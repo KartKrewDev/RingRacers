@@ -5298,7 +5298,7 @@ static void HWR_ProjectSprite(mobj_t *thing)
 			flip ^= (1<<rot);
 	}
 
-	if (thing->skin && ((skin_t *)thing->skin)->flags & SF_HIRES)
+	if (thing->skin && ((skin_t *)thing->skin)->highresscale != FRACUNIT)
 		this_scale *= FIXED_TO_FLOAT(((skin_t *)thing->skin)->highresscale);
 
 	spr_width = spritecachedinfo[lumpoff].width;

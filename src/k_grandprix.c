@@ -231,9 +231,9 @@ void K_InitGrandPrixBots(void)
 	// Rearrange usable bot skins list to prevent gaps for randomised selection
 	for (i = 0; i < usableskins; i++)
 	{
-		if (!(grabskins[i] == MAXSKINS /*|| K_SkinLocked(grabskins[i])*/))
+		if (!(grabskins[i] == MAXSKINS || !R_SkinUsable(-1, grabskins[i], true)))
 			continue;
-		while (usableskins > i && (grabskins[usableskins] == MAXSKINS /*|| K_SkinLocked(grabskins[i])*/))
+		while (usableskins > i && (grabskins[usableskins] == MAXSKINS || !R_SkinUsable(-1, grabskins[usableskins], true)))
 		{
 			usableskins--;
 		}
@@ -557,9 +557,9 @@ void K_RetireBots(void)
 	// Rearrange usable bot skins list to prevent gaps for randomised selection
 	for (i = 0; i < usableskins; i++)
 	{
-		if (!(grabskins[i] == MAXSKINS /*|| K_SkinLocked(grabskins[i])*/))
+		if (!(grabskins[i] == MAXSKINS || !R_SkinUsable(-1, grabskins[i], true)))
 			continue;
-		while (usableskins > i && (grabskins[usableskins] == MAXSKINS /*|| K_SkinLocked(grabskins[i])*/))
+		while (usableskins > i && (grabskins[usableskins] == MAXSKINS || !R_SkinUsable(-1, grabskins[usableskins], true)))
 			usableskins--;
 		grabskins[i] = grabskins[usableskins];
 		grabskins[usableskins] = MAXSKINS;
@@ -676,7 +676,7 @@ void K_PlayerLoseLife(player_t *player)
 		return;
 	}
 
-	if (player->spectator || player->exiting || player->bot || (player->pflags & PF_LOSTLIFE))
+	if (player->spectator || player->exiting || player->bot || player->lives <= 0 || (player->pflags & PF_LOSTLIFE))
 	{
 		return;
 	}

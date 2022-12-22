@@ -945,7 +945,7 @@ static void R_DrawVisSprite(vissprite_t *vis)
 	frac = vis->startfrac;
 	windowtop = windowbottom = sprbotscreen = INT32_MAX;
 
-	if (!(vis->cut & SC_PRECIP) && vis->mobj->skin && ((skin_t *)vis->mobj->skin)->flags & SF_HIRES)
+	if (!(vis->cut & SC_PRECIP) && vis->mobj->skin && ((skin_t *)vis->mobj->skin)->highresscale != FRACUNIT)
 		this_scale = FixedMul(this_scale, ((skin_t *)vis->mobj->skin)->highresscale);
 
 	if (this_scale <= 0)
@@ -1410,7 +1410,7 @@ static void R_ProjectDropShadow(
 	shadow->gzt = groundz + patch->height * shadowyscale / 2;
 	shadow->gz = shadow->gzt - patch->height * shadowyscale;
 	shadow->texturemid = FixedMul(interp.scale, FixedDiv(shadow->gzt - viewz, shadowyscale));
-	if (thing->skin && ((skin_t *)thing->skin)->flags & SF_HIRES)
+	if (thing->skin && ((skin_t *)thing->skin)->highresscale != FRACUNIT)
 		shadow->texturemid = FixedMul(shadow->texturemid, ((skin_t *)thing->skin)->highresscale);
 	shadow->scalestep = 0;
 	shadow->shear.tan = shadowskew; // repurposed variable
@@ -1797,7 +1797,7 @@ static void R_ProjectSprite(mobj_t *thing)
 
 	I_Assert(lump < max_spritelumps);
 
-	if (thing->skin && ((skin_t *)thing->skin)->flags & SF_HIRES)
+	if (thing->skin && ((skin_t *)thing->skin)->highresscale != FRACUNIT)
 		this_scale = FixedMul(this_scale, ((skin_t *)thing->skin)->highresscale);
 
 	spr_width = spritecachedinfo[lump].width;
@@ -3442,6 +3442,27 @@ boolean R_ThingVisible (mobj_t *thing)
 {
 	if (thing->sprite == SPR_NULL)
 		return false;
+
+	if (!cv_drawpickups.value)
+	{
+		switch (thing->type)
+		{
+			case MT_RING:
+			case MT_FLINGRING:
+			case MT_BLUESPHERE:
+			case MT_RANDOMITEM:
+			case MT_SPHEREBOX:
+			case MT_ITEMCAPSULE:
+			case MT_ITEMCAPSULE_PART:
+			case MT_OVERLAY: // mostly capsule numbers :)))
+			case MT_BATTLECAPSULE:
+			case MT_BATTLECAPSULE_PIECE:
+				return false;
+
+			default:
+				break;
+		}
+	}
 
 	if (r_viewmobj && (thing == r_viewmobj || (r_viewmobj->player && r_viewmobj->player->followmobj == thing)))
 		return false;

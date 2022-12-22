@@ -27,9 +27,12 @@
 #include "p_local.h"
 #include "dehacked.h" // get_number (for thok)
 #include "m_cond.h"
+#include "k_kart.h"
+#include "m_random.h"
 #if 0
 #include "k_kart.h" // K_KartResetPlayerColor
 #endif
+#include "k_grandprix.h" // K_CanChangeRules
 #ifdef HWRENDER
 #include "hardware/hw_md2.h"
 #endif
@@ -148,36 +151,52 @@ void R_InitSkins(void)
 
 	for (i = 0; i < numwadfiles; i++)
 	{
-		R_AddSkins((UINT16)i);
-		R_PatchSkins((UINT16)i);
+		R_AddSkins((UINT16)i, true);
+		R_PatchSkins((UINT16)i, true);
 		R_LoadSpriteInfoLumps(i, wadfiles[i]->numlumps);
 	}
 	ST_ReloadSkinFaceGraphics();
 }
 
-UINT32 R_GetSkinAvailabilities(void)
+UINT8 *R_GetSkinAvailabilities(boolean demolock)
 {
-	UINT8 i;
-	UINT32 response = 0;
+	UINT8 i, shif, byte;
+	INT32 skinid;
+	static UINT8 responsebuffer[MAXAVAILABILITY];
+
+	memset(&responsebuffer, 0, sizeof(responsebuffer));
 
 	for (i = 0; i < MAXUNLOCKABLES; i++)
 	{
-		if (unlockables[i].type == SECRET_SKIN && unlockables[i].unlocked)
-		{
-			UINT8 s = min(unlockables[i].variable, MAXSKINS);
-			response |= (1 << s);
-		}
+		if (unlockables[i].type != SECRET_SKIN)
+			continue;
+
+		// NEVER EVER EVER M_CheckNetUnlockByID
+		if (gamedata->unlocked[i] != true && !demolock)
+			continue;
+
+		skinid = M_UnlockableSkinNum(&unlockables[i]);
+
+		if (skinid < 0 || skinid >= MAXSKINS)
+			continue;
+
+		shif = (skinid % 8);
+		byte = (skinid / 8);
+
+		responsebuffer[byte] |= (1 << shif);
 	}
 
-	return response;
+	return responsebuffer;
 }
 
 // returns true if available in circumstances, otherwise nope
 // warning don't use with an invalid skinnum other than -1 which always returns true
-boolean R_SkinUsable(INT32 playernum, INT32 skinnum)
+boolean R_SkinUsable(INT32 playernum, INT32 skinnum, boolean demoskins)
 {
 	boolean needsunlocked = false;
+	boolean useplayerstruct = (Playing() && playernum != -1);
 	UINT8 i;
+	INT32 skinid;
 
 	if (skinnum == -1)
 	{
@@ -185,55 +204,55 @@ boolean R_SkinUsable(INT32 playernum, INT32 skinnum)
 		return true;
 	}
 
-	if (modeattacking)
-	{
-		// If you have someone else's run, you should be able to take a look
-		return true;
-	}
-
-	if (netgame && (cv_forceskin.value == skinnum))
+	if (K_CanChangeRules(true) && (cv_forceskin.value == skinnum))
 	{
 		// Being forced to play as this character by the server
 		return true;
 	}
 
-	if (metalrecording)
-	{
-		// Recording a Metal Sonic race
-		const INT32 metalskin = R_SkinAvailable("metalsonic");
-		return (skinnum == metalskin);
-	}
-
 	// Determine if this character is supposed to be unlockable or not
-	for (i = 0; i < MAXUNLOCKABLES; i++)
+	if (useplayerstruct && demo.playback)
 	{
-		if (unlockables[i].type == SECRET_SKIN && unlockables[i].variable == skinnum)
+		if (!demoskins)
+			skinnum = demo.skinlist[skinnum].mapping;
+		needsunlocked = demo.skinlist[skinnum].unlockrequired;
+	}
+	else
+	{
+		for (i = 0; i < MAXUNLOCKABLES; i++)
 		{
+			if (unlockables[i].type != SECRET_SKIN)
+				continue;
+
+			skinid = M_UnlockableSkinNum(&unlockables[i]);
+
+			if (skinid != skinnum)
+				continue;
+
 			// i is now the unlockable index, we can use this later
 			needsunlocked = true;
 			break;
 		}
 	}
 
-	if (needsunlocked == true)
-	{
-		// You can use this character IF you have it unlocked.
-		if ((netgame || multiplayer) && playernum != -1)
-		{
-			// Use the netgame synchronized unlocks.
-			return (boolean)(!(players[playernum].availabilities & (1 << skinnum)));
-		}
-		else
-		{
-			// Use the unlockables table directly
-			return (boolean)(unlockables[i].unlocked);
-		}
-	}
-	else
+	if (needsunlocked == false)
 	{
 		// Didn't trip anything, so we can use this character.
 		return true;
 	}
+
+	// Ok, you can use this character IF you have it unlocked.
+	if (useplayerstruct)
+	{
+		// Use the netgame synchronized unlocks.
+		UINT8 shif = (skinnum % 8);
+		UINT8 byte = (skinnum / 8);
+		return !!(players[playernum].availabilities[byte] & (1 << shif));
+	}
+
+	// Use the unlockables table directly
+	// NOTE: M_CheckNetUnlockByID would be correct in many circumstances... but not all. TODO figure out how to discern.
+	return (boolean)(gamedata->unlocked[i]);
 }
 
 // returns true if the skin name is found (loaded from pwad)
@@ -251,15 +270,79 @@ INT32 R_SkinAvailable(const char *name)
 	return -1;
 }
 
+// Auxillary function that actually sets the skin
+static void SetSkin(player_t *player, INT32 skinnum)
+{
+	skin_t *skin = &skins[skinnum];
+
+	player->skin = skinnum;
+
+	player->followitem = skin->followitem;
+
+	player->kartspeed = skin->kartspeed;
+	player->kartweight = skin->kartweight;
+	player->charflags = skin->flags;
+
+#if 0
+	if (!CV_CheatsEnabled() && !(netgame || multiplayer || demo.playback))
+	{
+		for (i = 0; i <= r_splitscreen; i++)
+		{
+			if (playernum == g_localplayers[i])
+			{
+				CV_StealthSetValue(&cv_playercolor[i], skin->prefcolor);
+			}
+		}
+
+		player->skincolor = skin->prefcolor;
+		K_KartResetPlayerColor(player);
+	}
+#endif
+
+	if (player->followmobj)
+	{
+		P_RemoveMobj(player->followmobj);
+		P_SetTarget(&player->followmobj, NULL);
+	}
+
+	if (player->mo)
+	{
+		player->mo->skin = skin;
+		P_SetScale(player->mo, player->mo->scale);
+		P_SetPlayerMobjState(player->mo, player->mo->state-states); // Prevent visual errors when switching between skins with differing number of frames
+	}
+
+	// for replays: We have changed our skin mid-game; let the game know so it can do the same in the replay!
+	demo_extradata[(player-players)] |= DXD_SKIN;
+}
+
+// Gets the player to the first usuable skin in the game.
+// (If your mod locked them all, then you kinda stupid)
+static INT32 GetPlayerDefaultSkin(INT32 playernum)
+{
+	INT32 i;
+
+	for (i = 0; i < numskins; i++)
+	{
+		if (R_SkinUsable(playernum, i, false))
+		{
+			return i;
+		}
+	}
+
+	I_Error("All characters are locked!");
+	return 0;
+}
+
 // network code calls this when a 'skin change' is received
 void SetPlayerSkin(INT32 playernum, const char *skinname)
 {
 	INT32 i = R_SkinAvailable(skinname);
 	player_t *player = &players[playernum];
 
-	if ((i != -1) && R_SkinUsable(playernum, i))
+	if ((i != -1) && R_SkinUsable(playernum, i, false))
 	{
-		SetPlayerSkinByNum(playernum, i);
+		SetSkin(player, i);
 		return;
 	}
 
@@ -268,7 +351,7 @@ void SetPlayerSkin(INT32 playernum, const char *skinname)
 	else if(server || IsPlayerAdmin(consoleplayer))
 		CONS_Alert(CONS_WARNING, M_GetText("Player %d (%s) skin '%s' not found\n"), playernum, player_names[playernum], skinname);
 
-	SetPlayerSkinByNum(playernum, 0);
+	SetSkin(player, GetPlayerDefaultSkin(playernum));
 }
 
 // Same as SetPlayerSkin, but uses the skin #.
@@ -276,53 +359,10 @@ void SetPlayerSkin(INT32 playernum, const char *skinname)
 void SetPlayerSkinByNum(INT32 playernum, INT32 skinnum)
 {
 	player_t *player = &players[playernum];
-	skin_t *skin = &skins[skinnum];
-	//UINT16 newcolor = 0;
-	//UINT8 i;
 
-	if (skinnum >= 0 && skinnum < numskins && R_SkinUsable(playernum, skinnum)) // Make sure it exists!
+	if (skinnum >= 0 && skinnum < numskins && R_SkinUsable(playernum, skinnum, false)) // Make sure it exists!
 	{
-		player->skin = skinnum;
-
-		player->charflags = (UINT32)skin->flags;
-
-		player->followitem = skin->followitem;
-
-		player->kartspeed = skin->kartspeed;
-		player->kartweight = skin->kartweight;
-
-#if 0
-		if (!CV_CheatsEnabled() && !(netgame || multiplayer || demo.playback))
-		{
-			for (i = 0; i <= r_splitscreen; i++)
-			{
-				if (playernum == g_localplayers[i])
-				{
-					CV_StealthSetValue(&cv_playercolor[i], skin->prefcolor);
-				}
-			}
-
-			player->skincolor = newcolor = skin->prefcolor;
-			K_KartResetPlayerColor(player);
-		}
-#endif
-
-		if (player->followmobj)
-		{
-			P_RemoveMobj(player->followmobj);
-			P_SetTarget(&player->followmobj, NULL);
-		}
-
-		if (player->mo)
-		{
-			player->mo->skin = skin;
-			P_SetScale(player->mo, player->mo->scale);
-			P_SetPlayerMobjState(player->mo, player->mo->state-states); // Prevent visual errors when switching between skins with differing number of frames
-		}
-
-		// for replays: We have changed our skin mid-game; let the game know so it can do the same in the replay!
-		demo_extradata[playernum] |= DXD_SKIN;
-
+		SetSkin(player, skinnum);
 		return;
 	}
 
@@ -331,7 +371,185 @@ void SetPlayerSkinByNum(INT32 playernum, INT32 skinnum)
 	else if(server || IsPlayerAdmin(consoleplayer))
 		CONS_Alert(CONS_WARNING, "Player %d (%s) skin %d not found\n", playernum, player_names[playernum], skinnum);
 
-	SetPlayerSkinByNum(playernum, 0); // not found, put in the default skin
+	SetSkin(player, GetPlayerDefaultSkin(playernum)); // not found put the eggman skin
+}
+
+// Set mo skin but not player_t skin, for ironman
+void SetFakePlayerSkin(player_t* player, INT32 skinid)
+{
+	if (player->fakeskin != skinid)
+	{
+		if (player->fakeskin != MAXSKINS)
+			player->lastfakeskin = player->fakeskin;
+		player->fakeskin = skinid;
+	}
+
+	if (demo.playback)
+	{
+		player->kartspeed = demo.skinlist[skinid].kartspeed;
+		player->kartweight = demo.skinlist[skinid].kartweight;
+		player->charflags = demo.skinlist[skinid].flags;
+		skinid = demo.skinlist[skinid].mapping;
+	}
+	else
+	{
+		player->kartspeed = skins[skinid].kartspeed;
+		player->kartweight = skins[skinid].kartweight;
+		player->charflags = skins[skinid].flags;
+	}
+
+	player->mo->skin = &skins[skinid];
+}
+
+// Loudly rerandomize
+void SetRandomFakePlayerSkin(player_t* player, boolean fast)
+{
+	INT32 i;
+	UINT8 usableskins = 0, maxskinpick;
+	UINT8 grabskins[MAXSKINS];
+
+	maxskinpick = (demo.playback ? demo.numskins : numskins);
+
+	for (i = 0; i < maxskinpick; i++)
+	{
+		if (i == player->lastfakeskin)
+			continue;
+		if (demo.playback)
+		{
+			if (demo.skinlist[i].flags & SF_IRONMAN)
+				continue;
+		}
+		else if (skins[i].flags & SF_IRONMAN)
+			continue;
+		if (!R_SkinUsable(player-players, i, true))
+			continue;
+		grabskins[usableskins++] = i;
+	}
+
+	if (!usableskins)
+		I_Error("SetRandomFakePlayerSkin: No valid skins to pick from!?");
+
+	i = grabskins[P_RandomKey(PR_RANDOMSKIN, usableskins)];
+
+	SetFakePlayerSkin(player, i);
+
+	if (player->mo)
+	{
+		S_StartSound(player->mo, sfx_kc33);
+		S_StartSound(player->mo, sfx_cdfm44);
+		
+		mobj_t *parent = player->mo;
+		fixed_t baseangle = P_RandomRange(PR_DECORATION, 0, 359);
+		INT32 j;
+
+		for (j = 0; j < 6; j++)	// 0-3 = sides, 4 = top, 5 = bottom
+		{
+			mobj_t *box = P_SpawnMobjFromMobj(parent, 0, 0, 0, MT_MAGICIANBOX);
+			P_SetTarget(&box->target, parent);
+			box->angle = FixedAngle((baseangle + j*90) * FRACUNIT);
+			box->flags2 |= MF2_AMBUSH;
+			if (fast)
+			{
+				box->extravalue1 = 10; // Rotation rate
+				box->extravalue2 = 5*TICRATE/4; // Lifetime
+			}
+			else
+			{
+				box->extravalue1 = 1;
+				box->extravalue2 = 3*TICRATE/2;
+			}
+
+			// cusval controls behavior that should run only once, like disappear FX and RF_DONTDRAW handling.
+			// NB: Order of thinker execution matters here!
+			// We want the other sides to inherit the player's "existing" RF_DONTDRAW before the last side writes to it.
+			// See the MT_MAGICIANBOX thinker in p_mobj.c.
+			if (j == 5)
+				box->cusval = 1;
+			else
+				box->cusval = 0;
+			
+			if (j > 3)
+			{
+				P_SetMobjState(box, (j == 4) ? S_MAGICIANBOX_TOP : S_MAGICIANBOX_BOTTOM);
+				box->renderflags |= RF_NOSPLATBILLBOARD;
+				box->angle = FixedAngle(baseangle*FRACUNIT);
+			}
+		}
+
+		K_SpawnMagicianParticles(player->mo, 10);
+	}
+}
+
+// Return to base skin from an SF_IRONMAN randomization
+void ClearFakePlayerSkin(player_t* player)
+{
+	UINT8 skinid;
+	UINT32 flags;
+
+	if (demo.playback)
+	{
+		skinid = demo.currentskinid[(player-players)];
+		flags = demo.skinlist[skinid].flags;
+	}
+	else
+	{
+		skinid = player->skin;
+		flags = skins[player->skin].flags;
+	}
+
+	if ((flags & SF_IRONMAN) && !P_MobjWasRemoved(player->mo))
+	{
+		SetFakePlayerSkin(player, skinid);
+		S_StartSound(player->mo, sfx_s3k9f);
+		K_SpawnMagicianParticles(player->mo, 5);
+	}
+
+	player->fakeskin = MAXSKINS;
+}
+
+// Finds a skin with the closest stats if the expected skin doesn't exist.
+INT32 GetSkinNumClosestToStats(UINT8 kartspeed, UINT8 kartweight, UINT32 flags, boolean unlock)
+{
+	INT32 i, closest_skin = 0;
+	UINT8 closest_stats, stat_diff;
+	boolean doflagcheck = true;
+	UINT32 flagcheck = flags;
+
+flaglessretry:
+	closest_stats = stat_diff = UINT8_MAX;
+
+	for (i = 0; i < numskins; i++)
+	{
+		if (!unlock && !R_SkinUsable(-1, i, false))
+		{
+			continue;
+		}
+		stat_diff = abs(skins[i].kartspeed - kartspeed) + abs(skins[i].kartweight - kartweight);
+		if (doflagcheck && (skins[i].flags & flagcheck) != flagcheck)
+		{
+			continue;
+		}
+		if (stat_diff < closest_stats)
+		{
+			closest_stats = stat_diff;
+			closest_skin = i;
+		}
+	}
+
+	if (stat_diff && (doflagcheck || closest_stats == UINT8_MAX))
+	{
+		// Just grab *any* SF_IRONMAN if we don't get it on the first pass.
+		if ((flagcheck & SF_IRONMAN) && (flagcheck != SF_IRONMAN))
+		{
+			flagcheck = SF_IRONMAN;
+		}
+
+		doflagcheck = false;
+
+		goto flaglessretry;
+	}
+
+	return closest_skin;
 }
 
 //
@@ -482,8 +700,8 @@ static boolean R_ProcessPatchableFields(skin_t *skin, char *stoken, char *value)
 	// parameters for individual character flags
 	// these are uppercase so they can be concatenated with SF_
 	// 1, true, yes are all valid values
-	GETFLAG(HIRES)
 	GETFLAG(MACHINE)
+	GETFLAG(IRONMAN)
 #undef GETFLAG
 
 	else // let's check if it's a sound, otherwise error out
@@ -527,7 +745,7 @@ static boolean R_ProcessPatchableFields(skin_t *skin, char *stoken, char *value)
 //
 // Find skin sprites, sounds & optional status bar face, & add them
 //
-void R_AddSkins(UINT16 wadnum)
+void R_AddSkins(UINT16 wadnum, boolean mainfile)
 {
 	UINT16 lump, lastlump = 0;
 	char *buf;
@@ -675,7 +893,8 @@ next_token:
 
 		R_FlushTranslationColormapCache();
 
-		CONS_Printf(M_GetText("Added skin '%s'\n"), skin->name);
+		if (mainfile == false)
+			CONS_Printf(M_GetText("Added skin '%s'\n"), skin->name);
 
 #ifdef SKINVALUES
 		skin_cons_t[numskins].value = numskins;
@@ -699,7 +918,7 @@ next_token:
 //
 // Patch skin sprites
 //
-void R_PatchSkins(UINT16 wadnum)
+void R_PatchSkins(UINT16 wadnum, boolean mainfile)
 {
 	UINT16 lump, lastlump = 0;
 	char *buf;
@@ -841,7 +1060,8 @@ next_token:
 
 		R_FlushTranslationColormapCache();
 
-		CONS_Printf(M_GetText("Patched skin '%s'\n"), skin->name);
+		if (mainfile == false)
+			CONS_Printf(M_GetText("Patched skin '%s'\n"), skin->name);
 	}
 	return;
 }

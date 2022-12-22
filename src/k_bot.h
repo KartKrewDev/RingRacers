@@ -31,10 +31,10 @@
 #define BOTSPINDASHCONFIRM (2*TICRATE)
 
 // Point for bots to aim for
-typedef struct botprediction_s {
+struct botprediction_t {
 	fixed_t x, y;
 	fixed_t radius;
-} botprediction_t;
+};
 
 
 // AVAILABLE FOR LUA

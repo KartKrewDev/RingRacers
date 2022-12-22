@@ -478,6 +478,12 @@ void P_ResetPlayer(player_t *player)
 	player->trickpanel = 0;
 	player->glanceDir = 0;
 	player->fastfall = 0;
+
+	if (player->mo != NULL && P_MobjWasRemoved(player->mo) == false)
+	{
+		player->mo->pitch = 0;
+		player->mo->roll = 0;
+	}
 }
 
 //
@@ -1237,6 +1243,8 @@ mobj_t *P_SpawnGhostMobj(mobj_t *mobj)
 	ghost->old_pitch = mobj->old_pitch2;
 	ghost->old_roll = mobj->old_roll2;
 
+	K_ReduceVFX(ghost, mobj->player);
+
 	return ghost;
 }
 
@@ -1264,6 +1272,8 @@ void P_DoPlayerExit(player_t *player)
 
 	if (!player->spectator)
 	{
+		ClearFakePlayerSkin(player);
+
 		if ((gametyperules & GTR_CIRCUIT)) // If in Race Mode, allow
 		{
 			K_KartUpdatePosition(player);
@@ -4167,6 +4177,35 @@ void P_PlayerThink(player_t *player)
 	{
 		player->stairjank--;
 	}
+	
+	// Random skin / "ironman"
+	{
+		UINT32 skinflags = (demo.playback)
+			? demo.skinlist[demo.currentskinid[playeri]].flags
+			: skins[player->skin].flags;
+
+		if (skinflags & SF_IRONMAN) // we are Heavy Magician
+		{
+			if (player->charflags & SF_IRONMAN) // no fakeskin yet
+			{
+				if (leveltime >= starttime && !player->exiting)
+				{
+					if (player->fakeskin != MAXSKINS)
+					{
+						SetFakePlayerSkin(player, player->fakeskin);
+					}
+					else if (!(gametyperules & GTR_CIRCUIT))
+					{
+						SetRandomFakePlayerSkin(player, false);
+					}
+				}
+			}
+			else if (player->exiting) // wearing a fakeskin, but need to display signpost postrace etc
+			{
+				ClearFakePlayerSkin(player);
+			}
+		}
+	}
 
 	K_KartPlayerThink(player, cmd); // SRB2kart
 
@@ -4301,6 +4340,12 @@ void P_PlayerAfterThink(player_t *player)
 	// Run followers in AfterThink, after the players have moved,
 	// so a lag value of 1 is exactly attached to the player.
 	K_HandleFollower(player);
+
+	if (P_MobjWasRemoved(player->mo) || (player->mo->eflags & MFE_PAUSED) == 0)
+	{
+		player->timeshitprev = player->timeshit;
+		player->timeshit = 0;
+	}
 
 
 	if (K_PlayerUsesBotMovement(player))

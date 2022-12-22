@@ -145,6 +145,11 @@ void HWR_DrawStretchyFixedPatch(patch_t *gpatch, fixed_t x, fixed_t y, fixed_t p
 //  0--1
 	float dupx, dupy, fscalew, fscaleh, fwidth, fheight;
 
+	const cliprect_t *clip = V_GetClipRect();
+
+	float s_min, s_max;
+	float t_min, t_max;
+
 	// make patch ready in hardware cache
 	if (!colormap)
 		HWR_GetPatch(gpatch);
@@ -188,7 +193,10 @@ void HWR_DrawStretchyFixedPatch(patch_t *gpatch, fixed_t x, fixed_t y, fixed_t p
 			offsetx = (float)(gpatch->leftoffset) * fscalew;
 
 		// top offset
-		offsety = (float)(gpatch->topoffset) * fscaleh;
+		if (option & V_VFLIP)
+			offsety = (float)(gpatch->height - gpatch->topoffset) * fscaleh;
+		else
+			offsety = (float)(gpatch->topoffset) * fscaleh;
 
 		cx -= offsetx;
 		cy -= offsety;
@@ -204,7 +212,7 @@ void HWR_DrawStretchyFixedPatch(patch_t *gpatch, fixed_t x, fixed_t y, fixed_t p
 			INT32 intx, inty;
 			intx = (INT32)cx;
 			inty = (INT32)cy;
-			K_AdjustXYWithSnap(&intx, &inty, option, dupx, dupy);
+			V_AdjustXYWithSnap(&intx, &inty, option, dupx, dupy);
 			cx = (float)intx;
 			cy = (float)inty;
 		}
@@ -219,6 +227,41 @@ void HWR_DrawStretchyFixedPatch(patch_t *gpatch, fixed_t x, fixed_t y, fixed_t p
 	{
 		fwidth = (float)(gpatch->width) * dupx;
 		fheight = (float)(gpatch->height) * dupy;
+	}
+
+	s_min = t_min = 0.0f;
+	s_max = hwrPatch->max_s;
+	t_max = hwrPatch->max_t;
+
+	if (clip)
+	{
+		if (cx < clip->left)
+		{
+			s_min = ((clip->left - cx) / fwidth) * s_max;
+			cx = clip->left;
+		}
+
+		if (cy < clip->top)
+		{
+			t_min = ((clip->top - cy) / fheight) * t_max;
+			cy = clip->top;
+		}
+
+		if ((cx + fwidth) > clip->right)
+		{
+			const float n = (clip->right - cx);
+
+			s_max = (s_min + ((n / fwidth) * s_max));
+			fwidth = n;
+		}
+
+		if ((cy + fheight) > clip->bottom)
+		{
+			const float n = (clip->bottom - cy);
+
+			t_max = (t_min + ((n / fheight) * t_max));
+			fheight = n;
+		}
 	}
 
 	// positions of the cx, cy, are between 0 and vid.width/vid.height now, we need them to be between -1 and 1
@@ -240,17 +283,25 @@ void HWR_DrawStretchyFixedPatch(patch_t *gpatch, fixed_t x, fixed_t y, fixed_t p
 
 	if (option & V_FLIP)
 	{
-		v[0].s = v[3].s = hwrPatch->max_s;
-		v[2].s = v[1].s = 0.0f;
+		v[0].s = v[3].s = s_max;
+		v[2].s = v[1].s = s_min;
 	}
 	else
 	{
-		v[0].s = v[3].s = 0.0f;
-		v[2].s = v[1].s = hwrPatch->max_s;
+		v[0].s = v[3].s = s_min;
+		v[2].s = v[1].s = s_max;
 	}
 
-	v[0].t = v[1].t = 0.0f;
-	v[2].t = v[3].t = hwrPatch->max_t;
+	if (option & V_VFLIP)
+	{
+		v[0].t = v[1].t = t_max;
+		v[2].t = v[3].t = t_min;
+	}
+	else
+	{
+		v[0].t = v[1].t = t_min;
+		v[2].t = v[3].t = t_max;
+	}
 
 	flags = PF_NoDepthTest;
 
@@ -1000,7 +1051,7 @@ void HWR_DrawConsoleFill(INT32 x, INT32 y, INT32 w, INT32 h, INT32 color, UINT32
 
 		intx = (INT32)fx;
 		inty = (INT32)fy;
-		K_AdjustXYWithSnap(&intx, &inty, color, dupx, dupy);
+		V_AdjustXYWithSnap(&intx, &inty, color, dupx, dupy);
 		fx = (float)intx;
 		fy = (float)inty;
 	}
@@ -1091,7 +1142,7 @@ void HWR_DrawFill(INT32 x, INT32 y, INT32 w, INT32 h, INT32 color)
 
 		intx = (INT32)fx;
 		inty = (INT32)fy;
-		K_AdjustXYWithSnap(&intx, &inty, color, dupx, dupy);
+		V_AdjustXYWithSnap(&intx, &inty, color, dupx, dupy);
 		fx = (float)intx;
 		fy = (float)inty;
 	}

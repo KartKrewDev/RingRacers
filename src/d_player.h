@@ -35,8 +35,8 @@
 // Extra abilities/settings for skins (combinable stuff)
 typedef enum
 {
-	SF_HIRES            = 1, // Draw the sprite at different size?
-	SF_MACHINE          = 1<<1, // Beep boop. Are you a robot?
+	SF_MACHINE          = 1, // Beep boop. Are you a robot?
+	SF_IRONMAN			= 1<<1, // Pick a new skin during POSITION. I main Random!
 	// free up to and including 1<<31
 } skinflags_t;
 
@@ -154,7 +154,8 @@ Run this macro, then #undef FOREACH afterward
 	FOREACH (SUPERRING,     19),\
 	FOREACH (KITCHENSINK,   20),\
 	FOREACH (DROPTARGET,    21),\
-	FOREACH (GARDENTOP,     22)
+	FOREACH (GARDENTOP,     22),\
+	FOREACH (GACHABOM,      23)
 
 typedef enum
 {
@@ -168,10 +169,10 @@ typedef enum
 	KRITEM_DUALSNEAKER = NUMKARTITEMS,
 	KRITEM_TRIPLESNEAKER,
 	KRITEM_TRIPLEBANANA,
-	KRITEM_TENFOLDBANANA,
 	KRITEM_TRIPLEORBINAUT,
 	KRITEM_QUADORBINAUT,
 	KRITEM_DUALJAWZ,
+	KRITEM_TRIPLEGACHABOM,
 
 	NUMKARTRESULTS
 } kartitems_t;
@@ -226,6 +227,7 @@ typedef enum
 	// Item box
 	khud_itemblink,		// Item flashing after roulette, serves as a mashing indicator
 	khud_itemblinkmode,	// Type of flashing: 0 = white (normal), 1 = red (mashing), 2 = rainbow (enhanced items)
+	khud_rouletteoffset,// Roulette stop height
 
 	// Rings
 	khud_ringframe,		// Ring spin frame
@@ -288,7 +290,7 @@ typedef enum
 #define GARDENTOP_MAXGRINDTIME (45)
 
 // player_t struct for all respawn variables
-typedef struct respawnvars_s
+struct respawnvars_t
 {
 	UINT8 state; // see RESPAWNST_ constants in k_respawn.h
 	waypoint_t *wp; // Waypoint that we're going towards, NULL if the position isn't linked to one
@@ -302,14 +304,16 @@ typedef struct respawnvars_s
 	tic_t dropdash; // Drop Dash charge timer
 	boolean truedeath; // Your soul has left your body
 	boolean manual; // Respawn coords were manually set, please respawn exactly there
-} respawnvars_t;
+};
 
 // player_t struct for all bot variables
-typedef struct botvars_s
+struct botvars_t
 {
 	UINT8 difficulty; // Bot's difficulty setting
 	UINT8 diffincrease; // In GP: bot difficulty will increase this much next round
 	boolean rival; // If true, they're the GP rival
+
+	// All entries above persist between rounds and must be recorded in demos
 
 	fixed_t rubberband; // Bot rubberband value
 	UINT16 controller; // Special bot controller linedef ID
@@ -320,18 +324,53 @@ typedef struct botvars_s
 	SINT8 turnconfirm; // Confirm turn direction
 
 	tic_t spindashconfirm; // When high enough, they will try spindashing
-} botvars_t;
+};
 
 // player_t struct for all skybox variables
-typedef struct {
+struct skybox_t {
 	mobj_t * viewpoint;
 	mobj_t * centerpoint;
-} skybox_t;
+};
+
+// player_t struct for item roulette variables
+
+// Doing this the right way is causing problems.
+// so FINE, it's a static length now.
+#define ITEM_LIST_SIZE (NUMKARTRESULTS << 3)
+
+struct itemroulette_t
+{
+	boolean active;
+
+#ifdef ITEM_LIST_SIZE
+	size_t itemListLen;
+	SINT8 itemList[ITEM_LIST_SIZE];
+#else
+	size_t itemListCap;
+	size_t itemListLen;
+	SINT8 *itemList;
+#endif
+
+	UINT8 useOdds;
+	UINT8 playing, exiting;
+	UINT32 dist, baseDist;
+	UINT32 firstDist, secondDist;
+	UINT32 secondToFirst;
+
+	size_t index;
+	UINT8 sound;
+
+	tic_t speed;
+	tic_t tics;
+	tic_t elapsed;
+
+	boolean eggman;
+};
 
 // ========================================================================
 //                          PLAYER STRUCTURE
 // ========================================================================
-typedef struct player_s
+struct player_t
 {
 	mobj_t *mo;
 
@@ -384,7 +423,10 @@ typedef struct player_s
 	UINT16 skincolor;
 
 	INT32 skin;
-	UINT32 availabilities;
+	UINT8 availabilities[MAXAVAILABILITY];
+
+	UINT8 fakeskin; // ironman
+	UINT8 lastfakeskin;
 
 	UINT8 kartspeed; // Kart speed stat between 1 and 9
 	UINT8 kartweight; // Kart weight stat between 1 and 9
@@ -412,8 +454,9 @@ typedef struct player_s
 	// Basic gameplay things
 	UINT8 position;			// Used for Kart positions, mostly for deterministic stuff
 	UINT8 oldposition;		// Used for taunting when you pass someone
-	UINT8 positiondelay;	// Used for position number, so it can grow when passing/being passed
+	UINT8 positiondelay;	// Used for position number, so it can grow when passing
 	UINT32 distancetofinish;
+	waypoint_t *currentwaypoint;
 	waypoint_t *nextwaypoint;
 	respawnvars_t respawn; // Respawn info
 	tic_t airtime; 			// Keep track of how long you've been in the air
@@ -423,6 +466,7 @@ typedef struct player_s
 	UINT16 spinouttimer;	// Spin-out from a banana peel or oil slick (was "pw_bananacam")
 	UINT8 spinouttype;		// Determines the mode of spinout/wipeout, see kartspinoutflags_t
 	UINT8 instashield;		// Instashield no-damage animation timer
+	INT32 invulnhitlag;		// Numbers of tics of hitlag added this tic for "potential" damage -- not real damage
 	UINT8 wipeoutslow;		// Timer before you slowdown when getting wiped out
 	UINT8 justbumped;		// Prevent players from endlessly bumping into each other
 	UINT8 tumbleBounces;
@@ -472,8 +516,7 @@ typedef struct player_s
 	UINT8 tripwirePass; // see tripwirepass_t
 	UINT16 tripwireLeniency;	// When reaching a state that lets you go thru tripwire, you get an extra second leniency after it ends to still go through it.
 
-	UINT16 itemroulette;	// Used for the roulette when deciding what item to give you (was "pw_kartitem")
-	UINT8 roulettetype;		// Used for the roulette, for deciding type (0 = normal, 1 = better, 2 = eggman mark)
+	itemroulette_t itemRoulette;	// Item roulette data
 
 	// Item held stuff
 	SINT8 itemtype;		// KITEM_ constant for item number
@@ -573,7 +616,12 @@ typedef struct player_s
 
 	INT16 lastsidehit, lastlinehit;
 
-	//UINT8 timeshit; // That's TIMES HIT, not TIME SHIT, you doofus! -- in memoriam
+	// These track how many things tried to damage you, not
+	// whether you actually took damage.
+	UINT8 timeshit; // times hit this tic
+	UINT8 timeshitprev; // times hit before
+	// That's TIMES HIT, not TIME SHIT, you doofus! -- in memoriam
+	// No longer in memoriam =P -jart
 
 	INT32 onconveyor; // You are on a conveyor belt if nonzero
 
@@ -607,6 +655,6 @@ typedef struct player_s
 #ifdef HWRENDER
 	fixed_t fovadd; // adjust FOV for hw rendering
 #endif
-} player_t;
+};
 
 #endif

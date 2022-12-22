@@ -149,7 +149,7 @@ static boolean K_BotHatesThisSectorsSpecial(player_t *player, sector_t *sec)
 		return true;
 	}
 
-	if (sec->offroad > FRACUNIT) // Only care about strong offroad.
+	if (sec->offroad > 0)
 	{
 		return !K_BotCanTakeCut(player);
 	}
@@ -415,6 +415,7 @@ static BlockItReturn_t K_FindObjectsForNudging(mobj_t *thing)
 		case MT_SPB:
 		case MT_BUBBLESHIELDTRAP:
 		case MT_DUELBOMB:
+		case MT_GACHABOM:
 			K_AddDodgeObject(thing, side, 20);
 			break;
 		case MT_SHRINK_GUN:

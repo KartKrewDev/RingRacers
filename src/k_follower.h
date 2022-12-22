@@ -43,11 +43,12 @@ typedef enum
 //
 // We'll define these here because they're really just a mobj that'll follow some rules behind a player
 //
-typedef struct follower_s
+struct follower_t
 {
-	char skinname[SKINNAMESIZE+1];	// Skin Name. This is what to refer to when asking the commands anything.
-	char name[SKINNAMESIZE+1];		// Name. This is used for the menus. We'll just follow the same rules as skins for this.
+	char name[SKINNAMESIZE+1];	// Skin Name. This is what to refer to when asking the commands anything..
 	char icon[8+1];			// Lump names are only 8 characters. (+1 for \0)
+
+	UINT8 category;			// Category
 
 	skincolornum_t defaultcolor;	// default color for menus.
 	followermode_t mode;			// Follower behavior modifier.
@@ -80,10 +81,22 @@ typedef struct follower_s
 	statenum_t losestate;		// state when the player has lost
 	statenum_t hitconfirmstate;	// state for hit confirm
 	tic_t hitconfirmtime;		// time to keep the above playing for
-} follower_t;
+};
 
 extern INT32 numfollowers;
 extern follower_t followers[MAXSKINS];
+
+#define MAXFOLLOWERCATEGORIES 32
+
+struct followercategory_t
+{
+	char name[SKINNAMESIZE+1];		// Name. This is used for the menus. We'll just follow the same rules as skins for this.
+	char icon[8+1];			// Lump names are only 8 characters. (+1 for \0)
+	UINT8 numincategory;
+};
+
+extern INT32 numfollowercategories;
+extern followercategory_t followercategories[MAXFOLLOWERCATEGORIES];
 
 /*--------------------------------------------------
 	INT32 K_FollowerAvailable(const char *name)
@@ -100,6 +113,22 @@ extern follower_t followers[MAXSKINS];
 --------------------------------------------------*/
 
 INT32 K_FollowerAvailable(const char *name);
+
+
+/*--------------------------------------------------
+	boolean K_FollowerUsable(INT32 followernum);
+
+		Check if a follower is usable or not.
+
+	Input Arguments:-
+		skinnum - The follower's skin ID
+
+	Return:-
+		true if it was a valid follower,
+		otherwise false.
+--------------------------------------------------*/
+
+boolean K_FollowerUsable(INT32 skinnum);
 
 
 /*--------------------------------------------------
@@ -167,6 +196,20 @@ UINT16 K_GetEffectiveFollowerColor(UINT16 followercolor, UINT16 playercolor);
 --------------------------------------------------*/
 
 void K_HandleFollower(player_t *player);
+
+/*--------------------------------------------------
+	void K_RemoveFollower(player_t *player)
+
+		Removes Follower object
+
+	Input Arguments:-
+		player - The player who we want to remove the follower of.
+
+	Return:-
+		None
+--------------------------------------------------*/
+
+void K_RemoveFollower(player_t *player);
 
 
 #endif // __K_FOLLOWER__

@@ -131,11 +131,44 @@ static float searchfvalue(const char *s)
 #endif
 
 // These are for clearing all of various things
+void clear_emblems(void)
+{
+	INT32 i;
+
+	for (i = 0; i < MAXEMBLEMS; ++i)
+	{
+		Z_Free(emblemlocations[i].level);
+		emblemlocations[i].level = NULL;
+
+		Z_Free(emblemlocations[i].stringVar);
+		emblemlocations[i].stringVar = NULL;
+	}
+
+	memset(&emblemlocations, 0, sizeof(emblemlocations));
+	numemblems = 0;
+}
+
+void clear_unlockables(void)
+{
+	INT32 i;
+
+	for (i = 0; i < MAXUNLOCKABLES; ++i)
+	{
+		Z_Free(unlockables[i].stringVar);
+		unlockables[i].stringVar = NULL;
+
+		Z_Free(unlockables[i].icon);
+		unlockables[i].icon = NULL;
+	}
+
+	memset(&unlockables, 0, sizeof(unlockables));
+}
+
 void clear_conditionsets(void)
 {
 	UINT8 i;
 	for (i = 0; i < MAXCONDITIONSETS; ++i)
-		M_ClearConditionSet(i+1);
+		M_ClearConditionSet(i);
 }
 
 void clear_levels(void)
@@ -1148,13 +1181,6 @@ void readlevelheader(MYFILE *f, char * name)
 				mapheaderinfo[num]->encorepal = (UINT16)i;
 			else if (fastcmp(word, "NUMLAPS"))
 				mapheaderinfo[num]->numlaps = (UINT8)i;
-			else if (fastcmp(word, "UNLOCKABLE"))
-			{
-				if (i >= 0 && i <= MAXUNLOCKABLES) // 0 for no unlock required, anything else requires something
-					mapheaderinfo[num]->unlockrequired = (SINT8)i - 1;
-				else
-					deh_warning("Level header %d: invalid unlockable number %d", num, i);
-			}
 			else if (fastcmp(word, "SKYBOXSCALE"))
 				mapheaderinfo[num]->skybox_scalex = mapheaderinfo[num]->skybox_scaley = mapheaderinfo[num]->skybox_scalez = (INT16)i;
 			else if (fastcmp(word, "SKYBOXSCALEX"))
@@ -2098,14 +2124,6 @@ void reademblemdata(MYFILE *f, INT32 num)
 			word2 = tmp += 2;
 			value = atoi(word2); // used for numerical settings
 
-			// Up here to allow lowercase in hints
-			if (fastcmp(word, "HINT"))
-			{
-				while ((tmp = strchr(word2, '\\')))
-					*tmp = '\n';
-				deh_strlcpy(emblemlocations[num-1].hint, word2, sizeof (emblemlocations[num-1].hint), va("Emblem %d: hint", num));
-				continue;
-			}
 			strupr(word2);
 
 			if (fastcmp(word, "TYPE"))
@@ -2124,6 +2142,7 @@ void reademblemdata(MYFILE *f, INT32 num)
 			else if (fastcmp(word, "MAPNAME"))
 			{
 				emblemlocations[num-1].level = Z_StrDup(word2);
+				emblemlocations[num-1].levelCache = NEXTMAP_INVALID;
 			}
 			else if (fastcmp(word, "SPRITE"))
 			{
@@ -2140,7 +2159,14 @@ void reademblemdata(MYFILE *f, INT32 num)
 			else if (fastcmp(word, "COLOR"))
 				emblemlocations[num-1].color = get_number(word2);
 			else if (fastcmp(word, "VAR"))
+			{
+				Z_Free(emblemlocations[num-1].stringVar);
+				emblemlocations[num-1].stringVar = Z_StrDup(word2);
+
 				emblemlocations[num-1].var = get_number(word2);
+			}
+			else if (fastcmp(word, "FLAGS"))
+				emblemlocations[num-1].flags = get_number(word2);
 			else
 				deh_warning("Emblem %d: unknown word '%s'", num, word);
 		}
@@ -2165,88 +2191,6 @@ void reademblemdata(MYFILE *f, INT32 num)
 	Z_Free(s);
 }
 
-void readextraemblemdata(MYFILE *f, INT32 num)
-{
-	char *s = Z_Malloc(MAXLINELEN, PU_STATIC, NULL);
-	char *word = s;
-	char *word2;
-	char *tmp;
-	INT32 value;
-
-	memset(&extraemblems[num-1], 0, sizeof(extraemblem_t));
-
-	do
-	{
-		if (myfgets(s, MAXLINELEN, f))
-		{
-			if (s[0] == '\n')
-				break;
-
-			// First remove trailing newline, if there is one
-			tmp = strchr(s, '\n');
-			if (tmp)
-				*tmp = '\0';
-
-			tmp = strchr(s, '#');
-			if (tmp)
-				*tmp = '\0';
-			if (s == tmp)
-				continue; // Skip comment lines, but don't break.
-
-			// Get the part before the " = "
-			tmp = strchr(s, '=');
-			if (tmp)
-				*(tmp-1) = '\0';
-			else
-				break;
-			strupr(word);
-
-			// Now get the part after
-			word2 = tmp += 2;
-
-			value = atoi(word2); // used for numerical settings
-
-			if (fastcmp(word, "NAME"))
-				deh_strlcpy(extraemblems[num-1].name, word2,
-					sizeof (extraemblems[num-1].name), va("Extra emblem %d: name", num));
-			else if (fastcmp(word, "OBJECTIVE"))
-				deh_strlcpy(extraemblems[num-1].description, word2,
-					sizeof (extraemblems[num-1].description), va("Extra emblem %d: objective", num));
-			else if (fastcmp(word, "CONDITIONSET"))
-				extraemblems[num-1].conditionset = (UINT8)value;
-			else if (fastcmp(word, "SHOWCONDITIONSET"))
-				extraemblems[num-1].showconditionset = (UINT8)value;
-			else
-			{
-				strupr(word2);
-				if (fastcmp(word, "SPRITE"))
-				{
-					if (word2[0] >= 'A' && word2[0] <= 'Z')
-						value = word2[0];
-					else
-						value += 'A'-1;
-
-					if (value < 'A' || value > 'Z')
-						deh_warning("Emblem %d: sprite must be from A - Z (1 - 26)", num);
-					else
-						extraemblems[num-1].sprite = (UINT8)value;
-				}
-				else if (fastcmp(word, "COLOR"))
-					extraemblems[num-1].color = get_number(word2);
-				else
-					deh_warning("Extra emblem %d: unknown word '%s'", num, word);
-			}
-		}
-	} while (!myfeof(f));
-
-	if (!extraemblems[num-1].sprite)
-		extraemblems[num-1].sprite = 'C';
-	if (!extraemblems[num-1].color)
-		extraemblems[num-1].color = SKINCOLOR_RED;
-
-	Z_Free(s);
-}
-
 void readunlockable(MYFILE *f, INT32 num)
 {
 	char *s = Z_Malloc(MAXLINELEN, PU_STATIC, NULL);
@@ -2256,7 +2200,6 @@ void readunlockable(MYFILE *f, INT32 num)
 	INT32 i;
 
 	memset(&unlockables[num], 0, sizeof(unlockable_t));
-	unlockables[num].objective[0] = '/';
 
 	do
 	{
@@ -2291,61 +2234,64 @@ void readunlockable(MYFILE *f, INT32 num)
 
 			if (fastcmp(word, "NAME"))
 				deh_strlcpy(unlockables[num].name, word2,
-					sizeof (unlockables[num].name), va("Unlockable %d: name", num));
-			else if (fastcmp(word, "OBJECTIVE"))
-				deh_strlcpy(unlockables[num].objective, word2,
-					sizeof (unlockables[num].objective), va("Unlockable %d: objective", num));
+					sizeof (unlockables[num].name), va("Unlockable %d: name", num+1));
 			else
 			{
 				strupr(word2);
 
 				if (fastcmp(word, "CONDITIONSET"))
 					unlockables[num].conditionset = (UINT8)i;
-				else if (fastcmp(word, "SHOWCONDITIONSET"))
-					unlockables[num].showconditionset = (UINT8)i;
-				else if (fastcmp(word, "NOCECHO"))
-					unlockables[num].nocecho = (UINT8)(i || word2[0] == 'T' || word2[0] == 'Y');
-				else if (fastcmp(word, "NOCHECKLIST"))
-					unlockables[num].nochecklist = (UINT8)(i || word2[0] == 'T' || word2[0] == 'Y');
+				else if (fastcmp(word, "MAJORUNLOCK"))
+					unlockables[num].majorunlock = (UINT8)(i || word2[0] == 'T' || word2[0] == 'Y');
 				else if (fastcmp(word, "TYPE"))
 				{
 					if (fastcmp(word2, "NONE"))
 						unlockables[num].type = SECRET_NONE;
-					else if (fastcmp(word2, "HEADER"))
-						unlockables[num].type = SECRET_HEADER;
+					else if (fastcmp(word2, "EXTRAMEDAL"))
+						unlockables[num].type = SECRET_EXTRAMEDAL;
+					else if (fastcmp(word2, "CUP"))
+						unlockables[num].type = SECRET_CUP;
+					else if (fastcmp(word2, "MAP"))
+						unlockables[num].type = SECRET_MAP;
 					else if (fastcmp(word2, "SKIN"))
 						unlockables[num].type = SECRET_SKIN;
-					else if (fastcmp(word2, "WARP"))
-						unlockables[num].type = SECRET_WARP;
-					else if (fastcmp(word2, "LEVELSELECT"))
-						unlockables[num].type = SECRET_LEVELSELECT;
+					else if (fastcmp(word2, "FOLLOWER"))
+						unlockables[num].type = SECRET_FOLLOWER;
+					else if (fastcmp(word2, "HARDSPEED"))
+						unlockables[num].type = SECRET_HARDSPEED;
+					else if (fastcmp(word2, "ENCORE"))
+						unlockables[num].type = SECRET_ENCORE;
+					else if (fastcmp(word2, "LEGACYBOXRUMMAGE"))
+						unlockables[num].type = SECRET_LEGACYBOXRUMMAGE;
 					else if (fastcmp(word2, "TIMEATTACK"))
 						unlockables[num].type = SECRET_TIMEATTACK;
 					else if (fastcmp(word2, "BREAKTHECAPSULES"))
 						unlockables[num].type = SECRET_BREAKTHECAPSULES;
 					else if (fastcmp(word2, "SOUNDTEST"))
 						unlockables[num].type = SECRET_SOUNDTEST;
-					else if (fastcmp(word2, "CREDITS"))
-						unlockables[num].type = SECRET_CREDITS;
+					else if (fastcmp(word2, "ALTTITLE"))
+						unlockables[num].type = SECRET_ALTTITLE;
 					else if (fastcmp(word2, "ITEMFINDER"))
 						unlockables[num].type = SECRET_ITEMFINDER;
-					else if (fastcmp(word2, "EMBLEMHINTS"))
-						unlockables[num].type = SECRET_EMBLEMHINTS;
-					else if (fastcmp(word2, "ENCORE"))
-						unlockables[num].type = SECRET_ENCORE;
-					else if (fastcmp(word2, "HARDSPEED"))
-						unlockables[num].type = SECRET_HARDSPEED;
-					else if (fastcmp(word2, "HELLATTACK"))
-						unlockables[num].type = SECRET_HELLATTACK;
-					else if (fastcmp(word2, "PANDORA"))
-						unlockables[num].type = SECRET_PANDORA;
 					else
 						unlockables[num].type = (INT16)i;
+					unlockables[num].stringVarCache = -1;
 				}
 				else if (fastcmp(word, "VAR"))
 				{
-					// TODO: different field for level name string
+					Z_Free(unlockables[num].stringVar);
+					unlockables[num].stringVar = Z_StrDup(word2);
+					unlockables[num].stringVarCache = -1;
 					unlockables[num].variable = (INT16)i;
+				}
+				else if (fastcmp(word, "ICON"))
+				{
+					Z_Free(unlockables[num].icon);
+					unlockables[num].icon = Z_StrDup(word2);
+				}
+				else if (fastcmp(word, "COLOR"))
+				{
+					unlockables[num].color = get_number(word2);
 				}
 				else
 					deh_warning("Unlockable %d: unknown word '%s'", num+1, word);
@@ -2383,7 +2329,7 @@ static void readcondition(UINT8 set, UINT32 id, char *word2)
 
 	if (!params[0])
 	{
-		deh_warning("condition line is empty for condition ID %d", id);
+		deh_warning("condition line is empty for condition ID %d", id+1);
 		return;
 	}
 
@@ -2401,9 +2347,15 @@ static void readcondition(UINT8 set, UINT32 id, char *word2)
 		re = atoi(params[1]);
 		x1 = atoi(params[2]);
 
+		if (re < PWRLVRECORD_MIN || re > PWRLVRECORD_MAX)
+		{
+			deh_warning("Power level requirement %d out of range (%d - %d) for condition ID %d", re, PWRLVRECORD_MIN, PWRLVRECORD_MAX, id+1);
+			return;
+		}
+
 		if (x1 < 0 || x1 >= PWRLV_NUMTYPES)
 		{
-			deh_warning("Power level type %d out of range (0 - %d) for condition ID %d", x1, PWRLV_NUMTYPES-1, id);
+			deh_warning("Power level type %d out of range (0 - %d) for condition ID %d", x1, PWRLV_NUMTYPES-1, id+1);
 			return;
 		}
 	}
@@ -2427,7 +2379,7 @@ static void readcondition(UINT8 set, UINT32 id, char *word2)
 
 		if (re >= nummapheaders)
 		{
-			deh_warning("Invalid level %s for condition ID %d", params[1], id);
+			deh_warning("Invalid level %s for condition ID %d", params[1], id+1);
 			return;
 		}
 	}
@@ -2440,7 +2392,7 @@ static void readcondition(UINT8 set, UINT32 id, char *word2)
 
 		if (x1 >= nummapheaders)
 		{
-			deh_warning("Invalid level %s for condition ID %d", params[1], id);
+			deh_warning("Invalid level %s for condition ID %d", params[1], id+1);
 			return;
 		}
 	}
@@ -2453,14 +2405,14 @@ static void readcondition(UINT8 set, UINT32 id, char *word2)
 		// constrained by 32 bits
 		if (re < 0 || re > 31)
 		{
-			deh_warning("Trigger ID %d out of range (0 - 31) for condition ID %d", re, id);
+			deh_warning("Trigger ID %d out of range (0 - 31) for condition ID %d", re, id+1);
 			return;
 		}
 	}
-	else if (fastcmp(params[0], "TOTALEMBLEMS"))
+	else if (fastcmp(params[0], "TOTALMEDALS"))
 	{
 		PARAMCHECK(1);
-		ty = UC_TOTALEMBLEMS;
+		ty = UC_TOTALMEDALS;
 		re = atoi(params[1]);
 	}
 	else if (fastcmp(params[0], "EMBLEM"))
@@ -2471,19 +2423,19 @@ static void readcondition(UINT8 set, UINT32 id, char *word2)
 
 		if (re <= 0 || re > MAXEMBLEMS)
 		{
-			deh_warning("Emblem %d out of range (1 - %d) for condition ID %d", re, MAXEMBLEMS, id);
+			deh_warning("Emblem %d out of range (1 - %d) for condition ID %d", re, MAXEMBLEMS, id+1);
 			return;
 		}
 	}
-	else if (fastcmp(params[0], "EXTRAEMBLEM"))
+	else if (fastcmp(params[0], "UNLOCKABLE"))
 	{
 		PARAMCHECK(1);
-		ty = UC_EXTRAEMBLEM;
+		ty = UC_UNLOCKABLE;
 		re = atoi(params[1]);
 
-		if (re <= 0 || re > MAXEXTRAEMBLEMS)
+		if (re <= 0 || re > MAXUNLOCKABLES)
 		{
-			deh_warning("Extra emblem %d out of range (1 - %d) for condition ID %d", re, MAXEXTRAEMBLEMS, id);
+			deh_warning("Unlockable %d out of range (1 - %d) for condition ID %d", re, MAXUNLOCKABLES, id+1);
 			return;
 		}
 	}
@@ -2495,13 +2447,13 @@ static void readcondition(UINT8 set, UINT32 id, char *word2)
 
 		if (re <= 0 || re > MAXCONDITIONSETS)
 		{
-			deh_warning("Condition set %d out of range (1 - %d) for condition ID %d", re, MAXCONDITIONSETS, id);
+			deh_warning("Condition set %d out of range (1 - %d) for condition ID %d", re, MAXCONDITIONSETS, id+1);
 			return;
 		}
 	}
 	else
 	{
-		deh_warning("Invalid condition name %s for condition ID %d", params[0], id);
+		deh_warning("Invalid condition name %s for condition ID %d", params[0], id+1);
 		return;
 	}
 
@@ -2554,13 +2506,13 @@ void readconditionset(MYFILE *f, UINT8 setnum)
 				id = (UINT8)atoi(word + 9);
 				if (id == 0)
 				{
-					deh_warning("Condition set %d: unknown word '%s'", setnum, word);
+					deh_warning("Condition set %d: unknown word '%s'", setnum+1, word);
 					continue;
 				}
 				else if (previd > id)
 				{
 					// out of order conditions can cause problems, so enforce proper order
-					deh_warning("Condition set %d: conditions are out of order, ignoring this line", setnum);
+					deh_warning("Condition set %d: conditions are out of order, ignoring this line", setnum+1);
 					continue;
 				}
 				previd = id;
@@ -2575,13 +2527,14 @@ void readconditionset(MYFILE *f, UINT8 setnum)
 	Z_Free(s);
 }
 
-void readmaincfg(MYFILE *f)
+void readmaincfg(MYFILE *f, boolean mainfile)
 {
 	char *s = Z_Malloc(MAXLINELEN, PU_STATIC, NULL);
 	char *word = s;
 	char *word2;
 	char *tmp;
 	INT32 value;
+	boolean doClearLevels = false;
 
 	do
 	{
@@ -2615,7 +2568,54 @@ void readmaincfg(MYFILE *f)
 
 			value = atoi(word2); // used for numerical settings
 
-			if (fastcmp(word, "EXECCFG"))
+			if (fastcmp(word, "GAMEDATA"))
+			{
+				size_t filenamelen;
+
+				// Check the data filename so that mods
+				// can't write arbitrary files.
+				if (!GoodDataFileName(word2))
+					I_Error("Maincfg: bad data file name '%s'\n", word2);
+
+				G_SaveGameData();
+				strlcpy(gamedatafilename, word2, sizeof (gamedatafilename));
+				strlwr(gamedatafilename);
+				savemoddata = true;
+				majormods = false;
+
+				// Also save a time attack folder
+				filenamelen = strlen(gamedatafilename)-4;  // Strip off the extension
+				filenamelen = min(filenamelen, sizeof (timeattackfolder));
+				strncpy(timeattackfolder, gamedatafilename, filenamelen);
+				timeattackfolder[min(filenamelen, sizeof (timeattackfolder) - 1)] = '\0';
+
+				strcpy(savegamename, timeattackfolder);
+				strlcat(savegamename, "%u.ssg", sizeof(savegamename));
+				// can't use sprintf since there is %u in savegamename
+				strcatbf(savegamename, srb2home, PATHSEP);
+
+				strcpy(liveeventbackup, va("live%s.bkp", timeattackfolder));
+				strcatbf(liveeventbackup, srb2home, PATHSEP);
+
+				refreshdirmenu |= REFRESHDIR_GAMEDATA;
+				gamedataadded = true;
+				titlechanged = true;
+
+				clear_unlockables();
+				clear_conditionsets();
+				clear_emblems();
+				//clear_levels();
+				doClearLevels = true;
+			}
+			else if (!mainfile && !gamedataadded)
+			{
+				deh_warning("You must define a custom gamedata to use \"%s\"", word);
+			}
+			else if (fastcmp(word, "CLEARLEVELS"))
+			{
+				doClearLevels = (UINT8)(value == 0 || word2[0] == 'F' || word2[0] == 'N');
+			}
+			else if (fastcmp(word, "EXECCFG"))
 			{
 				if (strchr(word2, '.'))
 					COM_BufAddText(va("exec %s\n", word2));
@@ -2800,40 +2800,6 @@ void readmaincfg(MYFILE *f)
 			{
 				maxXtraLife = (UINT8)get_number(word2);
 			}
-
-			else if (fastcmp(word, "GAMEDATA"))
-			{
-				size_t filenamelen;
-
-				// Check the data filename so that mods
-				// can't write arbitrary files.
-				if (!GoodDataFileName(word2))
-					I_Error("Maincfg: bad data file name '%s'\n", word2);
-
-				G_SaveGameData();
-				strlcpy(gamedatafilename, word2, sizeof (gamedatafilename));
-				strlwr(gamedatafilename);
-				savemoddata = true;
-				majormods = false;
-
-				// Also save a time attack folder
-				filenamelen = strlen(gamedatafilename)-4;  // Strip off the extension
-				filenamelen = min(filenamelen, sizeof (timeattackfolder));
-				strncpy(timeattackfolder, gamedatafilename, filenamelen);
-				timeattackfolder[min(filenamelen, sizeof (timeattackfolder) - 1)] = '\0';
-
-				strcpy(savegamename, timeattackfolder);
-				strlcat(savegamename, "%u.ssg", sizeof(savegamename));
-				// can't use sprintf since there is %u in savegamename
-				strcatbf(savegamename, srb2home, PATHSEP);
-
-				strcpy(liveeventbackup, va("live%s.bkp", timeattackfolder));
-				strcatbf(liveeventbackup, srb2home, PATHSEP);
-
-				refreshdirmenu |= REFRESHDIR_GAMEDATA;
-				gamedataadded = true;
-				titlechanged = true;
-			}
 			else if (fastcmp(word, "RESETDATA"))
 			{
 				P_ResetData(value);
@@ -2857,6 +2823,11 @@ void readmaincfg(MYFILE *f)
 				deh_warning("Maincfg: unknown word '%s'", word);
 		}
 	} while (!myfeof(f));
+
+	if (doClearLevels)
+	{
+		clear_levels();
+	}
 
 	Z_Free(s);
 }
@@ -3021,6 +2992,28 @@ void readwipes(MYFILE *f)
 // SRB2KART
 //
 
+static void invalidateacrosscups(UINT16 map)
+{
+	cupheader_t *cup = kartcupheaders;
+	UINT8 i;
+
+	if (map >= nummapheaders)
+		return;
+
+	while (cup)
+	{
+		for (i = 0; i < CUPCACHE_MAX; i++)
+		{
+			if (cup->cachedlevels[i] != map)
+				continue;
+			cup->cachedlevels[i] = NEXTMAP_INVALID;
+		}
+		cup = cup->next;
+	}
+
+	mapheaderinfo[map]->cup = NULL;
+}
+
 void readcupheader(MYFILE *f, cupheader_t *cup)
 {
 	char *s = Z_Malloc(MAXLINELEN, PU_STATIC, NULL);
@@ -3077,7 +3070,7 @@ void readcupheader(MYFILE *f, cupheader_t *cup)
 					cup->levellist[cup->numlevels] = NULL;
 					if (cup->cachedlevels[cup->numlevels] == NEXTMAP_INVALID)
 						continue;
-					mapheaderinfo[cup->cachedlevels[cup->numlevels]]->cup = NULL;
+					invalidateacrosscups(cup->cachedlevels[cup->numlevels]);
 				}
 
 				tmp = strtok(word2,",");
@@ -3095,12 +3088,32 @@ void readcupheader(MYFILE *f, cupheader_t *cup)
 			}
 			else if (fastcmp(word, "BONUSGAME"))
 			{
-				Z_Free(cup->levellist[CUPCACHE_BONUS]);
-				cup->levellist[CUPCACHE_BONUS] = Z_StrDup(word2);
-				cup->cachedlevels[CUPCACHE_BONUS] = NEXTMAP_INVALID;
+				while (cup->numbonus > 0)
+				{
+					cup->numbonus--;
+					Z_Free(cup->levellist[CUPCACHE_BONUS + cup->numbonus]);
+					cup->levellist[CUPCACHE_BONUS + cup->numbonus] = NULL;
+					if (cup->cachedlevels[CUPCACHE_BONUS + cup->numbonus] == NEXTMAP_INVALID)
+						continue;
+					invalidateacrosscups(cup->cachedlevels[CUPCACHE_BONUS + cup->numbonus]);
+				}
+
+				tmp = strtok(word2,",");
+				do {
+					if (cup->numbonus >= MAXBONUSLIST)
+					{
+						deh_warning("%s Cup: reached max bonus list (%d)\n", cup->name, MAXBONUSLIST);
+						break;
+					}
+
+					cup->levellist[CUPCACHE_BONUS + cup->numbonus] = Z_StrDup(tmp);
+					cup->cachedlevels[CUPCACHE_BONUS + cup->numbonus] = NEXTMAP_INVALID;
+					cup->numbonus++;
+				} while((tmp = strtok(NULL,",")) != NULL);
 			}
 			else if (fastcmp(word, "SPECIALSTAGE"))
 			{
+				invalidateacrosscups(cup->cachedlevels[CUPCACHE_SPECIAL]);
 				Z_Free(cup->levellist[CUPCACHE_SPECIAL]);
 				cup->levellist[CUPCACHE_SPECIAL] = Z_StrDup(word2);
 				cup->cachedlevels[CUPCACHE_SPECIAL] = NEXTMAP_INVALID;
@@ -3111,13 +3124,6 @@ void readcupheader(MYFILE *f, cupheader_t *cup)
 					cup->emeraldnum = (UINT8)i;
 				else
 					deh_warning("%s Cup: invalid emerald number %d", cup->name, i);
-			}
-			else if (fastcmp(word, "UNLOCKABLE"))
-			{
-				if (i >= 0 && i <= MAXUNLOCKABLES) // 0 for no unlock required, anything else requires something
-					cup->unlockrequired = (SINT8)i - 1;
-				else
-					deh_warning("%s Cup: invalid unlockable number %d", cup->name, i);
 			}
 			else
 				deh_warning("%s Cup: unknown word '%s'", cup->name, word);
@@ -3130,7 +3136,7 @@ void readcupheader(MYFILE *f, cupheader_t *cup)
 void readfollower(MYFILE *f)
 {
 	char *s;
-	char *word, *word2, dname[SKINNAMESIZE+1];
+	char *word, *word2;
 	char *tmp;
 	char testname[SKINNAMESIZE+1];
 
@@ -3139,10 +3145,9 @@ void readfollower(MYFILE *f)
 	INT32 res;
 	INT32 i;
 
-	if (numfollowers > MAXSKINS)
+	if (numfollowers >= MAXSKINS)
 	{
-		deh_warning("Error: Too many followers, cannot add anymore.\n");
-		return;
+		I_Error("Out of Followers\nLoad less addons to fix this.");
 	}
 
 	s = Z_Malloc(MAXLINELEN, PU_STATIC, NULL);
@@ -3161,8 +3166,9 @@ void readfollower(MYFILE *f)
 	followers[numfollowers].bobspeed = TICRATE*2;
 	followers[numfollowers].bobamp = 4*FRACUNIT;
 	followers[numfollowers].hitconfirmtime = TICRATE;
-	followers[numfollowers].defaultcolor = SKINCOLOR_GREEN;
-	strcpy(followers[numfollowers].icon, "M_NORANK");
+	followers[numfollowers].defaultcolor = FOLLOWERCOLOR_MATCH;
+	followers[numfollowers].category = UINT8_MAX;
+	strcpy(followers[numfollowers].icon, "MISSING");
 
 	do
 	{
@@ -3201,6 +3207,23 @@ void readfollower(MYFILE *f)
 				strcpy(followers[numfollowers].icon, word2);
 				nameset = true;
 			}
+			else if (fastcmp(word, "CATEGORY"))
+			{
+				INT32 j;
+				for (j = 0; j < numfollowercategories; j++)
+				{
+					if (!stricmp(followercategories[j].name, word2))
+					{
+						followers[numfollowers].category = j;
+						break;
+					}
+				}
+
+				if (j == numfollowercategories)
+				{
+					deh_warning("Follower %d: unknown follower category '%s'", numfollowers, word2);
+				}
+			}
 			else if (fastcmp(word, "MODE"))
 			{
 				if (word2)
@@ -3215,7 +3238,20 @@ void readfollower(MYFILE *f)
 			}
 			else if (fastcmp(word, "DEFAULTCOLOR"))
 			{
-				followers[numfollowers].defaultcolor = get_number(word2);
+				INT32 j;
+				for (j = 0; j < numskincolors +2; j++)	// +2 because of Match and Opposite
+				{
+					if (!stricmp(Followercolor_cons_t[j].strvalue, word2))
+					{
+						followers[numfollowers].defaultcolor = Followercolor_cons_t[j].value;
+						break;
+					}
+				}
+
+				if (j == numskincolors+2)
+				{
+					deh_warning("Follower %d: unknown follower color '%s'", numfollowers, word2);
+				}
 			}
 			else if (fastcmp(word, "SCALE"))
 			{
@@ -3318,10 +3354,6 @@ void readfollower(MYFILE *f)
 	// set skin name (this is just the follower's name in lowercases):
 	// but before we do, let's... actually check if another follower isn't doing the same shit...
 
-	strcpy(testname, followers[numfollowers].name);
-
-	// lower testname for skin checks...
-	strlwr(testname);
 	res = K_FollowerAvailable(testname);
 	if (res > -1)	// yikes, someone else has stolen our name already
 	{
@@ -3333,8 +3365,7 @@ void readfollower(MYFILE *f)
 		// in that case, we'll be very lazy and copy numfollowers to the end of our skin name.
 	}
 
-	strcpy(followers[numfollowers].skinname, testname);
-	strcpy(dname, followers[numfollowers].skinname);	// display name, just used for printing succesful stuff or errors later down the line.
+	strcpy(testname, followers[numfollowers].name);
 
 	// now that the skin name is ready, post process the actual name to turn the underscores into spaces!
 	for (i = 0; followers[numfollowers].name[i]; i++)
@@ -3349,14 +3380,14 @@ void readfollower(MYFILE *f)
 	if (followers[numfollowers].mode < FOLLOWERMODE_FLOAT || followers[numfollowers].mode >= FOLLOWERMODE__MAX)
 	{
 		followers[numfollowers].mode = FOLLOWERMODE_FLOAT;
-		deh_warning("Follower '%s': Value for 'mode' should be between %d and %d.", dname, FOLLOWERMODE_FLOAT, FOLLOWERMODE__MAX-1);
+		deh_warning("Follower '%s': Value for 'mode' should be between %d and %d.", testname, FOLLOWERMODE_FLOAT, FOLLOWERMODE__MAX-1);
 	}
 
 #define FALLBACK(field, field2, threshold, set) \
 if ((signed)followers[numfollowers].field < threshold) \
 { \
 	followers[numfollowers].field = set; \
-	deh_warning("Follower '%s': Value for '%s' is too low! Minimum should be %d. Value was overwritten to %d.", dname, field2, threshold, set); \
+	deh_warning("Follower '%s': Value for '%s' is too low! Minimum should be %d. Value was overwritten to %d.", testname, field2, threshold, set); \
 } \
 
 	FALLBACK(dist, "DIST", 0, 0);
@@ -3373,13 +3404,6 @@ if ((signed)followers[numfollowers].field < threshold) \
 
 #undef FALLBACK
 
-	// Special case for color I suppose
-	if (followers[numfollowers].defaultcolor > (unsigned)(numskincolors-1))
-	{
-		followers[numfollowers].defaultcolor = SKINCOLOR_GREEN;
-		deh_warning("Follower \'%s\': Value for 'color' should be between 1 and %d.\n", dname, numskincolors-1);
-	}
-
 	// also check if we forgot states. If we did, we will set any missing state to the follower's idlestate.
 	// Print a warning in case we don't have a fallback and set the state to S_INVISIBLE (rather than S_NULL) if unavailable.
 
@@ -3388,7 +3412,7 @@ if (!followers[numfollowers].field) \
 { \
 	followers[numfollowers].field = fallbackstate ? fallbackstate : S_INVISIBLE; \
 	if (!fallbackstate) \
-		deh_warning("Follower '%s' is missing state definition for '%s', no idlestate fallback was found", dname, field2); \
+		deh_warning("Follower '%s' is missing state definition for '%s', no idlestate fallback was found", testname, field2); \
 } \
 
 	NOSTATE(idlestate, "IDLESTATE");
@@ -3399,8 +3423,80 @@ if (!followers[numfollowers].field) \
 	NOSTATE(hitconfirmstate, "HITCONFIRMSTATE");
 #undef NOSTATE
 
-	CONS_Printf("Added follower '%s'\n", dname);
+	CONS_Printf("Added follower '%s'\n", testname);
+	if (followers[numfollowers].category < numfollowercategories)
+		followercategories[followers[numfollowers].category].numincategory++;
 	numfollowers++; // add 1 follower
+	Z_Free(s);
+}
+
+void readfollowercategory(MYFILE *f)
+{
+	char *s;
+	char *word, *word2;
+	char *tmp;
+
+	boolean nameset;
+
+	if (numfollowercategories == MAXFOLLOWERCATEGORIES)
+	{
+		I_Error("Out of Follower categories\nLoad less addons to fix this.");
+	}
+
+	s = Z_Malloc(MAXLINELEN, PU_STATIC, NULL);
+
+	// Ready the default variables for followers. We will overwrite them as we go! We won't set the name or states RIGHT HERE as this is handled down instead.
+	strcpy(followercategories[numfollowercategories].icon, "MISSING");
+	followercategories[numfollowercategories].numincategory = 0;
+
+	do
+	{
+		if (myfgets(s, MAXLINELEN, f))
+		{
+			if (s[0] == '\n')
+				break;
+
+			tmp = strchr(s, '#');
+			if (tmp)
+				*tmp = '\0';
+			if (s == tmp)
+				continue; // Skip comment lines, but don't break.
+
+			word = strtok(s, " ");
+			if (word)
+				strupr(word);
+			else
+				break;
+
+			word2 = strtok(NULL, " = ");
+
+			if (!word2)
+				break;
+
+			if (word2[strlen(word2)-1] == '\n')
+				word2[strlen(word2)-1] = '\0';
+
+			if (fastcmp(word, "NAME"))
+			{
+				strcpy(followercategories[numfollowercategories].name, word2);
+				nameset = true;
+			}
+			else if (fastcmp(word, "ICON"))
+			{
+				strcpy(followercategories[numfollowercategories].icon, word2);
+				nameset = true;
+			}
+		}
+	} while (!myfeof(f)); // finish when the line is empty
+
+	if (!nameset)
+	{
+		// well this is problematic.
+		strcpy(followercategories[numfollowercategories].name, va("Followercategory%d", numfollowercategories)); // this is lazy, so what
+	}
+
+	CONS_Printf("Added follower category '%s'\n", followercategories[numfollowercategories].name);
+	numfollowercategories++; // add 1 follower
 	Z_Free(s);
 }
 

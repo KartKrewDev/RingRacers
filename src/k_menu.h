@@ -101,17 +101,17 @@ extern M_waiting_mode_t m_waiting_mode;
 
 typedef union
 {
-	struct menu_s *submenu;      // IT_SUBMENU
+	menu_t *submenu;      // IT_SUBMENU
 	consvar_t *cvar;             // IT_CVAR
 	void (*routine)(INT32 choice); // IT_CALL, IT_KEYHANDLER, IT_ARROWS
 } itemaction_t;
 
 // Player Setup menu colors linked list
-typedef struct menucolor_s {
-	struct menucolor_s *next;
-	struct menucolor_s *prev;
+struct menucolor_t {
+	menucolor_t *next;
+	menucolor_t *prev;
 	UINT16 color;
-} menucolor_t;
+};
 
 extern menucolor_t *menucolorhead, *menucolortail;
 
@@ -121,7 +121,7 @@ extern CV_PossibleValue_t gametype_cons_t[];
 // MENU TYPEDEFS
 //
 
-typedef struct menuitem_s
+struct menuitem_t
 {
 	UINT16 status; // show IT_xxx
 
@@ -134,12 +134,12 @@ typedef struct menuitem_s
 	// extra variables
 	INT32 mvar1;
 	INT32 mvar2;
-} menuitem_t;
+};
 
-typedef struct menu_s
+struct menu_t
 {
 	INT16          numitems;           // # of menu items
-	struct menu_s *prevMenu;           // previous menu
+	menu_t        *prevMenu;           // previous menu
 
 	INT16          lastOn;             // last item user was on in menu
 	menuitem_t    *menuitems;          // menu items
@@ -155,7 +155,7 @@ typedef struct menu_s
 	void         (*initroutine)(void); // called when starting a new menu
 	boolean      (*quitroutine)(void); // called before quit a menu return true if we can
 	boolean		 (*inputroutine)(INT32); // if set, called every frame in the input handler. Returning true overwrites normal input handling.
-} menu_t;
+};
 
 typedef enum
 {
@@ -398,18 +398,24 @@ extern menu_t EXTRAS_ReplayStartDef;
 extern menuitem_t PAUSE_Main[];
 extern menu_t PAUSE_MainDef;
 
+// EXTRAS
+extern menuitem_t MISC_Manual[];
+extern menu_t MISC_ManualDef;
+
 extern menuitem_t MISC_Addons[];
 extern menu_t MISC_AddonsDef;
 
-// MANUAL
-extern menuitem_t MISC_Manual[];
-extern menu_t MISC_ManualDef;
+extern menuitem_t MISC_ChallengesStatsDummyMenu[];
+extern menu_t MISC_ChallengesDef;
+extern menu_t MISC_StatisticsDef;
 
 // We'll need this since we're gonna have to dynamically enable and disable options depending on which state we're in.
 typedef enum
 {
 	mpause_addons = 0,
 	mpause_switchmap,
+	mpause_restartmap,
+	mpause_tryagain,
 #ifdef HAVE_DISCORDRPC
 	mpause_discordrequests,
 #endif
@@ -520,7 +526,7 @@ typedef enum
 	MBT_START = 1<<8
 } menuButtonCode_t;
 
-typedef struct menucmd_s
+struct menucmd_t
 {
 	SINT8 dpad_ud; // up / down dpad
 	SINT8 dpad_lr; // left / right
@@ -528,15 +534,15 @@ typedef struct menucmd_s
 	UINT32 buttonsHeld; // prev frame's buttons
 	UINT16 delay; // menu wait
 	UINT32 delayCount; // num times ya did menu wait (to make the wait shorter each time)
-} menucmd_t;
+};
 
 extern menucmd_t menucmd[MAXSPLITSCREENPLAYERS];
 
 extern struct menutransition_s {
 	INT16 tics;
 	INT16 dest;
-	struct menu_s *startmenu;
-	struct menu_s *endmenu;
+	menu_t *startmenu;
+	menu_t *endmenu;
 	boolean in;
 } menutransition;
 
@@ -591,6 +597,9 @@ extern struct setup_chargrid_s {
 	UINT8 numskins;
 } setup_chargrid[9][9];
 
+extern UINT8 setup_followercategories[MAXFOLLOWERCATEGORIES][2];
+extern UINT8 setup_numfollowercategories;
+
 typedef enum
 {
 	CSSTEP_NONE = 0,
@@ -599,12 +608,13 @@ typedef enum
 	CSSTEP_CHARS,
 	CSSTEP_ALTS,
 	CSSTEP_COLORS,
+	CSSTEP_FOLLOWERCATEGORY,
 	CSSTEP_FOLLOWER,
 	CSSTEP_FOLLOWERCOLORS,
 	CSSTEP_READY
 } setup_mdepth_t;
 
-typedef struct setup_player_s
+struct setup_player_t
 {
 	SINT8 gridx, gridy;
 	UINT8 profilen;
@@ -614,6 +624,7 @@ typedef struct setup_player_s
 	UINT8 delay;
 	UINT16 color;
 	UINT8 mdepth;
+	boolean hitlag;
 
 	// Hack, save player 1's original device even if they init charsel with keyboard.
 	// If they play ALONE, allow them to retain that original device, otherwise, ignore this.
@@ -622,13 +633,14 @@ typedef struct setup_player_s
 
 	UINT8 changeselect;
 
-	INT32 followern;
+	INT16 followercategory;
+	INT16 followern;
 	UINT16 followercolor;
 	tic_t follower_tics;
 	tic_t follower_timer;
 	UINT8 follower_frame;
 	state_t *follower_state;
-} setup_player_t;
+};
 
 extern setup_player_t setup_player[MAXSPLITSCREENPLAYERS];
 
@@ -645,9 +657,9 @@ extern UINT8 setup_maxpage;
 #define CSEXPLOSIONS 48
 
 extern struct setup_explosions_s {
-	UINT8 x, y;
+	INT16 x, y;
 	UINT8 tics;
-	UINT8 color;
+	UINT16 color;
 } setup_explosions[CSEXPLOSIONS];
 
 typedef enum
@@ -674,27 +686,37 @@ void M_SetupRaceMenu(INT32 choice);
 
 extern struct cupgrid_s {
 	SINT8 x, y;
-	SINT8 pageno;
-	UINT8 numpages;
+	size_t pageno;
+	cupheader_t **builtgrid;
+	size_t numpages;
+	size_t cappages;
 	tic_t previewanim;
 	boolean grandprix; 	// Setup grand prix server after picking
 	boolean netgame;	// Start the game in an actual server
 } cupgrid;
 
+typedef struct levelsearch_s {
+	UINT32 typeoflevel;
+	cupheader_t *cup;
+	boolean timeattack;
+	boolean cupmode;
+	boolean checklocked;
+} levelsearch_t;
+
 extern struct levellist_s {
 	SINT8 cursor;
 	UINT16 y;
 	UINT16 dest;
-	cupheader_t *selectedcup;
 	INT16 choosemap;
 	UINT8 newgametype;
-	boolean timeattack; // Setup time attack menu after picking
+	levelsearch_t levelsearch;
 	boolean netgame;	// Start the game in an actual server
 } levellist;
 
-boolean M_CanShowLevelInList(INT16 mapnum, UINT8 gt);
-INT16 M_CountLevelsToShowInList(UINT8 gt);
-INT16 M_GetFirstLevelInList(UINT8 gt);
+boolean M_CanShowLevelInList(INT16 mapnum, levelsearch_t *levelsearch);
+UINT16 M_CountLevelsToShowInList(levelsearch_t *levelsearch);
+UINT16 M_GetFirstLevelInList(UINT8 *i, levelsearch_t *levelsearch);
+UINT16 M_GetNextLevelInList(UINT16 mapnum, UINT8 *i, levelsearch_t *levelsearch);
 
 void M_LevelSelectInit(INT32 choice);
 void M_CupSelectHandler(INT32 choice);
@@ -795,12 +817,12 @@ void M_ServerListFillDebug(void);
 // Options menu:
 
 // mode descriptions for video mode menu
-typedef struct
+struct modedesc_t
 {
 	INT32 modenum; // video mode number in the vidmodes list
 	const char *desc;  // XXXxYYY
 	UINT8 goodratio; // aspect correct if 1
-} modedesc_t;
+};
 
 
 #define MAXCOLUMNMODES   12     //max modes displayed in one column
@@ -975,6 +997,8 @@ extern consvar_t cv_dummymenuplayer;
 extern consvar_t cv_dummyspectator;
 
 // Bunch of funny functions for the pause menu...~
+void M_RestartMap(INT32 choice);				// Restart level (MP)
+void M_TryAgain(INT32 choice);					// Try again (SP)
 void M_ConfirmSpectate(INT32 choice);			// Spectate confirm when you're alone
 void M_ConfirmEnterGame(INT32 choice);			// Enter game confirm when you're alone
 void M_ConfirmSpectateChange(INT32 choice);		// Splitscreen spectate/play menu func
@@ -1068,6 +1092,59 @@ void M_DrawReplayStartMenu(void);
 #define LOCATIONSTRING1 "Visit \x83SRB2.ORG/MODS\x80 to get & make addons!"
 #define LOCATIONSTRING2 "Visit \x88SRB2.ORG/MODS\x80 to get & make addons!"
 void M_DrawAddons(void);
+
+// Challenges menu:
+#define UNLOCKTIME 5
+#define MAXUNLOCKTIME TICRATE
+#define RIGHTUNLOCKSCROLL 3
+#define LEFTUNLOCKSCROLL (RIGHTUNLOCKSCROLL-1)
+
+#define CC_TOTAL 0
+#define CC_UNLOCKED 1
+#define CC_TALLY 2
+#define CC_ANIM 3
+#define CC_MAX 4
+
+// Keep track of some pause menu data for visual goodness.
+extern struct challengesmenu_s {
+
+	tic_t ticker;		// How long the menu's been open for
+	INT16 offset;		// To make the icons move smoothly when we transition!
+
+	UINT8 currentunlock;
+	char *unlockcondition;
+
+	tic_t unlockanim;
+
+	SINT8 row, hilix, focusx;
+	UINT8 col, hiliy;
+
+	UINT8 *extradata;
+
+	boolean pending;
+	boolean requestnew;
+
+	UINT8 unlockcount[CC_MAX];
+
+	UINT8 fade;
+} challengesmenu;
+
+menu_t *M_InterruptMenuWithChallenges(menu_t *desiredmenu);
+void M_Challenges(INT32 choice);
+void M_DrawChallenges(void);
+void M_ChallengesTick(void);
+boolean M_ChallengesInputs(INT32 ch);
+
+extern struct statisticsmenu_s {
+	INT32 location;
+	INT32 nummaps;
+	INT32 maxscroll;
+	UINT16 *maplist;
+} statisticsmenu;
+
+void M_Statistics(INT32 choice);
+void M_DrawStatistics(void);
+boolean M_StatisticsInputs(INT32 ch);
 
 // These defines make it a little easier to make menus
 #define DEFAULTMENUSTYLE(source, prev, x, y)\

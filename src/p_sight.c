@@ -27,12 +27,27 @@
 // killough 4/19/98:
 // Convert LOS info to struct for reentrancy and efficiency of data locality
 
-typedef struct {
-	fixed_t sightzstart, t2x, t2y;   // eye z of looker
-	divline_t strace;                // from t1 to t2
-	fixed_t topslope, bottomslope;   // slopes to top and bottom of target
+typedef struct
+{
+	fixed_t sightzstart, t2x, t2y;		// eye z of looker
+	divline_t strace;					// from t1 to t2
+	fixed_t topslope, bottomslope;		// slopes to top and bottom of target
 	fixed_t bbox[4];
+
+	mobj_t *compareThing;				// Original thing
+	boolean alreadyHates;				// For bot traversal, for if the bot is already in a sector it doesn't want to be
 } los_t;
+
+typedef boolean (*los_init_t)(mobj_t *, mobj_t *, register los_t *);
+typedef boolean (*los_valid_t)(seg_t *, divline_t *, register los_t *);
+typedef boolean (*los_valid_poly_t)(polyobj_t *, divline_t *, register los_t *);
+
+typedef struct
+{
+	los_init_t init;					// Initialization function. If true, we'll continue with checking across linedefs. If false, end early with failure.
+	los_valid_t validate;				// Validation function. If true, continue iterating for possible success. If false, end early with failure.
+	los_valid_poly_t validatePolyobj;	// If not NULL, then we will also check polyobject lines using this func.
+} los_funcs_t;
 
 static INT32 sightcounts[2];
 
@@ -103,23 +118,58 @@ static fixed_t P_InterceptVector2(divline_t *v2, divline_t *v1)
 	return frac;
 }
 
-static boolean P_CrossSubsecPolyObj(polyobj_t *po, register los_t *los)
+static boolean P_IsVisiblePolyObj(polyobj_t *po, divline_t *divl, register los_t *los)
 {
-	size_t i;
-	sector_t *polysec;
+	sector_t *polysec = po->lines[0]->backsector;
+	fixed_t frac;
+	fixed_t topslope, bottomslope;
 
 	if (!(po->flags & POF_RENDERALL))
+	{
 		return true; // the polyobject isn't visible, so we can ignore it
+	}
 
-	polysec = po->lines[0]->backsector;
+	// stop because it is not two sided
+	/*
+	if (!(po->flags & POF_TESTHEIGHT))
+	{
+		return false;
+	}
+	*/
+
+	frac = P_InterceptVector2(&los->strace, divl);
+
+	// get slopes of top and bottom of this polyobject line
+	topslope = FixedDiv(polysec->ceilingheight - los->sightzstart , frac);
+	bottomslope = FixedDiv(polysec->floorheight - los->sightzstart , frac);
+
+	if (topslope >= los->topslope && bottomslope <= los->bottomslope)
+	{
+		// view completely blocked
+		return false;
+	}
+
+	// TODO: figure out if it's worth considering partially blocked cases or not?
+	// maybe to adjust los's top/bottom slopes if needed
+	/*
+	if (los->topslope <= los->bottomslope)
+	{
+		return false;
+	}
+	*/
+
+	return true;
+}
+
+static boolean P_CrossSubsecPolyObj(polyobj_t *po, register los_t *los, register los_funcs_t *funcs)
+{
+	size_t i;
 
 	for (i = 0; i < po->numLines; ++i)
 	{
 		line_t *line = po->lines[i];
 		divline_t divl;
 		const vertex_t *v1,*v2;
-		fixed_t frac;
-		fixed_t topslope, bottomslope;
 
 		// already checked other side?
 		if (line->validcount == validcount)
@@ -150,23 +200,226 @@ static boolean P_CrossSubsecPolyObj(polyobj_t *po, register los_t *los)
 			P_DivlineSide(los->t2x, los->t2y, &divl))
 			continue;
 
-		// stop because it is not two sided
-		//if (!(po->flags & POF_TESTHEIGHT))
-			//return false;
+		if (funcs->validatePolyobj(po, &divl, los) == false)
+		{
+			return false;
+		}
+	}
 
-		frac = P_InterceptVector2(&los->strace, &divl);
+	return true;
+}
 
-		// get slopes of top and bottom of this polyobject line
-		topslope = FixedDiv(polysec->ceilingheight - los->sightzstart , frac);
-		bottomslope = FixedDiv(polysec->floorheight - los->sightzstart , frac);
+static boolean P_IsVisible(seg_t *seg, divline_t *divl, register los_t *los)
+{
+	line_t *line = seg->linedef;
+	fixed_t popentop, popenbottom;
+	const sector_t *front, *back;
+	fixed_t frac;
+	fixed_t fracx, fracy;
+	fixed_t frontf, backf, frontc, backc;
 
-		if (topslope >= los->topslope && bottomslope <= los->bottomslope)
-			return false; // view completely blocked
+	// stop because it is not two sided anyway
+	if (!(line->flags & ML_TWOSIDED))
+	{
+		return false;
+	}
 
+	// calculate fractional intercept (how far along we are divided by how far we are from t2)
+	frac = P_InterceptVector2(&los->strace, divl);
+
+	front = seg->frontsector;
+	back  = seg->backsector;
+	// calculate position at intercept
+	fracx = los->strace.x + FixedMul(los->strace.dx, frac);
+	fracy = los->strace.y + FixedMul(los->strace.dy, frac);
+	// calculate sector heights
+	frontf = P_GetSectorFloorZAt  (front, fracx, fracy);
+	frontc = P_GetSectorCeilingZAt(front, fracx, fracy);
+	backf  = P_GetSectorFloorZAt  (back , fracx, fracy);
+	backc  = P_GetSectorCeilingZAt(back , fracx, fracy);
+	// crosses a two sided line
+	// no wall to block sight with?
+	if (frontf == backf && frontc == backc
+	&& !front->ffloors & !back->ffloors) // (and no FOFs)
+	{
+		return true;
+	}
+
+	// possible occluder
+	// because of ceiling height differences
+	popentop = min(frontc, backc);
+
+	// because of floor height differences
+	popenbottom = max(frontf, backf);
+
+	// quick test for totally closed doors
+	if (popenbottom >= popentop)
+	{
+		return false;
+	}
+
+	if (frontf != backf)
+	{
+		fixed_t slope = FixedDiv(popenbottom - los->sightzstart , frac);
+		if (slope > los->bottomslope)
+			los->bottomslope = slope;
+	}
+
+	if (frontc != backc)
+	{
+		fixed_t slope = FixedDiv(popentop - los->sightzstart , frac);
+		if (slope < los->topslope)
+			los->topslope = slope;
+	}
+
+	if (los->topslope <= los->bottomslope)
+	{
+		return false;
+	}
+
+	// Monster Iestyn: check FOFs!
+	if (front->ffloors || back->ffloors)
+	{
+		ffloor_t *rover;
+		fixed_t topslope, bottomslope;
+		fixed_t topz, bottomz;
+		// check front sector's FOFs first
+		for (rover = front->ffloors; rover; rover = rover->next)
+		{
+			if (!(rover->fofflags & FOF_EXISTS)
+				|| !(rover->fofflags & FOF_RENDERSIDES) || (rover->fofflags & (FOF_TRANSLUCENT|FOF_FOG)))
+			{
+				continue;
+			}
+
+			topz    = P_GetFFloorTopZAt   (rover, fracx, fracy);
+			bottomz = P_GetFFloorBottomZAt(rover, fracx, fracy);
+			topslope    = FixedDiv(   topz - los->sightzstart, frac);
+			bottomslope = FixedDiv(bottomz - los->sightzstart, frac);
+
+			if (topslope >= los->topslope && bottomslope <= los->bottomslope)
+			{
+				return false; // view completely blocked
+			}
+		}
+		// check back sector's FOFs as well
+		for (rover = back->ffloors; rover; rover = rover->next)
+		{
+			if (!(rover->fofflags & FOF_EXISTS)
+				|| !(rover->fofflags & FOF_RENDERSIDES) || (rover->fofflags & (FOF_TRANSLUCENT|FOF_FOG)))
+			{
+				continue;
+			}
+
+			topz    = P_GetFFloorTopZAt   (rover, fracx, fracy);
+			bottomz = P_GetFFloorBottomZAt(rover, fracx, fracy);
+			topslope    = FixedDiv(   topz - los->sightzstart, frac);
+			bottomslope = FixedDiv(bottomz - los->sightzstart, frac);
+
+			if (topslope >= los->topslope && bottomslope <= los->bottomslope)
+			{
+				return false; // view completely blocked
+			}
+		}
 		// TODO: figure out if it's worth considering partially blocked cases or not?
 		// maybe to adjust los's top/bottom slopes if needed
-		//if (los->topslope <= los->bottomslope)
-			//return false;
+	}
+
+	return true;
+}
+
+static boolean P_CanTraceBlockingLine(seg_t *seg, divline_t *divl, register los_t *los)
+{
+	line_t *line = seg->linedef;
+
+	(void)divl;
+
+	if (!(line->flags & ML_TWOSIDED))
+	{
+		// stop because it is not two sided anyway
+		return false;
+	}
+
+	if (P_IsLineBlocking(line, los->compareThing) == true)
+	{
+		// This line will always block us
+		return false;
+	}
+
+	if (los->compareThing->player != NULL)
+	{
+		if (P_IsLineTripWire(line) == true && K_TripwirePass(los->compareThing->player) == false)
+		{
+			// Can't go through trip wire.
+			return false;
+		}
+	}
+
+	return true;
+}
+
+static boolean P_CanBotTraverse(seg_t *seg, divline_t *divl, register los_t *los)
+{
+	line_t *line = seg->linedef;
+	fixed_t maxstep = 0;
+
+	if (P_CanTraceBlockingLine(seg, divl, los) == false)
+	{
+		// Blocked, so obviously can't traverse either.
+		return false;
+	}
+
+	// set openrange, opentop, openbottom
+	tm.x = los->compareThing->x;
+	tm.y = los->compareThing->y;
+	P_LineOpening(line, los->compareThing);
+	maxstep = P_GetThingStepUp(los->compareThing, tm.x, tm.y);
+
+	if ((openrange < los->compareThing->height) // doesn't fit
+		|| (opentop - los->compareThing->z < los->compareThing->height) // mobj is too high
+		|| (openbottom - los->compareThing->z > maxstep)) // too big a step up
+	{
+		// This line situationally blocks us
+		return false;
+	}
+
+	if (los->compareThing->player != NULL && los->alreadyHates == false)
+	{
+		// Treat damage sectors like walls, if you're not already in a bad sector.
+		sector_t *front, *back;
+		vertex_t pos;
+
+		P_ClosestPointOnLine(los->compareThing->x, los->compareThing->y, line, &pos);
+
+		front = seg->frontsector;
+		back  = seg->backsector;
+
+		if (K_BotHatesThisSector(los->compareThing->player, front, pos.x, pos.y)
+			|| K_BotHatesThisSector(los->compareThing->player, back, pos.x, pos.y))
+		{
+			// This line does not block us, but we don't want to be in it.
+			return false;
+		}
+	}
+
+	return true;
+}
+
+static boolean P_CanWaypointTraverse(seg_t *seg, divline_t *divl, register los_t *los)
+{
+	line_t *line = seg->linedef;
+
+	if (P_CanTraceBlockingLine(seg, divl, los) == false)
+	{
+		// Blocked, so obviously can't traverse either.
+		return false;
+	}
+
+	if (line->special == 2001)
+	{
+		// Don't allow through the finish linedef.
+		// Causes some janky behavior.
+		return false;
 	}
 
 	return true;
@@ -177,11 +430,10 @@ static boolean P_CrossSubsecPolyObj(polyobj_t *po, register los_t *los)
 //
 // Returns true if strace crosses the given subsector successfully.
 //
-static boolean P_CrossSubsector(size_t num, register los_t *los)
+static boolean P_CrossSubsector(size_t num, register los_t *los, register los_funcs_t *funcs)
 {
 	seg_t *seg;
 	INT32 count;
-	polyobj_t *po; // haleyjd 02/23/06
 
 #ifdef RANGECHECK
 	if (num >= numsubsectors)
@@ -192,30 +444,30 @@ static boolean P_CrossSubsector(size_t num, register los_t *los)
 	seg = segs + subsectors[num].firstline;
 
 	// haleyjd 02/23/06: check polyobject lines
-	if ((po = subsectors[num].polyList))
+	if (funcs->validatePolyobj != NULL)
 	{
-		while (po)
+		polyobj_t *po;
+
+		if ((po = subsectors[num].polyList))
 		{
-			if (po->validcount != validcount)
+			while (po)
 			{
-				po->validcount = validcount;
-				if (!P_CrossSubsecPolyObj(po, los))
-					return false;
+				if (po->validcount != validcount)
+				{
+					po->validcount = validcount;
+					if (!P_CrossSubsecPolyObj(po, los, funcs))
+						return false;
+				}
+				po = (polyobj_t *)(po->link.next);
 			}
-			po = (polyobj_t *)(po->link.next);
 		}
 	}
 
 	for (count = subsectors[num].numlines; --count >= 0; seg++)  // check lines
 	{
 		line_t *line = seg->linedef;
+		const vertex_t *v1, *v2;
 		divline_t divl;
-		fixed_t popentop, popenbottom;
-		const sector_t *front, *back;
-		const vertex_t *v1,*v2;
-		fixed_t frac;
-		fixed_t frontf, backf, frontc, backc;
-		fixed_t fracx, fracy;
 
 		if (seg->glseg)
 			continue;
@@ -249,99 +501,9 @@ static boolean P_CrossSubsector(size_t num, register los_t *los)
 			P_DivlineSide(los->t2x, los->t2y, &divl))
 			continue;
 
-		// stop because it is not two sided anyway
-		if (!(line->flags & ML_TWOSIDED))
-			return false;
-
-		// calculate fractional intercept (how far along we are divided by how far we are from t2)
-		frac = P_InterceptVector2(&los->strace, &divl);
-
-		front = seg->frontsector;
-		back  = seg->backsector;
-		// calculate position at intercept
-		fracx = los->strace.x + FixedMul(los->strace.dx, frac);
-		fracy = los->strace.y + FixedMul(los->strace.dy, frac);
-		// calculate sector heights
-		frontf = P_GetSectorFloorZAt  (front, fracx, fracy);
-		frontc = P_GetSectorCeilingZAt(front, fracx, fracy);
-		backf  = P_GetSectorFloorZAt  (back , fracx, fracy);
-		backc  = P_GetSectorCeilingZAt(back , fracx, fracy);
-		// crosses a two sided line
-		// no wall to block sight with?
-		if (frontf == backf && frontc == backc
-		&& !front->ffloors & !back->ffloors) // (and no FOFs)
-			continue;
-
-		// possible occluder
-		// because of ceiling height differences
-		popentop = min(frontc, backc);
-
-		// because of floor height differences
-		popenbottom = max(frontf, backf);
-
-		// quick test for totally closed doors
-		if (popenbottom >= popentop)
-			return false;
-
-		if (frontf != backf)
+		if (funcs->validate(seg, &divl, los) == false)
 		{
-			fixed_t slope = FixedDiv(popenbottom - los->sightzstart , frac);
-			if (slope > los->bottomslope)
-				los->bottomslope = slope;
-		}
-
-		if (frontc != backc)
-		{
-			fixed_t slope = FixedDiv(popentop - los->sightzstart , frac);
-			if (slope < los->topslope)
-				los->topslope = slope;
-		}
-
-		if (los->topslope <= los->bottomslope)
 			return false;
-
-		// Monster Iestyn: check FOFs!
-		if (front->ffloors || back->ffloors)
-		{
-			ffloor_t *rover;
-			fixed_t topslope, bottomslope;
-			fixed_t topz, bottomz;
-			// check front sector's FOFs first
-			for (rover = front->ffloors; rover; rover = rover->next)
-			{
-				if (!(rover->fofflags & FOF_EXISTS)
-					|| !(rover->fofflags & FOF_RENDERSIDES) || (rover->fofflags & (FOF_TRANSLUCENT|FOF_FOG)))
-				{
-					continue;
-				}
-
-				topz    = P_GetFFloorTopZAt   (rover, fracx, fracy);
-				bottomz = P_GetFFloorBottomZAt(rover, fracx, fracy);
-				topslope    = FixedDiv(   topz - los->sightzstart, frac);
-				bottomslope = FixedDiv(bottomz - los->sightzstart, frac);
-
-				if (topslope >= los->topslope && bottomslope <= los->bottomslope)
-					return false; // view completely blocked
-			}
-			// check back sector's FOFs as well
-			for (rover = back->ffloors; rover; rover = rover->next)
-			{
-				if (!(rover->fofflags & FOF_EXISTS)
-					|| !(rover->fofflags & FOF_RENDERSIDES) || (rover->fofflags & (FOF_TRANSLUCENT|FOF_FOG)))
-				{
-					continue;
-				}
-
-				topz    = P_GetFFloorTopZAt   (rover, fracx, fracy);
-				bottomz = P_GetFFloorBottomZAt(rover, fracx, fracy);
-				topslope    = FixedDiv(   topz - los->sightzstart, frac);
-				bottomslope = FixedDiv(bottomz - los->sightzstart, frac);
-
-				if (topslope >= los->topslope && bottomslope <= los->bottomslope)
-					return false; // view completely blocked
-			}
-			// TODO: figure out if it's worth considering partially blocked cases or not?
-			// maybe to adjust los's top/bottom slopes if needed
 		}
 	}
 
@@ -356,95 +518,45 @@ static boolean P_CrossSubsector(size_t num, register los_t *los)
 //
 // killough 4/20/98: rewritten to remove tail recursion, clean up, and optimize
 
-static boolean P_CrossBSPNode(INT32 bspnum, register los_t *los)
+static boolean P_CrossBSPNode(INT32 bspnum, register los_t *los, register los_funcs_t *funcs)
 {
 	while (!(bspnum & NF_SUBSECTOR))
 	{
 		register node_t *bsp = nodes + bspnum;
-		INT32 side = P_DivlineSide(los->strace.x,los->strace.y,(divline_t *)bsp)&1;
+		INT32 side = P_DivlineSide(los->strace.x, los->strace.y, (divline_t *)bsp) & 1;
+
 		if (side == P_DivlineSide(los->t2x, los->t2y, (divline_t *) bsp))
+		{
 			bspnum = bsp->children[side]; // doesn't touch the other side
+		}
 		else         // the partition plane is crossed here
 		{
-			if (!P_CrossBSPNode(bsp->children[side], los))
-				return 0;  // cross the starting side
+			if (!P_CrossBSPNode(bsp->children[side], los, funcs))
+				return false;  // cross the starting side
 			else
-				bspnum = bsp->children[side^1];  // cross the ending side
+				bspnum = bsp->children[side ^ 1];  // cross the ending side
 		}
 	}
-	return
-		P_CrossSubsector((bspnum == -1 ? 0 : bspnum & ~NF_SUBSECTOR), los);
+
+	return P_CrossSubsector((bspnum == -1 ? 0 : bspnum & ~NF_SUBSECTOR), los, funcs);
 }
 
-//
-// P_CheckSight
-//
-// Returns true if a straight line between t1 and t2 is unobstructed.
-// Uses REJECT.
-//
-boolean P_CheckSight(mobj_t *t1, mobj_t *t2)
+static boolean P_InitCheckSight(mobj_t *t1, mobj_t *t2, register los_t *los)
 {
 	const sector_t *s1, *s2;
-	size_t pnum;
-	los_t los;
-
-	// First check for trivial rejection.
-	if (!t1 || !t2)
-		return false;
-
-	I_Assert(!P_MobjWasRemoved(t1));
-	I_Assert(!P_MobjWasRemoved(t2));
-
-	if (!t1->subsector || !t2->subsector
-	|| !t1->subsector->sector || !t2->subsector->sector)
-		return false;
-
-	s1 = t1->subsector->sector;
-	s2 = t2->subsector->sector;
-	pnum = (s1-sectors)*numsectors + (s2-sectors);
-
-	if (rejectmatrix != NULL)
-	{
-		// Check in REJECT table.
-		if (rejectmatrix[pnum>>3] & (1 << (pnum&7))) // can't possibly be connected
-			return false;
-	}
-
-	// killough 11/98: shortcut for melee situations
-	// same subsector? obviously visible
-	// haleyjd 02/23/06: can't do this if there are polyobjects in the subsec
-	if (!t1->subsector->polyList &&
-		t1->subsector == t2->subsector)
-		return true;
 
 	// An unobstructed LOS is possible.
 	// Now look from eyes of t1 to any part of t2.
 	sightcounts[1]++;
-
-	validcount++;
-
-	los.topslope =
-		(los.bottomslope = t2->z - (los.sightzstart =
-			t1->z + t1->height -
-			(t1->height>>2))) + t2->height;
-	los.strace.dx = (los.t2x = t2->x) - (los.strace.x = t1->x);
-	los.strace.dy = (los.t2y = t2->y) - (los.strace.y = t1->y);
-
-	if (t1->x > t2->x)
-		los.bbox[BOXRIGHT] = t1->x, los.bbox[BOXLEFT] = t2->x;
-	else
-		los.bbox[BOXRIGHT] = t2->x, los.bbox[BOXLEFT] = t1->x;
-
-	if (t1->y > t2->y)
-		los.bbox[BOXTOP] = t1->y, los.bbox[BOXBOTTOM] = t2->y;
-	else
-		los.bbox[BOXTOP] = t2->y, los.bbox[BOXBOTTOM] = t1->y;
 
 	// Prevent SOME cases of looking through 3dfloors
 	//
 	// This WILL NOT work for things like 3d stairs with monsters behind
 	// them - they will still see you! TODO: Fix.
 	//
+	s1 = t1->subsector->sector;
+	s2 = t2->subsector->sector;
+
 	if (s1 == s2) // Both sectors are the same.
 	{
 		ffloor_t *rover;
@@ -468,8 +580,8 @@ boolean P_CheckSight(mobj_t *t1, mobj_t *t2)
 			bottomz2 = P_GetFFloorBottomZAt(rover, t2->x, t2->y);
 
 			// Check for blocking floors here.
-			if ((los.sightzstart < bottomz1 && t2->z >= topz2)
-				|| (los.sightzstart >= topz1 && t2->z + t2->height < bottomz2))
+			if ((los->sightzstart < bottomz1 && t2->z >= topz2)
+				|| (los->sightzstart >= topz1 && t2->z + t2->height < bottomz2))
 			{
 				// no way to see through that
 				return false;
@@ -480,391 +592,167 @@ boolean P_CheckSight(mobj_t *t1, mobj_t *t2)
 
 			if (rover->fofflags & FOF_BOTHPLANES || !(rover->fofflags & FOF_INVERTPLANES))
 			{
-				if (los.sightzstart >= topz1 && t2->z + t2->height < topz2)
+				if (los->sightzstart >= topz1 && t2->z + t2->height < topz2)
 					return false; // blocked by upper outside plane
 
-				if (los.sightzstart < bottomz1 && t2->z >= bottomz2)
+				if (los->sightzstart < bottomz1 && t2->z >= bottomz2)
 					return false; // blocked by lower outside plane
 			}
 
 			if (rover->fofflags & FOF_BOTHPLANES || rover->fofflags & FOF_INVERTPLANES)
 			{
-				if (los.sightzstart < topz1 && t2->z >= topz2)
+				if (los->sightzstart < topz1 && t2->z >= topz2)
 					return false; // blocked by upper inside plane
 
-				if (los.sightzstart >= bottomz1 && t2->z + t2->height < bottomz2)
+				if (los->sightzstart >= bottomz1 && t2->z + t2->height < bottomz2)
 					return false; // blocked by lower inside plane
 			}
 		}
 	}
 
-	// the head node is the last node output
-	return P_CrossBSPNode((INT32)numnodes - 1, &los);
-}
-
-//
-// P_TraceBlockingLines
-//
-// Returns true if a straight line between t1 and t2 is unobstructed.
-// Unlike P_CheckSight, simplifed down to only check for explicit blocking lines on the 2D plane.
-// Intended for Kart waypoints.
-// Might be better in it's own file?
-//
-
-typedef struct {
-	fixed_t t2x, t2y;
-	divline_t strace; // from t1 to t2
-	fixed_t bbox[4];
-	mobj_t *compareThing;
-	boolean alreadyHates;
-} traceblocking_t;
-
-static boolean P_CrossBlockingSubsector(size_t num, register traceblocking_t *tb)
-{
-	seg_t *seg;
-	INT32 count;
-
-#ifdef RANGECHECK
-	if (num >= numsubsectors)
-		I_Error("P_CrossBlockingSubsector: ss %s with numss = %s\n", sizeu1(num), sizeu2(numsubsectors));
-#endif
-
-	// haleyjd 02/23/06: this assignment should be after the above check
-	seg = segs + subsectors[num].firstline;
-
-	for (count = subsectors[num].numlines; --count >= 0; seg++)  // check lines
-	{
-		line_t *line = seg->linedef;
-		divline_t divl;
-		const vertex_t *v1,*v2;
-
-		if (seg->glseg)
-			continue;
-
-		// already checked other side?
-		if (line->validcount == validcount)
-			continue;
-
-		line->validcount = validcount;
-
-		// OPTIMIZE: killough 4/20/98: Added quick bounding-box rejection test
-		if (line->bbox[BOXLEFT  ] > tb->bbox[BOXRIGHT ] ||
-			line->bbox[BOXRIGHT ] < tb->bbox[BOXLEFT  ] ||
-			line->bbox[BOXBOTTOM] > tb->bbox[BOXTOP   ] ||
-			line->bbox[BOXTOP]    < tb->bbox[BOXBOTTOM])
-			continue;
-
-		v1 = line->v1;
-		v2 = line->v2;
-
-		// line isn't crossed?
-		if (P_DivlineSide(v1->x, v1->y, &tb->strace) ==
-			P_DivlineSide(v2->x, v2->y, &tb->strace))
-			continue;
-
-		// stop because it is not two sided anyway
-		if (!(line->flags & ML_TWOSIDED))
-			return false;
-
-		divl.dx = v2->x - (divl.x = v1->x);
-		divl.dy = v2->y - (divl.y = v1->y);
-
-		// line isn't crossed?
-		if (P_DivlineSide(tb->strace.x, tb->strace.y, &divl) ==
-			P_DivlineSide(tb->t2x, tb->t2y, &divl))
-			continue;
-
-		if (P_IsLineBlocking(line, tb->compareThing) == true)
-		{
-			// This line will always block us
-			return false;
-		}
-
-		if (tb->compareThing->player != NULL)
-		{
-			if (P_IsLineTripWire(line) == true && K_TripwirePass(tb->compareThing->player) == false)
-			{
-				// Can't go through trip wire.
-				return false;
-			}
-		}
-	}
-
-	// passed the subsector ok
 	return true;
 }
 
-static boolean P_CrossBSPNodeBlocking(INT32 bspnum, register traceblocking_t *tb)
+static boolean P_InitTraceBotTraversal(mobj_t *t1, mobj_t *t2, register los_t *los)
 {
-	while (!(bspnum & NF_SUBSECTOR))
-	{
-		register node_t *bsp = nodes + bspnum;
-		INT32 side = P_DivlineSide(tb->strace.x,tb->strace.y,(divline_t *)bsp)&1;
-		if (side == P_DivlineSide(tb->t2x, tb->t2y, (divline_t *) bsp))
-			bspnum = bsp->children[side]; // doesn't touch the other side
-		else         // the partition plane is crossed here
-		{
-			if (!P_CrossBSPNodeBlocking(bsp->children[side], tb))
-				return false;  // cross the starting side
-			else
-				bspnum = bsp->children[side^1];  // cross the ending side
-		}
-	}
+	(void)t2;
 
-	return P_CrossBlockingSubsector((bspnum == -1 ? 0 : bspnum & ~NF_SUBSECTOR), tb);
-}
-
-boolean P_TraceBlockingLines(mobj_t *t1, mobj_t *t2)
-{
-	const sector_t *s1, *s2;
-	size_t pnum;
-	traceblocking_t tb;
-
-	// First check for trivial rejection.
-	if (!t1 || !t2)
-		return false;
-
-	I_Assert(!P_MobjWasRemoved(t1));
-	I_Assert(!P_MobjWasRemoved(t2));
-
-	if (!t1->subsector || !t2->subsector
-	|| !t1->subsector->sector || !t2->subsector->sector)
-		return false;
-
-	s1 = t1->subsector->sector;
-	s2 = t2->subsector->sector;
-	pnum = (s1-sectors)*numsectors + (s2-sectors);
-
-	if (rejectmatrix != NULL)
-	{
-		// Check in REJECT table.
-		if (rejectmatrix[pnum>>3] & (1 << (pnum&7))) // can't possibly be connected
-			return false;
-	}
-
-	// killough 11/98: shortcut for melee situations
-	// same subsector? obviously visible
-	// haleyjd 02/23/06: can't do this if there are polyobjects in the subsec
-	if (!t1->subsector->polyList &&
-		t1->subsector == t2->subsector)
-		return true;
-
-	validcount++;
-
-	tb.strace.dx = (tb.t2x = t2->x) - (tb.strace.x = t1->x);
-	tb.strace.dy = (tb.t2y = t2->y) - (tb.strace.y = t1->y);
-
-	if (t1->x > t2->x)
-		tb.bbox[BOXRIGHT] = t1->x, tb.bbox[BOXLEFT] = t2->x;
-	else
-		tb.bbox[BOXRIGHT] = t2->x, tb.bbox[BOXLEFT] = t1->x;
-
-	if (t1->y > t2->y)
-		tb.bbox[BOXTOP] = t1->y, tb.bbox[BOXBOTTOM] = t2->y;
-	else
-		tb.bbox[BOXTOP] = t2->y, tb.bbox[BOXBOTTOM] = t1->y;
-
-	tb.compareThing = t1;
-	tb.alreadyHates = false;
-
-	// the head node is the last node output
-	return P_CrossBSPNodeBlocking((INT32)numnodes - 1, &tb);
-}
-
-//
-// ANOTHER version, this time for bot traversal.
-// (TODO: since we have so many versions of this function, the differences
-// should maybe just be a function var that gets called?)
-//
-
-static boolean P_CrossBotTraversalSubsector(size_t num, register traceblocking_t *tb)
-{
-	seg_t *seg;
-	INT32 count;
-
-#ifdef RANGECHECK
-	if (num >= numsubsectors)
-		I_Error("P_CrossBotTraversalSubsector: ss %s with numss = %s\n", sizeu1(num), sizeu2(numsubsectors));
-#endif
-
-	// haleyjd 02/23/06: this assignment should be after the above check
-	seg = segs + subsectors[num].firstline;
-
-	for (count = subsectors[num].numlines; --count >= 0; seg++)  // check lines
-	{
-		line_t *line = seg->linedef;
-		divline_t divl;
-		const vertex_t *v1,*v2;
-		fixed_t maxstep = INT32_MAX;
-
-		if (seg->glseg)
-			continue;
-
-		// already checked other side?
-		if (line->validcount == validcount)
-			continue;
-
-		line->validcount = validcount;
-
-		// OPTIMIZE: killough 4/20/98: Added quick bounding-box rejection test
-		if (line->bbox[BOXLEFT  ] > tb->bbox[BOXRIGHT ] ||
-			line->bbox[BOXRIGHT ] < tb->bbox[BOXLEFT  ] ||
-			line->bbox[BOXBOTTOM] > tb->bbox[BOXTOP   ] ||
-			line->bbox[BOXTOP]    < tb->bbox[BOXBOTTOM])
-			continue;
-
-		v1 = line->v1;
-		v2 = line->v2;
-
-		// line isn't crossed?
-		if (P_DivlineSide(v1->x, v1->y, &tb->strace) ==
-			P_DivlineSide(v2->x, v2->y, &tb->strace))
-			continue;
-
-		// stop because it is not two sided anyway
-		if (!(line->flags & ML_TWOSIDED))
-			return false;
-
-		divl.dx = v2->x - (divl.x = v1->x);
-		divl.dy = v2->y - (divl.y = v1->y);
-
-		// line isn't crossed?
-		if (P_DivlineSide(tb->strace.x, tb->strace.y, &divl) ==
-			P_DivlineSide(tb->t2x, tb->t2y, &divl))
-			continue;
-
-		if (P_IsLineBlocking(line, tb->compareThing) == true)
-		{
-			// This line will always block us
-			return false;
-		}
-
-		if (tb->compareThing->player != NULL)
-		{
-			if (P_IsLineTripWire(line) == true && K_TripwirePass(tb->compareThing->player) == false)
-			{
-				// Can't go through trip wire.
-				return false;
-			}
-		}
-
-		// set openrange, opentop, openbottom
-		tmx = tb->compareThing->x;
-		tmy = tb->compareThing->y;
-		P_LineOpening(line, tb->compareThing);
-		maxstep = P_GetThingStepUp(tb->compareThing, tmx, tmy);
-
-		if ((openrange < tb->compareThing->height) // doesn't fit
-			|| (opentop - tb->compareThing->z < tb->compareThing->height) // mobj is too high
-			|| (openbottom - tb->compareThing->z > maxstep)) // too big a step up
-		{
-			// This line situationally blocks us
-			return false;
-		}
-
-		if (tb->compareThing->player != NULL && tb->alreadyHates == false)
-		{
-			// Treat damage sectors like walls, if you're not already in a bad sector.
-			vertex_t pos;
-			P_ClosestPointOnLine(tb->compareThing->x, tb->compareThing->y, line, &pos);
-
-			if (K_BotHatesThisSector(tb->compareThing->player, line->frontsector, pos.x, pos.y)
-				|| K_BotHatesThisSector(tb->compareThing->player, line->backsector, pos.x, pos.y))
-			{
-				// This line does not block us, but we don't want to be in it.
-				return false;
-			}
-		}
-	}
-
-	// passed the subsector ok
-	return true;
-}
-
-static boolean P_CrossBSPNodeBotTraversal(INT32 bspnum, register traceblocking_t *tb)
-{
-	while (!(bspnum & NF_SUBSECTOR))
-	{
-		register node_t *bsp = nodes + bspnum;
-		INT32 side = P_DivlineSide(tb->strace.x,tb->strace.y,(divline_t *)bsp)&1;
-		if (side == P_DivlineSide(tb->t2x, tb->t2y, (divline_t *) bsp))
-			bspnum = bsp->children[side]; // doesn't touch the other side
-		else         // the partition plane is crossed here
-		{
-			if (!P_CrossBSPNodeBotTraversal(bsp->children[side], tb))
-				return false;  // cross the starting side
-			else
-				bspnum = bsp->children[side^1];  // cross the ending side
-		}
-	}
-
-	return P_CrossBotTraversalSubsector((bspnum == -1 ? 0 : bspnum & ~NF_SUBSECTOR), tb);
-}
-
-boolean P_TraceBotTraversal(mobj_t *t1, mobj_t *t2)
-{
-	const sector_t *s1, *s2;
-	size_t pnum;
-	traceblocking_t tb;
-
-	// First check for trivial rejection.
-	if (!t1 || !t2)
-		return false;
-
-	I_Assert(!P_MobjWasRemoved(t1));
-	I_Assert(!P_MobjWasRemoved(t2));
-
-	if (!t1->subsector || !t2->subsector
-	|| !t1->subsector->sector || !t2->subsector->sector)
-		return false;
-
-	s1 = t1->subsector->sector;
-	s2 = t2->subsector->sector;
-	pnum = (s1-sectors)*numsectors + (s2-sectors);
-
-	if (rejectmatrix != NULL)
-	{
-		// Check in REJECT table.
-		if (rejectmatrix[pnum>>3] & (1 << (pnum&7))) // can't possibly be connected
-			return false;
-	}
-
-	// killough 11/98: shortcut for melee situations
-	// same subsector? obviously visible
-	// haleyjd 02/23/06: can't do this if there are polyobjects in the subsec
-	if (!t1->subsector->polyList &&
-		t1->subsector == t2->subsector)
-		return true;
-
-	validcount++;
-
-	tb.strace.dx = (tb.t2x = t2->x) - (tb.strace.x = t1->x);
-	tb.strace.dy = (tb.t2y = t2->y) - (tb.strace.y = t1->y);
-
-	if (t1->x > t2->x)
-		tb.bbox[BOXRIGHT] = t1->x, tb.bbox[BOXLEFT] = t2->x;
-	else
-		tb.bbox[BOXRIGHT] = t2->x, tb.bbox[BOXLEFT] = t1->x;
-
-	if (t1->y > t2->y)
-		tb.bbox[BOXTOP] = t1->y, tb.bbox[BOXBOTTOM] = t2->y;
-	else
-		tb.bbox[BOXTOP] = t2->y, tb.bbox[BOXBOTTOM] = t1->y;
-
-	tb.compareThing = t1;
 	if (t1->player != NULL)
 	{
-		tb.alreadyHates = K_BotHatesThisSector(
+		los->alreadyHates = K_BotHatesThisSector(
 			t1->player, t1->subsector->sector,
 			t1->x, t1->y
 		);
 	}
 	else
 	{
-		tb.alreadyHates = false;
+		los->alreadyHates = false;
 	}
 
-	// the head node is the last node output
-	return P_CrossBSPNodeBotTraversal((INT32)numnodes - 1, &tb);
+	return true;
 }
 
+static boolean P_CompareMobjsAcrossLines(mobj_t *t1, mobj_t *t2, register los_funcs_t *funcs)
+{
+	los_t los;
+	const sector_t *s1, *s2;
+	size_t pnum;
+
+	// First check for trivial rejection.
+	if (!t1 || !t2)
+	{
+		return false;
+	}
+
+	I_Assert(!P_MobjWasRemoved(t1));
+	I_Assert(!P_MobjWasRemoved(t2));
+
+	if (!t1->subsector || !t2->subsector
+	|| !t1->subsector->sector || !t2->subsector->sector)
+	{
+		return false;
+	}
+
+	s1 = t1->subsector->sector;
+	s2 = t2->subsector->sector;
+	pnum = (s1-sectors)*numsectors + (s2-sectors);
+
+	if (rejectmatrix != NULL)
+	{
+		// Check in REJECT table.
+		if (rejectmatrix[pnum>>3] & (1 << (pnum&7))) // can't possibly be connected
+		{
+			return false;
+		}
+	}
+
+	// killough 11/98: shortcut for melee situations
+	// same subsector? obviously visible
+	// haleyjd 02/23/06: can't do this if there are polyobjects in the subsec
+	if (!t1->subsector->polyList &&
+		t1->subsector == t2->subsector)
+	{
+		return true;
+	}
+
+	validcount++;
+
+	los.compareThing = t1;
+	los.alreadyHates = false;
+
+	los.topslope =
+		(los.bottomslope = t2->z - (los.sightzstart =
+			t1->z + t1->height -
+			(t1->height>>2))) + t2->height;
+	los.strace.dx = (los.t2x = t2->x) - (los.strace.x = t1->x);
+	los.strace.dy = (los.t2y = t2->y) - (los.strace.y = t1->y);
+
+	if (t1->x > t2->x)
+		los.bbox[BOXRIGHT] = t1->x, los.bbox[BOXLEFT] = t2->x;
+	else
+		los.bbox[BOXRIGHT] = t2->x, los.bbox[BOXLEFT] = t1->x;
+
+	if (t1->y > t2->y)
+		los.bbox[BOXTOP] = t1->y, los.bbox[BOXBOTTOM] = t2->y;
+	else
+		los.bbox[BOXTOP] = t2->y, los.bbox[BOXBOTTOM] = t1->y;
+
+	if (funcs->init != NULL)
+	{
+		if (funcs->init(t1, t2, &los) == false)
+		{
+			return false;
+		}
+	}
+
+	// The only required function.
+	I_Assert(funcs->validate != NULL);
+
+	// the head node is the last node output
+	return P_CrossBSPNode((INT32)numnodes - 1, &los, funcs);
+}
+
+//
+// P_CheckSight
+//
+// Returns true if a straight line between t1 and t2 is unobstructed.
+// Uses REJECT.
+//
+boolean P_CheckSight(mobj_t *t1, mobj_t *t2)
+{
+	los_funcs_t funcs = {0};
+
+	funcs.init = &P_InitCheckSight;
+	funcs.validate = &P_IsVisible;
+	funcs.validatePolyobj = &P_IsVisiblePolyObj;
+
+	return P_CompareMobjsAcrossLines(t1, t2, &funcs);
+}
+
+boolean P_TraceBlockingLines(mobj_t *t1, mobj_t *t2)
+{
+	los_funcs_t funcs = {0};
+
+	funcs.validate = &P_CanTraceBlockingLine;
+
+	return P_CompareMobjsAcrossLines(t1, t2, &funcs);
+}
+
+boolean P_TraceBotTraversal(mobj_t *t1, mobj_t *t2)
+{
+	los_funcs_t funcs = {0};
+
+	funcs.init = &P_InitTraceBotTraversal;
+	funcs.validate = &P_CanBotTraverse;
+
+	return P_CompareMobjsAcrossLines(t1, t2, &funcs);
+}
+
+boolean P_TraceWaypointTraversal(mobj_t *t1, mobj_t *t2)
+{
+	los_funcs_t funcs = {0};
+
+	funcs.validate = &P_CanWaypointTraverse;
+
+	return P_CompareMobjsAcrossLines(t1, t2, &funcs);
+}

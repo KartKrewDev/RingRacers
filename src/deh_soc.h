@@ -57,10 +57,9 @@ sfxenum_t get_sfx(const char *word);
 skincolornum_t get_skincolor(const char *word);
 
 void readwipes(MYFILE *f);
-void readmaincfg(MYFILE *f);
+void readmaincfg(MYFILE *f, boolean mainfile);
 void readconditionset(MYFILE *f, UINT8 setnum);
 void readunlockable(MYFILE *f, INT32 num);
-void readextraemblemdata(MYFILE *f, INT32 num);
 void reademblemdata(MYFILE *f, INT32 num);
 void readsound(MYFILE *f, INT32 num);
 void readframe(MYFILE *f, INT32 num);
@@ -77,11 +76,14 @@ void readlight(MYFILE *f, INT32 num);
 void readskincolor(MYFILE *f, INT32 num);
 void readthing(MYFILE *f, INT32 num);
 void readfreeslots(MYFILE *f);
+void clear_emblems(void);
+void clear_unlockables(void);
 void clear_levels(void);
 void clear_conditionsets(void);
 
 void readcupheader(MYFILE *f, cupheader_t *cup);
 void readfollower(MYFILE *f);
+void readfollowercategory(MYFILE *f);
 preciptype_t get_precip(const char *word);
 void readweather(MYFILE *f, INT32 num);
 

@@ -117,16 +117,16 @@ typedef enum {
 } dynplanetype_t;
 
 /// Permit slopes to be dynamically altered through a thinker.
-typedef struct
+struct dynlineplanethink_t
 {
 	thinker_t thinker;
 	pslope_t *slope;
 	dynplanetype_t type;
 	line_t *sourceline;
 	fixed_t extent;
-} dynlineplanethink_t;
+};
 
-typedef struct
+struct dynvertexplanethink_t
 {
 	thinker_t thinker;
 	pslope_t *slope;
@@ -135,7 +135,7 @@ typedef struct
 	fixed_t origsecheights[3];
 	fixed_t origvecheights[3];
 	UINT8 relative;
-} dynvertexplanethink_t;
+};
 
 void T_DynamicSlopeLine (dynlineplanethink_t* th);
 void T_DynamicSlopeVert (dynvertexplanethink_t* th);

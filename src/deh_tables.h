@@ -41,11 +41,11 @@ struct flickytypes_s {
 
 /** Action pointer for reading actions from Dehacked lumps.
   */
-typedef struct
+struct actionpointer_t
 {
 	actionf_t action; ///< Function pointer corresponding to the actual action.
 	const char *name; ///< Name of the action in ALL CAPS.
-} actionpointer_t;
+};
 
 struct int_const_s {
 	const char *n;

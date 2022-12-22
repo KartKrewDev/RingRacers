@@ -20,6 +20,7 @@
 #include "st_stuff.h"
 #include "p_polyobj.h"
 #include "m_random.h"
+#include "m_cond.h" // gamedata->playtime
 #include "lua_script.h"
 #include "lua_hook.h"
 #include "m_perfstats.h"
@@ -633,7 +634,7 @@ void P_Ticker(boolean run)
 
 	// Keep track of how long they've been playing!
 	if (!demo.playback) // Don't increment if a demo is playing.
-		totalplaytime++;
+		gamedata->totalplaytime++;
 
 	// formality so kitemcap gets updated properly each frame.
 	P_RunKartItems();

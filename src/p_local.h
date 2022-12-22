@@ -80,7 +80,7 @@ void P_RemoveThinker(thinker_t *thinker);
 //
 // P_USER
 //
-typedef struct camera_s
+struct camera_t
 {
 	boolean chase;
 	angle_t aiming;
@@ -96,7 +96,7 @@ typedef struct camera_s
 	//More drawing info: to determine current sprite.
 	angle_t angle; // orientation
 
-	struct subsector_s *subsector;
+	subsector_t *subsector;
 
 	// The closest interval over all contacted Sectors (or Things).
 	fixed_t floorz;
@@ -119,7 +119,7 @@ typedef struct camera_s
 	// Interpolation data
 	fixed_t old_x, old_y, old_z;
 	angle_t old_angle, old_aiming;
-} camera_t;
+};
 
 // demo freecam or something before i commit die
 struct demofreecam_s {
@@ -170,7 +170,7 @@ boolean P_IsObjectInGoop(mobj_t *mo);
 boolean P_IsObjectOnGround(mobj_t *mo);
 boolean P_IsObjectOnGroundIn(mobj_t *mo, sector_t *sec);
 boolean P_IsObjectOnRealGround(mobj_t *mo, sector_t *sec); // SRB2Kart
-#define P_IsObjectFlipped(o) ((o)->eflags & MFE_VERTICALFLIP)
+#define P_IsObjectFlipped(o) (((o)->eflags & MFE_VERTICALFLIP) == MFE_VERTICALFLIP)
 boolean P_InQuicksand(mobj_t *mo);
 boolean P_PlayerHitFloor(player_t *player, boolean fromAir, angle_t oldPitch, angle_t oldRoll);
 
@@ -246,11 +246,11 @@ typedef enum
 	NUMJINGLES
 } jingletype_t;
 
-typedef struct
+struct jingle_t
 {
 	char musname[7];
 	boolean looping;
-} jingle_t;
+};
 
 extern jingle_t jingleinfo[NUMJINGLES];
 
@@ -381,25 +381,48 @@ void P_InternalFlickyHop(mobj_t *actor, fixed_t momz, fixed_t momh, angle_t angl
 // P_MAP
 //
 
-// If "floatok" true, move would be ok
-// if within "tmfloorz - tmceilingz".
-extern boolean floatok;
-extern fixed_t tmfloorz;
-extern fixed_t tmceilingz;
-extern ffloor_t *tmfloorrover, *tmceilingrover;
-extern mobj_t *tmfloorthing, *tmhitthing, *tmthing;
+struct tm_t
+{
+	mobj_t *thing;
+	fixed_t x, y;
+	fixed_t bbox[4];
+	INT32 flags;
+
+	precipmobj_t *precipthing;
+	fixed_t precipbbox[4];
+
+	// If "floatok" true, move would be ok
+	// if within "tm.floorz - tm.ceilingz".
+	boolean floatok;
+
+	fixed_t floorz, ceilingz;
+	fixed_t dropoffz, drpoffceilz; // drop-off floor/ceiling heights
+	mobj_t *floorthing; // the thing corresponding to tm.floorz or NULL if tm.floorz is from a sector
+	mobj_t *hitthing; // the solid thing you bumped into (for collisions)
+	ffloor_t *floorrover, *ceilingrover;
+	pslope_t *floorslope, *ceilingslope;
+	INT32 floorpic, ceilingpic;
+	fixed_t floorstep, ceilingstep;
+
+	// keep track of the line that lowers the ceiling,
+	// so missiles don't explode against sky hack walls
+	line_t *ceilingline;
+
+	// set by PIT_CheckLine() for any line that stopped the PIT_CheckLine()
+	// that is, for any line which is 'solid'
+	line_t *blockingline;
+};
+
+extern tm_t tm;
+
+void P_RestoreTMStruct(tm_t tmrestore);
+
 extern camera_t *mapcampointer;
-extern fixed_t tmx;
-extern fixed_t tmy;
-extern pslope_t *tmfloorslope, *tmceilingslope;
-extern INT32 tmfloorpic, tmceilingpic;
 
 /* cphipps 2004/08/30 */
 extern void P_MapStart(void);
 extern void P_MapEnd(void);
 
-extern line_t *ceilingline;
-extern line_t *blockingline;
 extern msecnode_t *sector_list;
 
 extern mprecipsecnode_t *precipsector_list;
@@ -408,23 +431,32 @@ void P_UnsetThingPosition(mobj_t *thing);
 void P_SetThingPosition(mobj_t *thing);
 void P_SetUnderlayPosition(mobj_t *thing);
 
+struct TryMoveResult_t
+{
+	boolean success;
+	line_t *line;
+	mobj_t *mo;
+};
+
+boolean P_CheckPosition(mobj_t *thing, fixed_t x, fixed_t y, TryMoveResult_t *result);
+boolean P_CheckMove(mobj_t *thing, fixed_t x, fixed_t y, boolean allowdropoff, TryMoveResult_t *result);
+boolean P_TryMove(mobj_t *thing, fixed_t x, fixed_t y, boolean allowdropoff, TryMoveResult_t *result);
+boolean P_SceneryTryMove(mobj_t *thing, fixed_t x, fixed_t y, TryMoveResult_t *result);
+
 boolean P_IsLineBlocking(const line_t *ld, const mobj_t *thing);
 boolean P_IsLineTripWire(const line_t *ld);
-boolean P_CheckPosition(mobj_t *thing, fixed_t x, fixed_t y);
 boolean P_CheckCameraPosition(fixed_t x, fixed_t y, camera_t *thiscam);
-boolean P_CheckMove(mobj_t *thing, fixed_t x, fixed_t y, boolean allowdropoff);
 fixed_t P_BaseStepUp(void);
 fixed_t P_GetThingStepUp(mobj_t *thing, fixed_t destX, fixed_t destY);
-boolean P_TryMove(mobj_t *thing, fixed_t x, fixed_t y, boolean allowdropoff);
 boolean P_Move(mobj_t *actor, fixed_t speed);
 boolean P_SetOrigin(mobj_t *thing, fixed_t x, fixed_t y, fixed_t z);
 boolean P_MoveOrigin(mobj_t *thing, fixed_t x, fixed_t y, fixed_t z);
-void P_SlideMove(mobj_t *mo);
-void P_BouncePlayerMove(mobj_t *mo);
-void P_BounceMove(mobj_t *mo);
+void P_SlideMove(mobj_t *mo, TryMoveResult_t *result);
+void P_BounceMove(mobj_t *mo, TryMoveResult_t *result);
 boolean P_CheckSight(mobj_t *t1, mobj_t *t2);
 boolean P_TraceBlockingLines(mobj_t *t1, mobj_t *t2);
 boolean P_TraceBotTraversal(mobj_t *t1, mobj_t *t2);
+boolean P_TraceWaypointTraversal(mobj_t *t1, mobj_t *t2);
 void P_CheckHoopPosition(mobj_t *hoopthing, fixed_t x, fixed_t y, fixed_t z, fixed_t radius);
 
 boolean P_CheckSector(sector_t *sector, boolean crunch);
@@ -441,6 +473,7 @@ fixed_t P_FloorzAtPos(fixed_t x, fixed_t y, fixed_t z, fixed_t height);
 fixed_t P_CeilingzAtPos(fixed_t x, fixed_t y, fixed_t z, fixed_t height);
 BlockItReturn_t PIT_PushableMoved(mobj_t *thing);
 
+void P_DoSpringEx(mobj_t *object, fixed_t scaleVal, fixed_t vertispeed, fixed_t horizspeed, angle_t finalAngle, UINT16 starcolor);
 boolean P_DoSpring(mobj_t *spring, mobj_t *object);
 
 fixed_t P_GetFOFTopZAt (ffloor_t *rover, fixed_t x, fixed_t y);
@@ -464,7 +497,7 @@ extern mobj_t **blocklinks; // for thing chains
 //
 // P_INTER
 //
-typedef struct BasicFF_s
+struct BasicFF_t
 {
 	INT32 ForceX; ///< The X of the Force's Vel
 	INT32 ForceY; ///< The Y of the Force's Vel
@@ -474,7 +507,7 @@ typedef struct BasicFF_s
 	INT32 Gain; ///< /The gain to be applied to the effect, in the range from 0 through 10,000.
 	//All, CONSTANTFORCE �10,000 to 10,000
 	INT32 Magnitude; ///< Magnitude of the effect, in the range from 0 through 10,000.
-} BasicFF_t;
+};
 
 /* Damage/death types, for P_DamageMobj and related */
 //// Damage types
@@ -484,6 +517,7 @@ typedef struct BasicFF_s
 #define DMG_TUMBLE  0x03
 #define DMG_STING   0x04
 #define DMG_KARMA   0x05 // Karma Bomb explosion -- works like DMG_EXPLODE, but steals half of their bumpers & deletes the rest
+#define DMG_VOLTAGE 0x06
 //// Death types - cannot be combined with damage types
 #define DMG_INSTAKILL  0x80
 #define DMG_DEATHPIT   0x81
@@ -512,6 +546,8 @@ void P_CheckPointLimit(void);
 boolean P_CheckRacers(void);
 
 boolean P_CanPickupItem(player_t *player, UINT8 weapon);
+boolean P_CanPickupEmblem(player_t *player, INT32 emblemID);
+boolean P_EmblemWasCollected(INT32 emblemID);
 
 //
 // P_SPEC

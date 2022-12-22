@@ -16,6 +16,7 @@
 #define __D_NETCMD__
 
 #include "command.h"
+#include "d_player.h"
 
 // console vars
 extern consvar_t cv_playername[MAXSPLITSCREENPLAYERS];
@@ -72,38 +73,7 @@ extern consvar_t cv_pause;
 extern consvar_t cv_restrictskinchange, cv_allowteamchange, cv_maxplayers, cv_respawntime;
 
 // SRB2kart items
-extern consvar_t
-	cv_sneaker,
-	cv_rocketsneaker,
-	cv_invincibility,
-	cv_banana,
-	cv_eggmanmonitor,
-	cv_orbinaut,
-	cv_jawz,
-	cv_mine,
-	cv_landmine,
-	cv_ballhog,
-	cv_selfpropelledbomb,
-	cv_grow,
-	cv_shrink,
-	cv_lightningshield,
-	cv_bubbleshield,
-	cv_flameshield,
-	cv_hyudoro,
-	cv_pogospring,
-	cv_superring,
-	cv_kitchensink,
-	cv_droptarget,
-	cv_gardentop;
-
-extern consvar_t
-	cv_dualsneaker,
-	cv_triplesneaker,
-	cv_triplebanana,
-	cv_decabanana,
-	cv_tripleorbinaut,
-	cv_quadorbinaut,
-	cv_dualjawz;
+extern consvar_t cv_items[NUMKARTRESULTS-1];
 
 extern consvar_t cv_kartspeed;
 extern consvar_t cv_kartbumpers;
@@ -121,10 +91,10 @@ extern consvar_t cv_votetime;
 
 extern consvar_t cv_kartdebugitem, cv_kartdebugamount, cv_kartdebugdistribution, cv_kartdebughuddrop;
 extern consvar_t cv_kartdebugnodes, cv_kartdebugcolorize, cv_kartdebugdirector;
-extern consvar_t cv_spbtest, cv_gptest;
+extern consvar_t cv_spbtest, cv_gptest, cv_reducevfx;
 extern consvar_t cv_kartdebugwaypoints, cv_kartdebugbotpredict;
 
-extern consvar_t cv_itemfinder;
+extern consvar_t cv_alttitle, cv_itemfinder;
 
 extern consvar_t cv_inttime, cv_advancemap;
 extern consvar_t cv_overtime;
@@ -218,22 +188,22 @@ extern const char *netxcmdnames[MAXNETXCMD - 1];
 //Packet composition for Command_TeamChange_f() ServerTeamChange, etc.
 //bitwise structs make packing bits a little easier, but byte alignment harder?
 //todo: decide whether to make the other netcommands conform, or just get rid of this experiment.
-typedef struct {
+struct changeteam_packet_t {
 	UINT32 playernum    : 5;  // value 0 to 31
 	UINT32 newteam      : 5;  // value 0 to 31
 	UINT32 verification : 1;  // value 0 to 1
 	UINT32 autobalance  : 1;  // value 0 to 1
 	UINT32 scrambled    : 1;  // value 0 to 1
-} ATTRPACK changeteam_packet_t;
+} ATTRPACK;
 
 #ifdef _MSC_VER
 #pragma warning(default : 4214)
 #endif
 
-typedef struct {
+struct changeteam_value_t {
 	UINT16 l; // liitle endian
 	UINT16 b; // big enian
-} ATTRPACK changeteam_value_t;
+} ATTRPACK;
 
 //Since we do not want other files/modules to know about this data buffer we union it here with a Short Int.
 //Other files/modules will hand the INT16 back to us and we will decode it here.
@@ -268,15 +238,16 @@ boolean IsPlayerAdmin(INT32 playernum);
 void SetAdminPlayer(INT32 playernum);
 void ClearAdminPlayers(void);
 void RemoveAdminPlayer(INT32 playernum);
+void AltTitle_OnChange(void);
 void ItemFinder_OnChange(void);
 void D_SetPassword(const char *pw);
 
-typedef struct
+struct scheduleTask_t
 {
 	UINT16 basetime;
 	UINT16 timer;
 	char *command;
-} scheduleTask_t;
+};
 
 extern scheduleTask_t **schedule;
 extern size_t schedule_size;

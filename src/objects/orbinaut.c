@@ -184,7 +184,7 @@ boolean Obj_OrbinautJawzCollide(mobj_t *t1, mobj_t *t2)
 	if (t2->player)
 	{
 		if ((t2->player->flashing > 0 && t2->hitlag == 0)
-			&& !(t1->type == MT_ORBINAUT || t1->type == MT_JAWZ))
+			&& !(t1->type == MT_ORBINAUT || t1->type == MT_JAWZ || t1->type == MT_GACHABOM))
 			return true;
 
 		if (t2->player->hyudorotimer)
@@ -209,7 +209,7 @@ boolean Obj_OrbinautJawzCollide(mobj_t *t1, mobj_t *t2)
 	else if (t2->type == MT_ORBINAUT || t2->type == MT_JAWZ
 		|| t2->type == MT_ORBINAUT_SHIELD || t2->type == MT_JAWZ_SHIELD
 		|| t2->type == MT_BANANA || t2->type == MT_BANANA_SHIELD
-		|| t2->type == MT_BALLHOG)
+		|| t2->type == MT_BALLHOG || t2->type == MT_GACHABOM)
 	{
 		// Other Item Damage
 		angle_t bounceangle = K_GetCollideAngle(t1, t2);
@@ -217,7 +217,7 @@ boolean Obj_OrbinautJawzCollide(mobj_t *t1, mobj_t *t2)
 		S_StartSound(t2, t2->info->deathsound);
 		P_KillMobj(t2, t1, t1, DMG_NORMAL);
 
-		P_SetObjectMomZ(t2, 8*FRACUNIT, false);
+		P_SetObjectMomZ(t2, 24*FRACUNIT, false);
 		P_InstaThrust(t2, bounceangle, 16*FRACUNIT);
 
 		P_SpawnMobj(t2->x/2 + t1->x/2, t2->y/2 + t1->y/2, t2->z/2 + t1->z/2, MT_ITEMCLASH);
@@ -254,7 +254,7 @@ boolean Obj_OrbinautJawzCollide(mobj_t *t1, mobj_t *t2)
 		S_StartSound(t1, t1->info->deathsound);
 		P_KillMobj(t1, t2, t2, DMG_NORMAL);
 
-		P_SetObjectMomZ(t1, 8*FRACUNIT, false);
+		P_SetObjectMomZ(t1, 24*FRACUNIT, false);
 		P_InstaThrust(t1, bounceangle, 16*FRACUNIT);
 	}
 
@@ -358,9 +358,9 @@ void Obj_OrbinautJawzMoveHeld(player_t *player)
 		cur->momy = FixedMul(FINESINE(cur->angle >> ANGLETOFINESHIFT), orbinaut_shield_dist(cur));
 		cur->flags &= ~MF_NOCLIPTHING;
 
-		if (!P_TryMove(cur, player->mo->x + cur->momx, player->mo->y + cur->momy, true))
+		if (!P_TryMove(cur, player->mo->x + cur->momx, player->mo->y + cur->momy, true, NULL))
 		{
-			P_SlideMove(cur);
+			P_SlideMove(cur, NULL);
 		}
 
 		if (P_IsObjectOnGround(player->mo))

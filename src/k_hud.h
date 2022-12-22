@@ -19,14 +19,16 @@
 #define RINGANIM_NUMFRAMES 10
 #define RINGANIM_DELAYMAX 5
 
-void K_AdjustXYWithSnap(INT32 *x, INT32 *y, UINT32 options, INT32 dupx, INT32 dupy);
+#define POS_DELAY_TIME 10
 
-typedef struct trackingResult_s
+struct trackingResult_t
 {
 	fixed_t x, y;
 	fixed_t scale;
 	boolean onScreen;
-} trackingResult_t;
+	INT32 angle, pitch;
+	fixed_t fov;
+};
 
 void K_ObjectTracking(trackingResult_t *result, vector3_t *point, boolean reverse);
 
@@ -36,5 +38,9 @@ void K_drawKartHUD(void);
 void K_drawKartFreePlay(void);
 void K_drawKartTimestamp(tic_t drawtime, INT32 TX, INT32 TY, INT16 emblemmap, UINT8 mode);
 void K_DrawTabRankings(INT32 x, INT32 y, playersort_t *tab, INT32 scorelines, INT32 whiteplayer, INT32 hilicol);
+void K_DrawMapThumbnail(INT32 x, INT32 y, INT32 width, UINT32 flags, UINT16 map, UINT8 *colormap);
+void K_DrawLikeMapThumbnail(INT32 x, INT32 y, INT32 width, UINT32 flags, patch_t *patch, UINT8 *colormap);
+
+extern patch_t *kp_facehighlight[8];
 
 #endif

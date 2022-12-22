@@ -479,7 +479,7 @@ sfxinfo_t S_sfx[NUMSFX] =
   {"s3k4b",  false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, "Splash"},
   {"s3k4c",  false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, "Heavy hit"},
   {"s3k4d",  false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, "Firing bullet"},
-  {"s3k4e",  false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, "Big explosion"}, // Kart explosion
+  {"s3k4e",  false,  64,  8, -1, NULL, 0,        -1,  -1, LUMPERROR, "Big explosion"}, // Kart explosion
   {"s3k4f",  false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, "Flamethrower"},
   {"s3k50",  false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, "Siren"},
   {"s3k51",  false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, "Falling"},
@@ -750,7 +750,7 @@ sfxinfo_t S_sfx[NUMSFX] =
   {"cdfm71", false,  64,  8, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
   {"cdfm72", false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
   {"cdfm73", false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
-  {"cdfm74", false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
+  {"cdfm74", false,  64,  8, -1, NULL, 0,        -1,  -1, LUMPERROR, ""}, // Broly ki
   {"cdfm75", false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
   {"cdfm76", false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
   {"cdfm77", false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
@@ -1129,6 +1129,28 @@ sfxinfo_t S_sfx[NUMSFX] =
   {"gate03", false,  32, 64, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
   {"gate04", false,  32, 64, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
   {"gate05", false,  32, 64, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
+
+  // Passing sounds
+  {"pass01", false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
+  {"pass02", false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
+  {"pass03", false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
+  {"pass04", false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
+  {"pass05", false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
+  {"pass06", false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
+  {"pass07", false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
+  {"pass08", false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
+  {"pass09", false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
+  {"pass10", false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
+  {"pass11", false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
+  {"pass12", false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
+  {"pass13", false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
+  {"pass14", false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
+  {"pass15", false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
+  {"pass16", false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
+
+  // SRB2Kart - Blocked damage
+  {"grownd", false,  64, 16, -1, NULL, 0,        -1,  -1, LUMPERROR, ""}, // SF_X8AWAYSOUND
+  {"invind", false,  64, 16, -1, NULL, 0,        -1,  -1, LUMPERROR, ""}, // SF_X8AWAYSOUND
 
   // SRB2Kart - Engine sounds
   // Engine class A

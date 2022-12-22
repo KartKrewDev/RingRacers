@@ -313,6 +313,7 @@ actionpointer_t actionpointers[] =
 	{{A_JawzExplode},            "A_JAWZEXPLODE"},
 	{{A_SSMineSearch},           "A_SSMINESEARCH"},
 	{{A_SSMineExplode},          "A_SSMINEEXPLODE"},
+	{{A_SSMineFlash},            "A_SSMINEFLASH"},
 	{{A_LandMineExplode},		 "A_LANDMINEEXPLODE"},
 	{{A_BallhogExplode},         "A_BALLHOGEXPLODE"},
 	{{A_LightningFollowPlayer},  "A_LIGHTNINGFOLLOWPLAYER"},
@@ -3282,6 +3283,10 @@ const char *const STATE_LIST[] = { // array length left dynamic for sanity testi
 	//"S_ITEMCAPSULE_BOTTOM",
 	//"S_ITEMCAPSULE_INSIDE",
 
+	"S_MAGICIANBOX",
+	"S_MAGICIANBOXTOP",
+	"S_MAGICIANBOXBOTTOM",
+
 	// Signpost sparkles
 	"S_SIGNSPARK1",
 	"S_SIGNSPARK2",
@@ -3487,6 +3492,11 @@ const char *const STATE_LIST[] = { // array length left dynamic for sanity testi
 	// Banana
 	"S_BANANA",
 	"S_BANANA_DEAD",
+
+	"S_BANANA_SPARK",
+	"S_BANANA_SPARK2",
+	"S_BANANA_SPARK3",
+	"S_BANANA_SPARK4",
 
 	//{ Orbinaut
 	"S_ORBINAUT1",
@@ -4520,6 +4530,10 @@ const char *const STATE_LIST[] = { // array length left dynamic for sanity testi
 	"S_JANKSPARK2",
 	"S_JANKSPARK3",
 	"S_JANKSPARK4",
+
+	// Broly Ki Orb
+	"S_BROLY1",
+	"S_BROLY2",
 };
 
 // RegEx to generate this from info.h: ^\tMT_([^,]+), --> \t"MT_\1",
@@ -5279,6 +5293,7 @@ const char *const MOBJTYPE_LIST[] = {  // array length left dynamic for sanity t
 	"MT_FLOATINGITEM",
 	"MT_ITEMCAPSULE",
 	"MT_ITEMCAPSULE_PART",
+	"MT_MAGICIANBOX",
 
 	"MT_SIGNSPARKLE",
 
@@ -5311,6 +5326,7 @@ const char *const MOBJTYPE_LIST[] = {  // array length left dynamic for sanity t
 
 	"MT_BANANA", // Banana Stuff
 	"MT_BANANA_SHIELD",
+	"MT_BANANA_SPARK",
 
 	"MT_ORBINAUT", // Orbinaut stuff
 	"MT_ORBINAUT_SHIELD",
@@ -5362,6 +5378,8 @@ const char *const MOBJTYPE_LIST[] = {  // array length left dynamic for sanity t
 	"MT_SINK", // Kitchen Sink Stuff
 	"MT_SINK_SHIELD",
 	"MT_SINKTRAIL",
+
+	"MT_GACHABOM",
 
 	"MT_DUELBOMB", // Duel mode bombs
 
@@ -5611,6 +5629,8 @@ const char *const MOBJTYPE_LIST[] = {  // array length left dynamic for sanity t
 	"MT_PAPERITEMSPOT",
 
 	"MT_BEAMPOINT",
+
+	"MT_BROLY",
 };
 
 const char *const MOBJFLAG_LIST[] = {
@@ -5628,7 +5648,7 @@ const char *const MOBJFLAG_LIST[] = {
 	"SLIDEME",
 	"NOCLIP",
 	"FLOAT",
-	"BOXICON",
+	"SLOPE",
 	"MISSILE",
 	"SPRING",
 	"MONITOR",
@@ -6317,8 +6337,8 @@ struct int_const_s const INT_CONST[] = {
 	{"CR_ZOOMTUBE",CR_ZOOMTUBE},
 
 	// Character flags (skinflags_t)
-	{"SF_HIRES",SF_HIRES},
 	{"SF_MACHINE",SF_MACHINE},
+	{"SF_IRONMAN",SF_IRONMAN},
 
 	// Sound flags
 	{"SF_TOTALLYSINGLE",SF_TOTALLYSINGLE},
@@ -6330,7 +6350,8 @@ struct int_const_s const INT_CONST[] = {
 	{"SF_X2AWAYSOUND",SF_X2AWAYSOUND},
 
 	// Global emblem var flags
-	// none in kart yet
+	{"GE_NOTMEDAL", GE_NOTMEDAL},
+	{"GE_TIMED", GE_TIMED},
 
 	// Map emblem var flags
 	{"ME_ENCORE",ME_ENCORE},
@@ -6358,6 +6379,7 @@ struct int_const_s const INT_CONST[] = {
 	{"DMG_TUMBLE",DMG_TUMBLE},
 	{"DMG_STING",DMG_STING},
 	{"DMG_KARMA",DMG_KARMA},
+	{"DMG_VOLTAGE",DMG_VOLTAGE},
 	//// Death types
 	{"DMG_INSTAKILL",DMG_INSTAKILL},
 	{"DMG_DEATHPIT",DMG_DEATHPIT},
@@ -6685,6 +6707,7 @@ struct int_const_s const INT_CONST[] = {
 	{"V_OVERLAY",V_OVERLAY},
 	{"V_ALLOWLOWERCASE",V_ALLOWLOWERCASE},
 	{"V_FLIP",V_FLIP},
+	{"V_VFLIP",V_VFLIP},
 	{"V_SNAPTOTOP",V_SNAPTOTOP},
 	{"V_SNAPTOBOTTOM",V_SNAPTOBOTTOM},
 	{"V_SNAPTOLEFT",V_SNAPTOLEFT},
@@ -6756,17 +6779,17 @@ struct int_const_s const INT_CONST[] = {
 
 	// SRB2Kart
 	// kartitems_t
-#define FOREACH( name, n ) { #name, KITEM_ ## name }
+#define FOREACH( name, n ) { TOSTR (KITEM_ ## name), KITEM_ ## name }
 	KART_ITEM_ITERATOR, // Actual items (can be set for k_itemtype)
 #undef  FOREACH
 	{"NUMKARTITEMS",NUMKARTITEMS},
 	{"KRITEM_DUALSNEAKER",KRITEM_DUALSNEAKER}, // Additional roulette IDs (not usable for much in Lua besides K_GetItemPatch)
 	{"KRITEM_TRIPLESNEAKER",KRITEM_TRIPLESNEAKER},
 	{"KRITEM_TRIPLEBANANA",KRITEM_TRIPLEBANANA},
-	{"KRITEM_TENFOLDBANANA",KRITEM_TENFOLDBANANA},
 	{"KRITEM_TRIPLEORBINAUT",KRITEM_TRIPLEORBINAUT},
 	{"KRITEM_QUADORBINAUT",KRITEM_QUADORBINAUT},
 	{"KRITEM_DUALJAWZ",KRITEM_DUALJAWZ},
+	{"KRITEM_TRIPLEGACHABOM",KRITEM_TRIPLEGACHABOM},
 	{"NUMKARTRESULTS",NUMKARTRESULTS},
 
 	// kartshields_t

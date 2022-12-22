@@ -217,7 +217,7 @@ static void DEH_LoadDehackedFile(MYFILE *f, boolean mainfile)
 			else if (fastcmp(word, "MAINCFG"))
 			{
 				G_SetGameModified(multiplayer, true);
-				readmaincfg(f);
+				readmaincfg(f, mainfile);
 				continue;
 			}
 			else if (fastcmp(word, "WIPES"))
@@ -233,6 +233,12 @@ static void DEH_LoadDehackedFile(MYFILE *f, boolean mainfile)
 			{
 				// This is not a major mod.
 				readfollower(f);
+				continue;
+			}
+			else if (fastcmp(word, "FOLLOWERCATEGORY"))
+			{
+				// This is not a major mod.
+				readfollowercategory(f);
 				continue;
 			}
 
@@ -267,32 +273,6 @@ static void DEH_LoadDehackedFile(MYFILE *f, boolean mainfile)
 					else
 					{
 						deh_warning("Emblem number %d out of range (1 - %d)", i, MAXEMBLEMS);
-						ignorelines(f);
-					}
-				}
-				continue;
-			}
-			else if (fastcmp(word, "EXTRAEMBLEM"))
-			{
-				if (!mainfile && !gamedataadded)
-				{
-					deh_warning("You must define a custom gamedata to use \"%s\"", word);
-					ignorelines(f);
-				}
-				else
-				{
-					if (!word2)
-						i = numextraemblems + 1;
-
-					if (i > 0 && i <= MAXEXTRAEMBLEMS)
-					{
-						if (numextraemblems < i)
-							numextraemblems = i;
-						readextraemblemdata(f, i);
-					}
-					else
-					{
-						deh_warning("Extra emblem number %d out of range (1 - %d)", i, MAXEXTRAEMBLEMS);
 						ignorelines(f);
 					}
 				}
@@ -473,7 +453,7 @@ static void DEH_LoadDehackedFile(MYFILE *f, boolean mainfile)
 						ignorelines(f);
 					}
 					else if (i > 0 && i <= MAXCONDITIONSETS)
-						readconditionset(f, (UINT8)i);
+						readconditionset(f, (UINT8)(i-1));
 					else
 					{
 						deh_warning("Condition set number %d out of range (1 - %d)", i, MAXCONDITIONSETS);
@@ -506,7 +486,6 @@ static void DEH_LoadDehackedFile(MYFILE *f, boolean mainfile)
 					{
 						cup = Z_Calloc(sizeof (cupheader_t), PU_STATIC, NULL);
 						cup->id = numkartcupheaders;
-						cup->unlockrequired = -1;
 						deh_strlcpy(cup->name, word2,
 							sizeof(cup->name), va("Cup header %s: name", word2));
 						if (prev != NULL)
@@ -562,41 +541,6 @@ static void DEH_LoadDehackedFile(MYFILE *f, boolean mainfile)
 				else if (fastcmp(word, "SRB2"))
 				{
 					deh_warning("Patch is only compatible with base SRB2.");
-				}
-				// Clear all data in certain locations (mostly for unlocks)
-				// Unless you REALLY want to piss people off,
-				// define a custom gamedata /before/ doing this!!
-				// (then again, modifiedgame will prevent game data saving anyway)
-				else if (fastcmp(word, "CLEAR"))
-				{
-					boolean clearall = (fastcmp(word2, "ALL"));
-
-					if (!mainfile && !gamedataadded)
-					{
-						deh_warning("You must define a custom gamedata to use \"%s\"", word);
-						continue;
-					}
-
-					if (clearall || fastcmp(word2, "UNLOCKABLES"))
-						memset(&unlockables, 0, sizeof(unlockables));
-
-					if (clearall || fastcmp(word2, "EMBLEMS"))
-					{
-						memset(&emblemlocations, 0, sizeof(emblemlocations));
-						numemblems = 0;
-					}
-
-					if (clearall || fastcmp(word2, "EXTRAEMBLEMS"))
-					{
-						memset(&extraemblems, 0, sizeof(extraemblems));
-						numextraemblems = 0;
-					}
-
-					if (clearall || fastcmp(word2, "CONDITIONSETS"))
-						clear_conditionsets();
-
-					if (clearall || fastcmp(word2, "LEVELS"))
-						clear_levels();
 				}
 				else
 					deh_warning("Unknown word: %s", word);

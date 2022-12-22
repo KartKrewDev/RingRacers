@@ -28,6 +28,14 @@ extern consvar_t cv_recordmultiplayerdemos, cv_netdemosyncquality;
 
 extern tic_t demostarttime;
 
+struct democharlist_t {
+	UINT8 mapping; // No, this isn't about levels. It maps to loaded character ID.
+	UINT8 kartspeed;
+	UINT8 kartweight;
+	UINT32 flags;
+	boolean unlockrequired;
+};
+
 // Publicly-accessible demo vars
 struct demovars_s {
 	char titlename[65];
@@ -54,6 +62,9 @@ struct demovars_s {
 
 	boolean freecam;
 
+	UINT8 numskins;
+	democharlist_t *skinlist;
+	UINT8 currentskinid[MAXPLAYERS];
 };
 
 extern struct demovars_s demo;
@@ -66,7 +77,7 @@ typedef enum {
 	MD_INVALID
 } menudemotype_e;
 
-typedef struct menudemo_s {
+struct menudemo_t {
 	char filepath[256];
 	menudemotype_e type;
 
@@ -83,7 +94,7 @@ typedef struct menudemo_s {
 		UINT8 skin, color;
 		UINT32 timeorscore;
 	} standings[MAXPLAYERS];
-} menudemo_t;
+};
 
 
 extern mobj_t *metalplayback;
@@ -102,22 +113,21 @@ UINT8 G_CmpDemoTime(char *oldname, char *newname);
 typedef enum
 {
 	GHC_NORMAL = 0,
-	GHC_SUPER,
-	GHC_FIREFLOWER,
 	GHC_INVINCIBLE,
-	GHC_RETURNSKIN // not actually a colour
+	GHC_SUPER
 } ghostcolor_t;
 
 extern UINT8 demo_extradata[MAXPLAYERS];
 extern UINT8 demo_writerng;
 
-#define DXD_RESPAWN    0x01 // "respawn" command in console
-#define DXD_SKIN       0x02 // skin changed
-#define DXD_NAME       0x04 // name changed
-#define DXD_COLOR      0x08 // color changed
-#define DXD_PLAYSTATE  0x10 // state changed between playing, spectating, or not in-game
+#define DXD_JOINDATA   0x01 // join-specific data
+#define DXD_PLAYSTATE  0x02 // state changed between playing, spectating, or not in-game
+#define DXD_SKIN       0x04 // skin changed
+#define DXD_NAME       0x08 // name changed
+#define DXD_COLOR      0x10 // color changed
 #define DXD_FOLLOWER   0x20 // follower was changed
-#define DXD_WEAPONPREF 0x40 // netsynced playsim settings were changed
+#define DXD_RESPAWN    0x40 // "respawn" command in console
+#define DXD_WEAPONPREF 0x80 // netsynced playsim settings were changed
 
 #define DXD_PST_PLAYING    0x01
 #define DXD_PST_SPECTATING 0x02
@@ -150,14 +160,16 @@ void G_LoadMetal(UINT8 **buffer);
 
 // Your naming conventions are stupid and useless.
 // There is no conflict here.
-typedef struct demoghost {
+struct demoghost {
 	UINT8 checksum[16];
 	UINT8 *buffer, *p, color;
 	UINT8 fadein;
 	UINT16 version;
+	UINT8 numskins;
+	democharlist_t *skinlist;
 	mobj_t oldmo, *mo;
 	struct demoghost *next;
-} demoghost;
+};
 extern demoghost *ghosts;
 
 // G_CheckDemoExtraFiles: checks if our loaded WAD list matches the demo's.

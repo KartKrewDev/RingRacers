@@ -98,7 +98,7 @@ static char hu_tick;
 //-------------------------------------------
 
 patch_t *missingpat;
-patch_t *blanklvl;
+patch_t *blanklvl, *nolvl;
 
 // song credits
 static patch_t *songcreditbg;
@@ -186,6 +186,7 @@ void HU_LoadGraphics(void)
 	Font_Load();
 
 	HU_UpdatePatch(&blanklvl, "BLANKLVL");
+	HU_UpdatePatch(&nolvl, "M_NOLVL");
 
 	HU_UpdatePatch(&songcreditbg, "K_SONGCR");
 
@@ -326,22 +327,28 @@ patch_t *HU_UpdateOrBlankPatch(patch_t **user, boolean required, const char *for
 	va_list ap;
 	char buffer[9];
 
-	lumpnum_t lump;
+	lumpnum_t lump = INT16_MAX;
 	patch_t *patch;
 
 	va_start (ap, format);
 	vsnprintf(buffer, sizeof buffer, format, ap);
 	va_end   (ap);
 
-	if (user && p_adding_file != INT16_MAX)
+	if (user && partadd_earliestfile != UINT16_MAX)
 	{
-		lump = W_CheckNumForNamePwad(buffer, p_adding_file, 0);
+		UINT16 fileref = numwadfiles;
+		lump = INT16_MAX;
+
+		while ((lump == INT16_MAX) && ((--fileref) >= partadd_earliestfile))
+		{
+			lump = W_CheckNumForNamePwad(buffer, fileref, 0);
+		}
 
 		/* no update in this wad */
-		if (lump == INT16_MAX)
+		if (fileref < partadd_earliestfile)
 			return *user;
 
-		lump |= (p_adding_file << 16);
+		lump |= (fileref << 16);
 	}
 	else
 	{
@@ -932,8 +939,7 @@ static void HU_TickSongCredits(void)
 
 	if (cursongcredit.anim > 0)
 	{
-		char *str = va("\x1F"" %s", cursongcredit.def->source);
-		INT32 len = V_ThinStringWidth(str, V_ALLOWLOWERCASE|V_6WIDTHSPACE);
+		INT32 len = V_ThinStringWidth(cursongcredit.text, V_ALLOWLOWERCASE|V_6WIDTHSPACE);
 		fixed_t destx = (len+7) * FRACUNIT;
 
 		if (cursongcredit.trans > 0)
@@ -974,18 +980,27 @@ static void HU_TickSongCredits(void)
 
 void HU_Ticker(void)
 {
+	static boolean hu_holdscores = false;
+
 	if (dedicated)
 		return;
 
 	hu_tick++;
 	hu_tick &= 7; // currently only to blink chat input cursor
 
-	/*
-	if (PlayerInputDown(1, gc_scores))
-		hu_showscores = !chat_on;
+	// Rankings
+	if (G_PlayerInputDown(0, gc_rankings, 0))
+	{
+		if (!hu_holdscores)
+		{
+			hu_showscores ^= true;
+		}
+		hu_holdscores = true;
+	}
 	else
-		hu_showscores = false;
-	*/
+	{
+		hu_holdscores = false;
+	}
 
 	hu_keystrokes = false;
 
@@ -2030,29 +2045,28 @@ static void HU_DrawDemoInfo(void)
 //
 void HU_DrawSongCredits(void)
 {
-	char *str;
 	fixed_t x;
 	fixed_t y = (r_splitscreen ? (BASEVIDHEIGHT/2)-4 : 32) * FRACUNIT;
 	INT32 bgt;
 
-	if (!cursongcredit.def) // No def
+	if (!cursongcredit.def || cursongcredit.trans >= NUMTRANSMAPS) // No def
 	{
 		return;
 	}
 
-	str = va("\x1F"" %s", cursongcredit.def->source);
 	bgt = (NUMTRANSMAPS/2) + (cursongcredit.trans / 2);
 	x = R_InterpolateFixed(cursongcredit.old_x, cursongcredit.x);
 
 	if (bgt < NUMTRANSMAPS)
 	{
-		V_DrawFixedPatch(x, y - (2 * FRACUNIT), FRACUNIT, V_SNAPTOLEFT|(bgt<<V_ALPHASHIFT), songcreditbg, NULL);
+		V_DrawFixedPatch(x, y - (2 * FRACUNIT),
+			FRACUNIT, V_SNAPTOLEFT|(bgt<<V_ALPHASHIFT),
+			songcreditbg, NULL);
 	}
 
-	if (cursongcredit.trans < NUMTRANSMAPS)
-	{
-		V_DrawRightAlignedThinStringAtFixed(x, y, V_ALLOWLOWERCASE|V_6WIDTHSPACE|V_SNAPTOLEFT|(cursongcredit.trans<<V_ALPHASHIFT), str);
-	}
+	V_DrawRightAlignedThinStringAtFixed(x, y,
+		V_ALLOWLOWERCASE|V_6WIDTHSPACE|V_SNAPTOLEFT|(cursongcredit.trans<<V_ALPHASHIFT),
+		cursongcredit.text);
 }
 
 
@@ -2060,18 +2074,8 @@ void HU_DrawSongCredits(void)
 //
 void HU_Drawer(void)
 {
-	if (cv_vhseffect.value && (paused || (demo.playback && cv_playbackspeed.value > 1)))
-		V_DrawVhsEffect(demo.rewinding);
-
-	// draw chat string plus cursor
-	if (chat_on)
-	{
-		if (!OLDCHAT)
-			HU_DrawChat();
-		else
-			HU_DrawChat_Old();
-	}
-	else
+	// Closed chat
+	if (!chat_on)
 	{
 		typelines = 1;
 		chat_scrolltime = 0;
@@ -2080,15 +2084,8 @@ void HU_Drawer(void)
 			HU_drawMiniChat(); // draw messages in a cool fashion.
 	}
 
-	if (cechotimer)
-		HU_DrawCEcho();
-
-	if (!( Playing() || demo.playback )
-	 || gamestate == GS_INTERMISSION || gamestate == GS_CUTSCENE
-	 || gamestate == GS_CREDITS      || gamestate == GS_EVALUATION
-	 || gamestate == GS_ENDING       || gamestate == GS_GAMEEND
-	 || gamestate == GS_VOTING || gamestate == GS_WAITINGPLAYERS) // SRB2kart
-		return;
+	if (gamestate != GS_LEVEL)
+		goto drawontop;
 
 	// draw multiplayer rankings
 	if (hu_showscores)
@@ -2111,12 +2108,8 @@ void HU_Drawer(void)
 		}
 	}
 
-	if (gamestate != GS_LEVEL)
-		return;
-
-	// draw song credits
-	if (cv_songcredits.value && !( hu_showscores && (netgame || multiplayer) ))
-		HU_DrawSongCredits();
+	if (cv_vhseffect.value && (paused || (demo.playback && cv_playbackspeed.value > 1)))
+		V_DrawVhsEffect(demo.rewinding);
 
 	// draw desynch text
 	if (hu_redownloadinggamestate)
@@ -2132,20 +2125,22 @@ void HU_Drawer(void)
 		V_DrawCenteredString(BASEVIDWIDTH/2, 180, V_YELLOWMAP | V_ALLOWLOWERCASE, resynch_text);
 	}
 
-	if (modeattacking && pausedelay > 0 && !pausebreakkey)
+drawontop:
+	// Opened chat
+	if (chat_on)
 	{
-		INT32 strength = ((pausedelay - 1 - NEWTICRATE/2)*10)/(NEWTICRATE/3);
-		INT32 x = BASEVIDWIDTH/2, y = BASEVIDHEIGHT/2; // obviously incorrect values while we scrap hudinfo
-
-		V_DrawThinString(x, y,
-			((leveltime & 4) ? V_SKYMAP : V_BLUEMAP),
-			"HOLD TO RETRY...");
-
-		if (strength > 9)
-			V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 0);
-		else if (strength > 0)
-			V_DrawFadeScreen(0, strength);
+		if (!OLDCHAT)
+			HU_DrawChat();
+		else
+			HU_DrawChat_Old();
 	}
+
+	if (cechotimer)
+		HU_DrawCEcho();
+
+	// draw song credits
+	if (cv_songcredits.value && !( hu_showscores && (netgame || multiplayer) ))
+		HU_DrawSongCredits();
 }
 
 //======================================================================

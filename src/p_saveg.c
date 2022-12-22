@@ -35,6 +35,7 @@
 #include "p_polyobj.h"
 #include "lua_script.h"
 #include "p_slopes.h"
+#include "m_cond.h" // netUnlocked
 
 // SRB2Kart
 #include "k_battle.h"
@@ -96,7 +97,7 @@ static void P_NetArchivePlayers(void)
 {
 	INT32 i, j;
 	UINT16 flags;
-//	size_t q;
+	size_t q;
 
 	WRITEUINT32(save_p, ARCHIVEBLOCK_PLAYERS);
 
@@ -150,7 +151,14 @@ static void P_NetArchivePlayers(void)
 
 		WRITEUINT8(save_p, players[i].skincolor);
 		WRITEINT32(save_p, players[i].skin);
-		WRITEUINT32(save_p, players[i].availabilities);
+
+		for (j = 0; j < MAXAVAILABILITY; j++)
+		{
+			WRITEUINT8(save_p, players[i].availabilities[j]);
+		}
+
+		WRITEUINT8(save_p, players[i].fakeskin);
+		WRITEUINT8(save_p, players[i].lastfakeskin);
 		WRITEUINT32(save_p, players[i].score);
 		WRITESINT8(save_p, players[i].lives);
 		WRITESINT8(save_p, players[i].xtralife);
@@ -181,6 +189,9 @@ static void P_NetArchivePlayers(void)
 		WRITEINT16(save_p, players[i].lastlinehit);
 
 		WRITEINT32(save_p, players[i].onconveyor);
+
+		WRITEUINT8(save_p, players[i].timeshit);
+		WRITEUINT8(save_p, players[i].timeshitprev);
 
 		WRITEUINT32(save_p, players[i].jointime);
 
@@ -249,6 +260,7 @@ static void P_NetArchivePlayers(void)
 		WRITEUINT8(save_p, players[i].oldposition);
 		WRITEUINT8(save_p, players[i].positiondelay);
 		WRITEUINT32(save_p, players[i].distancetofinish);
+		WRITEUINT32(save_p, K_GetWaypointHeapIndex(players[i].currentwaypoint));
 		WRITEUINT32(save_p, K_GetWaypointHeapIndex(players[i].nextwaypoint));
 		WRITEUINT32(save_p, players[i].airtime);
 		WRITEUINT8(save_p, players[i].startboost);
@@ -257,6 +269,7 @@ static void P_NetArchivePlayers(void)
 		WRITEUINT16(save_p, players[i].spinouttimer);
 		WRITEUINT8(save_p, players[i].spinouttype);
 		WRITEUINT8(save_p, players[i].instashield);
+		WRITEINT32(save_p, players[i].invulnhitlag);
 		WRITEUINT8(save_p, players[i].wipeoutslow);
 		WRITEUINT8(save_p, players[i].justbumped);
 		WRITEUINT8(save_p, players[i].tumbleBounces);
@@ -306,9 +319,6 @@ static void P_NetArchivePlayers(void)
 		WRITEUINT8(save_p, players[i].tripwireState);
 		WRITEUINT8(save_p, players[i].tripwirePass);
 		WRITEUINT16(save_p, players[i].tripwireLeniency);
-
-		WRITEUINT16(save_p, players[i].itemroulette);
-		WRITEUINT8(save_p, players[i].roulettetype);
 
 		WRITESINT8(save_p, players[i].itemtype);
 		WRITEUINT8(save_p, players[i].itemamount);
@@ -407,6 +417,50 @@ static void P_NetArchivePlayers(void)
 		WRITEUINT32(save_p, players[i].botvars.itemconfirm);
 		WRITESINT8(save_p, players[i].botvars.turnconfirm);
 		WRITEUINT32(save_p, players[i].botvars.spindashconfirm);
+
+		// itemroulette_t
+		WRITEUINT8(save_p, players[i].itemRoulette.active);
+
+#ifdef ITEM_LIST_SIZE
+		WRITEUINT32(save_p, players[i].itemRoulette.itemListLen);
+
+		for (q = 0; q < ITEM_LIST_SIZE; q++)
+		{
+			if (q >= players[i].itemRoulette.itemListLen)
+			{
+				WRITESINT8(save_p, KITEM_NONE);
+			}
+			else
+			{
+				WRITESINT8(save_p, players[i].itemRoulette.itemList[q]);
+			}
+		}
+#else
+		if (players[i].itemRoulette.itemList == NULL)
+		{
+			WRITEUINT32(save_p, 0);
+			WRITEUINT32(save_p, 0);
+		}
+		else
+		{
+			WRITEUINT32(save_p, players[i].itemRoulette.itemListCap);
+			WRITEUINT32(save_p, players[i].itemRoulette.itemListLen);
+
+			for (q = 0; q < players[i].itemRoulette.itemListLen; q++)
+			{
+				WRITESINT8(save_p, players[i].itemRoulette.itemList[q]);
+			}
+		}
+#endif
+
+		WRITEUINT8(save_p, players[i].itemRoulette.useOdds);
+		WRITEUINT32(save_p, players[i].itemRoulette.dist);
+		WRITEUINT32(save_p, players[i].itemRoulette.index);
+		WRITEUINT8(save_p, players[i].itemRoulette.sound);
+		WRITEUINT32(save_p, players[i].itemRoulette.speed);
+		WRITEUINT32(save_p, players[i].itemRoulette.tics);
+		WRITEUINT32(save_p, players[i].itemRoulette.elapsed);
+		WRITEUINT8(save_p, players[i].itemRoulette.eggman);
 	}
 }
 
@@ -414,6 +468,7 @@ static void P_NetUnArchivePlayers(void)
 {
 	INT32 i, j;
 	UINT16 flags;
+	size_t q;
 
 	if (READUINT32(save_p) != ARCHIVEBLOCK_PLAYERS)
 		I_Error("Bad $$$.sav at archive block Players");
@@ -469,7 +524,14 @@ static void P_NetUnArchivePlayers(void)
 
 		players[i].skincolor = READUINT8(save_p);
 		players[i].skin = READINT32(save_p);
-		players[i].availabilities = READUINT32(save_p);
+
+		for (j = 0; j < MAXAVAILABILITY; j++)
+		{
+			players[i].availabilities[j] = READUINT8(save_p);
+		}
+
+		players[i].fakeskin = READUINT8(save_p);
+		players[i].lastfakeskin = READUINT8(save_p);
 		players[i].score = READUINT32(save_p);
 		players[i].lives = READSINT8(save_p);
 		players[i].xtralife = READSINT8(save_p); // Ring Extra Life counter
@@ -498,6 +560,9 @@ static void P_NetUnArchivePlayers(void)
 
 		players[i].lastsidehit = READINT16(save_p);
 		players[i].lastlinehit = READINT16(save_p);
+
+		players[i].timeshit = READUINT8(save_p);
+		players[i].timeshitprev = READUINT8(save_p);
 
 		players[i].onconveyor = READINT32(save_p);
 
@@ -548,6 +613,7 @@ static void P_NetUnArchivePlayers(void)
 		players[i].oldposition = READUINT8(save_p);
 		players[i].positiondelay = READUINT8(save_p);
 		players[i].distancetofinish = READUINT32(save_p);
+		players[i].currentwaypoint = (waypoint_t *)(size_t)READUINT32(save_p);
 		players[i].nextwaypoint = (waypoint_t *)(size_t)READUINT32(save_p);
 		players[i].airtime = READUINT32(save_p);
 		players[i].startboost = READUINT8(save_p);
@@ -556,6 +622,7 @@ static void P_NetUnArchivePlayers(void)
 		players[i].spinouttimer = READUINT16(save_p);
 		players[i].spinouttype = READUINT8(save_p);
 		players[i].instashield = READUINT8(save_p);
+		players[i].invulnhitlag = READINT32(save_p);
 		players[i].wipeoutslow = READUINT8(save_p);
 		players[i].justbumped = READUINT8(save_p);
 		players[i].tumbleBounces = READUINT8(save_p);
@@ -605,9 +672,6 @@ static void P_NetUnArchivePlayers(void)
 		players[i].tripwireState = READUINT8(save_p);
 		players[i].tripwirePass = READUINT8(save_p);
 		players[i].tripwireLeniency = READUINT16(save_p);
-
-		players[i].itemroulette = READUINT16(save_p);
-		players[i].roulettetype = READUINT8(save_p);
 
 		players[i].itemtype = READSINT8(save_p);
 		players[i].itemamount = READUINT8(save_p);
@@ -706,6 +770,61 @@ static void P_NetUnArchivePlayers(void)
 		players[i].botvars.itemconfirm = READUINT32(save_p);
 		players[i].botvars.turnconfirm = READSINT8(save_p);
 		players[i].botvars.spindashconfirm = READUINT32(save_p);
+
+		// itemroulette_t
+		players[i].itemRoulette.active = (boolean)READUINT8(save_p);
+
+#ifdef ITEM_LIST_SIZE
+		players[i].itemRoulette.itemListLen = (size_t)READUINT32(save_p);
+
+		for (q = 0; q < ITEM_LIST_SIZE; q++)
+		{
+			players[i].itemRoulette.itemList[q] = READSINT8(save_p);
+		}
+#else
+		players[i].itemRoulette.itemListCap = (size_t)READUINT32(save_p);
+		players[i].itemRoulette.itemListLen = (size_t)READUINT32(save_p);
+
+		if (players[i].itemRoulette.itemListCap > 0)
+		{
+			if (players[i].itemRoulette.itemList == NULL)
+			{
+				players[i].itemRoulette.itemList = Z_Calloc(
+					sizeof(SINT8) * players[i].itemRoulette.itemListCap,
+					PU_STATIC,
+					&players[i].itemRoulette.itemList
+				);
+			}
+			else
+			{
+				players[i].itemRoulette.itemList = Z_Realloc(
+					players[i].itemRoulette.itemList,
+					sizeof(SINT8) * players[i].itemRoulette.itemListCap,
+					PU_STATIC,
+					&players[i].itemRoulette.itemList
+				);
+			}
+
+			if (players[i].itemRoulette.itemList == NULL)
+			{
+				I_Error("Not enough memory for item roulette list\n");
+			}
+
+			for (q = 0; q < players[i].itemRoulette.itemListLen; q++)
+			{
+				players[i].itemRoulette.itemList[q] = READSINT8(save_p);
+			}
+		}
+#endif
+
+		players[i].itemRoulette.useOdds = READUINT8(save_p);
+		players[i].itemRoulette.dist = READUINT32(save_p);
+		players[i].itemRoulette.index = (size_t)READUINT32(save_p);
+		players[i].itemRoulette.sound = READUINT8(save_p);
+		players[i].itemRoulette.speed = (tic_t)READUINT32(save_p);
+		players[i].itemRoulette.tics = (tic_t)READUINT32(save_p);
+		players[i].itemRoulette.elapsed = (tic_t)READUINT32(save_p);
+		players[i].itemRoulette.eggman = (boolean)READUINT8(save_p);
 
 		//players[i].viewheight = P_GetPlayerViewHeight(players[i]); // scale cannot be factored in at this point
 	}
@@ -4434,6 +4553,15 @@ static void P_RelinkPointers(void)
 				if (!P_SetTarget(&mobj->player->follower, P_FindNewPosition(temp)))
 					CONS_Debug(DBG_GAMELOGIC, "follower not found on %d\n", mobj->type);
 			}
+			if (mobj->player->currentwaypoint)
+			{
+				temp = (UINT32)(size_t)mobj->player->currentwaypoint;
+				mobj->player->currentwaypoint = K_GetWaypointFromIndex(temp);
+				if (mobj->player->currentwaypoint == NULL)
+				{
+					CONS_Debug(DBG_GAMELOGIC, "currentwaypoint not found on %d\n", mobj->type);
+				}
+			}
 			if (mobj->player->nextwaypoint)
 			{
 				temp = (UINT32)(size_t)mobj->player->nextwaypoint;
@@ -4587,9 +4715,6 @@ static inline void P_UnArchiveSPGame(INT16 mapoverride)
 	//lastmapsaved = gamemap;
 	lastmaploaded = gamemap;
 
-	tokenlist = 0;
-	token = 0;
-
 	savedata.emeralds = READUINT16(save_p)-357;
 
 	READSTRINGN(save_p, testname, sizeof(testname));
@@ -4608,7 +4733,7 @@ static inline void P_UnArchiveSPGame(INT16 mapoverride)
 
 static void P_NetArchiveMisc(boolean resending)
 {
-	size_t i;
+	size_t i, j;
 
 	WRITEUINT32(save_p, ARCHIVEBLOCK_MISC);
 
@@ -4629,7 +4754,14 @@ static void P_NetArchiveMisc(boolean resending)
 		WRITEUINT32(save_p, pig);
 	}
 
-	WRITEUINT32(save_p, tokenlist);
+	for (i = 0; i < MAXUNLOCKABLES;)
+	{
+		UINT8 btemp = 0;
+		for (j = 0; j < 8 && j+i < MAXUNLOCKABLES; ++j)
+			btemp |= (netUnlocked[j+i] << j);
+		WRITEUINT8(save_p, btemp);
+		i += j;
+	}
 
 	WRITEUINT8(save_p, encoremode);
 
@@ -4658,7 +4790,6 @@ static void P_NetArchiveMisc(boolean resending)
 		WRITEUINT8(save_p, globools);
 	}
 
-	WRITEUINT32(save_p, token);
 	WRITEUINT32(save_p, bluescore);
 	WRITEUINT32(save_p, redscore);
 
@@ -4754,8 +4885,9 @@ static void P_NetArchiveMisc(boolean resending)
 
 static inline boolean P_NetUnArchiveMisc(boolean reloading)
 {
-	size_t i;
+	size_t i, j;
 	size_t numTasks;
+	UINT8 *old_save_p;
 
 	if (READUINT32(save_p) != ARCHIVEBLOCK_MISC)
 		I_Error("Bad $$$.sav at archive block Misc");
@@ -4788,15 +4920,26 @@ static inline boolean P_NetUnArchiveMisc(boolean reloading)
 		}
 	}
 
-	tokenlist = READUINT32(save_p);
+	for (i = 0; i < MAXUNLOCKABLES;)
+	{
+		UINT8 rtemp = READUINT8(save_p);
+		for (j = 0; j < 8 && j+i < MAXUNLOCKABLES; ++j)
+			netUnlocked[j+i] = ((rtemp >> j) & 1);
+		i += j;
+	}
 
 	encoremode = (boolean)READUINT8(save_p);
+
+	// FIXME: save_p should not be global!!!
+	old_save_p = save_p;
 
 	if (!P_LoadLevel(true, reloading))
 	{
 		CONS_Alert(CONS_ERROR, M_GetText("Can't load the level!\n"));
 		return false;
 	}
+
+	save_p = old_save_p;
 
 	// get the time
 	leveltime = READUINT32(save_p);
@@ -4821,7 +4964,6 @@ static inline boolean P_NetUnArchiveMisc(boolean reloading)
 		stoppedclock = !!(globools & (1<<1));
 	}
 
-	token = READUINT32(save_p);
 	bluescore = READUINT32(save_p);
 	redscore = READUINT32(save_p);
 

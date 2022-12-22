@@ -16,15 +16,15 @@
 
 #include "d_event.h"
 
-typedef struct
+struct fpoint_t
 {
 	INT32 x, y;
-} fpoint_t;
+};
 
-typedef struct
+struct fline_t
 {
 	fpoint_t a, b;
-} fline_t;
+};
 
 extern boolean am_recalc; // true if screen size changes
 extern boolean automapactive; // In AutoMap mode?

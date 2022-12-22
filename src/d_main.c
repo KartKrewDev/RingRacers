@@ -374,6 +374,9 @@ static void D_Display(void)
 	if (dedicated) //bail out after wipe logic
 		return;
 
+	// Catch runaway clipping rectangles.
+	V_ClearClipRect();
+
 	// do buffered drawing
 	switch (gamestate)
 	{
@@ -951,11 +954,6 @@ void D_StartTitle(void)
 	for (i = 0; i < MAXPLAYERS; i++)
 		CL_ClearPlayer(i);
 
-	for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
-	{
-		players[g_localplayers[i]].availabilities = R_GetSkinAvailabilities();
-	}
-
 	splitscreen = 0;
 	SplitScreen_OnChange();
 
@@ -994,6 +992,7 @@ void D_StartTitle(void)
 	memset(deviceResponding, false, sizeof (deviceResponding));
 
 	F_StartTitleScreen();
+	M_ClearMenus(false);
 
 	// Reset the palette
 	if (rendermode != render_none)
@@ -1126,14 +1125,14 @@ static void IdentifyVersion(void)
 ////
 #define TEXTURESNAME "MISC_TEXTURES.pk3"
 #define MAPSNAME "MISC_MAPS.pk3"
-#define PATCHNAME "MISC_PATCH.pk3"
+#define PATCHNAME "MISC_SCRIPTS.pk3"
 #define MUSICNAME "MISC_MUSIC.PK3"
 ////
 #else
 ////
 #define TEXTURESNAME "textures.pk3"
 #define MAPSNAME "maps.pk3"
-#define PATCHNAME "patch.pk3"
+#define PATCHNAME "scripts.pk3"
 #define MUSICNAME "music.pk3"
 ////
 #endif
@@ -1147,6 +1146,10 @@ static void IdentifyVersion(void)
 	D_AddFile(startupiwads, va(pandf,srb2waddir,"followers.pk3"));
 #ifdef USE_PATCH_FILE
 	D_AddFile(startupiwads, va(pandf,srb2waddir,PATCHNAME));
+#endif
+#define UNLOCKTESTING
+#if defined(DEVELOP) && defined(UNLOCKTESTING)
+	D_AddFile(startupiwads, va(pandf,srb2waddir,"unlocks.pk3"));
 #endif
 ////
 #undef TEXTURESNAME
@@ -1203,10 +1206,11 @@ D_ConvertVersionNumbers (void)
 void D_SRB2Main(void)
 {
 	INT32 i, p;
-
-	INT32 numbasemapheaders;
-
-	INT32 pstartmap = 1;
+#ifdef DEVELOP
+	INT32 pstartmap = 1; // default to first loaded map (Test Run)
+#else
+	INT32 pstartmap = 0; // default to random map (0 is not a valid map number)
+#endif
 	boolean autostart = false;
 
 	/* break the version string into version numbers, for netplay */
@@ -1381,6 +1385,8 @@ void D_SRB2Main(void)
 	Z_Init();
 	CON_SetLoadingProgress(LOADED_ZINIT);
 
+	M_NewGameDataStruct();
+
 	// Do this up here so that WADs loaded through the command line can use ExecCfg
 	COM_Init();
 
@@ -1450,7 +1456,10 @@ void D_SRB2Main(void)
 	mainwads++;	// maps.pk3
 	mainwads++; // followers.pk3
 #ifdef USE_PATCH_FILE
-	mainwads++;	// patch.pk3
+	mainwads++;	// scripts.pk3
+#endif
+#ifdef UNLOCKTESTING
+	mainwads++; // unlocks.pk3
 #endif
 
 #endif //ifndef DEVELOP
@@ -1462,9 +1471,7 @@ void D_SRB2Main(void)
 	//
 	// search for mainwad maps
 	//
-	P_InitMapData(0);
-
-	numbasemapheaders = nummapheaders;
+	P_InitMapData(false);
 
 	CON_SetLoadingProgress(LOADED_IWAD);
 
@@ -1475,7 +1482,7 @@ void D_SRB2Main(void)
 	//
 	// search for pwad maps
 	//
-	P_InitMapData(numbasemapheaders);
+	P_InitMapData(true);
 
 	CON_SetLoadingProgress(LOADED_PWAD);
 
@@ -1764,11 +1771,14 @@ void D_SRB2Main(void)
 
 	// Has to be done before anything else so skin, color, etc in command buffer has an affect.
 	// ttlprofilen used because it's roughly equivalent in functionality - a QoL aid for quickly getting from startup to action
-	PR_ApplyProfile(cv_ttlprofilen.value, 0);
-
-	for (i = 1; i < cv_splitplayers.value; i++)
+	if (!dedicated)
 	{
-		PR_ApplyProfile(cv_lastprofile[i].value, i);
+		PR_ApplyProfile(cv_ttlprofilen.value, 0);
+
+		for (i = 1; i < cv_splitplayers.value; i++)
+		{
+			PR_ApplyProfile(cv_lastprofile[i].value, i);
+		}
 	}
 
 	if (autostart || netgame)
@@ -1850,8 +1860,13 @@ void D_SRB2Main(void)
 				CV_SetValue(&cv_kartspeed, newskill);
 		}
 
-		if (server && !M_CheckParm("+map"))
+		if (server && (dedicated || !M_CheckParm("+map")))
 		{
+			if (!pstartmap && (pstartmap = G_GetFirstMapOfGametype(gametype)+1) > nummapheaders)
+			{
+				I_Error("Can't get first map of gametype\n");
+			}
+
 			if (M_MapLocked(pstartmap))
 			{
 				G_SetUsedCheats();
@@ -1872,14 +1887,6 @@ void D_SRB2Main(void)
 	}
 
 	CON_ToggleOff();
-
-	if (dedicated && server)
-	{
-		levelstarttic = gametic;
-		G_SetGamestate(GS_LEVEL);
-		if (!P_LoadLevel(false, false))
-			I_Quit(); // fail so reset game stuff
-	}
 
 #ifdef HAVE_DISCORDRPC
 	if (! dedicated)

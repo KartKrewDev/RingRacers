@@ -39,22 +39,22 @@ extern int       ps_checkposition_calls;
 extern precise_t ps_lua_thinkframe_time;
 extern int       ps_lua_mobjhooks;
 
-typedef struct
+struct ps_hookinfo_t
 {
 	precise_t time_taken;
 	char short_src[LUA_IDSIZE];
-} ps_hookinfo_t;
+};
 
 void PS_SetThinkFrameHookInfo(int index, precise_t time_taken, char* short_src);
 
-typedef struct
+struct ps_botinfo_t
 {
 	boolean isBot;
 	precise_t total;
 	precise_t prediction; // K_CreateBotPrediction
 	precise_t nudge; // K_NudgePredictionTowardsObjects
 	precise_t item; // K_BotItemUsage
-} ps_botinfo_t;
+};
 
 extern ps_botinfo_t ps_bots[MAXPLAYERS];
 

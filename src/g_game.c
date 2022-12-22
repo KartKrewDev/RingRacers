@@ -190,7 +190,8 @@ struct quake quake;
 
 // Map Header Information
 mapheader_t** mapheaderinfo = {NULL};
-INT32 nummapheaders, mapallocsize = 0;
+INT32 nummapheaders = 0;
+INT32 mapallocsize = 0;
 
 // Kart cup definitions
 cupheader_t *kartcupheaders = NULL;
@@ -204,14 +205,6 @@ UINT8 stagefailed; // Used for GEMS BONUS? Also to see if you beat the stage.
 
 UINT16 emeralds;
 INT32 luabanks[NUM_LUABANKS];
-UINT32 token; // Number of tokens collected in a level
-UINT32 tokenlist; // List of tokens collected
-boolean gottoken; // Did you get a token? Used for end of act
-INT32 tokenbits; // Used for setting token bits
-
-tic_t totalplaytime;
-UINT32 matchesplayed; // SRB2Kart
-boolean gamedataloaded = false;
 
 // Temporary holding place for nights data for the current map
 //nightsdata_t ntemprecords;
@@ -340,9 +333,6 @@ static void G_ResetRandMapBuffer(void)
 		randmaps.mapbuffer[i] = -1;
 	//intentionally not resetting randmaps.counttogametype here
 }
-
-// Grading
-UINT32 timesBeaten;
 
 typedef struct joystickvector2_s
 {
@@ -601,10 +591,7 @@ static void G_UpdateRecordReplays(void)
 	if ((earnedEmblems = M_CheckLevelEmblems()))
 		CONS_Printf(M_GetText("\x82" "Earned %hu medal%s for Record Attack records.\n"), (UINT16)earnedEmblems, earnedEmblems > 1 ? "s" : "");
 
-	if (M_UpdateUnlockablesAndExtraEmblems())
-		S_StartSound(NULL, sfx_ncitem);
-
-	// SRB2Kart - save here so you NEVER lose your earned times/medals.
+	M_UpdateUnlockablesAndExtraEmblems(true);
 	G_SaveGameData();
 }
 
@@ -2195,9 +2182,8 @@ static inline void G_PlayerFinishLevel(INT32 player)
 	{
 		if (legitimateexit && !demo.playback && !mapreset) // (yes you're allowed to unlock stuff this way when the game is modified)
 		{
-			matchesplayed++;
-			if (M_UpdateUnlockablesAndExtraEmblems())
-				S_StartSound(NULL, sfx_ncitem);
+			gamedata->matchesplayed++;
+			M_UpdateUnlockablesAndExtraEmblems(true);
 			G_SaveGameData();
 		}
 
@@ -2239,7 +2225,9 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	UINT8 latestlap;
 	UINT16 skincolor;
 	INT32 skin;
-	UINT32 availabilities;
+	UINT8 availabilities[MAXAVAILABILITY];
+	UINT8 fakeskin;
+	UINT8 lastfakeskin;
 
 	tic_t jointime;
 
@@ -2259,11 +2247,10 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	SINT8 xtralife;
 
 	// SRB2kart
+	itemroulette_t itemRoulette;
 	respawnvars_t respawn;
 	INT32 itemtype;
 	INT32 itemamount;
-	INT32 itemroulette;
-	INT32 roulettetype;
 	INT32 growshrinktimer;
 	INT32 bumper;
 	boolean songcredit = false;
@@ -2286,17 +2273,27 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	skincolor = players[player].skincolor;
 	skin = players[player].skin;
 
-	// SRB2kart
-	kartspeed = players[player].kartspeed;
-	kartweight = players[player].kartweight;
+	if (betweenmaps)
+	{
+		fakeskin = MAXSKINS;
+		kartspeed = skins[players[player].skin].kartspeed;
+		kartweight = skins[players[player].skin].kartweight;
+		charflags = skins[players[player].skin].flags;
+	}
+	else
+	{
+		fakeskin = players[player].fakeskin;
+		kartspeed = players[player].kartspeed;
+		kartweight = players[player].kartweight;
+		charflags = players[player].charflags;
+	}
+	lastfakeskin = players[player].lastfakeskin;
 
 	followerready = players[player].followerready;
 	followercolor = players[player].followercolor;
 	followerskin = players[player].followerskin;
 
-	availabilities = players[player].availabilities;
-
-	charflags = players[player].charflags;
+	memcpy(availabilities, players[player].availabilities, sizeof(availabilities));
 
 	followitem = players[player].followitem;
 
@@ -2312,10 +2309,13 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	pflags = (players[player].pflags & (PF_WANTSTOJOIN|PF_KICKSTARTACCEL|PF_SHRINKME|PF_SHRINKACTIVE));
 
 	// SRB2kart
+	memcpy(&itemRoulette, &players[player].itemRoulette, sizeof (itemRoulette));
+	memcpy(&respawn, &players[player].respawn, sizeof (respawn));
+
 	if (betweenmaps || leveltime < introtime)
 	{
-		itemroulette = 0;
-		roulettetype = 0;
+		itemRoulette.active = false;
+
 		itemtype = 0;
 		itemamount = 0;
 		growshrinktimer = 0;
@@ -2337,9 +2337,6 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	}
 	else
 	{
-		itemroulette = (players[player].itemroulette > 0 ? 1 : 0);
-		roulettetype = players[player].roulettetype;
-
 		if (players[player].pflags & PF_ITEMOUT)
 		{
 			itemtype = 0;
@@ -2395,8 +2392,6 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 		P_SetTarget(&players[player].follower, NULL);
 	}
 
-	memcpy(&respawn, &players[player].respawn, sizeof (respawn));
-
 	p = &players[player];
 	memset(p, 0, sizeof (*p));
 
@@ -2414,11 +2409,14 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	// save player config truth reborn
 	p->skincolor = skincolor;
 	p->skin = skin;
+
+	p->fakeskin = fakeskin;
 	p->kartspeed = kartspeed;
 	p->kartweight = kartweight;
-	//
 	p->charflags = charflags;
-	p->availabilities = availabilities;
+	p->lastfakeskin = lastfakeskin;
+
+	memcpy(players[player].availabilities, availabilities, sizeof(availabilities));
 	p->followitem = followitem;
 
 	p->starpostnum = starpostnum;
@@ -2439,8 +2437,6 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	p->xtralife = xtralife;
 
 	// SRB2kart
-	p->itemroulette = itemroulette;
-	p->roulettetype = roulettetype;
 	p->itemtype = itemtype;
 	p->itemamount = itemamount;
 	p->growshrinktimer = growshrinktimer;
@@ -2456,6 +2452,7 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	p->botvars.rubberband = FRACUNIT;
 	p->botvars.controller = UINT16_MAX;
 
+	memcpy(&p->itemRoulette, &itemRoulette, sizeof (p->itemRoulette));
 	memcpy(&p->respawn, &respawn, sizeof (p->respawn));
 
 	if (follower)
@@ -2466,7 +2463,6 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	p->followercolor = followercolor;
 	//p->follower = NULL;	// respawn a new one with you, it looks better.
 	// ^ Not necessary anyway since it will be respawned regardless considering it doesn't exist anymore.
-
 
 	p->playerstate = PST_LIVE;
 	p->panim = PA_STILL; // standing animation
@@ -2550,7 +2546,7 @@ static boolean G_CheckSpot(INT32 playernum, mapthing_t *mthing)
 	if (!K_CheckPlayersRespawnColliding(playernum, x, y))
 		return false;
 
-	if (!P_CheckPosition(players[playernum].mo, x, y))
+	if (!P_CheckPosition(players[playernum].mo, x, y, NULL))
 		return false;
 
 	return true;
@@ -2810,6 +2806,11 @@ mapthing_t *G_FindMapStart(INT32 playernum)
 			spawnpoint = G_FindRaceStartOrFallback(playernum);
 	}
 
+	// -- Grand Prix / Time Attack --
+	// Order: Race->DM->CTF
+	else if (grandprixinfo.gp || modeattacking)
+		spawnpoint = G_FindRaceStartOrFallback(playernum);
+
 	// -- CTF --
 	// Order: CTF->DM->Race
 	else if ((gametyperules & GTR_TEAMSTARTS) && players[playernum].ctfteam)
@@ -2906,7 +2907,7 @@ void G_AddPlayer(INT32 playernum)
 {
 	player_t *p = &players[playernum];
 	p->playerstate = PST_REBORN;
-	demo_extradata[playernum] |= DXD_PLAYSTATE|DXD_COLOR|DXD_NAME|DXD_SKIN|DXD_FOLLOWER; // Set everything
+	demo_extradata[playernum] |= DXD_JOINDATA|DXD_PLAYSTATE|DXD_COLOR|DXD_NAME|DXD_SKIN|DXD_FOLLOWER; // Set everything
 }
 
 void G_ExitLevel(void)
@@ -3303,7 +3304,7 @@ INT16 G_SometimesGetDifferentGametype(UINT8 prefgametype)
 	// Most of the gametype references in this condition are intentionally not prefgametype.
 	// This is so a server CAN continue playing a gametype if they like the taste of it.
 	// The encore check needs prefgametype so can't use G_RaceGametype...
-	boolean encorepossible = ((M_SecretUnlocked(SECRET_ENCORE) || encorescramble == 1)
+	boolean encorepossible = ((M_SecretUnlocked(SECRET_ENCORE, false) || encorescramble == 1)
 		&& ((gametyperules|gametypedefaultrules[prefgametype]) & GTR_CIRCUIT));
 	UINT8 encoremodifier = 0;
 
@@ -3404,28 +3405,29 @@ UINT32 G_TOLFlag(INT32 pgametype)
 
 INT16 G_GetFirstMapOfGametype(UINT8 pgametype)
 {
+	UINT8 i = 0;
 	INT16 mapnum = NEXTMAP_INVALID;
+	levelsearch_t templevelsearch;
 
-	if ((gametypedefaultrules[pgametype] & GTR_CAMPAIGN) && kartcupheaders)
-	{
-		mapnum = kartcupheaders->cachedlevels[0];
-	}
+	templevelsearch.cup = NULL;
+	templevelsearch.typeoflevel = G_TOLFlag(pgametype);
+	templevelsearch.cupmode = (!(gametypedefaultrules[pgametype] & GTR_NOCUPSELECT));
+	templevelsearch.timeattack = false;
+	templevelsearch.checklocked = true;
 
-	if (mapnum >= nummapheaders)
+	if (templevelsearch.cupmode)
 	{
-		UINT32 tolflag = G_TOLFlag(pgametype);
-		for (mapnum = 0; mapnum < nummapheaders; mapnum++)
+		templevelsearch.cup = kartcupheaders;
+		while (templevelsearch.cup && mapnum >= nummapheaders)
 		{
-			if (!mapheaderinfo[mapnum])
-				continue;
-			if (mapheaderinfo[mapnum]->lumpnum == LUMPERROR)
-				continue;
-			if (!(mapheaderinfo[mapnum]->typeoflevel & tolflag))
-				continue;
-			if (mapheaderinfo[mapnum]->menuflags & LF2_HIDEINMENU)
-				continue;
-			break;
+			mapnum = M_GetFirstLevelInList(&i, &templevelsearch);
+			i = 0;
+			templevelsearch.cup = templevelsearch.cup->next;
 		}
+	}
+	else
+	{
+		mapnum = M_GetFirstLevelInList(&i, &templevelsearch);
 	}
 
 	return mapnum;
@@ -3678,6 +3680,9 @@ static void G_UpdateVisited(void)
 
 	if ((earnedEmblems = M_CompletionEmblems()))
 		CONS_Printf(M_GetText("\x82" "Earned %hu emblem%s for level completion.\n"), (UINT16)earnedEmblems, earnedEmblems > 1 ? "s" : "");
+
+	M_UpdateUnlockablesAndExtraEmblems(true);
+	G_SaveGameData();
 }
 
 static boolean CanSaveLevel(INT32 mapnum)
@@ -3735,11 +3740,16 @@ static void G_GetNextMap(void)
 		else
 		{
 			INT32 lastgametype = gametype;
+			// 5 levels, 2 bonus stages: after rounds 2 and 4 (but flexible enough to accomodate other solutions)
+			UINT8 bonusmodulo = (grandprixinfo.cup->numlevels+1)/(grandprixinfo.cup->numbonus+1);
+			UINT8 bonusindex = (grandprixinfo.roundnum / bonusmodulo) - 1;
 
 			// If we're in a GP event, don't immediately follow it up with another.
 			// I also suspect this will not work with online GP so I'm gonna prevent it right now.
 			// The server might have to communicate eventmode (alongside other GP data) in XD_MAP later.
-			if (netgame || grandprixinfo.eventmode != GPEVENT_NONE)
+			if (netgame)
+				;
+			else if	(grandprixinfo.eventmode != GPEVENT_NONE)
 			{
 				grandprixinfo.eventmode = GPEVENT_NONE;
 
@@ -3777,11 +3787,13 @@ static void G_GetNextMap(void)
 					}
 				}
 			}
-			else if (grandprixinfo.roundnum == (grandprixinfo.cup->numlevels+1)/2) // 3 for a 5-map cup
+			else if ((grandprixinfo.cup->numbonus > 0)
+				&& (grandprixinfo.roundnum % bonusmodulo) == 0
+				&& bonusindex < MAXBONUSLIST)
 			{
 				// todo any other condition?
 				{
-					const INT32 cupLevelNum = grandprixinfo.cup->cachedlevels[CUPCACHE_BONUS];
+					const INT32 cupLevelNum = grandprixinfo.cup->cachedlevels[CUPCACHE_BONUS + bonusindex];
 					if (cupLevelNum < nummapheaders && mapheaderinfo[cupLevelNum]
 						&& mapheaderinfo[cupLevelNum]->typeoflevel & (TOL_BOSS|TOL_BATTLE))
 					{
@@ -3845,7 +3857,7 @@ static void G_GetNextMap(void)
 		UINT32 tolflag = G_TOLFlag(gametype);
 		register INT16 cm;
 
-		if (gametyperules & GTR_CAMPAIGN)
+		if (!(gametyperules & GTR_NOCUPSELECT))
 		{
 			cupheader_t *cup = mapheaderinfo[gamemap-1]->cup;
 			UINT8 gettingresult = 0;
@@ -3853,7 +3865,7 @@ static void G_GetNextMap(void)
 			while (cup)
 			{
 				// Not unlocked? Grab the next result afterwards
-				if (!marathonmode && cup->unlockrequired != -1 && !unlockables[cup->unlockrequired].unlocked)
+				if (!marathonmode && M_CupLocked(cup))
 				{
 					cup = cup->next;
 					gettingresult = 1;
@@ -3871,6 +3883,12 @@ static void G_GetNextMap(void)
 						|| !(mapheaderinfo[cm]->typeoflevel & tolflag)
 						|| (!marathonmode && M_MapLocked(cm+1)))
 						continue;
+
+					// If the map is in multiple cups, only consider the first one valid.
+					if (mapheaderinfo[cm]->cup != cup)
+					{
+						continue;
+					}
 
 					// Grab the first valid after the map you're on
 					if (gettingresult)
@@ -4201,10 +4219,6 @@ static void G_DoContinued(void)
 	// Reset score
 	pl->score = 0;
 
-	// Allow tokens to come back
-	tokenlist = 0;
-	token = 0;
-
 	if (!(netgame || multiplayer || demo.playback || demo.recording || metalrecording || modeattacking) && !usedCheats && cursaveslot > 0)
 		G_SaveGameOver((UINT32)cursaveslot, true);
 
@@ -4266,11 +4280,30 @@ void G_EndGame(void)
 // Sets a tad of default info we need.
 void G_LoadGameSettings(void)
 {
+	INT32 i;
+
 	// initialize free sfx slots for skin sounds
 	S_InitRuntimeSounds();
+
+	// Prepare skincolor material.
+	for (i = 0; i < MAXSKINCOLORS; i++)
+	{
+		Color_cons_t[i].value = Followercolor_cons_t[i+2].value = i;
+		Color_cons_t[i].strvalue = Followercolor_cons_t[i+2].strvalue = skincolors[i].name;
+	}
+
+	Followercolor_cons_t[1].value = FOLLOWERCOLOR_MATCH;
+	Followercolor_cons_t[1].strvalue = "Match"; // Add "Match" option, which will make the follower color match the player's
+
+	Followercolor_cons_t[0].value = FOLLOWERCOLOR_OPPOSITE;
+	Followercolor_cons_t[0].strvalue = "Opposite"; // Add "Opposite" option, ...which is like "Match", but for coloropposite.
+
+	Color_cons_t[MAXSKINCOLORS].value = Followercolor_cons_t[MAXSKINCOLORS+2].value = 0;
+	Color_cons_t[MAXSKINCOLORS].strvalue = Followercolor_cons_t[MAXSKINCOLORS+2].strvalue = NULL;
 }
 
-#define GD_VERSIONCHECK 0xBA5ED444 // Change every major version, as usual
+#define GD_VERSIONCHECK 0xBA5ED123 // Change every major version, as usual
+#define GD_VERSIONMINOR 0 // Change every format update
 
 // G_LoadGameData
 // Loads the main data file, which stores information such as emblems found, etc.
@@ -4279,21 +4312,22 @@ void G_LoadGameData(void)
 	size_t length;
 	UINT32 i, j;
 	UINT32 versionID;
+	UINT8 versionMinor;
 	UINT8 rtemp;
 
 	//For records
 	UINT32 numgamedatamapheaders;
 
 	// Stop saving, until we successfully load it again.
-	gamedataloaded = false;
+	gamedata->loaded = false;
 
 	// Clear things so previously read gamedata doesn't transfer
 	// to new gamedata
-	G_ClearRecords(); // main and nights records
+	G_ClearRecords(); // records
 	M_ClearSecrets(); // emblems, unlocks, maps visited, etc
 
-	totalplaytime = 0; // total play time (separate from all)
-	matchesplayed = 0; // SRB2Kart: matches played & finished
+	gamedata->totalplaytime = 0; // total play time (separate from all)
+	gamedata->matchesplayed = 0; // SRB2Kart: matches played & finished
 
 	if (M_CheckParm("-nodata"))
 	{
@@ -4304,7 +4338,7 @@ void G_LoadGameData(void)
 	if (M_CheckParm("-resetdata"))
 	{
 		// Don't load, but do save. (essentially, reset)
-		gamedataloaded = true;
+		gamedata->loaded = true;
 		return; 
 	}
 
@@ -4312,7 +4346,7 @@ void G_LoadGameData(void)
 	if (!length)
 	{
 		// No gamedata. We can save a new one.
-		gamedataloaded = true;
+		gamedata->loaded = true;
 		return;
 	}
 
@@ -4331,8 +4365,16 @@ void G_LoadGameData(void)
 		I_Error("Game data is not for Ring Racers v2.0.\nDelete %s(maybe in %s) and try again.", gamedatafilename, gdfolder);
 	}
 
-	totalplaytime = READUINT32(save_p);
-	matchesplayed = READUINT32(save_p);
+	versionMinor = READUINT8(save_p);
+	if (versionMinor > GD_VERSIONMINOR)
+	{
+		Z_Free(savebuffer);
+		save_p = NULL;
+		I_Error("Game data is from the future! (expected %d, got %d)", GD_VERSIONMINOR, versionMinor);
+	}
+
+	gamedata->totalplaytime = READUINT32(save_p);
+	gamedata->matchesplayed = READUINT32(save_p);
 
 	{
 		// Quick & dirty hash for what mod this save file is for.
@@ -4351,32 +4393,49 @@ void G_LoadGameData(void)
 	{
 		rtemp = READUINT8(save_p);
 		for (j = 0; j < 8 && j+i < MAXEMBLEMS; ++j)
-			emblemlocations[j+i].collected = ((rtemp >> j) & 1);
-		i += j;
-	}
-	for (i = 0; i < MAXEXTRAEMBLEMS;)
-	{
-		rtemp = READUINT8(save_p);
-		for (j = 0; j < 8 && j+i < MAXEXTRAEMBLEMS; ++j)
-			extraemblems[j+i].collected = ((rtemp >> j) & 1);
+			gamedata->collected[j+i] = ((rtemp >> j) & 1);
 		i += j;
 	}
 	for (i = 0; i < MAXUNLOCKABLES;)
 	{
 		rtemp = READUINT8(save_p);
 		for (j = 0; j < 8 && j+i < MAXUNLOCKABLES; ++j)
-			unlockables[j+i].unlocked = ((rtemp >> j) & 1);
+			gamedata->unlocked[j+i] = ((rtemp >> j) & 1);
+		i += j;
+	}
+	for (i = 0; i < MAXUNLOCKABLES;)
+	{
+		rtemp = READUINT8(save_p);
+		for (j = 0; j < 8 && j+i < MAXUNLOCKABLES; ++j)
+			gamedata->unlockpending[j+i] = ((rtemp >> j) & 1);
 		i += j;
 	}
 	for (i = 0; i < MAXCONDITIONSETS;)
 	{
 		rtemp = READUINT8(save_p);
 		for (j = 0; j < 8 && j+i < MAXCONDITIONSETS; ++j)
-			conditionSets[j+i].achieved = ((rtemp >> j) & 1);
+			gamedata->achieved[j+i] = ((rtemp >> j) & 1);
 		i += j;
 	}
 
-	timesBeaten = READUINT32(save_p);
+	gamedata->challengegridwidth = READUINT16(save_p);
+	Z_Free(gamedata->challengegrid);
+	if (gamedata->challengegridwidth)
+	{
+		gamedata->challengegrid = Z_Malloc(
+			(gamedata->challengegridwidth * CHALLENGEGRIDHEIGHT * sizeof(UINT8)),
+			PU_STATIC, NULL);
+		for (i = 0; i < (gamedata->challengegridwidth * CHALLENGEGRIDHEIGHT); i++)
+		{
+			gamedata->challengegrid[i] = READUINT8(save_p);
+		}
+	}
+	else
+	{
+		gamedata->challengegrid = NULL;
+	}
+
+	gamedata->timesBeaten = READUINT32(save_p);
 
 	// Main records
 	numgamedatamapheaders = READUINT32(save_p);
@@ -4428,10 +4487,10 @@ void G_LoadGameData(void)
 	// It used to do this much earlier, but this would cause the gamedata to
 	// save over itself when it I_Errors from the corruption landing point below,
 	// which can accidentally delete players' legitimate data if the code ever has any tiny mistakes!
-	gamedataloaded = true;
+	gamedata->loaded = true;
 
 	// Silent update unlockables in case they're out of sync with conditions
-	M_SilentUpdateUnlockablesAndEmblems();
+	M_UpdateUnlockablesAndExtraEmblems(false);
 
 	return;
 
@@ -4457,10 +4516,22 @@ void G_SaveGameData(void)
 	INT32 i, j;
 	UINT8 btemp;
 
-	if (!gamedataloaded)
+	if (!gamedata->loaded)
 		return; // If never loaded (-nodata), don't save
 
-	length = (4+4+4+1+(MAXEMBLEMS)+MAXEXTRAEMBLEMS+MAXUNLOCKABLES+MAXCONDITIONSETS+4+4);
+	if (usedCheats)
+	{
+#ifdef DEVELOP
+		CONS_Alert(CONS_WARNING, M_GetText("Cheats used - Gamedata will not be saved.\n"));
+#endif
+		return;
+	}
+
+	length = (4+1+4+4+1+(MAXEMBLEMS+(MAXUNLOCKABLES*2)+MAXCONDITIONSETS)+4+4+2);
+	if (gamedata->challengegrid)
+	{
+		length += gamedata->challengegridwidth * CHALLENGEGRIDHEIGHT;
+	}
 	length += nummapheaders * (MAXMAPLUMPNAME+1+4+4);
 
 	save_p = savebuffer = (UINT8 *)malloc(length);
@@ -4470,18 +4541,12 @@ void G_SaveGameData(void)
 		return;
 	}
 
-	if (usedCheats)
-	{
-		free(savebuffer);
-		save_p = savebuffer = NULL;
-		return;
-	}
-
 	// Version test
 
 	WRITEUINT32(save_p, GD_VERSIONCHECK); // 4
-	WRITEUINT32(save_p, totalplaytime); // 4
-	WRITEUINT32(save_p, matchesplayed); // 4
+	WRITEUINT8(save_p, GD_VERSIONMINOR); // 1
+	WRITEUINT32(save_p, gamedata->totalplaytime); // 4
+	WRITEUINT32(save_p, gamedata->matchesplayed); // 4
 	WRITEUINT32(save_p, quickncasehash(timeattackfolder, 64));
 
 	// To save space, use one bit per collected/achieved/unlocked flag
@@ -4489,36 +4554,52 @@ void G_SaveGameData(void)
 	{
 		btemp = 0;
 		for (j = 0; j < 8 && j+i < MAXEMBLEMS; ++j)
-			btemp |= (emblemlocations[j+i].collected << j);
-		WRITEUINT8(save_p, btemp);
-		i += j;
-	}
-	for (i = 0; i < MAXEXTRAEMBLEMS;) // MAXEXTRAEMBLEMS * 1;
-	{
-		btemp = 0;
-		for (j = 0; j < 8 && j+i < MAXEXTRAEMBLEMS; ++j)
-			btemp |= (extraemblems[j+i].collected << j);
-		WRITEUINT8(save_p, btemp);
-		i += j;
-	}
-	for (i = 0; i < MAXUNLOCKABLES;) // MAXUNLOCKABLES * 1;
-	{
-		btemp = 0;
-		for (j = 0; j < 8 && j+i < MAXUNLOCKABLES; ++j)
-			btemp |= (unlockables[j+i].unlocked << j);
-		WRITEUINT8(save_p, btemp);
-		i += j;
-	}
-	for (i = 0; i < MAXCONDITIONSETS;) // MAXCONDITIONSETS * 1;
-	{
-		btemp = 0;
-		for (j = 0; j < 8 && j+i < MAXCONDITIONSETS; ++j)
-			btemp |= (conditionSets[j+i].achieved << j);
+			btemp |= (gamedata->collected[j+i] << j);
 		WRITEUINT8(save_p, btemp);
 		i += j;
 	}
 
-	WRITEUINT32(save_p, timesBeaten); // 4
+	// MAXUNLOCKABLES * 2;
+	for (i = 0; i < MAXUNLOCKABLES;)
+	{
+		btemp = 0;
+		for (j = 0; j < 8 && j+i < MAXUNLOCKABLES; ++j)
+			btemp |= (gamedata->unlocked[j+i] << j);
+		WRITEUINT8(save_p, btemp);
+		i += j;
+	}
+	for (i = 0; i < MAXUNLOCKABLES;)
+	{
+		btemp = 0;
+		for (j = 0; j < 8 && j+i < MAXUNLOCKABLES; ++j)
+			btemp |= (gamedata->unlockpending[j+i] << j);
+		WRITEUINT8(save_p, btemp);
+		i += j;
+	}
+
+	for (i = 0; i < MAXCONDITIONSETS;) // MAXCONDITIONSETS * 1;
+	{
+		btemp = 0;
+		for (j = 0; j < 8 && j+i < MAXCONDITIONSETS; ++j)
+			btemp |= (gamedata->achieved[j+i] << j);
+		WRITEUINT8(save_p, btemp);
+		i += j;
+	}
+
+	if (gamedata->challengegrid) // 2 + gamedata->challengegridwidth * CHALLENGEGRIDHEIGHT
+	{
+		WRITEUINT16(save_p, gamedata->challengegridwidth);
+		for (i = 0; i < (gamedata->challengegridwidth * CHALLENGEGRIDHEIGHT); i++)
+		{
+			WRITEUINT8(save_p, gamedata->challengegrid[i]);
+		}
+	}
+	else // 2
+	{
+		WRITEUINT16(save_p, 0);
+	}
+
+	WRITEUINT32(save_p, gamedata->timesBeaten); // 4
 
 	// Main records
 	WRITEUINT32(save_p, nummapheaders); // 4

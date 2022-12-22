@@ -295,10 +295,10 @@ consvar_t cv_follower[MAXSPLITSCREENPLAYERS] = {
 
 // player's follower colors... Also saved...
 consvar_t cv_followercolor[MAXSPLITSCREENPLAYERS] = {
-	CVAR_INIT ("followercolor", "1", CV_SAVE|CV_CALL|CV_NOINIT, Followercolor_cons_t, Followercolor_OnChange),
-	CVAR_INIT ("followercolor2", "1", CV_SAVE|CV_CALL|CV_NOINIT, Followercolor_cons_t, Followercolor2_OnChange),
-	CVAR_INIT ("followercolor3", "1", CV_SAVE|CV_CALL|CV_NOINIT, Followercolor_cons_t, Followercolor3_OnChange),
-	CVAR_INIT ("followercolor4", "1", CV_SAVE|CV_CALL|CV_NOINIT, Followercolor_cons_t, Followercolor4_OnChange)
+	CVAR_INIT ("followercolor", "Match", CV_SAVE|CV_CALL|CV_NOINIT, Followercolor_cons_t, Followercolor_OnChange),
+	CVAR_INIT ("followercolor2", "Match", CV_SAVE|CV_CALL|CV_NOINIT, Followercolor_cons_t, Followercolor2_OnChange),
+	CVAR_INIT ("followercolor3", "Match", CV_SAVE|CV_CALL|CV_NOINIT, Followercolor_cons_t, Followercolor3_OnChange),
+	CVAR_INIT ("followercolor4", "Match", CV_SAVE|CV_CALL|CV_NOINIT, Followercolor_cons_t, Followercolor4_OnChange)
 };
 
 // last selected profile, unaccessible cvar only set internally but is saved.
@@ -360,36 +360,38 @@ consvar_t cv_joyscale[MAXSPLITSCREENPLAYERS] = { //Alam: Dummy for save
 #endif
 
 // SRB2kart
-consvar_t cv_sneaker = 				CVAR_INIT ("sneaker", 			"On", CV_NETVAR, CV_OnOff, NULL);
-consvar_t cv_rocketsneaker = 		CVAR_INIT ("rocketsneaker", 	"On", CV_NETVAR, CV_OnOff, NULL);
-consvar_t cv_invincibility = 		CVAR_INIT ("invincibility", 	"On", CV_NETVAR, CV_OnOff, NULL);
-consvar_t cv_banana = 				CVAR_INIT ("banana", 			"On", CV_NETVAR, CV_OnOff, NULL);
-consvar_t cv_eggmanmonitor = 		CVAR_INIT ("eggmanmonitor", 	"On", CV_NETVAR, CV_OnOff, NULL);
-consvar_t cv_orbinaut = 			CVAR_INIT ("orbinaut", 			"On", CV_NETVAR, CV_OnOff, NULL);
-consvar_t cv_jawz = 				CVAR_INIT ("jawz", 				"On", CV_NETVAR, CV_OnOff, NULL);
-consvar_t cv_mine = 				CVAR_INIT ("mine", 				"On", CV_NETVAR, CV_OnOff, NULL);
-consvar_t cv_landmine = 			CVAR_INIT ("landmine", 			"On", CV_NETVAR, CV_OnOff, NULL);
-consvar_t cv_ballhog = 				CVAR_INIT ("ballhog", 			"On", CV_NETVAR, CV_OnOff, NULL);
-consvar_t cv_selfpropelledbomb =	CVAR_INIT ("selfpropelledbomb", "On", CV_NETVAR, CV_OnOff, NULL);
-consvar_t cv_grow = 				CVAR_INIT ("grow", 				"On", CV_NETVAR, CV_OnOff, NULL);
-consvar_t cv_shrink = 				CVAR_INIT ("shrink", 			"On", CV_NETVAR, CV_OnOff, NULL);
-consvar_t cv_lightningshield = 		CVAR_INIT ("lightningshield", 	"On", CV_NETVAR, CV_OnOff, NULL);
-consvar_t cv_bubbleshield = 		CVAR_INIT ("bubbleshield", 		"On", CV_NETVAR, CV_OnOff, NULL);
-consvar_t cv_flameshield = 			CVAR_INIT ("flameshield", 		"On", CV_NETVAR, CV_OnOff, NULL);
-consvar_t cv_hyudoro = 				CVAR_INIT ("hyudoro", 			"On", CV_NETVAR, CV_OnOff, NULL);
-consvar_t cv_pogospring = 			CVAR_INIT ("pogospring", 		"On", CV_NETVAR, CV_OnOff, NULL);
-consvar_t cv_superring = 			CVAR_INIT ("superring", 		"On", CV_NETVAR, CV_OnOff, NULL);
-consvar_t cv_kitchensink = 			CVAR_INIT ("kitchensink", 		"On", CV_NETVAR, CV_OnOff, NULL);
-consvar_t cv_droptarget = 			CVAR_INIT ("droptarget", 		"On", CV_NETVAR, CV_OnOff, NULL);
-consvar_t cv_gardentop = 			CVAR_INIT ("gardentop", 		"On", CV_NETVAR, CV_OnOff, NULL);
-
-consvar_t cv_dualsneaker = 			CVAR_INIT ("dualsneaker", 		"On", CV_NETVAR, CV_OnOff, NULL);
-consvar_t cv_triplesneaker = 		CVAR_INIT ("triplesneaker", 	"On", CV_NETVAR, CV_OnOff, NULL);
-consvar_t cv_triplebanana = 		CVAR_INIT ("triplebanana", 		"On", CV_NETVAR, CV_OnOff, NULL);
-consvar_t cv_decabanana = 			CVAR_INIT ("decabanana", 		"On", CV_NETVAR, CV_OnOff, NULL);
-consvar_t cv_tripleorbinaut = 		CVAR_INIT ("tripleorbinaut", 	"On", CV_NETVAR, CV_OnOff, NULL);
-consvar_t cv_quadorbinaut = 		CVAR_INIT ("quadorbinaut", 		"On", CV_NETVAR, CV_OnOff, NULL);
-consvar_t cv_dualjawz = 			CVAR_INIT ("dualjawz", 			"On", CV_NETVAR, CV_OnOff, NULL);
+consvar_t cv_items[NUMKARTRESULTS-1] = {
+	CVAR_INIT ("sneaker", 			"On", CV_NETVAR, CV_OnOff, NULL),
+	CVAR_INIT ("rocketsneaker", 	"On", CV_NETVAR, CV_OnOff, NULL),
+	CVAR_INIT ("invincibility", 	"On", CV_NETVAR, CV_OnOff, NULL),
+	CVAR_INIT ("banana", 			"On", CV_NETVAR, CV_OnOff, NULL),
+	CVAR_INIT ("eggmanmonitor", 	"On", CV_NETVAR, CV_OnOff, NULL),
+	CVAR_INIT ("orbinaut", 			"On", CV_NETVAR, CV_OnOff, NULL),
+	CVAR_INIT ("jawz", 				"On", CV_NETVAR, CV_OnOff, NULL),
+	CVAR_INIT ("mine", 				"On", CV_NETVAR, CV_OnOff, NULL),
+	CVAR_INIT ("landmine", 			"On", CV_NETVAR, CV_OnOff, NULL),
+	CVAR_INIT ("ballhog", 			"On", CV_NETVAR, CV_OnOff, NULL),
+	CVAR_INIT ("selfpropelledbomb", "On", CV_NETVAR, CV_OnOff, NULL),
+	CVAR_INIT ("grow", 				"On", CV_NETVAR, CV_OnOff, NULL),
+	CVAR_INIT ("shrink", 			"On", CV_NETVAR, CV_OnOff, NULL),
+	CVAR_INIT ("lightningshield", 	"On", CV_NETVAR, CV_OnOff, NULL),
+	CVAR_INIT ("bubbleshield", 		"On", CV_NETVAR, CV_OnOff, NULL),
+	CVAR_INIT ("flameshield", 		"On", CV_NETVAR, CV_OnOff, NULL),
+	CVAR_INIT ("hyudoro", 			"On", CV_NETVAR, CV_OnOff, NULL),
+	CVAR_INIT ("pogospring", 		"On", CV_NETVAR, CV_OnOff, NULL),
+	CVAR_INIT ("superring", 		"On", CV_NETVAR, CV_OnOff, NULL),
+	CVAR_INIT ("kitchensink", 		"On", CV_NETVAR, CV_OnOff, NULL),
+	CVAR_INIT ("droptarget", 		"On", CV_NETVAR, CV_OnOff, NULL),
+	CVAR_INIT ("gardentop", 		"On", CV_NETVAR, CV_OnOff, NULL),
+	CVAR_INIT ("gachabom", 			"On", CV_NETVAR, CV_OnOff, NULL),
+	CVAR_INIT ("dualsneaker", 		"On", CV_NETVAR, CV_OnOff, NULL),
+	CVAR_INIT ("triplesneaker", 	"On", CV_NETVAR, CV_OnOff, NULL),
+	CVAR_INIT ("triplebanana", 		"On", CV_NETVAR, CV_OnOff, NULL),
+	CVAR_INIT ("tripleorbinaut", 	"On", CV_NETVAR, CV_OnOff, NULL),
+	CVAR_INIT ("quadorbinaut", 		"On", CV_NETVAR, CV_OnOff, NULL),
+	CVAR_INIT ("dualjawz", 			"On", CV_NETVAR, CV_OnOff, NULL),
+	CVAR_INIT ("triplegachabom", 	"On", CV_NETVAR, CV_OnOff, NULL)
+};
 
 consvar_t cv_kartspeed = CVAR_INIT ("gamespeed", "Auto", CV_NETVAR|CV_CALL|CV_NOINIT, kartspeed_cons_t, KartSpeed_OnChange);
 static CV_PossibleValue_t kartbumpers_cons_t[] = {{1, "MIN"}, {12, "MAX"}, {0, NULL}};
@@ -451,6 +453,8 @@ consvar_t cv_kartdebugdirector = CVAR_INIT ("debugdirector", "Off", CV_CHEAT, CV
 consvar_t cv_spbtest = CVAR_INIT ("spbtest", "Off", CV_CHEAT|CV_NETVAR, CV_OnOff, NULL);
 consvar_t cv_gptest = CVAR_INIT ("gptest", "Off", CV_CHEAT|CV_NETVAR, CV_OnOff, NULL);
 
+consvar_t cv_reducevfx = CVAR_INIT ("reducevfx", "No", CV_SAVE, CV_YesNo, NULL);
+
 static CV_PossibleValue_t votetime_cons_t[] = {{10, "MIN"}, {3600, "MAX"}, {0, NULL}};
 consvar_t cv_votetime = CVAR_INIT ("votetime", "20", CV_NETVAR, votetime_cons_t, NULL);
 
@@ -465,6 +469,7 @@ consvar_t cv_autobalance = CVAR_INIT ("autobalance", "Off", CV_SAVE|CV_NETVAR|CV
 consvar_t cv_teamscramble = CVAR_INIT ("teamscramble", "Off", CV_SAVE|CV_NETVAR|CV_CALL|CV_NOINIT, teamscramble_cons_t, TeamScramble_OnChange);
 consvar_t cv_scrambleonchange = CVAR_INIT ("scrambleonchange", "Off", CV_SAVE|CV_NETVAR, teamscramble_cons_t, NULL);
 
+consvar_t cv_alttitle = CVAR_INIT ("alttitle", "Off", CV_CALL|CV_NOSHOWHELP|CV_NOINIT|CV_SAVE, CV_OnOff, AltTitle_OnChange);
 consvar_t cv_itemfinder = CVAR_INIT ("itemfinder", "Off", CV_CALL|CV_NOSHOWHELP, CV_OnOff, ItemFinder_OnChange);
 
 // Scoring type options
@@ -802,8 +807,6 @@ void D_RegisterServerCommands(void)
 	CV_RegisterVar(&cv_pingmeasurement);
 	CV_RegisterVar(&cv_showviewpointtext);
 
-	CV_RegisterVar(&cv_director);
-
 	CV_RegisterVar(&cv_schedule);
 	CV_RegisterVar(&cv_automate);
 	CV_RegisterVar(&cv_livestudioaudience);
@@ -816,6 +819,23 @@ void D_RegisterServerCommands(void)
 
 	CV_RegisterVar(&cv_discordinvites);
 	RegisterNetXCmd(XD_DISCORD, Got_DiscordInfo);
+
+	COM_AddCommand("numthinkers", Command_Numthinkers_f);
+	COM_AddCommand("countmobjs", Command_CountMobjs_f);
+
+	CV_RegisterVar(&cv_recordmultiplayerdemos);
+	CV_RegisterVar(&cv_netdemosyncquality);
+
+	CV_RegisterVar(&cv_shoutname);
+	CV_RegisterVar(&cv_shoutcolor);
+	CV_RegisterVar(&cv_autoshout);
+
+#ifdef _DEBUG
+	COM_AddCommand("causecfail", Command_CauseCfail_f);
+#endif
+#ifdef LUA_ALLOW_BYTECODE
+	COM_AddCommand("dumplua", Command_Dumplua_f);
+#endif
 }
 
 // =========================================================================
@@ -831,27 +851,6 @@ void D_RegisterClientCommands(void)
 {
 	INT32 i;
 
-	for (i = 0; i < MAXSKINCOLORS; i++)
-	{
-		Color_cons_t[i].value = i;
-		Color_cons_t[i].strvalue = skincolors[i].name;
-	}
-
-	for (i = 2; i < MAXSKINCOLORS; i++)
-	{
-		Followercolor_cons_t[i].value = i-2;
-		Followercolor_cons_t[i].strvalue = skincolors[i-2].name;
-	}
-
-	Followercolor_cons_t[1].value = FOLLOWERCOLOR_MATCH;
-	Followercolor_cons_t[1].strvalue = "Match"; // Add "Match" option, which will make the follower color match the player's
-
-	Followercolor_cons_t[0].value = FOLLOWERCOLOR_OPPOSITE;
-	Followercolor_cons_t[0].strvalue = "Opposite"; // Add "Opposite" option, ...which is like "Match", but for coloropposite.
-
-	Color_cons_t[MAXSKINCOLORS].value = Followercolor_cons_t[MAXSKINCOLORS+2].value = 0;
-	Color_cons_t[MAXSKINCOLORS].strvalue = Followercolor_cons_t[MAXSKINCOLORS+2].strvalue = NULL;
-
 	// Set default player names
 	// Monster Iestyn (12/08/19): not sure where else I could have actually put this, but oh well
 	for (i = 0; i < MAXPLAYERS; i++)
@@ -859,9 +858,6 @@ void D_RegisterClientCommands(void)
 
 	if (dedicated)
 		return;
-
-	COM_AddCommand("numthinkers", Command_Numthinkers_f);
-	COM_AddCommand("countmobjs", Command_CountMobjs_f);
 
 	COM_AddCommand("changeteam", Command_Teamchange_f);
 	COM_AddCommand("changeteam2", Command_Teamchange2_f);
@@ -946,6 +942,7 @@ void D_RegisterClientCommands(void)
 	CV_RegisterVar(&cv_mindelay);
 
 	// HUD
+	CV_RegisterVar(&cv_alttitle);
 	CV_RegisterVar(&cv_itemfinder);
 	CV_RegisterVar(&cv_showinputjoy);
 
@@ -957,9 +954,6 @@ void D_RegisterClientCommands(void)
 	CV_RegisterVar(&cv_ghost_staff);
 
 	COM_AddCommand("displayplayer", Command_Displayplayer_f);
-
-	CV_RegisterVar(&cv_recordmultiplayerdemos);
-	CV_RegisterVar(&cv_netdemosyncquality);
 
 	// FIXME: not to be here.. but needs be done for config loading
 	CV_RegisterVar(&cv_globalgamma);
@@ -998,10 +992,6 @@ void D_RegisterClientCommands(void)
 	CV_RegisterVar(&cv_consolechat);
 	CV_RegisterVar(&cv_chatnotifications);
 	CV_RegisterVar(&cv_chatbacktint);
-
-	CV_RegisterVar(&cv_shoutname);
-	CV_RegisterVar(&cv_shoutcolor);
-	CV_RegisterVar(&cv_autoshout);
 
 	CV_RegisterVar(&cv_songcredits);
 	CV_RegisterVar(&cv_tutorialprompt);
@@ -1050,13 +1040,14 @@ void D_RegisterClientCommands(void)
 	// screen.c
 	CV_RegisterVar(&cv_fullscreen);
 	CV_RegisterVar(&cv_renderview);
-	CV_RegisterVar(&cv_renderhitbox);
 	CV_RegisterVar(&cv_vhseffect);
 	CV_RegisterVar(&cv_shittyscreen);
 	CV_RegisterVar(&cv_renderer);
 	CV_RegisterVar(&cv_scr_depth);
 	CV_RegisterVar(&cv_scr_width);
 	CV_RegisterVar(&cv_scr_height);
+
+	CV_RegisterVar(&cv_director);
 
 	CV_RegisterVar(&cv_soundtest);
 
@@ -1078,7 +1069,7 @@ void D_RegisterClientCommands(void)
 //	CV_RegisterVar(&cv_grid);
 //	CV_RegisterVar(&cv_snapto);
 
-	// add cheat commands
+	// add cheats
 	COM_AddCommand("noclip", Command_CheatNoClip_f);
 	COM_AddCommand("god", Command_CheatGod_f);
 	COM_AddCommand("setrings", Command_Setrings_f);
@@ -1093,12 +1084,7 @@ void D_RegisterClientCommands(void)
 	COM_AddCommand("skynum", Command_Skynum_f);
 	COM_AddCommand("weather", Command_Weather_f);
 	COM_AddCommand("grayscale", Command_Grayscale_f);
-#ifdef _DEBUG
-	COM_AddCommand("causecfail", Command_CauseCfail_f);
-#endif
-#ifdef LUA_ALLOW_BYTECODE
-	COM_AddCommand("dumplua", Command_Dumplua_f);
-#endif
+	CV_RegisterVar(&cv_renderhitbox);
 
 #ifdef HAVE_DISCORDRPC
 	CV_RegisterVar(&cv_discordrp);
@@ -1426,26 +1412,29 @@ boolean CanChangeSkinWhilePlaying(INT32 playernum)
 
 static void ForceAllSkins(INT32 forcedskin)
 {
-	INT32 i, j;
+	INT32 i;
+
+	if (demo.playback)
+		return; // DXD_SKIN should handle all changes for us
+
 	for (i = 0; i < MAXPLAYERS; ++i)
 	{
 		if (!playeringame[i])
 			continue;
 
 		SetPlayerSkinByNum(i, forcedskin);
+	}
 
-		// If it's me (or my brother (or my sister (or my trusty pet dog))), set appropriate skin value in cv_skin
-		if (dedicated) // But don't do this for dedicated servers, of course.
+	if (dedicated)
+		return;
+
+	// If it's me (or my brother (or my sister (or my trusty pet dog))), set appropriate skin value in cv_skin
+	for (i = 0; i <= splitscreen; i++)
+	{
+		if (!playeringame[g_localplayers[i]])
 			continue;
 
-		for (j = 0; j <= splitscreen; j++)
-		{
-			if (i == g_localplayers[j])
-			{
-				CV_StealthSet(&cv_skin[j], skins[forcedskin].name);
-				break;
-			}
-		}
+		CV_StealthSet(&cv_skin[i], skins[forcedskin].name);
 	}
 }
 
@@ -1493,8 +1482,10 @@ static void SendNameAndColor(UINT8 n)
 	const INT32 playernum = g_localplayers[n];
 	player_t *player = &players[playernum];
 
-	char buf[MAXPLAYERNAME+9];
+	char buf[MAXPLAYERNAME+12];
 	char *p;
+
+	UINT16 i = 0;
 
 	if (splitscreen < n)
 		return; // can happen if skin4/color4/name4 changed
@@ -1513,9 +1504,10 @@ static void SendNameAndColor(UINT8 n)
 			CV_StealthSetValue(&cv_playercolor[n], skins[player->skin].prefcolor);
 		else if (skincolors[atoi(cv_playercolor[n].defaultvalue)].accessible)
 			CV_StealthSet(&cv_playercolor[n], cv_playercolor[n].defaultvalue);
-		else {
-			UINT16 i = 0;
-			while (i<numskincolors && !skincolors[i].accessible) i++;
+		else
+		{
+			while (i < numskincolors && !skincolors[i].accessible)
+				i++;
 			CV_StealthSetValue(&cv_playercolor[n], (i != numskincolors) ? i : SKINCOLOR_BLUE);
 		}
 	}
@@ -1524,18 +1516,13 @@ static void SendNameAndColor(UINT8 n)
 	if (!cv_followercolor[n].value)
 		CV_StealthSet(&cv_followercolor[n], "Match"); // set it to "Match". I don't care about your stupidity!
 
-	// so like, this is sent before we even use anything like cvars or w/e so it's possible that follower is set to a pretty yikes value, so let's fix that before we send garbage that could crash the game:
-	if (cv_follower[n].value >= numfollowers || cv_follower[n].value < -1)
-		CV_StealthSet(&cv_follower[n], "-1");
-
 	if (!strcmp(cv_playername[n].string, player_names[playernum])
 		&& cv_playercolor[n].value == player->skincolor
-		&& !strcmp(cv_skin[n].string, skins[player->skin].name)
-		&& cv_follower[n].value == player->followerskin
+		&& !stricmp(cv_skin[n].string, skins[player->skin].name)
+		&& !stricmp(cv_follower[n].string,
+			(player->followerskin < 0 ? "None" : followers[player->followerskin].name))
 		&& cv_followercolor[n].value == player->followercolor)
 		return;
-
-	player->availabilities = R_GetSkinAvailabilities();
 
 	// We'll handle it later if we're not playing.
 	if (!Playing())
@@ -1553,30 +1540,30 @@ static void SendNameAndColor(UINT8 n)
 
 		K_KartResetPlayerColor(player);
 
-		// Update follower for local games:
-		if (cv_follower[n].value >= -1 && cv_follower[n].value != player->followerskin)
-			K_SetFollowerByNum(playernum, cv_follower[n].value);
-
-		player->followercolor = cv_followercolor[n].value;
-
-		if (metalrecording && n == 0)
-		{ // Starring Metal Sonic as themselves, obviously.
-			SetPlayerSkinByNum(playernum, 5);
-			CV_StealthSet(&cv_skin[n], skins[5].name);
-		}
-		else if ((foundskin = R_SkinAvailable(cv_skin[n].string)) != -1 && R_SkinUsable(playernum, foundskin))
+		foundskin = R_SkinAvailable(cv_skin[n].string);
+		if (foundskin != -1 && R_SkinUsable(playernum, foundskin, false))
 		{
-			cv_skin[n].value = foundskin;
 			SetPlayerSkin(playernum, cv_skin[n].string);
-			CV_StealthSet(&cv_skin[n], skins[cv_skin[n].value].name);
+			CV_StealthSet(&cv_skin[n], skins[foundskin].name);
+			cv_skin[n].value = foundskin;
 		}
 		else
 		{
-			cv_skin[n].value = players[playernum].skin;
 			CV_StealthSet(&cv_skin[n], skins[player->skin].name);
+			cv_skin[n].value = player->skin;
 			// will always be same as current
 			SetPlayerSkin(playernum, cv_skin[n].string);
 		}
+
+		player->followercolor = cv_followercolor[n].value;
+
+		// Update follower for local games:
+		foundskin = K_FollowerAvailable(cv_follower[n].string);
+		if (!K_FollowerUsable(foundskin))
+			foundskin = -1;
+		CV_StealthSet(&cv_follower[n], (foundskin == -1) ? "None" : followers[foundskin].name);
+		cv_follower[n].value = foundskin;
+		K_SetFollowerByNum(playernum, foundskin);
 
 		return;
 	}
@@ -1601,18 +1588,25 @@ static void SendNameAndColor(UINT8 n)
 	// check if player has the skin loaded (cv_skin may have
 	// the name of a skin that was available in the previous game)
 	cv_skin[n].value = R_SkinAvailable(cv_skin[n].string);
-	if ((cv_skin[n].value < 0) || !R_SkinUsable(playernum, cv_skin[n].value))
+	if ((cv_skin[n].value < 0) || !R_SkinUsable(playernum, cv_skin[n].value, false))
 	{
 		CV_StealthSet(&cv_skin[n], DEFAULTSKIN);
 		cv_skin[n].value = 0;
 	}
 
+	cv_follower[n].value = K_FollowerAvailable(cv_follower[n].string);
+	if (cv_follower[n].value < 0 || !K_FollowerUsable(cv_follower[n].value))
+	{
+		CV_StealthSet(&cv_follower[n], "None");
+		cv_follower[n].value = -1;
+	}
+
 	// Finally write out the complete packet and send it off.
 	WRITESTRINGN(p, cv_playername[n].zstring, MAXPLAYERNAME);
-	WRITEUINT32(p, (UINT32)player->availabilities);
 	WRITEUINT16(p, (UINT16)cv_playercolor[n].value);
 	WRITEUINT8(p, (UINT8)cv_skin[n].value);
-	WRITESINT8(p, (SINT8)cv_follower[n].value);
+	WRITEINT16(p, (INT16)cv_follower[n].value);
+	//CONS_Printf("Sending follower id %d\n", (INT16)cv_follower[n].value);
 	WRITEUINT16(p, (UINT16)cv_followercolor[n].value);
 
 	SendNetXCmdForPlayer(n, XD_NAMEANDCOLOR, buf, p - buf);
@@ -1624,7 +1618,7 @@ static void Got_NameAndColor(UINT8 **cp, INT32 playernum)
 	char name[MAXPLAYERNAME+1];
 	UINT16 color, followercolor;
 	UINT8 skin;
-	SINT8 follower;
+	INT16 follower;
 	SINT8 localplayer = -1;
 	UINT8 i;
 
@@ -1650,10 +1644,9 @@ static void Got_NameAndColor(UINT8 **cp, INT32 playernum)
 	}
 
 	READSTRINGN(*cp, name, MAXPLAYERNAME);
-	p->availabilities = READUINT32(*cp);
 	color = READUINT16(*cp);
 	skin = READUINT8(*cp);
-	follower = READSINT8(*cp);
+	follower = READINT16(*cp);
 	followercolor = READUINT16(*cp);
 
 	// set name
@@ -1674,56 +1667,20 @@ static void Got_NameAndColor(UINT8 **cp, INT32 playernum)
 	{
 		boolean kick = false;
 
-		// team colors
-		if (G_GametypeHasTeams())
-		{
-			if (p->ctfteam == 1 && p->skincolor != skincolor_redteam)
-				kick = true;
-			else if (p->ctfteam == 2 && p->skincolor != skincolor_blueteam)
-				kick = true;
-		}
-
 		// don't allow inaccessible colors
 		if (skincolors[p->skincolor].accessible == false)
 			kick = true;
 
-		// availabilities
-		for (i = 0; i < MAXSKINS; i++)
-		{
-			UINT32 playerhasunlocked = (p->availabilities & (1 << i));
-			boolean islocked = false;
-			UINT8 j;
-
-			for (j = 0; j < MAXUNLOCKABLES; j++)
-			{
-				if (unlockables[j].type != SECRET_SKIN)
-					continue;
-
-				if (unlockables[j].variable == i)
-				{
-					islocked = true;
-					break;
-				}
-			}
-
-			if (islocked == false && playerhasunlocked == true)
-			{
-				// hacked client that enabled every bit
-				kick = true;
-				break;
-			}
-		}
-
 		if (kick)
 		{
-			CONS_Alert(CONS_WARNING, M_GetText("Illegal color change received from %s (team: %d), color: %d)\n"), player_names[playernum], p->ctfteam, p->skincolor);
+			CONS_Alert(CONS_WARNING, M_GetText("Illegal color change received from %s, color: %d)\n"), player_names[playernum], p->skincolor);
 			SendKick(playernum, KICK_MSG_CON_FAIL);
 			return;
 		}
 	}
 
 	// set skin
-	if (cv_forceskin.value >= 0 && (netgame || multiplayer)) // Server wants everyone to use the same player
+	if (cv_forceskin.value >= 0 && K_CanChangeRules(true)) // Server wants everyone to use the same player
 	{
 		const INT32 forcedskin = cv_forceskin.value;
 		SetPlayerSkinByNum(playernum, forcedskin);
@@ -2905,7 +2862,7 @@ static void Command_Map_f(void)
 	{
 		newencoremode = !newencoremode;
 
-		if (!M_SecretUnlocked(SECRET_ENCORE) && newencoremode == true && !usingcheats)
+		if (!M_SecretUnlocked(SECRET_ENCORE, false) && newencoremode == true && !usingcheats)
 		{
 			CONS_Alert(CONS_NOTICE, M_GetText("You haven't unlocked Encore Mode yet!\n"));
 			return;
@@ -3170,6 +3127,8 @@ static void Command_RandomMap(void)
 
 static void Command_RestartLevel(void)
 {
+	boolean newencore = false;
+
 	if (client && !IsPlayerAdmin(consoleplayer))
 	{
 		CONS_Printf(M_GetText("Only the server or a remote admin can use this.\n"));
@@ -3182,7 +3141,12 @@ static void Command_RestartLevel(void)
 		return;
 	}
 
-	D_MapChange(gamemap, gametype, encoremode, false, 0, false, false);
+	if (cv_kartencore.value != 0)
+	{
+		newencore = (cv_kartencore.value == 1) || encoremode;
+	}
+
+	D_MapChange(gamemap, gametype, newencore, false, 0, false, false);
 }
 
 static void Command_Pause(void)
@@ -4884,12 +4848,25 @@ FUNCNORETURN static ATTRNORETURN void Command_Quit_f(void)
 	I_Quit();
 }
 
+void AltTitle_OnChange(void)
+{
+	if (!cv_alttitle.value)
+		return; // it's fine.
+
+	if (!M_SecretUnlocked(SECRET_ALTTITLE, true))
+	{
+		CONS_Printf(M_GetText("You haven't earned this yet.\n"));
+		CV_StealthSetValue(&cv_itemfinder, 0);
+		return;
+	}
+}
+
 void ItemFinder_OnChange(void)
 {
 	if (!cv_itemfinder.value)
 		return; // it's fine.
 
-	if (!M_SecretUnlocked(SECRET_ITEMFINDER))
+	if (!M_SecretUnlocked(SECRET_ITEMFINDER, true))
 	{
 		CONS_Printf(M_GetText("You haven't earned this yet.\n"));
 		CV_StealthSetValue(&cv_itemfinder, 0);
@@ -5668,7 +5645,7 @@ static void Got_Cheat(UINT8 **cp, INT32 playernum)
 			K_StripItems(player);
 
 			// Cancel roulette if rolling
-			player->itemroulette = 0;
+			player->itemRoulette.active = false;
 
 			player->itemtype = item;
 			player->itemamount = amt;
@@ -5738,11 +5715,6 @@ void Command_ExitGame_f(void)
 
 	for (i = 0; i < MAXPLAYERS; i++)
 		CL_ClearPlayer(i);
-
-	for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
-	{
-		players[g_localplayers[i]].availabilities = R_GetSkinAvailabilities();
-	}
 
 	splitscreen = 0;
 	SplitScreen_OnChange();
@@ -6079,6 +6051,7 @@ static void Name_OnChange(void)
 	{
 		CONS_Alert(CONS_NOTICE, M_GetText("You may not change your name when chat is muted.\n"));
 		CV_StealthSet(&cv_playername[0], player_names[consoleplayer]);
+		return;
 	}
 	else
 		SendNameAndColor(0);
@@ -6119,207 +6092,56 @@ static void Name4_OnChange(void)
 }
 
 // sends the follower change for players
-static void Follower_OnChange(void)
+static void FollowerAny_OnChange(UINT8 pnum)
 {
-	char str[SKINNAMESIZE+1], cpy[SKINNAMESIZE+1];
-	INT32 num;
-
-	// there is a slight chance that we will actually use a string instead so...
-	// let's investigate the string...
-	strcpy(str, cv_follower[0].string);
-	strcpy(cpy, cv_follower[0].string);
-	strlwr(str);
-	if (stricmp(cpy,"0") !=0 && !atoi(cpy))	// yep, that's a string alright...
-	{
-		if (stricmp(cpy, "None") == 0)
-		{
-			CV_StealthSet(&cv_follower[0], "-1");
-
-			if (!Playing())
-				return; // don't send anything there.
-
-			SendNameAndColor(0);
-			return;
-		}
-
-		num = K_FollowerAvailable(str);
-
-		if (num == -1) // that's an error.
-			CONS_Alert(CONS_WARNING, M_GetText("Follower '%s' not found\n"), str);
-
-		CV_StealthSet(&cv_follower[0], str);
-		cv_follower[0].value = num;
-	}
-
 	if (!Playing())
 		return; // don't send anything there.
 
-	SendNameAndColor(0);
+	SendNameAndColor(pnum);
+}
+
+// sends the follower change for players
+static void Follower_OnChange(void)
+{
+	FollowerAny_OnChange(0);
 }
 
 // About the same as Color_OnChange but for followers.
 static void Followercolor_OnChange(void)
 {
-	if (!Playing())
-		return; // do whatever you want if you aren't in the game or don't have a follower.
-
-	if (!P_PlayerMoving(consoleplayer))
-	{
-		// Color change menu scrolling fix is no longer necessary
-		SendNameAndColor(0);
-	}
+	FollowerAny_OnChange(0);
 }
 
 // repeat for the 3 other players
 
 static void Follower2_OnChange(void)
 {
-	char str[SKINNAMESIZE+1], cpy[SKINNAMESIZE+1];
-	INT32 num;
-
-	// there is a slight chance that we will actually use a string instead so...
-	// let's investigate the string...
-	strcpy(str, cv_follower[1].string);
-	strcpy(cpy, cv_follower[1].string);
-	strlwr(str);
-	if (stricmp(cpy,"0") !=0 && !atoi(cpy))	// yep, that's a string alright...
-	{
-		if (stricmp(cpy, "None") == 0)
-		{
-			CV_StealthSet(&cv_follower[1], "-1");
-
-			if (!Playing())
-				return; // don't send anything there.
-
-			SendNameAndColor(1);
-			return;
-		}
-
-		num = K_FollowerAvailable(str);
-
-		if (num == -1) // that's an error.
-			CONS_Alert(CONS_WARNING, M_GetText("Follower '%s' not found\n"), str);
-
-		CV_StealthSet(&cv_follower[1], str);
-		cv_follower[1].value = num;
-	}
-
-	if (!Playing())
-		return; // don't send anything there.
-
-	SendNameAndColor(1);
+	FollowerAny_OnChange(1);
 }
 
 static void Followercolor2_OnChange(void)
 {
-	if (!Playing())
-		return; // do whatever you want if you aren't in the game or don't have a follower.
-
-	if (!P_PlayerMoving(g_localplayers[1]))
-	{
-		// Color change menu scrolling fix is no longer necessary
-		SendNameAndColor(1);
-	}
+	FollowerAny_OnChange(1);
 }
 
 static void Follower3_OnChange(void)
 {
-	char str[SKINNAMESIZE+1], cpy[SKINNAMESIZE+1];
-	INT32 num;
-
-	// there is a slight chance that we will actually use a string instead so...
-	// let's investigate the string...
-	strcpy(str, cv_follower[2].string);
-	strcpy(cpy, cv_follower[2].string);
-	strlwr(str);
-	if (stricmp(cpy,"0") !=0 && !atoi(cpy))	// yep, that's a string alright...
-	{
-		if (stricmp(cpy, "None") == 0)
-		{
-			CV_StealthSet(&cv_follower[2], "-1");
-
-			if (!Playing())
-				return; // don't send anything there.
-
-			SendNameAndColor(2);
-			return;
-		}
-
-		num = K_FollowerAvailable(str);
-
-		if (num == -1) // that's an error.
-			CONS_Alert(CONS_WARNING, M_GetText("Follower '%s' not found\n"), str);
-
-		CV_StealthSet(&cv_follower[2], str);
-		cv_follower[2].value = num;
-	}
-
-	if (!Playing())
-		return; // don't send anything there.
-
-	SendNameAndColor(2);
+	FollowerAny_OnChange(2);
 }
 
 static void Followercolor3_OnChange(void)
 {
-	if (!Playing())
-		return; // do whatever you want if you aren't in the game or don't have a follower.
-
-	if (!P_PlayerMoving(g_localplayers[2]))
-	{
-		// Color change menu scrolling fix is no longer necessary
-		SendNameAndColor(2);
-	}
+	FollowerAny_OnChange(2);
 }
 
 static void Follower4_OnChange(void)
 {
-	char str[SKINNAMESIZE+1], cpy[SKINNAMESIZE+1];
-	INT32 num;
-
-	// there is a slight chance that we will actually use a string instead so...
-	// let's investigate the string...
-	strcpy(str, cv_follower[3].string);
-	strcpy(cpy, cv_follower[3].string);
-	strlwr(str);
-	if (stricmp(cpy,"0") !=0 && !atoi(cpy))	// yep, that's a string alright...
-	{
-		if (stricmp(cpy, "None") == 0)
-		{
-			CV_StealthSet(&cv_follower[3], "-1");
-
-			if (!Playing())
-				return; // don't send anything there.
-
-			SendNameAndColor(3);
-			return;
-		}
-
-		num = K_FollowerAvailable(str);
-
-		if (num == -1) // that's an error.
-			CONS_Alert(CONS_WARNING, M_GetText("Follower '%s' not found\n"), str);
-
-		CV_StealthSet(&cv_follower[3], str);
-		cv_follower[3].value = num;
-	}
-
-	if (!Playing())
-		return; // don't send anything there.
-
-	SendNameAndColor(3);
+	FollowerAny_OnChange(3);
 }
 
 static void Followercolor4_OnChange(void)
 {
-	if (!Playing())
-		return; // do whatever you want if you aren't in the game or don't have a follower.
-
-	if (!P_PlayerMoving(g_localplayers[3]))
-	{
-		// Color change menu scrolling fix is no longer necessary
-		SendNameAndColor(3);
-	}
+	FollowerAny_OnChange(3);
 }
 
 /** Sends a skin change for the console player, unless that player is moving. Also forces them to spectate if the change is done during gameplay
@@ -6339,7 +6161,9 @@ static void Skin_OnChange(void)
 	}
 
 	if (CanChangeSkinWhilePlaying(consoleplayer))
+	{
 		SendNameAndColor(0);
+	}
 	else
 	{
 		CONS_Alert(CONS_NOTICE, M_GetText("You can't change your skin at the moment.\n"));

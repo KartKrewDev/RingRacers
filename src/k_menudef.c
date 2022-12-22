@@ -653,6 +653,9 @@ menuitem_t OPTIONS_ProfileControls[] = {
 	{IT_CONTROL, "OPEN TEAM CHAT", "Do we even have team gamemodes?",
 		NULL, {.routine = M_ProfileSetControl}, gc_teamtalk, 0},
 
+	{IT_CONTROL, "SHOW RANKINGS", "Show mid-game rankings.",
+		NULL, {.routine = M_ProfileSetControl}, gc_rankings, 0},
+
 	{IT_CONTROL, "OPEN CONSOLE", "Opens the developer options console.",
 		NULL, {.routine = M_ProfileSetControl}, gc_console, 0},
 
@@ -1071,7 +1074,6 @@ menuitem_t OPTIONS_GameplayItems[] =
 
 	{IT_KEYHANDLER | IT_NOTHING, NULL, "Bananas",				NULL, {.routine = M_HandleItemToggles}, KITEM_BANANA, 0},
 	{IT_KEYHANDLER | IT_NOTHING, NULL, "Bananas x3",			NULL, {.routine = M_HandleItemToggles}, KRITEM_TRIPLEBANANA, 0},
-	{IT_KEYHANDLER | IT_NOTHING, NULL, "Bananas x10",			NULL, {.routine = M_HandleItemToggles}, KRITEM_TENFOLDBANANA, 0},
 	{IT_KEYHANDLER | IT_NOTHING, NULL, "Proximity Mines",		NULL, {.routine = M_HandleItemToggles}, KITEM_MINE, 0},
 
 	{IT_KEYHANDLER | IT_NOTHING, NULL, "Orbinauts",				NULL, {.routine = M_HandleItemToggles}, KITEM_ORBINAUT, 0},
@@ -1494,14 +1496,14 @@ menuitem_t EXTRAS_Main[] =
 	{IT_STRING | IT_CALL, "Addons", "Add files to customize your experience.",
 		NULL, {.routine = M_Addons}, 0, 0},
 
+	{IT_STRING | IT_CALL, "Challenges", "View the requirements for some of the secret content you can unlock!",
+		NULL, {.routine = M_Challenges}, 0, 0},
+
 	{IT_STRING | IT_CALL, "Replay Hut", "Play the replays you've saved throughout your many races & battles!",
 		NULL, {.routine = M_ReplayHut}, 0, 0},
 
 	{IT_STRING | IT_CALL, "Statistics", "Look back on some of your greatest achievements such as your playtime and wins!",
-		NULL, {NULL}, 0, 0},
-
-	{IT_STRING | IT_TRANSTEXT, "Extras Checklist", "View the requirement for some of the secret content you can unlock!",
-		NULL, {NULL}, 0, 0},
+		NULL, {.routine = M_Statistics}, 0, 0},
 };
 
 // the extras menu essentially reuses the options menu stuff
@@ -1593,6 +1595,12 @@ menuitem_t PAUSE_Main[] =
 
 	{IT_STRING | IT_SUBMENU, "CHANGE MAP", "M_ICOMAP",
 		NULL, {.submenu = &PAUSE_GamemodesDef}, 0, 0},
+
+	{IT_STRING | IT_CALL, "RESTART MAP", "M_ICORE",
+		NULL, {.routine = M_RestartMap}, 0, 0},
+
+	{IT_STRING | IT_CALL, "TRY AGAIN", "M_ICORE",
+		NULL, {.routine = M_TryAgain}, 0, 0},
 
 #ifdef HAVE_DISCORDRPC
 	{IT_STRING | IT_CALL, "DISCORD REQUESTS", "M_ICODIS",
@@ -1735,4 +1743,40 @@ menu_t MISC_AddonsDef = {
 	NULL,
 	NULL,
 	NULL
+};
+
+// Challenges.
+menuitem_t MISC_ChallengesStatsDummyMenu[] =
+{
+	{IT_STRING | IT_CALL, "Back", NULL, NULL, {.routine = M_GoBack}, 0, 0},
+};
+
+menu_t MISC_ChallengesDef = {
+	sizeof (MISC_ChallengesStatsDummyMenu)/sizeof (menuitem_t),
+	&MainDef,
+	0,
+	MISC_ChallengesStatsDummyMenu,
+	BASEVIDWIDTH/2, 32,
+	0, 0,
+	98, 0,
+	M_DrawChallenges,
+	M_ChallengesTick,
+	NULL,
+	NULL,
+	M_ChallengesInputs,
+};
+
+menu_t MISC_StatisticsDef = {
+	sizeof (MISC_ChallengesStatsDummyMenu)/sizeof (menuitem_t),
+	&MainDef,
+	0,
+	MISC_ChallengesStatsDummyMenu,
+	280, 185,
+	0, 0,
+	98, 0,
+	M_DrawStatistics,
+	NULL,
+	NULL,
+	NULL,
+	M_StatisticsInputs,
 };

@@ -1,119 +1,205 @@
-# SRB2 Core
+add_executable(SRB2SDL2 MACOSX_BUNDLE WIN32
+	comptime.c
+	md5.c
+	config.h.in
+	string.c
+	d_main.c
+	d_clisrv.c
+	d_net.c
+	d_netfil.c
+	d_netcmd.c
+	dehacked.c
+	deh_soc.c
+	deh_lua.c
+	deh_tables.c
+	z_zone.c
+	f_finale.c
+	f_wipe.c
+	g_demo.c
+	g_game.c
+	g_input.c
+	g_splitscreen.c
+	am_map.c
+	command.c
+	console.c
+	font.c
+	hu_stuff.c
+	i_time.c
+	y_inter.c
+	st_stuff.c
+	m_aatree.c
+	m_anigif.c
+	m_argv.c
+	m_bbox.c
+	m_cheat.c
+	m_cond.c
+	m_easing.c
+	m_fixed.c
+	m_misc.c
+	m_perfstats.c
+	m_random.c
+	m_queue.c
+	info.c
+	p_ceilng.c
+	p_enemy.c
+	p_floor.c
+	p_inter.c
+	p_lights.c
+	p_map.c
+	p_maputl.c
+	p_mobj.c
+	p_polyobj.c
+	p_saveg.c
+	p_setup.c
+	p_sight.c
+	p_spec.c
+	p_telept.c
+	p_tick.c
+	p_user.c
+	p_slopes.c
+	tables.c
+	r_bsp.c
+	r_data.c
+	r_draw.c
+	r_fps.c
+	r_main.c
+	r_plane.c
+	r_segs.c
+	r_skins.c
+	r_sky.c
+	r_splats.c
+	r_things.c
+	r_bbox.c
+	r_textures.c
+	r_patch.c
+	r_patchrotation.c
+	r_picformats.c
+	r_portal.c
+	screen.c
+	taglist.c
+	v_video.c
+	s_sound.c
+	sounds.c
+	w_wad.c
+	filesrch.c
+	mserv.c
+	http-mserv.c
+	i_tcp.c
+	lzf.c
+	vid_copy.s
+	lua_script.c
+	lua_baselib.c
+	lua_mathlib.c
+	lua_hooklib.c
+	lua_consolelib.c
+	lua_infolib.c
+	lua_mobjlib.c
+	lua_playerlib.c
+	lua_skinlib.c
+	lua_thinkerlib.c
+	lua_maplib.c
+	lua_taglib.c
+	lua_polyobjlib.c
+	lua_blockmaplib.c
+	lua_hudlib.c
+	lua_hudlib_drawlist.c
+	k_kart.c
+	k_respawn.c
+	k_collide.c
+	k_color.c
+	k_race.c
+	k_battle.c
+	k_pwrlv.c
+	k_waypoint.c
+	k_pathfind.c
+	k_bheap.c
+	k_bot.c
+	k_botitem.c
+	k_botsearch.c
+	k_grandprix.c
+	k_boss.c
+	k_hud.c
+	k_menudef.c
+	k_menufunc.c
+	k_menudraw.c
+	k_terrain.c
+	k_brightmap.c
+	k_terrain.c
+	k_director.c
+	k_follower.c
+	k_profiles.c
+	k_specialstage.c
+	k_roulette.c
+)
 
-add_executable(SRB2SDL2 MACOSX_BUNDLE WIN32)
+if("${CMAKE_COMPILER_IS_GNUCC}" AND "${CMAKE_SYSTEM_NAME}" MATCHES "Windows")
+	target_link_options(SRB2SDL2 PRIVATE "-Wl,--disable-dynamicbase")
+	if(NOT "${SRB2_CONFIG_SYSTEM_LIBRARIES}" AND NOT "${SRB2_CONFIG_SHARED_INTERNAL_LIBRARIES}")
+		# On MinGW with internal libraries, link the standard library statically
+		target_link_options(SRB2SDL2 PRIVATE "-static")
+	endif()
+endif()
 
-# Core sources
-target_sourcefile(c)
-target_sources(SRB2SDL2 PRIVATE comptime.c md5.c config.h.in)
+target_compile_features(SRB2SDL2 PRIVATE c_std_11 cxx_std_17)
 
 set(SRB2_ASM_SOURCES vid_copy.s)
 
 set(SRB2_NASM_SOURCES tmap_mmx.nas tmap.nas)
 
 ### Configuration
-set(SRB2_CONFIG_HAVE_PNG ON CACHE BOOL
-	"Enable PNG support. Depends on zlib, so will be disabled if you don't enable that too.")
-set(SRB2_CONFIG_HAVE_ZLIB ON CACHE BOOL
-	"Enable zlib support.")
-set(SRB2_CONFIG_HAVE_GME ON CACHE BOOL
-	"Enable GME support.")
-set(SRB2_CONFIG_HAVE_DISCORDRPC OFF CACHE BOOL
-	"Enable Discord rich presence support.")
-set(SRB2_CONFIG_HAVE_CURL ON CACHE BOOL
-	"Enable cURL support, used for downloading files via HTTP.")
-set(SRB2_CONFIG_HAVE_OPENMPT ON CACHE BOOL
-	"Enable OpenMPT support.")
-set(SRB2_CONFIG_HAVE_CURL ON CACHE BOOL
-	"Enable curl support.")
-set(SRB2_CONFIG_HAVE_THREADS ON CACHE BOOL
-	"Enable multithreading support.")
-if(${CMAKE_SYSTEM} MATCHES Windows)
-	set(SRB2_CONFIG_HAVE_MIXERX ON CACHE BOOL
-		"Enable SDL Mixer X support.")
-else()
-	set(SRB2_CONFIG_HAVE_MIXERX OFF)
-endif()
-set(SRB2_CONFIG_HWRENDER ON CACHE BOOL
-	"Enable hardware rendering through OpenGL.")
 set(SRB2_CONFIG_USEASM OFF CACHE BOOL
 	"Enable NASM tmap implementation for software mode speedup.")
 set(SRB2_CONFIG_YASM OFF CACHE BOOL
 	"Use YASM in place of NASM.")
-set(SRB2_CONFIG_STATIC_OPENGL OFF CACHE BOOL
-	"Use statically linked OpenGL. NOT RECOMMENDED.")
 set(SRB2_CONFIG_DEV_BUILD OFF CACHE BOOL
-	"Compile a development build of SRB2Kart.")
-
-### use internal libraries?
-if(${CMAKE_SYSTEM} MATCHES "Windows") ###set on Windows only
-	set(SRB2_CONFIG_USE_INTERNAL_LIBRARIES OFF CACHE BOOL
-	"Use SRB2Kart's internal copies of required dependencies (SDL2, PNG, zlib, GME, OpenMPT, cURL).")
-endif()
+	"Compile a development build of Dr Robotnik's Ring Racers.")
+set(SRB2_CONFIG_TESTERS OFF CACHE BOOL
+	"Compile a build for testers.")
+set(SRB2_CONFIG_HOSTTESTERS OFF CACHE BOOL
+	"Compile a build to host netgames for testers builds.")
 
 add_subdirectory(blua)
 
-if(${SRB2_CONFIG_HAVE_GME})
-	if(${SRB2_CONFIG_USE_INTERNAL_LIBRARIES})
-		set(GME_FOUND ON)
-		set(GME_INCLUDE_DIRS ${CMAKE_SOURCE_DIR}/libs/gme/include)
-		if(${SRB2_SYSTEM_BITS} EQUAL 64)
-			set(GME_LIBRARIES "-L${CMAKE_SOURCE_DIR}/libs/gme/win64 -lgme")
-		else() # 32-bit
-			set(GME_LIBRARIES "-L${CMAKE_SOURCE_DIR}/libs/gme/win32 -lgme")
-		endif()
-	else()
-		find_package(GME)
-	endif()
-	if(${GME_FOUND})
-		set(SRB2_HAVE_GME ON)
-		target_compile_definitions(SRB2SDL2 PRIVATE -DHAVE_GME)
-	else()
-		message(WARNING "You have specified that GME is available but it was not found.")
+# OS macros
+if (UNIX)
+	target_compile_definitions(SRB2SDL2 PRIVATE -DUNIXCOMMON)
+endif()
+
+if(CMAKE_COMPILER_IS_GNUCC)
+	find_program(OBJCOPY objcopy)
+endif()
+
+if("${CMAKE_SYSTEM_NAME}" MATCHES "Linux")
+	target_compile_definitions(SRB2SDL2 PRIVATE -DLINUX)
+	if(${SRB2_SYSTEM_BITS} EQUAL 64)
+		target_compile_definitions(SRB2SDL2 PRIVATE -DLINUX64)
 	endif()
 endif()
 
-if(${SRB2_CONFIG_HAVE_OPENMPT})
-	if(${SRB2_CONFIG_USE_INTERNAL_LIBRARIES})
-		set(OPENMPT_FOUND ON)
-		set(OPENMPT_INCLUDE_DIRS ${CMAKE_SOURCE_DIR}/libs/libopenmpt/inc)
-        if(${SRB2_SYSTEM_BITS} EQUAL 64)
-			set(OPENMPT_LIBRARIES "-L${CMAKE_SOURCE_DIR}/libs/libopenmpt/lib/x86_64/mingw -lopenmpt")
-		else() # 32-bit
-			set(OPENMPT_LIBRARIES "-L${CMAKE_SOURCE_DIR}/libs/libopenmpt/lib/x86/mingw -lopenmpt")
-		endif()
-	else()
-		find_package(OPENMPT)
-	endif()
-	if(${OPENMPT_FOUND})
-		set(SRB2_HAVE_OPENMPT ON)
-		target_compile_definitions(SRB2SDL2 PRIVATE -DHAVE_OPENMPT)
-	else()
-		message(WARNING "You have specified that OpenMPT is available but it was not found.")
-	endif()
+if("${CMAKE_SYSTEM_NAME}" MATCHES "Darwin")
+	target_compile_definitions(SRB2SDL2 PRIVATE -DMACOSX)
 endif()
 
-if(${SRB2_CONFIG_HAVE_MIXERX})
-	if(${SRB2_CONFIG_USE_INTERNAL_LIBRARIES})
-		set(MIXERX_FOUND ON)
-		set(MIXERX_INCLUDE_DIRS ${CMAKE_SOURCE_DIR}/libs/SDLMixerX/i686-w64-mingw32/include/SDL2)
-        if(${SRB2_SYSTEM_BITS} EQUAL 64)
-			set(MIXERX_LIBRARIES "-L${CMAKE_SOURCE_DIR}/libs/SDLMixerX/x86_64-w64-mingw32/lib -lSDL2_mixer_ext")
-		else() # 32-bit
-			set(MIXERX_LIBRARIES "-L${CMAKE_SOURCE_DIR}/libs/SDLMixerX/i686-w64-mingw32/lib -lSDL2_mixer_ext")
-		endif()
-	else()
-		# No support for non-Windows (yet?)
-		#find_package(MIXERX)
-		message(WARNING "SDL Mixer X is not supported as an external library.")
-		set(MIXERX_FOUND OFF)
-	endif()
-	if(${MIXERX_FOUND})
-		set(SRB2_HAVE_MIXERX ON)
-		target_compile_definitions(SRB2SDL2 PRIVATE -DHAVE_MIXERX)
-	else()
-		message(WARNING "You have specified that SDL Mixer X is available but it was not found.")
-	endif()
+target_link_libraries(SRB2SDL2 PRIVATE gme)
+target_compile_definitions(SRB2SDL2 PRIVATE -DHAVE_GME)
+if(NOT "${SRB2_CONFIG_SYSTEM_LIBRARIES}")
+	# this sucks but gme doesn't use modern cmake to delineate public headers
+	target_include_directories(SRB2SDL2 PRIVATE "${libgme_SOURCE_DIR}")
 endif()
+
+target_link_libraries(SRB2SDL2 PRIVATE openmpt)
+target_compile_definitions(SRB2SDL2 PRIVATE -DHAVE_OPENMPT)
+
+target_link_libraries(SRB2SDL2 PRIVATE ZLIB::ZLIB PNG::PNG CURL::libcurl)
+target_compile_definitions(SRB2SDL2 PRIVATE -DHAVE_ZLIB -DHAVE_PNG -DHAVE_CURL -D_LARGEFILE64_SOURCE)
+target_sources(SRB2SDL2 PRIVATE apng.c)
+
+target_link_libraries(SRB2SDL2 PRIVATE DiscordRPC::DiscordRPC)
+target_compile_definitions(SRB2SDL2 PRIVATE -DHAVE_DISCORDRPC -DUSE_STUN)
+target_sources(SRB2SDL2 PRIVATE discord.c stun.c)
+
+set(SRB2_HAVE_THREADS ON)
+target_compile_definitions(SRB2SDL2 PRIVATE -DHAVE_THREADS)
 
 if(${SRB2_CONFIG_HAVE_DISCORDRPC})
 	if(${SRB2_CONFIG_USE_INTERNAL_LIBRARIES})
@@ -154,7 +240,7 @@ if(${SRB2_CONFIG_HAVE_ZLIB})
 		set(SRB2_HAVE_ZLIB ON)
 		target_compile_definitions(SRB2SDL2 PRIVATE -DHAVE_ZLIB)
 	else()
-		message(WARNING "You have specified that ZLIB is available but it was not found. SRB2Kart may not compile correctly.")
+		message(WARNING "You have specified that ZLIB is available but it was not found. Dr Robotnik's Ring Racers may not compile correctly.")
 	endif()
 endif()
 
@@ -177,54 +263,37 @@ if(${SRB2_CONFIG_HAVE_PNG} AND ${SRB2_CONFIG_HAVE_ZLIB})
 			target_compile_definitions(SRB2SDL2 PRIVATE -D_LARGEFILE64_SOURCE)
 			target_sources(SRB2SDL2 PRIVATE apng.c)
 		else()
-			message(WARNING "You have specified that PNG is available but it was not found. SRB2Kart may not compile correctly.")
+			message(WARNING "You have specified that PNG is available but it was not found. Dr Robotnik's Ring Racers may not compile correctly.")
 		endif()
 	endif()
 endif()
 
-if(${SRB2_CONFIG_HAVE_CURL})
-	if(${SRB2_CONFIG_USE_INTERNAL_LIBRARIES})
-		set(CURL_FOUND ON)
-		set(CURL_INCLUDE_DIRS ${CMAKE_SOURCE_DIR}/libs/curl/include)
-		if(${SRB2_SYSTEM_BITS} EQUAL 64)
-			set(CURL_LIBRARIES "-L${CMAKE_SOURCE_DIR}/libs/curl/lib64 -lcurl")
-		else() # 32-bit
-			set(CURL_LIBRARIES "-L${CMAKE_SOURCE_DIR}/libs/curl/lib32 -lcurl")
-		endif()
-	else()
-		find_package(CURL)
-	endif()
-	if(${CURL_FOUND})
-		set(SRB2_HAVE_CURL ON)
-		target_compile_definitions(SRB2SDL2 PRIVATE -DHAVE_CURL)
-	else()
-		message(WARNING "You have specified that CURL is available but it was not found. SRB2Kart may not compile correctly.")
-	endif()
-endif()
-
-if(${SRB2_CONFIG_HAVE_THREADS})
-	set(SRB2_HAVE_THREADS ON)
-	target_compile_definitions(SRB2SDL2 PRIVATE -DHAVE_THREADS)
-endif()
-
-if(${SRB2_CONFIG_HWRENDER})
+if("${SRB2_CONFIG_HWRENDER}")
 	target_compile_definitions(SRB2SDL2 PRIVATE -DHWRENDER)
 	add_subdirectory(hardware)
+
+	if("${SRB2_CONFIG_STATIC_OPENGL}")
+		find_package(OpenGL)
+		if(${OPENGL_FOUND})
+			target_compile_definitions(SRB2SDL2 PRIVATE -DSTATIC_OPENGL)
+		else()
+			message(WARNING "You have specified static opengl but opengl was not found. Not setting HWRENDER.")
+		endif()
+	endif()
 endif()
 
-if(${SRB2_CONFIG_HWRENDER} AND ${SRB2_CONFIG_STATIC_OPENGL})
-	find_package(OpenGL)
-	if(${OPENGL_FOUND})
-		target_compile_definitions(SRB2SDL2 PRIVATE -DHWRENDER)
-		target_compile_definitions(SRB2SDL2 PRIVATE -DSTATIC_OPENGL)
-	else()
-		message(WARNING "You have specified static opengl but opengl was not found. Not setting HWRENDER.")
-	endif()
+# TODO: build this with the game
+if(${CMAKE_SYSTEM} MATCHES Windows AND ${CMAKE_C_COMPILER_ID} MATCHES "GNU" AND ${SRB2_SYSTEM_BITS} EQUAL 32)
+	target_link_libraries(SRB2SDL2 PRIVATE
+		"${CMAKE_CURRENT_SOURCE_DIR}/../libs/drmingw/lib/win32/libexchndl.a"
+		"${CMAKE_CURRENT_SOURCE_DIR}/../libs/drmingw/lib/win32/libmgwhelp.a"
+	)
+	target_include_directories(SRB2SDL2 PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/../libs/drmingw/include")
 endif()
 
 if(${SRB2_CONFIG_USEASM})
 	#SRB2_ASM_FLAGS can be used to pass flags to either nasm or yasm.
-	if(${CMAKE_SYSTEM} MATCHES "Linux")
+	if("${CMAKE_SYSTEM_NAME}" MATCHES "Linux")
 		set(SRB2_ASM_FLAGS "-DLINUX ${SRB2_ASM_FLAGS}")
 	endif()
 
@@ -240,7 +309,7 @@ if(${SRB2_CONFIG_USEASM})
 
 	set(SRB2_USEASM ON)
 	target_compile_definitions(SRB2SDL2 PRIVATE -DUSEASM)
-	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -msse3 -mfpmath=sse")
+	target_compile_options(SRB2SDL2 PRIVATE -msse3 -mfpmath=sse)
 
 	target_sources(SRB2SDL2 PRIVATE ${SRB2_ASM_SOURCES}
 		${SRB2_NASM_SOURCES})
@@ -253,7 +322,7 @@ endif()
 
 # If using CCACHE, then force it.
 # https://github.com/Cockatrice/Cockatrice/pull/3052/files
-if (${CMAKE_SYSTEM} MATCHES "Darwin")
+if ("${CMAKE_SYSTEM_NAME}" MATCHES "Darwin")
 	get_property(RULE_LAUNCH_COMPILE GLOBAL PROPERTY RULE_LAUNCH_COMPILE)
 	if(RULE_LAUNCH_COMPILE)
 		MESSAGE(STATUS "Force enabling CCache usage under macOS")
@@ -275,35 +344,178 @@ endif()
 # Compatibility flag with later versions of GCC
 # We should really fix our code to not need this
 if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
-	set(CMAKE_C_FLAGS ${CMAKE_C_FLAGS} -mno-ms-bitfields)
+	target_compile_options(SRB2SDL2 PRIVATE -mno-ms-bitfields)
 endif()
 
-if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-	set(CMAKE_C_FLAGS ${CMAKE_C_FLAGS} -Wno-absolute-value)
+# Compiler warnings configuration
+target_compile_options(SRB2SDL2 PRIVATE
+	# Using generator expressions to handle per-language compile options
+
+	# C, GNU
+	# This is a direct translation from versions.mk
+	$<$<AND:$<COMPILE_LANGUAGE:C>,$<C_COMPILER_ID:GNU>>:
+		-Wall
+		-Wno-trigraphs
+		-W # Was controlled by RELAXWARNINGS
+		-pedantic
+		-Wfloat-equal
+		-Wundef
+		-Wpointer-arith
+		-Wbad-function-cast
+		-Wcast-qual
+		-Wcast-align # Was controlled by NOCASTALIGNWARN
+		-Wwrite-strings
+		-Wsign-compare
+		-Wmissing-prototypes
+		-Wmissing-declarations
+		-Wmissing-noreturn
+		-Wnested-externs
+		-Winline
+		-Wformat-y2k
+		-Wformat-security
+		
+		$<$<VERSION_LESS:$<C_COMPILER_VERSION>,2.9.5>:
+			-Wno-div-by-zero
+			-Wendif-labels
+			-Wdisabled-optimization
+		>
+
+		$<$<VERSION_GREATER_EQUAL:$<C_COMPILER_VERSION>,4.0.0>:
+			-Wold-style-definition
+			-Wmissing-field-initializers
+		>
+
+		$<$<VERSION_GREATER_EQUAL:$<C_COMPILER_VERSION>,4.1.0>:
+			-Wshadow
+		>
+
+		$<$<VERSION_GREATER_EQUAL:$<C_COMPILER_VERSION>,4.3.0>:
+			-funit-at-a-time
+			-Wlogical-op
+		>
+
+		$<$<VERSION_GREATER_EQUAL:$<C_COMPILER_VERSION>,4.5.0>:
+			-Wlogical-op
+			-Wno-error=array-bounds
+		>
+
+		$<$<VERSION_GREATER_EQUAL:$<C_COMPILER_VERSION>,4.6.0>:
+			-Wno-suggest-attribute=noreturn
+			-Wno-error=suggest-attribute=noreturn
+		>
+
+		$<$<VERSION_GREATER_EQUAL:$<C_COMPILER_VERSION>,5.4.0>:
+			-Wno-logical-op
+			-Wno-error=logical-op
+		>
+
+		$<$<VERSION_GREATER_EQUAL:$<C_COMPILER_VERSION>,6.1.0>:
+			-Wno-tautological-compare
+			-Wno-error=tautological-compare
+		>
+
+		$<$<VERSION_GREATER_EQUAL:$<C_COMPILER_VERSION>,7.1.0>:
+			-Wno-error=format-overflow=2
+			-Wimplicit-fallthrough=4
+		>
+
+		$<$<VERSION_GREATER_EQUAL:$<C_COMPILER_VERSION>,8.1.0>:
+			-Wno-error=format-overflow
+			-Wno-error=stringop-truncation
+			-Wno-error=stringop-overflow
+			-Wno-format-overflow
+			-Wno-stringop-truncation
+			-Wno-stringop-overflow
+			-Wno-error=multistatement-macros
+		>
+
+		$<$<VERSION_GREATER_EQUAL:$<C_COMPILER_VERSION>,9.1.0>:
+			-Wno-error=address-of-packed-member
+		>
+	>
+
+	# C, Clang and Apple Clang
+	$<$<AND:$<COMPILE_LANGUAGE:C>,$<OR:$<C_COMPILER_ID:AppleClang>,$<C_COMPILER_ID:Clang>>>:
+		-Wall
+		-Wno-absolute-value
+		-Wno-trigraphs
+		-Wno-error=non-literal-null-conversion
+		-Wno-error=constant-conversion
+		-Wno-error=unused-but-set-variable
+	>
+
+	# C, MSVC
+	$<$<AND:$<COMPILE_LANGUAGE:C>,$<C_COMPILER_ID:MSVC>>:
+		# All warnings at and before Visual Studio 2019 RTM
+		# https://learn.microsoft.com/en-us/cpp/error-messages/compiler-warnings/compiler-warnings-by-compiler-version?view=msvc-170
+		/Wv:19.20.27004.0
+	>
+
+	# C++, GNU, Clang and Apple Clang
+	$<$<AND:$<COMPILE_LANGUAGE:CXX>,$<OR:$<C_COMPILER_ID:GNU>,$<C_COMPILER_ID:AppleClang>,$<C_COMPILER_ID:Clang>>>:
+		-Wall
+	>
+
+	# C++, MSVC
+	$<$<AND:$<COMPILE_LANGUAGE:C>,$<C_COMPILER_ID:MSVC>>:
+		/Wv:19.20.27004.0
+	>
+)
+if(SRB2_CONFIG_ERRORMODE)
+	target_compile_options(SRB2SDL2 PRIVATE
+		$<$<OR:$<C_COMPILER_ID:GNU>,$<C_COMPILER_ID:AppleClang>,$<C_COMPILER_ID:Clang>>:
+			-Werror
+		>
+
+		$<$<C_COMPILER_ID:MSVC>:
+			/WX
+		>
+	)
 endif()
+
+# Link warnings configuration
+target_link_options(SRB2SDL2 PRIVATE
+	$<$<C_COMPILER_ID:GNU>:
+		# -Wl,--as-needed   - Was controlled by NOLDWARNING
+	>
+)
 
 if(${SRB2_CONFIG_DEV_BUILD})
 	target_compile_definitions(SRB2SDL2 PRIVATE -DDEVELOP)
 endif()
-
-set(CMAKE_C_FLAGS ${CMAKE_C_FLAGS} -Wno-trigraphs)
-
 target_compile_definitions(SRB2SDL2 PRIVATE -DCMAKECONFIG)
 
-#add_library(SRB2Core STATIC
-#	${SRB2_CORE_SOURCES}
-#	${SRB2_CORE_HEADERS}
-#	${SRB2_CORE_RENDER_SOURCES}
-#	${SRB2_CORE_GAME_SOURCES}
-#	${SRB2_LUA_SOURCES}
-#	${SRB2_LUA_HEADERS}
-#	${SRB2_BLUA_SOURCES}
-#	${SRB2_BLUA_HEADERS}
-#)
+# Misc. build options from Makefiles
+if(SRB2_CONFIG_DEBUGMODE)
+	target_compile_definitions(SRB2SDL2 PRIVATE -DZDEBUG -DPARANOIA -DRANGECHECK -DPACKETDROP)
+endif()
+if(SRB2_CONFIG_TESTERS)
+	target_compile_definitions(SRB2SDL2 PRIVATE -DTESTERS)
+endif()
+if(SRB2_CONFIG_HOSTTESTERS)
+	target_compile_definitions(SRB2SDL2 PRIVATE -DHOSTTESTERS)
+endif()
+if(SRB2_CONFIG_MOBJCONSISTANCY)
+	target_compile_definitions(SRB2SDL2 PRIVATE -DMOBJCONSISTANCY)
+endif()
+if(SRB2_CONFIG_PACKETDROP)
+	target_compile_definitions(SRB2SDL2 PRIVATE -DPACKETDROP)
+endif()
+if(SRB2_CONFIG_ZDEBUG)
+	target_compile_definitions(SRB2SDL2 PRIVATE -DZDEBUG)
+endif()
+if(SRB2_CONFIG_PROFILEMODE AND "${CMAKE_C_COMPILER_ID}" STREQUAL "GNU")
+	target_compile_options(SRB2SDL2 PRIVATE -pg)
+	target_link_options(SRB2SDL2 PRIVATE -pg)
+endif()
 
-## strip debug symbols into separate file when using gcc.
-## to be consistent with Makefile, don't generate for OS X.
-if((CMAKE_COMPILER_IS_GNUCC) AND NOT (${CMAKE_SYSTEM} MATCHES Darwin))
+add_subdirectory(sdl)
+add_subdirectory(objects)
+add_subdirectory(tests)
+
+# strip debug symbols into separate file when using gcc.
+# to be consistent with Makefile, don't generate for OS X.
+if((CMAKE_COMPILER_IS_GNUCC) AND NOT ("${CMAKE_SYSTEM_NAME}" MATCHES Darwin))
 	if((${CMAKE_BUILD_TYPE} MATCHES Debug) OR (${CMAKE_BUILD_TYPE} MATCHES RelWithDebInfo))
 		if(${CMAKE_BUILD_TYPE} MATCHES Debug)
 			set(OBJCOPY_ONLY_KEEP_DEBUG "--only-keep-debug")
@@ -317,9 +529,26 @@ if((CMAKE_COMPILER_IS_GNUCC) AND NOT (${CMAKE_SYSTEM} MATCHES Darwin))
 	endif()
 endif()
 
-add_subdirectory(sdl)
-add_subdirectory(objects)
+# copy DLLs to bin/ directory if building internal shared on windows
+if("${CMAKE_SYSTEM_NAME}" STREQUAL Windows AND NOT "${SRB2_CONFIG_INTERNAL_LIBRARIES}" AND "${SRB2_CONFIG_SHARED_INTERNAL_LIBRARIES}")
+	set(ADDITIONAL_DLLS "")
+	if("${CMAKE_C_COMPILER_ID}" STREQUAL GNU)
+		# also copy implicitly linked system libraries
+		get_filename_component(MINGW_BIN_PATH ${CMAKE_CXX_COMPILER} PATH)
+		list(APPEND ADDITIONAL_DLLS
+			"libgcc_s_dw2-1.dll"
+			"libstdc++-6.dll"
+			"libwinpthread-1.dll"
+		)
+		list(TRANSFORM ADDITIONAL_DLLS PREPEND "${MINGW_BIN_PATH}/")
+	endif()
+	add_custom_command(TARGET SRB2SDL2 POST_BUILD
+		COMMAND ${CMAKE_COMMAND} -E copy_if_different
+			$<TARGET_RUNTIME_DLLS:SRB2SDL2>
+			${ADDITIONAL_DLLS}
 
-if(NOT ${SRB2_SDL2_AVAILABLE})
-	message(FATAL_ERROR "There are no targets available to build an SRB2Kart executable. :(")
+			$<TARGET_FILE_DIR:SRB2SDL2>
+		COMMAND_EXPAND_LISTS
+		COMMENT "Copying runtime DLLs"
+	)
 endif()

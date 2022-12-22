@@ -92,12 +92,12 @@ typedef enum
 	PRECIPFX_WATERPARTICLES = 1<<2
 } precipeffect_t;
 
-typedef struct
+struct precipprops_t
 {
 	const char *name;
 	mobjtype_t type;
 	precipeffect_t effects;
-} precipprops_t;
+};
 
 extern precipprops_t precipprops[MAXPRECIP];
 extern preciptype_t precip_freeslot;
@@ -107,13 +107,13 @@ extern preciptype_t curWeather;
 
 /** Time attack information, currently a very small structure.
   */
-typedef struct
+struct recorddata_t
 {
 	tic_t time; ///< Time in which the level was finished.
 	tic_t lap;  ///< Best lap time for this level.
 	//UINT32 score; ///< Score when the level was finished.
 	//UINT16 rings; ///< Rings when the level was finished.
-} recorddata_t;
+};
 
 // mapvisited is now a set of flags that says what we've done in the map.
 #define MV_VISITED (1)
@@ -186,8 +186,6 @@ extern INT32 postimgparam[MAXSPLITSCREENPLAYERS];
 extern INT32 viewwindowx, viewwindowy;
 extern INT32 viewwidth, scaledviewwidth;
 
-extern boolean gamedataloaded;
-
 // Player taking events, and displaying.
 extern INT32 consoleplayer;
 extern INT32 displayplayers[MAXSPLITSCREENPLAYERS];
@@ -220,7 +218,7 @@ extern UINT16 skincolor_redteam, skincolor_blueteam, skincolor_redring, skincolo
 
 extern boolean exitfadestarted;
 
-typedef struct
+struct scene_t
 {
 	UINT8 numpics;
 	char picname[8][8];
@@ -240,13 +238,13 @@ typedef struct
 	UINT8 fadecolor; // Color number for fade, 0 means don't do the first fade
 	UINT8 fadeinid;  // ID of the first fade, to a color -- ignored if fadecolor is 0
 	UINT8 fadeoutid; // ID of the second fade, to the new screen
-} scene_t; // TODO: It would probably behoove us to implement subsong/track selection here, too, but I'm lazy -SH
+}; // TODO: It would probably behoove us to implement subsong/track selection here, too, but I'm lazy -SH
 
-typedef struct
+struct cutscene_t
 {
 	scene_t scene[128]; // 128 scenes per cutscene.
 	INT32 numscenes; // Number of scenes in this cutscene
-} cutscene_t;
+};
 
 extern cutscene_t *cutscenes[128];
 
@@ -261,7 +259,7 @@ extern cutscene_t *cutscenes[128];
 #define PROMPT_PIC_LOOP 1
 #define PROMPT_PIC_DESTROY 2
 #define MAX_PROMPT_PICS 8
-typedef struct
+struct textpage_t
 {
 	UINT8 numpics;
 	UINT8 picmode; // sequence mode after displaying last pic, 0 = persist, 1 = loop, 2 = destroy
@@ -294,13 +292,13 @@ typedef struct
 	char nexttag[33]; // next tag to jump to. If set, this overrides nextprompt and nextpage.
 	INT32 timetonext; // time in tics to jump to next page automatically. 0 = don't jump automatically
 	char *text;
-} textpage_t;
+};
 
-typedef struct
+struct textprompt_t
 {
 	textpage_t page[MAX_PAGES];
 	INT32 numpages; // Number of pages in this prompt
-} textprompt_t;
+};
 
 extern textprompt_t *textprompts[MAX_PROMPTS];
 
@@ -316,10 +314,10 @@ extern mapthing_t *rflagpoint, *bflagpoint; // Pointers to the flag spawn locati
 #define GF_BLUEFLAG 2
 
 // A single point in space.
-typedef struct
+struct mappoint_t
 {
 	fixed_t x, y, z;
-} mappoint_t;
+};
 
 extern struct quake
 {
@@ -333,20 +331,21 @@ extern struct quake
 } quake;
 
 // Custom Lua values
-typedef struct
+struct customoption_t
 {
 	char option[32]; // 31 usable characters
 	char value[256]; // 255 usable characters. If this seriously isn't enough then wtf.
-} customoption_t;
+};
 
 // This could support more, but is that a good idea?
 // Keep in mind that it may encourage people making overly long cups just because they "can", and would be a waste of memory.
 #define MAXLEVELLIST 5
 #define CUPCACHE_BONUS MAXLEVELLIST
-#define CUPCACHE_SPECIAL MAXLEVELLIST+1
-#define CUPCACHE_MAX CUPCACHE_SPECIAL+1
+#define MAXBONUSLIST 2
+#define CUPCACHE_SPECIAL (CUPCACHE_BONUS+MAXBONUSLIST)
+#define CUPCACHE_MAX (CUPCACHE_SPECIAL+1)
 
-typedef struct cupheader_s
+struct cupheader_t
 {
 	UINT16 id;								///< Cup ID
 	char name[15];							///< Cup title (14 chars)
@@ -354,10 +353,10 @@ typedef struct cupheader_s
 	char *levellist[CUPCACHE_MAX];			///< List of levels that belong to this cup
 	INT16 cachedlevels[CUPCACHE_MAX];		///< IDs in levellist, bonusgame, and specialstage
 	UINT8 numlevels;						///< Number of levels defined in levellist
+	UINT8 numbonus;							///< Number of bonus stages defined
 	UINT8 emeraldnum;						///< ID of Emerald to use for special stage (1-7 for Chaos Emeralds, 8-14 for Super Emeralds, 0 for no emerald)
-	SINT8 unlockrequired;					///< An unlockable is required to select this cup. -1 for no unlocking required.
-	struct cupheader_s *next;				///< Next cup in linked list
-} cupheader_t;
+	cupheader_t *next;						///< Next cup in linked list
+};
 
 extern cupheader_t *kartcupheaders; // Start of cup linked list
 extern UINT16 numkartcupheaders;
@@ -366,7 +365,7 @@ extern UINT16 numkartcupheaders;
 
 /** Map header information.
   */
-typedef struct
+struct mapheader_t
 {
 	// Core game information, not user-modifiable directly
 	char *lumpname;						///< Lump name can be really long
@@ -391,7 +390,6 @@ typedef struct
 	// Selection metadata
 	char keywords[33];					///< Keywords separated by space to search for. 32 characters.
 
-	SINT8 unlockrequired;				///< Is an unlockable required to play this level? -1 if no.
 	UINT8 levelselect;					///< Is this map available in the level select? If so, which map list is it available in?
 	UINT16 menuflags;					///< LF2_flags: options that affect record attack menus
 
@@ -439,7 +437,7 @@ typedef struct
 	// Lua information
 	UINT8 numCustomOptions;				///< Internal. For Lua custom value support.
 	customoption_t *customopts;			///< Custom options. Allocated dynamically for space reasons. Be careful.
-} mapheader_t;
+};
 
 // level flags
 #define LF_SCRIPTISFILE       (1<<0) ///< True if the script is a file, not a lump.
@@ -500,6 +498,8 @@ enum GameTypeRules
 	GTR_LIVES				= 1<<18, // Lives system, players are forced to spectate during Game Over.
 	GTR_SPECIALBOTS			= 1<<19, // Bot difficulty gets stronger between rounds, and the rival system is enabled.
 
+	GTR_NOCUPSELECT			= 1<<20, // Your maps are not selected via cup. ...mutually exclusive with GTR_CAMPAIGN.
+
 	// free: to and including 1<<31
 };
 
@@ -528,16 +528,13 @@ enum TypeOfLevel
 #define NUMBASETOLNAMES    (4)
 #define NUMTOLNAMES        (NUMBASETOLNAMES + NUMGAMETYPEFREESLOTS)
 
-typedef struct
+struct tolinfo_t
 {
 	const char *name;
 	UINT32 flag;
-} tolinfo_t;
+};
 extern tolinfo_t TYPEOFLEVEL[NUMTOLNAMES];
 extern UINT32 lastcustomtol;
-
-extern tic_t totalplaytime;
-extern UINT32 matchesplayed;
 
 extern UINT8 stagefailed;
 
@@ -576,10 +573,6 @@ extern INT32 luabanks[NUM_LUABANKS];
 
 extern INT32 nummaprings; //keep track of spawned rings/coins
 
-extern UINT32 token; ///< Number of tokens collected in a level
-extern UINT32 tokenlist; ///< List of tokens collected
-extern boolean gottoken; ///< Did you get a token? Used for end of act
-extern INT32 tokenbits; ///< Used for setting token bits
 extern UINT32 bluescore; ///< Blue Team Scores
 extern UINT32 redscore;  ///< Red Team Scores
 
@@ -679,8 +672,6 @@ extern tic_t curlap, bestlap;
 extern INT16 votelevels[4][2];
 extern SINT8 votes[MAXPLAYERS];
 extern SINT8 pickedvote;
-
-extern UINT32 timesBeaten; // # of times the game has been beaten.
 
 // ===========================
 // Internal parameters, fixed.

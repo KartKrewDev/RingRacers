@@ -38,6 +38,7 @@
 #include "k_respawn.h"
 #include "p_spec.h"
 #include "k_objects.h"
+#include "k_roulette.h"
 
 // CTF player names
 #define CTFTEAMCODE(pl) pl->ctfteam ? (pl->ctfteam == 1 ? "\x85" : "\x84") : ""
@@ -130,7 +131,7 @@ boolean P_CanPickupItem(player_t *player, UINT8 weapon)
 				return false;
 
 			// Already have fake
-			if (player->roulettetype == 2
+			if ((player->itemRoulette.active && player->itemRoulette.eggman) == true
 				|| player->eggmanexplode)
 				return false;
 		}
@@ -143,7 +144,7 @@ boolean P_CanPickupItem(player_t *player, UINT8 weapon)
 				return false;
 
 			// Item slot already taken up
-			if (player->itemroulette
+			if (player->itemRoulette.active == true
 				|| (weapon != 3 && player->itemamount)
 				|| (player->pflags & PF_ITEMOUT))
 				return false;
@@ -154,6 +155,40 @@ boolean P_CanPickupItem(player_t *player, UINT8 weapon)
 	}
 
 	return true;
+}
+
+boolean P_CanPickupEmblem(player_t *player, INT32 emblemID)
+{
+	if (emblemID < 0 || emblemID >= MAXEMBLEMS)
+	{
+		// Invalid emblem ID, can't pickup.
+		return false;
+	}
+
+	if (demo.playback)
+	{
+		// Never collect emblems in replays.
+		return false;
+	}
+
+	if (player->bot)
+	{
+		// Your nefarious opponent puppy can't grab these for you.
+		return false;
+	}
+
+	return true;
+}
+
+boolean P_EmblemWasCollected(INT32 emblemID)
+{
+	if (emblemID < 0 || emblemID >= numemblems)
+	{
+		// Invalid emblem ID, can't pickup.
+		return true;
+	}
+
+	return gamedata->collected[emblemID];
 }
 
 /** Takes action based on a ::MF_SPECIAL thing touched by a player.
@@ -411,8 +446,7 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 			if (special->fuse || !P_CanPickupItem(player, 1) || ((gametyperules & GTR_BUMPERS) && player->bumpers <= 0))
 				return;
 
-			player->itemroulette = 1;
-			player->roulettetype = 1;
+			K_StartItemRoulette(player);
 
 			// Karma fireworks
 			for (i = 0; i < 5; i++)
@@ -501,12 +535,24 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 		// Secret emblem thingy
 		case MT_EMBLEM:
 			{
-				if (demo.playback || special->health > MAXEMBLEMS)
+				boolean gotcollected = false;
+
+				if (!P_CanPickupEmblem(player, special->health - 1))
 					return;
 
-				emblemlocations[special->health-1].collected = true;
-				M_UpdateUnlockablesAndExtraEmblems();
-				G_SaveGameData();
+				if (P_IsLocalPlayer(player) && !gamedata->collected[special->health-1])
+				{
+					gamedata->collected[special->health-1] = gotcollected = true;
+					M_UpdateUnlockablesAndExtraEmblems(true);
+					G_SaveGameData();
+				}
+
+				if (netgame)
+				{
+					// Don't delete the object in netgames, just fade it.
+					return;
+				}
+
 				break;
 			}
 
@@ -955,7 +1001,8 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 		 || target->type == MT_BANANA || target->type == MT_BANANA_SHIELD
 		 || target->type == MT_DROPTARGET || target->type == MT_DROPTARGET_SHIELD
 		 || target->type == MT_EGGMANITEM || target->type == MT_EGGMANITEM_SHIELD
-		 || target->type == MT_BALLHOG || target->type == MT_SPB)) // kart dead items
+		 || target->type == MT_BALLHOG || target->type == MT_SPB
+		 || target->type == MT_GACHABOM)) // kart dead items
 		target->flags |= MF_NOGRAVITY; // Don't drop Tails 03-08-2000
 	else
 		target->flags &= ~MF_NOGRAVITY; // lose it if you for whatever reason have it, I'm looking at you shields
@@ -1449,8 +1496,7 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 				}
 				player->karthud[khud_itemblink] = TICRATE;
 				player->karthud[khud_itemblinkmode] = 0;
-				player->itemroulette = 0;
-				player->roulettetype = 0;
+				player->itemRoulette.active = false;
 				if (P_IsDisplayPlayer(player))
 					S_StartSound(NULL, sfx_itrolf);
 			}
@@ -1584,6 +1630,32 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 		case MT_DROPTARGET_SHIELD:
 			target->fuse = 1;
 			break;
+
+		case MT_BANANA:
+		case MT_BANANA_SHIELD:
+		{
+			const UINT8 numParticles = 8;
+			const angle_t diff = ANGLE_MAX / numParticles;
+			UINT8 i;
+
+			for (i = 0; i < numParticles; i++)
+			{
+				mobj_t *spark = P_SpawnMobjFromMobj(target, 0, 0, 0, MT_BANANA_SPARK);
+				spark->angle = (diff * i) - (diff / 2);
+
+				if (inflictor != NULL && P_MobjWasRemoved(inflictor) == false)
+				{
+					spark->angle += K_MomentumAngle(inflictor);
+					spark->momx += inflictor->momx / 2;
+					spark->momy += inflictor->momy / 2;
+					spark->momz += inflictor->momz / 2;
+				}
+
+				P_SetObjectMomZ(spark, (12 + P_RandomRange(PR_DECORATION, -4, 4)) * FRACUNIT, true);
+				P_Thrust(spark, spark->angle, (12 + P_RandomRange(PR_DECORATION, -4, 4)) * spark->scale);
+			}
+			break;
+		}
 
 		default:
 			break;
@@ -1943,7 +2015,7 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 		if (!(target->flags & MF_SHOOTABLE))
 			return false; // shouldn't happen...
 
-		if (!(damagetype & DMG_DEATHMASK) && target->hitlag > 0 && inflictor == NULL)
+		if (!(damagetype & DMG_DEATHMASK) && (target->eflags & MFE_PAUSED))
 			return false;
 	}
 
@@ -1966,6 +2038,18 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 
 	if (player) // Player is the target
 	{
+		{
+			const INT32 oldtimeshit = player->timeshit;
+
+			player->timeshit++;
+
+			// overflow prevention
+			if (player->timeshit < oldtimeshit)
+			{
+				player->timeshit = oldtimeshit;
+			}
+		}
+
 		if (player->pflags & PF_GODMODE)
 			return false;
 
@@ -1999,6 +2083,9 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 			// If not, then spawn the instashield effect instead.
 			if (!force)
 			{
+				boolean invincible = true;
+				sfxenum_t sfx = sfx_None;
+
 				if (gametyperules & GTR_BUMPERS)
 				{
 					if (player->bumpers <= 0 && player->karmadelay)
@@ -2018,8 +2105,35 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 					}
 				}
 
-				if (player->invincibilitytimer > 0 || K_IsBigger(target, inflictor) == true || player->hyudorotimer > 0)
+				if (player->invincibilitytimer > 0)
 				{
+					sfx= sfx_invind;
+				}
+				else if (K_IsBigger(target, inflictor) == true)
+				{
+					sfx = sfx_grownd;
+				}
+				else if (player->hyudorotimer > 0)
+					;
+				else
+				{
+					invincible = false;
+				}
+
+				if (invincible)
+				{
+					const INT32	oldhitlag = target->hitlag;
+
+					laglength = max(laglength / 2, 1);
+					K_SetHitLagForObjects(target, inflictor, laglength, false);
+
+					player->invulnhitlag += (target->hitlag - oldhitlag);
+
+					if (player->timeshit > player->timeshitprev)
+					{
+						S_StartSound(target, sfx);
+					}
+
 					// Full invulnerability
 					K_DoInstashield(player);
 					return false;
@@ -2154,6 +2268,7 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 					K_SpinPlayer(player, inflictor, source, KSPIN_WIPEOUT);
 					K_KartPainEnergyFling(player);
 					break;
+				case DMG_VOLTAGE:
 				case DMG_NORMAL:
 				default:
 					K_SpinPlayer(player, inflictor, source, KSPIN_SPINOUT);
@@ -2255,6 +2370,9 @@ static void P_FlingBurst
 	mo->threshold = 10; // not useful for spikes
 	mo->fuse = objFuse;
 	P_SetTarget(&mo->target, player->mo);
+
+	// We want everything from P_SpawnMobjFromMobj except scale.
+	objScale = FixedMul(objScale, FixedDiv(mapobjectscale, player->mo->scale));
 
 	if (objScale != FRACUNIT)
 	{

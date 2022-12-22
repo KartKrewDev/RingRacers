@@ -34,6 +34,7 @@
 #include "k_respawn.h"
 #include "k_collide.h"
 #include "k_objects.h"
+#include "k_roulette.h"
 
 #ifdef HW3SOUND
 #include "hardware/hw3sound.h"
@@ -315,6 +316,7 @@ void A_ItemPop(mobj_t *actor);
 void A_JawzExplode(mobj_t *actor);
 void A_SSMineSearch(mobj_t *actor);
 void A_SSMineExplode(mobj_t *actor);
+void A_SSMineFlash(mobj_t *actor);
 void A_LandMineExplode(mobj_t *actor);
 void A_BallhogExplode(mobj_t *actor);
 void A_LightningFollowPlayer(mobj_t *actor);
@@ -541,12 +543,12 @@ boolean P_Move(mobj_t *actor, fixed_t speed)
 	if (actor->type == MT_SKIM && !P_WaterInSector(actor, tryx, tryy)) // bail out if sector lacks water
 		return false;
 
-	if (!P_TryMove(actor, tryx, tryy, false))
+	if (!P_TryMove(actor, tryx, tryy, false, NULL))
 	{
-		if (actor->flags & MF_FLOAT && floatok)
+		if (actor->flags & MF_FLOAT && tm.floatok)
 		{
 			// must adjust height
-			if (actor->z < tmfloorz)
+			if (actor->z < tm.floorz)
 				actor->z += FixedMul(FLOATSPEED, actor->scale);
 			else
 				actor->z -= FixedMul(FLOATSPEED, actor->scale);
@@ -749,9 +751,6 @@ boolean P_LookForPlayers(mobj_t *actor, boolean allaround, boolean tracer, fixed
 
 		if (player->mo->health <= 0)
 			continue; // dead
-
-		if (player->bot)
-			continue; // ignore bots
 
 		if (dist > 0
 			&& P_AproxDistance(P_AproxDistance(player->mo->x - actor->x, player->mo->y - actor->y), player->mo->z - actor->z) > dist)
@@ -1074,7 +1073,7 @@ void A_FaceStabRev(mobj_t *actor)
 		}
 		else
 		{
-			P_TryMove(actor, actor->x - P_ReturnThrustX(actor, actor->angle, 2<<FRACBITS), actor->y - P_ReturnThrustY(actor, actor->angle, 2<<FRACBITS), false);
+			P_TryMove(actor, actor->x - P_ReturnThrustX(actor, actor->angle, 2<<FRACBITS), actor->y - P_ReturnThrustY(actor, actor->angle, 2<<FRACBITS), false, NULL);
 			P_FaceStabFlume(actor);
 		}
 	}
@@ -1126,7 +1125,7 @@ void A_FaceStabHurl(mobj_t *actor)
 			if (P_TryMove(actor,
 				actor->x + P_ReturnThrustX(actor, dirang, actor->extravalue2<<FRACBITS),
 				actor->y + P_ReturnThrustY(actor, dirang, actor->extravalue2<<FRACBITS),
-				false))
+				false, NULL))
 			{
 				// Do the spear damage.
 #define NUMSTEPS 3
@@ -1196,7 +1195,7 @@ void A_FaceStabMiss(mobj_t *actor)
 	if (actor->extravalue2 <= 0 || !P_TryMove(actor,
 		actor->x + P_ReturnThrustX(actor, actor->angle, actor->extravalue2<<FRACBITS),
 		actor->y + P_ReturnThrustY(actor, actor->angle, actor->extravalue2<<FRACBITS),
-		false))
+		false, NULL))
 	{
 		actor->extravalue2 = 0;
 		P_SetMobjState(actor, locvar2);
@@ -1821,7 +1820,7 @@ void A_CrushstaceanWalk(mobj_t *actor)
 	if (!P_TryMove(actor,
 		actor->x + P_ReturnThrustX(actor, ang, locvar1*actor->scale),
 		actor->y + P_ReturnThrustY(actor, ang, locvar1*actor->scale),
-		false)
+		false, NULL)
 	|| (actor->reactiontime-- <= 0))
 	{
 		actor->flags2 ^= MF2_AMBUSH;
@@ -2000,7 +1999,7 @@ void A_CrushclawLaunch(mobj_t *actor)
 	if (!P_TryMove(actor,
 		actor->target->x + P_ReturnThrustX(actor, actor->target->angle, actor->extravalue2*actor->scale),
 		actor->target->y + P_ReturnThrustY(actor, actor->target->angle, actor->extravalue2*actor->scale),
-		true)
+		true, NULL)
 		&& !locvar1)
 	{
 		actor->extravalue1 = 0;
@@ -2946,9 +2945,9 @@ void A_Boss1Laser(mobj_t *actor)
 		{
 			fixed_t distx = P_ReturnThrustX(point, point->angle, point->radius);
 			fixed_t disty = P_ReturnThrustY(point, point->angle, point->radius);
-			if (P_TryMove(point, point->x + distx, point->y + disty, false) // prevents the sprite from clipping into the wall or dangling off ledges
-				&& P_TryMove(point, point->x - 2*distx, point->y - 2*disty, false)
-				&& P_TryMove(point, point->x + distx, point->y + disty, false))
+			if (P_TryMove(point, point->x + distx, point->y + disty, false, NULL) // prevents the sprite from clipping into the wall or dangling off ledges
+				&& P_TryMove(point, point->x - 2*distx, point->y - 2*disty, false, NULL)
+				&& P_TryMove(point, point->x + distx, point->y + disty, false, NULL))
 			{
 				if (point->info->seesound)
 					S_StartSound(point, point->info->seesound);
@@ -3012,7 +3011,7 @@ void A_FocusTarget(mobj_t *actor)
 			{
 				actor->momx = 0, actor->momy = 0, actor->momz = 0;
 				actor->z = actor->target->z + (actor->target->height>>1);
-				P_TryMove(actor, actor->target->x, actor->target->y, true);
+				P_TryMove(actor, actor->target->x, actor->target->y, true, NULL);
 			}
 			break;
 		default:
@@ -3168,7 +3167,7 @@ void A_SkullAttack(mobj_t *actor)
 			if (P_CheckMove(actor,\
 				P_ReturnThrustX(actor, testang, dist + 2*actor->radius),\
 				P_ReturnThrustY(actor, testang, dist + 2*actor->radius),\
-				true)) break;
+				true, NULL)) break;
 
 		if (P_RandomChance(PR_UNDEFINED, FRACUNIT/2)) // port priority 2?
 		{
@@ -3829,12 +3828,13 @@ void A_AttractChase(mobj_t *actor)
 
 				// Base add is 3 tics for 9,9, adds 1 tic for each point closer to the 1,1 end
 				actor->target->player->ringboost += K_GetKartRingPower(actor->target->player, true) + 3;
-				S_StartSound(actor->target, sfx_s1b5);
+				S_ReducedVFXSound(actor->target, sfx_s1b5, NULL);
 
 				sparkle = P_SpawnMobj(actor->target->x, actor->target->y, actor->target->z, MT_RINGSPARKS);
 				P_SetTarget(&sparkle->target, actor->target);
 				sparkle->angle = (actor->target->angle + (offset>>1)) + (offset * actor->target->player->sparkleanim);
 				actor->target->player->sparkleanim = (actor->target->player->sparkleanim+1) % 20;
+				K_ReduceVFX(sparkle, actor->target->player);
 
 				P_KillMobj(actor, actor->target, actor->target, DMG_NORMAL);
 				return;
@@ -4483,13 +4483,13 @@ void A_MinusDigging(mobj_t *actor)
 	par = P_SpawnMobj(actor->x, actor->y, mz, MT_MINUSDIRT);
 	if (actor->eflags & MFE_VERTICALFLIP)
 		par->eflags |= MFE_VERTICALFLIP;
-	P_TryMove(par, x, y, false);
+	P_TryMove(par, x, y, false, NULL);
 
 	// If close enough, prepare to attack
 	if (P_AproxDistance(actor->x - actor->target->x, actor->y - actor->target->y) < actor->radius*2)
 	{
 		P_SetMobjState(actor, actor->info->meleestate);
-		P_TryMove(actor, actor->target->x, actor->target->y, false);
+		P_TryMove(actor, actor->target->x, actor->target->y, false, NULL);
 		S_StartSound(actor, actor->info->attacksound);
 
 		// Spawn growing dirt pile.
@@ -4532,7 +4532,7 @@ void A_MinusDigging(mobj_t *actor)
 	}
 	else
 	{
-		if (P_TryMove(actor->tracer, actor->x, actor->y, false))
+		if (P_TryMove(actor->tracer, actor->x, actor->y, false, NULL))
 			actor->tracer->z = mz;
 		else
 			P_SetTarget(&actor->tracer, NULL);
@@ -5702,7 +5702,7 @@ void A_MixUp(mobj_t *actor)
 				players[i].mo->floorz = P_GetFloorZ(players[i].mo, players[i].mo->subsector->sector, players[i].mo->x, players[i].mo->y, NULL);
 				players[i].mo->ceilingz = P_GetCeilingZ(players[i].mo, players[i].mo->subsector->sector, players[i].mo->x, players[i].mo->y, NULL);
 
-				P_CheckPosition(players[i].mo, players[i].mo->x, players[i].mo->y);
+				P_CheckPosition(players[i].mo, players[i].mo->x, players[i].mo->y, NULL);
 			}
 		}
 	}
@@ -6470,7 +6470,7 @@ void A_GuardChase(mobj_t *actor)
 		&& !P_TryMove(actor,
 			actor->x + P_ReturnThrustX(actor, actor->angle, speed),
 			actor->y + P_ReturnThrustY(actor, actor->angle, speed),
-			false)
+			false, NULL)
 		&& speed > 0) // can't be the same check as previous so that P_TryMove gets to happen.
 		{
 			INT32 direction = actor->spawnpoint ? actor->spawnpoint->args[0] : TMGD_BACK;
@@ -9273,7 +9273,7 @@ void A_SpikeRetract(mobj_t *actor)
 		actor->flags &= ~MF_NOCLIPTHING;
 	}
 	if (actor->flags & MF_SOLID)
-		P_CheckPosition(actor, actor->x, actor->y);
+		P_CheckPosition(actor, actor->x, actor->y, NULL);
 }
 
 // Function: A_InfoState
@@ -10421,13 +10421,13 @@ void A_FlickyCenter(mobj_t *actor)
 		{
 			actor->extravalue2 = 1;
 		 	P_SetOrigin(actor, actor->target->x, actor->target->y, actor->target->z);
-			tmthing = NULL;
+			P_SetTarget(&tm.thing, NULL);
 		}
 		else if(actor->extravalue2)
 		{
 			actor->extravalue2 = 0;
 			P_SetOrigin(actor, originx, originy, originz);
-			tmthing = NULL;
+			P_SetTarget(&tm.thing, NULL);
 		}
 	}
 }
@@ -11511,7 +11511,7 @@ void A_DoNPCSkid(mobj_t *actor)
 		locvar2 = FRACUNIT/2;
 
 	if ((FixedHypot(actor->momx, actor->momy) < locvar2)
-	|| !P_TryMove(actor, actor->x + actor->momx, actor->y + actor->momy, false))
+	|| !P_TryMove(actor, actor->x + actor->momx, actor->y + actor->momy, false, NULL))
 	{
 		actor->momx = actor->momy = 0;
 		P_SetMobjState(actor, locvar1);
@@ -12286,7 +12286,7 @@ static void P_SnapperLegPlace(mobj_t *mo)
 	INT32 necklen = (32*(mo->info->reactiontime - mo->reactiontime))/mo->info->reactiontime; // Not in FU
 
 	seg->z = mo->z + ((mo->eflags & MFE_VERTICALFLIP) ? (((mo->height<<1)/3) - seg->height) : mo->height/3);
-	P_TryMove(seg, mo->x + FixedMul(c, rad) + necklen*c, mo->y + FixedMul(s, rad) + necklen*s, true);
+	P_TryMove(seg, mo->x + FixedMul(c, rad) + necklen*c, mo->y + FixedMul(s, rad) + necklen*s, true, NULL);
 	seg->angle = a;
 
 	// Move as many legs as available.
@@ -12307,7 +12307,7 @@ static void P_SnapperLegPlace(mobj_t *mo)
 			x = c*o2 + s*o1;
 			y = s*o2 - c*o1;
 			seg->z = mo->z + (((mo->eflags & MFE_VERTICALFLIP) ? (mo->height - seg->height) : 0));
-			P_TryMove(seg, mo->x + x, mo->y + y, true);
+			P_TryMove(seg, mo->x + x, mo->y + y, true, NULL);
 			P_SetMobjState(seg, seg->info->raisestate);
 		}
 		else
@@ -12442,7 +12442,7 @@ void A_SnapperThinker(mobj_t *actor)
 		c = FINECOSINE(fa);
 		s = FINESINE(fa);
 
-		P_TryMove(actor, actor->x + c*speed, actor->y + s*speed, false);
+		P_TryMove(actor, actor->x + c*speed, actor->y + s*speed, false, NULL);
 
 		// The snapper spawns dust if going fast!
 		if (actor->reactiontime < 4)
@@ -13044,9 +13044,13 @@ void A_ItemPop(mobj_t *actor)
 	Obj_SpawnItemDebrisEffects(actor, actor->target);
 
 	if (locvar1 == 1)
+	{
 		P_GivePlayerSpheres(actor->target->player, actor->extravalue1);
+	}
 	else if (locvar1 == 0)
-		actor->target->player->itemroulette = 1;
+	{
+		K_StartItemRoulette(actor->target->player);
+	}
 
 	// Here at mapload in battle?
 	if ((gametyperules & GTR_BUMPERS) && (actor->flags2 & MF2_BOSSNOTRAP))
@@ -13119,14 +13123,21 @@ void A_SSMineExplode(mobj_t *actor)
 {
 	INT32 locvar1 = var1;
 
+	tic_t delay;
+
 	if (LUA_CallAction(A_SSMINEEXPLODE, actor))
 		return;
 
 	if (actor->flags2 & MF2_DEBRIS)
 		return;
 
-	K_SpawnMineExplosion(actor, (actor->target && actor->target->player) ? actor->target->player->skincolor : SKINCOLOR_KETCHUP);
-	K_MineExplodeAttack(actor, (3*actor->info->painchance)>>1, (boolean)locvar1);
+	delay = K_MineExplodeAttack(actor, (3*actor->info->painchance)>>1, (boolean)locvar1);
+	K_SpawnMineExplosion(actor, (actor->target && actor->target->player) ? actor->target->player->skincolor : SKINCOLOR_KETCHUP, delay);
+}
+
+void A_SSMineFlash(mobj_t *actor)
+{
+	K_MineFlashScreen(actor);
 }
 
 void A_LandMineExplode(mobj_t *actor)
@@ -13137,8 +13148,15 @@ void A_LandMineExplode(mobj_t *actor)
 	INT32 i;
 	mobj_t *smoldering;
 
+	tic_t delay = actor->reactiontime;
+
 	if (LUA_CallAction(A_LANDMINEEXPLODE, actor))
 		return;
+
+	if (delay == 0)
+	{
+		delay = 8;
+	}
 
 	// we'll base the explosion "timer" off of some stupid variable like uh... cvmem!
 	// Yeah let's use cvmem since nobody uses that
@@ -13146,12 +13164,11 @@ void A_LandMineExplode(mobj_t *actor)
 	if (actor->target && !P_MobjWasRemoved(actor->target))
 		colour = actor->target->color;
 
-	K_MineFlashScreen(actor);
-
 	// Spawn smoke remains:
 	smoldering = P_SpawnMobj(actor->x, actor->y, actor->z, MT_SMOLDERING);
 	P_SetScale(smoldering, actor->scale);
 	smoldering->tics = TICRATE*3;
+	smoldering->hitlag = delay;
 
 	actor->fuse = actor->tics;	// disappear when this state ends.
 
@@ -13161,6 +13178,8 @@ void A_LandMineExplode(mobj_t *actor)
 		expl = P_SpawnMobj(actor->x, actor->y, actor->z + actor->scale, MT_BOOMEXPLODE);
 		expl->color = colour;
 		expl->tics = (i+1);
+		expl->hitlag = delay;
+		expl->renderflags |= RF_DONTDRAW;
 
 		//K_MatchGenericExtraFlags(expl, actor);
 		P_SetScale(expl, actor->scale*4);
@@ -13171,6 +13190,8 @@ void A_LandMineExplode(mobj_t *actor)
 		// 100/45 = 2.22 fu/t
 		expl->momz = ((i+1)*actor->scale*5/2)*P_MobjFlip(expl);
 	}
+
+	Obj_SpawnBrolyKi(actor, delay);
 }
 
 void A_BallhogExplode(mobj_t *actor)

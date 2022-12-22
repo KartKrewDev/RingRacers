@@ -57,6 +57,7 @@
 #include "k_boss.h"
 #include "doomstat.h"
 #include "s_sound.h" // sfx_syfail
+#include "m_cond.h" // netUnlocked
 
 // cl loading screen
 #include "v_video.h"
@@ -531,8 +532,10 @@ typedef enum
 	CL_SEARCHING,
 	CL_CHECKFILES,
 	CL_DOWNLOADFILES,
+	CL_DOWNLOADFAILED,
 	CL_ASKJOIN,
 	CL_LOADFILES,
+	CL_SETUPFILES,
 	CL_WAITJOINRESPONSE,
 	CL_DOWNLOADSAVEGAME,
 	CL_CONNECTED,
@@ -615,7 +618,11 @@ static inline void CL_DrawConnectionStatus(void)
 				break;
 			case CL_ASKFULLFILELIST:
 			case CL_CONFIRMCONNECT:
+			case CL_DOWNLOADFAILED:
 				cltext = "";
+				break;
+			case CL_SETUPFILES:
+				cltext = M_GetText("Configuring addons...");
 				break;
 			case CL_ASKJOIN:
 			case CL_WAITJOINRESPONSE:
@@ -655,8 +662,8 @@ static inline void CL_DrawConnectionStatus(void)
 			V_DrawCenteredString(BASEVIDWIDTH/2, BASEVIDHEIGHT-24-32, V_YELLOWMAP, "Checking server addons...");
 			totalfileslength = (INT32)((checkednum/(double)(fileneedednum)) * 256);
 			M_DrawTextBox(BASEVIDWIDTH/2-128-8, BASEVIDHEIGHT-24-8, 32, 1);
-			V_DrawFill(BASEVIDWIDTH/2-128, BASEVIDHEIGHT-24, 256, 8, 175);
-			V_DrawFill(BASEVIDWIDTH/2-128, BASEVIDHEIGHT-24, totalfileslength, 8, 160);
+			V_DrawFill(BASEVIDWIDTH/2-128, BASEVIDHEIGHT-24, 256, 8, 111);
+			V_DrawFill(BASEVIDWIDTH/2-128, BASEVIDHEIGHT-24, totalfileslength, 8, 96);
 			V_DrawCenteredString(BASEVIDWIDTH/2, BASEVIDHEIGHT-24, V_20TRANS|V_MONOSPACE,
 				va(" %2u/%2u Files",checkednum,fileneedednum));
 		}
@@ -677,8 +684,8 @@ static inline void CL_DrawConnectionStatus(void)
 			V_DrawCenteredString(BASEVIDWIDTH/2, BASEVIDHEIGHT-24-32, V_YELLOWMAP, "Loading server addons...");
 			totalfileslength = (INT32)((loadcompletednum/(double)(fileneedednum)) * 256);
 			M_DrawTextBox(BASEVIDWIDTH/2-128-8, BASEVIDHEIGHT-24-8, 32, 1);
-			V_DrawFill(BASEVIDWIDTH/2-128, BASEVIDHEIGHT-24, 256, 8, 175);
-			V_DrawFill(BASEVIDWIDTH/2-128, BASEVIDHEIGHT-24, totalfileslength, 8, 160);
+			V_DrawFill(BASEVIDWIDTH/2-128, BASEVIDHEIGHT-24, 256, 8, 111);
+			V_DrawFill(BASEVIDWIDTH/2-128, BASEVIDHEIGHT-24, totalfileslength, 8, 96);
 			V_DrawCenteredString(BASEVIDWIDTH/2, BASEVIDHEIGHT-24, V_20TRANS|V_MONOSPACE,
 				va(" %2u/%2u Files",loadcompletednum,fileneedednum));
 		}
@@ -719,8 +726,10 @@ static inline void CL_DrawConnectionStatus(void)
 				strncpy(tempname, filename, sizeof(tempname)-1);
 			}
 
+			V_DrawCenteredString(BASEVIDWIDTH/2, BASEVIDHEIGHT-58-30, 0,
+				va(M_GetText("%s downloading"), ((cl_mode == CL_DOWNLOADHTTPFILES) ? "\x82""HTTP" : "\x85""Direct")));
 			V_DrawCenteredString(BASEVIDWIDTH/2, BASEVIDHEIGHT-58-22, V_YELLOWMAP,
-				va(M_GetText("Downloading \"%s\""), tempname));
+				va(M_GetText("\"%s\""), tempname));
 			V_DrawString(BASEVIDWIDTH/2-128, BASEVIDHEIGHT-58, V_20TRANS|V_MONOSPACE,
 				va(" %4uK/%4uK",fileneeded[lastfilenum].currentsize>>10,file->totalsize>>10));
 			V_DrawRightAlignedString(BASEVIDWIDTH/2+128, BASEVIDHEIGHT-58, V_20TRANS|V_MONOSPACE,
@@ -736,8 +745,8 @@ static inline void CL_DrawConnectionStatus(void)
 			V_DrawCenteredString(BASEVIDWIDTH/2, BASEVIDHEIGHT-24-14, V_YELLOWMAP, "Overall Download Progress");
 			totalfileslength = (INT32)((totaldldsize/(double)totalfilesrequestedsize) * 256);
 			M_DrawTextBox(BASEVIDWIDTH/2-128-8, BASEVIDHEIGHT-24-8, 32, 1);
-			V_DrawFill(BASEVIDWIDTH/2-128, BASEVIDHEIGHT-24, 256, 8, 175);
-			V_DrawFill(BASEVIDWIDTH/2-128, BASEVIDHEIGHT-24, totalfileslength, 8, 160);
+			V_DrawFill(BASEVIDWIDTH/2-128, BASEVIDHEIGHT-24, 256, 8, 111);
+			V_DrawFill(BASEVIDWIDTH/2-128, BASEVIDHEIGHT-24, totalfileslength, 8, 96);
 
 			if (totalfilesrequestedsize>>20 >= 10) //display in MB if over 10MB
 				V_DrawString(BASEVIDWIDTH/2-128, BASEVIDHEIGHT-24, V_20TRANS|V_MONOSPACE,
@@ -815,6 +824,8 @@ static boolean CL_SendJoin(void)
 	// privacy shield for the local players not joining this session
 	for (; i < MAXSPLITSCREENPLAYERS; i++)
 		strncpy(netbuffer->u.clientcfg.names[i], va("Player %c", 'A' + i), MAXPLAYERNAME);
+
+	memcpy(&netbuffer->u.clientcfg.availabilities, R_GetSkinAvailabilities(false), MAXAVAILABILITY*sizeof(UINT8));
 
 	return HSendPacket(servernode, false, 0, sizeof (clientconfig_pak));
 }
@@ -1497,6 +1508,10 @@ static void M_ConfirmConnect(void)
 				{
 					cl_mode = CL_DOWNLOADFILES;
 				}
+				else
+				{
+					cl_mode = CL_DOWNLOADFAILED;
+				}
 			}
 #ifdef HAVE_CURL
 			else
@@ -1644,6 +1659,10 @@ static boolean CL_FinishedFileList(void)
 			if (CL_SendFileRequest())
 			{
 				cl_mode = CL_DOWNLOADFILES;
+			}
+			else
+			{
+				cl_mode = CL_DOWNLOADFAILED;
 			}
 		}
 #endif
@@ -1850,8 +1869,28 @@ static boolean CL_ServerConnectionTicker(const char *tmpsave, tic_t *oldtic, tic
 
 			cl_mode = CL_LOADFILES;
 			break;
+		case CL_DOWNLOADFAILED:
+			{
+				CONS_Printf(M_GetText("Legacy downloader request packet failed.\n"));
+				CONS_Printf(M_GetText("Network game synchronization aborted.\n"));
+				D_QuitNetGame();
+				CL_Reset();
+				D_StartTitle();
+				M_StartMessage(M_GetText(
+					"The direct download encountered an error.\n"
+					"See the logfile for more info.\n"
+					"\n"
+					"Press (B)\n"
+				), NULL, MM_NOTHING);
+				return false;
+			}
 		case CL_LOADFILES:
-			if (CL_LoadServerFiles())
+			if (CL_LoadServerFiles()) 
+				cl_mode = CL_SETUPFILES;
+
+			break;
+		case CL_SETUPFILES:
+			if (P_PartialAddGetStage() < 0 || P_MultiSetupWadFiles(false))
 			{
 				*asksent = 0; //This ensure the first join ask is right away
 				firstconnectattempttime = I_GetTime();
@@ -2079,7 +2118,12 @@ static void CL_ConnectToServer(void)
 	{
 		// If the connection was aborted for some reason, leave
 		if (!CL_ServerConnectionTicker(tmpsave, &oldtic, &asksent))
+		{
+			if (P_PartialAddGetStage() >= 0)
+				P_MultiSetupWadFiles(true); // in case any partial adds were done
+
 			return;
+		}
 
 		if (server)
 		{
@@ -2487,6 +2531,11 @@ void CL_ClearPlayer(INT32 playernum)
 {
 	int i;
 
+	if (players[playernum].follower)
+	{	
+		K_RemoveFollower(&players[playernum]);
+	}
+
 	if (players[playernum].mo)
 	{
 		P_RemoveMobj(players[playernum].mo);
@@ -2503,6 +2552,9 @@ void CL_ClearPlayer(INT32 playernum)
 	splitscreen_original_party_size[playernum] = 0;
 
 	memset(&players[playernum], 0, sizeof (player_t));
+
+	players[playernum].followerskin = -1; // don't have a ghost follower
+	players[playernum].fakeskin = players[playernum].lastfakeskin = MAXSKINS; // don't avoid eggman
 
 	RemoveAdminPlayer(playernum); // don't stay admin after you're gone
 }
@@ -3412,6 +3464,11 @@ void SV_ResetServer(void)
 
 	CV_RevertNetVars();
 
+	// Copy our unlocks to a place where net material can grab at/overwrite them safely.
+	// (permits all unlocks in dedicated)
+	for (i = 0; i < MAXUNLOCKABLES; i++)
+		netUnlocked[i] = (dedicated || gamedata->unlocked[i]);
+
 	DEBFILE("\n-=-=-=-=-=-=-= Server Reset =-=-=-=-=-=-=-\n\n");
 }
 
@@ -3516,8 +3573,8 @@ static void Got_AddPlayer(UINT8 **p, INT32 playernum)
 		return;
 	}
 
-	node = (UINT8)READUINT8(*p);
-	newplayernum = (UINT8)READUINT8(*p);
+	node = READUINT8(*p);
+	newplayernum = READUINT8(*p);
 
 	CONS_Debug(DBG_NETPLAY, "addplayer: %d %d\n", node, newplayernum);
 
@@ -3538,8 +3595,13 @@ static void Got_AddPlayer(UINT8 **p, INT32 playernum)
 
 	READSTRINGN(*p, player_names[newplayernum], MAXPLAYERNAME);
 
-	console = (UINT8)READUINT8(*p);
-	splitscreenplayer = (UINT8)READUINT8(*p);
+	console = READUINT8(*p);
+	splitscreenplayer = READUINT8(*p);
+
+	for (i = 0; i < MAXAVAILABILITY; i++)
+	{
+		newplayer->availabilities[i] = READUINT8(*p);
+	}
 
 	// the server is creating my player
 	if (node == mynode)
@@ -3641,7 +3703,7 @@ static void Got_RemovePlayer(UINT8 **p, INT32 playernum)
 static void Got_AddBot(UINT8 **p, INT32 playernum)
 {
 	INT16 newplayernum;
-	UINT8 skinnum = 0;
+	UINT8 i, skinnum = 0;
 	UINT8 difficulty = DIFFICULTBOT;
 
 	if (playernum != serverplayer && !IsPlayerAdmin(playernum))
@@ -3655,9 +3717,9 @@ static void Got_AddBot(UINT8 **p, INT32 playernum)
 		return;
 	}
 
-	newplayernum = (UINT8)READUINT8(*p);
-	skinnum = (UINT8)READUINT8(*p);
-	difficulty = (UINT8)READUINT8(*p);
+	newplayernum = READUINT8(*p);
+	skinnum = READUINT8(*p);
+	difficulty = READUINT8(*p);
 
 	CONS_Debug(DBG_NETPLAY, "addbot: %d\n", newplayernum);
 
@@ -3670,6 +3732,15 @@ static void Got_AddBot(UINT8 **p, INT32 playernum)
 		doomcom->numslots = (INT16)(newplayernum+1);
 
 	playernode[newplayernum] = servernode;
+
+	// todo find a way to have all auto unlocked for dedicated
+	if (playeringame[0])
+	{
+		for (i = 0; i < MAXAVAILABILITY; i++)
+		{
+			players[newplayernum].availabilities[i] = players[0].availabilities[i];
+		}
+	}
 
 	players[newplayernum].splitscreenindex = 0;
 	players[newplayernum].bot = true;
@@ -3688,10 +3759,10 @@ static void Got_AddBot(UINT8 **p, INT32 playernum)
 	LUA_HookInt(newplayernum, HOOK(PlayerJoin));
 }
 
-static boolean SV_AddWaitingPlayers(SINT8 node, const char *name, const char *name2, const char *name3, const char *name4)
+static boolean SV_AddWaitingPlayers(SINT8 node, UINT8 *availabilities, const char *name, const char *name2, const char *name3, const char *name4)
 {
-	INT32 n, newplayernum;
-	UINT8 buf[4 + MAXPLAYERNAME];
+	INT32 n, newplayernum, i;
+	UINT8 buf[4 + MAXPLAYERNAME + MAXAVAILABILITY];
 	UINT8 *buf_p = buf;
 	boolean newplayer = false;
 
@@ -3774,6 +3845,11 @@ static boolean SV_AddWaitingPlayers(SINT8 node, const char *name, const char *na
 			WRITEUINT8(buf_p, nodetoplayer[node]); // consoleplayer
 			WRITEUINT8(buf_p, playerpernode[node]); // splitscreen num
 
+			for (i = 0; i < MAXAVAILABILITY; i++)
+			{
+				WRITEUINT8(buf_p, availabilities[i]);
+			}
+
 			playerpernode[node]++;
 
 			SendNetXCmd(XD_ADDPLAYER, buf, buf_p - buf);
@@ -3837,9 +3913,10 @@ boolean SV_SpawnServer(void)
 	// strictly speaking, i'm not convinced the following is necessary
 	// but I'm not confident enough to remove it entirely in case it breaks something
 	{
+		UINT8 *availabilitiesbuffer = R_GetSkinAvailabilities(false);
 		SINT8 node = 0;
 		for (; node < MAXNETNODES; node++)
-			result |= SV_AddWaitingPlayers(node, cv_playername[0].zstring, cv_playername[1].zstring, cv_playername[2].zstring, cv_playername[3].zstring);
+			result |= SV_AddWaitingPlayers(node, availabilitiesbuffer, cv_playername[0].zstring, cv_playername[1].zstring, cv_playername[2].zstring, cv_playername[3].zstring);
 	}
 	return result;
 #endif
@@ -3922,6 +3999,7 @@ static void HandleConnect(SINT8 node)
 {
 	char names[MAXSPLITSCREENPLAYERS][MAXPLAYERNAME + 1];
 	INT32 i;
+	UINT8 availabilitiesbuffer[MAXAVAILABILITY];
 
 	// Sal: Dedicated mode is INCREDIBLY hacked together.
 	// If a server filled out, then it'd overwrite the host and turn everyone into weird husks.....
@@ -4028,6 +4106,8 @@ static void HandleConnect(SINT8 node)
 			}
 		}
 
+		memcpy(availabilitiesbuffer, netbuffer->u.clientcfg.availabilities, sizeof(availabilitiesbuffer));
+
 		// client authorised to join
 		nodewaiting[node] = (UINT8)(netbuffer->u.clientcfg.localplayers - playerpernode[node]);
 		if (!nodeingame[node])
@@ -4062,7 +4142,8 @@ static void HandleConnect(SINT8 node)
 				SV_SendSaveGame(node, false); // send a complete game state
 				DEBFILE("send savegame\n");
 			}
-			SV_AddWaitingPlayers(node, names[0], names[1], names[2], names[3]);
+
+			SV_AddWaitingPlayers(node, availabilitiesbuffer, names[0], names[1], names[2], names[3]);
 			joindelay += cv_joindelay.value * TICRATE;
 			player_joining = true;
 		}
@@ -5532,53 +5613,56 @@ static INT32 pingtimeout[MAXPLAYERS];
 static inline void PingUpdate(void)
 {
 	INT32 i;
-	boolean laggers[MAXPLAYERS];
-	UINT8 numlaggers = 0;
-	memset(laggers, 0, sizeof(boolean) * MAXPLAYERS);
+	boolean pingkick[MAXPLAYERS];
+	UINT8 nonlaggers = 0;
+	memset(pingkick, 0, sizeof(pingkick));
 
 	netbuffer->packettype = PT_PING;
 
 	//check for ping limit breakage.
 	if (cv_maxping.value)
 	{
-		for (i = 1; i < MAXPLAYERS; i++)
+		for (i = 0; i < MAXPLAYERS; i++)
 		{
-			if (playeringame[i]
-			&& (realpingtable[i] / pingmeasurecount > (unsigned)cv_maxping.value))
+			if (!playeringame[i] || P_IsMachineLocalPlayer(&players[i]))
 			{
-				if (players[i].jointime > 30 * TICRATE)
-					laggers[i] = true;
-				numlaggers++;
+				pingtimeout[i] = 0;
+				continue;
+			}
+
+			if ((cv_maxping.value)
+				&& (realpingtable[i] / pingmeasurecount > (unsigned)cv_maxping.value))
+			{
+				if (players[i].jointime > 10 * TICRATE)
+				{
+					pingkick[i] = true;
+				}
 			}
 			else
-				pingtimeout[i] = 0;
+			{
+				nonlaggers++;
+
+				// you aren't lagging, but you aren't free yet. In case you'll keep spiking, we just make the timer go back down. (Very unstable net must still get kicked).
+				if (pingtimeout[i] > 0)
+					pingtimeout[i]--;
+			}
 		}
 
 		//kick lagging players... unless everyone but the server's ping sucks.
 		//in that case, it is probably the server's fault.
-		if (numlaggers < D_NumPlayers() - 1)
+		if (nonlaggers > 0)
 		{
-			for (i = 1; i < MAXPLAYERS; i++)
+			for (i = 0; i < MAXPLAYERS; i++)
 			{
-				if (playeringame[i] && laggers[i])
-				{
-					pingtimeout[i]++;
+				if (!playeringame[i] || !pingkick[i])
+					continue;
 
-					// ok your net has been bad for too long, you deserve to die.
-					if (pingtimeout[i] > cv_pingtimeout.value)
-					{
-						pingtimeout[i] = 0;
-						SendKick(i, KICK_MSG_PING_HIGH);
-					}
-				}
-				/*
-					you aren't lagging,
-					but you aren't free yet.
-					In case you'll keep spiking,
-					we just make the timer go back down. (Very unstable net must still get kicked).
-				*/
-				else
-					pingtimeout[i] = (pingtimeout[i] == 0 ? 0 : pingtimeout[i]-1);
+				// Don't kick on ping alone if we haven't reached our threshold yet.
+				if (++pingtimeout[i] < cv_pingtimeout.value)
+					continue;
+
+				pingtimeout[i] = 0;
+				SendKick(i, KICK_MSG_PING_HIGH);
 			}
 		}
 	}
@@ -5759,6 +5843,9 @@ void NetKeepAlive(void)
 	FileSendTicker();
 }
 
+// If a tree falls in the forest but nobody is around to hear it, does it make a tic?
+#define DEDICATEDIDLETIME (10*TICRATE)
+
 void NetUpdate(void)
 {
 	static tic_t resptime = 0;
@@ -5771,6 +5858,7 @@ void NetUpdate(void)
 
 	if (realtics <= 0) // nothing new to update
 		return;
+
 	if (realtics > 5)
 	{
 		if (server)
@@ -5778,6 +5866,55 @@ void NetUpdate(void)
 		else
 			realtics = 5;
 	}
+
+#ifdef DEDICATEDIDLETIME
+	if (server && dedicated && gamestate == GS_LEVEL)
+	{
+		static tic_t dedicatedidle = 0;
+
+		for (i = 1; i < MAXNETNODES; ++i)
+			if (nodeingame[i])
+			{
+				if (dedicatedidle == DEDICATEDIDLETIME)
+				{
+					CONS_Printf("DEDICATED: Awakening from idle (Node %d detected...)\n", i);
+					dedicatedidle = 0;
+				}
+				break;
+			}
+
+		if (i == MAXNETNODES)
+		{
+			if (leveltime == 2)
+			{
+				// On next tick...
+				dedicatedidle = DEDICATEDIDLETIME-1;
+			}
+			else if (dedicatedidle == DEDICATEDIDLETIME)
+			{
+				if (D_GetExistingTextcmd(gametic, 0) || D_GetExistingTextcmd(gametic+1, 0))
+				{
+					CONS_Printf("DEDICATED: Awakening from idle (Netxcmd detected...)\n");
+					dedicatedidle = 0;
+				}
+				else
+				{
+					realtics = 0;
+				}
+			}
+			else if ((dedicatedidle += realtics) >= DEDICATEDIDLETIME)
+			{
+				const char *idlereason = "at round start";
+				if (leveltime > 3)
+					idlereason = va("for %d seconds", dedicatedidle/TICRATE);
+
+				CONS_Printf("DEDICATED: No nodes %s, idling...\n", idlereason);
+				realtics = 0;
+				dedicatedidle = DEDICATEDIDLETIME;
+			}
+		}
+	}
+#endif
 
 	gametime = nowtime;
 
@@ -5816,24 +5953,25 @@ void NetUpdate(void)
 	}
 	else
 	{
-		if (!demo.playback)
+		if (!demo.playback && realtics > 0)
 		{
 			INT32 counts;
 
 			hu_redownloadinggamestate = false;
 
-			firstticstosend = gametic;
-			for (i = 0; i < MAXNETNODES; i++)
-				if (nodeingame[i] && nettics[i] < firstticstosend)
-				{
-					firstticstosend = nettics[i];
-
-					if (maketic + 1 >= nettics[i] + BACKUPTICS)
-						Net_ConnectionTimeout(i);
-				}
-
 			// Don't erase tics not acknowledged
 			counts = realtics;
+
+			firstticstosend = gametic;
+			for (i = 0; i < MAXNETNODES; i++)
+			{
+				if (!nodeingame[i])
+					continue;
+				if (nettics[i] < firstticstosend)
+					firstticstosend = nettics[i];
+				if (maketic + counts >= nettics[i] + (BACKUPTICS - TICRATE))
+					Net_ConnectionTimeout(i);
+			}
 
 			if (maketic + counts >= firstticstosend + BACKUPTICS)
 				counts = firstticstosend+BACKUPTICS-maketic-1;

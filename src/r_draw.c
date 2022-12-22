@@ -103,7 +103,7 @@ UINT8 *dc_transmap; // one of the translucency tables
 */
 UINT8 *dc_translation;
 
-struct r_lightlist_s *dc_lightlist = NULL;
+struct r_lightlist_t *dc_lightlist = NULL;
 INT32 dc_numlights = 0, dc_maxlights, dc_texheight;
 
 // =========================================================================
@@ -197,6 +197,9 @@ CV_PossibleValue_t Color_cons_t[MAXSKINCOLORS+1];
 
 #define TRANSTAB_AMTMUL10 (255.0f / 10.0f)
 
+static void R_GenerateBlendTables(void);
+static void R_GenerateTranslucencyTable(UINT8 *table, RGBA_t* sourcepal, int style, UINT8 blendamt);
+
 static void R_AllocateBlendTables(void)
 {
 	INT32 i;
@@ -259,15 +262,15 @@ void R_GenerateBlendTables(void)
 		const size_t offs = (0x10000 * i);
 		const UINT8 alpha = (TRANSTAB_AMTMUL10 * ((float)(10-i)));
 
-		R_GenerateTranslucencyTable(blendtables[blendtab_add] + offs, AST_ADD, alpha);
-		R_GenerateTranslucencyTable(blendtables[blendtab_subtract] + offs, AST_SUBTRACT, alpha);
-		R_GenerateTranslucencyTable(blendtables[blendtab_reversesubtract] + offs, AST_REVERSESUBTRACT, alpha);
+		R_GenerateTranslucencyTable(blendtables[blendtab_add] + offs, pGammaCorrectedPalette, AST_ADD, alpha);
+		R_GenerateTranslucencyTable(blendtables[blendtab_subtract] + offs, pMasterPalette, AST_SUBTRACT, alpha); // intentionally uses pMasterPalette
+		R_GenerateTranslucencyTable(blendtables[blendtab_reversesubtract] + offs, pGammaCorrectedPalette, AST_REVERSESUBTRACT, alpha);
 	}
 
-	R_GenerateTranslucencyTable(blendtables[blendtab_modulate], AST_MODULATE, 0);
+	R_GenerateTranslucencyTable(blendtables[blendtab_modulate], pGammaCorrectedPalette, AST_MODULATE, 0);
 }
 
-void R_GenerateTranslucencyTable(UINT8 *table, int style, UINT8 blendamt)
+void R_GenerateTranslucencyTable(UINT8 *table, RGBA_t* sourcepal, int style, UINT8 blendamt)
 {
 	INT16 bg, fg;
 	RGBA_t backrgba, frontrgba, result;
@@ -277,18 +280,13 @@ void R_GenerateTranslucencyTable(UINT8 *table, int style, UINT8 blendamt)
 
 	for (bg = 0; bg <= 0xFF; bg++)
 	{
-		backrgba = pGammaCorrectedPalette[bg];
+		backrgba = sourcepal[bg];
 		for (fg = 0; fg <= 0xFF; fg++)
 		{
-			frontrgba = pGammaCorrectedPalette[fg];
+			frontrgba = sourcepal[fg];
 
-#if 0 // perfect implementation
-			result.rgba = V_GammaEncode(ASTBlendPixel(backrgba, frontrgba, style, blendamt));
-			table[((fg * 0x100) + bg)] = NearestPaletteColor(result.s.red, result.s.green, result.s.blue, pMasterPalette);
-#else // performance scrabbler
 			result.rgba = ASTBlendPixel(backrgba, frontrgba, style, blendamt);
-			table[((fg * 0x100) + bg)] = NearestPaletteColor(result.s.red, result.s.green, result.s.blue, pGammaCorrectedPalette);
-#endif
+			table[((fg * 0x100) + bg)] = NearestPaletteColor(result.s.red, result.s.green, result.s.blue, sourcepal);
 		}
 	}
 }

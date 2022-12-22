@@ -30,7 +30,7 @@
 #define DEFAULTSKIN4 "knuckles" // fourth player
 
 /// The skin_t struct
-typedef struct
+struct skin_t
 {
 	char name[SKINNAMESIZE+1]; // INT16 descriptive name of the skin
 	UINT16 wadnum;
@@ -61,7 +61,7 @@ typedef struct
 	// contains super versions too
 	spritedef_t sprites[NUMPLAYERSPRITES*2];
 	spriteinfo_t sprinfo[NUMPLAYERSPRITES*2];
-} skin_t;
+};
 
 enum facepatches {
 	FACE_RANK = 0,
@@ -81,11 +81,17 @@ void R_InitSkins(void);
 
 void SetPlayerSkin(INT32 playernum,const char *skinname);
 void SetPlayerSkinByNum(INT32 playernum,INT32 skinnum); // Tails 03-16-2002
-boolean R_SkinUsable(INT32 playernum, INT32 skinnum);
-UINT32 R_GetSkinAvailabilities(void);
+void SetFakePlayerSkin(player_t* player, INT32 skinnum);
+void SetRandomFakePlayerSkin(player_t* player, boolean fast);
+void ClearFakePlayerSkin(player_t* player);
+boolean R_SkinUsable(INT32 playernum, INT32 skinnum, boolean demoskins);
+INT32 GetSkinNumClosestToStats(UINT8 kartspeed, UINT8 kartweight, UINT32 flags, boolean unlock);
+
+UINT8 *R_GetSkinAvailabilities(boolean demolock);
 INT32 R_SkinAvailable(const char *name);
-void R_PatchSkins(UINT16 wadnum);
-void R_AddSkins(UINT16 wadnum);
+
+void R_PatchSkins(UINT16 wadnum, boolean mainfile);
+void R_AddSkins(UINT16 wadnum, boolean mainfile);
 
 UINT8 P_GetSkinSprite2(skin_t *skin, UINT8 spr2, player_t *player);
 

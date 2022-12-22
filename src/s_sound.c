@@ -732,6 +732,27 @@ void S_StartSound(const void *origin, sfxenum_t sfx_id)
 		S_StartSoundAtVolume(origin, sfx_id, 255);
 }
 
+void S_ReducedVFXSoundAtVolume(const void *origin, sfxenum_t sfx_id, INT32 volume, player_t *owner)
+{
+	if (S_SoundDisabled())
+		return;
+
+	if (cv_reducevfx.value == 1)
+	{
+		if (owner == NULL)
+		{
+			return;
+		}
+
+		if (P_IsDisplayPlayer(owner) == false)
+		{
+			return;
+		}
+	}
+
+	S_StartSoundAtVolume(origin, sfx_id, volume);
+}
+
 void S_StopSound(void *origin)
 {
 	INT32 cnum;
@@ -1455,16 +1476,32 @@ ReadMusicDefFields
 
 			textline = value;
 
-			/* based ignored lumps */
-			if (!stricmp(stoken, "usage")) {
-#if 0 // Ignore for now
-				STRBUFCPY(def->usage, textline);
-#endif
-			} else if (!stricmp(stoken, "source")) {
-				STRBUFCPY(def->source, textline);
-			} else if (!stricmp(stoken, "volume")) {
+			if (!stricmp(stoken, "title"))
+			{
+				Z_Free(def->title);
+				def->title = Z_StrDup(textline);
+			}
+			else if (!stricmp(stoken, "author"))
+			{
+				Z_Free(def->author);
+				def->author = Z_StrDup(textline);
+			}
+			else if (!stricmp(stoken, "source"))
+			{
+				Z_Free(def->source);
+				def->source = Z_StrDup(textline);
+			}
+			else if (!stricmp(stoken, "originalcomposers"))
+			{
+				Z_Free(def->composers);
+				def->composers = Z_StrDup(textline);
+			}
+			else if (!stricmp(stoken, "volume"))
+			{
 				def->volume = atoi(textline);
-			} else {
+			}
+			else
+			{
 				MusicDefError(CONS_WARNING,
 						"Unknown field '%s'.",
 						stoken, lumpnum, line);
@@ -1587,14 +1624,53 @@ void S_ShowMusicCredit(void)
 	{
 		if (!stricmp(def->name, music_name))
 		{
+			char credittext[128] = "";
+			char *work = NULL;
+			size_t len = 128, worklen;
+
+			if (!def->title)
+			{
+				return;
+			}
+
+			work = va("\x1F %s", def->title);
+			worklen = strlen(work);
+			if (worklen <= len)
+			{
+				strncat(credittext, work, len);
+				len -= worklen;
+
+#define MUSICCREDITAPPEND(field)\
+				if (field)\
+				{\
+					work = va(" - %s", field);\
+					worklen = strlen(work);\
+					if (worklen <= len)\
+					{\
+						strncat(credittext, work, len);\
+						len -= worklen;\
+					}\
+				}
+
+				MUSICCREDITAPPEND(def->author);
+				MUSICCREDITAPPEND(def->source);
+
+#undef MUSICCREDITAPPEND
+			}
+
+			if (credittext[0] == '\0')
+				return;
+
 			cursongcredit.def = def;
+			Z_Free(cursongcredit.text);
+			cursongcredit.text = Z_StrDup(credittext);
 			cursongcredit.anim = 5*TICRATE;
-			cursongcredit.x = cursongcredit.old_x =0;
+			cursongcredit.x = cursongcredit.old_x = 0;
 			cursongcredit.trans = NUMTRANSMAPS;
 			return;
 		}
-		else
-			def = def->next;
+
+		def = def->next;
 	}
 }
 

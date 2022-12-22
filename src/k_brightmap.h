@@ -17,7 +17,7 @@
 #include "doomdef.h"
 #include "doomtype.h"
 
-typedef struct brightmapStorage_s
+struct brightmapStorage_t
 {
 	// Brightmap storage struct.
 	// Stores data for brightmap definitions,
@@ -28,7 +28,7 @@ typedef struct brightmapStorage_s
 
 	char brightmapName[9];	// The brightmap's name.
 	UINT32 brightmapHash;	// The brightmap name's hash.
-} brightmapStorage_t;
+};
 
 /*--------------------------------------------------
 	void K_InitBrightmapsPwad(INT32 wadNum);

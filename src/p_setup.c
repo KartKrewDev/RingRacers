@@ -171,6 +171,13 @@ mapthing_t *playerstarts[MAXPLAYERS];
 mapthing_t *bluectfstarts[MAXPLAYERS];
 mapthing_t *redctfstarts[MAXPLAYERS];
 
+// Global state for PartialAddWadFile/MultiSetupWadFiles
+// Might be replacable with parameters, but non-trivial when the functions are called on separate tics
+static SINT8 partadd_stage = -1;
+static boolean partadd_important = false;
+UINT16 partadd_earliestfile = UINT16_MAX;
+
+
 // Maintain *ZOOM TUBE* waypoints
 // Renamed because SRB2Kart owns real waypoints.
 mobj_t *tubewaypoints[NUMTUBEWAYPOINTSEQUENCES][TUBEWAYPOINTSEQUENCESIZE];
@@ -394,7 +401,6 @@ static void P_ClearSingleMapHeaderInfo(INT16 num)
 	mapheaderinfo[num]->palette = UINT16_MAX;
 	mapheaderinfo[num]->encorepal = UINT16_MAX;
 	mapheaderinfo[num]->numlaps = NUMLAPS_DEFAULT;
-	mapheaderinfo[num]->unlockrequired = -1;
 	mapheaderinfo[num]->levelselect = 0;
 	mapheaderinfo[num]->levelflags = 0;
 	mapheaderinfo[num]->menuflags = 0;
@@ -2625,6 +2631,7 @@ static void P_ProcessLinedefsAfterSidedefs(void)
 {
 	size_t i = numlines;
 	register line_t *ld = lines;
+	const boolean subtractTripwire = ((mapheaderinfo[gamemap - 1]->levelflags & LF_SUBTRACTNUM) == LF_SUBTRACTNUM);
 
 	for (; i--; ld++)
 	{
@@ -2639,7 +2646,7 @@ static void P_ProcessLinedefsAfterSidedefs(void)
 
 		if (ld->tripwire)
 		{
-			ld->blendmode = AST_ADD;
+			ld->blendmode = (subtractTripwire ? AST_SUBTRACT : AST_ADD);
 			ld->alpha = 0xff;
 		}
 
@@ -5493,6 +5500,10 @@ static void P_ConvertBinaryLinedefTypes(void)
 			if (lines[i].flags & ML_SKEWTD)
 				lines[i].args[3] |= TMPF_GHOSTFADE;
 			break;
+		case 499: //Ring Racers - Toggle waypoints
+			lines[i].args[0] = tag;
+			lines[i].args[1] = !!(lines[i].flags & ML_NOCLIMB);
+			break;
 		case 500: //Scroll front wall left
 		case 501: //Scroll front wall right
 			lines[i].args[0] = 0;
@@ -6796,7 +6807,6 @@ static void P_InitLevelSettings(void)
 	modulothing = 0;
 
 	// special stage tokens, emeralds, and ring total
-	tokenbits = 0;
 	runemeraldmanager = false;
 	emeraldspawndelay = 60*TICRATE;
 
@@ -6826,6 +6836,7 @@ static void P_InitLevelSettings(void)
 	memset(&quake,0,sizeof(struct quake));
 
 	// song credit init
+	Z_Free(cursongcredit.text);
 	memset(&cursongcredit,0,sizeof(struct cursongcredit));
 	cursongcredit.trans = NUMTRANSMAPS;
 
@@ -7458,7 +7469,7 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 
 	P_ResetTubeWaypoints();
 
-	P_MapStart(); // tmthing can be used starting from this point
+	P_MapStart(); // tm.thing can be used starting from this point
 
 	// init anything that P_SpawnSlopes/P_LoadThings needs to know
 	P_InitSpecials();
@@ -7558,10 +7569,13 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 	nextmapoverride = 0;
 	skipstats = 0;
 
-	if (!(netgame || multiplayer || demo.playback) && !majormods)
+	if (!demo.playback)
+	{
 		mapheaderinfo[gamemap-1]->mapvisited |= MV_VISITED;
-	else if (!demo.playback)
-		mapheaderinfo[gamemap-1]->mapvisited |= MV_MP; // you want to record that you've been there this session, but not permanently
+
+		M_UpdateUnlockablesAndExtraEmblems(true);
+		G_SaveGameData();
+	}
 
 	G_AddMapToBuffer(gamemap-1);
 
@@ -7569,7 +7583,7 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 
 	P_RunCachedActions();
 
-	P_MapEnd(); // tmthing is no longer needed from this point onwards
+	P_MapEnd(); // tm.thing is no longer needed from this point onwards
 
 	// Took me 3 hours to figure out why my progression kept on getting overwritten with the titlemap...
 	if (!titlemapinaction)
@@ -7631,11 +7645,10 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 
 		P_PreTicker(2);
 
+		P_MapStart(); // just in case MapLoad modifies tm.thing
 		ACS_RunLevelStartScripts();
-
-		P_MapStart(); // just in case MapLoad modifies tmthing
 		LUA_HookInt(gamemap, HOOK(MapLoad));
-		P_MapEnd(); // just in case MapLoad modifies tmthing
+		P_MapEnd(); // just in case MapLoad modifies tm.thing
 	}
 
 	K_TimerReset();
@@ -7757,7 +7770,7 @@ lumpnum_t wadnamelump = LUMPERROR;
 INT16 wadnamemap = 0; // gamemap based
 
 // Initialising map data (and catching replacements)...
-UINT8 P_InitMapData(INT32 numexistingmapheaders)
+UINT8 P_InitMapData(boolean existingmapheaders)
 {
 	UINT8 ret = 0;
 	INT32 i;
@@ -7771,20 +7784,9 @@ UINT8 P_InitMapData(INT32 numexistingmapheaders)
 		name = mapheaderinfo[i]->lumpname;
 		maplump = W_CheckNumForMap(name);
 
-		// Doesn't exist?
-		if (maplump == INT16_MAX)
-		{
-#ifndef DEVELOP
-			if (!numexistingmapheaders)
-			{
-				I_Error("P_InitMapData: Base map %s has a header but no level\n", name);
-			}
-#endif
-			continue;
-		}
-
 		// Always check for cup cache reassociations.
 		// (The core assumption is that cups < headers.)
+		if (maplump != LUMPERROR || mapheaderinfo[i]->lumpnum != LUMPERROR)
 		{
 			cupheader_t *cup = kartcupheaders;
 			INT32 j;
@@ -7805,18 +7807,26 @@ UINT8 P_InitMapData(INT32 numexistingmapheaders)
 					if (strcasecmp(cup->levellist[j], name) != 0)
 						continue;
 
-					// Only panic about back-reference for non-bonus material.
-					if (j < MAXLEVELLIST)
-					{
-						if (mapheaderinfo[i]->cup)
-							I_Error("P_InitMapData: Map %s cannot appear in cups multiple times! (First in %s, now in %s)", name, mapheaderinfo[i]->cup->name, cup->name);
+					// Have a map recognise the first cup it's a part of.
+					if (!mapheaderinfo[i]->cup)
 						mapheaderinfo[i]->cup = cup;
-					}
 
 					cup->cachedlevels[j] = i;
 				}
 				cup = cup->next;
 			}
+		}
+
+		// Doesn't exist in this set of files?
+		if (maplump == LUMPERROR)
+		{
+#ifndef DEVELOP
+			if (!existingmapheaders)
+			{
+				I_Error("P_InitMapData: Base map %s has a header but no level\n", name);
+			}
+#endif
+			continue;
 		}
 
 		// No change?
@@ -7828,7 +7838,7 @@ UINT8 P_InitMapData(INT32 numexistingmapheaders)
 			ret |= MAPRET_ADDED;
 			CONS_Printf("%s\n", name);
 
-			if (numexistingmapheaders && mapheaderinfo[i]->lumpnum != LUMPERROR)
+			if (existingmapheaders && mapheaderinfo[i]->lumpnum != LUMPERROR)
 			{
 				G_SetGameModified(multiplayer, true); // oops, double-defined - no record attack privileges for you
 
@@ -7878,22 +7888,31 @@ UINT8 P_InitMapData(INT32 numexistingmapheaders)
 	return ret;
 }
 
-UINT16 p_adding_file = INT16_MAX;
-
 //
 // Add a wadfile to the active wad files,
 // replace sounds, musics, patches, textures, sprites and maps
 //
 boolean P_AddWadFile(const char *wadfilename)
 {
+	UINT16 wadnum;
+
+	if ((wadnum = P_PartialAddWadFile(wadfilename)) == UINT16_MAX)
+		return false;
+
+	P_MultiSetupWadFiles(true);
+	return true;
+}
+
+//
+// Add a WAD file and do the per-WAD setup stages.
+// Call P_MultiSetupWadFiles as soon as possible after any number of these.
+//
+UINT16 P_PartialAddWadFile(const char *wadfilename)
+{
 	size_t i, j, sreplaces = 0, mreplaces = 0, digmreplaces = 0;
-	INT32 numexistingmapheaders = nummapheaders;
 	UINT16 numlumps, wadnum;
 	char *name;
 	lumpinfo_t *lumpinfo;
-
-	//boolean texturechange = false; ///\todo Useless; broken when back-frontporting PK3 changes?
-	UINT8 mapsadded = 0;
 
 	// Vars to help us with the position start and amount of each resource type.
 	// Useful for PK3s since they use folders.
@@ -7914,10 +7933,19 @@ boolean P_AddWadFile(const char *wadfilename)
 		refreshdirmenu |= REFRESHDIR_NOTLOADED;
 		return false;
 	}
-	else
-		wadnum = (UINT16)(numwadfiles-1);
 
-	p_adding_file = wadnum;
+	wadnum = (UINT16)(numwadfiles-1);
+
+	// Init partadd.
+	if (wadfiles[wadnum]->important)
+	{
+		partadd_important = true;
+	}
+	if (partadd_stage != 0)
+	{
+		partadd_earliestfile = wadnum;
+	}
+	partadd_stage = 0;
 
 	switch(wadfiles[wadnum]->type)
 	{
@@ -7951,8 +7979,6 @@ boolean P_AddWadFile(const char *wadfilename)
 //			R_LoadSpritsRange(wadnum, sprPos, sprNum);
 //		if (texNum) // Textures. TODO: R_LoadTextures() does the folder positioning once again. New function maybe?
 //			R_LoadTextures();
-//		if (mapNum) // Maps. TODO: Actually implement the map WAD loading code, lulz.
-//			P_LoadWadMapRange(wadnum, mapPos, mapNum);
 		break;
 	default:
 		lumpinfo = wadfiles[wadnum]->lumpinfo;
@@ -8017,23 +8043,14 @@ boolean P_AddWadFile(const char *wadfilename)
 	// TEXTURES/etc. list.
 	R_LoadTexturesPwad(wadnum); // numtexture changes
 
-	// Reload ANIMDEFS
-	P_InitPicAnims();
-
 	// Reload BRIGHT
 	K_InitBrightmapsPwad(wadnum);
-
-	// Flush and reload HUD graphics
-	//ST_UnloadGraphics();
-	HU_LoadGraphics();
-	ST_LoadGraphics();
 
 	//
 	// look for skins
 	//
-	R_AddSkins(wadnum); // faB: wadfile index in wadfiles[]
-	R_PatchSkins(wadnum); // toast: PATCH PATCH
-	ST_ReloadSkinFaceGraphics();
+	R_AddSkins(wadnum, false); // faB: wadfile index in wadfiles[]
+	R_PatchSkins(wadnum, false); // toast: PATCH PATCH
 
 	//
 	// edit music defs
@@ -8041,37 +8058,99 @@ boolean P_AddWadFile(const char *wadfilename)
 	S_LoadMusicDefs(wadnum);
 
 	//
-	// search for maps
+	// extra sprite/skin data
 	//
-	mapsadded = P_InitMapData(numexistingmapheaders);
-
-	if (!mapsadded)
-		CONS_Printf(M_GetText("No maps added\n"));
-
 	R_LoadSpriteInfoLumps(wadnum, numlumps);
 
-#ifdef HWRENDER
-	HWR_ReloadModels();
-#endif
+	// For anything that has to be done over every wadfile at once, see P_MultiSetupWadFiles.
 
-	// reload status bar (warning should have valid player!)
-	if (gamestate == GS_LEVEL)
-		ST_Start();
-
-	// Prevent savefile cheating
-	if (cursaveslot > 0)
-		cursaveslot = 0;
-
-	if ((mapsadded & MAPRET_CURRENTREPLACED) && gamestate == GS_LEVEL && (netgame || multiplayer))
-	{
-		CONS_Printf(M_GetText("Current map %d replaced by added file, ending the level to ensure consistency.\n"), gamemap);
-		if (server)
-			SendNetXCmd(XD_EXITLEVEL, NULL, 0);
-	}
-
-	refreshdirmenu &= ~REFRESHDIR_GAMEDATA; // Under usual circumstances we'd wait for REFRESHDIR_GAMEDATA to disappear the next frame, but it's a bit too dangerous for that...
-
-	p_adding_file = INT16_MAX;
+	refreshdirmenu &= ~REFRESHDIR_GAMEDATA; // Under usual circumstances we'd wait for REFRESHDIR_ flags to disappear the next frame, but this one's a bit too dangerous for that...
 
 	return true;
+}
+
+// Only exists to make sure there's no way to overwrite partadd_stage externally
+// unless you really push yourself.
+SINT8 P_PartialAddGetStage(void)
+{
+	return partadd_stage;
+}
+
+//
+// Set up a series of partially added WAD files.
+// Setup functions that iterate over every loaded WAD go here.
+// If fullsetup false, only do one stage per call.
+//
+boolean P_MultiSetupWadFiles(boolean fullsetup)
+{
+	if (partadd_stage < 0)
+		I_Error(M_GetText("P_MultiSetupWadFiles: Post-load addon setup attempted without loading any addons first"));
+
+	if (partadd_stage == 0)
+	{
+		// Flush and reload HUD graphics
+		//ST_UnloadGraphics();
+		HU_LoadGraphics();
+		ST_LoadGraphics();
+		ST_ReloadSkinFaceGraphics();
+
+		if (!partadd_important)
+			partadd_stage = -1; // everything done
+		else if (fullsetup)
+			partadd_stage++;
+	}
+
+	if (partadd_stage == 1)
+	{
+		// Prevent savefile cheating
+		if (cursaveslot >= 0)
+			cursaveslot = 0;
+
+		// Reload ANIMATED / ANIMDEFS
+		P_InitPicAnims();
+
+		// reload status bar (warning should have valid player!)
+		if (gamestate == GS_LEVEL)
+			ST_Start();
+
+#ifdef HWRENDER
+		HWR_ReloadModels();
+#endif
+
+		if (fullsetup)
+			partadd_stage++;
+	}
+
+	if (partadd_stage == 2)
+	{
+		UINT8 mapsadded = P_InitMapData(true);
+
+		if (!mapsadded)
+			CONS_Printf(M_GetText("No maps added\n"));
+
+		if ((mapsadded & MAPRET_CURRENTREPLACED)
+			&& (gamestate == GS_LEVEL)
+			&& (netgame || multiplayer))
+		{
+			CONS_Printf(M_GetText("Current map %d replaced by added file, ending the level to ensure consistency.\n"), gamemap);
+			if (server)
+				SendNetXCmd(XD_EXITLEVEL, NULL, 0);
+		}
+
+		//if (fullsetup)
+			//partadd_stage++;
+		partadd_stage = -1;
+	}
+
+	I_Assert(!fullsetup || partadd_stage < 0);
+
+	if (partadd_stage < 0)
+	{
+		partadd_important = false;
+		partadd_earliestfile = UINT16_MAX;
+		return true;
+	}
+
+	partadd_stage++;
+	return false;
 }

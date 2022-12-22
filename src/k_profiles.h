@@ -27,7 +27,7 @@
 #define SKINNAMESIZE 16
 
 #define PROFILENAMELEN 6
-#define PROFILEVER 1
+#define PROFILEVER 2
 #define MAXPROFILES 16
 #define PROFILESFILE "ringprofiles.prf"
 #define PROFILE_GUEST 0
@@ -45,7 +45,7 @@
 
 // profile_t definition (WIP)
 // If you edit, see PR_SaveProfiles and PR_LoadProfiles
-typedef struct profile_s
+struct profile_t
 {
 
 	// Versionning
@@ -70,7 +70,7 @@ typedef struct profile_s
 
 	// Finally, control data itself
 	INT32 controls[num_gamecontrols][MAXINPUTMAPPING];	// Lists of all the controls, defined the same way as default inputs in g_input.c
-} profile_t;
+};
 
 
 // Functions

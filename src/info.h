@@ -549,6 +549,7 @@ void A_ItemPop();
 void A_JawzExplode();
 void A_SSMineSearch();
 void A_SSMineExplode();
+void A_SSMineFlash();
 void A_LandMineExplode();
 void A_LandMineExplode();
 void A_BallhogExplode();
@@ -1041,6 +1042,7 @@ typedef enum sprite
 	SPR_BOM3, // Boss Explosion 2
 	SPR_BOM4, // Underwater Explosion
 	SPR_BMNB, // Mine Explosion
+	SPR_LSSJ, // My ki is overflowing!!
 
 	// Crumbly rocks
 	SPR_ROIA,
@@ -1089,6 +1091,10 @@ typedef enum sprite
 	SPR_KINF, // Invincibility flash
 	SPR_INVI, // Invincibility speedlines
 	SPR_ICAP, // Item capsules
+	SPR_IMON, // Item Monitor
+	SPR_MGBX, // Heavy Magician transform box
+	SPR_MGBT, // Heavy Magician transform box top
+	SPR_MGBB, // Heavy Magician transform box bottom
 
 	SPR_WIPD, // Wipeout dust trail
 	SPR_DRIF, // Drift Sparks
@@ -1103,6 +1109,7 @@ typedef enum sprite
 	SPR_RSHE, // Rocket sneaker
 	SPR_FITM, // Eggman Monitor
 	SPR_BANA, // Banana Peel
+	SPR_BAND, // Banana Peel death particles
 	SPR_ORBN, // Orbinaut
 	SPR_JAWZ, // Jawz
 	SPR_SSMN, // SS Mine
@@ -4294,6 +4301,10 @@ typedef enum state
 	//S_ITEMCAPSULE_BOTTOM,
 	//S_ITEMCAPSULE_INSIDE,
 
+	S_MAGICIANBOX,
+	S_MAGICIANBOX_TOP,
+	S_MAGICIANBOX_BOTTOM,
+
 	// Signpost sparkles
 	S_SIGNSPARK1,
 	S_SIGNSPARK2,
@@ -4499,6 +4510,11 @@ typedef enum state
 	// Banana
 	S_BANANA,
 	S_BANANA_DEAD,
+
+	S_BANANA_SPARK,
+	S_BANANA_SPARK2,
+	S_BANANA_SPARK3,
+	S_BANANA_SPARK4,
 
 	//{ Orbinaut
 	S_ORBINAUT1,
@@ -5549,12 +5565,16 @@ typedef enum state
 	S_JANKSPARK3,
 	S_JANKSPARK4,
 
+	// Broly Ki Orb
+	S_BROLY1,
+	S_BROLY2,
+
 	S_FIRSTFREESLOT,
 	S_LASTFREESLOT = S_FIRSTFREESLOT + NUMSTATEFREESLOTS - 1,
 	NUMSTATES
 } statenum_t;
 
-typedef struct
+struct state_t
 {
 	spritenum_t sprite;
 	UINT32 frame; // we use the upper 16 bits for translucency and other shade effects
@@ -5563,7 +5583,7 @@ typedef struct
 	INT32 var1;
 	INT32 var2;
 	statenum_t nextstate;
-} state_t;
+};
 
 extern state_t states[NUMSTATES];
 extern char sprnames[NUMSPRITES + 1][5];
@@ -6327,6 +6347,7 @@ typedef enum mobj_type
 	MT_FLOATINGITEM,
 	MT_ITEMCAPSULE,
 	MT_ITEMCAPSULE_PART,
+	MT_MAGICIANBOX,
 
 	MT_SIGNSPARKLE,
 
@@ -6359,6 +6380,7 @@ typedef enum mobj_type
 
 	MT_BANANA, // Banana Stuff
 	MT_BANANA_SHIELD,
+	MT_BANANA_SPARK,
 
 	MT_ORBINAUT, // Orbinaut stuff
 	MT_ORBINAUT_SHIELD,
@@ -6410,6 +6432,8 @@ typedef enum mobj_type
 	MT_SINK, // Kitchen Sink Stuff
 	MT_SINK_SHIELD,
 	MT_SINKTRAIL,
+
+	MT_GACHABOM,
 
 	MT_DUELBOMB, // Duel mode bombs
 
@@ -6660,12 +6684,14 @@ typedef enum mobj_type
 
 	MT_BEAMPOINT,
 
+	MT_BROLY,
+
 	MT_FIRSTFREESLOT,
 	MT_LASTFREESLOT = MT_FIRSTFREESLOT + NUMMOBJFREESLOTS - 1,
 	NUMMOBJTYPES
 } mobjtype_t;
 
-typedef struct
+struct mobjinfo_t
 {
 	INT32 doomednum;
 	statenum_t spawnstate;
@@ -6691,7 +6717,7 @@ typedef struct
 	sfxenum_t activesound;
 	UINT32 flags;
 	statenum_t raisestate;
-} mobjinfo_t;
+};
 
 extern mobjinfo_t mobjinfo[NUMMOBJTYPES];
 

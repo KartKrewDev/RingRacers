@@ -30,14 +30,14 @@ typedef enum
 	UC_MAPENCORE,		// MAPENCORE [map number]
 	UC_MAPTIME,			// MAPTIME [map number] [time to beat, tics]
 	UC_TRIGGER,			// TRIGGER [trigger number]
-	UC_TOTALEMBLEMS,	// TOTALEMBLEMS [number of emblems]
+	UC_TOTALMEDALS,		// TOTALMEDALS [number of emblems]
 	UC_EMBLEM,			// EMBLEM [emblem number]
-	UC_EXTRAEMBLEM,		// EXTRAEMBLEM [extra emblem number]
+	UC_UNLOCKABLE,		// UNLOCKABLE [unlockable number]
 	UC_CONDITIONSET,	// CONDITIONSET [condition set number]
 } conditiontype_t;
 
 // Condition Set information
-typedef struct
+struct condition_t
 {
 	UINT32 id;           /// <- The ID of this condition.
 	                     ///    In an unlock condition, all conditions with the same ID
@@ -47,101 +47,151 @@ typedef struct
 	INT32 requirement;   /// <- The requirement for this variable.
 	INT16 extrainfo1;    /// <- Extra information for the condition when needed.
 	INT16 extrainfo2;    /// <- Extra information for the condition when needed.
-} condition_t;
-typedef struct
+};
+struct conditionset_t
 {
 	UINT32 numconditions;   /// <- number of conditions.
 	condition_t *condition; /// <- All conditionals to be checked.
-	UINT8 achieved;         /// <- Whether this conditional has been achieved already or not.
-	                        ///    (Conditional checking is skipped if true -- it's assumed you can't relock an unlockable)
-} conditionset_t;
+};
 
 // Emblem information
-#define ET_GLOBAL  0 // Emblem with a position in space
-#define ET_MAP     1 // Beat the map
-#define ET_TIME    2 // Get the time
+#define ET_GLOBAL		0	// Emblem with a position in space
+#define ET_MAP			1	// Beat the map
+#define ET_TIME			2	// Get the time
 //#define ET_DEVTIME 3 // Time, but the value is tied to a Time Trial demo, not pre-defined
 
 // Global emblem flags
-// (N/A to Kart yet)
-//#define GE_OH 1
+#define GE_NOTMEDAL		1	// Doesn't count towards number of medals
+#define GE_TIMED		2	// Disappears after var time
 
 // Map emblem flags
-#define ME_ENCORE 1
+#define ME_ENCORE		1	// Achieve in Encore
 
-typedef struct
+struct emblem_t
 {
-	UINT8 type;      ///< Emblem type
-	INT16 tag;       ///< Tag of emblem mapthing
-	char * level;     ///< Level on which this emblem can be found.
-	UINT8 sprite;    ///< emblem sprite to use, 0 - 25
-	UINT16 color;    ///< skincolor to use
-	INT32 var;       ///< If needed, specifies information on the target amount to achieve (or target skin)
-	char hint[110];  ///< Hint for emblem hints menu
-	UINT8 collected; ///< Do you have this emblem?
-} emblem_t;
-typedef struct
-{
-	char name[20];          ///< Name of the goal (used in the "emblem awarded" cecho)
-	char description[40];   ///< Description of goal (used in statistics)
-	UINT8 conditionset;     ///< Condition set that awards this emblem.
-	UINT8 showconditionset; ///< Condition set that shows this emblem.
-	UINT8 sprite;           ///< emblem sprite to use, 0 - 25
-	UINT16 color;           ///< skincolor to use
-	UINT8 collected;        ///< Do you have this emblem?
-} extraemblem_t;
+	UINT8 type;			///< Emblem type
+	INT16 tag;			///< Tag of emblem mapthing
+	char *level;		///< Level on which this emblem can be found.
+	INT16 levelCache;	///< Stored G_MapNumber()+1 result
+	UINT8 sprite;		///< emblem sprite to use, 0 - 25
+	UINT16 color;		///< skincolor to use
+	INT32 flags;		///< GE or ME constants
+	INT32 var;			///< If needed, specifies extra information
+	char *stringVar;	///< String version
+};
 
 // Unlockable information
-typedef struct
+struct unlockable_t
 {
 	char name[64];
-	char objective[64];
+	char *icon;
+	UINT16 color;
 	UINT8 conditionset;
-	UINT8 showconditionset;
 	INT16 type;
 	INT16 variable;
-	UINT8 nocecho;
-	UINT8 nochecklist;
-	UINT8 unlocked;
-} unlockable_t;
+	char *stringVar;
+	INT16 stringVarCache;
+	UINT8 majorunlock;
+};
 
-#define SECRET_NONE			 0 // Does nil.  Use with levels locked by UnlockRequired
-#define SECRET_HEADER		 1 // Does nothing on its own, just serves as a header for the menu
+typedef enum
+{
+	SECRET_NONE = 0,			// Does nil, useful as a default only
 
-#define SECRET_SKIN			 2 // Allow this character to be selected
-#define SECRET_WARP			 3 // Selectable warp
-#define SECRET_LEVELSELECT	 4 // Selectable level select
+	// One step above bragging rights
+	SECRET_EXTRAMEDAL,			// Extra medal for your counter
 
-#define SECRET_TIMEATTACK	 5 // Enables Time Attack on the main menu
-#define SECRET_BREAKTHECAPSULES	6 // Enables Break the Capsules on the main menu
-#define SECRET_SOUNDTEST	 7 // Sound Test
-#define SECRET_CREDITS		 8 // Enables Credits
+	// Level restrictions
+	SECRET_CUP,					// Permit access to entire cup (overrides SECRET_MAP)
+	SECRET_MAP,					// Permit access to single map
 
-#define SECRET_ITEMFINDER	 9 // Enables Item Finder/Emblem Radar
-#define SECRET_EMBLEMHINTS	10 // Enables Emblem Hints
+	// Player restrictions
+	SECRET_SKIN,				// Permit this character
+	SECRET_FOLLOWER,			// Permit this follower
 
-#define SECRET_ENCORE		11 // Enables Encore mode cvar
-#define SECRET_HARDSPEED	12 // Enables Hard gamespeed
-#define SECRET_HELLATTACK	13 // Map Hell in record attack
+	// Difficulty restrictions
+	SECRET_HARDSPEED,			// Permit Hard gamespeed
+	SECRET_ENCORE,				// Permit Encore option
+	SECRET_LEGACYBOXRUMMAGE,	// Permit the Legacy Box for record attack, etc
 
-#define SECRET_PANDORA		14 // Enables Pandora's Box
+	// Menu restrictions
+	SECRET_TIMEATTACK,			// Permit Time attack
+	SECRET_BREAKTHECAPSULES,	// Permit SP Capsules
+	SECRET_SOUNDTEST,			// Permit Sound Test
+	SECRET_ALTTITLE,			// Permit alternate titlescreen
+
+	// Assist restrictions
+	SECRET_ITEMFINDER,			// Permit locating in-level secrets
+} secrettype_t;
 
 // If you have more secrets than these variables allow in your game,
 // you seriously need to get a life.
-#define MAXCONDITIONSETS 128
+#define MAXCONDITIONSETS UINT8_MAX
 #define MAXEMBLEMS       512
-#define MAXEXTRAEMBLEMS   16
-#define MAXUNLOCKABLES    32
+#define MAXUNLOCKABLES   MAXCONDITIONSETS
+
+#define CHALLENGEGRIDHEIGHT 5
+#ifdef DEVELOP
+#define CHALLENGEGRIDLOOPWIDTH 3
+#else
+#define CHALLENGEGRIDLOOPWIDTH (BASEVIDWIDTH/16)
+#endif
+#define challengegridloops (gamedata->challengegridwidth >= CHALLENGEGRIDLOOPWIDTH)
+
+// GAMEDATA STRUCTURE
+// Everything that would get saved in gamedata.dat
+struct gamedata_t
+{
+	// WHENEVER OR NOT WE'RE READY TO SAVE
+	boolean loaded;
+
+	// CONDITION SETS ACHIEVED
+	boolean achieved[MAXCONDITIONSETS];
+
+	// EMBLEMS COLLECTED
+	boolean collected[MAXEMBLEMS];
+
+	// UNLOCKABLES UNLOCKED
+	boolean unlocked[MAXUNLOCKABLES];
+	boolean unlockpending[MAXUNLOCKABLES];
+
+	// CHALLENGE GRID
+	UINT16 challengegridwidth;
+	UINT8 *challengegrid;
+
+	// # OF TIMES THE GAME HAS BEEN BEATEN
+	UINT32 timesBeaten;
+
+	// PLAY TIME
+	UINT32 totalplaytime;
+	UINT32 matchesplayed;
+};
+
+extern gamedata_t *gamedata;
+
+// Netsynced functional alternative to gamedata->unlocked
+extern boolean netUnlocked[MAXUNLOCKABLES];
 
 extern conditionset_t conditionSets[MAXCONDITIONSETS];
 extern emblem_t emblemlocations[MAXEMBLEMS];
-extern extraemblem_t extraemblems[MAXEXTRAEMBLEMS];
 extern unlockable_t unlockables[MAXUNLOCKABLES];
 
 extern INT32 numemblems;
-extern INT32 numextraemblems;
 
 extern UINT32 unlocktriggers;
+
+void M_NewGameDataStruct(void);
+
+// Challenges menu stuff
+void M_PopulateChallengeGrid(void);
+UINT8 *M_ChallengeGridExtraData(void);
+#define CHE_NONE          0
+#define CHE_HINT          1
+#define CHE_CONNECTEDLEFT (1<<1)
+#define CHE_CONNECTEDUP   (1<<2)
+#define CHE_DONTDRAW (CHE_CONNECTEDLEFT|CHE_CONNECTEDUP)
+char *M_BuildConditionSetString(UINT8 unlockid);
+#define DESCRIPTIONWIDTH 170
 
 // Condition set setup
 void M_AddRawCondition(UINT8 set, UINT8 id, conditiontype_t c, INT32 r, INT16 x1, INT16 x2);
@@ -151,30 +201,36 @@ void M_ClearConditionSet(UINT8 set);
 void M_ClearSecrets(void);
 
 // Updating conditions and unlockables
-void M_CheckUnlockConditions(void);
 UINT8 M_CheckCondition(condition_t *cn);
-UINT8 M_UpdateUnlockablesAndExtraEmblems(void);
-void M_SilentUpdateUnlockablesAndEmblems(void);
+boolean M_UpdateUnlockablesAndExtraEmblems(boolean loud);
+UINT8 M_GetNextAchievedUnlock(void);
 UINT8 M_CheckLevelEmblems(void);
 UINT8 M_CompletionEmblems(void);
 
 // Checking unlockable status
-UINT8 M_AnySecretUnlocked(void);
-UINT8 M_SecretUnlocked(INT32 type);
-UINT8 M_MapLocked(INT32 mapnum);
-INT32 M_CountEmblems(void);
+boolean M_CheckNetUnlockByID(UINT8 unlockid);
+boolean M_SecretUnlocked(INT32 type, boolean local);
+boolean M_CupLocked(cupheader_t *cup);
+boolean M_MapLocked(INT32 mapnum);
+INT32 M_CountMedals(boolean all, boolean extraonly);
 
 // Emblem shit
 emblem_t *M_GetLevelEmblems(INT32 mapnum);
 skincolornum_t M_GetEmblemColor(emblem_t *em);
 const char *M_GetEmblemPatch(emblem_t *em, boolean big);
-skincolornum_t M_GetExtraEmblemColor(extraemblem_t *em);
-const char *M_GetExtraEmblemPatch(extraemblem_t *em, boolean big);
 
 // If you're looking to compare stats for unlocks or what not, use these
 // They stop checking upon reaching the target number so they
 // should be (theoretically?) slightly faster.
-UINT8 M_GotEnoughEmblems(INT32 number);
+UINT8 M_GotEnoughMedals(INT32 number);
 UINT8 M_GotLowEnoughTime(INT32 tictime);
 
-#define M_Achieved(a) ((a) >= MAXCONDITIONSETS || conditionSets[a].achieved)
+INT32 M_UnlockableSkinNum(unlockable_t *unlock);
+INT32 M_UnlockableFollowerNum(unlockable_t *unlock);
+cupheader_t *M_UnlockableCup(unlockable_t *unlock);
+UINT16 M_UnlockableMapNum(unlockable_t *unlock);
+
+INT32 M_EmblemSkinNum(emblem_t *emblem);
+UINT16 M_EmblemMapNum(emblem_t *emblem);
+
+#define M_Achieved(a) ((a) >= MAXCONDITIONSETS || gamedata->achieved[a])

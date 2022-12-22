@@ -126,10 +126,10 @@ extern char logfilename[1024];
 // VERSIONSTRING_RC is for the resource-definition script used by windows builds
 #else
 #ifdef BETAVERSION
-#define VERSIONSTRING "v"SRB2VERSION" "BETAVERSION
+#define VERSIONSTRING "v" SRB2VERSION " " BETAVERSION
 #define VERSIONSTRING_RC SRB2VERSION " " BETAVERSION "\0"
 #else
-#define VERSIONSTRING "v"SRB2VERSION
+#define VERSIONSTRING "v" SRB2VERSION
 #define VERSIONSTRING_RC SRB2VERSION "\0"
 #endif
 // Hey! If you change this, add 1 to the MODVERSION below!
@@ -201,7 +201,8 @@ extern char logfilename[1024];
 #define MAXGAMEPADS (MAXSPLITSCREENPLAYERS * 2) // Number of gamepads we'll be allowing
 
 #define MAXSKINS UINT8_MAX
-#define SKINNAMESIZE 16	// Moved from r_skins.h as including that particular header causes issues later down the line.
+#define SKINNAMESIZE 16
+#define MAXAVAILABILITY ((MAXSKINS + 7)/8)
 
 #define COLORRAMPSIZE 16
 #define MAXCOLORNAME 32
@@ -210,7 +211,7 @@ extern char logfilename[1024];
 // Master Server compatibility ONLY
 #define MSCOMPAT_MAXPLAYERS (32)
 
-typedef struct skincolor_s
+struct skincolor_t
 {
 	char name[MAXCOLORNAME+1];  // Skincolor name
 	UINT8 ramp[COLORRAMPSIZE];  // Colormap ramp
@@ -218,7 +219,7 @@ typedef struct skincolor_s
 	UINT8 invshade;             // Signpost color shade
 	UINT16 chatcolor;           // Chat color
 	boolean accessible;         // Accessible by the color command + setup menu
-} skincolor_t;
+};
 
 #define FOLLOWERCOLOR_MATCH UINT16_MAX
 #define FOLLOWERCOLOR_OPPOSITE (UINT16_MAX-1)
@@ -398,6 +399,19 @@ typedef enum
 	SKINCOLOR_CHAOSEMERALD7,
 
 	SKINCOLOR_INVINCFLASH,
+	SKINCOLOR_POSNUM,
+	SKINCOLOR_POSNUM_WIN1,
+	SKINCOLOR_POSNUM_WIN2,
+	SKINCOLOR_POSNUM_WIN3,
+	SKINCOLOR_POSNUM_LOSE1,
+	SKINCOLOR_POSNUM_LOSE2,
+	SKINCOLOR_POSNUM_LOSE3,
+	SKINCOLOR_POSNUM_BEST1,
+	SKINCOLOR_POSNUM_BEST2,
+	SKINCOLOR_POSNUM_BEST3,
+	SKINCOLOR_POSNUM_BEST4,
+	SKINCOLOR_POSNUM_BEST5,
+	SKINCOLOR_POSNUM_BEST6,
 
 	SKINCOLOR_FIRSTFREESLOT,
 	SKINCOLOR_LASTFREESLOT = SKINCOLOR_FIRSTFREESLOT + NUMCOLORFREESLOTS - 1,
@@ -601,11 +615,13 @@ UINT32 quickncasehash (const char *p, size_t n)
 	return x;
 }
 
+#ifndef __cplusplus
 #ifndef min // Double-Check with WATTCP-32's cdefs.h
 #define min(x, y) (((x) < (y)) ? (x) : (y))
 #endif
 #ifndef max // Double-Check with WATTCP-32's cdefs.h
 #define max(x, y) (((x) > (y)) ? (x) : (y))
+#endif
 #endif
 
 // Max gamepad/joysticks that can be detected/used.

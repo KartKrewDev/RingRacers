@@ -12,6 +12,7 @@
 #include "doomdef.h" // Sink snipe print
 #include "g_game.h" // Sink snipe print
 #include "k_objects.h"
+#include "k_roulette.h"
 
 angle_t K_GetCollideAngle(mobj_t *t1, mobj_t *t2)
 {
@@ -86,7 +87,7 @@ boolean K_BananaBallhogCollide(mobj_t *t1, mobj_t *t2)
 	else if (t2->type == MT_BANANA || t2->type == MT_BANANA_SHIELD
 		|| t2->type == MT_ORBINAUT || t2->type == MT_ORBINAUT_SHIELD
 		|| t2->type == MT_JAWZ || t2->type == MT_JAWZ_SHIELD
-		|| t2->type == MT_BALLHOG)
+		|| t2->type == MT_BALLHOG || t2->type == MT_GACHABOM)
 	{
 		// Other Item Damage
 		angle_t bounceangle = K_GetCollideAngle(t1, t2);
@@ -94,7 +95,7 @@ boolean K_BananaBallhogCollide(mobj_t *t1, mobj_t *t2)
 		S_StartSound(t2, t2->info->deathsound);
 		P_KillMobj(t2, t1, t1, DMG_NORMAL);
 
-		P_SetObjectMomZ(t2, 8*FRACUNIT, false);
+		P_SetObjectMomZ(t2, 24*FRACUNIT, false);
 		P_InstaThrust(t2, bounceangle, 16*FRACUNIT);
 
 		P_SpawnMobj(t2->x/2 + t1->x/2, t2->y/2 + t1->y/2, t2->z/2 + t1->z/2, MT_ITEMCLASH);
@@ -122,7 +123,7 @@ boolean K_BananaBallhogCollide(mobj_t *t1, mobj_t *t2)
 		S_StartSound(t1, t1->info->deathsound);
 		P_KillMobj(t1, t2, t2, DMG_NORMAL);
 
-		P_SetObjectMomZ(t1, 8*FRACUNIT, false);
+		P_SetObjectMomZ(t1, 24*FRACUNIT, false);
 		P_InstaThrust(t1, bounceangle, 16*FRACUNIT);
 	}
 
@@ -158,10 +159,7 @@ boolean K_EggItemCollide(mobj_t *t1, mobj_t *t2)
 		}
 		else
 		{
-			K_DropItems(t2->player); //K_StripItems(t2->player);
-			//K_StripOther(t2->player);
-			t2->player->itemroulette = 1;
-			t2->player->roulettetype = 2;
+			K_StartEggmanRoulette(t2->player);
 		}
 
 		if (t2->player->flamedash && t2->player->itemtype == KITEM_FLAMESHIELD)
@@ -206,6 +204,7 @@ boolean K_EggItemCollide(mobj_t *t1, mobj_t *t2)
 static mobj_t *grenade;
 static fixed_t explodedist;
 static boolean explodespin;
+static INT32 minehitlag;
 
 static inline boolean PIT_SSMineChecks(mobj_t *thing)
 {
@@ -273,6 +272,9 @@ void K_DoMineSearch(mobj_t *actor, fixed_t size)
 
 static inline BlockItReturn_t PIT_SSMineExplode(mobj_t *thing)
 {
+	const INT32 oldhitlag = thing->hitlag;
+	INT32 lagadded;
+
 	if (grenade == NULL || P_MobjWasRemoved(grenade))
 		return BMIT_ABORT; // There's the possibility these can chain react onto themselves after they've already died if there are enough all in one spot
 
@@ -285,16 +287,25 @@ static inline BlockItReturn_t PIT_SSMineExplode(mobj_t *thing)
 		return BMIT_CONTINUE;
 
 	P_DamageMobj(thing, grenade, grenade->target, 1, (explodespin ? DMG_NORMAL : DMG_EXPLODE));
+
+	lagadded = (thing->hitlag - oldhitlag);
+
+	if (lagadded > 0)
+	{
+		minehitlag = lagadded;
+	}
+
 	return BMIT_CONTINUE;
 }
 
-void K_MineExplodeAttack(mobj_t *actor, fixed_t size, boolean spin)
+tic_t K_MineExplodeAttack(mobj_t *actor, fixed_t size, boolean spin)
 {
 	INT32 bx, by, xl, xh, yl, yh;
 
 	explodespin = spin;
 	explodedist = FixedMul(size, actor->scale);
 	grenade = actor;
+	minehitlag = 0;
 
 	// Use blockmap to check for nearby shootables
 	yh = (unsigned)(actor->y + explodedist - bmaporgy)>>MAPBLOCKSHIFT;
@@ -310,6 +321,15 @@ void K_MineExplodeAttack(mobj_t *actor, fixed_t size, boolean spin)
 
 	// Set this flag to ensure that the inital action won't be triggered twice.
 	actor->flags2 |= MF2_DEBRIS;
+
+	if (!spin)
+	{
+		Obj_SpawnBrolyKi(actor, minehitlag);
+
+		return minehitlag;
+	}
+
+	return 0;
 }
 
 boolean K_MineCollide(mobj_t *t1, mobj_t *t2)
@@ -330,7 +350,7 @@ boolean K_MineCollide(mobj_t *t1, mobj_t *t2)
 
 		// Bomb punting
 		if ((t1->state >= &states[S_SSMINE1] && t1->state <= &states[S_SSMINE4])
-			|| (t1->state >= &states[S_SSMINE_DEPLOY8] && t1->state <= &states[S_SSMINE_DEPLOY13]))
+			|| (t1->state >= &states[S_SSMINE_DEPLOY8] && t1->state <= &states[S_SSMINE_EXPLODE2]))
 		{
 			P_KillMobj(t1, t2, t2, DMG_NORMAL);
 		}
@@ -340,7 +360,8 @@ boolean K_MineCollide(mobj_t *t1, mobj_t *t2)
 		}
 	}
 	else if (t2->type == MT_ORBINAUT || t2->type == MT_JAWZ
-		|| t2->type == MT_ORBINAUT_SHIELD || t2->type == MT_JAWZ_SHIELD)
+		|| t2->type == MT_ORBINAUT_SHIELD || t2->type == MT_JAWZ_SHIELD
+		|| t2->type == MT_GACHABOM)
 	{
 		// Bomb death
 		angle_t bounceangle = K_GetCollideAngle(t1, t2);
@@ -351,7 +372,7 @@ boolean K_MineCollide(mobj_t *t1, mobj_t *t2)
 		S_StartSound(t2, t2->info->deathsound);
 		P_KillMobj(t2, t1, t1, DMG_NORMAL);
 
-		P_SetObjectMomZ(t2, 8*FRACUNIT, false);
+		P_SetObjectMomZ(t2, 24*FRACUNIT, false);
 		P_InstaThrust(t2, bounceangle, 16*FRACUNIT);
 	}
 	else if (t2->flags & MF_SHOOTABLE)
@@ -378,6 +399,8 @@ boolean K_LandMineCollide(mobj_t *t1, mobj_t *t2)
 
 	if (t2->player)
 	{
+		const INT32 oldhitlag = t2->hitlag;
+
 		if (t2->player->flashing)
 			return true;
 
@@ -389,6 +412,7 @@ boolean K_LandMineCollide(mobj_t *t1, mobj_t *t2)
 		{
 			// Melt item
 			S_StartSound(t2, sfx_s3k43);
+			K_SetHitLagForObjects(t2, t1, 3, false);
 		}
 		else
 		{
@@ -396,12 +420,13 @@ boolean K_LandMineCollide(mobj_t *t1, mobj_t *t2)
 			P_DamageMobj(t2, t1, t1->target, 1, DMG_TUMBLE);
 		}
 
+		t1->reactiontime = (t2->hitlag - oldhitlag);
 		P_KillMobj(t1, t2, t2, DMG_NORMAL);
 	}
 	else if (t2->type == MT_BANANA || t2->type == MT_BANANA_SHIELD
 		|| t2->type == MT_ORBINAUT || t2->type == MT_ORBINAUT_SHIELD
 		|| t2->type == MT_JAWZ || t2->type == MT_JAWZ_SHIELD
-		|| t2->type == MT_BALLHOG)
+		|| t2->type == MT_BALLHOG || t2->type == MT_GACHABOM)
 	{
 		// Other Item Damage
 		angle_t bounceangle = K_GetCollideAngle(t1, t2);
@@ -414,11 +439,12 @@ boolean K_LandMineCollide(mobj_t *t1, mobj_t *t2)
 		S_StartSound(t2, t2->info->deathsound);
 		P_KillMobj(t2, t1, t1, DMG_NORMAL);
 
-		P_SetObjectMomZ(t2, 8*FRACUNIT, false);
+		P_SetObjectMomZ(t2, 24*FRACUNIT, false);
 		P_InstaThrust(t2, bounceangle, 16*FRACUNIT);
 
 		P_SpawnMobj(t2->x/2 + t1->x/2, t2->y/2 + t1->y/2, t2->z/2 + t1->z/2, MT_ITEMCLASH);
 
+		t1->reactiontime = t2->hitlag;
 		P_KillMobj(t1, t2, t2, DMG_NORMAL);
 	}
 	else if (t2->type == MT_SSMINE_SHIELD || t2->type == MT_SSMINE || t2->type == MT_LANDMINE)
@@ -431,6 +457,8 @@ boolean K_LandMineCollide(mobj_t *t1, mobj_t *t2)
 	{
 		// Shootable damage
 		P_DamageMobj(t2, t1, t1->target, 1, DMG_NORMAL);
+
+		t1->reactiontime = t2->hitlag;
 		P_KillMobj(t1, t2, t2, DMG_NORMAL);
 	}
 
@@ -625,7 +653,7 @@ static inline BlockItReturn_t PIT_LightningShieldAttack(mobj_t *thing)
 	}
 #endif
 
-	P_DamageMobj(thing, lightningSource, lightningSource, 1, DMG_NORMAL|DMG_CANTHURTSELF|DMG_WOMBO);
+	P_DamageMobj(thing, lightningSource, lightningSource, 1, DMG_VOLTAGE|DMG_CANTHURTSELF|DMG_WOMBO);
 	return BMIT_CONTINUE;
 }
 
@@ -655,12 +683,12 @@ boolean K_BubbleShieldCollide(mobj_t *t1, mobj_t *t2)
 	{
 		// Counter desyncs
 		/*mobj_t *oldthing = thing;
-		mobj_t *oldtmthing = tmthing;
+		mobj_t *oldtm.thing = tm.thing;
 
-		P_Thrust(tmthing, R_PointToAngle2(thing->x, thing->y, tmthing->x, tmthing->y), 4*thing->scale);
+		P_Thrust(tm.thing, R_PointToAngle2(thing->x, thing->y, tm.thing->x, tm.thing->y), 4*thing->scale);
 
 		thing = oldthing;
-		P_SetTarget(&tmthing, oldtmthing);*/
+		P_SetTarget(&tm.thing, oldtm.thing);*/
 
 		if (P_PlayerInPain(t2->player)
 			|| t2->player->flashing || t2->player->hyudorotimer
