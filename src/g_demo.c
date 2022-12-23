@@ -2502,7 +2502,7 @@ void G_BeginRecording(void)
 
 	// player lua vars, always saved even if empty
 	if (demoflags & DF_LUAVARS)
-		LUA_Archive(&demo_p);
+		LUA_Archive(&demo_p, false);
 
 	memset(&oldcmd,0,sizeof(oldcmd));
 	memset(&oldghost,0,sizeof(oldghost));
@@ -3366,7 +3366,7 @@ void G_DoPlayDemo(char *defdemoname)
 			LUA_ClearState();
 
 		// No modeattacking check, DF_LUAVARS won't be present here.
-		LUA_UnArchive(&demo_p);
+		LUA_UnArchive(&demo_p, false);
 	}
 
 	splitscreen = 0;

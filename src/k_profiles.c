@@ -10,9 +10,10 @@
 /// \file  k_profiles.c
 /// \brief implements methods for profiles etc.
 
+#include "doomtype.h"
 #include "d_main.h" // pandf
 #include "byteptr.h" // READ/WRITE macros
-#include "p_saveg.h" // save_p
+#include "p_saveg.h" // savebuffer_t
 #include "m_misc.h" //FIL_WriteFile()
 #include "k_profiles.h"
 #include "z_zone.h"
@@ -211,68 +212,67 @@ void PR_InitNewProfile(void)
 	PR_AddProfile(dprofile);
 }
 
-static UINT8 *savebuffer;
-
 void PR_SaveProfiles(void)
 {
 	size_t length = 0;
 	const size_t headerlen = strlen(PROFILEHEADER);
 	UINT8 i, j, k;
+	savebuffer_t save;
 
-	save_p = savebuffer = (UINT8 *)malloc(sizeof(UINT32) + (numprofiles * sizeof(profile_t)));
-	if (!save_p)
+	save.p = save.buffer = (UINT8 *)malloc(sizeof(UINT32) + (numprofiles * sizeof(profile_t)));
+	if (!save.p)
 	{
 		I_Error("No more free memory for saving profiles\n");
 		return;
 	}
 
 	// Add header.
-	WRITESTRINGN(save_p, PROFILEHEADER, headerlen);
-	WRITEUINT8(save_p, PROFILEVER);
-	WRITEUINT8(save_p, numprofiles);
+	WRITESTRINGN(save.p, PROFILEHEADER, headerlen);
+	WRITEUINT8(save.p, PROFILEVER);
+	WRITEUINT8(save.p, numprofiles);
 
 	for (i = 1; i < numprofiles; i++)
 	{
 		// Names.
-		WRITESTRINGN(save_p, profilesList[i]->profilename, PROFILENAMELEN);
-		WRITESTRINGN(save_p, profilesList[i]->playername, MAXPLAYERNAME);
+		WRITESTRINGN(save.p, profilesList[i]->profilename, PROFILENAMELEN);
+		WRITESTRINGN(save.p, profilesList[i]->playername, MAXPLAYERNAME);
 
 		// Character and colour.
-		WRITESTRINGN(save_p, profilesList[i]->skinname, SKINNAMESIZE);
-		WRITEUINT16(save_p, profilesList[i]->color);
+		WRITESTRINGN(save.p, profilesList[i]->skinname, SKINNAMESIZE);
+		WRITEUINT16(save.p, profilesList[i]->color);
 
 		// Follower and colour.
-		WRITESTRINGN(save_p, profilesList[i]->follower, SKINNAMESIZE);
-		WRITEUINT16(save_p, profilesList[i]->followercolor);
+		WRITESTRINGN(save.p, profilesList[i]->follower, SKINNAMESIZE);
+		WRITEUINT16(save.p, profilesList[i]->followercolor);
 
 		// PWR.
 		for (j = 0; j < PWRLV_NUMTYPES; j++)
 		{
-			WRITEUINT16(save_p, profilesList[i]->powerlevels[j]);
+			WRITEUINT16(save.p, profilesList[i]->powerlevels[j]);
 		}
 
 		// Consvars.
-		WRITEUINT8(save_p, profilesList[i]->kickstartaccel);
+		WRITEUINT8(save.p, profilesList[i]->kickstartaccel);
 
 		// Controls.
 		for (j = 0; j < num_gamecontrols; j++)
 		{
 			for (k = 0; k < MAXINPUTMAPPING; k++)
 			{
-				WRITEINT32(save_p, profilesList[i]->controls[j][k]);
+				WRITEINT32(save.p, profilesList[i]->controls[j][k]);
 			}
 		}
 	}
 
-	length = save_p - savebuffer;
+	length = save.p - save.buffer;
 
-	if (!FIL_WriteFile(va(pandf, srb2home, PROFILESFILE), savebuffer, length))
+	if (!FIL_WriteFile(va(pandf, srb2home, PROFILESFILE), save.buffer, length))
 	{
-		free(savebuffer);
+		free(save.buffer);
 		I_Error("Couldn't save profiles. Are you out of Disk space / playing in a protected folder?");
 	}
-	free(savebuffer);
-	save_p = savebuffer = NULL;
+	free(save.buffer);
+	save.p = save.buffer = NULL;
 }
 
 void PR_LoadProfiles(void)
@@ -288,8 +288,9 @@ void PR_LoadProfiles(void)
 		gamecontroldefault,
 		true
 	);
+	savebuffer_t save;
 
-	length = FIL_ReadFile(va(pandf, srb2home, PROFILESFILE), &savebuffer);
+	length = FIL_ReadFile(va(pandf, srb2home, PROFILESFILE), &save.buffer);
 	if (!length)
 	{
 		// No profiles. Add the default one.
@@ -297,29 +298,29 @@ void PR_LoadProfiles(void)
 		return;
 	}
 
-	save_p = savebuffer;
+	save.p = save.buffer;
 
-	if (strncmp(PROFILEHEADER, (const char *)savebuffer, headerlen))
+	if (strncmp(PROFILEHEADER, (const char *)save.buffer, headerlen))
 	{
 		const char *gdfolder = "the Ring Racers folder";
 		if (strcmp(srb2home,"."))
 			gdfolder = srb2home;
 
-		Z_Free(savebuffer);
-		save_p = NULL;
+		Z_Free(save.buffer);
+		save.p = NULL;
 		I_Error("Not a valid Profile file.\nDelete %s (maybe in %s) and try again.", PROFILESFILE, gdfolder);
 	}
-	save_p += headerlen;
+	save.p += headerlen;
 
-	version = READUINT8(save_p);
+	version = READUINT8(save.p);
 	if (version > PROFILEVER)
 	{
-		Z_Free(savebuffer);
-		save_p = NULL;
+		Z_Free(save.buffer);
+		save.p = NULL;
 		I_Error("Existing %s is from the future! (expected %d, got %d)", PROFILESFILE, PROFILEVER, version);
 	}
 
-	numprofiles = READUINT8(save_p);
+	numprofiles = READUINT8(save.p);
 	if (numprofiles > MAXPROFILES)
 		numprofiles = MAXPROFILES;
 
@@ -331,12 +332,12 @@ void PR_LoadProfiles(void)
 		profilesList[i]->version = PROFILEVER;
 
 		// Names.
-		READSTRINGN(save_p, profilesList[i]->profilename, PROFILENAMELEN);
-		READSTRINGN(save_p, profilesList[i]->playername, MAXPLAYERNAME);
+		READSTRINGN(save.p, profilesList[i]->profilename, PROFILENAMELEN);
+		READSTRINGN(save.p, profilesList[i]->playername, MAXPLAYERNAME);
 
 		// Character and colour.
-		READSTRINGN(save_p, profilesList[i]->skinname, SKINNAMESIZE);
-		profilesList[i]->color = READUINT16(save_p);
+		READSTRINGN(save.p, profilesList[i]->skinname, SKINNAMESIZE);
+		profilesList[i]->color = READUINT16(save.p);
 
 		if (profilesList[i]->color == SKINCOLOR_NONE)
 		{
@@ -349,8 +350,8 @@ void PR_LoadProfiles(void)
 		}
 
 		// Follower and colour.
-		READSTRINGN(save_p, profilesList[i]->follower, SKINNAMESIZE);
-		profilesList[i]->followercolor = READUINT16(save_p);
+		READSTRINGN(save.p, profilesList[i]->follower, SKINNAMESIZE);
+		profilesList[i]->followercolor = READUINT16(save.p);
 
 		if (profilesList[i]->followercolor == FOLLOWERCOLOR_MATCH
 			|| profilesList[i]->followercolor == FOLLOWERCOLOR_OPPOSITE)
@@ -367,7 +368,7 @@ void PR_LoadProfiles(void)
 		// PWR.
 		for (j = 0; j < PWRLV_NUMTYPES; j++)
 		{
-			profilesList[i]->powerlevels[j] = READUINT16(save_p);
+			profilesList[i]->powerlevels[j] = READUINT16(save.p);
 			if (profilesList[i]->powerlevels[j] < PWRLVRECORD_MIN
 				|| profilesList[i]->powerlevels[j] > PWRLVRECORD_MAX)
 			{
@@ -377,7 +378,7 @@ void PR_LoadProfiles(void)
 		}
 
 		// Consvars.
-		profilesList[i]->kickstartaccel = (boolean)READUINT8(save_p);
+		profilesList[i]->kickstartaccel = (boolean)READUINT8(save.p);
 
 		// Controls.
 		for (j = 0; j < num_gamecontrols; j++)
@@ -396,7 +397,7 @@ void PR_LoadProfiles(void)
 
 			for (k = 0; k < MAXINPUTMAPPING; k++)
 			{
-				profilesList[i]->controls[j][k] = READINT32(save_p);
+				profilesList[i]->controls[j][k] = READINT32(save.p);
 			}
 		}
 	}

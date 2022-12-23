@@ -53,8 +53,8 @@ void LUA_DumpFile(const char *filename);
 #endif
 fixed_t LUA_EvalMath(const char *word);
 void LUA_Step(void);
-void LUA_Archive(UINT8 **p);
-void LUA_UnArchive(UINT8 **p);
+void LUA_Archive(UINT8 **p, boolean network);
+void LUA_UnArchive(UINT8 **p, boolean network);
 
 int LUA_PushGlobals(lua_State *L, const char *word);
 int LUA_WriteGlobals(lua_State *L, const char *word);

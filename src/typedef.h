@@ -258,6 +258,7 @@ TYPEDEF (polyfadedata_t);
 
 // p_saveg.h
 TYPEDEF (savedata_t);
+TYPEDEF (savebuffer_t);
 
 // p_setup.h
 TYPEDEF (levelflat_t);
