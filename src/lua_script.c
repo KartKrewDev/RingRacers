@@ -41,6 +41,8 @@ lua_State *gL = NULL;
 
 int hook_defrosting;
 
+static UINT8 **lua_save_p = NULL; // FIXME: Remove this horrible hack
+
 // List of internal libraries to load from SRB2
 static lua_CFunction liblist[] = {
 	LUA_EnumLib, // global metatable for enums
@@ -1248,10 +1250,10 @@ static UINT8 ArchiveValue(UINT8 **p, int TABLESINDEX, int myindex)
 		{
 			polyobj_t *polyobj = *((polyobj_t **)lua_touserdata(gL, myindex));
 			if (!polyobj)
-				WRITEUINT8(save_p, ARCH_NULL);
+				WRITEUINT8(*p, ARCH_NULL);
 			else {
-				WRITEUINT8(save_p, ARCH_POLYOBJ);
-				WRITEUINT16(save_p, polyobj-PolyObjects);
+				WRITEUINT8(*p, ARCH_POLYOBJ);
+				WRITEUINT16(*p, polyobj-PolyObjects);
 			}
 			break;
 		}
@@ -1355,7 +1357,7 @@ static int NetArchive(lua_State *L)
 	int TABLESINDEX = lua_upvalueindex(1);
 	int i, n = lua_gettop(L);
 	for (i = 1; i <= n; i++)
-		ArchiveValue(&save_p, TABLESINDEX, i);
+		ArchiveValue(lua_save_p, TABLESINDEX, i);
 	return n;
 }
 
@@ -1517,7 +1519,7 @@ static UINT8 UnArchiveValue(UINT8 **p, int TABLESINDEX)
 		break;
 	}
 	case ARCH_POLYOBJ:
-		LUA_PushUserdata(gL, &PolyObjects[READUINT16(save_p)], META_POLYOBJ);
+		LUA_PushUserdata(gL, &PolyObjects[READUINT16(*p)], META_POLYOBJ);
 		break;
 	case ARCH_SLOPE:
 		LUA_PushUserdata(gL, P_SlopeById(READUINT16(*p)), META_SLOPE);
@@ -1568,7 +1570,7 @@ static int NetUnArchive(lua_State *L)
 	int TABLESINDEX = lua_upvalueindex(1);
 	int i, n = lua_gettop(L);
 	for (i = 1; i <= n; i++)
-		UnArchiveValue(&save_p, TABLESINDEX);
+		UnArchiveValue(lua_save_p, TABLESINDEX);
 	return n;
 }
 
@@ -1602,7 +1604,7 @@ static void UnArchiveTables(UINT8 **p)
 				lua_rawset(gL, -3);
 		}
 
-		metatableid = READUINT16(save_p);
+		metatableid = READUINT16(*p);
 		if (metatableid)
 		{
 			// setmetatable(table, registry.metatables[metatableid])
@@ -1626,7 +1628,7 @@ void LUA_Step(void)
 	lua_gc(gL, LUA_GCSTEP, 1);
 }
 
-void LUA_Archive(UINT8 **p)
+void LUA_Archive(UINT8 **p, boolean network)
 {
 	INT32 i;
 	thinker_t *th;
@@ -1642,7 +1644,7 @@ void LUA_Archive(UINT8 **p)
 		ArchiveExtVars(p, &players[i], "player");
 	}
 
-	if (p == &save_p)
+	if (network == true)
 	{
 		if (gamestate == GS_LEVEL)
 		{
@@ -1659,6 +1661,7 @@ void LUA_Archive(UINT8 **p)
 		
 		WRITEUINT32(*p, UINT32_MAX); // end of mobjs marker, replaces mobjnum.
 
+		lua_save_p = p;
 		LUA_HookNetArchive(NetArchive); // call the NetArchive hook in archive mode
 	}
 
@@ -1668,7 +1671,7 @@ void LUA_Archive(UINT8 **p)
 		lua_pop(gL, 1); // pop tables
 }
 
-void LUA_UnArchive(UINT8 **p)
+void LUA_UnArchive(UINT8 **p, boolean network)
 {
 	UINT32 mobjnum;
 	INT32 i;
@@ -1684,7 +1687,7 @@ void LUA_UnArchive(UINT8 **p)
 		UnArchiveExtVars(p, &players[i]);
 	}
 
-	if (p == &save_p)
+	if (network == true)
 	{
 		do {
 			mobjnum = READUINT32(*p); // read a mobjnum
@@ -1698,6 +1701,7 @@ void LUA_UnArchive(UINT8 **p)
 			}
 		} while(mobjnum != UINT32_MAX); // repeat until end of mobjs marker.
 
+		lua_save_p = p;
 		LUA_HookNetArchive(NetUnArchive); // call the NetArchive hook in unarchive mode
 	}
 

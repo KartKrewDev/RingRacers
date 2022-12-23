@@ -345,8 +345,6 @@ boolean precache = true; // if true, load all graphics at start
 
 INT16 prevmap, nextmap;
 
-static UINT8 *savebuffer;
-
 static void weaponPrefChange(void);
 static void weaponPrefChange2(void);
 static void weaponPrefChange3(void);
@@ -4313,6 +4311,7 @@ void G_LoadGameData(void)
 	UINT32 versionID;
 	UINT8 versionMinor;
 	UINT8 rtemp;
+	savebuffer_t save;
 
 	//For records
 	UINT32 numgamedatamapheaders;
@@ -4341,7 +4340,7 @@ void G_LoadGameData(void)
 		return; 
 	}
 
-	length = FIL_ReadFile(va(pandf, srb2home, gamedatafilename), &savebuffer);
+	length = FIL_ReadFile(va(pandf, srb2home, gamedatafilename), &save.buffer);
 	if (!length)
 	{
 		// No gamedata. We can save a new one.
@@ -4349,35 +4348,35 @@ void G_LoadGameData(void)
 		return;
 	}
 
-	save_p = savebuffer;
+	save.p = save.buffer;
 
 	// Version check
-	versionID = READUINT32(save_p);
+	versionID = READUINT32(save.p);
 	if (versionID != GD_VERSIONCHECK)
 	{
 		const char *gdfolder = "the Ring Racers folder";
 		if (strcmp(srb2home,"."))
 			gdfolder = srb2home;
 
-		Z_Free(savebuffer);
-		save_p = NULL;
+		Z_Free(save.buffer);
+		save.p = NULL;
 		I_Error("Game data is not for Ring Racers v2.0.\nDelete %s(maybe in %s) and try again.", gamedatafilename, gdfolder);
 	}
 
-	versionMinor = READUINT8(save_p);
+	versionMinor = READUINT8(save.p);
 	if (versionMinor > GD_VERSIONMINOR)
 	{
-		Z_Free(savebuffer);
-		save_p = NULL;
+		Z_Free(save.buffer);
+		save.p = NULL;
 		I_Error("Game data is from the future! (expected %d, got %d)", GD_VERSIONMINOR, versionMinor);
 	}
 
-	gamedata->totalplaytime = READUINT32(save_p);
-	gamedata->matchesplayed = READUINT32(save_p);
+	gamedata->totalplaytime = READUINT32(save.p);
+	gamedata->matchesplayed = READUINT32(save.p);
 
 	{
 		// Quick & dirty hash for what mod this save file is for.
-		UINT32 modID = READUINT32(save_p);
+		UINT32 modID = READUINT32(save.p);
 		UINT32 expectedID = quickncasehash(timeattackfolder, 64);
 
 		if (modID != expectedID)
@@ -4390,34 +4389,34 @@ void G_LoadGameData(void)
 	// To save space, use one bit per collected/achieved/unlocked flag
 	for (i = 0; i < MAXEMBLEMS;)
 	{
-		rtemp = READUINT8(save_p);
+		rtemp = READUINT8(save.p);
 		for (j = 0; j < 8 && j+i < MAXEMBLEMS; ++j)
 			gamedata->collected[j+i] = ((rtemp >> j) & 1);
 		i += j;
 	}
 	for (i = 0; i < MAXUNLOCKABLES;)
 	{
-		rtemp = READUINT8(save_p);
+		rtemp = READUINT8(save.p);
 		for (j = 0; j < 8 && j+i < MAXUNLOCKABLES; ++j)
 			gamedata->unlocked[j+i] = ((rtemp >> j) & 1);
 		i += j;
 	}
 	for (i = 0; i < MAXUNLOCKABLES;)
 	{
-		rtemp = READUINT8(save_p);
+		rtemp = READUINT8(save.p);
 		for (j = 0; j < 8 && j+i < MAXUNLOCKABLES; ++j)
 			gamedata->unlockpending[j+i] = ((rtemp >> j) & 1);
 		i += j;
 	}
 	for (i = 0; i < MAXCONDITIONSETS;)
 	{
-		rtemp = READUINT8(save_p);
+		rtemp = READUINT8(save.p);
 		for (j = 0; j < 8 && j+i < MAXCONDITIONSETS; ++j)
 			gamedata->achieved[j+i] = ((rtemp >> j) & 1);
 		i += j;
 	}
 
-	gamedata->challengegridwidth = READUINT16(save_p);
+	gamedata->challengegridwidth = READUINT16(save.p);
 	Z_Free(gamedata->challengegrid);
 	if (gamedata->challengegridwidth)
 	{
@@ -4426,7 +4425,7 @@ void G_LoadGameData(void)
 			PU_STATIC, NULL);
 		for (i = 0; i < (gamedata->challengegridwidth * CHALLENGEGRIDHEIGHT); i++)
 		{
-			gamedata->challengegrid[i] = READUINT8(save_p);
+			gamedata->challengegrid[i] = READUINT8(save.p);
 		}
 	}
 	else
@@ -4434,10 +4433,10 @@ void G_LoadGameData(void)
 		gamedata->challengegrid = NULL;
 	}
 
-	gamedata->timesBeaten = READUINT32(save_p);
+	gamedata->timesBeaten = READUINT32(save.p);
 
 	// Main records
-	numgamedatamapheaders = READUINT32(save_p);
+	numgamedatamapheaders = READUINT32(save.p);
 	if (numgamedatamapheaders >= NEXTMAP_SPECIAL)
 		goto datacorrupt;
 
@@ -4448,12 +4447,12 @@ void G_LoadGameData(void)
 		tic_t rectime;
 		tic_t reclap;
 
-		READSTRINGN(save_p, mapname, sizeof(mapname));
+		READSTRINGN(save.p, mapname, sizeof(mapname));
 		mapnum = G_MapNumber(mapname);
 
-		rtemp = READUINT8(save_p);
-		rectime = (tic_t)READUINT32(save_p);
-		reclap  = (tic_t)READUINT32(save_p);
+		rtemp = READUINT8(save.p);
+		rectime = (tic_t)READUINT32(save.p);
+		reclap  = (tic_t)READUINT32(save.p);
 
 		if (mapnum < nummapheaders && mapheaderinfo[mapnum])
 		{
@@ -4479,8 +4478,8 @@ void G_LoadGameData(void)
 	}
 
 	// done
-	Z_Free(savebuffer);
-	save_p = NULL;
+	Z_Free(save.buffer);
+	save.p = NULL;
 
 	// Don't consider loaded until it's a success!
 	// It used to do this much earlier, but this would cause the gamedata to
@@ -4500,8 +4499,8 @@ void G_LoadGameData(void)
 		if (strcmp(srb2home,"."))
 			gdfolder = srb2home;
 
-		Z_Free(savebuffer);
-		save_p = NULL;
+		Z_Free(save.buffer);
+		save.p = NULL;
 
 		I_Error("Corrupt game data file.\nDelete %s(maybe in %s) and try again.", gamedatafilename, gdfolder);
 	}
@@ -4514,6 +4513,7 @@ void G_SaveGameData(void)
 	size_t length;
 	INT32 i, j;
 	UINT8 btemp;
+	savebuffer_t save;
 
 	if (!gamedata->loaded)
 		return; // If never loaded (-nodata), don't save
@@ -4533,8 +4533,8 @@ void G_SaveGameData(void)
 	}
 	length += nummapheaders * (MAXMAPLUMPNAME+1+4+4);
 
-	save_p = savebuffer = (UINT8 *)malloc(length);
-	if (!save_p)
+	save.p = save.buffer = (UINT8 *)malloc(length);
+	if (!save.p)
 	{
 		CONS_Alert(CONS_ERROR, M_GetText("No more free memory for saving game data\n"));
 		return;
@@ -4542,11 +4542,11 @@ void G_SaveGameData(void)
 
 	// Version test
 
-	WRITEUINT32(save_p, GD_VERSIONCHECK); // 4
-	WRITEUINT8(save_p, GD_VERSIONMINOR); // 1
-	WRITEUINT32(save_p, gamedata->totalplaytime); // 4
-	WRITEUINT32(save_p, gamedata->matchesplayed); // 4
-	WRITEUINT32(save_p, quickncasehash(timeattackfolder, 64));
+	WRITEUINT32(save.p, GD_VERSIONCHECK); // 4
+	WRITEUINT8(save.p, GD_VERSIONMINOR); // 1
+	WRITEUINT32(save.p, gamedata->totalplaytime); // 4
+	WRITEUINT32(save.p, gamedata->matchesplayed); // 4
+	WRITEUINT32(save.p, quickncasehash(timeattackfolder, 64));
 
 	// To save space, use one bit per collected/achieved/unlocked flag
 	for (i = 0; i < MAXEMBLEMS;) // MAXEMBLEMS * 1;
@@ -4554,7 +4554,7 @@ void G_SaveGameData(void)
 		btemp = 0;
 		for (j = 0; j < 8 && j+i < MAXEMBLEMS; ++j)
 			btemp |= (gamedata->collected[j+i] << j);
-		WRITEUINT8(save_p, btemp);
+		WRITEUINT8(save.p, btemp);
 		i += j;
 	}
 
@@ -4564,7 +4564,7 @@ void G_SaveGameData(void)
 		btemp = 0;
 		for (j = 0; j < 8 && j+i < MAXUNLOCKABLES; ++j)
 			btemp |= (gamedata->unlocked[j+i] << j);
-		WRITEUINT8(save_p, btemp);
+		WRITEUINT8(save.p, btemp);
 		i += j;
 	}
 	for (i = 0; i < MAXUNLOCKABLES;)
@@ -4572,7 +4572,7 @@ void G_SaveGameData(void)
 		btemp = 0;
 		for (j = 0; j < 8 && j+i < MAXUNLOCKABLES; ++j)
 			btemp |= (gamedata->unlockpending[j+i] << j);
-		WRITEUINT8(save_p, btemp);
+		WRITEUINT8(save.p, btemp);
 		i += j;
 	}
 
@@ -4581,52 +4581,52 @@ void G_SaveGameData(void)
 		btemp = 0;
 		for (j = 0; j < 8 && j+i < MAXCONDITIONSETS; ++j)
 			btemp |= (gamedata->achieved[j+i] << j);
-		WRITEUINT8(save_p, btemp);
+		WRITEUINT8(save.p, btemp);
 		i += j;
 	}
 
 	if (gamedata->challengegrid) // 2 + gamedata->challengegridwidth * CHALLENGEGRIDHEIGHT
 	{
-		WRITEUINT16(save_p, gamedata->challengegridwidth);
+		WRITEUINT16(save.p, gamedata->challengegridwidth);
 		for (i = 0; i < (gamedata->challengegridwidth * CHALLENGEGRIDHEIGHT); i++)
 		{
-			WRITEUINT8(save_p, gamedata->challengegrid[i]);
+			WRITEUINT8(save.p, gamedata->challengegrid[i]);
 		}
 	}
 	else // 2
 	{
-		WRITEUINT16(save_p, 0);
+		WRITEUINT16(save.p, 0);
 	}
 
-	WRITEUINT32(save_p, gamedata->timesBeaten); // 4
+	WRITEUINT32(save.p, gamedata->timesBeaten); // 4
 
 	// Main records
-	WRITEUINT32(save_p, nummapheaders); // 4
+	WRITEUINT32(save.p, nummapheaders); // 4
 
 	for (i = 0; i < nummapheaders; i++) // nummapheaders * (255+1+4+4)
 	{
 		// For figuring out which header to assing it to on load
-		WRITESTRINGN(save_p, mapheaderinfo[i]->lumpname, MAXMAPLUMPNAME);
+		WRITESTRINGN(save.p, mapheaderinfo[i]->lumpname, MAXMAPLUMPNAME);
 
-		WRITEUINT8(save_p, (mapheaderinfo[i]->mapvisited & MV_MAX));
+		WRITEUINT8(save.p, (mapheaderinfo[i]->mapvisited & MV_MAX));
 
 		if (mapheaderinfo[i]->mainrecord)
 		{
-			WRITEUINT32(save_p, mapheaderinfo[i]->mainrecord->time);
-			WRITEUINT32(save_p, mapheaderinfo[i]->mainrecord->lap);
+			WRITEUINT32(save.p, mapheaderinfo[i]->mainrecord->time);
+			WRITEUINT32(save.p, mapheaderinfo[i]->mainrecord->lap);
 		}
 		else
 		{
-			WRITEUINT32(save_p, 0);
-			WRITEUINT32(save_p, 0);
+			WRITEUINT32(save.p, 0);
+			WRITEUINT32(save.p, 0);
 		}
 	}
 
-	length = save_p - savebuffer;
+	length = save.p - save.buffer;
 
-	FIL_WriteFile(va(pandf, srb2home, gamedatafilename), savebuffer, length);
-	free(savebuffer);
-	save_p = savebuffer = NULL;
+	FIL_WriteFile(va(pandf, srb2home, gamedatafilename), save.buffer, length);
+	free(save.buffer);
+	save.p = save.buffer = NULL;
 
 	// Also save profiles here.
 	PR_SaveProfiles();
@@ -4643,6 +4643,7 @@ void G_LoadGame(UINT32 slot, INT16 mapoverride)
 	size_t length;
 	char vcheck[VERSIONSIZE];
 	char savename[255];
+	savebuffer_t save;
 
 	// memset savedata to all 0, fixes calling perfectly valid saves corrupt because of bots
 	memset(&savedata, 0, sizeof(savedata));
@@ -4657,18 +4658,18 @@ void G_LoadGame(UINT32 slot, INT16 mapoverride)
 	else
 		sprintf(savename, savegamename, slot);
 
-	length = FIL_ReadFile(savename, &savebuffer);
+	length = FIL_ReadFile(savename, &save.buffer);
 	if (!length)
 	{
 		CONS_Printf(M_GetText("Couldn't read file %s\n"), savename);
 		return;
 	}
 
-	save_p = savebuffer;
+	save.p = save.buffer;
 
 	memset(vcheck, 0, sizeof (vcheck));
 	sprintf(vcheck, (marathonmode ? "back-up %d" : "version %d"), VERSION);
-	if (strcmp((const char *)save_p, (const char *)vcheck))
+	if (strcmp((const char *)save.p, (const char *)vcheck))
 	{
 #ifdef SAVEGAME_OTHERVERSIONS
 		M_StartMessage(M_GetText("Save game from different version.\nYou can load this savegame, but\nsaving afterwards will be disabled.\n\nDo you want to continue anyway?\n\n(Press 'Y' to confirm)\n"),
@@ -4678,15 +4679,15 @@ void G_LoadGame(UINT32 slot, INT16 mapoverride)
 		M_ClearMenus(true); // so ESC backs out to title
 		M_StartMessage(M_GetText("Save game from different version\n\nPress ESC\n"), NULL, MM_NOTHING);
 		Command_ExitGame_f();
-		Z_Free(savebuffer);
-		save_p = savebuffer = NULL;
+		Z_Free(save.buffer);
+		save.p = save.buffer = NULL;
 
 		// no cheating!
 		memset(&savedata, 0, sizeof(savedata));
 #endif
 		return; // bad version
 	}
-	save_p += VERSIONSIZE;
+	save.p += VERSIONSIZE;
 
 	if (demo.playback) // reset game engine
 		G_StopDemo();
@@ -4695,13 +4696,13 @@ void G_LoadGame(UINT32 slot, INT16 mapoverride)
 //	automapactive = false;
 
 	// dearchive all the modifications
-	if (!P_LoadGame(mapoverride))
+	if (!P_LoadGame(&save, mapoverride))
 	{
 		M_ClearMenus(true); // so ESC backs out to title
 		M_StartMessage(M_GetText("Savegame file corrupted\n\nPress ESC\n"), NULL, MM_NOTHING);
 		Command_ExitGame_f();
-		Z_Free(savebuffer);
-		save_p = savebuffer = NULL;
+		Z_Free(save.buffer);
+		save.p = save.buffer = NULL;
 
 		// no cheating!
 		memset(&savedata, 0, sizeof(savedata));
@@ -4709,13 +4710,13 @@ void G_LoadGame(UINT32 slot, INT16 mapoverride)
 	}
 	if (marathonmode)
 	{
-		marathontime = READUINT32(save_p);
-		marathonmode |= READUINT8(save_p);
+		marathontime = READUINT32(save.p);
+		marathonmode |= READUINT8(save.p);
 	}
 
 	// done
-	Z_Free(savebuffer);
-	save_p = savebuffer = NULL;
+	Z_Free(save.buffer);
+	save.p = save.buffer = NULL;
 
 //	gameaction = ga_nothing;
 //	G_SetGamestate(GS_LEVEL);
@@ -4741,6 +4742,7 @@ void G_SaveGame(UINT32 slot, INT16 mapnum)
 	boolean saved;
 	char savename[256] = "";
 	const char *backup;
+	savebuffer_t save;
 
 	if (marathonmode)
 		strcpy(savename, liveeventbackup);
@@ -4753,8 +4755,8 @@ void G_SaveGame(UINT32 slot, INT16 mapnum)
 		char name[VERSIONSIZE];
 		size_t length;
 
-		save_p = savebuffer = (UINT8 *)malloc(SAVEGAMESIZE);
-		if (!save_p)
+		save.p = save.buffer = (UINT8 *)malloc(SAVEGAMESIZE);
+		if (!save.p)
 		{
 			CONS_Alert(CONS_ERROR, M_GetText("No more free memory for saving game data\n"));
 			return;
@@ -4762,22 +4764,22 @@ void G_SaveGame(UINT32 slot, INT16 mapnum)
 
 		memset(name, 0, sizeof (name));
 		sprintf(name, (marathonmode ? "back-up %d" : "version %d"), VERSION);
-		WRITEMEM(save_p, name, VERSIONSIZE);
+		WRITEMEM(save.p, name, VERSIONSIZE);
 
-		P_SaveGame(mapnum);
+		P_SaveGame(&save, mapnum);
 		if (marathonmode)
 		{
 			UINT32 writetime = marathontime;
 			if (!(marathonmode & MA_INGAME))
 				writetime += TICRATE*5; // live event backup penalty because we don't know how long it takes to get to the next map
-			WRITEUINT32(save_p, writetime);
-			WRITEUINT8(save_p, (marathonmode & ~MA_INIT));
+			WRITEUINT32(save.p, writetime);
+			WRITEUINT8(save.p, (marathonmode & ~MA_INIT));
 		}
 
-		length = save_p - savebuffer;
-		saved = FIL_WriteFile(backup, savebuffer, length);
-		free(savebuffer);
-		save_p = savebuffer = NULL;
+		length = save.p - save.buffer;
+		saved = FIL_WriteFile(backup, save.buffer, length);
+		free(save.buffer);
+		save.p = save.buffer = NULL;
 	}
 
 	gameaction = ga_nothing;
@@ -4789,7 +4791,7 @@ void G_SaveGame(UINT32 slot, INT16 mapnum)
 }
 
 #define BADSAVE goto cleanup;
-#define CHECKPOS if (save_p >= end_p) BADSAVE
+#define CHECKPOS if (save.p >= end_p) BADSAVE
 void G_SaveGameOver(UINT32 slot, boolean modifylives)
 {
 	boolean saved = false;
@@ -4797,6 +4799,7 @@ void G_SaveGameOver(UINT32 slot, boolean modifylives)
 	char vcheck[VERSIONSIZE];
 	char savename[255];
 	const char *backup;
+	savebuffer_t save;
 
 	if (marathonmode)
 		strcpy(savename, liveeventbackup);
@@ -4804,7 +4807,7 @@ void G_SaveGameOver(UINT32 slot, boolean modifylives)
 		sprintf(savename, savegamename, slot);
 	backup = va("%s",savename);
 
-	length = FIL_ReadFile(savename, &savebuffer);
+	length = FIL_ReadFile(savename, &save.buffer);
 	if (!length)
 	{
 		CONS_Printf(M_GetText("Couldn't read file %s\n"), savename);
@@ -4813,35 +4816,35 @@ void G_SaveGameOver(UINT32 slot, boolean modifylives)
 
 	{
 		char temp[sizeof(timeattackfolder)];
-		UINT8 *end_p = savebuffer + length;
+		UINT8 *end_p = save.buffer + length;
 		UINT8 *lives_p;
 		SINT8 pllives;
 
-		save_p = savebuffer;
+		save.p = save.buffer;
 		// Version check
 		memset(vcheck, 0, sizeof (vcheck));
 		sprintf(vcheck, (marathonmode ? "back-up %d" : "version %d"), VERSION);
-		if (strcmp((const char *)save_p, (const char *)vcheck)) BADSAVE
-		save_p += VERSIONSIZE;
+		if (strcmp((const char *)save.p, (const char *)vcheck)) BADSAVE
+		save.p += VERSIONSIZE;
 
 		// P_UnArchiveMisc()
-		(void)READINT16(save_p);
+		(void)READINT16(save.p);
 		CHECKPOS
-		(void)READUINT16(save_p); // emeralds
+		(void)READUINT16(save.p); // emeralds
 		CHECKPOS
-		READSTRINGN(save_p, temp, sizeof(temp)); // mod it belongs to
+		READSTRINGN(save.p, temp, sizeof(temp)); // mod it belongs to
 		if (strcmp(temp, timeattackfolder)) BADSAVE
 
 		// P_UnArchivePlayer()
 		CHECKPOS
-		(void)READUINT16(save_p);
+		(void)READUINT16(save.p);
 		CHECKPOS
 
-		WRITEUINT8(save_p, numgameovers);
+		WRITEUINT8(save.p, numgameovers);
 		CHECKPOS
 
-		lives_p = save_p;
-		pllives = READSINT8(save_p); // lives
+		lives_p = save.p;
+		pllives = READSINT8(save.p); // lives
 		CHECKPOS
 		if (modifylives && pllives < startinglivesbalance[numgameovers])
 		{
@@ -4849,28 +4852,28 @@ void G_SaveGameOver(UINT32 slot, boolean modifylives)
 			WRITESINT8(lives_p, pllives);
 		}
 
-		(void)READINT32(save_p); // Score
+		(void)READINT32(save.p); // Score
 		CHECKPOS
-		(void)READINT32(save_p); // continues
+		(void)READINT32(save.p); // continues
 
 		// File end marker check
 		CHECKPOS
-		switch (READUINT8(save_p))
+		switch (READUINT8(save.p))
 		{
 			case 0xb7:
 				{
 					UINT8 i, banksinuse;
 					CHECKPOS
-					banksinuse = READUINT8(save_p);
+					banksinuse = READUINT8(save.p);
 					CHECKPOS
 					if (banksinuse > NUM_LUABANKS)
 						BADSAVE
 					for (i = 0; i < banksinuse; i++)
 					{
-						(void)READINT32(save_p);
+						(void)READINT32(save.p);
 						CHECKPOS
 					}
-					if (READUINT8(save_p) != 0x1d)
+					if (READUINT8(save.p) != 0x1d)
 						BADSAVE
 				}
 			case 0x1d:
@@ -4880,7 +4883,7 @@ void G_SaveGameOver(UINT32 slot, boolean modifylives)
 		}
 
 		// done
-		saved = FIL_WriteFile(backup, savebuffer, length);
+		saved = FIL_WriteFile(backup, save.buffer, length);
 	}
 
 cleanup:
@@ -4888,8 +4891,8 @@ cleanup:
 		CONS_Printf(M_GetText("Game saved.\n"));
 	else if (!saved)
 		CONS_Alert(CONS_ERROR, M_GetText("Error while writing to %s for save slot %u, base: %s\n"), backup, slot, (marathonmode ? liveeventbackup : savegamename));
-	Z_Free(savebuffer);
-	save_p = savebuffer = NULL;
+	Z_Free(save.buffer);
+	save.p = save.buffer = NULL;
 
 }
 #undef CHECKPOS
