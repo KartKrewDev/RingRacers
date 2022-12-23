@@ -98,7 +98,7 @@
 #include "k_brightmap.h"
 #include "k_director.h" // K_InitDirector
 #include "k_specialstage.h"
-#include "k_acs.h"
+#include "acs/interface.h"
 
 // Replay names have time
 #if !defined (UNDER_CE)

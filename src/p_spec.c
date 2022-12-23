@@ -46,7 +46,7 @@
 #include "console.h" // CON_LogMessage
 #include "k_respawn.h"
 #include "k_terrain.h"
-#include "k_acs.h"
+#include "acs/interface.h"
 
 #ifdef HW3SOUND
 #include "hardware/hw3sound.h"

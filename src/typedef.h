@@ -295,6 +295,7 @@ TYPEDEF (disappear_t);
 TYPEDEF (fade_t);
 TYPEDEF (fadecolormap_t);
 TYPEDEF (planedisplace_t);
+TYPEDEF (activator_t);
 
 // r_data.h
 TYPEDEF (lumplist_t);

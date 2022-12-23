@@ -130,8 +130,6 @@ add_executable(SRB2SDL2 MACOSX_BUNDLE WIN32
 	k_profiles.c
 	k_specialstage.c
 	k_roulette.c
-	k_acs.c
-	k_acs-func.c
 )
 
 if("${CMAKE_COMPILER_IS_GNUCC}" AND "${CMAKE_SYSTEM_NAME}" MATCHES "Windows")
@@ -515,6 +513,7 @@ endif()
 
 add_subdirectory(sdl)
 add_subdirectory(objects)
+add_subdirectory(acs)
 add_subdirectory(tests)
 
 # strip debug symbols into separate file when using gcc.

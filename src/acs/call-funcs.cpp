@@ -8,49 +8,56 @@
 // terms of the GNU General Public License, version 2.
 // See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
-/// \file  k_acs-func.c
-/// \brief ACS CallFunc definitions
+/// \file  call-funcs.cpp
+/// \brief Action Code Script: CallFunc instructions
 
-#include "k_acs.h"
+extern "C" {
+#include "../doomtype.h"
+#include "../doomdef.h"
+#include "../doomstat.h"
 
-#include "doomtype.h"
-#include "doomdef.h"
-#include "doomstat.h"
-#include "d_think.h"
-#include "p_mobj.h"
-#include "p_tick.h"
-#include "w_wad.h"
-#include "m_random.h"
-#include "g_game.h"
-#include "d_player.h"
-#include "r_defs.h"
-#include "r_state.h"
-#include "p_polyobj.h"
-#include "taglist.h"
-#include "p_local.h"
-#include "deh_tables.h"
-#include "fastcmp.h"
-#include "hu_stuff.h"
-#include "s_sound.h"
-#include "r_textures.h"
-
-ACSVM_String *ACSVM_MapScope_GetString(ACSVM_MapScope *map, ACSVM_Word index)
-{
-	(void)map;
-	(void)index;
-	return NULL;
+#include "../d_think.h"
+#include "../p_mobj.h"
+#include "../p_tick.h"
+#include "../w_wad.h"
+#include "../m_random.h"
+#include "../g_game.h"
+#include "../d_player.h"
+#include "../r_defs.h"
+#include "../r_state.h"
+#include "../p_polyobj.h"
+#include "../taglist.h"
+#include "../p_local.h"
+#include "../deh_tables.h"
+#include "../fastcmp.h"
+#include "../hu_stuff.h"
+#include "../s_sound.h"
+#include "../r_textures.h"
 }
 
-ACSVM_ThreadInfo *ACSVM_AllocThreadInfo(void *activator)
-{
-	(void)activator;
-	return NULL;
-}
+#include <ACSVM/Code.hpp>
+#include <ACSVM/CodeData.hpp>
+#include <ACSVM/Environment.hpp>
+#include <ACSVM/Error.hpp>
+#include <ACSVM/Module.hpp>
+#include <ACSVM/Scope.hpp>
+#include <ACSVM/Script.hpp>
+#include <ACSVM/Serial.hpp>
+#include <ACSVM/Thread.hpp>
+#include <Util/Floats.hpp>
+
+#include "call-funcs.hpp"
+
+#include "environment.hpp"
+#include "thread.hpp"
+#include "../cxxutil.hpp"
+
+using namespace srb2::acs;
 
 /*--------------------------------------------------
 	static bool ACS_GetMobjTypeFromString(const char *word, mobjtype_t *type)
 
-		Helper function for ACS_CF_ThingCount. Gets
+		Helper function for CallFunc_ThingCount. Gets
 		an object type from a string.
 
 	Input Arguments:-
@@ -62,15 +69,13 @@ ACSVM_ThreadInfo *ACSVM_AllocThreadInfo(void *activator)
 --------------------------------------------------*/
 static bool ACS_GetMobjTypeFromString(const char *word, mobjtype_t *type)
 {
-	mobjtype_t i;
-
 	if (fastncmp("MT_", word, 3))
 	{
 		// take off the MT_
 		word += 3;
 	}
 
-	for (i = 0; i < NUMMOBJFREESLOTS; i++)
+	for (int i = 0; i < NUMMOBJFREESLOTS; i++)
 	{
 		if (!FREE_MOBJS[i])
 		{
@@ -79,16 +84,16 @@ static bool ACS_GetMobjTypeFromString(const char *word, mobjtype_t *type)
 
 		if (fastcmp(word, FREE_MOBJS[i]))
 		{
-			*type = MT_FIRSTFREESLOT+i;
+			*type = static_cast<mobjtype_t>(static_cast<int>(MT_FIRSTFREESLOT) + i);
 			return true;
 		}
 	}
 
-	for (i = 0; i < MT_FIRSTFREESLOT; i++)
+	for (int i = 0; i < MT_FIRSTFREESLOT; i++)
 	{
-		if (fastcmp(word, MOBJTYPE_LIST[i]+3))
+		if (fastcmp(word, MOBJTYPE_LIST[i] + 3))
 		{
-			*type = i;
+			*type = static_cast<mobjtype_t>(i);
 			return true;
 		}
 	}
@@ -111,8 +116,6 @@ static bool ACS_GetMobjTypeFromString(const char *word, mobjtype_t *type)
 --------------------------------------------------*/
 static bool ACS_GetSFXFromString(const char *word, sfxenum_t *type)
 {
-	sfxenum_t i;
-
 	if (fastncmp("SFX_", word, 4))
 	{
 		// take off the SFX_
@@ -124,11 +127,11 @@ static bool ACS_GetSFXFromString(const char *word, sfxenum_t *type)
 		word += 2;
 	}
 
-	for (i = 0; i < NUMSFX; i++)
+	for (int i = 0; i < NUMSFX; i++)
 	{
 		if (S_sfx[i].name && fasticmp(word, S_sfx[i].name))
 		{
-			*type = i;
+			*type = static_cast<sfxenum_t>(i);
 			return true;
 		}
 	}
@@ -139,7 +142,7 @@ static bool ACS_GetSFXFromString(const char *word, sfxenum_t *type)
 /*--------------------------------------------------
 	static bool ACS_CountThing(mobj_t *mobj, mobjtype_t type)
 
-		Helper function for ACS_CF_ThingCount.
+		Helper function for CallFunc_ThingCount.
 		Returns whenever or not to add this thing
 		to the thing count.
 
@@ -172,7 +175,7 @@ static bool ACS_CountThing(mobj_t *mobj, mobjtype_t type)
 }
 
 /*--------------------------------------------------
-	static bool ACS_ActivatorIsLocal(ACSVM_Thread *thread)
+	static bool ACS_ActivatorIsLocal(ACSVM::Thread *thread)
 
 		Helper function for many print functions.
 		Returns whenever or not the activator of the
@@ -185,9 +188,9 @@ static bool ACS_CountThing(mobj_t *mobj, mobjtype_t type)
 		true if it's for a display player,
 		otherwise false.
 --------------------------------------------------*/
-static bool ACS_ActivatorIsLocal(ACSVM_Thread *thread)
+static bool ACS_ActivatorIsLocal(ACSVM::Thread *thread)
 {
-	activator_t *info = (activator_t *)ACSVM_Thread_GetInfo(thread);
+	auto info = &static_cast<Thread *>(thread)->info;
 
 	if ((info != NULL)
 		&& (info->mo != NULL && P_MobjWasRemoved(info->mo) == false)
@@ -200,11 +203,11 @@ static bool ACS_ActivatorIsLocal(ACSVM_Thread *thread)
 }
 
 /*--------------------------------------------------
-	bool ACS_CF_Random(ACSVM_Thread *thread, ACSVM_Word const *argV, ACSVM_Word argC)
+	bool CallFunc_Random(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
 
 		ACS wrapper for P_RandomRange.
 --------------------------------------------------*/
-bool ACS_CF_Random(ACSVM_Thread *thread, ACSVM_Word const *argV, ACSVM_Word argC)
+bool CallFunc_Random(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
 {
 	INT32 low = 0;
 	INT32 high = 0;
@@ -214,22 +217,22 @@ bool ACS_CF_Random(ACSVM_Thread *thread, ACSVM_Word const *argV, ACSVM_Word argC
 	low = argV[0];
 	high = argV[1];
 
-	ACSVM_Thread_DataStk_Push(thread, P_RandomRange(PR_ACS, low, high));
+	thread->dataStk.push(P_RandomRange(PR_ACS, low, high));
 	return false;
 }
 
 /*--------------------------------------------------
-	bool ACS_CF_ThingCount(ACSVM_Thread *thread, ACSVM_Word const *argV, ACSVM_Word argC)
+	bool CallFunc_ThingCount(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
 
 		Counts the number of things of a particular
 		type and tid. Both fields are optional;
 		no type means indescriminate against type,
 		no tid means search thru all thinkers.
 --------------------------------------------------*/
-bool ACS_CF_ThingCount(ACSVM_Thread *thread, ACSVM_Word const *argV, ACSVM_Word argC)
+bool CallFunc_ThingCount(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
 {
-	ACSVM_MapScope *map = NULL;
-	ACSVM_String *str = NULL;
+	ACSVM::MapScope *map = NULL;
+	ACSVM::String *str = NULL;
 	const char *className = NULL;
 	size_t classLen = 0;
 
@@ -240,11 +243,11 @@ bool ACS_CF_ThingCount(ACSVM_Thread *thread, ACSVM_Word const *argV, ACSVM_Word 
 
 	(void)argC;
 
-	map = ACSVM_Thread_GetScopeMap(thread);
-	str = ACSVM_MapScope_GetString(map, argV[0]);
+	map = thread->scopeMap;
+	str = map->getString(argV[0]);
 
-	className = ACSVM_String_GetStr(str);
-	classLen = ACSVM_String_GetLen(str);
+	className = str->str;
+	classLen = str->len;
 
 	if (classLen > 0)
 	{
@@ -270,6 +273,9 @@ bool ACS_CF_ThingCount(ACSVM_Thread *thread, ACSVM_Word const *argV, ACSVM_Word 
 		// TODO: Even in SRB2 next's UDMF, tag lists
 		// still aren't attached to mobj_t, only
 		// mapthing_t. Fix this.
+		CONS_Alert(CONS_WARNING,
+			"ThingCount TID field not implemented -- waiting for mobj tags.\n"
+		);
 	}
 	else
 	{
@@ -293,60 +299,58 @@ bool ACS_CF_ThingCount(ACSVM_Thread *thread, ACSVM_Word const *argV, ACSVM_Word 
 		}
 	}
 
-	ACSVM_Thread_DataStk_Push(thread, count);
+	thread->dataStk.push(count);
 	return false;
 }
 
 /*--------------------------------------------------
-	bool ACS_CF_TagWait(ACSVM_Thread *thread, ACSVM_Word const *argV, ACSVM_Word argC)
+	bool CallFunc_TagWait(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
 
 		Pauses the thread until the tagged
 		sector stops moving.
 --------------------------------------------------*/
-bool ACS_CF_TagWait(ACSVM_Thread *thread, ACSVM_Word const *argV, ACSVM_Word argC)
+bool CallFunc_TagWait(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
 {
-	ACSVM_ThreadState st = {0};
-
 	(void)argC;
 
-	st.state = ACSVM_ThreadState_WaitTag;
-	st.data = argV[0];
-	st.type = ACS_TAGTYPE_SECTOR;
+	thread->state = {
+		ACSVM::ThreadState::WaitTag,
+		argV[0],
+		ACS_TAGTYPE_SECTOR
+	};
 
-	ACSVM_Thread_SetState(thread, st);
 	return true; // Execution interrupted
 }
 
 /*--------------------------------------------------
-	bool ACS_CF_PolyWait(ACSVM_Thread *thread, ACSVM_Word const *argV, ACSVM_Word argC)
+	bool CallFunc_PolyWait(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
 
 		Pauses the thread until the tagged
 		polyobject stops moving.
 --------------------------------------------------*/
-bool ACS_CF_PolyWait(ACSVM_Thread *thread, ACSVM_Word const *argV, ACSVM_Word argC)
+bool CallFunc_PolyWait(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
 {
-	ACSVM_ThreadState st = {0};
-
 	(void)argC;
 
-	st.state = ACSVM_ThreadState_WaitTag;
-	st.data = argV[0];
-	st.type = ACS_TAGTYPE_POLYOBJ;
+	thread->state = {
+		ACSVM::ThreadState::WaitTag,
+		argV[0],
+		ACS_TAGTYPE_POLYOBJ
+	};
 
-	ACSVM_Thread_SetState(thread, st);
 	return true; // Execution interrupted
 }
 
 /*--------------------------------------------------
-	bool ACS_CF_ChangeFloor(ACSVM_Thread *thread, ACSVM_Word const *argV, ACSVM_Word argC)
+	bool CallFunc_ChangeFloor(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
 
 		Changes a floor texture.
 --------------------------------------------------*/
-bool ACS_CF_ChangeFloor(ACSVM_Thread *thread, ACSVM_Word const *argV, ACSVM_Word argC)
+bool CallFunc_ChangeFloor(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
 {
-	ACSVM_MapScope *map = NULL;
-	ACSVM_String *str = NULL;
-	const char *texName = NULL;
+	ACSVM::MapScope *map = nullptr;
+	ACSVM::String *str = nullptr;
+	const char *texName = nullptr;
 
 	INT32 secnum = -1;
 	mtag_t tag = 0;
@@ -355,9 +359,9 @@ bool ACS_CF_ChangeFloor(ACSVM_Thread *thread, ACSVM_Word const *argV, ACSVM_Word
 
 	tag = argV[0];
 
-	map = ACSVM_Thread_GetScopeMap(thread);
-	str = ACSVM_MapScope_GetString(map, argV[1]);
-	texName = ACSVM_String_GetStr(str);
+	map = thread->scopeMap;
+	str = map->getString(argV[1]);
+	texName = str->str;
 
 	TAG_ITER_SECTORS(tag, secnum)
 	{
@@ -369,14 +373,14 @@ bool ACS_CF_ChangeFloor(ACSVM_Thread *thread, ACSVM_Word const *argV, ACSVM_Word
 }
 
 /*--------------------------------------------------
-	bool ACS_CF_ChangeCeiling(ACSVM_Thread *thread, ACSVM_Word const *argV, ACSVM_Word argC)
+	bool CallFunc_ChangeCeiling(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
 
 		Changes a ceiling texture.
 --------------------------------------------------*/
-bool ACS_CF_ChangeCeiling(ACSVM_Thread *thread, ACSVM_Word const *argV, ACSVM_Word argC)
+bool CallFunc_ChangeCeiling(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
 {
-	ACSVM_MapScope *map = NULL;
-	ACSVM_String *str = NULL;
+	ACSVM::MapScope *map = NULL;
+	ACSVM::String *str = NULL;
 	const char *texName = NULL;
 
 	INT32 secnum = -1;
@@ -386,9 +390,9 @@ bool ACS_CF_ChangeCeiling(ACSVM_Thread *thread, ACSVM_Word const *argV, ACSVM_Wo
 
 	tag = argV[0];
 
-	map = ACSVM_Thread_GetScopeMap(thread);
-	str = ACSVM_MapScope_GetString(map, argV[1]);
-	texName = ACSVM_String_GetStr(str);
+	map = thread->scopeMap;
+	str = map->getString(argV[1]);
+	texName = str->str;
 
 	TAG_ITER_SECTORS(tag, secnum)
 	{
@@ -400,31 +404,31 @@ bool ACS_CF_ChangeCeiling(ACSVM_Thread *thread, ACSVM_Word const *argV, ACSVM_Wo
 }
 
 /*--------------------------------------------------
-	bool ACS_CF_LineSide(ACSVM_Thread *thread, ACSVM_Word const *argV, ACSVM_Word argC)
+	bool CallFunc_LineSide(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
 
 		Pushes which side of the linedef was
 		activated.
 --------------------------------------------------*/
-bool ACS_CF_LineSide(ACSVM_Thread *thread, ACSVM_Word const *argV, ACSVM_Word argC)
+bool CallFunc_LineSide(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
 {
-	activator_t *info = (activator_t *)ACSVM_Thread_GetInfo(thread);
+	auto info = &static_cast<Thread *>(thread)->info;
 
 	(void)argV;
 	(void)argC;
 
-	ACSVM_Thread_DataStk_Push(thread, info->side);
+	thread->dataStk.push(info->side);
 	return false;
 }
 
 /*--------------------------------------------------
-	bool ACS_CF_ClearLineSpecial(ACSVM_Thread *thread, ACSVM_Word const *argV, ACSVM_Word argC)
+	bool CallFunc_ClearLineSpecial(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
 
 		If there is an activating linedef, set its
 		special to 0.
 --------------------------------------------------*/
-bool ACS_CF_ClearLineSpecial(ACSVM_Thread *thread, ACSVM_Word const *argV, ACSVM_Word argC)
+bool CallFunc_ClearLineSpecial(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
 {
-	activator_t *info = (activator_t *)ACSVM_Thread_GetInfo(thread);
+	auto info = &static_cast<Thread *>(thread)->info;
 
 	(void)argV;
 	(void)argC;
@@ -439,38 +443,33 @@ bool ACS_CF_ClearLineSpecial(ACSVM_Thread *thread, ACSVM_Word const *argV, ACSVM
 }
 
 /*--------------------------------------------------
-	bool ACS_CF_EndPrint(ACSVM_Thread *thread, ACSVM_Word const *argV, ACSVM_Word argC)
+	bool CallFunc_EndPrint(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
 
 		One of the ACS wrappers for CEcho. This
 		version only prints if the activator is a
 		display player.
 --------------------------------------------------*/
-bool ACS_CF_EndPrint(ACSVM_Thread *thread, ACSVM_Word const *argV, ACSVM_Word argC)
+bool CallFunc_EndPrint(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
 {
-	ACSVM_PrintBuf *buf = NULL;
-
 	(void)argV;
 	(void)argC;
-
-	buf = ACSVM_Thread_GetPrintBuf(thread);
 
 	if (ACS_ActivatorIsLocal(thread) == true)
 	{
 		HU_SetCEchoDuration(5);
-		HU_DoCEcho(ACSVM_PrintBuf_GetData(buf));
+		HU_DoCEcho(thread->printBuf.data());
 	}
 
-	ACSVM_PrintBuf_Drop(buf);
-
+	thread->printBuf.drop();
 	return false;
 }
 
 /*--------------------------------------------------
-	bool ACS_CF_PlayerCount(ACSVM_Thread *thread, ACSVM_Word const *argV, ACSVM_Word argC)
+	bool CallFunc_PlayerCount(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
 
 		Pushes the number of players to ACS.
 --------------------------------------------------*/
-bool ACS_CF_PlayerCount(ACSVM_Thread *thread, ACSVM_Word const *argV, ACSVM_Word argC)
+bool CallFunc_PlayerCount(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
 {
 	UINT8 numPlayers = 0;
 	UINT8 i;
@@ -497,78 +496,78 @@ bool ACS_CF_PlayerCount(ACSVM_Thread *thread, ACSVM_Word const *argV, ACSVM_Word
 		numPlayers++;
 	}
 
-	ACSVM_Thread_DataStk_Push(thread, numPlayers);
+	thread->dataStk.push(numPlayers);
 	return false;
 }
 
 /*--------------------------------------------------
-	bool ACS_CF_GameType(ACSVM_Thread *thread, ACSVM_Word const *argV, ACSVM_Word argC)
+	bool CallFunc_GameType(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
 
 		Pushes the current gametype to ACS.
 --------------------------------------------------*/
-bool ACS_CF_GameType(ACSVM_Thread *thread, ACSVM_Word const *argV, ACSVM_Word argC)
+bool CallFunc_GameType(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
 {
 	(void)argV;
 	(void)argC;
 
-	ACSVM_Thread_DataStk_Push(thread, gametype);
+	thread->dataStk.push(gametype);
 	return false;
 }
 
 /*--------------------------------------------------
-	bool ACS_CF_GameSpeed(ACSVM_Thread *thread, ACSVM_Word const *argV, ACSVM_Word argC)
+	bool CallFunc_GameSpeed(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
 
 		Pushes the current game speed to ACS.
 --------------------------------------------------*/
-bool ACS_CF_GameSpeed(ACSVM_Thread *thread, ACSVM_Word const *argV, ACSVM_Word argC)
+bool CallFunc_GameSpeed(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
 {
 	(void)argV;
 	(void)argC;
 
-	ACSVM_Thread_DataStk_Push(thread, gamespeed);
+	thread->dataStk.push(gamespeed);
 	return false;
 }
 
 /*--------------------------------------------------
-	bool ACS_CF_Timer(ACSVM_Thread *thread, ACSVM_Word const *argV, ACSVM_Word argC)
+	bool CallFunc_Timer(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
 
 		Pushes leveltime to ACS.
 --------------------------------------------------*/
-bool ACS_CF_Timer(ACSVM_Thread *thread, ACSVM_Word const *argV, ACSVM_Word argC)
+bool CallFunc_Timer(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
 {
 	(void)argV;
 	(void)argC;
 
-	ACSVM_Thread_DataStk_Push(thread, leveltime);
+	thread->dataStk.push(leveltime);
 	return false;
 }
 
 /*--------------------------------------------------
-	bool ACS_CF_SectorSound(ACSVM_Thread *thread, ACSVM_Word const *argV, ACSVM_Word argC)
+	bool CallFunc_SectorSound(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
 
 		Plays a point sound effect from a sector.
 --------------------------------------------------*/
-bool ACS_CF_SectorSound(ACSVM_Thread *thread, ACSVM_Word const *argV, ACSVM_Word argC)
+bool CallFunc_SectorSound(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
 {
-	activator_t *info = (activator_t *)ACSVM_Thread_GetInfo(thread);
+	auto info = &static_cast<Thread *>(thread)->info;
 
-	ACSVM_MapScope *map = NULL;
-	ACSVM_String *str = NULL;
+	ACSVM::MapScope *map = nullptr;
+	ACSVM::String *str = nullptr;
 
-	const char *sfxName = NULL;
+	const char *sfxName = nullptr;
 	size_t sfxLen = 0;
 
 	sfxenum_t sfxId = sfx_None;
 	INT32 vol = 0;
-	mobj_t *origin = NULL;
+	mobj_t *origin = nullptr;
 
 	(void)argC;
 
-	map = ACSVM_Thread_GetScopeMap(thread);
-	str = ACSVM_MapScope_GetString(map, argV[0]);
+	map = thread->scopeMap;
+	str = map->getString(argV[0]);
 
-	sfxName = ACSVM_String_GetStr(str);
-	sfxLen = ACSVM_String_GetLen(str);
+	sfxName = str->str;
+	sfxLen = str->len;
 
 	if (sfxLen > 0)
 	{
@@ -589,15 +588,15 @@ bool ACS_CF_SectorSound(ACSVM_Thread *thread, ACSVM_Word const *argV, ACSVM_Word
 
 	vol = argV[1];
 
-	if (info->sector != NULL)
+	if (info->sector != nullptr)
 	{
 		// New to Ring Racers: Use activating sector directly.
-		origin = (void *)&info->sector->soundorg;
+		origin = static_cast<mobj_t *>(static_cast<void *>(&info->sector->soundorg));
 	}
-	else if (info->line != NULL)
+	else if (info->line != nullptr)
 	{
 		// Original Hexen behavior: Use line's frontsector.
-		origin = (void *)&info->line->frontsector->soundorg;
+		origin = static_cast<mobj_t *>(static_cast<void *>(&info->line->frontsector->soundorg));
 	}
 
 	S_StartSoundAtVolume(origin, sfxId, vol);
@@ -605,16 +604,16 @@ bool ACS_CF_SectorSound(ACSVM_Thread *thread, ACSVM_Word const *argV, ACSVM_Word
 }
 
 /*--------------------------------------------------
-	bool ACS_CF_AmbientSound(ACSVM_Thread *thread, ACSVM_Word const *argV, ACSVM_Word argC)
+	bool CallFunc_AmbientSound(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
 
 		Plays a sound effect globally.
 --------------------------------------------------*/
-bool ACS_CF_AmbientSound(ACSVM_Thread *thread, ACSVM_Word const *argV, ACSVM_Word argC)
+bool CallFunc_AmbientSound(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
 {
-	ACSVM_MapScope *map = NULL;
-	ACSVM_String *str = NULL;
+	ACSVM::MapScope *map = nullptr;
+	ACSVM::String *str = nullptr;
 
-	const char *sfxName = NULL;
+	const char *sfxName = nullptr;
 	size_t sfxLen = 0;
 
 	sfxenum_t sfxId = sfx_None;
@@ -622,11 +621,11 @@ bool ACS_CF_AmbientSound(ACSVM_Thread *thread, ACSVM_Word const *argV, ACSVM_Wor
 
 	(void)argC;
 
-	map = ACSVM_Thread_GetScopeMap(thread);
-	str = ACSVM_MapScope_GetString(map, argV[0]);
+	map = thread->scopeMap;
+	str = map->getString(argV[0]);
 
-	sfxName = ACSVM_String_GetStr(str);
-	sfxLen = ACSVM_String_GetLen(str);
+	sfxName = str->str;
+	sfxLen = str->len;
 
 	if (sfxLen > 0)
 	{
@@ -652,7 +651,7 @@ bool ACS_CF_AmbientSound(ACSVM_Thread *thread, ACSVM_Word const *argV, ACSVM_Wor
 }
 
 /*--------------------------------------------------
-	bool ACS_CF_SetLineTexture(ACSVM_Thread *thread, ACSVM_Word const *argV, ACSVM_Word argC)
+	bool CallFunc_SetLineTexture(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
 
 		Plays a sound effect globally.
 --------------------------------------------------*/
@@ -663,14 +662,14 @@ enum
 	SLT_POS_BOTTOM
 };
 
-bool ACS_CF_SetLineTexture(ACSVM_Thread *thread, ACSVM_Word const *argV, ACSVM_Word argC)
+bool CallFunc_SetLineTexture(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
 {
 	mtag_t tag = 0;
 	UINT8 sideId = 0;
 	UINT8 texPos = 0;
 
-	ACSVM_MapScope *map = NULL;
-	ACSVM_String *str = NULL;
+	ACSVM::MapScope *map = NULL;
+	ACSVM::String *str = NULL;
 	const char *texName = NULL;
 	INT32 texId = LUMPERROR;
 
@@ -682,9 +681,9 @@ bool ACS_CF_SetLineTexture(ACSVM_Thread *thread, ACSVM_Word const *argV, ACSVM_W
 	sideId = (argV[1] & 1);
 	texPos = argV[2];
 
-	map = ACSVM_Thread_GetScopeMap(thread);
-	str = ACSVM_MapScope_GetString(map, argV[4]);
-	texName = ACSVM_String_GetStr(str);
+	map = thread->scopeMap;
+	str = map->getString(argV[4]);
+	texName = str->str;
 
 	texId = R_TextureNumForName(texName);
 
@@ -718,13 +717,13 @@ bool ACS_CF_SetLineTexture(ACSVM_Thread *thread, ACSVM_Word const *argV, ACSVM_W
 }
 
 /*--------------------------------------------------
-	bool ACS_CF_SetLineSpecial(ACSVM_Thread *thread, ACSVM_Word const *argV, ACSVM_Word argC)
+	bool CallFunc_SetLineSpecial(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
 
 		Changes a linedef's special and arguments.
 --------------------------------------------------*/
-bool ACS_CF_SetLineSpecial(ACSVM_Thread *thread, ACSVM_Word const *argV, ACSVM_Word argC)
+bool CallFunc_SetLineSpecial(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
 {
-	activator_t *info = (activator_t *)ACSVM_Thread_GetInfo(thread);
+	auto info = &static_cast<Thread *>(thread)->info;
 
 	mtag_t tag = 0;
 	INT32 spec = 0;
@@ -735,14 +734,14 @@ bool ACS_CF_SetLineSpecial(ACSVM_Thread *thread, ACSVM_Word const *argV, ACSVM_W
 	tag = argV[0];
 	spec = argV[1];
 
-	numArgs = min(max(argC - 2, 0), NUMLINEARGS);
+	numArgs = std::min(std::max((signed)(argC - 2), 0), NUMLINEARGS);
 
 	TAG_ITER_LINES(tag, lineId)
 	{
 		line_t *line = &lines[lineId];
 		size_t i;
 
-		if (info->line != NULL && line == info->line)
+		if (info->line != nullptr && line == info->line)
 		{
 			continue;
 		}
@@ -759,16 +758,16 @@ bool ACS_CF_SetLineSpecial(ACSVM_Thread *thread, ACSVM_Word const *argV, ACSVM_W
 }
 
 /*--------------------------------------------------
-	bool ACS_CF_ThingSound(ACSVM_Thread *thread, ACSVM_Word const *argV, ACSVM_Word argC)
+	bool CallFunc_ThingSound(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
 
 		Plays a sound effect for a tagged object.
 --------------------------------------------------*/
-bool ACS_CF_ThingSound(ACSVM_Thread *thread, ACSVM_Word const *argV, ACSVM_Word argC)
+bool CallFunc_ThingSound(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
 {
-	ACSVM_MapScope *map = NULL;
-	ACSVM_String *str = NULL;
+	ACSVM::MapScope *map = nullptr;
+	ACSVM::String *str = nullptr;
 
-	const char *sfxName = NULL;
+	const char *sfxName = nullptr;
 	size_t sfxLen = 0;
 
 	mtag_t tag = 0;
@@ -779,11 +778,11 @@ bool ACS_CF_ThingSound(ACSVM_Thread *thread, ACSVM_Word const *argV, ACSVM_Word 
 
 	tag = argV[0];
 
-	map = ACSVM_Thread_GetScopeMap(thread);
-	str = ACSVM_MapScope_GetString(map, argV[1]);
+	map = thread->scopeMap;
+	str = map->getString(argV[1]);
 
-	sfxName = ACSVM_String_GetStr(str);
-	sfxLen = ACSVM_String_GetLen(str);
+	sfxName = str->str;
+	sfxLen = str->len;
 
 	if (sfxLen > 0)
 	{
@@ -823,50 +822,40 @@ bool ACS_CF_ThingSound(ACSVM_Thread *thread, ACSVM_Word const *argV, ACSVM_Word 
 
 
 /*--------------------------------------------------
-	bool ACS_CF_EndPrintBold(ACSVM_Thread *thread, ACSVM_Word const *argV, ACSVM_Word argC)
+	bool CallFunc_EndPrintBold(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
 
 		One of the ACS wrappers for CEcho. This
 		version prints for all players.
 --------------------------------------------------*/
-bool ACS_CF_EndPrintBold(ACSVM_Thread *thread, ACSVM_Word const *argV, ACSVM_Word argC)
+bool CallFunc_EndPrintBold(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
 {
-	ACSVM_PrintBuf *buf = NULL;
-
 	(void)argV;
 	(void)argC;
 
-	buf = ACSVM_Thread_GetPrintBuf(thread);
-
 	HU_SetCEchoDuration(5);
-	HU_DoCEcho(ACSVM_PrintBuf_GetData(buf));
+	HU_DoCEcho(thread->printBuf.data());
 
-	ACSVM_PrintBuf_Drop(buf);
-
+	thread->printBuf.drop();
 	return false;
 }
 
 /*--------------------------------------------------
-	bool ACS_CF_EndLog(ACSVM_Thread *thread, ACSVM_Word const *argV, ACSVM_Word argC)
+	bool CallFunc_EndLog(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
 
 		One of the ACS wrappers for CONS_Printf.
 		This version only prints if the activator
 		is a display player.
 --------------------------------------------------*/
-bool ACS_CF_EndLog(ACSVM_Thread *thread, ACSVM_Word const *argV, ACSVM_Word argC)
+bool CallFunc_EndLog(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
 {
-	ACSVM_PrintBuf *buf = NULL;
-
 	(void)argV;
 	(void)argC;
 
-	buf = ACSVM_Thread_GetPrintBuf(thread);
-
 	if (ACS_ActivatorIsLocal(thread) == true)
 	{
-		CONS_Printf("%s\n", ACSVM_PrintBuf_GetData(buf));
+		CONS_Printf("%s\n", thread->printBuf.data());
 	}
 
-	ACSVM_PrintBuf_Drop(buf);
-
+	thread->printBuf.drop();
 	return false;
 }

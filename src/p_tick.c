@@ -40,7 +40,7 @@
 #include "k_waypoint.h"
 #include "k_director.h"
 #include "k_specialstage.h"
-#include "k_acs.h"
+#include "acs/interface.h"
 
 tic_t leveltime;
 

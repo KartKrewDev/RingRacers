@@ -76,7 +76,7 @@
 #include "doomstat.h"
 #include "m_random.h" // P_ClearRandom
 #include "k_specialstage.h"
-#include "k_acs.h"
+#include "acs/interface.h"
 
 #ifdef CMAKECONFIG
 #include "config.h"

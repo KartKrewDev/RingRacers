@@ -559,6 +559,21 @@ INT32 P_FindMinSurroundingLight(sector_t *sector, INT32 max);
 
 void P_CrossSpecialLine(line_t *ld, INT32 side, mobj_t *thing);
 
+//
+// Special activation info
+//
+struct activator_t
+{
+	mobj_t *mo;
+	line_t *line;
+	UINT8 side;
+	sector_t *sector;
+	polyobj_t *po;
+	boolean fromLineSpecial; // Backwards compat for ACS
+};
+
+void P_ProcessSpecial(activator_t *activator, INT16 special, INT32 *args, char **stringargs);
+
 void P_SetupSignExit(player_t *player);
 
 boolean P_IsMobjTouchingSectorPlane(mobj_t *mo, sector_t *sec);

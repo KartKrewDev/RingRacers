@@ -634,7 +634,6 @@ if(NOT "${SRB2_CONFIG_SYSTEM_LIBRARIES}")
 		add_library(acsvm "${SRB2_INTERNAL_LIBRARY_TYPE}" ${acsvm_SOURCES})
 
 		target_compile_features(acsvm PRIVATE cxx_std_11)
-		#target_compile_definitions(ACSVM_SHARED="${SRB2_CONFIG_SHARED_INTERNAL_LIBRARIES}")
 
 		target_include_directories(acsvm INTERFACE "${acsvm_SOURCE_DIR}")
 
