@@ -608,27 +608,6 @@ if(NOT "${SRB2_CONFIG_SYSTEM_LIBRARIES}")
 
 			Util/Floats.cpp
 			Util/Floats.hpp
-
-			# temp
-			CAPI/Array.cpp
-			CAPI/Array.h
-			CAPI/BinaryIO.cpp
-			CAPI/BinaryIO.h
-			CAPI/Environment.cpp
-			CAPI/Environment.h
-			CAPI/Floats.cpp
-			CAPI/Floats.h
-			CAPI/Module.cpp
-			CAPI/Module.h
-			CAPI/PrintBuf.cpp
-			CAPI/PrintBuf.h
-			CAPI/Scope.cpp
-			CAPI/Scope.h
-			CAPI/String.cpp
-			CAPI/String.h
-			CAPI/Thread.cpp
-			CAPI/Thread.h
-			CAPI/Types.h
 		)
 		list(TRANSFORM acsvm_SOURCES PREPEND "${acsvm_SOURCE_DIR}/")
 		add_library(acsvm "${SRB2_INTERNAL_LIBRARY_TYPE}" ${acsvm_SOURCES})
