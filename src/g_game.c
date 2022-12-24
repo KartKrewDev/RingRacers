@@ -77,7 +77,9 @@ JoyType_t Joystick[MAXSPLITSCREENPLAYERS];
 
 // SRB2kart
 char gamedatafilename[64] =
-#ifdef DEVELOP
+#if defined (TESTERS) || defined (HOSTTESTERS)
+	"test"
+#elif defined(DEVELOP)
 	"develop"
 #endif
 	"ringdata.dat";
