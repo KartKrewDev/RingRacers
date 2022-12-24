@@ -2880,8 +2880,7 @@ static void Command_Map_f(void)
 					mapheaderinfo[newmapnum-1]->typeoflevel & G_TOLFlag(newgametype)
 		))
 		{
-			CONS_Alert(CONS_WARNING, M_GetText("%s (%s) doesn't support %s mode!\n(Use -force to override)\n"), realmapname, G_BuildMapName(newmapnum),
-				(multiplayer ? gametype_cons_t[newgametype].strvalue : "Single Player"));
+			CONS_Alert(CONS_WARNING, M_GetText("%s (%s) doesn't support %s mode!\n(Use -force to override)\n"), realmapname, G_BuildMapName(newmapnum), (gametype_cons_t[newgametype].strvalue));
 			Z_Free(realmapname);
 			Z_Free(mapname);
 			return;
@@ -4806,12 +4805,6 @@ static void Command_ModDetails_f(void)
 static void Command_ShowGametype_f(void)
 {
 	const char *gametypestr = NULL;
-
-	if (!(netgame || multiplayer)) // print "Single player" instead of "Race"
-	{
-		CONS_Printf(M_GetText("Current gametype is %s\n"), "Single Player");
-		return;
-	}
 
 	// get name string for current gametype
 	if (gametype >= 0 && gametype < gametypecount)
