@@ -525,7 +525,7 @@ enum TypeOfLevel
 };
 
 #define MAXTOL             (1<<31)
-#define NUMBASETOLNAMES    (4)
+#define NUMBASETOLNAMES    (5)
 #define NUMTOLNAMES        (NUMBASETOLNAMES + NUMGAMETYPEFREESLOTS)
 
 struct tolinfo_t
