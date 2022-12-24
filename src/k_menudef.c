@@ -1132,9 +1132,6 @@ menuitem_t OPTIONS_Server[] =
 	{IT_STRING | IT_CVAR, "Vote Timer", "Set how long players have to vote.",
 		NULL, {.cvar = &cv_votetime}, 0, 0},
 
-	{IT_STRING | IT_CVAR, "Vote Mode Change", "Set how often voting proposes a different gamemode.",
-		NULL, {.cvar = &cv_kartvoterulechanges}, 0, 0},
-
 
 	{IT_SPACE | IT_NOTHING, NULL,  NULL,
 		NULL, {NULL}, 0, 0},

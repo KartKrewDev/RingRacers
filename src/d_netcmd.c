@@ -399,10 +399,6 @@ consvar_t cv_kartbumpers = CVAR_INIT ("battlebumpers", "3", CV_NETVAR, kartbumpe
 consvar_t cv_kartfrantic = CVAR_INIT ("franticitems", "Off", CV_NETVAR|CV_CALL|CV_NOINIT, CV_OnOff, KartFrantic_OnChange);
 static CV_PossibleValue_t kartencore_cons_t[] = {{-1, "Auto"}, {0, "Off"}, {1, "On"}, {0, NULL}};
 consvar_t cv_kartencore = CVAR_INIT ("encore", "Auto", CV_NETVAR|CV_CALL|CV_NOINIT, kartencore_cons_t, KartEncore_OnChange);
-static CV_PossibleValue_t kartvoterulechanges_cons_t[] = {{0, "Never"}, {1, "Sometimes"}, {2, "Frequent"}, {3, "Always"}, {0, NULL}};
-consvar_t cv_kartvoterulechanges = CVAR_INIT ("voterulechanges", "Frequent", CV_NETVAR, kartvoterulechanges_cons_t, NULL);
-static CV_PossibleValue_t kartgametypepreference_cons_t[] = {{-1, "None"}, {GT_RACE, "Race"}, {GT_BATTLE, "Battle"}, {0, NULL}};
-consvar_t cv_kartgametypepreference = CVAR_INIT ("gametypepreference", "None", CV_NETVAR, kartgametypepreference_cons_t, NULL);
 static CV_PossibleValue_t kartspeedometer_cons_t[] = {{0, "Off"}, {1, "Percentage"}, {2, "Kilometers"}, {3, "Miles"}, {4, "Fracunits"}, {0, NULL}};
 consvar_t cv_kartspeedometer = CVAR_INIT ("speedometer", "Percentage", CV_SAVE, kartspeedometer_cons_t, NULL); // use tics in display
 static CV_PossibleValue_t kartvoices_cons_t[] = {{0, "Never"}, {1, "Tasteful"}, {2, "Meme"}, {0, NULL}};
@@ -2596,14 +2592,13 @@ void D_SetupVote(void)
 	UINT8 buf[5*2]; // four UINT16 maps (at twice the width of a UINT8), and two gametypes
 	UINT8 *p = buf;
 	INT32 i;
-	UINT8 gt = (cv_kartgametypepreference.value == -1) ? gametype : cv_kartgametypepreference.value;
-	UINT8 secondgt = G_SometimesGetDifferentGametype(gt);
+	UINT8 secondgt = G_SometimesGetDifferentGametype();
 	INT16 votebuffer[4] = {-1,-1,-1,0};
 
-	if ((cv_kartencore.value == 1) && (gametypedefaultrules[gt] & GTR_CIRCUIT))
-		WRITEUINT8(p, (gt|VOTEMODIFIER_ENCORE));
+	if ((cv_kartencore.value == 1) && (gametypedefaultrules[gametype] & GTR_CIRCUIT))
+		WRITEUINT8(p, (gametype|VOTEMODIFIER_ENCORE));
 	else
-		WRITEUINT8(p, gt);
+		WRITEUINT8(p, gametype);
 	WRITEUINT8(p, secondgt);
 	secondgt &= ~VOTEMODIFIER_ENCORE;
 
@@ -2613,9 +2608,9 @@ void D_SetupVote(void)
 		if (i == 2) // sometimes a different gametype
 			m = G_RandMap(G_TOLFlag(secondgt), prevmap, ((secondgt != gametype) ? 2 : 0), 0, true, votebuffer);
 		else if (i >= 3) // unknown-random and formerly force-unknown MAP HELL
-			m = G_RandMap(G_TOLFlag(gt), prevmap, 0, (i-2), (i < 4), votebuffer);
+			m = G_RandMap(G_TOLFlag(gametype), prevmap, 0, (i-2), (i < 4), votebuffer);
 		else
-			m = G_RandMap(G_TOLFlag(gt), prevmap, 0, 0, true, votebuffer);
+			m = G_RandMap(G_TOLFlag(gametype), prevmap, 0, 0, true, votebuffer);
 		if (i < 3)
 			votebuffer[i] = m;
 		WRITEUINT16(p, m);

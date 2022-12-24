@@ -318,9 +318,8 @@ typedef struct
 {
 	INT16 *mapbuffer;			// Pointer to zone memory
 	INT32 lastnummapheaders;	// Reset if nummapheaders != this
-	UINT8 counttogametype;		// Time to gametype change event
 } randmaps_t;
-static randmaps_t randmaps = {NULL, 0, 0};
+static randmaps_t randmaps = {NULL, 0};
 
 static void G_ResetRandMapBuffer(void)
 {
@@ -330,7 +329,6 @@ static void G_ResetRandMapBuffer(void)
 	randmaps.mapbuffer = Z_Malloc(randmaps.lastnummapheaders * sizeof(INT16), PU_STATIC, NULL);
 	for (i = 0; i < randmaps.lastnummapheaders; i++)
 		randmaps.mapbuffer[i] = -1;
-	//intentionally not resetting randmaps.counttogametype here
 }
 
 typedef struct joystickvector2_s
@@ -3294,80 +3292,30 @@ boolean G_GametypeHasSpectators(void)
 //
 // G_SometimesGetDifferentGametype
 //
-// Oh, yeah, and we sometimes flip encore mode on here too.
+// Because gametypes are no longer on the vote screen, all this does is sometimes flip encore mode.
+// However, it remains a seperate function for long-term possibility.
 //
-INT16 G_SometimesGetDifferentGametype(UINT8 prefgametype)
+INT16 G_SometimesGetDifferentGametype(void)
 {
-	// Most of the gametype references in this condition are intentionally not prefgametype.
-	// This is so a server CAN continue playing a gametype if they like the taste of it.
-	// The encore check needs prefgametype so can't use G_RaceGametype...
 	boolean encorepossible = ((M_SecretUnlocked(SECRET_ENCORE, false) || encorescramble == 1)
-		&& ((gametyperules|gametypedefaultrules[prefgametype]) & GTR_CIRCUIT));
+		&& ((gametyperules|gametypedefaultrules[gametype]) & GTR_CIRCUIT));
 	UINT8 encoremodifier = 0;
 
 	// -- the below is only necessary if you want to use randmaps.mapbuffer here
 	//if (randmaps.lastnummapheaders != nummapheaders)
 		//G_ResetRandMapBuffer();
 
-	if (encorepossible)
+	// FORCE to what was scrambled on intermission?
+	if (encorepossible && encorescramble != -1)
 	{
-		if (encorescramble != -1)
+		// FORCE to what was scrambled on intermission
+		if ((encorescramble != 0) != (cv_kartencore.value == 1))
 		{
-			encorepossible = (boolean)encorescramble; // FORCE to what was scrambled on intermission
-		}
-		else
-		{
-			switch (cv_kartvoterulechanges.value)
-			{
-				case 3: // always
-					encorepossible = true;
-					break;
-				case 2: // frequent
-					encorepossible = M_RandomChance(FRACUNIT>>1);
-					break;
-				case 1: // sometimes
-					encorepossible = M_RandomChance(FRACUNIT>>2);
-					break;
-				default:
-					break;
-			}
-		}
-		if (encorepossible != (cv_kartencore.value == 1))
 			encoremodifier = VOTEMODIFIER_ENCORE;
+		}
 	}
 
-	if (!cv_kartvoterulechanges.value) // never
-		return (gametype|encoremodifier);
-
-	if (randmaps.counttogametype > 0 && (cv_kartvoterulechanges.value != 3))
-	{
-		randmaps.counttogametype--;
-		return (gametype|encoremodifier);
-	}
-
-	switch (cv_kartvoterulechanges.value) // okay, we're having a gametype change! when's the next one, luv?
-	{
-		case 1: // sometimes
-			randmaps.counttogametype = 5; // per "cup"
-			break;
-		default:
-			// fallthrough - happens when clearing buffer, but needs a reasonable countdown if cvar is modified
-		case 2: // frequent
-			randmaps.counttogametype = 2; // ...every 1/2th-ish cup?
-			break;
-	}
-
-	// Only this response is prefgametype-based.
-	// todo custom gametypes
-	if (prefgametype == GT_BATTLE)
-	{
-		// Intentionally does not use encoremodifier!
-		if (cv_kartencore.value == 1)
-			return (GT_RACE|VOTEMODIFIER_ENCORE);
-		return (GT_RACE);
-	}
-	// This might appear wrong HERE, but the game will display the Encore possibility on the second voting choice instead.
-	return (GT_BATTLE|encoremodifier);
+	return (gametype|encoremodifier);
 }
 
 //
