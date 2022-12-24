@@ -454,7 +454,7 @@ extern mapheader_t** mapheaderinfo;
 extern INT32 nummapheaders, mapallocsize;
 
 // Gametypes
-#define NUMGAMETYPEFREESLOTS 128
+#define NUMGAMETYPEFREESLOTS (NUMGAMETYPES-GT_FIRSTFREESLOT)
 
 enum GameType
 {
@@ -462,7 +462,7 @@ enum GameType
 	GT_BATTLE,
 
 	GT_FIRSTFREESLOT,
-	GT_LASTFREESLOT = GT_FIRSTFREESLOT + NUMGAMETYPEFREESLOTS - 1,
+	GT_LASTFREESLOT = 127, // Previously (GT_FIRSTFREESLOT + NUMGAMETYPEFREESLOTS - 1) - it would be necessary to rewrite VOTEMODIFIER_ENCORE to go higher than this.
 	NUMGAMETYPES
 };
 // If you alter this list, update deh_tables.c, MISC_ChangeGameTypeMenu in m_menu.c, and Gametype_Names in g_game.c

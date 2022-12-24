@@ -881,7 +881,7 @@ void readgametype(MYFILE *f, char *gtname)
 	// Ran out of gametype slots
 	if (gametypecount == NUMGAMETYPEFREESLOTS)
 	{
-		CONS_Alert(CONS_WARNING, "Ran out of free gametype slots!\n");
+		I_Error("Out of Gametype Freeslots while allocating \"%s\"\nLoad less addons to fix this.", gtname);
 		return;
 	}
 

@@ -5313,6 +5313,24 @@ static void Got_SetupVotecmd(UINT8 **cp, INT32 playernum)
 		gt &= ~VOTEMODIFIER_ENCORE;
 	}
 
+	if ((gt & ~VOTEMODIFIER_ENCORE) >= gametypecount)
+	{
+		gt &= ~VOTEMODIFIER_ENCORE;
+		if (server)
+			I_Error("Got_SetupVotecmd: Internal gametype ID %d not found (gametypecount = %d)", gt, gametypecount);
+		CONS_Alert(CONS_WARNING, M_GetText("Vote setup with bad gametype ID %d received from %s\n"), gt, player_names[playernum]);
+		return;
+	}
+
+	if ((secondgt & ~VOTEMODIFIER_ENCORE) >= gametypecount)
+	{
+		secondgt &= ~VOTEMODIFIER_ENCORE;
+		if (server)
+			I_Error("Got_SetupVotecmd: Internal second gametype ID %d not found (gametypecount = %d)", secondgt, gametypecount);
+		CONS_Alert(CONS_WARNING, M_GetText("Vote setup with bad second gametype ID %d received from %s\n"), secondgt, player_names[playernum]);
+		return;
+	}
+
 	for (i = 0; i < 4; i++)
 	{
 		tempvotelevels[i][0] = (UINT16)READUINT16(*cp);
