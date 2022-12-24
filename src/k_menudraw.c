@@ -2261,7 +2261,7 @@ void M_DrawTimeAttack(void)
 			laprec = mapheaderinfo[map]->mainrecord->lap;
 		}
 
-		if (levellist.newgametype != GT_BATTLE)
+		if (gametypedefaultrules[levellist.newgametype] & GTR_CIRCUIT)
 		{
 			V_DrawRightAlignedString(rightedge-12, timeheight, highlightflags, "BEST LAP:");
 			K_drawKartTimestamp(laprec, 162+t, timeheight+6, 0, 2);
@@ -3964,9 +3964,20 @@ static void M_DrawReplayHutReplayInfo(menudemo_t *demoref)
 		if (demoref->numlaps)
 			V_DrawThinString(x, y+9, V_SNAPTOTOP|V_ALLOWLOWERCASE, va("(%d laps)", demoref->numlaps));
 
-		V_DrawString(x, y+20, V_SNAPTOTOP|V_ALLOWLOWERCASE, demoref->gametype == GT_RACE ?
-			va("Race (%s speed)", kartspeed_cons_t[(demoref->kartspeed & ~DF_ENCORE) + 1].strvalue) :
-			"Battle Mode");
+		{
+			const char *gtstring = "???";
+			if (demoref->gametype >= gametypecount)
+				;
+			else
+			{
+				gtstring = Gametype_Names[demoref->gametype];
+
+				if ((gametypedefaultrules[demoref->gametype] & GTR_CIRCUIT))
+					gtstring = va("%s (%s)", gtstring, kartspeed_cons_t[(demoref->kartspeed & ~DF_ENCORE) + 1].strvalue);
+			}
+
+			V_DrawString(x, y+20, V_SNAPTOTOP|V_ALLOWLOWERCASE, gtstring);
+		}
 
 		if (!demoref->standings[0].ranking)
 		{
@@ -3979,30 +3990,33 @@ static void M_DrawReplayHutReplayInfo(menudemo_t *demoref)
 		V_DrawThinString(x, y+29, V_SNAPTOTOP|highlightflags, "WINNER");
 		V_DrawString(x+38, y+30, V_SNAPTOTOP|V_ALLOWLOWERCASE, demoref->standings[0].name);
 
-		if (demoref->gametype == GT_RACE)
+		if (demoref->gametype < gametypecount)
 		{
-			V_DrawThinString(x, y+39, V_SNAPTOTOP|highlightflags, "TIME");
-		}
-		else
-		{
-			V_DrawThinString(x, y+39, V_SNAPTOTOP|highlightflags, "SCORE");
-		}
+			if (gametypedefaultrules[demoref->gametype] & GTR_POINTLIMIT)
+			{
+				V_DrawThinString(x, y+39, V_SNAPTOTOP|highlightflags, "SCORE");
+			}
+			else
+			{
+				V_DrawThinString(x, y+39, V_SNAPTOTOP|highlightflags, "TIME");
+			}
 
-		if (demoref->standings[0].timeorscore == (UINT32_MAX-1))
-		{
-			V_DrawThinString(x+32, y+39, V_SNAPTOTOP, "NO CONTEST");
-		}
-		else if (demoref->gametype == GT_RACE)
-		{
-			V_DrawRightAlignedString(x+84, y+40, V_SNAPTOTOP, va("%d'%02d\"%02d",
-											G_TicsToMinutes(demoref->standings[0].timeorscore, true),
-											G_TicsToSeconds(demoref->standings[0].timeorscore),
-											G_TicsToCentiseconds(demoref->standings[0].timeorscore)
-			));
-		}
-		else
-		{
-			V_DrawString(x+32, y+40, V_SNAPTOTOP, va("%d", demoref->standings[0].timeorscore));
+			if (demoref->standings[0].timeorscore == (UINT32_MAX-1))
+			{
+				V_DrawThinString(x+32, y+39, V_SNAPTOTOP, "NO CONTEST");
+			}
+			else if (gametypedefaultrules[demoref->gametype] & GTR_POINTLIMIT)
+			{
+				V_DrawString(x+32, y+40, V_SNAPTOTOP, va("%d", demoref->standings[0].timeorscore));
+			}
+			else
+			{
+				V_DrawRightAlignedString(x+84, y+40, V_SNAPTOTOP, va("%d'%02d\"%02d",
+												G_TicsToMinutes(demoref->standings[0].timeorscore, true),
+												G_TicsToSeconds(demoref->standings[0].timeorscore),
+												G_TicsToCentiseconds(demoref->standings[0].timeorscore)
+				));
+			}
 		}
 
 		// Character face!
@@ -4197,14 +4211,16 @@ void M_DrawReplayStartMenu(void)
 
 		if (demoref->standings[i].timeorscore == UINT32_MAX-1)
 			V_DrawThinString(BASEVIDWIDTH-92, STARTY + i*20 + 9, V_SNAPTOTOP, "NO CONTEST");
-		else if (demoref->gametype == GT_RACE)
+		else if (demoref->gametype >= gametypecount)
+			;
+		else if (gametypedefaultrules[demoref->gametype] & GTR_POINTLIMIT)
+			V_DrawString(BASEVIDWIDTH-92, STARTY + i*20 + 9, V_SNAPTOTOP, va("%d", demoref->standings[i].timeorscore));
+		else
 			V_DrawRightAlignedString(BASEVIDWIDTH-40, STARTY + i*20 + 9, V_SNAPTOTOP, va("%d'%02d\"%02d",
 											G_TicsToMinutes(demoref->standings[i].timeorscore, true),
 											G_TicsToSeconds(demoref->standings[i].timeorscore),
 											G_TicsToCentiseconds(demoref->standings[i].timeorscore)
 			));
-		else
-			V_DrawString(BASEVIDWIDTH-92, STARTY + i*20 + 9, V_SNAPTOTOP, va("%d", demoref->standings[i].timeorscore));
 
 		// Character face!
 

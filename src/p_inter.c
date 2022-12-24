@@ -2198,7 +2198,7 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 					{
 						tic_t kinvextend;
 
-						if (gametype == GT_BATTLE)
+						if (gametyperules & GTR_CLOSERPLAYERS)
 							kinvextend = 2*TICRATE;
 						else
 							kinvextend = 5*TICRATE;

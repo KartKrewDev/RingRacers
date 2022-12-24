@@ -196,6 +196,11 @@ void K_CheckEmeralds(player_t *player)
 {
 	UINT8 i;
 
+	if (!(gametyperules & GTR_POWERSTONES))
+	{
+		return;
+	}
+
 	if (!ALLCHAOSEMERALDS(player->emeralds))
 	{
 		return;
@@ -341,7 +346,7 @@ void K_RunPaperItemSpawners(void)
 	const boolean overtime = (battleovertime.enabled >= 10*TICRATE);
 	tic_t interval = 8*TICRATE;
 
-	const boolean canmakeemeralds = true; //(!(battlecapsules || bossinfo.boss));
+	const boolean canmakeemeralds = (gametyperules & GTR_POWERSTONES);
 
 	UINT32 emeraldsSpawned = 0;
 	UINT32 firstUnspawnedEmerald = 0;

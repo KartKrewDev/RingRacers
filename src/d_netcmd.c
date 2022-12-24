@@ -2595,7 +2595,7 @@ void D_SetupVote(void)
 	UINT8 secondgt = G_SometimesGetDifferentGametype();
 	INT16 votebuffer[4] = {-1,-1,-1,0};
 
-	if ((cv_kartencore.value == 1) && (gametypedefaultrules[gametype] & GTR_CIRCUIT))
+	if ((cv_kartencore.value == 1) && (gametypedefaultrules[gametype] & GTR_ENCORE))
 		WRITEUINT8(p, (gametype|VOTEMODIFIER_ENCORE));
 	else
 		WRITEUINT8(p, gametype);
@@ -3029,7 +3029,7 @@ static void Got_Mapcmd(UINT8 **cp, INT32 playernum)
 	else if (gametype != lastgametype)
 		D_GameTypeChanged(lastgametype); // emulate consvar_t behavior for gametype
 
-	if (!(gametyperules & GTR_CIRCUIT) && !bossinfo.boss)
+	if (!(gametyperules & GTR_ENCORE) && !bossinfo.boss)
 		pencoremode = false;
 
 	skipprecutscene = ((flags & (1<<2)) != 0);
@@ -5308,7 +5308,7 @@ static void Got_SetupVotecmd(UINT8 **cp, INT32 playernum)
 
 	// Strip illegal Encore flag.
 	if ((gt & VOTEMODIFIER_ENCORE)
-		&& !(gametypedefaultrules[(gt & ~VOTEMODIFIER_ENCORE)] & GTR_CIRCUIT))
+		&& !(gametypedefaultrules[(gt & ~VOTEMODIFIER_ENCORE)] & GTR_ENCORE))
 	{
 		gt &= ~VOTEMODIFIER_ENCORE;
 	}
@@ -5346,11 +5346,11 @@ static void Got_SetupVotecmd(UINT8 **cp, INT32 playernum)
 
 	// If third entry has an illelegal Encore flag... (illelegal!?)
 	if ((secondgt & VOTEMODIFIER_ENCORE)
-		&& !(gametypedefaultrules[(secondgt & ~VOTEMODIFIER_ENCORE)] & GTR_CIRCUIT))
+		&& !(gametypedefaultrules[(secondgt & ~VOTEMODIFIER_ENCORE)] & GTR_ENCORE))
 	{
 		secondgt &= ~VOTEMODIFIER_ENCORE;
 		// Apply it to the second entry instead, gametype permitting!
-		if (gametypedefaultrules[gt] & GTR_CIRCUIT)
+		if (gametypedefaultrules[gt] & GTR_ENCORE)
 		{
 			tempvotelevels[1][1] |= VOTEMODIFIER_ENCORE;
 		}

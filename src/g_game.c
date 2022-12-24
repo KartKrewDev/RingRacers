@@ -3016,9 +3016,9 @@ const char *Gametype_ConstantNames[NUMGAMETYPES] =
 UINT32 gametypedefaultrules[NUMGAMETYPES] =
 {
 	// Race
-	GTR_CAMPAIGN|GTR_CIRCUIT|GTR_BOTS,
+	GTR_CAMPAIGN|GTR_CIRCUIT|GTR_BOTS|GTR_ENCORE,
 	// Battle
-	GTR_SPHERES|GTR_BUMPERS|GTR_PAPERITEMS|GTR_KARMA|GTR_ITEMARROWS|GTR_CAPSULES|GTR_BATTLESTARTS|GTR_POINTLIMIT|GTR_TIMELIMIT|GTR_OVERTIME
+	GTR_SPHERES|GTR_BUMPERS|GTR_PAPERITEMS|GTR_POWERSTONES|GTR_KARMA|GTR_ITEMARROWS|GTR_CAPSULES|GTR_BATTLESTARTS|GTR_POINTLIMIT|GTR_TIMELIMIT|GTR_OVERTIME|GTR_CLOSERPLAYERS
 };
 
 //
@@ -3241,13 +3241,7 @@ boolean G_GametypeUsesLives(void)
 		return false;
 
 	if ((grandprixinfo.gp == true) // In Grand Prix
-		&& (gametype == GT_RACE) // NOT in bonus round
-		&& grandprixinfo.eventmode == GPEVENT_NONE) // NOT in bonus
-	{
-		return true;
-	}
-
-	if (bossinfo.boss == true) // Fighting a boss?
+		&& !(gametyperules & GTR_CAPSULES)) // NOT in Break The Capsules
 	{
 		return true;
 	}
@@ -3298,7 +3292,7 @@ boolean G_GametypeHasSpectators(void)
 INT16 G_SometimesGetDifferentGametype(void)
 {
 	boolean encorepossible = ((M_SecretUnlocked(SECRET_ENCORE, false) || encorescramble == 1)
-		&& ((gametyperules|gametypedefaultrules[gametype]) & GTR_CIRCUIT));
+		&& (gametyperules & GTR_ENCORE));
 	UINT8 encoremodifier = 0;
 
 	// -- the below is only necessary if you want to use randmaps.mapbuffer here

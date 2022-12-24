@@ -478,10 +478,10 @@ enum GameTypeRules
 	GTR_BUMPERS				= 1<<3,  // Enables the bumper health system
 	GTR_SPHERES				= 1<<4,  // Replaces rings with blue spheres
 	GTR_PAPERITEMS			= 1<<5,  // Replaces item boxes with paper item spawners
-	GTR_WANTED				= 1<<6,  // unused
+	GTR_POWERSTONES			= 1<<6,  // Battle Emerald collectables.
 	GTR_KARMA				= 1<<7,  // Enables the Karma system if you're out of bumpers
 	GTR_ITEMARROWS			= 1<<8,  // Show item box arrows above players
-	GTR_CAPSULES			= 1<<9,  // Enables the wanted anti-camping system
+	GTR_CAPSULES			= 1<<9,  // Can enter Break The Capsules mode
 	GTR_BATTLESTARTS		= 1<<10, // Use Battle Mode start positions.
 
 	GTR_POINTLIMIT			= 1<<11,  // Reaching point limit ends the round
@@ -495,10 +495,11 @@ enum GameTypeRules
 
 	// Grand Prix rules
 	GTR_CAMPAIGN			= 1<<17, // Handles cup-based progression
-	GTR_LIVES				= 1<<18, // Lives system, players are forced to spectate during Game Over.
-	GTR_SPECIALBOTS			= 1<<19, // Bot difficulty gets stronger between rounds, and the rival system is enabled.
 
+	// To be rearranged later
 	GTR_NOCUPSELECT			= 1<<20, // Your maps are not selected via cup. ...mutually exclusive with GTR_CAMPAIGN.
+	GTR_CLOSERPLAYERS		= 1<<21, // Buffs spindash and draft power to bring everyone together, nerfs invincibility and grow to prevent excessive combos
+	GTR_ENCORE				= 1<<22, // Alternate Encore mirroring, scripting, and texture remapping
 
 	// free: to and including 1<<31
 };

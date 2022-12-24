@@ -1125,25 +1125,21 @@ void K_FillItemRouletteData(const player_t *player, itemroulette_t *const roulet
 	}
 	else if (K_TimeAttackRules() == true)
 	{
-		switch (gametype)
+		kartitems_t *presetlist = K_KartItemReelTimeAttack;
+
+		// If the objective is not to go fast, it's to cause serious damage.
+		if (!(gametyperules & GTR_CIRCUIT))
 		{
-			case GT_RACE:
-			default:
+			presetlist = K_KartItemReelBreakTheCapsules;
+			for (i = 0; K_KartItemReelBreakTheCapsules[i] != KITEM_NONE; i++)
 			{
-				for (i = 0; K_KartItemReelTimeAttack[i] != KITEM_NONE; i++)
-				{
-					K_PushToRouletteItemList(roulette, K_KartItemReelTimeAttack[i]);
-				}
-				break;
+				K_PushToRouletteItemList(roulette, K_KartItemReelBreakTheCapsules[i]);
 			}
-			case GT_BATTLE:
-			{
-				for (i = 0; K_KartItemReelBreakTheCapsules[i] != KITEM_NONE; i++)
-				{
-					K_PushToRouletteItemList(roulette, K_KartItemReelBreakTheCapsules[i]);
-				}
-				break;
-			}
+		}
+
+		for (i = 0; presetlist[i] != KITEM_NONE; i++)
+		{
+			K_PushToRouletteItemList(roulette, presetlist[i]);
 		}
 
 		return;

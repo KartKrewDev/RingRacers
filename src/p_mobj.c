@@ -6163,7 +6163,7 @@ static void P_MobjSceneryThink(mobj_t *mobj)
 			mobj->color = mobj->target->color;
 			K_MatchGenericExtraFlags(mobj, mobj->target);
 
-			if ((gametype == GT_RACE || mobj->target->player->bumpers <= 0)
+			if ((!(gametyperules & GTR_BUMPERS) || mobj->target->player->bumpers <= 0)
 #if 1 // Set to 0 to test without needing to host
 				|| (P_IsDisplayPlayer(mobj->target->player))
 #endif
@@ -8362,7 +8362,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 			statenum_t state = (mobj->state-states);
 
 			if (!mobj->target || !mobj->target->health || !mobj->target->player || mobj->target->player->spectator
-				|| (gametype == GT_RACE || mobj->target->player->bumpers))
+				|| (!(gametyperules & GTR_BUMPERS) || mobj->target->player->bumpers))
 			{
 				P_RemoveMobj(mobj);
 				return false;
@@ -9389,12 +9389,12 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 		}
 		// FALLTHRU
 	case MT_SPHEREBOX:
-		if (gametype == GT_BATTLE && mobj->threshold == 70)
+		if (mobj->threshold == 70)
 		{
 			mobj->color = K_RainbowColor(leveltime);
 			mobj->colorized = true;
 
-			if (battleovertime.enabled)
+			if ((gametyperules & GTR_OVERTIME) && battleovertime.enabled)
 			{
 				angle_t ang = FixedAngle((leveltime % 360) << FRACBITS);
 				fixed_t z = battleovertime.z;

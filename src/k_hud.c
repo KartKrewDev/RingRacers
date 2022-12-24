@@ -1863,7 +1863,7 @@ static boolean K_drawKartPositionFaces(void)
 	ranklines--;
 	i = ranklines;
 
-	if (gametype == GT_BATTLE || strank <= 2) // too close to the top, or playing battle, or a spectator? would have had (strank == -1) called out, but already caught by (strank <= 2)
+	if ((gametyperules & GTR_POINTLIMIT) || strank <= 2) // too close to the top, or playing battle, or a spectator? would have had (strank == -1) called out, but already caught by (strank <= 2)
 	{
 		if (i > 4) // could be both...
 			i = 4;
@@ -1951,7 +1951,7 @@ static boolean K_drawKartPositionFaces(void)
 		if (i == strank)
 			V_DrawScaledPatch(FACE_X, Y, V_HUDTRANS|V_SLIDEIN|V_SNAPTOLEFT, kp_facehighlight[(leveltime / 4) % 8]);
 
-		if (gametype == GT_BATTLE && players[rankplayer[i]].bumpers <= 0)
+		if ((gametyperules & GTR_BUMPERS) && players[rankplayer[i]].bumpers <= 0)
 			V_DrawScaledPatch(FACE_X-4, Y-3, V_HUDTRANS|V_SLIDEIN|V_SNAPTOLEFT, kp_ranknobumpers);
 		else
 		{
@@ -2265,7 +2265,7 @@ void K_DrawTabRankings(INT32 x, INT32 y, playersort_t *tab, INT32 scorelines, IN
 				colormap = R_GetTranslationColormap(players[tab[i].num].skin, players[tab[i].num].mo->color, GTC_CACHE);
 
 			V_DrawMappedPatch(x, y-4, 0, faceprefix[players[tab[i].num].skin][FACE_RANK], colormap);
-			/*if (gametype == GT_BATTLE && players[tab[i].num].bumpers > 0) -- not enough space for this
+			/*if ((gametyperules & GTR_BUMPERS) && players[tab[i].num].bumpers > 0) -- not enough space for this
 			{
 				INT32 bumperx = x+19;
 				V_DrawMappedPatch(bumperx-2, y-4, 0, kp_tinybumper[0], colormap);
@@ -2280,7 +2280,7 @@ void K_DrawTabRankings(INT32 x, INT32 y, playersort_t *tab, INT32 scorelines, IN
 		if (tab[i].num == whiteplayer)
 			V_DrawScaledPatch(x, y-4, 0, kp_facehighlight[(leveltime / 4) % 8]);
 
-		if (gametype == GT_BATTLE && players[tab[i].num].bumpers <= 0)
+		if ((gametyperules & GTR_BUMPERS) && players[tab[i].num].bumpers <= 0)
 			V_DrawScaledPatch(x-4, y-7, 0, kp_ranknobumpers);
 		else
 		{
@@ -2291,7 +2291,7 @@ void K_DrawTabRankings(INT32 x, INT32 y, playersort_t *tab, INT32 scorelines, IN
 			V_DrawScaledPatch(x-5, y+6, 0, kp_facenum[pos]);
 		}
 
-		if (gametype == GT_RACE)
+		if ((gametyperules & GTR_CIRCUIT))
 		{
 #define timestring(time) va("%i'%02i\"%02i", G_TicsToMinutes(time, true), G_TicsToSeconds(time), G_TicsToCentiseconds(time))
 			if (scorelines >= 8)
@@ -2801,6 +2801,7 @@ static void K_drawKartBumpersOrKarma(void)
 	}
 }
 
+#if 0
 static void K_drawKartWanted(void)
 {
 	UINT8 i, numwanted = 0;
@@ -2875,6 +2876,7 @@ static void K_drawKartWanted(void)
 		}
 	}
 }
+#endif //if 0
 
 static void K_drawKartPlayerCheck(void)
 {
@@ -3810,7 +3812,7 @@ static void K_drawKartMinimap(void)
 	y -= SHORT(AutomapPic->topoffset);
 
 	// Draw the super item in Battle
-	if (gametype == GT_BATTLE && battleovertime.enabled)
+	if ((gametyperules & GTR_OVERTIME) && battleovertime.enabled)
 	{
 		if (battleovertime.enabled >= 10*TICRATE || (battleovertime.enabled & 1))
 		{
@@ -3920,8 +3922,8 @@ static void K_drawKartMinimap(void)
 			K_drawKartMinimapIcon(interpx, interpy, x, y, splitflags, faceprefix[skin][FACE_MINIMAP], colormap, AutomapPic);
 
 			// Target reticule
-			if ((gametype == GT_RACE && players[i].position == spbplace)
-				|| (gametype == GT_BATTLE && K_IsPlayerWanted(&players[i])))
+			if (((gametyperules & GTR_CIRCUIT) && players[i].position == spbplace)
+				|| ((gametyperules & GTR_POINTLIMIT) && K_IsPlayerWanted(&players[i])))
 			{
 				K_drawKartMinimapIcon(interpx, interpy, x, y, splitflags, kp_wantedreticle, NULL, AutomapPic);
 			}
@@ -4047,8 +4049,8 @@ static void K_drawKartMinimap(void)
 		K_drawKartMinimapIcon(interpx, interpy, x, y, splitflags, workingPic, colormap, AutomapPic);
 
 		// Target reticule
-		if ((gametype == GT_RACE && players[localplayers[i]].position == spbplace)
-			|| (gametype == GT_BATTLE && K_IsPlayerWanted(&players[localplayers[i]])))
+		if (((gametyperules & GTR_CIRCUIT) && players[localplayers[i]].position == spbplace)
+			|| ((gametyperules & GTR_POINTLIMIT) && K_IsPlayerWanted(&players[localplayers[i]])))
 		{
 			K_drawKartMinimapIcon(interpx, interpy, x, y, splitflags, kp_wantedreticle, NULL, AutomapPic);
 		}
@@ -5043,11 +5045,13 @@ void K_drawKartHUD(void)
 			K_drawKartNameTags();
 
 		// Draw WANTED status
+#if 0
 		if (gametype == GT_BATTLE)
 		{
 			if (LUA_HudEnabled(hud_wanted))
 				K_drawKartWanted();
 		}
+#endif
 
 		if (LUA_HudEnabled(hud_minimap))
 			K_drawKartMinimap();
@@ -5098,21 +5102,15 @@ void K_drawKartHUD(void)
 				{
 					K_drawBossHealthBar();
 				}
-				else if (gametype == GT_RACE) // Race-only elements (not currently gametyperuleable)
+				else if (freecam)
+					;
+				else if ((gametyperules & GTR_POWERSTONES))
 				{
-					if (!islonesome)
-					{
-						// Draw the numerical position
-						K_DrawKartPositionNum(stplyr->position);
-					}
-				}
-				else if (gametype == GT_BATTLE) // Battle-only (ditto)
-				{
-					if (!freecam && !battlecapsules)
-					{
+					if (!battlecapsules)
 						K_drawKartEmeralds();
-					}
 				}
+				else if (!islonesome)
+					K_DrawKartPositionNum(stplyr->position);
 			}
 
 			if (LUA_HudEnabled(hud_gametypeinfo))
@@ -5172,10 +5170,12 @@ void K_drawKartHUD(void)
 	}
 
 	// Race overlays
-	if (gametype == GT_RACE && !freecam)
+	if (!freecam)
 	{
 		if (stplyr->exiting)
 			K_drawKartFinish(true);
+		else if (!(gametyperules & GTR_CIRCUIT))
+			;
 		else if (stplyr->karthud[khud_lapanimation] && !r_splitscreen)
 			K_drawLapStartAnim();
 	}
@@ -5187,7 +5187,7 @@ void K_drawKartHUD(void)
 	if (modeattacking || freecam) // everything after here is MP and debug only
 		return;
 
-	if (gametype == GT_BATTLE && !r_splitscreen && (stplyr->karthud[khud_yougotem] % 2)) // * YOU GOT EM *
+	if ((gametyperules & GTR_KARMA) && !r_splitscreen && (stplyr->karthud[khud_yougotem] % 2)) // * YOU GOT EM *
 		V_DrawScaledPatch(BASEVIDWIDTH/2 - (SHORT(kp_yougotem->width)/2), 32, V_HUDTRANS, kp_yougotem);
 
 	// Draw FREE PLAY.

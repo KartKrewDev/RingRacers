@@ -6857,7 +6857,7 @@ static void P_InitLevelSettings(void)
 	// SRB2Kart: map load variables
 	if (grandprixinfo.gp == true)
 	{
-		if ((gametyperules & GTR_BUMPERS))
+		if (!(gametyperules & GTR_CIRCUIT))
 		{
 			gamespeed = KARTSPEED_EASY;
 		}
@@ -6875,8 +6875,7 @@ static void P_InitLevelSettings(void)
 	}
 	else if (modeattacking)
 	{
-		// Just play it safe and set everything
-		if ((gametyperules & GTR_BUMPERS))
+		if (!(gametyperules & GTR_CIRCUIT))
 			gamespeed = KARTSPEED_EASY;
 		else
 			gamespeed = KARTSPEED_HARD;
@@ -6884,7 +6883,7 @@ static void P_InitLevelSettings(void)
 	}
 	else
 	{
-		if ((gametyperules & GTR_BUMPERS))
+		if (!(gametyperules & GTR_CIRCUIT))
 			gamespeed = KARTSPEED_EASY;
 		else
 		{
