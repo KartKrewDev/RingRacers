@@ -5164,7 +5164,7 @@ void P_SaveNetGame(savebuffer_t *save, boolean resending)
 		P_NetArchiveTubeWaypoints(save);
 		P_NetArchiveWaypoints(save);
 	}
-	LUA_Archive(&save->p, true);
+	LUA_Archive(save, true);
 
 	P_NetArchiveRNG(save);
 
@@ -5214,7 +5214,7 @@ boolean P_LoadNetGame(savebuffer_t *save, boolean reloading)
 		P_FinishMobjs();
 	}
 
-	LUA_UnArchive(&save->p, true);
+	LUA_UnArchive(save, true);
 
 	P_NetUnArchiveRNG(save);
 
