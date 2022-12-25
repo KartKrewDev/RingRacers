@@ -834,7 +834,7 @@ int LUA_HookHurtMsg(player_t *player, mobj_t *inflictor, mobj_t *source, UINT8 d
 	return hook.status;
 }
 
-void LUA_HookNetArchive(lua_CFunction archFunc)
+void LUA_HookNetArchive(lua_CFunction archFunc, savebuffer_t *save)
 {
 	const hook_t * map = &hookIds[HOOK(NetVars)];
 	Hook_State hook;
@@ -852,8 +852,9 @@ void LUA_HookNetArchive(lua_CFunction archFunc)
 
 		// tables becomes an upvalue of archFunc
 		lua_pushvalue(gL, -1);
-		lua_pushcclosure(gL, archFunc, 1);
-		// stack: tables, archFunc
+		lua_pushlightuserdata(gL, save);
+		lua_pushcclosure(gL, archFunc, 2);
+		// stack: tables, savebuffer_t, archFunc
 
 		init_hook_call(&hook, 0, res_none);
 		call_mapped(&hook, map);
