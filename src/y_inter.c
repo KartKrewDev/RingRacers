@@ -98,7 +98,6 @@ static INT32 endtic = -1;
 static INT32 sorttic = -1;
 
 intertype_t intertype = int_none;
-intertype_t intermissiontypes[NUMGAMETYPES];
 
 static huddrawlist_h luahuddrawlist_intermission;
 
@@ -751,15 +750,14 @@ void Y_Ticker(void)
 //
 void Y_DetermineIntermissionType(void)
 {
-	// set to int_none initially
-	intertype = int_none;
+	// set initially
+	intertype = gametypes[gametype]->intermission;
 
-	if (gametype == GT_RACE)
-		intertype = int_race;
-	else if (gametype == GT_BATTLE)
+	// TODO: special cases
+	if (gametype == GT_BATTLE)
 	{
 		if (grandprixinfo.gp == true && bossinfo.boss == false)
-			intertype = int_none;
+			return;
 		else
 		{
 			UINT8 i = 0, nump = 0;
@@ -772,8 +770,6 @@ void Y_DetermineIntermissionType(void)
 			intertype = (nump < 2 ? int_battletime : int_battle);
 		}
 	}
-	else //if (intermissiontypes[gametype] != int_none)
-		intertype = intermissiontypes[gametype];
 }
 
 //
@@ -829,9 +825,6 @@ void Y_StartIntermission(void)
 		// Minimum two seconds for match results, then two second slideover approx halfway through
 		sorttic = max((timer/2) - 2*TICRATE, 2*TICRATE);
 	}
-
-	if (intermissiontypes[gametype] != int_none)
-		intertype = intermissiontypes[gametype];
 
 	// We couldn't display the intermission even if we wanted to.
 	// But we still need to give the players their score bonuses, dummy.
@@ -1571,7 +1564,7 @@ void Y_StartVote(void)
 		// set up the gtc and gts
 		levelinfo[i].gtc = G_GetGametypeColor(votelevels[i][1]);
 		if (i == 2 && votelevels[i][1] != votelevels[0][1])
-			levelinfo[i].gts = Gametype_Names[votelevels[i][1]];
+			levelinfo[i].gts = gametypes[votelevels[i][1]]->name;
 		else
 			levelinfo[i].gts = NULL;
 	}

@@ -2998,28 +2998,55 @@ void G_ExitLevel(void)
 	}
 }
 
-// See also the enum GameType in doomstat.h
-const char *Gametype_Names[NUMGAMETYPES] =
+static gametype_t defaultgametypes[] =
 {
-	"Race", // GT_RACE
-	"Battle" // GT_BATTLE
+	// GT_RACE
+	{
+		"Race",
+		"GT_RACE",
+		GTR_CAMPAIGN|GTR_CIRCUIT|GTR_BOTS|GTR_ENCORE,
+		TOL_RACE,
+		int_race,
+		0,
+		0,
+	},
+
+	// GT_BATTLE
+	{
+		"Battle",
+		"GT_BATTLE",
+		GTR_SPHERES|GTR_BUMPERS|GTR_PAPERITEMS|GTR_POWERSTONES|GTR_KARMA|GTR_ITEMARROWS|GTR_CAPSULES|GTR_BATTLESTARTS|GTR_POINTLIMIT|GTR_TIMELIMIT|GTR_OVERTIME|GTR_CLOSERPLAYERS,
+		TOL_BATTLE,
+		int_battle,
+		0,
+		2,
+	},
 };
 
-// For dehacked
-const char *Gametype_ConstantNames[NUMGAMETYPES] =
+gametype_t *gametypes[MAXGAMETYPES+1] =
 {
-	"GT_RACE", // GT_RACE
-	"GT_BATTLE" // GT_BATTLE
+	&defaultgametypes[GT_RACE],
+	&defaultgametypes[GT_BATTLE],
 };
 
-// Gametype rules
-UINT32 gametypedefaultrules[NUMGAMETYPES] =
+//
+// G_GetGametypeByName
+//
+// Returns the number for the given gametype name string, or -1 if not valid.
+//
+INT32 G_GetGametypeByName(const char *gametypestr)
 {
-	// Race
-	GTR_CAMPAIGN|GTR_CIRCUIT|GTR_BOTS|GTR_ENCORE,
-	// Battle
-	GTR_SPHERES|GTR_BUMPERS|GTR_PAPERITEMS|GTR_POWERSTONES|GTR_KARMA|GTR_ITEMARROWS|GTR_CAPSULES|GTR_BATTLESTARTS|GTR_POINTLIMIT|GTR_TIMELIMIT|GTR_OVERTIME|GTR_CLOSERPLAYERS
-};
+	INT32 i = 0;
+
+	while (gametypes[i] != NULL)
+	{
+		if (!stricmp(gametypestr, gametypes[i]->name))
+			return i;
+		i++;
+	}
+
+	return -1; // unknown gametype
+}
 
 //
 // G_SetGametype
@@ -3028,41 +3055,26 @@ UINT32 gametypedefaultrules[NUMGAMETYPES] =
 //
 void G_SetGametype(INT16 gtype)
 {
+	if (gtype < 0 || gtype > numgametypes)
+	{
+		I_Error("G_SetGametype: Bad gametype change %d (was %d/\"%s\")", gtype, gametype, gametypes[gametype]->name);
+	}
+
 	gametype = gtype;
-	gametyperules = gametypedefaultrules[gametype];
 }
 
 //
-// G_AddGametype
-//
-// Add a gametype. Returns the new gametype number.
-//
-INT16 G_AddGametype(UINT32 rules)
-{
-	INT16 newgtype = gametypecount;
-	gametypecount++;
-
-	// Set gametype rules.
-	gametypedefaultrules[newgtype] = rules;
-	Gametype_Names[newgtype] = "???";
-
-	// Update gametype_cons_t accordingly.
-	G_UpdateGametypeSelections();
-
-	return newgtype;
-}
-
-//
-// G_AddGametypeConstant
+// G_PrepareGametypeConstant
 //
 // Self-explanatory. Filters out "bad" characters.
 //
-void G_AddGametypeConstant(INT16 gtype, const char *newgtconst)
+char *G_PrepareGametypeConstant(const char *newgtconst)
 {
 	size_t r = 0; // read
 	size_t w = 0; // write
-	char *gtconst = Z_Calloc(strlen(newgtconst) + 4, PU_STATIC, NULL);
-	char *tmpconst = Z_Calloc(strlen(newgtconst) + 1, PU_STATIC, NULL);
+	size_t len = strlen(newgtconst);
+	char *gtconst = Z_Calloc(len + 4, PU_STATIC, NULL);
+	char *tmpconst = Z_Calloc(len + 1, PU_STATIC, NULL);
 
 	// Copy the gametype name.
 	strcpy(tmpconst, newgtconst);
@@ -3122,8 +3134,8 @@ void G_AddGametypeConstant(INT16 gtype, const char *newgtconst)
 	// Free the temporary string.
 	Z_Free(tmpconst);
 
-	// Finally, set the constant string.
-	Gametype_ConstantNames[gtype] = gtconst;
+	// Finally, return the constant string.
+	return gtconst;
 }
 
 //
@@ -3134,29 +3146,14 @@ void G_AddGametypeConstant(INT16 gtype, const char *newgtconst)
 void G_UpdateGametypeSelections(void)
 {
 	INT32 i;
-	for (i = 0; i < gametypecount; i++)
+	for (i = 0; i < numgametypes; i++)
 	{
 		gametype_cons_t[i].value = i;
-		gametype_cons_t[i].strvalue = Gametype_Names[i];
+		gametype_cons_t[i].strvalue = gametypes[i]->name;
 	}
-	gametype_cons_t[NUMGAMETYPES].value = 0;
-	gametype_cons_t[NUMGAMETYPES].strvalue = NULL;
+	gametype_cons_t[numgametypes].value = 0;
+	gametype_cons_t[numgametypes].strvalue = NULL;
 }
-
-// Gametype rankings
-INT16 gametyperankings[NUMGAMETYPES] =
-{
-	GT_RACE,
-	GT_BATTLE,
-};
-
-// Gametype to TOL (Type Of Level)
-UINT32 gametypetol[NUMGAMETYPES] =
-{
-	TOL_RACE, // Race
-	TOL_BATTLE, // Battle
-	TOL_TV, // Midnight Channel effect
-};
 
 tolinfo_t TYPEOFLEVEL[NUMTOLNAMES] = {
 	{"RACE",TOL_RACE},
@@ -3182,32 +3179,6 @@ void G_AddTOL(UINT32 newtol, const char *tolname)
 
 	TYPEOFLEVEL[i].name = Z_StrDup(tolname);
 	TYPEOFLEVEL[i].flag = newtol;
-}
-
-//
-// G_AddGametypeTOL
-//
-// Assigns a type of level to a gametype.
-//
-void G_AddGametypeTOL(INT16 gtype, UINT32 newtol)
-{
-	gametypetol[gtype] = newtol;
-}
-
-//
-// G_GetGametypeByName
-//
-// Returns the number for the given gametype name string, or -1 if not valid.
-//
-INT32 G_GetGametypeByName(const char *gametypestr)
-{
-	INT32 i;
-
-	for (i = 0; i < gametypecount; i++)
-		if (!stricmp(gametypestr, Gametype_Names[i]))
-			return i;
-
-	return -1; // unknown gametype
 }
 
 //
@@ -3339,7 +3310,9 @@ UINT8 G_GetGametypeColor(INT16 gt)
   */
 UINT32 G_TOLFlag(INT32 pgametype)
 {
-	return gametypetol[pgametype];
+	if (pgametype >= 0 && pgametype < numgametypes)
+		return gametypes[pgametype]->tol;
+	return 0;
 }
 
 INT16 G_GetFirstMapOfGametype(UINT8 pgametype)
@@ -3350,7 +3323,7 @@ INT16 G_GetFirstMapOfGametype(UINT8 pgametype)
 
 	templevelsearch.cup = NULL;
 	templevelsearch.typeoflevel = G_TOLFlag(pgametype);
-	templevelsearch.cupmode = (!(gametypedefaultrules[pgametype] & GTR_NOCUPSELECT));
+	templevelsearch.cupmode = (!(gametypes[pgametype]->rules & GTR_NOCUPSELECT));
 	templevelsearch.timeattack = false;
 	templevelsearch.checklocked = true;
 

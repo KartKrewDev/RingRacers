@@ -764,13 +764,13 @@ void readgametype(MYFILE *f, char *gtname)
 	char *tmp;
 	INT32 i, j;
 
-	INT16 newgtidx = 0;
+	gametype_t *newgametype = NULL;
+
 	UINT32 newgtrules = 0;
 	UINT32 newgttol = 0;
 	INT32 newgtpointlimit = 0;
 	INT32 newgttimelimit = 0;
-	INT16 newgtrankingstype = -1;
-	int newgtinttype = 0;
+	UINT8 newgtinttype = 0;
 	char gtconst[MAXLINELEN];
 
 	// Empty strings.
@@ -821,12 +821,6 @@ void readgametype(MYFILE *f, char *gtname)
 				newgtpointlimit = (INT32)i;
 			else if (fastcmp(word, "DEFAULTTIMELIMIT"))
 				newgttimelimit = (INT32)i;
-			// Rankings type
-			else if (fastcmp(word, "RANKINGTYPE"))
-			{
-				// Case insensitive
-				newgtrankingstype = (int)get_number(word2);
-			}
 			// Intermission type
 			else if (fastcmp(word, "INTERMISSIONTYPE"))
 			{
@@ -879,36 +873,35 @@ void readgametype(MYFILE *f, char *gtname)
 		Z_Free(word2lwr);
 
 	// Ran out of gametype slots
-	if (gametypecount == NUMGAMETYPEFREESLOTS)
+	if (numgametypes == GT_LASTFREESLOT)
 	{
 		I_Error("Out of Gametype Freeslots while allocating \"%s\"\nLoad less addons to fix this.", gtname);
-		return;
 	}
 
 	// Add the new gametype
-	newgtidx = G_AddGametype(newgtrules);
-	G_AddGametypeTOL(newgtidx, newgttol);
+	newgametype = Z_Calloc(sizeof (gametype_t), PU_STATIC, NULL);
+	if (!newgametype)
+	{
+		I_Error("Out of memory allocating gametype \"%s\"", gtname);
+	}
 
-	// Not covered by G_AddGametype alone.
-	if (newgtrankingstype == -1)
-		newgtrankingstype = newgtidx;
-	gametyperankings[newgtidx] = newgtrankingstype;
-	intermissiontypes[newgtidx] = newgtinttype;
-	pointlimits[newgtidx] = newgtpointlimit;
-	timelimits[newgtidx] = newgttimelimit;
-
-	// Write the new gametype name.
-	Gametype_Names[newgtidx] = Z_StrDup((const char *)gtname);
-
-	// Write the constant name.
 	if (gtconst[0] == '\0')
 		strncpy(gtconst, gtname, MAXLINELEN);
-	G_AddGametypeConstant(newgtidx, (const char *)gtconst);
+
+	newgametype->name = Z_StrDup((const char *)gtname);
+	newgametype->rules = newgtrules;
+	newgametype->constant = G_PrepareGametypeConstant((const char *)gtconst);
+	newgametype->tol = newgttol;
+	newgametype->intermission = newgtinttype;
+	newgametype->pointlimit = newgtpointlimit;
+	newgametype->timelimit = newgttimelimit;
+
+	gametypes[numgametypes++] = newgametype;
 
 	// Update gametype_cons_t accordingly.
 	G_UpdateGametypeSelections();
 
-	CONS_Printf("Added gametype %s\n", Gametype_Names[newgtidx]);
+	CONS_Printf("Added gametype %s\n", gtname);
 }
 
 void readlevelheader(MYFILE *f, char * name)
@@ -3670,7 +3663,7 @@ sfxenum_t get_sfx(const char *word)
 		return atoi(word);
 	if (fastncmp("GT_",word,3))
 		word += 3; // take off the GT_
-	for (i = 0; i < NUMGAMETYPES; i++)
+	for (i = 0; i < MAXGAMETYPES; i++)
 		if (fastcmp(word, Gametype_ConstantNames[i]+3))
 			return i;
 	deh_warning("Couldn't find gametype named 'GT_%s'",word);

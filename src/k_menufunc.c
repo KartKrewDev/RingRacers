@@ -149,7 +149,7 @@ static consvar_t cv_menujam = CVAR_INIT ("menujam", "0", CV_SAVE, menujam_cons_t
 
 // This gametype list is integral for many different reasons.
 // When you add gametypes here, don't forget to update them in dehacked.c and doomstat.h!
-CV_PossibleValue_t gametype_cons_t[NUMGAMETYPES+1];
+CV_PossibleValue_t gametype_cons_t[MAXGAMETYPES+1];
 
 static CV_PossibleValue_t serversort_cons_t[] = {
 	{0,"Ping"},
@@ -3537,7 +3537,7 @@ static void M_LevelListFromGametype(INT16 gt)
 	{
 		levellist.newgametype = gt;
 		levellist.levelsearch.typeoflevel = G_TOLFlag(gt);
-		levellist.levelsearch.cupmode = (!(gametypedefaultrules[gt] & GTR_NOCUPSELECT));
+		levellist.levelsearch.cupmode = (!(gametypes[gt]->rules & GTR_NOCUPSELECT));
 		levellist.levelsearch.cup = NULL;
 		first = false;
 	}

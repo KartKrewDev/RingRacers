@@ -32,4 +32,3 @@ typedef enum
 } intertype_t;
 
 extern intertype_t intertype;
-extern intertype_t intermissiontypes[NUMGAMETYPES];

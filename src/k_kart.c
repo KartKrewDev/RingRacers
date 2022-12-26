@@ -162,7 +162,7 @@ void K_TimerInit(void)
 			}
 			else
 			{
-				timelimitintics = timelimits[gametype] * (60*TICRATE);
+				timelimitintics = gametypes[gametype]->timelimit * (60*TICRATE);
 			}
 		}
 		else

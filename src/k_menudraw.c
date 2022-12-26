@@ -2002,7 +2002,7 @@ static void M_DrawCupTitle(INT16 y, cupheader_t *cup)
 	else
 	{
 		if (currentMenu == &PLAY_LevelSelectDef)
-			V_DrawCenteredLSTitleLowString(BASEVIDWIDTH/2, y+6, 0, va("%s Mode", Gametype_Names[levellist.newgametype]));
+			V_DrawCenteredLSTitleLowString(BASEVIDWIDTH/2, y+6, 0, va("%s Mode", gametypes[levellist.newgametype]->name));
 	}
 }
 
@@ -2261,7 +2261,7 @@ void M_DrawTimeAttack(void)
 			laprec = mapheaderinfo[map]->mainrecord->lap;
 		}
 
-		if (gametypedefaultrules[levellist.newgametype] & GTR_CIRCUIT)
+		if (gametypes[levellist.newgametype]->rules & GTR_CIRCUIT)
 		{
 			V_DrawRightAlignedString(rightedge-12, timeheight, highlightflags, "BEST LAP:");
 			K_drawKartTimestamp(laprec, 162+t, timeheight+6, 0, 2);
@@ -3966,13 +3966,13 @@ static void M_DrawReplayHutReplayInfo(menudemo_t *demoref)
 
 		{
 			const char *gtstring = "???";
-			if (demoref->gametype >= gametypecount)
-				;
+			if (demoref->gametype >= GT_FIRSTFREESLOT)
+				; // TODO: Support custom gametypes in netreplays (would require deeper changes than this)
 			else
 			{
-				gtstring = Gametype_Names[demoref->gametype];
+				gtstring = gametypes[demoref->gametype]->name;
 
-				if ((gametypedefaultrules[demoref->gametype] & GTR_CIRCUIT))
+				if ((gametypes[demoref->gametype]->rules & GTR_CIRCUIT))
 					gtstring = va("%s (%s)", gtstring, kartspeed_cons_t[(demoref->kartspeed & ~DF_ENCORE) + 1].strvalue);
 			}
 
@@ -3990,9 +3990,9 @@ static void M_DrawReplayHutReplayInfo(menudemo_t *demoref)
 		V_DrawThinString(x, y+29, V_SNAPTOTOP|highlightflags, "WINNER");
 		V_DrawString(x+38, y+30, V_SNAPTOTOP|V_ALLOWLOWERCASE, demoref->standings[0].name);
 
-		if (demoref->gametype < gametypecount)
+		if (demoref->gametype < GT_FIRSTFREESLOT)
 		{
-			if (gametypedefaultrules[demoref->gametype] & GTR_POINTLIMIT)
+			if (gametypes[demoref->gametype]->rules & GTR_POINTLIMIT)
 			{
 				V_DrawThinString(x, y+39, V_SNAPTOTOP|highlightflags, "SCORE");
 			}
@@ -4005,7 +4005,7 @@ static void M_DrawReplayHutReplayInfo(menudemo_t *demoref)
 			{
 				V_DrawThinString(x+32, y+39, V_SNAPTOTOP, "NO CONTEST");
 			}
-			else if (gametypedefaultrules[demoref->gametype] & GTR_POINTLIMIT)
+			else if (gametypes[demoref->gametype]->rules & GTR_POINTLIMIT)
 			{
 				V_DrawString(x+32, y+40, V_SNAPTOTOP, va("%d", demoref->standings[0].timeorscore));
 			}
@@ -4211,9 +4211,9 @@ void M_DrawReplayStartMenu(void)
 
 		if (demoref->standings[i].timeorscore == UINT32_MAX-1)
 			V_DrawThinString(BASEVIDWIDTH-92, STARTY + i*20 + 9, V_SNAPTOTOP, "NO CONTEST");
-		else if (demoref->gametype >= gametypecount)
+		else if (demoref->gametype >= GT_FIRSTFREESLOT)
 			;
-		else if (gametypedefaultrules[demoref->gametype] & GTR_POINTLIMIT)
+		else if (gametypes[demoref->gametype]->rules & GTR_POINTLIMIT)
 			V_DrawString(BASEVIDWIDTH-92, STARTY + i*20 + 9, V_SNAPTOTOP, va("%d", demoref->standings[i].timeorscore));
 		else
 			V_DrawRightAlignedString(BASEVIDWIDTH-40, STARTY + i*20 + 9, V_SNAPTOTOP, va("%d'%02d\"%02d",

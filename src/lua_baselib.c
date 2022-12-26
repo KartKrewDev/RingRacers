@@ -2971,15 +2971,15 @@ static int lib_gAddGametype(lua_State *L)
 	const char *k;
 	lua_Integer i;
 
+	gametype_t *newgametype = NULL;
+
 	const char *gtname = NULL;
 	const char *gtconst = NULL;
-	INT16 newgtidx = 0;
 	UINT32 newgtrules = 0;
 	UINT32 newgttol = 0;
 	INT32 newgtpointlimit = 0;
 	INT32 newgttimelimit = 0;
-	INT16 newgtrankingstype = -1;
-	int newgtinttype = 0;
+	UINT8 newgtinttype = 0;
 
 	luaL_checktype(L, 1, LUA_TTABLE);
 	lua_settop(L, 1); // Clear out all other possible arguments, leaving only the first one.
@@ -2988,8 +2988,10 @@ static int lib_gAddGametype(lua_State *L)
 		return luaL_error(L, "This function cannot be called from within a hook or coroutine!");
 
 	// Ran out of gametype slots
-	if (gametypecount == NUMGAMETYPEFREESLOTS)
-		return luaL_error(L, "Ran out of free gametype slots!");
+	if (numgametypes == GT_LASTFREESLOT)
+	{
+		I_Error("Out of Gametype Freeslots while allocating \"%s\"\nLoad less addons to fix this.", gtname);
+	}
 
 #define FIELDERROR(f, e) luaL_error(L, "bad value for " LUA_QL(f) " in table passed to " LUA_QL("G_AddGametype") " (%s)", e);
 #define TYPEERROR(f, t) FIELDERROR(f, va("%s expected, got %s", lua_typename(L, t), luaL_typename(L, -1)))
@@ -3022,19 +3024,15 @@ static int lib_gAddGametype(lua_State *L)
 			if (!lua_isnumber(L, 3))
 				TYPEERROR("typeoflevel", LUA_TNUMBER)
 			newgttol = (UINT32)lua_tointeger(L, 3);
-		} else if (i == 5 || (k && fasticmp(k, "rankingtype"))) {
-			if (!lua_isnumber(L, 3))
-				TYPEERROR("rankingtype", LUA_TNUMBER)
-			newgtrankingstype = (INT16)lua_tointeger(L, 3);
-		} else if (i == 6 || (k && fasticmp(k, "intermissiontype"))) {
+		} else if (i == 5 || (k && fasticmp(k, "intermissiontype"))) {
 			if (!lua_isnumber(L, 3))
 				TYPEERROR("intermissiontype", LUA_TNUMBER)
 			newgtinttype = (int)lua_tointeger(L, 3);
-		} else if (i == 7 || (k && fasticmp(k, "defaultpointlimit"))) {
+		} else if (i == 6 || (k && fasticmp(k, "defaultpointlimit"))) {
 			if (!lua_isnumber(L, 3))
 				TYPEERROR("defaultpointlimit", LUA_TNUMBER)
 			newgtpointlimit = (INT32)lua_tointeger(L, 3);
-		} else if (i == 8 || (k && fasticmp(k, "defaulttimelimit"))) {
+		} else if (i == 7 || (k && fasticmp(k, "defaulttimelimit"))) {
 			if (!lua_isnumber(L, 3))
 				TYPEERROR("defaulttimelimit", LUA_TNUMBER)
 			newgttimelimit = (INT32)lua_tointeger(L, 3);
@@ -3053,30 +3051,30 @@ static int lib_gAddGametype(lua_State *L)
 		gtname = Z_StrDup("Unnamed gametype");
 
 	// Add the new gametype
-	newgtidx = G_AddGametype(newgtrules);
-	G_AddGametypeTOL(newgtidx, newgttol);
+	newgametype = Z_Calloc(sizeof (gametype_t), PU_STATIC, NULL);
+	if (!newgametype)
+	{
+		I_Error("Out of memory allocating gametype \"%s\"", gtname);
+	}
 
-	// Not covered by G_AddGametype alone.
-	if (newgtrankingstype == -1)
-		newgtrankingstype = newgtidx;
-	gametyperankings[newgtidx] = newgtrankingstype;
-	intermissiontypes[newgtidx] = newgtinttype;
-	pointlimits[newgtidx] = newgtpointlimit;
-	timelimits[newgtidx] = newgttimelimit;
-
-	// Write the new gametype name.
-	Gametype_Names[newgtidx] = gtname;
-
-	// Write the constant name.
 	if (gtconst == NULL)
 		gtconst = gtname;
-	G_AddGametypeConstant(newgtidx, gtconst);
+
+	newgametype->name = gtname;
+	newgametype->rules = newgtrules;
+	newgametype->constant = G_PrepareGametypeConstant(gtconst);
+	newgametype->tol = newgttol;
+	newgametype->intermission = newgtinttype;
+	newgametype->pointlimit = newgtpointlimit;
+	newgametype->timelimit = newgttimelimit;
+
+	gametypes[numgametypes++] = newgametype;
 
 	// Update gametype_cons_t accordingly.
 	G_UpdateGametypeSelections();
 
 	// done
-	CONS_Printf("Added gametype %s\n", Gametype_Names[newgtidx]);
+	CONS_Printf("Added gametype %s\n", gtname);
 	return 0;
 }
 
