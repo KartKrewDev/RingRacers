@@ -725,6 +725,7 @@ void P_WriteThings(void)
 	savebuffer_t save;
 	INT16 temp;
 
+	save.size = nummapthings * sizeof (mapthing_t);
 	save.p = save.buffer = (UINT8 *)malloc(nummapthings * sizeof (mapthing_t));
 
 	if (!save.p)
@@ -732,6 +733,8 @@ void P_WriteThings(void)
 		CONS_Alert(CONS_ERROR, M_GetText("No more free memory for thing writing!\n"));
 		return;
 	}
+
+	save.end = save.buffer + save.size;
 
 	mt = mapthings;
 	for (i = 0; i < nummapthings; i++, mt++)

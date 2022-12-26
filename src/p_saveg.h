@@ -18,6 +18,12 @@
 #pragma interface
 #endif
 
+// 1024 bytes is plenty for a savegame
+#define SAVEGAMESIZE (1024)
+
+// For netgames
+#define NETSAVEGAMESIZE (768*1024)
+
 // Persistent storage/archiving.
 // These are the load / save game routines.
 
@@ -43,6 +49,8 @@ struct savebuffer_t
 {
 	UINT8 *buffer;
 	UINT8 *p;
+	UINT8 *end;
+	size_t size;
 };
 
 #endif
