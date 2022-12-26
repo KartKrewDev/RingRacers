@@ -18,8 +18,6 @@
 #include "doomstat.h"
 #include "d_event.h"
 
-extern UINT8 *demo_p;
-
 // ======================================
 // DEMO playback/recording related stuff.
 // ======================================
