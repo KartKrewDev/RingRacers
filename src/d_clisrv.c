@@ -54,7 +54,6 @@
 #include "k_pwrlv.h"
 #include "k_bot.h"
 #include "k_grandprix.h"
-#include "k_boss.h"
 #include "doomstat.h"
 #include "s_sound.h" // sfx_syfail
 #include "m_cond.h" // netUnlocked

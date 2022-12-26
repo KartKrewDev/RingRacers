@@ -209,7 +209,7 @@ static void Y_CalculateMatchData(UINT8 rankingsmode, void (*comparison)(INT32))
 	else
 	{
 		// set up the levelstring
-		if (bossinfo.boss == true && bossinfo.enemyname)
+		if (bossinfo.valid == true && bossinfo.enemyname)
 		{
 			snprintf(data.levelstring,
 				sizeof data.levelstring,
@@ -574,7 +574,7 @@ skiptallydrawer:
 	if (!LUA_HudEnabled(hud_intermissionmessages))
 		return;
 
-	if (timer && grandprixinfo.gp == false && bossinfo.boss == false && !modeattacking)
+	if (timer && grandprixinfo.gp == false && !modeattacking)
 	{
 		char *string;
 		INT32 tickdown = (timer+1)/TICRATE;

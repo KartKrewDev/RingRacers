@@ -55,7 +55,6 @@
 // SRB2Kart
 #include "s_sound.h" // song credits
 #include "k_kart.h"
-#include "k_boss.h"
 #include "k_color.h"
 #include "k_hud.h"
 #include "r_fps.h"
@@ -2409,7 +2408,7 @@ static void HU_DrawRankings(void)
 	else if (gametype >= 0 && gametype < numgametypes)
 		V_DrawString(4, 188, hilicol|V_SNAPTOBOTTOM|V_SNAPTOLEFT, gametypes[gametype]->name);
 
-	if ((gametyperules & (GTR_TIMELIMIT|GTR_POINTLIMIT)) && !bossinfo.boss)
+	if ((gametyperules & (GTR_TIMELIMIT|GTR_POINTLIMIT)))
 	{
 		if ((gametyperules & GTR_TIMELIMIT) && timelimitintics > 0)
 		{

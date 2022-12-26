@@ -11,7 +11,6 @@
 /// \brief Grand Prix mode game logic & bot behaviors
 
 #include "k_grandprix.h"
-#include "k_boss.h"
 #include "k_specialstage.h"
 #include "doomdef.h"
 #include "d_player.h"
@@ -529,7 +528,7 @@ void K_RetireBots(void)
 	UINT8 i;
 
 	if (grandprixinfo.gp == true
-		&& ((grandprixinfo.roundnum >= grandprixinfo.cup->numlevels)
+		&& ((grandprixinfo.cup != NULL && grandprixinfo.roundnum >= grandprixinfo.cup->numlevels)
 		|| grandprixinfo.eventmode != GPEVENT_NONE))
 	{
 		// No replacement.
@@ -703,21 +702,9 @@ void K_PlayerLoseLife(player_t *player)
 --------------------------------------------------*/
 boolean K_CanChangeRules(boolean allowdemos)
 {
-	if (grandprixinfo.gp == true && grandprixinfo.roundnum > 0)
+	if (grandprixinfo.gp == true /*&& grandprixinfo.roundnum > 0*/)
 	{
 		// Don't cheat the rules of the GP!
-		return false;
-	}
-
-	if (bossinfo.boss == true)
-	{
-		// Don't cheat the boss!
-		return false;
-	}
-
-	if (specialStage.active == true)
-	{
-		// Don't cheat special stages!
 		return false;
 	}
 

@@ -16,14 +16,13 @@
 #include "doomdef.h"
 #include "doomstat.h"
 
-extern struct specialStage
+extern struct specialstageinfo
 {
-	boolean active;						///< If true, then we are in a special stage
-	boolean encore;						///< Copy of encore, just to make sure you can't cheat it with cvars
+	boolean valid;						///< If true, then data in this struct is valid
 
 	UINT32 beamDist;					///< Where the exit beam is.
 	mobj_t *ufo;						///< The Chaos Emerald capsule.
-} specialStage;
+} specialstageinfo;
 
 /*--------------------------------------------------
 	void K_ResetSpecialStage(void);

@@ -6,7 +6,6 @@
 
 #include "k_kart.h"
 #include "k_battle.h"
-#include "k_boss.h"
 #include "k_pwrlv.h"
 #include "k_color.h"
 #include "k_respawn.h"
@@ -41,6 +40,7 @@
 #include "k_follower.h"
 #include "k_objects.h"
 #include "k_grandprix.h"
+#include "k_boss.h"
 #include "k_specialstage.h"
 #include "k_roulette.h"
 
@@ -109,11 +109,13 @@ void K_TimerInit(void)
 	boolean domodeattack = ((modeattacking != ATTACKING_NONE)
 		|| (grandprixinfo.gp == true && grandprixinfo.eventmode != GPEVENT_NONE));
 
-	if (specialStage.active == true)
+	if ((gametyperules & (GTR_CATCHER|GTR_CIRCUIT)) == (GTR_CATCHER|GTR_CIRCUIT))
 	{
 		K_InitSpecialStage();
 	}
-	else if (bossinfo.boss == false)
+	else if (K_CheckBossIntro() == true)
+		;
+	else
 	{
 		if (!domodeattack)
 		{
@@ -152,7 +154,7 @@ void K_TimerInit(void)
 
 	K_BattleInit(domodeattack);
 
-	if ((gametyperules & GTR_TIMELIMIT) && !bossinfo.boss && !modeattacking)
+	if ((gametyperules & GTR_TIMELIMIT) && !modeattacking)
 	{
 		if (!K_CanChangeRules(true))
 		{
@@ -343,7 +345,7 @@ boolean K_IsPlayerLosing(player_t *player)
 	if (battlecapsules && numtargets == 0)
 		return true; // Didn't even TRY?
 
-	if (battlecapsules || bossinfo.boss)
+	if (battlecapsules || (gametyperules & GTR_BOSS))
 		return (player->bumpers <= 0); // anything short of DNF is COOL
 
 	if (player->position == 1)
@@ -513,7 +515,7 @@ boolean K_TimeAttackRules(void)
 	UINT8 playing = 0;
 	UINT8 i;
 
-	if (specialStage.active == true)
+	if ((gametyperules & (GTR_CATCHER|GTR_CIRCUIT)) == (GTR_CATCHER|GTR_CIRCUIT))
 	{
 		// Kind of a hack -- Special Stages
 		// are expected to be 1-player, so
@@ -1301,8 +1303,8 @@ static boolean K_TryDraft(player_t *player, mobj_t *dest, fixed_t minDist, fixed
 */
 static void K_UpdateDraft(player_t *player)
 {
-	const boolean addUfo = ((specialStage.active == true)
-		&& (specialStage.ufo != NULL && P_MobjWasRemoved(specialStage.ufo) == false));
+	const boolean addUfo = ((specialstageinfo.valid == true)
+		&& (specialstageinfo.ufo != NULL && P_MobjWasRemoved(specialstageinfo.ufo) == false));
 
 	fixed_t topspd = K_GetKartSpeed(player, false, false);
 	fixed_t draftdistance;
@@ -1345,7 +1347,7 @@ static void K_UpdateDraft(player_t *player)
 		if (addUfo == true)
 		{
 			// Tether off of the UFO!
-			if (K_TryDraft(player, specialStage.ufo, minDist, draftdistance, leniency) == true)
+			if (K_TryDraft(player, specialstageinfo.ufo, minDist, draftdistance, leniency) == true)
 			{
 				return; // Finished doing our draft.
 			}
@@ -1402,8 +1404,8 @@ static void K_UpdateDraft(player_t *player)
 		else if (addUfo == true)
 		{
 			// kind of a hack to not have to mess with how lastdraft works
-			fixed_t dist = P_AproxDistance(P_AproxDistance(specialStage.ufo->x - player->mo->x, specialStage.ufo->y - player->mo->y), specialStage.ufo->z - player->mo->z);
-			K_DrawDraftCombiring(player, specialStage.ufo, dist, draftdistance, true);
+			fixed_t dist = P_AproxDistance(P_AproxDistance(specialstageinfo.ufo->x - player->mo->x, specialstageinfo.ufo->y - player->mo->y), specialstageinfo.ufo->z - player->mo->z);
+			K_DrawDraftCombiring(player, specialstageinfo.ufo, dist, draftdistance, true);
 		}
 	}
 	else // Remove draft speed boost.
@@ -4128,7 +4130,7 @@ void K_HandleBumperChanges(player_t *player, UINT8 prevBumpers)
 
 		player->karmadelay = comebacktime;
 
-		if (bossinfo.boss)
+		if (gametyperules & GTR_BOSS)
 		{
 			P_DoTimeOver(player);
 		}
@@ -6789,10 +6791,10 @@ mobj_t *K_FindJawzTarget(mobj_t *actor, player_t *source, angle_t range)
 	mobj_t *wtarg = NULL;
 	INT32 i;
 
-	if (specialStage.active == true)
+	if (specialstageinfo.valid == true)
 	{
 		// Always target the UFO.
-		return specialStage.ufo;
+		return specialstageinfo.ufo;
 	}
 
 	for (i = 0; i < MAXPLAYERS; i++)
@@ -8028,10 +8030,10 @@ void K_KartPlayerAfterThink(player_t *player)
 
 		mobj_t *ret = NULL;
 
-		if (specialStage.active == true && lastTargID == MAXPLAYERS)
+		if (specialstageinfo.valid == true && lastTargID == MAXPLAYERS)
 		{
 			// Aiming at the UFO.
-			lastTarg = specialStage.ufo;
+			lastTarg = specialstageinfo.ufo;
 		}
 		else if ((lastTargID >= 0 && lastTargID <= MAXPLAYERS)
 			&& playeringame[lastTargID] == true)

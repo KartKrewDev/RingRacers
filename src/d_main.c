@@ -72,7 +72,6 @@
 
 // SRB2Kart
 #include "k_grandprix.h"
-#include "k_boss.h"
 #include "doomstat.h"
 #include "m_random.h" // P_ClearRandom
 #include "k_specialstage.h"
@@ -969,12 +968,6 @@ void D_StartTitle(void)
 	// Reset GP
 	memset(&grandprixinfo, 0, sizeof(struct grandprixinfo));
 
-	// Reset boss info
-	K_ResetBossInfo();
-
-	// Reset Special Stage
-	K_ResetSpecialStage();
-
 	// empty maptol so mario/etc sounds don't play in sound test when they shouldn't
 	maptol = 0;
 
@@ -1204,13 +1197,14 @@ D_ConvertVersionNumbers (void)
 //
 void D_SRB2Main(void)
 {
-	INT32 i, p;
+	INT32 i, j, p;
 #ifdef DEVELOP
 	INT32 pstartmap = 1; // default to first loaded map (Test Run)
 #else
 	INT32 pstartmap = 0; // default to random map (0 is not a valid map number)
 #endif
 	boolean autostart = false;
+	INT32 newgametype = -1;
 
 	/* break the version string into version numbers, for netplay */
 	D_ConvertVersionNumbers();
@@ -1788,8 +1782,6 @@ void D_SRB2Main(void)
 		if (M_CheckParm("-gametype") && M_IsNextParm())
 		{
 			// from Command_Map_f
-			INT32 j;
-			INT16 newgametype = -1;
 			const char *sgametype = M_GetNextParm();
 
 			newgametype = G_GetGametypeByName(sgametype);
@@ -1811,7 +1803,6 @@ void D_SRB2Main(void)
 
 		if (M_CheckParm("-skill") && M_IsNextParm())
 		{
-			INT32 j;
 			INT16 newskill = -1;
 			const char *sskill = M_GetNextParm();
 
@@ -1864,11 +1855,20 @@ void D_SRB2Main(void)
 
 			if (grandprixinfo.gp == true && mapheaderinfo[pstartmap-1])
 			{
-				if (mapheaderinfo[pstartmap-1]->typeoflevel & TOL_SPECIAL)
+				if (newgametype == -1)
 				{
-					specialStage.active = true;
-					specialStage.encore = grandprixinfo.encore;
-					grandprixinfo.eventmode = GPEVENT_SPECIAL;
+					newgametype = G_GuessGametypeByTOL(mapheaderinfo[pstartmap-1]->typeoflevel);
+					if (newgametype != -1)
+					{
+						j = gametype;
+						G_SetGametype(newgametype);
+						D_GameTypeChanged(j);
+					}
+
+					if (gametyperules & (GTR_BOSS|GTR_CATCHER))
+						grandprixinfo.eventmode = GPEVENT_SPECIAL;
+					else if (gametype != GT_RACE)
+						grandprixinfo.eventmode = GPEVENT_BONUS;
 				}
 
 				G_SetUsedCheats();

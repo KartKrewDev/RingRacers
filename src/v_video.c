@@ -589,7 +589,7 @@ void V_AdjustXYWithSnap(INT32 *x, INT32 *y, UINT32 options, INT32 dupx, INT32 du
 	{
 		const tic_t length = TICRATE/4;
 		tic_t timer = lt_exitticker;
-		if (bossinfo.boss == true)
+		if (K_CheckBossIntro() == true)
 		{
 			if (leveltime <= 3)
 				timer = 0;

@@ -39,7 +39,8 @@ struct weakspot_t
 
 extern struct bossinfo
 {
-	boolean boss;						///< If true, then we are fighting a boss
+	boolean valid;						///< If true, then data in this struct is valid
+
 	UINT8 healthbar;					///< Actual health bar fill amount
 	UINT8 visualbar;					///< Tracks above, but with delay
 	fixed_t visualdiv;					///< How far apart health bar divisions should appear
@@ -48,7 +49,7 @@ extern struct bossinfo
 	UINT8 barlen;						///< The length of the bar (only reduced when a boss is deceased)
 	char *enemyname;					///< The name next to the bar
 	weakspot_t weakspots[NUMWEAKSPOTS]; ///< Array of weak spots (for minimap/object tracking)
-	boolean encore;						///< Copy of encore, just to make sure you can't cheat it with cvars
+	boolean coolintro;					///< Determines whether the map start(s/ed) with a boss-specific intro.
 	spottype_t doweakspotsound;			///< If nonzero, at least one weakspot was declared this tic
 	tic_t titleshow;					///< Show this many letters on the titlecard
 	sfxenum_t titlesound;				///< Sound to play when title typing
@@ -111,5 +112,17 @@ void K_UpdateBossHealthBar(fixed_t magnitude, tic_t jitterlen);
 --------------------------------------------------*/
 
 void K_DeclareWeakspot(mobj_t *spot, spottype_t spottype, UINT16 color, boolean minimap);
+
+/*--------------------------------------------------
+	boolean K_CheckBossIntro(void);
+
+		Checks whether the Versus-specific intro is playing for this map start.
+
+	Return:-
+		true if cool intro in action,
+		otherwise false.
+--------------------------------------------------*/
+
+boolean K_CheckBossIntro(void);
 
 #endif

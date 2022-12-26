@@ -23,7 +23,7 @@
 struct bossinfo bossinfo;
 
 /*--------------------------------------------------
-	void K_ClearBossInfo(void)
+	void K_ResetBossInfo(void)
 
 		See header file for description.
 --------------------------------------------------*/
@@ -32,6 +32,8 @@ void K_ResetBossInfo(void)
 	Z_Free(bossinfo.enemyname);
 	Z_Free(bossinfo.subtitle);
 	memset(&bossinfo, 0, sizeof(struct bossinfo));
+	bossinfo.barlen = BOSSHEALTHBARLEN;
+	bossinfo.titlesound = sfx_typri1;
 }
 
 /*--------------------------------------------------
@@ -43,7 +45,7 @@ void K_BossInfoTicker(void)
 {
 	UINT8 i;
 
-	if (bossinfo.boss == false)
+	if (bossinfo.valid == false)
 		return;
 
 	// Update healthbar data. (only if the hud is visible)
@@ -55,7 +57,7 @@ void K_BossInfoTicker(void)
 			bossinfo.visualbar--;
 			// If the boss is dying, start shrinking the healthbar.
 			if (bossinfo.visualbar == 0)
-				bossinfo.barlen-= 2;
+				bossinfo.barlen -= 2;
 		}
 		// Less than the actual health?
 		else if (bossinfo.visualbar < bossinfo.healthbar)
@@ -108,6 +110,18 @@ void K_BossInfoTicker(void)
 
 void K_InitBossHealthBar(const char *enemyname, const char *subtitle, sfxenum_t titlesound, fixed_t pinchmagnitude, UINT8 divisions)
 {
+	if (!(gametyperules & GTR_BOSS))
+	{
+		return;
+	}
+
+	bossinfo.valid = true;
+
+	if (!leveltime)
+	{
+		bossinfo.coolintro = true;
+	}
+
 	if (enemyname && enemyname[0])
 	{
 		Z_Free(bossinfo.enemyname);
@@ -158,6 +172,9 @@ void K_InitBossHealthBar(const char *enemyname, const char *subtitle, sfxenum_t 
 
 void K_UpdateBossHealthBar(fixed_t magnitude, tic_t jitterlen)
 {
+	if (bossinfo.valid == false)
+		return;
+
 	if (magnitude > FRACUNIT)
 		magnitude = FRACUNIT;
 	else if (magnitude < 0)
@@ -176,6 +193,9 @@ void K_UpdateBossHealthBar(fixed_t magnitude, tic_t jitterlen)
 void K_DeclareWeakspot(mobj_t *spot, spottype_t spottype, UINT16 color, boolean minimap)
 {
 	UINT8 i;
+
+	if (bossinfo.valid == false)
+		return;
 
 	// First check whether the spot is already in the list and simply redeclaring weakness (for example, a vulnerable moment in the pattern).
 	for (i = 0; i < NUMWEAKSPOTS; i++)
@@ -205,4 +225,17 @@ void K_DeclareWeakspot(mobj_t *spot, spottype_t spottype, UINT16 color, boolean 
 	{
 		bossinfo.doweakspotsound = spottype;
 	}
+}
+
+/*--------------------------------------------------
+	boolean K_CheckBossIntro(void);
+
+		See header file for description.
+--------------------------------------------------*/
+
+boolean K_CheckBossIntro(void)
+{
+	if (bossinfo.valid == false)
+		return false;
+	return bossinfo.coolintro;
 }

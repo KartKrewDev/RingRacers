@@ -455,6 +455,8 @@ enum GameType
 {
 	GT_RACE = 0,
 	GT_BATTLE,
+	GT_SPECIAL,
+	GT_VERSUS,
 
 	GT_FIRSTFREESLOT,
 	GT_LASTFREESLOT = 127, // Previously (GT_FIRSTFREESLOT + NUMGAMETYPEFREESLOTS - 1) - it would be necessary to rewrite VOTEMODIFIER_ENCORE to go higher than this.
@@ -509,12 +511,16 @@ enum GameTypeRules
 	GTR_TEAMSTARTS			= 1<<16, // Use team-based start positions
 
 	// To be rearranged later
-	GTR_NOCUPSELECT			= 1<<20, // Your maps are not selected via cup. ...mutually exclusive with GTR_CAMPAIGN.
+	GTR_CATCHER				= 1<<17, // UFO Catcher (only works with GTR_CIRCUIT)
+	GTR_BOSS				= 1<<18, // Boss intro and spawning
+
+	GTR_NOCUPSELECT			= 1<<20, // Your maps are not selected via cup.
 	GTR_CLOSERPLAYERS		= 1<<21, // Buffs spindash and draft power to bring everyone together, nerfs invincibility and grow to prevent excessive combos
 	GTR_ENCORE				= 1<<22, // Alternate Encore mirroring, scripting, and texture remapping
 
 	// free: to and including 1<<31
 };
+// Remember to update GAMETYPERULE_LIST in deh_soc.c
 
 // TODO: replace every instance
 #define gametyperules (gametypes[gametype]->rules)
@@ -531,6 +537,7 @@ enum TypeOfLevel
 	// Modifiers
 	TOL_TV		= 0x0100 ///< Midnight Channel specific: draw TV like overlay on HUD
 };
+// Make sure to update TYPEOFLEVEL too
 
 #define MAXTOL             (1<<31)
 #define NUMBASETOLNAMES    (5)

@@ -1425,9 +1425,9 @@ void G_StartTitleCard(void)
 	// play the sound
 	{
 		sfxenum_t kstart = sfx_kstart;
-		if (bossinfo.boss)
+		if (K_CheckBossIntro() == true)
 			kstart = sfx_ssa021;
-		else if (encoremode)
+		else if (encoremode == true)
 			kstart = sfx_ruby2;
 		S_StartSound(NULL, kstart);
 	}
@@ -2790,22 +2790,9 @@ mapthing_t *G_FindMapStart(INT32 playernum)
 	if (!playeringame[playernum])
 		return NULL;
 
-	// -- Spectators --
-	// Order in platform gametypes: Race->DM->CTF
-	// And, with deathmatch starts: DM->CTF->Race
-	if (players[playernum].spectator)
-	{
-		// In platform gametypes, spawn in Co-op starts first
-		// Overriden by GTR_BATTLESTARTS.
-		if (gametyperules & GTR_BATTLESTARTS && bossinfo.boss == false)
-			spawnpoint = G_FindBattleStartOrFallback(playernum);
-		else
-			spawnpoint = G_FindRaceStartOrFallback(playernum);
-	}
-
-	// -- Grand Prix / Time Attack --
+	// -- Time Attack --
 	// Order: Race->DM->CTF
-	else if (grandprixinfo.gp || modeattacking)
+	if (K_TimeAttackRules() == true)
 		spawnpoint = G_FindRaceStartOrFallback(playernum);
 
 	// -- CTF --
@@ -2911,7 +2898,7 @@ void G_ExitLevel(void)
 	{
 		UINT8 i;
 		boolean youlost = false;
-		if (bossinfo.boss == true)
+		if (gametyperules & GTR_BOSS)
 		{
 			youlost = true;
 			for (i = 0; i < MAXPLAYERS; i++)
@@ -3021,12 +3008,35 @@ static gametype_t defaultgametypes[] =
 		0,
 		2,
 	},
+	// GT_SPECIAL
+	{
+		"Special",
+		"GT_SPECIAL",
+		GTR_CATCHER|GTR_CIRCUIT,
+		TOL_SPECIAL,
+		int_race,
+		0,
+		0,
+	},
+
+	// GT_VERSUS
+	{
+		"Versus",
+		"GT_VERSUS",
+		GTR_BOSS|GTR_SPHERES|GTR_BUMPERS|GTR_POINTLIMIT|GTR_CLOSERPLAYERS|GTR_NOCUPSELECT|GTR_ENCORE,
+		TOL_BOSS,
+		int_battle,
+		0,
+		0,
+	},
 };
 
 gametype_t *gametypes[MAXGAMETYPES+1] =
 {
 	&defaultgametypes[GT_RACE],
 	&defaultgametypes[GT_BATTLE],
+	&defaultgametypes[GT_SPECIAL],
+	&defaultgametypes[GT_VERSUS],
 };
 
 //
@@ -3041,6 +3051,25 @@ INT32 G_GetGametypeByName(const char *gametypestr)
 	while (gametypes[i] != NULL)
 	{
 		if (!stricmp(gametypestr, gametypes[i]->name))
+			return i;
+		i++;
+	}
+
+	return -1; // unknown gametype
+}
+
+//
+// G_GuessGametypeByTOL
+//
+// Returns the first valid number for the given typeoflevel, or -1 if not valid.
+//
+INT32 G_GuessGametypeByTOL(UINT32 tol)
+{
+	INT32 i = 0;
+
+	while (gametypes[i] != NULL)
+	{
+		if (tol & gametypes[i]->tol)
 			return i;
 		i++;
 	}
@@ -3651,7 +3680,7 @@ static void G_GetNextMap(void)
 		}
 		else
 		{
-			INT32 lastgametype = gametype;
+			INT32 lastgametype = gametype, newgametype = GT_RACE;
 			// 5 levels, 2 bonus stages: after rounds 2 and 4 (but flexible enough to accomodate other solutions)
 			UINT8 bonusmodulo = (grandprixinfo.cup->numlevels+1)/(grandprixinfo.cup->numbonus+1);
 			UINT8 bonusindex = (grandprixinfo.roundnum / bonusmodulo) - 1;
@@ -3668,9 +3697,6 @@ static void G_GetNextMap(void)
 				G_SetGametype(GT_RACE);
 				if (gametype != lastgametype)
 					D_GameTypeChanged(lastgametype);
-
-				specialStage.active = false;
-				bossinfo.boss = false;
 			}
 			// Special stage
 			else if (grandprixinfo.roundnum >= grandprixinfo.cup->numlevels)
@@ -3691,11 +3717,11 @@ static void G_GetNextMap(void)
 				if (totaltotalring >= 50)
 				{
 					const INT32 cupLevelNum = grandprixinfo.cup->cachedlevels[CUPCACHE_SPECIAL];
-					if (cupLevelNum < nummapheaders && mapheaderinfo[cupLevelNum]
-						&& mapheaderinfo[cupLevelNum]->typeoflevel & (TOL_SPECIAL|TOL_BOSS|TOL_BATTLE))
+					if (cupLevelNum < nummapheaders && mapheaderinfo[cupLevelNum])
 					{
 						grandprixinfo.eventmode = GPEVENT_SPECIAL;
 						nextmap = cupLevelNum;
+						newgametype = G_GuessGametypeByTOL(mapheaderinfo[cupLevelNum]->typeoflevel);
 					}
 				}
 			}
@@ -3706,37 +3732,27 @@ static void G_GetNextMap(void)
 				// todo any other condition?
 				{
 					const INT32 cupLevelNum = grandprixinfo.cup->cachedlevels[CUPCACHE_BONUS + bonusindex];
-					if (cupLevelNum < nummapheaders && mapheaderinfo[cupLevelNum]
-						&& mapheaderinfo[cupLevelNum]->typeoflevel & (TOL_BOSS|TOL_BATTLE))
+					if (cupLevelNum < nummapheaders && mapheaderinfo[cupLevelNum])
 					{
 						grandprixinfo.eventmode = GPEVENT_BONUS;
 						nextmap = cupLevelNum;
+						newgametype = G_GuessGametypeByTOL(mapheaderinfo[cupLevelNum]->typeoflevel);
 					}
 				}
 			}
 
+			if (newgametype == -1)
+			{
+				// Don't permit invalid changes.
+				grandprixinfo.eventmode = GPEVENT_NONE;
+				newgametype = gametype;
+			}
+
 			if (grandprixinfo.eventmode != GPEVENT_NONE)
 			{
-				// nextmap is set above
-				const INT32 newtol = mapheaderinfo[nextmap]->typeoflevel;
-
-				if (newtol & TOL_SPECIAL)
-				{
-					specialStage.active = true;
-					specialStage.encore = grandprixinfo.encore;
-				}
-				else //(if newtol & (TOL_BATTLE|TOL_BOSS)) -- safe to assume??
-				{
-					G_SetGametype(GT_BATTLE);
-					if (gametype != lastgametype)
-						D_GameTypeChanged(lastgametype);
-					if (newtol & TOL_BOSS)
-					{
-						K_ResetBossInfo();
-						bossinfo.boss = true;
-						bossinfo.encore = grandprixinfo.encore;
-					}
-				}
+				G_SetGametype(newgametype);
+				if (gametype != lastgametype)
+					D_GameTypeChanged(lastgametype);
 			}
 			else if (grandprixinfo.roundnum >= grandprixinfo.cup->numlevels) // On final map
 			{
@@ -3759,10 +3775,6 @@ static void G_GetNextMap(void)
 				grandprixinfo.roundnum++;
 			}
 		}
-	}
-	else if (bossinfo.boss == true)
-	{
-		nextmap = NEXTMAP_TITLE; // temporary
 	}
 	else
 	{

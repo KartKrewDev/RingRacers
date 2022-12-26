@@ -828,7 +828,8 @@ void P_RestoreMusic(player_t *player)
 		return;
 
 	// Event - Level Start
-	if (bossinfo.boss == false && (leveltime < (starttime + (TICRATE/2)))) // see also where time overs are handled
+	if ((K_CheckBossIntro() == false)
+		&& (leveltime < (starttime + (TICRATE/2)))) // see also where time overs are handled
 		return;
 
 	{
@@ -3612,7 +3613,7 @@ void P_DoTimeOver(player_t *player)
 		legitimateexit = true; // SRB2kart: losing a race is still seeing it through to the end :p
 	}
 
-	if (netgame && !player->bot && !bossinfo.boss)
+	if (netgame && !player->bot && !(gametyperules & GTR_BOSS))
 	{
 		CON_LogMessage(va(M_GetText("%s ran out of time.\n"), player_names[player-players]));
 	}

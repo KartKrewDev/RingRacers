@@ -239,9 +239,9 @@ static void UFOUpdateAngle(mobj_t *ufo)
 
 waypoint_t *K_GetSpecialUFOWaypoint(mobj_t *ufo)
 {
-	if ((ufo == NULL) && (specialStage.active == true))
+	if ((ufo == NULL) && (specialstageinfo.valid == true))
 	{
-		ufo = specialStage.ufo;
+		ufo = specialstageinfo.ufo;
 	}
 
 	if (ufo != NULL && P_MobjWasRemoved(ufo) == false
@@ -820,11 +820,11 @@ mobj_t *Obj_CreateSpecialUFO(void)
 
 UINT32 K_GetSpecialUFODistance(void)
 {
-	if (specialStage.active == true)
+	if (specialstageinfo.valid == true)
 	{
-		if (specialStage.ufo != NULL && P_MobjWasRemoved(specialStage.ufo) == false)
+		if (specialstageinfo.ufo != NULL && P_MobjWasRemoved(specialstageinfo.ufo) == false)
 		{
-			return (UINT32)ufo_distancetofinish(specialStage.ufo);
+			return (UINT32)ufo_distancetofinish(specialstageinfo.ufo);
 		}
 	}
 

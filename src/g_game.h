@@ -184,6 +184,8 @@ char *G_PrepareGametypeConstant(const char *newgtconst);
 void G_UpdateGametypeSelections(void);
 void G_AddTOL(UINT32 newtol, const char *tolname);
 INT32 G_GetGametypeByName(const char *gametypestr);
+INT32 G_GuessGametypeByTOL(UINT32 tol);
+
 boolean G_IsSpecialStage(INT32 mapnum);
 boolean G_GametypeUsesLives(void);
 boolean G_GametypeHasTeams(void);

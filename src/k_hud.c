@@ -3360,7 +3360,7 @@ static void K_drawKartNameTags(void)
 	c.z = viewz;
 
 	// Maybe shouldn't be handling this here... but the camera info is too good.
-	if (bossinfo.boss)
+	if (bossinfo.valid == true)
 	{
 		weakspotdraw_t weakspotdraw[NUMWEAKSPOTS];
 		UINT8 numdraw = 0;
@@ -3923,7 +3923,7 @@ static void K_drawKartMinimap(void)
 
 			// Target reticule
 			if (((gametyperules & GTR_CIRCUIT) && players[i].position == spbplace)
-				|| ((gametyperules & GTR_POINTLIMIT) && K_IsPlayerWanted(&players[i])))
+				|| ((gametyperules & (GTR_BOSS|GTR_POINTLIMIT)) == GTR_POINTLIMIT && K_IsPlayerWanted(&players[i])))
 			{
 				K_drawKartMinimapIcon(interpx, interpy, x, y, splitflags, kp_wantedreticle, NULL, AutomapPic);
 			}
@@ -3981,7 +3981,7 @@ static void K_drawKartMinimap(void)
 	}
 
 	// ...but first, any boss targets.
-	if (bossinfo.boss)
+	if (bossinfo.valid == true)
 	{
 		for (i = 0; i < NUMWEAKSPOTS; i++)
 		{
@@ -4050,7 +4050,7 @@ static void K_drawKartMinimap(void)
 
 		// Target reticule
 		if (((gametyperules & GTR_CIRCUIT) && players[localplayers[i]].position == spbplace)
-			|| ((gametyperules & GTR_POINTLIMIT) && K_IsPlayerWanted(&players[localplayers[i]])))
+			|| ((gametyperules & (GTR_BOSS|GTR_POINTLIMIT)) == GTR_POINTLIMIT && K_IsPlayerWanted(&players[localplayers[i]])))
 		{
 			K_drawKartMinimapIcon(interpx, interpy, x, y, splitflags, kp_wantedreticle, NULL, AutomapPic);
 		}
@@ -4838,7 +4838,7 @@ void K_drawKartFreePlay(void)
 	if (!LUA_HudEnabled(hud_freeplay))
 		return;
 
-	if (modeattacking || grandprixinfo.gp || bossinfo.boss || stplyr->spectator)
+	if (modeattacking || grandprixinfo.gp || bossinfo.valid || stplyr->spectator)
 		return;
 
 	if (lt_exitticker < TICRATE/2)
@@ -5098,7 +5098,7 @@ void K_drawKartHUD(void)
 		{
 			if (LUA_HudEnabled(hud_position))
 			{
-				if (bossinfo.boss)
+				if (bossinfo.valid)
 				{
 					K_drawBossHealthBar();
 				}
@@ -5140,7 +5140,7 @@ void K_drawKartHUD(void)
 				K_drawBlueSphereMeter();
 			}
 
-			if (modeattacking && !bossinfo.boss)
+			if (modeattacking && !bossinfo.valid)
 			{
 				// Draw the input UI
 				if (LUA_HudEnabled(hud_position))

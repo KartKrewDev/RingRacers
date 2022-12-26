@@ -549,7 +549,7 @@ static void SPBSeek(mobj_t *spb, mobj_t *bestMobj)
 
 	SetSPBSpeed(spb, xySpeed, zSpeed);
 
-	if (specialStage.active == false)
+	if (specialstageinfo.valid == false)
 	{
 		// see if a player is near us, if they are, try to hit them by slightly thrusting towards them, otherwise, bleh!
 		steerDist = 1536 * mapobjectscale;
@@ -874,12 +874,12 @@ void Obj_SPBThink(mobj_t *spb)
 	}
 	else
 	{
-		if (specialStage.active == true)
+		if (specialstageinfo.valid == true)
 		{
-			if (specialStage.ufo != NULL && P_MobjWasRemoved(specialStage.ufo) == false)
+			if (specialstageinfo.ufo != NULL && P_MobjWasRemoved(specialstageinfo.ufo) == false)
 			{
 				bestRank = 1;
-				bestMobj = specialStage.ufo;
+				bestMobj = specialstageinfo.ufo;
 			}
 		}
 

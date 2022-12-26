@@ -597,7 +597,7 @@ void ST_runTitleCard(void)
 
 		// SRB2KART
 		// side Zig-Zag positions...
-		if (bossinfo.boss == true)
+		if (K_CheckBossIntro() == true)
 		{
 			// Handle name info...
 			if (bossinfo.enemyname)
@@ -792,7 +792,7 @@ void ST_drawTitleCard(void)
 	if (lt_ticker < TTANIMSTART)
 		V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, levelfadecol);
 
-	if (bossinfo.boss == true)
+	if (K_CheckBossIntro() == true)
 	{
 		// WARNING!
 		// https://twitter.com/matthewseiji/status/1485003284196716544

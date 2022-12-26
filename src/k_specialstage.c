@@ -22,7 +22,7 @@
 #include "k_waypoint.h"
 #include "k_objects.h"
 
-struct specialStage specialStage;
+struct specialstageinfo specialstageinfo;
 
 /*--------------------------------------------------
 	void K_ResetSpecialStage(void)
@@ -31,7 +31,8 @@ struct specialStage specialStage;
 --------------------------------------------------*/
 void K_ResetSpecialStage(void)
 {
-	memset(&specialStage, 0, sizeof(struct specialStage));
+	memset(&specialstageinfo, 0, sizeof(struct specialstageinfo));
+	specialstageinfo.beamDist = UINT32_MAX;
 }
 
 /*--------------------------------------------------
@@ -43,8 +44,15 @@ void K_InitSpecialStage(void)
 {
 	INT32 i;
 
-	specialStage.beamDist = UINT32_MAX; // TODO: make proper value
-	P_SetTarget(&specialStage.ufo, Obj_CreateSpecialUFO());
+	if ((gametyperules & (GTR_CATCHER|GTR_CIRCUIT)) != (GTR_CATCHER|GTR_CIRCUIT))
+	{
+		return;
+	}
+
+	specialstageinfo.valid = true;
+
+	specialstageinfo.beamDist = UINT32_MAX; // TODO: make proper value
+	P_SetTarget(&specialstageinfo.ufo, Obj_CreateSpecialUFO());
 
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
@@ -88,15 +96,15 @@ static void K_MoveExitBeam(void)
 
 	moveDist = (8 * mapobjectscale) / FRACUNIT;
 
-	if (specialStage.beamDist <= moveDist)
+	if (specialstageinfo.beamDist <= moveDist)
 	{
-		specialStage.beamDist = 0;
+		specialstageinfo.beamDist = 0;
 
 		// TODO: Fail Special Stage
 	}
 	else
 	{
-		specialStage.beamDist -= moveDist;
+		specialstageinfo.beamDist -= moveDist;
 	}
 
 	// Find players who are now outside of the level.
@@ -118,7 +126,7 @@ static void K_MoveExitBeam(void)
 			continue;
 		}
 
-		if (player->distancetofinish > specialStage.beamDist)
+		if (player->distancetofinish > specialstageinfo.beamDist)
 		{
 			P_DoTimeOver(player);
 		}
@@ -132,7 +140,7 @@ static void K_MoveExitBeam(void)
 --------------------------------------------------*/
 void K_TickSpecialStage(void)
 {
-	if (specialStage.active == false)
+	if (specialstageinfo.valid == false)
 	{
 		return;
 	}

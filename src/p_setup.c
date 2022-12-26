@@ -6844,7 +6844,7 @@ static void P_InitLevelSettings(void)
 		if (playeringame[i] && !players[i].spectator)
 			p++;
 
-		if (grandprixinfo.gp == false && bossinfo.boss == false)
+		if (grandprixinfo.gp == false)
 			players[i].lives = 3;
 
 		G_PlayerReborn(i, true);
@@ -6854,38 +6854,27 @@ static void P_InitLevelSettings(void)
 	racecountdown = exitcountdown = exitfadestarted = 0;
 	curlap = bestlap = 0; // SRB2Kart
 
-	// SRB2Kart: map load variables
+	// Gamespeed and frantic items
+	gamespeed = KARTSPEED_EASY;
+	franticitems = false;
+
 	if (grandprixinfo.gp == true)
 	{
-		if (!(gametyperules & GTR_CIRCUIT))
-		{
-			gamespeed = KARTSPEED_EASY;
-		}
-		else
+		if (gametyperules & GTR_CIRCUIT)
 		{
 			gamespeed = grandprixinfo.gamespeed;
 		}
-
-		franticitems = false;
-	}
-	else if (bossinfo.boss)
-	{
-		gamespeed = KARTSPEED_EASY;
-		franticitems = false;
 	}
 	else if (modeattacking)
 	{
-		if (!(gametyperules & GTR_CIRCUIT))
-			gamespeed = KARTSPEED_EASY;
-		else
+		if (gametyperules & GTR_CIRCUIT)
+		{
 			gamespeed = KARTSPEED_HARD;
-		franticitems = false;
+		}
 	}
 	else
 	{
-		if (!(gametyperules & GTR_CIRCUIT))
-			gamespeed = KARTSPEED_EASY;
-		else
+		if (gametyperules & GTR_CIRCUIT)
 		{
 			if (cv_kartspeed.value == KARTSPEED_AUTO)
 				gamespeed = ((speedscramble == -1) ? KARTSPEED_NORMAL : (UINT8)speedscramble);
@@ -6900,6 +6889,9 @@ static void P_InitLevelSettings(void)
 
 	memset(&battleovertime, 0, sizeof(struct battleovertime));
 	speedscramble = encorescramble = -1;
+
+	K_ResetSpecialStage();
+	K_ResetBossInfo();
 }
 
 #if 0
@@ -7609,19 +7601,6 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 	{
 		// We're in a Match Race, use simplistic randomized bots.
 		K_UpdateMatchRaceBots();
-	}
-
-	if (bossinfo.boss)
-	{
-		// Reset some pesky boss state that can't be handled elsewhere.
-		bossinfo.barlen = BOSSHEALTHBARLEN;
-		bossinfo.visualbar = 0;
-		Z_Free(bossinfo.enemyname);
-		Z_Free(bossinfo.subtitle);
-		bossinfo.enemyname = bossinfo.subtitle = NULL;
-		bossinfo.titleshow = 0;
-		bossinfo.titlesound = sfx_typri1;
-		memset(&(bossinfo.weakspots), 0, sizeof(weakspot_t)*NUMWEAKSPOTS);
 	}
 
 	if (!fromnetsave) // uglier hack

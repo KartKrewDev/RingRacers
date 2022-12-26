@@ -57,7 +57,6 @@
 #include "k_color.h"
 #include "k_respawn.h"
 #include "k_grandprix.h"
-#include "k_boss.h"
 #include "k_follower.h"
 #include "doomstat.h"
 #include "deh_tables.h"
@@ -2525,15 +2524,7 @@ void D_MapChange(INT32 mapnum, INT32 newgametype, boolean pencoremode, boolean r
 		FLS = false;
 
 	// Too lazy to change the input value for every instance of this function.......
-	if (bossinfo.boss == true)
-	{
-		pencoremode = bossinfo.encore;
-	}
-	else if (specialStage.active == true)
-	{
-		pencoremode = specialStage.encore;
-	}
-	else if (grandprixinfo.gp == true)
+	if (grandprixinfo.gp == true)
 	{
 		pencoremode = grandprixinfo.encore;
 	}
@@ -2843,7 +2834,15 @@ static void Command_Map_f(void)
 		if (mapheaderinfo[newmapnum-1])
 		{
 			// Let's just guess so we don't have to specify the gametype EVERY time...
-			newgametype = (mapheaderinfo[newmapnum-1]->typeoflevel & (TOL_BATTLE|TOL_BOSS)) ? GT_BATTLE : GT_RACE;
+			newgametype = G_GuessGametypeByTOL(mapheaderinfo[newmapnum-1]->typeoflevel);
+
+			if (newgametype == -1)
+			{
+				CONS_Alert(CONS_WARNING, M_GetText("%s (%s) doesn't support any known gametype!\n"), realmapname, G_BuildMapName(newmapnum));
+				Z_Free(realmapname);
+				Z_Free(mapname);
+				return;
+			}
 		}
 	}
 
@@ -2855,6 +2854,8 @@ static void Command_Map_f(void)
 		if (!M_SecretUnlocked(SECRET_ENCORE, false) && newencoremode == true && !usingcheats)
 		{
 			CONS_Alert(CONS_NOTICE, M_GetText("You haven't unlocked Encore Mode yet!\n"));
+			Z_Free(realmapname);
+			Z_Free(mapname);
 			return;
 		}
 	}
@@ -2875,7 +2876,7 @@ static void Command_Map_f(void)
 					mapheaderinfo[newmapnum-1]->typeoflevel & G_TOLFlag(newgametype)
 		))
 		{
-			CONS_Alert(CONS_WARNING, M_GetText("%s (%s) doesn't support %s mode!\n(Use -force to override)\n"), realmapname, G_BuildMapName(newmapnum), (gametype_cons_t[newgametype].strvalue));
+			CONS_Alert(CONS_WARNING, M_GetText("%s (%s) doesn't support %s mode!\n(Use -force to override)\n"), realmapname, G_BuildMapName(newmapnum), gametypes[newgametype]->name);
 			Z_Free(realmapname);
 			Z_Free(mapname);
 			return;
@@ -2940,35 +2941,18 @@ static void Command_Map_f(void)
 
 		grandprixinfo.eventmode = GPEVENT_NONE;
 
-		if (newgametype == GT_BATTLE)
+		if (gametypes[newgametype]->rules & (GTR_BOSS|GTR_CATCHER))
+		{
+			grandprixinfo.eventmode = GPEVENT_SPECIAL;
+		}
+		else if (newgametype != GT_RACE)
 		{
 			grandprixinfo.eventmode = GPEVENT_BONUS;
-
-			if (mapheaderinfo[newmapnum-1] &&
-				mapheaderinfo[newmapnum-1]->typeoflevel & TOL_BOSS)
-			{
-				bossinfo.boss = true;
-				bossinfo.encore = newencoremode;
-			}
-			else
-			{
-				bossinfo.boss = false;
-				K_ResetBossInfo();
-			}
 		}
-		else
+
+		if (!Playing())
 		{
-			if (mapheaderinfo[newmapnum-1] &&
-				mapheaderinfo[newmapnum-1]->typeoflevel & TOL_SPECIAL) // Special Stage
-			{
-				specialStage.active = true;
-				specialStage.encore = newencoremode;
-				grandprixinfo.eventmode = GPEVENT_SPECIAL;
-			}
-			else
-			{
-				specialStage.active = false;
-			}
+			multiplayer = true;
 		}
 	}
 
@@ -3022,7 +3006,7 @@ static void Got_Mapcmd(UINT8 **cp, INT32 playernum)
 	else if (gametype != lastgametype)
 		D_GameTypeChanged(lastgametype); // emulate consvar_t behavior for gametype
 
-	if (!(gametyperules & GTR_ENCORE) && !bossinfo.boss)
+	if (!(gametyperules & GTR_ENCORE))
 		pencoremode = false;
 
 	skipprecutscene = ((flags & (1<<2)) != 0);
@@ -5737,11 +5721,11 @@ void Command_Retry_f(void)
 	{
 		CONS_Printf(M_GetText("You must be in a level to use this.\n"));
 	}
-	else if (grandprixinfo.gp == false && bossinfo.boss == false)
+	else if (grandprixinfo.gp == false)
 	{
 		CONS_Printf(M_GetText("This only works in singleplayer games.\n"));
 	}
-	else if (grandprixinfo.gp == true && grandprixinfo.eventmode != GPEVENT_NONE)
+	else if (grandprixinfo.eventmode == GPEVENT_BONUS)
 	{
 		CONS_Printf(M_GetText("You can't retry right now!\n"));
 	}

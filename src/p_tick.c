@@ -646,7 +646,7 @@ void P_Ticker(boolean run)
 				P_PlayerAfterThink(&players[i]);
 
 		// Bosses have a punchy start, so no position.
-		if (bossinfo.boss == true)
+		if (K_CheckBossIntro() == true)
 		{
 			if (leveltime == 3)
 			{

@@ -39,7 +39,6 @@
 // SRB2kart
 #include "k_kart.h"
 #include "k_battle.h"
-#include "k_boss.h"
 #include "k_color.h"
 #include "k_respawn.h"
 #include "k_bot.h"
@@ -9366,7 +9365,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 		{
 			if (gametyperules & GTR_PAPERITEMS)
 			{
-				if (battlecapsules == true || bossinfo.boss == true)
+				if (battlecapsules == true)
 				{
 					;
 				}
@@ -12075,7 +12074,7 @@ static boolean P_AllowMobjSpawn(mapthing_t* mthing, mobjtype_t i)
 
 	// No bosses outside of a combat situation.
 	// (just in case we want boss arenas to do double duty as battle maps)
-	if (!bossinfo.boss && (mobjinfo[i].flags & MF_BOSS))
+	if (!(gametyperules & GTR_BOSS) && (mobjinfo[i].flags & MF_BOSS))
 	{
 		return false;
 	}
@@ -12096,7 +12095,7 @@ static mobjtype_t P_GetMobjtypeSubstitute(mapthing_t *mthing, mobjtype_t i)
 	if ((i == MT_RING) && (gametyperules & GTR_SPHERES))
 		return MT_BLUESPHERE;
 
-	if ((i == MT_RANDOMITEM) && (gametyperules & (GTR_PAPERITEMS|GTR_CIRCUIT)) == (GTR_PAPERITEMS|GTR_CIRCUIT) && !bossinfo.boss)
+	if ((i == MT_RANDOMITEM) && (gametyperules & (GTR_PAPERITEMS|GTR_CIRCUIT)) == (GTR_PAPERITEMS|GTR_CIRCUIT))
 		return MT_PAPERITEMSPOT;
 
 	return i;

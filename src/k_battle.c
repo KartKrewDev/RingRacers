@@ -2,7 +2,6 @@
 /// \brief SRB2Kart Battle Mode specific code
 
 #include "k_battle.h"
-#include "k_boss.h"
 #include "k_kart.h"
 #include "doomtype.h"
 #include "doomdata.h"
@@ -357,7 +356,7 @@ void K_RunPaperItemSpawners(void)
 	UINT8 pcount = 0;
 	INT16 i;
 
-	if (battlecapsules || bossinfo.boss)
+	if (battlecapsules)
 	{
 		// Gametype uses paper items, but this specific expression doesn't
 		return;
@@ -794,7 +793,7 @@ void K_BattleInit(boolean singleplayercontext)
 {
 	size_t i;
 
-	if ((gametyperules & GTR_CAPSULES) && singleplayercontext && !battlecapsules && !bossinfo.boss)
+	if ((gametyperules & GTR_CAPSULES) && singleplayercontext && !battlecapsules)
 	{
 		mapthing_t *mt = mapthings;
 		for (i = 0; i < nummapthings; i++, mt++)

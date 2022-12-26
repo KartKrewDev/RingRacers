@@ -34,7 +34,6 @@
 #include "k_battle.h"
 #include "k_pwrlv.h"
 #include "k_grandprix.h"
-#include "k_boss.h"
 #include "k_respawn.h"
 #include "p_spec.h"
 #include "k_objects.h"
