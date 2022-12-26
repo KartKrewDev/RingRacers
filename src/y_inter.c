@@ -754,10 +754,12 @@ void Y_DetermineIntermissionType(void)
 	intertype = gametypes[gametype]->intermission;
 
 	// TODO: special cases
-	if (gametype == GT_BATTLE)
+	if (intertype == int_battle)
 	{
-		if (grandprixinfo.gp == true && bossinfo.boss == false)
-			return;
+		if (grandprixinfo.gp == true && grandprixinfo.eventmode != GPEVENT_NONE)
+		{
+			intertype = int_none;
+		}
 		else
 		{
 			UINT8 i = 0, nump = 0;

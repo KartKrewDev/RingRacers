@@ -2498,7 +2498,7 @@ static void K_drawKartAccessibilityIcons(INT32 fx)
 
 	if (r_splitscreen < 2) // adjust to speedometer height
 	{
-		if (gametype == GT_BATTLE)
+		if (gametyperules & (GTR_BUMPERS|GTR_SPHERES))
 			fy -= 4;
 	}
 	else
@@ -2588,7 +2588,7 @@ static void K_drawKartSpeedometer(void)
 	numbers[1] = ((convSpeed / 10) % 10);
 	numbers[2] = (convSpeed % 10);
 
-	if (gametype == GT_BATTLE)
+	if (gametyperules & (GTR_BUMPERS|GTR_SPHERES))
 		battleoffset = -4;
 
 	V_DrawScaledPatch(LAPS_X, LAPS_Y-25 + battleoffset, V_HUDTRANS|V_SLIDEIN|splitflags, kp_speedometersticker);
@@ -2793,10 +2793,10 @@ static void K_drawKartBumpersOrKarma(void)
 			else
 				V_DrawMappedPatch(LAPS_X, LAPS_Y, V_HUDTRANS|V_SLIDEIN|splitflags, kp_bumpersticker, colormap);
 
-			if (bossinfo.boss)
-				V_DrawKartString(LAPS_X+47, LAPS_Y+3, V_HUDTRANS|V_SLIDEIN|splitflags, va("%d/%d", stplyr->bumpers, maxbumper));
-			else // TODO BETTER HUD
+			if (gametyperules & GTR_KARMA)  // TODO BETTER HUD
 				V_DrawKartString(LAPS_X+47, LAPS_Y+3, V_HUDTRANS|V_SLIDEIN|splitflags, va("%d/%d  %d", stplyr->bumpers, maxbumper, stplyr->overtimekarma / TICRATE));
+			else
+				V_DrawKartString(LAPS_X+47, LAPS_Y+3, V_HUDTRANS|V_SLIDEIN|splitflags, va("%d/%d", stplyr->bumpers, maxbumper));
 		}
 	}
 }
@@ -5026,10 +5026,10 @@ void K_drawKartHUD(void)
 		return;
 	}
 
-	battlefullscreen = ((gametyperules & (GTR_BUMPERS|GTR_KARMA)) == (GTR_BUMPERS|GTR_KARMA)
+	battlefullscreen = ((gametyperules & (GTR_BUMPERS))
 		&& (stplyr->exiting
 		|| (stplyr->bumpers <= 0
-		&& stplyr->karmadelay > 0
+		&& ((gametyperules & GTR_KARMA) && (stplyr->karmadelay > 0))
 		&& !(stplyr->pflags & PF_ELIMINATED)
 		&& stplyr->playerstate == PST_LIVE)));
 

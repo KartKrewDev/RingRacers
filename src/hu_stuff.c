@@ -2438,7 +2438,7 @@ static void HU_DrawRankings(void)
 			V_DrawCenteredString(256, 16, hilicol, va("%d", cv_pointlimit.value));
 		}
 	}
-	else
+	else if (gametyperules & GTR_CIRCUIT)
 	{
 		if (circuitmap)
 		{
