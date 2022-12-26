@@ -2521,7 +2521,7 @@ void D_MapChange(INT32 mapnum, INT32 newgametype, boolean pencoremode, boolean r
 	CONS_Debug(DBG_GAMELOGIC, "Map change: mapnum=%d gametype=%d pencoremode=%d resetplayers=%d delay=%d skipprecutscene=%d\n",
 	           mapnum, newgametype, pencoremode, resetplayers, delay, skipprecutscene);
 
-	if ((netgame || multiplayer) && !((gametype == newgametype) && (gametypes[newgametype]->rules & GTR_CAMPAIGN)))
+	if ((netgame || multiplayer) && (grandprixinfo.gp != false))
 		FLS = false;
 
 	// Too lazy to change the input value for every instance of this function.......
@@ -2884,8 +2884,7 @@ static void Command_Map_f(void)
 		{
 			fromlevelselect =
 				( netgame || multiplayer ) &&
-				newgametype == gametype    &&
-				gametypes[newgametype]->rules & GTR_CAMPAIGN;
+				grandprixinfo.gp != false;
 		}
 	}
 

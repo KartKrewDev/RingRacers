@@ -3004,7 +3004,7 @@ static gametype_t defaultgametypes[] =
 	{
 		"Race",
 		"GT_RACE",
-		GTR_CAMPAIGN|GTR_CIRCUIT|GTR_BOTS|GTR_ENCORE,
+		GTR_CIRCUIT|GTR_BOTS|GTR_ENCORE,
 		TOL_RACE,
 		int_race,
 		0,
@@ -4026,7 +4026,7 @@ void G_AfterIntermission(void)
 		G_HandleSaveLevel();
 	}
 
-	if ((gametyperules & GTR_CAMPAIGN) && mapheaderinfo[prevmap]->cutscenenum && !modeattacking && skipstats <= 1 && (gamecomplete || !(marathonmode & MA_NOCUTSCENES))) // Start a custom cutscene.
+	if ((grandprixinfo.gp == true) && mapheaderinfo[prevmap]->cutscenenum && !modeattacking && skipstats <= 1 && (gamecomplete || !(marathonmode & MA_NOCUTSCENES))) // Start a custom cutscene.
 		F_StartCustomCutscene(mapheaderinfo[prevmap]->cutscenenum-1, false, false);
 	else
 	{
@@ -4163,7 +4163,7 @@ void G_EndGame(void)
 	}
 
 	// Only do evaluation and credits in singleplayer contexts
-	if (!netgame && (gametyperules & GTR_CAMPAIGN))
+	if (!netgame && grandprixinfo.gp == true)
 	{
 		if (nextmap == NEXTMAP_CEREMONY) // end game with ceremony
 		{
@@ -4927,7 +4927,7 @@ void G_InitNew(UINT8 pencoremode, INT32 map, boolean resetplayer, boolean skippr
 	automapactive = false;
 	imcontinuing = false;
 
-	if ((gametyperules & GTR_CAMPAIGN) && !skipprecutscene && mapheaderinfo[gamemap-1]->precutscenenum && !modeattacking && !(marathonmode & MA_NOCUTSCENES)) // Start a custom cutscene.
+	if ((grandprixinfo.gp == true) && !skipprecutscene && mapheaderinfo[gamemap-1]->precutscenenum && !modeattacking && !(marathonmode & MA_NOCUTSCENES)) // Start a custom cutscene.
 		F_StartCustomCutscene(mapheaderinfo[gamemap-1]->precutscenenum-1, true, resetplayer);
 	else
 	{

@@ -508,9 +508,6 @@ enum GameTypeRules
 	GTR_NOTEAMS				= 1<<15, // Teams are forced off
 	GTR_TEAMSTARTS			= 1<<16, // Use team-based start positions
 
-	// Grand Prix rules
-	GTR_CAMPAIGN			= 1<<17, // Handles cup-based progression
-
 	// To be rearranged later
 	GTR_NOCUPSELECT			= 1<<20, // Your maps are not selected via cup. ...mutually exclusive with GTR_CAMPAIGN.
 	GTR_CLOSERPLAYERS		= 1<<21, // Buffs spindash and draft power to bring everyone together, nerfs invincibility and grow to prevent excessive combos
