@@ -723,37 +723,40 @@ void P_WriteThings(void)
 	const char * filename;
 	size_t i, length;
 	mapthing_t *mt;
-	UINT8 *savebuffer, *savebuf_p;
+	savebuffer_t save;
 	INT16 temp;
 
-	savebuf_p = savebuffer = (UINT8 *)malloc(nummapthings * sizeof (mapthing_t));
+	save.size = nummapthings * sizeof (mapthing_t);
+	save.p = save.buffer = (UINT8 *)malloc(nummapthings * sizeof (mapthing_t));
 
-	if (!savebuf_p)
+	if (!save.p)
 	{
 		CONS_Alert(CONS_ERROR, M_GetText("No more free memory for thing writing!\n"));
 		return;
 	}
 
+	save.end = save.buffer + save.size;
+
 	mt = mapthings;
 	for (i = 0; i < nummapthings; i++, mt++)
 	{
-		WRITEINT16(savebuf_p, mt->x);
-		WRITEINT16(savebuf_p, mt->y);
+		WRITEINT16(save.p, mt->x);
+		WRITEINT16(save.p, mt->y);
 
-		WRITEINT16(savebuf_p, mt->angle);
+		WRITEINT16(save.p, mt->angle);
 
 		temp = (INT16)(mt->type + ((INT16)mt->extrainfo << 12));
-		WRITEINT16(savebuf_p, temp);
-		WRITEUINT16(savebuf_p, mt->options);
+		WRITEINT16(save.p, temp);
+		WRITEUINT16(save.p, mt->options);
 	}
 
-	length = savebuf_p - savebuffer;
+	length = save.p - save.buffer;
 
 	filename = va("newthings-%s.lmp", G_BuildMapName(gamemap));
 
-	FIL_WriteFile(filename, savebuffer, length);
-	free(savebuffer);
-	savebuf_p = NULL;
+	FIL_WriteFile(filename, save.buffer, length);
+	free(save.buffer);
+	save.p = NULL;
 
 	CONS_Printf(M_GetText("%s saved.\n"), filename);
 }

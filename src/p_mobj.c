@@ -46,6 +46,7 @@
 #include "k_terrain.h"
 #include "k_collide.h"
 #include "k_objects.h"
+#include "k_grandprix.h"
 
 static CV_PossibleValue_t CV_BobSpeed[] = {{0, "MIN"}, {4*FRACUNIT, "MAX"}, {0, NULL}};
 consvar_t cv_movebob = CVAR_INIT ("movebob", "1.0", CV_FLOAT|CV_SAVE, CV_BobSpeed, NULL);
@@ -5306,10 +5307,24 @@ void P_RunOverlays(void)
 		mo->pitch = mo->target->pitch;
 		mo->roll = mo->target->roll;
 
+#if 0
+		mo->spritexoffset = mo->target->spritexoffset;
+		mo->spriteyoffset = mo->target->spriteyoffset;
+		mo->spritexscale = mo->target->spritexscale;
+		mo->spriteyscale = mo->target->spriteyscale;
+
+		mo->sprxoff = mo->target->sprxoff;
+		mo->spryoff = mo->target->spryoff;
+		mo->sprzoff = mo->target->sprzoff;
+#endif
+
+		mo->hitlag = mo->target->hitlag;
+		mo->eflags = (mo->eflags & ~MFE_DAMAGEHITLAG) | (mo->target->eflags & MFE_DAMAGEHITLAG);
+
 		if ((mo->flags & MF_DONTENCOREMAP) != (mo->target->flags & MF_DONTENCOREMAP))
 			mo->flags ^= MF_DONTENCOREMAP;
 
-		mo->dispoffset = mo->target->dispoffset + mo->info->dispoffset;
+		mo->dispoffset = mo->target->dispoffset;
 
 		if (!(mo->state->frame & FF_ANIMATE))
 		{
@@ -5329,6 +5344,7 @@ void P_RunOverlays(void)
 			// if you're using FF_ANIMATE on an overlay,
 			// then you're on your own.
 			zoffs = 0;
+			mo->dispoffset++;
 		}
 
 		P_UnsetThingPosition(mo);
@@ -6755,6 +6771,11 @@ static boolean P_MobjDeadThink(mobj_t *mobj)
 				S_StartSound(dust, sfx_s3k3d);
 		}
 		break;
+	case MT_SPECIAL_UFO_PIECE:
+	{
+		Obj_UFOPieceDead(mobj);
+		break;
+	}
 	default:
 		break;
 	}
@@ -7364,6 +7385,16 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 	case MT_DUELBOMB:
 	{
 		Obj_DuelBombThink(mobj);
+		break;
+	}
+	case MT_SPECIAL_UFO:
+	{
+		Obj_SpecialUFOThinker(mobj);
+		break;
+	}
+	case MT_SPECIAL_UFO_PIECE:
+	{
+		Obj_UFOPieceThink(mobj);
 		break;
 	}
 	case MT_EMERALD:
@@ -10121,6 +10152,7 @@ static void P_DefaultMobjShadowScale(mobj_t *thing)
 		case MT_PLAYER:
 		case MT_KART_LEFTOVER:
 		case MT_BATTLECAPSULE:
+		case MT_SPECIAL_UFO:
 			thing->shadowscale = FRACUNIT;
 			break;
 		case MT_SMALLMACE:
@@ -10978,6 +11010,11 @@ void P_RemoveMobj(mobj_t *mobj)
 		Obj_ShrinkGunRemoved(mobj);
 	}
 
+	if (mobj->type == MT_SPECIAL_UFO_PIECE)
+	{
+		Obj_UFOPieceRemoved(mobj);
+	}
+
 	mobj->health = 0; // Just because
 
 	// unlink from sector and block lists
@@ -11541,13 +11578,12 @@ void P_SpawnPlayer(INT32 playernum)
 	}
 	else if (p->bot)
 	{
-		/*
-		if (bonusgame || specialstage || boss)
+		if (grandprixinfo.gp == true && grandprixinfo.eventmode != GPEVENT_NONE)
 		{
-			// Bots should avoid
+			// Bots aren't supposed to be here.
 			p->spectator = true;
 		}
-		*/
+		else
 		{
 			// No point in a spectating bot!
 			p->spectator = false;
@@ -12018,7 +12054,7 @@ static boolean P_AllowMobjSpawn(mapthing_t* mthing, mobjtype_t i)
 
 				// in record attack, only spawn ring capsules
 				// (behavior can be inverted with the Extra flag, i.e. item capsule spawns and ring capsule does not)
-				if (modeattacking
+				if (K_TimeAttackRules() == true
 				&& (!(mthing->args[2] & TMICF_INVERTTIMEATTACK) == !isRingCapsule))
 					return false;
 			}

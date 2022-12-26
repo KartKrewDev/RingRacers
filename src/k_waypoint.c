@@ -1071,6 +1071,45 @@ static boolean K_WaypointPathfindReachedEnd(void *data, void *setupData)
 }
 
 /*--------------------------------------------------
+	static boolean K_WaypointPathfindNextValid(void *data, void *setupData)
+
+		Returns if the current waypoint data has a next waypoint.
+
+	Input Arguments:-
+		data - Should point to a pathfindnode_t to compare
+		setupData - Should point to the pathfindsetup_t to compare
+
+	Return:-
+		True if the waypoint has a next waypoint, false otherwise.
+--------------------------------------------------*/
+static boolean K_WaypointPathfindNextValid(void *data, void *setupData)
+{
+	boolean nextValid = false;
+
+	if (data == NULL || setupData == NULL)
+	{
+		CONS_Debug(DBG_GAMELOGIC, "K_WaypointPathfindNextValid received NULL data.\n");
+	}
+	else
+	{
+		pathfindnode_t *node = (pathfindnode_t *)data;
+		pathfindsetup_t *setup = (pathfindsetup_t *)setupData;
+		waypoint_t *wp = (waypoint_t *)node->nodedata;
+
+		if (setup->getconnectednodes == K_WaypointPathfindGetPrev)
+		{
+			nextValid = (wp->numprevwaypoints > 0U);
+		}
+		else
+		{
+			nextValid = (wp->numnextwaypoints > 0U);
+		}
+	}
+
+	return nextValid;
+}
+
+/*--------------------------------------------------
 	static boolean K_WaypointPathfindReachedGScore(void *data, void *setupData)
 
 		Returns if the current waypoint data reaches our end G score.
@@ -1094,8 +1133,9 @@ static boolean K_WaypointPathfindReachedGScore(void *data, void *setupData)
 	{
 		pathfindnode_t *node = (pathfindnode_t *)data;
 		pathfindsetup_t *setup = (pathfindsetup_t *)setupData;
+		boolean nextValid = K_WaypointPathfindNextValid(data, setupData);
 
-		scoreReached = (node->gscore >= setup->endgscore);
+		scoreReached = (node->gscore >= setup->endgscore) || (nextValid == false);
 	}
 
 	return scoreReached;
@@ -1127,8 +1167,9 @@ static boolean K_WaypointPathfindReachedGScoreSpawnable(void *data, void *setupD
 		pathfindnode_t *node = (pathfindnode_t *)data;
 		pathfindsetup_t *setup = (pathfindsetup_t *)setupData;
 		waypoint_t *wp = (waypoint_t *)node->nodedata;
+		boolean nextValid = K_WaypointPathfindNextValid(data, setupData);
 
-		scoreReached = (node->gscore >= setup->endgscore);
+		scoreReached = (node->gscore >= setup->endgscore) || (nextValid == false);
 		spawnable = K_GetWaypointIsSpawnpoint(wp);
 	}
 
@@ -1251,13 +1292,6 @@ boolean K_PathfindThruCircuit(
 			"K_PathfindThruCircuit: sourcewaypoint with ID %d has no next waypoint\n",
 			K_GetWaypointID(sourcewaypoint));
 	}
-	else if (((huntbackwards == false) && (finishline->numprevwaypoints == 0))
-		|| ((huntbackwards == true) && (finishline->numnextwaypoints == 0)))
-	{
-		CONS_Debug(DBG_GAMELOGIC,
-			"K_PathfindThruCircuit: finishline with ID %d has no previous waypoint\n",
-			K_GetWaypointID(finishline));
-	}
 	else
 	{
 		pathfindsetup_t            pathfindsetup   = {0};
@@ -1333,13 +1367,6 @@ boolean K_PathfindThruCircuitSpawnable(
 		CONS_Debug(DBG_GAMELOGIC,
 			"K_PathfindThruCircuitSpawnable: sourcewaypoint with ID %d has no next waypoint\n",
 			K_GetWaypointID(sourcewaypoint));
-	}
-	else if (((huntbackwards == false) && (finishline->numprevwaypoints == 0))
-		|| ((huntbackwards == true) && (finishline->numnextwaypoints == 0)))
-	{
-		CONS_Debug(DBG_GAMELOGIC,
-			"K_PathfindThruCircuitSpawnable: finishline with ID %d has no previous waypoint\n",
-			K_GetWaypointID(finishline));
 	}
 	else
 	{

@@ -110,7 +110,6 @@ static UINT8 K_KartItemOddsRace[NUMKARTRESULTS-1][8] =
 
 static UINT8 K_KartItemOddsBattle[NUMKARTRESULTS-1][2] =
 {
-	//K  L
 	{ 2, 1 }, // Sneaker
 	{ 0, 0 }, // Rocket Sneaker
 	{ 4, 1 }, // Invincibility
@@ -141,6 +140,40 @@ static UINT8 K_KartItemOddsBattle[NUMKARTRESULTS-1][2] =
 	{ 1, 1 }, // Orbinaut x4
 	{ 5, 1 }, // Jawz x2
 	{ 0, 0 }  // Gachabom x3
+};
+
+static UINT8 K_KartItemOddsSpecial[NUMKARTRESULTS-1][4] =
+{
+	{ 1, 1, 0, 0 }, // Sneaker
+	{ 0, 0, 0, 0 }, // Rocket Sneaker
+	{ 0, 0, 0, 0 }, // Invincibility
+	{ 0, 0, 0, 0 }, // Banana
+	{ 0, 0, 0, 0 }, // Eggman Monitor
+	{ 1, 1, 0, 0 }, // Orbinaut
+	{ 1, 1, 0, 0 }, // Jawz
+	{ 0, 0, 0, 0 }, // Mine
+	{ 0, 0, 0, 0 }, // Land Mine
+	{ 0, 0, 0, 0 }, // Ballhog
+	{ 0, 0, 0, 1 }, // Self-Propelled Bomb
+	{ 0, 0, 0, 0 }, // Grow
+	{ 0, 0, 0, 0 }, // Shrink
+	{ 0, 0, 0, 0 }, // Lightning Shield
+	{ 0, 0, 0, 0 }, // Bubble Shield
+	{ 0, 0, 0, 0 }, // Flame Shield
+	{ 0, 0, 0, 0 }, // Hyudoro
+	{ 0, 0, 0, 0 }, // Pogo Spring
+	{ 0, 0, 0, 0 }, // Super Ring
+	{ 0, 0, 0, 0 }, // Kitchen Sink
+	{ 0, 0, 0, 0 }, // Drop Target
+	{ 0, 0, 0, 0 }, // Garden Top
+	{ 0, 0, 0, 0 }, // Gachabom
+	{ 0, 1, 1, 0 }, // Sneaker x2
+	{ 0, 0, 1, 1 }, // Sneaker x3
+	{ 0, 0, 0, 0 }, // Banana x3
+	{ 0, 1, 1, 0 }, // Orbinaut x3
+	{ 0, 0, 1, 1 }, // Orbinaut x4
+	{ 0, 0, 1, 1 }, // Jawz x2
+	{ 0, 0, 0, 0 }  // Gachabom x3
 };
 
 static kartitems_t K_KartItemReelTimeAttack[] =
@@ -326,7 +359,6 @@ static UINT32 K_GetItemRouletteDistance(const player_t *player, UINT8 numPlayers
 		return 0;
 	}
 
-#if 0
 	if (specialStage.active == true)
 	{
 		UINT32 ufoDis = K_GetSpecialUFODistance();
@@ -343,7 +375,6 @@ static UINT32 K_GetItemRouletteDistance(const player_t *player, UINT8 numPlayers
 		}
 	}
 	else
-#endif
 	{
 		UINT8 i;
 		for (i = 0; i < MAXPLAYERS; i++)
@@ -475,6 +506,11 @@ INT32 K_KartGetItemOdds(const player_t *player, itemroulette_t *const roulette, 
 		I_Assert(pos < 2); // DO NOT allow positions past the bounds of the table
 		newOdds = K_KartItemOddsBattle[item-1][pos];
 	}
+	else if (specialStage.active == true)
+	{
+		I_Assert(pos < 4); // Ditto
+		newOdds = K_KartItemOddsSpecial[item-1][pos];
+	}
 	else
 	{
 		I_Assert(pos < 8); // Ditto
@@ -537,29 +573,32 @@ INT32 K_KartGetItemOdds(const player_t *player, itemroulette_t *const roulette, 
 				return 0;
 			}
 
-			if (roulette->firstDist < ENDDIST*2 // No SPB when 1st is almost done
-				|| position == 1) // No SPB for 1st ever
+			if (specialStage.active == false)
 			{
-				return 0;
-			}
-			else
-			{
-				const UINT32 dist = max(0, ((signed)roulette->secondToFirst) - SPBSTARTDIST);
-				const UINT32 distRange = SPBFORCEDIST - SPBSTARTDIST;
-				const fixed_t maxOdds = 20 << FRACBITS;
-				fixed_t multiplier = FixedDiv(dist, distRange);
-
-				if (multiplier < 0)
+				if (roulette->firstDist < ENDDIST*2 // No SPB when 1st is almost done
+					|| position == 1) // No SPB for 1st ever
 				{
-					multiplier = 0;
+					return 0;
 				}
-
-				if (multiplier > FRACUNIT)
+				else
 				{
-					multiplier = FRACUNIT;
-				}
+					const UINT32 dist = max(0, ((signed)roulette->secondToFirst) - SPBSTARTDIST);
+					const UINT32 distRange = SPBFORCEDIST - SPBSTARTDIST;
+					const fixed_t maxOdds = 20 << FRACBITS;
+					fixed_t multiplier = FixedDiv(dist, distRange);
 
-				newOdds = FixedMul(maxOdds, multiplier);
+					if (multiplier < 0)
+					{
+						multiplier = 0;
+					}
+
+					if (multiplier > FRACUNIT)
+					{
+						multiplier = FRACUNIT;
+					}
+
+					newOdds = FixedMul(maxOdds, multiplier);
+				}
 			}
 			break;
 		}
@@ -666,6 +705,11 @@ static UINT8 K_FindUseodds(const player_t *player, itemroulette_t *const roulett
 			oddsValid[i] = false;
 			continue;
 		}
+		else if (specialStage.active == true && i > 3)
+		{
+			oddsValid[i] = false;
+			continue;
+		}
 
 		for (j = 1; j < NUMKARTRESULTS; j++)
 		{
@@ -690,14 +734,24 @@ static UINT8 K_FindUseodds(const player_t *player, itemroulette_t *const roulett
 	}
 	else
 	{
-		SETUPDISTTABLE(0,1);
-		SETUPDISTTABLE(1,1);
-		SETUPDISTTABLE(2,1);
-		SETUPDISTTABLE(3,2);
-		SETUPDISTTABLE(4,2);
-		SETUPDISTTABLE(5,3);
-		SETUPDISTTABLE(6,3);
-		SETUPDISTTABLE(7,1);
+		if (specialStage.active == true) // Special Stages
+		{
+			SETUPDISTTABLE(0,2);
+			SETUPDISTTABLE(1,2);
+			SETUPDISTTABLE(2,3);
+			SETUPDISTTABLE(3,1);
+		}
+		else
+		{
+			SETUPDISTTABLE(0,1);
+			SETUPDISTTABLE(1,1);
+			SETUPDISTTABLE(2,1);
+			SETUPDISTTABLE(3,2);
+			SETUPDISTTABLE(4,2);
+			SETUPDISTTABLE(5,3);
+			SETUPDISTTABLE(6,3);
+			SETUPDISTTABLE(7,1);
+		}
 
 		for (i = 0; i < totalSize; i++)
 		{
@@ -750,6 +804,11 @@ static boolean K_ForcedSPB(const player_t *player, itemroulette_t *const roulett
 	}
 
 	if (!(gametyperules & GTR_CIRCUIT))
+	{
+		return false;
+	}
+
+	if (specialStage.active == true)
 	{
 		return false;
 	}
@@ -845,19 +904,36 @@ static void K_InitRoulette(itemroulette_t *const roulette)
 			roulette->exiting++;
 		}
 
-		if (players[i].position == 1)
+		if (specialStage.active == true)
 		{
-			roulette->firstDist = K_UndoMapScaling(players[i].distancetofinish);
+			UINT32 dis = K_UndoMapScaling(players[i].distancetofinish);
+			if (dis < roulette->secondDist)
+			{
+				roulette->secondDist = dis;
+			}
 		}
-
-		if (players[i].position == 2)
+		else
 		{
-			roulette->secondDist = K_UndoMapScaling(players[i].distancetofinish);
+			if (players[i].position == 1)
+			{
+				roulette->firstDist = K_UndoMapScaling(players[i].distancetofinish);
+			}
+
+			if (players[i].position == 2)
+			{
+				roulette->secondDist = K_UndoMapScaling(players[i].distancetofinish);
+			}
 		}
 	}
 
+	if (specialStage.active == true)
+	{
+		roulette->firstDist = K_UndoMapScaling(K_GetSpecialUFODistance());
+	}
+
 	// Calculate 2nd's distance from 1st, for SPB
-	if (roulette->firstDist != UINT32_MAX && roulette->secondDist != UINT32_MAX)
+	if (roulette->firstDist != UINT32_MAX && roulette->secondDist != UINT32_MAX
+		&& roulette->secondDist > roulette->firstDist)
 	{
 		roulette->secondToFirst = roulette->secondDist - roulette->firstDist;
 		roulette->secondToFirst = K_ScaleItemDistance(roulette->secondToFirst, 16 - roulette->playing); // Reversed scaling
@@ -964,7 +1040,7 @@ static void K_CalculateRouletteSpeed(itemroulette_t *const roulette)
 	fixed_t progress = 0;
 	fixed_t total = 0;
 
-	if (modeattacking || roulette->playing <= 1)
+	if (K_TimeAttackRules() == true)
 	{
 		// Time Attack rules; use a consistent speed.
 		roulette->tics = roulette->speed = ROULETTE_SPEED_TIMEATTACK;
@@ -1047,7 +1123,7 @@ void K_FillItemRouletteData(const player_t *player, itemroulette_t *const roulet
 
 		return;
 	}
-	else if (modeattacking || roulette->playing <= 1)
+	else if (K_TimeAttackRules() == true)
 	{
 		switch (gametype)
 		{

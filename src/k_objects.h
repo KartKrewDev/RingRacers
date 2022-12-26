@@ -58,4 +58,15 @@ void Obj_DuelBombInit(mobj_t *bomb);
 mobj_t *Obj_SpawnBrolyKi(mobj_t *source, tic_t duration);
 void Obj_BrolyKiThink(mobj_t *ki);
 
+/* Special Stage UFO */
+waypoint_t *K_GetSpecialUFOWaypoint(mobj_t *ufo);
+void Obj_SpecialUFOThinker(mobj_t *ufo);
+boolean Obj_SpecialUFODamage(mobj_t *ufo, mobj_t *inflictor, mobj_t *source, UINT8 damageType);
+void Obj_PlayerUFOCollide(mobj_t *ufo, mobj_t *other);
+void Obj_UFOPieceThink(mobj_t *piece);
+void Obj_UFOPieceDead(mobj_t *piece);
+void Obj_UFOPieceRemoved(mobj_t *piece);
+mobj_t *Obj_CreateSpecialUFO(void);
+UINT32 K_GetSpecialUFODistance(void);
+
 #endif/*k_objects_H*/

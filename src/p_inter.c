@@ -386,11 +386,6 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 				special->target->player->karmadelay = comebacktime;
 			}
 			return;
-		case MT_SPB:
-			{
-				Obj_SPBTouch(special, toucher);
-				return;
-			}
 		case MT_DUELBOMB:
 			{
 				Obj_DuelBombTouch(special, toucher);
@@ -408,6 +403,18 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 
 			player->emeralds |= special->extravalue1;
 			K_CheckEmeralds(player);
+			break;
+		case MT_SPECIAL_UFO:
+			if (!P_CanPickupItem(player, 0))
+				return;
+
+			if (special->threshold > 0)
+				return;
+
+			if (toucher->hitlag > 0)
+				return;
+
+			CONS_Printf("You win!\n");
 			break;
 		/*
 		case MT_EERIEFOG:
@@ -1402,7 +1409,7 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 			INT16 spacing = (target->radius >> 1) / target->scale;
 
 			// set respawn fuse
-			if (modeattacking) // no respawns
+			if (K_TimeAttackRules() == true) // no respawns
 				;
 			else if (target->threshold == KITEM_SUPERRING)
 				target->fuse = 20*TICRATE;
@@ -2289,7 +2296,7 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 
 			K_PlayPainSound(target, source);
 
-			if ((hardhit == true) || (cv_kartdebughuddrop.value && !modeattacking))
+			if ((hardhit == true) || cv_kartdebughuddrop.value)
 			{
 				K_DropItems(player);
 			}
@@ -2311,6 +2318,11 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 	}
 	else
 	{
+		if (target->type == MT_SPECIAL_UFO)
+		{
+			return Obj_SpecialUFODamage(target, inflictor, source, damagetype);
+		}
+
 		if (damagetype & DMG_STEAL)
 		{
 			// Not a player, steal damage is intended to not do anything

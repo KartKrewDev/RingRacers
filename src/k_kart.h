@@ -56,6 +56,9 @@ UINT8 K_ItemResultToAmount(SINT8 getitem);
 tic_t K_GetItemCooldown(SINT8 itemResult);
 void K_SetItemCooldown(SINT8 itemResult, tic_t time);
 void K_RunItemCooldowns(void);
+
+boolean K_TimeAttackRules(void);
+
 fixed_t K_GetMobjWeight(mobj_t *mobj, mobj_t *against);
 boolean K_KartBouncing(mobj_t *mobj1, mobj_t *mobj2);
 boolean K_KartSolidBounce(mobj_t *bounceMobj, mobj_t *solidMobj);
@@ -118,7 +121,7 @@ void K_UpdateHnextList(player_t *player, boolean clean);
 void K_DropHnextList(player_t *player, boolean keepshields);
 void K_RepairOrbitChain(mobj_t *orbit);
 void K_CalculateBananaSlope(mobj_t *mobj, fixed_t x, fixed_t y, fixed_t z, fixed_t radius, fixed_t height, boolean flip, boolean player);
-player_t *K_FindJawzTarget(mobj_t *actor, player_t *source, angle_t range);
+mobj_t *K_FindJawzTarget(mobj_t *actor, player_t *source, angle_t range);
 INT32 K_GetKartRingPower(player_t *player, boolean boosted);
 void K_UpdateDistanceFromFinishLine(player_t *const player);
 boolean K_CheckPlayersRespawnColliding(INT32 playernum, fixed_t x, fixed_t y);

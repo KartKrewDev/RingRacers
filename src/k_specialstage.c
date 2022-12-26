@@ -20,6 +20,7 @@
 #include "st_stuff.h"
 #include "z_zone.h"
 #include "k_waypoint.h"
+#include "k_objects.h"
 
 struct specialStage specialStage;
 
@@ -43,6 +44,7 @@ void K_InitSpecialStage(void)
 	INT32 i;
 
 	specialStage.beamDist = UINT32_MAX; // TODO: make proper value
+	P_SetTarget(&specialStage.ufo, Obj_CreateSpecialUFO());
 
 	for (i = 0; i < MAXPLAYERS; i++)
 	{

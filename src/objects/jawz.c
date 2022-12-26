@@ -24,6 +24,7 @@
 #include "../k_waypoint.h"
 #include "../k_respawn.h"
 #include "../k_collide.h"
+#include "../k_specialstage.h"
 
 #define MAX_JAWZ_TURN (ANGLE_90 / 15) // We can turn a maximum of 6 degrees per frame at regular max speed
 
@@ -140,17 +141,21 @@ static void JawzChase(mobj_t *th, boolean grounded)
 
 	if (jawz_chase(th) == NULL || P_MobjWasRemoved(jawz_chase(th)) == true)
 	{
+		mobj_t *newChase = NULL;
+		player_t *owner = NULL;
+
 		th->angle = K_MomentumAngle(th);
 
-		if (jawz_owner(th) != NULL && P_MobjWasRemoved(jawz_owner(th)) == false
-			&& jawz_owner(th)->player != NULL)
+		if ((jawz_owner(th) != NULL && P_MobjWasRemoved(jawz_owner(th)) == false)
+			&& (jawz_owner(th)->player != NULL))
 		{
-			player_t *newPlayer = K_FindJawzTarget(th, jawz_owner(th)->player, ANGLE_90);
+			owner = jawz_owner(th)->player;
+		}
 
-			if (newPlayer != NULL)
-			{
-				P_SetTarget(&jawz_chase(th), newPlayer->mo);
-			}
+		newChase = K_FindJawzTarget(th, owner, ANGLE_90);
+		if (newChase != NULL)
+		{
+			P_SetTarget(&jawz_chase(th), newChase);
 		}
 	}
 
@@ -179,6 +184,11 @@ static void JawzChase(mobj_t *th, boolean grounded)
 
 		P_Thrust(th, th->angle, thrustamount);
 	}
+}
+
+static boolean JawzSteersBetter(void)
+{
+	return !!!(gametyperules & GTR_CIRCUIT);
 }
 
 void Obj_JawzThink(mobj_t *th)
@@ -211,7 +221,7 @@ void Obj_JawzThink(mobj_t *th)
 		ghost->colorized = true;
 	}
 
-	if (!(gametyperules & GTR_CIRCUIT))
+	if (JawzSteersBetter() == true)
 	{
 		th->friction = max(0, 3 * th->friction / 4);
 	}

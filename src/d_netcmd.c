@@ -2853,7 +2853,7 @@ static void Command_Map_f(void)
 		if (mapheaderinfo[newmapnum-1])
 		{
 			// Let's just guess so we don't have to specify the gametype EVERY time...
-			newgametype = (mapheaderinfo[newmapnum-1]->typeoflevel & TOL_RACE) ? GT_RACE : GT_BATTLE;
+			newgametype = (mapheaderinfo[newmapnum-1]->typeoflevel & (TOL_BATTLE|TOL_BOSS)) ? GT_BATTLE : GT_RACE;
 		}
 	}
 
@@ -2902,11 +2902,59 @@ static void Command_Map_f(void)
 
 	if (!(netgame || multiplayer))
 	{
+		grandprixinfo.gamespeed = (cv_kartspeed.value == KARTSPEED_AUTO ? KARTSPEED_NORMAL : cv_kartspeed.value);
+		grandprixinfo.masterbots = false;
+
+		if (option_skill)
+		{
+			const char *skillname = COM_Argv(option_skill + 1);
+			INT32 newskill = -1;
+			INT32 j;
+
+			for (j = 0; gpdifficulty_cons_t[j].strvalue; j++)
+			{
+				if (!strcasecmp(gpdifficulty_cons_t[j].strvalue, skillname))
+				{
+					newskill = (INT16)gpdifficulty_cons_t[j].value;
+					break;
+				}
+			}
+
+			if (!gpdifficulty_cons_t[j].strvalue) // reached end of the list with no match
+			{
+				INT32 num = atoi(COM_Argv(option_skill + 1)); // assume they gave us a skill number, which is okay too
+				if (num >= KARTSPEED_EASY && num <= KARTGP_MASTER)
+					newskill = (INT16)num;
+			}
+
+			if (newskill != -1)
+			{
+				if (newskill == KARTGP_MASTER)
+				{
+					grandprixinfo.gamespeed = KARTSPEED_HARD;
+					grandprixinfo.masterbots = true;
+				}
+				else
+				{
+					grandprixinfo.gamespeed = newskill;
+					grandprixinfo.masterbots = false;
+				}
+			}
+		}
+
+		grandprixinfo.encore = newencoremode;
+
+		grandprixinfo.gp = true;
+		grandprixinfo.roundnum = 0;
+		grandprixinfo.cup = NULL;
+		grandprixinfo.wonround = false;
+		grandprixinfo.initalize = true;
+
+		grandprixinfo.eventmode = GPEVENT_NONE;
+
 		if (newgametype == GT_BATTLE)
 		{
-			grandprixinfo.gp = false;
-			specialStage.active = false;
-			K_ResetBossInfo();
+			grandprixinfo.eventmode = GPEVENT_BONUS;
 
 			if (mapheaderinfo[newmapnum-1] &&
 				mapheaderinfo[newmapnum-1]->typeoflevel & TOL_BOSS)
@@ -2914,71 +2962,24 @@ static void Command_Map_f(void)
 				bossinfo.boss = true;
 				bossinfo.encore = newencoremode;
 			}
+			else
+			{
+				bossinfo.boss = false;
+				K_ResetBossInfo();
+			}
 		}
 		else
 		{
 			if (mapheaderinfo[newmapnum-1] &&
 				mapheaderinfo[newmapnum-1]->typeoflevel & TOL_SPECIAL) // Special Stage
 			{
-				grandprixinfo.gp = false;
-				bossinfo.boss = false;
-
 				specialStage.active = true;
 				specialStage.encore = newencoremode;
+				grandprixinfo.eventmode = GPEVENT_SPECIAL;
 			}
-			else // default GP
+			else
 			{
-				grandprixinfo.gamespeed = (cv_kartspeed.value == KARTSPEED_AUTO ? KARTSPEED_NORMAL : cv_kartspeed.value);
-				grandprixinfo.masterbots = false;
-
-				if (option_skill)
-				{
-					const char *skillname = COM_Argv(option_skill + 1);
-					INT32 newskill = -1;
-					INT32 j;
-
-					for (j = 0; gpdifficulty_cons_t[j].strvalue; j++)
-					{
-						if (!strcasecmp(gpdifficulty_cons_t[j].strvalue, skillname))
-						{
-							newskill = (INT16)gpdifficulty_cons_t[j].value;
-							break;
-						}
-					}
-
-					if (!gpdifficulty_cons_t[j].strvalue) // reached end of the list with no match
-					{
-						INT32 num = atoi(COM_Argv(option_skill + 1)); // assume they gave us a skill number, which is okay too
-						if (num >= KARTSPEED_EASY && num <= KARTGP_MASTER)
-							newskill = (INT16)num;
-					}
-
-					if (newskill != -1)
-					{
-						if (newskill == KARTGP_MASTER)
-						{
-							grandprixinfo.gamespeed = KARTSPEED_HARD;
-							grandprixinfo.masterbots = true;
-						}
-						else
-						{
-							grandprixinfo.gamespeed = newskill;
-							grandprixinfo.masterbots = false;
-						}
-					}
-				}
-
-				grandprixinfo.encore = newencoremode;
-
-				grandprixinfo.gp = true;
-				grandprixinfo.roundnum = 0;
-				grandprixinfo.cup = NULL;
-				grandprixinfo.wonround = false;
-
-				bossinfo.boss = false;
 				specialStage.active = false;
-
-				grandprixinfo.initalize = true;
 			}
 		}
 	}
@@ -5775,10 +5776,9 @@ static void Command_Togglemodified_f(void)
 	modifiedgame = !modifiedgame;
 }
 
-extern UINT8 *save_p;
 static void Command_Archivetest_f(void)
 {
-	UINT8 *buf;
+	savebuffer_t save;
 	UINT32 i, wrote;
 	thinker_t *th;
 	if (gamestate != GS_LEVEL)
@@ -5794,28 +5794,30 @@ static void Command_Archivetest_f(void)
 			((mobj_t *)th)->mobjnum = i++;
 
 	// allocate buffer
-	buf = save_p = ZZ_Alloc(1024);
+	save.size = 1024;
+	save.buffer = save.p = ZZ_Alloc(save.size);
+	save.end = save.buffer + save.size;
 
 	// test archive
 	CONS_Printf("LUA_Archive...\n");
-	LUA_Archive(&save_p);
-	WRITEUINT8(save_p, 0x7F);
-	wrote = (UINT32)(save_p-buf);
+	LUA_Archive(&save, true);
+	WRITEUINT8(save.p, 0x7F);
+	wrote = (UINT32)(save.p - save.buffer);
 
 	// clear Lua state, so we can really see what happens!
 	CONS_Printf("Clearing state!\n");
 	LUA_ClearExtVars();
 
 	// test unarchive
-	save_p = buf;
+	save.p = save.buffer;
 	CONS_Printf("LUA_UnArchive...\n");
-	LUA_UnArchive(&save_p);
-	i = READUINT8(save_p);
-	if (i != 0x7F || wrote != (UINT32)(save_p-buf))
-		CONS_Printf("Savegame corrupted. (write %u, read %u)\n", wrote, (UINT32)(save_p-buf));
+	LUA_UnArchive(&save, true);
+	i = READUINT8(save.p);
+	if (i != 0x7F || wrote != (UINT32)(save.p - save.buffer))
+		CONS_Printf("Savegame corrupted. (write %u, read %u)\n", wrote, (UINT32)(save.p - save.buffer));
 
 	// free buffer
-	Z_Free(buf);
+	Z_Free(save.buffer);
 	CONS_Printf("Done. No crash.\n");
 }
 #endif
