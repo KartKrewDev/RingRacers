@@ -338,7 +338,7 @@ void K_UpdateGrandPrixBots(void)
 			continue;
 		}
 
-		players[i].spectator = (grandprixinfo.eventmode != GPEVENT_NONE);
+		players[i].spectator = !(gametyperules & GTR_BOTS) || (grandprixinfo.eventmode != GPEVENT_NONE);
 	}
 
 	// Find the rival.
