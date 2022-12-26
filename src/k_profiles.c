@@ -219,12 +219,14 @@ void PR_SaveProfiles(void)
 	UINT8 i, j, k;
 	savebuffer_t save;
 
-	save.p = save.buffer = (UINT8 *)malloc(sizeof(UINT32) + (numprofiles * sizeof(profile_t)));
+	save.size = sizeof(UINT32) + (numprofiles * sizeof(profile_t));
+	save.p = save.buffer = (UINT8 *)malloc(save.size);
 	if (!save.p)
 	{
 		I_Error("No more free memory for saving profiles\n");
 		return;
 	}
+	save.end = save.buffer + save.size;
 
 	// Add header.
 	WRITESTRINGN(save.p, PROFILEHEADER, headerlen);
@@ -272,7 +274,6 @@ void PR_SaveProfiles(void)
 		I_Error("Couldn't save profiles. Are you out of Disk space / playing in a protected folder?");
 	}
 	free(save.buffer);
-	save.p = save.buffer = NULL;
 }
 
 void PR_LoadProfiles(void)

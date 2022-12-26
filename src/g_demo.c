@@ -72,7 +72,6 @@ tic_t demostarttime; // for comparative timing purposes
 static char demoname[MAX_WADPATH];
 static savebuffer_t demobuf;
 static UINT8 *demotime_p, *demoinfo_p;
-static UINT8 *demoend;
 static UINT8 demoflags;
 boolean demosynced = true; // console warning message
 
@@ -151,7 +150,7 @@ demoghost *ghosts = NULL;
 #define ZT_FLAGS	0x80
 // OUT OF ZIPTICS...
 
-#define DEMOMARKER 0x80 // demoend
+#define DEMOMARKER 0x80 // demobuf.end
 
 UINT8 demo_extradata[MAXPLAYERS];
 UINT8 demo_writerng; // 0=no, 1=yes, 2=yes but on a timeout
@@ -630,7 +629,7 @@ void G_WriteDemoTiccmd(ticcmd_t *cmd, INT32 playernum)
 
 	// attention here for the ticcmd size!
 	// latest demos with mouse aiming byte in ticcmd
-	if (!(demoflags & DF_GHOST) && ziptic_p > demoend - 9)
+	if (!(demoflags & DF_GHOST) && ziptic_p > demobuf.end - 9)
 	{
 		G_CheckDemoStatus(); // no more space
 		return;
@@ -703,7 +702,7 @@ void G_WriteAllGhostTics(void)
 
 	// attention here for the ticcmd size!
 	// latest demos with mouse aiming byte in ticcmd
-	if (demobuf.p >= demoend - (13 + 9 + 9))
+	if (demobuf.p >= demobuf.end - (13 + 9 + 9))
 	{
 		G_CheckDemoStatus(); // no more space
 		return;
@@ -1995,7 +1994,7 @@ void G_WriteMetalTic(mobj_t *metal)
 
 	// attention here for the ticcmd size!
 	// latest demos with mouse aiming byte in ticcmd
-	if (demobuf.p >= demoend - 32)
+	if (demobuf.p >= demobuf.end - 32)
 	{
 		G_StopMetalRecording(false); // no more space
 		return;
@@ -2013,13 +2012,17 @@ void G_RecordDemo(const char *name)
 	strcat(demoname, ".lmp");
 	//@TODO make a maxdemosize cvar
 	maxsize = 1024*1024*2;
+
 	if (M_CheckParm("-maxdemo") && M_IsNextParm())
 		maxsize = atoi(M_GetNextParm()) * 1024;
+
 //	if (demobuf.buffer)
-//		free(demobuf.buffer);
+//		P_SaveBufferFree(&demobuf);
+
+	demobuf.size = maxsize;
+	demobuf.buffer = (UINT8 *)malloc(maxsize);
 	demobuf.p = NULL;
-	demobuf.buffer = malloc(maxsize);
-	demoend = demobuf.buffer + maxsize;
+	demobuf.end = demobuf.buffer + demobuf.size;
 
 	demo.recording = true;
 }
@@ -2030,9 +2033,12 @@ void G_RecordMetal(void)
 	maxsize = 1024*1024;
 	if (M_CheckParm("-maxdemo") && M_IsNextParm())
 		maxsize = atoi(M_GetNextParm()) * 1024;
+
+	demobuf.size = maxsize;
+	demobuf.buffer = (UINT8 *)malloc(maxsize);
 	demobuf.p = NULL;
-	demobuf.buffer = malloc(maxsize);
-	demoend = demobuf.buffer + maxsize;
+	demobuf.end = demobuf.buffer + demobuf.size;
+
 	metalrecording = true;
 }
 
