@@ -1118,6 +1118,7 @@ static void IdentifyVersion(void)
 #define TEXTURESNAME "MISC_TEXTURES.pk3"
 #define MAPSNAME "MISC_MAPS.pk3"
 #define PATCHNAME "MISC_SCRIPTS.pk3"
+#define UNLOCKNAME "MISC_UNLOCKS.pk3"
 #define MUSICNAME "MISC_MUSIC.PK3"
 ////
 #else
@@ -1125,6 +1126,7 @@ static void IdentifyVersion(void)
 #define TEXTURESNAME "textures.pk3"
 #define MAPSNAME "maps.pk3"
 #define PATCHNAME "scripts.pk3"
+#define UNLOCKNAME "unlocks.pk3"
 #define MUSICNAME "music.pk3"
 ////
 #endif
@@ -1141,7 +1143,7 @@ static void IdentifyVersion(void)
 #endif
 #define UNLOCKTESTING
 #if defined(DEVELOP) && defined(UNLOCKTESTING)
-	D_AddFile(startupiwads, va(pandf,srb2waddir,"unlocks.pk3"));
+	D_AddFile(startupiwads, va(pandf,srb2waddir,UNLOCKNAME));
 #endif
 ////
 #undef TEXTURESNAME
