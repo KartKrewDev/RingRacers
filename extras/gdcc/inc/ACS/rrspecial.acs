@@ -21,21 +21,12 @@
 // Macros                                                                     |
 //
 
-#define ACS_ExecuteWait(num, ...) \
-	do \
-	{ \
-		int __execute_wait_num = (num); \
-		ACS_Execute(__execute_wait_num, __VA_ARGS__); \
-		ScriptWait(__execute_wait_num); \
-	} \
-	while(0)
-
-#define ACS_NamedExecuteWait(name, ...) \
+#define ACS_ExecuteWait(name, ...) \
 	do \
 	{ \
 		str __execute_wait_name = (name); \
-		ACS_NamedExecute(__execute_wait_name, __VA_ARGS__); \
-		NamedScriptWait(__execute_wait_name); \
+		ACS_Execute(__execute_wait_name, __VA_ARGS__); \
+		ScriptWait(__execute_wait_name); \
 	} \
 	while(0)
 
@@ -186,7 +177,7 @@ special
 	void  { 67,  68}:ChangeCeiling(int, str),
 	// 69 to 79: Implemented by ACSVM
 	int   { 80     }:LineSide(void),
-	void  { 81,  82}:ScriptWait(int), // 81 to 82: Implemented by ACSVM
+	void  { 81,  82}:__ScriptWaitDirect(int), // 81 to 82: Implemented by ACSVM
 	void  { 83     }:ClearLineSpecial(void),
 	// 84 to 85: Implemented by ACSVM
 	void  { 85     }:BeginPrint(void),
@@ -238,9 +229,22 @@ special
 
 	// 330: Implemented by ACSVM
 
-	// 349 to 361: Implemented by ACSVM
+	void  {349     }:PrintBinary(int), // 349 to 361: Implemented by ACSVM
+	void  {350     }:PrintHex(int),
 
-	void  {361     }:NamedScriptWait(str),
+	str   {352     }:EndStrParam(void),
+	void  {353     }:PrintModuleCharRange(int, int, int, int),
+	void  {354     }:PrintWorldCharRange(int, int, int, int),
+	void  {355     }:PrintGlobalCharRange(int, int, int, int),
+	int   {356     }:StrCpyToModuleCharRange(int, int, int, int, str, int),
+	int   {357     }:StrCpyToWorldCharRange(int, int, int, int, str, int),
+	int   {358     }:StrCpyToGlobalCharRange(int, int, int, int, str, int),
+
+	void  {361     }:ScriptWait(str),
+
+	void  {378     }:PrintLocalCharArray(int, int),
+	void  {379     }:PrintLocalCharRange(int, int, int, int),
+	int   {380     }:StrCpyToLocalCharRange(int, int, int, int, str, int);
 
 	// 363 to 380: Implemented by ACSVM
 
