@@ -5163,6 +5163,7 @@ static void P_ConvertBinaryLinedefTypes(void)
 		case 435: //Change plane scroller direction
 			lines[i].args[0] = tag;
 			lines[i].args[1] = R_PointToDist2(lines[i].v2->x, lines[i].v2->y, lines[i].v1->x, lines[i].v1->y) >> FRACBITS;
+			lines[i].args[2] = AngleFixed(R_PointToAngle2(lines[i].v2->x, lines[i].v2->y, lines[i].v1->x, lines[i].v1->y)) >> FRACBITS;
 			break;
 		case 436: //Shatter FOF
 			lines[i].args[0] = sides[lines[i].sidenum[0]].textureoffset >> FRACBITS;

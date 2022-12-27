@@ -2878,20 +2878,15 @@ void P_ProcessSpecial(activator_t *activator, INT16 special, INT32 *args, char *
 				scroll_t *scroller;
 				thinker_t *th;
 
-				fixed_t length;
 				fixed_t speed;
+				angle_t angle;
 				fixed_t dx;
 				fixed_t dy;
 
-				if (line == NULL)
-				{
-					break; // TODO
-				}
-
-				length = R_PointToDist2(line->v2->x, line->v2->y, line->v1->x, line->v1->y);
 				speed = args[1] << FRACBITS;
-				dx = FixedMul(FixedMul(FixedDiv(line->dx, length), speed) >> SCROLL_SHIFT, CARRYFACTOR);
-				dy = FixedMul(FixedMul(FixedDiv(line->dy, length), speed) >> SCROLL_SHIFT, CARRYFACTOR);
+				angle = FixedAngle(args[2] << FRACBITS) >> ANGLETOFINESHIFT;
+				dx = FixedMul(FixedMul(FINECOSINE(angle), speed) >> SCROLL_SHIFT, CARRYFACTOR);
+				dy = FixedMul(FixedMul(  FINESINE(angle), speed) >> SCROLL_SHIFT, CARRYFACTOR);
 
 				for (th = thlist[THINK_MAIN].next; th != &thlist[THINK_MAIN]; th = th->next)
 				{
