@@ -3742,6 +3742,7 @@ static void M_LevelSelected(INT16 add)
 		if (levellist.guessgt != MAXGAMETYPES)
 			levellist.newgametype = G_GuessGametypeByTOL(levellist.levelsearch.typeoflevel);
 
+		PLAY_TimeAttackDef.lastOn = ta_start;
 		PLAY_TimeAttackDef.prevMenu = currentMenu;
 		M_SetupNextMenu(&PLAY_TimeAttackDef, false);
 	}
