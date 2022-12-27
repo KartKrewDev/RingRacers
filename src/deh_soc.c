@@ -2260,6 +2260,8 @@ void readunlockable(MYFILE *f, INT32 num)
 						unlockables[num].type = SECRET_TIMEATTACK;
 					else if (fastcmp(word2, "BREAKTHECAPSULES"))
 						unlockables[num].type = SECRET_BREAKTHECAPSULES;
+					else if (fastcmp(word2, "SPECIALATTACK"))
+						unlockables[num].type = SECRET_SPECIALATTACK;
 					else if (fastcmp(word2, "SOUNDTEST"))
 						unlockables[num].type = SECRET_SOUNDTEST;
 					else if (fastcmp(word2, "ALTTITLE"))

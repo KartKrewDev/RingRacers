@@ -3295,25 +3295,40 @@ void M_SetupGametypeMenu(INT32 choice)
 
 	PLAY_GamemodesDef.prevMenu = currentMenu;
 
-	// Battle and Capsules disabled
+	// Battle and Capsules (and Special) disabled
 	PLAY_GamemodesMenu[1].status = IT_DISABLED;
 	PLAY_GamemodesMenu[2].status = IT_DISABLED;
+	PLAY_GamemodesMenu[3].status = IT_DISABLED;
 
 	if (cv_splitplayers.value > 1)
 	{
 		// Re-add Battle
 		PLAY_GamemodesMenu[1].status = IT_STRING | IT_CALL;
 	}
-	else if (M_SecretUnlocked(SECRET_BREAKTHECAPSULES, true))
-	{
-		// Re-add Capsules
-		PLAY_GamemodesMenu[2].status = IT_STRING | IT_CALL;
-	}
 	else
 	{
-		// Only one non-Back entry, let's skip straight to Race.
-		M_SetupRaceMenu(-1);
-		return;
+		boolean anyunlocked = false;
+
+		if (M_SecretUnlocked(SECRET_BREAKTHECAPSULES, true))
+		{
+			// Re-add Capsules
+			PLAY_GamemodesMenu[2].status = IT_STRING | IT_CALL;
+			anyunlocked = true;
+		}
+
+		if (M_SecretUnlocked(SECRET_SPECIALATTACK, true))
+		{
+			// Re-add Special
+			PLAY_GamemodesMenu[3].status = IT_STRING | IT_CALL;
+			anyunlocked = true;
+		}
+
+		if (!anyunlocked)
+		{
+			// Only one non-Back entry, let's skip straight to Race.
+			M_SetupRaceMenu(-1);
+			return;
+		}
 	}
 
 	M_SetupNextMenu(&PLAY_GamemodesDef, false);
@@ -3533,12 +3548,25 @@ static void M_LevelSelectScrollDest(void)
 static void M_LevelListFromGametype(INT16 gt)
 {
 	static boolean first = true;
-	if (first || gt != levellist.newgametype)
+	if (first || gt != levellist.newgametype || levellist.guessgt != MAXGAMETYPES)
 	{
 		levellist.newgametype = gt;
+
 		levellist.levelsearch.typeoflevel = G_TOLFlag(gt);
+		if (levellist.levelsearch.timeattack == true && gt == GT_SPECIAL)
+		{
+			// Sneak in an extra.
+			levellist.levelsearch.typeoflevel |= G_TOLFlag(GT_VERSUS);
+			levellist.guessgt = gt;
+		}
+		else
+		{
+			levellist.guessgt = MAXGAMETYPES;
+		}
+
 		levellist.levelsearch.cupmode = (!(gametypes[gt]->rules & GTR_NOCUPSELECT));
 		levellist.levelsearch.cup = NULL;
+
 		first = false;
 	}
 
@@ -3680,6 +3708,100 @@ void M_LevelSelectInit(INT32 choice)
 	M_LevelListFromGametype(currentMenu->menuitems[itemOn].mvar2);
 }
 
+static void M_LevelSelected(INT16 add)
+{
+	UINT8 i = 0;
+	INT16 map = M_GetFirstLevelInList(&i, &levellist.levelsearch);
+
+	while (add > 0)
+	{
+		map = M_GetNextLevelInList(map, &i, &levellist.levelsearch);
+
+		if (map >= nummapheaders)
+		{
+			break;
+		}
+
+		add--;
+	}
+
+	if (map >= nummapheaders)
+	{
+		// This shouldn't happen
+		return;
+	}
+
+	levellist.choosemap = map;
+
+	if (levellist.levelsearch.timeattack)
+	{
+		S_StartSound(NULL, sfx_s3k63);
+
+		if (levellist.guessgt != MAXGAMETYPES)
+			levellist.newgametype = G_GuessGametypeByTOL(levellist.levelsearch.typeoflevel);
+
+		PLAY_TimeAttackDef.prevMenu = currentMenu;
+		M_SetupNextMenu(&PLAY_TimeAttackDef, false);
+	}
+	else
+	{
+		if (gamestate == GS_MENU)
+		{
+			UINT8 ssplayers = cv_splitplayers.value-1;
+
+			netgame = false;
+			multiplayer = true;
+
+			strncpy(connectedservername, cv_servername.string, MAXSERVERNAME);
+
+			// Still need to reset devmode
+			cht_debug = 0;
+
+			if (demo.playback)
+				G_StopDemo();
+			if (metalrecording)
+				G_StopMetalDemo();
+
+				/*if (levellist.choosemap == 0)
+					levellist.choosemap = G_RandMap(G_TOLFlag(levellist.newgametype), -1, 0, 0, false, NULL);*/
+
+			if (cv_maxconnections.value < ssplayers+1)
+				CV_SetValue(&cv_maxconnections, ssplayers+1);
+
+			if (splitscreen != ssplayers)
+			{
+				splitscreen = ssplayers;
+				SplitScreen_OnChange();
+			}
+
+			S_StartSound(NULL, sfx_s3k63);
+
+			paused = false;
+
+			// Early fadeout to let the sound finish playing
+			F_WipeStartScreen();
+			V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 31);
+			F_WipeEndScreen();
+			F_RunWipe(wipedefs[wipe_level_toblack], false, "FADEMAP0", false, false);
+
+			SV_StartSinglePlayerServer(levellist.newgametype, levellist.netgame);
+
+			CV_StealthSet(&cv_kartbot, cv_dummymatchbots.string);
+			CV_StealthSet(&cv_kartencore, (cv_dummygpencore.value == 1) ? "On" : "Auto");
+			CV_StealthSet(&cv_kartspeed, (cv_dummykartspeed.value == KARTSPEED_NORMAL) ? "Auto" : cv_dummykartspeed.string);
+
+			D_MapChange(levellist.choosemap+1, levellist.newgametype, (cv_kartencore.value == 1), 1, 1, false, false);
+		}
+		else
+		{
+			// directly do the map change
+			D_MapChange(levellist.choosemap+1, levellist.newgametype, (cv_kartencore.value == 1), 1, 1, false, false);
+		}
+
+		M_ClearMenus(true);
+	}
+}
+
 void M_CupSelectHandler(INT32 choice)
 {
 	const UINT8 pid = 0;
@@ -3733,13 +3855,18 @@ void M_CupSelectHandler(INT32 choice)
 
 	if (M_MenuConfirmPressed(pid) /*|| M_MenuButtonPressed(pid, MBT_START)*/)
 	{
+		INT16 count;
 		cupheader_t *newcup = cupgrid.builtgrid[CUPMENU_CURSORID];
+		cupheader_t *oldcup = levellist.levelsearch.cup;
 
 		M_SetMenuDelay(pid);
 
+		levellist.levelsearch.cup = newcup;
+		count = M_CountLevelsToShowInList(&levellist.levelsearch);
+
 		if ((!newcup)
-			|| (M_CupLocked(newcup))
-			|| (newcup->cachedlevels[0] == NEXTMAP_INVALID))
+			|| (count <= 0)
+			|| (cupgrid.grandprix == true && newcup->cachedlevels[0] == NEXTMAP_INVALID))
 		{
 			S_StartSound(NULL, sfx_s3kb2);
 			return;
@@ -3803,13 +3930,17 @@ void M_CupSelectHandler(INT32 choice)
 
 			M_ClearMenus(true);
 		}
+		else if (count == 1)
+		{
+			PLAY_TimeAttackDef.transitionID = currentMenu->transitionID+1;
+			M_LevelSelected(0);
+		}
 		else
 		{
 			// Keep cursor position if you select the same cup again, reset if it's a different cup
-			if (levellist.levelsearch.cup != newcup)
+			if (oldcup != newcup || levellist.cursor >= count)
 			{
 				levellist.cursor = 0;
-				levellist.levelsearch.cup = newcup;
 			}
 
 			M_LevelSelectScrollDest();
@@ -3868,94 +3999,10 @@ void M_LevelSelectHandler(INT32 choice)
 
 	if (M_MenuConfirmPressed(pid) /*|| M_MenuButtonPressed(pid, MBT_START)*/)
 	{
-		UINT8 i = 0;
-		INT16 map = M_GetFirstLevelInList(&i, &levellist.levelsearch);
-		INT16 add = levellist.cursor;
-
 		M_SetMenuDelay(pid);
 
-		while (add > 0)
-		{
-			map = M_GetNextLevelInList(map, &i, &levellist.levelsearch);
-
-			if (map >= nummapheaders)
-			{
-				break;
-			}
-
-			add--;
-		}
-
-		if (map >= nummapheaders)
-		{
-			// This shouldn't happen
-			return;
-		}
-
-		levellist.choosemap = map;
-
-		if (levellist.levelsearch.timeattack)
-		{
-			M_SetupNextMenu(&PLAY_TimeAttackDef, false);
-			S_StartSound(NULL, sfx_s3k63);
-		}
-		else
-		{
-			if (gamestate == GS_MENU)
-			{
-				UINT8 ssplayers = cv_splitplayers.value-1;
-
-				netgame = false;
-				multiplayer = true;
-
-				strncpy(connectedservername, cv_servername.string, MAXSERVERNAME);
-
-				// Still need to reset devmode
-				cht_debug = 0;
-
-				if (demo.playback)
-					G_StopDemo();
-				if (metalrecording)
-					G_StopMetalDemo();
-
-				/*if (levellist.choosemap == 0)
-					levellist.choosemap = G_RandMap(G_TOLFlag(levellist.newgametype), -1, 0, 0, false, NULL);*/
-
-				if (cv_maxconnections.value < ssplayers+1)
-					CV_SetValue(&cv_maxconnections, ssplayers+1);
-
-				if (splitscreen != ssplayers)
-				{
-					splitscreen = ssplayers;
-					SplitScreen_OnChange();
-				}
-
-				S_StartSound(NULL, sfx_s3k63);
-
-				paused = false;
-
-				// Early fadeout to let the sound finish playing
-				F_WipeStartScreen();
-				V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 31);
-				F_WipeEndScreen();
-				F_RunWipe(wipedefs[wipe_level_toblack], false, "FADEMAP0", false, false);
-
-				SV_StartSinglePlayerServer(levellist.newgametype, levellist.netgame);
-
-				CV_StealthSet(&cv_kartbot, cv_dummymatchbots.string);
-				CV_StealthSet(&cv_kartencore, (cv_dummygpencore.value == 1) ? "On" : "Auto");
-				CV_StealthSet(&cv_kartspeed, (cv_dummykartspeed.value == KARTSPEED_NORMAL) ? "Auto" : cv_dummykartspeed.string);
-
-				D_MapChange(levellist.choosemap+1, levellist.newgametype, (cv_kartencore.value == 1), 1, 1, false, false);
-			}
-			else
-			{
-				// directly do the map change
-				D_MapChange(levellist.choosemap+1, levellist.newgametype, (cv_kartencore.value == 1), 1, 1, false, false);
-			}
-
-			M_ClearMenus(true);
-		}
+		PLAY_TimeAttackDef.transitionID = currentMenu->transitionID;
+		M_LevelSelected(levellist.cursor);
 	}
 	else if (M_MenuBackPressed(pid))
 	{

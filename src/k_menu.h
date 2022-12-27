@@ -709,6 +709,7 @@ extern struct levellist_s {
 	UINT16 dest;
 	INT16 choosemap;
 	UINT8 newgametype;
+	UINT8 guessgt;
 	levelsearch_t levelsearch;
 	boolean netgame;	// Start the game in an actual server
 } levellist;

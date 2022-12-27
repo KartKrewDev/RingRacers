@@ -95,6 +95,9 @@ menuitem_t PLAY_GamemodesMenu[] =
 	{IT_STRING | IT_CALL, "Capsules", "Bust up all of the capsules in record time!",
 		NULL, {.routine = M_LevelSelectInit}, 1, GT_BATTLE},
 
+	{IT_STRING | IT_CALL, "Special", "Strike your target and secure the prize!",
+		NULL, {.routine = M_LevelSelectInit}, 1, GT_SPECIAL},
+
 	{IT_STRING | IT_CALL, "Back", NULL, NULL, {.routine = M_GoBack}, 0, 0},
 };
 

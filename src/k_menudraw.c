@@ -1933,7 +1933,7 @@ static void M_DrawCupPreview(INT16 y, levelsearch_t *levelsearch)
 
 	V_DrawFill(0, y, BASEVIDWIDTH, 54, 31);
 
-	if (levelsearch->cup && !M_CupLocked(levelsearch->cup))
+	if (levelsearch->cup && !M_CupLocked(levelsearch->cup) && maxlevels > 0)
 	{
 		add = (cupgrid.previewanim / 82) % maxlevels;
 		map = start;
@@ -2002,7 +2002,10 @@ static void M_DrawCupTitle(INT16 y, cupheader_t *cup)
 	else
 	{
 		if (currentMenu == &PLAY_LevelSelectDef)
-			V_DrawCenteredLSTitleLowString(BASEVIDWIDTH/2, y+6, 0, va("%s Mode", gametypes[levellist.newgametype]->name));
+		{
+			UINT8 namedgt = (levellist.guessgt != MAXGAMETYPES) ? levellist.guessgt : levellist.newgametype;
+			V_DrawCenteredLSTitleLowString(BASEVIDWIDTH/2, y+6, 0, va("%s Mode", gametypes[namedgt]->name));
+		}
 	}
 }
 
@@ -2261,7 +2264,8 @@ void M_DrawTimeAttack(void)
 			laprec = mapheaderinfo[map]->mainrecord->lap;
 		}
 
-		if (gametypes[levellist.newgametype]->rules & GTR_CIRCUIT)
+		if ((gametypes[levellist.newgametype]->rules & GTR_CIRCUIT)
+			&& (mapheaderinfo[map]->numlaps != 1))
 		{
 			V_DrawRightAlignedString(rightedge-12, timeheight, highlightflags, "BEST LAP:");
 			K_drawKartTimestamp(laprec, 162+t, timeheight+6, 0, 2);
