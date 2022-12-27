@@ -114,6 +114,106 @@ void ACS_Tick(void);
 
 
 /*--------------------------------------------------
+	boolean ACS_Execute(const char *name, const INT32 *args, size_t numArgs, activator_t *activator);
+
+		Runs an ACS script by its string name.
+		Only one instance of the script will run at
+		a time with this method.
+
+	Input Arguments:-
+		name: Script string to run.
+		args: Array of the input arguments.
+			Strings should be transformed into
+			ACSVM string IDs.
+		numArgs: Number of input arguments.
+		activator: Container for information on what
+			activated this script.
+
+	Return:-
+		true if we were able to run the script, otherwise false.
+--------------------------------------------------*/
+
+boolean ACS_Execute(const char *name, const INT32 *args, size_t numArgs, activator_t *activator);
+
+
+/*--------------------------------------------------
+	boolean ACS_ExecuteAlways(const char *name, const INT32 *args, size_t numArgs, activator_t *activator);
+
+		Runs an ACS script by its string name.
+		If the script is already running, this method
+		will create another instance of the script.
+		(Suspend and Terminate cannot be used, however.)
+
+	Input Arguments:-
+		name: Script string to run.
+		args: Array of the input arguments.
+			Strings should be transformed into
+			ACSVM string IDs.
+		numArgs: Number of input arguments.
+		activator: Container for information on what
+			activated this script.
+
+	Return:-
+		true if we were able to run the script, otherwise false.
+--------------------------------------------------*/
+
+boolean ACS_ExecuteAlways(const char *name, const INT32 *args, size_t numArgs, activator_t *activator);
+
+
+/*--------------------------------------------------
+	INT32 ACS_ExecuteResult(const char *name, const INT32 *args, size_t numArgs, activator_t *activator);
+
+		Runs an ACS script by its string name.
+		Will return the scripts special result
+		value, if set.
+
+	Input Arguments:-
+		name: Script string to run.
+		args: Array of the input arguments.
+			Strings should be transformed into
+			ACSVM string IDs.
+		numArgs: Number of input arguments.
+		activator: Container for information on what
+			activated this script.
+
+	Return:-
+		true if we were able to run the script, otherwise false.
+--------------------------------------------------*/
+
+INT32 ACS_ExecuteResult(const char *name, const INT32 *args, size_t numArgs, activator_t *activator);
+
+
+/*--------------------------------------------------
+	boolean ACS_Suspend(const char *name);
+
+		Pauses an ACS script by its string name.
+
+	Input Arguments:-
+		name: Script string to pause.
+
+	Return:-
+		true if we were able to pause the script, otherwise false.
+--------------------------------------------------*/
+
+boolean ACS_Suspend(const char *name);
+
+
+/*--------------------------------------------------
+	boolean ACS_Terminate(const char *name);
+
+		Stops an ACS script by its string name.
+
+	Input Arguments:-
+		name: Script string to stop.
+
+	Return:-
+		true if we were able to stop the script, otherwise false.
+--------------------------------------------------*/
+
+boolean ACS_Terminate(const char *name);
+
+
+/*--------------------------------------------------
 	void ACS_Archive(savebuffer_t *save);
 
 		Saves the ACS VM state into a save buffer.

@@ -19,6 +19,9 @@ extern "C" {
 #include "../doomdef.h"
 #include "../doomstat.h"
 #include "../p_tick.h"
+#include "../r_defs.h"
+#include "../r_state.h"
+#include "../p_spec.h"
 }
 
 #include <ACSVM/Code.hpp>
@@ -87,6 +90,17 @@ public:
 		P_SetTarget(&mo, info.mo);
 	}
 
+	ThreadInfo(const activator_t *activator) :
+		mo{ nullptr },
+		line{ activator->line },
+		side{ activator->side },
+		sector{ activator->sector },
+		po{ activator->po },
+		fromLineSpecial{ static_cast<bool>(activator->fromLineSpecial) }
+	{
+		P_SetTarget(&mo, activator->mo);
+	}
+
 	~ThreadInfo()
 	{
 		P_SetTarget(&mo, nullptr);
@@ -97,6 +111,7 @@ public:
 		P_SetTarget(&mo, info.mo);
 		line = info.line;
 		side = info.side;
+		sector = info.sector;
 		po = info.po;
 
 		return *this;

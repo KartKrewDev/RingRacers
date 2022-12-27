@@ -27,6 +27,7 @@ extern "C" {
 #include <cmath>
 #include <memory>
 
+#include <ACSVM/Action.hpp>
 #include <ACSVM/Code.hpp>
 #include <ACSVM/CodeData.hpp>
 #include <ACSVM/Environment.hpp>
@@ -231,6 +232,101 @@ void ACS_Tick(void)
 	{
 		env->exec();
 	}
+}
+
+/*--------------------------------------------------
+	boolean ACS_Execute(const char *name, const INT32 *args, size_t numArgs, activator_t *activator)
+
+		See header file for description.
+--------------------------------------------------*/
+boolean ACS_Execute(const char *name, const INT32 *args, size_t numArgs, activator_t *activator)
+{
+	Environment *env = &ACSEnv;
+
+	ACSVM::GlobalScope *const global = env->getGlobalScope(0);
+	ACSVM::HubScope *const hub = global->getHubScope(0);
+	ACSVM::MapScope *const map = hub->getMapScope(0);
+	ACSVM::ScopeID scope{global->id, hub->id, map->id};
+
+	ThreadInfo info{activator};
+
+	ACSVM::String *script = env->getString(name, strlen(name));
+	return map->scriptStart(script, scope, {reinterpret_cast<const ACSVM::Word *>(args), numArgs, &info});
+}
+
+/*--------------------------------------------------
+	boolean ACS_ExecuteAlways(const char *name, const INT32 *args, size_t numArgs, activator_t *activator)
+
+		See header file for description.
+--------------------------------------------------*/
+boolean ACS_ExecuteAlways(const char *name, const INT32 *args, size_t numArgs, activator_t *activator)
+{
+	Environment *env = &ACSEnv;
+
+	ACSVM::GlobalScope *const global = env->getGlobalScope(0);
+	ACSVM::HubScope *const hub = global->getHubScope(0);
+	ACSVM::MapScope *const map = hub->getMapScope(0);
+	ACSVM::ScopeID scope{global->id, hub->id, map->id};
+
+	ThreadInfo info{activator};
+
+	ACSVM::String *script = env->getString(name, strlen(name));
+	return map->scriptStartForced(script, scope, {reinterpret_cast<const ACSVM::Word *>(args), numArgs, &info});
+}
+
+/*--------------------------------------------------
+	boolean ACS_ExecuteResult(const char *name, const INT32 *args, size_t numArgs, activator_t *activator)
+
+		See header file for description.
+--------------------------------------------------*/
+boolean ACS_ExecuteResult(const char *name, const INT32 *args, size_t numArgs, activator_t *activator)
+{
+	Environment *env = &ACSEnv;
+
+	ACSVM::GlobalScope *const global = env->getGlobalScope(0);
+	ACSVM::HubScope *const hub = global->getHubScope(0);
+	ACSVM::MapScope *const map = hub->getMapScope(0);
+
+	ThreadInfo info{activator};
+
+	ACSVM::String *script = env->getString(name, strlen(name));
+	return map->scriptStartResult(script, {reinterpret_cast<const ACSVM::Word *>(args), numArgs, &info});
+}
+
+/*--------------------------------------------------
+	boolean ACS_Suspend(const char *name)
+
+		See header file for description.
+--------------------------------------------------*/
+boolean ACS_Suspend(const char *name)
+{
+	Environment *env = &ACSEnv;
+
+	ACSVM::GlobalScope *const global = env->getGlobalScope(0);
+	ACSVM::HubScope *const hub = global->getHubScope(0);
+	ACSVM::MapScope *const map = hub->getMapScope(0);
+	ACSVM::ScopeID scope{global->id, hub->id, map->id};
+
+	ACSVM::String *script = env->getString(name, strlen(name));
+	return map->scriptPause(script, scope);
+}
+
+/*--------------------------------------------------
+	boolean ACS_Terminate(const char *name)
+
+		See header file for description.
+--------------------------------------------------*/
+boolean ACS_Terminate(const char *name)
+{
+	Environment *env = &ACSEnv;
+
+	ACSVM::GlobalScope *const global = env->getGlobalScope(0);
+	ACSVM::HubScope *const hub = global->getHubScope(0);
+	ACSVM::MapScope *const map = hub->getMapScope(0);
+	ACSVM::ScopeID scope{global->id, hub->id, map->id};
+
+	ACSVM::String *script = env->getString(name, strlen(name));
+	return map->scriptStop(script, scope);
 }
 
 /*--------------------------------------------------
