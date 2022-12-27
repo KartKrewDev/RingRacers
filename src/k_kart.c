@@ -1340,7 +1340,8 @@ static boolean K_TryDraft(player_t *player, mobj_t *dest, fixed_t minDist, fixed
 static void K_UpdateDraft(player_t *player)
 {
 	const boolean addUfo = ((specialstageinfo.valid == true)
-		&& (specialstageinfo.ufo != NULL && P_MobjWasRemoved(specialstageinfo.ufo) == false));
+		&& (specialstageinfo.ufo != NULL && P_MobjWasRemoved(specialstageinfo.ufo) == false)
+		&& specialstageinfo.ufo->health > 1);
 
 	fixed_t topspd = K_GetKartSpeed(player, false, false);
 	fixed_t draftdistance;
