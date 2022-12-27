@@ -176,6 +176,12 @@ static UINT8 K_KartItemOddsSpecial[NUMKARTRESULTS-1][4] =
 	{ 0, 0, 0, 0 }  // Gachabom x3
 };
 
+static kartitems_t K_KartItemReelSpecialEnd[] =
+{
+	KITEM_SUPERRING,
+	KITEM_NONE
+};
+
 static kartitems_t K_KartItemReelTimeAttack[] =
 {
 	KITEM_SNEAKER,
@@ -1113,8 +1119,21 @@ void K_FillItemRouletteData(const player_t *player, itemroulette_t *const roulet
 	}
 
 	// SPECIAL CASE No. 2:
-	// Use a special, pre-determined item reel for Time Attack / Free Play
-	if (gametyperules & GTR_BOSS)
+	// Use a special, pre-determined item reel for Time Attack / Free Play / End of Sealed Stars
+	if (specialstageinfo.valid)
+	{
+		if (specialstageinfo.ufo == NULL
+			|| P_MobjWasRemoved(specialstageinfo.ufo)
+			|| specialstageinfo.ufo->health == 1)
+		{
+			for (i = 0; K_KartItemReelSpecialEnd[i] != KITEM_NONE; i++)
+			{
+				K_PushToRouletteItemList(roulette, K_KartItemReelSpecialEnd[i]);
+			}
+			return;
+		}
+	}
+	else if (gametyperules & GTR_BOSS)
 	{
 		for (i = 0; K_KartItemReelBoss[i] != KITEM_NONE; i++)
 		{
