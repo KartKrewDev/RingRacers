@@ -21,6 +21,7 @@ extern "C" {
 #include "../r_defs.h"
 #include "../g_game.h"
 #include "../i_system.h"
+#include "../p_saveg.h"
 }
 
 #include <cmath>
@@ -39,6 +40,7 @@ extern "C" {
 
 #include "environment.hpp"
 #include "thread.hpp"
+#include "stream.hpp"
 
 #include "../cxxutil.hpp"
 
@@ -228,5 +230,58 @@ void ACS_Tick(void)
 	if (env->hasActiveThread() == true)
 	{
 		env->exec();
+	}
+}
+
+/*--------------------------------------------------
+	void ACS_Archive(savebuffer_t *save)
+
+		See header file for description.
+--------------------------------------------------*/
+void ACS_Archive(savebuffer_t *save)
+{
+	Environment *env = &ACSEnv;
+
+	SaveBuffer buffer{save};
+	std::ostream stream{&buffer};
+	ACSVM::Serial serial{stream};
+
+	// Enable debug signatures.
+	serial.signs = true;
+
+	try
+	{
+		serial.saveHead();
+		env->saveState(serial);
+		serial.saveTail();
+	}
+	catch (ACSVM::SerialError const &e)
+	{
+		I_Error("ACS_Archive: %s\n", e.what());
+	}
+}
+
+/*--------------------------------------------------
+	void ACS_UnArchive(savebuffer_t *save)
+
+		See header file for description.
+--------------------------------------------------*/
+void ACS_UnArchive(savebuffer_t *save)
+{
+	Environment *env = &ACSEnv;
+
+	SaveBuffer buffer{save};
+	std::istream stream{&buffer};
+	ACSVM::Serial serial{stream};
+
+	try
+	{
+		serial.loadHead();
+		env->loadState(serial);
+		serial.loadTail();
+	}
+	catch (ACSVM::SerialError const &e)
+	{
+		I_Error("ACS_UnArchive: %s\n", e.what());
 	}
 }

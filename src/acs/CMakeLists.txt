@@ -5,6 +5,8 @@ target_sources(SRB2SDL2 PRIVATE
 	thread.hpp
 	call-funcs.cpp
 	call-funcs.hpp
+	stream.cpp
+	stream.hpp
 	interface.cpp
 	interface.h
 )

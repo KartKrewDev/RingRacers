@@ -113,4 +113,34 @@ void ACS_RunLapScript(mobj_t *mo, line_t *line);
 void ACS_Tick(void);
 
 
+/*--------------------------------------------------
+	void ACS_Archive(savebuffer_t *save);
+
+		Saves the ACS VM state into a save buffer.
+
+	Input Arguments:-
+		save: Pointer to the save buffer from P_SaveNetGame.
+
+	Return:-
+		None
+--------------------------------------------------*/
+
+void ACS_Archive(savebuffer_t *save);
+
+
+/*--------------------------------------------------
+	void ACS_UnArchive(savebuffer_t *save);
+
+		Loads the ACS VM state from a save buffer.
+
+	Input Arguments:-
+		save: Pointer to the save buffer from P_LoadNetGame.
+
+	Return:-
+		None
+--------------------------------------------------*/
+
+void ACS_UnArchive(savebuffer_t *save);
+
+
 #endif // __SRB2_ACS_INTERFACE_H__
