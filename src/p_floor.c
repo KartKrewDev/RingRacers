@@ -1890,91 +1890,209 @@ void EV_DoCrushFloorOnce(mtag_t tag, fixed_t speed)
 //
 void EV_DoElevator(mtag_t tag, line_t *line, elevator_e elevtype)
 {
+	// This function is deprecated.
+	// Use any of the following functions directly, instead.
+
+	switch (elevtype)
+	{
+		case elevateDown:
+			EV_DoElevateDown(tag);
+			break;
+		case elevateUp:
+			EV_DoElevateUp(tag);
+			break;
+		case elevateHighest:
+			EV_DoElevateHighest(tag);
+			break;
+		case elevateContinuous:
+			EV_DoContinuousElevator(
+				tag,
+				line->args[1] << (FRACBITS - 2),
+				line->args[2],
+				line->args[3],
+				(line->args[4] == 0)
+			);
+			break;
+		case bridgeFall:
+			EV_DoBridgeFall(tag);
+			break;
+		default:
+			break;
+	}
+}
+
+static elevator_t *CreateElevatorThinker(sector_t *sec)
+{
+	elevator_t *elevator = NULL;
+
+	if (sec->floordata || sec->ceilingdata)
+	{
+		return NULL;
+	}
+
+	elevator = Z_Calloc(sizeof (*elevator), PU_LEVSPEC, NULL);
+	P_AddThinker(THINK_MAIN, &elevator->thinker);
+
+	// make sure other thinkers won't get started over this one
+	sec->floordata = elevator;
+	sec->ceilingdata = elevator;
+
+	// set up some generic aspects of the floormove_t
+	elevator->thinker.function.acp1 = (actionf_p1)T_MoveElevator;
+	elevator->distance = 1; // Always crush unless otherwise
+	elevator->sector = sec;
+
+	// interpolation
+	R_CreateInterpolator_SectorPlane(&elevator->thinker, sec, false);
+	R_CreateInterpolator_SectorPlane(&elevator->thinker, sec, true);
+
+	return elevator;
+}
+
+void EV_DoElevateDown(mtag_t tag)
+{
 	INT32 secnum = -1;
 	sector_t *sec;
-	elevator_t *elevator;
 
-	// act on all sectors with the given tag
 	TAG_ITER_SECTORS(tag, secnum)
 	{
+		elevator_t *elevator = NULL;
 		sec = &sectors[secnum];
 
-		// If either floor or ceiling is already activated, skip it
-		if (sec->floordata || sec->ceilingdata)
-			continue;
-
-		// create and initialize new elevator thinker
-		elevator = Z_Calloc(sizeof (*elevator), PU_LEVSPEC, NULL);
-		P_AddThinker(THINK_MAIN, &elevator->thinker);
-		sec->floordata = elevator;
-		sec->ceilingdata = elevator;
-		elevator->thinker.function.acp1 = (actionf_p1)T_MoveElevator;
-		elevator->type = elevtype;
-		elevator->sourceline = line;
-		elevator->distance = 1; // Always crush unless otherwise
-		elevator->sector = sec;
-
-		// set up the fields according to the type of elevator action
-		switch (elevtype)
+		elevator = CreateElevatorThinker(sec);
+		if (elevator == NULL)
 		{
-			// elevator down to next floor
-			case elevateDown:
-				elevator->direction = -1;
-				elevator->speed = ELEVATORSPEED/2; // half speed
-				elevator->floordestheight = P_FindNextLowestFloor(sec, sec->floorheight);
-				break;
-
-			// elevator up to next floor
-			case elevateUp:
-				elevator->direction = 1;
-				elevator->speed = ELEVATORSPEED/4; // quarter speed
-				elevator->floordestheight = P_FindNextHighestFloor(sec, sec->floorheight);
-				break;
-
-			// elevator up to highest floor
-			case elevateHighest:
-				elevator->direction = 1;
-				elevator->speed = ELEVATORSPEED/4; // quarter speed
-				elevator->floordestheight = P_FindHighestFloorSurrounding(sec);
-				break;
-
-			case elevateContinuous:
-				elevator->origspeed = line->args[1] << (FRACBITS - 2);
-				elevator->speed = elevator->origspeed;
-
-				elevator->low = !line->args[4]; // go down first unless args[4] is set
-				if (elevator->low)
-				{
-					elevator->direction = 1;
-					elevator->floordestheight = P_FindNextHighestFloor(sec, sec->floorheight);
-				}
-				else
-				{
-					elevator->direction = -1;
-					elevator->floordestheight = P_FindNextLowestFloor(sec,sec->floorheight);
-				}
-				elevator->floorwasheight = elevator->sector->floorheight;
-				elevator->ceilingwasheight = elevator->sector->ceilingheight;
-
-				elevator->delay = line->args[3];
-				elevator->delaytimer = line->args[2]; // Initial delay
-				break;
-
-			case bridgeFall:
-				elevator->direction = -1;
-				elevator->speed = ELEVATORSPEED*4; // quadruple speed
-				elevator->floordestheight = P_FindNextLowestFloor(sec, sec->floorheight);
-				break;
-
-			default:
-				break;
+			continue;
 		}
 
-		elevator->ceilingdestheight = elevator->floordestheight + sec->ceilingheight - sec->floorheight;
+		elevator->type = elevateDown;
 
-		// interpolation
-		R_CreateInterpolator_SectorPlane(&elevator->thinker, sec, false);
-		R_CreateInterpolator_SectorPlane(&elevator->thinker, sec, true);
+		elevator->direction = -1;
+		elevator->speed = ELEVATORSPEED/2; // half speed
+		elevator->floordestheight = P_FindNextLowestFloor(sec, sec->floorheight);
+
+		elevator->ceilingdestheight = elevator->floordestheight + (sec->ceilingheight - sec->floorheight);
+	}
+}
+
+void EV_DoElevateUp(mtag_t tag)
+{
+	INT32 secnum = -1;
+	sector_t *sec;
+
+	TAG_ITER_SECTORS(tag, secnum)
+	{
+		elevator_t *elevator = NULL;
+		sec = &sectors[secnum];
+
+		elevator = CreateElevatorThinker(sec);
+		if (elevator == NULL)
+		{
+			continue;
+		}
+
+		elevator->type = elevateDown;
+
+		elevator->direction = 1;
+		elevator->speed = ELEVATORSPEED/4; // quarter speed
+		elevator->floordestheight = P_FindNextHighestFloor(sec, sec->floorheight);
+
+		elevator->ceilingdestheight = elevator->floordestheight + (sec->ceilingheight - sec->floorheight);
+	}
+}
+
+void EV_DoElevateHighest(mtag_t tag)
+{
+	INT32 secnum = -1;
+	sector_t *sec;
+
+	TAG_ITER_SECTORS(tag, secnum)
+	{
+		elevator_t *elevator = NULL;
+		sec = &sectors[secnum];
+
+		elevator = CreateElevatorThinker(sec);
+		if (elevator == NULL)
+		{
+			continue;
+		}
+
+		elevator->type = elevateHighest;
+
+		elevator->direction = 1;
+		elevator->speed = ELEVATORSPEED/4; // quarter speed
+		elevator->floordestheight = P_FindHighestFloorSurrounding(sec);
+
+		elevator->ceilingdestheight = elevator->floordestheight + (sec->ceilingheight - sec->floorheight);
+	}
+}
+
+void EV_DoContinuousElevator(mtag_t tag, fixed_t speed, INT32 delayInit, INT32 delay, boolean lowFirst)
+{
+	INT32 secnum = -1;
+	sector_t *sec;
+
+	TAG_ITER_SECTORS(tag, secnum)
+	{
+		elevator_t *elevator = NULL;
+		sec = &sectors[secnum];
+
+		elevator = CreateElevatorThinker(sec);
+		if (elevator == NULL)
+		{
+			continue;
+		}
+
+		elevator->type = elevateContinuous;
+
+		elevator->origspeed = speed;
+		elevator->speed = elevator->origspeed;
+
+		elevator->low = lowFirst; // go down first unless args[4] is set
+		if (elevator->low)
+		{
+			elevator->direction = 1;
+			elevator->floordestheight = P_FindNextHighestFloor(sec, sec->floorheight);
+		}
+		else
+		{
+			elevator->direction = -1;
+			elevator->floordestheight = P_FindNextLowestFloor(sec,sec->floorheight);
+		}
+
+		elevator->floorwasheight = elevator->sector->floorheight;
+		elevator->ceilingwasheight = elevator->sector->ceilingheight;
+
+		elevator->delay = delay;
+		elevator->delaytimer = delayInit; // Initial delay
+
+		elevator->ceilingdestheight = elevator->floordestheight + (sec->ceilingheight - sec->floorheight);
+	}
+}
+
+void EV_DoBridgeFall(mtag_t tag)
+{
+	INT32 secnum = -1;
+	sector_t *sec;
+
+	TAG_ITER_SECTORS(tag, secnum)
+	{
+		elevator_t *elevator = NULL;
+		sec = &sectors[secnum];
+
+		elevator = CreateElevatorThinker(sec);
+		if (elevator == NULL)
+		{
+			continue;
+		}
+
+		elevator->type = bridgeFall;
+
+		elevator->direction = -1;
+		elevator->speed = ELEVATORSPEED*4; // quadruple speed
+		elevator->floordestheight = P_FindNextLowestFloor(sec, sec->floorheight);
+
+		elevator->ceilingdestheight = elevator->floordestheight + (sec->ceilingheight - sec->floorheight);
 	}
 }
 

@@ -2523,7 +2523,6 @@ static void SaveElevatorThinker(savebuffer_t *save, const thinker_t *th, const U
 	WRITEFIXED(save->p, ht->delaytimer);
 	WRITEFIXED(save->p, ht->floorwasheight);
 	WRITEFIXED(save->p, ht->ceilingwasheight);
-	WRITEUINT32(save->p, SaveLine(ht->sourceline));
 }
 
 static void SaveCrumbleThinker(savebuffer_t *save, const thinker_t *th, const UINT8 type)
@@ -3753,7 +3752,6 @@ static thinker_t* LoadElevatorThinker(savebuffer_t *save, actionf_p1 thinker, bo
 	ht->delaytimer = READFIXED(save->p);
 	ht->floorwasheight = READFIXED(save->p);
 	ht->ceilingwasheight = READFIXED(save->p);
-	ht->sourceline = LoadLine(READUINT32(save->p));
 
 	if (ht->sector && setplanedata)
 	{

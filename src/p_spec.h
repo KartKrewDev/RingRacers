@@ -839,7 +839,6 @@ struct elevator_t
 	fixed_t delaytimer;
 	fixed_t floorwasheight; // Height the floor WAS at
 	fixed_t ceilingwasheight; // Height the ceiling WAS at
-	line_t *sourceline;
 };
 
 typedef enum
@@ -987,6 +986,12 @@ void EV_DoBounceFloor(mtag_t tag, boolean crush, fixed_t crushHeight, fixed_t cr
 void EV_DoCrushFloorOnce(mtag_t tag, fixed_t speed);
 
 void EV_DoElevator(mtag_t tag, line_t *line, elevator_e elevtype);
+void EV_DoElevateDown(mtag_t tag);
+void EV_DoElevateUp(mtag_t tag);
+void EV_DoElevateHighest(mtag_t tag);
+void EV_DoContinuousElevator(mtag_t tag, fixed_t speed, INT32 delayInit, INT32 delay, boolean lowFirst);
+void EV_DoBridgeFall(mtag_t tag);
+
 void EV_CrumbleChain(sector_t *sec, ffloor_t *rover);
 void EV_BounceSector(sector_t *sector, fixed_t momz, line_t *sourceline);
 
