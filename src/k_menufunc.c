@@ -1009,6 +1009,8 @@ void M_ClearMenus(boolean callexitmenufunc)
 	if (!menuactive)
 		return;
 
+	CON_ClearHUD();
+
 	if (currentMenu->quitroutine && callexitmenufunc && !currentMenu->quitroutine())
 		return; // we can't quit this menu (also used to set parameter from the menu)
 
