@@ -172,22 +172,25 @@ add_subdirectory(src)
 add_subdirectory(assets)
 
 
-## config.h generation
 set(GIT_EXECUTABLE "git" CACHE FILEPATH "Path to git binary")
 include(GitUtilities)
-git_latest_commit(SRB2_COMP_COMMIT "${CMAKE_SOURCE_DIR}")
-git_current_branch(SRB2_GIT_BRANCH "${CMAKE_SOURCE_DIR}")
-git_working_tree_dirty(SRB2_COMP_UNCOMMITTED "${CMAKE_SOURCE_DIR}")
-set(SRB2_COMP_BRANCH "${SRB2_GIT_BRANCH}")
-set(SRB2_COMP_REVISION "${SRB2_COMP_COMMIT}")
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/src/config.h.in ${CMAKE_CURRENT_BINARY_DIR}/src/config.h)
-
 
 if("${SRB2_SDL2_EXE_NAME}" STREQUAL "")
+	# cause a reconfigure if the branch changes
+	get_git_dir(SRB2_GIT_DIR)
+	configure_file("${SRB2_GIT_DIR}/HEAD" HEAD COPYONLY)
+
+	git_current_branch(SRB2_GIT_REVISION)
+
+	if("${SRB2_GIT_REVISION}" STREQUAL "")
+		# use abbreviated commit hash if on detached HEAD
+		git_latest_commit(SRB2_GIT_REVISION)
+	endif()
+
 	list(APPEND EXE_NAME_PARTS "ringracers")
 
-	if(NOT "${SRB2_GIT_BRANCH}" STREQUAL "master")
-		list(APPEND EXE_NAME_PARTS ${SRB2_GIT_BRANCH})
+	if(NOT "${SRB2_GIT_REVISION}" STREQUAL "master")
+		list(APPEND EXE_NAME_PARTS ${SRB2_GIT_REVISION})
 	endif()
 else()
 	list(APPEND EXE_NAME_PARTS ${SRB2_SDL2_EXE_NAME})
