@@ -118,6 +118,10 @@ public:
 	);
 
 	virtual void stop();
+
+	virtual void loadState(ACSVM::Serial &serial);
+
+	virtual void saveState(ACSVM::Serial &serial) const;
 };
 
 }
