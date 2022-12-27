@@ -2739,13 +2739,16 @@ static void Command_Map_f(void)
 
 	if (option_gametype)
 	{
+#if 0
 		if (!multiplayer)
 		{
 			CONS_Printf(M_GetText(
 						"You can't switch gametypes in single player!\n"));
 			return;
 		}
-		else if (COM_Argc() < option_gametype + 2)/* no argument after? */
+		else
+#endif //#if 0
+		if (COM_Argc() < option_gametype + 2)/* no argument after? */
 		{
 			CONS_Alert(CONS_ERROR,
 					"No gametype name follows parameter '%s'.\n",
