@@ -6396,9 +6396,9 @@ struct int_const_s const INT_CONST[] = {
 
 	// Intermission types
 	{"int_none",int_none},
-	{"int_race",int_race},
-	{"int_battle",int_battle},
-	{"int_battletime", int_battletime},
+	{"int_time",int_time},
+	{"int_score",int_score},
+	{"int_scoreortimeattack", int_scoreortimeattack},
 
 	// Jingles (jingletype_t)
 	{"JT_NONE",JT_NONE},

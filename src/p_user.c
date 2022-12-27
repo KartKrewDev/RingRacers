@@ -720,6 +720,7 @@ boolean P_EndingMusic(player_t *player)
 {
 	char buffer[9];
 	boolean looping = true;
+	boolean racetracks = !!(gametyperules & GTR_CIRCUIT);
 	INT32 bestlocalpos, test;
 	player_t *bestlocalplayer;
 
@@ -773,7 +774,7 @@ boolean P_EndingMusic(player_t *player)
 
 #undef getplayerpos
 
-	if ((gametyperules & GTR_CIRCUIT) && bestlocalpos == MAXPLAYERS+1)
+	if (racetracks == true && bestlocalpos == MAXPLAYERS+1)
 		sprintf(buffer, "k*fail"); // F-Zero death results theme
 	else
 	{
@@ -787,9 +788,11 @@ boolean P_EndingMusic(player_t *player)
 
 	S_SpeedMusic(1.0f);
 
-	if ((gametyperules & GTR_CIRCUIT))
+	if (racetracks == true)
+	{
 		buffer[1] = 'r';
-	else if ((gametyperules & GTR_BUMPERS))
+	}
+	else
 	{
 		buffer[1] = 'b';
 		looping = false;
