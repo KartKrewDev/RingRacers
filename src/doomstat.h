@@ -513,10 +513,11 @@ enum GameTypeRules
 	// To be rearranged later
 	GTR_CATCHER				= 1<<17, // UFO Catcher (only works with GTR_CIRCUIT)
 	GTR_BOSS				= 1<<18, // Boss intro and spawning
-
+	GTR_ROLLINGSTART		= 1<<19, // Rolling start (only works with GTR_CIRCUIT)
 	GTR_NOCUPSELECT			= 1<<20, // Your maps are not selected via cup.
 	GTR_CLOSERPLAYERS		= 1<<21, // Buffs spindash and draft power to bring everyone together, nerfs invincibility and grow to prevent excessive combos
 	GTR_ENCORE				= 1<<22, // Alternate Encore mirroring, scripting, and texture remapping
+	GTR_SPECIALSTART		= 1<<23, // White fade instant start
 
 	// free: to and including 1<<31
 };

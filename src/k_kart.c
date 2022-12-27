@@ -109,6 +109,36 @@ void K_TimerInit(void)
 	boolean domodeattack = ((modeattacking != ATTACKING_NONE)
 		|| (grandprixinfo.gp == true && grandprixinfo.eventmode != GPEVENT_NONE));
 
+	// Rooooooolllling staaaaaaart
+	if ((gametyperules & (GTR_ROLLINGSTART|GTR_CIRCUIT)) == (GTR_ROLLINGSTART|GTR_CIRCUIT))
+	{
+		S_StartSound(NULL, sfx_s25f);
+
+		for (i = 0; i < MAXPLAYERS; i++)
+		{
+			player_t *player = NULL;
+
+			if (playeringame[i] == false)
+			{
+				continue;
+			}
+
+			player = &players[i];
+			if (player->spectator == true)
+			{
+				continue;
+			}
+
+			if (player->mo == NULL || P_MobjWasRemoved(player->mo) == true)
+			{
+				continue;
+			}
+
+			// Rolling start? lol
+			P_InstaThrust(player->mo, player->mo->angle, K_GetKartSpeed(player, false, false));
+		}
+	}
+
 	if ((gametyperules & (GTR_CATCHER|GTR_CIRCUIT)) == (GTR_CATCHER|GTR_CIRCUIT))
 	{
 		K_InitSpecialStage();
@@ -3298,7 +3328,8 @@ SINT8 K_GetForwardMove(player_t *player)
 		return 0;
 	}
 
-	if (player->sneakertimer || player->spindashboost)
+	if (player->sneakertimer || player->spindashboost
+		|| (((gametyperules & (GTR_ROLLINGSTART|GTR_CIRCUIT)) == (GTR_ROLLINGSTART|GTR_CIRCUIT)) && (leveltime < TICRATE/2)))
 	{
 		return MAXPLMOVE;
 	}

@@ -1412,7 +1412,7 @@ void G_StartTitleCard(void)
 {
 	// The title card has been disabled for this map.
 	// Oh well.
-	if (!G_IsTitleCardAvailable() || demo.rewinding)
+	if (demo.rewinding || !G_IsTitleCardAvailable())
 	{
 		WipeStageTitle = false;
 		return;
@@ -1476,11 +1476,17 @@ void G_PreLevelTitleCard(void)
 //
 boolean G_IsTitleCardAvailable(void)
 {
-#if 0
+	// Overwrites all other title card exceptions.
+	if (K_CheckBossIntro() == true)
+		return true;
+
 	// The current level has no name.
 	if (!mapheaderinfo[gamemap-1]->lvlttl[0])
 		return false;
-#endif
+
+	// Instant white fade.
+	if (gametyperules & GTR_SPECIALSTART)
+		return false;
 
 	// The title card is available.
 	return true;
@@ -3015,7 +3021,7 @@ static gametype_t defaultgametypes[] =
 	{
 		"Special",
 		"GT_SPECIAL",
-		GTR_CATCHER|GTR_CIRCUIT,
+		GTR_CATCHER|GTR_SPECIALSTART|GTR_ROLLINGSTART|GTR_CIRCUIT,
 		TOL_SPECIAL,
 		int_time,
 		0,
@@ -3211,25 +3217,6 @@ void G_AddTOL(UINT32 newtol, const char *tolname)
 
 	TYPEOFLEVEL[i].name = Z_StrDup(tolname);
 	TYPEOFLEVEL[i].flag = newtol;
-}
-
-//
-// G_IsSpecialStage
-//
-// Returns TRUE if
-// the given map is a special stage.
-//
-boolean G_IsSpecialStage(INT32 mapnum)
-{
-	mapnum--; // gamemap-based to 0 indexed
-
-	if (mapnum > nummapheaders || !mapheaderinfo[mapnum])
-		return false;
-
-	if (!mapheaderinfo[mapnum]->cup || mapheaderinfo[mapnum]->cup->cachedlevels[CUPCACHE_SPECIAL] != mapnum)
-		return false;
-
-	return true;
 }
 
 //
@@ -3666,7 +3653,6 @@ static void G_HandleSaveLevel(void)
 
 static void G_GetNextMap(void)
 {
-	boolean spec = G_IsSpecialStage(prevmap+1);
 	INT32 i;
 
 	// go to next level
@@ -3917,7 +3903,9 @@ static void G_GetNextMap(void)
 	if (nextmap == NEXTMAP_INVALID || (nextmap < NEXTMAP_SPECIAL && (nextmap >= nummapheaders || !mapheaderinfo[nextmap] || mapheaderinfo[nextmap]->lumpnum == LUMPERROR)))
 		I_Error("G_GetNextMap: Internal map ID %d not found (nummapheaders = %d)\n", nextmap, nummapheaders);
 
+#if 0 // This is a surprise tool that will help us later.
 	if (!spec)
+#endif //#if 0
 		lastmap = nextmap;
 }
 

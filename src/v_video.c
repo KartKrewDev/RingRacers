@@ -585,16 +585,16 @@ void V_AdjustXYWithSnap(INT32 *x, INT32 *y, UINT32 options, INT32 dupx, INT32 du
 		}
 	}
 
-	if (options & V_SLIDEIN)
+	if ((options & V_SLIDEIN))
 	{
 		const tic_t length = TICRATE/4;
 		tic_t timer = lt_exitticker;
-		if (K_CheckBossIntro() == true)
+		if (K_CheckBossIntro() == true || G_IsTitleCardAvailable() == false)
 		{
-			if (leveltime <= 3)
+			if (leveltime <= 16)
 				timer = 0;
 			else
-				timer = leveltime-3;
+				timer = leveltime-16;
 		}
 
 		if (timer < length)

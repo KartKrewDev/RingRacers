@@ -802,7 +802,7 @@ void ST_drawTitleCard(void)
 #define HITIME 15
 			patch_t *localwarn = (encoremode ? twarn2 : twarn);
 			INT32 transp = (lt_ticker+HITIME) % (LOTIME+HITIME);
-			boolean encorehack = (encoremode && lt_ticker <= PRELEVELTIME+4);
+			boolean encorehack = ((levelfadecol == 0) && lt_ticker <= PRELEVELTIME+4);
 
 			if ((localwarn->width > 0) && (lt_ticker + (HITIME-transp) <= lt_endtime))
 			{

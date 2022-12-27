@@ -42,8 +42,6 @@ void K_ResetSpecialStage(void)
 --------------------------------------------------*/
 void K_InitSpecialStage(void)
 {
-	INT32 i;
-
 	if ((gametyperules & (GTR_CATCHER|GTR_CIRCUIT)) != (GTR_CATCHER|GTR_CIRCUIT))
 	{
 		return;
@@ -53,30 +51,6 @@ void K_InitSpecialStage(void)
 
 	specialstageinfo.beamDist = UINT32_MAX; // TODO: make proper value
 	P_SetTarget(&specialstageinfo.ufo, Obj_CreateSpecialUFO());
-
-	for (i = 0; i < MAXPLAYERS; i++)
-	{
-		player_t *player = NULL;
-
-		if (playeringame[i] == false)
-		{
-			continue;
-		}
-
-		player = &players[i];
-		if (player->spectator == true)
-		{
-			continue;
-		}
-
-		if (player->mo == NULL || P_MobjWasRemoved(player->mo) == true)
-		{
-			continue;
-		}
-
-		// Rolling start? lol
-		P_InstaThrust(player->mo, player->mo->angle, K_GetKartSpeed(player, false, false));
-	}
 }
 
 /*--------------------------------------------------

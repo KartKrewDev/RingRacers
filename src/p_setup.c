@@ -7326,13 +7326,6 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 		}
 		G_ClearModeAttackRetryFlag();
 	}
-	/*
-	else if (rendermode != render_none && G_IsSpecialStage(gamemap))
-	{
-		P_RunSpecialStageWipe();
-		ranspecialwipe = 1;
-	}
-	*/
 
 	// Make sure all sounds are stopped before Z_FreeTags.
 	S_StopSounds();
@@ -7367,7 +7360,20 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 			S_Start();
 		}
 
-		levelfadecol = (encoremode ? 0 : 31);
+		if (gametyperules & GTR_SPECIALSTART)
+		{
+			if (ranspecialwipe != 2)
+				S_StartSound(NULL, sfx_s3kaf);
+			levelfadecol = 0;
+		}
+		else if (encoremode)
+		{
+			levelfadecol = 0;
+		}
+		else
+		{
+			levelfadecol = 31;
+		}
 
 		if (rendermode != render_none)
 		{

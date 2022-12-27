@@ -3282,15 +3282,6 @@ static int lib_gExitLevel(lua_State *L)
 	return 0;
 }
 
-static int lib_gIsSpecialStage(lua_State *L)
-{
-	INT32 mapnum = luaL_optinteger(L, 1, gamemap);
-	//HUDSAFE
-	INLEVEL
-	lua_pushboolean(L, G_IsSpecialStage(mapnum));
-	return 1;
-}
-
 static int lib_gGametypeUsesLives(lua_State *L)
 {
 	//HUDSAFE
@@ -4099,7 +4090,6 @@ static luaL_Reg lib[] = {
 	{"G_DoReborn",lib_gDoReborn},
 	{"G_SetCustomExitVars",lib_gSetCustomExitVars},
 	{"G_ExitLevel",lib_gExitLevel},
-	{"G_IsSpecialStage",lib_gIsSpecialStage},
 	{"G_GametypeUsesLives",lib_gGametypeUsesLives},
 	{"G_GametypeHasTeams",lib_gGametypeHasTeams},
 	{"G_GametypeHasSpectators",lib_gGametypeHasSpectators},

@@ -1843,7 +1843,7 @@ static void K_HandleLapIncrement(player_t *player)
 {
 	if (player)
 	{
-		if (leveltime < starttime)
+		if (leveltime < starttime && !(gametyperules & GTR_ROLLINGSTART))
 		{
 			// Will fault the player
 			K_DoIngameRespawn(player);
@@ -1902,7 +1902,7 @@ static void K_HandleLapIncrement(player_t *player)
 
 			if (P_IsDisplayPlayer(player))
 			{
-				if (player->laps == numlaps) // final lap
+				if (numlaps > 1 && player->laps == numlaps) // final lap
 					S_StartSound(NULL, sfx_s3k68);
 				else if ((player->laps > 1) && (player->laps < numlaps)) // non-final lap
 					S_StartSound(NULL, sfx_s221);
