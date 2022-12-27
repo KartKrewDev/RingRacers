@@ -369,6 +369,24 @@ static const char *const vector_opt[] = {
 	"z",
 	NULL};
 
+enum activator_e {
+	activator_valid = 0,
+	activator_mo,
+	activator_line,
+	activator_side,
+	activator_sector,
+	activator_po
+};
+
+static const char *const activator_opt[] = {
+	"valid",
+	"mo",
+	"line",
+	"side",
+	"sector",
+	"po",
+	NULL};
+
 static const char *const array_opt[] ={"iterate",NULL};
 static const char *const valid_opt[] ={"valid",NULL};
 
@@ -2473,6 +2491,59 @@ static int mapheaderinfo_get(lua_State *L)
 	return 1;
 }
 
+/////////////////
+// activator_t //
+/////////////////
+
+static int activator_get(lua_State *L)
+{
+	activator_t *activator = *((activator_t **)luaL_checkudata(L, 1, META_ACTIVATOR));
+	enum activator_e field = luaL_checkoption(L, 2, activator_opt[0], activator_opt);
+
+	if (activator == NULL)
+	{
+		if (field == activator_valid)
+		{
+			lua_pushboolean(L, 0);
+			return 1;
+		}
+
+		return luaL_error(L, "accessed activator_t doesn't exist anymore.");
+	}
+
+	switch (field)
+	{
+		case activator_valid:
+			lua_pushboolean(L, 1);
+			return 1;
+
+		case activator_mo:
+			LUA_PushUserdata(L, activator->mo, META_MOBJ);
+			return 1;
+
+		case activator_line:
+			LUA_PushUserdata(L, activator->line, META_LINE);
+			return 1;
+
+		case activator_side:
+			lua_pushinteger(L, activator->side);
+			return 1;
+
+		case activator_sector:
+			LUA_PushUserdata(L, activator->sector, META_SECTOR);
+			return 1;
+
+		case activator_po:
+			LUA_PushUserdata(L, activator->po, META_POLYOBJ);
+			return 1;
+
+		default:
+			break;
+	}
+
+	return 0;
+}
+
 int LUA_MapLib(lua_State *L)
 {
 	luaL_newmetatable(L, META_SECTORLINES);
@@ -2617,6 +2688,11 @@ int LUA_MapLib(lua_State *L)
 
 		//lua_pushcfunction(L, mapheaderinfo_num);
 		//lua_setfield(L, -2, "__len");
+	lua_pop(L, 1);
+
+	luaL_newmetatable(L, META_ACTIVATOR);
+		lua_pushcfunction(L, activator_get);
+		lua_setfield(L, -2, "__index");
 	lua_pop(L, 1);
 
 	LUA_PushTaggableObjectArray(L, "sectors",

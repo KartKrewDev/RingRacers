@@ -220,6 +220,8 @@ static const struct {
 	{META_ACTION,       "action"},
 
 	{META_LUABANKS,     "luabanks[]"},
+
+	{META_ACTIVATOR,    "activator_t"},
 	{NULL,              NULL}
 };
 
