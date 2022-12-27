@@ -975,52 +975,53 @@ static sector_t *P_FindModelCeilingSector(fixed_t ceildestheight, INT32 secnum)
 #endif
 
 // Parses arguments for parameterized polyobject door types
-static boolean PolyDoor(line_t *line)
+static boolean PolyDoor(INT32 *args)
 {
 	polydoordata_t pdd;
 
-	pdd.polyObjNum = line->args[0]; // polyobject id
+	pdd.polyObjNum = args[0]; // polyobject id
 
-	switch(line->special)
-	{
-		case 480: // Polyobj_DoorSlide
-			pdd.doorType = POLY_DOOR_SLIDE;
-			pdd.speed    = line->args[1] << (FRACBITS - 3);
-			pdd.angle    = R_PointToAngle2(line->v1->x, line->v1->y, line->v2->x, line->v2->y); // angle of motion
-			pdd.distance = line->args[2] << FRACBITS;
-			pdd.delay    = line->args[3]; // delay in tics
-			break;
-		case 481: // Polyobj_DoorSwing
-			pdd.doorType = POLY_DOOR_SWING;
-			pdd.speed    = line->args[1]; // angular speed
-			pdd.distance = line->args[2]; // angular distance
-			pdd.delay    = line->args[3]; // delay in tics
-			break;
-		default:
-			return 0; // ???
-	}
+	pdd.doorType = POLY_DOOR_SLIDE;
+	pdd.speed    = args[1] << (FRACBITS - 3);
+	pdd.angle    = FixedAngle(args[2] << FRACBITS); // angle of motion
+	pdd.distance = args[3] << FRACBITS;
+	pdd.delay    = args[4]; // delay in tics
+
+	return EV_DoPolyDoor(&pdd);
+}
+
+static boolean PolyDoorSwing(INT32 *args)
+{
+	polydoordata_t pdd;
+
+	pdd.polyObjNum = args[0]; // polyobject id
+
+	pdd.doorType = POLY_DOOR_SWING;
+	pdd.speed    = args[1]; // angular speed
+	pdd.distance = args[2]; // angular distance
+	pdd.delay    = args[3]; // delay in tics
 
 	return EV_DoPolyDoor(&pdd);
 }
 
 // Parses arguments for parameterized polyobject move special
-static boolean PolyMove(line_t *line)
+static boolean PolyMove(INT32 *args)
 {
 	polymovedata_t pmd;
 
-	pmd.polyObjNum = line->args[0];
-	pmd.speed      = line->args[1] << (FRACBITS - 3);
-	pmd.angle      = R_PointToAngle2(line->v1->x, line->v1->y, line->v2->x, line->v2->y);
-	pmd.distance   = line->args[2] << FRACBITS;
+	pmd.polyObjNum = args[0];
+	pmd.speed      = args[1] << (FRACBITS - 3);
+	pmd.angle      = FixedAngle(args[2] << FRACBITS);
+	pmd.distance   = args[3] << FRACBITS;
 
-	pmd.overRide = !!line->args[3]; // Polyobj_OR_Move
+	pmd.overRide = !!args[4]; // Polyobj_OR_Move
 
 	return EV_DoPolyObjMove(&pmd);
 }
 
-static void PolySetVisibilityTangibility(line_t *line)
+static void PolySetVisibilityTangibility(INT32 *args)
 {
-	INT32 polyObjNum = line->args[0];
+	INT32 polyObjNum = args[0];
 	polyobj_t* po;
 
 	if (!(po = Polyobj_GetForNum(polyObjNum)))
@@ -1033,27 +1034,27 @@ static void PolySetVisibilityTangibility(line_t *line)
 	if (po->isBad)
 		return;
 
-	if (line->args[1] == TMPV_VISIBLE)
+	if (args[1] == TMPV_VISIBLE)
 	{
 		po->flags &= ~POF_NOSPECIALS;
 		po->flags |= (po->spawnflags & POF_RENDERALL);
 	}
-	else if (line->args[1] == TMPV_INVISIBLE)
+	else if (args[1] == TMPV_INVISIBLE)
 	{
 		po->flags |= POF_NOSPECIALS;
 		po->flags &= ~POF_RENDERALL;
 	}
 
-	if (line->args[2] == TMPT_TANGIBLE)
+	if (args[2] == TMPT_TANGIBLE)
 		po->flags |= POF_SOLID;
-	else if (line->args[2] == TMPT_INTANGIBLE)
+	else if (args[2] == TMPT_INTANGIBLE)
 		po->flags &= ~POF_SOLID;
 }
 
 // Sets the translucency of a polyobject
-static void PolyTranslucency(line_t *line)
+static void PolyTranslucency(INT32 *args)
 {
-	INT32 polyObjNum = line->args[0];
+	INT32 polyObjNum = args[0];
 	polyobj_t *po;
 
 	if (!(po = Polyobj_GetForNum(polyObjNum)))
@@ -1066,18 +1067,18 @@ static void PolyTranslucency(line_t *line)
 	if (po->isBad)
 		return;
 
-	if (lines->args[2]) // relative calc
-		po->translucency += line->args[1];
+	if (args[2]) // relative calc
+		po->translucency += args[1];
 	else
-		po->translucency = line->args[1];
+		po->translucency = args[1];
 
 	po->translucency = max(min(po->translucency, NUMTRANSMAPS), 0);
 }
 
 // Makes a polyobject translucency fade and applies tangibility
-static boolean PolyFade(line_t *line)
+static boolean PolyFade(INT32 *args)
 {
-	INT32 polyObjNum = line->args[0];
+	INT32 polyObjNum = args[0];
 	polyobj_t *po;
 	polyfadedata_t pfd;
 
@@ -1092,7 +1093,7 @@ static boolean PolyFade(line_t *line)
 		return 0;
 
 	// Prevent continuous execs from interfering on an existing fade
-	if (!(line->args[3] & TMPF_OVERRIDE)
+	if (!(args[3] & TMPF_OVERRIDE)
 		&& po->thinker
 		&& po->thinker->function.acp1 == (actionf_p1)T_PolyObjFade)
 	{
@@ -1102,10 +1103,10 @@ static boolean PolyFade(line_t *line)
 
 	pfd.polyObjNum = polyObjNum;
 
-	if (line->args[3] & TMPF_RELATIVE) // relative calc
-		pfd.destvalue = po->translucency + line->args[1];
+	if (args[3] & TMPF_RELATIVE) // relative calc
+		pfd.destvalue = po->translucency + args[1];
 	else
-		pfd.destvalue = line->args[1];
+		pfd.destvalue = args[1];
 
 	pfd.destvalue = max(min(pfd.destvalue, NUMTRANSMAPS), 0);
 
@@ -1113,88 +1114,129 @@ static boolean PolyFade(line_t *line)
 	if (po->translucency == pfd.destvalue)
 		return 1;
 
-	pfd.docollision = !(line->args[3] & TMPF_IGNORECOLLISION); // do not handle collision flags
-	pfd.doghostfade = (line->args[3] & TMPF_GHOSTFADE);        // do ghost fade (no collision flags during fade)
-	pfd.ticbased = (line->args[3] & TMPF_TICBASED);            // Speed = Tic Duration
+	pfd.docollision = !(args[3] & TMPF_IGNORECOLLISION); // do not handle collision flags
+	pfd.doghostfade = (args[3] & TMPF_GHOSTFADE);        // do ghost fade (no collision flags during fade)
+	pfd.ticbased = (args[3] & TMPF_TICBASED);            // Speed = Tic Duration
 
-	pfd.speed = line->args[2];
+	pfd.speed = args[2];
 
 	return EV_DoPolyObjFade(&pfd);
 }
 
 // Parses arguments for parameterized polyobject waypoint movement
-static boolean PolyWaypoint(line_t *line)
+static boolean PolyWaypoint(INT32 *args)
 {
 	polywaypointdata_t pwd;
 
-	pwd.polyObjNum     = line->args[0];
-	pwd.speed          = line->args[1] << (FRACBITS - 3);
-	pwd.sequence       = line->args[2];
-	pwd.returnbehavior = line->args[3];
-	pwd.flags          = line->args[4];
+	pwd.polyObjNum     = args[0];
+	pwd.speed          = args[1] << (FRACBITS - 3);
+	pwd.sequence       = args[2];
+	pwd.returnbehavior = args[3];
+	pwd.flags          = args[4];
 
 	return EV_DoPolyObjWaypoint(&pwd);
 }
 
 // Parses arguments for parameterized polyobject rotate special
-static boolean PolyRotate(line_t *line)
+static boolean PolyRotate(INT32 *args)
 {
 	polyrotdata_t prd;
 
-	prd.polyObjNum = line->args[0];
-	prd.speed      = line->args[1]; // angular speed
-	prd.distance   = abs(line->args[2]); // angular distance
-	prd.direction  = (line->args[2] < 0) ? -1 : 1;
-	prd.flags      = line->args[3];
+	prd.polyObjNum = args[0];
+	prd.speed      = args[1]; // angular speed
+	prd.distance   = abs(args[2]); // angular distance
+	prd.direction  = (args[2] < 0) ? -1 : 1;
+	prd.flags      = args[3];
 
 	return EV_DoPolyObjRotate(&prd);
 }
 
 // Parses arguments for polyobject flag waving special
-static boolean PolyFlag(line_t *line)
+static boolean PolyFlag(INT32 *args)
 {
 	polyflagdata_t pfd;
 
-	pfd.polyObjNum = line->args[0];
-	pfd.speed = line->args[1];
-	pfd.angle = line->angle >> ANGLETOFINESHIFT;
-	pfd.momx = line->args[2];
+	pfd.polyObjNum = args[0];
+	pfd.speed = args[1];
+	pfd.angle = FixedAngle(args[2] << FRACBITS) >> ANGLETOFINESHIFT;
+	pfd.momx = args[3];
 
 	return EV_DoPolyObjFlag(&pfd);
 }
 
 // Parses arguments for parameterized polyobject move-by-sector-heights specials
-static boolean PolyDisplace(line_t *line)
+static boolean PolyDisplace(INT32 *args, line_t *fallback)
 {
 	polydisplacedata_t pdd;
-	fixed_t length = R_PointToDist2(line->v2->x, line->v2->y, line->v1->x, line->v1->y);
-	fixed_t speed = line->args[1] << FRACBITS;
+	fixed_t speed;
+	angle_t angle;
 
-	pdd.polyObjNum = line->args[0];
+	pdd.polyObjNum = args[0];
 
-	pdd.controlSector = line->frontsector;
-	pdd.dx = FixedMul(FixedDiv(line->dx, length), speed) >> 8;
-	pdd.dy = FixedMul(FixedDiv(line->dy, length), speed) >> 8;
+	if (args[1] == 0)
+	{
+		if (fallback == NULL)
+		{
+			CONS_Debug(DBG_GAMELOGIC, "PolyDisplace: No frontsector to displace from!\n");
+			return false;
+		}
+		pdd.controlSector = fallback->frontsector;
+	}
+	else
+	{
+		INT32 destsec = Tag_Iterate_Sectors(args[1], 0);
+		if (destsec == -1)
+		{
+			CONS_Debug(DBG_GAMELOGIC, "PolyDisplace: No tagged sector to displace from (tag %d)!\n", args[1]);
+			return false;
+		}
+		pdd.controlSector = &sectors[destsec];
+	}
+
+	speed = args[2] << FRACBITS;
+	angle = FixedAngle(args[3] << FRACBITS) >> ANGLETOFINESHIFT;
+
+	pdd.dx = FixedMul(FINECOSINE(angle), speed) >> 8;
+	pdd.dy = FixedMul(  FINESINE(angle), speed) >> 8;
 
 	return EV_DoPolyObjDisplace(&pdd);
 }
 
 // Parses arguments for parameterized polyobject rotate-by-sector-heights specials
-static boolean PolyRotDisplace(line_t *line)
+static boolean PolyRotDisplace(INT32 *args, line_t *fallback)
 {
 	polyrotdisplacedata_t pdd;
 	fixed_t anginter, distinter;
 
-	pdd.polyObjNum = line->args[0];
-	pdd.controlSector = line->frontsector;
+	pdd.polyObjNum = args[0];
+
+	if (args[1] == 0)
+	{
+		if (fallback == NULL)
+		{
+			CONS_Debug(DBG_GAMELOGIC, "PolyRotDisplace: No frontsector to displace from!\n");
+			return false;
+		}
+		pdd.controlSector = fallback->frontsector;
+	}
+	else
+	{
+		INT32 destsec = Tag_Iterate_Sectors(args[1], 0);
+		if (destsec == -1)
+		{
+			CONS_Debug(DBG_GAMELOGIC, "PolyRotDisplace: No tagged sector to displace from (tag %d)!\n", args[1]);
+			return false;
+		}
+		pdd.controlSector = &sectors[destsec];
+	}
 
 	// Rotate 'anginter' interval for each 'distinter' interval from the control sector.
-	anginter	= line->args[2] << FRACBITS;
-	distinter	= line->args[1] << FRACBITS;
+	distinter	= args[2] << FRACBITS;
+	anginter	= args[3] << FRACBITS;
 	pdd.rotscale = FixedDiv(anginter, distinter);
 
 	// Same behavior as other rotators when carrying things.
-	pdd.turnobjs = line->args[3];
+	pdd.turnobjs = args[4];
 
 	return EV_DoPolyObjRotDisplace(&pdd);
 }
@@ -3869,61 +3911,28 @@ void P_ProcessSpecial(activator_t *activator, INT16 special, INT32 *args, char *
 		break;
 
 		case 480: // Polyobj_DoorSlide
+			PolyDoor(args);
+			break;
 		case 481: // Polyobj_DoorSwing
-			if (line == NULL)
-			{
-				break; // TODO
-			}
-
-			PolyDoor(line);
+			PolyDoorSwing(args);
 			break;
 		case 482: // Polyobj_Move
-			if (line == NULL)
-			{
-				break; // TODO
-			}
-
-			PolyMove(line);
+			PolyMove(args);
 			break;
 		case 484: // Polyobj_RotateRight
-			if (line == NULL)
-			{
-				break; // TODO
-			}
-
-			PolyRotate(line);
+			PolyRotate(args);
 			break;
 		case 488: // Polyobj_Waypoint
-			if (line == NULL)
-			{
-				break; // TODO
-			}
-
-			PolyWaypoint(line);
+			PolyWaypoint(args);
 			break;
 		case 489:
-			if (line == NULL)
-			{
-				break; // TODO
-			}
-
-			PolySetVisibilityTangibility(line);
+			PolySetVisibilityTangibility(args);
 			break;
 		case 491:
-			if (line == NULL)
-			{
-				break; // TODO
-			}
-
-			PolyTranslucency(line);
+			PolyTranslucency(args);
 			break;
 		case 492:
-			if (line == NULL)
-			{
-				break; // TODO
-			}
-
-			PolyFade(line);
+			PolyFade(args);
 			break;
 
 		// SRB2kart
@@ -6929,15 +6938,15 @@ void P_SpawnSpecialsThatRequireObjects(boolean fromnetsave)
 		switch (lines[i].special)
 		{
 			case 30: // Polyobj_Flag
-				PolyFlag(&lines[i]);
+				PolyFlag(lines[i].args);
 				break;
 
 			case 31: // Polyobj_Displace
-				PolyDisplace(&lines[i]);
+				PolyDisplace(lines[i].args, &lines[i]);
 				break;
 
 			case 32: // Polyobj_RotDisplace
-				PolyRotDisplace(&lines[i]);
+				PolyRotDisplace(lines[i].args, &lines[i]);
 				break;
 
 			case 80: // Raise tagged things by type to this FOF

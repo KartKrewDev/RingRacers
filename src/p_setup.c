@@ -4120,20 +4120,24 @@ static void P_ConvertBinaryLinedefTypes(void)
 		case 30: //Polyobject - waving flag
 			lines[i].args[0] = tag;
 			lines[i].args[1] = P_AproxDistance(lines[i].dx, lines[i].dy) >> FRACBITS;
-			lines[i].args[2] = sides[lines[i].sidenum[0]].textureoffset >> FRACBITS;
+			lines[i].args[2] = AngleFixed(lines[i].angle) >> FRACBITS;
+			lines[i].args[3] = sides[lines[i].sidenum[0]].textureoffset >> FRACBITS;
 			break;
 		case 31: //Polyobject - displacement by front sector
 			lines[i].args[0] = tag;
-			lines[i].args[1] = R_PointToDist2(lines[i].v2->x, lines[i].v2->y, lines[i].v1->x, lines[i].v1->y) >> FRACBITS;
+			lines[i].args[1] = 0;
+			lines[i].args[2] = R_PointToDist2(lines[i].v2->x, lines[i].v2->y, lines[i].v1->x, lines[i].v1->y) >> FRACBITS;
+			lines[i].args[3] = R_PointToAngle2(lines[i].v2->x, lines[i].v2->y, lines[i].v1->x, lines[i].v1->y) >> FRACBITS;
 			break;
 		case 32: //Polyobject - angular displacement by front sector
 			lines[i].args[0] = tag;
-			lines[i].args[1] = sides[lines[i].sidenum[0]].textureoffset ? sides[lines[i].sidenum[0]].textureoffset >> FRACBITS : 128;
-			lines[i].args[2] = sides[lines[i].sidenum[0]].rowoffset ? sides[lines[i].sidenum[0]].rowoffset >> FRACBITS : 90;
+			lines[i].args[1] = 0;
+			lines[i].args[2] = sides[lines[i].sidenum[0]].textureoffset ? sides[lines[i].sidenum[0]].textureoffset >> FRACBITS : 128;
+			lines[i].args[3] = sides[lines[i].sidenum[0]].rowoffset ? sides[lines[i].sidenum[0]].rowoffset >> FRACBITS : 90;
 			if (lines[i].flags & ML_NOCLIMB)
-				lines[i].args[3] |= TMPR_DONTROTATEOTHERS;
+				lines[i].args[4] |= TMPR_DONTROTATEOTHERS;
 			else if (lines[i].flags & ML_MIDSOLID)
-				lines[i].args[3] |= TMPR_ROTATEPLAYERS;
+				lines[i].args[4] |= TMPR_ROTATEPLAYERS;
 			break;
 		case 50: //Instantly lower floor on level load
 		case 51: //Instantly raise ceiling on level load
@@ -5416,7 +5420,14 @@ static void P_ConvertBinaryLinedefTypes(void)
 			lines[i].args[3] = !!(lines[i].flags & ML_MIDPEG);
 			break;
 		case 480: //Polyobject - door slide
-		case 481: //Polyobject - door move
+			lines[i].args[0] = tag;
+			lines[i].args[1] = sides[lines[i].sidenum[0]].textureoffset >> FRACBITS;
+			lines[i].args[2] = AngleFixed(R_PointToAngle2(lines[i].v1->x, lines[i].v1->y, lines[i].v2->x, lines[i].v2->y)) >> FRACBITS;
+			lines[i].args[3] = sides[lines[i].sidenum[0]].rowoffset >> FRACBITS;
+			if (lines[i].sidenum[1] != 0xffff)
+				lines[i].args[4] = sides[lines[i].sidenum[1]].textureoffset >> FRACBITS;
+			break;
+		case 481: //Polyobject - door swing
 			lines[i].args[0] = tag;
 			lines[i].args[1] = sides[lines[i].sidenum[0]].textureoffset >> FRACBITS;
 			lines[i].args[2] = sides[lines[i].sidenum[0]].rowoffset >> FRACBITS;
@@ -5427,8 +5438,9 @@ static void P_ConvertBinaryLinedefTypes(void)
 		case 483: //Polyobject - move, override
 			lines[i].args[0] = tag;
 			lines[i].args[1] = sides[lines[i].sidenum[0]].textureoffset >> FRACBITS;
-			lines[i].args[2] = sides[lines[i].sidenum[0]].rowoffset >> FRACBITS;
-			lines[i].args[3] = lines[i].special == 483;
+			lines[i].args[2] = AngleFixed(R_PointToAngle2(lines[i].v1->x, lines[i].v1->y, lines[i].v2->x, lines[i].v2->y)) >> FRACBITS;
+			lines[i].args[3] = sides[lines[i].sidenum[0]].rowoffset >> FRACBITS;
+			lines[i].args[4] = lines[i].special == 483;
 			lines[i].special = 482;
 			break;
 		case 484: //Polyobject - rotate right
