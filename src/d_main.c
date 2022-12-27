@@ -1211,6 +1211,12 @@ void D_SRB2Main(void)
 	/* break the version string into version numbers, for netplay */
 	D_ConvertVersionNumbers();
 
+	if (!strcmp(compbranch, ""))
+	{
+		// \x8b = aqua highlight
+		compbranch = "\x8b" "detached HEAD" "\x80";
+	}
+
 #ifdef DEVELOP
 	D_AbbrevCommit();
 #endif
