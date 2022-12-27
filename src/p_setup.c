@@ -4864,8 +4864,9 @@ static void P_ConvertBinaryLinedefTypes(void)
 			lines[i].special = 400;
 			break;
 		case 402: //Copy light level
-			lines[i].args[0] = tag;
-			lines[i].args[1] = 0;
+			lines[i].args[0] = 0;
+			lines[i].args[1] = tag;
+			lines[i].args[2] = 0;
 			break;
 		case 403: //Move tagged sector's floor
 		case 404: //Move tagged sector's ceiling
@@ -4886,18 +4887,19 @@ static void P_ConvertBinaryLinedefTypes(void)
 			lines[i].special = 405;
 			break;
 		case 408: //Set flats
-			lines[i].args[0] = tag;
+			lines[i].args[0] = 0;
+			lines[i].args[1] = tag;
 			if ((lines[i].flags & (ML_NOCLIMB|ML_MIDSOLID)) == (ML_NOCLIMB|ML_MIDSOLID))
 			{
 				CONS_Alert(CONS_WARNING, M_GetText("Set flats linedef (tag %d) doesn't have anything to do.\nConsider changing the linedef's flag configuration or removing it entirely.\n"), tag);
 				lines[i].special = 0;
 			}
 			else if (lines[i].flags & ML_NOCLIMB)
-				lines[i].args[1] = TMP_CEILING;
+				lines[i].args[2] = TMP_CEILING;
 			else if (lines[i].flags & ML_MIDSOLID)
-				lines[i].args[1] = TMP_FLOOR;
+				lines[i].args[2] = TMP_FLOOR;
 			else
-				lines[i].args[1] = TMP_BOTH;
+				lines[i].args[2] = TMP_BOTH;
 			break;
 		case 409: //Change tagged sector's tag
 			lines[i].args[0] = tag;
@@ -5168,9 +5170,10 @@ static void P_ConvertBinaryLinedefTypes(void)
 			lines[i].args[0] = P_AproxDistance(lines[i].dx, lines[i].dy) >> FRACBITS;
 			break;
 		case 439: //Change tagged linedef's textures
-			lines[i].args[0] = tag;
-			lines[i].args[1] = TMSD_FRONTBACK;
-			lines[i].args[2] = !!(lines[i].flags & ML_NOCLIMB);
+			lines[i].args[0] = 0;
+			lines[i].args[1] = tag;
+			lines[i].args[2] = TMSD_FRONTBACK;
+			lines[i].args[3] = !!(lines[i].flags & ML_NOCLIMB);
 			break;
 		case 441: //Condition set trigger
 			lines[i].args[0] = sides[lines[i].sidenum[0]].textureoffset >> FRACBITS;

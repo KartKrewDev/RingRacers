@@ -2232,26 +2232,43 @@ void P_ProcessSpecial(activator_t *activator, INT16 special, INT32 *args, char *
 			break;
 
 		case 402: // Copy light level to tagged sectors
-			if (line == NULL)
 			{
-				break; // TODO
-			}
+				sector_t *copySector = NULL;
 
-			{
 				INT16 newlightlevel;
 				INT16 newfloorlightlevel, newceilinglightlevel;
 				boolean newfloorlightabsolute, newceilinglightabsolute;
 				INT32 newfloorlightsec, newceilinglightsec;
 
-				newlightlevel = line->frontsector->lightlevel;
-				newfloorlightlevel = line->frontsector->floorlightlevel;
-				newfloorlightabsolute = line->frontsector->floorlightabsolute;
-				newceilinglightlevel = line->frontsector->ceilinglightlevel;
-				newceilinglightabsolute = line->frontsector->ceilinglightabsolute;
-				newfloorlightsec = line->frontsector->floorlightsec;
-				newceilinglightsec = line->frontsector->ceilinglightsec;
+				if (args[0] == 0)
+				{
+					if (line == NULL)
+					{
+						CONS_Debug(DBG_GAMELOGIC, "Special type 402 Executor: No frontsector to copy light level from!\n");
+						return;
+					}
+					copySector = line->frontsector;
+				}
+				else
+				{
+					INT32 destsec = Tag_Iterate_Sectors(args[0], 0);
+					if (destsec == -1)
+					{
+						CONS_Debug(DBG_GAMELOGIC, "Special type 402 Executor: No sector to copy light level from (tag %d)!\n", args[0]);
+						return;
+					}
+					copySector = &sectors[destsec];
+				}
 
-				TAG_ITER_SECTORS(args[0], secnum)
+				newlightlevel = copySector->lightlevel;
+				newfloorlightlevel = copySector->floorlightlevel;
+				newfloorlightabsolute = copySector->floorlightabsolute;
+				newceilinglightlevel = copySector->ceilinglightlevel;
+				newceilinglightabsolute = copySector->ceilinglightabsolute;
+				newfloorlightsec = copySector->floorlightsec;
+				newceilinglightsec = copySector->ceilinglightsec;
+
+				TAG_ITER_SECTORS(args[1], secnum)
 				{
 					if (sectors[secnum].lightingdata)
 					{
@@ -2260,17 +2277,17 @@ void P_ProcessSpecial(activator_t *activator, INT16 special, INT32 *args, char *
 						sectors[secnum].lightingdata = NULL;
 					}
 
-					if (!(args[1] & TMLC_NOSECTOR))
+					if (!(args[2] & TMLC_NOSECTOR))
 						sectors[secnum].lightlevel = newlightlevel;
 
-					if (!(args[1] & TMLC_NOFLOOR))
+					if (!(args[2] & TMLC_NOFLOOR))
 					{
 						sectors[secnum].floorlightlevel = newfloorlightlevel;
 						sectors[secnum].floorlightabsolute = newfloorlightabsolute;
 						sectors[secnum].floorlightsec = newfloorlightsec;
 					}
 
-					if (!(args[1] & TMLC_NOCEILING))
+					if (!(args[2] & TMLC_NOCEILING))
 					{
 						sectors[secnum].ceilinglightlevel = newceilinglightlevel;
 						sectors[secnum].ceilinglightabsolute = newceilinglightabsolute;
@@ -2306,17 +2323,34 @@ void P_ProcessSpecial(activator_t *activator, INT16 special, INT32 *args, char *
 
 		case 408: // Set flats
 		{
-			if (line == NULL)
+			sector_t *copySector = NULL;
+
+			if (args[0] == 0)
 			{
-				break; // TODO
+				if (line == NULL)
+				{
+					CONS_Debug(DBG_GAMELOGIC, "Special type 408 Executor: No frontsector to copy flats from!\n");
+					return;
+				}
+				copySector = line->frontsector;
+			}
+			else
+			{
+				INT32 destsec = Tag_Iterate_Sectors(args[0], 0);
+				if (destsec == -1)
+				{
+					CONS_Debug(DBG_GAMELOGIC, "Special type 408 Executor: No sector to copy flats from (tag %d)!\n", args[0]);
+					return;
+				}
+				copySector = &sectors[destsec];
 			}
 
-			TAG_ITER_SECTORS(args[0], secnum)
+			TAG_ITER_SECTORS(args[1], secnum)
 			{
-				if (args[1] != TMP_CEILING)
-					sectors[secnum].floorpic = line->frontsector->floorpic;
-				if (args[1] != TMP_FLOOR)
-					sectors[secnum].ceilingpic = line->frontsector->ceilingpic;
+				if (args[2] != TMP_CEILING)
+					sectors[secnum].floorpic = copySector->floorpic;
+				if (args[2] != TMP_FLOOR)
+					sectors[secnum].ceilingpic = copySector->ceilingpic;
 			}
 			break;
 		}
@@ -2804,28 +2838,44 @@ void P_ProcessSpecial(activator_t *activator, INT16 special, INT32 *args, char *
 
 		case 439: // Set texture
 			{
+				line_t *copyLine = NULL;
 				size_t linenum;
 				side_t *set, *this;
 				boolean always;
 
-				if (line == NULL)
+				if (args[0] == 0)
 				{
-					break; // TODO
+					if (line == NULL)
+					{
+						CONS_Debug(DBG_GAMELOGIC, "Special type 439 Executor: No activating line to copy textures from!\n");
+						return;
+					}
+					copyLine = line;
+				}
+				else
+				{
+					INT32 origline = Tag_Iterate_Lines(args[0], 0);
+					if (origline == -1)
+					{
+						CONS_Debug(DBG_GAMELOGIC, "Special type 439 Executor: No tagged line to copy textures from (tag %d)!\n", args[0]);
+						return;
+					}
+					copyLine = &lines[origline];
 				}
 
-				set = &sides[line->sidenum[0]];
-				always = !(line->args[2]); // If args[2] is set: Only change mid texture if mid texture already exists on tagged lines, etc.
+				set = &sides[copyLine->sidenum[0]];
+				always = !(args[3]); // If args[3] is set: Only change mid texture if mid texture already exists on tagged lines, etc.
 
 				for (linenum = 0; linenum < numlines; linenum++)
 				{
 					if (lines[linenum].special == 439)
 						continue; // Don't override other set texture lines!
 
-					if (!Tag_Find(&lines[linenum].tags, line->args[0]))
+					if (!Tag_Find(&lines[linenum].tags, args[1]))
 						continue; // Find tagged lines
 
 					// Front side
-					if (line->args[1] != TMSD_BACK)
+					if (args[2] != TMSD_BACK)
 					{
 						this = &sides[lines[linenum].sidenum[0]];
 						if (always || this->toptexture) this->toptexture = set->toptexture;
@@ -2834,7 +2884,7 @@ void P_ProcessSpecial(activator_t *activator, INT16 special, INT32 *args, char *
 					}
 
 					// Back side
-					if (line->args[1] != TMSD_FRONT && lines[linenum].sidenum[1] != 0xffff)
+					if (args[2] != TMSD_FRONT && lines[linenum].sidenum[1] != 0xffff)
 					{
 						this = &sides[lines[linenum].sidenum[1]];
 						if (always || this->toptexture) this->toptexture = set->toptexture;
