@@ -4515,7 +4515,7 @@ static void P_ConvertBinaryLinedefTypes(void)
 				lines[i].args[3] |= TMFA_SPLAT;
 
 			lines[i].special = 220;
-            break;
+			break;
 		case 250: //FOF: Mario block
 			lines[i].args[0] = tag;
 			if (lines[i].flags & ML_NOCLIMB)
@@ -4860,11 +4860,12 @@ static void P_ConvertBinaryLinedefTypes(void)
 				lines[i].args[2] = TMC_EQUAL;
 			lines[i].special = 340;
 			break;
-		case 400: //Set tagged sector's floor height/texture
-		case 401: //Set tagged sector's ceiling height/texture
-			lines[i].args[0] = tag;
-			lines[i].args[1] = lines[i].special - 400;
-			lines[i].args[2] = !(lines[i].flags & ML_NOCLIMB);
+		case 400: //Copy tagged sector's floor height/texture
+		case 401: //Copy tagged sector's ceiling height/texture
+			lines[i].args[0] = 0;
+			lines[i].args[1] = tag;
+			lines[i].args[2] = lines[i].special - 400;
+			lines[i].args[3] = !(lines[i].flags & ML_NOCLIMB);
 			lines[i].special = 400;
 			break;
 		case 402: //Copy light level
@@ -4872,13 +4873,14 @@ static void P_ConvertBinaryLinedefTypes(void)
 			lines[i].args[1] = tag;
 			lines[i].args[2] = 0;
 			break;
-		case 403: //Move tagged sector's floor
-		case 404: //Move tagged sector's ceiling
-			lines[i].args[0] = tag;
-			lines[i].args[1] = lines[i].special - 403;
-			lines[i].args[2] = P_AproxDistance(lines[i].dx, lines[i].dy) >> FRACBITS;
-			lines[i].args[3] = (lines[i].flags & ML_BLOCKPLAYERS) ? sides[lines[i].sidenum[0]].textureoffset >> FRACBITS : 0;
-			lines[i].args[4] = !!(lines[i].flags & ML_NOCLIMB);
+		case 403: //Copy-move tagged sector's floor height/texture
+		case 404: //Copy-move tagged sector's ceiling height/texture
+			lines[i].args[0] = 0;
+			lines[i].args[1] = tag;
+			lines[i].args[2] = lines[i].special - 403;
+			lines[i].args[3] = P_AproxDistance(lines[i].dx, lines[i].dy) >> FRACBITS;
+			lines[i].args[4] = (lines[i].flags & ML_BLOCKPLAYERS) ? sides[lines[i].sidenum[0]].textureoffset >> FRACBITS : 0;
+			lines[i].args[5] = !!(lines[i].flags & ML_NOCLIMB);
 			lines[i].special = 403;
 			break;
 		case 405: //Move floor according to front texture offsets
@@ -4890,12 +4892,12 @@ static void P_ConvertBinaryLinedefTypes(void)
 			lines[i].args[4] = !!(lines[i].flags & ML_NOCLIMB);
 			lines[i].special = 405;
 			break;
-		case 408: //Set flats
+		case 408: //Copy flats
 			lines[i].args[0] = 0;
 			lines[i].args[1] = tag;
 			if ((lines[i].flags & (ML_NOCLIMB|ML_MIDSOLID)) == (ML_NOCLIMB|ML_MIDSOLID))
 			{
-				CONS_Alert(CONS_WARNING, M_GetText("Set flats linedef (tag %d) doesn't have anything to do.\nConsider changing the linedef's flag configuration or removing it entirely.\n"), tag);
+				CONS_Alert(CONS_WARNING, M_GetText("Copy flats linedef (tag %d) doesn't have anything to do.\nConsider changing the linedef's flag configuration or removing it entirely.\n"), tag);
 				lines[i].special = 0;
 			}
 			else if (lines[i].flags & ML_NOCLIMB)

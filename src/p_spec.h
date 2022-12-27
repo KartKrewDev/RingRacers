@@ -984,7 +984,7 @@ void EV_DoInstantMoveFloorByHeight(mtag_t tag, fixed_t height, INT32 texture);
 void EV_DoMoveFloorByHeight(mtag_t tag, fixed_t height, fixed_t speed, mtag_t chain, INT32 texture);
 void EV_DoMoveFloorByDistance(mtag_t tag, fixed_t distance, fixed_t speed, boolean instant);
 void EV_DoBounceFloor(mtag_t tag, boolean crush, fixed_t crushHeight, fixed_t crushSpeed, fixed_t returnHeight, fixed_t returnSpeed, INT32 delayInit, INT32 delay);
-void EV_DoCrushFloorOnce(mtag_t tag, fixed_t height, fixed_t speed);
+void EV_DoCrushFloorOnce(mtag_t tag, fixed_t speed);
 
 void EV_DoElevator(mtag_t tag, line_t *line, elevator_e elevtype);
 void EV_CrumbleChain(sector_t *sec, ffloor_t *rover);
