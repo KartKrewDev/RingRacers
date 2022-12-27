@@ -281,10 +281,11 @@ static void UFOMove(mobj_t *ufo)
 	if (curWaypoint == NULL || destWaypoint == NULL)
 	{
 		// Waypoints aren't valid.
-		// Just stand still.
+		// Just go straight up.
+		// :japanese_ogre: : "Abrupt and funny is the funniest way to end the special stage anyways"
 		ufo->momx = 0;
 		ufo->momy = 0;
-		ufo->momz = 0;
+		ufo->momz = ufo_speed(ufo);
 		return;
 	}
 
@@ -365,8 +366,23 @@ static void UFOMove(mobj_t *ufo)
 
 	if (reachedEnd == true)
 	{
-		CONS_Printf("You lost...\n");
-		ufo_waypoint(ufo) = -1; // Invalidate
+		UINT8 i;
+
+		// Invalidate UFO/emerald
+		ufo_waypoint(ufo) = -1;
+		ufo->flags &= ~(MF_SPECIAL|MF_PICKUPFROMBELOW);
+
+		// Disable player
+		for (i = 0; i < MAXPLAYERS; i++)
+		{
+			if (!playeringame[i])
+				continue;
+			if (players[i].spectator)
+				continue;
+
+			players[i].pflags |= PF_NOCONTEST;
+			P_DoPlayerExit(&players[i]);
+		}
 	}
 
 	if (pathfindsuccess == true)
@@ -655,7 +671,10 @@ void Obj_UFOPieceThink(mobj_t *piece)
 			fixed_t sc = FixedDiv(FixedDiv(ufo->ceilingz - stemZ, piece->scale), 15 * FRACUNIT);
 
 			UFOMoveTo(piece, ufo->x, ufo->y, stemZ);
-			piece->spriteyscale = sc;
+			if (sc > 0)
+			{
+				piece->spriteyscale = sc;
+			}
 			break;
 		}
 		default:

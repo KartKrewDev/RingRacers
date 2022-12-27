@@ -372,6 +372,9 @@ boolean K_IsPlayerLosing(player_t *player)
 	INT32 winningpos = 1;
 	UINT8 i, pcount = 0;
 
+	if (player->pflags & PF_NOCONTEST)
+		return true;
+
 	if (battlecapsules && numtargets == 0)
 		return true; // Didn't even TRY?
 
@@ -380,6 +383,9 @@ boolean K_IsPlayerLosing(player_t *player)
 
 	if (player->position == 1)
 		return false;
+
+	if (specialstageinfo.valid == true)
+		return false; // anything short of DNF is COOL
 
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
@@ -7566,8 +7572,6 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		}
 		//CONS_Printf("cam: %d, dest: %d\n", player->karthud[khud_boostcam], player->karthud[khud_destboostcam]);
 	}
-
-	player->karthud[khud_timeovercam] = 0;
 
 	// Make ABSOLUTELY SURE that your flashing tics don't get set WHILE you're still in hit animations.
 	if (player->spinouttimer != 0 || player->wipeoutslow != 0)

@@ -54,6 +54,7 @@
 #include "k_bot.h"
 #include "k_grandprix.h"
 #include "k_boss.h"
+#include "k_specialstage.h"
 #include "k_terrain.h" // K_SpawnSplashForMobj
 #include "k_color.h"
 #include "k_follower.h"
@@ -1307,7 +1308,16 @@ void P_DoPlayerExit(player_t *player)
 				P_EndingMusic(player);
 
 			if (P_CheckRacers() && !exitcountdown)
-				exitcountdown = raceexittime+1;
+			{
+				if (specialstageinfo.valid == true && losing == true)
+				{
+					exitcountdown = (5*TICRATE)/2;
+				}
+				else
+				{
+					exitcountdown = raceexittime+1;
+				}
+			}
 		}
 		else if ((gametyperules & GTR_BUMPERS)) // Battle Mode exiting
 		{
@@ -3048,7 +3058,7 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 		return true;
 	}
 
-	if ((player->pflags & PF_NOCONTEST) && (gametyperules & GTR_CIRCUIT)) // 1 for momentum keep, 2 for turnaround
+	if ((player->pflags & PF_NOCONTEST) && (gametyperules & GTR_CIRCUIT) && player->karthud[khud_timeovercam] != 0) // 1 for momentum keep, 2 for turnaround
 		timeover = (player->karthud[khud_timeovercam] > 2*TICRATE ? 2 : 1);
 	else
 		timeover = 0;

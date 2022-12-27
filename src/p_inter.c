@@ -32,6 +32,7 @@
 // SRB2kart
 #include "k_kart.h"
 #include "k_battle.h"
+#include "k_specialstage.h"
 #include "k_pwrlv.h"
 #include "k_grandprix.h"
 #include "k_respawn.h"
@@ -892,7 +893,7 @@ boolean P_CheckRacers(void)
 		}
 	}
 
-	if (numPlaying <= 1)
+	if (numPlaying <= 1 || specialstageinfo.valid == true)
 	{
 		// Never do this without enough players.
 		eliminateLast = false;
