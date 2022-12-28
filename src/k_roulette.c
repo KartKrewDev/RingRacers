@@ -1122,9 +1122,7 @@ void K_FillItemRouletteData(const player_t *player, itemroulette_t *const roulet
 	// Use a special, pre-determined item reel for Time Attack / Free Play / End of Sealed Stars
 	if (specialstageinfo.valid)
 	{
-		if (specialstageinfo.ufo == NULL
-			|| P_MobjWasRemoved(specialstageinfo.ufo)
-			|| specialstageinfo.ufo->health == 1)
+		if (K_GetPossibleSpecialTarget() == NULL)
 		{
 			for (i = 0; K_KartItemReelSpecialEnd[i] != KITEM_NONE; i++)
 			{

@@ -121,3 +121,18 @@ void K_TickSpecialStage(void)
 
 	K_MoveExitBeam();
 }
+
+mobj_t *K_GetPossibleSpecialTarget(void)
+{
+	if (specialstageinfo.valid == false)
+		return NULL;
+
+	if (specialstageinfo.ufo == NULL
+	|| P_MobjWasRemoved(specialstageinfo.ufo))
+		return NULL;
+
+	if (specialstageinfo.ufo->health <= 1) //UFOEmeraldChase(specialstageinfo.ufo)
+		return NULL;
+
+	return specialstageinfo.ufo;
+}

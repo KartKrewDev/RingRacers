@@ -1339,9 +1339,7 @@ static boolean K_TryDraft(player_t *player, mobj_t *dest, fixed_t minDist, fixed
 */
 static void K_UpdateDraft(player_t *player)
 {
-	const boolean addUfo = ((specialstageinfo.valid == true)
-		&& (specialstageinfo.ufo != NULL && P_MobjWasRemoved(specialstageinfo.ufo) == false)
-		&& specialstageinfo.ufo->health > 1);
+	mobj_t *addUfo = K_GetPossibleSpecialTarget();
 
 	fixed_t topspd = K_GetKartSpeed(player, false, false);
 	fixed_t draftdistance;
@@ -1381,10 +1379,10 @@ static void K_UpdateDraft(player_t *player)
 	// Not enough speed to draft.
 	if (player->speed >= 20 * player->mo->scale)
 	{
-		if (addUfo == true)
+		if (addUfo != NULL)
 		{
 			// Tether off of the UFO!
-			if (K_TryDraft(player, specialstageinfo.ufo, minDist, draftdistance, leniency) == true)
+			if (K_TryDraft(player, addUfo, minDist, draftdistance, leniency) == true)
 			{
 				return; // Finished doing our draft.
 			}
@@ -1438,11 +1436,11 @@ static void K_UpdateDraft(player_t *player)
 			fixed_t dist = P_AproxDistance(P_AproxDistance(victim->mo->x - player->mo->x, victim->mo->y - player->mo->y), victim->mo->z - player->mo->z);
 			K_DrawDraftCombiring(player, victim->mo, dist, draftdistance, true);
 		}
-		else if (addUfo == true)
+		else if (addUfo != NULL)
 		{
 			// kind of a hack to not have to mess with how lastdraft works
-			fixed_t dist = P_AproxDistance(P_AproxDistance(specialstageinfo.ufo->x - player->mo->x, specialstageinfo.ufo->y - player->mo->y), specialstageinfo.ufo->z - player->mo->z);
-			K_DrawDraftCombiring(player, specialstageinfo.ufo, dist, draftdistance, true);
+			fixed_t dist = P_AproxDistance(P_AproxDistance(addUfo->x - player->mo->x, addUfo->y - player->mo->y), addUfo->z - player->mo->z);
+			K_DrawDraftCombiring(player, addUfo, dist, draftdistance, true);
 		}
 	}
 	else // Remove draft speed boost.
@@ -6831,8 +6829,8 @@ mobj_t *K_FindJawzTarget(mobj_t *actor, player_t *source, angle_t range)
 
 	if (specialstageinfo.valid == true)
 	{
-		// Always target the UFO.
-		return specialstageinfo.ufo;
+		// Always target the UFO (but not the emerald)
+		return K_GetPossibleSpecialTarget();
 	}
 
 	for (i = 0; i < MAXPLAYERS; i++)
@@ -8066,10 +8064,11 @@ void K_KartPlayerAfterThink(player_t *player)
 
 		mobj_t *ret = NULL;
 
-		if (specialstageinfo.valid == true && lastTargID == MAXPLAYERS)
+		if (specialstageinfo.valid == true
+			&& lastTargID == MAXPLAYERS)
 		{
-			// Aiming at the UFO.
-			lastTarg = specialstageinfo.ufo;
+			// Aiming at the UFO (but never the emerald).
+			lastTarg = K_GetPossibleSpecialTarget();
 		}
 		else if ((lastTargID >= 0 && lastTargID <= MAXPLAYERS)
 			&& playeringame[lastTargID] == true)

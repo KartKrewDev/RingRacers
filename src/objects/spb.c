@@ -857,6 +857,20 @@ void Obj_SPBThink(mobj_t *spb)
 		ghost->colorized = true;
 	}
 
+	if (spb_nothink(spb) <= 1)
+	{
+		if (specialstageinfo.valid == true)
+		{
+			bestRank = 0;
+
+			if ((bestMobj = K_GetPossibleSpecialTarget()) == NULL)
+			{
+				spb->fuse = TICRATE/3;
+				spb_nothink(spb) = spb->fuse + 2;
+			}
+		}
+	}
+
 	if (spb_nothink(spb) > 0)
 	{
 		// Init values, don't think yet.
@@ -874,15 +888,6 @@ void Obj_SPBThink(mobj_t *spb)
 	}
 	else
 	{
-		if (specialstageinfo.valid == true)
-		{
-			if (specialstageinfo.ufo != NULL && P_MobjWasRemoved(specialstageinfo.ufo) == false)
-			{
-				bestRank = 1;
-				bestMobj = specialstageinfo.ufo;
-			}
-		}
-
 		// Find the player with the best rank
 		for (i = 0; i < MAXPLAYERS; i++)
 		{
