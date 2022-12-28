@@ -1,5 +1,6 @@
 add_executable(SRB2SDL2 MACOSX_BUNDLE WIN32
 	comptime.c
+	cxxutil.hpp
 	md5.c
 	config.h.in
 	string.c
@@ -537,6 +538,7 @@ if(SRB2_CONFIG_PROFILEMODE AND "${CMAKE_C_COMPILER_ID}" STREQUAL "GNU")
 	target_link_options(SRB2SDL2 PRIVATE -pg)
 endif()
 
+add_subdirectory(io)
 add_subdirectory(sdl)
 add_subdirectory(objects)
 add_subdirectory(tests)
