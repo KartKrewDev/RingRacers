@@ -1145,6 +1145,10 @@ static void P_LoadSidedefs(UINT8 *data)
 			case 459: // Control text prompt (named tag)
 			case 461: // Spawns an object on the map based on texture offsets
 			case 463: // Colorizes an object
+			case 475: // ACS_Execute
+			case 476: // ACS_ExecuteAlways
+			case 477: // ACS_Suspend
+			case 478: // ACS_Terminate
 			{
 				char process[8*3+1];
 				memset(process,0,8*3+1);
@@ -5422,10 +5426,10 @@ static void P_ConvertBinaryLinedefTypes(void)
 			lines[i].args[2] = TML_SECTOR;
 			lines[i].args[3] = !!(lines[i].flags & ML_MIDPEG);
 			break;
-		case 475: // ACS funcs
-		case 476:
-		case 477:
-		case 478:
+		case 475: // ACS_Execute
+		case 476: // ACS_ExecuteAlways
+		case 477: // ACS_Suspend
+		case 478: // ACS_Terminate
 			if (sides[lines[i].sidenum[0]].text)
 			{
 				lines[i].stringargs[0] = Z_Malloc(strlen(sides[lines[i].sidenum[0]].text) + 1, PU_LEVEL, NULL);

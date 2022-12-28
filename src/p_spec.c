@@ -3987,7 +3987,7 @@ void P_ProcessSpecial(activator_t *activator, INT16 special, INT32 *args, char *
 		}
 		break;
 
-		case 475:
+		case 475: // ACS_Execute
 			if (!stringargs[0])
 			{
 				CONS_Debug(DBG_GAMELOGIC, "Linedef type 475: No script name given\n");
@@ -3996,7 +3996,7 @@ void P_ProcessSpecial(activator_t *activator, INT16 special, INT32 *args, char *
 
 			ACS_Execute(stringargs[0], args, NUMLINEARGS, activator);
 			break;
-		case 476:
+		case 476: // ACS_ExecuteAlways
 			if (!stringargs[0])
 			{
 				CONS_Debug(DBG_GAMELOGIC, "Linedef type 476: No script name given\n");
@@ -4005,7 +4005,7 @@ void P_ProcessSpecial(activator_t *activator, INT16 special, INT32 *args, char *
 
 			ACS_ExecuteAlways(stringargs[0], args, NUMLINEARGS, activator);
 			break;
-		case 477:
+		case 477: // ACS_Suspend
 			if (!stringargs[0])
 			{
 				CONS_Debug(DBG_GAMELOGIC, "Linedef type 477: No script name given\n");
@@ -4014,7 +4014,7 @@ void P_ProcessSpecial(activator_t *activator, INT16 special, INT32 *args, char *
 
 			ACS_Suspend(stringargs[0]);
 			break;
-		case 478:
+		case 478: // ACS_Terminate
 			if (!stringargs[0])
 			{
 				CONS_Debug(DBG_GAMELOGIC, "Linedef type 478: No script name given\n");
