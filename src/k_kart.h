@@ -197,6 +197,8 @@ fixed_t K_ItemScaleForPlayer(player_t *player);
 void K_SetItemOut(player_t *player);
 void K_UnsetItemOut(player_t *player);
 
+void K_UpdateMobjItemOverlay(mobj_t *part, SINT8 itemType, UINT8 itemCount);
+
 #ifdef __cplusplus
 } // extern "C"
 #endif
