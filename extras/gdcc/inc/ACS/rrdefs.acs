@@ -13,29 +13,144 @@
 // Macros                                                                     |
 //
 
-#define TRUE  1
-#define FALSE 0
-#define ON    1
-#define OFF   0
-#define YES   1
-#define NO    0
+#define TRUE  (1)
+#define FALSE (0)
 
-#define LINE_FRONT 0
-#define LINE_BACK  1
+#define ON    (1)
+#define OFF   (0)
 
-#define SIDE_FRONT 0
-#define SIDE_BACK  1
+#define YES   (1)
+#define NO    (0)
 
-#define TEXTURE_TOP    0
-#define TEXTURE_MIDDLE 1
-#define TEXTURE_BOTTOM 2
+#define FLAG_NOCHANGE (0)
+#define FLAG_ADD      (1)
+#define FLAG_REMOVE   (2)
 
-#define GAMETYPE_RACE   0
-#define GAMETYPE_BATTLE 1
+#define PLANE_FLOOR   (0)
+#define PLANE_CEILING (1)
+#define PLANE_BOTH    (2)
 
-#define GAMESPEED_EASY   0
-#define GAMESPEED_NORMAL 1
-#define GAMESPEED_HARD   2
+#define SIDE_FRONT (0)
+#define SIDE_BACK  (1)
+#define SIDE_BOTH  (2)
+
+#define TEXTURE_TOP    (0)
+#define TEXTURE_MIDDLE (1)
+#define TEXTURE_BOTTOM (2)
+
+#define TAG_REPLACEFIRST (0)
+#define TAG_ADD          (1)
+#define TAG_REMOVE       (2)
+
+#define LIGHT_COPY_NOSECTOR  (1)
+#define LIGHT_COPY_NOFLOOR   (1<<1)
+#define LIGHT_COPY_NOCEILING (1<<2)
+
+#define LIGHT_BLINK_USETARGET (1)
+#define LIGHT_BLINK_SYNC      (1<<1)
+
+#define LIGHT_FADE_RELATIVE (1)
+#define LIGHT_FADE_OVERRIDE (1<<1)
+#define LIGHT_FADE_TICBASED (1<<2)
+
+#define LIGHT_AREA_SECTOR  (0)
+#define LIGHT_AREA_FLOOR   (1)
+#define LIGHT_AREA_CEILING (2)
+
+#define TELEPORT_SILENT       (1)
+#define TELEPORT_KEEPANGLE    (1<<1)
+#define TELEPORT_KEEPMOMENTUM (1<<2)
+#define TELEPORT_RELATIVE     (1<<3)
+
+#define MUSIC_ALLPLAYERS (1)
+#define MUSIC_NOLOOP     (1<<2)
+#define MUSIC_NOCREDIT   (1<<3)
+#define MUSIC_NORELOAD   (1<<4)
+#define MUSIC_FORCERESET (1<<5)
+#define MUSIC_OFFSET     (1<<6)
+#define MUSIC_FADE       (1<<7)
+
+#define SFX_SOURCE_TRIGGERMOBJ   (0)
+#define SFX_SOURCE_TRIGGERSECTOR (1)
+#define SFX_SOURCE_NOWHERE       (2)
+#define SFX_SOURCE_TAGGEDSECTOR  (3)
+
+#define SFX_LISTEN_EVERYONE     (0)
+#define SFX_LISTEN_TRIGGERER    (1)
+#define SFX_LISTEN_TAGGEDSECTOR (2)
+
+#define CRUMBLE_NORETURN  (1)
+#define CRUMBLE_CHECKFLAG (1<<1)
+
+#define COLORMAP_RELATIVE     (1)
+#define COLORMAP_SUBLIGHTR    (1<<1)
+#define COLORMAP_SUBLIGHTG    (1<<2)
+#define COLORMAP_SUBLIGHTB    (1<<3)
+#define COLORMAP_SUBLIGHTA    (1<<4)
+#define COLORMAP_SUBFADER     (1<<5)
+#define COLORMAP_SUBFADEG     (1<<6)
+#define COLORMAP_SUBFADEB     (1<<7)
+#define COLORMAP_SUBFADEA     (1<<8)
+#define COLORMAP_SUBFADESTART (1<<9)
+#define COLORMAP_SUBFADEEND   (1<<10)
+#define COLORMAP_IGNOREFLAGS  (1<<11)
+#define COLORMAP_FROMBLACK    (1<<12)
+#define COLORMAP_OVERRIDE     (1<<13)
+
+#define SKYBOX_VIEWPOINT   (0)
+#define SKYBOX_CENTERPOINT (1)
+#define SKYBOX_BOTH        (2)
+
+#define ALPHA_SET_RELATIVE          (1)
+#define ALPHA_SET_DONTDOTRANSLUCENT (1<<1)
+
+#define ALPHA_FADE_RELATIVE          (1)
+#define ALPHA_FADE_OVERRIDE          (1<<1)
+#define ALPHA_FADE_TICBASED          (1<<2)
+#define ALPHA_FADE_IGNORECOLLISION   (1<<3)
+#define ALPHA_FADE_GHOSTFADE         (1<<4)
+#define ALPHA_FADE_DONTDOTRANSLUCENT (1<<5)
+#define ALPHA_FADE_DONTDOEXISTS      (1<<6)
+#define ALPHA_FADE_DONTDOLIGHTING    (1<<7)
+#define ALPHA_FADE_DONTDOCOLORMAP    (1<<8)
+#define ALPHA_FADE_USEEXACTALPHA     (1<<9)
+
+#define PROMPT_CLOSE        (1)
+#define PROMPT_RUNPOSTEXEC  (1<<1)
+#define PROMPT_CALLBYNAME   (1<<2)
+#define PROMPT_KEEPCONTROLS (1<<3)
+#define PROMPT_KEEPREALTIME (1<<4)
+
+#define PO_ROTATE_DONTROTATEOTHERS  (1)
+#define PO_ROTATE_DONTROTATEPLAYERS (1<<1)
+#define PO_ROTATE_CONTINUOUS        (1<<2)
+#define PO_ROTATE_OVERRIDE          (1<<3)
+
+#define PO_WP_RETURN_STOP     (0)
+#define PO_WP_RETURN_WRAP     (1)
+#define PO_WP_RETURN_COMEBACK (2)
+
+#define PO_WP_REVERSE (1)
+#define PO_WP_LOOP    (1<<1)
+
+#define PO_FADE_RELATIVE        (1)
+#define PO_FADE_OVERRIDE        (1<<1)
+#define PO_FADE_TICBASED        (1<<2)
+#define PO_FADE_IGNORECOLLISION (1<<3)
+#define PO_FADE_GHOSTFADE       (1<<4)
+
+#define TICRATE (35)
+#define FRACBITS (16)
+#define FRACUNIT (1<<FRACBITS)
+
+#define GAMETYPE_RACE   (0)
+#define GAMETYPE_BATTLE (1)
+
+#define GAMESPEED_EASY   (0)
+#define GAMESPEED_NORMAL (1)
+#define GAMESPEED_HARD   (2)
+
+#define TAG_ALL (65535)
 
 #endif//__GDCC_Header__ACS__rrdefs_acs__
 

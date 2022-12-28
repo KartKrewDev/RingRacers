@@ -77,12 +77,12 @@ special
 
 	int		  411:Sector_StopMovement(1),
 	int		  412:Thing_Teleport(1, 5),
-	int		  413:Level_SetMusic(2, 8),
+	int		  413:Level_SetMusic(1, 8),
 	int		  414:PlaySFX(1, 4),
 	int		  415:Console_Execute(1),
-	int		  416:Light_Flicker(3, 5),
-	int		  417:Light_Pulse(3, 5),
-	int		  418:Light_Blink(4, 6),
+	int		  416:Light_Flicker(5),
+	int		  417:Light_Glow(5),
+	int		  418:Light_Blink(6),
 
 	int		  420:Light_Fade(3, 4),
 	int		  421:Light_Stop(1),
@@ -92,36 +92,36 @@ special
 	int		  425:Thing_SetState(1),
 	int		  426:Thing_Stop(0, 1),
 	int		  427:Player_AddScore(1),
-	int		  428:FOF_StartMovement(2, 5),
+	int		  428:Sector_PlatformMovement(2, 5),
 	int		  429:Sector_Crush(3),
 
 	int		  433:Thing_SetFlip(1),
 
 	int		  435:Sector_ChangeScroll(3),
 	int		  436:FOF_Shatter(2),
-	int		  437:Player_DisableControl(1, 2),
+	int		  437:Player_DisableControl(1),
 	int		  438:Thing_SetScale(1),
 	int		  439:Line_CopyTextures(3, 4),
 	int		  440:Level_StartMetalSonicRace(0),
 	int		  441:SetUnlockableTrigger(1),
-	int		  442:Sector_NextThingState(3, 4),
+	int		  442:Sector_ChangeThingStates(3, 4),
 	int		  443:Lua_Execute(1, 12),
 	int		  444:Earthquake(1, 3),
-	int		  445:FOF_SetExists(2, 3),
+	int		  445:FOF_SetExists(3),
 	int		  446:FOF_Crumble(2, 3),
 	int		  447:Sector_SetColormap(2, 3),
-	int		  448:SetSkyboxViewpoints(3, 4),
-	int		  449:SetBossActive(2),
+	int		  448:Level_SetSkyboxViewpoints(3, 4),
+	int		  449:Level_SetBossDisabled(2),
 	int		  450:Line_Execute(1),
 	int		  451:Line_ExecuteRandom(2),
 	int		  452:FOF_SetAlpha(3, 4),
 	int		  453:FOF_Fade(4, 5),
 	int		  454:FOF_StopFade(2, 3),
-	int		  455:Sector_FadeColormap(2, 4),
+	int		  455:Sector_FadeColormap(3, 4),
 	int		  456:Sector_StopColormapFade(1),
-	int		  457:Thing_StartTracking(3, 5),
+	int		  457:Thing_StartTracking(4, 5),
 	int		  458:Thing_StopTracking(0),
-	int		  459:Prompt_Execute(2, 4),
+	int		  459:Prompt_Execute(4, 5),
 	int		  460:Player_AddRings(1, 3),
 	int		  461:Thing_Spawn(5, 9),
 	int		  462:Level_StopClock(0),
@@ -138,8 +138,8 @@ special
 	int		  477:ACS_Suspend(1),
 	int		  478:ACS_Terminate(1),
 
-	int		  480:Polyobj_DoorSlide(4, 5),
-	int		  481:Polyobj_DoorSwing(3, 4),
+	int		  480:Polyobj_DoorSlide(5),
+	int		  481:Polyobj_DoorSwing(4),
 	int		  482:Polyobj_Move(4, 5),
 
 	int		  484:Polyobj_Rotate(3, 4),
@@ -152,7 +152,8 @@ special
 
 	int		  499:Sector_ToggleWaypoints(2),
 
-	// internal functions have negative values
+	// Internal functions have negative values
+	// [type] [ID]:[function name]([required args], [type of each arg, including optional ones])
 	/*
 	int		   -1:GetLineUDMFInt(2, int, str),
 	fixed	   -2:GetLineUDMFFixed(2, int, str),
@@ -164,9 +165,9 @@ special
 	fixed	   -8:GetSideUDMFFixed(3, int, int, str),
 	*/
 
+	//  0 to 56: Implemented by ACSVM
 	void  {  2     }:__suspend(void),
 
-	//  0 to 56: Implemented by ACSVM
 	void  { 55,  56}:Delay(int),
 	int   { 57,  58}:Random(int, int),
 	fixed { 57,  58}:RandomFixed(fixed, fixed),
@@ -219,6 +220,8 @@ special
 	int   {253     }:StrLen(str), // 253: Implemented by ACSVM
 
 	// 256 to 257: Implemented by ACSVM
+	void  {257     }:SetResultValue(int),
+	void  {257     }:SetResultValueFixed(fixed),
 
 	// 263: Implemented by ACSVM
 
@@ -245,11 +248,11 @@ special
 
 	void  {361     }:ScriptWait(str),
 
+	// 363 to 380: Implemented by ACSVM
+
 	void  {378     }:PrintLocalCharArray(int, int),
 	void  {379     }:PrintLocalCharRange(int, int, int, int),
 	int   {380     }:StrCpyToLocalCharRange(int, int, int, int, str, int);
-
-	// 363 to 380: Implemented by ACSVM
 
 print __Print
 (

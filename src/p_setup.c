@@ -4922,13 +4922,14 @@ static void P_ConvertBinaryLinedefTypes(void)
 				lines[i].args[2] = TMT_REPLACEFIRST;
 			break;
 		case 410: //Change front sector's tag
-			lines[i].args[0] = sides[lines[i].sidenum[0]].textureoffset >> FRACBITS;
+			lines[i].args[0] = 0;
+			lines[i].args[1] = sides[lines[i].sidenum[0]].textureoffset >> FRACBITS;
 			if (lines[i].flags & ML_NOCLIMB)
-				lines[i].args[1] = TMT_ADD;
+				lines[i].args[2] = TMT_ADD;
 			else if (lines[i].flags & ML_BLOCKPLAYERS)
-				lines[i].args[1] = TMT_REMOVE;
+				lines[i].args[2] = TMT_REMOVE;
 			else
-				lines[i].args[1] = TMT_REPLACEFIRST;
+				lines[i].args[2] = TMT_REPLACEFIRST;
 			break;
 		case 411: //Stop plane movement
 			lines[i].args[0] = tag;
@@ -5175,7 +5176,6 @@ static void P_ConvertBinaryLinedefTypes(void)
 			break;
 		case 437: //Disable player control
 			lines[i].args[0] = sides[lines[i].sidenum[0]].textureoffset >> FRACBITS;
-			lines[i].args[1] = !!(lines[i].flags & ML_NOCLIMB);
 			break;
 		case 438: //Change object size
 			lines[i].args[0] = P_AproxDistance(lines[i].dx, lines[i].dy) >> FRACBITS;

@@ -1034,20 +1034,20 @@ static void PolySetVisibilityTangibility(INT32 *args)
 	if (po->isBad)
 		return;
 
-	if (args[1] == TMPV_VISIBLE)
+	if (args[1] == TMF_ADD)
 	{
 		po->flags &= ~POF_NOSPECIALS;
 		po->flags |= (po->spawnflags & POF_RENDERALL);
 	}
-	else if (args[1] == TMPV_INVISIBLE)
+	else if (args[1] == TMF_REMOVE)
 	{
 		po->flags |= POF_NOSPECIALS;
 		po->flags &= ~POF_RENDERALL;
 	}
 
-	if (args[2] == TMPT_TANGIBLE)
+	if (args[2] == TMF_ADD)
 		po->flags |= POF_SOLID;
-	else if (args[2] == TMPT_INTANGIBLE)
+	else if (args[2] == TMF_REMOVE)
 		po->flags &= ~POF_SOLID;
 }
 
@@ -2502,14 +2502,30 @@ void P_ProcessSpecial(activator_t *activator, INT16 special, INT32 *args, char *
 		case 410: // Change front sector's tag
 		{
 			mtag_t newtag;
+			line_t *editLine = NULL;
 
-			if (line == NULL)
+			if (args[0] == 0)
 			{
-				break; // This one is reasonable to have based on the activator.
+				if (line == NULL)
+				{
+					CONS_Debug(DBG_GAMELOGIC, "Special type 410 Executor: No linedef to change frontsector tag of!\n");
+					return;
+				}
+				editLine = line;
+			}
+			else
+			{
+				INT32 destline = Tag_Iterate_Sectors(args[0], 0);
+				if (destline == -1)
+				{
+					CONS_Debug(DBG_GAMELOGIC, "Special type 408 Executor: No linedef to change frontsector tag of (tag %d)!\n", args[0]);
+					return;
+				}
+				editLine = &lines[destline];
 			}
 
 			newtag = args[1];
-			secnum = (UINT32)(line->frontsector - sectors);
+			secnum = (UINT32)(editLine->frontsector - sectors);
 
 			switch (args[2])
 			{
@@ -2947,8 +2963,6 @@ void P_ProcessSpecial(activator_t *activator, INT16 special, INT32 *args, char *
 				UINT16 fractime = (UINT16)(args[0]);
 				if (fractime < 1)
 					fractime = 1; //instantly wears off upon leaving
-				if (args[1])
-					fractime |= 1<<15; //more crazy &ing, as if music stuff wasn't enough
 				mo->player->nocontrol = fractime;
 			}
 			break;
@@ -2956,9 +2970,9 @@ void P_ProcessSpecial(activator_t *activator, INT16 special, INT32 *args, char *
 		case 438: // Set player scale
 			if (mo)
 			{
-				mo->destscale = FixedDiv(args[0]<<FRACBITS, 100<<FRACBITS);
-				if (mo->destscale < FRACUNIT/100)
-					mo->destscale = FRACUNIT/100;
+				mo->destscale = FixedMul(FixedDiv(args[0]<<FRACBITS, 100<<FRACBITS), mapobjectscale);
+				if (mo->destscale < mapobjectscale/100)
+					mo->destscale = mapobjectscale/100;
 			}
 			break;
 
