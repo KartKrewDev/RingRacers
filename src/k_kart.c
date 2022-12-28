@@ -6183,17 +6183,48 @@ void K_DropHnextList(player_t *player, boolean keepshields)
 	}
 }
 
+SINT8 K_GetTotallyRandomResult(UINT8 useodds)
+{
+	itemroulette_t rouletteData = {0};
+	INT32 spawnchance[NUMKARTRESULTS];
+	INT32 totalspawnchance = 0;
+	INT32 i;
+
+	memset(spawnchance, 0, sizeof (spawnchance));
+
+	K_FillItemRouletteData(NULL, &rouletteData);
+
+	for (i = 1; i < NUMKARTRESULTS; i++)
+	{
+		spawnchance[i] = (
+			totalspawnchance += K_KartGetItemOdds(NULL, &rouletteData, useodds, i)
+		);
+	}
+
+	if (totalspawnchance > 0)
+	{
+		totalspawnchance = P_RandomKey(PR_ITEM_ROULETTE, totalspawnchance);
+		for (i = 0; i < NUMKARTRESULTS && spawnchance[i] <= totalspawnchance; i++);
+	}
+	else
+	{
+		i = KITEM_SAD;
+	}
+
+	return i;
+}
+
 mobj_t *K_CreatePaperItem(fixed_t x, fixed_t y, fixed_t z, angle_t angle, SINT8 flip, UINT8 type, UINT8 amount)
 {
 	mobj_t *drop = P_SpawnMobj(x, y, z, MT_FLOATINGITEM);
 	mobj_t *backdrop = P_SpawnMobjFromMobj(drop, 0, 0, 0, MT_OVERLAY);
-	
+
 	P_SetTarget(&backdrop->target, drop);
 	P_SetMobjState(backdrop, S_ITEMBACKDROP);
 
 	P_SetScale(drop, drop->scale>>4);
 	drop->destscale = (3*drop->destscale)/2;
-	
+
 	drop->angle = angle;
 	P_Thrust(drop,
 		FixedAngle(P_RandomFixed(PR_ITEM_ROULETTE) * 180) + angle,
@@ -6205,62 +6236,31 @@ mobj_t *K_CreatePaperItem(fixed_t x, fixed_t y, fixed_t z, angle_t angle, SINT8 
 
 	if (type == 0)
 	{
-		itemroulette_t rouletteData = {0};
-		UINT8 useodds = 0;
-		INT32 spawnchance[NUMKARTRESULTS];
-		INT32 totalspawnchance = 0;
-		INT32 i;
+		const SINT8 i = K_GetTotallyRandomResult(amount);
 
-		memset(spawnchance, 0, sizeof (spawnchance));
+		// TODO: this is bad!
+		// K_KartGetItemResult requires a player
+		// but item roulette will need rewritten to change this
 
-		useodds = amount;
+		const SINT8 newType = K_ItemResultToType(i);
+		const UINT8 newAmount = K_ItemResultToAmount(i);
 
-		K_FillItemRouletteData(NULL, &rouletteData);
-
-		for (i = 1; i < NUMKARTRESULTS; i++)
+		if (newAmount > 1)
 		{
-			spawnchance[i] = (
-				totalspawnchance += K_KartGetItemOdds(NULL, &rouletteData, useodds, i)
-			);
-		}
+			UINT8 j;
 
-		if (totalspawnchance > 0)
-		{
-			UINT8 newType;
-			UINT8 newAmount;
-
-			totalspawnchance = P_RandomKey(PR_ITEM_ROULETTE, totalspawnchance);
-			for (i = 0; i < NUMKARTRESULTS && spawnchance[i] <= totalspawnchance; i++);
-
-			// TODO: this is bad!
-			// K_KartGetItemResult requires a player
-			// but item roulette will need rewritten to change this
-
-			newType = K_ItemResultToType(i);
-			newAmount = K_ItemResultToAmount(i);
-
-			if (newAmount > 1)
+			for (j = 0; j < newAmount-1; j++)
 			{
-				UINT8 j;
-
-				for (j = 0; j < newAmount-1; j++)
-				{
-					K_CreatePaperItem(
-						x, y, z,
-						angle, flip,
-						newType, 1
-					);
-				}
+				K_CreatePaperItem(
+					x, y, z,
+					angle, flip,
+					newType, 1
+				);
 			}
+		}
 
-			drop->threshold = newType;
-			drop->movecount = 1;
-		}
-		else
-		{
-			drop->threshold = 1;
-			drop->movecount = 1;
-		}
+		drop->threshold = newType;
+		drop->movecount = 1;
 	}
 	else
 	{
