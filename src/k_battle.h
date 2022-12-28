@@ -8,6 +8,8 @@
 extern "C" {
 #endif
 
+#define BATTLE_SPAWN_INTERVAL (8*TICRATE)
+
 extern struct battleovertime
 {
 	UINT16 enabled; ///< Has this been initalized yet?

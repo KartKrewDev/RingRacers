@@ -350,7 +350,7 @@ UINT8 K_NumEmeralds(player_t *player)
 void K_RunPaperItemSpawners(void)
 {
 	const boolean overtime = (battleovertime.enabled >= 10*TICRATE);
-	tic_t interval = 8*TICRATE;
+	tic_t interval = BATTLE_SPAWN_INTERVAL;
 
 	const boolean canmakeemeralds = true; //(!(battlecapsules || bossinfo.boss));
 
