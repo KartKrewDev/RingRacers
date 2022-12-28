@@ -347,10 +347,15 @@ UINT8 K_NumEmeralds(player_t *player)
 	return num;
 }
 
+static inline boolean IsOnInterval(tic_t interval)
+{
+	return ((leveltime - starttime) % interval) == 0;
+}
+
 void K_RunPaperItemSpawners(void)
 {
 	const boolean overtime = (battleovertime.enabled >= 10*TICRATE);
-	tic_t interval = BATTLE_SPAWN_INTERVAL;
+	const tic_t interval = BATTLE_SPAWN_INTERVAL;
 
 	const boolean canmakeemeralds = true; //(!(battlecapsules || bossinfo.boss));
 
@@ -375,13 +380,7 @@ void K_RunPaperItemSpawners(void)
 		return;
 	}
 
-	if (overtime == true)
-	{
-		// Double frequency of items
-		interval /= 2;
-	}
-
-	if (((leveltime - starttime) % interval) != 0)
+	if (!IsOnInterval(interval))
 	{
 		return;
 	}
@@ -557,7 +556,7 @@ void K_RunPaperItemSpawners(void)
 				}
 				else
 				{
-					if (gametyperules & GTR_SPHERES)
+					if ((gametyperules & GTR_SPHERES) && IsOnInterval(2 * interval))
 					{
 						drop = K_SpawnSphereBox(
 							spotList[r]->x, spotList[r]->y, spotList[r]->z + (128 * mapobjectscale * flip),

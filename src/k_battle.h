@@ -8,7 +8,7 @@
 extern "C" {
 #endif
 
-#define BATTLE_SPAWN_INTERVAL (8*TICRATE)
+#define BATTLE_SPAWN_INTERVAL (4*TICRATE)
 
 extern struct battleovertime
 {
