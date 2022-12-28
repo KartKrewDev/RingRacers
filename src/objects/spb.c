@@ -865,6 +865,13 @@ void Obj_SPBThink(mobj_t *spb)
 
 			if ((bestMobj = K_GetPossibleSpecialTarget()) == NULL)
 			{
+				// experimental - I think it's interesting IMO
+				Obj_MantaRingCreate(
+					spb,
+					spb_owner(spb),
+					NULL
+				);
+
 				spb->fuse = TICRATE/3;
 				spb_nothink(spb) = spb->fuse + 2;
 			}
