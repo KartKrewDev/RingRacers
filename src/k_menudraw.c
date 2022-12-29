@@ -3969,9 +3969,11 @@ static void M_DrawReplayHutReplayInfo(menudemo_t *demoref)
 			V_DrawThinString(x, y+9, V_SNAPTOTOP|V_ALLOWLOWERCASE, va("(%d laps)", demoref->numlaps));
 
 		{
-			const char *gtstring = "???";
-			if (demoref->gametype >= GT_FIRSTFREESLOT)
-				; // TODO: Support custom gametypes in netreplays (would require deeper changes than this)
+			const char *gtstring;
+			if (demoref->gametype < 0)
+			{
+				gtstring = "Custom (not loaded)";
+			}
 			else
 			{
 				gtstring = gametypes[demoref->gametype]->name;
@@ -3994,7 +3996,7 @@ static void M_DrawReplayHutReplayInfo(menudemo_t *demoref)
 		V_DrawThinString(x, y+29, V_SNAPTOTOP|highlightflags, "WINNER");
 		V_DrawString(x+38, y+30, V_SNAPTOTOP|V_ALLOWLOWERCASE, demoref->standings[0].name);
 
-		if (demoref->gametype < GT_FIRSTFREESLOT)
+		if (demoref->gametype >= 0)
 		{
 			if (gametypes[demoref->gametype]->rules & GTR_POINTLIMIT)
 			{
@@ -4215,7 +4217,7 @@ void M_DrawReplayStartMenu(void)
 
 		if (demoref->standings[i].timeorscore == UINT32_MAX-1)
 			V_DrawThinString(BASEVIDWIDTH-92, STARTY + i*20 + 9, V_SNAPTOTOP, "NO CONTEST");
-		else if (demoref->gametype >= GT_FIRSTFREESLOT)
+		else if (demoref->gametype < 0)
 			;
 		else if (gametypes[demoref->gametype]->rules & GTR_POINTLIMIT)
 			V_DrawString(BASEVIDWIDTH-92, STARTY + i*20 + 9, V_SNAPTOTOP, va("%d", demoref->standings[i].timeorscore));

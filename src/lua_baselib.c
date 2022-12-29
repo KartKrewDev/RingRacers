@@ -2980,6 +2980,7 @@ static int lib_gAddGametype(lua_State *L)
 	INT32 newgtpointlimit = 0;
 	INT32 newgttimelimit = 0;
 	UINT8 newgtinttype = 0;
+	INT16 j;
 
 	luaL_checktype(L, 1, LUA_TTABLE);
 	lua_settop(L, 1); // Clear out all other possible arguments, leaving only the first one.
@@ -3043,12 +3044,21 @@ static int lib_gAddGametype(lua_State *L)
 #undef FIELDERROR
 #undef TYPEERROR
 
+	if (gtname == NULL)
+		return luaL_error(L, "Custom gametype must have a name");
+
+	if (strlen(gtname) >= MAXGAMETYPELENGTH)
+		return luaL_error(L, "Custom gametype \"%s\"'s name must be %d long at most", gtname, MAXGAMETYPELENGTH-1);
+
+	for (j = 0; j < numgametypes; j++)
+		if (!strcmp(gtname, gametypes[j]->name))
+			break;
+
+	if (j < numgametypes)
+		return luaL_error(L, "Custom gametype \"%s\"'s name is already in use", gtname);
+
 	// pop gametype table
 	lua_pop(L, 1);
-
-	// Set defaults
-	if (gtname == NULL)
-		gtname = Z_StrDup("Unnamed gametype");
 
 	// Add the new gametype
 	newgametype = Z_Calloc(sizeof (gametype_t), PU_STATIC, NULL);

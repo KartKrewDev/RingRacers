@@ -450,6 +450,7 @@ extern INT32 nummapheaders, mapallocsize;
 
 // Gametypes
 #define NUMGAMETYPEFREESLOTS (MAXGAMETYPES-GT_FIRSTFREESLOT)
+#define MAXGAMETYPELENGTH 32
 
 enum GameType
 {

@@ -2378,7 +2378,9 @@ void G_BeginRecording(void)
 	M_Memcpy(demo_p, mapmd5, 16); demo_p += 16;
 
 	WRITEUINT8(demo_p, demoflags);
-	WRITEUINT8(demo_p, gametype & 0xFF);
+
+	WRITESTRINGN(demo_p, gametypes[gametype]->name, MAXGAMETYPELENGTH);
+
 	WRITEUINT8(demo_p, numlaps);
 
 	// file list
@@ -2652,7 +2654,7 @@ UINT8 G_CmpDemoTime(char *oldname, char *newname)
 	SKIPSTRING(p); // gamemap
 	p += 16; // map md5
 	flags = READUINT8(p); // demoflags
-	p++; // gametype
+	SKIPSTRING(p); // gametype
 	p++; // numlaps
 	G_SkipDemoExtraFiles(&p);
 
@@ -2711,7 +2713,7 @@ UINT8 G_CmpDemoTime(char *oldname, char *newname)
 	SKIPSTRING(p); // gamemap
 	p += 16; // mapmd5
 	flags = READUINT8(p);
-	p++; // gametype
+	SKIPSTRING(p); // gametype
 	p++; // numlaps
 	G_SkipDemoExtraFiles(&p);
 	if (!(flags & aflags))
@@ -2756,7 +2758,7 @@ void G_LoadDemoInfo(menudemo_t *pdemo)
 	UINT8 version, subversion, pdemoflags, worknumskins, skinid;
 	democharlist_t *skinlist = NULL;
 	UINT16 pdemoversion, count;
-	char mapname[MAXMAPLUMPNAME];
+	char mapname[MAXMAPLUMPNAME],gtname[MAXGAMETYPELENGTH];
 	INT32 i;
 
 	if (!FIL_ReadFile(pdemo->filepath, &infobuffer))
@@ -2820,7 +2822,9 @@ void G_LoadDemoInfo(menudemo_t *pdemo)
 		return;
 	}
 
-	pdemo->gametype = READUINT8(info_p);
+	READSTRINGN(info_p, gtname, sizeof(gtname)); // gametype
+	pdemo->gametype = G_GetGametypeByName(gtname);
+
 	pdemo->numlaps = READUINT8(info_p);
 
 	pdemo->addonstatus = G_CheckDemoExtraFiles(&info_p, true);
@@ -2932,9 +2936,11 @@ void G_DeferedPlayDemo(const char *name)
 
 void G_DoPlayDemo(char *defdemoname)
 {
-	UINT8 i, p, numslots = 0;
+	INT32 i;
+	UINT8 p, numslots = 0;
 	lumpnum_t l;
-	char color[MAXCOLORNAME+1],follower[17],mapname[MAXMAPLUMPNAME],*n,*pdemoname;
+	char color[MAXCOLORNAME+1],follower[17],mapname[MAXMAPLUMPNAME],gtname[MAXGAMETYPELENGTH];
+	char *n,*pdemoname;
 	UINT8 availabilities[MAXPLAYERS][MAXAVAILABILITY];
 	UINT8 version,subversion;
 	UINT32 randseed[PRNUMCLASS];
@@ -2951,6 +2957,7 @@ void G_DoPlayDemo(char *defdemoname)
 
 	follower[16] = '\0';
 	color[MAXCOLORNAME] = '\0';
+	gtname[MAXGAMETYPELENGTH-1] = '\0';
 
 	// No demo name means we're restarting the current demo
 	if (defdemoname == NULL)
@@ -3060,8 +3067,22 @@ void G_DoPlayDemo(char *defdemoname)
 	demo_p += 16; // mapmd5
 
 	demoflags = READUINT8(demo_p);
-	gametype = READUINT8(demo_p);
-	G_SetGametype(gametype);
+
+	READSTRINGN(demo_p, gtname, sizeof(gtname)); // gametype
+	i = G_GetGametypeByName(gtname);
+	if (i < 0)
+	{
+		snprintf(msg, 1024, M_GetText("%s is in a gametype that is not currently loaded and cannot be played.\n"), pdemoname);
+		CONS_Alert(CONS_ERROR, "%s", msg);
+		M_StartMessage(msg, NULL, MM_NOTHING);
+		Z_Free(pdemoname);
+		Z_Free(demobuffer);
+		demo.playback = false;
+		demo.title = false;
+		return;
+	}
+	G_SetGametype(i);
+
 	numlaps = READUINT8(demo_p);
 
 	if (demo.title) // Titledemos should always play and ought to always be compatible with whatever wadlist is running.
@@ -3519,7 +3540,7 @@ void G_AddGhost(char *defdemoname)
 		return;
 	}
 
-	p++; // gametype
+	SKIPSTRING(p); // gametype
 	p++; // numlaps
 	G_SkipDemoExtraFiles(&p); // Don't wanna modify the file list for ghosts.
 
@@ -3736,7 +3757,7 @@ void G_UpdateStaffGhostName(lumpnum_t l)
 		goto fail; // we don't NEED to do it here, but whatever
 	}
 
-	p++; // Gametype
+	SKIPSTRING(p); // gametype
 	p++; // numlaps
 	G_SkipDemoExtraFiles(&p);
 

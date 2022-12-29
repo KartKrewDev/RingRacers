@@ -878,6 +878,28 @@ void readgametype(MYFILE *f, char *gtname)
 		I_Error("Out of Gametype Freeslots while allocating \"%s\"\nLoad less addons to fix this.", gtname);
 	}
 
+	if (gtname[0] == '\0')
+	{
+		deh_warning("Custom gametype must have a name");
+		return;
+	}
+
+	if (strlen(gtname) >= MAXGAMETYPELENGTH)
+	{
+		deh_warning("Custom gametype \"%s\"'s name must be %d long at most", gtname, MAXGAMETYPELENGTH-1);
+		return;
+	}
+
+	for (i = 0; i < numgametypes; i++)
+		if (fastcmp(gtname, gametypes[i]->name))
+			break;
+
+	if (i < numgametypes)
+	{
+		deh_warning("Custom gametype \"%s\"'s name is already in use", gtname);
+		return;
+	}
+
 	// Add the new gametype
 	newgametype = Z_Calloc(sizeof (gametype_t), PU_STATIC, NULL);
 	if (!newgametype)
