@@ -6993,20 +6993,23 @@ static void P_LoadRecordGhosts(void)
 	gpath = Z_StrDup(va("%s"PATHSEP"media"PATHSEP"replay"PATHSEP"%s"PATHSEP"%s", srb2home, timeattackfolder, G_BuildMapName(gamemap)));
 
 	// Best Time ghost
-	if (cv_ghost_besttime.value)
+	if (modeattacking & ATTACKING_TIME)
 	{
-		for (i = 0; i < numskins; ++i)
+		if (cv_ghost_besttime.value)
 		{
-			if (cv_ghost_besttime.value == 1 && players[consoleplayer].skin != i)
-				continue;
+			for (i = 0; i < numskins; ++i)
+			{
+				if (cv_ghost_besttime.value == 1 && players[consoleplayer].skin != i)
+					continue;
 
-			if (FIL_FileExists(va("%s-%s-time-best.lmp", gpath, skins[i].name)))
-				G_AddGhost(va("%s-%s-time-best.lmp", gpath, skins[i].name));
+				if (FIL_FileExists(va("%s-%s-time-best.lmp", gpath, skins[i].name)))
+					G_AddGhost(va("%s-%s-time-best.lmp", gpath, skins[i].name));
+			}
 		}
 	}
 
 	// Best Lap ghost
-	if (modeattacking != ATTACKING_CAPSULES)
+	if (modeattacking & ATTACKING_LAP)
 	{
 		if (cv_ghost_bestlap.value)
 		{

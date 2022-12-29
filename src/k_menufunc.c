@@ -4056,14 +4056,12 @@ void M_StartTimeAttack(INT32 choice)
 
 	(void)choice;
 
-	switch (levellist.newgametype)
+	modeattacking = ATTACKING_TIME;
+
+	if ((gametypes[levellist.newgametype]->rules & GTR_CIRCUIT)
+		&& (mapheaderinfo[levellist.choosemap]->numlaps != 1))
 	{
-		case GT_BATTLE:
-			modeattacking = ATTACKING_CAPSULES;
-			break;
-		default:
-			modeattacking = ATTACKING_TIME;
-			break;
+		modeattacking |= ATTACKING_LAP;
 	}
 
 	// Still need to reset devmode

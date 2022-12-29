@@ -520,13 +520,18 @@ static void G_UpdateRecordReplays(void)
 		players[consoleplayer].realtime = UINT32_MAX;
 	}
 
-	if (((mapheaderinfo[gamemap-1]->mainrecord->time == 0) || (players[consoleplayer].realtime < mapheaderinfo[gamemap-1]->mainrecord->time))
-		&& (players[consoleplayer].realtime < UINT32_MAX)) // DNF
+	if (modeattacking & ATTACKING_TIME)
 	{
-		mapheaderinfo[gamemap-1]->mainrecord->time = players[consoleplayer].realtime;
+		if (((mapheaderinfo[gamemap-1]->mainrecord->time == 0) || (players[consoleplayer].realtime < mapheaderinfo[gamemap-1]->mainrecord->time))
+		&& (players[consoleplayer].realtime < UINT32_MAX)) // DNF
+			mapheaderinfo[gamemap-1]->mainrecord->time = players[consoleplayer].realtime;
+	}
+	else
+	{
+		mapheaderinfo[gamemap-1]->mainrecord->time = 0;
 	}
 
-	if (modeattacking == ATTACKING_TIME)
+	if (modeattacking & ATTACKING_LAP)
 	{
 		if ((mapheaderinfo[gamemap-1]->mainrecord->lap == 0) || (bestlap < mapheaderinfo[gamemap-1]->mainrecord->lap))
 			mapheaderinfo[gamemap-1]->mainrecord->lap = bestlap;
@@ -549,27 +554,32 @@ static void G_UpdateRecordReplays(void)
 	strcat(gpath, PATHSEP);
 	strcat(gpath, G_BuildMapName(gamemap));
 
-	snprintf(lastdemo, 255, "%s-%s-last.lmp", gpath, cv_chooseskin.string);
+	snprintf(lastdemo, 255, "%s-%s-last.lmp", gpath, cv_skin[0].string);
 
-	gpath = Z_StrDup(gpath);
-
-	if (FIL_FileExists(lastdemo))
+	if (modeattacking != ATTACKING_NONE && FIL_FileExists(lastdemo))
 	{
 		UINT8 *buf;
-		size_t len = FIL_ReadFile(lastdemo, &buf);
+		size_t len;
 
-		snprintf(bestdemo, 255, "%s-%s-time-best.lmp", gpath, cv_chooseskin.string);
-		if (!FIL_FileExists(bestdemo) || G_CmpDemoTime(bestdemo, lastdemo) & 1)
-		{ // Better time, save this demo.
-			if (FIL_FileExists(bestdemo))
-				remove(bestdemo);
-			FIL_WriteFile(bestdemo, buf, len);
-			CONS_Printf("\x83%s\x80 %s '%s'\n", M_GetText("NEW RECORD TIME!"), M_GetText("Saved replay as"), bestdemo);
+		gpath = Z_StrDup(gpath);
+
+		len = FIL_ReadFile(lastdemo, &buf);
+
+		if (modeattacking & ATTACKING_TIME)
+		{
+			snprintf(bestdemo, 255, "%s-%s-time-best.lmp", gpath, cv_skin[0].string);
+			if (!FIL_FileExists(bestdemo) || G_CmpDemoTime(bestdemo, lastdemo) & 1)
+			{ // Better time, save this demo.
+				if (FIL_FileExists(bestdemo))
+					remove(bestdemo);
+				FIL_WriteFile(bestdemo, buf, len);
+				CONS_Printf("\x83%s\x80 %s '%s'\n", M_GetText("NEW RECORD TIME!"), M_GetText("Saved replay as"), bestdemo);
+			}
 		}
 
-		if (modeattacking == ATTACKING_TIME)
+		if (modeattacking & ATTACKING_LAP)
 		{
-			snprintf(bestdemo, 255, "%s-%s-lap-best.lmp", gpath, cv_chooseskin.string);
+			snprintf(bestdemo, 255, "%s-%s-lap-best.lmp", gpath, cv_skin[0].string);
 			if (!FIL_FileExists(bestdemo) || G_CmpDemoTime(bestdemo, lastdemo) & (1<<1))
 			{ // Better lap time, save this demo.
 				if (FIL_FileExists(bestdemo))
@@ -582,9 +592,9 @@ static void G_UpdateRecordReplays(void)
 		//CONS_Printf("%s '%s'\n", M_GetText("Saved replay as"), lastdemo);
 
 		Z_Free(buf);
-	}
 
-	Z_Free(gpath);
+		Z_Free(gpath);
+	}
 
 	// Check emblems when level data is updated
 	if ((earnedEmblems = M_CheckLevelEmblems()))

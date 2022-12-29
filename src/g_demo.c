@@ -120,18 +120,14 @@ demoghost *ghosts = NULL;
 #define DEMOVERSION 0x0007
 #define DEMOHEADER  "\xF0" "KartReplay" "\x0F"
 
-#define DF_GHOST        0x01 // This demo contains ghost data too!
-#define DF_TIMEATTACK   0x02 // This demo is from Time Attack and contains its final completion time & best lap!
-#define DF_BREAKTHECAPSULES 0x04 // This demo is from Break the Capsules and contains its final completion time!
-#define DF_ATTACKMASK   0x06 // This demo is from ??? attack and contains ???
+#define DF_ATTACKMASK   (ATTACKING_TIME|ATTACKING_LAP) // This demo contains time/lap data
 
-// 0x08 free
+#define DF_GHOST		0x08 // This demo contains ghost data too!
 
 #define DF_NONETMP		0x10 // multiplayer but not netgame
 
 #define DF_LUAVARS		0x20 // this demo contains extra lua vars
 
-#define DF_ATTACKSHIFT  1
 #define DF_ENCORE       0x40
 #define DF_MULTIPLAYER  0x80 // This demo was recorded in multiplayer mode!
 
@@ -2339,10 +2335,19 @@ void G_BeginRecording(void)
 	memset(name,0,sizeof(name));
 
 	demo_p = demobuffer;
-	demoflags = DF_GHOST|(multiplayer ? DF_MULTIPLAYER : (modeattacking<<DF_ATTACKSHIFT));
 
-	if (multiplayer && !netgame)
-		demoflags |= DF_NONETMP;
+	demoflags = DF_GHOST;
+
+	if (multiplayer)
+	{
+		demoflags |= DF_MULTIPLAYER;
+		if (!netgame)
+			demoflags |= DF_NONETMP;
+	}
+	else
+	{
+		demoflags |= modeattacking;
+	}
 
 	if (encoremode)
 		demoflags |= DF_ENCORE;
@@ -2382,21 +2387,18 @@ void G_BeginRecording(void)
 	// character list
 	G_SaveDemoSkins(&demo_p);
 
-	switch ((demoflags & DF_ATTACKMASK)>>DF_ATTACKSHIFT)
+	if ((demoflags & DF_ATTACKMASK))
 	{
-		case ATTACKING_NONE: // 0
-			break;
-		case ATTACKING_TIME: // 1
-			demotime_p = demo_p;
+		demotime_p = demo_p;
+
+		if (demoflags & ATTACKING_TIME)
 			WRITEUINT32(demo_p,UINT32_MAX); // time
+		if (demoflags & ATTACKING_LAP)
 			WRITEUINT32(demo_p,UINT32_MAX); // lap
-			break;
-		case ATTACKING_CAPSULES: // 2
-			demotime_p = demo_p;
-			WRITEUINT32(demo_p,UINT32_MAX); // time
-			break;
-		default: // 3
-			break;
+	}
+	else
+	{
+		demotime_p = NULL;
 	}
 
 	for (i = 0; i < PRNUMCLASS; i++)
@@ -2600,18 +2602,15 @@ void G_SetDemoTime(UINT32 ptime, UINT32 plap)
 {
 	if (!demo.recording || !demotime_p)
 		return;
-	if (demoflags & DF_TIMEATTACK)
+	if (demoflags & ATTACKING_TIME)
 	{
 		WRITEUINT32(demotime_p, ptime);
+	}
+	if (demoflags & ATTACKING_LAP)
+	{
 		WRITEUINT32(demotime_p, plap);
-		demotime_p = NULL;
 	}
-	else if (demoflags & DF_BREAKTHECAPSULES)
-	{
-		WRITEUINT32(demotime_p, ptime);
-		(void)plap;
-		demotime_p = NULL;
-	}
+	demotime_p = NULL;
 }
 
 // Returns bitfield:
@@ -2622,7 +2621,8 @@ UINT8 G_CmpDemoTime(char *oldname, char *newname)
 {
 	UINT8 *buffer,*p;
 	UINT8 flags;
-	UINT32 oldtime, newtime, oldlap, newlap;
+	UINT32 oldtime = UINT32_MAX, newtime = UINT32_MAX;
+	UINT32 oldlap = UINT32_MAX, newlap = UINT32_MAX;
 	UINT16 oldversion;
 	size_t bufsize ATTRUNUSED;
 	UINT8 c;
@@ -2658,17 +2658,16 @@ UINT8 G_CmpDemoTime(char *oldname, char *newname)
 
 	G_SkipDemoSkins(&p);
 
-	aflags = flags & (DF_TIMEATTACK|DF_BREAKTHECAPSULES);
+	aflags = flags & DF_ATTACKMASK;
 	I_Assert(aflags);
 
-	if (flags & DF_TIMEATTACK)
-		uselaps = true; // get around uninitalized error
+	if (aflags & ATTACKING_LAP)
+		uselaps = true;
 
-	newtime = READUINT32(p);
+	if (aflags & ATTACKING_TIME)
+		newtime = READUINT32(p);
 	if (uselaps)
 		newlap = READUINT32(p);
-	else
-		newlap = UINT32_MAX;
 
 	Z_Free(buffer);
 
@@ -2724,11 +2723,10 @@ UINT8 G_CmpDemoTime(char *oldname, char *newname)
 
 	G_SkipDemoSkins(&p);
 
-	oldtime = READUINT32(p);
+	if (flags & ATTACKING_TIME)
+		oldtime = READUINT32(p);
 	if (uselaps)
 		oldlap = READUINT32(p);
-	else
-		oldlap = 0;
 
 	Z_Free(buffer);
 
@@ -3136,7 +3134,7 @@ void G_DoPlayDemo(char *defdemoname)
 		return;
 	}
 
-	modeattacking = (demoflags & DF_ATTACKMASK)>>DF_ATTACKSHIFT;
+	modeattacking = (demoflags & DF_ATTACKMASK);
 	multiplayer = !!(demoflags & DF_MULTIPLAYER);
 	demo.netgame = (multiplayer && !(demoflags & DF_NONETMP));
 	CON_ToggleOff();
@@ -3144,21 +3142,10 @@ void G_DoPlayDemo(char *defdemoname)
 	hu_demotime = UINT32_MAX;
 	hu_demolap = UINT32_MAX;
 
-	switch (modeattacking)
-	{
-		case ATTACKING_NONE: // 0
-			break;
-		case ATTACKING_TIME: // 1
-			hu_demotime = READUINT32(demo_p);
-			hu_demolap = READUINT32(demo_p);
-			break;
-		case ATTACKING_CAPSULES: // 2
-			hu_demotime = READUINT32(demo_p);
-			break;
-		default: // 3
-			modeattacking = ATTACKING_NONE;
-			break;
-	}
+	if (modeattacking & ATTACKING_TIME)
+		hu_demotime = READUINT32(demo_p);
+	if (modeattacking & ATTACKING_LAP)
+		hu_demolap = READUINT32(demo_p);
 
 	// Random seed
 	for (i = 0; i < PRNUMCLASS; i++)
@@ -3545,19 +3532,10 @@ void G_AddGhost(char *defdemoname)
 		return;
 	}
 
-	switch ((flags & DF_ATTACKMASK)>>DF_ATTACKSHIFT)
-	{
-		case ATTACKING_NONE: // 0
-			break;
-		case ATTACKING_TIME: // 1
-			p += 8; // demo time, lap
-			break;
-		case ATTACKING_CAPSULES: // 2
-			p += 4; // demo time
-			break;
-		default: // 3
-			break;
-	}
+	if (flags & ATTACKING_TIME)
+		p += 4;
+	if (flags & ATTACKING_LAP)
+		p += 4;
 
 	for (i = 0; i < PRNUMCLASS; i++)
 	{
@@ -3587,9 +3565,10 @@ void G_AddGhost(char *defdemoname)
 	p++; // player number - doesn't really need to be checked, TODO maybe support adding multiple players' ghosts at once
 
 	// any invalidating flags?
-	if ((READUINT8(p) & (DEMO_SPECTATOR|DEMO_BOT)) != 0)
+	i = READUINT8(p);
+	if ((i & (DEMO_SPECTATOR|DEMO_BOT)) != 0)
 	{
-		CONS_Alert(CONS_NOTICE, M_GetText("Failed to add ghost %s: Invalid player slot.\n"), pdemoname);
+		CONS_Alert(CONS_NOTICE, M_GetText("Failed to add ghost %s: Invalid player slot (spectator/bot)\n"), pdemoname);
 		Z_Free(skinlist);
 		Z_Free(pdemoname);
 		Z_Free(buffer);
@@ -3599,6 +3578,8 @@ void G_AddGhost(char *defdemoname)
 	// Player name (TODO: Display this somehow if it doesn't match cv_playername!)
 	M_Memcpy(name, p, 16);
 	p += 16;
+
+	p += MAXAVAILABILITY;
 
 	// Skin
 	i = READUINT8(p);
@@ -3620,7 +3601,7 @@ void G_AddGhost(char *defdemoname)
 
 	if (READUINT8(p) != 0xFF)
 	{
-		CONS_Alert(CONS_NOTICE, M_GetText("Failed to add ghost %s: Invalid player slot.\n"), pdemoname);
+		CONS_Alert(CONS_NOTICE, M_GetText("Failed to add ghost %s: Invalid player slot (bad terminator)\n"), pdemoname);
 		Z_Free(skinlist);
 		Z_Free(pdemoname);
 		Z_Free(buffer);
@@ -3761,19 +3742,10 @@ void G_UpdateStaffGhostName(lumpnum_t l)
 
 	G_SkipDemoSkins(&p);
 
-	switch ((flags & DF_ATTACKMASK)>>DF_ATTACKSHIFT)
-	{
-		case ATTACKING_NONE: // 0
-			break;
-		case ATTACKING_TIME: // 1
-			p += 8; // demo time, lap
-			break;
-		case ATTACKING_CAPSULES: // 2
-			p += 4; // demo time
-			break;
-		default: // 3
-			break;
-	}
+	if (flags & ATTACKING_TIME)
+		p += 4;
+	if (flags & ATTACKING_LAP)
+		p += 4;
 
 	for (i = 0; i < PRNUMCLASS; i++)
 	{
