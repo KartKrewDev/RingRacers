@@ -56,7 +56,7 @@ void Obj_DuelBombInit(mobj_t *bomb);
 
 /* Broly Ki */
 mobj_t *Obj_SpawnBrolyKi(mobj_t *source, tic_t duration);
-void Obj_BrolyKiThink(mobj_t *ki);
+boolean Obj_BrolyKiThink(mobj_t *ki);
 
 /* Special Stage UFO */
 waypoint_t *K_GetSpecialUFOWaypoint(mobj_t *ufo);

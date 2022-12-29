@@ -34,13 +34,15 @@ Obj_SpawnBrolyKi
 (		mobj_t * source,
 		tic_t duration)
 {
-	mobj_t *x = P_SpawnMobjFromMobj(
-			source, 0, 0, 0, MT_BROLY);
+	mobj_t *x;
 
-	if (duration == 0)
+	if (duration <= 0)
 	{
-		return x;
+		return NULL;
 	}
+
+	x = P_SpawnMobjFromMobj(
+			source, 0, 0, 0, MT_BROLY);
 
 	// Shrink into center of source object.
 	x->z = (source->z + source->height / 2);
@@ -61,12 +63,20 @@ Obj_SpawnBrolyKi
 	return x;
 }
 
-void
+boolean
 Obj_BrolyKiThink (mobj_t *x)
 {
+	if (broly_duration(x) <= 0)
+	{
+		P_RemoveMobj(x);
+		return false;
+	}
+
 	const fixed_t
 		t = get_unit_linear(x),
 		n = Easing_OutSine(t, 0, broly_maxscale(x));
 
 	P_InstaScale(x, n);
+
+	return true;
 }
