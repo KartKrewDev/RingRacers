@@ -607,6 +607,8 @@ boolean Obj_SpecialUFODamage(mobj_t *ufo, mobj_t *inflictor, mobj_t *source, UIN
 		ufo->flags = (ufo->flags & ~MF_SHOOTABLE) | (MF_SPECIAL|MF_PICKUPFROMBELOW);
 		ufo->shadowscale = FRACUNIT/3;
 
+		P_LinedefExecute(LE_PINCHPHASE, ufo, NULL);
+
 		ufo_speed(ufo) += addSpeed; // Even more speed!
 		return true;
 	}

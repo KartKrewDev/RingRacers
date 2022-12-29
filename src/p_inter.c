@@ -414,6 +414,8 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 			if (toucher->hitlag > 0)
 				return;
 
+			P_LinedefExecute(LE_BOSSDEAD, ufo, NULL);
+
 			CONS_Printf("You win!\n");
 			break;
 		/*
