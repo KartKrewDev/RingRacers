@@ -3080,9 +3080,6 @@ static int lib_gAddGametype(lua_State *L)
 
 	gametypes[numgametypes++] = newgametype;
 
-	// Update gametype_cons_t accordingly.
-	G_UpdateGametypeSelections();
-
 	// done
 	CONS_Printf("Added gametype %s\n", gtname);
 	return 0;

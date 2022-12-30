@@ -2466,6 +2466,20 @@ void M_DrawMPHost(void)
 							}
 							break;
 						}
+						case IT_KEYHANDLER:
+						{
+							if (currentMenu->menuitems[i].itemaction.routine != M_HandleMenuGametype)
+								break;
+
+							w = V_ThinStringWidth(gametypes[menugametype]->name, V_6WIDTHSPACE);
+							V_DrawThinString(xp + 138 - w, yp, highlightflags|V_6WIDTHSPACE, gametypes[menugametype]->name);
+							if (i == itemOn)
+							{
+								V_DrawCharacter(xp + 138 - 10 - w - (skullAnimCounter/5), yp, '\x1C' | highlightflags, false); // left arrow
+								V_DrawCharacter(xp + 138 + 2 + (skullAnimCounter/5), yp, '\x1D' | highlightflags, false); // right arrow
+							}
+							break;
+						}
 					}
 
 					xp += 5;

@@ -362,8 +362,8 @@ menuitem_t PLAY_MP_Host[] =
 	{IT_STRING | IT_CVAR, "Max. Players", "Set how many players can play at once. Others will spectate.",
 		NULL, {.cvar = &cv_maxplayers}, 0, 0},
 
-	{IT_STRING | IT_CVAR, "Gamemode", "Are we racing? Or perhaps battling?",
-	NULL, {.cvar = &cv_dummygametype}, 0, 0},
+	{IT_STRING | IT_KEYHANDLER, "Gamemode", "Choose the type of play on your server.",
+	NULL, {.routine = M_HandleMenuGametype}, 0, 0},
 
 	{IT_STRING | IT_CALL, "GO", "Select a map with the currently selected gamemode",
 		NULL, {.routine = M_MPSetupNetgameMapSelect}, 0, 0},

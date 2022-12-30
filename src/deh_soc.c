@@ -920,9 +920,6 @@ void readgametype(MYFILE *f, char *gtname)
 
 	gametypes[numgametypes++] = newgametype;
 
-	// Update gametype_cons_t accordingly.
-	G_UpdateGametypeSelections();
-
 	CONS_Printf("Added gametype %s\n", gtname);
 }
 

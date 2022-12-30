@@ -115,7 +115,8 @@ struct menucolor_t {
 
 extern menucolor_t *menucolorhead, *menucolortail;
 
-extern CV_PossibleValue_t gametype_cons_t[];
+extern INT16 menugametype;
+void M_HandleMenuGametype(INT32 choice);
 
 //
 // MENU TYPEDEFS
@@ -770,7 +771,6 @@ void M_MPOptSelect(INT32 choice);
 void M_MPOptSelectInit(INT32 choice);
 void M_MPOptSelectTick(void);
 boolean M_MPResetOpts(void);
-extern consvar_t cv_dummygametype;		// lazy hack to allow us to select the GT on the server host submenu
 extern consvar_t cv_dummyip;			// I HAVE
 								// HAVE YOUR IP ADDRESS (This just the hack Cvar we'll type into and then it apends itself to "connect" in the console for IP join)
 

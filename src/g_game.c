@@ -3186,23 +3186,6 @@ char *G_PrepareGametypeConstant(const char *newgtconst)
 	return gtconst;
 }
 
-//
-// G_UpdateGametypeSelections
-//
-// Updates gametype_cons_t.
-//
-void G_UpdateGametypeSelections(void)
-{
-	INT32 i;
-	for (i = 0; i < numgametypes; i++)
-	{
-		gametype_cons_t[i].value = i;
-		gametype_cons_t[i].strvalue = gametypes[i]->name;
-	}
-	gametype_cons_t[numgametypes].value = 0;
-	gametype_cons_t[numgametypes].strvalue = NULL;
-}
-
 tolinfo_t TYPEOFLEVEL[NUMTOLNAMES] = {
 	{"RACE",TOL_RACE},
 	{"BATTLE",TOL_BATTLE},

@@ -181,7 +181,6 @@ void G_SaveGameOver(UINT32 slot, boolean modifylives);
 
 void G_SetGametype(INT16 gametype);
 char *G_PrepareGametypeConstant(const char *newgtconst);
-void G_UpdateGametypeSelections(void);
 void G_AddTOL(UINT32 newtol, const char *tolname);
 INT32 G_GetGametypeByName(const char *gametypestr);
 INT32 G_GuessGametypeByTOL(UINT32 tol);

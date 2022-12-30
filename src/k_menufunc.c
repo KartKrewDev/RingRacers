@@ -147,10 +147,6 @@ consvar_t cv_menujam_update = CVAR_INIT ("menujam_update", "Off", CV_SAVE, CV_On
 static CV_PossibleValue_t menujam_cons_t[] = {{0, "menu"}, {1, "menu2"}, {2, "menu3"}, {0, NULL}};
 static consvar_t cv_menujam = CVAR_INIT ("menujam", "0", CV_SAVE, menujam_cons_t, NULL);
 
-// This gametype list is integral for many different reasons.
-// When you add gametypes here, don't forget to update them in dehacked.c and doomstat.h!
-CV_PossibleValue_t gametype_cons_t[MAXGAMETYPES+1];
-
 static CV_PossibleValue_t serversort_cons_t[] = {
 	{0,"Ping"},
 	{1,"AVG. Power Level"},
@@ -189,17 +185,17 @@ static CV_PossibleValue_t dummyteam_cons_t[] = {{0, "Spectator"}, {1, "Red"}, {2
 static CV_PossibleValue_t dummyspectate_cons_t[] = {{0, "Spectator"}, {1, "Playing"}, {0, NULL}};
 static CV_PossibleValue_t dummyscramble_cons_t[] = {{0, "Random"}, {1, "Points"}, {0, NULL}};
 static CV_PossibleValue_t dummystaff_cons_t[] = {{0, "MIN"}, {100, "MAX"}, {0, NULL}};
-static CV_PossibleValue_t dummygametype_cons_t[] = {{0, "Race"}, {1, "Battle"}, {0, NULL}};
 
 //static consvar_t cv_dummymenuplayer = CVAR_INIT ("dummymenuplayer", "P1", CV_HIDDEN|CV_CALL, dummymenuplayer_cons_t, Dummymenuplayer_OnChange);
 static consvar_t cv_dummyteam = CVAR_INIT ("dummyteam", "Spectator", CV_HIDDEN, dummyteam_cons_t, NULL);
 //static cv_dummyspectate = CVAR_INITconsvar_t  ("dummyspectate", "Spectator", CV_HIDDEN, dummyspectate_cons_t, NULL);
 static consvar_t cv_dummyscramble = CVAR_INIT ("dummyscramble", "Random", CV_HIDDEN, dummyscramble_cons_t, NULL);
 static consvar_t cv_dummystaff = CVAR_INIT ("dummystaff", "0", CV_HIDDEN|CV_CALL, dummystaff_cons_t, Dummystaff_OnChange);
-consvar_t cv_dummygametype = CVAR_INIT ("dummygametype", "Race", CV_HIDDEN, dummygametype_cons_t, NULL);
 consvar_t cv_dummyip = CVAR_INIT ("dummyip", "", CV_HIDDEN, NULL, NULL);
 consvar_t cv_dummymenuplayer = CVAR_INIT ("dummymenuplayer", "P1", CV_HIDDEN|CV_CALL, dummymenuplayer_cons_t, Dummymenuplayer_OnChange);
 consvar_t cv_dummyspectate = CVAR_INIT ("dummyspectate", "Spectator", CV_HIDDEN, dummyspectate_cons_t, NULL);
+
+INT16 menugametype = GT_RACE;
 
 consvar_t cv_dummyprofilename = CVAR_INIT ("dummyprofilename", "", CV_HIDDEN, NULL, NULL);
 consvar_t cv_dummyprofileplayername = CVAR_INIT ("dummyprofileplayername", "", CV_HIDDEN, NULL, NULL);
@@ -1715,7 +1711,6 @@ void M_Init(void)
 	CV_RegisterVar(&cv_dummyspectate);
 	CV_RegisterVar(&cv_dummyscramble);
 	CV_RegisterVar(&cv_dummystaff);
-	CV_RegisterVar(&cv_dummygametype);
 	CV_RegisterVar(&cv_dummyip);
 
 	CV_RegisterVar(&cv_dummyprofilename);
@@ -4167,10 +4162,70 @@ void M_MPHostInit(INT32 choice)
 	itemOn = mhost_go;
 }
 
+void M_HandleMenuGametype(INT32 choice)
+{
+	const UINT8 pid = 0;
+	const INT16 currentmenugametype = menugametype;
+	UINT32 forbidden = GTR_FORBIDMP;
+
+	(void)choice;
+
+	if (currentMenu->menuitems[itemOn].mvar1 != 0)
+		forbidden = currentMenu->menuitems[itemOn].mvar1;
+
+	if (menucmd[pid].dpad_lr > 0 || M_MenuConfirmPressed(pid))
+	{
+		do
+		{
+			menugametype++;
+			if (menugametype >= numgametypes)
+				menugametype = 0;
+
+			if (!(gametypes[menugametype]->rules & forbidden))
+				break;
+		} while (menugametype != currentmenugametype);
+
+		S_StartSound(NULL, sfx_s3k5b);
+		M_SetMenuDelay(pid);
+	}
+	else if (menucmd[pid].dpad_lr < 0)
+	{
+		do
+		{
+			if (menugametype == 0)
+				menugametype = numgametypes;
+			menugametype--;
+
+			if (!(gametypes[menugametype]->rules & forbidden))
+				break;
+		} while (menugametype != currentmenugametype);
+
+		S_StartSound(NULL, sfx_s3k5b);
+		M_SetMenuDelay(pid);
+	}
+	else if (M_MenuBackPressed(pid))
+	{
+		M_GoBack(0);
+		M_SetMenuDelay(pid);
+		return;
+	}
+
+	if (menucmd[pid].dpad_ud > 0)
+	{
+		M_NextOpt();
+		S_StartSound(NULL, sfx_s3k5b);
+		M_SetMenuDelay(pid);
+	}
+	else if (menucmd[pid].dpad_ud < 0)
+	{
+		M_PrevOpt();
+		S_StartSound(NULL, sfx_s3k5b);
+		M_SetMenuDelay(pid);
+	}
+}
+
 void M_MPSetupNetgameMapSelect(INT32 choice)
 {
-
-	INT16 gt = GT_RACE;
 	(void)choice;
 
 	// Yep, we'll be starting a netgame.
@@ -4181,26 +4236,10 @@ void M_MPSetupNetgameMapSelect(INT32 choice)
 	levellist.levelsearch.checklocked = true;
 	cupgrid.grandprix = false;
 
-	// In case we ever want to add new gamemodes there somehow, have at it!
-	switch (cv_dummygametype.value)
-	{
-		case 1:	// Battle
-		{
-			gt = GT_BATTLE;
-			break;
-		}
-
-		default:
-		{
-			gt = GT_RACE;
-			break;
-		}
-	}
-
 	// okay this is REALLY stupid but this fixes the host menu re-folding on itself when we go back.
 	mpmenu.modewinextend[0][0] = 1;
 
-	M_LevelListFromGametype(gt); // Setup the level select.
+	M_LevelListFromGametype(menugametype); // Setup the level select.
 	// (This will also automatically send us to the apropriate menu)
 }
 

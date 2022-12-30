@@ -519,10 +519,13 @@ enum GameTypeRules
 	GTR_CLOSERPLAYERS		= 1<<21, // Buffs spindash and draft power to bring everyone together, nerfs invincibility and grow to prevent excessive combos
 	GTR_ENCORE				= 1<<22, // Alternate Encore mirroring, scripting, and texture remapping
 	GTR_SPECIALSTART		= 1<<23, // White fade instant start
+	GTR_NOMP				= 1<<24, // No multiplayer
 
 	// free: to and including 1<<31
 };
 // Remember to update GAMETYPERULE_LIST in deh_soc.c
+
+#define GTR_FORBIDMP (GTR_NOMP|GTR_CATCHER|GTR_BOSS)
 
 // TODO: replace every instance
 #define gametyperules (gametypes[gametype]->rules)
