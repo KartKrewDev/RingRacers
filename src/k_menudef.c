@@ -363,7 +363,7 @@ menuitem_t PLAY_MP_Host[] =
 		NULL, {.cvar = &cv_maxplayers}, 0, 0},
 
 	{IT_STRING | IT_KEYHANDLER, "Gamemode", "Choose the type of play on your server.",
-	NULL, {.routine = M_HandleMenuGametype}, 0, 0},
+	NULL, {.routine = M_HandleHostMenuGametype}, 0, 0},
 
 	{IT_STRING | IT_CALL, "GO", "Select a map with the currently selected gamemode",
 		NULL, {.routine = M_MPSetupNetgameMapSelect}, 0, 0},
@@ -1592,6 +1592,9 @@ menuitem_t PAUSE_Main[] =
 
 	{IT_STRING | IT_CALL, "ADDONS", "M_ICOADD",
 		NULL, {.routine = M_Addons}, 0, 0},
+
+	{IT_STRING | IT_KEYHANDLER, "GAMETYPE", "M_ICOGAM",
+		NULL, {.routine = M_HandlePauseMenuGametype}, 0, 0},
 
 	{IT_STRING | IT_SUBMENU, "CHANGE MAP", "M_ICOMAP",
 		NULL, {.submenu = &PAUSE_GamemodesDef}, 0, 0},

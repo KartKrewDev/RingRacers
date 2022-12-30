@@ -116,7 +116,8 @@ struct menucolor_t {
 extern menucolor_t *menucolorhead, *menucolortail;
 
 extern INT16 menugametype;
-void M_HandleMenuGametype(INT32 choice);
+void M_HandleHostMenuGametype(INT32 choice);
+void M_HandlePauseMenuGametype(INT32 choice);
 
 //
 // MENU TYPEDEFS
@@ -414,6 +415,7 @@ extern menu_t MISC_StatisticsDef;
 typedef enum
 {
 	mpause_addons = 0,
+	mpause_changegametype,
 	mpause_switchmap,
 	mpause_restartmap,
 	mpause_tryagain,

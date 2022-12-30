@@ -358,7 +358,22 @@ static void CON_SetupColormaps(void)
 		*memorysrc = (UINT8)(i & 0xFF); // remap each color to itself...
 
 	purplemap[0]   = (UINT8)163;
+
 	yellowmap[0]   = (UINT8)73;
+	yellowmap[1]   = (UINT8)73;
+	yellowmap[3]   = (UINT8)74;
+	yellowmap[6]   = (UINT8)74;
+	yellowmap[7]   = (UINT8)190;
+	yellowmap[8]   = (UINT8)190;
+	yellowmap[10]  = (UINT8)190;
+	yellowmap[12]  = (UINT8)190;
+	yellowmap[14]  = (UINT8)149;
+	yellowmap[15]  = (UINT8)149;
+	yellowmap[16]  = (UINT8)149;
+	yellowmap[21]  = (UINT8)152;
+	yellowmap[23]  = (UINT8)173;
+	yellowmap[24]  = (UINT8)167;
+
 	greenmap[0]    = (UINT8)98;
 	bluemap[0]     = (UINT8)148;
 	redmap[0]      = (UINT8)34; // battle

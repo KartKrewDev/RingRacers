@@ -2468,7 +2468,7 @@ void M_DrawMPHost(void)
 						}
 						case IT_KEYHANDLER:
 						{
-							if (currentMenu->menuitems[i].itemaction.routine != M_HandleMenuGametype)
+							if (currentMenu->menuitems[i].itemaction.routine != M_HandleHostMenuGametype)
 								break;
 
 							w = V_ThinStringWidth(gametypes[menugametype]->name, V_6WIDTHSPACE);
@@ -3778,12 +3778,26 @@ void M_DrawPause(void)
 	word1[word1len] = '\0';
 	word2[word2len] = '\0';
 
-	// If there's no 2nd word, take this opportunity to center this line of text.
-	if (word1len)
-		V_DrawCenteredLSTitleHighString(220 + offset*2, 75 + (!word2len ? 10 : 0), 0, word1);
+	if (itemOn == mpause_changegametype)
+	{
+		INT32 w = V_LSTitleLowStringWidth(gametypes[menugametype]->name, 0)/2;
 
-	if (word2len)
-		V_DrawCenteredLSTitleLowString(220 + offset*2, 103, 0, word2);
+		if (word1len)
+			V_DrawCenteredLSTitleHighString(220 + offset*2, 75, 0, word1);
+
+		V_DrawLSTitleLowString(220-w + offset*2, 103, V_YELLOWMAP, gametypes[menugametype]->name);
+		V_DrawCharacter(220-w + offset*2 - 8 - (skullAnimCounter/5), 103+6, '\x1C' | V_YELLOWMAP, false); // left arrow
+		V_DrawCharacter(220+w + offset*2 + 4 + (skullAnimCounter/5), 103+6, '\x1D' | V_YELLOWMAP, false); // right arrow
+	}
+	else
+	{
+		// If there's no 2nd word, take this opportunity to center this line of text.
+		if (word1len)
+			V_DrawCenteredLSTitleHighString(220 + offset*2, 75 + (!word2len ? 10 : 0), 0, word1);
+
+		if (word2len)
+			V_DrawCenteredLSTitleLowString(220 + offset*2, 103, 0, word2);
+	}
 }
 
 tic_t playback_last_menu_interaction_leveltime = 0;

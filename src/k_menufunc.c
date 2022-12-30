@@ -4162,10 +4162,37 @@ void M_MPHostInit(INT32 choice)
 	itemOn = mhost_go;
 }
 
-void M_HandleMenuGametype(INT32 choice)
+static void M_NextMenuGametype(UINT32 forbidden)
+{
+	const INT16 currentmenugametype = menugametype;
+	do
+	{
+		menugametype++;
+		if (menugametype >= numgametypes)
+			menugametype = 0;
+
+		if (!(gametypes[menugametype]->rules & forbidden))
+			break;
+	} while (menugametype != currentmenugametype);
+}
+
+static void M_PrevMenuGametype(UINT32 forbidden)
+{
+	const INT16 currentmenugametype = menugametype;
+	do
+	{
+		if (menugametype == 0)
+			menugametype = numgametypes;
+		menugametype--;
+
+		if (!(gametypes[menugametype]->rules & forbidden))
+			break;
+	} while (menugametype != currentmenugametype);
+}
+
+void M_HandleHostMenuGametype(INT32 choice)
 {
 	const UINT8 pid = 0;
-	const INT16 currentmenugametype = menugametype;
 	UINT32 forbidden = GTR_FORBIDMP;
 
 	(void)choice;
@@ -4173,41 +4200,23 @@ void M_HandleMenuGametype(INT32 choice)
 	if (currentMenu->menuitems[itemOn].mvar1 != 0)
 		forbidden = currentMenu->menuitems[itemOn].mvar1;
 
-	if (menucmd[pid].dpad_lr > 0 || M_MenuConfirmPressed(pid))
+	if (M_MenuBackPressed(pid))
 	{
-		do
-		{
-			menugametype++;
-			if (menugametype >= numgametypes)
-				menugametype = 0;
-
-			if (!(gametypes[menugametype]->rules & forbidden))
-				break;
-		} while (menugametype != currentmenugametype);
-
+		M_GoBack(0);
+		M_SetMenuDelay(pid);
+		return;
+	}
+	else if (menucmd[pid].dpad_lr > 0 || M_MenuConfirmPressed(pid))
+	{
+		M_NextMenuGametype(forbidden);
 		S_StartSound(NULL, sfx_s3k5b);
 		M_SetMenuDelay(pid);
 	}
 	else if (menucmd[pid].dpad_lr < 0)
 	{
-		do
-		{
-			if (menugametype == 0)
-				menugametype = numgametypes;
-			menugametype--;
-
-			if (!(gametypes[menugametype]->rules & forbidden))
-				break;
-		} while (menugametype != currentmenugametype);
-
+		M_PrevMenuGametype(forbidden);
 		S_StartSound(NULL, sfx_s3k5b);
 		M_SetMenuDelay(pid);
-	}
-	else if (M_MenuBackPressed(pid))
-	{
-		M_GoBack(0);
-		M_SetMenuDelay(pid);
-		return;
 	}
 
 	if (menucmd[pid].dpad_ud > 0)
@@ -6150,6 +6159,7 @@ void M_OpenPauseMenu(void)
 	// By default, disable anything sensitive:
 
 	PAUSE_Main[mpause_addons].status = IT_DISABLED;
+	PAUSE_Main[mpause_changegametype].status = IT_DISABLED;
 	PAUSE_Main[mpause_switchmap].status = IT_DISABLED;
 	PAUSE_Main[mpause_restartmap].status = IT_DISABLED;
 	PAUSE_Main[mpause_tryagain].status = IT_DISABLED;
@@ -6171,14 +6181,8 @@ void M_OpenPauseMenu(void)
 
 		if (server || IsPlayerAdmin(consoleplayer))
 		{
-			PAUSE_Main[mpause_switchmap].status = IT_STRING | IT_SUBMENU;
-			for (i = 0; i < PAUSE_GamemodesDef.numitems; i++)
-			{
-				if (PAUSE_GamemodesMenu[i].mvar2 != gametype)
-					continue;
-				PAUSE_GamemodesDef.lastOn = i;
-				break;
-			}
+			PAUSE_Main[mpause_changegametype].status = IT_STRING | IT_KEYHANDLER;
+			PAUSE_Main[mpause_switchmap].status = IT_STRING | IT_CALL;
 			PAUSE_Main[mpause_restartmap].status = IT_STRING | IT_CALL;
 			PAUSE_Main[mpause_addons].status = IT_STRING | IT_CALL;
 		}
@@ -6277,6 +6281,46 @@ boolean M_PauseInputs(INT32 ch)
 		return true;
 	}
 	return false;
+}
+
+// Change gametype
+void M_HandlePauseMenuGametype(INT32 choice)
+{
+	const UINT8 pid = 0;
+	UINT32 forbidden = GTR_FORBIDMP;
+
+	(void)choice;
+
+	if (M_MenuConfirmPressed(pid))
+	{
+		if (menugametype != gametype)
+		{
+			M_ClearMenus(true);
+			COM_ImmedExecute(va("randommap -gt %s", gametypes[menugametype]->name));
+			return;
+		}
+
+		M_SetMenuDelay(pid);
+		S_StartSound(NULL, sfx_s3k7b);
+	}
+	else if (M_MenuExtraPressed(pid))
+	{
+		menugametype = gametype;
+		M_SetMenuDelay(pid);
+		S_StartSound(NULL, sfx_s3k7b);
+	}
+	else if (menucmd[pid].dpad_lr > 0)
+	{
+		M_NextMenuGametype(forbidden);
+		S_StartSound(NULL, sfx_s3k5b);
+		M_SetMenuDelay(pid);
+	}
+	else if (menucmd[pid].dpad_lr < 0)
+	{
+		M_PrevMenuGametype(forbidden);
+		S_StartSound(NULL, sfx_s3k5b);
+		M_SetMenuDelay(pid);
+	}
 }
 
 // Restart map

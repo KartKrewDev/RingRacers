@@ -2739,15 +2739,6 @@ static void Command_Map_f(void)
 
 	if (option_gametype)
 	{
-#if 0
-		if (!multiplayer)
-		{
-			CONS_Printf(M_GetText(
-						"You can't switch gametypes in single player!\n"));
-			return;
-		}
-		else
-#endif //#if 0
 		if (COM_Argc() < option_gametype + 2)/* no argument after? */
 		{
 			CONS_Alert(CONS_ERROR,
@@ -2823,12 +2814,22 @@ static void Command_Map_f(void)
 			else
 			{
 				CONS_Alert(CONS_ERROR,
-						"'%s' is not a gametype.\n",
+						"'%s' is not a valid gametype.\n",
 						gametypename);
 				Z_Free(realmapname);
 				Z_Free(mapname);
 				return;
 			}
+		}
+
+		if (Playing() && netgame && (gametypes[newgametype]->rules & GTR_FORBIDMP))
+		{
+			CONS_Alert(CONS_ERROR,
+					"'%s' is not a net-compatible gametype.\n",
+					gametypename);
+			Z_Free(realmapname);
+			Z_Free(mapname);
+			return;
 		}
 	}
 	else if (!Playing())
@@ -3061,9 +3062,10 @@ static void Command_RandomMap(void)
 {
 	INT32 oldmapnum;
 	INT32 newmapnum;
-	INT32 newgametype;
-	boolean newencoremode;
+	INT32 newgametype = (Playing() ? gametype : menugametype);
+	boolean newencore = false;
 	boolean newresetplayers;
+	size_t option_gametype;
 
 	if (client && !IsPlayerAdmin(consoleplayer))
 	{
@@ -3071,13 +3073,69 @@ static void Command_RandomMap(void)
 		return;
 	}
 
+	if ((option_gametype = COM_CheckPartialParm("-g")))
+	{
+		const char *gametypename;
+
+		if (COM_Argc() < option_gametype + 2)/* no argument after? */
+		{
+			CONS_Alert(CONS_ERROR,
+					"No gametype name follows parameter '%s'.\n",
+					COM_Argv(option_gametype));
+			return;
+		}
+
+		// new gametype value
+		// use current one by default
+		gametypename = COM_Argv(option_gametype + 1);
+
+		newgametype = G_GetGametypeByName(gametypename);
+
+		if (newgametype == -1) // reached end of the list with no match
+		{
+			/* Did they give us a gametype number? That's okay too! */
+			if (isdigit(gametypename[0]))
+			{
+				INT16 d = atoi(gametypename);
+				if (d >= 0 && d < numgametypes)
+					newgametype = d;
+				else
+				{
+					CONS_Alert(CONS_ERROR,
+							"Gametype number %d is out of range. Use a number between"
+							" 0 and %d inclusive. ...Or just use the name. :v\n",
+							d,
+							numgametypes-1);
+					return;
+				}
+			}
+			else
+			{
+				CONS_Alert(CONS_ERROR,
+						"'%s' is not a valid gametype.\n",
+						gametypename);
+				return;
+			}
+		}
+
+		if (Playing() && netgame && (gametypes[newgametype]->rules & GTR_FORBIDMP))
+		{
+			CONS_Alert(CONS_ERROR,
+					"'%s' is not a net-compatible gametype.\n",
+					gametypename);
+			return;
+		}
+	}
+
 	// TODO: Handle singleplayer conditions.
 	// The existing ones are way too annoyingly complicated and "anti-cheat" for my tastes.
 
 	if (Playing())
 	{
-		newgametype = gametype;
-		newencoremode = encoremode;
+		if (cv_kartencore.value == 1 && (gametypes[newgametype]->rules & GTR_ENCORE))
+		{
+			newencore = true;
+		}
 		newresetplayers = false;
 
 		if (gamestate == GS_LEVEL)
@@ -3091,14 +3149,12 @@ static void Command_RandomMap(void)
 	}
 	else
 	{
-		newgametype = menugametype;
-		newencoremode = false;
 		newresetplayers = true;
 		oldmapnum = -1;
 	}
 
 	newmapnum = G_RandMap(G_TOLFlag(newgametype), oldmapnum, 0, 0, false, NULL) + 1;
-	D_MapChange(newmapnum, newgametype, newencoremode, newresetplayers, 0, false, false);
+	D_MapChange(newmapnum, newgametype, newencore, newresetplayers, 0, false, false);
 }
 
 static void Command_RestartLevel(void)
