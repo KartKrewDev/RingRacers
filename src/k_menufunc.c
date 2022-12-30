@@ -4121,6 +4121,7 @@ void M_MPOptSelectInit(INT32 choice)
 {
 	INT16 arrcpy[3][3] = {{0,68,0}, {0,12,0}, {0,74,0}};
 	UINT8 i = 0, j = 0;	// To copy the array into the struct
+	const UINT32 forbidden = GTR_FORBIDMP;
 
 	(void)choice;
 
@@ -4130,6 +4131,10 @@ void M_MPOptSelectInit(INT32 choice)
 	for (; i < 3; i++)
 		for (j = 0; j < 3; j++)
 			mpmenu.modewinextend[i][j] = arrcpy[i][j];	// I miss Lua already
+
+	// Guarantee menugametype is good
+	M_NextMenuGametype(forbidden);
+	M_PrevMenuGametype(forbidden);
 
 	M_SetupNextMenu(&PLAY_MP_OptSelectDef, false);
 }
@@ -4162,7 +4167,7 @@ void M_MPHostInit(INT32 choice)
 	itemOn = mhost_go;
 }
 
-static void M_NextMenuGametype(UINT32 forbidden)
+void M_NextMenuGametype(UINT32 forbidden)
 {
 	const INT16 currentmenugametype = menugametype;
 	do
@@ -4176,7 +4181,7 @@ static void M_NextMenuGametype(UINT32 forbidden)
 	} while (menugametype != currentmenugametype);
 }
 
-static void M_PrevMenuGametype(UINT32 forbidden)
+void M_PrevMenuGametype(UINT32 forbidden)
 {
 	const INT16 currentmenugametype = menugametype;
 	do
@@ -4193,12 +4198,9 @@ static void M_PrevMenuGametype(UINT32 forbidden)
 void M_HandleHostMenuGametype(INT32 choice)
 {
 	const UINT8 pid = 0;
-	UINT32 forbidden = GTR_FORBIDMP;
+	const UINT32 forbidden = GTR_FORBIDMP;
 
 	(void)choice;
-
-	if (currentMenu->menuitems[itemOn].mvar1 != 0)
-		forbidden = currentMenu->menuitems[itemOn].mvar1;
 
 	if (M_MenuBackPressed(pid))
 	{
@@ -6182,6 +6184,8 @@ void M_OpenPauseMenu(void)
 		if (server || IsPlayerAdmin(consoleplayer))
 		{
 			PAUSE_Main[mpause_changegametype].status = IT_STRING | IT_KEYHANDLER;
+			menugametype = gametype;
+
 			PAUSE_Main[mpause_switchmap].status = IT_STRING | IT_CALL;
 			PAUSE_Main[mpause_restartmap].status = IT_STRING | IT_CALL;
 			PAUSE_Main[mpause_addons].status = IT_STRING | IT_CALL;
@@ -6287,7 +6291,7 @@ boolean M_PauseInputs(INT32 ch)
 void M_HandlePauseMenuGametype(INT32 choice)
 {
 	const UINT8 pid = 0;
-	UINT32 forbidden = GTR_FORBIDMP;
+	const UINT32 forbidden = GTR_FORBIDMP;
 
 	(void)choice;
 

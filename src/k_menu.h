@@ -116,6 +116,8 @@ struct menucolor_t {
 extern menucolor_t *menucolorhead, *menucolortail;
 
 extern INT16 menugametype;
+void M_NextMenuGametype(UINT32 forbidden);
+void M_PrevMenuGametype(UINT32 forbidden);
 void M_HandleHostMenuGametype(INT32 choice);
 void M_HandlePauseMenuGametype(INT32 choice);
 
