@@ -1596,8 +1596,8 @@ menuitem_t PAUSE_Main[] =
 	{IT_STRING | IT_KEYHANDLER, "GAMETYPE", "M_ICOGAM",
 		NULL, {.routine = M_HandlePauseMenuGametype}, 0, 0},
 
-	{IT_STRING | IT_SUBMENU, "CHANGE MAP", "M_ICOMAP",
-		NULL, {.submenu = &PAUSE_GamemodesDef}, 0, 0},
+	{IT_STRING | IT_CALL, "CHANGE MAP", "M_ICOMAP",
+		NULL, {.routine = M_LevelSelectInit}, 0, -1},
 
 	{IT_STRING | IT_CALL, "RESTART MAP", "M_ICORE",
 		NULL, {.routine = M_RestartMap}, 0, 0},
@@ -1649,20 +1649,6 @@ menu_t PAUSE_MainDef = {
 	NULL,
 	M_PauseInputs
 };
-
-// PAUSE : Map switching gametype selection (In case you want to pick from battle / race...)
-menuitem_t PAUSE_GamemodesMenu[] =
-{
-	{IT_STRING | IT_CALL, "Race", "Select which gamemode to choose a new map from.",
-		NULL, {.routine = M_LevelSelectInit}, 0, GT_RACE},
-
-	{IT_STRING | IT_CALL, "Battle", "Select which gamemode to choose a new map from.",
-		NULL, {.routine = M_LevelSelectInit}, 0, GT_BATTLE},
-
-	{IT_STRING | IT_CALL, "Back", NULL, NULL, {.routine = M_GoBack}, 0, 0},
-};
-
-menu_t PAUSE_GamemodesDef = KARTGAMEMODEMENU(PAUSE_GamemodesMenu, &PAUSE_MainDef);
 
 // Replay popup menu
 menuitem_t PAUSE_PlaybackMenu[] =

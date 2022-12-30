@@ -436,9 +436,6 @@ typedef enum
 	mpause_title,
 } mpause_e;
 
-extern menuitem_t PAUSE_GamemodesMenu[];
-extern menu_t PAUSE_GamemodesDef;
-
 extern menuitem_t PAUSE_PlaybackMenu[];
 extern menu_t PAUSE_PlaybackMenuDef;
 

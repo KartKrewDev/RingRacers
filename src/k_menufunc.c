@@ -3676,6 +3676,8 @@ static void M_LevelListFromGametype(INT16 gt)
 
 void M_LevelSelectInit(INT32 choice)
 {
+	INT32 gt = currentMenu->menuitems[itemOn].mvar2;
+
 	(void)choice;
 
 	// Make sure this is reset as we'll only be using this function for offline games!
@@ -3702,7 +3704,12 @@ void M_LevelSelectInit(INT32 choice)
 			return;
 	}
 
-	M_LevelListFromGametype(currentMenu->menuitems[itemOn].mvar2);
+	if (gt == -1)
+	{
+		gt = menugametype;
+	}
+
+	M_LevelListFromGametype(gt);
 }
 
 static void M_LevelSelected(INT16 add)
