@@ -3410,7 +3410,7 @@ tryagain:
 		if (!mapheaderinfo[ix] || mapheaderinfo[ix]->lumpnum == LUMPERROR)
 			continue;
 
-		if ((mapheaderinfo[ix]->typeoflevel & tolflags) != tolflags
+		if (!(mapheaderinfo[ix]->typeoflevel & tolflags)
 			|| ix == pprevmap
 			|| M_MapLocked(ix+1)
 			|| (usehellmaps != (mapheaderinfo[ix]->menuflags & LF2_HIDEINMENU))) // this is bad
