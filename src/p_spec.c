@@ -43,6 +43,7 @@
 
 // SRB2kart
 #include "k_kart.h"
+#include "k_specialstage.h"
 #include "console.h" // CON_LogMessage
 #include "k_respawn.h"
 #include "k_terrain.h"
@@ -1925,6 +1926,14 @@ static void K_HandleLapIncrement(player_t *player)
 			// finished race exit setup
 			if (player->laps > numlaps)
 			{
+				if (specialstageinfo.valid == true)
+				{
+					// Don't permit a win just by sneaking ahead of the UFO/emerald.
+					if (!(specialstageinfo.ufo == NULL || P_MobjWasRemoved(specialstageinfo.ufo)))
+					{
+						player->pflags |= PF_NOCONTEST;
+					}
+				}
 				P_DoPlayerExit(player);
 				P_SetupSignExit(player);
 			}
