@@ -1140,7 +1140,7 @@ void readlevelheader(MYFILE *f, char * name)
 			}
 			else if (fastcmp(word, "TYPEOFLEVEL"))
 			{
-				if (i) // it's just a number
+				if (i || isdigit(word2[0])) // it's just a number
 					mapheaderinfo[num]->typeoflevel = (UINT32)i;
 				else
 				{
@@ -1279,12 +1279,12 @@ void readlevelheader(MYFILE *f, char * name)
 				else
 					mapheaderinfo[num]->menuflags &= ~LF2_NOTIMEATTACK;
 			}
-			else if (fastcmp(word, "VISITNEEDED"))
+			else if (fastcmp(word, "FINISHNEEDED"))
 			{
 				if (i || word2[0] == 'T' || word2[0] == 'Y')
-					mapheaderinfo[num]->menuflags |= LF2_VISITNEEDED;
+					mapheaderinfo[num]->menuflags |= LF2_FINISHNEEDED;
 				else
-					mapheaderinfo[num]->menuflags &= ~LF2_VISITNEEDED;
+					mapheaderinfo[num]->menuflags &= ~LF2_FINISHNEEDED;
 			}
 			else if (fastcmp(word, "GRAVITY"))
 				mapheaderinfo[num]->gravity = FLOAT_TO_FIXED(atof(word2));

@@ -3418,8 +3418,18 @@ boolean M_CanShowLevelInList(INT16 mapnum, levelsearch_t *levelsearch)
 	if (mapheaderinfo[mapnum]->lumpnum == LUMPERROR)
 		return false;
 
-	if (levelsearch->checklocked && M_MapLocked(mapnum+1))
-		return false; // not unlocked
+	// Does the map have lock conditions?
+	if (levelsearch->checklocked)
+	{
+		// Check for completion
+		if ((mapheaderinfo[mapnum]->menuflags & LF2_FINISHNEEDED)
+		&& !(mapheaderinfo[mapnum]->mapvisited & MV_BEATEN))
+			return false;
+
+		// Check for unlock
+		if (M_MapLocked(mapnum+1))
+			return false;
+	}
 
 	// Check for TOL
 	if (!(mapheaderinfo[mapnum]->typeoflevel & levelsearch->typeoflevel))
@@ -7688,9 +7698,16 @@ void M_Statistics(INT32 choice)
 		if (!mapheaderinfo[i])
 			continue;
 
+		// Check for no visibility + legacy box
 		if (mapheaderinfo[i]->menuflags & (LF2_NOTIMEATTACK|LF2_HIDEINSTATS|LF2_HIDEINMENU))
 			continue;
 
+		// Check for completion
+		if ((mapheaderinfo[i]->menuflags & LF2_FINISHNEEDED)
+		&& !(mapheaderinfo[i]->mapvisited & MV_BEATEN))
+			continue;
+
+		// Check for unlock
 		if (M_MapLocked(i+1))
 			continue;
 
