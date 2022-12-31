@@ -2457,11 +2457,8 @@ static void HU_DrawRankings(void)
 	}
 	else if (gametyperules & GTR_CIRCUIT)
 	{
-		if (circuitmap)
-		{
-			V_DrawCenteredString(64, 8, 0, "LAP COUNT");
-			V_DrawCenteredString(64, 16, hilicol, va("%d", numlaps));
-		}
+		V_DrawCenteredString(64, 8, 0, "LAPS");
+		V_DrawCenteredString(64, 16, hilicol, va("%d", numlaps));
 	}
 
 	// Right hand side
@@ -2548,13 +2545,12 @@ static void HU_DrawRankings(void)
 
 		if ((gametyperules & GTR_CIRCUIT))
 		{
-			if (circuitmap)
-				tab[scorelines].count = players[i].laps;
-			else
-				tab[scorelines].count = players[i].realtime;
+			tab[scorelines].count = players[i].laps;
 		}
 		else
+		{
 			tab[scorelines].count = players[i].roundscore;
+		}
 
 		scorelines++;
 

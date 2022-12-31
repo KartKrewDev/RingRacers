@@ -553,7 +553,6 @@ INT16 numgametypes = GT_FIRSTFREESLOT;
 boolean forceresetplayers = false;
 boolean deferencoremode = false;
 UINT8 splitscreen = 0;
-boolean circuitmap = false;
 INT32 adminplayers[MAXPLAYERS];
 
 // Scheduled commands.

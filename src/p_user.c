@@ -2639,7 +2639,7 @@ static void P_DeathThink(player_t *player)
 			player->realtime = leveltime - starttime;
 			if (player == &players[consoleplayer])
 			{
-				if (player->spectator || !circuitmap)
+				if (player->spectator)
 					curlap = 0;
 				else if (curlap != UINT32_MAX)
 					curlap++; // This is too complicated to sync to realtime, just sorta hope for the best :V
@@ -3998,7 +3998,7 @@ void P_PlayerThink(player_t *player)
 			player->realtime = leveltime - starttime;
 			if (player == &players[consoleplayer])
 			{
-				if (player->spectator || !circuitmap)
+				if (player->spectator)
 					curlap = 0;
 				else if (curlap != UINT32_MAX)
 					curlap++; // This is too complicated to sync to realtime, just sorta hope for the best :V

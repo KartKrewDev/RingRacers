@@ -6822,7 +6822,6 @@ static void P_InitLevelSettings(void)
 	rflagpoint = bflagpoint = NULL;
 
 	// circuit, race and competition stuff
-	circuitmap = false;
 	numstarposts = 0;
 	timeinmap = 0;
 

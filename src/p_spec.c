@@ -6671,12 +6671,6 @@ void P_SpawnSpecials(boolean fromnetsave)
 				break;
 			}
 
-			// SRB2Kart
-			case 2001: // Finish Line
-				if ((gametyperules & GTR_CIRCUIT))
-					circuitmap = true;
-				break;
-
 			default:
 				break;
 		}
