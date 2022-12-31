@@ -3698,27 +3698,19 @@ void M_DrawPause(void)
 			case IT_STRING:
 			{
 				patch_t *pp;
+				UINT8 *colormap = NULL;
 
-				if (i == itemOn)
+				if (i == itemOn && (i == mpause_restartmap || i == mpause_tryagain))
 				{
-					if (i == mpause_restartmap || i == mpause_tryagain)
-					{
-						pp = W_CachePatchName(
-							va("M_ICOR2%c", ('A'+(pausemenu.ticker & 1))),
-							PU_CACHE);
-					}
-					else
-					{
-						char iconame[9];	// 8 chars + \0
-						strcpy(iconame, currentMenu->menuitems[i].tooltip);
-						iconame[7] = '2';	// Yes this is a stupid hack. Replace the last character with a 2 when we're selecting this graphic.
-
-						pp = W_CachePatchName(iconame, PU_CACHE);
-					}
+					pp = W_CachePatchName(
+						va("M_ICOR2%c", ('A'+(pausemenu.ticker & 1))),
+						PU_CACHE);
 				}
 				else
 				{
 					pp = W_CachePatchName(currentMenu->menuitems[i].tooltip, PU_CACHE);
+					if (i == itemOn)
+						colormap = yellowmap;
 				}
 
 				// 294 - 261 = 33
@@ -3729,7 +3721,7 @@ void M_DrawPause(void)
 				// This double ternary is awful, yes.
 
 				dypos = ypos + pausemenu.offset;
-				V_DrawFixedPatch( ((i == itemOn ? (294 - pausemenu.offset*2/3 * (dypos > 100 ? 1 : -1)) : 261) + offset) << FRACBITS, (dypos)*FRACUNIT, FRACUNIT, 0, pp, NULL);
+				V_DrawFixedPatch( ((i == itemOn ? (294 - pausemenu.offset*2/3 * (dypos > 100 ? 1 : -1)) : 261) + offset) << FRACBITS, (dypos)*FRACUNIT, FRACUNIT, 0, pp, colormap);
 
 				ypos += 50;
 				itemsdrawn++;	// We drew that!
