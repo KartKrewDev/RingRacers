@@ -145,7 +145,7 @@ void K_CheckBumpers(void)
 	}
 	else if (numingame <= 1)
 	{
-		if (!battlecapsules)
+		if ((gametyperules & GTR_CAPSULES) && !battlecapsules)
 		{
 			// Reset map to turn on battle capsules
 			if (server)
