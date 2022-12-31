@@ -3,6 +3,13 @@
 /// \file  k_director.h
 /// \brief SRB2kart automatic spectator camera.
 
+#ifndef __K_DIRECTOR_H__
+#define __K_DIRECTOR_H__
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 extern struct directorinfo
 {
     tic_t cooldown; // how long has it been since we last switched?
@@ -19,3 +26,9 @@ void K_InitDirector(void);
 void K_UpdateDirector(void);
 void K_DrawDirectorDebugger(void);
 void K_DirectorFollowAttack(player_t *player, mobj_t *inflictor, mobj_t *source);
+
+#ifdef __cplusplus
+} // extern "C"
+#endif
+
+#endif // __K_DIRECTOR_H__

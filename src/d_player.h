@@ -32,6 +32,10 @@
 // the player struct stores a waypoint for racing
 #include "k_waypoint.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 // Extra abilities/settings for skins (combinable stuff)
 typedef enum
 {
@@ -656,5 +660,9 @@ struct player_t
 	fixed_t fovadd; // adjust FOV for hw rendering
 #endif
 };
+
+#ifdef __cplusplus
+} // extern "C"
+#endif
 
 #endif

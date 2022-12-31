@@ -17,6 +17,10 @@
 #ifndef __D_THINK__
 #define __D_THINK__
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #ifdef __GNUG__
 #pragma interface
 #endif
@@ -50,5 +54,9 @@ struct thinker_t
 	// this one using pointers. Used for garbage collection.
 	INT32 references;
 };
+
+#ifdef __cplusplus
+} // extern "C"
+#endif
 
 #endif

@@ -12,6 +12,10 @@
 #ifndef __HWS_DATA_H__
 #define __HWS_DATA_H__
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define NORMAL_SEP 128
 
 // abuse?
@@ -112,5 +116,9 @@ typedef struct snddev_s
 	HWND    hWnd;
 #endif
 } snddev_t;
+
+#ifdef __cplusplus
+} // extern "C"
+#endif
 
 #endif //__HWS_DATA_H__

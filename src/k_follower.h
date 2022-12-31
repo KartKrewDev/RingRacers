@@ -16,6 +16,10 @@
 #include "doomdef.h"
 #include "doomstat.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define FOLLOWERCOLOR_MATCH UINT16_MAX
 #define FOLLOWERCOLOR_OPPOSITE (UINT16_MAX-1)
 
@@ -211,5 +215,8 @@ void K_HandleFollower(player_t *player);
 
 void K_RemoveFollower(player_t *player);
 
+#ifdef __cplusplus
+} // extern "C"
+#endif
 
 #endif // __K_FOLLOWER__

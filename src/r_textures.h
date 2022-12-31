@@ -19,6 +19,10 @@
 #include "p_setup.h" // levelflats
 #include "r_data.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #ifdef __GNUG__
 #pragma interface
 #endif
@@ -106,5 +110,9 @@ INT32 R_CheckTextureNumForName(const char *name);
 lumpnum_t R_GetFlatNumForName(const char *name);
 
 extern INT32 numtextures;
+
+#ifdef __cplusplus
+} // extern "C"
+#endif
 
 #endif

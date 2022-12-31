@@ -21,6 +21,10 @@
 #include "d_event.h" // Screenshot responder
 #include "command.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef enum {
 	MM_OFF = 0,
 	MM_APNG,
@@ -139,5 +143,9 @@ FUNCMATH UINT8 M_CountBits(UINT32 num, UINT8 size);
 
 #include "w_wad.h"
 extern char configfile[MAX_WADPATH];
+
+#ifdef __cplusplus
+} // extern "C"
+#endif
 
 #endif

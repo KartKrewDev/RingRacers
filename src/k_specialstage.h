@@ -16,6 +16,10 @@
 #include "doomdef.h"
 #include "doomstat.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 extern struct specialStage
 {
 	boolean active;						///< If true, then we are in a special stage
@@ -51,5 +55,8 @@ void K_InitSpecialStage(void);
 
 void K_TickSpecialStage(void);
 
+#ifdef __cplusplus
+} // extern "C"
+#endif
 
 #endif

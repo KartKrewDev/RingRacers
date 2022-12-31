@@ -16,6 +16,10 @@
 #include "hw_dll.h"
 #include "hws_data.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #if defined (HAVE_SDL) || !defined (HWD)
 EXPORT void HWRAPI(Shutdown) (void);
 #endif
@@ -73,5 +77,9 @@ extern struct hardware3ds_s hw3ds_driver;
 
 
 #endif  // _CREATE_DLL_
+
+#ifdef __cplusplus
+} // extern "C"
+#endif
 
 #endif // __HW_3DS_DRV_H__

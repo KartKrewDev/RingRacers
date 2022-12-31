@@ -16,6 +16,10 @@
 
 #include "endian.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define SWAP_SHORT(x) ((INT16)(\
 (((UINT16)(x) & (UINT16)0x00ffU) << 8) \
 | \
@@ -51,6 +55,10 @@
 #else
 	#define BIGENDIAN_LONG(x) ((INT32)(x))
 	#define BIGENDIAN_SHORT(x) ((INT16)(x))
+#endif
+
+#ifdef __cplusplus
+} // extern "C"
 #endif
 
 #endif

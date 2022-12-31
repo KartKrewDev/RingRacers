@@ -13,6 +13,10 @@
 #define LZF_H
 #include <stdio.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /***********************************************************************
 **
 **	lzf -- an extremely fast/free compression/decompression-method
@@ -70,6 +74,10 @@ lzf_compress (const void *const in_data,  size_t in_len,
 size_t
 lzf_decompress (const void *const in_data,  size_t in_len,
                 void             *out_data, size_t out_len);
+
+#ifdef __cplusplus
+} // extern "C"
+#endif
 
 #endif
 

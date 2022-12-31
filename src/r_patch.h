@@ -17,6 +17,10 @@
 #include "doomdef.h"
 #include "d_player.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 // Patch functions
 patch_t *Patch_Create(softwarepatch_t *source, size_t srcsize, void *dest);
 void Patch_Free(patch_t *patch);
@@ -44,6 +48,10 @@ INT32 R_GetRollAngle(angle_t rollangle);
 angle_t R_GetPitchRollAngle(mobj_t *mobj, player_t *viewPlayer);
 angle_t R_ModelRotationAngle(mobj_t *mobj, player_t *viewPlayer);
 angle_t R_SpriteRotationAngle(mobj_t *mobj, player_t *viewPlayer);
+#endif
+
+#ifdef __cplusplus
+} // extern "C"
 #endif
 
 #endif // __R_PATCH__

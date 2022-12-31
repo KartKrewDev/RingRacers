@@ -17,6 +17,10 @@
 #include "doomdef.h"
 #include "doomtype.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 struct brightmapStorage_t
 {
 	// Brightmap storage struct.
@@ -45,5 +49,9 @@ void K_InitBrightmapsPwad(INT32 wadNum);
 --------------------------------------------------*/
 
 void K_InitBrightmaps(void);
+
+#ifdef __cplusplus
+} // extern "C"
+#endif
 
 #endif // __K_BRIGHTMAP_H__

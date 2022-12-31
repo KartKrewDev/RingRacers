@@ -26,6 +26,10 @@
 #include "taglist.h"
 #include "m_fixed.h" // See the mapthing_t scale.
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 //
 // Map level types.
 // The following data structures define the persistent format
@@ -233,5 +237,9 @@ enum
 	FLOOR_SLOPE_THING   = 777,
 	CEILING_SLOPE_THING = 778,
 };
+
+#ifdef __cplusplus
+} // extern "C"
+#endif
 
 #endif // __DOOMDATA__

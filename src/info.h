@@ -19,6 +19,10 @@
 #include "sounds.h"
 #include "m_fixed.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 // deh_tables.c now has lists for the more named enums! PLEASE keep them up to date!
 // For great modding!!
 
@@ -6738,5 +6742,9 @@ void P_PatchInfoTables(void);
 void P_BackupTables(void);
 
 void P_ResetData(INT32 flags);
+
+#ifdef __cplusplus
+} // extern "C"
+#endif
 
 #endif

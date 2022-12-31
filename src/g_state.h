@@ -15,6 +15,10 @@
 
 #include "doomtype.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 // the current state of the game
 typedef enum
 {
@@ -57,5 +61,9 @@ extern gamestate_t gamestate;
 extern UINT8 titlemapinaction;
 extern UINT8 ultimatemode; // was sk_insane
 extern gameaction_t gameaction;
+
+#ifdef __cplusplus
+} // extern "C"
+#endif
 
 #endif //__G_STATE__

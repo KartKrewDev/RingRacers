@@ -15,6 +15,10 @@
 
 #include "doomtype.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 // function pointer for returning a node's connected node data
 // should return a pointer to an array of pointers to the data, as arguments takes a node's data and a pointer that the
 // number of connected nodes should be placed into
@@ -83,5 +87,9 @@ struct pathfindsetup_t {
 		True if a path was found between source and destination, false otherwise.
 --------------------------------------------------*/
 boolean K_PathfindAStar(path_t *const path, pathfindsetup_t *const pathfindsetup);
+
+#ifdef __cplusplus
+} // extern "C"
+#endif
 
 #endif

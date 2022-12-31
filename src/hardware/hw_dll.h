@@ -12,6 +12,10 @@
 #ifndef __HWR_DLL_H__
 #define __HWR_DLL_H__
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 // Function declaration for exports from the DLL :
 // EXPORT <return-type> HWRAPI(<function-name>) (<arguments>);
 // If _CREATE_DLL_ is defined the above declaration translates to :
@@ -54,6 +58,10 @@ void _fini() __attribute__((destructor));
 #else
 void _init();
 void _fini();
+#endif
+
+#ifdef __cplusplus
+} // extern "C"
 #endif
 
 #endif

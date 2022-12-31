@@ -19,6 +19,14 @@
 #ifndef __ENDTXT__
 #define __ENDTXT__
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 void ShowEndTxt (void);
+
+#ifdef __cplusplus
+} // extern "C"
+#endif
 
 #endif

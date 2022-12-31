@@ -45,6 +45,10 @@
 #include "dehacked.h"
 #include "doomdef.h" // HWRENDER
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 // Crazy word-reading stuff
 /// \todo Put these in a seperate file or something.
 mobjtype_t get_mobjtype(const char *word);
@@ -86,5 +90,9 @@ void readfollower(MYFILE *f);
 void readfollowercategory(MYFILE *f);
 preciptype_t get_precip(const char *word);
 void readweather(MYFILE *f, INT32 num);
+
+#ifdef __cplusplus
+} // extern "C"
+#endif
 
 #endif

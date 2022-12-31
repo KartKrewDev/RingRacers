@@ -18,6 +18,10 @@
 #include "r_state.h"
 #include "p_setup.h" // levelflats
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #ifdef __GNUG__
 #pragma interface
 #endif
@@ -120,5 +124,9 @@ const char *R_NameForColormap(extracolormap_t *extra_colormap);
 
 UINT8 NearestPaletteColor(UINT8 r, UINT8 g, UINT8 b, RGBA_t *palette);
 #define NearestColor(r, g, b) NearestPaletteColor(r, g, b, NULL)
+
+#ifdef __cplusplus
+} // extern "C"
+#endif
 
 #endif

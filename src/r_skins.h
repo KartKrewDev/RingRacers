@@ -21,6 +21,10 @@
 #include "r_picformats.h" // spriteinfo_t
 #include "r_defs.h" // spritedef_t
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /// Defaults
 #define SKINRIVALS 3
 // should be all lowercase!! S_SKIN processing does a strlwr
@@ -94,5 +98,9 @@ void R_PatchSkins(UINT16 wadnum, boolean mainfile);
 void R_AddSkins(UINT16 wadnum, boolean mainfile);
 
 UINT8 P_GetSkinSprite2(skin_t *skin, UINT8 spr2, player_t *player);
+
+#ifdef __cplusplus
+} // extern "C"
+#endif
 
 #endif //__R_SKINS__

@@ -14,6 +14,10 @@
 #ifndef __P_TICK__
 #define __P_TICK__
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #ifdef __GNUG__
 #pragma interface
 #endif
@@ -42,5 +46,9 @@ INT32 P_AltFlip(INT32 value, tic_t tics);
 // A half cycle (one direction) takes 2 * tics.
 // A full cycle takes 4 * tics.
 INT32 P_LerpFlip(INT32 value, tic_t tics);
+
+#ifdef __cplusplus
+} // extern "C"
+#endif
 
 #endif
