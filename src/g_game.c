@@ -3298,26 +3298,6 @@ INT16 G_SometimesGetDifferentGametype(void)
 	return (gametype|encoremodifier);
 }
 
-//
-// G_GetGametypeColor
-//
-// Pretty and consistent ^u^
-// See also M_GetGametypeColor (if that still exists).
-//
-UINT8 G_GetGametypeColor(INT16 gt)
-{
-	if (modeattacking) // == ATTACKING_RECORD
-		return orangemap[0];
-
-	if (gt == GT_BATTLE)
-		return redmap[0];
-
-	if (gt == GT_RACE)
-		return skymap[0];
-
-	return 255; // FALLBACK
-}
-
 /** Get the typeoflevel flag needed to indicate support of a gametype.
   * \param gametype The gametype for which support is desired.
   * \return The typeoflevel flag to check for that gametype.

@@ -1209,12 +1209,8 @@ void Y_VoteDrawer(void)
 
 	if (timer)
 	{
-		INT32 hilicol, tickdown = (timer+1)/TICRATE;
-		if (gametype == GT_RACE)
-			hilicol = V_SKYMAP;
-		else //if (gametype == GT_BATTLE)
-			hilicol = V_REDMAP;
-		V_DrawCenteredString(BASEVIDWIDTH/2, 188, hilicol,
+		INT32 tickdown = (timer+1)/TICRATE;
+		V_DrawCenteredString(BASEVIDWIDTH/2, 188, V_YELLOWMAP,
 			va("Vote ends in %d", tickdown));
 	}
 }
@@ -1554,7 +1550,7 @@ void Y_StartVote(void)
 		levelinfo[i].str[sizeof levelinfo[i].str - 1] = '\0';
 
 		// set up the gtc and gts
-		levelinfo[i].gtc = G_GetGametypeColor(votelevels[i][1]);
+		levelinfo[i].gtc = 255; // TODO rewrite vote screen
 		if (i == 2 && votelevels[i][1] != votelevels[0][1])
 			levelinfo[i].gts = gametypes[votelevels[i][1]]->name;
 		else
