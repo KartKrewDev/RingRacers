@@ -119,6 +119,11 @@ void K_TickSpecialStage(void)
 		return;
 	}
 
+	if (P_MobjWasRemoved(specialstageinfo.ufo))
+	{
+		P_SetTarget(&specialstageinfo.ufo, NULL);
+	}
+
 	K_MoveExitBeam();
 }
 
