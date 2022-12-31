@@ -20,7 +20,11 @@
 #define __I_TTF__
 
 #include "../doomdef.h"
-#include "SDL_ttf.h"
+#include <SDL_ttf.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 // Default name for standard TTF file.
 #define FONTFILE "srb2.ttf"
@@ -84,4 +88,9 @@ void I_TTFDrawText(TTF_Font *font, TextQuality quality, INT32 fgR, INT32 fgG, IN
 void I_StartupTTF(UINT32 fontpointsize, Uint32 initflags, Uint32 vidmodeflags);
 
 void I_ShutdownTTF(void);
+
+#ifdef __cplusplus
+} // extern "C"
+#endif
+
 #endif

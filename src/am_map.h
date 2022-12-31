@@ -16,6 +16,10 @@
 
 #include "d_event.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 struct fpoint_t
 {
 	INT32 x, y;
@@ -43,5 +47,9 @@ void AM_Start(void);
 
 // Called to force the automap to quit if the level is completed while it is up.
 void AM_Stop(void);
+
+#ifdef __cplusplus
+} // extern "C"
+#endif
 
 #endif

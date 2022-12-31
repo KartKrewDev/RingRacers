@@ -16,6 +16,10 @@
 #include "doomdef.h"
 #include "doomstat.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define GPEVENT_NONE 0
 #define GPEVENT_BONUS 1
 #define GPEVENT_SPECIAL 2
@@ -165,5 +169,9 @@ void K_PlayerLoseLife(player_t *player);
 --------------------------------------------------*/
 
 boolean K_CanChangeRules(boolean allowdemos);
+
+#ifdef __cplusplus
+} // extern "C"
+#endif
 
 #endif

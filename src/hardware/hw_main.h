@@ -20,6 +20,10 @@
 #include "../d_player.h"
 #include "../r_defs.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 // Startup & Shutdown the hardware mode renderer
 void HWR_Startup(void);
 void HWR_Switch(void);
@@ -149,5 +153,9 @@ extern boolean gl_maploaded;
 extern boolean gl_maptexturesloaded;
 extern boolean gl_sessioncommandsadded;
 extern boolean gl_shadersavailable;
+
+#ifdef __cplusplus
+} // extern "C"
+#endif
 
 #endif

@@ -9,6 +9,10 @@
 #ifndef _R_VBO_H_
 #define _R_VBO_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef struct
 {
 	float x, y, z;		// Vertex
@@ -48,5 +52,9 @@ typedef struct
 	float tan0, tan1, tan2; // Tangent
 	unsigned char r, g, b, a;	// Color
 } vbo64_t;
+
+#ifdef __cplusplus
+} // extern "C"
+#endif
 
 #endif

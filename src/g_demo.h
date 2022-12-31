@@ -18,6 +18,10 @@
 #include "doomstat.h"
 #include "d_event.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 // ======================================
 // DEMO playback/recording related stuff.
 // ======================================
@@ -200,5 +204,9 @@ void G_SaveDemo(void);
 boolean G_DemoTitleResponder(event_t *ev);
 
 boolean G_CheckDemoTitleEntry(void);
+
+#ifdef __cplusplus
+} // extern "C"
+#endif
 
 #endif // __G_DEMO__

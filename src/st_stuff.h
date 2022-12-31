@@ -22,6 +22,10 @@
 // SRB2Kart
 #include "r_skins.h" // NUMFACES
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 //
 // STATUS BAR
 //
@@ -84,5 +88,9 @@ extern lumpnum_t st_borderpatchnum;
 extern patch_t *faceprefix[MAXSKINS][NUMFACES];
 
 extern UINT16 objectsdrawn;
+
+#ifdef __cplusplus
+} // extern "C"
+#endif
 
 #endif

@@ -30,6 +30,10 @@
 
 #include "taglist.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 //
 // ClipWallSegment
 // Clips the given range of columns
@@ -976,5 +980,9 @@ struct spritedef_t
 	size_t numframes;
 	spriteframe_t *spriteframes;
 };
+
+#ifdef __cplusplus
+} // extern "C"
+#endif
 
 #endif

@@ -13,6 +13,10 @@
 #ifndef __I_TCP__
 #define __I_TCP__
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 extern UINT16 current_port;
 
 /**	\brief	The I_InitTcpNetwork function
@@ -27,5 +31,9 @@ boolean I_InitTcpNetwork(void);
 */
 boolean I_InitTcpDriver(void);
 void I_ShutdownTcpDriver(void);
+
+#ifdef __cplusplus
+} // extern "C"
+#endif
 
 #endif

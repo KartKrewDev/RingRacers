@@ -13,9 +13,17 @@
 #ifndef __DEH_LUA_H__
 #define __DEH_LUA_H__
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 boolean LUA_SetLuaAction(void *state, const char *actiontocompare);
 const char *LUA_GetActionName(void *action);
 void LUA_SetActionByName(void *state, const char *actiontocompare);
 size_t LUA_GetActionNumByName(const char *actiontocompare);
+
+#ifdef __cplusplus
+} // extern "C"
+#endif
 
 #endif

@@ -13,6 +13,10 @@
 #ifndef __KEYS_H__
 #define __KEYS_H__
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 // These are the key codes as posted by the keyboard handler,
 // ascii codes are 0->127,
 // scancodes are 0x80 + 0->127
@@ -93,5 +97,9 @@
 
 #define KEY_OPENBRACKETS
 #define KEY_CLOSEBRACKETS
+
+#ifdef __cplusplus
+} // extern "C"
+#endif
 
 #endif

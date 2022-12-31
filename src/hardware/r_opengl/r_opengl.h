@@ -47,6 +47,10 @@
 #include "../../doomdef.h"
 #include "../hw_drv.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 // ==========================================================================
 //                                                                DEFINITIONS
 // ==========================================================================
@@ -137,5 +141,9 @@ typedef enum
 	GLF_NOZBUFREAD = 0x01,
 	GLF_NOTEXENV   = 0x02,
 } oglflags_t;
+
+#ifdef __cplusplus
+} // extern "C"
+#endif
 
 #endif

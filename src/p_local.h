@@ -24,6 +24,10 @@
 #include "p_maputl.h"
 #include "doomstat.h" // MAXSPLITSCREENPLAYERS
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define FLOATSPEED (FRACUNIT*4)
 
 //#define VIEWHEIGHTS "41"
@@ -577,5 +581,9 @@ fixed_t P_GetMobjHead(const mobj_t *);
 fixed_t P_GetMobjFeet(const mobj_t *);
 fixed_t P_GetMobjGround(const mobj_t *);
 fixed_t P_GetMobjZMovement(mobj_t *mo);
+
+#ifdef __cplusplus
+} // extern "C"
+#endif
 
 #endif // __P_LOCAL__

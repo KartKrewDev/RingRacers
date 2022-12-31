@@ -18,6 +18,10 @@
 #include "r_textures.h"
 #include "r_plane.h" // visplanes
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /** Portal structure for the software renderer.
  */
 struct portal_t
@@ -58,4 +62,9 @@ void Portal_ClipRange (portal_t* portal);
 void Portal_ClipApply (const portal_t* portal);
 
 void Portal_AddSkyboxPortals (const player_t* player);
+
+#ifdef __cplusplus
+} // extern "C"
+#endif
+
 #endif

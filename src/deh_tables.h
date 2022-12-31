@@ -18,6 +18,10 @@
 #include "info.h" // Mobj, state, sprite, etc constants
 #include "lua_script.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 // Free slot names
 // The crazy word-reading stuff uses these.
 extern char *FREE_STATES[NUMSTATEFREESLOTS];
@@ -77,5 +81,9 @@ extern struct int_const_s const INT_CONST[];
 
 // Moved to this file because it can't work compile-time otherwise
 void DEH_TableCheck(void);
+
+#ifdef __cplusplus
+} // extern "C"
+#endif
 
 #endif

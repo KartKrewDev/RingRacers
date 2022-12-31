@@ -16,9 +16,16 @@
 /// \file
 /// \brief exception handler
 
+#ifndef __WIN32_WIN_DBG_H__
+#define __WIN32_WIN_DBG_H__
+
 //#define WIN32_LEAN_AND_MEAN
 #define RPC_NO_WINDOWS_H
 #include <windows.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #ifdef BUGTRAP
 
@@ -62,3 +69,9 @@ void *__cdecl _exception_info(void);
 #endif // !__TRYLEVEL_NONE
 
 #endif // __MINGW32__
+
+#ifdef __cplusplus
+} // extern "C"
+#endif
+
+#endif // __WIN32_WIN_DBG_H__

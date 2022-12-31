@@ -22,6 +22,13 @@
 
 #ifdef HAVE_OPENMPT
 #include "libopenmpt/libopenmpt.h"
+#endif
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+#ifdef HAVE_OPENMPT
 extern openmpt_module *openmpt_mhandle;
 #endif
 
@@ -332,6 +339,10 @@ void S_StopSoundByNum(sfxenum_t sfxnum);
 #ifndef HW3SOUND
 #define S_StartAttackSound S_StartSound
 #define S_StartScreamSound S_StartSound
+#endif
+
+#ifdef __cplusplus
+} // extern "C"
 #endif
 
 #endif

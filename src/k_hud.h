@@ -9,12 +9,16 @@
 /// \file  k_hud.h
 /// \brief HUD drawing functions exclusive to Kart
 
+#ifndef __K_HUD__
+#define __K_HUD__
+
 #include "doomtype.h"
 #include "doomstat.h"
 #include "hu_stuff.h"
 
-#ifndef __K_HUD__
-#define __K_HUD__
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #define RINGANIM_NUMFRAMES 10
 #define RINGANIM_DELAYMAX 5
@@ -42,5 +46,9 @@ void K_DrawMapThumbnail(INT32 x, INT32 y, INT32 width, UINT32 flags, UINT16 map,
 void K_DrawLikeMapThumbnail(INT32 x, INT32 y, INT32 width, UINT32 flags, patch_t *patch, UINT8 *colormap);
 
 extern patch_t *kp_facehighlight[8];
+
+#ifdef __cplusplus
+} // extern "C"
+#endif
 
 #endif

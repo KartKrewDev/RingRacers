@@ -17,6 +17,10 @@
 #include "d_clisrv.h"
 #include "w_wad.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef enum
 {
 	SF_FILE,
@@ -160,6 +164,10 @@ size_t nameonlylength(const char *s);
 void CURLPrepareFile(const char* url, int dfilenum);
 void CURLGetFile(void);
 HTTP_login * CURLGetLogin (const char *url, HTTP_login ***return_prev_next);
+#endif
+
+#ifdef __cplusplus
+} // extern "C"
 #endif
 
 #endif // __D_NETFIL__

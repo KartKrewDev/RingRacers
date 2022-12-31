@@ -22,6 +22,10 @@
 #include "g_game.h"			// game CVs
 #include "k_follower.h"		// followers
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 // We have to redefine this because somehow including r_skins.h causes a redefinition of node_t since that's used for both net nodes and BSP nodes too......
 // And honestly I don't wanna refactor that.
 #define SKINNAMESIZE 16
@@ -151,5 +155,9 @@ UINT8 PR_GetProfileNum(profile_t *p);
 SINT8 PR_ProfileUsedBy(profile_t *p);
 
 profile_t *PR_GetPlayerProfile(player_t *player);
+
+#ifdef __cplusplus
+} // extern "C"
+#endif
 
 #endif

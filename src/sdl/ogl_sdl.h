@@ -17,7 +17,14 @@
 /// \file
 /// \brief SDL specific part of the OpenGL API for SRB2
 
+#ifndef __SDL_OGL_SDL_H__
+#define __SDL_OGL_SDL_H__
+
 #include "../v_video.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 extern void *GLUhandle;
 
@@ -33,3 +40,9 @@ extern Uint16      realheight;
 #ifdef _CREATE_DLL_
 EXPORT void HWRAPI( OglSdlSetPalette ) (RGBA_t *palette);
 #endif
+
+#ifdef __cplusplus
+} // extern "C"
+#endif
+
+#endif // __SDL_OGL_SDL_H__

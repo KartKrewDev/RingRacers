@@ -15,6 +15,10 @@
 
 #include "doomdef.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef void(*updateindexfunc)(void *const, const size_t);
 
 struct bheapitem_t
@@ -149,5 +153,9 @@ size_t K_BHeapContains(bheap_t *const heap, void *const data, size_t index);
 --------------------------------------------------*/
 
 boolean K_BHeapFree(bheap_t *const heap);
+
+#ifdef __cplusplus
+} // extern "C"
+#endif
 
 #endif

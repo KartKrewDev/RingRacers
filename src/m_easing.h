@@ -15,6 +15,10 @@
 #include "doomtype.h"
 #include "m_fixed.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef enum
 {
 	EASE_LINEAR = 0,
@@ -98,4 +102,9 @@ EASINGFUNC(OutBackParameterized) /* Easing_OutBackParameterized */
 EASINGFUNC(InOutBackParameterized) /* Easing_InOutBackParameterized */
 
 #undef EASINGFUNC
+
+#ifdef __cplusplus
+} // extern "C"
+#endif
+
 #endif

@@ -16,6 +16,10 @@
 #include "r_defs.h"
 #include "r_things.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 // ==========================================================================
 // DEFINITIONS
 // ==========================================================================
@@ -42,5 +46,9 @@ struct floorsplat_t
 };
 
 void R_DrawFloorSplat(vissprite_t *spr);
+
+#ifdef __cplusplus
+} // extern "C"
+#endif
 
 #endif /*__R_SPLATS_H__*/

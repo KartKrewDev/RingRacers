@@ -78,12 +78,6 @@
 #include "k_specialstage.h"
 #include "acs/interface.h"
 
-#ifdef CMAKECONFIG
-#include "config.h"
-#else
-#include "config.h.in"
-#endif
-
 #ifdef HWRENDER
 #include "hardware/hw_main.h" // 3D View Rendering
 #endif
@@ -1126,6 +1120,7 @@ static void IdentifyVersion(void)
 #define TEXTURESNAME "MISC_TEXTURES.pk3"
 #define MAPSNAME "MISC_MAPS.pk3"
 #define PATCHNAME "MISC_SCRIPTS.pk3"
+#define UNLOCKNAME "MISC_UNLOCKS.pk3"
 #define MUSICNAME "MISC_MUSIC.PK3"
 ////
 #else
@@ -1133,6 +1128,7 @@ static void IdentifyVersion(void)
 #define TEXTURESNAME "textures.pk3"
 #define MAPSNAME "maps.pk3"
 #define PATCHNAME "scripts.pk3"
+#define UNLOCKNAME "unlocks.pk3"
 #define MUSICNAME "music.pk3"
 ////
 #endif
@@ -1149,7 +1145,7 @@ static void IdentifyVersion(void)
 #endif
 #define UNLOCKTESTING
 #if defined(DEVELOP) && defined(UNLOCKTESTING)
-	D_AddFile(startupiwads, va(pandf,srb2waddir,"unlocks.pk3"));
+	D_AddFile(startupiwads, va(pandf,srb2waddir,UNLOCKNAME));
 #endif
 ////
 #undef TEXTURESNAME
@@ -1215,6 +1211,12 @@ void D_SRB2Main(void)
 
 	/* break the version string into version numbers, for netplay */
 	D_ConvertVersionNumbers();
+
+	if (!strcmp(compbranch, ""))
+	{
+		// \x8b = aqua highlight
+		compbranch = "\x8b" "detached HEAD" "\x80";
+	}
 
 #ifdef DEVELOP
 	D_AbbrevCommit();
@@ -1445,6 +1447,7 @@ void D_SRB2Main(void)
 	mainwads++; W_VerifyFileMD5(mainwads, ASSET_HASH_MAPS_PK3);			// maps.pk3 -- 4 - If you touch this, make sure to touch up the majormods stuff below.
 	mainwads++; W_VerifyFileMd5(mainwads, ASSET_HASH_FOLLOWERS_PK3);  // followers.pk3
 #ifdef USE_PATCH_FILE
+
 	mainwads++; W_VerifyFileMD5(mainwads, ASSET_HASH_PATCH_PK3);		// patch.pk3
 #endif
 #else

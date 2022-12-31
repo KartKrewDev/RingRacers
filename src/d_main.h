@@ -18,6 +18,10 @@
 #include "d_event.h"
 #include "w_wad.h"   // for MAX_WADFILES
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 // make sure not to write back the config until it's been correctly loaded
 extern tic_t rendergametic;
 
@@ -51,5 +55,9 @@ const char *D_Home(void);
 // BASE LEVEL
 //
 void D_StartTitle(void);
+
+#ifdef __cplusplus
+} // extern "C"
+#endif
 
 #endif //__D_MAIN__

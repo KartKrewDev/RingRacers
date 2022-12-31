@@ -12,9 +12,17 @@
 #ifndef KART_STUN_H
 #define KART_STUN_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef void (*stun_callback_t)(UINT32 address);
 
 void    STUN_bind (stun_callback_t);
 boolean STUN_got_response (const char * const buffer, const size_t size);
+
+#ifdef __cplusplus
+} // extern "C"
+#endif
 
 #endif/*KART_STUN_H*/

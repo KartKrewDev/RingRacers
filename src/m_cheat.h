@@ -19,6 +19,10 @@
 #include "p_mobj.h"
 #include "command.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef enum {
 	CHEAT_NOCLIP,
 	CHEAT_GOD,
@@ -81,6 +85,10 @@ void Command_CauseCfail_f(void);
 #endif
 #ifdef LUA_ALLOW_BYTECODE
 void Command_Dumplua_f(void);
+#endif
+
+#ifdef __cplusplus
+} // extern "C"
 #endif
 
 #endif

@@ -20,6 +20,10 @@
 #include "m_fixed.h"
 #include "p_mobj.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define TERRAIN_NAME_LEN 32
 
 struct t_splash_t
@@ -564,5 +568,9 @@ void K_UpdateTerrainOverlay(mobj_t *mo);
 --------------------------------------------------*/
 
 void K_InitTerrain(UINT16 wadNum);
+
+#ifdef __cplusplus
+} // extern "C"
+#endif
 
 #endif // __K_TERRAIN_H__

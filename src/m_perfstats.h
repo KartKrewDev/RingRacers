@@ -16,6 +16,10 @@
 #include "lua_script.h"
 #include "p_local.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef enum
 {
 	PS_OFF = 0,
@@ -61,5 +65,9 @@ extern ps_botinfo_t ps_bots[MAXPLAYERS];
 void PS_ResetBotInfo(void);
 
 void M_DrawPerfStats(void);
+
+#ifdef __cplusplus
+} // extern "C"
+#endif
 
 #endif

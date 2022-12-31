@@ -28,6 +28,10 @@
 // Needs precompiled tables/data structures.
 #include "info.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 //
 // NOTES: mobj_t
 //
@@ -556,4 +560,9 @@ extern UINT16 emeraldspawndelay;
 extern INT32 numstarposts;
 extern UINT16 bossdisabled;
 extern boolean stoppedclock;
+
+#ifdef __cplusplus
+} // extern "C"
+#endif
+
 #endif

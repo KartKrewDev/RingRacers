@@ -16,6 +16,10 @@
 
 #include "m_fixed.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #ifdef __GNUG__
 #pragma interface
 #endif
@@ -37,5 +41,9 @@ extern char globallevelskytexture[9];
 void R_SetupSkyDraw(void);
 
 void R_SetSkyScale(void);
+
+#ifdef __cplusplus
+} // extern "C"
+#endif
 
 #endif

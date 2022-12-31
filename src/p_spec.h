@@ -17,6 +17,10 @@
 #ifndef __P_SPEC__
 #define __P_SPEC__
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 extern mobj_t *skyboxviewpnts[16]; // array of MT_SKYBOX viewpoint mobjs
 extern mobj_t *skyboxcenterpnts[16]; // array of MT_SKYBOX centerpoint mobjs
 
@@ -1188,5 +1192,9 @@ enum
 	LT_SLOPE_ANCHORS_OLD_CEILING = 778,
 	LT_SLOPE_ANCHORS_OLD         = 779,
 };
+
+#ifdef __cplusplus
+} // extern "C"
+#endif
 
 #endif

@@ -14,6 +14,10 @@
 
 #include "r_defs.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 extern line_t *finishBeamLine;
 
 #define FINISHLINEBEAM_SPACING (48*mapobjectscale)
@@ -65,5 +69,9 @@ boolean K_GenerateFinishBeamLine(void);
 --------------------------------------------------*/
 
 void K_RunFinishLineBeam(void);
+
+#ifdef __cplusplus
+} // extern "C"
+#endif
 
 #endif

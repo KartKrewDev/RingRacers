@@ -19,6 +19,10 @@
 #include "../r_defs.h"
 #include "../p_setup.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 // the original aspect ratio of Doom graphics isn't square
 #define ORIGINAL_ASPECT (320.0f/200.0f)
 
@@ -142,5 +146,9 @@ void HWR_SetPalette(RGBA_t *palette);
 // --------
 extern INT32 patchformat;
 extern INT32 textureformat;
+
+#ifdef __cplusplus
+} // extern "C"
+#endif
 
 #endif //_HW_GLOB_

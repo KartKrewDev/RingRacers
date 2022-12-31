@@ -24,6 +24,10 @@
 #include "k_pwrlv.h" // PWRLV_NUMTYPES
 #include "p_saveg.h" // NETSAVEGAMESIZE
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /*
 The 'packet version' is used to distinguish packet formats.
 This version is independent of VERSION and SUBVERSION. Different
@@ -544,5 +548,9 @@ struct rewind_t {
 void CL_ClearRewinds(void);
 rewind_t *CL_SaveRewindPoint(size_t demopos);
 rewind_t *CL_RewindToTime(tic_t time);
+
+#ifdef __cplusplus
+} // extern "C"
+#endif
 
 #endif

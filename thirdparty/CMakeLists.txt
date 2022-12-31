@@ -620,3 +620,5 @@ if(NOT "${SRB2_CONFIG_SYSTEM_LIBRARIES}")
 		add_library(acsvm::acsvm ALIAS acsvm)
 	endif()
 endif()
+
+add_subdirectory(tcbrindle_span)
