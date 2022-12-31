@@ -1147,6 +1147,10 @@ static void P_NetUnArchiveTubeWaypoints(savebuffer_t *save)
 #define LD_ARGS          0x10
 #define LD_STRINGARGS    0x20
 #define LD_EXECUTORDELAY 0x40
+#define LD_DIFF3         0x80
+
+// diff3 flags
+#define LD_ACTIVATION    0x01
 
 static boolean P_AreArgsEqual(const line_t *li, const line_t *spawnli)
 {
@@ -1540,11 +1544,14 @@ static void ArchiveLines(savebuffer_t *save)
 	const line_t *spawnli = spawnlines;
 	const side_t *si;
 	const side_t *spawnsi;
-	UINT8 diff, diff2; // no diff3
+	UINT8 diff, diff2, diff3;
 
 	for (i = 0; i < numlines; i++, spawnli++, li++)
 	{
-		diff = diff2 = 0;
+		diff = diff2 = diff3 = 0;
+
+		if (li->flags != spawnli->flags)
+			diff |= LD_FLAG;
 
 		if (li->special != spawnli->special)
 			diff |= LD_SPECIAL;
@@ -1560,6 +1567,9 @@ static void ArchiveLines(savebuffer_t *save)
 
 		if (li->executordelay != spawnli->executordelay)
 			diff2 |= LD_EXECUTORDELAY;
+
+		if (li->activation != spawnli->activation)
+			diff3 |= LD_ACTIVATION;
 
 		if (li->sidenum[0] != 0xffff)
 		{
@@ -1589,6 +1599,9 @@ static void ArchiveLines(savebuffer_t *save)
 				diff2 |= LD_S2MIDTEX;
 		}
 
+		if (diff3)
+			diff2 |= LD_DIFF3;
+
 		if (diff2)
 			diff |= LD_DIFF2;
 
@@ -1598,6 +1611,8 @@ static void ArchiveLines(savebuffer_t *save)
 			WRITEUINT8(save->p, diff);
 			if (diff & LD_DIFF2)
 				WRITEUINT8(save->p, diff2);
+			if (diff2 & LD_DIFF3)
+				WRITEUINT8(save->p, diff3);
 			if (diff & LD_FLAG)
 				WRITEUINT32(save->p, li->flags);
 			if (diff & LD_SPECIAL)
@@ -1651,6 +1666,8 @@ static void ArchiveLines(savebuffer_t *save)
 			}
 			if (diff2 & LD_EXECUTORDELAY)
 				WRITEINT32(save->p, li->executordelay);
+			if (diff3 & LD_ACTIVATION)
+				WRITEUINT32(save->p, li->activation);
 		}
 	}
 	WRITEUINT16(save->p, 0xffff);
@@ -1661,7 +1678,7 @@ static void UnArchiveLines(savebuffer_t *save)
 	UINT16 i;
 	line_t *li;
 	side_t *si;
-	UINT8 diff, diff2; // no diff3
+	UINT8 diff, diff2, diff3;
 
 	for (;;)
 	{
@@ -1679,6 +1696,11 @@ static void UnArchiveLines(savebuffer_t *save)
 			diff2 = READUINT8(save->p);
 		else
 			diff2 = 0;
+
+		if (diff2 & LD_DIFF3)
+			diff3 = READUINT8(save->p);
+		else
+			diff3 = 0;
 
 		if (diff & LD_FLAG)
 			li->flags = READUINT32(save->p);
@@ -1735,6 +1757,8 @@ static void UnArchiveLines(savebuffer_t *save)
 		}
 		if (diff2 & LD_EXECUTORDELAY)
 			li->executordelay = READINT32(save->p);
+		if (diff3 & LD_ACTIVATION)
+			li->activation = READUINT32(save->p);
 
 	}
 }

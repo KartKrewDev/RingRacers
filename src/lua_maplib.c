@@ -112,6 +112,7 @@ enum line_e {
 	line_dy,
 	line_angle,
 	line_flags,
+	line_activation,
 	line_special,
 	line_tag,
 	line_taglist,
@@ -138,6 +139,7 @@ static const char *const line_opt[] = {
 	"dy",
 	"angle",
 	"flags",
+	"activation",
 	"special",
 	"tag",
 	"taglist",
@@ -949,6 +951,9 @@ static int line_get(lua_State *L)
 		return 1;
 	case line_flags:
 		lua_pushinteger(L, line->flags);
+		return 1;
+	case line_activation:
+		lua_pushinteger(L, line->activation);
 		return 1;
 	case line_special:
 		lua_pushinteger(L, line->special);

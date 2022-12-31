@@ -1376,9 +1376,26 @@ static boolean P_CheckPushables(line_t *triggerline, sector_t *caller)
 	}
 }
 
+boolean P_CanActivateSpecial(INT16 special)
+{
+	switch (special)
+	{
+		case 2001: // Finish line
+		case 2003: // Respawn line
+		{
+			return true;
+		}
+		default:
+		{
+			// Linedef executors
+			return (special >= 400 && special < 500);
+		}
+	}
+}
+
 static void P_ActivateLinedefExecutor(line_t *line, mobj_t *actor, sector_t *caller)
 {
-	if (line->special < 400 || line->special >= 500)
+	if (P_CanActivateSpecial(line->special) == false)
 		return;
 
 	if (line->executordelay)
@@ -2073,68 +2090,183 @@ static void K_HandleLapDecrement(player_t *player)
 	}
 }
 
+static void P_LineSpecialWasActivated(line_t *line)
+{
+	if (!(line->flags & ML_REPEATSPECIAL))
+	{
+		line->special = 0;
+	}
+}
+
+static boolean P_AllowSpecialCross(line_t *line, mobj_t *thing)
+{
+	if (P_CanActivateSpecial(line->special) == false)
+	{
+		// No special to even activate.
+		return false;
+	}
+
+	if (thing->player != NULL)
+	{
+		return !!(line->activation & SPAC_CROSS);
+	}
+	else if ((thing->flags & (MF_ENEMY|MF_BOSS)) != 0)
+	{
+		return !!(line->activation & SPAC_CROSSMONSTER);
+	}
+	else if (K_IsMissileOrKartItem(thing) == true)
+	{
+		return !!(line->activation & SPAC_CROSSMISSILE);
+	}
+
+	// No activation flags for you.
+	return false;
+}
+
 //
 // P_CrossSpecialLine - TRIGGER
 // Called every time a thing origin is about
 //  to cross a line with specific specials
-// Kart - Only used for the finish line currently
 //
 void P_CrossSpecialLine(line_t *line, INT32 side, mobj_t *thing)
 {
-	// only used for the players currently
-	if (!(thing && thing->player && !thing->player->spectator && !(thing->player->pflags & PF_NOCONTEST)))
-		return;
-	{
-		player_t *player = thing->player;
+	player_t *player = NULL;
+	activator_t *activator = NULL;
+	boolean result = false;
 
+	if (thing == NULL || P_MobjWasRemoved(thing) == true || thing->health <= 0)
+	{
+		// Invalid mobj.
+		return;
+	}
+
+	player = thing->player;
+
+	if (player != NULL)
+	{
+		if (player->spectator == true)
+		{
+			// Ignore spectators.
+			return;
+		}
+
+		if (player->pflags & PF_NOCONTEST)
+		{
+			// Ignore NO CONTEST.
+			return;
+		}
+
+		// Tripwire effect
 		if (P_IsLineTripWire(line))
 		{
 			K_ApplyTripWire(player, TRIPSTATE_PASSED);
 		}
+	}
 
-		switch (line->special)
+	if (P_AllowSpecialCross(line, thing) == false)
+	{
+		// This special can't be activated this way.
+		return;
+	}
+
+	activator = Z_Calloc(sizeof(activator_t), PU_LEVEL, NULL);
+	I_Assert(activator != NULL);
+
+	P_SetTarget(&activator->mo, thing);
+	activator->line = line;
+	activator->side = side;
+	activator->sector = (side != 0) ? line->backsector : line->frontsector;
+	activator->fromLineSpecial = true;
+
+	result = P_ProcessSpecial(activator, line->special, line->args, line->stringargs);
+	Z_Free(activator);
+
+	if (result == true)
+	{
+		P_LineSpecialWasActivated(line);
+	}
+}
+
+static boolean P_AllowSpecialPush(line_t *line, mobj_t *thing)
+{
+	if (P_CanActivateSpecial(line->special) == false)
+	{
+		// No special to even activate.
+		return false;
+	}
+
+	if (thing->player != NULL)
+	{
+		return !!(line->activation & SPAC_PUSH);
+	}
+	else if ((thing->flags & (MF_ENEMY|MF_BOSS)) != 0)
+	{
+		return !!(line->activation & SPAC_PUSHMONSTER);
+	}
+	else if (K_IsMissileOrKartItem(thing) == true)
+	{
+		return !!(line->activation & SPAC_IMPACT);
+	}
+
+	// No activation flags for you.
+	return false;
+}
+
+//
+// P_PushSpecialLine - TRIGGER
+// Called every time a thing origin is blocked
+//  by a line with specific specials
+//
+void P_PushSpecialLine(line_t *line, mobj_t *thing)
+{
+	player_t *player = NULL;
+	activator_t *activator = NULL;
+	boolean result = false;
+
+	if (thing == NULL || P_MobjWasRemoved(thing) == true || thing->health <= 0)
+	{
+		// Invalid mobj.
+		return;
+	}
+
+	player = thing->player;
+
+	if (player != NULL)
+	{
+		if (player->spectator == true)
 		{
-			case 2001: // Finish Line
-			{
-				if ((gametyperules & GTR_CIRCUIT) && !(player->exiting) && !(player->pflags & PF_HITFINISHLINE))
-				{
-					if (((line->args[0] & TMCFF_FLIP) && (side == 0))
-						|| (!(line->args[0] & TMCFF_FLIP) && (side == 1))) // crossed from behind to infront
-					{
-						K_HandleLapIncrement(player);
-
-						ACS_RunLapScript(thing, line);
-					}
-					else
-					{
-						K_HandleLapDecrement(player);
-					}
-
-					player->pflags |= PF_HITFINISHLINE;
-				}
-			}
-			break;
-
-			case 2003: // Respawn Line
-			{
-				/* No Climb: only trigger from front side */
-				if
-					(
-							player->respawn.state == RESPAWNST_NONE &&
-							(!(line->args[0] & TMCRF_FRONTONLY) || side == 0)
-					)
-				{
-					P_DamageMobj(player->mo, NULL, NULL, 1, DMG_DEATHPIT);
-				}
-			}
-			break;
-
-			default:
-			{
-				// Do nothing
-			}
-			break;
+			// Ignore spectators.
+			return;
 		}
+
+		if (player->pflags & PF_NOCONTEST)
+		{
+			// Ignore NO CONTEST.
+			return;
+		}
+	}
+
+	if (P_AllowSpecialPush(line, thing) == false)
+	{
+		// This special can't be activated this way.
+		return;
+	}
+
+	activator = Z_Calloc(sizeof(activator_t), PU_LEVEL, NULL);
+	I_Assert(activator != NULL);
+
+	P_SetTarget(&activator->mo, thing);
+	activator->line = line;
+	activator->side = P_PointOnLineSide(thing->x, thing->y, line);
+	activator->sector = (activator->side != 0) ? line->backsector : line->frontsector;
+	activator->fromLineSpecial = true;
+
+	result = P_ProcessSpecial(activator, line->special, line->args, line->stringargs);
+	Z_Free(activator);
+
+	if (result == true)
+	{
+		P_LineSpecialWasActivated(line);
 	}
 }
 
@@ -2221,6 +2353,9 @@ static mobj_t* P_FindObjectTypeFromTag(mobjtype_t type, mtag_t tag)
   */
 static void P_ProcessLineSpecial(line_t *line, mobj_t *mo, sector_t *callsec)
 {
+	// This is an old function purely for linedef executor
+	// backwards compatibility.
+
 	activator_t *activator = NULL;
 
 	if (line == NULL)
@@ -2239,26 +2374,23 @@ static void P_ProcessLineSpecial(line_t *line, mobj_t *mo, sector_t *callsec)
 
 	P_ProcessSpecial(activator, line->special, line->args, line->stringargs);
 	Z_Free(activator);
+
+	// Intentionally no P_LineSpecialWasActivated call.
 }
 
-void P_ProcessSpecial(activator_t *activator, INT16 special, INT32 *args, char **stringargs)
+boolean P_ProcessSpecial(activator_t *activator, INT16 special, INT32 *args, char **stringargs)
 {
-	line_t *line = activator->line; // If called from a linedef executor, this is the control sector linedef. If from a script, then it's the actual activator.
-	mobj_t *mo = activator->mo;
-	sector_t *callsec = activator->sector;
+	line_t *const line = activator->line; // If called from a linedef executor, this is the control sector linedef. If from a script, then it's the actual activator.
+	UINT8 const side = activator->side;
+	mobj_t *const mo = activator->mo;
+	sector_t *const callsec = activator->sector;
 
 	// All of these conditions being met means this is a binary map using a linedef executor.
-	const boolean backwardsCompat = (!udmf && activator->fromLineSpecial && line != NULL);
+	boolean const backwardsCompat = (!udmf && activator->fromLineSpecial && line != NULL);
 
 	INT32 secnum = -1;
 
-	//
-	// TODO: Too many specials are tied to a linedef existing,
-	// even after UDMF cleanups. We'll need to remove all of the
-	// (line == NULL) guards if we want these to be useful for ACS.
-	//
-
-	// note: only commands with linedef types >= 400 && < 500 can be used
+	// note: only specials that P_CanActivateSpecial returns true on can be used
 	switch (special)
 	{
 		case 400: // Copy tagged sector's heights/flats
@@ -2270,7 +2402,7 @@ void P_ProcessSpecial(activator_t *activator, INT16 special, INT32 *args, char *
 					if (line == NULL)
 					{
 						CONS_Debug(DBG_GAMELOGIC, "Special type 400 Executor: No frontsector to copy planes from!\n");
-						return;
+						return false;
 					}
 					copySector = line->frontsector;
 				}
@@ -2280,7 +2412,7 @@ void P_ProcessSpecial(activator_t *activator, INT16 special, INT32 *args, char *
 					if (destsec == -1)
 					{
 						CONS_Debug(DBG_GAMELOGIC, "Special type 400 Executor: No sector to copy planes from (tag %d)!\n", args[0]);
-						return;
+						return false;
 					}
 					copySector = &sectors[destsec];
 				}
@@ -2319,7 +2451,7 @@ void P_ProcessSpecial(activator_t *activator, INT16 special, INT32 *args, char *
 					if (line == NULL)
 					{
 						CONS_Debug(DBG_GAMELOGIC, "Special type 402 Executor: No frontsector to copy light level from!\n");
-						return;
+						return false;
 					}
 					copySector = line->frontsector;
 				}
@@ -2329,7 +2461,7 @@ void P_ProcessSpecial(activator_t *activator, INT16 special, INT32 *args, char *
 					if (destsec == -1)
 					{
 						CONS_Debug(DBG_GAMELOGIC, "Special type 402 Executor: No sector to copy light level from (tag %d)!\n", args[0]);
-						return;
+						return false;
 					}
 					copySector = &sectors[destsec];
 				}
@@ -2380,7 +2512,7 @@ void P_ProcessSpecial(activator_t *activator, INT16 special, INT32 *args, char *
 					if (line == NULL)
 					{
 						CONS_Debug(DBG_GAMELOGIC, "Special type 403 Executor: No frontsector to copy planes from!\n");
-						return;
+						return false;
 					}
 					copySector = line->frontsector;
 				}
@@ -2390,7 +2522,7 @@ void P_ProcessSpecial(activator_t *activator, INT16 special, INT32 *args, char *
 					if (destsec == -1)
 					{
 						CONS_Debug(DBG_GAMELOGIC, "Special type 403 Executor: No sector to copy planes from (tag %d)!\n", args[0]);
-						return;
+						return false;
 					}
 					copySector = &sectors[destsec];
 				}
@@ -2450,7 +2582,7 @@ void P_ProcessSpecial(activator_t *activator, INT16 special, INT32 *args, char *
 				if (line == NULL)
 				{
 					CONS_Debug(DBG_GAMELOGIC, "Special type 408 Executor: No frontsector to copy flats from!\n");
-					return;
+					return false;
 				}
 				copySector = line->frontsector;
 			}
@@ -2460,7 +2592,7 @@ void P_ProcessSpecial(activator_t *activator, INT16 special, INT32 *args, char *
 				if (destsec == -1)
 				{
 					CONS_Debug(DBG_GAMELOGIC, "Special type 408 Executor: No sector to copy flats from (tag %d)!\n", args[0]);
-					return;
+					return false;
 				}
 				copySector = &sectors[destsec];
 			}
@@ -2509,7 +2641,7 @@ void P_ProcessSpecial(activator_t *activator, INT16 special, INT32 *args, char *
 				if (line == NULL)
 				{
 					CONS_Debug(DBG_GAMELOGIC, "Special type 410 Executor: No linedef to change frontsector tag of!\n");
-					return;
+					return false;
 				}
 				editLine = line;
 			}
@@ -2519,7 +2651,7 @@ void P_ProcessSpecial(activator_t *activator, INT16 special, INT32 *args, char *
 				if (destline == -1)
 				{
 					CONS_Debug(DBG_GAMELOGIC, "Special type 408 Executor: No linedef to change frontsector tag of (tag %d)!\n", args[0]);
-					return;
+					return false;
 				}
 				editLine = &lines[destline];
 			}
@@ -2576,7 +2708,7 @@ void P_ProcessSpecial(activator_t *activator, INT16 special, INT32 *args, char *
 				mobj_t *dest;
 
 				if (!mo) // nothing to teleport
-					return;
+					return false;
 
 				if (args[1] & TMT_RELATIVE) // Relative silent teleport
 				{
@@ -2617,7 +2749,7 @@ void P_ProcessSpecial(activator_t *activator, INT16 special, INT32 *args, char *
 
 					dest = P_FindObjectTypeFromTag(MT_TELEPORTMAN, args[0]);
 					if (!dest)
-						return;
+						return false;
 
 					angle = (args[1] & TMT_KEEPANGLE) ? mo->angle : dest->angle;
 					silent = !!(args[1] & TMT_SILENT);
@@ -2764,11 +2896,11 @@ void P_ProcessSpecial(activator_t *activator, INT16 special, INT32 *args, char *
 				INT32 aim;
 
 				if ((!mo || !mo->player) && !titlemapinaction) // only players have views, and title screens
-					return;
+					return false;
 
 				altview = P_FindObjectTypeFromTag(MT_ALTVIEWMAN, args[0]);
 				if (!altview || !altview->spawnpoint)
-					return;
+					return false;
 
 				// If titlemap, set the camera ref for title's thinker
 				// This is not revoked until overwritten; awayviewtics is ignored
@@ -2818,7 +2950,7 @@ void P_ProcessSpecial(activator_t *activator, INT16 special, INT32 *args, char *
 
 		case 426: // Moves the mobj to its sector's soundorg and on the floor, and stops it
 			if (!mo)
-				return;
+				return false;
 
 			if (args[0])
 			{
@@ -2882,7 +3014,7 @@ void P_ProcessSpecial(activator_t *activator, INT16 special, INT32 *args, char *
 
 		case 433: // Flip/flop gravity. Works on pushables, too!
 			if (!mo)
-				return;
+				return false;
 
 			if (args[0])
 				mo->flags2 &= ~MF2_OBJECTFLIP;
@@ -2935,7 +3067,7 @@ void P_ProcessSpecial(activator_t *activator, INT16 special, INT32 *args, char *
 					if (!sec->ffloors)
 					{
 						CONS_Debug(DBG_GAMELOGIC, "Special type 436: Target sector #%d has no FOFs.\n", secnum);
-						return;
+						return false;
 					}
 
 					for (rover = sec->ffloors; rover; rover = rover->next)
@@ -2951,7 +3083,7 @@ void P_ProcessSpecial(activator_t *activator, INT16 special, INT32 *args, char *
 					if (!foundrover)
 					{
 						CONS_Debug(DBG_GAMELOGIC, "Special type 436: Can't find a FOF control sector with tag %d\n", foftag);
-						return;
+						return false;
 					}
 				}
 			}
@@ -2988,7 +3120,7 @@ void P_ProcessSpecial(activator_t *activator, INT16 special, INT32 *args, char *
 					if (line == NULL)
 					{
 						CONS_Debug(DBG_GAMELOGIC, "Special type 439 Executor: No activating line to copy textures from!\n");
-						return;
+						return false;
 					}
 					copyLine = line;
 				}
@@ -2998,7 +3130,7 @@ void P_ProcessSpecial(activator_t *activator, INT16 special, INT32 *args, char *
 					if (origline == -1)
 					{
 						CONS_Debug(DBG_GAMELOGIC, "Special type 439 Executor: No tagged line to copy textures from (tag %d)!\n", args[0]);
-						return;
+						return false;
 					}
 					copyLine = &lines[origline];
 				}
@@ -3149,7 +3281,7 @@ void P_ProcessSpecial(activator_t *activator, INT16 special, INT32 *args, char *
 					if (!sec->ffloors)
 					{
 						CONS_Debug(DBG_GAMELOGIC, "Special type 445 Executor: Target sector #%d has no FOFs.\n", secnum);
-						return;
+						return false;
 					}
 
 					for (rover = sec->ffloors; rover; rover = rover->next)
@@ -3178,7 +3310,7 @@ void P_ProcessSpecial(activator_t *activator, INT16 special, INT32 *args, char *
 					if (!foundrover)
 					{
 						CONS_Debug(DBG_GAMELOGIC, "Special type 445 Executor: Can't find a FOF control sector with tag %d\n", foftag);
-						return;
+						return false;
 					}
 				}
 			}
@@ -3207,7 +3339,7 @@ void P_ProcessSpecial(activator_t *activator, INT16 special, INT32 *args, char *
 					if (!sec->ffloors)
 					{
 						CONS_Debug(DBG_GAMELOGIC, "Special type 446 Executor: Target sector #%d has no FOFs.\n", secnum);
-						return;
+						return false;
 					}
 
 					for (rover = sec->ffloors; rover; rover = rover->next)
@@ -3226,7 +3358,7 @@ void P_ProcessSpecial(activator_t *activator, INT16 special, INT32 *args, char *
 					if (!foundrover)
 					{
 						CONS_Debug(DBG_GAMELOGIC, "Special type 446 Executor: Can't find a FOF control sector with tag %d\n", foftag);
-						return;
+						return false;
 					}
 				}
 			}
@@ -3251,7 +3383,7 @@ void P_ProcessSpecial(activator_t *activator, INT16 special, INT32 *args, char *
 					if (line == NULL)
 					{
 						CONS_Debug(DBG_GAMELOGIC, "Special type 447 Executor: Can't find frontsector with source colormap!\n");
-						return;
+						return false;
 					}
 					source = line->frontsector->extra_colormap;
 				}
@@ -3261,7 +3393,7 @@ void P_ProcessSpecial(activator_t *activator, INT16 special, INT32 *args, char *
 					if (sourcesec == -1)
 					{
 						CONS_Debug(DBG_GAMELOGIC, "Special type 447 Executor: Can't find sector with source colormap (tag %d)!\n", args[1]);
-						return;
+						return false;
 					}
 					source = sectors[sourcesec].extra_colormap;
 				}
@@ -3416,7 +3548,7 @@ void P_ProcessSpecial(activator_t *activator, INT16 special, INT32 *args, char *
 				if (!sec->ffloors)
 				{
 					CONS_Debug(DBG_GAMELOGIC, "Line type 452 Executor: Target sector #%d has no FOFs.\n", secnum);
-					return;
+					return false;
 				}
 
 				for (rover = sec->ffloors; rover; rover = rover->next)
@@ -3454,7 +3586,7 @@ void P_ProcessSpecial(activator_t *activator, INT16 special, INT32 *args, char *
 				if (!foundrover)
 				{
 					CONS_Debug(DBG_GAMELOGIC, "Special type 452 Executor: Can't find a FOF control sector with tag %d\n", foftag);
-					return;
+					return false;
 				}
 			}
 			break;
@@ -3478,7 +3610,7 @@ void P_ProcessSpecial(activator_t *activator, INT16 special, INT32 *args, char *
 				if (!sec->ffloors)
 				{
 					CONS_Debug(DBG_GAMELOGIC, "Special type 453 Executor: Target sector #%d has no FOFs.\n", secnum);
-					return;
+					return false;
 				}
 
 				for (rover = sec->ffloors; rover; rover = rover->next)
@@ -3542,7 +3674,7 @@ void P_ProcessSpecial(activator_t *activator, INT16 special, INT32 *args, char *
 				if (!foundrover)
 				{
 					CONS_Debug(DBG_GAMELOGIC, "Special type 453 Executor: Can't find a FOF control sector with tag %d\n", foftag);
-					return;
+					return false;
 				}
 			}
 			break;
@@ -3563,7 +3695,7 @@ void P_ProcessSpecial(activator_t *activator, INT16 special, INT32 *args, char *
 				if (!sec->ffloors)
 				{
 					CONS_Debug(DBG_GAMELOGIC, "Special type 454 Executor: Target sector #%d has no FOFs.\n", secnum);
-					return;
+					return false;
 				}
 
 				for (rover = sec->ffloors; rover; rover = rover->next)
@@ -3580,7 +3712,7 @@ void P_ProcessSpecial(activator_t *activator, INT16 special, INT32 *args, char *
 				if (!foundrover)
 				{
 					CONS_Debug(DBG_GAMELOGIC, "Special type 454 Executor: Can't find a FOF control sector with tag %d\n", foftag);
-					return;
+					return false;
 				}
 			}
 			break;
@@ -3601,7 +3733,7 @@ void P_ProcessSpecial(activator_t *activator, INT16 special, INT32 *args, char *
 					if (line == NULL)
 					{
 						CONS_Debug(DBG_GAMELOGIC, "Special type 455 Executor: Can't find frontsector with destination colormap!\n");
-						return;
+						return false;
 					}
 					dest = line->frontsector->extra_colormap;
 				}
@@ -3611,7 +3743,7 @@ void P_ProcessSpecial(activator_t *activator, INT16 special, INT32 *args, char *
 					if (destsec == -1)
 					{
 						CONS_Debug(DBG_GAMELOGIC, "Special type 455 Executor: Can't find sector with destination colormap (tag %d)!\n", args[1]);
-						return;
+						return false;
 					}
 					dest = sectors[destsec].extra_colormap;
 				}
@@ -3718,7 +3850,7 @@ void P_ProcessSpecial(activator_t *activator, INT16 special, INT32 *args, char *
 
 				anchormo = P_FindObjectTypeFromTag(MT_ANGLEMAN, args[0]);
 				if (!anchormo)
-					return;
+					return false;
 
 				mo->eflags |= MFE_TRACERANGLE;
 				P_SetTarget(&mo->tracer, anchormo);
@@ -3773,7 +3905,7 @@ void P_ProcessSpecial(activator_t *activator, INT16 special, INT32 *args, char *
 				{
 					// Don't award rings while SPB is targetting you
 					if (mo->player->pflags & PF_RINGLOCK)
-						return;
+						return false;
 
 					if (delay <= 0 || !(leveltime % delay))
 					{
@@ -3837,7 +3969,7 @@ void P_ProcessSpecial(activator_t *activator, INT16 special, INT32 *args, char *
 					INT32 color = stringargs[0] ? get_number(stringargs[0]) : SKINCOLOR_NONE;
 
 					if (color < 0 || color >= numskincolors)
-						return;
+						return false;
 
 					var1 = 0;
 					var2 = color;
@@ -4005,7 +4137,7 @@ void P_ProcessSpecial(activator_t *activator, INT16 special, INT32 *args, char *
 			if (!stringargs[0])
 			{
 				CONS_Debug(DBG_GAMELOGIC, "Linedef type 475: No script name given\n");
-				return;
+				return false;
 			}
 
 			ACS_Execute(stringargs[0], args, NUMLINEARGS, activator);
@@ -4014,7 +4146,7 @@ void P_ProcessSpecial(activator_t *activator, INT16 special, INT32 *args, char *
 			if (!stringargs[0])
 			{
 				CONS_Debug(DBG_GAMELOGIC, "Linedef type 476: No script name given\n");
-				return;
+				return false;
 			}
 
 			ACS_ExecuteAlways(stringargs[0], args, NUMLINEARGS, activator);
@@ -4023,7 +4155,7 @@ void P_ProcessSpecial(activator_t *activator, INT16 special, INT32 *args, char *
 			if (!stringargs[0])
 			{
 				CONS_Debug(DBG_GAMELOGIC, "Linedef type 477: No script name given\n");
-				return;
+				return false;
 			}
 
 			ACS_Suspend(stringargs[0]);
@@ -4032,7 +4164,7 @@ void P_ProcessSpecial(activator_t *activator, INT16 special, INT32 *args, char *
 			if (!stringargs[0])
 			{
 				CONS_Debug(DBG_GAMELOGIC, "Linedef type 478: No script name given\n");
-				return;
+				return false;
 			}
 
 			ACS_Terminate(stringargs[0]);
@@ -4097,9 +4229,56 @@ void P_ProcessSpecial(activator_t *activator, INT16 special, INT32 *args, char *
 			}
 			break;
 
+		case 2001: // Finish Line
+		{
+			if (mo->player == NULL)
+			{
+				return false;
+			}
+
+			if ((gametyperules & GTR_CIRCUIT) && (mo->player->exiting == 0) && !(mo->player->pflags & PF_HITFINISHLINE))
+			{
+				if (((line->args[0] & TMCFF_FLIP) && (side == 0))
+					|| (!(line->args[0] & TMCFF_FLIP) && (side == 1))) // crossed from behind to infront
+				{
+					K_HandleLapIncrement(mo->player);
+
+					ACS_RunLapScript(mo, line);
+				}
+				else
+				{
+					K_HandleLapDecrement(mo->player);
+				}
+
+				mo->player->pflags |= PF_HITFINISHLINE;
+			}
+		}
+		break;
+
+		case 2003: // Respawn Line
+		{
+			if (mo->player == NULL)
+			{
+				return false;
+			}
+
+			/* No Climb: only trigger from front side */
+			if
+				(
+						mo->player->respawn.state == RESPAWNST_NONE &&
+						(!(line->args[0] & TMCRF_FRONTONLY) || side == 0)
+				)
+			{
+				P_DamageMobj(mo, NULL, NULL, 1, DMG_DEATHPIT);
+			}
+		}
+		break;
+
 		default:
 			break;
 	}
+
+	return true;
 }
 
 static void P_SetupSignObject(mobj_t *sign, mobj_t *pmo, boolean error)

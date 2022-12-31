@@ -152,6 +152,9 @@ special
 
 	int		  499:Sector_ToggleWaypoints(2),
 
+	int		 2001:Player_FinishLine(0, 1),
+	int		 2003:Player_Respawn(0, 1),
+
 	// Internal functions have negative values
 	// [type] [ID]:[function name]([required args], [type of each arg, including optional ones])
 	/*

@@ -1646,6 +1646,21 @@ static void ParseTextmapLinedefParameter(UINT32 i, const char *param, const char
 		lines[i].flags |= ML_NOTBOUNCY;
 	else if (fastcmp(param, "transfer") && fastcmp("true", val))
 		lines[i].flags |= ML_TFERLINE;
+	else if (fastcmp(param, "repeatspecial") && fastcmp("true", val))
+		lines[i].flags |= ML_REPEATSPECIAL;
+	// Activation flags
+	else if (fastcmp(param, "playercross") && fastcmp("true", val))
+		lines[i].activation |= SPAC_CROSS;
+	else if (fastcmp(param, "monstercross") && fastcmp("true", val))
+		lines[i].activation |= SPAC_CROSSMONSTER;
+	else if (fastcmp(param, "missilecross") && fastcmp("true", val))
+		lines[i].activation |= SPAC_CROSSMISSILE;
+	else if (fastcmp(param, "playerpush") && fastcmp("true", val))
+		lines[i].activation |= SPAC_PUSH;
+	else if (fastcmp(param, "monsterpush") && fastcmp("true", val))
+		lines[i].activation |= SPAC_PUSHMONSTER;
+	else if (fastcmp(param, "impact") && fastcmp("true", val))
+		lines[i].activation |= SPAC_IMPACT;
 }
 
 static void ParseTextmapThingParameter(UINT32 i, const char *param, const char *val)
@@ -5814,10 +5829,14 @@ static void P_ConvertBinaryLinedefTypes(void)
 			lines[i].blendmode = AST_FOG;
 			break;
 		case 2001: //Finish line
+			lines[i].activation |= SPAC_CROSS;
+			lines[i].flags |= ML_REPEATSPECIAL;
 			if (lines[i].flags & ML_NOCLIMB)
 				lines[i].args[0] |= TMCFF_FLIP;
 			break;
 		case 2003: //Respawn line
+			lines[i].activation |= SPAC_CROSS;
+			lines[i].flags |= ML_REPEATSPECIAL;
 			if (lines[i].flags & ML_NOCLIMB)
 				lines[i].args[0] |= TMCRF_FRONTONLY;
 			break;
