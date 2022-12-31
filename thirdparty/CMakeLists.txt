@@ -540,3 +540,5 @@ if(NOT "${SRB2_CONFIG_SYSTEM_LIBRARIES}")
 	target_include_directories(discord-rpc INTERFACE "${DiscordRPC_SOURCE_DIR}/include")
 	add_library(DiscordRPC::DiscordRPC ALIAS discord-rpc)
 endif()
+
+add_subdirectory(tcbrindle_span)
