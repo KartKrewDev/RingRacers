@@ -3418,19 +3418,6 @@ boolean M_CanShowLevelInList(INT16 mapnum, levelsearch_t *levelsearch)
 	if (mapheaderinfo[mapnum]->lumpnum == LUMPERROR)
 		return false;
 
-	// Does the map have lock conditions?
-	if (levelsearch->checklocked)
-	{
-		// Check for completion
-		if ((mapheaderinfo[mapnum]->menuflags & LF2_FINISHNEEDED)
-		&& !(mapheaderinfo[mapnum]->mapvisited & MV_BEATEN))
-			return false;
-
-		// Check for unlock
-		if (M_MapLocked(mapnum+1))
-			return false;
-	}
-
 	// Check for TOL
 	if (!(mapheaderinfo[mapnum]->typeoflevel & levelsearch->typeoflevel))
 		return false;
@@ -3449,6 +3436,19 @@ boolean M_CanShowLevelInList(INT16 mapnum, levelsearch_t *levelsearch)
 		&& mapheaderinfo[mapnum]->cup != levelsearch->cup)
 		return false;
 
+	// Finally, the most complex check: does the map have lock conditions?
+	if (levelsearch->checklocked)
+	{
+		// Check for completion
+		if ((mapheaderinfo[mapnum]->menuflags & LF2_FINISHNEEDED)
+		&& !(mapheaderinfo[mapnum]->mapvisited & MV_BEATEN))
+			return false;
+
+		// Check for unlock
+		if (M_MapLocked(mapnum+1))
+			return false;
+	}
+
 	// Survived our checks.
 	return true;
 }
@@ -3462,6 +3462,9 @@ UINT16 M_CountLevelsToShowInList(levelsearch_t *levelsearch)
 
 	if (levelsearch->cup)
 	{
+		if (levelsearch->checklocked && M_CupLocked(levelsearch->cup))
+			return 0;
+
 		for (i = 0; i < CUPCACHE_MAX; i++)
 		{
 			if (!M_CanShowLevelInList(levelsearch->cup->cachedlevels[i], levelsearch))
@@ -3488,6 +3491,12 @@ UINT16 M_GetFirstLevelInList(UINT8 *i, levelsearch_t *levelsearch)
 
 	if (levelsearch->cup)
 	{
+		if (levelsearch->checklocked && M_CupLocked(levelsearch->cup))
+		{
+			*i = CUPCACHE_MAX;
+			return NEXTMAP_INVALID;
+		}
+
 		*i = 0;
 		mapnum = NEXTMAP_INVALID;
 		for (; *i < CUPCACHE_MAX; (*i)++)
@@ -3555,6 +3564,8 @@ static void M_LevelSelectScrollDest(void)
 static void M_LevelListFromGametype(INT16 gt)
 {
 	static boolean first = true;
+	UINT8 temp = 0;
+
 	if (first || gt != levellist.newgametype || levellist.guessgt != MAXGAMETYPES)
 	{
 		levellist.newgametype = gt;
@@ -3589,7 +3600,6 @@ static void M_LevelListFromGametype(INT16 gt)
 		const size_t unitlen = sizeof(cupheader_t*) * (CUPMENU_COLUMNS * CUPMENU_ROWS);
 
 		templevelsearch.cup = kartcupheaders;
-		templevelsearch.checklocked = false;
 
 		// Make sure there's valid cups before going to this menu.
 		if (templevelsearch.cup == NULL)
@@ -3612,6 +3622,7 @@ static void M_LevelListFromGametype(INT16 gt)
 
 		while (templevelsearch.cup)
 		{
+			templevelsearch.checklocked = false;
 			if (!M_CountLevelsToShowInList(&templevelsearch))
 			{
 				// No valid maps, skip.
@@ -3638,7 +3649,8 @@ static void M_LevelListFromGametype(INT16 gt)
 
 			cupgrid.builtgrid[currentid] = templevelsearch.cup;
 
-			if (!M_CupLocked(templevelsearch.cup))
+			templevelsearch.checklocked = true;
+			if (M_GetFirstLevelInList(&temp, &templevelsearch) != NEXTMAP_INVALID)
 			{
 				highestunlockedid = currentid;
 				if (Playing() && mapheaderinfo[gamemap-1] && mapheaderinfo[gamemap-1]->cup == templevelsearch.cup)

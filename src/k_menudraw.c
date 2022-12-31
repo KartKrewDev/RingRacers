@@ -1933,7 +1933,7 @@ static void M_DrawCupPreview(INT16 y, levelsearch_t *levelsearch)
 
 	V_DrawFill(0, y, BASEVIDWIDTH, 54, 31);
 
-	if (levelsearch->cup && !M_CupLocked(levelsearch->cup) && maxlevels > 0)
+	if (levelsearch->cup && maxlevels > 0)
 	{
 		add = (cupgrid.previewanim / 82) % maxlevels;
 		map = start;
@@ -1979,16 +1979,18 @@ static void M_DrawCupPreview(INT16 y, levelsearch_t *levelsearch)
 	}
 }
 
-static void M_DrawCupTitle(INT16 y, cupheader_t *cup)
+static void M_DrawCupTitle(INT16 y, levelsearch_t *levelsearch)
 {
+	UINT8 temp = 0;
+
 	V_DrawScaledPatch(0, y, 0, W_CachePatchName("MENUHINT", PU_CACHE));
 
-	if (cup)
+	if (levelsearch->cup)
 	{
-		boolean unlocked = !M_CupLocked(cup);
+		boolean unlocked = (M_GetFirstLevelInList(&temp, levelsearch) != NEXTMAP_INVALID);
 		UINT8 *colormap = R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_GREY, GTC_MENUCACHE);
-		patch_t *icon = W_CachePatchName(cup->icon, PU_CACHE);
-		const char *str = (unlocked ? va("%s Cup", cup->name) : "???");
+		patch_t *icon = W_CachePatchName(levelsearch->cup->icon, PU_CACHE);
+		const char *str = (unlocked ? va("%s Cup", levelsearch->cup->name) : "???");
 		INT16 offset = V_LSTitleLowStringWidth(str, 0) / 2;
 
 		V_DrawLSTitleLowString(BASEVIDWIDTH/2 - offset, y+6, 0, str);
@@ -2011,26 +2013,26 @@ static void M_DrawCupTitle(INT16 y, cupheader_t *cup)
 
 void M_DrawCupSelect(void)
 {
-	UINT8 i, j;
+	UINT8 i, j, temp = 0;
 	levelsearch_t templevelsearch = levellist.levelsearch; // full copy
-	templevelsearch.cup = cupgrid.builtgrid[CUPMENU_CURSORID];
 
 	for (i = 0; i < CUPMENU_COLUMNS; i++)
 	{
 		for (j = 0; j < CUPMENU_ROWS; j++)
 		{
 			size_t id = (i + (j * CUPMENU_COLUMNS)) + (cupgrid.pageno * (CUPMENU_COLUMNS * CUPMENU_ROWS));
-			cupheader_t *iconcup = cupgrid.builtgrid[id];
 			patch_t *patch = NULL;
 			INT16 x, y;
 			INT16 icony = 7;
 
-			if (!iconcup)
+			if (!cupgrid.builtgrid[id])
 				break;
 
-			/*if (iconcup->emeraldnum == 0)
+			templevelsearch.cup = cupgrid.builtgrid[id];
+
+			/*if (templevelsearch.cup->emeraldnum == 0)
 				patch = W_CachePatchName("CUPMON3A", PU_CACHE);
-			else*/ if (iconcup->emeraldnum > 7)
+			else*/ if (templevelsearch.cup->emeraldnum > 7)
 			{
 				patch = W_CachePatchName("CUPMON2A", PU_CACHE);
 				icony = 5;
@@ -2043,14 +2045,14 @@ void M_DrawCupSelect(void)
 
 			V_DrawScaledPatch(x, y, 0, patch);
 
-			if (M_CupLocked(iconcup))
+			if (M_GetFirstLevelInList(&temp, &templevelsearch) == NEXTMAP_INVALID)
 			{
 				patch_t *st = W_CachePatchName(va("ICONST0%d", (cupgrid.previewanim % 4) + 1), PU_CACHE);
 				V_DrawScaledPatch(x + 8, y + icony, 0, st);
 			}
 			else
 			{
-				V_DrawScaledPatch(x + 8, y + icony, 0, W_CachePatchName(iconcup->icon, PU_CACHE));
+				V_DrawScaledPatch(x + 8, y + icony, 0, W_CachePatchName(templevelsearch.cup->icon, PU_CACHE));
 				V_DrawScaledPatch(x + 8, y + icony, 0, W_CachePatchName("CUPBOX", PU_CACHE));
 			}
 		}
@@ -2061,8 +2063,10 @@ void M_DrawCupSelect(void)
 		0, W_CachePatchName("CUPCURS", PU_CACHE)
 	);
 
+	templevelsearch.cup = cupgrid.builtgrid[CUPMENU_CURSORID];
+
 	M_DrawCupPreview(146 + (24*menutransition.tics), &templevelsearch);
-	M_DrawCupTitle(120 - (24*menutransition.tics), templevelsearch.cup);
+	M_DrawCupTitle(120 - (24*menutransition.tics), &templevelsearch);
 }
 
 static void M_DrawHighLowLevelTitle(INT16 x, INT16 y, INT16 map)
@@ -2228,7 +2232,7 @@ void M_DrawLevelSelect(void)
 		map = M_GetNextLevelInList(map, &j, &levellist.levelsearch);
 	}
 
-	M_DrawCupTitle(tay, levellist.levelsearch.cup);
+	M_DrawCupTitle(tay, &levellist.levelsearch);
 }
 
 void M_DrawTimeAttack(void)
