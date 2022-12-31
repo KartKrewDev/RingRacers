@@ -3720,7 +3720,6 @@ void M_LevelSelectInit(INT32 choice)
 	(void)choice;
 
 	// Make sure this is reset as we'll only be using this function for offline games!
-	cupgrid.netgame = false;
 	levellist.netgame = false;
 	levellist.levelsearch.checklocked = true;
 
@@ -4291,7 +4290,6 @@ void M_MPSetupNetgameMapSelect(INT32 choice)
 
 	// Yep, we'll be starting a netgame.
 	levellist.netgame = true;
-	cupgrid.netgame = true;
 	// Make sure we reset those
 	levellist.levelsearch.timeattack = false;
 	levellist.levelsearch.checklocked = true;

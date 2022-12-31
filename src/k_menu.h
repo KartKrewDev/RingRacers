@@ -694,7 +694,6 @@ extern struct cupgrid_s {
 	size_t cappages;
 	tic_t previewanim;
 	boolean grandprix; 	// Setup grand prix server after picking
-	boolean netgame;	// Start the game in an actual server
 } cupgrid;
 
 typedef struct levelsearch_s {
