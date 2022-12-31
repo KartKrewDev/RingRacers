@@ -5030,9 +5030,9 @@ void K_drawKartHUD(void)
 		return;
 	}
 
-	battlefullscreen = ((gametyperules & (GTR_BUMPERS))
+	battlefullscreen = (!(gametyperules & GTR_CIRCUIT)
 		&& (stplyr->exiting
-		|| (stplyr->bumpers <= 0
+		|| ((gametyperules & GTR_BUMPERS) && (stplyr->bumpers <= 0)
 		&& ((gametyperules & GTR_KARMA) && (stplyr->karmadelay > 0))
 		&& !(stplyr->pflags & PF_ELIMINATED)
 		&& stplyr->playerstate == PST_LIVE)));

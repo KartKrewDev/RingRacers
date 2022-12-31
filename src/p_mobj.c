@@ -9581,7 +9581,7 @@ static boolean P_FuseThink(mobj_t *mobj)
 		{
 			;
 		}
-		else if ((gametyperules & GTR_BUMPERS) && (mobj->state == &states[S_INVISIBLE]))
+		else if (!(gametyperules & GTR_CIRCUIT) && (mobj->state == &states[S_INVISIBLE]))
 		{
 			break;
 		}
@@ -11419,7 +11419,7 @@ void P_RespawnBattleBoxes(void)
 {
 	thinker_t *th;
 
-	if (!(gametyperules & GTR_BUMPERS))
+	if (gametyperules & GTR_CIRCUIT)
 		return;
 
 	for (th = thlist[THINK_MOBJ].next; th != &thlist[THINK_MOBJ]; th = th->next)
@@ -11684,13 +11684,16 @@ void P_SpawnPlayer(INT32 playernum)
 
 	K_InitStumbleIndicator(p);
 
-	if (gametyperules & GTR_BUMPERS)
+	if (gametyperules & GTR_ITEMARROWS)
 	{
 		mobj_t *overheadarrow = P_SpawnMobj(mobj->x, mobj->y, mobj->z + mobj->height + 16*FRACUNIT, MT_PLAYERARROW);
 		P_SetTarget(&overheadarrow->target, mobj);
 		overheadarrow->renderflags |= RF_DONTDRAW;
 		P_SetScale(overheadarrow, mobj->destscale);
+	}
 
+	if (gametyperules & GTR_BUMPERS)
+	{
 		if (p->spectator)
 		{
 			// HEY! No being cheap...

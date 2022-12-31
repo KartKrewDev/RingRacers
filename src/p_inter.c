@@ -1099,7 +1099,7 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 		{
 			P_SetTarget(&target->target, source);
 
-			if (gametyperules & GTR_BUMPERS)
+			if (!(gametyperules & GTR_CIRCUIT))
 			{
 				target->fuse = 2;
 			}

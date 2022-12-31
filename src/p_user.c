@@ -520,6 +520,9 @@ INT32 P_GivePlayerSpheres(player_t *player, INT32 num_spheres)
 {
 	num_spheres += player->spheres;
 
+	if (!(gametyperules & GTR_SPHERES)) // No spheres in Race mode)
+		return 0;
+
 	// Not alive
 	if ((gametyperules & GTR_BUMPERS) && (player->bumpers <= 0))
 		return 0;
@@ -555,7 +558,7 @@ void P_GivePlayerLives(player_t *player, INT32 numlives)
 // Adds to the player's score
 void P_AddPlayerScore(player_t *player, UINT32 amount)
 {
-	if (!((gametyperules & GTR_BUMPERS)))
+	if (!((gametyperules & GTR_POINTLIMIT)))
 		return;
 
 	if (player->exiting) // srb2kart

@@ -3773,7 +3773,7 @@ static void Got_Teamchange(UINT8 **cp, INT32 playernum)
 	// Clear player score and rings if a spectator.
 	if (players[playernum].spectator)
 	{
-		if (gametyperules & GTR_BUMPERS) // SRB2kart
+		if (gametyperules & GTR_POINTLIMIT) // SRB2kart
 		{
 			players[playernum].roundscore = 0;
 			K_CalculateBattleWanted();
