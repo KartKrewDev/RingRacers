@@ -2919,7 +2919,7 @@ void G_ExitLevel(void)
 
 		if (!G_GametypeUsesLives())
 			; // never force a retry
-		else if (specialstageinfo.valid == true || (gametyperules & GTR_BOSS)
+		else if (specialstageinfo.valid == true || (gametyperules & GTR_BOSS))
 		{
 			doretry = true;
 			for (i = 0; i < MAXPLAYERS; i++)
