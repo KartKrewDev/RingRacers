@@ -1520,13 +1520,13 @@ void D_SRB2Main(void)
 
 	I_RegisterSysCommands();
 
+	M_Init();
+
 	//--------------------------------------------------------- CONFIG.CFG
 	M_FirstLoadConfig(); // WARNING : this do a "COM_BufExecute()"
 
 	// Load Profiles now that default controls have been defined
 	PR_LoadProfiles();	// load control profiles
-
-	M_Init();
 
 #if (defined (__unix__) && !defined (MSDOS)) || defined (UNIXCOMMON) || defined (HAVE_SDL)
 	VID_PrepareModeList(); // Regenerate Modelist according to cv_fullscreen
