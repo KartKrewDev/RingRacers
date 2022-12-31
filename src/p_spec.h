@@ -557,7 +557,8 @@ fixed_t P_FindHighestCeilingSurrounding(sector_t *sec);
 
 INT32 P_FindMinSurroundingLight(sector_t *sector, INT32 max);
 
-void P_CrossSpecialLine(line_t *ld, INT32 side, mobj_t *thing);
+void P_CrossSpecialLine(line_t *line, INT32 side, mobj_t *thing);
+void P_PushSpecialLine(line_t *line, mobj_t *thing);
 
 //
 // Special activation info
@@ -572,7 +573,8 @@ struct activator_t
 	boolean fromLineSpecial; // Backwards compat for ACS
 };
 
-void P_ProcessSpecial(activator_t *activator, INT16 special, INT32 *args, char **stringargs);
+boolean P_CanActivateSpecial(INT16 special);
+boolean P_ProcessSpecial(activator_t *activator, INT16 special, INT32 *args, char **stringargs);
 
 void P_SetupSignExit(player_t *player);
 
