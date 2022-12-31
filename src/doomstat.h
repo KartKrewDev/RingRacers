@@ -489,37 +489,39 @@ extern INT16 gametype;
 enum GameTypeRules
 {
 	// Race rules
-	GTR_CIRCUIT				= 1,     // Enables the finish line, laps, and the waypoint system.
-	GTR_BOTS				= 1<<2,  // Allows bots in this gametype. Combine with BotTiccmd hooks to make bots support your gametype.
+	GTR_CIRCUIT				= 1,		// Enables the finish line, laps, and the waypoint system.
+	GTR_BOTS				= 1<<1,		// Allows bots in this gametype. Combine with BotTiccmd hooks to make bots support your gametype.
 
 	// Battle gametype rules
-	GTR_BUMPERS				= 1<<3,  // Enables the bumper health system
-	GTR_SPHERES				= 1<<4,  // Replaces rings with blue spheres
-	GTR_PAPERITEMS			= 1<<5,  // Replaces item boxes with paper item spawners
-	GTR_POWERSTONES			= 1<<6,  // Battle Emerald collectables.
-	GTR_KARMA				= 1<<7,  // Enables the Karma system if you're out of bumpers
-	GTR_ITEMARROWS			= 1<<8,  // Show item box arrows above players
-	GTR_CAPSULES			= 1<<9,  // Can enter Break The Capsules mode
-	GTR_BATTLESTARTS		= 1<<10, // Use Battle Mode start positions.
+	GTR_BUMPERS				= 1<<2,		// Enables the bumper health system
+	GTR_SPHERES				= 1<<3,		// Replaces rings with blue spheres
+	GTR_CLOSERPLAYERS		= 1<<4,		// Buffs spindash and draft power to bring everyone together, nerfs invincibility and grow to prevent excessive combos
 
-	GTR_POINTLIMIT			= 1<<11,  // Reaching point limit ends the round
-	GTR_TIMELIMIT			= 1<<12, // Reaching time limit ends the round
-	GTR_OVERTIME			= 1<<13, // Allow overtime behavior
+	GTR_BATTLESTARTS		= 1<<5,		// Use Battle Mode start positions.
+	GTR_PAPERITEMS			= 1<<6,		// Replaces item boxes with paper item spawners
+	GTR_POWERSTONES			= 1<<7,		// Battle Emerald collectables.
+	GTR_KARMA				= 1<<8,		// Enables the Karma system if you're out of bumpers
+	GTR_ITEMARROWS			= 1<<9,		// Show item box arrows above players
 
-	// Custom gametype rules
-	GTR_TEAMS				= 1<<14, // Teams are forced on
-	GTR_NOTEAMS				= 1<<15, // Teams are forced off
-	GTR_TEAMSTARTS			= 1<<16, // Use team-based start positions
+	// Bonus gametype rules
+	GTR_CAPSULES			= 1<<10,	// Can enter Break The Capsules mode
+	GTR_CATCHER				= 1<<11, // UFO Catcher (only works with GTR_CIRCUIT)
+	GTR_ROLLINGSTART		= 1<<12, // Rolling start (only works with GTR_CIRCUIT)
+	GTR_SPECIALSTART		= 1<<13, // White fade instant start
+	GTR_BOSS				= 1<<14, // Boss intro and spawning
 
-	// To be rearranged later
-	GTR_CATCHER				= 1<<17, // UFO Catcher (only works with GTR_CIRCUIT)
-	GTR_BOSS				= 1<<18, // Boss intro and spawning
-	GTR_ROLLINGSTART		= 1<<19, // Rolling start (only works with GTR_CIRCUIT)
-	GTR_NOCUPSELECT			= 1<<20, // Your maps are not selected via cup.
-	GTR_CLOSERPLAYERS		= 1<<21, // Buffs spindash and draft power to bring everyone together, nerfs invincibility and grow to prevent excessive combos
-	GTR_ENCORE				= 1<<22, // Alternate Encore mirroring, scripting, and texture remapping
-	GTR_SPECIALSTART		= 1<<23, // White fade instant start
-	GTR_NOMP				= 1<<24, // No multiplayer
+	// General purpose rules
+	GTR_POINTLIMIT			= 1<<15,	// Reaching point limit ends the round
+	GTR_TIMELIMIT			= 1<<16,	// Reaching time limit ends the round
+	GTR_OVERTIME			= 1<<17,	// Allow overtime behavior
+	GTR_ENCORE				= 1<<18,	// Alternate Encore mirroring, scripting, and texture remapping
+
+	GTR_TEAMS				= 1<<19, // Teams are forced on
+	GTR_NOTEAMS				= 1<<20, // Teams are forced off
+	GTR_TEAMSTARTS			= 1<<21, // Use team-based start positions
+
+	GTR_NOMP				= 1<<22, // No multiplayer
+	GTR_NOCUPSELECT			= 1<<23, // Your maps are not selected via cup.
 
 	// free: to and including 1<<31
 };
