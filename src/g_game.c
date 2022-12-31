@@ -3227,7 +3227,7 @@ boolean G_GametypeUsesLives(void)
 		return false;
 
 	if ((grandprixinfo.gp == true) // In Grand Prix
-		&& !(gametyperules & GTR_CAPSULES)) // NOT in Break The Capsules
+		&& grandprixinfo.eventmode != GPEVENT_BONUS) // NOT in bonus round
 	{
 		return true;
 	}
