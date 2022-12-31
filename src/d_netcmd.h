@@ -18,6 +18,10 @@
 #include "command.h"
 #include "d_player.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 // console vars
 extern consvar_t cv_playername[MAXSPLITSCREENPLAYERS];
 extern consvar_t cv_playercolor[MAXSPLITSCREENPLAYERS];
@@ -278,5 +282,9 @@ void D_Cheat(INT32 playernum, INT32 cheat, ...);
 // used for the player setup menu
 UINT8 CanChangeSkin(INT32 playernum);
 boolean CanChangeSkinWhilePlaying(INT32 playernum);
+
+#ifdef __cplusplus
+} // extern "C"
+#endif
 
 #endif

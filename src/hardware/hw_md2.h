@@ -17,6 +17,10 @@
 #include "hw_glob.h"
 #include "hw_model.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #if defined(_MSC_VER)
 #pragma pack()
 #endif
@@ -45,5 +49,9 @@ void HWR_AddSpriteModel(size_t spritenum);
 boolean HWR_DrawModel(gl_vissprite_t *spr);
 
 #define PLAYERMODELPREFIX "PLAYER"
+
+#ifdef __cplusplus
+} // extern "C"
+#endif
 
 #endif // _HW_MD2_H_

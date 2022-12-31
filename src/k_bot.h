@@ -17,6 +17,10 @@
 #include "d_player.h"
 #include "r_defs.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 // Maximum value of botvars.difficulty
 #define MAXBOTDIFFICULTY 13
 
@@ -269,5 +273,9 @@ void K_UpdateBotGameplayVars(player_t *player);
 --------------------------------------------------*/
 
 void K_BotItemUsage(player_t *player, ticcmd_t *cmd, INT16 turnamt);
+
+#ifdef __cplusplus
+} // extern "C"
+#endif
 
 #endif

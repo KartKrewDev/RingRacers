@@ -19,6 +19,10 @@
 #include "r_defs.h"
 #include "k_terrain.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 // map md5, sent to players via PT_SERVERINFO
 extern unsigned char mapmd5[16];
 
@@ -144,5 +148,9 @@ void P_DeleteFlickies(INT16 i);
 
 // Needed for NiGHTS
 void P_ReloadRings(void);
+
+#ifdef __cplusplus
+} // extern "C"
+#endif
 
 #endif

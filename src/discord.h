@@ -17,6 +17,10 @@
 
 #include <discord_rpc.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 extern consvar_t cv_discordrp;
 extern consvar_t cv_discordstreamer;
 extern consvar_t cv_discordasks;
@@ -76,5 +80,9 @@ void DRPC_UpdatePresence(void);
 
 
 #endif // HAVE_DISCORDRPC
+
+#ifdef __cplusplus
+} // extern "C"
+#endif
 
 #endif // __DISCORD__

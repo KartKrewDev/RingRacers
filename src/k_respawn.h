@@ -15,6 +15,10 @@
 #include "k_waypoint.h"
 #include "d_player.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define RESPAWN_DIST 1024
 #define RESPAWN_TIME 48
 #define RESPAWNST_NONE 0x00
@@ -97,5 +101,9 @@ size_t K_NextRespawnWaypointIndex(waypoint_t *waypoint);
 --------------------------------------------------*/
 
 void K_RespawnChecker(player_t *player);
+
+#ifdef __cplusplus
+} // extern "C"
+#endif
 
 #endif

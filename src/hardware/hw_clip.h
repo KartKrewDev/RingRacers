@@ -7,10 +7,17 @@
  *
  */
 
+#ifndef __HARDWARE_HW_CLIP_H__
+#define __HARDWARE_HW_CLIP_H__
+
 // OpenGL BSP clipping
 #include "../doomdef.h"
 #include "../tables.h"
 #include "../doomtype.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 //#define HAVE_SPHEREFRUSTRUM // enable if you want gld_SphereInFrustum and related code
 
@@ -22,3 +29,9 @@ angle_t gld_FrustumAngle(angle_t tiltangle);
 void gld_FrustrumSetup(void);
 boolean gld_SphereInFrustum(float x, float y, float z, float radius);
 #endif
+
+#ifdef __cplusplus
+} // extern "C"
+#endif
+
+#endif // __HARDWARE_HW_CLIP_H__

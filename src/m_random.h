@@ -18,6 +18,10 @@
 #include "doomtype.h"
 #include "m_fixed.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 //#define DEBUGRANDOM
 
 typedef enum
@@ -125,5 +129,9 @@ void P_SetRandSeedNet(pr_class_t pr_class, UINT32 init, UINT32 seed);
 
 void P_ClearRandom(UINT32 seed);
 UINT32 M_RandomizedSeed(void);
+
+#ifdef __cplusplus
+} // extern "C"
+#endif
 
 #endif

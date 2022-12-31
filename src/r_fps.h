@@ -19,6 +19,10 @@
 #include "p_local.h"
 #include "r_state.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 extern consvar_t cv_fpscap;
 
 UINT32 R_GetFramerateCap(void);
@@ -167,5 +171,9 @@ void R_RemoveMobjInterpolator(mobj_t *mobj);
 void R_UpdateMobjInterpolators(void);
 void R_ResetMobjInterpolationState(mobj_t *mobj);
 void R_ResetPrecipitationMobjInterpolationState(precipmobj_t *mobj);
+
+#ifdef __cplusplus
+} // extern "C"
+#endif
 
 #endif

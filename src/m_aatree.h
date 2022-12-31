@@ -16,6 +16,10 @@
 
 #include "doomtype.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 // Flags for AA trees.
 #define AATREE_ZUSER	1		// Treat values as z_zone-allocated blocks and set their user fields
 
@@ -26,5 +30,9 @@ void M_AATreeFree(aatree_t *aatree);
 void M_AATreeSet(aatree_t *aatree, INT32 key, void* value);
 void *M_AATreeGet(aatree_t *aatree, INT32 key);
 void M_AATreeIterate(aatree_t *aatree, aatree_iter_t callback);
+
+#ifdef __cplusplus
+} // extern "C"
+#endif
 
 #endif

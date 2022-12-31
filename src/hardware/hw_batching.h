@@ -16,6 +16,10 @@
 #include "hw_data.h"
 #include "hw_drv.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef struct
 {
 	FSurfaceInfo surf;// surf also has its own polyflags for some reason, but it seems unused
@@ -32,5 +36,9 @@ void HWR_StartBatching(void);
 void HWR_SetCurrentTexture(GLMipmap_t *texture);
 void HWR_ProcessPolygon(FSurfaceInfo *pSurf, FOutVector *pOutVerts, FUINT iNumPts, FBITFIELD PolyFlags, int shader, boolean horizonSpecial);
 void HWR_RenderBatches(void);
+
+#ifdef __cplusplus
+} // extern "C"
+#endif
 
 #endif

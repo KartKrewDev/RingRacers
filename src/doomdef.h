@@ -97,6 +97,10 @@
 #include <io.h>
 #endif
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 //#define NOMD5
 
 // Uncheck this to compile debugging code
@@ -745,5 +749,9 @@ extern int compuncommitted;
 
 /// Other karma comeback modes
 //#define OTHERKARMAMODES
+
+#ifdef __cplusplus
+} // extern "C"
+#endif
 
 #endif // __DOOMDEF__

@@ -16,6 +16,10 @@
 
 #include "doomtype.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #ifdef __GNUG__
 #pragma interface
 #endif
@@ -152,5 +156,9 @@ void I_BeginRead(void);
 void I_EndRead(void);
 
 UINT32 I_GetRefreshRate(void);
+
+#ifdef __cplusplus
+} // extern "C"
+#endif
 
 #endif

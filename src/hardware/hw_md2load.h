@@ -13,7 +13,15 @@
 #include "hw_model.h"
 #include "../doomtype.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 // Load the Model
 model_t *MD2_LoadModel(const char *fileName, int ztag, boolean useFloat);
+
+#ifdef __cplusplus
+} // extern "C"
+#endif
 
 #endif

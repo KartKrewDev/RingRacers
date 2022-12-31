@@ -17,6 +17,10 @@
 #include "r_defs.h"
 #include "doomdef.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef enum
 {
 	PICFMT_NONE = 0,
@@ -126,5 +130,9 @@ boolean Picture_PNGDimensions(UINT8 *png, INT32 *width, INT32 *height, INT16 *to
 extern spriteinfo_t spriteinfo[NUMSPRITES];
 void R_LoadSpriteInfoLumps(UINT16 wadnum, UINT16 numlumps);
 void R_ParseSPRTINFOLump(UINT16 wadNum, UINT16 lumpNum);
+
+#ifdef __cplusplus
+} // extern "C"
+#endif
 
 #endif // __R_PICFORMATS__

@@ -14,6 +14,10 @@
 #ifndef I_THREADS_H
 #define I_THREADS_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef void (*I_thread_fn)(void *userdata);
 
 typedef void * I_mutex;
@@ -34,6 +38,10 @@ void      I_hold_cond       (I_cond *, I_mutex);
 
 void      I_wake_one_cond   (I_cond *);
 void      I_wake_all_cond   (I_cond *);
+
+#ifdef __cplusplus
+} // extern "C"
+#endif
 
 #endif/*I_THREADS_H*/
 #endif/*HAVE_THREADS*/

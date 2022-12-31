@@ -14,6 +14,10 @@
 #ifndef __M_ARGV__
 #define __M_ARGV__
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 //
 // MISC
 //
@@ -38,5 +42,9 @@ const char *M_GetNextParm(void);
 
 // Finds and loads a response file (@moreargs.txt)
 void M_FindResponseFile(void);
+
+#ifdef __cplusplus
+} // extern "C"
+#endif
 
 #endif //__M_ARGV__

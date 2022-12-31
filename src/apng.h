@@ -39,6 +39,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <png.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef struct apng_info_def apng_info;
 typedef apng_info * apng_infop;
 typedef const apng_info * apng_const_infop;
@@ -76,5 +80,9 @@ void apng_set_write_fn (png_structp png_ptr, apng_infop ainfo_ptr,
 
 void apng_set_set_acTL_fn (png_structp png_ptr, apng_infop ainfo_ptr,
 		apng_set_acTL_ptr set_acTL_fn);
+
+#ifdef __cplusplus
+} // extern "C"
+#endif
 
 #endif/* APNG_H */

@@ -17,6 +17,10 @@
 #include "r_defs.h"
 #include "m_fixed.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 //
 // P_MAPUTL
 //
@@ -88,4 +92,9 @@ extern divline_t trace;
 // bbox defined by the radius
 //boolean P_RadiusLinesCheck(fixed_t radius, fixed_t x, fixed_t y,
 //	boolean (*func)(line_t *));
+
+#ifdef __cplusplus
+} // extern "C"
+#endif
+
 #endif // __P_MAPUTL__

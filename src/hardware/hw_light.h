@@ -16,6 +16,10 @@
 #include "hw_glob.h"
 #include "hw_defs.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define NUMLIGHTFREESLOTS 32 // Free light slots (for SOCs)
 
 #ifdef ALAM_LIGHTING
@@ -91,4 +95,9 @@ typedef enum
 
 extern light_t lspr[NUMLIGHTS];
 extern light_t *t_lspr[NUMSPRITES];
+
+#ifdef __cplusplus
+} // extern "C"
+#endif
+
 #endif

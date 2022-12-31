@@ -17,6 +17,10 @@
 //#include "../s_sound.h"
 //#include "../p_mobj.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 // Default sound mode (original stereo mode)
 enum
 {
@@ -94,5 +98,9 @@ void HW3S_FreeSfx(sfxinfo_t *sfx);
 
 INT32 S_AdjustSoundParams(const mobj_t *listener, const mobj_t *source,
 	INT32 *vol, INT32 *sep, INT32 *pitch, sfxinfo_t *sfxinfo);
+
+#ifdef __cplusplus
+} // extern "C"
+#endif
 
 #endif // __HW3_SOUND_H__

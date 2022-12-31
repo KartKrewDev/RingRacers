@@ -31,6 +31,10 @@
 // and the Frame Sequence table.
 #include "info.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #ifdef __GNUG__
 #pragma interface
 #endif
@@ -119,5 +123,9 @@ typedef enum
 	tr_trans90,
 	NUMTRANSMAPS,
 } transnum_t;
+
+#ifdef __cplusplus
+} // extern "C"
+#endif
 
 #endif

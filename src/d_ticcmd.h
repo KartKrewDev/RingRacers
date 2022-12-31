@@ -17,6 +17,10 @@
 #include "m_fixed.h"
 #include "doomtype.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #ifdef __GNUG__
 #pragma interface
 #endif
@@ -76,6 +80,10 @@ struct ticcmd_t
 
 #if defined(_MSC_VER)
 #pragma pack()
+#endif
+
+#ifdef __cplusplus
+} // extern "C"
 #endif
 
 #endif

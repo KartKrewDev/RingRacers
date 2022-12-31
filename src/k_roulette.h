@@ -16,6 +16,10 @@
 #include "doomtype.h"
 #include "d_player.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define ROULETTE_SPACING (36 << FRACBITS)
 #define ROULETTE_SPACING_SPLITSCREEN (16 << FRACBITS)
 
@@ -165,5 +169,8 @@ fixed_t K_GetRouletteOffset(itemroulette_t *const roulette, fixed_t renderDelta)
 
 void K_KartItemRoulette(player_t *const player, ticcmd_t *cmd);
 
+#ifdef __cplusplus
+} // extern "C"
+#endif
 
 #endif // __K_ROULETTE_H__
