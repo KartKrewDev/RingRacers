@@ -2915,17 +2915,24 @@ void G_ExitLevel(void)
 	if (gamestate == GS_LEVEL)
 	{
 		UINT8 i;
-		boolean youlost = false;
-		if (gametyperules & GTR_BOSS)
+		boolean doretry = false;
+
+		if (modeattacking != ATTACKING_NONE)
+			;
+		else if (specialstageinfo.valid == true)
 		{
-			youlost = true;
+			doretry = (specialstageinfo.ufo != NULL);
+		}
+		else if (gametyperules & GTR_BOSS)
+		{
+			doretry = true;
 			for (i = 0; i < MAXPLAYERS; i++)
 			{
 				if (playeringame[i] && !players[i].spectator && !players[i].bot)
 				{
 					if (players[i].bumpers > 0)
 					{
-						youlost = false;
+						doretry = false;
 						break;
 					}
 				}
@@ -2933,10 +2940,10 @@ void G_ExitLevel(void)
 		}
 		else if (grandprixinfo.gp == true && grandprixinfo.eventmode == GPEVENT_NONE)
 		{
-			youlost = (grandprixinfo.wonround != true);
+			doretry = (grandprixinfo.wonround != true);
 		}
 
-		if (youlost)
+		if (doretry)
 		{
 			// You didn't win...
 
