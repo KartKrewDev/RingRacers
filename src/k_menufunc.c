@@ -3561,7 +3561,7 @@ static void M_LevelSelectScrollDest(void)
 }
 
 //  Builds the level list we'll be using from the gametype we're choosing and send us to the apropriate menu.
-static void M_LevelListFromGametype(INT16 gt)
+static boolean M_LevelListFromGametype(INT16 gt)
 {
 	static boolean first = true;
 	UINT8 temp = 0;
@@ -3588,8 +3588,6 @@ static void M_LevelListFromGametype(INT16 gt)
 		first = false;
 	}
 
-	PLAY_CupSelectDef.prevMenu = currentMenu;
-
 	// Obviously go to Cup Select in gametypes that have cups.
 	// Use a really long level select in gametypes that don't use cups.
 
@@ -3598,12 +3596,15 @@ static void M_LevelListFromGametype(INT16 gt)
 		levelsearch_t templevelsearch = levellist.levelsearch; // full copy
 		size_t currentid = 0, highestunlockedid = 0;
 		const size_t unitlen = sizeof(cupheader_t*) * (CUPMENU_COLUMNS * CUPMENU_ROWS);
+		boolean foundany = false;
 
 		templevelsearch.cup = kartcupheaders;
 
-		// Make sure there's valid cups before going to this menu.
+#if 0
+		// Make sure there's valid cups before going to this menu. -- rip sweet prince
 		if (templevelsearch.cup == NULL)
 			I_Error("Can you really call this a racing game, I didn't recieve any Cups on my pillow or anything");
+#endif
 
 		if (!cupgrid.builtgrid)
 		{
@@ -3629,6 +3630,8 @@ static void M_LevelListFromGametype(INT16 gt)
 				templevelsearch.cup = templevelsearch.cup->next;
 				continue;
 			}
+
+			foundany = true;
 
 			if ((currentid * sizeof(cupheader_t*)) >= cupgrid.cappages * unitlen)
 			{
@@ -3665,16 +3668,29 @@ static void M_LevelListFromGametype(INT16 gt)
 			templevelsearch.cup = templevelsearch.cup->next;
 		}
 
+		if (foundany == false)
+		{
+			return false;
+		}
+
 		cupgrid.numpages = (highestunlockedid / (CUPMENU_COLUMNS * CUPMENU_ROWS)) + 1;
 		if (cupgrid.pageno >= cupgrid.numpages)
 		{
 			cupgrid.pageno = 0;
 		}
 
+		PLAY_CupSelectDef.prevMenu = currentMenu;
 		PLAY_LevelSelectDef.prevMenu = &PLAY_CupSelectDef;
 		M_SetupNextMenu(&PLAY_CupSelectDef, false);
 
-		return;
+		return true;
+	}
+
+	// Okay, just a list of maps then.
+
+	if (M_GetFirstLevelInList(&temp, &levellist.levelsearch) == NEXTMAP_INVALID)
+	{
+		return false;
 	}
 
 	// Reset position properly if you go back & forth between gametypes
@@ -3690,6 +3706,7 @@ static void M_LevelListFromGametype(INT16 gt)
 	PLAY_LevelSelectDef.prevMenu = currentMenu;
 	M_SetupNextMenu(&PLAY_LevelSelectDef, false);
 
+	return true;
 }
 
 // Init level select for use in local play using the last choice we made.
@@ -3731,7 +3748,11 @@ void M_LevelSelectInit(INT32 choice)
 		gt = menugametype;
 	}
 
-	M_LevelListFromGametype(gt);
+	if (!M_LevelListFromGametype(gt))
+	{
+		S_StartSound(NULL, sfx_s3kb2);
+		M_StartMessage(va("No levels available for\n%s Mode!\n\nPress (B)\n", gametypes[gt]->name), NULL, MM_NOTHING);
+	}
 }
 
 static void M_LevelSelected(INT16 add)
@@ -4279,8 +4300,11 @@ void M_MPSetupNetgameMapSelect(INT32 choice)
 	// okay this is REALLY stupid but this fixes the host menu re-folding on itself when we go back.
 	mpmenu.modewinextend[0][0] = 1;
 
-	M_LevelListFromGametype(menugametype); // Setup the level select.
-	// (This will also automatically send us to the apropriate menu)
+	if (!M_LevelListFromGametype(menugametype))
+	{
+		S_StartSound(NULL, sfx_s3kb2);
+		M_StartMessage(va("No levels available for\n%s Mode!\n\nPress (B)\n", gametypes[menugametype]->name), NULL, MM_NOTHING);
+	}
 }
 
 // MULTIPLAYER JOIN BY IP
