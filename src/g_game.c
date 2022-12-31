@@ -2917,20 +2917,16 @@ void G_ExitLevel(void)
 		UINT8 i;
 		boolean doretry = false;
 
-		if (modeattacking != ATTACKING_NONE)
-			;
-		else if (specialstageinfo.valid == true)
-		{
-			doretry = (specialstageinfo.ufo != NULL);
-		}
-		else if (gametyperules & GTR_BOSS)
+		if (!G_GametypeUsesLives())
+			; // never force a retry
+		else if (specialstageinfo.valid == true || (gametyperules & GTR_BOSS)
 		{
 			doretry = true;
 			for (i = 0; i < MAXPLAYERS; i++)
 			{
 				if (playeringame[i] && !players[i].spectator && !players[i].bot)
 				{
-					if (players[i].bumpers > 0)
+					if (!K_IsPlayerLosing(&players[i]))
 					{
 						doretry = false;
 						break;
