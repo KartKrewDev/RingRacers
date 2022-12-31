@@ -502,7 +502,7 @@ INT32 P_GivePlayerRings(player_t *player, INT32 num_rings)
 	if (!player->mo)
 		return 0;
 
-	if ((gametyperules & GTR_BUMPERS)) // No rings in Battle Mode
+	if ((gametyperules & GTR_SPHERES)) // No rings in Battle Mode
 		return 0;
 
 	test = player->rings + num_rings;
