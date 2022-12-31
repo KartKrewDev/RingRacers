@@ -95,6 +95,12 @@ Environment::Environment()
 	addCodeDataACS0( 99, {"",        7, addCallFunc(CallFunc_SetLineSpecial)});
 	addCodeDataACS0(100, {"",        3, addCallFunc(CallFunc_ThingSound)});
 	addCodeDataACS0(101, {"",        0, addCallFunc(CallFunc_EndPrintBold)});
+
+	addCodeDataACS0(119, {"",        0, addCallFunc(CallFunc_PlayerTeam)});
+	addCodeDataACS0(120, {"",        0, addCallFunc(CallFunc_PlayerRings)});
+
+	addCodeDataACS0(122, {"",        0, addCallFunc(CallFunc_PlayerScore)});
+
 	// 136 to 137: Implemented by ACSVM
 
 	// 157: Implemented by ACSVM
@@ -124,6 +130,30 @@ Environment::Environment()
 	// 349 to 361: Implemented by ACSVM
 
 	// 363 to 380: Implemented by ACSVM
+
+	// Now for new style functions.
+	// This style is preferred for added functions
+	// that aren't mimicing one from Hexen's or ZDoom's
+	// ACS implementations.
+	//addFuncDataACS0(   1, addCallFunc(CallFunc_GetLineUDMFInt));
+	//addFuncDataACS0(   2, addCallFunc(CallFunc_GetLineUDMFFixed));
+	//addFuncDataACS0(   3, addCallFunc(CallFunc_GetThingUDMFInt));
+	//addFuncDataACS0(   4, addCallFunc(CallFunc_GetThingUDMFFixed));
+	//addFuncDataACS0(   5, addCallFunc(CallFunc_GetSectorUDMFInt));
+	//addFuncDataACS0(   6, addCallFunc(CallFunc_GetSectorUDMFFixed));
+	//addFuncDataACS0(   7, addCallFunc(CallFunc_GetSideUDMFInt));
+	//addFuncDataACS0(   8, addCallFunc(CallFunc_GetSideUDMFFixed));
+
+	addFuncDataACS0( 300, addCallFunc(CallFunc_CountEnemies));
+	addFuncDataACS0( 301, addCallFunc(CallFunc_CountPushables));
+	addFuncDataACS0( 302, addCallFunc(CallFunc_HaveUnlockableTrigger));
+	addFuncDataACS0( 303, addCallFunc(CallFunc_HaveUnlockable));
+	addFuncDataACS0( 304, addCallFunc(CallFunc_PlayerSkin));
+	addFuncDataACS0( 305, addCallFunc(CallFunc_GetObjectDye));
+	addFuncDataACS0( 306, addCallFunc(CallFunc_PlayerEmeralds));
+	addFuncDataACS0( 307, addCallFunc(CallFunc_PlayerLap));
+	addFuncDataACS0( 308, addCallFunc(CallFunc_LowestLap));
+	addFuncDataACS0( 309, addCallFunc(CallFunc_EncoreMode));
 }
 
 ACSVM::Thread *Environment::allocThread()

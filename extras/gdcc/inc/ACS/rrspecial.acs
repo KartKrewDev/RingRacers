@@ -167,6 +167,17 @@ special
 	int		   -7:GetSideUDMFInt(3, int, int, str),
 	fixed	   -8:GetSideUDMFFixed(3, int, int, str),
 	*/
+	// Reimplementations of trigger linedefs.
+	int		 -300:CountEnemies(1, int),
+	int		 -301:CountPushables(1, int),
+	bool	 -302:HaveUnlockableTrigger(1, int),
+	bool	 -303:HaveUnlockable(1, int),
+	str		 -304:PlayerSkin(0),
+	str		 -305:GetObjectDye(0),
+	int		 -306:PlayerEmeralds(0),
+	int		 -307:PlayerLap(0),
+	int		 -308:LowestLap(0),
+	bool	 -309:EncoreMode(0),
 
 	//  0 to 56: Implemented by ACSVM
 	void  {  2     }:__suspend(void),
@@ -204,6 +215,11 @@ special
 	void  { 99     }:SetLineSpecial(int, int, int, int, int, int, int),
 	void  {100     }:ThingSound(int, str, int),
 	void  {101     }:EndPrintBold(void),
+
+	int   {119     }:PlayerTeam(void),
+	int   {120     }:PlayerRings(void),
+
+	int   {122     }:PlayerScore(void),
 
 	int   {136     }:FixedMul(int, int), // 136 to 137: Implemented by ACSVM
 	int   {137     }:FixedDiv(int, int),

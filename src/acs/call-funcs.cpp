@@ -33,6 +33,9 @@ extern "C" {
 #include "../hu_stuff.h"
 #include "../s_sound.h"
 #include "../r_textures.h"
+#include "../m_cond.h"
+#include "../r_skins.h"
+#include "../k_battle.h"
 }
 
 #include <ACSVM/Code.hpp>
@@ -200,6 +203,101 @@ static bool ACS_ActivatorIsLocal(ACSVM::Thread *thread)
 	}
 
 	return false;
+}
+
+/*--------------------------------------------------
+	static UINT32 ACS_SectorThingCounter(sector_t *sec, bool (*filter)(mobj_t *))
+
+		Helper function for CallFunc_CountEnemies
+		and CallFunc_CountPushables. Counts a number
+		of things in the specified sector.
+
+	Input Arguments:-
+		sec: The sector to search in.
+		filter: Filter function, total count is increased when
+			this function returns true.
+
+	Return:-
+		Numbers of things matching the filter found.
+--------------------------------------------------*/
+static UINT32 ACS_SectorThingCounter(sector_t *sec, bool (*filter)(mobj_t *))
+{
+	msecnode_t *node = sec->touching_thinglist; // things touching this sector
+	UINT32 count = 0;
+
+	while (node)
+	{
+		mobj_t *mo = node->m_thing;
+
+		if (mo->z > sec->ceilingheight
+			|| mo->z + mo->height < sec->floorheight)
+		{
+			continue;
+		}
+
+		if (filter(mo) == true)
+		{
+			count++;
+		}
+
+		node = node->m_thinglist_next;
+	}
+
+	return count;
+}
+
+/*--------------------------------------------------
+	static UINT32 ACS_SectorTagThingCounter(mtag_t tag, bool (*filter)(mobj_t *))
+
+		Helper function for CallFunc_CountEnemies
+		and CallFunc_CountPushables. Counts a number
+		of things in the tagged sectors.
+
+	Input Arguments:-
+		tag: The sector tag to search in.
+		filter: Filter function, total count is increased when
+			this function returns true.
+
+	Return:-
+		Numbers of things matching the filter found.
+--------------------------------------------------*/
+static UINT32 ACS_SectorTagThingCounter(mtag_t tag, bool (*filter)(mobj_t *))
+{
+	INT32 secnum = -1;
+	UINT32 count = 0;
+	size_t i;
+
+	TAG_ITER_SECTORS(tag, secnum)
+	{
+		sector_t *sec = &sectors[secnum];
+		boolean FOFsector = false;
+
+		// Check the lines of this sector, to see if it is a FOF control sector.
+		for (i = 0; i < sec->linecount; i++)
+		{
+			INT32 targetsecnum = -1;
+
+			if (sec->lines[i]->special < 100 || sec->lines[i]->special >= 300)
+			{
+				continue;
+			}
+
+			FOFsector = true;
+
+			TAG_ITER_SECTORS(sec->lines[i]->args[0], targetsecnum)
+			{
+				sector_t *targetsec = &sectors[targetsecnum];
+				count += ACS_SectorThingCounter(targetsec, filter);
+			}
+		}
+
+		if (FOFsector == false)
+		{
+			count += ACS_SectorThingCounter(sec, filter);
+		}
+	}
+
+	return count;
 }
 
 /*--------------------------------------------------
@@ -840,6 +938,78 @@ bool CallFunc_EndPrintBold(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM
 }
 
 /*--------------------------------------------------
+	bool CallFunc_PlayerTeam(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
+
+		Returns the activating player's team ID.
+--------------------------------------------------*/
+bool CallFunc_PlayerTeam(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
+{
+	auto info = &static_cast<Thread *>(thread)->info;
+	UINT8 teamID = 0;
+
+	(void)argV;
+	(void)argC;
+
+	if ((info != NULL)
+		&& (info->mo != NULL && P_MobjWasRemoved(info->mo) == false)
+		&& (info->mo->player != NULL))
+	{
+		teamID = info->mo->player->ctfteam;
+	}
+
+	thread->dataStk.push(teamID);
+	return false;
+}
+
+/*--------------------------------------------------
+	bool CallFunc_PlayerRings(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
+
+		Returns the activating player's ring count.
+--------------------------------------------------*/
+bool CallFunc_PlayerRings(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
+{
+	auto info = &static_cast<Thread *>(thread)->info;
+	SINT8 rings = 0;
+
+	(void)argV;
+	(void)argC;
+
+	if ((info != NULL)
+		&& (info->mo != NULL && P_MobjWasRemoved(info->mo) == false)
+		&& (info->mo->player != NULL))
+	{
+		rings = info->mo->player->rings;
+	}
+
+	thread->dataStk.push(rings);
+	return false;
+}
+
+/*--------------------------------------------------
+	bool CallFunc_PlayerScore(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
+
+		Returns the activating player's ring count.
+--------------------------------------------------*/
+bool CallFunc_PlayerScore(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
+{
+	auto info = &static_cast<Thread *>(thread)->info;
+	UINT32 score = 0;
+
+	(void)argV;
+	(void)argC;
+
+	if ((info != NULL)
+		&& (info->mo != NULL && P_MobjWasRemoved(info->mo) == false)
+		&& (info->mo->player != NULL))
+	{
+		score = info->mo->player->roundscore;
+	}
+
+	thread->dataStk.push(score);
+	return false;
+}
+
+/*--------------------------------------------------
 	bool CallFunc_EndLog(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
 
 		One of the ACS wrappers for CONS_Printf.
@@ -857,5 +1027,234 @@ bool CallFunc_EndLog(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word
 	}
 
 	thread->printBuf.drop();
+	return false;
+}
+
+/*--------------------------------------------------
+	bool CallFunc_CountEnemies(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
+
+		Returns the number of enemies in the tagged sectors.
+--------------------------------------------------*/
+bool ACS_EnemyFilter(mobj_t *mo)
+{
+	return ((mo->flags & (MF_ENEMY|MF_BOSS)) && mo->health > 0);
+}
+
+bool CallFunc_CountEnemies(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
+{
+	mtag_t tag = 0;
+	UINT32 count = 0;
+
+	(void)argC;
+
+	tag = argV[0];
+	count = ACS_SectorTagThingCounter(tag, ACS_EnemyFilter);
+
+	thread->dataStk.push(count);
+	return false;
+}
+
+/*--------------------------------------------------
+	bool CallFunc_CountPushables(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
+
+		Returns the number of pushables in the tagged sectors.
+--------------------------------------------------*/
+bool ACS_PushableFilter(mobj_t *mo)
+{
+	return ((mo->flags & MF_PUSHABLE)
+		|| ((mo->info->flags & MF_PUSHABLE) && mo->fuse));
+}
+
+bool CallFunc_CountPushables(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
+{
+	mtag_t tag = 0;
+	UINT32 count = 0;
+
+	(void)argC;
+
+	tag = argV[0];
+	count = ACS_SectorTagThingCounter(tag, ACS_PushableFilter);
+
+	thread->dataStk.push(count);
+	return false;
+}
+
+/*--------------------------------------------------
+	bool CallFunc_HaveUnlockableTrigger(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
+
+		Returns if an unlockable trigger has been gotten.
+--------------------------------------------------*/
+bool CallFunc_HaveUnlockableTrigger(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
+{
+	UINT8 id = 0;
+	bool unlocked = false;
+
+	(void)argC;
+
+	id = argV[0];
+
+	if (id < 0 || id > 31) // limited by 32 bit variable
+	{
+		CONS_Printf("Bad unlockable trigger ID %d\n", id);
+	}
+	else
+	{
+		unlocked = (unlocktriggers & (1 << id));
+	}
+
+	thread->dataStk.push(unlocked);
+	return false;
+}
+
+/*--------------------------------------------------
+	bool CallFunc_HaveUnlockable(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
+
+		Returns if an unlockable has been gotten.
+--------------------------------------------------*/
+bool CallFunc_HaveUnlockable(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
+{
+	UINT8 id = 0;
+	bool unlocked = false;
+
+	(void)argC;
+
+	id = argV[0];
+
+	if (id < 0 || id >= MAXUNLOCKABLES)
+	{
+		CONS_Printf("Bad unlockable ID %d\n", id);
+	}
+	else
+	{
+		unlocked = M_CheckNetUnlockByID(id);
+	}
+
+	thread->dataStk.push(unlocked);
+	return false;
+}
+
+/*--------------------------------------------------
+	bool CallFunc_PlayerSkin(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
+
+		Returns the activating player's skin name.
+--------------------------------------------------*/
+bool CallFunc_PlayerSkin(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
+{
+	Environment *env = &ACSEnv;
+	auto info = &static_cast<Thread *>(thread)->info;
+
+	(void)argV;
+	(void)argC;
+
+	if ((info != NULL)
+		&& (info->mo != NULL && P_MobjWasRemoved(info->mo) == false)
+		&& (info->mo->player != NULL))
+	{
+		UINT8 skin = info->mo->player->skin;
+		thread->dataStk.push(~env->getString( skins[skin].name )->idx);
+		return false;
+	}
+
+	thread->dataStk.push(0);
+	return false;
+}
+
+/*--------------------------------------------------
+	bool CallFunc_GetObjectDye(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
+
+		Returns the activating object's current dye.
+--------------------------------------------------*/
+bool CallFunc_GetObjectDye(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
+{
+	Environment *env = &ACSEnv;
+	auto info = &static_cast<Thread *>(thread)->info;
+	UINT16 dye = SKINCOLOR_NONE;
+
+	(void)argV;
+	(void)argC;
+
+	if ((info != NULL)
+		&& (info->mo != NULL && P_MobjWasRemoved(info->mo) == false))
+	{
+		dye = (info->mo->player != NULL) ? info->mo->player->dye : info->mo->color;
+	}
+
+	thread->dataStk.push(~env->getString( skincolors[dye].name )->idx);
+	return false;
+}
+
+/*--------------------------------------------------
+	bool CallFunc_PlayerEmeralds(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
+
+		Returns the activating player's number of Chaos Emeralds.
+--------------------------------------------------*/
+bool CallFunc_PlayerEmeralds(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
+{
+	auto info = &static_cast<Thread *>(thread)->info;
+	UINT8 count = 0;
+
+	(void)argV;
+	(void)argC;
+
+	if ((info != NULL)
+		&& (info->mo != NULL && P_MobjWasRemoved(info->mo) == false)
+		&& (info->mo->player != NULL))
+	{
+		count = K_NumEmeralds(info->mo->player);
+	}
+
+	thread->dataStk.push(count);
+	return false;
+}
+
+/*--------------------------------------------------
+	bool CallFunc_PlayerLap(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
+
+		Returns the activating player's current lap.
+--------------------------------------------------*/
+bool CallFunc_PlayerLap(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
+{
+	auto info = &static_cast<Thread *>(thread)->info;
+	UINT8 laps = 0;
+
+	(void)argV;
+	(void)argC;
+
+	if ((info != NULL)
+		&& (info->mo != NULL && P_MobjWasRemoved(info->mo) == false)
+		&& (info->mo->player != NULL))
+	{
+		laps = info->mo->player->laps;
+	}
+
+	thread->dataStk.push(laps);
+	return false;
+}
+
+/*--------------------------------------------------
+	bool CallFunc_LowestLap(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
+
+		Returns the lowest lap of all of the players in-game.
+--------------------------------------------------*/
+bool CallFunc_LowestLap(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
+{
+	(void)argV;
+	(void)argC;
+
+	thread->dataStk.push(P_FindLowestLap());
+	return false;
+}
+
+/*--------------------------------------------------
+	bool CallFunc_EncoreMode(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
+
+		Returns if the map is in Encore Mode.
+--------------------------------------------------*/
+bool CallFunc_EncoreMode(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
+{
+	(void)argV;
+	(void)argC;
+
+	thread->dataStk.push(encoremode);
 	return false;
 }
