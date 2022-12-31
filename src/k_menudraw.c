@@ -4738,6 +4738,16 @@ static void M_DrawChallengePreview(INT32 x, INT32 y)
 			specialmap = btcmapcache;
 			break;
 		}
+		case SECRET_SPECIALATTACK:
+		{
+			static UINT16 sscmapcache = NEXTMAP_INVALID;
+			if (sscmapcache > nummapheaders)
+			{
+				sscmapcache = G_RandMap(G_TOLFlag(GT_SPECIAL), -1, 2, 0, false, NULL);
+			}
+			specialmap = sscmapcache;
+			break;
+		}
 		case SECRET_HARDSPEED:
 		{
 			static UINT16 hardmapcache = NEXTMAP_INVALID;
