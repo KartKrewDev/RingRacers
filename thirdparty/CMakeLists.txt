@@ -666,3 +666,4 @@ if(xmp-lite_ADDED)
 endif()
 
 add_subdirectory(tcbrindle_span)
+add_subdirectory(stb_vorbis)
