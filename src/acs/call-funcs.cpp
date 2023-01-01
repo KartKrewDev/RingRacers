@@ -368,18 +368,21 @@ bool CallFunc_ThingCount(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::
 
 	if (tid != 0)
 	{
-		// TODO: Even in SRB2 next's UDMF, tag lists
-		// still aren't attached to mobj_t, only
-		// mapthing_t. Fix this.
-		CONS_Alert(CONS_WARNING,
-			"ThingCount TID field not implemented -- waiting for mobj tags.\n"
-		);
+		mobj_t *mobj = nullptr;
+
+		while ((mobj = P_FindMobjFromTID(tid, mobj, nullptr)) != nullptr)
+		{
+			if (ACS_CountThing(mobj, type) == true)
+			{
+				++count;
+			}
+		}
 	}
 	else
 	{
 		// Search thinkers instead of tag lists.
-		thinker_t *th = NULL;
-		mobj_t *mobj = NULL;
+		thinker_t *th = nullptr;
+		mobj_t *mobj = nullptr;
 
 		for (th = thlist[THINK_MOBJ].next; th != &thlist[THINK_MOBJ]; th = th->next)
 		{
@@ -862,6 +865,8 @@ bool CallFunc_SetLineSpecial(ACSVM::Thread *thread, const ACSVM::Word *argV, ACS
 --------------------------------------------------*/
 bool CallFunc_ThingSound(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
 {
+	auto info = &static_cast<Thread *>(thread)->info;
+
 	ACSVM::MapScope *map = nullptr;
 	ACSVM::String *str = nullptr;
 
@@ -871,6 +876,8 @@ bool CallFunc_ThingSound(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::
 	mtag_t tag = 0;
 	sfxenum_t sfxId = sfx_None;
 	INT32 vol = 0;
+
+	mobj_t *mobj = nullptr;
 
 	(void)argC;
 
@@ -901,19 +908,10 @@ bool CallFunc_ThingSound(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::
 
 	vol = argV[2];
 
-#if 0
-	TAG_ITER_MOBJS(tag, mobj)
+	while ((mobj = P_FindMobjFromTID(tag, mobj, info->mo)) != nullptr)
 	{
 		S_StartSoundAtVolume(mobj, sfxId, vol);
 	}
-#else
-	CONS_Alert(CONS_WARNING,
-		"ThingSound not implemented -- waiting for mobj tags.\n"
-	);
-
-	(void)tag;
-	(void)vol;
-#endif
 
 	return false;
 }
