@@ -1889,6 +1889,43 @@ void F_StartTitleScreen(void)
 	F_CacheTitleScreen();
 }
 
+void F_VersionDrawer(void)
+{
+	// An adapted thing from old menus - most games have version info on the title screen now...
+	INT32 texty = vid.height - 10*vid.dupy;
+
+#define addtext(f, str) {\
+	V_DrawThinString(vid.dupx, texty, V_NOSCALESTART|f, str);\
+	texty -= 10*vid.dupy;\
+}
+	if (customversionstring[0] != '\0')
+	{
+		addtext(V_ALLOWLOWERCASE, customversionstring);
+		addtext(0, "Mod version:");
+	}
+	else
+	{
+// Development -- show revision / branch info
+#if defined(TESTERS)
+		addtext(V_ALLOWLOWERCASE|V_SKYMAP, "Tester client");
+		addtext(V_ALLOWLOWERCASE|V_TRANSLUCENT, va("%s", compdate));
+#elif defined(HOSTTESTERS)
+		addtext(V_ALLOWLOWERCASE|V_REDMAP, "Netgame host for testers");
+		addtext(V_ALLOWLOWERCASE|V_TRANSLUCENT, va("%s", compdate));
+#elif defined(DEVELOP)
+		addtext(V_ALLOWLOWERCASE|V_TRANSLUCENT, comprevision);
+		addtext(V_ALLOWLOWERCASE|V_TRANSLUCENT, compbranch);
+#else // Regular build
+		addtext(V_ALLOWLOWERCASE|V_TRANSLUCENT, va("%s", VERSIONSTRING));
+#endif
+		if (compuncommitted)
+		{
+			addtext(V_REDMAP|V_STRINGDANCE, "! UNCOMMITTED CHANGES !");
+		}
+	}
+#undef addtext
+}
+
 // (no longer) De-Demo'd Title Screen
 void F_TitleScreenDrawer(void)
 {
@@ -1959,39 +1996,7 @@ void F_TitleScreenDrawer(void)
 
 			V_DrawFixedPatch(0, 0, FRACUNIT, 0, kts_copyright, NULL);
 
-			// An adapted thing from old menus - most games have version info on the title screen now...
-			{
-				INT32 texty = vid.height - 10*vid.dupy;
-#define addtext(f, str) {\
-	V_DrawThinString(vid.dupx, texty, V_NOSCALESTART|f, str);\
-	texty -= 10*vid.dupy;\
-}
-				if (customversionstring[0] != '\0')
-				{
-					addtext(V_ALLOWLOWERCASE, customversionstring);
-					addtext(0, "Mod version:");
-				}
-				else
-				{
-// Development -- show revision / branch info
-#if defined(TESTERS)
-					addtext(V_ALLOWLOWERCASE|V_SKYMAP, "Tester client");
-					addtext(V_ALLOWLOWERCASE|V_TRANSLUCENT, va("%s", compdate));
-#elif defined(HOSTTESTERS)
-					addtext(V_ALLOWLOWERCASE|V_REDMAP, "Netgame host for testers");
-					addtext(V_ALLOWLOWERCASE|V_TRANSLUCENT, va("%s", compdate));
-#elif defined(DEVELOP)
-					addtext(V_ALLOWLOWERCASE|V_TRANSLUCENT, comprevision);
-					addtext(V_ALLOWLOWERCASE|V_TRANSLUCENT, compbranch);
-#else // Regular build
-					addtext(V_ALLOWLOWERCASE|V_TRANSLUCENT, va("%s", VERSIONSTRING));
-#endif
-					if (compuncommitted)
-						addtext(V_REDMAP|V_STRINGDANCE, "! UNCOMMITTED CHANGES !");
-				}
-#undef addtext
-			}
-
+			F_VersionDrawer();
 			break;
 		}
 
