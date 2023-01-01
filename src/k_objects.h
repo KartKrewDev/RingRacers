@@ -82,6 +82,12 @@ void Obj_MonitorOnDamage(mobj_t *monitor, mobj_t *inflictor, INT32 damage);
 void Obj_MonitorOnDeath(mobj_t *monitor);
 void Obj_MonitorShardThink(mobj_t *shard);
 UINT32 Obj_MonitorGetEmerald(const mobj_t *monitor);
+void Obj_MonitorSetItemSpot(mobj_t *monitor, mobj_t *spot);
+
+/* Item Spot */
+boolean Obj_ItemSpotIsAvailable(const mobj_t *spot);
+void Obj_ItemSpotAssignMonitor(mobj_t *spot, mobj_t *monitor);
+void Obj_ItemSpotUpdate(mobj_t *spot);
 
 #ifdef __cplusplus
 } // extern "C"

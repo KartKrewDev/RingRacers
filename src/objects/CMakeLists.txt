@@ -11,4 +11,5 @@ target_sources(SRB2SDL2 PRIVATE
 	broly.c
 	ufo.c
 	monitor.c
+	item-spot.c
 )

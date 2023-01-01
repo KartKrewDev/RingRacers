@@ -18,6 +18,7 @@
 #include "r_sky.h" // skyflatnum
 #include "k_grandprix.h" // K_CanChangeRules
 #include "p_spec.h"
+#include "k_objects.h"
 
 // Battle overtime info
 struct battleovertime battleovertime;
@@ -472,9 +473,7 @@ void K_RunPaperItemSpawners(void)
 #define MAXITEM 64
 			mobj_t *spotList[MAXITEM];
 			UINT8 spotMap[MAXITEM];
-			UINT8 spotCount = 0, spotBackup = 0;
-
-			INT16 starti = 0;
+			UINT8 spotCount = 0, spotBackup = 0, spotAvailable = 0;
 
 			for (th = thlist[THINK_MOBJ].next; th != &thlist[THINK_MOBJ]; th = th->next)
 			{
@@ -488,14 +487,26 @@ void K_RunPaperItemSpawners(void)
 					emeraldsSpawned |= mo->extravalue1;
 				}
 
+				if (mo->type == MT_MONITOR)
+				{
+					emeraldsSpawned |= Obj_MonitorGetEmerald(mo);
+				}
+
 				if (mo->type != MT_PAPERITEMSPOT)
 					continue;
 
 				if (spotCount >= MAXITEM)
 					continue;
 
+				if (Obj_ItemSpotIsAvailable(mo))
+				{
+					// spotMap first only includes spots
+					// where a monitor doesn't exist
+					spotMap[spotAvailable] = spotCount;
+					spotAvailable++;
+				}
+
 				spotList[spotCount] = mo;
-				spotMap[spotCount] = spotCount;
 				spotCount++;
 			}
 
@@ -513,7 +524,6 @@ void K_RunPaperItemSpawners(void)
 					if (!(emeraldsSpawned & emeraldFlag))
 					{
 						firstUnspawnedEmerald = emeraldFlag;
-						starti = -1;
 						break;
 					}
 				}
@@ -521,77 +531,72 @@ void K_RunPaperItemSpawners(void)
 
 			//CONS_Printf("leveltime = %d ", leveltime);
 
-			spotBackup = spotCount;
-			for (i = starti; i < pcount; i++)
+			if (spotAvailable > 0)
 			{
-				UINT8 r = 0, key = 0;
-				mobj_t *drop = NULL;
-				SINT8 flip = 1;
+				const UINT8 r = spotMap[P_RandomKey(PR_ITEM_ROULETTE, spotAvailable)];
 
-				if (spotCount == 0)
+				Obj_ItemSpotAssignMonitor(spotList[r], Obj_SpawnMonitor(
+							spotList[r], 1 + pcount, firstUnspawnedEmerald));
+			}
+
+			for (i = 0; i < spotCount; ++i)
+			{
+				// now spotMap includes every spot
+				spotMap[i] = i;
+			}
+
+			if ((gametyperules & GTR_SPHERES) && IsOnInterval(2 * interval))
+			{
+				spotBackup = spotCount;
+				for (i = 0; i < pcount; i++)
 				{
-					// all are accessible again
-					spotCount = spotBackup;
-				}
+					UINT8 r = 0, key = 0;
+					mobj_t *drop = NULL;
+					SINT8 flip = 1;
 
-				if (spotCount == 1)
-				{
-					key = 0;
-				}
-				else
-				{
-					key = P_RandomKey(PR_ITEM_ROULETTE, spotCount);
-				}
-
-				r = spotMap[key];
-
-				//CONS_Printf("[%d %d %d] ", i, key, r);
-
-				flip = P_MobjFlip(spotList[r]);
-
-				// When -1, we're spawning a Chaos Emerald.
-				if (i == -1)
-				{
-					drop = K_SpawnChaosEmerald(
-						spotList[r]->x, spotList[r]->y, spotList[r]->z + (128 * mapobjectscale * flip),
-						FixedAngle(P_RandomRange(PR_ITEM_ROULETTE, 0, 359) * FRACUNIT), flip,
-						firstUnspawnedEmerald
-					);
-				}
-				else
-				{
-					if ((gametyperules & GTR_SPHERES) && IsOnInterval(2 * interval))
+					if (spotCount == 0)
 					{
-						drop = K_SpawnSphereBox(
-							spotList[r]->x, spotList[r]->y, spotList[r]->z + (128 * mapobjectscale * flip),
-								FixedAngle(P_RandomRange(PR_ITEM_ROULETTE, 0, 359) * FRACUNIT), flip,
-								10
-						);
-						K_FlipFromObject(drop, spotList[r]);
+						// all are accessible again
+						spotCount = spotBackup;
 					}
 
-					drop = K_CreatePaperItem(
+					if (spotCount == 1)
+					{
+						key = 0;
+					}
+					else
+					{
+						key = P_RandomKey(PR_ITEM_ROULETTE, spotCount);
+					}
+
+					r = spotMap[key];
+
+					//CONS_Printf("[%d %d %d] ", i, key, r);
+
+					flip = P_MobjFlip(spotList[r]);
+
+					drop = K_SpawnSphereBox(
 						spotList[r]->x, spotList[r]->y, spotList[r]->z + (128 * mapobjectscale * flip),
-						FixedAngle(P_RandomRange(PR_ITEM_ROULETTE, 0, 359) * FRACUNIT), flip,
-						0, 0
+							FixedAngle(P_RandomRange(PR_ITEM_ROULETTE, 0, 359) * FRACUNIT), flip,
+							10
 					);
-				}
 
-				K_FlipFromObject(drop, spotList[r]);
+					K_FlipFromObject(drop, spotList[r]);
 
-				spotCount--;
-				if (key != spotCount)
-				{
-					// So the core theory of what's going on is that we keep every
-					// available option at the front of the array, so we don't have
-					// to skip over any gaps or do recursion to avoid doubles.
-					// But because spotCount can be reset in the case of a low
-					// quanitity of item spawnpoints in a map, we still need every
-					// entry in the array, even outside of the "visible" range.
-					// A series of swaps allows us to adhere to both constraints.
-					// -toast 22/03/22 (semipalindromic!)
-					spotMap[key] = spotMap[spotCount];
-					spotMap[spotCount] = r; // was set to spotMap[key] previously
+					spotCount--;
+					if (key != spotCount)
+					{
+						// So the core theory of what's going on is that we keep every
+						// available option at the front of the array, so we don't have
+						// to skip over any gaps or do recursion to avoid doubles.
+						// But because spotCount can be reset in the case of a low
+						// quanitity of item spawnpoints in a map, we still need every
+						// entry in the array, even outside of the "visible" range.
+						// A series of swaps allows us to adhere to both constraints.
+						// -toast 22/03/22 (semipalindromic!)
+						spotMap[key] = spotMap[spotCount];
+						spotMap[spotCount] = r; // was set to spotMap[key] previously
+					}
 				}
 			}
 			//CONS_Printf("\n");

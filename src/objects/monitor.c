@@ -32,6 +32,7 @@ static const struct monitor_part_config {
 	MONITOR_PART_DEFINE (-5, 5, S_MONITOR_STAND),
 };
 
+#define monitor_spot(o) ((o)->target)
 #define monitor_rngseed(o) ((o)->movedir)
 #define monitor_itemcount(o) ((o)->movecount)
 #define monitor_spawntic(o) ((o)->reactiontime)
@@ -671,6 +672,11 @@ Obj_MonitorOnDeath (mobj_t *monitor)
 	// There is hitlag from being damaged, so remove
 	// tangibility RIGHT NOW.
 	monitor->flags &= ~(MF_SOLID);
+
+	if (!P_MobjWasRemoved(monitor_spot(monitor)))
+	{
+		Obj_ItemSpotUpdate(monitor_spot(monitor));
+	}
 }
 
 void
@@ -688,4 +694,12 @@ UINT32
 Obj_MonitorGetEmerald (const mobj_t *monitor)
 {
 	return monitor_emerald(monitor);
+}
+
+void
+Obj_MonitorSetItemSpot
+(		mobj_t * monitor,
+		mobj_t * spot)
+{
+	P_SetTarget(&monitor_spot(monitor), spot);
 }
