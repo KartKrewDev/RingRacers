@@ -11,6 +11,8 @@
 #include "config.h"
 const char *compbranch = SRB2_COMP_BRANCH;
 const char *comprevision = SRB2_COMP_REVISION;
+const char *comptype = CMAKE_BUILD_TYPE;
+const int compoptimized = SRB2_COMP_OPTIMIZED;
 
 #elif (defined(COMPVERSION))
 #include "comptime.h"

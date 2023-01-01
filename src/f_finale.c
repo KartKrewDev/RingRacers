@@ -1918,6 +1918,15 @@ void F_VersionDrawer(void)
 #else // Regular build
 		addtext(V_ALLOWLOWERCASE|V_TRANSLUCENT, va("%s", VERSIONSTRING));
 #endif
+		if (compoptimized)
+		{
+			addtext(V_ALLOWLOWERCASE|V_TRANSLUCENT, va("%s build", comptype));
+		}
+		else
+		{
+			addtext(V_ALLOWLOWERCASE|V_ORANGEMAP, va("%s build (no optimizations)", comptype));
+		}
+
 		if (compuncommitted)
 		{
 			addtext(V_REDMAP|V_STRINGDANCE, "! UNCOMMITTED CHANGES !");
