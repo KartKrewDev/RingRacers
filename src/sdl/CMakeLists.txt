@@ -1,7 +1,7 @@
 # Declare SDL2 interface sources
 
 target_sources(SRB2SDL2 PRIVATE
-	mixer_sound.c
+	new_sound.cpp
 	ogl_sdl.c
 	i_threads.c
 	i_net.c

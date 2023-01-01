@@ -226,6 +226,8 @@ target_compile_definitions(SRB2SDL2 PRIVATE -DHAVE_DISCORDRPC -DUSE_STUN)
 target_sources(SRB2SDL2 PRIVATE discord.c stun.c)
 
 target_link_libraries(SRB2SDL2 PRIVATE tcbrindle::span)
+target_link_libraries(SRB2SDL2 PRIVATE stb_vorbis)
+target_link_libraries(SRB2SDL2 PRIVATE xmp-lite::xmp-lite)
 
 set(SRB2_HAVE_THREADS ON)
 target_compile_definitions(SRB2SDL2 PRIVATE -DHAVE_THREADS)
@@ -538,6 +540,7 @@ if(SRB2_CONFIG_PROFILEMODE AND "${CMAKE_C_COMPILER_ID}" STREQUAL "GNU")
 	target_link_options(SRB2SDL2 PRIVATE -pg)
 endif()
 
+add_subdirectory(audio)
 add_subdirectory(io)
 add_subdirectory(sdl)
 add_subdirectory(objects)
