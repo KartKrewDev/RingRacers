@@ -214,9 +214,6 @@ if(NOT "${SRB2_CONFIG_SYSTEM_LIBRARIES}")
 	target_include_directories(SRB2SDL2 PRIVATE "${libgme_SOURCE_DIR}")
 endif()
 
-target_link_libraries(SRB2SDL2 PRIVATE openmpt)
-target_compile_definitions(SRB2SDL2 PRIVATE -DHAVE_OPENMPT)
-
 target_link_libraries(SRB2SDL2 PRIVATE ZLIB::ZLIB PNG::PNG CURL::libcurl)
 target_compile_definitions(SRB2SDL2 PRIVATE -DHAVE_ZLIB -DHAVE_PNG -DHAVE_CURL -D_LARGEFILE64_SOURCE)
 target_sources(SRB2SDL2 PRIVATE apng.c)
