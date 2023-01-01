@@ -645,6 +645,7 @@ UINT32 quickncasehash (const char *p, size_t n)
 #endif
 
 // An assert-type mechanism.
+// NOTE: USE SRB2_ASSERT FOR C++ CODE INSTEAD
 #ifdef PARANOIA
 #define I_Assert(e) ((e) ? (void)0 : I_Error("assert failed: %s, file %s, line %d", #e, __FILE__, __LINE__))
 #else
