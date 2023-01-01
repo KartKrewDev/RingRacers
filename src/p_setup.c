@@ -7771,7 +7771,7 @@ UINT8 P_InitMapData(boolean existingmapheaders)
 	for (i = 0; i < nummapheaders; ++i)
 	{
 		name = mapheaderinfo[i]->lumpname;
-		maplump = W_CheckNumForMap(name);
+		maplump = W_CheckNumForMap(name, (mapheaderinfo[i]->lumpnum == LUMPERROR));
 
 		// Always check for cup cache reassociations.
 		// (The core assumption is that cups < headers.)

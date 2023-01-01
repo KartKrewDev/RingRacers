@@ -171,7 +171,7 @@ UINT16 W_CheckNumForFullNamePK3(const char *name, UINT16 wad, UINT16 startlump);
 UINT16 W_CheckNumForFolderStartPK3(const char *name, UINT16 wad, UINT16 startlump);
 UINT16 W_CheckNumForFolderEndPK3(const char *name, UINT16 wad, UINT16 startlump);
 
-lumpnum_t W_CheckNumForMap(const char *name);
+lumpnum_t W_CheckNumForMap(const char *name, boolean checktofirst);
 lumpnum_t W_CheckNumForName(const char *name);
 lumpnum_t W_CheckNumForLongName(const char *name);
 lumpnum_t W_GetNumForName(const char *name); // like W_CheckNumForName but I_Error on LUMPERROR
