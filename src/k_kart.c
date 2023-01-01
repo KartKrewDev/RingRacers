@@ -624,13 +624,22 @@ static fixed_t K_PlayerWeight(mobj_t *mobj, mobj_t *against)
 		// from causing super crazy bumps.
 		fixed_t spd = K_GetKartSpeed(mobj->player, false, true);
 
+		fixed_t speedfactor = 8 * mapobjectscale;
+
 		weight = (mobj->player->kartweight) * FRACUNIT;
 
-		if (mobj->player->speed > spd)
-			weight += FixedDiv((mobj->player->speed - spd), 8 * mapobjectscale);
+		if (against && against->type == MT_MONITOR)
+		{
+			speedfactor /= 5; // speed matters more
+		}
+		else
+		{
+			if (mobj->player->itemtype == KITEM_BUBBLESHIELD)
+				weight += 9*FRACUNIT;
+		}
 
-		if (mobj->player->itemtype == KITEM_BUBBLESHIELD)
-			weight += 9*FRACUNIT;
+		if (mobj->player->speed > spd)
+			weight += FixedDiv((mobj->player->speed - spd), speedfactor);
 	}
 
 	return weight;
