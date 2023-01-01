@@ -24,6 +24,10 @@
 #include "i_threads.h"
 #include "mserv.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define SERVERLISTDEBUG
 
 // flags for items in the menu
@@ -1196,5 +1200,8 @@ boolean M_StatisticsInputs(INT32 ch);
 	NULL\
 }
 
+#ifdef __cplusplus
+} // extern "C"
+#endif
 
 #endif //__K_MENU__

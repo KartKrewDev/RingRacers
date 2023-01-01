@@ -17,6 +17,10 @@
 #include "d_ticcmd.h"
 #include "d_event.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #ifdef __GNUG__
 #pragma interface
 #endif
@@ -360,5 +364,9 @@ const char *I_ClipboardPaste(void);
 void I_RegisterSysCommands(void);
 
 void I_CursedWindowMovement(int xd, int yd);
+
+#ifdef __cplusplus
+} // extern "C"
+#endif
 
 #endif

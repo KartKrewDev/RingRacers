@@ -16,6 +16,10 @@
 
 #include "i_threads.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #if defined(_MSC_VER)
 #pragma pack(1)
 #endif
@@ -90,5 +94,9 @@ int  HMS_update (void);
 void HMS_list_servers (void);
 msg_server_t * HMS_fetch_servers (msg_server_t *list, int id);
 int  HMS_compare_mod_version (char *buffer, size_t size_of_buffer);
+
+#ifdef __cplusplus
+} // extern "C"
+#endif
 
 #endif

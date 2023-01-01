@@ -35,8 +35,16 @@
 #include "r_things.h"
 #include "r_draw.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 extern drawseg_t *firstseg;
 
 void SplitScreen_OnChange(void);
+
+#ifdef __cplusplus
+} // extern "C"
+#endif
 
 #endif // __R_LOCAL__

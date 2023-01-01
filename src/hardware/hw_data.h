@@ -22,6 +22,10 @@
 #include "../doomdef.h"
 #include "../screen.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 // ==========================================================================
 //                                                               TEXTURE INFO
 // ==========================================================================
@@ -85,5 +89,9 @@ struct GLPatch_s
 	float       max_s, max_t;
 };
 typedef struct GLPatch_s GLPatch_t;
+
+#ifdef __cplusplus
+} // extern "C"
+#endif
 
 #endif //_HWR_DATA_

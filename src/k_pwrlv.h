@@ -15,6 +15,10 @@
 #include "doomdef.h"
 #include "d_player.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef enum
 {
 	PWRLV_DISABLED = -1,
@@ -46,5 +50,9 @@ INT16 K_FinalPowerIncrement(player_t *player, INT16 yourPower, INT16 increment);
 void K_CashInPowerLevels(void);
 void K_SetPowerLevelScrambles(SINT8 powertype);
 void K_PlayerForfeit(UINT8 playernum, boolean nopointloss);
+
+#ifdef __cplusplus
+} // extern "C"
+#endif
 
 #endif

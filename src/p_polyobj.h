@@ -18,6 +18,10 @@
 #include "p_mobj.h"
 #include "r_defs.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 //
 // Defines
 //
@@ -410,6 +414,10 @@ boolean EV_DoPolyObjFade(polyfadedata_t *);
 extern polyobj_t *PolyObjects;
 extern INT32 numPolyObjects;
 extern polymaplink_t **polyblocklinks; // polyobject blockmap
+
+#ifdef __cplusplus
+} // extern "C"
+#endif
 
 #endif
 

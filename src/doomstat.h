@@ -28,6 +28,10 @@
 // For lumpnum_t.
 #include "w_wad.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 // =============================
 // Selected map etc.
 // =============================
@@ -770,5 +774,9 @@ extern INT32 serverplayer;
 extern INT32 adminplayers[MAXPLAYERS];
 
 /// \note put these in d_clisrv outright?
+
+#ifdef __cplusplus
+} // extern "C"
+#endif
 
 #endif //__DOOMSTAT__

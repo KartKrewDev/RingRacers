@@ -16,6 +16,10 @@
 #include "doomdef.h"
 #include "doomstat.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 extern struct specialstageinfo
 {
 	boolean valid;						///< If true, then data in this struct is valid
@@ -61,5 +65,9 @@ void K_TickSpecialStage(void);
 --------------------------------------------------*/
 
 mobj_t *K_GetPossibleSpecialTarget(void);
+
+#ifdef __cplusplus
+} // extern "C"
+#endif
 
 #endif

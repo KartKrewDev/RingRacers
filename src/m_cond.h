@@ -10,7 +10,14 @@
 /// \file  m_cond.h
 /// \brief Unlockable condition system for SRB2 version 2.1
 
+#ifndef __M_COND_H__
+#define __M_COND_H__
+
 #include "doomdef.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 // --------
 // Typedefs
@@ -235,3 +242,9 @@ INT32 M_EmblemSkinNum(emblem_t *emblem);
 UINT16 M_EmblemMapNum(emblem_t *emblem);
 
 #define M_Achieved(a) ((a) >= MAXCONDITIONSETS || gamedata->achieved[a])
+
+#ifdef __cplusplus
+} // extern "C"
+#endif
+
+#endif // __M_COND_H__

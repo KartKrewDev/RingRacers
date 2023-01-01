@@ -33,6 +33,10 @@
 
 #define NO_BAN_TIME (time_t)(-1)
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 extern INT16 hardware_MAXPACKETLENGTH;
 extern INT32 net_bandwidth; // in byte/s
 
@@ -181,5 +185,9 @@ extern bannednode_t *bannednode;
 
 /// \brief Called by D_SRB2Main to be defined by extern network driver
 boolean I_InitNetwork(void);
+
+#ifdef __cplusplus
+} // extern "C"
+#endif
 
 #endif

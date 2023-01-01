@@ -13,6 +13,10 @@
 #ifndef M_QUEUE_H
 #define M_QUEUE_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 struct mqueueitem_t
 {
 	mqueueitem_t *next;
@@ -30,6 +34,10 @@ void M_QueueInsert(mqueueitem_t *item, mqueue_t *queue);
 mqueueitem_t *M_QueueIterator(mqueue_t *queue);
 void M_QueueResetIterator(mqueue_t *queue);
 void M_QueueFree(mqueue_t *queue);
+
+#ifdef __cplusplus
+} // extern "C"
+#endif
 
 #endif
 

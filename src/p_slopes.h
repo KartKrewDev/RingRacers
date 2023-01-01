@@ -15,6 +15,10 @@
 
 #include "m_fixed.h" // Vectors
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 extern pslope_t *slopelist;
 extern UINT16 slopecount;
 
@@ -139,4 +143,9 @@ struct dynvertexplanethink_t
 
 void T_DynamicSlopeLine (dynlineplanethink_t* th);
 void T_DynamicSlopeVert (dynvertexplanethink_t* th);
+
+#ifdef __cplusplus
+} // extern "C"
+#endif
+
 #endif // #ifndef P_SLOPES_H__

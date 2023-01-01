@@ -11,6 +11,13 @@
 ///        file exists so these types can be used anywhere
 ///        without needing to include specific headers.
 
+#ifndef __TYPEDEF_H__
+#define __TYPEDEF_H__
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define TYPEDEF2(struct_id, new_type) \
 	typedef struct struct_id new_type
 
@@ -398,3 +405,9 @@ TYPEDEF (wadfile_t);
 
 #undef TYPEDEF
 #undef TYPEDEF2
+
+#ifdef __cplusplus
+} // extern "C"
+#endif
+
+#endif // __TYPEDEF_H__

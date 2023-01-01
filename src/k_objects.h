@@ -2,6 +2,10 @@
 #ifndef k_objects_H
 #define k_objects_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* Hyudoro */
 void Obj_InitHyudoroCenter(mobj_t *center, mobj_t *master);
 void Obj_HyudoroDeploy(mobj_t *master);
@@ -68,5 +72,9 @@ void Obj_UFOPieceDead(mobj_t *piece);
 void Obj_UFOPieceRemoved(mobj_t *piece);
 mobj_t *Obj_CreateSpecialUFO(void);
 UINT32 K_GetSpecialUFODistance(void);
+
+#ifdef __cplusplus
+} // extern "C"
+#endif
 
 #endif/*k_objects_H*/

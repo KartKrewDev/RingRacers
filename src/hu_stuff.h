@@ -19,6 +19,10 @@
 #include "r_defs.h"
 #include "font.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 //------------------------------------
 //           heads up font
 //------------------------------------
@@ -152,4 +156,9 @@ void HU_DoCEcho(const char *msg);
 // Demo playback info
 extern UINT32 hu_demotime;
 extern UINT32 hu_demolap;
+
+#ifdef __cplusplus
+} // extern "C"
+#endif
+
 #endif

@@ -12,6 +12,10 @@
 
 #include "../doomtype.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef struct
 {
 	float x, y, z;
@@ -131,5 +135,9 @@ void GeneratePolygonNormals(model_t *model, int ztag);
 void CreateVBOTiny(mesh_t *mesh, tinyframe_t *frame);
 void CreateVBO(mesh_t *mesh, mdlframe_t *frame);
 void DeleteVBOs(model_t *model);
+
+#ifdef __cplusplus
+} // extern "C"
+#endif
 
 #endif

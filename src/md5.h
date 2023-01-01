@@ -74,6 +74,10 @@ typedef u_int32_t md5_uint32;
 #define	__P(x) ()
 #endif
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /*
  * The following three functions are build up the low level used in
  * the functions `md5_stream' and `md5_buffer'.
@@ -127,5 +131,9 @@ int md5_stream __P ((FILE *stream, void *resblock));
    output yields to the wanted ASCII representation of the message
    digest.  */
 extern void *md5_buffer __P ((const char *buffer, size_t len, void *resblock));
+
+#ifdef __cplusplus
+} // extern "C"
+#endif
 
 #endif

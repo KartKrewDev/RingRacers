@@ -10,6 +10,10 @@
 #ifndef _U_LIST_H_
 #define _U_LIST_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef struct listitem_s
 {
 	struct listitem_s *next;
@@ -25,5 +29,9 @@ void ListRemoveAll(listitem_t **itemHead);
 void ListRemoveNoFree(void *pItem, listitem_t **itemHead);
 unsigned int ListGetCount(void *itemHead);
 listitem_t *ListGetByIndex(void *itemHead, unsigned int index);
+
+#ifdef __cplusplus
+} // extern "C"
+#endif
 
 #endif

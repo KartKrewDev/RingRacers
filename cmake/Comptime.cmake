@@ -10,4 +10,4 @@ git_current_branch(SRB2_COMP_BRANCH)
 git_summary(SRB2_COMP_REVISION)
 git_working_tree_dirty(SRB2_COMP_UNCOMMITTED)
 
-configure_file(src/config.h.in src/config.h)
+configure_file("${CMAKE_CURRENT_SOURCE_DIR}/src/config.h.in" "${CMAKE_CURRENT_BINARY_DIR}/src/config.h")

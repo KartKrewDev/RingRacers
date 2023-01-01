@@ -21,6 +21,10 @@
 
 #include "hw_dll.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 // ==========================================================================
 //                                                       STANDARD DLL EXPORTS
 // ==========================================================================
@@ -128,5 +132,9 @@ extern struct hwdriver_s hwdriver;
 #define HWD hwdriver
 
 #endif //not defined _CREATE_DLL_
+
+#ifdef __cplusplus
+} // extern "C"
+#endif
 
 #endif //__HWR_DRV_H__

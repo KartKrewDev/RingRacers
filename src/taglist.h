@@ -16,6 +16,10 @@
 
 #include "doomtype.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef INT16 mtag_t;
 #define MAXTAGS UINT16_MAX
 #define MTAG_GLOBAL -1
@@ -126,5 +130,9 @@ EXAMPLE:
 Notes:
 If no elements are found for a given tag, the loop inside won't be executed.
 */
+
+#ifdef __cplusplus
+} // extern "C"
+#endif
 
 #endif //__R_TAGLIST__

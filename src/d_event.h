@@ -17,6 +17,10 @@
 #include "doomtype.h"
 #include "g_state.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 // Input event types.
 typedef enum
 {
@@ -44,5 +48,9 @@ struct event_t
 
 extern event_t events[MAXEVENTS];
 extern INT32 eventhead, eventtail;
+
+#ifdef __cplusplus
+} // extern "C"
+#endif
 
 #endif

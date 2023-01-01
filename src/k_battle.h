@@ -4,6 +4,10 @@
 #include "doomtype.h"
 #include "d_player.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 extern struct battleovertime
 {
 	UINT16 enabled; ///< Has this been initalized yet?
@@ -30,5 +34,9 @@ void K_RunBattleOvertime(void);
 void K_SetupMovingCapsule(mapthing_t *mt, mobj_t *mobj);
 void K_SpawnPlayerBattleBumpers(player_t *p);
 void K_BattleInit(boolean singleplayercontext);
+
+#ifdef __cplusplus
+} // extern "C"
+#endif
 
 #endif

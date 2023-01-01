@@ -15,6 +15,10 @@
 #include "../doomtype.h"
 #include "../r_defs.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define ZCLIP_PLANE 4.0f // Used for the actual game drawing
 #define NZCLIP_PLANE 0.9f // Seems to be only used for the HUD and screen textures
 
@@ -329,5 +333,9 @@ enum hwdfiltermode
 	HWD_SET_TEXTUREFILTER_MIXED2,
 	HWD_SET_TEXTUREFILTER_MIXED3,
 };
+
+#ifdef __cplusplus
+} // extern "C"
+#endif
 
 #endif //_HWR_DEFS_

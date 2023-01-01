@@ -21,6 +21,10 @@
 #include "r_defs.h"
 #include "r_skins.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 // --------------
 // SPRITE LOADING
 // --------------
@@ -311,5 +315,9 @@ FUNCMATH FUNCINLINE static ATTRINLINE UINT8 R_Char2Rotation(char cn)
 	if (cn == 'R') return ROT_R;
 	return 255;
 }
+
+#ifdef __cplusplus
+} // extern "C"
+#endif
 
 #endif //__R_THINGS__

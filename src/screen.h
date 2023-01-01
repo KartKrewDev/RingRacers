@@ -23,6 +23,10 @@
 #define DNWH void * // unused in DOS version
 #endif
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 // quickhack for V_Init()... to be cleaned up
 #ifdef NOPOSTPROCESSING
 #define NUMSCREENS 2
@@ -243,4 +247,9 @@ void SCR_ClosedCaptions(void);
 void SCR_DisplayLocalPing(void);
 void SCR_DisplayMarathonInfo(void);
 #undef DNWH
+
+#ifdef __cplusplus
+} // extern "C"
+#endif
+
 #endif //__SCREEN_H__

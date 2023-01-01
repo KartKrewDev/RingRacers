@@ -18,6 +18,10 @@
 #include "doomstat.h"
 #include "d_event.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 extern UINT8 *demo_p;
 
 // ======================================
@@ -202,5 +206,9 @@ void G_SaveDemo(void);
 boolean G_DemoTitleResponder(event_t *ev);
 
 boolean G_CheckDemoTitleEntry(void);
+
+#ifdef __cplusplus
+} // extern "C"
+#endif
 
 #endif // __G_DEMO__

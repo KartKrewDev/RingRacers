@@ -18,6 +18,10 @@
 #include "p_mobj.h"
 #include "k_pathfind.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define DEFAULT_WAYPOINT_RADIUS (384)
 
 struct waypoint_t
@@ -418,5 +422,9 @@ void K_ClearWaypoints(void);
 --------------------------------------------------*/
 
 void K_AdjustWaypointsParameters (void);
+
+#ifdef __cplusplus
+} // extern "C"
+#endif
 
 #endif

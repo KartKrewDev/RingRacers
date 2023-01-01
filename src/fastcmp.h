@@ -1,6 +1,10 @@
 #ifndef __FASTCMP_H__
 #define __FASTCMP_H__
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 // returns false if s != c
 // returns true if s == c
 FUNCINLINE static ATTRINLINE boolean fasticmp(const char *s, const char *c)
@@ -23,5 +27,9 @@ FUNCINLINE static ATTRINLINE boolean fastncmp(const char *s, const char *c, UINT
 	for (; *s && *s == *c && --l; s++, c++) ;
 	return !l; // make sure you reached the end
 }
+
+#ifdef __cplusplus
+} // extern "C"
+#endif
 
 #endif

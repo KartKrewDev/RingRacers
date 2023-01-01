@@ -14,6 +14,10 @@
 #ifndef __P_SAVEG__
 #define __P_SAVEG__
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #ifdef __GNUG__
 #pragma interface
 #endif
@@ -39,5 +43,9 @@ struct savedata_t
 
 extern savedata_t savedata;
 extern UINT8 *save_p;
+
+#ifdef __cplusplus
+} // extern "C"
+#endif
 
 #endif

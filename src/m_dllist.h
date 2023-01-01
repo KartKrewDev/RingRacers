@@ -25,6 +25,10 @@
 #ifndef M_DLLIST_H__
 #define M_DLLIST_H__
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #ifdef _MSC_VER
 #pragma warning(disable : 4706)
 #endif
@@ -53,6 +57,10 @@ FUNCINLINE static ATTRINLINE void M_DLListRemove(mdllistitem_t *item)
 	if ((*prev = next))
 		next->prev = prev;
 }
+
+#ifdef __cplusplus
+} // extern "C"
+#endif
 
 #endif
 
