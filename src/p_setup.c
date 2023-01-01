@@ -2219,6 +2219,20 @@ static void P_WriteTextmap(void)
 			fprintf(f, "notbouncy = true;\n");
 		if (wlines[i].flags & ML_TFERLINE)
 			fprintf(f, "transfer = true;\n");
+		if (wlines[i].flags & ML_REPEATSPECIAL)
+			fprintf(f, "repeatspecial = true;\n");
+		if (wlines[i].activation & SPAC_CROSS)
+			fprintf(f, "playercross = true;\n");
+		if (wlines[i].activation & SPAC_CROSSMONSTER)
+			fprintf(f, "monstercross = true;\n");
+		if (wlines[i].activation & SPAC_CROSSMISSILE)
+			fprintf(f, "missilecross = true;\n");
+		if (wlines[i].activation & SPAC_PUSH)
+			fprintf(f, "playerpush = true;\n");
+		if (wlines[i].activation & SPAC_PUSHMONSTER)
+			fprintf(f, "monsterpush = true;\n");
+		if (wlines[i].activation & SPAC_IMPACT)
+			fprintf(f, "impact = true;\n");
 		fprintf(f, "}\n");
 		fprintf(f, "\n");
 	}
@@ -2291,7 +2305,7 @@ static void P_WriteTextmap(void)
 			fprintf(f, "rotationfloor = %f;\n", FIXED_TO_FLOAT(AngleFixed(wsectors[i].floorpic_angle)));
 		if (wsectors[i].ceilingpic_angle != 0)
 			fprintf(f, "rotationceiling = %f;\n", FIXED_TO_FLOAT(AngleFixed(wsectors[i].ceilingpic_angle)));
-        if (wsectors[i].extra_colormap)
+		if (wsectors[i].extra_colormap)
 		{
 			INT32 lightcolor = P_RGBAToColor(wsectors[i].extra_colormap->rgba);
 			UINT8 lightalpha = R_GetRgbaA(wsectors[i].extra_colormap->rgba);
