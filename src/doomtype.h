@@ -110,7 +110,10 @@ typedef long ssize_t;
 	#define strnicmp(x,y,n) strncasecmp(x,y,n)
 #endif
 
-char *strcasestr(const char *in, const char *what);
+char *nongnu_strcasestr(const char *in, const char *what);
+#ifndef _GNU_SOURCE
+#define strcasestr nongnu_strcasestr
+#endif
 #define stristr strcasestr
 
 #if defined (PC_DOS) || defined (_WIN32) || defined (__HAIKU__)
