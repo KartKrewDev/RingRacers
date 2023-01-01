@@ -2330,40 +2330,13 @@ void K_DrawTabRankings(INT32 x, INT32 y, playersort_t *tab, INT32 scorelines, IN
 	}
 }
 
-#define RINGANIM_FLIPFRAME (RINGANIM_NUMFRAMES/2)
-
-static void K_drawKartLapsAndRings(void)
+static void K_drawKartLaps(void)
 {
-	const boolean uselives = G_GametypeUsesLives();
-	SINT8 ringanim_realframe = stplyr->karthud[khud_ringframe];
 	INT32 splitflags = V_SNAPTOBOTTOM|V_SNAPTOLEFT|V_SPLITSCREEN;
-	UINT8 rn[2];
-	INT32 ringflip = 0;
-	UINT8 *ringmap = NULL;
-	boolean colorring = false;
-	INT32 ringx = 0;
-
-	rn[0] = ((abs(stplyr->rings) / 10) % 10);
-	rn[1] = (abs(stplyr->rings) % 10);
-
-	if (stplyr->rings <= 0 && (leveltime/5 & 1)) // In debt
-	{
-		ringmap = R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_CRIMSON, GTC_CACHE);
-		colorring = true;
-	}
-	else if (stplyr->rings >= 20) // Maxed out
-		ringmap = R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_YELLOW, GTC_CACHE);
-
-	if (stplyr->karthud[khud_ringframe] > RINGANIM_FLIPFRAME)
-	{
-		ringflip = V_FLIP;
-		ringanim_realframe = RINGANIM_NUMFRAMES-stplyr->karthud[khud_ringframe];
-		ringx += SHORT((r_splitscreen > 1) ? kp_smallring[ringanim_realframe]->width : kp_ring[ringanim_realframe]->width);
-	}
 
 	if (r_splitscreen > 1)
 	{
-		INT32 fx = 0, fy = 0, fr = 0;
+		INT32 fx = 0, fy = 0;
 		INT32 flipflag = 0;
 
 		// pain and suffering defined below
@@ -2388,8 +2361,6 @@ static void K_drawKartLapsAndRings(void)
 				flipflag = V_FLIP; // make the string right aligned and other shit
 			}
 		}
-
-		fr = fx;
 
 		// Laps
 		V_DrawScaledPatch(fx-2 + (flipflag ? (SHORT(kp_ringstickersplit[1]->width) - 3) : 0), fy, V_HUDTRANS|V_SLIDEIN|splitflags|flipflag, kp_ringstickersplit[0]);
@@ -2417,6 +2388,75 @@ static void K_drawKartLapsAndRings(void)
 			V_DrawScaledPatch(fx+13, fy, V_HUDTRANS|V_SLIDEIN|splitflags, kp_facenum[(stplyr->laps) % 10]);
 			V_DrawScaledPatch(fx+27, fy, V_HUDTRANS|V_SLIDEIN|splitflags, kp_facenum[(numlaps) % 10]);
 		}
+	}
+	else
+	{
+		// Laps
+		V_DrawScaledPatch(LAPS_X, LAPS_Y, V_HUDTRANS|V_SLIDEIN|splitflags, kp_lapsticker);
+		V_DrawKartString(LAPS_X+33, LAPS_Y+3, V_HUDTRANS|V_SLIDEIN|splitflags, va("%d/%d", min(stplyr->laps, numlaps), numlaps));
+	}
+}
+
+#define RINGANIM_FLIPFRAME (RINGANIM_NUMFRAMES/2)
+
+static void K_drawRingCounter(void)
+{
+	const boolean uselives = G_GametypeUsesLives();
+	SINT8 ringanim_realframe = stplyr->karthud[khud_ringframe];
+	INT32 splitflags = V_SNAPTOBOTTOM|V_SNAPTOLEFT|V_SPLITSCREEN;
+	UINT8 rn[2];
+	INT32 ringflip = 0;
+	UINT8 *ringmap = NULL;
+	boolean colorring = false;
+	INT32 ringx = 0, fy = 0;
+
+	rn[0] = ((abs(stplyr->rings) / 10) % 10);
+	rn[1] = (abs(stplyr->rings) % 10);
+
+	if (stplyr->rings <= 0 && (leveltime/5 & 1)) // In debt
+	{
+		ringmap = R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_CRIMSON, GTC_CACHE);
+		colorring = true;
+	}
+	else if (stplyr->rings >= 20) // Maxed out
+		ringmap = R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_YELLOW, GTC_CACHE);
+
+	if (stplyr->karthud[khud_ringframe] > RINGANIM_FLIPFRAME)
+	{
+		ringflip = V_FLIP;
+		ringanim_realframe = RINGANIM_NUMFRAMES-stplyr->karthud[khud_ringframe];
+		ringx += SHORT((r_splitscreen > 1) ? kp_smallring[ringanim_realframe]->width : kp_ring[ringanim_realframe]->width);
+	}
+
+	if (r_splitscreen > 1)
+	{
+		INT32 fx = 0, fr = 0;
+		INT32 flipflag = 0;
+
+		// pain and suffering defined below
+		if (r_splitscreen < 2)	// don't change shit for THIS splitscreen.
+		{
+			fx = LAPS_X;
+			fy = LAPS_Y;
+		}
+		else
+		{
+			if (stplyr == &players[displayplayers[0]] || stplyr == &players[displayplayers[2]])	// If we are P1 or P3...
+			{
+				fx = LAPS_X;
+				fy = LAPS_Y;
+				splitflags = V_SNAPTOLEFT|V_SNAPTOBOTTOM|V_SPLITSCREEN;
+			}
+			else // else, that means we're P2 or P4.
+			{
+				fx = LAPS2_X;
+				fy = LAPS2_Y;
+				splitflags = V_SNAPTORIGHT|V_SNAPTOBOTTOM|V_SPLITSCREEN;
+				flipflag = V_FLIP; // make the string right aligned and other shit
+			}
+		}
+
+		fr = fx;
 
 		// Rings
 		if (!uselives)
@@ -2451,41 +2491,42 @@ static void K_drawKartLapsAndRings(void)
 	}
 	else
 	{
-		// Laps
-		V_DrawScaledPatch(LAPS_X, LAPS_Y, V_HUDTRANS|V_SLIDEIN|splitflags, kp_lapsticker);
-		V_DrawKartString(LAPS_X+33, LAPS_Y+3, V_HUDTRANS|V_SLIDEIN|splitflags, va("%d/%d", min(stplyr->laps, numlaps), numlaps));
+		fy = LAPS_Y-11;
+
+		if ((gametyperules & (GTR_BUMPERS|GTR_CIRCUIT)) == GTR_BUMPERS)
+			fy -= 4;
 
 		// Rings
 		if (!uselives)
-			V_DrawScaledPatch(LAPS_X, LAPS_Y-11, V_HUDTRANS|V_SLIDEIN|splitflags, kp_ringsticker[1]);
+			V_DrawScaledPatch(LAPS_X, fy, V_HUDTRANS|V_SLIDEIN|splitflags, kp_ringsticker[1]);
 		else
-			V_DrawScaledPatch(LAPS_X, LAPS_Y-11, V_HUDTRANS|V_SLIDEIN|splitflags, kp_ringsticker[0]);
+			V_DrawScaledPatch(LAPS_X, fy, V_HUDTRANS|V_SLIDEIN|splitflags, kp_ringsticker[0]);
 
-		V_DrawMappedPatch(LAPS_X+ringx+7, LAPS_Y-16, V_HUDTRANS|V_SLIDEIN|splitflags|ringflip, kp_ring[ringanim_realframe], (colorring ? ringmap : NULL));
+		V_DrawMappedPatch(LAPS_X+ringx+7, fy-5, V_HUDTRANS|V_SLIDEIN|splitflags|ringflip, kp_ring[ringanim_realframe], (colorring ? ringmap : NULL));
 
 		if (stplyr->rings < 0) // Draw the minus for ring debt
 		{
-			V_DrawMappedPatch(LAPS_X+23, LAPS_Y-11, V_HUDTRANS|V_SLIDEIN|splitflags, kp_ringdebtminus, ringmap);
-			V_DrawMappedPatch(LAPS_X+29, LAPS_Y-11, V_HUDTRANS|V_SLIDEIN|splitflags, kp_facenum[rn[0]], ringmap);
-			V_DrawMappedPatch(LAPS_X+35, LAPS_Y-11, V_HUDTRANS|V_SLIDEIN|splitflags, kp_facenum[rn[1]], ringmap);
+			V_DrawMappedPatch(LAPS_X+23, fy, V_HUDTRANS|V_SLIDEIN|splitflags, kp_ringdebtminus, ringmap);
+			V_DrawMappedPatch(LAPS_X+29, fy, V_HUDTRANS|V_SLIDEIN|splitflags, kp_facenum[rn[0]], ringmap);
+			V_DrawMappedPatch(LAPS_X+35, fy, V_HUDTRANS|V_SLIDEIN|splitflags, kp_facenum[rn[1]], ringmap);
 		}
 		else
 		{
-			V_DrawMappedPatch(LAPS_X+23, LAPS_Y-11, V_HUDTRANS|V_SLIDEIN|splitflags, kp_facenum[rn[0]], ringmap);
-			V_DrawMappedPatch(LAPS_X+29, LAPS_Y-11, V_HUDTRANS|V_SLIDEIN|splitflags, kp_facenum[rn[1]], ringmap);
+			V_DrawMappedPatch(LAPS_X+23, fy, V_HUDTRANS|V_SLIDEIN|splitflags, kp_facenum[rn[0]], ringmap);
+			V_DrawMappedPatch(LAPS_X+29, fy, V_HUDTRANS|V_SLIDEIN|splitflags, kp_facenum[rn[1]], ringmap);
 		}
 
 		// SPB ring lock
 		if (stplyr->pflags & PF_RINGLOCK)
-			V_DrawScaledPatch(LAPS_X-5, LAPS_Y-28, V_HUDTRANS|V_SLIDEIN|splitflags, kp_ringspblock[stplyr->karthud[khud_ringspblock]]);
+			V_DrawScaledPatch(LAPS_X-5, fy-17, V_HUDTRANS|V_SLIDEIN|splitflags, kp_ringspblock[stplyr->karthud[khud_ringspblock]]);
 
 		// Lives
 		if (uselives)
 		{
 			UINT8 *colormap = R_GetTranslationColormap(stplyr->skin, stplyr->skincolor, GTC_CACHE);
-			V_DrawMappedPatch(LAPS_X+46, LAPS_Y-16, V_HUDTRANS|V_SLIDEIN|splitflags, faceprefix[stplyr->skin][FACE_RANK], colormap);
+			V_DrawMappedPatch(LAPS_X+46, fy-5, V_HUDTRANS|V_SLIDEIN|splitflags, faceprefix[stplyr->skin][FACE_RANK], colormap);
 			if (stplyr->lives >= 0)
-				V_DrawScaledPatch(LAPS_X+63, LAPS_Y-11, V_HUDTRANS|V_SLIDEIN|splitflags, kp_facenum[(stplyr->lives % 10)]); // make sure this doesn't overflow OR underflow
+				V_DrawScaledPatch(LAPS_X+63, fy, V_HUDTRANS|V_SLIDEIN|splitflags, kp_facenum[(stplyr->lives % 10)]); // make sure this doesn't overflow OR underflow
 		}
 	}
 }
@@ -2502,7 +2543,7 @@ static void K_drawKartAccessibilityIcons(INT32 fx)
 
 	if (r_splitscreen < 2) // adjust to speedometer height
 	{
-		if (gametyperules & (GTR_BUMPERS|GTR_SPHERES))
+		if ((gametyperules & (GTR_BUMPERS|GTR_CIRCUIT)) == GTR_BUMPERS)
 			fy -= 4;
 	}
 	else
@@ -2592,7 +2633,7 @@ static void K_drawKartSpeedometer(void)
 	numbers[1] = ((convSpeed / 10) % 10);
 	numbers[2] = (convSpeed % 10);
 
-	if (gametyperules & (GTR_BUMPERS|GTR_SPHERES))
+	if ((gametyperules & (GTR_BUMPERS|GTR_CIRCUIT)) == GTR_BUMPERS)
 		battleoffset = -4;
 
 	V_DrawScaledPatch(LAPS_X, LAPS_Y-25 + battleoffset, V_HUDTRANS|V_SLIDEIN|splitflags, kp_speedometersticker);
@@ -5121,7 +5162,7 @@ void K_drawKartHUD(void)
 			{
 				if (gametyperules & GTR_CIRCUIT)
 				{
-					K_drawKartLapsAndRings();
+					K_drawKartLaps();
 				}
 				else if (gametyperules & GTR_BUMPERS)
 				{
@@ -5142,6 +5183,10 @@ void K_drawKartHUD(void)
 			if (gametyperules & GTR_SPHERES)
 			{
 				K_drawBlueSphereMeter();
+			}
+			else
+			{
+				K_drawRingCounter();
 			}
 
 			if (modeattacking && !bossinfo.valid)
