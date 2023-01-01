@@ -1225,6 +1225,21 @@ fixed_t P_GetMobjGravity(mobj_t *mo)
 			case MT_ITEM_DEBRIS:
 				gravityadd *= 6;
 				break;
+			case MT_FLOATINGITEM: {
+				// Basically this accelerates gravity after
+				// the object reached its peak vertical
+				// momentum. It's a gradual acceleration up
+				// to 2x normal gravity. It's not instant to
+				// give it some 'weight'.
+				const fixed_t z = P_MobjFlip(mo) * mo->momz;
+				if (z < 0)
+				{
+					const fixed_t d = (z - (mo->height / 2));
+					const fixed_t f = 2 * abs(FixedDiv(d, mo->height));
+					gravityadd = FixedMul(gravityadd, FRACUNIT + min(f, 2*FRACUNIT));
+				}
+				break;
+			}
 			default:
 				break;
 		}
@@ -5734,6 +5749,21 @@ static void P_MobjSceneryThink(mobj_t *mobj)
 			P_AddOverlay(mobj);
 		if (mobj->target->hitlag) // move to the correct position, update to the correct properties, but DON'T STATE-ANIMATE
 			return;
+		switch (mobj->target->type)
+		{
+			case MT_FLOATINGITEM:
+				// Spawn trail for item drop as it flies upward.
+				// Done here so it applies to backdrop too.
+				if (mobj->target->momz * P_MobjFlip(mobj->target) > 0)
+				{
+					P_SpawnGhostMobj(mobj);
+					P_SpawnGhostMobj(mobj->target);
+				}
+				break;
+
+			default:
+				break;
+		}
 		break;
 	case MT_WATERDROP:
 		P_SceneryCheckWater(mobj);
