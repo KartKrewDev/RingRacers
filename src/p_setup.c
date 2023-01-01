@@ -2070,7 +2070,7 @@ static void P_WriteTextmap(void)
 		}
 	}
 
-	fprintf(f, "namespace = \"ringracers\";\n");
+	fprintf(f, "namespace = \"srb2\";\n");
 	for (i = 0; i < nummapthings; i++)
 	{
 		fprintf(f, "thing // %s\n", sizeu1(i));
