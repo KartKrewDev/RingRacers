@@ -1550,7 +1550,7 @@ void Y_StartVote(void)
 		levelinfo[i].str[sizeof levelinfo[i].str - 1] = '\0';
 
 		// set up the gtc and gts
-		levelinfo[i].gtc = yellowmap[0]; // TODO rewrite vote screen
+		levelinfo[i].gtc = 73; // yellowmap[0] -- TODO rewrite vote screen
 		if (i == 2 && votelevels[i][1] != votelevels[0][1])
 			levelinfo[i].gts = gametypes[votelevels[i][1]]->name;
 		else
