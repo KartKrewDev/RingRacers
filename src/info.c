@@ -548,6 +548,9 @@ char sprnames[NUMSPRITES + 1][5] =
 	"MGBX", // Heavy Magician transform box
 	"MGBT", // Heavy Magician transform box top
 	"MGBB", // Heavy Magician transform box bottom
+	"MSHD", // Item Monitor Big Shard
+	"IMDB", // Item Monitor Small Shard (Debris)
+	"MTWK", // Item Monitor Glass Twinkle
 
 	"WIPD", // Wipeout dust trail
 	"DRIF", // Drift Sparks
@@ -3899,6 +3902,24 @@ state_t states[NUMSTATES] =
 	//{SPR_ICAP,                 FF_FLOORSPRITE|3, -1, {NULL}, 0, 0, S_NULL}, // S_ITEMCAPSULE_TOP
 	//{SPR_ICAP,                 FF_FLOORSPRITE|4, -1, {NULL}, 0, 0, S_NULL}, // S_ITEMCAPSULE_BOTTOM
 	//{SPR_ICAP,                 FF_FLOORSPRITE|5, -1, {NULL}, 0, 0, S_NULL}, // S_ITEMCAPSULE_INSIDE
+
+	{SPR_NULL, 0, 1, {NULL}, 6, 1, S_SPAWNSTATE}, // S_MONITOR_DAMAGE
+	{SPR_NULL, 0, 1, {NULL}, 0, 0, S_NULL}, // S_MONITOR_DEATH
+	{SPR_IMON, FF_PAPERSPRITE|1, 1, {NULL}, 3, 1, S_MONITOR_SCREEN1B}, // S_MONITOR_SCREEN1A
+	{SPR_IMON, FF_PAPERSPRITE|0, 1, {NULL}, 3, 1, S_MONITOR_SCREEN2A}, // S_MONITOR_SCREEN1B
+	{SPR_IMON, FF_PAPERSPRITE|2, 1, {NULL}, 3, 1, S_MONITOR_SCREEN2B}, // S_MONITOR_SCREEN2A
+	{SPR_IMON, FF_PAPERSPRITE|0, 1, {NULL}, 3, 1, S_MONITOR_SCREEN3A}, // S_MONITOR_SCREEN2B
+	{SPR_IMON, FF_PAPERSPRITE|3, 1, {NULL}, 3, 1, S_MONITOR_SCREEN3B}, // S_MONITOR_SCREEN3A
+	{SPR_IMON, FF_PAPERSPRITE|0, 1, {NULL}, 3, 1, S_MONITOR_SCREEN4A}, // S_MONITOR_SCREEN3B
+	{SPR_IMON, FF_PAPERSPRITE|4, 1, {NULL}, 3, 1, S_MONITOR_SCREEN4B}, // S_MONITOR_SCREEN4A
+	{SPR_IMON, FF_PAPERSPRITE|0, 1, {NULL}, 3, 1, S_MONITOR_SCREEN1A}, // S_MONITOR_SCREEN4B
+	{SPR_IMON, FF_PAPERSPRITE|5, -1, {NULL}, 3, 1, S_NULL}, // S_MONITOR_STAND
+	{SPR_NULL, FF_PAPERSPRITE|FF_TRANS50|FF_ADD|6, -1, {NULL}, 3, 35, S_NULL}, // S_MONITOR_CRACKA
+	{SPR_NULL, FF_PAPERSPRITE|FF_TRANS50|FF_SUBTRACT|10, -1, {NULL}, 3, 35, S_NULL}, // S_MONITOR_CRACKB
+
+	{SPR_MSHD, FF_FULLBRIGHT|FF_ANIMATE|FF_RANDOMANIM, -1, {NULL}, 7, 2, S_NULL}, // S_MONITOR_BIG_SHARD
+	{SPR_IMDB, FF_FULLBRIGHT, -1, {NULL}, 0, 0, S_NULL}, // S_MONITOR_SMALL_SHARD
+	{SPR_MTWK, FF_FULLBRIGHT, -1, {NULL}, 0, 0, S_NULL}, // S_MONITOR_TWINKLE
 
 	{SPR_MGBX,                 FF_PAPERSPRITE|0, -1, {NULL}, 0, 0, S_NULL}, // S_MAGICIANBOX
 	{SPR_MGBT,                 FF_FLOORSPRITE|0, -1, {NULL}, 0, 0, S_NULL}, // S_MAGICIANBOX_TOP
@@ -22417,6 +22438,87 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		0,              // damage
 		sfx_None,       // activesound
 		MF_SCENERY|MF_NOGRAVITY|MF_NOBLOCKMAP|MF_NOCLIP|MF_NOCLIPTHING|MF_NOCLIPHEIGHT, // flags
+		S_NULL          // raisestate
+	},
+
+	{           // MT_MONITOR
+		-1,             // doomednum
+		S_INVISIBLE,    // spawnstate
+		FRACUNIT,       // spawnhealth
+		S_NULL,         // seestate
+		sfx_None,       // seesound
+		0,              // reactiontime
+		sfx_None,       // attacksound
+		S_MONITOR_DAMAGE, // painstate
+		0,              // painchance
+		sfx_None,       // painsound
+		S_NULL,         // meleestate
+		S_NULL,         // missilestate
+		S_MONITOR_DEATH, // deathstate
+		S_NULL,         // xdeathstate
+		sfx_None,       // deathsound
+		0,              // speed
+		32*FRACUNIT,    // radius
+		112*FRACUNIT,   // height
+		0,              // display offset
+		100,            // mass
+		0,              // damage
+		sfx_None,       // activesound
+		MF_SOLID|MF_SHOOTABLE|MF_SLIDEME|MF_DONTENCOREMAP|MF_NOHITLAGFORME, // flags
+		S_NULL          // raisestate
+	},
+
+	{           // MT_MONITOR_PART
+		-1,             // doomednum
+		S_INVISIBLE,    // spawnstate
+		1,              // spawnhealth
+		S_NULL,         // seestate
+		sfx_None,       // seesound
+		0,              // reactiontime
+		sfx_None,       // attacksound
+		S_NULL,         // painstate
+		0,              // painchance
+		sfx_None,       // painsound
+		S_NULL,         // meleestate
+		S_NULL,         // missilestate
+		S_NULL,         // deathstate
+		S_NULL,         // xdeathstate
+		sfx_None,       // deathsound
+		0,              // speed
+		32*FRACUNIT,    // radius
+		112*FRACUNIT,   // height
+		0,              // display offset
+		100,            // mass
+		0,              // damage
+		sfx_None,       // activesound
+		MF_NOGRAVITY|MF_NOBLOCKMAP|MF_NOCLIP|MF_NOCLIPTHING|MF_NOCLIPHEIGHT|MF_NOSQUISH, // flags
+		S_NULL          // raisestate
+	},
+
+	{           // MT_MONITOR_SHARD
+		-1,             // doomednum
+		S_MONITOR_BIG_SHARD, // spawnstate
+		1,              // spawnhealth
+		S_NULL,         // seestate
+		sfx_None,       // seesound
+		0,              // reactiontime
+		sfx_None,       // attacksound
+		S_NULL,         // painstate
+		0,              // painchance
+		sfx_None,       // painsound
+		S_NULL,         // meleestate
+		S_NULL,         // missilestate
+		S_NULL,         // deathstate
+		S_NULL,         // xdeathstate
+		sfx_None,       // deathsound
+		0,              // speed
+		32*FRACUNIT,    // radius
+		32*FRACUNIT,    // height
+		0,              // display offset
+		100,            // mass
+		0,              // damage
+		sfx_None,       // activesound
+		MF_SCENERY|MF_NOBLOCKMAP|MF_NOCLIP|MF_NOCLIPTHING|MF_NOSQUISH, // flags
 		S_NULL          // raisestate
 	},
 
