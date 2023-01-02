@@ -861,7 +861,7 @@ boolean P_CheckRacers(void)
 	// Check if all the players in the race have finished. If so, end the level.
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
-		if (!playeringame[i] || players[i].spectator || players[i].lives <= 0)
+		if (!playeringame[i] || players[i].spectator || (players[i].lives <= 0 && !players[i].exiting))
 		{
 			// Y'all aren't even playing
 			continue;
