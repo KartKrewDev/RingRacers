@@ -3568,6 +3568,12 @@ static boolean M_LevelListFromGametype(INT16 gt)
 
 	if (first || gt != levellist.newgametype || levellist.guessgt != MAXGAMETYPES)
 	{
+		if (first)
+		{
+			cupgrid.cappages = 0;
+			cupgrid.builtgrid = NULL;
+		}
+
 		levellist.newgametype = gt;
 
 		levellist.levelsearch.typeoflevel = G_TOLFlag(gt);
@@ -3595,7 +3601,7 @@ static boolean M_LevelListFromGametype(INT16 gt)
 	{
 		levelsearch_t templevelsearch = levellist.levelsearch; // full copy
 		size_t currentid = 0, highestunlockedid = 0;
-		const size_t unitlen = sizeof(cupheader_t*) * (CUPMENU_COLUMNS * CUPMENU_ROWS);
+		const size_t pagelen = sizeof(cupheader_t*) * (CUPMENU_COLUMNS * CUPMENU_ROWS);
 		boolean foundany = false;
 
 		templevelsearch.cup = kartcupheaders;
@@ -3606,20 +3612,20 @@ static boolean M_LevelListFromGametype(INT16 gt)
 			I_Error("Can you really call this a racing game, I didn't recieve any Cups on my pillow or anything");
 #endif
 
-		if (!cupgrid.builtgrid)
+		if (cupgrid.cappages == 0)
 		{
 			cupgrid.cappages = 2;
 			cupgrid.builtgrid = Z_Calloc(
-				cupgrid.cappages * unitlen,
+				cupgrid.cappages * pagelen,
 				PU_STATIC,
-				cupgrid.builtgrid);
+				NULL);
 
 			if (!cupgrid.builtgrid)
 			{
 				I_Error("M_LevelListFromGametype: Not enough memory to allocate builtgrid");
 			}
 		}
-		memset(cupgrid.builtgrid, 0, cupgrid.cappages * unitlen);
+		memset(cupgrid.builtgrid, 0, cupgrid.cappages * pagelen);
 
 		while (templevelsearch.cup)
 		{
@@ -3633,10 +3639,10 @@ static boolean M_LevelListFromGametype(INT16 gt)
 
 			foundany = true;
 
-			if ((currentid * sizeof(cupheader_t*)) >= cupgrid.cappages * unitlen)
+			if ((currentid * sizeof(cupheader_t*)) >= cupgrid.cappages * pagelen)
 			{
 				// Double the size of the buffer, and clear the other stuff.
-				const size_t firstlen = cupgrid.cappages * unitlen;
+				const size_t firstlen = cupgrid.cappages * pagelen;
 				cupgrid.builtgrid = Z_Realloc(cupgrid.builtgrid,
 					firstlen * 2,
 					PU_STATIC, NULL);
