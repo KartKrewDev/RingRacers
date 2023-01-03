@@ -664,7 +664,8 @@ UINT32 quickncasehash (const char *p, size_t n)
 
 // Compile date and time and revision.
 extern const char *compdate, *comptime, *comprevision, *compbranch;
-extern int compuncommitted;
+extern int compuncommitted, compoptimized;
+extern const char *comptype;
 
 // Disabled code and code under testing
 // None of these that are disabled in the normal build are guaranteed to work perfectly

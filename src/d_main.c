@@ -72,7 +72,6 @@
 
 // SRB2Kart
 #include "k_grandprix.h"
-#include "k_boss.h"
 #include "doomstat.h"
 #include "m_random.h" // P_ClearRandom
 #include "k_specialstage.h"
@@ -963,12 +962,6 @@ void D_StartTitle(void)
 	// Reset GP
 	memset(&grandprixinfo, 0, sizeof(struct grandprixinfo));
 
-	// Reset boss info
-	K_ResetBossInfo();
-
-	// Reset Special Stage
-	K_ResetSpecialStage();
-
 	// empty maptol so mario/etc sounds don't play in sound test when they shouldn't
 	maptol = 0;
 
@@ -1200,13 +1193,14 @@ D_ConvertVersionNumbers (void)
 //
 void D_SRB2Main(void)
 {
-	INT32 i, p;
+	INT32 i, j, p;
 #ifdef DEVELOP
 	INT32 pstartmap = 1; // default to first loaded map (Test Run)
 #else
 	INT32 pstartmap = 0; // default to random map (0 is not a valid map number)
 #endif
 	boolean autostart = false;
+	INT32 newgametype = -1;
 
 	/* break the version string into version numbers, for netplay */
 	D_ConvertVersionNumbers();
@@ -1519,11 +1513,6 @@ void D_SRB2Main(void)
 
 	CON_SetLoadingProgress(LOADED_HUINIT);
 
-	memset(timelimits, 0, sizeof(timelimits));
-	memset(pointlimits, 0, sizeof(pointlimits));
-
-	timelimits[GT_BATTLE] = 2;
-
 	D_RegisterServerCommands();
 	D_RegisterClientCommands(); // be sure that this is called before D_CheckNetGame
 	R_RegisterEngineStuff();
@@ -1531,13 +1520,13 @@ void D_SRB2Main(void)
 
 	I_RegisterSysCommands();
 
+	M_Init();
+
 	//--------------------------------------------------------- CONFIG.CFG
 	M_FirstLoadConfig(); // WARNING : this do a "COM_BufExecute()"
 
 	// Load Profiles now that default controls have been defined
 	PR_LoadProfiles();	// load control profiles
-
-	M_Init();
 
 #if (defined (__unix__) && !defined (MSDOS)) || defined (UNIXCOMMON) || defined (HAVE_SDL)
 	VID_PrepareModeList(); // Regenerate Modelist according to cv_fullscreen
@@ -1796,8 +1785,6 @@ void D_SRB2Main(void)
 		if (M_CheckParm("-gametype") && M_IsNextParm())
 		{
 			// from Command_Map_f
-			INT32 j;
-			INT16 newgametype = -1;
 			const char *sgametype = M_GetNextParm();
 
 			newgametype = G_GetGametypeByName(sgametype);
@@ -1805,7 +1792,7 @@ void D_SRB2Main(void)
 			if (newgametype == -1) // reached end of the list with no match
 			{
 				j = atoi(sgametype); // assume they gave us a gametype number, which is okay too
-				if (j >= 0 && j < gametypecount)
+				if (j >= 0 && j < numgametypes)
 					newgametype = (INT16)j;
 			}
 
@@ -1819,7 +1806,6 @@ void D_SRB2Main(void)
 
 		if (M_CheckParm("-skill") && M_IsNextParm())
 		{
-			INT32 j;
 			INT16 newskill = -1;
 			const char *sskill = M_GetNextParm();
 
@@ -1872,11 +1858,20 @@ void D_SRB2Main(void)
 
 			if (grandprixinfo.gp == true && mapheaderinfo[pstartmap-1])
 			{
-				if (mapheaderinfo[pstartmap-1]->typeoflevel & TOL_SPECIAL)
+				if (newgametype == -1)
 				{
-					specialStage.active = true;
-					specialStage.encore = grandprixinfo.encore;
-					grandprixinfo.eventmode = GPEVENT_SPECIAL;
+					newgametype = G_GuessGametypeByTOL(mapheaderinfo[pstartmap-1]->typeoflevel);
+					if (newgametype != -1)
+					{
+						j = gametype;
+						G_SetGametype(newgametype);
+						D_GameTypeChanged(j);
+					}
+
+					if (gametyperules & (GTR_BOSS|GTR_CATCHER))
+						grandprixinfo.eventmode = GPEVENT_SPECIAL;
+					else if (gametype != GT_RACE)
+						grandprixinfo.eventmode = GPEVENT_BONUS;
 				}
 
 				G_SetUsedCheats();

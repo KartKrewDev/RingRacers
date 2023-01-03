@@ -119,7 +119,11 @@ struct menucolor_t {
 
 extern menucolor_t *menucolorhead, *menucolortail;
 
-extern CV_PossibleValue_t gametype_cons_t[];
+extern INT16 menugametype;
+void M_NextMenuGametype(UINT32 forbidden);
+void M_PrevMenuGametype(UINT32 forbidden);
+void M_HandleHostMenuGametype(INT32 choice);
+void M_HandlePauseMenuGametype(INT32 choice);
 
 //
 // MENU TYPEDEFS
@@ -417,6 +421,7 @@ extern menu_t MISC_StatisticsDef;
 typedef enum
 {
 	mpause_addons = 0,
+	mpause_changegametype,
 	mpause_switchmap,
 	mpause_restartmap,
 	mpause_tryagain,
@@ -434,9 +439,6 @@ typedef enum
 
 	mpause_title,
 } mpause_e;
-
-extern menuitem_t PAUSE_GamemodesMenu[];
-extern menu_t PAUSE_GamemodesDef;
 
 extern menuitem_t PAUSE_PlaybackMenu[];
 extern menu_t PAUSE_PlaybackMenuDef;
@@ -696,7 +698,6 @@ extern struct cupgrid_s {
 	size_t cappages;
 	tic_t previewanim;
 	boolean grandprix; 	// Setup grand prix server after picking
-	boolean netgame;	// Start the game in an actual server
 } cupgrid;
 
 typedef struct levelsearch_s {
@@ -713,6 +714,7 @@ extern struct levellist_s {
 	UINT16 dest;
 	INT16 choosemap;
 	UINT8 newgametype;
+	UINT8 guessgt;
 	levelsearch_t levelsearch;
 	boolean netgame;	// Start the game in an actual server
 } levellist;
@@ -773,7 +775,6 @@ void M_MPOptSelect(INT32 choice);
 void M_MPOptSelectInit(INT32 choice);
 void M_MPOptSelectTick(void);
 boolean M_MPResetOpts(void);
-extern consvar_t cv_dummygametype;		// lazy hack to allow us to select the GT on the server host submenu
 extern consvar_t cv_dummyip;			// I HAVE
 								// HAVE YOUR IP ADDRESS (This just the hack Cvar we'll type into and then it apends itself to "connect" in the console for IP join)
 

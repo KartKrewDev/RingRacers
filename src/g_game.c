@@ -317,9 +317,8 @@ typedef struct
 {
 	INT16 *mapbuffer;			// Pointer to zone memory
 	INT32 lastnummapheaders;	// Reset if nummapheaders != this
-	UINT8 counttogametype;		// Time to gametype change event
 } randmaps_t;
-static randmaps_t randmaps = {NULL, 0, 0};
+static randmaps_t randmaps = {NULL, 0};
 
 static void G_ResetRandMapBuffer(void)
 {
@@ -329,7 +328,6 @@ static void G_ResetRandMapBuffer(void)
 	randmaps.mapbuffer = Z_Malloc(randmaps.lastnummapheaders * sizeof(INT16), PU_STATIC, NULL);
 	for (i = 0; i < randmaps.lastnummapheaders; i++)
 		randmaps.mapbuffer[i] = -1;
-	//intentionally not resetting randmaps.counttogametype here
 }
 
 typedef struct joystickvector2_s
@@ -517,13 +515,18 @@ static void G_UpdateRecordReplays(void)
 		players[consoleplayer].realtime = UINT32_MAX;
 	}
 
-	if (((mapheaderinfo[gamemap-1]->mainrecord->time == 0) || (players[consoleplayer].realtime < mapheaderinfo[gamemap-1]->mainrecord->time))
-		&& (players[consoleplayer].realtime < UINT32_MAX)) // DNF
+	if (modeattacking & ATTACKING_TIME)
 	{
-		mapheaderinfo[gamemap-1]->mainrecord->time = players[consoleplayer].realtime;
+		if (((mapheaderinfo[gamemap-1]->mainrecord->time == 0) || (players[consoleplayer].realtime < mapheaderinfo[gamemap-1]->mainrecord->time))
+		&& (players[consoleplayer].realtime < UINT32_MAX)) // DNF
+			mapheaderinfo[gamemap-1]->mainrecord->time = players[consoleplayer].realtime;
+	}
+	else
+	{
+		mapheaderinfo[gamemap-1]->mainrecord->time = 0;
 	}
 
-	if (modeattacking == ATTACKING_TIME)
+	if (modeattacking & ATTACKING_LAP)
 	{
 		if ((mapheaderinfo[gamemap-1]->mainrecord->lap == 0) || (bestlap < mapheaderinfo[gamemap-1]->mainrecord->lap))
 			mapheaderinfo[gamemap-1]->mainrecord->lap = bestlap;
@@ -546,27 +549,32 @@ static void G_UpdateRecordReplays(void)
 	strcat(gpath, PATHSEP);
 	strcat(gpath, G_BuildMapName(gamemap));
 
-	snprintf(lastdemo, 255, "%s-%s-last.lmp", gpath, cv_chooseskin.string);
+	snprintf(lastdemo, 255, "%s-%s-last.lmp", gpath, cv_skin[0].string);
 
-	gpath = Z_StrDup(gpath);
-
-	if (FIL_FileExists(lastdemo))
+	if (modeattacking != ATTACKING_NONE && FIL_FileExists(lastdemo))
 	{
 		UINT8 *buf;
-		size_t len = FIL_ReadFile(lastdemo, &buf);
+		size_t len;
 
-		snprintf(bestdemo, 255, "%s-%s-time-best.lmp", gpath, cv_chooseskin.string);
-		if (!FIL_FileExists(bestdemo) || G_CmpDemoTime(bestdemo, lastdemo) & 1)
-		{ // Better time, save this demo.
-			if (FIL_FileExists(bestdemo))
-				remove(bestdemo);
-			FIL_WriteFile(bestdemo, buf, len);
-			CONS_Printf("\x83%s\x80 %s '%s'\n", M_GetText("NEW RECORD TIME!"), M_GetText("Saved replay as"), bestdemo);
+		gpath = Z_StrDup(gpath);
+
+		len = FIL_ReadFile(lastdemo, &buf);
+
+		if (modeattacking & ATTACKING_TIME)
+		{
+			snprintf(bestdemo, 255, "%s-%s-time-best.lmp", gpath, cv_skin[0].string);
+			if (!FIL_FileExists(bestdemo) || G_CmpDemoTime(bestdemo, lastdemo) & 1)
+			{ // Better time, save this demo.
+				if (FIL_FileExists(bestdemo))
+					remove(bestdemo);
+				FIL_WriteFile(bestdemo, buf, len);
+				CONS_Printf("\x83%s\x80 %s '%s'\n", M_GetText("NEW RECORD TIME!"), M_GetText("Saved replay as"), bestdemo);
+			}
 		}
 
-		if (modeattacking == ATTACKING_TIME)
+		if (modeattacking & ATTACKING_LAP)
 		{
-			snprintf(bestdemo, 255, "%s-%s-lap-best.lmp", gpath, cv_chooseskin.string);
+			snprintf(bestdemo, 255, "%s-%s-lap-best.lmp", gpath, cv_skin[0].string);
 			if (!FIL_FileExists(bestdemo) || G_CmpDemoTime(bestdemo, lastdemo) & (1<<1))
 			{ // Better lap time, save this demo.
 				if (FIL_FileExists(bestdemo))
@@ -579,9 +587,9 @@ static void G_UpdateRecordReplays(void)
 		//CONS_Printf("%s '%s'\n", M_GetText("Saved replay as"), lastdemo);
 
 		Z_Free(buf);
-	}
 
-	Z_Free(gpath);
+		Z_Free(gpath);
+	}
 
 	// Check emblems when level data is updated
 	if ((earnedEmblems = M_CheckLevelEmblems()))
@@ -1409,7 +1417,7 @@ void G_StartTitleCard(void)
 {
 	// The title card has been disabled for this map.
 	// Oh well.
-	if (!G_IsTitleCardAvailable() || demo.rewinding)
+	if (demo.rewinding || !G_IsTitleCardAvailable())
 	{
 		WipeStageTitle = false;
 		return;
@@ -1424,9 +1432,9 @@ void G_StartTitleCard(void)
 	// play the sound
 	{
 		sfxenum_t kstart = sfx_kstart;
-		if (bossinfo.boss)
+		if (K_CheckBossIntro() == true)
 			kstart = sfx_ssa021;
-		else if (encoremode)
+		else if (encoremode == true)
 			kstart = sfx_ruby2;
 		S_StartSound(NULL, kstart);
 	}
@@ -1473,11 +1481,17 @@ void G_PreLevelTitleCard(void)
 //
 boolean G_IsTitleCardAvailable(void)
 {
-#if 0
+	// Overwrites all other title card exceptions.
+	if (K_CheckBossIntro() == true)
+		return true;
+
 	// The current level has no name.
 	if (!mapheaderinfo[gamemap-1]->lvlttl[0])
 		return false;
-#endif
+
+	// Instant white fade.
+	if (gametyperules & GTR_SPECIALSTART)
+		return false;
 
 	// The title card is available.
 	return true;
@@ -2789,22 +2803,9 @@ mapthing_t *G_FindMapStart(INT32 playernum)
 	if (!playeringame[playernum])
 		return NULL;
 
-	// -- Spectators --
-	// Order in platform gametypes: Race->DM->CTF
-	// And, with deathmatch starts: DM->CTF->Race
-	if (players[playernum].spectator)
-	{
-		// In platform gametypes, spawn in Co-op starts first
-		// Overriden by GTR_BATTLESTARTS.
-		if (gametyperules & GTR_BATTLESTARTS && bossinfo.boss == false)
-			spawnpoint = G_FindBattleStartOrFallback(playernum);
-		else
-			spawnpoint = G_FindRaceStartOrFallback(playernum);
-	}
-
-	// -- Grand Prix / Time Attack --
+	// -- Time Attack --
 	// Order: Race->DM->CTF
-	else if (grandprixinfo.gp || modeattacking)
+	if (K_TimeAttackRules() == true)
 		spawnpoint = G_FindRaceStartOrFallback(playernum);
 
 	// -- CTF --
@@ -2909,17 +2910,20 @@ void G_ExitLevel(void)
 	if (gamestate == GS_LEVEL)
 	{
 		UINT8 i;
-		boolean youlost = false;
-		if (bossinfo.boss == true)
+		boolean doretry = false;
+
+		if (!G_GametypeUsesLives())
+			; // never force a retry
+		else if (specialstageinfo.valid == true || (gametyperules & GTR_BOSS))
 		{
-			youlost = true;
+			doretry = true;
 			for (i = 0; i < MAXPLAYERS; i++)
 			{
 				if (playeringame[i] && !players[i].spectator && !players[i].bot)
 				{
-					if (players[i].bumpers > 0)
+					if (!K_IsPlayerLosing(&players[i]))
 					{
-						youlost = false;
+						doretry = false;
 						break;
 					}
 				}
@@ -2927,10 +2931,10 @@ void G_ExitLevel(void)
 		}
 		else if (grandprixinfo.gp == true && grandprixinfo.eventmode == GPEVENT_NONE)
 		{
-			youlost = (grandprixinfo.wonround != true);
+			doretry = (grandprixinfo.wonround != true);
 		}
 
-		if (youlost)
+		if (doretry)
 		{
 			// You didn't win...
 
@@ -2997,28 +3001,98 @@ void G_ExitLevel(void)
 	}
 }
 
-// See also the enum GameType in doomstat.h
-const char *Gametype_Names[NUMGAMETYPES] =
+static gametype_t defaultgametypes[] =
 {
-	"Race", // GT_RACE
-	"Battle" // GT_BATTLE
+	// GT_RACE
+	{
+		"Race",
+		"GT_RACE",
+		GTR_CIRCUIT|GTR_BOTS|GTR_ENCORE,
+		TOL_RACE,
+		int_time,
+		0,
+		0,
+	},
+
+	// GT_BATTLE
+	{
+		"Battle",
+		"GT_BATTLE",
+		GTR_SPHERES|GTR_BUMPERS|GTR_PAPERITEMS|GTR_POWERSTONES|GTR_KARMA|GTR_ITEMARROWS|GTR_CAPSULES|GTR_BATTLESTARTS|GTR_POINTLIMIT|GTR_TIMELIMIT|GTR_OVERTIME|GTR_CLOSERPLAYERS,
+		TOL_BATTLE,
+		int_scoreortimeattack,
+		0,
+		2,
+	},
+
+	// GT_SPECIAL
+	{
+		"Special",
+		"GT_SPECIAL",
+		GTR_CATCHER|GTR_SPECIALSTART|GTR_ROLLINGSTART|GTR_CIRCUIT,
+		TOL_SPECIAL,
+		int_time,
+		0,
+		0,
+	},
+
+	// GT_VERSUS
+	{
+		"Versus",
+		"GT_VERSUS",
+		GTR_BOSS|GTR_SPHERES|GTR_BUMPERS|GTR_POINTLIMIT|GTR_CLOSERPLAYERS|GTR_NOCUPSELECT|GTR_ENCORE,
+		TOL_BOSS,
+		int_scoreortimeattack,
+		0,
+		0,
+	},
 };
 
-// For dehacked
-const char *Gametype_ConstantNames[NUMGAMETYPES] =
+gametype_t *gametypes[MAXGAMETYPES+1] =
 {
-	"GT_RACE", // GT_RACE
-	"GT_BATTLE" // GT_BATTLE
+	&defaultgametypes[GT_RACE],
+	&defaultgametypes[GT_BATTLE],
+	&defaultgametypes[GT_SPECIAL],
+	&defaultgametypes[GT_VERSUS],
 };
 
-// Gametype rules
-UINT32 gametypedefaultrules[NUMGAMETYPES] =
+//
+// G_GetGametypeByName
+//
+// Returns the number for the given gametype name string, or -1 if not valid.
+//
+INT32 G_GetGametypeByName(const char *gametypestr)
 {
-	// Race
-	GTR_CAMPAIGN|GTR_CIRCUIT|GTR_BOTS,
-	// Battle
-	GTR_SPHERES|GTR_BUMPERS|GTR_PAPERITEMS|GTR_KARMA|GTR_ITEMARROWS|GTR_CAPSULES|GTR_BATTLESTARTS|GTR_POINTLIMIT|GTR_TIMELIMIT|GTR_OVERTIME
-};
+	INT32 i = 0;
+
+	while (gametypes[i] != NULL)
+	{
+		if (!stricmp(gametypestr, gametypes[i]->name))
+			return i;
+		i++;
+	}
+
+	return -1; // unknown gametype
+}
+
+//
+// G_GuessGametypeByTOL
+//
+// Returns the first valid number for the given typeoflevel, or -1 if not valid.
+//
+INT32 G_GuessGametypeByTOL(UINT32 tol)
+{
+	INT32 i = 0;
+
+	while (gametypes[i] != NULL)
+	{
+		if (tol & gametypes[i]->tol)
+			return i;
+		i++;
+	}
+
+	return -1; // unknown gametype
+}
 
 //
 // G_SetGametype
@@ -3027,41 +3101,26 @@ UINT32 gametypedefaultrules[NUMGAMETYPES] =
 //
 void G_SetGametype(INT16 gtype)
 {
+	if (gtype < 0 || gtype > numgametypes)
+	{
+		I_Error("G_SetGametype: Bad gametype change %d (was %d/\"%s\")", gtype, gametype, gametypes[gametype]->name);
+	}
+
 	gametype = gtype;
-	gametyperules = gametypedefaultrules[gametype];
 }
 
 //
-// G_AddGametype
-//
-// Add a gametype. Returns the new gametype number.
-//
-INT16 G_AddGametype(UINT32 rules)
-{
-	INT16 newgtype = gametypecount;
-	gametypecount++;
-
-	// Set gametype rules.
-	gametypedefaultrules[newgtype] = rules;
-	Gametype_Names[newgtype] = "???";
-
-	// Update gametype_cons_t accordingly.
-	G_UpdateGametypeSelections();
-
-	return newgtype;
-}
-
-//
-// G_AddGametypeConstant
+// G_PrepareGametypeConstant
 //
 // Self-explanatory. Filters out "bad" characters.
 //
-void G_AddGametypeConstant(INT16 gtype, const char *newgtconst)
+char *G_PrepareGametypeConstant(const char *newgtconst)
 {
 	size_t r = 0; // read
 	size_t w = 0; // write
-	char *gtconst = Z_Calloc(strlen(newgtconst) + 4, PU_STATIC, NULL);
-	char *tmpconst = Z_Calloc(strlen(newgtconst) + 1, PU_STATIC, NULL);
+	size_t len = strlen(newgtconst);
+	char *gtconst = Z_Calloc(len + 4, PU_STATIC, NULL);
+	char *tmpconst = Z_Calloc(len + 1, PU_STATIC, NULL);
 
 	// Copy the gametype name.
 	strcpy(tmpconst, newgtconst);
@@ -3121,41 +3180,9 @@ void G_AddGametypeConstant(INT16 gtype, const char *newgtconst)
 	// Free the temporary string.
 	Z_Free(tmpconst);
 
-	// Finally, set the constant string.
-	Gametype_ConstantNames[gtype] = gtconst;
+	// Finally, return the constant string.
+	return gtconst;
 }
-
-//
-// G_UpdateGametypeSelections
-//
-// Updates gametype_cons_t.
-//
-void G_UpdateGametypeSelections(void)
-{
-	INT32 i;
-	for (i = 0; i < gametypecount; i++)
-	{
-		gametype_cons_t[i].value = i;
-		gametype_cons_t[i].strvalue = Gametype_Names[i];
-	}
-	gametype_cons_t[NUMGAMETYPES].value = 0;
-	gametype_cons_t[NUMGAMETYPES].strvalue = NULL;
-}
-
-// Gametype rankings
-INT16 gametyperankings[NUMGAMETYPES] =
-{
-	GT_RACE,
-	GT_BATTLE,
-};
-
-// Gametype to TOL (Type Of Level)
-UINT32 gametypetol[NUMGAMETYPES] =
-{
-	TOL_RACE, // Race
-	TOL_BATTLE, // Battle
-	TOL_TV, // Midnight Channel effect
-};
 
 tolinfo_t TYPEOFLEVEL[NUMTOLNAMES] = {
 	{"RACE",TOL_RACE},
@@ -3184,51 +3211,6 @@ void G_AddTOL(UINT32 newtol, const char *tolname)
 }
 
 //
-// G_AddGametypeTOL
-//
-// Assigns a type of level to a gametype.
-//
-void G_AddGametypeTOL(INT16 gtype, UINT32 newtol)
-{
-	gametypetol[gtype] = newtol;
-}
-
-//
-// G_GetGametypeByName
-//
-// Returns the number for the given gametype name string, or -1 if not valid.
-//
-INT32 G_GetGametypeByName(const char *gametypestr)
-{
-	INT32 i;
-
-	for (i = 0; i < gametypecount; i++)
-		if (!stricmp(gametypestr, Gametype_Names[i]))
-			return i;
-
-	return -1; // unknown gametype
-}
-
-//
-// G_IsSpecialStage
-//
-// Returns TRUE if
-// the given map is a special stage.
-//
-boolean G_IsSpecialStage(INT32 mapnum)
-{
-	mapnum--; // gamemap-based to 0 indexed
-
-	if (mapnum > nummapheaders || !mapheaderinfo[mapnum])
-		return false;
-
-	if (!mapheaderinfo[mapnum]->cup || mapheaderinfo[mapnum]->cup->cachedlevels[CUPCACHE_SPECIAL] != mapnum)
-		return false;
-
-	return true;
-}
-
-//
 // G_GametypeUsesLives
 //
 // Returns true if the current gametype uses
@@ -3240,13 +3222,7 @@ boolean G_GametypeUsesLives(void)
 		return false;
 
 	if ((grandprixinfo.gp == true) // In Grand Prix
-		&& (gametype == GT_RACE) // NOT in bonus round
-		&& grandprixinfo.eventmode == GPEVENT_NONE) // NOT in bonus
-	{
-		return true;
-	}
-
-	if (bossinfo.boss == true) // Fighting a boss?
+		&& grandprixinfo.eventmode != GPEVENT_BONUS) // NOT in bonus round
 	{
 		return true;
 	}
@@ -3291,100 +3267,30 @@ boolean G_GametypeHasSpectators(void)
 //
 // G_SometimesGetDifferentGametype
 //
-// Oh, yeah, and we sometimes flip encore mode on here too.
+// Because gametypes are no longer on the vote screen, all this does is sometimes flip encore mode.
+// However, it remains a seperate function for long-term possibility.
 //
-INT16 G_SometimesGetDifferentGametype(UINT8 prefgametype)
+INT16 G_SometimesGetDifferentGametype(void)
 {
-	// Most of the gametype references in this condition are intentionally not prefgametype.
-	// This is so a server CAN continue playing a gametype if they like the taste of it.
-	// The encore check needs prefgametype so can't use G_RaceGametype...
 	boolean encorepossible = ((M_SecretUnlocked(SECRET_ENCORE, false) || encorescramble == 1)
-		&& ((gametyperules|gametypedefaultrules[prefgametype]) & GTR_CIRCUIT));
+		&& (gametyperules & GTR_ENCORE));
 	UINT8 encoremodifier = 0;
 
 	// -- the below is only necessary if you want to use randmaps.mapbuffer here
 	//if (randmaps.lastnummapheaders != nummapheaders)
 		//G_ResetRandMapBuffer();
 
-	if (encorepossible)
+	// FORCE to what was scrambled on intermission?
+	if (encorepossible && encorescramble != -1)
 	{
-		if (encorescramble != -1)
+		// FORCE to what was scrambled on intermission
+		if ((encorescramble != 0) != (cv_kartencore.value == 1))
 		{
-			encorepossible = (boolean)encorescramble; // FORCE to what was scrambled on intermission
-		}
-		else
-		{
-			switch (cv_kartvoterulechanges.value)
-			{
-				case 3: // always
-					encorepossible = true;
-					break;
-				case 2: // frequent
-					encorepossible = M_RandomChance(FRACUNIT>>1);
-					break;
-				case 1: // sometimes
-					encorepossible = M_RandomChance(FRACUNIT>>2);
-					break;
-				default:
-					break;
-			}
-		}
-		if (encorepossible != (cv_kartencore.value == 1))
 			encoremodifier = VOTEMODIFIER_ENCORE;
+		}
 	}
 
-	if (!cv_kartvoterulechanges.value) // never
-		return (gametype|encoremodifier);
-
-	if (randmaps.counttogametype > 0 && (cv_kartvoterulechanges.value != 3))
-	{
-		randmaps.counttogametype--;
-		return (gametype|encoremodifier);
-	}
-
-	switch (cv_kartvoterulechanges.value) // okay, we're having a gametype change! when's the next one, luv?
-	{
-		case 1: // sometimes
-			randmaps.counttogametype = 5; // per "cup"
-			break;
-		default:
-			// fallthrough - happens when clearing buffer, but needs a reasonable countdown if cvar is modified
-		case 2: // frequent
-			randmaps.counttogametype = 2; // ...every 1/2th-ish cup?
-			break;
-	}
-
-	// Only this response is prefgametype-based.
-	// todo custom gametypes
-	if (prefgametype == GT_BATTLE)
-	{
-		// Intentionally does not use encoremodifier!
-		if (cv_kartencore.value == 1)
-			return (GT_RACE|VOTEMODIFIER_ENCORE);
-		return (GT_RACE);
-	}
-	// This might appear wrong HERE, but the game will display the Encore possibility on the second voting choice instead.
-	return (GT_BATTLE|encoremodifier);
-}
-
-//
-// G_GetGametypeColor
-//
-// Pretty and consistent ^u^
-// See also M_GetGametypeColor (if that still exists).
-//
-UINT8 G_GetGametypeColor(INT16 gt)
-{
-	if (modeattacking) // == ATTACKING_RECORD
-		return orangemap[0];
-
-	if (gt == GT_BATTLE)
-		return redmap[0];
-
-	if (gt == GT_RACE)
-		return skymap[0];
-
-	return 255; // FALLBACK
+	return (gametype|encoremodifier);
 }
 
 /** Get the typeoflevel flag needed to indicate support of a gametype.
@@ -3394,7 +3300,9 @@ UINT8 G_GetGametypeColor(INT16 gt)
   */
 UINT32 G_TOLFlag(INT32 pgametype)
 {
-	return gametypetol[pgametype];
+	if (pgametype >= 0 && pgametype < numgametypes)
+		return gametypes[pgametype]->tol;
+	return 0;
 }
 
 INT16 G_GetFirstMapOfGametype(UINT8 pgametype)
@@ -3405,7 +3313,7 @@ INT16 G_GetFirstMapOfGametype(UINT8 pgametype)
 
 	templevelsearch.cup = NULL;
 	templevelsearch.typeoflevel = G_TOLFlag(pgametype);
-	templevelsearch.cupmode = (!(gametypedefaultrules[pgametype] & GTR_NOCUPSELECT));
+	templevelsearch.cupmode = (!(gametypes[pgametype]->rules & GTR_NOCUPSELECT));
 	templevelsearch.timeattack = false;
 	templevelsearch.checklocked = true;
 
@@ -3497,7 +3405,7 @@ tryagain:
 		if (!mapheaderinfo[ix] || mapheaderinfo[ix]->lumpnum == LUMPERROR)
 			continue;
 
-		if ((mapheaderinfo[ix]->typeoflevel & tolflags) != tolflags
+		if (!(mapheaderinfo[ix]->typeoflevel & tolflags)
 			|| ix == pprevmap
 			|| M_MapLocked(ix+1)
 			|| (usehellmaps != (mapheaderinfo[ix]->menuflags & LF2_HIDEINMENU))) // this is bad
@@ -3716,7 +3624,6 @@ static void G_HandleSaveLevel(void)
 
 static void G_GetNextMap(void)
 {
-	boolean spec = G_IsSpecialStage(prevmap+1);
 	INT32 i;
 
 	// go to next level
@@ -3733,7 +3640,7 @@ static void G_GetNextMap(void)
 		}
 		else
 		{
-			INT32 lastgametype = gametype;
+			INT32 lastgametype = gametype, newgametype = GT_RACE;
 			// 5 levels, 2 bonus stages: after rounds 2 and 4 (but flexible enough to accomodate other solutions)
 			UINT8 bonusmodulo = (grandprixinfo.cup->numlevels+1)/(grandprixinfo.cup->numbonus+1);
 			UINT8 bonusindex = (grandprixinfo.roundnum / bonusmodulo) - 1;
@@ -3750,9 +3657,6 @@ static void G_GetNextMap(void)
 				G_SetGametype(GT_RACE);
 				if (gametype != lastgametype)
 					D_GameTypeChanged(lastgametype);
-
-				specialStage.active = false;
-				bossinfo.boss = false;
 			}
 			// Special stage
 			else if (grandprixinfo.roundnum >= grandprixinfo.cup->numlevels)
@@ -3773,11 +3677,11 @@ static void G_GetNextMap(void)
 				if (totaltotalring >= 50)
 				{
 					const INT32 cupLevelNum = grandprixinfo.cup->cachedlevels[CUPCACHE_SPECIAL];
-					if (cupLevelNum < nummapheaders && mapheaderinfo[cupLevelNum]
-						&& mapheaderinfo[cupLevelNum]->typeoflevel & (TOL_SPECIAL|TOL_BOSS|TOL_BATTLE))
+					if (cupLevelNum < nummapheaders && mapheaderinfo[cupLevelNum])
 					{
 						grandprixinfo.eventmode = GPEVENT_SPECIAL;
 						nextmap = cupLevelNum;
+						newgametype = G_GuessGametypeByTOL(mapheaderinfo[cupLevelNum]->typeoflevel);
 					}
 				}
 			}
@@ -3788,37 +3692,27 @@ static void G_GetNextMap(void)
 				// todo any other condition?
 				{
 					const INT32 cupLevelNum = grandprixinfo.cup->cachedlevels[CUPCACHE_BONUS + bonusindex];
-					if (cupLevelNum < nummapheaders && mapheaderinfo[cupLevelNum]
-						&& mapheaderinfo[cupLevelNum]->typeoflevel & (TOL_BOSS|TOL_BATTLE))
+					if (cupLevelNum < nummapheaders && mapheaderinfo[cupLevelNum])
 					{
 						grandprixinfo.eventmode = GPEVENT_BONUS;
 						nextmap = cupLevelNum;
+						newgametype = G_GuessGametypeByTOL(mapheaderinfo[cupLevelNum]->typeoflevel);
 					}
 				}
 			}
 
+			if (newgametype == -1)
+			{
+				// Don't permit invalid changes.
+				grandprixinfo.eventmode = GPEVENT_NONE;
+				newgametype = gametype;
+			}
+
 			if (grandprixinfo.eventmode != GPEVENT_NONE)
 			{
-				// nextmap is set above
-				const INT32 newtol = mapheaderinfo[nextmap]->typeoflevel;
-
-				if (newtol & TOL_SPECIAL)
-				{
-					specialStage.active = true;
-					specialStage.encore = grandprixinfo.encore;
-				}
-				else //(if newtol & (TOL_BATTLE|TOL_BOSS)) -- safe to assume??
-				{
-					G_SetGametype(GT_BATTLE);
-					if (gametype != lastgametype)
-						D_GameTypeChanged(lastgametype);
-					if (newtol & TOL_BOSS)
-					{
-						K_ResetBossInfo();
-						bossinfo.boss = true;
-						bossinfo.encore = grandprixinfo.encore;
-					}
-				}
+				G_SetGametype(newgametype);
+				if (gametype != lastgametype)
+					D_GameTypeChanged(lastgametype);
 			}
 			else if (grandprixinfo.roundnum >= grandprixinfo.cup->numlevels) // On final map
 			{
@@ -3841,10 +3735,6 @@ static void G_GetNextMap(void)
 				grandprixinfo.roundnum++;
 			}
 		}
-	}
-	else if (bossinfo.boss == true)
-	{
-		nextmap = NEXTMAP_TITLE; // temporary
 	}
 	else
 	{
@@ -3984,7 +3874,9 @@ static void G_GetNextMap(void)
 	if (nextmap == NEXTMAP_INVALID || (nextmap < NEXTMAP_SPECIAL && (nextmap >= nummapheaders || !mapheaderinfo[nextmap] || mapheaderinfo[nextmap]->lumpnum == LUMPERROR)))
 		I_Error("G_GetNextMap: Internal map ID %d not found (nummapheaders = %d)\n", nextmap, nummapheaders);
 
+#if 0 // This is a surprise tool that will help us later.
 	if (!spec)
+#endif //#if 0
 		lastmap = nextmap;
 }
 
@@ -4108,7 +4000,7 @@ void G_AfterIntermission(void)
 		G_HandleSaveLevel();
 	}
 
-	if ((gametyperules & GTR_CAMPAIGN) && mapheaderinfo[prevmap]->cutscenenum && !modeattacking && skipstats <= 1 && (gamecomplete || !(marathonmode & MA_NOCUTSCENES))) // Start a custom cutscene.
+	if ((grandprixinfo.gp == true) && mapheaderinfo[prevmap]->cutscenenum && !modeattacking && skipstats <= 1 && (gamecomplete || !(marathonmode & MA_NOCUTSCENES))) // Start a custom cutscene.
 		F_StartCustomCutscene(mapheaderinfo[prevmap]->cutscenenum-1, false, false);
 	else
 	{
@@ -4245,7 +4137,7 @@ void G_EndGame(void)
 	}
 
 	// Only do evaluation and credits in singleplayer contexts
-	if (!netgame && (gametyperules & GTR_CAMPAIGN))
+	if (!netgame && grandprixinfo.gp == true)
 	{
 		if (nextmap == NEXTMAP_CEREMONY) // end game with ceremony
 		{
@@ -4883,7 +4775,6 @@ cleanup:
 void G_DeferedInitNew(boolean pencoremode, INT32 map, INT32 pickedchar, UINT8 ssplayers, boolean FLS)
 {
 	UINT16 color = SKINCOLOR_NONE;
-	INT32 dogametype;
 
 	paused = false;
 
@@ -4894,17 +4785,8 @@ void G_DeferedInitNew(boolean pencoremode, INT32 map, INT32 pickedchar, UINT8 ss
 
 	G_ResetRandMapBuffer();
 
-	if ((modeattacking == ATTACKING_CAPSULES) || (bossinfo.boss == true))
-	{
-		dogametype = GT_BATTLE;
-	}
-	else
-	{
-		dogametype = GT_RACE;
-	}
-
 	// this leave the actual game if needed
-	SV_StartSinglePlayerServer(dogametype, false);
+	SV_StartSinglePlayerServer(gametype, false);
 
 	if (splitscreen != ssplayers)
 	{
@@ -5004,7 +4886,7 @@ void G_InitNew(UINT8 pencoremode, INT32 map, boolean resetplayer, boolean skippr
 	automapactive = false;
 	imcontinuing = false;
 
-	if ((gametyperules & GTR_CAMPAIGN) && !skipprecutscene && mapheaderinfo[gamemap-1]->precutscenenum && !modeattacking && !(marathonmode & MA_NOCUTSCENES)) // Start a custom cutscene.
+	if ((grandprixinfo.gp == true) && !skipprecutscene && mapheaderinfo[gamemap-1]->precutscenenum && !modeattacking && !(marathonmode & MA_NOCUTSCENES)) // Start a custom cutscene.
 		F_StartCustomCutscene(mapheaderinfo[gamemap-1]->precutscenenum-1, true, resetplayer);
 	else
 	{

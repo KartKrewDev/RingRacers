@@ -54,7 +54,6 @@
 #include "k_pwrlv.h"
 #include "k_bot.h"
 #include "k_grandprix.h"
-#include "k_boss.h"
 #include "doomstat.h"
 #include "s_sound.h" // sfx_syfail
 #include "m_cond.h" // netUnlocked
@@ -899,9 +898,6 @@ static void SV_SendServerInfo(INT32 node, tic_t servertime)
 	UINT8 *p;
 	size_t mirror_length;
 	const char *httpurl = cv_httpsource.string;
-	UINT8 prefgametype = (cv_kartgametypepreference.value == -1)
-		? gametype
-		: cv_kartgametypepreference.value;
 
 	netbuffer->packettype = PT_SERVERINFO;
 	netbuffer->u.serverinfo._255 = 255;
@@ -933,7 +929,7 @@ static void SV_SendServerInfo(INT32 node, tic_t servertime)
 	else
 		netbuffer->u.serverinfo.refusereason = 0;
 
-	strncpy(netbuffer->u.serverinfo.gametypename, Gametype_Names[prefgametype],
+	strncpy(netbuffer->u.serverinfo.gametypename, gametypes[gametype]->name,
 			sizeof netbuffer->u.serverinfo.gametypename);
 	netbuffer->u.serverinfo.modifiedgame = (UINT8)modifiedgame;
 	netbuffer->u.serverinfo.cheatsenabled = CV_CheatsEnabled();
@@ -2077,8 +2073,9 @@ static void CL_ConnectToServer(void)
 		Y_EndVote();
 
 	DEBFILE(va("waiting %d nodes\n", doomcom->numnodes));
-	M_ClearMenus(true);
 	G_SetGamestate(GS_WAITINGPLAYERS);
+	if (wipegamestate == GS_MENU)
+		M_ClearMenus(true);
 	wipegamestate = GS_WAITINGPLAYERS;
 
 	ClearAdminPlayers();
@@ -3743,6 +3740,9 @@ static void Got_AddBot(UINT8 **p, INT32 playernum)
 	players[newplayernum].skincolor = skins[skinnum].prefcolor;
 	sprintf(player_names[newplayernum], "%s", skins[skinnum].realname);
 	SetPlayerSkinByNum(newplayernum, skinnum);
+
+	players[newplayernum].spectator = !(gametyperules & GTR_BOTS)
+		|| (grandprixinfo.gp == true && grandprixinfo.eventmode != GPEVENT_NONE);
 
 	if (netgame)
 	{

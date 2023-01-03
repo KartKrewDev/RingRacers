@@ -16,7 +16,6 @@
 #include "m_cond.h" // M_UpdateUnlockablesAndExtraEmblems
 #include "p_tick.h" // leveltime
 #include "k_grandprix.h"
-#include "k_boss.h"
 #include "k_profiles.h"
 
 // Client-sided calculations done for Power Levels.
@@ -38,7 +37,7 @@ SINT8 K_UsingPowerLevels(void)
 {
 	SINT8 pt = PWRLV_DISABLED;
 
-	if (!cv_kartusepwrlv.value || !(netgame || (demo.playback && demo.netgame)) || grandprixinfo.gp == true || bossinfo.boss == true)
+	if (!cv_kartusepwrlv.value || !(netgame || (demo.playback && demo.netgame)) || grandprixinfo.gp == true)
 	{
 		return PWRLV_DISABLED;
 	}

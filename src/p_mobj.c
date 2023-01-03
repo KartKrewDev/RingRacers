@@ -39,7 +39,6 @@
 // SRB2kart
 #include "k_kart.h"
 #include "k_battle.h"
-#include "k_boss.h"
 #include "k_color.h"
 #include "k_respawn.h"
 #include "k_bot.h"
@@ -4346,25 +4345,7 @@ static void P_RefreshItemCapsuleParts(mobj_t *mobj)
 	part->threshold = mobj->threshold;
 	part->movecount = mobj->movecount;
 
-	switch (itemType)
-	{
-		case KITEM_ORBINAUT:
-			part->sprite = SPR_ITMO;
-			part->frame = FF_FULLBRIGHT|FF_PAPERSPRITE|K_GetOrbinautItemFrame(mobj->movecount);
-			break;
-		case KITEM_INVINCIBILITY:
-			part->sprite = SPR_ITMI;
-			part->frame = FF_FULLBRIGHT|FF_PAPERSPRITE|K_GetInvincibilityItemFrame();
-			break;
-		case KITEM_SAD:
-			part->sprite = SPR_ITEM;
-			part->frame = FF_FULLBRIGHT|FF_PAPERSPRITE;
-			break;
-		default:
-			part->sprite = SPR_ITEM;
-			part->frame = FF_FULLBRIGHT|FF_PAPERSPRITE|(itemType);
-			break;
-	}
+	K_UpdateMobjItemOverlay(part, itemType, mobj->movecount);
 
 	// update number frame
 	if (K_GetShieldFromItem(itemType) != KSHIELD_NONE) // shields don't stack, so don't show a number
@@ -6163,7 +6144,7 @@ static void P_MobjSceneryThink(mobj_t *mobj)
 			mobj->color = mobj->target->color;
 			K_MatchGenericExtraFlags(mobj, mobj->target);
 
-			if ((gametype == GT_RACE || mobj->target->player->bumpers <= 0)
+			if ((!(gametyperules & GTR_BUMPERS) || mobj->target->player->bumpers <= 0)
 #if 1 // Set to 0 to test without needing to host
 				|| (P_IsDisplayPlayer(mobj->target->player))
 #endif
@@ -6534,7 +6515,10 @@ static void P_MobjSceneryThink(mobj_t *mobj)
 		mobj->renderflags ^= RF_DONTDRAW;
 		break;
 	case MT_BROLY:
-		Obj_BrolyKiThink(mobj);
+		if (Obj_BrolyKiThink(mobj) == false)
+		{
+			return;
+		}
 		break;
 	case MT_VWREF:
 	case MT_VWREB:
@@ -8362,7 +8346,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 			statenum_t state = (mobj->state-states);
 
 			if (!mobj->target || !mobj->target->health || !mobj->target->player || mobj->target->player->spectator
-				|| (gametype == GT_RACE || mobj->target->player->bumpers))
+				|| (!(gametyperules & GTR_BUMPERS) || mobj->target->player->bumpers))
 			{
 				P_RemoveMobj(mobj);
 				return false;
@@ -9366,7 +9350,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 		{
 			if (gametyperules & GTR_PAPERITEMS)
 			{
-				if (battlecapsules == true || bossinfo.boss == true)
+				if (battlecapsules == true)
 				{
 					;
 				}
@@ -9389,12 +9373,12 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 		}
 		// FALLTHRU
 	case MT_SPHEREBOX:
-		if (gametype == GT_BATTLE && mobj->threshold == 70)
+		if (mobj->threshold == 70)
 		{
 			mobj->color = K_RainbowColor(leveltime);
 			mobj->colorized = true;
 
-			if (battleovertime.enabled)
+			if ((gametyperules & GTR_OVERTIME) && battleovertime.enabled)
 			{
 				angle_t ang = FixedAngle((leveltime % 360) << FRACBITS);
 				fixed_t z = battleovertime.z;
@@ -9528,13 +9512,39 @@ for (i = ((mobj->flags2 & MF2_STRONGBOX) ? strongboxamt : weakboxamt); i; --i) s
 	P_RemoveMobj(mobj); // make sure they disappear
 }
 
+static boolean P_CanFlickerFuse(mobj_t *mobj)
+{
+	switch (mobj->type)
+	{
+		case MT_SNAPPER_HEAD:
+		case MT_SNAPPER_LEG:
+		case MT_MINECARTSEG:
+			return true;
+
+		case MT_RANDOMITEM:
+		case MT_EGGMANITEM:
+		case MT_FALLINGROCK:
+		case MT_FLOATINGITEM:
+			if (mobj->fuse <= TICRATE)
+			{
+				return true;
+			}
+			break;
+
+		default:
+			break;
+	}
+
+	return false;
+
+}
+
 static boolean P_FuseThink(mobj_t *mobj)
 {
-	if (mobj->type == MT_SNAPPER_HEAD || mobj->type == MT_SNAPPER_LEG || mobj->type == MT_MINECARTSEG)
+	if (P_CanFlickerFuse(mobj))
+	{
 		mobj->renderflags ^= RF_DONTDRAW;
-
-	if (mobj->fuse <= TICRATE && (mobj->type == MT_RANDOMITEM || mobj->type == MT_EGGMANITEM || mobj->type == MT_FALLINGROCK))
-		mobj->renderflags ^= RF_DONTDRAW;
+	}
 
 	mobj->fuse--;
 
@@ -9582,7 +9592,7 @@ static boolean P_FuseThink(mobj_t *mobj)
 		{
 			;
 		}
-		else if ((gametyperules & GTR_BUMPERS) && (mobj->state == &states[S_INVISIBLE]))
+		else if (!(gametyperules & GTR_CIRCUIT) && (mobj->state == &states[S_INVISIBLE]))
 		{
 			break;
 		}
@@ -11420,7 +11430,7 @@ void P_RespawnBattleBoxes(void)
 {
 	thinker_t *th;
 
-	if (!(gametyperules & GTR_BUMPERS))
+	if (gametyperules & GTR_CIRCUIT)
 		return;
 
 	for (th = thlist[THINK_MOBJ].next; th != &thlist[THINK_MOBJ]; th = th->next)
@@ -11685,13 +11695,16 @@ void P_SpawnPlayer(INT32 playernum)
 
 	K_InitStumbleIndicator(p);
 
-	if (gametyperules & GTR_BUMPERS)
+	if (gametyperules & GTR_ITEMARROWS)
 	{
 		mobj_t *overheadarrow = P_SpawnMobj(mobj->x, mobj->y, mobj->z + mobj->height + 16*FRACUNIT, MT_PLAYERARROW);
 		P_SetTarget(&overheadarrow->target, mobj);
 		overheadarrow->renderflags |= RF_DONTDRAW;
 		P_SetScale(overheadarrow, mobj->destscale);
+	}
 
+	if (gametyperules & GTR_BUMPERS)
+	{
 		if (p->spectator)
 		{
 			// HEY! No being cheap...
@@ -12075,7 +12088,7 @@ static boolean P_AllowMobjSpawn(mapthing_t* mthing, mobjtype_t i)
 
 	// No bosses outside of a combat situation.
 	// (just in case we want boss arenas to do double duty as battle maps)
-	if (!bossinfo.boss && (mobjinfo[i].flags & MF_BOSS))
+	if (!(gametyperules & GTR_BOSS) && (mobjinfo[i].flags & MF_BOSS))
 	{
 		return false;
 	}
@@ -12096,7 +12109,7 @@ static mobjtype_t P_GetMobjtypeSubstitute(mapthing_t *mthing, mobjtype_t i)
 	if ((i == MT_RING) && (gametyperules & GTR_SPHERES))
 		return MT_BLUESPHERE;
 
-	if ((i == MT_RANDOMITEM) && (gametyperules & (GTR_PAPERITEMS|GTR_CIRCUIT)) == (GTR_PAPERITEMS|GTR_CIRCUIT) && !bossinfo.boss)
+	if ((i == MT_RANDOMITEM) && (gametyperules & (GTR_PAPERITEMS|GTR_CIRCUIT)) == (GTR_PAPERITEMS|GTR_CIRCUIT))
 		return MT_PAPERITEMSPOT;
 
 	return i;

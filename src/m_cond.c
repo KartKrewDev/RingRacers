@@ -570,7 +570,10 @@ static char *M_BuildConditionTitle(UINT16 map)
 {
 	char *title, *ref;
 
-	if (M_MapLocked(map+1))
+	if (((mapheaderinfo[map]->menuflags & LF2_FINISHNEEDED)
+	// the following is intentionally not MV_BEATEN, just in case the title is for "Finish a round on X"
+	&& !(mapheaderinfo[map]->mapvisited & MV_VISITED))
+	|| M_MapLocked(map+1))
 		return Z_StrDup("???");
 
 	title = ref = G_BuildMapTitle(map+1);
@@ -629,7 +632,7 @@ static const char *M_GetConditionString(condition_t *cn)
 
 			title = BUILDCONDITIONTITLE(cn->requirement);
 			work = va("%s %s%s",
-				(cn->type == UC_MAPVISITED) ? "Visit" : "Beat",
+				(cn->type == UC_MAPVISITED) ? "Visit" : "Finish a round on",
 				title,
 				(cn->type == UC_MAPENCORE) ? " in Encore Mode" : "");
 			Z_Free(title);

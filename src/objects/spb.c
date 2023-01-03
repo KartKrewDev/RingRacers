@@ -549,7 +549,7 @@ static void SPBSeek(mobj_t *spb, mobj_t *bestMobj)
 
 	SetSPBSpeed(spb, xySpeed, zSpeed);
 
-	if (specialStage.active == false)
+	if (specialstageinfo.valid == false)
 	{
 		// see if a player is near us, if they are, try to hit them by slightly thrusting towards them, otherwise, bleh!
 		steerDist = 1536 * mapobjectscale;
@@ -857,6 +857,27 @@ void Obj_SPBThink(mobj_t *spb)
 		ghost->colorized = true;
 	}
 
+	if (spb_nothink(spb) <= 1)
+	{
+		if (specialstageinfo.valid == true)
+		{
+			bestRank = 0;
+
+			if ((bestMobj = K_GetPossibleSpecialTarget()) == NULL)
+			{
+				// experimental - I think it's interesting IMO
+				Obj_MantaRingCreate(
+					spb,
+					spb_owner(spb),
+					NULL
+				);
+
+				spb->fuse = TICRATE/3;
+				spb_nothink(spb) = spb->fuse + 2;
+			}
+		}
+	}
+
 	if (spb_nothink(spb) > 0)
 	{
 		// Init values, don't think yet.
@@ -874,15 +895,6 @@ void Obj_SPBThink(mobj_t *spb)
 	}
 	else
 	{
-		if (specialStage.active == true)
-		{
-			if (specialStage.ufo != NULL && P_MobjWasRemoved(specialStage.ufo) == false)
-			{
-				bestRank = 1;
-				bestMobj = specialStage.ufo;
-			}
-		}
-
 		// Find the player with the best rank
 		for (i = 0; i < MAXPLAYERS; i++)
 		{

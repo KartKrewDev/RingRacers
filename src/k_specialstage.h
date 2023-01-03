@@ -20,14 +20,13 @@
 extern "C" {
 #endif
 
-extern struct specialStage
+extern struct specialstageinfo
 {
-	boolean active;						///< If true, then we are in a special stage
-	boolean encore;						///< Copy of encore, just to make sure you can't cheat it with cvars
+	boolean valid;						///< If true, then data in this struct is valid
 
 	UINT32 beamDist;					///< Where the exit beam is.
 	mobj_t *ufo;						///< The Chaos Emerald capsule.
-} specialStage;
+} specialstageinfo;
 
 /*--------------------------------------------------
 	void K_ResetSpecialStage(void);
@@ -54,6 +53,18 @@ void K_InitSpecialStage(void);
 --------------------------------------------------*/
 
 void K_TickSpecialStage(void);
+
+/*--------------------------------------------------
+	mobj_t *K_GetPossibleSpecialTarget(void)
+
+		Gets the global special stage target if valid
+		(for Jawz, tether, etc)
+
+	Return:-
+		Target or NULL
+--------------------------------------------------*/
+
+mobj_t *K_GetPossibleSpecialTarget(void);
 
 #ifdef __cplusplus
 } // extern "C"

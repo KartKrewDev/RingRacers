@@ -499,8 +499,8 @@ void DRPC_UpdatePresence(void)
 		else
 		{
 			snprintf(detailstr, 48, "%s%s%s",
-				gametype_cons_t[gametype].strvalue,
-				(gametype == GT_RACE) ? va(" | %s", kartspeed_cons_t[gamespeed].strvalue) : "",
+				gametypes[gametype]->name,
+				(gametyperules & GTR_CIRCUIT) ? va(" | %s", kartspeed_cons_t[gamespeed].strvalue) : "",
 				(encoremode == true) ? " | Encore" : ""
 			);
 			discordPresence.details = detailstr;

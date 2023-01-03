@@ -8,6 +8,9 @@
 extern "C" {
 #endif
 
+#define BATTLE_SPAWN_INTERVAL (4*TICRATE)
+#define BATTLE_DESPAWN_TIME (15*TICRATE)
+
 extern struct battleovertime
 {
 	UINT16 enabled; ///< Has this been initalized yet?
@@ -25,6 +28,7 @@ boolean K_IsPlayerWanted(player_t *player);
 void K_SpawnBattlePoints(player_t *source, player_t *victim, UINT8 amount);
 void K_CheckBumpers(void);
 void K_CheckEmeralds(player_t *player);
+UINT16 K_GetChaosEmeraldColor(UINT32 emeraldType);
 mobj_t *K_SpawnChaosEmerald(fixed_t x, fixed_t y, fixed_t z, angle_t angle, SINT8 flip, UINT32 emeraldType);
 mobj_t *K_SpawnSphereBox(fixed_t x, fixed_t y, fixed_t z, angle_t angle, SINT8 flip, UINT8 amount);
 void K_DropEmeraldsFromPlayer(player_t *player, UINT32 emeraldType);

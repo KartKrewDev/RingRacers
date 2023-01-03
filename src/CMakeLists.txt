@@ -154,7 +154,7 @@ add_custom_command(
 # build time for accurate git information and before anything
 # that needs it, obviously.
 add_custom_target(_SRB2_reconf ALL
-	COMMAND ${CMAKE_COMMAND} -DGIT_EXECUTABLE=${GIT_EXECUTABLE} -DBINARY_DIR=${CMAKE_CURRENT_BINARY_DIR}/.. -P ${CMAKE_CURRENT_SOURCE_DIR}/../cmake/Comptime.cmake
+	COMMAND ${CMAKE_COMMAND} -DGIT_EXECUTABLE=${GIT_EXECUTABLE} -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE} -DBINARY_DIR=${CMAKE_CURRENT_BINARY_DIR}/.. -P ${CMAKE_CURRENT_SOURCE_DIR}/../cmake/Comptime.cmake
 	WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/.."
 )
 add_dependencies(SRB2SDL2 _SRB2_reconf)

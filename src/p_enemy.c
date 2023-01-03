@@ -13053,7 +13053,7 @@ void A_ItemPop(mobj_t *actor)
 	}
 
 	// Here at mapload in battle?
-	if ((gametyperules & GTR_BUMPERS) && (actor->flags2 & MF2_BOSSNOTRAP))
+	if (!(gametyperules & GTR_CIRCUIT) && (actor->flags2 & MF2_BOSSNOTRAP))
 	{
 		numgotboxes++;
 

@@ -162,9 +162,6 @@ int LUA_PushGlobals(lua_State *L, const char *word)
 	} else if (fastcmp(word,"maptol")) {
 		lua_pushinteger(L, maptol);
 		return 1;
-	} else if (fastcmp(word,"circuitmap")) {
-		lua_pushboolean(L, circuitmap);
-		return 1;
 	} else if (fastcmp(word,"stoppedclock")) {
 		lua_pushboolean(L, stoppedclock);
 		return 1;

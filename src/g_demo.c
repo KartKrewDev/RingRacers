@@ -119,18 +119,14 @@ demoghost *ghosts = NULL;
 #define DEMOVERSION 0x0007
 #define DEMOHEADER  "\xF0" "KartReplay" "\x0F"
 
-#define DF_GHOST        0x01 // This demo contains ghost data too!
-#define DF_TIMEATTACK   0x02 // This demo is from Time Attack and contains its final completion time & best lap!
-#define DF_BREAKTHECAPSULES 0x04 // This demo is from Break the Capsules and contains its final completion time!
-#define DF_ATTACKMASK   0x06 // This demo is from ??? attack and contains ???
+#define DF_ATTACKMASK   (ATTACKING_TIME|ATTACKING_LAP) // This demo contains time/lap data
 
-// 0x08 free
+#define DF_GHOST		0x08 // This demo contains ghost data too!
 
 #define DF_NONETMP		0x10 // multiplayer but not netgame
 
 #define DF_LUAVARS		0x20 // this demo contains extra lua vars
 
-#define DF_ATTACKSHIFT  1
 #define DF_ENCORE       0x40
 #define DF_MULTIPLAYER  0x80 // This demo was recorded in multiplayer mode!
 
@@ -2341,10 +2337,19 @@ void G_BeginRecording(void)
 	memset(name,0,sizeof(name));
 
 	demobuf.p = demobuf.buffer;
-	demoflags = DF_GHOST|(multiplayer ? DF_MULTIPLAYER : (modeattacking<<DF_ATTACKSHIFT));
 
-	if (multiplayer && !netgame)
-		demoflags |= DF_NONETMP;
+	demoflags = DF_GHOST;
+
+	if (multiplayer)
+	{
+		demoflags |= DF_MULTIPLAYER;
+		if (!netgame)
+			demoflags |= DF_NONETMP;
+	}
+	else
+	{
+		demoflags |= modeattacking;
+	}
 
 	if (encoremode)
 		demoflags |= DF_ENCORE;
@@ -2375,7 +2380,9 @@ void G_BeginRecording(void)
 	M_Memcpy(demobuf.p, mapmd5, 16); demobuf.p += 16;
 
 	WRITEUINT8(demobuf.p, demoflags);
-	WRITEUINT8(demobuf.p, gametype & 0xFF);
+
+	WRITESTRINGN(demobuf.p, gametypes[gametype]->name, MAXGAMETYPELENGTH);
+
 	WRITEUINT8(demobuf.p, numlaps);
 
 	// file list
@@ -2384,21 +2391,18 @@ void G_BeginRecording(void)
 	// character list
 	G_SaveDemoSkins(&demobuf.p);
 
-	switch ((demoflags & DF_ATTACKMASK)>>DF_ATTACKSHIFT)
+	if ((demoflags & DF_ATTACKMASK))
 	{
-		case ATTACKING_NONE: // 0
-			break;
-		case ATTACKING_TIME: // 1
-			demotime_p = demobuf.p;
+		demotime_p = demobuf.p;
+
+		if (demoflags & ATTACKING_TIME)
 			WRITEUINT32(demobuf.p,UINT32_MAX); // time
+		if (demoflags & ATTACKING_LAP)
 			WRITEUINT32(demobuf.p,UINT32_MAX); // lap
-			break;
-		case ATTACKING_CAPSULES: // 2
-			demotime_p = demobuf.p;
-			WRITEUINT32(demobuf.p,UINT32_MAX); // time
-			break;
-		default: // 3
-			break;
+	}
+	else
+	{
+		demotime_p = NULL;
 	}
 
 	for (i = 0; i < PRNUMCLASS; i++)
@@ -2602,18 +2606,15 @@ void G_SetDemoTime(UINT32 ptime, UINT32 plap)
 {
 	if (!demo.recording || !demotime_p)
 		return;
-	if (demoflags & DF_TIMEATTACK)
+	if (demoflags & ATTACKING_TIME)
 	{
 		WRITEUINT32(demotime_p, ptime);
+	}
+	if (demoflags & ATTACKING_LAP)
+	{
 		WRITEUINT32(demotime_p, plap);
-		demotime_p = NULL;
 	}
-	else if (demoflags & DF_BREAKTHECAPSULES)
-	{
-		WRITEUINT32(demotime_p, ptime);
-		(void)plap;
-		demotime_p = NULL;
-	}
+	demotime_p = NULL;
 }
 
 // Returns bitfield:
@@ -2624,7 +2625,8 @@ UINT8 G_CmpDemoTime(char *oldname, char *newname)
 {
 	UINT8 *buffer,*p;
 	UINT8 flags;
-	UINT32 oldtime, newtime, oldlap, newlap;
+	UINT32 oldtime = UINT32_MAX, newtime = UINT32_MAX;
+	UINT32 oldlap = UINT32_MAX, newlap = UINT32_MAX;
 	UINT16 oldversion;
 	size_t bufsize ATTRUNUSED;
 	UINT8 c;
@@ -2654,23 +2656,22 @@ UINT8 G_CmpDemoTime(char *oldname, char *newname)
 	SKIPSTRING(p); // gamemap
 	p += 16; // map md5
 	flags = READUINT8(p); // demoflags
-	p++; // gametype
+	SKIPSTRING(p); // gametype
 	p++; // numlaps
 	G_SkipDemoExtraFiles(&p);
 
 	G_SkipDemoSkins(&p);
 
-	aflags = flags & (DF_TIMEATTACK|DF_BREAKTHECAPSULES);
+	aflags = flags & DF_ATTACKMASK;
 	I_Assert(aflags);
 
-	if (flags & DF_TIMEATTACK)
-		uselaps = true; // get around uninitalized error
+	if (aflags & ATTACKING_LAP)
+		uselaps = true;
 
-	newtime = READUINT32(p);
+	if (aflags & ATTACKING_TIME)
+		newtime = READUINT32(p);
 	if (uselaps)
 		newlap = READUINT32(p);
-	else
-		newlap = UINT32_MAX;
 
 	Z_Free(buffer);
 
@@ -2714,7 +2715,7 @@ UINT8 G_CmpDemoTime(char *oldname, char *newname)
 	SKIPSTRING(p); // gamemap
 	p += 16; // mapmd5
 	flags = READUINT8(p);
-	p++; // gametype
+	SKIPSTRING(p); // gametype
 	p++; // numlaps
 	G_SkipDemoExtraFiles(&p);
 	if (!(flags & aflags))
@@ -2726,11 +2727,10 @@ UINT8 G_CmpDemoTime(char *oldname, char *newname)
 
 	G_SkipDemoSkins(&p);
 
-	oldtime = READUINT32(p);
+	if (flags & ATTACKING_TIME)
+		oldtime = READUINT32(p);
 	if (uselaps)
 		oldlap = READUINT32(p);
-	else
-		oldlap = 0;
 
 	Z_Free(buffer);
 
@@ -2760,7 +2760,7 @@ void G_LoadDemoInfo(menudemo_t *pdemo)
 	UINT8 version, subversion, pdemoflags, worknumskins, skinid;
 	democharlist_t *skinlist = NULL;
 	UINT16 pdemoversion, count;
-	char mapname[MAXMAPLUMPNAME];
+	char mapname[MAXMAPLUMPNAME],gtname[MAXGAMETYPELENGTH];
 	INT32 i;
 
 	if (!FIL_ReadFile(pdemo->filepath, &infobuffer))
@@ -2824,7 +2824,9 @@ void G_LoadDemoInfo(menudemo_t *pdemo)
 		return;
 	}
 
-	pdemo->gametype = READUINT8(info_p);
+	READSTRINGN(info_p, gtname, sizeof(gtname)); // gametype
+	pdemo->gametype = G_GetGametypeByName(gtname);
+
 	pdemo->numlaps = READUINT8(info_p);
 
 	pdemo->addonstatus = G_CheckDemoExtraFiles(&info_p, true);
@@ -2936,9 +2938,11 @@ void G_DeferedPlayDemo(const char *name)
 
 void G_DoPlayDemo(char *defdemoname)
 {
-	UINT8 i, p, numslots = 0;
+	INT32 i;
+	UINT8 p, numslots = 0;
 	lumpnum_t l;
-	char color[MAXCOLORNAME+1],follower[17],mapname[MAXMAPLUMPNAME],*n,*pdemoname;
+	char color[MAXCOLORNAME+1],follower[17],mapname[MAXMAPLUMPNAME],gtname[MAXGAMETYPELENGTH];
+	char *n,*pdemoname;
 	UINT8 availabilities[MAXPLAYERS][MAXAVAILABILITY];
 	UINT8 version,subversion;
 	UINT32 randseed[PRNUMCLASS];
@@ -2955,6 +2959,7 @@ void G_DoPlayDemo(char *defdemoname)
 
 	follower[16] = '\0';
 	color[MAXCOLORNAME] = '\0';
+	gtname[MAXGAMETYPELENGTH-1] = '\0';
 
 	// No demo name means we're restarting the current demo
 	if (defdemoname == NULL)
@@ -3064,8 +3069,22 @@ void G_DoPlayDemo(char *defdemoname)
 	demobuf.p += 16; // mapmd5
 
 	demoflags = READUINT8(demobuf.p);
-	gametype = READUINT8(demobuf.p);
-	G_SetGametype(gametype);
+
+	READSTRINGN(demobuf.p, gtname, sizeof(gtname)); // gametype
+	i = G_GetGametypeByName(gtname);
+	if (i < 0)
+	{
+		snprintf(msg, 1024, M_GetText("%s is in a gametype that is not currently loaded and cannot be played.\n"), pdemoname);
+		CONS_Alert(CONS_ERROR, "%s", msg);
+		M_StartMessage(msg, NULL, MM_NOTHING);
+		Z_Free(pdemoname);
+		Z_Free(demobuf.buffer);
+		demo.playback = false;
+		demo.title = false;
+		return;
+	}
+	G_SetGametype(i);
+
 	numlaps = READUINT8(demobuf.p);
 
 	if (demo.title) // Titledemos should always play and ought to always be compatible with whatever wadlist is running.
@@ -3138,7 +3157,7 @@ void G_DoPlayDemo(char *defdemoname)
 		return;
 	}
 
-	modeattacking = (demoflags & DF_ATTACKMASK)>>DF_ATTACKSHIFT;
+	modeattacking = (demoflags & DF_ATTACKMASK);
 	multiplayer = !!(demoflags & DF_MULTIPLAYER);
 	demo.netgame = (multiplayer && !(demoflags & DF_NONETMP));
 	CON_ToggleOff();
@@ -3146,21 +3165,10 @@ void G_DoPlayDemo(char *defdemoname)
 	hu_demotime = UINT32_MAX;
 	hu_demolap = UINT32_MAX;
 
-	switch (modeattacking)
-	{
-		case ATTACKING_NONE: // 0
-			break;
-		case ATTACKING_TIME: // 1
-			hu_demotime = READUINT32(demobuf.p);
-			hu_demolap = READUINT32(demobuf.p);
-			break;
-		case ATTACKING_CAPSULES: // 2
-			hu_demotime = READUINT32(demobuf.p);
-			break;
-		default: // 3
-			modeattacking = ATTACKING_NONE;
-			break;
-	}
+	if (modeattacking & ATTACKING_TIME)
+		hu_demotime = READUINT32(demobuf.p);
+	if (modeattacking & ATTACKING_LAP)
+		hu_demolap = READUINT32(demobuf.p);
 
 	// Random seed
 	for (i = 0; i < PRNUMCLASS; i++)
@@ -3534,7 +3542,7 @@ void G_AddGhost(char *defdemoname)
 		return;
 	}
 
-	p++; // gametype
+	SKIPSTRING(p); // gametype
 	p++; // numlaps
 	G_SkipDemoExtraFiles(&p); // Don't wanna modify the file list for ghosts.
 
@@ -3547,19 +3555,10 @@ void G_AddGhost(char *defdemoname)
 		return;
 	}
 
-	switch ((flags & DF_ATTACKMASK)>>DF_ATTACKSHIFT)
-	{
-		case ATTACKING_NONE: // 0
-			break;
-		case ATTACKING_TIME: // 1
-			p += 8; // demo time, lap
-			break;
-		case ATTACKING_CAPSULES: // 2
-			p += 4; // demo time
-			break;
-		default: // 3
-			break;
-	}
+	if (flags & ATTACKING_TIME)
+		p += 4;
+	if (flags & ATTACKING_LAP)
+		p += 4;
 
 	for (i = 0; i < PRNUMCLASS; i++)
 	{
@@ -3589,9 +3588,10 @@ void G_AddGhost(char *defdemoname)
 	p++; // player number - doesn't really need to be checked, TODO maybe support adding multiple players' ghosts at once
 
 	// any invalidating flags?
-	if ((READUINT8(p) & (DEMO_SPECTATOR|DEMO_BOT)) != 0)
+	i = READUINT8(p);
+	if ((i & (DEMO_SPECTATOR|DEMO_BOT)) != 0)
 	{
-		CONS_Alert(CONS_NOTICE, M_GetText("Failed to add ghost %s: Invalid player slot.\n"), pdemoname);
+		CONS_Alert(CONS_NOTICE, M_GetText("Failed to add ghost %s: Invalid player slot (spectator/bot)\n"), pdemoname);
 		Z_Free(skinlist);
 		Z_Free(pdemoname);
 		Z_Free(buffer);
@@ -3601,6 +3601,8 @@ void G_AddGhost(char *defdemoname)
 	// Player name (TODO: Display this somehow if it doesn't match cv_playername!)
 	M_Memcpy(name, p, 16);
 	p += 16;
+
+	p += MAXAVAILABILITY;
 
 	// Skin
 	i = READUINT8(p);
@@ -3622,7 +3624,7 @@ void G_AddGhost(char *defdemoname)
 
 	if (READUINT8(p) != 0xFF)
 	{
-		CONS_Alert(CONS_NOTICE, M_GetText("Failed to add ghost %s: Invalid player slot.\n"), pdemoname);
+		CONS_Alert(CONS_NOTICE, M_GetText("Failed to add ghost %s: Invalid player slot (bad terminator)\n"), pdemoname);
 		Z_Free(skinlist);
 		Z_Free(pdemoname);
 		Z_Free(buffer);
@@ -3757,25 +3759,16 @@ void G_UpdateStaffGhostName(lumpnum_t l)
 		goto fail; // we don't NEED to do it here, but whatever
 	}
 
-	p++; // Gametype
+	SKIPSTRING(p); // gametype
 	p++; // numlaps
 	G_SkipDemoExtraFiles(&p);
 
 	G_SkipDemoSkins(&p);
 
-	switch ((flags & DF_ATTACKMASK)>>DF_ATTACKSHIFT)
-	{
-		case ATTACKING_NONE: // 0
-			break;
-		case ATTACKING_TIME: // 1
-			p += 8; // demo time, lap
-			break;
-		case ATTACKING_CAPSULES: // 2
-			p += 4; // demo time
-			break;
-		default: // 3
-			break;
-	}
+	if (flags & ATTACKING_TIME)
+		p += 4;
+	if (flags & ATTACKING_LAP)
+		p += 4;
 
 	for (i = 0; i < PRNUMCLASS; i++)
 	{
