@@ -4094,7 +4094,6 @@ static void P_NetUnArchiveThinkers(savebuffer_t *save)
 	// remove all the current thinkers
 	for (i = 0; i < NUM_THINKERLISTS; i++)
 	{
-		currentthinker = thlist[i].next;
 		for (currentthinker = thlist[i].next; currentthinker != &thlist[i]; currentthinker = next)
 		{
 			next = currentthinker->next;
@@ -4438,7 +4437,7 @@ static void P_RelinkPointers(void)
 {
 	thinker_t *currentthinker;
 	mobj_t *mobj;
-	UINT32 temp;
+	UINT32 temp, i;
 
 	// use info field (value = oldposition) to relink mobjs
 	for (currentthinker = thlist[THINK_MOBJ].next; currentthinker != &thlist[THINK_MOBJ];
@@ -4503,84 +4502,88 @@ static void P_RelinkPointers(void)
 			if (!P_SetTarget(&mobj->terrainOverlay, P_FindNewPosition(temp)))
 				CONS_Debug(DBG_GAMELOGIC, "terrainOverlay not found on %d\n", mobj->type);
 		}
-		if (mobj->player)
+	}
+
+	for (i = 0; i < MAXPLAYERS; i++)
+	{
+		if (!playeringame[i])
+			continue;
+
+		if (players[i].skybox.viewpoint)
 		{
-			if ( mobj->player->skybox.viewpoint)
+			temp = (UINT32)(size_t)players[i].skybox.viewpoint;
+			players[i].skybox.viewpoint = NULL;
+			if (!P_SetTarget(&players[i].skybox.viewpoint, P_FindNewPosition(temp)))
+				CONS_Debug(DBG_GAMELOGIC, "skybox.viewpoint not found on player %d\n", i);
+		}
+		if (players[i].skybox.centerpoint)
+		{
+			temp = (UINT32)(size_t)players[i].skybox.centerpoint;
+			players[i].skybox.centerpoint = NULL;
+			if (!P_SetTarget(&players[i].skybox.centerpoint, P_FindNewPosition(temp)))
+				CONS_Debug(DBG_GAMELOGIC, "skybox.centerpoint not found on player %d\n", i);
+		}
+		if (players[i].awayviewmobj)
+		{
+			temp = (UINT32)(size_t)players[i].awayviewmobj;
+			players[i].awayviewmobj = NULL;
+			if (!P_SetTarget(&players[i].awayviewmobj, P_FindNewPosition(temp)))
+				CONS_Debug(DBG_GAMELOGIC, "awayviewmobj not found on player %d\n", i);
+		}
+		if (players[i].followmobj)
+		{
+			temp = (UINT32)(size_t)players[i].followmobj;
+			players[i].followmobj = NULL;
+			if (!P_SetTarget(&players[i].followmobj, P_FindNewPosition(temp)))
+				CONS_Debug(DBG_GAMELOGIC, "followmobj not found on player %d\n", i);
+		}
+		if (players[i].follower)
+		{
+			temp = (UINT32)(size_t)players[i].follower;
+			players[i].follower = NULL;
+			if (!P_SetTarget(&players[i].follower, P_FindNewPosition(temp)))
+				CONS_Debug(DBG_GAMELOGIC, "follower not found on player %d\n", i);
+		}
+		if (players[i].currentwaypoint)
+		{
+			temp = (UINT32)(size_t)players[i].currentwaypoint;
+			players[i].currentwaypoint = K_GetWaypointFromIndex(temp);
+			if (players[i].currentwaypoint == NULL)
 			{
-				temp = (UINT32)(size_t)mobj->player->skybox.viewpoint;
-				mobj->player->skybox.viewpoint = NULL;
-				if (!P_SetTarget(&mobj->player->skybox.viewpoint, P_FindNewPosition(temp)))
-					CONS_Debug(DBG_GAMELOGIC, "skybox.viewpoint not found on %d\n", mobj->type);
+				CONS_Debug(DBG_GAMELOGIC, "currentwaypoint not found on player %d\n", i);
 			}
-			if ( mobj->player->skybox.centerpoint)
+		}
+		if (players[i].nextwaypoint)
+		{
+			temp = (UINT32)(size_t)players[i].nextwaypoint;
+			players[i].nextwaypoint = K_GetWaypointFromIndex(temp);
+			if (players[i].nextwaypoint == NULL)
 			{
-				temp = (UINT32)(size_t)mobj->player->skybox.centerpoint;
-				mobj->player->skybox.centerpoint = NULL;
-				if (!P_SetTarget(&mobj->player->skybox.centerpoint, P_FindNewPosition(temp)))
-					CONS_Debug(DBG_GAMELOGIC, "skybox.centerpoint not found on %d\n", mobj->type);
+				CONS_Debug(DBG_GAMELOGIC, "nextwaypoint not found on player %d\n", i);
 			}
-			if ( mobj->player->awayviewmobj)
+		}
+		if (players[i].respawn.wp)
+		{
+			temp = (UINT32)(size_t)players[i].respawn.wp;
+			players[i].respawn.wp = K_GetWaypointFromIndex(temp);
+			if (players[i].respawn.wp == NULL)
 			{
-				temp = (UINT32)(size_t)mobj->player->awayviewmobj;
-				mobj->player->awayviewmobj = NULL;
-				if (!P_SetTarget(&mobj->player->awayviewmobj, P_FindNewPosition(temp)))
-					CONS_Debug(DBG_GAMELOGIC, "awayviewmobj not found on %d\n", mobj->type);
+				CONS_Debug(DBG_GAMELOGIC, "respawn.wp not found on player %d\n", i);
 			}
-			if (mobj->player->followmobj)
-			{
-				temp = (UINT32)(size_t)mobj->player->followmobj;
-				mobj->player->followmobj = NULL;
-				if (!P_SetTarget(&mobj->player->followmobj, P_FindNewPosition(temp)))
-					CONS_Debug(DBG_GAMELOGIC, "followmobj not found on %d\n", mobj->type);
-			}
-			if (mobj->player->follower)
-			{
-				temp = (UINT32)(size_t)mobj->player->follower;
-				mobj->player->follower = NULL;
-				if (!P_SetTarget(&mobj->player->follower, P_FindNewPosition(temp)))
-					CONS_Debug(DBG_GAMELOGIC, "follower not found on %d\n", mobj->type);
-			}
-			if (mobj->player->currentwaypoint)
-			{
-				temp = (UINT32)(size_t)mobj->player->currentwaypoint;
-				mobj->player->currentwaypoint = K_GetWaypointFromIndex(temp);
-				if (mobj->player->currentwaypoint == NULL)
-				{
-					CONS_Debug(DBG_GAMELOGIC, "currentwaypoint not found on %d\n", mobj->type);
-				}
-			}
-			if (mobj->player->nextwaypoint)
-			{
-				temp = (UINT32)(size_t)mobj->player->nextwaypoint;
-				mobj->player->nextwaypoint = K_GetWaypointFromIndex(temp);
-				if (mobj->player->nextwaypoint == NULL)
-				{
-					CONS_Debug(DBG_GAMELOGIC, "nextwaypoint not found on %d\n", mobj->type);
-				}
-			}
-			if (mobj->player->respawn.wp)
-			{
-				temp = (UINT32)(size_t)mobj->player->respawn.wp;
-				mobj->player->respawn.wp = K_GetWaypointFromIndex(temp);
-				if (mobj->player->respawn.wp == NULL)
-				{
-					CONS_Debug(DBG_GAMELOGIC, "respawn.wp not found on %d\n", mobj->type);
-				}
-			}
-			if (mobj->player->hoverhyudoro)
-			{
-				temp = (UINT32)(size_t)mobj->player->hoverhyudoro;
-				mobj->player->hoverhyudoro = NULL;
-				if (!P_SetTarget(&mobj->player->hoverhyudoro, P_FindNewPosition(temp)))
-					CONS_Debug(DBG_GAMELOGIC, "hoverhyudoro not found on %d\n", mobj->type);
-			}
-			if (mobj->player->stumbleIndicator)
-			{
-				temp = (UINT32)(size_t)mobj->player->stumbleIndicator;
-				mobj->player->stumbleIndicator = NULL;
-				if (!P_SetTarget(&mobj->player->stumbleIndicator, P_FindNewPosition(temp)))
-					CONS_Debug(DBG_GAMELOGIC, "stumbleIndicator not found on %d\n", mobj->type);
-			}
+		}
+		if (players[i].hoverhyudoro)
+		{
+			temp = (UINT32)(size_t)players[i].hoverhyudoro;
+			players[i].hoverhyudoro = NULL;
+			if (!P_SetTarget(&players[i].hoverhyudoro, P_FindNewPosition(temp)))
+				CONS_Debug(DBG_GAMELOGIC, "hoverhyudoro not found on player %d\n", i);
+		}
+		if (players[i].stumbleIndicator)
+		{
+			temp = (UINT32)(size_t)players[i].stumbleIndicator;
+			players[i].stumbleIndicator = NULL;
+			if (!P_SetTarget(&players[i].stumbleIndicator, P_FindNewPosition(temp)))
+				CONS_Debug(DBG_GAMELOGIC, "stumbleIndicator not found on player %d\n", i);
 		}
 	}
 }
