@@ -4346,25 +4346,7 @@ static void P_RefreshItemCapsuleParts(mobj_t *mobj)
 	part->threshold = mobj->threshold;
 	part->movecount = mobj->movecount;
 
-	switch (itemType)
-	{
-		case KITEM_ORBINAUT:
-			part->sprite = SPR_ITMO;
-			part->frame = FF_FULLBRIGHT|FF_PAPERSPRITE|K_GetOrbinautItemFrame(mobj->movecount);
-			break;
-		case KITEM_INVINCIBILITY:
-			part->sprite = SPR_ITMI;
-			part->frame = FF_FULLBRIGHT|FF_PAPERSPRITE|K_GetInvincibilityItemFrame();
-			break;
-		case KITEM_SAD:
-			part->sprite = SPR_ITEM;
-			part->frame = FF_FULLBRIGHT|FF_PAPERSPRITE;
-			break;
-		default:
-			part->sprite = SPR_ITEM;
-			part->frame = FF_FULLBRIGHT|FF_PAPERSPRITE|(itemType);
-			break;
-	}
+	K_UpdateMobjItemOverlay(part, itemType, mobj->movecount);
 
 	// update number frame
 	if (K_GetShieldFromItem(itemType) != KSHIELD_NONE) // shields don't stack, so don't show a number
@@ -9528,13 +9510,39 @@ for (i = ((mobj->flags2 & MF2_STRONGBOX) ? strongboxamt : weakboxamt); i; --i) s
 	P_RemoveMobj(mobj); // make sure they disappear
 }
 
+static boolean P_CanFlickerFuse(mobj_t *mobj)
+{
+	switch (mobj->type)
+	{
+		case MT_SNAPPER_HEAD:
+		case MT_SNAPPER_LEG:
+		case MT_MINECARTSEG:
+			return true;
+
+		case MT_RANDOMITEM:
+		case MT_EGGMANITEM:
+		case MT_FALLINGROCK:
+		case MT_FLOATINGITEM:
+			if (mobj->fuse <= TICRATE)
+			{
+				return true;
+			}
+			break;
+
+		default:
+			break;
+	}
+
+	return false;
+
+}
+
 static boolean P_FuseThink(mobj_t *mobj)
 {
-	if (mobj->type == MT_SNAPPER_HEAD || mobj->type == MT_SNAPPER_LEG || mobj->type == MT_MINECARTSEG)
+	if (P_CanFlickerFuse(mobj))
+	{
 		mobj->renderflags ^= RF_DONTDRAW;
-
-	if (mobj->fuse <= TICRATE && (mobj->type == MT_RANDOMITEM || mobj->type == MT_EGGMANITEM || mobj->type == MT_FALLINGROCK))
-		mobj->renderflags ^= RF_DONTDRAW;
+	}
 
 	mobj->fuse--;
 

@@ -138,6 +138,7 @@ INT32 K_GetKartDriftSparkValueForStage(player_t *player, UINT8 stage);
 void K_SpawnDriftBoostExplosion(player_t *player, int stage);
 void K_SpawnDriftElectricSparks(player_t *player, int color, boolean shockwave);
 void K_KartUpdatePosition(player_t *player);
+SINT8 K_GetTotallyRandomResult(UINT8 useodds);
 mobj_t *K_CreatePaperItem(fixed_t x, fixed_t y, fixed_t z, angle_t angle, SINT8 flip, UINT8 type, UINT8 amount);
 void K_DropItems(player_t *player);
 void K_DropRocketSneaker(player_t *player);
@@ -196,6 +197,8 @@ void K_PlayPowerGloatSound(mobj_t *source);
 fixed_t K_ItemScaleForPlayer(player_t *player);
 void K_SetItemOut(player_t *player);
 void K_UnsetItemOut(player_t *player);
+
+void K_UpdateMobjItemOverlay(mobj_t *part, SINT8 itemType, UINT8 itemCount);
 
 #ifdef __cplusplus
 } // extern "C"

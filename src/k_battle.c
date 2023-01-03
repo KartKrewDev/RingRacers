@@ -221,6 +221,29 @@ void K_CheckEmeralds(player_t *player)
 	K_CheckBumpers();
 }
 
+UINT16 K_GetChaosEmeraldColor(UINT32 emeraldType)
+{
+	switch (emeraldType)
+	{
+		case EMERALD_CHAOS1:
+			return SKINCOLOR_CHAOSEMERALD1;
+		case EMERALD_CHAOS2:
+			return SKINCOLOR_CHAOSEMERALD2;
+		case EMERALD_CHAOS3:
+			return SKINCOLOR_CHAOSEMERALD3;
+		case EMERALD_CHAOS4:
+			return SKINCOLOR_CHAOSEMERALD4;
+		case EMERALD_CHAOS5:
+			return SKINCOLOR_CHAOSEMERALD5;
+		case EMERALD_CHAOS6:
+			return SKINCOLOR_CHAOSEMERALD6;
+		case EMERALD_CHAOS7:
+			return SKINCOLOR_CHAOSEMERALD7;
+		default:
+			return SKINCOLOR_NONE;
+	}
+}
+
 mobj_t *K_SpawnChaosEmerald(fixed_t x, fixed_t y, fixed_t z, angle_t angle, SINT8 flip, UINT32 emeraldType)
 {
 	boolean validEmerald = true;
@@ -240,25 +263,13 @@ mobj_t *K_SpawnChaosEmerald(fixed_t x, fixed_t y, fixed_t z, angle_t angle, SINT
 	switch (emeraldType)
 	{
 		case EMERALD_CHAOS1:
-			emerald->color = SKINCOLOR_CHAOSEMERALD1;
-			break;
 		case EMERALD_CHAOS2:
-			emerald->color = SKINCOLOR_CHAOSEMERALD2;
-			break;
 		case EMERALD_CHAOS3:
-			emerald->color = SKINCOLOR_CHAOSEMERALD3;
-			break;
 		case EMERALD_CHAOS4:
-			emerald->color = SKINCOLOR_CHAOSEMERALD4;
-			break;
 		case EMERALD_CHAOS5:
-			emerald->color = SKINCOLOR_CHAOSEMERALD5;
-			break;
 		case EMERALD_CHAOS6:
-			emerald->color = SKINCOLOR_CHAOSEMERALD6;
-			break;
 		case EMERALD_CHAOS7:
-			emerald->color = SKINCOLOR_CHAOSEMERALD7;
+			emerald->color = K_GetChaosEmeraldColor(emeraldType);
 			break;
 		default:
 			CONS_Printf("Invalid emerald type %d\n", emeraldType);
@@ -336,10 +347,15 @@ UINT8 K_NumEmeralds(player_t *player)
 	return num;
 }
 
+static inline boolean IsOnInterval(tic_t interval)
+{
+	return ((leveltime - starttime) % interval) == 0;
+}
+
 void K_RunPaperItemSpawners(void)
 {
 	const boolean overtime = (battleovertime.enabled >= 10*TICRATE);
-	tic_t interval = 8*TICRATE;
+	const tic_t interval = BATTLE_SPAWN_INTERVAL;
 
 	const boolean canmakeemeralds = true; //(!(battlecapsules || bossinfo.boss));
 
@@ -364,13 +380,7 @@ void K_RunPaperItemSpawners(void)
 		return;
 	}
 
-	if (overtime == true)
-	{
-		// Double frequency of items
-		interval /= 2;
-	}
-
-	if (((leveltime - starttime) % interval) != 0)
+	if (!IsOnInterval(interval))
 	{
 		return;
 	}
@@ -546,7 +556,7 @@ void K_RunPaperItemSpawners(void)
 				}
 				else
 				{
-					if (gametyperules & GTR_SPHERES)
+					if ((gametyperules & GTR_SPHERES) && IsOnInterval(2 * interval))
 					{
 						drop = K_SpawnSphereBox(
 							spotList[r]->x, spotList[r]->y, spotList[r]->z + (128 * mapobjectscale * flip),
