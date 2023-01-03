@@ -418,6 +418,99 @@ static UINT32 K_GetItemRouletteDistance(const player_t *player, UINT8 numPlayers
 }
 
 /*--------------------------------------------------
+	static boolean K_DenyShieldOdds(kartitems_t item)
+
+		Checks if this type of shield already exists in
+		another player's inventory.
+
+	Input Arguments:-
+		item - The item type of the shield.
+
+	Return:-
+		Whether this item is a shield and may not be awarded
+		at this time.
+--------------------------------------------------*/
+static boolean K_DenyShieldOdds(kartitems_t item)
+{
+	INT32 shieldType = K_GetShieldFromItem(item);
+
+	switch (shieldType)
+	{
+		case KSHIELD_NONE:
+			/* Marble Garden Top is not REALLY
+				a Sonic 3 shield */
+		case KSHIELD_TOP:
+		{
+			break;
+		}
+
+		default:
+		{
+			size_t i;
+
+			for (i = 0; i < MAXPLAYERS; i++)
+			{
+				if (playeringame[i] == false || players[i].spectator == true)
+				{
+					continue;
+				}
+
+				if (shieldType == K_GetShieldFromItem(players[i].itemtype))
+				{
+					// Don't allow more than one of each shield type at a time
+					return true;
+				}
+			}
+		}
+	}
+
+	return false;
+}
+
+/*--------------------------------------------------
+	static fixed_t K_AdjustSPBOdds(const itemroulette_t *roulette, UINT8 position)
+
+	Adjust odds of SPB according to distances of first and
+	second place players.
+
+	Input Arguments:-
+		roulette - The roulette data that we intend to
+			insert this item into.
+		position - Position of player to consider for these
+			odds.
+
+	Return:-
+		New item odds.
+--------------------------------------------------*/
+static fixed_t K_AdjustSPBOdds(const itemroulette_t *roulette, UINT8 position)
+{
+	if (roulette->firstDist < ENDDIST*2 // No SPB when 1st is almost done
+		|| position == 1) // No SPB for 1st ever
+	{
+		return 0;
+	}
+	else
+	{
+		const UINT32 dist = max(0, ((signed)roulette->secondToFirst) - SPBSTARTDIST);
+		const UINT32 distRange = SPBFORCEDIST - SPBSTARTDIST;
+		const fixed_t maxOdds = 20 << FRACBITS;
+		fixed_t multiplier = FixedDiv(dist, distRange);
+
+		if (multiplier < 0)
+		{
+			multiplier = 0;
+		}
+
+		if (multiplier > FRACUNIT)
+		{
+			multiplier = FRACUNIT;
+		}
+
+		return FixedMul(maxOdds, multiplier);
+	}
+}
+
+/*--------------------------------------------------
 	INT32 K_KartGetItemOdds(const player_t *player, itemroulette_t *const roulette, UINT8 pos, kartitems_t item)
 
 		See header file for description.
@@ -428,14 +521,11 @@ INT32 K_KartGetItemOdds(const player_t *player, itemroulette_t *const roulette, 
 	boolean rival = false;
 	UINT8 position = 0;
 
-	INT32 shieldType = KSHIELD_NONE;
-
 	boolean powerItem = false;
 	boolean cooldownOnStart = false;
 	boolean notNearEnd = false;
 
 	fixed_t newOdds = 0;
-	size_t i;
 
 	I_Assert(roulette != NULL);
 
@@ -478,33 +568,9 @@ INT32 K_KartGetItemOdds(const player_t *player, itemroulette_t *const roulette, 
 	*/
 	(void)bot;
 
-	shieldType = K_GetShieldFromItem(item);
-	switch (shieldType)
+	if (K_DenyShieldOdds(item))
 	{
-		case KSHIELD_NONE:
-			/* Marble Garden Top is not REALLY
-				a Sonic 3 shield */
-		case KSHIELD_TOP:
-		{
-			break;
-		}
-
-		default:
-		{
-			for (i = 0; i < MAXPLAYERS; i++)
-			{
-				if (playeringame[i] == false || players[i].spectator == true)
-				{
-					continue;
-				}
-
-				if (shieldType == K_GetShieldFromItem(players[i].itemtype))
-				{
-					// Don't allow more than one of each shield type at a time
-					return 0;
-				}
-			}
-		}
+		return 0;
 	}
 
 	if (gametype == GT_BATTLE)
@@ -581,30 +647,7 @@ INT32 K_KartGetItemOdds(const player_t *player, itemroulette_t *const roulette, 
 
 			if (specialstageinfo.valid == false)
 			{
-				if (roulette->firstDist < ENDDIST*2 // No SPB when 1st is almost done
-					|| position == 1) // No SPB for 1st ever
-				{
-					return 0;
-				}
-				else
-				{
-					const UINT32 dist = max(0, ((signed)roulette->secondToFirst) - SPBSTARTDIST);
-					const UINT32 distRange = SPBFORCEDIST - SPBSTARTDIST;
-					const fixed_t maxOdds = 20 << FRACBITS;
-					fixed_t multiplier = FixedDiv(dist, distRange);
-
-					if (multiplier < 0)
-					{
-						multiplier = 0;
-					}
-
-					if (multiplier > FRACUNIT)
-					{
-						multiplier = FRACUNIT;
-					}
-
-					newOdds = FixedMul(maxOdds, multiplier);
-				}
+				newOdds = K_AdjustSPBOdds(roulette, position);
 			}
 			break;
 		}
