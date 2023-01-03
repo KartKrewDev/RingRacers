@@ -2106,9 +2106,6 @@ static void SaveMobjThinker(savebuffer_t *save, const thinker_t *th, const UINT8
 	if (diff & MD_MORE)
 		WRITEUINT32(save->p, diff2);
 
-	// save pointer, at load time we will search this pointer to reinitilize pointers
-	WRITEUINT32(save->p, (size_t)mobj);
-
 	WRITEFIXED(save->p, mobj->z); // Force this so 3dfloor problems don't arise.
 	WRITEFIXED(save->p, mobj->floorz);
 	WRITEFIXED(save->p, mobj->ceilingz);
@@ -3141,7 +3138,6 @@ static inline pslope_t *LoadSlope(UINT32 slopeid)
 
 static thinker_t* LoadMobjThinker(savebuffer_t *save, actionf_p1 thinker)
 {
-	thinker_t *next;
 	mobj_t *mobj;
 	UINT32 diff;
 	UINT32 diff2;
@@ -3154,8 +3150,6 @@ static thinker_t* LoadMobjThinker(savebuffer_t *save, actionf_p1 thinker)
 		diff2 = READUINT32(save->p);
 	else
 		diff2 = 0;
-
-	next = (void *)(size_t)READUINT32(save->p);
 
 	z = READFIXED(save->p); // Force this so 3dfloor problems don't arise.
 	floorz = READFIXED(save->p);
@@ -3477,8 +3471,6 @@ static thinker_t* LoadMobjThinker(savebuffer_t *save, actionf_p1 thinker)
 
 	if (diff2 & MD2_KITEMCAP)
 		P_SetTarget(&kitemcap, mobj);
-
-	mobj->info = (mobjinfo_t *)next; // temporarily, set when leave this function
 
 	R_AddMobjInterpolator(mobj);
 
@@ -4416,23 +4408,6 @@ static inline void P_UnArchivePolyObjects(savebuffer_t *save)
 		P_UnArchivePolyObj(save, &PolyObjects[i]);
 }
 
-static inline void P_FinishMobjs(void)
-{
-	thinker_t *currentthinker;
-	mobj_t *mobj;
-
-	// put info field there real value
-	for (currentthinker = thlist[THINK_MOBJ].next; currentthinker != &thlist[THINK_MOBJ];
-		currentthinker = currentthinker->next)
-	{
-		if (currentthinker->function.acp1 == (actionf_p1)P_RemoveThinkerDelayed)
-			continue;
-
-		mobj = (mobj_t *)currentthinker;
-		mobj->info = &mobjinfo[mobj->type];
-	}
-}
-
 static void P_RelinkPointers(void)
 {
 	thinker_t *currentthinker;
@@ -5214,7 +5189,6 @@ boolean P_LoadNetGame(savebuffer_t *save, boolean reloading)
 		P_NetUnArchiveTubeWaypoints(save);
 		P_NetUnArchiveWaypoints(save);
 		P_RelinkPointers();
-		P_FinishMobjs();
 	}
 
 	LUA_UnArchive(save, true);
