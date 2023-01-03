@@ -1166,7 +1166,7 @@ static void SV_SendSaveGame(INT32 node, boolean resending)
 
 	// Allocate space for compressed save: one byte fewer than for the
 	// uncompressed data to ensure that the compression is worthwhile.
-	compressedsave = malloc(length - 1);
+	compressedsave = Z_Malloc(length - 1, PU_STATIC, NULL);
 	if (!compressedsave)
 	{
 		CONS_Alert(CONS_ERROR, M_GetText("No more free memory for savegame\n"));
@@ -1187,14 +1187,14 @@ static void SV_SendSaveGame(INT32 node, boolean resending)
 	else
 	{
 		// Compression failed to make it smaller; send original
-		free(compressedsave);
+		Z_Free(compressedsave);
 
 		// State that we're not compressed
 		buffertosend = save.buffer;
 		WRITEUINT32(save.buffer, 0);
 	}
 
-	AddRamToSendQueue(node, buffertosend, length, SF_RAM, 0);
+	AddRamToSendQueue(node, buffertosend, length, SF_Z_RAM, 0);
 
 	// Remember when we started sending the savegame so we can handle timeouts
 	sendingsavegame[node] = true;
