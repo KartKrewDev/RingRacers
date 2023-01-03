@@ -324,6 +324,11 @@ tic_t K_MineExplodeAttack(mobj_t *actor, fixed_t size, boolean spin)
 
 	if (!spin)
 	{
+		if (minehitlag == 0)
+		{
+			minehitlag = actor->hitlag;
+		}
+
 		Obj_SpawnBrolyKi(actor, minehitlag);
 
 		return minehitlag;
