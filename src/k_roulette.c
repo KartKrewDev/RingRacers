@@ -489,6 +489,8 @@ static boolean K_DenyShieldOdds(kartitems_t item)
 --------------------------------------------------*/
 static fixed_t K_AdjustSPBOdds(const itemroulette_t *roulette, UINT8 position)
 {
+	I_Assert(roulette != NULL);
+
 	if (roulette->firstDist < ENDDIST*2 // No SPB when 1st is almost done
 		|| position == 1) // No SPB for 1st ever
 	{
@@ -551,7 +553,7 @@ static fixed_t K_AdjustItemOddsToConditions(fixed_t newOdds, const itemcondition
 		// This item should not appear at the beginning of a race. (Usually really powerful crowd-breaking items)
 		newOdds = 0;
 	}
-	else if ((conditions->notNearEnd == true) && (roulette->baseDist < ENDDIST))
+	else if ((conditions->notNearEnd == true) && (roulette != NULL && roulette->baseDist < ENDDIST))
 	{
 		// This item should not appear at the end of a race. (Usually trap items that lose their effectiveness)
 		newOdds = 0;
@@ -571,7 +573,10 @@ static fixed_t K_AdjustItemOddsToConditions(fixed_t newOdds, const itemcondition
 			newOdds *= 2;
 		}
 
-		newOdds = FixedMul(newOdds, FRACUNIT + K_ItemOddsScale(roulette->playing));
+		if (roulette != NULL)
+		{
+			newOdds = FixedMul(newOdds, FRACUNIT + K_ItemOddsScale(roulette->playing));
+		}
 	}
 
 	return newOdds;
@@ -595,8 +600,6 @@ INT32 K_KartGetItemOdds(const player_t *player, itemroulette_t *const roulette, 
 	};
 
 	fixed_t newOdds = 0;
-
-	I_Assert(roulette != NULL);
 
 	I_Assert(item > KITEM_NONE); // too many off by one scenarioes.
 	I_Assert(item < NUMKARTRESULTS);
@@ -708,7 +711,8 @@ INT32 K_KartGetItemOdds(const player_t *player, itemroulette_t *const roulette, 
 			conditions.cooldownOnStart = true;
 			conditions.notNearEnd = true;
 
-			if ((gametyperules & GTR_CIRCUIT) &&
+			if (roulette != NULL &&
+					(gametyperules & GTR_CIRCUIT) &&
 					specialstageinfo.valid == false)
 			{
 				newOdds = K_AdjustSPBOdds(roulette, position);
@@ -722,7 +726,8 @@ INT32 K_KartGetItemOdds(const player_t *player, itemroulette_t *const roulette, 
 			conditions.powerItem = true;
 			conditions.notNearEnd = true;
 
-			if ((gametyperules & GTR_CIRCUIT) &&
+			if (roulette != NULL &&
+					(gametyperules & GTR_CIRCUIT) &&
 					roulette->playing - 1 <= roulette->exiting)
 			{
 				return 0;
