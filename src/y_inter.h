@@ -33,13 +33,12 @@ void Y_SetupVoteFinish(SINT8 pick, SINT8 level);
 typedef enum
 {
 	int_none,
-	int_race,		// Race
-	int_battle,		// Battle (score-based)
-	int_battletime,	// Battle (time-based)
+	int_time,				// Always time
+	int_score,				// Always score
+	int_scoreortimeattack,	// Score unless 1P
 } intertype_t;
 
 extern intertype_t intertype;
-extern intertype_t intermissiontypes[NUMGAMETYPES];
 
 #ifdef __cplusplus
 } // extern "C"

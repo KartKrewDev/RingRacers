@@ -6822,7 +6822,6 @@ static void P_InitLevelSettings(void)
 	rflagpoint = bflagpoint = NULL;
 
 	// circuit, race and competition stuff
-	circuitmap = false;
 	numstarposts = 0;
 	timeinmap = 0;
 
@@ -6844,7 +6843,7 @@ static void P_InitLevelSettings(void)
 		if (playeringame[i] && !players[i].spectator)
 			p++;
 
-		if (grandprixinfo.gp == false && bossinfo.boss == false)
+		if (grandprixinfo.gp == false)
 			players[i].lives = 3;
 
 		G_PlayerReborn(i, true);
@@ -6854,39 +6853,27 @@ static void P_InitLevelSettings(void)
 	racecountdown = exitcountdown = exitfadestarted = 0;
 	curlap = bestlap = 0; // SRB2Kart
 
-	// SRB2Kart: map load variables
+	// Gamespeed and frantic items
+	gamespeed = KARTSPEED_EASY;
+	franticitems = false;
+
 	if (grandprixinfo.gp == true)
 	{
-		if ((gametyperules & GTR_BUMPERS))
-		{
-			gamespeed = KARTSPEED_EASY;
-		}
-		else
+		if (gametyperules & GTR_CIRCUIT)
 		{
 			gamespeed = grandprixinfo.gamespeed;
 		}
-
-		franticitems = false;
-	}
-	else if (bossinfo.boss)
-	{
-		gamespeed = KARTSPEED_EASY;
-		franticitems = false;
 	}
 	else if (modeattacking)
 	{
-		// Just play it safe and set everything
-		if ((gametyperules & GTR_BUMPERS))
-			gamespeed = KARTSPEED_EASY;
-		else
+		if (gametyperules & GTR_CIRCUIT)
+		{
 			gamespeed = KARTSPEED_HARD;
-		franticitems = false;
+		}
 	}
 	else
 	{
-		if ((gametyperules & GTR_BUMPERS))
-			gamespeed = KARTSPEED_EASY;
-		else
+		if (gametyperules & GTR_CIRCUIT)
 		{
 			if (cv_kartspeed.value == KARTSPEED_AUTO)
 				gamespeed = ((speedscramble == -1) ? KARTSPEED_NORMAL : (UINT8)speedscramble);
@@ -6901,6 +6888,9 @@ static void P_InitLevelSettings(void)
 
 	memset(&battleovertime, 0, sizeof(struct battleovertime));
 	speedscramble = encorescramble = -1;
+
+	K_ResetSpecialStage();
+	K_ResetBossInfo();
 }
 
 #if 0
@@ -7002,20 +6992,23 @@ static void P_LoadRecordGhosts(void)
 	gpath = Z_StrDup(va("%s"PATHSEP"media"PATHSEP"replay"PATHSEP"%s"PATHSEP"%s", srb2home, timeattackfolder, G_BuildMapName(gamemap)));
 
 	// Best Time ghost
-	if (cv_ghost_besttime.value)
+	if (modeattacking & ATTACKING_TIME)
 	{
-		for (i = 0; i < numskins; ++i)
+		if (cv_ghost_besttime.value)
 		{
-			if (cv_ghost_besttime.value == 1 && players[consoleplayer].skin != i)
-				continue;
+			for (i = 0; i < numskins; ++i)
+			{
+				if (cv_ghost_besttime.value == 1 && players[consoleplayer].skin != i)
+					continue;
 
-			if (FIL_FileExists(va("%s-%s-time-best.lmp", gpath, skins[i].name)))
-				G_AddGhost(va("%s-%s-time-best.lmp", gpath, skins[i].name));
+				if (FIL_FileExists(va("%s-%s-time-best.lmp", gpath, skins[i].name)))
+					G_AddGhost(va("%s-%s-time-best.lmp", gpath, skins[i].name));
+			}
 		}
 	}
 
 	// Best Lap ghost
-	if (modeattacking != ATTACKING_CAPSULES)
+	if (modeattacking & ATTACKING_LAP)
 	{
 		if (cv_ghost_bestlap.value)
 		{
@@ -7222,7 +7215,6 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 
 	// This is needed. Don't touch.
 	maptol = mapheaderinfo[gamemap-1]->typeoflevel;
-	gametyperules = gametypedefaultrules[gametype];
 
 	CON_Drawer(); // let the user know what we are going to do
 	I_FinishUpdate(); // page flip or blit buffer
@@ -7336,13 +7328,6 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 		}
 		G_ClearModeAttackRetryFlag();
 	}
-	/*
-	else if (rendermode != render_none && G_IsSpecialStage(gamemap))
-	{
-		P_RunSpecialStageWipe();
-		ranspecialwipe = 1;
-	}
-	*/
 
 	// Make sure all sounds are stopped before Z_FreeTags.
 	S_StopSounds();
@@ -7377,7 +7362,20 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 			S_Start();
 		}
 
-		levelfadecol = (encoremode ? 0 : 31);
+		if (gametyperules & GTR_SPECIALSTART)
+		{
+			if (ranspecialwipe != 2)
+				S_StartSound(NULL, sfx_s3kaf);
+			levelfadecol = 0;
+		}
+		else if (encoremode)
+		{
+			levelfadecol = 0;
+		}
+		else
+		{
+			levelfadecol = 31;
+		}
 
 		if (rendermode != render_none)
 		{
@@ -7611,19 +7609,6 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 	{
 		// We're in a Match Race, use simplistic randomized bots.
 		K_UpdateMatchRaceBots();
-	}
-
-	if (bossinfo.boss)
-	{
-		// Reset some pesky boss state that can't be handled elsewhere.
-		bossinfo.barlen = BOSSHEALTHBARLEN;
-		bossinfo.visualbar = 0;
-		Z_Free(bossinfo.enemyname);
-		Z_Free(bossinfo.subtitle);
-		bossinfo.enemyname = bossinfo.subtitle = NULL;
-		bossinfo.titleshow = 0;
-		bossinfo.titlesound = sfx_typri1;
-		memset(&(bossinfo.weakspots), 0, sizeof(weakspot_t)*NUMWEAKSPOTS);
 	}
 
 	if (!fromnetsave) // uglier hack

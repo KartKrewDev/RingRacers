@@ -2,7 +2,6 @@
 /// \brief SRB2Kart Battle Mode specific code
 
 #include "k_battle.h"
-#include "k_boss.h"
 #include "k_kart.h"
 #include "doomtype.h"
 #include "doomdata.h"
@@ -146,7 +145,7 @@ void K_CheckBumpers(void)
 	}
 	else if (numingame <= 1)
 	{
-		if (!battlecapsules)
+		if ((gametyperules & GTR_CAPSULES) && !battlecapsules)
 		{
 			// Reset map to turn on battle capsules
 			if (server)
@@ -195,6 +194,11 @@ void K_CheckBumpers(void)
 void K_CheckEmeralds(player_t *player)
 {
 	UINT8 i;
+
+	if (!(gametyperules & GTR_POWERSTONES))
+	{
+		return;
+	}
 
 	if (!ALLCHAOSEMERALDS(player->emeralds))
 	{
@@ -357,7 +361,7 @@ void K_RunPaperItemSpawners(void)
 	const boolean overtime = (battleovertime.enabled >= 10*TICRATE);
 	const tic_t interval = BATTLE_SPAWN_INTERVAL;
 
-	const boolean canmakeemeralds = true; //(!(battlecapsules || bossinfo.boss));
+	const boolean canmakeemeralds = (gametyperules & GTR_POWERSTONES);
 
 	UINT32 emeraldsSpawned = 0;
 	UINT32 firstUnspawnedEmerald = 0;
@@ -368,7 +372,7 @@ void K_RunPaperItemSpawners(void)
 	UINT8 pcount = 0;
 	INT16 i;
 
-	if (battlecapsules || bossinfo.boss)
+	if (battlecapsules)
 	{
 		// Gametype uses paper items, but this specific expression doesn't
 		return;
@@ -799,7 +803,7 @@ void K_BattleInit(boolean singleplayercontext)
 {
 	size_t i;
 
-	if ((gametyperules & GTR_CAPSULES) && singleplayercontext && !battlecapsules && !bossinfo.boss)
+	if ((gametyperules & GTR_CAPSULES) && singleplayercontext && !battlecapsules)
 	{
 		mapthing_t *mt = mapthings;
 		for (i = 0; i < nummapthings; i++, mt++)

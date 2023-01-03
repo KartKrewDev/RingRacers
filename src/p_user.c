@@ -54,6 +54,7 @@
 #include "k_bot.h"
 #include "k_grandprix.h"
 #include "k_boss.h"
+#include "k_specialstage.h"
 #include "k_terrain.h" // K_SpawnSplashForMobj
 #include "k_color.h"
 #include "k_follower.h"
@@ -501,7 +502,7 @@ INT32 P_GivePlayerRings(player_t *player, INT32 num_rings)
 	if (!player->mo)
 		return 0;
 
-	if ((gametyperules & GTR_BUMPERS)) // No rings in Battle Mode
+	if ((gametyperules & GTR_SPHERES)) // No rings in Battle Mode
 		return 0;
 
 	test = player->rings + num_rings;
@@ -518,6 +519,9 @@ INT32 P_GivePlayerRings(player_t *player, INT32 num_rings)
 INT32 P_GivePlayerSpheres(player_t *player, INT32 num_spheres)
 {
 	num_spheres += player->spheres;
+
+	if (!(gametyperules & GTR_SPHERES)) // No spheres in Race mode)
+		return 0;
 
 	// Not alive
 	if ((gametyperules & GTR_BUMPERS) && (player->bumpers <= 0))
@@ -554,7 +558,7 @@ void P_GivePlayerLives(player_t *player, INT32 numlives)
 // Adds to the player's score
 void P_AddPlayerScore(player_t *player, UINT32 amount)
 {
-	if (!((gametyperules & GTR_BUMPERS)))
+	if (!((gametyperules & GTR_POINTLIMIT)))
 		return;
 
 	if (player->exiting) // srb2kart
@@ -720,6 +724,7 @@ boolean P_EndingMusic(player_t *player)
 {
 	char buffer[9];
 	boolean looping = true;
+	boolean racetracks = !!(gametyperules & GTR_CIRCUIT);
 	INT32 bestlocalpos, test;
 	player_t *bestlocalplayer;
 
@@ -773,7 +778,7 @@ boolean P_EndingMusic(player_t *player)
 
 #undef getplayerpos
 
-	if ((gametyperules & GTR_CIRCUIT) && bestlocalpos == MAXPLAYERS+1)
+	if (racetracks == true && bestlocalpos == MAXPLAYERS+1)
 		sprintf(buffer, "k*fail"); // F-Zero death results theme
 	else
 	{
@@ -787,9 +792,11 @@ boolean P_EndingMusic(player_t *player)
 
 	S_SpeedMusic(1.0f);
 
-	if ((gametyperules & GTR_CIRCUIT))
+	if (racetracks == true)
+	{
 		buffer[1] = 'r';
-	else if ((gametyperules & GTR_BUMPERS))
+	}
+	else
 	{
 		buffer[1] = 'b';
 		looping = false;
@@ -828,7 +835,8 @@ void P_RestoreMusic(player_t *player)
 		return;
 
 	// Event - Level Start
-	if (bossinfo.boss == false && (leveltime < (starttime + (TICRATE/2)))) // see also where time overs are handled
+	if ((K_CheckBossIntro() == false)
+		&& (leveltime < (starttime + (TICRATE/2)))) // see also where time overs are handled
 		return;
 
 	{
@@ -1303,7 +1311,16 @@ void P_DoPlayerExit(player_t *player)
 				P_EndingMusic(player);
 
 			if (P_CheckRacers() && !exitcountdown)
-				exitcountdown = raceexittime+1;
+			{
+				if (specialstageinfo.valid == true && losing == true)
+				{
+					exitcountdown = (5*TICRATE)/2;
+				}
+				else
+				{
+					exitcountdown = raceexittime+1;
+				}
+			}
 		}
 		else if ((gametyperules & GTR_BUMPERS)) // Battle Mode exiting
 		{
@@ -2622,7 +2639,7 @@ static void P_DeathThink(player_t *player)
 			player->realtime = leveltime - starttime;
 			if (player == &players[consoleplayer])
 			{
-				if (player->spectator || !circuitmap)
+				if (player->spectator)
 					curlap = 0;
 				else if (curlap != UINT32_MAX)
 					curlap++; // This is too complicated to sync to realtime, just sorta hope for the best :V
@@ -3044,7 +3061,7 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 		return true;
 	}
 
-	if ((player->pflags & PF_NOCONTEST) && (gametyperules & GTR_CIRCUIT)) // 1 for momentum keep, 2 for turnaround
+	if ((player->pflags & PF_NOCONTEST) && (gametyperules & GTR_CIRCUIT) && player->karthud[khud_timeovercam] != 0) // 1 for momentum keep, 2 for turnaround
 		timeover = (player->karthud[khud_timeovercam] > 2*TICRATE ? 2 : 1);
 	else
 		timeover = 0;
@@ -3612,7 +3629,7 @@ void P_DoTimeOver(player_t *player)
 		legitimateexit = true; // SRB2kart: losing a race is still seeing it through to the end :p
 	}
 
-	if (netgame && !player->bot && !bossinfo.boss)
+	if (netgame && !player->bot && !(gametyperules & GTR_BOSS))
 	{
 		CON_LogMessage(va(M_GetText("%s ran out of time.\n"), player_names[player-players]));
 	}
@@ -3981,7 +3998,7 @@ void P_PlayerThink(player_t *player)
 			player->realtime = leveltime - starttime;
 			if (player == &players[consoleplayer])
 			{
-				if (player->spectator || !circuitmap)
+				if (player->spectator)
 					curlap = 0;
 				else if (curlap != UINT32_MAX)
 					curlap++; // This is too complicated to sync to realtime, just sorta hope for the best :V

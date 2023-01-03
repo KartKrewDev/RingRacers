@@ -30,7 +30,6 @@
 #include "m_misc.h" // for tunes command
 #include "m_cond.h" // for conditionsets
 #include "lua_hook.h" // MusicChange hook
-#include "k_boss.h" // bossinfo
 #include "byteptr.h"
 
 #ifdef HW3SOUND

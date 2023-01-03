@@ -6,7 +6,6 @@
 
 #include "k_kart.h"
 #include "k_battle.h"
-#include "k_boss.h"
 #include "k_pwrlv.h"
 #include "k_color.h"
 #include "k_respawn.h"
@@ -41,6 +40,7 @@
 #include "k_follower.h"
 #include "k_objects.h"
 #include "k_grandprix.h"
+#include "k_boss.h"
 #include "k_specialstage.h"
 #include "k_roulette.h"
 
@@ -109,11 +109,43 @@ void K_TimerInit(void)
 	boolean domodeattack = ((modeattacking != ATTACKING_NONE)
 		|| (grandprixinfo.gp == true && grandprixinfo.eventmode != GPEVENT_NONE));
 
-	if (specialStage.active == true)
+	// Rooooooolllling staaaaaaart
+	if ((gametyperules & (GTR_ROLLINGSTART|GTR_CIRCUIT)) == (GTR_ROLLINGSTART|GTR_CIRCUIT))
+	{
+		S_StartSound(NULL, sfx_s25f);
+
+		for (i = 0; i < MAXPLAYERS; i++)
+		{
+			player_t *player = NULL;
+
+			if (playeringame[i] == false)
+			{
+				continue;
+			}
+
+			player = &players[i];
+			if (player->spectator == true)
+			{
+				continue;
+			}
+
+			if (player->mo == NULL || P_MobjWasRemoved(player->mo) == true)
+			{
+				continue;
+			}
+
+			// Rolling start? lol
+			P_InstaThrust(player->mo, player->mo->angle, K_GetKartSpeed(player, false, false));
+		}
+	}
+
+	if ((gametyperules & (GTR_CATCHER|GTR_CIRCUIT)) == (GTR_CATCHER|GTR_CIRCUIT))
 	{
 		K_InitSpecialStage();
 	}
-	else if (bossinfo.boss == false)
+	else if (K_CheckBossIntro() == true)
+		;
+	else
 	{
 		if (!domodeattack)
 		{
@@ -152,7 +184,7 @@ void K_TimerInit(void)
 
 	K_BattleInit(domodeattack);
 
-	if ((gametyperules & GTR_TIMELIMIT) && !bossinfo.boss && !modeattacking)
+	if ((gametyperules & GTR_TIMELIMIT) && !modeattacking)
 	{
 		if (!K_CanChangeRules(true))
 		{
@@ -162,7 +194,7 @@ void K_TimerInit(void)
 			}
 			else
 			{
-				timelimitintics = timelimits[gametype] * (60*TICRATE);
+				timelimitintics = gametypes[gametype]->timelimit * (60*TICRATE);
 			}
 		}
 		else
@@ -310,8 +342,6 @@ void K_RegisterKartStuff(void)
 	CV_RegisterVar(&cv_kartbumpers);
 	CV_RegisterVar(&cv_kartfrantic);
 	CV_RegisterVar(&cv_kartencore);
-	CV_RegisterVar(&cv_kartvoterulechanges);
-	CV_RegisterVar(&cv_kartgametypepreference);
 	CV_RegisterVar(&cv_kartspeedometer);
 	CV_RegisterVar(&cv_kartvoices);
 	CV_RegisterVar(&cv_kartbot);
@@ -342,14 +372,20 @@ boolean K_IsPlayerLosing(player_t *player)
 	INT32 winningpos = 1;
 	UINT8 i, pcount = 0;
 
+	if (player->pflags & PF_NOCONTEST)
+		return true;
+
 	if (battlecapsules && numtargets == 0)
 		return true; // Didn't even TRY?
 
-	if (battlecapsules || bossinfo.boss)
+	if (battlecapsules || (gametyperules & GTR_BOSS))
 		return (player->bumpers <= 0); // anything short of DNF is COOL
 
 	if (player->position == 1)
 		return false;
+
+	if (specialstageinfo.valid == true)
+		return false; // anything short of DNF is COOL
 
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
@@ -515,7 +551,7 @@ boolean K_TimeAttackRules(void)
 	UINT8 playing = 0;
 	UINT8 i;
 
-	if (specialStage.active == true)
+	if ((gametyperules & (GTR_CATCHER|GTR_CIRCUIT)) == (GTR_CATCHER|GTR_CIRCUIT))
 	{
 		// Kind of a hack -- Special Stages
 		// are expected to be 1-player, so
@@ -1272,10 +1308,9 @@ static boolean K_TryDraft(player_t *player, mobj_t *dest, fixed_t minDist, fixed
 			player->draftpower += add;
 		}
 
-		if (gametype == GT_BATTLE)
+		if (gametyperules & GTR_CLOSERPLAYERS)
 		{
-			// TODO: gametyperules
-			// Double speed in Battle
+			// Double speed in smaller environments
 			player->draftpower += add;
 		}
 	}
@@ -1304,8 +1339,7 @@ static boolean K_TryDraft(player_t *player, mobj_t *dest, fixed_t minDist, fixed
 */
 static void K_UpdateDraft(player_t *player)
 {
-	const boolean addUfo = ((specialStage.active == true)
-		&& (specialStage.ufo != NULL && P_MobjWasRemoved(specialStage.ufo) == false));
+	mobj_t *addUfo = K_GetPossibleSpecialTarget();
 
 	fixed_t topspd = K_GetKartSpeed(player, false, false);
 	fixed_t draftdistance;
@@ -1335,9 +1369,8 @@ static void K_UpdateDraft(player_t *player)
 
 	minDist = 640 * player->mo->scale;
 
-	if (gametype == GT_BATTLE)
+	if (gametyperules & GTR_CLOSERPLAYERS)
 	{
-		// TODO: gametyperules
 		minDist /= 4;
 		draftdistance *= 2;
 		leniency *= 4;
@@ -1346,10 +1379,10 @@ static void K_UpdateDraft(player_t *player)
 	// Not enough speed to draft.
 	if (player->speed >= 20 * player->mo->scale)
 	{
-		if (addUfo == true)
+		if (addUfo != NULL)
 		{
 			// Tether off of the UFO!
-			if (K_TryDraft(player, specialStage.ufo, minDist, draftdistance, leniency) == true)
+			if (K_TryDraft(player, addUfo, minDist, draftdistance, leniency) == true)
 			{
 				return; // Finished doing our draft.
 			}
@@ -1403,11 +1436,11 @@ static void K_UpdateDraft(player_t *player)
 			fixed_t dist = P_AproxDistance(P_AproxDistance(victim->mo->x - player->mo->x, victim->mo->y - player->mo->y), victim->mo->z - player->mo->z);
 			K_DrawDraftCombiring(player, victim->mo, dist, draftdistance, true);
 		}
-		else if (addUfo == true)
+		else if (addUfo != NULL)
 		{
 			// kind of a hack to not have to mess with how lastdraft works
-			fixed_t dist = P_AproxDistance(P_AproxDistance(specialStage.ufo->x - player->mo->x, specialStage.ufo->y - player->mo->y), specialStage.ufo->z - player->mo->z);
-			K_DrawDraftCombiring(player, specialStage.ufo, dist, draftdistance, true);
+			fixed_t dist = P_AproxDistance(P_AproxDistance(addUfo->x - player->mo->x, addUfo->y - player->mo->y), addUfo->z - player->mo->z);
+			K_DrawDraftCombiring(player, addUfo, dist, draftdistance, true);
 		}
 	}
 	else // Remove draft speed boost.
@@ -2454,7 +2487,7 @@ void K_PlayOvertakeSound(mobj_t *source)
 {
 	boolean tasteful = (!source->player || !source->player->karthud[khud_voices]);
 
-	if (!gametype == GT_RACE) // Only in race
+	if (!(gametyperules & GTR_CIRCUIT)) // Only in race
 		return;
 
 	// 4 seconds from before race begins, 10 seconds afterwards
@@ -2963,8 +2996,7 @@ fixed_t K_GetSpindashChargeSpeed(player_t *player)
 	// (can be higher than this value when overcharged)
 	const fixed_t val = (10*FRACUNIT/277) + (((player->kartspeed + player->kartweight) + 2) * FRACUNIT) / 45;
 
-	// TODO: gametyperules
-	return (gametype == GT_BATTLE) ? (4 * val) : val;
+	return (gametyperules & GTR_CLOSERPLAYERS) ? (4 * val) : val;
 }
 
 // sets boostpower, speedboost, accelboost, and handleboost to whatever we need it to be
@@ -3099,9 +3131,8 @@ static void K_GetKartBoostPower(player_t *player)
 		// 30% - 44%, each point of speed adds 1.75%
 		fixed_t draftspeed = ((3*FRACUNIT)/10) + ((player->kartspeed-1) * ((7*FRACUNIT)/400));
 
-		if (gametype == GT_BATTLE)
+		if (gametyperules & GTR_CLOSERPLAYERS)
 		{
-			// TODO: gametyperules
 			draftspeed *= 2;
 		}
 
@@ -3224,7 +3255,7 @@ fixed_t K_GetKartAccel(player_t *player)
 	k_accel += 17 * (9 - player->kartspeed); // 121 - 257
 
 	// karma bomb gets 2x acceleration
-	if (gametype == GT_BATTLE && player->bumpers <= 0)
+	if ((gametyperules & GTR_BUMPERS) && player->bumpers <= 0)
 		k_accel *= 2;
 
 	// Marble Garden Top gets 1200% accel
@@ -3238,9 +3269,8 @@ UINT16 K_GetKartFlashing(player_t *player)
 {
 	UINT16 tics = flashingtics;
 
-	if (gametype == GT_BATTLE)
+	if (gametyperules & GTR_BUMPERS)
 	{
-		// TODO: gametyperules
 		return 1;
 	}
 
@@ -3303,7 +3333,8 @@ SINT8 K_GetForwardMove(player_t *player)
 		return 0;
 	}
 
-	if (player->sneakertimer || player->spindashboost)
+	if (player->sneakertimer || player->spindashboost
+		|| (((gametyperules & (GTR_ROLLINGSTART|GTR_CIRCUIT)) == (GTR_ROLLINGSTART|GTR_CIRCUIT)) && (leveltime < TICRATE/2)))
 	{
 		return MAXPLMOVE;
 	}
@@ -3545,6 +3576,12 @@ void K_BattleAwardHit(player_t *player, player_t *victim, mobj_t *inflictor, UIN
 	UINT8 points = 1;
 	boolean trapItem = false;
 
+	if (!(gametyperules & GTR_POINTLIMIT))
+	{
+		// No points in this gametype.
+		return;
+	}
+
 	if (player == NULL || victim == NULL)
 	{
 		// Invalid player or victim
@@ -3580,11 +3617,8 @@ void K_BattleAwardHit(player_t *player, player_t *victim, mobj_t *inflictor, UIN
 		}
 	}
 
-	if (gametyperules & GTR_POINTLIMIT)
-	{
-		P_AddPlayerScore(player, points);
-		K_SpawnBattlePoints(player, victim, points);
-	}
+	P_AddPlayerScore(player, points);
+	K_SpawnBattlePoints(player, victim, points);
 }
 
 void K_SpinPlayer(player_t *player, mobj_t *inflictor, mobj_t *source, INT32 type)
@@ -4132,7 +4166,7 @@ void K_HandleBumperChanges(player_t *player, UINT8 prevBumpers)
 
 		player->karmadelay = comebacktime;
 
-		if (bossinfo.boss)
+		if (gametyperules & GTR_BOSS)
 		{
 			P_DoTimeOver(player);
 		}
@@ -5056,7 +5090,7 @@ void K_SpawnDraftDust(mobj_t *mo)
 		{
 			UINT8 leniency = (3*TICRATE)/4 + ((mo->player->kartweight-1) * (TICRATE/4));
 
-			if (gametype == GT_BATTLE)
+			if (gametyperules & GTR_CLOSERPLAYERS)
 				leniency *= 4;
 
 			ang = mo->player->drawangle;
@@ -6798,10 +6832,10 @@ mobj_t *K_FindJawzTarget(mobj_t *actor, player_t *source, angle_t range)
 	mobj_t *wtarg = NULL;
 	INT32 i;
 
-	if (specialStage.active == true)
+	if (specialstageinfo.valid == true)
 	{
-		// Always target the UFO.
-		return specialStage.ufo;
+		// Always target the UFO (but not the emerald)
+		return K_GetPossibleSpecialTarget();
 	}
 
 	for (i = 0; i < MAXPLAYERS; i++)
@@ -7477,7 +7511,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 			K_SpawnGrowShrinkParticles(player->mo, player->growshrinktimer);
 		}
 
-		if (gametype == GT_RACE && player->rings <= 0) // spawn ring debt indicator
+		if (!(gametyperules & GTR_SPHERES) && player->rings <= 0) // spawn ring debt indicator
 		{
 			mobj_t *debtflag = P_SpawnMobj(player->mo->x + player->mo->momx, player->mo->y + player->mo->momy,
 				player->mo->z + P_GetMobjZMovement(player->mo) + player->mo->height + (24*player->mo->scale), MT_THOK);
@@ -7542,8 +7576,6 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		}
 		//CONS_Printf("cam: %d, dest: %d\n", player->karthud[khud_boostcam], player->karthud[khud_destboostcam]);
 	}
-
-	player->karthud[khud_timeovercam] = 0;
 
 	// Make ABSOLUTELY SURE that your flashing tics don't get set WHILE you're still in hit animations.
 	if (player->spinouttimer != 0 || player->wipeoutslow != 0)
@@ -7795,7 +7827,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 
 	if (player->eggmanexplode)
 	{
-		if (player->spectator || (gametype == GT_BATTLE && !player->bumpers))
+		if (player->spectator || ((gametyperules & GTR_BUMPERS) && player->bumpers <= 0))
 			player->eggmanexplode = 0;
 		else
 		{
@@ -8037,10 +8069,11 @@ void K_KartPlayerAfterThink(player_t *player)
 
 		mobj_t *ret = NULL;
 
-		if (specialStage.active == true && lastTargID == MAXPLAYERS)
+		if (specialstageinfo.valid == true
+			&& lastTargID == MAXPLAYERS)
 		{
-			// Aiming at the UFO.
-			lastTarg = specialStage.ufo;
+			// Aiming at the UFO (but never the emerald).
+			lastTarg = K_GetPossibleSpecialTarget();
 		}
 		else if ((lastTargID >= 0 && lastTargID <= MAXPLAYERS)
 			&& playeringame[lastTargID] == true)
@@ -9337,15 +9370,18 @@ static INT32 K_FlameShieldMax(player_t *player)
 	UINT8 numplayers = 0;
 	UINT8 i;
 
-	for (i = 0; i < MAXPLAYERS; i++)
+	if (gametyperules & GTR_CIRCUIT)
 	{
-		if (playeringame[i] && !players[i].spectator)
-			numplayers++;
-		if (players[i].position == 1)
-			disttofinish = players[i].distancetofinish;
+		for (i = 0; i < MAXPLAYERS; i++)
+		{
+			if (playeringame[i] && !players[i].spectator)
+				numplayers++;
+			if (players[i].position == 1)
+				disttofinish = players[i].distancetofinish;
+		}
 	}
 
-	if (numplayers <= 1 || gametype == GT_BATTLE)
+	if (numplayers <= 1)
 	{
 		return 16; // max when alone, for testing
 		// and when in battle, for chaos
@@ -9599,8 +9635,7 @@ static void K_KartSpindash(player_t *player)
 		{
 			fixed_t thrust = FixedMul(player->mo->scale, player->spindash*FRACUNIT/5);
 
-			// TODO: gametyperules
-			if (gametype == GT_BATTLE)
+			if (gametyperules & GTR_CLOSERPLAYERS)
 				thrust *= 2;
 
 			// Give a bit of a boost depending on charge.
@@ -10407,8 +10442,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 										player->mo->destscale = FixedMul(player->mo->destscale, SHRINK_SCALE);
 									}
 
-									// TODO: gametyperules
-									player->growshrinktimer = max(player->growshrinktimer, (gametype == GT_BATTLE ? 8 : 12) * TICRATE);
+									player->growshrinktimer = max(player->growshrinktimer, ((gametyperules & GTR_CLOSERPLAYERS) ? 8 : 12) * TICRATE);
 
 									if (player->invincibilitytimer > 0)
 									{
@@ -10566,8 +10600,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 
 								if ((cmd->buttons & BT_ATTACK) && (player->pflags & PF_HOLDREADY))
 								{
-									// TODO: gametyperules
-									const INT32 incr = gametype == GT_BATTLE ? 4 : 2;
+									const INT32 incr = (gametyperules & GTR_CLOSERPLAYERS) ? 4 : 2;
 
 									if (player->flamedash == 0)
 									{
@@ -10603,8 +10636,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 								{
 									player->pflags |= PF_HOLDREADY;
 
-									// TODO: gametyperules
-									if (gametype != GT_BATTLE || leveltime % 6 == 0)
+									if (!(gametyperules & GTR_CLOSERPLAYERS) || leveltime % 6 == 0)
 									{
 										if (player->flamemeter > 0)
 											player->flamemeter--;
@@ -10726,18 +10758,13 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 
 		if (player->hyudorotimer > 0)
 		{
-			INT32 hyu = hyudorotime;
-
-			if (gametype == GT_RACE)
-				hyu *= 2; // double in race
-
 			if (leveltime & 1)
 			{
 				player->mo->renderflags |= RF_DONTDRAW;
 			}
 			else
 			{
-				if (player->hyudorotimer >= (TICRATE/2) && player->hyudorotimer <= hyu-(TICRATE/2))
+				if (player->hyudorotimer >= (TICRATE/2) && player->hyudorotimer <= hyudorotime-(TICRATE/2))
 					player->mo->renderflags &= ~K_GetPlayerDontDrawFlag(player);
 				else
 					player->mo->renderflags &= ~RF_DONTDRAW;
@@ -10750,16 +10777,16 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 			player->mo->renderflags &= ~RF_DONTDRAW;
 		}
 
-		if (gametype == GT_BATTLE && player->bumpers <= 0) // dead in match? you da bomb
+		if (!(gametyperules & GTR_BUMPERS) || player->bumpers > 0)
+		{
+			player->mo->renderflags &= ~(RF_TRANSMASK|RF_BRIGHTMASK);
+		}
+		else // dead in match? you da bomb
 		{
 			K_DropItems(player); //K_StripItems(player);
 			K_StripOther(player);
 			player->mo->renderflags |= RF_GHOSTLY;
 			player->flashing = player->karmadelay;
-		}
-		else if (gametype == GT_RACE || player->bumpers > 0)
-		{
-			player->mo->renderflags &= ~(RF_TRANSMASK|RF_BRIGHTMASK);
 		}
 
 		if (player->trickpanel == 1)
@@ -10973,7 +11000,7 @@ void K_CheckSpectateStatus(void)
 				continue;
 			if (leveltime > (starttime + 20*TICRATE)) // DON'T allow if the match is 20 seconds in
 				return;
-			if (gametype == GT_RACE && players[i].laps >= 2) // DON'T allow if the race is at 2 laps
+			if ((gametyperules & GTR_CIRCUIT) && players[i].laps >= 2) // DON'T allow if the race is at 2 laps
 				return;
 			continue;
 		}

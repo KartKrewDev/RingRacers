@@ -239,9 +239,9 @@ static void UFOUpdateAngle(mobj_t *ufo)
 
 waypoint_t *K_GetSpecialUFOWaypoint(mobj_t *ufo)
 {
-	if ((ufo == NULL) && (specialStage.active == true))
+	if ((ufo == NULL) && (specialstageinfo.valid == true))
 	{
-		ufo = specialStage.ufo;
+		ufo = specialstageinfo.ufo;
 	}
 
 	if (ufo != NULL && P_MobjWasRemoved(ufo) == false
@@ -281,10 +281,11 @@ static void UFOMove(mobj_t *ufo)
 	if (curWaypoint == NULL || destWaypoint == NULL)
 	{
 		// Waypoints aren't valid.
-		// Just stand still.
+		// Just go straight up.
+		// :japanese_ogre: : "Abrupt and funny is the funniest way to end the special stage anyways"
 		ufo->momx = 0;
 		ufo->momy = 0;
-		ufo->momz = 0;
+		ufo->momz = ufo_speed(ufo);
 		return;
 	}
 
@@ -365,8 +366,23 @@ static void UFOMove(mobj_t *ufo)
 
 	if (reachedEnd == true)
 	{
-		CONS_Printf("You lost...\n");
-		ufo_waypoint(ufo) = -1; // Invalidate
+		UINT8 i;
+
+		// Invalidate UFO/emerald
+		ufo_waypoint(ufo) = -1;
+		ufo->flags &= ~(MF_SPECIAL|MF_PICKUPFROMBELOW);
+
+		// Disable player
+		for (i = 0; i < MAXPLAYERS; i++)
+		{
+			if (!playeringame[i])
+				continue;
+			if (players[i].spectator)
+				continue;
+
+			players[i].pflags |= PF_NOCONTEST;
+			P_DoPlayerExit(&players[i]);
+		}
 	}
 
 	if (pathfindsuccess == true)
@@ -591,6 +607,8 @@ boolean Obj_SpecialUFODamage(mobj_t *ufo, mobj_t *inflictor, mobj_t *source, UIN
 		ufo->flags = (ufo->flags & ~MF_SHOOTABLE) | (MF_SPECIAL|MF_PICKUPFROMBELOW);
 		ufo->shadowscale = FRACUNIT/3;
 
+		P_LinedefExecute(LE_PINCHPHASE, ufo, NULL);
+
 		ufo_speed(ufo) += addSpeed; // Even more speed!
 		return true;
 	}
@@ -655,7 +673,10 @@ void Obj_UFOPieceThink(mobj_t *piece)
 			fixed_t sc = FixedDiv(FixedDiv(ufo->ceilingz - stemZ, piece->scale), 15 * FRACUNIT);
 
 			UFOMoveTo(piece, ufo->x, ufo->y, stemZ);
-			piece->spriteyscale = sc;
+			if (sc > 0)
+			{
+				piece->spriteyscale = sc;
+			}
 			break;
 		}
 		default:
@@ -820,11 +841,11 @@ mobj_t *Obj_CreateSpecialUFO(void)
 
 UINT32 K_GetSpecialUFODistance(void)
 {
-	if (specialStage.active == true)
+	if (specialstageinfo.valid == true)
 	{
-		if (specialStage.ufo != NULL && P_MobjWasRemoved(specialStage.ufo) == false)
+		if (specialstageinfo.ufo != NULL && P_MobjWasRemoved(specialstageinfo.ufo) == false)
 		{
-			return (UINT32)ufo_distancetofinish(specialStage.ufo);
+			return (UINT32)ufo_distancetofinish(specialstageinfo.ufo);
 		}
 	}
 

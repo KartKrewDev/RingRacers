@@ -16,7 +16,7 @@
 #include "hu_stuff.h"
 #include "font.h"
 
-#include "k_menu.h" // gametype_cons_t
+#include "k_menu.h" // highlightflags
 #include "m_cond.h" // emblems
 #include "m_misc.h" // word jumping
 
@@ -55,7 +55,8 @@
 // SRB2Kart
 #include "s_sound.h" // song credits
 #include "k_kart.h"
-#include "k_boss.h"
+#include "k_battle.h"
+#include "k_grandprix.h"
 #include "k_color.h"
 #include "k_hud.h"
 #include "r_fps.h"
@@ -2392,60 +2393,110 @@ static inline void HU_DrawSpectatorTicker(void)
 static void HU_DrawRankings(void)
 {
 	playersort_t tab[MAXPLAYERS];
-	INT32 i, j, scorelines, hilicol, numplayersingame = 0;
+	INT32 i, j, scorelines, numplayersingame = 0, hilicol = highlightflags;
 	boolean completed[MAXPLAYERS];
 	UINT32 whiteplayer = MAXPLAYERS;
+	boolean timedone = false, pointsdone = false;
 
 	V_DrawFadeScreen(0xFF00, 16); // A little more readable, and prevents cheating the fades under other circumstances.
 
-	if (modeattacking)
-		hilicol = V_ORANGEMAP;
-	else
-		hilicol = ((gametype == GT_RACE) ? V_SKYMAP : V_REDMAP);
-
 	// draw the current gametype in the lower right
-	if (modeattacking)
-		V_DrawString(4, 188, hilicol|V_SNAPTOBOTTOM|V_SNAPTOLEFT, "Record Attack");
-	else
-		V_DrawString(4, 188, hilicol|V_SNAPTOBOTTOM|V_SNAPTOLEFT, Gametype_Names[gametype]);
+	if (grandprixinfo.gp == true)
+		V_DrawString(4, 188, hilicol|V_SNAPTOBOTTOM|V_SNAPTOLEFT, "Grand Prix");
+	else if (battlecapsules)
+		V_DrawString(4, 188, hilicol|V_SNAPTOBOTTOM|V_SNAPTOLEFT, "Capsules");
+	else if (gametype >= 0 && gametype < numgametypes)
+		V_DrawString(4, 188, hilicol|V_SNAPTOBOTTOM|V_SNAPTOLEFT, gametypes[gametype]->name);
 
-	if ((gametyperules & (GTR_TIMELIMIT|GTR_POINTLIMIT)) && !bossinfo.boss)
+	// Left hand side
+	if (grandprixinfo.gp == true)
 	{
-		if ((gametyperules & GTR_TIMELIMIT) && timelimitintics > 0)
+		const char *roundstr = NULL;
+		V_DrawCenteredString(64, 8, 0, "ROUND");
+		switch (grandprixinfo.eventmode)
 		{
-			UINT32 timeval = (timelimitintics + starttime + 1 - leveltime);
-			if (timeval > timelimitintics+1)
-				timeval = timelimitintics+1;
-			timeval /= TICRATE;
+			case GPEVENT_BONUS:
+				roundstr = "BONUS";
+				break;
+			case GPEVENT_SPECIAL:
+				roundstr = "SPECIAL";
+				break;
+			default:
+				roundstr = va("%d", grandprixinfo.roundnum);
+				break;
+		}
+		V_DrawCenteredString(64, 16, hilicol, roundstr);
+	}
+	else if ((gametyperules & GTR_TIMELIMIT) && timelimitintics > 0)
+	{
+		UINT32 timeval = (timelimitintics + starttime + 1 - leveltime);
+		if (timeval > timelimitintics+1)
+			timeval = timelimitintics+1;
+		timeval /= TICRATE;
 
-			if (leveltime <= (timelimitintics + starttime))
-			{
-				V_DrawCenteredString(64, 8, 0, "TIME LEFT");
-				V_DrawCenteredString(64, 16, hilicol, va("%u", timeval));
-			}
-
-			// overtime
-			if (!players[consoleplayer].exiting && (leveltime > (timelimitintics + starttime + TICRATE/2)) && cv_overtime.value)
-			{
-				V_DrawCenteredString(64, 8, 0, "TIME LEFT");
-				V_DrawCenteredString(64, 16, hilicol, "OVERTIME");
-			}
+		if (leveltime <= (timelimitintics + starttime))
+		{
+			V_DrawCenteredString(64, 8, 0, "TIME LEFT");
+			V_DrawCenteredString(64, 16, hilicol, va("%u", timeval));
 		}
 
-		if ((gametyperules & GTR_POINTLIMIT) && cv_pointlimit.value > 0)
+		// overtime
+		if (!players[consoleplayer].exiting && (leveltime > (timelimitintics + starttime + TICRATE/2)) && cv_overtime.value)
 		{
-			V_DrawCenteredString(256, 8, 0, "POINT LIMIT");
-			V_DrawCenteredString(256, 16, hilicol, va("%d", cv_pointlimit.value));
+			V_DrawCenteredString(64, 8, 0, "TIME LEFT");
+			V_DrawCenteredString(64, 16, hilicol, "OVERTIME");
+		}
+
+		timedone = true;
+	}
+	else if ((gametyperules & GTR_POINTLIMIT) && cv_pointlimit.value > 0)
+	{
+		V_DrawCenteredString(64, 8, 0, "POINT LIMIT");
+		V_DrawCenteredString(64, 16, hilicol, va("%d", cv_pointlimit.value));
+		pointsdone = true;
+	}
+	else if (gametyperules & GTR_CIRCUIT)
+	{
+		V_DrawCenteredString(64, 8, 0, "LAPS");
+		V_DrawCenteredString(64, 16, hilicol, va("%d", numlaps));
+	}
+
+	// Right hand side
+	if (battlecapsules == true)
+	{
+		if (numtargets < maptargets)
+		{
+			V_DrawCenteredString(256, 8, 0, "CAPSULES");
+			V_DrawCenteredString(256, 16, hilicol, va("%d", maptargets - numtargets));
 		}
 	}
-	else
+	else if (!timedone && (gametyperules & GTR_TIMELIMIT) && timelimitintics > 0)
 	{
-		if (circuitmap)
+		UINT32 timeval = (timelimitintics + starttime + 1 - leveltime);
+		if (timeval > timelimitintics+1)
+			timeval = timelimitintics+1;
+		timeval /= TICRATE;
+
+		if (leveltime <= (timelimitintics + starttime))
 		{
-			V_DrawCenteredString(64, 8, 0, "LAP COUNT");
-			V_DrawCenteredString(64, 16, hilicol, va("%d", numlaps));
+			V_DrawCenteredString(256, 8, 0, "TIME LEFT");
+			V_DrawCenteredString(256, 16, hilicol, va("%u", timeval));
 		}
 
+		// overtime
+		if (!players[consoleplayer].exiting && (leveltime > (timelimitintics + starttime + TICRATE/2)) && cv_overtime.value)
+		{
+			V_DrawCenteredString(256, 8, 0, "TIME LEFT");
+			V_DrawCenteredString(256, 16, hilicol, "OVERTIME");
+		}
+	}
+	else if (!pointsdone && (gametyperules & GTR_POINTLIMIT) && cv_pointlimit.value > 0)
+	{
+		V_DrawCenteredString(256, 8, 0, "POINT LIMIT");
+		V_DrawCenteredString(256, 16, hilicol, va("%d", cv_pointlimit.value));
+	}
+	else if (gametyperules & GTR_CIRCUIT)
+	{
 		V_DrawCenteredString(256, 8, 0, "GAME SPEED");
 		V_DrawCenteredString(256, 16, hilicol, kartspeed_cons_t[1+gamespeed].strvalue);
 	}
@@ -2494,13 +2545,12 @@ static void HU_DrawRankings(void)
 
 		if ((gametyperules & GTR_CIRCUIT))
 		{
-			if (circuitmap)
-				tab[scorelines].count = players[i].laps;
-			else
-				tab[scorelines].count = players[i].realtime;
+			tab[scorelines].count = players[i].laps;
 		}
 		else
+		{
 			tab[scorelines].count = players[i].roundscore;
+		}
 
 		scorelines++;
 

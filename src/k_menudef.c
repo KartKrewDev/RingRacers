@@ -89,11 +89,14 @@ menuitem_t PLAY_GamemodesMenu[] =
 	{IT_STRING | IT_CALL, "Race", "A contest to see who's the fastest of them all!",
 		NULL, {.routine = M_SetupRaceMenu}, 0, 0},
 
-	{IT_STRING | IT_CALL, "Battle", "It's last hedgehog standing in this free-for-all!",
+	{IT_STRING | IT_CALL, "Battle", "It's last kart standing in this free-for-all!",
 		"MENIMG00", {.routine = M_LevelSelectInit}, 0, GT_BATTLE},
 
 	{IT_STRING | IT_CALL, "Capsules", "Bust up all of the capsules in record time!",
 		NULL, {.routine = M_LevelSelectInit}, 1, GT_BATTLE},
+
+	{IT_STRING | IT_CALL, "Special", "Strike your target and secure the prize!",
+		NULL, {.routine = M_LevelSelectInit}, 1, GT_SPECIAL},
 
 	{IT_STRING | IT_CALL, "Back", NULL, NULL, {.routine = M_GoBack}, 0, 0},
 };
@@ -359,8 +362,8 @@ menuitem_t PLAY_MP_Host[] =
 	{IT_STRING | IT_CVAR, "Max. Players", "Set how many players can play at once. Others will spectate.",
 		NULL, {.cvar = &cv_maxplayers}, 0, 0},
 
-	{IT_STRING | IT_CVAR, "Gamemode", "Are we racing? Or perhaps battling?",
-	NULL, {.cvar = &cv_dummygametype}, 0, 0},
+	{IT_STRING | IT_KEYHANDLER, "Gamemode", "Choose the type of play on your server.",
+	NULL, {.routine = M_HandleHostMenuGametype}, 0, 0},
 
 	{IT_STRING | IT_CALL, "GO", "Select a map with the currently selected gamemode",
 		NULL, {.routine = M_MPSetupNetgameMapSelect}, 0, 0},
@@ -1132,9 +1135,6 @@ menuitem_t OPTIONS_Server[] =
 	{IT_STRING | IT_CVAR, "Vote Timer", "Set how long players have to vote.",
 		NULL, {.cvar = &cv_votetime}, 0, 0},
 
-	{IT_STRING | IT_CVAR, "Vote Mode Change", "Set how often voting proposes a different gamemode.",
-		NULL, {.cvar = &cv_kartvoterulechanges}, 0, 0},
-
 
 	{IT_SPACE | IT_NOTHING, NULL,  NULL,
 		NULL, {NULL}, 0, 0},
@@ -1593,8 +1593,11 @@ menuitem_t PAUSE_Main[] =
 	{IT_STRING | IT_CALL, "ADDONS", "M_ICOADD",
 		NULL, {.routine = M_Addons}, 0, 0},
 
-	{IT_STRING | IT_SUBMENU, "CHANGE MAP", "M_ICOMAP",
-		NULL, {.submenu = &PAUSE_GamemodesDef}, 0, 0},
+	{IT_STRING | IT_KEYHANDLER, "GAMETYPE", "M_ICOGAM",
+		NULL, {.routine = M_HandlePauseMenuGametype}, 0, 0},
+
+	{IT_STRING | IT_CALL, "CHANGE MAP", "M_ICOMAP",
+		NULL, {.routine = M_LevelSelectInit}, 0, -1},
 
 	{IT_STRING | IT_CALL, "RESTART MAP", "M_ICORE",
 		NULL, {.routine = M_RestartMap}, 0, 0},
@@ -1646,20 +1649,6 @@ menu_t PAUSE_MainDef = {
 	NULL,
 	M_PauseInputs
 };
-
-// PAUSE : Map switching gametype selection (In case you want to pick from battle / race...)
-menuitem_t PAUSE_GamemodesMenu[] =
-{
-	{IT_STRING | IT_CALL, "Race", "Select which gamemode to choose a new map from.",
-		NULL, {.routine = M_LevelSelectInit}, 0, GT_RACE},
-
-	{IT_STRING | IT_CALL, "Battle", "Select which gamemode to choose a new map from.",
-		NULL, {.routine = M_LevelSelectInit}, 0, GT_BATTLE},
-
-	{IT_STRING | IT_CALL, "Back", NULL, NULL, {.routine = M_GoBack}, 0, 0},
-};
-
-menu_t PAUSE_GamemodesDef = KARTGAMEMODEMENU(PAUSE_GamemodesMenu, &PAUSE_MainDef);
 
 // Replay popup menu
 menuitem_t PAUSE_PlaybackMenu[] =

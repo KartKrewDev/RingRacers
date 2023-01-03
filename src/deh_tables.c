@@ -5791,38 +5791,36 @@ const char *const PLAYERFLAG_LIST[] = {
 };
 
 const char *const GAMETYPERULE_LIST[] = {
-	"CAMPAIGN",
-	"RINGSLINGER",
-	"SPECTATORS",
-	"LIVES",
-	"TEAMS",
-	"FIRSTPERSON",
+	"CIRCUIT",
+	"BOTS",
+
+	"BUMPERS",
+	"SPHERES",
+	"CLOSERPLAYERS",
+
+	"BATTLESTARTS",
+	"PAPERITEMS",
 	"POWERSTONES",
-	"TEAMFLAGS",
-	"FRIENDLY",
-	"SPECIALSTAGES",
-	"EMERALDTOKENS",
-	"EMERALDHUNT",
-	"RACE",
-	"TAG",
+	"KARMA",
+	"ITEMARROWS",
+
+	"CAPSULES",
+	"CATCHER",
+	"ROLLINGSTART",
+	"SPECIALSTART",
+	"BOSS",
+
 	"POINTLIMIT",
 	"TIMELIMIT",
 	"OVERTIME",
-	"HURTMESSAGES",
-	"FRIENDLYFIRE",
-	"STARTCOUNTDOWN",
-	"HIDEFROZEN",
-	"BLINDFOLDED",
-	"RESPAWNDELAY",
-	"PITYSHIELD",
-	"DEATHPENALTY",
-	"NOSPECTATORSPAWN",
-	"DEATHMATCHSTARTS",
-	"SPAWNINVUL",
-	"SPAWNENEMIES",
-	"ALLOWEXIT",
-	"NOTITLECARD",
-	"CUTSCENES",
+	"ENCORE",
+
+	"TEAMS",
+	"NOTEAMS",
+	"TEAMSTARTS",
+
+	"NOMP",
+	"NOCUPSELECT",
 	NULL
 };
 
@@ -6305,7 +6303,7 @@ struct int_const_s const INT_CONST[] = {
 	{"LF2_HIDEINMENU",LF2_HIDEINMENU},
 	{"LF2_HIDEINSTATS",LF2_HIDEINSTATS},
 	{"LF2_NOTIMEATTACK",LF2_NOTIMEATTACK},
-	{"LF2_VISITNEEDED",LF2_VISITNEEDED},
+	{"LF2_FINISHNEEDED",LF2_FINISHNEEDED},
 
 	// Emeralds
 	{"EMERALD_CHAOS1",EMERALD_CHAOS1},
@@ -6403,9 +6401,9 @@ struct int_const_s const INT_CONST[] = {
 
 	// Intermission types
 	{"int_none",int_none},
-	{"int_race",int_race},
-	{"int_battle",int_battle},
-	{"int_battletime", int_battletime},
+	{"int_time",int_time},
+	{"int_score",int_score},
+	{"int_scoreortimeattack", int_scoreortimeattack},
 
 	// Jingles (jingletype_t)
 	{"JT_NONE",JT_NONE},

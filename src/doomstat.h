@@ -135,9 +135,9 @@ extern boolean usedCheats;
 extern boolean imcontinuing; // Temporary flag while continuing
 extern boolean metalrecording;
 
-#define ATTACKING_NONE     0
-#define ATTACKING_TIME     1
-#define ATTACKING_CAPSULES 2
+#define ATTACKING_NONE	0
+#define ATTACKING_TIME	1
+#define ATTACKING_LAP	(1<<1)
 extern UINT8 modeattacking;
 
 // menu demo things
@@ -151,15 +151,9 @@ extern boolean addedtogame; // true after the server has added you
 // Only true if >1 player. netgame => multiplayer but not (multiplayer=>netgame)
 extern boolean multiplayer;
 
-extern INT16 gametype;
-
-extern UINT32 gametyperules;
-extern INT16 gametypecount;
-
 extern UINT8 splitscreen;
 extern int r_splitscreen;
 
-extern boolean circuitmap; // Does this level have 'circuit mode'?
 extern boolean fromlevelselect;
 extern boolean forceresetplayers, deferencoremode;
 
@@ -449,71 +443,97 @@ struct mapheader_t
 #define LF_SECTIONRACE        (1<<2) ///< Section race level
 #define LF_SUBTRACTNUM        (1<<3) ///< Use subtractive position number (for bright levels)
 
-#define LF2_HIDEINMENU    (1<<0) ///< Hide in the multiplayer menu
-#define LF2_HIDEINSTATS   (1<<1) ///< Hide in the statistics screen
-#define LF2_NOTIMEATTACK  (1<<2) ///< Hide this map in Time Attack modes
-#define LF2_VISITNEEDED   (1<<3) ///< Not available in Time Attack modes until you visit the level
+#define LF2_HIDEINMENU		(1<<0) ///< Hide in the multiplayer menu
+#define LF2_HIDEINSTATS		(1<<1) ///< Hide in the statistics screen
+#define LF2_NOTIMEATTACK	(1<<2) ///< Hide this map in Time Attack modes
+#define LF2_FINISHNEEDED	(1<<3) ///< Not available in Time Attack modes until you beat the level
 
 extern mapheader_t** mapheaderinfo;
 extern INT32 nummapheaders, mapallocsize;
 
 // Gametypes
-#define NUMGAMETYPEFREESLOTS 128
+#define NUMGAMETYPEFREESLOTS (MAXGAMETYPES-GT_FIRSTFREESLOT)
+#define MAXGAMETYPELENGTH 32
 
 enum GameType
 {
 	GT_RACE = 0,
 	GT_BATTLE,
+	GT_SPECIAL,
+	GT_VERSUS,
 
 	GT_FIRSTFREESLOT,
-	GT_LASTFREESLOT = GT_FIRSTFREESLOT + NUMGAMETYPEFREESLOTS - 1,
-	NUMGAMETYPES
+	GT_LASTFREESLOT = 127, // Previously (GT_FIRSTFREESLOT + NUMGAMETYPEFREESLOTS - 1) - it would be necessary to rewrite VOTEMODIFIER_ENCORE to go higher than this.
+	MAXGAMETYPES
 };
-// If you alter this list, update deh_tables.c, MISC_ChangeGameTypeMenu in m_menu.c, and Gametype_Names in g_game.c
+// If you alter this list, update defaultgametypes and *gametypes in g_game.c
+
+#define MAXTOL             (1<<31)
+#define NUMBASETOLNAMES    (5)
+#define NUMTOLNAMES        (NUMBASETOLNAMES + NUMGAMETYPEFREESLOTS)
+
+struct gametype_t
+{
+	const char *name;
+	const char *constant;
+	UINT32 rules;
+	UINT32 tol;
+	UINT8 intermission;
+	INT32 pointlimit;
+	INT32 timelimit;
+};
+
+extern gametype_t *gametypes[MAXGAMETYPES+1];
+extern INT16 numgametypes;
+
+extern INT16 gametype;
 
 // Gametype rules
 enum GameTypeRules
 {
 	// Race rules
-	GTR_CIRCUIT				= 1,     // Enables the finish line, laps, and the waypoint system.
-	GTR_BOTS				= 1<<2,  // Allows bots in this gametype. Combine with BotTiccmd hooks to make bots support your gametype.
+	GTR_CIRCUIT				= 1,		// Enables the finish line, laps, and the waypoint system.
+	GTR_BOTS				= 1<<1,		// Allows bots in this gametype. Combine with BotTiccmd hooks to make bots support your gametype.
 
 	// Battle gametype rules
-	GTR_BUMPERS				= 1<<3,  // Enables the bumper health system
-	GTR_SPHERES				= 1<<4,  // Replaces rings with blue spheres
-	GTR_PAPERITEMS			= 1<<5,  // Replaces item boxes with paper item spawners
-	GTR_WANTED				= 1<<6,  // unused
-	GTR_KARMA				= 1<<7,  // Enables the Karma system if you're out of bumpers
-	GTR_ITEMARROWS			= 1<<8,  // Show item box arrows above players
-	GTR_CAPSULES			= 1<<9,  // Enables the wanted anti-camping system
-	GTR_BATTLESTARTS		= 1<<10, // Use Battle Mode start positions.
+	GTR_BUMPERS				= 1<<2,		// Enables the bumper health system
+	GTR_SPHERES				= 1<<3,		// Replaces rings with blue spheres
+	GTR_CLOSERPLAYERS		= 1<<4,		// Buffs spindash and draft power to bring everyone together, nerfs invincibility and grow to prevent excessive combos
 
-	GTR_POINTLIMIT			= 1<<11,  // Reaching point limit ends the round
-	GTR_TIMELIMIT			= 1<<12, // Reaching time limit ends the round
-	GTR_OVERTIME			= 1<<13, // Allow overtime behavior
+	GTR_BATTLESTARTS		= 1<<5,		// Use Battle Mode start positions.
+	GTR_PAPERITEMS			= 1<<6,		// Replaces item boxes with paper item spawners
+	GTR_POWERSTONES			= 1<<7,		// Battle Emerald collectables.
+	GTR_KARMA				= 1<<8,		// Enables the Karma system if you're out of bumpers
+	GTR_ITEMARROWS			= 1<<9,		// Show item box arrows above players
 
-	// Custom gametype rules
-	GTR_TEAMS				= 1<<14, // Teams are forced on
-	GTR_NOTEAMS				= 1<<15, // Teams are forced off
-	GTR_TEAMSTARTS			= 1<<16, // Use team-based start positions
+	// Bonus gametype rules
+	GTR_CAPSULES			= 1<<10,	// Can enter Break The Capsules mode
+	GTR_CATCHER				= 1<<11, // UFO Catcher (only works with GTR_CIRCUIT)
+	GTR_ROLLINGSTART		= 1<<12, // Rolling start (only works with GTR_CIRCUIT)
+	GTR_SPECIALSTART		= 1<<13, // White fade instant start
+	GTR_BOSS				= 1<<14, // Boss intro and spawning
 
-	// Grand Prix rules
-	GTR_CAMPAIGN			= 1<<17, // Handles cup-based progression
-	GTR_LIVES				= 1<<18, // Lives system, players are forced to spectate during Game Over.
-	GTR_SPECIALBOTS			= 1<<19, // Bot difficulty gets stronger between rounds, and the rival system is enabled.
+	// General purpose rules
+	GTR_POINTLIMIT			= 1<<15,	// Reaching point limit ends the round
+	GTR_TIMELIMIT			= 1<<16,	// Reaching time limit ends the round
+	GTR_OVERTIME			= 1<<17,	// Allow overtime behavior
+	GTR_ENCORE				= 1<<18,	// Alternate Encore mirroring, scripting, and texture remapping
 
-	GTR_NOCUPSELECT			= 1<<20, // Your maps are not selected via cup. ...mutually exclusive with GTR_CAMPAIGN.
+	GTR_TEAMS				= 1<<19, // Teams are forced on
+	GTR_NOTEAMS				= 1<<20, // Teams are forced off
+	GTR_TEAMSTARTS			= 1<<21, // Use team-based start positions
+
+	GTR_NOMP				= 1<<22, // No multiplayer
+	GTR_NOCUPSELECT			= 1<<23, // Your maps are not selected via cup.
 
 	// free: to and including 1<<31
 };
+// Remember to update GAMETYPERULE_LIST in deh_soc.c
 
-// String names for gametypes
-extern const char *Gametype_Names[NUMGAMETYPES];
-extern const char *Gametype_ConstantNames[NUMGAMETYPES];
+#define GTR_FORBIDMP (GTR_NOMP|GTR_CATCHER|GTR_BOSS)
 
-// Point and time limits for every gametype
-extern INT32 pointlimits[NUMGAMETYPES];
-extern INT32 timelimits[NUMGAMETYPES];
+// TODO: replace every instance
+#define gametyperules (gametypes[gametype]->rules)
 
 // TypeOfLevel things
 enum TypeOfLevel
@@ -527,9 +547,10 @@ enum TypeOfLevel
 	// Modifiers
 	TOL_TV		= 0x0100 ///< Midnight Channel specific: draw TV like overlay on HUD
 };
+// Make sure to update TYPEOFLEVEL too
 
 #define MAXTOL             (1<<31)
-#define NUMBASETOLNAMES    (4)
+#define NUMBASETOLNAMES    (5)
 #define NUMTOLNAMES        (NUMBASETOLNAMES + NUMGAMETYPEFREESLOTS)
 
 struct tolinfo_t

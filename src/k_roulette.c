@@ -176,6 +176,12 @@ static UINT8 K_KartItemOddsSpecial[NUMKARTRESULTS-1][4] =
 	{ 0, 0, 0, 0 }  // Gachabom x3
 };
 
+static kartitems_t K_KartItemReelSpecialEnd[] =
+{
+	KITEM_SUPERRING,
+	KITEM_NONE
+};
+
 static kartitems_t K_KartItemReelTimeAttack[] =
 {
 	KITEM_SNEAKER,
@@ -359,7 +365,7 @@ static UINT32 K_GetItemRouletteDistance(const player_t *player, UINT8 numPlayers
 		return 0;
 	}
 
-	if (specialStage.active == true)
+	if (specialstageinfo.valid == true)
 	{
 		UINT32 ufoDis = K_GetSpecialUFODistance();
 
@@ -506,7 +512,7 @@ INT32 K_KartGetItemOdds(const player_t *player, itemroulette_t *const roulette, 
 		I_Assert(pos < 2); // DO NOT allow positions past the bounds of the table
 		newOdds = K_KartItemOddsBattle[item-1][pos];
 	}
-	else if (specialStage.active == true)
+	else if (specialstageinfo.valid == true)
 	{
 		I_Assert(pos < 4); // Ditto
 		newOdds = K_KartItemOddsSpecial[item-1][pos];
@@ -573,7 +579,7 @@ INT32 K_KartGetItemOdds(const player_t *player, itemroulette_t *const roulette, 
 				return 0;
 			}
 
-			if (specialStage.active == false)
+			if (specialstageinfo.valid == false)
 			{
 				if (roulette->firstDist < ENDDIST*2 // No SPB when 1st is almost done
 					|| position == 1) // No SPB for 1st ever
@@ -705,7 +711,7 @@ static UINT8 K_FindUseodds(const player_t *player, itemroulette_t *const roulett
 			oddsValid[i] = false;
 			continue;
 		}
-		else if (specialStage.active == true && i > 3)
+		else if (specialstageinfo.valid == true && i > 3)
 		{
 			oddsValid[i] = false;
 			continue;
@@ -734,7 +740,7 @@ static UINT8 K_FindUseodds(const player_t *player, itemroulette_t *const roulett
 	}
 	else
 	{
-		if (specialStage.active == true) // Special Stages
+		if (specialstageinfo.valid == true) // Special Stages
 		{
 			SETUPDISTTABLE(0,2);
 			SETUPDISTTABLE(1,2);
@@ -808,7 +814,7 @@ static boolean K_ForcedSPB(const player_t *player, itemroulette_t *const roulett
 		return false;
 	}
 
-	if (specialStage.active == true)
+	if (specialstageinfo.valid == true)
 	{
 		return false;
 	}
@@ -904,7 +910,7 @@ static void K_InitRoulette(itemroulette_t *const roulette)
 			roulette->exiting++;
 		}
 
-		if (specialStage.active == true)
+		if (specialstageinfo.valid == true)
 		{
 			UINT32 dis = K_UndoMapScaling(players[i].distancetofinish);
 			if (dis < roulette->secondDist)
@@ -926,7 +932,7 @@ static void K_InitRoulette(itemroulette_t *const roulette)
 		}
 	}
 
-	if (specialStage.active == true)
+	if (specialstageinfo.valid == true)
 	{
 		roulette->firstDist = K_UndoMapScaling(K_GetSpecialUFODistance());
 	}
@@ -1113,8 +1119,19 @@ void K_FillItemRouletteData(const player_t *player, itemroulette_t *const roulet
 	}
 
 	// SPECIAL CASE No. 2:
-	// Use a special, pre-determined item reel for Time Attack / Free Play
-	if (bossinfo.boss == true)
+	// Use a special, pre-determined item reel for Time Attack / Free Play / End of Sealed Stars
+	if (specialstageinfo.valid)
+	{
+		if (K_GetPossibleSpecialTarget() == NULL)
+		{
+			for (i = 0; K_KartItemReelSpecialEnd[i] != KITEM_NONE; i++)
+			{
+				K_PushToRouletteItemList(roulette, K_KartItemReelSpecialEnd[i]);
+			}
+			return;
+		}
+	}
+	else if (gametyperules & GTR_BOSS)
 	{
 		for (i = 0; K_KartItemReelBoss[i] != KITEM_NONE; i++)
 		{
@@ -1125,25 +1142,17 @@ void K_FillItemRouletteData(const player_t *player, itemroulette_t *const roulet
 	}
 	else if (K_TimeAttackRules() == true)
 	{
-		switch (gametype)
+		kartitems_t *presetlist = K_KartItemReelTimeAttack;
+
+		// If the objective is not to go fast, it's to cause serious damage.
+		if (gametyperules & GTR_CAPSULES)
 		{
-			case GT_RACE:
-			default:
-			{
-				for (i = 0; K_KartItemReelTimeAttack[i] != KITEM_NONE; i++)
-				{
-					K_PushToRouletteItemList(roulette, K_KartItemReelTimeAttack[i]);
-				}
-				break;
-			}
-			case GT_BATTLE:
-			{
-				for (i = 0; K_KartItemReelBreakTheCapsules[i] != KITEM_NONE; i++)
-				{
-					K_PushToRouletteItemList(roulette, K_KartItemReelBreakTheCapsules[i]);
-				}
-				break;
-			}
+			presetlist = K_KartItemReelBreakTheCapsules;
+		}
+
+		for (i = 0; presetlist[i] != KITEM_NONE; i++)
+		{
+			K_PushToRouletteItemList(roulette, presetlist[i]);
 		}
 
 		return;

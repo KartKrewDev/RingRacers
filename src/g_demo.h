@@ -88,7 +88,7 @@ struct menudemo_t {
 	char title[65]; // Null-terminated for string prints
 	UINT16 map;
 	UINT8 addonstatus; // What do we need to do addon-wise to play this demo?
-	UINT8 gametype;
+	INT16 gametype;
 	SINT8 kartspeed; // Add OR DF_ENCORE for encore mode, idk
 	UINT8 numlaps;
 

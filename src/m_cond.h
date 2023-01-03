@@ -123,7 +123,8 @@ typedef enum
 
 	// Menu restrictions
 	SECRET_TIMEATTACK,			// Permit Time attack
-	SECRET_BREAKTHECAPSULES,	// Permit SP Capsules
+	SECRET_BREAKTHECAPSULES,	// Permit SP Capsule attack
+	SECRET_SPECIALATTACK,		// Permit Special attack (You're blue now!)
 	SECRET_SOUNDTEST,			// Permit Sound Test
 	SECRET_ALTTITLE,			// Permit alternate titlescreen
 
