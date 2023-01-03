@@ -722,19 +722,14 @@ void P_WriteThings(void)
 	const char * filename;
 	size_t i, length;
 	mapthing_t *mt;
-	savebuffer_t save;
+	savebuffer_t save = {0};
 	INT16 temp;
 
-	save.size = nummapthings * sizeof (mapthing_t);
-	save.p = save.buffer = (UINT8 *)malloc(nummapthings * sizeof (mapthing_t));
-
-	if (!save.p)
+	if (P_SaveBufferAlloc(&save, nummapthings * sizeof (mapthing_t)) == false)
 	{
 		CONS_Alert(CONS_ERROR, M_GetText("No more free memory for thing writing!\n"));
 		return;
 	}
-
-	save.end = save.buffer + save.size;
 
 	mt = mapthings;
 	for (i = 0; i < nummapthings; i++, mt++)

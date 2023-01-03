@@ -217,16 +217,13 @@ void PR_SaveProfiles(void)
 	size_t length = 0;
 	const size_t headerlen = strlen(PROFILEHEADER);
 	UINT8 i, j, k;
-	savebuffer_t save;
+	savebuffer_t save = {0};
 
-	save.size = sizeof(UINT32) + (numprofiles * sizeof(profile_t));
-	save.p = save.buffer = (UINT8 *)malloc(save.size);
-	if (!save.p)
+	if (P_SaveBufferAlloc(&save, sizeof(UINT32) + (numprofiles * sizeof(profile_t))) == false)
 	{
 		I_Error("No more free memory for saving profiles\n");
 		return;
 	}
-	save.end = save.buffer + save.size;
 
 	// Add header.
 	WRITESTRINGN(save.p, PROFILEHEADER, headerlen);
@@ -278,7 +275,6 @@ void PR_SaveProfiles(void)
 
 void PR_LoadProfiles(void)
 {
-	size_t length = 0;
 	const size_t headerlen = strlen(PROFILEHEADER);
 	UINT8 i, j, k, version;
 	profile_t *dprofile = PR_MakeProfile(
@@ -289,17 +285,14 @@ void PR_LoadProfiles(void)
 		gamecontroldefault,
 		true
 	);
-	savebuffer_t save;
+	savebuffer_t save = {0};
 
-	length = FIL_ReadFile(va(pandf, srb2home, PROFILESFILE), &save.buffer);
-	if (!length)
+	if (P_SaveBufferFromFile(&save, va(pandf, srb2home, PROFILESFILE)) == false)
 	{
 		// No profiles. Add the default one.
 		PR_AddProfile(dprofile);
 		return;
 	}
-
-	save.p = save.buffer;
 
 	if (strncmp(PROFILEHEADER, (const char *)save.buffer, headerlen))
 	{

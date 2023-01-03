@@ -70,7 +70,7 @@ boolean noblit; // for comparative timing purposes
 tic_t demostarttime; // for comparative timing purposes
 
 static char demoname[MAX_WADPATH];
-static savebuffer_t demobuf;
+static savebuffer_t demobuf = {0};
 static UINT8 *demotime_p, *demoinfo_p;
 static UINT8 demoflags;
 boolean demosynced = true; // console warning message
@@ -2019,10 +2019,8 @@ void G_RecordDemo(const char *name)
 //	if (demobuf.buffer)
 //		P_SaveBufferFree(&demobuf);
 
-	demobuf.size = maxsize;
-	demobuf.buffer = (UINT8 *)malloc(maxsize);
+	P_SaveBufferAlloc(&demobuf, maxsize);
 	demobuf.p = NULL;
-	demobuf.end = demobuf.buffer + demobuf.size;
 
 	demo.recording = true;
 }
@@ -2034,10 +2032,8 @@ void G_RecordMetal(void)
 	if (M_CheckParm("-maxdemo") && M_IsNextParm())
 		maxsize = atoi(M_GetNextParm()) * 1024;
 
-	demobuf.size = maxsize;
-	demobuf.buffer = (UINT8 *)malloc(maxsize);
+	P_SaveBufferAlloc(&demobuf, maxsize);
 	demobuf.p = NULL;
-	demobuf.end = demobuf.buffer + demobuf.size;
 
 	metalrecording = true;
 }
@@ -2982,7 +2978,7 @@ void G_DoPlayDemo(char *defdemoname)
 		if (FIL_CheckExtension(defdemoname))
 		{
 			//FIL_DefaultExtension(defdemoname, ".lmp");
-			if (!FIL_ReadFile(defdemoname, &demobuf.buffer))
+			if (P_SaveBufferFromFile(&demobuf, defdemoname) == false)
 			{
 				snprintf(msg, 1024, M_GetText("Failed to read file '%s'.\n"), defdemoname);
 				CONS_Alert(CONS_ERROR, "%s", msg);
@@ -2990,20 +2986,20 @@ void G_DoPlayDemo(char *defdemoname)
 				M_StartMessage(msg, NULL, MM_NOTHING);
 				return;
 			}
-			demobuf.p = demobuf.buffer;
 		}
 		// load demo resource from WAD
-		else if ((l = W_CheckNumForName(defdemoname)) == LUMPERROR)
+		else
 		{
-			snprintf(msg, 1024, M_GetText("Failed to read lump '%s'.\n"), defdemoname);
-			CONS_Alert(CONS_ERROR, "%s", msg);
-			gameaction = ga_nothing;
-			M_StartMessage(msg, NULL, MM_NOTHING);
-			return;
-		}
-		else // it's an internal demo
-		{
-			demobuf.buffer = demobuf.p = W_CacheLumpNum(l, PU_STATIC);
+			if ((l = W_CheckNumForName(defdemoname)) == LUMPERROR)
+			{
+				snprintf(msg, 1024, M_GetText("Failed to read lump '%s'.\n"), defdemoname);
+				CONS_Alert(CONS_ERROR, "%s", msg);
+				gameaction = ga_nothing;
+				M_StartMessage(msg, NULL, MM_NOTHING);
+				return;
+			}
+
+			P_SaveBufferFromLump(&demobuf, l);
 #if defined(SKIPERRORS) && !defined(DEVELOP)
 			skiperrors = true; // SRB2Kart: Don't print warnings for staff ghosts, since they'll inevitably happen when we make bugfixes/changes...
 #endif
@@ -3945,7 +3941,7 @@ ATTRNORETURN void FUNCNORETURN G_StopMetalRecording(boolean kill)
 		WriteDemoChecksum();
 		saved = FIL_WriteFile(va("%sMS.LMP", G_BuildMapName(gamemap)), demobuf.buffer, demobuf.p - demobuf.buffer); // finally output the file.
 	}
-	free(demobuf.buffer);
+	Z_Free(demobuf.buffer);
 	metalrecording = false;
 	if (saved)
 		I_Error("Saved to %sMS.LMP", G_BuildMapName(gamemap));
@@ -4165,7 +4161,7 @@ void G_SaveDemo(void)
 
 	if (FIL_WriteFile(demoname, demobuf.buffer, demobuf.p - demobuf.buffer)) // finally output the file.
 		demo.savemode = DSM_SAVED;
-	free(demobuf.buffer);
+	Z_Free(demobuf.buffer);
 	demo.recording = false;
 
 	if (!modeattacking)

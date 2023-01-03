@@ -1141,29 +1141,26 @@ static boolean SV_ResendingSavegameToAnyone(void)
 static void SV_SendSaveGame(INT32 node, boolean resending)
 {
 	size_t length, compressedlen;
-	savebuffer_t save;
+	savebuffer_t save = {0};
 	UINT8 *compressedsave;
 	UINT8 *buffertosend;
 
 	// first save it in a malloced buffer
-	save.size = NETSAVEGAMESIZE;
-	save.buffer = (UINT8 *)malloc(save.size);
-	if (!save.buffer)
+	if (P_SaveBufferAlloc(&save, NETSAVEGAMESIZE) == false)
 	{
 		CONS_Alert(CONS_ERROR, M_GetText("No more free memory for savegame\n"));
 		return;
 	}
 
 	// Leave room for the uncompressed length.
-	save.p = save.buffer + sizeof(UINT32);
-	save.end = save.buffer + save.size;
+	save.p += sizeof(UINT32);
 
 	P_SaveNetGame(&save, resending);
 
 	length = save.p - save.buffer;
 	if (length > NETSAVEGAMESIZE)
 	{
-		free(save.buffer);
+		P_SaveBufferFree(&save);
 		I_Error("Savegame buffer overrun");
 	}
 
@@ -1180,7 +1177,7 @@ static void SV_SendSaveGame(INT32 node, boolean resending)
 	if ((compressedlen = lzf_compress(save.buffer + sizeof(UINT32), length - sizeof(UINT32), compressedsave + sizeof(UINT32), length - sizeof(UINT32) - 1)))
 	{
 		// Compressing succeeded; send compressed data
-		free(save.buffer);
+		P_SaveBufferFree(&save);
 
 		// State that we're compressed.
 		buffertosend = compressedsave;
@@ -1211,7 +1208,7 @@ static consvar_t cv_dumpconsistency = CVAR_INIT ("dumpconsistency", "Off", CV_SA
 static void SV_SavedGame(void)
 {
 	size_t length;
-	savebuffer_t save;
+	savebuffer_t save = {0};
 	char tmpsave[256];
 
 	if (!cv_dumpconsistency.value)
@@ -1220,22 +1217,18 @@ static void SV_SavedGame(void)
 	sprintf(tmpsave, "%s" PATHSEP TMPSAVENAME, srb2home);
 
 	// first save it in a malloced buffer
-	save.size = NETSAVEGAMESIZE;
-	save.p = save.buffer = (UINT8 *)malloc(save.size);
-	if (!save.p)
+	if (P_SaveBufferAlloc(&save, NETSAVEGAMESIZE) == false)
 	{
 		CONS_Alert(CONS_ERROR, M_GetText("No more free memory for savegame\n"));
 		return;
 	}
-
-	save.end = save.buffer + save.size;
 
 	P_SaveNetGame(&save, false);
 
 	length = save.p - save.buffer;
 	if (length > NETSAVEGAMESIZE)
 	{
-		free(save.buffer);
+		P_SaveBufferFree(&save);
 		I_Error("Savegame buffer overrun");
 	}
 
@@ -1243,7 +1236,7 @@ static void SV_SavedGame(void)
 	if (!FIL_WriteFile(tmpsave, save.buffer, length))
 		CONS_Printf(M_GetText("Didn't save %s for netgame"), tmpsave);
 
-	free(save.buffer);
+	P_SaveBufferFree(&save);
 }
 
 #undef  TMPSAVENAME
@@ -1253,37 +1246,31 @@ static void SV_SavedGame(void)
 
 static void CL_LoadReceivedSavegame(boolean reloading)
 {
-	savebuffer_t save;
+	savebuffer_t save = {0};
 	size_t length, decompressedlen;
 	char tmpsave[256];
 
 	sprintf(tmpsave, "%s" PATHSEP TMPSAVENAME, srb2home);
 
-	length = FIL_ReadFile(tmpsave, &save.buffer);
-
-	CONS_Printf(M_GetText("Loading savegame length %s\n"), sizeu1(length));
-	if (!length)
+	if (P_SaveBufferFromFile(&save, tmpsave) == false)
 	{
 		I_Error("Can't read savegame sent");
 		return;
 	}
 
-	save.p = save.buffer;
-	save.size = length;
-	save.end = save.buffer + save.size;
+	length = save.size;
+	CONS_Printf(M_GetText("Loading savegame length %s\n"), sizeu1(length));
 
 	// Decompress saved game if necessary.
 	decompressedlen = READUINT32(save.p);
-	if(decompressedlen > 0)
+	if (decompressedlen > 0)
 	{
 		UINT8 *decompressedbuffer = Z_Malloc(decompressedlen, PU_STATIC, NULL);
 
 		lzf_decompress(save.p, length - sizeof(UINT32), decompressedbuffer, decompressedlen);
-		Z_Free(save.buffer);
 
-		save.p = save.buffer = decompressedbuffer;
-		save.size = decompressedlen;
-		save.end = save.buffer + decompressedlen;
+		P_SaveBufferFree(&save);
+		P_SaveBufferFromExisting(&save, decompressedbuffer, decompressedlen);
 	}
 
 	paused = false;
@@ -1315,10 +1302,13 @@ static void CL_LoadReceivedSavegame(boolean reloading)
 	}
 
 	// done
-	Z_Free(save.buffer);
-	save.p = NULL;
+	P_SaveBufferFree(&save);
+
 	if (unlink(tmpsave) == -1)
+	{
 		CONS_Alert(CONS_ERROR, M_GetText("Can't delete %s\n"), tmpsave);
+	}
+
 	consistancy[gametic%BACKUPTICS] = Consistancy();
 	CON_ToggleOff();
 
@@ -6067,7 +6057,7 @@ void CL_ClearRewinds(void)
 
 rewind_t *CL_SaveRewindPoint(size_t demopos)
 {
-	savebuffer_t save;
+	savebuffer_t save = {0};
 	rewind_t *rewind;
 
 	if (rewindhead && rewindhead->leveltime + REWIND_POINT_INTERVAL > leveltime)
@@ -6077,10 +6067,7 @@ rewind_t *CL_SaveRewindPoint(size_t demopos)
 	if (!rewind)
 		return NULL;
 
-	save.buffer = save.p = rewind->savebuffer;
-	save.size = NETSAVEGAMESIZE;
-	save.end = save.buffer + save.size;
-
+	P_SaveBufferFromExisting(&save, rewind->savebuffer, NETSAVEGAMESIZE);
 	P_SaveNetGame(&save, false);
 
 	rewind->leveltime = leveltime;
@@ -6093,7 +6080,7 @@ rewind_t *CL_SaveRewindPoint(size_t demopos)
 
 rewind_t *CL_RewindToTime(tic_t time)
 {
-	savebuffer_t save;
+	savebuffer_t save = {0};
 	rewind_t *rewind;
 
 	while (rewindhead && rewindhead->leveltime > time)
@@ -6106,10 +6093,7 @@ rewind_t *CL_RewindToTime(tic_t time)
 	if (!rewindhead)
 		return NULL;
 
-	save.buffer = save.p = rewindhead->savebuffer;
-	save.size = NETSAVEGAMESIZE;
-	save.end = save.buffer + save.size;
-
+	P_SaveBufferFromExisting(&save, rewindhead->savebuffer, NETSAVEGAMESIZE);
 	P_LoadNetGame(&save, false);
 
 	wipegamestate = gamestate; // No fading back in!

@@ -4303,12 +4303,11 @@ void G_LoadGameSettings(void)
 // Loads the main data file, which stores information such as emblems found, etc.
 void G_LoadGameData(void)
 {
-	size_t length;
 	UINT32 i, j;
 	UINT32 versionID;
 	UINT8 versionMinor;
 	UINT8 rtemp;
-	savebuffer_t save;
+	savebuffer_t save = {0};
 
 	//For records
 	UINT32 numgamedatamapheaders;
@@ -4337,15 +4336,12 @@ void G_LoadGameData(void)
 		return; 
 	}
 
-	length = FIL_ReadFile(va(pandf, srb2home, gamedatafilename), &save.buffer);
-	if (!length)
+	if (P_SaveBufferFromFile(&save, va(pandf, srb2home, gamedatafilename)) == false)
 	{
 		// No gamedata. We can save a new one.
 		gamedata->loaded = true;
 		return;
 	}
-
-	save.p = save.buffer;
 
 	// Version check
 	versionID = READUINT32(save.p);
@@ -4355,16 +4351,14 @@ void G_LoadGameData(void)
 		if (strcmp(srb2home,"."))
 			gdfolder = srb2home;
 
-		Z_Free(save.buffer);
-		save.p = NULL;
+		P_SaveBufferFree(&save);
 		I_Error("Game data is not for Ring Racers v2.0.\nDelete %s(maybe in %s) and try again.", gamedatafilename, gdfolder);
 	}
 
 	versionMinor = READUINT8(save.p);
 	if (versionMinor > GD_VERSIONMINOR)
 	{
-		Z_Free(save.buffer);
-		save.p = NULL;
+		P_SaveBufferFree(&save);
 		I_Error("Game data is from the future! (expected %d, got %d)", GD_VERSIONMINOR, versionMinor);
 	}
 
@@ -4475,8 +4469,7 @@ void G_LoadGameData(void)
 	}
 
 	// done
-	Z_Free(save.buffer);
-	save.p = NULL;
+	P_SaveBufferFree(&save);
 
 	// Don't consider loaded until it's a success!
 	// It used to do this much earlier, but this would cause the gamedata to
@@ -4496,8 +4489,7 @@ void G_LoadGameData(void)
 		if (strcmp(srb2home,"."))
 			gdfolder = srb2home;
 
-		Z_Free(save.buffer);
-		save.p = NULL;
+		P_SaveBufferFree(&save);
 
 		I_Error("Corrupt game data file.\nDelete %s(maybe in %s) and try again.", gamedatafilename, gdfolder);
 	}
@@ -4510,7 +4502,7 @@ void G_SaveGameData(void)
 	size_t length;
 	INT32 i, j;
 	UINT8 btemp;
-	savebuffer_t save;
+	savebuffer_t save = {0};
 
 	if (!gamedata->loaded)
 		return; // If never loaded (-nodata), don't save
@@ -4530,14 +4522,11 @@ void G_SaveGameData(void)
 	}
 	length += nummapheaders * (MAXMAPLUMPNAME+1+4+4);
 
-	save.size = length;
-	save.p = save.buffer = (UINT8 *)malloc(save.size);
-	if (!save.p)
+	if (P_SaveBufferAlloc(&save, length) == false)
 	{
 		CONS_Alert(CONS_ERROR, M_GetText("No more free memory for saving game data\n"));
 		return;
 	}
-	save.end = save.buffer + save.size;
 
 	// Version test
 
@@ -4624,7 +4613,7 @@ void G_SaveGameData(void)
 	length = save.p - save.buffer;
 
 	FIL_WriteFile(va(pandf, srb2home, gamedatafilename), save.buffer, length);
-	free(save.buffer);
+	P_SaveBufferFree(&save);
 
 	// Also save profiles here.
 	PR_SaveProfiles();
@@ -4638,10 +4627,9 @@ void G_SaveGameData(void)
 //
 void G_LoadGame(UINT32 slot, INT16 mapoverride)
 {
-	size_t length;
 	char vcheck[VERSIONSIZE];
 	char savename[255];
-	savebuffer_t save;
+	savebuffer_t save = {0};
 
 	// memset savedata to all 0, fixes calling perfectly valid saves corrupt because of bots
 	memset(&savedata, 0, sizeof(savedata));
@@ -4656,16 +4644,11 @@ void G_LoadGame(UINT32 slot, INT16 mapoverride)
 	else
 		sprintf(savename, savegamename, slot);
 
-	length = FIL_ReadFile(savename, &save.buffer);
-	if (!length)
+	if (P_SaveBufferFromFile(&save, savename) == false)
 	{
 		CONS_Printf(M_GetText("Couldn't read file %s\n"), savename);
 		return;
 	}
-
-	save.p = save.buffer;
-	save.size = length;
-	save.end = save.buffer + save.size;
 
 	memset(vcheck, 0, sizeof (vcheck));
 	sprintf(vcheck, (marathonmode ? "back-up %d" : "version %d"), VERSION);
@@ -4679,7 +4662,7 @@ void G_LoadGame(UINT32 slot, INT16 mapoverride)
 		M_ClearMenus(true); // so ESC backs out to title
 		M_StartMessage(M_GetText("Save game from different version\n\nPress ESC\n"), NULL, MM_NOTHING);
 		Command_ExitGame_f();
-		Z_Free(save.buffer);
+		P_SaveBufferFree(&save);
 
 		// no cheating!
 		memset(&savedata, 0, sizeof(savedata));
@@ -4714,7 +4697,7 @@ void G_LoadGame(UINT32 slot, INT16 mapoverride)
 	}
 
 	// done
-	Z_Free(save.buffer);
+	P_SaveBufferFree(&save);
 
 //	gameaction = ga_nothing;
 //	G_SetGamestate(GS_LEVEL);
@@ -4740,7 +4723,7 @@ void G_SaveGame(UINT32 slot, INT16 mapnum)
 	boolean saved;
 	char savename[256] = "";
 	const char *backup;
-	savebuffer_t save;
+	savebuffer_t save = {0};
 
 	if (marathonmode)
 		strcpy(savename, liveeventbackup);
@@ -4753,14 +4736,11 @@ void G_SaveGame(UINT32 slot, INT16 mapnum)
 		char name[VERSIONSIZE];
 		size_t length;
 
-		save.size = SAVEGAMESIZE;
-		save.p = save.buffer = (UINT8 *)malloc(save.size);
-		if (!save.p)
+		if (P_SaveBufferAlloc(&save, SAVEGAMESIZE) == false)
 		{
 			CONS_Alert(CONS_ERROR, M_GetText("No more free memory for saving game data\n"));
 			return;
 		}
-		save.end = save.buffer + save.size;
 
 		memset(name, 0, sizeof (name));
 		sprintf(name, (marathonmode ? "back-up %d" : "version %d"), VERSION);
@@ -4778,7 +4758,7 @@ void G_SaveGame(UINT32 slot, INT16 mapnum)
 
 		length = save.p - save.buffer;
 		saved = FIL_WriteFile(backup, save.buffer, length);
-		free(save.buffer);
+		P_SaveBufferFree(&save);
 	}
 
 	gameaction = ga_nothing;
@@ -4798,7 +4778,7 @@ void G_SaveGameOver(UINT32 slot, boolean modifylives)
 	char vcheck[VERSIONSIZE];
 	char savename[255];
 	const char *backup;
-	savebuffer_t save;
+	savebuffer_t save = {0};
 
 	if (marathonmode)
 		strcpy(savename, liveeventbackup);
@@ -4806,21 +4786,18 @@ void G_SaveGameOver(UINT32 slot, boolean modifylives)
 		sprintf(savename, savegamename, slot);
 	backup = va("%s",savename);
 
-	length = FIL_ReadFile(savename, &save.buffer);
-	if (!length)
+	if (P_SaveBufferFromFile(&save, savename) == false)
 	{
 		CONS_Printf(M_GetText("Couldn't read file %s\n"), savename);
 		return;
 	}
 
+	length = save.size;
+
 	{
 		char temp[sizeof(timeattackfolder)];
 		UINT8 *lives_p;
 		SINT8 pllives;
-
-		save.p = save.buffer;
-		save.size = length;
-		save.end = save.buffer + save.size;
 
 		// Version check
 		memset(vcheck, 0, sizeof (vcheck));
@@ -4892,9 +4869,8 @@ cleanup:
 		CONS_Printf(M_GetText("Game saved.\n"));
 	else if (!saved)
 		CONS_Alert(CONS_ERROR, M_GetText("Error while writing to %s for save slot %u, base: %s\n"), backup, slot, (marathonmode ? liveeventbackup : savegamename));
-	Z_Free(save.buffer);
-	save.p = save.buffer = NULL;
 
+	P_SaveBufferFree(&save);
 }
 #undef CHECKPOS
 #undef BADSAVE

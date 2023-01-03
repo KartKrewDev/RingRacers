@@ -5226,3 +5226,92 @@ boolean P_LoadNetGame(savebuffer_t *save, boolean reloading)
 
 	return P_UnArchiveLuabanksAndConsistency(save);
 }
+
+boolean P_SaveBufferZAlloc(savebuffer_t *save, size_t alloc_size, INT32 tag, void *user)
+{
+	I_Assert(save->buffer == NULL);
+	save->buffer = (UINT8 *)Z_Malloc(alloc_size, tag, user);
+
+	if (save->buffer == NULL)
+	{
+		return false;
+	}
+
+	save->size = alloc_size;
+	save->p = save->buffer;
+	save->end = save->buffer + save->size;
+
+	return true;
+}
+
+boolean P_SaveBufferFromExisting(savebuffer_t *save, UINT8 *existing_buffer, size_t existing_size)
+{
+	I_Assert(save->buffer == NULL);
+
+	if (existing_buffer == NULL || existing_size == 0)
+	{
+		return false;
+	}
+
+	save->buffer = existing_buffer;
+	save->size = existing_size;
+
+	save->p = save->buffer;
+	save->end = save->buffer + save->size;
+
+	return true;
+}
+
+boolean P_SaveBufferFromLump(savebuffer_t *save, lumpnum_t lump)
+{
+	I_Assert(save->buffer == NULL);
+
+	if (lump == LUMPERROR)
+	{
+		return false;
+	}
+
+	save->buffer = (UINT8 *)W_CacheLumpNum(lump, PU_STATIC);
+
+	if (save->buffer == NULL)
+	{
+		return false;
+	}
+
+	save->size = W_LumpLength(lump);
+
+	save->p = save->buffer;
+	save->end = save->buffer + save->size;
+
+	return true;
+}
+
+boolean P_SaveBufferFromFile(savebuffer_t *save, char const *name)
+{
+	size_t len = 0;
+
+	I_Assert(save->buffer == NULL);
+	len = FIL_ReadFile(name, &save->buffer);
+
+	if (len != 0)
+	{
+		save->size = len;
+
+		save->p = save->buffer;
+		save->end = save->buffer + save->size;
+	}
+
+	return len;
+}
+
+static void P_SaveBufferInvalidate(savebuffer_t *save)
+{
+	save->buffer = save->p = save->end = NULL;
+	save->size = 0;
+}
+
+void P_SaveBufferFree(savebuffer_t *save)
+{
+	Z_Free(save->buffer);
+	P_SaveBufferInvalidate(save);
+}
