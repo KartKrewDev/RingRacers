@@ -434,6 +434,11 @@ static boolean K_DenyShieldOdds(kartitems_t item)
 {
 	INT32 shieldType = K_GetShieldFromItem(item);
 
+	if ((gametyperules & GTR_CIRCUIT) == 0)
+	{
+		return false;
+	}
+
 	switch (shieldType)
 	{
 		case KSHIELD_NONE:
@@ -535,6 +540,12 @@ typedef struct {
 --------------------------------------------------*/
 static fixed_t K_AdjustItemOddsToConditions(fixed_t newOdds, const itemconditions_t *conditions, const itemroulette_t *roulette)
 {
+	// None if this applies outside of Race modes (for now?)
+	if ((gametyperules & GTR_CIRCUIT) == 0)
+	{
+		return newOdds;
+	}
+
 	if ((conditions->cooldownOnStart == true) && (leveltime < (30*TICRATE) + starttime))
 	{
 		// This item should not appear at the beginning of a race. (Usually really powerful crowd-breaking items)
@@ -697,13 +708,8 @@ INT32 K_KartGetItemOdds(const player_t *player, itemroulette_t *const roulette, 
 			conditions.cooldownOnStart = true;
 			conditions.notNearEnd = true;
 
-			if ((gametyperules & GTR_CIRCUIT) == 0)
-			{
-				// Needs to be a race.
-				return 0;
-			}
-
-			if (specialstageinfo.valid == false)
+			if ((gametyperules & GTR_CIRCUIT) &&
+					specialstageinfo.valid == false)
 			{
 				newOdds = K_AdjustSPBOdds(roulette, position);
 			}
@@ -716,7 +722,8 @@ INT32 K_KartGetItemOdds(const player_t *player, itemroulette_t *const roulette, 
 			conditions.powerItem = true;
 			conditions.notNearEnd = true;
 
-			if (roulette->playing - 1 <= roulette->exiting)
+			if ((gametyperules & GTR_CIRCUIT) &&
+					roulette->playing - 1 <= roulette->exiting)
 			{
 				return 0;
 			}
@@ -728,7 +735,7 @@ INT32 K_KartGetItemOdds(const player_t *player, itemroulette_t *const roulette, 
 			conditions.cooldownOnStart = true;
 			conditions.powerItem = true;
 
-			if (spbplace != -1)
+			if ((gametyperules & GTR_CIRCUIT) && spbplace != -1)
 			{
 				return 0;
 			}
