@@ -1219,16 +1219,31 @@ static boolean M_MenuConfirmPressed(UINT8 pid)
 	 return M_MenuButtonPressed(pid, MBT_A);
 }
 
+/*static boolean M_MenuConfirmHeld(UINT8 pid)
+{
+	 return M_MenuButtonHeld(pid, MBT_A);
+}*/
+
 // Returns true if we press the Cancel button
 static boolean M_MenuBackPressed(UINT8 pid)
 {
 	 return (M_MenuButtonPressed(pid, MBT_B) || M_MenuButtonPressed(pid, MBT_X));
 }
 
+/*static boolean M_MenuBackHeld(UINT8 pid)
+{
+	 return (M_MenuButtonHeld(pid, MBT_B) || M_MenuButtonHeld(pid, MBT_X));
+}*/
+
 // Retrurns true if we press the tertiary option button (C)
 static boolean M_MenuExtraPressed(UINT8 pid)
 {
 	 return M_MenuButtonPressed(pid, MBT_C);
+}
+
+static boolean M_MenuExtraHeld(UINT8 pid)
+{
+	 return M_MenuButtonHeld(pid, MBT_C);
 }
 
 
@@ -7369,6 +7384,7 @@ void M_Challenges(INT32 choice)
 
 void M_ChallengesTick(void)
 {
+	const UINT8 pid = 0;
 	UINT8 i, newunlock = MAXUNLOCKABLES;
 	boolean fresh = (challengesmenu.currentunlock >= MAXUNLOCKABLES);
 
@@ -7412,8 +7428,9 @@ void M_ChallengesTick(void)
 		else
 		{
 			// Unlock sequence.
+			tic_t nexttime = M_MenuExtraHeld(pid) ? (UNLOCKTIME*2) : MAXUNLOCKTIME;
 
-			if (++challengesmenu.unlockanim >= MAXUNLOCKTIME)
+			if (++challengesmenu.unlockanim >= nexttime)
 			{
 				challengesmenu.requestnew = true;
 			}
