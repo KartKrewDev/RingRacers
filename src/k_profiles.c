@@ -267,10 +267,10 @@ void PR_SaveProfiles(void)
 
 	if (!FIL_WriteFile(va(pandf, srb2home, PROFILESFILE), save.buffer, length))
 	{
-		free(save.buffer);
+		P_SaveBufferFree(&save);
 		I_Error("Couldn't save profiles. Are you out of Disk space / playing in a protected folder?");
 	}
-	free(save.buffer);
+	P_SaveBufferFree(&save);
 }
 
 void PR_LoadProfiles(void)
