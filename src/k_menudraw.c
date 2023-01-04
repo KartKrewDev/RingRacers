@@ -4633,9 +4633,31 @@ static void M_DrawChallengePreview(INT32 x, INT32 y)
 	// Okay, this is what we want to draw.
 	ref = &unlockables[challengesmenu.currentunlock];
 
+	// Funny question mark?
 	if (!gamedata->unlocked[challengesmenu.currentunlock])
 	{
-		// todo draw some sort of question mark?
+		spritedef_t *sprdef = &sprites[SPR_UQMK];
+		spriteframe_t *sprframe;
+		patch_t *patch;
+		UINT32 useframe;
+		UINT32 addflags = 0;
+
+		if (!sprdef->numframes)
+		{
+			return;
+		}
+
+		useframe = (challengesmenu.ticker / 2) % sprdef->numframes;
+
+		sprframe = &sprdef->spriteframes[useframe];
+		patch = W_CachePatchNum(sprframe->lumppat[0], PU_CACHE);
+
+		if (sprframe->flip & 1) // Only for first sprite
+		{
+			addflags ^= V_FLIP; // This sprite is left/right flipped!
+		}
+
+		V_DrawFixedPatch(x*FRACUNIT, (y+6)*FRACUNIT, FRACUNIT, addflags, patch, NULL);
 		return;
 	}
 
