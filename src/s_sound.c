@@ -2457,6 +2457,27 @@ void S_StartEx(boolean reset)
 	music_stack_fadein = JINGLEPOSTFADE;
 }
 
+static inline void PrintMusicDefField(const char *label, const char *field)
+{
+	if (field)
+	{
+		CONS_Printf("%s%s\n", label, field);
+	}
+}
+
+static void PrintSongAuthors(const musicdef_t *def)
+{
+	CONS_Printf("Volume: %d/100\n\n", def->volume);
+
+	PrintMusicDefField("Title:  ", def->title);
+	PrintMusicDefField("Author: ", def->author);
+
+	CONS_Printf("\n");
+
+	PrintMusicDefField("Original Source:    ", def->source);
+	PrintMusicDefField("Original Composers: ", def->composers);
+}
+
 // TODO: fix this function, needs better support for map names
 static void Command_Tunes_f(void)
 {
@@ -2481,8 +2502,15 @@ static void Command_Tunes_f(void)
 
 	if (!strcasecmp(tunearg, "-show"))
 	{
+		const musicdef_t *def = S_FindMusicDef(mapmusname);
+
 		CONS_Printf(M_GetText("The current tune is: %s [track %d]\n"),
 			mapmusname, (mapmusflags & MUSIC_TRACKMASK));
+
+		if (def != NULL)
+		{
+			PrintSongAuthors(def);
+		}
 		return;
 	}
 	if (!strcasecmp(tunearg, "-none"))
