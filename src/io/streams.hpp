@@ -418,7 +418,7 @@ public:
 
 		switch (seek_from) {
 		case SeekFrom::kStart:
-			if (offset < 0 || offset >= static_cast<StreamOffset>(span_.size())) {
+			if (offset < 0) {
 				throw std::logic_error("start offset is out of bounds");
 			}
 			head = offset;
@@ -430,7 +430,7 @@ public:
 			head = span_.size() - offset;
 			break;
 		case SeekFrom::kCurrent:
-			if (head_ + offset < 0 || head_ + offset >= span_.size()) {
+			if (head_ + offset < 0) {
 				throw std::logic_error("offset is out of bounds");
 			}
 			head = head_ + offset;
@@ -489,7 +489,7 @@ public:
 
 		switch (seek_from) {
 		case SeekFrom::kStart:
-			if (offset < 0 || offset >= static_cast<StreamOffset>(vec_.size())) {
+			if (offset < 0) {
 				throw std::logic_error("start offset is out of bounds");
 			}
 			head = offset;
@@ -501,7 +501,7 @@ public:
 			head = vec_.size() - offset;
 			break;
 		case SeekFrom::kCurrent:
-			if (head_ + offset < 0 || head_ + offset >= vec_.size()) {
+			if (head_ + offset < 0) {
 				throw std::logic_error("offset is out of bounds");
 			}
 			head = head_ + offset;
