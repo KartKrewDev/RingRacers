@@ -1,3 +1,12 @@
+// SONIC ROBO BLAST 2
+//-----------------------------------------------------------------------------
+// Copyright (C) 2022-2023 by Ronald "Eidolon" Kinard
+//
+// This program is free software distributed under the
+// terms of the GNU General Public License, version 2.
+// See the 'LICENSE' file for more details.
+//-----------------------------------------------------------------------------
+
 #ifndef __SRB2_IO_STREAMS_HPP__
 #define __SRB2_IO_STREAMS_HPP__
 
@@ -409,7 +418,7 @@ public:
 
 		switch (seek_from) {
 		case SeekFrom::kStart:
-			if (offset < 0 || offset >= static_cast<StreamOffset>(span_.size())) {
+			if (offset < 0) {
 				throw std::logic_error("start offset is out of bounds");
 			}
 			head = offset;
@@ -421,7 +430,7 @@ public:
 			head = span_.size() - offset;
 			break;
 		case SeekFrom::kCurrent:
-			if (head_ + offset < 0 || head_ + offset >= span_.size()) {
+			if (head_ + offset < 0) {
 				throw std::logic_error("offset is out of bounds");
 			}
 			head = head_ + offset;
@@ -480,7 +489,7 @@ public:
 
 		switch (seek_from) {
 		case SeekFrom::kStart:
-			if (offset < 0 || offset >= static_cast<StreamOffset>(vec_.size())) {
+			if (offset < 0) {
 				throw std::logic_error("start offset is out of bounds");
 			}
 			head = offset;
@@ -492,7 +501,7 @@ public:
 			head = vec_.size() - offset;
 			break;
 		case SeekFrom::kCurrent:
-			if (head_ + offset < 0 || head_ + offset >= vec_.size()) {
+			if (head_ + offset < 0) {
 				throw std::logic_error("offset is out of bounds");
 			}
 			head = head_ + offset;

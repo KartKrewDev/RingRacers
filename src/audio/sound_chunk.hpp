@@ -7,7 +7,19 @@
 // See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
 
-#include "streams.hpp"
+#ifndef __SRB2_AUDIO_SOUND_CHUNK_HPP__
+#define __SRB2_AUDIO_SOUND_CHUNK_HPP__
 
-template class srb2::io::ZlibInputStream<srb2::io::SpanStream>;
-template class srb2::io::ZlibInputStream<srb2::io::VecStream>;
+#include <vector>
+
+#include "source.hpp"
+
+namespace srb2::audio {
+
+struct SoundChunk {
+	std::vector<Sample<1>> samples;
+};
+
+} // namespace srb2::audio
+
+#endif // __SRB2_AUDIO_SOUND_CHUNK_HPP__
