@@ -72,10 +72,6 @@ char logfilename[1024];
 #endif
 
 #if defined (_WIN32)
-#include <exchndl.h>
-#endif
-
-#if defined (_WIN32)
 extern "C" {
 #include "../win32/win_dbg.h"
 }
@@ -202,6 +198,20 @@ static void InitLogging(void)
 }
 #endif
 
+static void init_exchndl()
+{
+#ifdef _WIN32
+	HMODULE exchndl_module = LoadLibraryA("exchndl.dll");
+	if (exchndl_module != NULL)
+	{
+		using PFN_ExcHndlInit = void(*)(void);
+		PFN_ExcHndlInit pfnExcHndlInit = reinterpret_cast<PFN_ExcHndlInit>(
+			GetProcAddress(exchndl_module, "ExcHndlInit"));
+		if (pfnExcHndlInit != NULL)
+			(pfnExcHndlInit)();
+	}
+#endif
+}
 
 #ifdef _WIN32
 static void
@@ -294,7 +304,7 @@ int main(int argc, char **argv)
 			)
 #endif
 		{
-			ExcHndlInit();
+			init_exchndl();
 		}
 	}
 #ifndef __MINGW32__
