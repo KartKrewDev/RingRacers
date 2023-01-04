@@ -6842,7 +6842,7 @@ void M_Addons(INT32 choice)
 
 #if 1
 	if (cv_addons_option.value == 0)
-		pathname = usehome ? srb2home : srb2path;
+		pathname = addonsdir;
 	else if (cv_addons_option.value == 1)
 		pathname = srb2home;
 	else if (cv_addons_option.value == 2)

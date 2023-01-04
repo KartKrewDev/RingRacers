@@ -310,13 +310,13 @@ closedir (DIR * dirp)
 }
 #endif
 
-static CV_PossibleValue_t addons_cons_t[] = {{0, "Default"},
+static CV_PossibleValue_t addons_cons_t[] = {{0, "Addons"},
 #if 1
 												{1, "HOME"}, {2, "RINGRACERS"},
 #endif
 													{3, "CUSTOM"}, {0, NULL}};
 
-consvar_t cv_addons_option = CVAR_INIT ("addons_option", "Default", CV_SAVE|CV_CALL, addons_cons_t, Addons_option_Onchange);
+consvar_t cv_addons_option = CVAR_INIT ("addons_option", "Addons", CV_SAVE|CV_CALL, addons_cons_t, Addons_option_Onchange);
 consvar_t cv_addons_folder = CVAR_INIT ("addons_folder", "", CV_SAVE, NULL, NULL);
 
 static CV_PossibleValue_t addons_md5_cons_t[] = {{0, "Name"}, {1, "Contents"}, {0, NULL}};
