@@ -4510,8 +4510,6 @@ void M_DrawAddons(void)
 
 // Challenges Menu
 
-#define challengesbordercolor 27
-
 static void M_DrawChallengeTile(INT16 i, INT16 j, INT32 x, INT32 y, boolean hili)
 {
 	unlockable_t *ref = NULL;
