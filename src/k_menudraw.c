@@ -4950,6 +4950,7 @@ challengedesc:
 	i = (challengesmenu.hilix * CHALLENGEGRIDHEIGHT) + challengesmenu.hiliy;
 
 	if (challengesmenu.unlockcondition != NULL
+	&& challengesmenu.currentunlock < MAXUNLOCKABLES
 	&& ((gamedata->unlocked[challengesmenu.currentunlock] == true)
 		|| ((challengesmenu.extradata != NULL)
 		&& (challengesmenu.extradata[i] & CHE_HINT))
