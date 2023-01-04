@@ -300,8 +300,7 @@ void PR_LoadProfiles(void)
 		if (strcmp(srb2home,"."))
 			gdfolder = srb2home;
 
-		Z_Free(save.buffer);
-		save.p = NULL;
+		P_SaveBufferFree(&save);
 		I_Error("Not a valid Profile file.\nDelete %s (maybe in %s) and try again.", PROFILESFILE, gdfolder);
 	}
 	save.p += headerlen;
@@ -309,8 +308,7 @@ void PR_LoadProfiles(void)
 	version = READUINT8(save.p);
 	if (version > PROFILEVER)
 	{
-		Z_Free(save.buffer);
-		save.p = NULL;
+		P_SaveBufferFree(&save);
 		I_Error("Existing %s is from the future! (expected %d, got %d)", PROFILESFILE, PROFILEVER, version);
 	}
 

@@ -749,8 +749,7 @@ void P_WriteThings(void)
 	filename = va("newthings-%s.lmp", G_BuildMapName(gamemap));
 
 	FIL_WriteFile(filename, save.buffer, length);
-	free(save.buffer);
-	save.p = NULL;
+	P_SaveBufferFree(&save);
 
 	CONS_Printf(M_GetText("%s saved.\n"), filename);
 }
