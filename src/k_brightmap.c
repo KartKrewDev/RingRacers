@@ -86,7 +86,7 @@ static brightmapStorage_t *K_GetBrightmapStorageByTextureName(const char *checkN
 }
 
 /*--------------------------------------------------
-	static boolean K_BRIGHTLumpParser(UINT8 *data, size_t size)
+	static boolean K_BRIGHTLumpParser(char *data, size_t size)
 
 		Parses inputted lump data as a BRIGHT lump.
 
@@ -97,7 +97,7 @@ static brightmapStorage_t *K_GetBrightmapStorageByTextureName(const char *checkN
 	Return:-
 		false if any errors occured, otherwise true.
 --------------------------------------------------*/
-static boolean K_BRIGHTLumpParser(UINT8 *data, size_t size)
+static boolean K_BRIGHTLumpParser(char *data, size_t size)
 {
 	char *tkn = M_GetToken((char *)data);
 	size_t pos = 0;
@@ -188,6 +188,7 @@ void K_InitBrightmapsPwad(INT32 wadNum)
 		{
 			lumpinfo_t *lump_p = &wadfiles[wadNum]->lumpinfo[lumpNum];
 			size_t size = W_LumpLengthPwad(wadNum, lumpNum);
+			char *datacopy;
 
 			size_t nameLength = strlen(wadfiles[wadNum]->filename) + 1 + strlen(lump_p->fullname); // length of file name, '|', and lump name
 			char *name = malloc(nameLength + 1);
@@ -198,10 +199,18 @@ void K_InitBrightmapsPwad(INT32 wadNum)
 			size = W_LumpLengthPwad(wadNum, lumpNum);
 
 			CONS_Printf(M_GetText("Loading BRIGHT from %s\n"), name);
-			K_BRIGHTLumpParser(data, size);
+
+			datacopy = (char *)Z_Malloc((size+1)*sizeof(char),PU_STATIC,NULL);
+			memmove(datacopy,data,size);
+			datacopy[size] = '\0';
+
+			Z_Free(data);
+
+			K_BRIGHTLumpParser(datacopy, size);
+
+			Z_Free(datacopy);
 
 			free(name);
-			Z_Free(data);
 		}
 
 		lumpNum = W_CheckNumForNamePwad("BRIGHT", (UINT16)wadNum, lumpNum + 1);
