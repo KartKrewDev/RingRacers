@@ -6621,7 +6621,9 @@ void M_PrepReplayList(void)
 		else
 		{
 			extrasmenu.demolist[i].type = MD_NOTLOADED;
-			snprintf(extrasmenu.demolist[i].filepath, 255, "%s%s", menupath, dirmenu[i] + DIR_STRING);
+			snprintf(extrasmenu.demolist[i].filepath, sizeof extrasmenu.demolist[i].filepath,
+					// 255 = UINT8 limit. dirmenu entries are restricted to this length (see DIR_LEN).
+					"%s%.255s", menupath, dirmenu[i] + DIR_STRING);
 			sprintf(extrasmenu.demolist[i].title, ".....");
 		}
 	}
