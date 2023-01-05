@@ -1792,6 +1792,38 @@ static void P_DoBubbleBreath(player_t *player)
 	}
 }
 
+static inline boolean P_IsMomentumAngleLocked(player_t *player)
+{
+	// This timer is used for the animation too and the
+	// animation should continue for a bit after the physics
+	// stop.
+
+	if (player->stairjank > 8)
+	{
+		const angle_t th = K_MomentumAngle(player->mo);
+		const angle_t d = AngleDelta(th, player->mo->angle);
+
+		// A larger difference between momentum and facing
+		// angles awards back control.
+		//  <45 deg: 3/4 tics
+		//  >45 deg: 2/4 tics
+		//  >90 deg: 1/4 tics
+		// >135 deg: 0/4 tics
+
+		if ((leveltime & 3) > (d / ANGLE_45))
+		{
+			return true;
+		}
+	}
+
+	if (K_IsRidingFloatingTop(player))
+	{
+		return true;
+	}
+
+	return false;
+}
+
 //#define OLD_MOVEMENT_CODE 1
 static void P_3dMovement(player_t *player)
 {
@@ -1812,7 +1844,7 @@ static void P_3dMovement(player_t *player)
 	// Get the old momentum; this will be needed at the end of the function! -SH
 	oldMagnitude = R_PointToDist2(player->mo->momx - player->cmomx, player->mo->momy - player->cmomy, 0, 0);
 
-	if ((player->stairjank > 8 && leveltime & 3) || K_IsRidingFloatingTop(player))
+	if (P_IsMomentumAngleLocked(player))
 	{
 		movepushangle = K_MomentumAngle(player->mo);
 	}
