@@ -1734,7 +1734,7 @@ static boolean K_DoTERRAINLumpParse(size_t num, void (*parser)(size_t, char *, c
 }
 
 /*--------------------------------------------------
-	static boolean K_TERRAINLumpParser(UINT8 *data, size_t size)
+	static boolean K_TERRAINLumpParser(char *data, size_t size)
 
 		Parses inputted lump data as a TERRAIN lump.
 
