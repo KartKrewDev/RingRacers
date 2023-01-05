@@ -6219,19 +6219,18 @@ void K_DropHnextList(player_t *player, boolean keepshields)
 
 SINT8 K_GetTotallyRandomResult(UINT8 useodds)
 {
-	itemroulette_t rouletteData = {0};
 	INT32 spawnchance[NUMKARTRESULTS];
 	INT32 totalspawnchance = 0;
 	INT32 i;
 
 	memset(spawnchance, 0, sizeof (spawnchance));
 
-	K_FillItemRouletteData(NULL, &rouletteData);
-
 	for (i = 1; i < NUMKARTRESULTS; i++)
 	{
+		// Avoid calling K_FillItemRouletteData since that
+		// function resets PR_ITEM_ROULETTE.
 		spawnchance[i] = (
-			totalspawnchance += K_KartGetItemOdds(NULL, &rouletteData, useodds, i)
+			totalspawnchance += K_KartGetItemOdds(NULL, NULL, useodds, i)
 		);
 	}
 
