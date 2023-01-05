@@ -187,7 +187,7 @@ static void InitLogging(void)
 	logstream = fopen(logfilename, "w");
 #ifdef DEFAULTDIR
 	if (logdir)
-		link = va("%s/"DEFAULTDIR"/latest-log.txt", logdir);
+		link = va("%s/" DEFAULTDIR "/latest-log.txt", logdir);
 	else
 #endif/*DEFAULTDIR*/
 		link = "latest-log.txt";
