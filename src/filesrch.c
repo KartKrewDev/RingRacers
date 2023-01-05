@@ -450,7 +450,7 @@ filestatus_t filesearch(char *filename, const char *startpath, const UINT8 *want
 	filestatus_t retval = FS_NOTFOUND;
 	DIR **dirhandle;
 	struct dirent *dent;
-	struct stat fsstat;
+	struct stat fsstat = {0};
 	int found = 0;
 	char *searchname = strdup(filename);
 	int depthleft = maxsearchdepth;
@@ -709,7 +709,7 @@ boolean preparefilemenu(boolean samedepth, boolean replayhut)
 {
 	DIR *dirhandle;
 	struct dirent *dent;
-	struct stat fsstat;
+	struct stat fsstat = {0};
 	size_t pos = 0, folderpos = 0, numfolders = 0;
 	char *tempname = NULL;
 
