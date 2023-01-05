@@ -1340,6 +1340,8 @@ typedef enum sprite
 	SPR_UFOA,
 	SPR_UFOS,
 
+	SPR_UQMK,
+
 	// First person view sprites; this is a sprite so that it can be replaced by a specialized MD2 draw later
 	SPR_VIEW,
 

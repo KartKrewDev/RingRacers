@@ -23,6 +23,10 @@
 #include "../m_misc.h"/* path shit */
 #include "../i_system.h"
 
+#include <exception>
+#include <stdexcept>
+#include <string>
+
 #if defined (__GNUC__) || defined (__unix__)
 #include <unistd.h>
 #endif
@@ -31,7 +35,9 @@
 #include <errno.h>
 #endif
 
+extern "C" {
 #include "time.h" // For log timestamps
+}
 
 #ifdef HAVE_SDL
 
@@ -66,11 +72,9 @@ char logfilename[1024];
 #endif
 
 #if defined (_WIN32)
-#include <exchndl.h>
-#endif
-
-#if defined (_WIN32)
+extern "C" {
 #include "../win32/win_dbg.h"
+}
 typedef BOOL (WINAPI *p_IsDebuggerPresent)(VOID);
 #endif
 
@@ -151,20 +155,20 @@ static void InitLogging(void)
 		if (M_IsPathAbsolute(reldir))
 		{
 			left = snprintf(logfilename, sizeof logfilename,
-					"%s"PATHSEP, reldir);
+					"%s" PATHSEP, reldir);
 		}
 		else
 #ifdef DEFAULTDIR
 		if (logdir)
 		{
 			left = snprintf(logfilename, sizeof logfilename,
-					"%s"PATHSEP DEFAULTDIR PATHSEP"%s"PATHSEP, logdir, reldir);
+					"%s" PATHSEP DEFAULTDIR PATHSEP "%s" PATHSEP, logdir, reldir);
 		}
 		else
 #endif/*DEFAULTDIR*/
 		{
 			left = snprintf(logfilename, sizeof logfilename,
-					"."PATHSEP"%s"PATHSEP, reldir);
+					"." PATHSEP "%s" PATHSEP, reldir);
 		}
 
 		strftime(&logfilename[left], sizeof logfilename - left,
@@ -179,7 +183,7 @@ static void InitLogging(void)
 	logstream = fopen(logfilename, "w");
 #ifdef DEFAULTDIR
 	if (logdir)
-		link = va("%s/"DEFAULTDIR"/latest-log.txt", logdir);
+		link = va("%s/" DEFAULTDIR "/latest-log.txt", logdir);
 	else
 #endif/*DEFAULTDIR*/
 		link = "latest-log.txt";
@@ -194,6 +198,20 @@ static void InitLogging(void)
 }
 #endif
 
+static void init_exchndl()
+{
+#ifdef _WIN32
+	HMODULE exchndl_module = LoadLibraryA("exchndl.dll");
+	if (exchndl_module != NULL)
+	{
+		using PFN_ExcHndlInit = void(*)(void);
+		PFN_ExcHndlInit pfnExcHndlInit = reinterpret_cast<PFN_ExcHndlInit>(
+			GetProcAddress(exchndl_module, "ExcHndlInit"));
+		if (pfnExcHndlInit != NULL)
+			(pfnExcHndlInit)();
+	}
+#endif
+}
 
 #ifdef _WIN32
 static void
@@ -207,6 +225,33 @@ ChDirToExe (void)
 	}
 }
 #endif
+
+static void walk_exception_stack(std::string& accum, bool nested) {
+	if (nested)
+		accum.append("\n  Caused by: Unknown exception");
+	else
+		accum.append("Uncaught exception: Unknown exception");
+}
+
+static void walk_exception_stack(std::string& accum, const std::exception& ex, bool nested) {
+	if (nested)
+		accum.append("\n  Caused by: ");
+	else
+		accum.append("Uncaught exception: ");
+
+	accum.append("(");
+	accum.append(typeid(ex).name());
+	accum.append(") ");
+	accum.append(ex.what());
+
+	try {
+		std::rethrow_if_nested(ex);
+	} catch (const std::exception& ex) {
+		walk_exception_stack(accum, ex, true);
+	} catch (...) {
+		walk_exception_stack(accum, true);
+	}
+}
 
 
 /**	\brief	The main function
@@ -259,7 +304,7 @@ int main(int argc, char **argv)
 			)
 #endif
 		{
-			ExcHndlInit();
+			init_exchndl();
 		}
 	}
 #ifndef __MINGW32__
@@ -267,6 +312,8 @@ int main(int argc, char **argv)
 #endif
 	MakeCodeWritable();
 #endif
+
+	try {
 
 	// startup SRB2
 	CONS_Printf("Setting up Dr. Robotnik's Ring Racers...\n");
@@ -278,6 +325,16 @@ int main(int argc, char **argv)
 	CONS_Printf("Entering main game loop...\n");
 	// never return
 	D_SRB2Loop();
+
+	} catch (const std::exception& ex) {
+		std::string exception;
+		walk_exception_stack(exception, ex, false);
+		I_Error("%s", exception.c_str());
+	} catch (...) {
+		std::string exception;
+		walk_exception_stack(exception, false);
+		I_Error("%s", exception.c_str());
+	}
 
 #ifdef BUGTRAP
 	// This is safe even if BT didn't start.

@@ -1,12 +1,12 @@
 # Declare SDL2 interface sources
 
 target_sources(SRB2SDL2 PRIVATE
-	mixer_sound.c
+	new_sound.cpp
 	ogl_sdl.c
 	i_threads.c
 	i_net.c
 	i_system.c
-	i_main.c
+	i_main.cpp
 	i_video.c
 	dosstr.c
 	endtxt.c
@@ -57,9 +57,9 @@ if("${CMAKE_SYSTEM_NAME}" MATCHES Darwin)
 endif()
 
 if(NOT "${SRB2_CONFIG_SYSTEM_LIBRARIES}" AND NOT "${SRB2_CONFIG_SHARED_INTERNAL_LIBRARIES}")
-	target_link_libraries(SRB2SDL2 PRIVATE SDL2::SDL2-static SDL2_mixer::SDL2_mixer-static)
+	target_link_libraries(SRB2SDL2 PRIVATE SDL2::SDL2-static)
 else()
-	target_link_libraries(SRB2SDL2 PRIVATE SDL2::SDL2 SDL2_mixer::SDL2_mixer)
+	target_link_libraries(SRB2SDL2 PRIVATE SDL2::SDL2)
 endif()
 
 if("${CMAKE_SYSTEM_NAME}" MATCHES Linux)

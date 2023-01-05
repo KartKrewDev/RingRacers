@@ -1926,8 +1926,6 @@ static void M_DrawCupPreview(INT16 y, levelsearch_t *levelsearch)
 	INT16 map, start = M_GetFirstLevelInList(&i, levelsearch);
 	UINT8 starti = i;
 
-	V_DrawFill(0, y, BASEVIDWIDTH, 54, 31);
-
 	if (levelsearch->cup && maxlevels > 0)
 	{
 		add = (cupgrid.previewanim / 82) % maxlevels;
@@ -2060,7 +2058,9 @@ void M_DrawCupSelect(void)
 
 	templevelsearch.cup = cupgrid.builtgrid[CUPMENU_CURSORID];
 
+	V_DrawFill(0, 146 + (24*menutransition.tics), BASEVIDWIDTH, 54, 31);
 	M_DrawCupPreview(146 + (24*menutransition.tics), &templevelsearch);
+
 	M_DrawCupTitle(120 - (24*menutransition.tics), &templevelsearch);
 }
 
@@ -4510,15 +4510,14 @@ void M_DrawAddons(void)
 
 // Challenges Menu
 
-#define challengesbordercolor 27
-
 static void M_DrawChallengeTile(INT16 i, INT16 j, INT32 x, INT32 y, boolean hili)
 {
 	unlockable_t *ref = NULL;
 	patch_t *pat = missingpat;
 	UINT8 *colormap = NULL;
 	fixed_t siz;
-	UINT8 id, num, work;
+	UINT8 id, num;
+	UINT32 edgelength;
 
 	id = (i * CHALLENGEGRIDHEIGHT) + j;
 	num = gamedata->challengegrid[id];
@@ -4526,19 +4525,19 @@ static void M_DrawChallengeTile(INT16 i, INT16 j, INT32 x, INT32 y, boolean hili
 	// Empty spots in the grid are always unconnected.
 	if (num >= MAXUNLOCKABLES)
 	{
-		V_DrawFill(x, y, 16, 16, challengesbordercolor);
 		goto drawborder;
 	}
 
 	// Okay, this is what we want to draw.
 	ref = &unlockables[num];
 
+	edgelength = (ref->majorunlock ? 30 : 14);
+
 	// ...unless we simply aren't unlocked yet.
 	if ((gamedata->unlocked[num] == false)
 		|| (challengesmenu.pending && num == challengesmenu.currentunlock && challengesmenu.unlockanim <= UNLOCKTIME))
 	{
-		work = (ref->majorunlock) ? 2 : 1;
-		V_DrawFill(x, y, 16*work, 16*work,
+		V_DrawFill(x+1, y+1, edgelength, edgelength,
 			((challengesmenu.extradata[id] == CHE_HINT) ? 132 : 11));
 		goto drawborder;
 	}
@@ -4589,6 +4588,12 @@ static void M_DrawChallengeTile(INT16 i, INT16 j, INT32 x, INT32 y, boolean hili
 	siz = (SHORT(pat->width) << FRACBITS);
 	siz = FixedDiv(((ref->majorunlock) ? 32 : 16) << FRACBITS, siz);
 
+	V_SetClipRect(
+		(x+1) << FRACBITS, (y+1) << FRACBITS,
+		edgelength << FRACBITS, edgelength << FRACBITS,
+		0
+	);
+
 	V_DrawFixedPatch(
 		x*FRACUNIT, y*FRACUNIT,
 		siz,
@@ -4596,19 +4601,11 @@ static void M_DrawChallengeTile(INT16 i, INT16 j, INT32 x, INT32 y, boolean hili
 		colormap
 	);
 
+	V_ClearClipRect();
+
 drawborder:
 	if (!hili)
 	{
-		if (ref != NULL)
-		{
-			work = 16 * (ref->majorunlock ? 2 : 1);
-			// Horizontal
-			V_DrawFill(x, y         , work, 1, challengesbordercolor);
-			V_DrawFill(x, y + work-1, work, 1, challengesbordercolor);
-			// Vertical
-			V_DrawFill(x         , y+1, 1, work-2, challengesbordercolor);
-			V_DrawFill(x + work-1, y+1, 1, work-2, challengesbordercolor);
-		}
 		return;
 	}
 
@@ -4628,22 +4625,39 @@ static void M_DrawChallengePreview(INT32 x, INT32 y)
 	
 	if (challengesmenu.currentunlock >= MAXUNLOCKABLES)
 	{
-		V_DrawFill(0, 146, BASEVIDWIDTH, 54, challengesbordercolor);
 		return;
 	}
 
 	// Okay, this is what we want to draw.
 	ref = &unlockables[challengesmenu.currentunlock];
 
+	// Funny question mark?
 	if (!gamedata->unlocked[challengesmenu.currentunlock])
 	{
-		// todo draw some sort of question mark?
-		V_DrawFill(0, 146, BASEVIDWIDTH, 54, challengesbordercolor);
+		spritedef_t *sprdef = &sprites[SPR_UQMK];
+		spriteframe_t *sprframe;
+		patch_t *patch;
+		UINT32 useframe;
+		UINT32 addflags = 0;
+
+		if (!sprdef->numframes)
+		{
+			return;
+		}
+
+		useframe = (challengesmenu.ticker / 2) % sprdef->numframes;
+
+		sprframe = &sprdef->spriteframes[useframe];
+		patch = W_CachePatchNum(sprframe->lumppat[0], PU_CACHE);
+
+		if (sprframe->flip & 1) // Only for first sprite
+		{
+			addflags ^= V_FLIP; // This sprite is left/right flipped!
+		}
+
+		V_DrawFixedPatch(x*FRACUNIT, (y+6)*FRACUNIT, FRACUNIT, addflags, patch, NULL);
 		return;
 	}
-
-	if (ref->type != SECRET_CUP)
-		V_DrawFill(0, 146, BASEVIDWIDTH, 54, challengesbordercolor);
 
 	switch (ref->type)
 	{
@@ -4812,7 +4826,7 @@ void M_DrawChallenges(void)
 	INT16 offset;
 
 	{
-		patch_t *bg = W_CachePatchName("M_XTRABG", PU_CACHE);
+		patch_t *bg = W_CachePatchName("BGUNLCK2", PU_CACHE);
 		V_DrawFixedPatch(0, 0, FRACUNIT, 0, bg, NULL);
 	}
 
@@ -4847,15 +4861,10 @@ void M_DrawChallenges(void)
 		i = gamedata->challengegridwidth-1;
 		explodex = x - (i*16)/2;
 		x += (i*16)/2;
-
-		V_DrawFill(0, currentMenu->y, explodex, (CHALLENGEGRIDHEIGHT*16), challengesbordercolor);
-		V_DrawFill((x+16), currentMenu->y, BASEVIDWIDTH - (x+16), (CHALLENGEGRIDHEIGHT*16), challengesbordercolor);
 	}
 
 	selectx = explodex + (challengesmenu.hilix*16);
 
-	V_DrawFill(0, (currentMenu->y)-1                         , BASEVIDWIDTH, 1, challengesbordercolor);
-	V_DrawFill(0, (currentMenu->y) + (CHALLENGEGRIDHEIGHT*16), BASEVIDWIDTH, 1, challengesbordercolor);
 	while (i >= 0 && x >= -32)
 	{
 		y = currentMenu->y-16;
@@ -4910,7 +4919,6 @@ challengedesc:
 	// Name bar
 	{
 		y = 120;
-		V_DrawScaledPatch(0, y, 0, W_CachePatchName("MENUHINT", PU_CACHE));
 
 		if (challengesmenu.currentunlock < MAXUNLOCKABLES)
 		{
@@ -4940,6 +4948,7 @@ challengedesc:
 	i = (challengesmenu.hilix * CHALLENGEGRIDHEIGHT) + challengesmenu.hiliy;
 
 	if (challengesmenu.unlockcondition != NULL
+	&& challengesmenu.currentunlock < MAXUNLOCKABLES
 	&& ((gamedata->unlocked[challengesmenu.currentunlock] == true)
 		|| ((challengesmenu.extradata != NULL)
 		&& (challengesmenu.extradata[i] & CHE_HINT))

@@ -214,9 +214,6 @@ if(NOT "${SRB2_CONFIG_SYSTEM_LIBRARIES}")
 	target_include_directories(SRB2SDL2 PRIVATE "${libgme_SOURCE_DIR}")
 endif()
 
-target_link_libraries(SRB2SDL2 PRIVATE openmpt)
-target_compile_definitions(SRB2SDL2 PRIVATE -DHAVE_OPENMPT)
-
 target_link_libraries(SRB2SDL2 PRIVATE ZLIB::ZLIB PNG::PNG CURL::libcurl)
 target_compile_definitions(SRB2SDL2 PRIVATE -DHAVE_ZLIB -DHAVE_PNG -DHAVE_CURL -D_LARGEFILE64_SOURCE)
 target_sources(SRB2SDL2 PRIVATE apng.c)
@@ -226,6 +223,8 @@ target_compile_definitions(SRB2SDL2 PRIVATE -DHAVE_DISCORDRPC -DUSE_STUN)
 target_sources(SRB2SDL2 PRIVATE discord.c stun.c)
 
 target_link_libraries(SRB2SDL2 PRIVATE tcbrindle::span)
+target_link_libraries(SRB2SDL2 PRIVATE stb_vorbis)
+target_link_libraries(SRB2SDL2 PRIVATE xmp-lite::xmp-lite)
 
 set(SRB2_HAVE_THREADS ON)
 target_compile_definitions(SRB2SDL2 PRIVATE -DHAVE_THREADS)
@@ -311,15 +310,6 @@ if("${SRB2_CONFIG_HWRENDER}")
 	endif()
 endif()
 
-# TODO: build this with the game
-if(${CMAKE_SYSTEM} MATCHES Windows AND ${CMAKE_C_COMPILER_ID} MATCHES "GNU" AND ${SRB2_SYSTEM_BITS} EQUAL 32)
-	target_link_libraries(SRB2SDL2 PRIVATE
-		"${CMAKE_CURRENT_SOURCE_DIR}/../libs/drmingw/lib/win32/libexchndl.a"
-		"${CMAKE_CURRENT_SOURCE_DIR}/../libs/drmingw/lib/win32/libmgwhelp.a"
-	)
-	target_include_directories(SRB2SDL2 PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/../libs/drmingw/include")
-endif()
-
 if(${SRB2_CONFIG_USEASM})
 	#SRB2_ASM_FLAGS can be used to pass flags to either nasm or yasm.
 	if("${CMAKE_SYSTEM_NAME}" MATCHES "Linux")
@@ -402,7 +392,7 @@ target_compile_options(SRB2SDL2 PRIVATE
 		-Winline
 		-Wformat-y2k
 		-Wformat-security
-		
+
 		$<$<VERSION_LESS:$<C_COMPILER_VERSION>,2.9.5>:
 			-Wno-div-by-zero
 			-Wendif-labels
@@ -538,6 +528,7 @@ if(SRB2_CONFIG_PROFILEMODE AND "${CMAKE_C_COMPILER_ID}" STREQUAL "GNU")
 	target_link_options(SRB2SDL2 PRIVATE -pg)
 endif()
 
+add_subdirectory(audio)
 add_subdirectory(io)
 add_subdirectory(sdl)
 add_subdirectory(objects)

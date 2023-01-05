@@ -138,7 +138,7 @@ char srb2home[256] = ".";
 char srb2path[256] = ".";
 boolean usehome = true;
 const char *pandf = "%s" PATHSEP "%s";
-static char addonsdir[MAX_WADPATH];
+char addonsdir[MAX_WADPATH];
 
 //
 // EVENT HANDLING
