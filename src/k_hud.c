@@ -785,6 +785,29 @@ static patch_t *K_GetCachedItemPatch(INT32 item, UINT8 offset)
 		return NULL;
 }
 
+static patch_t *K_GetSmallStaticCachedItemPatch(kartitems_t item)
+{
+	UINT8 offset;
+
+	item = K_ItemResultToType(item);
+
+	switch (item)
+	{
+		case KITEM_INVINCIBILITY:
+			offset = 7;
+			break;
+
+		case KITEM_ORBINAUT:
+			offset = 4;
+			break;
+
+		default:
+			offset = 1;
+	}
+
+	return K_GetCachedItemPatch(item, offset);
+}
+
 //}
 
 INT32 ITEM_X, ITEM_Y;	// Item Window
@@ -4930,39 +4953,6 @@ K_drawMiniPing (void)
 
 static void K_drawDistributionDebugger(void)
 {
-	patch_t *patches[NUMKARTRESULTS] = {
-		kp_sadface[1],
-		kp_sneaker[1],
-		kp_rocketsneaker[1],
-		kp_invincibility[7],
-		kp_banana[1],
-		kp_eggman[1],
-		kp_orbinaut[4],
-		kp_jawz[1],
-		kp_mine[1],
-		kp_landmine[1],
-		kp_ballhog[1],
-		kp_selfpropelledbomb[1],
-		kp_grow[1],
-		kp_shrink[1],
-		kp_lightningshield[1],
-		kp_bubbleshield[1],
-		kp_flameshield[1],
-		kp_hyudoro[1],
-		kp_pogospring[1],
-		kp_superring[1],
-		kp_kitchensink[1],
-		kp_droptarget[1],
-		kp_gardentop[1],
-
-		kp_sneaker[1],
-		kp_sneaker[1],
-		kp_banana[1],
-		kp_orbinaut[4],
-		kp_orbinaut[4],
-		kp_jawz[1]
-	};
-
 	itemroulette_t rouletteData = {0};
 
 	const fixed_t scale = (FRACUNIT >> 1);
@@ -4991,7 +4981,8 @@ static void K_drawDistributionDebugger(void)
 			y = -pad;
 		}
 
-		V_DrawFixedPatch(x, y, scale, V_SNAPTOTOP, patches[item], NULL);
+		V_DrawFixedPatch(x, y, scale, V_SNAPTOTOP,
+				K_GetSmallStaticCachedItemPatch(item), NULL);
 
 		// Display amount for multi-items
 		amount = K_ItemResultToAmount(item);
