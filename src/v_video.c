@@ -476,6 +476,8 @@ void V_SetPaletteLump(const char *pal)
 
 static void CV_palette_OnChange(void)
 {
+	if (con_startup_loadprogress < LOADED_CONFIG)
+		return;
 	// recalculate Color Cube
 	V_ReloadPalette();
 	V_SetPalette(0);
