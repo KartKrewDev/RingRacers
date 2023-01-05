@@ -184,7 +184,7 @@ UINT16 numtubewaypoints[NUMTUBEWAYPOINTSEQUENCES];
 
 void P_AddTubeWaypoint(UINT8 sequence, UINT8 id, mobj_t *waypoint)
 {
-	tubewaypoints[sequence][id] = waypoint;
+	P_SetTarget(&tubewaypoints[sequence][id], waypoint);
 	if (id >= numtubewaypoints[sequence])
 		numtubewaypoints[sequence] = id + 1;
 }

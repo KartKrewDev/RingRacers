@@ -1070,7 +1070,12 @@ static void P_NetArchiveTubeWaypoints(savebuffer_t *save)
 	{
 		WRITEUINT16(save->p, numtubewaypoints[i]);
 		for (j = 0; j < numtubewaypoints[i]; j++)
-			WRITEUINT32(save->p, tubewaypoints[i][j] ? tubewaypoints[i][j]->mobjnum : 0);
+		{
+			if (tubewaypoints[i][j])
+				WRITEUINT32(save->p, tubewaypoints[i][j]->mobjnum);
+			else
+				WRITEUINT32(save->p, UINT32_MAX);
+		}
 	}
 }
 
@@ -1085,7 +1090,9 @@ static void P_NetUnArchiveTubeWaypoints(savebuffer_t *save)
 		for (j = 0; j < numtubewaypoints[i]; j++)
 		{
 			mobjnum = READUINT32(save->p);
-			tubewaypoints[i][j] = (mobjnum == 0) ? NULL : P_FindNewPosition(mobjnum);
+			tubewaypoints[i][j] = NULL;
+			if (mobjnum != UINT32_MAX)
+				P_SetTarget(&tubewaypoints[i][j], P_FindNewPosition(mobjnum));
 		}
 	}
 }
@@ -3068,6 +3075,7 @@ static void P_NetUnArchiveWaypoints(savebuffer_t *save)
 			for (i = 0U; i < numArchiveWaypoints; i++) {
 				waypoint = K_GetWaypointFromIndex(i);
 				temp = READUINT32(save->p);
+				waypoint->mobj = NULL;
 				if (!P_SetTarget(&waypoint->mobj, P_FindNewPosition(temp))) {
 					CONS_Debug(DBG_GAMELOGIC, "waypoint mobj not found for %d\n", i);
 				}
@@ -3453,17 +3461,9 @@ static thinker_t* LoadMobjThinker(savebuffer_t *save, actionf_p1 thinker)
 			mobj->player->viewz = mobj->player->mo->z + mobj->player->viewheight;
 	}
 
-	if (mobj->type == MT_SKYBOX)
+	if (mobj->type == MT_SKYBOX && mobj->spawnpoint)
 	{
-		mtag_t tag = mobj->movedir;
-		if (tag < 0 || tag > 15)
-		{
-			CONS_Debug(DBG_GAMELOGIC, "LoadMobjThinker: Skybox ID %d of netloaded object is not between 0 and 15!\n", tag);
-		}
-		else if (mobj->flags2 & MF2_AMBUSH)
-			skyboxcenterpnts[tag] = mobj;
-		else
-			skyboxviewpnts[tag] = mobj;
+		P_InitSkyboxPoint(mobj, mobj->spawnpoint);
 	}
 
 	if (diff2 & MD2_WAYPOINTCAP)
@@ -4104,6 +4104,13 @@ static void P_NetUnArchiveThinkers(savebuffer_t *save)
 	// we don't want the removed mobjs to come back
 	iquetail = iquehead = 0;
 	P_InitThinkers();
+
+	// Oh my god don't blast random memory with our reference counts.
+	waypointcap = kitemcap = NULL;
+	for (i = 0; i <= 15; i++)
+	{
+		skyboxcenterpnts[i] = skyboxviewpnts[i] = NULL;
+	}
 
 	// clear sector thinker pointers so they don't point to non-existant thinkers for all of eternity
 	for (i = 0; i < numsectors; i++)
