@@ -789,6 +789,8 @@ char sprnames[NUMSPRITES + 1][5] =
 	"UFOA",
 	"UFOS",
 
+	"UQMK",
+
 	// First person view sprites; this is a sprite so that it can be replaced by a specialized MD2 draw later
 	"VIEW",
 };
