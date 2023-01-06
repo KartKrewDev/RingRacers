@@ -17,6 +17,17 @@
 #include "doomtype.h"
 
 #ifdef __cplusplus
+
+#include "rhi/rhi.hpp"
+
+namespace srb2::sys {
+
+extern rhi::Handle<rhi::Rhi> g_current_rhi;
+
+rhi::Rhi* get_rhi(rhi::Handle<rhi::Rhi> handle);
+
+} // namespace
+
 extern "C" {
 #endif
 
@@ -43,10 +54,6 @@ extern rendermode_t rendermode;
 /**	\brief render mode set by command line arguments
 */
 extern rendermode_t chosenrendermode;
-
-/**	\brief use highcolor modes if true
-*/
-extern boolean highcolor;
 
 /**	\brief setup video mode
 */

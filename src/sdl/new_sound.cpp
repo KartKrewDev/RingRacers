@@ -359,7 +359,8 @@ void I_InitMusic(void)
 
 	SdlAudioLockHandle _;
 
-	*music_player = audio::MusicPlayer();
+	if (music_player != nullptr)
+		*music_player = audio::MusicPlayer();
 }
 
 void I_ShutdownMusic(void)

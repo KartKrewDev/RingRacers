@@ -1167,12 +1167,6 @@ static void R_Init8to16(void)
 //
 void R_InitTextureData(void)
 {
-	if (highcolor)
-	{
-		CONS_Printf("InitHighColor...\n");
-		R_Init8to16();
-	}
-
 	CONS_Printf("R_LoadTextures()...\n");
 	R_LoadTextures();
 
