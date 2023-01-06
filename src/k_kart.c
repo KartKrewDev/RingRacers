@@ -1045,10 +1045,6 @@ static fixed_t K_CheckOffroadCollide(mobj_t *mo)
 	I_Assert(mo != NULL);
 	I_Assert(!P_MobjWasRemoved(mo));
 
-	// If tiregrease is active, don't
-	if (mo->player && mo->player->tiregrease)
-		return 0;
-
 	for (node = mo->touching_sectorlist; node; node = node->m_sectorlist_next)
 	{
 		if (!node->m_sector)
@@ -1103,14 +1099,18 @@ static void K_UpdateOffroad(player_t *player)
 	terrain_t *terrain = player->mo->terrain;
 	fixed_t offroadstrength = 0;
 
-	// TODO: Make this use actual special touch code.
-	if (terrain != NULL && terrain->offroad > 0)
+	// If tiregrease is active, don't
+	if (player->tiregrease == 0)
 	{
-		offroadstrength = (terrain->offroad << FRACBITS);
-	}
-	else
-	{
-		offroadstrength = K_CheckOffroadCollide(player->mo);
+		// TODO: Make this use actual special touch code.
+		if (terrain != NULL && terrain->offroad > 0)
+		{
+			offroadstrength = (terrain->offroad << FRACBITS);
+		}
+		else
+		{
+			offroadstrength = K_CheckOffroadCollide(player->mo);
+		}
 	}
 
 	// If you are in offroad, a timer starts.
