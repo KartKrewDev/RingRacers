@@ -2379,9 +2379,6 @@ boolean P_ZMovement(mobj_t *mo)
 		&& !(mo->flags & MF_NOCLIPHEIGHT))
 	{
 		vector3_t mom;
-		mom.x = mo->momx;
-		mom.y = mo->momy;
-		mom.z = mo->momz;
 
 		if (mo->eflags & MFE_VERTICALFLIP)
 			mo->z = mo->ceilingz - mo->height;
@@ -2397,6 +2394,11 @@ boolean P_ZMovement(mobj_t *mo)
 		P_CheckPosition(mo, mo->x, mo->y, NULL); // Sets mo->standingslope correctly
 		if (P_MobjWasRemoved(mo)) // mobjs can be removed by P_CheckPosition -- Monster Iestyn 31/07/21
 			return false;
+
+		// Set these here since P_CheckPosition can alter object's momentum values
+		mom.x = mo->momx;
+		mom.y = mo->momy;
+		mom.z = mo->momz;
 
 		K_UpdateMobjTerrain(mo, ((mo->eflags & MFE_VERTICALFLIP) ? tm.ceilingpic : tm.floorpic));
 
