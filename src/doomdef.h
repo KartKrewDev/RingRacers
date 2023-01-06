@@ -668,6 +668,7 @@ extern const char
 	*comptime,
 	*comprevision,
 	*compbranch,
+	*compnote,
 	*comptype;
 extern int
 	compuncommitted,
