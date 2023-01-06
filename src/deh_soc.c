@@ -3213,12 +3213,12 @@ void readfollower(MYFILE *f)
 
 			if (fastcmp(word, "NAME"))
 			{
-				strcpy(followers[numfollowers].name, word2);
+				strlcpy(followers[numfollowers].name, word2, SKINNAMESIZE+1);
 				nameset = true;
 			}
 			else if (fastcmp(word, "ICON"))
 			{
-				strcpy(followers[numfollowers].icon, word2);
+				strlcpy(followers[numfollowers].icon, word2, 8+1);
 				nameset = true;
 			}
 			else if (fastcmp(word, "CATEGORY"))
@@ -3362,30 +3362,26 @@ void readfollower(MYFILE *f)
 	if (!nameset)
 	{
 		// well this is problematic.
-		strcpy(followers[numfollowers].name, va("Follower%d", numfollowers)); // this is lazy, so what
+		strlcpy(followers[numfollowers].name, va("Follower%d", numfollowers), SKINNAMESIZE+1);
+		strcpy(testname, followers[numfollowers].name);
 	}
-
-	// set skin name (this is just the follower's name in lowercases):
-	// but before we do, let's... actually check if another follower isn't doing the same shit...
-
-	res = K_FollowerAvailable(testname);
-	if (res > -1)	// yikes, someone else has stolen our name already
+	else
 	{
-		INT32 startlen = strlen(testname);
-		char cpy[2];
-		//deh_warning("There was already a follower with the same name. (%s)", testname);	This warning probably isn't necessary anymore?
-		sprintf(cpy, "%d", numfollowers);
-		memcpy(&testname[startlen], cpy, 2);
-		// in that case, we'll be very lazy and copy numfollowers to the end of our skin name.
-	}
+		strcpy(testname, followers[numfollowers].name);
 
-	strcpy(testname, followers[numfollowers].name);
+		// now that the skin name is ready, post process the actual name to turn the underscores into spaces!
+		for (i = 0; followers[numfollowers].name[i]; i++)
+		{
+			if (followers[numfollowers].name[i] == '_')
+				followers[numfollowers].name[i] = ' ';
+		}
 
-	// now that the skin name is ready, post process the actual name to turn the underscores into spaces!
-	for (i = 0; followers[numfollowers].name[i]; i++)
-	{
-		if (followers[numfollowers].name[i] == '_')
-			followers[numfollowers].name[i] = ' ';
+		res = K_FollowerAvailable(followers[numfollowers].name);
+		if (res > -1)	// yikes, someone else has stolen our name already
+		{
+			deh_warning("Follower%d: Name \"%s\" already in use!", numfollowers, testname);
+			strlcpy(followers[numfollowers].name, va("Follower%d", numfollowers), SKINNAMESIZE+1);
+		}
 	}
 
 	// fallbacks for variables

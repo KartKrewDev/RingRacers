@@ -172,6 +172,7 @@ opendir (const CHAR *szPath)
   /* Initialize the dirent structure. ino and reclen are invalid under
    * Win32, and name simply points at the appropriate part of the
    * findfirst_t structure. */
+  nd->dd_dta = (struct _finddata_t) {0};
   nd->dd_dir.d_ino = 0;
   nd->dd_dir.d_reclen = 0;
   nd->dd_dir.d_namlen = 0;
@@ -450,7 +451,7 @@ filestatus_t filesearch(char *filename, const char *startpath, const UINT8 *want
 	filestatus_t retval = FS_NOTFOUND;
 	DIR **dirhandle;
 	struct dirent *dent;
-	struct stat fsstat;
+	struct stat fsstat = {0};
 	int found = 0;
 	char *searchname = strdup(filename);
 	int depthleft = maxsearchdepth;
@@ -709,7 +710,7 @@ boolean preparefilemenu(boolean samedepth, boolean replayhut)
 {
 	DIR *dirhandle;
 	struct dirent *dent;
-	struct stat fsstat;
+	struct stat fsstat = {0};
 	size_t pos = 0, folderpos = 0, numfolders = 0;
 	char *tempname = NULL;
 

@@ -268,8 +268,6 @@ void S_RegisterSoundStuff(void)
 
 static void SetChannelsNum(void)
 {
-	INT32 i;
-
 	// Allocating the internal channels for mixing
 	// (the maximum number of sounds rendered
 	// simultaneously) within zone memory.
@@ -291,12 +289,8 @@ static void SetChannelsNum(void)
 	}
 #endif
 	if (cv_numChannels.value)
-		channels = (channel_t *)Z_Malloc(cv_numChannels.value * sizeof (channel_t), PU_STATIC, NULL);
-	numofchannels = cv_numChannels.value;
-
-	// Free all channels for use
-	for (i = 0; i < numofchannels; i++)
-		channels[i].sfxinfo = 0;
+		channels = (channel_t *)Z_Calloc(cv_numChannels.value * sizeof (channel_t), PU_STATIC, NULL);
+	numofchannels = (channels ? cv_numChannels.value : 0);
 
 	S_ResetCaptions();
 }

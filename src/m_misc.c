@@ -1940,14 +1940,14 @@ char *M_GetToken(const char *inputString)
 	}
 
 	// Find the first non-whitespace char, or else the end of the string trying
-	while ((stringToUse[startPos] == ' '
+	while (startPos < stringLength
+			&& (stringToUse[startPos] == ' '
 			|| stringToUse[startPos] == '\t'
 			|| stringToUse[startPos] == '\r'
 			|| stringToUse[startPos] == '\n'
 			|| stringToUse[startPos] == '\0'
 			|| stringToUse[startPos] == '=' || stringToUse[startPos] == ';' // UDMF TEXTMAP.
-			|| inComment != 0)
-			&& startPos < stringLength)
+			|| inComment != 0))
 	{
 		// Try to detect comment endings now
 		if (inComment == 1
@@ -1988,7 +1988,7 @@ char *M_GetToken(const char *inputString)
 	}
 
 	// If the end of the string is reached, no token is to be read
-	if (startPos == stringLength) {
+	if (startPos >= stringLength) {
 		endPos = stringLength;
 		return NULL;
 	}
@@ -2007,7 +2007,7 @@ char *M_GetToken(const char *inputString)
 	else if (stringToUse[startPos] == '"')
 	{
 		endPos = ++startPos;
-		while (stringToUse[endPos] != '"' && endPos < stringLength)
+		while (endPos < stringLength && stringToUse[endPos] != '"')
 			endPos++;
 
 		texturesTokenLength = endPos++ - startPos;
@@ -2023,7 +2023,8 @@ char *M_GetToken(const char *inputString)
 
 	// Now find the end of the token. This includes several additional characters that are okay to capture as one character, but not trailing at the end of another token.
 	endPos = startPos + 1;
-	while ((stringToUse[endPos] != ' '
+	while (endPos < stringLength
+			&& (stringToUse[endPos] != ' '
 			&& stringToUse[endPos] != '\t'
 			&& stringToUse[endPos] != '\r'
 			&& stringToUse[endPos] != '\n'
@@ -2031,8 +2032,7 @@ char *M_GetToken(const char *inputString)
 			&& stringToUse[endPos] != '{'
 			&& stringToUse[endPos] != '}'
 			&& stringToUse[endPos] != '=' && stringToUse[endPos] != ';' // UDMF TEXTMAP.
-			&& inComment == 0)
-			&& endPos < stringLength)
+			&& inComment == 0))
 	{
 		endPos++;
 		// Try to detect comment starts now; if it's in a comment, we don't want it in this token
