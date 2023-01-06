@@ -4211,7 +4211,7 @@ void P_PlayerThink(player_t *player)
 	// Flash player after being hit.
 	if (!(player->hyudorotimer // SRB2kart - fixes Hyudoro not flashing when it should.
 		|| player->growshrinktimer > 0 // Grow doesn't flash either.
-		|| (player->respawn.state != RESPAWNST_NONE) // Respawn timer (for drop dash effect)
+		|| (player->respawn.state != RESPAWNST_NONE && player->respawn.truedeath == true) // Respawn timer (for drop dash effect)
 		|| (player->pflags & PF_NOCONTEST) // NO CONTEST explosion
 		|| ((gametyperules & GTR_BUMPERS) && player->bumpers <= 0 && player->karmadelay)))
 	{
