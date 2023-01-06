@@ -99,7 +99,6 @@ static filetran_t transfer[MAXNETNODES];
 INT32 fileneedednum; // Number of files needed to join the server
 fileneeded_t fileneeded[MAX_WADFILES]; // List of needed files
 static tic_t lasttimeackpacketsent = 0;
-char downloaddir[512] = "DOWNLOAD";
 
 // For resuming failed downloads
 typedef struct

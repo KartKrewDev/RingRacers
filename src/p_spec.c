@@ -43,6 +43,7 @@
 
 // SRB2kart
 #include "k_kart.h"
+#include "k_specialstage.h"
 #include "console.h" // CON_LogMessage
 #include "k_respawn.h"
 #include "k_terrain.h"
@@ -1903,7 +1904,7 @@ static void K_HandleLapIncrement(player_t *player)
 {
 	if (player)
 	{
-		if (leveltime < starttime)
+		if (leveltime < starttime && !(gametyperules & GTR_ROLLINGSTART))
 		{
 			// Will fault the player
 			K_DoIngameRespawn(player);
@@ -1962,7 +1963,7 @@ static void K_HandleLapIncrement(player_t *player)
 
 			if (P_IsDisplayPlayer(player))
 			{
-				if (player->laps == numlaps) // final lap
+				if (numlaps > 1 && player->laps == numlaps) // final lap
 					S_StartSound(NULL, sfx_s3k68);
 				else if ((player->laps > 1) && (player->laps < numlaps)) // non-final lap
 					S_StartSound(NULL, sfx_s221);
@@ -1985,6 +1986,14 @@ static void K_HandleLapIncrement(player_t *player)
 			// finished race exit setup
 			if (player->laps > numlaps)
 			{
+				if (specialstageinfo.valid == true)
+				{
+					// Don't permit a win just by sneaking ahead of the UFO/emerald.
+					if (!(specialstageinfo.ufo == NULL || P_MobjWasRemoved(specialstageinfo.ufo)))
+					{
+						player->pflags |= PF_NOCONTEST;
+					}
+				}
 				P_DoPlayerExit(player);
 				P_SetupSignExit(player);
 			}
@@ -7205,12 +7214,6 @@ void P_SpawnSpecials(boolean fromnetsave)
 				}
 				break;
 			}
-
-			// SRB2Kart
-			case 2001: // Finish Line
-				if ((gametyperules & GTR_CIRCUIT))
-					circuitmap = true;
-				break;
 
 			default:
 				break;

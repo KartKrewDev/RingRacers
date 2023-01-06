@@ -20,6 +20,9 @@
 #define COMPVERSION_UNCOMMITTED
 #endif
 
+#define CMAKE_BUILD_TYPE         "${CMAKE_BUILD_TYPE}"
+#cmakedefine01 SRB2_COMP_OPTIMIZED
+
 #endif
 
 /* Manually defined asset hashes for non-CMake builds

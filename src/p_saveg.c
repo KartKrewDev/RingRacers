@@ -1063,34 +1063,6 @@ static void P_NetUnArchiveColormaps(savebuffer_t *save)
 	net_colormaps = NULL;
 }
 
-static void P_NetArchiveTubeWaypoints(savebuffer_t *save)
-{
-	INT32 i, j;
-
-	for (i = 0; i < NUMTUBEWAYPOINTSEQUENCES; i++)
-	{
-		WRITEUINT16(save->p, numtubewaypoints[i]);
-		for (j = 0; j < numtubewaypoints[i]; j++)
-			WRITEUINT32(save->p, tubewaypoints[i][j] ? tubewaypoints[i][j]->mobjnum : 0);
-	}
-}
-
-static void P_NetUnArchiveTubeWaypoints(savebuffer_t *save)
-{
-	INT32 i, j;
-	UINT32 mobjnum;
-
-	for (i = 0; i < NUMTUBEWAYPOINTSEQUENCES; i++)
-	{
-		numtubewaypoints[i] = READUINT16(save->p);
-		for (j = 0; j < numtubewaypoints[i]; j++)
-		{
-			mobjnum = READUINT32(save->p);
-			tubewaypoints[i][j] = (mobjnum == 0) ? NULL : P_FindNewPosition(mobjnum);
-		}
-	}
-}
-
 ///
 /// World Archiving
 ///
@@ -1759,7 +1731,6 @@ static void UnArchiveLines(savebuffer_t *save)
 			li->executordelay = READINT32(save->p);
 		if (diff3 & LD_ACTIVATION)
 			li->activation = READUINT32(save->p);
-
 	}
 }
 
@@ -2132,9 +2103,6 @@ static void SaveMobjThinker(savebuffer_t *save, const thinker_t *th, const UINT8
 	WRITEUINT32(save->p, diff);
 	if (diff & MD_MORE)
 		WRITEUINT32(save->p, diff2);
-
-	// save pointer, at load time we will search this pointer to reinitilize pointers
-	WRITEUINT32(save->p, (size_t)mobj);
 
 	WRITEFIXED(save->p, mobj->z); // Force this so 3dfloor problems don't arise.
 	WRITEFIXED(save->p, mobj->floorz);
@@ -3105,10 +3073,43 @@ static void P_NetUnArchiveWaypoints(savebuffer_t *save)
 			for (i = 0U; i < numArchiveWaypoints; i++) {
 				waypoint = K_GetWaypointFromIndex(i);
 				temp = READUINT32(save->p);
+				waypoint->mobj = NULL;
 				if (!P_SetTarget(&waypoint->mobj, P_FindNewPosition(temp))) {
 					CONS_Debug(DBG_GAMELOGIC, "waypoint mobj not found for %d\n", i);
 				}
 			}
+		}
+	}
+}
+
+static void P_NetArchiveTubeWaypoints(savebuffer_t *save)
+{
+	INT32 i, j;
+
+	for (i = 0; i < NUMTUBEWAYPOINTSEQUENCES; i++)
+	{
+		WRITEUINT16(save->p, numtubewaypoints[i]);
+		for (j = 0; j < numtubewaypoints[i]; j++)
+		{
+			WRITEUINT32(save->p, SaveMobjnum(tubewaypoints[i][j]));
+		}
+	}
+}
+
+static void P_NetUnArchiveTubeWaypoints(savebuffer_t *save)
+{
+	INT32 i, j;
+	UINT32 mobjnum;
+
+	for (i = 0; i < NUMTUBEWAYPOINTSEQUENCES; i++)
+	{
+		numtubewaypoints[i] = READUINT16(save->p);
+		for (j = 0; j < numtubewaypoints[i]; j++)
+		{
+			mobjnum = READUINT32(save->p);
+			tubewaypoints[i][j] = NULL;
+			if (mobjnum != 0)
+				P_SetTarget(&tubewaypoints[i][j], P_FindNewPosition(mobjnum));
 		}
 	}
 }
@@ -3133,7 +3134,7 @@ mobj_t *P_FindNewPosition(UINT32 oldposition)
 
 		return mobj;
 	}
-	CONS_Debug(DBG_GAMELOGIC, "mobj not found\n");
+	CONS_Debug(DBG_GAMELOGIC, "mobj %d not found\n", oldposition);
 	return NULL;
 }
 
@@ -3175,7 +3176,6 @@ static inline pslope_t *LoadSlope(UINT32 slopeid)
 
 static thinker_t* LoadMobjThinker(savebuffer_t *save, actionf_p1 thinker)
 {
-	thinker_t *next;
 	mobj_t *mobj;
 	UINT32 diff;
 	UINT32 diff2;
@@ -3188,8 +3188,6 @@ static thinker_t* LoadMobjThinker(savebuffer_t *save, actionf_p1 thinker)
 		diff2 = READUINT32(save->p);
 	else
 		diff2 = 0;
-
-	next = (void *)(size_t)READUINT32(save->p);
 
 	z = READFIXED(save->p); // Force this so 3dfloor problems don't arise.
 	floorz = READFIXED(save->p);
@@ -3495,17 +3493,9 @@ static thinker_t* LoadMobjThinker(savebuffer_t *save, actionf_p1 thinker)
 			mobj->player->viewz = mobj->player->mo->z + mobj->player->viewheight;
 	}
 
-	if (mobj->type == MT_SKYBOX)
+	if (mobj->type == MT_SKYBOX && mobj->spawnpoint)
 	{
-		mtag_t tag = mobj->movedir;
-		if (tag < 0 || tag > 15)
-		{
-			CONS_Debug(DBG_GAMELOGIC, "LoadMobjThinker: Skybox ID %d of netloaded object is not between 0 and 15!\n", tag);
-		}
-		else if (mobj->flags2 & MF2_AMBUSH)
-			skyboxcenterpnts[tag] = mobj;
-		else
-			skyboxviewpnts[tag] = mobj;
+		P_InitSkyboxPoint(mobj, mobj->spawnpoint);
 	}
 
 	if (diff2 & MD2_WAYPOINTCAP)
@@ -3513,8 +3503,6 @@ static thinker_t* LoadMobjThinker(savebuffer_t *save, actionf_p1 thinker)
 
 	if (diff2 & MD2_KITEMCAP)
 		P_SetTarget(&kitemcap, mobj);
-
-	mobj->info = (mobjinfo_t *)next; // temporarily, set when leave this function
 
 	R_AddMobjInterpolator(mobj);
 
@@ -4135,7 +4123,6 @@ static void P_NetUnArchiveThinkers(savebuffer_t *save)
 	// remove all the current thinkers
 	for (i = 0; i < NUM_THINKERLISTS; i++)
 	{
-		currentthinker = thlist[i].next;
 		for (currentthinker = thlist[i].next; currentthinker != &thlist[i]; currentthinker = next)
 		{
 			next = currentthinker->next;
@@ -4154,6 +4141,13 @@ static void P_NetUnArchiveThinkers(savebuffer_t *save)
 	// we don't want the removed mobjs to come back
 	iquetail = iquehead = 0;
 	P_InitThinkers();
+
+	// Oh my god don't blast random memory with our reference counts.
+	waypointcap = kitemcap = NULL;
+	for (i = 0; i <= 15; i++)
+	{
+		skyboxcenterpnts[i] = skyboxviewpnts[i] = NULL;
+	}
 
 	// clear sector thinker pointers so they don't point to non-existant thinkers for all of eternity
 	for (i = 0; i < numsectors; i++)
@@ -4458,28 +4452,11 @@ static inline void P_UnArchivePolyObjects(savebuffer_t *save)
 		P_UnArchivePolyObj(save, &PolyObjects[i]);
 }
 
-static inline void P_FinishMobjs(void)
-{
-	thinker_t *currentthinker;
-	mobj_t *mobj;
-
-	// put info field there real value
-	for (currentthinker = thlist[THINK_MOBJ].next; currentthinker != &thlist[THINK_MOBJ];
-		currentthinker = currentthinker->next)
-	{
-		if (currentthinker->function.acp1 == (actionf_p1)P_RemoveThinkerDelayed)
-			continue;
-
-		mobj = (mobj_t *)currentthinker;
-		mobj->info = &mobjinfo[mobj->type];
-	}
-}
-
 static void P_RelinkPointers(void)
 {
 	thinker_t *currentthinker;
 	mobj_t *mobj;
-	UINT32 temp;
+	UINT32 temp, i;
 
 	// use info field (value = oldposition) to relink mobjs
 	for (currentthinker = thlist[THINK_MOBJ].next; currentthinker != &thlist[THINK_MOBJ];
@@ -4544,84 +4521,88 @@ static void P_RelinkPointers(void)
 			if (!P_SetTarget(&mobj->terrainOverlay, P_FindNewPosition(temp)))
 				CONS_Debug(DBG_GAMELOGIC, "terrainOverlay not found on %d\n", mobj->type);
 		}
-		if (mobj->player)
+	}
+
+	for (i = 0; i < MAXPLAYERS; i++)
+	{
+		if (!playeringame[i])
+			continue;
+
+		if (players[i].skybox.viewpoint)
 		{
-			if ( mobj->player->skybox.viewpoint)
+			temp = (UINT32)(size_t)players[i].skybox.viewpoint;
+			players[i].skybox.viewpoint = NULL;
+			if (!P_SetTarget(&players[i].skybox.viewpoint, P_FindNewPosition(temp)))
+				CONS_Debug(DBG_GAMELOGIC, "skybox.viewpoint not found on player %d\n", i);
+		}
+		if (players[i].skybox.centerpoint)
+		{
+			temp = (UINT32)(size_t)players[i].skybox.centerpoint;
+			players[i].skybox.centerpoint = NULL;
+			if (!P_SetTarget(&players[i].skybox.centerpoint, P_FindNewPosition(temp)))
+				CONS_Debug(DBG_GAMELOGIC, "skybox.centerpoint not found on player %d\n", i);
+		}
+		if (players[i].awayviewmobj)
+		{
+			temp = (UINT32)(size_t)players[i].awayviewmobj;
+			players[i].awayviewmobj = NULL;
+			if (!P_SetTarget(&players[i].awayviewmobj, P_FindNewPosition(temp)))
+				CONS_Debug(DBG_GAMELOGIC, "awayviewmobj not found on player %d\n", i);
+		}
+		if (players[i].followmobj)
+		{
+			temp = (UINT32)(size_t)players[i].followmobj;
+			players[i].followmobj = NULL;
+			if (!P_SetTarget(&players[i].followmobj, P_FindNewPosition(temp)))
+				CONS_Debug(DBG_GAMELOGIC, "followmobj not found on player %d\n", i);
+		}
+		if (players[i].follower)
+		{
+			temp = (UINT32)(size_t)players[i].follower;
+			players[i].follower = NULL;
+			if (!P_SetTarget(&players[i].follower, P_FindNewPosition(temp)))
+				CONS_Debug(DBG_GAMELOGIC, "follower not found on player %d\n", i);
+		}
+		if (players[i].currentwaypoint)
+		{
+			temp = (UINT32)(size_t)players[i].currentwaypoint;
+			players[i].currentwaypoint = K_GetWaypointFromIndex(temp);
+			if (players[i].currentwaypoint == NULL)
 			{
-				temp = (UINT32)(size_t)mobj->player->skybox.viewpoint;
-				mobj->player->skybox.viewpoint = NULL;
-				if (!P_SetTarget(&mobj->player->skybox.viewpoint, P_FindNewPosition(temp)))
-					CONS_Debug(DBG_GAMELOGIC, "skybox.viewpoint not found on %d\n", mobj->type);
+				CONS_Debug(DBG_GAMELOGIC, "currentwaypoint not found on player %d\n", i);
 			}
-			if ( mobj->player->skybox.centerpoint)
+		}
+		if (players[i].nextwaypoint)
+		{
+			temp = (UINT32)(size_t)players[i].nextwaypoint;
+			players[i].nextwaypoint = K_GetWaypointFromIndex(temp);
+			if (players[i].nextwaypoint == NULL)
 			{
-				temp = (UINT32)(size_t)mobj->player->skybox.centerpoint;
-				mobj->player->skybox.centerpoint = NULL;
-				if (!P_SetTarget(&mobj->player->skybox.centerpoint, P_FindNewPosition(temp)))
-					CONS_Debug(DBG_GAMELOGIC, "skybox.centerpoint not found on %d\n", mobj->type);
+				CONS_Debug(DBG_GAMELOGIC, "nextwaypoint not found on player %d\n", i);
 			}
-			if ( mobj->player->awayviewmobj)
+		}
+		if (players[i].respawn.wp)
+		{
+			temp = (UINT32)(size_t)players[i].respawn.wp;
+			players[i].respawn.wp = K_GetWaypointFromIndex(temp);
+			if (players[i].respawn.wp == NULL)
 			{
-				temp = (UINT32)(size_t)mobj->player->awayviewmobj;
-				mobj->player->awayviewmobj = NULL;
-				if (!P_SetTarget(&mobj->player->awayviewmobj, P_FindNewPosition(temp)))
-					CONS_Debug(DBG_GAMELOGIC, "awayviewmobj not found on %d\n", mobj->type);
+				CONS_Debug(DBG_GAMELOGIC, "respawn.wp not found on player %d\n", i);
 			}
-			if (mobj->player->followmobj)
-			{
-				temp = (UINT32)(size_t)mobj->player->followmobj;
-				mobj->player->followmobj = NULL;
-				if (!P_SetTarget(&mobj->player->followmobj, P_FindNewPosition(temp)))
-					CONS_Debug(DBG_GAMELOGIC, "followmobj not found on %d\n", mobj->type);
-			}
-			if (mobj->player->follower)
-			{
-				temp = (UINT32)(size_t)mobj->player->follower;
-				mobj->player->follower = NULL;
-				if (!P_SetTarget(&mobj->player->follower, P_FindNewPosition(temp)))
-					CONS_Debug(DBG_GAMELOGIC, "follower not found on %d\n", mobj->type);
-			}
-			if (mobj->player->currentwaypoint)
-			{
-				temp = (UINT32)(size_t)mobj->player->currentwaypoint;
-				mobj->player->currentwaypoint = K_GetWaypointFromIndex(temp);
-				if (mobj->player->currentwaypoint == NULL)
-				{
-					CONS_Debug(DBG_GAMELOGIC, "currentwaypoint not found on %d\n", mobj->type);
-				}
-			}
-			if (mobj->player->nextwaypoint)
-			{
-				temp = (UINT32)(size_t)mobj->player->nextwaypoint;
-				mobj->player->nextwaypoint = K_GetWaypointFromIndex(temp);
-				if (mobj->player->nextwaypoint == NULL)
-				{
-					CONS_Debug(DBG_GAMELOGIC, "nextwaypoint not found on %d\n", mobj->type);
-				}
-			}
-			if (mobj->player->respawn.wp)
-			{
-				temp = (UINT32)(size_t)mobj->player->respawn.wp;
-				mobj->player->respawn.wp = K_GetWaypointFromIndex(temp);
-				if (mobj->player->respawn.wp == NULL)
-				{
-					CONS_Debug(DBG_GAMELOGIC, "respawn.wp not found on %d\n", mobj->type);
-				}
-			}
-			if (mobj->player->hoverhyudoro)
-			{
-				temp = (UINT32)(size_t)mobj->player->hoverhyudoro;
-				mobj->player->hoverhyudoro = NULL;
-				if (!P_SetTarget(&mobj->player->hoverhyudoro, P_FindNewPosition(temp)))
-					CONS_Debug(DBG_GAMELOGIC, "hoverhyudoro not found on %d\n", mobj->type);
-			}
-			if (mobj->player->stumbleIndicator)
-			{
-				temp = (UINT32)(size_t)mobj->player->stumbleIndicator;
-				mobj->player->stumbleIndicator = NULL;
-				if (!P_SetTarget(&mobj->player->stumbleIndicator, P_FindNewPosition(temp)))
-					CONS_Debug(DBG_GAMELOGIC, "stumbleIndicator not found on %d\n", mobj->type);
-			}
+		}
+		if (players[i].hoverhyudoro)
+		{
+			temp = (UINT32)(size_t)players[i].hoverhyudoro;
+			players[i].hoverhyudoro = NULL;
+			if (!P_SetTarget(&players[i].hoverhyudoro, P_FindNewPosition(temp)))
+				CONS_Debug(DBG_GAMELOGIC, "hoverhyudoro not found on player %d\n", i);
+		}
+		if (players[i].stumbleIndicator)
+		{
+			temp = (UINT32)(size_t)players[i].stumbleIndicator;
+			players[i].stumbleIndicator = NULL;
+			if (!P_SetTarget(&players[i].stumbleIndicator, P_FindNewPosition(temp)))
+				CONS_Debug(DBG_GAMELOGIC, "stumbleIndicator not found on player %d\n", i);
 		}
 	}
 }
@@ -5174,7 +5155,7 @@ void P_SaveNetGame(savebuffer_t *save, boolean resending)
 {
 	thinker_t *th;
 	mobj_t *mobj;
-	INT32 i = 1; // don't start from 0, it'd be confused with a blank pointer otherwise
+	UINT32 i = 1; // don't start from 0, it'd be confused with a blank pointer otherwise
 
 	CV_SaveNetVars(&save->p);
 	P_NetArchiveMisc(save, resending);
@@ -5254,7 +5235,6 @@ boolean P_LoadNetGame(savebuffer_t *save, boolean reloading)
 		P_NetUnArchiveTubeWaypoints(save);
 		P_NetUnArchiveWaypoints(save);
 		P_RelinkPointers();
-		P_FinishMobjs();
 	}
 
 	ACS_UnArchive(save);
@@ -5269,4 +5249,93 @@ boolean P_LoadNetGame(savebuffer_t *save, boolean reloading)
 	// This is done in P_NetUnArchiveSpecials now.
 
 	return P_UnArchiveLuabanksAndConsistency(save);
+}
+
+boolean P_SaveBufferZAlloc(savebuffer_t *save, size_t alloc_size, INT32 tag, void *user)
+{
+	I_Assert(save->buffer == NULL);
+	save->buffer = (UINT8 *)Z_Malloc(alloc_size, tag, user);
+
+	if (save->buffer == NULL)
+	{
+		return false;
+	}
+
+	save->size = alloc_size;
+	save->p = save->buffer;
+	save->end = save->buffer + save->size;
+
+	return true;
+}
+
+boolean P_SaveBufferFromExisting(savebuffer_t *save, UINT8 *existing_buffer, size_t existing_size)
+{
+	I_Assert(save->buffer == NULL);
+
+	if (existing_buffer == NULL || existing_size == 0)
+	{
+		return false;
+	}
+
+	save->buffer = existing_buffer;
+	save->size = existing_size;
+
+	save->p = save->buffer;
+	save->end = save->buffer + save->size;
+
+	return true;
+}
+
+boolean P_SaveBufferFromLump(savebuffer_t *save, lumpnum_t lump)
+{
+	I_Assert(save->buffer == NULL);
+
+	if (lump == LUMPERROR)
+	{
+		return false;
+	}
+
+	save->buffer = (UINT8 *)W_CacheLumpNum(lump, PU_STATIC);
+
+	if (save->buffer == NULL)
+	{
+		return false;
+	}
+
+	save->size = W_LumpLength(lump);
+
+	save->p = save->buffer;
+	save->end = save->buffer + save->size;
+
+	return true;
+}
+
+boolean P_SaveBufferFromFile(savebuffer_t *save, char const *name)
+{
+	size_t len = 0;
+
+	I_Assert(save->buffer == NULL);
+	len = FIL_ReadFile(name, &save->buffer);
+
+	if (len != 0)
+	{
+		save->size = len;
+
+		save->p = save->buffer;
+		save->end = save->buffer + save->size;
+	}
+
+	return len;
+}
+
+static void P_SaveBufferInvalidate(savebuffer_t *save)
+{
+	save->buffer = save->p = save->end = NULL;
+	save->size = 0;
+}
+
+void P_SaveBufferFree(savebuffer_t *save)
+{
+	Z_Free(save->buffer);
+	P_SaveBufferInvalidate(save);
 }

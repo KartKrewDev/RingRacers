@@ -541,12 +541,7 @@ void M_Drawer(void)
 			}
 			else
 			{
-#ifdef DEVELOP // Development -- show revision / branch info
-				V_DrawThinString(vid.dupx, vid.height - 20*vid.dupy, V_NOSCALESTART|V_TRANSLUCENT|V_ALLOWLOWERCASE, compbranch);
-				V_DrawThinString(vid.dupx, vid.height - 10*vid.dupy, V_NOSCALESTART|V_TRANSLUCENT|V_ALLOWLOWERCASE, comprevision);
-#else // Regular build
-				V_DrawThinString(vid.dupx, vid.height - 10*vid.dupy, V_NOSCALESTART|V_TRANSLUCENT|V_ALLOWLOWERCASE, va("%s", VERSIONSTRING));
-#endif
+				F_VersionDrawer();
 			}
 
 
@@ -1931,9 +1926,7 @@ static void M_DrawCupPreview(INT16 y, levelsearch_t *levelsearch)
 	INT16 map, start = M_GetFirstLevelInList(&i, levelsearch);
 	UINT8 starti = i;
 
-	V_DrawFill(0, y, BASEVIDWIDTH, 54, 31);
-
-	if (levelsearch->cup && !M_CupLocked(levelsearch->cup))
+	if (levelsearch->cup && maxlevels > 0)
 	{
 		add = (cupgrid.previewanim / 82) % maxlevels;
 		map = start;
@@ -1979,16 +1972,18 @@ static void M_DrawCupPreview(INT16 y, levelsearch_t *levelsearch)
 	}
 }
 
-static void M_DrawCupTitle(INT16 y, cupheader_t *cup)
+static void M_DrawCupTitle(INT16 y, levelsearch_t *levelsearch)
 {
+	UINT8 temp = 0;
+
 	V_DrawScaledPatch(0, y, 0, W_CachePatchName("MENUHINT", PU_CACHE));
 
-	if (cup)
+	if (levelsearch->cup)
 	{
-		boolean unlocked = !M_CupLocked(cup);
+		boolean unlocked = (M_GetFirstLevelInList(&temp, levelsearch) != NEXTMAP_INVALID);
 		UINT8 *colormap = R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_GREY, GTC_MENUCACHE);
-		patch_t *icon = W_CachePatchName(cup->icon, PU_CACHE);
-		const char *str = (unlocked ? va("%s Cup", cup->name) : "???");
+		patch_t *icon = W_CachePatchName(levelsearch->cup->icon, PU_CACHE);
+		const char *str = (unlocked ? va("%s Cup", levelsearch->cup->name) : "???");
 		INT16 offset = V_LSTitleLowStringWidth(str, 0) / 2;
 
 		V_DrawLSTitleLowString(BASEVIDWIDTH/2 - offset, y+6, 0, str);
@@ -2002,32 +1997,35 @@ static void M_DrawCupTitle(INT16 y, cupheader_t *cup)
 	else
 	{
 		if (currentMenu == &PLAY_LevelSelectDef)
-			V_DrawCenteredLSTitleLowString(BASEVIDWIDTH/2, y+6, 0, va("%s Mode", Gametype_Names[levellist.newgametype]));
+		{
+			UINT8 namedgt = (levellist.guessgt != MAXGAMETYPES) ? levellist.guessgt : levellist.newgametype;
+			V_DrawCenteredLSTitleLowString(BASEVIDWIDTH/2, y+6, 0, va("%s Mode", gametypes[namedgt]->name));
+		}
 	}
 }
 
 void M_DrawCupSelect(void)
 {
-	UINT8 i, j;
+	UINT8 i, j, temp = 0;
 	levelsearch_t templevelsearch = levellist.levelsearch; // full copy
-	templevelsearch.cup = cupgrid.builtgrid[CUPMENU_CURSORID];
 
 	for (i = 0; i < CUPMENU_COLUMNS; i++)
 	{
 		for (j = 0; j < CUPMENU_ROWS; j++)
 		{
 			size_t id = (i + (j * CUPMENU_COLUMNS)) + (cupgrid.pageno * (CUPMENU_COLUMNS * CUPMENU_ROWS));
-			cupheader_t *iconcup = cupgrid.builtgrid[id];
 			patch_t *patch = NULL;
 			INT16 x, y;
 			INT16 icony = 7;
 
-			if (!iconcup)
+			if (!cupgrid.builtgrid[id])
 				break;
 
-			/*if (iconcup->emeraldnum == 0)
+			templevelsearch.cup = cupgrid.builtgrid[id];
+
+			/*if (templevelsearch.cup->emeraldnum == 0)
 				patch = W_CachePatchName("CUPMON3A", PU_CACHE);
-			else*/ if (iconcup->emeraldnum > 7)
+			else*/ if (templevelsearch.cup->emeraldnum > 7)
 			{
 				patch = W_CachePatchName("CUPMON2A", PU_CACHE);
 				icony = 5;
@@ -2040,14 +2038,14 @@ void M_DrawCupSelect(void)
 
 			V_DrawScaledPatch(x, y, 0, patch);
 
-			if (M_CupLocked(iconcup))
+			if (M_GetFirstLevelInList(&temp, &templevelsearch) == NEXTMAP_INVALID)
 			{
 				patch_t *st = W_CachePatchName(va("ICONST0%d", (cupgrid.previewanim % 4) + 1), PU_CACHE);
 				V_DrawScaledPatch(x + 8, y + icony, 0, st);
 			}
 			else
 			{
-				V_DrawScaledPatch(x + 8, y + icony, 0, W_CachePatchName(iconcup->icon, PU_CACHE));
+				V_DrawScaledPatch(x + 8, y + icony, 0, W_CachePatchName(templevelsearch.cup->icon, PU_CACHE));
 				V_DrawScaledPatch(x + 8, y + icony, 0, W_CachePatchName("CUPBOX", PU_CACHE));
 			}
 		}
@@ -2058,8 +2056,12 @@ void M_DrawCupSelect(void)
 		0, W_CachePatchName("CUPCURS", PU_CACHE)
 	);
 
+	templevelsearch.cup = cupgrid.builtgrid[CUPMENU_CURSORID];
+
+	V_DrawFill(0, 146 + (24*menutransition.tics), BASEVIDWIDTH, 54, 31);
 	M_DrawCupPreview(146 + (24*menutransition.tics), &templevelsearch);
-	M_DrawCupTitle(120 - (24*menutransition.tics), templevelsearch.cup);
+
+	M_DrawCupTitle(120 - (24*menutransition.tics), &templevelsearch);
 }
 
 static void M_DrawHighLowLevelTitle(INT16 x, INT16 y, INT16 map)
@@ -2225,7 +2227,7 @@ void M_DrawLevelSelect(void)
 		map = M_GetNextLevelInList(map, &j, &levellist.levelsearch);
 	}
 
-	M_DrawCupTitle(tay, levellist.levelsearch.cup);
+	M_DrawCupTitle(tay, &levellist.levelsearch);
 }
 
 void M_DrawTimeAttack(void)
@@ -2261,7 +2263,8 @@ void M_DrawTimeAttack(void)
 			laprec = mapheaderinfo[map]->mainrecord->lap;
 		}
 
-		if (levellist.newgametype != GT_BATTLE)
+		if ((gametypes[levellist.newgametype]->rules & GTR_CIRCUIT)
+			&& (mapheaderinfo[map]->numlaps != 1))
 		{
 			V_DrawRightAlignedString(rightedge-12, timeheight, highlightflags, "BEST LAP:");
 			K_drawKartTimestamp(laprec, 162+t, timeheight+6, 0, 2);
@@ -2459,6 +2462,20 @@ void M_DrawMPHost(void)
 										V_DrawCharacter(xp + 138 + 2 + (skullAnimCounter/5), yp, '\x1D' | highlightflags, false); // right arrow
 									}
 									break;
+							}
+							break;
+						}
+						case IT_KEYHANDLER:
+						{
+							if (currentMenu->menuitems[i].itemaction.routine != M_HandleHostMenuGametype)
+								break;
+
+							w = V_ThinStringWidth(gametypes[menugametype]->name, V_6WIDTHSPACE);
+							V_DrawThinString(xp + 138 - w, yp, highlightflags|V_6WIDTHSPACE, gametypes[menugametype]->name);
+							if (i == itemOn)
+							{
+								V_DrawCharacter(xp + 138 - 10 - w - (skullAnimCounter/5), yp, '\x1C' | highlightflags, false); // left arrow
+								V_DrawCharacter(xp + 138 + 2 + (skullAnimCounter/5), yp, '\x1D' | highlightflags, false); // right arrow
 							}
 							break;
 						}
@@ -3680,27 +3697,19 @@ void M_DrawPause(void)
 			case IT_STRING:
 			{
 				patch_t *pp;
+				UINT8 *colormap = NULL;
 
-				if (i == itemOn)
+				if (i == itemOn && (i == mpause_restartmap || i == mpause_tryagain))
 				{
-					if (i == mpause_restartmap || i == mpause_tryagain)
-					{
-						pp = W_CachePatchName(
-							va("M_ICOR2%c", ('A'+(pausemenu.ticker & 1))),
-							PU_CACHE);
-					}
-					else
-					{
-						char iconame[9];	// 8 chars + \0
-						strcpy(iconame, currentMenu->menuitems[i].tooltip);
-						iconame[7] = '2';	// Yes this is a stupid hack. Replace the last character with a 2 when we're selecting this graphic.
-
-						pp = W_CachePatchName(iconame, PU_CACHE);
-					}
+					pp = W_CachePatchName(
+						va("M_ICOR2%c", ('A'+(pausemenu.ticker & 1))),
+						PU_CACHE);
 				}
 				else
 				{
 					pp = W_CachePatchName(currentMenu->menuitems[i].tooltip, PU_CACHE);
+					if (i == itemOn)
+						colormap = yellowmap;
 				}
 
 				// 294 - 261 = 33
@@ -3711,7 +3720,7 @@ void M_DrawPause(void)
 				// This double ternary is awful, yes.
 
 				dypos = ypos + pausemenu.offset;
-				V_DrawFixedPatch( ((i == itemOn ? (294 - pausemenu.offset*2/3 * (dypos > 100 ? 1 : -1)) : 261) + offset) << FRACBITS, (dypos)*FRACUNIT, FRACUNIT, 0, pp, NULL);
+				V_DrawFixedPatch( ((i == itemOn ? (294 - pausemenu.offset*2/3 * (dypos > 100 ? 1 : -1)) : 261) + offset) << FRACBITS, (dypos)*FRACUNIT, FRACUNIT, 0, pp, colormap);
 
 				ypos += 50;
 				itemsdrawn++;	// We drew that!
@@ -3760,12 +3769,26 @@ void M_DrawPause(void)
 	word1[word1len] = '\0';
 	word2[word2len] = '\0';
 
-	// If there's no 2nd word, take this opportunity to center this line of text.
-	if (word1len)
-		V_DrawCenteredLSTitleHighString(220 + offset*2, 75 + (!word2len ? 10 : 0), 0, word1);
+	if (itemOn == mpause_changegametype)
+	{
+		INT32 w = V_LSTitleLowStringWidth(gametypes[menugametype]->name, 0)/2;
 
-	if (word2len)
-		V_DrawCenteredLSTitleLowString(220 + offset*2, 103, 0, word2);
+		if (word1len)
+			V_DrawCenteredLSTitleHighString(220 + offset*2, 75, 0, word1);
+
+		V_DrawLSTitleLowString(220-w + offset*2, 103, V_YELLOWMAP, gametypes[menugametype]->name);
+		V_DrawCharacter(220-w + offset*2 - 8 - (skullAnimCounter/5), 103+6, '\x1C' | V_YELLOWMAP, false); // left arrow
+		V_DrawCharacter(220+w + offset*2 + 4 + (skullAnimCounter/5), 103+6, '\x1D' | V_YELLOWMAP, false); // right arrow
+	}
+	else
+	{
+		// If there's no 2nd word, take this opportunity to center this line of text.
+		if (word1len)
+			V_DrawCenteredLSTitleHighString(220 + offset*2, 75 + (!word2len ? 10 : 0), 0, word1);
+
+		if (word2len)
+			V_DrawCenteredLSTitleLowString(220 + offset*2, 103, 0, word2);
+	}
 }
 
 tic_t playback_last_menu_interaction_leveltime = 0;
@@ -3964,9 +3987,22 @@ static void M_DrawReplayHutReplayInfo(menudemo_t *demoref)
 		if (demoref->numlaps)
 			V_DrawThinString(x, y+9, V_SNAPTOTOP|V_ALLOWLOWERCASE, va("(%d laps)", demoref->numlaps));
 
-		V_DrawString(x, y+20, V_SNAPTOTOP|V_ALLOWLOWERCASE, demoref->gametype == GT_RACE ?
-			va("Race (%s speed)", kartspeed_cons_t[(demoref->kartspeed & ~DF_ENCORE) + 1].strvalue) :
-			"Battle Mode");
+		{
+			const char *gtstring;
+			if (demoref->gametype < 0)
+			{
+				gtstring = "Custom (not loaded)";
+			}
+			else
+			{
+				gtstring = gametypes[demoref->gametype]->name;
+
+				if ((gametypes[demoref->gametype]->rules & GTR_CIRCUIT))
+					gtstring = va("%s (%s)", gtstring, kartspeed_cons_t[(demoref->kartspeed & ~DF_ENCORE) + 1].strvalue);
+			}
+
+			V_DrawString(x, y+20, V_SNAPTOTOP|V_ALLOWLOWERCASE, gtstring);
+		}
 
 		if (!demoref->standings[0].ranking)
 		{
@@ -3979,30 +4015,33 @@ static void M_DrawReplayHutReplayInfo(menudemo_t *demoref)
 		V_DrawThinString(x, y+29, V_SNAPTOTOP|highlightflags, "WINNER");
 		V_DrawString(x+38, y+30, V_SNAPTOTOP|V_ALLOWLOWERCASE, demoref->standings[0].name);
 
-		if (demoref->gametype == GT_RACE)
+		if (demoref->gametype >= 0)
 		{
-			V_DrawThinString(x, y+39, V_SNAPTOTOP|highlightflags, "TIME");
-		}
-		else
-		{
-			V_DrawThinString(x, y+39, V_SNAPTOTOP|highlightflags, "SCORE");
-		}
+			if (gametypes[demoref->gametype]->rules & GTR_POINTLIMIT)
+			{
+				V_DrawThinString(x, y+39, V_SNAPTOTOP|highlightflags, "SCORE");
+			}
+			else
+			{
+				V_DrawThinString(x, y+39, V_SNAPTOTOP|highlightflags, "TIME");
+			}
 
-		if (demoref->standings[0].timeorscore == (UINT32_MAX-1))
-		{
-			V_DrawThinString(x+32, y+39, V_SNAPTOTOP, "NO CONTEST");
-		}
-		else if (demoref->gametype == GT_RACE)
-		{
-			V_DrawRightAlignedString(x+84, y+40, V_SNAPTOTOP, va("%d'%02d\"%02d",
-											G_TicsToMinutes(demoref->standings[0].timeorscore, true),
-											G_TicsToSeconds(demoref->standings[0].timeorscore),
-											G_TicsToCentiseconds(demoref->standings[0].timeorscore)
-			));
-		}
-		else
-		{
-			V_DrawString(x+32, y+40, V_SNAPTOTOP, va("%d", demoref->standings[0].timeorscore));
+			if (demoref->standings[0].timeorscore == (UINT32_MAX-1))
+			{
+				V_DrawThinString(x+32, y+39, V_SNAPTOTOP, "NO CONTEST");
+			}
+			else if (gametypes[demoref->gametype]->rules & GTR_POINTLIMIT)
+			{
+				V_DrawString(x+32, y+40, V_SNAPTOTOP, va("%d", demoref->standings[0].timeorscore));
+			}
+			else
+			{
+				V_DrawRightAlignedString(x+84, y+40, V_SNAPTOTOP, va("%d'%02d\"%02d",
+												G_TicsToMinutes(demoref->standings[0].timeorscore, true),
+												G_TicsToSeconds(demoref->standings[0].timeorscore),
+												G_TicsToCentiseconds(demoref->standings[0].timeorscore)
+				));
+			}
 		}
 
 		// Character face!
@@ -4197,14 +4236,16 @@ void M_DrawReplayStartMenu(void)
 
 		if (demoref->standings[i].timeorscore == UINT32_MAX-1)
 			V_DrawThinString(BASEVIDWIDTH-92, STARTY + i*20 + 9, V_SNAPTOTOP, "NO CONTEST");
-		else if (demoref->gametype == GT_RACE)
+		else if (demoref->gametype < 0)
+			;
+		else if (gametypes[demoref->gametype]->rules & GTR_POINTLIMIT)
+			V_DrawString(BASEVIDWIDTH-92, STARTY + i*20 + 9, V_SNAPTOTOP, va("%d", demoref->standings[i].timeorscore));
+		else
 			V_DrawRightAlignedString(BASEVIDWIDTH-40, STARTY + i*20 + 9, V_SNAPTOTOP, va("%d'%02d\"%02d",
 											G_TicsToMinutes(demoref->standings[i].timeorscore, true),
 											G_TicsToSeconds(demoref->standings[i].timeorscore),
 											G_TicsToCentiseconds(demoref->standings[i].timeorscore)
 			));
-		else
-			V_DrawString(BASEVIDWIDTH-92, STARTY + i*20 + 9, V_SNAPTOTOP, va("%d", demoref->standings[i].timeorscore));
 
 		// Character face!
 
@@ -4469,15 +4510,14 @@ void M_DrawAddons(void)
 
 // Challenges Menu
 
-#define challengesbordercolor 27
-
 static void M_DrawChallengeTile(INT16 i, INT16 j, INT32 x, INT32 y, boolean hili)
 {
 	unlockable_t *ref = NULL;
 	patch_t *pat = missingpat;
 	UINT8 *colormap = NULL;
 	fixed_t siz;
-	UINT8 id, num, work;
+	UINT8 id, num;
+	UINT32 edgelength;
 
 	id = (i * CHALLENGEGRIDHEIGHT) + j;
 	num = gamedata->challengegrid[id];
@@ -4485,19 +4525,19 @@ static void M_DrawChallengeTile(INT16 i, INT16 j, INT32 x, INT32 y, boolean hili
 	// Empty spots in the grid are always unconnected.
 	if (num >= MAXUNLOCKABLES)
 	{
-		V_DrawFill(x, y, 16, 16, challengesbordercolor);
 		goto drawborder;
 	}
 
 	// Okay, this is what we want to draw.
 	ref = &unlockables[num];
 
+	edgelength = (ref->majorunlock ? 30 : 14);
+
 	// ...unless we simply aren't unlocked yet.
 	if ((gamedata->unlocked[num] == false)
 		|| (challengesmenu.pending && num == challengesmenu.currentunlock && challengesmenu.unlockanim <= UNLOCKTIME))
 	{
-		work = (ref->majorunlock) ? 2 : 1;
-		V_DrawFill(x, y, 16*work, 16*work,
+		V_DrawFill(x+1, y+1, edgelength, edgelength,
 			((challengesmenu.extradata[id] == CHE_HINT) ? 132 : 11));
 		goto drawborder;
 	}
@@ -4548,6 +4588,12 @@ static void M_DrawChallengeTile(INT16 i, INT16 j, INT32 x, INT32 y, boolean hili
 	siz = (SHORT(pat->width) << FRACBITS);
 	siz = FixedDiv(((ref->majorunlock) ? 32 : 16) << FRACBITS, siz);
 
+	V_SetClipRect(
+		(x+1) << FRACBITS, (y+1) << FRACBITS,
+		edgelength << FRACBITS, edgelength << FRACBITS,
+		0
+	);
+
 	V_DrawFixedPatch(
 		x*FRACUNIT, y*FRACUNIT,
 		siz,
@@ -4555,19 +4601,11 @@ static void M_DrawChallengeTile(INT16 i, INT16 j, INT32 x, INT32 y, boolean hili
 		colormap
 	);
 
+	V_ClearClipRect();
+
 drawborder:
 	if (!hili)
 	{
-		if (ref != NULL)
-		{
-			work = 16 * (ref->majorunlock ? 2 : 1);
-			// Horizontal
-			V_DrawFill(x, y         , work, 1, challengesbordercolor);
-			V_DrawFill(x, y + work-1, work, 1, challengesbordercolor);
-			// Vertical
-			V_DrawFill(x         , y+1, 1, work-2, challengesbordercolor);
-			V_DrawFill(x + work-1, y+1, 1, work-2, challengesbordercolor);
-		}
 		return;
 	}
 
@@ -4587,22 +4625,39 @@ static void M_DrawChallengePreview(INT32 x, INT32 y)
 	
 	if (challengesmenu.currentunlock >= MAXUNLOCKABLES)
 	{
-		V_DrawFill(0, 146, BASEVIDWIDTH, 54, challengesbordercolor);
 		return;
 	}
 
 	// Okay, this is what we want to draw.
 	ref = &unlockables[challengesmenu.currentunlock];
 
+	// Funny question mark?
 	if (!gamedata->unlocked[challengesmenu.currentunlock])
 	{
-		// todo draw some sort of question mark?
-		V_DrawFill(0, 146, BASEVIDWIDTH, 54, challengesbordercolor);
+		spritedef_t *sprdef = &sprites[SPR_UQMK];
+		spriteframe_t *sprframe;
+		patch_t *patch;
+		UINT32 useframe;
+		UINT32 addflags = 0;
+
+		if (!sprdef->numframes)
+		{
+			return;
+		}
+
+		useframe = (challengesmenu.ticker / 2) % sprdef->numframes;
+
+		sprframe = &sprdef->spriteframes[useframe];
+		patch = W_CachePatchNum(sprframe->lumppat[0], PU_CACHE);
+
+		if (sprframe->flip & 1) // Only for first sprite
+		{
+			addflags ^= V_FLIP; // This sprite is left/right flipped!
+		}
+
+		V_DrawFixedPatch(x*FRACUNIT, (y+6)*FRACUNIT, FRACUNIT, addflags, patch, NULL);
 		return;
 	}
-
-	if (ref->type != SECRET_CUP)
-		V_DrawFill(0, 146, BASEVIDWIDTH, 54, challengesbordercolor);
 
 	switch (ref->type)
 	{
@@ -4692,6 +4747,16 @@ static void M_DrawChallengePreview(INT32 x, INT32 y)
 			specialmap = btcmapcache;
 			break;
 		}
+		case SECRET_SPECIALATTACK:
+		{
+			static UINT16 sscmapcache = NEXTMAP_INVALID;
+			if (sscmapcache > nummapheaders)
+			{
+				sscmapcache = G_RandMap(G_TOLFlag(GT_SPECIAL), -1, 2, 0, false, NULL);
+			}
+			specialmap = sscmapcache;
+			break;
+		}
 		case SECRET_HARDSPEED:
 		{
 			static UINT16 hardmapcache = NEXTMAP_INVALID;
@@ -4761,7 +4826,7 @@ void M_DrawChallenges(void)
 	INT16 offset;
 
 	{
-		patch_t *bg = W_CachePatchName("M_XTRABG", PU_CACHE);
+		patch_t *bg = W_CachePatchName("BGUNLCK2", PU_CACHE);
 		V_DrawFixedPatch(0, 0, FRACUNIT, 0, bg, NULL);
 	}
 
@@ -4796,15 +4861,10 @@ void M_DrawChallenges(void)
 		i = gamedata->challengegridwidth-1;
 		explodex = x - (i*16)/2;
 		x += (i*16)/2;
-
-		V_DrawFill(0, currentMenu->y, explodex, (CHALLENGEGRIDHEIGHT*16), challengesbordercolor);
-		V_DrawFill((x+16), currentMenu->y, BASEVIDWIDTH - (x+16), (CHALLENGEGRIDHEIGHT*16), challengesbordercolor);
 	}
 
 	selectx = explodex + (challengesmenu.hilix*16);
 
-	V_DrawFill(0, (currentMenu->y)-1                         , BASEVIDWIDTH, 1, challengesbordercolor);
-	V_DrawFill(0, (currentMenu->y) + (CHALLENGEGRIDHEIGHT*16), BASEVIDWIDTH, 1, challengesbordercolor);
 	while (i >= 0 && x >= -32)
 	{
 		y = currentMenu->y-16;
@@ -4859,7 +4919,6 @@ challengedesc:
 	// Name bar
 	{
 		y = 120;
-		V_DrawScaledPatch(0, y, 0, W_CachePatchName("MENUHINT", PU_CACHE));
 
 		if (challengesmenu.currentunlock < MAXUNLOCKABLES)
 		{
@@ -4889,6 +4948,7 @@ challengedesc:
 	i = (challengesmenu.hilix * CHALLENGEGRIDHEIGHT) + challengesmenu.hiliy;
 
 	if (challengesmenu.unlockcondition != NULL
+	&& challengesmenu.currentunlock < MAXUNLOCKABLES
 	&& ((gamedata->unlocked[challengesmenu.currentunlock] == true)
 		|| ((challengesmenu.extradata != NULL)
 		&& (challengesmenu.extradata[i] & CHE_HINT))

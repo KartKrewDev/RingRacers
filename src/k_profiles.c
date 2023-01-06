@@ -217,16 +217,13 @@ void PR_SaveProfiles(void)
 	size_t length = 0;
 	const size_t headerlen = strlen(PROFILEHEADER);
 	UINT8 i, j, k;
-	savebuffer_t save;
+	savebuffer_t save = {0};
 
-	save.size = sizeof(UINT32) + (numprofiles * sizeof(profile_t));
-	save.p = save.buffer = (UINT8 *)malloc(save.size);
-	if (!save.p)
+	if (P_SaveBufferAlloc(&save, sizeof(UINT32) + (numprofiles * sizeof(profile_t))) == false)
 	{
 		I_Error("No more free memory for saving profiles\n");
 		return;
 	}
-	save.end = save.buffer + save.size;
 
 	// Add header.
 	WRITESTRINGN(save.p, PROFILEHEADER, headerlen);
@@ -270,15 +267,14 @@ void PR_SaveProfiles(void)
 
 	if (!FIL_WriteFile(va(pandf, srb2home, PROFILESFILE), save.buffer, length))
 	{
-		free(save.buffer);
+		P_SaveBufferFree(&save);
 		I_Error("Couldn't save profiles. Are you out of Disk space / playing in a protected folder?");
 	}
-	free(save.buffer);
+	P_SaveBufferFree(&save);
 }
 
 void PR_LoadProfiles(void)
 {
-	size_t length = 0;
 	const size_t headerlen = strlen(PROFILEHEADER);
 	UINT8 i, j, k, version;
 	profile_t *dprofile = PR_MakeProfile(
@@ -289,17 +285,14 @@ void PR_LoadProfiles(void)
 		gamecontroldefault,
 		true
 	);
-	savebuffer_t save;
+	savebuffer_t save = {0};
 
-	length = FIL_ReadFile(va(pandf, srb2home, PROFILESFILE), &save.buffer);
-	if (!length)
+	if (P_SaveBufferFromFile(&save, va(pandf, srb2home, PROFILESFILE)) == false)
 	{
 		// No profiles. Add the default one.
 		PR_AddProfile(dprofile);
 		return;
 	}
-
-	save.p = save.buffer;
 
 	if (strncmp(PROFILEHEADER, (const char *)save.buffer, headerlen))
 	{
@@ -307,8 +300,7 @@ void PR_LoadProfiles(void)
 		if (strcmp(srb2home,"."))
 			gdfolder = srb2home;
 
-		Z_Free(save.buffer);
-		save.p = NULL;
+		P_SaveBufferFree(&save);
 		I_Error("Not a valid Profile file.\nDelete %s (maybe in %s) and try again.", PROFILESFILE, gdfolder);
 	}
 	save.p += headerlen;
@@ -316,8 +308,7 @@ void PR_LoadProfiles(void)
 	version = READUINT8(save.p);
 	if (version > PROFILEVER)
 	{
-		Z_Free(save.buffer);
-		save.p = NULL;
+		P_SaveBufferFree(&save);
 		I_Error("Existing %s is from the future! (expected %d, got %d)", PROFILESFILE, PROFILEVER, version);
 	}
 

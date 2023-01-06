@@ -183,24 +183,17 @@ void G_SaveGame(UINT32 slot, INT16 mapnum);
 
 void G_SaveGameOver(UINT32 slot, boolean modifylives);
 
-extern UINT32 gametypedefaultrules[NUMGAMETYPES];
-extern UINT32 gametypetol[NUMGAMETYPES];
-extern INT16 gametyperankings[NUMGAMETYPES];
-
 void G_SetGametype(INT16 gametype);
-INT16 G_AddGametype(UINT32 rules);
-void G_AddGametypeConstant(INT16 gtype, const char *newgtconst);
-void G_UpdateGametypeSelections(void);
+char *G_PrepareGametypeConstant(const char *newgtconst);
 void G_AddTOL(UINT32 newtol, const char *tolname);
-void G_AddGametypeTOL(INT16 gtype, UINT32 newtol);
 INT32 G_GetGametypeByName(const char *gametypestr);
-boolean G_IsSpecialStage(INT32 mapnum);
+INT32 G_GuessGametypeByTOL(UINT32 tol);
+
 boolean G_GametypeUsesLives(void);
 boolean G_GametypeHasTeams(void);
 boolean G_GametypeHasSpectators(void);
 #define VOTEMODIFIER_ENCORE 0x80
-INT16 G_SometimesGetDifferentGametype(UINT8 prefgametype);
-UINT8 G_GetGametypeColor(INT16 gt);
+INT16 G_SometimesGetDifferentGametype(void);
 void G_ExitLevel(void);
 void G_NextLevel(void);
 void G_Continue(void);

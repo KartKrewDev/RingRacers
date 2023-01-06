@@ -147,10 +147,6 @@ consvar_t cv_menujam_update = CVAR_INIT ("menujam_update", "Off", CV_SAVE, CV_On
 static CV_PossibleValue_t menujam_cons_t[] = {{0, "menu"}, {1, "menu2"}, {2, "menu3"}, {0, NULL}};
 static consvar_t cv_menujam = CVAR_INIT ("menujam", "0", CV_SAVE, menujam_cons_t, NULL);
 
-// This gametype list is integral for many different reasons.
-// When you add gametypes here, don't forget to update them in dehacked.c and doomstat.h!
-CV_PossibleValue_t gametype_cons_t[NUMGAMETYPES+1];
-
 static CV_PossibleValue_t serversort_cons_t[] = {
 	{0,"Ping"},
 	{1,"AVG. Power Level"},
@@ -189,17 +185,17 @@ static CV_PossibleValue_t dummyteam_cons_t[] = {{0, "Spectator"}, {1, "Red"}, {2
 static CV_PossibleValue_t dummyspectate_cons_t[] = {{0, "Spectator"}, {1, "Playing"}, {0, NULL}};
 static CV_PossibleValue_t dummyscramble_cons_t[] = {{0, "Random"}, {1, "Points"}, {0, NULL}};
 static CV_PossibleValue_t dummystaff_cons_t[] = {{0, "MIN"}, {100, "MAX"}, {0, NULL}};
-static CV_PossibleValue_t dummygametype_cons_t[] = {{0, "Race"}, {1, "Battle"}, {0, NULL}};
 
 //static consvar_t cv_dummymenuplayer = CVAR_INIT ("dummymenuplayer", "P1", CV_HIDDEN|CV_CALL, dummymenuplayer_cons_t, Dummymenuplayer_OnChange);
 static consvar_t cv_dummyteam = CVAR_INIT ("dummyteam", "Spectator", CV_HIDDEN, dummyteam_cons_t, NULL);
 //static cv_dummyspectate = CVAR_INITconsvar_t  ("dummyspectate", "Spectator", CV_HIDDEN, dummyspectate_cons_t, NULL);
 static consvar_t cv_dummyscramble = CVAR_INIT ("dummyscramble", "Random", CV_HIDDEN, dummyscramble_cons_t, NULL);
 static consvar_t cv_dummystaff = CVAR_INIT ("dummystaff", "0", CV_HIDDEN|CV_CALL, dummystaff_cons_t, Dummystaff_OnChange);
-consvar_t cv_dummygametype = CVAR_INIT ("dummygametype", "Race", CV_HIDDEN, dummygametype_cons_t, NULL);
 consvar_t cv_dummyip = CVAR_INIT ("dummyip", "", CV_HIDDEN, NULL, NULL);
 consvar_t cv_dummymenuplayer = CVAR_INIT ("dummymenuplayer", "P1", CV_HIDDEN|CV_CALL, dummymenuplayer_cons_t, Dummymenuplayer_OnChange);
 consvar_t cv_dummyspectate = CVAR_INIT ("dummyspectate", "Spectator", CV_HIDDEN, dummyspectate_cons_t, NULL);
+
+INT16 menugametype = GT_RACE;
 
 consvar_t cv_dummyprofilename = CVAR_INIT ("dummyprofilename", "", CV_HIDDEN, NULL, NULL);
 consvar_t cv_dummyprofileplayername = CVAR_INIT ("dummyprofileplayername", "", CV_HIDDEN, NULL, NULL);
@@ -1009,6 +1005,8 @@ void M_ClearMenus(boolean callexitmenufunc)
 	if (!menuactive)
 		return;
 
+	CON_ClearHUD();
+
 	if (currentMenu->quitroutine && callexitmenufunc && !currentMenu->quitroutine())
 		return; // we can't quit this menu (also used to set parameter from the menu)
 
@@ -1221,16 +1219,31 @@ static boolean M_MenuConfirmPressed(UINT8 pid)
 	 return M_MenuButtonPressed(pid, MBT_A);
 }
 
+/*static boolean M_MenuConfirmHeld(UINT8 pid)
+{
+	 return M_MenuButtonHeld(pid, MBT_A);
+}*/
+
 // Returns true if we press the Cancel button
 static boolean M_MenuBackPressed(UINT8 pid)
 {
 	 return (M_MenuButtonPressed(pid, MBT_B) || M_MenuButtonPressed(pid, MBT_X));
 }
 
+/*static boolean M_MenuBackHeld(UINT8 pid)
+{
+	 return (M_MenuButtonHeld(pid, MBT_B) || M_MenuButtonHeld(pid, MBT_X));
+}*/
+
 // Retrurns true if we press the tertiary option button (C)
 static boolean M_MenuExtraPressed(UINT8 pid)
 {
 	 return M_MenuButtonPressed(pid, MBT_C);
+}
+
+static boolean M_MenuExtraHeld(UINT8 pid)
+{
+	 return M_MenuButtonHeld(pid, MBT_C);
 }
 
 
@@ -1713,7 +1726,6 @@ void M_Init(void)
 	CV_RegisterVar(&cv_dummyspectate);
 	CV_RegisterVar(&cv_dummyscramble);
 	CV_RegisterVar(&cv_dummystaff);
-	CV_RegisterVar(&cv_dummygametype);
 	CV_RegisterVar(&cv_dummyip);
 
 	CV_RegisterVar(&cv_dummyprofilename);
@@ -3295,25 +3307,40 @@ void M_SetupGametypeMenu(INT32 choice)
 
 	PLAY_GamemodesDef.prevMenu = currentMenu;
 
-	// Battle and Capsules disabled
+	// Battle and Capsules (and Special) disabled
 	PLAY_GamemodesMenu[1].status = IT_DISABLED;
 	PLAY_GamemodesMenu[2].status = IT_DISABLED;
+	PLAY_GamemodesMenu[3].status = IT_DISABLED;
 
 	if (cv_splitplayers.value > 1)
 	{
 		// Re-add Battle
 		PLAY_GamemodesMenu[1].status = IT_STRING | IT_CALL;
 	}
-	else if (M_SecretUnlocked(SECRET_BREAKTHECAPSULES, true))
-	{
-		// Re-add Capsules
-		PLAY_GamemodesMenu[2].status = IT_STRING | IT_CALL;
-	}
 	else
 	{
-		// Only one non-Back entry, let's skip straight to Race.
-		M_SetupRaceMenu(-1);
-		return;
+		boolean anyunlocked = false;
+
+		if (M_SecretUnlocked(SECRET_BREAKTHECAPSULES, true))
+		{
+			// Re-add Capsules
+			PLAY_GamemodesMenu[2].status = IT_STRING | IT_CALL;
+			anyunlocked = true;
+		}
+
+		if (M_SecretUnlocked(SECRET_SPECIALATTACK, true))
+		{
+			// Re-add Special
+			PLAY_GamemodesMenu[3].status = IT_STRING | IT_CALL;
+			anyunlocked = true;
+		}
+
+		if (!anyunlocked)
+		{
+			// Only one non-Back entry, let's skip straight to Race.
+			M_SetupRaceMenu(-1);
+			return;
+		}
 	}
 
 	M_SetupNextMenu(&PLAY_GamemodesDef, false);
@@ -3406,9 +3433,6 @@ boolean M_CanShowLevelInList(INT16 mapnum, levelsearch_t *levelsearch)
 	if (mapheaderinfo[mapnum]->lumpnum == LUMPERROR)
 		return false;
 
-	if (levelsearch->checklocked && M_MapLocked(mapnum+1))
-		return false; // not unlocked
-
 	// Check for TOL
 	if (!(mapheaderinfo[mapnum]->typeoflevel & levelsearch->typeoflevel))
 		return false;
@@ -3427,6 +3451,19 @@ boolean M_CanShowLevelInList(INT16 mapnum, levelsearch_t *levelsearch)
 		&& mapheaderinfo[mapnum]->cup != levelsearch->cup)
 		return false;
 
+	// Finally, the most complex check: does the map have lock conditions?
+	if (levelsearch->checklocked)
+	{
+		// Check for completion
+		if ((mapheaderinfo[mapnum]->menuflags & LF2_FINISHNEEDED)
+		&& !(mapheaderinfo[mapnum]->mapvisited & MV_BEATEN))
+			return false;
+
+		// Check for unlock
+		if (M_MapLocked(mapnum+1))
+			return false;
+	}
+
 	// Survived our checks.
 	return true;
 }
@@ -3440,6 +3477,9 @@ UINT16 M_CountLevelsToShowInList(levelsearch_t *levelsearch)
 
 	if (levelsearch->cup)
 	{
+		if (levelsearch->checklocked && M_CupLocked(levelsearch->cup))
+			return 0;
+
 		for (i = 0; i < CUPCACHE_MAX; i++)
 		{
 			if (!M_CanShowLevelInList(levelsearch->cup->cachedlevels[i], levelsearch))
@@ -3466,6 +3506,12 @@ UINT16 M_GetFirstLevelInList(UINT8 *i, levelsearch_t *levelsearch)
 
 	if (levelsearch->cup)
 	{
+		if (levelsearch->checklocked && M_CupLocked(levelsearch->cup))
+		{
+			*i = CUPCACHE_MAX;
+			return NEXTMAP_INVALID;
+		}
+
 		*i = 0;
 		mapnum = NEXTMAP_INVALID;
 		for (; *i < CUPCACHE_MAX; (*i)++)
@@ -3530,19 +3576,38 @@ static void M_LevelSelectScrollDest(void)
 }
 
 //  Builds the level list we'll be using from the gametype we're choosing and send us to the apropriate menu.
-static void M_LevelListFromGametype(INT16 gt)
+static boolean M_LevelListFromGametype(INT16 gt)
 {
 	static boolean first = true;
-	if (first || gt != levellist.newgametype)
+	UINT8 temp = 0;
+
+	if (first || gt != levellist.newgametype || levellist.guessgt != MAXGAMETYPES)
 	{
+		if (first)
+		{
+			cupgrid.cappages = 0;
+			cupgrid.builtgrid = NULL;
+		}
+
 		levellist.newgametype = gt;
+
 		levellist.levelsearch.typeoflevel = G_TOLFlag(gt);
-		levellist.levelsearch.cupmode = (!(gametypedefaultrules[gt] & GTR_NOCUPSELECT));
+		if (levellist.levelsearch.timeattack == true && gt == GT_SPECIAL)
+		{
+			// Sneak in an extra.
+			levellist.levelsearch.typeoflevel |= G_TOLFlag(GT_VERSUS);
+			levellist.guessgt = gt;
+		}
+		else
+		{
+			levellist.guessgt = MAXGAMETYPES;
+		}
+
+		levellist.levelsearch.cupmode = (!(gametypes[gt]->rules & GTR_NOCUPSELECT));
 		levellist.levelsearch.cup = NULL;
+
 		first = false;
 	}
-
-	PLAY_CupSelectDef.prevMenu = currentMenu;
 
 	// Obviously go to Cup Select in gametypes that have cups.
 	// Use a really long level select in gametypes that don't use cups.
@@ -3551,32 +3616,35 @@ static void M_LevelListFromGametype(INT16 gt)
 	{
 		levelsearch_t templevelsearch = levellist.levelsearch; // full copy
 		size_t currentid = 0, highestunlockedid = 0;
-		const size_t unitlen = sizeof(cupheader_t*) * (CUPMENU_COLUMNS * CUPMENU_ROWS);
+		const size_t pagelen = sizeof(cupheader_t*) * (CUPMENU_COLUMNS * CUPMENU_ROWS);
+		boolean foundany = false;
 
 		templevelsearch.cup = kartcupheaders;
-		templevelsearch.checklocked = false;
 
-		// Make sure there's valid cups before going to this menu.
+#if 0
+		// Make sure there's valid cups before going to this menu. -- rip sweet prince
 		if (templevelsearch.cup == NULL)
 			I_Error("Can you really call this a racing game, I didn't recieve any Cups on my pillow or anything");
+#endif
 
-		if (!cupgrid.builtgrid)
+		if (cupgrid.cappages == 0)
 		{
 			cupgrid.cappages = 2;
 			cupgrid.builtgrid = Z_Calloc(
-				cupgrid.cappages * unitlen,
+				cupgrid.cappages * pagelen,
 				PU_STATIC,
-				cupgrid.builtgrid);
+				NULL);
 
 			if (!cupgrid.builtgrid)
 			{
 				I_Error("M_LevelListFromGametype: Not enough memory to allocate builtgrid");
 			}
 		}
-		memset(cupgrid.builtgrid, 0, cupgrid.cappages * unitlen);
+		memset(cupgrid.builtgrid, 0, cupgrid.cappages * pagelen);
 
 		while (templevelsearch.cup)
 		{
+			templevelsearch.checklocked = false;
 			if (!M_CountLevelsToShowInList(&templevelsearch))
 			{
 				// No valid maps, skip.
@@ -3584,10 +3652,12 @@ static void M_LevelListFromGametype(INT16 gt)
 				continue;
 			}
 
-			if ((currentid * sizeof(cupheader_t*)) >= cupgrid.cappages * unitlen)
+			foundany = true;
+
+			if ((currentid * sizeof(cupheader_t*)) >= cupgrid.cappages * pagelen)
 			{
 				// Double the size of the buffer, and clear the other stuff.
-				const size_t firstlen = cupgrid.cappages * unitlen;
+				const size_t firstlen = cupgrid.cappages * pagelen;
 				cupgrid.builtgrid = Z_Realloc(cupgrid.builtgrid,
 					firstlen * 2,
 					PU_STATIC, NULL);
@@ -3603,7 +3673,8 @@ static void M_LevelListFromGametype(INT16 gt)
 
 			cupgrid.builtgrid[currentid] = templevelsearch.cup;
 
-			if (!M_CupLocked(templevelsearch.cup))
+			templevelsearch.checklocked = true;
+			if (M_GetFirstLevelInList(&temp, &templevelsearch) != NEXTMAP_INVALID)
 			{
 				highestunlockedid = currentid;
 				if (Playing() && mapheaderinfo[gamemap-1] && mapheaderinfo[gamemap-1]->cup == templevelsearch.cup)
@@ -3618,16 +3689,29 @@ static void M_LevelListFromGametype(INT16 gt)
 			templevelsearch.cup = templevelsearch.cup->next;
 		}
 
+		if (foundany == false)
+		{
+			return false;
+		}
+
 		cupgrid.numpages = (highestunlockedid / (CUPMENU_COLUMNS * CUPMENU_ROWS)) + 1;
 		if (cupgrid.pageno >= cupgrid.numpages)
 		{
 			cupgrid.pageno = 0;
 		}
 
+		PLAY_CupSelectDef.prevMenu = currentMenu;
 		PLAY_LevelSelectDef.prevMenu = &PLAY_CupSelectDef;
 		M_SetupNextMenu(&PLAY_CupSelectDef, false);
 
-		return;
+		return true;
+	}
+
+	// Okay, just a list of maps then.
+
+	if (M_GetFirstLevelInList(&temp, &levellist.levelsearch) == NEXTMAP_INVALID)
+	{
+		return false;
 	}
 
 	// Reset position properly if you go back & forth between gametypes
@@ -3643,6 +3727,7 @@ static void M_LevelListFromGametype(INT16 gt)
 	PLAY_LevelSelectDef.prevMenu = currentMenu;
 	M_SetupNextMenu(&PLAY_LevelSelectDef, false);
 
+	return true;
 }
 
 // Init level select for use in local play using the last choice we made.
@@ -3651,10 +3736,11 @@ static void M_LevelListFromGametype(INT16 gt)
 
 void M_LevelSelectInit(INT32 choice)
 {
+	INT32 gt = currentMenu->menuitems[itemOn].mvar2;
+
 	(void)choice;
 
 	// Make sure this is reset as we'll only be using this function for offline games!
-	cupgrid.netgame = false;
 	levellist.netgame = false;
 	levellist.levelsearch.checklocked = true;
 
@@ -3677,7 +3763,111 @@ void M_LevelSelectInit(INT32 choice)
 			return;
 	}
 
-	M_LevelListFromGametype(currentMenu->menuitems[itemOn].mvar2);
+	if (gt == -1)
+	{
+		gt = menugametype;
+	}
+
+	if (!M_LevelListFromGametype(gt))
+	{
+		S_StartSound(NULL, sfx_s3kb2);
+		M_StartMessage(va("No levels available for\n%s Mode!\n\nPress (B)\n", gametypes[gt]->name), NULL, MM_NOTHING);
+	}
+}
+
+static void M_LevelSelected(INT16 add)
+{
+	UINT8 i = 0;
+	INT16 map = M_GetFirstLevelInList(&i, &levellist.levelsearch);
+
+	while (add > 0)
+	{
+		map = M_GetNextLevelInList(map, &i, &levellist.levelsearch);
+
+		if (map >= nummapheaders)
+		{
+			break;
+		}
+
+		add--;
+	}
+
+	if (map >= nummapheaders)
+	{
+		// This shouldn't happen
+		return;
+	}
+
+	levellist.choosemap = map;
+
+	if (levellist.levelsearch.timeattack)
+	{
+		S_StartSound(NULL, sfx_s3k63);
+
+		if (levellist.guessgt != MAXGAMETYPES)
+			levellist.newgametype = G_GuessGametypeByTOL(levellist.levelsearch.typeoflevel);
+
+		PLAY_TimeAttackDef.lastOn = ta_start;
+		PLAY_TimeAttackDef.prevMenu = currentMenu;
+		M_SetupNextMenu(&PLAY_TimeAttackDef, false);
+	}
+	else
+	{
+		if (gamestate == GS_MENU)
+		{
+			UINT8 ssplayers = cv_splitplayers.value-1;
+
+			netgame = false;
+			multiplayer = true;
+
+			strncpy(connectedservername, cv_servername.string, MAXSERVERNAME);
+
+			// Still need to reset devmode
+			cht_debug = 0;
+
+			if (demo.playback)
+				G_StopDemo();
+			if (metalrecording)
+				G_StopMetalDemo();
+
+				/*if (levellist.choosemap == 0)
+					levellist.choosemap = G_RandMap(G_TOLFlag(levellist.newgametype), -1, 0, 0, false, NULL);*/
+
+			if (cv_maxconnections.value < ssplayers+1)
+				CV_SetValue(&cv_maxconnections, ssplayers+1);
+
+			if (splitscreen != ssplayers)
+			{
+				splitscreen = ssplayers;
+				SplitScreen_OnChange();
+			}
+
+			S_StartSound(NULL, sfx_s3k63);
+
+			paused = false;
+
+			// Early fadeout to let the sound finish playing
+			F_WipeStartScreen();
+			V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 31);
+			F_WipeEndScreen();
+			F_RunWipe(wipedefs[wipe_level_toblack], false, "FADEMAP0", false, false);
+
+			SV_StartSinglePlayerServer(levellist.newgametype, levellist.netgame);
+
+			CV_StealthSet(&cv_kartbot, cv_dummymatchbots.string);
+			CV_StealthSet(&cv_kartencore, (cv_dummygpencore.value == 1) ? "On" : "Auto");
+			CV_StealthSet(&cv_kartspeed, (cv_dummykartspeed.value == KARTSPEED_NORMAL) ? "Auto" : cv_dummykartspeed.string);
+
+			D_MapChange(levellist.choosemap+1, levellist.newgametype, (cv_kartencore.value == 1), 1, 1, false, false);
+		}
+		else
+		{
+			// directly do the map change
+			D_MapChange(levellist.choosemap+1, levellist.newgametype, (cv_kartencore.value == 1), 1, 1, false, false);
+		}
+
+		M_ClearMenus(true);
+	}
 }
 
 void M_CupSelectHandler(INT32 choice)
@@ -3733,13 +3923,18 @@ void M_CupSelectHandler(INT32 choice)
 
 	if (M_MenuConfirmPressed(pid) /*|| M_MenuButtonPressed(pid, MBT_START)*/)
 	{
+		INT16 count;
 		cupheader_t *newcup = cupgrid.builtgrid[CUPMENU_CURSORID];
+		cupheader_t *oldcup = levellist.levelsearch.cup;
 
 		M_SetMenuDelay(pid);
 
+		levellist.levelsearch.cup = newcup;
+		count = M_CountLevelsToShowInList(&levellist.levelsearch);
+
 		if ((!newcup)
-			|| (M_CupLocked(newcup))
-			|| (newcup->cachedlevels[0] == NEXTMAP_INVALID))
+			|| (count <= 0)
+			|| (cupgrid.grandprix == true && newcup->cachedlevels[0] == NEXTMAP_INVALID))
 		{
 			S_StartSound(NULL, sfx_s3kb2);
 			return;
@@ -3803,13 +3998,17 @@ void M_CupSelectHandler(INT32 choice)
 
 			M_ClearMenus(true);
 		}
+		else if (count == 1)
+		{
+			PLAY_TimeAttackDef.transitionID = currentMenu->transitionID+1;
+			M_LevelSelected(0);
+		}
 		else
 		{
 			// Keep cursor position if you select the same cup again, reset if it's a different cup
-			if (levellist.levelsearch.cup != newcup)
+			if (oldcup != newcup || levellist.cursor >= count)
 			{
 				levellist.cursor = 0;
-				levellist.levelsearch.cup = newcup;
 			}
 
 			M_LevelSelectScrollDest();
@@ -3868,94 +4067,10 @@ void M_LevelSelectHandler(INT32 choice)
 
 	if (M_MenuConfirmPressed(pid) /*|| M_MenuButtonPressed(pid, MBT_START)*/)
 	{
-		UINT8 i = 0;
-		INT16 map = M_GetFirstLevelInList(&i, &levellist.levelsearch);
-		INT16 add = levellist.cursor;
-
 		M_SetMenuDelay(pid);
 
-		while (add > 0)
-		{
-			map = M_GetNextLevelInList(map, &i, &levellist.levelsearch);
-
-			if (map >= nummapheaders)
-			{
-				break;
-			}
-
-			add--;
-		}
-
-		if (map >= nummapheaders)
-		{
-			// This shouldn't happen
-			return;
-		}
-
-		levellist.choosemap = map;
-
-		if (levellist.levelsearch.timeattack)
-		{
-			M_SetupNextMenu(&PLAY_TimeAttackDef, false);
-			S_StartSound(NULL, sfx_s3k63);
-		}
-		else
-		{
-			if (gamestate == GS_MENU)
-			{
-				UINT8 ssplayers = cv_splitplayers.value-1;
-
-				netgame = false;
-				multiplayer = true;
-
-				strncpy(connectedservername, cv_servername.string, MAXSERVERNAME);
-
-				// Still need to reset devmode
-				cht_debug = 0;
-
-				if (demo.playback)
-					G_StopDemo();
-				if (metalrecording)
-					G_StopMetalDemo();
-
-				/*if (levellist.choosemap == 0)
-					levellist.choosemap = G_RandMap(G_TOLFlag(levellist.newgametype), -1, 0, 0, false, NULL);*/
-
-				if (cv_maxconnections.value < ssplayers+1)
-					CV_SetValue(&cv_maxconnections, ssplayers+1);
-
-				if (splitscreen != ssplayers)
-				{
-					splitscreen = ssplayers;
-					SplitScreen_OnChange();
-				}
-
-				S_StartSound(NULL, sfx_s3k63);
-
-				paused = false;
-
-				// Early fadeout to let the sound finish playing
-				F_WipeStartScreen();
-				V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 31);
-				F_WipeEndScreen();
-				F_RunWipe(wipedefs[wipe_level_toblack], false, "FADEMAP0", false, false);
-
-				SV_StartSinglePlayerServer(levellist.newgametype, levellist.netgame);
-
-				CV_StealthSet(&cv_kartbot, cv_dummymatchbots.string);
-				CV_StealthSet(&cv_kartencore, (cv_dummygpencore.value == 1) ? "On" : "Auto");
-				CV_StealthSet(&cv_kartspeed, (cv_dummykartspeed.value == KARTSPEED_NORMAL) ? "Auto" : cv_dummykartspeed.string);
-
-				D_MapChange(levellist.choosemap+1, levellist.newgametype, (cv_kartencore.value == 1), 1, 1, false, false);
-			}
-			else
-			{
-				// directly do the map change
-				D_MapChange(levellist.choosemap+1, levellist.newgametype, (cv_kartencore.value == 1), 1, 1, false, false);
-			}
-
-			M_ClearMenus(true);
-		}
+		PLAY_TimeAttackDef.transitionID = currentMenu->transitionID;
+		M_LevelSelected(levellist.cursor);
 	}
 	else if (M_MenuBackPressed(pid))
 	{
@@ -4006,14 +4121,12 @@ void M_StartTimeAttack(INT32 choice)
 
 	(void)choice;
 
-	switch (levellist.newgametype)
+	modeattacking = ATTACKING_TIME;
+
+	if ((gametypes[levellist.newgametype]->rules & GTR_CIRCUIT)
+		&& (mapheaderinfo[levellist.choosemap]->numlaps != 1))
 	{
-		case GT_BATTLE:
-			modeattacking = ATTACKING_CAPSULES;
-			break;
-		default:
-			modeattacking = ATTACKING_TIME;
-			break;
+		modeattacking |= ATTACKING_LAP;
 	}
 
 	// Still need to reset devmode
@@ -4078,6 +4191,7 @@ void M_MPOptSelectInit(INT32 choice)
 {
 	INT16 arrcpy[3][3] = {{0,68,0}, {0,12,0}, {0,74,0}};
 	UINT8 i = 0, j = 0;	// To copy the array into the struct
+	const UINT32 forbidden = GTR_FORBIDMP;
 
 	(void)choice;
 
@@ -4087,6 +4201,10 @@ void M_MPOptSelectInit(INT32 choice)
 	for (; i < 3; i++)
 		for (j = 0; j < 3; j++)
 			mpmenu.modewinextend[i][j] = arrcpy[i][j];	// I miss Lua already
+
+	// Guarantee menugametype is good
+	M_NextMenuGametype(forbidden);
+	M_PrevMenuGametype(forbidden);
 
 	M_SetupNextMenu(&PLAY_MP_OptSelectDef, false);
 }
@@ -4119,41 +4237,93 @@ void M_MPHostInit(INT32 choice)
 	itemOn = mhost_go;
 }
 
+void M_NextMenuGametype(UINT32 forbidden)
+{
+	const INT16 currentmenugametype = menugametype;
+	do
+	{
+		menugametype++;
+		if (menugametype >= numgametypes)
+			menugametype = 0;
+
+		if (!(gametypes[menugametype]->rules & forbidden))
+			break;
+	} while (menugametype != currentmenugametype);
+}
+
+void M_PrevMenuGametype(UINT32 forbidden)
+{
+	const INT16 currentmenugametype = menugametype;
+	do
+	{
+		if (menugametype == 0)
+			menugametype = numgametypes;
+		menugametype--;
+
+		if (!(gametypes[menugametype]->rules & forbidden))
+			break;
+	} while (menugametype != currentmenugametype);
+}
+
+void M_HandleHostMenuGametype(INT32 choice)
+{
+	const UINT8 pid = 0;
+	const UINT32 forbidden = GTR_FORBIDMP;
+
+	(void)choice;
+
+	if (M_MenuBackPressed(pid))
+	{
+		M_GoBack(0);
+		M_SetMenuDelay(pid);
+		return;
+	}
+	else if (menucmd[pid].dpad_lr > 0 || M_MenuConfirmPressed(pid))
+	{
+		M_NextMenuGametype(forbidden);
+		S_StartSound(NULL, sfx_s3k5b);
+		M_SetMenuDelay(pid);
+	}
+	else if (menucmd[pid].dpad_lr < 0)
+	{
+		M_PrevMenuGametype(forbidden);
+		S_StartSound(NULL, sfx_s3k5b);
+		M_SetMenuDelay(pid);
+	}
+
+	if (menucmd[pid].dpad_ud > 0)
+	{
+		M_NextOpt();
+		S_StartSound(NULL, sfx_s3k5b);
+		M_SetMenuDelay(pid);
+	}
+	else if (menucmd[pid].dpad_ud < 0)
+	{
+		M_PrevOpt();
+		S_StartSound(NULL, sfx_s3k5b);
+		M_SetMenuDelay(pid);
+	}
+}
+
 void M_MPSetupNetgameMapSelect(INT32 choice)
 {
-
-	INT16 gt = GT_RACE;
 	(void)choice;
 
 	// Yep, we'll be starting a netgame.
 	levellist.netgame = true;
-	cupgrid.netgame = true;
 	// Make sure we reset those
 	levellist.levelsearch.timeattack = false;
 	levellist.levelsearch.checklocked = true;
 	cupgrid.grandprix = false;
 
-	// In case we ever want to add new gamemodes there somehow, have at it!
-	switch (cv_dummygametype.value)
-	{
-		case 1:	// Battle
-		{
-			gt = GT_BATTLE;
-			break;
-		}
-
-		default:
-		{
-			gt = GT_RACE;
-			break;
-		}
-	}
-
 	// okay this is REALLY stupid but this fixes the host menu re-folding on itself when we go back.
 	mpmenu.modewinextend[0][0] = 1;
 
-	M_LevelListFromGametype(gt); // Setup the level select.
-	// (This will also automatically send us to the apropriate menu)
+	if (!M_LevelListFromGametype(menugametype))
+	{
+		S_StartSound(NULL, sfx_s3kb2);
+		M_StartMessage(va("No levels available for\n%s Mode!\n\nPress (B)\n", gametypes[menugametype]->name), NULL, MM_NOTHING);
+	}
 }
 
 // MULTIPLAYER JOIN BY IP
@@ -6063,6 +6233,7 @@ void M_OpenPauseMenu(void)
 	// By default, disable anything sensitive:
 
 	PAUSE_Main[mpause_addons].status = IT_DISABLED;
+	PAUSE_Main[mpause_changegametype].status = IT_DISABLED;
 	PAUSE_Main[mpause_switchmap].status = IT_DISABLED;
 	PAUSE_Main[mpause_restartmap].status = IT_DISABLED;
 	PAUSE_Main[mpause_tryagain].status = IT_DISABLED;
@@ -6084,14 +6255,10 @@ void M_OpenPauseMenu(void)
 
 		if (server || IsPlayerAdmin(consoleplayer))
 		{
-			PAUSE_Main[mpause_switchmap].status = IT_STRING | IT_SUBMENU;
-			for (i = 0; i < PAUSE_GamemodesDef.numitems; i++)
-			{
-				if (PAUSE_GamemodesMenu[i].mvar2 != gametype)
-					continue;
-				PAUSE_GamemodesDef.lastOn = i;
-				break;
-			}
+			PAUSE_Main[mpause_changegametype].status = IT_STRING | IT_KEYHANDLER;
+			menugametype = gametype;
+
+			PAUSE_Main[mpause_switchmap].status = IT_STRING | IT_CALL;
 			PAUSE_Main[mpause_restartmap].status = IT_STRING | IT_CALL;
 			PAUSE_Main[mpause_addons].status = IT_STRING | IT_CALL;
 		}
@@ -6192,6 +6359,46 @@ boolean M_PauseInputs(INT32 ch)
 	return false;
 }
 
+// Change gametype
+void M_HandlePauseMenuGametype(INT32 choice)
+{
+	const UINT8 pid = 0;
+	const UINT32 forbidden = GTR_FORBIDMP;
+
+	(void)choice;
+
+	if (M_MenuConfirmPressed(pid))
+	{
+		if (menugametype != gametype)
+		{
+			M_ClearMenus(true);
+			COM_ImmedExecute(va("randommap -gt %s", gametypes[menugametype]->name));
+			return;
+		}
+
+		M_SetMenuDelay(pid);
+		S_StartSound(NULL, sfx_s3k7b);
+	}
+	else if (M_MenuExtraPressed(pid))
+	{
+		menugametype = gametype;
+		M_SetMenuDelay(pid);
+		S_StartSound(NULL, sfx_s3k7b);
+	}
+	else if (menucmd[pid].dpad_lr > 0)
+	{
+		M_NextMenuGametype(forbidden);
+		S_StartSound(NULL, sfx_s3k5b);
+		M_SetMenuDelay(pid);
+	}
+	else if (menucmd[pid].dpad_lr < 0)
+	{
+		M_PrevMenuGametype(forbidden);
+		S_StartSound(NULL, sfx_s3k5b);
+		M_SetMenuDelay(pid);
+	}
+}
+
 // Restart map
 void M_RestartMap(INT32 choice)
 {
@@ -6269,7 +6476,7 @@ void M_EndGame(INT32 choice)
 	if (!Playing())
 		return;
 
-	M_StartMessage(M_GetText("Are you sure you want to return\nto the title screen?\nPress (A) to confirm or (B) to cancel\n"), FUNCPTRCAST(M_ExitGameResponse), MM_YESNO);
+	M_StartMessage(M_GetText("Are you sure you want to\nreturn to the menu?\nPress (A) to confirm or (B) to cancel\n"), FUNCPTRCAST(M_ExitGameResponse), MM_YESNO);
 }
 
 
@@ -6429,7 +6636,9 @@ void M_PrepReplayList(void)
 		else
 		{
 			extrasmenu.demolist[i].type = MD_NOTLOADED;
-			snprintf(extrasmenu.demolist[i].filepath, 255, "%s%s", menupath, dirmenu[i] + DIR_STRING);
+			snprintf(extrasmenu.demolist[i].filepath, sizeof extrasmenu.demolist[i].filepath,
+					// 255 = UINT8 limit. dirmenu entries are restricted to this length (see DIR_LEN).
+					"%s%.255s", menupath, dirmenu[i] + DIR_STRING);
 			sprintf(extrasmenu.demolist[i].title, ".....");
 		}
 	}
@@ -6650,7 +6859,7 @@ void M_Addons(INT32 choice)
 
 #if 1
 	if (cv_addons_option.value == 0)
-		pathname = usehome ? srb2home : srb2path;
+		pathname = addonsdir;
 	else if (cv_addons_option.value == 1)
 		pathname = srb2home;
 	else if (cv_addons_option.value == 2)
@@ -7177,6 +7386,7 @@ void M_Challenges(INT32 choice)
 
 void M_ChallengesTick(void)
 {
+	const UINT8 pid = 0;
 	UINT8 i, newunlock = MAXUNLOCKABLES;
 	boolean fresh = (challengesmenu.currentunlock >= MAXUNLOCKABLES);
 
@@ -7220,8 +7430,9 @@ void M_ChallengesTick(void)
 		else
 		{
 			// Unlock sequence.
+			tic_t nexttime = M_MenuExtraHeld(pid) ? (UNLOCKTIME*2) : MAXUNLOCKTIME;
 
-			if (++challengesmenu.unlockanim >= MAXUNLOCKTIME)
+			if (++challengesmenu.unlockanim >= nexttime)
 			{
 				challengesmenu.requestnew = true;
 			}
@@ -7546,9 +7757,16 @@ void M_Statistics(INT32 choice)
 		if (!mapheaderinfo[i])
 			continue;
 
+		// Check for no visibility + legacy box
 		if (mapheaderinfo[i]->menuflags & (LF2_NOTIMEATTACK|LF2_HIDEINSTATS|LF2_HIDEINMENU))
 			continue;
 
+		// Check for completion
+		if ((mapheaderinfo[i]->menuflags & LF2_FINISHNEEDED)
+		&& !(mapheaderinfo[i]->mapvisited & MV_BEATEN))
+			continue;
+
+		// Check for unlock
 		if (M_MapLocked(i+1))
 			continue;
 

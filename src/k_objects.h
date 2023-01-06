@@ -60,7 +60,7 @@ void Obj_DuelBombInit(mobj_t *bomb);
 
 /* Broly Ki */
 mobj_t *Obj_SpawnBrolyKi(mobj_t *source, tic_t duration);
-void Obj_BrolyKiThink(mobj_t *ki);
+boolean Obj_BrolyKiThink(mobj_t *ki);
 
 /* Special Stage UFO */
 waypoint_t *K_GetSpecialUFOWaypoint(mobj_t *ufo);
@@ -72,6 +72,22 @@ void Obj_UFOPieceDead(mobj_t *piece);
 void Obj_UFOPieceRemoved(mobj_t *piece);
 mobj_t *Obj_CreateSpecialUFO(void);
 UINT32 K_GetSpecialUFODistance(void);
+
+/* Monitors */
+mobj_t *Obj_SpawnMonitor(mobj_t *origin, UINT8 numItemTypes, UINT8 emerald);
+void Obj_MonitorSpawnParts(mobj_t *monitor);
+void Obj_MonitorPartThink(mobj_t *part);
+fixed_t Obj_MonitorGetDamage(mobj_t *monitor, mobj_t *inflictor, UINT8 damagetype);
+void Obj_MonitorOnDamage(mobj_t *monitor, mobj_t *inflictor, INT32 damage);
+void Obj_MonitorOnDeath(mobj_t *monitor);
+void Obj_MonitorShardThink(mobj_t *shard);
+UINT32 Obj_MonitorGetEmerald(const mobj_t *monitor);
+void Obj_MonitorSetItemSpot(mobj_t *monitor, mobj_t *spot);
+
+/* Item Spot */
+boolean Obj_ItemSpotIsAvailable(const mobj_t *spot);
+void Obj_ItemSpotAssignMonitor(mobj_t *spot, mobj_t *monitor);
+void Obj_ItemSpotUpdate(mobj_t *spot);
 
 #ifdef __cplusplus
 } // extern "C"

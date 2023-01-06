@@ -39,7 +39,6 @@
 // SRB2kart
 #include "k_kart.h"
 #include "k_battle.h"
-#include "k_boss.h"
 #include "k_color.h"
 #include "k_respawn.h"
 #include "k_bot.h"
@@ -1226,6 +1225,21 @@ fixed_t P_GetMobjGravity(mobj_t *mo)
 			case MT_ITEM_DEBRIS:
 				gravityadd *= 6;
 				break;
+			case MT_FLOATINGITEM: {
+				// Basically this accelerates gravity after
+				// the object reached its peak vertical
+				// momentum. It's a gradual acceleration up
+				// to 2x normal gravity. It's not instant to
+				// give it some 'weight'.
+				const fixed_t z = P_MobjFlip(mo) * mo->momz;
+				if (z < 0)
+				{
+					const fixed_t d = (z - (mo->height / 2));
+					const fixed_t f = 2 * abs(FixedDiv(d, mo->height));
+					gravityadd = FixedMul(gravityadd, FRACUNIT + min(f, 2*FRACUNIT));
+				}
+				break;
+			}
 			default:
 				break;
 		}
@@ -3080,6 +3094,17 @@ boolean P_SceneryZMovement(mobj_t *mo)
 				P_RemoveMobj(mo);
 				return false;
 			}
+			break;
+		case MT_MONITOR_SHARD:
+			// Hits the ground
+			if ((mo->eflags & MFE_VERTICALFLIP)
+					? (mo->ceilingz <= (mo->z + mo->height))
+					: (mo->z <= mo->floorz))
+			{
+				P_RemoveMobj(mo);
+				return false;
+			}
+			break;
 		default:
 			break;
 	}
@@ -4348,25 +4373,7 @@ static void P_RefreshItemCapsuleParts(mobj_t *mobj)
 	part->threshold = mobj->threshold;
 	part->movecount = mobj->movecount;
 
-	switch (itemType)
-	{
-		case KITEM_ORBINAUT:
-			part->sprite = SPR_ITMO;
-			part->frame = FF_FULLBRIGHT|FF_PAPERSPRITE|K_GetOrbinautItemFrame(mobj->movecount);
-			break;
-		case KITEM_INVINCIBILITY:
-			part->sprite = SPR_ITMI;
-			part->frame = FF_FULLBRIGHT|FF_PAPERSPRITE|K_GetInvincibilityItemFrame();
-			break;
-		case KITEM_SAD:
-			part->sprite = SPR_ITEM;
-			part->frame = FF_FULLBRIGHT|FF_PAPERSPRITE;
-			break;
-		default:
-			part->sprite = SPR_ITEM;
-			part->frame = FF_FULLBRIGHT|FF_PAPERSPRITE|(itemType);
-			break;
-	}
+	K_UpdateMobjItemOverlay(part, itemType, mobj->movecount);
 
 	// update number frame
 	if (K_GetShieldFromItem(itemType) != KSHIELD_NONE) // shields don't stack, so don't show a number
@@ -5761,6 +5768,21 @@ static void P_MobjSceneryThink(mobj_t *mobj)
 			P_AddOverlay(mobj);
 		if (mobj->target->hitlag) // move to the correct position, update to the correct properties, but DON'T STATE-ANIMATE
 			return;
+		switch (mobj->target->type)
+		{
+			case MT_FLOATINGITEM:
+				// Spawn trail for item drop as it flies upward.
+				// Done here so it applies to backdrop too.
+				if (mobj->target->momz * P_MobjFlip(mobj->target) > 0)
+				{
+					P_SpawnGhostMobj(mobj);
+					P_SpawnGhostMobj(mobj->target);
+				}
+				break;
+
+			default:
+				break;
+		}
 		break;
 	case MT_WATERDROP:
 		P_SceneryCheckWater(mobj);
@@ -6182,7 +6204,7 @@ static void P_MobjSceneryThink(mobj_t *mobj)
 			mobj->color = mobj->target->color;
 			K_MatchGenericExtraFlags(mobj, mobj->target);
 
-			if ((gametype == GT_RACE || mobj->target->player->bumpers <= 0)
+			if ((!(gametyperules & GTR_BUMPERS) || mobj->target->player->bumpers <= 0)
 #if 1 // Set to 0 to test without needing to host
 				|| (P_IsDisplayPlayer(mobj->target->player))
 #endif
@@ -6553,7 +6575,13 @@ static void P_MobjSceneryThink(mobj_t *mobj)
 		mobj->renderflags ^= RF_DONTDRAW;
 		break;
 	case MT_BROLY:
-		Obj_BrolyKiThink(mobj);
+		if (Obj_BrolyKiThink(mobj) == false)
+		{
+			return;
+		}
+		break;
+	case MT_MONITOR_SHARD:
+		Obj_MonitorShardThink(mobj);
 		break;
 	case MT_VWREF:
 	case MT_VWREB:
@@ -7418,6 +7446,12 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 	}
 	case MT_EMERALD:
 		{
+			if (mobj->threshold > 0)
+				mobj->threshold--;
+		}
+		/*FALLTHRU*/
+	case MT_MONITOR:
+		{
 			if (battleovertime.enabled >= 10*TICRATE)
 			{
 				fixed_t distance = R_PointToDist2(mobj->x, mobj->y, battleovertime.x, battleovertime.y);
@@ -7427,6 +7461,14 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 					// Delete emeralds to let them reappear
 					P_KillMobj(mobj, NULL, NULL, DMG_NORMAL);
 				}
+			}
+
+			// Don't spawn sparkles on a monitor with no
+			// emerald inside
+			if (mobj->type == MT_MONITOR &&
+					Obj_MonitorGetEmerald(mobj) == 0)
+			{
+				break;
 			}
 
 			if (leveltime % 3 == 0)
@@ -7442,9 +7484,6 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 				sparkle->color = mobj->color;
 				sparkle->momz += 8 * mobj->scale * P_MobjFlip(mobj);
 			}
-
-			if (mobj->threshold > 0)
-				mobj->threshold--;
 		}
 		break;
 	case MT_DRIFTEXPLODE:
@@ -8381,7 +8420,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 			statenum_t state = (mobj->state-states);
 
 			if (!mobj->target || !mobj->target->health || !mobj->target->player || mobj->target->player->spectator
-				|| (gametype == GT_RACE || mobj->target->player->bumpers))
+				|| (!(gametyperules & GTR_BUMPERS) || mobj->target->player->bumpers))
 			{
 				P_RemoveMobj(mobj);
 				return false;
@@ -9385,7 +9424,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 		{
 			if (gametyperules & GTR_PAPERITEMS)
 			{
-				if (battlecapsules == true || bossinfo.boss == true)
+				if (battlecapsules == true)
 				{
 					;
 				}
@@ -9408,12 +9447,12 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 		}
 		// FALLTHRU
 	case MT_SPHEREBOX:
-		if (gametype == GT_BATTLE && mobj->threshold == 70)
+		if (mobj->threshold == 70)
 		{
 			mobj->color = K_RainbowColor(leveltime);
 			mobj->colorized = true;
 
-			if (battleovertime.enabled)
+			if ((gametyperules & GTR_OVERTIME) && battleovertime.enabled)
 			{
 				angle_t ang = FixedAngle((leveltime % 360) << FRACBITS);
 				fixed_t z = battleovertime.z;
@@ -9448,6 +9487,9 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 			mobj->color = color;
 			mobj->colorized = false;
 		}
+		break;
+	case MT_MONITOR_PART:
+		Obj_MonitorPartThink(mobj);
 		break;
 	default:
 		// check mobj against possible water content, before movement code
@@ -9547,13 +9589,40 @@ for (i = ((mobj->flags2 & MF2_STRONGBOX) ? strongboxamt : weakboxamt); i; --i) s
 	P_RemoveMobj(mobj); // make sure they disappear
 }
 
+static boolean P_CanFlickerFuse(mobj_t *mobj)
+{
+	switch (mobj->type)
+	{
+		case MT_SNAPPER_HEAD:
+		case MT_SNAPPER_LEG:
+		case MT_MINECARTSEG:
+		case MT_MONITOR_PART:
+			return true;
+
+		case MT_RANDOMITEM:
+		case MT_EGGMANITEM:
+		case MT_FALLINGROCK:
+		case MT_FLOATINGITEM:
+			if (mobj->fuse <= TICRATE)
+			{
+				return true;
+			}
+			break;
+
+		default:
+			break;
+	}
+
+	return false;
+
+}
+
 static boolean P_FuseThink(mobj_t *mobj)
 {
-	if (mobj->type == MT_SNAPPER_HEAD || mobj->type == MT_SNAPPER_LEG || mobj->type == MT_MINECARTSEG)
+	if (P_CanFlickerFuse(mobj))
+	{
 		mobj->renderflags ^= RF_DONTDRAW;
-
-	if (mobj->fuse <= TICRATE && (mobj->type == MT_RANDOMITEM || mobj->type == MT_EGGMANITEM || mobj->type == MT_FALLINGROCK))
-		mobj->renderflags ^= RF_DONTDRAW;
+	}
 
 	mobj->fuse--;
 
@@ -9601,7 +9670,7 @@ static boolean P_FuseThink(mobj_t *mobj)
 		{
 			;
 		}
-		else if ((gametyperules & GTR_BUMPERS) && (mobj->state == &states[S_INVISIBLE]))
+		else if (!(gametyperules & GTR_CIRCUIT) && (mobj->state == &states[S_INVISIBLE]))
 		{
 			break;
 		}
@@ -10629,6 +10698,10 @@ mobj_t *P_SpawnMobj(fixed_t x, fixed_t y, fixed_t z, mobjtype_t type)
 
 			break;
 		}
+		case MT_MONITOR: {
+			Obj_MonitorSpawnParts(mobj);
+			break;
+		}
 		case MT_KARMAHITBOX:
 			{
 				const fixed_t rad = FixedMul(mobjinfo[MT_PLAYER].radius, mobj->scale);
@@ -11440,7 +11513,7 @@ void P_RespawnBattleBoxes(void)
 {
 	thinker_t *th;
 
-	if (!(gametyperules & GTR_BUMPERS))
+	if (gametyperules & GTR_CIRCUIT)
 		return;
 
 	for (th = thlist[THINK_MOBJ].next; th != &thlist[THINK_MOBJ]; th = th->next)
@@ -11705,13 +11778,16 @@ void P_SpawnPlayer(INT32 playernum)
 
 	K_InitStumbleIndicator(p);
 
-	if (gametyperules & GTR_BUMPERS)
+	if (gametyperules & GTR_ITEMARROWS)
 	{
 		mobj_t *overheadarrow = P_SpawnMobj(mobj->x, mobj->y, mobj->z + mobj->height + 16*FRACUNIT, MT_PLAYERARROW);
 		P_SetTarget(&overheadarrow->target, mobj);
 		overheadarrow->renderflags |= RF_DONTDRAW;
 		P_SetScale(overheadarrow, mobj->destscale);
+	}
 
+	if (gametyperules & GTR_BUMPERS)
+	{
 		if (p->spectator)
 		{
 			// HEY! No being cheap...
@@ -12095,7 +12171,7 @@ static boolean P_AllowMobjSpawn(mapthing_t* mthing, mobjtype_t i)
 
 	// No bosses outside of a combat situation.
 	// (just in case we want boss arenas to do double duty as battle maps)
-	if (!bossinfo.boss && (mobjinfo[i].flags & MF_BOSS))
+	if (!(gametyperules & GTR_BOSS) && (mobjinfo[i].flags & MF_BOSS))
 	{
 		return false;
 	}
@@ -12116,7 +12192,7 @@ static mobjtype_t P_GetMobjtypeSubstitute(mapthing_t *mthing, mobjtype_t i)
 	if ((i == MT_RING) && (gametyperules & GTR_SPHERES))
 		return MT_BLUESPHERE;
 
-	if ((i == MT_RANDOMITEM) && (gametyperules & (GTR_PAPERITEMS|GTR_CIRCUIT)) == (GTR_PAPERITEMS|GTR_CIRCUIT) && !bossinfo.boss)
+	if ((i == MT_RANDOMITEM) && (gametyperules & (GTR_PAPERITEMS|GTR_CIRCUIT)) == (GTR_PAPERITEMS|GTR_CIRCUIT))
 		return MT_PAPERITEMSPOT;
 
 	return i;
@@ -12564,6 +12640,21 @@ static mobj_t *P_MakeSoftwareCorona(mobj_t *mo, INT32 height)
 	return corona;
 }
 
+void P_InitSkyboxPoint(mobj_t *mobj, mapthing_t *mthing)
+{
+	mtag_t tag = Tag_FGet(&mthing->tags);
+	if (tag < 0 || tag > 15)
+	{
+		CONS_Debug(DBG_GAMELOGIC, "P_InitSkyboxPoint: Skybox ID %d of mapthing %s is not between 0 and 15!\n", tag, sizeu1((size_t)(mthing - mapthings)));
+		return;
+	}
+
+	if (mthing->args[0])
+		P_SetTarget(&skyboxcenterpnts[tag], mobj);
+	else
+		P_SetTarget(&skyboxviewpnts[tag], mobj);
+}
+
 static boolean P_MapAlreadyHasStarPost(mobj_t *mobj)
 {
 	thinker_t *th;
@@ -12609,17 +12700,7 @@ static boolean P_SetupSpawnedMapThing(mapthing_t *mthing, mobj_t *mobj, boolean 
 	}
 	case MT_SKYBOX:
 	{
-		mtag_t tag = Tag_FGet(&mthing->tags);
-		if (tag < 0 || tag > 15)
-		{
-			CONS_Debug(DBG_GAMELOGIC, "P_SetupSpawnedMapThing: Skybox ID %d of mapthing %s is not between 0 and 15!\n", tag, sizeu1((size_t)(mthing - mapthings)));
-			break;
-		}
-
-		if (mthing->args[0])
-			skyboxcenterpnts[tag] = mobj;
-		else
-			skyboxviewpnts[tag] = mobj;
+		P_InitSkyboxPoint(mobj, mthing);
 		break;
 	}
 	case MT_EGGSTATUE:

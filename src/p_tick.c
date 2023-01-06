@@ -362,7 +362,7 @@ static inline void P_RunThinkers(void)
 	if (gametyperules & GTR_PAPERITEMS)
 		K_RunPaperItemSpawners();
 
-	if ((gametyperules & GTR_BUMPERS) && battleovertime.enabled)
+	if ((gametyperules & GTR_OVERTIME) && battleovertime.enabled)
 		K_RunBattleOvertime();
 
 	ps_acs_time = I_GetPreciseTime();
@@ -651,7 +651,7 @@ void P_Ticker(boolean run)
 				P_PlayerAfterThink(&players[i]);
 
 		// Bosses have a punchy start, so no position.
-		if (bossinfo.boss == true)
+		if (K_CheckBossIntro() == true)
 		{
 			if (leveltime == 3)
 			{
@@ -724,7 +724,7 @@ void P_Ticker(boolean run)
 
 		K_TickSpecialStage();
 
-		if ((gametyperules & GTR_BUMPERS))
+		if ((gametyperules & GTR_POINTLIMIT))
 		{
 			if (wantedcalcdelay && --wantedcalcdelay <= 0)
 				K_CalculateBattleWanted();

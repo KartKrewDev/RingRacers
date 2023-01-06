@@ -98,7 +98,6 @@ static INT32 endtic = -1;
 static INT32 sorttic = -1;
 
 intertype_t intertype = int_none;
-intertype_t intermissiontypes[NUMGAMETYPES];
 
 static huddrawlist_h luahuddrawlist_intermission;
 
@@ -210,7 +209,7 @@ static void Y_CalculateMatchData(UINT8 rankingsmode, void (*comparison)(INT32))
 	else
 	{
 		// set up the levelstring
-		if (bossinfo.boss == true && bossinfo.enemyname)
+		if (bossinfo.valid == true && bossinfo.enemyname)
 		{
 			snprintf(data.levelstring,
 				sizeof data.levelstring,
@@ -335,7 +334,7 @@ static void Y_CalculateMatchData(UINT8 rankingsmode, void (*comparison)(INT32))
 //
 void Y_IntermissionDrawer(void)
 {
-	INT32 i, whiteplayer = MAXPLAYERS, x = 4, hilicol = V_YELLOWMAP; // fallback
+	INT32 i, whiteplayer = MAXPLAYERS, x = 4, hilicol = highlightflags;
 
 	if (intertype == int_none || rendermode == render_none)
 		return;
@@ -358,11 +357,6 @@ void Y_IntermissionDrawer(void)
 	if (!r_splitscreen)
 		whiteplayer = demo.playback ? displayplayers[0] : consoleplayer;
 
-	if (modeattacking)
-		hilicol = V_ORANGEMAP;
-	else
-		hilicol = ((intertype == int_race) ? V_SKYMAP : V_REDMAP);
-
 	if (sorttic != -1 && intertic > sorttic)
 	{
 		INT32 count = (intertic - sorttic);
@@ -375,7 +369,7 @@ void Y_IntermissionDrawer(void)
 			x += (((16 - count) * vid.width) / (8 * vid.dupx));
 	}
 
-	if (intertype == int_race || intertype == int_battle || intertype == int_battletime)
+	if (intertype == int_time || intertype == int_score)
 	{
 #define NUMFORNEWCOLUMN 8
 		INT32 y = 41, gutter = ((data.numplayers > NUMFORNEWCOLUMN) ? 0 : (BASEVIDWIDTH/2));
@@ -398,7 +392,7 @@ void Y_IntermissionDrawer(void)
 		{
 			switch (intertype)
 			{
-				case int_battle:
+				case int_score:
 					timeheader = "SCORE";
 					break;
 				default:
@@ -533,7 +527,7 @@ void Y_IntermissionDrawer(void)
 						V_DrawRightAlignedThinString(x+152+gutter, y-1, (data.numplayers > NUMFORNEWCOLUMN ? V_6WIDTHSPACE : 0), "NO CONTEST.");
 					else
 					{
-						if (intertype == int_race || intertype == int_battletime)
+						if (intertype == int_time)
 						{
 							snprintf(strtime, sizeof strtime, "%i'%02i\"%02i", G_TicsToMinutes(data.val[i], true),
 							G_TicsToSeconds(data.val[i]), G_TicsToCentiseconds(data.val[i]));
@@ -575,7 +569,7 @@ skiptallydrawer:
 	if (!LUA_HudEnabled(hud_intermissionmessages))
 		return;
 
-	if (timer && grandprixinfo.gp == false && bossinfo.boss == false && !modeattacking)
+	if (timer && grandprixinfo.gp == false && !modeattacking)
 	{
 		char *string;
 		INT32 tickdown = (timer+1)/TICRATE;
@@ -669,7 +663,7 @@ void Y_Ticker(void)
 	if (intertic < TICRATE || intertic & 1 || endtic != -1)
 		return;
 
-	if (intertype == int_race || intertype == int_battle || intertype == int_battletime)
+	if (intertype == int_time || intertype == int_score)
 	{
 		{
 			if (!data.rankingsmode && sorttic != -1 && (intertic >= sorttic + 8))
@@ -751,29 +745,28 @@ void Y_Ticker(void)
 //
 void Y_DetermineIntermissionType(void)
 {
-	// set to int_none initially
-	intertype = int_none;
-
-	if (gametype == GT_RACE)
-		intertype = int_race;
-	else if (gametype == GT_BATTLE)
+	// no intermission for GP events
+	if (grandprixinfo.gp == true && grandprixinfo.eventmode != GPEVENT_NONE)
 	{
-		if (grandprixinfo.gp == true && bossinfo.boss == false)
-			intertype = int_none;
-		else
-		{
-			UINT8 i = 0, nump = 0;
-			for (i = 0; i < MAXPLAYERS; i++)
-			{
-				if (!playeringame[i] || players[i].spectator)
-					continue;
-				nump++;
-			}
-			intertype = (nump < 2 ? int_battletime : int_battle);
-		}
+		intertype = int_none;
+		return;
 	}
-	else //if (intermissiontypes[gametype] != int_none)
-		intertype = intermissiontypes[gametype];
+
+	// set initially
+	intertype = gametypes[gametype]->intermission;
+
+	// special cases
+	if (intertype == int_scoreortimeattack)
+	{
+		UINT8 i = 0, nump = 0;
+		for (i = 0; i < MAXPLAYERS; i++)
+		{
+			if (!playeringame[i] || players[i].spectator)
+				continue;
+			nump++;
+		}
+		intertype = (nump < 2 ? int_time : int_score);
+	}
 }
 
 //
@@ -830,9 +823,6 @@ void Y_StartIntermission(void)
 		sorttic = max((timer/2) - 2*TICRATE, 2*TICRATE);
 	}
 
-	if (intermissiontypes[gametype] != int_none)
-		intertype = intermissiontypes[gametype];
-
 	// We couldn't display the intermission even if we wanted to.
 	// But we still need to give the players their score bonuses, dummy.
 	//if (dedicated) return;
@@ -841,23 +831,18 @@ void Y_StartIntermission(void)
 	if (prevmap >= nummapheaders || !mapheaderinfo[prevmap])
 		I_Error("Y_StartIntermission: Internal map ID %d not found (nummapheaders = %d)", prevmap, nummapheaders);
 
+	if (!(gametyperules & GTR_CIRCUIT) && (timer > 1))
+		S_ChangeMusicInternal("racent", true); // loop it
+
 	switch (intertype)
 	{
-		case int_battle:
-		case int_battletime:
+		case int_score:
 		{
-			if (timer > 1)
-				S_ChangeMusicInternal("racent", true); // loop it
-
 			// Calculate who won
-			if (intertype == int_battle)
-			{
-				Y_CalculateMatchData(0, Y_CompareScore);
-				break;
-			}
+			Y_CalculateMatchData(0, Y_CompareScore);
+			break;
 		}
-		// FALLTHRU
-		case int_race:
+		case int_time:
 		{
 			// Calculate who won
 			Y_CalculateMatchData(0, Y_CompareTime);
@@ -1224,12 +1209,8 @@ void Y_VoteDrawer(void)
 
 	if (timer)
 	{
-		INT32 hilicol, tickdown = (timer+1)/TICRATE;
-		if (gametype == GT_RACE)
-			hilicol = V_SKYMAP;
-		else //if (gametype == GT_BATTLE)
-			hilicol = V_REDMAP;
-		V_DrawCenteredString(BASEVIDWIDTH/2, 188, hilicol,
+		INT32 tickdown = (timer+1)/TICRATE;
+		V_DrawCenteredString(BASEVIDWIDTH/2, 188, V_YELLOWMAP,
 			va("Vote ends in %d", tickdown));
 	}
 }
@@ -1569,9 +1550,9 @@ void Y_StartVote(void)
 		levelinfo[i].str[sizeof levelinfo[i].str - 1] = '\0';
 
 		// set up the gtc and gts
-		levelinfo[i].gtc = G_GetGametypeColor(votelevels[i][1]);
+		levelinfo[i].gtc = 73; // yellowmap[0] -- TODO rewrite vote screen
 		if (i == 2 && votelevels[i][1] != votelevels[0][1])
-			levelinfo[i].gts = Gametype_Names[votelevels[i][1]];
+			levelinfo[i].gts = gametypes[votelevels[i][1]]->name;
 		else
 			levelinfo[i].gts = NULL;
 	}

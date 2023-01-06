@@ -597,7 +597,7 @@ void ST_runTitleCard(void)
 
 		// SRB2KART
 		// side Zig-Zag positions...
-		if (bossinfo.boss == true)
+		if (K_CheckBossIntro() == true)
 		{
 			// Handle name info...
 			if (bossinfo.enemyname)
@@ -792,7 +792,7 @@ void ST_drawTitleCard(void)
 	if (lt_ticker < TTANIMSTART)
 		V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, levelfadecol);
 
-	if (bossinfo.boss == true)
+	if (K_CheckBossIntro() == true)
 	{
 		// WARNING!
 		// https://twitter.com/matthewseiji/status/1485003284196716544
@@ -802,7 +802,7 @@ void ST_drawTitleCard(void)
 #define HITIME 15
 			patch_t *localwarn = (encoremode ? twarn2 : twarn);
 			INT32 transp = (lt_ticker+HITIME) % (LOTIME+HITIME);
-			boolean encorehack = (encoremode && lt_ticker <= PRELEVELTIME+4);
+			boolean encorehack = ((levelfadecol == 0) && lt_ticker <= PRELEVELTIME+4);
 
 			if ((localwarn->width > 0) && (lt_ticker + (HITIME-transp) <= lt_endtime))
 			{
@@ -1253,15 +1253,15 @@ void ST_Drawer(void)
 		switch (demo.savemode)
 		{
 		case DSM_NOTSAVING:
-			V_DrawRightAlignedThinString(BASEVIDWIDTH - 2, 2, V_HUDTRANS|V_SNAPTOTOP|V_SNAPTORIGHT|V_ALLOWLOWERCASE|((gametyperules & GTR_BUMPERS) ? V_REDMAP : V_SKYMAP), "(B) or (X): Save replay");
+			V_DrawRightAlignedThinString(BASEVIDWIDTH - 2, 2, V_HUDTRANS|V_SNAPTOTOP|V_SNAPTORIGHT|V_ALLOWLOWERCASE|V_YELLOWMAP, "(B) or (X): Save replay");
 			break;
 
 		case DSM_WILLAUTOSAVE:
-			V_DrawRightAlignedThinString(BASEVIDWIDTH - 2, 2, V_HUDTRANS|V_SNAPTOTOP|V_SNAPTORIGHT|V_ALLOWLOWERCASE|((gametyperules & GTR_BUMPERS) ? V_REDMAP : V_SKYMAP), "Replay will be saved. (Look Backward: Change title)");
+			V_DrawRightAlignedThinString(BASEVIDWIDTH - 2, 2, V_HUDTRANS|V_SNAPTOTOP|V_SNAPTORIGHT|V_ALLOWLOWERCASE|V_YELLOWMAP, "Replay will be saved. (Look Backward: Change title)");
 			break;
 
 		case DSM_WILLSAVE:
-			V_DrawRightAlignedThinString(BASEVIDWIDTH - 2, 2, V_HUDTRANS|V_SNAPTOTOP|V_SNAPTORIGHT|V_ALLOWLOWERCASE|((gametyperules & GTR_BUMPERS) ? V_REDMAP : V_SKYMAP), "Replay will be saved.");
+			V_DrawRightAlignedThinString(BASEVIDWIDTH - 2, 2, V_HUDTRANS|V_SNAPTOTOP|V_SNAPTORIGHT|V_ALLOWLOWERCASE|V_YELLOWMAP, "Replay will be saved.");
 			break;
 
 		case DSM_TITLEENTRY:

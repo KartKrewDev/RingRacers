@@ -764,13 +764,13 @@ void readgametype(MYFILE *f, char *gtname)
 	char *tmp;
 	INT32 i, j;
 
-	INT16 newgtidx = 0;
+	gametype_t *newgametype = NULL;
+
 	UINT32 newgtrules = 0;
 	UINT32 newgttol = 0;
 	INT32 newgtpointlimit = 0;
 	INT32 newgttimelimit = 0;
-	INT16 newgtrankingstype = -1;
-	int newgtinttype = 0;
+	UINT8 newgtinttype = 0;
 	char gtconst[MAXLINELEN];
 
 	// Empty strings.
@@ -821,12 +821,6 @@ void readgametype(MYFILE *f, char *gtname)
 				newgtpointlimit = (INT32)i;
 			else if (fastcmp(word, "DEFAULTTIMELIMIT"))
 				newgttimelimit = (INT32)i;
-			// Rankings type
-			else if (fastcmp(word, "RANKINGTYPE"))
-			{
-				// Case insensitive
-				newgtrankingstype = (int)get_number(word2);
-			}
 			// Intermission type
 			else if (fastcmp(word, "INTERMISSIONTYPE"))
 			{
@@ -879,36 +873,54 @@ void readgametype(MYFILE *f, char *gtname)
 		Z_Free(word2lwr);
 
 	// Ran out of gametype slots
-	if (gametypecount == NUMGAMETYPEFREESLOTS)
+	if (numgametypes == GT_LASTFREESLOT)
 	{
-		CONS_Alert(CONS_WARNING, "Ran out of free gametype slots!\n");
+		I_Error("Out of Gametype Freeslots while allocating \"%s\"\nLoad less addons to fix this.", gtname);
+	}
+
+	if (gtname[0] == '\0')
+	{
+		deh_warning("Custom gametype must have a name");
+		return;
+	}
+
+	if (strlen(gtname) >= MAXGAMETYPELENGTH)
+	{
+		deh_warning("Custom gametype \"%s\"'s name must be %d long at most", gtname, MAXGAMETYPELENGTH-1);
+		return;
+	}
+
+	for (i = 0; i < numgametypes; i++)
+		if (fastcmp(gtname, gametypes[i]->name))
+			break;
+
+	if (i < numgametypes)
+	{
+		deh_warning("Custom gametype \"%s\"'s name is already in use", gtname);
 		return;
 	}
 
 	// Add the new gametype
-	newgtidx = G_AddGametype(newgtrules);
-	G_AddGametypeTOL(newgtidx, newgttol);
+	newgametype = Z_Calloc(sizeof (gametype_t), PU_STATIC, NULL);
+	if (!newgametype)
+	{
+		I_Error("Out of memory allocating gametype \"%s\"", gtname);
+	}
 
-	// Not covered by G_AddGametype alone.
-	if (newgtrankingstype == -1)
-		newgtrankingstype = newgtidx;
-	gametyperankings[newgtidx] = newgtrankingstype;
-	intermissiontypes[newgtidx] = newgtinttype;
-	pointlimits[newgtidx] = newgtpointlimit;
-	timelimits[newgtidx] = newgttimelimit;
-
-	// Write the new gametype name.
-	Gametype_Names[newgtidx] = Z_StrDup((const char *)gtname);
-
-	// Write the constant name.
 	if (gtconst[0] == '\0')
 		strncpy(gtconst, gtname, MAXLINELEN);
-	G_AddGametypeConstant(newgtidx, (const char *)gtconst);
 
-	// Update gametype_cons_t accordingly.
-	G_UpdateGametypeSelections();
+	newgametype->name = Z_StrDup((const char *)gtname);
+	newgametype->rules = newgtrules;
+	newgametype->constant = G_PrepareGametypeConstant((const char *)gtconst);
+	newgametype->tol = newgttol;
+	newgametype->intermission = newgtinttype;
+	newgametype->pointlimit = newgtpointlimit;
+	newgametype->timelimit = newgttimelimit;
 
-	CONS_Printf("Added gametype %s\n", Gametype_Names[newgtidx]);
+	gametypes[numgametypes++] = newgametype;
+
+	CONS_Printf("Added gametype %s\n", gtname);
 }
 
 void readlevelheader(MYFILE *f, char * name)
@@ -1128,7 +1140,7 @@ void readlevelheader(MYFILE *f, char * name)
 			}
 			else if (fastcmp(word, "TYPEOFLEVEL"))
 			{
-				if (i) // it's just a number
+				if (i || isdigit(word2[0])) // it's just a number
 					mapheaderinfo[num]->typeoflevel = (UINT32)i;
 				else
 				{
@@ -1267,12 +1279,12 @@ void readlevelheader(MYFILE *f, char * name)
 				else
 					mapheaderinfo[num]->menuflags &= ~LF2_NOTIMEATTACK;
 			}
-			else if (fastcmp(word, "VISITNEEDED"))
+			else if (fastcmp(word, "FINISHNEEDED"))
 			{
 				if (i || word2[0] == 'T' || word2[0] == 'Y')
-					mapheaderinfo[num]->menuflags |= LF2_VISITNEEDED;
+					mapheaderinfo[num]->menuflags |= LF2_FINISHNEEDED;
 				else
-					mapheaderinfo[num]->menuflags &= ~LF2_VISITNEEDED;
+					mapheaderinfo[num]->menuflags &= ~LF2_FINISHNEEDED;
 			}
 			else if (fastcmp(word, "GRAVITY"))
 				mapheaderinfo[num]->gravity = FLOAT_TO_FIXED(atof(word2));
@@ -2267,6 +2279,8 @@ void readunlockable(MYFILE *f, INT32 num)
 						unlockables[num].type = SECRET_TIMEATTACK;
 					else if (fastcmp(word2, "BREAKTHECAPSULES"))
 						unlockables[num].type = SECRET_BREAKTHECAPSULES;
+					else if (fastcmp(word2, "SPECIALATTACK"))
+						unlockables[num].type = SECRET_SPECIALATTACK;
 					else if (fastcmp(word2, "SOUNDTEST"))
 						unlockables[num].type = SECRET_SOUNDTEST;
 					else if (fastcmp(word2, "ALTTITLE"))
@@ -3670,7 +3684,7 @@ sfxenum_t get_sfx(const char *word)
 		return atoi(word);
 	if (fastncmp("GT_",word,3))
 		word += 3; // take off the GT_
-	for (i = 0; i < NUMGAMETYPES; i++)
+	for (i = 0; i < MAXGAMETYPES; i++)
 		if (fastcmp(word, Gametype_ConstantNames[i]+3))
 			return i;
 	deh_warning("Couldn't find gametype named 'GT_%s'",word);

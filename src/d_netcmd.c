@@ -57,7 +57,6 @@
 #include "k_color.h"
 #include "k_respawn.h"
 #include "k_grandprix.h"
-#include "k_boss.h"
 #include "k_follower.h"
 #include "doomstat.h"
 #include "deh_tables.h"
@@ -399,10 +398,6 @@ consvar_t cv_kartbumpers = CVAR_INIT ("battlebumpers", "3", CV_NETVAR, kartbumpe
 consvar_t cv_kartfrantic = CVAR_INIT ("franticitems", "Off", CV_NETVAR|CV_CALL|CV_NOINIT, CV_OnOff, KartFrantic_OnChange);
 static CV_PossibleValue_t kartencore_cons_t[] = {{-1, "Auto"}, {0, "Off"}, {1, "On"}, {0, NULL}};
 consvar_t cv_kartencore = CVAR_INIT ("encore", "Auto", CV_NETVAR|CV_CALL|CV_NOINIT, kartencore_cons_t, KartEncore_OnChange);
-static CV_PossibleValue_t kartvoterulechanges_cons_t[] = {{0, "Never"}, {1, "Sometimes"}, {2, "Frequent"}, {3, "Always"}, {0, NULL}};
-consvar_t cv_kartvoterulechanges = CVAR_INIT ("voterulechanges", "Frequent", CV_NETVAR, kartvoterulechanges_cons_t, NULL);
-static CV_PossibleValue_t kartgametypepreference_cons_t[] = {{-1, "None"}, {GT_RACE, "Race"}, {GT_BATTLE, "Battle"}, {0, NULL}};
-consvar_t cv_kartgametypepreference = CVAR_INIT ("gametypepreference", "None", CV_NETVAR, kartgametypepreference_cons_t, NULL);
 static CV_PossibleValue_t kartspeedometer_cons_t[] = {{0, "Off"}, {1, "Percentage"}, {2, "Kilometers"}, {3, "Miles"}, {4, "Fracunits"}, {0, NULL}};
 consvar_t cv_kartspeedometer = CVAR_INIT ("speedometer", "Percentage", CV_SAVE, kartspeedometer_cons_t, NULL); // use tics in display
 static CV_PossibleValue_t kartvoices_cons_t[] = {{0, "Never"}, {1, "Tasteful"}, {2, "Meme"}, {0, NULL}};
@@ -485,10 +480,6 @@ consvar_t cv_timelimit = CVAR_INIT ("timelimit", "None", CV_NETVAR|CV_CALL|CV_NO
 static CV_PossibleValue_t numlaps_cons_t[] = {{1, "MIN"}, {MAX_LAPS, "MAX"}, {0, "Map default"}, {0, NULL}};
 consvar_t cv_numlaps = CVAR_INIT ("numlaps", "Map default", CV_SAVE|CV_NETVAR|CV_CALL|CV_CHEAT, numlaps_cons_t, NumLaps_OnChange);
 
-// Point and time limits for every gametype
-INT32 pointlimits[NUMGAMETYPES];
-INT32 timelimits[NUMGAMETYPES];
-
 consvar_t cv_forceskin = CVAR_INIT ("forceskin", "None", CV_NETVAR|CV_CALL|CV_CHEAT, NULL, ForceSkin_OnChange);
 
 consvar_t cv_downloading = CVAR_INIT ("downloading", "On", 0, CV_OnOff, NULL);
@@ -557,13 +548,11 @@ char timedemo_csv_id[256];
 boolean timedemo_quit;
 
 INT16 gametype = GT_RACE;
-UINT32 gametyperules = 0;
-INT16 gametypecount = GT_FIRSTFREESLOT;
+INT16 numgametypes = GT_FIRSTFREESLOT;
 
 boolean forceresetplayers = false;
 boolean deferencoremode = false;
 UINT8 splitscreen = 0;
-boolean circuitmap = false;
 INT32 adminplayers[MAXPLAYERS];
 
 // Scheduled commands.
@@ -2530,19 +2519,11 @@ void D_MapChange(INT32 mapnum, INT32 newgametype, boolean pencoremode, boolean r
 	CONS_Debug(DBG_GAMELOGIC, "Map change: mapnum=%d gametype=%d pencoremode=%d resetplayers=%d delay=%d skipprecutscene=%d\n",
 	           mapnum, newgametype, pencoremode, resetplayers, delay, skipprecutscene);
 
-	if ((netgame || multiplayer) && !((gametype == newgametype) && (gametypedefaultrules[newgametype] & GTR_CAMPAIGN)))
+	if ((netgame || multiplayer) && (grandprixinfo.gp != false))
 		FLS = false;
 
 	// Too lazy to change the input value for every instance of this function.......
-	if (bossinfo.boss == true)
-	{
-		pencoremode = bossinfo.encore;
-	}
-	else if (specialStage.active == true)
-	{
-		pencoremode = specialStage.encore;
-	}
-	else if (grandprixinfo.gp == true)
+	if (grandprixinfo.gp == true)
 	{
 		pencoremode = grandprixinfo.encore;
 	}
@@ -2596,14 +2577,13 @@ void D_SetupVote(void)
 	UINT8 buf[5*2]; // four UINT16 maps (at twice the width of a UINT8), and two gametypes
 	UINT8 *p = buf;
 	INT32 i;
-	UINT8 gt = (cv_kartgametypepreference.value == -1) ? gametype : cv_kartgametypepreference.value;
-	UINT8 secondgt = G_SometimesGetDifferentGametype(gt);
+	UINT8 secondgt = G_SometimesGetDifferentGametype();
 	INT16 votebuffer[4] = {-1,-1,-1,0};
 
-	if ((cv_kartencore.value == 1) && (gametypedefaultrules[gt] & GTR_CIRCUIT))
-		WRITEUINT8(p, (gt|VOTEMODIFIER_ENCORE));
+	if ((cv_kartencore.value == 1) && (gametyperules & GTR_ENCORE))
+		WRITEUINT8(p, (gametype|VOTEMODIFIER_ENCORE));
 	else
-		WRITEUINT8(p, gt);
+		WRITEUINT8(p, gametype);
 	WRITEUINT8(p, secondgt);
 	secondgt &= ~VOTEMODIFIER_ENCORE;
 
@@ -2613,9 +2593,9 @@ void D_SetupVote(void)
 		if (i == 2) // sometimes a different gametype
 			m = G_RandMap(G_TOLFlag(secondgt), prevmap, ((secondgt != gametype) ? 2 : 0), 0, true, votebuffer);
 		else if (i >= 3) // unknown-random and formerly force-unknown MAP HELL
-			m = G_RandMap(G_TOLFlag(gt), prevmap, 0, (i-2), (i < 4), votebuffer);
+			m = G_RandMap(G_TOLFlag(gametype), prevmap, 0, (i-2), (i < 4), votebuffer);
 		else
-			m = G_RandMap(G_TOLFlag(gt), prevmap, 0, 0, true, votebuffer);
+			m = G_RandMap(G_TOLFlag(gametype), prevmap, 0, 0, true, votebuffer);
 		if (i < 3)
 			votebuffer[i] = m;
 		WRITEUINT16(p, m);
@@ -2758,13 +2738,7 @@ static void Command_Map_f(void)
 
 	if (option_gametype)
 	{
-		if (!multiplayer)
-		{
-			CONS_Printf(M_GetText(
-						"You can't switch gametypes in single player!\n"));
-			return;
-		}
-		else if (COM_Argc() < option_gametype + 2)/* no argument after? */
+		if (COM_Argc() < option_gametype + 2)/* no argument after? */
 		{
 			CONS_Alert(CONS_ERROR,
 					"No gametype name follows parameter '%s'.\n",
@@ -2822,7 +2796,7 @@ static void Command_Map_f(void)
 			if (isdigit(gametypename[0]))
 			{
 				d = atoi(gametypename);
-				if (d >= 0 && d < gametypecount)
+				if (d >= 0 && d < numgametypes)
 					newgametype = d;
 				else
 				{
@@ -2830,7 +2804,7 @@ static void Command_Map_f(void)
 							"Gametype number %d is out of range. Use a number between"
 							" 0 and %d inclusive. ...Or just use the name. :v\n",
 							d,
-							gametypecount-1);
+							numgametypes-1);
 					Z_Free(realmapname);
 					Z_Free(mapname);
 					return;
@@ -2839,12 +2813,22 @@ static void Command_Map_f(void)
 			else
 			{
 				CONS_Alert(CONS_ERROR,
-						"'%s' is not a gametype.\n",
+						"'%s' is not a valid gametype.\n",
 						gametypename);
 				Z_Free(realmapname);
 				Z_Free(mapname);
 				return;
 			}
+		}
+
+		if (Playing() && netgame && (gametypes[newgametype]->rules & GTR_FORBIDMP))
+		{
+			CONS_Alert(CONS_ERROR,
+					"'%s' is not a net-compatible gametype.\n",
+					gametypename);
+			Z_Free(realmapname);
+			Z_Free(mapname);
+			return;
 		}
 	}
 	else if (!Playing())
@@ -2853,7 +2837,15 @@ static void Command_Map_f(void)
 		if (mapheaderinfo[newmapnum-1])
 		{
 			// Let's just guess so we don't have to specify the gametype EVERY time...
-			newgametype = (mapheaderinfo[newmapnum-1]->typeoflevel & (TOL_BATTLE|TOL_BOSS)) ? GT_BATTLE : GT_RACE;
+			newgametype = G_GuessGametypeByTOL(mapheaderinfo[newmapnum-1]->typeoflevel);
+
+			if (newgametype == -1)
+			{
+				CONS_Alert(CONS_WARNING, M_GetText("%s (%s) doesn't support any known gametype!\n"), realmapname, G_BuildMapName(newmapnum));
+				Z_Free(realmapname);
+				Z_Free(mapname);
+				return;
+			}
 		}
 	}
 
@@ -2865,6 +2857,8 @@ static void Command_Map_f(void)
 		if (!M_SecretUnlocked(SECRET_ENCORE, false) && newencoremode == true && !usingcheats)
 		{
 			CONS_Alert(CONS_NOTICE, M_GetText("You haven't unlocked Encore Mode yet!\n"));
+			Z_Free(realmapname);
+			Z_Free(mapname);
 			return;
 		}
 	}
@@ -2885,8 +2879,7 @@ static void Command_Map_f(void)
 					mapheaderinfo[newmapnum-1]->typeoflevel & G_TOLFlag(newgametype)
 		))
 		{
-			CONS_Alert(CONS_WARNING, M_GetText("%s (%s) doesn't support %s mode!\n(Use -force to override)\n"), realmapname, G_BuildMapName(newmapnum),
-				(multiplayer ? gametype_cons_t[newgametype].strvalue : "Single Player"));
+			CONS_Alert(CONS_WARNING, M_GetText("%s (%s) doesn't support %s mode!\n(Use -force to override)\n"), realmapname, G_BuildMapName(newmapnum), gametypes[newgametype]->name);
 			Z_Free(realmapname);
 			Z_Free(mapname);
 			return;
@@ -2895,8 +2888,7 @@ static void Command_Map_f(void)
 		{
 			fromlevelselect =
 				( netgame || multiplayer ) &&
-				newgametype == gametype    &&
-				gametypedefaultrules[newgametype] & GTR_CAMPAIGN;
+				grandprixinfo.gp != false;
 		}
 	}
 
@@ -2952,35 +2944,18 @@ static void Command_Map_f(void)
 
 		grandprixinfo.eventmode = GPEVENT_NONE;
 
-		if (newgametype == GT_BATTLE)
+		if (gametypes[newgametype]->rules & (GTR_BOSS|GTR_CATCHER))
+		{
+			grandprixinfo.eventmode = GPEVENT_SPECIAL;
+		}
+		else if (newgametype != GT_RACE)
 		{
 			grandprixinfo.eventmode = GPEVENT_BONUS;
-
-			if (mapheaderinfo[newmapnum-1] &&
-				mapheaderinfo[newmapnum-1]->typeoflevel & TOL_BOSS)
-			{
-				bossinfo.boss = true;
-				bossinfo.encore = newencoremode;
-			}
-			else
-			{
-				bossinfo.boss = false;
-				K_ResetBossInfo();
-			}
 		}
-		else
+
+		if (!Playing())
 		{
-			if (mapheaderinfo[newmapnum-1] &&
-				mapheaderinfo[newmapnum-1]->typeoflevel & TOL_SPECIAL) // Special Stage
-			{
-				specialStage.active = true;
-				specialStage.encore = newencoremode;
-				grandprixinfo.eventmode = GPEVENT_SPECIAL;
-			}
-			else
-			{
-				specialStage.active = false;
-			}
+			multiplayer = true;
 		}
 	}
 
@@ -3029,12 +3004,12 @@ static void Got_Mapcmd(UINT8 **cp, INT32 playernum)
 	gametype = READUINT8(*cp);
 	G_SetGametype(gametype); // I fear putting that macro as an argument
 
-	if (gametype < 0 || gametype >= gametypecount)
+	if (gametype < 0 || gametype >= numgametypes)
 		gametype = lastgametype;
 	else if (gametype != lastgametype)
 		D_GameTypeChanged(lastgametype); // emulate consvar_t behavior for gametype
 
-	if (!(gametyperules & GTR_CIRCUIT) && !bossinfo.boss)
+	if (!(gametyperules & GTR_ENCORE))
 		pencoremode = false;
 
 	skipprecutscene = ((flags & (1<<2)) != 0);
@@ -3086,9 +3061,10 @@ static void Command_RandomMap(void)
 {
 	INT32 oldmapnum;
 	INT32 newmapnum;
-	INT32 newgametype;
-	boolean newencoremode;
+	INT32 newgametype = (Playing() ? gametype : menugametype);
+	boolean newencore = false;
 	boolean newresetplayers;
+	size_t option_gametype;
 
 	if (client && !IsPlayerAdmin(consoleplayer))
 	{
@@ -3096,13 +3072,69 @@ static void Command_RandomMap(void)
 		return;
 	}
 
+	if ((option_gametype = COM_CheckPartialParm("-g")))
+	{
+		const char *gametypename;
+
+		if (COM_Argc() < option_gametype + 2)/* no argument after? */
+		{
+			CONS_Alert(CONS_ERROR,
+					"No gametype name follows parameter '%s'.\n",
+					COM_Argv(option_gametype));
+			return;
+		}
+
+		// new gametype value
+		// use current one by default
+		gametypename = COM_Argv(option_gametype + 1);
+
+		newgametype = G_GetGametypeByName(gametypename);
+
+		if (newgametype == -1) // reached end of the list with no match
+		{
+			/* Did they give us a gametype number? That's okay too! */
+			if (isdigit(gametypename[0]))
+			{
+				INT16 d = atoi(gametypename);
+				if (d >= 0 && d < numgametypes)
+					newgametype = d;
+				else
+				{
+					CONS_Alert(CONS_ERROR,
+							"Gametype number %d is out of range. Use a number between"
+							" 0 and %d inclusive. ...Or just use the name. :v\n",
+							d,
+							numgametypes-1);
+					return;
+				}
+			}
+			else
+			{
+				CONS_Alert(CONS_ERROR,
+						"'%s' is not a valid gametype.\n",
+						gametypename);
+				return;
+			}
+		}
+
+		if (Playing() && netgame && (gametypes[newgametype]->rules & GTR_FORBIDMP))
+		{
+			CONS_Alert(CONS_ERROR,
+					"'%s' is not a net-compatible gametype.\n",
+					gametypename);
+			return;
+		}
+	}
+
 	// TODO: Handle singleplayer conditions.
 	// The existing ones are way too annoyingly complicated and "anti-cheat" for my tastes.
 
 	if (Playing())
 	{
-		newgametype = gametype;
-		newencoremode = encoremode;
+		if (cv_kartencore.value == 1 && (gametypes[newgametype]->rules & GTR_ENCORE))
+		{
+			newencore = true;
+		}
 		newresetplayers = false;
 
 		if (gamestate == GS_LEVEL)
@@ -3116,14 +3148,12 @@ static void Command_RandomMap(void)
 	}
 	else
 	{
-		newgametype = cv_dummygametype.value; // Changed from cv_newgametype to match newmenus
-		newencoremode = false;
 		newresetplayers = true;
 		oldmapnum = -1;
 	}
 
 	newmapnum = G_RandMap(G_TOLFlag(newgametype), oldmapnum, 0, 0, false, NULL) + 1;
-	D_MapChange(newmapnum, newgametype, newencoremode, newresetplayers, 0, false, false);
+	D_MapChange(newmapnum, newgametype, newencore, newresetplayers, 0, false, false);
 }
 
 static void Command_RestartLevel(void)
@@ -3742,7 +3772,7 @@ static void Got_Teamchange(UINT8 **cp, INT32 playernum)
 	// Clear player score and rings if a spectator.
 	if (players[playernum].spectator)
 	{
-		if (gametyperules & GTR_BUMPERS) // SRB2kart
+		if (gametyperules & GTR_POINTLIMIT) // SRB2kart
 		{
 			players[playernum].roundscore = 0;
 			K_CalculateBattleWanted();
@@ -4774,14 +4804,11 @@ static void Command_Version_f(void)
 	else // 16-bit? 128-bit?
 		CONS_Printf("Bits Unknown ");
 
+	CONS_Printf("%s ", comptype);
+
 	// No ASM?
 #ifdef NOASM
 	CONS_Printf("\x85" "NOASM " "\x80");
-#endif
-
-	// Debug build
-#ifdef _DEBUG
-	CONS_Printf("\x85" "DEBUG " "\x80");
 #endif
 
 	// DEVELOP build
@@ -4812,15 +4839,9 @@ static void Command_ShowGametype_f(void)
 {
 	const char *gametypestr = NULL;
 
-	if (!(netgame || multiplayer)) // print "Single player" instead of "Race"
-	{
-		CONS_Printf(M_GetText("Current gametype is %s\n"), "Single Player");
-		return;
-	}
-
 	// get name string for current gametype
-	if (gametype >= 0 && gametype < gametypecount)
-		gametypestr = Gametype_Names[gametype];
+	if (gametype >= 0 && gametype < numgametypes)
+		gametypestr = gametypes[gametype]->name;
 
 	if (gametypestr)
 		CONS_Printf(M_GetText("Current gametype is %s\n"), gametypestr);
@@ -4999,10 +5020,10 @@ void D_GameTypeChanged(INT32 lastgametype)
 	{
 		const char *oldgt = NULL, *newgt = NULL;
 
-		if (lastgametype >= 0 && lastgametype < gametypecount)
-			oldgt = Gametype_Names[lastgametype];
-		if (gametype >= 0 && lastgametype < gametypecount)
-			newgt = Gametype_Names[gametype];
+		if (lastgametype >= 0 && lastgametype < numgametypes)
+			oldgt = gametypes[lastgametype]->name;
+		if (gametype >= 0 && gametype < numgametypes)
+			newgt = gametypes[gametype]->name;
 
 		if (oldgt && newgt)
 			CONS_Printf(M_GetText("Gametype was changed from %s to %s\n"), oldgt, newgt);
@@ -5014,11 +5035,11 @@ void D_GameTypeChanged(INT32 lastgametype)
 	{
 		if (!cv_timelimit.changed) // user hasn't changed limits
 		{
-			CV_SetValue(&cv_timelimit, timelimits[gametype]);
+			CV_SetValue(&cv_timelimit, gametypes[gametype]->timelimit);
 		}
 		if (!cv_pointlimit.changed)
 		{
-			CV_SetValue(&cv_pointlimit, pointlimits[gametype]);
+			CV_SetValue(&cv_pointlimit, gametypes[gametype]->pointlimit);
 		}
 	}
 
@@ -5313,9 +5334,27 @@ static void Got_SetupVotecmd(UINT8 **cp, INT32 playernum)
 
 	// Strip illegal Encore flag.
 	if ((gt & VOTEMODIFIER_ENCORE)
-		&& !(gametypedefaultrules[(gt & ~VOTEMODIFIER_ENCORE)] & GTR_CIRCUIT))
+		&& !(gametypes[(gt & ~VOTEMODIFIER_ENCORE)]->rules & GTR_ENCORE))
 	{
 		gt &= ~VOTEMODIFIER_ENCORE;
+	}
+
+	if ((gt & ~VOTEMODIFIER_ENCORE) >= numgametypes)
+	{
+		gt &= ~VOTEMODIFIER_ENCORE;
+		if (server)
+			I_Error("Got_SetupVotecmd: Internal gametype ID %d not found (numgametypes = %d)", gt, numgametypes);
+		CONS_Alert(CONS_WARNING, M_GetText("Vote setup with bad gametype ID %d received from %s\n"), gt, player_names[playernum]);
+		return;
+	}
+
+	if ((secondgt & ~VOTEMODIFIER_ENCORE) >= numgametypes)
+	{
+		secondgt &= ~VOTEMODIFIER_ENCORE;
+		if (server)
+			I_Error("Got_SetupVotecmd: Internal second gametype ID %d not found (numgametypes = %d)", secondgt, numgametypes);
+		CONS_Alert(CONS_WARNING, M_GetText("Vote setup with bad second gametype ID %d received from %s\n"), secondgt, player_names[playernum]);
+		return;
 	}
 
 	for (i = 0; i < 4; i++)
@@ -5333,11 +5372,11 @@ static void Got_SetupVotecmd(UINT8 **cp, INT32 playernum)
 
 	// If third entry has an illelegal Encore flag... (illelegal!?)
 	if ((secondgt & VOTEMODIFIER_ENCORE)
-		&& !(gametypedefaultrules[(secondgt & ~VOTEMODIFIER_ENCORE)] & GTR_CIRCUIT))
+		&& !(gametypes[(secondgt & ~VOTEMODIFIER_ENCORE)]->rules & GTR_ENCORE))
 	{
 		secondgt &= ~VOTEMODIFIER_ENCORE;
 		// Apply it to the second entry instead, gametype permitting!
-		if (gametypedefaultrules[gt] & GTR_CIRCUIT)
+		if (gametypes[gt]->rules & GTR_ENCORE)
 		{
 			tempvotelevels[1][1] |= VOTEMODIFIER_ENCORE;
 		}
@@ -5737,11 +5776,11 @@ void Command_Retry_f(void)
 	{
 		CONS_Printf(M_GetText("You must be in a level to use this.\n"));
 	}
-	else if (grandprixinfo.gp == false && bossinfo.boss == false)
+	else if (grandprixinfo.gp == false)
 	{
 		CONS_Printf(M_GetText("This only works in singleplayer games.\n"));
 	}
-	else if (grandprixinfo.gp == true && grandprixinfo.eventmode != GPEVENT_NONE)
+	else if (grandprixinfo.eventmode == GPEVENT_BONUS)
 	{
 		CONS_Printf(M_GetText("You can't retry right now!\n"));
 	}
@@ -5778,7 +5817,7 @@ static void Command_Togglemodified_f(void)
 
 static void Command_Archivetest_f(void)
 {
-	savebuffer_t save;
+	savebuffer_t save = {0};
 	UINT32 i, wrote;
 	thinker_t *th;
 	if (gamestate != GS_LEVEL)
@@ -5794,9 +5833,11 @@ static void Command_Archivetest_f(void)
 			((mobj_t *)th)->mobjnum = i++;
 
 	// allocate buffer
-	save.size = 1024;
-	save.buffer = save.p = ZZ_Alloc(save.size);
-	save.end = save.buffer + save.size;
+	if (P_SaveBufferAlloc(&save, 1024) == false)
+	{
+		CONS_Printf("Unable to allocate buffer.\n");
+		return;
+	}
 
 	// test archive
 	CONS_Printf("LUA_Archive...\n");
@@ -5814,10 +5855,12 @@ static void Command_Archivetest_f(void)
 	LUA_UnArchive(&save, true);
 	i = READUINT8(save.p);
 	if (i != 0x7F || wrote != (UINT32)(save.p - save.buffer))
+	{
 		CONS_Printf("Savegame corrupted. (write %u, read %u)\n", wrote, (UINT32)(save.p - save.buffer));
+	}
 
 	// free buffer
-	Z_Free(save.buffer);
+	P_SaveBufferFree(&save);
 	CONS_Printf("Done. No crash.\n");
 }
 #endif

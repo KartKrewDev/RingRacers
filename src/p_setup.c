@@ -185,7 +185,7 @@ UINT16 numtubewaypoints[NUMTUBEWAYPOINTSEQUENCES];
 
 void P_AddTubeWaypoint(UINT8 sequence, UINT8 id, mobj_t *waypoint)
 {
-	tubewaypoints[sequence][id] = waypoint;
+	P_SetTarget(&tubewaypoints[sequence][id], waypoint);
 	if (id >= numtubewaypoints[sequence])
 		numtubewaypoints[sequence] = id + 1;
 }
@@ -723,13 +723,10 @@ void P_WriteThings(void)
 	const char * filename;
 	size_t i, length;
 	mapthing_t *mt;
-	savebuffer_t save;
+	savebuffer_t save = {0};
 	INT16 temp;
 
-	save.size = nummapthings * sizeof (mapthing_t);
-	save.p = save.buffer = (UINT8 *)malloc(nummapthings * sizeof (mapthing_t));
-
-	if (!save.p)
+	if (P_SaveBufferAlloc(&save, nummapthings * sizeof (mapthing_t)) == false)
 	{
 		CONS_Alert(CONS_ERROR, M_GetText("No more free memory for thing writing!\n"));
 		return;
@@ -755,8 +752,7 @@ void P_WriteThings(void)
 	filename = va("newthings-%s.lmp", G_BuildMapName(gamemap));
 
 	FIL_WriteFile(filename, save.buffer, length);
-	free(save.buffer);
-	save.p = NULL;
+	P_SaveBufferFree(&save);
 
 	CONS_Printf(M_GetText("%s saved.\n"), filename);
 }
@@ -6891,7 +6887,6 @@ static void P_InitLevelSettings(void)
 	rflagpoint = bflagpoint = NULL;
 
 	// circuit, race and competition stuff
-	circuitmap = false;
 	numstarposts = 0;
 	timeinmap = 0;
 
@@ -6913,7 +6908,7 @@ static void P_InitLevelSettings(void)
 		if (playeringame[i] && !players[i].spectator)
 			p++;
 
-		if (grandprixinfo.gp == false && bossinfo.boss == false)
+		if (grandprixinfo.gp == false)
 			players[i].lives = 3;
 
 		G_PlayerReborn(i, true);
@@ -6923,39 +6918,27 @@ static void P_InitLevelSettings(void)
 	racecountdown = exitcountdown = exitfadestarted = 0;
 	curlap = bestlap = 0; // SRB2Kart
 
-	// SRB2Kart: map load variables
+	// Gamespeed and frantic items
+	gamespeed = KARTSPEED_EASY;
+	franticitems = false;
+
 	if (grandprixinfo.gp == true)
 	{
-		if ((gametyperules & GTR_BUMPERS))
-		{
-			gamespeed = KARTSPEED_EASY;
-		}
-		else
+		if (gametyperules & GTR_CIRCUIT)
 		{
 			gamespeed = grandprixinfo.gamespeed;
 		}
-
-		franticitems = false;
-	}
-	else if (bossinfo.boss)
-	{
-		gamespeed = KARTSPEED_EASY;
-		franticitems = false;
 	}
 	else if (modeattacking)
 	{
-		// Just play it safe and set everything
-		if ((gametyperules & GTR_BUMPERS))
-			gamespeed = KARTSPEED_EASY;
-		else
+		if (gametyperules & GTR_CIRCUIT)
+		{
 			gamespeed = KARTSPEED_HARD;
-		franticitems = false;
+		}
 	}
 	else
 	{
-		if ((gametyperules & GTR_BUMPERS))
-			gamespeed = KARTSPEED_EASY;
-		else
+		if (gametyperules & GTR_CIRCUIT)
 		{
 			if (cv_kartspeed.value == KARTSPEED_AUTO)
 				gamespeed = ((speedscramble == -1) ? KARTSPEED_NORMAL : (UINT8)speedscramble);
@@ -6970,6 +6953,9 @@ static void P_InitLevelSettings(void)
 
 	memset(&battleovertime, 0, sizeof(struct battleovertime));
 	speedscramble = encorescramble = -1;
+
+	K_ResetSpecialStage();
+	K_ResetBossInfo();
 }
 
 #if 0
@@ -7071,20 +7057,23 @@ static void P_LoadRecordGhosts(void)
 	gpath = Z_StrDup(va("%s"PATHSEP"media"PATHSEP"replay"PATHSEP"%s"PATHSEP"%s", srb2home, timeattackfolder, G_BuildMapName(gamemap)));
 
 	// Best Time ghost
-	if (cv_ghost_besttime.value)
+	if (modeattacking & ATTACKING_TIME)
 	{
-		for (i = 0; i < numskins; ++i)
+		if (cv_ghost_besttime.value)
 		{
-			if (cv_ghost_besttime.value == 1 && players[consoleplayer].skin != i)
-				continue;
+			for (i = 0; i < numskins; ++i)
+			{
+				if (cv_ghost_besttime.value == 1 && players[consoleplayer].skin != i)
+					continue;
 
-			if (FIL_FileExists(va("%s-%s-time-best.lmp", gpath, skins[i].name)))
-				G_AddGhost(va("%s-%s-time-best.lmp", gpath, skins[i].name));
+				if (FIL_FileExists(va("%s-%s-time-best.lmp", gpath, skins[i].name)))
+					G_AddGhost(va("%s-%s-time-best.lmp", gpath, skins[i].name));
+			}
 		}
 	}
 
 	// Best Lap ghost
-	if (modeattacking != ATTACKING_CAPSULES)
+	if (modeattacking & ATTACKING_LAP)
 	{
 		if (cv_ghost_bestlap.value)
 		{
@@ -7291,7 +7280,6 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 
 	// This is needed. Don't touch.
 	maptol = mapheaderinfo[gamemap-1]->typeoflevel;
-	gametyperules = gametypedefaultrules[gametype];
 
 	CON_Drawer(); // let the user know what we are going to do
 	I_FinishUpdate(); // page flip or blit buffer
@@ -7405,13 +7393,6 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 		}
 		G_ClearModeAttackRetryFlag();
 	}
-	/*
-	else if (rendermode != render_none && G_IsSpecialStage(gamemap))
-	{
-		P_RunSpecialStageWipe();
-		ranspecialwipe = 1;
-	}
-	*/
 
 	// Make sure all sounds are stopped before Z_FreeTags.
 	S_StopSounds();
@@ -7446,7 +7427,20 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 			S_Start();
 		}
 
-		levelfadecol = (encoremode ? 0 : 31);
+		if (gametyperules & GTR_SPECIALSTART)
+		{
+			if (ranspecialwipe != 2)
+				S_StartSound(NULL, sfx_s3kaf);
+			levelfadecol = 0;
+		}
+		else if (encoremode)
+		{
+			levelfadecol = 0;
+		}
+		else
+		{
+			levelfadecol = 31;
+		}
 
 		if (rendermode != render_none)
 		{
@@ -7689,19 +7683,6 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 		K_UpdateMatchRaceBots();
 	}
 
-	if (bossinfo.boss)
-	{
-		// Reset some pesky boss state that can't be handled elsewhere.
-		bossinfo.barlen = BOSSHEALTHBARLEN;
-		bossinfo.visualbar = 0;
-		Z_Free(bossinfo.enemyname);
-		Z_Free(bossinfo.subtitle);
-		bossinfo.enemyname = bossinfo.subtitle = NULL;
-		bossinfo.titleshow = 0;
-		bossinfo.titlesound = sfx_typri1;
-		memset(&(bossinfo.weakspots), 0, sizeof(weakspot_t)*NUMWEAKSPOTS);
-	}
-
 	if (!fromnetsave) // uglier hack
 	{ // to make a newly loaded level start on the second frame.
 		INT32 buf = gametic % BACKUPTICS;
@@ -7851,7 +7832,7 @@ UINT8 P_InitMapData(boolean existingmapheaders)
 	for (i = 0; i < nummapheaders; ++i)
 	{
 		name = mapheaderinfo[i]->lumpname;
-		maplump = W_CheckNumForMap(name);
+		maplump = W_CheckNumForMap(name, (mapheaderinfo[i]->lumpnum == LUMPERROR));
 
 		// Always check for cup cache reassociations.
 		// (The core assumption is that cups < headers.)

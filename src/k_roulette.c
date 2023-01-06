@@ -176,6 +176,12 @@ static UINT8 K_KartItemOddsSpecial[NUMKARTRESULTS-1][4] =
 	{ 0, 0, 0, 0 }  // Gachabom x3
 };
 
+static kartitems_t K_KartItemReelSpecialEnd[] =
+{
+	KITEM_SUPERRING,
+	KITEM_NONE
+};
+
 static kartitems_t K_KartItemReelTimeAttack[] =
 {
 	KITEM_SNEAKER,
@@ -359,7 +365,7 @@ static UINT32 K_GetItemRouletteDistance(const player_t *player, UINT8 numPlayers
 		return 0;
 	}
 
-	if (specialStage.active == true)
+	if (specialstageinfo.valid == true)
 	{
 		UINT32 ufoDis = K_GetSpecialUFODistance();
 
@@ -412,6 +418,171 @@ static UINT32 K_GetItemRouletteDistance(const player_t *player, UINT8 numPlayers
 }
 
 /*--------------------------------------------------
+	static boolean K_DenyShieldOdds(kartitems_t item)
+
+		Checks if this type of shield already exists in
+		another player's inventory.
+
+	Input Arguments:-
+		item - The item type of the shield.
+
+	Return:-
+		Whether this item is a shield and may not be awarded
+		at this time.
+--------------------------------------------------*/
+static boolean K_DenyShieldOdds(kartitems_t item)
+{
+	INT32 shieldType = K_GetShieldFromItem(item);
+
+	if ((gametyperules & GTR_CIRCUIT) == 0)
+	{
+		return false;
+	}
+
+	switch (shieldType)
+	{
+		case KSHIELD_NONE:
+			/* Marble Garden Top is not REALLY
+				a Sonic 3 shield */
+		case KSHIELD_TOP:
+		{
+			break;
+		}
+
+		default:
+		{
+			size_t i;
+
+			for (i = 0; i < MAXPLAYERS; i++)
+			{
+				if (playeringame[i] == false || players[i].spectator == true)
+				{
+					continue;
+				}
+
+				if (shieldType == K_GetShieldFromItem(players[i].itemtype))
+				{
+					// Don't allow more than one of each shield type at a time
+					return true;
+				}
+			}
+		}
+	}
+
+	return false;
+}
+
+/*--------------------------------------------------
+	static fixed_t K_AdjustSPBOdds(const itemroulette_t *roulette, UINT8 position)
+
+	Adjust odds of SPB according to distances of first and
+	second place players.
+
+	Input Arguments:-
+		roulette - The roulette data that we intend to
+			insert this item into.
+		position - Position of player to consider for these
+			odds.
+
+	Return:-
+		New item odds.
+--------------------------------------------------*/
+static fixed_t K_AdjustSPBOdds(const itemroulette_t *roulette, UINT8 position)
+{
+	I_Assert(roulette != NULL);
+
+	if (roulette->firstDist < ENDDIST*2 // No SPB when 1st is almost done
+		|| position == 1) // No SPB for 1st ever
+	{
+		return 0;
+	}
+	else
+	{
+		const UINT32 dist = max(0, ((signed)roulette->secondToFirst) - SPBSTARTDIST);
+		const UINT32 distRange = SPBFORCEDIST - SPBSTARTDIST;
+		const fixed_t maxOdds = 20 << FRACBITS;
+		fixed_t multiplier = FixedDiv(dist, distRange);
+
+		if (multiplier < 0)
+		{
+			multiplier = 0;
+		}
+
+		if (multiplier > FRACUNIT)
+		{
+			multiplier = FRACUNIT;
+		}
+
+		return FixedMul(maxOdds, multiplier);
+	}
+}
+
+typedef struct {
+	boolean powerItem;
+	boolean cooldownOnStart;
+	boolean notNearEnd;
+
+	// gameplay state
+	boolean rival; // player is a bot Rival
+} itemconditions_t;
+
+/*--------------------------------------------------
+	static fixed_t K_AdjustItemOddsToConditions(fixed_t newOdds, const itemconditions_t *conditions, const itemroulette_t *roulette)
+
+		Adjust item odds to certain group conditions.
+
+	Input Arguments:-
+		newOdds - The item odds to adjust.
+		conditions - The conditions state.
+		roulette - The roulette data that we intend to
+			insert this item into.
+
+	Return:-
+		New item odds.
+--------------------------------------------------*/
+static fixed_t K_AdjustItemOddsToConditions(fixed_t newOdds, const itemconditions_t *conditions, const itemroulette_t *roulette)
+{
+	// None if this applies outside of Race modes (for now?)
+	if ((gametyperules & GTR_CIRCUIT) == 0)
+	{
+		return newOdds;
+	}
+
+	if ((conditions->cooldownOnStart == true) && (leveltime < (30*TICRATE) + starttime))
+	{
+		// This item should not appear at the beginning of a race. (Usually really powerful crowd-breaking items)
+		newOdds = 0;
+	}
+	else if ((conditions->notNearEnd == true) && (roulette != NULL && roulette->baseDist < ENDDIST))
+	{
+		// This item should not appear at the end of a race. (Usually trap items that lose their effectiveness)
+		newOdds = 0;
+	}
+	else if (conditions->powerItem == true)
+	{
+		// This item is a "power item". This activates "frantic item" toggle related functionality.
+		if (franticitems == true)
+		{
+			// First, power items multiply their odds by 2 if frantic items are on; easy-peasy.
+			newOdds *= 2;
+		}
+
+		if (conditions->rival == true)
+		{
+			// The Rival bot gets frantic-like items, also :p
+			newOdds *= 2;
+		}
+
+		if (roulette != NULL)
+		{
+			newOdds = FixedMul(newOdds, FRACUNIT + K_ItemOddsScale(roulette->playing));
+		}
+	}
+
+	return newOdds;
+}
+
+/*--------------------------------------------------
 	INT32 K_KartGetItemOdds(const player_t *player, itemroulette_t *const roulette, UINT8 pos, kartitems_t item)
 
 		See header file for description.
@@ -419,19 +590,16 @@ static UINT32 K_GetItemRouletteDistance(const player_t *player, UINT8 numPlayers
 INT32 K_KartGetItemOdds(const player_t *player, itemroulette_t *const roulette, UINT8 pos, kartitems_t item)
 {
 	boolean bot = false;
-	boolean rival = false;
 	UINT8 position = 0;
 
-	INT32 shieldType = KSHIELD_NONE;
-
-	boolean powerItem = false;
-	boolean cooldownOnStart = false;
-	boolean notNearEnd = false;
+	itemconditions_t conditions = {
+		.powerItem = false,
+		.cooldownOnStart = false,
+		.notNearEnd = false,
+		.rival = false,
+	};
 
 	fixed_t newOdds = 0;
-	size_t i;
-
-	I_Assert(roulette != NULL);
 
 	I_Assert(item > KITEM_NONE); // too many off by one scenarioes.
 	I_Assert(item < NUMKARTRESULTS);
@@ -439,7 +607,7 @@ INT32 K_KartGetItemOdds(const player_t *player, itemroulette_t *const roulette, 
 	if (player != NULL)
 	{
 		bot = player->bot;
-		rival = (bot == true && player->botvars.rival == true);
+		conditions.rival = (bot == true && player->botvars.rival == true);
 		position = player->position;
 	}
 
@@ -472,33 +640,9 @@ INT32 K_KartGetItemOdds(const player_t *player, itemroulette_t *const roulette, 
 	*/
 	(void)bot;
 
-	shieldType = K_GetShieldFromItem(item);
-	switch (shieldType)
+	if (K_DenyShieldOdds(item))
 	{
-		case KSHIELD_NONE:
-			/* Marble Garden Top is not REALLY
-				a Sonic 3 shield */
-		case KSHIELD_TOP:
-		{
-			break;
-		}
-
-		default:
-		{
-			for (i = 0; i < MAXPLAYERS; i++)
-			{
-				if (playeringame[i] == false || players[i].spectator == true)
-				{
-					continue;
-				}
-
-				if (shieldType == K_GetShieldFromItem(players[i].itemtype))
-				{
-					// Don't allow more than one of each shield type at a time
-					return 0;
-				}
-			}
-		}
+		return 0;
 	}
 
 	if (gametype == GT_BATTLE)
@@ -506,7 +650,7 @@ INT32 K_KartGetItemOdds(const player_t *player, itemroulette_t *const roulette, 
 		I_Assert(pos < 2); // DO NOT allow positions past the bounds of the table
 		newOdds = K_KartItemOddsBattle[item-1][pos];
 	}
-	else if (specialStage.active == true)
+	else if (specialstageinfo.valid == true)
 	{
 		I_Assert(pos < 4); // Ditto
 		newOdds = K_KartItemOddsSpecial[item-1][pos];
@@ -525,7 +669,7 @@ INT32 K_KartGetItemOdds(const player_t *player, itemroulette_t *const roulette, 
 		case KITEM_EGGMAN:
 		case KITEM_SUPERRING:
 		{
-			notNearEnd = true;
+			conditions.notNearEnd = true;
 			break;
 		}
 
@@ -539,15 +683,15 @@ INT32 K_KartGetItemOdds(const player_t *player, itemroulette_t *const roulette, 
 		case KRITEM_QUADORBINAUT:
 		case KRITEM_DUALJAWZ:
 		{
-			powerItem = true;
+			conditions.powerItem = true;
 			break;
 		}
 
 		case KITEM_HYUDORO:
 		case KRITEM_TRIPLEBANANA:
 		{
-			powerItem = true;
-			notNearEnd = true;
+			conditions.powerItem = true;
+			conditions.notNearEnd = true;
 			break;
 		}
 
@@ -557,59 +701,34 @@ INT32 K_KartGetItemOdds(const player_t *player, itemroulette_t *const roulette, 
 		case KITEM_BUBBLESHIELD:
 		case KITEM_FLAMESHIELD:
 		{
-			cooldownOnStart = true;
-			powerItem = true;
+			conditions.cooldownOnStart = true;
+			conditions.powerItem = true;
 			break;
 		}
 
 		case KITEM_SPB:
 		{
-			cooldownOnStart = true;
-			notNearEnd = true;
+			conditions.cooldownOnStart = true;
+			conditions.notNearEnd = true;
 
-			if ((gametyperules & GTR_CIRCUIT) == 0)
+			if (roulette != NULL &&
+					(gametyperules & GTR_CIRCUIT) &&
+					specialstageinfo.valid == false)
 			{
-				// Needs to be a race.
-				return 0;
-			}
-
-			if (specialStage.active == false)
-			{
-				if (roulette->firstDist < ENDDIST*2 // No SPB when 1st is almost done
-					|| position == 1) // No SPB for 1st ever
-				{
-					return 0;
-				}
-				else
-				{
-					const UINT32 dist = max(0, ((signed)roulette->secondToFirst) - SPBSTARTDIST);
-					const UINT32 distRange = SPBFORCEDIST - SPBSTARTDIST;
-					const fixed_t maxOdds = 20 << FRACBITS;
-					fixed_t multiplier = FixedDiv(dist, distRange);
-
-					if (multiplier < 0)
-					{
-						multiplier = 0;
-					}
-
-					if (multiplier > FRACUNIT)
-					{
-						multiplier = FRACUNIT;
-					}
-
-					newOdds = FixedMul(maxOdds, multiplier);
-				}
+				newOdds = K_AdjustSPBOdds(roulette, position);
 			}
 			break;
 		}
 
 		case KITEM_SHRINK:
 		{
-			cooldownOnStart = true;
-			powerItem = true;
-			notNearEnd = true;
+			conditions.cooldownOnStart = true;
+			conditions.powerItem = true;
+			conditions.notNearEnd = true;
 
-			if (roulette->playing - 1 <= roulette->exiting)
+			if (roulette != NULL &&
+					(gametyperules & GTR_CIRCUIT) &&
+					roulette->playing - 1 <= roulette->exiting)
 			{
 				return 0;
 			}
@@ -618,10 +737,10 @@ INT32 K_KartGetItemOdds(const player_t *player, itemroulette_t *const roulette, 
 
 		case KITEM_LIGHTNINGSHIELD:
 		{
-			cooldownOnStart = true;
-			powerItem = true;
+			conditions.cooldownOnStart = true;
+			conditions.powerItem = true;
 
-			if (spbplace != -1)
+			if ((gametyperules & GTR_CIRCUIT) && spbplace != -1)
 			{
 				return 0;
 			}
@@ -640,35 +759,7 @@ INT32 K_KartGetItemOdds(const player_t *player, itemroulette_t *const roulette, 
 		return newOdds;
 	}
 
-	if ((cooldownOnStart == true) && (leveltime < (30*TICRATE)+starttime))
-	{
-		// This item should not appear at the beginning of a race. (Usually really powerful crowd-breaking items)
-		newOdds = 0;
-	}
-	else if ((notNearEnd == true) && (roulette->baseDist < ENDDIST))
-	{
-		// This item should not appear at the end of a race. (Usually trap items that lose their effectiveness)
-		newOdds = 0;
-	}
-	else if (powerItem == true)
-	{
-		// This item is a "power item". This activates "frantic item" toggle related functionality.
-		if (franticitems == true)
-		{
-			// First, power items multiply their odds by 2 if frantic items are on; easy-peasy.
-			newOdds *= 2;
-		}
-
-		if (rival == true)
-		{
-			// The Rival bot gets frantic-like items, also :p
-			newOdds *= 2;
-		}
-
-		newOdds = FixedMul(newOdds, FRACUNIT + K_ItemOddsScale(roulette->playing));
-	}
-
-	newOdds = FixedInt(FixedRound(newOdds));
+	newOdds = FixedInt(FixedRound(K_AdjustItemOddsToConditions(newOdds, &conditions, roulette)));
 	return newOdds;
 }
 
@@ -705,7 +796,7 @@ static UINT8 K_FindUseodds(const player_t *player, itemroulette_t *const roulett
 			oddsValid[i] = false;
 			continue;
 		}
-		else if (specialStage.active == true && i > 3)
+		else if (specialstageinfo.valid == true && i > 3)
 		{
 			oddsValid[i] = false;
 			continue;
@@ -734,7 +825,7 @@ static UINT8 K_FindUseodds(const player_t *player, itemroulette_t *const roulett
 	}
 	else
 	{
-		if (specialStage.active == true) // Special Stages
+		if (specialstageinfo.valid == true) // Special Stages
 		{
 			SETUPDISTTABLE(0,2);
 			SETUPDISTTABLE(1,2);
@@ -808,7 +899,7 @@ static boolean K_ForcedSPB(const player_t *player, itemroulette_t *const roulett
 		return false;
 	}
 
-	if (specialStage.active == true)
+	if (specialstageinfo.valid == true)
 	{
 		return false;
 	}
@@ -904,7 +995,7 @@ static void K_InitRoulette(itemroulette_t *const roulette)
 			roulette->exiting++;
 		}
 
-		if (specialStage.active == true)
+		if (specialstageinfo.valid == true)
 		{
 			UINT32 dis = K_UndoMapScaling(players[i].distancetofinish);
 			if (dis < roulette->secondDist)
@@ -926,7 +1017,7 @@ static void K_InitRoulette(itemroulette_t *const roulette)
 		}
 	}
 
-	if (specialStage.active == true)
+	if (specialstageinfo.valid == true)
 	{
 		roulette->firstDist = K_UndoMapScaling(K_GetSpecialUFODistance());
 	}
@@ -1113,8 +1204,19 @@ void K_FillItemRouletteData(const player_t *player, itemroulette_t *const roulet
 	}
 
 	// SPECIAL CASE No. 2:
-	// Use a special, pre-determined item reel for Time Attack / Free Play
-	if (bossinfo.boss == true)
+	// Use a special, pre-determined item reel for Time Attack / Free Play / End of Sealed Stars
+	if (specialstageinfo.valid)
+	{
+		if (K_GetPossibleSpecialTarget() == NULL)
+		{
+			for (i = 0; K_KartItemReelSpecialEnd[i] != KITEM_NONE; i++)
+			{
+				K_PushToRouletteItemList(roulette, K_KartItemReelSpecialEnd[i]);
+			}
+			return;
+		}
+	}
+	else if (gametyperules & GTR_BOSS)
 	{
 		for (i = 0; K_KartItemReelBoss[i] != KITEM_NONE; i++)
 		{
@@ -1125,25 +1227,17 @@ void K_FillItemRouletteData(const player_t *player, itemroulette_t *const roulet
 	}
 	else if (K_TimeAttackRules() == true)
 	{
-		switch (gametype)
+		kartitems_t *presetlist = K_KartItemReelTimeAttack;
+
+		// If the objective is not to go fast, it's to cause serious damage.
+		if (gametyperules & GTR_CAPSULES)
 		{
-			case GT_RACE:
-			default:
-			{
-				for (i = 0; K_KartItemReelTimeAttack[i] != KITEM_NONE; i++)
-				{
-					K_PushToRouletteItemList(roulette, K_KartItemReelTimeAttack[i]);
-				}
-				break;
-			}
-			case GT_BATTLE:
-			{
-				for (i = 0; K_KartItemReelBreakTheCapsules[i] != KITEM_NONE; i++)
-				{
-					K_PushToRouletteItemList(roulette, K_KartItemReelBreakTheCapsules[i]);
-				}
-				break;
-			}
+			presetlist = K_KartItemReelBreakTheCapsules;
+		}
+
+		for (i = 0; presetlist[i] != KITEM_NONE; i++)
+		{
+			K_PushToRouletteItemList(roulette, presetlist[i]);
 		}
 
 		return;

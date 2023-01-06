@@ -2,7 +2,6 @@
 /// \brief SRB2Kart Battle Mode specific code
 
 #include "k_battle.h"
-#include "k_boss.h"
 #include "k_kart.h"
 #include "doomtype.h"
 #include "doomdata.h"
@@ -19,6 +18,7 @@
 #include "r_sky.h" // skyflatnum
 #include "k_grandprix.h" // K_CanChangeRules
 #include "p_spec.h"
+#include "k_objects.h"
 
 // Battle overtime info
 struct battleovertime battleovertime;
@@ -146,7 +146,7 @@ void K_CheckBumpers(void)
 	}
 	else if (numingame <= 1)
 	{
-		if (!battlecapsules)
+		if ((gametyperules & GTR_CAPSULES) && !battlecapsules)
 		{
 			// Reset map to turn on battle capsules
 			if (server)
@@ -196,6 +196,11 @@ void K_CheckEmeralds(player_t *player)
 {
 	UINT8 i;
 
+	if (!(gametyperules & GTR_POWERSTONES))
+	{
+		return;
+	}
+
 	if (!ALLCHAOSEMERALDS(player->emeralds))
 	{
 		return;
@@ -221,6 +226,29 @@ void K_CheckEmeralds(player_t *player)
 	K_CheckBumpers();
 }
 
+UINT16 K_GetChaosEmeraldColor(UINT32 emeraldType)
+{
+	switch (emeraldType)
+	{
+		case EMERALD_CHAOS1:
+			return SKINCOLOR_CHAOSEMERALD1;
+		case EMERALD_CHAOS2:
+			return SKINCOLOR_CHAOSEMERALD2;
+		case EMERALD_CHAOS3:
+			return SKINCOLOR_CHAOSEMERALD3;
+		case EMERALD_CHAOS4:
+			return SKINCOLOR_CHAOSEMERALD4;
+		case EMERALD_CHAOS5:
+			return SKINCOLOR_CHAOSEMERALD5;
+		case EMERALD_CHAOS6:
+			return SKINCOLOR_CHAOSEMERALD6;
+		case EMERALD_CHAOS7:
+			return SKINCOLOR_CHAOSEMERALD7;
+		default:
+			return SKINCOLOR_NONE;
+	}
+}
+
 mobj_t *K_SpawnChaosEmerald(fixed_t x, fixed_t y, fixed_t z, angle_t angle, SINT8 flip, UINT32 emeraldType)
 {
 	boolean validEmerald = true;
@@ -240,25 +268,13 @@ mobj_t *K_SpawnChaosEmerald(fixed_t x, fixed_t y, fixed_t z, angle_t angle, SINT
 	switch (emeraldType)
 	{
 		case EMERALD_CHAOS1:
-			emerald->color = SKINCOLOR_CHAOSEMERALD1;
-			break;
 		case EMERALD_CHAOS2:
-			emerald->color = SKINCOLOR_CHAOSEMERALD2;
-			break;
 		case EMERALD_CHAOS3:
-			emerald->color = SKINCOLOR_CHAOSEMERALD3;
-			break;
 		case EMERALD_CHAOS4:
-			emerald->color = SKINCOLOR_CHAOSEMERALD4;
-			break;
 		case EMERALD_CHAOS5:
-			emerald->color = SKINCOLOR_CHAOSEMERALD5;
-			break;
 		case EMERALD_CHAOS6:
-			emerald->color = SKINCOLOR_CHAOSEMERALD6;
-			break;
 		case EMERALD_CHAOS7:
-			emerald->color = SKINCOLOR_CHAOSEMERALD7;
+			emerald->color = K_GetChaosEmeraldColor(emeraldType);
 			break;
 		default:
 			CONS_Printf("Invalid emerald type %d\n", emeraldType);
@@ -336,12 +352,17 @@ UINT8 K_NumEmeralds(player_t *player)
 	return num;
 }
 
+static inline boolean IsOnInterval(tic_t interval)
+{
+	return ((leveltime - starttime) % interval) == 0;
+}
+
 void K_RunPaperItemSpawners(void)
 {
 	const boolean overtime = (battleovertime.enabled >= 10*TICRATE);
-	tic_t interval = 8*TICRATE;
+	const tic_t interval = BATTLE_SPAWN_INTERVAL;
 
-	const boolean canmakeemeralds = true; //(!(battlecapsules || bossinfo.boss));
+	const boolean canmakeemeralds = (gametyperules & GTR_POWERSTONES);
 
 	UINT32 emeraldsSpawned = 0;
 	UINT32 firstUnspawnedEmerald = 0;
@@ -352,7 +373,7 @@ void K_RunPaperItemSpawners(void)
 	UINT8 pcount = 0;
 	INT16 i;
 
-	if (battlecapsules || bossinfo.boss)
+	if (battlecapsules)
 	{
 		// Gametype uses paper items, but this specific expression doesn't
 		return;
@@ -364,13 +385,7 @@ void K_RunPaperItemSpawners(void)
 		return;
 	}
 
-	if (overtime == true)
-	{
-		// Double frequency of items
-		interval /= 2;
-	}
-
-	if (((leveltime - starttime) % interval) != 0)
+	if (!IsOnInterval(interval))
 	{
 		return;
 	}
@@ -458,9 +473,7 @@ void K_RunPaperItemSpawners(void)
 #define MAXITEM 64
 			mobj_t *spotList[MAXITEM];
 			UINT8 spotMap[MAXITEM];
-			UINT8 spotCount = 0, spotBackup = 0;
-
-			INT16 starti = 0;
+			UINT8 spotCount = 0, spotBackup = 0, spotAvailable = 0;
 
 			for (th = thlist[THINK_MOBJ].next; th != &thlist[THINK_MOBJ]; th = th->next)
 			{
@@ -474,14 +487,26 @@ void K_RunPaperItemSpawners(void)
 					emeraldsSpawned |= mo->extravalue1;
 				}
 
+				if (mo->type == MT_MONITOR)
+				{
+					emeraldsSpawned |= Obj_MonitorGetEmerald(mo);
+				}
+
 				if (mo->type != MT_PAPERITEMSPOT)
 					continue;
 
 				if (spotCount >= MAXITEM)
 					continue;
 
+				if (Obj_ItemSpotIsAvailable(mo))
+				{
+					// spotMap first only includes spots
+					// where a monitor doesn't exist
+					spotMap[spotAvailable] = spotCount;
+					spotAvailable++;
+				}
+
 				spotList[spotCount] = mo;
-				spotMap[spotCount] = spotCount;
 				spotCount++;
 			}
 
@@ -499,7 +524,6 @@ void K_RunPaperItemSpawners(void)
 					if (!(emeraldsSpawned & emeraldFlag))
 					{
 						firstUnspawnedEmerald = emeraldFlag;
-						starti = -1;
 						break;
 					}
 				}
@@ -507,77 +531,72 @@ void K_RunPaperItemSpawners(void)
 
 			//CONS_Printf("leveltime = %d ", leveltime);
 
-			spotBackup = spotCount;
-			for (i = starti; i < pcount; i++)
+			if (spotAvailable > 0)
 			{
-				UINT8 r = 0, key = 0;
-				mobj_t *drop = NULL;
-				SINT8 flip = 1;
+				const UINT8 r = spotMap[P_RandomKey(PR_ITEM_ROULETTE, spotAvailable)];
 
-				if (spotCount == 0)
+				Obj_ItemSpotAssignMonitor(spotList[r], Obj_SpawnMonitor(
+							spotList[r], 1 + pcount, firstUnspawnedEmerald));
+			}
+
+			for (i = 0; i < spotCount; ++i)
+			{
+				// now spotMap includes every spot
+				spotMap[i] = i;
+			}
+
+			if ((gametyperules & GTR_SPHERES) && IsOnInterval(2 * interval))
+			{
+				spotBackup = spotCount;
+				for (i = 0; i < pcount; i++)
 				{
-					// all are accessible again
-					spotCount = spotBackup;
-				}
+					UINT8 r = 0, key = 0;
+					mobj_t *drop = NULL;
+					SINT8 flip = 1;
 
-				if (spotCount == 1)
-				{
-					key = 0;
-				}
-				else
-				{
-					key = P_RandomKey(PR_ITEM_ROULETTE, spotCount);
-				}
-
-				r = spotMap[key];
-
-				//CONS_Printf("[%d %d %d] ", i, key, r);
-
-				flip = P_MobjFlip(spotList[r]);
-
-				// When -1, we're spawning a Chaos Emerald.
-				if (i == -1)
-				{
-					drop = K_SpawnChaosEmerald(
-						spotList[r]->x, spotList[r]->y, spotList[r]->z + (128 * mapobjectscale * flip),
-						FixedAngle(P_RandomRange(PR_ITEM_ROULETTE, 0, 359) * FRACUNIT), flip,
-						firstUnspawnedEmerald
-					);
-				}
-				else
-				{
-					if (gametyperules & GTR_SPHERES)
+					if (spotCount == 0)
 					{
-						drop = K_SpawnSphereBox(
-							spotList[r]->x, spotList[r]->y, spotList[r]->z + (128 * mapobjectscale * flip),
-								FixedAngle(P_RandomRange(PR_ITEM_ROULETTE, 0, 359) * FRACUNIT), flip,
-								10
-						);
-						K_FlipFromObject(drop, spotList[r]);
+						// all are accessible again
+						spotCount = spotBackup;
 					}
 
-					drop = K_CreatePaperItem(
+					if (spotCount == 1)
+					{
+						key = 0;
+					}
+					else
+					{
+						key = P_RandomKey(PR_ITEM_ROULETTE, spotCount);
+					}
+
+					r = spotMap[key];
+
+					//CONS_Printf("[%d %d %d] ", i, key, r);
+
+					flip = P_MobjFlip(spotList[r]);
+
+					drop = K_SpawnSphereBox(
 						spotList[r]->x, spotList[r]->y, spotList[r]->z + (128 * mapobjectscale * flip),
-						FixedAngle(P_RandomRange(PR_ITEM_ROULETTE, 0, 359) * FRACUNIT), flip,
-						0, 0
+							FixedAngle(P_RandomRange(PR_ITEM_ROULETTE, 0, 359) * FRACUNIT), flip,
+							10
 					);
-				}
 
-				K_FlipFromObject(drop, spotList[r]);
+					K_FlipFromObject(drop, spotList[r]);
 
-				spotCount--;
-				if (key != spotCount)
-				{
-					// So the core theory of what's going on is that we keep every
-					// available option at the front of the array, so we don't have
-					// to skip over any gaps or do recursion to avoid doubles.
-					// But because spotCount can be reset in the case of a low
-					// quanitity of item spawnpoints in a map, we still need every
-					// entry in the array, even outside of the "visible" range.
-					// A series of swaps allows us to adhere to both constraints.
-					// -toast 22/03/22 (semipalindromic!)
-					spotMap[key] = spotMap[spotCount];
-					spotMap[spotCount] = r; // was set to spotMap[key] previously
+					spotCount--;
+					if (key != spotCount)
+					{
+						// So the core theory of what's going on is that we keep every
+						// available option at the front of the array, so we don't have
+						// to skip over any gaps or do recursion to avoid doubles.
+						// But because spotCount can be reset in the case of a low
+						// quanitity of item spawnpoints in a map, we still need every
+						// entry in the array, even outside of the "visible" range.
+						// A series of swaps allows us to adhere to both constraints.
+						// -toast 22/03/22 (semipalindromic!)
+						spotMap[key] = spotMap[spotCount];
+						spotMap[spotCount] = r; // was set to spotMap[key] previously
+					}
 				}
 			}
 			//CONS_Printf("\n");
@@ -789,7 +808,7 @@ void K_BattleInit(boolean singleplayercontext)
 {
 	size_t i;
 
-	if ((gametyperules & GTR_CAPSULES) && singleplayercontext && !battlecapsules && !bossinfo.boss)
+	if ((gametyperules & GTR_CAPSULES) && singleplayercontext && !battlecapsules)
 	{
 		mapthing_t *mt = mapthings;
 		for (i = 0; i < nummapthings; i++, mt++)

@@ -27,7 +27,6 @@
 #include "m_random.h"
 #include "r_things.h" // numskins
 #include "k_race.h" // finishBeamLine
-#include "k_boss.h"
 #include "m_perfstats.h"
 
 
@@ -168,7 +167,7 @@ void K_UpdateMatchRaceBots(void)
 		}
 	}
 
-	if (difficulty == 0 || !(gametyperules & GTR_BOTS) || bossinfo.boss == true)
+	if (difficulty == 0 || !(gametyperules & GTR_BOTS))
 	{
 		wantedbots = 0;
 	}

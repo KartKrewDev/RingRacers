@@ -32,9 +32,9 @@
 // SRB2kart
 #include "k_kart.h"
 #include "k_battle.h"
+#include "k_specialstage.h"
 #include "k_pwrlv.h"
 #include "k_grandprix.h"
-#include "k_boss.h"
 #include "k_respawn.h"
 #include "p_spec.h"
 #include "k_objects.h"
@@ -413,6 +413,8 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 
 			if (toucher->hitlag > 0)
 				return;
+
+			P_LinedefExecute(LE_BOSSDEAD, toucher, NULL);
 
 			CONS_Printf("You win!\n");
 			break;
@@ -859,7 +861,7 @@ boolean P_CheckRacers(void)
 	// Check if all the players in the race have finished. If so, end the level.
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
-		if (!playeringame[i] || players[i].spectator || players[i].lives <= 0)
+		if (!playeringame[i] || players[i].spectator || (players[i].lives <= 0 && !players[i].exiting))
 		{
 			// Y'all aren't even playing
 			continue;
@@ -893,7 +895,7 @@ boolean P_CheckRacers(void)
 		}
 	}
 
-	if (numPlaying <= 1)
+	if (numPlaying <= 1 || specialstageinfo.valid == true)
 	{
 		// Never do this without enough players.
 		eliminateLast = false;
@@ -1097,7 +1099,7 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 		{
 			P_SetTarget(&target->target, source);
 
-			if (gametyperules & GTR_BUMPERS)
+			if (!(gametyperules & GTR_CIRCUIT))
 			{
 				target->fuse = 2;
 			}
@@ -1664,6 +1666,10 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 			break;
 		}
 
+		case MT_MONITOR:
+			Obj_MonitorOnDeath(target);
+			break;
+
 		default:
 			break;
 	}
@@ -2005,6 +2011,17 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 		laglength = 0; // handled elsewhere
 	}
 
+	switch (target->type)
+	{
+		case MT_MONITOR:
+			damage = Obj_MonitorGetDamage(target, inflictor, damagetype);
+			Obj_MonitorOnDamage(target, inflictor, damage);
+			break;
+
+		default:
+			break;
+	}
+
 	// Everything above here can't be forced.
 	if (!metalrecording)
 	{
@@ -2198,7 +2215,7 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 					{
 						tic_t kinvextend;
 
-						if (gametype == GT_BATTLE)
+						if (gametyperules & GTR_CLOSERPLAYERS)
 							kinvextend = 2*TICRATE;
 						else
 							kinvextend = 5*TICRATE;

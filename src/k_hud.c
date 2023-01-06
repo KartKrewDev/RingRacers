@@ -785,6 +785,29 @@ static patch_t *K_GetCachedItemPatch(INT32 item, UINT8 offset)
 		return NULL;
 }
 
+static patch_t *K_GetSmallStaticCachedItemPatch(kartitems_t item)
+{
+	UINT8 offset;
+
+	item = K_ItemResultToType(item);
+
+	switch (item)
+	{
+		case KITEM_INVINCIBILITY:
+			offset = 7;
+			break;
+
+		case KITEM_ORBINAUT:
+			offset = 4;
+			break;
+
+		default:
+			offset = 1;
+	}
+
+	return K_GetCachedItemPatch(item, offset);
+}
+
 //}
 
 INT32 ITEM_X, ITEM_Y;	// Item Window
@@ -1863,7 +1886,7 @@ static boolean K_drawKartPositionFaces(void)
 	ranklines--;
 	i = ranklines;
 
-	if (gametype == GT_BATTLE || strank <= 2) // too close to the top, or playing battle, or a spectator? would have had (strank == -1) called out, but already caught by (strank <= 2)
+	if ((gametyperules & GTR_POINTLIMIT) || strank <= 2) // too close to the top, or playing battle, or a spectator? would have had (strank == -1) called out, but already caught by (strank <= 2)
 	{
 		if (i > 4) // could be both...
 			i = 4;
@@ -1951,7 +1974,7 @@ static boolean K_drawKartPositionFaces(void)
 		if (i == strank)
 			V_DrawScaledPatch(FACE_X, Y, V_HUDTRANS|V_SLIDEIN|V_SNAPTOLEFT, kp_facehighlight[(leveltime / 4) % 8]);
 
-		if (gametype == GT_BATTLE && players[rankplayer[i]].bumpers <= 0)
+		if ((gametyperules & GTR_BUMPERS) && players[rankplayer[i]].bumpers <= 0)
 			V_DrawScaledPatch(FACE_X-4, Y-3, V_HUDTRANS|V_SLIDEIN|V_SNAPTOLEFT, kp_ranknobumpers);
 		else
 		{
@@ -1973,7 +1996,7 @@ static void K_drawBossHealthBar(void)
 	UINT8 i = 0, barstatus = 1, randlen = 0, darken = 0;
 	const INT32 startx = BASEVIDWIDTH - 23;
 	INT32 starty = BASEVIDHEIGHT - 25;
-	INT32 rolrand = 0;
+	INT32 rolrand = 0, randtemp = 0;
 	boolean randsign = false;
 
 	if (bossinfo.barlen <= 1)
@@ -2019,7 +2042,9 @@ static void K_drawBossHealthBar(void)
 		barstatus = 2;
 	}
 
-	randlen = M_RandomKey(bossinfo.visualbar-(bossinfo.visualdiv/(2*FRACUNIT)))+1;
+	randtemp = bossinfo.visualbar-(bossinfo.visualdiv/(2*FRACUNIT));
+	if (randtemp > 0)
+		randlen = M_RandomKey(randtemp)+1;
 	randsign = M_RandomChance(FRACUNIT/2);
 
 	// Right wing.
@@ -2034,7 +2059,9 @@ static void K_drawBossHealthBar(void)
 			randlen--;
 			if (!randlen)
 			{
-				randlen = M_RandomKey(bossinfo.visualbar-(bossinfo.visualdiv/(2*FRACUNIT)))+1;
+				randtemp = bossinfo.visualbar-(bossinfo.visualdiv/(2*FRACUNIT));
+				if (randtemp > 0)
+					randlen = M_RandomKey(randtemp)+1;
 				if (barstatus > 1)
 				{
 					rolrand = M_RandomKey(barstatus)+1;
@@ -2265,7 +2292,7 @@ void K_DrawTabRankings(INT32 x, INT32 y, playersort_t *tab, INT32 scorelines, IN
 				colormap = R_GetTranslationColormap(players[tab[i].num].skin, players[tab[i].num].mo->color, GTC_CACHE);
 
 			V_DrawMappedPatch(x, y-4, 0, faceprefix[players[tab[i].num].skin][FACE_RANK], colormap);
-			/*if (gametype == GT_BATTLE && players[tab[i].num].bumpers > 0) -- not enough space for this
+			/*if ((gametyperules & GTR_BUMPERS) && players[tab[i].num].bumpers > 0) -- not enough space for this
 			{
 				INT32 bumperx = x+19;
 				V_DrawMappedPatch(bumperx-2, y-4, 0, kp_tinybumper[0], colormap);
@@ -2280,7 +2307,7 @@ void K_DrawTabRankings(INT32 x, INT32 y, playersort_t *tab, INT32 scorelines, IN
 		if (tab[i].num == whiteplayer)
 			V_DrawScaledPatch(x, y-4, 0, kp_facehighlight[(leveltime / 4) % 8]);
 
-		if (gametype == GT_BATTLE && players[tab[i].num].bumpers <= 0)
+		if ((gametyperules & GTR_BUMPERS) && players[tab[i].num].bumpers <= 0)
 			V_DrawScaledPatch(x-4, y-7, 0, kp_ranknobumpers);
 		else
 		{
@@ -2291,7 +2318,7 @@ void K_DrawTabRankings(INT32 x, INT32 y, playersort_t *tab, INT32 scorelines, IN
 			V_DrawScaledPatch(x-5, y+6, 0, kp_facenum[pos]);
 		}
 
-		if (gametype == GT_RACE)
+		if ((gametyperules & GTR_CIRCUIT))
 		{
 #define timestring(time) va("%i'%02i\"%02i", G_TicsToMinutes(time, true), G_TicsToSeconds(time), G_TicsToCentiseconds(time))
 			if (scorelines >= 8)
@@ -2300,7 +2327,7 @@ void K_DrawTabRankings(INT32 x, INT32 y, playersort_t *tab, INT32 scorelines, IN
 					V_DrawRightAlignedThinString(x+rightoffset, y-1, hilicol|V_6WIDTHSPACE, timestring(players[tab[i].num].realtime));
 				else if (players[tab[i].num].pflags & PF_NOCONTEST)
 					V_DrawRightAlignedThinString(x+rightoffset, y-1, V_6WIDTHSPACE, "NO CONTEST.");
-				else if (circuitmap)
+				else
 					V_DrawRightAlignedThinString(x+rightoffset, y-1, V_6WIDTHSPACE, va("Lap %d", tab[i].count));
 			}
 			else
@@ -2309,7 +2336,7 @@ void K_DrawTabRankings(INT32 x, INT32 y, playersort_t *tab, INT32 scorelines, IN
 					V_DrawRightAlignedString(x+rightoffset, y, hilicol, timestring(players[tab[i].num].realtime));
 				else if (players[tab[i].num].pflags & PF_NOCONTEST)
 					V_DrawRightAlignedThinString(x+rightoffset, y-1, 0, "NO CONTEST.");
-				else if (circuitmap)
+				else
 					V_DrawRightAlignedString(x+rightoffset, y, 0, va("Lap %d", tab[i].count));
 			}
 #undef timestring
@@ -2326,40 +2353,13 @@ void K_DrawTabRankings(INT32 x, INT32 y, playersort_t *tab, INT32 scorelines, IN
 	}
 }
 
-#define RINGANIM_FLIPFRAME (RINGANIM_NUMFRAMES/2)
-
-static void K_drawKartLapsAndRings(void)
+static void K_drawKartLaps(void)
 {
-	const boolean uselives = G_GametypeUsesLives();
-	SINT8 ringanim_realframe = stplyr->karthud[khud_ringframe];
 	INT32 splitflags = V_SNAPTOBOTTOM|V_SNAPTOLEFT|V_SPLITSCREEN;
-	UINT8 rn[2];
-	INT32 ringflip = 0;
-	UINT8 *ringmap = NULL;
-	boolean colorring = false;
-	INT32 ringx = 0;
-
-	rn[0] = ((abs(stplyr->rings) / 10) % 10);
-	rn[1] = (abs(stplyr->rings) % 10);
-
-	if (stplyr->rings <= 0 && (leveltime/5 & 1)) // In debt
-	{
-		ringmap = R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_CRIMSON, GTC_CACHE);
-		colorring = true;
-	}
-	else if (stplyr->rings >= 20) // Maxed out
-		ringmap = R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_YELLOW, GTC_CACHE);
-
-	if (stplyr->karthud[khud_ringframe] > RINGANIM_FLIPFRAME)
-	{
-		ringflip = V_FLIP;
-		ringanim_realframe = RINGANIM_NUMFRAMES-stplyr->karthud[khud_ringframe];
-		ringx += SHORT((r_splitscreen > 1) ? kp_smallring[ringanim_realframe]->width : kp_ring[ringanim_realframe]->width);
-	}
 
 	if (r_splitscreen > 1)
 	{
-		INT32 fx = 0, fy = 0, fr = 0;
+		INT32 fx = 0, fy = 0;
 		INT32 flipflag = 0;
 
 		// pain and suffering defined below
@@ -2384,8 +2384,6 @@ static void K_drawKartLapsAndRings(void)
 				flipflag = V_FLIP; // make the string right aligned and other shit
 			}
 		}
-
-		fr = fx;
 
 		// Laps
 		V_DrawScaledPatch(fx-2 + (flipflag ? (SHORT(kp_ringstickersplit[1]->width) - 3) : 0), fy, V_HUDTRANS|V_SLIDEIN|splitflags|flipflag, kp_ringstickersplit[0]);
@@ -2413,6 +2411,75 @@ static void K_drawKartLapsAndRings(void)
 			V_DrawScaledPatch(fx+13, fy, V_HUDTRANS|V_SLIDEIN|splitflags, kp_facenum[(stplyr->laps) % 10]);
 			V_DrawScaledPatch(fx+27, fy, V_HUDTRANS|V_SLIDEIN|splitflags, kp_facenum[(numlaps) % 10]);
 		}
+	}
+	else
+	{
+		// Laps
+		V_DrawScaledPatch(LAPS_X, LAPS_Y, V_HUDTRANS|V_SLIDEIN|splitflags, kp_lapsticker);
+		V_DrawKartString(LAPS_X+33, LAPS_Y+3, V_HUDTRANS|V_SLIDEIN|splitflags, va("%d/%d", min(stplyr->laps, numlaps), numlaps));
+	}
+}
+
+#define RINGANIM_FLIPFRAME (RINGANIM_NUMFRAMES/2)
+
+static void K_drawRingCounter(void)
+{
+	const boolean uselives = G_GametypeUsesLives();
+	SINT8 ringanim_realframe = stplyr->karthud[khud_ringframe];
+	INT32 splitflags = V_SNAPTOBOTTOM|V_SNAPTOLEFT|V_SPLITSCREEN;
+	UINT8 rn[2];
+	INT32 ringflip = 0;
+	UINT8 *ringmap = NULL;
+	boolean colorring = false;
+	INT32 ringx = 0, fy = 0;
+
+	rn[0] = ((abs(stplyr->rings) / 10) % 10);
+	rn[1] = (abs(stplyr->rings) % 10);
+
+	if (stplyr->rings <= 0 && (leveltime/5 & 1)) // In debt
+	{
+		ringmap = R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_CRIMSON, GTC_CACHE);
+		colorring = true;
+	}
+	else if (stplyr->rings >= 20) // Maxed out
+		ringmap = R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_YELLOW, GTC_CACHE);
+
+	if (stplyr->karthud[khud_ringframe] > RINGANIM_FLIPFRAME)
+	{
+		ringflip = V_FLIP;
+		ringanim_realframe = RINGANIM_NUMFRAMES-stplyr->karthud[khud_ringframe];
+		ringx += SHORT((r_splitscreen > 1) ? kp_smallring[ringanim_realframe]->width : kp_ring[ringanim_realframe]->width);
+	}
+
+	if (r_splitscreen > 1)
+	{
+		INT32 fx = 0, fr = 0;
+		INT32 flipflag = 0;
+
+		// pain and suffering defined below
+		if (r_splitscreen < 2)	// don't change shit for THIS splitscreen.
+		{
+			fx = LAPS_X;
+			fy = LAPS_Y;
+		}
+		else
+		{
+			if (stplyr == &players[displayplayers[0]] || stplyr == &players[displayplayers[2]])	// If we are P1 or P3...
+			{
+				fx = LAPS_X;
+				fy = LAPS_Y;
+				splitflags = V_SNAPTOLEFT|V_SNAPTOBOTTOM|V_SPLITSCREEN;
+			}
+			else // else, that means we're P2 or P4.
+			{
+				fx = LAPS2_X;
+				fy = LAPS2_Y;
+				splitflags = V_SNAPTORIGHT|V_SNAPTOBOTTOM|V_SPLITSCREEN;
+				flipflag = V_FLIP; // make the string right aligned and other shit
+			}
+		}
+
+		fr = fx;
 
 		// Rings
 		if (!uselives)
@@ -2447,41 +2514,42 @@ static void K_drawKartLapsAndRings(void)
 	}
 	else
 	{
-		// Laps
-		V_DrawScaledPatch(LAPS_X, LAPS_Y, V_HUDTRANS|V_SLIDEIN|splitflags, kp_lapsticker);
-		V_DrawKartString(LAPS_X+33, LAPS_Y+3, V_HUDTRANS|V_SLIDEIN|splitflags, va("%d/%d", min(stplyr->laps, numlaps), numlaps));
+		fy = LAPS_Y-11;
+
+		if ((gametyperules & (GTR_BUMPERS|GTR_CIRCUIT)) == GTR_BUMPERS)
+			fy -= 4;
 
 		// Rings
 		if (!uselives)
-			V_DrawScaledPatch(LAPS_X, LAPS_Y-11, V_HUDTRANS|V_SLIDEIN|splitflags, kp_ringsticker[1]);
+			V_DrawScaledPatch(LAPS_X, fy, V_HUDTRANS|V_SLIDEIN|splitflags, kp_ringsticker[1]);
 		else
-			V_DrawScaledPatch(LAPS_X, LAPS_Y-11, V_HUDTRANS|V_SLIDEIN|splitflags, kp_ringsticker[0]);
+			V_DrawScaledPatch(LAPS_X, fy, V_HUDTRANS|V_SLIDEIN|splitflags, kp_ringsticker[0]);
 
-		V_DrawMappedPatch(LAPS_X+ringx+7, LAPS_Y-16, V_HUDTRANS|V_SLIDEIN|splitflags|ringflip, kp_ring[ringanim_realframe], (colorring ? ringmap : NULL));
+		V_DrawMappedPatch(LAPS_X+ringx+7, fy-5, V_HUDTRANS|V_SLIDEIN|splitflags|ringflip, kp_ring[ringanim_realframe], (colorring ? ringmap : NULL));
 
 		if (stplyr->rings < 0) // Draw the minus for ring debt
 		{
-			V_DrawMappedPatch(LAPS_X+23, LAPS_Y-11, V_HUDTRANS|V_SLIDEIN|splitflags, kp_ringdebtminus, ringmap);
-			V_DrawMappedPatch(LAPS_X+29, LAPS_Y-11, V_HUDTRANS|V_SLIDEIN|splitflags, kp_facenum[rn[0]], ringmap);
-			V_DrawMappedPatch(LAPS_X+35, LAPS_Y-11, V_HUDTRANS|V_SLIDEIN|splitflags, kp_facenum[rn[1]], ringmap);
+			V_DrawMappedPatch(LAPS_X+23, fy, V_HUDTRANS|V_SLIDEIN|splitflags, kp_ringdebtminus, ringmap);
+			V_DrawMappedPatch(LAPS_X+29, fy, V_HUDTRANS|V_SLIDEIN|splitflags, kp_facenum[rn[0]], ringmap);
+			V_DrawMappedPatch(LAPS_X+35, fy, V_HUDTRANS|V_SLIDEIN|splitflags, kp_facenum[rn[1]], ringmap);
 		}
 		else
 		{
-			V_DrawMappedPatch(LAPS_X+23, LAPS_Y-11, V_HUDTRANS|V_SLIDEIN|splitflags, kp_facenum[rn[0]], ringmap);
-			V_DrawMappedPatch(LAPS_X+29, LAPS_Y-11, V_HUDTRANS|V_SLIDEIN|splitflags, kp_facenum[rn[1]], ringmap);
+			V_DrawMappedPatch(LAPS_X+23, fy, V_HUDTRANS|V_SLIDEIN|splitflags, kp_facenum[rn[0]], ringmap);
+			V_DrawMappedPatch(LAPS_X+29, fy, V_HUDTRANS|V_SLIDEIN|splitflags, kp_facenum[rn[1]], ringmap);
 		}
 
 		// SPB ring lock
 		if (stplyr->pflags & PF_RINGLOCK)
-			V_DrawScaledPatch(LAPS_X-5, LAPS_Y-28, V_HUDTRANS|V_SLIDEIN|splitflags, kp_ringspblock[stplyr->karthud[khud_ringspblock]]);
+			V_DrawScaledPatch(LAPS_X-5, fy-17, V_HUDTRANS|V_SLIDEIN|splitflags, kp_ringspblock[stplyr->karthud[khud_ringspblock]]);
 
 		// Lives
 		if (uselives)
 		{
 			UINT8 *colormap = R_GetTranslationColormap(stplyr->skin, stplyr->skincolor, GTC_CACHE);
-			V_DrawMappedPatch(LAPS_X+46, LAPS_Y-16, V_HUDTRANS|V_SLIDEIN|splitflags, faceprefix[stplyr->skin][FACE_RANK], colormap);
+			V_DrawMappedPatch(LAPS_X+46, fy-5, V_HUDTRANS|V_SLIDEIN|splitflags, faceprefix[stplyr->skin][FACE_RANK], colormap);
 			if (stplyr->lives >= 0)
-				V_DrawScaledPatch(LAPS_X+63, LAPS_Y-11, V_HUDTRANS|V_SLIDEIN|splitflags, kp_facenum[(stplyr->lives % 10)]); // make sure this doesn't overflow OR underflow
+				V_DrawScaledPatch(LAPS_X+63, fy, V_HUDTRANS|V_SLIDEIN|splitflags, kp_facenum[(stplyr->lives % 10)]); // make sure this doesn't overflow OR underflow
 		}
 	}
 }
@@ -2498,7 +2566,7 @@ static void K_drawKartAccessibilityIcons(INT32 fx)
 
 	if (r_splitscreen < 2) // adjust to speedometer height
 	{
-		if (gametype == GT_BATTLE)
+		if ((gametyperules & (GTR_BUMPERS|GTR_CIRCUIT)) == GTR_BUMPERS)
 			fy -= 4;
 	}
 	else
@@ -2588,7 +2656,7 @@ static void K_drawKartSpeedometer(void)
 	numbers[1] = ((convSpeed / 10) % 10);
 	numbers[2] = (convSpeed % 10);
 
-	if (gametype == GT_BATTLE)
+	if ((gametyperules & (GTR_BUMPERS|GTR_CIRCUIT)) == GTR_BUMPERS)
 		battleoffset = -4;
 
 	V_DrawScaledPatch(LAPS_X, LAPS_Y-25 + battleoffset, V_HUDTRANS|V_SLIDEIN|splitflags, kp_speedometersticker);
@@ -2793,14 +2861,15 @@ static void K_drawKartBumpersOrKarma(void)
 			else
 				V_DrawMappedPatch(LAPS_X, LAPS_Y, V_HUDTRANS|V_SLIDEIN|splitflags, kp_bumpersticker, colormap);
 
-			if (bossinfo.boss)
-				V_DrawKartString(LAPS_X+47, LAPS_Y+3, V_HUDTRANS|V_SLIDEIN|splitflags, va("%d/%d", stplyr->bumpers, maxbumper));
-			else // TODO BETTER HUD
+			if (gametyperules & GTR_KARMA)  // TODO BETTER HUD
 				V_DrawKartString(LAPS_X+47, LAPS_Y+3, V_HUDTRANS|V_SLIDEIN|splitflags, va("%d/%d  %d", stplyr->bumpers, maxbumper, stplyr->overtimekarma / TICRATE));
+			else
+				V_DrawKartString(LAPS_X+47, LAPS_Y+3, V_HUDTRANS|V_SLIDEIN|splitflags, va("%d/%d", stplyr->bumpers, maxbumper));
 		}
 	}
 }
 
+#if 0
 static void K_drawKartWanted(void)
 {
 	UINT8 i, numwanted = 0;
@@ -2875,6 +2944,7 @@ static void K_drawKartWanted(void)
 		}
 	}
 }
+#endif //if 0
 
 static void K_drawKartPlayerCheck(void)
 {
@@ -3358,7 +3428,7 @@ static void K_drawKartNameTags(void)
 	c.z = viewz;
 
 	// Maybe shouldn't be handling this here... but the camera info is too good.
-	if (bossinfo.boss)
+	if (bossinfo.valid == true)
 	{
 		weakspotdraw_t weakspotdraw[NUMWEAKSPOTS];
 		UINT8 numdraw = 0;
@@ -3810,7 +3880,7 @@ static void K_drawKartMinimap(void)
 	y -= SHORT(AutomapPic->topoffset);
 
 	// Draw the super item in Battle
-	if (gametype == GT_BATTLE && battleovertime.enabled)
+	if ((gametyperules & GTR_OVERTIME) && battleovertime.enabled)
 	{
 		if (battleovertime.enabled >= 10*TICRATE || (battleovertime.enabled & 1))
 		{
@@ -3920,8 +3990,8 @@ static void K_drawKartMinimap(void)
 			K_drawKartMinimapIcon(interpx, interpy, x, y, splitflags, faceprefix[skin][FACE_MINIMAP], colormap, AutomapPic);
 
 			// Target reticule
-			if ((gametype == GT_RACE && players[i].position == spbplace)
-				|| (gametype == GT_BATTLE && K_IsPlayerWanted(&players[i])))
+			if (((gametyperules & GTR_CIRCUIT) && players[i].position == spbplace)
+				|| ((gametyperules & (GTR_BOSS|GTR_POINTLIMIT)) == GTR_POINTLIMIT && K_IsPlayerWanted(&players[i])))
 			{
 				K_drawKartMinimapIcon(interpx, interpy, x, y, splitflags, kp_wantedreticle, NULL, AutomapPic);
 			}
@@ -3979,7 +4049,7 @@ static void K_drawKartMinimap(void)
 	}
 
 	// ...but first, any boss targets.
-	if (bossinfo.boss)
+	if (bossinfo.valid == true)
 	{
 		for (i = 0; i < NUMWEAKSPOTS; i++)
 		{
@@ -4047,8 +4117,8 @@ static void K_drawKartMinimap(void)
 		K_drawKartMinimapIcon(interpx, interpy, x, y, splitflags, workingPic, colormap, AutomapPic);
 
 		// Target reticule
-		if ((gametype == GT_RACE && players[localplayers[i]].position == spbplace)
-			|| (gametype == GT_BATTLE && K_IsPlayerWanted(&players[localplayers[i]])))
+		if (((gametyperules & GTR_CIRCUIT) && players[localplayers[i]].position == spbplace)
+			|| ((gametyperules & (GTR_BOSS|GTR_POINTLIMIT)) == GTR_POINTLIMIT && K_IsPlayerWanted(&players[localplayers[i]])))
 		{
 			K_drawKartMinimapIcon(interpx, interpy, x, y, splitflags, kp_wantedreticle, NULL, AutomapPic);
 		}
@@ -4836,7 +4906,7 @@ void K_drawKartFreePlay(void)
 	if (!LUA_HudEnabled(hud_freeplay))
 		return;
 
-	if (modeattacking || grandprixinfo.gp || bossinfo.boss || stplyr->spectator)
+	if (modeattacking || grandprixinfo.gp || bossinfo.valid || stplyr->spectator)
 		return;
 
 	if (lt_exitticker < TICRATE/2)
@@ -4883,39 +4953,6 @@ K_drawMiniPing (void)
 
 static void K_drawDistributionDebugger(void)
 {
-	patch_t *patches[NUMKARTRESULTS] = {
-		kp_sadface[1],
-		kp_sneaker[1],
-		kp_rocketsneaker[1],
-		kp_invincibility[7],
-		kp_banana[1],
-		kp_eggman[1],
-		kp_orbinaut[4],
-		kp_jawz[1],
-		kp_mine[1],
-		kp_landmine[1],
-		kp_ballhog[1],
-		kp_selfpropelledbomb[1],
-		kp_grow[1],
-		kp_shrink[1],
-		kp_lightningshield[1],
-		kp_bubbleshield[1],
-		kp_flameshield[1],
-		kp_hyudoro[1],
-		kp_pogospring[1],
-		kp_superring[1],
-		kp_kitchensink[1],
-		kp_droptarget[1],
-		kp_gardentop[1],
-
-		kp_sneaker[1],
-		kp_sneaker[1],
-		kp_banana[1],
-		kp_orbinaut[4],
-		kp_orbinaut[4],
-		kp_jawz[1]
-	};
-
 	itemroulette_t rouletteData = {0};
 
 	const fixed_t scale = (FRACUNIT >> 1);
@@ -4944,7 +4981,8 @@ static void K_drawDistributionDebugger(void)
 			y = -pad;
 		}
 
-		V_DrawFixedPatch(x, y, scale, V_SNAPTOTOP, patches[item], NULL);
+		V_DrawFixedPatch(x, y, scale, V_SNAPTOTOP,
+				K_GetSmallStaticCachedItemPatch(item), NULL);
 
 		// Display amount for multi-items
 		amount = K_ItemResultToAmount(item);
@@ -5024,10 +5062,10 @@ void K_drawKartHUD(void)
 		return;
 	}
 
-	battlefullscreen = ((gametyperules & (GTR_BUMPERS|GTR_KARMA)) == (GTR_BUMPERS|GTR_KARMA)
+	battlefullscreen = (!(gametyperules & GTR_CIRCUIT)
 		&& (stplyr->exiting
-		|| (stplyr->bumpers <= 0
-		&& stplyr->karmadelay > 0
+		|| ((gametyperules & GTR_BUMPERS) && (stplyr->bumpers <= 0)
+		&& ((gametyperules & GTR_KARMA) && (stplyr->karmadelay > 0))
 		&& !(stplyr->pflags & PF_ELIMINATED)
 		&& stplyr->playerstate == PST_LIVE)));
 
@@ -5043,11 +5081,13 @@ void K_drawKartHUD(void)
 			K_drawKartNameTags();
 
 		// Draw WANTED status
+#if 0
 		if (gametype == GT_BATTLE)
 		{
 			if (LUA_HudEnabled(hud_wanted))
 				K_drawKartWanted();
 		}
+#endif
 
 		if (LUA_HudEnabled(hud_minimap))
 			K_drawKartMinimap();
@@ -5094,32 +5134,26 @@ void K_drawKartHUD(void)
 		{
 			if (LUA_HudEnabled(hud_position))
 			{
-				if (bossinfo.boss)
+				if (bossinfo.valid)
 				{
 					K_drawBossHealthBar();
 				}
-				else if (gametype == GT_RACE) // Race-only elements (not currently gametyperuleable)
+				else if (freecam)
+					;
+				else if ((gametyperules & GTR_POWERSTONES))
 				{
-					if (!islonesome)
-					{
-						// Draw the numerical position
-						K_DrawKartPositionNum(stplyr->position);
-					}
-				}
-				else if (gametype == GT_BATTLE) // Battle-only (ditto)
-				{
-					if (!freecam && !battlecapsules)
-					{
+					if (!battlecapsules)
 						K_drawKartEmeralds();
-					}
 				}
+				else if (!islonesome)
+					K_DrawKartPositionNum(stplyr->position);
 			}
 
 			if (LUA_HudEnabled(hud_gametypeinfo))
 			{
 				if (gametyperules & GTR_CIRCUIT)
 				{
-					K_drawKartLapsAndRings();
+					K_drawKartLaps();
 				}
 				else if (gametyperules & GTR_BUMPERS)
 				{
@@ -5141,8 +5175,12 @@ void K_drawKartHUD(void)
 			{
 				K_drawBlueSphereMeter();
 			}
+			else
+			{
+				K_drawRingCounter();
+			}
 
-			if (modeattacking && !bossinfo.boss)
+			if (modeattacking && !bossinfo.valid)
 			{
 				// Draw the input UI
 				if (LUA_HudEnabled(hud_position))
@@ -5172,10 +5210,12 @@ void K_drawKartHUD(void)
 	}
 
 	// Race overlays
-	if (gametype == GT_RACE && !freecam)
+	if (!freecam)
 	{
 		if (stplyr->exiting)
 			K_drawKartFinish(true);
+		else if (!(gametyperules & GTR_CIRCUIT))
+			;
 		else if (stplyr->karthud[khud_lapanimation] && !r_splitscreen)
 			K_drawLapStartAnim();
 	}
@@ -5187,7 +5227,7 @@ void K_drawKartHUD(void)
 	if (modeattacking || freecam) // everything after here is MP and debug only
 		return;
 
-	if (gametype == GT_BATTLE && !r_splitscreen && (stplyr->karthud[khud_yougotem] % 2)) // * YOU GOT EM *
+	if ((gametyperules & GTR_KARMA) && !r_splitscreen && (stplyr->karthud[khud_yougotem] % 2)) // * YOU GOT EM *
 		V_DrawScaledPatch(BASEVIDWIDTH/2 - (SHORT(kp_yougotem->width)/2), 32, V_HUDTRANS, kp_yougotem);
 
 	// Draw FREE PLAY.

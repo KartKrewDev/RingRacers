@@ -1309,12 +1309,12 @@ lumpnum_t W_CheckNumForLongName(const char *name)
 
 // Look for valid map data through all added files in descendant order.
 // Get a map marker for WADs, and a standalone WAD file lump inside PK3s.
-lumpnum_t W_CheckNumForMap(const char *name)
+lumpnum_t W_CheckNumForMap(const char *name, boolean checktofirst)
 {
 	lumpnum_t check = INT16_MAX;
 	UINT32 uhash, hash = quickncasehash(name, LUMPNUMCACHENAME);
 	INT32 i;
-	UINT16 firstfile = (partadd_earliestfile == UINT16_MAX) ? 0 : partadd_earliestfile;
+	UINT16 firstfile = (checktofirst || (partadd_earliestfile == UINT16_MAX)) ? 0 : partadd_earliestfile;
 
 	// Check the lumpnumcache first. Loop backwards so that we check
 	// most recent entries first
