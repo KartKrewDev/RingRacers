@@ -12557,6 +12557,21 @@ static mobj_t *P_MakeSoftwareCorona(mobj_t *mo, INT32 height)
 	return corona;
 }
 
+void P_InitSkyboxPoint(mobj_t *mobj, mapthing_t *mthing)
+{
+	mtag_t tag = Tag_FGet(&mthing->tags);
+	if (tag < 0 || tag > 15)
+	{
+		CONS_Debug(DBG_GAMELOGIC, "P_InitSkyboxPoint: Skybox ID %d of mapthing %s is not between 0 and 15!\n", tag, sizeu1((size_t)(mthing - mapthings)));
+		return;
+	}
+
+	if (mthing->args[0])
+		P_SetTarget(&skyboxcenterpnts[tag], mobj);
+	else
+		P_SetTarget(&skyboxviewpnts[tag], mobj);
+}
+
 static boolean P_MapAlreadyHasStarPost(mobj_t *mobj)
 {
 	thinker_t *th;
@@ -12602,17 +12617,7 @@ static boolean P_SetupSpawnedMapThing(mapthing_t *mthing, mobj_t *mobj, boolean 
 	}
 	case MT_SKYBOX:
 	{
-		mtag_t tag = Tag_FGet(&mthing->tags);
-		if (tag < 0 || tag > 15)
-		{
-			CONS_Debug(DBG_GAMELOGIC, "P_SetupSpawnedMapThing: Skybox ID %d of mapthing %s is not between 0 and 15!\n", tag, sizeu1((size_t)(mthing - mapthings)));
-			break;
-		}
-
-		if (mthing->args[0])
-			skyboxcenterpnts[tag] = mobj;
-		else
-			skyboxviewpnts[tag] = mobj;
+		P_InitSkyboxPoint(mobj, mthing);
 		break;
 	}
 	case MT_EGGSTATUE:

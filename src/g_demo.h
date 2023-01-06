@@ -22,8 +22,6 @@
 extern "C" {
 #endif
 
-extern UINT8 *demo_p;
-
 // ======================================
 // DEMO playback/recording related stuff.
 // ======================================

@@ -24,6 +24,8 @@ extern "C" {
 extern mobj_t *skyboxviewpnts[16]; // array of MT_SKYBOX viewpoint mobjs
 extern mobj_t *skyboxcenterpnts[16]; // array of MT_SKYBOX centerpoint mobjs
 
+void P_InitSkyboxPoint(mobj_t *mobj, mapthing_t *mthing);
+
 // Amount (dx, dy) vector linedef is shifted right to get scroll amount
 #define SCROLL_SHIFT 5
 
