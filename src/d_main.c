@@ -1189,6 +1189,17 @@ D_ConvertVersionNumbers (void)
 #endif
 }
 
+const char *D_GetFancyBranchName(void)
+{
+	if (!strcmp(compbranch, ""))
+	{
+		// \x8b = aqua highlight
+		return "\x8b" "detached HEAD" "\x80";
+	}
+
+	return compbranch;
+}
+
 //
 // D_SRB2Main
 //
@@ -1205,12 +1216,6 @@ void D_SRB2Main(void)
 
 	/* break the version string into version numbers, for netplay */
 	D_ConvertVersionNumbers();
-
-	if (!strcmp(compbranch, ""))
-	{
-		// \x8b = aqua highlight
-		compbranch = "\x8b" "detached HEAD" "\x80";
-	}
 
 #ifdef DEVELOP
 	D_AbbrevCommit();

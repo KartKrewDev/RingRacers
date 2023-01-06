@@ -4772,9 +4772,9 @@ static void Command_ListDoomednums_f(void)
 static void Command_Version_f(void)
 {
 #ifdef DEVELOP
-	CONS_Printf("Ring Racers %s %s %s (%s %s)\n", compbranch, comprevision, compnote, compdate, comptime);
+	CONS_Printf("Ring Racers %s %s %s (%s %s)\n", D_GetFancyBranchName(), comprevision, compnote, compdate, comptime);
 #else
-	CONS_Printf("Ring Racers %s (%s %s %s %s) ", VERSIONSTRING, compdate, comptime, comprevision, compbranch);
+	CONS_Printf("Ring Racers %s (%s %s %s %s) ", VERSIONSTRING, compdate, comptime, comprevision, D_GetFancyBranchName());
 #endif
 
 	// Base library
