@@ -1693,6 +1693,8 @@ static void ParseTextmapThingParameter(UINT32 i, const char *param, const char *
 	else if (fastcmp(param, "flip") && fastcmp("true", val))
 		mapthings[i].options |= MTF_OBJECTFLIP;
 
+	else if (fastcmp(param, "special"))
+		mapthings[i].special = atol(val);
 	else if (fastncmp(param, "stringarg", 9) && strlen(param) > 9)
 	{
 		size_t argnum = atol(param + 9);
@@ -2100,6 +2102,8 @@ static void P_WriteTextmap(void)
 			fprintf(f, "scale = %f;\n", FIXED_TO_FLOAT(wmapthings[i].scale));
 		if (wmapthings[i].options & MTF_OBJECTFLIP)
 			fprintf(f, "flip = true;\n");
+		if (wmapthings[i].special != 0)
+			fprintf(f, "special = %d;\n", wmapthings[i].special);
 		for (j = 0; j < NUMMAPTHINGARGS; j++)
 			if (wmapthings[i].args[j] != 0)
 				fprintf(f, "arg%s = %d;\n", sizeu1(j), wmapthings[i].args[j]);

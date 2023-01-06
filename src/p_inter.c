@@ -1036,6 +1036,8 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 	if (LUA_HookMobjDeath(target, inflictor, source, damagetype) || P_MobjWasRemoved(target))
 		return;
 
+	P_ActivateThingSpecial(target, source);
+
 	//K_SetHitLagForObjects(target, inflictor, MAXHITLAGTICS, true);
 
 	// SRB2kart

@@ -339,7 +339,7 @@ if ((*mop = targ) != NULL) // Set new target and if non-NULL, increase its count
 // Rewritten to delete nodes implicitly, by making currentthinker
 // external and using P_RemoveThinkerDelayed() implicitly.
 //
-static inline void P_RunThinkers(void)
+static void P_RunThinkers(void)
 {
 	size_t i;
 

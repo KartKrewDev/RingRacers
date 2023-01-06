@@ -2185,7 +2185,6 @@ void P_CrossSpecialLine(line_t *line, INT32 side, mobj_t *thing)
 	activator->line = line;
 	activator->side = side;
 	activator->sector = (side != 0) ? line->backsector : line->frontsector;
-	activator->fromLineSpecial = true;
 
 	result = P_ProcessSpecial(activator, line->special, line->args, line->stringargs);
 	Z_Free(activator);
@@ -2268,7 +2267,6 @@ void P_PushSpecialLine(line_t *line, mobj_t *thing)
 	activator->line = line;
 	activator->side = P_PointOnLineSide(thing->x, thing->y, line);
 	activator->sector = (activator->side != 0) ? line->backsector : line->frontsector;
-	activator->fromLineSpecial = true;
 
 	result = P_ProcessSpecial(activator, line->special, line->args, line->stringargs);
 	Z_Free(activator);
@@ -2277,6 +2275,68 @@ void P_PushSpecialLine(line_t *line, mobj_t *thing)
 	{
 		P_LineSpecialWasActivated(line);
 	}
+}
+
+//
+// P_ActivateThingSpecial - TRIGGER
+// Called when a thing is killed, or upon
+//  any other type-specific conditions
+//
+void P_ActivateThingSpecial(mobj_t *mo, mobj_t *source)
+{
+	mapthing_t *mt = NULL;
+	player_t *player = NULL;
+	activator_t *activator = NULL;
+
+	if (mo == NULL || P_MobjWasRemoved(mo) == true)
+	{
+		// Invalid mobj.
+		return;
+	}
+
+	mt = mo->spawnpoint;
+	if (mt == NULL)
+	{
+		// No mapthing to activate the special of.
+		return;
+	}
+
+	// Is this necessary? Probably not, but I hate
+	// spectators so I will manually ensure they
+	// can't impact the gamestate anyway.
+	player = mo->player;
+	if (player != NULL)
+	{
+		if (player->spectator == true)
+		{
+			// Ignore spectators.
+			return;
+		}
+
+		if (player->pflags & PF_NOCONTEST)
+		{
+			// Ignore NO CONTEST.
+			return;
+		}
+	}
+
+	if (P_CanActivateSpecial(mt->special) == false)
+	{
+		// No special to even activate.
+		return;
+	}
+
+	activator = Z_Calloc(sizeof(activator_t), PU_LEVEL, NULL);
+	I_Assert(activator != NULL);
+
+	if (source != NULL)
+	{
+		P_SetTarget(&activator->mo, source);
+		activator->sector = source->subsector->sector;
+	}
+
+	P_ProcessSpecial(activator, mt->special, mt->args, mt->stringargs);
+	Z_Free(activator);
 }
 
 /** Gets an object.
@@ -2379,7 +2439,6 @@ static void P_ProcessLineSpecial(line_t *line, mobj_t *mo, sector_t *callsec)
 	P_SetTarget(&activator->mo, mo);
 	activator->line = line;
 	activator->sector = callsec;
-	activator->fromLineSpecial = true;
 
 	P_ProcessSpecial(activator, line->special, line->args, line->stringargs);
 	Z_Free(activator);

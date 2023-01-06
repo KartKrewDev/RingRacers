@@ -248,6 +248,7 @@ struct mapthing_t
 	UINT8 extrainfo;
 	taglist_t tags;
 	fixed_t scale;
+	INT16 special;
 	INT32 args[NUMMAPTHINGARGS];
 	char *stringargs[NUMMAPTHINGSTRINGARGS];
 	mobj_t *mobj;

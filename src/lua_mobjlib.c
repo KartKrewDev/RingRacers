@@ -956,6 +956,8 @@ static int mapthing_get(lua_State *L)
 		LUA_PushUserdata(L, &mt->tags, META_TAGLIST);
 		return 1;
 	}
+	else if(fastcmp(field,"special"))
+		number = mt->special;
 	else if(fastcmp(field,"args"))
 	{
 		LUA_PushUserdata(L, mt->args, META_THINGARGS);
@@ -1020,6 +1022,12 @@ static int mapthing_set(lua_State *L)
 		Tag_FSet(&mt->tags, (INT16)luaL_checkinteger(L, 3));
 	else if (fastcmp(field,"taglist"))
 		return LUA_ErrSetDirectly(L, "mapthing_t", "taglist");
+	else if (fastcmp(field,"special"))
+	{
+		// Can't change mapthing args (yet?), so let's not allow changing special either.
+		//mt->special = (INT16)luaL_checkinteger(L, 3);
+		return LUA_ErrSetDirectly(L, "mapthing_t", "special");
+	}
 	else if(fastcmp(field,"mobj"))
 		mt->mobj = *((mobj_t **)luaL_checkudata(L, 3, META_MOBJ));
 	else
