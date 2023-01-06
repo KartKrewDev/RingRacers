@@ -966,26 +966,13 @@ void K_HandleFootstepParticles(mobj_t *mo)
 		return;
 	}
 
-	if (!(mo->flags & MF_APPLYTERRAIN))
+	if (!(mo->flags & MF_APPLYTERRAIN) || mo->terrain == NULL)
 	{
 		// No TERRAIN effects for this object.
 		return;
 	}
 
-	if (mo->terrain == NULL || mo->terrain->footstepID == SIZE_MAX)
-	{
-		// If no terrain, check for offroad.
-		// If we're in offroad, use the default particle.
-
-		if (mo->player != NULL && mo->player->boostpower < FRACUNIT)
-		{
-			fs = K_GetFootstepByIndex(defaultOffroadFootstep);
-		}
-	}
-	else
-	{
-		fs = K_GetFootstepByIndex(mo->terrain->footstepID);
-	}
+	fs = K_GetFootstepByIndex(mo->terrain->footstepID);
 
 	if (fs == NULL || fs->mobjType == MT_NULL || fs->frequency <= 0)
 	{
