@@ -42,6 +42,8 @@ void D_SRB2Loop(void) FUNCNORETURN;
 //
 void D_SRB2Main(void);
 
+const char *D_GetFancyBranchName(void);
+
 // Called by IO functions when input is detected.
 void D_PostEvent(const event_t *ev);
 #if defined (PC_DOS) && !defined (DOXYGEN)

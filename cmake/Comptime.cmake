@@ -11,8 +11,9 @@ include(GitUtilities)
 git_current_branch(SRB2_COMP_BRANCH)
 git_working_tree_dirty(SRB2_COMP_UNCOMMITTED)
 
-git_summary(revision)
-string(REGEX REPLACE "([\"\\])" "\\\\\\1" SRB2_COMP_REVISION "${revision}")
+git_latest_commit(SRB2_COMP_REVISION)
+git_subject(subject)
+string(REGEX REPLACE "([\"\\])" "\\\\\\1" SRB2_COMP_NOTE "${subject}")
 
 if("${CMAKE_BUILD_TYPE}" STREQUAL "")
 	set(CMAKE_BUILD_TYPE None)

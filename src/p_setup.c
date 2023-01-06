@@ -7177,7 +7177,10 @@ static void P_InitGametype(void)
 		int parts;
 
 #ifdef DEVELOP
-		sprintf(ver, "%s-%s", compbranch, comprevision);
+		if (strcmp(compbranch, ""))
+			sprintf(ver, "%s-%s", compbranch, comprevision);
+		else
+			strcpy(ver, comprevision);
 #else
 		strcpy(ver, VERSIONSTRING);
 #endif
