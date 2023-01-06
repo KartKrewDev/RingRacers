@@ -7596,9 +7596,12 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 
 	if (player->spinouttimer)
 	{
-		if ((P_IsObjectOnGround(player->mo)
+		if (((P_IsObjectOnGround(player->mo)
 			|| ( player->spinouttype & KSPIN_AIRTIMER ))
 			&& (!player->sneakertimer))
+		|| (player->respawn.state != RESPAWNST_NONE
+			&& player->spinouttimer > 1
+			&& (leveltime & 1)))
 		{
 			player->spinouttimer--;
 			if (player->wipeoutslow > 1)
