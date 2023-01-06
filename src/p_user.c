@@ -4166,7 +4166,7 @@ void P_PlayerThink(player_t *player)
 		// for a bit after a teleport.
 		player->mo->reactiontime--;
 	}
-	else if (player->mo->tracer && player->mo->tracer->type == MT_TUBEWAYPOINT)
+	else if (player->carry == CR_ZOOMTUBE && player->mo->tracer && player->mo->tracer->type == MT_TUBEWAYPOINT)
 	{
 		P_DoZoomTube(player);
 		player->rmomx = player->rmomy = 0;
