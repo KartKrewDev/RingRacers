@@ -172,7 +172,7 @@ opendir (const CHAR *szPath)
   /* Initialize the dirent structure. ino and reclen are invalid under
    * Win32, and name simply points at the appropriate part of the
    * findfirst_t structure. */
-  nd->dd_dta = {0};
+  nd->dd_dta = (struct _finddata_t) {0};
   nd->dd_dir.d_ino = 0;
   nd->dd_dir.d_reclen = 0;
   nd->dd_dir.d_namlen = 0;
