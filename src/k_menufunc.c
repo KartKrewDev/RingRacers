@@ -1219,16 +1219,31 @@ static boolean M_MenuConfirmPressed(UINT8 pid)
 	 return M_MenuButtonPressed(pid, MBT_A);
 }
 
+/*static boolean M_MenuConfirmHeld(UINT8 pid)
+{
+	 return M_MenuButtonHeld(pid, MBT_A);
+}*/
+
 // Returns true if we press the Cancel button
 static boolean M_MenuBackPressed(UINT8 pid)
 {
 	 return (M_MenuButtonPressed(pid, MBT_B) || M_MenuButtonPressed(pid, MBT_X));
 }
 
+/*static boolean M_MenuBackHeld(UINT8 pid)
+{
+	 return (M_MenuButtonHeld(pid, MBT_B) || M_MenuButtonHeld(pid, MBT_X));
+}*/
+
 // Retrurns true if we press the tertiary option button (C)
 static boolean M_MenuExtraPressed(UINT8 pid)
 {
 	 return M_MenuButtonPressed(pid, MBT_C);
+}
+
+static boolean M_MenuExtraHeld(UINT8 pid)
+{
+	 return M_MenuButtonHeld(pid, MBT_C);
 }
 
 
@@ -6621,7 +6636,9 @@ void M_PrepReplayList(void)
 		else
 		{
 			extrasmenu.demolist[i].type = MD_NOTLOADED;
-			snprintf(extrasmenu.demolist[i].filepath, 255, "%s%s", menupath, dirmenu[i] + DIR_STRING);
+			snprintf(extrasmenu.demolist[i].filepath, sizeof extrasmenu.demolist[i].filepath,
+					// 255 = UINT8 limit. dirmenu entries are restricted to this length (see DIR_LEN).
+					"%s%.255s", menupath, dirmenu[i] + DIR_STRING);
 			sprintf(extrasmenu.demolist[i].title, ".....");
 		}
 	}
@@ -6842,7 +6859,7 @@ void M_Addons(INT32 choice)
 
 #if 1
 	if (cv_addons_option.value == 0)
-		pathname = usehome ? srb2home : srb2path;
+		pathname = addonsdir;
 	else if (cv_addons_option.value == 1)
 		pathname = srb2home;
 	else if (cv_addons_option.value == 2)
@@ -7369,6 +7386,7 @@ void M_Challenges(INT32 choice)
 
 void M_ChallengesTick(void)
 {
+	const UINT8 pid = 0;
 	UINT8 i, newunlock = MAXUNLOCKABLES;
 	boolean fresh = (challengesmenu.currentunlock >= MAXUNLOCKABLES);
 
@@ -7412,8 +7430,9 @@ void M_ChallengesTick(void)
 		else
 		{
 			// Unlock sequence.
+			tic_t nexttime = M_MenuExtraHeld(pid) ? (UNLOCKTIME*2) : MAXUNLOCKTIME;
 
-			if (++challengesmenu.unlockanim >= MAXUNLOCKTIME)
+			if (++challengesmenu.unlockanim >= nexttime)
 			{
 				challengesmenu.requestnew = true;
 			}

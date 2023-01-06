@@ -1225,6 +1225,21 @@ fixed_t P_GetMobjGravity(mobj_t *mo)
 			case MT_ITEM_DEBRIS:
 				gravityadd *= 6;
 				break;
+			case MT_FLOATINGITEM: {
+				// Basically this accelerates gravity after
+				// the object reached its peak vertical
+				// momentum. It's a gradual acceleration up
+				// to 2x normal gravity. It's not instant to
+				// give it some 'weight'.
+				const fixed_t z = P_MobjFlip(mo) * mo->momz;
+				if (z < 0)
+				{
+					const fixed_t d = (z - (mo->height / 2));
+					const fixed_t f = 2 * abs(FixedDiv(d, mo->height));
+					gravityadd = FixedMul(gravityadd, FRACUNIT + min(f, 2*FRACUNIT));
+				}
+				break;
+			}
 			default:
 				break;
 		}
@@ -3077,6 +3092,17 @@ boolean P_SceneryZMovement(mobj_t *mo)
 				P_RemoveMobj(mo);
 				return false;
 			}
+			break;
+		case MT_MONITOR_SHARD:
+			// Hits the ground
+			if ((mo->eflags & MFE_VERTICALFLIP)
+					? (mo->ceilingz <= (mo->z + mo->height))
+					: (mo->z <= mo->floorz))
+			{
+				P_RemoveMobj(mo);
+				return false;
+			}
+			break;
 		default:
 			break;
 	}
@@ -5723,6 +5749,21 @@ static void P_MobjSceneryThink(mobj_t *mobj)
 			P_AddOverlay(mobj);
 		if (mobj->target->hitlag) // move to the correct position, update to the correct properties, but DON'T STATE-ANIMATE
 			return;
+		switch (mobj->target->type)
+		{
+			case MT_FLOATINGITEM:
+				// Spawn trail for item drop as it flies upward.
+				// Done here so it applies to backdrop too.
+				if (mobj->target->momz * P_MobjFlip(mobj->target) > 0)
+				{
+					P_SpawnGhostMobj(mobj);
+					P_SpawnGhostMobj(mobj->target);
+				}
+				break;
+
+			default:
+				break;
+		}
 		break;
 	case MT_WATERDROP:
 		P_SceneryCheckWater(mobj);
@@ -6519,6 +6560,9 @@ static void P_MobjSceneryThink(mobj_t *mobj)
 		{
 			return;
 		}
+		break;
+	case MT_MONITOR_SHARD:
+		Obj_MonitorShardThink(mobj);
 		break;
 	case MT_VWREF:
 	case MT_VWREB:
@@ -7383,6 +7427,12 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 	}
 	case MT_EMERALD:
 		{
+			if (mobj->threshold > 0)
+				mobj->threshold--;
+		}
+		/*FALLTHRU*/
+	case MT_MONITOR:
+		{
 			if (battleovertime.enabled >= 10*TICRATE)
 			{
 				fixed_t distance = R_PointToDist2(mobj->x, mobj->y, battleovertime.x, battleovertime.y);
@@ -7392,6 +7442,14 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 					// Delete emeralds to let them reappear
 					P_KillMobj(mobj, NULL, NULL, DMG_NORMAL);
 				}
+			}
+
+			// Don't spawn sparkles on a monitor with no
+			// emerald inside
+			if (mobj->type == MT_MONITOR &&
+					Obj_MonitorGetEmerald(mobj) == 0)
+			{
+				break;
 			}
 
 			if (leveltime % 3 == 0)
@@ -7407,9 +7465,6 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 				sparkle->color = mobj->color;
 				sparkle->momz += 8 * mobj->scale * P_MobjFlip(mobj);
 			}
-
-			if (mobj->threshold > 0)
-				mobj->threshold--;
 		}
 		break;
 	case MT_DRIFTEXPLODE:
@@ -9414,6 +9469,9 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 			mobj->colorized = false;
 		}
 		break;
+	case MT_MONITOR_PART:
+		Obj_MonitorPartThink(mobj);
+		break;
 	default:
 		// check mobj against possible water content, before movement code
 		P_MobjCheckWater(mobj);
@@ -9519,6 +9577,7 @@ static boolean P_CanFlickerFuse(mobj_t *mobj)
 		case MT_SNAPPER_HEAD:
 		case MT_SNAPPER_LEG:
 		case MT_MINECARTSEG:
+		case MT_MONITOR_PART:
 			return true;
 
 		case MT_RANDOMITEM:
@@ -10618,6 +10677,10 @@ mobj_t *P_SpawnMobj(fixed_t x, fixed_t y, fixed_t z, mobjtype_t type)
 			mobj->scalespeed >>= 1;
 			P_SetScale(mobj, mobj->destscale = mapobjectscale >> 4);
 
+			break;
+		}
+		case MT_MONITOR: {
+			Obj_MonitorSpawnParts(mobj);
 			break;
 		}
 		case MT_KARMAHITBOX:
@@ -12557,6 +12620,21 @@ static mobj_t *P_MakeSoftwareCorona(mobj_t *mo, INT32 height)
 	return corona;
 }
 
+void P_InitSkyboxPoint(mobj_t *mobj, mapthing_t *mthing)
+{
+	mtag_t tag = Tag_FGet(&mthing->tags);
+	if (tag < 0 || tag > 15)
+	{
+		CONS_Debug(DBG_GAMELOGIC, "P_InitSkyboxPoint: Skybox ID %d of mapthing %s is not between 0 and 15!\n", tag, sizeu1((size_t)(mthing - mapthings)));
+		return;
+	}
+
+	if (mthing->args[0])
+		P_SetTarget(&skyboxcenterpnts[tag], mobj);
+	else
+		P_SetTarget(&skyboxviewpnts[tag], mobj);
+}
+
 static boolean P_MapAlreadyHasStarPost(mobj_t *mobj)
 {
 	thinker_t *th;
@@ -12602,17 +12680,7 @@ static boolean P_SetupSpawnedMapThing(mapthing_t *mthing, mobj_t *mobj, boolean 
 	}
 	case MT_SKYBOX:
 	{
-		mtag_t tag = Tag_FGet(&mthing->tags);
-		if (tag < 0 || tag > 15)
-		{
-			CONS_Debug(DBG_GAMELOGIC, "P_SetupSpawnedMapThing: Skybox ID %d of mapthing %s is not between 0 and 15!\n", tag, sizeu1((size_t)(mthing - mapthings)));
-			break;
-		}
-
-		if (mthing->args[0])
-			skyboxcenterpnts[tag] = mobj;
-		else
-			skyboxviewpnts[tag] = mobj;
+		P_InitSkyboxPoint(mobj, mthing);
 		break;
 	}
 	case MT_EGGSTATUE:

@@ -97,21 +97,27 @@ void M_PopulateChallengeGrid(void)
 	{
 		// Getting the number of 2-highs you can fit into two adjacent columns.
 		UINT8 majorpad = (CHALLENGEGRIDHEIGHT/2);
-		majorpad = (nummajorunlocks+1)/majorpad;
+		numempty = nummajorunlocks%majorpad;
+		majorpad = (nummajorunlocks+(majorpad-1))/majorpad;
 
 		gamedata->challengegridwidth = majorpad*2;
+		numempty *= 4;
 
 #if (CHALLENGEGRIDHEIGHT % 2)
-		// One empty per column.
-		numempty = gamedata->challengegridwidth;
+		// One extra empty per column.
+		numempty += gamedata->challengegridwidth;
 #endif
+
+		//CONS_Printf("%d major unlocks means width of %d, numempty of %d\n", nummajorunlocks, gamedata->challengegridwidth, numempty);
 	}
 
 	if (numunlocks > numempty)
 	{
 		// Getting the number of extra columns to store normal unlocks
-		gamedata->challengegridwidth += ((numunlocks - numempty) + (CHALLENGEGRIDHEIGHT-1))/CHALLENGEGRIDHEIGHT;
+		UINT16 temp = ((numunlocks - numempty) + (CHALLENGEGRIDHEIGHT-1))/CHALLENGEGRIDHEIGHT;
+		gamedata->challengegridwidth += temp;
 		majorcompact = 1;
+		//CONS_Printf("%d normal unlocks means %d extra entries, additional width of %d\n", numunlocks, (numunlocks - numempty), temp);
 	}
 	else if (challengegridloops)
 	{

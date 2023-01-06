@@ -271,7 +271,8 @@ public:
 		gain_ = from;
 		gain_target_ = to;
 		// Gain samples target must always be at least 1 to avoid a div-by-zero.
-		gain_samples_target_ = std::max(static_cast<uint64_t>(seconds * 44100.f), 1ULL);
+		gain_samples_target_ = std::max(
+				static_cast<uint64_t>(seconds * 44100.f), UINT64_C(1)); // UINT64_C generates a uint64_t literal
 		gain_samples_ = 0;
 	}
 

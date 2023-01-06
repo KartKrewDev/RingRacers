@@ -183,7 +183,7 @@ static void InitLogging(void)
 	logstream = fopen(logfilename, "w");
 #ifdef DEFAULTDIR
 	if (logdir)
-		link = va("%s/"DEFAULTDIR"/latest-log.txt", logdir);
+		link = va("%s/" DEFAULTDIR "/latest-log.txt", logdir);
 	else
 #endif/*DEFAULTDIR*/
 		link = "latest-log.txt";
@@ -198,9 +198,9 @@ static void InitLogging(void)
 }
 #endif
 
+#ifdef _WIN32
 static void init_exchndl()
 {
-#ifdef _WIN32
 	HMODULE exchndl_module = LoadLibraryA("exchndl.dll");
 	if (exchndl_module != NULL)
 	{
@@ -210,8 +210,8 @@ static void init_exchndl()
 		if (pfnExcHndlInit != NULL)
 			(pfnExcHndlInit)();
 	}
-#endif
 }
+#endif
 
 #ifdef _WIN32
 static void

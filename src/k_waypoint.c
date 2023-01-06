@@ -1949,6 +1949,7 @@ static waypoint_t *K_MakeWaypoint(mobj_t *const mobj)
 	madewaypoint = &waypointheap[numwaypoints];
 	numwaypoints++;
 
+	madewaypoint->mobj = NULL;
 	P_SetTarget(&madewaypoint->mobj, mobj);
 
 	// Don't allow a waypoint that has its next ID set to itself to work

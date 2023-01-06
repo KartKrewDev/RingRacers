@@ -22,8 +22,6 @@
 extern "C" {
 #endif
 
-extern UINT8 *demo_p;
-
 // ======================================
 // DEMO playback/recording related stuff.
 // ======================================
@@ -82,7 +80,7 @@ typedef enum {
 } menudemotype_e;
 
 struct menudemo_t {
-	char filepath[256];
+	char filepath[1023 + 256]; // see M_PrepReplayList and sizeof menupath
 	menudemotype_e type;
 
 	char title[65]; // Null-terminated for string prints

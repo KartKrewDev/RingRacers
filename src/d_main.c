@@ -138,7 +138,8 @@ char srb2home[256] = ".";
 char srb2path[256] = ".";
 boolean usehome = true;
 const char *pandf = "%s" PATHSEP "%s";
-static char addonsdir[MAX_WADPATH];
+char addonsdir[MAX_WADPATH];
+char downloaddir[sizeof addonsdir + sizeof DOWNLOADDIR_PART] = "DOWNLOAD";
 
 //
 // EVENT HANDLING
@@ -1361,7 +1362,7 @@ void D_SRB2Main(void)
 
 	/* and downloads in a subdirectory */
 	snprintf(downloaddir, sizeof downloaddir, "%s%s%s",
-			addonsdir, PATHSEP, "downloads");
+			addonsdir, PATHSEP, DOWNLOADDIR_PART);
 
 	// rand() needs seeded regardless of password
 	srand((unsigned int)time(NULL));

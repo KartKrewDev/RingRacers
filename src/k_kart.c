@@ -624,13 +624,22 @@ static fixed_t K_PlayerWeight(mobj_t *mobj, mobj_t *against)
 		// from causing super crazy bumps.
 		fixed_t spd = K_GetKartSpeed(mobj->player, false, true);
 
+		fixed_t speedfactor = 8 * mapobjectscale;
+
 		weight = (mobj->player->kartweight) * FRACUNIT;
 
-		if (mobj->player->speed > spd)
-			weight += FixedDiv((mobj->player->speed - spd), 8 * mapobjectscale);
+		if (against && against->type == MT_MONITOR)
+		{
+			speedfactor /= 5; // speed matters more
+		}
+		else
+		{
+			if (mobj->player->itemtype == KITEM_BUBBLESHIELD)
+				weight += 9*FRACUNIT;
+		}
 
-		if (mobj->player->itemtype == KITEM_BUBBLESHIELD)
-			weight += 9*FRACUNIT;
+		if (mobj->player->speed > spd)
+			weight += FixedDiv((mobj->player->speed - spd), speedfactor);
 	}
 
 	return weight;
@@ -6219,19 +6228,18 @@ void K_DropHnextList(player_t *player, boolean keepshields)
 
 SINT8 K_GetTotallyRandomResult(UINT8 useodds)
 {
-	itemroulette_t rouletteData = {0};
 	INT32 spawnchance[NUMKARTRESULTS];
 	INT32 totalspawnchance = 0;
 	INT32 i;
 
 	memset(spawnchance, 0, sizeof (spawnchance));
 
-	K_FillItemRouletteData(NULL, &rouletteData);
-
 	for (i = 1; i < NUMKARTRESULTS; i++)
 	{
+		// Avoid calling K_FillItemRouletteData since that
+		// function resets PR_ITEM_ROULETTE.
 		spawnchance[i] = (
-			totalspawnchance += K_KartGetItemOdds(NULL, &rouletteData, useodds, i)
+			totalspawnchance += K_KartGetItemOdds(NULL, NULL, useodds, i)
 		);
 	}
 
