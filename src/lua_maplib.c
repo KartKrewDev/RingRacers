@@ -56,6 +56,10 @@ enum sector_e {
 	sector_triggerer,
 	sector_friction,
 	sector_gravity,
+	sector_action,
+	sector_args,
+	sector_stringargs,
+	sector_activation,
 };
 
 static const char *const sector_opt[] = {
@@ -86,6 +90,10 @@ static const char *const sector_opt[] = {
 	"triggerer",
 	"friction",
 	"gravity",
+	"action",
+	"args"
+	"stringargs",
+	"activation",
 	NULL};
 
 enum subsector_e {
@@ -592,6 +600,42 @@ static int sectorlines_num(lua_State *L)
 // sector_t //
 //////////////
 
+// args, i -> args[i]
+static int sectorargs_get(lua_State *L)
+{
+	INT32 *args = *((INT32**)luaL_checkudata(L, 1, META_SECTORARGS));
+	int i = luaL_checkinteger(L, 2);
+	if (i < 0 || i >= NUMSECTORARGS)
+		return luaL_error(L, LUA_QL("sector_t.args") " index cannot be %d", i);
+	lua_pushinteger(L, args[i]);
+	return 1;
+}
+
+// #args -> NUMSECTORARGS
+static int sectorargs_len(lua_State* L)
+{
+	lua_pushinteger(L, NUMSECTORARGS);
+	return 1;
+}
+
+// stringargs, i -> stringargs[i]
+static int sectorstringargs_get(lua_State *L)
+{
+	char **stringargs = *((char***)luaL_checkudata(L, 1, META_SECTORSTRINGARGS));
+	int i = luaL_checkinteger(L, 2);
+	if (i < 0 || i >= NUMSECTORSTRINGARGS)
+		return luaL_error(L, LUA_QL("line_t.stringargs") " index cannot be %d", i);
+	lua_pushstring(L, stringargs[i]);
+	return 1;
+}
+
+// #stringargs -> NUMLINESTRINGARGS
+static int sectorstringargs_len(lua_State *L)
+{
+	lua_pushinteger(L, NUMSECTORSTRINGARGS);
+	return 1;
+}
+
 static int sector_get(lua_State *L)
 {
 	sector_t *sector = *((sector_t **)luaL_checkudata(L, 1, META_SECTOR));
@@ -710,6 +754,18 @@ static int sector_get(lua_State *L)
 	case sector_gravity: // gravity
 		lua_pushfixed(L, sector->gravity);
 		return 1;
+	case sector_action: // action
+		lua_pushinteger(L, (INT16)sector->action);
+		return 1;
+	case sector_args:
+		LUA_PushUserdata(L, sector->args, META_SECTORARGS);
+		return 1;
+	case sector_stringargs:
+		LUA_PushUserdata(L, sector->stringargs, META_SECTORSTRINGARGS);
+		return 1;
+	case sector_activation: // activation
+		lua_pushinteger(L, sector->activation);
+		return 1;
 	}
 	return 0;
 }
@@ -738,6 +794,8 @@ static int sector_set(lua_State *L)
 	case sector_fslope: // f_slope
 	case sector_cslope: // c_slope
 	case sector_friction: // friction
+	case sector_args: // args
+	case sector_stringargs: // stringargs
 	default:
 		return luaL_error(L, "sector_t field " LUA_QS " cannot be set.", sector_opt[field]);
 	case sector_floorheight: { // floorheight
@@ -815,6 +873,12 @@ static int sector_set(lua_State *L)
 		break;
 	case sector_gravity:
 		sector->gravity = luaL_checkfixed(L, 3);
+		break;
+	case sector_action:
+		sector->action = (INT16)luaL_checkinteger(L, 3);
+		break;
+	case sector_activation:
+		sector->activation = luaL_checkinteger(L, 3);
 		break;
 	}
 	return 0;
@@ -2567,6 +2631,22 @@ int LUA_MapLib(lua_State *L)
 		lua_setfield(L, -2, "__newindex");
 
 		lua_pushcfunction(L, sector_num);
+		lua_setfield(L, -2, "__len");
+	lua_pop(L, 1);
+
+	luaL_newmetatable(L, META_SECTORARGS);
+		lua_pushcfunction(L, sectorargs_get);
+		lua_setfield(L, -2, "__index");
+
+		lua_pushcfunction(L, sectorargs_len);
+		lua_setfield(L, -2, "__len");
+	lua_pop(L, 1);
+
+	luaL_newmetatable(L, META_SECTORSTRINGARGS);
+		lua_pushcfunction(L, sectorstringargs_get);
+		lua_setfield(L, -2, "__index");
+
+		lua_pushcfunction(L, sectorstringargs_len);
 		lua_setfield(L, -2, "__len");
 	lua_pop(L, 1);
 

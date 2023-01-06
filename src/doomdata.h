@@ -153,30 +153,30 @@ enum
 
 	// Transfers FOF properties.
 	ML_TFERLINE			= 0x00008000,
-
-	// Special action is repeatable.
-	ML_REPEATSPECIAL	= 0x00010000,
 };
 
 enum
 {
+	// Special action is repeatable.
+	SPAC_REPEATSPECIAL		= 0x00000001,
+
 	// Activates when crossed by a player.
-	SPAC_CROSS				= 0x00000001,
+	SPAC_CROSS				= 0x00000002,
 
 	// Activates when crossed by an enemy.
-	SPAC_CROSSMONSTER		= 0x00000002,
+	SPAC_CROSSMONSTER		= 0x00000004,
 
 	// Activates when crossed by a projectile.
-	SPAC_CROSSMISSILE		= 0x00000004,
+	SPAC_CROSSMISSILE		= 0x00000008,
 
 	// Activates when bumped by a player.
-	SPAC_PUSH				= 0x00000008,
+	SPAC_PUSH				= 0x00000010,
 
 	// Activates when bumped by an enemy.
-	SPAC_PUSHMONSTER		= 0x00000010,
+	SPAC_PUSHMONSTER		= 0x00000020,
 
 	// Activates when bumped by a missile.
-	SPAC_IMPACT				= 0x00000020,
+	SPAC_IMPACT				= 0x00000040,
 };
 
 // Sector definition, from editing.

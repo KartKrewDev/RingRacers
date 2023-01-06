@@ -870,6 +870,11 @@ static void P_LoadSectors(UINT8 *data)
 
 		ss->friction = ORIG_FRICTION;
 
+		ss->action = 0;
+		memset(ss->args, 0, NUMLINEARGS*sizeof(*ss->args));
+		memset(ss->stringargs, 0x00, NUMLINESTRINGARGS*sizeof(*ss->stringargs));
+		ss->activation = 0;
+
 		P_InitializeSector(ss);
 	}
 }
@@ -980,6 +985,7 @@ static void P_LoadLinedefs(UINT8 *data)
 		memset(ld->stringargs, 0x00, NUMLINESTRINGARGS*sizeof(*ld->stringargs));
 		ld->alpha = FRACUNIT;
 		ld->executordelay = 0;
+		ld->activation = 0;
 		P_SetLinedefV1(i, SHORT(mld->v1));
 		P_SetLinedefV2(i, SHORT(mld->v2));
 
@@ -1216,6 +1222,7 @@ static void P_LoadThings(UINT8 *data)
 		mt->scale = mapobjectscale;
 		memset(mt->args, 0, NUMMAPTHINGARGS*sizeof(*mt->args));
 		memset(mt->stringargs, 0x00, NUMMAPTHINGSTRINGARGS*sizeof(*mt->stringargs));
+		mt->special = 0;
 		mt->pitch = mt->roll = 0;
 
 		mt->type &= 4095;
@@ -1530,6 +1537,43 @@ static void ParseTextmapSectorParameter(UINT32 i, const char *param, const char 
 		sectors[i].triggertag = atol(val);
 	else if (fastcmp(param, "triggerer"))
 		sectors[i].triggerer = atol(val);
+	else if (fastcmp(param, "action"))
+		sectors[i].action = atol(val);
+	else if (fastncmp(param, "stringarg", 9) && strlen(param) > 9)
+	{
+		size_t argnum = atol(param + 9);
+		if (argnum >= NUMSECTORSTRINGARGS)
+			return;
+		sectors[i].stringargs[argnum] = Z_Malloc(strlen(val) + 1, PU_LEVEL, NULL);
+		M_Memcpy(sectors[i].stringargs[argnum], val, strlen(val) + 1);
+	}
+	else if (fastncmp(param, "arg", 3) && strlen(param) > 3)
+	{
+		size_t argnum = atol(param + 3);
+		if (argnum >= NUMSECTORARGS)
+			return;
+		sectors[i].args[argnum] = atol(val);
+	}
+	else if (fastcmp(param, "repeatspecial") && fastcmp("true", val))
+		sectors[i].activation |= SECSPAC_REPEATSPECIAL;
+	else if (fastcmp(param, "playerenter") && fastcmp("true", val))
+		sectors[i].activation |= SECSPAC_ENTER;
+	else if (fastcmp(param, "playerfloor") && fastcmp("true", val))
+		sectors[i].activation |= SECSPAC_FLOOR;
+	else if (fastcmp(param, "playerceiling") && fastcmp("true", val))
+		sectors[i].activation |= SECSPAC_CEILING;
+	else if (fastcmp(param, "monsterenter") && fastcmp("true", val))
+		sectors[i].activation |= SECSPAC_ENTERMONSTER;
+	else if (fastcmp(param, "monsterfloor") && fastcmp("true", val))
+		sectors[i].activation |= SECSPAC_FLOORMONSTER;
+	else if (fastcmp(param, "monsterceiling") && fastcmp("true", val))
+		sectors[i].activation |= SECSPAC_CEILINGMONSTER;
+	else if (fastcmp(param, "missileenter") && fastcmp("true", val))
+		sectors[i].activation |= SECSPAC_ENTERMISSILE;
+	else if (fastcmp(param, "missilefloor") && fastcmp("true", val))
+		sectors[i].activation |= SECSPAC_FLOORMISSILE;
+	else if (fastcmp(param, "missileceiling") && fastcmp("true", val))
+		sectors[i].activation |= SECSPAC_CEILINGMISSILE;
 }
 
 static void ParseTextmapSidedefParameter(UINT32 i, const char *param, const char *val)
@@ -1642,9 +1686,9 @@ static void ParseTextmapLinedefParameter(UINT32 i, const char *param, const char
 		lines[i].flags |= ML_NOTBOUNCY;
 	else if (fastcmp(param, "transfer") && fastcmp("true", val))
 		lines[i].flags |= ML_TFERLINE;
-	else if (fastcmp(param, "repeatspecial") && fastcmp("true", val))
-		lines[i].flags |= ML_REPEATSPECIAL;
 	// Activation flags
+	else if (fastcmp(param, "repeatspecial") && fastcmp("true", val))
+		lines[i].activation |= SPAC_REPEATSPECIAL;
 	else if (fastcmp(param, "playercross") && fastcmp("true", val))
 		lines[i].activation |= SPAC_CROSS;
 	else if (fastcmp(param, "monstercross") && fastcmp("true", val))
@@ -2219,7 +2263,7 @@ static void P_WriteTextmap(void)
 			fprintf(f, "notbouncy = true;\n");
 		if (wlines[i].flags & ML_TFERLINE)
 			fprintf(f, "transfer = true;\n");
-		if (wlines[i].flags & ML_REPEATSPECIAL)
+		if (wlines[i].activation & SPAC_REPEATSPECIAL)
 			fprintf(f, "repeatspecial = true;\n");
 		if (wlines[i].activation & SPAC_CROSS)
 			fprintf(f, "playercross = true;\n");
@@ -2403,6 +2447,34 @@ static void P_WriteTextmap(void)
 			fprintf(f, "triggertag = %d;\n", wsectors[i].triggertag);
 		if (wsectors[i].triggerer != 0)
 			fprintf(f, "triggerer = %d;\n", wsectors[i].triggerer);
+		if (wsectors[i].action != 0)
+			fprintf(f, "action = %d;\n", wsectors[i].action);
+		for (j = 0; j < NUMSECTORARGS; j++)
+			if (wsectors[i].args[j] != 0)
+				fprintf(f, "arg%s = %d;\n", sizeu1(j), wsectors[i].args[j]);
+		for (j = 0; j < NUMSECTORSTRINGARGS; j++)
+			if (wsectors[i].stringargs[j])
+				fprintf(f, "stringarg%s = \"%s\";\n", sizeu1(j), wsectors[i].stringargs[j]);
+		if (wsectors[i].activation & SECSPAC_REPEATSPECIAL)
+			fprintf(f, "repeatspecial = true;\n");
+		if (wsectors[i].activation & SECSPAC_ENTER)
+			fprintf(f, "playerenter = true;\n");
+		if (wsectors[i].activation & SECSPAC_FLOOR)
+			fprintf(f, "playerfloor = true;\n");
+		if (wsectors[i].activation & SECSPAC_CEILING)
+			fprintf(f, "playerceiling = true;\n");
+		if (wsectors[i].activation & SECSPAC_ENTERMONSTER)
+			fprintf(f, "monsterenter = true;\n");
+		if (wsectors[i].activation & SECSPAC_FLOORMONSTER)
+			fprintf(f, "monsterfloor = true;\n");
+		if (wsectors[i].activation & SECSPAC_CEILINGMONSTER)
+			fprintf(f, "monsterceiling = true;\n");
+		if (wsectors[i].activation & SECSPAC_ENTERMISSILE)
+			fprintf(f, "missileenter = true;\n");
+		if (wsectors[i].activation & SECSPAC_FLOORMISSILE)
+			fprintf(f, "missilefloor = true;\n");
+		if (wsectors[i].activation & SECSPAC_CEILINGMISSILE)
+			fprintf(f, "missileceiling = true;\n");
 		fprintf(f, "}\n");
 		fprintf(f, "\n");
 	}
@@ -2497,6 +2569,11 @@ static void P_LoadTextmap(void)
 
 		sc->friction = ORIG_FRICTION;
 
+		sc->action = 0;
+		memset(sc->args, 0, NUMSECTORARGS*sizeof(*sc->args));
+		memset(sc->stringargs, 0x00, NUMSECTORSTRINGARGS*sizeof(*sc->stringargs));
+		sc->activation = 0;
+
 		textmap_colormap.used = false;
 		textmap_colormap.lightcolor = 0;
 		textmap_colormap.lightalpha = 25;
@@ -2549,6 +2626,8 @@ static void P_LoadTextmap(void)
 		ld->sidenum[0] = 0xffff;
 		ld->sidenum[1] = 0xffff;
 
+		ld->activation = 0;
+
 		TextmapParse(linesPos[i], i, ParseTextmapLinedefParameter);
 
 		if (!ld->v1)
@@ -2593,6 +2672,7 @@ static void P_LoadTextmap(void)
 		mt->scale = mapobjectscale;
 		memset(mt->args, 0, NUMMAPTHINGARGS*sizeof(*mt->args));
 		memset(mt->stringargs, 0x00, NUMMAPTHINGSTRINGARGS*sizeof(*mt->stringargs));
+		mt->special = 0;
 		mt->mobj = NULL;
 
 		TextmapParse(mapthingsPos[i], i, ParseTextmapThingParameter);
@@ -5843,14 +5923,12 @@ static void P_ConvertBinaryLinedefTypes(void)
 			lines[i].blendmode = AST_FOG;
 			break;
 		case 2001: //Finish line
-			lines[i].activation |= SPAC_CROSS;
-			lines[i].flags |= ML_REPEATSPECIAL;
+			lines[i].activation |= (SPAC_CROSS|SPAC_REPEATSPECIAL);
 			if (lines[i].flags & ML_NOCLIMB)
 				lines[i].args[0] |= TMCFF_FLIP;
 			break;
 		case 2003: //Respawn line
-			lines[i].activation |= SPAC_CROSS;
-			lines[i].flags |= ML_REPEATSPECIAL;
+			lines[i].activation |= (SPAC_CROSS|SPAC_REPEATSPECIAL);
 			if (lines[i].flags & ML_NOCLIMB)
 				lines[i].args[0] |= TMCRF_FRONTONLY;
 			break;

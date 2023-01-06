@@ -204,6 +204,9 @@ static const struct {
 	{META_LINEARGS,     "line_t.args"},
 	{META_LINESTRINGARGS, "line_t.stringargs"},
 
+	{META_SECTORARGS,     "sector_t.args"},
+	{META_SECTORSTRINGARGS, "sector_t.stringargs"},
+
 	{META_THINGARGS,     "mapthing.args"},
 	{META_THINGSTRINGARGS, "mapthing.stringargs"},
 #ifdef HAVE_LUA_SEGS

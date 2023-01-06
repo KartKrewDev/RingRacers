@@ -1099,8 +1099,40 @@ static void P_NetUnArchiveColormaps(savebuffer_t *save)
 //diff4 flags
 #define SD_DAMAGETYPE 0x01
 #define SD_TRIGGERTAG 0x02
-#define SD_TRIGGERER 0x04
-#define SD_GRAVITY   0x08
+#define SD_TRIGGERER  0x04
+#define SD_GRAVITY    0x08
+#define SD_ACTION     0x10
+#define SD_ARGS       0x20
+#define SD_STRINGARGS 0x40
+#define SD_DIFF5      0x80
+
+//diff5 flags
+#define SD_ACTIVATION 0x01
+
+static boolean P_SectorArgsEqual(const sector_t *sc, const sector_t *spawnsc)
+{
+	UINT8 i;
+	for (i = 0; i < NUMSECTORARGS; i++)
+		if (sc->args[i] != spawnsc->args[i])
+			return false;
+
+	return true;
+}
+
+static boolean P_SectorStringArgsEqual(const sector_t *sc, const sector_t *spawnsc)
+{
+	UINT8 i;
+	for (i = 0; i < NUMSECTORSTRINGARGS; i++)
+	{
+		if (!sc->stringargs[i])
+			return !spawnsc->stringargs[i];
+
+		if (strcmp(sc->stringargs[i], spawnsc->stringargs[i]))
+			return false;
+	}
+
+	return true;
+}
 
 #define LD_FLAG     0x01
 #define LD_SPECIAL  0x02
@@ -1124,7 +1156,7 @@ static void P_NetUnArchiveColormaps(savebuffer_t *save)
 // diff3 flags
 #define LD_ACTIVATION    0x01
 
-static boolean P_AreArgsEqual(const line_t *li, const line_t *spawnli)
+static boolean P_LineArgsEqual(const line_t *li, const line_t *spawnli)
 {
 	UINT8 i;
 	for (i = 0; i < NUMLINEARGS; i++)
@@ -1134,7 +1166,7 @@ static boolean P_AreArgsEqual(const line_t *li, const line_t *spawnli)
 	return true;
 }
 
-static boolean P_AreStringArgsEqual(const line_t *li, const line_t *spawnli)
+static boolean P_LineStringArgsEqual(const line_t *li, const line_t *spawnli)
 {
 	UINT8 i;
 	for (i = 0; i < NUMLINESTRINGARGS; i++)
@@ -1243,11 +1275,11 @@ static void ArchiveSectors(savebuffer_t *save)
 	size_t i, j;
 	const sector_t *ss = sectors;
 	const sector_t *spawnss = spawnsectors;
-	UINT8 diff, diff2, diff3, diff4;
+	UINT8 diff, diff2, diff3, diff4, diff5;
 
 	for (i = 0; i < numsectors; i++, ss++, spawnss++)
 	{
-		diff = diff2 = diff3 = diff4 = 0;
+		diff = diff2 = diff3 = diff4 = diff5 = 0;
 		if (ss->floorheight != spawnss->floorheight)
 			diff |= SD_FLOORHT;
 		if (ss->ceilingheight != spawnss->ceilingheight)
@@ -1303,8 +1335,20 @@ static void ArchiveSectors(savebuffer_t *save)
 		if (ss->gravity != spawnss->gravity)
 			diff4 |= SD_GRAVITY;
 
+		if (ss->action != spawnss->action)
+			diff4 |= SD_ACTION;
+		if (!P_SectorArgsEqual(ss, spawnss))
+			diff4 |= SD_ARGS;
+		if (!P_SectorStringArgsEqual(ss, spawnss))
+			diff4 |= SD_STRINGARGS;
+		if (ss->activation != spawnss->activation)
+			diff5 |= SD_ACTIVATION;
+
 		if (ss->ffloors && CheckFFloorDiff(ss))
 			diff |= SD_FFLOORS;
+
+		if (diff5)
+			diff4 |= SD_DIFF5;
 
 		if (diff4)
 			diff3 |= SD_DIFF4;
@@ -1383,6 +1427,35 @@ static void ArchiveSectors(savebuffer_t *save)
 				WRITEUINT8(save->p, ss->triggerer);
 			if (diff4 & SD_GRAVITY)
 				WRITEFIXED(save->p, ss->gravity);
+
+			if (diff4 & SD_ACTION)
+				WRITEINT16(save->p, ss->action);
+			if (diff4 & SD_ARGS)
+			{
+				for (j = 0; j < NUMSECTORARGS; j++)
+					WRITEINT32(save->p, ss->args[j]);
+			}
+			if (diff4 & SD_STRINGARGS)
+			{
+				for (j = 0; j < NUMSECTORSTRINGARGS; j++)
+				{
+					size_t len, k;
+
+					if (!ss->stringargs[j])
+					{
+						WRITEINT32(save->p, 0);
+						continue;
+					}
+
+					len = strlen(ss->stringargs[j]);
+					WRITEINT32(save->p, len);
+					for (k = 0; k < len; k++)
+						WRITECHAR(save->p, ss->stringargs[j][k]);
+				}
+			}
+			if (diff5 & SD_ACTIVATION)
+				WRITEUINT32(save->p, ss->activation);
+
 			if (diff & SD_FFLOORS)
 				ArchiveFFloors(save, ss);
 		}
@@ -1394,7 +1467,7 @@ static void ArchiveSectors(savebuffer_t *save)
 static void UnArchiveSectors(savebuffer_t *save)
 {
 	UINT16 i, j;
-	UINT8 diff, diff2, diff3, diff4;
+	UINT8 diff, diff2, diff3, diff4, diff5;
 	for (;;)
 	{
 		i = READUINT16(save->p);
@@ -1418,6 +1491,11 @@ static void UnArchiveSectors(savebuffer_t *save)
 			diff4 = READUINT8(save->p);
 		else
 			diff4 = 0;
+
+		if (diff4 & SD_DIFF5)
+			diff5 = READUINT8(save->p);
+		else
+			diff5 = 0;
 
 		if (diff & SD_FLOORHT)
 			sectors[i].floorheight = READFIXED(save->p);
@@ -1504,6 +1582,36 @@ static void UnArchiveSectors(savebuffer_t *save)
 		if (diff4 & SD_GRAVITY)
 			sectors[i].gravity = READFIXED(save->p);
 
+		if (diff4 & SD_ACTION)
+			sectors[i].action = READINT16(save->p);
+		if (diff4 & SD_ARGS)
+		{
+			for (j = 0; j < NUMSECTORARGS; j++)
+				sectors[i].args[j] = READINT32(save->p);
+		}
+		if (diff4 & SD_STRINGARGS)
+		{
+			for (j = 0; j < NUMLINESTRINGARGS; j++)
+			{
+				size_t len = READINT32(save->p);
+				size_t k;
+
+				if (!len)
+				{
+					Z_Free(sectors[i].stringargs[j]);
+					sectors[i].stringargs[j] = NULL;
+					continue;
+				}
+
+				sectors[i].stringargs[j] = Z_Realloc(sectors[i].stringargs[j], len + 1, PU_LEVEL, NULL);
+				for (k = 0; k < len; k++)
+					sectors[i].stringargs[j][k] = READCHAR(save->p);
+				sectors[i].stringargs[j][len] = '\0';
+			}
+		}
+		if (diff5 & SD_ACTIVATION)
+			sectors[i].activation = READUINT32(save->p);
+
 		if (diff & SD_FFLOORS)
 			UnArchiveFFloors(save, &sectors[i]);
 	}
@@ -1531,10 +1639,10 @@ static void ArchiveLines(savebuffer_t *save)
 		if (spawnli->special == 321 || spawnli->special == 322) // only reason li->callcount would be non-zero is if either of these are involved
 			diff |= LD_CLLCOUNT;
 
-		if (!P_AreArgsEqual(li, spawnli))
+		if (!P_LineArgsEqual(li, spawnli))
 			diff2 |= LD_ARGS;
 
-		if (!P_AreStringArgsEqual(li, spawnli))
+		if (!P_LineStringArgsEqual(li, spawnli))
 			diff2 |= LD_STRINGARGS;
 
 		if (li->executordelay != spawnli->executordelay)

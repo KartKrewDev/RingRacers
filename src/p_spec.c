@@ -2101,7 +2101,7 @@ static void K_HandleLapDecrement(player_t *player)
 
 static void P_LineSpecialWasActivated(line_t *line)
 {
-	if (!(line->flags & ML_REPEATSPECIAL))
+	if (!(line->activation & SPAC_REPEATSPECIAL))
 	{
 		line->special = 0;
 	}
@@ -5408,6 +5408,260 @@ void P_CheckMobjTrigger(mobj_t *mobj, boolean pushable)
 	if TELEPORTED(mobj)	return;
 
 	P_CheckMobjSectorTrigger(mobj, originalsector);
+}
+
+static void P_SectorActionWasActivated(sector_t *sec)
+{
+	if ((sec->activation & SECSPAC_REPEATSPECIAL) == 0)
+	{
+		sec->action = 0;
+	}
+}
+
+static boolean P_AllowSpecialEnter(sector_t *sec, mobj_t *thing)
+{
+	if (thing->player != NULL)
+	{
+		return !!(sec->activation & SECSPAC_ENTER);
+	}
+	else if ((thing->flags & (MF_ENEMY|MF_BOSS)) != 0)
+	{
+		return !!(sec->activation & SECSPAC_ENTERMONSTER);
+	}
+	else if (K_IsMissileOrKartItem(thing) == true)
+	{
+		return !!(sec->activation & SECSPAC_ENTERMISSILE);
+	}
+
+	// No activation flags for you.
+	return false;
+}
+
+static boolean P_AllowSpecialFloor(sector_t *sec, mobj_t *thing)
+{
+	if (thing->player != NULL)
+	{
+		return !!(sec->activation & SECSPAC_FLOOR);
+	}
+	else if ((thing->flags & (MF_ENEMY|MF_BOSS)) != 0)
+	{
+		return !!(sec->activation & SECSPAC_FLOORMONSTER);
+	}
+	else if (K_IsMissileOrKartItem(thing) == true)
+	{
+		return !!(sec->activation & SECSPAC_FLOORMISSILE);
+	}
+
+	// No activation flags for you.
+	return false;
+}
+
+static boolean P_AllowSpecialCeiling(sector_t *sec, mobj_t *thing)
+{
+	if (thing->player != NULL)
+	{
+		return !!(sec->activation & SECSPAC_CEILING);
+	}
+	else if ((thing->flags & (MF_ENEMY|MF_BOSS)) != 0)
+	{
+		return !!(sec->activation & SECSPAC_CEILINGMONSTER);
+	}
+	else if (K_IsMissileOrKartItem(thing) == true)
+	{
+		return !!(sec->activation & SECSPAC_CEILINGMISSILE);
+	}
+
+	// No activation flags for you.
+	return false;
+}
+
+static void P_CheckMobj3DFloorAction(mobj_t *mo, sector_t *sec)
+{
+	sector_t *originalsector = mo->subsector->sector;
+	ffloor_t *rover;
+	sector_t *roversec;
+
+	activator_t *activator = NULL;
+	boolean result = false;
+
+	for (rover = sec->ffloors; rover; rover = rover->next)
+	{
+		roversec = rover->master->frontsector;
+
+		if (P_CanActivateSpecial(roversec->action) == false)
+		{
+			// No special to even activate.
+			continue;
+		}
+
+		if (P_AllowSpecialEnter(roversec, mo) == false)
+		{
+			boolean floor = false;
+			boolean ceiling = false;
+
+			if (P_AllowSpecialFloor(roversec, mo) == true)
+			{
+				floor = (P_GetMobjFeet(mo) == P_GetSpecialTopZ(mo, roversec, roversec));
+			}
+
+			if (P_AllowSpecialCeiling(roversec, mo) == true)
+			{
+				ceiling = (P_GetMobjHead(mo) == P_GetSpecialBottomZ(mo, roversec, roversec));
+			}
+
+			if (floor == false && ceiling == false)
+			{
+				continue;
+			}
+		}
+
+		activator = Z_Calloc(sizeof(activator_t), PU_LEVEL, NULL);
+		I_Assert(activator != NULL);
+
+		P_SetTarget(&activator->mo, mo);
+		activator->sector = roversec;
+
+		result = P_ProcessSpecial(activator, roversec->action, roversec->args, roversec->stringargs);
+		Z_Free(activator);
+
+		if (result == true)
+		{
+			P_SectorActionWasActivated(roversec);
+		}
+
+		if TELEPORTED(mo) return;
+	}
+}
+
+static void P_CheckMobjPolyobjAction(mobj_t *mo)
+{
+	sector_t *originalsector = mo->subsector->sector;
+	polyobj_t *po;
+	sector_t *polysec;
+	boolean touching = false;
+	boolean inside = false;
+
+	activator_t *activator = NULL;
+	boolean result = false;
+
+	for (po = mo->subsector->polyList; po; po = (polyobj_t *)(po->link.next))
+	{
+		polysec = po->lines[0]->backsector;
+
+		touching = P_MobjTouchingPolyobj(po, mo);
+		inside = P_MobjInsidePolyobj(po, mo);
+
+		if (!(inside || touching))
+			continue;
+
+		if (P_CanActivateSpecial(polysec->action) == false)
+		{
+			// No special to even activate.
+			continue;
+		}
+
+		if (P_AllowSpecialEnter(polysec, mo) == false)
+		{
+			boolean floor = false;
+			boolean ceiling = false;
+
+			if (P_AllowSpecialFloor(polysec, mo) == true)
+			{
+				floor = (P_GetMobjFeet(mo) == P_GetSpecialTopZ(mo, polysec, polysec));
+			}
+
+			if (P_AllowSpecialCeiling(polysec, mo) == true)
+			{
+				ceiling = (P_GetMobjHead(mo) == P_GetSpecialBottomZ(mo, polysec, polysec));
+			}
+
+			if (floor == false && ceiling == false)
+			{
+				continue;
+			}
+		}
+
+		activator = Z_Calloc(sizeof(activator_t), PU_LEVEL, NULL);
+		I_Assert(activator != NULL);
+
+		P_SetTarget(&activator->mo, mo);
+		activator->sector = polysec;
+
+		result = P_ProcessSpecial(activator, polysec->action, polysec->args, polysec->stringargs);
+		Z_Free(activator);
+
+		if (result == true)
+		{
+			P_SectorActionWasActivated(polysec);
+		}
+
+		if TELEPORTED(mo) return;
+	}
+}
+
+static void P_CheckMobjSectorAction(mobj_t *mo, sector_t *sec)
+{
+	activator_t *activator = NULL;
+	boolean result = false;
+
+	if (P_CanActivateSpecial(sec->action) == false)
+	{
+		// No special to even activate.
+		return;
+	}
+
+	if (P_AllowSpecialEnter(sec, mo) == false)
+	{
+		boolean floor = false;
+		boolean ceiling = false;
+
+		if (P_AllowSpecialFloor(sec, mo) == true)
+		{
+			floor = (P_GetMobjFeet(mo) == P_GetSpecialBottomZ(mo, sec, sec));
+		}
+
+		if (P_AllowSpecialCeiling(sec, mo) == true)
+		{
+			ceiling = (P_GetMobjHead(mo) == P_GetSpecialTopZ(mo, sec, sec));
+		}
+
+		if (floor == false && ceiling == false)
+		{
+			return;
+		}
+	}
+
+	activator = Z_Calloc(sizeof(activator_t), PU_LEVEL, NULL);
+	I_Assert(activator != NULL);
+
+	P_SetTarget(&activator->mo, mo);
+	activator->sector = sec;
+
+	result = P_ProcessSpecial(activator, sec->action, sec->args, sec->stringargs);
+	Z_Free(activator);
+
+	if (result == true)
+	{
+		P_SectorActionWasActivated(sec);
+	}
+}
+
+void P_CheckMobjTouchingSectorActions(mobj_t *mobj)
+{
+	sector_t *originalsector;
+
+	if (!mobj->subsector)
+		return;
+
+	originalsector = mobj->subsector->sector;
+
+	P_CheckMobj3DFloorAction(mobj, originalsector);
+	if TELEPORTED(mobj)	return;
+
+	P_CheckMobjPolyobjAction(mobj);
+	if TELEPORTED(mobj)	return;
+
+	P_CheckMobjSectorAction(mobj, originalsector);
 }
 
 #undef TELEPORTED
