@@ -9406,17 +9406,28 @@ static INT32 K_FlameShieldMax(player_t *player)
 
 boolean K_PlayerEBrake(player_t *player)
 {
+	if (player->respawn.state != RESPAWNST_NONE
+		&& player->respawn.init == true)
+	{
+		return false;
+	}
+
 	if (player->fastfall != 0)
 	{
 		return true;
 	}
 
-	return (K_GetKartButtons(player) & BT_EBRAKEMASK) == BT_EBRAKEMASK
+	if ((K_GetKartButtons(player) & BT_EBRAKEMASK) == BT_EBRAKEMASK
 		&& player->drift == 0
 		&& P_PlayerInPain(player) == false
 		&& player->justbumped == 0
 		&& player->spindashboost == 0
-		&& player->nocontrol == 0;
+		&& player->nocontrol == 0)
+	{
+		return true;
+	}
+
+	return false;
 }
 
 SINT8 K_Sliptiding(player_t *player)
@@ -9444,10 +9455,13 @@ void K_KartEbrakeVisuals(player_t *p)
 		{
 			wave = P_SpawnMobj(p->mo->x, p->mo->y, p->mo->z, MT_SOFTLANDING);
 			P_SetScale(wave, p->mo->scale);
-			wave->momx = p->mo->momx;
-			wave->momy = p->mo->momy;
-			wave->momz = p->mo->momz;
-			wave->standingslope = p->mo->standingslope;
+			if (p->respawn.state == RESPAWNST_NONE)
+			{
+				wave->momx = p->mo->momx;
+				wave->momy = p->mo->momy;
+				wave->momz = p->mo->momz;
+				wave->standingslope = p->mo->standingslope;
+			}
 			K_ReduceVFX(wave, p);
 		}
 
@@ -9688,7 +9702,12 @@ static void K_KartSpindash(player_t *player)
 	}
 
 	// Handle fast falling behaviors first.
-	if (onGround == false)
+	if (player->respawn.state != RESPAWNST_NONE)
+	{
+		// This is handled in K_MovePlayerToRespawnPoint.
+		return;
+	}
+	else if (onGround == false)
 	{
 		// Update fastfall.
 		player->fastfall = player->mo->momz;

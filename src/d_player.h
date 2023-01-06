@@ -308,6 +308,7 @@ struct respawnvars_t
 	tic_t dropdash; // Drop Dash charge timer
 	boolean truedeath; // Your soul has left your body
 	boolean manual; // Respawn coords were manually set, please respawn exactly there
+	boolean init;
 };
 
 // player_t struct for all bot variables

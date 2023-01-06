@@ -2219,7 +2219,7 @@ void P_MovePlayer(player_t *player)
 	runspd = FixedMul(runspd, player->mo->movefactor);
 
 	// Control relinquishing stuff!
-	if (player->nocontrol)
+	if (player->nocontrol || player->respawn.state == RESPAWNST_MOVE)
 		player->pflags |= PF_STASIS;
 
 	// note: don't unset stasis here

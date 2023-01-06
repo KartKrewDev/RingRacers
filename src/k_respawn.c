@@ -269,6 +269,7 @@ void K_DoIngameRespawn(player_t *player)
 
 	player->respawn.timer = RESPAWN_TIME;
 	player->respawn.state = RESPAWNST_MOVE;
+	player->respawn.init = true;
 
 	player->respawn.airtimer = player->airtime;
 	player->respawn.truedeath = false;
@@ -337,7 +338,7 @@ static void K_MovePlayerToRespawnPoint(player_t *player)
 	player->mo->momx = player->mo->momy = player->mo->momz = 0;
 
 	player->flashing = 2;
-	player->nocontrol = max(2, player->nocontrol);
+	//player->nocontrol = max(2, player->nocontrol);
 
 	if (leveltime % 8 == 0 && !mapreset)
 	{
@@ -365,6 +366,9 @@ static void K_MovePlayerToRespawnPoint(player_t *player)
 		player->mo->y = dest.y;
 		player->mo->z = dest.z;
 		P_SetThingPosition(player->mo);
+
+		// At the first valid waypoint, permit extra player control options.
+		player->respawn.init = false;
 
 		// Find the next waypoint to head towards
 		if (player->respawn.wp != NULL)
@@ -444,6 +448,13 @@ static void K_MovePlayerToRespawnPoint(player_t *player)
 		player->mo->momx = step.x;
 		player->mo->momy = step.y;
 		player->mo->momz = step.z;
+	}
+
+	if (player->respawn.init == false && K_PlayerEBrake(player) == true)
+	{
+		// Manual drop!
+		player->respawn.state = RESPAWNST_DROP;
+		return;
 	}
 
 	// NOW THEN, time for loads of dumb duplication!
