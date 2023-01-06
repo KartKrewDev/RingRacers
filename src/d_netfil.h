@@ -62,7 +62,8 @@ struct fileneeded_t
 
 extern INT32 fileneedednum;
 extern fileneeded_t fileneeded[MAX_WADFILES];
-extern char downloaddir[512];
+#define DOWNLOADDIR_PART "downloads"
+extern char downloaddir[];
 
 extern INT32 lastfilenum;
 extern INT32 downloadcompletednum;
