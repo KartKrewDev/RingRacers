@@ -1019,12 +1019,90 @@ bool CallFunc_EndLog(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word
 	(void)argV;
 	(void)argC;
 
-	if (ACS_ActivatorIsLocal(thread) == true)
-	{
-		CONS_Printf("%s\n", thread->printBuf.data());
-	}
-
+	CONS_Printf("%s\n", thread->printBuf.data());
 	thread->printBuf.drop();
+	return false;
+}
+
+/*--------------------------------------------------
+	bool CallFunc_strcmp(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
+
+		ACS wrapper for strcmp.
+--------------------------------------------------*/
+static int ACS_strcmp(ACSVM::String *a, ACSVM::String *b)
+{
+	for (char const *sA = a->str, *sB = b->str; ; ++sA, ++sB)
+	{
+		char cA = *sA, cB = *sB;
+
+		if (cA != cB)
+		{
+			return (cA < cB) ? -1 : 1;
+		}
+
+		if (!cA)
+		{
+			return 0;
+		}
+	}
+}
+
+bool CallFunc_strcmp(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
+{
+	ACSVM::MapScope *map = NULL;
+
+	ACSVM::String *strA = nullptr;
+	ACSVM::String *strB = nullptr;
+
+	(void)argC;
+
+	map = thread->scopeMap;
+
+	strA = map->getString(argV[0]);
+	strB = map->getString(argV[1]);
+
+	thread->dataStk.push(ACS_strcmp(strA, strB));
+	return false;
+}
+
+/*--------------------------------------------------
+	bool CallFunc_strcasecmp(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
+
+		ACS wrapper for strcasecmp / stricmp.
+--------------------------------------------------*/
+static int ACS_strcasecmp(ACSVM::String *a, ACSVM::String *b)
+{
+	for (char const *sA = a->str, *sB = b->str; ; ++sA, ++sB)
+	{
+		char cA = std::tolower(*sA), cB = std::tolower(*sB);
+
+		if (cA != cB)
+		{
+			return (cA < cB) ? -1 : 1;
+		}
+
+		if (!cA)
+		{
+			return 0;
+		}
+	}
+}
+
+bool CallFunc_strcasecmp(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
+{
+	ACSVM::MapScope *map = NULL;
+
+	ACSVM::String *strA = nullptr;
+	ACSVM::String *strB = nullptr;
+
+	(void)argC;
+
+	map = thread->scopeMap;
+
+	strA = map->getString(argV[0]);
+	strB = map->getString(argV[1]);
+
+	thread->dataStk.push(ACS_strcasecmp(strA, strB));
 	return false;
 }
 

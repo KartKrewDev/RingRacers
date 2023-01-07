@@ -144,6 +144,9 @@ Environment::Environment()
 	//addFuncDataACS0(   7, addCallFunc(CallFunc_GetSideUDMFInt));
 	//addFuncDataACS0(   8, addCallFunc(CallFunc_GetSideUDMFFixed));
 
+	addFuncDataACS0( 100, addCallFunc(CallFunc_strcmp));
+	addFuncDataACS0( 101, addCallFunc(CallFunc_strcasecmp));
+
 	addFuncDataACS0( 300, addCallFunc(CallFunc_CountEnemies));
 	addFuncDataACS0( 301, addCallFunc(CallFunc_CountPushables));
 	addFuncDataACS0( 302, addCallFunc(CallFunc_HaveUnlockableTrigger));
