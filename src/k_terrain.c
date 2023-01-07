@@ -1734,7 +1734,7 @@ static boolean K_DoTERRAINLumpParse(size_t num, void (*parser)(size_t, char *, c
 }
 
 /*--------------------------------------------------
-	static boolean K_TERRAINLumpParser(UINT8 *data, size_t size)
+	static boolean K_TERRAINLumpParser(char *data, size_t size)
 
 		Parses inputted lump data as a TERRAIN lump.
 
@@ -1745,9 +1745,9 @@ static boolean K_DoTERRAINLumpParse(size_t num, void (*parser)(size_t, char *, c
 	Return:-
 		false if any errors occured, otherwise true.
 --------------------------------------------------*/
-static boolean K_TERRAINLumpParser(UINT8 *data, size_t size)
+static boolean K_TERRAINLumpParser(char *data, size_t size)
 {
-	char *tkn = M_GetToken((char *)data);
+	char *tkn = M_GetToken(data);
 	UINT32 tknHash = 0;
 	size_t pos = 0;
 	size_t i;
@@ -2136,6 +2136,7 @@ void K_InitTerrain(UINT16 wadNum)
 		else
 		{
 			size_t size = W_LumpLengthPwad(wadNum, lumpNum);
+			char *datacopy;
 
 			size_t nameLength = strlen(wadfiles[wadNum]->filename) + 1 + strlen(lump_p->fullname); // length of file name, '|', and lump name
 			char *name = malloc(nameLength + 1);
@@ -2146,7 +2147,16 @@ void K_InitTerrain(UINT16 wadNum)
 			size = W_LumpLengthPwad(wadNum, lumpNum);
 
 			CONS_Printf(M_GetText("Loading TERRAIN from %s\n"), name);
-			K_TERRAINLumpParser(data, size);
+
+			datacopy = (char *)Z_Malloc((size+1)*sizeof(char),PU_STATIC,NULL);
+			memmove(datacopy,data,size);
+			datacopy[size] = '\0';
+
+			Z_Free(data);
+
+			K_TERRAINLumpParser(datacopy, size);
+
+			Z_Free(datacopy);
 
 			free(name);
 		}

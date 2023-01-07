@@ -5011,6 +5011,9 @@ static void P_ProcessZoomTube(player_t *player, mtag_t sectag, boolean end)
 	if (player->mo->tracer && player->mo->tracer->type == MT_TUBEWAYPOINT && player->carry == CR_ZOOMTUBE)
 		return;
 
+	if (player->respawn.state != RESPAWNST_NONE)
+		return;
+
 	// Find line #3 tagged to this sector
 	lineindex = Tag_FindLineSpecial(3, sectag);
 

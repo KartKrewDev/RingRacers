@@ -2219,7 +2219,7 @@ void P_MovePlayer(player_t *player)
 	runspd = FixedMul(runspd, player->mo->movefactor);
 
 	// Control relinquishing stuff!
-	if (player->nocontrol)
+	if (player->nocontrol || player->respawn.state == RESPAWNST_MOVE)
 		player->pflags |= PF_STASIS;
 
 	// note: don't unset stasis here
@@ -4166,7 +4166,7 @@ void P_PlayerThink(player_t *player)
 		// for a bit after a teleport.
 		player->mo->reactiontime--;
 	}
-	else if (player->mo->tracer && player->mo->tracer->type == MT_TUBEWAYPOINT)
+	else if (player->carry == CR_ZOOMTUBE && player->mo->tracer && player->mo->tracer->type == MT_TUBEWAYPOINT)
 	{
 		P_DoZoomTube(player);
 		player->rmomx = player->rmomy = 0;
@@ -4211,7 +4211,7 @@ void P_PlayerThink(player_t *player)
 	// Flash player after being hit.
 	if (!(player->hyudorotimer // SRB2kart - fixes Hyudoro not flashing when it should.
 		|| player->growshrinktimer > 0 // Grow doesn't flash either.
-		|| (player->respawn.state != RESPAWNST_NONE) // Respawn timer (for drop dash effect)
+		|| (player->respawn.state != RESPAWNST_NONE && player->respawn.truedeath == true) // Respawn timer (for drop dash effect)
 		|| (player->pflags & PF_NOCONTEST) // NO CONTEST explosion
 		|| ((gametyperules & GTR_BUMPERS) && player->bumpers <= 0 && player->karmadelay)))
 	{

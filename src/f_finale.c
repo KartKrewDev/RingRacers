@@ -1913,8 +1913,8 @@ void F_VersionDrawer(void)
 		addtext(V_ALLOWLOWERCASE|V_REDMAP, "Netgame host for testers");
 		addtext(V_ALLOWLOWERCASE|V_TRANSLUCENT, va("%s", compdate));
 #elif defined(DEVELOP)
-		addtext(V_ALLOWLOWERCASE|V_TRANSLUCENT, comprevision);
-		addtext(V_ALLOWLOWERCASE|V_TRANSLUCENT, compbranch);
+		addtext(V_ALLOWLOWERCASE|V_TRANSLUCENT, va("%s %s", comprevision, compnote));
+		addtext(V_ALLOWLOWERCASE|V_TRANSLUCENT, D_GetFancyBranchName());
 #else // Regular build
 		addtext(V_ALLOWLOWERCASE|V_TRANSLUCENT, va("%s", VERSIONSTRING));
 #endif
