@@ -3105,8 +3105,8 @@ boolean P_ProcessSpecial(activator_t *activator, INT16 special, INT32 *args, cha
 
 				speed = args[1] << FRACBITS;
 				angle = FixedAngle(args[2] << FRACBITS) >> ANGLETOFINESHIFT;
-				dx = FixedMul(FixedMul(FINECOSINE(angle), speed) >> SCROLL_SHIFT, CARRYFACTOR);
-				dy = FixedMul(FixedMul(  FINESINE(angle), speed) >> SCROLL_SHIFT, CARRYFACTOR);
+				dx = FixedMul(FINECOSINE(angle), speed) >> SCROLL_SHIFT;
+				dy = FixedMul(  FINESINE(angle), speed) >> SCROLL_SHIFT;
 
 				for (th = thlist[THINK_MAIN].next; th != &thlist[THINK_MAIN]; th = th->next)
 				{
@@ -3117,8 +3117,22 @@ boolean P_ProcessSpecial(activator_t *activator, INT16 special, INT32 *args, cha
 					if (!Tag_Find(&sectors[scroller->affectee].tags, args[0]))
 						continue;
 
-					scroller->dx = dx;
-					scroller->dy = dy;
+					switch (scroller->type)
+					{
+						case sc_carry:
+						case sc_carry_ceiling:
+						{
+							scroller->dx = FixedMul(-dx, CARRYFACTOR);
+							scroller->dy = FixedMul(dy, CARRYFACTOR);
+							break;
+						}
+						default:
+						{
+							scroller->dx = dx;
+							scroller->dy = dy;
+							break;
+						}
+					}
 				}
 			}
 			break;
