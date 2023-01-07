@@ -572,7 +572,7 @@ static INT32 SDLJoyAxis(const Sint16 axis, UINT8 pid)
 
 static void Impl_HandleWindowEvent(SDL_WindowEvent evt)
 {
-#define FOCUSUNION (mousefocus | (kbfocus << 1))
+#define FOCUSUNION static_cast<unsigned int>(mousefocus | (kbfocus << 1))
 	static SDL_bool firsttimeonmouse = SDL_TRUE;
 	static SDL_bool mousefocus = SDL_TRUE;
 	static SDL_bool kbfocus = SDL_TRUE;
