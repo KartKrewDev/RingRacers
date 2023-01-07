@@ -1482,10 +1482,6 @@ static void ParseTextmapSectorParameter(UINT32 i, const char *param, const char 
 		sectors[i].flags |= MSF_TRIGGERSPECIAL_TOUCH;
 	else if (fastcmp(param, "triggerspecial_headbump") && fastcmp("true", val))
 		sectors[i].flags |= MSF_TRIGGERSPECIAL_HEADBUMP;
-	else if (fastcmp(param, "triggerline_plane") && fastcmp("true", val))
-		sectors[i].flags |= MSF_TRIGGERLINE_PLANE;
-	else if (fastcmp(param, "triggerline_mobj") && fastcmp("true", val))
-		sectors[i].flags |= MSF_TRIGGERLINE_MOBJ;
 	else if (fastcmp(param, "invertprecip") && fastcmp("true", val))
 		sectors[i].flags |= MSF_INVERTPRECIP;
 	else if (fastcmp(param, "gravityflip") && fastcmp("true", val))
@@ -1533,10 +1529,6 @@ static void ParseTextmapSectorParameter(UINT32 i, const char *param, const char 
 		if (fastcmp(val, "Instakill"))
 			sectors[i].damagetype = SD_INSTAKILL;
 	}
-	else if (fastcmp(param, "triggertag"))
-		sectors[i].triggertag = atol(val);
-	else if (fastcmp(param, "triggerer"))
-		sectors[i].triggerer = atol(val);
 	else if (fastcmp(param, "action"))
 		sectors[i].action = atol(val);
 	else if (fastncmp(param, "stringarg", 9) && strlen(param) > 9)
@@ -1650,8 +1642,6 @@ static void ParseTextmapLinedefParameter(UINT32 i, const char *param, const char
 		if (fastcmp(val, "fog"))
 			lines[i].blendmode = AST_FOG;
 	}
-	else if (fastcmp(param, "executordelay"))
-		lines[i].executordelay = atol(val);
 
 	// Flags
 	else if (fastcmp(param, "blocking") && fastcmp("true", val))
@@ -2073,8 +2063,16 @@ static void P_WriteTextmap(void)
 				break;
 		}
 
-		if (wlines[i].special >= 300 && wlines[i].special < 400 && wlines[i].flags & ML_WRAPMIDTEX)
-			CONS_Alert(CONS_WARNING, M_GetText("Linedef executor trigger linedef %s has disregard order flag, which is not supported in UDMF.\n"), sizeu1(i));
+		if (wlines[i].special >= 300 && wlines[i].special < 400)
+		{
+			CONS_Alert(CONS_WARNING, M_GetText("Linedef %s is a linedef executor, which is not supported in UDMF. Use ACS instead.\n"), sizeu1(i));
+			wlines[i].special = 0;
+		}
+
+		if (wlines[i].executordelay != 0)
+		{
+			CONS_Alert(CONS_WARNING, M_GetText("Linedef %s has an linedef executor delay, which is not supported in UDMF. Use ACS instead.\n"), sizeu1(i));
+		}
 	}
 
 	for (i = 0; i < numsectors; i++)
@@ -2090,7 +2088,7 @@ static void P_WriteTextmap(void)
 		{
 			case 9:
 			case 10:
-				CONS_Alert(CONS_WARNING, M_GetText("Sector %s has ring drainer effect, which is not supported in UDMF. Use linedef type 462 instead.\n"), sizeu1(i));
+				CONS_Alert(CONS_WARNING, M_GetText("Sector %s has ring drainer effect, which is not supported in UDMF. Use action 462 instead.\n"), sizeu1(i));
 				break;
 			default:
 				break;
@@ -2099,16 +2097,29 @@ static void P_WriteTextmap(void)
 		switch (GETSECSPECIAL(wsectors[i].special, 2))
 		{
 			case 6:
-				CONS_Alert(CONS_WARNING, M_GetText("Sector %s has emerald check trigger type, which is not supported in UDMF. Use linedef types 337-339 instead.\n"), sizeu1(i));
+				CONS_Alert(CONS_WARNING, M_GetText("Sector %s has emerald check trigger type, which is not supported in UDMF. Use ACS instead.\n"), sizeu1(i));
 				break;
 			case 7:
-				CONS_Alert(CONS_WARNING, M_GetText("Sector %s has NiGHTS mare trigger type, which is not supported in UDMF. Use linedef types 340-342 instead.\n"), sizeu1(i));
+				CONS_Alert(CONS_WARNING, M_GetText("Sector %s has NiGHTS mare trigger type, which is not supported in UDMF. Use ACS instead.\n"), sizeu1(i));
 				break;
 			case 9:
-				CONS_Alert(CONS_WARNING, M_GetText("Sector %s has Egg Capsule type, which is not supported in UDMF. Use linedef type 464 instead.\n"), sizeu1(i));
+				CONS_Alert(CONS_WARNING, M_GetText("Sector %s has Egg Capsule type, which is not supported in UDMF. Use action 464 instead.\n"), sizeu1(i));
 				break;
 			default:
 				break;
+		}
+
+		if (wsectors[i].triggertag)
+		{
+			CONS_Alert(CONS_WARNING, M_GetText("Sector %s uses a linedef executor trigger tag, which is not supported in UDMF. Use ACS instead.\n"), sizeu1(i));
+		}
+		if (wsectors[i].triggerer)
+		{
+			CONS_Alert(CONS_WARNING, M_GetText("Sector %s uses a linedef executor trigger effect, which is not supported in UDMF. Use ACS instead.\n"), sizeu1(i));
+		}
+		if ((wsectors[i].flags & (MSF_TRIGGERLINE_PLANE|MSF_TRIGGERLINE_MOBJ)) != 0)
+		{
+			CONS_Alert(CONS_WARNING, M_GetText("Sector %s uses a linedef executor trigger flag, which is not supported in UDMF. Use ACS instead.\n"), sizeu1(i));
 		}
 	}
 
@@ -2227,11 +2238,6 @@ static void P_WriteTextmap(void)
 				default:
 					break;
 			}
-		}
-		if (wlines[i].executordelay != 0 && wlines[i].backsector)
-		{
-			CONS_Alert(CONS_WARNING, M_GetText("Linedef %s has an executor delay. Changes to the delay at runtime will not be reflected in the converted map. Use linedef type 465 for this.\n"), sizeu1(i));
-			fprintf(f, "executordelay = %d;\n", (wlines[i].backsector->ceilingheight >> FRACBITS) + (wlines[i].backsector->floorheight >> FRACBITS));
 		}
 		if (wlines[i].flags & ML_IMPASSABLE)
 			fprintf(f, "blocking = true;\n");
@@ -2383,10 +2389,6 @@ static void P_WriteTextmap(void)
 			fprintf(f, "triggerspecial_touch = true;\n");
 		if (wsectors[i].flags & MSF_TRIGGERSPECIAL_HEADBUMP)
 			fprintf(f, "triggerspecial_headbump = true;\n");
-		if (wsectors[i].flags & MSF_TRIGGERLINE_PLANE)
-			fprintf(f, "triggerline_plane = true;\n");
-		if (wsectors[i].flags & MSF_TRIGGERLINE_MOBJ)
-			fprintf(f, "triggerline_mobj = true;\n");
 		if (wsectors[i].flags & MSF_INVERTPRECIP)
 			fprintf(f, "invertprecip = true;\n");
 		if (wsectors[i].flags & MSF_GRAVITYFLIP)
@@ -2443,10 +2445,6 @@ static void P_WriteTextmap(void)
 					break;
 			}
 		}
-		if (wsectors[i].triggertag != 0)
-			fprintf(f, "triggertag = %d;\n", wsectors[i].triggertag);
-		if (wsectors[i].triggerer != 0)
-			fprintf(f, "triggerer = %d;\n", wsectors[i].triggerer);
 		if (wsectors[i].action != 0)
 			fprintf(f, "action = %d;\n", wsectors[i].action);
 		for (j = 0; j < NUMSECTORARGS; j++)
@@ -2597,16 +2595,16 @@ static void P_LoadTextmap(void)
 		}
 
 		if (textmap_planefloor.defined == (PD_A|PD_B|PD_C|PD_D))
-        {
+		{
 			sc->f_slope = MakeViaEquationConstants(textmap_planefloor.a, textmap_planefloor.b, textmap_planefloor.c, textmap_planefloor.d);
 			sc->hasslope = true;
-        }
+		}
 
 		if (textmap_planeceiling.defined == (PD_A|PD_B|PD_C|PD_D))
-        {
+		{
 			sc->c_slope = MakeViaEquationConstants(textmap_planeceiling.a, textmap_planeceiling.b, textmap_planeceiling.c, textmap_planeceiling.d);
 			sc->hasslope = true;
-        }
+		}
 
 		TextmapFixFlatOffsets(sc);
 	}

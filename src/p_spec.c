@@ -1516,6 +1516,9 @@ boolean P_RunTriggerLinedef(line_t *triggerline, mobj_t *actor, sector_t *caller
 {
 	INT16 specialtype = triggerline->special;
 
+	if (udmf)
+		return false;
+
 	////////////////////////
 	// Trigger conditions //
 	////////////////////////
@@ -4084,23 +4087,6 @@ boolean P_ProcessSpecial(activator_t *activator, INT16 special, INT32 *args, cha
 			}
 			break;
 
-		case 465: // Set linedef executor delay
-			{
-				INT32 linenum;
-
-				if (backwardsCompat)
-					break;
-
-				TAG_ITER_LINES(args[0], linenum)
-				{
-					if (args[2])
-						lines[linenum].executordelay += args[1];
-					else
-						lines[linenum].executordelay = args[1];
-				}
-			}
-			break;
-
 		case 466: // Set level failure state
 			{
 				if (args[0])
@@ -4831,6 +4817,9 @@ sector_t *P_FindPlayerTrigger(player_t *player, line_t *sourceline)
 	msecnode_t *node;
 	sector_t *caller;
 
+	if (udmf)
+		return NULL;
+
 	if (!player->mo)
 		return NULL;
 
@@ -4901,6 +4890,10 @@ static boolean P_DoAllPlayersTrigger(mtag_t triggertag)
 {
 	INT32 i;
 	line_t dummyline;
+
+	if (udmf)
+		return false;
+
 	dummyline.tags.count = 1;
 	dummyline.tags.tags = &triggertag;
 
@@ -5059,7 +5052,7 @@ static boolean P_SectorHasSpecial(sector_t *sec)
 	if (sec->damagetype != SD_NONE)
 		return true;
 
-	if (sec->triggertag)
+	if (!udmf && sec->triggertag)
 		return true;
 
 	if (sec->special)
@@ -5128,6 +5121,9 @@ static void P_EvaluateDamageType(player_t *player, sector_t *sector, boolean isT
 
 static void P_EvaluateLinedefExecutorTrigger(player_t *player, sector_t *sector, boolean isTouching)
 {
+	if (udmf)
+		return;
+
 	if (!sector->triggertag)
 		return;
 
@@ -5392,6 +5388,9 @@ static void P_CheckMobjSectorTrigger(mobj_t *mo, sector_t *sec)
 void P_CheckMobjTrigger(mobj_t *mobj, boolean pushable)
 {
 	sector_t *originalsector;
+
+	if (udmf)
+		return;
 
 	if (!mobj->subsector)
 		return;
@@ -7294,11 +7293,15 @@ void P_SpawnSpecials(boolean fromnetsave)
 			case 331: // Player skin
 			case 334: // Object dye
 			case 337: // Emerald check
+				if (udmf)
+					break;
 				if (lines[i].args[0] > TMT_EACHTIMEMASK)
 					P_AddEachTimeThinker(&lines[i], lines[i].args[0] == TMT_EACHTIMEENTERANDEXIT);
 				break;
 
 			case 308: // Race-only linedef executor. Triggers once.
+				if (udmf)
+					break;
 				if (!P_CheckGametypeRules(lines[i].args[2], (UINT32)lines[i].args[1]))
 				{
 					lines[i].special = 0;
@@ -7310,6 +7313,8 @@ void P_SpawnSpecials(boolean fromnetsave)
 
 			// Linedef executor triggers for CTF teams.
 			case 309:
+				if (udmf)
+					break;
 				if (!(gametyperules & GTR_TEAMS))
 				{
 					lines[i].special = 0;
@@ -7321,11 +7326,15 @@ void P_SpawnSpecials(boolean fromnetsave)
 
 			// No More Enemies Linedef Exec
 			case 313:
+				if (udmf)
+					break;
 				P_AddNoEnemiesThinker(&lines[i]);
 				break;
 
 			// Trigger on X calls
 			case 321:
+				if (udmf)
+					break;
 				lines[i].callcount = (lines[i].args[2] && lines[i].args[3] > 0) ? lines[i].args[3] : lines[i].args[1]; // optional "starting" count
 				if (lines[i].args[0] > TMXT_EACHTIMEMASK) // Each time
 					P_AddEachTimeThinker(&lines[i], lines[i].args[0] == TMXT_EACHTIMEENTERANDEXIT);

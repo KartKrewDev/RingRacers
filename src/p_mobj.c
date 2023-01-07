@@ -2779,6 +2779,9 @@ static boolean P_PlayerPolyObjectZMovement(mobj_t *mo)
 				if ((mo->z == polysec->ceilingheight || mo->z + mo->height == polysec->floorheight) && po->thinker)
 					stopmovecut = true;
 
+				if (udmf)
+					continue;
+
 				if (!(po->flags & POF_LDEXEC))
 					continue;
 
@@ -9810,11 +9813,16 @@ void P_MobjThinker(mobj_t *mobj)
 	P_SetTarget(&tm.floorthing, NULL);
 	P_SetTarget(&tm.hitthing, NULL);
 
-	// Check for sector special actions
-	P_CheckMobjTouchingSectorActions(mobj);
-
-	// Sector flag MSF_TRIGGERLINE_MOBJ allows ANY mobj to trigger a linedef exec
-	P_CheckMobjTrigger(mobj, false);
+	if (udmf)
+	{
+		// Check for sector special actions
+		P_CheckMobjTouchingSectorActions(mobj);
+	}
+	else
+	{
+		// Sector flag MSF_TRIGGERLINE_MOBJ allows ANY mobj to trigger a linedef exec
+		P_CheckMobjTrigger(mobj, false);
+	}
 
 	if (mobj->scale != mobj->destscale)
 		P_MobjScaleThink(mobj); // Slowly scale up/down to reach your destscale.
@@ -10102,7 +10110,8 @@ void P_PushableThinker(mobj_t *mobj)
 	I_Assert(mobj != NULL);
 	I_Assert(!P_MobjWasRemoved(mobj));
 
-	P_CheckMobjTrigger(mobj, true);
+	if (!udmf)
+		P_CheckMobjTrigger(mobj, true);
 
 	// it has to be pushable RIGHT NOW for this part to happen
 	if (mobj->flags & MF_PUSHABLE && !(mobj->momx || mobj->momy))
