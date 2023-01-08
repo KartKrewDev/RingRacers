@@ -295,7 +295,13 @@ boolean P_MobjWasRemoved(mobj_t *th);
 void P_RemoveSavegameMobj(mobj_t *th);
 boolean P_SetPlayerMobjState(mobj_t *mobj, statenum_t state);
 boolean P_SetMobjState(mobj_t *mobj, statenum_t state);
+
 void P_RunOverlays(void);
+#define OV_DONTSCREENOFFSET	1
+#define OV_DONT3DOFFSET		1<<1
+#define OV_DONTXYSCALE		1<<2
+#define OV_DONTROLL			1<<3
+
 void P_HandleMinecartSegments(mobj_t *mobj);
 void P_MobjThinker(mobj_t *mobj);
 boolean P_RailThinker(mobj_t *mobj);

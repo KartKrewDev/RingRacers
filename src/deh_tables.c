@@ -6443,6 +6443,12 @@ struct int_const_s const INT_CONST[] = {
 	// {"JT_RACENT",JT_RACENT},
 	// {"JT_CONTSC",JT_CONTSC},
 
+	// Overlay exception settings
+	{"OV_DONTSCREENOFFSET", OV_DONTSCREENOFFSET},
+	{"OV_DONT3DOFFSET", OV_DONT3DOFFSET},
+	{"OV_DONTXYSCALE", OV_DONTXYSCALE},
+	{"OV_DONTROLL", OV_DONTROLL},
+
 	// Player state (playerstate_t)
 	{"PST_LIVE",PST_LIVE}, // Playing or camping.
 	{"PST_DEAD",PST_DEAD}, // Dead on the ground, view follows killer.

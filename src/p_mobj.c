@@ -4406,6 +4406,7 @@ static void P_RefreshItemCapsuleParts(mobj_t *mobj)
 			P_SetMobjState(part->tracer, S_INVISIBLE);
 			part->tracer->spriteyoffset = 10*FRACUNIT;
 			part->tracer->spritexoffset = 13*numNumbers*FRACUNIT;
+			part->threshold = OV_DONTSCREENOFFSET;
 		}
 		part = part->tracer;
 		part->sprite = SPR_ITMN;
@@ -5310,20 +5311,32 @@ void P_RunOverlays(void)
 		mo->eflags = (mo->eflags & ~MFE_VERTICALFLIP) | (mo->target->eflags & MFE_VERTICALFLIP);
 		mo->scale = mo->destscale = FixedMul(mo->target->scale, mo->movefactor);
 		mo->angle = (mo->target->player ? mo->target->player->drawangle : mo->target->angle) + mo->movedir;
-		mo->rollangle = mo->target->rollangle;
-		mo->pitch = mo->target->pitch;
-		mo->roll = mo->target->roll;
 
-#if 0
-		mo->spritexoffset = mo->target->spritexoffset;
-		mo->spriteyoffset = mo->target->spriteyoffset;
-		mo->spritexscale = mo->target->spritexscale;
-		mo->spriteyscale = mo->target->spriteyscale;
+		if (!(mo->threshold & OV_DONTSCREENOFFSET))
+		{
+			mo->spritexoffset = mo->target->spritexoffset;
+			mo->spriteyoffset = mo->target->spriteyoffset;
+		}
 
-		mo->sprxoff = mo->target->sprxoff;
-		mo->spryoff = mo->target->spryoff;
-		mo->sprzoff = mo->target->sprzoff;
-#endif
+		if (!(mo->threshold & OV_DONT3DOFFSET))
+		{
+			mo->sprxoff = mo->target->sprxoff;
+			mo->spryoff = mo->target->spryoff;
+			mo->sprzoff = mo->target->sprzoff;
+		}
+
+		if (!(mo->threshold & OV_DONTXYSCALE))
+		{
+			mo->spritexscale = mo->target->spritexscale;
+			mo->spriteyscale = mo->target->spriteyscale;
+		}
+
+		if (!(mo->threshold & OV_DONTROLL))
+		{
+			mo->rollangle = mo->target->rollangle;
+			mo->pitch = mo->target->pitch;
+			mo->roll = mo->target->roll;
+		}
 
 		mo->hitlag = mo->target->hitlag;
 		mo->eflags = (mo->eflags & ~MFE_DAMAGEHITLAG) | (mo->target->eflags & MFE_DAMAGEHITLAG);
