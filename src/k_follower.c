@@ -315,7 +315,8 @@ void K_HandleFollower(player_t *player)
 
 	// don't do anything if we can't have a follower to begin with.
 	// (It gets removed under those conditions)
-	if (player->spectator || player->followerskin < 0)
+	if (player->spectator || player->followerskin < 0
+	|| player->mo == NULL || P_MobjWasRemoved(player->mo))
 	{
 		if (player->follower)
 		{
@@ -377,12 +378,15 @@ void K_HandleFollower(player_t *player)
 	// Set follower colour
 	color = K_GetEffectiveFollowerColor(player->followercolor, player->skincolor);
 
-	if (player->follower == NULL) // follower doesn't exist / isn't valid
+	if (player->follower == NULL || P_MobjWasRemoved(player->follower)) // follower doesn't exist / isn't valid
 	{
 		//CONS_Printf("Spawning follower...\n");
 
 		// so let's spawn one!
 		P_SetTarget(&player->follower, P_SpawnMobj(sx, sy, sz, MT_FOLLOWER));
+		if (player->follower == NULL)
+			return;
+
 		K_UpdateFollowerState(player->follower, fl.idlestate, FOLLOWERSTATE_IDLE);
 
 		P_SetTarget(&player->follower->target, player->mo); // we need that to know when we need to disappear
@@ -402,14 +406,6 @@ void K_HandleFollower(player_t *player)
 	}
 	else // follower exists, woo!
 	{
-		// Safety net (2)
-
-		if (P_MobjWasRemoved(player->follower))
-		{
-			P_SetTarget(&player->follower, NULL); // Remove this and respawn one, don't crash the game if Lua decides to P_RemoveMobj this thing.
-			return;
-		}
-
 		// first of all, handle states following the same model as above:
 		if (player->follower->tics == 1)
 		{
