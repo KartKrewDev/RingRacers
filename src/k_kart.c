@@ -1943,7 +1943,7 @@ void K_SpawnMagicianParticles(mobj_t *mo, int spread)
 	INT32 i;
 	mobj_t *target = mo->target;
 
-	if (P_MobjWasRemoved(target)) 
+	if (!target || P_MobjWasRemoved(target))
 		target = mo;
 
 	for (i = 0; i < 16; i++)
