@@ -406,6 +406,12 @@ void K_HandleFollower(player_t *player)
 	}
 	else // follower exists, woo!
 	{
+		if (player->follower->hitlag != 0)
+		{
+			// Don't update frames in hitlag
+			return;
+		}
+
 		// first of all, handle states following the same model as above:
 		if (player->follower->tics == 1)
 		{
@@ -620,5 +626,12 @@ void K_HandleFollower(player_t *player)
 		{
 			K_UpdateFollowerState(player->follower, fl.idlestate, FOLLOWERSTATE_IDLE);
 		}
+	}
+
+	if (player->mo->hitlag)
+	{
+		player->follower->hitlag = player->mo->hitlag;
+		player->follower->eflags |= (player->mo->eflags & MFE_DAMAGEHITLAG);
+		return;
 	}
 }
