@@ -2127,12 +2127,12 @@ static void P_SwitchSkybox(INT32 args, player_t *player, skybox_t *skybox)
 {
 	if (args != TMS_CENTERPOINT) // Only viewpoint, or both.
 	{
-		player->skybox.viewpoint = skybox->viewpoint;
+		P_SetTarget(&player->skybox.viewpoint, skybox->viewpoint);
 	}
 
 	if (args != TMS_VIEWPOINT) // Only centerpoint, or both.
 	{
-		player->skybox.centerpoint = skybox->centerpoint;
+		P_SetTarget(&player->skybox.centerpoint, skybox->centerpoint);
 	}
 }
 
@@ -3016,22 +3016,28 @@ static void P_ProcessLineSpecial(line_t *line, mobj_t *mo, sector_t *callsec)
 				INT32 viewid = line->args[0];
 				INT32 centerid = line->args[1];
 
+				mobj_t *set;
+
 				// set viewpoint mobj
 				if (line->args[2] != TMS_CENTERPOINT)
 				{
 					if (viewid >= 0 && viewid < 16)
-						skybox.viewpoint = skyboxviewpnts[viewid];
+						set = skyboxviewpnts[viewid];
 					else
-						skybox.viewpoint = NULL;
+						set = NULL;
+
+					P_SetTarget(&skybox.viewpoint, set);
 				}
 
 				// set centerpoint mobj
 				if (line->args[2] != TMS_VIEWPOINT)
 				{
 					if (centerid >= 0 && centerid < 16)
-						skybox.centerpoint = skyboxcenterpnts[centerid];
+						set = skyboxcenterpnts[centerid];
 					else
-						skybox.centerpoint = NULL;
+						set = NULL;
+
+					P_SetTarget(&skybox.centerpoint, set);
 				}
 
 				if (line->args[3]) // Applies to all players

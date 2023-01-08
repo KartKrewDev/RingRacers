@@ -11738,14 +11738,11 @@ void P_SpawnPlayer(INT32 playernum)
 	p->realtime = leveltime;
 	p->followitem = skins[p->skin].followitem;
 
-	//awayview stuff
-	p->awayviewmobj = NULL;
-	p->awayviewtics = 0;
-
-	p->skybox.viewpoint = skyboxviewpnts[0];
-	p->skybox.centerpoint = skyboxcenterpnts[0];
-
-	P_SetTarget(&p->follower, NULL);	// cleanse follower from existence
+	if (p->jointime <= 1 || leveltime <= 1)
+	{
+		P_SetTarget(&p->skybox.viewpoint, skyboxviewpnts[0]);
+		P_SetTarget(&p->skybox.centerpoint, skyboxcenterpnts[0]);
+	}
 
 	if (K_PlayerShrinkCheat(p) == true)
 	{

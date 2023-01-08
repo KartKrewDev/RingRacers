@@ -2521,31 +2521,45 @@ void CL_ClearPlayer(INT32 playernum)
 {
 	int i;
 
-	if (players[playernum].follower)
-	{	
-		K_RemoveFollower(&players[playernum]);
-	}
-
-	if (players[playernum].mo)
+	// Handle mobj_t pointers.
+	if (gamestate == GS_LEVEL)
 	{
-		P_RemoveMobj(players[playernum].mo);
+		if (players[playernum].follower)
+		{	
+			K_RemoveFollower(&players[playernum]);
+		}
+
+		if (players[playernum].mo)
+		{
+			P_RemoveMobj(players[playernum].mo);
+			P_SetTarget(&players[playernum].mo, NULL);
+		}
+
+		P_SetTarget(&players[playernum].skybox.viewpoint, NULL);
+		P_SetTarget(&players[playernum].skybox.centerpoint, NULL);
+		P_SetTarget(&players[playernum].awayviewmobj, NULL);
+		P_SetTarget(&players[playernum].followmobj, NULL);
+		P_SetTarget(&players[playernum].hoverhyudoro, NULL);
+		P_SetTarget(&players[playernum].stumbleIndicator, NULL);
 	}
 
+	// Handle parties.
 	for (i = 0; i < MAXPLAYERS; ++i)
 	{
 		if (splitscreen_invitations[i] == playernum)
 			splitscreen_invitations[i] = -1;
 	}
-
-	splitscreen_invitations[playernum] = -1;
 	splitscreen_party_size[playernum] = 0;
 	splitscreen_original_party_size[playernum] = 0;
 
+	// Wipe the struct.
 	memset(&players[playernum], 0, sizeof (player_t));
 
+	// Handle values which should not be initialised to 0.
 	players[playernum].followerskin = -1; // don't have a ghost follower
 	players[playernum].fakeskin = players[playernum].lastfakeskin = MAXSKINS; // don't avoid eggman
 
+	// Handle post-cleanup.
 	RemoveAdminPlayer(playernum); // don't stay admin after you're gone
 }
 
