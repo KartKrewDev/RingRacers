@@ -13,6 +13,8 @@
 #include <optional>
 #include <stdexcept>
 
+#include "../cxxutil.hpp"
+
 using namespace srb2;
 using srb2::audio::Wav;
 
@@ -130,14 +132,6 @@ std::vector<int16_t> read_int16_samples_from_stream(io::SpanStream& stream, std:
 	return samples;
 }
 
-template <typename... Ts>
-struct OverloadVisitor : Ts... {
-	using Ts::operator()...;
-};
-
-template <typename... Ts>
-OverloadVisitor(Ts...) -> OverloadVisitor<Ts...>;
-
 } // namespace
 
 Wav::Wav() = default;
@@ -171,7 +165,7 @@ Wav::Wav(tcb::span<std::byte> data) {
 			throw std::runtime_error("WAVE tag length exceeds stream length");
 		}
 
-		auto tag_visitor = OverloadVisitor {
+		auto tag_visitor = srb2::Overload {
 			[&](const FmtTag& fmt) {
 				if (read_fmt) {
 					throw std::runtime_error("WAVE has multiple 'fmt' tags");
@@ -248,7 +242,7 @@ std::size_t read_samples(std::size_t channels,
 } // namespace
 
 std::size_t Wav::get_samples(std::size_t offset, tcb::span<audio::Sample<1>> buffer) const noexcept {
-	auto samples_visitor = OverloadVisitor {
+	auto samples_visitor = srb2::Overload {
 		[&](const std::vector<uint8_t>& samples) { return read_samples<uint8_t>(channels(), offset, samples, buffer); },
 		[&](const std::vector<int16_t>& samples) {
 			return read_samples<int16_t>(channels(), offset, samples, buffer);
@@ -258,7 +252,7 @@ std::size_t Wav::get_samples(std::size_t offset, tcb::span<audio::Sample<1>> buf
 }
 
 std::size_t Wav::interleaved_length() const noexcept {
-	auto samples_visitor = OverloadVisitor {[](const std::vector<uint8_t>& samples) { return samples.size(); },
-											[](const std::vector<int16_t>& samples) { return samples.size(); }};
+	auto samples_visitor = srb2::Overload {[](const std::vector<uint8_t>& samples) { return samples.size(); },
+										   [](const std::vector<int16_t>& samples) { return samples.size(); }};
 	return std::visit(samples_visitor, interleaved_samples_);
 }

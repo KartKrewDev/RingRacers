@@ -147,6 +147,17 @@ public:
 template <class T>
 NotNull(T) -> NotNull<T>;
 
+/// @brief Utility struct for combining several Callables (e.g. lambdas) into a single Callable with the call operator
+/// overloaded. Use it to build a visitor for calling std::visit on variants.
+/// @tparam ...Ts callable types
+template <typename... Ts>
+struct Overload : Ts... {
+	using Ts::operator()...;
+};
+
+template <typename... Ts>
+Overload(Ts...) -> Overload<Ts...>;
+
 } // namespace srb2
 
 #endif // __SRB2_CXXUTIL_HPP__
