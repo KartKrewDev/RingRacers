@@ -14,9 +14,11 @@
 
 #include "source.hpp"
 
-namespace srb2::audio {
+namespace srb2::audio
+{
 
-struct SoundChunk {
+struct SoundChunk
+{
 	std::vector<Sample<1>> samples;
 };
 

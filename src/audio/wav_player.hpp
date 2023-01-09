@@ -17,9 +17,11 @@
 #include "source.hpp"
 #include "wav.hpp"
 
-namespace srb2::audio {
+namespace srb2::audio
+{
 
-class WavPlayer final : public Source<1> {
+class WavPlayer final : public Source<1>
+{
 	Wav wav_;
 	std::size_t position_;
 	bool looping_;

@@ -19,15 +19,18 @@
 
 struct stb_vorbis;
 
-namespace srb2::audio {
+namespace srb2::audio
+{
 
-enum class MusicType {
+enum class MusicType
+{
 	kOgg,
 	kGme,
 	kMod
 };
 
-class MusicPlayer : public Source<2> {
+class MusicPlayer : public Source<2>
+{
 public:
 	MusicPlayer();
 	MusicPlayer(tcb::span<std::byte> data);

@@ -16,11 +16,14 @@
 using namespace srb2;
 using namespace srb2::audio;
 
-StbVorbisException::StbVorbisException(int code) noexcept : code_(code) {
+StbVorbisException::StbVorbisException(int code) noexcept : code_(code)
+{
 }
 
-const char* StbVorbisException::what() const noexcept {
-	switch (code_) {
+const char* StbVorbisException::what() const noexcept
+{
+	switch (code_)
+	{
 	case VORBIS__no_error:
 		return "No error";
 	case VORBIS_need_more_data:
@@ -68,54 +71,73 @@ const char* StbVorbisException::what() const noexcept {
 	}
 }
 
-Ogg::Ogg() noexcept : memory_data_(), instance_(nullptr) {
+Ogg::Ogg() noexcept : memory_data_(), instance_(nullptr)
+{
 }
 
-Ogg::Ogg(std::vector<std::byte> data) : memory_data_(std::move(data)), instance_(nullptr) {
+Ogg::Ogg(std::vector<std::byte> data) : memory_data_(std::move(data)), instance_(nullptr)
+{
 	_init_with_data();
 }
 
-Ogg::Ogg(tcb::span<std::byte> data) : memory_data_(data.begin(), data.end()), instance_(nullptr) {
+Ogg::Ogg(tcb::span<std::byte> data) : memory_data_(data.begin(), data.end()), instance_(nullptr)
+{
 	_init_with_data();
 }
 
-Ogg::Ogg(Ogg&& rhs) noexcept : memory_data_(), instance_(nullptr) {
+Ogg::Ogg(Ogg&& rhs) noexcept : memory_data_(), instance_(nullptr)
+{
 	std::swap(memory_data_, rhs.memory_data_);
 	std::swap(instance_, rhs.instance_);
 }
 
-Ogg& Ogg::operator=(Ogg&& rhs) noexcept {
+Ogg& Ogg::operator=(Ogg&& rhs) noexcept
+{
 	std::swap(memory_data_, rhs.memory_data_);
 	std::swap(instance_, rhs.instance_);
 
 	return *this;
 }
 
-Ogg::~Ogg() {
-	if (instance_) {
+Ogg::~Ogg()
+{
+	if (instance_)
+	{
 		stb_vorbis_close(instance_);
 		instance_ = nullptr;
 	}
 }
 
-std::size_t Ogg::get_samples(tcb::span<Sample<1>> buffer) {
+std::size_t Ogg::get_samples(tcb::span<Sample<1>> buffer)
+{
 	SRB2_ASSERT(instance_ != nullptr);
 
 	size_t read = stb_vorbis_get_samples_float_interleaved(
-		instance_, 1, reinterpret_cast<float*>(buffer.data()), buffer.size() * 1);
+		instance_,
+		1,
+		reinterpret_cast<float*>(buffer.data()),
+		buffer.size() * 1
+	);
 
 	return read;
 }
 
-std::size_t Ogg::get_samples(tcb::span<Sample<2>> buffer) {
+std::size_t Ogg::get_samples(tcb::span<Sample<2>> buffer)
+{
 	SRB2_ASSERT(instance_ != nullptr);
 
 	size_t read = stb_vorbis_get_samples_float_interleaved(
-		instance_, 2, reinterpret_cast<float*>(buffer.data()), buffer.size() * 2);
+		instance_,
+		2,
+		reinterpret_cast<float*>(buffer.data()),
+		buffer.size() * 2
+	);
 
 	stb_vorbis_info info = stb_vorbis_get_info(instance_);
-	if (info.channels == 1) {
-		for (auto& sample : buffer.subspan(0, read)) {
+	if (info.channels == 1)
+	{
+		for (auto& sample : buffer.subspan(0, read))
+		{
 			sample.amplitudes[1] = sample.amplitudes[0];
 		}
 	}
@@ -123,7 +145,8 @@ std::size_t Ogg::get_samples(tcb::span<Sample<2>> buffer) {
 	return read;
 }
 
-OggComment Ogg::comment() const {
+OggComment Ogg::comment() const
+{
 	SRB2_ASSERT(instance_ != nullptr);
 
 	stb_vorbis_comment c_comment = stb_vorbis_get_comment(instance_);
@@ -133,50 +156,59 @@ OggComment Ogg::comment() const {
 		std::vector<std::string>(c_comment.comment_list, c_comment.comment_list + c_comment.comment_list_length)};
 }
 
-std::size_t Ogg::sample_rate() const {
+std::size_t Ogg::sample_rate() const
+{
 	SRB2_ASSERT(instance_ != nullptr);
 
 	stb_vorbis_info info = stb_vorbis_get_info(instance_);
 	return info.sample_rate;
 }
 
-void Ogg::seek(std::size_t sample) {
+void Ogg::seek(std::size_t sample)
+{
 	SRB2_ASSERT(instance_ != nullptr);
 
 	stb_vorbis_seek(instance_, sample);
 }
 
-std::size_t Ogg::position() const {
+std::size_t Ogg::position() const
+{
 	SRB2_ASSERT(instance_ != nullptr);
 
 	return stb_vorbis_get_sample_offset(instance_);
 }
 
-float Ogg::position_seconds() const {
+float Ogg::position_seconds() const
+{
 	return position() / static_cast<float>(sample_rate());
 }
 
-std::size_t Ogg::duration_samples() const {
+std::size_t Ogg::duration_samples() const
+{
 	SRB2_ASSERT(instance_ != nullptr);
 
 	return stb_vorbis_stream_length_in_samples(instance_);
 }
 
-float Ogg::duration_seconds() const {
+float Ogg::duration_seconds() const
+{
 	SRB2_ASSERT(instance_ != nullptr);
 
 	return stb_vorbis_stream_length_in_seconds(instance_);
 }
 
-std::size_t Ogg::channels() const {
+std::size_t Ogg::channels() const
+{
 	SRB2_ASSERT(instance_ != nullptr);
 
 	stb_vorbis_info info = stb_vorbis_get_info(instance_);
 	return info.channels;
 }
 
-void Ogg::_init_with_data() {
-	if (instance_) {
+void Ogg::_init_with_data()
+{
+	if (instance_)
+	{
 		return;
 	}
 
@@ -187,7 +219,11 @@ void Ogg::_init_with_data() {
 
 	int vorbis_result;
 	instance_ = stb_vorbis_open_memory(
-		reinterpret_cast<const unsigned char*>(memory_data_.data()), memory_data_.size(), &vorbis_result, NULL);
+		reinterpret_cast<const unsigned char*>(memory_data_.data()),
+		memory_data_.size(),
+		&vorbis_result,
+		NULL
+	);
 
 	if (vorbis_result != VORBIS__no_error)
 		throw StbVorbisException(vorbis_result);

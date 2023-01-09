@@ -14,10 +14,12 @@
 
 #include "filter.hpp"
 
-namespace srb2::audio {
+namespace srb2::audio
+{
 
 template <size_t C>
-class Gain : public Filter<C, C> {
+class Gain : public Filter<C, C>
+{
 public:
 	virtual std::size_t filter(tcb::span<Sample<C>> input_buffer, tcb::span<Sample<C>> buffer) override final;
 	void gain(float new_gain);

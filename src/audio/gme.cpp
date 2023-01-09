@@ -17,37 +17,45 @@
 using namespace srb2;
 using namespace srb2::audio;
 
-Gme::Gme() : memory_data_(), instance_(nullptr) {
+Gme::Gme() : memory_data_(), instance_(nullptr)
+{
 }
 
-Gme::Gme(Gme&& rhs) noexcept : memory_data_(), instance_(nullptr) {
+Gme::Gme(Gme&& rhs) noexcept : memory_data_(), instance_(nullptr)
+{
 	std::swap(memory_data_, rhs.memory_data_);
 	std::swap(instance_, rhs.instance_);
 }
 
-Gme::Gme(std::vector<std::byte>&& data) : memory_data_(std::move(data)), instance_(nullptr) {
+Gme::Gme(std::vector<std::byte>&& data) : memory_data_(std::move(data)), instance_(nullptr)
+{
 	_init_with_data();
 }
 
-Gme::Gme(tcb::span<std::byte> data) : memory_data_(data.begin(), data.end()), instance_(nullptr) {
+Gme::Gme(tcb::span<std::byte> data) : memory_data_(data.begin(), data.end()), instance_(nullptr)
+{
 	_init_with_data();
 }
 
-Gme& Gme::operator=(Gme&& rhs) noexcept {
+Gme& Gme::operator=(Gme&& rhs) noexcept
+{
 	std::swap(memory_data_, rhs.memory_data_);
 	std::swap(instance_, rhs.instance_);
 
 	return *this;
 }
 
-Gme::~Gme() {
-	if (instance_) {
+Gme::~Gme()
+{
+	if (instance_)
+	{
 		gme_delete(instance_);
 		instance_ = nullptr;
 	}
 }
 
-std::size_t Gme::get_samples(tcb::span<short> buffer) {
+std::size_t Gme::get_samples(tcb::span<short> buffer)
+{
 	SRB2_ASSERT(instance_ != nullptr);
 
 	gme_err_t err = gme_play(instance_, buffer.size(), buffer.data());
@@ -57,13 +65,15 @@ std::size_t Gme::get_samples(tcb::span<short> buffer) {
 	return buffer.size();
 }
 
-void Gme::seek(int sample) {
+void Gme::seek(int sample)
+{
 	SRB2_ASSERT(instance_ != nullptr);
 
 	gme_seek_samples(instance_, sample);
 }
 
-std::optional<float> Gme::duration_seconds() const {
+std::optional<float> Gme::duration_seconds() const
+{
 	SRB2_ASSERT(instance_ != nullptr);
 
 	gme_info_t* info = nullptr;
@@ -79,7 +89,8 @@ std::optional<float> Gme::duration_seconds() const {
 	return static_cast<float>(info->length) / 1000.f;
 }
 
-std::optional<float> Gme::loop_point_seconds() const {
+std::optional<float> Gme::loop_point_seconds() const
+{
 	SRB2_ASSERT(instance_ != nullptr);
 
 	gme_info_t* info = nullptr;
@@ -95,7 +106,8 @@ std::optional<float> Gme::loop_point_seconds() const {
 	return loop_point_ms / 44100.f;
 }
 
-float Gme::position_seconds() const {
+float Gme::position_seconds() const
+{
 	SRB2_ASSERT(instance_ != nullptr);
 
 	gme_info_t* info = nullptr;
@@ -117,8 +129,10 @@ float Gme::position_seconds() const {
 	return position / 1000.f;
 }
 
-void Gme::_init_with_data() {
-	if (instance_) {
+void Gme::_init_with_data()
+{
+	if (instance_)
+	{
 		return;
 	}
 

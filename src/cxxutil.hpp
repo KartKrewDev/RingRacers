@@ -62,10 +62,12 @@ struct SourceLocation {
 class IErrorAssertHandler {
 public:
 	static void handle(const SourceLocation& source_location, const char* expression) {
-		I_Error("Assertion failed at %s:%u: %s != true",
-				source_location.file_name,
-				source_location.line_number,
-				expression);
+		I_Error(
+			"Assertion failed at %s:%u: %s != true",
+			source_location.file_name,
+			source_location.line_number,
+			expression
+		);
 	}
 };
 
@@ -102,8 +104,10 @@ class NotNull final {
 	T ptr_;
 
 public:
-	static_assert(std::is_convertible_v<decltype(std::declval<T>() != nullptr), bool>,
-				  "T is not comparable with nullptr_t");
+	static_assert(
+		std::is_convertible_v<decltype(std::declval<T>() != nullptr), bool>,
+		"T is not comparable with nullptr_t"
+	);
 
 	/// @brief Move-construct from the pointer value U, asserting that it is not null. Allows construction of a
 	/// NotNull<T> from any compatible pointer U, for example with polymorphic classes.
