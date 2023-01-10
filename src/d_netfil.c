@@ -69,7 +69,7 @@ static boolean AddFileToSendQueue(INT32 node, const char *filename, UINT8 fileid
 
 #ifdef HAVE_CURL
 size_t curlwrite_data(void *ptr, size_t size, size_t nmemb, FILE *stream);
-int curlprogress_callback(void *clientp, double dltotal, double dlnow, double ultotal, double ulnow);
+int curlprogress_callback(void *clientp, curl_off_t dltotal, curl_off_t dlnow, curl_off_t ultotal, curl_off_t ulnow);
 #endif
 
 // Sender structure
@@ -131,8 +131,8 @@ static CURL *http_handle;
 static CURLM *multi_handle;
 boolean curl_running = false;
 boolean curl_failedwebdownload = false;
-static double curl_dlnow;
-static double curl_dltotal;
+static curl_off_t curl_dlnow;
+static curl_off_t curl_dltotal;
 static time_t curl_starttime;
 INT32 curl_transfers = 0;
 static int curl_runninghandles = 0;
@@ -1771,7 +1771,7 @@ size_t curlwrite_data(void *ptr, size_t size, size_t nmemb, FILE *stream)
     return written;
 }
 
-int curlprogress_callback(void *clientp, double dltotal, double dlnow, double ultotal, double ulnow)
+int curlprogress_callback(void *clientp, curl_off_t dltotal, curl_off_t dlnow, curl_off_t ultotal, curl_off_t ulnow)
 {
 	(void)clientp;
 	(void)ultotal;
@@ -1834,7 +1834,7 @@ void CURLPrepareFile(const char* url, int dfilenum)
 		curl_easy_setopt(http_handle, CURLOPT_WRITEDATA, curl_curfile->file);
 		curl_easy_setopt(http_handle, CURLOPT_WRITEFUNCTION, curlwrite_data);
 		curl_easy_setopt(http_handle, CURLOPT_NOPROGRESS, 0L);
-		curl_easy_setopt(http_handle, CURLOPT_PROGRESSFUNCTION, curlprogress_callback);
+		curl_easy_setopt(http_handle, CURLOPT_XFERINFOFUNCTION, curlprogress_callback);
 
 		curl_curfile->status = FS_DOWNLOADING;
 		lastfilenum = dfilenum;
