@@ -1,0 +1,41 @@
+target_sources(SRB2SDL2 PRIVATE
+	extras-1.c
+	extras-addons.c
+	extras-challenges.c
+	extras-replay-hut.c
+	main-1.c
+	main-profile-select.c
+	options-1.c
+	options-data-1.c
+	options-data-addons.c
+	options-data-discord.c
+	options-data-erase-1.c
+	options-data-erase-profile.c
+	options-data-replays.c
+	options-data-screenshots.c
+	options-gameplay-1.c
+	options-gameplay-item-toggles.c
+	options-hud-1.c
+	options-hud-online.c
+	options-profiles-1.c
+	options-profiles-edit-1.c
+	options-profiles-edit-controls.c
+	options-server-1.c
+	options-server-advanced.c
+	options-sound.c
+	options-video-1.c
+	options-video-gl.c
+	options-video-modes.c
+	play-1.c
+	play-char-select.c
+	play-local-1.c
+	play-local-race-1.c
+	play-local-race-difficulty.c
+	play-local-race-time-attack.c
+	play-online-1.c
+	play-online-host.c
+	play-online-join-ip.c
+	play-online-server-browser.c
+)
+
+add_subdirectory(transient)
