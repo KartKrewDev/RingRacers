@@ -2549,6 +2549,7 @@ void CL_ClearPlayer(INT32 playernum)
 		if (splitscreen_invitations[i] == playernum)
 			splitscreen_invitations[i] = -1;
 	}
+	splitscreen_invitations[playernum] = -1;
 	splitscreen_party_size[playernum] = 0;
 	splitscreen_original_party_size[playernum] = 0;
 
