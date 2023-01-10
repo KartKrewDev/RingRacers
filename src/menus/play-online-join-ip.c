@@ -2,6 +2,10 @@
 /// \brief MULTIPLAYER JOIN BY IP
 
 #include "../k_menu.h"
+#include "../v_video.h"
+#include "../i_system.h" // I_OsPolling
+#include "../i_video.h" // I_UpdateNoBlit
+#include "../m_misc.h" // NUMLOGIP
 
 menuitem_t PLAY_MP_JoinIP[] =
 {
@@ -41,3 +45,66 @@ menu_t PLAY_MP_JoinIPDef = {
 	M_MPResetOpts,
 	M_JoinIPInputs
 };
+
+consvar_t cv_dummyip = CVAR_INIT ("dummyip", "", CV_HIDDEN, NULL, NULL);
+
+void M_MPJoinIPInit(INT32 choice)
+{
+
+	(void)choice;
+	mpmenu.modewinextend[2][0] = 1;
+	M_SetupNextMenu(&PLAY_MP_JoinIPDef, true);
+}
+
+// Attempts to join a given IP from the menu.
+void M_JoinIP(const char *ipa)
+{
+	if (*(ipa) == '\0')	// Jack shit
+	{
+		M_StartMessage("Please specify an address.\n", NULL, MM_NOTHING);
+		return;
+	}
+
+	COM_BufAddText(va("connect \"%s\"\n", ipa));
+
+	// A little "please wait" message.
+	M_DrawTextBox(56, BASEVIDHEIGHT/2-12, 24, 2);
+	V_DrawCenteredString(BASEVIDWIDTH/2, BASEVIDHEIGHT/2, 0, "Connecting to server...");
+	I_OsPolling();
+	I_UpdateNoBlit();
+	if (rendermode == render_soft)
+		I_FinishUpdate(); // page flip or blit buffer
+}
+
+boolean M_JoinIPInputs(INT32 ch)
+{
+
+	const UINT8 pid = 0;
+	(void) ch;
+
+	if (itemOn == 1)	// connect field
+	{
+		// enter: connect
+		if (M_MenuConfirmPressed(pid))
+		{
+			M_JoinIP(cv_dummyip.string);
+			M_SetMenuDelay(pid);
+			return true;
+		}
+	}
+	else if (currentMenu->numitems - itemOn <= NUMLOGIP && M_MenuConfirmPressed(pid))	// On one of the last 3 options for IP rejoining
+	{
+		UINT8 index = NUMLOGIP - (currentMenu->numitems - itemOn);
+		M_SetMenuDelay(pid);
+
+		// Is there an address at this part of the table?
+		if (*joinedIPlist[index][0])
+			M_JoinIP(joinedIPlist[index][0]);
+		else
+			S_StartSound(NULL, sfx_lose);
+
+		return true;	// eat input.
+	}
+
+	return false;
+}
