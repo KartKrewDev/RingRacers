@@ -11748,7 +11748,11 @@ void P_SpawnPlayer(INT32 playernum)
 	mobj->health = 1;
 	p->playerstate = PST_LIVE;
 
-	p->realtime = leveltime;
+	if (!p->exiting || !p->realtime)
+	{
+		p->realtime = leveltime;
+	}
+
 	p->followitem = skins[p->skin].followitem;
 
 	//awayview stuff

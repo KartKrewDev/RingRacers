@@ -120,7 +120,6 @@ add_executable(SRB2SDL2 MACOSX_BUNDLE WIN32
 	k_grandprix.c
 	k_boss.c
 	k_hud.c
-	k_menudef.c
 	k_menufunc.c
 	k_menudraw.c
 	k_terrain.c
@@ -533,6 +532,7 @@ add_subdirectory(io)
 add_subdirectory(sdl)
 add_subdirectory(objects)
 add_subdirectory(tests)
+add_subdirectory(menus)
 
 # strip debug symbols into separate file when using gcc.
 # to be consistent with Makefile, don't generate for OS X.

@@ -186,7 +186,8 @@ void I_ShutdownSound(void) {
 	SdlAudioLockHandle _;
 
 	for (auto& channel : sound_effect_channels) {
-		*channel = audio::SoundEffectPlayer();
+		if (channel)
+			*channel = audio::SoundEffectPlayer();
 	}
 }
 
@@ -329,7 +330,8 @@ void I_InitMusic(void) {
 void I_ShutdownMusic(void) {
 	SdlAudioLockHandle _;
 
-	*music_player = audio::MusicPlayer();
+	if (music_player)
+		*music_player = audio::MusicPlayer();
 }
 
 /// ------------------------
