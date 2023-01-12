@@ -260,6 +260,8 @@ public:
 			return ogg_inst_->position_seconds();
 		if (gme_inst_)
 			return gme_inst_->position_seconds();
+		if (xmp_inst_)
+			return xmp_inst_->position_seconds();
 
 		return std::nullopt;
 	}

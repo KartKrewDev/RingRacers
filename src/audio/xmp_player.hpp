@@ -37,6 +37,7 @@ public:
 	void looping(bool looping) { xmp_.looping(looping); }
 	void reset() { xmp_.reset(); }
 	float duration_seconds() const;
+	float position_seconds() const;
 	void seek(float position_seconds);
 };
 
