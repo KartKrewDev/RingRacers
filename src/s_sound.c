@@ -2331,24 +2331,6 @@ void S_ResumeAudio(void)
 	S_AdjustMusicStackTics();
 }
 
-void S_DisableSound(void)
-{
-	if (sound_started && !sound_disabled)
-	{
-		sound_disabled = true;
-		S_StopSounds();
-	}
-}
-
-void S_EnableSound(void)
-{
-	if (sound_started && sound_disabled)
-	{
-		sound_disabled = false;
-		S_InitSfxChannels(cv_soundvolume.value);
-	}
-}
-
 void S_SetMusicVolume(INT32 digvolume)
 {
 	if (digvolume < 0)
@@ -2698,13 +2680,8 @@ static void PlaySoundIfUnfocused_OnChange(void)
 	if (!cv_gamesounds.value)
 		return;
 
-	if (window_notinfocus)
-	{
-		if (cv_playsoundifunfocused.value)
-			S_DisableSound();
-		else
-			S_EnableSound();
-	}
+	if (window_notinfocus && cv_playsoundifunfocused.value)
+		S_StopSounds();
 }
 
 #ifdef HAVE_OPENMPT

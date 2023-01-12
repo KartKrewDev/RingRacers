@@ -614,9 +614,6 @@ static void Impl_HandleWindowEvent(SDL_WindowEvent evt)
 
 		S_InitMusicVolume();
 
-		if (cv_gamesounds.value)
-			S_EnableSound();
-
 		if (!firsttimeonmouse)
 		{
 			if (cv_usemouse.value) I_StartupMouse();
@@ -633,7 +630,7 @@ static void Impl_HandleWindowEvent(SDL_WindowEvent evt)
 		if (!cv_playmusicifunfocused.value)
 			I_SetMusicVolume(0);
 		if (!cv_playsoundifunfocused.value)
-			S_DisableSound();
+			S_StopSounds();
 
 		if (!disable_mouse)
 		{
