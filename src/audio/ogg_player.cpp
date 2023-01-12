@@ -43,7 +43,7 @@ std::optional<std::size_t> find_loop_point(const Ogg& ogg) {
 
 			try {
 				int loop_ms = std::stoi(copied);
-				int loop_point = std::round(static_cast<double>(loop_ms) / (rate / 1000.));
+				int loop_point = std::round(static_cast<double>(rate) * (loop_ms / 1000.));
 
 				return loop_point;
 			} catch (...) {
