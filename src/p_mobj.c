@@ -4399,7 +4399,7 @@ static void P_RefreshItemCapsuleParts(mobj_t *mobj)
 
 	while (count > 0)
 	{
-		if (P_MobjWasRemoved(part->tracer))
+		if (part->tracer == NULL || P_MobjWasRemoved(part->tracer))
 		{
 			P_SetTarget(&part->tracer, P_SpawnMobjFromMobj(mobj, 0, 0, 0, MT_OVERLAY));
 			P_SetTarget(&part->tracer->target, part);
