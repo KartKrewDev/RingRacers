@@ -56,14 +56,6 @@
 
 #include <errno.h>
 
-#ifdef HAVE_CURL
-#	if LIBCURL_VERSION_MAJOR >= 7 && LIBCURL_VERSION_MINOR >= 85
-#		define PROTOCOLS_CURLOPT CURLOPT_PROTOCOLS_STR
-#	else
-#		define PROTOCOLS_CURLOPT CURLOPT_PROTOCOLS // deprecated in 7.85.0
-#	endif
-#endif
-
 // Prototypes
 static boolean AddFileToSendQueue(INT32 node, const char *filename, UINT8 fileid);
 
@@ -1810,7 +1802,11 @@ void CURLPrepareFile(const char* url, int dfilenum)
 		curl_easy_setopt(http_handle, CURLOPT_URL, va("%s/%s", url, curl_realname));
 
 		// Only allow HTTP and HTTPS
-		curl_easy_setopt(http_handle, PROTOCOLS_CURLOPT, CURLPROTO_HTTP|CURLPROTO_HTTPS);
+#if LIBCURL_VERSION_MAJOR > 7 || (LIBCURL_VERSION_MAJOR == 7 && LIBCURL_VERSION_MINOR >= 85)
+		curl_easy_setopt(http_handle, CURLOPT_PROTOCOLS_STR, "http,https");
+#else
+		curl_easy_setopt(http_handle, CURLOPT_PROTOCOLS, CURLPROTO_HTTP|CURLPROTO_HTTPS); // deprecated in 7.85.0
+#endif
 
 		curl_easy_setopt(http_handle, CURLOPT_USERAGENT, va("Ring Racers/v%d.%d", VERSION, SUBVERSION)); // Set user agent as some servers won't accept invalid user agents.
 
