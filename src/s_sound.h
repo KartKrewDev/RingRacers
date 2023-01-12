@@ -14,7 +14,6 @@
 #ifndef __S_SOUND__
 #define __S_SOUND__
 
-#include "i_sound.h" // musictype_t
 #include "sounds.h"
 #include "m_fixed.h"
 #include "command.h"
@@ -162,7 +161,7 @@ boolean S_MusicDisabled(void);
 boolean S_MusicPlaying(void);
 boolean S_MusicPaused(void);
 boolean S_MusicNotInFocus(void);
-musictype_t S_MusicType(void);
+const char *S_MusicType(void);
 const char *S_MusicName(void);
 
 boolean S_MusicExists(const char *mname);

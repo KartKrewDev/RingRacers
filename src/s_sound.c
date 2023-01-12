@@ -1701,7 +1701,7 @@ boolean S_MusicNotInFocus(void)
 	);
 }
 
-musictype_t S_MusicType(void)
+const char *S_MusicType(void)
 {
 	return I_SongType();
 }
