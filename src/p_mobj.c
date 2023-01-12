@@ -4406,7 +4406,7 @@ static void P_RefreshItemCapsuleParts(mobj_t *mobj)
 			P_SetMobjState(part->tracer, S_INVISIBLE);
 			part->tracer->spriteyoffset = 10*FRACUNIT;
 			part->tracer->spritexoffset = 13*numNumbers*FRACUNIT;
-			part->threshold = OV_DONTSCREENOFFSET;
+			part->tracer->threshold = OV_DONTSCREENOFFSET;
 		}
 		part = part->tracer;
 		part->sprite = SPR_ITMN;
