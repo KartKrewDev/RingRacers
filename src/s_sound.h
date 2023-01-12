@@ -202,6 +202,7 @@ extern int musicdef_volume;
 
 void S_LoadMusicDefs(UINT16 wadnum);
 void S_InitMusicDefs(void);
+musicdef_t *S_FindMusicDef(const char *name);
 void S_ShowMusicCredit(void);
 
 //

@@ -1364,7 +1364,7 @@ int musicdef_volume;
 //
 // Find music def by 6 char name
 //
-static musicdef_t *S_FindMusicDef(const char *name)
+musicdef_t *S_FindMusicDef(const char *name)
 {
 	musicdef_t *def = musicdefstart;
 
@@ -2461,8 +2461,6 @@ static inline void PrintMusicDefField(const char *label, const char *field)
 
 static void PrintSongAuthors(const musicdef_t *def)
 {
-	CONS_Printf("Volume: %d/100\n\n", def->volume);
-
 	PrintMusicDefField("Title:  ", def->title);
 	PrintMusicDefField("Author: ", def->author);
 
