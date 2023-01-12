@@ -92,7 +92,7 @@ std::optional<float> Gme::loop_point_seconds() const {
 	if (loop_point_ms == -1)
 		return std::nullopt;
 
-	return loop_point_ms / 44100.f;
+	return loop_point_ms / 1000.f;
 }
 
 float Gme::position_seconds() const {
