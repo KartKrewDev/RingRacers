@@ -96,6 +96,13 @@ extern consvar_t cv_kartdebugnodes, cv_kartdebugcolorize, cv_kartdebugdirector;
 extern consvar_t cv_spbtest, cv_gptest, cv_reducevfx;
 extern consvar_t cv_kartdebugwaypoints, cv_kartdebugbotpredict;
 
+typedef enum {
+	CV_CAPSULETEST_OFF,
+	CV_CAPSULETEST_MULTIPLAYER,
+	CV_CAPSULETEST_TIMEATTACK,
+} capsuletest_val_t;
+extern consvar_t cv_capsuletest;
+
 extern consvar_t cv_alttitle, cv_itemfinder;
 
 extern consvar_t cv_inttime, cv_advancemap;

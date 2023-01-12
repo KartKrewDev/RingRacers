@@ -1411,7 +1411,7 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 			INT16 spacing = (target->radius >> 1) / target->scale;
 
 			// set respawn fuse
-			if (K_TimeAttackRules() == true) // no respawns
+			if (K_CapsuleTimeAttackRules() == true) // no respawns
 				;
 			else if (target->threshold == KITEM_SUPERRING)
 				target->fuse = 20*TICRATE;

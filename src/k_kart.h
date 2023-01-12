@@ -62,6 +62,7 @@ void K_SetItemCooldown(SINT8 itemResult, tic_t time);
 void K_RunItemCooldowns(void);
 
 boolean K_TimeAttackRules(void);
+boolean K_CapsuleTimeAttackRules(void);
 
 fixed_t K_GetMobjWeight(mobj_t *mobj, mobj_t *against);
 boolean K_KartBouncing(mobj_t *mobj1, mobj_t *mobj2);

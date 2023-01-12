@@ -361,6 +361,7 @@ void K_RegisterKartStuff(void)
 	CV_RegisterVar(&cv_kartdebugdirector);
 	CV_RegisterVar(&cv_spbtest);
 	CV_RegisterVar(&cv_gptest);
+	CV_RegisterVar(&cv_capsuletest);
 
 	CV_RegisterVar(&cv_reducevfx);
 }
@@ -589,6 +590,21 @@ boolean K_TimeAttackRules(void)
 
 	// Use Time Attack gameplay rules with only 1P.
 	return (playing <= 1);
+}
+
+boolean K_CapsuleTimeAttackRules(void)
+{
+	switch (cv_capsuletest.value)
+	{
+		case CV_CAPSULETEST_MULTIPLAYER:
+			return false;
+
+		case CV_CAPSULETEST_TIMEATTACK:
+			return true;
+
+		default:
+			return K_TimeAttackRules();
+	}
 }
 
 //}

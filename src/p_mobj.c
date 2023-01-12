@@ -12134,7 +12134,7 @@ static boolean P_AllowMobjSpawn(mapthing_t* mthing, mobjtype_t i)
 
 				// in record attack, only spawn ring capsules
 				// (behavior can be inverted with the Extra flag, i.e. item capsule spawns and ring capsule does not)
-				if (K_TimeAttackRules() == true
+				if (K_CapsuleTimeAttackRules() == true
 				&& (!(mthing->args[2] & TMICF_INVERTTIMEATTACK) == !isRingCapsule))
 					return false;
 			}
