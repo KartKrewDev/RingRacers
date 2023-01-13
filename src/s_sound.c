@@ -2680,7 +2680,7 @@ static void PlaySoundIfUnfocused_OnChange(void)
 	if (!cv_gamesounds.value)
 		return;
 
-	if (window_notinfocus && cv_playsoundifunfocused.value)
+	if (window_notinfocus && !cv_playsoundifunfocused.value)
 		S_StopSounds();
 }
 
