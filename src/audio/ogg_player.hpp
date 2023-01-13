@@ -25,10 +25,12 @@
 #include "ogg.hpp"
 #include "source.hpp"
 
-namespace srb2::audio {
+namespace srb2::audio
+{
 
 template <size_t C>
-class OggPlayer final : public Source<C> {
+class OggPlayer final : public Source<C>
+{
 	bool playing_;
 	bool looping_;
 	std::optional<std::size_t> loop_point_;

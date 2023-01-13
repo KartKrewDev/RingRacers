@@ -14,9 +14,11 @@
 
 #include "filter.hpp"
 
-namespace srb2::audio {
+namespace srb2::audio
+{
 
-class ExpandMono : public Filter<1, 2> {
+class ExpandMono : public Filter<1, 2>
+{
 public:
 	virtual ~ExpandMono();
 	virtual std::size_t filter(tcb::span<Sample<1>> input_buffer, tcb::span<Sample<2>> buffer) override final;

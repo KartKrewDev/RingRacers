@@ -6,6 +6,8 @@ UseTab: Always
 TabWidth: 4
 ColumnLimit: 120
 AccessModifierOffset: -4
+AllowAllArgumentsOnNextLine: false
+AllowAllParametersOfDeclarationOnNextLine: false
 AllowShortBlocksOnASingleLine: false
 AllowShortCaseLabelsOnASingleLine: false
 AllowShortEnumsOnASingleLine: false
@@ -13,10 +15,11 @@ AllowShortFunctionsOnASingleLine: InlineOnly
 AllowShortIfStatementsOnASingleLine: false
 AllowShortLambdasOnASingleLine: All
 AllowShortLoopsOnASingleLine: false
+AlignAfterOpenBracket: BlockIndent
 AlwaysBreakTemplateDeclarations: Yes
 BinPackArguments: false
 BinPackParameters: false
-BreakBeforeBraces: Attach # K&R/OTBS, braces on same line, Java style
+BreakBeforeBraces: Allman # Always break before braces, to match existing SRB2 code
 BreakConstructorInitializers: BeforeComma
 CompactNamespaces: true
 ConstructorInitializerAllOnOneLineOrOnePerLine: true

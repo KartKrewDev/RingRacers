@@ -17,10 +17,12 @@
 
 #include "source.hpp"
 
-namespace srb2::audio {
+namespace srb2::audio
+{
 
 template <size_t C>
-class Mixer : public Source<C> {
+class Mixer : public Source<C>
+{
 public:
 	virtual std::size_t generate(tcb::span<Sample<C>> buffer) override final;
 

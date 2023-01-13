@@ -17,9 +17,11 @@
 #include "sound_chunk.hpp"
 #include "source.hpp"
 
-namespace srb2::audio {
+namespace srb2::audio
+{
 
-class SoundEffectPlayer : public Source<2> {
+class SoundEffectPlayer : public Source<2>
+{
 public:
 	virtual std::size_t generate(tcb::span<Sample<2>> buffer) override final;
 

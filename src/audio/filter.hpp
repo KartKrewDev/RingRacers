@@ -18,10 +18,12 @@
 
 #include "source.hpp"
 
-namespace srb2::audio {
+namespace srb2::audio
+{
 
 template <size_t IC, size_t OC>
-class Filter : public Source<OC> {
+class Filter : public Source<OC>
+{
 public:
 	virtual std::size_t generate(tcb::span<Sample<OC>> buffer) override;
 

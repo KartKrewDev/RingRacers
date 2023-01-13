@@ -20,9 +20,11 @@
 #include "../io/streams.hpp"
 #include "source.hpp"
 
-namespace srb2::audio {
+namespace srb2::audio
+{
 
-class StbVorbisException final : public std::exception {
+class StbVorbisException final : public std::exception
+{
 	int code_;
 
 public:
@@ -31,12 +33,14 @@ public:
 	virtual const char* what() const noexcept;
 };
 
-struct OggComment {
+struct OggComment
+{
 	std::string vendor;
 	std::vector<std::string> comments;
 };
 
-class Ogg final {
+class Ogg final
+{
 	std::vector<std::byte> memory_data_;
 	stb_vorbis* instance_;
 
@@ -71,7 +75,8 @@ private:
 };
 
 template <typename I, typename std::enable_if_t<srb2::io::IsInputStreamV<I>, int> = 0>
-inline Ogg load_ogg(I& stream) {
+inline Ogg load_ogg(I& stream)
+{
 	std::vector<std::byte> data = srb2::io::read_to_vec(stream);
 	return Ogg {std::move(data)};
 }
