@@ -57,6 +57,8 @@ struct viddef_t
 	size_t rowbytes; // bytes per scanline of the VIDEO mode
 	INT32 width; // PIXELS per scanline
 	INT32 height;
+	UINT32 realwidth; // real pixel width of window/screen
+	UINT32 realheight; // real pixel height of window/screen
 	union { // don't need numpages for OpenGL, so we can use it for fullscreen/windowed mode
 		INT32 numpages; // always 1, page flipping todo
 		INT32 windowed; // windowed or fullscren mode?
