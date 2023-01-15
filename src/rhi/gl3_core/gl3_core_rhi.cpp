@@ -1086,7 +1086,7 @@ void GlCoreRhi::begin_render_pass(Handle<GraphicsContext> ctx, const RenderPassB
 			{
 				SRB2_ASSERT(texture_slab_.is_valid(handle));
 				auto& texture = texture_slab_[handle];
-				gl_->FramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, texture.texture, 0);
+				gl_->FramebufferTexture2D(GL_FRAMEBUFFER, attachment, GL_TEXTURE_2D, texture.texture, 0);
 				GL_ASSERT
 			},
 			[&, this](const Handle<Renderbuffer>& handle)
@@ -1095,7 +1095,7 @@ void GlCoreRhi::begin_render_pass(Handle<GraphicsContext> ctx, const RenderPassB
 				auto& renderbuffer = renderbuffer_slab_[handle];
 				gl_->FramebufferRenderbuffer(
 					GL_FRAMEBUFFER,
-					GL_COLOR_ATTACHMENT0,
+					attachment,
 					GL_RENDERBUFFER,
 					renderbuffer.renderbuffer
 				);
