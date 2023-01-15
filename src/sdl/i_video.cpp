@@ -152,17 +152,8 @@ SDL_Window   *window;
 static SDL_bool      havefocus = SDL_TRUE;
 static const char *fallback_resolution_name = "Fallback";
 
-struct RhiSwState {
-	rhi::Handle<rhi::Pipeline> g_sw_palette_pipeline;
-	rhi::Handle<rhi::Texture> g_sw_screen_texture;
-	rhi::Handle<rhi::Texture> g_palette_texture;
-	rhi::Handle<rhi::Buffer> g_quad_vb;
-	rhi::Handle<rhi::Buffer> g_quad_ib;
-};
-
 static std::unique_ptr<rhi::Rhi> g_rhi;
 static uint32_t g_rhi_generation = 0;
-static RhiSwState g_rhi_sw_state;
 
 // windowed video modes from which to choose from.
 static INT32 windowedModes[MAXWINMODES][2] =
