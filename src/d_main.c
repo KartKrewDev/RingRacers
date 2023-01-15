@@ -1115,7 +1115,6 @@ static void IdentifyVersion(void)
 #define PATCHNAME "MISC_SCRIPTS.pk3"
 #define UNLOCKNAME "MISC_UNLOCKS.pk3"
 #define MUSICNAME "MISC_MUSIC.PK3"
-#define SHADERSNAME "MISC_SHADERS.pk3"
 ////
 #else
 ////
@@ -1124,7 +1123,6 @@ static void IdentifyVersion(void)
 #define PATCHNAME "scripts.pk3"
 #define UNLOCKNAME "unlocks.pk3"
 #define MUSICNAME "music.pk3"
-#define SHADERSNAME "shaders.pk3"
 ////
 #endif
 ////
@@ -1142,7 +1140,7 @@ static void IdentifyVersion(void)
 #if defined(DEVELOP) && defined(UNLOCKTESTING)
 	D_AddFile(startupiwads, va(pandf,srb2waddir,UNLOCKNAME));
 #endif
-	D_AddFile(startupiwads, va(pandf,srb2waddir,SHADERSNAME));
+	D_AddFile(startupiwads, va(pandf,srb2waddir,"shaders.pk3"));
 ////
 #undef TEXTURESNAME
 #undef MAPSNAME
@@ -1468,6 +1466,7 @@ void D_SRB2Main(void)
 #endif
 
 #endif //ifndef DEVELOP
+	mainwads++; // shaders.pk3
 
 	// Do it before P_InitMapData because PNG patch
 	// conversion sometimes needs the palette
