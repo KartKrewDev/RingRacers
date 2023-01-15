@@ -288,7 +288,13 @@ ACSVM::Word Environment::callSpecImpl
 	);
 
 	activator_t *activator = static_cast<activator_t *>(Z_Calloc(sizeof(activator_t), PU_LEVEL, nullptr));
-	auto __ = srb2::finally([activator]() { Z_Free(activator); });
+	auto __ = srb2::finally(
+		[activator]()
+		{
+			P_SetTarget(&activator->mo, NULL);
+			Z_Free(activator);
+		}
+	);
 
 	// This needs manually set, as ACS just uses indicies in the
 	// compiled string table and not actual strings, and SRB2 has

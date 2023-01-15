@@ -2190,6 +2190,8 @@ void P_CrossSpecialLine(line_t *line, INT32 side, mobj_t *thing)
 	activator->sector = (side != 0) ? line->backsector : line->frontsector;
 
 	result = P_ProcessSpecial(activator, line->special, line->args, line->stringargs);
+
+	P_SetTarget(&activator->mo, NULL);
 	Z_Free(activator);
 
 	if (result == true)
@@ -2272,6 +2274,8 @@ void P_PushSpecialLine(line_t *line, mobj_t *thing)
 	activator->sector = (activator->side != 0) ? line->backsector : line->frontsector;
 
 	result = P_ProcessSpecial(activator, line->special, line->args, line->stringargs);
+
+	P_SetTarget(&activator->mo, NULL);
 	Z_Free(activator);
 
 	if (result == true)
@@ -2339,6 +2343,8 @@ void P_ActivateThingSpecial(mobj_t *mo, mobj_t *source)
 	}
 
 	P_ProcessSpecial(activator, mt->special, mt->args, mt->stringargs);
+
+	P_SetTarget(&activator->mo, NULL);
 	Z_Free(activator);
 }
 
@@ -2444,6 +2450,8 @@ static void P_ProcessLineSpecial(line_t *line, mobj_t *mo, sector_t *callsec)
 	activator->sector = callsec;
 
 	P_ProcessSpecial(activator, line->special, line->args, line->stringargs);
+
+	P_SetTarget(&activator->mo, NULL);
 	Z_Free(activator);
 
 	// Intentionally no P_LineSpecialWasActivated call.
@@ -5538,6 +5546,8 @@ static void P_CheckMobj3DFloorAction(mobj_t *mo, sector_t *sec)
 		activator->sector = roversec;
 
 		result = P_ProcessSpecial(activator, roversec->action, roversec->args, roversec->stringargs);
+
+		P_SetTarget(&activator->mo, NULL);
 		Z_Free(activator);
 
 		if (result == true)
@@ -5604,6 +5614,8 @@ static void P_CheckMobjPolyobjAction(mobj_t *mo)
 		activator->sector = polysec;
 
 		result = P_ProcessSpecial(activator, polysec->action, polysec->args, polysec->stringargs);
+
+		P_SetTarget(&activator->mo, NULL);
 		Z_Free(activator);
 
 		if (result == true)
@@ -5654,6 +5666,8 @@ static void P_CheckMobjSectorAction(mobj_t *mo, sector_t *sec)
 	activator->sector = sec;
 
 	result = P_ProcessSpecial(activator, sec->action, sec->args, sec->stringargs);
+
+	P_SetTarget(&activator->mo, NULL);
 	Z_Free(activator);
 
 	if (result == true)
