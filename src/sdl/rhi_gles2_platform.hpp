@@ -1,14 +1,16 @@
 #ifndef __SRB2_SDL_RHI_GLES2_PLATFORM_HPP__
 #define __SRB2_SDL_RHI_GLES2_PLATFORM_HPP__
 
-#include "../rhi/rhi.hpp"
 #include "../rhi/gles2/gles2_rhi.hpp"
+#include "../rhi/rhi.hpp"
 
 #include <SDL.h>
 
-namespace srb2::rhi {
+namespace srb2::rhi
+{
 
-struct SdlGles2Platform final : public Gles2Platform {
+struct SdlGles2Platform final : public Gles2Platform
+{
 	SDL_Window* window = nullptr;
 
 	virtual ~SdlGles2Platform();

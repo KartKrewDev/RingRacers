@@ -12,28 +12,41 @@
 #include "../core/static_vec.hpp"
 #include "handle.hpp"
 
-namespace srb2::rhi {
+namespace srb2::rhi
+{
 
-struct Buffer {};
+struct Buffer
+{
+};
 
-struct Texture {};
+struct Texture
+{
+};
 
-struct Pipeline {};
+struct Pipeline
+{
+};
 
-struct RenderPass {};
+struct RenderPass
+{
+};
 
-struct Renderbuffer {};
+struct Renderbuffer
+{
+};
 
 using TextureOrRenderbuffer = std::variant<Handle<Texture>, Handle<Renderbuffer>>;
 
-enum class VertexAttributeFormat {
+enum class VertexAttributeFormat
+{
 	kFloat,
 	kFloat2,
 	kFloat3,
 	kFloat4
 };
 
-enum class UniformFormat {
+enum class UniformFormat
+{
 	kFloat,
 	kFloat2,
 	kFloat3,
@@ -47,20 +60,23 @@ enum class UniformFormat {
 	kMat4
 };
 
-enum class PixelFormat {
+enum class PixelFormat
+{
 	kR8,
 	kRGBA8,
 	kDepth16,
 	kStencil8
 };
 
-enum class TextureFormat {
+enum class TextureFormat
+{
 	kLuminance,
 	kRGB,
 	kRGBA
 };
 
-enum class CompareFunc {
+enum class CompareFunc
+{
 	kNever,
 	kLess,
 	kEqual,
@@ -71,7 +87,8 @@ enum class CompareFunc {
 	kAlways
 };
 
-enum class BlendFactor {
+enum class BlendFactor
+{
 	kZero,
 	kOne,
 	kSource,
@@ -89,13 +106,15 @@ enum class BlendFactor {
 	kSourceAlphaSaturated
 };
 
-enum class BlendFunction {
+enum class BlendFunction
+{
 	kAdd,
 	kSubtract,
 	kReverseSubtract
 };
 
-enum class PrimitiveType {
+enum class PrimitiveType
+{
 	kPoints,
 	kLines,
 	kLineStrip,
@@ -104,44 +123,52 @@ enum class PrimitiveType {
 	kTriangleFan
 };
 
-enum class CullMode {
+enum class CullMode
+{
 	kNone,
 	kFront,
 	kBack
 };
 
-enum class FaceWinding {
+enum class FaceWinding
+{
 	kCounterClockwise,
 	kClockwise
 };
 
-enum class AttachmentLoadOp {
+enum class AttachmentLoadOp
+{
 	kLoad,
 	kClear,
 	kDontCare
 };
 
-enum class AttachmentStoreOp {
+enum class AttachmentStoreOp
+{
 	kStore,
 	kDontCare
 };
 
-enum class PipelineProgram {
+enum class PipelineProgram
+{
 	kUnshaded,
 	kUnshadedPaletted
 };
 
-enum class BufferType {
+enum class BufferType
+{
 	kVertexBuffer,
 	kIndexBuffer
 };
 
-enum class BufferUsage {
+enum class BufferUsage
+{
 	kImmutable,
 	kDynamic
 };
 
-enum class VertexAttributeName {
+enum class VertexAttributeName
+{
 	kPosition,
 	kNormal,
 	kTexCoord0,
@@ -149,28 +176,32 @@ enum class VertexAttributeName {
 	kColor
 };
 
-enum class UniformName {
+enum class UniformName
+{
 	kTime,
 	kModelView,
 	kProjection,
 	kTexCoord0Transform
 };
 
-enum class SamplerName {
+enum class SamplerName
+{
 	kSampler0,
 	kSampler1,
 	kSampler2,
 	kSampler3
 };
 
-struct Color {
+struct Color
+{
 	float r;
 	float g;
 	float b;
 	float a;
 };
 
-struct Rect {
+struct Rect
+{
 	int32_t x;
 	int32_t y;
 	uint32_t w;
@@ -180,35 +211,42 @@ struct Rect {
 constexpr const size_t kMaxVertexAttributes = 8;
 constexpr const size_t kMaxSamplers = 4;
 
-struct ProgramVertexInput {
+struct ProgramVertexInput
+{
 	VertexAttributeName name;
 	VertexAttributeFormat type;
 	bool required;
 };
 
-struct ProgramUniformInput {
+struct ProgramUniformInput
+{
 	UniformName name;
 	bool required;
 };
 
-struct ProgramSamplerInput {
+struct ProgramSamplerInput
+{
 	SamplerName name;
 	bool required;
 };
 
-struct ProgramVertexInputRequirements {
+struct ProgramVertexInputRequirements
+{
 	srb2::StaticVec<ProgramVertexInput, kMaxVertexAttributes> attributes;
 };
 
-struct ProgramUniformRequirements {
+struct ProgramUniformRequirements
+{
 	srb2::StaticVec<srb2::StaticVec<UniformName, 16>, 4> uniform_groups;
 };
 
-struct ProgramSamplerRequirements {
+struct ProgramSamplerRequirements
+{
 	std::array<std::optional<ProgramSamplerInput>, kMaxSamplers> samplers;
 };
 
-struct ProgramRequirements {
+struct ProgramRequirements
+{
 	ProgramVertexInputRequirements vertex_input;
 	ProgramUniformRequirements uniforms;
 	ProgramSamplerRequirements samplers;
@@ -221,7 +259,8 @@ const ProgramRequirements& program_requirements_for_program(PipelineProgram prog
 
 inline constexpr const VertexAttributeFormat vertex_attribute_format(VertexAttributeName name) noexcept
 {
-	switch (name) {
+	switch (name)
+	{
 	case VertexAttributeName::kPosition:
 		return VertexAttributeFormat::kFloat3;
 	case VertexAttributeName::kNormal:
@@ -239,7 +278,8 @@ inline constexpr const VertexAttributeFormat vertex_attribute_format(VertexAttri
 
 inline constexpr const UniformFormat uniform_format(UniformName name) noexcept
 {
-	switch (name) {
+	switch (name)
+	{
 	case UniformName::kTime:
 		return UniformFormat::kFloat;
 	case UniformName::kModelView:
@@ -253,11 +293,13 @@ inline constexpr const UniformFormat uniform_format(UniformName name) noexcept
 	}
 }
 
-struct VertexBufferLayoutDesc {
+struct VertexBufferLayoutDesc
+{
 	uint32_t stride;
 };
 
-struct VertexAttributeLayoutDesc {
+struct VertexAttributeLayoutDesc
+{
 	VertexAttributeName name;
 	uint32_t buffer_index;
 	uint32_t offset;
@@ -265,27 +307,32 @@ struct VertexAttributeLayoutDesc {
 
 // constexpr const size_t kMaxVertexBufferBindings = 4;
 
-struct VertexInputDesc {
+struct VertexInputDesc
+{
 	std::vector<VertexBufferLayoutDesc> buffer_layouts;
 	std::vector<VertexAttributeLayoutDesc> attr_layouts;
 };
 
-struct UniformInputDesc {
+struct UniformInputDesc
+{
 	srb2::StaticVec<srb2::StaticVec<UniformName, 16>, 4> enabled_uniforms;
 };
 
-struct SamplerInputDesc {
+struct SamplerInputDesc
+{
 	std::vector<SamplerName> enabled_samplers;
 };
 
-struct ColorMask {
+struct ColorMask
+{
 	bool r;
 	bool g;
 	bool b;
 	bool a;
 };
 
-struct BlendDesc {
+struct BlendDesc
+{
 	BlendFactor source_factor_color;
 	BlendFactor dest_factor_color;
 	BlendFunction color_function;
@@ -294,19 +341,22 @@ struct BlendDesc {
 	BlendFunction alpha_function;
 };
 
-struct PipelineDepthAttachmentDesc {
+struct PipelineDepthAttachmentDesc
+{
 	PixelFormat format;
 	CompareFunc func;
 	bool write;
 };
 
-struct PipelineColorAttachmentDesc {
+struct PipelineColorAttachmentDesc
+{
 	PixelFormat format;
 	std::optional<BlendDesc> blend;
 	ColorMask color_mask;
 };
 
-struct PipelineDesc {
+struct PipelineDesc
+{
 	PipelineProgram program;
 	VertexInputDesc vertex_input;
 	UniformInputDesc uniform_input;
@@ -320,32 +370,37 @@ struct PipelineDesc {
 	Color blend_color;
 };
 
-struct RenderPassDesc {
+struct RenderPassDesc
+{
 	std::optional<PixelFormat> depth_format;
 	PixelFormat color_format;
 	AttachmentLoadOp load_op;
 	AttachmentStoreOp store_op;
 };
 
-struct RenderbufferDesc {
+struct RenderbufferDesc
+{
 	PixelFormat format;
 	uint32_t width;
 	uint32_t height;
 };
 
-struct TextureDesc {
+struct TextureDesc
+{
 	TextureFormat format;
 	uint32_t width;
 	uint32_t height;
 };
 
-struct BufferDesc {
+struct BufferDesc
+{
 	uint32_t size;
 	BufferType type;
 	BufferUsage usage;
 };
 
-struct RenderPassBeginInfo {
+struct RenderPassBeginInfo
+{
 	Handle<RenderPass> render_pass;
 	TextureOrRenderbuffer color_attachment;
 	std::optional<TextureOrRenderbuffer> depth_attachment;
@@ -367,8 +422,7 @@ using UniformVariant = std::variant<
 
 	std::array<std::array<float, 2>, 2>,
 	std::array<std::array<float, 3>, 3>,
-	std::array<std::array<float, 4>, 4>
->;
+	std::array<std::array<float, 4>, 4>>;
 
 inline constexpr UniformFormat uniform_variant_format(const UniformVariant& variant)
 {
@@ -382,40 +436,62 @@ inline constexpr UniformFormat uniform_variant_format(const UniformVariant& vari
 		UniformFormat operator()(const std::array<int32_t, 2>&) const noexcept { return UniformFormat::kInt2; }
 		UniformFormat operator()(const std::array<int32_t, 3>&) const noexcept { return UniformFormat::kInt3; }
 		UniformFormat operator()(const std::array<int32_t, 4>&) const noexcept { return UniformFormat::kInt4; }
-		UniformFormat operator()(const std::array<std::array<float, 2>, 2>&) const noexcept { return UniformFormat::kMat2; }
-		UniformFormat operator()(const std::array<std::array<float, 3>, 3>&) const noexcept { return UniformFormat::kMat3; }
-		UniformFormat operator()(const std::array<std::array<float, 4>, 4>&) const noexcept { return UniformFormat::kMat4; }
+		UniformFormat operator()(const std::array<std::array<float, 2>, 2>&) const noexcept
+		{
+			return UniformFormat::kMat2;
+		}
+		UniformFormat operator()(const std::array<std::array<float, 3>, 3>&) const noexcept
+		{
+			return UniformFormat::kMat3;
+		}
+		UniformFormat operator()(const std::array<std::array<float, 4>, 4>&) const noexcept
+		{
+			return UniformFormat::kMat4;
+		}
 	};
-	return std::visit(Visitor{}, variant);
+	return std::visit(Visitor {}, variant);
 }
 
-struct VertexAttributeBufferBinding {
+struct VertexAttributeBufferBinding
+{
 	uint32_t attribute_index;
 	Handle<Buffer> vertex_buffer;
 };
 
-struct TextureBinding {
+struct TextureBinding
+{
 	SamplerName name;
 	Handle<Texture> texture;
 };
 
-struct CreateUniformSetInfo {
+struct CreateUniformSetInfo
+{
 	tcb::span<UniformVariant> uniforms;
 };
 
-struct CreateBindingSetInfo {
+struct CreateBindingSetInfo
+{
 	tcb::span<VertexAttributeBufferBinding> vertex_buffers;
 	tcb::span<TextureBinding> sampler_textures;
 };
 
-struct UniformSet {};
-struct BindingSet {};
+struct UniformSet
+{
+};
+struct BindingSet
+{
+};
 
-struct TransferContext {};
-struct GraphicsContext {};
+struct TransferContext
+{
+};
+struct GraphicsContext
+{
+};
 
 /// @brief An active handle to a rendering device.
-struct Rhi {
+struct Rhi
+{
 	virtual ~Rhi();
 
 	virtual Handle<RenderPass> create_render_pass(const RenderPassDesc& desc) = 0;
@@ -434,10 +510,22 @@ struct Rhi {
 	virtual void end_transfer(Handle<TransferContext> handle) = 0;
 
 	// Transfer Context functions
-	virtual void update_buffer_contents(Handle<TransferContext> ctx, Handle<Buffer> buffer, uint32_t offset, tcb::span<const std::byte> data) = 0;
-	virtual void update_texture(Handle<TransferContext> ctx, Handle<Texture> texture, Rect region, srb2::rhi::PixelFormat data_format, tcb::span<const std::byte> data) = 0;
+	virtual void update_buffer_contents(
+		Handle<TransferContext> ctx,
+		Handle<Buffer> buffer,
+		uint32_t offset,
+		tcb::span<const std::byte> data
+	) = 0;
+	virtual void update_texture(
+		Handle<TransferContext> ctx,
+		Handle<Texture> texture,
+		Rect region,
+		srb2::rhi::PixelFormat data_format,
+		tcb::span<const std::byte> data
+	) = 0;
 	virtual Handle<UniformSet> create_uniform_set(Handle<TransferContext> ctx, const CreateUniformSetInfo& info) = 0;
-	virtual Handle<BindingSet> create_binding_set(Handle<TransferContext> ctx, Handle<Pipeline> pipeline, const CreateBindingSetInfo& info) = 0;
+	virtual Handle<BindingSet>
+	create_binding_set(Handle<TransferContext> ctx, Handle<Pipeline> pipeline, const CreateBindingSetInfo& info) = 0;
 
 	virtual Handle<GraphicsContext> begin_graphics() = 0;
 	virtual void end_graphics(Handle<GraphicsContext> ctx) = 0;

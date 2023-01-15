@@ -11,17 +11,20 @@ using namespace srb2::rhi;
 
 SdlGlCorePlatform::~SdlGlCorePlatform() = default;
 
-void SdlGlCorePlatform::present() {
+void SdlGlCorePlatform::present()
+{
 	SRB2_ASSERT(window != nullptr);
 	SRB2_ASSERT(SDL_GetWindowID(window) != 0);
 
 	SDL_GL_SwapWindow(window);
 }
 
-std::tuple<std::string, std::string> SdlGlCorePlatform::find_shader_sources(rhi::PipelineProgram program) {
+std::tuple<std::string, std::string> SdlGlCorePlatform::find_shader_sources(rhi::PipelineProgram program)
+{
 	const char* vertex_lump_name = nullptr;
 	const char* fragment_lump_name = nullptr;
-	switch (program) {
+	switch (program)
+	{
 	case rhi::PipelineProgram::kUnshaded:
 		vertex_lump_name = "rhi_glcore_vertex_unshaded";
 		fragment_lump_name = "rhi_glcore_fragment_unshaded";
@@ -47,7 +50,8 @@ std::tuple<std::string, std::string> SdlGlCorePlatform::find_shader_sources(rhi:
 	return std::make_tuple(std::move(vertex_shader), std::move(fragment_shader));
 }
 
-rhi::Rect SdlGlCorePlatform::get_default_framebuffer_dimensions() {
+rhi::Rect SdlGlCorePlatform::get_default_framebuffer_dimensions()
+{
 	SRB2_ASSERT(window != nullptr);
 	int w;
 	int h;

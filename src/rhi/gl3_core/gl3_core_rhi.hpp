@@ -11,19 +11,17 @@
 
 #include "../rhi.hpp"
 
-namespace srb2::rhi {
+namespace srb2::rhi
+{
 
-struct GlCoreFramebufferKey {
+struct GlCoreFramebufferKey
+{
 	TextureOrRenderbuffer color;
 	std::optional<TextureOrRenderbuffer> depth;
 
-	bool operator==(const GlCoreFramebufferKey& rhs) const noexcept {
-		return color == rhs.color && depth == rhs.depth;
-	}
+	bool operator==(const GlCoreFramebufferKey& rhs) const noexcept { return color == rhs.color && depth == rhs.depth; }
 
-	bool operator!=(const GlCoreFramebufferKey& rhs) const noexcept {
-		return !(*this == rhs);
-	}
+	bool operator!=(const GlCoreFramebufferKey& rhs) const noexcept { return !(*this == rhs); }
 };
 
 } // namespace srb2::rhi
@@ -32,19 +30,25 @@ struct GlCoreFramebufferKey {
 // we need to split the namespace declarations _before_ the instantiation of std::unordered_map.
 
 template <>
-struct std::hash<srb2::rhi::GlCoreFramebufferKey> {
-	std::size_t operator()(const srb2::rhi::GlCoreFramebufferKey& key) const {
-		struct GetHandleHashVisitor {
-			uint32_t operator()(const srb2::rhi::Handle<srb2::rhi::Texture>& handle) const noexcept {
+struct std::hash<srb2::rhi::GlCoreFramebufferKey>
+{
+	std::size_t operator()(const srb2::rhi::GlCoreFramebufferKey& key) const
+	{
+		struct GetHandleHashVisitor
+		{
+			uint32_t operator()(const srb2::rhi::Handle<srb2::rhi::Texture>& handle) const noexcept
+			{
 				return std::hash<srb2::rhi::Handle<srb2::rhi::Texture>>()(handle);
 			}
-			uint32_t operator()(const srb2::rhi::Handle<srb2::rhi::Renderbuffer>& handle) const noexcept {
+			uint32_t operator()(const srb2::rhi::Handle<srb2::rhi::Renderbuffer>& handle) const noexcept
+			{
 				return std::hash<srb2::rhi::Handle<srb2::rhi::Renderbuffer>>()(handle);
 			}
 		};
 		std::size_t color_hash = std::visit(GetHandleHashVisitor {}, key.color);
 		std::size_t depth_hash = 0;
-		if (key.depth) {
+		if (key.depth)
+		{
 			depth_hash = std::visit(GetHandleHashVisitor {}, *key.depth);
 		}
 		return color_hash ^ (depth_hash << 1);
@@ -53,13 +57,15 @@ struct std::hash<srb2::rhi::GlCoreFramebufferKey> {
 
 struct GladGLContext;
 
-namespace srb2::rhi {
+namespace srb2::rhi
+{
 
 typedef void (*GlProc)(void);
 typedef GlProc (*GlLoadFunc)(const char* name);
 
 /// @brief Platform-specific implementation details for the GLES2 backend.
-struct GlCorePlatform {
+struct GlCorePlatform
+{
 	virtual ~GlCorePlatform();
 
 	virtual void present() = 0;
@@ -67,7 +73,8 @@ struct GlCorePlatform {
 	virtual Rect get_default_framebuffer_dimensions() = 0;
 };
 
-class GlCoreRhi final : public Rhi {
+class GlCoreRhi final : public Rhi
+{
 	std::unique_ptr<GlCorePlatform> platform_;
 
 	std::unique_ptr<GladGLContext> gl_;
@@ -82,7 +89,9 @@ class GlCoreRhi final : public Rhi {
 
 	std::unordered_map<GlCoreFramebufferKey, uint32_t> framebuffers_ {16};
 
-	struct DefaultRenderPassState {};
+	struct DefaultRenderPassState
+	{
+	};
 	using RenderPassState = std::variant<DefaultRenderPassState, RenderPassBeginInfo>;
 	std::optional<RenderPassState> current_render_pass_;
 	std::optional<Handle<Pipeline>> current_pipeline_;
@@ -114,10 +123,24 @@ public:
 	virtual Handle<TransferContext> begin_transfer() override;
 	virtual void end_transfer(Handle<TransferContext> handle) override;
 
-	virtual void update_buffer_contents(Handle<TransferContext> ctx, Handle<Buffer> buffer, uint32_t offset, tcb::span<const std::byte> data) override;
-	virtual void update_texture(Handle<TransferContext> ctx, Handle<Texture> texture, Rect region, srb2::rhi::PixelFormat data_format, tcb::span<const std::byte> data) override;
-	virtual Handle<UniformSet> create_uniform_set(Handle<TransferContext> ctx, const CreateUniformSetInfo& info) override;
-	virtual Handle<BindingSet> create_binding_set(Handle<TransferContext> ctx, Handle<Pipeline> pipeline, const CreateBindingSetInfo& info) override;
+	virtual void update_buffer_contents(
+		Handle<TransferContext> ctx,
+		Handle<Buffer> buffer,
+		uint32_t offset,
+		tcb::span<const std::byte> data
+	) override;
+	virtual void update_texture(
+		Handle<TransferContext> ctx,
+		Handle<Texture> texture,
+		Rect region,
+		srb2::rhi::PixelFormat data_format,
+		tcb::span<const std::byte> data
+	) override;
+	virtual Handle<UniformSet>
+	create_uniform_set(Handle<TransferContext> ctx, const CreateUniformSetInfo& info) override;
+	virtual Handle<BindingSet>
+	create_binding_set(Handle<TransferContext> ctx, Handle<Pipeline> pipeline, const CreateBindingSetInfo& info)
+		override;
 
 	virtual Handle<GraphicsContext> begin_graphics() override;
 	virtual void end_graphics(Handle<GraphicsContext> ctx) override;
@@ -133,9 +156,7 @@ public:
 	virtual void set_scissor(Handle<GraphicsContext> ctx, const Rect& rect) override;
 	virtual void set_viewport(Handle<GraphicsContext> ctx, const Rect& rect) override;
 	virtual void draw(Handle<GraphicsContext> ctx, uint32_t vertex_count, uint32_t first_vertex) override;
-	virtual void draw_indexed(Handle<GraphicsContext> ctx,
-							  uint32_t index_count,
-							  uint32_t first_index) override;
+	virtual void draw_indexed(Handle<GraphicsContext> ctx, uint32_t index_count, uint32_t first_index) override;
 	virtual void read_pixels(Handle<GraphicsContext> ctx, const Rect& rect, tcb::span<std::byte> out) override;
 
 	virtual void present() override;

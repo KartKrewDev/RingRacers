@@ -5,14 +5,15 @@
 #include <cstddef>
 #include <cstdint>
 #include <functional>
-#include <iterator>
 #include <initializer_list>
+#include <iterator>
 #include <stdexcept>
 #include <type_traits>
 
 #include "../cxxutil.hpp"
 
-namespace srb2 {
+namespace srb2
+{
 
 template <typename T, size_t Limit>
 class StaticVec
@@ -98,15 +99,9 @@ public:
 		return *this;
 	}
 
-	void push_back(const T& value)
-	{
-		arr_[size_++] = value;
-	}
+	void push_back(const T& value) { arr_[size_++] = value; }
 
-	void pop_back()
-	{
-		arr_[size_--] = T();
-	}
+	void pop_back() { arr_[size_--] = T(); }
 
 	void resize(size_t size, T value = T())
 	{
@@ -135,80 +130,35 @@ public:
 		}
 	}
 
-	constexpr T* begin() noexcept
-	{
-		return &arr_[0];
-	}
+	constexpr T* begin() noexcept { return &arr_[0]; }
 
-	constexpr const T* begin() const noexcept
-	{
-		return cbegin();
-	}
+	constexpr const T* begin() const noexcept { return cbegin(); }
 
-	constexpr const T* cbegin() const noexcept
-	{
-		return &arr_[0];
-	}
+	constexpr const T* cbegin() const noexcept { return &arr_[0]; }
 
-	constexpr T* end() noexcept
-	{
-		return &arr_[size_];
-	}
+	constexpr T* end() noexcept { return &arr_[size_]; }
 
-	constexpr const T* end() const noexcept
-	{
-		return cend();
-	}
+	constexpr const T* end() const noexcept { return cend(); }
 
-	constexpr const T* cend() const noexcept
-	{
-		return &arr_[size_];
-	}
+	constexpr const T* cend() const noexcept { return &arr_[size_]; }
 
-	constexpr std::reverse_iterator<T*> rbegin() noexcept
-	{
-		return &arr_[size_];
-	}
+	constexpr std::reverse_iterator<T*> rbegin() noexcept { return &arr_[size_]; }
 
-	constexpr std::reverse_iterator<const T*> crbegin() const noexcept
-	{
-		return &arr_[size_];
-	}
+	constexpr std::reverse_iterator<const T*> crbegin() const noexcept { return &arr_[size_]; }
 
-	constexpr std::reverse_iterator<T*> rend() noexcept
-	{
-		return &arr_[0];
-	}
+	constexpr std::reverse_iterator<T*> rend() noexcept { return &arr_[0]; }
 
-	constexpr std::reverse_iterator<const T*> crend() const noexcept
-	{
-		return &arr_[0];
-	}
+	constexpr std::reverse_iterator<const T*> crend() const noexcept { return &arr_[0]; }
 
-	constexpr bool empty() const noexcept
-	{
-		return size_ == 0;
-	}
+	constexpr bool empty() const noexcept { return size_ == 0; }
 
-	constexpr size_t size() const noexcept
-	{
-		return size_;
-	}
+	constexpr size_t size() const noexcept { return size_; }
 
-	constexpr size_t capacity() const noexcept
-	{
-		return Limit;
-	}
+	constexpr size_t capacity() const noexcept { return Limit; }
 
-	constexpr size_t max_size() const noexcept
-	{
-		return Limit;
-	}
+	constexpr size_t max_size() const noexcept { return Limit; }
 
-	constexpr T& operator[](size_t index) noexcept
-	{
-		return arr_[index];
-	}
+	constexpr T& operator[](size_t index) noexcept { return arr_[index]; }
 
 	T& at(size_t index)
 	{
@@ -219,10 +169,7 @@ public:
 		return this[index];
 	}
 
-	constexpr const T& operator[](size_t index) const noexcept
-	{
-		return arr_[index];
-	}
+	constexpr const T& operator[](size_t index) const noexcept { return arr_[index]; }
 
 	const T& at(size_t index) const
 	{
@@ -233,15 +180,9 @@ public:
 		return this[index];
 	}
 
-	T& front()
-	{
-		return *arr_[0];
-	}
+	T& front() { return *arr_[0]; }
 
-	T& back()
-	{
-		return *arr_[size_ - 1];
-	}
+	T& back() { return *arr_[size_ - 1]; }
 };
 
 } // namespace srb2
@@ -254,7 +195,8 @@ bool operator==(const srb2::StaticVec<T, L1>& lhs, const srb2::StaticVec<T, L2>&
 	{
 		return false;
 	}
-	for (size_t i = 0; i < lhs; i++) {
+	for (size_t i = 0; i < lhs; i++)
+	{
 		if (rhs[i] != lhs[i])
 		{
 			return false;
@@ -274,8 +216,8 @@ struct std::hash<srb2::StaticVec<T, Limit>>
 {
 	uint64_t operator()(const srb2::StaticVec<T, Limit>& input) const
 	{
-		constexpr const uint64_t prime { 0x00000100000001B3 };
-		std::size_t ret { 0xcbf29ce484222325 };
+		constexpr const uint64_t prime {0x00000100000001B3};
+		std::size_t ret {0xcbf29ce484222325};
 
 		for (auto itr = input.begin(); itr != input.end(); itr++)
 		{

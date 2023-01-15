@@ -7,9 +7,9 @@
 #include <imgui.h>
 
 #include "cxxutil.hpp"
-#include "v_video.h"
 #include "hwr2/pass_imgui.hpp"
 #include "hwr2/pass_software.hpp"
+#include "v_video.h"
 
 // KILL THIS WHEN WE KILL OLD OGL SUPPORT PLEASE
 #include "sdl/ogl_sdl.h"
