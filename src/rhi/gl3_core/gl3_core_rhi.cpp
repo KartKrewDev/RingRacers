@@ -948,14 +948,14 @@ void GlCoreRhi::begin_default_render_pass(Handle<GraphicsContext> ctx, bool clea
 	const Rect fb_rect = platform_->get_default_framebuffer_dimensions();
 
 	gl_->BindFramebuffer(GL_FRAMEBUFFER, 0); GL_ASSERT
-	gl_->Disable(GL_SCISSOR_TEST);
+	gl_->Disable(GL_SCISSOR_TEST); GL_ASSERT
 	gl_->Viewport(0, 0, fb_rect.w, fb_rect.h); GL_ASSERT
 
 	if (clear)
 	{
-		gl_->ClearColor(0.0f, 0.0f, 0.0f, 1.0f); GL_ASSERT
-		gl_->ClearDepth(1.0f); GL_ASSERT
-		gl_->ClearStencil(0); GL_ASSERT
+		gl_->ClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+		gl_->ClearDepth(1.0f);
+		gl_->ClearStencil(0);
 		gl_->Clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); GL_ASSERT
 	}
 
@@ -974,22 +974,53 @@ void GlCoreRhi::begin_render_pass(Handle<GraphicsContext> ctx, const RenderPassB
 	if (fb_itr == framebuffers_.end()) {
 		// Create a new framebuffer for this color-depth pair
 		GLuint fb_name;
-		gl_->GenFramebuffers(1, &fb_name);
-		gl_->BindFramebuffer(GL_FRAMEBUFFER, fb_name);
+		gl_->GenFramebuffers(1, &fb_name); GL_ASSERT
+		gl_->BindFramebuffer(GL_FRAMEBUFFER, fb_name); GL_ASSERT
 		fb_itr = framebuffers_.insert(
 			{GlCoreFramebufferKey {info.color_attachment, info.depth_attachment}, static_cast<uint32_t>(fb_name)}).first;
 
-		// TODO bind buffers correctly
+		GLuint attachment = GL_COLOR_ATTACHMENT0;
+		auto visitor = srb2::Overload {
+			[&, this](const Handle<Texture>& handle)
+			{
+				SRB2_ASSERT(texture_slab_.is_valid(handle));
+				auto& texture = *static_cast<GlCoreTexture*>(&texture_slab_[handle]);
+				gl_->FramebufferTexture2D(
+					GL_FRAMEBUFFER,
+					GL_COLOR_ATTACHMENT0,
+					GL_TEXTURE_2D,
+					texture.texture,
+					0
+				); GL_ASSERT
+			},
+			[&, this](const Handle<Renderbuffer>& handle)
+			{
+				SRB2_ASSERT(renderbuffer_slab_.is_valid(handle));
+				auto& renderbuffer = *static_cast<GlCoreRenderbuffer*>(&renderbuffer_slab_[handle]);
+				gl_->FramebufferRenderbuffer(
+					GL_FRAMEBUFFER,
+					GL_COLOR_ATTACHMENT0,
+					GL_RENDERBUFFER,
+					renderbuffer.renderbuffer
+				); GL_ASSERT
+			}
+		};
+		std::visit(visitor, info.color_attachment);
+		if (info.depth_attachment)
+		{
+			attachment = GL_DEPTH_ATTACHMENT;
+			std::visit(visitor, *info.depth_attachment);
+		}
 	}
 	auto& fb = *fb_itr;
-	gl_->BindFramebuffer(GL_FRAMEBUFFER, fb.second);
-	gl_->Disable(GL_SCISSOR_TEST);
+	gl_->BindFramebuffer(GL_FRAMEBUFFER, fb.second); GL_ASSERT
+	gl_->Disable(GL_SCISSOR_TEST); GL_ASSERT
 
 	if (rp.desc.load_op == rhi::AttachmentLoadOp::kClear) {
 		gl_->ClearColor(info.clear_color.r, info.clear_color.g, info.clear_color.b, info.clear_color.a);
 		gl_->ClearDepth(1.f);
 		gl_->ClearStencil(0);
-		gl_->Clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+		gl_->Clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT); GL_ASSERT
 	}
 
 	current_render_pass_ = info;
@@ -1091,46 +1122,45 @@ void GlCoreRhi::bind_uniform_set(Handle<GraphicsContext> ctx, uint32_t slot, Han
 		SRB2_ASSERT(pl.uniform_locations.find(uniform_name) != pl.uniform_locations.end());
 		GLuint pipeline_uniform = pl.uniform_locations[uniform_name];
 
-		struct UniformVariantVisitor {
-			GladGLContext* gl_;
-			rhi::UniformName name;
-			GLuint uniform;
-
-			void operator()(const float& value) const noexcept {
-				gl_->Uniform1f(uniform, value); GL_ASSERT
-			}
-			void operator()(const std::array<float, 2>& value) const noexcept {
-				gl_->Uniform2f(uniform, value[0], value[1]); GL_ASSERT
-			}
-			void operator()(const std::array<float, 3>& value) const noexcept {
-				gl_->Uniform3f(uniform, value[0], value[1], value[2]); GL_ASSERT
-			}
-			void operator()(const std::array<float, 4>& value) const noexcept {
-				gl_->Uniform4f(uniform, value[0], value[1], value[2], value[3]); GL_ASSERT
-			}
-			void operator()(const int32_t& value) const noexcept {
-				gl_->Uniform1i(uniform, value); GL_ASSERT
-			}
-			void operator()(const std::array<int32_t, 2>& value) const noexcept {
-				gl_->Uniform2i(uniform, value[0], value[1]); GL_ASSERT
-			}
-			void operator()(const std::array<int32_t, 3>& value) const noexcept {
-				gl_->Uniform3i(uniform, value[0], value[1], value[2]); GL_ASSERT
-			}
-			void operator()(const std::array<int32_t, 4>& value) const noexcept {
-				gl_->Uniform4i(uniform, value[0], value[1], value[2], value[3]); GL_ASSERT
-			}
-			void operator()(const std::array<std::array<float, 2>, 2>& value) const noexcept {
-				gl_->UniformMatrix2fv(uniform, 1, false, reinterpret_cast<const GLfloat*>(&value)); GL_ASSERT
-			}
-			void operator()(const std::array<std::array<float, 3>, 3>& value) const noexcept {
-				gl_->UniformMatrix3fv(uniform, 1, false, reinterpret_cast<const GLfloat*>(&value)); GL_ASSERT
-			}
-			void operator()(const std::array<std::array<float, 4>, 4>& value) const noexcept {
-				gl_->UniformMatrix4fv(uniform, 1, false, reinterpret_cast<const GLfloat*>(&value)); GL_ASSERT
-			}
+		auto visitor = srb2::Overload
+		{
+			[&](const float& value){ gl_->Uniform1f(pipeline_uniform, value); GL_ASSERT },
+			[&](const std::array<float, 2>& value) { gl_->Uniform2f(pipeline_uniform, value[0], value[1]); GL_ASSERT },
+			[&](const std::array<float, 3>& value)
+			{
+				gl_->Uniform3f(pipeline_uniform, value[0], value[1], value[2]); GL_ASSERT
+			},
+			[&](const std::array<float, 4>& value)
+			{
+				gl_->Uniform4f(pipeline_uniform, value[0], value[1], value[2], value[3]); GL_ASSERT
+			},
+			[&](const int32_t& value) { gl_->Uniform1i(pipeline_uniform, value); GL_ASSERT },
+			[&](const std::array<int32_t, 2>& value)
+			{
+				gl_->Uniform2i(pipeline_uniform, value[0], value[1]); GL_ASSERT
+			},
+			[&](const std::array<int32_t, 3>& value)
+			{
+				gl_->Uniform3i(pipeline_uniform, value[0], value[1], value[2]); GL_ASSERT
+			},
+			[&](const std::array<int32_t, 4>& value)
+			{
+				gl_->Uniform4i(pipeline_uniform, value[0], value[1], value[2], value[3]); GL_ASSERT
+			},
+			[&](const std::array<std::array<float, 2>, 2>& value)
+			{
+				gl_->UniformMatrix2fv(pipeline_uniform, 1, false, reinterpret_cast<const GLfloat*>(&value)); GL_ASSERT
+			},
+			[&](const std::array<std::array<float, 3>, 3>& value)
+			{
+				gl_->UniformMatrix3fv(pipeline_uniform, 1, false, reinterpret_cast<const GLfloat*>(&value)); GL_ASSERT
+			},
+			[&](const std::array<std::array<float, 4>, 4>& value)
+			{
+				gl_->UniformMatrix4fv(pipeline_uniform, 1, false, reinterpret_cast<const GLfloat*>(&value)); GL_ASSERT
+			},
 		};
-		std::visit(UniformVariantVisitor {gl_.get(), uniform_name, pipeline_uniform}, update_data);
+		std::visit(visitor, update_data);
 	}
 }
 
@@ -1250,6 +1280,13 @@ void GlCoreRhi::finish() {
 	}
 	binding_set_slab_.clear();
 	uniform_set_slab_.clear();
+
+	// I sure hope creating FBOs isn't costly on the driver!
+	for (auto& fbset : framebuffers_)
+	{
+		gl_->DeleteFramebuffers(1, &fbset.second);
+	}
+	framebuffers_.clear();
 
 	for (auto it = disposal_.begin(); it != disposal_.end(); it++)
 	{
