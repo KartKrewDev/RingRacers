@@ -1926,6 +1926,21 @@ static boolean P_KillPlayer(player_t *player, mobj_t *inflictor, mobj_t *source,
 			break;
 	}
 
+	if (player->spectator == false)
+	{
+		UINT32 skinflags = (demo.playback)
+			? demo.skinlist[demo.currentskinid[(player-players)]].flags
+			: skins[player->skin].flags;
+
+		if (skinflags & SF_IRONMAN)
+		{
+			player->mo->skin = &skins[player->skin];
+			K_SpawnMagicianParticles(player->mo, 5);
+		}
+
+		player->mo->renderflags &= ~RF_DONTDRAW;
+	}
+
 	K_DropEmeraldsFromPlayer(player, player->emeralds);
 	K_SetHitLagForObjects(player->mo, inflictor, MAXHITLAGTICS, true);
 
@@ -1934,11 +1949,6 @@ static boolean P_KillPlayer(player_t *player, mobj_t *inflictor, mobj_t *source,
 	K_KartResetPlayerColor(player);
 
 	P_ResetPlayer(player);
-
-	if (player->spectator == false)
-	{
-		player->mo->renderflags &= ~RF_DONTDRAW;
-	}
 
 	P_SetPlayerMobjState(player->mo, player->mo->info->deathstate);
 
