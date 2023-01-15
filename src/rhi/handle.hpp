@@ -52,15 +52,8 @@ public:
 	// Conversions from Handles of derived type U to base type T
 
 	template <typename U, typename std::enable_if_t<std::is_base_of_v<T, U>, bool> = true>
-	Handle(const Handle<U>& rhs) noexcept : id_(rhs.id_), generation_(rhs.generation_)
+	Handle(const Handle<U>& rhs) noexcept : id_(rhs.id()), generation_(rhs.generation())
 	{
-	}
-
-	template <typename U, typename std::enable_if_t<std::is_base_of_v<T, U>, bool> = true>
-	Handle(Handle<U>&& rhs) noexcept
-	{
-		id_ = std::exchange(rhs.id_, 0);
-		generation_ = std::exchange(rhs.generation_, 0);
 	}
 
 	template <typename U, typename std::enable_if_t<std::is_base_of_v<T, U>, bool> = true>
@@ -68,14 +61,6 @@ public:
 	{
 		id_ = rhs.id_;
 		generation_ = rhs.generation_;
-	}
-
-	template <typename U, typename std::enable_if_t<std::is_base_of_v<T, U>, bool> = true>
-	Handle& operator=(Handle<U>&& rhs) noexcept
-	{
-		id_ = std::exchange(rhs.id_, 0);
-		generation_ = std::exchange(rhs.generation_, 0);
-		return *this;
 	}
 
 	uint32_t id() const noexcept { return id_; }
@@ -175,7 +160,7 @@ public:
 	SlabIterator& operator=(const SlabIterator&) = default;
 	SlabIterator& operator=(SlabIterator&&) = default;
 
-	T& operator*() const noexcept { return *slab_->vec_[index_].item.get(); }
+	T& operator*() const noexcept { return slab_->vec_[index_].item; }
 
 	SlabIterator& operator++() noexcept
 	{
@@ -211,7 +196,7 @@ class Slab
 {
 	struct SlabStorage
 	{
-		std::unique_ptr<T> item;
+		T item;
 		uint32_t gen;
 	};
 	std::vector<SlabStorage> vec_;
@@ -226,7 +211,7 @@ public:
 	Slab(const Slab&) = delete;
 	Slab& operator=(const Slab&) = delete;
 
-	Handle<T> insert(std::unique_ptr<T>&& value)
+	Handle<T> insert(T&& value)
 	{
 		uint32_t ret_id = 0;
 		if (!free_list_.empty())
@@ -245,21 +230,22 @@ public:
 		return Handle<T>(ret_id, gen_);
 	}
 
-	std::unique_ptr<T> remove(Handle<T> handle)
+	template <typename U, typename std::enable_if_t<std::is_base_of_v<U, T>, bool> = true>
+	T remove(Handle<U> handle)
 	{
 		uint32_t handle_id = handle.id();
 		uint32_t handle_gen = handle.generation();
 		if (handle_id >= vec_.size())
 		{
-			return nullptr;
+			return T();
 		}
 		SlabStorage& storage = vec_[handle_id];
 		if (storage.gen > handle_gen)
 		{
-			return nullptr;
+			return T();
 		}
-		std::unique_ptr<T> ret = std::move(storage.item);
-		storage.item = nullptr;
+		T ret = std::move(storage.item);
+		storage.item = T();
 		free_list_.push_back(handle_id);
 		gen_ += 1;
 		if (gen_ == 0)
@@ -269,7 +255,8 @@ public:
 		return ret;
 	}
 
-	bool is_valid(Handle<T> handle)
+	template <typename U, typename std::enable_if_t<std::is_base_of_v<U, T>, bool> = true>
+	bool is_valid(Handle<U> handle)
 	{
 		uint32_t handle_id = handle.id();
 		uint32_t handle_gen = handle.generation();
@@ -296,10 +283,11 @@ public:
 		}
 	}
 
-	T& operator[](Handle<T> handle)
+	template <typename U, typename std::enable_if_t<std::is_base_of_v<U, T>, bool> = true>
+	T& operator[](Handle<U> handle)
 	{
 		SRB2_ASSERT(is_valid(handle));
-		return *vec_[handle.id()].item;
+		return vec_[handle.id()].item;
 	}
 
 	SlabIterator<T> begin() { return SlabIterator<T> {0, this}; }

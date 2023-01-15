@@ -73,19 +73,77 @@ struct GlCorePlatform
 	virtual Rect get_default_framebuffer_dimensions() = 0;
 };
 
+struct GlCoreTexture : public rhi::Texture
+{
+	uint32_t texture;
+	rhi::TextureDesc desc;
+};
+
+struct GlCoreBuffer : public rhi::Buffer
+{
+	uint32_t buffer;
+	rhi::BufferDesc desc;
+};
+
+struct GlCoreRenderPass : public rhi::RenderPass
+{
+	rhi::RenderPassDesc desc;
+};
+
+struct GlCoreRenderbuffer : public rhi::Renderbuffer
+{
+	uint32_t renderbuffer;
+};
+
+struct GlCoreUniformSet : public rhi::UniformSet
+{
+	std::vector<rhi::UniformVariant> uniforms;
+};
+
+struct GlCoreBindingSet : public rhi::BindingSet
+{
+	uint32_t vao;
+	std::unordered_map<rhi::SamplerName, uint32_t> textures {4};
+};
+
+struct GlCorePipeline : public rhi::Pipeline
+{
+	uint32_t vertex_shader = 0;
+	uint32_t fragment_shader = 0;
+	uint32_t program = 0;
+	std::unordered_map<rhi::VertexAttributeName, uint32_t> attrib_locations {2};
+	std::unordered_map<rhi::UniformName, uint32_t> uniform_locations {2};
+	std::unordered_map<rhi::SamplerName, uint32_t> sampler_locations {2};
+	rhi::PipelineDesc desc;
+};
+
+struct GlCoreGraphicsContext : public rhi::GraphicsContext
+{
+};
+
+struct GlCoreTransferContext : public rhi::TransferContext
+{
+};
+
+struct GlCoreActiveUniform
+{
+	uint32_t type;
+	uint32_t location;
+};
+
 class GlCoreRhi final : public Rhi
 {
 	std::unique_ptr<GlCorePlatform> platform_;
 
 	std::unique_ptr<GladGLContext> gl_;
 
-	Slab<RenderPass> render_pass_slab_;
-	Slab<Texture> texture_slab_;
-	Slab<Buffer> buffer_slab_;
-	Slab<Renderbuffer> renderbuffer_slab_;
-	Slab<Pipeline> pipeline_slab_;
-	Slab<UniformSet> uniform_set_slab_;
-	Slab<BindingSet> binding_set_slab_;
+	Slab<GlCoreRenderPass> render_pass_slab_;
+	Slab<GlCoreTexture> texture_slab_;
+	Slab<GlCoreBuffer> buffer_slab_;
+	Slab<GlCoreRenderbuffer> renderbuffer_slab_;
+	Slab<GlCorePipeline> pipeline_slab_;
+	Slab<GlCoreUniformSet> uniform_set_slab_;
+	Slab<GlCoreBindingSet> binding_set_slab_;
 
 	std::unordered_map<GlCoreFramebufferKey, uint32_t> framebuffers_ {16};
 

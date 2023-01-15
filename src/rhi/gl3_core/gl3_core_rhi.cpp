@@ -11,9 +11,7 @@
 #include <glad/gl.h>
 
 using namespace srb2;
-
-using srb2::rhi::GlCorePlatform;
-using srb2::rhi::GlCoreRhi;
+using namespace rhi;
 
 #if 1
 #define GL_ASSERT                                                                                                      \
@@ -30,13 +28,6 @@ using srb2::rhi::GlCoreRhi;
 
 namespace
 {
-
-template <typename D, typename B>
-std::unique_ptr<D, std::default_delete<D>> static_unique_ptr_cast(std::unique_ptr<B, std::default_delete<B>> ptr)
-{
-	D* derived = static_cast<D*>(ptr.release());
-	return std::unique_ptr<D, std::default_delete<D>>(derived, std::default_delete<D>());
-}
 
 constexpr GLenum map_pixel_format(rhi::PixelFormat format)
 {
@@ -399,69 +390,6 @@ constexpr GLenum map_uniform_format(rhi::UniformFormat format)
 	}
 }
 
-struct GlCoreTexture : public rhi::Texture
-{
-	GLuint texture;
-	rhi::TextureDesc desc;
-	GlCoreTexture(GLuint texture, const rhi::TextureDesc& desc) noexcept : texture(texture), desc(desc) {}
-};
-
-struct GlCoreBuffer : public rhi::Buffer
-{
-	GLuint buffer;
-	rhi::BufferDesc desc;
-	GlCoreBuffer(GLuint buffer, const rhi::BufferDesc& desc) noexcept : buffer(buffer), desc(desc) {}
-};
-
-struct GlCoreRenderPass : public rhi::RenderPass
-{
-	rhi::RenderPassDesc desc;
-	explicit GlCoreRenderPass(const rhi::RenderPassDesc& desc) noexcept : desc(desc) {}
-};
-
-struct GlCoreRenderbuffer : public rhi::Renderbuffer
-{
-	GLuint renderbuffer;
-
-	explicit GlCoreRenderbuffer(GLuint renderbuffer) noexcept : renderbuffer(renderbuffer) {}
-};
-
-struct GlCoreUniformSet : public rhi::UniformSet
-{
-	std::vector<rhi::UniformVariant> uniforms;
-};
-
-struct GlCoreBindingSet : public rhi::BindingSet
-{
-	GLuint vao;
-	std::unordered_map<rhi::SamplerName, GLuint> textures {4};
-};
-
-struct GlCorePipeline : public rhi::Pipeline
-{
-	GLuint vertex_shader = 0;
-	GLuint fragment_shader = 0;
-	GLuint program = 0;
-	std::unordered_map<rhi::VertexAttributeName, GLuint> attrib_locations {2};
-	std::unordered_map<rhi::UniformName, GLuint> uniform_locations {2};
-	std::unordered_map<rhi::SamplerName, GLuint> sampler_locations {2};
-	rhi::PipelineDesc desc;
-};
-
-struct GlCoreGraphicsContext : public rhi::GraphicsContext
-{
-};
-
-struct GlCoreTransferContext : public rhi::TransferContext
-{
-};
-
-struct GlCoreActiveUniform
-{
-	GLenum type;
-	GLuint location;
-};
-
 } // namespace
 
 GlCorePlatform::~GlCorePlatform() = default;
@@ -479,15 +407,16 @@ rhi::Handle<rhi::RenderPass> GlCoreRhi::create_render_pass(const rhi::RenderPass
 	SRB2_ASSERT(graphics_context_active_ == false);
 
 	// GL has no formal render pass object
-	return render_pass_slab_.insert(std::make_unique<GlCoreRenderPass>(desc));
+	GlCoreRenderPass pass;
+	pass.desc = desc;
+	return render_pass_slab_.insert(std::move(pass));
 }
 
 void GlCoreRhi::destroy_render_pass(rhi::Handle<rhi::RenderPass> handle)
 {
 	SRB2_ASSERT(graphics_context_active_ == false);
 
-	std::unique_ptr<rhi::RenderPass> buffer = render_pass_slab_.remove(handle);
-	std::unique_ptr<GlCoreRenderPass> casted(static_cast<GlCoreRenderPass*>(buffer.release()));
+	render_pass_slab_.remove(handle);
 }
 
 rhi::Handle<rhi::Texture> GlCoreRhi::create_texture(const rhi::TextureDesc& desc)
@@ -513,7 +442,10 @@ rhi::Handle<rhi::Texture> GlCoreRhi::create_texture(const rhi::TextureDesc& desc
 	gl_->TexImage2D(GL_TEXTURE_2D, 0, internal_format, desc.width, desc.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
 	GL_ASSERT
 
-	return texture_slab_.insert(std::make_unique<GlCoreTexture>(name, desc));
+	GlCoreTexture texture;
+	texture.texture = name;
+	texture.desc = desc;
+	return texture_slab_.insert(std::move(texture));
 }
 
 void GlCoreRhi::destroy_texture(rhi::Handle<rhi::Texture> handle)
@@ -521,8 +453,8 @@ void GlCoreRhi::destroy_texture(rhi::Handle<rhi::Texture> handle)
 	SRB2_ASSERT(graphics_context_active_ == false);
 
 	SRB2_ASSERT(texture_slab_.is_valid(handle) == true);
-	std::unique_ptr<GlCoreTexture> casted = static_unique_ptr_cast<GlCoreTexture>(texture_slab_.remove(handle));
-	GLuint name = casted->texture;
+	GlCoreTexture casted = texture_slab_.remove(handle);
+	GLuint name = casted.texture;
 	disposal_.push_back([this, name] { gl_->DeleteTextures(1, &name); });
 }
 
@@ -544,7 +476,7 @@ void GlCoreRhi::update_texture(
 	}
 
 	SRB2_ASSERT(texture_slab_.is_valid(texture) == true);
-	auto& t = *static_cast<GlCoreTexture*>(&texture_slab_[texture]);
+	auto& t = texture_slab_[texture];
 
 	GLenum format = GL_RGBA;
 	GLenum type = GL_UNSIGNED_BYTE;
@@ -593,7 +525,10 @@ rhi::Handle<rhi::Buffer> GlCoreRhi::create_buffer(const rhi::BufferDesc& desc)
 	gl_->BufferData(target, desc.size, nullptr, usage);
 	GL_ASSERT
 
-	return buffer_slab_.insert(std::make_unique<GlCoreBuffer>(name, desc));
+	GlCoreBuffer buffer;
+	buffer.buffer = name;
+	buffer.desc = desc;
+	return buffer_slab_.insert(std::move(buffer));
 }
 
 void GlCoreRhi::destroy_buffer(rhi::Handle<rhi::Buffer> handle)
@@ -602,8 +537,8 @@ void GlCoreRhi::destroy_buffer(rhi::Handle<rhi::Buffer> handle)
 
 	SRB2_ASSERT(buffer_slab_.is_valid(handle) == true);
 	SRB2_ASSERT(graphics_context_active_ == false);
-	std::unique_ptr<GlCoreBuffer> casted = static_unique_ptr_cast<GlCoreBuffer>(buffer_slab_.remove(handle));
-	GLuint name = casted->buffer;
+	GlCoreBuffer casted = buffer_slab_.remove(handle);
+	GLuint name = casted.buffer;
 
 	disposal_.push_back([this, name] { gl_->DeleteBuffers(1, &name); });
 }
@@ -625,7 +560,7 @@ void GlCoreRhi::update_buffer_contents(
 	}
 
 	SRB2_ASSERT(buffer_slab_.is_valid(handle) == true);
-	auto& b = *static_cast<GlCoreBuffer*>(&buffer_slab_[handle]);
+	auto& b = buffer_slab_[handle];
 
 	SRB2_ASSERT(offset < b.desc.size && offset + data.size() <= b.desc.size);
 
@@ -660,7 +595,7 @@ GlCoreRhi::create_uniform_set(rhi::Handle<rhi::TransferContext> ctx, const rhi::
 		uniform_set.uniforms.push_back(uniform);
 	}
 
-	return uniform_set_slab_.insert(std::make_unique<GlCoreUniformSet>(std::move(uniform_set)));
+	return uniform_set_slab_.insert(std::move(uniform_set));
 }
 
 rhi::Handle<rhi::BindingSet> GlCoreRhi::create_binding_set(
@@ -674,7 +609,7 @@ rhi::Handle<rhi::BindingSet> GlCoreRhi::create_binding_set(
 	SRB2_ASSERT(ctx.generation() == transfer_context_generation_);
 
 	SRB2_ASSERT(pipeline_slab_.is_valid(pipeline) == true);
-	auto& pl = *static_cast<GlCorePipeline*>(&pipeline_slab_[pipeline]);
+	auto& pl = pipeline_slab_[pipeline];
 
 	SRB2_ASSERT(info.vertex_buffers.size() == pl.desc.vertex_input.buffer_layouts.size());
 
@@ -689,8 +624,7 @@ rhi::Handle<rhi::BindingSet> GlCoreRhi::create_binding_set(
 	for (auto& attr_layout : pl.desc.vertex_input.attr_layouts)
 	{
 		SRB2_ASSERT(buffer_slab_.is_valid(info.vertex_buffers[attr_layout.buffer_index].vertex_buffer));
-		auto& buf =
-			*static_cast<GlCoreBuffer*>(&buffer_slab_[info.vertex_buffers[attr_layout.buffer_index].vertex_buffer]);
+		auto& buf = buffer_slab_[info.vertex_buffers[attr_layout.buffer_index].vertex_buffer];
 		SRB2_ASSERT(buf.desc.type == rhi::BufferType::kVertexBuffer);
 
 		auto& buffer_layout = pl.desc.vertex_input.buffer_layouts[attr_layout.buffer_index];
@@ -728,11 +662,11 @@ rhi::Handle<rhi::BindingSet> GlCoreRhi::create_binding_set(
 		SRB2_ASSERT(binding.name == sampler_name);
 
 		SRB2_ASSERT(texture_slab_.is_valid(binding.texture));
-		auto& tx = *static_cast<GlCoreTexture*>(&texture_slab_[binding.texture]);
+		auto& tx = texture_slab_[binding.texture];
 		binding_set.textures.insert({sampler_name, tx.texture});
 	}
 
-	return binding_set_slab_.insert(std::make_unique<GlCoreBindingSet>(std::move(binding_set)));
+	return binding_set_slab_.insert(std::move(binding_set));
 }
 
 rhi::Handle<rhi::Renderbuffer> GlCoreRhi::create_renderbuffer(const rhi::RenderbufferDesc& desc)
@@ -748,7 +682,9 @@ rhi::Handle<rhi::Renderbuffer> GlCoreRhi::create_renderbuffer(const rhi::Renderb
 	gl_->RenderbufferStorage(GL_RENDERBUFFER, map_pixel_format(desc.format), desc.width, desc.height);
 	GL_ASSERT
 
-	return renderbuffer_slab_.insert(std::make_unique<GlCoreRenderbuffer>(GlCoreRenderbuffer {name}));
+	GlCoreRenderbuffer rb;
+	rb.renderbuffer = name;
+	return renderbuffer_slab_.insert(std::move(rb));
 }
 
 void GlCoreRhi::destroy_renderbuffer(rhi::Handle<rhi::Renderbuffer> handle)
@@ -756,9 +692,8 @@ void GlCoreRhi::destroy_renderbuffer(rhi::Handle<rhi::Renderbuffer> handle)
 	SRB2_ASSERT(graphics_context_active_ == false);
 
 	SRB2_ASSERT(renderbuffer_slab_.is_valid(handle) == true);
-	std::unique_ptr<GlCoreRenderbuffer> casted =
-		static_unique_ptr_cast<GlCoreRenderbuffer>(renderbuffer_slab_.remove(handle));
-	GLuint name = casted->renderbuffer;
+	GlCoreRenderbuffer casted = renderbuffer_slab_.remove(handle);
+	GLuint name = casted.renderbuffer;
 	disposal_.push_back([this, name] { gl_->DeleteRenderbuffers(1, &name); });
 }
 
@@ -1031,7 +966,7 @@ rhi::Handle<rhi::Pipeline> GlCoreRhi::create_pipeline(const PipelineDesc& desc)
 	pipeline.fragment_shader = fragment;
 	pipeline.program = program;
 
-	return pipeline_slab_.insert(std::make_unique<GlCorePipeline>(std::move(pipeline)));
+	return pipeline_slab_.insert(std::move(pipeline));
 }
 
 void GlCoreRhi::destroy_pipeline(rhi::Handle<rhi::Pipeline> handle)
@@ -1039,10 +974,10 @@ void GlCoreRhi::destroy_pipeline(rhi::Handle<rhi::Pipeline> handle)
 	SRB2_ASSERT(graphics_context_active_ == false);
 
 	SRB2_ASSERT(pipeline_slab_.is_valid(handle) == true);
-	std::unique_ptr<GlCorePipeline> casted = static_unique_ptr_cast<GlCorePipeline>(pipeline_slab_.remove(handle));
-	GLuint vertex_shader = casted->vertex_shader;
-	GLuint fragment_shader = casted->fragment_shader;
-	GLuint program = casted->program;
+	GlCorePipeline casted = pipeline_slab_.remove(handle);
+	GLuint vertex_shader = casted.vertex_shader;
+	GLuint fragment_shader = casted.fragment_shader;
+	GLuint program = casted.program;
 
 	disposal_.push_back([this, fragment_shader] { gl_->DeleteShader(fragment_shader); });
 	disposal_.push_back([this, vertex_shader] { gl_->DeleteShader(vertex_shader); });
@@ -1126,7 +1061,7 @@ void GlCoreRhi::begin_render_pass(Handle<GraphicsContext> ctx, const RenderPassB
 	SRB2_ASSERT(current_render_pass_.has_value() == false);
 
 	SRB2_ASSERT(render_pass_slab_.is_valid(info.render_pass) == true);
-	auto& rp = *static_cast<GlCoreRenderPass*>(&render_pass_slab_[info.render_pass]);
+	auto& rp = render_pass_slab_[info.render_pass];
 	SRB2_ASSERT(rp.desc.depth_format.has_value() == info.depth_attachment.has_value());
 
 	auto fb_itr = framebuffers_.find(GlCoreFramebufferKey {info.color_attachment, info.depth_attachment});
@@ -1150,14 +1085,14 @@ void GlCoreRhi::begin_render_pass(Handle<GraphicsContext> ctx, const RenderPassB
 			[&, this](const Handle<Texture>& handle)
 			{
 				SRB2_ASSERT(texture_slab_.is_valid(handle));
-				auto& texture = *static_cast<GlCoreTexture*>(&texture_slab_[handle]);
+				auto& texture = texture_slab_[handle];
 				gl_->FramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, texture.texture, 0);
 				GL_ASSERT
 			},
 			[&, this](const Handle<Renderbuffer>& handle)
 			{
 				SRB2_ASSERT(renderbuffer_slab_.is_valid(handle));
-				auto& renderbuffer = *static_cast<GlCoreRenderbuffer*>(&renderbuffer_slab_[handle]);
+				auto& renderbuffer = renderbuffer_slab_[handle];
 				gl_->FramebufferRenderbuffer(
 					GL_FRAMEBUFFER,
 					GL_COLOR_ATTACHMENT0,
@@ -1206,7 +1141,7 @@ void GlCoreRhi::bind_pipeline(Handle<GraphicsContext> ctx, Handle<Pipeline> pipe
 	SRB2_ASSERT(current_render_pass_.has_value() == true);
 
 	SRB2_ASSERT(pipeline_slab_.is_valid(pipeline) == true);
-	auto& pl = *static_cast<GlCorePipeline*>(&pipeline_slab_[pipeline]);
+	auto& pl = pipeline_slab_[pipeline];
 	auto& desc = pl.desc;
 
 	gl_->UseProgram(pl.program);
@@ -1288,10 +1223,10 @@ void GlCoreRhi::bind_uniform_set(Handle<GraphicsContext> ctx, uint32_t slot, Han
 	SRB2_ASSERT(current_render_pass_.has_value() == true && current_pipeline_.has_value() == true);
 
 	SRB2_ASSERT(pipeline_slab_.is_valid(*current_pipeline_));
-	auto& pl = *static_cast<GlCorePipeline*>(&pipeline_slab_[*current_pipeline_]);
+	auto& pl = pipeline_slab_[*current_pipeline_];
 
 	SRB2_ASSERT(uniform_set_slab_.is_valid(set));
-	auto& us = *static_cast<GlCoreUniformSet*>(&uniform_set_slab_[set]);
+	auto& us = uniform_set_slab_[set];
 
 	auto& uniform_input = pl.desc.uniform_input;
 	SRB2_ASSERT(slot < uniform_input.enabled_uniforms.size());
@@ -1384,10 +1319,10 @@ void GlCoreRhi::bind_binding_set(Handle<GraphicsContext> ctx, Handle<BindingSet>
 	SRB2_ASSERT(current_render_pass_.has_value() == true && current_pipeline_.has_value() == true);
 
 	SRB2_ASSERT(pipeline_slab_.is_valid(*current_pipeline_));
-	auto& pl = *static_cast<GlCorePipeline*>(&pipeline_slab_[*current_pipeline_]);
+	auto& pl = pipeline_slab_[*current_pipeline_];
 
 	SRB2_ASSERT(binding_set_slab_.is_valid(set));
-	auto& bs = *static_cast<GlCoreBindingSet*>(&binding_set_slab_[set]);
+	auto& bs = binding_set_slab_[set];
 
 	SRB2_ASSERT(bs.textures.size() == pl.desc.sampler_input.enabled_samplers.size());
 
@@ -1441,7 +1376,7 @@ void GlCoreRhi::bind_index_buffer(Handle<GraphicsContext> ctx, Handle<Buffer> bu
 	SRB2_ASSERT(current_render_pass_.has_value() == true && current_pipeline_.has_value() == true);
 
 	SRB2_ASSERT(buffer_slab_.is_valid(buffer));
-	auto& ib = *static_cast<GlCoreBuffer*>(&buffer_slab_[buffer]);
+	auto& ib = buffer_slab_[buffer];
 
 	SRB2_ASSERT(ib.desc.type == rhi::BufferType::kIndexBuffer);
 
