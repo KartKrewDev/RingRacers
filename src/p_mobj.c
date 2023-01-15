@@ -1134,7 +1134,7 @@ fixed_t P_GetMobjGravity(mobj_t *mo)
 
 		if (K_IsHoldingDownTop(mo->player))
 		{
-			gravityadd = (5*gravityadd)/2;
+			gravityadd *= 3;
 		}
 		else if (mo->player->fastfall != 0)
 		{
