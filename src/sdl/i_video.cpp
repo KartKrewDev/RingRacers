@@ -226,6 +226,13 @@ static void SDLSetMode(INT32 width, INT32 height, SDL_bool fullscreen, SDL_bool 
 		}
 	}
 
+#ifdef HWRENDER
+	if (rendermode == render_opengl)
+	{
+		OglSdlSurface(vid.width, vid.height);
+	}
+#endif
+
 	SDL_GetWindowSize(window, &width, &height);
 	vid.realwidth = static_cast<uint32_t>(width);
 	vid.realheight = static_cast<uint32_t>(height);
@@ -1256,6 +1263,12 @@ void I_UpdateNoBlit(void)
 		return;
 	if (exposevideo)
 	{
+#ifdef HWRENDER
+		if (rendermode == render_opengl)
+		{
+			OglSdlFinishUpdate(cv_vidwait.value);
+		}
+#endif
 	}
 	exposevideo = SDL_FALSE;
 }
@@ -1452,28 +1465,8 @@ void VID_PrepareModeList(void)
 #endif
 }
 
-static SDL_bool Impl_CreateContext(void)
+static void init_imgui()
 {
-	// RHI always uses OpenGL 3.2 Core (for now)
-	if (!sdlglcontext)
-	{
-		SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
-		SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
-		SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 2);
-		sdlglcontext = SDL_GL_CreateContext(window);
-	}
-	if (sdlglcontext == NULL)
-	{
-		SDL_DestroyWindow(window);
-		I_Error("Failed to create a GL context: %s\n", SDL_GetError());
-	}
-	SDL_GL_MakeCurrent(window, sdlglcontext);
-
-	std::unique_ptr<rhi::SdlGlCorePlatform> platform = std::make_unique<rhi::SdlGlCorePlatform>();
-	platform->window = window;
-	g_rhi = std::make_unique<rhi::GlCoreRhi>(std::move(platform), reinterpret_cast<rhi::GlLoadFunc>(SDL_GL_GetProcAddress));
-	g_rhi_generation += 1;
-
 	ImGui::CreateContext();
     ImGuiIO& io = ImGui::GetIO(); (void)io;
 	io.IniFilename = NULL;
@@ -1487,6 +1480,46 @@ static SDL_bool Impl_CreateContext(void)
 		io.Fonts->GetTexDataAsRGBA32(&pixels, &width, &height);
 	}
 	ImGui::StyleColorsDark();
+}
+
+static SDL_bool Impl_CreateContext(void)
+{
+#ifdef HWRENDER
+	if (rendermode == render_opengl)
+	{
+		if (!sdlglcontext)
+			sdlglcontext = SDL_GL_CreateContext(window);
+		if (sdlglcontext == NULL)
+		{
+			SDL_DestroyWindow(window);
+			I_Error("Failed to create a GL context: %s\n", SDL_GetError());
+		}
+		init_imgui();
+		SDL_GL_MakeCurrent(window, sdlglcontext);
+		return SDL_TRUE;
+	}
+#endif
+
+	// RHI always uses OpenGL 3.2 Core (for now)
+	if (!sdlglcontext)
+	{
+		SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
+		SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
+		SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 2);
+		sdlglcontext = SDL_GL_CreateContext(window);
+	}
+	if (sdlglcontext == NULL)
+	{
+		SDL_DestroyWindow(window);
+		I_Error("Failed to create a GL context: %s\n", SDL_GetError());
+	}
+	init_imgui();
+	SDL_GL_MakeCurrent(window, sdlglcontext);
+
+	std::unique_ptr<rhi::SdlGlCorePlatform> platform = std::make_unique<rhi::SdlGlCorePlatform>();
+	platform->window = window;
+	g_rhi = std::make_unique<rhi::GlCoreRhi>(std::move(platform), reinterpret_cast<rhi::GlLoadFunc>(SDL_GL_GetProcAddress));
+	g_rhi_generation += 1;
 
 	return SDL_TRUE;
 }
@@ -1514,6 +1547,9 @@ boolean VID_CheckRenderer(void)
 {
 	boolean rendererchanged = false;
 	boolean contextcreated = false;
+#ifdef HWRENDER
+	rendermode_t oldrenderer = rendermode;
+#endif
 
 	if (dedicated)
 		return false;
@@ -1522,6 +1558,39 @@ boolean VID_CheckRenderer(void)
 	{
 		rendermode = static_cast<rendermode_t>(setrenderneeded);
 		rendererchanged = true;
+
+#ifdef HWRENDER
+		if (rendermode == render_opengl)
+		{
+			VID_CheckGLLoaded(oldrenderer);
+
+			// Initialise OpenGL before calling SDLSetMode!!!
+			// This is because SDLSetMode calls OglSdlSurface.
+			if (vid.glstate == VID_GL_LIBRARY_NOTLOADED)
+			{
+				VID_StartupOpenGL();
+
+				// Loaded successfully!
+				if (vid.glstate == VID_GL_LIBRARY_LOADED)
+				{
+					// Destroy the current window, if it exists.
+					if (window)
+					{
+						SDL_DestroyWindow(window);
+						window = NULL;
+					}
+
+					// Create a new window.
+					Impl_CreateWindow(static_cast<SDL_bool>(USE_FULLSCREEN));
+
+					// From there, the OpenGL context was already created.
+					contextcreated = true;
+				}
+			}
+			else if (vid.glstate == VID_GL_LIBRARY_ERROR)
+				rendererchanged = false;
+		}
+#endif
 
 		if (!contextcreated)
 			Impl_CreateContext();
@@ -1536,6 +1605,13 @@ boolean VID_CheckRenderer(void)
 	{
 		SCR_SetDrawFuncs();
 	}
+#ifdef HWRENDER
+	else if (rendermode == render_opengl && rendererchanged)
+	{
+		HWR_Switch();
+		V_SetPalette(0);
+	}
+#endif
 
 	return rendererchanged;
 }
@@ -1664,13 +1740,62 @@ void I_StartupGraphics(void)
 
 	keyboard_started = true;
 
-	// TEMPORARY OVERRIDES FOR RHI - SOFTWARE ONLY
-	chosenrendermode = render_soft;
-	rendermode = render_soft;
+#if !defined(HAVE_TTF)
+	// Previously audio was init here for questionable reasons?
+	if (SDL_InitSubSystem(SDL_INIT_VIDEO) < 0)
+	{
+		CONS_Printf(M_GetText("Couldn't initialize SDL's Video System: %s\n"), SDL_GetError());
+		return;
+	}
+#endif
+
+	// Renderer choices
+	// Takes priority over the config.
+	if (M_CheckParm("-renderer"))
+	{
+		INT32 i = 0;
+		CV_PossibleValue_t *renderer_list = cv_renderer_t;
+		const char *modeparm = M_GetNextParm();
+		while (renderer_list[i].strvalue)
+		{
+			if (!stricmp(modeparm, renderer_list[i].strvalue))
+			{
+				chosenrendermode = static_cast<rendermode_t>(renderer_list[i].value);
+				break;
+			}
+			i++;
+		}
+	}
+
+	// Choose Software renderer
+	else if (M_CheckParm("-software"))
+		chosenrendermode = render_soft;
+
+#ifdef HWRENDER
+	// Choose OpenGL renderer
+	else if (M_CheckParm("-opengl"))
+		chosenrendermode = render_opengl;
+
+	// Don't startup OpenGL
+	if (M_CheckParm("-nogl"))
+	{
+		vid.glstate = VID_GL_LIBRARY_ERROR;
+		if (chosenrendermode == render_opengl)
+			chosenrendermode = render_none;
+	}
+#endif
+
+	if (chosenrendermode != render_none)
+		rendermode = chosenrendermode;
 
 	borderlesswindow = M_CheckParm("-borderless") ? SDL_TRUE : SDL_FALSE;
 
 	VID_Command_ModeList_f();
+
+#ifdef HWRENDER
+	if (rendermode == render_opengl)
+		VID_StartupOpenGL();
+#endif
 
 	VID_SetMode(VID_GetModeForSize(BASEVIDWIDTH, BASEVIDHEIGHT));
 
@@ -1701,9 +1826,59 @@ void I_StartupGraphics(void)
 
 void VID_StartupOpenGL(void)
 {
-	CONS_Alert(CONS_WARNING, "VID_StartupOpenGL called (no longer going to use)");
-	rendermode = render_soft;
-	setrenderneeded = 0;
+#ifdef HWRENDER
+	static boolean glstartup = false;
+	if (!glstartup)
+	{
+		CONS_Printf("VID_StartupOpenGL()...\n");
+		*(void**)&HWD.pfnInit             = hwSym("Init",NULL);
+		*(void**)&HWD.pfnFinishUpdate     = NULL;
+		*(void**)&HWD.pfnDraw2DLine       = hwSym("Draw2DLine",NULL);
+		*(void**)&HWD.pfnDrawPolygon      = hwSym("DrawPolygon",NULL);
+		*(void**)&HWD.pfnDrawIndexedTriangles = hwSym("DrawIndexedTriangles",NULL);
+		*(void**)&HWD.pfnRenderSkyDome    = hwSym("RenderSkyDome",NULL);
+		*(void**)&HWD.pfnSetBlend         = hwSym("SetBlend",NULL);
+		*(void**)&HWD.pfnClearBuffer      = hwSym("ClearBuffer",NULL);
+		*(void**)&HWD.pfnSetTexture       = hwSym("SetTexture",NULL);
+		*(void**)&HWD.pfnUpdateTexture    = hwSym("UpdateTexture",NULL);
+		*(void**)&HWD.pfnDeleteTexture    = hwSym("DeleteTexture",NULL);
+		*(void**)&HWD.pfnReadRect         = hwSym("ReadRect",NULL);
+		*(void**)&HWD.pfnGClipRect        = hwSym("GClipRect",NULL);
+		*(void**)&HWD.pfnClearMipMapCache = hwSym("ClearMipMapCache",NULL);
+		*(void**)&HWD.pfnSetSpecialState  = hwSym("SetSpecialState",NULL);
+		*(void**)&HWD.pfnSetPalette       = hwSym("SetPalette",NULL);
+		*(void**)&HWD.pfnGetTextureUsed   = hwSym("GetTextureUsed",NULL);
+		*(void**)&HWD.pfnDrawModel        = hwSym("DrawModel",NULL);
+		*(void**)&HWD.pfnCreateModelVBOs  = hwSym("CreateModelVBOs",NULL);
+		*(void**)&HWD.pfnSetTransform     = hwSym("SetTransform",NULL);
+		*(void**)&HWD.pfnPostImgRedraw    = hwSym("PostImgRedraw",NULL);
+		*(void**)&HWD.pfnFlushScreenTextures=hwSym("FlushScreenTextures",NULL);
+		*(void**)&HWD.pfnStartScreenWipe  = hwSym("StartScreenWipe",NULL);
+		*(void**)&HWD.pfnEndScreenWipe    = hwSym("EndScreenWipe",NULL);
+		*(void**)&HWD.pfnDoScreenWipe     = hwSym("DoScreenWipe",NULL);
+		*(void**)&HWD.pfnDrawIntermissionBG=hwSym("DrawIntermissionBG",NULL);
+		*(void**)&HWD.pfnMakeScreenTexture= hwSym("MakeScreenTexture",NULL);
+		*(void**)&HWD.pfnMakeScreenFinalTexture=hwSym("MakeScreenFinalTexture",NULL);
+		*(void**)&HWD.pfnDrawScreenFinalTexture=hwSym("DrawScreenFinalTexture",NULL);
+
+		*(void**)&HWD.pfnCompileShaders   = hwSym("CompileShaders",NULL);
+		*(void**)&HWD.pfnCleanShaders     = hwSym("CleanShaders",NULL);
+		*(void**)&HWD.pfnSetShader        = hwSym("SetShader",NULL);
+		*(void**)&HWD.pfnUnSetShader      = hwSym("UnSetShader",NULL);
+
+		*(void**)&HWD.pfnSetShaderInfo    = hwSym("SetShaderInfo",NULL);
+		*(void**)&HWD.pfnLoadCustomShader = hwSym("LoadCustomShader",NULL);
+
+		vid.glstate = HWD.pfnInit() ? VID_GL_LIBRARY_LOADED : VID_GL_LIBRARY_ERROR; // let load the OpenGL library
+
+		if (vid.glstate == VID_GL_LIBRARY_ERROR)
+		{
+			rendermode = render_soft;
+			setrenderneeded = 0;
+		}
+		glstartup = true;
+	}
+#endif
 }
 
 void I_ShutdownGraphics(void)
@@ -1721,6 +1896,14 @@ void I_ShutdownGraphics(void)
 	}
 	graphics_started = false;
 
+#ifdef HWRENDER
+	if (GLUhandle)
+		hwClose(GLUhandle);
+	if (sdlglcontext)
+	{
+		SDL_GL_DeleteContext(sdlglcontext);
+	}
+#endif
 	SDL_QuitSubSystem(SDL_INIT_VIDEO);
 	framebuffer = SDL_FALSE;
 }

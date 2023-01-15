@@ -11,6 +11,9 @@
 #include "hwr2/pass_imgui.hpp"
 #include "hwr2/pass_software.hpp"
 
+// KILL THIS WHEN WE KILL OLD OGL SUPPORT PLEASE
+#include "sdl/ogl_sdl.h"
+
 using namespace srb2;
 using namespace srb2::hwr2;
 using namespace srb2::rhi;
@@ -31,6 +34,14 @@ void I_FinishUpdate(void)
 	{
 		return;
 	}
+
+#ifdef HWRENDER
+	if (rendermode == render_opengl)
+	{
+		OglSdlFinishUpdate(cv_vidwait.value);
+		return;
+	}
+#endif
 
 	// TODO move this to srb2loop
 	ImGuiIO& io = ImGui::GetIO();

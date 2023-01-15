@@ -20,6 +20,8 @@
 #ifndef __SDL_OGL_SDL_H__
 #define __SDL_OGL_SDL_H__
 
+#include <SDL.h>
+
 #include "../v_video.h"
 
 #ifdef __cplusplus
