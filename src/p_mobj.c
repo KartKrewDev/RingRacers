@@ -11729,7 +11729,26 @@ void P_SpawnPlayer(INT32 playernum)
 	// set 'spritedef' override in mobj for player skins.. (see ProjectSprite)
 	// (usefulness: when body mobj is detached from player (who respawns),
 	// the dead body mobj retains the skin through the 'spritedef' override).
-	mobj->skin = &skins[p->skin];
+
+	// Loading skins from a player is a little more complicated, now.
+	{
+		UINT32 skinflags = (demo.playback)
+			? demo.skinlist[demo.currentskinid[p-players]].flags
+			: skins[p->skin].flags;
+		UINT32 skinid = p->skin;
+
+		if ((skinflags & SF_IRONMAN) && (p->fakeskin != MAXSKINS))
+		{
+			skinid = p->fakeskin;
+			if (demo.playback)
+			{
+				skinid = demo.skinlist[skinid].mapping;
+			}
+		}
+
+		mobj->skin = &skins[skinid];
+	}
+
 	P_SetupStateAnimation(mobj, mobj->state);
 
 	mobj->health = 1;
