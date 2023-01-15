@@ -13,6 +13,11 @@
 
 // KILL THIS WHEN WE KILL OLD OGL SUPPORT PLEASE
 #include "sdl/ogl_sdl.h"
+#include "st_stuff.h" // kill
+#include "d_netcmd.h" // kill
+#include "doomstat.h" // kill
+#include "s_sound.h" // kill
+#include "discord.h" // kill
 
 using namespace srb2;
 using namespace srb2::hwr2;
@@ -28,6 +33,61 @@ static bool rhi_changed()
 	return false;
 }
 
+#ifdef HWRENDER
+static void finish_legacy_ogl_update()
+{
+	int player;
+
+	SCR_CalculateFPS();
+
+	if (st_overlay)
+	{
+		if (cv_ticrate.value)
+			SCR_DisplayTicRate();
+
+		if (cv_showping.value && netgame &&
+				( consoleplayer != serverplayer || ! server_lagless ))
+		{
+			if (server_lagless)
+			{
+				if (consoleplayer != serverplayer)
+					SCR_DisplayLocalPing();
+			}
+			else
+			{
+				for (
+						player = 1;
+						player < MAXPLAYERS;
+						player++
+				){
+					if (D_IsPlayerHumanAndGaming(player))
+					{
+						SCR_DisplayLocalPing();
+						break;
+					}
+				}
+			}
+		}
+		if (cv_mindelay.value && consoleplayer == serverplayer && Playing())
+			SCR_DisplayLocalPing();
+	}
+
+	if (marathonmode)
+		SCR_DisplayMarathonInfo();
+
+	// draw captions if enabled
+	if (cv_closedcaptioning.value)
+		SCR_ClosedCaptions();
+
+#ifdef HAVE_DISCORDRPC
+	if (discordRequestList != NULL)
+		ST_AskToJoinEnvelope();
+#endif
+
+	OglSdlFinishUpdate(cv_vidwait.value);
+}
+#endif
+
 void I_FinishUpdate(void)
 {
 	if (rendermode == render_none)
@@ -38,7 +98,7 @@ void I_FinishUpdate(void)
 #ifdef HWRENDER
 	if (rendermode == render_opengl)
 	{
-		OglSdlFinishUpdate(cv_vidwait.value);
+		finish_legacy_ogl_update();
 		return;
 	}
 #endif
