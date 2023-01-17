@@ -3386,7 +3386,7 @@ fixed_t K_GetNewSpeed(player_t *player)
 
 	if (player->curshield == KSHIELD_TOP)
 	{
-		p_speed = 11 * p_speed / 10;
+		p_speed = 15 * p_speed / 10;
 	}
 
 	if (K_PlayerUsesBotMovement(player) == true && player->botvars.rubberband > 0)
@@ -9873,7 +9873,9 @@ void K_AdjustPlayerFriction(player_t *player)
 		player->mo->friction += ((FRACUNIT - prevfriction) / greasetics) * player->tiregrease;
 	}
 
-	if (player->curshield == KSHIELD_TOP)
+	// Less friction on Top unless grinding
+	if (player->curshield == KSHIELD_TOP &&
+			K_GetForwardMove(player) > 0)
 	{
 		player->mo->friction += 1024;
 	}
