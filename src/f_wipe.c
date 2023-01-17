@@ -90,6 +90,10 @@ UINT8 wipedefs[NUMWIPEDEFS] = {
 //--------------------------------------------------------------------------
 
 boolean WipeInAction = false;
+UINT8 g_wipetype = 0;
+UINT8 g_wipeframe = 0;
+boolean g_wipereverse = false;
+boolean g_wipeskiprender = false;
 boolean WipeStageTitle = false;
 INT32 lastwipetic = 0;
 
@@ -189,152 +193,6 @@ static fademask_t *F_GetFadeMask(UINT8 masknum, UINT8 scrnnum) {
 	return NULL;
 }
 
-/**	Wipe ticker
-  *
-  * \param	fademask	pixels to change
-  */
-static void F_DoWipe(fademask_t *fademask, lighttable_t *fadecolormap, boolean reverse)
-{
-	// Software mask wipe -- optimized; though it might not look like it!
-	// Okay, to save you wondering *how* this is more optimized than the simpler
-	// version that came before it...
-	// ---
-	// The previous code did two FixedMul calls for every single pixel on the
-	// screen, of which there are hundreds of thousands -- if not millions -- of.
-	// This worked fine for smaller screen sizes, but with excessively large
-	// (1920x1200) screens that meant 4 million+ calls out to FixedMul, and that
-	// would take /just/ long enough that fades would start to noticably lag.
-	// ---
-	// This code iterates over the fade mask's pixels instead of the screen's,
-	// and deals with drawing over each rectangular area before it moves on to
-	// the next pixel in the fade mask.  As a result, it's more complex (and might
-	// look a little messy; sorry!) but it simultaneously runs at twice the speed.
-	// In addition, we precalculate all the X and Y positions that we need to draw
-	// from and to, so it uses a little extra memory, but again, helps it run faster.
-	// ---
-	// Sal: I kinda destroyed some of this code by introducing Genesis-style fades.
-	// A colormap can be provided in F_RunWipe, which the white/black values will be
-	// remapped to the appropriate entry in the fade colormap.
-	{
-		// wipe screen, start, end
-		UINT8       *w = wipe_scr;
-		const UINT8 *s = wipe_scr_start;
-		const UINT8 *e = wipe_scr_end;
-
-		// first pixel for each screen
-		UINT8       *w_base = w;
-		const UINT8 *s_base = s;
-		const UINT8 *e_base = e;
-
-		// mask data, end
-		UINT8       *transtbl;
-		const UINT8 *mask    = fademask->mask;
-		const UINT8 *maskend = mask + fademask->size;
-
-		// rectangle draw hints
-		UINT32 draw_linestart, draw_rowstart;
-		UINT32 draw_lineend,   draw_rowend;
-		UINT32 draw_linestogo, draw_rowstogo;
-
-		// rectangle coordinates, etc.
-		UINT16* scrxpos = (UINT16*)malloc((fademask->width + 1)  * sizeof(UINT16));
-		UINT16* scrypos = (UINT16*)malloc((fademask->height + 1) * sizeof(UINT16));
-		UINT16 maskx, masky;
-		UINT32 relativepos;
-
-		// ---
-		// Screw it, we do the fixed point math ourselves up front.
-		scrxpos[0] = 0;
-		for (relativepos = 0, maskx = 1; maskx < fademask->width; ++maskx)
-			scrxpos[maskx] = (relativepos += fademask->xscale)>>FRACBITS;
-		scrxpos[fademask->width] = vid.width;
-
-		scrypos[0] = 0;
-		for (relativepos = 0, masky = 1; masky < fademask->height; ++masky)
-			scrypos[masky] = (relativepos += fademask->yscale)>>FRACBITS;
-		scrypos[fademask->height] = vid.height;
-		// ---
-
-		maskx = masky = 0;
-		do
-		{
-			UINT8 m = *mask;
-
-			draw_rowstart = scrxpos[maskx];
-			draw_rowend   = scrxpos[maskx + 1];
-			draw_linestart = scrypos[masky];
-			draw_lineend   = scrypos[masky + 1];
-
-			relativepos = (draw_linestart * vid.width) + draw_rowstart;
-			draw_linestogo = draw_lineend - draw_linestart;
-
-			if (reverse)
-				m = ((pallen-1) - m);
-
-			if (m == 0)
-			{
-				// shortcut - memcpy source to work
-				while (draw_linestogo--)
-				{
-					M_Memcpy(w_base+relativepos, (reverse ? e_base : s_base)+relativepos, draw_rowend-draw_rowstart);
-					relativepos += vid.width;
-				}
-			}
-			else if (m >= (pallen-1))
-			{
-				// shortcut - memcpy target to work
-				while (draw_linestogo--)
-				{
-					M_Memcpy(w_base+relativepos, (reverse ? s_base : e_base)+relativepos, draw_rowend-draw_rowstart);
-					relativepos += vid.width;
-				}
-			}
-			else
-			{
-				// pointer to transtable that this mask would use
-				transtbl = transtables + ((9 - m)<<FF_TRANSSHIFT);
-
-				// DRAWING LOOP
-				while (draw_linestogo--)
-				{
-					w = w_base + relativepos;
-					s = s_base + relativepos;
-					e = e_base + relativepos;
-					draw_rowstogo = draw_rowend - draw_rowstart;
-
-					if (fadecolormap)
-					{
-						if (reverse)
-							s = e;
-						while (draw_rowstogo--)
-							*w++ = fadecolormap[ ( m << 8 ) + *s++ ];
-					}
-					else while (draw_rowstogo--)
-					{
-						/*if (fadecolormap != NULL)
-						{
-							if (reverse)
-								*w++ = fadecolormap[ ( m << 8 ) + *e++ ];
-							else
-								*w++ = fadecolormap[ ( m << 8 ) + *s++ ];
-						}
-						else*/
-							*w++ = transtbl[ ( *e++ << 8 ) + *s++ ];
-					}
-
-					relativepos += vid.width;
-				}
-				// END DRAWING LOOP
-			}
-
-			if (++maskx >= fademask->width)
-				++masky, maskx = 0;
-		} while (++mask < maskend);
-
-		free(scrxpos);
-		free(scrypos);
-	}
-}
 #endif
 
 /** Save the "before" screen of a wipe.
@@ -467,6 +325,7 @@ void F_RunWipe(UINT8 wipetype, boolean drawMenu, const char *colormap, boolean r
 
 	// Init the wipe
 	WipeInAction = true;
+	g_wipeskiprender = false;
 	wipe_scr = screens[0];
 
 	// lastwipetic should either be 0 or the tic we last wiped
@@ -494,7 +353,10 @@ void F_RunWipe(UINT8 wipetype, boolean drawMenu, const char *colormap, boolean r
 
 		if (rendermode != render_none) //this allows F_RunWipe to be called in dedicated servers
 		{
-			F_DoWipe(fmask, fcolor, reverse);
+			// F_DoWipe(fmask, fcolor, reverse);
+			g_wipetype = wipetype;
+			g_wipeframe = wipeframe - 1;
+			g_wipereverse = reverse;
 
 			if (encorewiggle)
 			{
@@ -521,6 +383,12 @@ void F_RunWipe(UINT8 wipetype, boolean drawMenu, const char *colormap, boolean r
 
 		I_FinishUpdate(); // page flip or blit buffer
 
+		if (rendermode != render_none)
+		{
+			// Skip subsequent renders until the end of the wipe to preserve the current frame.
+			g_wipeskiprender = true;
+		}
+
 		if (moviemode)
 			M_SaveFrame();
 
@@ -528,6 +396,7 @@ void F_RunWipe(UINT8 wipetype, boolean drawMenu, const char *colormap, boolean r
 	}
 
 	WipeInAction = false;
+	g_wipeskiprender = false;
 
 	if (fcolor)
 	{

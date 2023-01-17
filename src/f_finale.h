@@ -140,6 +140,10 @@ extern UINT16 curtttics;
 //
 
 extern boolean WipeInAction;
+extern UINT8 g_wipetype;
+extern UINT8 g_wipeframe;
+extern boolean g_wipereverse;
+extern boolean g_wipeskiprender;
 extern boolean WipeStageTitle;
 
 extern INT32 lastwipetic;

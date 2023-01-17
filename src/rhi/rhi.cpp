@@ -1,3 +1,12 @@
+// SONIC ROBO BLAST 2
+//-----------------------------------------------------------------------------
+// Copyright (C) 2023 by Ronald "Eidolon" Kinard
+//
+// This program is free software distributed under the
+// terms of the GNU General Public License, version 2.
+// See the 'LICENSE' file for more details.
+//-----------------------------------------------------------------------------
+
 #include "rhi.hpp"
 
 #include <exception>
@@ -14,8 +23,9 @@ const ProgramRequirements srb2::rhi::kProgramRequirementsUnshaded = {
 		 ProgramVertexInput {VertexAttributeName::kTexCoord0, VertexAttributeFormat::kFloat2, false},
 		 ProgramVertexInput {VertexAttributeName::kColor, VertexAttributeFormat::kFloat4, false}}},
 	ProgramUniformRequirements {
-		{{{UniformName::kProjection}}, {{UniformName::kModelView, UniformName::kTexCoord0Transform}}}},
-	ProgramSamplerRequirements {{ProgramSamplerInput {SamplerName::kSampler0, true}}}};
+		{{{{UniformName::kProjection, true}}},
+		 {{{UniformName::kModelView, true}, {UniformName::kTexCoord0Transform, true}}}}},
+	ProgramSamplerRequirements {{{SamplerName::kSampler0, true}}}};
 
 const ProgramRequirements srb2::rhi::kProgramRequirementsUnshadedPaletted = {
 	ProgramVertexInputRequirements {
@@ -23,9 +33,19 @@ const ProgramRequirements srb2::rhi::kProgramRequirementsUnshadedPaletted = {
 		 ProgramVertexInput {VertexAttributeName::kTexCoord0, VertexAttributeFormat::kFloat2, false},
 		 ProgramVertexInput {VertexAttributeName::kColor, VertexAttributeFormat::kFloat4, false}}},
 	ProgramUniformRequirements {
-		{{{UniformName::kProjection}}, {{UniformName::kModelView, UniformName::kTexCoord0Transform}}}},
+		{{{{UniformName::kProjection, true}}},
+		 {{{UniformName::kModelView, true},
+		   {UniformName::kTexCoord0Transform, true},
+		   {UniformName::kSampler0IsIndexedAlpha, false}}}}},
 	ProgramSamplerRequirements {
-		{ProgramSamplerInput {SamplerName::kSampler0, true}, ProgramSamplerInput {SamplerName::kSampler1, true}}}};
+		{{SamplerName::kSampler0, true}, {SamplerName::kSampler1, true}, {SamplerName::kSampler2, false}}}};
+
+const ProgramRequirements srb2::rhi::kProgramRequirementsPostprocessWipe = {
+	ProgramVertexInputRequirements {
+		{ProgramVertexInput {VertexAttributeName::kPosition, VertexAttributeFormat::kFloat3, true},
+		 ProgramVertexInput {VertexAttributeName::kTexCoord0, VertexAttributeFormat::kFloat2, true}}},
+	ProgramUniformRequirements {{{{{UniformName::kProjection, true}, {UniformName::kModelView, true}}}}},
+	ProgramSamplerRequirements {{{SamplerName::kSampler0, true}, {SamplerName::kSampler1, true}}}};
 
 const ProgramRequirements& rhi::program_requirements_for_program(PipelineProgram program) noexcept
 {
@@ -35,6 +55,8 @@ const ProgramRequirements& rhi::program_requirements_for_program(PipelineProgram
 		return kProgramRequirementsUnshaded;
 	case PipelineProgram::kUnshadedPaletted:
 		return kProgramRequirementsUnshadedPaletted;
+	case PipelineProgram::kPostprocessWipe:
+		return kProgramRequirementsPostprocessWipe;
 	default:
 		std::terminate();
 	}

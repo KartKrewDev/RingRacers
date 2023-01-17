@@ -1,3 +1,12 @@
+// SONIC ROBO BLAST 2
+//-----------------------------------------------------------------------------
+// Copyright (C) 2023 by Ronald "Eidolon" Kinard
+//
+// This program is free software distributed under the
+// terms of the GNU General Public License, version 2.
+// See the 'LICENSE' file for more details.
+//-----------------------------------------------------------------------------
+
 #ifndef __SRB2_RHI_RHI_HPP__
 #define __SRB2_RHI_RHI_HPP__
 
@@ -63,6 +72,7 @@ enum class UniformFormat
 enum class PixelFormat
 {
 	kR8,
+	kRG8,
 	kRGBA8,
 	kDepth16,
 	kStencil8
@@ -71,8 +81,10 @@ enum class PixelFormat
 enum class TextureFormat
 {
 	kLuminance,
+	kLuminanceAlpha,
 	kRGB,
-	kRGBA
+	kRGBA,
+	kDepth
 };
 
 enum class CompareFunc
@@ -152,7 +164,8 @@ enum class AttachmentStoreOp
 enum class PipelineProgram
 {
 	kUnshaded,
-	kUnshadedPaletted
+	kUnshadedPaletted,
+	kPostprocessWipe
 };
 
 enum class BufferType
@@ -181,7 +194,8 @@ enum class UniformName
 	kTime,
 	kModelView,
 	kProjection,
-	kTexCoord0Transform
+	kTexCoord0Transform,
+	kSampler0IsIndexedAlpha
 };
 
 enum class SamplerName
@@ -237,12 +251,12 @@ struct ProgramVertexInputRequirements
 
 struct ProgramUniformRequirements
 {
-	srb2::StaticVec<srb2::StaticVec<UniformName, 16>, 4> uniform_groups;
+	srb2::StaticVec<srb2::StaticVec<ProgramUniformInput, 16>, 4> uniform_groups;
 };
 
 struct ProgramSamplerRequirements
 {
-	std::array<std::optional<ProgramSamplerInput>, kMaxSamplers> samplers;
+	srb2::StaticVec<ProgramSamplerInput, kMaxSamplers> samplers;
 };
 
 struct ProgramRequirements
@@ -254,6 +268,7 @@ struct ProgramRequirements
 
 extern const ProgramRequirements kProgramRequirementsUnshaded;
 extern const ProgramRequirements kProgramRequirementsUnshadedPaletted;
+extern const ProgramRequirements kProgramRequirementsPostprocessWipe;
 
 const ProgramRequirements& program_requirements_for_program(PipelineProgram program) noexcept;
 
@@ -288,6 +303,8 @@ inline constexpr const UniformFormat uniform_format(UniformName name) noexcept
 		return UniformFormat::kMat4;
 	case UniformName::kTexCoord0Transform:
 		return UniformFormat::kMat3;
+	case UniformName::kSampler0IsIndexedAlpha:
+		return UniformFormat::kInt;
 	default:
 		return UniformFormat::kFloat;
 	}
@@ -309,8 +326,8 @@ struct VertexAttributeLayoutDesc
 
 struct VertexInputDesc
 {
-	std::vector<VertexBufferLayoutDesc> buffer_layouts;
-	std::vector<VertexAttributeLayoutDesc> attr_layouts;
+	srb2::StaticVec<VertexBufferLayoutDesc, 4> buffer_layouts;
+	srb2::StaticVec<VertexAttributeLayoutDesc, 8> attr_layouts;
 };
 
 struct UniformInputDesc
@@ -488,6 +505,9 @@ struct TransferContext
 struct GraphicsContext
 {
 };
+
+/// @brief The unpack alignment of a row span when uploading pixels to the device.
+constexpr const std::size_t kPixelRowUnpackAlignment = 4;
 
 /// @brief An active handle to a rendering device.
 struct Rhi

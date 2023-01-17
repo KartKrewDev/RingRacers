@@ -31,4 +31,5 @@ include("cpm-libyuv.cmake")
 
 add_subdirectory(tcbrindle_span)
 add_subdirectory(stb_vorbis)
+add_subdirectory(stb_rect_pack)
 add_subdirectory(glad)
