@@ -1220,6 +1220,28 @@ typedef enum
 	sfx_grownd,
 	sfx_invind,
 
+	// Claw SFX
+	sfx_claw01,
+	sfx_claw02,
+	sfx_claw03,
+	sfx_claw04,
+	sfx_claw05,
+	sfx_claw06,
+	sfx_claw07,
+	sfx_claw08,
+	sfx_claw09,
+	sfx_claw10,
+	sfx_claw11,
+	sfx_claw12,
+	sfx_claw13,
+	sfx_claw14,
+	sfx_claw15,
+	sfx_claw16,
+	sfx_clawht,
+	sfx_clawzm,
+	sfx_clawk1,
+	sfx_clawk2,
+
 	// Next up: UNIQUE ENGINE SOUNDS! Hoooooo boy...
 	// Engine class A - Low Speed, Low Weight
 	sfx_krta00,
