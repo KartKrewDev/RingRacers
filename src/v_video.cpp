@@ -13,6 +13,8 @@
 ///        Functions to draw patches (by post) directly to screen.
 ///        Functions to blit a block to the screen.
 
+#include <cmath>
+
 #include "doomdef.h"
 #include "r_local.h"
 #include "p_local.h" // stplyr
@@ -330,14 +332,14 @@ static void LoadPalette(const char *lumpname)
 	Z_Free(pMasterPalette);
 	Z_Free(pGammaCorrectedPalette);
 
-	pMasterPalette = Z_Malloc(sizeof (*pMasterPalette)*palsize, PU_STATIC, NULL);
+	pMasterPalette = static_cast<RGBA_t*>(Z_Malloc(sizeof (*pMasterPalette)*palsize, PU_STATIC, NULL));
 	if (Cubeapply)
-		pLocalPalette = Z_Malloc(sizeof (*pLocalPalette)*palsize, PU_STATIC, NULL);
+		pLocalPalette = static_cast<RGBA_t*>(Z_Malloc(sizeof (*pLocalPalette)*palsize, PU_STATIC, NULL));
 	else
 		pLocalPalette = pMasterPalette;
-	pGammaCorrectedPalette = Z_Malloc(sizeof (*pGammaCorrectedPalette)*palsize, PU_STATIC, NULL);
+	pGammaCorrectedPalette = static_cast<RGBA_t*>(Z_Malloc(sizeof (*pGammaCorrectedPalette)*palsize, PU_STATIC, NULL));
 
-	pal = W_CacheLumpNum(lumpnum, PU_CACHE);
+	pal = static_cast<UINT8*>(W_CacheLumpNum(lumpnum, PU_CACHE));
 	for (i = 0; i < palsize; i++)
 	{
 		pMasterPalette[i].s.red = *pal++;
@@ -403,7 +405,7 @@ const char *R_GetPalname(UINT16 num)
 	if (num > 0 && num <= 10000)
 		snprintf(newpal, 8, "PAL%04u", num-1);
 
-	strncpy(palname, newpal, 8);
+	strlcpy(palname, newpal, 9);
 	return palname;
 }
 
@@ -1011,7 +1013,7 @@ void V_DrawContinueIcon(INT32 x, INT32 y, INT32 flags, INT32 skinnum, UINT16 ski
 {
 	(void)skinnum;
 	(void)skincolor;
-	V_DrawScaledPatch(x - 10, y - 14, flags, W_CachePatchName("CONTINS", PU_PATCH));
+	V_DrawScaledPatch(x - 10, y - 14, flags, static_cast<patch_t*>(W_CachePatchName("CONTINS", PU_PATCH)));
 }
 
 //
@@ -1463,7 +1465,7 @@ void V_DrawFlatFill(INT32 x, INT32 y, INT32 w, INT32 h, lumpnum_t flatnum)
 			break;
 	}
 
-	flat = W_CacheLumpNum(flatnum, PU_CACHE);
+	flat = static_cast<UINT8*>(W_CacheLumpNum(flatnum, PU_CACHE));
 
 	dupx = dupy = (vid.dupx < vid.dupy ? vid.dupx : vid.dupy);
 
@@ -1555,12 +1557,12 @@ void V_DrawVhsEffect(boolean rewind)
 		if (y >= upbary && y < upbary+barsize)
 		{
 			thismapstart -= (2<<FF_TRANSSHIFT) - (5<<8);
-			offs += updistort * 2.0f * min(y-upbary, upbary+barsize-y) / barsize;
+			offs += updistort * 2.0f * std::min(y-upbary, upbary+barsize-y) / barsize;
 		}
 		if (y >= downbary && y < downbary+barsize)
 		{
 			thismapstart -= (2<<FF_TRANSSHIFT) - (5<<8);
-			offs -= downdistort * 2.0f * min(y-downbary, downbary+barsize-y) / barsize;
+			offs -= downdistort * 2.0f * std::min(y-downbary, downbary+barsize-y) / barsize;
 		}
 		offs += M_RandomKey(vid.dupx<<1);
 
@@ -1602,7 +1604,7 @@ void V_DrawFadeScreen(UINT16 color, UINT8 strength)
 	{
 		const UINT8 *fadetable =
 			(color > 0xFFF0) // Grab a specific colormap palette?
-			? R_GetTranslationColormap(color | 0xFFFF0000, strength, GTC_CACHE)
+			? R_GetTranslationColormap(color | 0xFFFF0000, static_cast<skincolornum_t>(strength), GTC_CACHE)
 			: ((color & 0xFF00) // Color is not palette index?
 			? ((UINT8 *)colormaps + strength*256) // Do COLORMAP fade.
 			: ((UINT8 *)R_GetTranslucencyTable((9-strength)+1) + color*256)); // Else, do TRANSMAP** fade.
@@ -1642,7 +1644,7 @@ void V_DrawCustomFadeScreen(const char *lump, UINT8 strength)
 
 		if (lumpnum != LUMPERROR)
 		{
-			clm = Z_MallocAlign(COLORMAP_SIZE, PU_STATIC, NULL, 8);
+			clm = static_cast<lighttable_t*>(Z_MallocAlign(COLORMAP_SIZE, PU_STATIC, NULL, 8));
 			W_ReadLump(lumpnum, clm);
 
 			if (clm != NULL)
@@ -1679,7 +1681,7 @@ void V_DrawFadeConsBack(INT32 plines)
 
 	// heavily simplified -- we don't need to know x or y position,
 	// just the stop position
-	deststop = screens[0] + vid.rowbytes * min(plines, vid.height);
+	deststop = screens[0] + vid.rowbytes * std::min(plines, vid.height);
 	for (buf = screens[0]; buf < deststop; ++buf)
 		*buf = consolebgmap[*buf];
 }
@@ -2011,7 +2013,7 @@ void V_DrawTitleCardString(INT32 x, INT32 y, const char *str, INT32 flags, boole
 
 				// otherwise; scalex must start at 0
 				// let's have each letter do 4 spins (360*4 + 90 = 1530 "degrees")
-				fakeang = min(360 + 90, let_time*41) * ANG1;
+				fakeang = std::min(360 + 90, let_time*41) * ANG1;
 				scalex = FINESINE(fakeang>>ANGLETOFINESHIFT);
 			}
 			else if (!bossmode && let_time > threshold)
@@ -2019,7 +2021,7 @@ void V_DrawTitleCardString(INT32 x, INT32 y, const char *str, INT32 flags, boole
 				// Make letters disappear...
 				let_time -= threshold;
 
-				fakeang = max(0, (360+90) - let_time*41)*ANG1;
+				fakeang = std::max(0, (360+90) - let_time*41)*ANG1;
 				scalex = FINESINE(fakeang>>ANGLETOFINESHIFT);
 			}
 
@@ -2169,7 +2171,7 @@ static inline fixed_t BunchedCharacterDim(
 	(void)chw;
 	(void)hchw;
 	(void)dupx;
-	(*cwp) = FixedMul (max (1, (*cwp) - 1) << FRACBITS, scale);
+	(*cwp) = FixedMul(std::max(1, (*cwp) - 1) << FRACBITS, scale);
 	return 0;
 }
 
@@ -2183,7 +2185,7 @@ static inline fixed_t GamemodeCharacterDim(
 	(void)chw;
 	(void)hchw;
 	(void)dupx;
-	(*cwp) = FixedMul (max (1, (*cwp) - 2) << FRACBITS, scale);
+	(*cwp) = FixedMul(std::max(1, (*cwp) - 2) << FRACBITS, scale);
 	return 0;
 }
 
@@ -2197,7 +2199,7 @@ static inline fixed_t FileCharacterDim(
 	(void)chw;
 	(void)hchw;
 	(void)dupx;
-	(*cwp) = FixedMul (max (1, (*cwp) - 3) << FRACBITS, scale);
+	(*cwp) = FixedMul(std::max(1, (*cwp) - 3) << FRACBITS, scale);
 	return 0;
 }
 
@@ -2211,7 +2213,7 @@ static inline fixed_t LSTitleCharacterDim(
 	(void)chw;
 	(void)hchw;
 	(void)dupx;
-	(*cwp) = FixedMul (max (1, (*cwp) - 4) << FRACBITS, scale);
+	(*cwp) = FixedMul(std::max(1, (*cwp) - 4) << FRACBITS, scale);
 	return 0;
 }
 
@@ -2737,7 +2739,7 @@ fixed_t V_StringScaledWidth(
 					cx += spacew;
 		}
 
-		fullwidth = max(cx, fullwidth);
+		fullwidth = std::max(cx, fullwidth);
 	}
 
 	return fullwidth;
@@ -3098,7 +3100,7 @@ Unoptimized version
 			if (heatshifter)
 				Z_Free(heatshifter);
 
-			heatshifter = Z_Calloc(viewheight * sizeof(boolean), PU_STATIC, NULL);
+			heatshifter = static_cast<boolean*>(Z_Calloc(viewheight * sizeof(boolean), PU_STATIC, NULL));
 
 			for (y = 0; y < viewheight; y++)
 			{
