@@ -418,7 +418,7 @@ static void UFOEmeraldVFX(mobj_t *ufo)
 
 static boolean UFOHumPlaying(mobj_t *ufo) {
 	INT32 i;
-	for (i = 0; i < 15; i++)
+	for (i = 0; i <= 15; i++)
 	{
 		if (S_SoundPlaying(ufo, hums[i]))
 			return true;
