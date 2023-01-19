@@ -26,7 +26,7 @@
 
 patch_t *Patch_Create(softwarepatch_t *source, size_t srcsize, void *dest)
 {
-	patch_t *patch = (dest == NULL) ? Z_Calloc(sizeof(patch_t), PU_PATCH, NULL) : (patch_t *)(dest);
+	patch_t *patch = (dest == NULL) ? static_cast<patch_t*>(Z_Calloc(sizeof(patch_t), PU_PATCH, NULL)) : (patch_t *)(dest);
 
 	if (source)
 	{
@@ -38,7 +38,7 @@ patch_t *Patch_Create(softwarepatch_t *source, size_t srcsize, void *dest)
 		patch->height     = SHORT(source->height);
 		patch->leftoffset = SHORT(source->leftoffset);
 		patch->topoffset  = SHORT(source->topoffset);
-		patch->columnofs  = Z_Calloc(size, PU_PATCH_DATA, NULL);
+		patch->columnofs  = static_cast<INT32*>(Z_Calloc(size, PU_PATCH_DATA, NULL));
 
 		for (col = 0; col < source->width; col++)
 		{
@@ -54,7 +54,7 @@ patch_t *Patch_Create(softwarepatch_t *source, size_t srcsize, void *dest)
 		if (colsize <= 0)
 			I_Error("Patch_Create: no column data!");
 
-		patch->columns = Z_Calloc(colsize, PU_PATCH_DATA, NULL);
+		patch->columns = static_cast<UINT8*>(Z_Calloc(colsize, PU_PATCH_DATA, NULL));
 		M_Memcpy(patch->columns, ((UINT8 *)source + LONG(source->columnofs[0])), colsize);
 	}
 
@@ -87,7 +87,7 @@ static void Patch_FreeData(patch_t *patch)
 		for (i = 0; i < rotsprite->angles; i++)
 		{
 			if (rotsprite->patches[i])
-				Patch_Free(rotsprite->patches[i]);
+				Patch_Free(static_cast<patch_t*>(rotsprite->patches[i]));
 		}
 
 		Z_Free(rotsprite->patches);
@@ -139,8 +139,8 @@ void *Patch_AllocateHardwarePatch(patch_t *patch)
 {
 	if (!patch->hardware)
 	{
-		GLPatch_t *grPatch = Z_Calloc(sizeof(GLPatch_t), PU_HWRPATCHINFO, &patch->hardware);
-		grPatch->mipmap = Z_Calloc(sizeof(GLMipmap_t), PU_HWRPATCHINFO, &grPatch->mipmap);
+		GLPatch_t *grPatch = static_cast<GLPatch_t*>(Z_Calloc(sizeof(GLPatch_t), PU_HWRPATCHINFO, &patch->hardware));
+		grPatch->mipmap = static_cast<GLMipmap_t*>(Z_Calloc(sizeof(GLMipmap_t), PU_HWRPATCHINFO, &grPatch->mipmap));
 	}
 	return (void *)(patch->hardware);
 }
