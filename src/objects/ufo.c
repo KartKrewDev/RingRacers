@@ -433,7 +433,7 @@ static void UFOUpdateSound(mobj_t *ufo) {
 
 	if (!UFOEmeraldChase(ufo) && !UFOHumPlaying(ufo))
 	{
-		healthlevel = max(min(healthlevel, 1), maxhum);
+		healthlevel = min(max(healthlevel, 1), maxhum);
 		S_StartSound(ufo, hums[maxhum - healthlevel]);
 	}
 }
