@@ -57,6 +57,7 @@ enum
 };
 
 static sfxenum_t hums[16] = {sfx_claw01, sfx_claw02, sfx_claw03, sfx_claw04, sfx_claw05, sfx_claw06, sfx_claw07, sfx_claw08, sfx_claw09, sfx_claw10, sfx_claw11, sfx_claw12, sfx_claw13, sfx_claw14, sfx_claw15, sfx_claw16};
+static int maxhum = sizeof(hums) / sizeof(hums[0]) - 1;
 
 static void UFOMoveTo(mobj_t *ufo, fixed_t destx, fixed_t desty, fixed_t destz)
 {
@@ -418,7 +419,7 @@ static void UFOEmeraldVFX(mobj_t *ufo)
 
 static boolean UFOHumPlaying(mobj_t *ufo) {
 	INT32 i;
-	for (i = 0; i <= 15; i++)
+	for (i = 0; i <= maxhum; i++)
 	{
 		if (S_SoundPlaying(ufo, hums[i]))
 			return true;
@@ -427,12 +428,13 @@ static boolean UFOHumPlaying(mobj_t *ufo) {
 }
 
 static void UFOUpdateSound(mobj_t *ufo) {
-	INT32 maxhealth = mobjinfo[MT_SPECIAL_UFO].spawnhealth;
-	INT32 healthlevel = 15 * ufo->health / maxhealth;
+	INT32 maxhealth = max(mobjinfo[MT_SPECIAL_UFO].spawnhealth, 1);
+	INT32 healthlevel = maxhum * ufo->health / maxhealth;
 
 	if (!UFOEmeraldChase(ufo) && !UFOHumPlaying(ufo))
 	{
-		S_StartSound(ufo, hums[15-healthlevel]);
+		healthlevel = max(min(healthlevel, 1), maxhum);
+		S_StartSound(ufo, hums[maxhum - healthlevel]);
 	}
 }
 
