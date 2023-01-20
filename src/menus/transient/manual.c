@@ -2,6 +2,7 @@
 /// \brief Manual
 
 #include "../../k_menu.h"
+#include "../../s_sound.h"
 
 menuitem_t MISC_Manual[] = {
 		{IT_NOTHING | IT_KEYHANDLER, "MANUAL00", NULL, NULL, {.routine = M_HandleImageDef}, 0, 0},
@@ -21,3 +22,52 @@ menuitem_t MISC_Manual[] = {
 };
 
 menu_t MISC_ManualDef = IMAGEDEF(MISC_Manual);
+
+// Handles the ImageDefs.  Just a specialized function that
+// uses left and right movement.
+void M_HandleImageDef(INT32 choice)
+{
+	const UINT8 pid = 0;
+	boolean exitmenu = false;
+	(void) choice;
+
+	if (menucmd[pid].dpad_lr > 0)
+	{
+		if (itemOn >= (INT16)(currentMenu->numitems-1))
+			return;
+		S_StartSound(NULL, sfx_s3k5b);
+		M_SetMenuDelay(pid);
+		itemOn++;
+	}
+	else if (menucmd[pid].dpad_lr < 0)
+	{
+		if (!itemOn)
+			return;
+		S_StartSound(NULL, sfx_s3k5b);
+		M_SetMenuDelay(pid);
+		itemOn--;
+	}
+	else if (M_MenuConfirmPressed(pid) || M_MenuButtonPressed(pid, MBT_X) || M_MenuButtonPressed(pid, MBT_Y))
+	{
+		exitmenu = true;
+		M_SetMenuDelay(pid);
+	}
+
+
+	if (exitmenu)
+	{
+		if (currentMenu->prevMenu)
+			M_SetupNextMenu(currentMenu->prevMenu, false);
+		else
+			M_ClearMenus(true);
+	}
+}
+
+// Opening manual
+void M_Manual(INT32 choice)
+{
+	(void)choice;
+
+	MISC_ManualDef.prevMenu = (choice == INT32_MAX ? NULL : currentMenu);
+	M_SetupNextMenu(&MISC_ManualDef, true);
+}

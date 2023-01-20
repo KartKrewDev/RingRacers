@@ -51,3 +51,10 @@ menu_t OPTIONS_DataAddonDef = {
 	NULL,
 };
 
+void Addons_option_Onchange(void)
+{
+	// Option 2 will always be the textbar.
+	// (keep in mind this is a 0 indexed array and the first element is a header...)
+	OPTIONS_DataAddon[2].status =
+		(cv_addons_option.value == 3 ? IT_CVAR|IT_STRING|IT_CV_STRING : IT_DISABLED);
+}

@@ -2,6 +2,7 @@
 /// \brief Random Item Toggles
 
 #include "../k_menu.h"
+#include "../s_sound.h"
 
 menuitem_t OPTIONS_GameplayItems[] =
 {
@@ -60,3 +61,122 @@ menu_t OPTIONS_GameplayItemsDef = {
 	NULL,
 	NULL,
 };
+
+void M_HandleItemToggles(INT32 choice)
+{
+	const INT32 width = 8, height = 4;
+	INT32 column = itemOn/height, row = itemOn%height;
+	INT16 next;
+	UINT8 i;
+	boolean exitmenu = false;
+	const UINT8 pid = 0;
+
+	(void) choice;
+
+	if (menucmd[pid].dpad_lr > 0)
+	{
+		S_StartSound(NULL, sfx_s3k5b);
+		column++;
+		if (((column*height)+row) >= currentMenu->numitems)
+			column = 0;
+		next = min(((column*height)+row), currentMenu->numitems-1);
+		itemOn = next;
+
+		M_SetMenuDelay(pid);
+	}
+
+	else if (menucmd[pid].dpad_lr < 0)
+	{
+		S_StartSound(NULL, sfx_s3k5b);
+		column--;
+		if (column < 0)
+			column = width-1;
+		if (((column*height)+row) >= currentMenu->numitems)
+			column--;
+		next = max(((column*height)+row), 0);
+		if (next >= currentMenu->numitems)
+			next = currentMenu->numitems-1;
+		itemOn = next;
+
+		M_SetMenuDelay(pid);
+	}
+
+	else if (menucmd[pid].dpad_ud > 0)
+	{
+		S_StartSound(NULL, sfx_s3k5b);
+		row = (row+1) % height;
+		if (((column*height)+row) >= currentMenu->numitems)
+			row = 0;
+		next = min(((column*height)+row), currentMenu->numitems-1);
+		itemOn = next;
+
+		M_SetMenuDelay(pid);
+	}
+
+	else if (menucmd[pid].dpad_ud < 0)
+	{
+		S_StartSound(NULL, sfx_s3k5b);
+		row = (row-1) % height;
+		if (row < 0)
+			row = height-1;
+		if (((column*height)+row) >= currentMenu->numitems)
+			row--;
+		next = max(((column*height)+row), 0);
+		if (next >= currentMenu->numitems)
+			next = currentMenu->numitems-1;
+		itemOn = next;
+
+		M_SetMenuDelay(pid);
+	}
+
+	else if (M_MenuConfirmPressed(pid))
+	{
+		M_SetMenuDelay(pid);
+		if (currentMenu->menuitems[itemOn].mvar1 == 255)
+		{
+			//S_StartSound(NULL, sfx_s26d);
+			if (!shitsfree)
+			{
+				shitsfree = TICRATE;
+				S_StartSound(NULL, sfx_itfree);
+			}
+		}
+		else
+		if (currentMenu->menuitems[itemOn].mvar1 == 0)
+		{
+			INT32 v = cv_items[0].value;
+			S_StartSound(NULL, sfx_s1b4);
+			for (i = 0; i < NUMKARTRESULTS-1; i++)
+			{
+				if (cv_items[i].value == v)
+					CV_AddValue(&cv_items[i], 1);
+			}
+		}
+		else
+		{
+			if (currentMenu->menuitems[itemOn].mvar2)
+			{
+				S_StartSound(NULL, currentMenu->menuitems[itemOn].mvar2);
+			}
+			else
+			{
+				S_StartSound(NULL, sfx_s1ba);
+			}
+			CV_AddValue(&cv_items[currentMenu->menuitems[itemOn].mvar1-1], 1);
+		}
+	}
+
+	else if (M_MenuBackPressed(pid))
+	{
+		M_SetMenuDelay(pid);
+		exitmenu = true;
+	}
+
+	if (exitmenu)
+	{
+		if (currentMenu->prevMenu)
+			M_SetupNextMenu(currentMenu->prevMenu, false);
+		else
+			M_ClearMenus(true);
+	}
+}
