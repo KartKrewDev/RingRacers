@@ -33,6 +33,7 @@ void M_ProfileSelectInit(INT32 choice)
 {
 	(void)choice;
 	optionsmenu.profilemenu = true;
+	optionsmenu.profilen = cv_currprofile.value;
 
 	M_SetupNextMenu(&OPTIONS_ProfilesDef, false);
 }
