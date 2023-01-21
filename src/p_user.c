@@ -2017,14 +2017,15 @@ static void P_3dMovement(player_t *player)
 	if (onground && player->curshield == KSHIELD_TOP && (K_GetKartButtons(player) & BT_DRIFT) != BT_DRIFT && (player->oldcmd.buttons & BT_DRIFT))
 	{
 		const fixed_t gmin = FRACUNIT/4;
-		const fixed_t gmax = 5*FRACUNIT/2;
+		const fixed_t gmax = 3*FRACUNIT;
 
 		const fixed_t grindfactor = (gmax - gmin) / GARDENTOP_MAXGRINDTIME;
 		const fixed_t grindscale = gmin + (player->topdriftheld * grindfactor);
 
 		const fixed_t speed = R_PointToDist2(0, 0, player->mo->momx, player->mo->momy);
+		const fixed_t minspeed = 3 * K_GetKartSpeed(player, false, false) / 5; // 60% top speed
 
-		P_InstaThrust(player->mo, player->mo->angle, FixedMul(speed, grindscale));
+		P_InstaThrust(player->mo, player->mo->angle, FixedMul(max(speed, minspeed), grindscale));
 
 		player->topdriftheld = 0;/* reset after release */
 	}
@@ -2664,7 +2665,7 @@ static void P_DeathThink(player_t *player)
 	}
 
 	// Keep time rolling
-	if (!(exitcountdown && !racecountdown) && !(player->exiting || mapreset) && !(player->pflags & PF_NOCONTEST) && !stoppedclock)
+	if (!(player->exiting || mapreset) && !(player->pflags & PF_NOCONTEST) && !stoppedclock)
 	{
 		if (leveltime >= starttime)
 		{
@@ -4023,7 +4024,7 @@ void P_PlayerThink(player_t *player)
 	}
 
 	// Synchronizes the "real" amount of time spent in the level.
-	if (!(exitcountdown && !racecountdown) && !(player->exiting || mapreset) && !(player->pflags & PF_NOCONTEST) && !stoppedclock)
+	if (!(player->exiting || mapreset) && !(player->pflags & PF_NOCONTEST) && !stoppedclock)
 	{
 		if (leveltime >= starttime)
 		{

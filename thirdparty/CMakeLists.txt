@@ -20,6 +20,8 @@ endif()
 include("cpm-rapidjson.cmake")
 include("cpm-discordrpc.cmake")
 include("cpm-xmp-lite.cmake")
+include("cpm-fmt.cmake")
+include("cpm-imgui.cmake")
 
 if(NOT "${SRB2_CONFIG_SYSTEM_LIBRARIES}")
 	CPMAddPackage(
@@ -103,3 +105,4 @@ endif()
 
 add_subdirectory(tcbrindle_span)
 add_subdirectory(stb_vorbis)
+add_subdirectory(glad)

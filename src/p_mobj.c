@@ -1134,7 +1134,7 @@ fixed_t P_GetMobjGravity(mobj_t *mo)
 
 		if (K_IsHoldingDownTop(mo->player))
 		{
-			gravityadd = (5*gravityadd)/2;
+			gravityadd *= 3;
 		}
 		else if (mo->player->fastfall != 0)
 		{
@@ -11767,7 +11767,11 @@ void P_SpawnPlayer(INT32 playernum)
 	mobj->health = 1;
 	p->playerstate = PST_LIVE;
 
-	p->realtime = leveltime;
+	if (!p->exiting || !p->realtime)
+	{
+		p->realtime = leveltime;
+	}
+
 	p->followitem = skins[p->skin].followitem;
 
 	//awayview stuff

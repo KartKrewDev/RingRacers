@@ -662,6 +662,42 @@ static void K_DropDashWait(player_t *player)
 
 
 /*--------------------------------------------------
+	static boolean K_CanDropDash(player_t *player)
+
+		Checks if you can use the Drop Dash maneuver.
+
+	Input Arguments:-
+		player - Player to check.
+
+	Return:-
+		Whether a Drop Dash should be allowed.
+--------------------------------------------------*/
+static boolean K_CanDropDash(player_t *player)
+{
+	const UINT16 buttons = K_GetKartButtons(player);
+
+	if (!(buttons & BT_ACCELERATE))
+	{
+		return false;
+	}
+
+	// Since we're letting players spin out on respawn, don't let them charge a dropdash in this state. (It wouldn't work anyway)
+	if (player->spinouttimer)
+	{
+		return false;
+	}
+
+	// Garden Top is overpowered enough
+	if (player->curshield == KSHIELD_TOP)
+	{
+		return false;
+	}
+
+	return true;
+}
+
+
+/*--------------------------------------------------
 	static void K_HandleDropDash(player_t *player)
 
 		Handles input for the Drop Dash maneuver.
@@ -699,7 +735,7 @@ static void K_HandleDropDash(player_t *player)
 		// The old behavior was stupid and prone to accidental usage.
 		// Let's rip off Mania instead, and turn this into a Drop Dash!
 
-		if ((buttons & BT_ACCELERATE) && !player->spinouttimer) // Since we're letting players spin out on respawn, don't let them charge a dropdash in this state. (It wouldn't work anyway)
+		if (K_CanDropDash(player))
 		{
 			player->respawn.dropdash++;
 		}

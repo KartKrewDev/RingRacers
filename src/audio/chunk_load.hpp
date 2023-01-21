@@ -17,7 +17,8 @@
 
 #include "sound_chunk.hpp"
 
-namespace srb2::audio {
+namespace srb2::audio
+{
 
 /// @brief Try to load a chunk from the given byte span.
 std::optional<SoundChunk> try_load_chunk(tcb::span<std::byte> data);

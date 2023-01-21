@@ -16,10 +16,12 @@
 
 #include "sample.hpp"
 
-namespace srb2::audio {
+namespace srb2::audio
+{
 
 template <size_t C>
-class Source {
+class Source
+{
 public:
 	virtual std::size_t generate(tcb::span<Sample<C>> buffer) = 0;
 

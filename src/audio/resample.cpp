@@ -23,7 +23,8 @@ using namespace srb2::audio;
 
 template <size_t C>
 Resampler<C>::Resampler(std::shared_ptr<Source<C>>&& source, float ratio)
-	: source_(std::forward<std::shared_ptr<Source<C>>>(source)), ratio_(ratio) {
+	: source_(std::forward<std::shared_ptr<Source<C>>>(source)), ratio_(ratio)
+{
 }
 
 template <size_t C>
@@ -36,11 +37,13 @@ template <size_t C>
 Resampler<C>& Resampler<C>::operator=(Resampler<C>&& r) = default;
 
 template <size_t C>
-size_t Resampler<C>::generate(tcb::span<Sample<C>> buffer) {
+size_t Resampler<C>::generate(tcb::span<Sample<C>> buffer)
+{
 	if (!source_)
 		return 0;
 
-	if (ratio_ == 1.f) {
+	if (ratio_ == 1.f)
+	{
 		// fast path - generate directly from source
 		size_t source_read = source_->generate(buffer);
 		return source_read;
@@ -48,21 +51,25 @@ size_t Resampler<C>::generate(tcb::span<Sample<C>> buffer) {
 
 	size_t written = 0;
 
-	while (written < buffer.size()) {
+	while (written < buffer.size())
+	{
 		// do we need a refill?
-		if (buf_.size() == 0 || pos_ >= static_cast<int>(buf_.size() - 1)) {
+		if (buf_.size() == 0 || pos_ >= static_cast<int>(buf_.size() - 1))
+		{
 			pos_ -= buf_.size();
 			last_ = buf_.size() == 0 ? Sample<C> {} : buf_.back();
 			buf_.clear();
 			buf_.resize(512);
 			size_t source_read = source_->generate(buf_);
 			buf_.resize(source_read);
-			if (source_read == 0) {
+			if (source_read == 0)
+			{
 				break;
 			}
 		}
 
-		if (pos_ < 0) {
+		if (pos_ < 0)
+		{
 			buffer[written] = (buf_[0] - last_) * pos_frac_ + last_;
 			advance(ratio_);
 			written++;

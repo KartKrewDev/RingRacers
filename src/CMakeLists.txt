@@ -26,6 +26,7 @@ add_executable(SRB2SDL2 MACOSX_BUNDLE WIN32
 	font.c
 	hu_stuff.c
 	i_time.c
+	i_video_common.cpp
 	y_inter.c
 	st_stuff.c
 	m_aatree.c
@@ -120,7 +121,6 @@ add_executable(SRB2SDL2 MACOSX_BUNDLE WIN32
 	k_grandprix.c
 	k_boss.c
 	k_hud.c
-	k_menudef.c
 	k_menufunc.c
 	k_menudraw.c
 	k_terrain.c
@@ -225,6 +225,9 @@ target_sources(SRB2SDL2 PRIVATE discord.c stun.c)
 target_link_libraries(SRB2SDL2 PRIVATE tcbrindle::span)
 target_link_libraries(SRB2SDL2 PRIVATE stb_vorbis)
 target_link_libraries(SRB2SDL2 PRIVATE xmp-lite::xmp-lite)
+target_link_libraries(SRB2SDL2 PRIVATE glad::glad)
+target_link_libraries(SRB2SDL2 PRIVATE fmt)
+target_link_libraries(SRB2SDL2 PRIVATE imgui::imgui)
 
 target_link_libraries(SRB2SDL2 PRIVATE acsvm::acsvm)
 
@@ -531,11 +534,15 @@ if(SRB2_CONFIG_PROFILEMODE AND "${CMAKE_C_COMPILER_ID}" STREQUAL "GNU")
 endif()
 
 add_subdirectory(audio)
+add_subdirectory(core)
+add_subdirectory(hwr2)
 add_subdirectory(io)
 add_subdirectory(sdl)
 add_subdirectory(objects)
 add_subdirectory(acs)
+add_subdirectory(rhi)
 add_subdirectory(tests)
+add_subdirectory(menus)
 
 # strip debug symbols into separate file when using gcc.
 # to be consistent with Makefile, don't generate for OS X.

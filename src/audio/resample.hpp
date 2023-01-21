@@ -21,10 +21,12 @@
 #include "sound_chunk.hpp"
 #include "source.hpp"
 
-namespace srb2::audio {
+namespace srb2::audio
+{
 
 template <size_t C>
-class Resampler : public Source<C> {
+class Resampler : public Source<C>
+{
 public:
 	Resampler(std::shared_ptr<Source<C>>&& source_, float ratio);
 	Resampler(const Resampler<C>& r) = delete;
@@ -44,7 +46,8 @@ private:
 	int pos_ {0};
 	float pos_frac_ {0.f};
 
-	void advance(float samples) {
+	void advance(float samples)
+	{
 		pos_frac_ += samples;
 		float integer;
 		std::modf(pos_frac_, &integer);

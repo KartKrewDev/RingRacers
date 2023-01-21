@@ -12,21 +12,27 @@
 
 #include <cstddef>
 
-namespace srb2::audio {
+namespace srb2::audio
+{
 
 template <size_t C>
-struct Sample {
+struct Sample
+{
 	std::array<float, C> amplitudes;
 
-	constexpr Sample& operator+=(const Sample& rhs) noexcept {
-		for (std::size_t i = 0; i < C; i++) {
+	constexpr Sample& operator+=(const Sample& rhs) noexcept
+	{
+		for (std::size_t i = 0; i < C; i++)
+		{
 			amplitudes[i] += rhs.amplitudes[i];
 		}
 		return *this;
 	}
 
-	constexpr Sample& operator*=(float rhs) noexcept {
-		for (std::size_t i = 0; i < C; i++) {
+	constexpr Sample& operator*=(float rhs) noexcept
+	{
+		for (std::size_t i = 0; i < C; i++)
+		{
 			amplitudes[i] *= rhs;
 		}
 		return *this;
@@ -34,27 +40,33 @@ struct Sample {
 };
 
 template <size_t C>
-constexpr Sample<C> operator+(const Sample<C>& lhs, const Sample<C>& rhs) noexcept {
+constexpr Sample<C> operator+(const Sample<C>& lhs, const Sample<C>& rhs) noexcept
+{
 	Sample<C> out;
-	for (std::size_t i = 0; i < C; i++) {
+	for (std::size_t i = 0; i < C; i++)
+	{
 		out.amplitudes[i] = lhs.amplitudes[i] + rhs.amplitudes[i];
 	}
 	return out;
 }
 
 template <size_t C>
-constexpr Sample<C> operator-(const Sample<C>& lhs, const Sample<C>& rhs) noexcept {
+constexpr Sample<C> operator-(const Sample<C>& lhs, const Sample<C>& rhs) noexcept
+{
 	Sample<C> out;
-	for (std::size_t i = 0; i < C; i++) {
+	for (std::size_t i = 0; i < C; i++)
+	{
 		out.amplitudes[i] = lhs.amplitudes[i] - rhs.amplitudes[i];
 	}
 	return out;
 }
 
 template <size_t C>
-constexpr Sample<C> operator*(const Sample<C>& lhs, float rhs) noexcept {
+constexpr Sample<C> operator*(const Sample<C>& lhs, float rhs) noexcept
+{
 	Sample<C> out;
-	for (std::size_t i = 0; i < C; i++) {
+	for (std::size_t i = 0; i < C; i++)
+	{
 		out.amplitudes[i] = lhs.amplitudes[i] * rhs;
 	}
 	return out;
@@ -64,12 +76,14 @@ template <class T>
 static constexpr float sample_to_float(T sample) noexcept;
 
 template <>
-constexpr float sample_to_float<uint8_t>(uint8_t sample) noexcept {
+constexpr float sample_to_float<uint8_t>(uint8_t sample) noexcept
+{
 	return (sample / 128.f) - 1.f;
 }
 
 template <>
-constexpr float sample_to_float<int16_t>(int16_t sample) noexcept {
+constexpr float sample_to_float<int16_t>(int16_t sample) noexcept
+{
 	return sample / 32768.f;
 }
 

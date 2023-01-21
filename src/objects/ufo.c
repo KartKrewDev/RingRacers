@@ -56,6 +56,9 @@ enum
 	UFO_PIECE_TYPE_STEM,
 };
 
+static sfxenum_t hums[16] = {sfx_claw01, sfx_claw02, sfx_claw03, sfx_claw04, sfx_claw05, sfx_claw06, sfx_claw07, sfx_claw08, sfx_claw09, sfx_claw10, sfx_claw11, sfx_claw12, sfx_claw13, sfx_claw14, sfx_claw15, sfx_claw16};
+static int maxhum = sizeof(hums) / sizeof(hums[0]) - 1;
+
 static void UFOMoveTo(mobj_t *ufo, fixed_t destx, fixed_t desty, fixed_t destz)
 {
 	ufo->momx = destx - ufo->x;
@@ -414,12 +417,34 @@ static void UFOEmeraldVFX(mobj_t *ufo)
 	}
 }
 
+static boolean UFOHumPlaying(mobj_t *ufo) {
+	INT32 i;
+	for (i = 0; i <= maxhum; i++)
+	{
+		if (S_SoundPlaying(ufo, hums[i]))
+			return true;
+	}
+	return false;
+}
+
+static void UFOUpdateSound(mobj_t *ufo) {
+	INT32 maxhealth = max(mobjinfo[MT_SPECIAL_UFO].spawnhealth, 1);
+	INT32 healthlevel = maxhum * ufo->health / maxhealth;
+
+	if (!UFOEmeraldChase(ufo) && !UFOHumPlaying(ufo))
+	{
+		healthlevel = min(max(healthlevel, 1), maxhum);
+		S_StartSound(ufo, hums[maxhum - healthlevel]);
+	}
+}
+
 void Obj_SpecialUFOThinker(mobj_t *ufo)
 {
 	UFOMove(ufo);
 	UFOUpdateAngle(ufo);
 	UFOUpdateDistanceToFinish(ufo);
 	UFOUpdateSpeed(ufo);
+	UFOUpdateSound(ufo);
 
 	if (UFOEmeraldChase(ufo) == true)
 	{
@@ -609,10 +634,16 @@ boolean Obj_SpecialUFODamage(mobj_t *ufo, mobj_t *inflictor, mobj_t *source, UIN
 
 		P_LinedefExecute(LE_PINCHPHASE, ufo, NULL);
 
+		S_StopSound(ufo);
+		S_StartSound(ufo, sfx_clawk2);
+		P_StartQuake(64<<FRACBITS, 20);
+
 		ufo_speed(ufo) += addSpeed; // Even more speed!
 		return true;
 	}
 
+	S_StartSound(ufo, sfx_clawht);
+	P_StartQuake(64<<FRACBITS, 10);
 	ufo->health -= damage;
 	return true;
 }

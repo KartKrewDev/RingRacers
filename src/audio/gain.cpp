@@ -20,9 +20,11 @@ using srb2::audio::Sample;
 constexpr const float kGainInterpolationAlpha = 0.8f;
 
 template <size_t C>
-size_t Gain<C>::filter(tcb::span<Sample<C>> input_buffer, tcb::span<Sample<C>> buffer) {
+size_t Gain<C>::filter(tcb::span<Sample<C>> input_buffer, tcb::span<Sample<C>> buffer)
+{
 	size_t written = std::min(buffer.size(), input_buffer.size());
-	for (size_t i = 0; i < written; i++) {
+	for (size_t i = 0; i < written; i++)
+	{
 		buffer[i] = input_buffer[i];
 		buffer[i] *= gain_;
 		gain_ += (new_gain_ - gain_) * kGainInterpolationAlpha;
@@ -32,7 +34,8 @@ size_t Gain<C>::filter(tcb::span<Sample<C>> input_buffer, tcb::span<Sample<C>> b
 }
 
 template <size_t C>
-void Gain<C>::gain(float new_gain) {
+void Gain<C>::gain(float new_gain)
+{
 	new_gain_ = std::clamp(new_gain, 0.0f, 1.0f);
 }
 

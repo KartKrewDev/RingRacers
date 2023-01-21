@@ -1141,6 +1141,7 @@ static void IdentifyVersion(void)
 #if defined(DEVELOP) && defined(UNLOCKTESTING)
 	D_AddFile(startupiwads, va(pandf,srb2waddir,UNLOCKNAME));
 #endif
+	D_AddFile(startupiwads, va(pandf,srb2waddir,"shaders.pk3"));
 ////
 #undef TEXTURESNAME
 #undef MAPSNAME
@@ -1466,6 +1467,7 @@ void D_SRB2Main(void)
 #endif
 
 #endif //ifndef DEVELOP
+	mainwads++; // shaders.pk3
 
 	// Do it before P_InitMapData because PNG patch
 	// conversion sometimes needs the palette

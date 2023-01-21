@@ -20,15 +20,18 @@ using srb2::audio::Sample;
 using srb2::audio::SoundEffectPlayer;
 using srb2::audio::Source;
 
-size_t SoundEffectPlayer::generate(tcb::span<Sample<2>> buffer) {
+size_t SoundEffectPlayer::generate(tcb::span<Sample<2>> buffer)
+{
 	if (!chunk_)
 		return 0;
-	if (position_ >= chunk_->samples.size()) {
+	if (position_ >= chunk_->samples.size())
+	{
 		return 0;
 	}
 
 	size_t written = 0;
-	for (; position_ < chunk_->samples.size() && written < buffer.size(); position_++) {
+	for (; position_ < chunk_->samples.size() && written < buffer.size(); position_++)
+	{
 		float mono_sample = chunk_->samples[position_].amplitudes[0];
 
 		float sep_pan = ((sep_ + 1.f) / 2.f) * (3.14159 / 2.f);
@@ -41,23 +44,27 @@ size_t SoundEffectPlayer::generate(tcb::span<Sample<2>> buffer) {
 	return written;
 }
 
-void SoundEffectPlayer::start(const SoundChunk* chunk, float volume, float sep) {
+void SoundEffectPlayer::start(const SoundChunk* chunk, float volume, float sep)
+{
 	this->update(volume, sep);
 	position_ = 0;
 	chunk_ = chunk;
 }
 
-void SoundEffectPlayer::update(float volume, float sep) {
+void SoundEffectPlayer::update(float volume, float sep)
+{
 	volume_ = volume;
 	sep_ = sep;
 }
 
-void SoundEffectPlayer::reset() {
+void SoundEffectPlayer::reset()
+{
 	position_ = 0;
 	chunk_ = nullptr;
 }
 
-bool SoundEffectPlayer::finished() const {
+bool SoundEffectPlayer::finished() const
+{
 	if (!chunk_)
 		return true;
 	if (position_ >= chunk_->samples.size())
@@ -65,7 +72,8 @@ bool SoundEffectPlayer::finished() const {
 	return false;
 }
 
-bool SoundEffectPlayer::is_playing_chunk(const SoundChunk* chunk) const {
+bool SoundEffectPlayer::is_playing_chunk(const SoundChunk* chunk) const
+{
 	return chunk_ == chunk;
 }
 

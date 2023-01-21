@@ -556,6 +556,7 @@ extern boolean menuwipe;
 
 extern consvar_t cv_showfocuslost;
 extern consvar_t cv_chooseskin, cv_serversort, cv_menujam_update;
+extern consvar_t cv_autorecord;
 
 void M_SetMenuDelay(UINT8 i);
 
@@ -569,6 +570,17 @@ void M_MapMenuControls(event_t *ev);
 boolean M_Responder(event_t *ev);
 boolean M_MenuButtonPressed(UINT8 pid, UINT32 bt);
 boolean M_MenuButtonHeld(UINT8 pid, UINT32 bt);
+
+boolean M_ChangeStringCvar(INT32 choice);
+
+boolean M_NextOpt(void);
+boolean M_PrevOpt(void);
+
+boolean M_MenuConfirmPressed(UINT8 pid);
+boolean M_MenuBackPressed(UINT8 pid);
+boolean M_MenuExtraPressed(UINT8 pid);
+boolean M_MenuExtraHeld(UINT8 pid);
+
 void M_StartControlPanel(void);
 void M_ClearMenus(boolean callexitmenufunc);
 void M_SelectableClearMenus(INT32 choice);
@@ -576,6 +588,8 @@ void M_SetupNextMenu(menu_t *menudef, boolean nofade);
 void M_GoBack(INT32 choice);
 void M_Ticker(void);
 void M_Init(void);
+
+void M_MenuTypingInput(INT32 key);
 
 extern menu_t MessageDef;
 void M_StartMessage(const char *string, void *routine, menumessagetype_t itemtype);
@@ -679,6 +693,7 @@ extern consvar_t *setup_playercvars[MAXSPLITSCREENPLAYERS][SPLITCV_MAX];
 
 void M_CharacterSelectInit(void);
 void M_CharacterSelect(INT32 choice);
+void M_SetupReadyExplosions(boolean charsel, UINT16 basex, UINT16 basey, UINT16 color);
 boolean M_CharacterSelectHandler(INT32 choice);
 void M_CharacterSelectTick(void);
 boolean M_CharacterSelectQuit(void);
@@ -723,12 +738,16 @@ boolean M_CanShowLevelInList(INT16 mapnum, levelsearch_t *levelsearch);
 UINT16 M_CountLevelsToShowInList(levelsearch_t *levelsearch);
 UINT16 M_GetFirstLevelInList(UINT8 *i, levelsearch_t *levelsearch);
 UINT16 M_GetNextLevelInList(UINT16 mapnum, UINT8 *i, levelsearch_t *levelsearch);
+void M_LevelSelectScrollDest(void);
+boolean M_LevelListFromGametype(INT16 gt);
 
 void M_LevelSelectInit(INT32 choice);
 void M_CupSelectHandler(INT32 choice);
 void M_CupSelectTick(void);
 void M_LevelSelectHandler(INT32 choice);
 void M_LevelSelectTick(void);
+
+void M_LevelSelected(INT16 add);
 
 // dummy consvars for GP & match race setup
 extern consvar_t cv_dummygpdifficulty;
@@ -916,6 +935,7 @@ void M_CheckProfileData(INT32 choice);	// check if we have profiles.
 
 // profile selection menu
 void M_ProfileSelectInit(INT32 choice);
+void M_FirstPickProfile(INT32 c);
 void M_HandleProfileSelect(INT32 ch);
 
 // profile edition
