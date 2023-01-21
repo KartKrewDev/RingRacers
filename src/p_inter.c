@@ -1935,7 +1935,9 @@ static boolean P_KillPlayer(player_t *player, mobj_t *inflictor, mobj_t *source,
 		if (skinflags & SF_IRONMAN)
 		{
 			player->mo->skin = &skins[player->skin];
+			player->charflags = skinflags;
 			K_SpawnMagicianParticles(player->mo, 5);
+			S_StartSound(player->mo, sfx_slip);
 		}
 
 		player->mo->renderflags &= ~RF_DONTDRAW;
@@ -2280,6 +2282,20 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 			player->ringboost = 0;
 			player->glanceDir = 0;
 			player->pflags &= ~PF_GAINAX;
+
+			if (!(player->charflags & SF_IRONMAN))
+			{
+				UINT32 skinflags = (demo.playback)
+					? demo.skinlist[demo.currentskinid[(player-players)]].flags
+					: skins[player->skin].flags;
+
+				if (skinflags & SF_IRONMAN)
+				{
+					player->mo->skin = &skins[player->skin];
+					player->charflags = skinflags;
+					K_SpawnMagicianParticles(player->mo, 5);
+				}
+			}
 
 			switch (type)
 			{
