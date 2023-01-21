@@ -2283,7 +2283,7 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 			player->glanceDir = 0;
 			player->pflags &= ~PF_GAINAX;
 
-			if (!(player->charflags & SF_IRONMAN))
+			if (player->spectator == false && !(player->charflags & SF_IRONMAN))
 			{
 				UINT32 skinflags = (demo.playback)
 					? demo.skinlist[demo.currentskinid[(player-players)]].flags

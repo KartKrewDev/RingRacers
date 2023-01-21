@@ -4248,8 +4248,11 @@ void P_PlayerThink(player_t *player)
 					if (player->fakeskin != MAXSKINS)
 					{
 						SetFakePlayerSkin(player, player->fakeskin);
-						S_StartSound(player->mo, sfx_kc33);
-						K_SpawnMagicianParticles(player->mo, 5);
+						if (player->spectator == false)
+						{
+							S_StartSound(player->mo, sfx_kc33);
+							K_SpawnMagicianParticles(player->mo, 5);
+						}
 					}
 					else if (!(gametyperules & GTR_CIRCUIT))
 					{
