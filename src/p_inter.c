@@ -2145,7 +2145,7 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 
 				if (player->invincibilitytimer > 0)
 				{
-					sfx= sfx_invind;
+					sfx = sfx_invind;
 				}
 				else if (K_IsBigger(target, inflictor) == true)
 				{
@@ -2158,7 +2158,7 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 					invincible = false;
 				}
 
-				if (invincible)
+				if (invincible && type != DMG_STUMBLE)
 				{
 					const INT32	oldhitlag = target->hitlag;
 
@@ -2179,18 +2179,24 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 
 				{
 					// Check if we should allow wombo combos (hard hits by default, inverted by the presence of DMG_WOMBO).
-					boolean allowcombo = (hardhit == !(damagetype & DMG_WOMBO));
+					boolean allowcombo = ((hardhit || (type == DMG_STUMBLE)) == !(damagetype & DMG_WOMBO));
 
-					// Tumble is a special case.
+					// Tumble/stumble is a special case.
 					if (type == DMG_TUMBLE)
 					{
 						// don't allow constant combo
 						if (player->tumbleBounces == 1 && (P_MobjFlip(target)*target->momz > 0))
 							allowcombo = false;
 					}
+					else if (type == DMG_STUMBLE)
+					{
+						// don't allow constant combo
+						if (player->tumbleBounces == TUMBLEBOUNCES-1 && (P_MobjFlip(target)*target->momz > 0))
+							allowcombo = false;
+					}
 
 					// DMG_EXPLODE excluded from flashtic checks to prevent dodging eggbox/SPB with weak spinout
-					if ((target->hitlag == 0 || allowcombo == false) && player->flashing > 0 && type != DMG_EXPLODE)
+					if ((target->hitlag == 0 || allowcombo == false) && player->flashing > 0 && type != DMG_EXPLODE && type != DMG_STUMBLE)
 					{
 						// Post-hit invincibility
 						K_DoInstashield(player);
@@ -2200,7 +2206,7 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 			}
 
 			// We successfully damaged them! Give 'em some bumpers!
-			if (type != DMG_STING)
+			if (type != DMG_STING && type != DMG_STUMBLE)
 			{
 				UINT8 takeBumpers = 1;
 
@@ -2306,6 +2312,10 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 					K_KartPainEnergyFling(player);
 					ringburst = 0;
 					break;
+				case DMG_STUMBLE:
+					K_StumblePlayer(player);
+					ringburst = 0;
+					break;
 				case DMG_TUMBLE:
 					K_TumblePlayer(player, inflictor, source);
 					ringburst = 10;
@@ -2327,7 +2337,7 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 					break;
 			}
 
-			if (type != DMG_STING)
+			if (type != DMG_STING && type != DMG_STUMBLE)
 			{
 				player->flashing = K_GetKartFlashing(player);
 			}
@@ -2350,8 +2360,11 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 				K_DropHnextList(player, false);
 			}
 
-			player->instashield = 15;
-			K_SetHitLagForObjects(target, inflictor, laglength, true);
+			if (type != DMG_STUMBLE)
+			{
+				player->instashield = 15;
+				K_SetHitLagForObjects(target, inflictor, laglength, true);
+			}
 
 			if (inflictor && !P_MobjWasRemoved(inflictor) && inflictor->type == MT_BANANA)
 			{
