@@ -2515,8 +2515,8 @@ void K_PlayOvertakeSound(mobj_t *source)
 void K_PlayPainSound(mobj_t *source, mobj_t *other)
 {
 	sfxenum_t pick = P_RandomKey(PR_VOICES, 2); // Gotta roll the RNG every time this is called for sync reasons
-
-	sfxenum_t sfx_id = ((skin_t *)source->skin)->soundsid[S_sfx[sfx_khurt1 + pick].skinsound];
+	skin_t *skin = (source->player ? &skins[source->player->skin] : ((skin_t *)source->skin));
+	sfxenum_t sfx_id = skin->soundsid[S_sfx[sfx_khurt1 + pick].skinsound];
 	boolean alwaysHear = false;
 
 	if (other != NULL && P_MobjWasRemoved(other) == false && other->player != NULL)
@@ -2534,7 +2534,8 @@ void K_PlayPainSound(mobj_t *source, mobj_t *other)
 
 void K_PlayHitEmSound(mobj_t *source, mobj_t *other)
 {
-	sfxenum_t sfx_id = ((skin_t *)source->skin)->soundsid[S_sfx[sfx_khitem].skinsound];
+	skin_t *skin = (source->player ? &skins[source->player->skin] : ((skin_t *)source->skin));
+	sfxenum_t sfx_id = skin->soundsid[S_sfx[sfx_khitem].skinsound];
 	boolean alwaysHear = false;
 
 	if (other != NULL && P_MobjWasRemoved(other) == false && other->player != NULL)
