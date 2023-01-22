@@ -1105,6 +1105,7 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 
 	forward = 0;
 	cmd->turning = 0;
+	cmd->aiming = 0;
 
 	if (joystickvector.xaxis != 0)
 	{
@@ -1123,14 +1124,21 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 			cmd->buttons |= BT_BRAKE;
 		}
 
-		if (joystickvector.yaxis < 0)
+		if (G_PlayerInputDown(forplayer, gc_lookback, 0))
 		{
-			forward += MAXPLMOVE;
+			cmd->aiming -= joystickvector.yaxis;
 		}
-
-		if (joystickvector.yaxis > 0)
+		else
 		{
-			forward -= MAXPLMOVE;
+			if (joystickvector.yaxis < 0)
+			{
+				forward += MAXPLMOVE;
+			}
+
+			if (joystickvector.yaxis > 0)
+			{
+				forward -= MAXPLMOVE;
+			}
 		}
 	}
 	else
