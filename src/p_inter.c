@@ -2342,10 +2342,9 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 				player->flashing = K_GetKartFlashing(player);
 			}
 
-			P_PlayRinglossSound(target);
-
 			if (ringburst > 0)
 			{
+				P_PlayRinglossSound(target);
 				P_PlayerRingBurst(player, ringburst);
 			}
 
