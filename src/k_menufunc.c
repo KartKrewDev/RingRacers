@@ -414,8 +414,6 @@ void M_StartControlPanel(void)
 			optionsmenu.profilen = cv_ttlprofilen.value;
 
 			// options don't need initializing here.
-			PR_ApplyProfile(0, 0); // apply guest profile to player 0 by default.
-			// this is to garantee that the controls aren't fucked up.
 
 			// make sure we don't overstep that.
 			if (optionsmenu.profilen > PR_GetNumProfiles())
