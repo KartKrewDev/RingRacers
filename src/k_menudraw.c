@@ -1106,7 +1106,8 @@ static void M_DrawCharSelectCircle(setup_player_t *p, INT16 x, INT16 y)
 							n = numfollowers-1;
 						if (n == startfollowern)
 							break;
-						if (followers[n].category == setup_followercategories[p->followercategory][1])
+						if (followers[n].category == setup_followercategories[p->followercategory][1]
+							&& K_FollowerUsable(n))
 							r--;
 					}
 					l = r = n;
@@ -1121,7 +1122,8 @@ static void M_DrawCharSelectCircle(setup_player_t *p, INT16 x, INT16 y)
 						if (l == startfollowern)
 							break;
 					}
-					while (followers[l].category != setup_followercategories[p->followercategory][1]);
+					while (followers[l].category != setup_followercategories[p->followercategory][1]
+						|| !K_FollowerUsable(l));
 					n = l;
 				}
 				else
@@ -1134,7 +1136,8 @@ static void M_DrawCharSelectCircle(setup_player_t *p, INT16 x, INT16 y)
 						if (r == startfollowern)
 							break;
 					}
-					while (followers[r].category != setup_followercategories[p->followercategory][1]);
+					while (followers[r].category != setup_followercategories[p->followercategory][1]
+						|| !K_FollowerUsable(r));
 					n = r;
 				}
 
