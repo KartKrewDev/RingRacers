@@ -4238,11 +4238,21 @@ void P_PlayerThink(player_t *player)
 		{
 			if (player->charflags & SF_IRONMAN) // no fakeskin yet
 			{
-				if (leveltime >= starttime && !player->exiting)
+				if (leveltime >= starttime
+					&& !player->exiting
+					&& player->mo->health > 0
+					&& (player->respawn.state == RESPAWNST_NONE
+						|| (player->respawn.state == RESPAWNST_DROP && !player->respawn.timer))
+					&& !P_PlayerInPain(player))
 				{
 					if (player->fakeskin != MAXSKINS)
 					{
 						SetFakePlayerSkin(player, player->fakeskin);
+						if (player->spectator == false)
+						{
+							S_StartSound(player->mo, sfx_kc33);
+							K_SpawnMagicianParticles(player->mo, 5);
+						}
 					}
 					else if (!(gametyperules & GTR_CIRCUIT))
 					{

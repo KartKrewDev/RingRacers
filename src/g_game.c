@@ -2292,10 +2292,15 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	}
 	else
 	{
+		UINT32 skinflags = (demo.playback)
+			? demo.skinlist[demo.currentskinid[player]].flags
+			: skins[players[player].skin].flags;
+
 		fakeskin = players[player].fakeskin;
 		kartspeed = players[player].kartspeed;
 		kartweight = players[player].kartweight;
-		charflags = players[player].charflags;
+
+		charflags = (skinflags & SF_IRONMAN) ? skinflags : players[player].charflags;
 	}
 	lastfakeskin = players[player].lastfakeskin;
 

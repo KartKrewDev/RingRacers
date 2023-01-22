@@ -7989,7 +7989,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 		if (mobj->extravalue2 == 0)
 		{
 			P_RemoveMobj(mobj);
-			break;
+			return false;
 		}
 		else if (mobj->extravalue2 < TICRATE/3)
 		{
@@ -8022,7 +8022,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 			if (mobj->target->player->hyudorotimer)
 			{
 				P_RemoveMobj(mobj);
-				break;
+				return false;
 			}
 			else
 			{

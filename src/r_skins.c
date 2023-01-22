@@ -433,7 +433,7 @@ void SetRandomFakePlayerSkin(player_t* player, boolean fast)
 
 	SetFakePlayerSkin(player, i);
 
-	if (player->mo)
+	if (player->mo && player->spectator == false)
 	{
 		S_StartSound(player->mo, sfx_kc33);
 		S_StartSound(player->mo, sfx_cdfm44);
@@ -500,8 +500,11 @@ void ClearFakePlayerSkin(player_t* player)
 	if ((flags & SF_IRONMAN) && !P_MobjWasRemoved(player->mo))
 	{
 		SetFakePlayerSkin(player, skinid);
-		S_StartSound(player->mo, sfx_s3k9f);
-		K_SpawnMagicianParticles(player->mo, 5);
+		if (player->spectator == false)
+		{
+			S_StartSound(player->mo, sfx_s3k9f);
+			K_SpawnMagicianParticles(player->mo, 5);
+		}
 	}
 
 	player->fakeskin = MAXSKINS;
