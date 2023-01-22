@@ -124,35 +124,59 @@ enum
 	// top and bottom textures (use next to windows).
 
 	// upper texture unpegged
-	ML_DONTPEGTOP    = 0x00000008,
+	ML_DONTPEGTOP		= 0x00000008,
 
 	// lower texture unpegged
-	ML_DONTPEGBOTTOM = 0x00000010,
+	ML_DONTPEGBOTTOM	= 0x00000010,
 
-	ML_SKEWTD        = 0x00000020,
+	ML_SKEWTD			= 0x00000020,
 
 	// Don't let Knuckles climb on this line
-	ML_NOCLIMB       = 0x00000040,
+	ML_NOCLIMB			= 0x00000040,
 
-	ML_NOSKEW        = 0x00000080,
-	ML_MIDPEG        = 0x00000100,
-	ML_MIDSOLID      = 0x00000200,
-	ML_WRAPMIDTEX    = 0x00000400,
+	ML_NOSKEW			= 0x00000080,
+	ML_MIDPEG			= 0x00000100,
+	ML_MIDSOLID			= 0x00000200,
+	ML_WRAPMIDTEX		= 0x00000400,
 
 	// Apply effect only in netgames
-	ML_NETONLY       = 0x00000800,
+	ML_NETONLY			= 0x00000800,
 
 	// Apply effect only in single player games
-	ML_NONET         = 0x00001000,
+	ML_NONET			= 0x00001000,
 
 	// Blocks enemies only
-	ML_BLOCKMONSTERS = 0x00002000,
+	ML_BLOCKMONSTERS	= 0x00002000,
 
 	// Don't bounce off this wall!
-	ML_NOTBOUNCY     = 0x00004000,
+	ML_NOTBOUNCY		= 0x00004000,
 
 	// Transfers FOF properties.
-	ML_TFERLINE      = 0x00008000,
+	ML_TFERLINE			= 0x00008000,
+};
+
+enum
+{
+	// Special action is repeatable.
+	SPAC_REPEATSPECIAL		= 0x00000001,
+
+	// Activates when crossed by a player.
+	SPAC_CROSS				= 0x00000002,
+
+	// Activates when crossed by an enemy.
+	SPAC_CROSSMONSTER		= 0x00000004,
+
+	// Activates when crossed by a projectile.
+	SPAC_CROSSMISSILE		= 0x00000008,
+
+	// Activates when bumped by a player.
+	SPAC_PUSH				= 0x00000010,
+
+	// Activates when bumped by an enemy.
+	SPAC_PUSHMONSTER		= 0x00000020,
+
+	// Activates when bumped by a missile.
+	SPAC_IMPACT				= 0x00000040,
 };
 
 // Sector definition, from editing.
@@ -224,6 +248,7 @@ struct mapthing_t
 	UINT8 extrainfo;
 	taglist_t tags;
 	fixed_t scale;
+	INT16 special;
 	INT32 args[NUMMAPTHINGARGS];
 	char *stringargs[NUMMAPTHINGSTRINGARGS];
 	mobj_t *mobj;

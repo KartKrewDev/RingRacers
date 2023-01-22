@@ -338,6 +338,10 @@ struct mobj_t
 	UINT32 flags2; // MF2_ flags
 	UINT16 eflags; // extra flags
 
+	mtag_t tid;
+	mobj_t *tid_next;
+	mobj_t **tid_prev; // killough 8/11/98: change to ptr-to-ptr
+
 	void *skin; // overrides 'sprite' when non-NULL (for player bodies to 'remember' the skin)
 	// Player and mobj sprites in multiplayer modes are modified
 	//  using an internal color lookup table for re-indexing.
@@ -510,6 +514,7 @@ void P_AddCachedAction(mobj_t *mobj, INT32 statenum);
 // kartitem stuff: Returns true if the specified 'type' is one of the kart item constants we want in the kitemcap list
 boolean P_IsKartFieldItem(INT32 type);
 boolean P_IsKartItem(INT32 type);
+boolean K_IsMissileOrKartItem(mobj_t *mo);
 boolean P_CanDeleteKartItem(INT32 type);
 void P_AddKartItem(mobj_t *thing);	// needs to be called in k_kart.c
 void P_RunKartItems(void);

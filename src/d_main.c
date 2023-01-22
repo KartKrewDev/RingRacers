@@ -75,6 +75,7 @@
 #include "doomstat.h"
 #include "m_random.h" // P_ClearRandom
 #include "k_specialstage.h"
+#include "acs/interface.h"
 
 #ifdef HWRENDER
 #include "hardware/hw_main.h" // 3D View Rendering
@@ -1617,6 +1618,10 @@ void D_SRB2Main(void)
 	CONS_Printf("ST_Init(): Init status bar.\n");
 	ST_Init();
 	CON_SetLoadingProgress(LOADED_STINIT);
+
+	CONS_Printf("ACS_Init(): Init Action Code Script VM.\n");
+	ACS_Init();
+	CON_SetLoadingProgress(LOADED_ACSINIT);
 
 	//------------------------------------------------ COMMAND LINE PARAMS
 

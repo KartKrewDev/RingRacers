@@ -41,6 +41,7 @@
 #include "k_battle.h"
 #include "k_pwrlv.h"
 #include "k_terrain.h"
+#include "acs/interface.h"
 
 savedata_t savedata;
 
@@ -1098,8 +1099,40 @@ static void P_NetUnArchiveColormaps(savebuffer_t *save)
 //diff4 flags
 #define SD_DAMAGETYPE 0x01
 #define SD_TRIGGERTAG 0x02
-#define SD_TRIGGERER 0x04
-#define SD_GRAVITY   0x08
+#define SD_TRIGGERER  0x04
+#define SD_GRAVITY    0x08
+#define SD_ACTION     0x10
+#define SD_ARGS       0x20
+#define SD_STRINGARGS 0x40
+#define SD_DIFF5      0x80
+
+//diff5 flags
+#define SD_ACTIVATION 0x01
+
+static boolean P_SectorArgsEqual(const sector_t *sc, const sector_t *spawnsc)
+{
+	UINT8 i;
+	for (i = 0; i < NUMSECTORARGS; i++)
+		if (sc->args[i] != spawnsc->args[i])
+			return false;
+
+	return true;
+}
+
+static boolean P_SectorStringArgsEqual(const sector_t *sc, const sector_t *spawnsc)
+{
+	UINT8 i;
+	for (i = 0; i < NUMSECTORSTRINGARGS; i++)
+	{
+		if (!sc->stringargs[i])
+			return !spawnsc->stringargs[i];
+
+		if (strcmp(sc->stringargs[i], spawnsc->stringargs[i]))
+			return false;
+	}
+
+	return true;
+}
 
 #define LD_FLAG     0x01
 #define LD_SPECIAL  0x02
@@ -1118,8 +1151,12 @@ static void P_NetUnArchiveColormaps(savebuffer_t *save)
 #define LD_ARGS          0x10
 #define LD_STRINGARGS    0x20
 #define LD_EXECUTORDELAY 0x40
+#define LD_DIFF3         0x80
 
-static boolean P_AreArgsEqual(const line_t *li, const line_t *spawnli)
+// diff3 flags
+#define LD_ACTIVATION    0x01
+
+static boolean P_LineArgsEqual(const line_t *li, const line_t *spawnli)
 {
 	UINT8 i;
 	for (i = 0; i < NUMLINEARGS; i++)
@@ -1129,7 +1166,7 @@ static boolean P_AreArgsEqual(const line_t *li, const line_t *spawnli)
 	return true;
 }
 
-static boolean P_AreStringArgsEqual(const line_t *li, const line_t *spawnli)
+static boolean P_LineStringArgsEqual(const line_t *li, const line_t *spawnli)
 {
 	UINT8 i;
 	for (i = 0; i < NUMLINESTRINGARGS; i++)
@@ -1238,11 +1275,11 @@ static void ArchiveSectors(savebuffer_t *save)
 	size_t i, j;
 	const sector_t *ss = sectors;
 	const sector_t *spawnss = spawnsectors;
-	UINT8 diff, diff2, diff3, diff4;
+	UINT8 diff, diff2, diff3, diff4, diff5;
 
 	for (i = 0; i < numsectors; i++, ss++, spawnss++)
 	{
-		diff = diff2 = diff3 = diff4 = 0;
+		diff = diff2 = diff3 = diff4 = diff5 = 0;
 		if (ss->floorheight != spawnss->floorheight)
 			diff |= SD_FLOORHT;
 		if (ss->ceilingheight != spawnss->ceilingheight)
@@ -1298,8 +1335,20 @@ static void ArchiveSectors(savebuffer_t *save)
 		if (ss->gravity != spawnss->gravity)
 			diff4 |= SD_GRAVITY;
 
+		if (ss->action != spawnss->action)
+			diff4 |= SD_ACTION;
+		if (!P_SectorArgsEqual(ss, spawnss))
+			diff4 |= SD_ARGS;
+		if (!P_SectorStringArgsEqual(ss, spawnss))
+			diff4 |= SD_STRINGARGS;
+		if (ss->activation != spawnss->activation)
+			diff5 |= SD_ACTIVATION;
+
 		if (ss->ffloors && CheckFFloorDiff(ss))
 			diff |= SD_FFLOORS;
+
+		if (diff5)
+			diff4 |= SD_DIFF5;
 
 		if (diff4)
 			diff3 |= SD_DIFF4;
@@ -1378,6 +1427,35 @@ static void ArchiveSectors(savebuffer_t *save)
 				WRITEUINT8(save->p, ss->triggerer);
 			if (diff4 & SD_GRAVITY)
 				WRITEFIXED(save->p, ss->gravity);
+
+			if (diff4 & SD_ACTION)
+				WRITEINT16(save->p, ss->action);
+			if (diff4 & SD_ARGS)
+			{
+				for (j = 0; j < NUMSECTORARGS; j++)
+					WRITEINT32(save->p, ss->args[j]);
+			}
+			if (diff4 & SD_STRINGARGS)
+			{
+				for (j = 0; j < NUMSECTORSTRINGARGS; j++)
+				{
+					size_t len, k;
+
+					if (!ss->stringargs[j])
+					{
+						WRITEINT32(save->p, 0);
+						continue;
+					}
+
+					len = strlen(ss->stringargs[j]);
+					WRITEINT32(save->p, len);
+					for (k = 0; k < len; k++)
+						WRITECHAR(save->p, ss->stringargs[j][k]);
+				}
+			}
+			if (diff5 & SD_ACTIVATION)
+				WRITEUINT32(save->p, ss->activation);
+
 			if (diff & SD_FFLOORS)
 				ArchiveFFloors(save, ss);
 		}
@@ -1389,7 +1467,7 @@ static void ArchiveSectors(savebuffer_t *save)
 static void UnArchiveSectors(savebuffer_t *save)
 {
 	UINT16 i, j;
-	UINT8 diff, diff2, diff3, diff4;
+	UINT8 diff, diff2, diff3, diff4, diff5;
 	for (;;)
 	{
 		i = READUINT16(save->p);
@@ -1413,6 +1491,11 @@ static void UnArchiveSectors(savebuffer_t *save)
 			diff4 = READUINT8(save->p);
 		else
 			diff4 = 0;
+
+		if (diff4 & SD_DIFF5)
+			diff5 = READUINT8(save->p);
+		else
+			diff5 = 0;
 
 		if (diff & SD_FLOORHT)
 			sectors[i].floorheight = READFIXED(save->p);
@@ -1499,6 +1582,36 @@ static void UnArchiveSectors(savebuffer_t *save)
 		if (diff4 & SD_GRAVITY)
 			sectors[i].gravity = READFIXED(save->p);
 
+		if (diff4 & SD_ACTION)
+			sectors[i].action = READINT16(save->p);
+		if (diff4 & SD_ARGS)
+		{
+			for (j = 0; j < NUMSECTORARGS; j++)
+				sectors[i].args[j] = READINT32(save->p);
+		}
+		if (diff4 & SD_STRINGARGS)
+		{
+			for (j = 0; j < NUMLINESTRINGARGS; j++)
+			{
+				size_t len = READINT32(save->p);
+				size_t k;
+
+				if (!len)
+				{
+					Z_Free(sectors[i].stringargs[j]);
+					sectors[i].stringargs[j] = NULL;
+					continue;
+				}
+
+				sectors[i].stringargs[j] = Z_Realloc(sectors[i].stringargs[j], len + 1, PU_LEVEL, NULL);
+				for (k = 0; k < len; k++)
+					sectors[i].stringargs[j][k] = READCHAR(save->p);
+				sectors[i].stringargs[j][len] = '\0';
+			}
+		}
+		if (diff5 & SD_ACTIVATION)
+			sectors[i].activation = READUINT32(save->p);
+
 		if (diff & SD_FFLOORS)
 			UnArchiveFFloors(save, &sectors[i]);
 	}
@@ -1511,11 +1624,14 @@ static void ArchiveLines(savebuffer_t *save)
 	const line_t *spawnli = spawnlines;
 	const side_t *si;
 	const side_t *spawnsi;
-	UINT8 diff, diff2; // no diff3
+	UINT8 diff, diff2, diff3;
 
 	for (i = 0; i < numlines; i++, spawnli++, li++)
 	{
-		diff = diff2 = 0;
+		diff = diff2 = diff3 = 0;
+
+		if (li->flags != spawnli->flags)
+			diff |= LD_FLAG;
 
 		if (li->special != spawnli->special)
 			diff |= LD_SPECIAL;
@@ -1523,14 +1639,17 @@ static void ArchiveLines(savebuffer_t *save)
 		if (spawnli->special == 321 || spawnli->special == 322) // only reason li->callcount would be non-zero is if either of these are involved
 			diff |= LD_CLLCOUNT;
 
-		if (!P_AreArgsEqual(li, spawnli))
+		if (!P_LineArgsEqual(li, spawnli))
 			diff2 |= LD_ARGS;
 
-		if (!P_AreStringArgsEqual(li, spawnli))
+		if (!P_LineStringArgsEqual(li, spawnli))
 			diff2 |= LD_STRINGARGS;
 
 		if (li->executordelay != spawnli->executordelay)
 			diff2 |= LD_EXECUTORDELAY;
+
+		if (li->activation != spawnli->activation)
+			diff3 |= LD_ACTIVATION;
 
 		if (li->sidenum[0] != 0xffff)
 		{
@@ -1560,6 +1679,9 @@ static void ArchiveLines(savebuffer_t *save)
 				diff2 |= LD_S2MIDTEX;
 		}
 
+		if (diff3)
+			diff2 |= LD_DIFF3;
+
 		if (diff2)
 			diff |= LD_DIFF2;
 
@@ -1569,6 +1691,8 @@ static void ArchiveLines(savebuffer_t *save)
 			WRITEUINT8(save->p, diff);
 			if (diff & LD_DIFF2)
 				WRITEUINT8(save->p, diff2);
+			if (diff2 & LD_DIFF3)
+				WRITEUINT8(save->p, diff3);
 			if (diff & LD_FLAG)
 				WRITEUINT32(save->p, li->flags);
 			if (diff & LD_SPECIAL)
@@ -1622,6 +1746,8 @@ static void ArchiveLines(savebuffer_t *save)
 			}
 			if (diff2 & LD_EXECUTORDELAY)
 				WRITEINT32(save->p, li->executordelay);
+			if (diff3 & LD_ACTIVATION)
+				WRITEUINT32(save->p, li->activation);
 		}
 	}
 	WRITEUINT16(save->p, 0xffff);
@@ -1632,7 +1758,7 @@ static void UnArchiveLines(savebuffer_t *save)
 	UINT16 i;
 	line_t *li;
 	side_t *si;
-	UINT8 diff, diff2; // no diff3
+	UINT8 diff, diff2, diff3;
 
 	for (;;)
 	{
@@ -1650,6 +1776,11 @@ static void UnArchiveLines(savebuffer_t *save)
 			diff2 = READUINT8(save->p);
 		else
 			diff2 = 0;
+
+		if (diff2 & LD_DIFF3)
+			diff3 = READUINT8(save->p);
+		else
+			diff3 = 0;
 
 		if (diff & LD_FLAG)
 			li->flags = READUINT32(save->p);
@@ -1706,7 +1837,8 @@ static void UnArchiveLines(savebuffer_t *save)
 		}
 		if (diff2 & LD_EXECUTORDELAY)
 			li->executordelay = READINT32(save->p);
-
+		if (diff3 & LD_ACTIVATION)
+			li->activation = READUINT32(save->p);
 	}
 }
 
@@ -1803,7 +1935,7 @@ typedef enum
 	MD2_ROLLANGLE    = 1<<14,
 	MD2_SHADOWSCALE  = 1<<15,
 	MD2_RENDERFLAGS  = 1<<16,
-	// 1<<17 was taken out, maybe reuse later
+	MD2_TID          = 1<<17,
 	MD2_SPRITEXSCALE = 1<<18,
 	MD2_SPRITEYSCALE = 1<<19,
 	MD2_SPRITEXOFFSET = 1<<20,
@@ -2031,6 +2163,8 @@ static void SaveMobjThinker(savebuffer_t *save, const thinker_t *th, const UINT8
 		diff2 |= MD2_SHADOWSCALE;
 	if (mobj->renderflags)
 		diff2 |= MD2_RENDERFLAGS;
+	if (mobj->tid != 0)
+		diff2 |= MD2_TID;
 	if (mobj->spritexscale != FRACUNIT)
 		diff2 |= MD2_SPRITEXSCALE;
 	if (mobj->spriteyscale != FRACUNIT)
@@ -2229,6 +2363,8 @@ static void SaveMobjThinker(savebuffer_t *save, const thinker_t *th, const UINT8
 
 		WRITEUINT32(save->p, rf);
 	}
+	if (diff2 & MD2_TID)
+		WRITEINT16(save->p, mobj->tid);
 	if (diff2 & MD2_SPRITEXSCALE)
 		WRITEFIXED(save->p, mobj->spritexscale);
 	if (diff2 & MD2_SPRITEYSCALE)
@@ -2402,7 +2538,10 @@ static void SaveCeilingThinker(savebuffer_t *save, const thinker_t *th, const UI
 	WRITEINT32(save->p, ht->direction);
 	WRITEINT16(save->p, ht->tag);
 	WRITEFIXED(save->p, ht->origspeed);
-	WRITEFIXED(save->p, ht->sourceline);
+	WRITEFIXED(save->p, ht->crushHeight);
+	WRITEFIXED(save->p, ht->crushSpeed);
+	WRITEFIXED(save->p, ht->returnHeight);
+	WRITEFIXED(save->p, ht->returnSpeed);
 }
 
 static void SaveFloormoveThinker(savebuffer_t *save, const thinker_t *th, const UINT8 type)
@@ -2420,7 +2559,10 @@ static void SaveFloormoveThinker(savebuffer_t *save, const thinker_t *th, const 
 	WRITEFIXED(save->p, ht->delay);
 	WRITEFIXED(save->p, ht->delaytimer);
 	WRITEINT16(save->p, ht->tag);
-	WRITEFIXED(save->p, ht->sourceline);
+	WRITEFIXED(save->p, ht->crushHeight);
+	WRITEFIXED(save->p, ht->crushSpeed);
+	WRITEFIXED(save->p, ht->returnHeight);
+	WRITEFIXED(save->p, ht->returnSpeed);
 }
 
 static void SaveLightflashThinker(savebuffer_t *save, const thinker_t *th, const UINT8 type)
@@ -2485,7 +2627,6 @@ static void SaveElevatorThinker(savebuffer_t *save, const thinker_t *th, const U
 	WRITEFIXED(save->p, ht->delaytimer);
 	WRITEFIXED(save->p, ht->floorwasheight);
 	WRITEFIXED(save->p, ht->ceilingwasheight);
-	WRITEUINT32(save->p, SaveLine(ht->sourceline));
 }
 
 static void SaveCrumbleThinker(savebuffer_t *save, const thinker_t *th, const UINT8 type)
@@ -3375,6 +3516,8 @@ static thinker_t* LoadMobjThinker(savebuffer_t *save, actionf_p1 thinker)
 	}
 	if (diff2 & MD2_RENDERFLAGS)
 		mobj->renderflags = READUINT32(save->p);
+	if (diff2 & MD2_TID)
+		P_SetThingTID(mobj, READINT16(save->p));
 	if (diff2 & MD2_SPRITEXSCALE)
 		mobj->spritexscale = READFIXED(save->p);
 	else
@@ -3628,7 +3771,10 @@ static thinker_t* LoadCeilingThinker(savebuffer_t *save, actionf_p1 thinker)
 	ht->direction = READINT32(save->p);
 	ht->tag = READINT16(save->p);
 	ht->origspeed = READFIXED(save->p);
-	ht->sourceline = READFIXED(save->p);
+	ht->crushHeight = READFIXED(save->p);
+	ht->crushSpeed = READFIXED(save->p);
+	ht->returnHeight = READFIXED(save->p);
+	ht->returnSpeed = READFIXED(save->p);
 	if (ht->sector)
 		ht->sector->ceilingdata = ht;
 	return &ht->thinker;
@@ -3649,7 +3795,10 @@ static thinker_t* LoadFloormoveThinker(savebuffer_t *save, actionf_p1 thinker)
 	ht->delay = READFIXED(save->p);
 	ht->delaytimer = READFIXED(save->p);
 	ht->tag = READINT16(save->p);
-	ht->sourceline = READFIXED(save->p);
+	ht->crushHeight = READFIXED(save->p);
+	ht->crushSpeed = READFIXED(save->p);
+	ht->returnHeight = READFIXED(save->p);
+	ht->returnSpeed = READFIXED(save->p);
 	if (ht->sector)
 		ht->sector->floordata = ht;
 	return &ht->thinker;
@@ -3729,7 +3878,6 @@ static thinker_t* LoadElevatorThinker(savebuffer_t *save, actionf_p1 thinker, bo
 	ht->delaytimer = READFIXED(save->p);
 	ht->floorwasheight = READFIXED(save->p);
 	ht->ceilingwasheight = READFIXED(save->p);
-	ht->sourceline = LoadLine(READUINT32(save->p));
 
 	if (ht->sector && setplanedata)
 	{
@@ -5146,6 +5294,8 @@ void P_SaveNetGame(savebuffer_t *save, boolean resending)
 		P_NetArchiveTubeWaypoints(save);
 		P_NetArchiveWaypoints(save);
 	}
+
+	ACS_Archive(save);
 	LUA_Archive(save, true);
 
 	P_NetArchiveRNG(save);
@@ -5195,6 +5345,7 @@ boolean P_LoadNetGame(savebuffer_t *save, boolean reloading)
 		P_RelinkPointers();
 	}
 
+	ACS_UnArchive(save);
 	LUA_UnArchive(save, true);
 
 	P_NetUnArchiveRNG(save);

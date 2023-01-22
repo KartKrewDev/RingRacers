@@ -229,6 +229,8 @@ target_link_libraries(SRB2SDL2 PRIVATE glad::glad)
 target_link_libraries(SRB2SDL2 PRIVATE fmt)
 target_link_libraries(SRB2SDL2 PRIVATE imgui::imgui)
 
+target_link_libraries(SRB2SDL2 PRIVATE acsvm::acsvm)
+
 set(SRB2_HAVE_THREADS ON)
 target_compile_definitions(SRB2SDL2 PRIVATE -DHAVE_THREADS)
 
@@ -537,6 +539,7 @@ add_subdirectory(hwr2)
 add_subdirectory(io)
 add_subdirectory(sdl)
 add_subdirectory(objects)
+add_subdirectory(acs)
 add_subdirectory(rhi)
 add_subdirectory(tests)
 add_subdirectory(menus)

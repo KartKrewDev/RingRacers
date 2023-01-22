@@ -242,7 +242,8 @@ static void Polyobj_GetInfo(polyobj_t *po, line_t *line)
 	if (line->args[3] & TMPF_CRUSH)
 		po->damage = 3;
 
-	po->triggertag = line->args[4];
+	if (!udmf)
+		po->triggertag = line->args[4];
 }
 
 // Reallocating array maintenance

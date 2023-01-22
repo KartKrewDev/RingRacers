@@ -547,6 +547,7 @@ sector_t *P_PlayerTouchingSectorSpecial(player_t *player, INT32 section, INT32 n
 sector_t *P_PlayerTouchingSectorSpecialFlag(player_t *player, sectorspecialflags_t flag);
 void P_PlayerInSpecialSector(player_t *player);
 void P_CheckMobjTrigger(mobj_t *mobj, boolean pushable);
+void P_CheckMobjTouchingSectorActions(mobj_t *mobj);
 sector_t *P_FindPlayerTrigger(player_t *player, line_t *sourceline);
 boolean P_IsPlayerValid(size_t playernum);
 boolean P_CanPlayerTrigger(size_t playernum);
@@ -563,7 +564,25 @@ fixed_t P_FindHighestCeilingSurrounding(sector_t *sec);
 
 INT32 P_FindMinSurroundingLight(sector_t *sector, INT32 max);
 
-void P_CrossSpecialLine(line_t *ld, INT32 side, mobj_t *thing);
+void P_CrossSpecialLine(line_t *line, INT32 side, mobj_t *thing);
+void P_PushSpecialLine(line_t *line, mobj_t *thing);
+void P_ActivateThingSpecial(mobj_t *mo, mobj_t *source);
+
+//
+// Special activation info
+//
+struct activator_t
+{
+	mobj_t *mo;
+	line_t *line;
+	UINT8 side;
+	sector_t *sector;
+	polyobj_t *po;
+	boolean fromLineSpecial; // Backwards compat for ACS
+};
+
+boolean P_CanActivateSpecial(INT16 special);
+boolean P_ProcessSpecial(activator_t *activator, INT16 special, INT32 *args, char **stringargs);
 
 void P_SetupSignExit(player_t *player);
 
@@ -733,17 +752,32 @@ struct ceiling_t
 	// ID
 	INT16 tag;            ///< Tag of linedef executor to run when movement is done.
 	fixed_t origspeed;    ///< The original, "real" speed.
-	INT32 sourceline;     ///< Index of the source linedef
+
+	fixed_t crushHeight;  ///< Crusher height
+	fixed_t crushSpeed;   ///< Crusher speed
+	fixed_t returnHeight; ///< Crusher return height
+	fixed_t returnSpeed;  ///< Crusher return speed
 };
 
 #define CEILSPEED (FRACUNIT)
 
 INT32 EV_DoCeiling(mtag_t tag, line_t *line, ceiling_e type);
+void T_MoveCeiling(ceiling_t *ceiling);
+
+boolean EV_DoRaiseCeilingToHighest(mtag_t tag);
+boolean EV_DoLowerCeilingToLowestFast(mtag_t tag);
+boolean EV_DoInstantRaiseCeiling(mtag_t tag);
+boolean EV_DoMoveCeilingByHeight(mtag_t tag, fixed_t height, fixed_t speed, mtag_t chain, INT32 texture);
+boolean EV_DoInstantMoveCeilingByHeight(mtag_t tag, fixed_t height, INT32 texture);
+boolean EV_DoMoveCeilingByDistance(mtag_t tag, fixed_t distance, fixed_t speed, boolean instant);
+boolean EV_DoBounceCeiling(mtag_t tag, boolean crush, fixed_t crushHeight, fixed_t crushSpeed, fixed_t returnHeight, fixed_t returnSpeed, INT32 delayInit, INT32 delay);
 
 INT32 EV_DoCrush(mtag_t tag, line_t *line, ceiling_e type);
 void T_CrushCeiling(ceiling_t *ceiling);
 
-void T_MoveCeiling(ceiling_t *ceiling);
+boolean EV_DoRaiseAndCrushCeiling(mtag_t tag, fixed_t speed, fixed_t returnSpeed);
+boolean EV_DoCrushBothOnce(mtag_t tag, fixed_t speed);
+boolean EV_DoCrushCeilingOnce(mtag_t tag, fixed_t speed);
 
 //
 // P_FLOOR
@@ -791,7 +825,10 @@ struct floormove_t
 	fixed_t delay;
 	fixed_t delaytimer;
 	INT16 tag;
-	INT32 sourceline;
+	fixed_t crushHeight;
+	fixed_t crushSpeed;
+	fixed_t returnHeight;
+	fixed_t returnSpeed;
 };
 
 struct elevator_t
@@ -812,7 +849,6 @@ struct elevator_t
 	fixed_t delaytimer;
 	fixed_t floorwasheight; // Height the floor WAS at
 	fixed_t ceilingwasheight; // Height the ceiling WAS at
-	line_t *sourceline;
 };
 
 typedef enum
@@ -949,8 +985,23 @@ typedef enum
 
 result_e T_MovePlane(sector_t *sector, fixed_t speed, fixed_t dest, boolean crush,
 	boolean ceiling, INT32 direction);
+
 void EV_DoFloor(mtag_t tag, line_t *line, floor_e floortype);
+void EV_DoRaiseFloorToNearestFast(mtag_t tag);
+void EV_DoInstantLowerFloor(mtag_t tag);
+void EV_DoInstantMoveFloorByHeight(mtag_t tag, fixed_t height, INT32 texture);
+void EV_DoMoveFloorByHeight(mtag_t tag, fixed_t height, fixed_t speed, mtag_t chain, INT32 texture);
+void EV_DoMoveFloorByDistance(mtag_t tag, fixed_t distance, fixed_t speed, boolean instant);
+void EV_DoBounceFloor(mtag_t tag, boolean crush, fixed_t crushHeight, fixed_t crushSpeed, fixed_t returnHeight, fixed_t returnSpeed, INT32 delayInit, INT32 delay);
+void EV_DoCrushFloorOnce(mtag_t tag, fixed_t speed);
+
 void EV_DoElevator(mtag_t tag, line_t *line, elevator_e elevtype);
+void EV_DoElevateDown(mtag_t tag);
+void EV_DoElevateUp(mtag_t tag);
+void EV_DoElevateHighest(mtag_t tag);
+void EV_DoContinuousElevator(mtag_t tag, fixed_t speed, INT32 delayInit, INT32 delay, boolean lowFirst);
+void EV_DoBridgeFall(mtag_t tag);
+
 void EV_CrumbleChain(sector_t *sec, ffloor_t *rover);
 void EV_BounceSector(sector_t *sector, fixed_t momz, line_t *sourceline);
 

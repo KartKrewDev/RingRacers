@@ -67,7 +67,7 @@ endif
 ifdef GCC45
  WFLAGS+=-Wlogical-op
 endif
- WFLAGS+=-Waggregate-return
+ #WFLAGS+=-Waggregate-return
 ifdef HAIKU
 ifdef GCC41
  #WFLAGS+=-Wno-attributes

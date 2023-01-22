@@ -40,6 +40,7 @@
 #include "k_waypoint.h"
 #include "k_director.h"
 #include "k_specialstage.h"
+#include "acs/interface.h"
 
 tic_t leveltime;
 
@@ -338,7 +339,7 @@ if ((*mop = targ) != NULL) // Set new target and if non-NULL, increase its count
 // Rewritten to delete nodes implicitly, by making currentthinker
 // external and using P_RemoveThinkerDelayed() implicitly.
 //
-static inline void P_RunThinkers(void)
+static void P_RunThinkers(void)
 {
 	size_t i;
 
@@ -363,6 +364,10 @@ static inline void P_RunThinkers(void)
 
 	if ((gametyperules & GTR_OVERTIME) && battleovertime.enabled)
 		K_RunBattleOvertime();
+
+	ps_acs_time = I_GetPreciseTime();
+	ACS_Tick();
+	ps_acs_time = I_GetPreciseTime() - ps_acs_time;
 }
 
 //
