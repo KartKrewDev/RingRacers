@@ -16,11 +16,14 @@
 using namespace srb2;
 using namespace srb2::audio;
 
-XmpException::XmpException(int code) : code_(code) {
+XmpException::XmpException(int code) : code_(code)
+{
 }
 
-const char* XmpException::what() const noexcept {
-	switch (code_) {
+const char* XmpException::what() const noexcept
+{
+	switch (code_)
+	{
 	case -XMP_ERROR_INTERNAL:
 		return "XMP_ERROR_INTERNAL";
 	case -XMP_ERROR_FORMAT:
@@ -41,23 +44,27 @@ const char* XmpException::what() const noexcept {
 }
 
 template <size_t C>
-Xmp<C>::Xmp() : data_(), instance_(nullptr), module_loaded_(false), looping_(false) {
+Xmp<C>::Xmp() : data_(), instance_(nullptr), module_loaded_(false), looping_(false)
+{
 }
 
 template <size_t C>
 Xmp<C>::Xmp(std::vector<std::byte> data)
-	: data_(std::move(data)), instance_(nullptr), module_loaded_(false), looping_(false) {
+	: data_(std::move(data)), instance_(nullptr), module_loaded_(false), looping_(false)
+{
 	_init();
 }
 
 template <size_t C>
 Xmp<C>::Xmp(tcb::span<std::byte> data)
-	: data_(data.begin(), data.end()), instance_(nullptr), module_loaded_(false), looping_(false) {
+	: data_(data.begin(), data.end()), instance_(nullptr), module_loaded_(false), looping_(false)
+{
 	_init();
 }
 
 template <size_t C>
-Xmp<C>::Xmp(Xmp<C>&& rhs) noexcept : Xmp<C>() {
+Xmp<C>::Xmp(Xmp<C>&& rhs) noexcept : Xmp<C>()
+{
 	std::swap(data_, rhs.data_);
 	std::swap(instance_, rhs.instance_);
 	std::swap(module_loaded_, rhs.module_loaded_);
@@ -65,7 +72,8 @@ Xmp<C>::Xmp(Xmp<C>&& rhs) noexcept : Xmp<C>() {
 }
 
 template <size_t C>
-Xmp<C>& Xmp<C>::operator=(Xmp<C>&& rhs) noexcept {
+Xmp<C>& Xmp<C>::operator=(Xmp<C>&& rhs) noexcept
+{
 	std::swap(data_, rhs.data_);
 	std::swap(instance_, rhs.instance_);
 	std::swap(module_loaded_, rhs.module_loaded_);
@@ -75,15 +83,18 @@ Xmp<C>& Xmp<C>::operator=(Xmp<C>&& rhs) noexcept {
 };
 
 template <size_t C>
-Xmp<C>::~Xmp() {
-	if (instance_) {
+Xmp<C>::~Xmp()
+{
+	if (instance_)
+	{
 		xmp_free_context(instance_);
 		instance_ = nullptr;
 	}
 }
 
 template <size_t C>
-std::size_t Xmp<C>::play_buffer(tcb::span<std::array<int16_t, C>> buffer) {
+std::size_t Xmp<C>::play_buffer(tcb::span<std::array<int16_t, C>> buffer)
+{
 	SRB2_ASSERT(instance_ != nullptr);
 	SRB2_ASSERT(module_loaded_ == true);
 
@@ -99,7 +110,8 @@ std::size_t Xmp<C>::play_buffer(tcb::span<std::array<int16_t, C>> buffer) {
 }
 
 template <size_t C>
-void Xmp<C>::reset() {
+void Xmp<C>::reset()
+{
 	SRB2_ASSERT(instance_ != nullptr);
 	SRB2_ASSERT(module_loaded_ == true);
 
@@ -107,7 +119,8 @@ void Xmp<C>::reset() {
 }
 
 template <size_t C>
-float Xmp<C>::duration_seconds() const {
+float Xmp<C>::duration_seconds() const
+{
 	SRB2_ASSERT(instance_ != nullptr);
 	SRB2_ASSERT(module_loaded_ == true);
 
@@ -127,7 +140,8 @@ float Xmp<C>::position_seconds() const {
 }
 
 template <size_t C>
-void Xmp<C>::seek(int position_ms) {
+void Xmp<C>::seek(int position_ms)
+{
 	SRB2_ASSERT(instance_ != nullptr);
 	SRB2_ASSERT(module_loaded_ == true);
 
@@ -137,7 +151,8 @@ void Xmp<C>::seek(int position_ms) {
 }
 
 template <size_t C>
-void Xmp<C>::_init() {
+void Xmp<C>::_init()
+{
 	if (instance_)
 		return;
 
@@ -147,12 +162,14 @@ void Xmp<C>::_init() {
 		throw std::logic_error("Insufficient data from stream");
 
 	instance_ = xmp_create_context();
-	if (instance_ == nullptr) {
+	if (instance_ == nullptr)
+	{
 		throw std::bad_alloc();
 	}
 
 	int result = xmp_load_module_from_memory(instance_, data_.data(), data_.size());
-	if (result != 0) {
+	if (result != 0)
+	{
 		xmp_free_context(instance_);
 		instance_ = nullptr;
 		throw XmpException(result);
@@ -160,11 +177,13 @@ void Xmp<C>::_init() {
 	module_loaded_ = true;
 
 	int flags = 0;
-	if constexpr (C == 1) {
+	if constexpr (C == 1)
+	{
 		flags |= XMP_FORMAT_MONO;
 	}
 	result = xmp_start_player(instance_, 44100, flags);
-	if (result != 0) {
+	if (result != 0)
+	{
 		xmp_release_module(instance_);
 		module_loaded_ = false;
 		xmp_free_context(instance_);

@@ -2017,14 +2017,15 @@ static void P_3dMovement(player_t *player)
 	if (onground && player->curshield == KSHIELD_TOP && (K_GetKartButtons(player) & BT_DRIFT) != BT_DRIFT && (player->oldcmd.buttons & BT_DRIFT))
 	{
 		const fixed_t gmin = FRACUNIT/4;
-		const fixed_t gmax = 5*FRACUNIT/2;
+		const fixed_t gmax = 3*FRACUNIT;
 
 		const fixed_t grindfactor = (gmax - gmin) / GARDENTOP_MAXGRINDTIME;
 		const fixed_t grindscale = gmin + (player->topdriftheld * grindfactor);
 
 		const fixed_t speed = R_PointToDist2(0, 0, player->mo->momx, player->mo->momy);
+		const fixed_t minspeed = 3 * K_GetKartSpeed(player, false, false) / 5; // 60% top speed
 
-		P_InstaThrust(player->mo, player->mo->angle, FixedMul(speed, grindscale));
+		P_InstaThrust(player->mo, player->mo->angle, FixedMul(max(speed, minspeed), grindscale));
 
 		player->topdriftheld = 0;/* reset after release */
 	}
@@ -4237,11 +4238,21 @@ void P_PlayerThink(player_t *player)
 		{
 			if (player->charflags & SF_IRONMAN) // no fakeskin yet
 			{
-				if (leveltime >= starttime && !player->exiting)
+				if (leveltime >= starttime
+					&& !player->exiting
+					&& player->mo->health > 0
+					&& (player->respawn.state == RESPAWNST_NONE
+						|| (player->respawn.state == RESPAWNST_DROP && !player->respawn.timer))
+					&& !P_PlayerInPain(player))
 				{
 					if (player->fakeskin != MAXSKINS)
 					{
 						SetFakePlayerSkin(player, player->fakeskin);
+						if (player->spectator == false)
+						{
+							S_StartSound(player->mo, sfx_kc33);
+							K_SpawnMagicianParticles(player->mo, 5);
+						}
 					}
 					else if (!(gametyperules & GTR_CIRCUIT))
 					{

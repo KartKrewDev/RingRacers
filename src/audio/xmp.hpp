@@ -7,7 +7,7 @@
 // See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
 
-	#ifndef __SRB2_AUDIO_XMP_HPP__
+#ifndef __SRB2_AUDIO_XMP_HPP__
 #define __SRB2_AUDIO_XMP_HPP__
 
 #include <array>
@@ -22,9 +22,11 @@
 
 #include "../io/streams.hpp"
 
-namespace srb2::audio {
+namespace srb2::audio
+{
 
-class XmpException : public std::exception {
+class XmpException : public std::exception
+{
 	int code_;
 
 public:
@@ -33,7 +35,8 @@ public:
 };
 
 template <size_t C>
-class Xmp final {
+class Xmp final
+{
 	std::vector<std::byte> data_;
 	xmp_context instance_;
 	bool module_loaded_;
@@ -69,7 +72,8 @@ extern template class Xmp<1>;
 extern template class Xmp<2>;
 
 template <size_t C, typename I, typename std::enable_if_t<srb2::io::IsInputStreamV<I>, int> = 0>
-inline Xmp<C> load_xmp(I& stream) {
+inline Xmp<C> load_xmp(I& stream)
+{
 	std::vector<std::byte> data = srb2::io::read_to_vec(stream);
 	return Xmp<C> {std::move(data)};
 }

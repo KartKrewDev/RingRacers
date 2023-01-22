@@ -75,6 +75,7 @@
 #include "doomstat.h"
 #include "m_random.h" // P_ClearRandom
 #include "k_specialstage.h"
+#include "acs/interface.h"
 
 #ifdef HWRENDER
 #include "hardware/hw_main.h" // 3D View Rendering
@@ -1140,6 +1141,7 @@ static void IdentifyVersion(void)
 #if defined(DEVELOP) && defined(UNLOCKTESTING)
 	D_AddFile(startupiwads, va(pandf,srb2waddir,UNLOCKNAME));
 #endif
+	D_AddFile(startupiwads, va(pandf,srb2waddir,"shaders.pk3"));
 ////
 #undef TEXTURESNAME
 #undef MAPSNAME
@@ -1465,6 +1467,7 @@ void D_SRB2Main(void)
 #endif
 
 #endif //ifndef DEVELOP
+	mainwads++; // shaders.pk3
 
 	// Do it before P_InitMapData because PNG patch
 	// conversion sometimes needs the palette
@@ -1615,6 +1618,10 @@ void D_SRB2Main(void)
 	CONS_Printf("ST_Init(): Init status bar.\n");
 	ST_Init();
 	CON_SetLoadingProgress(LOADED_STINIT);
+
+	CONS_Printf("ACS_Init(): Init Action Code Script VM.\n");
+	ACS_Init();
+	CON_SetLoadingProgress(LOADED_ACSINIT);
 
 	//------------------------------------------------ COMMAND LINE PARAMS
 

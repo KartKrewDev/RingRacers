@@ -13,10 +13,12 @@
 #include "source.hpp"
 #include "xmp.hpp"
 
-namespace srb2::audio {
+namespace srb2::audio
+{
 
 template <size_t C>
-class XmpPlayer final : public Source<C> {
+class XmpPlayer final : public Source<C>
+{
 	Xmp<C> xmp_;
 	std::vector<std::array<int16_t, C>> buf_;
 

@@ -2,6 +2,8 @@
 /// \brief Profile Controls Editor
 
 #include "../k_menu.h"
+#include "../s_sound.h"
+#include "../i_joy.h" // for joystick menu controls
 
 menuitem_t OPTIONS_ProfileControls[] = {
 
@@ -108,3 +110,339 @@ menu_t OPTIONS_ProfileControlsDef = {
 	NULL,
 	M_ProfileControlsInputs,
 };
+
+// sets whatever device has had its key pressed to the active device.
+// 20/05/22: Commented out for now but not deleted as it might still find some use in the future?
+/*
+static void SetDeviceOnPress(void)
+{
+	UINT8 i;
+
+	for (i=0; i < MAXDEVICES; i++)
+	{
+		if (deviceResponding[i])
+		{
+			CV_SetValue(&cv_usejoystick[0], i);	// Force-set this joystick as the current joystick we're using for P1 (which is the only one controlling menus)
+			CONS_Printf("SetDeviceOnPress: Device for %d set to %d\n", 0, i);
+			return;
+		}
+	}
+}
+*/
+
+void M_HandleProfileControls(void)
+{
+	UINT8 maxscroll = currentMenu->numitems - 5;
+	M_OptionsTick();
+
+	optionsmenu.contx += (optionsmenu.tcontx - optionsmenu.contx)/2;
+	optionsmenu.conty += (optionsmenu.tconty - optionsmenu.conty)/2;
+
+	if (abs(optionsmenu.contx - optionsmenu.tcontx) < 2 && abs(optionsmenu.conty - optionsmenu.tconty) < 2)
+	{
+		optionsmenu.contx = optionsmenu.tcontx;
+		optionsmenu.conty = optionsmenu.tconty;	// Avoid awkward 1 px errors.
+	}
+
+	optionsmenu.controlscroll = itemOn - 3;	// very barebones scrolling, but it works just fine for our purpose.
+	if (optionsmenu.controlscroll > maxscroll)
+		optionsmenu.controlscroll = maxscroll;
+
+	if (optionsmenu.controlscroll < 0)
+		optionsmenu.controlscroll = 0;
+
+	// bindings, cancel if timer is depleted.
+	if (optionsmenu.bindcontrol)
+	{
+		optionsmenu.bindtimer--;
+		if (!optionsmenu.bindtimer)
+		{
+			optionsmenu.bindcontrol = 0;		// we've gone past the max, just stop.
+		}
+
+	}
+}
+
+void M_ProfileTryController(INT32 choice)
+{
+	(void)choice;
+
+	optionsmenu.trycontroller = TICRATE*5;
+
+	// Apply these controls right now on P1's end.
+	memcpy(&gamecontrol[0], optionsmenu.tempcontrols, sizeof(gamecontroldefault));
+}
+
+static void M_ProfileControlSaveResponse(INT32 choice)
+{
+	if (choice == MA_YES)
+	{
+		SINT8 belongsto = PR_ProfileUsedBy(optionsmenu.profile);
+		// Save the profile
+		optionsmenu.profile->kickstartaccel = cv_dummyprofilekickstart.value;
+		memcpy(&optionsmenu.profile->controls, optionsmenu.tempcontrols, sizeof(gamecontroldefault));
+
+		// If this profile is in-use by anyone, apply the changes immediately upon exiting.
+		// Don't apply the profile itself as that would lead to issues mid-game.
+		if (belongsto > -1 && belongsto < MAXSPLITSCREENPLAYERS)
+		{
+			memcpy(&gamecontrol[belongsto], optionsmenu.tempcontrols, sizeof(gamecontroldefault));
+			CV_StealthSetValue(&cv_kickstartaccel[belongsto], cv_dummyprofilekickstart.value);
+		}
+
+		M_GoBack(0);
+	}
+}
+
+void M_ProfileControlsConfirm(INT32 choice)
+{
+	(void)choice;
+
+	//M_StartMessage(M_GetText("Exiting will save the control changes\nfor this Profile.\nIs this okay?\n\nPress (A) to confirm or (B) to cancel"), FUNCPTRCAST(M_ProfileControlSaveResponse), MM_YESNO);
+	// TODO: Add a graphic for controls saving, instead of obnoxious prompt.
+
+	M_ProfileControlSaveResponse(MA_YES);
+
+	optionsmenu.profile->kickstartaccel = cv_dummyprofilekickstart.value;		// Make sure to save kickstart accel.
+
+	// Reapply player 1's real profile.
+	if (cv_currprofile.value > -1)
+	{
+		PR_ApplyProfile(cv_lastprofile[0].value, 0);
+	}
+}
+
+boolean M_ProfileControlsInputs(INT32 ch)
+{
+	const UINT8 pid = 0;
+	(void)ch;
+
+	// By default, accept all inputs.
+	if (optionsmenu.trycontroller)
+	{
+		if (menucmd[pid].dpad_ud || menucmd[pid].dpad_lr || menucmd[pid].buttons)
+		{
+			optionsmenu.trycontroller = 5*TICRATE;
+		}
+		else
+		{
+			optionsmenu.trycontroller--;
+		}
+
+		if (optionsmenu.trycontroller == 0)
+		{
+			// Reset controls to that of the current profile.
+			profile_t *cpr = PR_GetProfile(cv_currprofile.value);
+			if (cpr == NULL)
+				cpr = PR_GetProfile(0); // Creating a profile at boot, revert to guest profile
+			memcpy(&gamecontrol[0], cpr->controls, sizeof(gamecontroldefault));
+		}
+
+		return true;
+	}
+
+	if (optionsmenu.bindcontrol)
+		return true;	// Eat all inputs there. We'll use a stupid hack in M_Responder instead.
+
+	//SetDeviceOnPress();	// Update device constantly so that we don't stay stuck with otpions saying a device is unavailable just because we're mapping multiple devices...
+
+	if (M_MenuExtraPressed(pid))
+	{
+		// check if we're on a valid menu option...
+		if (currentMenu->menuitems[itemOn].mvar1)
+		{
+			// clear controls for that key
+			INT32 i;
+
+			for (i = 0; i < MAXINPUTMAPPING; i++)
+				optionsmenu.tempcontrols[currentMenu->menuitems[itemOn].mvar1][i] = KEY_NULL;
+
+			S_StartSound(NULL, sfx_s3k66);
+		}
+		M_SetMenuDelay(pid);
+		return true;
+	}
+	else if (M_MenuBackPressed(pid))
+	{
+		M_ProfileControlsConfirm(0);
+		M_SetMenuDelay(pid);
+		return true;
+	}
+
+	return false;
+}
+
+void M_ProfileSetControl(INT32 ch)
+{
+	INT32 controln = currentMenu->menuitems[itemOn].mvar1;
+	UINT8 i;
+	(void) ch;
+
+	optionsmenu.bindcontrol = 1;	// Default to control #1
+
+	for (i = 0; i < MAXINPUTMAPPING; i++)
+	{
+		if (optionsmenu.tempcontrols[controln][i] == KEY_NULL)
+		{
+			optionsmenu.bindcontrol = i+1;
+			break;
+		}
+	}
+
+	// If we could find a null key to map into, map there.
+	// Otherwise, this will stay at 1 which means we'll overwrite the first bound control.
+
+	optionsmenu.bindtimer = TICRATE*5;
+}
+
+// Map the event to the profile.
+
+#define KEYHOLDFOR 1
+void M_MapProfileControl(event_t *ev)
+{
+	INT32 c = 0;
+	UINT8 n = optionsmenu.bindcontrol-1;					// # of input to bind
+	INT32 controln = currentMenu->menuitems[itemOn].mvar1;	// gc_
+	UINT8 where = n;										// By default, we'll save the bind where we're supposed to map.
+	INT32 i;
+
+	//SetDeviceOnPress();	// Update cv_usejoystick
+
+	// Only consider keydown and joystick events to make sure we ignore ev_mouse and other events
+	// See also G_MapEventsToControls
+	switch (ev->type)
+	{
+		case ev_keydown:
+			if (ev->data1 < NUMINPUTS)
+			{
+				c = ev->data1;
+			}
+#ifdef PARANOIA
+			else
+			{
+				CONS_Debug(DBG_GAMELOGIC, "Bad downkey input %d\n", ev->data1);
+			}
+#endif
+			break;
+		case ev_joystick:
+			if (ev->data1 >= JOYAXES)
+			{
+#ifdef PARANOIA
+				CONS_Debug(DBG_GAMELOGIC, "Bad joystick axis event %d\n", ev->data1);
+#endif
+				return;
+			}
+			else
+			{
+				INT32 deadzone = deadzone = (JOYAXISRANGE * cv_deadzone[0].value) / FRACUNIT; // TODO how properly account for different deadzone cvars for different devices
+				boolean responsivelr = ((ev->data2 != INT32_MAX) && (abs(ev->data2) >= deadzone));
+				boolean responsiveud = ((ev->data3 != INT32_MAX) && (abs(ev->data3) >= deadzone));
+
+				i = ev->data1;
+
+				if (i >= JOYANALOGS)
+				{
+					// The trigger axes are handled specially.
+					i -= JOYANALOGS;
+
+					if (responsivelr)
+					{
+						c = KEY_AXIS1 + (JOYANALOGS * 4) + (i * 2);
+					}
+					else if (responsiveud)
+					{
+						c = KEY_AXIS1 + (JOYANALOGS * 4) + (i * 2) + 1;
+					}
+				}
+				else
+				{
+					// Actual analog sticks
+
+					// Only consider unambiguous assignment.
+					if (responsivelr == responsiveud)
+						return;
+
+					if (responsivelr)
+					{
+						if (ev->data2 < 0)
+						{
+							// Left
+							c = KEY_AXIS1 + (i * 4);
+						}
+						else
+						{
+							// Right
+							c = KEY_AXIS1 + (i * 4) + 1;
+						}
+					}
+					else //if (responsiveud)
+					{
+						if (ev->data3 < 0)
+						{
+							// Up
+							c = KEY_AXIS1 + (i * 4) + 2;
+						}
+						else
+						{
+							// Down
+							c = KEY_AXIS1 + (i * 4) + 3;
+						}
+					}
+				}
+			}
+			break;
+		default:
+			return;
+	}
+
+	// safety result
+	if (!c)
+		return;
+
+	// Set menu delay regardless of what we're doing to avoid stupid stuff.
+	M_SetMenuDelay(0);
+
+	// Check if this particular key (c) is already bound in any slot.
+	// If that's the case, simply do nothing.
+	for (i = 0; i < MAXINPUTMAPPING; i++)
+	{
+		if (optionsmenu.tempcontrols[controln][i] == c)
+		{
+			optionsmenu.bindcontrol = 0;
+			return;
+		}
+	}
+
+	// With the way we do things, there cannot be instances of 'gaps' within the controls, so we don't need to pretend like we need to handle that.
+	// Unless of course you tamper with the cfg file, but then it's *your* fault, not mine.
+
+	optionsmenu.tempcontrols[controln][where] = c;
+	optionsmenu.bindcontrol = 0;	// not binding anymore
+
+	// If possible, reapply the profile...
+	// 19/05/22: Actually, no, don't do that, it just fucks everything up in too many cases.
+
+	/*
+	if (gamestate == GS_MENU)	// In menu? Apply this to P1, no questions asked.
+	{
+		// Apply the profile's properties to player 1 but keep the last profile cv to p1's ACTUAL profile to revert once we exit.
+		UINT8 lastp = cv_lastprofile[0].value;
+		PR_ApplyProfile(PR_GetProfileNum(optionsmenu.profile), 0);
+		CV_StealthSetValue(&cv_lastprofile[0], lastp);
+	}
+	else	// != GS_MENU
+	{
+		// ONLY apply the profile if it's in use by anything currently.
+		UINT8 pnum = PR_GetProfileNum(optionsmenu.profile);
+		for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
+		{
+			if (cv_lastprofile[i].value == pnum)
+			{
+				PR_ApplyProfile(pnum, i);
+				break;
+			}
+		}
+	}
+	*/
+}
+#undef KEYHOLDFOR

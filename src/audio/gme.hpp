@@ -24,9 +24,11 @@
 
 #include "../io/streams.hpp"
 
-namespace srb2::audio {
+namespace srb2::audio
+{
 
-class GmeException : public std::exception {
+class GmeException : public std::exception
+{
 	std::string msg_;
 
 public:
@@ -35,7 +37,8 @@ public:
 	virtual const char* what() const noexcept override { return msg_.c_str(); }
 };
 
-class Gme {
+class Gme
+{
 	std::vector<std::byte> memory_data_;
 	Music_Emu* instance_;
 
@@ -64,7 +67,8 @@ private:
 };
 
 template <typename I, typename std::enable_if_t<srb2::io::IsInputStreamV<I>, int> = 0>
-inline Gme load_gme(I& stream) {
+inline Gme load_gme(I& stream)
+{
 	std::vector<std::byte> data = srb2::io::read_to_vec(stream);
 	return Gme {std::move(data)};
 }

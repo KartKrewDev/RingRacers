@@ -600,10 +600,11 @@ void S_StartSoundAtVolume(const void *origin_p, sfxenum_t sfx_id, INT32 volume)
 
 	sfx = &S_sfx[sfx_id];
 
-	if (sfx->skinsound != -1 && origin && origin->skin)
+	if (sfx->skinsound != -1 && origin && (origin->player || origin->skin))
 	{
 		// redirect player sound to the sound in the skin table
-		sfx_id = ((skin_t *)origin->skin)->soundsid[sfx->skinsound];
+		skin_t *skin = (origin->player ? &skins[origin->player->skin] : ((skin_t *)origin->skin));
+		sfx_id = skin->soundsid[sfx->skinsound];
 		sfx = &S_sfx[sfx_id];
 	}
 
@@ -2331,24 +2332,6 @@ void S_ResumeAudio(void)
 	S_AdjustMusicStackTics();
 }
 
-void S_DisableSound(void)
-{
-	if (sound_started && !sound_disabled)
-	{
-		sound_disabled = true;
-		S_StopSounds();
-	}
-}
-
-void S_EnableSound(void)
-{
-	if (sound_started && sound_disabled)
-	{
-		sound_disabled = false;
-		S_InitSfxChannels(cv_soundvolume.value);
-	}
-}
-
 void S_SetMusicVolume(INT32 digvolume)
 {
 	if (digvolume < 0)
@@ -2696,13 +2679,8 @@ static void PlaySoundIfUnfocused_OnChange(void)
 	if (!cv_gamesounds.value)
 		return;
 
-	if (window_notinfocus)
-	{
-		if (cv_playsoundifunfocused.value)
-			S_DisableSound();
-		else
-			S_EnableSound();
-	}
+	if (window_notinfocus && !cv_playsoundifunfocused.value)
+		S_StopSounds();
 }
 
 #ifdef HAVE_OPENMPT

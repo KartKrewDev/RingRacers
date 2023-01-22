@@ -2,6 +2,9 @@
 /// \brief Options Menu
 
 #include "../k_menu.h"
+#include "../k_grandprix.h" // K_CanChangeRules
+#include "../m_cond.h" // Condition Sets
+#include "../s_sound.h"
 
 // options menu --  see mopt_e
 menuitem_t OPTIONS_Main[] =
@@ -47,3 +50,181 @@ menu_t OPTIONS_MainDef = {
 	NULL,
 	M_OptionsInputs
 };
+
+struct optionsmenu_s optionsmenu;
+
+void M_ResetOptions(void)
+{
+	optionsmenu.ticker = 0;
+	optionsmenu.offset = 0;
+
+	optionsmenu.optx = 0;
+	optionsmenu.opty = 0;
+	optionsmenu.toptx = 0;
+	optionsmenu.topty = 0;
+
+	// BG setup:
+	optionsmenu.currcolour = OPTIONS_MainDef.extra1;
+	optionsmenu.lastcolour = 0;
+	optionsmenu.fade = 0;
+
+	// For profiles:
+	memset(setup_player, 0, sizeof(setup_player));
+	optionsmenu.profile = NULL;
+}
+
+void M_InitOptions(INT32 choice)
+{
+	(void)choice;
+
+	OPTIONS_MainDef.menuitems[mopt_gameplay].status = IT_STRING | IT_TRANSTEXT;
+	OPTIONS_MainDef.menuitems[mopt_server].status = IT_STRING | IT_TRANSTEXT;
+
+	// enable gameplay & server options under the right circumstances.
+	if (gamestate == GS_MENU
+		|| ((server || IsPlayerAdmin(consoleplayer)) && K_CanChangeRules(false)))
+	{
+		OPTIONS_MainDef.menuitems[mopt_gameplay].status = IT_STRING | IT_SUBMENU;
+		OPTIONS_MainDef.menuitems[mopt_server].status = IT_STRING | IT_SUBMENU;
+		OPTIONS_GameplayDef.menuitems[gopt_encore].status =
+			(M_SecretUnlocked(SECRET_ENCORE, false) ? (IT_STRING | IT_CVAR) : IT_DISABLED);
+	}
+
+	OPTIONS_DataDef.menuitems[dopt_erase].status = (gamestate == GS_MENU
+		? (IT_STRING | IT_SUBMENU)
+		: (IT_TRANSTEXT2 | IT_SPACE));
+
+	M_ResetOptions();
+
+	// So that pause doesn't go to the main menu...
+	OPTIONS_MainDef.prevMenu = currentMenu;
+
+	// This will disable or enable the textboxes of the affected menus before we get to them.
+	Screenshot_option_Onchange();
+	Moviemode_mode_Onchange();
+	Moviemode_option_Onchange();
+	Addons_option_Onchange();
+
+	M_SetupNextMenu(&OPTIONS_MainDef, false);
+}
+
+// Prepares changing the colour of the background
+void M_OptionsChangeBGColour(INT16 newcolour)
+{
+	optionsmenu.fade = 10;
+	optionsmenu.lastcolour = optionsmenu.currcolour;
+	optionsmenu.currcolour = newcolour;
+}
+
+boolean M_OptionsQuit(void)
+{
+	optionsmenu.toptx = 140-1;
+	optionsmenu.topty = 70+1;
+
+	// Reset button behaviour because profile menu is different, since of course it is.
+	if (optionsmenu.resetprofilemenu)
+	{
+		optionsmenu.profilemenu = false;
+		optionsmenu.profile = NULL;
+		optionsmenu.resetprofilemenu = false;
+	}
+
+	return true;	// Always allow quitting, duh.
+}
+
+void M_OptionsTick(void)
+{
+	optionsmenu.offset /= 2;
+	optionsmenu.ticker++;
+
+	optionsmenu.optx += (optionsmenu.toptx - optionsmenu.optx)/2;
+	optionsmenu.opty += (optionsmenu.topty - optionsmenu.opty)/2;
+
+	if (abs(optionsmenu.optx - optionsmenu.opty) < 2)
+	{
+		optionsmenu.optx = optionsmenu.toptx;
+		optionsmenu.opty = optionsmenu.topty;	// Avoid awkward 1 px errors.
+	}
+
+	// Move the button for cool animations
+	if (currentMenu == &OPTIONS_MainDef)
+	{
+		M_OptionsQuit();	// ...So now this is used here.
+	}
+	else if (optionsmenu.profile == NULL)	// Not currently editing a profile (otherwise we're using these variables for other purposes....)
+	{
+		// I don't like this, it looks like shit but it needs to be done..........
+		if (optionsmenu.profilemenu)
+		{
+			optionsmenu.toptx = 420;
+			optionsmenu.topty = 70+1;
+		}
+		else if (currentMenu == &OPTIONS_GameplayItemsDef)
+		{
+			optionsmenu.toptx = -160; // off the side of the screen
+			optionsmenu.topty = 50;
+		}
+		else
+		{
+			optionsmenu.toptx = 160;
+			optionsmenu.topty = 50;
+		}
+	}
+
+	// Handle the background stuff:
+	if (optionsmenu.fade)
+		optionsmenu.fade--;
+
+	// change the colour if we aren't matching the current menu colour
+	if (optionsmenu.currcolour != currentMenu->extra1)
+		M_OptionsChangeBGColour(currentMenu->extra1);
+
+	// And one last giggle...
+	if (shitsfree)
+		shitsfree--;
+}
+
+boolean M_OptionsInputs(INT32 ch)
+{
+
+	const UINT8 pid = 0;
+	(void)ch;
+
+	if (menucmd[pid].dpad_ud > 0)
+	{
+		M_SetMenuDelay(pid);
+		optionsmenu.offset += 48;
+		M_NextOpt();
+		S_StartSound(NULL, sfx_s3k5b);
+
+		if (itemOn == 0)
+			optionsmenu.offset -= currentMenu->numitems*48;
+
+
+		return true;
+	}
+	else if (menucmd[pid].dpad_ud < 0)
+	{
+		M_SetMenuDelay(pid);
+		optionsmenu.offset -= 48;
+		M_PrevOpt();
+		S_StartSound(NULL, sfx_s3k5b);
+
+		if (itemOn == currentMenu->numitems-1)
+			optionsmenu.offset += currentMenu->numitems*48;
+
+
+		return true;
+	}
+	else if (M_MenuConfirmPressed(pid))
+	{
+
+		if (currentMenu->menuitems[itemOn].status & IT_TRANSTEXT)
+			return true;	// No.
+
+		optionsmenu.optx = 140;
+		optionsmenu.opty = 70;	// Default position for the currently selected option.
+		return false;	// Don't eat.
+	}
+	return false;
+}

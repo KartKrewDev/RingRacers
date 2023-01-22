@@ -1152,6 +1152,28 @@ sfxinfo_t S_sfx[NUMSFX] =
   {"grownd", false,  64, 16, -1, NULL, 0,        -1,  -1, LUMPERROR, ""}, // SF_X8AWAYSOUND
   {"invind", false,  64, 16, -1, NULL, 0,        -1,  -1, LUMPERROR, ""}, // SF_X8AWAYSOUND
 
+    // SRB2Kart - Claw SFX
+  {"claw01", false,  64, 64, -1, NULL, 0,        -1,  -1, LUMPERROR, ""}, // SF_X2AWAYSOUND
+  {"claw02", false,  64, 64, -1, NULL, 0,        -1,  -1, LUMPERROR, ""}, // SF_X2AWAYSOUND
+  {"claw03", false,  64, 64, -1, NULL, 0,        -1,  -1, LUMPERROR, ""}, // SF_X2AWAYSOUND
+  {"claw04", false,  64, 64, -1, NULL, 0,        -1,  -1, LUMPERROR, ""}, // SF_X2AWAYSOUND
+  {"claw05", false,  64, 64, -1, NULL, 0,        -1,  -1, LUMPERROR, ""}, // SF_X2AWAYSOUND
+  {"claw06", false,  64, 64, -1, NULL, 0,        -1,  -1, LUMPERROR, ""}, // SF_X2AWAYSOUND
+  {"claw07", false,  64, 64, -1, NULL, 0,        -1,  -1, LUMPERROR, ""}, // SF_X2AWAYSOUND
+  {"claw08", false,  64, 64, -1, NULL, 0,        -1,  -1, LUMPERROR, ""}, // SF_X2AWAYSOUND
+  {"claw09", false,  64, 64, -1, NULL, 0,        -1,  -1, LUMPERROR, ""}, // SF_X2AWAYSOUND
+  {"claw10", false,  64, 64, -1, NULL, 0,        -1,  -1, LUMPERROR, ""}, // SF_X2AWAYSOUND
+  {"claw11", false,  64, 64, -1, NULL, 0,        -1,  -1, LUMPERROR, ""}, // SF_X2AWAYSOUND
+  {"claw12", false,  64, 64, -1, NULL, 0,        -1,  -1, LUMPERROR, ""}, // SF_X2AWAYSOUND
+  {"claw13", false,  64, 64, -1, NULL, 0,        -1,  -1, LUMPERROR, ""}, // SF_X2AWAYSOUND
+  {"claw14", false,  64, 64, -1, NULL, 0,        -1,  -1, LUMPERROR, ""}, // SF_X2AWAYSOUND
+  {"claw15", false,  64, 64, -1, NULL, 0,        -1,  -1, LUMPERROR, ""}, // SF_X2AWAYSOUND
+  {"claw16", false,  64, 64, -1, NULL, 0,        -1,  -1, LUMPERROR, ""}, // SF_X2AWAYSOUND
+  {"clawht", false,  64, 8, -1, NULL, 0,         -1,  -1, LUMPERROR, ""}, // SF_X4AWAYSOUND
+  {"clawzm", false,  64, 8, -1, NULL, 0,         -1,  -1, LUMPERROR, ""}, // SF_X4AWAYSOUND
+  {"clawk1", false,  64, 16, -1, NULL, 0,         -1,  -1, LUMPERROR, ""}, // SF_X8AWAYSOUND
+  {"clawk2", false,  64, 16, -1, NULL, 0,         -1,  -1, LUMPERROR, ""}, // SF_X8AWAYSOUND
+
   // SRB2Kart - Engine sounds
   // Engine class A
   {"krta00", false,  48, 65, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},

@@ -116,3 +116,8 @@ lib:=../libs/discord-rpc/win$(32)-dynamic
 DISCORDRPC_opts:=-I$(lib)/include
 DISCORDRPC_libs:=-L$(lib)/lib
 $(eval $(call _set,DISCORDRPC))
+
+lib:=../libs/ACSVM
+ACSVM_opts:=-I$(lib)/include
+ACSVM_libs:=-L$(lib)/lib
+$(eval $(call _set,ACSVM))

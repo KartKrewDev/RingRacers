@@ -30,20 +30,26 @@ using std::size_t;
 using namespace srb2::audio;
 using namespace srb2;
 
-namespace {
+namespace
+{
 
 // Utility for leveraging Resampler...
-class SoundChunkSource : public Source<1> {
+class SoundChunkSource : public Source<1>
+{
 public:
 	explicit SoundChunkSource(std::unique_ptr<SoundChunk>&& chunk)
-		: chunk_(std::forward<std::unique_ptr<SoundChunk>>(chunk)) {}
+		: chunk_(std::forward<std::unique_ptr<SoundChunk>>(chunk))
+	{
+	}
 
-	virtual size_t generate(tcb::span<Sample<1>> buffer) override final {
+	virtual size_t generate(tcb::span<Sample<1>> buffer) override final
+	{
 		if (!chunk_)
 			return 0;
 
 		size_t written = 0;
-		for (; pos_ < chunk_->samples.size() && written < buffer.size(); pos_++) {
+		for (; pos_ < chunk_->samples.size() && written < buffer.size(); pos_++)
+		{
 			buffer[written] = chunk_->samples[pos_];
 			written++;
 		}
@@ -56,13 +62,15 @@ private:
 };
 
 template <class I>
-std::vector<Sample<1>> generate_to_vec(I& source, std::size_t estimate = 0) {
+std::vector<Sample<1>> generate_to_vec(I& source, std::size_t estimate = 0)
+{
 	std::vector<Sample<1>> generated;
 
 	size_t total = 0;
 	size_t read = 0;
 	generated.reserve(estimate);
-	do {
+	do
+	{
 		generated.resize(total + 4096);
 		read = source.generate(tcb::span {generated.data() + total, 4096});
 		total += read;
@@ -71,7 +79,8 @@ std::vector<Sample<1>> generate_to_vec(I& source, std::size_t estimate = 0) {
 	return generated;
 }
 
-optional<SoundChunk> try_load_dmx(tcb::span<std::byte> data) {
+optional<SoundChunk> try_load_dmx(tcb::span<std::byte> data)
+{
 	io::SpanStream stream {data};
 
 	if (io::remaining(stream) < 8)
@@ -90,14 +99,16 @@ optional<SoundChunk> try_load_dmx(tcb::span<std::byte> data) {
 	stream.seek(io::SeekFrom::kCurrent, 16);
 
 	std::vector<Sample<1>> samples;
-	for (size_t i = 0; i < length; i++) {
+	for (size_t i = 0; i < length; i++)
+	{
 		uint8_t doom_sample = io::read_uint8(stream);
 		float float_sample = audio::sample_to_float(doom_sample);
 		samples.push_back(Sample<1> {float_sample});
 	}
 	size_t samples_len = samples.size();
 
-	if (rate == 44100) {
+	if (rate == 44100)
+	{
 		return SoundChunk {samples};
 	}
 
@@ -110,7 +121,8 @@ optional<SoundChunk> try_load_dmx(tcb::span<std::byte> data) {
 	size_t total = 0;
 	size_t read = 0;
 	resampled.reserve(samples_len * (static_cast<float>(kSampleRate) / rate));
-	do {
+	do
+	{
 		resampled.resize(total + 4096);
 		read = resampler.generate(tcb::span {resampled.data() + total, 4096});
 		total += read;
@@ -120,34 +132,44 @@ optional<SoundChunk> try_load_dmx(tcb::span<std::byte> data) {
 	return SoundChunk {std::move(resampled)};
 }
 
-optional<SoundChunk> try_load_wav(tcb::span<std::byte> data) {
+optional<SoundChunk> try_load_wav(tcb::span<std::byte> data)
+{
 	io::SpanStream stream {data};
 
 	audio::Wav wav;
 	std::size_t sample_rate;
 
-	try {
+	try
+	{
 		wav = audio::load_wav(stream);
-	} catch (const std::exception& ex) {
+	}
+	catch (const std::exception& ex)
+	{
 		return nullopt;
 	}
 
 	sample_rate = wav.sample_rate();
 
-	audio::Resampler<1> resampler(std::make_unique<WavPlayer>(std::move(wav)),
-								  sample_rate / static_cast<float>(kSampleRate));
+	audio::Resampler<1> resampler(
+		std::make_unique<WavPlayer>(std::move(wav)),
+		sample_rate / static_cast<float>(kSampleRate)
+	);
 
 	SoundChunk chunk {generate_to_vec(resampler)};
 	return chunk;
 }
 
-optional<SoundChunk> try_load_ogg(tcb::span<std::byte> data) {
+optional<SoundChunk> try_load_ogg(tcb::span<std::byte> data)
+{
 	std::shared_ptr<audio::OggPlayer<1>> player;
-	try {
+	try
+	{
 		io::SpanStream data_stream {data};
 		audio::Ogg ogg = audio::load_ogg(data_stream);
 		player = std::make_shared<audio::OggPlayer<1>>(std::move(ogg));
-	} catch (...) {
+	}
+	catch (...)
+	{
 		return nullopt;
 	}
 	player->looping(false);
@@ -161,19 +183,26 @@ optional<SoundChunk> try_load_ogg(tcb::span<std::byte> data) {
 	return chunk;
 }
 
-optional<SoundChunk> try_load_gme(tcb::span<std::byte> data) {
+optional<SoundChunk> try_load_gme(tcb::span<std::byte> data)
+{
 	std::shared_ptr<audio::GmePlayer<1>> player;
-	try {
-		if (data[0] == std::byte {0x1F} && data[1] == std::byte {0x8B}) {
+	try
+	{
+		if (data[0] == std::byte {0x1F} && data[1] == std::byte {0x8B})
+		{
 			io::SpanStream stream {data};
 			audio::Gme gme = audio::load_gme(stream);
 			player = std::make_shared<GmePlayer<1>>(std::move(gme));
-		} else {
+		}
+		else
+		{
 			io::ZlibInputStream stream {io::SpanStream(data)};
 			audio::Gme gme = audio::load_gme(stream);
 			player = std::make_shared<GmePlayer<1>>(std::move(gme));
 		}
-	} catch (...) {
+	}
+	catch (...)
+	{
 		return nullopt;
 	}
 	std::vector<Sample<1>> samples {generate_to_vec(*player)};
@@ -183,7 +212,8 @@ optional<SoundChunk> try_load_gme(tcb::span<std::byte> data) {
 
 } // namespace
 
-optional<SoundChunk> srb2::audio::try_load_chunk(tcb::span<std::byte> data) {
+optional<SoundChunk> srb2::audio::try_load_chunk(tcb::span<std::byte> data)
+{
 	optional<SoundChunk> ret;
 
 	ret = try_load_dmx(data);

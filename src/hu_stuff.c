@@ -2126,6 +2126,10 @@ void HU_Drawer(void)
 		V_DrawCenteredString(BASEVIDWIDTH/2, 180, V_YELLOWMAP | V_ALLOWLOWERCASE, resynch_text);
 	}
 
+	// draw song credits
+	if (cv_songcredits.value && !( hu_showscores && (netgame || multiplayer) ))
+		HU_DrawSongCredits();
+
 drawontop:
 	// Opened chat
 	if (chat_on)
@@ -2138,10 +2142,6 @@ drawontop:
 
 	if (cechotimer)
 		HU_DrawCEcho();
-
-	// draw song credits
-	if (cv_songcredits.value && !( hu_showscores && (netgame || multiplayer) ))
-		HU_DrawSongCredits();
 }
 
 //======================================================================

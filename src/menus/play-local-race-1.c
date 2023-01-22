@@ -2,6 +2,7 @@
 /// \brief Race Mode Menu
 
 #include "../k_menu.h"
+#include "../m_cond.h" // Condition Sets
 
 menuitem_t PLAY_RaceGamemodesMenu[] =
 {
@@ -18,3 +19,22 @@ menuitem_t PLAY_RaceGamemodesMenu[] =
 };
 
 menu_t PLAY_RaceGamemodesDef = KARTGAMEMODEMENU(PLAY_RaceGamemodesMenu, &PLAY_GamemodesDef);
+
+void M_SetupRaceMenu(INT32 choice)
+{
+	(void)choice;
+
+	PLAY_RaceGamemodesDef.prevMenu = currentMenu;
+
+	// Time Attack disabled
+	PLAY_RaceGamemodesMenu[2].status = IT_DISABLED;
+
+	// Time Attack is 1P only
+	if (cv_splitplayers.value <= 1
+	 && M_SecretUnlocked(SECRET_TIMEATTACK, true))
+	{
+		PLAY_RaceGamemodesMenu[2].status = IT_STRING | IT_CALL;
+	}
+
+	M_SetupNextMenu(&PLAY_RaceGamemodesDef, false);
+}

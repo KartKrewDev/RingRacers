@@ -249,20 +249,11 @@ static boolean P_SpecialIsLinedefCrossType(line_t *ld)
 {
 	boolean linedefcrossspecial = false;
 
-	switch (ld->special)
+	// Take anything with any cross type for now,
+	// we'll have to filter it down later...
+	if (ld->activation & (SPAC_CROSS | SPAC_CROSSMONSTER | SPAC_CROSSMISSILE))
 	{
-		case 2001: // Finish line
-		case 2003: // Respawn line
-		{
-			linedefcrossspecial = true;
-		}
-		break;
-
-		default:
-		{
-			linedefcrossspecial = false;
-		}
-		break;
+		linedefcrossspecial = P_CanActivateSpecial(ld->special);
 	}
 
 	return linedefcrossspecial;

@@ -15,10 +15,12 @@
 #include "gme.hpp"
 #include "source.hpp"
 
-namespace srb2::audio {
+namespace srb2::audio
+{
 
 template <size_t C>
-class GmePlayer : public Source<C> {
+class GmePlayer : public Source<C>
+{
 	Gme gme_;
 	std::vector<short> buf_;
 

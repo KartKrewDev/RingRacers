@@ -3,6 +3,7 @@ target_sources(SRB2SDL2 PRIVATE
 	extras-addons.c
 	extras-challenges.c
 	extras-replay-hut.c
+	extras-statistics.c
 	main-1.c
 	main-profile-select.c
 	options-1.c
@@ -35,6 +36,7 @@ target_sources(SRB2SDL2 PRIVATE
 	play-online-1.c
 	play-online-host.c
 	play-online-join-ip.c
+	play-online-room-select.c
 	play-online-server-browser.c
 )
 

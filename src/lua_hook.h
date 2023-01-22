@@ -81,7 +81,7 @@ automatically.
 	X (VoteThinker),/* Y_VoteTicker */\
 
 #define STRING_HOOK_LIST(X) \
-	X (LinedefExecute),\
+	X (SpecialExecute),\
 	X (ShouldJingleContinue),/* should jingle of the given music continue playing */\
 
 #define HUD_HOOK_LIST(X) \
@@ -138,7 +138,7 @@ int  LUA_HookShouldDamage(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT
 int  LUA_HookMobjDamage(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 damage, UINT8 damagetype);
 int  LUA_HookMobjDeath(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damagetype);
 int  LUA_HookMobjMoveBlocked(mobj_t *, mobj_t *, line_t *);
-void LUA_HookLinedefExecute(line_t *, mobj_t *, sector_t *);
+void LUA_HookSpecialExecute(activator_t *activator, INT32 *args, char **stringargs);
 int  LUA_HookPlayerMsg(int source, int target, int flags, char *msg, int mute);
 int  LUA_HookHurtMsg(player_t *, mobj_t *inflictor, mobj_t *source, UINT8 damagetype);
 int  LUA_HookMapThingSpawn(mobj_t *, mapthing_t *);

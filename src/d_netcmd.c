@@ -448,6 +448,20 @@ consvar_t cv_kartdebugdirector = CVAR_INIT ("debugdirector", "Off", CV_CHEAT, CV
 consvar_t cv_spbtest = CVAR_INIT ("spbtest", "Off", CV_CHEAT|CV_NETVAR, CV_OnOff, NULL);
 consvar_t cv_gptest = CVAR_INIT ("gptest", "Off", CV_CHEAT|CV_NETVAR, CV_OnOff, NULL);
 
+static CV_PossibleValue_t capsuletest_cons_t[] = {
+	{CV_CAPSULETEST_OFF, "Off"},
+	{CV_CAPSULETEST_MULTIPLAYER, "Multiplayer"},
+	{CV_CAPSULETEST_TIMEATTACK, "TimeAttack"},
+	{0, NULL}};
+
+static void CapsuleTest_OnChange(void)
+{
+	if (gamestate == GS_LEVEL)
+		CONS_Printf("Level must be restarted for capsuletest to have effect.\n");
+}
+
+consvar_t cv_capsuletest = CVAR_INIT ("capsuletest", "Off", CV_CHEAT|CV_NETVAR|CV_CALL, capsuletest_cons_t, CapsuleTest_OnChange);
+
 consvar_t cv_reducevfx = CVAR_INIT ("reducevfx", "No", CV_SAVE, CV_YesNo, NULL);
 
 static CV_PossibleValue_t votetime_cons_t[] = {{10, "MIN"}, {3600, "MAX"}, {0, NULL}};

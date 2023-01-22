@@ -1105,6 +1105,7 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 
 	forward = 0;
 	cmd->turning = 0;
+	cmd->aiming = 0;
 
 	if (joystickvector.xaxis != 0)
 	{
@@ -1123,14 +1124,21 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 			cmd->buttons |= BT_BRAKE;
 		}
 
-		if (joystickvector.yaxis < 0)
+		if (G_PlayerInputDown(forplayer, gc_lookback, 0))
 		{
-			forward += MAXPLMOVE;
+			cmd->aiming -= joystickvector.yaxis;
 		}
-
-		if (joystickvector.yaxis > 0)
+		else
 		{
-			forward -= MAXPLMOVE;
+			if (joystickvector.yaxis < 0)
+			{
+				forward += MAXPLMOVE;
+			}
+
+			if (joystickvector.yaxis > 0)
+			{
+				forward -= MAXPLMOVE;
+			}
 		}
 	}
 	else
@@ -1513,7 +1521,7 @@ boolean G_Responder(event_t *ev)
 	if (gameaction == ga_nothing && !demo.quitafterplaying &&
 		((demo.playback && !modeattacking && !demo.title && !multiplayer) || gamestate == GS_TITLESCREEN))
 	{
-		if (ev->type == ev_keydown && ev->data1 != 301 && !(gamestate == GS_TITLESCREEN && finalecount < TICRATE))
+		if (ev->type == ev_keydown)
 		{
 			M_StartControlPanel();
 			return true;
@@ -2292,10 +2300,15 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	}
 	else
 	{
+		UINT32 skinflags = (demo.playback)
+			? demo.skinlist[demo.currentskinid[player]].flags
+			: skins[players[player].skin].flags;
+
 		fakeskin = players[player].fakeskin;
 		kartspeed = players[player].kartspeed;
 		kartweight = players[player].kartweight;
-		charflags = players[player].charflags;
+
+		charflags = (skinflags & SF_IRONMAN) ? skinflags : players[player].charflags;
 	}
 	lastfakeskin = players[player].lastfakeskin;
 

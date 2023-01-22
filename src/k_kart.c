@@ -361,6 +361,7 @@ void K_RegisterKartStuff(void)
 	CV_RegisterVar(&cv_kartdebugdirector);
 	CV_RegisterVar(&cv_spbtest);
 	CV_RegisterVar(&cv_gptest);
+	CV_RegisterVar(&cv_capsuletest);
 
 	CV_RegisterVar(&cv_reducevfx);
 }
@@ -589,6 +590,21 @@ boolean K_TimeAttackRules(void)
 
 	// Use Time Attack gameplay rules with only 1P.
 	return (playing <= 1);
+}
+
+boolean K_CapsuleTimeAttackRules(void)
+{
+	switch (cv_capsuletest.value)
+	{
+		case CV_CAPSULETEST_MULTIPLAYER:
+			return false;
+
+		case CV_CAPSULETEST_TIMEATTACK:
+			return true;
+
+		default:
+			return K_TimeAttackRules();
+	}
 }
 
 //}
@@ -1943,7 +1959,7 @@ void K_SpawnMagicianParticles(mobj_t *mo, int spread)
 	INT32 i;
 	mobj_t *target = mo->target;
 
-	if (P_MobjWasRemoved(target)) 
+	if (!target || P_MobjWasRemoved(target))
 		target = mo;
 
 	for (i = 0; i < 16; i++)
@@ -2515,8 +2531,8 @@ void K_PlayOvertakeSound(mobj_t *source)
 void K_PlayPainSound(mobj_t *source, mobj_t *other)
 {
 	sfxenum_t pick = P_RandomKey(PR_VOICES, 2); // Gotta roll the RNG every time this is called for sync reasons
-
-	sfxenum_t sfx_id = ((skin_t *)source->skin)->soundsid[S_sfx[sfx_khurt1 + pick].skinsound];
+	skin_t *skin = (source->player ? &skins[source->player->skin] : ((skin_t *)source->skin));
+	sfxenum_t sfx_id = skin->soundsid[S_sfx[sfx_khurt1 + pick].skinsound];
 	boolean alwaysHear = false;
 
 	if (other != NULL && P_MobjWasRemoved(other) == false && other->player != NULL)
@@ -2534,7 +2550,8 @@ void K_PlayPainSound(mobj_t *source, mobj_t *other)
 
 void K_PlayHitEmSound(mobj_t *source, mobj_t *other)
 {
-	sfxenum_t sfx_id = ((skin_t *)source->skin)->soundsid[S_sfx[sfx_khitem].skinsound];
+	skin_t *skin = (source->player ? &skins[source->player->skin] : ((skin_t *)source->skin));
+	sfxenum_t sfx_id = skin->soundsid[S_sfx[sfx_khitem].skinsound];
 	boolean alwaysHear = false;
 
 	if (other != NULL && P_MobjWasRemoved(other) == false && other->player != NULL)
@@ -3386,7 +3403,7 @@ fixed_t K_GetNewSpeed(player_t *player)
 
 	if (player->curshield == KSHIELD_TOP)
 	{
-		p_speed = 11 * p_speed / 10;
+		p_speed = 15 * p_speed / 10;
 	}
 
 	if (K_PlayerUsesBotMovement(player) == true && player->botvars.rubberband > 0)
@@ -9873,7 +9890,9 @@ void K_AdjustPlayerFriction(player_t *player)
 		player->mo->friction += ((FRACUNIT - prevfriction) / greasetics) * player->tiregrease;
 	}
 
-	if (player->curshield == KSHIELD_TOP)
+	// Less friction on Top unless grinding
+	if (player->curshield == KSHIELD_TOP &&
+			K_GetForwardMove(player) > 0)
 	{
 		player->mo->friction += 1024;
 	}

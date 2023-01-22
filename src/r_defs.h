@@ -373,6 +373,39 @@ typedef enum
 
 typedef enum
 {
+	// Special action is repeatable.
+	SECSPAC_REPEATSPECIAL		= 0x00000001,
+
+	// When a player enters this sector.
+	SECSPAC_ENTER				= 0x00000002,
+
+	// When a player touches the floor of this sector.
+	SECSPAC_FLOOR				= 0x00000004,
+
+	// When a player touches the ceiling of this sector.
+	SECSPAC_CEILING				= 0x00000008,
+
+	// When an enemy enters this sector.
+	SECSPAC_ENTERMONSTER		= 0x00000010,
+
+	// When an enemy touches the floor of this sector.
+	SECSPAC_FLOORMONSTER		= 0x00000020,
+
+	// When an enemy touches the ceiling of this sector.
+	SECSPAC_CEILINGMONSTER		= 0x00000040,
+
+	// When a projectile enters this sector.
+	SECSPAC_ENTERMISSILE		= 0x00000080,
+
+	// When a projectile touches the floor of this sector.
+	SECSPAC_FLOORMISSILE		= 0x00000100,
+
+	// When a projectile touches the ceiling of this sector.
+	SECSPAC_CEILINGMISSILE		= 0x00000200,
+} sectoractionflags_t;
+
+typedef enum
+{
 	SD_NONE = 0,
 	SD_GENERIC = 1,
 	SD_LAVA = 2,
@@ -395,6 +428,9 @@ typedef enum
 	CRUMBLE_FALL, // Crumble thinker is falling
 	CRUMBLE_RESTORE, // Crumble thinker is about to restore to original position
 } crumblestate_t;
+
+#define NUMSECTORARGS 10
+#define NUMSECTORSTRINGARGS 2
 
 //
 // The SECTORS record, at runtime.
@@ -500,6 +536,12 @@ struct sector_t
 
 	// colormap structure
 	extracolormap_t *spawn_extra_colormap;
+
+	// Action specials
+	INT16 action;
+	INT32 args[NUMSECTORARGS];
+	char *stringargs[NUMSECTORSTRINGARGS];
+	sectoractionflags_t activation;
 };
 
 //
@@ -529,6 +571,7 @@ struct line_t
 
 	// Animation related.
 	UINT32 flags;
+	UINT32 activation;
 	INT16 special;
 	taglist_t tags;
 	INT32 args[NUMLINEARGS];

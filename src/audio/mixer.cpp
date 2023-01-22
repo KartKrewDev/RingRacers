@@ -18,16 +18,20 @@ using srb2::audio::Mixer;
 using srb2::audio::Sample;
 using srb2::audio::Source;
 
-namespace {
+namespace
+{
 
 template <size_t C>
-void default_init_sample_buffer(Sample<C>* buffer, size_t size) {
+void default_init_sample_buffer(Sample<C>* buffer, size_t size)
+{
 	std::for_each(buffer, buffer + size, [](auto& i) { i = Sample<C> {}; });
 }
 
 template <size_t C>
-void mix_sample_buffers(Sample<C>* dst, size_t size, Sample<C>* src, size_t src_size) {
-	for (size_t i = 0; i < size && i < src_size; i++) {
+void mix_sample_buffers(Sample<C>* dst, size_t size, Sample<C>* src, size_t src_size)
+{
+	for (size_t i = 0; i < size && i < src_size; i++)
+	{
 		dst[i] += src[i];
 	}
 }
@@ -35,12 +39,14 @@ void mix_sample_buffers(Sample<C>* dst, size_t size, Sample<C>* src, size_t src_
 } // namespace
 
 template <size_t C>
-size_t Mixer<C>::generate(tcb::span<Sample<C>> buffer) {
+size_t Mixer<C>::generate(tcb::span<Sample<C>> buffer)
+{
 	buffer_.resize(buffer.size());
 
 	default_init_sample_buffer<C>(buffer.data(), buffer.size());
 
-	for (auto& source : sources_) {
+	for (auto& source : sources_)
+	{
 		size_t read = source->generate(buffer_);
 
 		mix_sample_buffers<C>(buffer.data(), buffer.size(), buffer_.data(), read);
@@ -51,7 +57,8 @@ size_t Mixer<C>::generate(tcb::span<Sample<C>> buffer) {
 }
 
 template <size_t C>
-void Mixer<C>::add_source(const shared_ptr<Source<C>>& source) {
+void Mixer<C>::add_source(const shared_ptr<Source<C>>& source)
+{
 	sources_.push_back(source);
 }
 

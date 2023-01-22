@@ -1036,6 +1036,8 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 	if (LUA_HookMobjDeath(target, inflictor, source, damagetype) || P_MobjWasRemoved(target))
 		return;
 
+	P_ActivateThingSpecial(target, source);
+
 	//K_SetHitLagForObjects(target, inflictor, MAXHITLAGTICS, true);
 
 	// SRB2kart
@@ -1411,7 +1413,7 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 			INT16 spacing = (target->radius >> 1) / target->scale;
 
 			// set respawn fuse
-			if (K_TimeAttackRules() == true) // no respawns
+			if (K_CapsuleTimeAttackRules() == true) // no respawns
 				;
 			else if (target->threshold == KITEM_SUPERRING)
 				target->fuse = 20*TICRATE;
@@ -1926,6 +1928,23 @@ static boolean P_KillPlayer(player_t *player, mobj_t *inflictor, mobj_t *source,
 			break;
 	}
 
+	if (player->spectator == false)
+	{
+		UINT32 skinflags = (demo.playback)
+			? demo.skinlist[demo.currentskinid[(player-players)]].flags
+			: skins[player->skin].flags;
+
+		if (skinflags & SF_IRONMAN)
+		{
+			player->mo->skin = &skins[player->skin];
+			player->charflags = skinflags;
+			K_SpawnMagicianParticles(player->mo, 5);
+			S_StartSound(player->mo, sfx_slip);
+		}
+
+		player->mo->renderflags &= ~RF_DONTDRAW;
+	}
+
 	K_DropEmeraldsFromPlayer(player, player->emeralds);
 	K_SetHitLagForObjects(player->mo, inflictor, MAXHITLAGTICS, true);
 
@@ -1934,11 +1953,6 @@ static boolean P_KillPlayer(player_t *player, mobj_t *inflictor, mobj_t *source,
 	K_KartResetPlayerColor(player);
 
 	P_ResetPlayer(player);
-
-	if (player->spectator == false)
-	{
-		player->mo->renderflags &= ~RF_DONTDRAW;
-	}
 
 	P_SetPlayerMobjState(player->mo, player->mo->info->deathstate);
 
@@ -2270,6 +2284,20 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 			player->ringboost = 0;
 			player->glanceDir = 0;
 			player->pflags &= ~PF_GAINAX;
+
+			if (player->spectator == false && !(player->charflags & SF_IRONMAN))
+			{
+				UINT32 skinflags = (demo.playback)
+					? demo.skinlist[demo.currentskinid[(player-players)]].flags
+					: skins[player->skin].flags;
+
+				if (skinflags & SF_IRONMAN)
+				{
+					player->mo->skin = &skins[player->skin];
+					player->charflags = skinflags;
+					K_SpawnMagicianParticles(player->mo, 5);
+				}
+			}
 
 			switch (type)
 			{

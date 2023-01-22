@@ -133,7 +133,7 @@ static void add_string_hook(lua_State *L, int type)
 			}
 			break;
 
-		case STRING_HOOK(LinedefExecute):
+		case STRING_HOOK(SpecialExecute):
 			string = Z_StrDup(luaL_checkstring(L, 3));
 			strupr(string);
 			break;
@@ -780,16 +780,21 @@ int LUA_HookMobjMoveBlocked(mobj_t *t1, mobj_t *t2, line_t *line)
 	return hook.status;
 }
 
-void LUA_HookLinedefExecute(line_t *line, mobj_t *mo, sector_t *sector)
+void LUA_HookSpecialExecute(activator_t *activator, INT32 *args, char **stringargs)
 {
 	Hook_State hook;
 	if (prepare_string_hook
-			(&hook, 0, STRING_HOOK(LinedefExecute), line->stringargs[0]))
+			(&hook, 0, STRING_HOOK(SpecialExecute), stringargs[0]))
 	{
-		LUA_PushUserdata(gL, line, META_LINE);
-		LUA_PushUserdata(gL, mo, META_MOBJ);
-		LUA_PushUserdata(gL, sector, META_SECTOR);
+		LUA_PushUserdata(gL, activator, META_ACTIVATOR);
+		LUA_PushUserdata(gL, args, META_LINEARGS);
+		LUA_PushUserdata(gL, stringargs, META_LINESTRINGARGS);
+#if 0
+		// but this isn't a mobj hook...?
 		ps_lua_mobjhooks += call_hooks(&hook, 0, res_none);
+#else
+		call_hooks(&hook, 0, res_none);
+#endif
 	}
 }
 
