@@ -26,6 +26,7 @@ extern "C" {
 // am_map.h
 TYPEDEF (fpoint_t);
 TYPEDEF (fline_t);
+TYPEDEF (minigen_t);
 
 // command.h
 TYPEDEF (vsbuf_t);

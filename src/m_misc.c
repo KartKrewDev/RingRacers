@@ -1754,7 +1754,7 @@ void M_MinimapGenerate(void)
 #ifdef USE_PNG
 	char *filepath = va(pandf, srb2home, "MINIMAP.png");
 	boolean ret = false;
-	UINT8 *linear = NULL;
+	minigen_t *minigen = NULL;
 	INT32 wh = 100;
 
 	if (gamestate != GS_LEVEL)
@@ -1763,17 +1763,17 @@ void M_MinimapGenerate(void)
 		return;
 	}
 
-	linear = AM_MinimapGenerate(wh);
+	minigen = AM_MinimapGenerate(wh);
 
-	if (linear == NULL)
+	if (minigen == NULL || minigen->buf == NULL)
 		goto failure;
 
 	M_CreateScreenShotPalette();
-	ret = M_SavePNG(filepath, linear+2, linear[0], linear[1], screenshot_palette);
+	ret = M_SavePNG(filepath, minigen->buf, minigen->w, minigen->h, screenshot_palette);
 
 failure:
-	if (linear != NULL)
-		free(linear);
+	if (minigen->buf != NULL)
+		free(minigen->buf);
 
 	if (ret)
 	{

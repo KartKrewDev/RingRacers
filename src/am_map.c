@@ -1353,12 +1353,15 @@ void AM_Drawer(void)
 	if (!followplayer) AM_drawCrosshair(XHAIRCOLORS);
 }
 
-UINT8 *AM_MinimapGenerate(INT32 wh)
+minigen_t *AM_MinimapGenerate(INT32 wh)
 {
-	UINT8 *buf = NULL;
+	static minigen_t ret = {0};
 
 	if (automapactive)
 		return NULL;
+
+	ret.w = ret.h = 0;
+	ret.buf = NULL;
 
 	am_minigen = true;
 
@@ -1396,9 +1399,9 @@ UINT8 *AM_MinimapGenerate(INT32 wh)
 	old_m_w = m_w;
 	old_m_h = m_h;
 
-	buf = malloc(2 + (f_w*f_h));
-
-	am_buf = buf+2;
+	ret.w = f_w;
+	ret.h = f_h;
+	am_buf = ret.buf = malloc((f_w*f_h));
 
 	//AM_clearFB(BACKGROUND);
 	memset(am_buf, 0xff, (f_w*f_h));
@@ -1411,7 +1414,5 @@ UINT8 *AM_MinimapGenerate(INT32 wh)
 
 	am_minigen = false;
 
-	buf[0] = (UINT8)f_w;
-	buf[1] = (UINT8)f_h;
-	return buf;
+	return &ret;
 }
