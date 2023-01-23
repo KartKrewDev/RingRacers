@@ -26,43 +26,39 @@
 #endif
 
 // For use if I do walls with outsides/insides
-static const UINT8 REDS        = (8*16);
+static const UINT8 REDS        = (2*16);
 static const UINT8 REDRANGE    = 16;
 static const UINT8 GRAYS       = (1*16);
 static const UINT8 GRAYSRANGE  = 16;
-static const UINT8 BROWNS      = (3*16);
-static const UINT8 YELLOWS     = (7*16);
-static const UINT8 GREENS      = (10*16);
+static const UINT8 BROWNS      = (15*16);
+static const UINT8 YELLOWS     = (5*16)+8;
+static const UINT8 GREENS      = (6*16);
+static const UINT8 CYANS       = (8*16);
+static const UINT8 BLUES       = (9*16);
 static const UINT8 DBLACK      = 31;
 static const UINT8 DWHITE      = 0;
-
-static const UINT8 NOCLIMBREDS        = 248;
-static const UINT8 NOCLIMBREDRANGE    = 8;
-static const UINT8 NOCLIMBGRAYS       = 204;
-static const UINT8 NOCLIMBBROWNS      = (2*16);
-static const UINT8 NOCLIMBYELLOWS     = (11*16);
 
 
 // Automap colors
 #define BACKGROUND            DBLACK
 #define WALLCOLORS            (REDS + REDRANGE/2)
 #define WALLRANGE             (REDRANGE/2)
-#define NOCLIMBWALLCOLORS     (NOCLIMBREDS + NOCLIMBREDRANGE/2)
-#define NOCLIMBWALLRANGE      (NOCLIMBREDRANGE/2)
 #define THOKWALLCOLORS        REDS
 #define THOKWALLRANGE         REDRANGE
-#define NOCLIMBTHOKWALLCOLORS NOCLIMBREDS
-#define NOCLIMBTHOKWALLRANGE  NOCLIMBREDRANGE
-#define TSWALLCOLORS          GRAYS
-#define TSWALLRANGE           GRAYSRANGE
-#define NOCLIMBTSWALLCOLORS   NOCLIMBGRAYS
+#define TSWALLCOLORS          DWHITE
+#define TSFINISHLINE          GRAYS
+#define TSTRIPWIRE            (CYANS + 4)
+#define TSFOFINFO             (BLUES + 4)
 #define FDWALLCOLORS          BROWNS
-#define NOCLIMBFDWALLCOLORS   NOCLIMBBROWNS
 #define CDWALLCOLORS          YELLOWS
-#define NOCLIMBCDWALLCOLORS   NOCLIMBYELLOWS
 #define THINGCOLORS           GREENS
 #define GRIDCOLORS            (GRAYS + GRAYSRANGE/2)
-#define XHAIRCOLORS           DWHITE
+#define XHAIRCOLORS           GRAYS
+
+// Automap passes
+#define PASS_SOLID 			1
+#define PASS_INTANGIBLE		2
+#define PASS_FOF			4
 
 // controls
 #define AM_PANUPKEY     KEY_UPARROW
@@ -932,14 +928,93 @@ static void AM_drawGrid(INT32 color)
 	}
 }
 
+#define SLOPEPARAMS(slope, end1, end2, normalheight) \
+		end1 = (P_GetZAt(slope, lines[i].v1->x, lines[i].v1->y, normalheight) + FRACUNIT/2) >> FRACBITS; \
+		end2 = (P_GetZAt(slope, lines[i].v2->x, lines[i].v2->y, normalheight) + FRACUNIT/2) >> FRACBITS;
+
+static ffloor_t *AM_CompareFOFs(size_t i, ffloor_t *rover, ffloor_t *secondarystore)
+{
+	ffloor_t *secondaryrover = NULL;
+
+	for (; rover; rover = rover->next)
+	{
+		fixed_t rovt1, rovt2;
+		fixed_t rovb1, rovb2;
+
+		if (!(rover->fofflags & FOF_EXISTS))
+			continue;
+		if (!(rover->fofflags & FOF_BLOCKPLAYER))
+			continue;
+
+		SLOPEPARAMS(*rover->t_slope, rovt1, rovt2, *rover->topheight)
+		SLOPEPARAMS(*rover->b_slope, rovb1, rovb2, *rover->bottomheight)
+
+		for (secondaryrover = secondarystore; secondaryrover; secondaryrover = secondaryrover->next)
+		{
+			fixed_t sect1, sect2;
+			fixed_t secb1, secb2;
+
+			terrain_t *terrain1 = NULL;
+			terrain_t *terrain2 = NULL;
+
+			if (!(secondaryrover->fofflags & FOF_EXISTS))
+				continue;
+			if (!(secondaryrover->fofflags & FOF_BLOCKPLAYER))
+				continue;
+			if (secondaryrover->secnum == rover->secnum)
+				break;
+
+			SLOPEPARAMS(*secondaryrover->t_slope, sect1, sect2, *secondaryrover->topheight)
+			SLOPEPARAMS(*secondaryrover->b_slope, secb1, secb2, *secondaryrover->bottomheight)
+
+			if (rovt1 != sect1)
+				continue;
+			if (rovt2 != sect2)
+				continue;
+			if (rovb1 != secb1)
+				continue;
+			if (rovb2 != secb2)
+				continue;
+
+			if (sectors[rover->secnum].damagetype != sectors[secondaryrover->secnum].damagetype
+				|| sectors[rover->secnum].friction != sectors[secondaryrover->secnum].friction
+				|| sectors[rover->secnum].offroad != sectors[secondaryrover->secnum].offroad)
+				continue;
+
+			if (*rover->toppic != *secondaryrover->toppic)
+			{
+				terrain1 = K_GetTerrainForFlatNum(*rover->toppic);
+				terrain2 = K_GetTerrainForFlatNum(*secondaryrover->toppic);
+			}
+			else if (*rover->bottompic != *secondaryrover->bottompic)
+			{
+				terrain1 = K_GetTerrainForFlatNum(*rover->bottompic);
+				terrain2 = K_GetTerrainForFlatNum(*secondaryrover->bottompic);
+			}
+
+			if ((terrain1 && K_TerrainHasAffect(terrain1))
+				|| (terrain2 && K_TerrainHasAffect(terrain2)))
+				continue;
+
+			break;
+		}
+
+		if (secondaryrover == NULL)
+			break;
+	}
+
+	return rover;
+}
+
 //
 // Determines visible lines, draws them.
 // This is LineDef based, not LineSeg based.
 //
-static void AM_drawWalls(void)
+static void AM_drawWalls(UINT8 pass)
 {
 	size_t i;
 	static mline_t l;
+	const fixed_t maxstep = P_BaseStepUp()>>FRACBITS;
 	fixed_t frontf1,frontf2, frontc1, frontc2; // front floor/ceiling ends
 	fixed_t backf1 = 0, backf2 = 0, backc1 = 0, backc2 = 0; // back floor ceiling ends
 
@@ -950,70 +1025,179 @@ static void AM_drawWalls(void)
 		l.b.x = lines[i].v2->x >> FRACTOMAPBITS;
 		l.b.y = lines[i].v2->y >> FRACTOMAPBITS;
 
-#define SLOPEPARAMS(slope, end1, end2, normalheight) \
-		end1 = P_GetZAt(slope, lines[i].v1->x, lines[i].v1->y, normalheight); \
-		end2 = P_GetZAt(slope, lines[i].v2->x, lines[i].v2->y, normalheight);
-
 		SLOPEPARAMS(lines[i].frontsector->f_slope, frontf1, frontf2, lines[i].frontsector->floorheight)
 		SLOPEPARAMS(lines[i].frontsector->c_slope, frontc1, frontc2, lines[i].frontsector->ceilingheight)
-		if (lines[i].backsector) {
-			SLOPEPARAMS(lines[i].backsector->f_slope, backf1,  backf2,  lines[i].backsector->floorheight)
-			SLOPEPARAMS(lines[i].backsector->c_slope, backc1,  backc2,  lines[i].backsector->ceilingheight)
-		}
-#undef SLOPEPARAMS
 
 		if (!lines[i].backsector) // 1-sided
 		{
-			if (lines[i].flags & ML_NOCLIMB)
-				AM_drawMline(&l, NOCLIMBWALLCOLORS);
-			else
+			if (!(pass & PASS_SOLID))
+				;
+			else if (frontf1 != frontc1 || frontf2 != frontc2 || lines[i].frontsector->f_slope)
+			{
+				AM_drawMline(&l, TSWALLCOLORS);
+			}
+			else if (!am_minigen)
+			{
 				AM_drawMline(&l, WALLCOLORS);
+			}
+			continue;
 		}
-		else if ((backf1 == backc1 && backf2 == backc2) // Back is thok barrier
+
+		SLOPEPARAMS(lines[i].backsector->f_slope, backf1,  backf2,  lines[i].backsector->floorheight)
+		SLOPEPARAMS(lines[i].backsector->c_slope, backc1,  backc2,  lines[i].backsector->ceilingheight)
+
+		if ((backf1 == backc1 && backf2 == backc2) // Back is thok barrier
 				 || (frontf1 == frontc1 && frontf2 == frontc2)) // Front is thok barrier
 		{
 			if (backf1 == backc1 && backf2 == backc2
 				&& frontf1 == frontc1 && frontf2 == frontc2) // BOTH are thok barriers
 			{
-				if (lines[i].flags & ML_NOCLIMB)
-					AM_drawMline(&l, NOCLIMBTSWALLCOLORS);
-				else
-					AM_drawMline(&l, TSWALLCOLORS);
+				if (!am_minigen && (pass & PASS_INTANGIBLE))
+				{
+					AM_drawMline(&l, GRIDCOLORS);
+				}
 			}
-			else
+			else if (pass & PASS_SOLID)
 			{
-				if (lines[i].flags & ML_NOCLIMB)
-					AM_drawMline(&l, NOCLIMBTHOKWALLCOLORS);
-				else
-					AM_drawMline(&l, THOKWALLCOLORS);
+				AM_drawMline(&l, TSWALLCOLORS);
 			}
 		}
 		else
 		{
-			if (lines[i].flags & ML_NOCLIMB) {
-				if (backf1 != frontf1 || backf2 != frontf2) {
-					AM_drawMline(&l, NOCLIMBFDWALLCOLORS); // floor level change
-				}
-				else if (backc1 != frontc1 || backc2 != frontc2) {
-					AM_drawMline(&l, NOCLIMBCDWALLCOLORS); // ceiling level change
+			if (lines[i].flags & (ML_IMPASSABLE|ML_BLOCKPLAYERS))
+			{
+				if (pass & PASS_SOLID)
+					AM_drawMline(&l, TSWALLCOLORS); // Completely solid course boundary
+			}
+			else if ((lines[i].flags & ML_MIDSOLID)
+				&& sides[lines->sidenum[0]].midtexture)
+			{
+				if (pass & PASS_SOLID)
+					AM_drawMline(&l, TSWALLCOLORS); // solid midtexture, likely a course boundary
+			}
+			if ((backf1 != frontf1 && abs(backf1 - frontf1) > maxstep)
+				|| (backf2 != frontf2 && abs(backf2 - frontf2) > maxstep))
+			{
+				if (pass & PASS_SOLID)
+					AM_drawMline(&l, TSWALLCOLORS); // floor-wall, likely a course boundary
+			}
+			else if (lines[i].special == 2001)
+			{
+				if (pass & PASS_SOLID)
+					AM_drawMline(&l, TSFINISHLINE); // finish line
+			}
+			else if (P_IsLineTripWire(&lines[i]))
+			{
+				if (pass & PASS_SOLID)
+					AM_drawMline(&l, TSTRIPWIRE); // tripwire shortcut
+			}
+			else if (backf1 != frontf1 || backf2 != frontf2)
+			{
+				if (pass & PASS_INTANGIBLE)
+					AM_drawMline(&l, FDWALLCOLORS); // floorlevel change
+			}
+			else if (backc1 != frontc1 || backc2 != frontc2)
+			{
+				if (!(pass & PASS_INTANGIBLE))
+					;	
+				else if (abs(backc1 - frontc1) < maxstep
+					|| abs(backc2 - frontc2) < maxstep)
+				{
+					AM_drawMline(&l, CDWALLCOLORS); // ceilinglevel change
 				}
 				else
-					AM_drawMline(&l, NOCLIMBTSWALLCOLORS);
+				{
+					AM_drawMline(&l, GRIDCOLORS); // ceiling-wall, not likely to be a course boundary but flagged up just in case
+				}
+			}
+			else if (lines[i].frontsector->damagetype != lines[i].backsector->damagetype
+				|| lines[i].frontsector->friction != lines[i].backsector->friction
+				|| lines[i].frontsector->offroad != lines[i].backsector->offroad)
+			{
+				if (pass & PASS_INTANGIBLE)
+					AM_drawMline(&l, FDWALLCOLORS); // Functionality boundary
 			}
 			else
 			{
-				if (backf1 != frontf1 || backf2 != frontf2) {
-					AM_drawMline(&l, FDWALLCOLORS); // floor level change
+				terrain_t *terrain1 = NULL;
+				terrain_t *terrain2 = NULL;
+				UINT8 defercol = GRIDCOLORS;
+
+				if (lines[i].frontsector->floorpic != lines[i].backsector->floorpic)
+				{
+					terrain1 = K_GetTerrainForFlatNum(lines[i].frontsector->floorpic);
+					terrain2 = K_GetTerrainForFlatNum(lines[i].backsector->ceilingpic);
+					defercol = FDWALLCOLORS; // possible floor offroad boundary
 				}
-				else if (backc1 != frontc1 || backc2 != frontc2) {
-					AM_drawMline(&l, CDWALLCOLORS); // ceiling level change
+				else if (lines[i].frontsector->ceilingpic != lines[i].backsector->ceilingpic)
+				{
+					terrain1 = K_GetTerrainForFlatNum(lines[i].frontsector->floorpic);
+					terrain2 = K_GetTerrainForFlatNum(lines[i].backsector->ceilingpic);
+					defercol = CDWALLCOLORS; // possible ceiling offroad boundary
+				}
+
+				if ((terrain1 && K_TerrainHasAffect(terrain1))
+					|| (terrain2 && K_TerrainHasAffect(terrain2)))
+				{
+					if (pass & PASS_INTANGIBLE)
+						AM_drawMline(&l, defercol); // Yep, definitely a functionality boundary
 				}
 				else
-					AM_drawMline(&l, TSWALLCOLORS);
+				{
+					ffloor_t *rover = NULL;
+					
+					if (lines[i].frontsector->ffloors || lines[i].backsector->ffloors)
+					{
+						if (lines[i].backsector->ffloors == NULL)
+						{
+							// Check frontside for one solid
+							for (rover = lines[i].frontsector->ffloors; rover; rover = rover->next)
+							{
+								if (!(rover->fofflags & FOF_EXISTS))
+									continue;
+								if (!(rover->fofflags & FOF_BLOCKPLAYER))
+									continue;
+								break;
+							}
+						}
+						else if (lines[i].frontsector->ffloors == NULL)
+						{
+							// Check backside for one solid
+							for (rover = lines[i].backsector->ffloors; rover; rover = rover->next)
+							{
+								if (!(rover->fofflags & FOF_EXISTS))
+									continue;
+								if (!(rover->fofflags & FOF_BLOCKPLAYER))
+									continue;
+								break;
+							}
+						}
+						else
+						{
+							// Check to see if any secnums exist in one but not the other.
+							rover = AM_CompareFOFs(i, lines[i].frontsector->ffloors, lines[i].backsector->ffloors);
+							if (rover == NULL)
+								rover = AM_CompareFOFs(i, lines[i].backsector->ffloors, lines[i].frontsector->ffloors);
+						}
+					}
+
+					if (rover != NULL)
+					{
+						if (pass & PASS_FOF)
+							AM_drawMline(&l, TSFOFINFO); // a FOF is here but we don't know how to distinguish them yet
+					}
+					else if (!am_minigen)
+					{
+						if (pass & PASS_INTANGIBLE)
+							AM_drawMline(&l, GRIDCOLORS); // likely low-relevance line
+					}
+				}
 			}
 		}
 	}
 }
+
+#undef SLOPEPARAMS
 
 //
 // Rotation in 2D.
@@ -1162,7 +1346,7 @@ void AM_Drawer(void)
 
 	AM_clearFB(BACKGROUND);
 	if (draw_grid) AM_drawGrid(GRIDCOLORS);
-	AM_drawWalls();
+	AM_drawWalls(PASS_FOF|PASS_INTANGIBLE|PASS_SOLID);
 	AM_drawPlayers();
 	AM_drawThings(THINGCOLORS);
 
@@ -1218,7 +1402,9 @@ UINT8 *AM_MinimapGenerate(INT32 wh)
 
 	//AM_clearFB(BACKGROUND);
 	memset(am_buf, 0xff, (f_w*f_h));
-	AM_drawWalls();
+	AM_drawWalls(PASS_FOF);
+	AM_drawWalls(PASS_INTANGIBLE);
+	AM_drawWalls(PASS_SOLID);
 
 	am_buf = NULL;
 	am_recalc = true;

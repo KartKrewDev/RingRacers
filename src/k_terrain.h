@@ -569,6 +569,20 @@ void K_UpdateTerrainOverlay(mobj_t *mo);
 
 void K_InitTerrain(UINT16 wadNum);
 
+/*--------------------------------------------------
+	boolean K_TerrainHasAffect(terrain_t *terrain)
+
+		Checks if Terrain block has a gameplay-affecting property.
+
+	Input Arguments:-
+		terrain - Terrain structure to default.
+
+	Return:-
+		false if functionally default, otherwise true.
+--------------------------------------------------*/
+
+boolean K_TerrainHasAffect(terrain_t *terrain);
+
 #ifdef __cplusplus
 } // extern "C"
 #endif

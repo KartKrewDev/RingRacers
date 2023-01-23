@@ -1537,6 +1537,23 @@ static void K_TerrainDefaults(terrain_t *terrain)
 }
 
 /*--------------------------------------------------
+	boolean K_TerrainHasAffect(terrain_t *terrain)
+
+		See header file for description.
+--------------------------------------------------*/
+
+boolean K_TerrainHasAffect(terrain_t *terrain)
+{
+	return (terrain->friction != 0
+	|| terrain->offroad != 0
+	|| terrain->damageType != -1
+	|| terrain->trickPanel != 0
+	|| terrain->speedPad != 0
+	|| terrain->springStrength != 0
+	|| terrain->flags != 0);
+}
+
+/*--------------------------------------------------
 	static void K_NewTerrainDefs(void)
 
 		Increases the size of terrainDefs by 1, and
