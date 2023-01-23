@@ -1403,6 +1403,9 @@ minigen_t *AM_MinimapGenerate(INT32 wh)
 	ret.h = f_h;
 	am_buf = ret.buf = malloc((f_w*f_h));
 
+	if (ret.buf == NULL)
+		return NULL;
+
 	//AM_clearFB(BACKGROUND);
 	memset(am_buf, 0xff, (f_w*f_h));
 	AM_drawWalls(PASS_FOF);
