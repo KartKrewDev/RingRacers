@@ -247,8 +247,8 @@ boolean cht_Responder(event_t *ev)
 #define REQUIRE_INLEVEL if (gamestate != GS_LEVEL || demo.playback)\
 { CONS_Printf(M_GetText("You must be in a level to use this.\n")); return; }
 
-#define REQUIRE_SINGLEPLAYER if (netgame || multiplayer)\
-{ CONS_Printf(M_GetText("This only works in single player.\n")); return; }
+#define REQUIRE_SINGLEPLAYER if (netgame)\
+{ CONS_Printf(M_GetText("This only works offline.\n")); return; }
 
 // command that can be typed at the console!
 void Command_CheatNoClip_f(void)
