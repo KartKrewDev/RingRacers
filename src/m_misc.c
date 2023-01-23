@@ -1763,6 +1763,12 @@ void M_MinimapGenerate(void)
 		return;
 	}
 
+	if (automapactive)
+	{
+		CONS_Alert(CONS_ERROR, "The automap is active! Please deactivate it and try again.\n");
+		return;
+	}
+
 	minigen = AM_MinimapGenerate(wh);
 
 	if (minigen == NULL || minigen->buf == NULL)
