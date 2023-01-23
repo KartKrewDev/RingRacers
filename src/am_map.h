@@ -48,6 +48,9 @@ void AM_Start(void);
 // Called to force the automap to quit if the level is completed while it is up.
 void AM_Stop(void);
 
+// Minimap generation
+UINT8 *AM_MinimapGenerate(INT32 wh);
+
 #ifdef __cplusplus
 } // extern "C"
 #endif

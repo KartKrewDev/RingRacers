@@ -89,6 +89,8 @@ void M_ScreenShot(void);
 void M_DoScreenShot(void);
 boolean M_ScreenshotResponder(event_t *ev);
 
+void M_MinimapGenerate(void);
+
 void Command_SaveConfig_f(void);
 void Command_LoadConfig_f(void);
 void Command_ChangeConfig_f(void);

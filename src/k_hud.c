@@ -3752,8 +3752,6 @@ static void K_drawKartMinimapIcon(fixed_t objx, fixed_t objy, INT32 hudx, INT32 
 	fixed_t xoffset, yoffset;
 	fixed_t xscale, yscale, zoom;
 
-	maxx = maxy = INT32_MAX;
-	minx = miny = INT32_MIN;
 	minx = bsp->bbox[0][BOXLEFT];
 	maxx = bsp->bbox[0][BOXRIGHT];
 	miny = bsp->bbox[0][BOXBOTTOM];

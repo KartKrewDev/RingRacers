@@ -156,6 +156,9 @@ static boolean draw_grid = false;
 boolean automapactive = false;
 boolean am_recalc = false; //added : 05-02-98 : true when screen size changes
 static boolean am_stopped = true;
+static boolean am_minigen = false;
+
+static UINT8 *am_buf = NULL;
 
 static INT32 f_x, f_y;	// location of window on screen (always zero for both)
 static INT32 f_w, f_h;	// size of window on screen (always the screen width and height respectively)
@@ -256,25 +259,24 @@ static inline void AM_restoreScaleAndLoc(void)
   */
 static void AM_findMinMaxBoundaries(void)
 {
-	size_t i;
 	fixed_t a;
 	fixed_t b;
 
-	min_x = min_y = +INT32_MAX;
-	max_x = max_y = -INT32_MAX;
+	node_t *bsp = &nodes[numnodes-1];
 
-	for (i = 0; i < numvertexes; i++)
-	{
-		if (vertexes[i].x < min_x)
-			min_x = vertexes[i].x;
-		else if (vertexes[i].x > max_x)
-			max_x = vertexes[i].x;
+	min_x = bsp->bbox[0][BOXLEFT];
+	max_x = bsp->bbox[0][BOXRIGHT];
+	min_y = bsp->bbox[0][BOXBOTTOM];
+	max_y = bsp->bbox[0][BOXTOP];
 
-		if (vertexes[i].y < min_y)
-			min_y = vertexes[i].y;
-		else if (vertexes[i].y > max_y)
-			max_y = vertexes[i].y;
-	}
+	if (bsp->bbox[1][BOXLEFT] < min_x)
+		min_x = bsp->bbox[1][BOXLEFT];
+	if (bsp->bbox[1][BOXRIGHT] > max_x)
+		max_x = bsp->bbox[1][BOXRIGHT];
+	if (bsp->bbox[1][BOXBOTTOM] < min_y)
+		min_y = bsp->bbox[1][BOXBOTTOM];
+	if (bsp->bbox[1][BOXTOP] > max_y)
+		max_y = bsp->bbox[1][BOXTOP];
 
 	max_w = (max_x >>= FRACTOMAPBITS) - (min_x >>= FRACTOMAPBITS);
 	max_h = (max_y >>= FRACTOMAPBITS) - (min_y >>= FRACTOMAPBITS);
@@ -282,8 +284,26 @@ static void AM_findMinMaxBoundaries(void)
 	a = FixedDiv(f_w<<FRACBITS, max_w);
 	b = FixedDiv(f_h<<FRACBITS, max_h);
 
-	min_scale_mtof = a < b ? a : b;
-	max_scale_mtof = FixedDiv(f_h<<FRACBITS, 2*PLAYERRADIUS);
+	//min_scale_mtof = a < b ? a : b;
+	if (a < b)
+	{
+		if (am_minigen)
+		{
+			f_h = FixedMul(a, max_h)>>FRACBITS;
+		}
+		min_scale_mtof = a;
+		max_scale_mtof = f_h;
+	}
+	else
+	{
+		if (am_minigen)
+		{
+			f_w = FixedMul(b, max_w)>>FRACBITS;
+		}
+		min_scale_mtof = b;
+		max_scale_mtof = f_w;
+	}
+	max_scale_mtof = FixedDiv(max_scale_mtof<<FRACBITS, 2*PLAYERRADIUS);
 }
 
 static void AM_changeWindowLoc(void)
@@ -354,6 +374,7 @@ static void AM_FrameBufferInit(void)
 	f_x = f_y = 0;
 	f_w = vid.width;
 	f_h = vid.height;
+	am_buf = screens[0];
 }
 
 //
@@ -784,10 +805,9 @@ static boolean AM_clipMline(const mline_t *ml, fline_t *fl)
 //
 static void AM_drawPixel(INT32 xx, INT32 yy, INT32 cc)
 {
-	UINT8 *dest = screens[0];
-	if (xx < 0 || yy < 0 || xx >= vid.width || yy >= vid.height)
+	if (xx < 0 || yy < 0 || xx >= f_w || yy >= f_h)
 		return; // off the screen
-	dest[(yy*vid.width) + xx] = cc;
+	am_buf[(yy*f_w) + xx] = cc;
 }
 
 //
@@ -916,7 +936,7 @@ static void AM_drawGrid(INT32 color)
 // Determines visible lines, draws them.
 // This is LineDef based, not LineSeg based.
 //
-static inline void AM_drawWalls(void)
+static void AM_drawWalls(void)
 {
 	size_t i;
 	static mline_t l;
@@ -1147,4 +1167,65 @@ void AM_Drawer(void)
 	AM_drawThings(THINGCOLORS);
 
 	if (!followplayer) AM_drawCrosshair(XHAIRCOLORS);
+}
+
+UINT8 *AM_MinimapGenerate(INT32 wh)
+{
+	UINT8 *buf = NULL;
+
+	if (automapactive)
+		return NULL;
+
+	am_minigen = true;
+
+	AM_drawFline = AM_drawFline_soft; // yes, even in GL
+
+	//AM_FrameBufferInit();
+	f_x = f_y = 0;
+	f_w = f_h = wh;
+	am_buf = NULL;
+
+	//AM_LevelInit();
+	AM_findMinMaxBoundaries();
+	scale_mtof = FixedMul(min_scale_mtof, FRACUNIT-FRACUNIT/20);
+	scale_ftom = FixedDiv(FRACUNIT, scale_mtof);
+
+	//AM_initVariables();
+	f_oldloc.x = INT32_MAX;
+
+	m_paninc.x = m_paninc.y = 0;
+	ftom_zoommul = FRACUNIT;
+	mtof_zoommul = FRACUNIT;
+
+	m_w = FTOM(f_w);
+	m_h = FTOM(f_h);
+
+	//AM_changeWindowLoc();
+	m_x = min_x - FixedMul(m_w, FRACUNIT/40);
+	m_y = min_y - FixedMul(m_h, FRACUNIT/40);
+	m_x2 = m_x + m_w;
+	m_y2 = m_y + m_h;
+
+	// for saving & restoring
+	old_m_x = m_x;
+	old_m_y = m_y;
+	old_m_w = m_w;
+	old_m_h = m_h;
+
+	buf = malloc(2 + (f_w*f_h));
+
+	am_buf = buf+2;
+
+	//AM_clearFB(BACKGROUND);
+	memset(am_buf, 0xff, (f_w*f_h));
+	AM_drawWalls();
+
+	am_buf = NULL;
+	am_recalc = true;
+
+	am_minigen = false;
+
+	buf[0] = (UINT8)f_w;
+	buf[1] = (UINT8)f_h;
+	return buf;
 }

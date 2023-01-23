@@ -1749,6 +1749,43 @@ boolean M_ScreenshotResponder(event_t *ev)
 	return true;
 }
 
+void M_MinimapGenerate(void)
+{
+#ifdef USE_PNG
+	char *filepath = va(pandf, srb2home, "MINIMAP.png");
+	boolean ret = false;
+	UINT8 *linear = NULL;
+	INT32 wh = 100;
+
+	if (gamestate != GS_LEVEL)
+	{
+		CONS_Alert(CONS_ERROR, "You must be in a level to generate a preliminary minimap!\n");
+		return;
+	}
+
+	linear = AM_MinimapGenerate(wh);
+
+	if (linear == NULL)
+		goto failure;
+
+	M_CreateScreenShotPalette();
+	ret = M_SavePNG(filepath, linear+2, linear[0], linear[1], screenshot_palette);
+
+failure:
+	if (linear != NULL)
+		free(linear);
+
+	if (ret)
+	{
+		CONS_Printf(M_GetText("%s saved.\nRemember that this is not a complete minimap,\nand must be edited before putting in-game.\n"), filepath);
+	}
+	else
+	{
+		CONS_Alert(CONS_ERROR, M_GetText("Couldn't create %s\n"), filepath);
+	}
+#endif //#ifdef USE_PNG
+}
+
 // ==========================================================================
 //                       TRANSLATION FUNCTIONS
 // ==========================================================================
