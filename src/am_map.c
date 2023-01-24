@@ -962,8 +962,8 @@ static ffloor_t *AM_CompareFOFs(size_t i, ffloor_t *rover, ffloor_t *secondaryst
 				terrain2 = K_GetTerrainForFlatNum(*secondaryrover->bottompic);
 			}
 
-			if ((terrain1 && K_TerrainHasAffect(terrain1))
-				|| (terrain2 && K_TerrainHasAffect(terrain2)))
+			if ((terrain1 && K_TerrainHasAffect(terrain1, false))
+				|| (terrain2 && K_TerrainHasAffect(terrain2, false)))
 				continue;
 
 			break;
@@ -1106,8 +1106,8 @@ static void AM_drawWalls(UINT8 pass)
 					defercol = CDWALLCOLORS; // possible ceiling offroad boundary
 				}
 
-				if ((terrain1 && K_TerrainHasAffect(terrain1))
-					|| (terrain2 && K_TerrainHasAffect(terrain2)))
+				if ((terrain1 && K_TerrainHasAffect(terrain1, false))
+					|| (terrain2 && K_TerrainHasAffect(terrain2, false)))
 				{
 					if (pass & PASS_INTANGIBLE)
 						AM_drawMline(&l, defercol); // Yep, definitely a functionality boundary
@@ -1239,13 +1239,6 @@ static inline void AM_drawPlayers(void)
 	player_t *p;
 	INT32 color = GREENS;
 
-	if (!multiplayer)
-	{
-		AM_drawLineCharacter(player_arrow, NUMPLYRLINES, 16<<FRACBITS, plr->mo->angle, DWHITE, plr->mo->x, plr->mo->y);
-		return;
-	}
-
-	// multiplayer (how??)
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
 		if (!playeringame[i] || players[i].spectator)
@@ -1269,7 +1262,46 @@ static inline void AM_drawThings(UINT8 colors)
 		t = sectors[i].thinglist;
 		while (t)
 		{
-			AM_drawLineCharacter(thintriangle_guy, NUMTHINTRIANGLEGUYLINES, 16<<FRACBITS, t->angle, colors, t->x, t->y);
+			if (!t->player)
+				AM_drawLineCharacter(thintriangle_guy, NUMTHINTRIANGLEGUYLINES, 16<<FRACBITS, t->angle, colors, t->x, t->y);
+			t = t->snext;
+		}
+	}
+}
+
+static inline void AM_drawSpecialThingsOnly(UINT8 colors)
+{
+	size_t i;
+
+	for (i = 0; i < numsectors; i++)
+	{
+		terrain_t *terrain = NULL;
+		mobj_t *t = NULL;
+
+		if (sectors[i].damagetype != 0
+		|| sectors[i].friction < ORIG_FRICTION
+		|| sectors[i].offroad != 0)
+			continue;
+
+		terrain = K_GetTerrainForFlatNum(sectors[i].floorpic);
+		if (!terrain)
+			terrain = K_GetTerrainForFlatNum(sectors[i].ceilingpic);
+
+		if (terrain && K_TerrainHasAffect(terrain, true))
+			continue;
+
+		t = sectors[i].thinglist;
+		while (t)
+		{
+			if (t->type == MT_RANDOMITEM
+			|| t->type == MT_PAPERITEMSPOT
+			|| t->type == MT_OVERTIME_CENTER
+			|| t->type == MT_RING
+			|| t->type == MT_BLUESPHERE
+			|| t->type == MT_WAYPOINT
+			|| t->type == MT_ITEMCAPSULE
+			|| t->flags & MF_SPRING)
+				AM_drawLineCharacter(thintriangle_guy, NUMTHINTRIANGLEGUYLINES, 16<<FRACBITS, t->angle, colors, t->x, t->y);
 			t = t->snext;
 		}
 	}
@@ -1317,8 +1349,8 @@ void AM_Drawer(void)
 	AM_clearFB(BACKGROUND);
 	if (draw_grid) AM_drawGrid(GRIDCOLORS);
 	AM_drawWalls(PASS_FOF|PASS_INTANGIBLE|PASS_SOLID);
-	AM_drawPlayers();
 	AM_drawThings(THINGCOLORS);
+	AM_drawPlayers();
 
 	if (!followplayer) AM_drawCrosshair(XHAIRCOLORS);
 }
@@ -1374,6 +1406,7 @@ minigen_t *AM_MinimapGenerate(INT32 mul)
 
 	//AM_clearFB(BACKGROUND);
 	memset(am_buf, 0xff, (f_w*f_h));
+	AM_drawSpecialThingsOnly(BACKGROUND);
 	AM_drawWalls(PASS_FOF);
 	AM_drawWalls(PASS_INTANGIBLE);
 	AM_drawWalls(PASS_SOLID);
