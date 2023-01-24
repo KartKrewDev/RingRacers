@@ -1127,6 +1127,9 @@ static void IdentifyVersion(void)
 ////
 #endif
 ////
+#ifdef USE_PATCH_FILE
+	D_AddFile(startupiwads, va(pandf,srb2waddir,PATCHNAME));
+#endif
 #if !defined (TESTERS) && !defined (HOSTTESTERS)
 	D_AddFile(startupiwads, va(pandf,srb2waddir,"gfx.pk3"));
 #endif
@@ -1134,9 +1137,6 @@ static void IdentifyVersion(void)
 	D_AddFile(startupiwads, va(pandf,srb2waddir,"chars.pk3"));
 	D_AddFile(startupiwads, va(pandf,srb2waddir,MAPSNAME));
 	D_AddFile(startupiwads, va(pandf,srb2waddir,"followers.pk3"));
-#ifdef USE_PATCH_FILE
-	D_AddFile(startupiwads, va(pandf,srb2waddir,PATCHNAME));
-#endif
 #define UNLOCKTESTING
 #if defined(DEVELOP) && defined(UNLOCKTESTING)
 	D_AddFile(startupiwads, va(pandf,srb2waddir,UNLOCKNAME));
@@ -1439,6 +1439,9 @@ void D_SRB2Main(void)
 	mainwads = 0;
 
 #ifndef DEVELOP
+#ifdef USE_PATCH_FILE
+	mainwads++; W_VerifyFileMD5(mainwads, ASSET_HASH_PATCH_PK3);		// patch.pk3
+#endif
 	// Check MD5s of autoloaded files
 	// Note: Do not add any files that ignore MD5!
 	W_VerifyFileMD5(mainwads, ASSET_HASH_MAIN_KART);					// main.kart
@@ -1447,11 +1450,10 @@ void D_SRB2Main(void)
 	mainwads++; W_VerifyFileMD5(mainwads, ASSET_HASH_CHARS_PK3);		// chars.pk3
 	mainwads++; W_VerifyFileMD5(mainwads, ASSET_HASH_MAPS_PK3);			// maps.pk3 -- 4 - If you touch this, make sure to touch up the majormods stuff below.
 	mainwads++; W_VerifyFileMd5(mainwads, ASSET_HASH_FOLLOWERS_PK3);  // followers.pk3
-#ifdef USE_PATCH_FILE
-
-	mainwads++; W_VerifyFileMD5(mainwads, ASSET_HASH_PATCH_PK3);		// patch.pk3
-#endif
 #else
+#ifdef USE_PATCH_FILE
+	mainwads++;	// scripts.pk3
+#endif
 #if !defined (TESTERS) && !defined (HOSTTESTERS)
 	mainwads++;	// gfx.pk3
 #endif
@@ -1459,9 +1461,6 @@ void D_SRB2Main(void)
 	mainwads++;	// chars.pk3
 	mainwads++;	// maps.pk3
 	mainwads++; // followers.pk3
-#ifdef USE_PATCH_FILE
-	mainwads++;	// scripts.pk3
-#endif
 #ifdef UNLOCKTESTING
 	mainwads++; // unlocks.pk3
 #endif
