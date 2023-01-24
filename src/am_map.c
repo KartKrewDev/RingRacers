@@ -1096,12 +1096,12 @@ static void AM_drawWalls(UINT8 pass)
 				if (lines[i].frontsector->floorpic != lines[i].backsector->floorpic)
 				{
 					terrain1 = K_GetTerrainForFlatNum(lines[i].frontsector->floorpic);
-					terrain2 = K_GetTerrainForFlatNum(lines[i].backsector->ceilingpic);
+					terrain2 = K_GetTerrainForFlatNum(lines[i].backsector->floorpic);
 					defercol = FDWALLCOLORS; // possible floor offroad boundary
 				}
 				else if (lines[i].frontsector->ceilingpic != lines[i].backsector->ceilingpic)
 				{
-					terrain1 = K_GetTerrainForFlatNum(lines[i].frontsector->floorpic);
+					terrain1 = K_GetTerrainForFlatNum(lines[i].frontsector->ceilingpic);
 					terrain2 = K_GetTerrainForFlatNum(lines[i].backsector->ceilingpic);
 					defercol = CDWALLCOLORS; // possible ceiling offroad boundary
 				}
