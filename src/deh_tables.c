@@ -5273,6 +5273,7 @@ const char *const MOBJTYPE_LIST[] = {  // array length left dynamic for sanity t
 	"MT_ANGLEMAN",
 	"MT_POLYANCHOR",
 	"MT_POLYSPAWN",
+	"MT_MINIMAPBOUND",
 
 	// Skybox objects
 	"MT_SKYBOX",
