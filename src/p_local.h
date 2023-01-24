@@ -504,6 +504,18 @@ extern fixed_t bmaporgx;
 extern fixed_t bmaporgy; // origin of block map
 extern mobj_t **blocklinks; // for thing chains
 
+extern struct minimapinfo
+{
+	patch_t *minimap_pic;
+	UINT8 mapthingcount;
+	INT32 min_x, min_y;
+	INT32 max_x, max_y;
+	INT32 map_w, map_h;
+	INT32 minimap_w, minimap_h;
+	fixed_t offs_x, offs_y;
+	fixed_t zoom;
+} minimapinfo;
+
 //
 // P_INTER
 //

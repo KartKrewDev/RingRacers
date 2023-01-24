@@ -255,51 +255,21 @@ static inline void AM_restoreScaleAndLoc(void)
   */
 static void AM_findMinMaxBoundaries(void)
 {
-	fixed_t a;
-	fixed_t b;
+	fixed_t a, b;
 
-	node_t *bsp = &nodes[numnodes-1];
+	min_x = minimapinfo.min_x << MAPBITS;
+	max_x = minimapinfo.max_x << MAPBITS;
+	min_y = minimapinfo.min_y << MAPBITS;
+	max_y = minimapinfo.max_y << MAPBITS;
 
-	min_x = bsp->bbox[0][BOXLEFT];
-	max_x = bsp->bbox[0][BOXRIGHT];
-	min_y = bsp->bbox[0][BOXBOTTOM];
-	max_y = bsp->bbox[0][BOXTOP];
-
-	if (bsp->bbox[1][BOXLEFT] < min_x)
-		min_x = bsp->bbox[1][BOXLEFT];
-	if (bsp->bbox[1][BOXRIGHT] > max_x)
-		max_x = bsp->bbox[1][BOXRIGHT];
-	if (bsp->bbox[1][BOXBOTTOM] < min_y)
-		min_y = bsp->bbox[1][BOXBOTTOM];
-	if (bsp->bbox[1][BOXTOP] > max_y)
-		max_y = bsp->bbox[1][BOXTOP];
-
-	max_w = (max_x >>= FRACTOMAPBITS) - (min_x >>= FRACTOMAPBITS);
-	max_h = (max_y >>= FRACTOMAPBITS) - (min_y >>= FRACTOMAPBITS);
+	max_w = minimapinfo.map_w << MAPBITS;
+	max_h = minimapinfo.map_h << MAPBITS;
 
 	a = FixedDiv(f_w<<FRACBITS, max_w);
 	b = FixedDiv(f_h<<FRACBITS, max_h);
 
-	//min_scale_mtof = a < b ? a : b;
-	if (a < b)
-	{
-		if (am_minigen)
-		{
-			f_h = FixedMul(a, max_h)>>FRACBITS;
-		}
-		min_scale_mtof = a;
-		max_scale_mtof = f_h;
-	}
-	else
-	{
-		if (am_minigen)
-		{
-			f_w = FixedMul(b, max_w)>>FRACBITS;
-		}
-		min_scale_mtof = b;
-		max_scale_mtof = f_w;
-	}
-	max_scale_mtof = FixedDiv(max_scale_mtof<<FRACBITS, 2*PLAYERRADIUS);
+	min_scale_mtof = a < b ? a : b;
+	max_scale_mtof = FixedDiv(f_h<<FRACBITS, 2*PLAYERRADIUS);
 }
 
 static void AM_changeWindowLoc(void)
@@ -1353,15 +1323,12 @@ void AM_Drawer(void)
 	if (!followplayer) AM_drawCrosshair(XHAIRCOLORS);
 }
 
-minigen_t *AM_MinimapGenerate(INT32 wh)
+minigen_t *AM_MinimapGenerate(INT32 mul)
 {
 	static minigen_t ret = {0};
 
 	if (automapactive)
 		return NULL;
-
-	ret.w = ret.h = 0;
-	ret.buf = NULL;
 
 	am_minigen = true;
 
@@ -1369,12 +1336,13 @@ minigen_t *AM_MinimapGenerate(INT32 wh)
 
 	//AM_FrameBufferInit();
 	f_x = f_y = 0;
-	f_w = f_h = wh;
-	am_buf = NULL;
+	ret.w = f_w = minimapinfo.minimap_w * mul;
+	ret.h = f_h = minimapinfo.minimap_h * mul;
+	am_buf = ret.buf = NULL;
 
 	//AM_LevelInit();
 	AM_findMinMaxBoundaries();
-	scale_mtof = FixedMul(min_scale_mtof, FRACUNIT-FRACUNIT/20);
+	scale_mtof = min_scale_mtof - (min_scale_mtof/20);
 	scale_ftom = FixedDiv(FRACUNIT, scale_mtof);
 
 	//AM_initVariables();
@@ -1399,8 +1367,6 @@ minigen_t *AM_MinimapGenerate(INT32 wh)
 	old_m_w = m_w;
 	old_m_h = m_h;
 
-	ret.w = f_w;
-	ret.h = f_h;
 	am_buf = ret.buf = malloc((f_w*f_h));
 
 	if (ret.buf == NULL)

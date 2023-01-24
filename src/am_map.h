@@ -55,7 +55,7 @@ struct minigen_t
 };
 
 // Minimap generation
-minigen_t *AM_MinimapGenerate(INT32 wh);
+minigen_t *AM_MinimapGenerate(INT32 mul);
 
 #ifdef __cplusplus
 } // extern "C"
