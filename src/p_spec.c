@@ -5145,6 +5145,10 @@ static void P_EvaluateDamageType(player_t *player, sector_t *sector, boolean isT
 		case SD_INSTAKILL:
 			P_DamageMobj(player->mo, NULL, NULL, 1, DMG_INSTAKILL);
 			break;
+		case SD_STUMBLE:
+			if (isTouching)
+				P_DamageMobj(player->mo, NULL, NULL, 1, DMG_STUMBLE);
+			break;
 		default:
 			break;
 	}
