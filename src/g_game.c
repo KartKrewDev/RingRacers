@@ -2225,7 +2225,11 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	boolean followerready;
 	INT32 followerskin;
 	UINT16 followercolor;
+
 	mobj_t *follower; // old follower, will probably be removed by the time we're dead but you never know.
+	mobj_t *hoverhyudoro;
+	mobj_t *skyboxviewpoint;
+	mobj_t *skyboxcenterpoint;
 
 	INT32 charflags;
 	UINT32 followitem;
@@ -2355,8 +2359,6 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 		khudfinish = 0;
 		khudcardanimation = 0;
 		starpostnum = 0;
-
-		follower = NULL;
 	}
 	else
 	{
@@ -2404,15 +2406,25 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 
 		starpostnum = players[player].starpostnum;
 
-		follower = players[player].follower;
-
 		pflags |= (players[player].pflags & (PF_STASIS|PF_ELIMINATED|PF_NOCONTEST|PF_FAULT|PF_LOSTLIFE));
 	}
 
 	if (!betweenmaps)
 	{
-		// Obliterate follower from existence (if valid memory)
+		follower = players[player].follower;
 		P_SetTarget(&players[player].follower, NULL);
+		P_SetTarget(&players[player].awayviewmobj, NULL);
+		P_SetTarget(&players[player].stumbleIndicator, NULL);
+		P_SetTarget(&players[player].followmobj, NULL);
+
+		hoverhyudoro = players[player].hoverhyudoro;
+		skyboxviewpoint = players[player].skybox.viewpoint;
+		skyboxcenterpoint = players[player].skybox.centerpoint;
+	}
+	else
+	{
+		follower = hoverhyudoro = NULL;
+		skyboxviewpoint = skyboxcenterpoint = NULL;
 	}
 
 	p = &players[player];
@@ -2480,6 +2492,10 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 
 	if (follower)
 		P_RemoveMobj(follower);
+
+	p->hoverhyudoro = hoverhyudoro;
+	p->skybox.viewpoint = skyboxviewpoint;
+	p->skybox.centerpoint = skyboxcenterpoint;
 
 	p->followerready = followerready;
 	p->followerskin = followerskin;
