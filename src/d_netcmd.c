@@ -895,6 +895,7 @@ void D_RegisterClientCommands(void)
 	COM_AddCommand("screenshot", M_ScreenShot);
 	COM_AddCommand("startmovie", Command_StartMovie_f);
 	COM_AddCommand("stopmovie", Command_StopMovie_f);
+	COM_AddCommand("minigen", M_MinimapGenerate);
 
 	CV_RegisterVar(&cv_screenshot_option);
 	CV_RegisterVar(&cv_screenshot_folder);

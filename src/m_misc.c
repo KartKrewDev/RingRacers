@@ -1749,6 +1749,83 @@ boolean M_ScreenshotResponder(event_t *ev)
 	return true;
 }
 
+void M_MinimapGenerate(void)
+{
+#ifdef USE_PNG
+	char *filepath;
+	boolean ret = false;
+	minigen_t *minigen = NULL;
+	size_t option_scale;
+	INT32 mul = 1;
+
+	if (gamestate != GS_LEVEL)
+	{
+		CONS_Alert(CONS_ERROR, "You must be in a level to generate a preliminary minimap!\n");
+		return;
+	}
+
+	if (automapactive)
+	{
+		CONS_Alert(CONS_ERROR, "The automap is active! Please deactivate it and try again.\n");
+		return;
+	}
+
+	option_scale = COM_CheckPartialParm("-m");
+
+	if (option_scale)
+	{
+		if (COM_Argc() < option_scale + 2)/* no argument after? */
+		{
+			CONS_Alert(CONS_ERROR,
+					"No multiplier follows parameter '%s'.\n",
+					COM_Argv(option_scale));
+			return;
+		}
+
+		mul = atoi(COM_Argv(option_scale + 1));
+
+		if (mul < 1 || mul > 10)
+		{
+			CONS_Alert(CONS_ERROR,
+					"Multiplier %d must be within range 1-10.\n",
+					mul);
+			return;
+		}
+
+		filepath = va("%s" PATHSEP "MINIMAP-%d.png", srb2home, mul);
+	}
+	else
+	{
+		filepath = va("%s" PATHSEP "MINIMAP.png", srb2home);
+	}
+
+	minigen = AM_MinimapGenerate(mul);
+
+	if (minigen == NULL || minigen->buf == NULL)
+		goto failure;
+
+	M_CreateScreenShotPalette();
+	ret = M_SavePNG(filepath, minigen->buf, minigen->w, minigen->h, screenshot_palette);
+
+failure:
+	if (minigen->buf != NULL)
+		free(minigen->buf);
+
+	if (ret)
+	{
+		CONS_Printf(M_GetText("%s saved.\nRemember that this is not a complete minimap,\nand must be edited before putting in-game.\n"), filepath);
+		if (mul != 1)
+		{
+			CONS_Printf("You should divide its size by %d!\n", mul);
+		}
+	}
+	else
+	{
+		CONS_Alert(CONS_ERROR, M_GetText("Couldn't create %s\n"), filepath);
+	}
+#endif //#ifdef USE_PNG
+}
+
 // ==========================================================================
 //                       TRANSLATION FUNCTIONS
 // ==========================================================================
