@@ -59,6 +59,7 @@ public:
 	void looping(bool looping) { looping_ = looping; };
 	void reset();
 	float duration_seconds() const;
+	float position_seconds() const;
 	void seek(int position_ms);
 
 	~Xmp();

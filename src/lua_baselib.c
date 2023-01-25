@@ -2608,7 +2608,7 @@ static int lib_sMusicType(lua_State *L)
 			return LUA_ErrInvalid(L, "player_t");
 	}
 	if (!player || P_IsLocalPlayer(player))
-		lua_pushinteger(L, S_MusicType());
+		lua_pushstring(L, S_MusicType());
 	else
 		lua_pushnil(L);
 	return 1;

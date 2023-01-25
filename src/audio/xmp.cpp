@@ -130,6 +130,16 @@ float Xmp<C>::duration_seconds() const
 }
 
 template <size_t C>
+float Xmp<C>::position_seconds() const {
+	SRB2_ASSERT(instance_ != nullptr);
+	SRB2_ASSERT(module_loaded_ == true);
+
+	xmp_frame_info info;
+	xmp_get_frame_info(instance_, &info);
+	return static_cast<float>(info.time) / 1000.f;
+}
+
+template <size_t C>
 void Xmp<C>::seek(int position_ms)
 {
 	SRB2_ASSERT(instance_ != nullptr);

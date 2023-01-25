@@ -22,20 +22,6 @@
 extern "C" {
 #endif
 
-// copied from SDL mixer, plus GME
-typedef enum {
-	MU_NONE,
-	MU_WAV,
-	MU_MOD,
-	MU_MID,
-	MU_OGG,
-	MU_MP3,
-	MU_FLAC,
-	MU_GME,
-	MU_MOD_EX, // libopenmpt
-	MU_MID_EX // Non-native MIDI
-} musictype_t;
-
 /**	\brief Sound subsystem runing and waiting
 */
 extern UINT8 sound_started;
@@ -139,7 +125,7 @@ void I_ShutdownMusic(void);
 //  MUSIC PROPERTIES
 /// ------------------------
 
-musictype_t I_SongType(void);
+const char *I_SongType(void);
 boolean I_SongPlaying(void);
 boolean I_SongPaused(void);
 

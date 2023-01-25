@@ -36,6 +36,7 @@
 #include "r_fps.h" // R_ResetViewInterpolation in level load
 
 #include "s_sound.h"
+#include "i_sound.h" // I_FreeSfx
 #include "st_stuff.h"
 #include "w_wad.h"
 #include "z_zone.h"

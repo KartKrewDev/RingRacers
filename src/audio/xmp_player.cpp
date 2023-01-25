@@ -54,6 +54,12 @@ float XmpPlayer<C>::duration_seconds() const
 }
 
 template <size_t C>
+float XmpPlayer<C>::position_seconds() const
+{
+	return xmp_.position_seconds();
+}
+
+template <size_t C>
 void XmpPlayer<C>::seek(float position_seconds)
 {
 	xmp_.seek(static_cast<int>(std::round(position_seconds * 1000.f)));

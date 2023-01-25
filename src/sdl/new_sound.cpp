@@ -375,10 +375,10 @@ void I_ShutdownMusic(void)
 //  MUSIC PROPERTIES
 /// ------------------------
 
-musictype_t I_SongType(void)
+const char* I_SongType(void)
 {
 	if (!music_player)
-		return MU_NONE;
+		return nullptr;
 
 	SdlAudioLockHandle _;
 
@@ -386,19 +386,19 @@ musictype_t I_SongType(void)
 
 	if (music_type == std::nullopt)
 	{
-		return MU_NONE;
+		return nullptr;
 	}
 
 	switch (*music_type)
 	{
 	case audio::MusicType::kOgg:
-		return MU_OGG;
+		return "OGG";
 	case audio::MusicType::kGme:
-		return MU_GME;
+		return "GME";
 	case audio::MusicType::kMod:
-		return MU_MOD;
+		return "Mod";
 	default:
-		return MU_NONE;
+		return nullptr;
 	}
 }
 
