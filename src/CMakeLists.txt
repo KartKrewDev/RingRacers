@@ -229,7 +229,7 @@ target_link_libraries(SRB2SDL2 PRIVATE glad::glad)
 target_link_libraries(SRB2SDL2 PRIVATE fmt)
 target_link_libraries(SRB2SDL2 PRIVATE imgui::imgui)
 
-target_link_libraries(SRB2SDL2 PRIVATE acsvm::acsvm)
+target_link_libraries(SRB2SDL2 PRIVATE acsvm)
 
 set(SRB2_HAVE_THREADS ON)
 target_compile_definitions(SRB2SDL2 PRIVATE -DHAVE_THREADS)
