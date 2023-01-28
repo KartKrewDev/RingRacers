@@ -289,8 +289,28 @@ void M_HandleStaffReplay(INT32 choice)
 
 void M_ReplayTimeAttack(INT32 choice)
 {
-	// @TODO:
-	(void) choice;
+	const char *which;
+	M_ClearMenus(true);
+	demo.loadfiles = false; demo.ignorefiles = true; // Just assume that record attack replays have the files needed
+
+	switch (choice)
+	{
+		default:
+		case tareplay_besttime:
+			which = "time-best";
+			break;
+		case tareplay_bestlap:
+			which = "lap-best";
+			break;
+		case tareplay_last:
+			which = "last";
+			break;
+		case tareplay_guest:
+			G_DoPlayDemo(va("%s"PATHSEP"media"PATHSEP"replay"PATHSEP"%s"PATHSEP"%s-guest.lmp", srb2home, timeattackfolder, G_BuildMapName(levellist.choosemap+1)));
+			return;
+	}
+
+	G_DoPlayDemo(va("%s"PATHSEP"media"PATHSEP"replay"PATHSEP"%s"PATHSEP"%s-%s-%s.lmp", srb2home, timeattackfolder, G_BuildMapName(levellist.choosemap+1), cv_skin[0].string, which));
 }
 
 static const char *TA_GuestReplay_Str = NULL;
