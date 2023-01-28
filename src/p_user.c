@@ -3038,8 +3038,8 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 	fixed_t f1, f2;
 	fixed_t speed;
 
-	fixed_t playerScale = FixedDiv(player->mo->scale, mapobjectscale);
-	fixed_t scaleDiff = playerScale - FRACUNIT;
+	fixed_t playerScale;
+	fixed_t scaleDiff;
 	fixed_t cameraScale = mapobjectscale;
 
 	thiscam->old_x = thiscam->x;
@@ -3063,6 +3063,9 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 		P_DemoCameraMovement(thiscam);
 		return true;
 	}
+
+	playerScale = FixedDiv(player->mo->scale, mapobjectscale);
+	scaleDiff = playerScale - FRACUNIT;
 
 	if (thiscam == &camera[1]) // Camera 2
 	{
