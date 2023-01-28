@@ -4010,7 +4010,7 @@ void G_StopDemo(void)
 	demobuf.buffer = NULL;
 	demo.playback = false;
 	if (demo.title)
-		modeattacking = false;
+		modeattacking = ATTACKING_NONE;
 	demo.title = false;
 	demo.timing = false;
 	singletics = false;
