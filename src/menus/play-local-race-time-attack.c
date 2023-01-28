@@ -8,6 +8,7 @@
 #include "../v_video.h"
 #include "../d_main.h" // srb2home
 #include "../m_misc.h" // M_MkdirEach
+#include "../z_zone.h" // Z_StrDup/Z_Free
 
 // see ta_e
 menuitem_t PLAY_TimeAttack[] =
@@ -34,6 +35,18 @@ menu_t PLAY_TimeAttackDef = {
 	NULL
 };
 
+
+typedef enum
+{
+	tareplay_besttime = 0,
+	tareplay_bestlap,
+	tareplay_gap1,
+	tareplay_last,
+	tareplay_guest,
+	tareplay_staff,
+	tareplay_gap2,
+	tareplay_back
+} tareplay_e;
 
 menuitem_t PLAY_TAReplay[] =
 {
@@ -62,6 +75,18 @@ menu_t PLAY_TAReplayDef = {
 	NULL,
 	NULL
 };
+
+typedef enum
+{
+	taguest_save = 0,
+	taguest_besttime,
+	taguest_bestlap,
+	taguest_last,
+	taguest_gap1,
+	taguest_delete,
+	taguest_gap2,
+	taguest_back
+} taguest_e;
 
 menuitem_t PLAY_TAReplayGuest[] =
 {
@@ -93,6 +118,17 @@ menu_t PLAY_TAReplayGuestDef = {
 	NULL,
 	NULL
 };
+
+typedef enum
+{
+	taghost_besttime = 0,
+	taghost_bestlap,
+	taghost_last,
+	taghost_guest,
+	taghost_staff,
+	taghost_gap1,
+	taghost_back
+} taghost_e;
 
 menuitem_t PLAY_TAGhosts[] =
 {
@@ -134,6 +170,109 @@ consvar_t cv_ghost_guest     = CVAR_INIT ("ghost_guest",     "Show", CV_SAVE, gh
 consvar_t cv_ghost_staff     = CVAR_INIT ("ghost_staff",     "Show", CV_SAVE, ghost2_cons_t, NULL);
 
 // time attack stuff...
+void M_PrepareTimeAttack(INT32 choice)
+{
+	(void) choice;
+
+	if (levellist.guessgt != MAXGAMETYPES)
+	{
+		levellist.newgametype = levellist.guessgt;
+		if (!(gametypes[levellist.newgametype]->tol & mapheaderinfo[levellist.choosemap]->typeoflevel))
+		{
+			INT32 guess = G_GuessGametypeByTOL(mapheaderinfo[levellist.choosemap]->typeoflevel);
+			if (guess != -1)
+				levellist.newgametype = guess;
+		}
+	}
+
+	{
+		// see also p_setup.c's P_LoadRecordGhosts
+		char *gpath = Z_StrDup(va("%s"PATHSEP"media"PATHSEP"replay"PATHSEP"%s"PATHSEP"%s", srb2home, timeattackfolder, G_BuildMapName(levellist.choosemap+1)));
+		UINT8 active;
+
+		if (!gpath)
+			return;
+
+		CV_StealthSetValue(&cv_dummystaff, 0);
+
+		active = false;
+		PLAY_TimeAttack[ta_guest].status = IT_DISABLED;
+		PLAY_TimeAttack[ta_replay].status = IT_DISABLED;
+		PLAY_TimeAttack[ta_ghosts].status = IT_DISABLED;
+
+		// Check if file exists, if not, disable options
+		PLAY_TAReplay[tareplay_besttime].status =
+			PLAY_TAReplayGuest[taguest_besttime].status = IT_DISABLED;
+		if (FIL_FileExists(va("%s-%s-time-best.lmp", gpath, cv_skin[0].string)))
+		{
+			PLAY_TAReplay[tareplay_besttime].status = IT_STRING|IT_CALL;
+			PLAY_TAReplayGuest[taguest_besttime].status = IT_STRING|IT_CALL;
+			active |= (1|2|4);
+		}
+
+		PLAY_TAReplay[tareplay_bestlap].status =
+			PLAY_TAReplayGuest[taguest_bestlap].status =
+			PLAY_TAGhosts[taghost_bestlap].status = IT_DISABLED;
+		if ((gametypes[levellist.newgametype]->rules & GTR_CIRCUIT)
+			&& (mapheaderinfo[levellist.choosemap]->numlaps > 1)
+			&& FIL_FileExists(va("%s-%s-lap-best.lmp", gpath, cv_skin[0].string)))
+		{
+			PLAY_TAReplay[tareplay_bestlap].status = IT_STRING|IT_CALL;
+			PLAY_TAReplayGuest[taguest_bestlap].status = IT_STRING|IT_CALL;
+			PLAY_TAGhosts[taghost_bestlap].status = IT_STRING|IT_CVAR;
+			active |= (1|2|4);
+		}
+
+		PLAY_TAReplay[tareplay_last].status =
+			PLAY_TAReplayGuest[taguest_last].status = IT_DISABLED;
+		if (FIL_FileExists(va("%s-%s-last.lmp", gpath, cv_skin[0].string)))
+		{
+			PLAY_TAReplay[tareplay_last].status = IT_STRING|IT_CALL;
+			PLAY_TAReplayGuest[taguest_last].status = IT_STRING|IT_CALL;
+			active |= (1|2|4);
+		}
+
+		PLAY_TAReplay[tareplay_guest].status =
+			PLAY_TAGhosts[taghost_guest].status =
+			PLAY_TAReplayGuest[taguest_delete].status = IT_DISABLED;
+		if (FIL_FileExists(va("%s-guest.lmp", gpath)))
+		{
+			PLAY_TAReplay[tareplay_guest].status = IT_STRING|IT_CALL;
+			PLAY_TAReplayGuest[taguest_delete].status = IT_STRING|IT_CALL;
+			PLAY_TAGhosts[taghost_guest].status = IT_STRING|IT_CVAR;
+			active |= (1|2|4);
+		}
+
+		PLAY_TAReplay[tareplay_staff].status =
+			PLAY_TAGhosts[taghost_staff].status = IT_DISABLED;
+#ifdef STAFFGHOSTS
+		CV_SetValue(&cv_dummystaff, 1);
+		if (cv_dummystaff.value)
+		{
+			PLAY_TAReplay[tareplay_staff].status = IT_STRING|IT_KEYHANDLER;
+			PLAY_TAGhosts[taghost_staff].status = IT_STRING|IT_CVAR;
+			CV_StealthSetValue(&cv_dummystaff, 1);
+			active |= 1|4;
+		}
+#endif //#ifdef STAFFGHOSTS
+
+		if (active & 1)
+			PLAY_TimeAttack[ta_replay].status = IT_STRING|IT_SUBMENU;
+		else if (PLAY_TimeAttackDef.lastOn == ta_replay)
+			PLAY_TimeAttackDef.lastOn = ta_start;
+		if (active & 2)
+			PLAY_TimeAttack[ta_guest].status = IT_STRING|IT_SUBMENU;
+		else if (PLAY_TimeAttackDef.lastOn == ta_guest)
+			PLAY_TimeAttackDef.lastOn = ta_start;
+		//if (active & 4) -- for possible future use
+			PLAY_TimeAttack[ta_ghosts].status = IT_STRING|IT_SUBMENU;
+		/*else if (PLAY_TimeAttackDef.lastOn == ta_ghosts)
+			PLAY_TimeAttackDef.lastOn = ta_start;*/
+
+		Z_Free(gpath);
+	}
+}
+
 void M_HandleStaffReplay(INT32 choice)
 {
 	// @TODO:

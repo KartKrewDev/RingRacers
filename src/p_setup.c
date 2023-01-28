@@ -7139,7 +7139,7 @@ static void P_ResetSpawnpoints(void)
 
 static void P_LoadRecordGhosts(void)
 {
-	// see also k_menu.c's Nextmap_OnChange
+	// see also /menus/play-local-race-time-attack.c's M_PrepareTimeAttack
 	char *gpath;
 	INT32 i;
 
@@ -7200,7 +7200,7 @@ static void P_LoadRecordGhosts(void)
 	{
 		lumpnum_t l;
 		UINT8 j = 1;
-		// TODO: Use map header to determine lump name
+		// TODO: Use vres for lumps
 		while (j <= 99 && (l = W_CheckNumForLongName(va("%sS%02u",G_BuildMapName(gamemap),j))) != LUMPERROR)
 		{
 			G_AddGhost(va("%sS%02u",G_BuildMapName(gamemap),j));

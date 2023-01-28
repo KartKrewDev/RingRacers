@@ -424,8 +424,7 @@ void M_LevelSelected(INT16 add)
 	{
 		S_StartSound(NULL, sfx_s3k63);
 
-		if (levellist.guessgt != MAXGAMETYPES)
-			levellist.newgametype = G_GuessGametypeByTOL(levellist.levelsearch.typeoflevel);
+		M_PrepareTimeAttack(0);
 
 		PLAY_TimeAttackDef.lastOn = ta_start;
 		PLAY_TimeAttackDef.prevMenu = currentMenu;

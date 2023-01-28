@@ -467,6 +467,7 @@ void Moviemode_option_Onchange(void);
 
 extern menu_t *currentMenu;
 extern char dummystaffname[22];
+extern consvar_t cv_dummystaff;
 
 extern INT16 itemOn; // menu item skull is on, Hack by Tails 09-18-2002
 extern INT16 skullAnimCounter; // skull animation counter
@@ -784,6 +785,7 @@ extern struct mpmenu_s {
 } mpmenu;
 
 // Time Attack
+void M_PrepareTimeAttack(INT32 choice);
 void M_StartTimeAttack(INT32 choice);
 void M_ReplayTimeAttack(INT32 choice);
 void M_HandleStaffReplay(INT32 choice);
