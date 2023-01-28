@@ -78,7 +78,7 @@ menu_t PLAY_TAReplayDef = {
 
 typedef enum
 {
-	taguest_save = 0,
+	taguest_header = 0,
 	taguest_besttime,
 	taguest_bestlap,
 	taguest_last,
@@ -209,6 +209,8 @@ void M_PrepareTimeAttack(INT32 choice)
 			PLAY_TAReplayGuest[taguest_besttime].status = IT_STRING|IT_CALL;
 			active |= (1|2|4);
 		}
+		else if (PLAY_TAReplayGuestDef.lastOn == taguest_besttime)
+			PLAY_TAReplayGuestDef.lastOn = taguest_back;
 
 		PLAY_TAReplay[tareplay_bestlap].status =
 			PLAY_TAReplayGuest[taguest_bestlap].status =
@@ -222,6 +224,8 @@ void M_PrepareTimeAttack(INT32 choice)
 			PLAY_TAGhosts[taghost_bestlap].status = IT_STRING|IT_CVAR;
 			active |= (1|2|4);
 		}
+		else if (PLAY_TAReplayGuestDef.lastOn == taguest_bestlap)
+			PLAY_TAReplayGuestDef.lastOn = taguest_back;
 
 		PLAY_TAReplay[tareplay_last].status =
 			PLAY_TAReplayGuest[taguest_last].status = IT_DISABLED;
@@ -231,6 +235,8 @@ void M_PrepareTimeAttack(INT32 choice)
 			PLAY_TAReplayGuest[taguest_last].status = IT_STRING|IT_CALL;
 			active |= (1|2|4);
 		}
+		else if (PLAY_TAReplayGuestDef.lastOn == taguest_last)
+			PLAY_TAReplayGuestDef.lastOn = taguest_back;
 
 		PLAY_TAReplay[tareplay_guest].status =
 			PLAY_TAGhosts[taghost_guest].status =
@@ -242,6 +248,8 @@ void M_PrepareTimeAttack(INT32 choice)
 			PLAY_TAGhosts[taghost_guest].status = IT_STRING|IT_CVAR;
 			active |= (1|2|4);
 		}
+		else if (PLAY_TAReplayGuestDef.lastOn == taguest_delete)
+			PLAY_TAReplayGuestDef.lastOn = taguest_back;
 
 		PLAY_TAReplay[tareplay_staff].status =
 			PLAY_TAGhosts[taghost_staff].status = IT_DISABLED;
@@ -285,10 +293,83 @@ void M_ReplayTimeAttack(INT32 choice)
 	(void) choice;
 }
 
+static const char *TA_GuestReplay_Str = NULL;
+
+static void M_WriteGuestReplay(INT32 ch)
+{
+	char *gpath, *rguest;
+
+	UINT8 *buf;
+	size_t len = 0;
+
+	if (ch != MA_YES)
+		return;
+
+	gpath = Z_StrDup(va("%s"PATHSEP"media"PATHSEP"replay"PATHSEP"%s"PATHSEP"%s", srb2home, timeattackfolder, G_BuildMapName(levellist.choosemap+1)));
+
+	if (TA_GuestReplay_Str != NULL)
+	{
+		len = FIL_ReadFile(va("%s-%s-%s.lmp", gpath, cv_skin[0].string, TA_GuestReplay_Str), &buf);
+		if (!len)
+		{
+			M_StartMessage("Replay to copy no longer exists!", NULL, MM_NOTHING);
+			Z_Free(gpath);
+			return;
+		}
+	}
+
+	rguest = Z_StrDup(va("%s-guest.lmp", gpath));
+
+	if (FIL_FileExists(rguest))
+	{
+		//M_StopMessage(0);
+		remove(rguest);
+	}
+
+	if (len)
+	{
+		FIL_WriteFile(rguest, buf, len);
+	}
+
+	Z_Free(rguest);
+	Z_Free(gpath);
+
+	M_PrepareTimeAttack(0);
+	M_SetupNextMenu(&PLAY_TimeAttackDef, false);
+
+	// TODO the following isn't showing up and I'm not sure why
+	//M_StartMessage(va("Guest replay data %s.", (len ? "saved" : "erased")), NULL, MM_NOTHING);
+}
+
+
 void M_SetGuestReplay(INT32 choice)
 {
-	// @TODO:
-	(void) choice;
+	switch (choice)
+	{
+		case taguest_besttime:
+			TA_GuestReplay_Str = "time-best";
+			break;
+		case taguest_bestlap:
+			TA_GuestReplay_Str = "lap-best";
+			break;
+		case taguest_last:
+			TA_GuestReplay_Str = "last";
+			break;
+
+		case taguest_delete:
+		default:
+			TA_GuestReplay_Str = NULL;
+			break;
+	}
+
+	if (FIL_FileExists(va("%s"PATHSEP"media"PATHSEP"replay"PATHSEP"%s"PATHSEP"%s-guest.lmp", srb2home, timeattackfolder, G_BuildMapName(levellist.choosemap+1))))
+	{
+		M_StartMessage(va("Are you sure you want to\n%s the guest replay data?\n\nPress (A) to confirm or (B) to cancel", (TA_GuestReplay_Str != NULL ? "overwrite" : "delete")), FUNCPTRCAST(M_WriteGuestReplay), MM_YESNO);
+	}
+	else if (TA_GuestReplay_Str != NULL)
+	{
+		M_WriteGuestReplay(MA_YES);
+	}
 }
 
 void M_StartTimeAttack(INT32 choice)
