@@ -54,6 +54,8 @@ void M_EndModeAttackRun(void)
 
 	M_StartControlPanel();
 
+	M_PrepareTimeAttack(0);
+
 	currentMenu = &PLAY_TimeAttackDef;
 	itemOn = currentMenu->lastOn;
 
