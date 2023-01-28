@@ -216,7 +216,7 @@ void M_PrepareTimeAttack(INT32 choice)
 			PLAY_TAReplayGuest[taguest_bestlap].status =
 			PLAY_TAGhosts[taghost_bestlap].status = IT_DISABLED;
 		if ((gametypes[levellist.newgametype]->rules & GTR_CIRCUIT)
-			&& (mapheaderinfo[levellist.choosemap]->numlaps > 1)
+			&& (mapheaderinfo[levellist.choosemap]->numlaps != 1)
 			&& FIL_FileExists(va("%s-%s-lap-best.lmp", gpath, cv_skin[0].string)))
 		{
 			PLAY_TAReplay[tareplay_bestlap].status = IT_STRING|IT_CALL;
