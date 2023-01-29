@@ -915,9 +915,9 @@ void D_SRB2Loop(void)
 // =========================================================================
 
 //
-// D_StartTitle
+// D_ClearState
 //
-void D_StartTitle(void)
+void D_ClearState(void)
 {
 	INT32 i;
 
@@ -932,7 +932,7 @@ void D_StartTitle(void)
 			i = G_GetFirstMapOfGametype(gametype)+1;
 
 			if (i > nummapheaders)
-				I_Error("D_StartTitle: No valid map ID found!?");
+				I_Error("D_ClearState: No valid map ID found!?");
 
 			COM_BufAddText(va("map %s\n", G_BuildMapName(i)));
 		}
@@ -979,15 +979,27 @@ void D_StartTitle(void)
 	memset(gamekeydown, 0, sizeof (gamekeydown));
 	memset(deviceResponding, false, sizeof (deviceResponding));
 
-	F_StartTitleScreen();
-	M_ClearMenus(false);
-
 	// Reset the palette
 	if (rendermode != render_none)
 		V_SetPaletteLump("PLAYPAL");
 
 	// The title screen is obviously not a tutorial! (Unless I'm mistaken)
 	tutorialmode = false;
+
+	G_SetGamestate(GS_NULL);
+}
+
+//
+// D_StartTitle
+//
+void D_StartTitle(void)
+{
+	D_ClearState();
+	if (netgame)
+		return;
+
+	F_StartTitleScreen();
+	M_ClearMenus(false);
 }
 
 //

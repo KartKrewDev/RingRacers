@@ -2990,7 +2990,8 @@ void G_ExitLevel(void)
 				{
 					D_QuitNetGame();
 					CL_Reset();
-					D_StartTitle();
+					D_ClearState();
+					M_StartControlPanel();
 				}
 			}
 			else
@@ -4003,15 +4004,7 @@ void G_AfterIntermission(void)
 
 	if (demo.playback)
 	{
-		G_StopDemo();
-
-#if 0
-		if (demo.inreplayhut)
-			M_ReplayHut(0);
-		else
-#endif
-			D_StartTitle();
-
+		M_PlaybackQuit(0);
 		return;
 	}
 	else if (demo.recording && (modeattacking || demo.savemode != DSM_NOTSAVING))
@@ -4170,8 +4163,8 @@ void G_EndGame(void)
 	{
 		if (nextmap == NEXTMAP_CEREMONY) // end game with ceremony
 		{
-			D_StartTitle(); //F_StartEnding(); -- temporary
-			return;
+			/*F_StartEnding(); -- temporary
+			return;*/
 		}
 		if (nextmap == NEXTMAP_CREDITS) // end game with credits
 		{
@@ -4186,7 +4179,8 @@ void G_EndGame(void)
 	}
 
 	// direct or competitive multiplayer, so go back to title screen.
-	D_StartTitle();
+	D_ClearState();
+	M_StartControlPanel();
 }
 
 //

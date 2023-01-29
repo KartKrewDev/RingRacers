@@ -22,9 +22,8 @@ menu_t PLAY_RaceGamemodesDef = KARTGAMEMODEMENU(PLAY_RaceGamemodesMenu, &PLAY_Ga
 
 void M_SetupRaceMenu(INT32 choice)
 {
-	(void)choice;
-
-	PLAY_RaceGamemodesDef.prevMenu = currentMenu;
+	if (choice != -1)
+		PLAY_RaceGamemodesDef.prevMenu = currentMenu;
 
 	// Time Attack disabled
 	PLAY_RaceGamemodesMenu[2].status = IT_DISABLED;
@@ -36,5 +35,6 @@ void M_SetupRaceMenu(INT32 choice)
 		PLAY_RaceGamemodesMenu[2].status = IT_STRING | IT_CALL;
 	}
 
-	M_SetupNextMenu(&PLAY_RaceGamemodesDef, false);
+	if (choice != -1)
+		M_SetupNextMenu(&PLAY_RaceGamemodesDef, false);
 }

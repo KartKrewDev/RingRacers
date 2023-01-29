@@ -466,6 +466,8 @@ typedef enum
 void Moviemode_option_Onchange(void);
 
 extern menu_t *currentMenu;
+extern menu_t *restoreMenu;
+
 extern char dummystaffname[22];
 extern consvar_t cv_dummystaff;
 
@@ -583,6 +585,7 @@ boolean M_MenuExtraPressed(UINT8 pid);
 boolean M_MenuExtraHeld(UINT8 pid);
 
 void M_StartControlPanel(void);
+menu_t *M_SpecificMenuRestore(menu_t *torestore);
 void M_ClearMenus(boolean callexitmenufunc);
 void M_SelectableClearMenus(INT32 choice);
 void M_SetupNextMenu(menu_t *menudef, boolean nofade);

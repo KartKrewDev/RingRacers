@@ -54,17 +54,9 @@ void M_EndModeAttackRun(void)
 	if (gamestate == GS_LEVEL || gamestate == GS_INTERMISSION)
 		Command_ExitGame_f();
 
-	M_StartControlPanel();
-
-	M_PrepareTimeAttack(0);
-
-	currentMenu = &PLAY_TimeAttackDef;
-	itemOn = currentMenu->lastOn;
-
-	G_SetGamestate(GS_MENU);
-	S_ChangeMusicInternal("menu", true);
-
 	modeattacking = ATTACKING_NONE;
+
+	M_StartControlPanel();
 }
 
 // Replay Playback Menu
@@ -250,7 +242,7 @@ void M_PlaybackQuit(INT32 choice)
 	G_StopDemo();
 
 	if (demo.inreplayhut)
-		M_ReplayHut(choice);
+		M_StartControlPanel();
 	else if (modeattacking)
 		M_EndModeAttackRun();
 	else

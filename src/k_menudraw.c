@@ -237,7 +237,7 @@ static void M_DrawMenuParty(void)
 	UINT16 color;
 	UINT8 *colormap;
 
-	if (setup_numplayers == 0 || currentMenu == &PLAY_CharSelectDef)
+	if (setup_numplayers == 0 || currentMenu == &PLAY_CharSelectDef || currentMenu == &MISC_ChallengesDef)
 	{
 		return;
 	}

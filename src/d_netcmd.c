@@ -2971,6 +2971,7 @@ static void Command_Map_f(void)
 		if (!Playing())
 		{
 			multiplayer = true;
+			restoreMenu = NULL;
 		}
 	}
 
@@ -5782,7 +5783,10 @@ void Command_ExitGame_f(void)
 		closefilemenu(true);
 
 	if (!modeattacking)
-		D_StartTitle();
+	{
+		D_ClearState();
+		M_StartControlPanel();
+	}
 }
 
 void Command_Retry_f(void)

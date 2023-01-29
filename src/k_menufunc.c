@@ -35,6 +35,7 @@ boolean fromlevelselect = false;
 
 // current menudef
 menu_t *currentMenu = &MAIN_ProfilesDef;
+menu_t *restoreMenu = NULL;
 
 char dummystaffname[22];
 
@@ -356,6 +357,51 @@ boolean M_Responder(event_t *ev)
 }
 
 //
+// M_SpecificMenuRestore
+//
+menu_t *M_SpecificMenuRestore(menu_t *torestore)
+{
+	// I'd advise the following not be a switch case because they're pointers...
+
+	if (torestore == &PLAY_CupSelectDef
+	|| torestore == &PLAY_LevelSelectDef
+	|| torestore == &PLAY_TimeAttackDef)
+	{
+		// Handle unlock restrictions
+		M_SetupGametypeMenu(-1);
+		M_SetupRaceMenu(-1);
+
+		if (!M_LevelListFromGametype(-1))
+		{
+			if (PLAY_LevelSelectDef.prevMenu == &PLAY_CupSelectDef)
+			{
+				torestore = PLAY_CupSelectDef.prevMenu;
+			}
+			else
+			{
+				torestore = PLAY_LevelSelectDef.prevMenu;
+			}
+		}
+		else if (torestore == &PLAY_TimeAttackDef)
+		{
+			M_PrepareTimeAttack(0);
+		}
+	}
+	else if (torestore == &EXTRAS_ReplayHutDef)
+	{
+		// Handle modifications to the folder while playing
+		M_ReplayHut(0);
+	}
+
+	if (setup_numplayers == 0)
+	{
+		setup_numplayers = 1;
+	}
+
+	return torestore;
+}
+
+//
 // M_StartControlPanel
 //
 void M_StartControlPanel(void)
@@ -370,32 +416,18 @@ void M_StartControlPanel(void)
 	}
 
 	// intro might call this repeatedly
-	if (menuactive)
+	if (menuactive && gamestate != GS_NULL)
 	{
 		CON_ToggleOff(); // move away console
 		return;
 	}
 
-	if (gamestate == GS_TITLESCREEN) // Set up menu state
+	if (gamestate == GS_TITLESCREEN && restoreMenu == NULL) // Set up menu state
 	{
 		// No instantly skipping the titlescreen.
 		// (We can change this timer later when extra animation is added.)
 		if (finalecount < 1)
 			return;
-
-		G_SetGamestate(GS_MENU);
-
-		gameaction = ga_nothing;
-		paused = false;
-		CON_ToggleOff();
-
-		if (cv_menujam_update.value)
-		{
-			CV_AddValue(&cv_menujam, 1);
-			CV_SetValue(&cv_menujam_update, 0);
-		}
-
-		S_ChangeMusicInternal(cv_menujam.string, true);
 	}
 
 	menuactive = true;
@@ -407,6 +439,28 @@ void M_StartControlPanel(void)
 	else if (!Playing())
 	{
 		M_StopMessage(0); // Doesn't work with MM_YESNO or MM_EVENTHANDLER... but good enough to get the game as it is currently functional again
+
+		if (gamestate != GS_MENU)
+		{
+			G_SetGamestate(GS_MENU);
+
+			gameaction = ga_nothing;
+			paused = false;
+			CON_ToggleOff();
+
+			modeattacking = ATTACKING_NONE;
+
+			if (cv_menujam_update.value)
+			{
+				CV_AddValue(&cv_menujam, 1);
+				CV_SetValue(&cv_menujam_update, 0);
+			}
+
+			S_ChangeMusicInternal(cv_menujam.string, true);
+
+			if (!restoreMenu)
+				restoreMenu = &MainDef;
+		}
 
 		if (cv_currprofile.value == -1) // Only ask once per session.
 		{
@@ -431,8 +485,10 @@ void M_StartControlPanel(void)
 		}
 		else
 		{
-			currentMenu = M_InterruptMenuWithChallenges(&MainDef);
+			currentMenu = M_SpecificMenuRestore(M_InterruptMenuWithChallenges(restoreMenu));
 		}
+
+		restoreMenu = NULL;
 	}
 	else
 	{

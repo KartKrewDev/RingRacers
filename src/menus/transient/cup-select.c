@@ -157,6 +157,8 @@ void M_CupSelectHandler(INT32 choice)
 			);
 
 			M_ClearMenus(true);
+
+			restoreMenu = &PLAY_CupSelectDef;
 		}
 		else if (count == 1)
 		{

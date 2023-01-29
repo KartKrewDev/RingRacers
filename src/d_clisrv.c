@@ -1533,7 +1533,8 @@ static boolean CL_FinishedFileList(void)
 	{
 		D_QuitNetGame();
 		CL_Reset();
-		D_StartTitle();
+		D_ClearState();
+		M_StartControlPanel();
 		M_StartMessage(M_GetText(
 			"You have too many WAD files loaded\n"
 			"to add ones the server is using.\n"
@@ -1546,7 +1547,8 @@ static boolean CL_FinishedFileList(void)
 	{
 		D_QuitNetGame();
 		CL_Reset();
-		D_StartTitle();
+		D_ClearState();
+		M_StartControlPanel();
 		M_StartMessage(M_GetText(
 			"You have the wrong addons loaded.\n\n"
 			"To play on this server, restart\n"
@@ -1713,7 +1715,8 @@ static boolean CL_ServerConnectionSearchTicker(tic_t *asksent)
 
 				D_QuitNetGame();
 				CL_Reset();
-				D_StartTitle();
+				D_ClearState();
+				M_StartControlPanel();
 
 				M_StartMessage(va(
 							"Your EXE differs from the server.\n"
@@ -1864,7 +1867,8 @@ static boolean CL_ServerConnectionTicker(const char *tmpsave, tic_t *oldtic, tic
 				CONS_Printf(M_GetText("Network game synchronization aborted.\n"));
 				D_QuitNetGame();
 				CL_Reset();
-				D_StartTitle();
+				D_ClearState();
+				M_StartControlPanel();
 				M_StartMessage(M_GetText(
 					"The direct download encountered an error.\n"
 					"See the logfile for more info.\n"
@@ -1893,7 +1897,8 @@ static boolean CL_ServerConnectionTicker(const char *tmpsave, tic_t *oldtic, tic
 				CONS_Printf(M_GetText("Network game synchronization aborted.\n"));
 				D_QuitNetGame();
 				CL_Reset();
-				D_StartTitle();
+				D_ClearState();
+				M_StartControlPanel();
 				M_StartMessage(M_GetText(
 					"5 minute wait time exceeded.\n"
 					"You may retry connection.\n"
@@ -1982,7 +1987,8 @@ static boolean CL_ServerConnectionTicker(const char *tmpsave, tic_t *oldtic, tic
 
 			D_QuitNetGame();
 			CL_Reset();
-			D_StartTitle();
+			D_ClearState();
+			M_StartControlPanel();
 			return false;
 		}
 
@@ -2507,6 +2513,7 @@ static void Command_connect(void)
 		SplitScreen_OnChange();
 	}
 
+	restoreMenu = &PLAY_MP_OptSelectDef;
 	CL_ConnectToServer();
 }
 
@@ -3142,7 +3149,8 @@ static void Got_KickCmd(UINT8 **p, INT32 playernum)
 
 		D_QuitNetGame();
 		CL_Reset();
-		D_StartTitle();
+		D_ClearState();
+		M_StartControlPanel();
 
 		if (msg == KICK_MSG_CON_FAIL)
 			M_StartMessage(M_GetText("Server closed connection\n(Synch failure)\nPress (B)\n"), NULL, MM_NOTHING);
@@ -4169,7 +4177,8 @@ static void HandleShutdown(SINT8 node)
 	LUA_HookBool(false, HOOK(GameQuit));
 	D_QuitNetGame();
 	CL_Reset();
-	D_StartTitle();
+	D_ClearState();
+	M_StartControlPanel();
 	M_StartMessage(M_GetText("Server has shutdown\n\nPress (B)\n"), NULL, MM_NOTHING);
 }
 
@@ -4184,7 +4193,8 @@ static void HandleTimeout(SINT8 node)
 	LUA_HookBool(false, HOOK(GameQuit));
 	D_QuitNetGame();
 	CL_Reset();
-	D_StartTitle();
+	D_ClearState();
+	M_StartControlPanel();
 	M_StartMessage(M_GetText("Server Timeout\n\nPress (B)\n"), NULL, MM_NOTHING);
 }
 
@@ -4370,7 +4380,8 @@ static void HandlePacketFromAwayNode(SINT8 node)
 
 				D_QuitNetGame();
 				CL_Reset();
-				D_StartTitle();
+				D_ClearState();
+				M_StartControlPanel();
 
 				if (reason[1] == '|')
 				{

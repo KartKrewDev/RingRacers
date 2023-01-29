@@ -290,8 +290,12 @@ void M_HandleStaffReplay(INT32 choice)
 void M_ReplayTimeAttack(INT32 choice)
 {
 	const char *which;
+
+	restoreMenu = &PLAY_TimeAttackDef;
+
 	M_ClearMenus(true);
-	demo.loadfiles = false; demo.ignorefiles = true; // Just assume that record attack replays have the files needed
+	demo.loadfiles = false;
+	demo.ignorefiles = true; // Just assume that record attack replays have the files needed
 
 	switch (choice)
 	{
@@ -444,6 +448,8 @@ void M_StartTimeAttack(INT32 choice)
 		remove(va("%s"PATHSEP"%s.lmp", srb2home, nameofdemo));
 	else
 		G_RecordDemo(nameofdemo);
+
+	restoreMenu = &PLAY_TimeAttackDef;
 
 	M_ClearMenus(true);
 	D_MapChange(levellist.choosemap+1, levellist.newgametype, (cv_dummygpencore.value == 1), 1, 1, false, false);

@@ -416,6 +416,8 @@ boolean M_ChallengesInputs(INT32 ch)
 	{
 		if (M_MenuBackPressed(pid) || start)
 		{
+			currentMenu->prevMenu = M_SpecificMenuRestore(currentMenu->prevMenu);
+
 			M_GoBack(0);
 			M_SetMenuDelay(pid);
 
