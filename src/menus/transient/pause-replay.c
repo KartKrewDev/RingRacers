@@ -9,6 +9,8 @@
 #include "../../p_local.h" // P_InitCameraCmd
 #include "../../d_main.h" // D_StartTitle
 
+static void M_PlaybackTick(void);
+
 menuitem_t PAUSE_PlaybackMenu[] =
 {
 	{IT_CALL   | IT_STRING, "Hide Menu (Esc)",			NULL, "M_PHIDE",	{.routine = M_SelectableClearMenus},	  0, 0},
@@ -39,7 +41,7 @@ menu_t PAUSE_PlaybackMenuDef = {
 	0, 0,
 	0, 0,
 	M_DrawPlaybackMenu,
-	NULL,
+	M_PlaybackTick,
 	NULL,
 	NULL,
 	NULL
@@ -66,6 +68,64 @@ void M_EndModeAttackRun(void)
 }
 
 // Replay Playback Menu
+
+tic_t playback_last_menu_interaction_leveltime = 0;
+
+static void M_PlaybackTick(void)
+{
+	INT16 i;
+
+	if (leveltime - playback_last_menu_interaction_leveltime >= 6*TICRATE)
+		playback_last_menu_interaction_leveltime = leveltime - 6*TICRATE;
+
+	// Toggle items
+	if (paused && !demo.rewinding)
+	{
+		PAUSE_PlaybackMenu[playback_pause].status = PAUSE_PlaybackMenu[playback_fastforward].status = PAUSE_PlaybackMenu[playback_rewind].status = IT_DISABLED;
+		PAUSE_PlaybackMenu[playback_resume].status = PAUSE_PlaybackMenu[playback_advanceframe].status = PAUSE_PlaybackMenu[playback_backframe].status = IT_CALL|IT_STRING;
+
+		if (itemOn >= playback_rewind && itemOn <= playback_fastforward)
+			itemOn += playback_backframe - playback_rewind;
+	}
+	else
+	{
+		PAUSE_PlaybackMenu[playback_pause].status = PAUSE_PlaybackMenu[playback_fastforward].status = PAUSE_PlaybackMenu[playback_rewind].status = IT_CALL|IT_STRING;
+		PAUSE_PlaybackMenu[playback_resume].status = PAUSE_PlaybackMenu[playback_advanceframe].status = PAUSE_PlaybackMenu[playback_backframe].status = IT_DISABLED;
+
+		if (itemOn >= playback_backframe && itemOn <= playback_advanceframe)
+			itemOn -= playback_backframe - playback_rewind;
+	}
+
+	if (modeattacking)
+	{
+		for (i = playback_viewcount; i <= playback_view4; i++)
+			PAUSE_PlaybackMenu[i].status = IT_DISABLED;
+
+		//PAUSE_PlaybackMenu[playback_moreoptions].mvar1 = 72;
+		//PAUSE_PlaybackMenu[playback_quit].mvar1 = 88;
+		PAUSE_PlaybackMenu[playback_quit].mvar1 = 72;
+
+		//currentMenu->x = BASEVIDWIDTH/2 - 52;
+		currentMenu->x = BASEVIDWIDTH/2 - 44;
+	}
+	else
+	{
+		PAUSE_PlaybackMenu[playback_viewcount].status = IT_ARROWS|IT_STRING;
+
+		for (i = 0; i <= r_splitscreen; i++)
+			PAUSE_PlaybackMenu[playback_view1+i].status = IT_ARROWS|IT_STRING;
+		for (i = r_splitscreen+1; i < 4; i++)
+			PAUSE_PlaybackMenu[playback_view1+i].status = IT_DISABLED;
+
+		//PAUSE_PlaybackMenu[playback_moreoptions].mvar1 = 156;
+		//PAUSE_PlaybackMenu[playback_quit].mvar1 = 172;
+		PAUSE_PlaybackMenu[playback_quit].mvar1 = 156;
+
+		//currentMenu->x = BASEVIDWIDTH/2 - 94;
+		currentMenu->x = BASEVIDWIDTH/2 - 88;
+	}
+}
+
 void M_SetPlaybackMenuPointer(void)
 {
 	itemOn = playback_pause;
@@ -143,12 +203,12 @@ void M_PlaybackSetViews(INT32 choice)
 {
 	if (choice > 0)
 	{
-		if (splitscreen < 3)
-			G_AdjustView(splitscreen + 2, 0, true);
+		if (r_splitscreen < 3)
+			G_AdjustView(r_splitscreen + 2, 0, true);
 	}
-	else if (splitscreen)
+	else if (r_splitscreen)
 	{
-		splitscreen--;
+		r_splitscreen--;
 		R_ExecuteSetViewSize();
 	}
 }

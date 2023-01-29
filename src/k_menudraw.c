@@ -3794,8 +3794,6 @@ void M_DrawPause(void)
 	}
 }
 
-tic_t playback_last_menu_interaction_leveltime = 0;
-
 void M_DrawPlaybackMenu(void)
 {
 	INT16 i;
@@ -3803,56 +3801,6 @@ void M_DrawPlaybackMenu(void)
 	UINT8 *activemap = R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_GOLD, GTC_MENUCACHE);
 	UINT32 transmap = max(0, (INT32)(leveltime - playback_last_menu_interaction_leveltime - 4*TICRATE)) / 5;
 	transmap = min(8, transmap) << V_ALPHASHIFT;
-
-	if (leveltime - playback_last_menu_interaction_leveltime >= 6*TICRATE)
-		playback_last_menu_interaction_leveltime = leveltime - 6*TICRATE;
-
-	// Toggle items
-	if (paused && !demo.rewinding)
-	{
-		PAUSE_PlaybackMenu[playback_pause].status = PAUSE_PlaybackMenu[playback_fastforward].status = PAUSE_PlaybackMenu[playback_rewind].status = IT_DISABLED;
-		PAUSE_PlaybackMenu[playback_resume].status = PAUSE_PlaybackMenu[playback_advanceframe].status = PAUSE_PlaybackMenu[playback_backframe].status = IT_CALL|IT_STRING;
-
-		if (itemOn >= playback_rewind && itemOn <= playback_fastforward)
-			itemOn += playback_backframe - playback_rewind;
-	}
-	else
-	{
-		PAUSE_PlaybackMenu[playback_pause].status = PAUSE_PlaybackMenu[playback_fastforward].status = PAUSE_PlaybackMenu[playback_rewind].status = IT_CALL|IT_STRING;
-		PAUSE_PlaybackMenu[playback_resume].status = PAUSE_PlaybackMenu[playback_advanceframe].status = PAUSE_PlaybackMenu[playback_backframe].status = IT_DISABLED;
-
-		if (itemOn >= playback_backframe && itemOn <= playback_advanceframe)
-			itemOn -= playback_backframe - playback_rewind;
-	}
-
-	if (modeattacking)
-	{
-		for (i = playback_viewcount; i <= playback_view4; i++)
-			PAUSE_PlaybackMenu[i].status = IT_DISABLED;
-
-		//PAUSE_PlaybackMenu[playback_moreoptions].mvar1 = 72;
-		//PAUSE_PlaybackMenu[playback_quit].mvar1 = 88;
-		PAUSE_PlaybackMenu[playback_quit].mvar1 = 72;
-
-		//currentMenu->x = BASEVIDWIDTH/2 - 52;
-		currentMenu->x = BASEVIDWIDTH/2 - 44;
-	}
-	else
-	{
-		PAUSE_PlaybackMenu[playback_viewcount].status = IT_ARROWS|IT_STRING;
-
-		for (i = 0; i <= splitscreen; i++)
-			PAUSE_PlaybackMenu[playback_view1+i].status = IT_ARROWS|IT_STRING;
-		for (i = splitscreen+1; i < 4; i++)
-			PAUSE_PlaybackMenu[playback_view1+i].status = IT_DISABLED;
-
-		//PAUSE_PlaybackMenu[playback_moreoptions].mvar1 = 156;
-		//PAUSE_PlaybackMenu[playback_quit].mvar1 = 172;
-		PAUSE_PlaybackMenu[playback_quit].mvar1 = 156;
-
-		//currentMenu->x = BASEVIDWIDTH/2 - 94;
-		currentMenu->x = BASEVIDWIDTH/2 - 88;
-	}
 
 	// wip
 	//M_DrawTextBox(currentMenu->x-68, currentMenu->y-7, 15, 15);
@@ -3866,7 +3814,7 @@ void M_DrawPlaybackMenu(void)
 		{
 			if (modeattacking) continue;
 
-			if (splitscreen >= i - playback_view1)
+			if (r_splitscreen >= i - playback_view1)
 			{
 				INT32 ply = displayplayers[i - playback_view1];
 
@@ -3898,18 +3846,18 @@ void M_DrawPlaybackMenu(void)
 			{
 				char *str;
 
-				if (!(i == playback_viewcount && splitscreen == 3))
+				if (!(i == playback_viewcount && r_splitscreen == 3))
 					V_DrawCharacter(BASEVIDWIDTH/2 - 4, currentMenu->y + 28 - (skullAnimCounter/5),
 						'\x1A' | V_SNAPTOTOP|highlightflags, false); // up arrow
 
-				if (!(i == playback_viewcount && splitscreen == 0))
+				if (!(i == playback_viewcount && r_splitscreen == 0))
 					V_DrawCharacter(BASEVIDWIDTH/2 - 4, currentMenu->y + 48 + (skullAnimCounter/5),
 						'\x1B' | V_SNAPTOTOP|highlightflags, false); // down arrow
 
 				switch (i)
 				{
 				case playback_viewcount:
-					str = va("%d", splitscreen+1);
+					str = va("%d", r_splitscreen+1);
 					break;
 
 				case playback_view1:

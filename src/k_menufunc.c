@@ -400,7 +400,11 @@ void M_StartControlPanel(void)
 
 	menuactive = true;
 
-	if (!Playing())
+	if (demo.playback)
+	{
+		currentMenu = &PAUSE_PlaybackMenuDef;
+	}
+	else if (!Playing())
 	{
 		M_StopMessage(0); // Doesn't work with MM_YESNO or MM_EVENTHANDLER... but good enough to get the game as it is currently functional again
 
@@ -432,14 +436,7 @@ void M_StartControlPanel(void)
 	}
 	else
 	{
-		if (demo.playback)
-		{
-			currentMenu = &PAUSE_PlaybackMenuDef;
-		}
-		else
-		{
-			M_OpenPauseMenu();
-		}
+		M_OpenPauseMenu();
 	}
 
 	itemOn = currentMenu->lastOn;
@@ -771,6 +768,13 @@ static void M_HandleMenuInput(void)
 
 	lr = menucmd[pid].dpad_lr;
 	ud = menucmd[pid].dpad_ud;
+
+	// If we ever add a second horizontal menu, make it a menu_t property, not an extra check.
+	if (currentMenu == &PAUSE_PlaybackMenuDef)
+	{
+		ud = menucmd[pid].dpad_lr;
+		lr = -menucmd[pid].dpad_ud;
+	}
 
 	// LR does nothing in the default menu, just remap as dpad.
 	if (menucmd[pid].buttons & MBT_L) { lr--; }
