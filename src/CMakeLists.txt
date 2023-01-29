@@ -231,6 +231,7 @@ target_link_libraries(SRB2SDL2 PRIVATE fmt)
 target_link_libraries(SRB2SDL2 PRIVATE imgui::imgui)
 target_link_libraries(SRB2SDL2 PRIVATE webm::libwebm webm::libvpx)
 target_link_libraries(SRB2SDL2 PRIVATE libyuv::libyuv)
+target_link_libraries(SRB2SDL2 PRIVATE Vorbis::vorbis Vorbis::vorbisenc)
 
 target_link_libraries(SRB2SDL2 PRIVATE acsvm)
 

@@ -16,6 +16,8 @@ include("cpm-sdl2.cmake")
 	include("cpm-curl.cmake")
 	include("cpm-libgme.cmake")
 	include("cpm-libvpx.cmake")
+	include("cpm-ogg.cmake") # libvorbis depends
+	include("cpm-libvorbis.cmake")
 endif()
 
 include("cpm-rapidjson.cmake")
