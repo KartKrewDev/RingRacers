@@ -457,9 +457,6 @@ void M_StartControlPanel(void)
 			}
 
 			S_ChangeMusicInternal(cv_menujam.string, true);
-
-			if (!restoreMenu)
-				restoreMenu = &MainDef;
 		}
 
 		if (cv_currprofile.value == -1) // Only ask once per session.
@@ -485,6 +482,8 @@ void M_StartControlPanel(void)
 		}
 		else
 		{
+			if (restoreMenu == NULL)
+				restoreMenu = &MainDef;
 			currentMenu = M_SpecificMenuRestore(M_InterruptMenuWithChallenges(restoreMenu));
 		}
 
