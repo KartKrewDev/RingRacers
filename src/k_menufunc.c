@@ -368,6 +368,8 @@ menu_t *M_SpecificMenuRestore(menu_t *torestore)
 	|| torestore == &PLAY_TimeAttackDef)
 	{
 		// Handle unlock restrictions
+		cupheader_t *currentcup = levellist.levelsearch.cup;
+
 		M_SetupGametypeMenu(-1);
 		M_SetupRaceMenu(-1);
 
@@ -382,15 +384,27 @@ menu_t *M_SpecificMenuRestore(menu_t *torestore)
 				torestore = PLAY_LevelSelectDef.prevMenu;
 			}
 		}
-		else if (torestore == &PLAY_TimeAttackDef)
+		else
 		{
-			M_PrepareTimeAttack(0);
+			if (currentcup != NULL && levellist.levelsearch.cup == NULL)
+			{
+				torestore = &PLAY_CupSelectDef;
+			}
+			else if (torestore == &PLAY_TimeAttackDef)
+			{
+				M_PrepareTimeAttack(0);
+			}
 		}
 	}
 	else if (torestore == &EXTRAS_ReplayHutDef)
 	{
 		// Handle modifications to the folder while playing
 		M_ReplayHut(0);
+
+		if (demo.inreplayhut == false)
+		{
+			torestore = &EXTRAS_MainDef;
+		}
 	}
 
 	if (setup_numplayers == 0)

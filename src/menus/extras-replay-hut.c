@@ -116,12 +116,7 @@ void M_ReplayHut(INT32 choice)
 	if (!preparefilemenu(false, true))
 	{
 		M_StartMessage("No replays found.\n\nPress (B)\n", NULL, MM_NOTHING);
-
-		if (restoreMenu == &EXTRAS_ReplayHutDef)
-		{
-			restoreMenu = &EXTRAS_MainDef;
-		}
-
+		demo.inreplayhut = false;
 		return;
 	}
 	else if (!demo.inreplayhut)

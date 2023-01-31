@@ -321,10 +321,6 @@ boolean M_LevelListFromGametype(INT16 gt)
 		if (currentvalid == false)
 		{
 			levellist.levelsearch.cup = NULL;
-			if (gt == -1 && restoreMenu != &PLAY_CupSelectDef)
-			{
-				restoreMenu = &PLAY_CupSelectDef;
-			}
 		}
 
 		cupgrid.numpages = (highestunlockedid / (CUPMENU_COLUMNS * CUPMENU_ROWS)) + 1;
