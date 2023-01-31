@@ -224,7 +224,7 @@ void M_HandleReplayHutList(INT32 choice)
 				M_PrepReplayList();
 				break;
 			default:
-				M_SetupNextMenu(&EXTRAS_ReplayStartDef, false);
+				M_SetupNextMenu(&EXTRAS_ReplayStartDef, true);
 
 				extrasmenu.replayScrollTitle = 0;
 				extrasmenu.replayScrollDelay = TICRATE;
