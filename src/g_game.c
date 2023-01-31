@@ -4178,12 +4178,28 @@ void G_EndGame(void)
 		}
 	}
 
-	// direct or competitive multiplayer, so go back to title screen.
-	D_ClearState();
-	if (!netgame)
+	// In a netgame, don't unwittingly boot everyone.
+	if (netgame)
 	{
-		M_StartControlPanel();
+		S_StopMusic();
+		G_SetGamestate(GS_WAITINGPLAYERS); // hack to prevent a command repeat
+
+		if (server)
+		{
+			UINT16 map = G_GetFirstMapOfGametype(gametype)+1;
+
+			if (map > nummapheaders)
+				I_Error("G_EndGame: No valid map ID found!?");
+
+			COM_BufAddText(va("map %s\n", G_BuildMapName(map)));
+		}
+
+		return;
 	}
+
+	// Time to return to the menu.
+	D_ClearState();
+	M_StartControlPanel();
 }
 
 //

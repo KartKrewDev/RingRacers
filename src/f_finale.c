@@ -1638,9 +1638,14 @@ void F_GameEndDrawer(void)
 void F_GameEndTicker(void)
 {
 	if (timetonext > 0)
+	{
 		timetonext--;
+	}
 	else
-		D_StartTitle();
+	{
+		nextmap = NEXTMAP_TITLE;
+		G_EndGame();
+	}
 }
 
 

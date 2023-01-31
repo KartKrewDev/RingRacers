@@ -923,23 +923,6 @@ void D_ClearState(void)
 
 	S_StopMusic();
 
-	if (netgame)
-	{
-		G_SetGamestate(GS_WAITINGPLAYERS); // hack to prevent a command repeat
-
-		if (server)
-		{
-			i = G_GetFirstMapOfGametype(gametype)+1;
-
-			if (i > nummapheaders)
-				I_Error("D_ClearState: No valid map ID found!?");
-
-			COM_BufAddText(va("map %s\n", G_BuildMapName(i)));
-		}
-
-		return;
-	}
-
 	// okay, stop now
 	// (otherwise the game still thinks we're playing!)
 	SV_StopServer();
@@ -995,9 +978,6 @@ void D_ClearState(void)
 void D_StartTitle(void)
 {
 	D_ClearState();
-	if (netgame)
-		return;
-
 	F_StartTitleScreen();
 	M_ClearMenus(false);
 }
