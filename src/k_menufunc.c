@@ -371,7 +371,11 @@ menu_t *M_SpecificMenuRestore(menu_t *torestore)
 		cupheader_t *currentcup = levellist.levelsearch.cup;
 
 		M_SetupGametypeMenu(-1);
-		M_SetupRaceMenu(-1);
+
+		if (levellist.newgametype == GT_RACE)
+		{
+			M_SetupRaceMenu(-1);
+		}
 
 		if (!M_LevelListFromGametype(-1))
 		{
