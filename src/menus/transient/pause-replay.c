@@ -49,14 +49,23 @@ menu_t PAUSE_PlaybackMenuDef = {
 
 void M_EndModeAttackRun(void)
 {
+	boolean dotitle = demo.title;
+
 	G_CheckDemoStatus(); // Cancel recording
 
-	if (gamestate == GS_LEVEL || gamestate == GS_INTERMISSION)
-		Command_ExitGame_f();
+	Command_ExitGame_f(); // Clear a bunch of state
 
-	modeattacking = ATTACKING_NONE;
+	modeattacking = ATTACKING_NONE; // Kept until now because of Command_ExitGame_f
 
-	M_StartControlPanel();
+	if (dotitle)
+	{
+		D_StartTitle();
+	}
+	else
+	{
+		D_ClearState();
+		M_StartControlPanel();
+	}
 }
 
 // Replay Playback Menu
