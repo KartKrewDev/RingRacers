@@ -4180,7 +4180,10 @@ void G_EndGame(void)
 
 	// direct or competitive multiplayer, so go back to title screen.
 	D_ClearState();
-	M_StartControlPanel();
+	if (!netgame)
+	{
+		M_StartControlPanel();
+	}
 }
 
 //
