@@ -6,7 +6,7 @@
 
 menuitem_t PLAY_RaceGamemodesMenu[] =
 {
-	{IT_STRING | IT_CALL, "Grand Prix", "Compete for the best rank over five races!",
+	{IT_STRING | IT_CALL, "Grand Prix", "Compete for the best rank over five rounds!",
 		NULL, {.routine = M_SetupDifficultySelect}, 0, 0},
 
 	{IT_STRING | IT_CALL, "Match Race", "Play by your own rules in a specialized, single race!",
