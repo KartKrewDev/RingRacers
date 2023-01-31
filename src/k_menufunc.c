@@ -503,9 +503,8 @@ void M_StartControlPanel(void)
 			if (restoreMenu == NULL)
 				restoreMenu = &MainDef;
 			currentMenu = M_SpecificMenuRestore(M_InterruptMenuWithChallenges(restoreMenu));
+			restoreMenu = NULL;
 		}
-
-		restoreMenu = NULL;
 	}
 	else
 	{
