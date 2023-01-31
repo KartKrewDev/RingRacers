@@ -2018,7 +2018,7 @@ static void HU_DrawDemoInfo(void)
 		V_DrawRightAlignedThinString(BASEVIDWIDTH-2, BASEVIDHEIGHT-10, V_ALLOWLOWERCASE, demo.titlename);
 	}
 
-	if (modeattacking)
+	if (modeattacking & ATTACKING_TIME)
 	{
 		V_DrawRightAlignedString((BASEVIDWIDTH/2)-4, BASEVIDHEIGHT-24, V_YELLOWMAP|V_MONOSPACE, "BEST TIME:");
 		if (hu_demotime != UINT32_MAX)
@@ -2028,7 +2028,10 @@ static void HU_DrawDemoInfo(void)
 				G_TicsToCentiseconds(hu_demotime)));
 		else
 			V_DrawString((BASEVIDWIDTH/2)+4, BASEVIDHEIGHT-24, V_MONOSPACE, "--'--\"--");
+	}
 
+	if (modeattacking & ATTACKING_LAP)
+	{
 		V_DrawRightAlignedString((BASEVIDWIDTH/2)-4, BASEVIDHEIGHT-16, V_YELLOWMAP|V_MONOSPACE, "BEST LAP:");
 		if (hu_demolap != UINT32_MAX)
 			V_DrawString((BASEVIDWIDTH/2)+4, BASEVIDHEIGHT-16, V_MONOSPACE, va("%i'%02i\"%02i",
