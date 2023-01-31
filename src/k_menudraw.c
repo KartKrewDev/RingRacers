@@ -2364,11 +2364,11 @@ static void M_MPOptDrawer(menu_t *m, INT16 extend[3][3])
 
 					if (extend[i][2])
 					{
-						for (j=0; j < extend[i][2]/2; j++)
+						for (j=0; j <= extend[i][2]/2; j++)
 						{
 							// Draw rectangles that look like the current selected item starting from the top of the actual selection graphic and going up to where it's supposed to go.
 							// With colour 169 (that's the index of the shade of black the plague colourization gives us. ...No I don't like using a magic number either.
-							V_DrawFill(x + (extend[i][2]/2) - j - (buttback->width/2), (y + extend[i][2]) - (2*j), 225, 2, 169);
+							V_DrawFill((x-1) + (extend[i][2]/2) - j - (buttback->width/2), (y + extend[i][2]) - (2*j), 226, 2, 169);
 						}
 					}
 					V_DrawFixedPatch((x + (extend[i][2]/2)) *FRACUNIT, (y + extend[i][2])*FRACUNIT, FRACUNIT, 0, buttback, colormap);

@@ -71,12 +71,26 @@ void M_MPOptSelectTick(void)
 	// 3 Because we have 3 options in the menu
 	for (; i < 3; i++)
 	{
-		if (mpmenu.modewinextend[i][0])
-			mpmenu.modewinextend[i][2] += 8;
+		if (mpmenu.modewinextend[i][0] != 0)
+		{
+			if (mpmenu.modewinextend[i][2] < (mpmenu.modewinextend[i][1] - 8))
+			{
+				mpmenu.modewinextend[i][2] = (((2*mpmenu.modewinextend[i][1]) + mpmenu.modewinextend[i][2])/3);
+				mpmenu.modewinextend[i][2] -= (mpmenu.modewinextend[i][2] & 1); // prevent jitter, bias closed
+			}
+			else
+			{
+				mpmenu.modewinextend[i][2] = mpmenu.modewinextend[i][1];
+			}
+		}
+		else if (mpmenu.modewinextend[i][2] > 8)
+		{
+			mpmenu.modewinextend[i][2] /= 3;
+			mpmenu.modewinextend[i][2] += (mpmenu.modewinextend[i][2] & 1); // prevent jitter, bias open
+		}
 		else
-			mpmenu.modewinextend[i][2] -= 8;
-
-		mpmenu.modewinextend[i][2] = min(mpmenu.modewinextend[i][1], max(0, mpmenu.modewinextend[i][2]));
-		//CONS_Printf("%d - %d,%d,%d\n", i, mpmenu.modewinextend[i][0], mpmenu.modewinextend[i][1], mpmenu.modewinextend[i][2]);
+		{
+			mpmenu.modewinextend[i][2] = 0;
+		}
 	}
 }
