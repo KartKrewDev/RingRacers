@@ -410,6 +410,11 @@ menu_t *M_SpecificMenuRestore(menu_t *torestore)
 			torestore = &EXTRAS_MainDef;
 		}
 	}
+	else if (torestore == &PLAY_MP_OptSelectDef)
+	{
+		// Ticker init
+		M_MPOptSelectInit(-1);
+	}
 
 	if (setup_numplayers == 0)
 	{

@@ -47,23 +47,21 @@ boolean M_MPResetOpts(void)
 void M_MPOptSelectInit(INT32 choice)
 {
 	INT16 arrcpy[3][3] = {{0,68,0}, {0,12,0}, {0,74,0}};
-	UINT8 i = 0, j = 0;	// To copy the array into the struct
 	const UINT32 forbidden = GTR_FORBIDMP;
-
-	(void)choice;
 
 	mpmenu.modechoice = 0;
 	mpmenu.ticker = 0;
 
-	for (; i < 3; i++)
-		for (j = 0; j < 3; j++)
-			mpmenu.modewinextend[i][j] = arrcpy[i][j];	// I miss Lua already
+	memcpy(&mpmenu.modewinextend, &arrcpy, sizeof(mpmenu.modewinextend));
 
 	// Guarantee menugametype is good
 	M_NextMenuGametype(forbidden);
 	M_PrevMenuGametype(forbidden);
 
-	M_SetupNextMenu(&PLAY_MP_OptSelectDef, false);
+	if (choice != -1)
+	{
+		M_SetupNextMenu(&PLAY_MP_OptSelectDef, false);
+	}
 }
 
 void M_MPOptSelectTick(void)
