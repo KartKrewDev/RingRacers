@@ -136,7 +136,10 @@ void M_HandleMenuMessage(void)
 	boolean btnok = M_MenuBackPressed(pid);
 
 	if (menumessage.fadetimer < 9)
+	{
 		menumessage.fadetimer++;
+		return;
+	}
 
 	switch (menumessage.flags)
 	{
