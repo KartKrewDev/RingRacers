@@ -154,6 +154,7 @@ struct menu_t
 
 	INT16          x, y;               // x, y of menu
 	INT16 		   extra1, extra2;	   // Can be whatever really! Options menu uses extra1 for bg colour.
+	const char    *music;              // Track to play in M_PlayMenuJam. NULL for default, "." to stop
 
 	INT16          transitionID;       // only transition if IDs match
 	INT16          transitionTics;     // tics for transitions out
@@ -1185,6 +1186,7 @@ boolean M_StatisticsInputs(INT32 ch);
 	0,\
 	source,\
 	x, y,\
+	NULL,\
 	0, 0,\
 	M_DrawGenericMenu,\
 	NULL,\
@@ -1201,7 +1203,8 @@ boolean M_StatisticsInputs(INT32 ch);
 	0,\
 	source,\
 	0, 0,\
-	0, 0, \
+	0, 0,\
+	NULL,\
 	1, 5,\
 	M_DrawKartGamemodeMenu,\
 	NULL,\
@@ -1217,7 +1220,8 @@ boolean M_StatisticsInputs(INT32 ch);
 	0,\
 	source,\
 	0, 0,\
-	0, 0, \
+	0, 0,\
+	"EXTRAS",\
 	1, 5,\
 	M_DrawImageDef,\
 	NULL,\

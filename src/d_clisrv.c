@@ -2513,7 +2513,10 @@ static void Command_connect(void)
 		SplitScreen_OnChange();
 	}
 
+	// Menu restore state.
 	restoreMenu = &PLAY_MP_OptSelectDef;
+	S_ChangeMusicInternal("NETMD2", true);
+
 	CL_ConnectToServer();
 }
 

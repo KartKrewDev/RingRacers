@@ -43,6 +43,7 @@ menu_t OPTIONS_DataAddonDef = {
 	OPTIONS_DataAddon,
 	48, 80,
 	SKINCOLOR_BLUEBERRY, 0,
+	NULL,
 	2, 5,
 	M_DrawGenericOptions,
 	M_OptionsTick,

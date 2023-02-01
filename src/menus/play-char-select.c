@@ -17,6 +17,7 @@ menu_t PLAY_CharSelectDef = {
 	PLAY_CharSelect,
 	0, 0,
 	0, 0,
+	NULL,
 	0, 0,
 	M_DrawCharacterSelect,
 	M_CharacterSelectTick,

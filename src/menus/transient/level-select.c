@@ -21,6 +21,7 @@ menu_t PLAY_LevelSelectDef = {
 	PLAY_LevelSelect,
 	0, 0,
 	0, 0,
+	NULL,
 	2, 5,
 	M_DrawLevelSelect,
 	M_LevelSelectTick,

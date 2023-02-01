@@ -16,7 +16,8 @@ menu_t OPTIONS_DataProfileEraseDef = {
 	0,
 	OPTIONS_DataProfileErase,
 	48, 80,
-	SKINCOLOR_BLUEBERRY, 0,
+	SKINCOLOR_BLACK, 0,
+	"SHWDN2", // Danger.
 	2, 5,
 	M_DrawProfileErase,
 	M_OptionsTick,

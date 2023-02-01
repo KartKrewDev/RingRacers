@@ -57,6 +57,7 @@ menu_t OPTIONS_SoundDef = {
 	OPTIONS_Sound,
 	48, 80,
 	SKINCOLOR_THUNDER, 0,
+	NULL,
 	2, 5,
 	M_DrawGenericOptions,
 	M_OptionsTick,

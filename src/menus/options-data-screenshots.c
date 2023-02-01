@@ -37,6 +37,7 @@ menu_t OPTIONS_DataScreenshotDef = {
 	OPTIONS_DataScreenshot,
 	48, 80,
 	SKINCOLOR_BLUEBERRY, 0,
+	NULL,
 	2, 5,
 	M_DrawGenericOptions,
 	M_OptionsTick,

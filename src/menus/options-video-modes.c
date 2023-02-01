@@ -19,6 +19,7 @@ menu_t OPTIONS_VideoModesDef = {
 	OPTIONS_VideoModes,
 	48, 80,
 	SKINCOLOR_PLAGUE, 0,
+	NULL,
 	2, 5,
 	M_DrawVideoModes,
 	M_OptionsTick,

@@ -39,6 +39,7 @@ menu_t PAUSE_PlaybackMenuDef = {
 	PAUSE_PlaybackMenu,
 	BASEVIDWIDTH/2 - 88, 2,
 	0, 0,
+	NULL,
 	0, 0,
 	M_DrawPlaybackMenu,
 	M_PlaybackTick,

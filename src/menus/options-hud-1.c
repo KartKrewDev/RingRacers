@@ -48,6 +48,7 @@ menu_t OPTIONS_HUDDef = {
 	OPTIONS_HUD,
 	48, 80,
 	SKINCOLOR_SUNSLAM, 0,
+	NULL,
 	2, 5,
 	M_DrawGenericOptions,
 	M_OptionsTick,

@@ -43,6 +43,7 @@ menu_t OPTIONS_MainDef = {
 	OPTIONS_Main,
 	0, 0,
 	SKINCOLOR_SLATE, 0,
+	NULL,
 	2, 5,
 	M_DrawOptions,
 	M_OptionsTick,

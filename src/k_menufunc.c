@@ -358,8 +358,26 @@ boolean M_Responder(event_t *ev)
 
 void M_PlayMenuJam(void)
 {
+	menu_t *refMenu = (menuactive ? currentMenu : restoreMenu);
+
 	if (challengesmenu.pending)
 		return;
+
+	if (Playing())
+		return;
+
+	if (refMenu != NULL && refMenu->music != NULL)
+	{
+		if (refMenu->music[0] == '.' && refMenu->music[1] == '\0')
+		{
+			S_StopMusic();
+		}
+		else
+		{
+			S_ChangeMusicInternal(refMenu->music, true);
+		}
+		return;
+	}
 
 	if (cv_menujam_update.value)
 	{
@@ -630,6 +648,7 @@ void M_SetupNextMenu(menu_t *menudef, boolean notransition)
 	}
 
 	M_UpdateMenuBGImage(false);
+	M_PlayMenuJam();
 }
 
 void M_GoBack(INT32 choice)
