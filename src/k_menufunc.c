@@ -358,6 +358,9 @@ boolean M_Responder(event_t *ev)
 
 void M_PlayMenuJam(void)
 {
+	if (challengesmenu.pending)
+		return;
+
 	if (cv_menujam_update.value)
 	{
 		CV_AddValue(&cv_menujam, 1);

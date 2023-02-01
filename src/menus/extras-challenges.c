@@ -160,6 +160,7 @@ menu_t *M_InterruptMenuWithChallenges(menu_t *desiredmenu)
 
 	if ((challengesmenu.pending = (newunlock < MAXUNLOCKABLES)))
 	{
+		S_StopMusic();
 		MISC_ChallengesDef.prevMenu = desiredmenu;
 	}
 
@@ -380,7 +381,11 @@ void M_ChallengesTick(void)
 		if (challengesmenu.fade > 0)
 		{
 			// Fade decrease.
-			challengesmenu.fade--;
+			if (--challengesmenu.fade == 0)
+			{
+				// Play music the moment control returns.
+				M_PlayMenuJam();
+			}
 		}
 	}
 }
