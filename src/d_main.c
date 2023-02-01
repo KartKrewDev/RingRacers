@@ -921,8 +921,6 @@ void D_ClearState(void)
 {
 	INT32 i;
 
-	S_StopMusic();
-
 	// okay, stop now
 	// (otherwise the game still thinks we're playing!)
 	SV_StopServer();
@@ -977,6 +975,7 @@ void D_ClearState(void)
 //
 void D_StartTitle(void)
 {
+	S_StopMusic();
 	D_ClearState();
 	F_StartTitleScreen();
 	M_ClearMenus(false);
