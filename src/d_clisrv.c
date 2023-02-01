@@ -1587,7 +1587,8 @@ static boolean CL_FinishedFileList(void)
 			{
 				D_QuitNetGame();
 				CL_Reset();
-				D_StartTitle();
+				D_ClearState();
+				M_StartControlPanel();
 				M_StartMessage(M_GetText(
 					"An error occured when trying to\n"
 					"download missing addons.\n"
