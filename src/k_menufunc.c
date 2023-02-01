@@ -448,11 +448,6 @@ menu_t *M_SpecificMenuRestore(menu_t *torestore)
 		M_MPOptSelectInit(-1);
 	}
 
-	if (setup_numplayers == 0)
-	{
-		setup_numplayers = 1;
-	}
-
 	return torestore;
 }
 

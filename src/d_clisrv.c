@@ -2516,6 +2516,10 @@ static void Command_connect(void)
 	// Menu restore state.
 	restoreMenu = &PLAY_MP_OptSelectDef;
 	S_ChangeMusicInternal("NETMD2", true);
+	if (setup_numplayers == 0)
+	{
+		setup_numplayers = 1;
+	}
 
 	CL_ConnectToServer();
 }
