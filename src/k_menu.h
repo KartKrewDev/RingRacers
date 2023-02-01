@@ -597,7 +597,6 @@ void M_PlayMenuJam(void);
 
 void M_MenuTypingInput(INT32 key);
 
-extern menu_t MessageDef;
 void M_StartMessage(const char *string, void *routine, menumessagetype_t itemtype);
 void M_StopMessage(INT32 choice);
 void M_DrawMenuMessage(void);

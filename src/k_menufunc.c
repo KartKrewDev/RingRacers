@@ -546,9 +546,6 @@ void M_ClearMenus(boolean callexitmenufunc)
 	COM_BufAddText(va("saveconfig \"%s\" -silent\n", configfile));
 #endif //Alam: But not on the Dreamcast's VMUs
 
-	if (currentMenu == &MessageDef) // Oh sod off!
-		currentMenu = &MainDef; // Not like it matters
-
 	if (gamestate == GS_MENU) // Back to title screen
 		D_StartTitle();
 

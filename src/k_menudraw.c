@@ -505,9 +505,6 @@ void M_DrawMenuMessage(void)
 
 void M_Drawer(void)
 {
-	if (currentMenu == &MessageDef)
-		menuactive = true;
-
 	if (menuwipe)
 		F_WipeStartScreen();
 

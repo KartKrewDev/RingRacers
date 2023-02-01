@@ -4,28 +4,6 @@
 #include "../../k_menu.h"
 #include "../../z_zone.h"
 
-static menuitem_t MessageMenu[] =
-{
-	// TO HACK
-	{0, NULL, NULL, NULL, {NULL}, 0, 0}
-};
-
-menu_t MessageDef =
-{
-	1,					// # of menu items
-	NULL,				// previous menu       (TO HACK)
-	0,					// lastOn, flags       (TO HACK)
-	MessageMenu,		// menuitem_t ->
-	0, 0,				// x, y                (TO HACK)
-	0, 0,				// extra1, extra2
-	0, 0,				// transition tics
-	NULL,				// drawing routine ->
-	NULL,				// ticker routine
-	NULL,				// init routine
-	NULL,				// quit routine
-	NULL				// input routine
-};
-
 // message prompt struct
 struct menumessage_s menumessage;
 
