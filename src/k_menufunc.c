@@ -356,6 +356,17 @@ boolean M_Responder(event_t *ev)
 	return true;
 }
 
+void M_PlayMenuJam(void)
+{
+	if (cv_menujam_update.value)
+	{
+		CV_AddValue(&cv_menujam, 1);
+		CV_SetValue(&cv_menujam_update, 0);
+	}
+
+	S_ChangeMusicInternal(cv_menujam.string, true);
+}
+
 //
 // M_SpecificMenuRestore
 //
@@ -472,14 +483,6 @@ void M_StartControlPanel(void)
 			CON_ToggleOff();
 
 			modeattacking = ATTACKING_NONE;
-
-			if (cv_menujam_update.value)
-			{
-				CV_AddValue(&cv_menujam, 1);
-				CV_SetValue(&cv_menujam_update, 0);
-			}
-
-			S_ChangeMusicInternal(cv_menujam.string, true);
 		}
 
 		if (cv_currprofile.value == -1) // Only ask once per session.
@@ -510,6 +513,8 @@ void M_StartControlPanel(void)
 			currentMenu = M_SpecificMenuRestore(M_InterruptMenuWithChallenges(restoreMenu));
 			restoreMenu = NULL;
 		}
+
+		M_PlayMenuJam();
 	}
 	else
 	{

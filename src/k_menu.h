@@ -593,6 +593,8 @@ void M_GoBack(INT32 choice);
 void M_Ticker(void);
 void M_Init(void);
 
+void M_PlayMenuJam(void);
+
 void M_MenuTypingInput(INT32 key);
 
 extern menu_t MessageDef;
