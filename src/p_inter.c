@@ -2337,13 +2337,11 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 					break;
 			}
 
-			if (type != DMG_STING && type != DMG_STUMBLE)
+			if (type != DMG_STUMBLE)
 			{
-				player->flashing = K_GetKartFlashing(player);
-			}
+				if (type != DMG_STING)
+					player->flashing = K_GetKartFlashing(player);
 
-			if (ringburst > 0)
-			{
 				P_PlayRinglossSound(target);
 				P_PlayerRingBurst(player, ringburst);
 			}
