@@ -26,11 +26,12 @@ menu_t EXTRAS_ReplayHutDef =
 	EXTRAS_ReplayHut,
 	30, 80,
 	0, 0,
-	0, 0,
+	"REPLAY",
+	41, 1,
 	M_DrawReplayHut,
 	NULL,
 	NULL,
-	M_QuitReplayHut,
+	NULL,
 	NULL
 };
 
@@ -58,7 +59,8 @@ menu_t EXTRAS_ReplayStartDef =
 	EXTRAS_ReplayStart,
 	27, 80,
 	0, 0,
-	0, 0,
+	"REPLAY",
+	41, 1,
 	M_DrawReplayStartMenu,
 	NULL,
 	NULL,
@@ -102,37 +104,38 @@ void M_ReplayHut(INT32 choice)
 {
 	(void)choice;
 
-	extrasmenu.replayScrollTitle = 0;
-	extrasmenu.replayScrollDelay = TICRATE;
-	extrasmenu.replayScrollDir = 1;
-
-	if (!demo.inreplayhut)
+	if (demo.inreplayhut)
+	{
+		demo.rewinding = false;
+		CL_ClearRewinds();
+	}
+	else
 	{
 		snprintf(menupath, 1024, "%s"PATHSEP"media"PATHSEP"replay"PATHSEP"online"PATHSEP, srb2home);
 		menupathindex[(menudepthleft = menudepth-1)] = strlen(menupath);
 	}
+
 	if (!preparefilemenu(false, true))
 	{
 		M_StartMessage("No replays found.\n\nPress (B)\n", NULL, MM_NOTHING);
+		demo.inreplayhut = false;
 		return;
 	}
 	else if (!demo.inreplayhut)
+	{
 		dir_on[menudepthleft] = 0;
-	demo.inreplayhut = true;
+	}
 
-	extrasmenu.replayScrollTitle = 0; extrasmenu.replayScrollDelay = TICRATE; extrasmenu.replayScrollDir = 1;
+	extrasmenu.replayScrollTitle = 0;
+	extrasmenu.replayScrollDelay = TICRATE;
+	extrasmenu.replayScrollDir = 1;
 
 	M_PrepReplayList();
 
-	menuactive = true;
-	M_SetupNextMenu(&EXTRAS_ReplayHutDef, false);
-	//G_SetGamestate(GS_TIMEATTACK);
-	//titlemapinaction = TITLEMAP_OFF; // Nope don't give us HOMs please
+	if (!demo.inreplayhut)
+		M_SetupNextMenu(&EXTRAS_ReplayHutDef, false);
 
-	demo.rewinding = false;
-	CL_ClearRewinds();
-
-	//S_ChangeMusicInternal("replst", true);
+	demo.inreplayhut = true;
 }
 
 // key handler
@@ -223,11 +226,11 @@ void M_HandleReplayHutList(INT32 choice)
 				M_PrepReplayList();
 				break;
 			default:
-				// We can't just use M_SetupNextMenu because that'll run ReplayDef's quitroutine and boot us back to the title screen!
-				currentMenu->lastOn = itemOn;
-				currentMenu = &EXTRAS_ReplayStartDef;
+				M_SetupNextMenu(&EXTRAS_ReplayStartDef, true);
 
-				extrasmenu.replayScrollTitle = 0; extrasmenu.replayScrollDelay = TICRATE; extrasmenu.replayScrollDir = 1;
+				extrasmenu.replayScrollTitle = 0;
+				extrasmenu.replayScrollDelay = TICRATE;
+				extrasmenu.replayScrollDir = 1;
 
 				switch (extrasmenu.demolist[dir_on[menudepthleft]].addonstatus)
 				{
@@ -267,22 +270,21 @@ void M_HandleReplayHutList(INT32 choice)
 
 boolean M_QuitReplayHut(void)
 {
-	// D_StartTitle does its own wipe, since GS_TIMEATTACK is now a complete gamestate.
-	menuactive = false;
-	D_StartTitle();
-
 	if (extrasmenu.demolist)
 		Z_Free(extrasmenu.demolist);
 	extrasmenu.demolist = NULL;
 
 	demo.inreplayhut = false;
 
+	M_GoBack(0);
 	return true;
 }
 
 void M_HutStartReplay(INT32 choice)
 {
 	(void)choice;
+
+	restoreMenu = &EXTRAS_ReplayHutDef;
 
 	M_ClearMenus(false);
 	demo.loadfiles = (itemOn == 0);

@@ -4009,8 +4009,6 @@ void G_StopDemo(void)
 	Z_Free(demobuf.buffer);
 	demobuf.buffer = NULL;
 	demo.playback = false;
-	if (demo.title)
-		modeattacking = false;
 	demo.title = false;
 	demo.timing = false;
 	singletics = false;

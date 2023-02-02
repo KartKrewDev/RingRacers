@@ -25,9 +25,8 @@ menu_t PLAY_GamemodesDef = KARTGAMEMODEMENU(PLAY_GamemodesMenu, &PLAY_MainDef);
 
 void M_SetupGametypeMenu(INT32 choice)
 {
-	(void)choice;
-
-	PLAY_GamemodesDef.prevMenu = currentMenu;
+	if (choice != -1)
+		PLAY_GamemodesDef.prevMenu = currentMenu;
 
 	// Battle and Capsules (and Special) disabled
 	PLAY_GamemodesMenu[1].status = IT_DISABLED;
@@ -65,5 +64,6 @@ void M_SetupGametypeMenu(INT32 choice)
 		}
 	}
 
-	M_SetupNextMenu(&PLAY_GamemodesDef, false);
+	if (choice != -1)
+		M_SetupNextMenu(&PLAY_GamemodesDef, false);
 }

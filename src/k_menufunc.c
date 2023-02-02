@@ -35,6 +35,7 @@ boolean fromlevelselect = false;
 
 // current menudef
 menu_t *currentMenu = &MAIN_ProfilesDef;
+menu_t *restoreMenu = NULL;
 
 char dummystaffname[22];
 
@@ -81,7 +82,7 @@ static CV_PossibleValue_t dummystaff_cons_t[] = {{0, "MIN"}, {100, "MAX"}, {0, N
 static consvar_t cv_dummyteam = CVAR_INIT ("dummyteam", "Spectator", CV_HIDDEN, dummyteam_cons_t, NULL);
 //static cv_dummyspectate = CVAR_INITconsvar_t  ("dummyspectate", "Spectator", CV_HIDDEN, dummyspectate_cons_t, NULL);
 static consvar_t cv_dummyscramble = CVAR_INIT ("dummyscramble", "Random", CV_HIDDEN, dummyscramble_cons_t, NULL);
-static consvar_t cv_dummystaff = CVAR_INIT ("dummystaff", "0", CV_HIDDEN|CV_CALL, dummystaff_cons_t, Dummystaff_OnChange);
+consvar_t cv_dummystaff = CVAR_INIT ("dummystaff", "0", CV_HIDDEN|CV_CALL, dummystaff_cons_t, Dummystaff_OnChange);
 consvar_t cv_dummyspectate = CVAR_INIT ("dummyspectate", "Spectator", CV_HIDDEN, dummyspectate_cons_t, NULL);
 
 // ==========================================================================
@@ -355,6 +356,101 @@ boolean M_Responder(event_t *ev)
 	return true;
 }
 
+void M_PlayMenuJam(void)
+{
+	menu_t *refMenu = (menuactive ? currentMenu : restoreMenu);
+
+	if (challengesmenu.pending)
+		return;
+
+	if (Playing())
+		return;
+
+	if (refMenu != NULL && refMenu->music != NULL)
+	{
+		if (refMenu->music[0] == '.' && refMenu->music[1] == '\0')
+		{
+			S_StopMusic();
+		}
+		else
+		{
+			S_ChangeMusicInternal(refMenu->music, true);
+		}
+		return;
+	}
+
+	if (cv_menujam_update.value)
+	{
+		CV_AddValue(&cv_menujam, 1);
+		CV_SetValue(&cv_menujam_update, 0);
+	}
+
+	S_ChangeMusicInternal(cv_menujam.string, true);
+}
+
+//
+// M_SpecificMenuRestore
+//
+menu_t *M_SpecificMenuRestore(menu_t *torestore)
+{
+	// I'd advise the following not be a switch case because they're pointers...
+
+	if (torestore == &PLAY_CupSelectDef
+	|| torestore == &PLAY_LevelSelectDef
+	|| torestore == &PLAY_TimeAttackDef)
+	{
+		// Handle unlock restrictions
+		cupheader_t *currentcup = levellist.levelsearch.cup;
+
+		M_SetupGametypeMenu(-1);
+
+		if (levellist.newgametype == GT_RACE)
+		{
+			M_SetupRaceMenu(-1);
+		}
+
+		if (!M_LevelListFromGametype(-1))
+		{
+			if (PLAY_LevelSelectDef.prevMenu == &PLAY_CupSelectDef)
+			{
+				torestore = PLAY_CupSelectDef.prevMenu;
+			}
+			else
+			{
+				torestore = PLAY_LevelSelectDef.prevMenu;
+			}
+		}
+		else
+		{
+			if (currentcup != NULL && levellist.levelsearch.cup == NULL)
+			{
+				torestore = &PLAY_CupSelectDef;
+			}
+			else if (torestore == &PLAY_TimeAttackDef)
+			{
+				M_PrepareTimeAttack(0);
+			}
+		}
+	}
+	else if (torestore == &EXTRAS_ReplayHutDef)
+	{
+		// Handle modifications to the folder while playing
+		M_ReplayHut(0);
+
+		if (demo.inreplayhut == false)
+		{
+			torestore = &EXTRAS_MainDef;
+		}
+	}
+	else if (torestore == &PLAY_MP_OptSelectDef)
+	{
+		// Ticker init
+		M_MPOptSelectInit(-1);
+	}
+
+	return torestore;
+}
+
 //
 // M_StartControlPanel
 //
@@ -370,39 +466,40 @@ void M_StartControlPanel(void)
 	}
 
 	// intro might call this repeatedly
-	if (menuactive)
+	if (menuactive && gamestate != GS_NULL)
 	{
 		CON_ToggleOff(); // move away console
 		return;
 	}
 
-	if (gamestate == GS_TITLESCREEN) // Set up menu state
+	if (gamestate == GS_TITLESCREEN && restoreMenu == NULL) // Set up menu state
 	{
 		// No instantly skipping the titlescreen.
 		// (We can change this timer later when extra animation is added.)
 		if (finalecount < 1)
 			return;
-
-		G_SetGamestate(GS_MENU);
-
-		gameaction = ga_nothing;
-		paused = false;
-		CON_ToggleOff();
-
-		if (cv_menujam_update.value)
-		{
-			CV_AddValue(&cv_menujam, 1);
-			CV_SetValue(&cv_menujam_update, 0);
-		}
-
-		S_ChangeMusicInternal(cv_menujam.string, true);
 	}
 
 	menuactive = true;
 
-	if (!Playing())
+	if (demo.playback)
+	{
+		currentMenu = &PAUSE_PlaybackMenuDef;
+	}
+	else if (!Playing())
 	{
 		M_StopMessage(0); // Doesn't work with MM_YESNO or MM_EVENTHANDLER... but good enough to get the game as it is currently functional again
+
+		if (gamestate != GS_MENU)
+		{
+			G_SetGamestate(GS_MENU);
+
+			gameaction = ga_nothing;
+			paused = false;
+			CON_ToggleOff();
+
+			modeattacking = ATTACKING_NONE;
+		}
 
 		if (cv_currprofile.value == -1) // Only ask once per session.
 		{
@@ -427,19 +524,17 @@ void M_StartControlPanel(void)
 		}
 		else
 		{
-			currentMenu = M_InterruptMenuWithChallenges(&MainDef);
+			if (restoreMenu == NULL)
+				restoreMenu = &MainDef;
+			currentMenu = M_SpecificMenuRestore(M_InterruptMenuWithChallenges(restoreMenu));
+			restoreMenu = NULL;
 		}
+
+		M_PlayMenuJam();
 	}
 	else
 	{
-		if (demo.playback)
-		{
-			currentMenu = &PAUSE_PlaybackMenuDef;
-		}
-		else
-		{
-			M_OpenPauseMenu();
-		}
+		M_OpenPauseMenu();
 	}
 
 	itemOn = currentMenu->lastOn;
@@ -463,9 +558,6 @@ void M_ClearMenus(boolean callexitmenufunc)
 #ifndef DC // Save the config file. I'm sick of crashing the game later and losing all my changes!
 	COM_BufAddText(va("saveconfig \"%s\" -silent\n", configfile));
 #endif //Alam: But not on the Dreamcast's VMUs
-
-	if (currentMenu == &MessageDef) // Oh sod off!
-		currentMenu = &MainDef; // Not like it matters
 
 	if (gamestate == GS_MENU) // Back to title screen
 		D_StartTitle();
@@ -551,6 +643,7 @@ void M_SetupNextMenu(menu_t *menudef, boolean notransition)
 	}
 
 	M_UpdateMenuBGImage(false);
+	M_PlayMenuJam();
 }
 
 void M_GoBack(INT32 choice)
@@ -771,6 +864,13 @@ static void M_HandleMenuInput(void)
 
 	lr = menucmd[pid].dpad_lr;
 	ud = menucmd[pid].dpad_ud;
+
+	// If we ever add a second horizontal menu, make it a menu_t property, not an extra check.
+	if (currentMenu == &PAUSE_PlaybackMenuDef)
+	{
+		ud = menucmd[pid].dpad_lr;
+		lr = -menucmd[pid].dpad_ud;
+	}
 
 	// LR does nothing in the default menu, just remap as dpad.
 	if (menucmd[pid].buttons & MBT_L) { lr--; }

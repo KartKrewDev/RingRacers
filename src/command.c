@@ -1859,7 +1859,15 @@ void CV_RevertNetVars(void)
 	{
 		if (cvar->revert.v.string != NULL)
 		{
-			Setvalue(cvar, cvar->revert.v.string, false);
+			Setvalue(
+				cvar,
+				cvar->revert.v.string,
+#ifdef DEVELOP
+				(cvar == &cv_cheats)
+#else
+				false
+#endif
+			);
 
 			if (cvar->revert.allocated)
 			{

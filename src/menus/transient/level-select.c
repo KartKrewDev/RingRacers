@@ -21,6 +21,7 @@ menu_t PLAY_LevelSelectDef = {
 	PLAY_LevelSelect,
 	0, 0,
 	0, 0,
+	NULL,
 	2, 5,
 	M_DrawLevelSelect,
 	M_LevelSelectTick,
@@ -195,13 +196,14 @@ void M_LevelSelectScrollDest(void)
 		levellist.dest = (6*m)-3;
 }
 
-//  Builds the level list we'll be using from the gametype we're choosing and send us to the apropriate menu.
+// Builds the level list we'll be using from the gametype we're choosing and send us to the apropriate menu.
+// A gt of -1 means the menu is being restored.
 boolean M_LevelListFromGametype(INT16 gt)
 {
 	static boolean first = true;
 	UINT8 temp = 0;
 
-	if (first || gt != levellist.newgametype || levellist.guessgt != MAXGAMETYPES)
+	if (gt != -1 && (first || gt != levellist.newgametype || levellist.guessgt != MAXGAMETYPES))
 	{
 		if (first)
 		{
@@ -224,7 +226,6 @@ boolean M_LevelListFromGametype(INT16 gt)
 		}
 
 		levellist.levelsearch.cupmode = (!(gametypes[gt]->rules & GTR_NOCUPSELECT));
-		levellist.levelsearch.cup = NULL;
 
 		first = false;
 	}
@@ -237,7 +238,7 @@ boolean M_LevelListFromGametype(INT16 gt)
 		levelsearch_t templevelsearch = levellist.levelsearch; // full copy
 		size_t currentid = 0, highestunlockedid = 0;
 		const size_t pagelen = sizeof(cupheader_t*) * (CUPMENU_COLUMNS * CUPMENU_ROWS);
-		boolean foundany = false;
+		boolean foundany = false, currentvalid = false;
 
 		templevelsearch.cup = kartcupheaders;
 
@@ -297,11 +298,15 @@ boolean M_LevelListFromGametype(INT16 gt)
 			if (M_GetFirstLevelInList(&temp, &templevelsearch) != NEXTMAP_INVALID)
 			{
 				highestunlockedid = currentid;
-				if (Playing() && mapheaderinfo[gamemap-1] && mapheaderinfo[gamemap-1]->cup == templevelsearch.cup)
+
+				if (Playing()
+					? (mapheaderinfo[gamemap-1] && mapheaderinfo[gamemap-1]->cup == templevelsearch.cup)
+					: (gt == -1 && levellist.levelsearch.cup == templevelsearch.cup))
 				{
 					cupgrid.x = currentid % CUPMENU_COLUMNS;
 					cupgrid.y = (currentid / CUPMENU_COLUMNS) % CUPMENU_ROWS;
 					cupgrid.pageno = currentid / (CUPMENU_COLUMNS * CUPMENU_ROWS);
+					currentvalid = true;
 				}
 			}
 
@@ -314,15 +319,23 @@ boolean M_LevelListFromGametype(INT16 gt)
 			return false;
 		}
 
+		if (currentvalid == false)
+		{
+			levellist.levelsearch.cup = NULL;
+		}
+
 		cupgrid.numpages = (highestunlockedid / (CUPMENU_COLUMNS * CUPMENU_ROWS)) + 1;
 		if (cupgrid.pageno >= cupgrid.numpages)
 		{
 			cupgrid.pageno = 0;
 		}
 
-		PLAY_CupSelectDef.prevMenu = currentMenu;
-		PLAY_LevelSelectDef.prevMenu = &PLAY_CupSelectDef;
-		M_SetupNextMenu(&PLAY_CupSelectDef, false);
+		if (gt != -1)
+		{
+			PLAY_CupSelectDef.prevMenu = currentMenu;
+			PLAY_LevelSelectDef.prevMenu = &PLAY_CupSelectDef;
+			M_SetupNextMenu(&PLAY_CupSelectDef, false);
+		}
 
 		return true;
 	}
@@ -344,8 +357,11 @@ boolean M_LevelListFromGametype(INT16 gt)
 	M_LevelSelectScrollDest();
 	levellist.y = levellist.dest;
 
-	PLAY_LevelSelectDef.prevMenu = currentMenu;
-	M_SetupNextMenu(&PLAY_LevelSelectDef, false);
+	if (gt != -1)
+	{
+		PLAY_LevelSelectDef.prevMenu = currentMenu;
+		M_SetupNextMenu(&PLAY_LevelSelectDef, false);
+	}
 
 	return true;
 }
@@ -424,8 +440,7 @@ void M_LevelSelected(INT16 add)
 	{
 		S_StartSound(NULL, sfx_s3k63);
 
-		if (levellist.guessgt != MAXGAMETYPES)
-			levellist.newgametype = G_GuessGametypeByTOL(levellist.levelsearch.typeoflevel);
+		M_PrepareTimeAttack(0);
 
 		PLAY_TimeAttackDef.lastOn = ta_start;
 		PLAY_TimeAttackDef.prevMenu = currentMenu;
@@ -479,6 +494,15 @@ void M_LevelSelected(INT16 add)
 			CV_StealthSet(&cv_kartspeed, (cv_dummykartspeed.value == KARTSPEED_NORMAL) ? "Auto" : cv_dummykartspeed.string);
 
 			D_MapChange(levellist.choosemap+1, levellist.newgametype, (cv_kartencore.value == 1), 1, 1, false, false);
+
+			if (levellist.netgame == true)
+			{
+				restoreMenu = &PLAY_MP_OptSelectDef;
+			}
+			else
+			{
+				restoreMenu = &PLAY_LevelSelectDef;
+			}
 		}
 		else
 		{

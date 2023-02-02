@@ -17,6 +17,7 @@ menu_t OPTIONS_ProfilesDef = {
 	OPTIONS_Profiles,
 	32, 80,
 	SKINCOLOR_ULTRAMARINE, 0,
+	NULL,
 	2, 5,
 	M_DrawProfileSelect,
 	M_OptionsTick,
@@ -47,7 +48,11 @@ void M_FirstPickProfile(INT32 c)
 		optionsmenu.profile = NULL;	// Make sure to get rid of that, too.
 
 		PR_ApplyProfile(optionsmenu.profilen, 0);
-		M_SetupNextMenu(M_InterruptMenuWithChallenges(&MainDef), false);
+
+		if (restoreMenu == NULL)
+			restoreMenu = &MainDef;
+		M_SetupNextMenu(M_SpecificMenuRestore(M_InterruptMenuWithChallenges(restoreMenu)), false);
+		restoreMenu = NULL;
 
 		// Tell the game this is the last profile we picked.
 		CV_StealthSetValue(&cv_ttlprofilen, optionsmenu.profilen);

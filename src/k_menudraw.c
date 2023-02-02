@@ -237,7 +237,7 @@ static void M_DrawMenuParty(void)
 	UINT16 color;
 	UINT8 *colormap;
 
-	if (setup_numplayers == 0 || currentMenu == &PLAY_CharSelectDef)
+	if (setup_numplayers == 0 || currentMenu == &PLAY_CharSelectDef || currentMenu == &MISC_ChallengesDef)
 	{
 		return;
 	}
@@ -505,9 +505,6 @@ void M_DrawMenuMessage(void)
 
 void M_Drawer(void)
 {
-	if (currentMenu == &MessageDef)
-		menuactive = true;
-
 	if (menuwipe)
 		F_WipeStartScreen();
 
@@ -2364,11 +2361,11 @@ static void M_MPOptDrawer(menu_t *m, INT16 extend[3][3])
 
 					if (extend[i][2])
 					{
-						for (j=0; j < extend[i][2]/2; j++)
+						for (j=0; j <= extend[i][2]/2; j++)
 						{
 							// Draw rectangles that look like the current selected item starting from the top of the actual selection graphic and going up to where it's supposed to go.
 							// With colour 169 (that's the index of the shade of black the plague colourization gives us. ...No I don't like using a magic number either.
-							V_DrawFill(x + (extend[i][2]/2) - j - (buttback->width/2), (y + extend[i][2]) - (2*j), 225, 2, 169);
+							V_DrawFill((x-1) + (extend[i][2]/2) - j - (buttback->width/2), (y + extend[i][2]) - (2*j), 226, 2, 169);
 						}
 					}
 					V_DrawFixedPatch((x + (extend[i][2]/2)) *FRACUNIT, (y + extend[i][2])*FRACUNIT, FRACUNIT, 0, buttback, colormap);
@@ -3794,8 +3791,6 @@ void M_DrawPause(void)
 	}
 }
 
-tic_t playback_last_menu_interaction_leveltime = 0;
-
 void M_DrawPlaybackMenu(void)
 {
 	INT16 i;
@@ -3803,56 +3798,6 @@ void M_DrawPlaybackMenu(void)
 	UINT8 *activemap = R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_GOLD, GTC_MENUCACHE);
 	UINT32 transmap = max(0, (INT32)(leveltime - playback_last_menu_interaction_leveltime - 4*TICRATE)) / 5;
 	transmap = min(8, transmap) << V_ALPHASHIFT;
-
-	if (leveltime - playback_last_menu_interaction_leveltime >= 6*TICRATE)
-		playback_last_menu_interaction_leveltime = leveltime - 6*TICRATE;
-
-	// Toggle items
-	if (paused && !demo.rewinding)
-	{
-		PAUSE_PlaybackMenu[playback_pause].status = PAUSE_PlaybackMenu[playback_fastforward].status = PAUSE_PlaybackMenu[playback_rewind].status = IT_DISABLED;
-		PAUSE_PlaybackMenu[playback_resume].status = PAUSE_PlaybackMenu[playback_advanceframe].status = PAUSE_PlaybackMenu[playback_backframe].status = IT_CALL|IT_STRING;
-
-		if (itemOn >= playback_rewind && itemOn <= playback_fastforward)
-			itemOn += playback_backframe - playback_rewind;
-	}
-	else
-	{
-		PAUSE_PlaybackMenu[playback_pause].status = PAUSE_PlaybackMenu[playback_fastforward].status = PAUSE_PlaybackMenu[playback_rewind].status = IT_CALL|IT_STRING;
-		PAUSE_PlaybackMenu[playback_resume].status = PAUSE_PlaybackMenu[playback_advanceframe].status = PAUSE_PlaybackMenu[playback_backframe].status = IT_DISABLED;
-
-		if (itemOn >= playback_backframe && itemOn <= playback_advanceframe)
-			itemOn -= playback_backframe - playback_rewind;
-	}
-
-	if (modeattacking)
-	{
-		for (i = playback_viewcount; i <= playback_view4; i++)
-			PAUSE_PlaybackMenu[i].status = IT_DISABLED;
-
-		//PAUSE_PlaybackMenu[playback_moreoptions].mvar1 = 72;
-		//PAUSE_PlaybackMenu[playback_quit].mvar1 = 88;
-		PAUSE_PlaybackMenu[playback_quit].mvar1 = 72;
-
-		//currentMenu->x = BASEVIDWIDTH/2 - 52;
-		currentMenu->x = BASEVIDWIDTH/2 - 44;
-	}
-	else
-	{
-		PAUSE_PlaybackMenu[playback_viewcount].status = IT_ARROWS|IT_STRING;
-
-		for (i = 0; i <= splitscreen; i++)
-			PAUSE_PlaybackMenu[playback_view1+i].status = IT_ARROWS|IT_STRING;
-		for (i = splitscreen+1; i < 4; i++)
-			PAUSE_PlaybackMenu[playback_view1+i].status = IT_DISABLED;
-
-		//PAUSE_PlaybackMenu[playback_moreoptions].mvar1 = 156;
-		//PAUSE_PlaybackMenu[playback_quit].mvar1 = 172;
-		PAUSE_PlaybackMenu[playback_quit].mvar1 = 156;
-
-		//currentMenu->x = BASEVIDWIDTH/2 - 94;
-		currentMenu->x = BASEVIDWIDTH/2 - 88;
-	}
 
 	// wip
 	//M_DrawTextBox(currentMenu->x-68, currentMenu->y-7, 15, 15);
@@ -3866,7 +3811,7 @@ void M_DrawPlaybackMenu(void)
 		{
 			if (modeattacking) continue;
 
-			if (splitscreen >= i - playback_view1)
+			if (r_splitscreen >= i - playback_view1)
 			{
 				INT32 ply = displayplayers[i - playback_view1];
 
@@ -3898,18 +3843,18 @@ void M_DrawPlaybackMenu(void)
 			{
 				char *str;
 
-				if (!(i == playback_viewcount && splitscreen == 3))
+				if (!(i == playback_viewcount && r_splitscreen == 3))
 					V_DrawCharacter(BASEVIDWIDTH/2 - 4, currentMenu->y + 28 - (skullAnimCounter/5),
 						'\x1A' | V_SNAPTOTOP|highlightflags, false); // up arrow
 
-				if (!(i == playback_viewcount && splitscreen == 0))
+				if (!(i == playback_viewcount && r_splitscreen == 0))
 					V_DrawCharacter(BASEVIDWIDTH/2 - 4, currentMenu->y + 48 + (skullAnimCounter/5),
 						'\x1B' | V_SNAPTOTOP|highlightflags, false); // down arrow
 
 				switch (i)
 				{
 				case playback_viewcount:
-					str = va("%d", splitscreen+1);
+					str = va("%d", r_splitscreen+1);
 					break;
 
 				case playback_view1:
@@ -3944,18 +3889,18 @@ static void M_DrawReplayHutReplayInfo(menudemo_t *demoref)
 	switch (demoref->type)
 	{
 	case MD_NOTLOADED:
-		V_DrawCenteredString(160, 40, V_SNAPTOTOP, "Loading replay information...");
+		V_DrawCenteredString(160, 40, 0, "Loading replay information...");
 		break;
 
 	case MD_INVALID:
-		V_DrawCenteredString(160, 40, V_SNAPTOTOP|warningflags, "This replay cannot be played.");
+		V_DrawCenteredString(160, 40, warningflags, "This replay cannot be played.");
 		break;
 
 	case MD_SUBDIR:
 		break; // Can't think of anything to draw here right now
 
 	case MD_OUTDATED:
-		V_DrawThinString(17, 64, V_SNAPTOTOP|V_ALLOWLOWERCASE|V_TRANSLUCENT|highlightflags, "Recorded on an outdated version.");
+		V_DrawThinString(17, 64, V_ALLOWLOWERCASE|V_TRANSLUCENT|highlightflags, "Recorded on an outdated version.");
 		/* FALLTHRU */
 	default:
 		// Draw level stuff
@@ -3964,7 +3909,7 @@ static void M_DrawReplayHutReplayInfo(menudemo_t *demoref)
 		K_DrawMapThumbnail(
 			x<<FRACBITS, y<<FRACBITS,
 			80<<FRACBITS,
-			V_SNAPTOTOP|((demoref->kartspeed & DF_ENCORE) ? V_FLIP : 0),
+			((demoref->kartspeed & DF_ENCORE) ? V_FLIP : 0),
 			demoref->map,
 			NULL);
 
@@ -3972,7 +3917,7 @@ static void M_DrawReplayHutReplayInfo(menudemo_t *demoref)
 		{
 			static angle_t rubyfloattime = 0;
 			const fixed_t rubyheight = FINESINE(rubyfloattime>>ANGLETOFINESHIFT);
-			V_DrawFixedPatch((x+40)<<FRACBITS, ((y+25)<<FRACBITS) - (rubyheight<<1), FRACUNIT, V_SNAPTOTOP, W_CachePatchName("RUBYICON", PU_CACHE), NULL);
+			V_DrawFixedPatch((x+40)<<FRACBITS, ((y+25)<<FRACBITS) - (rubyheight<<1), FRACUNIT, 0, W_CachePatchName("RUBYICON", PU_CACHE), NULL);
 			rubyfloattime += FixedMul(ANGLE_MAX/NEWTICRATE, renderdeltatics);
 		}
 
@@ -3981,14 +3926,14 @@ static void M_DrawReplayHutReplayInfo(menudemo_t *demoref)
 		if (demoref->map < nummapheaders && mapheaderinfo[demoref->map])
 		{
 			char *title = G_BuildMapTitle(demoref->map+1);
-			V_DrawString(x, y, V_SNAPTOTOP, title);
+			V_DrawString(x, y, 0, title);
 			Z_Free(title);
 		}
 		else
-			V_DrawString(x, y, V_SNAPTOTOP|V_ALLOWLOWERCASE|V_TRANSLUCENT, "Level is not loaded.");
+			V_DrawString(x, y, V_ALLOWLOWERCASE|V_TRANSLUCENT, "Level is not loaded.");
 
 		if (demoref->numlaps)
-			V_DrawThinString(x, y+9, V_SNAPTOTOP|V_ALLOWLOWERCASE, va("(%d laps)", demoref->numlaps));
+			V_DrawThinString(x, y+9, V_ALLOWLOWERCASE, va("(%d laps)", demoref->numlaps));
 
 		{
 			const char *gtstring;
@@ -4004,42 +3949,42 @@ static void M_DrawReplayHutReplayInfo(menudemo_t *demoref)
 					gtstring = va("%s (%s)", gtstring, kartspeed_cons_t[(demoref->kartspeed & ~DF_ENCORE) + 1].strvalue);
 			}
 
-			V_DrawString(x, y+20, V_SNAPTOTOP|V_ALLOWLOWERCASE, gtstring);
+			V_DrawString(x, y+20, V_ALLOWLOWERCASE, gtstring);
 		}
 
 		if (!demoref->standings[0].ranking)
 		{
 			// No standings were loaded!
-			V_DrawString(x, y+39, V_SNAPTOTOP|V_ALLOWLOWERCASE|V_TRANSLUCENT, "No standings available.");
+			V_DrawString(x, y+39, V_ALLOWLOWERCASE|V_TRANSLUCENT, "No standings available.");
 
 			break;
 		}
 
-		V_DrawThinString(x, y+29, V_SNAPTOTOP|highlightflags, "WINNER");
-		V_DrawString(x+38, y+30, V_SNAPTOTOP|V_ALLOWLOWERCASE, demoref->standings[0].name);
+		V_DrawThinString(x, y+29, highlightflags, "WINNER");
+		V_DrawString(x+38, y+30, V_ALLOWLOWERCASE, demoref->standings[0].name);
 
 		if (demoref->gametype >= 0)
 		{
 			if (gametypes[demoref->gametype]->rules & GTR_POINTLIMIT)
 			{
-				V_DrawThinString(x, y+39, V_SNAPTOTOP|highlightflags, "SCORE");
+				V_DrawThinString(x, y+39, highlightflags, "SCORE");
 			}
 			else
 			{
-				V_DrawThinString(x, y+39, V_SNAPTOTOP|highlightflags, "TIME");
+				V_DrawThinString(x, y+39, highlightflags, "TIME");
 			}
 
 			if (demoref->standings[0].timeorscore == (UINT32_MAX-1))
 			{
-				V_DrawThinString(x+32, y+39, V_SNAPTOTOP, "NO CONTEST");
+				V_DrawThinString(x+32, y+39, 0, "NO CONTEST");
 			}
 			else if (gametypes[demoref->gametype]->rules & GTR_POINTLIMIT)
 			{
-				V_DrawString(x+32, y+40, V_SNAPTOTOP, va("%d", demoref->standings[0].timeorscore));
+				V_DrawString(x+32, y+40, 0, va("%d", demoref->standings[0].timeorscore));
 			}
 			else
 			{
-				V_DrawRightAlignedString(x+84, y+40, V_SNAPTOTOP, va("%d'%02d\"%02d",
+				V_DrawRightAlignedString(x+84, y+40, 0, va("%d'%02d\"%02d",
 												G_TicsToMinutes(demoref->standings[0].timeorscore, true),
 												G_TicsToSeconds(demoref->standings[0].timeorscore),
 												G_TicsToCentiseconds(demoref->standings[0].timeorscore)
@@ -4069,7 +4014,7 @@ static void M_DrawReplayHutReplayInfo(menudemo_t *demoref)
 				GTC_MENUCACHE);
 		}
 
-		V_DrawMappedPatch(BASEVIDWIDTH-15 - SHORT(patch->width), y+20, V_SNAPTOTOP, patch, colormap);
+		V_DrawMappedPatch(BASEVIDWIDTH-15 - SHORT(patch->width), y+20, 0, patch, colormap);
 
 		break;
 	}
@@ -4134,9 +4079,9 @@ void M_DrawReplayHut(void)
 			cursory = localy;
 
 		if ((currentMenu->menuitems[i].status & IT_DISPLAY)==IT_STRING)
-			V_DrawString(x, localy, V_SNAPTOTOP|V_SNAPTOLEFT, currentMenu->menuitems[i].text);
+			V_DrawString(x, localy, 0, currentMenu->menuitems[i].text);
 		else
-			V_DrawString(x, localy, V_SNAPTOTOP|V_SNAPTOLEFT|highlightflags, currentMenu->menuitems[i].text);
+			V_DrawString(x, localy, highlightflags, currentMenu->menuitems[i].text);
 	}
 
 	y += currentMenu->menuitems[replaylistitem].mvar1;
@@ -4160,7 +4105,7 @@ void M_DrawReplayHut(void)
 		if (extrasmenu.demolist[i].type == MD_SUBDIR)
 		{
 			localx += 8;
-			V_DrawScaledPatch(x - 4, localy, V_SNAPTOTOP|V_SNAPTOLEFT, W_CachePatchName(dirmenu[i][DIR_TYPE] == EXT_UP ? "M_RBACK" : "M_RFLDR", PU_CACHE));
+			V_DrawScaledPatch(x - 4, localy, 0, W_CachePatchName(dirmenu[i][DIR_TYPE] == EXT_UP ? "M_RBACK" : "M_RFLDR", PU_CACHE));
 		}
 
 		if (itemOn == replaylistitem && i == (INT16)dir_on[menudepthleft])
@@ -4190,27 +4135,27 @@ void M_DrawReplayHut(void)
 				}
 			}
 
-			V_DrawString(localx - (extrasmenu.replayScrollTitle>>1), localy, V_SNAPTOTOP|V_SNAPTOLEFT|highlightflags|V_ALLOWLOWERCASE, extrasmenu.demolist[i].title);
+			V_DrawString(localx - (extrasmenu.replayScrollTitle>>1), localy, highlightflags|V_ALLOWLOWERCASE, extrasmenu.demolist[i].title);
 		}
 		else
-			V_DrawString(localx, localy, V_SNAPTOTOP|V_SNAPTOLEFT|V_ALLOWLOWERCASE, extrasmenu.demolist[i].title);
+			V_DrawString(localx, localy, V_ALLOWLOWERCASE, extrasmenu.demolist[i].title);
 	}
 
 	// Draw scrollbar
 	y = sizedirmenu*10 + currentMenu->menuitems[replaylistitem].mvar1 + 30;
 	if (y > SCALEDVIEWHEIGHT-80)
 	{
-		V_DrawFill(BASEVIDWIDTH-4, 75, 4, SCALEDVIEWHEIGHT-80, V_SNAPTOTOP|V_SNAPTORIGHT|159);
-		V_DrawFill(BASEVIDWIDTH-3, 76 + (SCALEDVIEWHEIGHT-80) * replayhutmenuy / y, 2, (((SCALEDVIEWHEIGHT-80) * (SCALEDVIEWHEIGHT-80))-1) / y - 1, V_SNAPTOTOP|V_SNAPTORIGHT|149);
+		V_DrawFill(BASEVIDWIDTH-4, 75, 4, SCALEDVIEWHEIGHT-80, 159);
+		V_DrawFill(BASEVIDWIDTH-3, 76 + (SCALEDVIEWHEIGHT-80) * replayhutmenuy / y, 2, (((SCALEDVIEWHEIGHT-80) * (SCALEDVIEWHEIGHT-80))-1) / y - 1, 149);
 	}
 
 	// Draw the cursor
-	V_DrawScaledPatch(currentMenu->x - 24, cursory, V_SNAPTOTOP|V_SNAPTOLEFT,
+	V_DrawScaledPatch(currentMenu->x - 24, cursory, 0,
 		W_CachePatchName("M_CURSOR", PU_CACHE));
-	V_DrawString(currentMenu->x, cursory, V_SNAPTOTOP|V_SNAPTOLEFT|highlightflags, currentMenu->menuitems[itemOn].text);
+	V_DrawString(currentMenu->x, cursory, highlightflags, currentMenu->menuitems[itemOn].text);
 
 	// Now draw some replay info!
-	V_DrawFill(10, 10, 300, 60, V_SNAPTOTOP|159);
+	V_DrawFill(10, 10, 300, 60, 159);
 
 	if (itemOn == replaylistitem)
 	{
@@ -4234,17 +4179,17 @@ void M_DrawReplayStartMenu(void)
 		patch_t *patch;
 		UINT8 *colormap;
 
-		V_DrawRightAlignedString(BASEVIDWIDTH-100, STARTY + i*20, V_SNAPTOTOP|highlightflags, va("%2d", demoref->standings[i].ranking));
-		V_DrawThinString(BASEVIDWIDTH-96, STARTY + i*20, V_SNAPTOTOP|V_ALLOWLOWERCASE, demoref->standings[i].name);
+		V_DrawRightAlignedString(BASEVIDWIDTH-100, STARTY + i*20,highlightflags, va("%2d", demoref->standings[i].ranking));
+		V_DrawThinString(BASEVIDWIDTH-96, STARTY + i*20, V_ALLOWLOWERCASE, demoref->standings[i].name);
 
 		if (demoref->standings[i].timeorscore == UINT32_MAX-1)
-			V_DrawThinString(BASEVIDWIDTH-92, STARTY + i*20 + 9, V_SNAPTOTOP, "NO CONTEST");
+			V_DrawThinString(BASEVIDWIDTH-92, STARTY + i*20 + 9, 0, "NO CONTEST");
 		else if (demoref->gametype < 0)
 			;
 		else if (gametypes[demoref->gametype]->rules & GTR_POINTLIMIT)
-			V_DrawString(BASEVIDWIDTH-92, STARTY + i*20 + 9, V_SNAPTOTOP, va("%d", demoref->standings[i].timeorscore));
+			V_DrawString(BASEVIDWIDTH-92, STARTY + i*20 + 9, 0, va("%d", demoref->standings[i].timeorscore));
 		else
-			V_DrawRightAlignedString(BASEVIDWIDTH-40, STARTY + i*20 + 9, V_SNAPTOTOP, va("%d'%02d\"%02d",
+			V_DrawRightAlignedString(BASEVIDWIDTH-40, STARTY + i*20 + 9, 0, va("%d'%02d\"%02d",
 											G_TicsToMinutes(demoref->standings[i].timeorscore, true),
 											G_TicsToSeconds(demoref->standings[i].timeorscore),
 											G_TicsToCentiseconds(demoref->standings[i].timeorscore)
@@ -4272,7 +4217,7 @@ void M_DrawReplayStartMenu(void)
 				GTC_MENUCACHE);
 		}
 
-		V_DrawMappedPatch(BASEVIDWIDTH-5 - SHORT(patch->width), STARTY + i*20, V_SNAPTOTOP, patch, colormap);
+		V_DrawMappedPatch(BASEVIDWIDTH-5 - SHORT(patch->width), STARTY + i*20, 0, patch, colormap);
 	}
 #undef STARTY
 
@@ -4300,10 +4245,10 @@ void M_DrawReplayStartMenu(void)
 		}
 	}
 
-	V_DrawFill(10, 10, 300, 60, V_SNAPTOTOP|159);
+	V_DrawFill(10, 10, 300, 60, 159);
 	M_DrawReplayHutReplayInfo(demoref);
 
-	V_DrawString(10, 72, V_SNAPTOTOP|highlightflags|V_ALLOWLOWERCASE, demoref->title);
+	V_DrawString(10, 72, highlightflags|V_ALLOWLOWERCASE, demoref->title);
 
 	// Draw a warning prompt if needed
 	switch (demoref->addonstatus)
@@ -4329,7 +4274,7 @@ void M_DrawReplayStartMenu(void)
 		return;
 	}
 
-	V_DrawSmallString(4, BASEVIDHEIGHT-14, V_SNAPTOBOTTOM|V_SNAPTOLEFT|V_ALLOWLOWERCASE, warning);
+	V_DrawSmallString(4, BASEVIDHEIGHT-14, V_ALLOWLOWERCASE, warning);
 }
 
 // Draw misc menus:

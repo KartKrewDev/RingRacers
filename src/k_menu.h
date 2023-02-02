@@ -154,6 +154,7 @@ struct menu_t
 
 	INT16          x, y;               // x, y of menu
 	INT16 		   extra1, extra2;	   // Can be whatever really! Options menu uses extra1 for bg colour.
+	const char    *music;              // Track to play in M_PlayMenuJam. NULL for default, "." to stop
 
 	INT16          transitionID;       // only transition if IDs match
 	INT16          transitionTics;     // tics for transitions out
@@ -466,7 +467,10 @@ typedef enum
 void Moviemode_option_Onchange(void);
 
 extern menu_t *currentMenu;
+extern menu_t *restoreMenu;
+
 extern char dummystaffname[22];
+extern consvar_t cv_dummystaff;
 
 extern INT16 itemOn; // menu item skull is on, Hack by Tails 09-18-2002
 extern INT16 skullAnimCounter; // skull animation counter
@@ -582,6 +586,7 @@ boolean M_MenuExtraPressed(UINT8 pid);
 boolean M_MenuExtraHeld(UINT8 pid);
 
 void M_StartControlPanel(void);
+menu_t *M_SpecificMenuRestore(menu_t *torestore);
 void M_ClearMenus(boolean callexitmenufunc);
 void M_SelectableClearMenus(INT32 choice);
 void M_SetupNextMenu(menu_t *menudef, boolean nofade);
@@ -589,9 +594,10 @@ void M_GoBack(INT32 choice);
 void M_Ticker(void);
 void M_Init(void);
 
+void M_PlayMenuJam(void);
+
 void M_MenuTypingInput(INT32 key);
 
-extern menu_t MessageDef;
 void M_StartMessage(const char *string, void *routine, menumessagetype_t itemtype);
 void M_StopMessage(INT32 choice);
 void M_DrawMenuMessage(void);
@@ -784,6 +790,7 @@ extern struct mpmenu_s {
 } mpmenu;
 
 // Time Attack
+void M_PrepareTimeAttack(INT32 choice);
 void M_StartTimeAttack(INT32 choice);
 void M_ReplayTimeAttack(INT32 choice);
 void M_HandleStaffReplay(INT32 choice);
@@ -1179,6 +1186,7 @@ boolean M_StatisticsInputs(INT32 ch);
 	0,\
 	source,\
 	x, y,\
+	NULL,\
 	0, 0,\
 	M_DrawGenericMenu,\
 	NULL,\
@@ -1195,7 +1203,8 @@ boolean M_StatisticsInputs(INT32 ch);
 	0,\
 	source,\
 	0, 0,\
-	0, 0, \
+	0, 0,\
+	NULL,\
 	1, 5,\
 	M_DrawKartGamemodeMenu,\
 	NULL,\
@@ -1211,7 +1220,8 @@ boolean M_StatisticsInputs(INT32 ch);
 	0,\
 	source,\
 	0, 0,\
-	0, 0, \
+	0, 0,\
+	"EXTRAS",\
 	1, 5,\
 	M_DrawImageDef,\
 	NULL,\

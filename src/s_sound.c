@@ -31,6 +31,7 @@
 #include "m_cond.h" // for conditionsets
 #include "lua_hook.h" // MusicChange hook
 #include "byteptr.h"
+#include "k_menu.h" // M_PlayMenuJam
 
 #ifdef HW3SOUND
 // 3D Sound Interface
@@ -2651,9 +2652,13 @@ void GameDigiMusic_OnChange(void)
 		{
 			P_RestoreMusic(&players[consoleplayer]);
 		}
-		else if (S_MusicExists("menu"))
+		else if (gamestate == GS_TITLESCREEN)
 		{
-			S_ChangeMusicInternal("menu", looptitle);
+			S_ChangeMusicInternal("_title", looptitle);
+		}
+		else
+		{
+			M_PlayMenuJam();
 		}
 	}
 	else

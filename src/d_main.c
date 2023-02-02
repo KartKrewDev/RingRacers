@@ -915,30 +915,11 @@ void D_SRB2Loop(void)
 // =========================================================================
 
 //
-// D_StartTitle
+// D_ClearState
 //
-void D_StartTitle(void)
+void D_ClearState(void)
 {
 	INT32 i;
-
-	S_StopMusic();
-
-	if (netgame)
-	{
-		G_SetGamestate(GS_WAITINGPLAYERS); // hack to prevent a command repeat
-
-		if (server)
-		{
-			i = G_GetFirstMapOfGametype(gametype)+1;
-
-			if (i > nummapheaders)
-				I_Error("D_StartTitle: No valid map ID found!?");
-
-			COM_BufAddText(va("map %s\n", G_BuildMapName(i)));
-		}
-
-		return;
-	}
 
 	// okay, stop now
 	// (otherwise the game still thinks we're playing!)
@@ -979,15 +960,25 @@ void D_StartTitle(void)
 	memset(gamekeydown, 0, sizeof (gamekeydown));
 	memset(deviceResponding, false, sizeof (deviceResponding));
 
-	F_StartTitleScreen();
-	M_ClearMenus(false);
-
 	// Reset the palette
 	if (rendermode != render_none)
 		V_SetPaletteLump("PLAYPAL");
 
 	// The title screen is obviously not a tutorial! (Unless I'm mistaken)
 	tutorialmode = false;
+
+	G_SetGamestate(GS_NULL);
+}
+
+//
+// D_StartTitle
+//
+void D_StartTitle(void)
+{
+	S_StopMusic();
+	D_ClearState();
+	F_StartTitleScreen();
+	M_ClearMenus(false);
 }
 
 //

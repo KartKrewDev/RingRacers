@@ -9,25 +9,27 @@
 #include "../../p_local.h" // P_InitCameraCmd
 #include "../../d_main.h" // D_StartTitle
 
+static void M_PlaybackTick(void);
+
 menuitem_t PAUSE_PlaybackMenu[] =
 {
-	{IT_CALL   | IT_STRING, "Hide Menu (Esc)",			NULL, "M_PHIDE",	{.routine = M_SelectableClearMenus},	  0, 0},
+	{IT_CALL   | IT_STRING, "Hide Menu",			NULL, "M_PHIDE",	{.routine = M_SelectableClearMenus},	  0, 0},
 
-	{IT_CALL   | IT_STRING, "Rewind ([)",				NULL, "M_PREW",		{.routine = M_PlaybackRewind},			 20, 0},
-	{IT_CALL   | IT_STRING, "Pause (\\)",				NULL, "M_PPAUSE",	{.routine = M_PlaybackPause},			 36, 0},
-	{IT_CALL   | IT_STRING, "Fast-Forward (])",			NULL, "M_PFFWD",	{.routine = M_PlaybackFastForward},		 52, 0},
-	{IT_CALL   | IT_STRING, "Backup Frame ([)",			NULL, "M_PSTEPB",	{.routine = M_PlaybackRewind},			 20, 0},
-	{IT_CALL   | IT_STRING, "Resume",					NULL, "M_PRESUM",	{.routine = M_PlaybackPause},			 36, 0},
-	{IT_CALL   | IT_STRING, "Advance Frame (])",		NULL, "M_PFADV",	{.routine = M_PlaybackAdvance},			 52, 0},
+	{IT_CALL   | IT_STRING, "Rewind",				NULL, "M_PREW",		{.routine = M_PlaybackRewind},			 20, 0},
+	{IT_CALL   | IT_STRING, "Pause",				NULL, "M_PPAUSE",	{.routine = M_PlaybackPause},			 36, 0},
+	{IT_CALL   | IT_STRING, "Fast-Forward",			NULL, "M_PFFWD",	{.routine = M_PlaybackFastForward},		 52, 0},
+	{IT_CALL   | IT_STRING, "Backup Frame",			NULL, "M_PSTEPB",	{.routine = M_PlaybackRewind},			 20, 0},
+	{IT_CALL   | IT_STRING, "Resume",				NULL, "M_PRESUM",	{.routine = M_PlaybackPause},			 36, 0},
+	{IT_CALL   | IT_STRING, "Advance Frame",		NULL, "M_PFADV",	{.routine = M_PlaybackAdvance},			 52, 0},
 
-	{IT_ARROWS | IT_STRING, "View Count (- and =)",		NULL, "M_PVIEWS",	{.routine = M_PlaybackSetViews},		 72, 0},
-	{IT_ARROWS | IT_STRING, "Viewpoint (1)",			NULL, "M_PNVIEW",	{.routine = M_PlaybackAdjustView},		 88, 0},
-	{IT_ARROWS | IT_STRING, "Viewpoint 2 (2)",			NULL, "M_PNVIEW",	{.routine = M_PlaybackAdjustView},		104, 0},
-	{IT_ARROWS | IT_STRING, "Viewpoint 3 (3)",			NULL, "M_PNVIEW",	{.routine = M_PlaybackAdjustView},		120, 0},
-	{IT_ARROWS | IT_STRING, "Viewpoint 4 (4)",			NULL, "M_PNVIEW",	{.routine = M_PlaybackAdjustView},		136, 0},
+	{IT_ARROWS | IT_STRING, "View Count",			NULL, "M_PVIEWS",	{.routine = M_PlaybackSetViews},		 72, 0},
+	{IT_ARROWS | IT_STRING, "Viewpoint",			NULL, "M_PNVIEW",	{.routine = M_PlaybackAdjustView},		 88, 0},
+	{IT_ARROWS | IT_STRING, "Viewpoint 2",			NULL, "M_PNVIEW",	{.routine = M_PlaybackAdjustView},		104, 0},
+	{IT_ARROWS | IT_STRING, "Viewpoint 3",			NULL, "M_PNVIEW",	{.routine = M_PlaybackAdjustView},		120, 0},
+	{IT_ARROWS | IT_STRING, "Viewpoint 4",			NULL, "M_PNVIEW",	{.routine = M_PlaybackAdjustView},		136, 0},
 
-	{IT_CALL   | IT_STRING, "Toggle Free Camera (')",	NULL, "M_PVIEWS",	{.routine = M_PlaybackToggleFreecam},	156, 0},
-	{IT_CALL   | IT_STRING, "Stop Playback",			NULL, "M_PEXIT",	{.routine = M_PlaybackQuit},			172, 0},
+	{IT_CALL   | IT_STRING, "Toggle Free Camera",	NULL, "M_PVIEWS",	{.routine = M_PlaybackToggleFreecam},	156, 0},
+	{IT_CALL   | IT_STRING, "Stop Playback",		NULL, "M_PEXIT",	{.routine = M_PlaybackQuit},			172, 0},
 };
 
 menu_t PAUSE_PlaybackMenuDef = {
@@ -37,9 +39,10 @@ menu_t PAUSE_PlaybackMenuDef = {
 	PAUSE_PlaybackMenu,
 	BASEVIDWIDTH/2 - 88, 2,
 	0, 0,
+	NULL,
 	0, 0,
 	M_DrawPlaybackMenu,
-	NULL,
+	M_PlaybackTick,
 	NULL,
 	NULL,
 	NULL
@@ -47,23 +50,84 @@ menu_t PAUSE_PlaybackMenuDef = {
 
 void M_EndModeAttackRun(void)
 {
+	boolean dotitle = demo.title;
+
 	G_CheckDemoStatus(); // Cancel recording
 
-	if (gamestate == GS_LEVEL || gamestate == GS_INTERMISSION)
-		Command_ExitGame_f();
+	Command_ExitGame_f(); // Clear a bunch of state
 
-	M_StartControlPanel();
+	modeattacking = ATTACKING_NONE; // Kept until now because of Command_ExitGame_f
 
-	currentMenu = &PLAY_TimeAttackDef;
-	itemOn = currentMenu->lastOn;
-
-	G_SetGamestate(GS_MENU);
-	S_ChangeMusicInternal("menu", true);
-
-	modeattacking = ATTACKING_NONE;
+	if (dotitle)
+	{
+		D_StartTitle();
+	}
+	else
+	{
+		D_ClearState();
+		M_StartControlPanel();
+	}
 }
 
 // Replay Playback Menu
+
+tic_t playback_last_menu_interaction_leveltime = 0;
+
+static void M_PlaybackTick(void)
+{
+	INT16 i;
+
+	if (leveltime - playback_last_menu_interaction_leveltime >= 6*TICRATE)
+		playback_last_menu_interaction_leveltime = leveltime - 6*TICRATE;
+
+	// Toggle items
+	if (paused && !demo.rewinding)
+	{
+		PAUSE_PlaybackMenu[playback_pause].status = PAUSE_PlaybackMenu[playback_fastforward].status = PAUSE_PlaybackMenu[playback_rewind].status = IT_DISABLED;
+		PAUSE_PlaybackMenu[playback_resume].status = PAUSE_PlaybackMenu[playback_advanceframe].status = PAUSE_PlaybackMenu[playback_backframe].status = IT_CALL|IT_STRING;
+
+		if (itemOn >= playback_rewind && itemOn <= playback_fastforward)
+			itemOn += playback_backframe - playback_rewind;
+	}
+	else
+	{
+		PAUSE_PlaybackMenu[playback_pause].status = PAUSE_PlaybackMenu[playback_fastforward].status = PAUSE_PlaybackMenu[playback_rewind].status = IT_CALL|IT_STRING;
+		PAUSE_PlaybackMenu[playback_resume].status = PAUSE_PlaybackMenu[playback_advanceframe].status = PAUSE_PlaybackMenu[playback_backframe].status = IT_DISABLED;
+
+		if (itemOn >= playback_backframe && itemOn <= playback_advanceframe)
+			itemOn -= playback_backframe - playback_rewind;
+	}
+
+	if (modeattacking)
+	{
+		for (i = playback_viewcount; i <= playback_view4; i++)
+			PAUSE_PlaybackMenu[i].status = IT_DISABLED;
+
+		//PAUSE_PlaybackMenu[playback_moreoptions].mvar1 = 72;
+		//PAUSE_PlaybackMenu[playback_quit].mvar1 = 88;
+		PAUSE_PlaybackMenu[playback_quit].mvar1 = 72;
+
+		//currentMenu->x = BASEVIDWIDTH/2 - 52;
+		currentMenu->x = BASEVIDWIDTH/2 - 44;
+	}
+	else
+	{
+		PAUSE_PlaybackMenu[playback_viewcount].status = IT_ARROWS|IT_STRING;
+
+		for (i = 0; i <= r_splitscreen; i++)
+			PAUSE_PlaybackMenu[playback_view1+i].status = IT_ARROWS|IT_STRING;
+		for (i = r_splitscreen+1; i < 4; i++)
+			PAUSE_PlaybackMenu[playback_view1+i].status = IT_DISABLED;
+
+		//PAUSE_PlaybackMenu[playback_moreoptions].mvar1 = 156;
+		//PAUSE_PlaybackMenu[playback_quit].mvar1 = 172;
+		PAUSE_PlaybackMenu[playback_quit].mvar1 = 156;
+
+		//currentMenu->x = BASEVIDWIDTH/2 - 94;
+		currentMenu->x = BASEVIDWIDTH/2 - 88;
+	}
+}
+
 void M_SetPlaybackMenuPointer(void)
 {
 	itemOn = playback_pause;
@@ -141,12 +205,12 @@ void M_PlaybackSetViews(INT32 choice)
 {
 	if (choice > 0)
 	{
-		if (splitscreen < 3)
-			G_AdjustView(splitscreen + 2, 0, true);
+		if (r_splitscreen < 3)
+			G_AdjustView(r_splitscreen + 2, 0, true);
 	}
-	else if (splitscreen)
+	else if (r_splitscreen)
 	{
-		splitscreen--;
+		r_splitscreen--;
 		R_ExecuteSetViewSize();
 	}
 }
@@ -188,7 +252,7 @@ void M_PlaybackQuit(INT32 choice)
 	G_StopDemo();
 
 	if (demo.inreplayhut)
-		M_ReplayHut(choice);
+		M_StartControlPanel();
 	else if (modeattacking)
 		M_EndModeAttackRun();
 	else

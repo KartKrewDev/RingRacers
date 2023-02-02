@@ -23,6 +23,7 @@ menu_t PLAY_MP_OptSelectDef = {
 	PLAY_MP_OptSelect,
 	0, 0,
 	0, 0,
+	"NETMD2",
 	-1, 1,
 	M_DrawMPOptSelect,
 	M_MPOptSelectTick,
@@ -47,23 +48,21 @@ boolean M_MPResetOpts(void)
 void M_MPOptSelectInit(INT32 choice)
 {
 	INT16 arrcpy[3][3] = {{0,68,0}, {0,12,0}, {0,74,0}};
-	UINT8 i = 0, j = 0;	// To copy the array into the struct
 	const UINT32 forbidden = GTR_FORBIDMP;
-
-	(void)choice;
 
 	mpmenu.modechoice = 0;
 	mpmenu.ticker = 0;
 
-	for (; i < 3; i++)
-		for (j = 0; j < 3; j++)
-			mpmenu.modewinextend[i][j] = arrcpy[i][j];	// I miss Lua already
+	memcpy(&mpmenu.modewinextend, &arrcpy, sizeof(mpmenu.modewinextend));
 
 	// Guarantee menugametype is good
 	M_NextMenuGametype(forbidden);
 	M_PrevMenuGametype(forbidden);
 
-	M_SetupNextMenu(&PLAY_MP_OptSelectDef, false);
+	if (choice != -1)
+	{
+		M_SetupNextMenu(&PLAY_MP_OptSelectDef, false);
+	}
 }
 
 void M_MPOptSelectTick(void)
@@ -73,12 +72,26 @@ void M_MPOptSelectTick(void)
 	// 3 Because we have 3 options in the menu
 	for (; i < 3; i++)
 	{
-		if (mpmenu.modewinextend[i][0])
-			mpmenu.modewinextend[i][2] += 8;
+		if (mpmenu.modewinextend[i][0] != 0)
+		{
+			if (mpmenu.modewinextend[i][2] < (mpmenu.modewinextend[i][1] - 8))
+			{
+				mpmenu.modewinextend[i][2] = (((2*mpmenu.modewinextend[i][1]) + mpmenu.modewinextend[i][2])/3);
+				mpmenu.modewinextend[i][2] -= (mpmenu.modewinextend[i][2] & 1); // prevent jitter, bias closed
+			}
+			else
+			{
+				mpmenu.modewinextend[i][2] = mpmenu.modewinextend[i][1];
+			}
+		}
+		else if (mpmenu.modewinextend[i][2] > 8)
+		{
+			mpmenu.modewinextend[i][2] /= 3;
+			mpmenu.modewinextend[i][2] += (mpmenu.modewinextend[i][2] & 1); // prevent jitter, bias open
+		}
 		else
-			mpmenu.modewinextend[i][2] -= 8;
-
-		mpmenu.modewinextend[i][2] = min(mpmenu.modewinextend[i][1], max(0, mpmenu.modewinextend[i][2]));
-		//CONS_Printf("%d - %d,%d,%d\n", i, mpmenu.modewinextend[i][0], mpmenu.modewinextend[i][1], mpmenu.modewinextend[i][2]);
+		{
+			mpmenu.modewinextend[i][2] = 0;
+		}
 	}
 }

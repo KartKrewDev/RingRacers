@@ -20,6 +20,7 @@ menu_t MISC_ChallengesDef = {
 	MISC_ChallengesStatsDummyMenu,
 	BASEVIDWIDTH/2, 32,
 	0, 0,
+	"EXTRAS",
 	98, 0,
 	M_DrawChallenges,
 	M_ChallengesTick,
@@ -37,6 +38,7 @@ menu_t MISC_StatisticsDef = {
 	MISC_ChallengesStatsDummyMenu,
 	280, 185,
 	0, 0,
+	"EXTRAS",
 	98, 0,
 	M_DrawStatistics,
 	NULL,
@@ -46,51 +48,6 @@ menu_t MISC_StatisticsDef = {
 };
 
 struct challengesmenu_s challengesmenu;
-
-menu_t *M_InterruptMenuWithChallenges(menu_t *desiredmenu)
-{
-	UINT8 i;
-
-	M_UpdateUnlockablesAndExtraEmblems(false);
-
-	if ((challengesmenu.pending = challengesmenu.requestnew = (M_GetNextAchievedUnlock() < MAXUNLOCKABLES)))
-	{
-		MISC_ChallengesDef.prevMenu = desiredmenu;
-	}
-
-	if (challengesmenu.pending || desiredmenu == NULL)
-	{
-		challengesmenu.currentunlock = MAXUNLOCKABLES;
-		challengesmenu.unlockcondition = NULL;
-
-		M_PopulateChallengeGrid();
-		if (gamedata->challengegrid)
-			challengesmenu.extradata = M_ChallengeGridExtraData();
-
-		memset(setup_explosions, 0, sizeof(setup_explosions));
-		memset(&challengesmenu.unlockcount, 0, sizeof(challengesmenu.unlockcount));
-		for (i = 0; i < MAXUNLOCKABLES; i++)
-		{
-			if (!unlockables[i].conditionset)
-			{
-				continue;
-			}
-
-			challengesmenu.unlockcount[CC_TOTAL]++;
-
-			if (!gamedata->unlocked[i])
-			{
-				continue;
-			}
-
-			challengesmenu.unlockcount[CC_UNLOCKED]++;
-		}
-
-		return &MISC_ChallengesDef;
-	}
-
-	return desiredmenu;
-}
 
 static void M_ChallengesAutoFocus(UINT8 unlockid, boolean fresh)
 {
@@ -196,6 +153,57 @@ static void M_ChallengesAutoFocus(UINT8 unlockid, boolean fresh)
 	}
 }
 
+menu_t *M_InterruptMenuWithChallenges(menu_t *desiredmenu)
+{
+	UINT8 i;
+	UINT16 newunlock = M_GetNextAchievedUnlock();
+
+	M_UpdateUnlockablesAndExtraEmblems(false);
+
+	if ((challengesmenu.pending = (newunlock < MAXUNLOCKABLES)))
+	{
+		S_StopMusic();
+		MISC_ChallengesDef.prevMenu = desiredmenu;
+	}
+
+	if (challengesmenu.pending || desiredmenu == NULL)
+	{
+		challengesmenu.requestnew = false;
+		challengesmenu.currentunlock = MAXUNLOCKABLES;
+		challengesmenu.unlockcondition = NULL;
+
+		M_PopulateChallengeGrid();
+		if (gamedata->challengegrid)
+			challengesmenu.extradata = M_ChallengeGridExtraData();
+
+		memset(setup_explosions, 0, sizeof(setup_explosions));
+		memset(&challengesmenu.unlockcount, 0, sizeof(challengesmenu.unlockcount));
+		for (i = 0; i < MAXUNLOCKABLES; i++)
+		{
+			if (!unlockables[i].conditionset)
+			{
+				continue;
+			}
+
+			challengesmenu.unlockcount[CC_TOTAL]++;
+
+			if (!gamedata->unlocked[i])
+			{
+				continue;
+			}
+
+			challengesmenu.unlockcount[CC_UNLOCKED]++;
+		}
+
+		if (challengesmenu.pending)
+			M_ChallengesAutoFocus(newunlock, true);
+
+		return &MISC_ChallengesDef;
+	}
+
+	return desiredmenu;
+}
+
 void M_Challenges(INT32 choice)
 {
 	UINT8 i;
@@ -249,7 +257,6 @@ void M_ChallengesTick(void)
 {
 	const UINT8 pid = 0;
 	UINT8 i, newunlock = MAXUNLOCKABLES;
-	boolean fresh = (challengesmenu.currentunlock >= MAXUNLOCKABLES);
 
 	// Ticking
 	challengesmenu.ticker++;
@@ -274,7 +281,7 @@ void M_ChallengesTick(void)
 			if ((newunlock = M_GetNextAchievedUnlock()) < MAXUNLOCKABLES)
 			{
 				// We got one!
-				M_ChallengesAutoFocus(newunlock, fresh);
+				M_ChallengesAutoFocus(newunlock, false);
 			}
 			else
 			{
@@ -376,7 +383,11 @@ void M_ChallengesTick(void)
 		if (challengesmenu.fade > 0)
 		{
 			// Fade decrease.
-			challengesmenu.fade--;
+			if (--challengesmenu.fade == 0)
+			{
+				// Play music the moment control returns.
+				M_PlayMenuJam();
+			}
 		}
 	}
 }
@@ -416,6 +427,8 @@ boolean M_ChallengesInputs(INT32 ch)
 	{
 		if (M_MenuBackPressed(pid) || start)
 		{
+			currentMenu->prevMenu = M_SpecificMenuRestore(currentMenu->prevMenu);
+
 			M_GoBack(0);
 			M_SetMenuDelay(pid);
 

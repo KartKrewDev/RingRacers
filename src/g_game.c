@@ -2990,7 +2990,8 @@ void G_ExitLevel(void)
 				{
 					D_QuitNetGame();
 					CL_Reset();
-					D_StartTitle();
+					D_ClearState();
+					M_StartControlPanel();
 				}
 			}
 			else
@@ -4003,15 +4004,7 @@ void G_AfterIntermission(void)
 
 	if (demo.playback)
 	{
-		G_StopDemo();
-
-#if 0
-		if (demo.inreplayhut)
-			M_ReplayHut(0);
-		else
-#endif
-			D_StartTitle();
-
+		M_PlaybackQuit(0);
 		return;
 	}
 	else if (demo.recording && (modeattacking || demo.savemode != DSM_NOTSAVING))
@@ -4170,8 +4163,8 @@ void G_EndGame(void)
 	{
 		if (nextmap == NEXTMAP_CEREMONY) // end game with ceremony
 		{
-			D_StartTitle(); //F_StartEnding(); -- temporary
-			return;
+			/*F_StartEnding(); -- temporary
+			return;*/
 		}
 		if (nextmap == NEXTMAP_CREDITS) // end game with credits
 		{
@@ -4185,8 +4178,28 @@ void G_EndGame(void)
 		}
 	}
 
-	// direct or competitive multiplayer, so go back to title screen.
-	D_StartTitle();
+	// In a netgame, don't unwittingly boot everyone.
+	if (netgame)
+	{
+		S_StopMusic();
+		G_SetGamestate(GS_WAITINGPLAYERS); // hack to prevent a command repeat
+
+		if (server)
+		{
+			UINT16 map = G_GetFirstMapOfGametype(gametype)+1;
+
+			if (map > nummapheaders)
+				I_Error("G_EndGame: No valid map ID found!?");
+
+			COM_BufAddText(va("map %s\n", G_BuildMapName(map)));
+		}
+
+		return;
+	}
+
+	// Time to return to the menu.
+	D_ClearState();
+	M_StartControlPanel();
 }
 
 //

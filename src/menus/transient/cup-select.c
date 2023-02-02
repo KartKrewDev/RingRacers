@@ -20,6 +20,7 @@ menu_t PLAY_CupSelectDef = {
 	PLAY_CupSelect,
 	0, 0,
 	0, 0,
+	NULL,
 	2, 5,
 	M_DrawCupSelect,
 	M_CupSelectTick,
@@ -157,6 +158,8 @@ void M_CupSelectHandler(INT32 choice)
 			);
 
 			M_ClearMenus(true);
+
+			restoreMenu = &PLAY_CupSelectDef;
 		}
 		else if (count == 1)
 		{
