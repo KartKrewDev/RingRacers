@@ -1792,11 +1792,11 @@ void M_MinimapGenerate(void)
 			return;
 		}
 
-		filepath = va("%s" PATHSEP "MINIMAP-%d.png", srb2home, mul);
+		filepath = va("%s" PATHSEP "%s-MINIMAP-%d.png", srb2home, G_BuildMapName(gamemap), mul);
 	}
 	else
 	{
-		filepath = va("%s" PATHSEP "MINIMAP.png", srb2home);
+		filepath = va("%s" PATHSEP "%s-MINIMAP.png", srb2home, G_BuildMapName(gamemap));
 	}
 
 	minigen = AM_MinimapGenerate(mul);
