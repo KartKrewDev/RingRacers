@@ -6017,7 +6017,9 @@ static void P_ConvertBinarySectorTypes(void)
 			case 8: //Instakill
 				sectors[i].damagetype = SD_INSTAKILL;
 				break;
-			case 9: // Stumble
+			//case 9: -- Ring Drainer (Floor Touch)
+			//case 10: -- Ring Drainer (No Floor Touch)
+			case 11: // Stumble
 				sectors[i].damagetype = SD_STUMBLE;
 				break;
 			case 12: //Wall sector
