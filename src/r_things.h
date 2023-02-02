@@ -190,6 +190,7 @@ struct vissprite_t
 
 	fixed_t texturemid;
 	patch_t *patch;
+	patch_t *bright;
 
 	lighttable_t *colormap; // for color translation and shadow draw
 	                        // maxbright frames as well

@@ -266,6 +266,20 @@ static UINT8 GetPivotFrame(lua_State *L, int idx)
 	return frame;
 }
 
+static int PushCast(lua_State *L, const char *meta)
+{
+	// bypass LUA_PushUserdata
+	void **userdata = lua_newuserdata(L, sizeof(void *));
+
+	*userdata = lua_touserdata(L, 1);
+
+	luaL_getmetatable(L, meta);
+	lua_setmetatable(L, -2);
+
+	// stack is left with the userdata on top, as if getting it had originally succeeded.
+	return 1;
+}
+
 // spriteinfo[]
 static int lib_getSpriteInfo(lua_State *L)
 {
@@ -454,23 +468,15 @@ static int lib_spriteinfolen(lua_State *L)
 // spriteinfo_t
 static int spriteinfo_get(lua_State *L)
 {
-	spriteinfo_t *sprinfo = *((spriteinfo_t **)luaL_checkudata(L, 1, META_SPRITEINFO));
 	const char *field = luaL_checkstring(L, 2);
 
-	I_Assert(sprinfo != NULL);
+	luaL_checkudata(L, 1, META_SPRITEINFO);
 
 	// push spriteframepivot_t userdata
 	if (fastcmp(field, "pivot"))
-	{
-		// bypass LUA_PushUserdata
-		void **userdata = lua_newuserdata(L, sizeof(void *));
-		*userdata = sprinfo;
-		luaL_getmetatable(L, META_PIVOTLIST);
-		lua_setmetatable(L, -2);
-
-		// stack is left with the userdata on top, as if getting it had originally succeeded.
-		return 1;
-	}
+		return PushCast(L, META_PIVOTLIST);
+	else if (fastcmp(field, "brightmap"))
+		return PushCast(L, META_SPRITEBRIGHTLIST);
 	else
 		return luaL_error(L, LUA_QL("spriteinfo_t") " has no field named " LUA_QS, field);
 
@@ -638,6 +644,29 @@ static int framepivot_num(lua_State *L)
 {
 	lua_pushinteger(L, 2);
 	return 1;
+}
+
+static int brightlist_get(lua_State *L)
+{
+	const spriteinfo_t *sprinfo = *((spriteinfo_t **)luaL_checkudata(L, 1, META_SPRITEBRIGHTLIST));
+	const UINT8 frame = GetPivotFrame(L, 2);
+
+	lua_pushstring(L, sprinfo->bright[frame]);
+
+	return 1;
+}
+
+static int brightlist_set(lua_State *L)
+{
+	spriteinfo_t *sprinfo = *((spriteinfo_t **)luaL_checkudata(L, 1, META_SPRITEBRIGHTLIST));
+
+	const UINT8 frame = GetPivotFrame(L, 2);
+	const char *val = luaL_checkstring(L, 3);
+
+	Z_Free(sprinfo->bright[frame]);
+	sprinfo->bright[frame] = Z_StrDup(val);
+
+	return 0;
 }
 
 ////////////////
@@ -2030,6 +2059,17 @@ int LUA_InfoLib(lua_State *L)
 		lua_setfield(L, -2, "__newindex");
 
 		lua_pushcfunction(L, framepivot_num);
+		lua_setfield(L, -2, "__len");
+	lua_pop(L, 1);
+
+	luaL_newmetatable(L, META_SPRITEBRIGHTLIST);
+		lua_pushcfunction(L, brightlist_get);
+		lua_setfield(L, -2, "__index");
+
+		lua_pushcfunction(L, brightlist_set);
+		lua_setfield(L, -2, "__newindex");
+
+		lua_pushcfunction(L, pivotlist_num);
 		lua_setfield(L, -2, "__len");
 	lua_pop(L, 1);
 

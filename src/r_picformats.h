@@ -107,6 +107,7 @@ struct spriteinfo_t
 	spriteframepivot_t pivot[64 + 1];
 #define SPRINFO_DEFAULT_PIVOT (64)
 	UINT8 available[BIT_ARRAY_SIZE(64 + 1)]; // 1 extra for default_pivot
+	char *bright[64 + 1]; // brightmap lump name
 };
 
 // Portable Network Graphics
