@@ -1917,6 +1917,8 @@ static void K_HandleLapIncrement(player_t *player)
 			player->nocontrol = 69;
 			player->hyudorotimer = 69;
 			K_StripItems(player);
+			player->faulttimer = TICRATE/3;
+			ClearFakePlayerSkin(player);
 		}
 
 		if ((player->starpostnum == numstarposts) || (player->laps == 0))

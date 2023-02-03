@@ -7802,6 +7802,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		player->tiregrease = 0;
 		player->sneakertimer = 0;
 		player->spindashboost = 0;
+		player->flashing = TICRATE/2;
 	}
 
 	if (player->stealingtimer == 0
