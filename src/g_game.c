@@ -3441,6 +3441,10 @@ tryagain:
 			|| (usehellmaps != (mapheaderinfo[ix]->menuflags & LF2_HIDEINMENU))) // this is bad
 			continue; //isokmap = false;
 
+		if (pprevmap == -2 // title demo hack
+			&& mapheaderinfo[ix]->ghostCount == 0)
+			continue;
+
 		if (!ignorebuffer)
 		{
 			if (extbufsize > 0)
@@ -3474,16 +3478,6 @@ tryagain:
 			if (!isokmap)
 				continue;
 		}
-
-#ifdef STAFFGHOSTS
-		if (pprevmap == -2) // title demo hack
-		{
-			lumpnum_t l;
-			// TODO: Use map header to determine lump name
-			if ((l = W_CheckNumForLongName(va("%sS01",G_BuildMapName(ix+1)))) == LUMPERROR)
-				continue;
-		}
-#endif //#ifdef STAFFGHOSTS
 
 		okmaps[numokmaps++] = ix;
 	}
