@@ -1909,10 +1909,17 @@ static void K_HandleLapIncrement(player_t *player)
 	{
 		if (leveltime < starttime && !(gametyperules & GTR_ROLLINGSTART))
 		{
-			// Will fault the player
-			K_DoIngameRespawn(player);
+			// freeze 'em until fault penalty is over
+			player->mo->hitlag = starttime - leveltime + 50;
+			player->pflags = PF_VOID;
+			player->mo->renderflags |= RF_DONTDRAW;
+			player->mo->flags |= MF_NOCLIPTHING;
+			player->nocontrol = 69;
+			player->hyudorotimer = 69;
+			K_StripItems(player);
 		}
-		else if ((player->starpostnum == numstarposts) || (player->laps == 0))
+
+		if ((player->starpostnum == numstarposts) || (player->laps == 0))
 		{
 			size_t i = 0;
 			UINT8 nump = 0;
@@ -1948,7 +1955,7 @@ static void K_HandleLapIncrement(player_t *player)
 				player->karthud[khud_lapanimation] = 80;
 			}
 
-			if (rainbowstartavailable == true)
+			if (rainbowstartavailable == true && player->mo->hitlag == 0)
 			{
 				S_StartSound(player->mo, sfx_s23c);
 				player->startboost = 125;
