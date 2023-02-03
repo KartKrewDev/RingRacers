@@ -1916,6 +1916,7 @@ static void K_HandleLapIncrement(player_t *player)
 			player->mo->flags |= MF_NOCLIPTHING;
 			player->nocontrol = 69;
 			player->hyudorotimer = 69;
+			player->speed = 0;
 			K_StripItems(player);
 			player->faulttimer = TICRATE/3;
 			ClearFakePlayerSkin(player);
