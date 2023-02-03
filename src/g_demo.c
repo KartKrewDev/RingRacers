@@ -2987,6 +2987,7 @@ void G_DoPlayDemo(char *defdemoname)
 			{
 				snprintf(msg, 1024, M_GetText("Failed to read file '%s'.\n"), defdemoname);
 				CONS_Alert(CONS_ERROR, "%s", msg);
+				Z_Free(pdemoname);
 				gameaction = ga_nothing;
 				M_StartMessage(msg, NULL, MM_NOTHING);
 				return;
