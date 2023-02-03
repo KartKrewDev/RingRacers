@@ -2996,18 +2996,68 @@ void G_DoPlayDemo(char *defdemoname)
 		// load demo resource from WAD
 		else
 		{
-			if ((l = W_CheckNumForName(defdemoname)) == LUMPERROR)
+			if (n == defdemoname)
 			{
-				snprintf(msg, 1024, M_GetText("Failed to read lump '%s'.\n"), defdemoname);
-				CONS_Alert(CONS_ERROR, "%s", msg);
-				gameaction = ga_nothing;
-				M_StartMessage(msg, NULL, MM_NOTHING);
-				return;
-			}
+				// Raw lump.
+				if ((l = W_CheckNumForName(defdemoname)) == LUMPERROR)
+				{
+					snprintf(msg, 1024, M_GetText("Failed to read lump '%s'.\n"), defdemoname);
+					CONS_Alert(CONS_ERROR, "%s", msg);
+					Z_Free(pdemoname);
+					gameaction = ga_nothing;
+					M_StartMessage(msg, NULL, MM_NOTHING);
+					return;
+				}
 
-			P_SaveBufferFromLump(&demobuf, l);
+				P_SaveBufferFromLump(&demobuf, l);
+			}
+			else
+			{
+				// vres GHOST_%u
+				virtres_t *vRes;
+				virtlump_t *vLump;
+				UINT16 mapnum;
+				size_t step = 0;
+
+				step = 0;
+				while (defdemoname+step < n-1)
+				{
+					mapname[step] = defdemoname[step];
+					step++;
+				}
+				mapname[step] = '\0';
+
+				mapnum = G_MapNumber(mapname);
+				if (mapnum >= nummapheaders || mapheaderinfo[mapnum]->lumpnum == LUMPERROR)
+				{
+					snprintf(msg, 1024, M_GetText("Failed to read lump '%s (couldn't find map %s)'.\n"), defdemoname, mapname);
+					CONS_Alert(CONS_ERROR, "%s", msg);
+					Z_Free(pdemoname);
+					gameaction = ga_nothing;
+					M_StartMessage(msg, NULL, MM_NOTHING);
+					return;
+				}
+
+				vRes = vres_GetMap(mapheaderinfo[mapnum]->lumpnum);
+				vLump = vres_Find(vRes, pdemoname);
+
+				if (vLump == NULL)
+				{
+					snprintf(msg, 1024, M_GetText("Failed to read lump '%s (couldn't find lump %s in %s)'.\n"), defdemoname, pdemoname, mapname);
+					CONS_Alert(CONS_ERROR, "%s", msg);
+					Z_Free(pdemoname);
+					gameaction = ga_nothing;
+					M_StartMessage(msg, NULL, MM_NOTHING);
+					return;
+				}
+
+				P_SaveBufferAlloc(&demobuf, vLump->size);
+				memcpy(demobuf.buffer, vLump->data, vLump->size);
+
+				vres_Free(vRes);
+			}
 #if defined(SKIPERRORS) && !defined(DEVELOP)
-			skiperrors = true; // SRB2Kart: Don't print warnings for staff ghosts, since they'll inevitably happen when we make bugfixes/changes...
+			skiperrors = true; // RR: Don't print warnings for staff ghosts, since they'll inevitably happen when we make bugfixes/changes...
 #endif
 		}
 	}
