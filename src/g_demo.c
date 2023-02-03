@@ -3711,14 +3711,17 @@ void G_FreeGhosts(void)
 }
 
 // A simplified version of G_AddGhost...
-void G_UpdateStaffGhostName(lumpnum_t l)
+staffbrief_t *G_GetStaffGhostBrief(UINT8 *buffer)
 {
-	UINT8 *buffer,*p;
+	UINT8 *p = buffer;
 	UINT16 ghostversion;
 	UINT8 flags;
 	INT32 i;
+	staffbrief_t temp;
+	staffbrief_t *ret = NULL;
 
-	buffer = p = W_CacheLumpNum(l, PU_CACHE);
+	temp.name[0] = '\0';
+	temp.time = temp.lap = UINT32_MAX;
 
 	// read demo header
 	if (memcmp(p, DEMOHEADER, 12))
@@ -3766,9 +3769,9 @@ void G_UpdateStaffGhostName(lumpnum_t l)
 	G_SkipDemoSkins(&p);
 
 	if (flags & ATTACKING_TIME)
-		p += 4;
+		temp.time = READUINT32(p);
 	if (flags & ATTACKING_LAP)
-		p += 4;
+		temp.lap = READUINT32(p);
 
 	for (i = 0; i < PRNUMCLASS; i++)
 	{
@@ -3781,7 +3784,7 @@ void G_UpdateStaffGhostName(lumpnum_t l)
 	ghostversion = READUINT16(p);
 	while (ghostversion--)
 	{
-		p += 2;
+		SKIPSTRING(p);
 		SKIPSTRING(p);
 		p++; // stealth
 	}
@@ -3789,13 +3792,18 @@ void G_UpdateStaffGhostName(lumpnum_t l)
 	// Assert first player is in and then read name
 	if (READUINT8(p) != 0)
 		goto fail;
-	M_Memcpy(dummystaffname, p,16);
-	dummystaffname[16] = '\0';
+	if (READUINT8(p) & (DEMO_SPECTATOR|DEMO_BOT))
+		goto fail;
+
+	M_Memcpy(temp.name, p, 16);
+
+	ret = Z_Malloc(sizeof(staffbrief_t), PU_STATIC, NULL);
+	if (ret)
+		M_Memcpy(ret, &temp, sizeof(staffbrief_t));
 
 	// Ok, no longer any reason to care, bye
 fail:
-	Z_Free(buffer);
-	return;
+	return ret;
 }
 
 //

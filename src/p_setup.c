@@ -471,6 +471,7 @@ void P_AllocMapHeader(INT16 i)
 		mapheaderinfo[i]->lumpname = NULL;
 		mapheaderinfo[i]->thumbnailPic = NULL;
 		mapheaderinfo[i]->minimapPic = NULL;
+		mapheaderinfo[i]->ghostCount = 0;
 		mapheaderinfo[i]->cup = NULL;
 		mapheaderinfo[i]->mainrecord = NULL;
 		mapheaderinfo[i]->flickies = NULL;
@@ -8018,11 +8019,13 @@ INT16 wadnamemap = 0; // gamemap based
 UINT8 P_InitMapData(boolean existingmapheaders)
 {
 	UINT8 ret = 0;
-	INT32 i;
+	INT32 i, j;
 	lumpnum_t maplump;
 	virtres_t *virtmap;
-	virtlump_t *minimap, *thumbnailPic;
+	virtlump_t *minimap, *thumbnailPic, *ghost;
 	char *name;
+	char buffer[9];
+	sprintf(buffer, "GHOST_x");
 
 	for (i = 0; i < nummapheaders; ++i)
 	{
@@ -8034,7 +8037,6 @@ UINT8 P_InitMapData(boolean existingmapheaders)
 		if (maplump != LUMPERROR || mapheaderinfo[i]->lumpnum != LUMPERROR)
 		{
 			cupheader_t *cup = kartcupheaders;
-			INT32 j;
 
 			while (cup)
 			{
@@ -8116,14 +8118,44 @@ UINT8 P_InitMapData(boolean existingmapheaders)
 			}
 
 			// Now apply the new ones!
-			if (thumbnailPic)
+			if (thumbnailPic != NULL)
 			{
 				mapheaderinfo[i]->thumbnailPic = vres_GetPatch(thumbnailPic, PU_STATIC);
 			}
 
-			if (minimap)
+			if (minimap != NULL)
 			{
 				mapheaderinfo[i]->minimapPic = vres_GetPatch(minimap, PU_STATIC);
+			}
+
+			// Staff ghosts.
+			// The trouble with staff ghosts is that they're too large to cache.
+			// So we store extra information about them, and load later.
+			while (mapheaderinfo[i]->ghostCount > 0)
+			{
+				mapheaderinfo[i]->ghostCount--;
+
+				Z_Free(mapheaderinfo[i]->ghostBrief[mapheaderinfo[i]->ghostCount]);
+				mapheaderinfo[i]->ghostBrief[mapheaderinfo[i]->ghostCount] = NULL;
+			}
+
+			while (mapheaderinfo[i]->ghostCount < MAXSTAFF)
+			{
+				buffer[6] = '1' + mapheaderinfo[i]->ghostCount;
+
+				ghost = vres_Find(virtmap, buffer);
+				if (ghost == NULL)
+					break;
+
+				mapheaderinfo[i]->ghostBrief[mapheaderinfo[i]->ghostCount] = G_GetStaffGhostBrief(ghost->data);
+				if (mapheaderinfo[i]->ghostBrief[mapheaderinfo[i]->ghostCount] == NULL)
+					break;
+				/*CONS_Printf("name is %s, time is %d, lap is %d\n",
+					mapheaderinfo[i]->ghostBrief[mapheaderinfo[i]->ghostCount]->name,
+					mapheaderinfo[i]->ghostBrief[mapheaderinfo[i]->ghostCount]->time/TICRATE,
+					mapheaderinfo[i]->ghostBrief[mapheaderinfo[i]->ghostCount]->lap/TICRATE);*/
+
+				mapheaderinfo[i]->ghostCount++;
 			}
 
 			vres_Free(virtmap);

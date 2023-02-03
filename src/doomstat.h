@@ -360,6 +360,14 @@ extern cupheader_t *kartcupheaders; // Start of cup linked list
 extern UINT16 numkartcupheaders;
 
 #define MAXMAPLUMPNAME 64 // includes \0, for cleaner savedata
+#define MAXSTAFF 3
+
+struct staffbrief_t
+{
+	char name[16];
+	INT32 time;
+	INT32 lap;
+};
 
 /** Map header information.
   */
@@ -373,6 +381,10 @@ struct mapheader_t
 	void *minimapPic;					///< Lump data for the minimap graphic.
 	void *encoreLump;					///< Lump data for the Encore Mode remap.
 	void *tweakLump;					///< Lump data for the palette tweak remap.
+
+	// Staff Ghost information
+	UINT8 ghostCount;					///< Count of valid staff ghosts
+	staffbrief_t *ghostBrief[MAXSTAFF];	///< Mallocated array of names for each staff ghost
 
 	UINT8 mapvisited;					///< A set of flags that says what we've done in the map.
 	recorddata_t *mainrecord;			///< Stores best time attack data
