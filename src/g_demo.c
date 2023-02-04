@@ -3030,7 +3030,7 @@ void G_DoPlayDemo(char *defdemoname)
 				mapnum = G_MapNumber(mapname);
 				if (mapnum >= nummapheaders || mapheaderinfo[mapnum]->lumpnum == LUMPERROR)
 				{
-					snprintf(msg, 1024, M_GetText("Failed to read lump '%s (couldn't find map %s)'.\n"), defdemoname, mapname);
+					snprintf(msg, 1024, M_GetText("Failed to read virtlump '%s (couldn't find map %s)'.\n"), defdemoname, mapname);
 					CONS_Alert(CONS_ERROR, "%s", msg);
 					Z_Free(pdemoname);
 					gameaction = ga_nothing;
@@ -3043,7 +3043,7 @@ void G_DoPlayDemo(char *defdemoname)
 
 				if (vLump == NULL)
 				{
-					snprintf(msg, 1024, M_GetText("Failed to read lump '%s (couldn't find lump %s in %s)'.\n"), defdemoname, pdemoname, mapname);
+					snprintf(msg, 1024, M_GetText("Failed to read virtlump '%s (couldn't find lump %s in %s)'.\n"), defdemoname, pdemoname, mapname);
 					CONS_Alert(CONS_ERROR, "%s", msg);
 					Z_Free(pdemoname);
 					gameaction = ga_nothing;
@@ -3480,14 +3480,13 @@ void G_DoPlayDemo(char *defdemoname)
 	demo.deferstart = true;
 }
 
-void G_AddGhost(char *defdemoname)
+void G_AddGhost(UINT8 *buffer, char *defdemoname)
 {
 	INT32 i;
-	lumpnum_t l;
-	char name[17],color[MAXCOLORNAME+1],*n,*pdemoname,md5[16];
+	char name[17], color[MAXCOLORNAME+1], md5[16];
 	demoghost *gh;
 	UINT8 flags;
-	UINT8 *buffer,*p;
+	UINT8 *p;
 	mapthing_t *mthing;
 	UINT16 count, ghostversion;
 	skin_t *ghskin = &skins[0];
@@ -3497,41 +3496,12 @@ void G_AddGhost(char *defdemoname)
 	name[16] = '\0';
 	color[16] = '\0';
 
-	n = defdemoname+strlen(defdemoname);
-	while (*n != '/' && *n != '\\' && n != defdemoname)
-		n--;
-	if (n != defdemoname)
-		n++;
-	pdemoname = ZZ_Alloc(strlen(n)+1);
-	strcpy(pdemoname,n);
-
-	// Internal if no extension, external if one exists
-	if (FIL_CheckExtension(defdemoname))
-	{
-		//FIL_DefaultExtension(defdemoname, ".lmp");
-		if (!FIL_ReadFileTag(defdemoname, &buffer, PU_LEVEL))
-		{
-			CONS_Alert(CONS_ERROR, M_GetText("Failed to read file '%s'.\n"), defdemoname);
-			Z_Free(pdemoname);
-			return;
-		}
-		p = buffer;
-	}
-	// load demo resource from WAD
-	else if ((l = W_CheckNumForName(defdemoname)) == LUMPERROR)
-	{
-		CONS_Alert(CONS_ERROR, M_GetText("Failed to read lump '%s'.\n"), defdemoname);
-		Z_Free(pdemoname);
-		return;
-	}
-	else // it's an internal demo
-		buffer = p = W_CacheLumpNum(l, PU_LEVEL);
+	p = buffer;
 
 	// read demo header
 	if (memcmp(p, DEMOHEADER, 12))
 	{
-		CONS_Alert(CONS_NOTICE, M_GetText("Ghost %s: Not a SRB2 replay.\n"), pdemoname);
-		Z_Free(pdemoname);
+		CONS_Alert(CONS_NOTICE, M_GetText("Ghost %s: Not a SRB2 replay.\n"), defdemoname);
 		Z_Free(buffer);
 		return;
 	} p += 12; // DEMOHEADER
@@ -3546,8 +3516,7 @@ void G_AddGhost(char *defdemoname)
 		break;
 	// too old, cannot support.
 	default:
-		CONS_Alert(CONS_NOTICE, M_GetText("Ghost %s: Demo version incompatible.\n"), pdemoname);
-		Z_Free(pdemoname);
+		CONS_Alert(CONS_NOTICE, M_GetText("Ghost %s: Demo version incompatible.\n"), defdemoname);
 		Z_Free(buffer);
 		return;
 	}
@@ -3558,16 +3527,14 @@ void G_AddGhost(char *defdemoname)
 	for (gh = ghosts; gh; gh = gh->next)
 		if (!memcmp(md5, gh->checksum, 16)) // another ghost in the game already has this checksum?
 		{ // Don't add another one, then!
-			CONS_Debug(DBG_SETUP, "Rejecting duplicate ghost %s (MD5 was matched)\n", pdemoname);
-			Z_Free(pdemoname);
+			CONS_Debug(DBG_SETUP, "Rejecting duplicate ghost %s (MD5 was matched)\n", defdemoname);
 			Z_Free(buffer);
 			return;
 		}
 
 	if (memcmp(p, "PLAY", 4))
 	{
-		CONS_Alert(CONS_NOTICE, M_GetText("Ghost %s: Demo format unacceptable.\n"), pdemoname);
-		Z_Free(pdemoname);
+		CONS_Alert(CONS_NOTICE, M_GetText("Ghost %s: Demo format unacceptable.\n"), defdemoname);
 		Z_Free(buffer);
 		return;
 	} p += 4; // "PLAY"
@@ -3579,16 +3546,14 @@ void G_AddGhost(char *defdemoname)
 	flags = READUINT8(p);
 	if (!(flags & DF_GHOST))
 	{
-		CONS_Alert(CONS_NOTICE, M_GetText("Ghost %s: No ghost data in this demo.\n"), pdemoname);
-		Z_Free(pdemoname);
+		CONS_Alert(CONS_NOTICE, M_GetText("Ghost %s: No ghost data in this demo.\n"), defdemoname);
 		Z_Free(buffer);
 		return;
 	}
 
 	if (flags & DF_LUAVARS) // can't be arsed to add support for grinding away ported lua material
 	{
-		CONS_Alert(CONS_NOTICE, M_GetText("Ghost %s: Replay data contains luavars, cannot continue.\n"), pdemoname);
-		Z_Free(pdemoname);
+		CONS_Alert(CONS_NOTICE, M_GetText("Ghost %s: Replay data contains luavars, cannot continue.\n"), defdemoname);
 		Z_Free(buffer);
 		return;
 	}
@@ -3600,8 +3565,7 @@ void G_AddGhost(char *defdemoname)
 	skinlist = G_LoadDemoSkins(&p, &worknumskins, true);
 	if (!skinlist)
 	{
-		CONS_Alert(CONS_NOTICE, M_GetText("Ghost %s: Replay data has invalid skin list, cannot continue.\n"), pdemoname);
-		Z_Free(pdemoname);
+		CONS_Alert(CONS_NOTICE, M_GetText("Ghost %s: Replay data has invalid skin list, cannot continue.\n"), defdemoname);
 		Z_Free(buffer);
 		return;
 	}
@@ -3629,9 +3593,8 @@ void G_AddGhost(char *defdemoname)
 
 	if (*p == DEMOMARKER)
 	{
-		CONS_Alert(CONS_NOTICE, M_GetText("Failed to add ghost %s: Replay is empty.\n"), pdemoname);
+		CONS_Alert(CONS_NOTICE, M_GetText("Failed to add ghost %s: Replay is empty.\n"), defdemoname);
 		Z_Free(skinlist);
-		Z_Free(pdemoname);
 		Z_Free(buffer);
 		return;
 	}
@@ -3642,9 +3605,8 @@ void G_AddGhost(char *defdemoname)
 	i = READUINT8(p);
 	if ((i & (DEMO_SPECTATOR|DEMO_BOT)) != 0)
 	{
-		CONS_Alert(CONS_NOTICE, M_GetText("Failed to add ghost %s: Invalid player slot (spectator/bot)\n"), pdemoname);
+		CONS_Alert(CONS_NOTICE, M_GetText("Failed to add ghost %s: Invalid player slot (spectator/bot)\n"), defdemoname);
 		Z_Free(skinlist);
-		Z_Free(pdemoname);
 		Z_Free(buffer);
 		return;
 	}
@@ -3675,9 +3637,8 @@ void G_AddGhost(char *defdemoname)
 
 	if (READUINT8(p) != 0xFF)
 	{
-		CONS_Alert(CONS_NOTICE, M_GetText("Failed to add ghost %s: Invalid player slot (bad terminator)\n"), pdemoname);
+		CONS_Alert(CONS_NOTICE, M_GetText("Failed to add ghost %s: Invalid player slot (bad terminator)\n"), defdemoname);
 		Z_Free(skinlist);
-		Z_Free(pdemoname);
 		Z_Free(buffer);
 		return;
 	}
@@ -3744,8 +3705,7 @@ void G_AddGhost(char *defdemoname)
 		}
 	gh->oldmo.color = gh->mo->color;
 
-	CONS_Printf(M_GetText("Added ghost %s from %s\n"), name, pdemoname);
-	Z_Free(pdemoname);
+	CONS_Printf(M_GetText("Added ghost %s from %s\n"), name, defdemoname);
 }
 
 // Clean up all ghosts

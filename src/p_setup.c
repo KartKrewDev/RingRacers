@@ -6908,8 +6908,6 @@ static boolean P_LoadMapFromFile(void)
 			spawnsectors[i].tags.tags = memcpy(Z_Malloc(sectors[i].tags.count*sizeof(mtag_t), PU_LEVEL, NULL), sectors[i].tags.tags, sectors[i].tags.count*sizeof(mtag_t));
 
 	P_MakeMapMD5(curmapvirt, &mapmd5);
-
-	vres_Free(curmapvirt);
 	return true;
 }
 
@@ -7138,6 +7136,23 @@ static void P_ResetSpawnpoints(void)
 		skyboxviewpnts[i] = skyboxcenterpnts[i] = NULL;
 }
 
+static void P_TryAddExternalGhost(char *defdemoname)
+{
+	UINT8 *buffer = NULL;
+
+	if (FIL_FileExists(defdemoname))
+	{
+		if (FIL_ReadFileTag(defdemoname, &buffer, PU_LEVEL))
+		{
+			G_AddGhost(buffer, defdemoname);
+		}
+		else
+		{
+			CONS_Alert(CONS_ERROR, M_GetText("Failed to read file '%s'.\n"), defdemoname);
+		}
+	}
+}
+
 static void P_LoadRecordGhosts(void)
 {
 	// see also /menus/play-local-race-time-attack.c's M_PrepareTimeAttack
@@ -7156,8 +7171,7 @@ static void P_LoadRecordGhosts(void)
 				if (cv_ghost_besttime.value == 1 && players[consoleplayer].skin != i)
 					continue;
 
-				if (FIL_FileExists(va("%s-%s-time-best.lmp", gpath, skins[i].name)))
-					G_AddGhost(va("%s-%s-time-best.lmp", gpath, skins[i].name));
+				P_TryAddExternalGhost(va("%s-%s-time-best.lmp", gpath, skins[i].name));
 			}
 		}
 	}
@@ -7172,8 +7186,7 @@ static void P_LoadRecordGhosts(void)
 				if (cv_ghost_bestlap.value == 1 && players[consoleplayer].skin != i)
 					continue;
 
-				if (FIL_FileExists(va("%s-%s-lap-best.lmp", gpath, skins[i].name)))
-					G_AddGhost(va("%s-%s-lap-best.lmp", gpath, skins[i].name));
+				P_TryAddExternalGhost(va("%s-%s-lap-best.lmp", gpath, skins[i].name));
 			}
 		}
 	}
@@ -7186,29 +7199,35 @@ static void P_LoadRecordGhosts(void)
 			if (cv_ghost_last.value == 1 && players[consoleplayer].skin != i)
 				continue;
 
-			if (FIL_FileExists(va("%s-%s-last.lmp", gpath, skins[i].name)))
-				G_AddGhost(va("%s-%s-last.lmp", gpath, skins[i].name));
+			P_TryAddExternalGhost(va("%s-%s-last.lmp", gpath, skins[i].name));
 		}
 	}
 
 	// Guest ghost
-	if (cv_ghost_guest.value && FIL_FileExists(va("%s-guest.lmp", gpath)))
-		G_AddGhost(va("%s-guest.lmp", gpath));
+	if (cv_ghost_guest.value)
+		P_TryAddExternalGhost(va("%s-guest.lmp", gpath));
 
-#ifdef STAFFGHOSTS
 	// Staff Attack ghosts
 	if (cv_ghost_staff.value)
 	{
-		lumpnum_t l;
-		UINT8 j = 1;
-		// TODO: Use vres for lumps
-		while (j <= 99 && (l = W_CheckNumForLongName(va("%sS%02u",G_BuildMapName(gamemap),j))) != LUMPERROR)
+		char *defdemoname;
+		virtlump_t *vLump;
+		UINT8 *buffer = NULL;
+
+		for (i = mapheaderinfo[gamemap-1]->ghostCount; i > 0; i--)
 		{
-			G_AddGhost(va("%sS%02u",G_BuildMapName(gamemap),j));
-			j++;
+			defdemoname = va("GHOST_%u", i);
+			vLump = vres_Find(curmapvirt, defdemoname);
+			if (vLump == NULL)
+			{
+				CONS_Alert(CONS_ERROR, M_GetText("Failed to read virtlump '%s'.\n"), defdemoname);
+				continue;
+			}
+			buffer = Z_Malloc(vLump->size, PU_LEVEL, NULL);
+			memcpy(buffer, vLump->data, vLump->size);
+			G_AddGhost(buffer, defdemoname);
 		}
 	}
-#endif //#ifdef STAFFGHOSTS
 
 	Z_Free(gpath);
 }
@@ -7801,6 +7820,10 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 	//  the client's view of the data.)
 	if (!fromnetsave)
 		P_InitGametype();
+
+	// Now safe to free.
+	vres_Free(curmapvirt);
+	curmapvirt = NULL;
 
 	if (!reloadinggamestate)
 	{
