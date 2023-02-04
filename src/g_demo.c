@@ -3073,7 +3073,6 @@ void G_DoPlayDemo(char *defdemoname)
 		Z_Free(pdemoname);
 		Z_Free(demobuf.buffer);
 		demo.playback = false;
-		demo.title = false;
 		return;
 	}
 	demobuf.p += 12; // DEMOHEADER
@@ -3093,7 +3092,6 @@ void G_DoPlayDemo(char *defdemoname)
 		Z_Free(pdemoname);
 		Z_Free(demobuf.buffer);
 		demo.playback = false;
-		demo.title = false;
 		return;
 	}
 
@@ -3111,7 +3109,6 @@ void G_DoPlayDemo(char *defdemoname)
 		Z_Free(pdemoname);
 		Z_Free(demobuf.buffer);
 		demo.playback = false;
-		demo.title = false;
 		return;
 	}
 	demobuf.p += 4; // "PLAY"
@@ -3131,7 +3128,6 @@ void G_DoPlayDemo(char *defdemoname)
 		Z_Free(pdemoname);
 		Z_Free(demobuf.buffer);
 		demo.playback = false;
-		demo.title = false;
 		return;
 	}
 	G_SetGametype(i);
@@ -3189,7 +3185,6 @@ void G_DoPlayDemo(char *defdemoname)
 			Z_Free(pdemoname);
 			Z_Free(demobuf.buffer);
 			demo.playback = false;
-			demo.title = false;
 			return;
 		}
 	}
@@ -3204,7 +3199,6 @@ void G_DoPlayDemo(char *defdemoname)
 		Z_Free(pdemoname);
 		Z_Free(demobuf.buffer);
 		demo.playback = false;
-		demo.title = false;
 		return;
 	}
 
@@ -3240,7 +3234,6 @@ void G_DoPlayDemo(char *defdemoname)
 		Z_Free(pdemoname);
 		Z_Free(demobuf.buffer);
 		demo.playback = false;
-		demo.title = false;
 		return;
 	}
 
@@ -3258,7 +3251,6 @@ void G_DoPlayDemo(char *defdemoname)
 		Z_Free(pdemoname);
 		Z_Free(demobuf.buffer);
 		demo.playback = false;
-		demo.title = false;
 		return;
 	}
 
@@ -3313,7 +3305,6 @@ void G_DoPlayDemo(char *defdemoname)
 				Z_Free(pdemoname);
 				Z_Free(demobuf.buffer);
 				demo.playback = false;
-				demo.title = false;
 				return;
 			}
 		}
@@ -3331,7 +3322,6 @@ void G_DoPlayDemo(char *defdemoname)
 			Z_Free(pdemoname);
 			Z_Free(demobuf.buffer);
 			demo.playback = false;
-			demo.title = false;
 			return;
 		}
 
@@ -4028,7 +4018,6 @@ void G_StopDemo(void)
 	Z_Free(demobuf.buffer);
 	demobuf.buffer = NULL;
 	demo.playback = false;
-	demo.title = false;
 	demo.timing = false;
 	singletics = false;
 

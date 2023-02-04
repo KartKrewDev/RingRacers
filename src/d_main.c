@@ -952,7 +952,7 @@ void D_ClearState(void)
 	memset(displayplayers, 0, sizeof(displayplayers));
 	memset(g_localplayers, 0, sizeof g_localplayers);
 	consoleplayer = 0;
-	//demosequence = -1;
+	demo.title = false;
 	G_SetGametype(GT_RACE); // SRB2kart
 	paused = false;
 
@@ -975,7 +975,9 @@ void D_ClearState(void)
 //
 void D_StartTitle(void)
 {
-	S_StopMusic();
+	if (!demo.title)
+		S_StopMusic();
+
 	D_ClearState();
 	F_StartTitleScreen();
 	M_ClearMenus(false);
