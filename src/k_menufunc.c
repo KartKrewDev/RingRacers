@@ -132,10 +132,8 @@ static void Dummystaff_OnChange(void)
 // BASIC MENU HANDLING
 // =========================================================================
 
-static void M_ChangeCvar(INT32 choice)
+void M_ChangeCvarDirect(INT32 choice, consvar_t *cv)
 {
-	consvar_t *cv = currentMenu->menuitems[itemOn].itemaction.cvar;
-
 	// Backspace sets values to default value
 	if (choice == -1)
 	{
@@ -168,6 +166,11 @@ static void M_ChangeCvar(INT32 choice)
 
 		CV_AddValue(cv, choice);
 	}
+}
+
+static void M_ChangeCvar(INT32 choice)
+{
+	M_ChangeCvarDirect(choice, currentMenu->menuitems[itemOn].itemaction.cvar);
 }
 
 boolean M_NextOpt(void)
