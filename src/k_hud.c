@@ -5063,17 +5063,17 @@ void K_drawKartHUD(void)
 	{
 		if (demo.title) // Draw title logo instead in demo.titles
 		{
-			INT32 x = BASEVIDWIDTH - 32, y = 128, snapflags = V_SNAPTOBOTTOM|V_SNAPTORIGHT;
+			INT32 x = BASEVIDWIDTH - 8, y = BASEVIDHEIGHT-8, snapflags = V_SNAPTOBOTTOM|V_SNAPTORIGHT|V_SLIDEIN;
+			patch_t *pat = W_CachePatchName((cv_alttitle.value ? "MTSJUMPR1" : "MTSBUMPR1"), PU_CACHE);
 
 			if (r_splitscreen == 3)
 			{
-				x = BASEVIDWIDTH/2 + 10;
-				y = BASEVIDHEIGHT/2 - 30;
+				x = BASEVIDWIDTH/2;
+				y = BASEVIDHEIGHT/2;
 				snapflags = 0;
 			}
 
-			V_DrawTinyScaledPatch(x-54, y, snapflags|V_SLIDEIN, W_CachePatchName("TTKBANNR", PU_CACHE));
-			V_DrawTinyScaledPatch(x-54, y+25, snapflags|V_SLIDEIN, W_CachePatchName("TTKART", PU_CACHE));
+			V_DrawScaledPatch(x-(SHORT(pat->width)), y-(SHORT(pat->height)), snapflags, pat);
 		}
 		else
 		{
