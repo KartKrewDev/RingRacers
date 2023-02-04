@@ -5784,8 +5784,15 @@ void Command_ExitGame_f(void)
 
 	if (!modeattacking)
 	{
-		D_ClearState();
-		M_StartControlPanel();
+		if (restoreMenu == NULL)
+		{
+			D_StartTitle();
+		}
+		else
+		{
+			D_ClearState();
+			M_StartControlPanel();
+		}
 	}
 }
 
