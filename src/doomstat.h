@@ -365,8 +365,8 @@ extern UINT16 numkartcupheaders;
 struct staffbrief_t
 {
 	char name[16];
-	INT32 time;
-	INT32 lap;
+	tic_t time;
+	tic_t lap;
 };
 
 /** Map header information.
