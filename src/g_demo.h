@@ -47,7 +47,6 @@ struct demovars_s {
 	boolean rewinding; // Rewind in progress
 
 	boolean loadfiles, ignorefiles; // Demo file loading options
-	boolean fromtitle; // SRB2Kart: Don't stop the music
 	boolean inreplayhut; // Go back to replayhut after demos
 	boolean quitafterplaying; // quit after playing a demo from cmdline
 	boolean deferstart; // don't start playing demo right away

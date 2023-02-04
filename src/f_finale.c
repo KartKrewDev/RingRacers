@@ -2232,7 +2232,7 @@ void F_TitleScreenTicker(boolean run)
 		sprintf(dname, "%s/GHOST_%u", mapheaderinfo[mapnum]->lumpname, numstaff);
 
 loadreplay:
-		demo.title = demo.fromtitle = true;
+		demo.title = true;
 		demo.ignorefiles = true;
 		demo.loadfiles = false;
 		G_DoPlayDemo(dname);
