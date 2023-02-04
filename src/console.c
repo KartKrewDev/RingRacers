@@ -70,8 +70,8 @@ static INT32 con_curlines;  // vid lines currently used by console
 
        INT32 con_clipviewtop; // (useless)
 
-static UINT8 con_hudlines;             // number of console heads up message lines
-static INT32 con_hudtime[MAXHUDLINES]; // remaining time of display for hud msg lines
+static UINT8  con_hudlines;             // number of console heads up message lines
+static UINT32 con_hudtime[MAXHUDLINES]; // remaining time of display for hud msg lines
 
        INT32 con_clearlines;      // top screen lines to refresh when view reduced
        boolean con_hudupdate;   // when messages scroll, we need a backgrnd refresh
@@ -124,7 +124,9 @@ static void CONS_backcolor_Change(void);
 static char con_buffer[CON_BUFFERSIZE];
 
 // how many seconds the hud messages lasts on the screen
-static consvar_t cons_msgtimeout = CVAR_INIT ("con_hudtime", "5", CV_SAVE, CV_Unsigned, NULL);
+// CV_Unsigned can overflow when multiplied by TICRATE later, so let's use a 24-hour limit instead
+static CV_PossibleValue_t hudtime_cons_t[] = {{0, "MIN"}, {86400, "MAX"}, {0, NULL}};
+static consvar_t cons_hudtime = CVAR_INIT ("con_hudtime", "5", CV_SAVE, hudtime_cons_t, NULL);
 
 // number of lines displayed on the HUD
 static CV_PossibleValue_t hudlines_cons_t[] = {{0, "MIN"}, {MAXHUDLINES, "MAX"}, {0, "None"}, {0, NULL}};
@@ -458,7 +460,7 @@ void CON_Init(void)
 
 		Unlock_state();
 
-		CV_RegisterVar(&cons_msgtimeout);
+		CV_RegisterVar(&cons_hudtime);
 		CV_RegisterVar(&cons_hudlines);
 		CV_RegisterVar(&cons_speed);
 		CV_RegisterVar(&cons_height);
@@ -1345,7 +1347,7 @@ static void CON_Linefeed(void)
 {
 	// set time for heads up messages
 	if (con_hudlines)
-		con_hudtime[con_cy%con_hudlines] = cons_msgtimeout.value*TICRATE;
+		con_hudtime[con_cy%con_hudlines] = cons_hudtime.value*TICRATE;
 
 	con_cy++;
 	con_cx = 0;
