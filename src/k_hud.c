@@ -1578,6 +1578,15 @@ void K_drawKartTimestamp(tic_t drawtime, INT32 TX, INT32 TY, INT16 emblemmap, UI
 							goto bademblem;
 						}
 
+						if (emblem->tag > 0)
+						{
+							if (emblem->tag > mapheaderinfo[emblemmap-1]->ghostCount
+							|| mapheaderinfo[emblemmap-1]->ghostBrief[emblem->tag-1] == NULL)
+								goto bademblem;
+
+							timetoreach = mapheaderinfo[emblemmap-1]->ghostBrief[emblem->tag-1]->time;
+						}
+
 						snprintf(targettext, 9, "%i'%02i\"%02i",
 							G_TicsToMinutes(timetoreach, false),
 							G_TicsToSeconds(timetoreach),
@@ -1605,9 +1614,10 @@ void K_drawKartTimestamp(tic_t drawtime, INT32 TX, INT32 TY, INT16 emblemmap, UI
 					goto bademblem;
 			}
 
-			V_DrawRightAlignedString(workx, worky, splitflags|V_6WIDTHSPACE, targettext);
-			workx -= 67;
-			V_DrawSmallScaledPatch(workx + 4, worky, splitflags, W_CachePatchName("NEEDIT", PU_CACHE));
+			workx -= V_ThinStringWidth(targettext, splitflags|V_6WIDTHSPACE);
+			V_DrawThinString(workx, worky, splitflags|V_6WIDTHSPACE, targettext);
+			workx -= 11;
+			V_DrawSmallScaledPatch(workx, worky, splitflags, W_CachePatchName("NEEDIT", PU_CACHE));
 
 			break;
 
@@ -1619,8 +1629,8 @@ bademblem:
 			splitflags = (splitflags &~ V_HUDTRANSHALF)|V_HUDTRANS;
 		while (curemb--)
 		{
-			workx -= 12;
-			V_DrawSmallMappedPatch(workx + 4, worky, splitflags, emblempic[curemb], emblemcol[curemb]);
+			workx -= 11;
+			V_DrawSmallMappedPatch(workx, worky, splitflags, emblempic[curemb], emblemcol[curemb]);
 		}
 	}
 }

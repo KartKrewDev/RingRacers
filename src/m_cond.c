@@ -949,6 +949,7 @@ UINT8 M_CheckLevelEmblems(void)
 {
 	INT32 i;
 	INT32 valToReach;
+	INT16 tag;
 	INT16 levelnum;
 	UINT8 res;
 	UINT8 somethingUnlocked = 0;
@@ -968,11 +969,23 @@ UINT8 M_CheckLevelEmblems(void)
 
 		levelnum = checkLevel;
 		valToReach = emblemlocations[i].var;
+		tag = emblemlocations[i].tag;
 
 		switch (emblemlocations[i].type)
 		{
 			case ET_TIME: // Requires time on map <= x
-				res = (G_GetBestTime(levelnum) <= (unsigned)valToReach);
+				if (tag > 0)
+				{
+					if (tag > mapheaderinfo[checkLevel]->ghostCount
+					|| mapheaderinfo[checkLevel]->ghostBrief[tag-1] == NULL)
+						continue;
+
+					res = (G_GetBestTime(levelnum) <= mapheaderinfo[checkLevel]->ghostBrief[tag-1]->time);
+				}
+				else
+				{
+					res = (G_GetBestTime(levelnum) <= (unsigned)valToReach);
+				}
 				break;
 			default: // unreachable but shuts the compiler up.
 				continue;
