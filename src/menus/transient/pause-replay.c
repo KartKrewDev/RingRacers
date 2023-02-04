@@ -210,7 +210,14 @@ void M_PlaybackSetViews(INT32 choice)
 	}
 	else if (r_splitscreen)
 	{
-		r_splitscreen--;
+		if (choice == 0)
+		{
+			r_splitscreen--;
+		}
+		else
+		{
+			r_splitscreen = 0;
+		}
 		R_ExecuteSetViewSize();
 	}
 }
