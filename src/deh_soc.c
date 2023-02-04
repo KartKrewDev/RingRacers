@@ -2185,19 +2185,13 @@ void reademblemdata(MYFILE *f, INT32 num)
 	} while (!myfeof(f));
 
 	// Default sprite and color definitions for lazy people like me
-	if (!emblemlocations[num-1].sprite) switch (emblemlocations[num-1].type)
+	if (!emblemlocations[num-1].sprite)
 	{
-		case ET_TIME:
-			emblemlocations[num-1].sprite = 'B'; break;
-		default:
-			emblemlocations[num-1].sprite = 'A'; break;
+		emblemlocations[num-1].sprite = 'A';
 	}
-	if (!emblemlocations[num-1].color) switch (emblemlocations[num-1].type)
+	if (!emblemlocations[num-1].color)
 	{
-		case ET_TIME: //case ET_NTIME:
-			emblemlocations[num-1].color = SKINCOLOR_GREY; break;
-		default:
-			emblemlocations[num-1].color = SKINCOLOR_GOLD; break;
+		emblemlocations[num-1].color = SKINCOLOR_GOLD;
 	}
 
 	Z_Free(s);
