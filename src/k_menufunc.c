@@ -143,7 +143,7 @@ static void M_ChangeCvar(INT32 choice)
 		return;
 	}
 
-	choice = (choice<<1) - 1;
+	choice = (choice == 0 ? -1 : 1);
 
 	if (((currentMenu->menuitems[itemOn].status & IT_CVARTYPE) == IT_CV_SLIDER)
 		|| ((currentMenu->menuitems[itemOn].status & IT_CVARTYPE) == IT_CV_INVISSLIDER)
@@ -939,7 +939,7 @@ static void M_HandleMenuInput(void)
 			{
 				case IT_CVAR:
 				case IT_ARROWS:
-					routine(1); // right arrow
+					routine(2); // usually right arrow
 					break;
 				case IT_CALL:
 					routine(itemOn);
