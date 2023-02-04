@@ -2275,7 +2275,7 @@ void M_DrawTimeAttack(void)
 		}
 
 		V_DrawRightAlignedString(rightedge-12, timeheight, highlightflags, "BEST TIME:");
-		K_drawKartTimestamp(timerec, 162+t, timeheight+6, map, 1);
+		K_drawKartTimestamp(timerec, 162+t, timeheight+6, map+1, 1);
 	}
 	else
 		opty = 80;
