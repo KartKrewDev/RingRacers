@@ -469,7 +469,6 @@ void Moviemode_option_Onchange(void);
 extern menu_t *currentMenu;
 extern menu_t *restoreMenu;
 
-extern char dummystaffname[22];
 extern consvar_t cv_dummystaff;
 
 extern INT16 itemOn; // menu item skull is on, Hack by Tails 09-18-2002
