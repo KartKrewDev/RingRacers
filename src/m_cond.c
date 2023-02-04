@@ -998,7 +998,7 @@ UINT8 M_CompletionEmblems(void) // Bah! Duplication sucks, but it's for a separa
 	{
 		INT32 checkLevel;
 
-		if (emblemlocations[i].type < ET_TIME || gamedata->collected[i])
+		if (emblemlocations[i].type != ET_MAP || gamedata->collected[i])
 			continue;
 
 		checkLevel = M_EmblemMapNum(&emblemlocations[i]);
