@@ -1562,6 +1562,15 @@ void K_drawKartTimestamp(tic_t drawtime, INT32 TX, INT32 TY, UINT8 mode)
 		{
 			if (!mode)
 			{
+				if (stickermedalinfo.jitter)
+				{
+					jitter = stickermedalinfo.jitter+3;
+					if (jitter & 2)
+						workx += jitter/4;
+					else
+						workx -= jitter/4;
+				}
+
 				if (stickermedalinfo.norecord == true)
 				{
 					splitflags = (splitflags &~ V_HUDTRANS)|V_HUDTRANSHALF;

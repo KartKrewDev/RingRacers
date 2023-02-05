@@ -205,6 +205,7 @@ void G_EndGame(void); // moved from y_inter.c/h and renamed
 extern struct stickermedalinfo
 {
 	UINT8 visiblecount;
+	UINT8 jitter;
 	boolean norecord;
 	tic_t timetoreach;
 	emblem_t *emblems[MAXMEDALVISIBLECOUNT];

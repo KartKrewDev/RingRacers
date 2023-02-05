@@ -567,12 +567,16 @@ bademblem:
 
 void G_TickTimeStickerMedals(void)
 {
+	if (stickermedalinfo.jitter)
+		stickermedalinfo.jitter--;
+
 	if (players[consoleplayer].realtime > stickermedalinfo.timetoreach)
 	{
 		if (stickermedalinfo.norecord == false)
 		{
 			S_StartSound(NULL, sfx_s3k72); //sfx_s26d); -- you STOLE fizzy lifting drinks
 			stickermedalinfo.norecord = true;
+			stickermedalinfo.jitter = 4;
 		}
 	}
 	else
@@ -622,11 +626,14 @@ void G_UpdateRecords(void)
 	if ((earnedEmblems = M_CheckLevelEmblems()))
 	{
 		CONS_Printf(M_GetText("\x82" "Earned %hu medal%s for Record Attack records.\n"), (UINT16)earnedEmblems, earnedEmblems > 1 ? "s" : "");
+
 		if (stickermedalinfo.regenemblem != NULL
 			&& gamedata->collected[(stickermedalinfo.regenemblem-emblemlocations)])
 		{
 			G_UpdateTimeStickerMedals(gamemap-1);
 		}
+
+		stickermedalinfo.jitter = 4*earnedEmblems;
 	}
 
 	M_UpdateUnlockablesAndExtraEmblems(true);
