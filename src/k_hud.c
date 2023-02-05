@@ -1471,6 +1471,9 @@ void K_drawKartTimestamp(tic_t drawtime, INT32 TX, INT32 TY, INT16 emblemmap, UI
 	// TIME_X = BASEVIDWIDTH-124;	// 196
 	// TIME_Y = 6;					//   6
 
+	static UINT8 prevmode = UINT8_MAX;
+	static emblem_t *maxemblem = NULL;
+
 	tic_t worktime;
 	INT32 jitter = 0;
 
@@ -1509,6 +1512,10 @@ void K_drawKartTimestamp(tic_t drawtime, INT32 TX, INT32 TY, INT16 emblemmap, UI
 			}
 		}
 	}
+
+	if (mode != prevmode)
+		maxemblem = NULL;
+	prevmode = mode;
 
 	V_DrawScaledPatch(TX, TY, splitflags, ((mode == 2) ? kp_lapstickerwide : kp_timestickerwide));
 
@@ -1558,9 +1565,12 @@ void K_drawKartTimestamp(tic_t drawtime, INT32 TX, INT32 TY, INT16 emblemmap, UI
 		UINT8 *emblemcol[3] = {NULL, NULL, NULL};
 
 		emblem_t *emblem = M_GetLevelEmblems(emblemmap);
+
 		while (emblem)
 		{
 			char targettext[9];
+
+			emblem_t *nextemblem = M_GetLevelEmblems(-1);
 
 			switch (emblem->type)
 			{
@@ -1573,10 +1583,19 @@ void K_drawKartTimestamp(tic_t drawtime, INT32 TX, INT32 TY, INT16 emblemmap, UI
 						{
 							emblempic[curemb] = W_CachePatchName(M_GetEmblemPatch(emblem, false), PU_CACHE);
 							emblemcol[curemb] = R_GetTranslationColormap(TC_DEFAULT, M_GetEmblemColor(emblem), GTC_CACHE);
-							if (++curemb == 3)
-								break;
-							goto bademblem;
+							curemb++;
+
+							if (emblem == maxemblem
+								&& nextemblem != NULL
+								&& nextemblem->type == emblem->type
+								&& gamedata->collected[(nextemblem-emblemlocations)])
+								maxemblem = NULL;
+
+							if (emblem != maxemblem)
+								goto bademblem;
 						}
+
+						maxemblem = emblem;
 
 						if (emblem->tag > 0)
 						{
@@ -1616,13 +1635,19 @@ void K_drawKartTimestamp(tic_t drawtime, INT32 TX, INT32 TY, INT16 emblemmap, UI
 
 			workx -= V_ThinStringWidth(targettext, splitflags|V_6WIDTHSPACE);
 			V_DrawThinString(workx, worky, splitflags|V_6WIDTHSPACE, targettext);
-			workx -= 11;
-			V_DrawSmallScaledPatch(workx, worky, splitflags, W_CachePatchName("NEEDIT", PU_CACHE));
+
+			if (emblem != maxemblem || !gamedata->collected[(emblem-emblemlocations)])
+			{
+				emblempic[curemb] = W_CachePatchName("NEEDIT", PU_CACHE);
+				curemb++;
+			}
 
 			break;
 
 bademblem:
-			emblem = M_GetLevelEmblems(-1);
+			if (emblem == maxemblem || curemb == 3)
+				break;
+			emblem = nextemblem;
 		}
 
 		if (!mode)
