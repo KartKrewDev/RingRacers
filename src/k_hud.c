@@ -1552,8 +1552,7 @@ void K_drawKartTimestamp(tic_t drawtime, INT32 TX, INT32 TY, UINT8 mode)
 
 	// Medal data!
 	if ((modeattacking || (mode == 1))
-		&& !demo.playback
-		&& stickermedalinfo.visiblecount > 0)
+		&& !demo.playback)
 	{
 		INT32 workx = TX + 96, worky = TY+18;
 		UINT8 i = stickermedalinfo.visiblecount;
