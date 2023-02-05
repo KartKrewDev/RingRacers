@@ -465,11 +465,6 @@ void G_ClearRecords(void)
 			Z_Free(mapheaderinfo[i]->mainrecord);
 			mapheaderinfo[i]->mainrecord = NULL;
 		}
-		/*if (nightsrecords[i])
-		{
-			Z_Free(nightsrecords[i]);
-			nightsrecords[i] = NULL;
-		}*/
 	}
 }
 
@@ -494,6 +489,84 @@ tic_t G_GetBestLap(INT16 map)
 	return mapheaderinfo[map]->mainrecord->lap;
 }
 */
+
+struct stickermedalinfo stickermedalinfo;
+
+void G_UpdateTimeStickerMedals(UINT16 map)
+{
+	emblem_t *emblem = M_GetLevelEmblems(map+1);
+	boolean gonnadrawtime = false;
+
+	stickermedalinfo.visiblecount = 0;
+	stickermedalinfo.targettext[0] = '\0';
+	stickermedalinfo.emblems[0] = stickermedalinfo.regenemblem = NULL;
+	stickermedalinfo.timetoreach = UINT32_MAX;
+	stickermedalinfo.canplaysound = true;
+
+	while (emblem != NULL)
+	{
+		UINT8 i = 0;
+
+		switch (emblem->type)
+		{
+			case ET_TIME:
+			{
+				break;
+			}
+			default:
+				goto bademblem;
+		}
+
+		if (!gamedata->collected[(emblem-emblemlocations)] && gonnadrawtime)
+			break;
+
+		// Simpler than having two checks
+		if (stickermedalinfo.visiblecount == MAXMEDALVISIBLECOUNT)
+			stickermedalinfo.visiblecount--;
+
+		// Shuffle along, so [0] is the "main focus"
+		for (i = stickermedalinfo.visiblecount; i > 0; i--)
+		{
+			stickermedalinfo.emblems[i] = stickermedalinfo.emblems[i-1];
+		}
+		stickermedalinfo.emblems[0] = emblem;
+		stickermedalinfo.visiblecount++;
+
+		if (!gamedata->collected[(emblem-emblemlocations)] || Playing())
+			gonnadrawtime = true;
+
+bademblem:
+		emblem = M_GetLevelEmblems(-1);
+	}
+
+	if (stickermedalinfo.visiblecount > 0)
+	{
+		if (emblem != NULL && emblem != stickermedalinfo.emblems[0])
+		{
+			// Regenerate the entire array if this is unlocked
+			stickermedalinfo.regenemblem = emblem;
+		}
+		emblem = stickermedalinfo.emblems[0];
+
+		if (gonnadrawtime)
+		{
+			stickermedalinfo.timetoreach = emblem->var;
+			if (emblem->tag > 0)
+			{
+				if (emblem->tag > mapheaderinfo[map]->ghostCount
+				|| mapheaderinfo[map]->ghostBrief[emblem->tag-1] == NULL)
+					goto bademblem;
+
+				stickermedalinfo.timetoreach = mapheaderinfo[map]->ghostBrief[emblem->tag-1]->time;
+			}
+
+			snprintf(stickermedalinfo.targettext, 9, "%i'%02i\"%02i",
+				G_TicsToMinutes(stickermedalinfo.timetoreach, false),
+				G_TicsToSeconds(stickermedalinfo.timetoreach),
+				G_TicsToCentiseconds(stickermedalinfo.timetoreach));
+		}
+	}
+}
 
 //
 // G_UpdateRecords
@@ -534,7 +607,14 @@ void G_UpdateRecords(void)
 
 	// Check emblems when level data is updated
 	if ((earnedEmblems = M_CheckLevelEmblems()))
+	{
 		CONS_Printf(M_GetText("\x82" "Earned %hu medal%s for Record Attack records.\n"), (UINT16)earnedEmblems, earnedEmblems > 1 ? "s" : "");
+		if (stickermedalinfo.regenemblem != NULL
+			&& gamedata->collected[(stickermedalinfo.regenemblem-emblemlocations)])
+		{
+			G_UpdateTimeStickerMedals(gamemap-1);
+		}
+	}
 
 	M_UpdateUnlockablesAndExtraEmblems(true);
 	G_SaveGameData();

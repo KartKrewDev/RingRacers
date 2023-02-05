@@ -178,6 +178,7 @@ void M_PrepareTimeAttack(INT32 choice)
 {
 	(void) choice;
 
+	// Gametype guess
 	if (levellist.guessgt != MAXGAMETYPES)
 	{
 		levellist.newgametype = levellist.guessgt;
@@ -189,6 +190,10 @@ void M_PrepareTimeAttack(INT32 choice)
 		}
 	}
 
+	// Time-sticker Medals
+	G_UpdateTimeStickerMedals(levellist.choosemap);
+
+	// Menu options
 	{
 		// see also p_setup.c's P_LoadRecordGhosts
 		char *gpath = Z_StrDup(va("%s"PATHSEP"media"PATHSEP"replay"PATHSEP"%s"PATHSEP"%s", srb2home, timeattackfolder, G_BuildMapName(levellist.choosemap+1)));
