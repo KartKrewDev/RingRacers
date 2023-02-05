@@ -496,30 +496,26 @@ tic_t G_GetBestLap(INT16 map)
 */
 
 //
-// G_UpdateRecordReplays
+// G_UpdateRecords
 //
-// Update replay files/data, etc. for Record Attack
+// Update time attack records
 //
-static void G_UpdateRecordReplays(void)
+void G_UpdateRecords(void)
 {
-	char *gpath;
-	char lastdemo[256], bestdemo[256];
 	UINT8 earnedEmblems;
 
 	// Record new best time
 	if (!mapheaderinfo[gamemap-1]->mainrecord)
 		G_AllocMainRecordData(gamemap-1);
 
-	if (players[consoleplayer].pflags & PF_NOCONTEST)
-	{
-		players[consoleplayer].realtime = UINT32_MAX;
-	}
-
 	if (modeattacking & ATTACKING_TIME)
 	{
-		if (((mapheaderinfo[gamemap-1]->mainrecord->time == 0) || (players[consoleplayer].realtime < mapheaderinfo[gamemap-1]->mainrecord->time))
-		&& (players[consoleplayer].realtime < UINT32_MAX)) // DNF
-			mapheaderinfo[gamemap-1]->mainrecord->time = players[consoleplayer].realtime;
+		tic_t time = players[consoleplayer].realtime;
+		if (players[consoleplayer].pflags & PF_NOCONTEST)
+			time = UINT32_MAX;
+		if (((mapheaderinfo[gamemap-1]->mainrecord->time == 0) || (time < mapheaderinfo[gamemap-1]->mainrecord->time))
+		&& (time < UINT32_MAX)) // DNF
+			mapheaderinfo[gamemap-1]->mainrecord->time = time;
 	}
 	else
 	{
@@ -534,6 +530,29 @@ static void G_UpdateRecordReplays(void)
 	else
 	{
 		mapheaderinfo[gamemap-1]->mainrecord->lap = 0;
+	}
+
+	// Check emblems when level data is updated
+	if ((earnedEmblems = M_CheckLevelEmblems()))
+		CONS_Printf(M_GetText("\x82" "Earned %hu medal%s for Record Attack records.\n"), (UINT16)earnedEmblems, earnedEmblems > 1 ? "s" : "");
+
+	M_UpdateUnlockablesAndExtraEmblems(true);
+	G_SaveGameData();
+}
+
+//
+// G_UpdateRecordReplays
+//
+// Update replay files/data, etc. for Record Attack
+//
+static void G_UpdateRecordReplays(void)
+{
+	char *gpath;
+	char lastdemo[256], bestdemo[256];
+
+	if (players[consoleplayer].pflags & PF_NOCONTEST)
+	{
+		players[consoleplayer].realtime = UINT32_MAX;
 	}
 
 	// Save demo!
@@ -590,13 +609,6 @@ static void G_UpdateRecordReplays(void)
 
 		Z_Free(gpath);
 	}
-
-	// Check emblems when level data is updated
-	if ((earnedEmblems = M_CheckLevelEmblems()))
-		CONS_Printf(M_GetText("\x82" "Earned %hu medal%s for Record Attack records.\n"), (UINT16)earnedEmblems, earnedEmblems > 1 ? "s" : "");
-
-	M_UpdateUnlockablesAndExtraEmblems(true);
-	G_SaveGameData();
 }
 
 // for consistency among messages: this modifies the game and removes savemoddata.

@@ -201,6 +201,8 @@ void G_UseContinue(void);
 void G_AfterIntermission(void);
 void G_EndGame(void); // moved from y_inter.c/h and renamed
 
+void G_UpdateRecords(void);
+
 void G_Ticker(boolean run);
 boolean G_Responder(event_t *ev);
 
