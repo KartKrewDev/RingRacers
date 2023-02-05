@@ -552,9 +552,11 @@ bademblem:
 			{
 				if (emblem->tag > mapheaderinfo[map]->ghostCount
 				|| mapheaderinfo[map]->ghostBrief[emblem->tag-1] == NULL)
-					goto bademblem;
-
-				stickermedalinfo.timetoreach = mapheaderinfo[map]->ghostBrief[emblem->tag-1]->time;
+					snprintf(stickermedalinfo.targettext, 9, "Invalid ghost tag");
+				else if (mapheaderinfo[map]->ghostBrief[emblem->tag-1]->time == UINT32_MAX)
+					snprintf(stickermedalinfo.targettext, 9, "Ghost DNF");
+				else
+					stickermedalinfo.timetoreach = mapheaderinfo[map]->ghostBrief[emblem->tag-1]->time;
 			}
 		}
 	}
