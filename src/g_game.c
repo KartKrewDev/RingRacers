@@ -492,7 +492,7 @@ tic_t G_GetBestLap(INT16 map)
 
 struct stickermedalinfo stickermedalinfo;
 
-void G_UpdateTimeStickerMedals(UINT16 map)
+void G_UpdateTimeStickerMedals(UINT16 map, boolean showownrecord)
 {
 	emblem_t *emblem = M_GetLevelEmblems(map+1);
 	boolean gonnadrawtime = false;
@@ -556,12 +556,20 @@ bademblem:
 
 				stickermedalinfo.timetoreach = mapheaderinfo[map]->ghostBrief[emblem->tag-1]->time;
 			}
-
-			snprintf(stickermedalinfo.targettext, 9, "%i'%02i\"%02i",
-				G_TicsToMinutes(stickermedalinfo.timetoreach, false),
-				G_TicsToSeconds(stickermedalinfo.timetoreach),
-				G_TicsToCentiseconds(stickermedalinfo.timetoreach));
 		}
+	}
+
+	if (!gonnadrawtime && showownrecord)
+	{
+		stickermedalinfo.timetoreach = G_GetBestTime(map);
+	}
+
+	if (stickermedalinfo.timetoreach != UINT32_MAX)
+	{
+		snprintf(stickermedalinfo.targettext, 9, "%i'%02i\"%02i",
+			G_TicsToMinutes(stickermedalinfo.timetoreach, false),
+			G_TicsToSeconds(stickermedalinfo.timetoreach),
+			G_TicsToCentiseconds(stickermedalinfo.timetoreach));
 	}
 }
 
@@ -630,7 +638,7 @@ void G_UpdateRecords(void)
 		if (stickermedalinfo.regenemblem != NULL
 			&& gamedata->collected[(stickermedalinfo.regenemblem-emblemlocations)])
 		{
-			G_UpdateTimeStickerMedals(gamemap-1);
+			G_UpdateTimeStickerMedals(gamemap-1, false);
 		}
 
 		stickermedalinfo.jitter = 4*earnedEmblems;

@@ -213,7 +213,7 @@ extern struct stickermedalinfo
 	char targettext[9];
 } stickermedalinfo;
 
-void G_UpdateTimeStickerMedals(UINT16 map);
+void G_UpdateTimeStickerMedals(UINT16 map, boolean showownrecord);
 void G_TickTimeStickerMedals(void);
 void G_UpdateRecords(void);
 

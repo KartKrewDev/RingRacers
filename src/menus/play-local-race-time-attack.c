@@ -191,7 +191,7 @@ void M_PrepareTimeAttack(INT32 choice)
 	}
 
 	// Time-sticker Medals
-	G_UpdateTimeStickerMedals(levellist.choosemap);
+	G_UpdateTimeStickerMedals(levellist.choosemap, false);
 
 	// Menu options
 	{
@@ -468,4 +468,6 @@ void M_StartTimeAttack(INT32 choice)
 
 	M_ClearMenus(true);
 	D_MapChange(levellist.choosemap+1, levellist.newgametype, (cv_dummygpencore.value == 1), 1, 1, false, false);
+
+	G_UpdateTimeStickerMedals(levellist.choosemap, true);
 }
