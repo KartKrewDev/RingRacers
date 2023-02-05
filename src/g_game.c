@@ -1351,7 +1351,7 @@ void G_DoLoadLevel(boolean resetplayer)
 	if (wipegamestate == GS_LEVEL)
 		wipegamestate = -1; // force a wipe
 
-	if (cv_currprofile.value == -1)
+	if (cv_currprofile.value == -1 && !demo.playback)
 	{
 		PR_ApplyProfilePretend(cv_ttlprofilen.value, 0);
 		for (i = 1; i < cv_splitplayers.value; i++)
