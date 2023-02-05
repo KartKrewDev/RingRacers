@@ -443,7 +443,7 @@ void M_StartControlPanel(void)
 	}
 
 	// intro might call this repeatedly
-	if (menuactive && gamestate != GS_NULL)
+	if (mapchangepending || (menuactive && gamestate != GS_NULL))
 	{
 		CON_ToggleOff(); // move away console
 		return;
