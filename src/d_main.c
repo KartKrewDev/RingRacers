@@ -968,6 +968,7 @@ void D_ClearState(void)
 	tutorialmode = false;
 
 	G_SetGamestate(GS_NULL);
+	wipegamestate = GS_NULL;
 }
 
 //
