@@ -634,6 +634,7 @@ void G_UpdateRecords(void)
 		}
 
 		stickermedalinfo.jitter = 4*earnedEmblems;
+		S_StartSound(NULL, sfx_ncitem);
 	}
 
 	M_UpdateUnlockablesAndExtraEmblems(true);
