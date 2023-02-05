@@ -497,11 +497,8 @@ void G_UpdateTimeStickerMedals(UINT16 map)
 	emblem_t *emblem = M_GetLevelEmblems(map+1);
 	boolean gonnadrawtime = false;
 
-	stickermedalinfo.visiblecount = 0;
-	stickermedalinfo.targettext[0] = '\0';
-	stickermedalinfo.emblems[0] = stickermedalinfo.regenemblem = NULL;
+	memset(&stickermedalinfo, 0, sizeof(stickermedalinfo));
 	stickermedalinfo.timetoreach = UINT32_MAX;
-	stickermedalinfo.canplaysound = true;
 
 	while (emblem != NULL)
 	{
