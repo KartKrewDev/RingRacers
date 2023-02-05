@@ -205,7 +205,7 @@ void G_EndGame(void); // moved from y_inter.c/h and renamed
 extern struct stickermedalinfo
 {
 	UINT8 visiblecount;
-	boolean canplaysound;
+	boolean norecord;
 	tic_t timetoreach;
 	emblem_t *emblems[MAXMEDALVISIBLECOUNT];
 	emblem_t *regenemblem;
@@ -213,6 +213,7 @@ extern struct stickermedalinfo
 } stickermedalinfo;
 
 void G_UpdateTimeStickerMedals(UINT16 map);
+void G_TickTimeStickerMedals(void);
 void G_UpdateRecords(void);
 
 void G_Ticker(boolean run);

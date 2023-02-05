@@ -565,6 +565,22 @@ bademblem:
 	}
 }
 
+void G_TickTimeStickerMedals(void)
+{
+	if (players[consoleplayer].realtime > stickermedalinfo.timetoreach)
+	{
+		if (stickermedalinfo.norecord == false)
+		{
+			S_StartSound(NULL, sfx_s3k72); //sfx_s26d); -- you STOLE fizzy lifting drinks
+			stickermedalinfo.norecord = true;
+		}
+	}
+	else
+	{
+		stickermedalinfo.norecord = false;
+	}
+}
+
 //
 // G_UpdateRecords
 //

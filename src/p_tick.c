@@ -766,7 +766,10 @@ void P_Ticker(boolean run)
 		}
 
 		if (modeattacking)
+		{
 			G_GhostTicker();
+			G_TickTimeStickerMedals();
+		}
 
 		if (mapreset > 1
 			&& --mapreset <= 1

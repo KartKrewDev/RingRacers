@@ -1562,14 +1562,9 @@ void K_drawKartTimestamp(tic_t drawtime, INT32 TX, INT32 TY, UINT8 mode)
 		{
 			if (!mode)
 			{
-				if (stplyr->realtime > stickermedalinfo.timetoreach)
+				if (stickermedalinfo.norecord == true)
 				{
 					splitflags = (splitflags &~ V_HUDTRANS)|V_HUDTRANSHALF;
-					if (stickermedalinfo.canplaysound)
-					{
-						S_StartSound(NULL, sfx_s3k72); //sfx_s26d); -- you STOLE fizzy lifting drinks
-						stickermedalinfo.canplaysound = false;
-					}
 				}
 			}
 
