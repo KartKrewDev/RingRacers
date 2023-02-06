@@ -636,8 +636,6 @@ void G_UpdateRecords(void)
 	// Check emblems when level data is updated
 	if ((earnedEmblems = M_CheckLevelEmblems()))
 	{
-		CONS_Printf(M_GetText("\x82" "Earned %hu medal%s for Record Attack records.\n"), (UINT16)earnedEmblems, earnedEmblems > 1 ? "s" : "");
-
 		if (stickermedalinfo.regenemblem != NULL
 			&& gamedata->collected[(stickermedalinfo.regenemblem-emblemlocations)])
 		{
