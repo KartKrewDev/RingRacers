@@ -547,17 +547,18 @@ bademblem:
 
 		if (gonnadrawtime)
 		{
-			stickermedalinfo.timetoreach = emblem->var;
 			if (emblem->tag > 0)
 			{
 				if (emblem->tag > mapheaderinfo[map]->ghostCount
 				|| mapheaderinfo[map]->ghostBrief[emblem->tag-1] == NULL)
-					snprintf(stickermedalinfo.targettext, 9, "Invalid ghost tag");
+					snprintf(stickermedalinfo.targettext, 9, "Invalid");
 				else if (mapheaderinfo[map]->ghostBrief[emblem->tag-1]->time == UINT32_MAX)
-					snprintf(stickermedalinfo.targettext, 9, "Ghost DNF");
+					snprintf(stickermedalinfo.targettext, 9, "DNF");
 				else
 					stickermedalinfo.timetoreach = mapheaderinfo[map]->ghostBrief[emblem->tag-1]->time;
 			}
+			else
+				stickermedalinfo.timetoreach = emblem->var;
 		}
 	}
 
