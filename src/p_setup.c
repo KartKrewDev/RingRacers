@@ -4589,7 +4589,7 @@ static void P_ConvertBinaryLinedefTypes(void)
 			//Flags
 			if (lines[i].flags & ML_BLOCKPLAYERS)
 				lines[i].args[6] |= TMFR_REVERSE;
-			if (lines[i].flags & ML_BLOCKPLAYERS)
+			if (lines[i].flags & ML_NOCLIMB)
 				lines[i].args[6] |= TMFR_SPINDASH;
 
 			lines[i].special = 190;
@@ -6018,7 +6018,9 @@ static void P_ConvertBinarySectorTypes(void)
 			case 8: //Instakill
 				sectors[i].damagetype = SD_INSTAKILL;
 				break;
-			case 9: // Stumble
+			//case 9: -- Ring Drainer (Floor Touch)
+			//case 10: -- Ring Drainer (No Floor Touch)
+			case 11: // Stumble
 				sectors[i].damagetype = SD_STUMBLE;
 				break;
 			case 12: //Wall sector

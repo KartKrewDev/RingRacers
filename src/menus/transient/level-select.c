@@ -251,7 +251,7 @@ boolean M_LevelListFromGametype(INT16 gt)
 		if (cupgrid.cappages == 0)
 		{
 			cupgrid.cappages = 2;
-			cupgrid.builtgrid = Z_Calloc(
+			cupgrid.builtgrid = Z_Malloc(
 				cupgrid.cappages * pagelen,
 				PU_STATIC,
 				NULL);
@@ -288,7 +288,6 @@ boolean M_LevelListFromGametype(INT16 gt)
 					I_Error("M_LevelListFromGametype: Not enough memory to reallocate builtgrid");
 				}
 
-				memset(cupgrid.builtgrid + firstlen, 0, firstlen);
 				cupgrid.cappages *= 2;
 			}
 

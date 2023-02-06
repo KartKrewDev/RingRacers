@@ -591,7 +591,6 @@ void T_BounceCheese(bouncecheese_t *bouncer)
 	if (bouncer->sector->crumblestate == CRUMBLE_RESTORE || bouncer->sector->crumblestate == CRUMBLE_WAIT
 		|| bouncer->sector->crumblestate == CRUMBLE_ACTIVATED) // Oops! Crumbler says to remove yourself!
 	{
-		bouncer->sector->crumblestate = CRUMBLE_WAIT;
 		bouncer->sector->ceilingdata = NULL;
 		bouncer->sector->ceilspeed = 0;
 		bouncer->sector->floordata = NULL;
@@ -2149,11 +2148,10 @@ void EV_CrumbleChain(sector_t *sec, ffloor_t *rover)
 		}
 	}
 
-#undef controlsec
-
-	// soundorg z height never gets set normally, so MEH.
-	sec->soundorg.z = sec->floorheight;
+	sec->soundorg.z = (controlsec->floorheight + controlsec->ceilingheight)/2;
 	S_StartSound(&sec->soundorg, mobjinfo[type].activesound);
+
+#undef controlsec
 
 	// Find the outermost vertexes in the subsector
 	for (i = 0; i < sec->linecount; i++)

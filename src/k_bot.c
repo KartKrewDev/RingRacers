@@ -1397,7 +1397,10 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 					}
 				}
 
-				turnamt = K_HandleBotTrack(player, cmd, predict, destangle);
+				if (predict != NULL)
+				{
+					turnamt = K_HandleBotTrack(player, cmd, predict, destangle);
+				}
 				cmd->buttons &= ~(BT_ACCELERATE|BT_BRAKE);
 				cmd->forwardmove = 0;
 				trySpindash = true;
@@ -1431,7 +1434,10 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 				}
 			}
 
-			turnamt = K_HandleBotTrack(player, cmd, predict, destangle);
+			if (predict != NULL)
+			{
+				turnamt = K_HandleBotTrack(player, cmd, predict, destangle);
+			}
 		}
 	}
 	else
@@ -1450,7 +1456,10 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 			}
 		}
 
-		turnamt = K_HandleBotTrack(player, cmd, predict, destangle);
+		if (predict != NULL)
+		{
+			turnamt = K_HandleBotTrack(player, cmd, predict, destangle);
+		}
 	}
 
 	if (trySpindash == true)
