@@ -288,7 +288,6 @@ boolean M_LevelListFromGametype(INT16 gt)
 					I_Error("M_LevelListFromGametype: Not enough memory to reallocate builtgrid");
 				}
 
-				memset(cupgrid.builtgrid + firstlen, 0, firstlen);
 				cupgrid.cappages *= 2;
 			}
 
