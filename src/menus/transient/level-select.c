@@ -251,7 +251,7 @@ boolean M_LevelListFromGametype(INT16 gt)
 		if (cupgrid.cappages == 0)
 		{
 			cupgrid.cappages = 2;
-			cupgrid.builtgrid = Z_Calloc(
+			cupgrid.builtgrid = Z_Malloc(
 				cupgrid.cappages * pagelen,
 				PU_STATIC,
 				NULL);
