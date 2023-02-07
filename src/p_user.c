@@ -1367,6 +1367,9 @@ void P_DoPlayerExit(player_t *player)
 		}
 	}
 
+	if (modeattacking)
+		G_UpdateRecords();
+
 	player->karthud[khud_cardanimation] = 0; // srb2kart: reset battle animation
 
 	if (player == &players[consoleplayer])

@@ -198,6 +198,8 @@ void Environment::loadModule(ACSVM::Module *module)
 		{
 			CONS_Printf("No BEHAVIOR lump found.\n");
 		}
+
+		vres_Free(vRes);
 	}
 	else
 	{

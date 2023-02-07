@@ -113,6 +113,7 @@ TYPEDEF (textprompt_t);
 TYPEDEF (mappoint_t);
 TYPEDEF (customoption_t);
 TYPEDEF (gametype_t);
+TYPEDEF (staffbrief_t);
 TYPEDEF (mapheader_t);
 TYPEDEF (tolinfo_t);
 TYPEDEF (cupheader_t);

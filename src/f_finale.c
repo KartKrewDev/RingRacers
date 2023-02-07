@@ -2194,25 +2194,20 @@ void F_TitleScreenTicker(boolean run)
 		return;
 	}
 
-#ifdef STAFFGHOSTS
 	// is it time?
 	if (!(--demoIdleLeft))
 	{
-		//static boolean use_netreplay = false;
-
-		char dname[9];
-		char *dname2 = dname;
-		lumpnum_t l;
-		const char *mapname;
+		char dname[MAXMAPLUMPNAME+1+8+1];
+		UINT16 mapnum;
 		UINT8 numstaff;
+		static boolean use_netreplay = false;
 
-		//@TODO uncomment this when this goes into vanilla
-		/*if ((use_netreplay = !use_netreplay))*/
+		if ((use_netreplay = !use_netreplay))
 		{
-			numstaff = 1;
-			while ((l = W_CheckNumForName(va("TDEMO%03u", numstaff))) != LUMPERROR)
+			lumpnum_t l = LUMPERROR;
+			numstaff = 0;
+			while (numstaff < 99 && (l = W_CheckNumForName(va("TDEMO%03u", numstaff))) != LUMPERROR)
 				numstaff++;
-			numstaff--;
 
 			if (numstaff)
 			{
@@ -2225,42 +2220,23 @@ void F_TitleScreenTicker(boolean run)
 		// prevent console spam if failed
 		demoIdleLeft = demoIdleTime;
 
-		if ((l = W_CheckNumForName("MAP01S01")) == LUMPERROR) // gotta have ONE
+		mapnum = G_RandMap(TOL_RACE|TOL_BATTLE, -2, 2, 0, false, NULL);
+		if (mapnum == 0) // gotta have ONE
 		{
-			F_StartIntro();
 			return;
 		}
 
-		mapname = G_BuildMapName(G_RandMap(TOL_RACE, -2, 0, 0, false, NULL)+1);
-
-		numstaff = 1;
-		while (numstaff < 99 && (l = W_CheckNumForLongName(va("%sS%02u",mapname,numstaff+1))) != LUMPERROR)
-			numstaff++;
-
-		numstaff = M_RandomKey(numstaff)+1;
+		numstaff = M_RandomKey(mapheaderinfo[mapnum]->ghostCount)+1;
 
 		// Setup demo name
-		dname2 = Z_StrDup(va("%sS%02u", mapname, numstaff));
-
-		/*if ((l = W_CheckNumForName(dname)) == LUMPERROR) -- we KNOW it exists now
-		{
-			CONS_Alert(CONS_ERROR, M_GetText("Demo lump \"%s\" doesn't exist\n"), dname);
-			F_StartIntro();
-			return;
-		}*/
+		sprintf(dname, "%s/GHOST_%u", mapheaderinfo[mapnum]->lumpname, numstaff);
 
 loadreplay:
-		demo.title = demo.fromtitle = true;
+		demo.title = true;
 		demo.ignorefiles = true;
 		demo.loadfiles = false;
-		G_DoPlayDemo(dname2);
-
-		if (dname2 != dname)
-		{
-			Z_Free(dname2);
-		}
+		G_DoPlayDemo(dname);
 	}
-#endif //#ifdef STAFFGHOSTS
 }
 
 void F_TitleDemoTicker(void)

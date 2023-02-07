@@ -201,6 +201,22 @@ void G_UseContinue(void);
 void G_AfterIntermission(void);
 void G_EndGame(void); // moved from y_inter.c/h and renamed
 
+#define MAXMEDALVISIBLECOUNT 3
+extern struct stickermedalinfo
+{
+	UINT8 visiblecount;
+	UINT8 jitter;
+	boolean norecord;
+	tic_t timetoreach;
+	emblem_t *emblems[MAXMEDALVISIBLECOUNT];
+	emblem_t *regenemblem;
+	char targettext[9];
+} stickermedalinfo;
+
+void G_UpdateTimeStickerMedals(UINT16 map, boolean showownrecord);
+void G_TickTimeStickerMedals(void);
+void G_UpdateRecords(void);
+
 void G_Ticker(boolean run);
 boolean G_Responder(event_t *ev);
 

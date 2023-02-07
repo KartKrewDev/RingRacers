@@ -766,7 +766,11 @@ void P_Ticker(boolean run)
 		}
 
 		if (modeattacking)
+		{
 			G_GhostTicker();
+			if (!demo.playback)
+				G_TickTimeStickerMedals();
+		}
 
 		if (mapreset > 1
 			&& --mapreset <= 1

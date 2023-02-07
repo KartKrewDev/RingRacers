@@ -1466,7 +1466,7 @@ static void K_drawKartItem(void)
 	}
 }
 
-void K_drawKartTimestamp(tic_t drawtime, INT32 TX, INT32 TY, INT16 emblemmap, UINT8 mode)
+void K_drawKartTimestamp(tic_t drawtime, INT32 TX, INT32 TY, UINT8 mode)
 {
 	// TIME_X = BASEVIDWIDTH-124;	// 196
 	// TIME_Y = 6;					//   6
@@ -1550,77 +1550,60 @@ void K_drawKartTimestamp(tic_t drawtime, INT32 TX, INT32 TY, INT16 emblemmap, UI
 		V_DrawKartString(TX+84, TY+3-jitter, splitflags, va("%d", worktime%10));
 	}
 
-	if (emblemmap && (modeattacking || (mode == 1)) && !demo.playback) // emblem time!
+	// Medal data!
+	if ((modeattacking || (mode == 1))
+		&& !demo.playback)
 	{
 		INT32 workx = TX + 96, worky = TY+18;
-		SINT8 curemb = 0;
-		patch_t *emblempic[3] = {NULL, NULL, NULL};
-		UINT8 *emblemcol[3] = {NULL, NULL, NULL};
+		UINT8 i = stickermedalinfo.visiblecount;
 
-		emblem_t *emblem = M_GetLevelEmblems(emblemmap);
-		while (emblem)
+		if (stickermedalinfo.targettext[0] != '\0')
 		{
-			char targettext[9];
-
-			switch (emblem->type)
+			if (!mode)
 			{
-				case ET_TIME:
-					{
-						static boolean canplaysound = true;
-						tic_t timetoreach = emblem->var;
+				if (stickermedalinfo.jitter)
+				{
+					jitter = stickermedalinfo.jitter+3;
+					if (jitter & 2)
+						workx += jitter/4;
+					else
+						workx -= jitter/4;
+				}
 
-						if (gamedata->collected[(emblem-emblemlocations)])
-						{
-							emblempic[curemb] = W_CachePatchName(M_GetEmblemPatch(emblem, false), PU_CACHE);
-							emblemcol[curemb] = R_GetTranslationColormap(TC_DEFAULT, M_GetEmblemColor(emblem), GTC_CACHE);
-							if (++curemb == 3)
-								break;
-							goto bademblem;
-						}
-
-						snprintf(targettext, 9, "%i'%02i\"%02i",
-							G_TicsToMinutes(timetoreach, false),
-							G_TicsToSeconds(timetoreach),
-							G_TicsToCentiseconds(timetoreach));
-
-						if (!mode)
-						{
-							if (stplyr->realtime > timetoreach)
-							{
-								splitflags = (splitflags &~ V_HUDTRANS)|V_HUDTRANSHALF;
-								if (canplaysound)
-								{
-									S_StartSound(NULL, sfx_s3k72); //sfx_s26d); -- you STOLE fizzy lifting drinks
-									canplaysound = false;
-								}
-							}
-							else if (!canplaysound)
-								canplaysound = true;
-						}
-
-						targettext[8] = 0;
-					}
-					break;
-				default:
-					goto bademblem;
+				if (stickermedalinfo.norecord == true)
+				{
+					splitflags = (splitflags &~ V_HUDTRANS)|V_HUDTRANSHALF;
+				}
 			}
 
-			V_DrawRightAlignedString(workx, worky, splitflags|V_6WIDTHSPACE, targettext);
-			workx -= 67;
-			V_DrawSmallScaledPatch(workx + 4, worky, splitflags, W_CachePatchName("NEEDIT", PU_CACHE));
-
-			break;
-
-bademblem:
-			emblem = M_GetLevelEmblems(-1);
+			workx -= V_ThinStringWidth(stickermedalinfo.targettext, splitflags|V_6WIDTHSPACE);
+			V_DrawThinString(workx, worky, splitflags|V_6WIDTHSPACE, stickermedalinfo.targettext);
 		}
+
+		workx -= (6 + (i*5));
 
 		if (!mode)
 			splitflags = (splitflags &~ V_HUDTRANSHALF)|V_HUDTRANS;
-		while (curemb--)
+		while (i > 0)
 		{
-			workx -= 12;
-			V_DrawSmallMappedPatch(workx + 4, worky, splitflags, emblempic[curemb], emblemcol[curemb]);
+			i--;
+
+			if (gamedata->collected[(stickermedalinfo.emblems[i]-emblemlocations)])
+			{
+				V_DrawSmallMappedPatch(workx, worky, splitflags,
+					W_CachePatchName(M_GetEmblemPatch(stickermedalinfo.emblems[i], false), PU_CACHE),
+					R_GetTranslationColormap(TC_DEFAULT, M_GetEmblemColor(stickermedalinfo.emblems[i]), GTC_CACHE)
+				);
+			}
+			else
+			{
+				V_DrawSmallMappedPatch(workx, worky, splitflags,
+					W_CachePatchName("NEEDIT", PU_CACHE),
+					NULL
+				);
+			}
+
+			workx += 6;
 		}
 	}
 }
@@ -5054,7 +5037,7 @@ void K_drawKartHUD(void)
 	{
 		// Draw the timestamp
 		if (LUA_HudEnabled(hud_time))
-			K_drawKartTimestamp(stplyr->realtime, TIME_X, TIME_Y, gamemap, 0);
+			K_drawKartTimestamp(stplyr->realtime, TIME_X, TIME_Y, 0);
 
 		islonesome = K_drawKartPositionFaces();
 	}
@@ -5063,17 +5046,17 @@ void K_drawKartHUD(void)
 	{
 		if (demo.title) // Draw title logo instead in demo.titles
 		{
-			INT32 x = BASEVIDWIDTH - 32, y = 128, snapflags = V_SNAPTOBOTTOM|V_SNAPTORIGHT;
+			INT32 x = BASEVIDWIDTH - 8, y = BASEVIDHEIGHT-8, snapflags = V_SNAPTOBOTTOM|V_SNAPTORIGHT|V_SLIDEIN;
+			patch_t *pat = W_CachePatchName((cv_alttitle.value ? "MTSJUMPR1" : "MTSBUMPR1"), PU_CACHE);
 
 			if (r_splitscreen == 3)
 			{
-				x = BASEVIDWIDTH/2 + 10;
-				y = BASEVIDHEIGHT/2 - 30;
+				x = BASEVIDWIDTH/2;
+				y = BASEVIDHEIGHT/2;
 				snapflags = 0;
 			}
 
-			V_DrawTinyScaledPatch(x-54, y, snapflags|V_SLIDEIN, W_CachePatchName("TTKBANNR", PU_CACHE));
-			V_DrawTinyScaledPatch(x-54, y+25, snapflags|V_SLIDEIN, W_CachePatchName("TTKART", PU_CACHE));
+			V_DrawScaledPatch(x-(SHORT(pat->width)), y-(SHORT(pat->height)), snapflags, pat);
 		}
 		else
 		{

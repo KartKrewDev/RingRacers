@@ -465,11 +465,6 @@ void G_ClearRecords(void)
 			Z_Free(mapheaderinfo[i]->mainrecord);
 			mapheaderinfo[i]->mainrecord = NULL;
 		}
-		/*if (nightsrecords[i])
-		{
-			Z_Free(nightsrecords[i]);
-			nightsrecords[i] = NULL;
-		}*/
 	}
 }
 
@@ -495,31 +490,133 @@ tic_t G_GetBestLap(INT16 map)
 }
 */
 
-//
-// G_UpdateRecordReplays
-//
-// Update replay files/data, etc. for Record Attack
-//
-static void G_UpdateRecordReplays(void)
+struct stickermedalinfo stickermedalinfo;
+
+void G_UpdateTimeStickerMedals(UINT16 map, boolean showownrecord)
 {
-	char *gpath;
-	char lastdemo[256], bestdemo[256];
+	emblem_t *emblem = M_GetLevelEmblems(map+1);
+	boolean gonnadrawtime = false;
+
+	memset(&stickermedalinfo, 0, sizeof(stickermedalinfo));
+	stickermedalinfo.timetoreach = UINT32_MAX;
+
+	while (emblem != NULL)
+	{
+		UINT8 i = 0;
+
+		switch (emblem->type)
+		{
+			case ET_TIME:
+			{
+				break;
+			}
+			default:
+				goto bademblem;
+		}
+
+		if (!gamedata->collected[(emblem-emblemlocations)] && gonnadrawtime)
+			break;
+
+		// Simpler than having two checks
+		if (stickermedalinfo.visiblecount == MAXMEDALVISIBLECOUNT)
+			stickermedalinfo.visiblecount--;
+
+		// Shuffle along, so [0] is the "main focus"
+		for (i = stickermedalinfo.visiblecount; i > 0; i--)
+		{
+			stickermedalinfo.emblems[i] = stickermedalinfo.emblems[i-1];
+		}
+		stickermedalinfo.emblems[0] = emblem;
+		stickermedalinfo.visiblecount++;
+
+		if (!gamedata->collected[(emblem-emblemlocations)] || Playing())
+			gonnadrawtime = true;
+
+bademblem:
+		emblem = M_GetLevelEmblems(-1);
+	}
+
+	if (stickermedalinfo.visiblecount > 0)
+	{
+		if (emblem != NULL && emblem != stickermedalinfo.emblems[0])
+		{
+			// Regenerate the entire array if this is unlocked
+			stickermedalinfo.regenemblem = emblem;
+		}
+		emblem = stickermedalinfo.emblems[0];
+
+		if (gonnadrawtime)
+		{
+			if (emblem->tag > 0)
+			{
+				if (emblem->tag > mapheaderinfo[map]->ghostCount
+				|| mapheaderinfo[map]->ghostBrief[emblem->tag-1] == NULL)
+					snprintf(stickermedalinfo.targettext, 9, "Invalid");
+				else if (mapheaderinfo[map]->ghostBrief[emblem->tag-1]->time == UINT32_MAX)
+					snprintf(stickermedalinfo.targettext, 9, "DNF");
+				else
+					stickermedalinfo.timetoreach = mapheaderinfo[map]->ghostBrief[emblem->tag-1]->time;
+			}
+			else
+				stickermedalinfo.timetoreach = emblem->var;
+		}
+	}
+
+	if (!gonnadrawtime && showownrecord)
+	{
+		stickermedalinfo.timetoreach = G_GetBestTime(map);
+	}
+
+	if (stickermedalinfo.timetoreach != UINT32_MAX)
+	{
+		snprintf(stickermedalinfo.targettext, 9, "%i'%02i\"%02i",
+			G_TicsToMinutes(stickermedalinfo.timetoreach, false),
+			G_TicsToSeconds(stickermedalinfo.timetoreach),
+			G_TicsToCentiseconds(stickermedalinfo.timetoreach));
+	}
+}
+
+void G_TickTimeStickerMedals(void)
+{
+	if (stickermedalinfo.jitter)
+		stickermedalinfo.jitter--;
+
+	if (players[consoleplayer].realtime > stickermedalinfo.timetoreach)
+	{
+		if (stickermedalinfo.norecord == false)
+		{
+			S_StartSound(NULL, sfx_s3k72); //sfx_s26d); -- you STOLE fizzy lifting drinks
+			stickermedalinfo.norecord = true;
+			stickermedalinfo.jitter = 4;
+		}
+	}
+	else
+	{
+		stickermedalinfo.norecord = false;
+	}
+}
+
+//
+// G_UpdateRecords
+//
+// Update time attack records
+//
+void G_UpdateRecords(void)
+{
 	UINT8 earnedEmblems;
 
 	// Record new best time
 	if (!mapheaderinfo[gamemap-1]->mainrecord)
 		G_AllocMainRecordData(gamemap-1);
 
-	if (players[consoleplayer].pflags & PF_NOCONTEST)
-	{
-		players[consoleplayer].realtime = UINT32_MAX;
-	}
-
 	if (modeattacking & ATTACKING_TIME)
 	{
-		if (((mapheaderinfo[gamemap-1]->mainrecord->time == 0) || (players[consoleplayer].realtime < mapheaderinfo[gamemap-1]->mainrecord->time))
-		&& (players[consoleplayer].realtime < UINT32_MAX)) // DNF
-			mapheaderinfo[gamemap-1]->mainrecord->time = players[consoleplayer].realtime;
+		tic_t time = players[consoleplayer].realtime;
+		if (players[consoleplayer].pflags & PF_NOCONTEST)
+			time = UINT32_MAX;
+		if (((mapheaderinfo[gamemap-1]->mainrecord->time == 0) || (time < mapheaderinfo[gamemap-1]->mainrecord->time))
+		&& (time < UINT32_MAX)) // DNF
+			mapheaderinfo[gamemap-1]->mainrecord->time = time;
 	}
 	else
 	{
@@ -534,6 +631,38 @@ static void G_UpdateRecordReplays(void)
 	else
 	{
 		mapheaderinfo[gamemap-1]->mainrecord->lap = 0;
+	}
+
+	// Check emblems when level data is updated
+	if ((earnedEmblems = M_CheckLevelEmblems()))
+	{
+		if (stickermedalinfo.regenemblem != NULL
+			&& gamedata->collected[(stickermedalinfo.regenemblem-emblemlocations)])
+		{
+			G_UpdateTimeStickerMedals(gamemap-1, false);
+		}
+
+		stickermedalinfo.jitter = 4*earnedEmblems;
+		S_StartSound(NULL, sfx_ncitem);
+	}
+
+	M_UpdateUnlockablesAndExtraEmblems(true);
+	G_SaveGameData();
+}
+
+//
+// G_UpdateRecordReplays
+//
+// Update replay files/data, etc. for Record Attack
+//
+static void G_UpdateRecordReplays(void)
+{
+	char *gpath;
+	char lastdemo[256], bestdemo[256];
+
+	if (players[consoleplayer].pflags & PF_NOCONTEST)
+	{
+		players[consoleplayer].realtime = UINT32_MAX;
 	}
 
 	// Save demo!
@@ -590,13 +719,6 @@ static void G_UpdateRecordReplays(void)
 
 		Z_Free(gpath);
 	}
-
-	// Check emblems when level data is updated
-	if ((earnedEmblems = M_CheckLevelEmblems()))
-		CONS_Printf(M_GetText("\x82" "Earned %hu medal%s for Record Attack records.\n"), (UINT16)earnedEmblems, earnedEmblems > 1 ? "s" : "");
-
-	M_UpdateUnlockablesAndExtraEmblems(true);
-	G_SaveGameData();
 }
 
 // for consistency among messages: this modifies the game and removes savemoddata.
@@ -1339,7 +1461,7 @@ void G_DoLoadLevel(boolean resetplayer)
 	if (wipegamestate == GS_LEVEL)
 		wipegamestate = -1; // force a wipe
 
-	if (cv_currprofile.value == -1)
+	if (cv_currprofile.value == -1 && !demo.playback)
 	{
 		PR_ApplyProfilePretend(cv_ttlprofilen.value, 0);
 		for (i = 1; i < cv_splitplayers.value; i++)
@@ -3441,6 +3563,10 @@ tryagain:
 			|| (usehellmaps != (mapheaderinfo[ix]->menuflags & LF2_HIDEINMENU))) // this is bad
 			continue; //isokmap = false;
 
+		if (pprevmap == -2 // title demo hack
+			&& mapheaderinfo[ix]->ghostCount == 0)
+			continue;
+
 		if (!ignorebuffer)
 		{
 			if (extbufsize > 0)
@@ -3474,16 +3600,6 @@ tryagain:
 			if (!isokmap)
 				continue;
 		}
-
-#ifdef STAFFGHOSTS
-		if (pprevmap == -2) // title demo hack
-		{
-			lumpnum_t l;
-			// TODO: Use map header to determine lump name
-			if ((l = W_CheckNumForLongName(va("%sS01",G_BuildMapName(ix+1)))) == LUMPERROR)
-				continue;
-		}
-#endif //#ifdef STAFFGHOSTS
 
 		okmaps[numokmaps++] = ix;
 	}

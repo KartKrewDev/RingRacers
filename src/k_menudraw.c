@@ -2240,7 +2240,6 @@ void M_DrawTimeAttack(void)
 	INT32 w;
 	patch_t *minimap = NULL;
 	UINT8 i;
-	consvar_t *cv;
 
 	M_DrawLevelSelectBlock(0, 2, map, true, false);
 
@@ -2267,7 +2266,7 @@ void M_DrawTimeAttack(void)
 			&& (mapheaderinfo[map]->numlaps != 1))
 		{
 			V_DrawRightAlignedString(rightedge-12, timeheight, highlightflags, "BEST LAP:");
-			K_drawKartTimestamp(laprec, 162+t, timeheight+6, 0, 2);
+			K_drawKartTimestamp(laprec, 162+t, timeheight+6, 2);
 			timeheight += 30;
 		}
 		else
@@ -2276,7 +2275,7 @@ void M_DrawTimeAttack(void)
 		}
 
 		V_DrawRightAlignedString(rightedge-12, timeheight, highlightflags, "BEST TIME:");
-		K_drawKartTimestamp(timerec, 162+t, timeheight+6, map, 1);
+		K_drawKartTimestamp(timerec, 162+t, timeheight+6, 1);
 	}
 	else
 		opty = 80;
@@ -2303,19 +2302,56 @@ void M_DrawTimeAttack(void)
 				opty += 10;
 
 				// Cvar specific handling
-
-				if (currentMenu->menuitems[i].status & IT_CVAR)
 				{
-					cv = currentMenu->menuitems[i].itemaction.cvar;
+					const char *str = NULL;
+					INT32 optflags = f;
+					boolean drawarrows = (i == itemOn);
 
-					w = V_StringWidth(cv->string, 0);
-					V_DrawString(leftedge, opty, f, cv->string);
-					if (i == itemOn)
+					if ((currentMenu->menuitems[i].status & IT_TYPE) == IT_ARROWS)
 					{
-						V_DrawCharacter(leftedge - 10 - (skullAnimCounter/5), opty, '\x1C' | f, false); // left arrow
-						V_DrawCharacter(leftedge + w + 2+ (skullAnimCounter/5), opty, '\x1D' | f, false); // right arrow
+						// Currently assumes M_HandleStaffReplay
+						if (mapheaderinfo[levellist.choosemap]->ghostCount <= 1)
+							drawarrows = false;
+
+						optflags |= V_ALLOWLOWERCASE;
+						if (mapheaderinfo[levellist.choosemap] == NULL)
+							str = "Invalid map";
+						else if (cv_dummystaff.value > mapheaderinfo[levellist.choosemap]->ghostCount)
+							str = va("%u - Invalid ID", cv_dummystaff.value+1);
+						else if (mapheaderinfo[levellist.choosemap]->ghostBrief[cv_dummystaff.value] == NULL)
+							str = va("%u - Invalid brief", cv_dummystaff.value+1);
+						else
+						{
+							const char *th = "th";
+							if (cv_dummystaff.value+1 == 1)
+								th = "st";
+							else if (cv_dummystaff.value+1 == 2)
+								th = "nd";
+							else if (cv_dummystaff.value+1 == 3)
+								th = "rd";
+							str = va("%u%s - %s",
+								cv_dummystaff.value+1,
+								th,
+								mapheaderinfo[levellist.choosemap]->ghostBrief[cv_dummystaff.value]->name
+							);
+						}
 					}
-					opty += 10;
+					else if ((currentMenu->menuitems[i].status & IT_TYPE) == IT_CVAR)
+					{
+						str = currentMenu->menuitems[i].itemaction.cvar->string;
+					}
+
+					if (str)
+					{
+						w = V_StringWidth(str, optflags);
+						V_DrawString(leftedge+12, opty, optflags, str);
+						if (drawarrows)
+						{
+							V_DrawCharacter(leftedge+12 - 10 - (skullAnimCounter/5), opty, '\x1C' | f, false); // left arrow
+							V_DrawCharacter(leftedge+12 + w + 2+ (skullAnimCounter/5), opty, '\x1D' | f, false); // right arrow
+						}
+						opty += 10;
+					}
 				}
 
 				break;

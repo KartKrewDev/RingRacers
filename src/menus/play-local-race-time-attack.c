@@ -56,7 +56,7 @@ menuitem_t PLAY_TAReplay[] =
 	{IT_HEADERTEXT|IT_HEADER, "", NULL, NULL, {NULL}, 0, 0},
 	{IT_STRING | IT_CALL, "Replay Last", NULL, NULL, {.routine = M_ReplayTimeAttack}, 0, 0},
 	{IT_STRING | IT_CALL, "Replay Guest", NULL, NULL, {.routine = M_ReplayTimeAttack}, 0, 0},
-	{IT_STRING | IT_CALL, "Replay Staff", NULL, NULL, {.routine = M_HandleStaffReplay}, 0, 0},
+	{IT_STRING | IT_ARROWS, "Replay Staff", NULL, NULL, {.routine = M_HandleStaffReplay}, 0, 0},
 	{IT_HEADERTEXT|IT_HEADER, "", NULL, NULL, {NULL}, 0, 0},
 
 	{IT_STRING | IT_SUBMENU, "Back", NULL, NULL, {.submenu = &PLAY_TimeAttackDef}, 0, 0},
@@ -178,6 +178,7 @@ void M_PrepareTimeAttack(INT32 choice)
 {
 	(void) choice;
 
+	// Gametype guess
 	if (levellist.guessgt != MAXGAMETYPES)
 	{
 		levellist.newgametype = levellist.guessgt;
@@ -189,6 +190,10 @@ void M_PrepareTimeAttack(INT32 choice)
 		}
 	}
 
+	// Time-sticker Medals
+	G_UpdateTimeStickerMedals(levellist.choosemap, false);
+
+	// Menu options
 	{
 		// see also p_setup.c's P_LoadRecordGhosts
 		char *gpath = Z_StrDup(va("%s"PATHSEP"media"PATHSEP"replay"PATHSEP"%s"PATHSEP"%s", srb2home, timeattackfolder, G_BuildMapName(levellist.choosemap+1)));
@@ -196,8 +201,6 @@ void M_PrepareTimeAttack(INT32 choice)
 
 		if (!gpath)
 			return;
-
-		CV_StealthSetValue(&cv_dummystaff, 0);
 
 		active = false;
 		PLAY_TimeAttack[ta_guest].status = IT_DISABLED;
@@ -257,16 +260,13 @@ void M_PrepareTimeAttack(INT32 choice)
 
 		PLAY_TAReplay[tareplay_staff].status =
 			PLAY_TAGhosts[taghost_staff].status = IT_DISABLED;
-#ifdef STAFFGHOSTS
-		CV_SetValue(&cv_dummystaff, 1);
-		if (cv_dummystaff.value)
+		if (mapheaderinfo[levellist.choosemap]->ghostCount > 0)
 		{
-			PLAY_TAReplay[tareplay_staff].status = IT_STRING|IT_KEYHANDLER;
+			PLAY_TAReplay[tareplay_staff].status = IT_STRING|IT_ARROWS;
 			PLAY_TAGhosts[taghost_staff].status = IT_STRING|IT_CVAR;
-			CV_StealthSetValue(&cv_dummystaff, 1);
+			CV_SetValue(&cv_dummystaff, 0);
 			active |= 1|4;
 		}
-#endif //#ifdef STAFFGHOSTS
 
 		if (active & 1)
 			PLAY_TimeAttack[ta_replay].status = IT_STRING|IT_SUBMENU;
@@ -287,8 +287,19 @@ void M_PrepareTimeAttack(INT32 choice)
 
 void M_HandleStaffReplay(INT32 choice)
 {
-	// @TODO:
-	(void) choice;
+	if (choice == 2)
+	{
+		restoreMenu = &PLAY_TimeAttackDef;
+
+		M_ClearMenus(true);
+		demo.loadfiles = false;
+		demo.ignorefiles = true; // Just assume that record attack replays have the files needed
+
+		G_DoPlayDemo(va("%s/GHOST_%u", mapheaderinfo[levellist.choosemap]->lumpname, cv_dummystaff.value+1));
+		return;
+	}
+
+	M_ChangeCvarDirect(choice, &cv_dummystaff);
 }
 
 void M_ReplayTimeAttack(INT32 choice)
@@ -457,4 +468,6 @@ void M_StartTimeAttack(INT32 choice)
 
 	M_ClearMenus(true);
 	D_MapChange(levellist.choosemap+1, levellist.newgametype, (cv_dummygpencore.value == 1), 1, 1, false, false);
+
+	G_UpdateTimeStickerMedals(levellist.choosemap, true);
 }

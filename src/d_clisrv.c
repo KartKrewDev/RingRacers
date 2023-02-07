@@ -2066,7 +2066,7 @@ static void CL_ConnectToServer(void)
 			CONS_Printf(M_GetText("Contacting the server...\n"));
 	}
 
-	if (cv_currprofile.value == -1)
+	if (cv_currprofile.value == -1 && !demo.playback)
 	{
 		PR_ApplyProfilePretend(cv_ttlprofilen.value, 0);
 		for (i = 1; i < cv_splitplayers.value; i++)

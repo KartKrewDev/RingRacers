@@ -50,15 +50,13 @@ menu_t PAUSE_PlaybackMenuDef = {
 
 void M_EndModeAttackRun(void)
 {
-	boolean dotitle = demo.title;
-
 	G_CheckDemoStatus(); // Cancel recording
 
 	Command_ExitGame_f(); // Clear a bunch of state
 
 	modeattacking = ATTACKING_NONE; // Kept until now because of Command_ExitGame_f
 
-	if (dotitle)
+	if (demo.title == true)
 	{
 		D_StartTitle();
 	}
@@ -210,7 +208,14 @@ void M_PlaybackSetViews(INT32 choice)
 	}
 	else if (r_splitscreen)
 	{
-		r_splitscreen--;
+		if (choice == 0)
+		{
+			r_splitscreen--;
+		}
+		else
+		{
+			r_splitscreen = 0;
+		}
 		R_ExecuteSetViewSize();
 	}
 }

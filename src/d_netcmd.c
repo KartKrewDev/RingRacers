@@ -4894,7 +4894,7 @@ void AltTitle_OnChange(void)
 	if (!M_SecretUnlocked(SECRET_ALTTITLE, true))
 	{
 		CONS_Printf(M_GetText("You haven't earned this yet.\n"));
-		CV_StealthSetValue(&cv_itemfinder, 0);
+		CV_StealthSetValue(&cv_alttitle, 0);
 		return;
 	}
 }
@@ -5784,8 +5784,15 @@ void Command_ExitGame_f(void)
 
 	if (!modeattacking)
 	{
-		D_ClearState();
-		M_StartControlPanel();
+		if (restoreMenu == NULL)
+		{
+			D_StartTitle();
+		}
+		else
+		{
+			D_ClearState();
+			M_StartControlPanel();
+		}
 	}
 }
 

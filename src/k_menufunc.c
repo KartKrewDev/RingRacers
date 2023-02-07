@@ -37,8 +37,6 @@ boolean fromlevelselect = false;
 menu_t *currentMenu = &MAIN_ProfilesDef;
 menu_t *restoreMenu = NULL;
 
-char dummystaffname[22];
-
 INT16 itemOn = 0; // menu item skull is on, Hack by Tails 09-18-2002
 INT16 skullAnimCounter = 8; // skull animation counter
 struct menutransition_s menutransition; // Menu transition properties
@@ -77,7 +75,7 @@ consvar_t cv_tutorialprompt = CVAR_INIT ("tutorialprompt", "On", CV_SAVE, CV_OnO
 static CV_PossibleValue_t dummyteam_cons_t[] = {{0, "Spectator"}, {1, "Red"}, {2, "Blue"}, {0, NULL}};
 static CV_PossibleValue_t dummyspectate_cons_t[] = {{0, "Spectator"}, {1, "Playing"}, {0, NULL}};
 static CV_PossibleValue_t dummyscramble_cons_t[] = {{0, "Random"}, {1, "Points"}, {0, NULL}};
-static CV_PossibleValue_t dummystaff_cons_t[] = {{0, "MIN"}, {100, "MAX"}, {0, NULL}};
+static CV_PossibleValue_t dummystaff_cons_t[] = {{0, "MIN"}, {MAXSTAFF-1, "MAX"}, {0, NULL}};
 
 static consvar_t cv_dummyteam = CVAR_INIT ("dummyteam", "Spectator", CV_HIDDEN, dummyteam_cons_t, NULL);
 //static cv_dummyspectate = CVAR_INITconsvar_t  ("dummyspectate", "Spectator", CV_HIDDEN, dummyspectate_cons_t, NULL);
@@ -92,39 +90,15 @@ consvar_t cv_dummyspectate = CVAR_INIT ("dummyspectate", "Spectator", CV_HIDDEN,
 
 static void Dummystaff_OnChange(void)
 {
-#ifdef STAFFGHOSTS
-	lumpnum_t l;
+	if (mapheaderinfo[levellist.choosemap] == NULL || mapheaderinfo[levellist.choosemap]->ghostCount <= 0)
+		return;
 
-	dummystaffname[0] = '\0';
-
-	if ((l = W_CheckNumForName(va("%sS01",G_BuildMapName(cv_nextmap.value)))) == LUMPERROR)
+	dummystaff_cons_t[1].value = mapheaderinfo[levellist.choosemap]->ghostCount-1;
+	if (cv_dummystaff.value > dummystaff_cons_t[1].value)
 	{
 		CV_StealthSetValue(&cv_dummystaff, 0);
 		return;
 	}
-	else
-	{
-		char *temp = dummystaffname;
-		UINT8 numstaff = 1;
-		while (numstaff < 99 && (l = W_CheckNumForName(va("%sS%02u",G_BuildMapName(cv_nextmap.value),numstaff+1))) != LUMPERROR)
-			numstaff++;
-
-		if (cv_dummystaff.value < 1)
-			CV_StealthSetValue(&cv_dummystaff, numstaff);
-		else if (cv_dummystaff.value > numstaff)
-			CV_StealthSetValue(&cv_dummystaff, 1);
-
-		if ((l = W_CheckNumForName(va("%sS%02u",G_BuildMapName(cv_nextmap.value), cv_dummystaff.value))) == LUMPERROR)
-			return; // shouldn't happen but might as well check...
-
-		G_UpdateStaffGhostName(l);
-
-		while (*temp)
-			temp++;
-
-		sprintf(temp, " - %d", cv_dummystaff.value);
-	}
-#endif //#ifdef STAFFGHOSTS
 }
 
 
@@ -132,10 +106,8 @@ static void Dummystaff_OnChange(void)
 // BASIC MENU HANDLING
 // =========================================================================
 
-static void M_ChangeCvar(INT32 choice)
+void M_ChangeCvarDirect(INT32 choice, consvar_t *cv)
 {
-	consvar_t *cv = currentMenu->menuitems[itemOn].itemaction.cvar;
-
 	// Backspace sets values to default value
 	if (choice == -1)
 	{
@@ -143,7 +115,7 @@ static void M_ChangeCvar(INT32 choice)
 		return;
 	}
 
-	choice = (choice<<1) - 1;
+	choice = (choice == 0 ? -1 : 1);
 
 	if (((currentMenu->menuitems[itemOn].status & IT_CVARTYPE) == IT_CV_SLIDER)
 		|| ((currentMenu->menuitems[itemOn].status & IT_CVARTYPE) == IT_CV_INVISSLIDER)
@@ -168,6 +140,11 @@ static void M_ChangeCvar(INT32 choice)
 
 		CV_AddValue(cv, choice);
 	}
+}
+
+static void M_ChangeCvar(INT32 choice)
+{
+	M_ChangeCvarDirect(choice, currentMenu->menuitems[itemOn].itemaction.cvar);
 }
 
 boolean M_NextOpt(void)
@@ -466,7 +443,7 @@ void M_StartControlPanel(void)
 	}
 
 	// intro might call this repeatedly
-	if (menuactive && gamestate != GS_NULL)
+	if (mapchangepending || (menuactive && gamestate != GS_NULL))
 	{
 		CON_ToggleOff(); // move away console
 		return;
@@ -939,7 +916,7 @@ static void M_HandleMenuInput(void)
 			{
 				case IT_CVAR:
 				case IT_ARROWS:
-					routine(1); // right arrow
+					routine(2); // usually right arrow
 					break;
 				case IT_CALL:
 					routine(itemOn);
@@ -965,19 +942,17 @@ static void M_HandleMenuInput(void)
 		if (routine && ((currentMenu->menuitems[itemOn].status & IT_TYPE) == IT_ARROWS
 			|| (currentMenu->menuitems[itemOn].status & IT_TYPE) == IT_CVAR))
 		{
-			consvar_t *cv = currentMenu->menuitems[itemOn].itemaction.cvar;
+			/*consvar_t *cv = currentMenu->menuitems[itemOn].itemaction.cvar;
 
 			// Make these CVar options?
 			if (cv == &cv_chooseskin
 				|| cv == &cv_dummystaff
-				/*
 				|| cv == &cv_nextmap
 				|| cv == &cv_newgametype
-				*/
 				)
 			{
 				return;
-			}
+			}*/
 
 			S_StartSound(NULL, sfx_s3k5b);
 

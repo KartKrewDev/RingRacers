@@ -47,7 +47,6 @@ struct demovars_s {
 	boolean rewinding; // Rewind in progress
 
 	boolean loadfiles, ignorefiles; // Demo file loading options
-	boolean fromtitle; // SRB2Kart: Don't stop the music
 	boolean inreplayhut; // Go back to replayhut after demos
 	boolean quitafterplaying; // quit after playing a demo from cmdline
 	boolean deferstart; // don't start playing demo right away
@@ -184,8 +183,8 @@ extern demoghost *ghosts;
 void G_DeferedPlayDemo(const char *demo);
 void G_DoPlayDemo(char *defdemoname);
 void G_TimeDemo(const char *name);
-void G_AddGhost(char *defdemoname);
-void G_UpdateStaffGhostName(lumpnum_t l);
+void G_AddGhost(UINT8 *buffer, char *defdemoname);
+staffbrief_t *G_GetStaffGhostBrief(UINT8 *buffer);
 void G_FreeGhosts(void);
 void G_DoneLevelLoad(void);
 

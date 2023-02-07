@@ -469,7 +469,6 @@ void Moviemode_option_Onchange(void);
 extern menu_t *currentMenu;
 extern menu_t *restoreMenu;
 
-extern char dummystaffname[22];
 extern consvar_t cv_dummystaff;
 
 extern INT16 itemOn; // menu item skull is on, Hack by Tails 09-18-2002
@@ -576,7 +575,7 @@ boolean M_MenuButtonPressed(UINT8 pid, UINT32 bt);
 boolean M_MenuButtonHeld(UINT8 pid, UINT32 bt);
 
 boolean M_ChangeStringCvar(INT32 choice);
-
+void M_ChangeCvarDirect(INT32 choice, consvar_t *cv);
 boolean M_NextOpt(void);
 boolean M_PrevOpt(void);
 
