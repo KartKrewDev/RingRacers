@@ -73,7 +73,7 @@ add_executable(SRB2SDL2 MACOSX_BUNDLE WIN32
 	r_things.c
 	r_bbox.c
 	r_textures.c
-	r_patch.c
+	r_patch.cpp
 	r_patchrotation.c
 	r_picformats.c
 	r_portal.c
