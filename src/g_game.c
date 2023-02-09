@@ -3981,7 +3981,9 @@ static void G_GetNextMap(void)
 
 		if (K_CanChangeRules(true))
 		{
-			switch (cv_advancemap.value)
+			if (!netgame) // Match Race.
+				nextmap = NEXTMAP_TITLE;
+			else switch (cv_advancemap.value)
 			{
 				case 0: // Stay on same map.
 					nextmap = prevmap;
