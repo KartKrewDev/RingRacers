@@ -88,17 +88,17 @@ void M_SetupDifficultyOptions(INT32 choice)
 		PLAY_RaceDifficulty[drace_mrracers].status = IT_STRING2|IT_CVAR;	// CPU amount
 		PLAY_RaceDifficulty[drace_mapselect].status = IT_STRING|IT_CALL;	// Level Select (Match Race)
 		PLAY_RaceDifficultyDef.lastOn = drace_mapselect;	// Select map select by default.
+
+		if (M_SecretUnlocked(SECRET_ENCORE, false))
+		{
+			PLAY_RaceDifficulty[drace_encore].status = IT_STRING2|IT_CVAR;	// Encore on/off
+		}
 	}
 	else			// GP
 	{
 		PLAY_RaceDifficulty[drace_gpdifficulty].status = IT_STRING|IT_CVAR; // Difficulty
 		PLAY_RaceDifficulty[drace_cupselect].status = IT_STRING|IT_CALL;	// Level Select (GP)
 		PLAY_RaceDifficultyDef.lastOn = drace_cupselect;	// Select cup select by default.
-	}
-
-	if (M_SecretUnlocked(SECRET_ENCORE, false))
-	{
-		PLAY_RaceDifficulty[drace_encore].status = IT_STRING2|IT_CVAR;	// Encore on/off
 	}
 }
 
