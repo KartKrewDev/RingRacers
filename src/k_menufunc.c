@@ -384,6 +384,7 @@ menu_t *M_SpecificMenuRestore(menu_t *torestore)
 		if (levellist.newgametype == GT_RACE)
 		{
 			M_SetupRaceMenu(-1);
+			M_SetupDifficultyOptions((cupgrid.grandprix == false));
 		}
 
 		if (!M_LevelListFromGametype(-1))
@@ -408,6 +409,13 @@ menu_t *M_SpecificMenuRestore(menu_t *torestore)
 				M_PrepareTimeAttack(0);
 			}
 		}
+	}
+	else if (torestore == &PLAY_RaceDifficultyDef)
+	{
+		// Handle a much smaller subset of unlock restrictions
+		M_SetupGametypeMenu(-1);
+		M_SetupRaceMenu(-1);
+		M_SetupDifficultyOptions((cupgrid.grandprix == false));
 	}
 	else if (torestore == &EXTRAS_ReplayHutDef)
 	{

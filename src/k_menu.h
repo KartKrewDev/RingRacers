@@ -760,6 +760,7 @@ extern consvar_t cv_dummykartspeed;
 extern consvar_t cv_dummygpencore;
 extern consvar_t cv_dummymatchbots;
 
+void M_SetupDifficultyOptions(INT32 choice);
 void M_SetupDifficultySelect(INT32 choice);
 void M_DifficultySelectInputs(INT32 choice);
 

@@ -71,14 +71,8 @@ static CV_PossibleValue_t dummymatchbots_cons_t[] = {
 };
 consvar_t cv_dummymatchbots = CVAR_INIT ("dummymatchbots", "Off", CV_HIDDEN, dummymatchbots_cons_t, NULL);
 
-void M_SetupDifficultySelect(INT32 choice)
+void M_SetupDifficultyOptions(INT32 choice)
 {
-	// check what we picked.
-	choice = currentMenu->menuitems[itemOn].mvar1;
-
-	// setup the difficulty menu and then remove choices depending on choice
-	PLAY_RaceDifficultyDef.prevMenu = currentMenu;
-
 	PLAY_RaceDifficulty[drace_gpdifficulty].status = IT_DISABLED;
 	PLAY_RaceDifficulty[drace_mrkartspeed].status = IT_DISABLED;
 	PLAY_RaceDifficulty[drace_mrcpu].status = IT_DISABLED;
@@ -106,6 +100,16 @@ void M_SetupDifficultySelect(INT32 choice)
 	{
 		PLAY_RaceDifficulty[drace_encore].status = IT_STRING2|IT_CVAR;	// Encore on/off
 	}
+}
+
+void M_SetupDifficultySelect(INT32 choice)
+{
+	(void)choice;
+
+	// setup the difficulty menu and then remove choices depending on choice
+	PLAY_RaceDifficultyDef.prevMenu = currentMenu;
+
+	M_SetupDifficultyOptions(currentMenu->menuitems[itemOn].mvar1);
 
 	M_SetupNextMenu(&PLAY_RaceDifficultyDef, false);
 }
