@@ -1175,6 +1175,7 @@ void readlevelheader(MYFILE *f, char * name)
 							sizeof(mapheaderinfo[num]->musname[j]), va("Level header %d: music", num));
 						j += 1;
 					} while ((tmp = strtok(NULL,",")) != NULL);
+					mapheaderinfo[num]->musname_size = j;
 				}
 			}
 			else if (fastcmp(word, "MUSICSLOT"))

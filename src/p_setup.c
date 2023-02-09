@@ -394,6 +394,7 @@ static void P_ClearSingleMapHeaderInfo(INT16 num)
 	}
 	mapheaderinfo[num]->mustrack = 0;
 	mapheaderinfo[num]->muspos = 0;
+	mapheaderinfo[num]->musname_size = 0;
 	mapheaderinfo[num]->weather = PRECIP_NONE;
 	snprintf(mapheaderinfo[num]->skytexture, 5, "SKY1");
 	mapheaderinfo[num]->skytexture[4] = 0;

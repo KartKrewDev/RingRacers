@@ -2432,8 +2432,8 @@ void S_StartEx(boolean reset)
 
 	if (mapmusflags & MUSIC_RELOADRESET)
 	{
-		UINT32 i = P_RandomKey(PR_MUSICSELECT, 3);
-		strncpy(mapmusname, mapheaderinfo[gamemap-1]->musname[i], 7);
+		UINT32 t = P_RandomKey(PR_MUSICSELECT, mapheaderinfo[gamemap-1]->musname_size);
+		strncpy(mapmusname, mapheaderinfo[gamemap-1]->musname[t], 7);
 		mapmusname[6] = 0;
 		mapmusflags = (mapheaderinfo[gamemap-1]->mustrack & MUSIC_TRACKMASK);
 		mapmusposition = mapheaderinfo[gamemap-1]->muspos;
