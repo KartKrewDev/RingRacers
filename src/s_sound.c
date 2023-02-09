@@ -2431,7 +2431,8 @@ void S_StartEx(boolean reset)
 
 	if (mapmusflags & MUSIC_RELOADRESET)
 	{
-		strncpy(mapmusname, mapheaderinfo[gamemap-1]->musname, 7);
+		UINT32 i = P_RandomKey(PR_MUSICSELECT, 2);
+		strncpy(mapmusname, mapheaderinfo[gamemap-1]->musname[i], 7);
 		mapmusname[6] = 0;
 		mapmusflags = (mapheaderinfo[gamemap-1]->mustrack & MUSIC_TRACKMASK);
 		mapmusposition = mapheaderinfo[gamemap-1]->muspos;
@@ -2514,7 +2515,7 @@ static void Command_Tunes_f(void)
 	}
 	else if (!strcasecmp(tunearg, "-default"))
 	{
-		tunearg = mapheaderinfo[gamemap-1]->musname;
+		tunearg = mapheaderinfo[gamemap-1]->musname[0];
 		track = mapheaderinfo[gamemap-1]->mustrack;
 	}
 

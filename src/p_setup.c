@@ -378,6 +378,8 @@ void P_DeleteFlickies(INT16 i)
   */
 static void P_ClearSingleMapHeaderInfo(INT16 num)
 {
+	UINT8 i = 0;
+	
 	mapheaderinfo[num]->lvlttl[0] = '\0';
 	mapheaderinfo[num]->subttl[0] = '\0';
 	mapheaderinfo[num]->zonttl[0] = '\0';
@@ -385,8 +387,11 @@ static void P_ClearSingleMapHeaderInfo(INT16 num)
 	mapheaderinfo[num]->typeoflevel = 0;
 	mapheaderinfo[num]->gravity = DEFAULT_GRAVITY;
 	mapheaderinfo[num]->keywords[0] = '\0';
-	sprintf(mapheaderinfo[num]->musname, "%.5sM", G_BuildMapName(num+1));
-	mapheaderinfo[num]->musname[6] = 0;
+	for (i = 0; i < 3; i++)
+	{
+		sprintf(mapheaderinfo[num]->musname[i], "%.5sM", G_BuildMapName(num+1));
+		mapheaderinfo[num]->musname[i][6] = 0;
+	}
 	mapheaderinfo[num]->mustrack = 0;
 	mapheaderinfo[num]->muspos = 0;
 	mapheaderinfo[num]->weather = PRECIP_NONE;

@@ -67,6 +67,8 @@ typedef enum
 	PR_SPARKLE, // Endsign and/or Emerald
 
 	PR_MOVINGTARGET, // Randomised moving targets
+	
+	PR_MUSICSELECT, // Randomized music selection
 
 	PRNUMCLASS
 } pr_class_t;

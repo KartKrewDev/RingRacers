@@ -1165,11 +1165,16 @@ void readlevelheader(MYFILE *f, char * name)
 			else if (fastcmp(word, "MUSIC"))
 			{
 				if (fastcmp(word2, "NONE"))
-					mapheaderinfo[num]->musname[0] = 0; // becomes empty string
+					mapheaderinfo[num]->musname[0][0] = 0; // becomes empty string
 				else
 				{
-					deh_strlcpy(mapheaderinfo[num]->musname, word2,
-						sizeof(mapheaderinfo[num]->musname), va("Level header %d: music", num));
+					UINT8 i = 0;
+					tmp = strtok(word2, ",");
+					do {
+						deh_strlcpy(mapheaderinfo[num]->musname[i], tmp,
+							sizeof(mapheaderinfo[num]->musname[i]), va("Level header %d: music", num));
+						i += 1;
+					} while ((tmp = strtok(NULL,",")) != NULL);
 				}
 			}
 			else if (fastcmp(word, "MUSICSLOT"))
