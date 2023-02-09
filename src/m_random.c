@@ -213,7 +213,7 @@ UINT8 P_RandomByteD(const char *rfile, INT32 rline, pr_class_t pr_class)
   * NOTE: Maximum range is 65536.
   *
   * \param a Number of items in array.
-  * \return A random integer from [0,a].
+  * \return A random integer from [0,a).
   * \sa __internal_prng__
   */
 #ifndef DEBUGRANDOM
