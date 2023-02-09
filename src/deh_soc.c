@@ -1168,12 +1168,12 @@ void readlevelheader(MYFILE *f, char * name)
 					mapheaderinfo[num]->musname[0][0] = 0; // becomes empty string
 				else
 				{
-					UINT8 i = 0;
+					UINT8 j = 0; // i was declared elsewhere
 					tmp = strtok(word2, ",");
 					do {
-						deh_strlcpy(mapheaderinfo[num]->musname[i], tmp,
-							sizeof(mapheaderinfo[num]->musname[i]), va("Level header %d: music", num));
-						i += 1;
+						deh_strlcpy(mapheaderinfo[num]->musname[j], tmp,
+							sizeof(mapheaderinfo[num]->musname[j]), va("Level header %d: music", num));
+						j += 1;
 					} while ((tmp = strtok(NULL,",")) != NULL);
 				}
 			}
