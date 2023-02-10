@@ -2784,14 +2784,6 @@ int LUA_MapLib(lua_State *L)
 		//lua_pushcfunction(L, mapheaderinfo_num);
 		//lua_setfield(L, -2, "__len");
 	lua_pop(L, 1);
-	
-/*	luaL_newmetatable(L, META_MUSNAME);
-		lua_pushcfunction(L, musname_get);
-		lua_setfield(L, -2, "__index");
-		
-		lua_pushcfunction(L, musname_len);
-		lua_setfield(L, -2, "__len");
-	lua_pop(L, 1);*/
 
 	luaL_newmetatable(L, META_ACTIVATOR);
 		lua_pushcfunction(L, activator_get);
