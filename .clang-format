@@ -55,3 +55,4 @@ SpacesInConditionalStatement: false
 SpacesInContainerLiterals: false
 SpacesInParentheses: false
 SpacesInSquareBrackets: false
+PenaltyReturnTypeOnItsOwnLine: 1000
