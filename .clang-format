@@ -20,7 +20,7 @@ AlwaysBreakTemplateDeclarations: Yes
 BinPackArguments: false
 BinPackParameters: false
 BreakBeforeBraces: Allman # Always break before braces, to match existing SRB2 code
-BreakConstructorInitializers: BeforeComma
+BreakConstructorInitializers: AfterColon
 CompactNamespaces: true
 ConstructorInitializerAllOnOneLineOrOnePerLine: true
 Cpp11BracedListStyle: true
