@@ -369,6 +369,8 @@ struct staffbrief_t
 	tic_t lap;
 };
 
+#define MAXMUSNAMES 3 // maximum definable music tracks per level
+
 /** Map header information.
   */
 struct mapheader_t

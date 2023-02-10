@@ -50,6 +50,7 @@
 // SRB2Kart
 #include "filesrch.h" // refreshdirmenu
 #include "k_follower.h"
+#include "doomstat.h" // MAXMUSNAMES
 
 // Loops through every constant and operation in word and performs its calculations, returning the final value.
 fixed_t get_number(const char *word)
@@ -1173,7 +1174,8 @@ void readlevelheader(MYFILE *f, char * name)
 					do {
 						deh_strlcpy(mapheaderinfo[num]->musname[j], tmp,
 							sizeof(mapheaderinfo[num]->musname[j]), va("Level header %d: music", num));
-						j += 1;
+						if (j < MAXMUSNAMES)
+							j++;
 					} while ((tmp = strtok(NULL,",")) != NULL);
 					mapheaderinfo[num]->musname_size = j;
 				}

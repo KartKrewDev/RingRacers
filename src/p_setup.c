@@ -100,6 +100,7 @@
 #include "k_director.h" // K_InitDirector
 #include "k_specialstage.h"
 #include "acs/interface.h"
+#include "doomstat.h" // MAXMUSNAMES
 
 // Replay names have time
 #if !defined (UNDER_CE)
@@ -387,7 +388,7 @@ static void P_ClearSingleMapHeaderInfo(INT16 num)
 	mapheaderinfo[num]->typeoflevel = 0;
 	mapheaderinfo[num]->gravity = DEFAULT_GRAVITY;
 	mapheaderinfo[num]->keywords[0] = '\0';
-	for (i = 0; i < 3; i++)
+	for (i = 0; i < MAXMUSNAMES; i++)
 	{
 		sprintf(mapheaderinfo[num]->musname[i], "%.5sM", G_BuildMapName(num+1));
 		mapheaderinfo[num]->musname[i][6] = 0;
