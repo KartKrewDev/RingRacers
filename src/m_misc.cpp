@@ -1509,7 +1509,7 @@ void M_StopMovie(void)
   * \param palette  Palette of image data.
   *  \note if palette is NULL, BGR888 format
   */
-boolean M_SavePNG(const char *filename, void *data, int width, int height, const UINT8 *palette)
+boolean M_SavePNG(const char *filename, const void *data, int width, int height, const UINT8 *palette)
 {
 	png_structp png_ptr;
 	png_infop png_info_ptr;
@@ -1580,7 +1580,7 @@ boolean M_SavePNG(const char *filename, void *data, int width, int height, const
 
 	png_write_info(png_ptr, png_info_ptr);
 
-	M_PNGImage(png_ptr, png_info_ptr, height, static_cast<png_bytep>(data));
+	M_PNGImage(png_ptr, png_info_ptr, height, (png_bytep)data);
 
 	png_write_end(png_ptr, png_info_ptr);
 	png_destroy_write_struct(&png_ptr, &png_info_ptr);
@@ -1688,19 +1688,24 @@ void M_ScreenShot(void)
 	takescreenshot = true;
 }
 
+void M_DoLegacyGLScreenShot(void)
+{
+	const std::byte* fake_data = nullptr;
+	M_DoScreenShot(vid.width, vid.height, tcb::span(fake_data, vid.width * vid.height));
+}
+
 /** Takes a screenshot.
   * The screenshot is saved as "srb2xxxx.png" where xxxx is the lowest
   * four-digit number for which a file does not already exist.
   *
   * \sa HWR_ScreenShot
   */
-void M_DoScreenShot(void)
+void M_DoScreenShot(UINT32 width, UINT32 height, tcb::span<const std::byte> data)
 {
 #if NUMSCREENS > 2
 	const char *freename = NULL;
 	char pathname[MAX_WADPATH];
 	boolean ret = false;
-	UINT8 *linear = NULL;
 
 	// Don't take multiple screenshots, obviously
 	takescreenshot = false;
@@ -1733,13 +1738,6 @@ void M_DoScreenShot(void)
 		freename = Newsnapshotfile(pathname,"tga");
 #endif
 
-	if (rendermode == render_soft)
-	{
-		// munge planar buffer to linear
-		linear = screens[2];
-		I_ReadScreen(linear);
-	}
-
 	if (!freename)
 		goto failure;
 
@@ -1750,9 +1748,9 @@ void M_DoScreenShot(void)
 	else
 #endif
 	{
-		M_CreateScreenShotPalette();
+		const void* pixel_data = static_cast<const void*>(data.data());
 #ifdef USE_PNG
-		ret = M_SavePNG(va(pandf,pathname,freename), linear, vid.width, vid.height, screenshot_palette);
+		ret = M_SavePNG(va(pandf,pathname,freename), pixel_data, width, height, NULL);
 #else
 		ret = WritePCXfile(va(pandf,pathname,freename), linear, vid.width, vid.height, screenshot_palette);
 #endif

@@ -1603,8 +1603,6 @@ void G_PreLevelTitleCard(void)
 
         if (moviemode)
             M_SaveFrame();
-        if (takescreenshot) // Only take screenshots after drawing.
-            M_DoScreenShot();
 
         while (!((nowtime = I_GetTime()) - lasttime))
         {
@@ -4396,7 +4394,7 @@ void G_LoadGameData(void)
 	{
 		// Don't load, but do save. (essentially, reset)
 		gamedata->loaded = true;
-		return; 
+		return;
 	}
 
 	if (P_SaveBufferFromFile(&save, va(pandf, srb2home, gamedatafilename)) == false)

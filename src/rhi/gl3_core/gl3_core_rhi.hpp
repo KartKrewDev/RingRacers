@@ -226,7 +226,8 @@ public:
 	virtual void set_viewport(Handle<GraphicsContext> ctx, const Rect& rect) override;
 	virtual void draw(Handle<GraphicsContext> ctx, uint32_t vertex_count, uint32_t first_vertex) override;
 	virtual void draw_indexed(Handle<GraphicsContext> ctx, uint32_t index_count, uint32_t first_index) override;
-	virtual void read_pixels(Handle<GraphicsContext> ctx, const Rect& rect, tcb::span<std::byte> out) override;
+	virtual void
+	read_pixels(Handle<GraphicsContext> ctx, const Rect& rect, PixelFormat format, tcb::span<std::byte> out) override;
 
 	virtual void present() override;
 

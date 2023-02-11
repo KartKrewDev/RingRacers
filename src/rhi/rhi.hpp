@@ -73,6 +73,7 @@ enum class PixelFormat
 {
 	kR8,
 	kRG8,
+	kRGB8,
 	kRGBA8,
 	kDepth16,
 	kStencil8
@@ -562,7 +563,8 @@ struct Rhi
 	virtual void set_viewport(Handle<GraphicsContext> ctx, const Rect& rect) = 0;
 	virtual void draw(Handle<GraphicsContext> ctx, uint32_t vertex_count, uint32_t first_vertex) = 0;
 	virtual void draw_indexed(Handle<GraphicsContext> ctx, uint32_t index_count, uint32_t first_index) = 0;
-	virtual void read_pixels(Handle<GraphicsContext> ctx, const Rect& rect, tcb::span<std::byte> out) = 0;
+	virtual void
+	read_pixels(Handle<GraphicsContext> ctx, const Rect& rect, PixelFormat format, tcb::span<std::byte> out) = 0;
 
 	virtual void present() = 0;
 

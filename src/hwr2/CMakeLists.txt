@@ -9,6 +9,8 @@ target_sources(SRB2SDL2 PRIVATE
 	pass_postprocess.hpp
 	pass_resource_managers.cpp
 	pass_resource_managers.hpp
+	pass_screenshot.cpp
+	pass_screenshot.hpp
 	pass_software.cpp
 	pass_software.hpp
 	pass_twodee.cpp

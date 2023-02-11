@@ -42,6 +42,12 @@ constexpr GLenum map_pixel_format(rhi::PixelFormat format)
 {
 	switch (format)
 	{
+	case rhi::PixelFormat::kR8:
+		return GL_R8;
+	case rhi::PixelFormat::kRG8:
+		return GL_RG8;
+	case rhi::PixelFormat::kRGB8:
+		return GL_RGB8;
 	case rhi::PixelFormat::kRGBA8:
 		return GL_RGBA8;
 	case rhi::PixelFormat::kDepth16:
@@ -69,6 +75,11 @@ constexpr std::tuple<GLenum, GLenum, GLuint> map_pixel_data_format(rhi::PixelFor
 		layout = GL_RG;
 		type = GL_UNSIGNED_BYTE;
 		size = 2;
+		break;
+	case rhi::PixelFormat::kRGB8:
+		layout = GL_RGB;
+		type = GL_UNSIGNED_BYTE;
+		size = 3;
 		break;
 	case rhi::PixelFormat::kRGBA8:
 		layout = GL_RGBA;
@@ -1581,13 +1592,19 @@ void GlCoreRhi::draw_indexed(Handle<GraphicsContext> ctx, uint32_t index_count, 
 	GL_ASSERT
 }
 
-void GlCoreRhi::read_pixels(Handle<GraphicsContext> ctx, const Rect& rect, tcb::span<std::byte> out)
+void GlCoreRhi::read_pixels(Handle<GraphicsContext> ctx, const Rect& rect, PixelFormat format, tcb::span<std::byte> out)
 {
 	SRB2_ASSERT(graphics_context_active_ == true && graphics_context_generation_ == ctx.generation());
 	SRB2_ASSERT(current_render_pass_.has_value());
 
-	SRB2_ASSERT(out.size_bytes() == rect.w * rect.h);
-	gl_->ReadPixels(rect.x, rect.y, rect.w, rect.h, GL_RGBA, GL_UNSIGNED_BYTE, out.data());
+	std::tuple<GLenum, GLenum, GLuint> gl_format = map_pixel_data_format(format);
+	GLenum layout = std::get<0>(gl_format);
+	GLenum type = std::get<1>(gl_format);
+	GLint size = std::get<2>(gl_format);
+
+	SRB2_ASSERT(out.size_bytes() == rect.w * rect.h * size);
+
+	gl_->ReadPixels(rect.x, rect.y, rect.w, rect.h, layout, type, out.data());
 }
 
 void GlCoreRhi::finish()

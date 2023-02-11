@@ -22,6 +22,7 @@
 #include "hwr2/pass_manager.hpp"
 #include "hwr2/pass_postprocess.hpp"
 #include "hwr2/pass_resource_managers.hpp"
+#include "hwr2/pass_screenshot.hpp"
 #include "hwr2/pass_software.hpp"
 #include "hwr2/pass_twodee.hpp"
 #include "hwr2/twodee.hpp"
@@ -118,6 +119,7 @@ static std::shared_ptr<PassManager> build_pass_manager()
 	twodee->ctx_ = &g_2d;
 	std::shared_ptr<BlitRectPass> pp_simple_blit_pass = std::make_shared<BlitRectPass>(false);
 	std::shared_ptr<PostprocessWipePass> pp_wipe_pass = std::make_shared<PostprocessWipePass>();
+	std::shared_ptr<ScreenshotPass> screenshot_pass = std::make_shared<ScreenshotPass>();
 	std::shared_ptr<ImguiPass> imgui_pass = std::make_shared<ImguiPass>();
 	std::shared_ptr<BlitRectPass> final_composite_pass = std::make_shared<BlitRectPass>(true);
 
@@ -186,7 +188,7 @@ static std::shared_ptr<PassManager> build_pass_manager()
 			}
 			pp_simple_blit_pass->set_texture(color, vid.width, vid.height);
 			pp_simple_blit_pass
-				->set_output(framebuffer_manager->current_post_color(), vid.width, vid.height, false, true);
+				->set_output(framebuffer_manager->current_post_color(), vid.width, vid.height, false, false);
 		}
 	);
 	manager->insert("pp_final_simple_blit", pp_simple_blit_pass);
@@ -210,11 +212,20 @@ static std::shared_ptr<PassManager> build_pass_manager()
 	);
 
 	manager->insert(
+		"screenshot_prepare",
+		[screenshot_pass, framebuffer_manager](PassManager&, Rhi&)
+		{
+			screenshot_pass->set_source(framebuffer_manager->previous_post_color(), vid.width, vid.height);
+		}
+	);
+	manager->insert("screenshot", screenshot_pass);
+
+	manager->insert(
 		"final_composite_prepare",
 		[final_composite_pass, framebuffer_manager](PassManager&, Rhi&)
 		{
 			final_composite_pass->set_texture(framebuffer_manager->previous_post_color(), vid.width, vid.height);
-			final_composite_pass->set_output(kNullHandle, vid.realwidth, vid.realheight, true, true);
+			final_composite_pass->set_output(kNullHandle, vid.realwidth, vid.realheight, true, false);
 		}
 	);
 	manager->insert("final_composite", final_composite_pass);

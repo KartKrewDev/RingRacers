@@ -22,6 +22,13 @@
 #include "command.h"
 
 #ifdef __cplusplus
+
+#include <cstddef>
+
+#include <tcb/span.hpp>
+
+void M_DoScreenShot(uint32_t width, uint32_t height, tcb::span<const std::byte> data);
+
 extern "C" {
 #endif
 
@@ -82,12 +89,14 @@ void FIL_ForceExtension(char *path, const char *extension);
 boolean FIL_CheckExtension(const char *in);
 
 #ifdef HAVE_PNG
-boolean M_SavePNG(const char *filename, void *data, int width, int height, const UINT8 *palette);
+boolean M_SavePNG(const char *filename, const void *data, int width, int height, const UINT8 *palette);
 #endif
 
 extern boolean takescreenshot;
 void M_ScreenShot(void);
-void M_DoScreenShot(void);
+#ifdef HWRENDER
+void M_DoLegacyGLScreenShot(void);
+#endif
 boolean M_ScreenshotResponder(event_t *ev);
 
 void M_MinimapGenerate(void);

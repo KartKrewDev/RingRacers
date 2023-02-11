@@ -868,8 +868,10 @@ void D_SRB2Loop(void)
 		// Only take screenshots after drawing.
 		if (moviemode)
 			M_SaveFrame();
-		if (takescreenshot)
-			M_DoScreenShot();
+#ifdef HWRENDER
+		if (rendermode == render_opengl && takescreenshot)
+			M_DoLegacyGLScreenShot();
+#endif
 
 		// consoleplayer -> displayplayers (hear sounds from viewpoint)
 		S_UpdateSounds(); // move positional sounds
