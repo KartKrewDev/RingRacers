@@ -54,6 +54,8 @@ typedef enum
 	PR_RANDOMSKIN, // Random skin select from Heavy Magician(?)
 
 	PR_RULESCRAMBLE, // Rule scrambing events
+	
+	PR_MUSICSELECT, // Randomized music selection
 
 	PR_ITEM_ROULETTE, // Item results
 	PR_ITEM_RINGS, // Flung ring/bumper/player (on death)

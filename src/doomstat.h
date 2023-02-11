@@ -42,6 +42,7 @@ extern char mapmusname[7];
 extern UINT16 mapmusflags;
 extern UINT32 mapmusposition;
 extern UINT32 mapmusresume;
+extern UINT8 mapmusrng;
 #define MUSIC_TRACKMASK   0x0FFF // ----************
 #define MUSIC_RELOADRESET 0x8000 // *---------------
 #define MUSIC_FORCERESET  0x4000 // -*--------------
@@ -369,6 +370,8 @@ struct staffbrief_t
 	tic_t lap;
 };
 
+#define MAXMUSNAMES 3 // maximum definable music tracks per level
+
 /** Map header information.
   */
 struct mapheader_t
@@ -410,9 +413,10 @@ struct mapheader_t
 	fixed_t gravity;					///< Map-wide gravity.
 
 	// Music information
-	char musname[7];					///< Music track to play. "" for no music.
+	char musname[MAXMUSNAMES][7];		///< Music tracks to play. First dimension is the track number, second is the music string. "" for no music.
 	UINT16 mustrack;					///< Subsong to play. Only really relevant for music modules and specific formats supported by GME. 0 to ignore.
 	UINT32 muspos;						///< Music position to jump to.
+	UINT8 musname_size;					///< Number of music tracks defined
 
 	// Sky information
 	UINT8 weather;						///< See preciptype_t

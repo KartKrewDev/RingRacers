@@ -2508,12 +2508,22 @@ static int mapheaderinfo_get(lua_State *L)
 		lua_pushinteger(L, header->typeoflevel);
 	else if (fastcmp(field,"keywords"))
 		lua_pushstring(L, header->keywords);
-	else if (fastcmp(field,"musname"))
-		lua_pushstring(L, header->musname);
+	else if (fastcmp(field,"musname")) // we create a table here because it saves us from a userdata nightmare
+	{
+		UINT8 i;
+		lua_createtable(L, header->musname_size, 0);
+		for (i = 0; i < header->musname_size; i++)
+		{
+			lua_pushstring(L, header->musname[i]);
+			lua_rawseti(L, -2, 1 + i);
+		}
+	}
 	else if (fastcmp(field,"mustrack"))
 		lua_pushinteger(L, header->mustrack);
 	else if (fastcmp(field,"muspos"))
 		lua_pushinteger(L, header->muspos);
+	else if (fastcmp(field,"musname_size"))
+		lua_pushinteger(L, header->musname_size);
 	else if (fastcmp(field,"weather"))
 		lua_pushinteger(L, header->weather);
 	else if (fastcmp(field,"skytexture"))

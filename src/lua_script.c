@@ -309,6 +309,9 @@ int LUA_PushGlobals(lua_State *L, const char *word)
 	} else if (fastcmp(word,"mapmusposition")) {
 		lua_pushinteger(L, mapmusposition);
 		return 1;
+	} else if (fastcmp(word,"mapmusrng")) {
+		lua_pushinteger(L, mapmusrng);
+		return 1;
 	// local player variables, by popular request
 	} else if (fastcmp(word,"consoleplayer")) { // player controlling console (aka local player 1)
 		if (!addedtogame || consoleplayer < 0 || !playeringame[consoleplayer])
@@ -429,6 +432,8 @@ int LUA_WriteGlobals(lua_State *L, const char *word)
 	}
 	else if (fastcmp(word, "mapmusflags"))
 		mapmusflags = (UINT16)luaL_checkinteger(L, 2);
+	else if (fastcmp(word, "mapmusrng"))
+		mapmusrng = (UINT8)luaL_checkinteger(L, 2);
 	// SRB2Kart
 	else if (fastcmp(word,"racecountdown"))
 		racecountdown = (tic_t)luaL_checkinteger(L, 2);

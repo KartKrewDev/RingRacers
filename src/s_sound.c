@@ -32,6 +32,7 @@
 #include "lua_hook.h" // MusicChange hook
 #include "byteptr.h"
 #include "k_menu.h" // M_PlayMenuJam
+#include "m_random.h" // P_RandomKey
 
 #ifdef HW3SOUND
 // 3D Sound Interface
@@ -2425,13 +2426,19 @@ boolean S_FadeOutStopMusic(UINT32 ms)
 // Kills playing sounds at start of level,
 //  determines music if any, changes music.
 //
-void S_StartEx(boolean reset)
+void S_InitLevelMusic(boolean fromnetsave)
 {
-	(void)reset;
 
 	if (mapmusflags & MUSIC_RELOADRESET)
 	{
-		strncpy(mapmusname, mapheaderinfo[gamemap-1]->musname, 7);
+		if (!fromnetsave)
+		{
+			if (mapheaderinfo[gamemap-1]->musname_size > 1)
+				mapmusrng = P_RandomKey(PR_MUSICSELECT, mapheaderinfo[gamemap-1]->musname_size);
+			else
+				mapmusrng = 0;
+		}
+		strncpy(mapmusname, mapheaderinfo[gamemap-1]->musname[mapmusrng], 7);
 		mapmusname[6] = 0;
 		mapmusflags = (mapheaderinfo[gamemap-1]->mustrack & MUSIC_TRACKMASK);
 		mapmusposition = mapheaderinfo[gamemap-1]->muspos;
@@ -2514,7 +2521,7 @@ static void Command_Tunes_f(void)
 	}
 	else if (!strcasecmp(tunearg, "-default"))
 	{
-		tunearg = mapheaderinfo[gamemap-1]->musname;
+		tunearg = mapheaderinfo[gamemap-1]->musname[0];
 		track = mapheaderinfo[gamemap-1]->mustrack;
 	}
 
