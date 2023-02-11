@@ -389,10 +389,7 @@ static void P_ClearSingleMapHeaderInfo(INT16 num)
 	mapheaderinfo[num]->gravity = DEFAULT_GRAVITY;
 	mapheaderinfo[num]->keywords[0] = '\0';
 	for (i = 0; i < MAXMUSNAMES; i++)
-	{
-		sprintf(mapheaderinfo[num]->musname[i], "%.5sM", G_BuildMapName(num+1));
-		mapheaderinfo[num]->musname[i][6] = 0;
-	}
+		mapheaderinfo[num]->musname[i][0] = 0;
 	mapheaderinfo[num]->mustrack = 0;
 	mapheaderinfo[num]->muspos = 0;
 	mapheaderinfo[num]->musname_size = 0;
