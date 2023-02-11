@@ -93,7 +93,7 @@ char   mapmusname[7]; // Music name
 UINT16 mapmusflags; // Track and reset bit
 UINT32 mapmusposition; // Position to jump to
 UINT32 mapmusresume;
-UINT32 mapmusrng; // Random selection result
+UINT8 mapmusrng; // Random selection result
 
 INT16 gamemap = 1;
 UINT32 maptol;

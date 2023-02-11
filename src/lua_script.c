@@ -433,7 +433,7 @@ int LUA_WriteGlobals(lua_State *L, const char *word)
 	else if (fastcmp(word, "mapmusflags"))
 		mapmusflags = (UINT16)luaL_checkinteger(L, 2);
 	else if (fastcmp(word, "mapmusrng"))
-		mapmusrng = (UINT32)luaL_checkinteger(L, 2);
+		mapmusrng = (UINT8)luaL_checkinteger(L, 2);
 	// SRB2Kart
 	else if (fastcmp(word,"racecountdown"))
 		racecountdown = (tic_t)luaL_checkinteger(L, 2);
