@@ -38,7 +38,8 @@ add_executable(SRB2SDL2 MACOSX_BUNDLE WIN32
 	m_cond.c
 	m_easing.c
 	m_fixed.c
-	m_misc.c
+	m_memcpy.c
+	m_misc.cpp
 	m_perfstats.c
 	m_random.c
 	m_queue.c
