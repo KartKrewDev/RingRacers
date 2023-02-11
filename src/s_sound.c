@@ -2426,14 +2426,19 @@ boolean S_FadeOutStopMusic(UINT32 ms)
 // Kills playing sounds at start of level,
 //  determines music if any, changes music.
 //
-void S_StartEx(boolean reset)
+void S_InitLevelMusic(boolean fromnetsave)
 {
-	(void)reset;
 
 	if (mapmusflags & MUSIC_RELOADRESET)
 	{
-		UINT32 t = P_RandomKey(PR_MUSICSELECT, mapheaderinfo[gamemap-1]->musname_size);
-		strncpy(mapmusname, mapheaderinfo[gamemap-1]->musname[t], 7);
+		if (!fromnetsave)
+		{
+			if (mapheaderinfo[gamemap-1]->musname_size > 1)
+				mapmusrng = P_RandomKey(PR_MUSICSELECT, mapheaderinfo[gamemap-1]->musname_size);
+			else
+				mapmusrng = 0;
+		}
+		strncpy(mapmusname, mapheaderinfo[gamemap-1]->musname[mapmusrng], 7);
 		mapmusname[6] = 0;
 		mapmusflags = (mapheaderinfo[gamemap-1]->mustrack & MUSIC_TRACKMASK);
 		mapmusposition = mapheaderinfo[gamemap-1]->muspos;

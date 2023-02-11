@@ -4881,6 +4881,8 @@ static void P_NetArchiveMisc(savebuffer_t *save, boolean resending)
 	}
 
 	WRITEUINT8(save->p, encoremode);
+	
+	WRITEUINT32(save->p, mapmusrng);
 
 	WRITEUINT32(save->p, leveltime);
 	WRITEINT16(save->p, lastmap);
@@ -5045,6 +5047,8 @@ static inline boolean P_NetUnArchiveMisc(savebuffer_t *save, boolean reloading)
 	}
 
 	encoremode = (boolean)READUINT8(save->p);
+	
+	mapmusrng = READUINT32(save->p);
 
 	if (!P_LoadLevel(true, reloading))
 	{

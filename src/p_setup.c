@@ -7640,10 +7640,9 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 				S_StartSound(NULL, sfx_s3k73);
 			}
 
-			// As oddly named as this is, this handles music only.
-			// We should be fine starting it here.
+			// We should be fine starting music here.
 			// Don't do this during titlemap, because the menu code handles music by itself.
-			S_Start();
+			S_InitLevelMusic(fromnetsave);
 		}
 
 		if (gametyperules & GTR_SPECIALSTART)
