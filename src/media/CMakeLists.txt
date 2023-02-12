@@ -6,4 +6,7 @@ target_sources(SRB2SDL2 PRIVATE
 	options.hpp
 	video_encoder.hpp
 	video_frame.hpp
+	vorbis.cpp
+	vorbis.hpp
+	vorbis_error.hpp
 )
