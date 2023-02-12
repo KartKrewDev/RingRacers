@@ -1,5 +1,7 @@
 target_sources(SRB2SDL2 PRIVATE
 	audio_encoder.hpp
+	cfile.cpp
+	cfile.hpp
 	container.hpp
 	encoder.hpp
 	options.cpp
@@ -12,6 +14,10 @@ target_sources(SRB2SDL2 PRIVATE
 	vp8.cpp
 	vp8.hpp
 	vpx_error.hpp
+	webm.hpp
+	webm_container.cpp
+	webm_container.hpp
+	webm_writer.hpp
 	yuv420p.cpp
 	yuv420p.hpp
 )
