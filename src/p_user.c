@@ -4207,7 +4207,11 @@ void P_PlayerThink(player_t *player)
 	if (player->nocontrol && player->nocontrol < UINT16_MAX)
 	{
 		if (!(--player->nocontrol))
+		{
 			player->pflags &= ~PF_FAULT;
+			player->mo->renderflags &= ~RF_DONTDRAW;
+			player->mo->flags &= ~MF_NOCLIPTHING;
+		}
 	}
 	else
 		player->nocontrol = 0;
