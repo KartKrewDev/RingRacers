@@ -9,6 +9,9 @@ target_sources(SRB2SDL2 PRIVATE
 	vorbis.cpp
 	vorbis.hpp
 	vorbis_error.hpp
+	vp8.cpp
+	vp8.hpp
+	vpx_error.hpp
 	yuv420p.cpp
 	yuv420p.hpp
 )
