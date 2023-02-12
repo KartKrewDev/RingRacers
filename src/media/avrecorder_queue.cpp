@@ -69,6 +69,8 @@ bool Impl::Queue<T>::advance(int new_pts, int duration)
 
 	if (impl_->max_size_)
 	{
+		constexpr float kError = 0.99f; // 1% muxing overhead
+
 		const MediaEncoder::BitRate est = encoder_->estimated_bit_rate();
 
 		const float br = est.bits / 8.f;
@@ -76,7 +78,7 @@ bool Impl::Queue<T>::advance(int new_pts, int duration)
 		// count size of already queued frames too
 		const float t = ((duration + queued_frames_) * time_scale()) / est.period;
 
-		if ((impl_->container_->size() + (t * br)) > *impl_->max_size_)
+		if ((impl_->container_->size() + (t * br)) > (*impl_->max_size_ * kError))
 		{
 			return finish(), false;
 		}
