@@ -1106,6 +1106,7 @@ static void K_AddItemToReel(const player_t *player, itemroulette_t *const roulet
 	// a BUNCH of Super Rings.
 	if (K_ItemEnabled(KITEM_SUPERRING) == true
 		&& player->rings <= 0
+		&& player->position == 1
 		&& (gametyperules & GTR_SPHERES) == 0)
 	{
 		K_PushToRouletteItemList(roulette, KITEM_SUPERRING);
