@@ -3,6 +3,7 @@ target_sources(SRB2SDL2 PRIVATE
 	avrecorder.cpp
 	avrecorder.hpp
 	avrecorder_impl.hpp
+	avrecorder_indexed.cpp
 	avrecorder_queue.cpp
 	cfile.cpp
 	cfile.hpp

@@ -53,7 +53,7 @@ public:
 		template <typename _>
 		struct Traits<VideoEncoder, _>
 		{
-			using frame_type = VideoFrame::instance_t;
+			using frame_type = IndexedVideoFrame::instance_t;
 		};
 
 		std::vector<typename Traits<T>::frame_type> vec_;
@@ -142,6 +142,9 @@ private:
 	QueueState encode_queues();
 
 	void worker();
+
+	// TODO: remove once hwr2 twodee is finished
+	VideoFrame::instance_t convert_indexed_video_frame(const IndexedVideoFrame& indexed);
 };
 
 template <>

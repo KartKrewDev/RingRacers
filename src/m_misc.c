@@ -1380,6 +1380,12 @@ void M_SaveFrame(void)
 
 	if (moviemode == MM_AVRECORDER)
 	{
+		// TODO: replace once hwr2 twodee is finished
+		if (rendermode == render_soft)
+		{
+			M_AVRecorder_CopySoftwareScreen();
+		}
+
 		if (M_AVRecorder_IsExpired())
 		{
 			M_StopMovie();
@@ -1387,6 +1393,7 @@ void M_SaveFrame(void)
 		return;
 	}
 
+	// skip interpolated frames for other modes
 	if (oldtic == I_GetTime())
 		return;
 	else

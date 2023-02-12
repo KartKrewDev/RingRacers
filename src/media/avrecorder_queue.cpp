@@ -119,7 +119,15 @@ Impl::QueueState Impl::encode_queues()
 	};
 
 	auto encode_audio = [this](auto copy) { audio_encoder_->encode(copy); };
-	auto encode_video = [this](auto copy) {};
+	auto encode_video = [this](auto copy)
+	{
+		for (auto& p : copy)
+		{
+			auto frame = convert_indexed_video_frame(*p);
+
+			video_encoder_->encode(std::move(frame));
+		}
+	};
 
 	check(audio_queue_, encode_audio);
 	check(video_queue_, encode_video);

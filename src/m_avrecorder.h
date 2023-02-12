@@ -30,6 +30,9 @@ boolean M_AVRecorder_IsExpired(void);
 
 const char *M_AVRecorder_GetCurrentFormat(void);
 
+// TODO: remove once hwr2 twodee is finished
+void M_AVRecorder_CopySoftwareScreen(void);
+
 extern consvar_t
 	cv_movie_custom_resolution,
 	cv_movie_duration,

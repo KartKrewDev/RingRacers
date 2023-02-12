@@ -7,12 +7,15 @@
 // See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
 
+#include <algorithm>
 #include <chrono>
+#include <cstdint>
 #include <exception>
 #include <memory>
 #include <stdexcept>
 
 #include <fmt/format.h>
+#include <tcb/span.hpp>
 
 #include "cxxutil.hpp"
 #include "m_avrecorder.hpp"
@@ -22,7 +25,9 @@
 #include "i_sound.h"
 #include "m_avrecorder.h"
 #include "m_fixed.h"
-#include "screen.h" // vid global
+#include "screen.h"	  // vid global
+#include "st_stuff.h" // st_palette
+#include "v_video.h"  // pLocalPalette
 
 using namespace srb2::media;
 
@@ -206,4 +211,25 @@ boolean M_AVRecorder_IsExpired(void)
 	SRB2_ASSERT(g_av_recorder != nullptr);
 
 	return g_av_recorder->invalid();
+}
+
+// TODO: remove once hwr2 twodee is finished
+void M_AVRecorder_CopySoftwareScreen(void)
+{
+	SRB2_ASSERT(g_av_recorder != nullptr);
+
+	auto frame = g_av_recorder->new_indexed_video_frame(vid.width, vid.height);
+
+	if (!frame)
+	{
+		return;
+	}
+
+	tcb::span<RGBA_t> pal(&pLocalPalette[std::max(st_palette, 0) * 256], 256);
+	tcb::span<uint8_t> scr(screens[0], vid.width * vid.height);
+
+	std::copy(pal.begin(), pal.end(), frame->palette.begin());
+	std::copy(scr.begin(), scr.end(), frame->screen.begin());
+
+	g_av_recorder->push_indexed_video_frame(std::move(frame));
 }
