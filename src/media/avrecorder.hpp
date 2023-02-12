@@ -57,10 +57,17 @@ public:
 		std::optional<Video> video;
 	};
 
+	// Returns the canonical file extension minus the dot.
+	// E.g. "webm" (not ".webm").
+	static const char* file_extension();
+
 	AVRecorder(Config config);
 	~AVRecorder();
 
 	void push_audio_samples(audio_buffer_t buffer);
+
+	// Proper name of the container format.
+	const char* format_name() const;
 
 	// True if this instance has terminated. Continuing to use
 	// this interface is useless and the object should be

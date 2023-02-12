@@ -44,6 +44,7 @@
 #include "command.h" // cv_execversion
 
 #include "m_anigif.h"
+#include "m_avrecorder.h"
 
 // So that the screenshot menu auto-updates...
 #include "k_menu.h"
@@ -113,8 +114,8 @@ consvar_t cv_screenshot_folder = CVAR_INIT ("screenshot_folder", "", CV_SAVE, NU
 
 consvar_t cv_screenshot_colorprofile = CVAR_INIT ("screenshot_colorprofile", "Yes", CV_SAVE, CV_YesNo, NULL);
 
-static CV_PossibleValue_t moviemode_cons_t[] = {{MM_GIF, "GIF"}, {MM_APNG, "aPNG"}, {MM_SCREENSHOT, "Screenshots"}, {0, NULL}};
-consvar_t cv_moviemode = CVAR_INIT ("moviemode_mode", "GIF", CV_SAVE|CV_CALL, moviemode_cons_t, Moviemode_mode_Onchange);
+static CV_PossibleValue_t moviemode_cons_t[] = {{MM_GIF, "GIF"}, {MM_APNG, "aPNG"}, {MM_SCREENSHOT, "Screenshots"}, {MM_AVRECORDER, "WebM"}, {0, NULL}};
+consvar_t cv_moviemode = CVAR_INIT ("moviemode_mode", "WebM", CV_SAVE|CV_CALL, moviemode_cons_t, Moviemode_mode_Onchange);
 
 consvar_t cv_movie_option = CVAR_INIT ("movie_option", "Default", CV_SAVE|CV_CALL, screenshot_cons_t, Moviemode_option_Onchange);
 consvar_t cv_movie_folder = CVAR_INIT ("movie_folder", "", CV_SAVE, NULL, NULL);
@@ -1295,6 +1296,25 @@ static inline moviemode_t M_StartMovieGIF(const char *pathname)
 }
 #endif
 
+static inline moviemode_t M_StartMovieAVRecorder(const char *pathname)
+{
+	const char *ext = M_AVRecorder_GetFileExtension();
+	const char *freename;
+
+	if (!(freename = Newsnapshotfile(pathname, ext)))
+	{
+		CONS_Alert(CONS_ERROR, "Couldn't create %s file: no slots open in %s\n", ext, pathname);
+		return MM_OFF;
+	}
+
+	if (!M_AVRecorder_Open(va(pandf,pathname,freename)))
+	{
+		return MM_OFF;
+	}
+
+	return MM_AVRECORDER;
+}
+
 void M_StartMovie(void)
 {
 #if NUMSCREENS > 2
@@ -1332,6 +1352,9 @@ void M_StartMovie(void)
 		case MM_SCREENSHOT:
 			moviemode = MM_SCREENSHOT;
 			break;
+		case MM_AVRECORDER:
+			moviemode = M_StartMovieAVRecorder(pathname);
+			break;
 		default: //???
 			return;
 	}
@@ -1342,6 +1365,8 @@ void M_StartMovie(void)
 		CONS_Printf(M_GetText("Movie mode enabled (%s).\n"), "GIF");
 	else if (moviemode == MM_SCREENSHOT)
 		CONS_Printf(M_GetText("Movie mode enabled (%s).\n"), "screenshots");
+	else if (moviemode == MM_AVRECORDER)
+		CONS_Printf(M_GetText("Movie mode enabled (%s).\n"), M_AVRecorder_GetCurrentFormat());
 
 	//singletics = (moviemode != MM_OFF);
 #endif
@@ -1352,6 +1377,15 @@ void M_SaveFrame(void)
 #if NUMSCREENS > 2
 	// paranoia: should be unnecessary without singletics
 	static tic_t oldtic = 0;
+
+	if (moviemode == MM_AVRECORDER)
+	{
+		if (M_AVRecorder_IsExpired())
+		{
+			M_StopMovie();
+		}
+		return;
+	}
 
 	if (oldtic == I_GetTime())
 		return;
@@ -1439,6 +1473,9 @@ void M_StopMovie(void)
 			return;
 #endif
 		case MM_SCREENSHOT:
+			break;
+		case MM_AVRECORDER:
+			M_AVRecorder_Close();
 			break;
 		default:
 			return;

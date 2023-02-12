@@ -170,6 +170,11 @@ void Impl::worker()
 	valid_ = false;
 }
 
+const char* AVRecorder::file_extension()
+{
+	return "webm";
+}
+
 AVRecorder::AVRecorder(const Config config) : impl_(std::make_unique<Impl>(config))
 {
 }
@@ -184,6 +189,11 @@ AVRecorder::~AVRecorder()
 	//       not possibly terminate before fully destroyed?
 
 	std::thread([_ = std::move(impl_)] {}).detach();
+}
+
+const char* AVRecorder::format_name() const
+{
+	return impl_->container_->name();
 }
 
 void AVRecorder::push_audio_samples(audio_buffer_t buffer)

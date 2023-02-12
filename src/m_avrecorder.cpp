@@ -185,6 +185,18 @@ void M_AVRecorder_Close(void)
 	g_av_recorder.reset();
 }
 
+const char* M_AVRecorder_GetFileExtension(void)
+{
+	return AVRecorder::file_extension();
+}
+
+const char* M_AVRecorder_GetCurrentFormat(void)
+{
+	SRB2_ASSERT(g_av_recorder != nullptr);
+
+	return g_av_recorder->format_name();
+}
+
 boolean M_AVRecorder_IsExpired(void)
 {
 	SRB2_ASSERT(g_av_recorder != nullptr);
