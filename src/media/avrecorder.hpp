@@ -80,6 +80,9 @@ public:
 	AVRecorder(Config config);
 	~AVRecorder();
 
+	void print_configuration() const;
+	void draw_statistics() const;
+
 	void push_audio_samples(audio_buffer_t buffer);
 
 	// May return nullptr in case called between units of

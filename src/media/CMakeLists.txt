@@ -2,6 +2,7 @@ target_sources(SRB2SDL2 PRIVATE
 	audio_encoder.hpp
 	avrecorder.cpp
 	avrecorder.hpp
+	avrecorder_feedback.cpp
 	avrecorder_impl.hpp
 	avrecorder_indexed.cpp
 	avrecorder_queue.cpp

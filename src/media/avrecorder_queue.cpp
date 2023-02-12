@@ -127,6 +127,8 @@ Impl::QueueState Impl::encode_queues()
 
 			video_encoder_->encode(std::move(frame));
 		}
+
+		update_video_frame_rate_avg();
 	};
 
 	check(audio_queue_, encode_audio);
@@ -143,6 +145,21 @@ Impl::QueueState Impl::encode_queues()
 	else
 	{
 		return QueueState::kFinished;
+	}
+}
+
+void Impl::update_video_frame_rate_avg()
+{
+	constexpr auto period = std::chrono::duration<float>(1.f);
+
+	auto& ref = video_frame_count_reference_;
+	const auto count = video_encoder_->frame_count();
+	const auto t = (count.duration - ref.duration);
+
+	if (t >= period)
+	{
+		video_frame_rate_avg_ = (count.frames - ref.frames) * (period / t);
+		ref = count;
 	}
 }
 

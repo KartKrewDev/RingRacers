@@ -110,6 +110,9 @@ public:
 	// 2) the object has begun destructing
 	std::atomic<bool> valid_ = true;
 
+	// Average number of frames actually encoded per second.
+	std::atomic<float> video_frame_rate_avg_ = 0.f;
+
 	Impl(Config config);
 	~Impl();
 
@@ -132,6 +135,8 @@ private:
 
 	const tic_t epoch_;
 
+	VideoEncoder::FrameCount video_frame_count_reference_ = {};
+
 	std::thread thread_;
 	mutable std::recursive_mutex queue_mutex_; // guards audio and video queues
 	std::condition_variable_any queue_cond_;
@@ -140,8 +145,11 @@ private:
 	std::unique_ptr<VideoEncoder> make_video_encoder(const Config cfg) const;
 
 	QueueState encode_queues();
+	void update_video_frame_rate_avg();
 
 	void worker();
+
+	void container_dtor_handler(const MediaContainer& container) const;
 
 	// TODO: remove once hwr2 twodee is finished
 	VideoFrame::instance_t convert_indexed_video_frame(const IndexedVideoFrame& indexed);

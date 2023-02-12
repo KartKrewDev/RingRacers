@@ -1366,7 +1366,10 @@ void M_StartMovie(void)
 	else if (moviemode == MM_SCREENSHOT)
 		CONS_Printf(M_GetText("Movie mode enabled (%s).\n"), "screenshots");
 	else if (moviemode == MM_AVRECORDER)
+	{
 		CONS_Printf(M_GetText("Movie mode enabled (%s).\n"), M_AVRecorder_GetCurrentFormat());
+		M_AVRecorder_PrintCurrentConfiguration();
+	}
 
 	//singletics = (moviemode != MM_OFF);
 #endif

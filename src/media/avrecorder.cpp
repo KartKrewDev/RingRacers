@@ -39,6 +39,7 @@ Impl::Impl(Config cfg) :
 
 	container_(std::make_unique<WebmContainer>(MediaContainer::Config {
 		.file_name = cfg.file_name,
+		.destructor_callback = [this](const MediaContainer& container) { container_dtor_handler(container); },
 	})),
 
 	audio_encoder_(make_audio_encoder(cfg)),

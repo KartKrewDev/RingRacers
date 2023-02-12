@@ -206,11 +206,28 @@ const char* M_AVRecorder_GetCurrentFormat(void)
 	return g_av_recorder->format_name();
 }
 
+void M_AVRecorder_PrintCurrentConfiguration(void)
+{
+	SRB2_ASSERT(g_av_recorder != nullptr);
+
+	g_av_recorder->print_configuration();
+}
+
 boolean M_AVRecorder_IsExpired(void)
 {
 	SRB2_ASSERT(g_av_recorder != nullptr);
 
 	return g_av_recorder->invalid();
+}
+
+void M_AVRecorder_DrawFrameRate(void)
+{
+	if (!cv_movie_showfps.value || !g_av_recorder)
+	{
+		return;
+	}
+
+	g_av_recorder->draw_statistics();
 }
 
 // TODO: remove once hwr2 twodee is finished
