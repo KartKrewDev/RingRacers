@@ -58,7 +58,6 @@ struct Atlas
 struct srb2::hwr2::TwodeePassData
 {
 	Handle<Texture> default_tex;
-	Handle<Texture> palette_tex;
 	Handle<Texture> default_colormap_tex;
 	std::vector<Atlas> patch_atlases;
 	std::unordered_map<const patch_t*, size_t> patch_lookup;
@@ -482,10 +481,6 @@ void TwodeePass::prepass(Rhi& rhi)
 		data_->default_tex = rhi.create_texture({TextureFormat::kLuminanceAlpha, 2, 1});
 		data_->upload_default_tex = true;
 	}
-	if (!data_->palette_tex)
-	{
-		data_->palette_tex = rhi.create_texture({TextureFormat::kRGBA, 256, 1});
-	}
 	if (!data_->default_colormap_tex)
 	{
 		data_->default_colormap_tex = rhi.create_texture({TextureFormat::kLuminance, 256, 1});
@@ -772,24 +767,6 @@ void TwodeePass::transfer(Rhi& rhi, Handle<TransferContext> ctx)
 		data_->upload_default_tex = false;
 	}
 
-	{
-		// TODO share palette tex with software pass
-		// Unfortunately, pMasterPalette must be swizzled to get a linear layout.
-		// Maybe some adjustments to palette storage can make this a straight upload.
-		std::array<byteColor_t, 256> palette_32;
-		for (size_t i = 0; i < 256; i++)
-		{
-			palette_32[i] = pMasterPalette[i].s;
-		}
-		rhi.update_texture(
-			ctx,
-			data_->palette_tex,
-			{0, 0, 256, 1},
-			rhi::PixelFormat::kRGBA8,
-			tcb::as_bytes(tcb::span(palette_32))
-		);
-	}
-
 	for (auto colormap : data_->colormaps_to_upload)
 	{
 		rhi.update_texture(
@@ -821,6 +798,8 @@ void TwodeePass::transfer(Rhi& rhi, Handle<TransferContext> ctx)
 	}
 	data_->patches_to_upload.clear();
 
+	Handle<Texture> palette_tex = palette_manager_->palette();
+
 	// Update the buffers for each list
 	auto ctx_list_itr = ctx_->begin();
 	for (size_t i = 0; i < cmd_lists_.size() && ctx_list_itr != ctx_->end(); i++)
@@ -843,14 +822,14 @@ void TwodeePass::transfer(Rhi& rhi, Handle<TransferContext> ctx)
 				{
 					Atlas& atlas = data_->patch_atlases[atlas_index];
 					tx[0] = {SamplerName::kSampler0, atlas.tex};
-					tx[1] = {SamplerName::kSampler1, data_->palette_tex};
+					tx[1] = {SamplerName::kSampler1, palette_tex};
 				},
 				[&](const MergedTwodeeCommandFlatTexture& tex)
 				{
 					Handle<Texture> th = flat_manager_->find_indexed(tex.lump);
 					SRB2_ASSERT(th != kNullHandle);
 					tx[0] = {SamplerName::kSampler0, th};
-					tx[1] = {SamplerName::kSampler1, data_->palette_tex};
+					tx[1] = {SamplerName::kSampler1, palette_tex};
 				}};
 			if (mcmd.texture)
 			{
@@ -859,7 +838,7 @@ void TwodeePass::transfer(Rhi& rhi, Handle<TransferContext> ctx)
 			else
 			{
 				tx[0] = {SamplerName::kSampler0, data_->default_tex};
-				tx[1] = {SamplerName::kSampler1, data_->palette_tex};
+				tx[1] = {SamplerName::kSampler1, palette_tex};
 			}
 
 			const uint8_t* colormap = mcmd.colormap;

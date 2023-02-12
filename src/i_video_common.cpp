@@ -158,9 +158,10 @@ static std::shared_ptr<PassManager> build_pass_manager()
 
 	manager->insert(
 		"2d_prepare",
-		[twodee, framebuffer_manager](PassManager& mgr, Rhi&)
+		[twodee, framebuffer_manager, palette_manager](PassManager& mgr, Rhi&)
 		{
 			twodee->output_ = framebuffer_manager->current_main_color();
+			twodee->palette_manager_ = palette_manager;
 			twodee->output_width_ = vid.width;
 			twodee->output_height_ = vid.height;
 		}

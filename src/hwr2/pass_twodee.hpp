@@ -76,6 +76,7 @@ struct TwodeePass final : public Pass
 	std::variant<rhi::Handle<rhi::Texture>, rhi::Handle<rhi::Renderbuffer>> out_color_;
 
 	std::shared_ptr<TwodeePassData> data_;
+	std::shared_ptr<MainPaletteManager> palette_manager_;
 	std::shared_ptr<FlatTextureManager> flat_manager_;
 	rhi::Handle<rhi::UniformSet> us_1;
 	rhi::Handle<rhi::UniformSet> us_2;
