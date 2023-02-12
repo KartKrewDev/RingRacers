@@ -15,8 +15,12 @@ target_sources(SRB2SDL2 PRIVATE
 	vp8.hpp
 	vpx_error.hpp
 	webm.hpp
+	webm_encoder.hpp
 	webm_container.cpp
 	webm_container.hpp
+	webm_vorbis.hpp
+	webm_vorbis_lace.cpp
+	webm_vp8.hpp
 	webm_writer.hpp
 	yuv420p.cpp
 	yuv420p.hpp
