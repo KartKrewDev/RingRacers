@@ -549,6 +549,7 @@ if(SRB2_CONFIG_ENABLE_TESTS)
 	add_subdirectory(tests)
 endif()
 add_subdirectory(menus)
+add_subdirectory(media)
 
 # strip debug symbols into separate file when using gcc.
 # to be consistent with Makefile, don't generate for OS X.
