@@ -171,6 +171,8 @@ boolean M_AVRecorder_Open(const char* filename)
 
 		g_av_recorder = std::make_shared<AVRecorder>(cfg);
 
+		I_UpdateAudioRecorder();
+
 		return true;
 	}
 	catch (const std::exception& ex)
@@ -183,6 +185,8 @@ boolean M_AVRecorder_Open(const char* filename)
 void M_AVRecorder_Close(void)
 {
 	g_av_recorder.reset();
+
+	I_UpdateAudioRecorder();
 }
 
 const char* M_AVRecorder_GetFileExtension(void)

@@ -21,6 +21,7 @@
 #include "../audio/sound_effect_player.hpp"
 #include "../cxxutil.hpp"
 #include "../io/streams.hpp"
+#include "../m_avrecorder.hpp"
 
 #include "../doomdef.h"
 #include "../i_sound.h"
@@ -56,6 +57,8 @@ static shared_ptr<Gain<2>> gain_sound_effects;
 static shared_ptr<Gain<2>> gain_music;
 
 static vector<shared_ptr<SoundEffectPlayer>> sound_effect_channels;
+
+static shared_ptr<srb2::media::AVRecorder> av_recorder;
 
 static void (*music_fade_callback)();
 
@@ -135,6 +138,9 @@ void audio_callback(void* userdata, Uint8* buffer, int len)
 				std::clamp(float_buffer[i].amplitudes[1], -1.f, 1.f),
 			};
 		}
+
+		if (av_recorder)
+			av_recorder->push_audio_samples(tcb::span {float_buffer, float_len});
 	}
 	catch (...)
 	{
@@ -748,4 +754,12 @@ boolean I_FadeInPlaySong(UINT32 ms, boolean looping)
 		return I_FadeSongFromVolume(100, 0, ms, nullptr);
 	else
 		return false;
+}
+
+void I_UpdateAudioRecorder(void)
+{
+	// must be locked since av_recorder is used by audio_callback
+	SdlAudioLockHandle _;
+
+	av_recorder = g_av_recorder;
 }
