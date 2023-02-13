@@ -1910,7 +1910,7 @@ static void K_HandleLapIncrement(player_t *player)
 		if (leveltime < starttime && !(gametyperules & GTR_ROLLINGSTART))
 		{
 			// freeze 'em until fault penalty is over
-			player->mo->hitlag = starttime - leveltime + TICRATE*3;
+			player->mo->hitlag = starttime - leveltime + TICRATE*6;
 			player->pflags = PF_VOID;
 			player->mo->renderflags |= RF_DONTDRAW;
 			player->mo->flags |= MF_NOCLIPTHING;
