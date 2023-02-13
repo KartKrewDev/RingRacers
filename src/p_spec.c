@@ -1911,7 +1911,8 @@ static void K_HandleLapIncrement(player_t *player)
 		{
 			// freeze 'em until fault penalty is over
 			player->mo->hitlag = starttime - leveltime + TICRATE*6;
-			player->pflags = PF_VOID;
+			P_ResetPlayer(player);
+			player->pflags |= PF_VOID;
 			player->mo->renderflags |= RF_DONTDRAW;
 			player->mo->flags |= MF_NOCLIPTHING;
 			player->nocontrol = UINT16_MAX;
