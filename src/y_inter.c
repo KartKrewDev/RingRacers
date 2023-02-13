@@ -290,6 +290,9 @@ static void Y_CalculateMatchData(UINT8 rankingsmode, void (*comparison)(INT32))
 //
 void Y_IntermissionDrawer(void)
 {
+
+// dummy ALL OF THIS SHIT out, we're gonnas be starting over.
+#if 0
 	INT32 i, whiteplayer = MAXPLAYERS, x = 4, hilicol = highlightflags;
 
 	// If we early return, skip drawing the 3D scene (software buffer) so it doesn't clobber the frame for the wipe
@@ -584,6 +587,13 @@ skiptallydrawer:
 	}
 
 	M_DrawMenuForeground();
+#endif
+	UINT8 *color = NULL;
+	
+	if (intertype == int_none || rendermode == render_none)
+		return;
+		
+	K_DrawMapThumbnail(0, 0, BASEVIDWIDTH<<FRACBITS, 0, prevmap, color);
 }
 
 //
