@@ -119,6 +119,8 @@ void K_DoFault(player_t *player)
 		S_StartSound(player->mo, sfx_s3k83);
 		player->karthud[khud_fault] = 1;
 		player->pflags |= PF_FAULT;
+		player->mo->renderflags |= RF_DONTDRAW;
+		player->mo->flags |= MF_NOCLIPTHING;
 	}
 }
 
@@ -147,7 +149,12 @@ void K_DoIngameRespawn(player_t *player)
 
 	// FAULT
 	if (leveltime < starttime)
+	{
+		if (!(mapheaderinfo[gamemap-1]->levelflags & LF_SECTIONRACE))
+			player->respawn.wp = K_GetFinishLineWaypoint()->prevwaypoints[0];
 		K_DoFault(player);
+	}
+
 
 	player->ringboost = 0;
 	player->driftboost = player->strongdriftboost = 0;
@@ -163,7 +170,7 @@ void K_DoIngameRespawn(player_t *player)
 		player->respawn.pointz += K_RespawnOffset(player, player->respawn.flip);
 		player->respawn.manual = false; // one respawn only!
 	}
-	else if (player->respawn.wp != NULL && leveltime >= starttime)
+	else if (player->respawn.wp != NULL)
 	{
 		const UINT32 dist = RESPAWN_DIST + (player->airtime * 48);
 		player->respawn.distanceleft = (dist * mapobjectscale) / FRACUNIT;
@@ -272,7 +279,7 @@ void K_DoIngameRespawn(player_t *player)
 	player->respawn.init = true;
 
 	player->respawn.airtimer = player->airtime;
-	player->respawn.truedeath = false;
+	player->respawn.truedeath = !!(player->pflags & PF_FAULT);
 }
 
 /*--------------------------------------------------
@@ -611,6 +618,9 @@ static void K_DropDashWait(player_t *player)
 {
 	if (player->nocontrol == 0)
 		player->respawn.timer--;
+
+	if (player->pflags & PF_FAULT)
+		return;
 
 	if (leveltime % 8 == 0)
 	{

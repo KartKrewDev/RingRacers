@@ -433,7 +433,7 @@ void SetRandomFakePlayerSkin(player_t* player, boolean fast)
 
 	SetFakePlayerSkin(player, i);
 
-	if (player->mo && player->spectator == false)
+	if (player->mo && player->spectator == false && !(player->pflags & PF_VOID))
 	{
 		S_StartSound(player->mo, sfx_kc33);
 		S_StartSound(player->mo, sfx_cdfm44);
@@ -448,6 +448,7 @@ void SetRandomFakePlayerSkin(player_t* player, boolean fast)
 			P_SetTarget(&box->target, parent);
 			box->angle = FixedAngle((baseangle + j*90) * FRACUNIT);
 			box->flags2 |= MF2_AMBUSH;
+			box->renderflags |= parent->renderflags;
 			if (fast)
 			{
 				box->extravalue1 = 10; // Rotation rate
@@ -500,7 +501,7 @@ void ClearFakePlayerSkin(player_t* player)
 	if ((flags & SF_IRONMAN) && !P_MobjWasRemoved(player->mo))
 	{
 		SetFakePlayerSkin(player, skinid);
-		if (player->spectator == false)
+		if (player->spectator == false && player->mo->hitlag == 0)
 		{
 			S_StartSound(player->mo, sfx_s3k9f);
 			K_SpawnMagicianParticles(player->mo, 5);

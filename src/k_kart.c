@@ -7788,6 +7788,37 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		player->superring--;
 	}
 
+	if (player->pflags & PF_VOID) // Returning from FAULT VOID
+	{
+		player->pflags &= ~PF_VOID;
+		player->mo->renderflags &= ~RF_DONTDRAW;
+		player->mo->flags &= ~MF_NOCLIPTHING;
+		player->mo->momx = 0;
+		player->mo->momy = 0;
+		player->mo->momz = 0;
+		player->nocontrol = 0;
+		player->driftboost = 0;
+		player->strongdriftboost = 0;
+		player->tiregrease = 0;
+		player->sneakertimer = 0;
+		player->spindashboost = 0;
+		player->flashing = TICRATE/2;
+		player->ringboost = 0;
+		player->driftboost = player->strongdriftboost = 0;
+		player->gateBoost = 0;
+	}
+
+	if (player->pflags & PF_FAULT && player->nocontrol) // Hold player on respawn platform, no fair skipping long POSITION areas
+	{
+		if (rainbowstartavailable && ((leveltime <= starttime) || (leveltime - starttime < 10*TICRATE)))
+		{
+			player->nocontrol = 50;
+			player->mo->renderflags |= RF_DONTDRAW;
+			player->mo->flags |= MF_NOCLIPTHING;
+		}
+	}
+
+
 	if (player->stealingtimer == 0
 		&& player->rocketsneakertimer)
 		player->rocketsneakertimer--;
