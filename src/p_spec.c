@@ -2627,10 +2627,10 @@ boolean P_ProcessSpecial(activator_t *activator, INT16 special, INT32 *args, cha
 				{
 					EV_DoMoveCeilingByHeight(
 						args[1],
-						copySector->floorheight,
+						copySector->ceilingheight,
 						args[3] << (FRACBITS - 3),
 						args[4],
-						args[5] ? copySector->floorpic : -1
+						args[5] ? copySector->ceilingpic : -1
 					);
 				}
 			}

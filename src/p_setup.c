@@ -4999,7 +4999,7 @@ static void P_ConvertBinaryLinedefTypes(void)
 		case 404: //Copy-move tagged sector's ceiling height/texture
 			lines[i].args[0] = 0;
 			lines[i].args[1] = tag;
-			lines[i].args[2] = lines[i].special - 403;
+			lines[i].args[2] = (lines[i].special == 403) ? TMP_FLOOR : TMP_CEILING;
 			lines[i].args[3] = P_AproxDistance(lines[i].dx, lines[i].dy) >> FRACBITS;
 			lines[i].args[4] = (lines[i].flags & ML_BLOCKPLAYERS) ? sides[lines[i].sidenum[0]].textureoffset >> FRACBITS : 0;
 			lines[i].args[5] = !!(lines[i].flags & ML_NOCLIMB);
