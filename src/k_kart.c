@@ -7233,7 +7233,10 @@ void K_KartPlayerHUDUpdate(player_t *player)
 			player->karthud[khud_ringspblock] = (leveltime % 14); // reset to normal anim next time
 	}
 
-	if (player->exiting)
+	if (player->exiting
+	&& (specialstageinfo.valid == false
+		|| !(player->pflags & PF_NOCONTEST)
+		|| player->lives <= 0))
 	{
 		if (player->karthud[khud_finish] <= 2*TICRATE)
 			player->karthud[khud_finish]++;
