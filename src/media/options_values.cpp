@@ -26,37 +26,33 @@ std::vector<consvar_t*> Options::cvars_;
 
 // clang-format off
 const Options VorbisEncoder::options_("vorbis", {
-	{"quality",			Options::range<float>("0", -0.1f, 1.f)},
-	{"max_bitrate",		Options::range_min<int>("-1", -1)},
-	{"nominal_bitrate",	Options::range_min<int>("-1", -1)},
-	{"min_bitrate",		Options::range_min<int>("-1", -1)},
+	{"quality",			Options::values<float>("0", {-0.1f, 1.f})},
+	{"max_bitrate",		Options::values<int>("-1", {.min = -1})},
+	{"nominal_bitrate",	Options::values<int>("-1", {.min = -1})},
+	{"min_bitrate",		Options::values<int>("-1", {.min = -1})},
 });
 
 const Options VP8Encoder::options_("vp8", {
-	{"quality_mode", Options::value_map<int>("q", {
+	{"quality_mode", Options::values<int>("q", {}, {
 		{"vbr", VPX_VBR},
 		{"cbr", VPX_CBR},
 		{"cq", VPX_CQ},
 		{"q", VPX_Q},
 	})},
-	{"target_bitrate", Options::range_min<int>("800", 1)},
-	{"min_q", Options::range<int>("4", 4, 63)},
-	{"max_q", Options::range<int>("55", 4, 63)},
-	{"kf_min", Options::range_min<int>("0", 0)},
-	{"kf_max", Options::value_map<int>("auto", {
+	{"target_bitrate", Options::values<int>("800", {.min = 1})},
+	{"min_q", Options::values<int>("4", {4, 63})},
+	{"max_q", Options::values<int>("55", {4, 63})},
+	{"kf_min", Options::values<int>("0", {.min = 0})},
+	{"kf_max", Options::values<int>("auto", {.min = 0}, {
 		{"auto", static_cast<int>(KeyFrameOption::kAuto)},
-		{"MIN", 0},
-		{"MAX", INT32_MAX},
 	})},
-	{"cpu_used", Options::range<int>("0", -16, 16)},
-	{"cq_level", Options::range<int>("10", 0, 63)},
-	{"deadline", Options::value_map<int>("10", {
+	{"cpu_used", Options::values<int>("0", {-16, 16})},
+	{"cq_level", Options::values<int>("10", {0, 63})},
+	{"deadline", Options::values<int>("10", { .min = 1}, {
 		{"infinite", static_cast<int>(DeadlineOption::kInfinite)},
-		{"MIN", 1},
-		{"MAX", INT32_MAX},
 	})},
-	{"sharpness", Options::range<int>("7", 0, 7)},
-	{"token_parts", Options::range<int>("0", 0, 3)},
-	{"threads", Options::range_min<int>("1", 1)},
+	{"sharpness", Options::values<int>("7", {0, 7})},
+	{"token_parts", Options::values<int>("0", {0, 3})},
+	{"threads", Options::values<int>("1", {.min = 1})},
 });
 // clang-format on

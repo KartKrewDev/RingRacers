@@ -9,7 +9,7 @@
 
 #include <cstddef>
 #include <cstdint>
-#include <vector>
+#include <type_traits>
 
 #include <fmt/format.h>
 
@@ -49,60 +49,56 @@ float Options::get<float>(const char* option) const
 	return FixedToFloat(cvar(option).value);
 }
 
-static consvar_t range_cvar(const char* default_value, int32_t min, int32_t max, int32_t flags = 0)
+template <typename T>
+consvar_t Options::values(const char* default_value, const Range<T> range, std::map<std::string_view, T> list)
 {
-	return CVAR_INIT(
-		nullptr,
-		default_value,
-		CV_SAVE | flags,
-		new CV_PossibleValue_t[] {{min, "MIN"}, {max, "MAX"}, {}},
-		nullptr
-	);
-}
+	constexpr bool is_float = std::is_floating_point_v<T>;
 
-template <>
-consvar_t Options::range<float>(const char* default_value, float min, float max)
-{
-	return range_cvar(default_value, FloatToFixed(min), FloatToFixed(max), CV_FLOAT);
-}
+	const std::size_t min_max_size = (range.min || range.max) ? 2 : 0;
+	auto* arr = new CV_PossibleValue_t[list.size() + min_max_size + 1];
 
-template <>
-consvar_t Options::range_min<float>(const char* default_value, float min)
-{
-	return range_cvar(default_value, FloatToFixed(min), INT32_MAX);
-}
-
-template <>
-consvar_t Options::range<int>(const char* default_value, int min, int max)
-{
-	return range_cvar(default_value, min, max);
-}
-
-template <>
-consvar_t Options::range_min<int>(const char* default_value, int min)
-{
-	return range_cvar(default_value, min, INT32_MAX);
-}
-
-template <>
-consvar_t Options::value_map<int>(const char* default_value, std::map<const char*, int> values)
-{
-	auto* arr = new CV_PossibleValue_t[values.size() + 1];
-
-	std::size_t i = 0;
-
-	for (const auto& [k, v] : values)
+	auto cast = [is_float](T n)
 	{
-		arr[i].value = v;
-		arr[i].strvalue = k;
+		if constexpr (is_float)
+		{
+			return FloatToFixed(n);
+		}
+		else
+		{
+			return n;
+		}
+	};
 
-		i++;
+	if (min_max_size)
+	{
+		// Order is very important, MIN then MAX.
+		arr[0] = {range.min ? cast(*range.min) : INT32_MIN, "MIN"};
+		arr[1] = {range.max ? cast(*range.max) : INT32_MAX, "MAX"};
 	}
 
-	arr[i].value = 0;
-	arr[i].strvalue = nullptr;
+	{
+		std::size_t i = min_max_size;
 
-	return CVAR_INIT(nullptr, default_value, CV_SAVE, arr, nullptr);
+		for (const auto& [k, v] : list)
+		{
+			arr[i].value = cast(v);
+			arr[i].strvalue = k.data();
+
+			i++;
+		}
+
+		arr[i].value = 0;
+		arr[i].strvalue = nullptr;
+	}
+
+	int32_t flags = CV_SAVE;
+
+	if constexpr (is_float)
+	{
+		flags |= CV_FLOAT;
+	}
+
+	return CVAR_INIT(nullptr, default_value, flags, arr, nullptr);
 }
 
 void Options::register_all()
@@ -114,3 +110,8 @@ void Options::register_all()
 
 	cvars_ = {};
 }
+
+// clang-format off
+template consvar_t Options::values(const char* default_value, const Range<int> range, std::map<std::string_view, int> list);
+template consvar_t Options::values(const char* default_value, const Range<float> range, std::map<std::string_view, float> list);
+// clang-format on

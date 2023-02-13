@@ -11,7 +11,9 @@
 #define __SRB2_MEDIA_OPTIONS_HPP__
 
 #include <map>
+#include <optional>
 #include <string>
+#include <string_view>
 #include <unordered_map>
 #include <vector>
 
@@ -25,6 +27,12 @@ class Options
 public:
 	using map_t = std::unordered_map<std::string, consvar_t>;
 
+	template <typename T>
+	struct Range
+	{
+		std::optional<T> min, max;
+	};
+
 	// Registers all options as cvars.
 	static void register_all();
 
@@ -34,13 +42,7 @@ public:
 	T get(const char* option) const;
 
 	template <typename T>
-	static consvar_t range(const char* default_value, T min, T max);
-
-	template <typename T>
-	static consvar_t range_min(const char* default_value, T min);
-
-	template <typename T>
-	static consvar_t value_map(const char* default_value, std::map<const char*, T> values);
+	static consvar_t values(const char* default_value, const Range<T> range, std::map<std::string_view, T> list = {});
 
 private:
 	static std::vector<consvar_t*> cvars_;
