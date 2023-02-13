@@ -11,7 +11,9 @@
 #define __SRB2_MEDIA_OPTIONS_HPP__
 
 #include <map>
+#include <string>
 #include <unordered_map>
+#include <vector>
 
 #include "../command.h"
 
@@ -21,7 +23,10 @@ namespace srb2::media
 class Options
 {
 public:
-	using map_t = std::unordered_map<const char*, consvar_t>;
+	using map_t = std::unordered_map<std::string, consvar_t>;
+
+	// Registers all options as cvars.
+	static void register_all();
 
 	Options(const char* prefix, map_t map);
 
@@ -38,13 +43,13 @@ public:
 	static consvar_t value_map(const char* default_value, std::map<const char*, T> values);
 
 private:
+	static std::vector<consvar_t*> cvars_;
+
 	const char* prefix_;
 	map_t map_;
 
 	const consvar_t& cvar(const char* option) const;
 };
-
-void register_options();
 
 }; // namespace srb2::media
 

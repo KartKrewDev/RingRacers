@@ -24,61 +24,6 @@
 
 using namespace srb2::media;
 
-namespace
-{
-
-namespace KeyFrameOption
-{
-
-enum : int
-{
-	kAuto = -1,
-};
-
-}; // namespace KeyFrameOption
-
-namespace DeadlineOption
-{
-
-enum : int
-{
-	kInfinite = 0,
-};
-
-}; // namespace DeadlineOption
-
-}; // namespace
-
-// clang-format off
-const Options VP8Encoder::options_("vp8", {
-	{"quality_mode", Options::value_map<int>("q", {
-		{"vbr", VPX_VBR},
-		{"cbr", VPX_CBR},
-		{"cq", VPX_CQ},
-		{"q", VPX_Q},
-	})},
-	{"target_bitrate", Options::range_min<int>("800", 1)},
-	{"min_q", Options::range<int>("4", 4, 63)},
-	{"max_q", Options::range<int>("55", 4, 63)},
-	{"kf_min", Options::range_min<int>("0", 0)},
-	{"kf_max", Options::value_map<int>("auto", {
-		{"auto", KeyFrameOption::kAuto},
-		{"MIN", 0},
-		{"MAX", INT32_MAX},
-	})},
-	{"cpu_used", Options::range<int>("0", -16, 16)},
-	{"cq_level", Options::range<int>("10", 0, 63)},
-	{"deadline", Options::value_map<int>("10", {
-		{"infinite", DeadlineOption::kInfinite},
-		{"MIN", 1},
-		{"MAX", INT32_MAX},
-	})},
-	{"sharpness", Options::range<int>("7", 0, 7)},
-	{"token_parts", Options::range<int>("0", 0, 3)},
-	{"threads", Options::range_min<int>("1", 1)},
-});
-// clang-format on
-
 vpx_codec_iface_t* VP8Encoder::kCodec = vpx_codec_vp8_cx();
 
 const vpx_codec_enc_cfg_t VP8Encoder::configure(const Config user)
@@ -110,7 +55,7 @@ const vpx_codec_enc_cfg_t VP8Encoder::configure(const Config user)
 
 	int kf_max = options_.get<int>("kf_max");
 
-	if (kf_max == KeyFrameOption::kAuto)
+	if (kf_max == static_cast<int>(KeyFrameOption::kAuto))
 	{
 		// Automatically pick a good rate
 		kf_max = (user.frame_rate / 2); // every .5s

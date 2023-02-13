@@ -19,14 +19,12 @@
 
 using namespace srb2::media;
 
-static std::vector<consvar_t*> g_cvars;
-
 Options::Options(const char* prefix, map_t map) : prefix_(prefix), map_(map)
 {
 	for (auto& [suffix, cvar] : map_)
 	{
 		cvar.name = strdup(fmt::format("{}_{}", prefix_, suffix).c_str());
-		g_cvars.emplace_back(&cvar);
+		cvars_.emplace_back(&cvar);
 	}
 }
 
@@ -107,12 +105,12 @@ consvar_t Options::value_map<int>(const char* default_value, std::map<const char
 	return CVAR_INIT(nullptr, default_value, CV_SAVE, arr, nullptr);
 }
 
-void srb2::media::register_options()
+void Options::register_all()
 {
-	for (auto cvar : g_cvars)
+	for (auto cvar : cvars_)
 	{
 		CV_RegisterVar(cvar);
 	}
 
-	g_cvars = {};
+	cvars_ = {};
 }

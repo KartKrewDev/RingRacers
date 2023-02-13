@@ -69,6 +69,16 @@ private:
 		vpx_image_t img_;
 	};
 
+	enum class KeyFrameOption : int
+	{
+	    kAuto = -1,
+	};
+
+	enum class DeadlineOption : int
+	{
+	    kInfinite = 0,
+	};
+
 	static vpx_codec_iface_t* kCodec;
 
 	static const vpx_codec_enc_cfg_t configure(const Config config);

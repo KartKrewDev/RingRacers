@@ -89,7 +89,7 @@ void M_AVRecorder_AddCommands(void)
 	CV_RegisterVar(&cv_movie_size);
 	CV_RegisterVar(&cv_movie_sound);
 
-	srb2::media::register_options();
+	srb2::media::Options::register_all();
 }
 
 static AVRecorder::Config configure()

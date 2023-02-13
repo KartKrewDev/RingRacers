@@ -20,15 +20,6 @@
 
 using namespace srb2::media;
 
-// clang-format off
-const Options VorbisEncoder::options_("vorbis", {
-	{"quality",			Options::range<float>("0", -0.1f, 1.f)},
-	{"max_bitrate",		Options::range_min<int>("-1", -1)},
-	{"nominal_bitrate",	Options::range_min<int>("-1", -1)},
-	{"min_bitrate",		Options::range_min<int>("-1", -1)},
-});
-// clang-format on
-
 VorbisEncoder::VorbisEncoder(Config cfg)
 {
 	const long max_bitrate = options_.get<int>("max_bitrate");
