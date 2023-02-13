@@ -7235,8 +7235,7 @@ void K_KartPlayerHUDUpdate(player_t *player)
 
 	if (player->exiting
 	&& (specialstageinfo.valid == false
-		|| !(player->pflags & PF_NOCONTEST)
-		|| player->lives <= 0))
+		|| !(player->pflags & PF_NOCONTEST)))
 	{
 		if (player->karthud[khud_finish] <= 2*TICRATE)
 			player->karthud[khud_finish]++;

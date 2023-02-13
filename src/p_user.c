@@ -1314,14 +1314,7 @@ void P_DoPlayerExit(player_t *player)
 			{
 				if (specialstageinfo.valid == true && losing == true)
 				{
-					if (player->lives > 0)
-					{
-						exitcountdown = TICRATE;
-					}
-					else
-					{
-						exitcountdown = (5*TICRATE)/2;
-					}
+					exitcountdown = TICRATE;
 				}
 				else
 				{
