@@ -38,8 +38,8 @@ Impl::Impl(Config cfg) :
 	max_duration_(cfg.max_duration),
 
 	container_(std::make_unique<WebmContainer>(MediaContainer::Config {
-		.file_name = cfg.file_name,
-		.destructor_callback = [this](const MediaContainer& container) { container_dtor_handler(container); },
+		cfg.file_name,
+		[this](const MediaContainer& container) { container_dtor_handler(container); },
 	})),
 
 	audio_encoder_(make_audio_encoder(cfg)),
@@ -60,10 +60,7 @@ std::unique_ptr<AudioEncoder> Impl::make_audio_encoder(const Config cfg) const
 
 	const Config::Audio& a = *cfg.audio;
 
-	return container_->make_audio_encoder({
-		.channels = 2,
-		.sample_rate = a.sample_rate,
-	});
+	return container_->make_audio_encoder({2, a.sample_rate});
 }
 
 std::unique_ptr<VideoEncoder> Impl::make_video_encoder(const Config cfg) const
@@ -75,12 +72,7 @@ std::unique_ptr<VideoEncoder> Impl::make_video_encoder(const Config cfg) const
 
 	const Config::Video& v = *cfg.video;
 
-	return container_->make_video_encoder({
-		.width = v.width,
-		.height = v.height,
-		.frame_rate = v.frame_rate,
-		.buffer_method = kBufferMethod,
-	});
+	return container_->make_video_encoder({v.width, v.height, v.frame_rate, kBufferMethod});
 }
 
 Impl::~Impl()
