@@ -783,7 +783,7 @@ bool CallFunc_SetLineTexture(ACSVM::Thread *thread, const ACSVM::Word *argV, ACS
 	texPos = argV[2];
 
 	map = thread->scopeMap;
-	str = map->getString(argV[4]);
+	str = map->getString(argV[3]);
 	texName = str->str;
 
 	texId = R_TextureNumForName(texName);
