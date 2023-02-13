@@ -279,7 +279,7 @@ void K_DoIngameRespawn(player_t *player)
 	player->respawn.init = true;
 
 	player->respawn.airtimer = player->airtime;
-	player->respawn.truedeath = player->pflags & PF_FAULT;
+	player->respawn.truedeath = !!(player->pflags & PF_FAULT);
 }
 
 /*--------------------------------------------------

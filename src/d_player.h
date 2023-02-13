@@ -581,7 +581,7 @@ struct player_t
 
 	tic_t ebrakefor;	// Ebrake timer, used for visuals.
 
-	UINT16 faulttimer; // Used for misc FAULT visuals
+	UINT16 faultflash; // Used for misc FAULT visuals
 
 	UINT32 roundscore; // battle score this round
 	UINT8 emeralds;

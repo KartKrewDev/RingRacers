@@ -1918,7 +1918,7 @@ static void K_HandleLapIncrement(player_t *player)
 			player->hyudorotimer = UINT16_MAX;
 			player->speed = 0;
 			K_StripItems(player);
-			player->faulttimer = TICRATE/3;
+			player->faultflash = TICRATE/3;
 			ClearFakePlayerSkin(player);
 			S_StartSound(player->mo, sfx_s3k8a);
 			P_MoveOrigin(player->mo, player->mo->old_x, player->mo->old_y, player->mo->z);

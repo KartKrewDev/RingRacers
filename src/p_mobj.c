@@ -9805,15 +9805,15 @@ void P_MobjThinker(mobj_t *mobj)
 		mobj->eflags |= MFE_PAUSED;
 		mobj->hitlag--;
 
-		if (mobj->type == MT_PLAYER && mobj->player->faulttimer > 0)
+		if (mobj->player != NULL && mobj->player->faultflash > 0)
 		{
 			ClearFakePlayerSkin(mobj->player);
-			if (mobj->player->faulttimer & 1)
+			if (mobj->player->faultflash & 1)
 				mobj->renderflags |= RF_DONTDRAW;
 			else
 				mobj->renderflags &= ~RF_DONTDRAW;
 
-			mobj->player->faulttimer--;
+			mobj->player->faultflash--;
 		}
 
 		if (mobj->type == MT_DROPTARGET && mobj->reactiontime > 0 && mobj->hitlag == 2)
