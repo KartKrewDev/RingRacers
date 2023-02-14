@@ -9529,7 +9529,7 @@ void K_KartEbrakeVisuals(player_t *p)
 				P_RemoveMobj(p->mo->hprev);
 			}
 
-			p->mo->hprev = P_SpawnMobj(p->mo->x, p->mo->y, p->mo->z, MT_HOLDBUBBLE);
+			P_SetTarget(&p->mo->hprev, P_SpawnMobj(p->mo->x, p->mo->y, p->mo->z, MT_HOLDBUBBLE));
 			p->mo->hprev->renderflags |= (RF_DONTDRAW & ~K_GetPlayerDontDrawFlag(p));
 		}
 
@@ -9617,7 +9617,7 @@ void K_KartEbrakeVisuals(player_t *p)
 		if (p->mo->hprev && !P_MobjWasRemoved(p->mo->hprev) && (p->mo->hprev->frame & FF_FRAMEMASK) != 5)
 		{
 			P_RemoveMobj(p->mo->hprev);
-			p->mo->hprev = NULL;
+			P_SetTarget(&p->mo->hprev, NULL);
 		}
 
 		p->ebrakefor = 0;
