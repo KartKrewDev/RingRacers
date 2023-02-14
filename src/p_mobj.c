@@ -5280,13 +5280,13 @@ void P_AddKartItem(mobj_t *thing)
 // Keeps the hnext list from corrupting.
 static void P_RemoveKartItem(mobj_t *thing)
 {
-	mobj_t *mo;
-	for (mo = kitemcap; mo; mo = mo->itnext)
+	mobj_t *mo, **p;
+	for (mo = *(p = &kitemcap); mo; mo = *(p = &mo->itnext))
 	{
-		if (mo->itnext != thing)
+		if (mo != thing)
 			continue;
 
-		P_SetTarget(&mo->itnext, thing->itnext);
+		P_SetTarget(p, thing->itnext);
 		P_SetTarget(&thing->itnext, NULL);
 		return;
 	}
@@ -5433,13 +5433,13 @@ static void P_AddOverlay(mobj_t *thing)
 // Keeps the hnext list from corrupting.
 static void P_RemoveOverlay(mobj_t *thing)
 {
-	mobj_t *mo;
-	for (mo = overlaycap; mo; mo = mo->hnext)
+	mobj_t *mo, **p;
+	for (mo = *(p = &overlaycap); mo; mo = *(p = &mo->hnext))
 	{
-		if (mo->hnext != thing)
+		if (mo != thing)
 			continue;
 
-		P_SetTarget(&mo->hnext, thing->hnext);
+		P_SetTarget(p, thing->hnext);
 		P_SetTarget(&thing->hnext, NULL);
 		return;
 	}
