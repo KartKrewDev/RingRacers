@@ -1384,9 +1384,18 @@ void M_StartMovie(void)
 #endif
 }
 
-void M_SaveFrame(void)
+void M_LegacySaveFrame(void)
 {
 #if NUMSCREENS > 2
+	// TODO: until HWR2 replaces legacy OpenGL renderer, this
+	//       function still needs to called for OpenGL.
+#ifdef HWRENDER
+	if (rendermode != render_opengl)
+#endif
+	{
+		return;
+	}
+
 	// paranoia: should be unnecessary without singletics
 	static tic_t oldtic = 0;
 
@@ -1461,6 +1470,26 @@ void M_SaveFrame(void)
 			return;
 	}
 #endif
+}
+
+void M_SaveFrame(uint32_t width, uint32_t height, tcb::span<const std::byte> data)
+{
+	if (moviemode != MM_GIF)
+	{
+		return;
+	}
+
+	static tic_t oldtic = 0;
+
+	// limit the recording to TICRATE
+	if (oldtic == I_GetTime())
+	{
+		return;
+	}
+
+	oldtic = I_GetTime();
+
+	GIF_frame_rgb24(width, height, reinterpret_cast<const uint8_t*>(data.data()));
 }
 
 void M_StopMovie(void)

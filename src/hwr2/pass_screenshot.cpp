@@ -34,7 +34,7 @@ void ScreenshotPass::prepass(Rhi& rhi)
 		);
 	}
 
-	doing_screenshot_ = takescreenshot;
+	doing_screenshot_ = takescreenshot || moviemode == MM_GIF;
 }
 
 void ScreenshotPass::transfer(Rhi& rhi, Handle<TransferContext> ctx)
@@ -63,6 +63,15 @@ void ScreenshotPass::postpass(Rhi& rhi)
 		return;
 	}
 
-	M_DoScreenShot(width_, height_, tcb::as_bytes(tcb::span(pixel_data_)));
+	if (takescreenshot)
+	{
+		M_DoScreenShot(width_, height_, tcb::as_bytes(tcb::span(pixel_data_)));
+	}
+
+	if (moviemode == MM_GIF)
+	{
+		M_SaveFrame(width_, height_, tcb::as_bytes(tcb::span(pixel_data_)));
+	}
+
 	doing_screenshot_ = false;
 }

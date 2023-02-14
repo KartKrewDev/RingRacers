@@ -1602,7 +1602,7 @@ void G_PreLevelTitleCard(void)
 		NetKeepAlive();		// Prevent timeouts
 
         if (moviemode)
-            M_SaveFrame();
+            M_LegacySaveFrame();
 
         while (!((nowtime = I_GetTime()) - lasttime))
         {

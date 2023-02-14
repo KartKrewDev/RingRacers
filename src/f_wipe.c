@@ -526,7 +526,7 @@ void F_RunWipe(UINT8 wipetype, boolean drawMenu, const char *colormap, boolean r
 		}
 
 		if (moviemode)
-			M_SaveFrame();
+			M_LegacySaveFrame();
 
 		NetKeepAlive(); // Update the network so we don't cause timeouts
 	}

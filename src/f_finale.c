@@ -438,7 +438,7 @@ void F_IntroTicker(void)
 					I_FinishUpdate(); // Update the screen with the image Tails 06-19-2001
 
 					if (moviemode) // make sure we save frames for the white hold too
-						M_SaveFrame();
+						M_LegacySaveFrame();
 				}
 			}
 

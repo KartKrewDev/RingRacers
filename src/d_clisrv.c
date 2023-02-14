@@ -2022,7 +2022,7 @@ static boolean CL_ServerConnectionTicker(const char *tmpsave, tic_t *oldtic, tic
 			}
 			I_UpdateNoVsync(); // page flip or blit buffer
 			if (moviemode)
-				M_SaveFrame();
+				M_LegacySaveFrame();
 			S_UpdateSounds();
 			S_UpdateClosedCaptions();
 		}

@@ -7571,7 +7571,7 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 		} \
 		lastwipetic = nowtime; \
 		if (moviemode) \
-			M_SaveFrame(); \
+			M_LegacySaveFrame(); \
 		NetKeepAlive(); \
 	} \
 

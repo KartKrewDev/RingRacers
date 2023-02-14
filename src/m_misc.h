@@ -28,6 +28,7 @@
 #include <tcb/span.hpp>
 
 void M_DoScreenShot(uint32_t width, uint32_t height, tcb::span<const std::byte> data);
+void M_SaveFrame(uint32_t width, uint32_t height, tcb::span<const std::byte> data);
 
 extern "C" {
 #endif
@@ -48,7 +49,7 @@ extern consvar_t cv_zlib_memorya, cv_zlib_levela, cv_zlib_strategya, cv_zlib_win
 extern consvar_t cv_apng_delay, cv_apng_downscale;
 
 void M_StartMovie(void);
-void M_SaveFrame(void);
+void M_LegacySaveFrame(void);
 void M_StopMovie(void);
 
 // the file where game vars and settings are saved
