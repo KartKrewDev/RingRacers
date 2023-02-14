@@ -49,20 +49,10 @@ tm_t tm = {0};
 void P_RestoreTMStruct(tm_t tmrestore)
 {
 	// Reference count management
-	if (tm.thing != tmrestore.thing)
-	{
-		P_SetTarget(&tm.thing, NULL);
-	}
-
-	if (tm.floorthing != tmrestore.floorthing)
-	{
-		P_SetTarget(&tm.floorthing, NULL);
-	}
-
-	if (tm.hitthing != tmrestore.hitthing)
-	{
-		P_SetTarget(&tm.hitthing, NULL);
-	}
+	// These are effectively a no-op if mobj remains the same
+	P_SetTarget(&tm.thing, tmrestore.thing);
+	P_SetTarget(&tm.floorthing, tmrestore.floorthing);
+	P_SetTarget(&tm.hitthing, tmrestore.hitthing);
 
 	// Restore state
 	tm = tmrestore;
