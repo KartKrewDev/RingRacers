@@ -2015,7 +2015,10 @@ void G_RecordDemo(const char *name)
 //	if (demobuf.buffer)
 //		Z_Free(demobuf.buffer);
 
+	// FIXME: this file doesn't manage its memory and actually free this when it's done using it
+	Z_Free(demobuf.buffer);
 	P_SaveBufferAlloc(&demobuf, maxsize);
+	Z_SetUser(demobuf.buffer, (void**)&demobuf.buffer);
 	demobuf.p = NULL;
 
 	demo.recording = true;
@@ -2028,7 +2031,10 @@ void G_RecordMetal(void)
 	if (M_CheckParm("-maxdemo") && M_IsNextParm())
 		maxsize = atoi(M_GetNextParm()) * 1024;
 
+	// FIXME: this file doesn't manage its memory and actually free this when it's done using it
+	Z_Free(demobuf.buffer);
 	P_SaveBufferAlloc(&demobuf, maxsize);
+	Z_SetUser(demobuf.buffer, (void**)&demobuf.buffer);
 	demobuf.p = NULL;
 
 	metalrecording = true;
@@ -3051,7 +3057,10 @@ void G_DoPlayDemo(char *defdemoname)
 					return;
 				}
 
+				// FIXME: this file doesn't manage its memory and actually free this when it's done using it
+				Z_Free(demobuf.buffer);
 				P_SaveBufferAlloc(&demobuf, vLump->size);
+				Z_SetUser(demobuf.buffer, (void**)&demobuf.buffer);
 				memcpy(demobuf.buffer, vLump->data, vLump->size);
 
 				vres_Free(vRes);
