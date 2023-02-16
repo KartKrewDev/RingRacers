@@ -20,6 +20,19 @@
 
 using namespace srb2::media;
 
+namespace
+{
+
+void runtime_assert(VorbisError error, const char *what)
+{
+	if (error != 0)
+	{
+		throw std::runtime_error(fmt::format("{}: {}", what, error));
+	}
+}
+
+}; // namespace
+
 VorbisEncoder::VorbisEncoder(Config cfg)
 {
 	const long max_bitrate = options_.get<int>("max_bitrate");
@@ -58,8 +71,8 @@ VorbisEncoder::VorbisEncoder(Config cfg)
 		}
 	}
 
-	SRB2_ASSERT(vorbis_analysis_init(&vd_, &vi_) == 0);
-	SRB2_ASSERT(vorbis_block_init(&vd_, &vb_) == 0);
+	runtime_assert(vorbis_analysis_init(&vd_, &vi_), "vorbis_analysis_init");
+	runtime_assert(vorbis_block_init(&vd_, &vb_), "vorbis_block_init");
 }
 
 VorbisEncoder::~VorbisEncoder()
@@ -104,12 +117,12 @@ void VorbisEncoder::analyse(sample_buffer_t in)
 	}
 
 	// automatically handles end of stream if n = 0
-	SRB2_ASSERT(vorbis_analysis_wrote(&vd_, n) == 0);
+	runtime_assert(vorbis_analysis_wrote(&vd_, n), "vorbis_analysis_wrote");
 
 	while (vorbis_analysis_blockout(&vd_, &vb_) > 0)
 	{
-		SRB2_ASSERT(vorbis_analysis(&vb_, nullptr) == 0);
-		SRB2_ASSERT(vorbis_bitrate_addblock(&vb_) == 0);
+		runtime_assert(vorbis_analysis(&vb_, nullptr), "vorbis_analysis");
+		runtime_assert(vorbis_bitrate_addblock(&vb_), "vorbis_bitrate_addblock");
 
 		ogg_packet op;
 

@@ -41,7 +41,8 @@ bool YUV420pFrame::BufferRGBA::resize(int width, int height)
 	void* p = vec_.data();
 	std::size_t n = vec_.size();
 
-	SRB2_ASSERT(std::align(kAlignment, 1, p, n) != nullptr);
+	p = std::align(kAlignment, 1, p, n);
+	SRB2_ASSERT(p != nullptr);
 
 	plane = tcb::span<uint8_t>(reinterpret_cast<uint8_t*>(p), new_size);
 

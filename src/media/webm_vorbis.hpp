@@ -13,7 +13,10 @@
 #include <chrono>
 #include <cstddef>
 #include <cstdint>
+#include <stdexcept>
 #include <vector>
+
+#include <fmt/format.h>
 
 #include "../cxxutil.hpp"
 #include "vorbis.hpp"
@@ -32,7 +35,10 @@ public:
 
 		const auto p = make_vorbis_private_data();
 
-		SRB2_ASSERT(track()->SetCodecPrivate(reinterpret_cast<const uint8_t*>(p.data()), p.size()) == true);
+		if (!track()->SetCodecPrivate(reinterpret_cast<const uint8_t*>(p.data()), p.size()))
+		{
+			throw std::runtime_error(fmt::format("mkvmuxer::AudioTrack::SetCodecPrivate, size={}", p.size()));
+		}
 	}
 
 	virtual BitRate estimated_bit_rate() const override final

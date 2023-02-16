@@ -110,7 +110,10 @@ VP8Encoder::CtxWrapper::~CtxWrapper()
 
 VP8Encoder::ImgWrapper::ImgWrapper(int width, int height)
 {
-	SRB2_ASSERT(vpx_img_alloc(&img_, VPX_IMG_FMT_I420, width, height, YUV420pFrame::kAlignment) != nullptr);
+	if (vpx_img_alloc(&img_, VPX_IMG_FMT_I420, width, height, YUV420pFrame::kAlignment) == nullptr)
+	{
+		throw std::runtime_error("vpx_img_alloc");
+	}
 }
 
 VP8Encoder::ImgWrapper::~ImgWrapper()

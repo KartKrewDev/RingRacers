@@ -9,6 +9,9 @@
 
 #include <cstdint>
 #include <memory>
+#include <stdexcept>
+
+#include <fmt/format.h>
 
 #include "../cxxutil.hpp"
 #include "webm_vorbis.hpp"
@@ -20,7 +23,10 @@ using time_unit_t = MediaEncoder::time_unit_t;
 
 WebmContainer::WebmContainer(const Config cfg) : writer_(cfg.file_name), dtor_cb_(cfg.destructor_callback)
 {
-	SRB2_ASSERT(segment_.Init(&writer_) == true);
+	if (!segment_.Init(&writer_))
+	{
+		throw std::runtime_error("mkvmuxer::Segment::Init");
+	}
 }
 
 WebmContainer::~WebmContainer()
@@ -101,15 +107,22 @@ void WebmContainer::write_frame(
 	bool is_key_frame
 )
 {
-	SRB2_ASSERT(
-		segment_.AddFrame(
+	if (!segment_.AddFrame(
 			reinterpret_cast<const uint8_t*>(buffer.data()),
 			buffer.size_bytes(),
 			trackid,
 			timestamp,
 			is_key_frame
-		) == true
-	);
+		))
+	{
+		throw std::runtime_error(fmt::format(
+			"mkvmuxer::Segment::AddFrame, size={}, track={}, ts={}, key={}",
+			buffer.size_bytes(),
+			trackid,
+			timestamp,
+			is_key_frame
+		));
+	}
 
 	queue_[trackid].data_size += buffer.size_bytes();
 }
