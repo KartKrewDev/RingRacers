@@ -4195,6 +4195,7 @@ void K_HandleBumperChanges(player_t *player, UINT8 prevBumpers)
 		if (battlecapsules || bossinfo.valid)
 		{
 			player->pflags |= (PF_NOCONTEST|PF_ELIMINATED);
+			P_DamageMobj(player->mo, NULL, NULL, 1, DMG_TIMEOVER);
 		}
 		else if (netgame)
 		{
