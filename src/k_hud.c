@@ -4302,7 +4302,7 @@ static void K_drawKartStartCountdown(void)
 					break;
 			}
 
-			if (numplayers == 2)
+			if (inDuel == true)
 			{
 				pnum++; // DUEL
 			}
