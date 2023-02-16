@@ -2970,8 +2970,21 @@ static void Command_Map_f(void)
 
 		if (!Playing())
 		{
+			UINT8 ssplayers = cv_splitplayers.value-1;
+
 			multiplayer = true;
 			restoreMenu = NULL;
+
+			strncpy(connectedservername, cv_servername.string, MAXSERVERNAME);
+
+			if (cv_maxconnections.value < ssplayers+1)
+				CV_SetValue(&cv_maxconnections, ssplayers+1);
+
+			if (splitscreen != ssplayers)
+			{
+				splitscreen = ssplayers;
+				SplitScreen_OnChange();
+			}
 		}
 	}
 
