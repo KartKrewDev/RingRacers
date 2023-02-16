@@ -2846,7 +2846,7 @@ static void Command_Map_f(void)
 			return;
 		}
 	}
-	else if (!Playing())
+	else if (!Playing() || (netgame == false && grandprixinfo.gp == true))
 	{
 		newresetplayers = true;
 		if (mapheaderinfo[newmapnum-1])
