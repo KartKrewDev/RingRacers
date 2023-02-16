@@ -10056,6 +10056,9 @@ void A_BrakLobShot(mobj_t *actor)
 	// Look up actor's current gravity situation
 	g = FixedMul(gravity, P_GetSectorGravityFactor(actor->subsector->sector));
 
+	// Scale with map
+	g = FixedMul(g, mapobjectscale);
+
 	// Look up distance between actor and its target
 	x = P_AproxDistance(actor->target->x - actor->x, actor->target->y - actor->y);
 	if (!aimDirect)
@@ -10167,6 +10170,9 @@ void A_NapalmScatter(mobj_t *actor)
 
 	// Look up actor's current gravity situation
 	g = FixedMul(gravity, P_GetSectorGravityFactor(actor->subsector->sector));
+
+	// Scale with map
+	g = FixedMul(g, mapobjectscale);
 
 	// vy = (g*(airtime-1))/2
 	vy = FixedMul(g,(airtime-(1<<FRACBITS)))>>1;
@@ -10879,11 +10885,11 @@ void A_Boss5Jump(mobj_t *actor)
 	if (!actor->tracer)
 		return; // Don't even bother if we've got nothing to aim at.
 
-	// Scale with map
-	g = FixedMul(gravity, mapobjectscale);
-
 	// Look up actor's current gravity situation
 	g = FixedMul(gravity, P_GetSectorGravityFactor(actor->subsector->sector));
+
+	// Scale with map
+	g = FixedMul(g, mapobjectscale);
 
 	// Look up distance between actor and its tracer
 	x = FixedHypot(actor->tracer->x - actor->x, actor->tracer->y - actor->y);
