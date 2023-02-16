@@ -2266,7 +2266,7 @@ void M_DrawTimeAttack(void)
 			&& (mapheaderinfo[map]->numlaps != 1))
 		{
 			V_DrawRightAlignedString(rightedge-12, timeheight, highlightflags, "BEST LAP:");
-			K_drawKartTimestamp(laprec, 162+t, timeheight+6, 2);
+			K_drawKartTimestamp(laprec, 162+t, timeheight+6, 0, 2);
 			timeheight += 30;
 		}
 		else
@@ -2275,7 +2275,7 @@ void M_DrawTimeAttack(void)
 		}
 
 		V_DrawRightAlignedString(rightedge-12, timeheight, highlightflags, "BEST TIME:");
-		K_drawKartTimestamp(timerec, 162+t, timeheight+6, 1);
+		K_drawKartTimestamp(timerec, 162+t, timeheight+6, 0, 1);
 	}
 	else
 		opty = 80;

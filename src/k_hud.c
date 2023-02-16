@@ -1466,7 +1466,7 @@ static void K_drawKartItem(void)
 	}
 }
 
-void K_drawKartTimestamp(tic_t drawtime, INT32 TX, INT32 TY, UINT8 mode)
+void K_drawKartTimestamp(tic_t drawtime, INT32 TX, INT32 TY, INT32 splitflags, UINT8 mode)
 {
 	// TIME_X = BASEVIDWIDTH-124;	// 196
 	// TIME_Y = 6;					//   6
@@ -1474,11 +1474,8 @@ void K_drawKartTimestamp(tic_t drawtime, INT32 TX, INT32 TY, UINT8 mode)
 	tic_t worktime;
 	INT32 jitter = 0;
 
-	INT32 splitflags = 0;
 	if (!mode)
 	{
-		splitflags = V_HUDTRANS|V_SLIDEIN|V_SNAPTOTOP|V_SNAPTORIGHT|V_SPLITSCREEN;
-
 		if (timelimitintics > 0)
 		{
 			if (drawtime >= timelimitintics)
@@ -4971,17 +4968,15 @@ void K_drawKartHUD(void)
 	boolean battlefullscreen = false;
 	boolean freecam = demo.freecam;	//disable some hud elements w/ freecam
 	UINT8 i;
+	UINT8 viewnum = R_GetViewNumber();
 
 	// Define the X and Y for each drawn object
 	// This is handled by console/menu values
 	K_initKartHUD();
 
 	// Draw that fun first person HUD! Drawn ASAP so it looks more "real".
-	for (i = 0; i <= r_splitscreen; i++)
-	{
-		if (stplyr == &players[displayplayers[i]] && !camera[i].chase && !freecam)
-			K_drawKartFirstPerson();
-	}
+	if (!camera[viewnum].chase && !freecam)
+		K_drawKartFirstPerson();
 
 	// Draw full screen stuff that turns off the rest of the HUD
 	if (mapreset && stplyr == &players[displayplayers[0]])
@@ -5032,14 +5027,41 @@ void K_drawKartHUD(void)
 	if (LUA_HudEnabled(hud_item) && !freecam)
 		K_drawKartItem();
 
-	// If not splitscreen, draw...
-	if (!r_splitscreen && !demo.title)
+	if (demo.title)
+		;
+	else if (!r_splitscreen)
 	{
 		// Draw the timestamp
 		if (LUA_HudEnabled(hud_time))
-			K_drawKartTimestamp(stplyr->realtime, TIME_X, TIME_Y, 0);
+			K_drawKartTimestamp(stplyr->realtime,
+				TIME_X,
+				TIME_Y,
+				V_HUDTRANS|V_SLIDEIN|V_SNAPTOTOP|V_SNAPTORIGHT,
+				0);
 
 		islonesome = K_drawKartPositionFaces();
+	}
+	else if (viewnum == r_splitscreen
+		&& (gametyperules & GTR_TIMELIMIT)
+		&& timelimitintics > 0)
+	{
+		tic_t highestrealtime = players[displayplayers[1]].realtime;
+
+		// Uses the highest time across all players (handles paused timer on exiting)
+		for (i = 1; i <= r_splitscreen; i++)
+		{
+			if (players[displayplayers[i]].realtime <= highestrealtime)
+				continue;
+			highestrealtime = players[displayplayers[i]].realtime;
+		}
+
+		// Draw the timestamp (mostly) CENTERED
+		if (LUA_HudEnabled(hud_time))
+			K_drawKartTimestamp(highestrealtime,
+				(r_splitscreen == 1 ? TIME_X : ((BASEVIDWIDTH/2) - 69)),
+				TIME_Y,
+				V_HUDTRANS|V_SLIDEIN|V_SNAPTOTOP|(r_splitscreen == 1 ? V_SNAPTORIGHT : 0),
+				0);
 	}
 
 	if (!stplyr->spectator && !demo.freecam) // Bottom of the screen elements, don't need in spectate mode
