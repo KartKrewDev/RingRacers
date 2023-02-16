@@ -17,6 +17,7 @@
 #include "m_random.h"
 #include "r_sky.h" // skyflatnum
 #include "k_grandprix.h" // K_CanChangeRules
+#include "k_boss.h" // bossinfo.valid
 #include "p_spec.h"
 #include "k_objects.h"
 
@@ -92,7 +93,7 @@ void K_CheckBumpers(void)
 	UINT8 numingame = 0;
 	SINT8 winnernum = -1;
 	UINT32 winnerscoreadd = 0, maxroundscore = 0;
-	boolean nobumpers = false;
+	UINT8 nobumpers = 0;
 
 	if (!(gametyperules & GTR_BUMPERS))
 		return;
@@ -118,7 +119,7 @@ void K_CheckBumpers(void)
 
 		if (players[i].bumpers <= 0) // if you don't have any bumpers, you're probably not a winner
 		{
-			nobumpers = true;
+			nobumpers++;
 			continue;
 		}
 		else if (winnernum != -1) // TWO winners? that's dumb :V
@@ -128,9 +129,9 @@ void K_CheckBumpers(void)
 		winnerscoreadd -= players[i].roundscore;
 	}
 
-	if (K_CanChangeRules(true) == false)
+	if (battlecapsules || bossinfo.valid)
 	{
-		if (nobumpers)
+		if (nobumpers > 0 && nobumpers >= numingame)
 		{
 			for (i = 0; i < MAXPLAYERS; i++)
 			{
@@ -144,28 +145,14 @@ void K_CheckBumpers(void)
 		}
 		return;
 	}
-	else if (numingame <= 1)
+
+	if (numingame <= 1)
 	{
-		if ((gametyperules & GTR_CAPSULES) && !battlecapsules)
+		if ((gametyperules & GTR_CAPSULES) && (K_CanChangeRules(true) == true))
 		{
 			// Reset map to turn on battle capsules
 			if (server)
 				D_MapChange(gamemap, gametype, encoremode, true, 0, false, false);
-		}
-		else
-		{
-			if (nobumpers)
-			{
-				for (i = 0; i < MAXPLAYERS; i++)
-				{
-					if (!playeringame[i])
-						continue;
-					if (players[i].spectator)
-						continue;
-					players[i].pflags |= PF_NOCONTEST;
-					P_DoPlayerExit(&players[i]);
-				}
-			}
 		}
 
 		return;

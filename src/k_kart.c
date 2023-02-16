@@ -4192,9 +4192,9 @@ void K_HandleBumperChanges(player_t *player, UINT8 prevBumpers)
 
 		player->karmadelay = comebacktime;
 
-		if (gametyperules & GTR_BOSS)
+		if (battlecapsules || bossinfo.valid)
 		{
-			P_DoTimeOver(player);
+			player->pflags |= (PF_NOCONTEST|PF_ELIMINATED);
 		}
 		else if (netgame)
 		{
