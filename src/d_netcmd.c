@@ -1356,7 +1356,7 @@ boolean CanChangeSkin(INT32 playernum)
 		return true;
 
 	// Force skin in effect.
-	if (cv_forceskin.value != -1)
+	if (cv_forceskin.value != -1 && K_CanChangeRules(true))
 		return false;
 
 	// ... there used to be a lot more here, but it's now handled in Got_NameAndColor.
@@ -6107,7 +6107,7 @@ static void Command_Automate_Set(void)
 static void ForceSkin_OnChange(void)
 {
 	// NOT in SP, silly!
-	if (!(netgame || multiplayer))
+	if (!Playing() || !K_CanChangeRules(true))
 		return;
 
 	if (cv_forceskin.value < 0)
