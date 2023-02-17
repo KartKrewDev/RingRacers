@@ -7152,6 +7152,9 @@ void K_KartPlayerHUDUpdate(player_t *player)
 	if (player->karthud[khud_trickcool])
 		player->karthud[khud_trickcool]--;
 
+	if (player->positiondelay)
+		player->positiondelay--;
+
 	if (!(player->pflags & PF_FAULT))
 		player->karthud[khud_fault] = 0;
 	else if (player->karthud[khud_fault] > 0 && player->karthud[khud_fault] <= 2*TICRATE)
@@ -10110,9 +10113,6 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 			player->oldposition = player->position; // Restore the old position,
 		}
 	}
-
-	if (player->positiondelay)
-		player->positiondelay--;
 
 	// Prevent ring misfire
 	if (!(cmd->buttons & BT_ATTACK))
