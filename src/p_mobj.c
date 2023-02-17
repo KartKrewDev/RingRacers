@@ -5280,13 +5280,13 @@ void P_AddKartItem(mobj_t *thing)
 // Keeps the hnext list from corrupting.
 static void P_RemoveKartItem(mobj_t *thing)
 {
-	mobj_t *mo;
-	for (mo = kitemcap; mo; mo = mo->itnext)
+	mobj_t *mo, **p;
+	for (mo = *(p = &kitemcap); mo; mo = *(p = &mo->itnext))
 	{
-		if (mo->itnext != thing)
+		if (mo != thing)
 			continue;
 
-		P_SetTarget(&mo->itnext, thing->itnext);
+		P_SetTarget(p, thing->itnext);
 		P_SetTarget(&thing->itnext, NULL);
 		return;
 	}
@@ -5433,13 +5433,13 @@ static void P_AddOverlay(mobj_t *thing)
 // Keeps the hnext list from corrupting.
 static void P_RemoveOverlay(mobj_t *thing)
 {
-	mobj_t *mo;
-	for (mo = overlaycap; mo; mo = mo->hnext)
+	mobj_t *mo, **p;
+	for (mo = *(p = &overlaycap); mo; mo = *(p = &mo->hnext))
 	{
-		if (mo->hnext != thing)
+		if (mo != thing)
 			continue;
 
-		P_SetTarget(&mo->hnext, thing->hnext);
+		P_SetTarget(p, thing->hnext);
 		P_SetTarget(&thing->hnext, NULL);
 		return;
 	}
@@ -6469,6 +6469,9 @@ static void P_MobjSceneryThink(mobj_t *mobj)
 		break;
 	case MT_ITEMCAPSULE_PART:
 		P_ItemCapsulePartThinker(mobj);
+
+		if (P_MobjWasRemoved(mobj))
+			return;
 		break;
 	case MT_BATTLECAPSULE_PIECE:
 		if (mobj->extravalue2)
@@ -9850,8 +9853,15 @@ void P_MobjThinker(mobj_t *mobj)
 		P_CheckMobjTrigger(mobj, false);
 	}
 
+	I_Assert(!P_MobjWasRemoved(mobj));
+
 	if (mobj->scale != mobj->destscale)
+	{
 		P_MobjScaleThink(mobj); // Slowly scale up/down to reach your destscale.
+
+		if (P_MobjWasRemoved(mobj))
+			return;
+	}
 
 	if (mobj->type == MT_GHOST && mobj->fuse > 0) // Not guaranteed to be MF_SCENERY or not MF_SCENERY!
 	{
