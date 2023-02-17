@@ -1901,6 +1901,12 @@ static boolean P_KillPlayer(player_t *player, mobj_t *inflictor, mobj_t *source,
 {
 	(void)source;
 
+	if (!player->exiting && specialstageinfo.valid == true)
+	{
+		player->pflags |= PF_NOCONTEST;
+		P_DoPlayerExit(player);
+	}
+
 	if (player->exiting)
 	{
 		player->mo->destscale = 1;

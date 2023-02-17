@@ -1314,7 +1314,7 @@ void P_DoPlayerExit(player_t *player)
 			{
 				if (specialstageinfo.valid == true && losing == true)
 				{
-					exitcountdown = (5*TICRATE)/2;
+					exitcountdown = TICRATE;
 				}
 				else
 				{

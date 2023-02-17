@@ -2011,8 +2011,11 @@ static void K_HandleLapIncrement(player_t *player)
 						player->pflags |= PF_NOCONTEST;
 					}
 				}
+
 				P_DoPlayerExit(player);
-				P_SetupSignExit(player);
+
+				if (!(player->pflags & PF_NOCONTEST))
+					P_SetupSignExit(player);
 			}
 			else
 			{
