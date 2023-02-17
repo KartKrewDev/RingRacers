@@ -1460,7 +1460,12 @@ void M_CharacterSelectTick(void)
 					CV_StealthSetValue(&cv_usejoystick[0], setup_player[0].ponedevice);
 				}
 
-				M_SetupNextMenu(&PLAY_MainDef, false);
+				#if defined (TESTERS)
+					M_MPOptSelectInit(0);
+				#else
+					M_SetupNextMenu(&PLAY_MainDef, false);
+				#endif
+				
 			}
 		}
 		else	// In a game

@@ -3,22 +3,34 @@
 
 #include "../k_menu.h"
 
+#if defined (TESTERS)
+	#define IT_STRING_CALL_NOTESTERS IT_DISABLED
+#else
+	#define IT_STRING_CALL_NOTESTERS (IT_STRING | IT_CALL)
+#endif // TESTERS
+
 menuitem_t PLAY_MP_OptSelect[] =
 {
-	//{IT_NOTHING | IT_KEYHANDLER, NULL, NULL, NULL, M_MPOptSelect, 0, 0},
-	{IT_STRING | IT_CALL, "Host Game", "Start your own online game!",
+	{IT_STRING_CALL_NOTESTERS, "Host Game", "Start your own online game!",
 		NULL, {.routine = M_MPHostInit}, 0, 0},
 
-	{IT_STRING | IT_CALL, "Server Browser", "Search for game servers to play in.",
+	{IT_STRING_CALL_NOTESTERS, "Server Browser", "Search for game servers to play in.",
 		NULL, {.routine = M_MPRoomSelectInit}, 0, 0},
 
 	{IT_STRING | IT_CALL, "Join by IP", "Join an online game by its IP address.",
 		NULL, {.routine = M_MPJoinIPInit}, 0, 0},
 };
 
+#undef IT_STRING_CALL_NOTESTERS
+
+
 menu_t PLAY_MP_OptSelectDef = {
 	sizeof (PLAY_MP_OptSelect) / sizeof (menuitem_t),
-	&PLAY_MainDef,
+	#if defined (TESTERS)
+		&PLAY_CharSelectDef,
+	#else
+		&PLAY_MainDef,
+	#endif
 	0,
 	PLAY_MP_OptSelect,
 	0, 0,
