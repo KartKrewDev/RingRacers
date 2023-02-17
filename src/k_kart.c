@@ -4633,7 +4633,7 @@ UINT16 K_DriftSparkColor(player_t *player, INT32 charge)
 		}
 		else
 		{
-			color = SKINCOLOR_SAPPHIRE;
+			color = SKINCOLOR_BLUE;
 		}
 	}
 	else if (charge >= dstwo)
