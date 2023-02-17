@@ -10,6 +10,8 @@
 				"CMAKE_C_FLAGS": "-fdiagnostics-color",
 				"CMAKE_CXX_FLAGS": "-fdiagnostics-color",
 				"SRB2_CONFIG_DEV_BUILD": "ON",
+				"SRB2_CONFIG_HOSTTESTERS": "OFF",
+				"SRB2_CONFIG_TESTERS": "OFF",
 				"CMAKE_BUILD_TYPE": "RelWithDebInfo"
 			}
 		},
@@ -19,6 +21,22 @@
 			"inherits": "default",
 			"cacheVariables": {
 				"CMAKE_BUILD_TYPE": "Debug"
+			}
+		},
+		{
+			"name": "testers",
+			"description": "Build for testers to use",
+			"inherits": "default",
+			"cacheVariables": {
+				"SRB2_CONFIG_TESTERS": "ON"
+			}
+		},
+		{
+			"name": "host-testers",
+			"description": "Build to use when hosting, to let testers join",
+			"inherits": "default",
+			"cacheVariables": {
+				"SRB2_CONFIG_HOSTTESTERS": "ON"
 			}
 		}
 	],
