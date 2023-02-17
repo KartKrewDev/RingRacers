@@ -494,7 +494,7 @@ consvar_t cv_timelimit = CVAR_INIT ("timelimit", "None", CV_NETVAR|CV_CALL|CV_NO
 static CV_PossibleValue_t numlaps_cons_t[] = {{1, "MIN"}, {MAX_LAPS, "MAX"}, {0, "Map default"}, {0, NULL}};
 consvar_t cv_numlaps = CVAR_INIT ("numlaps", "Map default", CV_SAVE|CV_NETVAR|CV_CALL|CV_CHEAT, numlaps_cons_t, NumLaps_OnChange);
 
-consvar_t cv_forceskin = CVAR_INIT ("forceskin", "None", CV_NETVAR|CV_CALL|CV_CHEAT, NULL, ForceSkin_OnChange);
+consvar_t cv_forceskin = CVAR_INIT ("forcecharacter", "None", CV_NETVAR|CV_CALL|CV_CHEAT, NULL, ForceSkin_OnChange);
 
 consvar_t cv_downloading = CVAR_INIT ("downloading", "On", 0, CV_OnOff, NULL);
 consvar_t cv_allowexitlevel = CVAR_INIT ("allowexitlevel", "No", CV_NETVAR, CV_YesNo, NULL);
@@ -6111,10 +6111,10 @@ static void ForceSkin_OnChange(void)
 		return;
 
 	if (cv_forceskin.value < 0)
-		CONS_Printf("The server has lifted the forced skin restrictions.\n");
+		CONS_Printf("The server has lifted the forced character restrictions.\n");
 	else
 	{
-		CONS_Printf("The server is restricting all players to skin \"%s\".\n",cv_forceskin.string);
+		CONS_Printf("The server is restricting all players to \"%s\".\n",cv_forceskin.string);
 		ForceAllSkins(cv_forceskin.value);
 	}
 }
