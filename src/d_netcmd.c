@@ -1616,6 +1616,47 @@ static void SendNameAndColor(UINT8 n)
 	SendNetXCmdForPlayer(n, XD_NAMEANDCOLOR, buf, p - buf);
 }
 
+static void FinalisePlaystateChange(INT32 playernum)
+{
+	demo_extradata[playernum] |= DXD_PLAYSTATE;
+
+	// Clear player score and rings if a spectator.
+	if (players[playernum].spectator)
+	{
+		if (gametyperules & GTR_POINTLIMIT) // SRB2kart
+		{
+			players[playernum].roundscore = 0;
+			K_CalculateBattleWanted();
+		}
+
+		K_PlayerForfeit(playernum, true);
+
+		if (players[playernum].mo)
+			players[playernum].mo->health = 1;
+
+		K_StripItems(&players[playernum]);
+	}
+
+	// Reset away view (some code referenced from P_SpectatorJoinGame)
+	{
+		UINT8 i = 0;
+		INT32 *localplayertable = (splitscreen_partied[consoleplayer] ? splitscreen_party[consoleplayer] : g_localplayers);
+
+		for (i = 0; i <= r_splitscreen; i++)
+		{
+			if (localplayertable[i] == playernum)
+			{
+				LUA_HookViewpointSwitch(players+playernum, players+playernum, true);
+				displayplayers[i] = playernum;
+				break;
+			}
+		}
+	}
+
+	K_CheckBumpers(); // SRB2Kart
+	P_CheckRacers(); // also SRB2Kart
+}
+
 static void Got_NameAndColor(UINT8 **cp, INT32 playernum)
 {
 	player_t *p = &players[playernum];
@@ -1693,7 +1734,30 @@ static void Got_NameAndColor(UINT8 **cp, INT32 playernum)
 			CV_StealthSet(&cv_skin[localplayer], skins[forcedskin].name);
 	}
 	else
+	{
+		UINT8 oldskin = players[playernum].skin;
+
 		SetPlayerSkinByNum(playernum, skin);
+
+		// The following is a miniature subset of Got_Teamchange.
+		if ((gamestate == GS_LEVEL) // In a level?
+			&& (G_GametypeHasSpectators() && players[playernum].spectator == false) // not a spectator but could be?
+			&& (players[playernum].jointime > 1) // permit on join
+			&& (leveltime > introtime) // permit during intro turnaround
+			&& (players[playernum].skin != oldskin) // a skin change actually happened?
+			&& LUA_HookTeamSwitch(&players[playernum], 0, false, false, false)) // fiiiine, lua can except it
+		{
+			P_DamageMobj(players[playernum].mo, NULL, NULL, 1, DMG_SPECTATOR);
+			players[playernum].playerstate = PST_REBORN;
+
+			players[playernum].pflags &= ~PF_WANTSTOJOIN;
+			players[playernum].spectator = true;
+
+			HU_AddChatText(va("\x82*%s became a spectator.", player_names[playernum]), false);
+
+			FinalisePlaystateChange(playernum);
+		}
+	}
 
 	// set follower colour:
 	// Don't bother doing garbage and kicking if we receive None,
@@ -3764,22 +3828,6 @@ static void Got_Teamchange(UINT8 **cp, INT32 playernum)
 	else if (NetPacket.packet.newteam == 0)
 		HU_AddChatText(va("\x82*%s became a spectator.", player_names[playernum]), false); // "entered the game" text was moved to P_SpectatorJoinGame
 
-	// Reset away view (some code referenced from P_SpectatorJoinGame)
-	{
-		UINT8 i = 0;
-		INT32 *localplayertable = (splitscreen_partied[consoleplayer] ? splitscreen_party[consoleplayer] : g_localplayers);
-
-		for (i = 0; i <= r_splitscreen; i++)
-		{
-			if (localplayertable[i] == playernum)
-			{
-				LUA_HookViewpointSwitch(players+playernum, players+playernum, true);
-				displayplayers[i] = playernum;
-				break;
-			}
-		}
-	}
-
 	/*if (G_GametypeHasTeams())
 	{
 		if (NetPacket.packet.newteam)
@@ -3796,27 +3844,7 @@ static void Got_Teamchange(UINT8 **cp, INT32 playernum)
 	if (gamestate != GS_LEVEL)
 		return;
 
-	demo_extradata[playernum] |= DXD_PLAYSTATE;
-
-	// Clear player score and rings if a spectator.
-	if (players[playernum].spectator)
-	{
-		if (gametyperules & GTR_POINTLIMIT) // SRB2kart
-		{
-			players[playernum].roundscore = 0;
-			K_CalculateBattleWanted();
-		}
-
-		K_PlayerForfeit(playernum, true);
-
-		if (players[playernum].mo)
-			players[playernum].mo->health = 1;
-
-		K_StripItems(&players[playernum]);
-	}
-
-	K_CheckBumpers(); // SRB2Kart
-	P_CheckRacers(); // also SRB2Kart
+	FinalisePlaystateChange(playernum);
 }
 
 //
