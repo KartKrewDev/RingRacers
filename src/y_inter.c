@@ -569,19 +569,28 @@ skiptallydrawer:
 	if (!LUA_HudEnabled(hud_intermissionmessages))
 		return;
 
-	if (timer && grandprixinfo.gp == false && !modeattacking)
+	if (timer)
 	{
-		char *string;
-		INT32 tickdown = (timer+1)/TICRATE;
+		if (netgame || demo.netgame)
+		{
+			char *string;
+			INT32 tickdown = (timer+1)/TICRATE;
 
-		if (multiplayer && demo.playback)
-			string = va("Replay ends in %d", tickdown);
-		else
-			string = va("%s starts in %d", cv_advancemap.string, tickdown);
+			if (demo.playback)
+				string = va("Replay ends in %d", tickdown);
+			else
+				string = va("%s starts in %d", cv_advancemap.string, tickdown);
 
-		V_DrawCenteredString(BASEVIDWIDTH/2, 188, hilicol, string);
+			V_DrawCenteredString(BASEVIDWIDTH/2, 188, hilicol, string);
 
-		if ((demo.recording || demo.savemode == DSM_SAVED) && !demo.playback)
+			if (speedscramble != -1 && speedscramble != gamespeed)
+			{
+				V_DrawCenteredString(BASEVIDWIDTH/2, BASEVIDHEIGHT-24, hilicol|V_ALLOWLOWERCASE|V_SNAPTOBOTTOM,
+					va(M_GetText("Next race will be %s Speed!"), kartspeed_cons_t[1+speedscramble].strvalue));
+			}
+		}
+
+		if ((modeattacking == ATTACKING_NONE) && (demo.recording || demo.savemode == DSM_SAVED) && !demo.playback)
 		{
 			switch (demo.savemode)
 			{
@@ -601,15 +610,6 @@ skiptallydrawer:
 					break;
 			}
 		}
-
-		//if ((intertic/TICRATE) & 1) // Make it obvious that scrambling is happening next round. (OR NOT, I GUESS)
-		//{
-			if (speedscramble != -1 && speedscramble != gamespeed)
-			{
-				V_DrawCenteredString(BASEVIDWIDTH/2, BASEVIDHEIGHT-24, hilicol|V_ALLOWLOWERCASE|V_SNAPTOBOTTOM,
-					va(M_GetText("Next race will be %s Speed!"), kartspeed_cons_t[1+speedscramble].strvalue));
-			}
-		//}
 	}
 
 	M_DrawMenuForeground();

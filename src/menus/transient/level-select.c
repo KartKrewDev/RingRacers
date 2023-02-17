@@ -500,7 +500,7 @@ void M_LevelSelected(INT16 add)
 			}
 			else
 			{
-				restoreMenu = &PLAY_LevelSelectDef;
+				restoreMenu = &PLAY_RaceDifficultyDef;
 			}
 		}
 		else
