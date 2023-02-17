@@ -4,6 +4,7 @@
 #include "../k_menu.h"
 #include "../r_skins.h"
 #include "../s_sound.h"
+#include "../k_grandprix.h" // K_CanChangeRules
 
 menuitem_t PLAY_CharSelect[] =
 {
@@ -789,6 +790,7 @@ static boolean M_HandleCharacterGrid(setup_player_t *p, UINT8 num)
 {
 	UINT8 numclones;
 	INT32 skin;
+	boolean forceskin = (Playing() && K_CanChangeRules(true) == true) && (cv_forceskin.value != -1);
 
 	if (cv_splitdevice.value)
 		num = 0;
@@ -848,19 +850,35 @@ static boolean M_HandleCharacterGrid(setup_player_t *p, UINT8 num)
 
 	if (M_MenuConfirmPressed(num) /*|| M_MenuButtonPressed(num, MBT_START)*/)
 	{
-		skin = setup_chargrid[p->gridx][p->gridy].skinlist[setup_page];
-		if (setup_page >= setup_chargrid[p->gridx][p->gridy].numskins || skin == -1)
+		if (forceskin)
 		{
-			S_StartSound(NULL, sfx_s3k7b); //sfx_s3kb2
+			if ((p->gridx != skins[cv_forceskin.value].kartspeed-1)
+				|| (p->gridy != skins[cv_forceskin.value].kartweight-1))
+			{
+				S_StartSound(NULL, sfx_s3k7b); //sfx_s3kb2
+			}
+			else
+			{
+				p->mdepth = CSSTEP_COLORS;
+				S_StartSound(NULL, sfx_s3k63);
+			}
 		}
 		else
 		{
-			if (setup_page+1 == setup_chargrid[p->gridx][p->gridy].numskins)
-				p->mdepth = CSSTEP_COLORS; // Skip clones menu if there are none on this page.
+			skin = setup_chargrid[p->gridx][p->gridy].skinlist[setup_page];
+			if (setup_page >= setup_chargrid[p->gridx][p->gridy].numskins || skin == -1)
+			{
+				S_StartSound(NULL, sfx_s3k7b); //sfx_s3kb2
+			}
 			else
-				p->mdepth = CSSTEP_ALTS;
+			{
+				if (setup_page+1 == setup_chargrid[p->gridx][p->gridy].numskins)
+					p->mdepth = CSSTEP_COLORS; // Skip clones menu if there are none on this page.
+				else
+					p->mdepth = CSSTEP_ALTS;
 
-			S_StartSound(NULL, sfx_s3k63);
+				S_StartSound(NULL, sfx_s3k63);
+			}
 		}
 
 		M_SetMenuDelay(num);
@@ -884,7 +902,7 @@ static boolean M_HandleCharacterGrid(setup_player_t *p, UINT8 num)
 		M_SetMenuDelay(num);
 	}
 
-	if (num == 0 && setup_numplayers == 1 && setup_maxpage)	// ONLY one player.
+	if (num == 0 && setup_numplayers == 1 && setup_maxpage && !forceskin)	// ONLY one player.
 	{
 		if (M_MenuButtonPressed(num, MBT_L))
 		{
@@ -961,6 +979,8 @@ static void M_HandleCharRotate(setup_player_t *p, UINT8 num)
 
 static void M_HandleColorRotate(setup_player_t *p, UINT8 num)
 {
+	boolean forceskin = (Playing() && K_CanChangeRules(true) == true) && (cv_forceskin.value != -1);
+
 	if (cv_splitdevice.value)
 		num = 0;
 
@@ -987,7 +1007,8 @@ static void M_HandleColorRotate(setup_player_t *p, UINT8 num)
 	}
 	else if (M_MenuBackPressed(num))
 	{
-		if (setup_chargrid[p->gridx][p->gridy].numskins == 1)
+		if (forceskin
+			|| setup_chargrid[p->gridx][p->gridy].numskins == 1)
 		{
 			p->mdepth = CSSTEP_CHARS; // Skip clones menu
 		}
@@ -1253,6 +1274,7 @@ static void M_HandleFollowerColorRotate(setup_player_t *p, UINT8 num)
 boolean M_CharacterSelectHandler(INT32 choice)
 {
 	INT32 i;
+	boolean forceskin = (Playing() && K_CanChangeRules(true) == true) && (cv_forceskin.value != -1);
 
 	(void)choice;
 
@@ -1318,7 +1340,18 @@ boolean M_CharacterSelectHandler(INT32 choice)
 		}
 
 		// Just makes it easier to access later
-		p->skin = setup_chargrid[p->gridx][p->gridy].skinlist[p->clonenum];
+		if (forceskin)
+		{
+			if (p->gridx != skins[cv_forceskin.value].kartspeed-1
+				|| p->gridy != skins[cv_forceskin.value].kartweight-1)
+				p->skin = -1;
+			else
+				p->skin = cv_forceskin.value;
+		}
+		else
+		{
+			p->skin = setup_chargrid[p->gridx][p->gridy].skinlist[p->clonenum];
+		}
 
 		// Keep profile colour.
 		/*if (p->mdepth < CSSTEP_COLORS)
