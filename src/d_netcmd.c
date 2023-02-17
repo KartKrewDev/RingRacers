@@ -1701,7 +1701,9 @@ static void Got_NameAndColor(UINT8 **cp, INT32 playernum)
 			{
 				if (i == playernum)
 					continue;
-				if (!D_IsPlayerHumanAndGaming(i))
+				if (!playeringame[i])
+					continue;
+				if (players[i].spectator)
 					continue;
 				break;
 			}
