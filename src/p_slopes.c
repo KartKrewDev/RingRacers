@@ -987,9 +987,6 @@ void P_QuantizeMomentumToSlope(vector3_t *momentum, pslope_t *slope)
 {
 	vector3_t axis; // Fuck you, C90.
 
-	if (slope->flags & SL_NOPHYSICS)
-		return; // No physics, no quantizing.
-
 	axis.x = -slope->d.y;
 	axis.y = slope->d.x;
 	axis.z = 0;
