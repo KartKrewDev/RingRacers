@@ -3764,7 +3764,7 @@ static void Got_Teamchange(UINT8 **cp, INT32 playernum)
 
 	//Safety first!
 	// (not respawning spectators here...)
-	if (!players[playernum].spectator)
+	if (!players[playernum].spectator && gamestate == GS_LEVEL)
 	{
 		if (players[playernum].mo)
 		{
