@@ -683,7 +683,7 @@ void P_Ticker(boolean run)
 		}
 
 		ps_lua_thinkframe_time = I_GetPreciseTime();
-		LUA_HOOK(ThinkFrame);
+		LUA_HookThinkFrame();
 		ps_lua_thinkframe_time = I_GetPreciseTime() - ps_lua_thinkframe_time;
 	}
 
