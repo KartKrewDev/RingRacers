@@ -3,27 +3,25 @@
 
 #include "../k_menu.h"
 
-
 #if defined (TESTERS)
-	menuitem_t PLAY_MP_OptSelect[] =
-	{
-		{IT_STRING | IT_CALL, "Join by IP", "Join an online game by its IP address.",
-			NULL, {.routine = M_MPJoinIPInit}, 0, 0},
-	};
+	#define IT_STRING_CALL_NOTESTERS IT_DISABLED
 #else
-	menuitem_t PLAY_MP_OptSelect[] =
-	{
-		//{IT_NOTHING | IT_KEYHANDLER, NULL, NULL, NULL, M_MPOptSelect, 0, 0},
-		{IT_STRING | IT_CALL, "Host Game", "Start your own online game!",
-			NULL, {.routine = M_MPHostInit}, 0, 0},
+	#define IT_STRING_CALL_NOTESTERS (IT_STRING | IT_CALL)
+#endif // TESTERS
 
-		{IT_STRING | IT_CALL, "Server Browser", "Search for game servers to play in.",
-			NULL, {.routine = M_MPRoomSelectInit}, 0, 0},
+menuitem_t PLAY_MP_OptSelect[] =
+{
+	{IT_STRING_CALL_NOTESTERS, "Host Game", "Start your own online game!",
+		NULL, {.routine = M_MPHostInit}, 0, 0},
 
-		{IT_STRING | IT_CALL, "Join by IP", "Join an online game by its IP address.",
-			NULL, {.routine = M_MPJoinIPInit}, 0, 0},
-	};
-#endif
+	{IT_STRING_CALL_NOTESTERS, "Server Browser", "Search for game servers to play in.",
+		NULL, {.routine = M_MPRoomSelectInit}, 0, 0},
+
+	{IT_STRING | IT_CALL, "Join by IP", "Join an online game by its IP address.",
+		NULL, {.routine = M_MPJoinIPInit}, 0, 0},
+};
+
+#undef IT_STRING_CALL_NOTESTERS
 
 
 menu_t PLAY_MP_OptSelectDef = {

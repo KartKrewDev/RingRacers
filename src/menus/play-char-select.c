@@ -1461,7 +1461,7 @@ void M_CharacterSelectTick(void)
 				}
 
 				#if defined (TESTERS)
-					M_SetupNextMenu(&PLAY_MP_OptSelectDef, false);
+					M_MPOptSelectInit(0);
 				#else
 					M_SetupNextMenu(&PLAY_MainDef, false);
 				#endif
