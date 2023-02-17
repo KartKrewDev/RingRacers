@@ -1196,6 +1196,15 @@ const char *D_GetFancyBranchName(void)
 	return compbranch;
 }
 
+static void Command_assert(void)
+{
+#if !defined(NDEBUG) || defined(PARANOIA)
+	CONS_Printf("Yes, assertions are enabled.\n");
+#else
+	CONS_Printf("No, ssertions are NOT enabled.\n");
+#endif
+}
+
 //
 // D_SRB2Main
 //
@@ -1386,6 +1395,8 @@ void D_SRB2Main(void)
 
 	// Do this up here so that WADs loaded through the command line can use ExecCfg
 	COM_Init();
+
+	COM_AddCommand("assert", Command_assert);
 
 #ifndef TESTERS
 	// add any files specified on the command line with -file wadfile
