@@ -603,31 +603,49 @@ void V_AdjustXYWithSnap(INT32 *x, INT32 *y, UINT32 options, INT32 dupx, INT32 du
 
 		if (timer < length)
 		{
-			boolean slidefromright = false;
-
-			const INT32 offsetAmount = (screenwidth * FRACUNIT/2) / length;
-			fixed_t offset = (screenwidth * FRACUNIT/2) - (timer * offsetAmount);
-
-			offset += FixedMul(offsetAmount, renderdeltatics);
-			offset /= FRACUNIT;
-
-			if (r_splitscreen > 1)
+			if ((options & (V_SNAPTORIGHT|V_SNAPTOLEFT|V_SPLITSCREEN)) != 0)
 			{
-				if (stplyr == &players[displayplayers[1]] || stplyr == &players[displayplayers[3]])
+				boolean slidefromright = false;
+
+				const INT32 offsetAmount = (screenwidth * FRACUNIT/2) / length;
+				fixed_t offset = (screenwidth * FRACUNIT/2) - (timer * offsetAmount);
+
+				offset += FixedMul(offsetAmount, renderdeltatics);
+				offset /= FRACUNIT;
+
+				if (r_splitscreen > 1)
+				{
+					if (stplyr == &players[displayplayers[1]] || stplyr == &players[displayplayers[3]])
+						slidefromright = true;
+				}
+
+				if (options & V_SNAPTORIGHT)
 					slidefromright = true;
+				else if (options & V_SNAPTOLEFT)
+					slidefromright = false;
+
+				if (slidefromright == true)
+				{
+					offset = -offset;
+				}
+
+				*x -= offset;
 			}
-
-			if (options & V_SNAPTORIGHT)
-				slidefromright = true;
-			else if (options & V_SNAPTOLEFT)
-				slidefromright = false;
-
-			if (slidefromright == true)
+			else
 			{
-				offset = -offset;
-			}
+				const INT32 offsetAmount = (screenheight * FRACUNIT/2) / length;
+				fixed_t offset = (screenheight * FRACUNIT/2) - (timer * offsetAmount);
 
-			*x -= offset;
+				offset += FixedMul(offsetAmount, renderdeltatics);
+				offset /= FRACUNIT;
+
+				if (options & V_SNAPTOBOTTOM)
+				{
+					offset = -offset;
+				}
+
+				*y -= offset;
+			}
 		}
 	}
 }

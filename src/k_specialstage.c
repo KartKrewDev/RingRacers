@@ -102,7 +102,8 @@ static void K_MoveExitBeam(void)
 
 		if (player->distancetofinish > specialstageinfo.beamDist)
 		{
-			P_DoTimeOver(player);
+			player->pflags |= PF_NOCONTEST;
+			P_DoPlayerExit(player);
 		}
 	}
 }
