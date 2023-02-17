@@ -2179,6 +2179,10 @@ void F_TitleScreenTicker(boolean run)
 	if (!cv_rollingdemos.value)
 		return;
 
+	#if defined (TESTERS)
+		return;
+	#endif
+
 	// Wait for a while (for the music to finish, preferably)
 	// before starting demos
 	if (demoDelayLeft)
