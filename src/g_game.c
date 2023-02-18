@@ -1428,22 +1428,26 @@ ticcmd_t *G_MoveTiccmd(ticcmd_t* dest, const ticcmd_t* src, const size_t n)
 
 static void weaponPrefChange(void)
 {
-	WeaponPref_Send(0);
+	if (Playing())
+		WeaponPref_Send(0);
 }
 
 static void weaponPrefChange2(void)
 {
-	WeaponPref_Send(1);
+	if (Playing())
+		WeaponPref_Send(1);
 }
 
 static void weaponPrefChange3(void)
 {
-	WeaponPref_Send(2);
+	if (Playing())
+		WeaponPref_Send(2);
 }
 
 static void weaponPrefChange4(void)
 {
-	WeaponPref_Send(3);
+	if (Playing())
+		WeaponPref_Send(3);
 }
 
 //
