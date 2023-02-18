@@ -25,6 +25,8 @@ class FramebufferManager final : public Pass
 	std::array<rhi::Handle<rhi::Texture>, 2> main_colors_;
 	rhi::Handle<rhi::Renderbuffer> main_depth_;
 	std::array<rhi::Handle<rhi::Texture>, 2> post_colors_;
+	rhi::Handle<rhi::Texture> wipe_start_color_;
+	rhi::Handle<rhi::Texture> wipe_end_color_;
 	std::size_t main_index_ = 0;
 	std::size_t post_index_ = 0;
 	std::size_t width_ = 0;
@@ -67,6 +69,9 @@ public:
 		return post_colors_[1 - post_index_];
 	};
 
+	rhi::Handle<rhi::Texture> wipe_start_color() const noexcept { return wipe_start_color_; }
+	rhi::Handle<rhi::Texture> wipe_end_color() const noexcept { return wipe_end_color_; }
+
 	std::size_t width() const noexcept { return width_; }
 	std::size_t height() const noexcept { return height_; }
 };
@@ -85,6 +90,27 @@ public:
 	virtual void postpass(rhi::Rhi& rhi) override;
 
 	rhi::Handle<rhi::Texture> palette() const noexcept { return palette_; }
+};
+
+class CommonResourcesManager final : public Pass
+{
+	bool init_ = false;
+	rhi::Handle<rhi::Texture> black_;
+	rhi::Handle<rhi::Texture> white_;
+	rhi::Handle<rhi::Texture> transparent_;
+
+public:
+	CommonResourcesManager();
+	virtual ~CommonResourcesManager();
+
+	virtual void prepass(rhi::Rhi& rhi) override;
+	virtual void transfer(rhi::Rhi& rhi, rhi::Handle<rhi::TransferContext> ctx) override;
+	virtual void graphics(rhi::Rhi& rhi, rhi::Handle<rhi::GraphicsContext> ctx) override;
+	virtual void postpass(rhi::Rhi& rhi) override;
+
+	rhi::Handle<rhi::Texture> black() const noexcept { return black_; }
+	rhi::Handle<rhi::Texture> white() const noexcept { return white_; }
+	rhi::Handle<rhi::Texture> transparent() const noexcept { return transparent_; }
 };
 
 /*

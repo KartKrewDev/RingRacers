@@ -19,6 +19,7 @@ namespace srb2::hwr2
 
 class PostprocessWipePass final : public Pass
 {
+	// Internal RHI resources
 	rhi::Handle<rhi::RenderPass> render_pass_;
 	rhi::Handle<rhi::Pipeline> pipeline_;
 	rhi::Handle<rhi::Buffer> vbo_;
@@ -28,14 +29,17 @@ class PostprocessWipePass final : public Pass
 	rhi::Handle<rhi::UniformSet> us_;
 	rhi::Handle<rhi::BindingSet> bs_;
 	rhi::Handle<rhi::Texture> wipe_tex_;
-	rhi::Handle<rhi::Texture> source_;
-	uint32_t source_w_ = 0;
-	uint32_t source_h_ = 0;
+	int wipe_color_mode_ = 0;
+	int wipe_swizzle_ = 0;
+
+	// Pass parameters
+	rhi::Handle<rhi::Texture> start_;
 	rhi::Handle<rhi::Texture> end_;
 	rhi::Handle<rhi::Texture> target_;
 	uint32_t target_w_ = 0;
 	uint32_t target_h_ = 0;
 
+	// Mask lump loading
 	std::vector<uint8_t> mask_data_;
 	uint32_t mask_w_ = 0;
 	uint32_t mask_h_ = 0;
@@ -49,12 +53,7 @@ public:
 	virtual void graphics(rhi::Rhi& rhi, rhi::Handle<rhi::GraphicsContext> ctx) override;
 	virtual void postpass(rhi::Rhi& rhi) override;
 
-	void set_source(rhi::Handle<rhi::Texture> source, uint32_t width, uint32_t height) noexcept
-	{
-		source_ = source;
-		source_w_ = width;
-		source_h_ = height;
-	}
+	void set_start(rhi::Handle<rhi::Texture> start) noexcept { start_ = start; }
 
 	void set_end(rhi::Handle<rhi::Texture> end) noexcept { end_ = end; }
 

@@ -23,7 +23,7 @@
 namespace srb2::hwr2
 {
 
-class PassManager
+class PassManager final : public Pass
 {
 	struct PassManagerEntry
 	{
@@ -37,10 +37,15 @@ class PassManager
 
 public:
 	PassManager();
-	PassManager(const PassManager&) = delete;
+	PassManager(const PassManager&);
 	PassManager(PassManager&&) = delete;
-	PassManager& operator=(const PassManager&) = delete;
+	PassManager& operator=(const PassManager&);
 	PassManager& operator=(PassManager&&) = delete;
+
+	virtual void prepass(rhi::Rhi& rhi) override;
+	virtual void transfer(rhi::Rhi& rhi, rhi::Handle<rhi::TransferContext> ctx) override;
+	virtual void graphics(rhi::Rhi& rhi, rhi::Handle<rhi::GraphicsContext> ctx) override;
+	virtual void postpass(rhi::Rhi& rhi) override;
 
 	void insert(const std::string& name, std::shared_ptr<Pass> pass);
 	void insert(const std::string& name, std::function<void(PassManager&, rhi::Rhi&)> prepass_func);
@@ -52,7 +57,7 @@ public:
 	std::weak_ptr<Pass> for_name(const std::string& name);
 	void set_pass_enabled(const std::string& name, bool enabled);
 
-	void render(rhi::Rhi& rhi) const;
+	void render(rhi::Rhi& rhi);
 };
 
 } // namespace srb2::hwr2

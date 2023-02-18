@@ -44,8 +44,11 @@ const ProgramRequirements srb2::rhi::kProgramRequirementsPostprocessWipe = {
 	ProgramVertexInputRequirements {
 		{ProgramVertexInput {VertexAttributeName::kPosition, VertexAttributeFormat::kFloat3, true},
 		 ProgramVertexInput {VertexAttributeName::kTexCoord0, VertexAttributeFormat::kFloat2, true}}},
-	ProgramUniformRequirements {{{{{UniformName::kProjection, true}, {UniformName::kModelView, true}}}}},
-	ProgramSamplerRequirements {{{SamplerName::kSampler0, true}, {SamplerName::kSampler1, true}}}};
+	ProgramUniformRequirements {
+		{{{{UniformName::kProjection, true},
+		   {UniformName::kWipeColorizeMode, true},
+		   {UniformName::kWipeEncoreSwizzle, true}}}}},
+	ProgramSamplerRequirements {{{SamplerName::kSampler0, true}, {SamplerName::kSampler1, true}, {SamplerName::kSampler2, true}}}};
 
 const ProgramRequirements& rhi::program_requirements_for_program(PipelineProgram program) noexcept
 {

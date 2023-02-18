@@ -80,6 +80,8 @@ void LambdaPass::postpass(Rhi& rhi)
 }
 
 PassManager::PassManager() = default;
+PassManager::PassManager(const PassManager&) = default;
+PassManager& PassManager::operator=(const PassManager&) = default;
 
 void PassManager::insert(const std::string& name, std::shared_ptr<Pass> pass)
 {
@@ -124,13 +126,8 @@ std::weak_ptr<Pass> PassManager::for_name(const std::string& name)
 	return passes_[itr->second].pass;
 }
 
-void PassManager::render(Rhi& rhi) const
+void PassManager::prepass(Rhi& rhi)
 {
-	if (passes_.empty())
-	{
-		return;
-	}
-
 	for (auto& pass : passes_)
 	{
 		if (pass.enabled)
@@ -138,27 +135,32 @@ void PassManager::render(Rhi& rhi) const
 			pass.pass->prepass(rhi);
 		}
 	}
+}
 
-	Handle<TransferContext> tc = rhi.begin_transfer();
+void PassManager::transfer(Rhi& rhi, Handle<TransferContext> ctx)
+{
 	for (auto& pass : passes_)
 	{
 		if (pass.enabled)
 		{
-			pass.pass->transfer(rhi, tc);
+			pass.pass->transfer(rhi, ctx);
 		}
 	}
-	rhi.end_transfer(tc);
+}
 
-	Handle<GraphicsContext> gc = rhi.begin_graphics();
+void PassManager::graphics(Rhi& rhi, Handle<GraphicsContext> ctx)
+{
 	for (auto& pass : passes_)
 	{
 		if (pass.enabled)
 		{
-			pass.pass->graphics(rhi, gc);
+			pass.pass->graphics(rhi, ctx);
 		}
 	}
-	rhi.end_graphics(gc);
+}
 
+void PassManager::postpass(Rhi& rhi)
+{
 	for (auto& pass : passes_)
 	{
 		if (pass.enabled)
@@ -166,4 +168,24 @@ void PassManager::render(Rhi& rhi) const
 			pass.pass->postpass(rhi);
 		}
 	}
+}
+
+void PassManager::render(Rhi& rhi)
+{
+	if (passes_.empty())
+	{
+		return;
+	}
+
+	prepass(rhi);
+
+	Handle<TransferContext> tc = rhi.begin_transfer();
+	transfer(rhi, tc);
+	rhi.end_transfer(tc);
+
+	Handle<GraphicsContext> gc = rhi.begin_graphics();
+	graphics(rhi, gc);
+	rhi.end_graphics(gc);
+
+	postpass(rhi);
 }

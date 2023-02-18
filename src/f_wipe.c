@@ -85,6 +85,138 @@ UINT8 wipedefs[NUMWIPEDEFS] = {
 	99  // wipe_cutscene_final (hardcoded)
 };
 
+static boolean g_wipedef_toblack[NUMWIPEDEFS] = {
+	true, // wipe_credits_intermediate (0)
+
+	true,  // wipe_level_toblack
+	true,  // wipe_intermission_toblack
+	true,  // wipe_voting_toblack,
+	true,  // wipe_continuing_toblack
+	true,  // wipe_titlescreen_toblack
+	true,  // wipe_menu_toblack
+	true, // wipe_credits_toblack
+	true,  // wipe_evaluation_toblack
+	true,  // wipe_gameend_toblack
+	true, // wipe_intro_toblack (hardcoded)
+	true, // wipe_ending_toblack (hardcoded)
+	true, // wipe_cutscene_toblack (hardcoded)
+
+	false, // wipe_encore_toinvert
+	false, // wipe_encore_towhite
+
+	true, // wipe_level_final
+	true,  // wipe_intermission_final
+	true,  // wipe_voting_final
+	true,  // wipe_continuing_final
+	true,  // wipe_titlescreen_final
+	true,  // wipe_menu_final
+	true, // wipe_credits_final
+	true,  // wipe_evaluation_final
+	true,  // wipe_gameend_final
+	true, // wipe_intro_final (hardcoded)
+	true, // wipe_ending_final (hardcoded)
+	true  // wipe_cutscene_final (hardcoded)
+};
+
+static boolean g_wipedef_toinvert[NUMWIPEDEFS] = {
+	false, // wipe_credits_intermediate (0)
+
+	false,  // wipe_level_toblack
+	false,  // wipe_intermission_toblack
+	false,  // wipe_voting_toblack,
+	false,  // wipe_continuing_toblack
+	false,  // wipe_titlescreen_toblack
+	false,  // wipe_menu_toblack
+	false, // wipe_credits_toblack
+	false,  // wipe_evaluation_toblack
+	false,  // wipe_gameend_toblack
+	false, // wipe_intro_toblack (hardcoded)
+	false, // wipe_ending_toblack (hardcoded)
+	false, // wipe_cutscene_toblack (hardcoded)
+
+	true, // wipe_encore_toinvert
+	false, // wipe_encore_towhite
+
+	false, // wipe_level_final
+	false,  // wipe_intermission_final
+	false,  // wipe_voting_final
+	false,  // wipe_continuing_final
+	false,  // wipe_titlescreen_final
+	false,  // wipe_menu_final
+	false, // wipe_credits_final
+	false,  // wipe_evaluation_final
+	false,  // wipe_gameend_final
+	false, // wipe_intro_final (hardcoded)
+	false, // wipe_ending_final (hardcoded)
+	false  // wipe_cutscene_final (hardcoded)
+};
+
+static boolean g_wipedef_towhite[NUMWIPEDEFS] = {
+	false, // wipe_credits_intermediate (0)
+
+	false,  // wipe_level_toblack
+	false,  // wipe_intermission_toblack
+	false,  // wipe_voting_toblack,
+	false,  // wipe_continuing_toblack
+	false,  // wipe_titlescreen_toblack
+	false,  // wipe_menu_toblack
+	false, // wipe_credits_toblack
+	false,  // wipe_evaluation_toblack
+	false,  // wipe_gameend_toblack
+	false, // wipe_intro_toblack (hardcoded)
+	false, // wipe_ending_toblack (hardcoded)
+	false, // wipe_cutscene_toblack (hardcoded)
+
+	false, // wipe_encore_toinvert
+	true, // wipe_encore_towhite
+
+	false, // wipe_level_final
+	false,  // wipe_intermission_final
+	false,  // wipe_voting_final
+	false,  // wipe_continuing_final
+	false,  // wipe_titlescreen_final
+	false,  // wipe_menu_final
+	false, // wipe_credits_final
+	false,  // wipe_evaluation_final
+	false,  // wipe_gameend_final
+	false, // wipe_intro_final (hardcoded)
+	false, // wipe_ending_final (hardcoded)
+	false  // wipe_cutscene_final (hardcoded)
+};
+
+static boolean g_wipedef_crossfade[NUMWIPEDEFS] = {
+	false, // wipe_credits_intermediate (0)
+
+	false,  // wipe_level_toblack
+	false,  // wipe_intermission_toblack
+	false,  // wipe_voting_toblack,
+	false,  // wipe_continuing_toblack
+	false,  // wipe_titlescreen_toblack
+	false,  // wipe_menu_toblack
+	false, // wipe_credits_toblack
+	false,  // wipe_evaluation_toblack
+	false,  // wipe_gameend_toblack
+	false, // wipe_intro_toblack (hardcoded)
+	false, // wipe_ending_toblack (hardcoded)
+	false, // wipe_cutscene_toblack (hardcoded)
+
+	false, // wipe_encore_toinvert
+	false, // wipe_encore_towhite
+
+	true, // wipe_level_final
+	true,  // wipe_intermission_final
+	true,  // wipe_voting_final
+	true,  // wipe_continuing_final
+	true,  // wipe_titlescreen_final
+	true,  // wipe_menu_final
+	true, // wipe_credits_final
+	true,  // wipe_evaluation_final
+	true,  // wipe_gameend_final
+	true, // wipe_intro_final (hardcoded)
+	true, // wipe_ending_final (hardcoded)
+	true  // wipe_cutscene_final (hardcoded)
+};
+
 //--------------------------------------------------------------------------
 //                        SCREEN WIPE PACKAGE
 //--------------------------------------------------------------------------
@@ -94,6 +226,7 @@ UINT8 g_wipetype = 0;
 UINT8 g_wipeframe = 0;
 boolean g_wipereverse = false;
 boolean g_wipeskiprender = false;
+boolean g_wipeencorewiggle = false;
 boolean WipeStageTitle = false;
 INT32 lastwipetic = 0;
 
@@ -207,8 +340,9 @@ void F_WipeStartScreen(void)
 		return;
 	}
 #endif
-	wipe_scr_start = screens[3];
-	I_ReadScreen(wipe_scr_start);
+	// wipe_scr_start = screens[3];
+	// I_ReadScreen(wipe_scr_start);
+	I_FinishUpdateWipeStartScreen();
 #endif
 }
 
@@ -224,9 +358,10 @@ void F_WipeEndScreen(void)
 		return;
 	}
 #endif
-	wipe_scr_end = screens[4];
-	I_ReadScreen(wipe_scr_end);
-	V_DrawBlock(0, 0, 0, vid.width, vid.height, wipe_scr_start);
+	// wipe_scr_end = screens[4];
+	// I_ReadScreen(wipe_scr_end);
+	// V_DrawBlock(0, 0, 0, vid.width, vid.height, wipe_scr_start);
+	I_FinishUpdateWipeEndScreen();
 #endif
 }
 
@@ -360,10 +495,11 @@ void F_RunWipe(UINT8 wipetype, boolean drawMenu, const char *colormap, boolean r
 
 			if (encorewiggle)
 			{
-#ifdef HWRENDER
-				if (rendermode != render_opengl)
-#endif
-					F_DoEncoreWiggle(wipeframe);
+				g_wipeencorewiggle = wipeframe - 1;
+			}
+			else
+			{
+				g_wipeencorewiggle = 0;
 			}
 		}
 
@@ -381,7 +517,7 @@ void F_RunWipe(UINT8 wipetype, boolean drawMenu, const char *colormap, boolean r
 #endif
 		}
 
-		I_FinishUpdate(); // page flip or blit buffer
+		I_FinishUpdateWipe(); // page flip or blit buffer
 
 		if (rendermode != render_none)
 		{
@@ -454,3 +590,24 @@ boolean F_WipeExists(UINT8 wipetype)
 	return !(lumpnum == LUMPERROR);
 #endif
 }
+
+boolean F_WipeIsToBlack(UINT8 wipetype)
+{
+	return g_wipedef_toblack[wipetype];
+}
+
+boolean F_WipeIsToWhite(UINT8 wipetype)
+{
+	return g_wipedef_towhite[wipetype];
+}
+
+boolean F_WipeIsToInvert(UINT8 wipetype)
+{
+	return g_wipedef_toinvert[wipetype];
+}
+
+boolean F_WipeIsCrossfade(UINT8 wipetype)
+{
+	return g_wipedef_crossfade[wipetype];
+}
+

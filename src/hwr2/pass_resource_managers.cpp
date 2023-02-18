@@ -59,6 +59,16 @@ void FramebufferManager::prepass(Rhi& rhi)
 			rhi.destroy_texture(post_colors_[1]);
 			post_colors_[1] = kNullHandle;
 		}
+		if (wipe_start_color_ != kNullHandle)
+		{
+			rhi.destroy_texture(wipe_start_color_);
+			wipe_start_color_ = kNullHandle;
+		}
+		if (wipe_end_color_ != kNullHandle)
+		{
+			rhi.destroy_texture(wipe_end_color_);
+			wipe_end_color_ = kNullHandle;
+		}
 	}
 	width_ = current_width;
 	height_ = current_height;
@@ -84,6 +94,15 @@ void FramebufferManager::prepass(Rhi& rhi)
 	if (post_colors_[1] == kNullHandle)
 	{
 		post_colors_[1] = rhi.create_texture({TextureFormat::kRGBA, current_width, current_height});
+	}
+
+	if (wipe_start_color_ == kNullHandle)
+	{
+		wipe_start_color_ = rhi.create_texture({TextureFormat::kRGBA, current_width, current_height});
+	}
+	if (wipe_end_color_ == kNullHandle)
+	{
+		wipe_end_color_ = rhi.create_texture({TextureFormat::kRGBA, current_width, current_height});
 	}
 }
 
@@ -129,6 +148,45 @@ void MainPaletteManager::graphics(Rhi& rhi, Handle<GraphicsContext> ctx)
 
 void MainPaletteManager::postpass(Rhi& rhi)
 {
+}
+
+CommonResourcesManager::CommonResourcesManager() = default;
+CommonResourcesManager::~CommonResourcesManager() = default;
+
+void CommonResourcesManager::prepass(Rhi& rhi)
+{
+	if (!init_)
+	{
+		black_ = rhi.create_texture({TextureFormat::kRGBA, 1, 1});
+		white_ = rhi.create_texture({TextureFormat::kRGBA, 1, 1});
+		transparent_ = rhi.create_texture({TextureFormat::kRGBA, 1, 1});
+	}
+}
+
+void CommonResourcesManager::transfer(Rhi& rhi, Handle<TransferContext> ctx)
+{
+	if (!init_)
+	{
+		uint8_t black[4] = {0, 0, 0, 255};
+		tcb::span<const std::byte> black_bytes = tcb::as_bytes(tcb::span(black, 4));
+		uint8_t white[4] = {255, 255, 255, 255};
+		tcb::span<const std::byte> white_bytes = tcb::as_bytes(tcb::span(white, 4));
+		uint8_t transparent[4] = {0, 0, 0, 0};
+		tcb::span<const std::byte> transparent_bytes = tcb::as_bytes(tcb::span(transparent, 4));
+
+		rhi.update_texture(ctx, black_, {0, 0, 1, 1}, PixelFormat::kRGBA8, black_bytes);
+		rhi.update_texture(ctx, white_, {0, 0, 1, 1}, PixelFormat::kRGBA8, white_bytes);
+		rhi.update_texture(ctx, transparent_, {0, 0, 1, 1}, PixelFormat::kRGBA8, transparent_bytes);
+	}
+}
+
+void CommonResourcesManager::graphics(Rhi& rhi, Handle<GraphicsContext> ctx)
+{
+}
+
+void CommonResourcesManager::postpass(Rhi& rhi)
+{
+	init_ = true;
 }
 
 static uint32_t get_flat_size(lumpnum_t lump)

@@ -40,13 +40,26 @@ using namespace srb2;
 using namespace srb2::hwr2;
 using namespace srb2::rhi;
 
-static std::shared_ptr<PassManager> g_passmanager;
+namespace
+{
+struct InternalPassData
+{
+	std::shared_ptr<PassManager> resource_passmanager;
+	std::shared_ptr<PassManager> normal_rendering;
+	std::shared_ptr<PassManager> wipe_capture_start_rendering;
+	std::shared_ptr<PassManager> wipe_capture_end_rendering;
+	std::shared_ptr<PassManager> wipe_rendering;
+};
+} // namespace
+
+static std::unique_ptr<InternalPassData> g_passes;
+static Rhi* g_last_known_rhi = nullptr;
 
 Handle<Rhi> srb2::sys::g_current_rhi = kNullHandle;
 
-static bool rhi_changed()
+static bool rhi_changed(Rhi* rhi)
 {
-	return false;
+	return g_last_known_rhi != rhi;
 }
 
 #ifdef HWRENDER
@@ -103,50 +116,49 @@ static void finish_legacy_ogl_update()
 }
 #endif
 
-static std::shared_ptr<PassManager> build_pass_manager()
+static InternalPassData build_pass_manager()
 {
-	std::shared_ptr<PassManager> manager = std::make_shared<PassManager>();
+	auto framebuffer_manager = std::make_shared<FramebufferManager>();
+	auto palette_manager = std::make_shared<MainPaletteManager>();
+	auto common_resources_manager = std::make_shared<CommonResourcesManager>();
+	auto flat_texture_manager = std::make_shared<FlatTextureManager>();
+	auto resource_manager = std::make_shared<PassManager>();
 
-	std::shared_ptr<FramebufferManager> framebuffer_manager = std::make_shared<FramebufferManager>();
-	std::shared_ptr<MainPaletteManager> palette_manager = std::make_shared<MainPaletteManager>();
-	std::shared_ptr<FlatTextureManager> flat_texture_manager = std::make_shared<FlatTextureManager>();
+	resource_manager->insert("framebuffer_manager", framebuffer_manager);
+	resource_manager->insert("palette_manager", palette_manager);
+	resource_manager->insert("common_resources_manager", common_resources_manager);
+	resource_manager->insert("flat_texture_manager", flat_texture_manager);
 
-	std::shared_ptr<SoftwarePass> software_pass = std::make_shared<SoftwarePass>();
-	std::shared_ptr<BlitRectPass> blit_sw_pass = std::make_shared<BlitRectPass>(palette_manager, true);
-	std::shared_ptr<TwodeePass> twodee = std::make_shared<TwodeePass>();
+	// Basic Rendering is responsible for drawing 3d, 2d, and postprocessing the image.
+	// This is drawn to an alternating internal color buffer.
+	// Normal Rendering will output the result via final composite and present.
+	// Wipe Start Screen and Wipe End Screen will save to special color buffers used for Wipe Rendering.
+	auto basic_rendering = std::make_shared<PassManager>();
+
+	auto software_pass = std::make_shared<SoftwarePass>();
+	auto blit_sw_pass = std::make_shared<BlitRectPass>(palette_manager, true);
+	auto twodee = std::make_shared<TwodeePass>();
 	twodee->flat_manager_ = flat_texture_manager;
 	twodee->data_ = make_twodee_pass_data();
 	twodee->ctx_ = &g_2d;
-	std::shared_ptr<BlitRectPass> pp_simple_blit_pass = std::make_shared<BlitRectPass>(false);
-	std::shared_ptr<PostprocessWipePass> pp_wipe_pass = std::make_shared<PostprocessWipePass>();
-	std::shared_ptr<ScreenshotPass> screenshot_pass = std::make_shared<ScreenshotPass>();
-	std::shared_ptr<ImguiPass> imgui_pass = std::make_shared<ImguiPass>();
-	std::shared_ptr<BlitRectPass> final_composite_pass = std::make_shared<BlitRectPass>(true);
+	auto pp_simple_blit_pass = std::make_shared<BlitRectPass>(false);
+	auto screenshot_pass = std::make_shared<ScreenshotPass>();
+	auto imgui_pass = std::make_shared<ImguiPass>();
+	auto final_composite_pass = std::make_shared<BlitRectPass>(true);
 
-	manager->insert("framebuffer_manager", framebuffer_manager);
-	manager->insert("palette_manager", palette_manager);
-	manager->insert("flat_texture_manager", flat_texture_manager);
-
-	manager->insert(
+	basic_rendering->insert(
 		"3d_prepare",
 		[framebuffer_manager](PassManager& mgr, Rhi&)
 		{
 			const bool sw_enabled = rendermode == render_soft;
 
-			mgr.set_pass_enabled("software", !g_wipeskiprender && sw_enabled);
-			mgr.set_pass_enabled("blit_sw_prepare", !g_wipeskiprender && sw_enabled);
-			mgr.set_pass_enabled("blit_sw", !g_wipeskiprender && sw_enabled);
-		},
-		[framebuffer_manager](PassManager&, Rhi&)
-		{
-			if (!WipeInAction)
-			{
-				framebuffer_manager->swap_main();
-			}
+			mgr.set_pass_enabled("software", sw_enabled);
+			mgr.set_pass_enabled("blit_sw_prepare", sw_enabled);
+			mgr.set_pass_enabled("blit_sw", sw_enabled);
 		}
 	);
-	manager->insert("software", software_pass);
-	manager->insert(
+	basic_rendering->insert("software", software_pass);
+	basic_rendering->insert(
 		"blit_sw_prepare",
 		[blit_sw_pass, software_pass, framebuffer_manager](PassManager&, Rhi&)
 		{
@@ -154,9 +166,9 @@ static std::shared_ptr<PassManager> build_pass_manager()
 			blit_sw_pass->set_output(framebuffer_manager->current_main_color(), vid.width, vid.height, false, false);
 		}
 	);
-	manager->insert("blit_sw", blit_sw_pass);
+	basic_rendering->insert("blit_sw", blit_sw_pass);
 
-	manager->insert(
+	basic_rendering->insert(
 		"2d_prepare",
 		[twodee, framebuffer_manager, palette_manager](PassManager& mgr, Rhi&)
 		{
@@ -166,74 +178,62 @@ static std::shared_ptr<PassManager> build_pass_manager()
 			twodee->output_height_ = vid.height;
 		}
 	);
-	manager->insert("2d", twodee);
+	basic_rendering->insert("2d", twodee);
 
-	manager->insert(
-		"pp_final_prepare",
-		[](PassManager& mgr, Rhi&)
-		{
-			mgr.set_pass_enabled("pp_final_wipe_prepare", WipeInAction);
-			mgr.set_pass_enabled("pp_final_wipe", WipeInAction);
-			mgr.set_pass_enabled("pp_final_wipe_flip", WipeInAction);
-		}
-	);
-	manager->insert(
+	// basic_rendering->insert(
+	// 	"pp_final_prepare",
+	// 	[](PassManager& mgr, Rhi&)
+	// 	{
+	// 		mgr.set_pass_enabled("pp_final_wipe_prepare", WipeInAction);
+	// 		mgr.set_pass_enabled("pp_final_wipe", WipeInAction);
+	// 		mgr.set_pass_enabled("pp_final_wipe_flip", WipeInAction);
+	// 	}
+	// );
+	basic_rendering->insert(
 		"pp_final_simple_blit_prepare",
 		[pp_simple_blit_pass, framebuffer_manager](PassManager&, Rhi&)
 		{
-			Handle<Texture> color = framebuffer_manager->current_main_color();
-			if (WipeInAction && !g_wipereverse)
-			{
-				// Non-reverse wipes are "fade-outs" from the previous frame.
-				color = framebuffer_manager->previous_main_color();
-			}
-			pp_simple_blit_pass->set_texture(color, vid.width, vid.height);
+			framebuffer_manager->swap_post();
+			pp_simple_blit_pass->set_texture(framebuffer_manager->current_main_color(), vid.width, vid.height);
 			pp_simple_blit_pass
-				->set_output(framebuffer_manager->current_post_color(), vid.width, vid.height, false, false);
+				->set_output(framebuffer_manager->current_post_color(), vid.width, vid.height, false, true);
 		}
 	);
-	manager->insert("pp_final_simple_blit", pp_simple_blit_pass);
-	manager->insert(
-		"pp_final_simple_blit_flip",
-		[framebuffer_manager](PassManager&, Rhi&) { framebuffer_manager->swap_post(); }
-	);
-	manager->insert(
-		"pp_final_wipe_prepare",
-		[pp_wipe_pass, framebuffer_manager](PassManager&, Rhi&)
-		{
-			pp_wipe_pass->set_source(framebuffer_manager->previous_post_color(), vid.width, vid.height);
-			pp_wipe_pass->set_end(framebuffer_manager->current_main_color());
-			pp_wipe_pass->set_target(framebuffer_manager->current_post_color(), vid.width, vid.height);
-		}
-	);
-	manager->insert("pp_final_wipe", pp_wipe_pass);
-	manager->insert(
-		"pp_final_wipe_flip",
-		[framebuffer_manager](PassManager&, Rhi&) { framebuffer_manager->swap_post(); }
-	);
+	basic_rendering->insert("pp_final_simple_blit", pp_simple_blit_pass);
+	// basic_rendering->insert(
+	// 	"pp_final_simple_blit_flip",
+	// 	[framebuffer_manager](PassManager&, Rhi&) { framebuffer_manager->swap_post(); }
+	// );
 
-	manager->insert(
+	// basic_rendering->insert(
+	// 	"pp_final_wipe_flip",
+	// 	[framebuffer_manager](PassManager&, Rhi&) { framebuffer_manager->swap_post(); }
+	// );
+
+	basic_rendering->insert(
 		"screenshot_prepare",
 		[screenshot_pass, framebuffer_manager](PassManager&, Rhi&)
 		{
-			screenshot_pass->set_source(framebuffer_manager->previous_post_color(), vid.width, vid.height);
+			screenshot_pass->set_source(framebuffer_manager->current_post_color(), vid.width, vid.height);
 		}
 	);
-	manager->insert("screenshot", screenshot_pass);
+	basic_rendering->insert("screenshot", screenshot_pass);
 
-	manager->insert(
+	// Composite-present takes the current postprocess result and outputs it to the default framebuffer.
+	// It also renders imgui and presents the screen.
+	auto composite_present_rendering = std::make_shared<PassManager>();
+
+	composite_present_rendering->insert(
 		"final_composite_prepare",
 		[final_composite_pass, framebuffer_manager](PassManager&, Rhi&)
 		{
-			final_composite_pass->set_texture(framebuffer_manager->previous_post_color(), vid.width, vid.height);
-			final_composite_pass->set_output(kNullHandle, vid.realwidth, vid.realheight, true, false);
+			final_composite_pass->set_texture(framebuffer_manager->current_post_color(), vid.width, vid.height);
+			final_composite_pass->set_output(kNullHandle, vid.realwidth, vid.realheight, true, true);
 		}
 	);
-	manager->insert("final_composite", final_composite_pass);
-
-	manager->insert("imgui", imgui_pass);
-
-	manager->insert(
+	composite_present_rendering->insert("final_composite", final_composite_pass);
+	composite_present_rendering->insert("imgui", imgui_pass);
+	composite_present_rendering->insert(
 		"present",
 		[](PassManager&, Rhi& rhi) {},
 		[framebuffer_manager](PassManager&, Rhi& rhi)
@@ -241,25 +241,104 @@ static std::shared_ptr<PassManager> build_pass_manager()
 			rhi.present();
 			rhi.finish();
 			framebuffer_manager->reset_post();
-
-			// TODO fix this: it's an ugly hack to work around issues with wipes
-			// Why this works:
-			// - Menus run F_RunWipe which is an inner update loop calling I_FinishUpdate, with this global set
-			// - After exiting F_RunWipe, g_2d should normally be cleared by I_FinishUpdate
-			// - Unfortunately, the menu has already run all its draw calls when exiting F_RunWipe
-			// - That causes a single-frame flash of no 2d content, which is an epilepsy risk.
-			// - By not clearing the 2d context, we are redrawing 2d every frame of the wipe
-			// - This "works" because we draw 2d to the normal color buffer, not the postprocessed screen.
-			// - It does result in the FPS counter being mangled during the wipe though.
-			// - To fix the issues around wipes, wipes need to be a "sub" game state, and eliminate the inner tic loops.
-			if (!WipeInAction)
-			{
-				g_2d = Twodee();
-			}
 		}
 	);
 
-	return manager;
+	// Normal rendering combines basic rendering and composite-present.
+	auto normal_rendering = std::make_shared<PassManager>();
+
+	normal_rendering->insert("resource_manager", resource_manager);
+	normal_rendering->insert("basic_rendering", basic_rendering);
+	normal_rendering->insert("composite_present_rendering", composite_present_rendering);
+
+	// Wipe Start Screen Capture rendering
+	auto wipe_capture_start_rendering = std::make_shared<PassManager>();
+	auto wipe_start_blit = std::make_shared<BlitRectPass>();
+
+	wipe_capture_start_rendering->insert("resource_manager", resource_manager);
+	wipe_capture_start_rendering->insert("basic_rendering", basic_rendering);
+	wipe_capture_start_rendering->insert(
+		"wipe_capture_prepare",
+		[framebuffer_manager, wipe_start_blit](PassManager&, Rhi&)
+		{
+			wipe_start_blit->set_texture(framebuffer_manager->previous_post_color(), vid.width, vid.height);
+			wipe_start_blit->set_output(framebuffer_manager->wipe_start_color(), vid.width, vid.height, false, true);
+		}
+	);
+	wipe_capture_start_rendering->insert("wipe_capture", wipe_start_blit);
+
+	// Wipe End Screen Capture rendering
+	auto wipe_capture_end_rendering = std::make_shared<PassManager>();
+	auto wipe_end_blit = std::make_shared<BlitRectPass>();
+
+	wipe_capture_end_rendering->insert("resource_manager", resource_manager);
+	wipe_capture_end_rendering->insert("basic_rendering", basic_rendering);
+	wipe_capture_end_rendering->insert(
+		"wipe_capture_prepare",
+		[framebuffer_manager, wipe_end_blit](PassManager&, Rhi&)
+		{
+			wipe_end_blit->set_texture(framebuffer_manager->current_post_color(), vid.width, vid.height);
+			wipe_end_blit->set_output(framebuffer_manager->wipe_end_color(), vid.width, vid.height, false, true);
+		}
+	);
+	wipe_capture_end_rendering->insert("wipe_capture", wipe_end_blit);
+
+	// Wipe rendering only runs the wipe shader on the start and end screens, and adds composite-present.
+	auto wipe_rendering = std::make_shared<PassManager>();
+
+	auto pp_wipe_pass = std::make_shared<PostprocessWipePass>();
+
+	wipe_rendering->insert("resource_manager", resource_manager);
+	wipe_rendering->insert(
+		"pp_final_wipe_prepare",
+		[pp_wipe_pass, framebuffer_manager, common_resources_manager](PassManager&, Rhi&)
+		{
+			framebuffer_manager->swap_post();
+			Handle<Texture> start = framebuffer_manager->wipe_start_color();
+			Handle<Texture> end = framebuffer_manager->wipe_end_color();
+			if (g_wipereverse)
+			{
+				std::swap(start, end);
+			}
+			pp_wipe_pass->set_start(start);
+			pp_wipe_pass->set_end(end);
+			pp_wipe_pass->set_target(framebuffer_manager->current_post_color(), vid.width, vid.height);
+		}
+	);
+	wipe_rendering->insert("pp_final_wipe", pp_wipe_pass);
+	wipe_rendering->insert("composite_present_rendering", composite_present_rendering);
+
+	InternalPassData ret;
+	ret.resource_passmanager = resource_manager;
+	ret.normal_rendering = normal_rendering;
+	ret.wipe_capture_start_rendering = wipe_capture_start_rendering;
+	ret.wipe_capture_end_rendering = wipe_capture_end_rendering;
+	ret.wipe_rendering = wipe_rendering;
+
+	return ret;
+}
+
+void I_NewTwodeeFrame(void)
+{
+	g_2d = Twodee();
+}
+
+void I_NewImguiFrame(void)
+{
+	// TODO move this to srb2loop
+	ImGuiIO& io = ImGui::GetIO();
+	io.DisplaySize.x = vid.realwidth;
+	io.DisplaySize.y = vid.realheight;
+	ImGui::NewFrame();
+}
+
+static void maybe_reinit_passes(Rhi* rhi)
+{
+	if (rhi_changed(rhi) || !g_passes)
+	{
+		g_last_known_rhi = rhi;
+		g_passes = std::make_unique<InternalPassData>(build_pass_manager());
+	}
 }
 
 void I_FinishUpdate(void)
@@ -277,16 +356,33 @@ void I_FinishUpdate(void)
 	}
 #endif
 
-	// TODO move this to srb2loop
-	ImGuiIO& io = ImGui::GetIO();
-	io.DisplaySize.x = vid.realwidth;
-	io.DisplaySize.y = vid.realheight;
-	ImGui::NewFrame();
+	rhi::Rhi* rhi = sys::get_rhi(sys::g_current_rhi);
 
-	if (rhi_changed() || !g_passmanager)
+	if (rhi == nullptr)
 	{
-		g_passmanager = build_pass_manager();
+		// ???
+		return;
 	}
+
+	maybe_reinit_passes(rhi);
+
+	g_passes->normal_rendering->render(*rhi);
+}
+
+void I_FinishUpdateWipeStartScreen(void)
+{
+	if (rendermode == render_none)
+	{
+		return;
+	}
+
+#ifdef HWRENDER
+	if (rendermode == render_opengl)
+	{
+		finish_legacy_ogl_update();
+		return;
+	}
+#endif
 
 	rhi::Rhi* rhi = sys::get_rhi(sys::g_current_rhi);
 
@@ -296,5 +392,63 @@ void I_FinishUpdate(void)
 		return;
 	}
 
-	g_passmanager->render(*rhi);
+	maybe_reinit_passes(rhi);
+
+	g_passes->wipe_capture_start_rendering->render(*rhi);
+}
+
+void I_FinishUpdateWipeEndScreen(void)
+{
+	if (rendermode == render_none)
+	{
+		return;
+	}
+
+#ifdef HWRENDER
+	if (rendermode == render_opengl)
+	{
+		finish_legacy_ogl_update();
+		return;
+	}
+#endif
+
+	rhi::Rhi* rhi = sys::get_rhi(sys::g_current_rhi);
+
+	if (rhi == nullptr)
+	{
+		// ???
+		return;
+	}
+
+	maybe_reinit_passes(rhi);
+
+	g_passes->wipe_capture_end_rendering->render(*rhi);
+}
+
+void I_FinishUpdateWipe(void)
+{
+	if (rendermode == render_none)
+	{
+		return;
+	}
+
+#ifdef HWRENDER
+	if (rendermode == render_opengl)
+	{
+		finish_legacy_ogl_update();
+		return;
+	}
+#endif
+
+	rhi::Rhi* rhi = sys::get_rhi(sys::g_current_rhi);
+
+	if (rhi == nullptr)
+	{
+		// ???
+		return;
+	}
+
+	maybe_reinit_passes(rhi);
+
+	g_passes->wipe_rendering->render(*rhi);
 }

@@ -46,8 +46,8 @@ static const PipelineDesc kWipePipelineDesc = {
 		 {VertexAttributeName::kPosition, 0, 0},
 		 {VertexAttributeName::kTexCoord0, 0, 12},
 	 }},
-	{{{{UniformName::kProjection}}}},
-	{{SamplerName::kSampler0, SamplerName::kSampler1}},
+	{{{{UniformName::kProjection, UniformName::kWipeColorizeMode, UniformName::kWipeEncoreSwizzle}}}},
+	{{SamplerName::kSampler0, SamplerName::kSampler1, SamplerName::kSampler2}},
 	std::nullopt,
 	{PixelFormat::kRGBA8, std::nullopt, {true, true, true, true}},
 	PrimitiveType::kTriangles,
@@ -55,7 +55,7 @@ static const PipelineDesc kWipePipelineDesc = {
 	FaceWinding::kCounterClockwise,
 	{0.f, 0.f, 0.f, 1.f}};
 
-PostprocessWipePass::PostprocessWipePass() : Pass()
+PostprocessWipePass::PostprocessWipePass()
 {
 }
 
@@ -89,6 +89,27 @@ void PostprocessWipePass::prepass(Rhi& rhi)
 	uint32_t wipe_type = g_wipetype;
 	uint32_t wipe_frame = g_wipeframe;
 	bool wipe_reverse = g_wipereverse;
+
+	wipe_color_mode_ = 0; // TODO 0 = modulate, 1 = invert, 2 = MD to black, 3 = MD to white
+	if (F_WipeIsToBlack(wipe_type))
+	{
+		wipe_color_mode_ = 2;
+	}
+	else if (F_WipeIsToWhite(wipe_type))
+	{
+		wipe_color_mode_ = 3;
+	}
+	else if (F_WipeIsToInvert(wipe_type))
+	{
+		wipe_color_mode_ = 1;
+	}
+	else if (F_WipeIsCrossfade(wipe_type))
+	{
+		wipe_color_mode_ = 0;
+	}
+
+	wipe_swizzle_ = g_wipeencorewiggle;
+
 	if (wipe_type >= 100 || wipe_frame >= 100)
 	{
 		return;
@@ -145,7 +166,7 @@ void PostprocessWipePass::transfer(Rhi& rhi, Handle<TransferContext> ctx)
 		return;
 	}
 
-	if (source_ == kNullHandle)
+	if (start_ == kNullHandle || end_ == kNullHandle)
 	{
 		return;
 	}
@@ -166,13 +187,17 @@ void PostprocessWipePass::transfer(Rhi& rhi, Handle<TransferContext> ctx)
 	rhi.update_texture(ctx, wipe_tex_, {0, 0, mask_w_, mask_h_}, PixelFormat::kR8, data);
 
 	UniformVariant uniforms[] = {
-		{// Projection
-		 std::array<std::array<float, 4>, 4> {
-			 {{2.f, 0.f, 0.f, 0.f}, {0.f, 2.f, 0.f, 0.f}, {0.f, 0.f, 1.f, 0.f}, {0.f, 0.f, 0.f, 1.f}}}}};
+		{std::array<std::array<float, 4>, 4> {
+			{{2.f, 0.f, 0.f, 0.f}, {0.f, 2.f, 0.f, 0.f}, {0.f, 0.f, 1.f, 0.f}, {0.f, 0.f, 0.f, 1.f}}}},
+		{static_cast<int32_t>(wipe_color_mode_)},
+		{static_cast<int32_t>(wipe_swizzle_)}};
 	us_ = rhi.create_uniform_set(ctx, {tcb::span(uniforms)});
 
 	VertexAttributeBufferBinding vbos[] = {{0, vbo_}};
-	TextureBinding tx[] = {{SamplerName::kSampler0, source_}, {SamplerName::kSampler1, wipe_tex_}};
+	TextureBinding tx[] = {
+		{SamplerName::kSampler0, start_},
+		{SamplerName::kSampler1, end_},
+		{SamplerName::kSampler2, wipe_tex_}};
 	bs_ = rhi.create_binding_set(ctx, pipeline_, {vbos, tx});
 }
 

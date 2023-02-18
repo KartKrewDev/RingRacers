@@ -800,6 +800,9 @@ void D_SRB2Loop(void)
 		HW3S_BeginFrameUpdate();
 #endif
 
+		I_NewTwodeeFrame();
+		I_NewImguiFrame();
+
 		if (realtics > 0 || singletics)
 		{
 			// don't skip more than 10 frames at a time
@@ -1490,6 +1493,9 @@ void D_SRB2Main(void)
 
 	CONS_Printf("I_StartupGraphics()...\n");
 	I_StartupGraphics();
+
+	I_NewTwodeeFrame();
+	I_NewImguiFrame();
 
 #ifdef HWRENDER
 	// Lactozilla: Add every hardware mode CVAR and CCMD.

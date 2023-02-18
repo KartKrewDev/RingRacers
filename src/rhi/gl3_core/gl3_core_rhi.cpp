@@ -334,6 +334,10 @@ constexpr const char* map_uniform_attribute_symbol_name(rhi::UniformName name)
 		return "u_texcoord0_transform";
 	case rhi::UniformName::kSampler0IsIndexedAlpha:
 		return "u_sampler0_is_indexed_alpha";
+	case rhi::UniformName::kWipeColorizeMode:
+		return "u_wipe_colorize_mode";
+	case rhi::UniformName::kWipeEncoreSwizzle:
+		return "u_wipe_encore_swizzle";
 	default:
 		return nullptr;
 	}
@@ -353,6 +357,10 @@ constexpr const char* map_uniform_enable_define(rhi::UniformName name)
 		return "ENABLE_U_TEXCOORD0_TRANSFORM";
 	case rhi::UniformName::kSampler0IsIndexedAlpha:
 		return "ENABLE_U_SAMPLER0_IS_INDEXED_ALPHA";
+	case rhi::UniformName::kWipeColorizeMode:
+		return "ENABLE_U_WIPE_COLORIZE_MODE";
+	case rhi::UniformName::kWipeEncoreSwizzle:
+		return "ENABLE_U_WIPE_ENCORE_SWIZZLE";
 	default:
 		return nullptr;
 	}

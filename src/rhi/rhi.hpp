@@ -196,7 +196,9 @@ enum class UniformName
 	kModelView,
 	kProjection,
 	kTexCoord0Transform,
-	kSampler0IsIndexedAlpha
+	kSampler0IsIndexedAlpha,
+	kWipeColorizeMode,
+	kWipeEncoreSwizzle
 };
 
 enum class SamplerName
@@ -305,6 +307,10 @@ inline constexpr const UniformFormat uniform_format(UniformName name) noexcept
 	case UniformName::kTexCoord0Transform:
 		return UniformFormat::kMat3;
 	case UniformName::kSampler0IsIndexedAlpha:
+		return UniformFormat::kInt;
+	case UniformName::kWipeColorizeMode:
+		return UniformFormat::kInt;
+	case UniformName::kWipeEncoreSwizzle:
 		return UniformFormat::kInt;
 	default:
 		return UniformFormat::kFloat;
