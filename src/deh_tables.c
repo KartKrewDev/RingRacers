@@ -3776,6 +3776,7 @@ const char *const STATE_LIST[] = { // array length left dynamic for sanity testi
 	"S_GARDENTOP_SINKING3",
 	"S_GARDENTOP_DEAD",
 	"S_GARDENTOPSPARK",
+	"S_GARDENTOPARROW",
 
 	// Caked-Up Booty-Sheet Ghost
 	"S_HYUDORO",
@@ -5389,6 +5390,7 @@ const char *const MOBJTYPE_LIST[] = {  // array length left dynamic for sanity t
 	"MT_BUBBLESHIELDTRAP",
 	"MT_GARDENTOP",
 	"MT_GARDENTOPSPARK",
+	"MT_GARDENTOPARROW",
 
 	"MT_HYUDORO",
 	"MT_HYUDORO_CENTER",

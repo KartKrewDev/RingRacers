@@ -586,6 +586,7 @@ char sprnames[NUMSPRITES + 1][5] =
 	"FLML", // Flame Shield speed lines
 	"FLMF", // Flame Shield flash
 	"GTOP", // Marble Garden Zone Spinning Top
+	"GTAR", // Garden Top Arrow
 	"HYUU", // Hyudoro
 	"GRWP", // Grow
 	"POHB", // Shrink Poh-Bee
@@ -4370,6 +4371,7 @@ state_t states[NUMSTATES] =
 	{SPR_GTOP, 4, 1, {NULL}, 5, 1, S_GARDENTOP_SINKING1}, // S_GARDENTOP_SINKING3
 	{SPR_GTOP, FF_ANIMATE, 100, {A_Scream}, 5, 1, S_NULL}, // S_GARDENTOP_DEAD
 	{SPR_BDRF, FF_FULLBRIGHT|FF_PAPERSPRITE|FF_ANIMATE|FF_RANDOMANIM, -1, {NULL}, 5, 2, S_NULL}, // S_GARDENTOPSPARK
+	{SPR_GTAR, FF_FULLBRIGHT, -1, {NULL}, 5, 2, S_NULL}, // S_GARDENTOPARROW
 
 	{SPR_HYUU, FF_FULLBRIGHT, -1, {NULL}, 0, 0, S_NULL}, // S_HYUDORO
 
@@ -24028,6 +24030,33 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		8,              // speed
 		8*FRACUNIT,     // radius
 		8*FRACUNIT,     // height
+		1,              // display offset
+		100,            // mass
+		0,              // damage
+		sfx_None,       // activesound
+		MF_NOBLOCKMAP|MF_NOCLIP|MF_NOCLIPHEIGHT|MF_NOGRAVITY|MF_DONTENCOREMAP|MF_NOSQUISH, // flags
+		S_NULL          // raisestate
+	},
+
+	{           // MT_GARDENTOPARROW
+		-1,             // doomednum
+		S_GARDENTOPARROW, // spawnstate
+		1000,           // spawnhealth
+		S_NULL,         // seestate
+		sfx_None,       // seesound
+		8,              // reactiontime
+		sfx_None,       // attacksound
+		S_NULL,         // painstate
+		0,              // painchance
+		sfx_None,       // painsound
+		S_NULL,         // meleestate
+		S_NULL,         // missilestate
+		S_NULL,         // deathstate
+		S_NULL,         // xdeathstate
+		sfx_None,       // deathsound
+		8,              // speed
+		8*FRACUNIT,     // radius
+		54*FRACUNIT,    // height
 		1,              // display offset
 		100,            // mass
 		0,              // damage

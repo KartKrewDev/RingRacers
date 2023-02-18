@@ -9929,7 +9929,8 @@ void K_AdjustPlayerFriction(player_t *player)
 
 	// Less friction on Top unless grinding
 	if (player->curshield == KSHIELD_TOP &&
-			K_GetForwardMove(player) > 0)
+			K_GetForwardMove(player) > 0 &&
+			player->speed < 2 * K_GetKartSpeed(player, false, false))
 	{
 		player->mo->friction += 1024;
 	}
@@ -10601,9 +10602,12 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 										P_InstaThrust(player->mo, angle, player->speed + (80 * mapobjectscale));
 										P_SetObjectMomZ(player->mo, player->mo->info->height / 8, true);
 
-										top->momx = player->mo->momx;
-										top->momy = player->mo->momy;
-										top->momz = player->mo->momz;
+										if (top != NULL)
+										{
+											top->momx = player->mo->momx;
+											top->momy = player->mo->momy;
+											top->momz = player->mo->momz;
+										}
 									}
 									else
 									{

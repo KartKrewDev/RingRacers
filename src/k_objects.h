@@ -19,6 +19,7 @@ mobj_t *Obj_GardenTopThrow(player_t *player);
 mobj_t *Obj_GardenTopDestroy(player_t *player);
 void Obj_GardenTopThink(mobj_t *top);
 void Obj_GardenTopSparkThink(mobj_t *spark);
+void Obj_GardenTopArrowThink(mobj_t *arrow);
 boolean Obj_GardenTopPlayerIsGrinding(player_t *player);
 
 /* Shrink */

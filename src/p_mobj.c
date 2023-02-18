@@ -8394,6 +8394,11 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 		Obj_GardenTopSparkThink(mobj);
 		break;
 	}
+	case MT_GARDENTOPARROW:
+	{
+		Obj_GardenTopArrowThink(mobj);
+		break;
+	}
 	case MT_HYUDORO:
 	{
 		Obj_HyudoroThink(mobj);
