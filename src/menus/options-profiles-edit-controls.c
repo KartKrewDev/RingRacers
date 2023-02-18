@@ -188,7 +188,7 @@ static void M_ProfileControlSaveResponse(INT32 choice)
 		if (belongsto > -1 && belongsto < MAXSPLITSCREENPLAYERS)
 		{
 			memcpy(&gamecontrol[belongsto], optionsmenu.tempcontrols, sizeof(gamecontroldefault));
-			CV_StealthSetValue(&cv_kickstartaccel[belongsto], cv_dummyprofilekickstart.value);
+			CV_SetValue(&cv_kickstartaccel[belongsto], cv_dummyprofilekickstart.value);
 		}
 
 		M_GoBack(0);
