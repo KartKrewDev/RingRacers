@@ -1137,6 +1137,7 @@ typedef enum sprite
 	SPR_FLML, // Flame Shield speed lines
 	SPR_FLMF, // Flame Shield flash
 	SPR_GTOP, // Marble Garden Zone Spinning Top
+	SPR_GTAR, // Garden Top Arrow
 	SPR_HYUU, // Hyudoro
 	SPR_GRWP, // Grow
 	SPR_POHB, // Shrink Poh-Bee
@@ -4808,6 +4809,7 @@ typedef enum state
 	S_GARDENTOP_SINKING3,
 	S_GARDENTOP_DEAD,
 	S_GARDENTOPSPARK,
+	S_GARDENTOPARROW,
 
 	// Caked-Up Booty-Sheet Ghost
 	S_HYUDORO,
@@ -6457,6 +6459,7 @@ typedef enum mobj_type
 	MT_BUBBLESHIELDTRAP,
 	MT_GARDENTOP,
 	MT_GARDENTOPSPARK,
+	MT_GARDENTOPARROW,
 
 	MT_HYUDORO,
 	MT_HYUDORO_CENTER,

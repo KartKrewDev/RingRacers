@@ -51,6 +51,14 @@ enum {
 #define spark_top(o) ((o)->target)
 #define spark_angle(o) ((o)->movedir)
 
+enum {
+	ARROW_OVERHEAD,
+	ARROW_IN_FRONT,
+};
+
+#define arrow_top(o) ((o)->target)
+#define arrow_kind(o) ((o)->reactiontime)
+
 static inline player_t *
 get_rider_player (mobj_t *rider)
 {
@@ -201,6 +209,49 @@ spawn_grind_spark (mobj_t *top)
 				grind_spark_base_scale(player));
 
 		P_SetScale(spark, spark->destscale);
+	}
+}
+
+static mobj_t *
+spawn_arrow
+(		mobj_t * top,
+		UINT32 ff,
+		UINT8 kind)
+{
+	mobj_t *arrow = P_SpawnMobjFromMobj(
+			top, 0, 0, 0, MT_GARDENTOPARROW);
+
+	P_SetTarget(&arrow_top(arrow), top);
+	arrow_kind(arrow) = kind;
+
+	arrow->frame |= ff;
+
+	return arrow;
+}
+
+static void
+spawn_arrow_pair (mobj_t *top)
+{
+	{
+		mobj_t *x = spawn_arrow(top,
+				FF_PAPERSPRITE, ARROW_OVERHEAD);
+
+		// overhead arrow is slightly smaller
+		P_SetScale(x, (x->destscale = 3 * x->scale / 4));
+	}
+
+	{
+		mobj_t *x = spawn_arrow(top,
+				FF_FLOORSPRITE | FF_ADD, ARROW_IN_FRONT);
+
+		x->renderflags |= RF_SLOPESPLAT | RF_NOSPLATBILLBOARD;
+
+		// Let splat be flat, useful later for
+		// Obj_GardenTopArrowThink reverse gravity.
+		x->height = 0;
+
+		// Make the arrow wider (sprite length is horizontal).
+		x->spriteyscale = 2*FRACUNIT;
 	}
 }
 
@@ -362,6 +413,25 @@ tilt (mobj_t *top)
 }
 
 static void
+anchor
+(		mobj_t * us,
+		mobj_t * them,
+		angle_t angle,
+		fixed_t radius)
+{
+	const fixed_t x = P_ReturnThrustX(us, angle, radius);
+	const fixed_t y = P_ReturnThrustY(us, angle, radius);
+
+	/* FIXME: THIS FUNCTION FUCKING SUCKS */
+	K_FlipFromObject(us, them);
+
+	P_MoveOrigin(us, them->x + x, them->y + y,
+			them->z + K_FlipZOffset(us, them));
+
+	us->angle = angle;
+}
+
+static void
 anchor_top (mobj_t *top)
 {
 	mobj_t *rider = top_rider(top);
@@ -375,8 +445,7 @@ anchor_top (mobj_t *top)
 
 	tilt(top);
 
-	P_MoveOrigin(top, rider->x, rider->y,
-			rider->z + K_FlipZOffset(top, rider));
+	anchor(top, rider, rider->angle, 0);
 
 	K_GenericExtraFlagsNoZAdjust(top, rider);
 
@@ -447,17 +516,8 @@ anchor_spark (mobj_t *spark)
 	mobj_t *rider = top_rider(top);
 	player_t *player = get_rider_player(rider);
 
-	const angle_t angle = top->angle + spark_angle(spark);
-	const fixed_t x = P_ReturnThrustX(top, angle, spark->scale);
-	const fixed_t y = P_ReturnThrustY(top, angle, spark->scale);
-
-	/* FIXME: THIS FUNCTION FUCKING SUCKS */
-	K_FlipFromObject(spark, top);
-
-	P_MoveOrigin(spark, top->x + x, top->y + y,
-			top->z + K_FlipZOffset(spark, top));
-
-	spark->angle = angle;
+	anchor(spark, top,
+			(top->angle + spark_angle(spark)), spark->scale);
 
 	if (player)
 	{
@@ -470,6 +530,39 @@ anchor_spark (mobj_t *spark)
 		P_SetScale(spark, FixedMul(top->scale, FRACUNIT/2 +
 					FixedDiv(speed / 2, topspeed)));
 	}
+}
+
+static void
+anchor_arrow_overhead (mobj_t *arrow)
+{
+	mobj_t *top = arrow_top(arrow);
+	mobj_t *rider = top_rider(top);
+
+	const fixed_t height =
+		top->height + rider->height + (3 * arrow->height / 4);
+
+	arrow->sprzoff = top->sprzoff +
+		(height * P_MobjFlip(arrow));
+
+	anchor(arrow, top, rider->angle + ANGLE_180, 0);
+}
+
+static void
+anchor_arrow_in_front (mobj_t *arrow)
+{
+	mobj_t *top = arrow_top(arrow);
+	mobj_t *rider = top_rider(top);
+
+	anchor(arrow, top, rider->angle, 2 * rider->radius);
+
+	arrow->angle += ANGLE_90;
+
+	if (P_IsObjectFlipped(arrow))
+	{
+		arrow->angle += ANGLE_180;
+	}
+
+	arrow->floorspriteslope = rider->standingslope;
 }
 
 void
@@ -497,6 +590,8 @@ Obj_GardenTopDeploy (mobj_t *rider)
 	}
 
 	spawn_spark_circle(top, 6);
+
+	spawn_arrow_pair(top);
 }
 
 mobj_t *
@@ -602,6 +697,38 @@ Obj_GardenTopSparkThink (mobj_t *spark)
 	else
 	{
 		spark->renderflags |= RF_DONTDRAW;
+	}
+}
+
+void
+Obj_GardenTopArrowThink (mobj_t *arrow)
+{
+	mobj_t *top = arrow_top(arrow);
+	mobj_t *rider = top ? top_rider(top) : NULL;
+
+	if (!rider)
+	{
+		P_RemoveMobj(arrow);
+		return;
+	}
+
+	switch (arrow_kind(arrow))
+	{
+		case ARROW_OVERHEAD:
+			anchor_arrow_overhead(arrow);
+			break;
+
+		case ARROW_IN_FRONT:
+			anchor_arrow_in_front(arrow);
+			break;
+	}
+
+	if (rider->player)
+	{
+		// Don't show for other players
+		arrow->renderflags =
+			(arrow->renderflags & ~(RF_DONTDRAW)) |
+			(RF_DONTDRAW & ~(K_GetPlayerDontDrawFlag(rider->player)));
 	}
 }
 
