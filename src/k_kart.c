@@ -1978,10 +1978,10 @@ void K_SpawnMagicianParticles(mobj_t *mo, int spread)
 		else
 			ang += ANGLE_90;
 
-		dust = P_SpawnMobjFromMobj(mo,
-			FixedMul(mo->radius, FINECOSINE(ang >> ANGLETOFINESHIFT)),
-			FixedMul(mo->radius, FINESINE(ang >> ANGLETOFINESHIFT)),
-			target->height, (i%3 == 0) ? MT_SIGNSPARKLE : MT_SPINDASHDUST
+		dust = P_SpawnMobjFromMobjUnscaled(mo,
+			FixedMul(mo->radius / 4, FINECOSINE(ang >> ANGLETOFINESHIFT)),
+			FixedMul(mo->radius / 4, FINESINE(ang >> ANGLETOFINESHIFT)),
+			target->height / 4, (i%3 == 0) ? MT_SIGNSPARKLE : MT_SPINDASHDUST
 		);
 		flip = P_MobjFlip(dust);
 
