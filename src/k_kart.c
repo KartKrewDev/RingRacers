@@ -10602,9 +10602,12 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 										P_InstaThrust(player->mo, angle, player->speed + (80 * mapobjectscale));
 										P_SetObjectMomZ(player->mo, player->mo->info->height / 8, true);
 
-										top->momx = player->mo->momx;
-										top->momy = player->mo->momy;
-										top->momz = player->mo->momz;
+										if (top != NULL)
+										{
+											top->momx = player->mo->momx;
+											top->momy = player->mo->momy;
+											top->momz = player->mo->momz;
+										}
 									}
 									else
 									{
