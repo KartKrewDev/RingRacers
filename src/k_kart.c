@@ -9929,7 +9929,8 @@ void K_AdjustPlayerFriction(player_t *player)
 
 	// Less friction on Top unless grinding
 	if (player->curshield == KSHIELD_TOP &&
-			K_GetForwardMove(player) > 0)
+			K_GetForwardMove(player) > 0 &&
+			player->speed < 2 * K_GetKartSpeed(player, false, false))
 	{
 		player->mo->friction += 1024;
 	}
