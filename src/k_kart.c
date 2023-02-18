@@ -1978,10 +1978,11 @@ void K_SpawnMagicianParticles(mobj_t *mo, int spread)
 		else
 			ang += ANGLE_90;
 
+		// sprzoff for Garden Top!!
 		dust = P_SpawnMobjFromMobjUnscaled(mo,
 			FixedMul(mo->radius / 4, FINECOSINE(ang >> ANGLETOFINESHIFT)),
 			FixedMul(mo->radius / 4, FINESINE(ang >> ANGLETOFINESHIFT)),
-			target->height / 4, (i%3 == 0) ? MT_SIGNSPARKLE : MT_SPINDASHDUST
+			(target->height / 4) + target->sprzoff, (i%3 == 0) ? MT_SIGNSPARKLE : MT_SPINDASHDUST
 		);
 		flip = P_MobjFlip(dust);
 

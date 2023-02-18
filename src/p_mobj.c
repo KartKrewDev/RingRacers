@@ -8091,6 +8091,9 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 			zoff = mobj->radius*4;
 		}
 
+		// Necessary to "ride" on Garden Top
+		zoff += mobj->target->sprzoff;
+
 		if (mobj->flags2 & MF2_AMBUSH)
 		{
 			P_SetOrigin(mobj, destx, desty, mobj->target->z + zoff);
