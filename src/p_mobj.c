@@ -8091,6 +8091,9 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 			zoff = mobj->radius*4;
 		}
 
+		// Necessary to "ride" on Garden Top
+		zoff += mobj->target->sprzoff;
+
 		if (mobj->flags2 & MF2_AMBUSH)
 		{
 			P_SetOrigin(mobj, destx, desty, mobj->target->z + zoff);
@@ -14161,17 +14164,13 @@ fixed_t P_ScaleFromMap(fixed_t n, fixed_t scale)
 }
 
 //
-// P_SpawnMobjFromMobj
+// P_SpawnMobjFromMobjUnscaled
 // Spawns an object with offsets relative to the position of another object.
 // Scale, gravity flip, etc. is taken into account automatically.
 //
-mobj_t *P_SpawnMobjFromMobj(mobj_t *mobj, fixed_t xofs, fixed_t yofs, fixed_t zofs, mobjtype_t type)
+mobj_t *P_SpawnMobjFromMobjUnscaled(mobj_t *mobj, fixed_t xofs, fixed_t yofs, fixed_t zofs, mobjtype_t type)
 {
 	mobj_t *newmobj;
-
-	xofs = FixedMul(xofs, mobj->scale);
-	yofs = FixedMul(yofs, mobj->scale);
-	zofs = FixedMul(zofs, mobj->scale);
 
 	newmobj = P_SpawnMobj(mobj->x + xofs, mobj->y + yofs, mobj->z + zofs, type);
 	if (!newmobj)
@@ -14223,6 +14222,21 @@ mobj_t *P_SpawnMobjFromMobj(mobj_t *mobj, fixed_t xofs, fixed_t yofs, fixed_t zo
 	newmobj->old_spriteyoffset = mobj->old_spriteyoffset;
 
 	return newmobj;
+}
+
+//
+// P_SpawnMobjFromMobj
+// Spawns an object with offsets relative to the position of another object.
+// Scale, gravity flip, etc. is taken into account automatically.
+// The offsets are automatically scaled by source object's scale.
+//
+mobj_t *P_SpawnMobjFromMobj(mobj_t *mobj, fixed_t xofs, fixed_t yofs, fixed_t zofs, mobjtype_t type)
+{
+	xofs = FixedMul(xofs, mobj->scale);
+	yofs = FixedMul(yofs, mobj->scale);
+	zofs = FixedMul(zofs, mobj->scale);
+
+	return P_SpawnMobjFromMobjUnscaled(mobj, xofs, yofs, zofs, type);
 }
 
 //
