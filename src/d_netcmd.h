@@ -285,8 +285,7 @@ void LiveStudioAudience(void);
 void D_Cheat(INT32 playernum, INT32 cheat, ...);
 
 // used for the player setup menu
-UINT8 CanChangeSkin(INT32 playernum);
-boolean CanChangeSkinWhilePlaying(INT32 playernum);
+boolean CanChangeSkin(INT32 playernum);
 
 #ifdef __cplusplus
 } // extern "C"

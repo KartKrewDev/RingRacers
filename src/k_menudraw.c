@@ -50,6 +50,7 @@
 #include "k_follower.h"
 #include "d_player.h" // KITEM_ constants
 #include "doomstat.h" // MAXSPLITSCREENPLAYERS
+#include "k_grandprix.h" // K_CanChangeRules
 
 #include "i_joy.h" // for joystick menu controls
 
@@ -1689,6 +1690,7 @@ void M_DrawCharacterSelect(void)
 	INT16 quadx, quady;
 	INT16 skin;
 	INT32 basex = optionsmenu.profile != NULL ? 64 : 0;
+	boolean forceskin = (Playing() && K_CanChangeRules(true) == true) && (cv_forceskin.value != -1);
 
 	if (setup_numplayers > 0)
 	{
@@ -1696,26 +1698,29 @@ void M_DrawCharacterSelect(void)
 	}
 
 	// We have to loop twice -- first time to draw the drop shadows, a second time to draw the icons.
-	for (i = 0; i < 9; i++)
+	if (forceskin == false)
 	{
-		for (j = 0; j < 9; j++)
+		for (i = 0; i < 9; i++)
 		{
-			skin = setup_chargrid[i][j].skinlist[setup_page];
-			quadx = 4 * (i / 3);
-			quady = 4 * (j / 3);
-
-			// Here's a quick little cheat to save on drawing time!
-			// Don't draw a shadow if it'll get covered by another icon
-			if ((i % 3 < 2) && (j % 3 < 2))
+			for (j = 0; j < 9; j++)
 			{
-				if ((setup_chargrid[i+1][j].skinlist[setup_page] != -1)
-				&& (setup_chargrid[i][j+1].skinlist[setup_page] != -1)
-				&& (setup_chargrid[i+1][j+1].skinlist[setup_page] != -1))
-					continue;
-			}
+				skin = setup_chargrid[i][j].skinlist[setup_page];
+				quadx = 4 * (i / 3);
+				quady = 4 * (j / 3);
 
-			if (skin != -1)
-				V_DrawScaledPatch(basex+ 82 + (i*16) + quadx + 1, 22 + (j*16) + quady + 1, 0, W_CachePatchName("ICONBACK", PU_CACHE));
+				// Here's a quick little cheat to save on drawing time!
+				// Don't draw a shadow if it'll get covered by another icon
+				if ((i % 3 < 2) && (j % 3 < 2))
+				{
+					if ((setup_chargrid[i+1][j].skinlist[setup_page] != -1)
+					&& (setup_chargrid[i][j+1].skinlist[setup_page] != -1)
+					&& (setup_chargrid[i+1][j+1].skinlist[setup_page] != -1))
+						continue;
+				}
+
+				if (skin != -1)
+					V_DrawScaledPatch(basex+ 82 + (i*16) + quadx + 1, 22 + (j*16) + quady + 1, 0, W_CachePatchName("ICONBACK", PU_CACHE));
+			}
 		}
 	}
 
@@ -1725,8 +1730,22 @@ void M_DrawCharacterSelect(void)
 	// Draw the icons now
 	for (i = 0; i < 9; i++)
 	{
+		if ((forceskin == true) && (i != skins[cv_forceskin.value].kartspeed-1))
+			continue;
+
 		for (j = 0; j < 9; j++)
 		{
+			if (forceskin == true)
+			{
+				if (j != skins[cv_forceskin.value].kartweight-1)
+					continue;
+				skin = cv_forceskin.value;
+			}
+			else
+			{
+				skin = setup_chargrid[i][j].skinlist[setup_page];
+			}
+
 			for (k = 0; k < setup_numplayers; k++)
 			{
 				if (setup_player[k].mdepth < CSSTEP_ASKCHANGES)
@@ -1736,7 +1755,6 @@ void M_DrawCharacterSelect(void)
 				break; // k == setup_numplayers means no one has it selected
 			}
 
-			skin = setup_chargrid[i][j].skinlist[setup_page];
 			quadx = 4 * (i / 3);
 			quady = 4 * (j / 3);
 
@@ -1752,7 +1770,7 @@ void M_DrawCharacterSelect(void)
 				V_DrawMappedPatch(basex + 82 + (i*16) + quadx, 22 + (j*16) + quady, 0, faceprefix[skin][FACE_RANK], colormap);
 
 				// draw dot if there are more alts behind there!
-				if (setup_page+1 < setup_chargrid[i][j].numskins)
+				if (forceskin == false && setup_page+1 < setup_chargrid[i][j].numskins)
 					V_DrawScaledPatch(basex + 82 + (i*16) + quadx, 22 + (j*16) + quady + 11, 0, W_CachePatchName("ALTSDOT", PU_CACHE));
 			}
 		}

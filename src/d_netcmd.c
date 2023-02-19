@@ -494,7 +494,7 @@ consvar_t cv_timelimit = CVAR_INIT ("timelimit", "None", CV_NETVAR|CV_CALL|CV_NO
 static CV_PossibleValue_t numlaps_cons_t[] = {{1, "MIN"}, {MAX_LAPS, "MAX"}, {0, "Map default"}, {0, NULL}};
 consvar_t cv_numlaps = CVAR_INIT ("numlaps", "Map default", CV_SAVE|CV_NETVAR|CV_CALL|CV_CHEAT, numlaps_cons_t, NumLaps_OnChange);
 
-consvar_t cv_forceskin = CVAR_INIT ("forceskin", "None", CV_NETVAR|CV_CALL|CV_CHEAT, NULL, ForceSkin_OnChange);
+consvar_t cv_forceskin = CVAR_INIT ("forcecharacter", "None", CV_NETVAR|CV_CALL|CV_CHEAT, NULL, ForceSkin_OnChange);
 
 consvar_t cv_downloading = CVAR_INIT ("downloading", "On", 0, CV_OnOff, NULL);
 consvar_t cv_allowexitlevel = CVAR_INIT ("allowexitlevel", "No", CV_NETVAR, CV_YesNo, NULL);
@@ -1347,69 +1347,19 @@ static void SetPlayerName(INT32 playernum, char *newname)
 	}
 }
 
-UINT8 CanChangeSkin(INT32 playernum)
+boolean CanChangeSkin(INT32 playernum)
 {
+	(void)playernum;
+
 	// Of course we can change if we're not playing
 	if (!Playing() || !addedtogame)
 		return true;
 
 	// Force skin in effect.
-	if (cv_forceskin.value != -1)
+	if (cv_forceskin.value != -1 && K_CanChangeRules(true))
 		return false;
 
-	// Can change skin in intermission and whatnot.
-	if (gamestate != GS_LEVEL)
-		return true;
-
-	// Server has skin change restrictions.
-	if (cv_restrictskinchange.value)
-	{
-		UINT8 i;
-
-		// Can change skin during initial countdown.
-		if (leveltime < starttime)
-			return true;
-
-		// Not in game, so you can change
-		if (players[playernum].spectator)
-			return true;
-
-		// Check for freeeplay
-		for (i = 0; i < MAXPLAYERS; i++)
-		{
-			if (i == consoleplayer)
-				continue;
-			if (playeringame[i] && !players[i].spectator && gamestate == GS_LEVEL)
-				return false;	// Not freeplay!
-		}
-
-		// if we've gotten here, then it's freeplay, and switching anytime is fair game.
-		return true;
-	}
-	// if restrictskinchange is off and we're trying to change skins, don't allow changing skins while moving after the race has started.
-	else if (gamestate == GS_LEVEL && leveltime >= starttime)
-		return (!P_PlayerMoving(playernum));
-
-
-	return true;
-}
-
-boolean CanChangeSkinWhilePlaying(INT32 playernum)
-{
-	INT32 i;
-
-	// Force skin in effect.
-	if ((cv_forceskin.value != -1))
-		return false;
-
-	for (i = 0; i < MAXPLAYERS; ++i)
-	{
-		if (D_IsPlayerHumanAndGaming(i) &&
-				!P_IsLocalPlayer(&players[i]))
-		{
-			return CanChangeSkin(playernum);
-		}
-	}
+	// ... there used to be a lot more here, but it's now handled in Got_NameAndColor.
 
 	return true;
 }
@@ -1616,6 +1566,47 @@ static void SendNameAndColor(UINT8 n)
 	SendNetXCmdForPlayer(n, XD_NAMEANDCOLOR, buf, p - buf);
 }
 
+static void FinalisePlaystateChange(INT32 playernum)
+{
+	demo_extradata[playernum] |= DXD_PLAYSTATE;
+
+	// Clear player score and rings if a spectator.
+	if (players[playernum].spectator)
+	{
+		if (gametyperules & GTR_POINTLIMIT) // SRB2kart
+		{
+			players[playernum].roundscore = 0;
+			K_CalculateBattleWanted();
+		}
+
+		K_PlayerForfeit(playernum, true);
+
+		if (players[playernum].mo)
+			players[playernum].mo->health = 1;
+
+		K_StripItems(&players[playernum]);
+	}
+
+	// Reset away view (some code referenced from P_SpectatorJoinGame)
+	{
+		UINT8 i = 0;
+		INT32 *localplayertable = (splitscreen_partied[consoleplayer] ? splitscreen_party[consoleplayer] : g_localplayers);
+
+		for (i = 0; i <= r_splitscreen; i++)
+		{
+			if (localplayertable[i] == playernum)
+			{
+				LUA_HookViewpointSwitch(players+playernum, players+playernum, true);
+				displayplayers[i] = playernum;
+				break;
+			}
+		}
+	}
+
+	K_CheckBumpers(); // SRB2Kart
+	P_CheckRacers(); // also SRB2Kart
+}
+
 static void Got_NameAndColor(UINT8 **cp, INT32 playernum)
 {
 	player_t *p = &players[playernum];
@@ -1693,7 +1684,45 @@ static void Got_NameAndColor(UINT8 **cp, INT32 playernum)
 			CV_StealthSet(&cv_skin[localplayer], skins[forcedskin].name);
 	}
 	else
+	{
+		UINT8 oldskin = players[playernum].skin;
+
 		SetPlayerSkinByNum(playernum, skin);
+
+		// The following is a miniature subset of Got_Teamchange.
+		if ((gamestate == GS_LEVEL) // In a level?
+			&& (cv_restrictskinchange.value) // Skin changes are restricted?
+			&& (G_GametypeHasSpectators() && players[playernum].spectator == false) // not a spectator but could be?
+			&& (players[playernum].jointime > 1) // permit on join
+			&& (leveltime > introtime) // permit during intro turnaround
+			&& (players[playernum].skin != oldskin)) // a skin change actually happened?
+		{
+			for (i = 0; i < MAXPLAYERS; ++i)
+			{
+				if (i == playernum)
+					continue;
+				if (!playeringame[i])
+					continue;
+				if (players[i].spectator)
+					continue;
+				break;
+			}
+
+			if (i != MAXPLAYERS // Someone on your server who isn't you?
+				&& LUA_HookTeamSwitch(&players[playernum], 0, false, false, false)) // fiiiine, lua can except it
+			{
+				P_DamageMobj(players[playernum].mo, NULL, NULL, 1, DMG_SPECTATOR);
+				players[playernum].playerstate = PST_REBORN;
+
+				players[playernum].pflags &= ~PF_WANTSTOJOIN;
+				players[playernum].spectator = true;
+
+				HU_AddChatText(va("\x82*%s became a spectator.", player_names[playernum]), false);
+
+				FinalisePlaystateChange(playernum);
+			}
+		}
+	}
 
 	// set follower colour:
 	// Don't bother doing garbage and kicking if we receive None,
@@ -3700,7 +3729,7 @@ static void Got_Teamchange(UINT8 **cp, INT32 playernum)
 
 	//Safety first!
 	// (not respawning spectators here...)
-	if (!players[playernum].spectator)
+	if (!players[playernum].spectator && gamestate == GS_LEVEL)
 	{
 		if (players[playernum].mo)
 		{
@@ -3764,22 +3793,6 @@ static void Got_Teamchange(UINT8 **cp, INT32 playernum)
 	else if (NetPacket.packet.newteam == 0)
 		HU_AddChatText(va("\x82*%s became a spectator.", player_names[playernum]), false); // "entered the game" text was moved to P_SpectatorJoinGame
 
-	// Reset away view (some code referenced from P_SpectatorJoinGame)
-	{
-		UINT8 i = 0;
-		INT32 *localplayertable = (splitscreen_partied[consoleplayer] ? splitscreen_party[consoleplayer] : g_localplayers);
-
-		for (i = 0; i <= r_splitscreen; i++)
-		{
-			if (localplayertable[i] == playernum)
-			{
-				LUA_HookViewpointSwitch(players+playernum, players+playernum, true);
-				displayplayers[i] = playernum;
-				break;
-			}
-		}
-	}
-
 	/*if (G_GametypeHasTeams())
 	{
 		if (NetPacket.packet.newteam)
@@ -3796,27 +3809,7 @@ static void Got_Teamchange(UINT8 **cp, INT32 playernum)
 	if (gamestate != GS_LEVEL)
 		return;
 
-	demo_extradata[playernum] |= DXD_PLAYSTATE;
-
-	// Clear player score and rings if a spectator.
-	if (players[playernum].spectator)
-	{
-		if (gametyperules & GTR_POINTLIMIT) // SRB2kart
-		{
-			players[playernum].roundscore = 0;
-			K_CalculateBattleWanted();
-		}
-
-		K_PlayerForfeit(playernum, true);
-
-		if (players[playernum].mo)
-			players[playernum].mo->health = 1;
-
-		K_StripItems(&players[playernum]);
-	}
-
-	K_CheckBumpers(); // SRB2Kart
-	P_CheckRacers(); // also SRB2Kart
+	FinalisePlaystateChange(playernum);
 }
 
 //
@@ -6116,14 +6109,14 @@ static void Command_Automate_Set(void)
 static void ForceSkin_OnChange(void)
 {
 	// NOT in SP, silly!
-	if (!(netgame || multiplayer))
+	if (!Playing() || !K_CanChangeRules(true))
 		return;
 
 	if (cv_forceskin.value < 0)
-		CONS_Printf("The server has lifted the forced skin restrictions.\n");
+		CONS_Printf("The server has lifted the forced character restrictions.\n");
 	else
 	{
-		CONS_Printf("The server is restricting all players to skin \"%s\".\n",cv_forceskin.string);
+		CONS_Printf("The server is restricting all players to \"%s\".\n",cv_forceskin.string);
 		ForceAllSkins(cv_forceskin.value);
 	}
 }
@@ -6244,7 +6237,7 @@ static void Skin_OnChange(void)
 		return;
 	}
 
-	if (CanChangeSkinWhilePlaying(consoleplayer))
+	if (CanChangeSkin(consoleplayer))
 	{
 		SendNameAndColor(0);
 	}
@@ -6265,7 +6258,7 @@ static void Skin2_OnChange(void)
 	if (!Playing() || !splitscreen)
 		return; // do whatever you want
 
-	if (CanChangeSkinWhilePlaying(g_localplayers[1]))
+	if (CanChangeSkin(g_localplayers[1]))
 		SendNameAndColor(1);
 	else
 	{
@@ -6279,7 +6272,7 @@ static void Skin3_OnChange(void)
 	if (!Playing() || splitscreen < 2)
 		return; // do whatever you want
 
-	if (CanChangeSkinWhilePlaying(g_localplayers[2]))
+	if (CanChangeSkin(g_localplayers[2]))
 		SendNameAndColor(2);
 	else
 	{
@@ -6293,7 +6286,7 @@ static void Skin4_OnChange(void)
 	if (!Playing() || splitscreen < 3)
 		return; // do whatever you want
 
-	if (CanChangeSkinWhilePlaying(g_localplayers[3]))
+	if (CanChangeSkin(g_localplayers[3]))
 		SendNameAndColor(3);
 	else
 	{
