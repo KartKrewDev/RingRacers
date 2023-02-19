@@ -679,7 +679,7 @@ void LUA_HookThinkFrame(void)
 		{
 			get_hook(&hook, map->ids, k);
 
-			if (cv_perfstats.value == 3)
+			if (cv_perfstats.value == PS_THINKFRAME)
 			{
 				lua_pushvalue(gL, -1);/* need the function again */
 				time_taken = I_GetPreciseTime();
@@ -687,7 +687,7 @@ void LUA_HookThinkFrame(void)
 
 			call_single_hook(&hook);
 
-			if (cv_perfstats.value == 3)
+			if (cv_perfstats.value == PS_THINKFRAME)
 			{
 				lua_Debug ar;
 				time_taken = I_GetPreciseTime() - time_taken;
