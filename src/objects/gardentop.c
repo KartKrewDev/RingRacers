@@ -57,7 +57,6 @@ enum {
 };
 
 #define arrow_top(o) ((o)->target)
-#define arrow_kind(o) ((o)->reactiontime)
 
 static inline player_t *
 get_rider_player (mobj_t *rider)
@@ -212,47 +211,16 @@ spawn_grind_spark (mobj_t *top)
 	}
 }
 
-static mobj_t *
-spawn_arrow
-(		mobj_t * top,
-		UINT32 ff,
-		UINT8 kind)
+static void
+spawn_arrow (mobj_t *top)
 {
 	mobj_t *arrow = P_SpawnMobjFromMobj(
 			top, 0, 0, 0, MT_GARDENTOPARROW);
 
 	P_SetTarget(&arrow_top(arrow), top);
-	arrow_kind(arrow) = kind;
 
-	arrow->frame |= ff;
-
-	return arrow;
-}
-
-static void
-spawn_arrow_pair (mobj_t *top)
-{
-	{
-		mobj_t *x = spawn_arrow(top,
-				FF_PAPERSPRITE, ARROW_OVERHEAD);
-
-		// overhead arrow is slightly smaller
-		P_SetScale(x, (x->destscale = 3 * x->scale / 4));
-	}
-
-	{
-		mobj_t *x = spawn_arrow(top,
-				FF_FLOORSPRITE | FF_ADD, ARROW_IN_FRONT);
-
-		x->renderflags |= RF_SLOPESPLAT | RF_NOSPLATBILLBOARD;
-
-		// Let splat be flat, useful later for
-		// Obj_GardenTopArrowThink reverse gravity.
-		x->height = 0;
-
-		// Make the arrow wider (sprite length is horizontal).
-		x->spriteyscale = 2*FRACUNIT;
-	}
+	P_SetScale(arrow,
+			(arrow->destscale = 3 * arrow->scale / 4));
 }
 
 static void
@@ -547,24 +515,6 @@ anchor_arrow_overhead (mobj_t *arrow)
 	anchor(arrow, top, rider->angle + ANGLE_180, 0);
 }
 
-static void
-anchor_arrow_in_front (mobj_t *arrow)
-{
-	mobj_t *top = arrow_top(arrow);
-	mobj_t *rider = top_rider(top);
-
-	anchor(arrow, top, rider->angle, 2 * rider->radius);
-
-	arrow->angle += ANGLE_90;
-
-	if (P_IsObjectFlipped(arrow))
-	{
-		arrow->angle += ANGLE_180;
-	}
-
-	arrow->floorspriteslope = rider->standingslope;
-}
-
 void
 Obj_GardenTopDeploy (mobj_t *rider)
 {
@@ -591,7 +541,7 @@ Obj_GardenTopDeploy (mobj_t *rider)
 
 	spawn_spark_circle(top, 6);
 
-	spawn_arrow_pair(top);
+	spawn_arrow(top);
 }
 
 mobj_t *
@@ -712,16 +662,7 @@ Obj_GardenTopArrowThink (mobj_t *arrow)
 		return;
 	}
 
-	switch (arrow_kind(arrow))
-	{
-		case ARROW_OVERHEAD:
-			anchor_arrow_overhead(arrow);
-			break;
-
-		case ARROW_IN_FRONT:
-			anchor_arrow_in_front(arrow);
-			break;
-	}
+	anchor_arrow_overhead(arrow);
 
 	if (rider->player)
 	{
