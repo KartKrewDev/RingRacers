@@ -123,6 +123,12 @@ void M_HandleProfileSelect(INT32 ch)
 	boolean creatable = (maxp < MAXPROFILES);
 	(void) ch;
 
+	if (menutransition.tics == 0 && optionsmenu.resetprofile)
+	{
+		optionsmenu.profile = NULL;	// Make sure to reset that when transitions are done.'
+		optionsmenu.resetprofile = false;
+	}
+
 	if (!creatable)
 	{
 		maxp = MAXPROFILES;
@@ -214,11 +220,5 @@ void M_HandleProfileSelect(INT32 ch)
 		optionsmenu.resetprofilemenu = true;
 		M_GoBack(0);
 		M_SetMenuDelay(pid);
-	}
-
-	if (menutransition.tics == 0 && optionsmenu.resetprofile)
-	{
-		optionsmenu.profile = NULL;	// Make sure to reset that when transitions are done.'
-		optionsmenu.resetprofile = false;
 	}
 }
