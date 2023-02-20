@@ -1181,6 +1181,13 @@ static void Command_assert(void)
 #endif
 }
 
+#ifdef DEVELOP
+static void Command_crash(void)
+{
+	I_Error("The game crashed on PURPOSE, because of the 'crash' command. (This is only enabled in DEVELOP builds.)");
+}
+#endif
+
 //
 // D_SRB2Main
 //
@@ -1373,6 +1380,9 @@ void D_SRB2Main(void)
 	COM_Init();
 
 	COM_AddCommand("assert", Command_assert);
+#ifdef DEVELOP
+	COM_AddCommand("crash", Command_crash);
+#endif
 
 #ifndef TESTERS
 	// add any files specified on the command line with -file wadfile
