@@ -1031,18 +1031,20 @@ void V_DrawFill(INT32 x, INT32 y, INT32 w, INT32 h, INT32 c)
 		INT32 dupx = vid.dupx, dupy = vid.dupy;
 
 		if (x == 0 && y == 0 && w == BASEVIDWIDTH && h == BASEVIDHEIGHT)
-		{ // Clear the entire screen, from dest to deststop. Yes, this really works.
-			memset(screens[0], (c&255), vid.width * vid.height * vid.bpp);
-			return;
+		{
+			w = vid.width;
+			h = vid.height;
 		}
+		else
+		{
+			x *= dupx;
+			y *= dupy;
+			w *= dupx;
+			h *= dupy;
 
-		x *= dupx;
-		y *= dupy;
-		w *= dupx;
-		h *= dupy;
-
-		// Center it if necessary
-		V_AdjustXYWithSnap(&x, &y, c, dupx, dupy);
+			// Center it if necessary
+			V_AdjustXYWithSnap(&x, &y, c, dupx, dupy);
+		}
 	}
 
 	if (x >= vid.width || y >= vid.height)

@@ -1476,9 +1476,15 @@ void R_RenderPlayerView(void)
 	if (cv_homremoval.value && player == &players[displayplayers[0]])
 	{
 		if (cv_homremoval.value == 1)
-			V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 31); // No HOM effect!
-		else //'development' HOM removal -- makes it blindingly obvious if HOM is spotted.
-			V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 32+(timeinmap&15));
+		{
+			// Clear the software screen buffer to remove HOM
+			memset(screens[0], 31, vid.width * vid.height * vid.bpp);
+		}
+		else
+		{
+			//'development' HOM removal -- makes it blindingly obvious if HOM is spotted.
+			memset(screens[0], 32+(timeinmap&15), vid.width * vid.height * vid.bpp);
+		}
 	}
 	else if (r_splitscreen == 2 && player == &players[displayplayers[2]])
 	{
