@@ -541,7 +541,9 @@ add_subdirectory(sdl)
 add_subdirectory(objects)
 add_subdirectory(acs)
 add_subdirectory(rhi)
-add_subdirectory(tests)
+if(SRB2_CONFIG_ENABLE_TESTS)
+	add_subdirectory(tests)
+endif()
 add_subdirectory(menus)
 
 # strip debug symbols into separate file when using gcc.
