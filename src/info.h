@@ -1346,6 +1346,8 @@ typedef enum sprite
 
 	SPR_UQMK,
 
+	SPR_GBOM,
+
 	// First person view sprites; this is a sprite so that it can be replaced by a specialized MD2 draw later
 	SPR_VIEW,
 
@@ -5606,6 +5608,8 @@ typedef enum state
 	S_SPECIAL_UFO_OVERLAY,
 	S_SPECIAL_UFO_ARM,
 	S_SPECIAL_UFO_STEM,
+
+	S_GACHABOM,
 
 	S_FIRSTFREESLOT,
 	S_LASTFREESLOT = S_FIRSTFREESLOT + NUMSTATEFREESLOTS - 1,

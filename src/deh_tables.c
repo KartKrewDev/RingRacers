@@ -4557,6 +4557,8 @@ const char *const STATE_LIST[] = { // array length left dynamic for sanity testi
 	"S_SPECIAL_UFO_OVERLAY",
 	"S_SPECIAL_UFO_ARM",
 	"S_SPECIAL_UFO_STEM",
+
+	"S_GACHABOM",
 };
 
 // RegEx to generate this from info.h: ^\tMT_([^,]+), --> \t"MT_\1",

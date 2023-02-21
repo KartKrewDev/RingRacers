@@ -795,6 +795,8 @@ char sprnames[NUMSPRITES + 1][5] =
 
 	"UQMK",
 
+	"GBOM",
+
 	// First person view sprites; this is a sprite so that it can be replaced by a specialized MD2 draw later
 	"VIEW",
 };
@@ -5180,6 +5182,8 @@ state_t states[NUMSTATES] =
 	{SPR_UFOB, 1|FF_FULLBRIGHT|FF_ANIMATE, -1, {NULL}, 1, 1, S_NULL}, // S_SPECIAL_UFO_OVERLAY
 	{SPR_UFOA, FF_PAPERSPRITE, -1, {NULL}, 0, 0, S_NULL}, // S_SPECIAL_UFO_ARM
 	{SPR_UFOS, 0, -1, {NULL}, 0, 0, S_NULL}, // S_SPECIAL_UFO_STEM
+
+	{SPR_GBOM, FF_ANIMATE, -1, {NULL}, 3, 1, S_NULL}, // S_GACHABOM
 };
 
 mobjinfo_t mobjinfo[NUMMOBJTYPES] =
@@ -24364,7 +24368,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 
 	{           // MT_GACHABOM
 		-1,             // doomednum
-		S_ORBINAUT1,    // spawnstate
+		S_GACHABOM,     // spawnstate
 		7,              // spawnhealth
 		S_NULL,         // seestate
 		sfx_tossed,     // seesound
@@ -24375,7 +24379,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		sfx_None,       // painsound
 		S_NULL,         // meleestate
 		S_NULL,         // missilestate
-		S_ORBINAUT_DEAD,// deathstate
+		S_GACHABOM,     // deathstate
 		S_NULL,         // xdeathstate
 		sfx_s3k5d,      // deathsound
 		64*FRACUNIT,    // speed

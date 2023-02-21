@@ -1196,9 +1196,9 @@ fixed_t P_GetMobjGravity(mobj_t *mo)
 				gravityadd /= 2;
 				break;
 			case MT_GACHABOM:
-				if (!(mo->flags2 & MF2_AMBUSH))
+				// Use normal gravity, unless if it was tossed.
+				if (!Obj_GachaBomWasTossed(mo))
 				{
-					// Use normal gravity, unless if it was tossed.
 					break;
 				}
 				/*FALLTHRU*/
@@ -7177,38 +7177,6 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 		}
 		break;
 	case MT_GACHABOM:
-	{
-		if (mobj->flags2 & MF2_AMBUSH)
-		{
-			mobj->friction = ORIG_FRICTION/4;
-
-			if (mobj->momx || mobj->momy)
-			{
-				mobj_t *ghost = P_SpawnGhostMobj(mobj);
-
-				if (mobj->target && !P_MobjWasRemoved(mobj->target) && mobj->target->player)
-				{
-					ghost->color = mobj->target->player->skincolor;
-					ghost->colorized = true;
-				}
-			}
-
-			if (P_IsObjectOnGround(mobj))
-			{
-				if (mobj->movecount > 1)
-				{
-					S_StartSound(mobj, mobj->info->activesound);
-					mobj->momx = mobj->momy = 0;
-					mobj->movecount = 1;
-				}
-			}
-
-			if (mobj->threshold > 0)
-				mobj->threshold--;
-			break;
-		}
-	}
-	/* FALLTHRU */
 	case MT_ORBINAUT:
 	{
 		Obj_OrbinautThink(mobj);

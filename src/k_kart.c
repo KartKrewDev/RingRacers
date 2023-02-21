@@ -4552,7 +4552,6 @@ static mobj_t *K_SpawnKartMissile(mobj_t *source, mobjtype_t type, angle_t an, I
 	switch (type)
 	{
 		case MT_ORBINAUT:
-		case MT_GACHABOM:
 			Obj_OrbinautThrown(th, finalspeed, dir);
 			break;
 		case MT_JAWZ:
@@ -4574,6 +4573,9 @@ static mobj_t *K_SpawnKartMissile(mobj_t *source, mobjtype_t type, angle_t an, I
 			break;
 		case MT_GARDENTOP:
 			th->movefactor = finalspeed;
+			break;
+		case MT_GACHABOM:
+			Obj_GachaBomThrown(th, finalspeed, dir);
 			break;
 		default:
 			break;
@@ -5475,12 +5477,7 @@ mobj_t *K_ThrowKartItem(player_t *player, boolean missile, mobjtype_t mapthing, 
 
 			if (mapthing == MT_GACHABOM)
 			{
-				// Set dropped flag
-				mo->flags2 |= MF2_AMBUSH;
-				mo->movecount = 2;
-				P_SetMobjState(mo, mo->info->deathstate);
-				mo->tics = -1;
-				mo->color = player->skincolor;
+				Obj_GachaBomThrown(mo, mo->radius, dir);
 			}
 
 			// this is the small graphic effect that plops in you when you throw an item:
