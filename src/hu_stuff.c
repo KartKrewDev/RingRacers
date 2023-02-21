@@ -161,6 +161,11 @@ static tic_t cechotimer = 0;
 static tic_t cechoduration = 5*TICRATE;
 static INT32 cechoflags = 0;
 
+static char tcechotext[48];			// the text is wide so only 48 chars should do.
+static tic_t tcechotimer = 0;		// goes up by 1 each frame this is active
+static tic_t tcechoduration = 0;	// Set automatically
+
+
 static tic_t resynch_ticker = 0;
 
 static huddrawlist_h luahuddrawlist_scores;
@@ -1035,6 +1040,13 @@ void HU_Ticker(void)
 
 	if (cechotimer)
 		cechotimer--;
+	
+	if (tcechotimer)
+	{
+		tcechotimer++;
+		if (tcechotimer > tcechoduration)
+			tcechotimer = 0;
+	}
 
 	if (gamestate != GS_LEVEL)
 	{
@@ -2000,6 +2012,15 @@ static void HU_DrawCEcho(void)
 	}
 }
 
+static void HU_DrawTitlecardCEcho(void)
+{
+	if (tcechotimer)
+	{
+		INT32 w = V_TitleCardStringWidth(tcechotext);
+		V_DrawTitleCardString(160 -w/2, 90, tcechotext, 0, false, tcechotimer, TICRATE*4);
+	}
+}
+
 //
 // demo info stuff
 //
@@ -2145,6 +2166,9 @@ drawontop:
 
 	if (cechotimer)
 		HU_DrawCEcho();
+	
+	if (tcechotimer)
+		HU_DrawTitlecardCEcho();
 }
 
 //======================================================================
@@ -2597,4 +2621,21 @@ void HU_DoCEcho(const char *msg)
 	strncat(cechotext, "\\", sizeof(cechotext) - strlen(cechotext) - 1);
 	cechotext[sizeof(cechotext) - 1] = '\0';
 	cechotimer = cechoduration;
+}
+
+// Simply set the timer to 0 to clear it.
+// No need to bother clearing the buffer or anything.
+void HU_ClearTitlecardCEcho(void)
+{
+	tcechotimer = 0;
+}
+
+// Similar but for titlecard CEcho and also way less convoluted because I have no clue whatever the fuck they were trying above.
+void HU_DoTitlecardCEcho(const char *msg)
+{
+	I_OutputMsg("%s\n", msg);	// print to log
+	
+	strncpy(tcechotext, msg, sizeof(tcechotext));
+	tcechotimer = 1;
+	tcechoduration = TICRATE*6 + strlen(tcechotext);
 }

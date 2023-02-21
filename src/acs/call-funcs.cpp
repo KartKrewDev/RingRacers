@@ -566,6 +566,25 @@ bool CallFunc_EndPrint(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Wo
 }
 
 /*--------------------------------------------------
+	bool CallFunc_EndPrintTitlecard(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
+
+		One of the ACS wrappers for Titlecard CEcho. This
+		version only prints if the activator is a
+		display player.
+--------------------------------------------------*/
+bool CallFunc_EndPrintTitlecard(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
+{
+	(void)argV;
+	(void)argC;
+
+	if (ACS_ActivatorIsLocal(thread) == true)
+		HU_DoTitlecardCEcho(thread->printBuf.data());
+
+	thread->printBuf.drop();
+	return false;
+}
+
+/*--------------------------------------------------
 	bool CallFunc_PlayerCount(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
 
 		Pushes the number of players to ACS.
@@ -930,6 +949,23 @@ bool CallFunc_EndPrintBold(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM
 
 	HU_SetCEchoDuration(5);
 	HU_DoCEcho(thread->printBuf.data());
+
+	thread->printBuf.drop();
+	return false;
+}
+
+/*--------------------------------------------------
+	bool CallFunc_EndPrintBoldTitlecard(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
+
+		One of the ACS wrappers for Titlecard CEcho. This
+		version prints for all players.
+--------------------------------------------------*/
+bool CallFunc_EndPrintBoldTitlecard(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
+{
+	(void)argV;
+	(void)argC;
+
+	HU_DoTitlecardCEcho(thread->printBuf.data());
 
 	thread->printBuf.drop();
 	return false;

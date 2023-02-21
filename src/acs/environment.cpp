@@ -100,7 +100,12 @@ Environment::Environment()
 	addCodeDataACS0(120, {"",        0, addCallFunc(CallFunc_PlayerRings)});
 
 	addCodeDataACS0(122, {"",        0, addCallFunc(CallFunc_PlayerScore)});
-
+	
+	// Lat: Titlecard CEcho. I'm not sure if I should be putting it here.
+	// @TODO: Confirm this is fine?
+	addCodeDataACS0( 123, {"",        0, addCallFunc(CallFunc_EndPrintTitlecard)});
+	addCodeDataACS0( 124, {"",        0, addCallFunc(CallFunc_EndPrintBoldTitlecard)});
+	
 	// 136 to 137: Implemented by ACSVM
 
 	// 157: Implemented by ACSVM
