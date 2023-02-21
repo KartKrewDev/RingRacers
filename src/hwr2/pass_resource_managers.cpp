@@ -33,15 +33,10 @@ void FramebufferManager::prepass(Rhi& rhi)
 	// Destroy the framebuffer textures if they exist and the video size changed
 	if (width_ != current_width || height_ != current_height)
 	{
-		if (main_colors_[0] != kNullHandle)
+		if (main_color_ != kNullHandle)
 		{
-			rhi.destroy_texture(main_colors_[0]);
-			main_colors_[0] = kNullHandle;
-		}
-		if (main_colors_[1] != kNullHandle)
-		{
-			rhi.destroy_texture(main_colors_[1]);
-			main_colors_[1] = kNullHandle;
+			rhi.destroy_texture(main_color_);
+			main_color_ = kNullHandle;
 		}
 		if (main_depth_ != kNullHandle)
 		{
@@ -74,13 +69,9 @@ void FramebufferManager::prepass(Rhi& rhi)
 	height_ = current_height;
 
 	// Recreate the framebuffer textures
-	if (main_colors_[0] == kNullHandle)
+	if (main_color_ == kNullHandle)
 	{
-		main_colors_[0] = rhi.create_texture({TextureFormat::kRGBA, current_width, current_height});
-	}
-	if (main_colors_[1] == kNullHandle)
-	{
-		main_colors_[1] = rhi.create_texture({TextureFormat::kRGBA, current_width, current_height});
+		main_color_ = rhi.create_texture({TextureFormat::kRGBA, current_width, current_height});
 	}
 	if (main_depth_ == kNullHandle)
 	{

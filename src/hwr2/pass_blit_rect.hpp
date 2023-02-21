@@ -30,7 +30,7 @@ class BlitRectPass final : public Pass
 	uint32_t output_width_ = 0;
 	uint32_t output_height_ = 0;
 	bool output_correct_aspect_ = false;
-	bool output_clear_ = true;
+	bool output_clear_ = false;
 	bool output_flip_ = false;
 	rhi::Handle<rhi::RenderPass> render_pass_;
 	rhi::Handle<rhi::Buffer> quad_vbo_;
@@ -84,6 +84,8 @@ public:
 		output_correct_aspect_ = correct_aspect;
 		output_flip_ = flip;
 	}
+
+	void clear_output(bool clear) noexcept { output_clear_ = clear; }
 };
 
 } // namespace srb2::hwr2

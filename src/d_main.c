@@ -690,6 +690,9 @@ static void D_Display(void)
 		ps_swaptime = I_GetPreciseTime();
 		I_FinishUpdate(); // page flip or blit buffer
 		ps_swaptime = I_GetPreciseTime() - ps_swaptime;
+
+		// We should never do the HWR2 skip 3d drawing hack for more than 1 full draw.
+		g_wipeskiprender = false;
 	}
 }
 

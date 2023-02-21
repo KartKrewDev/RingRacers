@@ -340,8 +340,8 @@ void F_WipeStartScreen(void)
 		return;
 	}
 #endif
-	// wipe_scr_start = screens[3];
-	// I_ReadScreen(wipe_scr_start);
+	wipe_scr_start = screens[3];
+	I_ReadScreen(wipe_scr_start);
 	I_FinishUpdateWipeStartScreen();
 #endif
 }
@@ -358,9 +358,9 @@ void F_WipeEndScreen(void)
 		return;
 	}
 #endif
-	// wipe_scr_end = screens[4];
-	// I_ReadScreen(wipe_scr_end);
-	// V_DrawBlock(0, 0, 0, vid.width, vid.height, wipe_scr_start);
+	wipe_scr_end = screens[4];
+	I_ReadScreen(wipe_scr_end);
+	V_DrawBlock(0, 0, 0, vid.width, vid.height, wipe_scr_start);
 	I_FinishUpdateWipeEndScreen();
 #endif
 }

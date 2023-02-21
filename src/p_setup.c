@@ -334,7 +334,7 @@ FUNCNORETURN static ATTRNORETURN void CorruptMapError(const char *msg)
 	{
 		sprintf(mapname, "ID %d", gamemap-1);
 	}
-	
+
 	CON_LogMessage("Map ");
 	CON_LogMessage(mapname);
 	CON_LogMessage(" is corrupt: ");
@@ -7499,8 +7499,13 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 	// This is needed. Don't touch.
 	maptol = mapheaderinfo[gamemap-1]->typeoflevel;
 
+	// HWR2 skip 3d render draw hack to avoid losing the current wipe screen
+	g_wipeskiprender = true;
+
 	CON_Drawer(); // let the user know what we are going to do
 	I_FinishUpdate(); // page flip or blit buffer
+
+	g_wipeskiprender = false;
 
 	// Reset the palette
 	if (rendermode != render_none)

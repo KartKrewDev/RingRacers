@@ -22,12 +22,11 @@ namespace srb2::hwr2
 
 class FramebufferManager final : public Pass
 {
-	std::array<rhi::Handle<rhi::Texture>, 2> main_colors_;
+	rhi::Handle<rhi::Texture> main_color_;
 	rhi::Handle<rhi::Renderbuffer> main_depth_;
 	std::array<rhi::Handle<rhi::Texture>, 2> post_colors_;
 	rhi::Handle<rhi::Texture> wipe_start_color_;
 	rhi::Handle<rhi::Texture> wipe_end_color_;
-	std::size_t main_index_ = 0;
 	std::size_t post_index_ = 0;
 	std::size_t width_ = 0;
 	std::size_t height_ = 0;
@@ -42,9 +41,6 @@ public:
 	virtual void graphics(rhi::Rhi& rhi, rhi::Handle<rhi::GraphicsContext> ctx) override;
 	virtual void postpass(rhi::Rhi& rhi) override;
 
-	/// @brief Swap the current and previous main colors.
-	void swap_main() noexcept { main_index_ = main_index_ == 0 ? 1 : 0; }
-
 	/// @brief Swap the current and previous postprocess FB textures. Use between pass prepass phases to alternate.
 	void swap_post() noexcept
 	{
@@ -54,9 +50,8 @@ public:
 
 	void reset_post() noexcept { first_postprocess_ = true; }
 
-	rhi::Handle<rhi::Texture> current_main_color() const noexcept { return main_colors_[main_index_]; }
+	rhi::Handle<rhi::Texture> main_color() const noexcept { return main_color_; }
 	rhi::Handle<rhi::Renderbuffer> main_depth() const noexcept { return main_depth_; }
-	rhi::Handle<rhi::Texture> previous_main_color() const noexcept { return main_colors_[1 - main_index_]; }
 
 	rhi::Handle<rhi::Texture> current_post_color() const noexcept { return post_colors_[post_index_]; }
 
@@ -64,7 +59,7 @@ public:
 	{
 		if (first_postprocess_)
 		{
-			return current_main_color();
+			return main_color();
 		}
 		return post_colors_[1 - post_index_];
 	};
