@@ -9632,6 +9632,7 @@ static boolean P_CanFlickerFuse(mobj_t *mobj)
 		case MT_EGGMANITEM:
 		case MT_FALLINGROCK:
 		case MT_FLOATINGITEM:
+		case MT_POGOSPRING:
 			if (mobj->fuse <= TICRATE)
 			{
 				return true;

@@ -465,6 +465,11 @@ boolean P_DoSpring(mobj_t *spring, mobj_t *object)
 				object->momz = 3 * object->momz / 2;
 			}
 
+			if (!spring->fuse)
+			{
+				spring->fuse = 15*TICRATE;
+			}
+
 			spring->reactiontime++;
 		}
 	}
