@@ -4067,7 +4067,7 @@ void K_TumbleInterrupt(player_t *player)
 		player->pflags &= ~PF_TUMBLELASTBOUNCE;
 		//players->tumbleHeight = 20;
 
-		players->mo->rollangle = 0;
+		player->mo->rollangle = 0;
 		player->spinouttype = KSPIN_WIPEOUT;
 		player->spinouttimer = player->wipeoutslow = TICRATE+2;
 	}
