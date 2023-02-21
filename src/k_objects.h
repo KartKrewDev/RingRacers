@@ -47,7 +47,9 @@ mobj_t *Obj_MantaRingCreate(mobj_t *spb, mobj_t *owner, mobj_t *chase);
 void Obj_OrbinautThink(mobj_t *th);
 boolean Obj_OrbinautJawzCollide(mobj_t *t1, mobj_t *t2);
 void Obj_OrbinautThrown(mobj_t *th, fixed_t finalSpeed, SINT8 dir);
+void Obj_GachaBomThrown(mobj_t *th, fixed_t finalSpeed, SINT8 dir);
 void Obj_OrbinautJawzMoveHeld(player_t *player);
+boolean Obj_GachaBomWasTossed(mobj_t *th);
 
 /* Jawz */
 void Obj_JawzThink(mobj_t *th);

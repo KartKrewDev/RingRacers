@@ -30,7 +30,6 @@
 
 #define orbinaut_speed(o) ((o)->movefactor)
 #define orbinaut_selfdelay(o) ((o)->threshold)
-#define orbinaut_dropped(o) ((o)->flags2 & MF2_AMBUSH)
 #define orbinaut_droptime(o) ((o)->movecount)
 
 #define orbinaut_turn(o) ((o)->extravalue1)
@@ -39,17 +38,26 @@
 
 #define orbinaut_shield_dist(o) ((o)->extravalue1)
 
+enum {
+	ORBI_DROPPED	= 0x01, // stationary hazard
+	ORBI_TOSSED		= 0x02, // Gacha Bom tossed forward
+	ORBI_TRAIL		= 0x04, // spawn afterimages
+	ORBI_SPIN		= 0x08, // animate facing angle
+};
+
+#define orbinaut_flags(o) ((o)->movedir)
+#define orbinaut_spin(o) ((o)->extravalue2)
+
 void Obj_OrbinautThink(mobj_t *th)
 {
 	boolean grounded = P_IsObjectOnGround(th);
-	mobj_t *ghost = NULL;
 
 	if (th->fuse > 0 && th->fuse <= TICRATE)
 	{
 		th->renderflags ^= RF_DONTDRAW;
 	}
 
-	if (orbinaut_dropped(th))
+	if (orbinaut_flags(th) & ORBI_DROPPED)
 	{
 		if (grounded && (th->flags & MF_NOCLIPTHING))
 		{
@@ -72,8 +80,13 @@ void Obj_OrbinautThink(mobj_t *th)
 		return;
 	}
 
-	ghost = P_SpawnGhostMobj(th);
-	ghost->colorized = true; // already has color!
+	if (orbinaut_flags(th) & ORBI_TRAIL)
+	{
+		mobj_t *ghost = NULL;
+
+		ghost = P_SpawnGhostMobj(th);
+		ghost->colorized = true; // already has color!
+	}
 
 	th->angle = K_MomentumAngle(th);
 	if (orbinaut_turn(th) != 0)
@@ -122,6 +135,12 @@ void Obj_OrbinautThink(mobj_t *th)
 		}
 
 		P_Thrust(th, th->angle, thrustamount);
+	}
+
+	if (orbinaut_flags(th) & ORBI_SPIN)
+	{
+		th->angle = orbinaut_spin(th);
+		orbinaut_spin(th) += ANGLE_22h;
 	}
 
 	/* todo: UDMFify
@@ -281,6 +300,8 @@ void Obj_OrbinautThrown(mobj_t *th, fixed_t finalSpeed, SINT8 dir)
 	th->fuse = RR_PROJECTILE_FUSE;
 	orbinaut_speed(th) = finalSpeed;
 
+	orbinaut_flags(th) = ORBI_TRAIL;
+
 	if (dir == -1)
 	{
 		// Thrown backwards, init orbiting in place
@@ -289,6 +310,24 @@ void Obj_OrbinautThrown(mobj_t *th, fixed_t finalSpeed, SINT8 dir)
 		th->angle -= ANGLE_45;
 		th->momx = FixedMul(finalSpeed, FINECOSINE(th->angle >> ANGLETOFINESHIFT));
 		th->momy = FixedMul(finalSpeed, FINESINE(th->angle >> ANGLETOFINESHIFT));
+	}
+}
+
+void Obj_GachaBomThrown(mobj_t *th, fixed_t finalSpeed, SINT8 dir)
+{
+	Obj_OrbinautThrown(th, finalSpeed, dir);
+
+	orbinaut_flags(th) &= ~(ORBI_TRAIL);
+
+	switch (dir)
+	{
+		case -1:
+			orbinaut_flags(th) |= ORBI_SPIN;
+			break;
+
+		case 1:
+			orbinaut_flags(th) |= ORBI_TOSSED;
+			break;
 	}
 }
 
@@ -390,4 +429,9 @@ void Obj_OrbinautJawzMoveHeld(player_t *player)
 
 		cur = cur->hnext;
 	}
+}
+
+boolean Obj_GachaBomWasTossed(mobj_t *th)
+{
+	return (orbinaut_flags(th) & ORBI_TOSSED) == ORBI_TOSSED;
 }
