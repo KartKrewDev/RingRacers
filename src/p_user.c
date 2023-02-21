@@ -1460,7 +1460,14 @@ static boolean P_PlayerCanBust(player_t *player, ffloor_t *rover)
 	// TODO: Make these act like the Lua SA2 boxes.
 	(void)player;
 	(void)rover;
-	return false;
+
+	if (!(rover->fofflags & FOF_EXISTS))
+		return false;
+
+	if (!(rover->fofflags & FOF_BUSTUP))
+		return false;
+
+	return true;
 }
 
 static void P_CheckBustableBlocks(player_t *player)
