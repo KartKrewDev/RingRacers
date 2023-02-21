@@ -2521,7 +2521,7 @@ static void Command_Tunes_f(void)
 	}
 	else if (!strcasecmp(tunearg, "-default"))
 	{
-		tunearg = mapheaderinfo[gamemap-1]->musname[0];
+		tunearg = mapheaderinfo[gamemap-1]->musname[mapmusrng];
 		track = mapheaderinfo[gamemap-1]->mustrack;
 	}
 
