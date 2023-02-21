@@ -21,6 +21,7 @@ if(imgui_ADDED)
 
 	add_custom_command(
 		OUTPUT "${imgui_BINARY_DIR}/include/imgui.h" "${imgui_BINARY_DIR}/include/imconfig.h"
+		COMMAND ${CMAKE_COMMAND} -E make_directory "${imgui_BINARY_DIR}/include"
 		COMMAND ${CMAKE_COMMAND} -E copy "${imgui_SOURCE_DIR}/imgui.h" "${imgui_SOURCE_DIR}/imconfig.h" "${imgui_BINARY_DIR}/include"
 		DEPENDS "${imgui_SOURCE_DIR}/imgui.h" "${imgui_SOURCE_DIR}/imconfig.h"
 		VERBATIM
