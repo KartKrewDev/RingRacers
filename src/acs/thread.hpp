@@ -14,16 +14,6 @@
 #ifndef __SRB2_ACS_THREAD_HPP__
 #define __SRB2_ACS_THREAD_HPP__
 
-extern "C" {
-#include "../doomtype.h"
-#include "../doomdef.h"
-#include "../doomstat.h"
-#include "../p_tick.h"
-#include "../r_defs.h"
-#include "../r_state.h"
-#include "../p_spec.h"
-}
-
 #include <ACSVM/Code.hpp>
 #include <ACSVM/CodeData.hpp>
 #include <ACSVM/Environment.hpp>
@@ -34,6 +24,16 @@ extern "C" {
 #include <ACSVM/Serial.hpp>
 #include <ACSVM/Thread.hpp>
 #include <Util/Floats.hpp>
+
+extern "C" {
+#include "../doomtype.h"
+#include "../doomdef.h"
+#include "../doomstat.h"
+#include "../p_tick.h"
+#include "../r_defs.h"
+#include "../r_state.h"
+#include "../p_spec.h"
+}
 
 
 namespace srb2::acs {

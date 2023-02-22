@@ -11,6 +11,17 @@
 /// \file  environment.cpp
 /// \brief Action Code Script: Environment definition
 
+#include <ACSVM/Code.hpp>
+#include <ACSVM/CodeData.hpp>
+#include <ACSVM/Environment.hpp>
+#include <ACSVM/Error.hpp>
+#include <ACSVM/Module.hpp>
+#include <ACSVM/Scope.hpp>
+#include <ACSVM/Script.hpp>
+#include <ACSVM/Serial.hpp>
+#include <ACSVM/Thread.hpp>
+#include <Util/Floats.hpp>
+
 extern "C" {
 #include "../doomtype.h"
 #include "../doomdef.h"
@@ -23,17 +34,6 @@ extern "C" {
 #include "../w_wad.h"
 #include "../z_zone.h"
 }
-
-#include <ACSVM/Code.hpp>
-#include <ACSVM/CodeData.hpp>
-#include <ACSVM/Environment.hpp>
-#include <ACSVM/Error.hpp>
-#include <ACSVM/Module.hpp>
-#include <ACSVM/Scope.hpp>
-#include <ACSVM/Script.hpp>
-#include <ACSVM/Serial.hpp>
-#include <ACSVM/Thread.hpp>
-#include <Util/Floats.hpp>
 
 #include "environment.hpp"
 #include "thread.hpp"

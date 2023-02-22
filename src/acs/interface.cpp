@@ -11,19 +11,6 @@
 /// \file  interface.cpp
 /// \brief Action Code Script: Interface for the rest of SRB2's game logic
 
-extern "C" {
-#include "interface.h"
-
-#include "../doomtype.h"
-#include "../doomdef.h"
-#include "../doomstat.h"
-
-#include "../r_defs.h"
-#include "../g_game.h"
-#include "../i_system.h"
-#include "../p_saveg.h"
-}
-
 #include <cmath>
 #include <memory>
 
@@ -38,6 +25,19 @@ extern "C" {
 #include <ACSVM/Serial.hpp>
 #include <ACSVM/Thread.hpp>
 #include <Util/Floats.hpp>
+
+extern "C" {
+#include "interface.h"
+
+#include "../doomtype.h"
+#include "../doomdef.h"
+#include "../doomstat.h"
+
+#include "../r_defs.h"
+#include "../g_game.h"
+#include "../i_system.h"
+#include "../p_saveg.h"
+}
 
 #include "environment.hpp"
 #include "thread.hpp"

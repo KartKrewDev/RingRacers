@@ -14,6 +14,10 @@
 
 // TODO? Maybe untie this file from ACS?
 
+#include <istream>
+#include <ostream>
+#include <streambuf>
+
 extern "C" {
 #include "../doomtype.h"
 #include "../doomdef.h"
@@ -24,10 +28,6 @@ extern "C" {
 
 #include "stream.hpp"
 #include "../cxxutil.hpp"
-
-#include <istream>
-#include <ostream>
-#include <streambuf>
 
 using namespace srb2::acs;
 

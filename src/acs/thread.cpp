@@ -11,6 +11,18 @@
 /// \file  thread.cpp
 /// \brief Action Code Script: Thread definition
 
+#include <ACSVM/Code.hpp>
+#include <ACSVM/CodeData.hpp>
+#include <ACSVM/Environment.hpp>
+#include <ACSVM/Error.hpp>
+#include <ACSVM/Module.hpp>
+#include <ACSVM/Scope.hpp>
+#include <ACSVM/Script.hpp>
+#include <ACSVM/Serial.hpp>
+#include <ACSVM/Thread.hpp>
+#include <ACSVM/BinaryIO.hpp>
+#include <Util/Floats.hpp>
+
 #include "thread.hpp"
 
 extern "C" {
@@ -25,18 +37,6 @@ extern "C" {
 #include "../r_state.h"
 #include "../p_polyobj.h"
 }
-
-#include <ACSVM/Code.hpp>
-#include <ACSVM/CodeData.hpp>
-#include <ACSVM/Environment.hpp>
-#include <ACSVM/Error.hpp>
-#include <ACSVM/Module.hpp>
-#include <ACSVM/Scope.hpp>
-#include <ACSVM/Script.hpp>
-#include <ACSVM/Serial.hpp>
-#include <ACSVM/Thread.hpp>
-#include <ACSVM/BinaryIO.hpp>
-#include <Util/Floats.hpp>
 
 using namespace srb2::acs;
 

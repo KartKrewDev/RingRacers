@@ -11,6 +11,17 @@
 /// \file  call-funcs.cpp
 /// \brief Action Code Script: CallFunc instructions
 
+#include <ACSVM/Code.hpp>
+#include <ACSVM/CodeData.hpp>
+#include <ACSVM/Environment.hpp>
+#include <ACSVM/Error.hpp>
+#include <ACSVM/Module.hpp>
+#include <ACSVM/Scope.hpp>
+#include <ACSVM/Script.hpp>
+#include <ACSVM/Serial.hpp>
+#include <ACSVM/Thread.hpp>
+#include <Util/Floats.hpp>
+
 extern "C" {
 #include "../doomtype.h"
 #include "../doomdef.h"
@@ -37,17 +48,6 @@ extern "C" {
 #include "../r_skins.h"
 #include "../k_battle.h"
 }
-
-#include <ACSVM/Code.hpp>
-#include <ACSVM/CodeData.hpp>
-#include <ACSVM/Environment.hpp>
-#include <ACSVM/Error.hpp>
-#include <ACSVM/Module.hpp>
-#include <ACSVM/Scope.hpp>
-#include <ACSVM/Script.hpp>
-#include <ACSVM/Serial.hpp>
-#include <ACSVM/Thread.hpp>
-#include <Util/Floats.hpp>
 
 #include "call-funcs.hpp"
 

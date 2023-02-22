@@ -17,12 +17,9 @@
 #ifndef __SRB2_ACS_STREAM_HPP__
 #define __SRB2_ACS_STREAM_HPP__
 
-extern "C" {
-#include "../doomtype.h"
-#include "../doomdef.h"
-#include "../doomstat.h"
-#include "../p_saveg.h"
-}
+#include <istream>
+#include <ostream>
+#include <streambuf>
 
 #include <ACSVM/Code.hpp>
 #include <ACSVM/CodeData.hpp>
@@ -35,9 +32,12 @@ extern "C" {
 #include <ACSVM/Thread.hpp>
 #include <Util/Floats.hpp>
 
-#include <istream>
-#include <ostream>
-#include <streambuf>
+extern "C" {
+#include "../doomtype.h"
+#include "../doomdef.h"
+#include "../doomstat.h"
+#include "../p_saveg.h"
+}
 
 namespace srb2::acs {
 
