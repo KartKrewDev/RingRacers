@@ -12,19 +12,19 @@
 namespace
 {
 
-struct capsuletracking_t
+struct TargetTracking
 {
 	mobj_t* mobj;
 	vector3_t point;
 	fixed_t camDist;
 };
 
-void K_DrawCapsuleTracking(capsuletracking_t* caps)
+void K_DrawTargetTracking(TargetTracking* target)
 {
 	trackingResult_t result = {};
 	int32_t timer = 0;
 
-	K_ObjectTracking(&result, &caps->point, false);
+	K_ObjectTracking(&result, &target->point, false);
 
 	if (result.onScreen == false)
 	{
@@ -45,8 +45,8 @@ void K_DrawCapsuleTracking(capsuletracking_t* caps)
 		patch_t* arrowPatch = nullptr;
 		int32_t arrowFlags = 0;
 
-		vector2_t capsulePos = {};
-		patch_t* capsulePatch = nullptr;
+		vector2_t targetPos = {};
+		patch_t* targetPatch = nullptr;
 
 		timer = (leveltime / 3);
 
@@ -72,7 +72,7 @@ void K_DrawCapsuleTracking(capsuletracking_t* caps)
 		borderWin.y = screenSize.y - borderSize;
 
 		arrowDir.x = 0;
-		arrowDir.y = P_MobjFlip(caps->mobj) * FRACUNIT;
+		arrowDir.y = P_MobjFlip(target->mobj) * FRACUNIT;
 
 		// Simply pointing towards the result doesn't work, so inaccurate hack...
 		borderDir.x = FixedMul(
@@ -99,7 +99,7 @@ void K_DrawCapsuleTracking(capsuletracking_t* caps)
 			borderDir.y = FRACUNIT;
 		}
 
-		capsulePatch = kp_capsuletarget_icon[timer & 1];
+		targetPatch = kp_capsuletarget_icon[timer & 1];
 
 		if (abs(borderDir.x) > abs(borderDir.y))
 		{
@@ -142,14 +142,14 @@ void K_DrawCapsuleTracking(capsuletracking_t* caps)
 		arrowPos.x = std::clamp(arrowPos.x, borderSize, borderWin.x) * FRACUNIT;
 		arrowPos.y = std::clamp(arrowPos.y, borderSize, borderWin.y) * FRACUNIT;
 
-		capsulePos.x = arrowPos.x - (arrowDir.x * 12);
-		capsulePos.y = arrowPos.y - (arrowDir.y * 12);
+		targetPos.x = arrowPos.x - (arrowDir.x * 12);
+		targetPos.y = arrowPos.y - (arrowDir.y * 12);
 
 		arrowPos.x -= (arrowPatch->width << FRACBITS) >> 1;
 		arrowPos.y -= (arrowPatch->height << FRACBITS) >> 1;
 
-		capsulePos.x -= (capsulePatch->width << FRACBITS) >> 1;
-		capsulePos.y -= (capsulePatch->height << FRACBITS) >> 1;
+		targetPos.x -= (targetPatch->width << FRACBITS) >> 1;
+		targetPos.y -= (targetPatch->height << FRACBITS) >> 1;
 
 		if (arrowDir.x < 0)
 		{
@@ -163,7 +163,7 @@ void K_DrawCapsuleTracking(capsuletracking_t* caps)
 			arrowFlags |= V_VFLIP;
 		}
 
-		V_DrawFixedPatch(capsulePos.x, capsulePos.y, FRACUNIT, V_SPLITSCREEN, capsulePatch, nullptr);
+		V_DrawFixedPatch(targetPos.x, targetPos.y, FRACUNIT, V_SPLITSCREEN, targetPatch, nullptr);
 
 		V_DrawFixedPatch(arrowPos.x, arrowPos.y, FRACUNIT, V_SPLITSCREEN | arrowFlags, arrowPatch, nullptr);
 	}
@@ -171,12 +171,12 @@ void K_DrawCapsuleTracking(capsuletracking_t* caps)
 	{
 		// Draw simple overlay.
 		const fixed_t farDistance = 1280 * mapobjectscale;
-		bool useNear = (caps->camDist < farDistance);
+		bool useNear = (target->camDist < farDistance);
 
-		patch_t* capsulePatch = nullptr;
-		vector2_t capsulePos = {};
+		patch_t* targetPatch = nullptr;
+		vector2_t targetPos = {};
 
-		bool visible = P_CheckSight(stplyr->mo, caps->mobj);
+		bool visible = P_CheckSight(stplyr->mo, target->mobj);
 
 		if (visible == false && (leveltime & 1))
 		{
@@ -184,24 +184,24 @@ void K_DrawCapsuleTracking(capsuletracking_t* caps)
 			return;
 		}
 
-		capsulePos.x = result.x;
-		capsulePos.y = result.y;
+		targetPos.x = result.x;
+		targetPos.y = result.y;
 
 		if (useNear == true)
 		{
 			timer = (leveltime / 2);
-			capsulePatch = kp_capsuletarget_near[timer % 8];
+			targetPatch = kp_capsuletarget_near[timer % 8];
 		}
 		else
 		{
 			timer = (leveltime / 3);
-			capsulePatch = kp_capsuletarget_far[timer & 1];
+			targetPatch = kp_capsuletarget_far[timer & 1];
 		}
 
-		capsulePos.x -= (capsulePatch->width << FRACBITS) >> 1;
-		capsulePos.y -= (capsulePatch->height << FRACBITS) >> 1;
+		targetPos.x -= (targetPatch->width << FRACBITS) >> 1;
+		targetPos.y -= (targetPatch->height << FRACBITS) >> 1;
 
-		V_DrawFixedPatch(capsulePos.x, capsulePos.y, FRACUNIT, V_SPLITSCREEN, capsulePatch, nullptr);
+		V_DrawFixedPatch(targetPos.x, targetPos.y, FRACUNIT, V_SPLITSCREEN, targetPatch, nullptr);
 	}
 }
 
@@ -209,19 +209,19 @@ void K_DrawCapsuleTracking(capsuletracking_t* caps)
 
 void K_drawTargetHUD(const vector3_t* origin, player_t* player)
 {
-	constexpr std::size_t kMaxCapsuleHUD = 32;
+	constexpr std::size_t kMaxTargetHUD = 32;
 
 	std::size_t i, j;
 
-	capsuletracking_t capsuleList[kMaxCapsuleHUD];
-	std::size_t capsuleListLen = 0;
+	TargetTracking targetList[kMaxTargetHUD];
+	std::size_t targetListLen = 0;
 
 	mobj_t* mobj = nullptr;
 	mobj_t* next = nullptr;
 
 	for (mobj = trackercap; mobj; mobj = next)
 	{
-		capsuletracking_t* caps = nullptr;
+		TargetTracking* target = nullptr;
 
 		next = mobj->itnext;
 
@@ -235,36 +235,36 @@ void K_drawTargetHUD(const vector3_t* origin, player_t* player)
 			continue;
 		}
 
-		caps = &capsuleList[capsuleListLen];
+		target = &targetList[targetListLen];
 
-		caps->mobj = mobj;
-		caps->point.x = R_InterpolateFixed(mobj->old_x, mobj->x);
-		caps->point.y = R_InterpolateFixed(mobj->old_y, mobj->y);
-		caps->point.z = R_InterpolateFixed(mobj->old_z, mobj->z);
-		caps->point.z += (mobj->height >> 1);
-		caps->camDist = R_PointToDist2(origin->x, origin->y, caps->point.x, caps->point.y);
+		target->mobj = mobj;
+		target->point.x = R_InterpolateFixed(mobj->old_x, mobj->x);
+		target->point.y = R_InterpolateFixed(mobj->old_y, mobj->y);
+		target->point.z = R_InterpolateFixed(mobj->old_z, mobj->z);
+		target->point.z += (mobj->height >> 1);
+		target->camDist = R_PointToDist2(origin->x, origin->y, target->point.x, target->point.y);
 
-		capsuleListLen++;
+		targetListLen++;
 
-		if (capsuleListLen >= kMaxCapsuleHUD)
+		if (targetListLen >= kMaxTargetHUD)
 		{
 			break;
 		}
 	}
 
-	if (capsuleListLen > 0)
+	if (targetListLen > 0)
 	{
 		// Sort by distance from camera.
-		if (capsuleListLen > 1)
+		if (targetListLen > 1)
 		{
-			for (i = 0; i < capsuleListLen - 1; i++)
+			for (i = 0; i < targetListLen - 1; i++)
 			{
 				std::size_t swap = i;
 
-				for (j = i + 1; j < capsuleListLen; j++)
+				for (j = i + 1; j < targetListLen; j++)
 				{
-					capsuletracking_t* cj = &capsuleList[j];
-					capsuletracking_t* cSwap = &capsuleList[swap];
+					TargetTracking* cj = &targetList[j];
+					TargetTracking* cSwap = &targetList[swap];
 
 					if (cj->camDist > cSwap->camDist)
 					{
@@ -274,16 +274,16 @@ void K_drawTargetHUD(const vector3_t* origin, player_t* player)
 
 				if (swap != i)
 				{
-					capsuletracking_t temp = capsuleList[swap];
-					capsuleList[swap] = capsuleList[i];
-					capsuleList[i] = temp;
+					TargetTracking temp = targetList[swap];
+					targetList[swap] = targetList[i];
+					targetList[i] = temp;
 				}
 			}
 		}
 
-		for (i = 0; i < capsuleListLen; i++)
+		for (i = 0; i < targetListLen; i++)
 		{
-			K_DrawCapsuleTracking(&capsuleList[i]);
+			K_DrawTargetTracking(&targetList[i]);
 		}
 	}
 }
