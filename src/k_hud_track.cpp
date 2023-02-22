@@ -1,5 +1,6 @@
 #include <algorithm>
 #include <cstddef>
+#include <vector>
 
 #include "k_hud.h"
 #include "m_fixed.h"
@@ -19,12 +20,12 @@ struct TargetTracking
 	fixed_t camDist;
 };
 
-void K_DrawTargetTracking(TargetTracking* target)
+void K_DrawTargetTracking(const TargetTracking& target)
 {
 	trackingResult_t result = {};
 	int32_t timer = 0;
 
-	K_ObjectTracking(&result, &target->point, false);
+	K_ObjectTracking(&result, &target.point, false);
 
 	if (result.onScreen == false)
 	{
@@ -72,7 +73,7 @@ void K_DrawTargetTracking(TargetTracking* target)
 		borderWin.y = screenSize.y - borderSize;
 
 		arrowDir.x = 0;
-		arrowDir.y = P_MobjFlip(target->mobj) * FRACUNIT;
+		arrowDir.y = P_MobjFlip(target.mobj) * FRACUNIT;
 
 		// Simply pointing towards the result doesn't work, so inaccurate hack...
 		borderDir.x = FixedMul(
@@ -171,12 +172,12 @@ void K_DrawTargetTracking(TargetTracking* target)
 	{
 		// Draw simple overlay.
 		const fixed_t farDistance = 1280 * mapobjectscale;
-		bool useNear = (target->camDist < farDistance);
+		bool useNear = (target.camDist < farDistance);
 
 		patch_t* targetPatch = nullptr;
 		vector2_t targetPos = {};
 
-		bool visible = P_CheckSight(stplyr->mo, target->mobj);
+		bool visible = P_CheckSight(stplyr->mo, target.mobj);
 
 		if (visible == false && (leveltime & 1))
 		{
@@ -209,20 +210,13 @@ void K_DrawTargetTracking(TargetTracking* target)
 
 void K_drawTargetHUD(const vector3_t* origin, player_t* player)
 {
-	constexpr std::size_t kMaxTargetHUD = 32;
-
-	std::size_t i, j;
-
-	TargetTracking targetList[kMaxTargetHUD];
-	std::size_t targetListLen = 0;
+	std::vector<TargetTracking> targetList;
 
 	mobj_t* mobj = nullptr;
 	mobj_t* next = nullptr;
 
 	for (mobj = trackercap; mobj; mobj = next)
 	{
-		TargetTracking* target = nullptr;
-
 		next = mobj->itnext;
 
 		if (mobj->health <= 0)
@@ -235,55 +229,18 @@ void K_drawTargetHUD(const vector3_t* origin, player_t* player)
 			continue;
 		}
 
-		target = &targetList[targetListLen];
+		vector3_t pos = {
+			R_InterpolateFixed(mobj->old_x, mobj->x),
+			R_InterpolateFixed(mobj->old_y, mobj->y),
+			R_InterpolateFixed(mobj->old_z, mobj->z) + (mobj->height >> 1),
+		};
 
-		target->mobj = mobj;
-		target->point.x = R_InterpolateFixed(mobj->old_x, mobj->x);
-		target->point.y = R_InterpolateFixed(mobj->old_y, mobj->y);
-		target->point.z = R_InterpolateFixed(mobj->old_z, mobj->z);
-		target->point.z += (mobj->height >> 1);
-		target->camDist = R_PointToDist2(origin->x, origin->y, target->point.x, target->point.y);
-
-		targetListLen++;
-
-		if (targetListLen >= kMaxTargetHUD)
-		{
-			break;
-		}
+		targetList.push_back({mobj, pos, R_PointToDist2(origin->x, origin->y, pos.x, pos.y)});
 	}
 
-	if (targetListLen > 0)
-	{
-		// Sort by distance from camera.
-		if (targetListLen > 1)
-		{
-			for (i = 0; i < targetListLen - 1; i++)
-			{
-				std::size_t swap = i;
+	// Sort by distance from camera. Further trackers get
+	// drawn first so nearer ones draw over them.
+	std::sort(targetList.begin(), targetList.end(), [](const auto& a, const auto& b) { return a.camDist > b.camDist; });
 
-				for (j = i + 1; j < targetListLen; j++)
-				{
-					TargetTracking* cj = &targetList[j];
-					TargetTracking* cSwap = &targetList[swap];
-
-					if (cj->camDist > cSwap->camDist)
-					{
-						swap = j;
-					}
-				}
-
-				if (swap != i)
-				{
-					TargetTracking temp = targetList[swap];
-					targetList[swap] = targetList[i];
-					targetList[i] = temp;
-				}
-			}
-		}
-
-		for (i = 0; i < targetListLen; i++)
-		{
-			K_DrawTargetTracking(&targetList[i]);
-		}
-	}
+	std::for_each(targetList.cbegin(), targetList.cend(), K_DrawTargetTracking);
 }

@@ -34,7 +34,7 @@ struct trackingResult_t
 	fixed_t fov;
 };
 
-void K_ObjectTracking(trackingResult_t *result, vector3_t *point, boolean reverse);
+void K_ObjectTracking(trackingResult_t *result, const vector3_t *point, boolean reverse);
 
 const char *K_GetItemPatch(UINT8 item, boolean tiny);
 void K_LoadKartHUDGraphics(void);

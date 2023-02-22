@@ -832,7 +832,7 @@ INT32 POSI2_X, POSI2_Y;
 INT32 TCOOL_X, TCOOL_Y;
 
 // This version of the function was prototyped in Lua by Nev3r ... a HUGE thank you goes out to them!
-void K_ObjectTracking(trackingResult_t *result, vector3_t *point, boolean reverse)
+void K_ObjectTracking(trackingResult_t *result, const vector3_t *point, boolean reverse)
 {
 #define NEWTAN(x) FINETANGENT(((x + ANGLE_90) >> ANGLETOFINESHIFT) & 4095) // tan function used by Lua
 #define NEWCOS(x) FINECOSINE((x >> ANGLETOFINESHIFT) & FINEMASK)
