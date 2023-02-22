@@ -58,6 +58,7 @@ if(DiscordRPC_ADDED)
 			target_sources(discord-rpc PRIVATE
 				"${DiscordRPC_SOURCE_DIR}/src/discord_register_linux.cpp"
 			)
+			target_link_libraries(discord-rpc PUBLIC pthread)
 		endif()
 	endif()
 endif()
