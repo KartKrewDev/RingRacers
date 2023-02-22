@@ -9285,22 +9285,22 @@ void K_KartUpdatePosition(player_t *player)
 				UINT8 myEmeralds = K_NumEmeralds(player);
 				UINT8 yourEmeralds = K_NumEmeralds(&players[i]);
 
-				if (yourEmeralds > myEmeralds)
+				// First compare all points
+				if (players[i].roundscore > player->roundscore)
 				{
-					// Emeralds matter above all
 					position++;
 				}
-				else if (yourEmeralds == myEmeralds)
+				else if (players[i].roundscore == player->roundscore)
 				{
-					// Bumpers are a tie breaker
-					if (players[i].bumpers > player->bumpers)
+					// Emeralds are a tie breaker
+					if (yourEmeralds > myEmeralds)
 					{
 						position++;
 					}
-					else if (players[i].bumpers == player->bumpers)
+					else if (yourEmeralds == myEmeralds)
 					{
-						// Score is the second tier tie breaker
-						if (players[i].roundscore > player->roundscore)
+						// Bumpers are the second tier tie breaker
+						if (players[i].bumpers > player->bumpers)
 						{
 							position++;
 						}
