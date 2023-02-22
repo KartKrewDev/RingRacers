@@ -1094,7 +1094,7 @@ static void K_BotItemJawz(player_t *player, ticcmd_t *cmd)
 		target = &players[lastTarg];
 
 		// Make sure no other Jawz are targetting this player.
-		for (mobj = kitemcap; mobj; mobj = next)
+		for (mobj = trackercap; mobj; mobj = next)
 		{
 			next = mobj->itnext;
 

@@ -2195,7 +2195,7 @@ static void SaveMobjThinker(savebuffer_t *save, const thinker_t *th, const UINT8
 		diff2 |= MD2_DISPOFFSET;
 	if (mobj == waypointcap)
 		diff2 |= MD2_WAYPOINTCAP;
-	if (mobj == kitemcap)
+	if (mobj == trackercap)
 		diff2 |= MD2_KITEMCAP;
 	if (mobj->itnext)
 		diff2 |= MD2_ITNEXT;
@@ -3614,7 +3614,7 @@ static thinker_t* LoadMobjThinker(savebuffer_t *save, actionf_p1 thinker)
 		P_SetTarget(&waypointcap, mobj);
 
 	if (diff2 & MD2_KITEMCAP)
-		P_SetTarget(&kitemcap, mobj);
+		P_SetTarget(&trackercap, mobj);
 
 	R_AddMobjInterpolator(mobj);
 
@@ -4255,7 +4255,7 @@ static void P_NetUnArchiveThinkers(savebuffer_t *save)
 	P_InitThinkers();
 
 	// Oh my god don't blast random memory with our reference counts.
-	waypointcap = kitemcap = NULL;
+	waypointcap = trackercap = NULL;
 	for (i = 0; i <= 15; i++)
 	{
 		skyboxcenterpnts[i] = skyboxviewpnts[i] = NULL;

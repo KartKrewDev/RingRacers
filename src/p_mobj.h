@@ -356,7 +356,7 @@ struct mobj_t
 	mobj_t *hnext;
 	mobj_t *hprev;
 
-	// One last pointer for kart item lists
+	// One last pointer for trackers lists
 	mobj_t *itnext;
 
 	INT32 health; // for player this is rings + 1 -- no it isn't, not any more!!
@@ -504,20 +504,16 @@ struct actioncache_t
 
 extern actioncache_t actioncachehead;
 
-extern mobj_t *kitemcap;
+extern mobj_t *trackercap;
 extern mobj_t *waypointcap;
 
 void P_InitCachedActions(void);
 void P_RunCachedActions(void);
 void P_AddCachedAction(mobj_t *mobj, INT32 statenum);
 
-// kartitem stuff: Returns true if the specified 'type' is one of the kart item constants we want in the kitemcap list
 boolean P_IsKartFieldItem(INT32 type);
-boolean P_IsKartItem(INT32 type);
 boolean K_IsMissileOrKartItem(mobj_t *mo);
 boolean P_CanDeleteKartItem(INT32 type);
-void P_AddKartItem(mobj_t *thing);	// needs to be called in k_kart.c
-void P_RunKartItems(void);
 
 // check mobj against water content, before movement code
 void P_MobjCheckWater(mobj_t *mobj);

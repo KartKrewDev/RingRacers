@@ -210,7 +210,7 @@ void P_InitThinkers(void)
 {
 	UINT8 i;
 	waypointcap = NULL;
-	kitemcap = NULL;
+	trackercap = NULL;
 	for (i = 0; i < NUM_THINKERLISTS; i++)
 		thlist[i].prev = thlist[i].next = &thlist[i];
 }
@@ -635,9 +635,6 @@ void P_Ticker(boolean run)
 	// Keep track of how long they've been playing!
 	if (!demo.playback) // Don't increment if a demo is playing.
 		gamedata->totalplaytime++;
-
-	// formality so kitemcap gets updated properly each frame.
-	P_RunKartItems();
 
 	if (run)
 	{

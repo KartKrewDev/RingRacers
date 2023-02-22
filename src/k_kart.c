@@ -5816,7 +5816,7 @@ static void K_DoShrink(player_t *user)
 		mobj_t *mobj, *next;
 
 		// kill everything in the kitem list while we're at it:
-		for (mobj = kitemcap; mobj; mobj = next)
+		for (mobj = trackercap; mobj; mobj = next)
 		{
 			next = mobj->itnext;
 
@@ -6108,7 +6108,6 @@ void K_DropHnextList(player_t *player, boolean keepshields)
 		dropwork = P_SpawnMobj(work->x, work->y, work->z, type);
 
 		P_SetTarget(&dropwork->target, player->mo);
-		P_AddKartItem(dropwork); // needs to be called here so shrink can bust items off players in front of the user.
 
 		dropwork->angle = work->angle;
 

@@ -34,7 +34,7 @@ struct trackingResult_t
 	fixed_t fov;
 };
 
-void K_ObjectTracking(trackingResult_t *result, vector3_t *point, boolean reverse);
+void K_ObjectTracking(trackingResult_t *result, const vector3_t *point, boolean reverse);
 
 const char *K_GetItemPatch(UINT8 item, boolean tiny);
 void K_LoadKartHUDGraphics(void);
@@ -44,8 +44,14 @@ void K_drawKartTimestamp(tic_t drawtime, INT32 TX, INT32 TY, INT32 splitflags, U
 void K_DrawTabRankings(INT32 x, INT32 y, playersort_t *tab, INT32 scorelines, INT32 whiteplayer, INT32 hilicol);
 void K_DrawMapThumbnail(INT32 x, INT32 y, INT32 width, UINT32 flags, UINT16 map, UINT8 *colormap);
 void K_DrawLikeMapThumbnail(INT32 x, INT32 y, INT32 width, UINT32 flags, patch_t *patch, UINT8 *colormap);
+void K_drawTargetHUD(const vector3_t *origin, player_t *player);
 
 extern patch_t *kp_facehighlight[8];
+extern patch_t *kp_capsuletarget_arrow[2][2];
+extern patch_t *kp_capsuletarget_icon[2];
+extern patch_t *kp_capsuletarget_far[2];
+extern patch_t *kp_capsuletarget_far_text[2];
+extern patch_t *kp_capsuletarget_near[8];
 
 #ifdef __cplusplus
 } // extern "C"
