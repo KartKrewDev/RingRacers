@@ -1170,7 +1170,7 @@ sfxinfo_t S_sfx[NUMSFX] =
   {"claw15", false,  64, 64, -1, NULL, 0,        -1,  -1, LUMPERROR, ""}, // SF_X2AWAYSOUND
   {"claw16", false,  64, 64, -1, NULL, 0,        -1,  -1, LUMPERROR, ""}, // SF_X2AWAYSOUND
   {"clawht", false,  64, 8, -1, NULL, 0,         -1,  -1, LUMPERROR, ""}, // SF_X4AWAYSOUND
-  {"clawzm", false,  64, 8, -1, NULL, 0,         -1,  -1, LUMPERROR, ""}, // SF_X4AWAYSOUND
+  {"clawzm", false,  64, 16, -1, NULL, 0,         -1,  -1, LUMPERROR, ""}, // SF_X8AWAYSOUND
   {"clawk1", false,  64, 16, -1, NULL, 0,         -1,  -1, LUMPERROR, ""}, // SF_X8AWAYSOUND
   {"clawk2", false,  64, 16, -1, NULL, 0,         -1,  -1, LUMPERROR, ""}, // SF_X8AWAYSOUND
 
