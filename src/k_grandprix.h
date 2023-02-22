@@ -37,6 +37,38 @@ extern struct grandprixinfo
 	UINT8 eventmode;		///< See GPEVENT_ constants
 } grandprixinfo;
 
+extern struct gpRank
+{
+	UINT8 players;
+	UINT8 totalPlayers;
+
+	UINT32 winPoints;
+	UINT32 totalPoints;
+
+	UINT32 laps;
+	UINT32 totalLaps;
+
+	UINT32 continuesUsed;
+
+	UINT32 capsules;
+	UINT32 totalCapsules;
+
+	UINT32 rings;
+	UINT32 totalRings;
+
+	boolean specialWon;
+	UINT8 difficulty;
+} gpRank;
+
+typedef enum
+{
+	GRADE_E,
+	GRADE_D,
+	GRADE_C,
+	GRADE_B,
+	GRADE_A,
+	GRADE_S
+} gp_rank_e;
 
 /*--------------------------------------------------
 	UINT8 K_BotStartingDifficulty(SINT8 value);
@@ -80,6 +112,13 @@ INT16 K_CalculateGPRankPoints(UINT8 position, UINT8 numplayers);
 
 UINT8 K_BotDefaultSkin(void);
 
+/*--------------------------------------------------
+	void K_InitGrandPrixRank(void);
+
+		Calculates rank requirements for a GP session.
+--------------------------------------------------*/
+
+void K_InitGrandPrixRank(void);
 
 /*--------------------------------------------------
 	void K_InitGrandPrixBots(void);
@@ -169,6 +208,21 @@ void K_PlayerLoseLife(player_t *player);
 --------------------------------------------------*/
 
 boolean K_CanChangeRules(boolean allowdemos);
+
+/*--------------------------------------------------
+	gp_rank_e K_CalculateGPGrade(void);
+
+		Calculates the player's grade using the
+		variables from gpRank.
+
+	Input Arguments:-
+		N/A
+
+	Return:-
+		gp_rank_e representing the total grade.
+--------------------------------------------------*/
+
+gp_rank_e K_CalculateGPGrade(void);
 
 #ifdef __cplusplus
 } // extern "C"

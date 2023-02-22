@@ -1353,6 +1353,7 @@ void P_DoPlayerExit(player_t *player)
 				if (RINGTOTAL(player) > 0)
 				{
 					player->totalring += RINGTOTAL(player);
+					gpRank.rings += player->totalring;
 
 					extra = player->totalring / lifethreshold;
 
@@ -1362,6 +1363,16 @@ void P_DoPlayerExit(player_t *player)
 						S_StartSound(NULL, sfx_cdfm73);
 						player->xtralife = extra;
 					}
+				}
+
+				if (grandprixinfo.eventmode == GPEVENT_NONE)
+				{
+					gpRank.winPoints += K_CalculateGPRankPoints(player->position, gpRank.totalPlayers);
+					gpRank.laps += player->lapPoints;
+				}
+				else if (grandprixinfo.eventmode == GPEVENT_SPECIAL)
+				{
+					gpRank.specialWon = true;
 				}
 			}
 		}

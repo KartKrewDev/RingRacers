@@ -2388,6 +2388,7 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	INT16 totalring;
 	UINT8 laps;
 	UINT8 latestlap;
+	UINT32 lapPoints;
 	UINT16 skincolor;
 	INT32 skin;
 	UINT8 availabilities[MAXAVAILABILITY];
@@ -2497,6 +2498,7 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 		nocontrol = 0;
 		laps = 0;
 		latestlap = 0;
+		lapPoints = 0;
 		roundscore = 0;
 		exiting = 0;
 		khudfinish = 0;
@@ -2532,6 +2534,7 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 
 		laps = players[player].laps;
 		latestlap = players[player].latestlap;
+		lapPoints = players[player].lapPoints;
 
 		roundscore = players[player].roundscore;
 
@@ -2604,6 +2607,7 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 
 	p->laps = laps;
 	p->latestlap = latestlap;
+	p->lapPoints = lapPoints;
 	p->totalring = totalring;
 
 	p->bot = bot;
@@ -4123,6 +4127,8 @@ static void G_DoCompleted(void)
 	G_SetGamestate(GS_NULL);
 	wipegamestate = GS_NULL;
 
+	UINT8 bestDifficulty = 0;
+
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
 		if (playeringame[i])
@@ -4148,8 +4154,15 @@ static void G_DoCompleted(void)
 			}
 
 			G_PlayerFinishLevel(i); // take away cards and stuff
+
+			if (players[i].bot)
+			{
+				bestDifficulty = max(bestDifficulty, players[i].botvars.difficulty);
+			}
 		}
 	}
+
+	gpRank.difficulty = bestDifficulty;
 
 	// See Y_StartIntermission timer handling
 	if ((gametyperules & GTR_CIRCUIT) && ((multiplayer && demo.playback) || j == r_splitscreen+1) && (!K_CanChangeRules(false) || cv_inttime.value > 0))
@@ -5485,6 +5498,11 @@ boolean G_GetExitGameFlag(void)
 // Same deal with retrying.
 void G_SetRetryFlag(void)
 {
+	if (retrying == false)
+	{
+		gpRank.continuesUsed++;
+	}
+
 	retrying = true;
 }
 

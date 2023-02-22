@@ -7388,6 +7388,7 @@ static void P_InitGametype(void)
 	{
 		if (grandprixinfo.initalize == true)
 		{
+			K_InitGrandPrixRank();
 			K_InitGrandPrixBots();
 			grandprixinfo.initalize = false;
 		}

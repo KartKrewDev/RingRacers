@@ -21,6 +21,7 @@
 #include "r_things.h"
 
 struct grandprixinfo grandprixinfo;
+struct gpRank gpRank;
 
 /*--------------------------------------------------
 	UINT8 K_BotStartingDifficulty(SINT8 value)
@@ -115,6 +116,86 @@ UINT8 K_BotDefaultSkin(void)
 }
 
 /*--------------------------------------------------
+	static UINT8 K_GetGPPlayerCount(UINT8 humans)
+
+		Counts the number of total players,
+		including humans and bots, to put into
+		a GP session.
+--------------------------------------------------*/
+static UINT8 K_GetGPPlayerCount(UINT8 humans)
+{
+	UINT8 playerCount = 8;
+
+	if (humans > 2)
+	{
+		// Add 3 bots per player beyond 2P
+		playerCount += (humans - 2) * 3;
+	}
+
+	return playerCount;
+}
+
+/*--------------------------------------------------
+	void K_InitGrandPrixRank(void)
+
+		See header file for description.
+--------------------------------------------------*/
+void K_InitGrandPrixRank(void)
+{
+	UINT8 numHumans = 0;
+	INT32 i;
+
+	memset(&gpRank, 0, sizeof(gpRank));
+
+	if (grandprixinfo.cup == NULL)
+	{
+		return;
+	}
+
+	for (i = 0; i < MAXPLAYERS; i++)
+	{
+		if (playeringame[i])
+		{
+			if (numHumans < MAXSPLITSCREENPLAYERS && players[i].spectator == false)
+			{
+				numHumans++;
+			}
+		}
+	}
+
+	// Calculate players 
+	gpRank.players = numHumans;
+	gpRank.totalPlayers = K_GetGPPlayerCount(numHumans);
+
+	// Calculate total of points
+	// (Should this account for all coop players?)
+	for (i = 0; i < numHumans; i++)
+	{
+		gpRank.totalPoints += grandprixinfo.cup->numlevels * K_CalculateGPRankPoints(i + 1, gpRank.totalPlayers);
+	}
+
+	gpRank.totalRings = grandprixinfo.cup->numlevels * numHumans * 20;
+
+	UINT32 laps = 0;
+	for (i = 0; i < grandprixinfo.cup->numlevels; i++)
+	{
+		const INT32 cupLevelNum = grandprixinfo.cup->cachedlevels[i];
+		if (cupLevelNum < nummapheaders && mapheaderinfo[cupLevelNum] != NULL)
+		{
+			laps += mapheaderinfo[cupLevelNum]->numlaps;
+		}
+	}
+
+	// +1, since 1st place laps are worth 2 pts.
+	for (i = 0; i < numHumans+1; i++)
+	{
+		gpRank.totalLaps += laps;
+	}
+
+	// Total capsules will need to be calculated as you enter the bonus stages...
+}
+
+/*--------------------------------------------------
 	void K_InitGrandPrixBots(void)
 
 		See header file for description.
@@ -198,12 +279,7 @@ void K_InitGrandPrixBots(void)
 		}
 	}
 
-	if (numplayers > 2)
-	{
-		// Add 3 bots per player beyond 2P
-		playercount += (numplayers-2) * 3;
-	}
-
+	playercount = K_GetGPPlayerCount(numplayers);
 	wantedbots = playercount - numplayers;
 
 	// Create rival list
@@ -727,4 +803,76 @@ boolean K_CanChangeRules(boolean allowdemos)
 	}
 
 	return true;
+}
+
+/*--------------------------------------------------
+	gp_rank_e K_CalculateGPGrade(void)
+
+		See header file for description.
+--------------------------------------------------*/
+gp_rank_e K_CalculateGPGrade(void)
+{
+	static const fixed_t gradePercents[GRADE_A] = {
+		 9*FRACUNIT/20,		// GRADE_E -> GRADE_D
+		12*FRACUNIT/20,		// GRADE_D -> GRADE_C
+		15*FRACUNIT/20,		// GRADE_C -> GRADE_B
+		18*FRACUNIT/20		// GRADE_B -> GRADE_A
+	};
+
+	gp_rank_e retGrade = GRADE_E;
+
+	// TODO:
+	const INT32 pointsWeight = 100;
+	const INT32 lapsWeight = 100;
+	const INT32 capsulesWeight = 100;
+	const INT32 ringsWeight = 50;
+	const INT32 difficultyWeight = 20;
+	const INT32 total = pointsWeight + lapsWeight + capsulesWeight + ringsWeight + difficultyWeight;
+	const INT32 continuesPenalty = 20;
+
+	INT32 ours = 0;
+	fixed_t percent = 0;
+
+	if (gpRank.totalPoints > 0)
+	{
+		ours += (gpRank.winPoints * pointsWeight) / gpRank.totalPoints;
+	}
+
+	if (gpRank.totalLaps > 0)
+	{
+		ours += (gpRank.laps * lapsWeight) / gpRank.totalLaps;
+	}
+
+	if (gpRank.totalCapsules > 0)
+	{
+		ours += (gpRank.capsules * capsulesWeight) / gpRank.totalCapsules;
+	}
+
+	if (gpRank.totalRings > 0)
+	{
+		ours += (gpRank.rings * ringsWeight) / gpRank.totalRings;
+	}
+
+	ours += (gpRank.difficulty * difficultyWeight) / MAXBOTDIFFICULTY;
+
+	ours -= gpRank.continuesUsed * continuesPenalty;
+
+	percent = FixedDiv(ours, total);
+
+	for (retGrade = 0; retGrade < GRADE_A; retGrade++)
+	{
+		if (percent < gradePercents[retGrade])
+		{
+			break;
+		}
+	}
+
+	if (gpRank.specialWon == true)
+	{
+		// Winning the Special Stage gives you
+		// a free grade increase.
+		retGrade++;
+	}
+
+	return retGrade;
 }

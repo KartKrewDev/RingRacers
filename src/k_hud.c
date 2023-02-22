@@ -5067,4 +5067,39 @@ void K_drawKartHUD(void)
 
 	K_DrawWaypointDebugger();
 	K_DrawDirectorDebugger();
+
+	if (grandprixinfo.gp == true)
+	{
+		gp_rank_e grade = K_CalculateGPGrade();
+		char gradeChar = '?';
+
+		V_DrawThinString(0, 0, V_SNAPTOTOP|V_SNAPTOLEFT|V_6WIDTHSPACE|V_ALLOWLOWERCASE,
+			va("PTS: %d / %d", gpRank.winPoints, gpRank.totalPoints));
+		V_DrawThinString(0, 10, V_SNAPTOTOP|V_SNAPTOLEFT|V_6WIDTHSPACE|V_ALLOWLOWERCASE,
+			va("LAPS: %d / %d", gpRank.laps, gpRank.totalLaps));
+		V_DrawThinString(0, 20, V_SNAPTOTOP|V_SNAPTOLEFT|V_6WIDTHSPACE|V_ALLOWLOWERCASE,
+			va("CONTINUES: %d", gpRank.continuesUsed));
+		V_DrawThinString(0, 30, V_SNAPTOTOP|V_SNAPTOLEFT|V_6WIDTHSPACE|V_ALLOWLOWERCASE,
+			va("CAPSULES: %d / %d", gpRank.capsules, gpRank.totalCapsules));
+		V_DrawThinString(0, 40, V_SNAPTOTOP|V_SNAPTOLEFT|V_6WIDTHSPACE|V_ALLOWLOWERCASE,
+			va("RINGS: %d / %d", gpRank.rings, gpRank.totalRings));
+		V_DrawThinString(0, 50, V_SNAPTOTOP|V_SNAPTOLEFT|V_6WIDTHSPACE|V_ALLOWLOWERCASE,
+			va("SPECIAL: %d", gpRank.specialWon));
+		V_DrawThinString(0, 60, V_SNAPTOTOP|V_SNAPTOLEFT|V_6WIDTHSPACE|V_ALLOWLOWERCASE,
+			va("DIFFICULTY: %d", gpRank.difficulty));
+
+		switch (grade)
+		{
+			case GRADE_E: { gradeChar = 'E'; break; }
+			case GRADE_D: { gradeChar = 'D'; break; }
+			case GRADE_C: { gradeChar = 'C'; break; }
+			case GRADE_B: { gradeChar = 'B'; break; }
+			case GRADE_A: { gradeChar = 'A'; break; }
+			case GRADE_S: { gradeChar = 'S'; break; }
+			default: { break; }
+		}
+
+		V_DrawThinString(0, 80, V_SNAPTOTOP|V_SNAPTOLEFT|V_6WIDTHSPACE|V_ALLOWLOWERCASE|V_YELLOWMAP,
+			va(" ** FINAL GRADE: %c", gradeChar));
+	}
 }

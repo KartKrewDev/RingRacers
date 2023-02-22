@@ -2027,7 +2027,6 @@ static void K_HandleLapIncrement(player_t *player)
 					SetRandomFakePlayerSkin(player, true);
 				}
 			}
-				
 
 			if (player->laps > player->latestlap)
 			{
@@ -2046,6 +2045,18 @@ static void K_HandleLapIncrement(player_t *player)
 
 					// Update power levels for this lap.
 					K_UpdatePowerLevels(player, player->laps, false);
+
+					if (nump > 1 && K_IsPlayerLosing(player) == false)
+					{
+						if (nump > 2 && player->position == 1) // 1st place in 1v1 uses thumbs up
+						{
+							player->lapPoints += 2;
+						}
+						else
+						{
+							player->lapPoints++;
+						}
+					}
 				}
 
 				player->latestlap = player->laps;
