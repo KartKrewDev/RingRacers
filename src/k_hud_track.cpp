@@ -174,7 +174,6 @@ void K_DrawTargetTracking(const TargetTracking& target)
 		const fixed_t farDistance = 1280 * mapobjectscale;
 		bool useNear = (target.camDist < farDistance);
 
-		patch_t* targetPatch = nullptr;
 		vector2_t targetPos = {};
 
 		bool visible = P_CheckSight(stplyr->mo, target.mobj);
@@ -188,21 +187,46 @@ void K_DrawTargetTracking(const TargetTracking& target)
 		targetPos.x = result.x;
 		targetPos.y = result.y;
 
+		auto draw = [&](patch_t* patch)
+		{
+			V_DrawFixedPatch(
+				targetPos.x - ((patch->width << FRACBITS) >> 1),
+				targetPos.y - ((patch->height << FRACBITS) >> 1),
+				FRACUNIT,
+				V_SPLITSCREEN,
+				patch,
+				nullptr
+			);
+		};
+
 		if (useNear == true)
 		{
 			timer = (leveltime / 2);
-			targetPatch = kp_capsuletarget_near[timer % 8];
+			draw(kp_capsuletarget_near[timer % 8]);
 		}
 		else
 		{
 			timer = (leveltime / 3);
-			targetPatch = kp_capsuletarget_far[timer & 1];
+			draw(kp_capsuletarget_far[timer & 1]);
+
+			if (r_splitscreen <= 1)
+			{
+				draw(kp_capsuletarget_far_text[timer & 1]);
+			}
 		}
+	}
+}
 
-		targetPos.x -= (targetPatch->width << FRACBITS) >> 1;
-		targetPos.y -= (targetPatch->height << FRACBITS) >> 1;
+bool is_object_tracking_target(const mobj_t* mobj)
+{
+	switch (mobj->type)
+	{
+	case MT_BATTLECAPSULE:
+	case MT_SPECIAL_UFO:
+		return true;
 
-		V_DrawFixedPatch(targetPos.x, targetPos.y, FRACUNIT, V_SPLITSCREEN, targetPatch, nullptr);
+	default:
+		return false;
 	}
 }
 
@@ -224,7 +248,7 @@ void K_drawTargetHUD(const vector3_t* origin, player_t* player)
 			continue;
 		}
 
-		if (mobj->type != MT_BATTLECAPSULE)
+		if (is_object_tracking_target(mobj) == false)
 		{
 			continue;
 		}
