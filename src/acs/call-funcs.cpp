@@ -11,6 +11,9 @@
 /// \file  call-funcs.cpp
 /// \brief Action Code Script: CallFunc instructions
 
+#include <algorithm>
+#include <cctype>
+
 #include <ACSVM/Code.hpp>
 #include <ACSVM/CodeData.hpp>
 #include <ACSVM/Environment.hpp>

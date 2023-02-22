@@ -11,8 +11,10 @@
 /// \file  interface.cpp
 /// \brief Action Code Script: Interface for the rest of SRB2's game logic
 
-#include <cmath>
-#include <memory>
+#include <cstddef>
+#include <istream>
+#include <ostream>
+#include <vector>
 
 #include <ACSVM/Action.hpp>
 #include <ACSVM/Code.hpp>

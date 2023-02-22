@@ -11,6 +11,9 @@
 /// \file  environment.cpp
 /// \brief Action Code Script: Environment definition
 
+#include <algorithm>
+#include <vector>
+
 #include <ACSVM/Code.hpp>
 #include <ACSVM/CodeData.hpp>
 #include <ACSVM/Environment.hpp>

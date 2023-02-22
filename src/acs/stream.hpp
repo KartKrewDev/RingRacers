@@ -17,8 +17,6 @@
 #ifndef __SRB2_ACS_STREAM_HPP__
 #define __SRB2_ACS_STREAM_HPP__
 
-#include <istream>
-#include <ostream>
 #include <streambuf>
 
 #include <ACSVM/Code.hpp>
