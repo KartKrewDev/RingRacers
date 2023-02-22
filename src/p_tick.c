@@ -636,9 +636,6 @@ void P_Ticker(boolean run)
 	if (!demo.playback) // Don't increment if a demo is playing.
 		gamedata->totalplaytime++;
 
-	// formality so kitemcap gets updated properly each frame.
-	P_RunKartItems();
-
 	if (run)
 	{
 		ps_thinkertime = I_GetPreciseTime();

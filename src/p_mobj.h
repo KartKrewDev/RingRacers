@@ -511,13 +511,9 @@ void P_InitCachedActions(void);
 void P_RunCachedActions(void);
 void P_AddCachedAction(mobj_t *mobj, INT32 statenum);
 
-// kartitem stuff: Returns true if the specified 'type' is one of the kart item constants we want in the kitemcap list
 boolean P_IsKartFieldItem(INT32 type);
-boolean P_IsKartItem(INT32 type);
 boolean K_IsMissileOrKartItem(mobj_t *mo);
 boolean P_CanDeleteKartItem(INT32 type);
-void P_AddKartItem(mobj_t *thing);	// needs to be called in k_kart.c
-void P_RunTrackers(void);
 
 // check mobj against water content, before movement code
 void P_MobjCheckWater(mobj_t *mobj);

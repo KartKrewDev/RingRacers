@@ -5210,30 +5210,6 @@ boolean P_IsKartFieldItem(INT32 type)
 	}
 }
 
-boolean P_IsKartItem(INT32 type)
-{
-	switch (type)
-	{
-		case MT_EGGMANITEM_SHIELD:
-		case MT_BANANA_SHIELD:
-		case MT_DROPTARGET_SHIELD:
-		case MT_ORBINAUT_SHIELD:
-		case MT_JAWZ_SHIELD:
-		case MT_SSMINE_SHIELD:
-		case MT_SINK_SHIELD:
-		case MT_HYUDORO:
-			return true;
-
-		// Primarily for minimap data, handle with care
-		case MT_SPB:
-		case MT_BATTLECAPSULE:
-			return true;
-
-		default:
-			return P_IsKartFieldItem(type);
-	}
-}
-
 boolean K_IsMissileOrKartItem(mobj_t *mo)
 {
 	if (mo->flags & MF_MISSILE)
@@ -5260,8 +5236,25 @@ boolean P_CanDeleteKartItem(INT32 type)
 	return P_IsKartFieldItem(type);
 }
 
-// Called when a kart item "thinks"
-void P_AddKartItem(mobj_t *thing)
+static boolean P_IsTrackerType(INT32 type)
+{
+	switch (type)
+	{
+		// Bots need to know if another Jawz is targetting a player
+		case MT_JAWZ:
+			return true;
+
+		// Primarily for minimap data, handle with care
+		case MT_SPB:
+		case MT_BATTLECAPSULE:
+			return true;
+
+		default:
+			return false;
+	}
+}
+
+static void P_LinkTracker(mobj_t *thing)
 {
 	I_Assert(thing != NULL);
 
@@ -5280,9 +5273,9 @@ void P_AddKartItem(mobj_t *thing)
 	P_SetTarget(&thing->itnext, NULL);
 }
 
-// Called only when a kart item is removed
-// Keeps the hnext list from corrupting.
-static void P_RemoveKartItem(mobj_t *thing)
+// Called only when a tracker is removed
+// Keeps the itnext list from corrupting.
+static void P_RemoveTracker(mobj_t *thing)
 {
 	mobj_t *mo, **p;
 	for (mo = *(p = &trackercap); mo; mo = *(p = &mo->itnext))
@@ -5294,20 +5287,6 @@ static void P_RemoveKartItem(mobj_t *thing)
 		P_SetTarget(&thing->itnext, NULL);
 		return;
 	}
-}
-
-// Doesn't actually do anything since items have their own thinkers,
-// but this is necessary for the sole purpose of updating kitemcap
-void P_RunKartItems(void)
-{
-	mobj_t *mobj, *next;
-
-	for (mobj = trackercap; mobj; mobj = next)
-	{
-		next = mobj->itnext;
-		P_SetTarget(&mobj->itnext, NULL);
-	}
-	P_SetTarget(&trackercap, NULL);
 }
 
 void P_RunOverlays(void)
@@ -9811,9 +9790,6 @@ void P_MobjThinker(mobj_t *mobj)
 			K_HandleDirectionalInfluence(mobj->player);
 		}
 
-		if (P_IsKartItem(mobj->type))	// mobj is a kart item we want on the list:
-			P_AddKartItem(mobj);		// add to kitem list
-
 		return;
 	}
 
@@ -10053,9 +10029,6 @@ void P_MobjThinker(mobj_t *mobj)
 
 	if (P_MobjWasRemoved(mobj))
 		return; // obligatory paranoia check
-
-	if (P_IsKartItem(mobj->type))	// mobj is a kart item we want on the list:
-		P_AddKartItem(mobj);		// add to kitem list
 
 	// Can end up here if a player dies.
 	if (mobj->player)
@@ -10970,6 +10943,10 @@ mobj_t *P_SpawnMobj(fixed_t x, fixed_t y, fixed_t z, mobjtype_t type)
 
 	R_AddMobjInterpolator(mobj);
 
+
+	if (P_IsTrackerType(mobj->type))
+		P_LinkTracker(mobj);
+
 	return mobj;
 }
 
@@ -11112,8 +11089,8 @@ void P_RemoveMobj(mobj_t *mobj)
 	if (mobj->type == MT_SPB)
 		spbplace = -1;
 
-	if (P_IsKartItem(mobj->type))
-		P_RemoveKartItem(mobj);
+	if (P_IsTrackerType(mobj->type))
+		P_RemoveTracker(mobj);
 
 	if (mobj->player && mobj->player->followmobj)
 	{
