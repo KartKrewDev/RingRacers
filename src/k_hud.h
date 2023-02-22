@@ -50,6 +50,7 @@ extern patch_t *kp_facehighlight[8];
 extern patch_t *kp_capsuletarget_arrow[2][2];
 extern patch_t *kp_capsuletarget_icon[2];
 extern patch_t *kp_capsuletarget_far[2];
+extern patch_t *kp_capsuletarget_far_text[2];
 extern patch_t *kp_capsuletarget_near[8];
 
 #ifdef __cplusplus

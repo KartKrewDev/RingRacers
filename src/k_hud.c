@@ -177,6 +177,7 @@ static patch_t *kp_trickcool[2];
 patch_t *kp_capsuletarget_arrow[2][2];
 patch_t *kp_capsuletarget_icon[2];
 patch_t *kp_capsuletarget_far[2];
+patch_t *kp_capsuletarget_far_text[2];
 patch_t *kp_capsuletarget_near[8];
 
 void K_LoadKartHUDGraphics(void)
@@ -663,6 +664,13 @@ void K_LoadKartHUDGraphics(void)
 			buffer[7] = '0'+j;
 			HU_UpdatePatch(&kp_capsuletarget_arrow[i][j], "%s", buffer);
 		}
+	}
+
+	sprintf(buffer, "HUDCAPDx");
+	for (i = 0; i < 2; i++)
+	{
+		buffer[7] = '0'+i;
+		HU_UpdatePatch(&kp_capsuletarget_far_text[i], "%s", buffer);
 	}
 
 	sprintf(buffer, "HUDCAPCx");
