@@ -659,6 +659,8 @@ struct player_t
 
 	UINT8 shrinkLaserDelay;
 
+	UINT8 eggmanTransferDelay;
+
 	mobj_t *stumbleIndicator;
 
 #ifdef HWRENDER

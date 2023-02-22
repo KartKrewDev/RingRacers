@@ -393,6 +393,8 @@ static void P_NetArchivePlayers(savebuffer_t *save)
 
 		WRITEUINT8(save->p, players[i].shrinkLaserDelay);
 
+		WRITEUINT8(save->p, players[i].eggmanTransferDelay);
+
 		// respawnvars_t
 		WRITEUINT8(save->p, players[i].respawn.state);
 		WRITEUINT32(save->p, K_GetWaypointHeapIndex(players[i].respawn.wp));
@@ -745,6 +747,8 @@ static void P_NetUnArchivePlayers(savebuffer_t *save)
 		players[i].topinfirst = READUINT8(save->p);
 
 		players[i].shrinkLaserDelay = READUINT8(save->p);
+
+		players[i].eggmanTransferDelay = READUINT8(save->p);
 
 		// respawnvars_t
 		players[i].respawn.state = READUINT8(save->p);

@@ -1231,6 +1231,9 @@ static boolean K_HasInfiniteTether(player_t *player)
 			return true;
 	}
 
+	if (player->eggmanexplode > 0)
+		return true;
+
 	return false;
 }
 
@@ -3150,7 +3153,7 @@ static void K_GetKartBoostPower(player_t *player)
 
 	if (player->eggmanexplode) // Ready-to-explode
 	{
-		ADDBOOST(3*FRACUNIT/20, FRACUNIT, 0); // + 15% top speed, + 100% acceleration, +0% handling
+		ADDBOOST(6*FRACUNIT/20, FRACUNIT, 0); // + 30% top speed, + 100% acceleration, +0% handling
 	}
 
 	if (player->draftpower > 0) // Drafting
@@ -7708,6 +7711,9 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 	if (player->shrinkLaserDelay)
 		player->shrinkLaserDelay--;
 
+	if (player->eggmanTransferDelay)
+		player->eggmanTransferDelay--;
+
 	if (player->ringdelay)
 		player->ringdelay--;
 
@@ -7895,6 +7901,8 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		else
 		{
 			player->eggmanexplode--;
+			if (player->eggmanexplode == 5*TICRATE/2)
+				S_StartSound(player->mo, sfx_s3k53);
 			if (player->eggmanexplode <= 0)
 			{
 				mobj_t *eggsexplode;
@@ -11302,6 +11310,30 @@ void K_UpdateMobjItemOverlay(mobj_t *part, SINT8 itemType, UINT8 itemCount)
 			part->frame = FF_FULLBRIGHT|FF_PAPERSPRITE|(itemType);
 			break;
 	}
+}
+
+void K_EggmanTransfer(player_t *source, player_t *victim)
+{
+	if (victim->eggmanTransferDelay)
+		return;
+	if (victim->eggmanexplode)
+		return;
+
+	K_AddHitLag(victim->mo, 2, true);
+	victim->eggmanexplode = 4*TICRATE;
+	victim->itemRoulette.eggman = false;
+	victim->itemRoulette.active = false;
+
+	if (P_IsDisplayPlayer(victim) && !demo.freecam)
+		S_StartSound(NULL, sfx_itrole);
+
+	K_AddHitLag(source->mo, 2, true);
+	source->eggmanexplode = 0;
+	source->itemRoulette.eggman = false;
+	source->itemRoulette.active = false;
+	source->eggmanTransferDelay = 10;
+
+	S_StopSoundByID(source->mo, sfx_s3k53);
 }
 
 //}

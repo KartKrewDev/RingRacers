@@ -201,6 +201,8 @@ void K_UnsetItemOut(player_t *player);
 
 void K_UpdateMobjItemOverlay(mobj_t *part, SINT8 itemType, UINT8 itemCount);
 
+void K_EggmanTransfer(player_t *source, player_t *victim);
+
 #ifdef __cplusplus
 } // extern "C"
 #endif
