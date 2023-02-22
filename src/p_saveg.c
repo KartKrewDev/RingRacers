@@ -4953,8 +4953,7 @@ static void P_NetArchiveMisc(savebuffer_t *save, boolean resending)
 	WRITESINT8(save->p, speedscramble);
 	WRITESINT8(save->p, encorescramble);
 
-	for (i = 0; i < 4; i++)
-		WRITESINT8(save->p, battlewanted[i]);
+	WRITEUINT32(save->p, g_hiscore);
 
 	// battleovertime_t
 	WRITEUINT16(save->p, battleovertime.enabled);
@@ -5125,8 +5124,7 @@ static inline boolean P_NetUnArchiveMisc(savebuffer_t *save, boolean reloading)
 	speedscramble = READSINT8(save->p);
 	encorescramble = READSINT8(save->p);
 
-	for (i = 0; i < 4; i++)
-		battlewanted[i] = READSINT8(save->p);
+	g_hiscore = READUINT32(save->p);
 
 	// battleovertime_t
 	battleovertime.enabled = READUINT16(save->p);

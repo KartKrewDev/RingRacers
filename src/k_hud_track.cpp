@@ -226,6 +226,26 @@ void K_DrawTargetTracking(const TargetTracking& target)
 	}
 }
 
+bool is_player_tracking_target(const player_t *player)
+{
+	if (player == nullptr)
+	{
+		return false;
+	}
+
+	if (g_hiscore < 1) // SOMEONE should be scoring
+	{
+		return false;
+	}
+
+	if (player->roundscore < g_hiscore)
+	{
+		return false;
+	}
+
+	return true;
+}
+
 bool is_object_tracking_target(const mobj_t* mobj)
 {
 	switch (mobj->type)
@@ -233,6 +253,9 @@ bool is_object_tracking_target(const mobj_t* mobj)
 	case MT_BATTLECAPSULE:
 	case MT_SPECIAL_UFO:
 		return true;
+
+	case MT_PLAYER:
+		return is_player_tracking_target(mobj->player);
 
 	default:
 		return false;

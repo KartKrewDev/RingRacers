@@ -5250,6 +5250,10 @@ static boolean P_IsTrackerType(INT32 type)
 		case MT_SPECIAL_UFO:
 			return true;
 
+		// Players sometimes get targeted with HUD tracking
+		case MT_PLAYER:
+			return true;
+
 		default:
 			return false;
 	}

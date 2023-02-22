@@ -49,7 +49,6 @@
 // franticitems is Frantic Mode items, bool
 // encoremode is Encore Mode (duh), bool
 // comeback is Battle Mode's karma comeback, also bool
-// battlewanted is an array of the WANTED player nums, -1 for no player in that slot
 // mapreset is set when enough players fill an empty server
 
 boolean K_IsDuelItem(mobjtype_t type)

@@ -139,6 +139,8 @@ void K_CheckBumpers(void)
 	}
 	else
 	{
+		g_hiscore = toproundscore;
+
 		if (toproundscore < (numingame * 3))
 		{
 			return;
