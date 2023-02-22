@@ -23,7 +23,7 @@ git config 'alias.build' '!p="${1##-*}"; [ "$p" ] && shift; git cmake --build --
 
 # Usage: git crossmake
 #
-# Shortcut to i686-w64-mingw32-cmake (CMake cross
+# Shortcut to i686-w64-mingw32-cmake-static (CMake cross
 # compiler)
 #
-git config 'alias.crossmake' '!i686-w64-mingw32-cmake'
+git config 'alias.crossmake' '!i686-w64-mingw32-cmake-static'
