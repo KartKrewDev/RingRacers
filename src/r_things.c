@@ -1049,7 +1049,7 @@ static void R_DrawVisSprite(vissprite_t *vis)
 
 #ifdef RANGECHECK
 			if (texturecolumn < 0 || texturecolumn >= pwidth)
-				I_Error("R_DrawSpriteRange: bad texturecolumn at %d from end", vis->x2 - dc_x);
+				I_Error("R_DrawSpriteRange: bad texturecolumn at %d from end, dc_x=%d, x2=%d, texturecolumn=%d (%d), pwidth=%d, xiscale=%d, startfrac=%d", vis->x2 - dc_x, dc_x, vis->x2, texturecolumn, frac, pwidth, vis->xiscale, vis->startfrac);
 #endif
 			column = (column_t *)((UINT8 *)patch->columns + (patch->columnofs[texturecolumn]));
 			if (bmpatch)
@@ -1072,7 +1072,7 @@ static void R_DrawVisSprite(vissprite_t *vis)
 
 #ifdef RANGECHECK
 			if (texturecolumn < 0 || texturecolumn >= pwidth)
-				I_Error("R_DrawSpriteRange: bad texturecolumn at %d from end", vis->x2 - dc_x);
+				I_Error("R_DrawSpriteRange: bad texturecolumn at %d from end, dc_x=%d, x2=%d, texturecolumn=%d (%d), pwidth=%d, xiscale=%d, startfrac=%d", vis->x2 - dc_x, dc_x, vis->x2, texturecolumn, frac, pwidth, vis->xiscale, vis->startfrac);
 #endif
 			column = (column_t *)((UINT8 *)patch->columns + (patch->columnofs[texturecolumn]));
 
