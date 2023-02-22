@@ -1353,6 +1353,8 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 
 					if (target->player->pflags & PF_NOCONTEST)
 						P_SetTarget(&target->tracer, kart);
+
+					kart->fuse = 5*TICRATE;
 				}
 
 				if (source && !P_MobjWasRemoved(source))
