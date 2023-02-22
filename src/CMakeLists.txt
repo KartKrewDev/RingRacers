@@ -121,6 +121,7 @@ add_executable(SRB2SDL2 MACOSX_BUNDLE WIN32
 	k_grandprix.c
 	k_boss.c
 	k_hud.c
+	k_hud_track.cpp
 	k_menufunc.c
 	k_menudraw.c
 	k_terrain.c

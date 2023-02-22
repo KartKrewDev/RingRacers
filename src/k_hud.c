@@ -174,10 +174,11 @@ static patch_t *kp_bossret[4];
 
 static patch_t *kp_trickcool[2];
 
-static patch_t *kp_capsuletarget_arrow[2][2];
-static patch_t *kp_capsuletarget_icon[2];
-static patch_t *kp_capsuletarget_far[2];
-static patch_t *kp_capsuletarget_near[8];
+patch_t *kp_capsuletarget_arrow[2][2];
+patch_t *kp_capsuletarget_icon[2];
+patch_t *kp_capsuletarget_far[2];
+patch_t *kp_capsuletarget_far_text[2];
+patch_t *kp_capsuletarget_near[8];
 
 void K_LoadKartHUDGraphics(void)
 {
@@ -665,6 +666,13 @@ void K_LoadKartHUDGraphics(void)
 		}
 	}
 
+	sprintf(buffer, "HUDCAPDx");
+	for (i = 0; i < 2; i++)
+	{
+		buffer[7] = '0'+i;
+		HU_UpdatePatch(&kp_capsuletarget_far_text[i], "%s", buffer);
+	}
+
 	sprintf(buffer, "HUDCAPCx");
 	for (i = 0; i < 2; i++)
 	{
@@ -832,7 +840,7 @@ INT32 POSI2_X, POSI2_Y;
 INT32 TCOOL_X, TCOOL_Y;
 
 // This version of the function was prototyped in Lua by Nev3r ... a HUGE thank you goes out to them!
-void K_ObjectTracking(trackingResult_t *result, vector3_t *point, boolean reverse)
+void K_ObjectTracking(trackingResult_t *result, const vector3_t *point, boolean reverse)
 {
 #define NEWTAN(x) FINETANGENT(((x + ANGLE_90) >> ANGLETOFINESHIFT) & 4095) // tan function used by Lua
 #define NEWCOS(x) FINECOSINE((x >> ANGLETOFINESHIFT) & FINEMASK)
@@ -3175,217 +3183,6 @@ static void K_DrawWeakSpot(weakspotdraw_t *ws)
 	V_DrawFixedPatch(ws->x, ws->y, FRACUNIT, 0, kp_bossret[j+1], colormap);
 }
 
-typedef struct capsuletracking_s
-{
-	mobj_t *mobj;
-	vector3_t point;
-	fixed_t camDist;
-} capsuletracking_t;
-
-static void K_DrawCapsuleTracking(capsuletracking_t *caps)
-{
-	trackingResult_t result = {0};
-	INT32 timer = 0;
-
-	K_ObjectTracking(&result, &caps->point, false);
-
-	if (result.onScreen == false)
-	{
-		// Off-screen, draw alongside the borders of the screen.
-		// Probably the most complicated thing.
-
-		INT32 scrVal = 240;
-		vector2_t screenSize = {0};
-
-		INT32 borderSize = 7;
-		vector2_t borderWin = {0};
-		vector2_t borderDir = {0};
-		fixed_t borderLen = FRACUNIT;
-
-		vector2_t arrowDir = {0};
-
-		vector2_t arrowPos = {0};
-		patch_t *arrowPatch = NULL;
-		INT32 arrowFlags = 0;
-
-		vector2_t capsulePos = {0};
-		patch_t *capsulePatch = NULL;
-
-		timer = (leveltime / 3);
-
-		screenSize.x = vid.width / vid.dupx;
-		screenSize.y = vid.height / vid.dupy;
-
-		if (r_splitscreen >= 2)
-		{
-			// Half-wide screens
-			screenSize.x >>= 1;
-			borderSize >>= 1;
-		}
-
-		if (r_splitscreen >= 1)
-		{
-			// Half-tall screens
-			screenSize.y >>= 1;
-		}
-
-		scrVal = max(screenSize.x, screenSize.y) - 80;
-
-		borderWin.x = screenSize.x - borderSize;
-		borderWin.y = screenSize.y - borderSize;
-
-		arrowDir.x = 0;
-		arrowDir.y = P_MobjFlip(caps->mobj) * FRACUNIT;
-
-		// Simply pointing towards the result doesn't work, so inaccurate hack...
-		borderDir.x = FixedMul(
-			FixedMul(
-				FINESINE((-result.angle >> ANGLETOFINESHIFT) & FINEMASK),
-				FINECOSINE((-result.pitch >> ANGLETOFINESHIFT) & FINEMASK)
-			),
-			result.fov
-		);
-
-		borderDir.y = FixedMul(
-			FINESINE((-result.pitch >> ANGLETOFINESHIFT) & FINEMASK),
-			result.fov
-		);
-
-		borderLen = R_PointToDist2(0, 0, borderDir.x, borderDir.y);
-
-		if (borderLen > 0)
-		{
-			borderDir.x = FixedDiv(borderDir.x, borderLen);
-			borderDir.y = FixedDiv(borderDir.y, borderLen);
-		}
-		else
-		{
-			// Eh just put it at the bottom.
-			borderDir.x = 0;
-			borderDir.y = FRACUNIT;
-		}
-
-		capsulePatch = kp_capsuletarget_icon[timer & 1];
-
-		if (abs(borderDir.x) > abs(borderDir.y))
-		{
-			// Horizontal arrow
-			arrowPatch = kp_capsuletarget_arrow[1][timer & 1];
-			arrowDir.y = 0;
-
-			if (borderDir.x < 0)
-			{
-				// LEFT
-				arrowDir.x = -FRACUNIT;
-			}
-			else
-			{
-				// RIGHT
-				arrowDir.x = FRACUNIT;
-			}
-		}
-		else
-		{
-			// Vertical arrow
-			arrowPatch = kp_capsuletarget_arrow[0][timer & 1];
-			arrowDir.x = 0;
-
-			if (borderDir.y < 0)
-			{
-				// UP
-				arrowDir.y = -FRACUNIT;
-			}
-			else
-			{
-				// DOWN
-				arrowDir.y = FRACUNIT;
-			}
-		}
-
-		arrowPos.x = (screenSize.x >> 1) + FixedMul(scrVal, borderDir.x);
-		arrowPos.y = (screenSize.y >> 1) + FixedMul(scrVal, borderDir.y);
-
-		arrowPos.x = min(max(arrowPos.x, borderSize), borderWin.x) * FRACUNIT;
-		arrowPos.y = min(max(arrowPos.y, borderSize), borderWin.y) * FRACUNIT;
-
-		capsulePos.x = arrowPos.x - (arrowDir.x * 12);
-		capsulePos.y = arrowPos.y - (arrowDir.y * 12);
-
-		arrowPos.x -= (arrowPatch->width << FRACBITS) >> 1;
-		arrowPos.y -= (arrowPatch->height << FRACBITS) >> 1;
-
-		capsulePos.x -= (capsulePatch->width << FRACBITS) >> 1;
-		capsulePos.y -= (capsulePatch->height << FRACBITS) >> 1;
-
-		if (arrowDir.x < 0)
-		{
-			arrowPos.x += arrowPatch->width << FRACBITS;
-			arrowFlags |= V_FLIP;
-		}
-
-		if (arrowDir.y < 0)
-		{
-			arrowPos.y += arrowPatch->height << FRACBITS;
-			arrowFlags |= V_VFLIP;
-		}
-
-		V_DrawFixedPatch(
-			capsulePos.x, capsulePos.y,
-			FRACUNIT,
-			V_SPLITSCREEN,
-			capsulePatch, NULL
-		);
-
-		V_DrawFixedPatch(
-			arrowPos.x, arrowPos.y,
-			FRACUNIT,
-			V_SPLITSCREEN | arrowFlags,
-			arrowPatch, NULL
-		);
-	}
-	else
-	{
-		// Draw simple overlay.
-		const fixed_t farDistance = 1280*mapobjectscale;
-		boolean useNear = (caps->camDist < farDistance);
-
-		patch_t *capsulePatch = NULL;
-		vector2_t capsulePos = {0};
-
-		boolean visible = P_CheckSight(stplyr->mo, caps->mobj);
-
-		if (visible == false && (leveltime & 1))
-		{
-			// Flicker when not visible.
-			return;
-		}
-
-		capsulePos.x = result.x;
-		capsulePos.y = result.y;
-
-		if (useNear == true)
-		{
-			timer = (leveltime / 2);
-			capsulePatch = kp_capsuletarget_near[timer % 8];
-		}
-		else
-		{
-			timer = (leveltime / 3);
-			capsulePatch = kp_capsuletarget_far[timer & 1];
-		}
-
-		capsulePos.x -= (capsulePatch->width << FRACBITS) >> 1;
-		capsulePos.y -= (capsulePatch->height << FRACBITS) >> 1;
-
-		V_DrawFixedPatch(
-			capsulePos.x, capsulePos.y,
-			FRACUNIT,
-			V_SPLITSCREEN,
-			capsulePatch, NULL
-		);
-	}
-}
-
 static void K_drawKartNameTags(void)
 {
 	const fixed_t maxdistance = 8192*mapobjectscale;
@@ -3485,84 +3282,7 @@ static void K_drawKartNameTags(void)
 		}
 	}
 
-	if (battlecapsules == true)
-	{
-#define MAX_CAPSULE_HUD 32
-		capsuletracking_t capsuleList[MAX_CAPSULE_HUD];
-		size_t capsuleListLen = 0;
-
-		mobj_t *mobj = NULL;
-		mobj_t *next = NULL;
-
-		for (mobj = trackercap; mobj; mobj = next)
-		{
-			capsuletracking_t *caps = NULL;
-
-			next = mobj->itnext;
-
-			if (mobj->health <= 0)
-			{
-				continue;
-			}
-
-			if (mobj->type != MT_BATTLECAPSULE)
-			{
-				continue;
-			}
-
-			caps = &capsuleList[capsuleListLen];
-
-			caps->mobj = mobj;
-			caps->point.x = R_InterpolateFixed(mobj->old_x, mobj->x);
-			caps->point.y = R_InterpolateFixed(mobj->old_y, mobj->y);
-			caps->point.z = R_InterpolateFixed(mobj->old_z, mobj->z);
-			caps->point.z += (mobj->height >> 1);
-			caps->camDist = R_PointToDist2(c.x, c.y, caps->point.x, caps->point.y);
-
-			capsuleListLen++;
-
-			if (capsuleListLen >= MAX_CAPSULE_HUD)
-			{
-				break;
-			}
-		}
-
-		if (capsuleListLen > 0)
-		{
-			// Sort by distance from camera.
-			if (capsuleListLen > 1)
-			{
-				for (i = 0; i < capsuleListLen-1; i++)
-				{
-					size_t swap = i;
-
-					for (j = i + 1; j < capsuleListLen; j++)
-					{
-						capsuletracking_t *cj = &capsuleList[j];
-						capsuletracking_t *cSwap = &capsuleList[swap];
-
-						if (cj->camDist > cSwap->camDist)
-						{
-							swap = j;
-						}
-					}
-
-					if (swap != i)
-					{
-						capsuletracking_t temp = capsuleList[swap];
-						capsuleList[swap] = capsuleList[i];
-						capsuleList[i] = temp;
-					}
-				}
-			}
-
-			for (i = 0; i < capsuleListLen; i++)
-			{
-				K_DrawCapsuleTracking(&capsuleList[i]);
-			}
-		}
-#undef MAX_CAPSULE_HUD
-	}
+	K_drawTargetHUD(&c, stplyr);
 
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
