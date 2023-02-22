@@ -53,8 +53,12 @@ consvar_t cv_movebob = CVAR_INIT ("movebob", "1.0", CV_FLOAT|CV_SAVE, CV_BobSpee
 actioncache_t actioncachehead;
 
 static mobj_t *overlaycap = NULL;
-mobj_t *kitemcap = NULL;	// Used for Kart offensive items (the ones that can get removed by sizedown)
 mobj_t *waypointcap = NULL;
+
+// Used as a fast iterator to certain objects that help bot
+// AI, need HUD tracking or appear on the minimap. It's pretty
+// general purpose.
+mobj_t *trackercap = NULL;
 
 void P_InitCachedActions(void)
 {
@@ -5261,11 +5265,11 @@ void P_AddKartItem(mobj_t *thing)
 {
 	I_Assert(thing != NULL);
 
-	if (kitemcap == NULL)
-		P_SetTarget(&kitemcap, thing);
+	if (trackercap == NULL)
+		P_SetTarget(&trackercap, thing);
 	else {
 		mobj_t *mo;
-		for (mo = kitemcap; mo && mo->itnext; mo = mo->itnext)
+		for (mo = trackercap; mo && mo->itnext; mo = mo->itnext)
 			;
 
 		I_Assert(mo != NULL);
@@ -5281,7 +5285,7 @@ void P_AddKartItem(mobj_t *thing)
 static void P_RemoveKartItem(mobj_t *thing)
 {
 	mobj_t *mo, **p;
-	for (mo = *(p = &kitemcap); mo; mo = *(p = &mo->itnext))
+	for (mo = *(p = &trackercap); mo; mo = *(p = &mo->itnext))
 	{
 		if (mo != thing)
 			continue;
@@ -5298,12 +5302,12 @@ void P_RunKartItems(void)
 {
 	mobj_t *mobj, *next;
 
-	for (mobj = kitemcap; mobj; mobj = next)
+	for (mobj = trackercap; mobj; mobj = next)
 	{
 		next = mobj->itnext;
 		P_SetTarget(&mobj->itnext, NULL);
 	}
-	P_SetTarget(&kitemcap, NULL);
+	P_SetTarget(&trackercap, NULL);
 }
 
 void P_RunOverlays(void)

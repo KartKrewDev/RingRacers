@@ -210,7 +210,7 @@ void P_InitThinkers(void)
 {
 	UINT8 i;
 	waypointcap = NULL;
-	kitemcap = NULL;
+	trackercap = NULL;
 	for (i = 0; i < NUM_THINKERLISTS; i++)
 		thlist[i].prev = thlist[i].next = &thlist[i];
 }

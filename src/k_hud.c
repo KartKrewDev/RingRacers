@@ -3494,7 +3494,7 @@ static void K_drawKartNameTags(void)
 		mobj_t *mobj = NULL;
 		mobj_t *next = NULL;
 
-		for (mobj = kitemcap; mobj; mobj = next)
+		for (mobj = trackercap; mobj; mobj = next)
 		{
 			capsuletracking_t *caps = NULL;
 
@@ -3927,7 +3927,7 @@ static void K_drawKartMinimap(void)
 	}
 
 	// draw minimap-pertinent objects
-	for (mobj = kitemcap; mobj; mobj = next)
+	for (mobj = trackercap; mobj; mobj = next)
 	{
 		next = mobj->itnext;
 

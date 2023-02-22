@@ -5813,7 +5813,7 @@ static void K_DoShrink(player_t *user)
 		mobj_t *mobj, *next;
 
 		// kill everything in the kitem list while we're at it:
-		for (mobj = kitemcap; mobj; mobj = next)
+		for (mobj = trackercap; mobj; mobj = next)
 		{
 			next = mobj->itnext;
 
