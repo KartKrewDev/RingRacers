@@ -8,6 +8,7 @@
 #include "p_mobj.h"
 #include "r_fps.h"
 #include "r_main.h"
+#include "st_stuff.h"
 #include "v_video.h"
 
 namespace
@@ -231,6 +232,13 @@ bool is_player_tracking_target(const player_t *player)
 	if (player == nullptr)
 	{
 		return false;
+	}
+
+	if (inDuel)
+	{
+		// Always draw targets in 1v1 but don't draw player's
+		// own target on their own viewport.
+		return player != stplyr;
 	}
 
 	if (g_hiscore < 1) // SOMEONE should be scoring
