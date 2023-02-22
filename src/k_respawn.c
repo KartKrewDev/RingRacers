@@ -148,7 +148,7 @@ void K_DoIngameRespawn(player_t *player)
 	}
 
 	// FAULT
-	if (leveltime < starttime)
+	if ((gametyperules & GTR_CIRCUIT) && leveltime < starttime)
 	{
 		if (!(mapheaderinfo[gamemap-1]->levelflags & LF_SECTIONRACE))
 			player->respawn.wp = K_GetFinishLineWaypoint()->prevwaypoints[0];
