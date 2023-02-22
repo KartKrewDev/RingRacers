@@ -5247,6 +5247,7 @@ static boolean P_IsTrackerType(INT32 type)
 		// Primarily for minimap data, handle with care
 		case MT_SPB:
 		case MT_BATTLECAPSULE:
+		case MT_SPECIAL_UFO:
 			return true;
 
 		default:

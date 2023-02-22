@@ -206,6 +206,19 @@ void K_DrawTargetTracking(const TargetTracking& target)
 	}
 }
 
+bool is_object_tracking_target(const mobj_t* mobj)
+{
+	switch (mobj->type)
+	{
+	case MT_BATTLECAPSULE:
+	case MT_SPECIAL_UFO:
+		return true;
+
+	default:
+		return false;
+	}
+}
+
 }; // namespace
 
 void K_drawTargetHUD(const vector3_t* origin, player_t* player)
@@ -224,7 +237,7 @@ void K_drawTargetHUD(const vector3_t* origin, player_t* player)
 			continue;
 		}
 
-		if (mobj->type != MT_BATTLECAPSULE)
+		if (is_object_tracking_target(mobj) == false)
 		{
 			continue;
 		}

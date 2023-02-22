@@ -3274,10 +3274,7 @@ static void K_drawKartNameTags(void)
 		}
 	}
 
-	if (battlecapsules == true)
-	{
-		K_drawTargetHUD(&c, stplyr);
-	}
+	K_drawTargetHUD(&c, stplyr);
 
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
