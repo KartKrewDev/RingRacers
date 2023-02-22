@@ -59,6 +59,49 @@ enum
 static sfxenum_t hums[16] = {sfx_claw01, sfx_claw02, sfx_claw03, sfx_claw04, sfx_claw05, sfx_claw06, sfx_claw07, sfx_claw08, sfx_claw09, sfx_claw10, sfx_claw11, sfx_claw12, sfx_claw13, sfx_claw14, sfx_claw15, sfx_claw16};
 static int maxhum = sizeof(hums) / sizeof(hums[0]) - 1;
 
+static void SpawnUFOSpeedLines(mobj_t *ufo)
+{
+	mobj_t *fast = P_SpawnMobjFromMobj(ufo,
+		P_RandomRange(PR_DECORATION, -120, 120) * FRACUNIT,
+		P_RandomRange(PR_DECORATION, -120, 120) * FRACUNIT,
+		(ufo->info->height / 2) + (P_RandomRange(PR_DECORATION, -24, 24) * FRACUNIT),
+		MT_FASTLINE
+	);
+
+	fast->scale *= 3;
+
+	P_SetTarget(&fast->target, ufo);
+	fast->angle = K_MomentumAngle(ufo);
+
+	fast->color = SKINCOLOR_WHITE;
+	fast->colorized = true;
+
+	K_MatchGenericExtraFlags(fast, ufo);
+}
+
+static void SpawnEmeraldSpeedLines(mobj_t *mo)
+{
+	mobj_t *fast = P_SpawnMobjFromMobj(mo,
+		P_RandomRange(PR_DECORATION, -48, 48) * FRACUNIT,
+		P_RandomRange(PR_DECORATION, -48, 48) * FRACUNIT,
+		P_RandomRange(PR_DECORATION, 0, 64) * FRACUNIT,
+		MT_FASTLINE);
+	P_SetMobjState(fast, S_KARTINVLINES1);
+
+	P_SetTarget(&fast->target, mo);
+	fast->angle = K_MomentumAngle(mo);
+
+	fast->momx = 3*mo->momx/4;
+	fast->momy = 3*mo->momy/4;
+	fast->momz = 3*P_GetMobjZMovement(mo)/4;
+
+	K_MatchGenericExtraFlags(fast, mo);
+	K_ReduceVFX(fast, mo->player);
+
+	fast->color = mo->color;
+	fast->colorized = true;
+}
+
 static void UFOMoveTo(mobj_t *ufo, fixed_t destx, fixed_t desty, fixed_t destz)
 {
 	ufo->momx = destx - ufo->x;
@@ -218,6 +261,17 @@ static void UFOUpdateSpeed(mobj_t *ufo)
 		else
 		{
 			ufo_speed(ufo) += UFO_SPEEDUP;
+		}
+
+		// these number are primarily vibes based and not empirically derived
+		if (UFOEmeraldChase(ufo))
+		{
+			if (ufo_speed(ufo) > 50*FRACUNIT)
+				SpawnEmeraldSpeedLines(ufo);
+		}
+		else if (ufo_speed(ufo) > 70*FRACUNIT && !S_SoundPlaying(ufo, sfx_clawzm))
+		{			
+			S_StartSound(ufo, sfx_clawzm);
 		}
 	}
 	else if (speedDelta < 0)
@@ -643,6 +697,7 @@ boolean Obj_SpecialUFODamage(mobj_t *ufo, mobj_t *inflictor, mobj_t *source, UIN
 	}
 
 	S_StartSound(ufo, sfx_clawht);
+	S_StopSoundByID(ufo, sfx_clawzm);
 	P_StartQuake(64<<FRACBITS, 10);
 	ufo->health -= damage;
 	return true;
@@ -684,6 +739,8 @@ void Obj_UFOPieceThink(mobj_t *piece)
 		case UFO_PIECE_TYPE_POD:
 		{
 			UFOMoveTo(piece, ufo->x, ufo->y, ufo->z + (132 * piece->scale));
+			if (S_SoundPlaying(ufo, sfx_clawzm) && ufo_speed(ufo) > 70*FRACUNIT)
+				SpawnUFOSpeedLines(piece);
 			break;
 		}
 		case UFO_PIECE_TYPE_ARM:
