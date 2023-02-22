@@ -198,9 +198,11 @@ static kartitems_t K_KartItemReelBreakTheCapsules[] =
 
 static kartitems_t K_KartItemReelBoss[] =
 {
-	// FIXME: gachabom...?
 	KITEM_ORBINAUT,
 	KITEM_BANANA,
+	KITEM_ORBINAUT,
+	KITEM_BANANA,
+	KITEM_GACHABOM,
 	KITEM_NONE
 };
 
