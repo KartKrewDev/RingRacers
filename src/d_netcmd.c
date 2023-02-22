@@ -2636,8 +2636,8 @@ void D_SetupVote(void)
 		UINT16 m;
 		if (i == 2) // sometimes a different gametype
 			m = G_RandMap(G_TOLFlag(secondgt), prevmap, ((secondgt != gametype) ? 2 : 0), 0, true, votebuffer);
-		else if (i >= 3) // unknown-random and formerly force-unknown MAP HELL
-			m = G_RandMap(G_TOLFlag(gametype), prevmap, 0, (i-2), (i < 4), votebuffer);
+		else if (i >= 3) // Don't Care. Pick any of the available choices.
+			m = votebuffer[M_RandomRange(0, 2)];
 		else
 			m = G_RandMap(G_TOLFlag(gametype), prevmap, 0, 0, true, votebuffer);
 		if (i < 3)
