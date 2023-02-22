@@ -4170,22 +4170,14 @@ void K_HandleBumperChanges(player_t *player, UINT8 prevBumpers)
 	}
 	else if (player->bumpers == 0 && prevBumpers > 0)
 	{
-		mobj_t *karmahitbox = P_SpawnMobj(player->mo->x, player->mo->y, player->mo->z, MT_KARMAHITBOX);
-		P_SetTarget(&karmahitbox->target, player->mo);
-
-		karmahitbox->destscale = player->mo->destscale;
-		P_SetScale(karmahitbox, player->mo->scale);
-
-		player->karmadelay = comebacktime;
-
 		if (battlecapsules || bossinfo.valid)
 		{
 			player->pflags |= (PF_NOCONTEST|PF_ELIMINATED);
 			P_DamageMobj(player->mo, NULL, NULL, 1, DMG_TIMEOVER);
 		}
-		else if (netgame)
+		else
 		{
-			CONS_Printf(M_GetText("%s lost all of their bumpers!\n"), player_names[player-players]);
+			P_KillMobj(player->mo, NULL, NULL, DMG_NORMAL);
 		}
 	}
 

@@ -11819,10 +11819,8 @@ void P_SpawnPlayer(INT32 playernum)
 		}
 		else if (p->bumpers <= 0)
 		{
-			mobj_t *karmahitbox = P_SpawnMobj(mobj->x, mobj->y, mobj->z, MT_KARMAHITBOX); // Player hitbox is too small!!
-			P_SetTarget(&karmahitbox->target, mobj);
-			karmahitbox->destscale = mobj->scale;
-			P_SetScale(karmahitbox, mobj->scale);
+			p->bumpers = K_StartingBumperCount();
+			K_SpawnPlayerBattleBumpers(p);
 		}
 	}
 }
