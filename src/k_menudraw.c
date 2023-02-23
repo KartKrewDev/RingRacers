@@ -4828,8 +4828,25 @@ void M_DrawChallenges(void)
 	INT16 offset;
 
 	{
-		patch_t *bg = W_CachePatchName("BGUNLCK2", PU_CACHE);
+#define questionslow 4 // slows down the scroll by this factor
+#define questionloop (questionslow*100) // modulo
+		INT32 questionoffset = (challengesmenu.ticker % questionloop);
+		patch_t *bg = W_CachePatchName("BGUNLCKG", PU_CACHE);
+		patch_t *qm = W_CachePatchName("BGUNLSC", PU_CACHE);
+
+		// Background gradient
 		V_DrawFixedPatch(0, 0, FRACUNIT, 0, bg, NULL);
+
+		// Scrolling question mark overlay
+		V_DrawFixedPatch(
+			-((160 + questionoffset)*FRACUNIT)/questionslow,
+			-(4*FRACUNIT) - (245*(FixedDiv((questionloop - questionoffset)*FRACUNIT, questionloop*FRACUNIT))),
+			FRACUNIT,
+			V_MODULATE,
+			qm,
+			NULL);
+#undef questionslow
+#undef questionloop
 	}
 
 	if (gamedata->challengegrid == NULL || challengesmenu.extradata == NULL)
