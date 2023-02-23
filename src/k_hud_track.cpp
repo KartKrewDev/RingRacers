@@ -100,7 +100,10 @@ void K_DrawTargetTracking(const TargetTracking& target)
 			borderDir.y = FRACUNIT;
 		}
 
-		targetPatch = kp_capsuletarget_icon[timer & 1];
+		if (target.mobj->type == MT_BATTLECAPSULE)
+		{
+			targetPatch = kp_capsuletarget_icon[timer & 1];
+		}
 
 		if (abs(borderDir.x) > abs(borderDir.y))
 		{
@@ -143,14 +146,17 @@ void K_DrawTargetTracking(const TargetTracking& target)
 		arrowPos.x = std::clamp(arrowPos.x, borderSize, borderWin.x) * FRACUNIT;
 		arrowPos.y = std::clamp(arrowPos.y, borderSize, borderWin.y) * FRACUNIT;
 
-		targetPos.x = arrowPos.x - (arrowDir.x * 12);
-		targetPos.y = arrowPos.y - (arrowDir.y * 12);
+		if (targetPatch)
+		{
+			targetPos.x = arrowPos.x - (arrowDir.x * 12);
+			targetPos.y = arrowPos.y - (arrowDir.y * 12);
+
+			targetPos.x -= (targetPatch->width << FRACBITS) >> 1;
+			targetPos.y -= (targetPatch->height << FRACBITS) >> 1;
+		}
 
 		arrowPos.x -= (arrowPatch->width << FRACBITS) >> 1;
 		arrowPos.y -= (arrowPatch->height << FRACBITS) >> 1;
-
-		targetPos.x -= (targetPatch->width << FRACBITS) >> 1;
-		targetPos.y -= (targetPatch->height << FRACBITS) >> 1;
 
 		if (arrowDir.x < 0)
 		{
@@ -164,7 +170,10 @@ void K_DrawTargetTracking(const TargetTracking& target)
 			arrowFlags |= V_VFLIP;
 		}
 
-		V_DrawFixedPatch(targetPos.x, targetPos.y, FRACUNIT, V_SPLITSCREEN, targetPatch, nullptr);
+		if (targetPatch)
+		{
+			V_DrawFixedPatch(targetPos.x, targetPos.y, FRACUNIT, V_SPLITSCREEN, targetPatch, nullptr);
+		}
 
 		V_DrawFixedPatch(arrowPos.x, arrowPos.y, FRACUNIT, V_SPLITSCREEN | arrowFlags, arrowPatch, nullptr);
 	}
