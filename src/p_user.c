@@ -2120,6 +2120,7 @@ static void P_3dMovement(player_t *player)
 static void P_UpdatePlayerAngle(player_t *player)
 {
 	angle_t angleChange = ANGLE_MAX;
+	UINT8 maxlatency;
 	UINT8 p = UINT8_MAX;
 	UINT8 i;
 
@@ -2143,7 +2144,18 @@ static void P_UpdatePlayerAngle(player_t *player)
 	}
 	else
 	{
-		UINT8 lateTic = ((leveltime - player->cmd.latency) & TICCMD_LATENCYMASK);
+		// During standard play, our latency can vary by up to 1 tic in either direction, even on a stable connection.
+		// This probably comes from differences in ticcmd dispatch vs consumption rate. Probably.
+		// Uncorrected, this 2-tic "wobble" causes camera corrections to sometimes be skipped or batched.
+		// So just use the highest recent value for the furthest possible search.
+		// We unset the correction after applying, anyway.
+		locallatency[p][leveltime%TICRATE] = maxlatency = player->cmd.latency;
+		for (i = 0; i < TICRATE; i++)
+		{
+			maxlatency = max(locallatency[p][i], maxlatency);
+		}
+
+		UINT8 lateTic = ((leveltime - maxlatency) & TICCMD_LATENCYMASK);
 		UINT8 clearTic = ((localtic + 1) & TICCMD_LATENCYMASK);
 
 		player->angleturn += angleChange;
