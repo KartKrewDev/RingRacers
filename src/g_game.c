@@ -1113,8 +1113,6 @@ static void G_DoAnglePrediction(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer, p
 
 	localtic = cmd->latency;
 
-	//CONS_Printf("anglepredict realtics %d latency %d\n", realtics, cmd->latency);
-
 	if (player->pflags & PF_DRIFTEND)
 	{
 		// Otherwise, your angle slingshots off to the side violently...
