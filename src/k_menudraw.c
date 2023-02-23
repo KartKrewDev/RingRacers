@@ -4819,6 +4819,8 @@ static void M_DrawChallengePreview(INT32 x, INT32 y)
 	}
 }
 
+#define challengetransparentstrength 8
+
 void M_DrawChallenges(void)
 {
 	INT32 x = currentMenu->x, explodex, selectx;
@@ -4854,6 +4856,8 @@ void M_DrawChallenges(void)
 		V_DrawCenteredString(x, y, V_REDMAP, "No challenges available!?");
 		goto challengedesc;
 	}
+
+	V_DrawFadeFill(0, y-2, BASEVIDWIDTH, 90, 0, 31, challengetransparentstrength);
 
 	x -= 16;
 
@@ -4939,6 +4943,12 @@ challengedesc:
 	{
 		y = 120;
 
+		V_DrawScaledPatch(0, y,
+			(10-challengetransparentstrength)<<V_ALPHASHIFT,
+			W_CachePatchName("MENUHINT", PU_CACHE));
+
+		V_DrawFadeFill(0, y+27, BASEVIDWIDTH, BASEVIDHEIGHT - (y+27), 0, 31, challengetransparentstrength);
+
 		if (challengesmenu.currentunlock < MAXUNLOCKABLES)
 		{
 			str = unlockables[challengesmenu.currentunlock].name;
@@ -4977,6 +4987,8 @@ challengedesc:
 		V_DrawCenteredString(BASEVIDWIDTH/2, 120 + 32, V_ALLOWLOWERCASE, challengesmenu.unlockcondition);
 	}
 }
+
+#undef challengetransparentstrength
 
 // Statistics menu
 
