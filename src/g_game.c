@@ -63,6 +63,7 @@
 #include "doomstat.h"
 #include "k_director.h"
 #include "k_podium.h"
+#include "k_rank.h"
 
 #ifdef HAVE_DISCORDRPC
 #include "discord.h"
@@ -4127,7 +4128,7 @@ static void G_DoCompleted(void)
 	G_SetGamestate(GS_NULL);
 	wipegamestate = GS_NULL;
 
-	UINT8 bestDifficulty = 0;
+	g_gpRank.difficulty = 0;
 
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
@@ -4157,12 +4158,10 @@ static void G_DoCompleted(void)
 
 			if (players[i].bot)
 			{
-				bestDifficulty = max(bestDifficulty, players[i].botvars.difficulty);
+				g_gpRank.difficulty = max(g_gpRank.difficulty, players[i].botvars.difficulty);
 			}
 		}
 	}
-
-	gpRank.difficulty = bestDifficulty;
 
 	// See Y_StartIntermission timer handling
 	if ((gametyperules & GTR_CIRCUIT) && ((multiplayer && demo.playback) || j == r_splitscreen+1) && (!K_CanChangeRules(false) || cv_inttime.value > 0))
@@ -5500,7 +5499,7 @@ void G_SetRetryFlag(void)
 {
 	if (retrying == false)
 	{
-		gpRank.continuesUsed++;
+		g_gpRank.continuesUsed++;
 	}
 
 	retrying = true;

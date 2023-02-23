@@ -20,6 +20,7 @@
 #include "k_boss.h" // bossinfo.valid
 #include "p_spec.h"
 #include "k_objects.h"
+#include "k_rank.h"
 
 // Battle overtime info
 struct battleovertime battleovertime;
@@ -780,7 +781,7 @@ void K_BattleInit(boolean singleplayercontext)
 				P_SpawnMapThing(mt);
 		}
 
-		gpRank.totalCapsules += maptargets;
+		g_gpRank.totalCapsules += maptargets;
 		battlecapsules = true;
 	}
 

@@ -37,6 +37,8 @@
 #include "r_fps.h"
 #include "m_random.h"
 #include "k_roulette.h"
+#include "k_bot.h"
+#include "k_rank.h"
 
 //{ 	Patch Definitions
 static patch_t *kp_nodraw;
@@ -5070,23 +5072,23 @@ void K_drawKartHUD(void)
 
 	if (grandprixinfo.gp == true)
 	{
-		gp_rank_e grade = K_CalculateGPGrade();
+		gp_rank_e grade = K_CalculateGPGrade(&g_gpRank);
 		char gradeChar = '?';
 
 		V_DrawThinString(0, 0, V_SNAPTOTOP|V_SNAPTOLEFT|V_6WIDTHSPACE|V_ALLOWLOWERCASE,
-			va("PTS: %d / %d", gpRank.winPoints, gpRank.totalPoints));
+			va("PTS: %d / %d", g_gpRank.winPoints, g_gpRank.totalPoints));
 		V_DrawThinString(0, 10, V_SNAPTOTOP|V_SNAPTOLEFT|V_6WIDTHSPACE|V_ALLOWLOWERCASE,
-			va("LAPS: %d / %d", gpRank.laps, gpRank.totalLaps));
+			va("LAPS: %d / %d", g_gpRank.laps, g_gpRank.totalLaps));
 		V_DrawThinString(0, 20, V_SNAPTOTOP|V_SNAPTOLEFT|V_6WIDTHSPACE|V_ALLOWLOWERCASE,
-			va("CONTINUES: %d", gpRank.continuesUsed));
+			va("CONTINUES: %d", g_gpRank.continuesUsed));
 		V_DrawThinString(0, 30, V_SNAPTOTOP|V_SNAPTOLEFT|V_6WIDTHSPACE|V_ALLOWLOWERCASE,
-			va("CAPSULES: %d / %d", gpRank.capsules, gpRank.totalCapsules));
+			va("CAPSULES: %d / %d", g_gpRank.capsules, g_gpRank.totalCapsules));
 		V_DrawThinString(0, 40, V_SNAPTOTOP|V_SNAPTOLEFT|V_6WIDTHSPACE|V_ALLOWLOWERCASE,
-			va("RINGS: %d / %d", gpRank.rings, gpRank.totalRings));
+			va("RINGS: %d / %d", g_gpRank.rings, g_gpRank.totalRings));
 		V_DrawThinString(0, 50, V_SNAPTOTOP|V_SNAPTOLEFT|V_6WIDTHSPACE|V_ALLOWLOWERCASE,
-			va("SPECIAL: %d", gpRank.specialWon));
+			va("DIFFICULTY: %d / %d", g_gpRank.difficulty, MAXBOTDIFFICULTY));
 		V_DrawThinString(0, 60, V_SNAPTOTOP|V_SNAPTOLEFT|V_6WIDTHSPACE|V_ALLOWLOWERCASE,
-			va("DIFFICULTY: %d", gpRank.difficulty));
+			va("SPECIAL: %s", (g_gpRank.specialWon == true) ? "YES" : "NO"));
 
 		switch (grade)
 		{

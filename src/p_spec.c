@@ -2000,34 +2000,6 @@ static void K_HandleLapIncrement(player_t *player)
 				}
 			}
 
-			// finished race exit setup
-			if (player->laps > numlaps)
-			{
-				if (specialstageinfo.valid == true)
-				{
-					// Don't permit a win just by sneaking ahead of the UFO/emerald.
-					if (!(specialstageinfo.ufo == NULL || P_MobjWasRemoved(specialstageinfo.ufo)))
-					{
-						player->pflags |= PF_NOCONTEST;
-					}
-				}
-
-				P_DoPlayerExit(player);
-
-				if (!(player->pflags & PF_NOCONTEST))
-					P_SetupSignExit(player);
-			}
-			else
-			{
-				UINT32 skinflags = (demo.playback)
-					? demo.skinlist[demo.currentskinid[(player-players)]].flags
-					: skins[player->skin].flags;
-				if (skinflags & SF_IRONMAN)
-				{
-					SetRandomFakePlayerSkin(player, true);
-				}
-			}
-
 			if (player->laps > player->latestlap)
 			{
 				if (player->laps > 1)
@@ -2062,8 +2034,35 @@ static void K_HandleLapIncrement(player_t *player)
 				player->latestlap = player->laps;
 			}
 
-			thwompsactive = true; // Lap 2 effects
+			// finished race exit setup
+			if (player->laps > numlaps)
+			{
+				if (specialstageinfo.valid == true)
+				{
+					// Don't permit a win just by sneaking ahead of the UFO/emerald.
+					if (!(specialstageinfo.ufo == NULL || P_MobjWasRemoved(specialstageinfo.ufo)))
+					{
+						player->pflags |= PF_NOCONTEST;
+					}
+				}
 
+				P_DoPlayerExit(player);
+
+				if (!(player->pflags & PF_NOCONTEST))
+					P_SetupSignExit(player);
+			}
+			else
+			{
+				UINT32 skinflags = (demo.playback)
+					? demo.skinlist[demo.currentskinid[(player-players)]].flags
+					: skins[player->skin].flags;
+				if (skinflags & SF_IRONMAN)
+				{
+					SetRandomFakePlayerSkin(player, true);
+				}
+			}
+
+			thwompsactive = true; // Lap 2 effects
 			lowestLap = P_FindLowestLap();
 
 			for (i = 0; i < numlines; i++)

@@ -102,6 +102,7 @@
 #include "acs/interface.h"
 #include "doomstat.h" // MAXMUSNAMES
 #include "k_podium.h"
+#include "k_rank.h"
 
 // Replay names have time
 #if !defined (UNDER_CE)
@@ -7388,7 +7389,7 @@ static void P_InitGametype(void)
 	{
 		if (grandprixinfo.initalize == true)
 		{
-			K_InitGrandPrixRank();
+			K_InitGrandPrixRank(&g_gpRank);
 			K_InitGrandPrixBots();
 			grandprixinfo.initalize = false;
 		}

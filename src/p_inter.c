@@ -1595,8 +1595,6 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 					K_SpawnBattlePoints(source->player, NULL, 1);
 				}
 
-				gpRank.capsules++;
-
 				// All targets busted!
 				if (++numtargets >= maptargets)
 				{
