@@ -97,9 +97,9 @@ static UINT8 K_KartItemOddsRace[NUMKARTRESULTS-1][8] =
 	{ 2, 1, 1, 0, 0, 0, 0, 0 }, // Super Ring
 	{ 0, 0, 0, 0, 0, 0, 0, 0 }, // Kitchen Sink
 	{ 3, 0, 0, 0, 0, 0, 0, 0 }, // Drop Target
-	{ 0, 0, 0, 3, 5, 0, 0, 0 }, // Garden Top
+	{ 0, 0, 0, 1, 2, 2, 0, 0 }, // Garden Top
 	{ 0, 0, 0, 0, 0, 0, 0, 0 }, // Gachabom
-	{ 0, 0, 2, 2, 2, 0, 0, 0 }, // Sneaker x2
+	{ 0, 0, 2, 3, 3, 1, 0, 0 }, // Sneaker x2
 	{ 0, 0, 0, 0, 4, 4, 4, 0 }, // Sneaker x3
 	{ 0, 1, 1, 0, 0, 0, 0, 0 }, // Banana x3
 	{ 0, 0, 1, 0, 0, 0, 0, 0 }, // Orbinaut x3
