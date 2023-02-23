@@ -103,15 +103,14 @@ void K_InitGrandPrixRank(gpRank_t *rankData)
 gp_rank_e K_CalculateGPGrade(gpRank_t *rankData)
 {
 	static const fixed_t gradePercents[GRADE_A] = {
-		 9*FRACUNIT/20,		// GRADE_E -> GRADE_D
-		12*FRACUNIT/20,		// GRADE_D -> GRADE_C
-		15*FRACUNIT/20,		// GRADE_C -> GRADE_B
-		18*FRACUNIT/20		// GRADE_B -> GRADE_A
+		 7*FRACUNIT/20,		// D: 35% or higher
+		10*FRACUNIT/20,		// C: 50% or higher
+		14*FRACUNIT/20,		// B: 70% or higher
+		17*FRACUNIT/20		// A: 85% or higher
 	};
 
 	gp_rank_e retGrade = GRADE_E;
 
-	// TODO: Balance requirements
 	const INT32 pointsWeight = 100;
 	const INT32 lapsWeight = 100;
 	const INT32 capsulesWeight = 100;
