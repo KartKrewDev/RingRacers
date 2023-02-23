@@ -4516,10 +4516,11 @@ static void M_DrawChallengeTile(INT16 i, INT16 j, INT32 x, INT32 y, boolean hili
 {
 	unlockable_t *ref = NULL;
 	patch_t *pat = missingpat;
-	UINT8 *colormap = NULL;
+	UINT8 *colormap = NULL, *bgmap = NULL;
 	fixed_t siz;
 	UINT8 id, num;
 	boolean unlockedyet;
+	boolean categoryside;
 
 	id = (i * CHALLENGEGRIDHEIGHT) + j;
 	num = gamedata->challengegrid[id];
@@ -4543,22 +4544,21 @@ static void M_DrawChallengeTile(INT16 i, INT16 j, INT32 x, INT32 y, boolean hili
 	if (!unlockedyet)
 	{
 		UINT16 col = (challengesmenu.extradata[id] == CHE_HINT) ? SKINCOLOR_BLUE : SKINCOLOR_BLACK;
-		colormap = R_GetTranslationColormap(TC_DEFAULT, col, GTC_MENUCACHE);
+		bgmap = R_GetTranslationColormap(TC_DEFAULT, col, GTC_MENUCACHE);
 	}
 	else
 	{
-		colormap = R_GetTranslationColormap(TC_DEFAULT, SKINCOLOR_SILVER, GTC_MENUCACHE);
+		bgmap = R_GetTranslationColormap(TC_DEFAULT, SKINCOLOR_SILVER, GTC_MENUCACHE);
 	}
 
 	V_DrawFixedPatch(
 		x*FRACUNIT, y*FRACUNIT,
 		FRACUNIT,
 		0, pat,
-		colormap
+		bgmap
 	);
 
 	pat = missingpat;
-	colormap = NULL;
 
 	// If we aren't unlocked yet, return early.
 	if (!unlockedyet)
@@ -4566,7 +4566,54 @@ static void M_DrawChallengeTile(INT16 i, INT16 j, INT32 x, INT32 y, boolean hili
 		goto drawborder;
 	}
 
-	if (ref->icon != NULL && ref->icon[0])
+	categoryside = !hili; // temporary
+
+	if (categoryside)
+	{
+		char categoryid = '8';
+		colormap = bgmap;
+		switch (ref->type)
+		{
+			case SECRET_SKIN:
+				categoryid = '1';
+				break;
+			case SECRET_FOLLOWER:
+				categoryid = '2';
+				break;
+			/*case SECRET_COLOR:
+				categoryid = '3';
+				break;*/
+			case SECRET_CUP:
+				categoryid = '4';
+				break;
+			//case SECRET_MASTERBOTS:
+			case SECRET_HARDSPEED:
+			case SECRET_ENCORE:
+				categoryid = '5';
+				break;
+			case SECRET_ALTTITLE:
+			case SECRET_SOUNDTEST:
+				categoryid = '6';
+				break;
+			case SECRET_TIMEATTACK:
+			case SECRET_BREAKTHECAPSULES:
+			case SECRET_SPECIALATTACK:
+				categoryid = '7';
+				break;
+		}
+		pat = W_CachePatchName(va("UN_RR0%c%c",
+			categoryid,
+			(ref->majorunlock) ? 'B' : 'A'),
+			PU_CACHE);
+		if (pat == missingpat)
+		{
+			pat = W_CachePatchName(va("UN_RR0%c%c",
+				categoryid,
+				(ref->majorunlock) ? 'A' : 'B'),
+				PU_CACHE);
+		}
+	}
+	else if (ref->icon != NULL && ref->icon[0])
 	{
 		pat = W_CachePatchName(ref->icon, PU_CACHE);
 		if (ref->color != SKINCOLOR_NONE && ref->color < numskincolors)
@@ -4574,38 +4621,83 @@ static void M_DrawChallengeTile(INT16 i, INT16 j, INT32 x, INT32 y, boolean hili
 			colormap = R_GetTranslationColormap(TC_DEFAULT, ref->color, GTC_MENUCACHE);
 		}
 	}
-	else switch (ref->type)
+	else
 	{
-		case SECRET_SKIN:
+		UINT8 iconid = 0;
+		switch (ref->type)
 		{
-			INT32 skin = M_UnlockableSkinNum(ref);
-			if (skin != -1)
+			case SECRET_SKIN:
 			{
-				colormap = R_GetTranslationColormap(skin, skins[skin].prefcolor, GTC_MENUCACHE);
-				pat = faceprefix[skin][(ref->majorunlock) ? FACE_WANTED : FACE_RANK];
+				INT32 skin = M_UnlockableSkinNum(ref);
+				if (skin != -1)
+				{
+					colormap = R_GetTranslationColormap(skin, skins[skin].prefcolor, GTC_MENUCACHE);
+					pat = faceprefix[skin][(ref->majorunlock) ? FACE_WANTED : FACE_RANK];
+				}
+				break;
 			}
-			break;
+			case SECRET_FOLLOWER:
+			{
+				INT32 skin = M_UnlockableFollowerNum(ref);
+				if (skin != -1)
+				{
+					UINT16 col = K_GetEffectiveFollowerColor(followers[skin].defaultcolor, cv_playercolor[0].value);
+					colormap = R_GetTranslationColormap(TC_DEFAULT, col, GTC_MENUCACHE);
+					pat = W_CachePatchName(followers[skin].icon, PU_CACHE);
+				}
+				break;
+			}
+
+			/*case SECRET_MASTERBOTS:
+				iconid = 4;
+				break;*/
+			case SECRET_HARDSPEED:
+				iconid = 3;
+				break;
+			case SECRET_ENCORE:
+				iconid = 5;
+				break;
+
+			case SECRET_ALTTITLE:
+				iconid = 6;
+				break;
+			case SECRET_SOUNDTEST:
+				iconid = 1;
+				break;
+
+			case SECRET_TIMEATTACK:
+				iconid = 7;
+				break;
+			case SECRET_BREAKTHECAPSULES:
+				iconid = 8;
+				break;
+			case SECRET_SPECIALATTACK:
+				iconid = 9;
+				break;
+
+			default:
+			{
+				if (!colormap && ref->color != SKINCOLOR_NONE && ref->color < numskincolors)
+				{
+					colormap = R_GetTranslationColormap(TC_RAINBOW, ref->color, GTC_MENUCACHE);
+				}
+				break;
+			}
 		}
-		case SECRET_FOLLOWER:
+
+		if (pat == missingpat)
 		{
-			INT32 skin = M_UnlockableFollowerNum(ref);
-			if (skin != -1)
+			pat = W_CachePatchName(va("UN_IC%02u%c",
+				iconid,
+				ref->majorunlock ? 'B' : 'A'),
+				PU_CACHE);
+			if (pat == missingpat)
 			{
-				UINT16 col = K_GetEffectiveFollowerColor(followers[skin].defaultcolor, cv_playercolor[0].value);
-				colormap = R_GetTranslationColormap(TC_DEFAULT, col, GTC_MENUCACHE);
-				pat = W_CachePatchName(followers[skin].icon, PU_CACHE);
+				pat = W_CachePatchName(va("UN_IC%02u%c",
+					iconid,
+					ref->majorunlock ? 'A' : 'B'),
+					PU_CACHE);
 			}
-			break;
-		}
-		default:
-		{
-			pat = W_CachePatchName(va("UN_RR00%c", ref->majorunlock ? 'B' : 'A'), PU_CACHE);
-			if (ref->color != SKINCOLOR_NONE && ref->color < numskincolors)
-			{
-				//CONS_Printf(" color for %d is %s\n", num, skincolors[unlockables[num].color].name);
-				colormap = R_GetTranslationColormap(TC_RAINBOW, ref->color, GTC_MENUCACHE);
-			}
-			break;
 		}
 	}
 
