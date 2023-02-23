@@ -2058,8 +2058,11 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 
 	if (!force)
 	{
-		if (!(target->flags & MF_SHOOTABLE))
-			return false; // shouldn't happen...
+		if (!(target->type == MT_SPB && (damagetype & DMG_TYPEMASK) == DMG_VOLTAGE))
+		{
+			if (!(target->flags & MF_SHOOTABLE))
+				return false; // shouldn't happen...
+		}
 
 		if (!(damagetype & DMG_DEATHMASK) && (target->eflags & MFE_PAUSED))
 			return false;

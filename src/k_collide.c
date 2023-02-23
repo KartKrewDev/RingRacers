@@ -632,10 +632,13 @@ static inline BlockItReturn_t PIT_LightningShieldAttack(mobj_t *thing)
 		return BMIT_CONTINUE;
 	}
 
-	if (!(thing->flags & MF_SHOOTABLE) || (thing->flags & MF_SCENERY))
+	if (thing->type != MT_SPB)
 	{
-		// Not shootable
-		return BMIT_CONTINUE;
+		if (!(thing->flags & MF_SHOOTABLE) || (thing->flags & MF_SCENERY))
+		{
+			// Not shootable
+			return BMIT_CONTINUE;
+		}
 	}
 
 	if (thing->player && thing->player->spectator)
