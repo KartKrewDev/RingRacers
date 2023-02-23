@@ -31,6 +31,7 @@ gpRank_t g_gpRank = {0};
 void K_InitGrandPrixRank(gpRank_t *rankData)
 {
 	UINT8 numHumans = 0;
+	UINT32 laps = 0;
 	INT32 i;
 
 	memset(rankData, 0, sizeof(gpRank_t));
@@ -64,7 +65,18 @@ void K_InitGrandPrixRank(gpRank_t *rankData)
 
 	rankData->totalRings = grandprixinfo.cup->numlevels * numHumans * 20;
 
-	UINT32 laps = 0;
+	if (grandprixinfo.masterbots == true)
+	{
+		rankData->difficultyTarget = MAXBOTDIFFICULTY;
+	}
+	else
+	{
+		rankData->difficultyTarget = min(
+			MAXBOTDIFFICULTY,
+			K_BotStartingDifficulty(grandprixinfo.gamespeed) + ((grandprixinfo.cup->numlevels + 1) / 2)
+		);
+	}
+
 	for (i = 0; i < grandprixinfo.cup->numlevels; i++)
 	{
 		const INT32 cupLevelNum = grandprixinfo.cup->cachedlevels[i];
@@ -131,7 +143,10 @@ gp_rank_e K_CalculateGPGrade(gpRank_t *rankData)
 		ours += (rankData->rings * ringsWeight) / rankData->totalRings;
 	}
 
-	ours += (rankData->difficulty * difficultyWeight) / MAXBOTDIFFICULTY;
+	if (rankData->difficultyTarget > 0)
+	{
+		ours += (rankData->difficulty * difficultyWeight) / rankData->difficultyTarget;
+	}
 
 	ours -= rankData->continuesUsed * continuesPenalty;
 

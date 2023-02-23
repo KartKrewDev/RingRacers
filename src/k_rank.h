@@ -39,8 +39,10 @@ struct gpRank_t
 	UINT32 rings;
 	UINT32 totalRings;
 
-	boolean specialWon;
 	UINT8 difficulty;
+	UINT8 difficultyTarget;
+
+	boolean specialWon;
 };
 
 extern gpRank_t g_gpRank;

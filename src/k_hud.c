@@ -5086,7 +5086,7 @@ void K_drawKartHUD(void)
 		V_DrawThinString(0, 40, V_SNAPTOTOP|V_SNAPTOLEFT|V_6WIDTHSPACE|V_ALLOWLOWERCASE,
 			va("RINGS: %d / %d", g_gpRank.rings, g_gpRank.totalRings));
 		V_DrawThinString(0, 50, V_SNAPTOTOP|V_SNAPTOLEFT|V_6WIDTHSPACE|V_ALLOWLOWERCASE,
-			va("DIFFICULTY: %d / %d", g_gpRank.difficulty, MAXBOTDIFFICULTY));
+			va("DIFFICULTY: %d / %d", g_gpRank.difficulty, g_gpRank.difficultyTarget));
 		V_DrawThinString(0, 60, V_SNAPTOTOP|V_SNAPTOLEFT|V_6WIDTHSPACE|V_ALLOWLOWERCASE,
 			va("SPECIAL: %s", (g_gpRank.specialWon == true) ? "YES" : "NO"));
 
