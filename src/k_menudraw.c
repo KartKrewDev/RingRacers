@@ -4519,7 +4519,7 @@ static void M_DrawChallengeTile(INT16 i, INT16 j, INT32 x, INT32 y, boolean hili
 	UINT8 *colormap = NULL;
 	fixed_t siz;
 	UINT8 id, num;
-	UINT32 edgelength;
+	boolean unlockedyet;
 
 	id = (i * CHALLENGEGRIDHEIGHT) + j;
 	num = gamedata->challengegrid[id];
@@ -4533,14 +4533,36 @@ static void M_DrawChallengeTile(INT16 i, INT16 j, INT32 x, INT32 y, boolean hili
 	// Okay, this is what we want to draw.
 	ref = &unlockables[num];
 
-	edgelength = (ref->majorunlock ? 30 : 14);
+	unlockedyet = !((gamedata->unlocked[num] == false)
+		|| (challengesmenu.pending && num == challengesmenu.currentunlock && challengesmenu.unlockanim <= UNLOCKTIME));
 
-	// ...unless we simply aren't unlocked yet.
-	if ((gamedata->unlocked[num] == false)
-		|| (challengesmenu.pending && num == challengesmenu.currentunlock && challengesmenu.unlockanim <= UNLOCKTIME))
+	pat = W_CachePatchName(
+		(ref->majorunlock ? "UN_BORDB" : "UN_BORDA"),
+		PU_CACHE);
+
+	if (!unlockedyet)
 	{
-		V_DrawFill(x+1, y+1, edgelength, edgelength,
-			((challengesmenu.extradata[id] == CHE_HINT) ? 132 : 11));
+		UINT16 col = (challengesmenu.extradata[id] == CHE_HINT) ? SKINCOLOR_BLUE : SKINCOLOR_BLACK;
+		colormap = R_GetTranslationColormap(TC_DEFAULT, col, GTC_MENUCACHE);
+	}
+	else
+	{
+		colormap = R_GetTranslationColormap(TC_DEFAULT, SKINCOLOR_SILVER, GTC_MENUCACHE);
+	}
+
+	V_DrawFixedPatch(
+		x*FRACUNIT, y*FRACUNIT,
+		FRACUNIT,
+		0, pat,
+		colormap
+	);
+
+	pat = missingpat;
+	colormap = NULL;
+
+	// If we aren't unlocked yet, return early.
+	if (!unlockedyet)
+	{
 		goto drawborder;
 	}
 
@@ -4588,22 +4610,27 @@ static void M_DrawChallengeTile(INT16 i, INT16 j, INT32 x, INT32 y, boolean hili
 	}
 
 	siz = (SHORT(pat->width) << FRACBITS);
-	siz = FixedDiv(((ref->majorunlock) ? 32 : 16) << FRACBITS, siz);
 
-	V_SetClipRect(
-		(x+1) << FRACBITS, (y+1) << FRACBITS,
-		edgelength << FRACBITS, edgelength << FRACBITS,
-		0
-	);
-
-	V_DrawFixedPatch(
-		x*FRACUNIT, y*FRACUNIT,
-		siz,
-		0, pat,
-		colormap
-	);
-
-	V_ClearClipRect();
+	if (!siz)
+		; // prevent div/0
+	else if (ref->majorunlock)
+	{
+		V_DrawFixedPatch(
+			(x + 5)*FRACUNIT, (y + 5)*FRACUNIT,
+			FixedDiv(32 << FRACBITS, siz),
+			0, pat,
+			colormap
+		);
+	}
+	else
+	{
+		V_DrawFixedPatch(
+			(x + 2)*FRACUNIT, (y + 2)*FRACUNIT,
+			FixedDiv(16 << FRACBITS, siz),
+			0, pat,
+			colormap
+		);
+	}
 
 drawborder:
 	if (!hili)
@@ -4611,12 +4638,23 @@ drawborder:
 		return;
 	}
 
-	V_DrawFixedPatch(
-		x*FRACUNIT, y*FRACUNIT,
-		((ref != NULL && ref->majorunlock) ? FRACUNIT*2 : FRACUNIT),
-		0, kp_facehighlight[(challengesmenu.ticker / 4) % 8],
-		NULL
-	);
+	{
+		boolean maj = (ref != NULL && ref->majorunlock);
+		char buffer[9];
+		sprintf(buffer, "UN_RETA1");
+		buffer[6] = maj ? 'B' : 'A';
+		buffer[7] = (skullAnimCounter/5) ? '2' : '1';
+		pat = W_CachePatchName(buffer, PU_CACHE);
+
+		colormap = R_GetTranslationColormap(TC_DEFAULT, cv_playercolor[0].value, GTC_MENUCACHE);
+
+		V_DrawFixedPatch(
+			x*FRACUNIT, y*FRACUNIT,
+			FRACUNIT,
+			0, pat,
+			colormap
+		);
+	}
 }
 
 static void M_DrawChallengePreview(INT32 x, INT32 y)
@@ -4820,6 +4858,7 @@ static void M_DrawChallengePreview(INT32 x, INT32 y)
 }
 
 #define challengetransparentstrength 8
+#define challengesgridstep 22
 
 void M_DrawChallenges(void)
 {
@@ -4859,41 +4898,41 @@ void M_DrawChallenges(void)
 
 	V_DrawFadeFill(0, y-2, BASEVIDWIDTH, 90, 0, 31, challengetransparentstrength);
 
-	x -= 16;
+	x -= (challengesgridstep-1);
 
 	x += challengesmenu.offset;
 
 	if (challengegridloops)
 	{
 		if (!challengesmenu.col && challengesmenu.hilix)
-			x -= gamedata->challengegridwidth*16;
+			x -= gamedata->challengegridwidth*challengesgridstep;
 		i = challengesmenu.col + challengesmenu.focusx;
-		explodex = x - (i*16);
+		explodex = x - (i*challengesgridstep);
 
-		while (x < BASEVIDWIDTH-16)
+		while (x < BASEVIDWIDTH-challengesgridstep)
 		{
 			i = (i + 1) % gamedata->challengegridwidth;
-			x += 16;
+			x += challengesgridstep;
 		}
 	}
 	else
 	{
 		if (gamedata->challengegridwidth & 1)
-			x += 8;
+			x += (challengesgridstep/2);
 
 		i = gamedata->challengegridwidth-1;
-		explodex = x - (i*16)/2;
-		x += (i*16)/2;
+		explodex = x - (i*challengesgridstep)/2;
+		x += (i*challengesgridstep)/2;
 	}
 
-	selectx = explodex + (challengesmenu.hilix*16);
+	selectx = explodex + (challengesmenu.hilix*challengesgridstep);
 
-	while (i >= 0 && x >= -32)
+	while (i >= 0 && x >= -(challengesgridstep*2))
 	{
-		y = currentMenu->y-16;
+		y = currentMenu->y-challengesgridstep;
 		for (j = 0; j < CHALLENGEGRIDHEIGHT; j++)
 		{
-			y += 16;
+			y += challengesgridstep;
 
 			if (challengesmenu.extradata[(i * CHALLENGEGRIDHEIGHT) + j] & CHE_DONTDRAW)
 			{
@@ -4908,7 +4947,7 @@ void M_DrawChallenges(void)
 			M_DrawChallengeTile(i, j, x, y, false);
 		}
 
-		x -= 16;
+		x -= challengesgridstep;
 		i--;
 		if (challengegridloops && i < 0)
 		{
@@ -4924,7 +4963,7 @@ void M_DrawChallenges(void)
 		challengesmenu.hilix,
 		challengesmenu.hiliy,
 		selectx,
-		currentMenu->y + (challengesmenu.hiliy*16),
+		currentMenu->y + (challengesmenu.hiliy*challengesgridstep),
 		true);
 	M_DrawCharSelectExplosions(false, explodex, currentMenu->y);
 
@@ -4989,6 +5028,7 @@ challengedesc:
 }
 
 #undef challengetransparentstrength
+#undef challengesgridstep
 
 // Statistics menu
 
