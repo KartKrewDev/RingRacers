@@ -2,6 +2,8 @@
 #include <cstddef>
 #include <vector>
 
+#include "k_battle.h"
+#include "k_boss.h"
 #include "k_hud.h"
 #include "m_fixed.h"
 #include "p_local.h"
@@ -229,6 +231,16 @@ void K_DrawTargetTracking(const TargetTracking& target)
 
 bool is_player_tracking_target(const player_t *player)
 {
+	if ((gametyperules & (GTR_BUMPERS|GTR_CLOSERPLAYERS)) != (GTR_BUMPERS|GTR_CLOSERPLAYERS))
+	{
+		return false;
+	}
+
+	if (battlecapsules || bossinfo.valid)
+	{
+		return false;
+	}
+
 	if (player == nullptr)
 	{
 		return false;
