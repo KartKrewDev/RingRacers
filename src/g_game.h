@@ -118,6 +118,7 @@ extern INT32 localaiming[MAXSPLITSCREENPLAYERS]; // should be an angle_t but sig
 extern INT32 localsteering[MAXSPLITSCREENPLAYERS];
 extern INT32 localdelta[MAXSPLITSCREENPLAYERS];
 extern INT32 localstoredeltas[MAXSPLITSCREENPLAYERS][TICCMD_LATENCYMASK + 1];
+extern UINT8 locallatency[MAXSPLITSCREENPLAYERS][TICRATE];
 extern UINT8 localtic;
 
 INT32 G_PlayerInputAnalog(UINT8 p, INT32 gc, UINT8 menuPlayers);

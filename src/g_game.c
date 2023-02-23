@@ -1082,6 +1082,7 @@ angle_t localangle[MAXSPLITSCREENPLAYERS];
 INT32 localsteering[MAXSPLITSCREENPLAYERS];
 INT32 localdelta[MAXSPLITSCREENPLAYERS];
 INT32 localstoredeltas[MAXSPLITSCREENPLAYERS][TICCMD_LATENCYMASK + 1];
+UINT8 locallatency[MAXSPLITSCREENPLAYERS][TICRATE];
 UINT8 localtic;
 
 void G_ResetAnglePrediction(player_t *player)
@@ -1137,6 +1138,7 @@ static void G_DoAnglePrediction(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer, p
 	// but this causes incredible jittering when the prediction turns out to be wrong. So we ease into it.
 	// Slight increased camera lag in all scenarios > Mostly lagless camera but with jittering
 	destAngle = player->angleturn + localdelta[ssplayer - 1];
+
 	diff = destAngle - localangle[ssplayer - 1];
 
 	if (diff > ANGLE_180)
@@ -1149,6 +1151,9 @@ static void G_DoAnglePrediction(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer, p
 	}
 
 	localangle[ssplayer - 1] += diff;
+
+	// In case of angle debugging, break glass
+	// localangle[ssplayer - 1] = destAngle;
 }
 
 void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
