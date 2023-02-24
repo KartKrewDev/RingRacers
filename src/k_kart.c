@@ -11350,6 +11350,9 @@ tic_t K_TimeLimitForGametype(void)
 UINT32 K_PointLimitForGametype(void)
 {
 	const UINT32 gametypeDefault = gametypes[gametype]->pointlimit;
+	const UINT32 battleRules = GTR_BUMPERS|GTR_CLOSERPLAYERS|GTR_PAPERITEMS;
+
+	UINT32 ptsCap = gametypeDefault;
 
 	if (!(gametyperules & GTR_POINTLIMIT))
 	{
@@ -11361,7 +11364,28 @@ UINT32 K_PointLimitForGametype(void)
 		return cv_pointlimit.value;
 	}
 
-	return gametypeDefault;
+	if (battlecapsules || bossinfo.valid)
+	{
+		return 0;
+	}
+
+	if ((gametyperules & battleRules) == battleRules)
+	{
+		INT32 i;
+
+		// It's frustrating that this shitty for-loop needs to
+		// be duplicated every time the players need to be
+		// counted.
+		for (i = 0; i < MAXPLAYERS; ++i)
+		{
+			if (D_IsPlayerHumanAndGaming(i))
+			{
+				ptsCap += 3;
+			}
+		}
+	}
+
+	return ptsCap;
 }
 
 //}

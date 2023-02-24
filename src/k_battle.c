@@ -140,11 +140,6 @@ void K_CheckBumpers(void)
 	else
 	{
 		g_hiscore = toproundscore;
-
-		if (toproundscore < (numingame * 3))
-		{
-			return;
-		}
 	}
 
 	if (numingame <= 1)
@@ -157,18 +152,6 @@ void K_CheckBumpers(void)
 		}
 
 		return;
-	}
-
-	for (i = 0; i < MAXPLAYERS; i++) // This can't go in the earlier loop because winning adds points
-		K_KartUpdatePosition(&players[i]);
-
-	for (i = 0; i < MAXPLAYERS; i++) // and it can't be merged with this loop because it needs to be all updated before exiting... multi-loops suck...
-	{
-		if (!playeringame[i])
-			continue;
-		if (players[i].spectator)
-			continue;
-		P_DoPlayerExit(&players[i]);
 	}
 }
 
