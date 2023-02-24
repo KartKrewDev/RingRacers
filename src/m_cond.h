@@ -193,12 +193,20 @@ void M_NewGameDataStruct(void);
 
 // Challenges menu stuff
 void M_PopulateChallengeGrid(void);
-UINT8 *M_ChallengeGridExtraData(void);
+
+struct challengegridextradata_t
+{
+	UINT8 flags;
+};
+
+challengegridextradata_t *M_ChallengeGridExtraData(void);
+
 #define CHE_NONE          0
 #define CHE_HINT          1
 #define CHE_CONNECTEDLEFT (1<<1)
 #define CHE_CONNECTEDUP   (1<<2)
 #define CHE_DONTDRAW (CHE_CONNECTEDLEFT|CHE_CONNECTEDUP)
+
 char *M_BuildConditionSetString(UINT8 unlockid);
 #define DESCRIPTIONWIDTH 170
 

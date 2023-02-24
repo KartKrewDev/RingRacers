@@ -4544,7 +4544,7 @@ static void M_DrawChallengeTile(INT16 i, INT16 j, INT32 x, INT32 y, boolean hili
 
 	if (!unlockedyet)
 	{
-		UINT16 col = (challengesmenu.extradata[id] == CHE_HINT) ? SKINCOLOR_BLUE : SKINCOLOR_BLACK;
+		UINT16 col = (challengesmenu.extradata[id].flags == CHE_HINT) ? SKINCOLOR_BLUE : SKINCOLOR_BLACK;
 		bgmap = R_GetTranslationColormap(TC_DEFAULT, col, GTC_MENUCACHE);
 	}
 	else
@@ -5027,7 +5027,7 @@ void M_DrawChallenges(void)
 		{
 			y += challengesgridstep;
 
-			if (challengesmenu.extradata[(i * CHALLENGEGRIDHEIGHT) + j] & CHE_DONTDRAW)
+			if (challengesmenu.extradata[(i * CHALLENGEGRIDHEIGHT) + j].flags & CHE_DONTDRAW)
 			{
 				continue;
 			}
@@ -5112,7 +5112,7 @@ challengedesc:
 	&& challengesmenu.currentunlock < MAXUNLOCKABLES
 	&& ((gamedata->unlocked[challengesmenu.currentunlock] == true)
 		|| ((challengesmenu.extradata != NULL)
-		&& (challengesmenu.extradata[i] & CHE_HINT))
+		&& (challengesmenu.extradata[i].flags & CHE_HINT))
 		)
 	)
 	{

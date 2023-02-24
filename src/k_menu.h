@@ -1151,7 +1151,7 @@ extern struct challengesmenu_s {
 	SINT8 row, hilix, focusx;
 	UINT8 col, hiliy;
 
-	UINT8 *extradata;
+	challengegridextradata_t *extradata;
 
 	boolean pending;
 	boolean requestnew;

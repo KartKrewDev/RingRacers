@@ -72,7 +72,7 @@ static void M_ChallengesAutoFocus(UINT8 unlockid, boolean fresh)
 			continue;
 		}
 
-		if (challengesmenu.extradata[i] & CHE_CONNECTEDLEFT)
+		if (challengesmenu.extradata[i].flags & CHE_CONNECTEDLEFT)
 		{
 			// no need to check for CHE_CONNECTEDUP in linear iteration
 			continue;
@@ -461,8 +461,8 @@ boolean M_ChallengesInputs(INT32 ch)
 					}
 					if (!(challengesmenu.extradata[
 							(challengesmenu.col * CHALLENGEGRIDHEIGHT)
-							+ challengesmenu.row]
-						& CHE_CONNECTEDUP))
+							+ challengesmenu.row
+						].flags & CHE_CONNECTEDUP))
 					{
 						break;
 					}
@@ -475,8 +475,8 @@ boolean M_ChallengesInputs(INT32 ch)
 			{
 				i = (challengesmenu.extradata[
 							(challengesmenu.col * CHALLENGEGRIDHEIGHT)
-							+ challengesmenu.row]
-						& CHE_CONNECTEDUP) ? 2 : 1;
+							+ challengesmenu.row
+						].flags & CHE_CONNECTEDUP) ? 2 : 1;
 				while (i > 0)
 				{
 					if (challengesmenu.row > 0)
@@ -516,8 +516,8 @@ boolean M_ChallengesInputs(INT32 ch)
 
 					if (!(challengesmenu.extradata[
 							(challengesmenu.col * CHALLENGEGRIDHEIGHT)
-							+ challengesmenu.row]
-						& CHE_CONNECTEDLEFT))
+							+ challengesmenu.row
+						].flags & CHE_CONNECTEDLEFT))
 					{
 						break;
 					}
@@ -531,8 +531,8 @@ boolean M_ChallengesInputs(INT32 ch)
 			{
 				i = (challengesmenu.extradata[
 							(challengesmenu.col * CHALLENGEGRIDHEIGHT)
-							+ challengesmenu.row]
-						& CHE_CONNECTEDLEFT) ? 2 : 1;
+							+ challengesmenu.row
+						].flags & CHE_CONNECTEDLEFT) ? 2 : 1;
 				while (i > 0)
 				{
 					// Slide the focus counter to movement, if we can.
@@ -570,12 +570,12 @@ boolean M_ChallengesInputs(INT32 ch)
 			{
 				// Adjust highlight coordinates up/to the left for large tiles.
 
-				if (challengesmenu.hiliy > 0 && (challengesmenu.extradata[i] & CHE_CONNECTEDUP))
+				if (challengesmenu.hiliy > 0 && (challengesmenu.extradata[i].flags & CHE_CONNECTEDUP))
 				{
 					challengesmenu.hiliy--;
 				}
 
-				if ((challengesmenu.extradata[i] & CHE_CONNECTEDLEFT))
+				if ((challengesmenu.extradata[i].flags & CHE_CONNECTEDLEFT))
 				{
 					if (challengesmenu.hilix > 0)
 					{
