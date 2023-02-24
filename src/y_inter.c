@@ -591,24 +591,42 @@ skiptallydrawer:
 #endif
 
 	// Patches
-	patch_t *gthro = W_CachePatchName("R_GTHRO", PU_PATCH);
-	patch_t *resbar = W_CachePatchName("R_RESBAR", PU_PATCH);
+	
+	
+	patch_t *gthro = W_CachePatchName("R_GTHRO", PU_PATCH); // GOT THROUGH ROUND
+	patch_t *resbar = W_CachePatchName("R_RESBAR", PU_PATCH); // Results bars for players
+	
+	// Background pieces
 	patch_t *rmbg1 = W_CachePatchName("R_RMBG1", PU_PATCH);
 	patch_t *rmbg2 = W_CachePatchName("R_RMBG2", PU_PATCH);
 	patch_t *rmbg3 = W_CachePatchName("R_RMBG3", PU_PATCH);
 	patch_t *rmbg4 = W_CachePatchName("R_RMBG4", PU_PATCH);
+	
+	// Progress markers
 	patch_t *rpmark = W_CachePatchName("R_RPMARK", PU_PATCH);
 	patch_t *rrmrk1 = W_CachePatchName("R_RRMRK1", PU_PATCH);
 	patch_t *rrmrk2 = W_CachePatchName("R_RRMRK2", PU_PATCH);
 	patch_t *rrmrk3 = W_CachePatchName("R_RRMRK3", PU_PATCH);
 	patch_t *rrmrk4 = W_CachePatchName("R_RRMRK4", PU_PATCH);
+	
+	// Progression lines
 	patch_t *rrmln1 = W_CachePatchName("R_RRMLN1", PU_PATCH);
 	patch_t *rrmln2 = W_CachePatchName("R_RRMLN2", PU_PATCH);
 	patch_t *rrmln5 = W_CachePatchName("R_RRMLN5", PU_PATCH);
+	
+	// Shadows for progression lines
 	patch_t *rrmls1 = W_CachePatchName("R_RRMLS1", PU_PATCH);
 	patch_t *rrmls2 = W_CachePatchName("R_RRMLS2", PU_PATCH);
 	patch_t *rrmls3 = W_CachePatchName("R_RRMLS3", PU_PATCH);
+	
+	// Header bar
 	patch_t *rtpbr = W_CachePatchName("R_RTPBR", PU_PATCH);
+	
+	// Checker scroll
+	patch_t *rbgchk = W_CachePatchName("R_RBGCHK", PU_PATCH);
+	
+	// Scrolling marquee
+	patch_t *rrmq = W_CachePatchName("R_RRMQ", PU_PATCH);
 	
 	UINT8 *color = R_GetTranslationColormap(TC_DEFAULT, SKINCOLOR_YELLOW, GTC_CACHE); // I don't even know how necessary this is anymore but I don't want the game yelling at me
 	UINT8 *greymap = R_GetTranslationColormap(TC_DEFAULT, SKINCOLOR_GREY, GTC_CACHE);
@@ -630,6 +648,12 @@ skiptallydrawer:
 		
 	// Draw the background
 	K_DrawMapThumbnail(0, 0, BASEVIDWIDTH<<FRACBITS, 0, prevmap, color);
+	
+	// Draw the marquee (scroll pending)
+	V_DrawMappedPatch(0, 154, V_MODULATE, rrmq, 0);
+	
+	// Draw the checker pattern (scroll pending)
+	V_DrawMappedPatch(0, 0, V_MODULATE, rbgchk, 0);
 	
 	// Draw the header bar
 	V_DrawMappedPatch(20, 24, 0, rtpbr, 0);
@@ -709,6 +733,15 @@ skiptallydrawer:
 	
 	// Draw rank icon
 	V_DrawMappedPatch(14, 165, 0, rpmark, 0);
+	
+	for (SINT8 i = 0; i < data.numplayers; i++)
+	{
+		if (data.num[i] != MAXPLAYERS && playeringame[data.num[i]] && !players[data.num[i]].spectator && data.num[i] == consoleplayer)
+		{
+			UINT8 *colormap = R_GetTranslationColormap(*data.character[i], *data.color[i], GTC_CACHE);
+			V_DrawMappedPatch(15, 166, 0, faceprefix[*data.character[i]][FACE_RANK], colormap); // get an icon in there for now
+		}
+	}
 }
 
 //
