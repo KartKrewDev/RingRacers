@@ -632,83 +632,83 @@ skiptallydrawer:
 	K_DrawMapThumbnail(0, 0, BASEVIDWIDTH<<FRACBITS, 0, prevmap, color);
 	
 	// Draw the header bar
-	V_DrawFixedPatch(20<<FRACBITS, 24<<FRACBITS, FRACUNIT, 0, rtpbr, 0);
+	V_DrawMappedPatch(20, 24, 0, rtpbr, 0);
 	
 	// Draw "GOT THROUGH ROUND"
-	V_DrawFixedPatch(50<<FRACBITS, 42<<FRACBITS, FRACUNIT, 0, gthro, 0);
+	V_DrawMappedPatch(50, 42, 0, gthro, 0);
 	
 	
 	// TODO: Clean this bullshit up
 	// Draw resbars
-	V_DrawFixedPatch(41<<FRACBITS, 84<<FRACBITS, FRACUNIT, 0, resbar, 0);
-	V_DrawFixedPatch(41<<FRACBITS, 98<<FRACBITS, FRACUNIT, 0, resbar, 0);
-	V_DrawFixedPatch(41<<FRACBITS, 112<<FRACBITS, FRACUNIT, 0, resbar, 0);
-	V_DrawFixedPatch(41<<FRACBITS, 126<<FRACBITS, FRACUNIT, 0, resbar, 0);
+	V_DrawMappedPatch(41, 84, 0, resbar, 0);
+	V_DrawMappedPatch(41, 98, 0, resbar, 0);
+	V_DrawMappedPatch(41, 112, 0, resbar, 0);
+	V_DrawMappedPatch(41, 126, 0, resbar, 0);
 	
-	V_DrawFixedPatch(169<<FRACBITS, 84<<FRACBITS, FRACUNIT, 0, resbar, 0);
-	V_DrawFixedPatch(169<<FRACBITS, 98<<FRACBITS, FRACUNIT, 0, resbar, 0);
-	V_DrawFixedPatch(169<<FRACBITS, 112<<FRACBITS, FRACUNIT, 0, resbar, 0);
-	V_DrawFixedPatch(169<<FRACBITS, 126<<FRACBITS, FRACUNIT, 0, resbar, 0);
+	V_DrawMappedPatch(169, 84, 0, resbar, 0);
+	V_DrawMappedPatch(169, 98, 0, resbar, 0);
+	V_DrawMappedPatch(169, 112, 0, resbar, 0);
+	V_DrawMappedPatch(169, 126, 0, resbar, 0);
 	
 	// Draw bottom pieces
-	V_DrawFixedPatch(0, 167<<FRACBITS, FRACUNIT, 0, rmbg1, greymap);
-	V_DrawFixedPatch(24<<FRACBITS, 167<<FRACBITS, FRACUNIT, 0, rmbg2, greymap);
-	V_DrawFixedPatch(48<<FRACBITS, 167<<FRACBITS, FRACUNIT, 0, rmbg3, greymap);
+	V_DrawMappedPatch(0, 167, 0, rmbg1, greymap);
+	V_DrawMappedPatch(24, 167, 0, rmbg2, greymap);
+	V_DrawMappedPatch(48, 167, 0, rmbg3, greymap);
 	
-	V_DrawFixedPatch(72<<FRACBITS, 167<<FRACBITS, FRACUNIT, 0, rmbg2, greymap);
-	V_DrawFixedPatch(96<<FRACBITS, 167<<FRACBITS, FRACUNIT, 0, rmbg3, greymap);
+	V_DrawMappedPatch(72, 167, 0, rmbg2, greymap);
+	V_DrawMappedPatch(96, 167, 0, rmbg3, greymap);
 	
-	V_DrawFixedPatch(120<<FRACBITS, 167<<FRACBITS, FRACUNIT, 0, rmbg2, greymap);
-	V_DrawFixedPatch(144<<FRACBITS, 167<<FRACBITS, FRACUNIT, 0, rmbg3, greymap);
+	V_DrawMappedPatch(120, 167, 0, rmbg2, greymap);
+	V_DrawMappedPatch(144, 167, 0, rmbg3, greymap);
 	
-	V_DrawFixedPatch(168<<FRACBITS, 167<<FRACBITS, FRACUNIT, 0, rmbg1, greymap);
-	V_DrawFixedPatch(192<<FRACBITS, 167<<FRACBITS, FRACUNIT, 0, rmbg1, greymap);
-	V_DrawFixedPatch(216<<FRACBITS, 167<<FRACBITS, FRACUNIT, 0, rmbg1, greymap);
-	V_DrawFixedPatch(240<<FRACBITS, 167<<FRACBITS, FRACUNIT, 0, rmbg1, greymap);
+	V_DrawMappedPatch(168, 167, 0, rmbg1, greymap);
+	V_DrawMappedPatch(192, 167, 0, rmbg1, greymap);
+	V_DrawMappedPatch(216, 167, 0, rmbg1, greymap);
+	V_DrawMappedPatch(240, 167, 0, rmbg1, greymap);
 	
-	V_DrawFixedPatch(253<<FRACBITS, 167<<FRACBITS, FRACUNIT, 0, rmbg1, greymap);
-	V_DrawFixedPatch(277<<FRACBITS, 167<<FRACBITS, FRACUNIT, 0, rmbg4, greymap);
-	V_DrawFixedPatch(301<<FRACBITS, 167<<FRACBITS, FRACUNIT, 0, rmbg1, greymap);
+	V_DrawMappedPatch(253, 167, 0, rmbg1, greymap);
+	V_DrawMappedPatch(277, 167, 0, rmbg4, greymap);
+	V_DrawMappedPatch(301, 167, 0, rmbg1, greymap);
 	
 	// Draw the lines
 	// Draw the shadows first, so they don't draw over the lines
-	V_DrawFixedPatch(23<<FRACBITS, 178<<FRACBITS, FRACUNIT, 0, rrmls1, 0);
-	V_DrawFixedPatch(47<<FRACBITS, 178<<FRACBITS, FRACUNIT, 0, rrmls2, 0);
-	V_DrawFixedPatch(71<<FRACBITS, 178<<FRACBITS, FRACUNIT, 0, rrmls1, 0);
-	V_DrawFixedPatch(95<<FRACBITS, 178<<FRACBITS, FRACUNIT, 0, rrmls2, 0);
-	V_DrawFixedPatch(119<<FRACBITS, 178<<FRACBITS, FRACUNIT, 0, rrmls1, 0);
-	V_DrawFixedPatch(143<<FRACBITS, 178<<FRACBITS, FRACUNIT, 0, rrmls2, 0);
+	V_DrawMappedPatch(23, 178, 0, rrmls1, 0);
+	V_DrawMappedPatch(47, 178, 0, rrmls2, 0);
+	V_DrawMappedPatch(71, 178, 0, rrmls1, 0);
+	V_DrawMappedPatch(95, 178, 0, rrmls2, 0);
+	V_DrawMappedPatch(119, 178, 0, rrmls1, 0);
+	V_DrawMappedPatch(143, 178, 0, rrmls2, 0);
 	
 	// now draw the actual lines 
-	V_DrawFixedPatch(23<<FRACBITS, 179<<FRACBITS, FRACUNIT, 0, rrmln1, 0);
-	V_DrawFixedPatch(47<<FRACBITS, 179<<FRACBITS, FRACUNIT, 0, rrmln2, 0);
-	V_DrawFixedPatch(71<<FRACBITS, 179<<FRACBITS, FRACUNIT, 0, rrmln1, 0);
-	V_DrawFixedPatch(95<<FRACBITS, 179<<FRACBITS, FRACUNIT, 0, rrmln2, 0);
-	V_DrawFixedPatch(119<<FRACBITS, 179<<FRACBITS, FRACUNIT, 0, rrmln1, 0);
-	V_DrawFixedPatch(143<<FRACBITS, 179<<FRACBITS, FRACUNIT, 0, rrmln2, 0);
+	V_DrawMappedPatch(23, 179, 0, rrmln1, 0);
+	V_DrawMappedPatch(47, 179, 0, rrmln2, 0);
+	V_DrawMappedPatch(71, 179, 0, rrmln1, 0);
+	V_DrawMappedPatch(95, 179, 0, rrmln2, 0);
+	V_DrawMappedPatch(119, 179, 0, rrmln1, 0);
+	V_DrawMappedPatch(143, 179, 0, rrmln2, 0);
 	
 	// haha funny 54-part progress bar
 	// i am a dumbass and there is probably a better way to do this
 	for (UINT16 x = 172; x < 284; x += 2)
 	{
-		V_DrawFixedPatch(x<<FRACBITS, 177<<FRACBITS, FRACUNIT, 0, rrmls3, 0);
-		V_DrawFixedPatch(x<<FRACBITS, 179<<FRACBITS, FRACUNIT, 0, rrmln5, 0);
+		V_DrawMappedPatch(x, 177, 0, rrmls3, 0);
+		V_DrawMappedPatch(x, 179, 0, rrmln5, 0);
 	}
 	
 	// Draw the progress markers
-	V_DrawFixedPatch(16<<FRACBITS, 179<<FRACBITS, FRACUNIT, 0, rrmrk1, 0);
-	V_DrawFixedPatch(40<<FRACBITS, 171<<FRACBITS, FRACUNIT, 0, rrmrk2, 0);
-	V_DrawFixedPatch(64<<FRACBITS, 179<<FRACBITS, FRACUNIT, 0, rrmrk3, 0);
+	V_DrawMappedPatch(16, 179, 0, rrmrk1, 0);
+	V_DrawMappedPatch(40, 171, 0, rrmrk2, 0);
+	V_DrawMappedPatch(64, 179, 0, rrmrk3, 0);
 	
-	V_DrawFixedPatch(88<<FRACBITS, 171<<FRACBITS, FRACUNIT, 0, rrmrk2, 0);
-	V_DrawFixedPatch(112<<FRACBITS, 179<<FRACBITS, FRACUNIT, 0, rrmrk2, 0);
-	V_DrawFixedPatch(136<<FRACBITS, 171<<FRACBITS, FRACUNIT, 0, rrmrk3, 0);
-	V_DrawFixedPatch(160<<FRACBITS, 179<<FRACBITS, FRACUNIT, 0, rrmrk2, 0);
+	V_DrawMappedPatch(88, 171, 0, rrmrk2, 0);
+	V_DrawMappedPatch(112, 179, 0, rrmrk2, 0);
+	V_DrawMappedPatch(136, 171, 0, rrmrk3, 0);
+	V_DrawMappedPatch(160, 179, 0, rrmrk2, 0);
 	
-	V_DrawFixedPatch(282<<FRACBITS, 179<<FRACBITS, FRACUNIT, 0, rrmrk4, 0);
+	V_DrawMappedPatch(282, 179, 0, rrmrk4, 0);
 	
 	// Draw rank icon
-	V_DrawFixedPatch(14<<FRACBITS, 165<<FRACBITS, FRACUNIT, 0, rpmark, 0);
+	V_DrawMappedPatch(14, 165, 0, rpmark, 0);
 }
 
 //
