@@ -136,14 +136,15 @@ demoghost *ghosts = NULL;
 #define DEMO_BOT		0x08
 
 // For demos
-#define ZT_FWD		0x01
-#define ZT_SIDE		0x02
-#define ZT_TURNING	0x04
-#define ZT_THROWDIR	0x08
-#define ZT_BUTTONS	0x10
-#define ZT_AIMING	0x20
-#define ZT_LATENCY	0x40
-#define ZT_FLAGS	0x80
+#define ZT_FWD		1
+#define ZT_SIDE		2
+#define ZT_TURNING	4
+#define ZT_ANGLE	8
+#define ZT_THROWDIR	16
+#define ZT_BUTTONS	32
+#define ZT_AIMING	64
+#define ZT_LATENCY	128
+#define ZT_FLAGS	256
 // OUT OF ZIPTICS...
 
 #define DEMOMARKER 0x80 // demobuf.end
@@ -530,17 +531,19 @@ void G_WriteDemoExtraData(void)
 
 void G_ReadDemoTiccmd(ticcmd_t *cmd, INT32 playernum)
 {
-	UINT8 ziptic;
+	UINT16 ziptic;
 
 	if (!demobuf.p || !demo.deferstart)
 		return;
 
-	ziptic = READUINT8(demobuf.p);
+	ziptic = READUINT16(demobuf.p);
 
 	if (ziptic & ZT_FWD)
 		oldcmd[playernum].forwardmove = READSINT8(demobuf.p);
 	if (ziptic & ZT_TURNING)
 		oldcmd[playernum].turning = READINT16(demobuf.p);
+	if (ziptic & ZT_ANGLE)
+		oldcmd[playernum].angle = READINT16(demobuf.p);
 	if (ziptic & ZT_THROWDIR)
 		oldcmd[playernum].throwdir = READINT16(demobuf.p);
 	if (ziptic & ZT_BUTTONS)
@@ -564,13 +567,14 @@ void G_ReadDemoTiccmd(ticcmd_t *cmd, INT32 playernum)
 
 void G_WriteDemoTiccmd(ticcmd_t *cmd, INT32 playernum)
 {
-	char ziptic = 0;
+	UINT16 ziptic = 0;
 	UINT8 *ziptic_p;
 	(void)playernum;
 
 	if (!demobuf.p)
 		return;
-	ziptic_p = demobuf.p++; // the ziptic, written at the end of this function
+	ziptic_p = demobuf.p; // the ziptic, written at the end of this function
+	demobuf.p += 2;
 
 	if (cmd->forwardmove != oldcmd[playernum].forwardmove)
 	{
@@ -584,6 +588,13 @@ void G_WriteDemoTiccmd(ticcmd_t *cmd, INT32 playernum)
 		WRITEINT16(demobuf.p,cmd->turning);
 		oldcmd[playernum].turning = cmd->turning;
 		ziptic |= ZT_TURNING;
+	}
+
+	if (cmd->angle != oldcmd[playernum].angle)
+	{
+		WRITEINT16(demobuf.p,cmd->angle);
+		oldcmd[playernum].turning = cmd->angle;
+		ziptic |= ZT_ANGLE;
 	}
 
 	if (cmd->throwdir != oldcmd[playernum].throwdir)
@@ -621,7 +632,7 @@ void G_WriteDemoTiccmd(ticcmd_t *cmd, INT32 playernum)
 		ziptic |= ZT_FLAGS;
 	}
 
-	*ziptic_p = ziptic;
+	WRITEUINT16(ziptic_p, ziptic);
 
 	// attention here for the ticcmd size!
 	// latest demos with mouse aiming byte in ticcmd

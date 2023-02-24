@@ -1080,6 +1080,8 @@ INT32 localaiming[MAXSPLITSCREENPLAYERS];
 angle_t localangle[MAXSPLITSCREENPLAYERS];
 
 INT32 localsteering[MAXSPLITSCREENPLAYERS];
+INT32 localdrift[MAXSPLITSCREENPLAYERS];
+INT32 localdriftend[MAXSPLITSCREENPLAYERS];
 INT32 localdelta[MAXSPLITSCREENPLAYERS];
 INT32 localstoredeltas[MAXSPLITSCREENPLAYERS][TICCMD_LATENCYMASK + 1];
 UINT8 locallatency[MAXSPLITSCREENPLAYERS][TICRATE];
@@ -1113,25 +1115,21 @@ static void G_DoAnglePrediction(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer, p
 
 	localtic = cmd->latency;
 
-	if (player->pflags & PF_DRIFTEND)
+	while (realtics > 0)
 	{
-		// Otherwise, your angle slingshots off to the side violently...
-		G_ResetAnglePrediction(player);
-	}
-	else
-	{
-		while (realtics > 0)
-		{
-			localsteering[ssplayer - 1] = K_UpdateSteeringValue(localsteering[ssplayer - 1], cmd->turning);
-			angleChange = K_GetKartTurnValue(player, localsteering[ssplayer - 1]) << TICCMD_REDUCE;
+		pflags_t oldflags = player->pflags;
 
-			// Store the angle we applied to this tic, so we can revert it later.
-			// If we trust the camera to do all of the work, then it can get out of sync fast.
-			localstoredeltas[ssplayer - 1][cmd->latency] += angleChange;
-			localdelta[ssplayer - 1] += angleChange;
+		localsteering[ssplayer - 1] = K_UpdateSteeringValue(localsteering[ssplayer - 1], cmd->turning);
+		angleChange = K_GetKartTurnValue(player, localsteering[ssplayer - 1]) << TICCMD_REDUCE;
 
-			realtics--;
-		}
+		player->pflags = oldflags;
+
+		// Store the angle we applied to this tic, so we can revert it later.
+		// If we trust the camera to do all of the work, then it can get out of sync fast.
+		localstoredeltas[ssplayer - 1][cmd->latency] += angleChange;
+		localdelta[ssplayer - 1] += angleChange;
+
+		realtics--;
 	}
 
 	// We COULD set it to destAngle directly...
@@ -1141,6 +1139,7 @@ static void G_DoAnglePrediction(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer, p
 
 	diff = destAngle - localangle[ssplayer - 1];
 
+	/*
 	if (diff > ANGLE_180)
 	{
 		diff = InvAngle(InvAngle(diff) / 2);
@@ -1151,9 +1150,10 @@ static void G_DoAnglePrediction(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer, p
 	}
 
 	localangle[ssplayer - 1] += diff;
+	*/
 
 	// In case of angle debugging, break glass
-	// localangle[ssplayer - 1] = destAngle;
+	localangle[ssplayer - 1] = destAngle;
 }
 
 void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
@@ -1292,6 +1292,8 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 			cmd->throwdir -= (joystickvector.yaxis * KART_FULLTURN) / JOYAXISRANGE;
 		}
 	}
+	
+	cmd->angle = localangle[forplayer] >> TICCMD_REDUCE;
 
 	// drift
 	if (G_PlayerInputDown(forplayer, gc_drift, 0))
@@ -1422,6 +1424,7 @@ ticcmd_t *G_MoveTiccmd(ticcmd_t* dest, const ticcmd_t* src, const size_t n)
 	{
 		dest[i].forwardmove = src[i].forwardmove;
 		dest[i].turning = (INT16)SHORT(src[i].turning);
+		dest[i].angle = (INT16)SHORT(src[i].angle);
 		dest[i].throwdir = (INT16)SHORT(src[i].throwdir);
 		dest[i].aiming = (INT16)SHORT(src[i].aiming);
 		dest[i].buttons = (UINT16)SHORT(src[i].buttons);

@@ -2136,6 +2136,42 @@ static void P_UpdatePlayerAngle(player_t *player)
 	player->steering = K_UpdateSteeringValue(player->steering, player->cmd.turning);
 	angleChange = K_GetKartTurnValue(player, player->steering) << TICCMD_REDUCE;
 
+	INT16 steeringRight =  K_UpdateSteeringValue(player->steering, KART_FULLTURN);
+	angle_t maxTurnRight = K_GetKartTurnValue(player, steeringRight) << TICCMD_REDUCE;
+	INT16 steeringLeft =  K_UpdateSteeringValue(player->steering, -1 * KART_FULLTURN);
+	angle_t maxTurnLeft = K_GetKartTurnValue(player, steeringLeft) << TICCMD_REDUCE;
+
+	angle_t targetAngle = (player->cmd.angle) << TICCMD_REDUCE;
+
+	angle_t targetDelta = targetAngle - (player->mo->angle);
+
+	//CONS_Printf("%u, steering by %u but we want %u, MTL %d %u, MTR %d %u\n", targetAngle, angleChange, targetDelta, steeringLeft, maxTurnLeft, steeringRight, maxTurnRight);
+
+	if (targetDelta == angleChange)
+	{
+		//CONS_Printf("Facing correct, thank god\n");
+	}
+	else if (targetDelta >= ANGLE_180 && maxTurnLeft >= targetDelta) 
+	{
+		//CONS_Printf("undershoot left\n");
+		angleChange = targetDelta;
+	}
+	else if (targetDelta <= ANGLE_180 && maxTurnRight <= targetDelta)
+	{
+		//CONS_Printf("undershoot right\n");
+		angleChange = targetDelta;
+	}
+	else if (targetDelta >= ANGLE_180 && maxTurnLeft < targetDelta)
+	{
+		//CONS_Printf("overshoot left\n");
+		angleChange = maxTurnLeft;
+	}
+	else if (targetDelta <= ANGLE_180 && maxTurnRight < targetDelta)
+	{
+		//CONS_Printf("overshoot right\n");
+		angleChange = maxTurnRight;
+	}
+
 	if (p == UINT8_MAX)
 	{
 		// When F12ing players, set local angle directly.
@@ -2144,6 +2180,8 @@ static void P_UpdatePlayerAngle(player_t *player)
 	}
 	else
 	{
+
+		/*
 		// During standard play, our latency can vary by up to 1 tic in either direction, even on a stable connection.
 		// This probably comes from differences in ticcmd dispatch vs consumption rate. Probably.
 		// Uncorrected, this 2-tic "wobble" causes camera corrections to sometimes be skipped or batched.
@@ -2157,10 +2195,16 @@ static void P_UpdatePlayerAngle(player_t *player)
 
 		UINT8 lateTic = ((leveltime - maxlatency) & TICCMD_LATENCYMASK);
 		UINT8 clearTic = ((localtic + 1) & TICCMD_LATENCYMASK);
+		*/
 
+		/*
 		player->angleturn += angleChange;
 		player->mo->angle = player->angleturn;
+		*/
 
+		player->mo->angle += angleChange;
+
+		/*
 		// Undo the ticcmd's old emulated angle,
 		// now that we added the actual game logic angle.
 
@@ -2171,6 +2215,7 @@ static void P_UpdatePlayerAngle(player_t *player)
 
 			lateTic = (lateTic - 1) & TICCMD_LATENCYMASK;
 		}
+		*/
 	}
 
 	if (!cv_allowmlook.value || player->spectator == false)
