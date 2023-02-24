@@ -199,7 +199,7 @@ struct challengegridextradata_t
 	UINT8 flags;
 };
 
-challengegridextradata_t *M_ChallengeGridExtraData(void);
+void M_UpdateChallengeGridExtraData(challengegridextradata_t *extradata);
 
 #define CHE_NONE          0
 #define CHE_HINT          1

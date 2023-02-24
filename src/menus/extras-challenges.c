@@ -174,7 +174,12 @@ menu_t *M_InterruptMenuWithChallenges(menu_t *desiredmenu)
 
 		M_PopulateChallengeGrid();
 		if (gamedata->challengegrid)
-			challengesmenu.extradata = M_ChallengeGridExtraData();
+		{
+			challengesmenu.extradata = Z_Calloc(
+				(gamedata->challengegridwidth * CHALLENGEGRIDHEIGHT * sizeof(challengegridextradata_t)),
+				PU_STATIC, NULL);
+			M_UpdateChallengeGridExtraData(challengesmenu.extradata);
+		}
 
 		memset(setup_explosions, 0, sizeof(setup_explosions));
 		memset(&challengesmenu.unlockcount, 0, sizeof(challengesmenu.unlockcount));
@@ -318,11 +323,15 @@ void M_ChallengesTick(void)
 				challengesmenu.unlockcount[CC_TALLY]++;
 				challengesmenu.unlockcount[CC_ANIM]++;
 
-				Z_Free(challengesmenu.extradata);
-				if ((challengesmenu.extradata = M_ChallengeGridExtraData()))
+				if (challengesmenu.extradata)
 				{
-					unlockable_t *ref = &unlockables[challengesmenu.currentunlock];
-					UINT16 bombcolor = SKINCOLOR_NONE;
+					unlockable_t *ref;
+					UINT16 bombcolor;
+
+					M_UpdateChallengeGridExtraData(challengesmenu.extradata);
+
+					ref = &unlockables[challengesmenu.currentunlock];
+					bombcolor = SKINCOLOR_NONE;
 
 					if (ref->color != SKINCOLOR_NONE && ref->color < numskincolors)
 					{
@@ -413,8 +422,7 @@ boolean M_ChallengesInputs(INT32 ch)
 			gamedata->challengegrid = NULL;
 			gamedata->challengegridwidth = 0;
 			M_PopulateChallengeGrid();
-			Z_Free(challengesmenu.extradata);
-			challengesmenu.extradata = M_ChallengeGridExtraData();
+			M_UpdateChallengeGridExtraData(challengesmenu.extradata);
 
 			M_ChallengesAutoFocus(challengesmenu.currentunlock, true);
 

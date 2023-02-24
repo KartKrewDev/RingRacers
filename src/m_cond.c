@@ -260,24 +260,19 @@ quickcheckagain:
 	}
 }
 
-challengegridextradata_t *M_ChallengeGridExtraData(void)
+void M_UpdateChallengeGridExtraData(challengegridextradata_t *extradata)
 {
 	UINT8 i, j, num, id, tempid, work;
-	challengegridextradata_t *extradata;
 	boolean idchange;
 
-	if (!gamedata->challengegrid)
+	if (gamedata->challengegrid == NULL)
 	{
-		return NULL;
+		return;
 	}
 
-	extradata = Z_Malloc(
-		(gamedata->challengegridwidth * CHALLENGEGRIDHEIGHT * sizeof(challengegridextradata_t)),
-		PU_STATIC, NULL);
-
-	if (!extradata)
+	if (extradata == NULL)
 	{
-		I_Error("M_ChallengeGridExtraData: was not able to allocate extradata");
+		return;
 	}
 
 	//CONS_Printf(" --- \n");
@@ -430,8 +425,6 @@ challengegridextradata_t *M_ChallengeGridExtraData(void)
 			}
 		}
 	}
-
-	return extradata;
 }
 
 void M_AddRawCondition(UINT8 set, UINT8 id, conditiontype_t c, INT32 r, INT16 x1, INT16 x2)
