@@ -486,10 +486,10 @@ consvar_t cv_overtime = CVAR_INIT ("overtime", "Yes", CV_NETVAR, CV_YesNo, NULL)
 
 consvar_t cv_rollingdemos = CVAR_INIT ("rollingdemos", "On", CV_SAVE, CV_OnOff, NULL);
 
-static CV_PossibleValue_t pointlimit_cons_t[] = {{1, "MIN"}, {MAXSCORE, "MAX"}, {0, "None"}, {0, NULL}};
-consvar_t cv_pointlimit = CVAR_INIT ("pointlimit", "None", CV_NETVAR|CV_CALL|CV_NOINIT, pointlimit_cons_t, PointLimit_OnChange);
-static CV_PossibleValue_t timelimit_cons_t[] = {{1, "MIN"}, {30, "MAX"}, {0, "None"}, {0, NULL}};
-consvar_t cv_timelimit = CVAR_INIT ("timelimit", "None", CV_NETVAR|CV_CALL|CV_NOINIT, timelimit_cons_t, TimeLimit_OnChange);
+static CV_PossibleValue_t pointlimit_cons_t[] = {{1, "MIN"}, {MAXSCORE, "MAX"}, {0, "None"}, {-1, "Default"}, {0, NULL}};
+consvar_t cv_pointlimit = CVAR_INIT ("pointlimit", "Default", CV_NETVAR|CV_CALL|CV_NOINIT, pointlimit_cons_t, PointLimit_OnChange);
+static CV_PossibleValue_t timelimit_cons_t[] = {{1, "MIN"}, {30, "MAX"}, {0, "None"}, {-1, "Default"}, {0, NULL}};
+consvar_t cv_timelimit = CVAR_INIT ("timelimit", "Default", CV_NETVAR|CV_CALL|CV_NOINIT, timelimit_cons_t, TimeLimit_OnChange);
 
 static CV_PossibleValue_t numlaps_cons_t[] = {{1, "MIN"}, {MAX_LAPS, "MAX"}, {0, "Map default"}, {0, NULL}};
 consvar_t cv_numlaps = CVAR_INIT ("numlaps", "Map default", CV_SAVE|CV_NETVAR|CV_CALL|CV_CHEAT, numlaps_cons_t, NumLaps_OnChange);
@@ -4942,28 +4942,41 @@ static void PointLimit_OnChange(void)
 		return;
 	}
 
+	if (cv_pointlimit.value == -1)
+	{
+		CONS_Printf(M_GetText("Point limit will be left up to the gametype.\n"));
+	}
+
 	if (gamestate == GS_LEVEL && leveltime < starttime)
 	{
-		if (cv_pointlimit.value)
+		switch (cv_pointlimit.value)
 		{
-			CONS_Printf(M_GetText("Point limit has been set to %d.\n"), cv_pointlimit.value);
-		}
-		else
-		{
-			CONS_Printf(M_GetText("Point limit has been disabled.\n"));
+			case -1:
+				break;
+
+			case 0:
+				CONS_Printf(M_GetText("Point limit has been disabled.\n"));
+				break;
+
+			default:
+				CONS_Printf(M_GetText("Point limit has been set to %d.\n"), cv_pointlimit.value);
 		}
 
-		g_pointlimit = cv_pointlimit.value;
+		g_pointlimit = K_PointLimitForGametype();
 	}
 	else
 	{
-		if (cv_pointlimit.value)
+		switch (cv_pointlimit.value)
 		{
-			CONS_Printf(M_GetText("Point limit will be %d next round.\n"), cv_pointlimit.value);
-		}
-		else
-		{
-			CONS_Printf(M_GetText("Point limit will be disabled next round.\n"));
+			case -1:
+				break;
+
+			case 0:
+				CONS_Printf(M_GetText("Point limit will be disabled next round.\n"));
+				break;
+
+			default:
+				CONS_Printf(M_GetText("Point limit will be %d next round.\n"), cv_pointlimit.value);
 		}
 	}
 }
@@ -5007,18 +5020,27 @@ static void TimeLimit_OnChange(void)
 		return;
 	}
 
+	if (cv_timelimit.value == -1)
+	{
+		CONS_Printf(M_GetText("Time limit will be left up to the gametype.\n"));
+	}
+
 	if (gamestate == GS_LEVEL && leveltime < starttime)
 	{
-		if (cv_timelimit.value)
+		switch (cv_timelimit.value)
 		{
-			CONS_Printf(M_GetText("Time limit has been set to %d minute%s.\n"), cv_timelimit.value,cv_timelimit.value == 1 ? "" : "s");
-		}
-		else
-		{
-			CONS_Printf(M_GetText("Time limit has been disabled.\n"));
+			case -1:
+				break;
+
+			case 0:
+				CONS_Printf(M_GetText("Time limit has been disabled.\n"));
+				break;
+
+			default:
+				CONS_Printf(M_GetText("Time limit has been set to %d minute%s.\n"), cv_timelimit.value,cv_timelimit.value == 1 ? "" : "s");
 		}
 
-		timelimitintics = cv_timelimit.value * (60*TICRATE);
+		timelimitintics = K_TimeLimitForGametype();
 		extratimeintics = secretextratime = 0;
 
 #ifdef HAVE_DISCORDRPC
@@ -5027,13 +5049,17 @@ static void TimeLimit_OnChange(void)
 	}
 	else
 	{
-		if (cv_timelimit.value)
+		switch (cv_timelimit.value)
 		{
-			CONS_Printf(M_GetText("Time limit will be %d minute%s next round.\n"), cv_timelimit.value,cv_timelimit.value == 1 ? "" : "s");
-		}
-		else
-		{
-			CONS_Printf(M_GetText("Time limit will be disabled next round.\n"));
+			case -1:
+				break;
+
+			case 0:
+				CONS_Printf(M_GetText("Time limit will be disabled next round.\n"));
+				break;
+
+			default:
+				CONS_Printf(M_GetText("Time limit will be %d minute%s next round.\n"), cv_timelimit.value,cv_timelimit.value == 1 ? "" : "s");
 		}
 	}
 }
@@ -5058,20 +5084,6 @@ void D_GameTypeChanged(INT32 lastgametype)
 
 		if (oldgt && newgt)
 			CONS_Printf(M_GetText("Gametype was changed from %s to %s\n"), oldgt, newgt);
-	}
-
-	// Only do the following as the server, not as remote admin.
-	// There will always be a server, and this only needs to be done once.
-	if (server && multiplayer)
-	{
-		if (!cv_timelimit.changed) // user hasn't changed limits
-		{
-			CV_SetValue(&cv_timelimit, gametypes[gametype]->timelimit);
-		}
-		if (!cv_pointlimit.changed)
-		{
-			CV_SetValue(&cv_pointlimit, gametypes[gametype]->pointlimit);
-		}
 	}
 
 	// don't retain teams in other modes or between changes from ctf to team match.
