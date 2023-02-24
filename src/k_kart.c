@@ -4172,12 +4172,9 @@ void K_HandleBumperChanges(player_t *player, UINT8 prevBumpers)
 		if (battlecapsules || bossinfo.valid)
 		{
 			player->pflags |= (PF_NOCONTEST|PF_ELIMINATED);
-			P_DamageMobj(player->mo, NULL, NULL, 1, DMG_TIMEOVER);
 		}
-		else
-		{
-			P_KillMobj(player->mo, NULL, NULL, DMG_NORMAL);
-		}
+
+		P_KillMobj(player->mo, NULL, NULL, DMG_NORMAL);
 	}
 
 	K_CalculateBattleWanted();
