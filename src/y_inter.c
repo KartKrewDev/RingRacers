@@ -650,10 +650,10 @@ skiptallydrawer:
 	K_DrawMapThumbnail(0, 0, BASEVIDWIDTH<<FRACBITS, 0, prevmap, color);
 	
 	// Draw the marquee (scroll pending)
-	V_DrawMappedPatch(0, 154, V_MODULATE, rrmq, 0);
+	V_DrawMappedPatch(0, 154, V_SUBTRACT, rrmq, 0);
 	
 	// Draw the checker pattern (scroll pending)
-	V_DrawMappedPatch(0, 0, V_MODULATE, rbgchk, 0);
+	V_DrawMappedPatch(0, 0, V_SUBTRACT, rbgchk, 0);
 	
 	// Draw the header bar
 	V_DrawMappedPatch(20, 24, 0, rtpbr, 0);
