@@ -661,6 +661,8 @@ struct player_t
 
 	UINT8 eggmanTransferDelay;
 
+	UINT8 tripwireReboundDelay; // When failing Tripwire, brieftly lock out speed-based tripwire pass (anti-cheese)
+
 	mobj_t *stumbleIndicator;
 
 #ifdef HWRENDER

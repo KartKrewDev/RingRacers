@@ -2683,7 +2683,7 @@ tripwirepass_t K_TripwirePassConditions(player_t *player)
 
 	if (
 			player->flamedash ||
-			player->speed > 2 * K_GetKartSpeed(player, false, false)
+			(player->speed > 2 * K_GetKartSpeed(player, false, false) && player->tripwireReboundDelay == 0)
 	)
 		return TRIPWIRE_BOOST;
 
@@ -4078,10 +4078,17 @@ void K_TumbleInterrupt(player_t *player)
 
 void K_ApplyTripWire(player_t *player, tripwirestate_t state)
 {
+	// We are either softlocked or wildly misbehaving. Stop that!
+	if (state == TRIPSTATE_BLOCKED && player->tripwireReboundDelay && (player->speed > 5 * K_GetKartSpeed(player, false, false)))
+		K_TumblePlayer(player, NULL, NULL);
+
 	if (state == TRIPSTATE_PASSED)
 		S_StartSound(player->mo, sfx_ssa015);
 	else if (state == TRIPSTATE_BLOCKED)
+	{
 		S_StartSound(player->mo, sfx_kc40);
+		player->tripwireReboundDelay = 60;
+	}
 
 	player->tripwireState = state;
 	K_AddHitLag(player->mo, 10, false);
@@ -7712,6 +7719,9 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 
 	if (player->eggmanTransferDelay)
 		player->eggmanTransferDelay--;
+
+	if (player->tripwireReboundDelay)
+		player->tripwireReboundDelay--;
 
 	if (player->ringdelay)
 		player->ringdelay--;
