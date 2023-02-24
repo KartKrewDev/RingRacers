@@ -3026,7 +3026,9 @@ fixed_t K_GetSpindashChargeSpeed(player_t *player)
 	// (can be higher than this value when overcharged)
 	const fixed_t val = (10*FRACUNIT/277) + (((player->kartspeed + player->kartweight) + 2) * FRACUNIT) / 45;
 
-	return (gametyperules & GTR_CLOSERPLAYERS) ? (4 * val) : val;
+	// Old behavior before desperation spindash
+	// return (gametyperules & GTR_CLOSERPLAYERS) ? (4 * val) : val;
+	return val;
 }
 
 // sets boostpower, speedboost, accelboost, and handleboost to whatever we need it to be
@@ -9719,8 +9721,11 @@ static void K_KartSpindash(player_t *player)
 		{
 			fixed_t thrust = FixedMul(player->mo->scale, player->spindash*FRACUNIT/5);
 
+			// Old behavior, before emergency zero-ring spindash
+			/*
 			if (gametyperules & GTR_CLOSERPLAYERS)
 				thrust *= 2;
+			*/
 
 			// Give a bit of a boost depending on charge.
 			P_InstaThrust(player->mo, player->mo->angle, thrust);
@@ -9793,8 +9798,12 @@ static void K_KartSpindash(player_t *player)
 		if ((buttons & (BT_DRIFT|BT_BRAKE)) == (BT_DRIFT|BT_BRAKE))
 		{
 			UINT8 ringdropframes = 2 + (player->kartspeed + player->kartweight);
-			INT16 chargetime = MAXCHARGETIME - ++player->spindash;
 			boolean spawnOldEffect = true;
+
+			if (player->rings <= 0) // Use the damn spindash
+				player->spindash++; // I am no longer asking
+
+			INT16 chargetime = MAXCHARGETIME - ++player->spindash;
 
 			if (player->spindash >= SPINDASHTHRUSTTIME)
 			{
