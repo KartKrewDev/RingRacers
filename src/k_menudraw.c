@@ -1479,7 +1479,7 @@ static void M_DrawCharSelectPreview(UINT8 num)
 static void M_DrawCharSelectExplosions(boolean charsel, INT16 basex, INT16 basey)
 {
 	UINT8 i;
-	INT16 quadx = 0, quady = 0;
+	INT16 quadx = 2, quady = 2, mul = 22;
 
 	for (i = 0; i < CSEXPLOSIONS; i++)
 	{
@@ -1495,13 +1495,14 @@ static void M_DrawCharSelectExplosions(boolean charsel, INT16 basex, INT16 basey
 		{
 			quadx = 4 * (setup_explosions[i].x / 3);
 			quady = 4 * (setup_explosions[i].y / 3);
+			mul = 16;
 		}
 
 		colormap = R_GetTranslationColormap(TC_DEFAULT, setup_explosions[i].color, GTC_MENUCACHE);
 
 		V_DrawMappedPatch(
-			basex + (setup_explosions[i].x*16) + quadx - 6,
-			basey + (setup_explosions[i].y*16) + quady - 6,
+			basex + (setup_explosions[i].x*mul) + quadx - 6,
+			basey + (setup_explosions[i].y*mul) + quady - 6,
 			0, W_CachePatchName(va("CHCNFRM%d", frame), PU_CACHE),
 			colormap
 		);
