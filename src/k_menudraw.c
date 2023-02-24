@@ -4538,19 +4538,44 @@ static void M_DrawChallengeTile(INT16 i, INT16 j, INT32 x, INT32 y, boolean hili
 	unlockedyet = !((gamedata->unlocked[num] == false)
 		|| (challengesmenu.pending && num == challengesmenu.currentunlock && challengesmenu.unlockanim <= UNLOCKTIME));
 
+	{
+		UINT32 flags = 0;
+
+		if (challengesmenu.extradata[id].flags != CHE_HINT)
+		{
+			colormap = R_GetTranslationColormap(TC_BLINK, SKINCOLOR_BLACK, GTC_CACHE);
+			flags = V_SUBTRACT|V_90TRANS;
+		}
+
+		pat = W_CachePatchName(
+			va("UN_HNT%c%c",
+				(hili && !colormap) ? '1' : '2',
+				ref->majorunlock ? 'B' : 'A'
+			),
+			PU_CACHE);
+
+		V_DrawFixedPatch(
+			x*FRACUNIT, y*FRACUNIT,
+			FRACUNIT,
+			flags, pat,
+			colormap
+		);
+
+		pat = missingpat;
+		colormap = NULL;
+	}
+
+	// If we aren't unlocked yet, return early.
+	if (!unlockedyet)
+	{
+		goto drawborder;
+	}
+
 	pat = W_CachePatchName(
 		(ref->majorunlock ? "UN_BORDB" : "UN_BORDA"),
 		PU_CACHE);
 
-	if (!unlockedyet)
-	{
-		UINT16 col = (challengesmenu.extradata[id].flags == CHE_HINT) ? SKINCOLOR_BLUE : SKINCOLOR_BLACK;
-		bgmap = R_GetTranslationColormap(TC_DEFAULT, col, GTC_MENUCACHE);
-	}
-	else
-	{
-		bgmap = R_GetTranslationColormap(TC_DEFAULT, SKINCOLOR_SILVER, GTC_MENUCACHE);
-	}
+	bgmap = R_GetTranslationColormap(TC_DEFAULT, SKINCOLOR_SILVER, GTC_MENUCACHE);
 
 	V_DrawFixedPatch(
 		x*FRACUNIT, y*FRACUNIT,
@@ -4560,12 +4585,6 @@ static void M_DrawChallengeTile(INT16 i, INT16 j, INT32 x, INT32 y, boolean hili
 	);
 
 	pat = missingpat;
-
-	// If we aren't unlocked yet, return early.
-	if (!unlockedyet)
-	{
-		goto drawborder;
-	}
 
 	categoryside = !hili; // temporary
 
