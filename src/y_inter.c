@@ -604,8 +604,10 @@ skiptallydrawer:
 	patch_t *rrmrk4 = W_CachePatchName("R_RRMRK4", PU_PATCH);
 	patch_t *rrmln1 = W_CachePatchName("R_RRMLN1", PU_PATCH);
 	patch_t *rrmln2 = W_CachePatchName("R_RRMLN2", PU_PATCH);
+	patch_t *rrmln5 = W_CachePatchName("R_RRMLN5", PU_PATCH);
 	patch_t *rrmls1 = W_CachePatchName("R_RRMLS1", PU_PATCH);
 	patch_t *rrmls2 = W_CachePatchName("R_RRMLS2", PU_PATCH);
+	patch_t *rrmls3 = W_CachePatchName("R_RRMLS3", PU_PATCH);
 	patch_t *rtpbr = W_CachePatchName("R_RTPBR", PU_PATCH);
 	
 	UINT8 *color = R_GetTranslationColormap(TC_DEFAULT, SKINCOLOR_YELLOW, GTC_CACHE); // I don't even know how necessary this is anymore but I don't want the game yelling at me
@@ -670,10 +672,28 @@ skiptallydrawer:
 	
 	// Draw the lines
 	// Draw the shadows first, so they don't draw over the lines
-	//V_DrawFixedPatch(26<<FRACBITS, 182<<FRACBITS, FRACUNIT, 0, rrmls1, 0);
+	V_DrawFixedPatch(23<<FRACBITS, 178<<FRACBITS, FRACUNIT, 0, rrmls1, 0);
+	V_DrawFixedPatch(47<<FRACBITS, 178<<FRACBITS, FRACUNIT, 0, rrmls2, 0);
+	V_DrawFixedPatch(71<<FRACBITS, 178<<FRACBITS, FRACUNIT, 0, rrmls1, 0);
+	V_DrawFixedPatch(95<<FRACBITS, 178<<FRACBITS, FRACUNIT, 0, rrmls2, 0);
+	V_DrawFixedPatch(119<<FRACBITS, 178<<FRACBITS, FRACUNIT, 0, rrmls1, 0);
+	V_DrawFixedPatch(143<<FRACBITS, 178<<FRACBITS, FRACUNIT, 0, rrmls2, 0);
 	
 	// now draw the actual lines 
-	//V_DrawFixedPatch(26<<FRACBITS, 180<<FRACBITS, FRACUNIT, 0, rrmln1, 0);
+	V_DrawFixedPatch(23<<FRACBITS, 179<<FRACBITS, FRACUNIT, 0, rrmln1, 0);
+	V_DrawFixedPatch(47<<FRACBITS, 179<<FRACBITS, FRACUNIT, 0, rrmln2, 0);
+	V_DrawFixedPatch(71<<FRACBITS, 179<<FRACBITS, FRACUNIT, 0, rrmln1, 0);
+	V_DrawFixedPatch(95<<FRACBITS, 179<<FRACBITS, FRACUNIT, 0, rrmln2, 0);
+	V_DrawFixedPatch(119<<FRACBITS, 179<<FRACBITS, FRACUNIT, 0, rrmln1, 0);
+	V_DrawFixedPatch(143<<FRACBITS, 179<<FRACBITS, FRACUNIT, 0, rrmln2, 0);
+	
+	// haha funny 54-part progress bar
+	// i am a dumbass and there is probably a better way to do this
+	for (UINT16 x = 172; x < 284; x += 2)
+	{
+		V_DrawFixedPatch(x<<FRACBITS, 177<<FRACBITS, FRACUNIT, 0, rrmls3, 0);
+		V_DrawFixedPatch(x<<FRACBITS, 179<<FRACBITS, FRACUNIT, 0, rrmln5, 0);
+	}
 	
 	// Draw the progress markers
 	V_DrawFixedPatch(16<<FRACBITS, 179<<FRACBITS, FRACUNIT, 0, rrmrk1, 0);
