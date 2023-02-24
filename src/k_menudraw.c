@@ -4538,6 +4538,8 @@ static void M_DrawChallengeTile(INT16 i, INT16 j, INT32 x, INT32 y, boolean hili
 	unlockedyet = !((gamedata->unlocked[num] == false)
 		|| (challengesmenu.pending && num == challengesmenu.currentunlock && challengesmenu.unlockanim <= UNLOCKTIME));
 
+	// If we aren't unlocked yet, return early.
+	if (!unlockedyet)
 	{
 		UINT32 flags = 0;
 
@@ -4563,11 +4565,7 @@ static void M_DrawChallengeTile(INT16 i, INT16 j, INT32 x, INT32 y, boolean hili
 
 		pat = missingpat;
 		colormap = NULL;
-	}
 
-	// If we aren't unlocked yet, return early.
-	if (!unlockedyet)
-	{
 		goto drawborder;
 	}
 
