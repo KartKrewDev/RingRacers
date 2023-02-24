@@ -53,9 +53,15 @@
 
 boolean K_PodiumSequence(void)
 {
-	// FIXME: Cache so we don't have to iterate all map headers every time
 	INT32 podiumMapNum = nummapheaders;
 
+	if (grandprixinfo.gp == false)
+	{
+		return false;
+	}
+
+	// FIXME: This function is used a lot during gameplay. 
+	// Cache so we don't have to iterate all map headers every time.
 	if (podiummap && ((podiumMapNum = G_MapNumber(podiummap)) < nummapheaders))
 	{
 		return (gamemap == podiumMapNum+1);
@@ -3422,7 +3428,7 @@ fixed_t K_GetNewSpeed(player_t *player)
 	// Don't calculate the acceleration as ever being above top speed
 	if (oldspeed > p_speed)
 		oldspeed = p_speed;
-	newspeed = FixedDiv(FixedDiv(FixedMul(oldspeed, accelmax - p_accel) + FixedMul(p_speed, p_accel), accelmax), ORIG_FRICTION);
+	newspeed = FixedDiv(FixedDiv(FixedMul(oldspeed, accelmax - p_accel) + FixedMul(p_speed, p_accel), accelmax), K_PlayerBaseFriction(ORIG_FRICTION));
 
 	finalspeed = newspeed - oldspeed;
 
@@ -10008,16 +10014,33 @@ static void K_AirFailsafe(player_t *player)
 }
 
 //
+// K_PlayerBaseFriction
+//
+fixed_t K_PlayerBaseFriction(fixed_t original)
+{
+	fixed_t frict = original;
+
+	if (K_PodiumSequence() == true)
+	{
+		frict -= 4096;
+	}
+
+	return frict;
+}
+
+//
 // K_AdjustPlayerFriction
 //
 void K_AdjustPlayerFriction(player_t *player)
 {
-	fixed_t prevfriction = player->mo->friction;
+	const fixed_t prevfriction = K_PlayerBaseFriction(player->mo->friction);
 
 	if (P_IsObjectOnGround(player->mo) == false)
 	{
 		return;
 	}
+
+	player->mo->friction = prevfriction;
 
 	// Reduce friction after hitting a spring
 	if (player->tiregrease)

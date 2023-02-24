@@ -2559,6 +2559,10 @@ void readmaincfg(MYFILE *f, boolean mainfile)
 	INT32 value;
 	boolean doClearLevels = false;
 
+#ifdef DEVELOP
+	(void)mainfile;
+#endif
+
 	do
 	{
 		if (myfgets(s, MAXLINELEN, f))
@@ -2630,10 +2634,12 @@ void readmaincfg(MYFILE *f, boolean mainfile)
 				//clear_levels();
 				doClearLevels = true;
 			}
+#ifndef DEVELOP
 			else if (!mainfile && !gamedataadded)
 			{
 				deh_warning("You must define a custom gamedata to use \"%s\"", word);
 			}
+#endif
 			else if (fastcmp(word, "CLEARLEVELS"))
 			{
 				doClearLevels = (UINT8)(value == 0 || word2[0] == 'F' || word2[0] == 'N');
