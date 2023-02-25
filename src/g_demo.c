@@ -145,7 +145,7 @@ demoghost *ghosts = NULL;
 #define ZT_AIMING	64
 #define ZT_LATENCY	128
 #define ZT_FLAGS	256
-// OUT OF ZIPTICS...
+// Ziptics are UINT16 now, go nuts
 
 #define DEMOMARKER 0x80 // demobuf.end
 
