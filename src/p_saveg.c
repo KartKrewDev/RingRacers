@@ -4988,6 +4988,8 @@ static void P_NetArchiveMisc(savebuffer_t *save, boolean resending)
 	WRITEUINT32(save->p, extratimeintics);
 	WRITEUINT32(save->p, secretextratime);
 
+	WRITEUINT32(save->p, g_pointlimit);
+
 	// Is it paused?
 	if (paused)
 		WRITEUINT8(save->p, 0x2f);
@@ -5157,6 +5159,8 @@ static inline boolean P_NetUnArchiveMisc(savebuffer_t *save, boolean reloading)
 	timelimitintics = READUINT32(save->p);
 	extratimeintics = READUINT32(save->p);
 	secretextratime = READUINT32(save->p);
+
+	g_pointlimit = READUINT32(save->p);
 
 	// Is it paused?
 	if (READUINT8(save->p) == 0x2f)

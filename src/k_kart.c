@@ -100,6 +100,7 @@ void K_TimerReset(void)
 	numbulbs = 1;
 	inDuel = rainbowstartavailable = false;
 	timelimitintics = extratimeintics = secretextratime = 0;
+	g_pointlimit = 0;
 }
 
 void K_TimerInit(void)
@@ -204,6 +205,11 @@ void K_TimerInit(void)
 		{
 			timelimitintics = cv_timelimit.value * (60*TICRATE);
 		}
+	}
+
+	if (gametyperules & GTR_POINTLIMIT)
+	{
+		g_pointlimit = cv_pointlimit.value;
 	}
 
 	if (inDuel == true)

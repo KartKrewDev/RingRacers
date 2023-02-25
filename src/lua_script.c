@@ -205,7 +205,7 @@ int LUA_PushGlobals(lua_State *L, const char *word)
 		lua_pushinteger(L, timelimitintics);
 		return 1;
 	} else if (fastcmp(word,"pointlimit")) {
-		lua_pushinteger(L, cv_pointlimit.value);
+		lua_pushinteger(L, g_pointlimit);
 		return 1;
 	// begin map vars
 	} else if (fastcmp(word,"titlemap")) {

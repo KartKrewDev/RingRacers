@@ -4944,23 +4944,30 @@ static void PointLimit_OnChange(void)
 		return;
 	}
 
-	// Don't allow pointlimit in non-pointlimited gametypes!
-	if (server && Playing() && !(gametyperules & GTR_POINTLIMIT))
+	if (gamestate == GS_LEVEL && leveltime < starttime)
 	{
 		if (cv_pointlimit.value)
-			CV_StealthSetValue(&cv_pointlimit, 0);
-		return;
-	}
+		{
+			CONS_Printf(M_GetText("Point limit has been set to %d.\n"), cv_pointlimit.value);
+		}
+		else
+		{
+			CONS_Printf(M_GetText("Point limit has been disabled.\n"));
+		}
 
-	if (cv_pointlimit.value)
-	{
-		CONS_Printf(M_GetText("Levels will end after %s scores %d point%s.\n"),
-			G_GametypeHasTeams() ? M_GetText("a team") : M_GetText("someone"),
-			cv_pointlimit.value,
-			cv_pointlimit.value > 1 ? "s" : "");
+		g_pointlimit = cv_pointlimit.value;
 	}
 	else
-		CONS_Printf(M_GetText("Point limit disabled\n"));
+	{
+		if (cv_pointlimit.value)
+		{
+			CONS_Printf(M_GetText("Point limit will be %d next round.\n"), cv_pointlimit.value);
+		}
+		else
+		{
+			CONS_Printf(M_GetText("Point limit will be disabled next round.\n"));
+		}
+	}
 }
 
 static void NetTimeout_OnChange(void)
@@ -4984,6 +4991,8 @@ Lagless_OnChange (void)
 UINT32 timelimitintics = 0;
 UINT32 extratimeintics = 0;
 UINT32 secretextratime = 0;
+
+UINT32 g_pointlimit = 0;
 
 /** Deals with a timelimit change by printing the change to the console.
   * If the gametype is single player, cooperative, or race, the timelimit is
@@ -6465,7 +6474,7 @@ static void Command_ShowScores_f(void)
 			// FIXME: %lu? what's wrong with %u? ~Callum (produces warnings...)
 			CONS_Printf(M_GetText("%s's score is %u\n"), player_names[i], players[i].score);
 	}
-	CONS_Printf(M_GetText("The pointlimit is %d\n"), cv_pointlimit.value);
+	CONS_Printf(M_GetText("The pointlimit is %d\n"), g_pointlimit);
 
 }
 
