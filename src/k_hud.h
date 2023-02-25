@@ -46,7 +46,6 @@ void K_DrawMapThumbnail(INT32 x, INT32 y, INT32 width, UINT32 flags, UINT16 map,
 void K_DrawLikeMapThumbnail(INT32 x, INT32 y, INT32 width, UINT32 flags, patch_t *patch, UINT8 *colormap);
 void K_drawTargetHUD(const vector3_t *origin, player_t *player);
 
-extern patch_t *kp_facehighlight[8];
 extern patch_t *kp_capsuletarget_arrow[2][2];
 extern patch_t *kp_capsuletarget_icon[2];
 extern patch_t *kp_capsuletarget_far[2];

@@ -61,6 +61,7 @@ extern consvar_t cv_pointlimit;
 extern consvar_t cv_timelimit;
 extern consvar_t cv_numlaps;
 extern UINT32 timelimitintics, extratimeintics, secretextratime;
+extern UINT32 g_pointlimit;
 extern consvar_t cv_allowexitlevel;
 
 extern consvar_t cv_autobalance;

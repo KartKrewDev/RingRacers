@@ -209,6 +209,7 @@ TYPEDEF (conditionset_t);
 TYPEDEF (emblem_t);
 TYPEDEF (unlockable_t);
 TYPEDEF (gamedata_t);
+TYPEDEF (challengegridextradata_t);
 
 // m_dllist.h
 TYPEDEF (mdllistitem_t);

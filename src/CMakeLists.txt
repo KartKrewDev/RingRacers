@@ -32,6 +32,7 @@ add_executable(SRB2SDL2 MACOSX_BUNDLE WIN32
 	m_aatree.c
 	m_anigif.c
 	m_argv.c
+	m_avrecorder.cpp
 	m_bbox.c
 	m_cheat.c
 	m_cond.c
@@ -229,6 +230,9 @@ target_link_libraries(SRB2SDL2 PRIVATE xmp-lite::xmp-lite)
 target_link_libraries(SRB2SDL2 PRIVATE glad::glad)
 target_link_libraries(SRB2SDL2 PRIVATE fmt)
 target_link_libraries(SRB2SDL2 PRIVATE imgui::imgui)
+target_link_libraries(SRB2SDL2 PRIVATE webm::libwebm webm::libvpx)
+target_link_libraries(SRB2SDL2 PRIVATE libyuv::libyuv)
+target_link_libraries(SRB2SDL2 PRIVATE Vorbis::vorbis Vorbis::vorbisenc)
 
 target_link_libraries(SRB2SDL2 PRIVATE acsvm)
 
@@ -546,6 +550,7 @@ if(SRB2_CONFIG_ENABLE_TESTS)
 	add_subdirectory(tests)
 endif()
 add_subdirectory(menus)
+add_subdirectory(media)
 
 # strip debug symbols into separate file when using gcc.
 # to be consistent with Makefile, don't generate for OS X.

@@ -2453,10 +2453,10 @@ static void HU_DrawRankings(void)
 
 		timedone = true;
 	}
-	else if ((gametyperules & GTR_POINTLIMIT) && cv_pointlimit.value > 0)
+	else if ((gametyperules & GTR_POINTLIMIT) && g_pointlimit > 0)
 	{
 		V_DrawCenteredString(64, 8, 0, "POINT LIMIT");
-		V_DrawCenteredString(64, 16, hilicol, va("%d", cv_pointlimit.value));
+		V_DrawCenteredString(64, 16, hilicol, va("%d", g_pointlimit));
 		pointsdone = true;
 	}
 	else if (gametyperules & GTR_CIRCUIT)
@@ -2494,10 +2494,10 @@ static void HU_DrawRankings(void)
 			V_DrawCenteredString(256, 16, hilicol, "OVERTIME");
 		}
 	}
-	else if (!pointsdone && (gametyperules & GTR_POINTLIMIT) && cv_pointlimit.value > 0)
+	else if (!pointsdone && (gametyperules & GTR_POINTLIMIT) && g_pointlimit > 0)
 	{
 		V_DrawCenteredString(256, 8, 0, "POINT LIMIT");
-		V_DrawCenteredString(256, 16, hilicol, va("%d", cv_pointlimit.value));
+		V_DrawCenteredString(256, 16, hilicol, va("%d", g_pointlimit));
 	}
 	else if (gametyperules & GTR_CIRCUIT)
 	{

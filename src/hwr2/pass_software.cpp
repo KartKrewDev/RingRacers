@@ -10,6 +10,7 @@
 #include "../discord.h"
 #endif
 #include "../doomstat.h"
+#include "../m_avrecorder.h"
 #include "../st_stuff.h"
 #include "../s_sound.h"
 #include "../v_video.h"
@@ -121,6 +122,8 @@ static void temp_legacy_finishupdate_draws()
 		}
 		if (cv_mindelay.value && consoleplayer == serverplayer && Playing())
 			SCR_DisplayLocalPing();
+
+		M_AVRecorder_DrawFrameRate();
 	}
 
 	if (marathonmode)
