@@ -18,7 +18,7 @@ menu_t MISC_ChallengesDef = {
 	&MainDef,
 	0,
 	MISC_ChallengesStatsDummyMenu,
-	BASEVIDWIDTH/2, 32,
+	BASEVIDWIDTH/2, 30,
 	0, 0,
 	"EXTRAS",
 	98, 0,
