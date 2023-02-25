@@ -1095,7 +1095,8 @@ static void G_DoAnglePrediction(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer, p
 		realtics--;
 	}
 
-	if (player->pflags & PF_DRIFTEND)
+	//if (player->pflags & PF_DRIFTEND)
+	if (false)
 	{
 		localangle[ssplayer - 1] = player->mo->angle;
 	}
