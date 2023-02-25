@@ -5330,14 +5330,22 @@ static void Command_Mapmd5_f(void)
 
 static void Command_ExitLevel_f(void)
 {
-	if (!(netgame || multiplayer) && !CV_CheatsEnabled())
-		CONS_Printf(M_GetText("This only works in a netgame.\n"));
-	else if (!(server || (IsPlayerAdmin(consoleplayer))))
+	if (!(server || (IsPlayerAdmin(consoleplayer))))
+	{
 		CONS_Printf(M_GetText("Only the server or a remote admin can use this.\n"));
+	}
+	else if (K_CanChangeRules(false) == false && CV_CheatsEnabled() == false)
+	{
+		CONS_Printf(M_GetText("This cannot be used without cheats enabled.\n"));
+	}
 	else if (( gamestate != GS_LEVEL && gamestate != GS_CREDITS ) || demo.playback)
+	{
 		CONS_Printf(M_GetText("You must be in a level to use this.\n"));
+	}
 	else
+	{
 		SendNetXCmd(XD_EXITLEVEL, NULL, 0);
+	}
 }
 
 static void Got_ExitLevelcmd(UINT8 **cp, INT32 playernum)
