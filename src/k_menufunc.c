@@ -201,6 +201,23 @@ boolean M_PrevOpt(void)
 	return true;
 }
 
+static boolean M_GamestateCanOpenMenu(void)
+{
+	switch (gamestate)
+	{
+		case GS_INTRO:
+		case GS_CUTSCENE:
+		case GS_GAMEEND:
+		case GS_CREDITS:
+		case GS_EVALUATION:
+		case GS_CEREMONY:
+			return false;
+
+		default:
+			return true;
+	}
+}
+
 //
 // M_Responder
 //
@@ -208,9 +225,9 @@ boolean M_Responder(event_t *ev)
 {
 	menuKey = -1;
 
-	if (dedicated || (demo.playback && demo.title)
-		|| gamestate == GS_INTRO || gamestate == GS_CUTSCENE || gamestate == GS_GAMEEND
-		|| gamestate == GS_CREDITS || gamestate == GS_EVALUATION)
+	if (dedicated
+		|| (demo.playback && demo.title)
+		|| M_GamestateCanOpenMenu() == false)
 	{
 		return false;
 	}
