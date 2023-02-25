@@ -32,6 +32,7 @@ add_executable(SRB2SDL2 MACOSX_BUNDLE WIN32
 	m_aatree.c
 	m_anigif.c
 	m_argv.c
+	m_avrecorder.cpp
 	m_bbox.c
 	m_cheat.c
 	m_cond.c
@@ -549,6 +550,7 @@ if(SRB2_CONFIG_ENABLE_TESTS)
 	add_subdirectory(tests)
 endif()
 add_subdirectory(menus)
+add_subdirectory(media)
 
 # strip debug symbols into separate file when using gcc.
 # to be consistent with Makefile, don't generate for OS X.
