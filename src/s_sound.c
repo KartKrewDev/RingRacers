@@ -2493,6 +2493,7 @@ static void Command_Tunes_f(void)
 		CONS_Printf(M_GetText("Play an arbitrary music lump. If a map number is used, 'MAP##M' is played.\n"));
 		CONS_Printf(M_GetText("If the format supports multiple songs, you can specify which one to play.\n\n"));
 		CONS_Printf(M_GetText("* With \"-show\", shows the currently playing tune and track.\n"));
+		CONS_Printf(M_GetText("* With \"-showdefault\", shows the current music for the level.\n"));
 		CONS_Printf(M_GetText("* With \"-default\", returns to the default music for the map.\n"));
 		CONS_Printf(M_GetText("* With \"-none\", any music playing will be stopped.\n"));
 		return;
@@ -2503,9 +2504,22 @@ static void Command_Tunes_f(void)
 
 	if (!strcasecmp(tunearg, "-show"))
 	{
-		const musicdef_t *def = S_FindMusicDef(mapmusname);
+		const musicdef_t *def = S_FindMusicDef(music_name);
 
 		CONS_Printf(M_GetText("The current tune is: %s [track %d]\n"),
+			music_name, (music_flags & MUSIC_TRACKMASK));
+
+		if (def != NULL)
+		{
+			PrintSongAuthors(def);
+		}
+		return;
+	}
+	if (!strcasecmp(tunearg, "-showdefault"))
+	{
+		const musicdef_t *def = S_FindMusicDef(mapmusname);
+
+		CONS_Printf(M_GetText("The default tune is: %s [track %d]\n"),
 			mapmusname, (mapmusflags & MUSIC_TRACKMASK));
 
 		if (def != NULL)
