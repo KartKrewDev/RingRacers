@@ -1,5 +1,6 @@
 // SONIC ROBO BLAST 2
 //-----------------------------------------------------------------------------
+// Copyright (C) 2022-2023 by Vivian "toaster" Grannell.
 // Copyright (C) 2012-2016 by Matthew "Kaito Sinclaire" Walsh.
 // Copyright (C) 2012-2020 by Sonic Team Junior.
 //
@@ -138,7 +139,7 @@ typedef enum
 #define MAXEMBLEMS       512
 #define MAXUNLOCKABLES   MAXCONDITIONSETS
 
-#define CHALLENGEGRIDHEIGHT 5
+#define CHALLENGEGRIDHEIGHT 4
 #ifdef DEVELOP
 #define CHALLENGEGRIDLOOPWIDTH 3
 #else
@@ -192,12 +193,21 @@ void M_NewGameDataStruct(void);
 
 // Challenges menu stuff
 void M_PopulateChallengeGrid(void);
-UINT8 *M_ChallengeGridExtraData(void);
+
+struct challengegridextradata_t
+{
+	UINT8 flags;
+	UINT8 flip;
+};
+
+void M_UpdateChallengeGridExtraData(challengegridextradata_t *extradata);
+
 #define CHE_NONE          0
 #define CHE_HINT          1
 #define CHE_CONNECTEDLEFT (1<<1)
 #define CHE_CONNECTEDUP   (1<<2)
 #define CHE_DONTDRAW (CHE_CONNECTEDLEFT|CHE_CONNECTEDUP)
+
 char *M_BuildConditionSetString(UINT8 unlockid);
 #define DESCRIPTIONWIDTH 170
 

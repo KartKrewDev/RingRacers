@@ -8037,7 +8037,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		S_NULL,         // missilestate
 		S_SPRK1,        // deathstate
 		S_NULL,         // xdeathstate
-		sfx_ncitem,     // deathsound
+		sfx_None,       // deathsound
 		1,              // speed
 		16*FRACUNIT,     // radius
 		30*FRACUNIT,    // height

@@ -4311,7 +4311,7 @@ void G_LoadGameSettings(void)
 }
 
 #define GD_VERSIONCHECK 0xBA5ED123 // Change every major version, as usual
-#define GD_VERSIONMINOR 0 // Change every format update
+#define GD_VERSIONMINOR 1 // Change every format update
 
 // G_LoadGameData
 // Loads the main data file, which stores information such as emblems found, etc.
@@ -4321,6 +4321,7 @@ void G_LoadGameData(void)
 	UINT32 versionID;
 	UINT8 versionMinor;
 	UINT8 rtemp;
+	boolean gridunusable = false;
 	savebuffer_t save = {0};
 
 	//For records
@@ -4375,6 +4376,10 @@ void G_LoadGameData(void)
 		P_SaveBufferFree(&save);
 		I_Error("Game data is from the future! (expected %d, got %d)", GD_VERSIONMINOR, versionMinor);
 	}
+	if (versionMinor == 0)
+	{
+		gridunusable = true;
+	}
 
 	gamedata->totalplaytime = READUINT32(save.p);
 	gamedata->matchesplayed = READUINT32(save.p);
@@ -4421,21 +4426,34 @@ void G_LoadGameData(void)
 		i += j;
 	}
 
-	gamedata->challengegridwidth = READUINT16(save.p);
-	Z_Free(gamedata->challengegrid);
-	if (gamedata->challengegridwidth)
+	if (gridunusable)
 	{
-		gamedata->challengegrid = Z_Malloc(
-			(gamedata->challengegridwidth * CHALLENGEGRIDHEIGHT * sizeof(UINT8)),
-			PU_STATIC, NULL);
-		for (i = 0; i < (gamedata->challengegridwidth * CHALLENGEGRIDHEIGHT); i++)
-		{
-			gamedata->challengegrid[i] = READUINT8(save.p);
-		}
+		UINT16 burn = READUINT16(save.p); // Previous challengegridwidth
+		UINT8 height = (versionMinor > 0) ? CHALLENGEGRIDHEIGHT : 5;
+		save.p += (burn * height * sizeof(UINT8)); // Step over previous grid data
+
+		gamedata->challengegridwidth = 0;
+		Z_Free(gamedata->challengegrid);
+		gamedata->challengegrid = NULL;
 	}
 	else
 	{
-		gamedata->challengegrid = NULL;
+		gamedata->challengegridwidth = READUINT16(save.p);
+		Z_Free(gamedata->challengegrid);
+		if (gamedata->challengegridwidth)
+		{
+			gamedata->challengegrid = Z_Malloc(
+				(gamedata->challengegridwidth * CHALLENGEGRIDHEIGHT * sizeof(UINT8)),
+				PU_STATIC, NULL);
+			for (i = 0; i < (gamedata->challengegridwidth * CHALLENGEGRIDHEIGHT); i++)
+			{
+				gamedata->challengegrid[i] = READUINT8(save.p);
+			}
+		}
+		else
+		{
+			gamedata->challengegrid = NULL;
+		}
 	}
 
 	gamedata->timesBeaten = READUINT32(save.p);
