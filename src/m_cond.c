@@ -912,7 +912,7 @@ boolean M_UpdateUnlockablesAndExtraEmblems(boolean loud)
 	{
 		if (loud)
 		{
-			S_StartSound(NULL, sfx_ncitem);
+			S_StartSound(NULL, sfx_achiev);
 		}
 		return true;
 	}

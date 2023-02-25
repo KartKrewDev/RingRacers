@@ -552,7 +552,8 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 				if (P_IsLocalPlayer(player) && !gamedata->collected[special->health-1])
 				{
 					gamedata->collected[special->health-1] = gotcollected = true;
-					M_UpdateUnlockablesAndExtraEmblems(true);
+					if (!M_UpdateUnlockablesAndExtraEmblems(true))
+						S_StartSound(NULL, sfx_ncitem);
 					G_SaveGameData();
 				}
 
