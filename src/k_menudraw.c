@@ -4542,8 +4542,23 @@ static void M_DrawChallengeTile(INT16 i, INT16 j, INT32 x, INT32 y, boolean hili
 	if (!unlockedyet)
 	{
 		UINT32 flags = 0;
+		boolean hint = !!(challengesmenu.extradata[id].flags & CHE_HINT);
 
-		if (challengesmenu.extradata[id].flags != CHE_HINT)
+		pat = W_CachePatchName(
+			va("UN_OUTL%c",
+				ref->majorunlock ? 'B' : 'A'
+			),
+			PU_CACHE);
+
+		V_DrawFixedPatch(
+			x*FRACUNIT, y*FRACUNIT,
+			FRACUNIT,
+			(hint ? V_ADD : V_SUBTRACT)|V_90TRANS,
+			pat,
+			colormap
+		);
+
+		if (!hint)
 		{
 			colormap = R_GetTranslationColormap(TC_BLINK, SKINCOLOR_BLACK, GTC_CACHE);
 			flags = V_SUBTRACT|V_90TRANS;
@@ -4988,7 +5003,7 @@ static void M_DrawChallengePreview(INT32 x, INT32 y)
 void M_DrawChallenges(void)
 {
 	INT32 x = currentMenu->x, explodex, selectx;
-	INT32 y = currentMenu->y;
+	INT32 y;
 	INT16 i, j;
 	const char *str;
 	INT16 offset;
@@ -5015,11 +5030,24 @@ void M_DrawChallenges(void)
 #undef questionloop
 	}
 
+	// Do underlay for everything else early so the bottom of the reticule doesn't get shaded over.
+	{
+		y = 120;
+
+		V_DrawScaledPatch(0, y,
+			(10-challengetransparentstrength)<<V_ALPHASHIFT,
+			W_CachePatchName("MENUHINT", PU_CACHE));
+
+		V_DrawFadeFill(0, y+27, BASEVIDWIDTH, BASEVIDHEIGHT - (y+27), 0, 31, challengetransparentstrength);
+	}
+
 	if (gamedata->challengegrid == NULL || challengesmenu.extradata == NULL)
 	{
 		V_DrawCenteredString(x, y, V_REDMAP, "No challenges available!?");
 		goto challengedesc;
 	}
+
+	y = currentMenu->y;
 
 	V_DrawFadeFill(0, y-2, BASEVIDWIDTH, 90, 0, 31, challengetransparentstrength);
 
@@ -5106,12 +5134,6 @@ challengedesc:
 	// Name bar
 	{
 		y = 120;
-
-		V_DrawScaledPatch(0, y,
-			(10-challengetransparentstrength)<<V_ALPHASHIFT,
-			W_CachePatchName("MENUHINT", PU_CACHE));
-
-		V_DrawFadeFill(0, y+27, BASEVIDWIDTH, BASEVIDHEIGHT - (y+27), 0, 31, challengetransparentstrength);
 
 		if (challengesmenu.currentunlock < MAXUNLOCKABLES)
 		{
