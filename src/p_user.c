@@ -2132,7 +2132,8 @@ static void P_UpdatePlayerAngle(player_t *player)
 		}
 	}
 
-	player->steering = K_UpdateSteeringValue(player->steering, player->cmd.turning);
+	// Don't apply steering just yet. If we make a correction, we'll need to adjust it.
+	INT16 targetsteering = K_UpdateSteeringValue(player->steering, player->cmd.turning);
 	angleChange = K_GetKartTurnValue(player, player->steering) << TICCMD_REDUCE;
 
 	if (!K_PlayerUsesBotMovement(player))
@@ -2140,7 +2141,7 @@ static void P_UpdatePlayerAngle(player_t *player)
 		// With a full slam on the analog stick, how far could we steer in either direction?
 		INT16 steeringRight =  K_UpdateSteeringValue(player->steering, KART_FULLTURN);
 		angle_t maxTurnRight = K_GetKartTurnValue(player, steeringRight) << TICCMD_REDUCE;
-		INT16 steeringLeft =  K_UpdateSteeringValue(player->steering, -1 * KART_FULLTURN);
+		INT16 steeringLeft =  K_UpdateSteeringValue(player->steering, -KART_FULLTURN);
 		angle_t maxTurnLeft = K_GetKartTurnValue(player, steeringLeft) << TICCMD_REDUCE;
 
 		// Grab local camera angle from ticcmd. Where do we actually want to go?
@@ -2150,7 +2151,7 @@ static void P_UpdatePlayerAngle(player_t *player)
 		if (targetDelta == angleChange || player->pflags & PF_DRIFTEND)
 		{
 			// We are where we need to be. :)
-
+			player->steering = targetsteering;
 			// Alternatively, while in DRIFTEND we want to trust inputs for a bit, not camera.
 			// The game client doesn't know we're DRIFTEND until after a response gets back,
 			// so we momentarily ignore the camera angle and let the server trust our inputs instead.
@@ -2159,19 +2160,28 @@ static void P_UpdatePlayerAngle(player_t *player)
 		else if (targetDelta >= ANGLE_180 && maxTurnLeft >= targetDelta) // Overshot, so just fudge it.
 		{
 			angleChange = targetDelta;
+			player->steering = targetsteering;
 		}
 		else if (targetDelta <= ANGLE_180 && maxTurnRight <= targetDelta) // Overshot, so just fudge it.
 		{
 			angleChange = targetDelta;
+			player->steering = targetsteering;
 		}
 		else if (targetDelta >= ANGLE_180 && maxTurnLeft < targetDelta) // Undershot, slam the stick.
 		{
 			angleChange = maxTurnLeft;
+			player->steering = steeringLeft;
 		}
-		else if (targetDelta <= ANGLE_180 && maxTurnRight < targetDelta) // Undershot, slam the stick.
+		else if (targetDelta <= ANGLE_180 && maxTurnRight > targetDelta) // Undershot, slam the stick.
 		{
 			angleChange = maxTurnRight;
+			player->steering = steeringRight;
 		}
+	}
+	else
+	{
+		// You're a bot. Go where you're supposed to go
+		player->steering = targetsteering;
 	}
 
 	if (p == UINT8_MAX)
