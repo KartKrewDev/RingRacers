@@ -197,6 +197,7 @@ void M_PopulateChallengeGrid(void);
 struct challengegridextradata_t
 {
 	UINT8 flags;
+	UINT8 flip;
 };
 
 void M_UpdateChallengeGridExtraData(challengegridextradata_t *extradata);

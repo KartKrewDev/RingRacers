@@ -4518,7 +4518,7 @@ static void M_DrawChallengeTile(INT16 i, INT16 j, INT32 x, INT32 y, boolean hili
 	unlockable_t *ref = NULL;
 	patch_t *pat = missingpat;
 	UINT8 *colormap = NULL, *bgmap = NULL;
-	fixed_t siz;
+	fixed_t siz, accordion;
 	UINT8 id, num;
 	boolean unlockedyet;
 	boolean categoryside;
@@ -4569,14 +4569,26 @@ static void M_DrawChallengeTile(INT16 i, INT16 j, INT32 x, INT32 y, boolean hili
 		goto drawborder;
 	}
 
+	accordion = FRACUNIT;
+
+	if (challengesmenu.extradata[id].flip != 0
+		&& challengesmenu.extradata[id].flip != (TILEFLIP_MAX/2))
+	{
+		angle_t bad = (FixedAngle((fixed_t)(challengesmenu.extradata[id].flip) * (360*FRACUNIT/TILEFLIP_MAX)) >> ANGLETOFINESHIFT) & FINEMASK;
+		accordion = FINECOSINE(bad);
+		if (accordion < 0)
+			accordion = -accordion;
+	}
+
 	pat = W_CachePatchName(
 		(ref->majorunlock ? "UN_BORDB" : "UN_BORDA"),
 		PU_CACHE);
 
 	bgmap = R_GetTranslationColormap(TC_DEFAULT, SKINCOLOR_SILVER, GTC_MENUCACHE);
 
-	V_DrawFixedPatch(
-		x*FRACUNIT, y*FRACUNIT,
+	V_DrawStretchyFixedPatch(
+		(x*FRACUNIT) + (SHORT(pat->width)*(FRACUNIT-accordion)/2), y*FRACUNIT,
+		accordion,
 		FRACUNIT,
 		0, pat,
 		bgmap
@@ -4584,7 +4596,8 @@ static void M_DrawChallengeTile(INT16 i, INT16 j, INT32 x, INT32 y, boolean hili
 
 	pat = missingpat;
 
-	categoryside = !hili; // temporary
+	categoryside = (challengesmenu.extradata[id].flip <= TILEFLIP_MAX/4
+		|| challengesmenu.extradata[id].flip > (3*TILEFLIP_MAX)/4);
 
 	if (categoryside)
 	{
@@ -4725,8 +4738,9 @@ static void M_DrawChallengeTile(INT16 i, INT16 j, INT32 x, INT32 y, boolean hili
 		; // prevent div/0
 	else if (ref->majorunlock)
 	{
-		V_DrawFixedPatch(
-			(x + 5)*FRACUNIT, (y + 5)*FRACUNIT,
+		V_DrawStretchyFixedPatch(
+			((x + 5)*FRACUNIT) + (32*(FRACUNIT-accordion)/2), (y + 5)*FRACUNIT,
+			FixedDiv(32*accordion, siz),
 			FixedDiv(32 << FRACBITS, siz),
 			0, pat,
 			colormap
@@ -4734,8 +4748,9 @@ static void M_DrawChallengeTile(INT16 i, INT16 j, INT32 x, INT32 y, boolean hili
 	}
 	else
 	{
-		V_DrawFixedPatch(
-			(x + 2)*FRACUNIT, (y + 2)*FRACUNIT,
+		V_DrawStretchyFixedPatch(
+			((x + 2)*FRACUNIT) + (16*(FRACUNIT-accordion)/2), (y + 2)*FRACUNIT,
+			FixedDiv(16*accordion, siz),
 			FixedDiv(16 << FRACBITS, siz),
 			0, pat,
 			colormap

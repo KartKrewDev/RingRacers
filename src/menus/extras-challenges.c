@@ -84,6 +84,16 @@ static void M_ChallengesAutoFocus(UINT8 unlockid, boolean fresh)
 		challengesmenu.col = challengesmenu.hilix = i/CHALLENGEGRIDHEIGHT;
 		challengesmenu.row = challengesmenu.hiliy = i%CHALLENGEGRIDHEIGHT;
 
+		// Begin animation
+		if (challengesmenu.extradata[i].flip == 0)
+		{
+			challengesmenu.extradata[i].flip =
+				(challengesmenu.pending
+					? (TILEFLIP_MAX/2)
+					: 1
+				);
+		}
+
 		if (fresh)
 		{
 			// We're just entering the menu. Immediately jump to the desired position...
@@ -261,7 +271,8 @@ void M_Challenges(INT32 choice)
 void M_ChallengesTick(void)
 {
 	const UINT8 pid = 0;
-	UINT8 i, newunlock = MAXUNLOCKABLES;
+	UINT16 i;
+	UINT8 newunlock = MAXUNLOCKABLES;
 
 	// Ticking
 	challengesmenu.ticker++;
@@ -274,6 +285,29 @@ void M_ChallengesTick(void)
 	if (challengesmenu.unlockcount[CC_ANIM] > 0)
 		challengesmenu.unlockcount[CC_ANIM]--;
 	M_CupSelectTick();
+
+	// Update tile flip state.
+	if (challengesmenu.extradata != NULL)
+	{
+		UINT16 id = (challengesmenu.hilix * CHALLENGEGRIDHEIGHT) + challengesmenu.hiliy;
+		boolean seeeveryone = M_MenuButtonHeld(pid, MBT_R);
+		boolean allthewaythrough;
+		UINT8 maxflip;
+		for (i = 0; i < (CHALLENGEGRIDHEIGHT * gamedata->challengegridwidth); i++)
+		{
+			allthewaythrough = (!seeeveryone && !challengesmenu.pending && i != id);
+			maxflip = ((seeeveryone || !allthewaythrough) ? (TILEFLIP_MAX/2) : TILEFLIP_MAX);
+			if ((seeeveryone || (challengesmenu.extradata[i].flip > 0))
+				&& (challengesmenu.extradata[i].flip != maxflip))
+			{
+				challengesmenu.extradata[i].flip++;
+				if (challengesmenu.extradata[i].flip >= TILEFLIP_MAX)
+				{
+					challengesmenu.extradata[i].flip = 0;
+				}
+			}
+		}
+	}
 
 	if (challengesmenu.pending)
 	{
@@ -594,7 +628,13 @@ boolean M_ChallengesInputs(INT32 ch)
 						challengesmenu.hilix = gamedata->challengegridwidth-1;
 					}
 				}
+
+				i = (challengesmenu.hilix * CHALLENGEGRIDHEIGHT) + challengesmenu.hiliy;
 			}
+
+			// Begin animation
+			if (challengesmenu.extradata[i].flip == 0)
+				challengesmenu.extradata[i].flip++;
 
 			return true;
 		}
