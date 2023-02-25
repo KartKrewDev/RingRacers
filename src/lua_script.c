@@ -212,7 +212,7 @@ int LUA_PushGlobals(lua_State *L, const char *word)
 		lua_pushstring(L, titlemap);
 		return 1;
 	} else if (fastcmp(word,"titlemapinaction")) {
-		lua_pushboolean(L, (titlemapinaction != TITLEMAP_OFF));
+		lua_pushboolean(L, titlemapinaction);
 		return 1;
 	} else if (fastcmp(word,"bootmap")) {
 		lua_pushstring(L, bootmap);

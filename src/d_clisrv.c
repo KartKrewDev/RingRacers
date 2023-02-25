@@ -1272,7 +1272,7 @@ static void CL_LoadReceivedSavegame(boolean reloading)
 	paused = false;
 	demo.playback = false;
 	demo.title = false;
-	titlemapinaction = TITLEMAP_OFF;
+	titlemapinaction = false;
 	automapactive = false;
 
 	// load a base level

@@ -50,7 +50,7 @@
 INT32 finalecount;
 INT32 titlescrollxspeed = 16;
 INT32 titlescrollyspeed = 0;
-UINT8 titlemapinaction = TITLEMAP_OFF;
+boolean titlemapinaction = false;
 
 static INT32 timetonext; // Delay between screen changes
 
@@ -1835,14 +1835,14 @@ void F_StartTitleScreen(void)
 		mapthing_t *startpos;
 
 		gamestate_t prevwipegamestate = wipegamestate;
-		titlemapinaction = TITLEMAP_LOADING;
+		titlemapinaction = true;
 		titlemapcameraref = NULL;
 		gamemap = titleMapNum+1;
 
 		maptol = mapheaderinfo[titleMapNum]->typeoflevel;
 		globalweather = mapheaderinfo[titleMapNum]->weather;
 
-		G_DoLoadLevel(true);
+		G_DoLoadLevelEx(true, GS_TITLESCREEN);
 		if (!titlemap)
 			return;
 
@@ -1878,12 +1878,11 @@ void F_StartTitleScreen(void)
 	}
 	else
 	{
-		titlemapinaction = TITLEMAP_OFF;
+		G_SetGamestate(GS_TITLESCREEN);
+		titlemapinaction = false;
 		gamemap = 1; // g_game.c
 		CON_ClearHUD();
 	}
-
-	G_SetGamestate(GS_TITLESCREEN);
 
 	// IWAD dependent stuff.
 
@@ -3149,9 +3148,7 @@ boolean F_StartCeremony(void)
 		maptol = mapheaderinfo[gamemap-1]->typeoflevel;
 		globalweather = mapheaderinfo[gamemap-1]->weather;
 
-		G_DoLoadLevel(false);
-
-		G_SetGamestate(GS_CEREMONY);
+		G_DoLoadLevelEx(false, GS_CEREMONY);
 		return true;
 	}
 

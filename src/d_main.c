@@ -337,8 +337,8 @@ static void D_Display(void)
 		if (rendermode != render_none)
 		{
 			// Fade to black first
-			if (!(gamestate == GS_LEVEL || (gamestate == GS_TITLESCREEN && titlemapinaction)) // fades to black on its own timing, always
-			 && wipetypepre != UINT8_MAX)
+			if (G_GamestateUsesLevel() == false // fades to black on its own timing, always
+				&& wipetypepre != UINT8_MAX)
 			{
 				F_WipeStartScreen();
 				F_WipeColorFill(31);
@@ -464,7 +464,7 @@ static void D_Display(void)
 
 		// clean up border stuff
 		// see if the border needs to be initially drawn
-		if (gamestate == GS_LEVEL || (gamestate == GS_TITLESCREEN && titlemapinaction && curbghide && (!hidetitlemap)))
+		if (G_GamestateUsesLevel() == true || (gamestate == GS_TITLESCREEN && titlemapinaction && curbghide && (!hidetitlemap)))
 		{
 			if (!automapactive && !dedicated && cv_renderview.value)
 			{
@@ -560,14 +560,25 @@ static void D_Display(void)
 
 			ps_uitime = I_GetPreciseTime();
 
-			if (gamestate == GS_LEVEL)
+			switch (gamestate)
 			{
-				ST_Drawer();
-				F_TextPromptDrawer();
-				HU_Drawer();
+				case GS_LEVEL:
+				{
+					ST_Drawer();
+					F_TextPromptDrawer();
+					HU_Drawer();
+					break;
+				}
+				case GS_TITLESCREEN:
+				{
+					F_TitleScreenDrawer();
+					break;
+				}
+				default:
+				{
+					break;
+				}
 			}
-			else
-				F_TitleScreenDrawer();
 		}
 		else
 		{
@@ -577,7 +588,7 @@ static void D_Display(void)
 
 	// change gamma if needed
 	// (GS_LEVEL handles this already due to level-specific palettes)
-	if (forcerefresh && !(gamestate == GS_LEVEL || (gamestate == GS_TITLESCREEN && titlemapinaction)))
+	if (forcerefresh && G_GamestateUsesLevel() == false)
 		V_SetPalette(0);
 
 	// draw pause pic

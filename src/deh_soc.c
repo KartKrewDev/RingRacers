@@ -2990,6 +2990,14 @@ void readwipes(MYFILE *f)
 				else if (fastcmp(pword, "FINAL"))
 					wipeoffset = wipe_gameend_final;
 			}
+			else if (fastncmp(word, "CEREMONY_", 9))
+			{
+				pword = word + 9;
+				if (fastcmp(pword, "TOBLACK"))
+					wipeoffset = wipe_ceremony_toblack;
+				else if (fastcmp(pword, "FINAL"))
+					wipeoffset = wipe_ceremony_final;
+			}
 			else if (fastncmp(word, "ENCORE_", 7))
 			{
 				pword = word + 7;

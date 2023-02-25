@@ -1333,7 +1333,9 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 	// Remove any existing controls
 	memset(cmd, 0, sizeof(ticcmd_t));
 
-	if (gamestate != GS_LEVEL || !player->mo || player->spectator)
+	if (player->mo == NULL
+		|| player->spectator == true
+		|| G_GamestateUsesLevel() == false)
 	{
 		// Not in the level.
 		return;

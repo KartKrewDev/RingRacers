@@ -1442,9 +1442,9 @@ static void weaponPrefChange4(void)
 }
 
 //
-// G_DoLoadLevel
+// G_DoLoadLevelEx
 //
-void G_DoLoadLevel(boolean resetplayer)
+void G_DoLoadLevelEx(boolean resetplayer, gamestate_t newstate)
 {
 	boolean doAutomate = false;
 	INT32 i;
@@ -1471,27 +1471,27 @@ void G_DoLoadLevel(boolean resetplayer)
 		Y_EndVote();
 
 	// cleanup
-	if (titlemapinaction == TITLEMAP_LOADING)
+	// Is this actually necessary? Doesn't F_StartTitleScreen already do a significantly more comprehensive check?
+	if (newstate == GS_TITLESCREEN)
 	{
-		//if (W_CheckNumForName(G_BuildMapName(gamemap)) == LUMPERROR)
 		if (gamemap < 1 || gamemap > nummapheaders)
 		{
+			G_SetGamestate(GS_TITLESCREEN);
+			titlemapinaction = false;
+
 			Z_Free(titlemap);
 			titlemap = NULL; // let's not infinite recursion ok
+
 			Command_ExitGame_f();
 			return;
 		}
-
-		titlemapinaction = TITLEMAP_RUNNING;
 	}
-	else
-		titlemapinaction = TITLEMAP_OFF;
 
 	// Doing this matches HOSTMOD behavior.
 	// Is that desired? IDK
-	doAutomate = (gamestate != GS_LEVEL);
+	doAutomate = (gamestate != GS_LEVEL && newstate == GS_LEVEL);
 
-	G_SetGamestate(GS_LEVEL);
+	G_SetGamestate(newstate);
 	if (wipegamestate == GS_MENU)
 		M_ClearMenus(true);
 	I_UpdateMouseGrab();
@@ -1536,6 +1536,11 @@ void G_DoLoadLevel(boolean resetplayer)
 	}
 }
 
+void G_DoLoadLevel(boolean resetplayer)
+{
+	G_DoLoadLevelEx(resetplayer, GS_LEVEL);
+}
+
 //
 // Start the title card.
 //
@@ -1566,7 +1571,7 @@ void G_StartTitleCard(void)
 	}
 
 	// start the title card
-	WipeStageTitle = (!titlemapinaction);
+	WipeStageTitle = (gamestate == GS_LEVEL);
 }
 
 //
@@ -2168,7 +2173,6 @@ void G_Ticker(boolean run)
 			F_TextPromptTicker();
 			AM_Ticker();
 			HU_Ticker();
-
 			break;
 
 		case GS_INTERMISSION:
@@ -5340,6 +5344,22 @@ void G_SetGamestate(gamestate_t newstate)
 #endif
 }
 
+boolean G_GamestateUsesLevel(void)
+{
+	switch (gamestate)
+	{
+		case GS_TITLESCREEN:
+			return titlemapinaction;
+
+		case GS_LEVEL:
+		case GS_CEREMONY:
+			return true;
+
+		default:
+			return false;
+	}
+}
+
 /* These functions handle the exitgame flag. Before, when the user
    chose to end a game, it happened immediately, which could cause
    crashes if the game was in the middle of something. Now, a flag
@@ -5423,4 +5443,3 @@ INT32 G_TicsToMilliseconds(tic_t tics)
 {
 	return (INT32)((tics%TICRATE) * (1000.00f/TICRATE));
 }
-

@@ -53,21 +53,7 @@
 
 boolean K_PodiumSequence(void)
 {
-	INT32 podiumMapNum = nummapheaders;
-
-	if (grandprixinfo.gp == false)
-	{
-		return false;
-	}
-
-	// FIXME: This function is used a lot during gameplay. 
-	// Cache so we don't have to iterate all map headers every time.
-	if (podiummap && ((podiumMapNum = G_MapNumber(podiummap)) < nummapheaders))
-	{
-		return (gamemap == podiumMapNum+1);
-	}
-
-	return false;
+	return (gamestate == GS_CEREMONY);
 }
 
 boolean K_IsDuelItem(mobjtype_t type)
