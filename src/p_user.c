@@ -2134,7 +2134,7 @@ static void P_UpdatePlayerAngle(player_t *player)
 
 	// Don't apply steering just yet. If we make a correction, we'll need to adjust it.
 	INT16 targetsteering = K_UpdateSteeringValue(player->steering, player->cmd.turning);
-	angleChange = K_GetKartTurnValue(player, player->steering) << TICCMD_REDUCE;
+	angleChange = K_GetKartTurnValue(player, targetsteering) << TICCMD_REDUCE;
 
 	if (!K_PlayerUsesBotMovement(player))
 	{
@@ -2148,9 +2148,10 @@ static void P_UpdatePlayerAngle(player_t *player)
 		angle_t targetAngle = (player->cmd.angle) << TICCMD_REDUCE;
 		angle_t targetDelta = targetAngle - (player->mo->angle);
 
-		if (targetDelta == angleChange || player->pflags & PF_DRIFTEND)
+		if (targetDelta == angleChange || player->pflags & PF_DRIFTEND || (maxTurnRight == 0 && maxTurnLeft == 0))
 		{
-			// We are where we need to be. :)
+			// We are where we need to be.
+			// ...Or we aren't, but shouldn't be able to steer.
 			player->steering = targetsteering;
 			// Alternatively, while in DRIFTEND we want to trust inputs for a bit, not camera.
 			// The game client doesn't know we're DRIFTEND until after a response gets back,
@@ -2194,8 +2195,6 @@ static void P_UpdatePlayerAngle(player_t *player)
 	{
 		player->angleturn += angleChange;
 		player->mo->angle = player->angleturn;
-
-		// player->mo->angle += angleChange;
 	}
 
 	if (!cv_allowmlook.value || player->spectator == false)
