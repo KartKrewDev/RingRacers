@@ -219,6 +219,12 @@ void PR_SaveProfiles(void)
 	UINT8 i, j, k;
 	savebuffer_t save = {0};
 
+	if (profilesList[PROFILE_GUEST] == NULL)
+	{
+		// Profiles have not been loaded yet, don't overwrite with garbage.
+		return;
+	}
+
 	if (P_SaveBufferAlloc(&save, sizeof(UINT32) + (numprofiles * sizeof(profile_t))) == false)
 	{
 		I_Error("No more free memory for saving profiles\n");
