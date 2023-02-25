@@ -2137,39 +2137,39 @@ static void P_UpdatePlayerAngle(player_t *player)
 
 	if (!K_PlayerUsesBotMovement(player))
 	{
+		// With a full slam on the analog stick, how far could we steer in either direction?
 		INT16 steeringRight =  K_UpdateSteeringValue(player->steering, KART_FULLTURN);
 		angle_t maxTurnRight = K_GetKartTurnValue(player, steeringRight) << TICCMD_REDUCE;
 		INT16 steeringLeft =  K_UpdateSteeringValue(player->steering, -1 * KART_FULLTURN);
 		angle_t maxTurnLeft = K_GetKartTurnValue(player, steeringLeft) << TICCMD_REDUCE;
 
+		// Grab local camera angle from ticcmd. Where do we actually want to go?
 		angle_t targetAngle = (player->cmd.angle) << TICCMD_REDUCE;
-
 		angle_t targetDelta = targetAngle - (player->mo->angle);
-
-		//CONS_Printf("%u, steering by %u but we want %u, MTL %d %u, MTR %d %u\n", targetAngle, angleChange, targetDelta, steeringLeft, maxTurnLeft, steeringRight, maxTurnRight);
 
 		if (targetDelta == angleChange || player->pflags & PF_DRIFTEND)
 		{
-			//CONS_Printf("Facing correct, thank god\n");
+			// We are where we need to be. :)
+
+			// Alternatively, while in DRIFTEND we want to trust inputs for a bit, not camera.
+			// The game client doesn't know we're DRIFTEND until after a response gets back,
+			// so we momentarily ignore the camera angle and let the server trust our inputs instead.
+			// That way, even if you're steering blind, you get the intended "kick-out" effect.
 		}
-		else if (targetDelta >= ANGLE_180 && maxTurnLeft >= targetDelta) 
+		else if (targetDelta >= ANGLE_180 && maxTurnLeft >= targetDelta) // Overshot, so just fudge it.
 		{
-			//CONS_Printf("undershoot left\n");
 			angleChange = targetDelta;
 		}
-		else if (targetDelta <= ANGLE_180 && maxTurnRight <= targetDelta)
+		else if (targetDelta <= ANGLE_180 && maxTurnRight <= targetDelta) // Overshot, so just fudge it.
 		{
-			//CONS_Printf("undershoot right\n");
 			angleChange = targetDelta;
 		}
-		else if (targetDelta >= ANGLE_180 && maxTurnLeft < targetDelta)
+		else if (targetDelta >= ANGLE_180 && maxTurnLeft < targetDelta) // Undershot, slam the stick.
 		{
-			//CONS_Printf("overshoot left\n");
 			angleChange = maxTurnLeft;
 		}
-		else if (targetDelta <= ANGLE_180 && maxTurnRight < targetDelta)
+		else if (targetDelta <= ANGLE_180 && maxTurnRight < targetDelta) // Undershot, slam the stick.
 		{
-			//CONS_Printf("overshoot right\n");
 			angleChange = maxTurnRight;
 		}
 	}

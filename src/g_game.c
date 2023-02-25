@@ -1095,9 +1095,14 @@ static void G_DoAnglePrediction(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer, p
 		realtics--;
 	}
 
-	// In case of angle debugging, break glass
-	localangle[ssplayer - 1] += angleChange;
-	//player->angleturn = localangle[ssplayer - 1];
+	if (player->pflags & PF_DRIFTEND)
+	{
+		localangle[ssplayer - 1] = player->mo->angle;
+	}
+	else
+	{
+		localangle[ssplayer - 1] += angleChange;
+	}
 }
 
 void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
