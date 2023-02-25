@@ -72,7 +72,7 @@ static void M_ChallengesAutoFocus(UINT8 unlockid, boolean fresh)
 			continue;
 		}
 
-		if (challengesmenu.extradata[i] & CHE_CONNECTEDLEFT)
+		if (challengesmenu.extradata[i].flags & CHE_CONNECTEDLEFT)
 		{
 			// no need to check for CHE_CONNECTEDUP in linear iteration
 			continue;
@@ -83,6 +83,16 @@ static void M_ChallengesAutoFocus(UINT8 unlockid, boolean fresh)
 
 		challengesmenu.col = challengesmenu.hilix = i/CHALLENGEGRIDHEIGHT;
 		challengesmenu.row = challengesmenu.hiliy = i%CHALLENGEGRIDHEIGHT;
+
+		// Begin animation
+		if (challengesmenu.extradata[i].flip == 0)
+		{
+			challengesmenu.extradata[i].flip =
+				(challengesmenu.pending
+					? (TILEFLIP_MAX/2)
+					: 1
+				);
+		}
 
 		if (fresh)
 		{
@@ -174,7 +184,12 @@ menu_t *M_InterruptMenuWithChallenges(menu_t *desiredmenu)
 
 		M_PopulateChallengeGrid();
 		if (gamedata->challengegrid)
-			challengesmenu.extradata = M_ChallengeGridExtraData();
+		{
+			challengesmenu.extradata = Z_Calloc(
+				(gamedata->challengegridwidth * CHALLENGEGRIDHEIGHT * sizeof(challengegridextradata_t)),
+				PU_STATIC, NULL);
+			M_UpdateChallengeGridExtraData(challengesmenu.extradata);
+		}
 
 		memset(setup_explosions, 0, sizeof(setup_explosions));
 		memset(&challengesmenu.unlockcount, 0, sizeof(challengesmenu.unlockcount));
@@ -256,7 +271,8 @@ void M_Challenges(INT32 choice)
 void M_ChallengesTick(void)
 {
 	const UINT8 pid = 0;
-	UINT8 i, newunlock = MAXUNLOCKABLES;
+	UINT16 i;
+	UINT8 newunlock = MAXUNLOCKABLES;
 
 	// Ticking
 	challengesmenu.ticker++;
@@ -269,6 +285,29 @@ void M_ChallengesTick(void)
 	if (challengesmenu.unlockcount[CC_ANIM] > 0)
 		challengesmenu.unlockcount[CC_ANIM]--;
 	M_CupSelectTick();
+
+	// Update tile flip state.
+	if (challengesmenu.extradata != NULL)
+	{
+		UINT16 id = (challengesmenu.hilix * CHALLENGEGRIDHEIGHT) + challengesmenu.hiliy;
+		boolean seeeveryone = M_MenuButtonHeld(pid, MBT_R);
+		boolean allthewaythrough;
+		UINT8 maxflip;
+		for (i = 0; i < (CHALLENGEGRIDHEIGHT * gamedata->challengegridwidth); i++)
+		{
+			allthewaythrough = (!seeeveryone && !challengesmenu.pending && i != id);
+			maxflip = ((seeeveryone || !allthewaythrough) ? (TILEFLIP_MAX/2) : TILEFLIP_MAX);
+			if ((seeeveryone || (challengesmenu.extradata[i].flip > 0))
+				&& (challengesmenu.extradata[i].flip != maxflip))
+			{
+				challengesmenu.extradata[i].flip++;
+				if (challengesmenu.extradata[i].flip >= TILEFLIP_MAX)
+				{
+					challengesmenu.extradata[i].flip = 0;
+				}
+			}
+		}
+	}
 
 	if (challengesmenu.pending)
 	{
@@ -318,11 +357,15 @@ void M_ChallengesTick(void)
 				challengesmenu.unlockcount[CC_TALLY]++;
 				challengesmenu.unlockcount[CC_ANIM]++;
 
-				Z_Free(challengesmenu.extradata);
-				if ((challengesmenu.extradata = M_ChallengeGridExtraData()))
+				if (challengesmenu.extradata)
 				{
-					unlockable_t *ref = &unlockables[challengesmenu.currentunlock];
-					UINT16 bombcolor = SKINCOLOR_NONE;
+					unlockable_t *ref;
+					UINT16 bombcolor;
+
+					M_UpdateChallengeGridExtraData(challengesmenu.extradata);
+
+					ref = &unlockables[challengesmenu.currentunlock];
+					bombcolor = SKINCOLOR_NONE;
 
 					if (ref->color != SKINCOLOR_NONE && ref->color < numskincolors)
 					{
@@ -413,8 +456,7 @@ boolean M_ChallengesInputs(INT32 ch)
 			gamedata->challengegrid = NULL;
 			gamedata->challengegridwidth = 0;
 			M_PopulateChallengeGrid();
-			Z_Free(challengesmenu.extradata);
-			challengesmenu.extradata = M_ChallengeGridExtraData();
+			M_UpdateChallengeGridExtraData(challengesmenu.extradata);
 
 			M_ChallengesAutoFocus(challengesmenu.currentunlock, true);
 
@@ -461,8 +503,8 @@ boolean M_ChallengesInputs(INT32 ch)
 					}
 					if (!(challengesmenu.extradata[
 							(challengesmenu.col * CHALLENGEGRIDHEIGHT)
-							+ challengesmenu.row]
-						& CHE_CONNECTEDUP))
+							+ challengesmenu.row
+						].flags & CHE_CONNECTEDUP))
 					{
 						break;
 					}
@@ -475,8 +517,8 @@ boolean M_ChallengesInputs(INT32 ch)
 			{
 				i = (challengesmenu.extradata[
 							(challengesmenu.col * CHALLENGEGRIDHEIGHT)
-							+ challengesmenu.row]
-						& CHE_CONNECTEDUP) ? 2 : 1;
+							+ challengesmenu.row
+						].flags & CHE_CONNECTEDUP) ? 2 : 1;
 				while (i > 0)
 				{
 					if (challengesmenu.row > 0)
@@ -516,8 +558,8 @@ boolean M_ChallengesInputs(INT32 ch)
 
 					if (!(challengesmenu.extradata[
 							(challengesmenu.col * CHALLENGEGRIDHEIGHT)
-							+ challengesmenu.row]
-						& CHE_CONNECTEDLEFT))
+							+ challengesmenu.row
+						].flags & CHE_CONNECTEDLEFT))
 					{
 						break;
 					}
@@ -531,8 +573,8 @@ boolean M_ChallengesInputs(INT32 ch)
 			{
 				i = (challengesmenu.extradata[
 							(challengesmenu.col * CHALLENGEGRIDHEIGHT)
-							+ challengesmenu.row]
-						& CHE_CONNECTEDLEFT) ? 2 : 1;
+							+ challengesmenu.row
+						].flags & CHE_CONNECTEDLEFT) ? 2 : 1;
 				while (i > 0)
 				{
 					// Slide the focus counter to movement, if we can.
@@ -570,12 +612,12 @@ boolean M_ChallengesInputs(INT32 ch)
 			{
 				// Adjust highlight coordinates up/to the left for large tiles.
 
-				if (challengesmenu.hiliy > 0 && (challengesmenu.extradata[i] & CHE_CONNECTEDUP))
+				if (challengesmenu.hiliy > 0 && (challengesmenu.extradata[i].flags & CHE_CONNECTEDUP))
 				{
 					challengesmenu.hiliy--;
 				}
 
-				if ((challengesmenu.extradata[i] & CHE_CONNECTEDLEFT))
+				if ((challengesmenu.extradata[i].flags & CHE_CONNECTEDLEFT))
 				{
 					if (challengesmenu.hilix > 0)
 					{
@@ -586,7 +628,13 @@ boolean M_ChallengesInputs(INT32 ch)
 						challengesmenu.hilix = gamedata->challengegridwidth-1;
 					}
 				}
+
+				i = (challengesmenu.hilix * CHALLENGEGRIDHEIGHT) + challengesmenu.hiliy;
 			}
+
+			// Begin animation
+			if (challengesmenu.extradata[i].flip == 0)
+				challengesmenu.extradata[i].flip++;
 
 			return true;
 		}

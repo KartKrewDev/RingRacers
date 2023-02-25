@@ -1137,6 +1137,8 @@ void M_DrawAddons(void);
 #define CC_ANIM 3
 #define CC_MAX 4
 
+#define TILEFLIP_MAX 16
+
 // Keep track of some pause menu data for visual goodness.
 extern struct challengesmenu_s {
 
@@ -1151,7 +1153,7 @@ extern struct challengesmenu_s {
 	SINT8 row, hilix, focusx;
 	UINT8 col, hiliy;
 
-	UINT8 *extradata;
+	challengegridextradata_t *extradata;
 
 	boolean pending;
 	boolean requestnew;
