@@ -63,7 +63,7 @@ consvar_t cv_showfocuslost = CVAR_INIT ("showfocuslost", "Yes", CV_SAVE, CV_YesN
 
 consvar_t cv_menujam_update = CVAR_INIT ("menujam_update", "Off", CV_SAVE, CV_OnOff, NULL);
 static CV_PossibleValue_t menujam_cons_t[] = {{0, "menu"}, {1, "menu2"}, {2, "menu3"}, {0, NULL}};
-static consvar_t cv_menujam = CVAR_INIT ("menujam", "0", CV_SAVE, menujam_cons_t, NULL);
+static consvar_t cv_menujam = CVAR_INIT ("menujam", "menu", CV_SAVE, menujam_cons_t, NULL);
 
 // first time memory
 consvar_t cv_tutorialprompt = CVAR_INIT ("tutorialprompt", "On", CV_SAVE, CV_OnOff, NULL);
@@ -333,6 +333,8 @@ boolean M_Responder(event_t *ev)
 	return true;
 }
 
+#define NotCurrentlyPlaying(desiredname) (!S_MusicPlaying() || strcmp(desiredname, S_MusicName()))
+
 void M_PlayMenuJam(void)
 {
 	menu_t *refMenu = (menuactive ? currentMenu : restoreMenu);
@@ -348,10 +350,15 @@ void M_PlayMenuJam(void)
 		if (refMenu->music[0] == '.' && refMenu->music[1] == '\0')
 		{
 			S_StopMusic();
+			cursongcredit.def = NULL;
 		}
 		else
 		{
-			S_ChangeMusicInternal(refMenu->music, true);
+			if (NotCurrentlyPlaying(refMenu->music))
+			{
+				S_ChangeMusicInternal(refMenu->music, true);
+				S_ShowMusicCredit();
+			}
 		}
 		return;
 	}
@@ -362,8 +369,14 @@ void M_PlayMenuJam(void)
 		CV_SetValue(&cv_menujam_update, 0);
 	}
 
+	if (!NotCurrentlyPlaying(cv_menujam.string))
+		return;
+
 	S_ChangeMusicInternal(cv_menujam.string, true);
+	S_ShowMusicCredit();
 }
+
+#undef IsCurrentlyPlaying
 
 //
 // M_SpecificMenuRestore
@@ -981,6 +994,8 @@ static void M_HandleMenuInput(void)
 void M_Ticker(void)
 {
 	INT32 i;
+
+	HU_TickSongCredits();
 
 	if (!menuactive)
 	{

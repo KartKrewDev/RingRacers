@@ -834,6 +834,8 @@ void Y_StartIntermission(void)
 	if (!(gametyperules & GTR_CIRCUIT) && (timer > 1))
 		S_ChangeMusicInternal("racent", true); // loop it
 
+	S_ShowMusicCredit(); // Always call
+
 	switch (intertype)
 	{
 		case int_score:
@@ -1281,7 +1283,10 @@ void Y_VoteTicker(void)
 		D_PickVote();
 
 	if (!votetic)
+	{
 		S_ChangeMusicInternal("vote", true);
+		S_ShowMusicCredit();
+	}
 
 	if (timer)
 		timer--;
