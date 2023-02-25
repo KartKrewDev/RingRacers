@@ -2230,6 +2230,12 @@ void G_Ticker(boolean run)
 			F_TitleScreenTicker(run);
 			break;
 
+		case GS_CEREMONY:
+			P_Ticker(run);
+			ST_Ticker(run);
+			HU_Ticker();
+			break;
+
 		case GS_WAITINGPLAYERS:
 			if (netgame)
 				F_WaitingPlayersTicker();
@@ -4258,8 +4264,10 @@ void G_EndGame(void)
 	{
 		if (nextmap == NEXTMAP_CEREMONY) // end game with ceremony
 		{
-			/*F_StartEnding(); -- temporary
-			return;*/
+			if (F_StartCeremony() == true)
+			{
+				return;
+			}
 		}
 		if (nextmap == NEXTMAP_CREDITS) // end game with credits
 		{

@@ -3132,3 +3132,28 @@ void F_TextPromptTicker(void)
 			animtimer--;
 	}
 }
+
+boolean F_StartCeremony(void)
+{
+	INT32 podiumMapNum = nummapheaders;
+
+	wipegamestate = GS_CEREMONY;
+
+	if (podiummap
+		&& ((podiumMapNum = G_MapNumber(podiummap)) < nummapheaders)
+		&& mapheaderinfo[podiumMapNum]
+		&& mapheaderinfo[podiumMapNum]->lumpnum != LUMPERROR)
+	{
+		gamemap = podiumMapNum+1;
+
+		maptol = mapheaderinfo[gamemap-1]->typeoflevel;
+		globalweather = mapheaderinfo[gamemap-1]->weather;
+
+		G_DoLoadLevel(false);
+
+		G_SetGamestate(GS_CEREMONY);
+		return true;
+	}
+
+	return false;
+}

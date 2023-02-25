@@ -381,6 +381,7 @@ static void D_Display(void)
 			}
 			/* FALLTHRU */
 		case GS_LEVEL:
+		case GS_CEREMONY:
 			if (!gametic)
 				break;
 			HU_Erase();
