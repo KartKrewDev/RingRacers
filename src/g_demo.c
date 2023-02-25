@@ -593,7 +593,7 @@ void G_WriteDemoTiccmd(ticcmd_t *cmd, INT32 playernum)
 	if (cmd->angle != oldcmd[playernum].angle)
 	{
 		WRITEINT16(demobuf.p,cmd->angle);
-		oldcmd[playernum].turning = cmd->angle;
+		oldcmd[playernum].angle = cmd->angle;
 		ziptic |= ZT_ANGLE;
 	}
 

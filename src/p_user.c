@@ -2120,7 +2120,6 @@ static void P_3dMovement(player_t *player)
 static void P_UpdatePlayerAngle(player_t *player)
 {
 	angle_t angleChange = ANGLE_MAX;
-	UINT8 maxlatency;
 	UINT8 p = UINT8_MAX;
 	UINT8 i;
 
@@ -2147,7 +2146,7 @@ static void P_UpdatePlayerAngle(player_t *player)
 
 	//CONS_Printf("%u, steering by %u but we want %u, MTL %d %u, MTR %d %u\n", targetAngle, angleChange, targetDelta, steeringLeft, maxTurnLeft, steeringRight, maxTurnRight);
 
-	if (targetDelta == angleChange)
+	if (targetDelta == angleChange || player->pflags & PF_DRIFTEND)
 	{
 		//CONS_Printf("Facing correct, thank god\n");
 	}
@@ -2180,42 +2179,10 @@ static void P_UpdatePlayerAngle(player_t *player)
 	}
 	else
 	{
-
-		/*
-		// During standard play, our latency can vary by up to 1 tic in either direction, even on a stable connection.
-		// This probably comes from differences in ticcmd dispatch vs consumption rate. Probably.
-		// Uncorrected, this 2-tic "wobble" causes camera corrections to sometimes be skipped or batched.
-		// So just use the highest recent value for the furthest possible search.
-		// We unset the correction after applying, anyway.
-		locallatency[p][leveltime%TICRATE] = maxlatency = player->cmd.latency;
-		for (i = 0; i < TICRATE; i++)
-		{
-			maxlatency = max(locallatency[p][i], maxlatency);
-		}
-
-		UINT8 lateTic = ((leveltime - maxlatency) & TICCMD_LATENCYMASK);
-		UINT8 clearTic = ((localtic + 1) & TICCMD_LATENCYMASK);
-		*/
-
-		/*
 		player->angleturn += angleChange;
 		player->mo->angle = player->angleturn;
-		*/
 
-		player->mo->angle += angleChange;
-
-		/*
-		// Undo the ticcmd's old emulated angle,
-		// now that we added the actual game logic angle.
-
-		while (lateTic != clearTic)
-		{
-			localdelta[p] -= localstoredeltas[p][lateTic];
-			localstoredeltas[p][lateTic] = 0;
-
-			lateTic = (lateTic - 1) & TICCMD_LATENCYMASK;
-		}
-		*/
+		// player->mo->angle += angleChange;
 	}
 
 	if (!cv_allowmlook.value || player->spectator == false)
@@ -4523,7 +4490,7 @@ void P_ForceLocalAngle(player_t *player, angle_t angle)
 		if (player == &players[displayplayers[i]])
 		{
 			localangle[i] = angle;
-			G_ResetAnglePrediction(player);
+
 			break;
 		}
 	}

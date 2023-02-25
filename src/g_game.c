@@ -1080,80 +1080,24 @@ INT32 localaiming[MAXSPLITSCREENPLAYERS];
 angle_t localangle[MAXSPLITSCREENPLAYERS];
 
 INT32 localsteering[MAXSPLITSCREENPLAYERS];
-INT32 localdrift[MAXSPLITSCREENPLAYERS];
-INT32 localdriftend[MAXSPLITSCREENPLAYERS];
-INT32 localdelta[MAXSPLITSCREENPLAYERS];
-INT32 localstoredeltas[MAXSPLITSCREENPLAYERS][TICCMD_LATENCYMASK + 1];
-UINT8 locallatency[MAXSPLITSCREENPLAYERS][TICRATE];
-UINT8 localtic;
-
-void G_ResetAnglePrediction(player_t *player)
-{
-	UINT16 i, j;
-
-	for (i = 0; i <= r_splitscreen; i++)
-	{
-		if (&players[displayplayers[i]] == player)
-		{
-			localdelta[i] = 0;
-			for (j = 0; j < TICCMD_LATENCYMASK; j++)
-			{
-				localstoredeltas[i][j] = 0;
-			}
-			break;
-		}
-	}
-}
 
 // Turning was removed from G_BuildTiccmd to prevent easy client hacking.
 // This brings back the camera prediction that was lost.
 static void G_DoAnglePrediction(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer, player_t *player)
 {
 	angle_t angleChange = 0;
-	angle_t destAngle = player->angleturn;
-	angle_t diff = 0;
-
-	localtic = cmd->latency;
 
 	while (realtics > 0)
 	{
-		pflags_t oldflags = player->pflags;
-
 		localsteering[ssplayer - 1] = K_UpdateSteeringValue(localsteering[ssplayer - 1], cmd->turning);
 		angleChange = K_GetKartTurnValue(player, localsteering[ssplayer - 1]) << TICCMD_REDUCE;
-
-		player->pflags = oldflags;
-
-		// Store the angle we applied to this tic, so we can revert it later.
-		// If we trust the camera to do all of the work, then it can get out of sync fast.
-		localstoredeltas[ssplayer - 1][cmd->latency] += angleChange;
-		localdelta[ssplayer - 1] += angleChange;
 
 		realtics--;
 	}
 
-	// We COULD set it to destAngle directly...
-	// but this causes incredible jittering when the prediction turns out to be wrong. So we ease into it.
-	// Slight increased camera lag in all scenarios > Mostly lagless camera but with jittering
-	destAngle = player->angleturn + localdelta[ssplayer - 1];
-
-	diff = destAngle - localangle[ssplayer - 1];
-
-	/*
-	if (diff > ANGLE_180)
-	{
-		diff = InvAngle(InvAngle(diff) / 2);
-	}
-	else
-	{
-		diff /= 2;
-	}
-
-	localangle[ssplayer - 1] += diff;
-	*/
-
 	// In case of angle debugging, break glass
-	localangle[ssplayer - 1] = destAngle;
+	localangle[ssplayer - 1] += angleChange;
+	//player->angleturn = localangle[ssplayer - 1];
 }
 
 void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
@@ -1188,6 +1132,8 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 			G_CopyTiccmd(cmd, I_BaseTiccmd(), 1); // empty, or external driver
 			break;
 	}
+
+	cmd->angle = localangle[forplayer] >> TICCMD_REDUCE;
 
 	// why build a ticcmd if we're paused?
 	// Or, for that matter, if we're being reborn.
@@ -1292,8 +1238,6 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 			cmd->throwdir -= (joystickvector.yaxis * KART_FULLTURN) / JOYAXISRANGE;
 		}
 	}
-	
-	cmd->angle = localangle[forplayer] >> TICCMD_REDUCE;
 
 	// drift
 	if (G_PlayerInputDown(forplayer, gc_drift, 0))
