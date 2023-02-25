@@ -185,32 +185,8 @@ void K_TimerInit(void)
 
 	K_BattleInit(domodeattack);
 
-	if ((gametyperules & GTR_TIMELIMIT) && !modeattacking)
-	{
-		if (!K_CanChangeRules(true))
-		{
-			if (battlecapsules)
-			{
-				timelimitintics = (20*TICRATE);
-			}
-			else
-			{
-				timelimitintics = gametypes[gametype]->timelimit * (60*TICRATE);
-			}
-		}
-		else
-#ifndef TESTOVERTIMEINFREEPLAY
-			if (!battlecapsules)
-#endif
-		{
-			timelimitintics = cv_timelimit.value * (60*TICRATE);
-		}
-	}
-
-	if (gametyperules & GTR_POINTLIMIT)
-	{
-		g_pointlimit = cv_pointlimit.value;
-	}
+	timelimitintics = K_TimeLimitForGametype();
+	g_pointlimit = K_PointLimitForGametype();
 
 	if (inDuel == true)
 	{
@@ -11358,6 +11334,62 @@ void K_EggmanTransfer(player_t *source, player_t *victim)
 	source->eggmanTransferDelay = 10;
 
 	S_StopSoundByID(source->mo, sfx_s3k53);
+}
+
+tic_t K_TimeLimitForGametype(void)
+{
+	const tic_t gametypeDefault = gametypes[gametype]->timelimit * (60*TICRATE);
+
+	if (!(gametyperules & GTR_TIMELIMIT))
+	{
+		return 0;
+	}
+
+	if (modeattacking)
+	{
+		return 0;
+	}
+
+	// Grand Prix
+	if (!K_CanChangeRules(true))
+	{
+		if (battlecapsules)
+		{
+			return 20*TICRATE;
+		}
+
+		return gametypeDefault;
+	}
+
+	if (cv_timelimit.value != -1)
+	{
+		return cv_timelimit.value * (60*TICRATE);
+	}
+
+	// No time limit for Break the Capsules FREE PLAY
+	if (battlecapsules)
+	{
+		return 0;
+	}
+
+	return gametypeDefault;
+}
+
+UINT32 K_PointLimitForGametype(void)
+{
+	const UINT32 gametypeDefault = gametypes[gametype]->pointlimit;
+
+	if (!(gametyperules & GTR_POINTLIMIT))
+	{
+		return 0;
+	}
+
+	if (cv_pointlimit.value != -1)
+	{
+		return cv_pointlimit.value;
+	}
+
+	return gametypeDefault;
 }
 
 //}
