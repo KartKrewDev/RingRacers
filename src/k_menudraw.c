@@ -4542,8 +4542,23 @@ static void M_DrawChallengeTile(INT16 i, INT16 j, INT32 x, INT32 y, boolean hili
 	if (!unlockedyet)
 	{
 		UINT32 flags = 0;
+		boolean hint = !!(challengesmenu.extradata[id].flags & CHE_HINT);
 
-		if (challengesmenu.extradata[id].flags != CHE_HINT)
+		pat = W_CachePatchName(
+			va("UN_OUTL%c",
+				ref->majorunlock ? 'B' : 'A'
+			),
+			PU_CACHE);
+
+		V_DrawFixedPatch(
+			x*FRACUNIT, y*FRACUNIT,
+			FRACUNIT,
+			(hint ? V_ADD : V_SUBTRACT)|V_90TRANS,
+			pat,
+			colormap
+		);
+
+		if (!hint)
 		{
 			colormap = R_GetTranslationColormap(TC_BLINK, SKINCOLOR_BLACK, GTC_CACHE);
 			flags = V_SUBTRACT|V_90TRANS;
