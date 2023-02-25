@@ -2135,40 +2135,43 @@ static void P_UpdatePlayerAngle(player_t *player)
 	player->steering = K_UpdateSteeringValue(player->steering, player->cmd.turning);
 	angleChange = K_GetKartTurnValue(player, player->steering) << TICCMD_REDUCE;
 
-	INT16 steeringRight =  K_UpdateSteeringValue(player->steering, KART_FULLTURN);
-	angle_t maxTurnRight = K_GetKartTurnValue(player, steeringRight) << TICCMD_REDUCE;
-	INT16 steeringLeft =  K_UpdateSteeringValue(player->steering, -1 * KART_FULLTURN);
-	angle_t maxTurnLeft = K_GetKartTurnValue(player, steeringLeft) << TICCMD_REDUCE;
+	if (!K_PlayerUsesBotMovement(player))
+	{
+		INT16 steeringRight =  K_UpdateSteeringValue(player->steering, KART_FULLTURN);
+		angle_t maxTurnRight = K_GetKartTurnValue(player, steeringRight) << TICCMD_REDUCE;
+		INT16 steeringLeft =  K_UpdateSteeringValue(player->steering, -1 * KART_FULLTURN);
+		angle_t maxTurnLeft = K_GetKartTurnValue(player, steeringLeft) << TICCMD_REDUCE;
 
-	angle_t targetAngle = (player->cmd.angle) << TICCMD_REDUCE;
+		angle_t targetAngle = (player->cmd.angle) << TICCMD_REDUCE;
 
-	angle_t targetDelta = targetAngle - (player->mo->angle);
+		angle_t targetDelta = targetAngle - (player->mo->angle);
 
-	//CONS_Printf("%u, steering by %u but we want %u, MTL %d %u, MTR %d %u\n", targetAngle, angleChange, targetDelta, steeringLeft, maxTurnLeft, steeringRight, maxTurnRight);
+		//CONS_Printf("%u, steering by %u but we want %u, MTL %d %u, MTR %d %u\n", targetAngle, angleChange, targetDelta, steeringLeft, maxTurnLeft, steeringRight, maxTurnRight);
 
-	if (targetDelta == angleChange || player->pflags & PF_DRIFTEND)
-	{
-		//CONS_Printf("Facing correct, thank god\n");
-	}
-	else if (targetDelta >= ANGLE_180 && maxTurnLeft >= targetDelta) 
-	{
-		//CONS_Printf("undershoot left\n");
-		angleChange = targetDelta;
-	}
-	else if (targetDelta <= ANGLE_180 && maxTurnRight <= targetDelta)
-	{
-		//CONS_Printf("undershoot right\n");
-		angleChange = targetDelta;
-	}
-	else if (targetDelta >= ANGLE_180 && maxTurnLeft < targetDelta)
-	{
-		//CONS_Printf("overshoot left\n");
-		angleChange = maxTurnLeft;
-	}
-	else if (targetDelta <= ANGLE_180 && maxTurnRight < targetDelta)
-	{
-		//CONS_Printf("overshoot right\n");
-		angleChange = maxTurnRight;
+		if (targetDelta == angleChange || player->pflags & PF_DRIFTEND)
+		{
+			//CONS_Printf("Facing correct, thank god\n");
+		}
+		else if (targetDelta >= ANGLE_180 && maxTurnLeft >= targetDelta) 
+		{
+			//CONS_Printf("undershoot left\n");
+			angleChange = targetDelta;
+		}
+		else if (targetDelta <= ANGLE_180 && maxTurnRight <= targetDelta)
+		{
+			//CONS_Printf("undershoot right\n");
+			angleChange = targetDelta;
+		}
+		else if (targetDelta >= ANGLE_180 && maxTurnLeft < targetDelta)
+		{
+			//CONS_Printf("overshoot left\n");
+			angleChange = maxTurnLeft;
+		}
+		else if (targetDelta <= ANGLE_180 && maxTurnRight < targetDelta)
+		{
+			//CONS_Printf("overshoot right\n");
+			angleChange = maxTurnRight;
+		}
 	}
 
 	if (p == UINT8_MAX)
