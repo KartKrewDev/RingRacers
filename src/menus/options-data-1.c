@@ -7,7 +7,7 @@
 menuitem_t OPTIONS_Data[] =
 {
 
-	{IT_STRING | IT_SUBMENU, "Screenshot Options...", "Set options relative to screenshot and GIF capture.",
+	{IT_STRING | IT_SUBMENU, "Media Options...", "Set options relative to screenshot and movie capture.",
 		NULL, {.submenu = &OPTIONS_DataScreenshotDef}, 0, 0},
 
 	{IT_STRING | IT_SUBMENU, "Addon Options...", "Set options relative to the addons menu.",
