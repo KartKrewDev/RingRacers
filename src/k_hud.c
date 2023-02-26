@@ -143,7 +143,7 @@ static patch_t *kp_localtag[4][2];
 static patch_t *kp_talk;
 static patch_t *kp_typdot;
 
-static patch_t *kp_eggnum[4];
+static patch_t *kp_eggnum[6];
 
 static patch_t *kp_flameshieldmeter[104][2];
 static patch_t *kp_flameshieldmeter_bg[16][2];
@@ -547,7 +547,7 @@ void K_LoadKartHUDGraphics(void)
 
 	// Eggman warning numbers
 	sprintf(buffer, "K_EGGNx");
-	for (i = 0; i < 4; i++)
+	for (i = 0; i < 6; i++)
 	{
 		buffer[6] = '0'+i;
 		HU_UpdatePatch(&kp_eggnum[i], "%s", buffer);
@@ -1429,7 +1429,7 @@ static void K_drawKartItem(void)
 
 	// Quick Eggman numbers
 	if (stplyr->eggmanexplode > 1)
-		V_DrawScaledPatch(fx+17, fy+13-offset, V_HUDTRANS|V_SLIDEIN|fflags, kp_eggnum[min(3, G_TicsToSeconds(stplyr->eggmanexplode))]);
+		V_DrawScaledPatch(fx+17, fy+13-offset, V_HUDTRANS|V_SLIDEIN|fflags, kp_eggnum[min(5, G_TicsToSeconds(stplyr->eggmanexplode))]);
 
 	if (stplyr->itemtype == KITEM_FLAMESHIELD && stplyr->flamelength > 0)
 	{
