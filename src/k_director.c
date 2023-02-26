@@ -238,6 +238,13 @@ void K_UpdateDirector(void)
 		return;
 	}
 
+	// if there's only one player left in the list, just switch to that player
+	if (directorinfo.sortedplayers[0] != -1 && directorinfo.sortedplayers[1] == -1)
+	{
+		K_DirectorSwitch(directorinfo.sortedplayers[0], false);
+		return;
+	}
+
 	// aaight, time to walk through the standings to find the first interesting pair
 	// NB: targetposition/sortedplayers is 0-indexed, aiming at the "back half" of a given pair by default.
 	// we adjust for this when comparing to player->position or when looking at the leading player, Don't Freak Out
