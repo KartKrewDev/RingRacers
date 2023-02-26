@@ -18,7 +18,7 @@ menu_t MISC_ChallengesDef = {
 	&MainDef,
 	0,
 	MISC_ChallengesStatsDummyMenu,
-	BASEVIDWIDTH/2, 32,
+	BASEVIDWIDTH/2, 30,
 	0, 0,
 	"EXTRAS",
 	98, 0,
@@ -85,13 +85,9 @@ static void M_ChallengesAutoFocus(UINT8 unlockid, boolean fresh)
 		challengesmenu.row = challengesmenu.hiliy = i%CHALLENGEGRIDHEIGHT;
 
 		// Begin animation
-		if (challengesmenu.extradata[i].flip == 0)
+		if (challengesmenu.pending)
 		{
-			challengesmenu.extradata[i].flip =
-				(challengesmenu.pending
-					? (TILEFLIP_MAX/2)
-					: 1
-				);
+			challengesmenu.extradata[i].flip = (TILEFLIP_MAX/2);
 		}
 
 		if (fresh)
@@ -178,6 +174,7 @@ menu_t *M_InterruptMenuWithChallenges(menu_t *desiredmenu)
 
 	if (challengesmenu.pending || desiredmenu == NULL)
 	{
+		challengesmenu.ticker = 0;
 		challengesmenu.requestnew = false;
 		challengesmenu.currentunlock = MAXUNLOCKABLES;
 		challengesmenu.unlockcondition = NULL;
@@ -297,7 +294,7 @@ void M_ChallengesTick(void)
 		{
 			allthewaythrough = (!seeeveryone && !challengesmenu.pending && i != id);
 			maxflip = ((seeeveryone || !allthewaythrough) ? (TILEFLIP_MAX/2) : TILEFLIP_MAX);
-			if ((seeeveryone || (challengesmenu.extradata[i].flip > 0))
+			if ((seeeveryone || (i == id) || (challengesmenu.extradata[i].flip > 0))
 				&& (challengesmenu.extradata[i].flip != maxflip))
 			{
 				challengesmenu.extradata[i].flip++;
@@ -629,12 +626,8 @@ boolean M_ChallengesInputs(INT32 ch)
 					}
 				}
 
-				i = (challengesmenu.hilix * CHALLENGEGRIDHEIGHT) + challengesmenu.hiliy;
+				//i = (challengesmenu.hilix * CHALLENGEGRIDHEIGHT) + challengesmenu.hiliy;
 			}
-
-			// Begin animation
-			if (challengesmenu.extradata[i].flip == 0)
-				challengesmenu.extradata[i].flip++;
 
 			return true;
 		}

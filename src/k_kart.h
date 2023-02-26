@@ -203,6 +203,9 @@ void K_UpdateMobjItemOverlay(mobj_t *part, SINT8 itemType, UINT8 itemCount);
 
 void K_EggmanTransfer(player_t *source, player_t *victim);
 
+tic_t K_TimeLimitForGametype(void);
+UINT32 K_PointLimitForGametype(void);
+
 #ifdef __cplusplus
 } // extern "C"
 #endif

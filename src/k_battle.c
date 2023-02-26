@@ -91,8 +91,7 @@ void K_CheckBumpers(void)
 {
 	UINT8 i;
 	UINT8 numingame = 0;
-	SINT8 winnernum = -1;
-	UINT32 winnerscoreadd = 0, maxroundscore = 0;
+	UINT32 toproundscore = 0;
 	UINT8 nobumpers = 0;
 
 	if (!(gametyperules & GTR_BUMPERS))
@@ -110,23 +109,16 @@ void K_CheckBumpers(void)
 			return;
 
 		numingame++;
-		winnerscoreadd += players[i].roundscore;
 
-		if (players[i].roundscore > maxroundscore)
+		if (players[i].roundscore > toproundscore)
 		{
-			maxroundscore = players[i].roundscore;
+			toproundscore = players[i].roundscore;
 		}
 
 		if (players[i].bumpers <= 0) // if you don't have any bumpers, you're probably not a winner
 		{
 			nobumpers++;
-			continue;
 		}
-		else if (winnernum != -1) // TWO winners? that's dumb :V
-			return;
-
-		winnernum = i;
-		winnerscoreadd -= players[i].roundscore;
 	}
 
 	if (battlecapsules || bossinfo.valid)
@@ -145,6 +137,10 @@ void K_CheckBumpers(void)
 		}
 		return;
 	}
+	else
+	{
+		g_hiscore = toproundscore;
+	}
 
 	if (numingame <= 1)
 	{
@@ -156,26 +152,6 @@ void K_CheckBumpers(void)
 		}
 
 		return;
-	}
-
-	if (winnernum > -1 && playeringame[winnernum])
-	{
-		if ((players[winnernum].roundscore+winnerscoreadd) == maxroundscore)
-			winnerscoreadd++; // break ties if luigi wins by doing nothing
-		players[winnernum].roundscore += winnerscoreadd;
-		CONS_Printf(M_GetText("%s recieved %d point%s for winning!\n"), player_names[winnernum], winnerscoreadd, (winnerscoreadd == 1 ? "" : "s"));
-	}
-
-	for (i = 0; i < MAXPLAYERS; i++) // This can't go in the earlier loop because winning adds points
-		K_KartUpdatePosition(&players[i]);
-
-	for (i = 0; i < MAXPLAYERS; i++) // and it can't be merged with this loop because it needs to be all updated before exiting... multi-loops suck...
-	{
-		if (!playeringame[i])
-			continue;
-		if (players[i].spectator)
-			continue;
-		P_DoPlayerExit(&players[i]);
 	}
 }
 

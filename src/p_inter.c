@@ -798,7 +798,7 @@ void P_CheckPointLimit(void)
 	if (!K_CanChangeRules(true))
 		return;
 
-	if (!cv_pointlimit.value)
+	if (!g_pointlimit)
 		return;
 
 	if (!(gametyperules & GTR_POINTLIMIT))
@@ -811,7 +811,7 @@ void P_CheckPointLimit(void)
 	if (G_GametypeHasTeams())
 	{
 		// Just check both teams
-		if ((UINT32)cv_pointlimit.value <= redscore || (UINT32)cv_pointlimit.value <= bluescore)
+		if (g_pointlimit <= redscore || g_pointlimit <= bluescore)
 		{
 			if (server)
 				SendNetXCmd(XD_EXITLEVEL, NULL, 0);
@@ -824,7 +824,7 @@ void P_CheckPointLimit(void)
 			if (!playeringame[i] || players[i].spectator)
 				continue;
 
-			if ((UINT32)cv_pointlimit.value <= players[i].roundscore)
+			if (g_pointlimit <= players[i].roundscore)
 			{
 				for (i = 0; i < MAXPLAYERS; i++) // AAAAA nested loop using the same iteration variable ;;
 				{
@@ -1171,7 +1171,14 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 		}
 
 		if (gametyperules & GTR_BUMPERS)
+		{
 			K_CheckBumpers();
+
+			if (target->player->roundscore > 1)
+				target->player->roundscore -= 2;
+			else
+				target->player->roundscore = 0;
+		}
 
 		target->player->trickpanel = 0;
 	}
