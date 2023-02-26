@@ -46,6 +46,7 @@
 #include "k_collide.h"
 #include "k_objects.h"
 #include "k_grandprix.h"
+#include "k_director.h"
 
 static CV_PossibleValue_t CV_BobSpeed[] = {{0, "MIN"}, {4*FRACUNIT, "MAX"}, {0, NULL}};
 consvar_t cv_movebob = CVAR_INIT ("movebob", "1.0", CV_FLOAT|CV_SAVE, CV_BobSpeed, NULL);
@@ -11827,6 +11828,22 @@ void P_SpawnPlayer(INT32 playernum)
 			K_SpawnPlayerBattleBumpers(p);
 		}
 	}
+
+	// I'm not refactoring the loop at the top of this file.
+	pcount = 0;
+
+	for (i = 0; i < MAXPLAYERS; ++i)
+	{
+		if (G_CouldView(i))
+		{
+			pcount++;
+		}
+	}
+
+	// Spectating when there is literally any other player in
+	// the level enables director cam.
+	// TODO: how do we support splitscreen?
+	K_ToggleDirector(players[consoleplayer].spectator && pcount > 0);
 }
 
 void P_AfterPlayerSpawn(INT32 playernum)

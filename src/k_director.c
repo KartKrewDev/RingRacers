@@ -25,6 +25,7 @@ void K_InitDirector(void)
 {
 	INT32 playernum;
 
+	directorinfo.active = false;
 	directorinfo.cooldown = SWITCHTIME;
 	directorinfo.freeze = 0;
 	directorinfo.attacker = 0;
@@ -105,6 +106,11 @@ static boolean K_CanSwitchDirector(void)
 	}
 
 	if (directorinfo.cooldown > 0)
+	{
+		return false;
+	}
+
+	if (!directorinfo.active)
 	{
 		return false;
 	}
@@ -218,11 +224,6 @@ void K_UpdateDirector(void)
 	INT32 *displayplayerp = &displayplayers[0];
 	INT32 targetposition;
 
-	if (!cv_director.value)
-	{
-		return;
-	}
-
 	K_UpdateDirectorPositions();
 
 	if (directorinfo.cooldown > 0) {
@@ -298,4 +299,14 @@ void K_UpdateDirector(void)
 
 		break;
 	}
+}
+
+void K_ToggleDirector(boolean active)
+{
+	if (directorinfo.active != active)
+	{
+		directorinfo.cooldown = 0; // switch immediately
+	}
+
+	directorinfo.active = active;
 }
