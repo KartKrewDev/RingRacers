@@ -42,6 +42,9 @@ static void finish_legacy_ogl_update()
 
 	if (st_overlay)
 	{
+		if (cv_songcredits.value)
+			HU_DrawSongCredits();
+
 		if (cv_ticrate.value)
 			SCR_DisplayTicRate();
 

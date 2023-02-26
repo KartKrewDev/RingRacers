@@ -94,6 +94,9 @@ static void temp_legacy_finishupdate_draws()
 	SCR_CalculateFPS();
 	if (st_overlay)
 	{
+		if (cv_songcredits.value)
+			HU_DrawSongCredits();
+
 		if (cv_ticrate.value)
 			SCR_DisplayTicRate();
 
