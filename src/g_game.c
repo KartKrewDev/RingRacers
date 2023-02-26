@@ -1964,7 +1964,7 @@ boolean G_CanView(INT32 playernum, UINT8 viewnum, boolean onlyactive)
 INT32 G_FindView(INT32 startview, UINT8 viewnum, boolean onlyactive, boolean reverse)
 {
 	INT32 i, dir = reverse ? -1 : 1;
-	startview = min(max(startview, 0), MAXPLAYERS);
+	startview = min(max(startview, -1), MAXPLAYERS);
 	for (i = startview; i < MAXPLAYERS && i >= 0; i += dir)
 	{
 		if (G_CanView(i, viewnum, onlyactive))
