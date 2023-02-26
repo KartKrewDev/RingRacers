@@ -1208,7 +1208,6 @@ static boolean K_HasInfiniteTether(player_t *player)
 	switch (player->curshield)
 	{
 		case KSHIELD_LIGHTNING:
-		case KSHIELD_TOP:
 			return true;
 	}
 
@@ -11308,7 +11307,7 @@ void K_EggmanTransfer(player_t *source, player_t *victim)
 		return;
 
 	K_AddHitLag(victim->mo, 2, true);
-	victim->eggmanexplode = 4*TICRATE;
+	victim->eggmanexplode = 6*TICRATE;
 	victim->itemRoulette.eggman = false;
 	victim->itemRoulette.active = false;
 
