@@ -650,6 +650,7 @@ struct setup_player_t
 	UINT16 color;
 	UINT8 mdepth;
 	boolean hitlag;
+	boolean showextra;
 
 	// Hack, save player 1's original device even if they init charsel with keyboard.
 	// If they play ALONE, allow them to retain that original device, otherwise, ignore this.

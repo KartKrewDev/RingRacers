@@ -1366,16 +1366,19 @@ static void M_DrawCharSelectPreview(UINT8 num)
 		M_DrawCharSelectCircle(p, x+32, y+64);
 	}
 
-	V_DrawScaledPatch(x+9, y+2, 0, W_CachePatchName("FILEBACK", PU_CACHE));
-	V_DrawScaledPatch(x, y+2, 0, W_CachePatchName(va("CHARSEL%c", letter), PU_CACHE));
-	if (p->mdepth > CSSTEP_PROFILE)
+	if (p->showextra == false)
 	{
-		profile_t *pr = PR_GetProfile(p->profilen);
-		V_DrawCenteredFileString(x+16+18, y+2, 0, pr->profilename);
-	}
-	else
-	{
-		V_DrawFileString(x+16, y+2, 0, "PLAYER");
+		V_DrawScaledPatch(x+9, y+2, 0, W_CachePatchName("FILEBACK", PU_CACHE));
+		V_DrawScaledPatch(x, y+2, 0, W_CachePatchName(va("CHARSEL%c", letter), PU_CACHE));
+		if (p->mdepth > CSSTEP_PROFILE)
+		{
+			profile_t *pr = PR_GetProfile(p->profilen);
+			V_DrawCenteredFileString(x+16+18, y+2, 0, pr->profilename);
+		}
+		else
+		{
+			V_DrawFileString(x+16, y+2, 0, "PLAYER");
+		}
 	}
 
 	if (p->mdepth >= CSSTEP_FOLLOWER)
@@ -1472,6 +1475,82 @@ static void M_DrawCharSelectPreview(UINT8 num)
 				V_DrawScaledPatch(xpos, cy, 0, W_CachePatchName("M_CURSOR", PU_CACHE));
 
 			V_DrawThinString(xpos+16, cy, (p->changeselect == i ? highlightflags : 0)|V_6WIDTHSPACE, choices[i]);
+		}
+	}
+
+	if (p->showextra == true)
+	{
+		switch (p->mdepth)
+		{
+			case CSSTEP_CHARS: // Character Select grid
+				V_DrawThinString(x-3, y+2, V_6WIDTHSPACE, va("Speed %u - Weight %u", p->gridx+1, p->gridy+1));
+				break;
+			case CSSTEP_ALTS: // Select clone
+			case CSSTEP_READY:
+				if (p->clonenum < setup_chargrid[p->gridx][p->gridy].numskins
+					&& setup_chargrid[p->gridx][p->gridy].skinlist[p->clonenum] < numskins)
+				{
+					V_DrawThinString(x-3, y+2, V_6WIDTHSPACE,
+						skins[setup_chargrid[p->gridx][p->gridy].skinlist[p->clonenum]].name);
+				}
+				else
+				{
+					V_DrawThinString(x-3, y+2, V_6WIDTHSPACE, va("BAD CLONENUM %u", p->clonenum));
+				}
+				break;
+			case CSSTEP_COLORS: // Select color
+				if (p->color < numskincolors)
+				{
+					V_DrawThinString(x-3, y+2, V_6WIDTHSPACE, skincolors[p->color].name);
+				}
+				else
+				{
+					V_DrawThinString(x-3, y+2, V_6WIDTHSPACE, va("BAD COLOR %u", p->color));
+				}
+				break;
+			case CSSTEP_FOLLOWERCATEGORY:
+				if (p->followercategory == -1)
+				{
+					V_DrawThinString(x-3, y+2, V_6WIDTHSPACE, "None");
+				}
+				else
+				{
+					V_DrawThinString(x-3, y+2, V_6WIDTHSPACE,
+						followercategories[setup_followercategories[p->followercategory][1]].name);
+				}
+				break;
+			case CSSTEP_FOLLOWER:
+				if (p->followern == -1)
+				{
+					V_DrawThinString(x-3, y+2, V_6WIDTHSPACE, "None");
+				}
+				else
+				{
+					V_DrawThinString(x-3, y+2, V_6WIDTHSPACE,
+						followers[p->followern].name);
+				}
+				break;
+			case CSSTEP_FOLLOWERCOLORS:
+				if (p->followercolor == FOLLOWERCOLOR_MATCH)
+				{
+					V_DrawThinString(x-3, y+2, V_6WIDTHSPACE, "Match");
+				}
+				else if (p->followercolor == FOLLOWERCOLOR_OPPOSITE)
+				{
+					V_DrawThinString(x-3, y+2, V_6WIDTHSPACE, "Opposite");
+				}
+				else if (p->followercolor < numskincolors)
+				{
+					V_DrawThinString(x-3, y+2, V_6WIDTHSPACE, skincolors[p->followercolor].name);
+				}
+				else
+				{
+					V_DrawThinString(x-3, y+2, V_6WIDTHSPACE, va("BAD FOLLOWERCOLOR %u", p->followercolor));
+				}
+				break;
+			default:
+				V_DrawThinString(x-3, y+2, V_6WIDTHSPACE, "[extrainfo mode]");
+				break;
 		}
 	}
 }
