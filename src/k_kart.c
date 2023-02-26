@@ -7748,12 +7748,12 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		}
 	}
 
-	if (player->invincibilitytimer)
+	if (player->invincibilitytimer && onground == true)
 		player->invincibilitytimer--;
 
 	if ((player->respawn.state == RESPAWNST_NONE) && player->growshrinktimer != 0)
 	{
-		if (player->growshrinktimer > 0)
+		if (player->growshrinktimer > 0 && onground == true)
 			player->growshrinktimer--;
 		if (player->growshrinktimer < 0)
 			player->growshrinktimer++;
@@ -7810,7 +7810,8 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 
 
 	if (player->stealingtimer == 0
-		&& player->rocketsneakertimer)
+		&& player->rocketsneakertimer
+		&& onground == true)
 		player->rocketsneakertimer--;
 
 	if (player->hyudorotimer)
