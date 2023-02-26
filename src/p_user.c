@@ -3186,7 +3186,13 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 
 	if (demo.playback)
 	{
-		focusangle = mo->angle;
+		// Hack-adjacent.
+		// Sometimes stale ticcmds send a weird angle at the start of the race.
+		// P_UpdatePlayerAngle knows to ignore cmd angle when you literally can't turn, so we do the same here.
+		if (leveltime > starttime)
+			focusangle = player->cmd.angle << TICCMD_REDUCE;
+		else
+			focusangle = mo->angle; // Just use something known sane.
 		focusaiming = 0;
 	}
 	else
