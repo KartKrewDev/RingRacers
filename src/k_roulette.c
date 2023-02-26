@@ -1469,6 +1469,26 @@ void K_KartItemRoulette(player_t *const player, ticcmd_t *const cmd)
 		}
 		else
 		{
+			// D2 fudge factor. Roulette was originally designed and tested with this delay.
+			UINT8 fudgedDelay = (player->cmd.latency <= 2) ? 0 : player->cmd.latency - 2;
+			while (fudgedDelay > 0)
+			{
+				UINT8 gap = (roulette->speed - roulette->tics); // How long has the roulette been on this entry?
+				if (fudgedDelay > gap) // Did the roulette tick over in-flight?
+				{
+					fudgedDelay = fudgedDelay - gap; // We're compensating for this gap's worth of delay, so cut it down.
+					roulette->index = roulette->index == 0 ? roulette->itemListLen - 1 : roulette->index - 1; // Roll the roulette index back...
+					roulette->tics = 0; // And just in case our delay is SO high that a fast roulette needs to roll back again...
+				}
+				else
+				{
+					break;
+				}
+			}
+
+			// And one more nudge for the remaining delay.
+			roulette->tics = (roulette->tics + fudgedDelay) % roulette->speed;
+
 			kartitems_t finalItem = roulette->itemList[ roulette->index ];
 
 			K_KartGetItemResult(player, finalItem);
