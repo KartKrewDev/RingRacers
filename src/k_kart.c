@@ -49,7 +49,6 @@
 // franticitems is Frantic Mode items, bool
 // encoremode is Encore Mode (duh), bool
 // comeback is Battle Mode's karma comeback, also bool
-// battlewanted is an array of the WANTED player nums, -1 for no player in that slot
 // mapreset is set when enough players fill an empty server
 
 boolean K_IsDuelItem(mobjtype_t type)
@@ -4179,23 +4178,12 @@ void K_HandleBumperChanges(player_t *player, UINT8 prevBumpers)
 	}
 	else if (player->bumpers == 0 && prevBumpers > 0)
 	{
-		mobj_t *karmahitbox = P_SpawnMobj(player->mo->x, player->mo->y, player->mo->z, MT_KARMAHITBOX);
-		P_SetTarget(&karmahitbox->target, player->mo);
-
-		karmahitbox->destscale = player->mo->destscale;
-		P_SetScale(karmahitbox, player->mo->scale);
-
-		player->karmadelay = comebacktime;
-
 		if (battlecapsules || bossinfo.valid)
 		{
 			player->pflags |= (PF_NOCONTEST|PF_ELIMINATED);
-			P_DamageMobj(player->mo, NULL, NULL, 1, DMG_TIMEOVER);
 		}
-		else if (netgame)
-		{
-			CONS_Printf(M_GetText("%s lost all of their bumpers!\n"), player_names[player-players]);
-		}
+
+		P_KillMobj(player->mo, NULL, NULL, DMG_NORMAL);
 	}
 
 	K_CalculateBattleWanted();
@@ -9305,22 +9293,22 @@ void K_KartUpdatePosition(player_t *player)
 				UINT8 myEmeralds = K_NumEmeralds(player);
 				UINT8 yourEmeralds = K_NumEmeralds(&players[i]);
 
-				if (yourEmeralds > myEmeralds)
+				// First compare all points
+				if (players[i].roundscore > player->roundscore)
 				{
-					// Emeralds matter above all
 					position++;
 				}
-				else if (yourEmeralds == myEmeralds)
+				else if (players[i].roundscore == player->roundscore)
 				{
-					// Bumpers are a tie breaker
-					if (players[i].bumpers > player->bumpers)
+					// Emeralds are a tie breaker
+					if (yourEmeralds > myEmeralds)
 					{
 						position++;
 					}
-					else if (players[i].bumpers == player->bumpers)
+					else if (yourEmeralds == myEmeralds)
 					{
-						// Score is the second tier tie breaker
-						if (players[i].roundscore > player->roundscore)
+						// Bumpers are the second tier tie breaker
+						if (players[i].bumpers > player->bumpers)
 						{
 							position++;
 						}
@@ -11378,6 +11366,9 @@ tic_t K_TimeLimitForGametype(void)
 UINT32 K_PointLimitForGametype(void)
 {
 	const UINT32 gametypeDefault = gametypes[gametype]->pointlimit;
+	const UINT32 battleRules = GTR_BUMPERS|GTR_CLOSERPLAYERS|GTR_PAPERITEMS;
+
+	UINT32 ptsCap = gametypeDefault;
 
 	if (!(gametyperules & GTR_POINTLIMIT))
 	{
@@ -11389,7 +11380,28 @@ UINT32 K_PointLimitForGametype(void)
 		return cv_pointlimit.value;
 	}
 
-	return gametypeDefault;
+	if (battlecapsules || bossinfo.valid)
+	{
+		return 0;
+	}
+
+	if ((gametyperules & battleRules) == battleRules)
+	{
+		INT32 i;
+
+		// It's frustrating that this shitty for-loop needs to
+		// be duplicated every time the players need to be
+		// counted.
+		for (i = 0; i < MAXPLAYERS; ++i)
+		{
+			if (D_IsPlayerHumanAndGaming(i))
+			{
+				ptsCap += 3;
+			}
+		}
+	}
+
+	return ptsCap;
 }
 
 //}

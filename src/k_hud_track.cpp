@@ -2,12 +2,15 @@
 #include <cstddef>
 #include <vector>
 
+#include "k_battle.h"
+#include "k_boss.h"
 #include "k_hud.h"
 #include "m_fixed.h"
 #include "p_local.h"
 #include "p_mobj.h"
 #include "r_fps.h"
 #include "r_main.h"
+#include "st_stuff.h"
 #include "v_video.h"
 
 namespace
@@ -226,6 +229,43 @@ void K_DrawTargetTracking(const TargetTracking& target)
 	}
 }
 
+bool is_player_tracking_target(const player_t *player)
+{
+	if ((gametyperules & (GTR_BUMPERS|GTR_CLOSERPLAYERS)) != (GTR_BUMPERS|GTR_CLOSERPLAYERS))
+	{
+		return false;
+	}
+
+	if (battlecapsules || bossinfo.valid)
+	{
+		return false;
+	}
+
+	if (player == nullptr)
+	{
+		return false;
+	}
+
+	if (inDuel)
+	{
+		// Always draw targets in 1v1 but don't draw player's
+		// own target on their own viewport.
+		return player != stplyr;
+	}
+
+	if (g_hiscore < 1) // SOMEONE should be scoring
+	{
+		return false;
+	}
+
+	if (player->roundscore < g_hiscore)
+	{
+		return false;
+	}
+
+	return true;
+}
+
 bool is_object_tracking_target(const mobj_t* mobj)
 {
 	switch (mobj->type)
@@ -233,6 +273,9 @@ bool is_object_tracking_target(const mobj_t* mobj)
 	case MT_BATTLECAPSULE:
 	case MT_SPECIAL_UFO:
 		return true;
+
+	case MT_PLAYER:
+		return is_player_tracking_target(mobj->player);
 
 	default:
 		return false;

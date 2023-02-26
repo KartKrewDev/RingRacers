@@ -297,7 +297,7 @@ SINT8 votes[MAXPLAYERS]; // Each player's vote
 SINT8 pickedvote; // What vote the host rolls
 
 // Server-sided, synched variables
-SINT8 battlewanted[4]; // WANTED players in battle, worth x2 points
+UINT32 g_hiscore; // Highest score (points) achieved by anyone in game
 tic_t wantedcalcdelay; // Time before it recalculates WANTED
 tic_t itemCooldowns[NUMKARTITEMS - 1]; // Cooldowns to prevent item spawning
 tic_t mapreset; // Map reset delay when enough players have joined an empty game
