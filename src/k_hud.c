@@ -180,6 +180,26 @@ patch_t *kp_capsuletarget_far[2];
 patch_t *kp_capsuletarget_far_text[2];
 patch_t *kp_capsuletarget_near[8];
 
+static patch_t *kp_button_a[2][2];
+static patch_t *kp_button_b[2][2];
+static patch_t *kp_button_c[2][2];
+static patch_t *kp_button_x[2][2];
+static patch_t *kp_button_y[2][2];
+static patch_t *kp_button_z[2][2];
+static patch_t *kp_button_start[2];
+static patch_t *kp_button_l[2];
+static patch_t *kp_button_r[2];
+static patch_t *kp_button_up[2];
+static patch_t *kp_button_down[2];
+static patch_t *kp_button_right[2];
+static patch_t *kp_button_left[2];
+
+static void K_LoadButtonGraphics(patch_t *kp[2], int letter)
+{
+	HU_UpdatePatch(&kp[0], "TLB_%c", letter);
+	HU_UpdatePatch(&kp[1], "TLB_%cB", letter);
+}
+
 void K_LoadKartHUDGraphics(void)
 {
 	INT32 i, j, k;
@@ -693,6 +713,26 @@ void K_LoadKartHUDGraphics(void)
 		buffer[7] = '0'+i;
 		HU_UpdatePatch(&kp_capsuletarget_near[i], "%s", buffer);
 	}
+
+	K_LoadButtonGraphics(kp_button_a[0], 'A');
+	K_LoadButtonGraphics(kp_button_a[1], 'N');
+	K_LoadButtonGraphics(kp_button_b[0], 'B');
+	K_LoadButtonGraphics(kp_button_b[1], 'O');
+	K_LoadButtonGraphics(kp_button_c[0], 'C');
+	K_LoadButtonGraphics(kp_button_c[1], 'P');
+	K_LoadButtonGraphics(kp_button_x[0], 'D');
+	K_LoadButtonGraphics(kp_button_x[1], 'Q');
+	K_LoadButtonGraphics(kp_button_y[0], 'E');
+	K_LoadButtonGraphics(kp_button_y[1], 'R');
+	K_LoadButtonGraphics(kp_button_z[0], 'F');
+	K_LoadButtonGraphics(kp_button_z[1], 'S');
+	K_LoadButtonGraphics(kp_button_start, 'G');
+	K_LoadButtonGraphics(kp_button_l, 'H');
+	K_LoadButtonGraphics(kp_button_r, 'I');
+	K_LoadButtonGraphics(kp_button_up, 'J');
+	K_LoadButtonGraphics(kp_button_down, 'K');
+	K_LoadButtonGraphics(kp_button_right, 'L');
+	K_LoadButtonGraphics(kp_button_left, 'M');
 }
 
 // For the item toggle menu
