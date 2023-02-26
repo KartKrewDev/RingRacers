@@ -1095,12 +1095,14 @@ static void G_DoAnglePrediction(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer, p
 		realtics--;
 	}
 
+#if 0
+	// Left here in case it needs unsealing later. This tried to replicate an old localcam function, but this behavior was unpopular in tests.
 	//if (player->pflags & PF_DRIFTEND)
-	if (false) // Left here in case it needs unsealing later. This tried to replicate an old localcam function, but this behavior was unpopular in tests.
 	{
 		localangle[ssplayer - 1] = player->mo->angle;
 	}
 	else
+#endif
 	{
 		localangle[ssplayer - 1] += angleChange;
 	}

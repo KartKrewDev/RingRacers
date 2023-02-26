@@ -136,15 +136,15 @@ demoghost *ghosts = NULL;
 #define DEMO_BOT		0x08
 
 // For demos
-#define ZT_FWD		1
-#define ZT_SIDE		2
-#define ZT_TURNING	4
-#define ZT_ANGLE	8
-#define ZT_THROWDIR	16
-#define ZT_BUTTONS	32
-#define ZT_AIMING	64
-#define ZT_LATENCY	128
-#define ZT_FLAGS	256
+#define ZT_FWD		0x0001
+#define ZT_SIDE		0x0002
+#define ZT_TURNING	0x0004
+#define ZT_ANGLE	0x0008
+#define ZT_THROWDIR	0x0010
+#define ZT_BUTTONS	0x0020
+#define ZT_AIMING	0x0040
+#define ZT_LATENCY	0x0080
+#define ZT_FLAGS	0x0100
 // Ziptics are UINT16 now, go nuts
 
 #define DEMOMARKER 0x80 // demobuf.end
