@@ -1208,7 +1208,6 @@ static boolean K_HasInfiniteTether(player_t *player)
 	switch (player->curshield)
 	{
 		case KSHIELD_LIGHTNING:
-		case KSHIELD_TOP:
 			return true;
 	}
 
