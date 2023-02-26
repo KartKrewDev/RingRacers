@@ -175,6 +175,7 @@ menu_t *M_InterruptMenuWithChallenges(menu_t *desiredmenu)
 	if (challengesmenu.pending || desiredmenu == NULL)
 	{
 		challengesmenu.ticker = 0;
+		challengesmenu.requestflip = false;
 		challengesmenu.requestnew = false;
 		challengesmenu.currentunlock = MAXUNLOCKABLES;
 		challengesmenu.unlockcondition = NULL;
@@ -287,7 +288,7 @@ void M_ChallengesTick(void)
 	if (challengesmenu.extradata != NULL)
 	{
 		UINT16 id = (challengesmenu.hilix * CHALLENGEGRIDHEIGHT) + challengesmenu.hiliy;
-		boolean seeeveryone = M_MenuButtonHeld(pid, MBT_R);
+		boolean seeeveryone = challengesmenu.requestflip;
 		boolean allthewaythrough;
 		UINT8 maxflip;
 		for (i = 0; i < (CHALLENGEGRIDHEIGHT * gamedata->challengegridwidth); i++)
@@ -479,8 +480,17 @@ boolean M_ChallengesInputs(INT32 ch)
 			return true;
 		}
 
+		if (M_MenuButtonPressed(pid, MBT_R))
+		{
+			challengesmenu.requestflip ^= true;
+
+			return true;
+		}
+
 		if (challengesmenu.extradata != NULL && move)
 		{
+			challengesmenu.requestflip = false;
+
 			// Determine movement around the grid
 			// For right/down movement, we can pre-determine the number of steps based on extradata.
 			// For left/up movement, we can't - we have to be ready to iterate twice, and break early if we don't run into a large tile.

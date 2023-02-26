@@ -1158,6 +1158,8 @@ extern struct challengesmenu_s {
 	boolean pending;
 	boolean requestnew;
 
+	boolean requestflip;
+
 	UINT8 unlockcount[CC_MAX];
 
 	UINT8 fade;
