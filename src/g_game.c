@@ -2050,6 +2050,10 @@ void G_ResetView(UINT8 viewnum, INT32 playernum, boolean onlyactive)
 	{
 		camerap = &camera[viewnum-1];
 		P_ResetCamera(&players[(*displayplayerp)], camerap);
+
+		// Why does it need to be done twice?
+		R_ResetViewInterpolation(viewnum);
+		R_ResetViewInterpolation(viewnum);
 	}
 
 	if (viewnum > splits)
