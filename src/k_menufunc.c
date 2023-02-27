@@ -932,7 +932,7 @@ static void M_HandleMenuInput(void)
 			{
 				if (((currentMenu->menuitems[itemOn].status & IT_CALLTYPE) & IT_CALL_NOTMODIFIED) && majormods)
 				{
-					M_StartMessage(M_GetText("This cannot be done with complex addons\nor in a cheated game.\n\nPress (B)\n"), NULL, MM_NOTHING);
+					M_StartMessage(M_GetText("This cannot be done with complex addons\nor in a cheated game.\n\nPress (B)"), NULL, MM_NOTHING);
 					return;
 				}
 			}
