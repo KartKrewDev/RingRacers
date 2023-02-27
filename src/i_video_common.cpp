@@ -54,6 +54,7 @@ struct InternalPassData
 
 static std::unique_ptr<InternalPassData> g_passes;
 static Rhi* g_last_known_rhi = nullptr;
+static bool g_imgui_frame_active = false;
 
 Handle<Rhi> srb2::sys::g_current_rhi = kNullHandle;
 
@@ -220,6 +221,7 @@ static InternalPassData build_pass_manager()
 		[](PassManager&, Rhi& rhi) {},
 		[framebuffer_manager](PassManager&, Rhi& rhi)
 		{
+			g_imgui_frame_active = false;
 			rhi.present();
 			rhi.finish();
 			framebuffer_manager->reset_post();
@@ -322,11 +324,16 @@ void I_NewTwodeeFrame(void)
 
 void I_NewImguiFrame(void)
 {
-	// TODO move this to srb2loop
+	if (g_imgui_frame_active)
+	{
+		ImGui::EndFrame();
+		g_imgui_frame_active = false;
+	}
 	ImGuiIO& io = ImGui::GetIO();
 	io.DisplaySize.x = vid.realwidth;
 	io.DisplaySize.y = vid.realheight;
 	ImGui::NewFrame();
+	g_imgui_frame_active = true;
 }
 
 static void maybe_reinit_passes(Rhi* rhi)
