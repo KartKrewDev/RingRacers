@@ -9729,6 +9729,7 @@ static void K_KartSpindash(player_t *player)
 
 		player->spindash = 0;
 		S_ReducedVFXSound(player->mo, sfx_s23c, player);
+		S_StopSoundByID(player->mo, sfx_kc38);
 	}
 
 
@@ -9780,10 +9781,14 @@ static void K_KartSpindash(player_t *player)
 			UINT8 ringdropframes = 2 + (player->kartspeed + player->kartweight);
 			boolean spawnOldEffect = true;
 
-			if (player->rings <= 0) // Use the damn spindash
-				player->spindash++; // I am no longer asking
-
 			INT16 chargetime = MAXCHARGETIME - ++player->spindash;
+
+			if (player->rings <= 0 && chargetime >= 0) // Desperation spindash
+			{
+				player->spindash++;
+				if (!S_SoundPlaying(player->mo, sfx_kc38))
+					S_StartSound(player->mo, sfx_kc38);
+			} 
 
 			if (player->spindash >= SPINDASHTHRUSTTIME)
 			{
