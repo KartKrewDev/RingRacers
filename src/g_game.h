@@ -101,7 +101,6 @@ extern consvar_t cv_resume;
 const char *G_BuildMapName(INT32 map);
 INT32 G_MapNumber(const char *mapname);
 
-void G_ResetAnglePrediction(player_t *player);
 void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer);
 
 // copy ticcmd_t to and fro the normal way
@@ -116,10 +115,6 @@ INT16 G_SoftwareClipAimingPitch(INT32 *aiming);
 extern angle_t localangle[MAXSPLITSCREENPLAYERS];
 extern INT32 localaiming[MAXSPLITSCREENPLAYERS]; // should be an angle_t but signed
 extern INT32 localsteering[MAXSPLITSCREENPLAYERS];
-extern INT32 localdelta[MAXSPLITSCREENPLAYERS];
-extern INT32 localstoredeltas[MAXSPLITSCREENPLAYERS][TICCMD_LATENCYMASK + 1];
-extern UINT8 locallatency[MAXSPLITSCREENPLAYERS][TICRATE];
-extern UINT8 localtic;
 
 INT32 G_PlayerInputAnalog(UINT8 p, INT32 gc, UINT8 menuPlayers);
 boolean G_PlayerInputDown(UINT8 p, INT32 gc, UINT8 menuPlayers);

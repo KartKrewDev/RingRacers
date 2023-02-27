@@ -71,6 +71,7 @@ struct ticcmd_t
 {
 	SINT8 forwardmove; // -MAXPLMOVE to MAXPLMOVE (50)
 	INT16 turning; // Turn speed
+	INT16 angle; // Predicted angle, use me if you can!
 	INT16 throwdir; // Aiming direction
 	INT16 aiming; // vertical aiming, see G_BuildTicCmd
 	UINT16 buttons;

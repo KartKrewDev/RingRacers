@@ -359,10 +359,10 @@ struct doomdata_t
 	UINT8 reserved; // Padding
 	union
 	{
-		clientcmd_pak clientpak;            //         145 bytes
-		client2cmd_pak client2pak;          //         202 bytes
-		client3cmd_pak client3pak;          //         258 bytes(?)
-		client4cmd_pak client4pak;          //         316 bytes(?)
+		clientcmd_pak clientpak;            //         147 bytes
+		client2cmd_pak client2pak;          //         206 bytes
+		client3cmd_pak client3pak;          //         264 bytes(?)
+		client4cmd_pak client4pak;          //         324 bytes(?)
 		servertics_pak serverpak;           //      132495 bytes (more around 360, no?)
 		serverconfig_pak servercfg;         //         773 bytes
 		UINT8 textcmd[MAXTEXTCMD+1];        //       66049 bytes (wut??? 64k??? More like 257 bytes...)
