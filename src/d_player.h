@@ -384,6 +384,13 @@ typedef struct {
 	boolean flip;
 } sonicloopvars_t;
 
+// player_t struct for all alternative viewpoint variables
+struct altview_t
+{
+	mobj_t *mobj;
+	INT32 tics;
+};
+
 // ========================================================================
 //                          PLAYER STRUCTURE
 // ========================================================================
@@ -644,9 +651,7 @@ struct player_t
 
 	INT32 onconveyor; // You are on a conveyor belt if nonzero
 
-	mobj_t *awayviewmobj;
-	INT32 awayviewtics;
-	angle_t awayviewaiming; // Used for cut-away view
+	altview_t awayview;
 
 	boolean spectator;
 	tic_t spectatewait;		// reimplementable as UINT8 queue - How long have you been waiting as a spectator

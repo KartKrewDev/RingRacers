@@ -137,8 +137,7 @@ static void P_NetArchivePlayers(savebuffer_t *save)
 		WRITEANGLE(save->p, players[i].drawangle);
 		WRITEANGLE(save->p, players[i].viewrollangle);
 		WRITEANGLE(save->p, players[i].tilt);
-		WRITEANGLE(save->p, players[i].awayviewaiming);
-		WRITEINT32(save->p, players[i].awayviewtics);
+		WRITEINT32(save->p, players[i].awayview.tics);
 
 		WRITEUINT8(save->p, players[i].playerstate);
 		WRITEUINT32(save->p, players[i].pflags);
@@ -197,7 +196,7 @@ static void P_NetArchivePlayers(savebuffer_t *save)
 
 		WRITEUINT8(save->p, players[i].splitscreenindex);
 
-		if (players[i].awayviewmobj)
+		if (players[i].awayview.mobj)
 			flags |= AWAYVIEW;
 
 		if (players[i].followmobj)
@@ -227,7 +226,7 @@ static void P_NetArchivePlayers(savebuffer_t *save)
 			WRITEUINT32(save->p, players[i].skybox.centerpoint->mobjnum);
 
 		if (flags & AWAYVIEW)
-			WRITEUINT32(save->p, players[i].awayviewmobj->mobjnum);
+			WRITEUINT32(save->p, players[i].awayview.mobj->mobjnum);
 
 		if (flags & FOLLOWITEM)
 			WRITEUINT32(save->p, players[i].followmobj->mobjnum);
@@ -527,8 +526,7 @@ static void P_NetUnArchivePlayers(savebuffer_t *save)
 		players[i].drawangle = players[i].old_drawangle = READANGLE(save->p);
 		players[i].viewrollangle = READANGLE(save->p);
 		players[i].tilt = READANGLE(save->p);
-		players[i].awayviewaiming = READANGLE(save->p);
-		players[i].awayviewtics = READINT32(save->p);
+		players[i].awayview.tics = READINT32(save->p);
 
 		players[i].playerstate = READUINT8(save->p);
 		players[i].pflags = READUINT32(save->p);
@@ -596,7 +594,7 @@ static void P_NetUnArchivePlayers(savebuffer_t *save)
 			players[i].skybox.centerpoint = (mobj_t *)(size_t)READUINT32(save->p);
 
 		if (flags & AWAYVIEW)
-			players[i].awayviewmobj = (mobj_t *)(size_t)READUINT32(save->p);
+			players[i].awayview.mobj = (mobj_t *)(size_t)READUINT32(save->p);
 
 		if (flags & FOLLOWITEM)
 			players[i].followmobj = (mobj_t *)(size_t)READUINT32(save->p);
@@ -4684,12 +4682,12 @@ static void P_RelinkPointers(void)
 			if (!P_SetTarget(&players[i].skybox.centerpoint, P_FindNewPosition(temp)))
 				CONS_Debug(DBG_GAMELOGIC, "skybox.centerpoint not found on player %d\n", i);
 		}
-		if (players[i].awayviewmobj)
+		if (players[i].awayview.mobj)
 		{
-			temp = (UINT32)(size_t)players[i].awayviewmobj;
-			players[i].awayviewmobj = NULL;
-			if (!P_SetTarget(&players[i].awayviewmobj, P_FindNewPosition(temp)))
-				CONS_Debug(DBG_GAMELOGIC, "awayviewmobj not found on player %d\n", i);
+			temp = (UINT32)(size_t)players[i].awayview.mobj;
+			players[i].awayview.mobj = NULL;
+			if (!P_SetTarget(&players[i].awayview.mobj, P_FindNewPosition(temp)))
+				CONS_Debug(DBG_GAMELOGIC, "awayview.mobj not found on player %d\n", i);
 		}
 		if (players[i].followmobj)
 		{

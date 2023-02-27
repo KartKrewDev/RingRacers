@@ -3670,10 +3670,10 @@ static void P_CalcPostImg(player_t *player)
 	else
 		pviewheight = player->mo->z + player->viewheight;
 
-	if (player->awayviewtics && player->awayviewmobj && !P_MobjWasRemoved(player->awayviewmobj))
+	if (player->awayview.tics && player->awayview.mobj && !P_MobjWasRemoved(player->awayview.mobj))
 	{
-		sector = player->awayviewmobj->subsector->sector;
-		pviewheight = player->awayviewmobj->z + 20*FRACUNIT;
+		sector = player->awayview.mobj->subsector->sector;
+		pviewheight = player->awayview.mobj->z;
 	}
 
 	for (i = 0; i <= (unsigned)r_splitscreen; i++)
@@ -4020,17 +4020,17 @@ void P_PlayerThink(player_t *player)
 
 	player->old_drawangle = player->drawangle;
 
-	if (player->awayviewmobj && P_MobjWasRemoved(player->awayviewmobj))
+	if (player->awayview.mobj && P_MobjWasRemoved(player->awayview.mobj))
 	{
-		P_SetTarget(&player->awayviewmobj, NULL); // remove awayviewmobj asap if invalid
-		player->awayviewtics = 0; // reset to zero
+		P_SetTarget(&player->awayview.mobj, NULL); // remove awayview.mobj asap if invalid
+		player->awayview.tics = 0; // reset to zero
 	}
 
 	if (player->flashcount)
 		player->flashcount--;
 
-	if (player->awayviewtics && player->awayviewtics != -1)
-		player->awayviewtics--;
+	if (player->awayview.tics && player->awayview.tics != -1)
+		player->awayview.tics--;
 
 	// Track airtime
 	if (P_IsObjectOnGround(player->mo)

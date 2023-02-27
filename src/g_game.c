@@ -2520,7 +2520,7 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	{
 		follower = players[player].follower;
 		P_SetTarget(&players[player].follower, NULL);
-		P_SetTarget(&players[player].awayviewmobj, NULL);
+		P_SetTarget(&players[player].awayview.mobj, NULL);
 		P_SetTarget(&players[player].stumbleIndicator, NULL);
 		P_SetTarget(&players[player].followmobj, NULL);
 

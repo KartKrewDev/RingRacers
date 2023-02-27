@@ -482,12 +482,10 @@ static int player_get(lua_State *L)
 		lua_pushinteger(L, plr->timeshitprev);
 	else if (fastcmp(field,"onconveyor"))
 		lua_pushinteger(L, plr->onconveyor);
-	else if (fastcmp(field,"awayviewmobj"))
-		LUA_PushUserdata(L, plr->awayviewmobj, META_MOBJ);
-	else if (fastcmp(field,"awayviewtics"))
-		lua_pushinteger(L, plr->awayviewtics);
-	else if (fastcmp(field,"awayviewaiming"))
-		lua_pushangle(L, plr->awayviewaiming);
+	else if (fastcmp(field,"awayviewmobj")) // FIXME: struct
+		LUA_PushUserdata(L, plr->awayview.mobj, META_MOBJ);
+	else if (fastcmp(field,"awayviewtics")) // FIXME: struct
+		lua_pushinteger(L, plr->awayview.tics);
 
 	else if (fastcmp(field,"spectator"))
 		lua_pushboolean(L, plr->spectator);
@@ -848,21 +846,19 @@ static int player_set(lua_State *L)
 		plr->timeshitprev = (UINT8)luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"onconveyor"))
 		plr->onconveyor = (INT32)luaL_checkinteger(L, 3);
-	else if (fastcmp(field,"awayviewmobj"))
+	else if (fastcmp(field,"awayviewmobj")) // FIXME: struct
 	{
 		mobj_t *mo = NULL;
 		if (!lua_isnil(L, 3))
 			mo = *((mobj_t **)luaL_checkudata(L, 3, META_MOBJ));
-		P_SetTarget(&plr->awayviewmobj, mo);
+		P_SetTarget(&plr->awayview.mobj, mo);
 	}
-	else if (fastcmp(field,"awayviewtics"))
+	else if (fastcmp(field,"awayviewtics")) // FIXME: struct
 	{
-		plr->awayviewtics = (INT32)luaL_checkinteger(L, 3);
-		if (plr->awayviewtics && !plr->awayviewmobj) // awayviewtics must ALWAYS have an awayviewmobj set!!
-			P_SetTarget(&plr->awayviewmobj, plr->mo); // but since the script might set awayviewmobj immediately AFTER setting awayviewtics, use player mobj as filler for now.
+		plr->awayview.tics = (INT32)luaL_checkinteger(L, 3);
+		if (plr->awayview.tics && !plr->awayview.mobj) // awayviewtics must ALWAYS have an awayviewmobj set!!
+			P_SetTarget(&plr->awayview.mobj, plr->mo); // but since the script might set awayviewmobj immediately AFTER setting awayviewtics, use player mobj as filler for now.
 	}
-	else if (fastcmp(field,"awayviewaiming"))
-		plr->awayviewaiming = luaL_checkangle(L, 3);
 	else if (fastcmp(field,"spectator"))
 		plr->spectator = lua_toboolean(L, 3);
 	else if (fastcmp(field,"bot"))

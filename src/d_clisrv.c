@@ -2557,7 +2557,7 @@ void CL_ClearPlayer(INT32 playernum)
 
 		P_SetTarget(&players[playernum].skybox.viewpoint, NULL);
 		P_SetTarget(&players[playernum].skybox.centerpoint, NULL);
-		P_SetTarget(&players[playernum].awayviewmobj, NULL);
+		P_SetTarget(&players[playernum].awayview.mobj, NULL);
 		P_SetTarget(&players[playernum].followmobj, NULL);
 		P_SetTarget(&players[playernum].hoverhyudoro, NULL);
 		P_SetTarget(&players[playernum].stumbleIndicator, NULL);

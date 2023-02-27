@@ -2989,7 +2989,7 @@ static void K_drawKartPlayerCheck(void)
 		return;
 	}
 
-	if (stplyr->spectator || stplyr->awayviewtics)
+	if (stplyr->spectator || stplyr->awayview.tics)
 	{
 		return;
 	}
@@ -3238,7 +3238,7 @@ static void K_drawKartNameTags(void)
 		return;
 	}
 
-	if (stplyr->awayviewtics)
+	if (stplyr->awayview.tics)
 	{
 		return;
 	}

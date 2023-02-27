@@ -2994,35 +2994,35 @@ boolean P_ProcessSpecial(activator_t *activator, INT16 special, INT32 *args, cha
 
 		case 422: // Cut away to another view
 			{
-				mobj_t *altview;
-				INT32 aim;
+				altview_t *modifyView = NULL;
+				mobj_t *newViewMobj = NULL;
 
-				if ((!mo || !mo->player) && !titlemapinaction) // only players have views, and title screens
-					return false;
-
-				altview = P_FindObjectTypeFromTag(MT_ALTVIEWMAN, args[0]);
-				if (!altview || !altview->spawnpoint)
-					return false;
-
-				// If titlemap, set the camera ref for title's thinker
-				// This is not revoked until overwritten; awayviewtics is ignored
 				if (titlemapinaction)
-					titlemapcameraref = altview;
+				{
+					modifyView = &titlemapcam;
+				}
+				else if (mo != NULL && mo->player != NULL)
+				{
+					modifyView = &mo->player->awayview;
+				}
 				else
 				{
-					P_SetTarget(&mo->player->awayviewmobj, altview);
-					mo->player->awayviewtics = args[1];
+					return false;
 				}
 
-				aim = (backwardsCompat) ? args[2] : altview->spawnpoint->pitch;
-				aim = (aim + 360) % 360;
-				aim *= (ANGLE_90>>8);
-				aim /= 90;
-				aim <<= 8;
-				if (titlemapinaction)
-					titlemapcameraref->cusval = (angle_t)aim;
-				else
-					mo->player->awayviewaiming = (angle_t)aim;
+				newViewMobj = P_FindObjectTypeFromTag(MT_ALTVIEWMAN, args[0]);
+				if (newViewMobj == NULL || newViewMobj->spawnpoint == NULL)
+				{
+					return false;
+				}
+
+				P_SetTarget(&modifyView->mobj, newViewMobj);
+
+				// If titlemap, awayview.tics is ignored
+				if (titlemapinaction == false)
+				{
+					modifyView->tics = args[1];
+				}
 			}
 			break;
 

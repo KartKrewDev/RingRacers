@@ -62,7 +62,7 @@ static tic_t stoptimer;
 static boolean keypressed = false;
 
 static INT32 menuanimtimer; // Title screen: background animation timing
-mobj_t *titlemapcameraref = NULL;
+altview_t titlemapcam = {0};
 
 // menu presentation state
 char curbgname[9];
@@ -1836,7 +1836,7 @@ void F_StartTitleScreen(void)
 
 		gamestate_t prevwipegamestate = wipegamestate;
 		titlemapinaction = true;
-		titlemapcameraref = NULL;
+		P_SetTarget(&titlemapcam.mobj, NULL);
 		gamemap = titleMapNum+1;
 
 		maptol = mapheaderinfo[titleMapNum]->typeoflevel;
@@ -2138,7 +2138,7 @@ void F_TitleScreenTicker(boolean run)
 		mobj_t *cameraref = NULL;
 
 		// If there's a Line 422 Switch Cut-Away view, don't force us.
-		if (!titlemapcameraref || titlemapcameraref->type != MT_ALTVIEWMAN)
+		if (titlemapcam.mobj == NULL || titlemapcam.mobj->type != MT_ALTVIEWMAN)
 		{
 			for (th = thlist[THINK_MOBJ].next; th != &thlist[THINK_MOBJ]; th = th->next)
 			{
@@ -2153,14 +2153,21 @@ void F_TitleScreenTicker(boolean run)
 				if (mo2->type != MT_ALTVIEWMAN)
 					continue;
 
-				cameraref = titlemapcameraref = mo2;
+				cameraref = mo2;
 				break;
+			}
+
+			if (cameraref != NULL)
+			{
+				P_SetTarget(&titlemapcam.mobj, cameraref);
 			}
 		}
 		else
-			cameraref = titlemapcameraref;
+		{
+			cameraref = titlemapcam.mobj;
+		}
 
-		if (cameraref)
+		if (cameraref != NULL)
 		{
 			camera[0].x = cameraref->x;
 			camera[0].y = cameraref->y;
@@ -3135,8 +3142,6 @@ void F_TextPromptTicker(void)
 boolean F_StartCeremony(void)
 {
 	INT32 podiumMapNum = nummapheaders;
-
-	wipegamestate = GS_CEREMONY;
 
 	if (podiummap
 		&& ((podiumMapNum = G_MapNumber(podiummap)) < nummapheaders)

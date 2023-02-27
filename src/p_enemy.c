@@ -4165,8 +4165,8 @@ void A_OverlayThink(mobj_t *actor)
 	{
 		angle_t viewingangle;
 
-		if (players[displayplayers[0]].awayviewtics)
-			viewingangle = R_PointToAngle2(actor->target->x, actor->target->y, players[displayplayers[0]].awayviewmobj->x, players[displayplayers[0]].awayviewmobj->y);
+		if (players[displayplayers[0]].awayview.tics)
+			viewingangle = R_PointToAngle2(actor->target->x, actor->target->y, players[displayplayers[0]].awayview.mobj->x, players[displayplayers[0]].awayview.mobj->y);
 		else if (!camera[0].chase && players[displayplayers[0]].mo)
 			viewingangle = R_PointToAngle2(actor->target->x, actor->target->y, players[displayplayers[0]].mo->x, players[displayplayers[0]].mo->y);
 		else

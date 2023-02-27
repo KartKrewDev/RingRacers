@@ -105,17 +105,10 @@ extern INT16 ttloop;
 extern UINT16 tttics;
 extern boolean ttavailable[6];
 
-
-typedef enum
-{
-	TITLEMAP_OFF = 0,
-	TITLEMAP_LOADING,
-	TITLEMAP_RUNNING
-} titlemap_enum;
-
 // Current menu parameters
 
-extern mobj_t *titlemapcameraref;
+extern altview_t titlemapcam;
+
 extern char curbgname[9];
 extern SINT8 curfadevalue;
 extern INT32 curbgcolor;

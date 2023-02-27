@@ -3779,13 +3779,13 @@ void P_CalcChasePostImg(player_t *player, camera_t *thiscam)
 	{
 		postimg = postimg_mirror;
 	}
-	else if (player->awayviewtics && player->awayviewmobj && !P_MobjWasRemoved(player->awayviewmobj)) // Camera must obviously exist
+	else if (player->awayview.tics && player->awayview.mobj && !P_MobjWasRemoved(player->awayview.mobj)) // Camera must obviously exist
 	{
 		camera_t dummycam;
-		dummycam.subsector = player->awayviewmobj->subsector;
-		dummycam.x = player->awayviewmobj->x;
-		dummycam.y = player->awayviewmobj->y;
-		dummycam.z = player->awayviewmobj->z;
+		dummycam.subsector = player->awayview.mobj->subsector;
+		dummycam.x = player->awayview.mobj->x;
+		dummycam.y = player->awayview.mobj->y;
+		dummycam.z = player->awayview.mobj->z;
 		//dummycam.height = 40*FRACUNIT; // alt view height is 20*FRACUNIT
 		dummycam.height = 0;			 // Why? Remote viewpoint cameras have no height.
 		// Are we in water?
@@ -8088,8 +8088,8 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 			angle_t viewingangle;
 			statenum_t curstate = ((mobj->tics == 1) ? (mobj->state->nextstate) : ((statenum_t)(mobj->state-states)));
 
-			if (players[displayplayers[0]].awayviewtics)
-				viewingangle = R_PointToAngle2(mobj->target->x, mobj->target->y, players[displayplayers[0]].awayviewmobj->x, players[displayplayers[0]].awayviewmobj->y);
+			if (players[displayplayers[0]].awayview.tics)
+				viewingangle = R_PointToAngle2(mobj->target->x, mobj->target->y, players[displayplayers[0]].awayview.mobj->x, players[displayplayers[0]].awayview.mobj->y);
 			else if (!camera[0].chase && players[displayplayers[0]].mo)
 				viewingangle = R_PointToAngle2(mobj->target->x, mobj->target->y, players[displayplayers[0]].mo->x, players[displayplayers[0]].mo->y);
 			else
@@ -8219,8 +8219,8 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 		{
 			angle_t viewingangle;
 
-			if (players[displayplayers[0]].awayviewtics)
-				viewingangle = R_PointToAngle2(mobj->target->x, mobj->target->y, players[displayplayers[0]].awayviewmobj->x, players[displayplayers[0]].awayviewmobj->y);
+			if (players[displayplayers[0]].awayview.tics)
+				viewingangle = R_PointToAngle2(mobj->target->x, mobj->target->y, players[displayplayers[0]].awayview.mobj->x, players[displayplayers[0]].awayview.mobj->y);
 			else if (!camera[0].chase && players[displayplayers[0]].mo)
 				viewingangle = R_PointToAngle2(mobj->target->x, mobj->target->y, players[displayplayers[0]].mo->x, players[displayplayers[0]].mo->y);
 			else
@@ -8324,8 +8324,8 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 		{
 			angle_t viewingangle;
 
-			if (players[displayplayers[0]].awayviewtics)
-				viewingangle = R_PointToAngle2(mobj->target->x, mobj->target->y, players[displayplayers[0]].awayviewmobj->x, players[displayplayers[0]].awayviewmobj->y);
+			if (players[displayplayers[0]].awayview.tics)
+				viewingangle = R_PointToAngle2(mobj->target->x, mobj->target->y, players[displayplayers[0]].awayview.mobj->x, players[displayplayers[0]].awayview.mobj->y);
 			else if (!camera[0].chase && players[displayplayers[0]].mo)
 				viewingangle = R_PointToAngle2(mobj->target->x, mobj->target->y, players[displayplayers[0]].mo->x, players[displayplayers[0]].mo->y);
 			else
