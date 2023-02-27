@@ -10,14 +10,11 @@ else()
 endif()
 
 if(NOT "${SRB2_CONFIG_SYSTEM_LIBRARIES}")
-include("cpm-sdl2.cmake")
+	include("cpm-sdl2.cmake")
 	include("cpm-zlib.cmake")
 	include("cpm-png.cmake")
 	include("cpm-curl.cmake")
 	include("cpm-libgme.cmake")
-	include("cpm-libvpx.cmake")
-	include("cpm-ogg.cmake") # libvorbis depends
-	include("cpm-libvorbis.cmake")
 endif()
 
 include("cpm-rapidjson.cmake")
@@ -26,8 +23,14 @@ include("cpm-xmp-lite.cmake")
 include("cpm-fmt.cmake")
 include("cpm-imgui.cmake")
 include("cpm-acsvm.cmake")
-include("cpm-libwebm.cmake")
-include("cpm-libyuv.cmake")
+
+if(NOT "${SRB2_CONFIG_SYSTEM_LIBRARIES}" AND SRB2_CONFIG_ENABLE_WEBM_MOVIES)
+	include("cpm-libvpx.cmake")
+	include("cpm-ogg.cmake") # libvorbis depends
+	include("cpm-libvorbis.cmake")
+	include("cpm-libwebm.cmake")
+	include("cpm-libyuv.cmake")
+endif()
 
 add_subdirectory(tcbrindle_span)
 add_subdirectory(stb_vorbis)

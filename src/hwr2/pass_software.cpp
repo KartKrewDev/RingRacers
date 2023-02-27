@@ -17,7 +17,9 @@
 #include "../discord.h"
 #endif
 #include "../doomstat.h"
+#ifdef SRB2_CONFIG_ENABLE_WEBM_MOVIES
 #include "../m_avrecorder.h"
+#endif
 #include "../st_stuff.h"
 #include "../s_sound.h"
 #include "../st_stuff.h"
@@ -59,8 +61,9 @@ static void temp_legacy_finishupdate_draws()
 		}
 		if (cv_mindelay.value && consoleplayer == serverplayer && Playing())
 			SCR_DisplayLocalPing();
-
+#ifdef SRB2_CONFIG_ENABLE_WEBM_MOVIES
 		M_AVRecorder_DrawFrameRate();
+#endif
 	}
 
 	if (marathonmode)
