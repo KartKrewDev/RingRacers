@@ -1589,21 +1589,8 @@ static void FinalisePlaystateChange(INT32 playernum)
 		K_StripItems(&players[playernum]);
 	}
 
-	// Reset away view (some code referenced from P_SpectatorJoinGame)
-	{
-		UINT8 i = 0;
-		INT32 *localplayertable = (splitscreen_partied[consoleplayer] ? splitscreen_party[consoleplayer] : g_localplayers);
-
-		for (i = 0; i <= r_splitscreen; i++)
-		{
-			if (localplayertable[i] == playernum)
-			{
-				LUA_HookViewpointSwitch(players+playernum, players+playernum, true);
-				displayplayers[i] = playernum;
-				break;
-			}
-		}
-	}
+	// Reset away view
+	G_ResetViews();
 
 	K_CheckBumpers(); // SRB2Kart
 	P_CheckRacers(); // also SRB2Kart
