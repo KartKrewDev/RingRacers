@@ -89,7 +89,7 @@ void M_SetupDifficultyOptions(INT32 choice)
 		PLAY_RaceDifficulty[drace_mapselect].status = IT_STRING|IT_CALL;	// Level Select (Match Race)
 		PLAY_RaceDifficultyDef.lastOn = drace_mapselect;	// Select map select by default.
 
-		if (M_SecretUnlocked(SECRET_ENCORE, false))
+		if (M_SecretUnlocked(SECRET_ENCORE, true))
 		{
 			PLAY_RaceDifficulty[drace_encore].status = IT_STRING2|IT_CVAR;	// Encore on/off
 		}
