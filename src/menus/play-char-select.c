@@ -906,16 +906,6 @@ static boolean M_HandleCharacterGrid(setup_player_t *p, UINT8 num)
 	{
 		if (M_MenuButtonPressed(num, MBT_L))
 		{
-			if (setup_page == 0)
-				setup_page = setup_maxpage;
-			else
-				setup_page--;
-
-			S_StartSound(NULL, sfx_s3k63);
-			M_SetMenuDelay(num);
-		}
-		else if (M_MenuButtonPressed(num, MBT_R))
-		{
 			if (setup_page == setup_maxpage)
 				setup_page = 0;
 			else
@@ -1294,6 +1284,11 @@ boolean M_CharacterSelectHandler(INT32 choice)
 					// In any case, do setup 0 first.
 					if (i > 0 && setup_player[i-1].mdepth < CSSTEP_READY)
 						continue;
+				}
+
+				if (M_MenuButtonPressed(i, MBT_R))
+				{
+					p->showextra ^= true;
 				}
 			}
 
