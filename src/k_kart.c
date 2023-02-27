@@ -10521,16 +10521,14 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 									player->mo->destscale = FixedMul(player->mo->destscale, SHRINK_SCALE);
 								}
 
-								player->growshrinktimer = max(0, player->growshrinktimer);
-								player->growshrinktimer += ((gametyperules & GTR_CLOSERPLAYERS) ? 8 : 12) * TICRATE;
-
 								if (player->invincibilitytimer > 0)
 								{
 									; // invincibility has priority in P_RestoreMusic, no point in starting here
 								}
 								else if (P_IsLocalPlayer(player) == true)
 								{
-									S_ChangeMusicSpecial("kgrow");
+									if (player->growshrinktimer < 1)
+										S_ChangeMusicSpecial("kgrow");
 								}
 								else //used to be "if (P_IsDisplayPlayer(player) == false)"
 								{
@@ -10538,6 +10536,10 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 								}
 
 								P_RestoreMusic(player);
+
+								player->growshrinktimer = max(0, player->growshrinktimer);
+								player->growshrinktimer += ((gametyperules & GTR_CLOSERPLAYERS) ? 8 : 12) * TICRATE;
+
 								S_StartSound(player->mo, sfx_kc5a);
 
 								player->itemamount--;
