@@ -2236,8 +2236,7 @@ void G_Ticker(boolean run)
 
 		case GS_CEREMONY:
 			P_Ticker(run);
-			ST_Ticker(run);
-			HU_Ticker();
+			F_CeremonyTicker(run);
 			break;
 
 		case GS_WAITINGPLAYERS:

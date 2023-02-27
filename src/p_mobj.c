@@ -47,6 +47,7 @@
 #include "k_objects.h"
 #include "k_grandprix.h"
 #include "k_director.h"
+#include "m_easing.h"
 
 static CV_PossibleValue_t CV_BobSpeed[] = {{0, "MIN"}, {4*FRACUNIT, "MAX"}, {0, NULL}};
 consvar_t cv_movebob = CVAR_INIT ("movebob", "1.0", CV_FLOAT|CV_SAVE, CV_BobSpeed, NULL);
@@ -3782,12 +3783,13 @@ void P_CalcChasePostImg(player_t *player, camera_t *thiscam)
 	else if (player->awayview.tics && player->awayview.mobj && !P_MobjWasRemoved(player->awayview.mobj)) // Camera must obviously exist
 	{
 		camera_t dummycam;
+
 		dummycam.subsector = player->awayview.mobj->subsector;
 		dummycam.x = player->awayview.mobj->x;
 		dummycam.y = player->awayview.mobj->y;
 		dummycam.z = player->awayview.mobj->z;
-		//dummycam.height = 40*FRACUNIT; // alt view height is 20*FRACUNIT
-		dummycam.height = 0;			 // Why? Remote viewpoint cameras have no height.
+		dummycam.height = 0;
+
 		// Are we in water?
 		if (P_CameraCheckWater(&dummycam))
 			postimg = postimg_water;
@@ -9487,6 +9489,61 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 	case MT_MONITOR_PART:
 		Obj_MonitorPartThink(mobj);
 		break;
+	case MT_ALTVIEWMAN:
+		{
+			mobj->momx = mobj->momy = mobj->momz = 0;
+
+			if (mobj->tracer != NULL && P_MobjWasRemoved(mobj->tracer) == false)
+			{
+				fixed_t dist = P_AproxDistance(
+					P_AproxDistance(
+						mobj->tracer->x - mobj->x,
+						mobj->tracer->y - mobj->y
+					),
+					mobj->tracer->z - mobj->z
+				);
+
+				mobj->angle = Easing_OutSine(FRACUNIT/8, mobj->angle, mobj->tracer->angle);
+				mobj->pitch = Easing_OutSine(FRACUNIT/8, mobj->pitch, mobj->tracer->pitch);
+
+				if (dist > mobj->radius)
+				{
+					fixed_t newX = Easing_OutSine(FRACUNIT/8, mobj->x, mobj->tracer->x);
+					fixed_t newY = Easing_OutSine(FRACUNIT/8, mobj->y, mobj->tracer->y);
+					fixed_t newZ = Easing_OutSine(FRACUNIT/8, mobj->z, mobj->tracer->z);
+
+					mobj->momx = newX - mobj->x;
+					mobj->momy = newY - mobj->y;
+					mobj->momz = newZ - mobj->z;
+				}
+				else
+				{
+					P_SetTarget(&mobj->tracer, P_GetNextTubeWaypoint(mobj->tracer, false));
+				}
+			}
+
+			// If target is valid, then we'll focus on it.
+			if (mobj->target != NULL && P_MobjWasRemoved(mobj->target) == false)
+			{
+				mobj->angle = R_PointToAngle2(
+					mobj->x,
+					mobj->y,
+					mobj->target->x,
+					mobj->target->y
+				);
+
+				mobj->pitch = R_PointToAngle2(
+					0,
+					mobj->z,
+					R_PointToDist2(
+						mobj->x, mobj->y,
+						mobj->target->x, mobj->target->y
+					),
+					mobj->target->z + (mobj->target->height >> 1)
+				);
+			}
+		}
+		break;
 	default:
 		// check mobj against possible water content, before movement code
 		P_MobjCheckWater(mobj);
@@ -10464,9 +10521,6 @@ mobj_t *P_SpawnMobj(fixed_t x, fixed_t y, fixed_t z, mobjtype_t type)
 	else
 	switch (mobj->type)
 	{
-		case MT_ALTVIEWMAN:
-			if (titlemapinaction) mobj->flags &= ~MF_NOTHINK;
-			break;
 		case MT_LOCKONINF:
 			P_SetScale(mobj, (mobj->destscale = 3*mobj->scale));
 			break;

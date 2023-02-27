@@ -2997,7 +2997,7 @@ boolean P_ProcessSpecial(activator_t *activator, INT16 special, INT32 *args, cha
 				altview_t *modifyView = NULL;
 				mobj_t *newViewMobj = NULL;
 
-				if (titlemapinaction)
+				if (gamestate != GS_LEVEL)
 				{
 					modifyView = &titlemapcam;
 				}
@@ -3018,10 +3018,97 @@ boolean P_ProcessSpecial(activator_t *activator, INT16 special, INT32 *args, cha
 
 				P_SetTarget(&modifyView->mobj, newViewMobj);
 
-				// If titlemap, awayview.tics is ignored
-				if (titlemapinaction == false)
+				if (gamestate != GS_LEVEL)
+				{
+					// If titlemap, awayview.tics is ignored
+					modifyView->tics = -1;
+				}
+				else
 				{
 					modifyView->tics = args[1];
+				}
+
+				if (args[2] != 0)
+				{
+					switch (args[2])
+					{
+						case -1:
+						{
+							mobj_t *firstPlace = NULL;
+							INT32 i;
+
+							for (i = 0; i < MAXPLAYERS; i++)
+							{
+								player_t *player = NULL;
+
+								if (playeringame[i] == false)
+								{
+									continue;
+								}
+
+								player = &players[i];
+								if (player->spectator == true)
+								{
+									continue;
+								}
+
+								if (player->mo == NULL || P_MobjWasRemoved(player->mo) == true)
+								{
+									continue;
+								}
+
+								if (player->position == 1)
+								{
+									firstPlace = player->mo;
+									break;
+								}
+							}
+
+							P_SetTarget(
+								&newViewMobj->target,
+								firstPlace
+							);
+							break;
+						}
+						case -2:
+						{
+							mobj_t *consoleMo = NULL;
+							if (playeringame[consoleplayer] == true)
+							{
+								consoleMo = players[consoleplayer].mo;
+							}
+
+							P_SetTarget(
+								&newViewMobj->target,
+								consoleMo
+							);
+							break;
+						}
+						default:
+						{
+							P_SetTarget(
+								&newViewMobj->target,
+								P_FindMobjFromTID(args[2], NULL, NULL)
+							);
+							break;
+						}
+					}
+				}
+				else
+				{
+					P_SetTarget(&newViewMobj->target, NULL);
+				}
+
+				if (args[3] > 0 && args[3] <= NUMTUBEWAYPOINTSEQUENCES)
+				{
+					P_SetTarget(
+						&newViewMobj->tracer,
+						P_GetFirstTubeWaypoint(args[3] - 1)
+					);
+				}
+				else
+				{
+					P_SetTarget(&newViewMobj->tracer, NULL);
 				}
 			}
 			break;

@@ -2173,7 +2173,7 @@ void F_TitleScreenTicker(boolean run)
 			camera[0].y = cameraref->y;
 			camera[0].z = cameraref->z;
 			camera[0].angle = cameraref->angle;
-			camera[0].aiming = cameraref->cusval;
+			camera[0].aiming = cameraref->pitch;
 			camera[0].subsector = cameraref->subsector;
 		}
 		else
@@ -3154,8 +3154,34 @@ boolean F_StartCeremony(void)
 		globalweather = mapheaderinfo[gamemap-1]->weather;
 
 		G_DoLoadLevelEx(false, GS_CEREMONY);
+
+		r_splitscreen = 0; // Only one screen for the ceremony
+		R_ExecuteSetViewSize();
 		return true;
 	}
 
 	return false;
+}
+
+void F_CeremonyTicker(boolean run)
+{
+	(void)run;
+
+	// don't trigger if doing anything besides idling
+	if (gameaction != ga_nothing || gamestate != GS_CEREMONY)
+	{
+		return;
+	}
+
+	P_TickAltView(&titlemapcam);
+
+	if (titlemapcam.mobj != NULL)
+	{
+		camera[0].x = titlemapcam.mobj->x;
+		camera[0].y = titlemapcam.mobj->y;
+		camera[0].z = titlemapcam.mobj->z;
+		camera[0].angle = titlemapcam.mobj->angle;
+		camera[0].aiming = titlemapcam.mobj->pitch;
+		camera[0].subsector = titlemapcam.mobj->subsector;
+	}
 }

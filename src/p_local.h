@@ -197,6 +197,8 @@ void P_HaltPlayerOrbit(player_t *player);
 void P_ExitPlayerOrbit(player_t *player);
 boolean P_PlayerOrbit(player_t *player);
 
+void P_TickAltView(altview_t *view);
+
 void P_MovePlayer(player_t *player);
 void P_PlayerThink(player_t *player);
 void P_PlayerAfterThink(player_t *player);

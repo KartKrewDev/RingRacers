@@ -3997,6 +3997,25 @@ DoABarrelRoll (player_t *player)
 		player->tilt  = slope;
 }
 
+void P_TickAltView(altview_t *view)
+{
+	if (view->mobj != NULL && P_MobjWasRemoved(view->mobj) == true)
+	{
+		P_SetTarget(&view->mobj, NULL); // remove view->mobj asap if invalid
+		view->tics = 0; // reset to zero
+	}
+
+	if (view->tics > 0)
+	{
+		view->tics--;
+
+		if (view->tics == 0)
+		{
+			P_SetTarget(&view->mobj, NULL);
+		}
+	}
+}
+
 //
 // P_PlayerThink
 //
@@ -4020,17 +4039,10 @@ void P_PlayerThink(player_t *player)
 
 	player->old_drawangle = player->drawangle;
 
-	if (player->awayview.mobj && P_MobjWasRemoved(player->awayview.mobj))
-	{
-		P_SetTarget(&player->awayview.mobj, NULL); // remove awayview.mobj asap if invalid
-		player->awayview.tics = 0; // reset to zero
-	}
+	P_TickAltView(&player->awayview);
 
 	if (player->flashcount)
 		player->flashcount--;
-
-	if (player->awayview.tics && player->awayview.tics != -1)
-		player->awayview.tics--;
 
 	// Track airtime
 	if (P_IsObjectOnGround(player->mo)
