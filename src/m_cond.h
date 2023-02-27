@@ -119,8 +119,8 @@ typedef enum
 
 	// Difficulty restrictions
 	SECRET_HARDSPEED,			// Permit Hard gamespeed
+	SECRET_MASTERMODE,			// Permit Master Mode bots in GP
 	SECRET_ENCORE,				// Permit Encore option
-	SECRET_LEGACYBOXRUMMAGE,	// Permit the Legacy Box for record attack, etc
 
 	// Menu restrictions
 	SECRET_TIMEATTACK,			// Permit Time attack

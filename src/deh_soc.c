@@ -2280,10 +2280,10 @@ void readunlockable(MYFILE *f, INT32 num)
 						unlockables[num].type = SECRET_FOLLOWER;
 					else if (fastcmp(word2, "HARDSPEED"))
 						unlockables[num].type = SECRET_HARDSPEED;
+					else if (fastcmp(word2, "MASTERMODE"))
+						unlockables[num].type = SECRET_MASTERMODE;
 					else if (fastcmp(word2, "ENCORE"))
 						unlockables[num].type = SECRET_ENCORE;
-					else if (fastcmp(word2, "LEGACYBOXRUMMAGE"))
-						unlockables[num].type = SECRET_LEGACYBOXRUMMAGE;
 					else if (fastcmp(word2, "TIMEATTACK"))
 						unlockables[num].type = SECRET_TIMEATTACK;
 					else if (fastcmp(word2, "BREAKTHECAPSULES"))

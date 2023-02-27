@@ -4711,8 +4711,8 @@ static void M_DrawChallengeTile(INT16 i, INT16 j, INT32 x, INT32 y, boolean hili
 			case SECRET_CUP:
 				categoryid = '4';
 				break;
-			//case SECRET_MASTERBOTS:
 			case SECRET_HARDSPEED:
+			case SECRET_MASTERMODE:
 			case SECRET_ENCORE:
 				categoryid = '5';
 				break;
@@ -4773,11 +4773,11 @@ static void M_DrawChallengeTile(INT16 i, INT16 j, INT32 x, INT32 y, boolean hili
 				break;
 			}
 
-			/*case SECRET_MASTERBOTS:
-				iconid = 4;
-				break;*/
 			case SECRET_HARDSPEED:
 				iconid = 3;
+				break;
+			case SECRET_MASTERMODE:
+				iconid = 4;
 				break;
 			case SECRET_ENCORE:
 				iconid = 5;
@@ -5026,6 +5026,16 @@ static void M_DrawChallengePreview(INT32 x, INT32 y)
 			specialmap = hardmapcache;
 			break;
 		}
+		case SECRET_MASTERMODE:
+		{
+			static UINT16 mastermapcache = NEXTMAP_INVALID;
+			if (mastermapcache > nummapheaders)
+			{
+				mastermapcache = G_RandMap(G_TOLFlag(GT_RACE), -1, 2, 0, false, NULL);
+			}
+			specialmap = mastermapcache;
+			break;
+		}
 		case SECRET_ALTTITLE:
 		{
 			x = 8;
@@ -5064,6 +5074,13 @@ static void M_DrawChallengePreview(INT32 x, INT32 y)
 		V_DrawFixedPatch((x+40-25)<<FRACBITS, ((y+25-25)<<FRACBITS),
 			FRACUNIT, 0,
 			W_CachePatchName(K_GetItemPatch(KITEM_ROCKETSNEAKER, false), PU_CACHE),
+			NULL);
+	}
+	else if (ref->type == SECRET_MASTERMODE)
+	{
+		V_DrawFixedPatch((x+40-25)<<FRACBITS, ((y+25-25)<<FRACBITS),
+			FRACUNIT, 0,
+			W_CachePatchName(K_GetItemPatch(KITEM_JAWZ, false), PU_CACHE),
 			NULL);
 	}
 	else
