@@ -801,6 +801,8 @@ void M_DrawKartGamemodeMenu(void)
 
 	for (i = 0; i < currentMenu->numitems; i++)
 	{
+		INT32 type;
+
 		if (currentMenu->menuitems[i].status == IT_DISABLED)
 		{
 			continue;
@@ -817,9 +819,12 @@ void M_DrawKartGamemodeMenu(void)
 			}
 		}
 
-		switch (currentMenu->menuitems[i].status & IT_DISPLAY)
+		type = (currentMenu->menuitems[i].status & IT_DISPLAY);
+
+		switch (type)
 		{
 			case IT_STRING:
+			case IT_TRANSTEXT2:
 				{
 					UINT8 *colormap = NULL;
 
@@ -833,7 +838,13 @@ void M_DrawKartGamemodeMenu(void)
 					}
 
 					V_DrawFixedPatch(x*FRACUNIT, y*FRACUNIT, FRACUNIT, 0, W_CachePatchName("MENUPLTR", PU_CACHE), colormap);
-					V_DrawGamemodeString(x + 16, y - 3, V_ALLOWLOWERCASE, colormap, currentMenu->menuitems[i].text);
+					V_DrawGamemodeString(x + 16, y - 3,
+						(type == IT_TRANSTEXT2
+							? V_TRANSLUCENT
+							: 0
+						)|V_ALLOWLOWERCASE,
+						colormap,
+						currentMenu->menuitems[i].text);
 				}
 				break;
 		}
@@ -4716,6 +4727,7 @@ static void M_DrawChallengeTile(INT16 i, INT16 j, INT32 x, INT32 y, boolean hili
 			case SECRET_ENCORE:
 				categoryid = '5';
 				break;
+			case SECRET_ONLINE:
 			case SECRET_ALTTITLE:
 			case SECRET_SOUNDTEST:
 				categoryid = '6';
@@ -4783,6 +4795,9 @@ static void M_DrawChallengeTile(INT16 i, INT16 j, INT32 x, INT32 y, boolean hili
 				iconid = 5;
 				break;
 
+			case SECRET_ONLINE:
+				iconid = 10;
+				break;
 			case SECRET_ALTTITLE:
 				iconid = 6;
 				break;
@@ -5036,12 +5051,21 @@ static void M_DrawChallengePreview(INT32 x, INT32 y)
 			specialmap = mastermapcache;
 			break;
 		}
+		case SECRET_ONLINE:
+		{
+			V_DrawFixedPatch(-3*FRACUNIT, (y-40)*FRACUNIT,
+				FRACUNIT,
+				0, W_CachePatchName("EGGASTLA", PU_CACHE),
+				NULL);
+			break;
+		}
 		case SECRET_ALTTITLE:
 		{
 			x = 8;
 			y = BASEVIDHEIGHT-16;
 			V_DrawGamemodeString(x, y - 32, V_ALLOWLOWERCASE, R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_PLAGUE, GTC_MENUCACHE), cv_alttitle.string);
 			V_DrawThinString(x, y, V_6WIDTHSPACE|V_ALLOWLOWERCASE|highlightflags, "Press (A)");
+			break;
 		}
 		default:
 		{

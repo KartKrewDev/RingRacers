@@ -447,6 +447,7 @@ menu_t *M_SpecificMenuRestore(menu_t *torestore)
 	}
 
 	// One last catch.
+	M_SetupPlayMenu(-1);
 	PLAY_CharSelectDef.prevMenu = &MainDef;
 
 	return torestore;

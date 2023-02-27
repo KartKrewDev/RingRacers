@@ -704,6 +704,7 @@ boolean M_CharacterSelectHandler(INT32 choice);
 void M_CharacterSelectTick(void);
 boolean M_CharacterSelectQuit(void);
 
+void M_SetupPlayMenu(INT32 choice);
 void M_SetupGametypeMenu(INT32 choice);
 void M_SetupRaceMenu(INT32 choice);
 

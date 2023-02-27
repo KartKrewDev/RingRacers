@@ -126,6 +126,9 @@ typedef enum
 	SECRET_TIMEATTACK,			// Permit Time attack
 	SECRET_BREAKTHECAPSULES,	// Permit SP Capsule attack
 	SECRET_SPECIALATTACK,		// Permit Special attack (You're blue now!)
+
+	// Option restrictions
+	SECRET_ONLINE,				// Permit netplay (ankle-high barrier to jumping in the deep end)
 	SECRET_SOUNDTEST,			// Permit Sound Test
 	SECRET_ALTTITLE,			// Permit alternate titlescreen
 
