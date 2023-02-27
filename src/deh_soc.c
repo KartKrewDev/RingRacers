@@ -2292,6 +2292,10 @@ void readunlockable(MYFILE *f, INT32 num)
 						unlockables[num].type = SECRET_SPECIALATTACK;
 					else if (fastcmp(word2, "ONLINE"))
 						unlockables[num].type = SECRET_ONLINE;
+					else if (fastcmp(word2, "ADDONS"))
+						unlockables[num].type = SECRET_ADDONS;
+					else if (fastcmp(word2, "EGGTV"))
+						unlockables[num].type = SECRET_EGGTV;
 					else if (fastcmp(word2, "SOUNDTEST"))
 						unlockables[num].type = SECRET_SOUNDTEST;
 					else if (fastcmp(word2, "ALTTITLE"))

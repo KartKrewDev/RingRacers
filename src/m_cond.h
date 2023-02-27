@@ -129,6 +129,8 @@ typedef enum
 
 	// Option restrictions
 	SECRET_ONLINE,				// Permit netplay (ankle-high barrier to jumping in the deep end)
+	SECRET_ADDONS,				// Permit menu addfile
+	SECRET_EGGTV,				// Permit replay playback menu
 	SECRET_SOUNDTEST,			// Permit Sound Test
 	SECRET_ALTTITLE,			// Permit alternate titlescreen
 

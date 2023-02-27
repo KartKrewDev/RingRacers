@@ -91,6 +91,9 @@ void M_InitOptions(INT32 choice)
 			(M_SecretUnlocked(SECRET_ENCORE, false) ? (IT_STRING | IT_CVAR) : IT_DISABLED);
 	}
 
+	OPTIONS_DataDef.menuitems[dopt_addon].status = (M_SecretUnlocked(SECRET_ADDONS, true)
+		? (IT_STRING | IT_SUBMENU)
+		: (IT_TRANSTEXT2 | IT_SPACE));
 	OPTIONS_DataDef.menuitems[dopt_erase].status = (gamestate == GS_MENU
 		? (IT_STRING | IT_SUBMENU)
 		: (IT_TRANSTEXT2 | IT_SPACE));

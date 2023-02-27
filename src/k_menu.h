@@ -781,6 +781,7 @@ extern struct mpmenu_s {
 								// See M_OptSelectTick, it'll make more sense there. Sorry if this is a bit of a mess!
 
 	UINT8 room;
+	boolean roomforced;
 	tic_t ticker;
 
 	UINT8 servernum;

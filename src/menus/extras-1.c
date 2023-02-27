@@ -2,22 +2,26 @@
 /// \brief Extras Menu
 
 #include "../k_menu.h"
+#include "../m_cond.h"
 #include "../s_sound.h"
 
 menuitem_t EXTRAS_Main[] =
 {
+	// The following has NULL strings for text and tooltip.
+	// These are populated in M_InitExtras depending on unlock state.
+	// (This is legal - they're (const char)*'s, not const (char*)'s.
 
-	{IT_STRING | IT_CALL, "Addons", "Add files to customize your experience.",
+	{IT_STRING | IT_CALL, NULL, NULL,
 		NULL, {.routine = M_Addons}, 0, 0},
 
 	{IT_STRING | IT_CALL, "Challenges", "View the requirements for some of the secret content you can unlock!",
 		NULL, {.routine = M_Challenges}, 0, 0},
 
-	{IT_STRING | IT_CALL, "Replay Hut", "Play the replays you've saved throughout your many races & battles!",
-		NULL, {.routine = M_ReplayHut}, 0, 0},
-
 	{IT_STRING | IT_CALL, "Statistics", "Look back on some of your greatest achievements such as your playtime and wins!",
 		NULL, {.routine = M_Statistics}, 0, 0},
+
+	{IT_STRING | IT_CALL, NULL, NULL,
+		NULL, {.routine = M_ReplayHut}, 0, 0},
 };
 
 // the extras menu essentially reuses the options menu stuff
@@ -53,6 +57,40 @@ void M_InitExtras(INT32 choice)
 	extrasmenu.exty = 0;
 	extrasmenu.textx = 0;
 	extrasmenu.texty = 0;
+
+	// Addons
+	if (M_SecretUnlocked(SECRET_ADDONS, true))
+	{
+		EXTRAS_Main[0].status = IT_STRING | IT_CALL;
+		EXTRAS_Main[0].text = "Addons";
+		EXTRAS_Main[0].tooltip = "Add files to customize your experience.";
+	}
+	else
+	{
+		EXTRAS_Main[0].status = IT_STRING | IT_TRANSTEXT;
+		EXTRAS_Main[0].text = EXTRAS_Main[0].tooltip = "???";
+		if (EXTRAS_MainDef.lastOn == 0)
+		{
+			EXTRAS_MainDef.lastOn = 1;
+		}
+	}
+
+	// Egg TV
+	if (M_SecretUnlocked(SECRET_EGGTV, true))
+	{
+		EXTRAS_Main[3].status = IT_STRING | IT_CALL;
+		EXTRAS_Main[3].text = "Egg TV";
+		EXTRAS_Main[3].tooltip = "Watch the replays you've saved throughout your many races & battles!";
+	}
+	else
+	{
+		EXTRAS_Main[3].status = IT_STRING | IT_TRANSTEXT;
+		EXTRAS_Main[3].text = EXTRAS_Main[3].tooltip = "???";
+		if (EXTRAS_MainDef.lastOn == 3)
+		{
+			EXTRAS_MainDef.lastOn = 2;
+		}
+	}
 
 	M_SetupNextMenu(&EXTRAS_MainDef, false);
 }

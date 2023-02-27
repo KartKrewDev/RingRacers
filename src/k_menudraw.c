@@ -2775,8 +2775,12 @@ void M_DrawMPRoomSelect(void)
 
 
 	// Draw buttons:
-	V_DrawFixedPatch(160<<FRACBITS, 100<<FRACBITS, FRACUNIT, mpmenu.room ? (5<<V_ALPHASHIFT) : 0, butt1[(mpmenu.room) ? 1 : 0], NULL);
-	V_DrawFixedPatch(160<<FRACBITS, 100<<FRACBITS, FRACUNIT, (!mpmenu.room) ? (5<<V_ALPHASHIFT) : 0, butt2[(!mpmenu.room) ? 1 : 0], NULL);
+
+	if (!mpmenu.roomforced || mpmenu.room == 0)
+		V_DrawFixedPatch(160<<FRACBITS, 100<<FRACBITS, FRACUNIT, mpmenu.room ? (5<<V_ALPHASHIFT) : 0, butt1[(mpmenu.room) ? 1 : 0], NULL);
+
+	if (!mpmenu.roomforced || mpmenu.room == 1)
+		V_DrawFixedPatch(160<<FRACBITS, 100<<FRACBITS, FRACUNIT, (!mpmenu.room) ? (5<<V_ALPHASHIFT) : 0, butt2[(!mpmenu.room) ? 1 : 0], NULL);
 }
 
 // SERVER BROWSER
@@ -4728,6 +4732,8 @@ static void M_DrawChallengeTile(INT16 i, INT16 j, INT32 x, INT32 y, boolean hili
 				categoryid = '5';
 				break;
 			case SECRET_ONLINE:
+			case SECRET_ADDONS:
+			case SECRET_EGGTV:
 			case SECRET_ALTTITLE:
 			case SECRET_SOUNDTEST:
 				categoryid = '6';
@@ -4797,6 +4803,12 @@ static void M_DrawChallengeTile(INT16 i, INT16 j, INT32 x, INT32 y, boolean hili
 
 			case SECRET_ONLINE:
 				iconid = 10;
+				break;
+			case SECRET_ADDONS:
+				iconid = 12;
+				break;
+			case SECRET_EGGTV:
+				iconid = 11;
 				break;
 			case SECRET_ALTTITLE:
 				iconid = 6;
