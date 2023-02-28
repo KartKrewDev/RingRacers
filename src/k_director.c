@@ -285,8 +285,20 @@ void K_UpdateDirector(void)
 
 		target = directorinfo.sortedplayers[targetposition];
 
+		// stop here since we're already viewing this player
+		if (*displayplayerp == target)
+		{
+			break;
+		}
+
+		// if this is a splitscreen player, try next pair
+		if (P_IsDisplayPlayer(&players[target]))
+		{
+			continue;
+		}
+
 		// if we're certain the back half of the pair is actually in this position, try to switch
-		if (*displayplayerp != target && !players[target].positiondelay)
+		if (!players[target].positiondelay)
 		{
 			K_DirectorSwitch(target, false);
 		}
