@@ -1921,7 +1921,7 @@ static boolean P_KillPlayer(player_t *player, mobj_t *inflictor, mobj_t *source,
 		return false;
 	}
 
-	if (!player->exiting && specialstageinfo.valid == true)
+	if (!player->exiting && (specialstageinfo.valid == true || modeattacking & ATTACKING_SPB))
 	{
 		player->pflags |= PF_NOCONTEST;
 		P_DoPlayerExit(player);

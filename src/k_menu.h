@@ -232,6 +232,7 @@ typedef enum
 	ta_replay = 0,
 	ta_guest,
 	ta_ghosts,
+	ta_spb,
 	ta_spacer,
 	ta_start,
 } ta_e;
@@ -760,6 +761,8 @@ extern consvar_t cv_dummygpdifficulty;
 extern consvar_t cv_dummykartspeed;
 extern consvar_t cv_dummygpencore;
 extern consvar_t cv_dummymatchbots;
+
+extern consvar_t cv_dummyspbattack;
 
 void M_SetupDifficultyOptions(INT32 choice);
 void M_SetupDifficultySelect(INT32 choice);

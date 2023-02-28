@@ -1654,6 +1654,23 @@ void K_drawKartTimestamp(tic_t drawtime, INT32 TX, INT32 TY, INT32 splitflags, U
 			workx += 6;
 		}
 	}
+
+	if (modeattacking & ATTACKING_SPB && stplyr->SPBdistance > 0)
+	{
+		UINT8 *colormap = R_GetTranslationColormap(stplyr->skin, stplyr->skincolor, GTC_CACHE);
+		int ybar = 180;
+		int widthbar = 120;
+
+		V_DrawFill(160 - widthbar / 2, ybar, widthbar, 1, 6);
+		V_DrawMappedPatch(160 + widthbar/2 - 7, ybar - 7, FRACUNIT, faceprefix[stplyr->skin][FACE_MINIMAP], colormap);
+
+		// vibes-based math
+		int bombxoff = (stplyr->SPBdistance/mapobjectscale - mobjinfo[MT_SPB].radius/FRACUNIT - mobjinfo[MT_PLAYER].radius/FRACUNIT) * 8;
+		bombxoff = sqrt(bombxoff) - 5;
+		bombxoff = max(0, min(bombxoff, widthbar));
+		V_DrawScaledPatch(160 + widthbar/2 - bombxoff, ybar - 7, FRACUNIT, W_CachePatchName("SPBMMAP", PU_CACHE));
+
+	}
 }
 
 static fixed_t K_DrawKartPositionNumPatch(UINT8 num, UINT8 *color, fixed_t x, fixed_t y, fixed_t scale, INT32 flags)

@@ -10,12 +10,16 @@
 #include "../m_misc.h" // M_MkdirEach
 #include "../z_zone.h" // Z_StrDup/Z_Free
 
+consvar_t cv_dummyspbattack = CVAR_INIT ("dummyspbattack", "Off", CV_HIDDEN, CV_OnOff, NULL);
+
 // see ta_e
 menuitem_t PLAY_TimeAttack[] =
 {
 	{IT_STRING | IT_SUBMENU, "Replay...", NULL, NULL, {.submenu = &PLAY_TAReplayDef}, 0, 0},
 	{IT_STRING | IT_SUBMENU, "Guest...", NULL, NULL, {.submenu = &PLAY_TAReplayGuestDef}, 0, 0},
 	{IT_STRING | IT_SUBMENU, "Ghosts...", NULL, NULL, {.submenu = &PLAY_TAGhostsDef}, 0, 0},
+	{IT_STRING | IT_CVAR, "SPB Attack", NULL,
+		NULL, {.cvar = &cv_dummyspbattack}, 0, 0},
 	{IT_HEADERTEXT|IT_HEADER, "", NULL, NULL, {NULL}, 0, 0},
 	{IT_STRING | IT_CALL, "Start", NULL, NULL, {.routine = M_StartTimeAttack}, 0, 0},
 };
@@ -424,6 +428,11 @@ void M_StartTimeAttack(INT32 choice)
 		&& (mapheaderinfo[levellist.choosemap]->numlaps != 1))
 	{
 		modeattacking |= ATTACKING_LAP;
+	}
+
+	if (cv_dummyspbattack.value)
+	{
+		modeattacking |= ATTACKING_SPB;
 	}
 
 	// Still need to reset devmode

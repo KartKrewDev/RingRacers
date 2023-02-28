@@ -139,6 +139,7 @@ extern boolean metalrecording;
 #define ATTACKING_NONE	0
 #define ATTACKING_TIME	1
 #define ATTACKING_LAP	(1<<1)
+#define ATTACKING_SPB	(1<<2)
 extern UINT8 modeattacking;
 
 // menu demo things

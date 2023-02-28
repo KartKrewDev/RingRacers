@@ -12225,6 +12225,9 @@ static mobjtype_t P_GetMobjtypeSubstitute(mapthing_t *mthing, mobjtype_t i)
 	if ((i == MT_RANDOMITEM) && (gametyperules & (GTR_PAPERITEMS|GTR_CIRCUIT)) == (GTR_PAPERITEMS|GTR_CIRCUIT))
 		return MT_PAPERITEMSPOT;
 
+	if ((i == MT_RING) && (modeattacking & ATTACKING_SPB))
+		return MT_THOK;
+
 	return i;
 }
 
