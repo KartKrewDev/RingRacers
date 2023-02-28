@@ -3087,13 +3087,20 @@ void G_ExitLevel(void)
 			if (i == MAXPLAYERS)
 			{
 				// GAME OVER, try again from the start!
-
-				if (netgame)
+				if (grandprixinfo.gp == true
+					&& grandprixinfo.eventmode == GPEVENT_SPECIAL)
 				{
-					; // restart cup here if we do online GP
+					// We were in a Special Stage.
+					// We can still progress to the podium when we game over here.
+					doretry = false;
+				}
+				else if (netgame)
+				{
+					; // Restart cup here whenever we do Online GP
 				}
 				else
 				{
+					// Back to the menu with you.
 					D_QuitNetGame();
 					CL_Reset();
 					D_ClearState();
@@ -3102,11 +3109,14 @@ void G_ExitLevel(void)
 			}
 			else
 			{
-				// Go redo this course.
+				// We have lives, just redo this one course.
 				G_SetRetryFlag();
 			}
 
-			return;
+			if (doretry == true)
+			{
+				return;
+			}
 		}
 
 		gameaction = ga_completed;
