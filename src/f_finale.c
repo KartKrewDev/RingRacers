@@ -3142,6 +3142,7 @@ void F_TextPromptTicker(void)
 boolean F_StartCeremony(void)
 {
 	INT32 podiumMapNum = nummapheaders;
+	INT32 i;
 
 	if (podiummap
 		&& ((podiumMapNum = G_MapNumber(podiummap)) < nummapheaders)
@@ -3152,6 +3153,16 @@ boolean F_StartCeremony(void)
 
 		maptol = mapheaderinfo[gamemap-1]->typeoflevel;
 		globalweather = mapheaderinfo[gamemap-1]->weather;
+
+		// Make sure all of the GAME OVER'd players can spawn
+		// and be present for the podium
+		for (i = 0; i < MAXPLAYERS; i++)
+		{
+			if (playeringame[i] && !players[i].spectator && !players[i].bot)
+			{
+				players[i].lives = max(1, players[i].lives);
+			}
+		}
 
 		G_DoLoadLevelEx(false, GS_CEREMONY);
 
