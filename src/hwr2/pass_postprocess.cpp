@@ -86,24 +86,25 @@ void PostprocessWipePass::prepass(Rhi& rhi)
 		upload_ibo_ = true;
 	}
 
+	uint32_t wipe_mode = g_wipemode;
 	uint32_t wipe_type = g_wipetype;
 	uint32_t wipe_frame = g_wipeframe;
 	bool wipe_reverse = g_wipereverse;
 
 	wipe_color_mode_ = 0; // TODO 0 = modulate, 1 = invert, 2 = MD to black, 3 = MD to white
-	if (F_WipeIsToBlack(wipe_type))
+	if (F_WipeIsToBlack(wipe_mode))
 	{
 		wipe_color_mode_ = 2;
 	}
-	else if (F_WipeIsToWhite(wipe_type))
+	else if (F_WipeIsToWhite(wipe_mode))
 	{
 		wipe_color_mode_ = 3;
 	}
-	else if (F_WipeIsToInvert(wipe_type))
+	else if (F_WipeIsToInvert(wipe_mode))
 	{
 		wipe_color_mode_ = 1;
 	}
-	else if (F_WipeIsCrossfade(wipe_type))
+	else if (F_WipeIsCrossfade(wipe_mode))
 	{
 		wipe_color_mode_ = 0;
 	}

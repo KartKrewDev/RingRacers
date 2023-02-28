@@ -343,7 +343,7 @@ static void D_Display(void)
 				F_WipeStartScreen();
 				F_WipeColorFill(31);
 				F_WipeEndScreen();
-				F_RunWipe(wipetypepre, gamestate != GS_MENU, "FADEMAP0", false, false);
+				F_RunWipe(wipedefindex, wipetypepre, gamestate != GS_MENU, "FADEMAP0", false, false);
 			}
 
 			if (gamestate != GS_LEVEL && rendermode != render_none)
@@ -356,7 +356,7 @@ static void D_Display(void)
 		}
 		else //dedicated servers
 		{
-			F_RunWipe(wipedefs[wipedefindex], gamestate != GS_MENU, "FADEMAP0", false, false);
+			F_RunWipe(wipedefindex, wipedefs[wipedefindex], gamestate != GS_MENU, "FADEMAP0", false, false);
 			wipegamestate = gamestate;
 		}
 
@@ -633,7 +633,7 @@ static void D_Display(void)
 		{
 			F_WipeEndScreen();
 
-			F_RunWipe(wipedefs[wipedefindex], gamestate != GS_MENU && gamestate != GS_TITLESCREEN, "FADEMAP0", true, false);
+			F_RunWipe(wipedefindex, wipedefs[wipedefindex], gamestate != GS_MENU && gamestate != GS_TITLESCREEN, "FADEMAP0", true, false);
 		}
 
 		// reset counters so timedemo doesn't count the wipe duration

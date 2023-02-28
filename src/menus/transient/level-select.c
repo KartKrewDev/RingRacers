@@ -484,7 +484,7 @@ void M_LevelSelected(INT16 add)
 			F_WipeStartScreen();
 			V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 31);
 			F_WipeEndScreen();
-			F_RunWipe(wipedefs[wipe_level_toblack], false, "FADEMAP0", false, false);
+			F_RunWipe(wipe_level_toblack, wipedefs[wipe_level_toblack], false, "FADEMAP0", false, false);
 
 			SV_StartSinglePlayerServer(levellist.newgametype, levellist.netgame);
 

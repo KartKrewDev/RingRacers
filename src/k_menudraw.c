@@ -553,7 +553,7 @@ void M_Drawer(void)
 	if (menuwipe)
 	{
 		F_WipeEndScreen();
-		F_RunWipe(wipedefs[wipe_menu_final], false, "FADEMAP0", true, false);
+		F_RunWipe(wipe_menu_final, wipedefs[wipe_menu_final], false, "FADEMAP0", true, false);
 		menuwipe = false;
 	}
 

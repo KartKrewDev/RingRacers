@@ -222,6 +222,7 @@ static boolean g_wipedef_crossfade[NUMWIPEDEFS] = {
 //--------------------------------------------------------------------------
 
 boolean WipeInAction = false;
+UINT8 g_wipemode = 0;
 UINT8 g_wipetype = 0;
 UINT8 g_wipeframe = 0;
 boolean g_wipereverse = false;
@@ -425,9 +426,10 @@ void F_WipeStageTitle(void)
 /** After setting up the screens you want to wipe,
   * calling this will do a 'typical' wipe.
   */
-void F_RunWipe(UINT8 wipetype, boolean drawMenu, const char *colormap, boolean reverse, boolean encorewiggle)
+void F_RunWipe(UINT8 wipemode, UINT8 wipetype, boolean drawMenu, const char *colormap, boolean reverse, boolean encorewiggle)
 {
 #ifdef NOWIPE
+	(void)wipemode;
 	(void)wipetype;
 	(void)drawMenu;
 	(void)colormap;
@@ -489,6 +491,7 @@ void F_RunWipe(UINT8 wipetype, boolean drawMenu, const char *colormap, boolean r
 		if (rendermode != render_none) //this allows F_RunWipe to be called in dedicated servers
 		{
 			// F_DoWipe(fmask, fcolor, reverse);
+			g_wipemode = wipemode;
 			g_wipetype = wipetype;
 			g_wipeframe = wipeframe - 1;
 			g_wipereverse = reverse;
@@ -593,23 +596,23 @@ boolean F_WipeExists(UINT8 wipetype)
 #endif
 }
 
-boolean F_WipeIsToBlack(UINT8 wipetype)
+boolean F_WipeIsToBlack(UINT8 wipemode)
 {
-	return g_wipedef_toblack[wipetype];
+	return g_wipedef_toblack[wipemode];
 }
 
-boolean F_WipeIsToWhite(UINT8 wipetype)
+boolean F_WipeIsToWhite(UINT8 wipemode)
 {
-	return g_wipedef_towhite[wipetype];
+	return g_wipedef_towhite[wipemode];
 }
 
-boolean F_WipeIsToInvert(UINT8 wipetype)
+boolean F_WipeIsToInvert(UINT8 wipemode)
 {
-	return g_wipedef_toinvert[wipetype];
+	return g_wipedef_toinvert[wipemode];
 }
 
-boolean F_WipeIsCrossfade(UINT8 wipetype)
+boolean F_WipeIsCrossfade(UINT8 wipemode)
 {
-	return g_wipedef_crossfade[wipetype];
+	return g_wipedef_crossfade[wipemode];
 }
 
