@@ -58,6 +58,7 @@
 #include "k_terrain.h" // K_SpawnSplashForMobj
 #include "k_color.h"
 #include "k_follower.h"
+#include "k_director.h"
 
 #ifdef HW3SOUND
 #include "hardware/hw3sound.h"
@@ -2781,6 +2782,13 @@ static void P_DeathThink(player_t *player)
 	if (playerGone == false && player->deadtimer > TICRATE)
 	{
 		player->playerstate = PST_REBORN;
+	}
+
+	// TODO: support splitscreen
+	// Spectate another player after 2 seconds
+	if (player == &players[consoleplayer] && playerGone == true && (gametyperules & GTR_BUMPERS) && player->deadtimer == 2*TICRATE)
+	{
+		K_ToggleDirector(true);
 	}
 
 	// Keep time rolling
