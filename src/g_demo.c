@@ -1184,7 +1184,7 @@ void G_GhostTicker(void)
 	for(g = ghosts, p = NULL; g; g = g->next)
 	{
 		// Skip normal demo data.
-		UINT8 ziptic = READUINT8(g->p);
+		UINT16 ziptic = READUINT8(g->p);
 		UINT8 xziptic = 0;
 
 		while (ziptic != DW_END) // Get rid of extradata stuff
@@ -1225,11 +1225,13 @@ void G_GhostTicker(void)
 			ziptic = READUINT8(g->p);
 		}
 
-		ziptic = READUINT8(g->p);
+		ziptic = READUINT16(g->p);
 
 		if (ziptic & ZT_FWD)
 			g->p++;
 		if (ziptic & ZT_TURNING)
+			g->p += 2;
+		if (ziptic & ZT_ANGLE)
 			g->p += 2;
 		if (ziptic & ZT_THROWDIR)
 			g->p += 2;
