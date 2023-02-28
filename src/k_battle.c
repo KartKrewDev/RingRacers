@@ -92,6 +92,9 @@ void K_CheckBumpers(void)
 	UINT8 i;
 	UINT8 numingame = 0;
 	UINT8 nobumpers = 0;
+	UINT8 eliminated = 0;
+
+	const boolean singleplayer = (battlecapsules || bossinfo.valid);
 
 	if (!(gametyperules & GTR_BUMPERS))
 		return;
@@ -113,21 +116,28 @@ void K_CheckBumpers(void)
 		{
 			nobumpers++;
 		}
+
+		if (players[i].pflags & PF_ELIMINATED)
+		{
+			eliminated++;
+		}
 	}
 
-	if (battlecapsules || bossinfo.valid)
+	if (singleplayer
+			? nobumpers > 0 && nobumpers >= numingame
+			: eliminated >= numingame - 1)
 	{
-		if (nobumpers > 0 && nobumpers >= numingame)
+		for (i = 0; i < MAXPLAYERS; i++)
 		{
-			for (i = 0; i < MAXPLAYERS; i++)
-			{
-				if (!playeringame[i])
-					continue;
-				if (players[i].spectator)
-					continue;
+			if (!playeringame[i])
+				continue;
+			if (players[i].spectator)
+				continue;
+
+			if (singleplayer)
 				players[i].pflags |= PF_NOCONTEST;
-				P_DoPlayerExit(&players[i]);
-			}
+
+			P_DoPlayerExit(&players[i]);
 		}
 		return;
 	}

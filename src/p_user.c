@@ -2773,6 +2773,11 @@ static void P_DeathThink(player_t *player)
 		}
 	}
 
+	if ((player->pflags & PF_ELIMINATED) && (gametyperules & GTR_BUMPERS))
+	{
+		playerGone = true;
+	}
+
 	if (playerGone == false && player->deadtimer > TICRATE)
 	{
 		player->playerstate = PST_REBORN;
