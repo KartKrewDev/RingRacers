@@ -121,11 +121,12 @@ struct recorddata_t
 };
 
 // mapvisited is now a set of flags that says what we've done in the map.
-#define MV_VISITED (1)
-#define MV_BEATEN  (1<<1)
-#define MV_ENCORE  (1<<2)
-#define MV_MAX     (MV_VISITED|MV_BEATEN|MV_ENCORE)
-#define MV_MP      ((MV_MAX+1)<<1)
+#define MV_VISITED      (1)
+#define MV_BEATEN       (1<<1)
+#define MV_ENCORE       (1<<2)
+#define MV_SPBATTACK    (1<<3)
+#define MV_MAX          (MV_VISITED|MV_BEATEN|MV_ENCORE)
+#define MV_MP           ((MV_MAX+1)<<1)
 
 // Set if homebrew PWAD stuff has been added.
 extern boolean modifiedgame;

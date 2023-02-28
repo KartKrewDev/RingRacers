@@ -12175,7 +12175,7 @@ static boolean P_AllowMobjSpawn(mapthing_t* mthing, mobjtype_t i)
 				boolean isRingCapsule = (mthing->args[0] < 1 || mthing->args[0] == KITEM_SUPERRING || mthing->args[0] >= NUMKARTITEMS);
 
 				// don't spawn ring capsules in GTR_SPHERES gametypes
-				if (isRingCapsule && (gametyperules & GTR_SPHERES))
+				if (isRingCapsule && ((gametyperules & GTR_SPHERES) || (modeattacking & ATTACKING_SPB)))
 					return false;
 
 				// in record attack, only spawn ring capsules

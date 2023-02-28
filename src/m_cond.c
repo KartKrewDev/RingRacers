@@ -1029,6 +1029,9 @@ UINT8 M_CompletionEmblems(void) // Bah! Duplication sucks, but it's for a separa
 		if (embtype & ME_ENCORE)
 			flags |= MV_ENCORE;
 
+		if (embtype & ME_SPBATTACK)
+			flags |= MV_SPBATTACK;
+
 		res = ((mapheaderinfo[levelnum]->mapvisited & flags) == flags);
 
 		gamedata->collected[i] = res;

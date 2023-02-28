@@ -1973,7 +1973,7 @@ static void K_HandleLapIncrement(player_t *player)
 				rainbowstartavailable = false;
 			}
 
-			if (player->laps == 1 && modeattacking & ATTACKING_SPB)
+			if (player->laps == 1 && modeattacking & ATTACKING_SPB && false)
 			{
 				P_SpawnMobj(player->mo->x - FixedMul(8000*mapobjectscale, cos(player->mo->angle)),
 					player->mo->y - FixedMul(8000*mapobjectscale, sin(player->mo->angle)),

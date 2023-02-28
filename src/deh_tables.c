@@ -6402,6 +6402,7 @@ struct int_const_s const INT_CONST[] = {
 
 	// Map emblem var flags
 	{"ME_ENCORE",ME_ENCORE},
+	{"ME_SPBATTACK",ME_SPBATTACK},
 
 	// p_local.h constants
 	{"FLOATSPEED",FLOATSPEED},

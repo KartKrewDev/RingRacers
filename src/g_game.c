@@ -512,6 +512,12 @@ void G_UpdateTimeStickerMedals(UINT16 map, boolean showownrecord)
 			{
 				break;
 			}
+			case ET_MAP:
+			{	
+				if (emblem->flags & ME_SPBATTACK)
+					break;
+				goto bademblem;
+			}
 			default:
 				goto bademblem;
 		}
@@ -3695,6 +3701,11 @@ static void G_UpdateVisited(void)
 	if (encoremode == true)
 	{
 		mapheaderinfo[prevmap]->mapvisited |= MV_ENCORE;
+	}
+
+	if (modeattacking & ATTACKING_SPB)
+	{
+		mapheaderinfo[prevmap]->mapvisited |= MV_SPBATTACK;
 	}
 
 	if (modeattacking)
