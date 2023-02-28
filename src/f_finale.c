@@ -437,8 +437,10 @@ void F_IntroTicker(void)
 #endif
 					I_FinishUpdate(); // Update the screen with the image Tails 06-19-2001
 
-					if (moviemode) // make sure we save frames for the white hold too
+#ifdef HWRENDER
+					if (moviemode && rendermode == render_opengl) // make sure we save frames for the white hold too
 						M_LegacySaveFrame();
+#endif
 				}
 			}
 
@@ -464,7 +466,7 @@ void F_IntroTicker(void)
 	// check for skipping
 	if (keypressed)
 		keypressed = false;
-	
+
 	if (animtimer > 0)
 		animtimer--;
 }

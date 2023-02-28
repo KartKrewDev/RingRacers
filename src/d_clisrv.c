@@ -1879,7 +1879,7 @@ static boolean CL_ServerConnectionTicker(const char *tmpsave, tic_t *oldtic, tic
 				return false;
 			}
 		case CL_LOADFILES:
-			if (CL_LoadServerFiles()) 
+			if (CL_LoadServerFiles())
 				cl_mode = CL_SETUPFILES;
 
 			break;
@@ -2021,8 +2021,10 @@ static boolean CL_ServerConnectionTicker(const char *tmpsave, tic_t *oldtic, tic
 #endif
 			}
 			I_UpdateNoVsync(); // page flip or blit buffer
-			if (moviemode)
+#ifdef HWRENDER
+			if (moviemode && rendermode == render_opengl)
 				M_LegacySaveFrame();
+#endif
 			S_UpdateSounds();
 			S_UpdateClosedCaptions();
 		}
@@ -2540,7 +2542,7 @@ void CL_ClearPlayer(INT32 playernum)
 	if (gamestate == GS_LEVEL)
 	{
 		if (players[playernum].follower)
-		{	
+		{
 			K_RemoveFollower(&players[playernum]);
 		}
 

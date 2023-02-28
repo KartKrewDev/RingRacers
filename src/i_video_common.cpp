@@ -188,7 +188,7 @@ static InternalPassData build_pass_manager()
 			framebuffer_manager->swap_post();
 			pp_simple_blit_pass->set_texture(framebuffer_manager->main_color(), vid.width, vid.height);
 			pp_simple_blit_pass
-				->set_output(framebuffer_manager->current_post_color(), vid.width, vid.height, false, true);
+				->set_output(framebuffer_manager->current_post_color(), vid.width, vid.height, false, false);
 		}
 	);
 	basic_rendering->insert("pp_final_simple_blit", pp_simple_blit_pass);
@@ -211,7 +211,7 @@ static InternalPassData build_pass_manager()
 		[final_composite_pass, framebuffer_manager](PassManager&, Rhi&)
 		{
 			final_composite_pass->set_texture(framebuffer_manager->current_post_color(), vid.width, vid.height);
-			final_composite_pass->set_output(kNullHandle, vid.realwidth, vid.realheight, true, true);
+			final_composite_pass->set_output(kNullHandle, vid.realwidth, vid.realheight, true, false);
 		}
 	);
 	composite_present_rendering->insert("final_composite", final_composite_pass);
@@ -305,6 +305,14 @@ static InternalPassData build_pass_manager()
 		}
 	);
 	wipe_rendering->insert("pp_final_wipe", pp_wipe_pass);
+	wipe_rendering->insert(
+		"screenshot_prepare",
+		[screenshot_pass, framebuffer_manager](PassManager&, Rhi&)
+		{
+			screenshot_pass->set_source(framebuffer_manager->current_post_color(), vid.width, vid.height);
+		}
+	);
+	wipe_rendering->insert("screenshot", screenshot_pass);
 	wipe_rendering->insert("composite_present_rendering", composite_present_rendering);
 
 	InternalPassData ret;

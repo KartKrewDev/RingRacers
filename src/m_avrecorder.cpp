@@ -229,24 +229,3 @@ void M_AVRecorder_DrawFrameRate(void)
 
 	g_av_recorder->draw_statistics();
 }
-
-// TODO: remove once hwr2 twodee is finished
-void M_AVRecorder_CopySoftwareScreen(void)
-{
-	SRB2_ASSERT(g_av_recorder != nullptr);
-
-	auto frame = g_av_recorder->new_indexed_video_frame(vid.width, vid.height);
-
-	if (!frame)
-	{
-		return;
-	}
-
-	tcb::span<RGBA_t> pal(&pLocalPalette[std::max(st_palette, 0) * 256], 256);
-	tcb::span<uint8_t> scr(screens[0], vid.width * vid.height);
-
-	std::copy(pal.begin(), pal.end(), frame->palette.begin());
-	std::copy(scr.begin(), scr.end(), frame->screen.begin());
-
-	g_av_recorder->push_indexed_video_frame(std::move(frame));
-}

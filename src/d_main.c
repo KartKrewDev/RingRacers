@@ -871,10 +871,10 @@ void D_SRB2Loop(void)
 			D_Display();
 		}
 
-		// Only take screenshots after drawing.
-		if (moviemode)
-			M_LegacySaveFrame();
 #ifdef HWRENDER
+		// Only take screenshots after drawing.
+		if (moviemode && rendermode == render_opengl)
+			M_LegacySaveFrame();
 		if (rendermode == render_opengl && takescreenshot)
 			M_DoLegacyGLScreenShot();
 #endif

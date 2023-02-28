@@ -525,8 +525,10 @@ void F_RunWipe(UINT8 wipetype, boolean drawMenu, const char *colormap, boolean r
 			g_wipeskiprender = true;
 		}
 
-		if (moviemode)
+#ifdef HWRENDER
+		if (moviemode && rendermode == render_opengl)
 			M_LegacySaveFrame();
+#endif
 
 		NetKeepAlive(); // Update the network so we don't cause timeouts
 	}

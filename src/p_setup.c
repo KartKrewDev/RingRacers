@@ -380,7 +380,7 @@ void P_DeleteFlickies(INT16 i)
 static void P_ClearSingleMapHeaderInfo(INT16 num)
 {
 	UINT8 i = 0;
-	
+
 	mapheaderinfo[num]->lvlttl[0] = '\0';
 	mapheaderinfo[num]->subttl[0] = '\0';
 	mapheaderinfo[num]->zonttl[0] = '\0';
@@ -7570,7 +7570,7 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 			I_UpdateTime(cv_timescale.value); \
 		} \
 		lastwipetic = nowtime; \
-		if (moviemode) \
+		if (moviemode && rendermode == render_opengl) \
 			M_LegacySaveFrame(); \
 		NetKeepAlive(); \
 	} \
