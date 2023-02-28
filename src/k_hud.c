@@ -4639,6 +4639,33 @@ K_drawMiniPing (void)
 	}
 }
 
+static void K_DrawDirectorButton(INT32 idx, const char *label, patch_t *kp[2])
+{
+	const INT32 flags = V_SNAPTORIGHT | V_SLIDEIN;
+	const INT32 textflags = flags | V_6WIDTHSPACE | V_ALLOWLOWERCASE;
+
+	const UINT8 anim_duration = 16;
+	const UINT8 anim = (leveltime % (anim_duration * 2)) < anim_duration;
+
+	const INT32 x = BASEVIDWIDTH - 60;
+	const INT32 y = BASEVIDHEIGHT - 70 + (idx * 16);
+
+	V_DrawScaledPatch(x, y - 4, flags, kp[anim]);
+	V_DrawRightAlignedThinString(x - 2, y, textflags, label);
+}
+
+static void K_drawDirectorHUD(void)
+{
+	if (!LUA_HudEnabled(hud_textspectator))
+	{
+		return;
+	}
+
+	K_DrawDirectorButton(0, "Next Player", kp_button_a[0]);
+	K_DrawDirectorButton(1, "Prev Player", kp_button_x[0]);
+	K_DrawDirectorButton(2, "Director", kp_button_r);
+}
+
 static void K_drawDistributionDebugger(void)
 {
 	itemroulette_t rouletteData = {0};
@@ -4955,6 +4982,11 @@ void K_drawKartHUD(void)
 	if ((netgame || cv_mindelay.value) && r_splitscreen && Playing())
 	{
 		K_drawMiniPing();
+	}
+
+	if (displayplayers[viewnum] != g_localplayers[viewnum])
+	{
+		K_drawDirectorHUD();
 	}
 
 	if (cv_kartdebugdistribution.value)
