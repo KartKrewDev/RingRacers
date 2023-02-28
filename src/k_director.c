@@ -304,7 +304,7 @@ void K_UpdateDirector(void)
 		}
 
 		// even if we're not certain, if we're certain we're watching the WRONG player, try to switch
-		if (players[*displayplayerp].position != targetposition+1 && !players[target].positiondelay)
+		if (players[*displayplayerp].position != targetposition+1 && !players[*displayplayerp].positiondelay)
 		{
 			K_DirectorSwitch(target, false);
 		}
