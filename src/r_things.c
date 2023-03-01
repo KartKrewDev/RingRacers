@@ -1065,6 +1065,25 @@ static void R_DrawVisSprite(vissprite_t *vis)
 		pwidth = patch->width;
 #endif
 
+		if (vis->x1test && vis->x2test)
+		{
+			INT32 x1test = vis->x1test;
+			INT32 x2test = vis->x2test;
+
+			if (x1test < 0)
+				x1test = 0;
+
+			if (x2test >= vid.width)
+				x2test = vid.width-1;
+
+			const INT32 t = (vis->startfrac + (vis->xiscale * (x2test - x1test))) >> FRACBITS;
+
+			if (x1test <= x2test && (t < 0 || t >= pwidth))
+			{
+				CONS_Printf("THE GAME WOULD HAVE CRASHED, %d (old) vs %d (new)\n", (x2test - x1test), (vis->x2 - vis->x1));
+			}
+		}
+
 		// Non-paper drawing loop
 		for (dc_x = vis->x1; dc_x <= vis->x2; dc_x++, frac += vis->xiscale, sprtopscreen += vis->shear.tan)
 		{
@@ -1452,6 +1471,9 @@ static void R_ProjectDropShadow(
 	shadow->x1 = x1 < portalclipstart ? portalclipstart : x1;
 	shadow->x2 = x2 >= portalclipend ? portalclipend-1 : x2;
 
+	shadow->x1test = 0;
+	shadow->x2test = 0;
+
 	shadow->xscale = FixedMul(xscale, shadowxscale); //SoM: 4/17/2000
 	shadow->scale = FixedMul(yscale, shadowyscale);
 	shadow->thingscale = interp.scale;
@@ -1598,6 +1620,9 @@ static void R_ProjectBoundingBox(mobj_t *thing, vissprite_t *vis)
 		box->sortscale = yscale;
 		box->dispoffset = 0;
 	}
+
+	box->x1test = 0;
+	box->x2test = 0;
 }
 
 //
@@ -1616,6 +1641,7 @@ static void R_ProjectSprite(mobj_t *thing)
 	fixed_t sort_x = 0, sort_y = 0, sort_z;
 
 	INT32 x1, x2;
+	INT32 x1test = 0, x2test = 0;
 
 	spritedef_t *sprdef;
 	spriteframe_t *sprframe;
@@ -2001,18 +2027,35 @@ static void R_ProjectSprite(mobj_t *thing)
 		scalestep = 0;
 		yscale = sortscale;
 		tx += offset;
-		x1 = (centerxfrac + FixedMul(tx,xscale))>>FRACBITS;
+		//x1 = (centerxfrac + FixedMul(tx,xscale))>>FRACBITS;
+		x1 = centerx + (FixedMul(tx,xscale) / FRACUNIT);
+
+		x1test = (centerxfrac + FixedMul(tx,xscale))>>FRACBITS;
+
+		if (x1test > viewwidth)
+			x1test = 0;
 
 		// off the right side?
 		if (x1 > viewwidth)
 			return;
 
 		tx += offset2;
-		x2 = ((centerxfrac + FixedMul(tx,xscale))>>FRACBITS); x2--;
+		//x2 = ((centerxfrac + FixedMul(tx,xscale))>>FRACBITS); x2--;
+		x2 = (centerx + (FixedMul(tx,xscale) / FRACUNIT)) - 1;
+
+		x2test = ((centerxfrac + FixedMul(tx,xscale))>>FRACBITS) - 1;
+
+		if (x2test < 0)
+			x2test = 0;
 
 		// off the left side
 		if (x2 < 0)
 			return;
+
+#if 0
+		if ((x2 - x1) != (x2test - x1test))
+			CONS_Printf("[%d] %d != %d\n", objectsdrawn, x2 - x1, x2test - x1test);
+#endif
 	}
 
 	// Adjust the sort scale if needed
@@ -2100,6 +2143,12 @@ static void R_ProjectSprite(mobj_t *thing)
 	{
 		if (x2 < portalclipstart || x1 >= portalclipend)
 			return;
+
+		if (x2test < portalclipstart || x1test >= portalclipend)
+		{
+			x1test = 0;
+			x2test = 0;
+		}
 
 		if (P_PointOnLineSide(interp.x, interp.y, portalclipline) != 0)
 			return;
@@ -2269,6 +2318,9 @@ static void R_ProjectSprite(mobj_t *thing)
 	vis->x1 = x1 < portalclipstart ? portalclipstart : x1;
 	vis->x2 = x2 >= portalclipend ? portalclipend-1 : x2;
 
+	vis->x1test = x1test < portalclipstart ? portalclipstart : x1test;
+	vis->x2test = x2test >= portalclipend ? portalclipend-1 : x2test;
+
 	vis->sector = thing->subsector->sector;
 	vis->szt = (INT16)((centeryfrac - FixedMul(vis->gzt - viewz, sortscale))>>FRACBITS);
 	vis->sz = (INT16)((centeryfrac - FixedMul(vis->gz - viewz, sortscale))>>FRACBITS);
@@ -2290,6 +2342,12 @@ static void R_ProjectSprite(mobj_t *thing)
 
 	if (shadowdraw || shadoweffects)
 	{
+		if (x1test && x2test)
+		{
+			vis->xiscaletest = (patch->width<<FRACBITS)/(x2test-x1test+1); // fuck it
+			x1test += (x2test-x1test)/2; // reusing x1 variable
+		}
+
 		iscale = (patch->width<<FRACBITS)/(x2-x1+1); // fuck it
 		x1 += (x2-x1)/2; // reusing x1 variable
 		vis->shear.offset = vis->x1-x1;
@@ -2303,6 +2361,7 @@ static void R_ProjectSprite(mobj_t *thing)
 	{
 		vis->startfrac = spr_width-1;
 		vis->xiscale = -iscale;
+		vis->xiscaletest = -vis->xiscaletest;
 	}
 	else
 	{
@@ -2310,10 +2369,13 @@ static void R_ProjectSprite(mobj_t *thing)
 		vis->xiscale = iscale;
 	}
 
+	vis->startfractest = vis->startfrac;
+
 	if (vis->x1 > x1)
 	{
 		vis->startfrac += FixedDiv(vis->xiscale, this_scale) * (vis->x1 - x1);
 		vis->scale += FixedMul(scalestep, spriteyscale) * (vis->x1 - x1);
+		vis->startfractest += FixedDiv(vis->xiscaletest, this_scale) * (vis->x1test - x1test);
 	}
 
 	vis->transmap = R_GetBlendTable(blendmode, trans);
@@ -2524,6 +2586,9 @@ static void R_ProjectPrecipitationSprite(precipmobj_t *thing)
 
 	vis->x1 = x1 < portalclipstart ? portalclipstart : x1;
 	vis->x2 = x2 >= portalclipend ? portalclipend-1 : x2;
+
+	vis->x1test = 0;
+	vis->x2test = 0;
 
 	vis->xscale = xscale; //SoM: 4/17/2000
 	vis->sector = thing->subsector->sector;
