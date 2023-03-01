@@ -35,6 +35,7 @@
 #include "k_menu.h" // Player Setup menu color stuff
 #include "p_spec.h" // P_StartQuake
 #include "i_system.h" // I_GetPreciseTime, I_GetPrecisePrecision
+#include "hu_stuff.h" // for the cecho
 
 #include "lua_script.h"
 #include "lua_libs.h"
@@ -3879,6 +3880,14 @@ static int lib_getTimeMicros(lua_State *L)
 	return 1;
 }
 
+static int lib_startTitlecardCecho(lua_State *L)
+{
+	const char *str = luaL_checkstring(L, 1);
+	HU_DoTitlecardCEcho(str);
+	
+	return 1;
+}
+
 static luaL_Reg lib[] = {
 	{"print", lib_print},
 	{"chatprint", lib_chatprint},
@@ -4160,7 +4169,10 @@ static luaL_Reg lib[] = {
 	{"K_InitBossHealthBar", lib_kInitBossHealthBar},
 	{"K_UpdateBossHealthBar", lib_kUpdateBossHealthBar},
 	{"K_DeclareWeakspot", lib_kDeclareWeakspot},
-
+	
+	// hu_stuff technically?
+	{"HU_DoTitlecardCEcho", lib_startTitlecardCecho},
+	
 	{NULL, NULL}
 };
 

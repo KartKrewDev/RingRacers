@@ -3106,6 +3106,7 @@ void G_ExitLevel(void)
 
 		// Remove CEcho text on round end.
 		HU_ClearCEcho();
+		HU_ClearTitlecardCEcho();
 
 		// Don't save demos immediately here! Let standings write first
 	}
@@ -4085,6 +4086,7 @@ void G_AfterIntermission(void)
 		gamecomplete = 1;
 
 	HU_ClearCEcho();
+	HU_ClearTitlecardCEcho();
 
 	if (demo.playback)
 	{

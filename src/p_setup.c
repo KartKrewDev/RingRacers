@@ -7514,6 +7514,7 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 
 	// Clear CECHO messages
 	HU_ClearCEcho();
+	HU_ClearTitlecardCEcho();
 
 	if (mapheaderinfo[gamemap-1]->runsoc[0] != '#')
 		P_RunSOC(mapheaderinfo[gamemap-1]->runsoc);

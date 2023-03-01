@@ -154,6 +154,10 @@ void HU_SetCEchoDuration(INT32 seconds);
 void HU_SetCEchoFlags(INT32 flags);
 void HU_DoCEcho(const char *msg);
 
+// Titlecard CECHO shite
+void HU_DoTitlecardCEcho(const char *msg);
+void HU_ClearTitlecardCEcho(void);
+
 // Demo playback info
 extern UINT32 hu_demotime;
 extern UINT32 hu_demolap;
