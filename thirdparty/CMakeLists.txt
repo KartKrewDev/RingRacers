@@ -24,10 +24,12 @@ include("cpm-fmt.cmake")
 include("cpm-imgui.cmake")
 include("cpm-acsvm.cmake")
 
-if(NOT "${SRB2_CONFIG_SYSTEM_LIBRARIES}" AND SRB2_CONFIG_ENABLE_WEBM_MOVIES)
-	include("cpm-libvpx.cmake")
-	include("cpm-ogg.cmake") # libvorbis depends
-	include("cpm-libvorbis.cmake")
+if (SRB2_CONFIG_ENABLE_WEBM_MOVIES)
+	if (NOT "${SRB2_CONFIG_SYSTEM_LIBRARIES}")
+		include("cpm-libvpx.cmake")
+		include("cpm-ogg.cmake") # libvorbis depends
+		include("cpm-libvorbis.cmake")
+	endif()
 	include("cpm-libwebm.cmake")
 	include("cpm-libyuv.cmake")
 endif()
