@@ -672,7 +672,7 @@ void P_Ticker(boolean run)
 			{
 				S_StartSound(NULL, sfx_s3kad); // GO!
 			}
-			if (leveltime == (starttime + (TICRATE/2)))
+			else if (leveltime == (starttime + (TICRATE/2)))
 			{
 				S_ChangeMusic(mapmusname, mapmusflags, true);
 				S_ShowMusicCredit();
