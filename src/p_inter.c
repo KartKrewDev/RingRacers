@@ -1911,6 +1911,12 @@ static boolean P_KillPlayer(player_t *player, mobj_t *inflictor, mobj_t *source,
 {
 	(void)source;
 
+	if (player->respawn.state != RESPAWNST_NONE)
+	{
+		K_DoInstashield(player);
+		return false;
+	}
+
 	if (!player->exiting && specialstageinfo.valid == true)
 	{
 		player->pflags |= PF_NOCONTEST;
