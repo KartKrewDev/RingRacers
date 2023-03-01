@@ -816,6 +816,7 @@ void K_RespawnChecker(player_t *player)
 			return;
 		case RESPAWNST_DROP:
 			player->mo->momx = player->mo->momy = 0;
+			player->flashing = 3;
 			if (player->respawn.timer > 0)
 			{
 				player->mo->momz = 0;
