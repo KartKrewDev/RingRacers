@@ -2156,7 +2156,7 @@ static INT16 P_FindClosestTurningForAngle(player_t *player, INT32 targetAngle, I
 		angle_t highError = abs(targetAngle - highAngle);
 		angle_t newError = abs(targetAngle - newAngle);
 
-		CONS_Printf("steering %d / %d / %d - angle %d / %d / %d - TA %d - error %d / %d / %d\n", lowBound, newBound, highBound, lowAngle, newAngle, highAngle, targetAngle, lowError, newError, highError);
+		// CONS_Printf("steering %d / %d / %d - angle %d / %d / %d - TA %d - error %d / %d / %d\n", lowBound, newBound, highBound, lowAngle, newAngle, highAngle, targetAngle, lowError, newError, highError);
 
 		// EXIT CONDITION 3: We got lucky!
 		if (lowError == 0)
