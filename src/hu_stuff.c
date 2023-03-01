@@ -2688,7 +2688,7 @@ void HU_DoTitlecardCEcho(const char *msg)
 	
 	strncpy(tcechotext, msg, sizeof(tcechotext));
 	strncat(tcechotext, "\\", sizeof(tcechotext) - strlen(tcechotext) - 1);
-	cechotext[sizeof(tcechotext) - 1] = '\0';	
+	tcechotext[sizeof(tcechotext) - 1] = '\0';	
 	tcechotimer = 1;
 	tcechoduration = TICRATE*6 + strlen(tcechotext);
 }
