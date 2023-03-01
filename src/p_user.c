@@ -2112,6 +2112,81 @@ static void P_3dMovement(player_t *player)
 	}
 }
 
+// For turning correction in P_UpdatePlayerAngle.
+// Given a range of possible steering inputs, finds a steering input that corresponds to the desired angle change.
+static INT16 P_FindClosestTurningForAngle(player_t *player, INT32 targetAngle, INT16 lowBound, INT16 highBound)
+{
+	INT16 newBound;
+	INT16 preferred = lowBound;
+	int attempts = 0;
+
+	// Only works if our low bound is actually our low bound.
+	if (highBound < lowBound)
+	{
+		INT16 tmp = lowBound;
+		lowBound = highBound;
+		highBound = tmp;
+	}
+
+	// Slightly frumpy binary search for the ideal turning input.
+	// We do this instead of reversing K_GetKartTurnValue so that future handling changes are automatically accounted for.
+	
+	while (attempts < 20) // Practical calls of this function search maximum 10 times, this is solely for safety.
+	{
+		// These need to be treated as signed, or situations where boundaries straddle 0 are a mess.
+		INT32 lowAngle = K_GetKartTurnValue(player, lowBound) << TICCMD_REDUCE;
+		INT32 highAngle = K_GetKartTurnValue(player, highBound) << TICCMD_REDUCE;
+
+		// EXIT CONDITION 1: Hopeless search, target angle isn't between boundaries at all.
+		if (lowAngle >= targetAngle)
+			return lowBound;
+		if (highAngle <= targetAngle)
+			return highBound;
+
+		// Test the middle of our steering range, so we can see which side is more promising.
+		newBound = (lowBound + highBound) / 2;
+
+		// EXIT CONDITION 2: Boundaries converged and we're all out of precision.
+		if (newBound == lowBound || newBound == highBound)
+			break;
+
+		INT32 newAngle = K_GetKartTurnValue(player, newBound) << TICCMD_REDUCE;
+
+		angle_t lowError = abs(targetAngle - lowAngle);
+		angle_t highError = abs(targetAngle - highAngle);
+		angle_t newError = abs(targetAngle - newAngle);
+
+		CONS_Printf("steering %d / %d / %d - angle %d / %d / %d - TA %d - error %d / %d / %d\n", lowBound, newBound, highBound, lowAngle, newAngle, highAngle, targetAngle, lowError, newError, highError);
+
+		// EXIT CONDITION 3: We got lucky!
+		if (lowError == 0)
+			return lowBound;
+		if (newError == 0)
+			return newBound;
+		if (highError == 0)
+			return highBound;
+
+		// If not, store the best estimate...
+		if (lowError <= newError && lowError <= highError)
+			preferred = lowBound;
+		if (highError <= newError && highError <= lowError)
+			preferred = highBound;
+		if (newError <= lowError && newError <= highError)
+			preferred = newBound;
+
+		// ...adjust the bounds...
+		if (lowAngle <= targetAngle && targetAngle <= newAngle)
+			highBound = newBound;
+		else
+			lowBound = newBound;
+
+		// ...and go next
+		attempts++;
+	}
+
+	return preferred;
+}
+
 //
 // P_UpdatePlayerAngle
 //
@@ -2148,6 +2223,13 @@ static void P_UpdatePlayerAngle(player_t *player)
 		angle_t targetAngle = (player->cmd.angle) << TICCMD_REDUCE;
 		angle_t targetDelta = targetAngle - (player->mo->angle);
 
+		// Corrections via fake turn go through easing.
+		// That means undoing them takes the same amount of time as doing them.
+		// This can lead to oscillating death spiral states on a multi-tic correction, as we swing past the target angle.
+		// So before we go into death-spirals, if our predicton is _almost_ right... 
+		angle_t leniency = (2*ANG1/3) * min(player->cmd.latency, 6);
+		// Don't force another turning tic, just give them the desired angle!
+
 		if (targetDelta == angleChange || player->pflags & PF_DRIFTEND || (maxTurnRight == 0 && maxTurnLeft == 0))
 		{
 			// We are where we need to be.
@@ -2158,25 +2240,15 @@ static void P_UpdatePlayerAngle(player_t *player)
 			// so we momentarily ignore the camera angle and let the server trust our inputs instead.
 			// That way, even if you're steering blind, you get the intended "kick-out" effect.
 		}
-		else if (targetDelta >= ANGLE_180 && maxTurnLeft >= targetDelta) // Overshot, so just fudge it.
+		else
 		{
-			angleChange = targetDelta;
-			player->steering = targetsteering;
-		}
-		else if (targetDelta <= ANGLE_180 && maxTurnRight <= targetDelta) // Overshot, so just fudge it.
-		{
-			angleChange = targetDelta;
-			player->steering = targetsteering;
-		}
-		else if (targetDelta >= ANGLE_180 && maxTurnLeft < targetDelta) // Undershot, slam the stick.
-		{
-			angleChange = maxTurnLeft;
-			player->steering = steeringLeft;
-		}
-		else if (targetDelta <= ANGLE_180 && maxTurnRight > targetDelta) // Undershot, slam the stick.
-		{
-			angleChange = maxTurnRight;
-			player->steering = steeringRight;
+			// We're off. Try to legally steer the player towards their camera.
+			player->steering = P_FindClosestTurningForAngle(player, targetDelta, steeringLeft, steeringRight);
+			angleChange = K_GetKartTurnValue(player, player->steering) << TICCMD_REDUCE;
+
+			// And if the resulting steering input is close enough, snap them exactly.
+			if (min(targetDelta - angleChange, angleChange - targetDelta) <= leniency)
+				angleChange = targetDelta;
 		}
 	}
 	else
@@ -2212,6 +2284,7 @@ static void P_UpdatePlayerAngle(player_t *player)
 		localaiming[p] = player->aiming;
 	}
 }
+
 
 //
 // P_SpectatorMovement
