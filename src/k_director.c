@@ -110,16 +110,16 @@ static boolean K_CanSwitchDirector(void)
 		return false;
 	}
 
-	if (!directorinfo.active)
-	{
-		return false;
-	}
-
 	return true;
 }
 
 static void K_DirectorSwitch(INT32 player, boolean force)
 {
+	if (!directorinfo.active)
+	{
+		return;
+	}
+
 	if (P_IsDisplayPlayer(&players[player]))
 	{
 		return;
