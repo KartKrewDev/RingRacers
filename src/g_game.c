@@ -1179,9 +1179,18 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 			K_ToggleDirector(false);
 		}
 
-		if (M_MenuButtonPressed(forplayer, MBT_R))
+		if (player->spectator == true)
 		{
-			K_ToggleDirector(true);
+			// duplication of fire
+			if (G_PlayerInputDown(forplayer, gc_item, 0))
+			{
+				cmd->buttons |= BT_ATTACK;
+			}
+
+			if (M_MenuButtonPressed(forplayer, MBT_R))
+			{
+				K_ToggleDirector(true);
+			}
 		}
 
 		goto aftercmdinput;
