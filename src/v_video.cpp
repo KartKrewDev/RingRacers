@@ -1570,8 +1570,6 @@ void V_DrawFadeScreen(UINT16 color, UINT8 strength)
 //
 void V_DrawCustomFadeScreen(const char *lump, UINT8 strength)
 {
-	(void)lump;
-	(void)strength;
 #ifdef HWRENDER
 	if (rendermode != render_soft && rendermode != render_none)
 	{
@@ -1580,7 +1578,37 @@ void V_DrawCustomFadeScreen(const char *lump, UINT8 strength)
 	}
 #endif
 
-	// NOTE: This is not implementable in HWR2.
+	// TODO: fix this for Twodee
+	{
+		lumpnum_t lumpnum = LUMPERROR;
+		lighttable_t *clm = NULL;
+
+		if (lump != NULL)
+			lumpnum = W_GetNumForName(lump);
+		else
+			return;
+
+		if (lumpnum != LUMPERROR)
+		{
+			clm = static_cast<lighttable_t*>(Z_MallocAlign(COLORMAP_SIZE, PU_STATIC, NULL, 8));
+			W_ReadLump(lumpnum, clm);
+
+			if (clm != NULL)
+			{
+				const UINT8 *fadetable = ((UINT8 *)clm + strength*256);
+				const UINT8 *deststop = screens[0] + vid.rowbytes * vid.height;
+				UINT8 *buf = screens[0];
+
+				// heavily simplified -- we don't need to know x or y
+				// position when we're doing a full screen fade
+				for (; buf < deststop; ++buf)
+					*buf = fadetable[*buf];
+
+				Z_Free(clm);
+				clm = NULL;
+			}
+		}
+	}
 }
 
 // Simple translucency with one color, over a set number of lines starting from the top.
