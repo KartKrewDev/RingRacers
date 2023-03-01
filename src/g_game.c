@@ -514,13 +514,16 @@ void G_UpdateTimeStickerMedals(UINT16 map, boolean showownrecord)
 			}
 			case ET_MAP:
 			{	
-				if (emblem->flags & ME_SPBATTACK)
+				if (emblem->flags & ME_SPBATTACK && cv_dummyspbattack.value)
 					break;
 				goto bademblem;
 			}
 			default:
 				goto bademblem;
 		}
+
+		if (cv_dummyspbattack.value && !(emblem->flags & ME_SPBATTACK))
+			return;
 
 		if (!gamedata->collected[(emblem-emblemlocations)] && gonnadrawtime)
 			break;

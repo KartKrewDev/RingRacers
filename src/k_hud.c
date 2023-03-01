@@ -1669,7 +1669,6 @@ void K_drawKartTimestamp(tic_t drawtime, INT32 TX, INT32 TY, INT32 splitflags, U
 		bombxoff = sqrt(bombxoff) - 5;
 		bombxoff = max(0, min(bombxoff, widthbar));
 		V_DrawScaledPatch(160 + widthbar/2 - bombxoff, ybar - 7, FRACUNIT, W_CachePatchName("SPBMMAP", PU_CACHE));
-
 	}
 }
 

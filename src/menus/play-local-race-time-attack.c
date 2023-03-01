@@ -10,7 +10,12 @@
 #include "../m_misc.h" // M_MkdirEach
 #include "../z_zone.h" // Z_StrDup/Z_Free
 
-consvar_t cv_dummyspbattack = CVAR_INIT ("dummyspbattack", "Off", CV_HIDDEN, CV_OnOff, NULL);
+static void CV_SPBAttackChanged(void)
+{
+	G_UpdateTimeStickerMedals(levellist.choosemap, false);
+}
+
+consvar_t cv_dummyspbattack = CVAR_INIT ("dummyspbattack", "Off", CV_HIDDEN|CV_CALL, CV_OnOff, CV_SPBAttackChanged);
 
 // see ta_e
 menuitem_t PLAY_TimeAttack[] =
