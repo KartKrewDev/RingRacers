@@ -542,50 +542,51 @@ boolean Obj_ShrinkLaserCollide(mobj_t *gun, mobj_t *victim)
 			// Take away Shrink.
 			K_RemoveGrowShrink(victim->player);
 		}
-		else
+
+		victim->player->growshrinktimer += 3*TICRATE;
+		S_StartSound(victim, sfx_kc5a);
+
+		if (prevTimer <= 0)
 		{
-			victim->player->growshrinktimer += 3*TICRATE;
-			S_StartSound(victim, sfx_kc5a);
+			victim->scalespeed = mapobjectscale/TICRATE;
+			victim->destscale = FixedMul(mapobjectscale, GROW_SCALE);
 
-			if (prevTimer <= 0)
+			if (K_PlayerShrinkCheat(victim->player) == true)
 			{
-				victim->scalespeed = mapobjectscale/TICRATE;
-				victim->destscale = FixedMul(mapobjectscale, GROW_SCALE);
-
-				if (K_PlayerShrinkCheat(victim->player) == true)
-				{
-					victim->destscale = FixedMul(victim->destscale, SHRINK_SCALE);
-				}
-
-				if (victim->player->invincibilitytimer > 0)
-				{
-					; // invincibility has priority in P_RestoreMusic, no point in starting here
-				}
-				else if (P_IsLocalPlayer(victim->player) == true)
-				{
-					S_ChangeMusicSpecial("kgrow");
-				}
-				else //used to be "if (P_IsDisplayPlayer(victim->player) == false)"
-				{
-					S_StartSound(victim, sfx_alarmg);
-				}
-
-				P_RestoreMusic(victim->player);
+				victim->destscale = FixedMul(victim->destscale, SHRINK_SCALE);
 			}
+
+			if (victim->player->invincibilitytimer > 0)
+			{
+				; // invincibility has priority in P_RestoreMusic, no point in starting here
+			}
+			else if (P_IsLocalPlayer(victim->player) == true)
+			{
+				S_ChangeMusicSpecial("kgrow");
+			}
+			else //used to be "if (P_IsDisplayPlayer(victim->player) == false)"
+			{
+				S_StartSound(victim, sfx_alarmg);
+			}
+
+			P_RestoreMusic(victim->player);
+
 		}
 	}
 	else
 	{
 		if (prevTimer > 0)
 		{
-			// Take away Grow.
-			K_RemoveGrowShrink(victim->player);
+			// Dock some Grow time.
+			// (Hack-adjacent: Always make sure there's a tic left so standard timer handling can remove the effect properly.)
+			victim->player->growshrinktimer -= min(3*TICRATE/2, victim->player->growshrinktimer - 1);
+			S_StartSound(victim, sfx_s3k40);
 		}
 		else
 		{
 			// Start shrinking!
 			victim->player->growshrinktimer -= 5*TICRATE;
-			S_StartSound(victim, sfx_kc59);
+			S_StartSound(victim, sfx_kc59); // I don't think you ever get to hear this while the pohbee laser is in your teeth, but best effort.
 
 			if (prevTimer >= 0)
 			{

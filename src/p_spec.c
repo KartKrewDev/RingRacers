@@ -9100,15 +9100,17 @@ void T_Pusher(pusher_t *p)
 				thing->player->carry = CR_SLIDING;
 				thing->angle = R_PointToAngle2(0, 0, xspeed, yspeed);
 
+				
 				if (!demo.playback)
 				{
-					angle_t angle = thing->player->angleturn;
+					angle_t angle = thing->player->boostangle;
 					if (thing->angle - angle > ANGLE_180)
-						P_SetPlayerAngle(thing->player, angle - (angle - thing->angle) / 8);
+						thing->player->boostangle = angle - (angle - thing->angle) / 8;
 					else
-						P_SetPlayerAngle(thing->player, angle + (thing->angle - angle) / 8);
+						thing->player->boostangle = angle + (thing->angle - angle) / 8; 
 					//P_SetPlayerAngle(thing->player, thing->angle);
 				}
+				
 			}
 
 			if (p->exclusive)

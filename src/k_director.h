@@ -12,6 +12,7 @@ extern "C" {
 
 extern struct directorinfo
 {
+    boolean active; // is view point switching enabled?
     tic_t cooldown; // how long has it been since we last switched?
     tic_t freeze;   // when nonzero, fixed switch pending, freeze logic!
     INT32 attacker; // who to switch to when freeze delay elapses
@@ -26,6 +27,7 @@ void K_InitDirector(void);
 void K_UpdateDirector(void);
 void K_DrawDirectorDebugger(void);
 void K_DirectorFollowAttack(player_t *player, mobj_t *inflictor, mobj_t *source);
+void K_ToggleDirector(boolean active);
 
 #ifdef __cplusplus
 } // extern "C"

@@ -2610,15 +2610,6 @@ void CL_RemovePlayer(INT32 playernum, kickreason_t reason)
 
 	LUA_HookPlayerQuit(&players[playernum], reason); // Lua hook for player quitting
 
-	// don't look through someone's view who isn't there
-	if (playernum == displayplayers[0] && !demo.playback)
-	{
-		// Call ViewpointSwitch hooks here.
-		// The viewpoint was forcibly changed.
-		LUA_HookViewpointSwitch(&players[consoleplayer], &players[consoleplayer], true);
-		displayplayers[0] = consoleplayer;
-	}
-
 	G_RemovePartyMember(playernum);
 
 	// Reset player data
@@ -2637,6 +2628,9 @@ void CL_RemovePlayer(INT32 playernum, kickreason_t reason)
 	player_name_changes[playernum] = 0;
 
 	LUA_InvalidatePlayer(&players[playernum]);
+
+	// don't look through someone's view who isn't there
+	G_ResetViews();
 
 	K_CheckBumpers();
 	P_CheckRacers();

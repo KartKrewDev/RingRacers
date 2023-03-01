@@ -2120,7 +2120,6 @@ static void P_3dMovement(player_t *player)
 static void P_UpdatePlayerAngle(player_t *player)
 {
 	angle_t angleChange = ANGLE_MAX;
-	UINT8 maxlatency;
 	UINT8 p = UINT8_MAX;
 	UINT8 i;
 
@@ -2133,8 +2132,58 @@ static void P_UpdatePlayerAngle(player_t *player)
 		}
 	}
 
-	player->steering = K_UpdateSteeringValue(player->steering, player->cmd.turning);
-	angleChange = K_GetKartTurnValue(player, player->steering) << TICCMD_REDUCE;
+	// Don't apply steering just yet. If we make a correction, we'll need to adjust it.
+	INT16 targetsteering = K_UpdateSteeringValue(player->steering, player->cmd.turning);
+	angleChange = K_GetKartTurnValue(player, targetsteering) << TICCMD_REDUCE;
+
+	if (!K_PlayerUsesBotMovement(player))
+	{
+		// With a full slam on the analog stick, how far could we steer in either direction?
+		INT16 steeringRight =  K_UpdateSteeringValue(player->steering, KART_FULLTURN);
+		angle_t maxTurnRight = K_GetKartTurnValue(player, steeringRight) << TICCMD_REDUCE;
+		INT16 steeringLeft =  K_UpdateSteeringValue(player->steering, -KART_FULLTURN);
+		angle_t maxTurnLeft = K_GetKartTurnValue(player, steeringLeft) << TICCMD_REDUCE;
+
+		// Grab local camera angle from ticcmd. Where do we actually want to go?
+		angle_t targetAngle = (player->cmd.angle) << TICCMD_REDUCE;
+		angle_t targetDelta = targetAngle - (player->mo->angle);
+
+		if (targetDelta == angleChange || player->pflags & PF_DRIFTEND || (maxTurnRight == 0 && maxTurnLeft == 0))
+		{
+			// We are where we need to be.
+			// ...Or we aren't, but shouldn't be able to steer.
+			player->steering = targetsteering;
+			// Alternatively, while in DRIFTEND we want to trust inputs for a bit, not camera.
+			// The game client doesn't know we're DRIFTEND until after a response gets back,
+			// so we momentarily ignore the camera angle and let the server trust our inputs instead.
+			// That way, even if you're steering blind, you get the intended "kick-out" effect.
+		}
+		else if (targetDelta >= ANGLE_180 && maxTurnLeft >= targetDelta) // Overshot, so just fudge it.
+		{
+			angleChange = targetDelta;
+			player->steering = targetsteering;
+		}
+		else if (targetDelta <= ANGLE_180 && maxTurnRight <= targetDelta) // Overshot, so just fudge it.
+		{
+			angleChange = targetDelta;
+			player->steering = targetsteering;
+		}
+		else if (targetDelta >= ANGLE_180 && maxTurnLeft < targetDelta) // Undershot, slam the stick.
+		{
+			angleChange = maxTurnLeft;
+			player->steering = steeringLeft;
+		}
+		else if (targetDelta <= ANGLE_180 && maxTurnRight > targetDelta) // Undershot, slam the stick.
+		{
+			angleChange = maxTurnRight;
+			player->steering = steeringRight;
+		}
+	}
+	else
+	{
+		// You're a bot. Go where you're supposed to go
+		player->steering = targetsteering;
+	}
 
 	if (p == UINT8_MAX)
 	{
@@ -2144,33 +2193,8 @@ static void P_UpdatePlayerAngle(player_t *player)
 	}
 	else
 	{
-		// During standard play, our latency can vary by up to 1 tic in either direction, even on a stable connection.
-		// This probably comes from differences in ticcmd dispatch vs consumption rate. Probably.
-		// Uncorrected, this 2-tic "wobble" causes camera corrections to sometimes be skipped or batched.
-		// So just use the highest recent value for the furthest possible search.
-		// We unset the correction after applying, anyway.
-		locallatency[p][leveltime%TICRATE] = maxlatency = player->cmd.latency;
-		for (i = 0; i < TICRATE; i++)
-		{
-			maxlatency = max(locallatency[p][i], maxlatency);
-		}
-
-		UINT8 lateTic = ((leveltime - maxlatency) & TICCMD_LATENCYMASK);
-		UINT8 clearTic = ((localtic + 1) & TICCMD_LATENCYMASK);
-
 		player->angleturn += angleChange;
 		player->mo->angle = player->angleturn;
-
-		// Undo the ticcmd's old emulated angle,
-		// now that we added the actual game logic angle.
-
-		while (lateTic != clearTic)
-		{
-			localdelta[p] -= localstoredeltas[p][lateTic];
-			localstoredeltas[p][lateTic] = 0;
-
-			lateTic = (lateTic - 1) & TICCMD_LATENCYMASK;
-		}
 	}
 
 	if (!cv_allowmlook.value || player->spectator == false)
@@ -3162,7 +3186,13 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 
 	if (demo.playback)
 	{
-		focusangle = mo->angle;
+		// Hack-adjacent.
+		// Sometimes stale ticcmds send a weird angle at the start of the race.
+		// P_UpdatePlayerAngle knows to ignore cmd angle when you literally can't turn, so we do the same here.
+		if (leveltime > introtime)
+			focusangle = player->cmd.angle << TICCMD_REDUCE;
+		else
+			focusangle = mo->angle; // Just use something known sane.
 		focusaiming = 0;
 	}
 	else
@@ -4478,7 +4508,7 @@ void P_ForceLocalAngle(player_t *player, angle_t angle)
 		if (player == &players[displayplayers[i]])
 		{
 			localangle[i] = angle;
-			G_ResetAnglePrediction(player);
+
 			break;
 		}
 	}

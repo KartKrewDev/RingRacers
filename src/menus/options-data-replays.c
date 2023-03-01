@@ -8,7 +8,7 @@ menuitem_t OPTIONS_DataReplay[] =
 	{IT_STRING | IT_CVAR, "Record Replays", "Select when to save replays.",
 		NULL, {.cvar = &cv_recordmultiplayerdemos}, 0, 0},
 
-	{IT_STRING | IT_CVAR, "Synch. Check Interval", "How often to check for synchronization while playing back a replay.",
+	{IT_STRING | IT_CVAR, "Net Consistency Quality", "For filesize, how often do we write position data in online replays?",
 		NULL, {.cvar = &cv_netdemosyncquality}, 0, 0},
 };
 

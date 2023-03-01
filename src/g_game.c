@@ -61,6 +61,7 @@
 #include "k_specialstage.h"
 #include "k_bot.h"
 #include "doomstat.h"
+#include "k_director.h"
 
 #ifdef HAVE_DISCORDRPC
 #include "discord.h"
@@ -1080,80 +1081,32 @@ INT32 localaiming[MAXSPLITSCREENPLAYERS];
 angle_t localangle[MAXSPLITSCREENPLAYERS];
 
 INT32 localsteering[MAXSPLITSCREENPLAYERS];
-INT32 localdelta[MAXSPLITSCREENPLAYERS];
-INT32 localstoredeltas[MAXSPLITSCREENPLAYERS][TICCMD_LATENCYMASK + 1];
-UINT8 locallatency[MAXSPLITSCREENPLAYERS][TICRATE];
-UINT8 localtic;
-
-void G_ResetAnglePrediction(player_t *player)
-{
-	UINT16 i, j;
-
-	for (i = 0; i <= r_splitscreen; i++)
-	{
-		if (&players[displayplayers[i]] == player)
-		{
-			localdelta[i] = 0;
-			for (j = 0; j < TICCMD_LATENCYMASK; j++)
-			{
-				localstoredeltas[i][j] = 0;
-			}
-			break;
-		}
-	}
-}
 
 // Turning was removed from G_BuildTiccmd to prevent easy client hacking.
 // This brings back the camera prediction that was lost.
 static void G_DoAnglePrediction(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer, player_t *player)
 {
 	angle_t angleChange = 0;
-	angle_t destAngle = player->angleturn;
-	angle_t diff = 0;
 
-	localtic = cmd->latency;
-
-	if (player->pflags & PF_DRIFTEND)
+	while (realtics > 0)
 	{
-		// Otherwise, your angle slingshots off to the side violently...
-		G_ResetAnglePrediction(player);
+		localsteering[ssplayer - 1] = K_UpdateSteeringValue(localsteering[ssplayer - 1], cmd->turning);
+		angleChange = K_GetKartTurnValue(player, localsteering[ssplayer - 1]) << TICCMD_REDUCE;
+
+		realtics--;
+	}
+
+#if 0
+	// Left here in case it needs unsealing later. This tried to replicate an old localcam function, but this behavior was unpopular in tests.
+	//if (player->pflags & PF_DRIFTEND)
+	{
+		localangle[ssplayer - 1] = player->mo->angle;
 	}
 	else
+#endif
 	{
-		while (realtics > 0)
-		{
-			localsteering[ssplayer - 1] = K_UpdateSteeringValue(localsteering[ssplayer - 1], cmd->turning);
-			angleChange = K_GetKartTurnValue(player, localsteering[ssplayer - 1]) << TICCMD_REDUCE;
-
-			// Store the angle we applied to this tic, so we can revert it later.
-			// If we trust the camera to do all of the work, then it can get out of sync fast.
-			localstoredeltas[ssplayer - 1][cmd->latency] += angleChange;
-			localdelta[ssplayer - 1] += angleChange;
-
-			realtics--;
-		}
+		localangle[ssplayer - 1] += angleChange;
 	}
-
-	// We COULD set it to destAngle directly...
-	// but this causes incredible jittering when the prediction turns out to be wrong. So we ease into it.
-	// Slight increased camera lag in all scenarios > Mostly lagless camera but with jittering
-	destAngle = player->angleturn + localdelta[ssplayer - 1];
-
-	diff = destAngle - localangle[ssplayer - 1];
-
-	if (diff > ANGLE_180)
-	{
-		diff = InvAngle(InvAngle(diff) / 2);
-	}
-	else
-	{
-		diff /= 2;
-	}
-
-	localangle[ssplayer - 1] += diff;
-
-	// In case of angle debugging, break glass
-	// localangle[ssplayer - 1] = destAngle;
 }
 
 void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
@@ -1189,6 +1142,8 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 			break;
 	}
 
+	cmd->angle = localangle[forplayer] >> TICCMD_REDUCE;
+
 	// why build a ticcmd if we're paused?
 	// Or, for that matter, if we're being reborn.
 	if (paused || P_AutoPause() || (gamestate == GS_LEVEL && player->playerstate == PST_REBORN))
@@ -1205,6 +1160,28 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 		if (hu_keystrokes)
 		{
 			cmd->flags |= TICCMD_KEYSTROKE;
+		}
+
+		goto aftercmdinput;
+	}
+
+	if (displayplayers[forplayer] != g_localplayers[forplayer])
+	{
+		if (M_MenuButtonPressed(forplayer, MBT_A))
+		{
+			G_AdjustView(ssplayer, 1, true);
+			K_ToggleDirector(false);
+		}
+
+		if (M_MenuButtonPressed(forplayer, MBT_X))
+		{
+			G_AdjustView(ssplayer, -1, true);
+			K_ToggleDirector(false);
+		}
+
+		if (M_MenuButtonPressed(forplayer, MBT_R))
+		{
+			K_ToggleDirector(true);
 		}
 
 		goto aftercmdinput;
@@ -1398,16 +1375,6 @@ aftercmdinput:
 		cmd->throwdir = -KART_FULLTURN;
 
 	G_DoAnglePrediction(cmd, realtics, ssplayer, player);
-
-	// Reset away view if a command is given.
-	if ((cmd->forwardmove || cmd->buttons)
-		&& !r_splitscreen && displayplayers[0] != consoleplayer && ssplayer == 1)
-	{
-		// Call ViewpointSwitch hooks here.
-		// The viewpoint was forcibly changed.
-		LUA_HookViewpointSwitch(player, &players[consoleplayer], true);
-		displayplayers[0] = consoleplayer;
-	}
 }
 
 ticcmd_t *G_CopyTiccmd(ticcmd_t* dest, const ticcmd_t* src, const size_t n)
@@ -1422,6 +1389,7 @@ ticcmd_t *G_MoveTiccmd(ticcmd_t* dest, const ticcmd_t* src, const size_t n)
 	{
 		dest[i].forwardmove = src[i].forwardmove;
 		dest[i].turning = (INT16)SHORT(src[i].turning);
+		dest[i].angle = (INT16)SHORT(src[i].angle);
 		dest[i].throwdir = (INT16)SHORT(src[i].throwdir);
 		dest[i].aiming = (INT16)SHORT(src[i].aiming);
 		dest[i].buttons = (UINT16)SHORT(src[i].buttons);
@@ -1740,44 +1708,8 @@ boolean G_Responder(event_t *ev)
 			return true; // chat ate the event
 		}
 
-	// allow spy mode changes even during the demo
-	if (gamestate == GS_LEVEL && ev->type == ev_keydown
-		&& (ev->data1 == KEY_F12 /*|| ev->data1 == gamecontrol[0][gc_viewpoint][0] || ev->data1 == gamecontrol[0][gc_viewpoint][1]*/))
-	{
-		if (!demo.playback && (r_splitscreen || !netgame))
-			g_localplayers[0] = consoleplayer;
-		else
-		{
-			G_AdjustView(1, 1, true);
-
-			// change statusbar also if playing back demo
-			if (demo.quitafterplaying)
-				ST_changeDemoView();
-
-			return true;
-		}
-	}
-
 	if (gamestate == GS_LEVEL && ev->type == ev_keydown && multiplayer && demo.playback && !demo.freecam)
 	{
-		/*
-		if (ev->data1 == gamecontrol[1][gc_viewpoint][0] || ev->data1 == gamecontrol[1][gc_viewpoint][1])
-		{
-			G_AdjustView(2, 1, true);
-			return true;
-		}
-		else if (ev->data1 == gamecontrol[2][gc_viewpoint][0] || ev->data1 == gamecontrol[2][gc_viewpoint][1])
-		{
-			G_AdjustView(3, 1, true);
-			return true;
-		}
-		else if (ev->data1 == gamecontrol[3][gc_viewpoint][0] || ev->data1 == gamecontrol[3][gc_viewpoint][1])
-		{
-			G_AdjustView(4, 1, true);
-			return true;
-		}
-		*/
-
 		// Allow pausing
 		if (
 			//ev->data1 == gamecontrol[0][gc_pause][0]
@@ -1964,7 +1896,7 @@ boolean G_CanView(INT32 playernum, UINT8 viewnum, boolean onlyactive)
 INT32 G_FindView(INT32 startview, UINT8 viewnum, boolean onlyactive, boolean reverse)
 {
 	INT32 i, dir = reverse ? -1 : 1;
-	startview = min(max(startview, 0), MAXPLAYERS);
+	startview = min(max(startview, -1), MAXPLAYERS);
 	for (i = startview; i < MAXPLAYERS && i >= 0; i += dir)
 	{
 		if (G_CanView(i, viewnum, onlyactive))
@@ -2035,7 +1967,14 @@ void G_ResetView(UINT8 viewnum, INT32 playernum, boolean onlyactive)
 
 	/* Check if anyone is available to view. */
 	if (( playernum = G_FindView(playernum, viewnum, onlyactive, playernum < olddisplayplayer) ) == -1)
-		return;
+	{
+		/* Fall back on true self */
+		playernum = g_localplayers[viewnum-1];
+	}
+
+	// Call ViewpointSwitch hooks here.
+	// The viewpoint was forcibly changed.
+	LUA_HookViewpointSwitch(&players[g_localplayers[viewnum - 1]], &players[playernum], true);
 
 	/* Focus our target view first so that we don't take its player. */
 	(*displayplayerp) = playernum;
@@ -2043,6 +1982,10 @@ void G_ResetView(UINT8 viewnum, INT32 playernum, boolean onlyactive)
 	{
 		camerap = &camera[viewnum-1];
 		P_ResetCamera(&players[(*displayplayerp)], camerap);
+
+		// Why does it need to be done twice?
+		R_ResetViewInterpolation(viewnum);
+		R_ResetViewInterpolation(viewnum);
 	}
 
 	if (viewnum > splits)
@@ -2060,6 +2003,10 @@ void G_ResetView(UINT8 viewnum, INT32 playernum, boolean onlyactive)
 
 	if (viewnum == 1 && demo.playback)
 		consoleplayer = displayplayers[0];
+
+	// change statusbar also if playing back demo
+	if (demo.quitafterplaying)
+		ST_changeDemoView();
 }
 
 //
@@ -2097,8 +2044,8 @@ void G_ResetViews(void)
 	/* Demote splits */
 	if (playersviewable < splits)
 	{
-		splits = playersviewable;
-		r_splitscreen = max(splits-1, 0);
+		splits = max(playersviewable, splitscreen + 1); // don't delete local players
+		r_splitscreen = splits - 1;
 		R_ExecuteSetViewSize();
 	}
 

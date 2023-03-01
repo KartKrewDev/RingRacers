@@ -7748,12 +7748,12 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		}
 	}
 
-	if (player->invincibilitytimer)
+	if (player->invincibilitytimer && onground == true)
 		player->invincibilitytimer--;
 
 	if ((player->respawn.state == RESPAWNST_NONE) && player->growshrinktimer != 0)
 	{
-		if (player->growshrinktimer > 0)
+		if (player->growshrinktimer > 0 && onground == true)
 			player->growshrinktimer--;
 		if (player->growshrinktimer < 0)
 			player->growshrinktimer++;
@@ -7810,7 +7810,8 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 
 
 	if (player->stealingtimer == 0
-		&& player->rocketsneakertimer)
+		&& player->rocketsneakertimer
+		&& onground == true)
 		player->rocketsneakertimer--;
 
 	if (player->hyudorotimer)
@@ -9728,6 +9729,7 @@ static void K_KartSpindash(player_t *player)
 
 		player->spindash = 0;
 		S_ReducedVFXSound(player->mo, sfx_s23c, player);
+		S_StopSoundByID(player->mo, sfx_kc38);
 	}
 
 
@@ -9779,10 +9781,14 @@ static void K_KartSpindash(player_t *player)
 			UINT8 ringdropframes = 2 + (player->kartspeed + player->kartweight);
 			boolean spawnOldEffect = true;
 
-			if (player->rings <= 0) // Use the damn spindash
-				player->spindash++; // I am no longer asking
-
 			INT16 chargetime = MAXCHARGETIME - ++player->spindash;
+
+			if (player->rings <= 0 && chargetime >= 0) // Desperation spindash
+			{
+				player->spindash++;
+				if (!S_SoundPlaying(player->mo, sfx_kc38))
+					S_StartSound(player->mo, sfx_kc38);
+			} 
 
 			if (player->spindash >= SPINDASHTHRUSTTIME)
 			{
@@ -10504,39 +10510,42 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 							{
 								if (player->growshrinktimer < 0)
 								{
-									// If you're shrunk, then "grow" will just make you normal again.
+									// Old v1 behavior was to have Grow counter Shrink,
+									// but Shrink is now so ephemeral that it should just work.
 									K_RemoveGrowShrink(player);
+									// So we fall through here.
 								}
-								else
+
+								K_PlayPowerGloatSound(player->mo);
+
+								player->mo->scalespeed = mapobjectscale/TICRATE;
+								player->mo->destscale = FixedMul(mapobjectscale, GROW_SCALE);
+
+								if (K_PlayerShrinkCheat(player) == true)
 								{
-									K_PlayPowerGloatSound(player->mo);
-
-									player->mo->scalespeed = mapobjectscale/TICRATE;
-									player->mo->destscale = FixedMul(mapobjectscale, GROW_SCALE);
-
-									if (K_PlayerShrinkCheat(player) == true)
-									{
-										player->mo->destscale = FixedMul(player->mo->destscale, SHRINK_SCALE);
-									}
-
-									player->growshrinktimer = max(player->growshrinktimer, ((gametyperules & GTR_CLOSERPLAYERS) ? 8 : 12) * TICRATE);
-
-									if (player->invincibilitytimer > 0)
-									{
-										; // invincibility has priority in P_RestoreMusic, no point in starting here
-									}
-									else if (P_IsLocalPlayer(player) == true)
-									{
-										S_ChangeMusicSpecial("kgrow");
-									}
-									else //used to be "if (P_IsDisplayPlayer(player) == false)"
-									{
-										S_StartSound(player->mo, sfx_alarmg);
-									}
-
-									P_RestoreMusic(player);
-									S_StartSound(player->mo, sfx_kc5a);
+									player->mo->destscale = FixedMul(player->mo->destscale, SHRINK_SCALE);
 								}
+
+								if (player->invincibilitytimer > 0)
+								{
+									; // invincibility has priority in P_RestoreMusic, no point in starting here
+								}
+								else if (P_IsLocalPlayer(player) == true)
+								{
+									if (player->growshrinktimer < 1)
+										S_ChangeMusicSpecial("kgrow");
+								}
+								else //used to be "if (P_IsDisplayPlayer(player) == false)"
+								{
+									S_StartSound(player->mo, sfx_alarmg);
+								}
+
+								P_RestoreMusic(player);
+
+								player->growshrinktimer = max(0, player->growshrinktimer);
+								player->growshrinktimer += ((gametyperules & GTR_CLOSERPLAYERS) ? 8 : 12) * TICRATE;
+
+								S_StartSound(player->mo, sfx_kc5a);
 
 								player->itemamount--;
 							}

@@ -1095,6 +1095,8 @@ void ST_preLevelTitleCardDrawer(void)
 //
 static void ST_overlayDrawer(void)
 {
+	const UINT8 viewnum = R_GetViewNumber();
+
 	// hu_showscores = auto hide score/time/rings when tab rankings are shown
 	if (!(hu_showscores && (netgame || multiplayer)))
 	{
@@ -1135,7 +1137,7 @@ static void ST_overlayDrawer(void)
 
 	if (!hu_showscores && netgame && !mapreset)
 	{
-		if (stplyr->spectator && LUA_HudEnabled(hud_textspectator))
+		if (stplyr->spectator && displayplayers[viewnum] == g_localplayers[viewnum] && LUA_HudEnabled(hud_textspectator))
 		{
 			const char *itemtxt = M_GetText("Item - Join Game");
 

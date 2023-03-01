@@ -548,8 +548,6 @@ static CV_PossibleValue_t perfstats_cons_t[] = {
 };
 consvar_t cv_perfstats = CVAR_INIT ("perfstats", "Off", 0, perfstats_cons_t, NULL);
 
-consvar_t cv_director = CVAR_INIT ("director", "Off", 0, CV_OnOff, NULL);
-
 consvar_t cv_schedule = CVAR_INIT ("schedule", "On", CV_NETVAR|CV_CALL, CV_OnOff, Schedule_OnChange);
 
 consvar_t cv_automate = CVAR_INIT ("automate", "On", CV_NETVAR, CV_OnOff, NULL);
@@ -1059,8 +1057,6 @@ void D_RegisterClientCommands(void)
 	CV_RegisterVar(&cv_scr_depth);
 	CV_RegisterVar(&cv_scr_width);
 	CV_RegisterVar(&cv_scr_height);
-
-	CV_RegisterVar(&cv_director);
 
 	CV_RegisterVar(&cv_soundtest);
 
@@ -1596,21 +1592,8 @@ static void FinalisePlaystateChange(INT32 playernum)
 		K_StripItems(&players[playernum]);
 	}
 
-	// Reset away view (some code referenced from P_SpectatorJoinGame)
-	{
-		UINT8 i = 0;
-		INT32 *localplayertable = (splitscreen_partied[consoleplayer] ? splitscreen_party[consoleplayer] : g_localplayers);
-
-		for (i = 0; i <= r_splitscreen; i++)
-		{
-			if (localplayertable[i] == playernum)
-			{
-				LUA_HookViewpointSwitch(players+playernum, players+playernum, true);
-				displayplayers[i] = playernum;
-				break;
-			}
-		}
-	}
+	// Reset away view
+	G_ResetViews();
 
 	K_CheckBumpers(); // SRB2Kart
 	P_CheckRacers(); // also SRB2Kart

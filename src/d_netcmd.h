@@ -128,8 +128,6 @@ extern consvar_t cv_sleep;
 
 extern consvar_t cv_perfstats;
 
-extern consvar_t cv_director;
-
 extern consvar_t cv_schedule;
 
 extern consvar_t cv_livestudioaudience;

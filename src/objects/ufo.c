@@ -23,6 +23,7 @@
 #include "../z_zone.h"
 #include "../k_waypoint.h"
 #include "../k_specialstage.h"
+#include "../r_skins.h"
 
 #define UFO_BASE_SPEED (42 * FRACUNIT) // UFO's slowest speed.
 #define UFO_SPEEDUP (FRACUNIT >> 1) // Acceleration
@@ -671,6 +672,16 @@ boolean Obj_SpecialUFODamage(mobj_t *ufo, mobj_t *inflictor, mobj_t *source, UIN
 		return false;
 	}
 
+	if (source->player)
+	{
+		UINT32 skinflags = (demo.playback)
+			? demo.skinlist[demo.currentskinid[(source->player-players)]].flags
+			: skins[source->player->skin].flags;
+		if (skinflags & SF_IRONMAN)
+			SetRandomFakePlayerSkin(source->player, true);
+	}
+
+
 	// Speed up on damage!
 	ufo_speed(ufo) += addSpeed;
 
@@ -700,6 +711,7 @@ boolean Obj_SpecialUFODamage(mobj_t *ufo, mobj_t *inflictor, mobj_t *source, UIN
 	S_StopSoundByID(ufo, sfx_clawzm);
 	P_StartQuake(64<<FRACBITS, 10);
 	ufo->health -= damage;
+
 	return true;
 }
 
