@@ -700,10 +700,13 @@ static void P_SpawnMapThings(boolean spawnemblems)
 
 	for (i = 0, mt = mapthings; i < nummapthings; i++, mt++)
 	{
-		if (mt->type == 1700 // MT_AXIS
-			|| mt->type == 1701 // MT_AXISTRANSFER
-			|| mt->type == 1702) // MT_AXISTRANSFERLINE
-			continue; // These were already spawned
+		switch (mt->type)
+		{
+			case 1700: // MT_AXIS
+			case 1701: // MT_AXISTRANSFER
+			case 1702: // MT_AXISTRANSFERLINE
+				continue; // These were already spawned
+		}
 
 		if (mt->type == mobjinfo[MT_BATTLECAPSULE].doomednum)
 			continue; // This will spawn later
@@ -5952,6 +5955,7 @@ static void P_ConvertBinaryLinedefTypes(void)
 				lines[i].args[1] |= TMBOT_FORCEDIR;
 
 			lines[i].args[2] = sides[lines[i].sidenum[0]].textureoffset / FRACUNIT;
+			break;
 		default:
 			break;
 		}
@@ -7519,6 +7523,7 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 
 	// Clear CECHO messages
 	HU_ClearCEcho();
+	HU_ClearTitlecardCEcho();
 
 	if (mapheaderinfo[gamemap-1]->runsoc[0] != '#')
 		P_RunSOC(mapheaderinfo[gamemap-1]->runsoc);
