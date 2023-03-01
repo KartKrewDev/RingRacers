@@ -662,7 +662,7 @@ void P_Ticker(boolean run)
 			if (leveltime == starttime-(3*TICRATE))
 			{
 				S_StartSound(NULL, sfx_s3ka7); // 3,
-				S_FadeOutStopMusic(3500);
+				S_FadeMusic(0, 3500); //S_FadeOutStopMusic(3500); -- TODO the S_StopMusic callback can halt successor music instead
 			}
 			else if ((leveltime == starttime-(2*TICRATE)) || (leveltime == starttime-TICRATE))
 			{
