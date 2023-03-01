@@ -7660,6 +7660,7 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 		else if (encoremode)
 		{
 			levelfadecol = 0;
+			wipetype = wipe_encore_towhite;
 		}
 		else
 		{
