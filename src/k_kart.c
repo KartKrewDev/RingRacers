@@ -11036,18 +11036,6 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 	{
 		player->pflags &= ~PF_AIRFAILSAFE;
 	}
-
-	// Play the starting countdown sounds
-	if (player == &players[g_localplayers[0]]) // Don't play louder in splitscreen
-	{
-		if ((leveltime == starttime-(3*TICRATE)) || (leveltime == starttime-(2*TICRATE)) || (leveltime == starttime-TICRATE))
-			S_StartSound(NULL, sfx_s3ka7);
-
-		if (leveltime == starttime-(3*TICRATE))
-			S_FadeOutStopMusic(3500);
-		else if (leveltime == starttime)
-			S_StartSound(NULL, sfx_s3kad);
-	}
 }
 
 void K_CheckSpectateStatus(void)

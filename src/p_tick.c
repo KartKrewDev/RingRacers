@@ -647,24 +647,39 @@ void P_Ticker(boolean run)
 			if (playeringame[i] && players[i].mo && !P_MobjWasRemoved(players[i].mo))
 				P_PlayerAfterThink(&players[i]);
 
-		// Bosses have a punchy start, so no position.
 		if (K_CheckBossIntro() == true)
 		{
+			// Bosses have a punchy start, so no position.
 			if (leveltime == 3)
 			{
 				S_ChangeMusic(mapmusname, mapmusflags, true);
 				S_ShowMusicCredit();
 			}
 		}
-		// Plays the music after the starting countdown.
-		else
+		else if (leveltime < starttime + TICRATE)
 		{
-			if (leveltime == (starttime + (TICRATE/2)))
+			// Start countdown/music handling
+			if (leveltime == starttime-(3*TICRATE))
 			{
+				S_StartSound(NULL, sfx_s3ka7); // 3,
+				S_FadeMusic(0, 3500); //S_FadeOutStopMusic(3500); -- TODO the S_StopMusic callback can halt successor music instead
+			}
+			else if ((leveltime == starttime-(2*TICRATE)) || (leveltime == starttime-TICRATE))
+			{
+				S_StartSound(NULL, sfx_s3ka7); // 2, 1,
+			}
+			else if (leveltime == starttime)
+			{
+				S_StartSound(NULL, sfx_s3kad); // GO!
+			}
+			else if (leveltime == (starttime + (TICRATE/2)))
+			{
+				// Plays the music after the starting countdown.
 				S_ChangeMusic(mapmusname, mapmusflags, true);
 				S_ShowMusicCredit();
 			}
 
+			// POSITION!! music
 			if (encoremode)
 			{
 				// Encore humming starts immediately.
