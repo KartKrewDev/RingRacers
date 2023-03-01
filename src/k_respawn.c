@@ -344,7 +344,10 @@ static void K_MovePlayerToRespawnPoint(player_t *player)
 
 	player->mo->momx = player->mo->momy = player->mo->momz = 0;
 
-	player->flashing = 2;
+	// 3 because this timer counts down afterward, in
+	// P_PlayerThink. flashing must be > 1 after it has
+	// counted down in order to flicker the player sprite.
+	player->flashing = 3;
 	//player->nocontrol = max(2, player->nocontrol);
 
 	if (leveltime % 8 == 0 && !mapreset)
