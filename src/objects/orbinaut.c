@@ -335,23 +335,24 @@ void Obj_OrbinautJawzMoveHeld(player_t *player)
 {
 	fixed_t finalscale = K_ItemScaleForPlayer(player);
 	fixed_t speed = 0;
-	mobj_t *cur = NULL;
+	mobj_t *cur = NULL, *next = player->mo->hnext;
 
 	player->bananadrag = 0; // Just to make sure
 
-	cur = player->mo->hnext;
-	speed = ((8 - min(4, player->itemamount)) * cur->info->speed) / 7;
+	if (next == NULL)
+		return;
 
-	while (cur != NULL && P_MobjWasRemoved(cur) == false)
+	speed = ((8 - min(4, player->itemamount)) * next->info->speed) / 7;
+
+	while ((cur = next) != NULL && P_MobjWasRemoved(cur) == false)
 	{
 		const fixed_t radius = FixedHypot(player->mo->radius, player->mo->radius) + FixedHypot(cur->radius, cur->radius); // mobj's distance from its Target, or Radius.
 		fixed_t z;
 
+		next = cur->hnext;
+
 		if (!cur->health)
-		{
-			cur = cur->hnext;
 			continue;
-		}
 
 		cur->color = player->skincolor;
 
@@ -391,15 +392,17 @@ void Obj_OrbinautJawzMoveHeld(player_t *player)
 			z = player->mo->z + player->mo->height - cur->height;
 		}
 
-		cur->flags |= MF_NOCLIPTHING; // temporarily make them noclip other objects so they can't hit anyone while in the player
+		cur->flags |= (MF_NOCLIP|MF_NOCLIPTHING); // temporarily make them noclip other objects so they can't hit anyone while in the player
 		P_MoveOrigin(cur, player->mo->x, player->mo->y, z);
 		cur->momx = FixedMul(FINECOSINE(cur->angle >> ANGLETOFINESHIFT), orbinaut_shield_dist(cur));
 		cur->momy = FixedMul(FINESINE(cur->angle >> ANGLETOFINESHIFT), orbinaut_shield_dist(cur));
-		cur->flags &= ~MF_NOCLIPTHING;
+		cur->flags &= ~(MF_NOCLIP|MF_NOCLIPTHING);
 
 		if (!P_TryMove(cur, player->mo->x + cur->momx, player->mo->y + cur->momy, true, NULL))
 		{
 			P_SlideMove(cur, NULL);
+			if (P_MobjWasRemoved(cur))
+				continue;
 		}
 
 		if (P_IsObjectOnGround(player->mo))
@@ -426,8 +429,6 @@ void Obj_OrbinautJawzMoveHeld(player_t *player)
 		cur->z = z;
 		cur->momx = cur->momy = 0;
 		cur->angle += ANGLE_90;
-
-		cur = cur->hnext;
 	}
 }
 
