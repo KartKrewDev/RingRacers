@@ -4688,7 +4688,6 @@ static void K_drawDirectorHUD(void)
 		K_DrawDirectorButton(2, "Prev Player", kp_button_x[0], 0);
 		offs = 2;
 	}
-	else
 
 	if (p == -1 || !playeringame[p] || players[p].spectator == false)
 	{
