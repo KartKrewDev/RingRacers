@@ -4319,6 +4319,14 @@ void G_LoadGameSettings(void)
 #define GD_VERSIONCHECK 0xBA5ED123 // Change every major version, as usual
 #define GD_VERSIONMINOR 1 // Change every format update
 
+static const char *G_GameDataFolder(void)
+{
+	if (strcmp(srb2home,"."))
+		return srb2home;
+	else
+		return "the Ring Racers folder";
+}
+
 // G_LoadGameData
 // Loads the main data file, which stores information such as emblems found, etc.
 void G_LoadGameData(void)
@@ -4368,19 +4376,19 @@ void G_LoadGameData(void)
 	versionID = READUINT32(save.p);
 	if (versionID != GD_VERSIONCHECK)
 	{
-		const char *gdfolder = "the Ring Racers folder";
-		if (strcmp(srb2home,"."))
-			gdfolder = srb2home;
+		const char *gdfolder = G_GameDataFolder();
 
 		P_SaveBufferFree(&save);
-		I_Error("Game data is not for Ring Racers v2.0.\nDelete %s(maybe in %s) and try again.", gamedatafilename, gdfolder);
+		I_Error("Game data is not for Ring Racers v2.0.\nDelete %s (maybe in %s) and try again.", gamedatafilename, gdfolder);
 	}
 
 	versionMinor = READUINT8(save.p);
 	if (versionMinor > GD_VERSIONMINOR)
 	{
+		const char *gdfolder = G_GameDataFolder();
+
 		P_SaveBufferFree(&save);
-		I_Error("Game data is from the future! (expected %d, got %d)", GD_VERSIONMINOR, versionMinor);
+		I_Error("Game data is from the future! (expected %d, got %d)\nRename or delete %s (maybe in %s) and try again.", GD_VERSIONMINOR, versionMinor, gamedatafilename, gdfolder);
 	}
 	if (versionMinor == 0)
 	{
