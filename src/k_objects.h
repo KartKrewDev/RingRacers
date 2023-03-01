@@ -2,6 +2,8 @@
 #ifndef k_objects_H
 #define k_objects_H
 
+#include "taglist.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -91,6 +93,13 @@ void Obj_MonitorSetItemSpot(mobj_t *monitor, mobj_t *spot);
 boolean Obj_ItemSpotIsAvailable(const mobj_t *spot);
 void Obj_ItemSpotAssignMonitor(mobj_t *spot, mobj_t *monitor);
 void Obj_ItemSpotUpdate(mobj_t *spot);
+
+/* Loops */
+mobj_t *Obj_FindLoopCenter(const mtag_t tag);
+void Obj_InitLoopEndpoint(mobj_t *end, mobj_t *anchor);
+void Obj_InitLoopCenter(mobj_t *center);
+void Obj_LinkLoopAnchor(mobj_t *anchor, mobj_t *center, UINT8 type);
+void Obj_LoopEndpointCollide(mobj_t *special, mobj_t *toucher);
 
 #ifdef __cplusplus
 } // extern "C"

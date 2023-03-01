@@ -12,4 +12,5 @@ target_sources(SRB2SDL2 PRIVATE
 	ufo.c
 	monitor.c
 	item-spot.c
+	loops.c
 )

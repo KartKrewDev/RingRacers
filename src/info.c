@@ -29311,6 +29311,60 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		MF_NOBLOCKMAP|MF_NOCLIP|MF_NOCLIPHEIGHT|MF_NOCLIPTHING|MF_NOGRAVITY|MF_DONTENCOREMAP|MF_NOSQUISH, // flags
 		S_NULL          // raisestate
 	},
+
+	{           // MT_LOOPENDPOINT
+		2020,           // doomednum
+		S_INVISIBLE,    // spawnstate
+		1000,           // spawnhealth
+		S_NULL,         // seestate
+		sfx_None,       // seesound
+		8,              // reactiontime
+		sfx_None,       // attacksound
+		S_NULL,         // painstate
+		0,              // painchance
+		sfx_None,       // painsound
+		S_NULL,         // meleestate
+		S_NULL,         // missilestate
+		S_NULL,         // deathstate
+		S_NULL,         // xdeathstate
+		sfx_None,       // deathsound
+		0,              // speed
+		MAXRADIUS,      // radius
+		2*MAXRADIUS,    // height
+		0,              // display offset
+		100,            // mass
+		1,              // damage
+		sfx_None,       // activesound
+		MF_SPECIAL|MF_NOGRAVITY|MF_DONTENCOREMAP, // flags
+		S_NULL          // raisestate
+	},
+
+	{           // MT_LOOPCENTERPOINT
+		2021,           // doomednum
+		S_INVISIBLE,    // spawnstate
+		1000,           // spawnhealth
+		S_NULL,         // seestate
+		sfx_None,       // seesound
+		8,              // reactiontime
+		sfx_None,       // attacksound
+		S_NULL,         // painstate
+		0,              // painchance
+		sfx_None,       // painsound
+		S_NULL,         // meleestate
+		S_NULL,         // missilestate
+		S_NULL,         // deathstate
+		S_NULL,         // xdeathstate
+		sfx_None,       // deathsound
+		0,              // speed
+		48*FRACUNIT,    // radius
+		32*FRACUNIT,    // height
+		0,              // display offset
+		100,            // mass
+		1,              // damage
+		sfx_None,       // activesound
+		MF_NOSECTOR|MF_NOBLOCKMAP|MF_NOCLIPHEIGHT|MF_NOGRAVITY|MF_DONTENCOREMAP, // flags
+		S_NULL          // raisestate
+	},
 };
 
 skincolor_t skincolors[MAXSKINCOLORS] = {

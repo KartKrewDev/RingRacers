@@ -3979,7 +3979,8 @@ static void P_CheckFloatbobPlatforms(mobj_t *mobj)
 static void P_SquishThink(mobj_t *mobj)
 {
 	if (!(mobj->flags & MF_NOSQUISH) &&
-			!(mobj->eflags & MFE_SLOPELAUNCHED))
+			!(mobj->eflags & MFE_SLOPELAUNCHED) &&
+			!(mobj->player && mobj->player->loop.radius != 0))
 	{
 		K_Squish(mobj);
 	}
@@ -4002,7 +4003,8 @@ static void P_PlayerMobjThinker(mobj_t *mobj)
 
 	// Zoom tube
 	if ((mobj->player->carry == CR_ZOOMTUBE && mobj->tracer && !P_MobjWasRemoved(mobj->tracer))
-		|| mobj->player->respawn.state == RESPAWNST_MOVE)
+		|| mobj->player->respawn.state == RESPAWNST_MOVE
+		|| mobj->player->loop.radius != 0)
 	{
 		P_HitSpecialLines(mobj, mobj->x, mobj->y, mobj->momx, mobj->momy);
 		P_UnsetThingPosition(mobj);
@@ -13325,6 +13327,11 @@ static boolean P_SetupSpawnedMapThing(mapthing_t *mthing, mobj_t *mobj, boolean 
 		mobj->reactiontime++;
 		break;
 	}
+	case MT_LOOPCENTERPOINT:
+	{
+		Obj_InitLoopCenter(mobj);
+		break;
+	}
 	default:
 		break;
 	}
@@ -13545,6 +13552,11 @@ static void P_SpawnItemRow(mapthing_t *mthing, mobjtype_t *itemtypes, UINT8 numi
 	angle_t angle = FixedAngle(fixedangle << FRACBITS);
 	angle_t fineangle = (angle >> ANGLETOFINESHIFT) & FINEMASK;
 
+	boolean isloopend = (mthing->type == mobjinfo[MT_LOOPENDPOINT].doomednum);
+	mobj_t *loopanchor;
+
+	boolean inclusive = isloopend;
+
 	for (r = 0; r < numitemtypes; r++)
 	{
 		dummything = *mthing;
@@ -13563,6 +13575,21 @@ static void P_SpawnItemRow(mapthing_t *mthing, mobjtype_t *itemtypes, UINT8 numi
 	}
 	z = P_GetMobjSpawnHeight(itemtypes[0], x, y, z, 0, mthing->options & MTF_OBJECTFLIP, mthing->scale);
 
+	if (isloopend)
+	{
+		const fixed_t length = (numitems - 1) * horizontalspacing / 2;
+
+		mobj_t *loopcenter = Obj_FindLoopCenter(Tag_FGet(&mthing->tags));
+
+		// Spawn the anchor at the middle point of the line
+		loopanchor = P_SpawnMobjFromMapThing(&dummything,
+				x + FixedMul(length, FINECOSINE(fineangle)),
+				y + FixedMul(length, FINESINE(fineangle)),
+				z, MT_LOOPCENTERPOINT);
+
+		Obj_LinkLoopAnchor(loopanchor, loopcenter, mthing->args[0]);
+	}
+
 	for (r = 0; r < numitems; r++)
 	{
 		mobjtype_t itemtype = itemtypes[r % numitemtypes];
@@ -13570,14 +13597,23 @@ static void P_SpawnItemRow(mapthing_t *mthing, mobjtype_t *itemtypes, UINT8 numi
 			continue;
 		dummything.type = mobjinfo[itemtype].doomednum;
 
+		if (inclusive)
+			mobj = P_SpawnMobjFromMapThing(&dummything, x, y, z, itemtype);
+
 		x += FixedMul(horizontalspacing, FINECOSINE(fineangle));
 		y += FixedMul(horizontalspacing, FINESINE(fineangle));
 		z += (mthing->options & MTF_OBJECTFLIP) ? -verticalspacing : verticalspacing;
 
-		mobj = P_SpawnMobjFromMapThing(&dummything, x, y, z, itemtype);
+		if (!inclusive)
+			mobj = P_SpawnMobjFromMapThing(&dummything, x, y, z, itemtype);
 
 		if (!mobj)
 			continue;
+
+		if (isloopend)
+		{
+			Obj_InitLoopEndpoint(mobj, loopanchor);
+		}
 
 		mobj->spawnpoint = NULL;
 	}

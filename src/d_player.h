@@ -374,6 +374,16 @@ struct itemroulette_t
 	boolean eggman;
 };
 
+// player_t struct for loop state
+typedef struct {
+	fixed_t radius;
+	fixed_t revolution, min_revolution, max_revolution;
+	angle_t yaw;
+	vector3_t origin;
+	vector2_t shift;
+	boolean flip;
+} sonicloopvars_t;
+
 // ========================================================================
 //                          PLAYER STRUCTURE
 // ========================================================================
@@ -668,6 +678,8 @@ struct player_t
 #ifdef HWRENDER
 	fixed_t fovadd; // adjust FOV for hw rendering
 #endif
+
+	sonicloopvars_t loop;
 };
 
 #ifdef __cplusplus
