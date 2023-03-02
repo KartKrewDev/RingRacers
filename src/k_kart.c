@@ -1243,6 +1243,11 @@ static boolean K_TryDraft(player_t *player, mobj_t *dest, fixed_t minDist, fixed
 	angle_t yourangle, theirangle, diff;
 #endif
 
+	if (K_PodiumSequence() == true)
+	{
+		return false;
+	}
+
 #ifndef EASYDRAFTTEST
 	// Don't draft on yourself :V
 	if (dest->player && dest->player == player)
