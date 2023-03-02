@@ -602,6 +602,12 @@ Obj_MonitorGetDamage
 		damage = HEALTHFACTOR +
 			(FixedMul(weight, HEALTHFACTOR) / 9);
 
+
+		if (inflictor->player->tiregrease > 0)
+		{
+			damage *= 3; // Do 3x the damage if the player is in spring grease state
+		}
+
 		if (inflictor->scale > mapobjectscale)
 		{
 			damage = P_ScaleFromMap(damage, inflictor->scale);

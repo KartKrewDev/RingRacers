@@ -465,6 +465,19 @@ static void P_NetArchivePlayers(savebuffer_t *save)
 		WRITEUINT32(save->p, players[i].itemRoulette.tics);
 		WRITEUINT32(save->p, players[i].itemRoulette.elapsed);
 		WRITEUINT8(save->p, players[i].itemRoulette.eggman);
+
+		// sonicloopsvars_t
+		WRITEFIXED(save->p, players[i].loop.radius);
+		WRITEFIXED(save->p, players[i].loop.revolution);
+		WRITEFIXED(save->p, players[i].loop.min_revolution);
+		WRITEFIXED(save->p, players[i].loop.max_revolution);
+		WRITEANGLE(save->p, players[i].loop.yaw);
+		WRITEFIXED(save->p, players[i].loop.origin.x);
+		WRITEFIXED(save->p, players[i].loop.origin.y);
+		WRITEFIXED(save->p, players[i].loop.origin.z);
+		WRITEFIXED(save->p, players[i].loop.shift.x);
+		WRITEFIXED(save->p, players[i].loop.shift.y);
+		WRITEUINT8(save->p, players[i].loop.flip);
 	}
 }
 
@@ -833,6 +846,19 @@ static void P_NetUnArchivePlayers(savebuffer_t *save)
 		players[i].itemRoulette.tics = (tic_t)READUINT32(save->p);
 		players[i].itemRoulette.elapsed = (tic_t)READUINT32(save->p);
 		players[i].itemRoulette.eggman = (boolean)READUINT8(save->p);
+
+		// sonicloopsvars_t
+		players[i].loop.radius = READFIXED(save->p);
+		players[i].loop.revolution = READFIXED(save->p);
+		players[i].loop.min_revolution = READFIXED(save->p);
+		players[i].loop.max_revolution = READFIXED(save->p);
+		players[i].loop.yaw = READANGLE(save->p);
+		players[i].loop.origin.x = READFIXED(save->p);
+		players[i].loop.origin.y = READFIXED(save->p);
+		players[i].loop.origin.z = READFIXED(save->p);
+		players[i].loop.shift.x = READFIXED(save->p);
+		players[i].loop.shift.y = READFIXED(save->p);
+		players[i].loop.flip = READUINT8(save->p);
 
 		//players[i].viewheight = P_GetPlayerViewHeight(players[i]); // scale cannot be factored in at this point
 	}

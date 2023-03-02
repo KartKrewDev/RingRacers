@@ -25,6 +25,7 @@ void K_InitDirector(void)
 {
 	INT32 playernum;
 
+	directorinfo.active = false;
 	directorinfo.cooldown = SWITCHTIME;
 	directorinfo.freeze = 0;
 	directorinfo.attacker = 0;
@@ -114,6 +115,11 @@ static boolean K_CanSwitchDirector(void)
 
 static void K_DirectorSwitch(INT32 player, boolean force)
 {
+	if (!directorinfo.active)
+	{
+		return;
+	}
+
 	if (P_IsDisplayPlayer(&players[player]))
 	{
 		return;
@@ -218,11 +224,6 @@ void K_UpdateDirector(void)
 	INT32 *displayplayerp = &displayplayers[0];
 	INT32 targetposition;
 
-	if (!cv_director.value)
-	{
-		return;
-	}
-
 	K_UpdateDirectorPositions();
 
 	if (directorinfo.cooldown > 0) {
@@ -284,18 +285,40 @@ void K_UpdateDirector(void)
 
 		target = directorinfo.sortedplayers[targetposition];
 
+		// stop here since we're already viewing this player
+		if (*displayplayerp == target)
+		{
+			break;
+		}
+
+		// if this is a splitscreen player, try next pair
+		if (P_IsDisplayPlayer(&players[target]))
+		{
+			continue;
+		}
+
 		// if we're certain the back half of the pair is actually in this position, try to switch
-		if (*displayplayerp != target && !players[target].positiondelay)
+		if (!players[target].positiondelay)
 		{
 			K_DirectorSwitch(target, false);
 		}
 
 		// even if we're not certain, if we're certain we're watching the WRONG player, try to switch
-		if (players[*displayplayerp].position != targetposition+1 && !players[target].positiondelay)
+		if (players[*displayplayerp].position != targetposition+1 && !players[*displayplayerp].positiondelay)
 		{
 			K_DirectorSwitch(target, false);
 		}
 
 		break;
 	}
+}
+
+void K_ToggleDirector(boolean active)
+{
+	if (directorinfo.active != active)
+	{
+		directorinfo.cooldown = 0; // switch immediately
+	}
+
+	directorinfo.active = active;
 }

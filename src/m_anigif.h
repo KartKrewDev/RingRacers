@@ -28,6 +28,7 @@ extern "C" {
 #ifdef HAVE_ANIGIF
 INT32 GIF_open(const char *filename);
 void GIF_frame(void);
+void GIF_frame_rgb24(INT32 width, INT32 height, const UINT8 *buffer);
 INT32 GIF_close(void);
 #endif
 

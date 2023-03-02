@@ -508,7 +508,7 @@ static size_t gifframe_size = 8192;
 #ifdef HWRENDER
 static colorlookup_t gif_colorlookup;
 
-static void GIF_rgbconvert(UINT8 *linear, UINT8 *scr)
+static void GIF_rgbconvert(const UINT8 *linear, UINT8 *scr)
 {
 	UINT8 r, g, b;
 	size_t src = 0, dest = 0;
@@ -532,12 +532,17 @@ static void GIF_rgbconvert(UINT8 *linear, UINT8 *scr)
 // GIF_framewrite
 // writes a frame into the file.
 //
-static void GIF_framewrite(void)
+static void GIF_framewrite(INT32 input_width, INT32 input_height, const UINT8 *input)
 {
 	UINT8 *p;
 	UINT8 *movie_screen = screens[2];
 	INT32 blitx, blity, blitw, blith;
 	boolean palchanged;
+
+	(void)input_width;
+	(void)input_height;
+
+	I_Assert(input_width == vid.width && input_height == vid.height);
 
 	if (!gifframe_data)
 		gifframe_data = Z_Malloc(gifframe_size, PU_STATIC, NULL);
@@ -565,7 +570,10 @@ static void GIF_framewrite(void)
 
 		// blit to temp screen
 		if (rendermode == render_soft)
-			I_ReadScreen(movie_screen);
+		{
+			I_Assert(input != NULL);
+			GIF_rgbconvert(input, movie_screen);
+		}
 #ifdef HWRENDER
 		else if (rendermode == render_opengl)
 		{
@@ -594,7 +602,10 @@ static void GIF_framewrite(void)
 		// Copy the first frame into the movie screen
 		// OpenGL already does the same above.
 		if (gif_frames == 0 && rendermode == render_soft)
-			I_ReadScreen(movie_screen);
+		{
+			I_Assert(input != NULL);
+			GIF_rgbconvert(input, screens[0]);
+		}
 
 		movie_screen = screens[0];
 	}
@@ -751,7 +762,16 @@ INT32 GIF_open(const char *filename)
 void GIF_frame(void)
 {
 	// there's not much actually needed here, is there.
-	GIF_framewrite();
+	GIF_framewrite(vid.width, vid.height, NULL);
+}
+
+//
+// GIF_frame_rgb24
+// writes a frame into the output gif, with existing image data
+//
+void GIF_frame_rgb24(INT32 width, INT32 height, const UINT8 *buffer)
+{
+	GIF_framewrite(width, height, buffer);
 }
 
 //

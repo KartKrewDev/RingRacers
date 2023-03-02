@@ -343,7 +343,7 @@ static void D_Display(void)
 				F_WipeStartScreen();
 				F_WipeColorFill(31);
 				F_WipeEndScreen();
-				F_RunWipe(wipetypepre, gamestate != GS_MENU, "FADEMAP0", false, false);
+				F_RunWipe(wipedefindex, wipetypepre, gamestate != GS_MENU, "FADEMAP0", false, false);
 			}
 
 			if (gamestate != GS_LEVEL && rendermode != render_none)
@@ -356,7 +356,7 @@ static void D_Display(void)
 		}
 		else //dedicated servers
 		{
-			F_RunWipe(wipedefs[wipedefindex], gamestate != GS_MENU, "FADEMAP0", false, false);
+			F_RunWipe(wipedefindex, wipedefs[wipedefindex], gamestate != GS_MENU, "FADEMAP0", false, false);
 			wipegamestate = gamestate;
 		}
 
@@ -633,7 +633,7 @@ static void D_Display(void)
 		{
 			F_WipeEndScreen();
 
-			F_RunWipe(wipedefs[wipedefindex], gamestate != GS_MENU && gamestate != GS_TITLESCREEN, "FADEMAP0", true, false);
+			F_RunWipe(wipedefindex, wipedefs[wipedefindex], gamestate != GS_MENU && gamestate != GS_TITLESCREEN, "FADEMAP0", true, false);
 		}
 
 		// reset counters so timedemo doesn't count the wipe duration
@@ -690,6 +690,9 @@ static void D_Display(void)
 		ps_swaptime = I_GetPreciseTime();
 		I_FinishUpdate(); // page flip or blit buffer
 		ps_swaptime = I_GetPreciseTime() - ps_swaptime;
+
+		// We should never do the HWR2 skip 3d drawing hack for more than 1 full draw.
+		g_wipeskiprender = false;
 	}
 }
 
@@ -800,6 +803,9 @@ void D_SRB2Loop(void)
 		HW3S_BeginFrameUpdate();
 #endif
 
+		I_NewTwodeeFrame();
+		I_NewImguiFrame();
+
 		if (realtics > 0 || singletics)
 		{
 			// don't skip more than 10 frames at a time
@@ -865,11 +871,13 @@ void D_SRB2Loop(void)
 			D_Display();
 		}
 
+#ifdef HWRENDER
 		// Only take screenshots after drawing.
-		if (moviemode)
-			M_SaveFrame();
-		if (takescreenshot)
-			M_DoScreenShot();
+		if (moviemode && rendermode == render_opengl)
+			M_LegacySaveFrame();
+		if (rendermode == render_opengl && takescreenshot)
+			M_DoLegacyGLScreenShot();
+#endif
 
 		// consoleplayer -> displayplayers (hear sounds from viewpoint)
 		S_UpdateSounds(); // move positional sounds
@@ -1488,6 +1496,9 @@ void D_SRB2Main(void)
 
 	CONS_Printf("I_StartupGraphics()...\n");
 	I_StartupGraphics();
+
+	I_NewTwodeeFrame();
+	I_NewImguiFrame();
 
 #ifdef HWRENDER
 	// Lactozilla: Add every hardware mode CVAR and CCMD.

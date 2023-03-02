@@ -46,6 +46,7 @@
 #include "k_collide.h"
 #include "k_objects.h"
 #include "k_grandprix.h"
+#include "k_director.h"
 
 static CV_PossibleValue_t CV_BobSpeed[] = {{0, "MIN"}, {4*FRACUNIT, "MAX"}, {0, NULL}};
 consvar_t cv_movebob = CVAR_INIT ("movebob", "1.0", CV_FLOAT|CV_SAVE, CV_BobSpeed, NULL);
@@ -1790,6 +1791,8 @@ void P_XYMovement(mobj_t *mo)
 							{
 								S_StartSound(mo, mo->info->attacksound);
 								mo->health--;
+								// This prevents an item thrown at a wall from
+								// phasing through you on its return.
 								mo->threshold = 0;
 							}
 							/*FALLTHRU*/
@@ -1808,6 +1811,12 @@ void P_XYMovement(mobj_t *mo)
 
 						case MT_BUBBLESHIELDTRAP:
 							S_StartSound(mo, sfx_s3k44); // Bubble bounce
+							break;
+
+						case MT_DROPTARGET:
+							// This prevents an item thrown at a wall from
+							// phasing through you on its return.
+							mo->threshold = 0;
 							break;
 
 						default:
@@ -3978,7 +3987,8 @@ static void P_CheckFloatbobPlatforms(mobj_t *mobj)
 static void P_SquishThink(mobj_t *mobj)
 {
 	if (!(mobj->flags & MF_NOSQUISH) &&
-			!(mobj->eflags & MFE_SLOPELAUNCHED))
+			!(mobj->eflags & MFE_SLOPELAUNCHED) &&
+			!(mobj->player && mobj->player->loop.radius != 0))
 	{
 		K_Squish(mobj);
 	}
@@ -4001,7 +4011,8 @@ static void P_PlayerMobjThinker(mobj_t *mobj)
 
 	// Zoom tube
 	if ((mobj->player->carry == CR_ZOOMTUBE && mobj->tracer && !P_MobjWasRemoved(mobj->tracer))
-		|| mobj->player->respawn.state == RESPAWNST_MOVE)
+		|| mobj->player->respawn.state == RESPAWNST_MOVE
+		|| mobj->player->loop.radius != 0)
 	{
 		P_HitSpecialLines(mobj, mobj->x, mobj->y, mobj->momx, mobj->momy);
 		P_UnsetThingPosition(mobj);
@@ -9742,14 +9753,6 @@ void P_MobjThinker(mobj_t *mobj)
 	I_Assert(mobj != NULL);
 	I_Assert(!P_MobjWasRemoved(mobj));
 
-	// Set old position (for interpolation)
-	mobj->old_x = mobj->x;
-	mobj->old_y = mobj->y;
-	mobj->old_z = mobj->z;
-	mobj->old_angle = mobj->angle;
-	mobj->old_pitch = mobj->pitch;
-	mobj->old_roll = mobj->roll;
-
 	// Remove dead target/tracer.
 	if (mobj->target && P_MobjWasRemoved(mobj->target))
 		P_SetTarget(&mobj->target, NULL);
@@ -11827,6 +11830,22 @@ void P_SpawnPlayer(INT32 playernum)
 			K_SpawnPlayerBattleBumpers(p);
 		}
 	}
+
+	// I'm not refactoring the loop at the top of this file.
+	pcount = 0;
+
+	for (i = 0; i < MAXPLAYERS; ++i)
+	{
+		if (G_CouldView(i))
+		{
+			pcount++;
+		}
+	}
+
+	// Spectating when there is literally any other player in
+	// the level enables director cam.
+	// TODO: how do we support splitscreen?
+	K_ToggleDirector(players[consoleplayer].spectator && pcount > 0);
 }
 
 void P_AfterPlayerSpawn(INT32 playernum)
@@ -13316,6 +13335,11 @@ static boolean P_SetupSpawnedMapThing(mapthing_t *mthing, mobj_t *mobj, boolean 
 		mobj->reactiontime++;
 		break;
 	}
+	case MT_LOOPCENTERPOINT:
+	{
+		Obj_InitLoopCenter(mobj);
+		break;
+	}
 	default:
 		break;
 	}
@@ -13536,6 +13560,11 @@ static void P_SpawnItemRow(mapthing_t *mthing, mobjtype_t *itemtypes, UINT8 numi
 	angle_t angle = FixedAngle(fixedangle << FRACBITS);
 	angle_t fineangle = (angle >> ANGLETOFINESHIFT) & FINEMASK;
 
+	boolean isloopend = (mthing->type == mobjinfo[MT_LOOPENDPOINT].doomednum);
+	mobj_t *loopanchor;
+
+	boolean inclusive = isloopend;
+
 	for (r = 0; r < numitemtypes; r++)
 	{
 		dummything = *mthing;
@@ -13554,6 +13583,21 @@ static void P_SpawnItemRow(mapthing_t *mthing, mobjtype_t *itemtypes, UINT8 numi
 	}
 	z = P_GetMobjSpawnHeight(itemtypes[0], x, y, z, 0, mthing->options & MTF_OBJECTFLIP, mthing->scale);
 
+	if (isloopend)
+	{
+		const fixed_t length = (numitems - 1) * horizontalspacing / 2;
+
+		mobj_t *loopcenter = Obj_FindLoopCenter(Tag_FGet(&mthing->tags));
+
+		// Spawn the anchor at the middle point of the line
+		loopanchor = P_SpawnMobjFromMapThing(&dummything,
+				x + FixedMul(length, FINECOSINE(fineangle)),
+				y + FixedMul(length, FINESINE(fineangle)),
+				z, MT_LOOPCENTERPOINT);
+
+		Obj_LinkLoopAnchor(loopanchor, loopcenter, mthing->args[0]);
+	}
+
 	for (r = 0; r < numitems; r++)
 	{
 		mobjtype_t itemtype = itemtypes[r % numitemtypes];
@@ -13561,14 +13605,23 @@ static void P_SpawnItemRow(mapthing_t *mthing, mobjtype_t *itemtypes, UINT8 numi
 			continue;
 		dummything.type = mobjinfo[itemtype].doomednum;
 
+		if (inclusive)
+			mobj = P_SpawnMobjFromMapThing(&dummything, x, y, z, itemtype);
+
 		x += FixedMul(horizontalspacing, FINECOSINE(fineangle));
 		y += FixedMul(horizontalspacing, FINESINE(fineangle));
 		z += (mthing->options & MTF_OBJECTFLIP) ? -verticalspacing : verticalspacing;
 
-		mobj = P_SpawnMobjFromMapThing(&dummything, x, y, z, itemtype);
+		if (!inclusive)
+			mobj = P_SpawnMobjFromMapThing(&dummything, x, y, z, itemtype);
 
 		if (!mobj)
 			continue;
+
+		if (isloopend)
+		{
+			Obj_InitLoopEndpoint(mobj, loopanchor);
+		}
 
 		mobj->spawnpoint = NULL;
 	}
@@ -13715,6 +13768,18 @@ void P_SpawnItemPattern(mapthing_t *mthing)
 	default:
 		return;
 	}
+}
+
+void P_SpawnItemLine(mapthing_t *mt1, mapthing_t *mt2)
+{
+	const mobjtype_t type = P_GetMobjtype(mt1->type);
+	const fixed_t diameter = 2 * FixedMul(mobjinfo[type].radius, mapobjectscale);
+	const fixed_t dx = (mt2->x - mt1->x) * FRACUNIT;
+	const fixed_t dy = (mt2->y - mt1->y) * FRACUNIT;
+	const fixed_t dist = FixedHypot(dx, dy);
+	const angle_t angle = R_PointToAngle2(0, 0, dx, dy);
+
+	P_SpawnSingularItemRow(mt1, type, (dist / diameter) + 1, diameter, 0, AngleFixed(angle) / FRACUNIT);
 }
 
 //

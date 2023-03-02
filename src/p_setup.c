@@ -334,7 +334,7 @@ FUNCNORETURN static ATTRNORETURN void CorruptMapError(const char *msg)
 	{
 		sprintf(mapname, "ID %d", gamemap-1);
 	}
-	
+
 	CON_LogMessage("Map ");
 	CON_LogMessage(mapname);
 	CON_LogMessage(" is corrupt: ");
@@ -380,7 +380,7 @@ void P_DeleteFlickies(INT16 i)
 static void P_ClearSingleMapHeaderInfo(INT16 num)
 {
 	UINT8 i = 0;
-	
+
 	mapheaderinfo[num]->lvlttl[0] = '\0';
 	mapheaderinfo[num]->subttl[0] = '\0';
 	mapheaderinfo[num]->zonttl[0] = '\0';
@@ -677,10 +677,25 @@ void P_ReloadRings(void)
 	}
 }
 
+static int cmp_loopends(const void *a, const void *b)
+{
+	const mapthing_t
+		*mt1 = *(const mapthing_t*const*)a,
+		*mt2 = *(const mapthing_t*const*)b;
+
+	// weighted sorting; tag takes precedence over type
+	return
+		intsign(Tag_FGet(&mt1->tags) - Tag_FGet(&mt2->tags)) * 2 +
+		intsign(mt1->args[0] - mt2->args[0]);
+}
+
 static void P_SpawnMapThings(boolean spawnemblems)
 {
 	size_t i;
 	mapthing_t *mt;
+
+	mapthing_t **loopends;
+	size_t num_loopends = 0;
 
 	// Spawn axis points first so they are at the front of the list for fast searching.
 	for (i = 0, mt = mapthings; i < nummapthings; i++, mt++)
@@ -690,20 +705,32 @@ static void P_SpawnMapThings(boolean spawnemblems)
 			case 1700: // MT_AXIS
 			case 1701: // MT_AXISTRANSFER
 			case 1702: // MT_AXISTRANSFERLINE
+			case 2021: // MT_LOOPCENTERPOINT
 				mt->mobj = NULL;
 				P_SpawnMapThing(mt);
+				break;
+			case 2020: // MT_LOOPENDPOINT
+				num_loopends++;
 				break;
 			default:
 				break;
 		}
 	}
 
+	Z_Malloc(num_loopends * sizeof *loopends, PU_STATIC,
+			&loopends);
+	num_loopends = 0;
+
 	for (i = 0, mt = mapthings; i < nummapthings; i++, mt++)
 	{
-		if (mt->type == 1700 // MT_AXIS
-			|| mt->type == 1701 // MT_AXISTRANSFER
-			|| mt->type == 1702) // MT_AXISTRANSFERLINE
-			continue; // These were already spawned
+		switch (mt->type)
+		{
+			case 1700: // MT_AXIS
+			case 1701: // MT_AXISTRANSFER
+			case 1702: // MT_AXISTRANSFERLINE
+			case 2021: // MT_LOOPCENTERPOINT
+				continue; // These were already spawned
+		}
 
 		if (mt->type == mobjinfo[MT_BATTLECAPSULE].doomednum)
 			continue; // This will spawn later
@@ -713,6 +740,13 @@ static void P_SpawnMapThings(boolean spawnemblems)
 
 		mt->mobj = NULL;
 
+		if (mt->type == mobjinfo[MT_LOOPENDPOINT].doomednum)
+		{
+			loopends[num_loopends] = mt;
+			num_loopends++;
+			continue;
+		}
+
 		if (mt->type >= 600 && mt->type <= 611) // item patterns
 			P_SpawnItemPattern(mt);
 		else if (mt->type == 1713) // hoops
@@ -720,6 +754,25 @@ static void P_SpawnMapThings(boolean spawnemblems)
 		else // Everything else
 			P_SpawnMapThing(mt);
 	}
+
+	qsort(loopends, num_loopends, sizeof *loopends,
+			cmp_loopends);
+
+	for (i = 1; i < num_loopends; ++i)
+	{
+		mapthing_t
+			*mt1 = loopends[i - 1],
+			*mt2 = loopends[i];
+
+		if (Tag_FGet(&mt1->tags) == Tag_FGet(&mt2->tags) &&
+				mt1->args[0] == mt2->args[0])
+		{
+			P_SpawnItemLine(mt1, mt2);
+			i++;
+		}
+	}
+
+	Z_Free(loopends);
 }
 
 // Experimental groovy write function!
@@ -3928,6 +3981,8 @@ static void P_AddBinaryMapTags(void)
 		case 292:
 		case 294:
 		case 780:
+		case 2020: // MT_LOOPENDPOINT
+		case 2021: // MT_LOOPCENTERPOINT
 			Tag_FSet(&mapthings[i].tags, mapthings[i].extrainfo);
 			break;
 		default:
@@ -5952,6 +6007,7 @@ static void P_ConvertBinaryLinedefTypes(void)
 				lines[i].args[1] |= TMBOT_FORCEDIR;
 
 			lines[i].args[2] = sides[lines[i].sidenum[0]].textureoffset / FRACUNIT;
+			break;
 		default:
 			break;
 		}
@@ -6732,6 +6788,17 @@ static void P_ConvertBinaryThingTypes(void)
 				mapthings[i].args[2] |= TMICF_INVERTSIZE;
 			}
 			break;
+		case 2020: // MT_LOOPENDPOINT
+		{
+			mapthings[i].args[0] =
+				mapthings[i].options & MTF_AMBUSH ?
+				TMLOOP_BETA : TMLOOP_ALPHA;
+			break;
+		}
+		case 2021: // MT_LOOPCENTERPOINT
+			mapthings[i].args[0] = (mapthings[i].options & MTF_AMBUSH) == MTF_AMBUSH;
+			mapthings[i].args[1] = mapthings[i].angle;
+			break;
 		case 2050: // MT_DUELBOMB
 			mapthings[i].args[1] = !!(mapthings[i].options & MTF_AMBUSH);
 			break;
@@ -7499,8 +7566,13 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 	// This is needed. Don't touch.
 	maptol = mapheaderinfo[gamemap-1]->typeoflevel;
 
+	// HWR2 skip 3d render draw hack to avoid losing the current wipe screen
+	g_wipeskiprender = true;
+
 	CON_Drawer(); // let the user know what we are going to do
 	I_FinishUpdate(); // page flip or blit buffer
+
+	g_wipeskiprender = false;
 
 	// Reset the palette
 	if (rendermode != render_none)
@@ -7514,6 +7586,7 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 
 	// Clear CECHO messages
 	HU_ClearCEcho();
+	HU_ClearTitlecardCEcho();
 
 	if (mapheaderinfo[gamemap-1]->runsoc[0] != '#')
 		P_RunSOC(mapheaderinfo[gamemap-1]->runsoc);
@@ -7550,7 +7623,7 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 			F_WipeEndScreen();
 
 			S_StartSound(NULL, sfx_ruby1);
-			F_RunWipe(wipedefs[wipe_encore_toinvert], false, NULL, false, false);
+			F_RunWipe(wipe_encore_toinvert, wipedefs[wipe_encore_toinvert], false, NULL, false, false);
 
 			// Hold on invert for extra effect.
 			// (This define might be useful for other areas of code? Not sure)
@@ -7565,8 +7638,8 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 			I_UpdateTime(cv_timescale.value); \
 		} \
 		lastwipetic = nowtime; \
-		if (moviemode) \
-			M_SaveFrame(); \
+		if (moviemode && rendermode == render_opengl) \
+			M_LegacySaveFrame(); \
 		NetKeepAlive(); \
 	} \
 
@@ -7579,7 +7652,7 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 			V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 0);
 			F_WipeEndScreen();
 
-			F_RunWipe(wipedefs[wipe_encore_towhite], false, "FADEMAP1", false, true); // wiggle the screen during this!
+			F_RunWipe(wipe_encore_towhite, wipedefs[wipe_encore_towhite], false, "FADEMAP1", false, true); // wiggle the screen during this!
 
 			// THEN fade to a black screen.
 			F_WipeStartScreen();
@@ -7587,7 +7660,7 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 			V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 31);
 			F_WipeEndScreen();
 
-			F_RunWipe(wipedefs[wipe_level_toblack], false, "FADEMAP0", false, false);
+			F_RunWipe(wipe_level_toblack, wipedefs[wipe_level_toblack], false, "FADEMAP0", false, false);
 
 			// Wait a bit longer.
 			WAIT((3*TICRATE)/4);
@@ -7595,8 +7668,8 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 		else
 		{
 			// dedicated servers can call this now, to wait the appropriate amount of time for clients to wipe
-			F_RunWipe(wipedefs[wipe_encore_towhite], false, "FADEMAP1", false, true);
-			F_RunWipe(wipedefs[wipe_level_toblack], false, "FADEMAP0", false, false);
+			F_RunWipe(wipe_encore_towhite, wipedefs[wipe_encore_towhite], false, "FADEMAP1", false, true);
+			F_RunWipe(wipe_level_toblack, wipedefs[wipe_level_toblack], false, "FADEMAP0", false, false);
 		}
 	}
 
@@ -7620,6 +7693,7 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 	// But only if we didn't do the encore startup wipe
 	if (!demo.rewinding && !reloadinggamestate)
 	{
+		int wipetype = wipe_level_toblack;
 
 		// Fade out music here. Deduct 2 tics so the fade volume actually reaches 0.
 		// But don't halt the music! S_Start will take care of that. This dodges a MIDI crash bug.
@@ -7649,10 +7723,12 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 			if (ranspecialwipe != 2)
 				S_StartSound(NULL, sfx_s3kaf);
 			levelfadecol = 0;
+			wipetype = wipe_encore_towhite;
 		}
 		else if (encoremode)
 		{
 			levelfadecol = 0;
+			wipetype = wipe_encore_towhite;
 		}
 		else
 		{
@@ -7667,7 +7743,7 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 			F_WipeEndScreen();
 		}
 
-		F_RunWipe(wipedefs[wipe_level_toblack], false, ((levelfadecol == 0) ? "FADEMAP1" : "FADEMAP0"), false, false);
+		F_RunWipe(wipetype, wipedefs[wipetype], false, ((levelfadecol == 0) ? "FADEMAP1" : "FADEMAP0"), false, false);
 	}
 	/*if (!titlemapinaction)
 		wipegamestate = GS_LEVEL;*/

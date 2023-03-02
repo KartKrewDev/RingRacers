@@ -22,6 +22,14 @@
 #include "command.h"
 
 #ifdef __cplusplus
+
+#include <cstddef>
+
+#include <tcb/span.hpp>
+
+void M_DoScreenShot(uint32_t width, uint32_t height, tcb::span<const std::byte> data);
+void M_SaveFrame(uint32_t width, uint32_t height, tcb::span<const std::byte> data);
+
 extern "C" {
 #endif
 
@@ -41,7 +49,7 @@ extern consvar_t cv_zlib_memorya, cv_zlib_levela, cv_zlib_strategya, cv_zlib_win
 extern consvar_t cv_apng_delay, cv_apng_downscale;
 
 void M_StartMovie(void);
-void M_SaveFrame(void);
+void M_LegacySaveFrame(void);
 void M_StopMovie(void);
 
 // the file where game vars and settings are saved
@@ -82,12 +90,14 @@ void FIL_ForceExtension(char *path, const char *extension);
 boolean FIL_CheckExtension(const char *in);
 
 #ifdef HAVE_PNG
-boolean M_SavePNG(const char *filename, void *data, int width, int height, const UINT8 *palette);
+boolean M_SavePNG(const char *filename, const void *data, int width, int height, const UINT8 *palette);
 #endif
 
 extern boolean takescreenshot;
 void M_ScreenShot(void);
-void M_DoScreenShot(void);
+#ifdef HWRENDER
+void M_DoLegacyGLScreenShot(void);
+#endif
 boolean M_ScreenshotResponder(event_t *ev);
 
 void M_MinimapGenerate(void);

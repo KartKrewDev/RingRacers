@@ -85,11 +85,149 @@ UINT8 wipedefs[NUMWIPEDEFS] = {
 	99  // wipe_cutscene_final (hardcoded)
 };
 
+static boolean g_wipedef_toblack[NUMWIPEDEFS] = {
+	true, // wipe_credits_intermediate (0)
+
+	true,  // wipe_level_toblack
+	true,  // wipe_intermission_toblack
+	true,  // wipe_voting_toblack,
+	true,  // wipe_continuing_toblack
+	true,  // wipe_titlescreen_toblack
+	true,  // wipe_menu_toblack
+	true, // wipe_credits_toblack
+	true,  // wipe_evaluation_toblack
+	true,  // wipe_gameend_toblack
+	true, // wipe_intro_toblack (hardcoded)
+	true, // wipe_ending_toblack (hardcoded)
+	true, // wipe_cutscene_toblack (hardcoded)
+
+	false, // wipe_encore_toinvert
+	false, // wipe_encore_towhite
+
+	true, // wipe_level_final
+	true,  // wipe_intermission_final
+	true,  // wipe_voting_final
+	true,  // wipe_continuing_final
+	true,  // wipe_titlescreen_final
+	true,  // wipe_menu_final
+	true, // wipe_credits_final
+	true,  // wipe_evaluation_final
+	true,  // wipe_gameend_final
+	true, // wipe_intro_final (hardcoded)
+	true, // wipe_ending_final (hardcoded)
+	true  // wipe_cutscene_final (hardcoded)
+};
+
+static boolean g_wipedef_toinvert[NUMWIPEDEFS] = {
+	false, // wipe_credits_intermediate (0)
+
+	false,  // wipe_level_toblack
+	false,  // wipe_intermission_toblack
+	false,  // wipe_voting_toblack,
+	false,  // wipe_continuing_toblack
+	false,  // wipe_titlescreen_toblack
+	false,  // wipe_menu_toblack
+	false, // wipe_credits_toblack
+	false,  // wipe_evaluation_toblack
+	false,  // wipe_gameend_toblack
+	false, // wipe_intro_toblack (hardcoded)
+	false, // wipe_ending_toblack (hardcoded)
+	false, // wipe_cutscene_toblack (hardcoded)
+
+	true, // wipe_encore_toinvert
+	false, // wipe_encore_towhite
+
+	false, // wipe_level_final
+	false,  // wipe_intermission_final
+	false,  // wipe_voting_final
+	false,  // wipe_continuing_final
+	false,  // wipe_titlescreen_final
+	false,  // wipe_menu_final
+	false, // wipe_credits_final
+	false,  // wipe_evaluation_final
+	false,  // wipe_gameend_final
+	false, // wipe_intro_final (hardcoded)
+	false, // wipe_ending_final (hardcoded)
+	false  // wipe_cutscene_final (hardcoded)
+};
+
+static boolean g_wipedef_towhite[NUMWIPEDEFS] = {
+	false, // wipe_credits_intermediate (0)
+
+	false,  // wipe_level_toblack
+	false,  // wipe_intermission_toblack
+	false,  // wipe_voting_toblack,
+	false,  // wipe_continuing_toblack
+	false,  // wipe_titlescreen_toblack
+	false,  // wipe_menu_toblack
+	false, // wipe_credits_toblack
+	false,  // wipe_evaluation_toblack
+	false,  // wipe_gameend_toblack
+	false, // wipe_intro_toblack (hardcoded)
+	false, // wipe_ending_toblack (hardcoded)
+	false, // wipe_cutscene_toblack (hardcoded)
+
+	false, // wipe_encore_toinvert
+	true, // wipe_encore_towhite
+
+	false, // wipe_level_final
+	false,  // wipe_intermission_final
+	false,  // wipe_voting_final
+	false,  // wipe_continuing_final
+	false,  // wipe_titlescreen_final
+	false,  // wipe_menu_final
+	false, // wipe_credits_final
+	false,  // wipe_evaluation_final
+	false,  // wipe_gameend_final
+	false, // wipe_intro_final (hardcoded)
+	false, // wipe_ending_final (hardcoded)
+	false  // wipe_cutscene_final (hardcoded)
+};
+
+static boolean g_wipedef_crossfade[NUMWIPEDEFS] = {
+	false, // wipe_credits_intermediate (0)
+
+	false,  // wipe_level_toblack
+	false,  // wipe_intermission_toblack
+	false,  // wipe_voting_toblack,
+	false,  // wipe_continuing_toblack
+	false,  // wipe_titlescreen_toblack
+	false,  // wipe_menu_toblack
+	false, // wipe_credits_toblack
+	false,  // wipe_evaluation_toblack
+	false,  // wipe_gameend_toblack
+	false, // wipe_intro_toblack (hardcoded)
+	false, // wipe_ending_toblack (hardcoded)
+	false, // wipe_cutscene_toblack (hardcoded)
+
+	false, // wipe_encore_toinvert
+	false, // wipe_encore_towhite
+
+	true, // wipe_level_final
+	true,  // wipe_intermission_final
+	true,  // wipe_voting_final
+	true,  // wipe_continuing_final
+	true,  // wipe_titlescreen_final
+	true,  // wipe_menu_final
+	true, // wipe_credits_final
+	true,  // wipe_evaluation_final
+	true,  // wipe_gameend_final
+	true, // wipe_intro_final (hardcoded)
+	true, // wipe_ending_final (hardcoded)
+	true  // wipe_cutscene_final (hardcoded)
+};
+
 //--------------------------------------------------------------------------
 //                        SCREEN WIPE PACKAGE
 //--------------------------------------------------------------------------
 
 boolean WipeInAction = false;
+UINT8 g_wipemode = 0;
+UINT8 g_wipetype = 0;
+UINT8 g_wipeframe = 0;
+boolean g_wipereverse = false;
+boolean g_wipeskiprender = false;
+boolean g_wipeencorewiggle = false;
 boolean WipeStageTitle = false;
 INT32 lastwipetic = 0;
 
@@ -189,152 +327,6 @@ static fademask_t *F_GetFadeMask(UINT8 masknum, UINT8 scrnnum) {
 	return NULL;
 }
 
-/**	Wipe ticker
-  *
-  * \param	fademask	pixels to change
-  */
-static void F_DoWipe(fademask_t *fademask, lighttable_t *fadecolormap, boolean reverse)
-{
-	// Software mask wipe -- optimized; though it might not look like it!
-	// Okay, to save you wondering *how* this is more optimized than the simpler
-	// version that came before it...
-	// ---
-	// The previous code did two FixedMul calls for every single pixel on the
-	// screen, of which there are hundreds of thousands -- if not millions -- of.
-	// This worked fine for smaller screen sizes, but with excessively large
-	// (1920x1200) screens that meant 4 million+ calls out to FixedMul, and that
-	// would take /just/ long enough that fades would start to noticably lag.
-	// ---
-	// This code iterates over the fade mask's pixels instead of the screen's,
-	// and deals with drawing over each rectangular area before it moves on to
-	// the next pixel in the fade mask.  As a result, it's more complex (and might
-	// look a little messy; sorry!) but it simultaneously runs at twice the speed.
-	// In addition, we precalculate all the X and Y positions that we need to draw
-	// from and to, so it uses a little extra memory, but again, helps it run faster.
-	// ---
-	// Sal: I kinda destroyed some of this code by introducing Genesis-style fades.
-	// A colormap can be provided in F_RunWipe, which the white/black values will be
-	// remapped to the appropriate entry in the fade colormap.
-	{
-		// wipe screen, start, end
-		UINT8       *w = wipe_scr;
-		const UINT8 *s = wipe_scr_start;
-		const UINT8 *e = wipe_scr_end;
-
-		// first pixel for each screen
-		UINT8       *w_base = w;
-		const UINT8 *s_base = s;
-		const UINT8 *e_base = e;
-
-		// mask data, end
-		UINT8       *transtbl;
-		const UINT8 *mask    = fademask->mask;
-		const UINT8 *maskend = mask + fademask->size;
-
-		// rectangle draw hints
-		UINT32 draw_linestart, draw_rowstart;
-		UINT32 draw_lineend,   draw_rowend;
-		UINT32 draw_linestogo, draw_rowstogo;
-
-		// rectangle coordinates, etc.
-		UINT16* scrxpos = (UINT16*)malloc((fademask->width + 1)  * sizeof(UINT16));
-		UINT16* scrypos = (UINT16*)malloc((fademask->height + 1) * sizeof(UINT16));
-		UINT16 maskx, masky;
-		UINT32 relativepos;
-
-		// ---
-		// Screw it, we do the fixed point math ourselves up front.
-		scrxpos[0] = 0;
-		for (relativepos = 0, maskx = 1; maskx < fademask->width; ++maskx)
-			scrxpos[maskx] = (relativepos += fademask->xscale)>>FRACBITS;
-		scrxpos[fademask->width] = vid.width;
-
-		scrypos[0] = 0;
-		for (relativepos = 0, masky = 1; masky < fademask->height; ++masky)
-			scrypos[masky] = (relativepos += fademask->yscale)>>FRACBITS;
-		scrypos[fademask->height] = vid.height;
-		// ---
-
-		maskx = masky = 0;
-		do
-		{
-			UINT8 m = *mask;
-
-			draw_rowstart = scrxpos[maskx];
-			draw_rowend   = scrxpos[maskx + 1];
-			draw_linestart = scrypos[masky];
-			draw_lineend   = scrypos[masky + 1];
-
-			relativepos = (draw_linestart * vid.width) + draw_rowstart;
-			draw_linestogo = draw_lineend - draw_linestart;
-
-			if (reverse)
-				m = ((pallen-1) - m);
-
-			if (m == 0)
-			{
-				// shortcut - memcpy source to work
-				while (draw_linestogo--)
-				{
-					M_Memcpy(w_base+relativepos, (reverse ? e_base : s_base)+relativepos, draw_rowend-draw_rowstart);
-					relativepos += vid.width;
-				}
-			}
-			else if (m >= (pallen-1))
-			{
-				// shortcut - memcpy target to work
-				while (draw_linestogo--)
-				{
-					M_Memcpy(w_base+relativepos, (reverse ? s_base : e_base)+relativepos, draw_rowend-draw_rowstart);
-					relativepos += vid.width;
-				}
-			}
-			else
-			{
-				// pointer to transtable that this mask would use
-				transtbl = transtables + ((9 - m)<<FF_TRANSSHIFT);
-
-				// DRAWING LOOP
-				while (draw_linestogo--)
-				{
-					w = w_base + relativepos;
-					s = s_base + relativepos;
-					e = e_base + relativepos;
-					draw_rowstogo = draw_rowend - draw_rowstart;
-
-					if (fadecolormap)
-					{
-						if (reverse)
-							s = e;
-						while (draw_rowstogo--)
-							*w++ = fadecolormap[ ( m << 8 ) + *s++ ];
-					}
-					else while (draw_rowstogo--)
-					{
-						/*if (fadecolormap != NULL)
-						{
-							if (reverse)
-								*w++ = fadecolormap[ ( m << 8 ) + *e++ ];
-							else
-								*w++ = fadecolormap[ ( m << 8 ) + *s++ ];
-						}
-						else*/
-							*w++ = transtbl[ ( *e++ << 8 ) + *s++ ];
-					}
-
-					relativepos += vid.width;
-				}
-				// END DRAWING LOOP
-			}
-
-			if (++maskx >= fademask->width)
-				++masky, maskx = 0;
-		} while (++mask < maskend);
-
-		free(scrxpos);
-		free(scrypos);
-	}
-}
 #endif
 
 /** Save the "before" screen of a wipe.
@@ -351,6 +343,7 @@ void F_WipeStartScreen(void)
 #endif
 	wipe_scr_start = screens[3];
 	I_ReadScreen(wipe_scr_start);
+	I_FinishUpdateWipeStartScreen();
 #endif
 }
 
@@ -369,52 +362,8 @@ void F_WipeEndScreen(void)
 	wipe_scr_end = screens[4];
 	I_ReadScreen(wipe_scr_end);
 	V_DrawBlock(0, 0, 0, vid.width, vid.height, wipe_scr_start);
+	I_FinishUpdateWipeEndScreen();
 #endif
-}
-
-/**	Wiggle post processor for encore wipes
-  */
-static void F_DoEncoreWiggle(UINT8 time)
-{
-	UINT8 *tmpscr = wipe_scr_start;
-	UINT8 *srcscr = wipe_scr;
-	angle_t disStart = (time * 128) & FINEMASK;
-	INT32 y, sine, newpix, scanline;
-
-	for (y = 0; y < vid.height; y++)
-	{
-		sine = (FINESINE(disStart) * (time*12))>>FRACBITS;
-		scanline = y / vid.dupy;
-		if (scanline & 1)
-			sine = -sine;
-		newpix = abs(sine);
-
-		if (sine < 0)
-		{
-			M_Memcpy(&tmpscr[(y*vid.width)+newpix], &srcscr[(y*vid.width)], vid.width-newpix);
-
-			// Cleanup edge
-			while (newpix)
-			{
-				tmpscr[(y*vid.width)+newpix] = srcscr[(y*vid.width)];
-				newpix--;
-			}
-		}
-		else
-		{
-			M_Memcpy(&tmpscr[(y*vid.width)], &srcscr[(y*vid.width) + sine], vid.width-newpix);
-
-			// Cleanup edge
-			while (newpix)
-			{
-				tmpscr[(y*vid.width) + vid.width - newpix] = srcscr[(y*vid.width) + (vid.width-1)];
-				newpix--;
-			}
-		}
-
-		disStart += (time*8); //the offset into the displacement map, increment each game loop
-		disStart &= FINEMASK; //clip it to FINEMASK
-	}
 }
 
 /** Draw the stage title.
@@ -432,9 +381,10 @@ void F_WipeStageTitle(void)
 /** After setting up the screens you want to wipe,
   * calling this will do a 'typical' wipe.
   */
-void F_RunWipe(UINT8 wipetype, boolean drawMenu, const char *colormap, boolean reverse, boolean encorewiggle)
+void F_RunWipe(UINT8 wipemode, UINT8 wipetype, boolean drawMenu, const char *colormap, boolean reverse, boolean encorewiggle)
 {
 #ifdef NOWIPE
+	(void)wipemode;
 	(void)wipetype;
 	(void)drawMenu;
 	(void)colormap;
@@ -467,6 +417,7 @@ void F_RunWipe(UINT8 wipetype, boolean drawMenu, const char *colormap, boolean r
 
 	// Init the wipe
 	WipeInAction = true;
+	g_wipeskiprender = false;
 	wipe_scr = screens[0];
 
 	// lastwipetic should either be 0 or the tic we last wiped
@@ -494,14 +445,19 @@ void F_RunWipe(UINT8 wipetype, boolean drawMenu, const char *colormap, boolean r
 
 		if (rendermode != render_none) //this allows F_RunWipe to be called in dedicated servers
 		{
-			F_DoWipe(fmask, fcolor, reverse);
+			// F_DoWipe(fmask, fcolor, reverse);
+			g_wipemode = wipemode;
+			g_wipetype = wipetype;
+			g_wipeframe = wipeframe - 1;
+			g_wipereverse = reverse;
 
 			if (encorewiggle)
 			{
-#ifdef HWRENDER
-				if (rendermode != render_opengl)
-#endif
-					F_DoEncoreWiggle(wipeframe);
+				g_wipeencorewiggle = wipeframe - 1;
+			}
+			else
+			{
+				g_wipeencorewiggle = 0;
 			}
 		}
 
@@ -519,15 +475,24 @@ void F_RunWipe(UINT8 wipetype, boolean drawMenu, const char *colormap, boolean r
 #endif
 		}
 
-		I_FinishUpdate(); // page flip or blit buffer
+		I_FinishUpdateWipe(); // page flip or blit buffer
 
-		if (moviemode)
-			M_SaveFrame();
+		if (rendermode != render_none)
+		{
+			// Skip subsequent renders until the end of the wipe to preserve the current frame.
+			g_wipeskiprender = true;
+		}
+
+#ifdef HWRENDER
+		if (moviemode && rendermode == render_opengl)
+			M_LegacySaveFrame();
+#endif
 
 		NetKeepAlive(); // Update the network so we don't cause timeouts
 	}
 
 	WipeInAction = false;
+	g_wipeskiprender = false;
 
 	if (fcolor)
 	{
@@ -585,3 +550,24 @@ boolean F_WipeExists(UINT8 wipetype)
 	return !(lumpnum == LUMPERROR);
 #endif
 }
+
+boolean F_WipeIsToBlack(UINT8 wipemode)
+{
+	return g_wipedef_toblack[wipemode];
+}
+
+boolean F_WipeIsToWhite(UINT8 wipemode)
+{
+	return g_wipedef_towhite[wipemode];
+}
+
+boolean F_WipeIsToInvert(UINT8 wipemode)
+{
+	return g_wipedef_toinvert[wipemode];
+}
+
+boolean F_WipeIsCrossfade(UINT8 wipemode)
+{
+	return g_wipedef_crossfade[wipemode];
+}
+

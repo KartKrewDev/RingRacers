@@ -103,7 +103,7 @@ Environment::Environment()
 	addCodeDataACS0(120, {"",        0, addCallFunc(CallFunc_PlayerRings)});
 
 	addCodeDataACS0(122, {"",        0, addCallFunc(CallFunc_PlayerScore)});
-
+	
 	// 136 to 137: Implemented by ACSVM
 
 	// 157: Implemented by ACSVM

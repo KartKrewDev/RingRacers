@@ -1,3 +1,12 @@
+// SONIC ROBO BLAST 2
+//-----------------------------------------------------------------------------
+// Copyright (C) 2023 by Ronald "Eidolon" Kinard
+//
+// This program is free software distributed under the
+// terms of the GNU General Public License, version 2.
+// See the 'LICENSE' file for more details.
+//-----------------------------------------------------------------------------
+
 #ifndef __SRB2_RHI_GLES2_RHI_HPP__
 #define __SRB2_RHI_GLES2_RHI_HPP__
 
@@ -145,6 +154,8 @@ class GlCoreRhi final : public Rhi
 	Slab<GlCoreUniformSet> uniform_set_slab_;
 	Slab<GlCoreBindingSet> binding_set_slab_;
 
+	Handle<Buffer> current_index_buffer_;
+
 	std::unordered_map<GlCoreFramebufferKey, uint32_t> framebuffers_ {16};
 
 	struct DefaultRenderPassState
@@ -215,7 +226,8 @@ public:
 	virtual void set_viewport(Handle<GraphicsContext> ctx, const Rect& rect) override;
 	virtual void draw(Handle<GraphicsContext> ctx, uint32_t vertex_count, uint32_t first_vertex) override;
 	virtual void draw_indexed(Handle<GraphicsContext> ctx, uint32_t index_count, uint32_t first_index) override;
-	virtual void read_pixels(Handle<GraphicsContext> ctx, const Rect& rect, tcb::span<std::byte> out) override;
+	virtual void
+	read_pixels(Handle<GraphicsContext> ctx, const Rect& rect, PixelFormat format, tcb::span<std::byte> out) override;
 
 	virtual void present() override;
 

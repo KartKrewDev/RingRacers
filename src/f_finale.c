@@ -313,7 +313,7 @@ void F_StartIntro(void)
 		F_WipeStartScreen();
 		V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 31);
 		F_WipeEndScreen();
-		F_RunWipe(wipedefs[wipe_intro_toblack], false, "FADEMAP0", false, false);
+		F_RunWipe(wipe_intro_toblack, wipedefs[wipe_intro_toblack], false, "FADEMAP0", false, false);
 	}
 
 	S_StopMusic();
@@ -409,7 +409,7 @@ void F_IntroTicker(void)
 				F_WipeStartScreen();
 				F_WipeColorFill(31);
 				F_WipeEndScreen();
-				F_RunWipe(99, true, "FADEMAP0", false, false);
+				F_RunWipe(wipe_intro_toblack, 99, true, "FADEMAP0", false, false);
 			}
 
 			// Stay on black for a bit. =)
@@ -437,8 +437,10 @@ void F_IntroTicker(void)
 #endif
 					I_FinishUpdate(); // Update the screen with the image Tails 06-19-2001
 
-					if (moviemode) // make sure we save frames for the white hold too
-						M_SaveFrame();
+#ifdef HWRENDER
+					if (moviemode && rendermode == render_opengl) // make sure we save frames for the white hold too
+						M_LegacySaveFrame();
+#endif
 				}
 			}
 
@@ -464,7 +466,7 @@ void F_IntroTicker(void)
 	// check for skipping
 	if (keypressed)
 		keypressed = false;
-	
+
 	if (animtimer > 0)
 		animtimer--;
 }
@@ -2435,7 +2437,7 @@ void F_CutsceneDrawer(void)
 			V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, cutscenes[cutnum]->scene[scenenum].fadecolor);
 
 			F_WipeEndScreen();
-			F_RunWipe(cutscenes[cutnum]->scene[scenenum].fadeinid, true, NULL, false, false);
+			F_RunWipe(wipe_intro_toblack, cutscenes[cutnum]->scene[scenenum].fadeinid, true, NULL, false, false);
 
 			F_WipeStartScreen();
 		}
@@ -2455,7 +2457,7 @@ void F_CutsceneDrawer(void)
 	if (dofadenow && rendermode != render_none)
 	{
 		F_WipeEndScreen();
-		F_RunWipe(cutscenes[cutnum]->scene[scenenum].fadeoutid, true, NULL, false, false);
+		F_RunWipe(wipe_intro_toblack, cutscenes[cutnum]->scene[scenenum].fadeoutid, true, NULL, false, false);
 	}
 
 	V_DrawString(textxpos, textypos, V_ALLOWLOWERCASE, cutscene_disptext);

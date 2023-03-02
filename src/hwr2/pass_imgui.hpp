@@ -1,3 +1,12 @@
+// SONIC ROBO BLAST 2
+//-----------------------------------------------------------------------------
+// Copyright (C) 2023 by Ronald "Eidolon" Kinard
+//
+// This program is free software distributed under the
+// terms of the GNU General Public License, version 2.
+// See the 'LICENSE' file for more details.
+//-----------------------------------------------------------------------------
+
 #ifndef __SRB2_HWR2_PASS_IMGUI_HPP__
 #define __SRB2_HWR2_PASS_IMGUI_HPP__
 
@@ -9,7 +18,7 @@
 namespace srb2::hwr2
 {
 
-class ImguiPass : public Pass
+class ImguiPass final : public Pass
 {
 	struct DrawCmd
 	{
@@ -36,6 +45,7 @@ class ImguiPass : public Pass
 	std::vector<DrawList> draw_lists_;
 
 public:
+	ImguiPass();
 	virtual ~ImguiPass();
 
 	virtual void prepass(rhi::Rhi& rhi) override;

@@ -917,6 +917,7 @@ static BlockItReturn_t PIT_CheckThing(mobj_t *thing)
 		|| tm.thing->type == MT_BANANA || tm.thing->type == MT_EGGMANITEM || tm.thing->type == MT_BALLHOG
 		|| tm.thing->type == MT_SSMINE || tm.thing->type == MT_LANDMINE || tm.thing->type == MT_SINK
 		|| tm.thing->type == MT_GARDENTOP
+		|| tm.thing->type == MT_DROPTARGET
 		|| (tm.thing->type == MT_PLAYER && thing->target != tm.thing)))
 	{
 		// see if it went over / under
@@ -931,8 +932,9 @@ static BlockItReturn_t PIT_CheckThing(mobj_t *thing)
 		|| (tm.thing->player && tm.thing->player->bubbleblowup))
 		&& (thing->type == MT_ORBINAUT || thing->type == MT_JAWZ || thing->type == MT_GACHABOM
 		|| thing->type == MT_BANANA || thing->type == MT_EGGMANITEM || thing->type == MT_BALLHOG
-		|| thing->type == MT_SSMINE || tm.thing->type == MT_LANDMINE || thing->type == MT_SINK
+		|| thing->type == MT_SSMINE || thing->type == MT_LANDMINE || thing->type == MT_SINK
 		|| thing->type == MT_GARDENTOP
+		|| thing->type == MT_DROPTARGET
 		|| (thing->type == MT_PLAYER && tm.thing->target != thing)))
 	{
 		// see if it went over / under
@@ -967,7 +969,7 @@ static BlockItReturn_t PIT_CheckThing(mobj_t *thing)
 	else if ((tm.thing->type == MT_DROPTARGET || tm.thing->type == MT_DROPTARGET_SHIELD)
 		&& (thing->type == MT_ORBINAUT || thing->type == MT_JAWZ || thing->type == MT_GACHABOM
 		|| thing->type == MT_BANANA || thing->type == MT_EGGMANITEM || thing->type == MT_BALLHOG
-		|| thing->type == MT_SSMINE || tm.thing->type == MT_LANDMINE || thing->type == MT_SINK
+		|| thing->type == MT_SSMINE || thing->type == MT_LANDMINE || thing->type == MT_SINK
 		|| thing->type == MT_GARDENTOP
 		|| (thing->type == MT_PLAYER)))
 	{
@@ -2674,6 +2676,22 @@ fixed_t P_GetThingStepUp(mobj_t *thing, fixed_t destX, fixed_t destY)
 	return maxstep;
 }
 
+static boolean P_UsingStepUp(mobj_t *thing)
+{
+	if (thing->flags & MF_NOCLIP)
+	{
+		return false;
+	}
+
+	// orbits have no collision
+	if (thing->player && thing->player->loop.radius)
+	{
+		return false;
+	}
+
+	return true;
+}
+
 static boolean
 increment_move
 (		mobj_t * thing,
@@ -2734,7 +2752,7 @@ increment_move
 		// copy into the spechitint buffer from spechit
 		spechitint_copyinto();
 
-		if (!(thing->flags & MF_NOCLIP))
+		if (P_UsingStepUp(thing))
 		{
 			// All things are affected by their scale.
 			fixed_t maxstep = P_GetThingStepUp(thing, tryx, tryy);

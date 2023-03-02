@@ -32,13 +32,13 @@ add_executable(SRB2SDL2 MACOSX_BUNDLE WIN32
 	m_aatree.c
 	m_anigif.c
 	m_argv.c
-	m_avrecorder.cpp
 	m_bbox.c
 	m_cheat.c
 	m_cond.c
 	m_easing.c
 	m_fixed.c
-	m_misc.c
+	m_memcpy.c
+	m_misc.cpp
 	m_perfstats.c
 	m_random.c
 	m_queue.c
@@ -48,6 +48,7 @@ add_executable(SRB2SDL2 MACOSX_BUNDLE WIN32
 	p_floor.c
 	p_inter.c
 	p_lights.c
+	p_loop.c
 	p_map.c
 	p_maputl.c
 	p_mobj.c
@@ -134,6 +135,10 @@ add_executable(SRB2SDL2 MACOSX_BUNDLE WIN32
 	k_specialstage.c
 	k_roulette.c
 )
+
+if(SRB2_CONFIG_ENABLE_WEBM_MOVIES)
+	target_sources(SRB2SDL2 PRIVATE m_avrecorder.cpp)
+endif()
 
 # This updates the modification time for comptime.c at the
 # end of building so when the build system is ran next time,
@@ -225,14 +230,18 @@ target_compile_definitions(SRB2SDL2 PRIVATE -DHAVE_DISCORDRPC -DUSE_STUN)
 target_sources(SRB2SDL2 PRIVATE discord.c stun.c)
 
 target_link_libraries(SRB2SDL2 PRIVATE tcbrindle::span)
+target_link_libraries(SRB2SDL2 PRIVATE stb_rect_pack)
 target_link_libraries(SRB2SDL2 PRIVATE stb_vorbis)
 target_link_libraries(SRB2SDL2 PRIVATE xmp-lite::xmp-lite)
 target_link_libraries(SRB2SDL2 PRIVATE glad::glad)
 target_link_libraries(SRB2SDL2 PRIVATE fmt)
 target_link_libraries(SRB2SDL2 PRIVATE imgui::imgui)
-target_link_libraries(SRB2SDL2 PRIVATE webm::libwebm webm::libvpx)
-target_link_libraries(SRB2SDL2 PRIVATE libyuv::libyuv)
-target_link_libraries(SRB2SDL2 PRIVATE Vorbis::vorbis Vorbis::vorbisenc)
+if(SRB2_CONFIG_ENABLE_WEBM_MOVIES)
+	target_link_libraries(SRB2SDL2 PRIVATE webm::libwebm webm::libvpx)
+	target_link_libraries(SRB2SDL2 PRIVATE libyuv::libyuv)
+	target_link_libraries(SRB2SDL2 PRIVATE Vorbis::vorbis Vorbis::vorbisenc)
+	target_compile_definitions(SRB2SDL2 PRIVATE -DSRB2_CONFIG_ENABLE_WEBM_MOVIES)
+endif()
 
 target_link_libraries(SRB2SDL2 PRIVATE acsvm)
 
@@ -550,7 +559,9 @@ if(SRB2_CONFIG_ENABLE_TESTS)
 	add_subdirectory(tests)
 endif()
 add_subdirectory(menus)
-add_subdirectory(media)
+if(SRB2_CONFIG_ENABLE_WEBM_MOVIES)
+	add_subdirectory(media)
+endif()
 
 # strip debug symbols into separate file when using gcc.
 # to be consistent with Makefile, don't generate for OS X.

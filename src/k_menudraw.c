@@ -517,10 +517,7 @@ void M_Drawer(void)
 		}
 		else if (!WipeInAction && currentMenu != &PAUSE_PlaybackMenuDef)
 		{
-			if (rendermode == render_opengl)	// OGL can't handle what SW is doing so let's fake it;
-				V_DrawFadeScreen(122, 3);	// palette index aproximation...
-			else	// Software can keep its unique fade
-				V_DrawCustomFadeScreen("FADEMAP0", 4); // now that's more readable with a faded background (yeah like Quake...)
+			V_DrawFadeScreen(122, 3);
 		}
 
 		if (currentMenu->drawroutine)
@@ -556,7 +553,7 @@ void M_Drawer(void)
 	if (menuwipe)
 	{
 		F_WipeEndScreen();
-		F_RunWipe(wipedefs[wipe_menu_final], false, "FADEMAP0", true, false);
+		F_RunWipe(wipe_menu_final, wipedefs[wipe_menu_final], false, "FADEMAP0", true, false);
 		menuwipe = false;
 	}
 
@@ -4908,7 +4905,7 @@ static void M_DrawChallengePreview(INT32 x, INT32 y)
 	unlockable_t *ref = NULL;
 	UINT8 *colormap = NULL;
 	UINT16 specialmap = NEXTMAP_INVALID;
-	
+
 	if (challengesmenu.currentunlock >= MAXUNLOCKABLES)
 	{
 		return;

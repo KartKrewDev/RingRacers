@@ -103,6 +103,7 @@ void Patch_Free(patch_t *patch)
 {
 	if (!patch || patch == missingpat)
 		return;
+
 	Patch_FreeData(patch);
 	Z_Free(patch);
 }

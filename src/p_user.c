@@ -2691,8 +2691,6 @@ static void P_DeathThink(player_t *player)
 	else
 		player->karthud[khud_timeovercam] = 0;
 
-	K_KartPlayerHUDUpdate(player);
-
 	if (player->pflags & PF_NOCONTEST)
 	{
 		playerGone = true;
@@ -4225,6 +4223,11 @@ void P_PlayerThink(player_t *player)
 	else if (player->carry == CR_ZOOMTUBE && player->mo->tracer && player->mo->tracer->type == MT_TUBEWAYPOINT)
 	{
 		P_DoZoomTube(player);
+		player->rmomx = player->rmomy = 0;
+	}
+	else if (player->loop.radius != 0)
+	{
+		P_PlayerOrbit(player);
 		player->rmomx = player->rmomy = 0;
 	}
 	else

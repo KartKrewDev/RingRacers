@@ -559,10 +559,7 @@ bool CallFunc_EndPrint(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Wo
 	(void)argC;
 
 	if (ACS_ActivatorIsLocal(thread) == true)
-	{
-		HU_SetCEchoDuration(5);
-		HU_DoCEcho(thread->printBuf.data());
-	}
+		HU_DoTitlecardCEcho(thread->printBuf.data());
 
 	thread->printBuf.drop();
 	return false;
@@ -931,13 +928,11 @@ bool CallFunc_EndPrintBold(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM
 	(void)argV;
 	(void)argC;
 
-	HU_SetCEchoDuration(5);
-	HU_DoCEcho(thread->printBuf.data());
+	HU_DoTitlecardCEcho(thread->printBuf.data());
 
 	thread->printBuf.drop();
 	return false;
 }
-
 /*--------------------------------------------------
 	bool CallFunc_PlayerTeam(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
 

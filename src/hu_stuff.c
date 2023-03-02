@@ -161,6 +161,11 @@ static tic_t cechotimer = 0;
 static tic_t cechoduration = 5*TICRATE;
 static INT32 cechoflags = 0;
 
+static char tcechotext[1024];			// buffer for the titlecard text
+static tic_t tcechotimer = 0;		// goes up by 1 each frame this is active
+static tic_t tcechoduration = 0;	// Set automatically
+
+
 static tic_t resynch_ticker = 0;
 
 static huddrawlist_h luahuddrawlist_scores;
@@ -1033,6 +1038,13 @@ void HU_Ticker(void)
 
 	if (cechotimer)
 		cechotimer--;
+	
+	if (tcechotimer)
+	{
+		tcechotimer++;
+		if (tcechotimer > tcechoduration)
+			tcechotimer = 0;
+	}
 
 	if (gamestate != GS_LEVEL)
 	{
@@ -1996,6 +2008,66 @@ static void HU_DrawCEcho(void)
 	}
 }
 
+static void HU_DrawTitlecardCEcho(void)
+{
+	if (tcechotimer)
+	{
+		INT32 i = 0;
+		INT32 y = (BASEVIDHEIGHT/2)-16;
+		INT32 pnumlines = 0;
+		INT32 timeroffset = 0;
+
+		char *line;
+		char *echoptr;
+		char temp[1024];
+
+		for (i = 0; tcechotext[i] != '\0'; ++i)
+			if (tcechotext[i] == '\\')
+				pnumlines++;
+
+		y -= (pnumlines-1)*16;
+
+		// Prevent crashing because I'm sick of this
+		if (y < 0)
+		{
+			CONS_Alert(CONS_WARNING, "CEcho contained too many lines, not displaying\n");
+			cechotimer = 0;
+			return;
+		}
+
+		strcpy(temp, tcechotext);
+		echoptr = &temp[0];
+
+		while (*echoptr != '\0')
+		{
+			INT32 w;
+			INT32 timer = (INT32)(tcechotimer - timeroffset);
+			
+			if (timer <= 0)
+				return;	// we don't care.
+			
+			line = strchr(echoptr, '\\');
+			
+			if (line == NULL)
+				break;
+
+			*line = '\0';
+			
+			w = V_TitleCardStringWidth(echoptr);
+			V_DrawTitleCardString(BASEVIDWIDTH/2 -w/2, y, echoptr, 0, false, timer, TICRATE*4);
+
+			y += 32;
+			
+			// offset the timer for the next line.
+			timeroffset += strlen(echoptr);
+			
+			// set the ptr to the \0 we made and advance it because we don't want an empty string.
+			echoptr = line;
+			echoptr++;
+		}
+	}
+}
+
 //
 // demo info stuff
 //
@@ -2137,6 +2209,9 @@ drawontop:
 
 	if (cechotimer)
 		HU_DrawCEcho();
+	
+	if (tcechotimer)
+		HU_DrawTitlecardCEcho();
 }
 
 //======================================================================
@@ -2589,4 +2664,23 @@ void HU_DoCEcho(const char *msg)
 	strncat(cechotext, "\\", sizeof(cechotext) - strlen(cechotext) - 1);
 	cechotext[sizeof(cechotext) - 1] = '\0';
 	cechotimer = cechoduration;
+}
+
+// Simply set the timer to 0 to clear it.
+// No need to bother clearing the buffer or anything.
+void HU_ClearTitlecardCEcho(void)
+{
+	tcechotimer = 0;
+}
+
+// Similar but for titlecard CEcho and also way less convoluted because I have no clue whatever the fuck they were trying above.
+void HU_DoTitlecardCEcho(const char *msg)
+{
+	I_OutputMsg("%s\n", msg);	// print to log
+	
+	strncpy(tcechotext, msg, sizeof(tcechotext));
+	strncat(tcechotext, "\\", sizeof(tcechotext) - strlen(tcechotext) - 1);
+	tcechotext[sizeof(tcechotext) - 1] = '\0';	
+	tcechotimer = 1;
+	tcechoduration = TICRATE*6 + strlen(tcechotext);
 }

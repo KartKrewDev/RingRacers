@@ -601,6 +601,10 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 			}
 			return;
 
+		case MT_LOOPENDPOINT:
+			Obj_LoopEndpointCollide(special, toucher);
+			return;
+
 		default: // SOC or script pickup
 			P_SetTarget(&special->target, toucher);
 			break;
@@ -1910,6 +1914,12 @@ static boolean P_PlayerHitsPlayer(mobj_t *target, mobj_t *inflictor, mobj_t *sou
 static boolean P_KillPlayer(player_t *player, mobj_t *inflictor, mobj_t *source, UINT8 type)
 {
 	(void)source;
+
+	if (player->respawn.state != RESPAWNST_NONE)
+	{
+		K_DoInstashield(player);
+		return false;
+	}
 
 	if (!player->exiting && specialstageinfo.valid == true)
 	{

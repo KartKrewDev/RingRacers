@@ -193,6 +193,10 @@ boolean P_AutoPause(void);
 void P_ElementalFire(player_t *player, boolean cropcircle);
 void P_SpawnSkidDust(player_t *player, fixed_t radius, boolean sound);
 
+void P_HaltPlayerOrbit(player_t *player);
+void P_ExitPlayerOrbit(player_t *player);
+boolean P_PlayerOrbit(player_t *player);
+
 void P_MovePlayer(player_t *player);
 void P_PlayerThink(player_t *player);
 void P_PlayerAfterThink(player_t *player);

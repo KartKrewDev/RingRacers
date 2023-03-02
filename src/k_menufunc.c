@@ -602,7 +602,7 @@ void M_SetupNextMenu(menu_t *menudef, boolean notransition)
 			F_WipeStartScreen();
 			V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 31);
 			F_WipeEndScreen();
-			F_RunWipe(wipedefs[wipe_menu_toblack], false, "FADEMAP0", false, false);
+			F_RunWipe(wipe_menu_toblack, wipedefs[wipe_menu_toblack], false, "FADEMAP0", false, false);
 		}
 	}
 
@@ -1035,7 +1035,7 @@ void M_Ticker(void)
 				F_WipeStartScreen();
 				V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 31);
 				F_WipeEndScreen();
-				F_RunWipe(wipedefs[wipe_menu_toblack], false, "FADEMAP0", false, false);
+				F_RunWipe(wipe_menu_toblack, wipedefs[wipe_menu_toblack], false, "FADEMAP0", false, false);
 			}
 
 			M_SetupNextMenu(menutransition.endmenu, true);

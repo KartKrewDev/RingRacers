@@ -4639,6 +4639,77 @@ K_drawMiniPing (void)
 	}
 }
 
+static void K_DrawDirectorButton(INT32 idx, const char *label, patch_t *kp[2], INT32 textflags)
+{
+	INT32 flags = V_SNAPTORIGHT | V_SLIDEIN | V_SPLITSCREEN;
+
+	const UINT8 anim_duration = 16;
+	const UINT8 anim = (leveltime % (anim_duration * 2)) < anim_duration;
+
+	INT32 x = (BASEVIDWIDTH/2) - 10;
+	INT32 y = (idx * 16);
+
+	if (r_splitscreen <= 1)
+	{
+		x = BASEVIDWIDTH - 60;
+		if (r_splitscreen == 0)
+		{
+			y += BASEVIDHEIGHT - 78;
+		}
+	}
+
+	textflags |= (flags | V_6WIDTHSPACE | V_ALLOWLOWERCASE);
+
+	V_DrawScaledPatch(x, y - 4, flags, kp[anim]);
+	V_DrawRightAlignedThinString(x - 2, y, textflags, label);
+}
+
+static void K_drawDirectorHUD(void)
+{
+	const INT32 p = (splitscreen_partied[consoleplayer] ? splitscreen_party[consoleplayer] : g_localplayers)[R_GetViewNumber()];
+	const char *itemtxt = "Join";
+	UINT8 offs = 0;
+
+	UINT8 numingame = 0;
+	UINT8 i;
+
+	if (!LUA_HudEnabled(hud_textspectator))
+	{
+		return;
+	}
+
+	for (i = 0; i < MAXPLAYERS; i++)
+		if (playeringame[i] && !players[i].spectator)
+			numingame++;
+
+	if (numingame > 1 && r_splitscreen == 0) // simplifies things a lot
+	{
+		K_DrawDirectorButton(1, "Next Player", kp_button_a[0], 0);
+		K_DrawDirectorButton(2, "Prev Player", kp_button_x[0], 0);
+		offs = 2;
+	}
+
+	if (p == -1 || !playeringame[p] || players[p].spectator == false)
+	{
+		return;
+	}
+
+	K_DrawDirectorButton(offs + 1, "Director", kp_button_r,
+		(directorinfo.active ? V_YELLOWMAP : 0));
+
+	if (players[p].flashing)
+		itemtxt = ". . .";
+	else if (players[p].pflags & PF_WANTSTOJOIN)
+		itemtxt = "Cancel Join";
+
+	if (cv_maxplayers.value)
+	{
+		itemtxt = va("%s [%d/%d]", itemtxt, numingame, cv_maxplayers.value);
+	}
+
+	K_DrawDirectorButton(0, itemtxt, kp_button_l, 0);
+}
+
 static void K_drawDistributionDebugger(void)
 {
 	itemroulette_t rouletteData = {0};
@@ -4955,6 +5026,11 @@ void K_drawKartHUD(void)
 	if ((netgame || cv_mindelay.value) && r_splitscreen && Playing())
 	{
 		K_drawMiniPing();
+	}
+
+	if (displayplayers[viewnum] != g_localplayers[viewnum] && !demo.playback)
+	{
+		K_drawDirectorHUD();
 	}
 
 	if (cv_kartdebugdistribution.value)

@@ -62,7 +62,10 @@
 #include "deh_tables.h"
 #include "m_perfstats.h"
 #include "k_specialstage.h"
+
+#ifdef SRB2_CONFIG_ENABLE_WEBM_MOVIES
 #include "m_avrecorder.h"
+#endif
 
 #ifdef HAVE_DISCORDRPC
 #include "discord.h"
@@ -545,8 +548,6 @@ static CV_PossibleValue_t perfstats_cons_t[] = {
 };
 consvar_t cv_perfstats = CVAR_INIT ("perfstats", "Off", 0, perfstats_cons_t, NULL);
 
-consvar_t cv_director = CVAR_INIT ("director", "Off", 0, CV_OnOff, NULL);
-
 consvar_t cv_schedule = CVAR_INIT ("schedule", "On", CV_NETVAR|CV_CALL, CV_OnOff, Schedule_OnChange);
 
 consvar_t cv_automate = CVAR_INIT ("automate", "On", CV_NETVAR, CV_OnOff, NULL);
@@ -904,7 +905,11 @@ void D_RegisterClientCommands(void)
 	CV_RegisterVar(&cv_moviemode);
 	CV_RegisterVar(&cv_movie_option);
 	CV_RegisterVar(&cv_movie_folder);
+
+#ifdef SRB2_CONFIG_ENABLE_WEBM_MOVIES
 	M_AVRecorder_AddCommands();
+#endif
+
 	// PNG variables
 	CV_RegisterVar(&cv_zlib_level);
 	CV_RegisterVar(&cv_zlib_memory);
@@ -1052,8 +1057,6 @@ void D_RegisterClientCommands(void)
 	CV_RegisterVar(&cv_scr_depth);
 	CV_RegisterVar(&cv_scr_width);
 	CV_RegisterVar(&cv_scr_height);
-
-	CV_RegisterVar(&cv_director);
 
 	CV_RegisterVar(&cv_soundtest);
 
@@ -4096,7 +4099,7 @@ void Schedule_Insert(scheduleTask_t *addTask)
 		{
 			schedule_size *= 2;
 		}
-		
+
 		schedule = Z_ReallocAlign(
 			(void*) schedule,
 			sizeof(scheduleTask_t*) * schedule_size,
