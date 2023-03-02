@@ -5930,9 +5930,7 @@ void K_DoInvincibility(player_t *player, tic_t time)
 		P_SetScale(overlay, player->mo->scale);
 	}
 
-	player->invincibilitytimer += time;
-
-	if (P_IsLocalPlayer(player) == true)
+	if (P_IsLocalPlayer(player) == true && player->invincibilitytimer == 0)
 	{
 		S_ChangeMusicSpecial("kinvnc");
 	}
@@ -5940,6 +5938,8 @@ void K_DoInvincibility(player_t *player, tic_t time)
 	{
 		S_StartSound(player->mo, sfx_alarmi);
 	}
+
+	player->invincibilitytimer += time;
 
 	P_RestoreMusic(player);
 }
@@ -10540,10 +10540,10 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 									S_StartSound(player->mo, sfx_alarmg);
 								}
 
-								P_RestoreMusic(player);
-
 								player->growshrinktimer = max(0, player->growshrinktimer);
 								player->growshrinktimer += ((gametyperules & GTR_CLOSERPLAYERS) ? 8 : 12) * TICRATE;
+
+								P_RestoreMusic(player);
 
 								S_StartSound(player->mo, sfx_kc5a);
 
