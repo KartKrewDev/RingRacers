@@ -114,6 +114,12 @@ void K_TimerInit(void)
 	boolean domodeattack = ((modeattacking != ATTACKING_NONE)
 		|| (grandprixinfo.gp == true && grandprixinfo.eventmode != GPEVENT_NONE));
 
+	if (K_PodiumSequence() == true)
+	{
+		// Leave it alone for podium
+		return;
+	}
+
 	// Rooooooolllling staaaaaaart
 	if ((gametyperules & (GTR_ROLLINGSTART|GTR_CIRCUIT)) == (GTR_ROLLINGSTART|GTR_CIRCUIT))
 	{
