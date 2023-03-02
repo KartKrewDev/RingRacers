@@ -6983,6 +6983,13 @@ static void K_UpdateEngineSounds(player_t *player)
 	INT32 targetsnd = 0;
 	INT32 i;
 
+	if (leveltime < 8 || player->spectator || gamestate != GS_LEVEL)
+	{
+		// Silence the engines, and reset sound number while we're at it.
+		player->karthud[khud_enginesnd] = 0;
+		return;
+	}
+
 	s = (player->kartspeed - 1) / 3;
 	w = (player->kartweight - 1) / 3;
 
@@ -6994,13 +7001,6 @@ static void K_UpdateEngineSounds(player_t *player)
 #undef LOCKSTAT
 
 	class = s + (3*w);
-
-	if (leveltime < 8 || player->spectator)
-	{
-		// Silence the engines, and reset sound number while we're at it.
-		player->karthud[khud_enginesnd] = 0;
-		return;
-	}
 
 #if 0
 	if ((leveltime % 8) != ((player-players) % 8)) // Per-player offset, to make engines sound distinct!
