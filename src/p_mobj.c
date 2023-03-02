@@ -12033,7 +12033,7 @@ void P_MovePlayerToSpawn(INT32 playernum, mapthing_t *mthing)
 	mobj->angle = angle;
 
 	// FAULT
-	if (leveltime > introtime && !p->spectator)
+	if (gamestate == GS_LEVEL && leveltime > introtime && !p->spectator)
 	{
 		K_DoIngameRespawn(p);
 	}
