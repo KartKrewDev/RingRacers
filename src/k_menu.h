@@ -799,6 +799,7 @@ void M_StartTimeAttack(INT32 choice);
 void M_ReplayTimeAttack(INT32 choice);
 void M_HandleStaffReplay(INT32 choice);
 void M_SetGuestReplay(INT32 choice);
+boolean M_TimeAttackInputs (INT32 choice);
 
 // MP selection
 void M_MPOptSelect(INT32 choice);
@@ -1142,6 +1143,14 @@ void M_DrawAddons(void);
 #define CC_MAX 4
 
 #define TILEFLIP_MAX 16
+
+extern struct timeattackmenu_s {
+
+	tic_t ticker;		// How long the menu's been open for
+	tic_t spbflicker;	// used for SPB flicker-in
+
+} timeattackmenu;
+
 
 // Keep track of some pause menu data for visual goodness.
 extern struct challengesmenu_s {

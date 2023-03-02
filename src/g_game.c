@@ -2452,6 +2452,8 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 		growshrinktimer = 0;
 		bumper = ((gametyperules & GTR_BUMPERS) ? K_StartingBumperCount() : 0);
 		rings = ((gametyperules & GTR_SPHERES) ? 0 : 5);
+		if (modeattacking & ATTACKING_SPB)
+			rings = 20;
 		spheres = 0;
 		kickstartaccel = 0;
 		khudfault = 0;

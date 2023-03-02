@@ -17,14 +17,44 @@ static void CV_SPBAttackChanged(void)
 
 consvar_t cv_dummyspbattack = CVAR_INIT ("dummyspbattack", "Off", CV_HIDDEN|CV_CALL, CV_OnOff, CV_SPBAttackChanged);
 
+struct timeattackmenu_s timeattackmenu;
+
+boolean M_TimeAttackInputs(INT32 ch)
+{
+	const UINT8 pid = 0;
+	const boolean buttonR = M_MenuButtonPressed(pid, MBT_R);
+	(void) ch;
+
+	timeattackmenu.ticker++; 
+
+	if (buttonR)
+	{
+		cv_dummyspbattack.value = !(cv_dummyspbattack.value);
+		CV_SPBAttackChanged();
+		timeattackmenu.spbflicker = timeattackmenu.ticker;
+		if (cv_dummyspbattack.value)
+		{
+			S_StartSound(NULL, sfx_s3k9f);
+			S_StopSoundByID(NULL, sfx_s3k92);
+		}
+		else
+		{
+			S_StartSound(NULL, sfx_s3k92);
+			S_StopSoundByID(NULL, sfx_s3k9f);
+		}
+
+		return true;
+	}
+
+	return false;
+}
+
 // see ta_e
 menuitem_t PLAY_TimeAttack[] =
 {
 	{IT_STRING | IT_SUBMENU, "Replay...", NULL, NULL, {.submenu = &PLAY_TAReplayDef}, 0, 0},
 	{IT_STRING | IT_SUBMENU, "Guest...", NULL, NULL, {.submenu = &PLAY_TAReplayGuestDef}, 0, 0},
 	{IT_STRING | IT_SUBMENU, "Ghosts...", NULL, NULL, {.submenu = &PLAY_TAGhostsDef}, 0, 0},
-	{IT_STRING | IT_CVAR, "SPB Attack", NULL,
-		NULL, {.cvar = &cv_dummyspbattack}, 0, 0},
 	{IT_HEADERTEXT|IT_HEADER, "", NULL, NULL, {NULL}, 0, 0},
 	{IT_STRING | IT_CALL, "Start", NULL, NULL, {.routine = M_StartTimeAttack}, 0, 0},
 };
@@ -42,7 +72,7 @@ menu_t PLAY_TimeAttackDef = {
 	NULL,
 	NULL,
 	NULL,
-	NULL
+	M_TimeAttackInputs
 };
 
 
