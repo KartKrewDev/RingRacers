@@ -3232,27 +3232,42 @@ fixed_t K_GetKartSpeedFromStat(UINT8 kartspeed)
 fixed_t K_GetKartSpeed(player_t *player, boolean doboostpower, boolean dorubberband)
 {
 	const boolean mobjValid = (player->mo != NULL && P_MobjWasRemoved(player->mo) == false);
-	fixed_t finalspeed = K_GetKartSpeedFromStat(player->kartspeed);
+	fixed_t finalspeed = 0;
 
-	if (gametyperules & GTR_BUMPERS && player->bumpers <= 0)
-		finalspeed = 3 * finalspeed / 2;
-
-	if (player->spheres > 0)
+	if (K_PodiumSequence() == true)
 	{
-		fixed_t sphereAdd = (FRACUNIT/40); // 100% at max
-		finalspeed = FixedMul(finalspeed, FRACUNIT + (sphereAdd * player->spheres));
+		// Make 1st reach their podium faster!
+		finalspeed = K_GetKartSpeedFromStat(max(1, 11 - (player->position * 3)));
+
+		// Ignore other speed boosts.
+		doboostpower = dorubberband = false;
 	}
-
-	if (K_PlayerUsesBotMovement(player))
+	else
 	{
-		// Increase bot speed by 1-10% depending on difficulty
-		fixed_t add = (player->botvars.difficulty * (FRACUNIT/10)) / DIFFICULTBOT;
-		finalspeed = FixedMul(finalspeed, FRACUNIT + add);
+		finalspeed = K_GetKartSpeedFromStat(player->kartspeed);
 
-		if (player->bot && player->botvars.rival)
+		if (gametyperules & GTR_BUMPERS && player->bumpers <= 0)
 		{
-			// +10% top speed for the rival
-			finalspeed = FixedMul(finalspeed, 11*FRACUNIT/10);
+			finalspeed = 3 * finalspeed / 2;
+		}
+
+		if (player->spheres > 0)
+		{
+			fixed_t sphereAdd = (FRACUNIT/40); // 100% at max
+			finalspeed = FixedMul(finalspeed, FRACUNIT + (sphereAdd * player->spheres));
+		}
+
+		if (K_PlayerUsesBotMovement(player))
+		{
+			// Increase bot speed by 1-10% depending on difficulty
+			fixed_t add = (player->botvars.difficulty * (FRACUNIT/10)) / DIFFICULTBOT;
+			finalspeed = FixedMul(finalspeed, FRACUNIT + add);
+
+			if (player->bot && player->botvars.rival)
+			{
+				// +10% top speed for the rival
+				finalspeed = FixedMul(finalspeed, 11*FRACUNIT/10);
+			}
 		}
 	}
 
