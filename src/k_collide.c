@@ -811,6 +811,12 @@ boolean K_PvPTouchDamage(mobj_t *t1, mobj_t *t2)
 	boolean stungT1 = false;
 	boolean stungT2 = false;
 
+	if (K_PodiumSequence() == true)
+	{
+		// Always regular bumps, no ring toss.
+		return false;
+	}
+
 	// Clash instead of damage if both parties have any of these conditions
 	t1Condition = (K_IsBigger(t1, t2) == true)
 		|| (t1->player->invincibilitytimer > 0)
