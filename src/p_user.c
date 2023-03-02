@@ -2764,8 +2764,6 @@ static void P_DeathThink(player_t *player)
 	else
 		player->karthud[khud_timeovercam] = 0;
 
-	K_KartPlayerHUDUpdate(player);
-
 	if (player->pflags & PF_NOCONTEST)
 	{
 		playerGone = true;

@@ -62,7 +62,10 @@
 #include "deh_tables.h"
 #include "m_perfstats.h"
 #include "k_specialstage.h"
+
+#ifdef SRB2_CONFIG_ENABLE_WEBM_MOVIES
 #include "m_avrecorder.h"
+#endif
 
 #ifdef HAVE_DISCORDRPC
 #include "discord.h"
@@ -902,7 +905,11 @@ void D_RegisterClientCommands(void)
 	CV_RegisterVar(&cv_moviemode);
 	CV_RegisterVar(&cv_movie_option);
 	CV_RegisterVar(&cv_movie_folder);
+
+#ifdef SRB2_CONFIG_ENABLE_WEBM_MOVIES
 	M_AVRecorder_AddCommands();
+#endif
+
 	// PNG variables
 	CV_RegisterVar(&cv_zlib_level);
 	CV_RegisterVar(&cv_zlib_memory);
@@ -4092,7 +4099,7 @@ void Schedule_Insert(scheduleTask_t *addTask)
 		{
 			schedule_size *= 2;
 		}
-		
+
 		schedule = Z_ReallocAlign(
 			(void*) schedule,
 			sizeof(scheduleTask_t*) * schedule_size,

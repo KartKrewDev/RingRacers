@@ -8,7 +8,7 @@
 // terms of the GNU General Public License, version 2.
 // See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
-/// \file  m_misc.h
+/// \file  m_misc.cpp
 /// \brief Commonly used routines
 ///        Default config file, PCX screenshots, file i/o
 
@@ -23,6 +23,7 @@
 #include <unistd.h>
 #endif
 
+#include <algorithm>
 #include <errno.h>
 
 // Extended map support.
@@ -44,7 +45,10 @@
 #include "command.h" // cv_execversion
 
 #include "m_anigif.h"
+#ifdef SRB2_CONFIG_ENABLE_WEBM_MOVIES
 #include "m_avrecorder.h"
+#include "m_avrecorder.hpp"
+#endif
 
 // So that the screenshot menu auto-updates...
 #include "k_menu.h"
@@ -308,7 +312,7 @@ size_t FIL_ReadFileTag(char const *name, UINT8 **buffer, INT32 tag)
 	length = ftell(handle);
 	fseek(handle,0,SEEK_SET);
 
-	buf = Z_Malloc(length + 1, tag, NULL);
+	buf = static_cast<UINT8*>(Z_Malloc(length + 1, tag, NULL));
 	count = fread(buf, 1, length, handle);
 	fclose(handle);
 
@@ -472,7 +476,7 @@ void M_SaveJoinedIPs(void)
 {
 	FILE *f = NULL;
 	UINT8 i;
-	const char *filepath = va("%s"PATHSEP"%s", srb2home, IPLOGFILE);
+	const char *filepath = va("%s" PATHSEP "%s", srb2home, IPLOGFILE);
 
 	if (!*joinedIPlist[0][0])
 		return;	// Don't bother, there's nothing to save.
@@ -506,7 +510,7 @@ void M_LoadJoinedIPs(void)
 	char *s;
 	char buffer[2*(MAX_LOGIP+1)];
 
-	filepath = va("%s"PATHSEP"%s", srb2home, IPLOGFILE);
+	filepath = va("%s" PATHSEP "%s", srb2home, IPLOGFILE);
 	f = fopen(filepath, "r");
 
 	if (f == NULL)
@@ -774,8 +778,8 @@ static void M_CreateScreenShotPalette(void)
 	for (i = 0, j = 0; i < 768; i += 3, j++)
 	{
 		RGBA_t locpal = ((cv_screenshot_colorprofile.value)
-		? pLocalPalette[(max(st_palette,0)*256)+j]
-		: pMasterPalette[(max(st_palette,0)*256)+j]);
+		? pLocalPalette[(std::max(st_palette,0)*256)+j]
+		: pMasterPalette[(std::max(st_palette,0)*256)+j]);
 		screenshot_palette[i] = locpal.s.red;
 		screenshot_palette[i+1] = locpal.s.green;
 		screenshot_palette[i+2] = locpal.s.blue;
@@ -854,7 +858,7 @@ static void M_PNGhdr(png_structp png_ptr, png_infop png_info_ptr, PNG_CONST png_
 	const png_byte png_interlace = PNG_INTERLACE_NONE; //PNG_INTERLACE_ADAM7
 	if (palette)
 	{
-		png_colorp png_PLTE = png_malloc(png_ptr, sizeof(png_color)*256); //palette
+		png_colorp png_PLTE = static_cast<png_colorp>(png_malloc(png_ptr, sizeof(png_color)*256)); //palette
 		png_uint_16 i;
 
 		const png_byte *pal = palette;
@@ -975,8 +979,8 @@ static void M_PNGText(png_structp png_ptr, png_infop png_info_ptr, PNG_CONST png
 
 static inline void M_PNGImage(png_structp png_ptr, png_infop png_info_ptr, PNG_CONST png_uint_32 height, png_bytep png_buf)
 {
-	png_uint_32 pitch = png_get_rowbytes(png_ptr, png_info_ptr);
-	png_bytepp row_pointers = png_malloc(png_ptr, height* sizeof (png_bytep));
+	png_uint_32 pitch = png_get_rowbytes(png_ptr, static_cast<const png_info*>(png_info_ptr));
+	png_bytepp row_pointers = static_cast<png_bytepp>(png_malloc(png_ptr, height* sizeof (png_bytep)));
 	png_uint_32 y;
 	for (y = 0; y < height; y++)
 	{
@@ -1298,6 +1302,9 @@ static inline moviemode_t M_StartMovieGIF(const char *pathname)
 
 static inline moviemode_t M_StartMovieAVRecorder(const char *pathname)
 {
+#ifndef SRB2_CONFIG_ENABLE_WEBM_MOVIES
+	return MM_OFF;
+#else
 	const char *ext = M_AVRecorder_GetFileExtension();
 	const char *freename;
 
@@ -1313,6 +1320,7 @@ static inline moviemode_t M_StartMovieAVRecorder(const char *pathname)
 	}
 
 	return MM_AVRECORDER;
+#endif
 }
 
 void M_StartMovie(void)
@@ -1334,7 +1342,7 @@ void M_StartMovie(void)
 
 	if (cv_movie_option.value != 3)
 	{
-		strcat(pathname, PATHSEP"media"PATHSEP"movies"PATHSEP);
+		strcat(pathname, PATHSEP "media" PATHSEP "movies" PATHSEP);
 		M_MkdirEach(pathname, M_PathParts(pathname) - 2, 0755);
 	}
 
@@ -1365,36 +1373,45 @@ void M_StartMovie(void)
 		CONS_Printf(M_GetText("Movie mode enabled (%s).\n"), "GIF");
 	else if (moviemode == MM_SCREENSHOT)
 		CONS_Printf(M_GetText("Movie mode enabled (%s).\n"), "screenshots");
+#ifdef SRB2_CONFIG_ENABLE_WEBM_MOVIES
 	else if (moviemode == MM_AVRECORDER)
 	{
 		CONS_Printf(M_GetText("Movie mode enabled (%s).\n"), M_AVRecorder_GetCurrentFormat());
 		M_AVRecorder_PrintCurrentConfiguration();
 	}
+#endif
 
 	//singletics = (moviemode != MM_OFF);
 #endif
 }
 
-void M_SaveFrame(void)
+static void M_SaveFrame_AVRecorder(uint32_t width, uint32_t height, tcb::span<const std::byte> data);
+
+void M_LegacySaveFrame(void)
 {
 #if NUMSCREENS > 2
+	// TODO: until HWR2 replaces legacy OpenGL renderer, this
+	//       function still needs to called for OpenGL.
+#ifdef HWRENDER
+	if (rendermode != render_opengl)
+#endif
+	{
+		return;
+	}
+
 	// paranoia: should be unnecessary without singletics
 	static tic_t oldtic = 0;
 
+#ifdef SRB2_CONFIG_ENABLE_WEBM_MOVIES
 	if (moviemode == MM_AVRECORDER)
 	{
-		// TODO: replace once hwr2 twodee is finished
-		if (rendermode == render_soft)
-		{
-			M_AVRecorder_CopySoftwareScreen();
-		}
-
 		if (M_AVRecorder_IsExpired())
 		{
 			M_StopMovie();
+			return;
 		}
-		return;
 	}
+#endif
 
 	// skip interpolated frames for other modes
 	if (oldtic == I_GetTime())
@@ -1446,10 +1463,77 @@ void M_SaveFrame(void)
 			moviemode = MM_OFF;
 #endif
 			return;
+		case MM_AVRECORDER:
+#if defined(SRB2_CONFIG_ENABLE_WEBM_MOVIES) && defined(HWRENDER)
+			{
+				UINT8 *linear = HWR_GetScreenshot();
+				M_SaveFrame_AVRecorder(vid.width, vid.height, tcb::as_bytes(tcb::span(linear, 3 * vid.width * vid.height)));
+				free(linear);
+			}
+#endif
+			return;
 		default:
 			return;
 	}
 #endif
+}
+
+static void M_SaveFrame_GIF(uint32_t width, uint32_t height, tcb::span<const std::byte> data)
+{
+	if (moviemode != MM_GIF)
+	{
+		return;
+	}
+
+	static tic_t oldtic = 0;
+
+	// limit the recording to TICRATE
+	if (oldtic == I_GetTime())
+	{
+		return;
+	}
+
+	oldtic = I_GetTime();
+
+	GIF_frame_rgb24(width, height, reinterpret_cast<const uint8_t*>(data.data()));
+}
+
+static void M_SaveFrame_AVRecorder(uint32_t width, uint32_t height, tcb::span<const std::byte> data)
+{
+#ifdef SRB2_CONFIG_ENABLE_WEBM_MOVIES
+	if (M_AVRecorder_IsExpired())
+	{
+		M_StopMovie();
+		return;
+	}
+
+	auto frame = g_av_recorder->new_staging_video_frame(width, height);
+	if (!frame)
+	{
+		// Not time to submit a frame!
+		return;
+	}
+
+	auto data_begin = reinterpret_cast<const uint8_t*>(data.data());
+	auto data_end = reinterpret_cast<const uint8_t*>(data.data() + data.size_bytes());
+	std::copy(data_begin, data_end, frame->screen.begin());
+	g_av_recorder->push_staging_video_frame(std::move(frame));
+#endif
+}
+
+void M_SaveFrame(uint32_t width, uint32_t height, tcb::span<const std::byte> data)
+{
+	switch (moviemode)
+	{
+	case MM_GIF:
+		M_SaveFrame_GIF(width, height, data);
+		break;
+	case MM_AVRECORDER:
+		M_SaveFrame_AVRecorder(width, height, data);
+		break;
+	default:
+		break;
+	}
 }
 
 void M_StopMovie(void)
@@ -1484,9 +1568,11 @@ void M_StopMovie(void)
 #endif
 		case MM_SCREENSHOT:
 			break;
+#ifdef SRB2_CONFIG_ENABLE_WEBM_MOVIES
 		case MM_AVRECORDER:
 			M_AVRecorder_Close();
 			break;
+#endif
 		default:
 			return;
 	}
@@ -1508,7 +1594,7 @@ void M_StopMovie(void)
   * \param palette  Palette of image data.
   *  \note if palette is NULL, BGR888 format
   */
-boolean M_SavePNG(const char *filename, void *data, int width, int height, const UINT8 *palette)
+boolean M_SavePNG(const char *filename, const void *data, int width, int height, const UINT8 *palette)
 {
 	png_structp png_ptr;
 	png_infop png_info_ptr;
@@ -1579,7 +1665,7 @@ boolean M_SavePNG(const char *filename, void *data, int width, int height, const
 
 	png_write_info(png_ptr, png_info_ptr);
 
-	M_PNGImage(png_ptr, png_info_ptr, height, data);
+	M_PNGImage(png_ptr, png_info_ptr, height, (png_bytep)data);
 
 	png_write_end(png_ptr, png_info_ptr);
 	png_destroy_write_struct(&png_ptr, &png_info_ptr);
@@ -1687,19 +1773,24 @@ void M_ScreenShot(void)
 	takescreenshot = true;
 }
 
+void M_DoLegacyGLScreenShot(void)
+{
+	const std::byte* fake_data = nullptr;
+	M_DoScreenShot(vid.width, vid.height, tcb::span(fake_data, vid.width * vid.height));
+}
+
 /** Takes a screenshot.
   * The screenshot is saved as "srb2xxxx.png" where xxxx is the lowest
   * four-digit number for which a file does not already exist.
   *
   * \sa HWR_ScreenShot
   */
-void M_DoScreenShot(void)
+void M_DoScreenShot(UINT32 width, UINT32 height, tcb::span<const std::byte> data)
 {
 #if NUMSCREENS > 2
 	const char *freename = NULL;
 	char pathname[MAX_WADPATH];
 	boolean ret = false;
-	UINT8 *linear = NULL;
 
 	// Don't take multiple screenshots, obviously
 	takescreenshot = false;
@@ -1719,7 +1810,7 @@ void M_DoScreenShot(void)
 
 	if (cv_screenshot_option.value != 3)
 	{
-		strcat(pathname, PATHSEP"media"PATHSEP"screenshots"PATHSEP);
+		strcat(pathname, PATHSEP "media" PATHSEP "screenshots" PATHSEP);
 		M_MkdirEach(pathname, M_PathParts(pathname) - 2, 0755);
 	}
 
@@ -1732,13 +1823,6 @@ void M_DoScreenShot(void)
 		freename = Newsnapshotfile(pathname,"tga");
 #endif
 
-	if (rendermode == render_soft)
-	{
-		// munge planar buffer to linear
-		linear = screens[2];
-		I_ReadScreen(linear);
-	}
-
 	if (!freename)
 		goto failure;
 
@@ -1749,9 +1833,9 @@ void M_DoScreenShot(void)
 	else
 #endif
 	{
-		M_CreateScreenShotPalette();
+		const void* pixel_data = static_cast<const void*>(data.data());
 #ifdef USE_PNG
-		ret = M_SavePNG(va(pandf,pathname,freename), linear, vid.width, vid.height, screenshot_palette);
+		ret = M_SavePNG(va(pandf,pathname,freename), pixel_data, width, height, NULL);
 #else
 		ret = WritePCXfile(va(pandf,pathname,freename), linear, vid.width, vid.height, screenshot_palette);
 #endif
@@ -2462,460 +2546,36 @@ TMatrix *RotateZMatrix(angle_t rad)
 char *sizeu1(size_t num)
 {
 	static char sizeu1_buf[28];
-	sprintf(sizeu1_buf, "%"PRIdS, num);
+	sprintf(sizeu1_buf, "%" PRIdS, num);
 	return sizeu1_buf;
 }
 
 char *sizeu2(size_t num)
 {
 	static char sizeu2_buf[28];
-	sprintf(sizeu2_buf, "%"PRIdS, num);
+	sprintf(sizeu2_buf, "%" PRIdS, num);
 	return sizeu2_buf;
 }
 
 char *sizeu3(size_t num)
 {
 	static char sizeu3_buf[28];
-	sprintf(sizeu3_buf, "%"PRIdS, num);
+	sprintf(sizeu3_buf, "%" PRIdS, num);
 	return sizeu3_buf;
 }
 
 char *sizeu4(size_t num)
 {
 	static char sizeu4_buf[28];
-	sprintf(sizeu4_buf, "%"PRIdS, num);
+	sprintf(sizeu4_buf, "%" PRIdS, num);
 	return sizeu4_buf;
 }
 
 char *sizeu5(size_t num)
 {
 	static char sizeu5_buf[28];
-	sprintf(sizeu5_buf, "%"PRIdS, num);
+	sprintf(sizeu5_buf, "%" PRIdS, num);
 	return sizeu5_buf;
-}
-
-#if defined (__GNUC__) && defined (__i386__) // from libkwave, under GPL
-// Alam: note libkwave memcpy code comes from mplayer's libvo/aclib_template.c, r699
-
-/* for small memory blocks (<256 bytes) this version is faster */
-#define small_memcpy(dest,src,n)\
-{\
-register unsigned long int dummy;\
-__asm__ __volatile__(\
-	"cld\n\t"\
-	"rep; movsb"\
-	:"=&D"(dest), "=&S"(src), "=&c"(dummy)\
-	:"0" (dest), "1" (src),"2" (n)\
-	: "memory", "cc");\
-}
-/* linux kernel __memcpy (from: /include/asm/string.h) */
-ATTRINLINE static FUNCINLINE void *__memcpy (void *dest, const void * src, size_t n)
-{
-	int d0, d1, d2;
-
-	if ( n < 4 )
-	{
-		small_memcpy(dest, src, n);
-	}
-	else
-	{
-		__asm__ __volatile__ (
-			"rep ; movsl;"
-			"testb $2,%b4;"
-			"je 1f;"
-			"movsw;"
-			"1:\ttestb $1,%b4;"
-			"je 2f;"
-			"movsb;"
-			"2:"
-		: "=&c" (d0), "=&D" (d1), "=&S" (d2)
-		:"0" (n/4), "q" (n),"1" ((long) dest),"2" ((long) src)
-		: "memory");
-	}
-
-	return dest;
-}
-
-#define SSE_MMREG_SIZE 16
-#define MMX_MMREG_SIZE 8
-
-#define MMX1_MIN_LEN 0x800  /* 2K blocks */
-#define MIN_LEN 0x40  /* 64-byte blocks */
-
-/* SSE note: i tried to move 128 bytes a time instead of 64 but it
-didn't make any measureable difference. i'm using 64 for the sake of
-simplicity. [MF] */
-static /*FUNCTARGET("sse2")*/ void *sse_cpy(void * dest, const void * src, size_t n)
-{
-	void *retval = dest;
-	size_t i;
-
-	/* PREFETCH has effect even for MOVSB instruction ;) */
-	__asm__ __volatile__ (
-		"prefetchnta (%0);"
-		"prefetchnta 32(%0);"
-		"prefetchnta 64(%0);"
-		"prefetchnta 96(%0);"
-		"prefetchnta 128(%0);"
-		"prefetchnta 160(%0);"
-		"prefetchnta 192(%0);"
-		"prefetchnta 224(%0);"
-		"prefetchnta 256(%0);"
-		"prefetchnta 288(%0);"
-		: : "r" (src) );
-
-	if (n >= MIN_LEN)
-	{
-		register unsigned long int delta;
-		/* Align destinition to MMREG_SIZE -boundary */
-		delta = ((unsigned long int)dest)&(SSE_MMREG_SIZE-1);
-		if (delta)
-		{
-			delta=SSE_MMREG_SIZE-delta;
-			n -= delta;
-			small_memcpy(dest, src, delta);
-		}
-		i = n >> 6; /* n/64 */
-		n&=63;
-		if (((unsigned long)src) & 15)
-		/* if SRC is misaligned */
-		 for (; i>0; i--)
-		 {
-			__asm__ __volatile__ (
-				"prefetchnta 320(%0);"
-				"prefetchnta 352(%0);"
-				"movups (%0), %%xmm0;"
-				"movups 16(%0), %%xmm1;"
-				"movups 32(%0), %%xmm2;"
-				"movups 48(%0), %%xmm3;"
-				"movntps %%xmm0, (%1);"
-				"movntps %%xmm1, 16(%1);"
-				"movntps %%xmm2, 32(%1);"
-				"movntps %%xmm3, 48(%1);"
-			:: "r" (src), "r" (dest) : "memory");
-			src = (const unsigned char *)src + 64;
-			dest = (unsigned char *)dest + 64;
-		}
-		else
-			/*
-			   Only if SRC is aligned on 16-byte boundary.
-			   It allows to use movaps instead of movups, which required data
-			   to be aligned or a general-protection exception (#GP) is generated.
-			*/
-		 for (; i>0; i--)
-		 {
-			__asm__ __volatile__ (
-				"prefetchnta 320(%0);"
-				"prefetchnta 352(%0);"
-				"movaps (%0), %%xmm0;"
-				"movaps 16(%0), %%xmm1;"
-				"movaps 32(%0), %%xmm2;"
-				"movaps 48(%0), %%xmm3;"
-				"movntps %%xmm0, (%1);"
-				"movntps %%xmm1, 16(%1);"
-				"movntps %%xmm2, 32(%1);"
-				"movntps %%xmm3, 48(%1);"
-			:: "r" (src), "r" (dest) : "memory");
-			src = ((const unsigned char *)src) + 64;
-			dest = ((unsigned char *)dest) + 64;
-		}
-		/* since movntq is weakly-ordered, a "sfence"
-		 * is needed to become ordered again. */
-		__asm__ __volatile__ ("sfence":::"memory");
-		/* enables to use FPU */
-		__asm__ __volatile__ ("emms":::"memory");
-	}
-	/*
-	 *	Now do the tail of the block
-	 */
-	if (n) __memcpy(dest, src, n);
-	return retval;
-}
-
-static FUNCTARGET("mmx") void *mmx2_cpy(void *dest, const void *src, size_t n)
-{
-	void *retval = dest;
-	size_t i;
-
-	/* PREFETCH has effect even for MOVSB instruction ;) */
-	__asm__ __volatile__ (
-		"prefetchnta (%0);"
-		"prefetchnta 32(%0);"
-		"prefetchnta 64(%0);"
-		"prefetchnta 96(%0);"
-		"prefetchnta 128(%0);"
-		"prefetchnta 160(%0);"
-		"prefetchnta 192(%0);"
-		"prefetchnta 224(%0);"
-		"prefetchnta 256(%0);"
-		"prefetchnta 288(%0);"
-	: : "r" (src));
-
-	if (n >= MIN_LEN)
-	{
-		register unsigned long int delta;
-		/* Align destinition to MMREG_SIZE -boundary */
-		delta = ((unsigned long int)dest)&(MMX_MMREG_SIZE-1);
-		if (delta)
-		{
-			delta=MMX_MMREG_SIZE-delta;
-			n -= delta;
-			small_memcpy(dest, src, delta);
-		}
-		i = n >> 6; /* n/64 */
-		n&=63;
-		for (; i>0; i--)
-		{
-			__asm__ __volatile__ (
-				"prefetchnta 320(%0);"
-				"prefetchnta 352(%0);"
-				"movq (%0), %%mm0;"
-				"movq 8(%0), %%mm1;"
-				"movq 16(%0), %%mm2;"
-				"movq 24(%0), %%mm3;"
-				"movq 32(%0), %%mm4;"
-				"movq 40(%0), %%mm5;"
-				"movq 48(%0), %%mm6;"
-				"movq 56(%0), %%mm7;"
-				"movntq %%mm0, (%1);"
-				"movntq %%mm1, 8(%1);"
-				"movntq %%mm2, 16(%1);"
-				"movntq %%mm3, 24(%1);"
-				"movntq %%mm4, 32(%1);"
-				"movntq %%mm5, 40(%1);"
-				"movntq %%mm6, 48(%1);"
-				"movntq %%mm7, 56(%1);"
-			:: "r" (src), "r" (dest) : "memory");
-			src = ((const unsigned char *)src) + 64;
-			dest = ((unsigned char *)dest) + 64;
-		}
-		/* since movntq is weakly-ordered, a "sfence"
-		* is needed to become ordered again. */
-		__asm__ __volatile__ ("sfence":::"memory");
-		__asm__ __volatile__ ("emms":::"memory");
-	}
-	/*
-	 *	Now do the tail of the block
-	 */
-	if (n) __memcpy(dest, src, n);
-	return retval;
-}
-
-static FUNCTARGET("mmx") void *mmx1_cpy(void *dest, const void *src, size_t n) //3DNOW
-{
-	void *retval = dest;
-	size_t i;
-
-	/* PREFETCH has effect even for MOVSB instruction ;) */
-	__asm__ __volatile__ (
-		"prefetch (%0);"
-		"prefetch 32(%0);"
-		"prefetch 64(%0);"
-		"prefetch 96(%0);"
-		"prefetch 128(%0);"
-		"prefetch 160(%0);"
-		"prefetch 192(%0);"
-		"prefetch 224(%0);"
-		"prefetch 256(%0);"
-		"prefetch 288(%0);"
-	: : "r" (src));
-
-	if (n >= MMX1_MIN_LEN)
-	{
-		register unsigned long int delta;
-		/* Align destinition to MMREG_SIZE -boundary */
-		delta = ((unsigned long int)dest)&(MMX_MMREG_SIZE-1);
-		if (delta)
-		{
-			delta=MMX_MMREG_SIZE-delta;
-			n -= delta;
-			small_memcpy(dest, src, delta);
-		}
-		i = n >> 6; /* n/64 */
-		n&=63;
-		for (; i>0; i--)
-		{
-			__asm__ __volatile__ (
-				"prefetch 320(%0);"
-				"prefetch 352(%0);"
-				"movq (%0), %%mm0;"
-				"movq 8(%0), %%mm1;"
-				"movq 16(%0), %%mm2;"
-				"movq 24(%0), %%mm3;"
-				"movq 32(%0), %%mm4;"
-				"movq 40(%0), %%mm5;"
-				"movq 48(%0), %%mm6;"
-				"movq 56(%0), %%mm7;"
-				"movq %%mm0, (%1);"
-				"movq %%mm1, 8(%1);"
-				"movq %%mm2, 16(%1);"
-				"movq %%mm3, 24(%1);"
-				"movq %%mm4, 32(%1);"
-				"movq %%mm5, 40(%1);"
-				"movq %%mm6, 48(%1);"
-				"movq %%mm7, 56(%1);"
-			:: "r" (src), "r" (dest) : "memory");
-			src = ((const unsigned char *)src) + 64;
-			dest = ((unsigned char *)dest) + 64;
-		}
-		__asm__ __volatile__ ("femms":::"memory"); // same as mmx_cpy() but with a femms
-	}
-	/*
-	 *	Now do the tail of the block
-	 */
-	if (n) __memcpy(dest, src, n);
-	return retval;
-}
-#endif
-
-// Alam: why? memcpy may be __cdecl/_System and our code may be not the same type
-static void *cpu_cpy(void *dest, const void *src, size_t n)
-{
-	if (src == NULL)
-	{
-		CONS_Debug(DBG_MEMORY, "Memcpy from 0x0?!: %p %p %s\n", dest, src, sizeu1(n));
-		return dest;
-	}
-
-	if(dest == NULL)
-	{
-		CONS_Debug(DBG_MEMORY, "Memcpy to 0x0?!: %p %p %s\n", dest, src, sizeu1(n));
-		return dest;
-	}
-
-	return memcpy(dest, src, n);
-}
-
-static /*FUNCTARGET("mmx")*/ void *mmx_cpy(void *dest, const void *src, size_t n)
-{
-#if defined (_MSC_VER) && defined (_X86_)
-	_asm
-	{
-		mov ecx, [n]
-		mov esi, [src]
-		mov edi, [dest]
-		shr ecx, 6 // mit mmx: 64bytes per iteration
-		jz lower_64 // if lower than 64 bytes
-		loop_64: // MMX transfers multiples of 64bytes
-		movq mm0,  0[ESI] // read sources
-		movq mm1,  8[ESI]
-		movq mm2, 16[ESI]
-		movq mm3, 24[ESI]
-		movq mm4, 32[ESI]
-		movq mm5, 40[ESI]
-		movq mm6, 48[ESI]
-		movq mm7, 56[ESI]
-
-		movq  0[EDI], mm0 // write destination
-		movq  8[EDI], mm1
-		movq 16[EDI], mm2
-		movq 24[EDI], mm3
-		movq 32[EDI], mm4
-		movq 40[EDI], mm5
-		movq 48[EDI], mm6
-		movq 56[EDI], mm7
-
-		add esi, 64
-		add edi, 64
-		dec ecx
-		jnz loop_64
-		emms // close mmx operation
-		lower_64:// transfer rest of buffer
-		mov ebx,esi
-		sub ebx,src
-		mov ecx,[n]
-		sub ecx,ebx
-		shr ecx, 3 // multiples of 8 bytes
-		jz lower_8
-		loop_8:
-		movq  mm0, [esi] // read source
-		movq [edi], mm0 // write destination
-		add esi, 8
-		add edi, 8
-		dec ecx
-		jnz loop_8
-		emms // close mmx operation
-		lower_8:
-		mov ebx,esi
-		sub ebx,src
-		mov ecx,[n]
-		sub ecx,ebx
-		rep movsb
-		mov eax, [dest] // return dest
-	}
-#elif defined (__GNUC__) && defined (__i386__)
-	void *retval = dest;
-	size_t i;
-
-	if (n >= MMX1_MIN_LEN)
-	{
-		register unsigned long int delta;
-		/* Align destinition to MMREG_SIZE -boundary */
-		delta = ((unsigned long int)dest)&(MMX_MMREG_SIZE-1);
-		if (delta)
-		{
-			delta=MMX_MMREG_SIZE-delta;
-			n -= delta;
-			small_memcpy(dest, src, delta);
-		}
-		i = n >> 6; /* n/64 */
-		n&=63;
-		for (; i>0; i--)
-		{
-			__asm__ __volatile__ (
-				"movq (%0), %%mm0;"
-				"movq 8(%0), %%mm1;"
-				"movq 16(%0), %%mm2;"
-				"movq 24(%0), %%mm3;"
-				"movq 32(%0), %%mm4;"
-				"movq 40(%0), %%mm5;"
-				"movq 48(%0), %%mm6;"
-				"movq 56(%0), %%mm7;"
-				"movq %%mm0, (%1);"
-				"movq %%mm1, 8(%1);"
-				"movq %%mm2, 16(%1);"
-				"movq %%mm3, 24(%1);"
-				"movq %%mm4, 32(%1);"
-				"movq %%mm5, 40(%1);"
-				"movq %%mm6, 48(%1);"
-				"movq %%mm7, 56(%1);"
-			:: "r" (src), "r" (dest) : "memory");
-			src = ((const unsigned char *)src) + 64;
-			dest = ((unsigned char *)dest) + 64;
-		}
-		__asm__ __volatile__ ("emms":::"memory");
-	}
-	/*
-	 *	Now do the tail of the block
-	 */
-	if (n) __memcpy(dest, src, n);
-	return retval;
-#else
-	return cpu_cpy(dest, src, n);
-#endif
-}
-
-void *(*M_Memcpy)(void* dest, const void* src, size_t n) = cpu_cpy;
-
-/** Memcpy that uses MMX, 3DNow, MMXExt or even SSE
-  * Do not use on overlapped memory, use memmove for that
-  */
-void M_SetupMemcpy(void)
-{
-#if defined (__GNUC__) && defined (__i386__)
-	if (R_SSE2)
-		M_Memcpy = sse_cpy;
-	else if (R_MMXExt)
-		M_Memcpy = mmx2_cpy;
-	else if (R_3DNow)
-		M_Memcpy = mmx1_cpy;
-	else
-#endif
-	if (R_MMX)
-		M_Memcpy = mmx_cpy;
-#if 0
-	M_Memcpy = cpu_cpy;
-#endif
 }
 
 /** Return the appropriate message for a file error or end of file.
@@ -3026,7 +2686,7 @@ int M_JumpWord(const char *line)
 		if (isspace(line[1]))
 			return 1 + strspn(&line[1], " ");
 		else
-			return strcspn(line, " "PUNCTUATION);
+			return strcspn(line, " " PUNCTUATION);
 	}
 }
 

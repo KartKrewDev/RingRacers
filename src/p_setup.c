@@ -334,7 +334,7 @@ FUNCNORETURN static ATTRNORETURN void CorruptMapError(const char *msg)
 	{
 		sprintf(mapname, "ID %d", gamemap-1);
 	}
-	
+
 	CON_LogMessage("Map ");
 	CON_LogMessage(mapname);
 	CON_LogMessage(" is corrupt: ");
@@ -380,7 +380,7 @@ void P_DeleteFlickies(INT16 i)
 static void P_ClearSingleMapHeaderInfo(INT16 num)
 {
 	UINT8 i = 0;
-	
+
 	mapheaderinfo[num]->lvlttl[0] = '\0';
 	mapheaderinfo[num]->subttl[0] = '\0';
 	mapheaderinfo[num]->zonttl[0] = '\0';
@@ -7566,8 +7566,13 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 	// This is needed. Don't touch.
 	maptol = mapheaderinfo[gamemap-1]->typeoflevel;
 
+	// HWR2 skip 3d render draw hack to avoid losing the current wipe screen
+	g_wipeskiprender = true;
+
 	CON_Drawer(); // let the user know what we are going to do
 	I_FinishUpdate(); // page flip or blit buffer
+
+	g_wipeskiprender = false;
 
 	// Reset the palette
 	if (rendermode != render_none)
@@ -7618,7 +7623,7 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 			F_WipeEndScreen();
 
 			S_StartSound(NULL, sfx_ruby1);
-			F_RunWipe(wipedefs[wipe_encore_toinvert], false, NULL, false, false);
+			F_RunWipe(wipe_encore_toinvert, wipedefs[wipe_encore_toinvert], false, NULL, false, false);
 
 			// Hold on invert for extra effect.
 			// (This define might be useful for other areas of code? Not sure)
@@ -7633,8 +7638,8 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 			I_UpdateTime(cv_timescale.value); \
 		} \
 		lastwipetic = nowtime; \
-		if (moviemode) \
-			M_SaveFrame(); \
+		if (moviemode && rendermode == render_opengl) \
+			M_LegacySaveFrame(); \
 		NetKeepAlive(); \
 	} \
 
@@ -7647,7 +7652,7 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 			V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 0);
 			F_WipeEndScreen();
 
-			F_RunWipe(wipedefs[wipe_encore_towhite], false, "FADEMAP1", false, true); // wiggle the screen during this!
+			F_RunWipe(wipe_encore_towhite, wipedefs[wipe_encore_towhite], false, "FADEMAP1", false, true); // wiggle the screen during this!
 
 			// THEN fade to a black screen.
 			F_WipeStartScreen();
@@ -7655,7 +7660,7 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 			V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 31);
 			F_WipeEndScreen();
 
-			F_RunWipe(wipedefs[wipe_level_toblack], false, "FADEMAP0", false, false);
+			F_RunWipe(wipe_level_toblack, wipedefs[wipe_level_toblack], false, "FADEMAP0", false, false);
 
 			// Wait a bit longer.
 			WAIT((3*TICRATE)/4);
@@ -7663,8 +7668,8 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 		else
 		{
 			// dedicated servers can call this now, to wait the appropriate amount of time for clients to wipe
-			F_RunWipe(wipedefs[wipe_encore_towhite], false, "FADEMAP1", false, true);
-			F_RunWipe(wipedefs[wipe_level_toblack], false, "FADEMAP0", false, false);
+			F_RunWipe(wipe_encore_towhite, wipedefs[wipe_encore_towhite], false, "FADEMAP1", false, true);
+			F_RunWipe(wipe_level_toblack, wipedefs[wipe_level_toblack], false, "FADEMAP0", false, false);
 		}
 	}
 
@@ -7688,6 +7693,7 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 	// But only if we didn't do the encore startup wipe
 	if (!demo.rewinding && !reloadinggamestate)
 	{
+		int wipetype = wipe_level_toblack;
 
 		// Fade out music here. Deduct 2 tics so the fade volume actually reaches 0.
 		// But don't halt the music! S_Start will take care of that. This dodges a MIDI crash bug.
@@ -7717,10 +7723,12 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 			if (ranspecialwipe != 2)
 				S_StartSound(NULL, sfx_s3kaf);
 			levelfadecol = 0;
+			wipetype = wipe_encore_towhite;
 		}
 		else if (encoremode)
 		{
 			levelfadecol = 0;
+			wipetype = wipe_encore_towhite;
 		}
 		else
 		{
@@ -7735,7 +7743,7 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 			F_WipeEndScreen();
 		}
 
-		F_RunWipe(wipedefs[wipe_level_toblack], false, ((levelfadecol == 0) ? "FADEMAP1" : "FADEMAP0"), false, false);
+		F_RunWipe(wipetype, wipedefs[wipetype], false, ((levelfadecol == 0) ? "FADEMAP1" : "FADEMAP0"), false, false);
 	}
 	/*if (!titlemapinaction)
 		wipegamestate = GS_LEVEL;*/

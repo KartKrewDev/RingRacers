@@ -1,3 +1,12 @@
+// SONIC ROBO BLAST 2
+//-----------------------------------------------------------------------------
+// Copyright (C) 2023 by Ronald "Eidolon" Kinard
+//
+// This program is free software distributed under the
+// terms of the GNU General Public License, version 2.
+// See the 'LICENSE' file for more details.
+//-----------------------------------------------------------------------------
+
 #include "gl3_core_rhi.hpp"
 
 #include <memory>
@@ -13,7 +22,7 @@
 using namespace srb2;
 using namespace rhi;
 
-#if 1
+#ifndef NDEBUG
 #define GL_ASSERT                                                                                                      \
 	{                                                                                                                  \
 		GLenum __err = gl_->GetError();                                                                                \
@@ -33,6 +42,12 @@ constexpr GLenum map_pixel_format(rhi::PixelFormat format)
 {
 	switch (format)
 	{
+	case rhi::PixelFormat::kR8:
+		return GL_R8;
+	case rhi::PixelFormat::kRG8:
+		return GL_RG8;
+	case rhi::PixelFormat::kRGB8:
+		return GL_RGB8;
 	case rhi::PixelFormat::kRGBA8:
 		return GL_RGBA8;
 	case rhi::PixelFormat::kDepth16:
@@ -56,6 +71,16 @@ constexpr std::tuple<GLenum, GLenum, GLuint> map_pixel_data_format(rhi::PixelFor
 		type = GL_UNSIGNED_BYTE;
 		size = 1;
 		break;
+	case rhi::PixelFormat::kRG8:
+		layout = GL_RG;
+		type = GL_UNSIGNED_BYTE;
+		size = 2;
+		break;
+	case rhi::PixelFormat::kRGB8:
+		layout = GL_RGB;
+		type = GL_UNSIGNED_BYTE;
+		size = 3;
+		break;
 	case rhi::PixelFormat::kRGBA8:
 		layout = GL_RGBA;
 		type = GL_UNSIGNED_BYTE;
@@ -77,6 +102,27 @@ constexpr GLenum map_texture_format(rhi::TextureFormat format)
 		return GL_RGB;
 	case rhi::TextureFormat::kLuminance:
 		return GL_RED;
+	case rhi::TextureFormat::kLuminanceAlpha:
+		return GL_RG;
+	default:
+		return GL_ZERO;
+	}
+}
+
+constexpr GLenum map_internal_texture_format(rhi::TextureFormat format)
+{
+	switch (format)
+	{
+	case rhi::TextureFormat::kRGBA:
+		return GL_RGBA8;
+	case rhi::TextureFormat::kRGB:
+		return GL_RGB8;
+	case rhi::TextureFormat::kLuminance:
+		return GL_R8;
+	case rhi::TextureFormat::kLuminanceAlpha:
+		return GL_RG8;
+	case rhi::TextureFormat::kDepth:
+		return GL_DEPTH_COMPONENT24;
 	default:
 		return GL_ZERO;
 	}
@@ -286,6 +332,35 @@ constexpr const char* map_uniform_attribute_symbol_name(rhi::UniformName name)
 		return "u_projection";
 	case rhi::UniformName::kTexCoord0Transform:
 		return "u_texcoord0_transform";
+	case rhi::UniformName::kSampler0IsIndexedAlpha:
+		return "u_sampler0_is_indexed_alpha";
+	case rhi::UniformName::kWipeColorizeMode:
+		return "u_wipe_colorize_mode";
+	case rhi::UniformName::kWipeEncoreSwizzle:
+		return "u_wipe_encore_swizzle";
+	default:
+		return nullptr;
+	}
+}
+
+constexpr const char* map_uniform_enable_define(rhi::UniformName name)
+{
+	switch (name)
+	{
+	case rhi::UniformName::kTime:
+		return "ENABLE_U_TIME";
+	case rhi::UniformName::kProjection:
+		return "ENABLE_U_PROJECTION";
+	case rhi::UniformName::kModelView:
+		return "ENABLE_U_MODELVIEW";
+	case rhi::UniformName::kTexCoord0Transform:
+		return "ENABLE_U_TEXCOORD0_TRANSFORM";
+	case rhi::UniformName::kSampler0IsIndexedAlpha:
+		return "ENABLE_U_SAMPLER0_IS_INDEXED_ALPHA";
+	case rhi::UniformName::kWipeColorizeMode:
+		return "ENABLE_U_WIPE_COLORIZE_MODE";
+	case rhi::UniformName::kWipeEncoreSwizzle:
+		return "ENABLE_U_WIPE_ENCORE_SWIZZLE";
 	default:
 		return nullptr;
 	}
@@ -303,6 +378,23 @@ constexpr const char* map_sampler_symbol_name(rhi::SamplerName name)
 		return "s_sampler2";
 	case rhi::SamplerName::kSampler3:
 		return "s_sampler3";
+	default:
+		return nullptr;
+	}
+}
+
+constexpr const char* map_sampler_enable_define(rhi::SamplerName name)
+{
+	switch (name)
+	{
+	case rhi::SamplerName::kSampler0:
+		return "ENABLE_S_SAMPLER0";
+	case rhi::SamplerName::kSampler1:
+		return "ENABLE_S_SAMPLER1";
+	case rhi::SamplerName::kSampler2:
+		return "ENABLE_S_SAMPLER2";
+	case rhi::SamplerName::kSampler3:
+		return "ENABLE_S_SAMPLER3";
 	default:
 		return nullptr;
 	}
@@ -423,8 +515,13 @@ rhi::Handle<rhi::Texture> GlCoreRhi::create_texture(const rhi::TextureDesc& desc
 {
 	SRB2_ASSERT(graphics_context_active_ == false);
 
-	GLenum internal_format = map_texture_format(desc.format);
+	GLenum internal_format = map_internal_texture_format(desc.format);
 	SRB2_ASSERT(internal_format != GL_ZERO);
+	GLenum format = GL_RGBA;
+	if (desc.format == TextureFormat::kDepth)
+	{
+		format = GL_DEPTH_COMPONENT;
+	}
 
 	GLuint name = 0;
 	gl_->GenTextures(1, &name);
@@ -439,7 +536,7 @@ rhi::Handle<rhi::Texture> GlCoreRhi::create_texture(const rhi::TextureDesc& desc
 	GL_ASSERT
 	gl_->TexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 	GL_ASSERT
-	gl_->TexImage2D(GL_TEXTURE_2D, 0, internal_format, desc.width, desc.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+	gl_->TexImage2D(GL_TEXTURE_2D, 0, internal_format, desc.width, desc.height, 0, format, GL_UNSIGNED_BYTE, nullptr);
 	GL_ASSERT
 
 	GlCoreTexture texture;
@@ -478,13 +575,19 @@ void GlCoreRhi::update_texture(
 	SRB2_ASSERT(texture_slab_.is_valid(texture) == true);
 	auto& t = texture_slab_[texture];
 
+	// Each row of pixels must be on the unpack alignment boundary.
+	// This alignment is not user changeable until OpenGL 4.
+	constexpr const int32_t kUnpackAlignment = 4;
+
 	GLenum format = GL_RGBA;
 	GLenum type = GL_UNSIGNED_BYTE;
 	GLuint size = 0;
 	std::tie(format, type, size) = map_pixel_data_format(data_format);
 	SRB2_ASSERT(format != GL_ZERO && type != GL_ZERO);
 	SRB2_ASSERT(map_texture_format(t.desc.format) == format);
-	SRB2_ASSERT(region.w * region.h * size == data.size_bytes());
+
+	int32_t expected_row_span = (((size * region.w) + kUnpackAlignment - 1) / kUnpackAlignment) * kUnpackAlignment;
+	SRB2_ASSERT(expected_row_span * region.h == data.size_bytes());
 	SRB2_ASSERT(region.x + region.w <= t.desc.width && region.y + region.h <= t.desc.height);
 
 	gl_->ActiveTexture(GL_TEXTURE0);
@@ -740,14 +843,79 @@ rhi::Handle<rhi::Pipeline> GlCoreRhi::create_pipeline(const PipelineDesc& desc)
 					}
 				}
 			}
+			for (auto& uniform_group : desc.uniform_input.enabled_uniforms)
+			{
+				for (auto& uniform : uniform_group)
+				{
+					for (auto const& req_uni_group : reqs.uniforms.uniform_groups)
+					{
+						for (auto const& req_uni : req_uni_group)
+						{
+							if (req_uni.name == uniform && !req_uni.required)
+							{
+								vert_src_processed.append("#define ");
+								vert_src_processed.append(map_uniform_enable_define(uniform));
+								vert_src_processed.append("\n");
+							}
+						}
+					}
+				}
+			}
+		}
+		string_i = new_i + 1;
+	} while (string_i != std::string::npos);
+
+	std::string frag_src_processed;
+	string_i = 0;
+	do
+	{
+		std::string::size_type new_i = frag_src.find('\n', string_i);
+		if (new_i == std::string::npos)
+		{
+			break;
+		}
+		std::string_view line_view(frag_src.c_str() + string_i, new_i - string_i + 1);
+		frag_src_processed.append(line_view);
+		if (line_view.rfind("#version ", 0) == 0)
+		{
+			for (auto& sampler : desc.sampler_input.enabled_samplers)
+			{
+				for (auto const& require_sampler : reqs.samplers.samplers)
+				{
+					if (sampler == require_sampler.name && !require_sampler.required)
+					{
+						frag_src_processed.append("#define ");
+						frag_src_processed.append(map_sampler_enable_define(sampler));
+						frag_src_processed.append("\n");
+					}
+				}
+			}
+			for (auto& uniform_group : desc.uniform_input.enabled_uniforms)
+			{
+				for (auto& uniform : uniform_group)
+				{
+					for (auto const& req_uni_group : reqs.uniforms.uniform_groups)
+					{
+						for (auto const& req_uni : req_uni_group)
+						{
+							if (req_uni.name == uniform && !req_uni.required)
+							{
+								frag_src_processed.append("#define ");
+								frag_src_processed.append(map_uniform_enable_define(uniform));
+								frag_src_processed.append("\n");
+							}
+						}
+					}
+				}
+			}
 		}
 		string_i = new_i + 1;
 	} while (string_i != std::string::npos);
 
 	const char* vert_src_arr[1] = {vert_src_processed.c_str()};
 	const GLint vert_src_arr_lens[1] = {static_cast<GLint>(vert_src_processed.size())};
-	const char* frag_src_arr[1] = {frag_src.c_str()};
-	const GLint frag_src_arr_lens[1] = {static_cast<GLint>(frag_src.size())};
+	const char* frag_src_arr[1] = {frag_src_processed.c_str()};
+	const GLint frag_src_arr_lens[1] = {static_cast<GLint>(frag_src_processed.size())};
 
 	vertex = gl_->CreateShader(GL_VERTEX_SHADER);
 	gl_->ShaderSource(vertex, 1, vert_src_arr, vert_src_arr_lens);
@@ -1380,6 +1548,8 @@ void GlCoreRhi::bind_index_buffer(Handle<GraphicsContext> ctx, Handle<Buffer> bu
 
 	SRB2_ASSERT(ib.desc.type == rhi::BufferType::kIndexBuffer);
 
+	current_index_buffer_ = buffer;
+
 	gl_->BindBuffer(GL_ELEMENT_ARRAY_BUFFER, ib.buffer);
 }
 
@@ -1412,22 +1582,37 @@ void GlCoreRhi::draw(Handle<GraphicsContext> ctx, uint32_t vertex_count, uint32_
 void GlCoreRhi::draw_indexed(Handle<GraphicsContext> ctx, uint32_t index_count, uint32_t first_index)
 {
 	SRB2_ASSERT(graphics_context_active_ == true && graphics_context_generation_ == ctx.generation());
+
+	SRB2_ASSERT(current_index_buffer_ != kNullHandle);
+#ifndef NDEBUG
+	{
+		auto& ib = buffer_slab_[current_index_buffer_];
+		SRB2_ASSERT((index_count + first_index) * 2 + index_buffer_offset_ <= ib.desc.size);
+	}
+#endif
+
 	gl_->DrawElements(
 		map_primitive_mode(current_primitive_type_),
 		index_count,
 		GL_UNSIGNED_SHORT,
-		reinterpret_cast<const void*>(first_index * 2 + index_buffer_offset_)
+		(const void*)((size_t)first_index * 2 + index_buffer_offset_)
 	);
 	GL_ASSERT
 }
 
-void GlCoreRhi::read_pixels(Handle<GraphicsContext> ctx, const Rect& rect, tcb::span<std::byte> out)
+void GlCoreRhi::read_pixels(Handle<GraphicsContext> ctx, const Rect& rect, PixelFormat format, tcb::span<std::byte> out)
 {
 	SRB2_ASSERT(graphics_context_active_ == true && graphics_context_generation_ == ctx.generation());
 	SRB2_ASSERT(current_render_pass_.has_value());
 
-	SRB2_ASSERT(out.size_bytes() == rect.w * rect.h);
-	gl_->ReadPixels(rect.x, rect.y, rect.w, rect.h, GL_RGBA, GL_UNSIGNED_BYTE, out.data());
+	std::tuple<GLenum, GLenum, GLuint> gl_format = map_pixel_data_format(format);
+	GLenum layout = std::get<0>(gl_format);
+	GLenum type = std::get<1>(gl_format);
+	GLint size = std::get<2>(gl_format);
+
+	SRB2_ASSERT(out.size_bytes() == rect.w * rect.h * size);
+
+	gl_->ReadPixels(rect.x, rect.y, rect.w, rect.h, layout, type, out.data());
 }
 
 void GlCoreRhi::finish()

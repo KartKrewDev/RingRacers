@@ -112,7 +112,7 @@ void M_CupSelectHandler(INT32 choice)
 			F_WipeStartScreen();
 			V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 31);
 			F_WipeEndScreen();
-			F_RunWipe(wipedefs[wipe_level_toblack], false, "FADEMAP0", false, false);
+			F_RunWipe(wipe_level_toblack, wipedefs[wipe_level_toblack], false, "FADEMAP0", false, false);
 
 			memset(&grandprixinfo, 0, sizeof(struct grandprixinfo));
 

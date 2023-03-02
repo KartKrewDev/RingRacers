@@ -5,6 +5,7 @@
 
 #define IMGUI_DISABLE_OBSOLETE_FUNCTIONS
 #define IMGUI_DISABLE_OBSOLETE_KEYIO
+#define IMGUI_DISABLE_STB_RECT_PACK_IMPLEMENTATION
 
 // We provide needed functionalities provided by default win32 impls through the interface layer
 #define IMGUI_DISABLE_WIN32_FUNCTIONS

@@ -58,17 +58,16 @@ public:
 	};
 
 	// TODO: remove once hwr2 twodee is finished
-	struct IndexedVideoFrame
+	struct StagingVideoFrame
 	{
-		using instance_t = std::unique_ptr<IndexedVideoFrame>;
+		using instance_t = std::unique_ptr<StagingVideoFrame>;
 
-		std::array<RGBA_t, 256> palette;
 		std::vector<uint8_t> screen;
 		uint32_t width, height;
 		int pts;
 
-		IndexedVideoFrame(uint32_t width_, uint32_t height_, int pts_) :
-			screen(width_ * height_), width(width_), height(height_), pts(pts_)
+		StagingVideoFrame(uint32_t width_, uint32_t height_, int pts_) :
+			screen(width_ * height_ * 3), width(width_), height(height_), pts(pts_)
 		{
 		}
 	};
@@ -87,9 +86,9 @@ public:
 
 	// May return nullptr in case called between units of
 	// Config::frame_rate
-	IndexedVideoFrame::instance_t new_indexed_video_frame(uint32_t width, uint32_t height);
+	StagingVideoFrame::instance_t new_staging_video_frame(uint32_t width, uint32_t height);
 
-	void push_indexed_video_frame(IndexedVideoFrame::instance_t frame);
+	void push_staging_video_frame(StagingVideoFrame::instance_t frame);
 
 	// Proper name of the container format.
 	const char* format_name() const;

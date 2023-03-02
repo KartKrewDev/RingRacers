@@ -1,3 +1,12 @@
+// SONIC ROBO BLAST 2
+//-----------------------------------------------------------------------------
+// Copyright (C) 2023 by Ronald "Eidolon" Kinard
+//
+// This program is free software distributed under the
+// terms of the GNU General Public License, version 2.
+// See the 'LICENSE' file for more details.
+//-----------------------------------------------------------------------------
+
 #include "rhi_gl3_core_platform.hpp"
 
 #include <SDL.h>
@@ -32,6 +41,10 @@ std::tuple<std::string, std::string> SdlGlCorePlatform::find_shader_sources(rhi:
 	case rhi::PipelineProgram::kUnshadedPaletted:
 		vertex_lump_name = "rhi_glcore_vertex_unshadedpaletted";
 		fragment_lump_name = "rhi_glcore_fragment_unshadedpaletted";
+		break;
+	case rhi::PipelineProgram::kPostprocessWipe:
+		vertex_lump_name = "rhi_glcore_vertex_postprocesswipe";
+		fragment_lump_name = "rhi_glcore_fragment_postprocesswipe";
 		break;
 	default:
 		std::terminate();

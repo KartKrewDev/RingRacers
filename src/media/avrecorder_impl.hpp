@@ -53,7 +53,7 @@ public:
 		template <typename _>
 		struct Traits<VideoEncoder, _>
 		{
-			using frame_type = IndexedVideoFrame::instance_t;
+			using frame_type = StagingVideoFrame::instance_t;
 		};
 
 		std::vector<typename Traits<T>::frame_type> vec_;
@@ -151,8 +151,7 @@ private:
 
 	void container_dtor_handler(const MediaContainer& container) const;
 
-	// TODO: remove once hwr2 twodee is finished
-	VideoFrame::instance_t convert_indexed_video_frame(const IndexedVideoFrame& indexed);
+	VideoFrame::instance_t convert_staging_video_frame(const StagingVideoFrame& indexed);
 };
 
 template <>
