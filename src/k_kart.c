@@ -3295,16 +3295,31 @@ fixed_t K_GetKartSpeed(player_t *player, boolean doboostpower, boolean dorubberb
 fixed_t K_GetKartAccel(player_t *player)
 {
 	fixed_t k_accel = 121;
+	UINT8 stat = (9 - player->kartspeed);
 
-	k_accel += 17 * (9 - player->kartspeed); // 121 - 257
+	if (K_PodiumSequence() == true)
+	{
+		stat = 4;
+	}
+
+	k_accel += 17 * stat; // 121 - 257
+
+	if (K_PodiumSequence() == true)
+	{
+		return FixedMul(k_accel, FRACUNIT / 4);
+	}
 
 	// karma bomb gets 2x acceleration
 	if ((gametyperules & GTR_BUMPERS) && player->bumpers <= 0)
+	{
 		k_accel *= 2;
+	}
 
 	// Marble Garden Top gets 1200% accel
 	if (player->curshield == KSHIELD_TOP)
+	{
 		k_accel *= 12;
+	}
 
 	return FixedMul(k_accel, (FRACUNIT + player->accelboost) / 4);
 }
