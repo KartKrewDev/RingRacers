@@ -928,7 +928,22 @@ void R_ApplyViewMorph(int s)
 
 angle_t R_ViewRollAngle(const player_t *player)
 {
-	angle_t roll = player->viewrollangle;
+	angle_t roll = 0;
+
+	if (gamestate != GS_LEVEL)
+	{
+		// FIXME: The way this is implemented is totally
+		// incompatible with cameras that aren't directly
+		// tied to the player. (podium, titlemap,
+		// MT_ALTVIEWMAN in general)
+
+		// All of these player variables should affect their
+		// camera_t in P_MoveChaseCamera, and then this
+		// just returns that variable instead.
+		return 0;
+	}
+
+	roll = player->viewrollangle;
 
 	if (cv_tilting.value)
 	{

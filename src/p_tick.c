@@ -795,10 +795,12 @@ void P_Ticker(boolean run)
 		}
 	}
 
-	K_UpdateDirector();
-
-	// Always move the camera.
-	P_RunChaseCameras();
+	if (gamestate == GS_LEVEL)
+	{
+		// Move the camera during levels.
+		K_UpdateDirector();
+		P_RunChaseCameras();
+	}
 
 	LUA_HOOK(PostThinkFrame);
 
