@@ -8911,6 +8911,11 @@ INT16 K_GetKartTurnValue(player_t *player, INT16 turnvalue)
 		turnfixed = FixedMul(turnfixed, 5*FRACUNIT/4); // Base increase to turning
 	}
 
+	if (K_PodiumSequence() == true)
+	{
+		turnfixed *= 2;
+	}
+
 	if (player->drift != 0 && P_IsObjectOnGround(player->mo))
 	{
 		fixed_t countersteer = FixedDiv(turnfixed, KART_FULLTURN*FRACUNIT);
@@ -10014,8 +10019,11 @@ fixed_t K_PlayerBaseFriction(fixed_t original)
 
 	if (K_PodiumSequence() == true)
 	{
-		frict -= 4096;
+		frict -= FRACUNIT >> 3;
 	}
+
+	if (frict > FRACUNIT) { frict = FRACUNIT; }
+	if (frict < 0) { frict = 0; }
 
 	return frict;
 }
