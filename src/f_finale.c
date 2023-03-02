@@ -44,6 +44,7 @@
 
 // SRB2Kart
 #include "k_menu.h"
+#include "k_grandprix.h"
 
 // Stage of animation:
 // 0 = text, 1 = art screen
@@ -3144,11 +3145,18 @@ boolean F_StartCeremony(void)
 	INT32 podiumMapNum = nummapheaders;
 	INT32 i;
 
+	if (grandprixinfo.gp == false)
+	{
+		return false;
+	}
+
 	if (podiummap
 		&& ((podiumMapNum = G_MapNumber(podiummap)) < nummapheaders)
 		&& mapheaderinfo[podiumMapNum]
 		&& mapheaderinfo[podiumMapNum]->lumpnum != LUMPERROR)
 	{
+		P_SetTarget(&titlemapcam.mobj, NULL);
+
 		gamemap = podiumMapNum+1;
 
 		maptol = mapheaderinfo[gamemap-1]->typeoflevel;

@@ -1624,12 +1624,6 @@ void K_UpdateBotGameplayVars(player_t *player)
 		return;
 	}
 
-	if (K_PodiumSequence() == true)
-	{
-		// We don't want these during podium.
-		return;
-	}
-
 	botController = K_FindBotController(player->mo);
 
 	player->botvars.controller = botController ? (botController - lines) : UINT16_MAX;

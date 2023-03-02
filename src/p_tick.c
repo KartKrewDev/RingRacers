@@ -78,7 +78,7 @@ void Command_Numthinkers_f(void)
 	thinklistnum_t end = NUM_THINKERLISTS - 1;
 	thinklistnum_t i;
 
-	if (gamestate != GS_LEVEL)
+	if (G_GamestateUsesLevel() == false)
 	{
 		CONS_Printf(M_GetText("You must be in a level to use this.\n"));
 		return;
@@ -149,7 +149,7 @@ void Command_CountMobjs_f(void)
 	mobjtype_t i;
 	INT32 count;
 
-	if (gamestate != GS_LEVEL)
+	if (G_GamestateUsesLevel() == false)
 	{
 		CONS_Printf(M_GetText("You must be in a level to use this.\n"));
 		return;

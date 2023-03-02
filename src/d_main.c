@@ -346,7 +346,7 @@ static void D_Display(void)
 				F_RunWipe(wipedefindex, wipetypepre, gamestate != GS_MENU, "FADEMAP0", false, false);
 			}
 
-			if (gamestate != GS_LEVEL && rendermode != render_none)
+			if (G_GamestateUsesLevel() == false && rendermode != render_none)
 			{
 				V_SetPaletteLump("PLAYPAL"); // Reset the palette
 				R_ReInitColormaps(0, NULL, 0);
@@ -381,7 +381,6 @@ static void D_Display(void)
 			}
 			/* FALLTHRU */
 		case GS_LEVEL:
-		case GS_CEREMONY:
 			if (!gametic)
 				break;
 			HU_Erase();
@@ -396,6 +395,13 @@ static void D_Display(void)
 
 		case GS_VOTING:
 			Y_VoteDrawer();
+			HU_Erase();
+			HU_Drawer();
+			break;
+
+		case GS_CEREMONY:
+			if (!gametic)
+				break;
 			HU_Erase();
 			HU_Drawer();
 			break;
@@ -464,7 +470,7 @@ static void D_Display(void)
 
 		// clean up border stuff
 		// see if the border needs to be initially drawn
-		if (G_GamestateUsesLevel() == true || (gamestate == GS_TITLESCREEN && titlemapinaction && curbghide && (!hidetitlemap)))
+		if (G_GamestateUsesLevel() == true)
 		{
 			if (!automapactive && !dedicated && cv_renderview.value)
 			{
@@ -756,17 +762,6 @@ void D_SRB2Loop(void)
 	LMFAO this was showing garbage under OpenGL
 	because I_FinishUpdate was called afterward
 	*/
-
-#if 0
-	/* Smells like a hack... Don't fade Sonic's ass into the title screen. */
-	if (gamestate != GS_TITLESCREEN)
-	{
-		static lumpnum_t gstartuplumpnum = W_CheckNumForName("STARTUP");
-		if (gstartuplumpnum == LUMPERROR)
-			gstartuplumpnum = W_GetNumForName("MISSING");
-		V_DrawScaledPatch(0, 0, 0, W_CachePatchNum(gstartuplumpnum, PU_PATCH));
-	}
-#endif
 
 	for (;;)
 	{

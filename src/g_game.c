@@ -1454,7 +1454,7 @@ void G_DoLoadLevelEx(boolean resetplayer, gamestate_t newstate)
 
 	levelstarttic = gametic; // for time calculation
 
-	if (wipegamestate == GS_LEVEL)
+	if (wipegamestate == newstate)
 		wipegamestate = -1; // force a wipe
 
 	if (cv_currprofile.value == -1 && !demo.playback)
@@ -1715,6 +1715,16 @@ boolean G_Responder(event_t *ev)
 			return true;
 		}
 	}
+	else if (gamestate == GS_CEREMONY)
+	{
+		if (HU_Responder(ev))
+		{
+			hu_keystrokes = true;
+			return true; // chat ate the event
+		}
+
+		// todo
+	}
 	else if (gamestate == GS_CONTINUING)
 	{
 		return true;
@@ -1725,11 +1735,13 @@ boolean G_Responder(event_t *ev)
 		return true;
 	}
 	else if (gamestate == GS_INTERMISSION || gamestate == GS_VOTING || gamestate == GS_EVALUATION)
+	{
 		if (HU_Responder(ev))
 		{
 			hu_keystrokes = true;
 			return true; // chat ate the event
 		}
+	}
 
 	if (gamestate == GS_LEVEL && ev->type == ev_keydown && multiplayer && demo.playback && !demo.freecam)
 	{
@@ -5057,6 +5069,16 @@ void G_InitNew(UINT8 pencoremode, INT32 map, boolean resetplayer, boolean skippr
 		I_Error("Internal game map '%s' not found\n", mapname);
 		Command_ExitGame_f();
 		return;
+	}
+
+	if (map == G_MapNumber(podiummap)+1)
+	{
+		// Didn't want to do this, but it needs to be here
+		// for it to work on startup.
+		if (F_StartCeremony() == true)
+		{
+			return;
+		}
 	}
 
 	gamemap = map;
