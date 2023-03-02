@@ -11740,7 +11740,9 @@ void P_SpawnPlayer(INT32 playernum)
 	}
 	else if (p->bot)
 	{
-		if (grandprixinfo.gp == true && grandprixinfo.eventmode != GPEVENT_NONE)
+		if (K_PodiumSequence() == false
+			&& grandprixinfo.gp == true
+			&& grandprixinfo.eventmode != GPEVENT_NONE)
 		{
 			// Bots aren't supposed to be here.
 			p->spectator = true;

@@ -2109,7 +2109,7 @@ void G_Ticker(boolean run)
 		marathontime++;
 
 	P_MapStart();
-	// do player reborns if needed
+
 	if (gamestate == GS_LEVEL)
 	{
 		// Or, alternatively, retry.
@@ -2127,11 +2127,18 @@ void G_Ticker(boolean run)
 
 			D_MapChange(gamemap, gametype, (cv_kartencore.value == 1), false, 1, false, false);
 		}
+	}
 
+	// do player reborns if needed
+	if (G_GamestateUsesLevel() == true)
+	{
 		for (i = 0; i < MAXPLAYERS; i++)
+		{
 			if (playeringame[i] && players[i].playerstate == PST_REBORN)
 				G_DoReborn(i);
+		}
 	}
+
 	P_MapEnd();
 
 	// do things to change the game state
