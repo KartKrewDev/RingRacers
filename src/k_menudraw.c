@@ -2388,7 +2388,7 @@ void M_DrawTimeAttack(void)
 		if (timeattackmenu.ticker > (timeattackmenu.spbflicker + TICRATE/6) || timeattackmenu.ticker % 2)
 		{
 			if (cv_dummyspbattack.value)
-				V_DrawMappedPatch(buttonx + 7, buttony - 1, 0, W_CachePatchName("K_STKARM", PU_CACHE), R_GetTranslationColormap(TC_DEFAULT, SKINCOLOR_RED, GTC_MENUCACHE));
+				V_DrawMappedPatch(buttonx + 7, buttony - 1, 0, W_CachePatchName("K_SPBATK", PU_CACHE), R_GetTranslationColormap(TC_DEFAULT, SKINCOLOR_RED, GTC_MENUCACHE));
 		}
 
 	}
