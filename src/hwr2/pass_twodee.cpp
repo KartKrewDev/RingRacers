@@ -287,12 +287,20 @@ static PipelineDesc make_pipeline_desc(TwodeePipelineKey key)
 	BlendDesc blend_desc;
 	switch (key.blend)
 	{
-	case Draw2dBlend::kModulate:
+	case Draw2dBlend::kAlphaTransparent:
 		blend_desc.source_factor_color = BlendFactor::kSourceAlpha;
 		blend_desc.dest_factor_color = BlendFactor::kOneMinusSourceAlpha;
 		blend_desc.color_function = BlendFunction::kAdd;
 		blend_desc.source_factor_alpha = BlendFactor::kOne;
 		blend_desc.dest_factor_alpha = BlendFactor::kOneMinusSourceAlpha;
+		blend_desc.alpha_function = BlendFunction::kAdd;
+		break;
+	case Draw2dBlend::kModulate:
+		blend_desc.source_factor_color = BlendFactor::kDest;
+		blend_desc.dest_factor_color = BlendFactor::kZero;
+		blend_desc.color_function = BlendFunction::kAdd;
+		blend_desc.source_factor_alpha = BlendFactor::kDestAlpha;
+		blend_desc.dest_factor_alpha = BlendFactor::kZero;
 		blend_desc.alpha_function = BlendFunction::kAdd;
 		break;
 	case Draw2dBlend::kAdditive:
@@ -454,21 +462,25 @@ void TwodeePass::prepass(Rhi& rhi)
 
 	if (data_->pipelines.size() == 0)
 	{
+		TwodeePipelineKey alpha_transparent_tris = {Draw2dBlend::kAlphaTransparent, false};
 		TwodeePipelineKey modulate_tris = {Draw2dBlend::kModulate, false};
 		TwodeePipelineKey additive_tris = {Draw2dBlend::kAdditive, false};
 		TwodeePipelineKey subtractive_tris = {Draw2dBlend::kSubtractive, false};
 		TwodeePipelineKey revsubtractive_tris = {Draw2dBlend::kReverseSubtractive, false};
 		TwodeePipelineKey invertdest_tris = {Draw2dBlend::kInvertDest, false};
+		TwodeePipelineKey alpha_transparent_lines = {Draw2dBlend::kAlphaTransparent, true};
 		TwodeePipelineKey modulate_lines = {Draw2dBlend::kModulate, true};
 		TwodeePipelineKey additive_lines = {Draw2dBlend::kAdditive, true};
 		TwodeePipelineKey subtractive_lines = {Draw2dBlend::kSubtractive, true};
 		TwodeePipelineKey revsubtractive_lines = {Draw2dBlend::kReverseSubtractive, true};
 		TwodeePipelineKey invertdest_lines = {Draw2dBlend::kInvertDest, true};
+		data_->pipelines.insert({alpha_transparent_tris, rhi.create_pipeline(make_pipeline_desc(alpha_transparent_tris))});
 		data_->pipelines.insert({modulate_tris, rhi.create_pipeline(make_pipeline_desc(modulate_tris))});
 		data_->pipelines.insert({additive_tris, rhi.create_pipeline(make_pipeline_desc(additive_tris))});
 		data_->pipelines.insert({subtractive_tris, rhi.create_pipeline(make_pipeline_desc(subtractive_tris))});
 		data_->pipelines.insert({revsubtractive_tris, rhi.create_pipeline(make_pipeline_desc(revsubtractive_tris))});
 		data_->pipelines.insert({invertdest_tris, rhi.create_pipeline(make_pipeline_desc(invertdest_tris))});
+		data_->pipelines.insert({alpha_transparent_lines, rhi.create_pipeline(make_pipeline_desc(alpha_transparent_lines))});
 		data_->pipelines.insert({modulate_lines, rhi.create_pipeline(make_pipeline_desc(modulate_lines))});
 		data_->pipelines.insert({additive_lines, rhi.create_pipeline(make_pipeline_desc(additive_lines))});
 		data_->pipelines.insert({subtractive_lines, rhi.create_pipeline(make_pipeline_desc(subtractive_lines))});

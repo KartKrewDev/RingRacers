@@ -914,7 +914,7 @@ void V_DrawStretchyFixedPatch(fixed_t x, fixed_t y, fixed_t pscale, fixed_t vsca
 	{
 		falpha = (10 - alphalevel) / 10.f;
 	}
-	hwr2::Draw2dBlend blend = hwr2::Draw2dBlend::kModulate;
+	hwr2::Draw2dBlend blend = hwr2::Draw2dBlend::kAlphaTransparent;
 	switch (blendmode)
 	{
 	case AST_MODULATE:
@@ -934,7 +934,7 @@ void V_DrawStretchyFixedPatch(fixed_t x, fixed_t y, fixed_t pscale, fixed_t vsca
 		blend = hwr2::Draw2dBlend::kSubtractive;
 		break;
 	default:
-		blend = hwr2::Draw2dBlend::kModulate;
+		blend = hwr2::Draw2dBlend::kAlphaTransparent;
 		break;
 	}
 
@@ -1187,7 +1187,7 @@ void V_DrawFillConsoleMap(INT32 x, INT32 y, INT32 w, INT32 h, INT32 c)
 	float a = 0.5f; // alphalevel is unused in GL??
 	g_2d.begin_quad()
 		.rect(x, y, w, h)
-		.blend(hwr2::Draw2dBlend::kModulate)
+		.blend(hwr2::Draw2dBlend::kAlphaTransparent)
 		.color(r, g, b, a)
 		.done();
 }
@@ -1356,7 +1356,7 @@ void V_DrawFadeFill(INT32 x, INT32 y, INT32 w, INT32 h, INT32 c, UINT16 color, U
 		g = bc.green / 255.f;
 		b = bc.blue / 255.f;
 		a = softwaretranstohwr[std::clamp(static_cast<int>(strength), 0, 10)] / 255.f;
-		blendmode = hwr2::Draw2dBlend::kModulate;
+		blendmode = hwr2::Draw2dBlend::kAlphaTransparent;
 	}
 
 	g_2d.begin_quad()
@@ -1553,7 +1553,7 @@ void V_DrawFadeScreen(UINT16 color, UINT8 strength)
 		g = bc.green / 255.f;
 		b = bc.blue / 255.f;
 		a = softwaretranstohwr[std::clamp(static_cast<int>(strength), 0, 10)] / 255.f;
-		blendmode = hwr2::Draw2dBlend::kModulate;
+		blendmode = hwr2::Draw2dBlend::kAlphaTransparent;
 	}
 
 	g_2d.begin_quad()
@@ -1629,7 +1629,7 @@ void V_DrawFadeConsBack(INT32 plines)
 	float a = 0.5f;
 	g_2d.begin_quad()
 		.rect(0, 0, vid.width, plines)
-		.blend(hwr2::Draw2dBlend::kModulate)
+		.blend(hwr2::Draw2dBlend::kAlphaTransparent)
 		.color(r, g, b, a)
 		.done();
 }

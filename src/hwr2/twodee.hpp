@@ -40,6 +40,7 @@ struct TwodeeVertex
 
 enum class Draw2dBlend
 {
+	kAlphaTransparent,
 	kModulate,
 	kAdditive,
 	kSubtractive,
@@ -80,7 +81,7 @@ struct Draw2dVertices
 	std::size_t begin_index = 0;
 	std::size_t begin_element = 0;
 	std::size_t elements = 0;
-	Draw2dBlend blend = Draw2dBlend::kModulate;
+	Draw2dBlend blend = Draw2dBlend::kAlphaTransparent;
 	lumpnum_t flat_lump = UINT32_MAX; // LUMPERROR but not loading w_wad.h from this header
 	bool lines = false;
 };
