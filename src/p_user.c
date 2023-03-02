@@ -2131,7 +2131,7 @@ static INT16 P_FindClosestTurningForAngle(player_t *player, INT32 targetAngle, I
 	// Slightly frumpy binary search for the ideal turning input.
 	// We do this instead of reversing K_GetKartTurnValue so that future handling changes are automatically accounted for.
 	
-	while (attempts < 20) // Practical calls of this function search maximum 10 times, this is solely for safety.
+	while (attempts++ < 20) // Practical calls of this function search maximum 10 times, this is solely for safety.
 	{
 		// These need to be treated as signed, or situations where boundaries straddle 0 are a mess.
 		INT32 lowAngle = K_GetKartTurnValue(player, lowBound) << TICCMD_REDUCE;
@@ -2174,14 +2174,11 @@ static INT16 P_FindClosestTurningForAngle(player_t *player, INT32 targetAngle, I
 		if (newError <= lowError && newError <= highError)
 			preferred = newBound;
 
-		// ...adjust the bounds...
+		// ....and adjust the bounds for another run.
 		if (lowAngle <= targetAngle && targetAngle <= newAngle)
 			highBound = newBound;
 		else
 			lowBound = newBound;
-
-		// ...and go next
-		attempts++;
 	}
 
 	return preferred;
