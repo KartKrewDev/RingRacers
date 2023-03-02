@@ -3105,6 +3105,21 @@ boolean P_ProcessSpecial(activator_t *activator, INT16 special, INT32 *args, cha
 						&newViewMobj->tracer,
 						P_GetFirstTubeWaypoint(args[3] - 1)
 					);
+					newViewMobj->movecount = 0; // time
+					newViewMobj->movedir = newViewMobj->angle; // start angle
+					newViewMobj->lastlook = newViewMobj->pitch; // start pitch
+					newViewMobj->extravalue1 = newViewMobj->x; // start x
+					newViewMobj->extravalue2 = newViewMobj->y; // start y
+					newViewMobj->cusval = newViewMobj->z; // start z
+
+					if (args[4] > 0)
+					{
+						newViewMobj->movefactor = FRACUNIT / args[4];
+					}
+					else
+					{
+						newViewMobj->movefactor = FRACUNIT / TICRATE; // default speed
+					}
 				}
 				else
 				{

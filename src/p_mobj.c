@@ -9493,24 +9493,23 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 		{
 			mobj->momx = mobj->momy = mobj->momz = 0;
 
+			if (mobj->movefactor <= 0)
+			{
+				mobj->movefactor = FRACUNIT / TICRATE; // default speed
+			}
+
 			if (mobj->tracer != NULL && P_MobjWasRemoved(mobj->tracer) == false)
 			{
-				fixed_t dist = P_AproxDistance(
-					P_AproxDistance(
-						mobj->tracer->x - mobj->x,
-						mobj->tracer->y - mobj->y
-					),
-					mobj->tracer->z - mobj->z
-				);
+				mobj->movecount += mobj->movefactor;
 
-				mobj->angle = Easing_OutSine(FRACUNIT/8, mobj->angle, mobj->tracer->angle);
-				mobj->pitch = Easing_OutSine(FRACUNIT/8, mobj->pitch, mobj->tracer->pitch);
-
-				if (dist > mobj->radius)
+				if (mobj->movecount < FRACUNIT)
 				{
-					fixed_t newX = Easing_OutSine(FRACUNIT/8, mobj->x, mobj->tracer->x);
-					fixed_t newY = Easing_OutSine(FRACUNIT/8, mobj->y, mobj->tracer->y);
-					fixed_t newZ = Easing_OutSine(FRACUNIT/8, mobj->z, mobj->tracer->z);
+					fixed_t newX = Easing_Linear(mobj->movecount, mobj->extravalue1, mobj->tracer->x);
+					fixed_t newY = Easing_Linear(mobj->movecount, mobj->extravalue2, mobj->tracer->y);
+					fixed_t newZ = Easing_Linear(mobj->movecount, mobj->cusval, mobj->tracer->z);
+
+					mobj->angle = Easing_Linear(mobj->movecount, mobj->movedir, mobj->tracer->angle);
+					mobj->pitch = Easing_Linear(mobj->movecount, mobj->lastlook, mobj->tracer->pitch);
 
 					mobj->momx = newX - mobj->x;
 					mobj->momy = newY - mobj->y;
@@ -9519,6 +9518,12 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 				else
 				{
 					P_SetTarget(&mobj->tracer, P_GetNextTubeWaypoint(mobj->tracer, false));
+					mobj->movecount = 0; // time
+					mobj->movedir = mobj->angle; // start angle
+					mobj->lastlook = mobj->pitch; // start pitch
+					mobj->extravalue1 = mobj->x; // start x
+					mobj->extravalue2 = mobj->y; // start y
+					mobj->cusval = mobj->z; // start z
 				}
 			}
 
