@@ -630,6 +630,10 @@ void P_Ticker(boolean run)
 #undef PLAYERCONDITION
 
 		ps_playerthink_time = I_GetPreciseTime() - ps_playerthink_time;
+
+		// TODO would this be laggy with more conditions in play...
+		if (M_UpdateUnlockablesAndExtraEmblems(true))
+			G_SaveGameData();
 	}
 
 	// Keep track of how long they've been playing!

@@ -156,6 +156,7 @@ void R_InitSkins(void)
 		R_LoadSpriteInfoLumps(i, wadfiles[i]->numlumps);
 	}
 	ST_ReloadSkinFaceGraphics();
+	M_UpdateConditionSetsPending();
 }
 
 UINT8 *R_GetSkinAvailabilities(boolean demolock)

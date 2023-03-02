@@ -2336,9 +2336,10 @@ static void readcondition(UINT8 set, UINT32 id, char *word2)
 	INT32 i;
 	char *params[4]; // condition, requirement, extra info, extra info
 	char *spos;
+	char *pendingstring = NULL;
 
 	conditiontype_t ty;
-	INT32 re;
+	INT32 re = 0;
 	INT16 x1 = 0, x2 = 0;
 
 	INT32 offset = 0;
@@ -2362,8 +2363,8 @@ static void readcondition(UINT8 set, UINT32 id, char *word2)
 		return;
 	}
 
-	if				(fastcmp(params[0], "PLAYTIME")
-	|| (++offset && fastcmp(params[0], "MATCHESPLAYED")))
+	if		((offset=0) || fastcmp(params[0], "PLAYTIME")
+	||		  (++offset && fastcmp(params[0], "MATCHESPLAYED")))
 	{
 		PARAMCHECK(1);
 		ty = UC_PLAYTIME + offset;
@@ -2400,7 +2401,8 @@ static void readcondition(UINT8 set, UINT32 id, char *word2)
 		re = atoi(params[1]);
 	}
 	else if ((offset=0) || fastcmp(params[0], "MAPVISITED")
-	||        (++offset && fastcmp(params[0], "MAPBEATEN")))
+	||        (++offset && fastcmp(params[0], "MAPBEATEN"))
+	||        (++offset && fastcmp(params[0], "MAPENCORE")))
 	{
 		PARAMCHECK(1);
 		ty = UC_MAPVISITED + offset;
@@ -2480,13 +2482,94 @@ static void readcondition(UINT8 set, UINT32 id, char *word2)
 			return;
 		}
 	}
+	else if (fastcmp(params[0], "AND"))
+	{
+		//PARAMCHECK(1);
+		ty = UC_AND;
+	}
+	else if ((offset=0) || fastcmp(params[0], "PREFIX_GRANDPRIX")
+	||        (++offset && fastcmp(params[0], "PREFIX_BONUSROUND"))
+	||        (++offset && fastcmp(params[0], "PREFIX_TIMEATTACK"))
+	||        (++offset && fastcmp(params[0], "PREFIX_BREAKTHECAPSULES"))
+	||        (++offset && fastcmp(params[0], "PREFIX_SEALEDSTAR")))
+	{
+		//PARAMCHECK(1);
+		ty = UCRP_PREFIX_GRANDPRIX + offset;
+	}
+	else if (fastcmp(params[0], "ISMAP"))
+	{
+		PARAMCHECK(1);
+		ty = UCRP_ISMAP;
+		re = G_MapNumber(params[1]);
+
+		if (re >= nummapheaders)
+		{
+			deh_warning("Invalid level %s for condition ID %d", params[1], id+1);
+			return;
+		}
+	}
+	else if (fastcmp(params[0], "ISCHARACTER"))
+	{
+		PARAMCHECK(1);
+		ty = UCRP_ISCHARACTER;
+#if 0
+		{
+			re = R_SkinAvailable(params[1]);
+
+			if (re < 0)
+			{
+				deh_warning("Invalid character %s for condition ID %d", params[1], id+1);
+				return;
+			}
+		}
+#else
+		{
+			pendingstring = Z_StrDup(params[1]);
+			re = -1;
+		}
+#endif
+	}
+	else if ((offset=0) || fastcmp(params[0], "FINISHCOOL")
+	||        (++offset && fastcmp(params[0], "FINISHALLCAPSULES"))
+	||        (++offset && fastcmp(params[0], "NOCONTEST")))
+	{
+		//PARAMCHECK(1);
+		ty = UCRP_FINISHCOOL + offset;
+	}
+	else if ((offset=0) || fastcmp(params[0], "FINISHPLACE")
+	||        (++offset && fastcmp(params[0], "FINISHPLACEEXACT")))
+	{
+		PARAMCHECK(1);
+		ty = UCRP_FINISHPLACE + offset;
+		re = atoi(params[1]);
+
+		if (re < 1 || re > MAXPLAYERS)
+		{
+			deh_warning("Invalid place %s for condition ID %d", params[1], id+1);
+			return;
+		}
+	}
+	else if ((offset=0) || fastcmp(params[0], "FINISHTIME")
+	||        (++offset && fastcmp(params[0], "FINISHTIMEEXACT"))
+	||        (++offset && fastcmp(params[0], "FINISHTIMELEFT")))
+	{
+		PARAMCHECK(1);
+		ty = UCRP_FINISHTIME + offset;
+		re = atoi(params[1]);
+
+		if (re < 0)
+		{
+			deh_warning("Invalid time %s for condition ID %d", params[1], id+1);
+			return;
+		}
+	}
 	else
 	{
 		deh_warning("Invalid condition name %s for condition ID %d", params[0], id+1);
 		return;
 	}
 
-	M_AddRawCondition(set, (UINT8)id, ty, re, x1, x2);
+	M_AddRawCondition(set, (UINT8)id, ty, re, x1, x2, pendingstring);
 }
 
 void readconditionset(MYFILE *f, UINT8 setnum)

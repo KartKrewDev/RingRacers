@@ -25,6 +25,10 @@
 #include "r_draw.h" // R_GetColorByName
 #include "s_sound.h" // S_StartSound
 
+#include "k_kart.h" // K_IsPLayerLosing
+#include "k_grandprix.h" // grandprixinfo
+#include "k_battle.h" // battlecapsules
+#include "k_specialstage.h" // specialstageinfo
 #include "k_pwrlv.h"
 #include "k_profiles.h"
 
@@ -427,7 +431,7 @@ void M_UpdateChallengeGridExtraData(challengegridextradata_t *extradata)
 	}
 }
 
-void M_AddRawCondition(UINT8 set, UINT8 id, conditiontype_t c, INT32 r, INT16 x1, INT16 x2)
+void M_AddRawCondition(UINT8 set, UINT8 id, conditiontype_t c, INT32 r, INT16 x1, INT16 x2, char *pendingstring)
 {
 	condition_t *cond;
 	UINT32 num, wnum;
@@ -446,6 +450,7 @@ void M_AddRawCondition(UINT8 set, UINT8 id, conditiontype_t c, INT32 r, INT16 x1
 	cond[wnum].requirement = r;
 	cond[wnum].extrainfo1 = x1;
 	cond[wnum].extrainfo2 = x2;
+	cond[wnum].pendingstring = pendingstring;
 }
 
 void M_ClearConditionSet(UINT8 set)
@@ -490,8 +495,51 @@ void M_ClearSecrets(void)
 // Condition set checking
 // ----------------------
 
+void M_UpdateConditionSetsPending(void)
+{
+	UINT32 i, j;
+	conditionset_t *c;
+	condition_t *cn;
+
+	for (i = 0; i < MAXCONDITIONSETS; ++i)
+	{
+		c = &conditionSets[i];
+		if (!c->numconditions)
+			continue;
+
+		for (j = 0; j < c->numconditions; ++j)
+		{
+			cn = &c->condition[j];
+			if (cn->pendingstring == NULL)
+				continue;
+
+			switch (cn->type)
+			{
+				case UCRP_ISCHARACTER:
+				{
+					cn->requirement = R_SkinAvailable(cn->pendingstring);
+
+					if (cn->requirement < 0)
+					{
+						CONS_Alert(CONS_WARNING, "UCRP_ISCHARACTER: Invalid character %s for condition ID %d", cn->pendingstring, cn->id+1);
+						return;
+					}
+					break;
+				}
+				default:
+					break;
+			}
+
+			Z_Free(cn->pendingstring);
+			cn->pendingstring = NULL;
+		}
+
+		
+	}
+}
+
 // See also M_GetConditionString
-UINT8 M_CheckCondition(condition_t *cn)
+boolean M_CheckCondition(condition_t *cn, player_t *player)
 {
 	switch (cn->type)
 	{
@@ -544,16 +592,68 @@ UINT8 M_CheckCondition(condition_t *cn)
 			return gamedata->unlocked[cn->requirement-1];
 		case UC_CONDITIONSET: // requires condition set x to already be achieved
 			return M_Achieved(cn->requirement-1);
+
+		case UC_AND: // Just for string building
+			return true;
+
+		case UCRP_PREFIX_GRANDPRIX:
+			return (grandprixinfo.gp == true);
+		case UCRP_PREFIX_BONUSROUND:
+			return ((grandprixinfo.gp == true) && (grandprixinfo.eventmode == GPEVENT_BONUS));
+		case UCRP_PREFIX_TIMEATTACK:
+			return (modeattacking != ATTACKING_NONE);
+		case UCRP_PREFIX_BREAKTHECAPSULES:
+			return ((gametyperules & GTR_CAPSULES) && battlecapsules);
+		case UCRP_PREFIX_SEALEDSTAR:
+			return (specialstageinfo.valid == true);
+
+		case UCRP_ISMAP:
+			return (gamemap == cn->requirement+1);
+		case UCRP_ISCHARACTER:
+			return (player->skin == cn->requirement);
+
+		case UCRP_FINISHCOOL:
+			return (player->exiting
+				 && !(player->pflags & PF_NOCONTEST)
+				 && !K_IsPlayerLosing(player));
+		case UCRP_FINISHALLCAPSULES:
+			return (battlecapsules
+				&& !(player->pflags & PF_NOCONTEST)
+				&& numtargets >= maptargets);
+		case UCRP_NOCONTEST:
+			return (player->pflags & PF_NOCONTEST);
+		case UCRP_FINISHPLACE:
+			return (player->exiting
+				&& !(player->pflags & PF_NOCONTEST)
+				&& player->position <= cn->requirement);
+		case UCRP_FINISHPLACEEXACT:
+			return (player->exiting 
+				&& !(player->pflags & PF_NOCONTEST)
+				&& player->position == cn->requirement);
+		case UCRP_FINISHTIME:
+			return (player->exiting
+				&& !(player->pflags & PF_NOCONTEST)
+				&& player->realtime <= (unsigned)cn->requirement);
+		case UCRP_FINISHTIMEEXACT:
+			return (player->exiting
+				&& !(player->pflags & PF_NOCONTEST)
+				&& player->realtime == (unsigned)cn->requirement);
+		case UCRP_FINISHTIMELEFT:
+			return (timelimitintics
+				&& player->exiting
+				&& !(player->pflags & PF_NOCONTEST)
+				&& player->realtime < timelimitintics
+				&& (timelimitintics + extratimeintics + secretextratime - player->realtime) <= (unsigned)cn->requirement);
 	}
 	return false;
 }
 
-static UINT8 M_CheckConditionSet(conditionset_t *c)
+static boolean M_CheckConditionSet(conditionset_t *c, player_t *player)
 {
 	UINT32 i;
 	UINT32 lastID = 0;
 	condition_t *cn;
-	UINT8 achievedSoFar = true;
+	boolean achievedSoFar = true;
 
 	for (i = 0; i < c->numconditions; ++i)
 	{
@@ -569,7 +669,16 @@ static UINT8 M_CheckConditionSet(conditionset_t *c)
 			continue;
 
 		lastID = cn->id;
-		achievedSoFar = M_CheckCondition(cn);
+
+		if ((player != NULL) != (cn->type >= UCRP_REQUIRESPLAYING))
+		{
+			//CONS_Printf("skipping %s:%u:%u (%s)\n", sizeu1(c-conditionSets), cn->id, i, player ? "player exists" : "player does not exist");
+			achievedSoFar = false;
+			continue;
+		}
+
+		achievedSoFar = M_CheckCondition(cn, player);
+		//CONS_Printf("%s:%u:%u - %u is %s\n", sizeu1(c-conditionSets), cn->id, i, cn->type, achievedSoFar ? "true" : "false");
 	}
 
 	return achievedSoFar;
@@ -599,12 +708,25 @@ static char *M_BuildConditionTitle(UINT16 map)
 	return title;
 }
 
+static const char *M_GetNthType(UINT8 position)
+{
+	if (position == 1)
+		return "st";
+	if (position == 2)
+		return "nd";
+	if (position == 3)
+		return "rd";
+	return "th";
+}
+
 // See also M_CheckCondition
 static const char *M_GetConditionString(condition_t *cn)
 {
 	INT32 i;
 	char *title = NULL;
 	const char *work = NULL;
+
+	// If this function returns NULL, it stops building the condition and just does ???'s.
 
 #define BUILDCONDITIONTITLE(i) (M_BuildConditionTitle(i))
 
@@ -737,6 +859,60 @@ static const char *M_GetConditionString(condition_t *cn)
 				gamedata->unlocked[cn->requirement-1]
 				? unlockables[cn->requirement-1].name
 				: "???");
+
+		case UC_AND:
+			return "&";
+
+		case UCRP_PREFIX_GRANDPRIX:
+			return "GRAND PRIX:";
+		case UCRP_PREFIX_BONUSROUND:
+			return "BONUS ROUND:";
+		case UCRP_PREFIX_TIMEATTACK:
+			if (!M_SecretUnlocked(SECRET_TIMEATTACK, true))
+				return NULL;
+			return "TIME ATTACK:";
+		case UCRP_PREFIX_BREAKTHECAPSULES:
+			return "BREAK THE CAPSULES:";
+		case UCRP_PREFIX_SEALEDSTAR:
+			return "SEALED STAR:";
+
+		case UCRP_ISMAP:
+			if (cn->requirement >= nummapheaders || !mapheaderinfo[cn->requirement])
+				return va("INVALID MAP CONDITION \"%d:%d\"", cn->type, cn->requirement);
+
+			title = BUILDCONDITIONTITLE(cn->requirement);
+			work = va("On %s,", title);
+			Z_Free(title);
+			return work;
+		case UCRP_ISCHARACTER:
+			if (cn->requirement < 0 || !skins[cn->requirement].realname[0])
+				return va("INVALID CHAR CONDITION \"%d:%d\"", cn->type, cn->requirement);
+			return va("as %s", skins[cn->requirement].realname);
+
+		case UCRP_FINISHCOOL:
+			return "finish in good standing";
+		case UCRP_FINISHALLCAPSULES:
+			return "break every capsule";
+		case UCRP_NOCONTEST:
+			return "NO CONTEST";
+		case UCRP_FINISHPLACE:
+		case UCRP_FINISHPLACEEXACT:
+			return va("finish in %d%s%s", cn->requirement, M_GetNthType(cn->requirement),
+				((cn->type == UCRP_FINISHPLACE && cn->requirement > 1)
+					? " or better" : ""));
+		case UCRP_FINISHTIME:
+		case UCRP_FINISHTIMEEXACT:
+			return va("finish in %s%i:%02i.%02i",
+				(cn->type == UCRP_FINISHTIMEEXACT ? "exactly " : ""),
+				G_TicsToMinutes(cn->requirement, true),
+				G_TicsToSeconds(cn->requirement),
+				G_TicsToCentiseconds(cn->requirement));
+		case UCRP_FINISHTIMELEFT:
+			return va("finish with %i:%02i.%02i remaining",
+				G_TicsToMinutes(cn->requirement, true),
+				G_TicsToSeconds(cn->requirement),
+				G_TicsToCentiseconds(cn->requirement));
+
 		default:
 			break;
 	}
@@ -746,20 +922,16 @@ static const char *M_GetConditionString(condition_t *cn)
 #undef BUILDCONDITIONTITLE
 }
 
-//#define ACHIEVEDBRITE
-
 char *M_BuildConditionSetString(UINT8 unlockid)
 {
 	conditionset_t *c = NULL;
 	UINT32 lastID = 0;
 	condition_t *cn;
-#ifdef ACHIEVEDBRITE
-	boolean achieved = false;
-#endif
 	size_t len = 1024, worklen;
 	static char message[1024] = "";
 	const char *work = NULL;
 	size_t max = 0, start = 0, strlines = 0, i;
+	boolean stopasap = false;
 
 	message[0] = '\0';
 
@@ -781,43 +953,40 @@ char *M_BuildConditionSetString(UINT8 unlockid)
 
 		if (i > 0)
 		{
-			worklen = 3;
-			if (lastID == cn->id)
+			if (lastID != cn->id)
 			{
-				strncat(message, "\n& ", len);
-			}
-			else
-			{
+				worklen = 4;
 				strncat(message, "\nOR ", len);
-				worklen++;
 			}
+			else //if (cn->type >= UCRP_REQUIRESPLAYING)
+			{
+				worklen = 1;
+				strncat(message, " ", len);
+			}
+			/*else
+			{
+				worklen = 3;
+				strncat(message, "\n& ", len);
+			}*/
 			len -= worklen;
 		}
 		lastID = cn->id;
 
-#ifdef ACHIEVEDBRITE
-		achieved = M_CheckCondition(cn);
-
-		if (achieved)
-		{
-			strncat(message, "\0x82", len);
-			len--;
-		}
-#endif
-
 		work = M_GetConditionString(cn);
+		if (work == NULL)
+		{
+			stopasap = true;
+			work = "???";
+		}
 		worklen = strlen(work);
 
 		strncat(message, work, len);
 		len -= worklen;
 
-#ifdef ACHIEVEDBRITE
-		if (achieved)
+		if (stopasap)
 		{
-			strncat(message, "\0x80", len);
-			len--;
+			break;
 		}
-#endif
 	}
 
 	// Rudementary word wrapping.
@@ -854,10 +1023,11 @@ char *M_BuildConditionSetString(UINT8 unlockid)
 	return message;
 }
 
-static void M_CheckUnlockConditions(void)
+static boolean M_CheckUnlockConditions(player_t *player)
 {
 	INT32 i;
 	conditionset_t *c;
+	boolean ret;
 
 	for (i = 0; i < MAXCONDITIONSETS; ++i)
 	{
@@ -865,8 +1035,13 @@ static void M_CheckUnlockConditions(void)
 		if (!c->numconditions || gamedata->achieved[i])
 			continue;
 
-		gamedata->achieved[i] = (M_CheckConditionSet(c));
+		if ((gamedata->achieved[i] = (M_CheckConditionSet(c, player))) != true)
+			continue;
+
+		ret = true;
 	}
+
+	return ret;
 }
 
 boolean M_UpdateUnlockablesAndExtraEmblems(boolean loud)
@@ -882,7 +1057,26 @@ boolean M_UpdateUnlockablesAndExtraEmblems(boolean loud)
 		M_CompletionEmblems();
 	}
 
-	M_CheckUnlockConditions();
+	response = M_CheckUnlockConditions(NULL);
+
+	if (Playing() && (gamestate == GS_LEVEL))
+	{
+		for (i = 0; i <= splitscreen; i++)
+		{
+			if (!playeringame[g_localplayers[i]])
+				continue;
+			if (players[g_localplayers[i]].spectator)
+				continue;
+			response |= M_CheckUnlockConditions(&players[g_localplayers[i]]);
+		}
+	}
+
+	if (!response && loud)
+	{
+		return false;
+	}
+
+	response = 0;
 
 	// Go through unlockables
 	for (i = 0; i < MAXUNLOCKABLES; ++i)

@@ -33,15 +33,39 @@ typedef enum
 	UC_POWERLEVEL,		// SRB2Kart: POWERLEVEL [power level to reach] [gametype, "0" for race, "1" for battle]
 	UC_GAMECLEAR,		// GAMECLEAR <x times>
 	UC_OVERALLTIME,		// OVERALLTIME [time to beat, tics]
-	UC_MAPVISITED,		// MAPVISITED [map number]
-	UC_MAPBEATEN,		// MAPBEATEN [map number]
-	UC_MAPENCORE,		// MAPENCORE [map number]
-	UC_MAPTIME,			// MAPTIME [map number] [time to beat, tics]
+	UC_MAPVISITED,		// MAPVISITED [map]
+	UC_MAPBEATEN,		// MAPBEATEN [map]
+	UC_MAPENCORE,		// MAPENCORE [map]
+	UC_MAPTIME,			// MAPTIME [map] [time to beat, tics]
 	UC_TRIGGER,			// TRIGGER [trigger number]
 	UC_TOTALMEDALS,		// TOTALMEDALS [number of emblems]
 	UC_EMBLEM,			// EMBLEM [emblem number]
 	UC_UNLOCKABLE,		// UNLOCKABLE [unlockable number]
 	UC_CONDITIONSET,	// CONDITIONSET [condition set number]
+
+	UC_AND, // Just for string building
+
+	UCRP_REQUIRESPLAYING, // All conditions below this can only be checked if (Playing() && gamestate == GS_LEVEL).
+
+	UCRP_PREFIX_GRANDPRIX = UCRP_REQUIRESPLAYING, // GRAND PRIX:
+	UCRP_PREFIX_BONUSROUND, // BONUS ROUND:
+	UCRP_PREFIX_TIMEATTACK, // TIME ATTACK:
+	UCRP_PREFIX_BREAKTHECAPSULES, // BREAK THE CAPSULES:
+	UCRP_PREFIX_SEALEDSTAR, // SEALED STAR:
+
+	UCRP_ISMAP, // gamemap == [map]
+	UCRP_ISCHARACTER, // character == [skin]
+
+	UCRP_FINISHCOOL, // Finish in good standing
+	UCRP_FINISHALLCAPSULES, // Break all capsules
+	UCRP_NOCONTEST, // No Contest
+
+	UCRP_FINISHPLACE, // Finish at least [place]
+	UCRP_FINISHPLACEEXACT, // Finish at [place] exactly
+
+	UCRP_FINISHTIME, // Finish <= [time, tics]
+	UCRP_FINISHTIMEEXACT, // Finish == [time, tics]
+	UCRP_FINISHTIMELEFT, // Finish with at least [time, tics] to spare
 } conditiontype_t;
 
 // Condition Set information
@@ -55,6 +79,7 @@ struct condition_t
 	INT32 requirement;   /// <- The requirement for this variable.
 	INT16 extrainfo1;    /// <- Extra information for the condition when needed.
 	INT16 extrainfo2;    /// <- Extra information for the condition when needed.
+	char *pendingstring; /// oooohhh my god i hate loading order for SOC VS skins
 };
 struct conditionset_t
 {
@@ -217,14 +242,15 @@ char *M_BuildConditionSetString(UINT8 unlockid);
 #define DESCRIPTIONWIDTH 170
 
 // Condition set setup
-void M_AddRawCondition(UINT8 set, UINT8 id, conditiontype_t c, INT32 r, INT16 x1, INT16 x2);
+void M_AddRawCondition(UINT8 set, UINT8 id, conditiontype_t c, INT32 r, INT16 x1, INT16 x2, char *pendingstring);
+void M_UpdateConditionSetsPending(void);
 
 // Clearing secrets
 void M_ClearConditionSet(UINT8 set);
 void M_ClearSecrets(void);
 
 // Updating conditions and unlockables
-UINT8 M_CheckCondition(condition_t *cn);
+boolean M_CheckCondition(condition_t *cn, player_t *player);
 boolean M_UpdateUnlockablesAndExtraEmblems(boolean loud);
 UINT8 M_GetNextAchievedUnlock(void);
 UINT8 M_CheckLevelEmblems(void);
