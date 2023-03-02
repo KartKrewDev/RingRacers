@@ -22,6 +22,14 @@
 #include "hu_stuff.h" // fonts
 
 #ifdef __cplusplus
+
+#include "hwr2/twodee.hpp"
+
+namespace srb2
+{
+extern hwr2::Twodee g_2d;
+} // namespace srb2
+
 extern "C" {
 #endif
 

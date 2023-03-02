@@ -1,8 +1,22 @@
 target_sources(SRB2SDL2 PRIVATE
+	pass_blit_rect.cpp
+	pass_blit_rect.hpp
 	pass_imgui.cpp
 	pass_imgui.hpp
+	pass_manager.cpp
+	pass_manager.hpp
+	pass_postprocess.cpp
+	pass_postprocess.hpp
+	pass_resource_managers.cpp
+	pass_resource_managers.hpp
+	pass_screenshot.cpp
+	pass_screenshot.hpp
 	pass_software.cpp
 	pass_software.hpp
+	pass_twodee.cpp
+	pass_twodee.hpp
 	pass.cpp
 	pass.hpp
+	twodee.cpp
+	twodee.hpp
 )

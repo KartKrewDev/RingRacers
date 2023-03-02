@@ -1,3 +1,12 @@
+// SONIC ROBO BLAST 2
+//-----------------------------------------------------------------------------
+// Copyright (C) 2023 by Ronald "Eidolon" Kinard
+//
+// This program is free software distributed under the
+// terms of the GNU General Public License, version 2.
+// See the 'LICENSE' file for more details.
+//-----------------------------------------------------------------------------
+
 #include "pass_imgui.hpp"
 
 #include <imgui.h>
@@ -8,48 +17,32 @@ using namespace srb2;
 using namespace srb2::hwr2;
 using namespace srb2::rhi;
 
-static const PipelineDesc kPipelineDesc =
-{
+static const PipelineDesc kPipelineDesc = {
 	PipelineProgram::kUnshaded,
-	{
-		{
-			{sizeof(ImDrawVert)}
-		},
-		{
-			{VertexAttributeName::kPosition, 0, 0},
-			{VertexAttributeName::kTexCoord0, 0, 12},
-			{VertexAttributeName::kColor, 0, 24}
-		}
-	},
-	{{
-		{{UniformName::kProjection}},
-		{{UniformName::kModelView, UniformName::kTexCoord0Transform}}
-	}},
-	{{
-		SamplerName::kSampler0
-	}},
-	PipelineDepthAttachmentDesc {
-		PixelFormat::kDepth16,
-		CompareFunc::kAlways,
-		true
-	},
-	{
-		PixelFormat::kRGBA8,
-		BlendDesc {
-			BlendFactor::kSourceAlpha,
-			BlendFactor::kOneMinusSourceAlpha,
-			BlendFunction::kAdd,
-			BlendFactor::kOne,
-			BlendFactor::kOneMinusSourceAlpha,
-			BlendFunction::kAdd
-		},
-		{true, true, true, true}
-	},
+	{{{sizeof(ImDrawVert)}},
+	 {{VertexAttributeName::kPosition, 0, 0},
+	  {VertexAttributeName::kTexCoord0, 0, 12},
+	  {VertexAttributeName::kColor, 0, 24}}},
+	{{{{UniformName::kProjection}}, {{UniformName::kModelView, UniformName::kTexCoord0Transform}}}},
+	{{SamplerName::kSampler0}},
+	PipelineDepthAttachmentDesc {PixelFormat::kDepth16, CompareFunc::kAlways, true},
+	{PixelFormat::kRGBA8,
+	 BlendDesc {
+		 BlendFactor::kSourceAlpha,
+		 BlendFactor::kOneMinusSourceAlpha,
+		 BlendFunction::kAdd,
+		 BlendFactor::kOne,
+		 BlendFactor::kOneMinusSourceAlpha,
+		 BlendFunction::kAdd},
+	 {true, true, true, true}},
 	PrimitiveType::kTriangles,
 	CullMode::kNone,
 	FaceWinding::kCounterClockwise,
-	{0.f, 0.f, 0.f, 1.f}
-};
+	{0.f, 0.f, 0.f, 1.f}};
+
+ImguiPass::ImguiPass() : Pass()
+{
+}
 
 ImguiPass::~ImguiPass() = default;
 
@@ -86,18 +79,10 @@ void ImguiPass::prepass(Rhi& rhi)
 	for (auto list : draw_lists)
 	{
 		Handle<Buffer> vbo = rhi.create_buffer(
-			{
-				static_cast<uint32_t>(list->VtxBuffer.size_in_bytes()),
-				BufferType::kVertexBuffer,
-				BufferUsage::kImmutable
-			}
+			{static_cast<uint32_t>(list->VtxBuffer.size_in_bytes()), BufferType::kVertexBuffer, BufferUsage::kImmutable}
 		);
 		Handle<Buffer> ibo = rhi.create_buffer(
-			{
-				static_cast<uint32_t>(list->IdxBuffer.size_in_bytes()),
-				BufferType::kIndexBuffer,
-				BufferUsage::kImmutable
-			}
+			{static_cast<uint32_t>(list->IdxBuffer.size_in_bytes()), BufferType::kIndexBuffer, BufferUsage::kImmutable}
 		);
 
 		DrawList hwr2_list;
@@ -126,13 +111,11 @@ void ImguiPass::prepass(Rhi& rhi)
 			draw_cmd.v_offset = cmd.VtxOffset;
 			draw_cmd.i_offset = cmd.IdxOffset;
 			draw_cmd.elems = cmd.ElemCount;
-			draw_cmd.clip =
-			{
+			draw_cmd.clip = {
 				static_cast<int32_t>(clip_min.x),
 				static_cast<int32_t>((data->DisplaySize.y * data->FramebufferScale.y) - clip_max.y),
 				static_cast<uint32_t>(clip_max.x - clip_min.x),
-				static_cast<uint32_t>(clip_max.y - clip_min.y)
-			};
+				static_cast<uint32_t>(clip_max.y - clip_min.y)};
 			hwr2_list.cmds.push_back(std::move(draw_cmd));
 		}
 		draw_lists_.push_back(std::move(hwr2_list));
@@ -179,35 +162,20 @@ void ImguiPass::transfer(Rhi& rhi, Handle<TransferContext> ctx)
 		rhi.update_buffer_contents(ctx, ibo, 0, tcb::as_bytes(index_span));
 
 		// Uniform sets
-		std::array<UniformVariant, 1> g1_uniforms =
-		{{
+		std::array<UniformVariant, 1> g1_uniforms = {{
 			// Projection
-			std::array<std::array<float, 4>, 4>
-			{{
-				{2.f / vid.realwidth, 0.f, 0.f, 0.f},
-				{0.f, 2.f / vid.realheight, 0.f, 0.f},
-				{0.f, 0.f, 1.f, 0.f},
-				{-1.f, 1.f, 0.f, 1.f}
-			}},
+			std::array<std::array<float, 4>, 4> {
+				{{2.f / vid.realwidth, 0.f, 0.f, 0.f},
+				 {0.f, 2.f / vid.realheight, 0.f, 0.f},
+				 {0.f, 0.f, 1.f, 0.f},
+				 {-1.f, 1.f, 0.f, 1.f}}},
 		}};
-		std::array<UniformVariant, 2> g2_uniforms =
-		{{
-			// ModelView
-			std::array<std::array<float, 4>, 4>
-			{{
-				{1.f, 0.f, 0.f, 0.f},
-				{0.f, -1.f, 0.f, 0.f},
-				{0.f, 0.f, 1.f, 0.f},
-				{0.f, 0, 0.f, 1.f}
-			}},
-			// Texcoord0 Transform
-			std::array<std::array<float, 3>, 3>
-			{{
-				{1.f, 0.f, 0.f},
-				{0.f, 1.f, 0.f},
-				{0.f, 0.f, 1.f}
-			}}
-		}};
+		std::array<UniformVariant, 2> g2_uniforms = {
+			{// ModelView
+			 std::array<std::array<float, 4>, 4> {
+				 {{1.f, 0.f, 0.f, 0.f}, {0.f, -1.f, 0.f, 0.f}, {0.f, 0.f, 1.f, 0.f}, {0.f, 0, 0.f, 1.f}}},
+			 // Texcoord0 Transform
+			 std::array<std::array<float, 3>, 3> {{{1.f, 0.f, 0.f}, {0.f, 1.f, 0.f}, {0.f, 0.f, 1.f}}}}};
 		Handle<UniformSet> us_1 = rhi.create_uniform_set(ctx, {g1_uniforms});
 		Handle<UniformSet> us_2 = rhi.create_uniform_set(ctx, {g2_uniforms});
 

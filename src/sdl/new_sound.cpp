@@ -21,7 +21,10 @@
 #include "../audio/sound_effect_player.hpp"
 #include "../cxxutil.hpp"
 #include "../io/streams.hpp"
+
+#ifdef SRB2_CONFIG_ENABLE_WEBM_MOVIES
 #include "../m_avrecorder.hpp"
+#endif
 
 #include "../doomdef.h"
 #include "../i_sound.h"
@@ -58,7 +61,9 @@ static shared_ptr<Gain<2>> gain_music;
 
 static vector<shared_ptr<SoundEffectPlayer>> sound_effect_channels;
 
+#ifdef SRB2_CONFIG_ENABLE_WEBM_MOVIES
 static shared_ptr<srb2::media::AVRecorder> av_recorder;
+#endif
 
 static void (*music_fade_callback)();
 
@@ -138,9 +143,10 @@ void audio_callback(void* userdata, Uint8* buffer, int len)
 				std::clamp(float_buffer[i].amplitudes[1], -1.f, 1.f),
 			};
 		}
-
+#ifdef SRB2_CONFIG_ENABLE_WEBM_MOVIES
 		if (av_recorder)
 			av_recorder->push_audio_samples(tcb::span {float_buffer, float_len});
+#endif
 	}
 	catch (...)
 	{
@@ -758,8 +764,10 @@ boolean I_FadeInPlaySong(UINT32 ms, boolean looping)
 
 void I_UpdateAudioRecorder(void)
 {
+#ifdef SRB2_CONFIG_ENABLE_WEBM_MOVIES
 	// must be locked since av_recorder is used by audio_callback
 	SdlAudioLockHandle _;
 
 	av_recorder = g_av_recorder;
+#endif
 }

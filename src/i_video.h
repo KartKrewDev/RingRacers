@@ -130,9 +130,24 @@ extern boolean allow_fullscreen;
 */
 void I_UpdateNoBlit(void);
 
+/** \brief Begin a new Twodee frame.
+*/
+void I_NewTwodeeFrame(void);
+
+/** \brief Begin a new dear imgui frame.
+*/
+void I_NewImguiFrame(void);
+
 /**	\brief Update video system with updating frame
 */
 void I_FinishUpdate(void);
+
+void I_FinishUpdateWipeStartScreen(void);
+void I_FinishUpdateWipeEndScreen(void);
+
+/** \brief Update video system during a wipe
+*/
+void I_FinishUpdateWipe(void);
 
 /**	\brief I_FinishUpdate(), but vsync disabled
 */

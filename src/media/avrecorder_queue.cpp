@@ -125,7 +125,7 @@ Impl::QueueState Impl::encode_queues()
 	{
 		for (auto& p : copy)
 		{
-			auto frame = convert_indexed_video_frame(*p);
+			auto frame = convert_staging_video_frame(*p);
 
 			video_encoder_->encode(std::move(frame));
 		}

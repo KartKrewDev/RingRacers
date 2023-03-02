@@ -336,8 +336,13 @@ void Y_IntermissionDrawer(void)
 {
 	INT32 i, whiteplayer = MAXPLAYERS, x = 4, hilicol = highlightflags;
 
+	// If we early return, skip drawing the 3D scene (software buffer) so it doesn't clobber the frame for the wipe
+	g_wipeskiprender = true;
+
 	if (intertype == int_none || rendermode == render_none)
 		return;
+
+	g_wipeskiprender = false;
 
 	// the merge was kind of a mess, how does this work -- toast 171021
 	{
@@ -810,7 +815,7 @@ void Y_StartIntermission(void)
 	if (!timer)
 	{
 		// Prevent a weird bug
-		timer = 1; 
+		timer = 1;
 	}
 	else if (nump < 2 && !netgame)
 	{
@@ -945,6 +950,9 @@ void Y_VoteDrawer(void)
 	UINT8 selected[4];
 	fixed_t rubyheight = 0;
 
+	// If we early return, skip drawing the 3D scene (software buffer) so it doesn't clobber the frame for the wipe
+	g_wipeskiprender = true;
+
 	if (rendermode == render_none)
 		return;
 
@@ -953,6 +961,8 @@ void Y_VoteDrawer(void)
 
 	if (!voteclient.loaded)
 		return;
+
+	g_wipeskiprender = false;
 
 	{
 		static angle_t rubyfloattime = 0;

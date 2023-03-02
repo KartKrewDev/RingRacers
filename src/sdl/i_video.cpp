@@ -231,7 +231,11 @@ static void SDLSetMode(INT32 width, INT32 height, SDL_bool fullscreen, SDL_bool 
 	{
 		OglSdlSurface(vid.width, vid.height);
 	}
+	else
 #endif
+	{
+		SDL_GL_SetSwapInterval(cv_vidwait.value ? 1 : 0);
+	}
 
 	SDL_GetWindowSize(window, &width, &height);
 	vid.realwidth = static_cast<uint32_t>(width);
