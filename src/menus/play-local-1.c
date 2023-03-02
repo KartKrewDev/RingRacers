@@ -59,7 +59,7 @@ void M_SetupGametypeMenu(INT32 choice)
 		if (!anyunlocked)
 		{
 			// Only one non-Back entry, let's skip straight to Race.
-			M_SetupRaceMenu(0);
+			M_SetupRaceMenu(choice);
 			return;
 		}
 	}
