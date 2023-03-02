@@ -643,7 +643,7 @@ boolean M_CheckCondition(condition_t *cn, player_t *player)
 				&& player->exiting
 				&& !(player->pflags & PF_NOCONTEST)
 				&& player->realtime < timelimitintics
-				&& (timelimitintics + extratimeintics + secretextratime - player->realtime) <= (unsigned)cn->requirement);
+				&& (timelimitintics + extratimeintics + secretextratime - player->realtime) >= (unsigned)cn->requirement);
 	}
 	return false;
 }
