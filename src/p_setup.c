@@ -7083,7 +7083,11 @@ static void P_InitLevelSettings(void)
 	gamespeed = KARTSPEED_EASY;
 	franticitems = false;
 
-	if (grandprixinfo.gp == true)
+	if (K_PodiumSequence() == true)
+	{
+		; // NOP
+	}
+	else if (grandprixinfo.gp == true)
 	{
 		if (gametyperules & GTR_CIRCUIT)
 		{
