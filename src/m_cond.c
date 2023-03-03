@@ -1100,7 +1100,7 @@ boolean M_UpdateUnlockablesAndExtraEmblems(boolean loud)
 
 	response = M_CheckUnlockConditions(NULL);
 
-	if (Playing() && (gamestate == GS_LEVEL))
+	if (!demo.playback && Playing() && (gamestate == GS_LEVEL))
 	{
 		for (i = 0; i <= splitscreen; i++)
 		{
