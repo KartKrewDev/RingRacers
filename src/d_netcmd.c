@@ -492,7 +492,7 @@ consvar_t cv_rollingdemos = CVAR_INIT ("rollingdemos", "On", CV_SAVE, CV_OnOff, 
 
 static CV_PossibleValue_t pointlimit_cons_t[] = {{1, "MIN"}, {MAXSCORE, "MAX"}, {0, "None"}, {-1, "Default"}, {0, NULL}};
 consvar_t cv_pointlimit = CVAR_INIT ("pointlimit", "Default", CV_NETVAR|CV_CALL|CV_NOINIT, pointlimit_cons_t, PointLimit_OnChange);
-static CV_PossibleValue_t timelimit_cons_t[] = {{1, "MIN"}, {30, "MAX"}, {0, "None"}, {-1, "Default"}, {0, NULL}};
+static CV_PossibleValue_t timelimit_cons_t[] = {{1, "MIN"}, {30*60, "MAX"}, {0, "None"}, {-1, "Default"}, {0, NULL}};
 consvar_t cv_timelimit = CVAR_INIT ("timelimit", "Default", CV_NETVAR|CV_CALL|CV_NOINIT, timelimit_cons_t, TimeLimit_OnChange);
 
 static CV_PossibleValue_t numlaps_cons_t[] = {{1, "MIN"}, {MAX_LAPS, "MAX"}, {0, "Map default"}, {0, NULL}};
@@ -5029,7 +5029,7 @@ static void TimeLimit_OnChange(void)
 				break;
 
 			default:
-				CONS_Printf(M_GetText("Time limit has been set to %d minute%s.\n"), cv_timelimit.value,cv_timelimit.value == 1 ? "" : "s");
+				CONS_Printf(M_GetText("Time limit has been set to %d second%s.\n"), cv_timelimit.value,cv_timelimit.value == 1 ? "" : "s");
 		}
 
 		timelimitintics = K_TimeLimitForGametype();
@@ -5051,7 +5051,7 @@ static void TimeLimit_OnChange(void)
 				break;
 
 			default:
-				CONS_Printf(M_GetText("Time limit will be %d minute%s next round.\n"), cv_timelimit.value,cv_timelimit.value == 1 ? "" : "s");
+				CONS_Printf(M_GetText("Time limit will be %d second%s next round.\n"), cv_timelimit.value,cv_timelimit.value == 1 ? "" : "s");
 		}
 	}
 }
