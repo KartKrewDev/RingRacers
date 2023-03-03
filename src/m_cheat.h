@@ -35,6 +35,7 @@ typedef enum {
 	CHEAT_RELATIVE_TELEPORT,
 	CHEAT_DEVMODE,
 	CHEAT_GIVEITEM,
+	CHEAT_SCORE,
 
 	NUMBER_OF_CHEATS
 } cheat_t;
@@ -71,6 +72,7 @@ void Command_CheatGod_f(void);
 void Command_Savecheckpoint_f(void);
 void Command_Setrings_f(void);
 void Command_Setlives_f(void);
+void Command_Setscore_f(void);
 void Command_Devmode_f(void);
 void Command_Scale_f(void);
 void Command_Gravflip_f(void);

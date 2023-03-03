@@ -1083,6 +1083,7 @@ void D_RegisterClientCommands(void)
 	COM_AddCommand("god", Command_CheatGod_f);
 	COM_AddCommand("setrings", Command_Setrings_f);
 	COM_AddCommand("setlives", Command_Setlives_f);
+	COM_AddCommand("setscore", Command_Setscore_f);
 	COM_AddCommand("devmode", Command_Devmode_f);
 	COM_AddCommand("savecheckpoint", Command_Savecheckpoint_f);
 	COM_AddCommand("scale", Command_Scale_f);
@@ -2050,6 +2051,10 @@ void D_Cheat(INT32 playernum, INT32 cheat, ...)
 		case CHEAT_GIVEITEM:
 			COPY(WRITESINT8, int);
 			COPY(WRITEUINT8, unsigned int);
+			break;
+
+		case CHEAT_SCORE:
+			COPY(WRITEUINT32, UINT32);
 			break;
 	}
 
@@ -5736,6 +5741,15 @@ static void Got_Cheat(UINT8 **cp, INT32 playernum)
 
 				CV_CheaterWarning(playernum, va("give item %s x%d", itemname, amt));
 			}
+			break;
+		}
+
+		case CHEAT_SCORE: {
+			UINT32 score = READUINT32(*cp);
+
+			player->roundscore = score;
+
+			CV_CheaterWarning(targetPlayer, va("score = %u", score));
 			break;
 		}
 
