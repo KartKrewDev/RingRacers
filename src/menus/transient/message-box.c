@@ -27,7 +27,7 @@ static inline size_t M_StringHeight(const char *string)
 void M_StartMessage(const char *string, void *routine, menumessagetype_t itemtype)
 {
 	const UINT8 pid = 0;
-	size_t max = 0, start = 0, strlines = 0, i;
+	size_t max = 0, maxatstart = 0, start = 0, strlines, i;
 	static char *message = NULL;
 	Z_Free(message);
 	message = Z_StrDup(string);
@@ -41,12 +41,13 @@ void M_StartMessage(const char *string, void *routine, menumessagetype_t itemtyp
 		{
 			start = i;
 			max += 4;
+			maxatstart = max;
 		}
 		else if (message[i] == '\n')
 		{
-			strlines = i;
 			start = 0;
 			max = 0;
+			maxatstart = 0;
 			continue;
 		}
 		else if (message[i] & 0x80)
@@ -58,8 +59,7 @@ void M_StartMessage(const char *string, void *routine, menumessagetype_t itemtyp
 		if (max >= BASEVIDWIDTH && start > 0)
 		{
 			message[start] = '\n';
-			max -= (start-strlines)*8;
-			strlines = start;
+			max -= maxatstart;
 			start = 0;
 		}
 	}

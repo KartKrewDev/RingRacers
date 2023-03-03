@@ -971,7 +971,7 @@ char *M_BuildConditionSetString(UINT8 unlockid)
 	size_t len = 1024, worklen;
 	static char message[1024] = "";
 	const char *work = NULL;
-	size_t max = 0, start = 0, strlines = 0, i;
+	size_t max = 0, maxatstart = 0, start = 0, i;
 	boolean stopasap = false;
 
 	message[0] = '\0';
@@ -1038,12 +1038,13 @@ char *M_BuildConditionSetString(UINT8 unlockid)
 		{
 			start = i;
 			max += 4;
+			maxatstart = max;
 		}
 		else if (message[i] == '\n')
 		{
-			strlines = i;
 			start = 0;
 			max = 0;
+			maxatstart = 0;
 			continue;
 		}
 		else if (message[i] & 0x80)
@@ -1055,8 +1056,7 @@ char *M_BuildConditionSetString(UINT8 unlockid)
 		if (max >= DESCRIPTIONWIDTH && start > 0)
 		{
 			message[start] = '\n';
-			max -= (start-strlines)*8;
-			strlines = start;
+			max -= maxatstart;
 			start = 0;
 		}
 	}
