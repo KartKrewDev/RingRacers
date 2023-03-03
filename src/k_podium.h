@@ -55,6 +55,27 @@ boolean K_StartCeremony(void);
 
 
 /*--------------------------------------------------
+	void K_FinishCeremony(void);
+
+		Called at the end of the podium cutscene,
+		displays the ranking screen and starts
+		accepting input.
+--------------------------------------------------*/
+
+void K_FinishCeremony(void);
+
+
+/*--------------------------------------------------
+	void K_ResetCeremony(void);
+
+		Called on level load, to reset all of the
+		podium variables.
+--------------------------------------------------*/
+
+void K_ResetCeremony(void);
+
+
+/*--------------------------------------------------
 	void K_CeremonyTicker(boolean run);
 
 		Ticker function to be ran during the podium
@@ -70,6 +91,34 @@ boolean K_StartCeremony(void);
 --------------------------------------------------*/
 
 void K_CeremonyTicker(boolean run);
+
+
+/*--------------------------------------------------
+	void K_CeremonyResponder(event_t *ev);
+
+		Responder function to be ran during the podium
+		cutscene mode gamestate. Handles key presses
+		ending the podium scene.
+
+	Input Arguments:-
+		ev - The player input event.
+
+	Return:-
+		true to end the podium cutscene and return
+		to the title screen, otherwise false.
+--------------------------------------------------*/
+
+boolean K_CeremonyResponder(event_t *ev);
+
+
+/*--------------------------------------------------
+	void K_CeremonyDrawer(void);
+
+		Handles the ranking screen and other HUD for
+		the podium cutscene.
+--------------------------------------------------*/
+
+void K_CeremonyDrawer(void);
 
 
 #ifdef __cplusplus

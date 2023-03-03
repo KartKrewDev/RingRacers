@@ -50,6 +50,7 @@ extern "C" {
 #include "../m_cond.h"
 #include "../r_skins.h"
 #include "../k_battle.h"
+#include "../k_podium.h"
 }
 
 #include "call-funcs.hpp"
@@ -1393,3 +1394,17 @@ bool CallFunc_PodiumPosition(ACSVM::Thread *thread, const ACSVM::Word *argV, ACS
 	return false;
 }
 
+/*--------------------------------------------------
+	bool CallFunc_PodiumFinish(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
+
+		Ends the podium sequence. Doesn't do anything
+		outside of podium maps.
+--------------------------------------------------*/
+bool CallFunc_PodiumFinish(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
+{
+	(void)argV;
+	(void)argC;
+
+	K_FinishCeremony();
+	return false;
+}

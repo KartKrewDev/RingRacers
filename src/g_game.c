@@ -1471,6 +1471,8 @@ void G_DoLoadLevelEx(boolean resetplayer, gamestate_t newstate)
 	if (gamestate == GS_VOTING)
 		Y_EndVote();
 
+	K_ResetCeremony();
+
 	// cleanup
 	// Is this actually necessary? Doesn't F_StartTitleScreen already do a significantly more comprehensive check?
 	if (newstate == GS_TITLESCREEN)
@@ -1724,7 +1726,11 @@ boolean G_Responder(event_t *ev)
 			return true; // chat ate the event
 		}
 
-		// todo
+		if (K_CeremonyResponder(ev))
+		{
+			D_StartTitle();
+			return true;
+		}
 	}
 	else if (gamestate == GS_CONTINUING)
 	{

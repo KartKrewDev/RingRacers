@@ -76,6 +76,7 @@
 #include "m_random.h" // P_ClearRandom
 #include "k_specialstage.h"
 #include "acs/interface.h"
+#include "k_podium.h"
 
 #ifdef HWRENDER
 #include "hardware/hw_main.h" // 3D View Rendering
@@ -578,6 +579,11 @@ static void D_Display(void)
 				case GS_TITLESCREEN:
 				{
 					F_TitleScreenDrawer();
+					break;
+				}
+				case GS_CEREMONY:
+				{
+					K_CeremonyDrawer();
 					break;
 				}
 				default:
