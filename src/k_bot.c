@@ -1309,7 +1309,16 @@ static void K_BuildBotPodiumTiccmd(player_t *player, ticcmd_t *cmd)
 		return;
 	}
 
-	cmd->forwardmove = MAXPLMOVE;
+	if (K_GetWaypointIsSpawnpoint(player->currentwaypoint) == false)
+	{
+		// Hacky flag reuse: slow down before reaching your podium stand.
+		cmd->forwardmove = MAXPLMOVE * 3 / 4;
+	}
+	else
+	{
+		cmd->forwardmove = MAXPLMOVE;
+	}
+
 	cmd->buttons |= BT_ACCELERATE;
 
 	K_BotPodiumTurning(player, cmd);

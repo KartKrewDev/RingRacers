@@ -3304,7 +3304,8 @@ fixed_t K_GetKartAccel(player_t *player)
 
 	if (K_PodiumSequence() == true)
 	{
-		stat = 4;
+		// Normalize to Metal's accel
+		stat = 1;
 	}
 
 	k_accel += 17 * stat; // 121 - 257
@@ -8939,16 +8940,20 @@ INT16 K_GetKartTurnValue(player_t *player, INT16 turnvalue)
 		p_speed = min(currentSpeed, (p_maxspeed * 2));
 	}
 
+	if (K_PodiumSequence() == true)
+	{
+		// Normalize turning for podium
+		weightadjust = FixedDiv((p_maxspeed * 3), (p_maxspeed * 3) + (2 * FRACUNIT));
+		turnfixed = FixedMul(turnfixed, weightadjust);
+		turnfixed *= 2;
+		return (turnfixed / FRACUNIT);
+	}
+
 	weightadjust = FixedDiv((p_maxspeed * 3) - p_speed, (p_maxspeed * 3) + (player->kartweight * FRACUNIT));
 
 	if (K_PlayerUsesBotMovement(player))
 	{
 		turnfixed = FixedMul(turnfixed, 5*FRACUNIT/4); // Base increase to turning
-	}
-
-	if (K_PodiumSequence() == true)
-	{
-		turnfixed *= 2;
 	}
 
 	if (player->drift != 0 && P_IsObjectOnGround(player->mo))
@@ -10054,7 +10059,7 @@ fixed_t K_PlayerBaseFriction(fixed_t original)
 
 	if (K_PodiumSequence() == true)
 	{
-		frict -= FRACUNIT >> 3;
+		frict -= FRACUNIT >> 4;
 	}
 
 	if (frict > FRACUNIT) { frict = FRACUNIT; }
