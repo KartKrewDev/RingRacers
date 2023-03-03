@@ -955,7 +955,7 @@ static const char *M_GetConditionString(condition_t *cn)
 				: "???");
 		case UC_CRASH:
 			if (gamedata->crashflags & (GDCRASH_LAST|GDCRASH_ANY))
-				return "Relaunch \"Dr. Robotnik's Ring Racers\" after a crash";
+				return "Launch \"Dr. Robotnik's Ring Racers\" again after a game crash";
 			return NULL;
 
 		case UC_AND:
