@@ -1973,7 +1973,7 @@ static void K_HandleLapIncrement(player_t *player)
 				rainbowstartavailable = false;
 			}
 
-			if (netgame && player->laps >= numlaps)
+			if (netgame && player->laps > numlaps)
 				CON_LogMessage(va(M_GetText("%s has finished the race.\n"), player_names[player-players]));
 
 			player->starpostnum = 0;
