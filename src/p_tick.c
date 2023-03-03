@@ -633,7 +633,7 @@ void P_Ticker(boolean run)
 
 		// TODO would this be laggy with more conditions in play...
 		if ((!demo.playback && M_UpdateUnlockablesAndExtraEmblems(true))
-			|| gamedata->deferredsave)
+			|| (gamedata && gamedata->deferredsave))
 			G_SaveGameData(true);
 	}
 

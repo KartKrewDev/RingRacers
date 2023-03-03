@@ -1090,6 +1090,12 @@ boolean M_UpdateUnlockablesAndExtraEmblems(boolean loud)
 	INT32 i;
 	UINT8 response = 0;
 
+	if (!gamedata)
+	{
+		// Don't attempt to write/check anything.
+		return false;
+	}
+
 	if (!loud)
 	{
 		// Just in case they aren't to sync

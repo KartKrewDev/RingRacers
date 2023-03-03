@@ -4558,10 +4558,10 @@ void G_SaveGameData(boolean dirty)
 	UINT8 btemp;
 	savebuffer_t save = {0};
 
-	gamedata->deferredsave = false;
-
-	if (!gamedata->loaded)
+	if (gamedata == NULL || !gamedata->loaded)
 		return; // If never loaded (-nodata), don't save
+
+	gamedata->deferredsave = false;
 
 	if (usedCheats)
 	{
