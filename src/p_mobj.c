@@ -13416,16 +13416,14 @@ static boolean P_SetupSpawnedMapThing(mapthing_t *mthing, mobj_t *mobj, boolean 
 
 static mobj_t *P_SpawnMobjFromMapThing(mapthing_t *mthing, fixed_t x, fixed_t y, fixed_t z, mobjtype_t i)
 {
-	fixed_t relativise = FixedDiv(mthing->scale, mapobjectscale);
-
 	mobj_t *mobj = NULL;
 	boolean doangle = true;
 
 	mobj = P_SpawnMobj(x, y, z, i);
 	mobj->spawnpoint = mthing;
 
-	P_SetScale(mobj, FixedMul(mobj->scale, relativise));
-	mobj->destscale = FixedMul(mobj->destscale, relativise);
+	P_SetScale(mobj, FixedMul(mobj->scale, mthing->scale));
+	mobj->destscale = FixedMul(mobj->destscale, mthing->scale);
 
 	if (!P_SetupSpawnedMapThing(mthing, mobj, &doangle))
 		return mobj;

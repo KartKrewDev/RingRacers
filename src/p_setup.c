@@ -1278,7 +1278,7 @@ static void P_LoadThings(UINT8 *data)
 		mt->options = READUINT16(data);
 		mt->extrainfo = (UINT8)(mt->type >> 12);
 		Tag_FSet(&mt->tags, 0);
-		mt->scale = mapobjectscale;
+		mt->scale = FRACUNIT;
 		memset(mt->args, 0, NUMMAPTHINGARGS*sizeof(*mt->args));
 		memset(mt->stringargs, 0x00, NUMMAPTHINGSTRINGARGS*sizeof(*mt->stringargs));
 		mt->special = 0;
@@ -1783,7 +1783,7 @@ static void ParseTextmapThingParameter(UINT32 i, const char *param, const char *
 	else if (fastcmp(param, "type"))
 		mapthings[i].type = atol(val);
 	else if (fastcmp(param, "scale") || fastcmp(param, "scalex") || fastcmp(param, "scaley"))
-		mapthings[i].scale = FixedMul(mapobjectscale, FLOAT_TO_FIXED(atof(val)));
+		mapthings[i].scale = FLOAT_TO_FIXED(atof(val));
 	// Flags
 	else if (fastcmp(param, "flip") && fastcmp("true", val))
 		mapthings[i].options |= MTF_OBJECTFLIP;
@@ -2731,7 +2731,7 @@ static void P_LoadTextmap(void)
 		mt->z = 0;
 		mt->extrainfo = 0;
 		Tag_FSet(&mt->tags, 0);
-		mt->scale = mapobjectscale;
+		mt->scale = FRACUNIT;
 		memset(mt->args, 0, NUMMAPTHINGARGS*sizeof(*mt->args));
 		memset(mt->stringargs, 0x00, NUMMAPTHINGSTRINGARGS*sizeof(*mt->stringargs));
 		mt->special = 0;
