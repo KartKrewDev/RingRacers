@@ -1639,6 +1639,10 @@ void D_SRB2Main(void)
 				I_Error("Bad '%s' level warp.\n"
 #if defined (_WIN32)
 				"Are you using MSDOS 8.3 filenames in Zone Builder?\n"
+				"\n"
+				"To check: edit the Ring Racers game configuration in Zone Builder.\n"
+				"Go to the Testing tab and make sure \"Use short paths and file names\" is turned off.\n"
+				"(The option is hidden by default. Check \"Customize parameters\" to show it.)\n"
 #endif
 				, word);
 		}
