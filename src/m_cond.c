@@ -539,6 +539,28 @@ void M_UpdateConditionSetsPending(void)
 	}
 }
 
+static boolean M_NotFreePlay(player_t *player)
+{
+	UINT8 i;
+
+	for (i = 0; i < MAXPLAYERS; i++)
+	{
+		if (playeringame[i] == false || players[i].spectator == true)
+		{
+			continue;
+		}
+
+		if (player == &players[i])
+		{
+			continue;
+		}
+
+		return true;
+	}
+
+	return false;
+}
+
 // See also M_GetConditionString
 boolean M_CheckCondition(condition_t *cn, player_t *player)
 {
@@ -622,34 +644,41 @@ boolean M_CheckCondition(condition_t *cn, player_t *player)
 
 		case UCRP_FINISHCOOL:
 			return (player->exiting
-				 && !(player->pflags & PF_NOCONTEST)
-				 && !K_IsPlayerLosing(player));
+				&& !(player->pflags & PF_NOCONTEST)
+				&& M_NotFreePlay(player)
+				&& !K_IsPlayerLosing(player));
 		case UCRP_FINISHALLCAPSULES:
 			return (battlecapsules
 				&& !(player->pflags & PF_NOCONTEST)
+				//&& M_NotFreePlay(player)
 				&& numtargets >= maptargets);
 		case UCRP_NOCONTEST:
 			return (player->pflags & PF_NOCONTEST);
 		case UCRP_FINISHPLACE:
 			return (player->exiting
 				&& !(player->pflags & PF_NOCONTEST)
+				&& M_NotFreePlay(player)
 				&& player->position <= cn->requirement);
 		case UCRP_FINISHPLACEEXACT:
 			return (player->exiting 
 				&& !(player->pflags & PF_NOCONTEST)
+				&& M_NotFreePlay(player)
 				&& player->position == cn->requirement);
 		case UCRP_FINISHTIME:
 			return (player->exiting
 				&& !(player->pflags & PF_NOCONTEST)
+				//&& M_NotFreePlay(player)
 				&& player->realtime <= (unsigned)cn->requirement);
 		case UCRP_FINISHTIMEEXACT:
 			return (player->exiting
 				&& !(player->pflags & PF_NOCONTEST)
+				//&& M_NotFreePlay(player)
 				&& player->realtime == (unsigned)cn->requirement);
 		case UCRP_FINISHTIMELEFT:
 			return (timelimitintics
 				&& player->exiting
 				&& !(player->pflags & PF_NOCONTEST)
+				&& !K_CanChangeRules(false) // too easy to change cv_timelimit
 				&& player->realtime < timelimitintics
 				&& (timelimitintics + extratimeintics + secretextratime - player->realtime) >= (unsigned)cn->requirement);
 	}
