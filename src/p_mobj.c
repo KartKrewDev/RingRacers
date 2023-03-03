@@ -11843,9 +11843,13 @@ void P_SpawnPlayer(INT32 playernum)
 	}
 
 	// Spectating when there is literally any other player in
-	// the level enables director cam.
+	// the level enables director cam. Or if the first player
+	// enters the game, spectate them.
 	// TODO: how do we support splitscreen?
-	K_ToggleDirector(players[consoleplayer].spectator && pcount > 0);
+	if (playernum == consoleplayer || pcount == 1)
+	{
+		K_ToggleDirector(players[consoleplayer].spectator && pcount > 0);
+	}
 }
 
 void P_AfterPlayerSpawn(INT32 playernum)
