@@ -1655,7 +1655,7 @@ void D_SRB2Main(void)
 		}
 
 		{
-			if (!M_CheckParm("-server"))
+			if (!M_CheckParm("-server") && !M_CheckParm("-dedicated"))
 			{
 				G_SetUsedCheats();
 
