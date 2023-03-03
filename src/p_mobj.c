@@ -9500,30 +9500,30 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 
 			if (mobj->tracer != NULL && P_MobjWasRemoved(mobj->tracer) == false)
 			{
+				fixed_t newX = Easing_Linear(mobj->movecount, mobj->extravalue1, mobj->tracer->x);
+				fixed_t newY = Easing_Linear(mobj->movecount, mobj->extravalue2, mobj->tracer->y);
+				fixed_t newZ = Easing_Linear(mobj->movecount, mobj->cusval, mobj->tracer->z);
+
+				mobj->angle = Easing_Linear(mobj->movecount, mobj->movedir, mobj->tracer->angle);
+				mobj->pitch = Easing_Linear(mobj->movecount, mobj->lastlook, mobj->tracer->pitch);
+
+				mobj->momx = newX - mobj->x;
+				mobj->momy = newY - mobj->y;
+				mobj->momz = newZ - mobj->z;
+
 				mobj->movecount += mobj->movefactor;
 
-				if (mobj->movecount < FRACUNIT)
+				if (mobj->movecount >= FRACUNIT)
 				{
-					fixed_t newX = Easing_Linear(mobj->movecount, mobj->extravalue1, mobj->tracer->x);
-					fixed_t newY = Easing_Linear(mobj->movecount, mobj->extravalue2, mobj->tracer->y);
-					fixed_t newZ = Easing_Linear(mobj->movecount, mobj->cusval, mobj->tracer->z);
+					mobj->movecount = mobj->movecount % FRACUNIT; // time
 
-					mobj->angle = Easing_Linear(mobj->movecount, mobj->movedir, mobj->tracer->angle);
-					mobj->pitch = Easing_Linear(mobj->movecount, mobj->lastlook, mobj->tracer->pitch);
+					mobj->movedir = mobj->tracer->angle; // start angle
+					mobj->lastlook = mobj->tracer->pitch; // start pitch
+					mobj->extravalue1 = mobj->tracer->x; // start x
+					mobj->extravalue2 = mobj->tracer->y; // start y
+					mobj->cusval = mobj->tracer->z; // start z
 
-					mobj->momx = newX - mobj->x;
-					mobj->momy = newY - mobj->y;
-					mobj->momz = newZ - mobj->z;
-				}
-				else
-				{
 					P_SetTarget(&mobj->tracer, P_GetNextTubeWaypoint(mobj->tracer, false));
-					mobj->movecount = 0; // time
-					mobj->movedir = mobj->angle; // start angle
-					mobj->lastlook = mobj->pitch; // start pitch
-					mobj->extravalue1 = mobj->x; // start x
-					mobj->extravalue2 = mobj->y; // start y
-					mobj->cusval = mobj->z; // start z
 				}
 			}
 
