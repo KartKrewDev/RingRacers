@@ -5625,7 +5625,7 @@ void K_PuntMine(mobj_t *origMine, mobj_t *punter)
 
 	spd = FixedMul(82 * punter->scale, K_GetKartGameSpeedScalar(gamespeed)); // Avg Speed is 41 in Normal
 
-	mine->flags |= MF_NOCLIPTHING;
+	mine->flags |= (MF_NOCLIP|MF_NOCLIPTHING);
 
 	P_SetMobjState(mine, S_SSMINE_AIR1);
 	mine->threshold = 10;
@@ -5637,7 +5637,7 @@ void K_PuntMine(mobj_t *origMine, mobj_t *punter)
 
 	//K_SetHitLagForObjects(punter, mine, 5);
 
-	mine->flags &= ~MF_NOCLIPTHING;
+	mine->flags &= ~(MF_NOCLIP|MF_NOCLIPTHING);
 }
 
 #define THUNDERRADIUS 320
@@ -5930,9 +5930,7 @@ void K_DoInvincibility(player_t *player, tic_t time)
 		P_SetScale(overlay, player->mo->scale);
 	}
 
-	player->invincibilitytimer += time;
-
-	if (P_IsLocalPlayer(player) == true)
+	if (P_IsLocalPlayer(player) == true && player->invincibilitytimer == 0)
 	{
 		S_ChangeMusicSpecial("kinvnc");
 	}
@@ -5940,6 +5938,8 @@ void K_DoInvincibility(player_t *player, tic_t time)
 	{
 		S_StartSound(player->mo, sfx_alarmi);
 	}
+
+	player->invincibilitytimer += time;
 
 	P_RestoreMusic(player);
 }
@@ -6150,11 +6150,11 @@ void K_DropHnextList(player_t *player, boolean keepshields)
 			{
 				fixed_t radius = FixedMul(work->info->radius, dropwork->destscale);
 				radius = FixedHypot(player->mo->radius, player->mo->radius) + FixedHypot(radius, radius); // mobj's distance from its Target, or Radius.
-				dropwork->flags |= MF_NOCLIPTHING;
+				dropwork->flags |= (MF_NOCLIP|MF_NOCLIPTHING);
 				work->momx = FixedMul(FINECOSINE(work->angle>>ANGLETOFINESHIFT), radius);
 				work->momy = FixedMul(FINESINE(work->angle>>ANGLETOFINESHIFT), radius);
 				P_MoveOrigin(dropwork, player->mo->x + work->momx, player->mo->y + work->momy, player->mo->z);
-				dropwork->flags &= ~MF_NOCLIPTHING;
+				dropwork->flags &= ~(MF_NOCLIP|MF_NOCLIPTHING);
 			}
 
 			dropwork->flags2 |= MF2_AMBUSH;
@@ -10540,10 +10540,10 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 									S_StartSound(player->mo, sfx_alarmg);
 								}
 
-								P_RestoreMusic(player);
-
 								player->growshrinktimer = max(0, player->growshrinktimer);
 								player->growshrinktimer += ((gametyperules & GTR_CLOSERPLAYERS) ? 8 : 12) * TICRATE;
+
+								P_RestoreMusic(player);
 
 								S_StartSound(player->mo, sfx_kc5a);
 

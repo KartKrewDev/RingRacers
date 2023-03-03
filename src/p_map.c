@@ -917,6 +917,7 @@ static BlockItReturn_t PIT_CheckThing(mobj_t *thing)
 		|| tm.thing->type == MT_BANANA || tm.thing->type == MT_EGGMANITEM || tm.thing->type == MT_BALLHOG
 		|| tm.thing->type == MT_SSMINE || tm.thing->type == MT_LANDMINE || tm.thing->type == MT_SINK
 		|| tm.thing->type == MT_GARDENTOP
+		|| tm.thing->type == MT_DROPTARGET
 		|| (tm.thing->type == MT_PLAYER && thing->target != tm.thing)))
 	{
 		// see if it went over / under
@@ -931,8 +932,9 @@ static BlockItReturn_t PIT_CheckThing(mobj_t *thing)
 		|| (tm.thing->player && tm.thing->player->bubbleblowup))
 		&& (thing->type == MT_ORBINAUT || thing->type == MT_JAWZ || thing->type == MT_GACHABOM
 		|| thing->type == MT_BANANA || thing->type == MT_EGGMANITEM || thing->type == MT_BALLHOG
-		|| thing->type == MT_SSMINE || tm.thing->type == MT_LANDMINE || thing->type == MT_SINK
+		|| thing->type == MT_SSMINE || thing->type == MT_LANDMINE || thing->type == MT_SINK
 		|| thing->type == MT_GARDENTOP
+		|| thing->type == MT_DROPTARGET
 		|| (thing->type == MT_PLAYER && tm.thing->target != thing)))
 	{
 		// see if it went over / under
@@ -967,7 +969,7 @@ static BlockItReturn_t PIT_CheckThing(mobj_t *thing)
 	else if ((tm.thing->type == MT_DROPTARGET || tm.thing->type == MT_DROPTARGET_SHIELD)
 		&& (thing->type == MT_ORBINAUT || thing->type == MT_JAWZ || thing->type == MT_GACHABOM
 		|| thing->type == MT_BANANA || thing->type == MT_EGGMANITEM || thing->type == MT_BALLHOG
-		|| thing->type == MT_SSMINE || tm.thing->type == MT_LANDMINE || thing->type == MT_SINK
+		|| thing->type == MT_SSMINE || thing->type == MT_LANDMINE || thing->type == MT_SINK
 		|| thing->type == MT_GARDENTOP
 		|| (thing->type == MT_PLAYER)))
 	{

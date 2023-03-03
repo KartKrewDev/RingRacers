@@ -1791,6 +1791,8 @@ void P_XYMovement(mobj_t *mo)
 							{
 								S_StartSound(mo, mo->info->attacksound);
 								mo->health--;
+								// This prevents an item thrown at a wall from
+								// phasing through you on its return.
 								mo->threshold = 0;
 							}
 							/*FALLTHRU*/
@@ -1809,6 +1811,12 @@ void P_XYMovement(mobj_t *mo)
 
 						case MT_BUBBLESHIELDTRAP:
 							S_StartSound(mo, sfx_s3k44); // Bubble bounce
+							break;
+
+						case MT_DROPTARGET:
+							// This prevents an item thrown at a wall from
+							// phasing through you on its return.
+							mo->threshold = 0;
 							break;
 
 						default:
