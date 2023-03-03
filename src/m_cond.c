@@ -214,7 +214,11 @@ quickcheckagain:
 
 		if (nummajorunlocks > 0)
 		{
-			I_Error("M_PopulateChallengeGrid: was not able to populate %d large tiles (width %d)", nummajorunlocks, gamedata->challengegridwidth);
+			UINT16 widthtoprint = gamedata->challengegridwidth;
+			Z_Free(gamedata->challengegrid);
+			gamedata->challengegrid = NULL;
+
+			I_Error("M_PopulateChallengeGrid: was not able to populate %d large tiles (width %d)", nummajorunlocks, widthtoprint);
 		}
 	}
 
@@ -232,6 +236,10 @@ quickcheckagain:
 
 	if (numunlocks > numempty)
 	{
+		gamedata->challengegridwidth = 0;
+		Z_Free(gamedata->challengegrid);
+		gamedata->challengegrid = NULL;
+
 		I_Error("M_PopulateChallengeGrid: %d small unlocks vs %d empty spaces (%d gap)", numunlocks, numempty, (numunlocks-numempty));
 	}
 
