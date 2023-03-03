@@ -1351,3 +1351,45 @@ bool CallFunc_EncoreMode(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::
 	thread->dataStk.push(encoremode);
 	return false;
 }
+
+/*--------------------------------------------------
+	bool CallFunc_PodiumPosition(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
+
+		Returns the best position of all non-CPU players.
+--------------------------------------------------*/
+bool CallFunc_PodiumPosition(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
+{
+	UINT8 ret = MAXPLAYERS;
+	INT32 i;
+
+	(void)argV;
+	(void)argC;
+
+	for (i = 0; i < MAXPLAYERS; i++)
+	{
+		player_t *player = NULL;
+
+		if (playeringame[i] == false)
+		{
+			continue;
+		}
+
+		player = &players[i];
+
+		if (player->spectator == true)
+		{
+			continue;
+		}
+
+		if (player->bot == true)
+		{
+			continue;
+		}
+
+		ret = std::min(ret, player->position);
+	}
+
+	thread->dataStk.push(ret);
+	return false;
+}
+
