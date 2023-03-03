@@ -62,6 +62,7 @@
 #include "k_bot.h"
 #include "doomstat.h"
 #include "k_director.h"
+#include "k_podium.h"
 
 #ifdef HAVE_DISCORDRPC
 #include "discord.h"
@@ -2255,7 +2256,7 @@ void G_Ticker(boolean run)
 
 		case GS_CEREMONY:
 			P_Ticker(run);
-			F_CeremonyTicker(run);
+			K_CeremonyTicker(run);
 			break;
 
 		case GS_WAITINGPLAYERS:
@@ -4296,7 +4297,7 @@ void G_EndGame(void)
 	{
 		if (nextmap == NEXTMAP_CEREMONY) // end game with ceremony
 		{
-			if (F_StartCeremony() == true)
+			if (K_StartCeremony() == true)
 			{
 				return;
 			}
@@ -5082,7 +5083,7 @@ void G_InitNew(UINT8 pencoremode, INT32 map, boolean resetplayer, boolean skippr
 	{
 		// Didn't want to do this, but it needs to be here
 		// for it to work on startup.
-		if (F_StartCeremony() == true)
+		if (K_StartCeremony() == true)
 		{
 			return;
 		}

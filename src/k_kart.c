@@ -43,6 +43,7 @@
 #include "k_boss.h"
 #include "k_specialstage.h"
 #include "k_roulette.h"
+#include "k_podium.h"
 
 // SOME IMPORTANT VARIABLES DEFINED IN DOOMDEF.H:
 // gamespeed is cc (0 for easy, 1 for normal, 2 for hard)
@@ -50,11 +51,6 @@
 // encoremode is Encore Mode (duh), bool
 // comeback is Battle Mode's karma comeback, also bool
 // mapreset is set when enough players fill an empty server
-
-boolean K_PodiumSequence(void)
-{
-	return (gamestate == GS_CEREMONY);
-}
 
 boolean K_IsDuelItem(mobjtype_t type)
 {

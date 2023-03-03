@@ -28,7 +28,7 @@
 #include "r_things.h" // numskins
 #include "k_race.h" // finishBeamLine
 #include "m_perfstats.h"
-
+#include "k_podium.h"
 
 /*--------------------------------------------------
 	boolean K_AddBot(UINT8 skin, UINT8 difficulty, UINT8 *p)

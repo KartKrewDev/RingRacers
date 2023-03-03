@@ -101,6 +101,7 @@
 #include "k_specialstage.h"
 #include "acs/interface.h"
 #include "doomstat.h" // MAXMUSNAMES
+#include "k_podium.h"
 
 // Replay names have time
 #if !defined (UNDER_CE)

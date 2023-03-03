@@ -13,6 +13,7 @@
 #include "g_game.h" // Sink snipe print
 #include "k_objects.h"
 #include "k_roulette.h"
+#include "k_podium.h"
 
 angle_t K_GetCollideAngle(mobj_t *t1, mobj_t *t2)
 {

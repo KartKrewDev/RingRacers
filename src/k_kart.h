@@ -37,8 +37,6 @@ Make sure this matches the actual number of states
 #define STUMBLE_STEEP_VAL ANG60
 #define STUMBLE_STEEP_VAL_AIR (ANG30 + ANG10)
 
-boolean K_PodiumSequence(void);
-
 player_t *K_GetItemBoxPlayer(mobj_t *mobj);
 angle_t K_ReflectAngle(angle_t angle, angle_t against, fixed_t maxspeed, fixed_t yourspeed);
 
