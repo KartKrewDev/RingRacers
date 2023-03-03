@@ -183,10 +183,8 @@ void K_CheckEmeralds(player_t *player)
 			continue;
 		}
 
-		players[i].bumpers = 0;
+		P_DoPlayerExit(&players[i]);
 	}
-
-	K_CheckBumpers();
 }
 
 UINT16 K_GetChaosEmeraldColor(UINT32 emeraldType)
@@ -791,7 +789,14 @@ void K_BattleInit(boolean singleplayercontext)
 		{
 			if (!playeringame[i] || players[i].spectator)
 				continue;
+
 			players[i].bumpers = maxbumpers;
+
+			if (players[i].mo)
+			{
+				players[i].mo->health = maxbumpers;
+			}
+
 			K_SpawnPlayerBattleBumpers(players+i);
 		}
 	}

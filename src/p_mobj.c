@@ -11829,6 +11829,11 @@ void P_SpawnPlayer(INT32 playernum)
 			p->bumpers = K_StartingBumperCount();
 			K_SpawnPlayerBattleBumpers(p);
 		}
+
+		if (p->bumpers > 0)
+		{
+			mobj->health = p->bumpers;
+		}
 	}
 
 	// I'm not refactoring the loop at the top of this file.
