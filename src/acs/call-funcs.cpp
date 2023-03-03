@@ -446,6 +446,25 @@ bool CallFunc_PolyWait(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Wo
 }
 
 /*--------------------------------------------------
+	bool CallFunc_CameraWait(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
+
+		Pauses the thread until the tagged
+		camera is done moving.
+--------------------------------------------------*/
+bool CallFunc_CameraWait(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
+{
+	(void)argC;
+
+	thread->state = {
+		ACSVM::ThreadState::WaitTag,
+		argV[0],
+		ACS_TAGTYPE_CAMERA
+	};
+
+	return true; // Execution interrupted
+}
+
+/*--------------------------------------------------
 	bool CallFunc_ChangeFloor(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
 
 		Changes a floor texture.

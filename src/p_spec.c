@@ -2405,7 +2405,7 @@ static void P_SwitchSkybox(INT32 args, player_t *player, skybox_t *skybox)
 	}
 }
 
-static mobj_t* P_FindObjectTypeFromTag(mobjtype_t type, mtag_t tag)
+mobj_t* P_FindObjectTypeFromTag(mobjtype_t type, mtag_t tag)
 {
 	if (udmf)
 	{

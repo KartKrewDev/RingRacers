@@ -57,6 +57,7 @@ enum acs_tagType_e
 {
 	ACS_TAGTYPE_POLYOBJ,
 	ACS_TAGTYPE_SECTOR,
+	ACS_TAGTYPE_CAMERA,
 };
 
 class ThreadInfo : public ACSVM::ThreadInfo
