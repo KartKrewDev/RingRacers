@@ -2542,7 +2542,7 @@ void CL_ClearPlayer(INT32 playernum)
 	int i;
 
 	// Handle mobj_t pointers.
-	if (gamestate == GS_LEVEL)
+	if (G_GamestateUsesLevel() == true)
 	{
 		if (players[playernum].follower)
 		{
@@ -3770,9 +3770,6 @@ static void Got_AddBot(UINT8 **p, INT32 playernum)
 	players[newplayernum].skincolor = skins[skinnum].prefcolor;
 	sprintf(player_names[newplayernum], "%s", skins[skinnum].realname);
 	SetPlayerSkinByNum(newplayernum, skinnum);
-
-	players[newplayernum].spectator = !(gametyperules & GTR_BOTS)
-		|| (grandprixinfo.gp == true && grandprixinfo.eventmode != GPEVENT_NONE);
 
 	if (netgame)
 	{

@@ -11746,8 +11746,7 @@ void P_SpawnPlayer(INT32 playernum)
 	else if (p->bot)
 	{
 		if (K_PodiumSequence() == false
-			&& grandprixinfo.gp == true
-			&& grandprixinfo.eventmode != GPEVENT_NONE)
+			&& (!(gametyperules & GTR_BOTS) || (grandprixinfo.gp == true && grandprixinfo.eventmode != GPEVENT_NONE)))
 		{
 			// Bots aren't supposed to be here.
 			p->spectator = true;
@@ -11811,7 +11810,7 @@ void P_SpawnPlayer(INT32 playernum)
 			p->skincolor = skincolor_blueteam;
 	}
 
-	if (leveltime > introtime)
+	if (leveltime > introtime && K_PodiumSequence() == false)
 		p->flashing = K_GetKartFlashing(p); // Babysitting deterrent
 
 	mobj = P_SpawnMobj(0, 0, 0, MT_PLAYER);

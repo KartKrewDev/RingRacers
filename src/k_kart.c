@@ -8527,7 +8527,7 @@ static void K_UpdatePodiumWaypoints(player_t *const player)
 	{
 		if ((player->currentwaypoint == NULL)
 			&& (player->position > 0 && player->position <= MAXPLAYERS)
-			&& (leveltime <= 2))
+			&& (leveltime <= introtime || player->jointime <= 1))
 		{
 			// Initialize our first waypoint to the one that
 			// matches our position.

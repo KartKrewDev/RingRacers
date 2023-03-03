@@ -7363,7 +7363,7 @@ static void P_InitPlayers(void)
 
 		players[i].mo = NULL;
 
-		if (!(gametyperules & GTR_CIRCUIT))
+		if (!(gametyperules & GTR_CIRCUIT) && K_PodiumSequence() == false)
 		{
 			G_DoReborn(i);
 		}
