@@ -161,6 +161,9 @@ struct vissprite_t
 	mobj_t *mobj; // for easy access
 
 	INT32 x1, x2;
+	INT32 x1test, x2test;
+	fixed_t xiscaletest;
+	fixed_t startfractest;
 
 	fixed_t gx, gy; // for line side calculation
 	fixed_t gz, gzt; // global bottom/top for silhouette clipping and sorting with 3D floors
