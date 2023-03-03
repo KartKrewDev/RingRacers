@@ -15,6 +15,7 @@
 #include "v_video.h"
 #include "f_finale.h"
 #include "m_misc.h"
+#include "m_cond.h"
 
 #ifdef PC_DOS
 #include <stdio.h> // for snprintf
@@ -338,9 +339,17 @@ boolean M_Responder(event_t *ev)
 void M_PlayMenuJam(void)
 {
 	menu_t *refMenu = (menuactive ? currentMenu : restoreMenu);
+	static boolean loserclubpermitted = false;
+	boolean loserclub = (loserclubpermitted && (gamedata->crashflags & GDCRASH_LOSERCLUB));
 
 	if (challengesmenu.pending)
+	{
+		S_StopMusic();
+		cursongcredit.def = NULL;
+
+		loserclubpermitted = true;
 		return;
+	}
 
 	if (Playing())
 		return;
@@ -351,15 +360,27 @@ void M_PlayMenuJam(void)
 		{
 			S_StopMusic();
 			cursongcredit.def = NULL;
+			return;
 		}
-		else
+		else if (!loserclub)
 		{
 			if (NotCurrentlyPlaying(refMenu->music))
 			{
 				S_ChangeMusicInternal(refMenu->music, true);
 				S_ShowMusicCredit();
 			}
+			return;
 		}
+	}
+
+	if (loserclub)
+	{
+		if (refMenu != NULL && NotCurrentlyPlaying("LOSERC"))
+		{
+			S_ChangeMusicInternal("LOSERC", true);
+			S_ShowMusicCredit();
+		}
+
 		return;
 	}
 

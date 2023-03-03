@@ -3310,7 +3310,7 @@ boolean P_ProcessSpecial(activator_t *activator, INT16 special, INT32 *args, cha
 					// Unlocked something?
 					if (M_UpdateUnlockablesAndExtraEmblems(true))
 					{
-						G_SaveGameData(); // only save if unlocked something
+						gamedata->deferredsave = true; // only save if unlocked something
 					}
 				}
 			}

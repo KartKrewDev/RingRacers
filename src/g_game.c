@@ -649,7 +649,7 @@ void G_UpdateRecords(void)
 	}
 
 	M_UpdateUnlockablesAndExtraEmblems(true);
-	G_SaveGameData();
+	gamedata->deferredsave = true;
 }
 
 //
@@ -2282,19 +2282,6 @@ static inline void G_PlayerFinishLevel(INT32 player)
 
 	p->starpostnum = 0;
 	memset(&p->respawn, 0, sizeof (p->respawn));
-
-	// SRB2kart: Increment the "matches played" counter.
-	if (player == consoleplayer)
-	{
-		if (legitimateexit && !demo.playback && !mapreset) // (yes you're allowed to unlock stuff this way when the game is modified)
-		{
-			gamedata->matchesplayed++;
-			M_UpdateUnlockablesAndExtraEmblems(true);
-			G_SaveGameData();
-		}
-
-		legitimateexit = false;
-	}
 }
 
 //
@@ -3697,7 +3684,7 @@ static void G_UpdateVisited(void)
 		CONS_Printf(M_GetText("\x82" "Earned %hu emblem%s for level completion.\n"), (UINT16)earnedEmblems, earnedEmblems > 1 ? "s" : "");
 
 	M_UpdateUnlockablesAndExtraEmblems(true);
-	G_SaveGameData();
+	G_SaveGameData(true);
 }
 
 static boolean CanSaveLevel(INT32 mapnum)
@@ -4004,6 +3991,19 @@ static void G_DoCompleted(void)
 
 	if (modeattacking && pausedelay)
 		pausedelay = 0;
+
+	if (legitimateexit && !demo.playback && !mapreset) // (yes you're allowed to unlock stuff this way when the game is modified)
+	{
+		// Done before forced addition of PF_NOCONTEST to make UCRP_NOCONTEST harder to achieve
+		gamedata->matchesplayed++;
+		M_UpdateUnlockablesAndExtraEmblems(true);
+		gamedata->deferredsave = true;
+	}
+
+	if (gamedata->deferredsave)
+		G_SaveGameData(true);
+
+	legitimateexit = false;
 
 	gameaction = ga_nothing;
 
@@ -4317,7 +4317,7 @@ void G_LoadGameSettings(void)
 }
 
 #define GD_VERSIONCHECK 0xBA5ED123 // Change every major version, as usual
-#define GD_VERSIONMINOR 1 // Change every format update
+#define GD_VERSIONMINOR 2 // Change every format update
 
 static const char *G_GameDataFolder(void)
 {
@@ -4351,6 +4351,7 @@ void G_LoadGameData(void)
 
 	gamedata->totalplaytime = 0; // total play time (separate from all)
 	gamedata->matchesplayed = 0; // SRB2Kart: matches played & finished
+	gamedata->crashflags = 0;
 
 	if (M_CheckParm("-nodata"))
 	{
@@ -4397,6 +4398,13 @@ void G_LoadGameData(void)
 
 	gamedata->totalplaytime = READUINT32(save.p);
 	gamedata->matchesplayed = READUINT32(save.p);
+
+	if (versionMinor > 1)
+	{
+		gamedata->crashflags = READUINT8(save.p);
+		if (gamedata->crashflags & GDCRASH_LAST)
+			gamedata->crashflags |= GDCRASH_ANY;
+	}
 
 	{
 		// Quick & dirty hash for what mod this save file is for.
@@ -4543,12 +4551,14 @@ void G_LoadGameData(void)
 
 // G_SaveGameData
 // Saves the main data file, which stores information such as emblems found, etc.
-void G_SaveGameData(void)
+void G_SaveGameData(boolean dirty)
 {
 	size_t length;
 	INT32 i, j;
 	UINT8 btemp;
 	savebuffer_t save = {0};
+
+	gamedata->deferredsave = false;
 
 	if (!gamedata->loaded)
 		return; // If never loaded (-nodata), don't save
@@ -4561,7 +4571,7 @@ void G_SaveGameData(void)
 		return;
 	}
 
-	length = (4+1+4+4+1+(MAXEMBLEMS+(MAXUNLOCKABLES*2)+MAXCONDITIONSETS)+4+4+2);
+	length = (4+1+4+4+1+4+(MAXEMBLEMS+(MAXUNLOCKABLES*2)+MAXCONDITIONSETS)+4+4+2);
 	if (gamedata->challengegrid)
 	{
 		length += gamedata->challengegridwidth * CHALLENGEGRIDHEIGHT;
@@ -4580,6 +4590,14 @@ void G_SaveGameData(void)
 	WRITEUINT8(save.p, GD_VERSIONMINOR); // 1
 	WRITEUINT32(save.p, gamedata->totalplaytime); // 4
 	WRITEUINT32(save.p, gamedata->matchesplayed); // 4
+
+	{
+		UINT8 crashflags = (gamedata->crashflags & GDCRASH_ANY);
+		if (dirty)
+			crashflags |= GDCRASH_LAST;
+		WRITEUINT8(save.p, crashflags); // 1
+	}
+
 	WRITEUINT32(save.p, quickncasehash(timeattackfolder, 64));
 
 	// To save space, use one bit per collected/achieved/unlocked flag

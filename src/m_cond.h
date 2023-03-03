@@ -43,6 +43,8 @@ typedef enum
 	UC_UNLOCKABLE,		// UNLOCKABLE [unlockable number]
 	UC_CONDITIONSET,	// CONDITIONSET [condition set number]
 
+	UC_CRASH,			// Hee ho !
+
 	UC_AND, // Just for string building
 
 	UCRP_REQUIRESPLAYING, // All conditions below this can only be checked if (Playing() && gamestate == GS_LEVEL).
@@ -177,12 +179,17 @@ typedef enum
 #endif
 #define challengegridloops (gamedata->challengegridwidth >= CHALLENGEGRIDLOOPWIDTH)
 
+#define GDCRASH_LAST		0x01
+#define GDCRASH_ANY			0x02
+#define GDCRASH_LOSERCLUB	0x04
+
 // GAMEDATA STRUCTURE
 // Everything that would get saved in gamedata.dat
 struct gamedata_t
 {
 	// WHENEVER OR NOT WE'RE READY TO SAVE
 	boolean loaded;
+	boolean deferredsave;
 
 	// CONDITION SETS ACHIEVED
 	boolean achieved[MAXCONDITIONSETS];
@@ -204,6 +211,9 @@ struct gamedata_t
 	// PLAY TIME
 	UINT32 totalplaytime;
 	UINT32 matchesplayed;
+
+	// Funny
+	UINT8 crashflags;
 };
 
 extern gamedata_t *gamedata;

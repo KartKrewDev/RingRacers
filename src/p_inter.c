@@ -554,7 +554,7 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 					gamedata->collected[special->health-1] = gotcollected = true;
 					if (!M_UpdateUnlockablesAndExtraEmblems(true))
 						S_StartSound(NULL, sfx_ncitem);
-					G_SaveGameData();
+					gamedata->deferredsave = true;
 				}
 
 				if (netgame)

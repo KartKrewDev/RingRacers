@@ -2482,6 +2482,11 @@ static void readcondition(UINT8 set, UINT32 id, char *word2)
 			return;
 		}
 	}
+	else if (fastcmp(params[0], "CRASH"))
+	{
+		//PARAMCHECK(1);
+		ty = UC_CRASH;
+	}
 	else if (fastcmp(params[0], "AND"))
 	{
 		//PARAMCHECK(1);
@@ -2689,7 +2694,7 @@ void readmaincfg(MYFILE *f, boolean mainfile)
 				if (!GoodDataFileName(word2))
 					I_Error("Maincfg: bad data file name '%s'\n", word2);
 
-				G_SaveGameData();
+				G_SaveGameData(false); // undirty your old gamedata
 				strlcpy(gamedatafilename, word2, sizeof (gamedatafilename));
 				strlwr(gamedatafilename);
 				savemoddata = true;

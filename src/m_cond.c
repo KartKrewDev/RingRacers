@@ -486,6 +486,7 @@ void M_ClearSecrets(void)
 	gamedata->challengegridwidth = 0;
 
 	gamedata->timesBeaten = 0;
+	gamedata->crashflags = 0;
 
 	// Re-unlock any always unlocked things
 	M_UpdateUnlockablesAndExtraEmblems(false);
@@ -592,6 +593,13 @@ boolean M_CheckCondition(condition_t *cn, player_t *player)
 			return gamedata->unlocked[cn->requirement-1];
 		case UC_CONDITIONSET: // requires condition set x to already be achieved
 			return M_Achieved(cn->requirement-1);
+		case UC_CRASH:
+			if (gamedata->crashflags & (GDCRASH_LAST|GDCRASH_ANY))
+			{
+				gamedata->crashflags |= GDCRASH_LOSERCLUB;
+				return true;
+			}
+			return false;
 
 		case UC_AND: // Just for string building
 			return true;
@@ -859,6 +867,10 @@ static const char *M_GetConditionString(condition_t *cn)
 				gamedata->unlocked[cn->requirement-1]
 				? unlockables[cn->requirement-1].name
 				: "???");
+		case UC_CRASH:
+			if (gamedata->crashflags & (GDCRASH_LAST|GDCRASH_ANY))
+				return "Relaunch \"Dr. Robotnik's Ring Racers\" after a crash";
+			return NULL;
 
 		case UC_AND:
 			return "&";

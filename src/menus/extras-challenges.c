@@ -324,7 +324,7 @@ void M_ChallengesTick(void)
 			{
 				// All done! Let's save the unlocks we've busted open.
 				challengesmenu.pending = false;
-				G_SaveGameData();
+				G_SaveGameData(true);
 			}
 		}
 		else if (challengesmenu.fade < 5)

@@ -607,7 +607,7 @@ void I_Error(const char *error, ...)
 		if (errorcount == 7)
 		{
 			M_SaveConfig(NULL);
-			G_SaveGameData();
+			G_SaveGameData(true);
 		}
 		if (errorcount > 20)
 		{
@@ -636,7 +636,7 @@ void I_Error(const char *error, ...)
 	if (!errorcount)
 	{
 		M_SaveConfig(NULL); // save game config, cvars..
-		G_SaveGameData();
+		G_SaveGameData(true);
 	}
 
 	// save demo, could be useful for debug
@@ -726,7 +726,7 @@ void I_Quit(void)
 		G_CheckDemoStatus();
 
 	M_SaveConfig(NULL); // save game config, cvars..
-	G_SaveGameData();
+	G_SaveGameData(false); // undirty your save
 
 	// maybe it needs that the ticcount continues,
 	// or something else that will be finished by I_ShutdownSystem(),
