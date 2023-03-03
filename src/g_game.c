@@ -4346,12 +4346,13 @@ void G_LoadGameData(void)
 
 	// Clear things so previously read gamedata doesn't transfer
 	// to new gamedata
+	// see also M_EraseDataResponse
 	G_ClearRecords(); // records
 	M_ClearSecrets(); // emblems, unlocks, maps visited, etc
 
-	gamedata->totalplaytime = 0; // total play time (separate from all)
-	gamedata->matchesplayed = 0; // SRB2Kart: matches played & finished
-	gamedata->crashflags = 0;
+	gamedata->totalplaytime = 0;
+	gamedata->matchesplayed = 0;
+	gamedata->totalrings = 0;
 
 	if (M_CheckParm("-nodata"))
 	{
@@ -4401,6 +4402,8 @@ void G_LoadGameData(void)
 
 	if (versionMinor > 1)
 	{
+		gamedata->totalrings = READUINT32(save.p);
+
 		gamedata->crashflags = READUINT8(save.p);
 		if (gamedata->crashflags & GDCRASH_LAST)
 			gamedata->crashflags |= GDCRASH_ANY;
@@ -4571,7 +4574,7 @@ void G_SaveGameData(boolean dirty)
 		return;
 	}
 
-	length = (4+1+4+4+1+4+(MAXEMBLEMS+(MAXUNLOCKABLES*2)+MAXCONDITIONSETS)+4+4+2);
+	length = (4+1+4+4+4+1+4+(MAXEMBLEMS+(MAXUNLOCKABLES*2)+MAXCONDITIONSETS)+4+4+2);
 	if (gamedata->challengegrid)
 	{
 		length += gamedata->challengegridwidth * CHALLENGEGRIDHEIGHT;
@@ -4590,6 +4593,7 @@ void G_SaveGameData(boolean dirty)
 	WRITEUINT8(save.p, GD_VERSIONMINOR); // 1
 	WRITEUINT32(save.p, gamedata->totalplaytime); // 4
 	WRITEUINT32(save.p, gamedata->matchesplayed); // 4
+	WRITEUINT32(save.p, gamedata->totalrings); // 4
 
 	{
 		UINT8 crashflags = (gamedata->crashflags & GDCRASH_ANY);

@@ -505,6 +505,11 @@ INT32 P_GivePlayerRings(player_t *player, INT32 num_rings)
 	if ((gametyperules & GTR_SPHERES)) // No rings in Battle Mode
 		return 0;
 
+	if (gamedata && num_rings > 0 && P_IsLocalPlayer(player) && gamedata->totalrings <= GDMAX_RINGS)
+	{
+		gamedata->totalrings += num_rings;
+	}
+
 	test = player->rings + num_rings;
 	if (test > 20) // Caps at 20 rings, sorry!
 		num_rings -= (test-20);

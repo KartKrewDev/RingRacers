@@ -30,6 +30,7 @@ typedef enum
 {
 	UC_PLAYTIME,		// PLAYTIME [tics]
 	UC_MATCHESPLAYED,	// SRB2Kart: MATCHESPLAYED [x played]
+	UC_TOTALRINGS,		// TOTALRINGS [x collected]
 	UC_POWERLEVEL,		// SRB2Kart: POWERLEVEL [power level to reach] [gametype, "0" for race, "1" for battle]
 	UC_GAMECLEAR,		// GAMECLEAR <x times>
 	UC_OVERALLTIME,		// OVERALLTIME [time to beat, tics]
@@ -187,6 +188,9 @@ typedef enum
 #define GDCRASH_ANY			0x02
 #define GDCRASH_LOSERCLUB	0x04
 
+// This is the largest number of 9s that will fit in UINT32.
+#define GDMAX_RINGS 999999999
+
 // GAMEDATA STRUCTURE
 // Everything that would get saved in gamedata.dat
 struct gamedata_t
@@ -215,6 +219,7 @@ struct gamedata_t
 	// PLAY TIME
 	UINT32 totalplaytime;
 	UINT32 matchesplayed;
+	UINT32 totalrings;
 
 	// Funny
 	UINT8 crashflags;

@@ -624,6 +624,8 @@ boolean M_CheckCondition(condition_t *cn, player_t *player)
 			return (gamedata->totalplaytime >= (unsigned)cn->requirement);
 		case UC_MATCHESPLAYED: // Requires any level completed >= x times
 			return (gamedata->matchesplayed >= (unsigned)cn->requirement);
+		case UC_TOTALRINGS: // Requires grabbing >= x rings
+			return (gamedata->totalrings >= (unsigned)cn->requirement);
 		case UC_POWERLEVEL: // Requires power level >= x on a certain gametype
 		{
 			UINT8 i;
@@ -832,7 +834,13 @@ static const char *M_GetConditionString(condition_t *cn)
 				G_TicsToMinutes(cn->requirement, false),
 				G_TicsToSeconds(cn->requirement));
 		case UC_MATCHESPLAYED: // Requires any level completed >= x times
-			return va("Play %d matches", cn->requirement);
+			return va("Play %d Rounds", cn->requirement);
+		case UC_TOTALRINGS: // Requires collecting >= x rings
+			if (cn->requirement >= 1000000)
+				return va("Collect %u,%u,%u Rings", (cn->requirement/1000000), (cn->requirement/1000)%1000, (cn->requirement%1000));
+			if (cn->requirement >= 1000)
+				return va("Collect %u,%u Rings", (cn->requirement/1000), (cn->requirement%1000));
+			return va("Collect %u Rings", cn->requirement);
 		case UC_POWERLEVEL: // Requires power level >= x on a certain gametype
 			return va("Get a PWR of %d in %s", cn->requirement,
 				(cn->extrainfo1 == PWRLV_RACE)

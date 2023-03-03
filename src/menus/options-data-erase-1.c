@@ -53,11 +53,13 @@ static void M_EraseDataResponse(INT32 ch)
 	S_StartSound(NULL, sfx_itrole); // bweh heh heh
 
 	// Delete the data
+	// see also G_LoadGameData
 	if (optionsmenu.erasecontext == 2)
 	{
 		// SRB2Kart: This actually needs to be done FIRST, so that you don't immediately regain playtime/matches secrets
 		gamedata->totalplaytime = 0;
 		gamedata->matchesplayed = 0;
+		gamedata->totalrings = 0;
 	}
 	if (optionsmenu.erasecontext != 1)
 		G_ClearRecords();

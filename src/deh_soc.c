@@ -2370,6 +2370,18 @@ static void readcondition(UINT8 set, UINT32 id, char *word2)
 		ty = UC_PLAYTIME + offset;
 		re = atoi(params[1]);
 	}
+	else if (fastcmp(params[0], "TOTALRINGS"))
+	{
+		PARAMCHECK(1);
+		ty = UC_TOTALRINGS;
+		re = atoi(params[1]);
+
+		if (re < 2 || re > GDMAX_RINGS)
+		{
+			deh_warning("Total Rings requirement %d out of range (%d - %d) for condition ID %d", re, 2, GDMAX_RINGS, id+1);
+			return;
+		}
+	}
 	else if (fastcmp(params[0], "POWERLEVEL"))
 	{
 		PARAMCHECK(2);

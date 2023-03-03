@@ -5471,7 +5471,7 @@ bottomarrow:
 
 void M_DrawStatistics(void)
 {
-	char beststr[40];
+	char beststr[256];
 
 	tic_t besttime = 0;
 
@@ -5483,12 +5483,48 @@ void M_DrawStatistics(void)
 		V_DrawFixedPatch(0, 0, FRACUNIT, 0, bg, NULL);
 	}
 
+	beststr[0] = 0;
 	V_DrawThinString(20, 22, V_6WIDTHSPACE|V_ALLOWLOWERCASE|highlightflags, "Total Play Time:");
-	V_DrawCenteredThinString(BASEVIDWIDTH/2, 32, V_6WIDTHSPACE,
-							va("%i hours, %i minutes, %i seconds",
-	                         G_TicsToHours(gamedata->totalplaytime),
-	                         G_TicsToMinutes(gamedata->totalplaytime, false),
-	                         G_TicsToSeconds(gamedata->totalplaytime)));
+	besttime = G_TicsToHours(gamedata->totalplaytime);
+	if (besttime)
+	{
+		if (besttime >= 24)
+		{
+			strcat(beststr, va("%u days, ", besttime/24));
+			besttime %= 24;
+		}
+
+		strcat(beststr, va("%u hours, ", besttime));
+	}
+	besttime = G_TicsToMinutes(gamedata->totalplaytime, false);
+	if (besttime)
+	{
+		strcat(beststr, va("%u minutes, ", besttime));
+	}
+	strcat(beststr, va("%i seconds", G_TicsToSeconds(gamedata->totalplaytime)));
+	V_DrawRightAlignedThinString(BASEVIDWIDTH-20, 22, V_6WIDTHSPACE, beststr);
+	beststr[0] = 0;
+
+	V_DrawThinString(20, 32, V_6WIDTHSPACE|V_ALLOWLOWERCASE|highlightflags, "Total Rings:");
+	if (gamedata->totalrings > GDMAX_RINGS)
+	{
+		sprintf(beststr, "%c999,999,999+", '\x82');
+	}
+	else if (gamedata->totalrings >= 1000000)
+	{
+		sprintf(beststr, "%u,%u,%u", (gamedata->totalrings/1000000), (gamedata->totalrings/1000)%1000, (gamedata->totalrings%1000));
+	}
+	else if (gamedata->totalrings >= 1000)
+	{
+		sprintf(beststr, "%u,%u", (gamedata->totalrings/1000), (gamedata->totalrings%1000));
+	}
+	else
+	{
+		sprintf(beststr, "%u", gamedata->totalrings);
+	}
+	V_DrawRightAlignedThinString(BASEVIDWIDTH-20, 32, V_6WIDTHSPACE, va("%s collected", beststr));
+	beststr[0] = 0;
+
 	V_DrawThinString(20, 42, V_6WIDTHSPACE|V_ALLOWLOWERCASE|highlightflags, "Total Matches:");
 	V_DrawRightAlignedThinString(BASEVIDWIDTH-20, 42, V_6WIDTHSPACE, va("%i played", gamedata->matchesplayed));
 
@@ -5497,6 +5533,8 @@ void M_DrawStatistics(void)
 		V_DrawCenteredThinString(BASEVIDWIDTH/2, 62, V_6WIDTHSPACE|V_ALLOWLOWERCASE, "No maps!?");
 		return;
 	}
+
+	besttime = 0;
 
 	for (i = 0; i < nummapheaders; i++)
 	{
