@@ -479,6 +479,7 @@ static void COM_TokenizeString(char *ptext)
 		Z_Free(com_argv[i]);
 
 	com_argc = 0;
+	Z_Free(com_args);
 	com_args = NULL;
 	com_flags = 0;
 
@@ -502,7 +503,7 @@ static void COM_TokenizeString(char *ptext)
 			break;
 
 		if (com_argc == 1)
-			com_args = ptext;
+			com_args = COM_Purge(Z_StrDup(ptext), NULL);
 
 		ptext = COM_Parse(ptext);
 		if (ptext == NULL)

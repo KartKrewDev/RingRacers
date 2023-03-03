@@ -11347,7 +11347,7 @@ tic_t K_TimeLimitForGametype(void)
 
 	if (cv_timelimit.value != -1)
 	{
-		return cv_timelimit.value * (60*TICRATE);
+		return cv_timelimit.value * TICRATE;
 	}
 
 	// No time limit for Break the Capsules FREE PLAY
