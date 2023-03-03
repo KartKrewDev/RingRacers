@@ -519,6 +519,14 @@ typedef enum
 	TMLOOP_BETA  = 1,
 } textmaploopendpointtype_t;
 
+typedef enum
+{
+	TMCAM_FIRST = -1,
+	TMCAM_SECOND = -2,
+	TMCAM_THIRD = -3,
+	TMCAM_CONSOLE = -4,
+} textmapcamerafollow_t;
+
 // GETSECSPECIAL (specialval, section)
 //
 // Pulls out the special # from a particular section.

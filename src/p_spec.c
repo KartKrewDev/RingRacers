@@ -3032,7 +3032,9 @@ boolean P_ProcessSpecial(activator_t *activator, INT16 special, INT32 *args, cha
 				{
 					switch (args[2])
 					{
-						case -1:
+						case TMCAM_FIRST:
+						case TMCAM_SECOND:
+						case TMCAM_THIRD:
 						{
 							mobj_t *firstPlace = NULL;
 							INT32 i;
@@ -3057,7 +3059,7 @@ boolean P_ProcessSpecial(activator_t *activator, INT16 special, INT32 *args, cha
 									continue;
 								}
 
-								if (player->position == 1)
+								if (player->position == abs(args[2])) // a bit of a hack
 								{
 									firstPlace = player->mo;
 									break;
@@ -3070,7 +3072,7 @@ boolean P_ProcessSpecial(activator_t *activator, INT16 special, INT32 *args, cha
 							);
 							break;
 						}
-						case -2:
+						case TMCAM_CONSOLE:
 						{
 							mobj_t *consoleMo = NULL;
 							if (playeringame[consoleplayer] == true)
