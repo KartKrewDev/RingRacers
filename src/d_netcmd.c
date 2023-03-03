@@ -226,6 +226,8 @@ static void Command_Schedule_List(void);
 
 static void Command_Automate_Set(void);
 
+static void Command_Eval(void);
+
 // =========================================================================
 //                           CLIENT VARIABLES
 // =========================================================================
@@ -744,6 +746,8 @@ void D_RegisterServerCommands(void)
 	COM_AddCommand("schedule_list", Command_Schedule_List);
 
 	COM_AddCommand("automate_set", Command_Automate_Set);
+
+	COM_AddCommand("eval", Command_Eval);
 
 	// for master server connection
 	AddMServCommands();
@@ -6126,6 +6130,18 @@ static void Command_Automate_Set(void)
 	WRITESTRING(buf_p, command);
 
 	SendNetXCmd(XD_AUTOMATE, buf, buf_p - buf);
+}
+
+static void Command_Eval(void)
+{
+	const char *args = COM_Args();
+
+	if (args)
+	{
+		const fixed_t n = LUA_EvalMath(args);
+
+		CONS_Printf("%f (%d)\n", FixedToFloat(n), n);
+	}
 }
 
 /** Makes a change to ::cv_forceskin take effect immediately.
