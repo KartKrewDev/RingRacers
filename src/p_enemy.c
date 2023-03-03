@@ -9390,6 +9390,10 @@ void A_SetScale(mobj_t *actor)
 	}
 
 	locvar1 = FixedMul(locvar1, mapobjectscale); // SRB2Kart
+	if (target->spawnpoint != NULL)
+	{
+		locvar1 = FixedMul(locvar1, target->spawnpoint->scale);
+	}
 
 	target->destscale = locvar1; // destination scale
 	if (!(locvar2 & 65535))
