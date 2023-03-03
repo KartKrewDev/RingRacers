@@ -623,7 +623,9 @@ boolean M_CheckCondition(condition_t *cn, player_t *player)
 			}
 			return false;
 
-		case UC_AND: // Just for string building
+		// Just for string building
+		case UC_AND:
+		case UC_COMMA:
 			return true;
 
 		case UCRP_PREFIX_GRANDPRIX:
@@ -637,6 +639,7 @@ boolean M_CheckCondition(condition_t *cn, player_t *player)
 		case UCRP_PREFIX_SEALEDSTAR:
 			return (specialstageinfo.valid == true);
 
+		case UCRP_PREFIX_ISMAP:
 		case UCRP_ISMAP:
 			return (gamemap == cn->requirement+1);
 		case UCRP_ISCHARACTER:
@@ -844,7 +847,7 @@ static const char *M_GetConditionString(condition_t *cn)
 						Z_Free(title);
 						return va("INVALID MEDAL COLOR \"%d:%d\"", cn->requirement, checkLevel);
 					}
-					work = va("Get the %s Medal for %s", skincolors[emblemlocations[i].color].name, title);
+					work = va("TIME ATTACK: Get the %s Medal for %s", skincolors[emblemlocations[i].color].name, title);
 					break;
 				case ET_GLOBAL:
 				{
@@ -870,16 +873,16 @@ static const char *M_GetConditionString(condition_t *cn)
 
 					if (emblemlocations[i].flags & GE_TIMED)
 					{
-						work = va("Find %s%s%s in %s before %i:%02i.%02i",
-							astr, colorstr, medalstr, title,
+						work = va("%s: Find %s%s%s before %i:%02i.%02i",
+							title, astr, colorstr, medalstr,
 							G_TicsToMinutes(emblemlocations[i].var, true),
 							G_TicsToSeconds(emblemlocations[i].var),
 							G_TicsToCentiseconds(emblemlocations[i].var));
 					}
 					else
 					{
-						work = va("Find %s%s%s in %s",
-							astr, colorstr, medalstr, title);
+						work = va("%s: Find %s%s%s",
+							title, astr, colorstr, medalstr);
 					}
 					break;
 				}
@@ -903,6 +906,8 @@ static const char *M_GetConditionString(condition_t *cn)
 
 		case UC_AND:
 			return "&";
+		case UC_COMMA:
+			return ",";
 
 		case UCRP_PREFIX_GRANDPRIX:
 			return "GRAND PRIX:";
@@ -917,12 +922,20 @@ static const char *M_GetConditionString(condition_t *cn)
 		case UCRP_PREFIX_SEALEDSTAR:
 			return "SEALED STAR:";
 
+		case UCRP_PREFIX_ISMAP:
+			if (cn->requirement >= nummapheaders || !mapheaderinfo[cn->requirement])
+				return va("INVALID MAP CONDITION \"%d:%d\"", cn->type, cn->requirement);
+
+			title = BUILDCONDITIONTITLE(cn->requirement);
+			work = va("%s:", title);
+			Z_Free(title);
+			return work;
 		case UCRP_ISMAP:
 			if (cn->requirement >= nummapheaders || !mapheaderinfo[cn->requirement])
 				return va("INVALID MAP CONDITION \"%d:%d\"", cn->type, cn->requirement);
 
 			title = BUILDCONDITIONTITLE(cn->requirement);
-			work = va("On %s,", title);
+			work = va("On %s", title);
 			Z_Free(title);
 			return work;
 		case UCRP_ISCHARACTER:
@@ -992,25 +1005,21 @@ char *M_BuildConditionSetString(UINT8 unlockid)
 	{
 		cn = &c->condition[i];
 
-		if (i > 0)
+		if (i > 0 && (cn->type != UC_COMMA))
 		{
 			if (lastID != cn->id)
 			{
 				worklen = 4;
 				strncat(message, "\nOR ", len);
 			}
-			else //if (cn->type >= UCRP_REQUIRESPLAYING)
+			else
 			{
 				worklen = 1;
 				strncat(message, " ", len);
 			}
-			/*else
-			{
-				worklen = 3;
-				strncat(message, "\n& ", len);
-			}*/
 			len -= worklen;
 		}
+
 		lastID = cn->id;
 
 		work = M_GetConditionString(cn);

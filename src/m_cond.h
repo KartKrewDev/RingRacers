@@ -45,7 +45,9 @@ typedef enum
 
 	UC_CRASH,			// Hee ho !
 
-	UC_AND, // Just for string building
+	 // Just for string building
+	UC_AND,
+	UC_COMMA,
 
 	UCRP_REQUIRESPLAYING, // All conditions below this can only be checked if (Playing() && gamestate == GS_LEVEL).
 
@@ -55,7 +57,9 @@ typedef enum
 	UCRP_PREFIX_BREAKTHECAPSULES, // BREAK THE CAPSULES:
 	UCRP_PREFIX_SEALEDSTAR, // SEALED STAR:
 
+	UCRP_PREFIX_ISMAP, // name of [map]:
 	UCRP_ISMAP, // gamemap == [map]
+
 	UCRP_ISCHARACTER, // character == [skin]
 
 	UCRP_FINISHCOOL, // Finish in good standing

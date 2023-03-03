@@ -2487,10 +2487,11 @@ static void readcondition(UINT8 set, UINT32 id, char *word2)
 		//PARAMCHECK(1);
 		ty = UC_CRASH;
 	}
-	else if (fastcmp(params[0], "AND"))
+	else if ((offset=0) || fastcmp(params[0], "AND")
+	||        (++offset && fastcmp(params[0], "COMMA")))
 	{
 		//PARAMCHECK(1);
-		ty = UC_AND;
+		ty = UC_AND + offset;
 	}
 	else if ((offset=0) || fastcmp(params[0], "PREFIX_GRANDPRIX")
 	||        (++offset && fastcmp(params[0], "PREFIX_BONUSROUND"))
@@ -2501,10 +2502,11 @@ static void readcondition(UINT8 set, UINT32 id, char *word2)
 		//PARAMCHECK(1);
 		ty = UCRP_PREFIX_GRANDPRIX + offset;
 	}
-	else if (fastcmp(params[0], "ISMAP"))
+	else if ((offset=0) || fastcmp(params[0], "PREFIX_ISMAP")
+	||        (++offset && fastcmp(params[0], "ISMAP")))
 	{
 		PARAMCHECK(1);
-		ty = UCRP_ISMAP;
+		ty = UCRP_PREFIX_ISMAP + offset;
 		re = G_MapNumber(params[1]);
 
 		if (re >= nummapheaders)
