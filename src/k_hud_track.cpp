@@ -5,9 +5,11 @@
 #include "k_battle.h"
 #include "k_boss.h"
 #include "k_hud.h"
+#include "k_objects.h"
 #include "m_fixed.h"
 #include "p_local.h"
 #include "p_mobj.h"
+#include "r_draw.h"
 #include "r_fps.h"
 #include "r_main.h"
 #include "st_stuff.h"
@@ -21,10 +23,40 @@ struct TargetTracking
 	mobj_t* mobj;
 	vector3_t point;
 	fixed_t camDist;
+
+	skincolornum_t color() const
+	{
+		switch (mobj->type)
+		{
+		case MT_OVERTIME_CENTER:
+			return SKINCOLOR_BLUE;
+
+		case MT_MONITOR:
+		case MT_EMERALD:
+			return static_cast<skincolornum_t>(mobj->color);
+
+		default:
+			return SKINCOLOR_NONE;
+		}
+	}
+
+	const uint8_t* colormap() const
+	{
+		const skincolornum_t clr = color();
+
+		if (clr != SKINCOLOR_NONE)
+		{
+			return R_GetTranslationColormap(TC_RAINBOW, clr, GTC_CACHE);
+		}
+
+		return nullptr;
+	}
 };
 
 void K_DrawTargetTracking(const TargetTracking& target)
 {
+	const uint8_t* colormap = target.colormap();
+
 	trackingResult_t result = {};
 	int32_t timer = 0;
 
@@ -175,10 +207,10 @@ void K_DrawTargetTracking(const TargetTracking& target)
 
 		if (targetPatch)
 		{
-			V_DrawFixedPatch(targetPos.x, targetPos.y, FRACUNIT, V_SPLITSCREEN, targetPatch, nullptr);
+			V_DrawFixedPatch(targetPos.x, targetPos.y, FRACUNIT, V_SPLITSCREEN, targetPatch, colormap);
 		}
 
-		V_DrawFixedPatch(arrowPos.x, arrowPos.y, FRACUNIT, V_SPLITSCREEN | arrowFlags, arrowPatch, nullptr);
+		V_DrawFixedPatch(arrowPos.x, arrowPos.y, FRACUNIT, V_SPLITSCREEN | arrowFlags, arrowPatch, colormap);
 	}
 	else
 	{
@@ -207,7 +239,7 @@ void K_DrawTargetTracking(const TargetTracking& target)
 				FRACUNIT,
 				V_SPLITSCREEN,
 				patch,
-				nullptr
+				colormap
 			);
 		};
 
@@ -229,7 +261,7 @@ void K_DrawTargetTracking(const TargetTracking& target)
 	}
 }
 
-bool is_player_tracking_target(const player_t *player)
+bool is_player_tracking_target(const player_t *player = stplyr)
 {
 	if ((gametyperules & (GTR_BUMPERS|GTR_CLOSERPLAYERS)) != (GTR_BUMPERS|GTR_CLOSERPLAYERS))
 	{
@@ -251,6 +283,13 @@ bool is_player_tracking_target(const player_t *player)
 		// Always draw targets in 1v1 but don't draw player's
 		// own target on their own viewport.
 		return player != stplyr;
+	}
+
+	// Except for DUEL mode, Overtime hides all TARGETs except
+	// the kiosk.
+	if (battleovertime.enabled)
+	{
+		return false;
 	}
 
 	if (g_hiscore < 1) // SOMEONE should be scoring
@@ -276,6 +315,15 @@ bool is_object_tracking_target(const mobj_t* mobj)
 
 	case MT_PLAYER:
 		return is_player_tracking_target(mobj->player);
+
+	case MT_OVERTIME_CENTER:
+		return inDuel == false && battleovertime.enabled;
+
+	case MT_EMERALD:
+		return is_player_tracking_target();
+
+	case MT_MONITOR:
+		return is_player_tracking_target() && Obj_MonitorGetEmerald(mobj) != 0;
 
 	default:
 		return false;

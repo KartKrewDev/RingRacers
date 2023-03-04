@@ -5265,6 +5265,11 @@ static boolean P_IsTrackerType(INT32 type)
 		case MT_PLAYER:
 			return true;
 
+		case MT_OVERTIME_CENTER:
+		case MT_MONITOR:
+		case MT_EMERALD:
+			return true;
+
 		default:
 			return false;
 	}
