@@ -90,15 +90,16 @@ UINT8 wipedefs[NUMWIPEDEFS] = {
 static boolean g_wipedef_toblack[NUMWIPEDEFS] = {
 	true, // wipe_credits_intermediate (0)
 
-	true,  // wipe_level_toblack
-	true,  // wipe_intermission_toblack
-	true,  // wipe_voting_toblack,
-	true,  // wipe_continuing_toblack
-	true,  // wipe_titlescreen_toblack
-	true,  // wipe_menu_toblack
+	true, // wipe_level_toblack
+	true, // wipe_intermission_toblack
+	true, // wipe_voting_toblack,
+	true, // wipe_continuing_toblack
+	true, // wipe_titlescreen_toblack
+	true, // wipe_menu_toblack
 	true, // wipe_credits_toblack
-	true,  // wipe_evaluation_toblack
-	true,  // wipe_gameend_toblack
+	true, // wipe_evaluation_toblack
+	true, // wipe_gameend_toblack
+	true, // wipe_ceremony_toblack
 	true, // wipe_intro_toblack (hardcoded)
 	true, // wipe_ending_toblack (hardcoded)
 	true, // wipe_cutscene_toblack (hardcoded)
@@ -107,14 +108,15 @@ static boolean g_wipedef_toblack[NUMWIPEDEFS] = {
 	false, // wipe_encore_towhite
 
 	true, // wipe_level_final
-	true,  // wipe_intermission_final
-	true,  // wipe_voting_final
-	true,  // wipe_continuing_final
-	true,  // wipe_titlescreen_final
-	true,  // wipe_menu_final
+	true, // wipe_intermission_final
+	true, // wipe_voting_final
+	true, // wipe_continuing_final
+	true, // wipe_titlescreen_final
+	true, // wipe_menu_final
 	true, // wipe_credits_final
-	true,  // wipe_evaluation_final
-	true,  // wipe_gameend_final
+	true, // wipe_evaluation_final
+	true, // wipe_gameend_final
+	true, // wipe_ceremony_final
 	true, // wipe_intro_final (hardcoded)
 	true, // wipe_ending_final (hardcoded)
 	true  // wipe_cutscene_final (hardcoded)
@@ -123,15 +125,16 @@ static boolean g_wipedef_toblack[NUMWIPEDEFS] = {
 static boolean g_wipedef_toinvert[NUMWIPEDEFS] = {
 	false, // wipe_credits_intermediate (0)
 
-	false,  // wipe_level_toblack
-	false,  // wipe_intermission_toblack
-	false,  // wipe_voting_toblack,
-	false,  // wipe_continuing_toblack
-	false,  // wipe_titlescreen_toblack
-	false,  // wipe_menu_toblack
+	false, // wipe_level_toblack
+	false, // wipe_intermission_toblack
+	false, // wipe_voting_toblack,
+	false, // wipe_continuing_toblack
+	false, // wipe_titlescreen_toblack
+	false, // wipe_menu_toblack
 	false, // wipe_credits_toblack
-	false,  // wipe_evaluation_toblack
-	false,  // wipe_gameend_toblack
+	false, // wipe_evaluation_toblack
+	false, // wipe_gameend_toblack
+	false, // wipe_ceremony_toblack
 	false, // wipe_intro_toblack (hardcoded)
 	false, // wipe_ending_toblack (hardcoded)
 	false, // wipe_cutscene_toblack (hardcoded)
@@ -140,14 +143,15 @@ static boolean g_wipedef_toinvert[NUMWIPEDEFS] = {
 	false, // wipe_encore_towhite
 
 	false, // wipe_level_final
-	false,  // wipe_intermission_final
-	false,  // wipe_voting_final
-	false,  // wipe_continuing_final
-	false,  // wipe_titlescreen_final
-	false,  // wipe_menu_final
+	false, // wipe_intermission_final
+	false, // wipe_voting_final
+	false, // wipe_continuing_final
+	false, // wipe_titlescreen_final
+	false, // wipe_menu_final
 	false, // wipe_credits_final
-	false,  // wipe_evaluation_final
-	false,  // wipe_gameend_final
+	false, // wipe_evaluation_final
+	false, // wipe_gameend_final
+	false, // wipe_ceremony_final
 	false, // wipe_intro_final (hardcoded)
 	false, // wipe_ending_final (hardcoded)
 	false  // wipe_cutscene_final (hardcoded)
@@ -156,15 +160,16 @@ static boolean g_wipedef_toinvert[NUMWIPEDEFS] = {
 static boolean g_wipedef_towhite[NUMWIPEDEFS] = {
 	false, // wipe_credits_intermediate (0)
 
-	false,  // wipe_level_toblack
-	false,  // wipe_intermission_toblack
-	false,  // wipe_voting_toblack,
-	false,  // wipe_continuing_toblack
-	false,  // wipe_titlescreen_toblack
-	false,  // wipe_menu_toblack
+	false, // wipe_level_toblack
+	false, // wipe_intermission_toblack
+	false, // wipe_voting_toblack,
+	false, // wipe_continuing_toblack
+	false, // wipe_titlescreen_toblack
+	false, // wipe_menu_toblack
 	false, // wipe_credits_toblack
-	false,  // wipe_evaluation_toblack
-	false,  // wipe_gameend_toblack
+	false, // wipe_evaluation_toblack
+	false, // wipe_gameend_toblack
+	false, // wipe_ceremony_toblack
 	false, // wipe_intro_toblack (hardcoded)
 	false, // wipe_ending_toblack (hardcoded)
 	false, // wipe_cutscene_toblack (hardcoded)
@@ -173,14 +178,15 @@ static boolean g_wipedef_towhite[NUMWIPEDEFS] = {
 	true, // wipe_encore_towhite
 
 	false, // wipe_level_final
-	false,  // wipe_intermission_final
-	false,  // wipe_voting_final
-	false,  // wipe_continuing_final
-	false,  // wipe_titlescreen_final
-	false,  // wipe_menu_final
+	false, // wipe_intermission_final
+	false, // wipe_voting_final
+	false, // wipe_continuing_final
+	false, // wipe_titlescreen_final
+	false, // wipe_menu_final
 	false, // wipe_credits_final
-	false,  // wipe_evaluation_final
-	false,  // wipe_gameend_final
+	false, // wipe_evaluation_final
+	false, // wipe_gameend_final
+	false, // wipe_ceremony_final
 	false, // wipe_intro_final (hardcoded)
 	false, // wipe_ending_final (hardcoded)
 	false  // wipe_cutscene_final (hardcoded)
@@ -189,15 +195,16 @@ static boolean g_wipedef_towhite[NUMWIPEDEFS] = {
 static boolean g_wipedef_crossfade[NUMWIPEDEFS] = {
 	false, // wipe_credits_intermediate (0)
 
-	false,  // wipe_level_toblack
-	false,  // wipe_intermission_toblack
-	false,  // wipe_voting_toblack,
-	false,  // wipe_continuing_toblack
-	false,  // wipe_titlescreen_toblack
-	false,  // wipe_menu_toblack
+	false, // wipe_level_toblack
+	false, // wipe_intermission_toblack
+	false, // wipe_voting_toblack,
+	false, // wipe_continuing_toblack
+	false, // wipe_titlescreen_toblack
+	false, // wipe_menu_toblack
 	false, // wipe_credits_toblack
-	false,  // wipe_evaluation_toblack
-	false,  // wipe_gameend_toblack
+	false, // wipe_evaluation_toblack
+	false, // wipe_gameend_toblack
+	false, // wipe_ceremony_toblack
 	false, // wipe_intro_toblack (hardcoded)
 	false, // wipe_ending_toblack (hardcoded)
 	false, // wipe_cutscene_toblack (hardcoded)
@@ -206,14 +213,15 @@ static boolean g_wipedef_crossfade[NUMWIPEDEFS] = {
 	false, // wipe_encore_towhite
 
 	true, // wipe_level_final
-	true,  // wipe_intermission_final
-	true,  // wipe_voting_final
-	true,  // wipe_continuing_final
-	true,  // wipe_titlescreen_final
-	true,  // wipe_menu_final
+	true, // wipe_intermission_final
+	true, // wipe_voting_final
+	true, // wipe_continuing_final
+	true, // wipe_titlescreen_final
+	true, // wipe_menu_final
 	true, // wipe_credits_final
-	true,  // wipe_evaluation_final
-	true,  // wipe_gameend_final
+	true, // wipe_evaluation_final
+	true, // wipe_gameend_final
+	true, // wipe_ceremony_final
 	true, // wipe_intro_final (hardcoded)
 	true, // wipe_ending_final (hardcoded)
 	true  // wipe_cutscene_final (hardcoded)
