@@ -5364,12 +5364,6 @@ static void Got_ExitLevelcmd(UINT8 **cp, INT32 playernum)
 		return;
 	}
 
-	if (grandprixinfo.gp == true)
-	{
-		// This is already a cheat command.
-		grandprixinfo.wonround = true;
-	}
-
 	G_ExitLevel();
 }
 
