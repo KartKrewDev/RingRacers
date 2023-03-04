@@ -1324,13 +1324,22 @@ void ST_Drawer(void)
 		switch (demo.savemode)
 		{
 		case DSM_NOTSAVING:
-			V_DrawRightAlignedThinString(BASEVIDWIDTH - 2, 2, V_HUDTRANS|V_SNAPTOTOP|V_SNAPTORIGHT|V_ALLOWLOWERCASE|V_YELLOWMAP, "(B) or (X): Save replay");
-			break;
+		{
+			INT32 buttonx = BASEVIDWIDTH;
+			INT32 buttony = 2;
 
+			V_DrawRightAlignedThinString(buttonx - 64, buttony, V_HUDTRANS|V_SNAPTOTOP|V_SNAPTORIGHT|V_ALLOWLOWERCASE|V_YELLOWMAP, "or");
+			K_drawButtonAnim(buttonx - 65, buttony, V_HUDTRANS|V_SNAPTOTOP|V_SNAPTORIGHT, kp_button_x[1], leveltime);
+			V_DrawRightAlignedThinString(buttonx - 2, buttony, V_HUDTRANS|V_SNAPTOTOP|V_SNAPTORIGHT|V_ALLOWLOWERCASE|V_YELLOWMAP, "Save replay");
+			break;
+		}
 		case DSM_WILLAUTOSAVE:
-			V_DrawRightAlignedThinString(BASEVIDWIDTH - 2, 2, V_HUDTRANS|V_SNAPTOTOP|V_SNAPTORIGHT|V_ALLOWLOWERCASE|V_YELLOWMAP, "Replay will be saved. (Look Backward: Change title)");
+		{
+			V_DrawRightAlignedThinString(BASEVIDWIDTH - 66, 2, V_HUDTRANS|V_SNAPTOTOP|V_SNAPTORIGHT|V_ALLOWLOWERCASE|V_YELLOWMAP, "Replay will be saved.");
+			K_drawButtonAnim(BASEVIDWIDTH - 68, 2, V_HUDTRANS|V_SNAPTOTOP|V_SNAPTORIGHT, kp_button_b[1], leveltime);
+			V_DrawRightAlignedThinString(BASEVIDWIDTH - 2, 2, V_HUDTRANS|V_SNAPTOTOP|V_SNAPTORIGHT|V_ALLOWLOWERCASE|V_YELLOWMAP, "Change title");
 			break;
-
+		}
 		case DSM_WILLSAVE:
 			V_DrawRightAlignedThinString(BASEVIDWIDTH - 2, 2, V_HUDTRANS|V_SNAPTOTOP|V_SNAPTORIGHT|V_ALLOWLOWERCASE|V_YELLOWMAP, "Replay will be saved.");
 			break;

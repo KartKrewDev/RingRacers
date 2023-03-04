@@ -45,12 +45,27 @@ void K_DrawTabRankings(INT32 x, INT32 y, playersort_t *tab, INT32 scorelines, IN
 void K_DrawMapThumbnail(INT32 x, INT32 y, INT32 width, UINT32 flags, UINT16 map, UINT8 *colormap);
 void K_DrawLikeMapThumbnail(INT32 x, INT32 y, INT32 width, UINT32 flags, patch_t *patch, UINT8 *colormap);
 void K_drawTargetHUD(const vector3_t *origin, player_t *player);
+void K_drawButtonAnim(INT32 x, INT32 y, INT32 flags, patch_t *button[2], tic_t animtic);
 
 extern patch_t *kp_capsuletarget_arrow[2][2];
 extern patch_t *kp_capsuletarget_icon[2];
 extern patch_t *kp_capsuletarget_far[2];
 extern patch_t *kp_capsuletarget_far_text[2];
 extern patch_t *kp_capsuletarget_near[8];
+
+extern patch_t *kp_button_a[2][2];
+extern patch_t *kp_button_b[2][2];
+extern patch_t *kp_button_c[2][2];
+extern patch_t *kp_button_x[2][2];
+extern patch_t *kp_button_y[2][2];
+extern patch_t *kp_button_z[2][2];
+extern patch_t *kp_button_start[2];
+extern patch_t *kp_button_l[2];
+extern patch_t *kp_button_r[2];
+extern patch_t *kp_button_up[2];
+extern patch_t *kp_button_down[2];
+extern patch_t *kp_button_right[2];
+extern patch_t *kp_button_left[2];
 
 #ifdef __cplusplus
 } // extern "C"
