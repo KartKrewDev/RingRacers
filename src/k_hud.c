@@ -4833,8 +4833,6 @@ static void K_DrawGPRankDebugger(void)
 	V_DrawThinString(0, 50, V_SNAPTOTOP|V_SNAPTOLEFT|V_6WIDTHSPACE|V_ALLOWLOWERCASE,
 		va("RINGS: %d / %d", g_gpRank.rings, g_gpRank.totalRings));
 	V_DrawThinString(0, 60, V_SNAPTOTOP|V_SNAPTOLEFT|V_6WIDTHSPACE|V_ALLOWLOWERCASE,
-		va("DIFFICULTY: %d / %d", g_gpRank.difficulty, g_gpRank.difficultyTarget));
-	V_DrawThinString(0, 70, V_SNAPTOTOP|V_SNAPTOLEFT|V_6WIDTHSPACE|V_ALLOWLOWERCASE,
 		va("EMERALD: %s", (g_gpRank.specialWon == true) ? "YES" : "NO"));
 
 	switch (grade)
@@ -4848,7 +4846,7 @@ static void K_DrawGPRankDebugger(void)
 		default: { break; }
 	}
 
-	V_DrawThinString(0, 90, V_SNAPTOTOP|V_SNAPTOLEFT|V_6WIDTHSPACE|V_ALLOWLOWERCASE|V_YELLOWMAP,
+	V_DrawThinString(0, 80, V_SNAPTOTOP|V_SNAPTOLEFT|V_6WIDTHSPACE|V_ALLOWLOWERCASE|V_YELLOWMAP,
 		va(" ** FINAL GRADE: %c", gradeChar));
 }
 

@@ -4129,7 +4129,6 @@ static void G_DoCompleted(void)
 	wipegamestate = GS_NULL;
 
 	g_gpRank.position = MAXPLAYERS;
-	g_gpRank.difficulty = 0;
 
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
@@ -4157,11 +4156,7 @@ static void G_DoCompleted(void)
 
 			G_PlayerFinishLevel(i); // take away cards and stuff
 
-			if (players[i].bot)
-			{
-				g_gpRank.difficulty = max(g_gpRank.difficulty, players[i].botvars.difficulty);
-			}
-			else
+			if (players[i].bot == false)
 			{
 				g_gpRank.position = min(g_gpRank.position, K_GetPodiumPosition(&players[i]));
 			}

@@ -68,18 +68,6 @@ void K_InitGrandPrixRank(gpRank_t *rankData)
 
 	rankData->totalRings = grandprixinfo.cup->numlevels * numHumans * 20;
 
-	if (grandprixinfo.masterbots == true)
-	{
-		rankData->difficultyTarget = MAXBOTDIFFICULTY;
-	}
-	else
-	{
-		rankData->difficultyTarget = min(
-			MAXBOTDIFFICULTY,
-			K_BotStartingDifficulty(grandprixinfo.gamespeed) + ((grandprixinfo.cup->numlevels + 1) / 2)
-		);
-	}
-
 	for (i = 0; i < grandprixinfo.cup->numlevels; i++)
 	{
 		const INT32 cupLevelNum = grandprixinfo.cup->cachedlevels[i];
@@ -114,14 +102,13 @@ gp_rank_e K_CalculateGPGrade(gpRank_t *rankData)
 
 	gp_rank_e retGrade = GRADE_E;
 
-	const INT32 positionWeight = 1500;
-	const INT32 pointsWeight = 1000;
-	const INT32 lapsWeight = 1000;
-	const INT32 capsulesWeight = 1000;
-	const INT32 ringsWeight = 500;
-	const INT32 difficultyWeight = 200;
-	const INT32 total = positionWeight + pointsWeight + lapsWeight + capsulesWeight + ringsWeight + difficultyWeight;
-	const INT32 continuesPenalty = 200;
+	const INT32 positionWeight = 150;
+	const INT32 pointsWeight = 100;
+	const INT32 lapsWeight = 100;
+	const INT32 capsulesWeight = 100;
+	const INT32 ringsWeight = 50;
+	const INT32 total = positionWeight + pointsWeight + lapsWeight + capsulesWeight + ringsWeight;
+	const INT32 continuesPenalty = 20;
 
 	INT32 ours = 0;
 	fixed_t percent = 0;
@@ -151,11 +138,6 @@ gp_rank_e K_CalculateGPGrade(gpRank_t *rankData)
 	if (rankData->totalRings > 0)
 	{
 		ours += (rankData->rings * ringsWeight) / rankData->totalRings;
-	}
-
-	if (rankData->difficultyTarget > 0)
-	{
-		ours += (rankData->difficulty * difficultyWeight) / rankData->difficultyTarget;
 	}
 
 	ours -= rankData->continuesUsed * continuesPenalty;

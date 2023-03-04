@@ -57,7 +57,7 @@ static struct podiumData_s
 	UINT8 fade;
 } podiumData;
 
-#define PODIUM_STATES (10) // TODO: enum when this actually gets made
+#define PODIUM_STATES (9) // TODO: enum when this actually gets made
 
 /*--------------------------------------------------
 	boolean K_PodiumSequence(void)
@@ -472,27 +472,20 @@ void K_CeremonyDrawer(void)
 				case 7:
 				{
 					V_DrawString(x, y, V_ALLOWLOWERCASE,
-						va("DIFFICULTY: %d / %d", podiumData.rankData.difficulty, podiumData.rankData.difficultyTarget)
-					);
-					break;
-				}
-				case 8:
-				{
-					V_DrawString(x, y, V_ALLOWLOWERCASE,
 						va("EMERALD: %s", (podiumData.rankData.specialWon == true) ? "YES" : "NO")
 					);
 					break;
 				}
-				case 9:
+				case 8:
 				{
 					V_DrawString(x, y + 10, V_YELLOWMAP|V_ALLOWLOWERCASE,
 						va(" ** FINAL GRADE: %c", gradeChar)
 					);
 					break;
 				}
-				case 10:
+				case 9:
 				{
-					V_DrawRightAlignedThinString(BASEVIDWIDTH - 2, BASEVIDHEIGHT - 10, V_SNAPTOBOTTOM|V_SNAPTORIGHT|V_6WIDTHSPACE|V_ALLOWLOWERCASE,
+					V_DrawThinString(2, BASEVIDHEIGHT - 10, V_SNAPTOBOTTOM|V_SNAPTOLEFT|V_6WIDTHSPACE|V_ALLOWLOWERCASE,
 						"Press some button type deal to continue"
 					);
 					break;

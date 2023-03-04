@@ -41,9 +41,6 @@ struct gpRank_t
 	UINT32 rings;
 	UINT32 totalRings;
 
-	UINT8 difficulty;
-	UINT8 difficultyTarget;
-
 	boolean specialWon;
 };
 
