@@ -91,7 +91,6 @@ void K_CheckBumpers(void)
 {
 	UINT8 i;
 	UINT8 numingame = 0;
-	UINT32 toproundscore = 0;
 	UINT8 nobumpers = 0;
 
 	if (!(gametyperules & GTR_BUMPERS))
@@ -109,11 +108,6 @@ void K_CheckBumpers(void)
 			return;
 
 		numingame++;
-
-		if (players[i].roundscore > toproundscore)
-		{
-			toproundscore = players[i].roundscore;
-		}
 
 		if (players[i].bumpers <= 0) // if you don't have any bumpers, you're probably not a winner
 		{
@@ -136,10 +130,6 @@ void K_CheckBumpers(void)
 			}
 		}
 		return;
-	}
-	else
-	{
-		g_hiscore = toproundscore;
 	}
 
 	if (numingame <= 1)

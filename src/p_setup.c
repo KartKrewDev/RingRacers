@@ -7109,8 +7109,6 @@ static void P_InitLevelSettings(void)
 		franticitems = (boolean)cv_kartfrantic.value;
 	}
 
-	g_hiscore = 0;
-
 	memset(&battleovertime, 0, sizeof(struct battleovertime));
 	speedscramble = encorescramble = -1;
 
