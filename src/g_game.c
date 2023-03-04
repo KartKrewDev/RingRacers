@@ -1728,7 +1728,8 @@ boolean G_Responder(event_t *ev)
 
 		if (K_CeremonyResponder(ev))
 		{
-			D_StartTitle();
+			nextmap = NEXTMAP_TITLE;
+			G_EndGame();
 			return true;
 		}
 	}
