@@ -125,7 +125,7 @@ struct recorddata_t
 #define MV_BEATEN       (1<<1)
 #define MV_ENCORE       (1<<2)
 #define MV_SPBATTACK    (1<<3)
-#define MV_MAX          (MV_VISITED|MV_BEATEN|MV_ENCORE)
+#define MV_MAX          (MV_VISITED|MV_BEATEN|MV_ENCORE|MV_SPBATTACK)
 #define MV_MP           ((MV_MAX+1)<<1)
 
 // Set if homebrew PWAD stuff has been added.

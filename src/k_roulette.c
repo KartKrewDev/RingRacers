@@ -1244,8 +1244,7 @@ void K_FillItemRouletteData(const player_t *player, itemroulette_t *const roulet
 		{
 			presetlist = K_KartItemReelBreakTheCapsules;
 		}
-
-		if (modeattacking & ATTACKING_SPB)
+		else if (modeattacking & ATTACKING_SPB)
 		{
 			presetlist = K_KartItemReelSPBAttack;
 		}

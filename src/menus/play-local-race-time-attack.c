@@ -19,17 +19,20 @@ consvar_t cv_dummyspbattack = CVAR_INIT ("dummyspbattack", "Off", CV_HIDDEN|CV_C
 
 struct timeattackmenu_s timeattackmenu;
 
+void M_TimeAttackTick(void)
+{
+	timeattackmenu.ticker++; 
+}
+
 boolean M_TimeAttackInputs(INT32 ch)
 {
 	const UINT8 pid = 0;
 	const boolean buttonR = M_MenuButtonPressed(pid, MBT_R);
 	(void) ch;
 
-	timeattackmenu.ticker++; 
-
-	if (buttonR)
+	if (buttonR && levellist.newgametype == GT_RACE)
 	{
-		cv_dummyspbattack.value = !(cv_dummyspbattack.value);
+		CV_AddValue(&cv_dummyspbattack, 1);
 		CV_SPBAttackChanged();
 		timeattackmenu.spbflicker = timeattackmenu.ticker;
 		if (cv_dummyspbattack.value)
@@ -69,7 +72,7 @@ menu_t PLAY_TimeAttackDef = {
 	NULL,
 	2, 5,
 	M_DrawTimeAttack,
-	NULL,
+	M_TimeAttackTick,
 	NULL,
 	NULL,
 	M_TimeAttackInputs

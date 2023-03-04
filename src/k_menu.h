@@ -799,6 +799,7 @@ void M_StartTimeAttack(INT32 choice);
 void M_ReplayTimeAttack(INT32 choice);
 void M_HandleStaffReplay(INT32 choice);
 void M_SetGuestReplay(INT32 choice);
+void M_TimeAttackTick(void);
 boolean M_TimeAttackInputs (INT32 choice);
 
 // MP selection
