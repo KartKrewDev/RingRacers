@@ -2525,10 +2525,11 @@ static void readcondition(UINT8 set, UINT32 id, char *word2)
 			return;
 		}
 	}
-	else if (fastcmp(params[0], "CRASH"))
+	else if ((offset=0) || fastcmp(params[0], "ADDON")
+	||        (++offset && fastcmp(params[0], "CRASH")))
 	{
 		//PARAMCHECK(1);
-		ty = UC_CRASH;
+		ty = UC_ADDON + offset;
 	}
 	else if ((offset=0) || fastcmp(params[0], "AND")
 	||        (++offset && fastcmp(params[0], "COMMA")))

@@ -4425,6 +4425,8 @@ void G_LoadGameData(void)
 		gamedata->crashflags = READUINT8(save.p);
 		if (gamedata->crashflags & GDCRASH_LAST)
 			gamedata->crashflags |= GDCRASH_ANY;
+
+		gamedata->everloadedaddon = (boolean)READUINT8(save.p);
 	}
 	else
 	{
@@ -4598,7 +4600,7 @@ void G_SaveGameData(boolean dirty)
 		return;
 	}
 
-	length = (4+1+4+4+(4*GDGT_MAX)+1+4+(MAXEMBLEMS+(MAXUNLOCKABLES*2)+MAXCONDITIONSETS)+4+4+2);
+	length = (4+1+4+4+(4*GDGT_MAX)+1+1+4+(MAXEMBLEMS+(MAXUNLOCKABLES*2)+MAXCONDITIONSETS)+4+4+2);
 	if (gamedata->challengegrid)
 	{
 		length += gamedata->challengegridwidth * CHALLENGEGRIDHEIGHT;
@@ -4629,6 +4631,8 @@ void G_SaveGameData(boolean dirty)
 			crashflags |= GDCRASH_LAST;
 		WRITEUINT8(save.p, crashflags); // 1
 	}
+
+	WRITEUINT8(save.p, gamedata->everloadedaddon); // 1
 
 	WRITEUINT32(save.p, quickncasehash(timeattackfolder, 64));
 

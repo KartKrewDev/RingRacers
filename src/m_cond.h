@@ -44,6 +44,7 @@ typedef enum
 	UC_UNLOCKABLE,		// UNLOCKABLE [unlockable number]
 	UC_CONDITIONSET,	// CONDITIONSET [condition set number]
 
+	UC_ADDON,			// Ever loaded a custom file?
 	UC_CRASH,			// Hee ho !
 
 	 // Just for string building
@@ -230,7 +231,8 @@ struct gamedata_t
 	UINT32 roundsplayed[GDGT_MAX];
 	UINT32 totalrings;
 
-	// Funny
+	// SPECIFIC SPECIAL EVENTS
+	boolean everloadedaddon;
 	UINT8 crashflags;
 };
 

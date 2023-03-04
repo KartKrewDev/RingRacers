@@ -49,6 +49,7 @@
 #include "fastcmp.h"
 
 #include "g_game.h" // G_LoadGameData
+#include "m_cond.h" // gamedata itself
 #include "filesrch.h"
 
 #include "i_video.h" // rendermode
@@ -812,6 +813,14 @@ UINT16 W_InitFile(const char *filename, boolean mainfile, boolean startup)
 		}
 	}
 #endif
+
+	// Do this immediately before anything of consequence that invalidates gamedata can happen.
+	if ((mainfile == false) && (gamedata != NULL) && (gamedata->everloadedaddon == false))
+	{
+		gamedata->everloadedaddon = true;
+		M_UpdateUnlockablesAndExtraEmblems(true);
+		G_SaveGameData(true);
+	}
 
 	switch(type = ResourceFileDetect(filename))
 	{

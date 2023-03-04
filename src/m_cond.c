@@ -532,6 +532,8 @@ void M_ClearStats(void)
 	for (i = 0; i < GDGT_MAX; ++i)
 		gamedata->roundsplayed[i] = 0;
 	gamedata->timesBeaten = 0;
+
+	gamedata->everloadedaddon = false;
 	gamedata->crashflags = 0;
 }
 
@@ -695,6 +697,13 @@ boolean M_CheckCondition(condition_t *cn, player_t *player)
 			return gamedata->unlocked[cn->requirement-1];
 		case UC_CONDITIONSET: // requires condition set x to already be achieved
 			return M_Achieved(cn->requirement-1);
+
+		case UC_ADDON:
+			return (
+#ifndef DEVELOP
+				M_SecretUnlocked(SECRET_ADDONS, true) &&
+#endif
+				(gamedata->everloadedaddon == true));
 		case UC_CRASH:
 			if (gamedata->crashflags & (GDCRASH_LAST|GDCRASH_ANY))
 			{
@@ -863,9 +872,8 @@ static const char *M_GetConditionString(condition_t *cn)
 
 			if (cn->extrainfo1 == GDGT_MAX)
 				work = "";
-			else if (cn->extrainfo1 != GDGT_RACE
-				&& cn->extrainfo1 != GDGT_BATTLE
-				&& cn->extrainfo1 != GDGT_CUSTOM
+			else if (cn->extrainfo1 != GDGT_RACE && cn->extrainfo1 != GDGT_BATTLE // Base gametypes
+				&& (cn->extrainfo1 != GDGT_CUSTOM || M_SecretUnlocked(SECRET_ADDONS, true) == false) // Custom is visible at 0 if addons are unlocked
 				&& gamedata->roundsplayed[cn->extrainfo1] == 0)
 					work = " ???";
 			else switch (cn->extrainfo1)
@@ -1025,6 +1033,11 @@ static const char *M_GetConditionString(condition_t *cn)
 				gamedata->unlocked[cn->requirement-1]
 				? unlockables[cn->requirement-1].name
 				: "???");
+
+		case UC_ADDON:
+			if (!M_SecretUnlocked(SECRET_ADDONS, true) && !gamedata->everloadedaddon)
+				return NULL;
+			return "Load a custom addon into \"Dr. Robotnik's Ring Racers\"";
 		case UC_CRASH:
 			if (gamedata->crashflags & (GDCRASH_LAST|GDCRASH_ANY))
 				return "Launch \"Dr. Robotnik's Ring Racers\" again after a game crash";
