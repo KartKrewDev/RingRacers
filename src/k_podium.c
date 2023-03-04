@@ -45,12 +45,19 @@
 
 #include "k_menu.h"
 #include "k_grandprix.h"
+#include "k_rank.h"
 
 static struct podiumData_s
 {
 	boolean ranking;
+	gpRank_t rankData;
+	gp_rank_e grade;
+	UINT8 state;
+	UINT8 delay;
 	UINT8 fade;
 } podiumData;
+
+#define PODIUM_STATES (9) // TODO: enum
 
 /*--------------------------------------------------
 	boolean K_PodiumSequence(void)
@@ -267,6 +274,14 @@ void K_FinishCeremony(void)
 void K_ResetCeremony(void)
 {
 	memset(&podiumData, 0, sizeof(struct podiumData_s));
+
+	if (K_PodiumSequence() == false)
+	{
+		return;
+	}
+
+	podiumData.rankData = g_gpRank;
+	podiumData.grade = K_CalculateGPGrade(&podiumData.rankData);
 }
 
 /*--------------------------------------------------
@@ -305,6 +320,19 @@ void K_CeremonyTicker(boolean run)
 		{
 			podiumData.fade++;
 		}
+		else
+		{
+			if (podiumData.state < PODIUM_STATES)
+			{
+				podiumData.delay++;
+
+				if (podiumData.delay > TICRATE)
+				{
+					podiumData.state++;
+					podiumData.delay = 0;
+				}
+			}
+		}
 	}
 }
 
@@ -317,7 +345,7 @@ boolean K_CeremonyResponder(event_t *event)
 {
 	INT32 key = event->data1;
 
-	if (podiumData.ranking == false || podiumData.fade < 16)
+	if (podiumData.ranking == false || podiumData.state < PODIUM_STATES)
 	{
 		return false;
 	}
@@ -377,8 +405,88 @@ void K_CeremonyDrawer(void)
 {
 	if (podiumData.ranking == true)
 	{
+		char gradeChar = '?';
+		INT32 x = 64;
+		INT32 y = 48;
+		INT32 i;
+
+		switch (podiumData.grade)
+		{
+			case GRADE_E: { gradeChar = 'E'; break; }
+			case GRADE_D: { gradeChar = 'D'; break; }
+			case GRADE_C: { gradeChar = 'C'; break; }
+			case GRADE_B: { gradeChar = 'B'; break; }
+			case GRADE_A: { gradeChar = 'A'; break; }
+			case GRADE_S: { gradeChar = 'S'; break; }
+			default: { break; }
+		}
+
 		V_DrawFadeScreen(0xFF00, podiumData.fade);
-		V_DrawCenteredString(BASEVIDWIDTH / 2, 64, 0, "STUFF GOES HERE");
+
+		for (i = 0; i <= podiumData.state; i++)
+		{
+			switch (i)
+			{
+				case 1:
+				{
+					V_DrawString(x, y, V_SNAPTOTOP|V_SNAPTOLEFT|V_ALLOWLOWERCASE,
+						va("PTS: %d / %d", g_gpRank.winPoints, g_gpRank.totalPoints)
+					);
+					break;
+				}
+				case 2:
+				{
+					V_DrawString(x, y, V_SNAPTOTOP|V_SNAPTOLEFT|V_ALLOWLOWERCASE,
+						va("LAPS: %d / %d", g_gpRank.laps, g_gpRank.totalLaps)
+					);
+					break;
+				}
+				case 3:
+				{
+					V_DrawString(x, y, V_SNAPTOTOP|V_SNAPTOLEFT|V_ALLOWLOWERCASE,
+						va("CONTINUES: %d", g_gpRank.continuesUsed)
+					);
+					break;
+				}
+				case 4:
+				{
+					V_DrawString(x, y, V_SNAPTOTOP|V_SNAPTOLEFT|V_ALLOWLOWERCASE,
+						va("CAPSULES: %d / %d", g_gpRank.capsules, g_gpRank.totalCapsules)
+					);
+					break;
+				}
+				case 5:
+				{
+					V_DrawString(x, y, V_SNAPTOTOP|V_SNAPTOLEFT|V_ALLOWLOWERCASE,
+						va("RINGS: %d / %d", g_gpRank.rings, g_gpRank.totalRings)
+					);
+					break;
+				}
+				case 6:
+				{
+					V_DrawString(x, y, V_SNAPTOTOP|V_SNAPTOLEFT|V_ALLOWLOWERCASE,
+						va("DIFFICULTY: %d / %d", g_gpRank.difficulty, g_gpRank.difficultyTarget)
+					);
+					break;
+				}
+				case 7:
+				{
+					V_DrawString(x, y, V_SNAPTOTOP|V_SNAPTOLEFT|V_ALLOWLOWERCASE,
+						va("SPECIAL: %s", (g_gpRank.specialWon == true) ? "YES" : "NO")
+					);
+					break;
+				}
+				case 8:
+				{
+					V_DrawString(x, y + 10, V_SNAPTOTOP|V_SNAPTOLEFT|V_ALLOWLOWERCASE,
+						va(" ** FINAL GRADE: %c", gradeChar)
+					);
+					break;
+				}
+			}
+
+			y += 10;
+		}
 	}
 
 	if (timeinmap < 16)
