@@ -46,7 +46,11 @@
 #include "k_menu.h"
 #include "k_grandprix.h"
 
-static boolean s_podiumDone = false;
+static struct podiumData_s
+{
+	boolean ranking;
+	UINT8 fade;
+} podiumData;
 
 /*--------------------------------------------------
 	boolean K_PodiumSequence(void)
@@ -117,7 +121,7 @@ void K_FinishCeremony(void)
 		return;
 	}
 
-	s_podiumDone = true;
+	podiumData.ranking = true;
 }
 
 /*--------------------------------------------------
@@ -127,7 +131,7 @@ void K_FinishCeremony(void)
 --------------------------------------------------*/
 void K_ResetCeremony(void)
 {
-	s_podiumDone = false;
+	memset(&podiumData, 0, sizeof(struct podiumData_s));
 }
 
 /*--------------------------------------------------
@@ -137,8 +141,6 @@ void K_ResetCeremony(void)
 --------------------------------------------------*/
 void K_CeremonyTicker(boolean run)
 {
-	(void)run;
-
 	// don't trigger if doing anything besides idling
 	if (gameaction != ga_nothing || gamestate != GS_CEREMONY)
 	{
@@ -156,6 +158,19 @@ void K_CeremonyTicker(boolean run)
 		camera[0].aiming = titlemapcam.mobj->pitch;
 		camera[0].subsector = titlemapcam.mobj->subsector;
 	}
+
+	if (podiumData.ranking == false)
+	{
+		return;
+	}
+
+	if (run == true)
+	{
+		if (podiumData.fade < 16)
+		{
+			podiumData.fade++;
+		}
+	}
 }
 
 /*--------------------------------------------------
@@ -167,7 +182,7 @@ boolean K_CeremonyResponder(event_t *event)
 {
 	INT32 key = event->data1;
 
-	if (s_podiumDone == false)
+	if (podiumData.ranking == false || podiumData.fade < 16)
 	{
 		return false;
 	}
@@ -225,9 +240,9 @@ boolean K_CeremonyResponder(event_t *event)
 --------------------------------------------------*/
 void K_CeremonyDrawer(void)
 {
-	if (s_podiumDone == true)
+	if (podiumData.ranking == true)
 	{
-		V_DrawFadeScreen(0xFF00, 16);
+		V_DrawFadeScreen(0xFF00, podiumData.fade);
 		V_DrawCenteredString(BASEVIDWIDTH / 2, 64, 0, "STUFF GOES HERE");
 	}
 
