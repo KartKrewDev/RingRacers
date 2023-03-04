@@ -803,8 +803,11 @@ void D_SRB2Loop(void)
 		HW3S_BeginFrameUpdate();
 #endif
 
-		I_NewTwodeeFrame();
-		I_NewImguiFrame();
+		if (rendermode != render_none)
+		{
+			I_NewTwodeeFrame();
+			I_NewImguiFrame();
+		}
 
 		if (realtics > 0 || singletics)
 		{
@@ -1500,8 +1503,11 @@ void D_SRB2Main(void)
 	CONS_Printf("I_StartupGraphics()...\n");
 	I_StartupGraphics();
 
-	I_NewTwodeeFrame();
-	I_NewImguiFrame();
+	if (rendermode != render_none)
+	{
+		I_NewTwodeeFrame();
+		I_NewImguiFrame();
+	}
 
 #ifdef HWRENDER
 	// Lactozilla: Add every hardware mode CVAR and CCMD.
@@ -1642,6 +1648,10 @@ void D_SRB2Main(void)
 				I_Error("Bad '%s' level warp.\n"
 #if defined (_WIN32)
 				"Are you using MSDOS 8.3 filenames in Zone Builder?\n"
+				"\n"
+				"To check: edit the Ring Racers game configuration in Zone Builder.\n"
+				"Go to the Testing tab and make sure \"Use short paths and file names\" is turned off.\n"
+				"(The option is hidden by default. Check \"Customize parameters\" to show it.)\n"
 #endif
 				, word);
 		}
@@ -1652,7 +1662,7 @@ void D_SRB2Main(void)
 		}
 
 		{
-			if (!M_CheckParm("-server"))
+			if (!M_CheckParm("-server") && !M_CheckParm("-dedicated"))
 			{
 				G_SetUsedCheats();
 

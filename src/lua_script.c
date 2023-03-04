@@ -699,6 +699,10 @@ fixed_t LUA_EvalMath(const char *word)
 	lua_pushboolean(L, true);
 	lua_call(L, 1, 0);
 
+	lua_pushcfunction(L, LUA_MathLib);
+	lua_pushboolean(L, true);
+	lua_call(L, 1, 0);
+
 	// change ^ into ^^ for Lua.
 	strcpy(buf, "return ");
 	b = buf+strlen(buf);

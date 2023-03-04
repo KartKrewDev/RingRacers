@@ -763,6 +763,14 @@ void Command_Setlives_f(void)
 	D_Cheat(consoleplayer, CHEAT_LIVES, atoi(COM_Argv(1)));
 }
 
+void Command_Setscore_f(void)
+{
+	REQUIRE_CHEATS;
+	REQUIRE_INLEVEL;
+
+	D_Cheat(consoleplayer, CHEAT_SCORE, atoi(COM_Argv(1)));
+}
+
 void Command_Grayscale_f(void)
 {
 	REQUIRE_CHEATS;

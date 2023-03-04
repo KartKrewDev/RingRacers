@@ -1088,6 +1088,13 @@ static void G_DoAnglePrediction(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer, p
 {
 	angle_t angleChange = 0;
 
+	// Chasecam stops in these situations, so local cam should stop too.
+	// Otherwise it'll jerk when it resumes.
+	if (player->playerstate == PST_DEAD)
+		return;
+	if (player->mo != NULL && !P_MobjWasRemoved(player->mo) && player->mo->hitlag > 0)
+		return;
+
 	while (realtics > 0)
 	{
 		localsteering[ssplayer - 1] = K_UpdateSteeringValue(localsteering[ssplayer - 1], cmd->turning);

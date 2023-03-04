@@ -1955,6 +1955,9 @@ static boolean CL_ServerConnectionTicker(const char *tmpsave, tic_t *oldtic, tic
 	{
 		I_OsPolling();
 
+		I_NewTwodeeFrame();
+		I_NewImguiFrame();
+
 		// Needs to be updated here for M_DrawEggaChannel
 		renderdeltatics = FRACUNIT;
 		rendertimefrac = FRACUNIT;
