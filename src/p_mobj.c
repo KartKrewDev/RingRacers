@@ -6391,6 +6391,7 @@ static void P_MobjSceneryThink(mobj_t *mobj)
 					numx->destscale = scale;
 				}
 
+#if 0
 				if (K_IsPlayerWanted(mobj->target->player) && mobj->movecount != 1)
 				{
 					mobj_t *wanted = P_SpawnMobj(mobj->x, mobj->y, mobj->z, MT_PLAYERWANTED);
@@ -6401,6 +6402,7 @@ static void P_MobjSceneryThink(mobj_t *mobj)
 					mobj->movecount = 1;
 				}
 				else if (!K_IsPlayerWanted(mobj->target->player))
+#endif
 					mobj->movecount = 0;
 			}
 			else

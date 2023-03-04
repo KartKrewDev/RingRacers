@@ -261,7 +261,7 @@ void K_DrawTargetTracking(const TargetTracking& target)
 	}
 }
 
-bool is_player_tracking_target(const player_t *player = stplyr)
+bool is_player_tracking_target(player_t *player = stplyr)
 {
 	if ((gametyperules & (GTR_BUMPERS|GTR_CLOSERPLAYERS)) != (GTR_BUMPERS|GTR_CLOSERPLAYERS))
 	{
@@ -292,17 +292,7 @@ bool is_player_tracking_target(const player_t *player = stplyr)
 		return false;
 	}
 
-	if (g_hiscore < 1) // SOMEONE should be scoring
-	{
-		return false;
-	}
-
-	if (player->roundscore < g_hiscore)
-	{
-		return false;
-	}
-
-	return true;
+	return K_IsPlayerWanted(player);
 }
 
 bool is_object_tracking_target(const mobj_t* mobj)
