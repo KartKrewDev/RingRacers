@@ -1328,6 +1328,7 @@ void ST_Drawer(void)
 			INT32 buttonx = BASEVIDWIDTH;
 			INT32 buttony = 2;
 
+			K_drawButtonAnim(buttonx - 87, buttony, V_HUDTRANS|V_SNAPTOTOP|V_SNAPTORIGHT, kp_button_b[1], leveltime);
 			V_DrawRightAlignedThinString(buttonx - 64, buttony, V_HUDTRANS|V_SNAPTOTOP|V_SNAPTORIGHT|V_ALLOWLOWERCASE|V_YELLOWMAP, "or");
 			K_drawButtonAnim(buttonx - 65, buttony, V_HUDTRANS|V_SNAPTOTOP|V_SNAPTORIGHT, kp_button_x[1], leveltime);
 			V_DrawRightAlignedThinString(buttonx - 2, buttony, V_HUDTRANS|V_SNAPTOTOP|V_SNAPTORIGHT|V_ALLOWLOWERCASE|V_YELLOWMAP, "Save replay");
