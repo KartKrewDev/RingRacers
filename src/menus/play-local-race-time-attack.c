@@ -33,7 +33,6 @@ boolean M_TimeAttackInputs(INT32 ch)
 	if (buttonR && levellist.newgametype == GT_RACE)
 	{
 		CV_AddValue(&cv_dummyspbattack, 1);
-		CV_SPBAttackChanged();
 		timeattackmenu.spbflicker = timeattackmenu.ticker;
 		if (cv_dummyspbattack.value)
 		{
