@@ -511,9 +511,14 @@ void M_ClearConditionSet(UINT8 set)
 {
 	if (conditionSets[set].numconditions)
 	{
+		while (conditionSets[set].numconditions > 0)
+		{
+			--conditionSets[set].numconditions;
+			Z_Free(conditionSets[set].condition[conditionSets[set].numconditions].pendingstring);
+		}
+
 		Z_Free(conditionSets[set].condition);
 		conditionSets[set].condition = NULL;
-		conditionSets[set].numconditions = 0;
 	}
 	gamedata->achieved[set] = false;
 }
