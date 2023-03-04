@@ -3887,20 +3887,9 @@ static void G_GetNextMap(void)
 			// Special stage
 			else if (grandprixinfo.roundnum >= grandprixinfo.cup->numlevels)
 			{
-				INT16 totaltotalring = 0;
+				gp_rank_e grade = K_CalculateGPGrade(&g_gpRank);
 
-				for (i = 0; i < MAXPLAYERS; i++)
-				{
-					if (!playeringame[i])
-						continue;
-					if (players[i].spectator)
-						continue;
-					if (players[i].bot)
-						continue;
-					totaltotalring += players[i].totalring;
-				}
-
-				if (totaltotalring >= 50)
+				if (grade >= GRADE_A) // On A rank pace? Then you get a chance for S rank!
 				{
 					const INT32 cupLevelNum = grandprixinfo.cup->cachedlevels[CUPCACHE_SPECIAL];
 					if (cupLevelNum < nummapheaders && mapheaderinfo[cupLevelNum])
