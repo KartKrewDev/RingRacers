@@ -2768,6 +2768,10 @@ void readmaincfg(MYFILE *f, boolean mainfile)
 				clear_emblems();
 				//clear_levels();
 				doClearLevels = true;
+
+				G_ClearRecords();
+				M_ClearStats();
+				M_ClearSecrets();
 			}
 			else if (!mainfile && !gamedataadded)
 			{

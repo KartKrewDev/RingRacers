@@ -4371,21 +4371,21 @@ void G_LoadGameData(void)
 	if (M_CheckParm("-nodata"))
 	{
 		// Don't load at all.
+		// The following used to be in M_ClearSecrets, but that was silly.
+		M_UpdateUnlockablesAndExtraEmblems(false);
 		return;
 	}
 
 	if (M_CheckParm("-resetdata"))
 	{
 		// Don't load, but do save. (essentially, reset)
-		gamedata->loaded = true;
-		return;
+		goto finalisegamedata;
 	}
 
 	if (P_SaveBufferFromFile(&save, va(pandf, srb2home, gamedatafilename)) == false)
 	{
 		// No gamedata. We can save a new one.
-		gamedata->loaded = true;
-		return;
+		goto finalisegamedata;
 	}
 
 	// Version check
@@ -4549,6 +4549,8 @@ void G_LoadGameData(void)
 
 	// done
 	P_SaveBufferFree(&save);
+
+finalisegamedata:
 
 	// Don't consider loaded until it's a success!
 	// It used to do this much earlier, but this would cause the gamedata to

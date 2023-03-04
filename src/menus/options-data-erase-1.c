@@ -66,6 +66,8 @@ static void M_EraseDataResponse(INT32 ch)
 	if (optionsmenu.erasecontext & EC_CHALLENGES)
 		M_ClearSecrets();
 
+	M_UpdateUnlockablesAndExtraEmblems(false);
+
 	F_StartIntro();
 	M_ClearMenus(true);
 }

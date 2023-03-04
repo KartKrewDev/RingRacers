@@ -554,9 +554,6 @@ void M_ClearSecrets(void)
 	Z_Free(gamedata->challengegrid);
 	gamedata->challengegrid = NULL;
 	gamedata->challengegridwidth = 0;
-
-	// Re-unlock any always unlocked things
-	M_UpdateUnlockablesAndExtraEmblems(false);
 }
 
 // ----------------------
