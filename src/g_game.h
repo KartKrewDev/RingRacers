@@ -156,6 +156,7 @@ INT32 G_FindMapByNameOrCode(const char *query, char **foundmapnamep);
 mapthing_t *G_FindTeamStart(INT32 playernum);
 mapthing_t *G_FindBattleStart(INT32 playernum);
 mapthing_t *G_FindRaceStart(INT32 playernum);
+mapthing_t *G_FindPodiumStart(INT32 playernum);
 mapthing_t *G_FindMapStart(INT32 playernum);
 void G_MovePlayerToSpawnOrStarpost(INT32 playernum);
 void G_SpawnPlayer(INT32 playernum);

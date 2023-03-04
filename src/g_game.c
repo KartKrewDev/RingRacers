@@ -2846,7 +2846,9 @@ mapthing_t *G_FindRaceStart(INT32 playernum)
 
 		// SRB2Kart: figure out player spawn pos from points
 		if (!playeringame[playernum] || players[playernum].spectator)
+		{
 			return playerstarts[0]; // go to first spot if you're a spectator
+		}
 
 		for (i = 0; i < MAXPLAYERS; i++)
 		{
@@ -2929,6 +2931,78 @@ mapthing_t *G_FindRaceStart(INT32 playernum)
 	return NULL;
 }
 
+mapthing_t *G_FindPodiumStart(INT32 playernum)
+{
+	const boolean doprints = P_IsLocalPlayer(&players[playernum]);
+
+	if (numcoopstarts)
+	{
+		UINT8 i;
+		UINT8 pos = 0;
+
+		// SRB2Kart: figure out player spawn pos from points
+		if (!playeringame[playernum] || players[playernum].spectator)
+		{
+			return playerstarts[0]; // go to first spot if you're a spectator
+		}
+
+		for (i = 0; i < MAXPLAYERS; i++)
+		{
+			if (!playeringame[i] || players[i].spectator)
+			{
+				continue;
+			}
+
+			if (i == playernum)
+			{
+				continue;
+			}
+
+			if (players[i].score > players[playernum].score)
+			{
+				// Final score is the important part.
+				pos++;
+			}
+			else if (players[i].score == players[playernum].score)
+			{
+				if (players[i].bot == false && players[playernum].bot == true)
+				{
+					// Bots are never as important as players.
+					pos++;
+				}
+				else if (i < playernum)
+				{
+					// Port priority is the final tie breaker.
+					pos++;
+				}
+			}
+		}
+
+		if (G_CheckSpot(playernum, playerstarts[pos % numcoopstarts]))
+		{
+			return playerstarts[pos % numcoopstarts];
+		}
+
+		// Your spot isn't available? Find whatever you can get first.
+		for (i = 0; i < numcoopstarts; i++)
+		{
+			if (G_CheckSpot(playernum, playerstarts[i]))
+				return playerstarts[i];
+		}
+
+		if (doprints)
+		{
+			CONS_Alert(CONS_WARNING, M_GetText("Could not spawn at any Podium starts!\n"));
+		}
+
+		return NULL;
+	}
+
+	if (doprints)
+		CONS_Alert(CONS_WARNING, M_GetText("No Podium starts in this map!\n"));
+	return NULL;
+}
+
 // Find a Co-op start, or fallback into other types of starts.
 static inline mapthing_t *G_FindRaceStartOrFallback(INT32 playernum)
 {
@@ -2965,9 +3039,14 @@ mapthing_t *G_FindMapStart(INT32 playernum)
 	if (!playeringame[playernum])
 		return NULL;
 
+	// -- Podium -- 
+	// Single special behavior
+	if (K_PodiumSequence() == true)
+		spawnpoint = G_FindPodiumStart(playernum);
+
 	// -- Time Attack --
 	// Order: Race->DM->CTF
-	if (K_TimeAttackRules() == true)
+	else if (K_TimeAttackRules() == true)
 		spawnpoint = G_FindRaceStartOrFallback(playernum);
 
 	// -- CTF --
