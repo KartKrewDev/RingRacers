@@ -2747,6 +2747,7 @@ void readmaincfg(MYFILE *f, boolean mainfile)
 			}
 			else if (fastcmp(word, "TITLEMAP"))
 			{
+				Z_Free(titlemap);
 				titlemap = Z_StrDup(word2);
 				titlechanged = true;
 			}
@@ -2841,15 +2842,18 @@ void readmaincfg(MYFILE *f, boolean mainfile)
 			}
 			else if (fastcmp(word, "BOOTMAP"))
 			{
+				Z_Free(bootmap);
 				bootmap = Z_StrDup(word2);
 				//titlechanged = true;
 			}
 			else if (fastcmp(word, "TUTORIALMAP"))
 			{
+				Z_Free(tutorialmap);
 				tutorialmap = Z_StrDup(word2);
 			}
 			else if (fastcmp(word, "PODIUMMAP"))
 			{
+				Z_Free(podiummap);
 				podiummap = Z_StrDup(word2);
 			}
 			else
