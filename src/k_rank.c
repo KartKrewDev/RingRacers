@@ -56,6 +56,9 @@ void K_InitGrandPrixRank(gpRank_t *rankData)
 	rankData->players = numHumans;
 	rankData->totalPlayers = K_GetGPPlayerCount(numHumans);
 
+	// Initialize to the neutral value.
+	rankData->position = RANK_NEUTRAL_POSITION;
+
 	// Calculate total of points
 	// (Should this account for all coop players?)
 	for (i = 0; i < numHumans; i++)
@@ -111,16 +114,24 @@ gp_rank_e K_CalculateGPGrade(gpRank_t *rankData)
 
 	gp_rank_e retGrade = GRADE_E;
 
-	const INT32 pointsWeight = 100;
-	const INT32 lapsWeight = 100;
-	const INT32 capsulesWeight = 100;
-	const INT32 ringsWeight = 50;
-	const INT32 difficultyWeight = 20;
-	const INT32 total = pointsWeight + lapsWeight + capsulesWeight + ringsWeight + difficultyWeight;
-	const INT32 continuesPenalty = 20;
+	const INT32 positionWeight = 1500;
+	const INT32 pointsWeight = 1000;
+	const INT32 lapsWeight = 1000;
+	const INT32 capsulesWeight = 1000;
+	const INT32 ringsWeight = 500;
+	const INT32 difficultyWeight = 200;
+	const INT32 total = positionWeight + pointsWeight + lapsWeight + capsulesWeight + ringsWeight + difficultyWeight;
+	const INT32 continuesPenalty = 200;
 
 	INT32 ours = 0;
 	fixed_t percent = 0;
+
+	if (rankData->position > 0)
+	{
+		const INT32 sc = (rankData->position - 1);
+		const INT32 loser = (RANK_NEUTRAL_POSITION - 1);
+		ours += ((loser - sc) * positionWeight) / loser;
+	}
 
 	if (rankData->totalPoints > 0)
 	{

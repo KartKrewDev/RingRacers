@@ -57,7 +57,7 @@ static struct podiumData_s
 	UINT8 fade;
 } podiumData;
 
-#define PODIUM_STATES (9) // TODO: enum
+#define PODIUM_STATES (10) // TODO: enum when this actually gets made
 
 /*--------------------------------------------------
 	boolean K_PodiumSequence(void)
@@ -326,7 +326,7 @@ void K_CeremonyTicker(boolean run)
 			{
 				podiumData.delay++;
 
-				if (podiumData.delay > TICRATE)
+				if (podiumData.delay > TICRATE/2)
 				{
 					podiumData.state++;
 					podiumData.delay = 0;
@@ -429,57 +429,71 @@ void K_CeremonyDrawer(void)
 			{
 				case 1:
 				{
-					V_DrawString(x, y, V_SNAPTOTOP|V_SNAPTOLEFT|V_ALLOWLOWERCASE,
-						va("PTS: %d / %d", g_gpRank.winPoints, g_gpRank.totalPoints)
+					V_DrawString(x, y, V_ALLOWLOWERCASE,
+						va("POS: %d / %d", podiumData.rankData.position, RANK_NEUTRAL_POSITION)
 					);
 					break;
 				}
 				case 2:
 				{
-					V_DrawString(x, y, V_SNAPTOTOP|V_SNAPTOLEFT|V_ALLOWLOWERCASE,
-						va("LAPS: %d / %d", g_gpRank.laps, g_gpRank.totalLaps)
+					V_DrawString(x, y, V_ALLOWLOWERCASE,
+						va("PTS: %d / %d", podiumData.rankData.winPoints, podiumData.rankData.totalPoints)
 					);
 					break;
 				}
 				case 3:
 				{
-					V_DrawString(x, y, V_SNAPTOTOP|V_SNAPTOLEFT|V_ALLOWLOWERCASE,
-						va("CONTINUES: %d", g_gpRank.continuesUsed)
+					V_DrawString(x, y, V_ALLOWLOWERCASE,
+						va("LAPS: %d / %d", podiumData.rankData.laps, podiumData.rankData.totalLaps)
 					);
 					break;
 				}
 				case 4:
 				{
-					V_DrawString(x, y, V_SNAPTOTOP|V_SNAPTOLEFT|V_ALLOWLOWERCASE,
-						va("CAPSULES: %d / %d", g_gpRank.capsules, g_gpRank.totalCapsules)
+					V_DrawString(x, y, V_ALLOWLOWERCASE,
+						va("CONTINUES: %d", podiumData.rankData.continuesUsed)
 					);
 					break;
 				}
 				case 5:
 				{
-					V_DrawString(x, y, V_SNAPTOTOP|V_SNAPTOLEFT|V_ALLOWLOWERCASE,
-						va("RINGS: %d / %d", g_gpRank.rings, g_gpRank.totalRings)
+					V_DrawString(x, y, V_ALLOWLOWERCASE,
+						va("CAPSULES: %d / %d", podiumData.rankData.capsules, podiumData.rankData.totalCapsules)
 					);
 					break;
 				}
 				case 6:
 				{
-					V_DrawString(x, y, V_SNAPTOTOP|V_SNAPTOLEFT|V_ALLOWLOWERCASE,
-						va("DIFFICULTY: %d / %d", g_gpRank.difficulty, g_gpRank.difficultyTarget)
+					V_DrawString(x, y, V_ALLOWLOWERCASE,
+						va("RINGS: %d / %d", podiumData.rankData.rings, podiumData.rankData.totalRings)
 					);
 					break;
 				}
 				case 7:
 				{
-					V_DrawString(x, y, V_SNAPTOTOP|V_SNAPTOLEFT|V_ALLOWLOWERCASE,
-						va("SPECIAL: %s", (g_gpRank.specialWon == true) ? "YES" : "NO")
+					V_DrawString(x, y, V_ALLOWLOWERCASE,
+						va("DIFFICULTY: %d / %d", podiumData.rankData.difficulty, podiumData.rankData.difficultyTarget)
 					);
 					break;
 				}
 				case 8:
 				{
-					V_DrawString(x, y + 10, V_SNAPTOTOP|V_SNAPTOLEFT|V_ALLOWLOWERCASE,
+					V_DrawString(x, y, V_ALLOWLOWERCASE,
+						va("EMERALD: %s", (podiumData.rankData.specialWon == true) ? "YES" : "NO")
+					);
+					break;
+				}
+				case 9:
+				{
+					V_DrawString(x, y + 10, V_YELLOWMAP|V_ALLOWLOWERCASE,
 						va(" ** FINAL GRADE: %c", gradeChar)
+					);
+					break;
+				}
+				case 10:
+				{
+					V_DrawRightAlignedThinString(BASEVIDWIDTH - 2, BASEVIDHEIGHT - 10, V_SNAPTOBOTTOM|V_SNAPTORIGHT|V_6WIDTHSPACE|V_ALLOWLOWERCASE,
+						"Press some button type deal to continue"
 					);
 					break;
 				}

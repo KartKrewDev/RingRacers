@@ -4821,19 +4821,21 @@ static void K_DrawGPRankDebugger(void)
 	grade = K_CalculateGPGrade(&g_gpRank);
 
 	V_DrawThinString(0, 0, V_SNAPTOTOP|V_SNAPTOLEFT|V_6WIDTHSPACE|V_ALLOWLOWERCASE,
-		va("PTS: %d / %d", g_gpRank.winPoints, g_gpRank.totalPoints));
+		va("POS: %d / %d", g_gpRank.position, RANK_NEUTRAL_POSITION));
 	V_DrawThinString(0, 10, V_SNAPTOTOP|V_SNAPTOLEFT|V_6WIDTHSPACE|V_ALLOWLOWERCASE,
-		va("LAPS: %d / %d", g_gpRank.laps, g_gpRank.totalLaps));
+		va("PTS: %d / %d", g_gpRank.winPoints, g_gpRank.totalPoints));
 	V_DrawThinString(0, 20, V_SNAPTOTOP|V_SNAPTOLEFT|V_6WIDTHSPACE|V_ALLOWLOWERCASE,
-		va("CONTINUES: %d", g_gpRank.continuesUsed));
+		va("LAPS: %d / %d", g_gpRank.laps, g_gpRank.totalLaps));
 	V_DrawThinString(0, 30, V_SNAPTOTOP|V_SNAPTOLEFT|V_6WIDTHSPACE|V_ALLOWLOWERCASE,
-		va("CAPSULES: %d / %d", g_gpRank.capsules, g_gpRank.totalCapsules));
+		va("CONTINUES: %d", g_gpRank.continuesUsed));
 	V_DrawThinString(0, 40, V_SNAPTOTOP|V_SNAPTOLEFT|V_6WIDTHSPACE|V_ALLOWLOWERCASE,
-		va("RINGS: %d / %d", g_gpRank.rings, g_gpRank.totalRings));
+		va("CAPSULES: %d / %d", g_gpRank.capsules, g_gpRank.totalCapsules));
 	V_DrawThinString(0, 50, V_SNAPTOTOP|V_SNAPTOLEFT|V_6WIDTHSPACE|V_ALLOWLOWERCASE,
-		va("DIFFICULTY: %d / %d", g_gpRank.difficulty, g_gpRank.difficultyTarget));
+		va("RINGS: %d / %d", g_gpRank.rings, g_gpRank.totalRings));
 	V_DrawThinString(0, 60, V_SNAPTOTOP|V_SNAPTOLEFT|V_6WIDTHSPACE|V_ALLOWLOWERCASE,
-		va("SPECIAL: %s", (g_gpRank.specialWon == true) ? "YES" : "NO"));
+		va("DIFFICULTY: %d / %d", g_gpRank.difficulty, g_gpRank.difficultyTarget));
+	V_DrawThinString(0, 70, V_SNAPTOTOP|V_SNAPTOLEFT|V_6WIDTHSPACE|V_ALLOWLOWERCASE,
+		va("EMERALD: %s", (g_gpRank.specialWon == true) ? "YES" : "NO"));
 
 	switch (grade)
 	{
@@ -4846,7 +4848,7 @@ static void K_DrawGPRankDebugger(void)
 		default: { break; }
 	}
 
-	V_DrawThinString(0, 80, V_SNAPTOTOP|V_SNAPTOLEFT|V_6WIDTHSPACE|V_ALLOWLOWERCASE|V_YELLOWMAP,
+	V_DrawThinString(0, 90, V_SNAPTOTOP|V_SNAPTOLEFT|V_6WIDTHSPACE|V_ALLOWLOWERCASE|V_YELLOWMAP,
 		va(" ** FINAL GRADE: %c", gradeChar));
 }
 

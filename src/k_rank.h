@@ -25,6 +25,8 @@ struct gpRank_t
 	UINT8 players;
 	UINT8 totalPlayers;
 
+	UINT8 position;
+
 	UINT32 winPoints;
 	UINT32 totalPoints;
 
@@ -57,6 +59,8 @@ typedef enum
 	GRADE_S
 } gp_rank_e;
 
+// 3rd place is neutral, anything below is a penalty
+#define RANK_NEUTRAL_POSITION (3)
 
 /*--------------------------------------------------
 	void K_InitGrandPrixRank(gpRank_t *rankData);
