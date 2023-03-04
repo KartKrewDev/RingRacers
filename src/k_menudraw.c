@@ -5523,10 +5523,30 @@ void M_DrawStatistics(void)
 		sprintf(beststr, "%u", gamedata->totalrings);
 	}
 	V_DrawRightAlignedThinString(BASEVIDWIDTH-20, 32, V_6WIDTHSPACE, va("%s collected", beststr));
-	beststr[0] = 0;
 
-	V_DrawThinString(20, 42, V_6WIDTHSPACE|V_ALLOWLOWERCASE|highlightflags, "Total Matches:");
-	V_DrawRightAlignedThinString(BASEVIDWIDTH-20, 42, V_6WIDTHSPACE, va("%i played", gamedata->matchesplayed));
+	beststr[0] = 0;
+	V_DrawThinString(20, 42, V_6WIDTHSPACE|V_ALLOWLOWERCASE|highlightflags, "Total Rounds:");
+
+	strcat(beststr, va("%u Race", gamedata->roundsplayed[GDGT_RACE]));
+
+	if (gamedata->roundsplayed[GDGT_CAPSULES] > 0)
+	{
+		strcat(beststr, va(", %u Capsule", gamedata->roundsplayed[GDGT_CAPSULES]));
+	}
+
+	strcat(beststr, va(", %u Battle", gamedata->roundsplayed[GDGT_BATTLE]));
+
+	if (gamedata->roundsplayed[GDGT_SPECIAL] > 0)
+	{
+		strcat(beststr, va(", %u Special", gamedata->roundsplayed[GDGT_SPECIAL]));
+	}
+
+	if (gamedata->roundsplayed[GDGT_CUSTOM] > 0)
+	{
+		strcat(beststr, va(", %u Custom", gamedata->roundsplayed[GDGT_CUSTOM]));
+	}
+
+	V_DrawRightAlignedThinString(BASEVIDWIDTH-20, 42, V_6WIDTHSPACE, beststr);
 
 	if (!statisticsmenu.maplist)
 	{

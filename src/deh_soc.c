@@ -2363,12 +2363,43 @@ static void readcondition(UINT8 set, UINT32 id, char *word2)
 		return;
 	}
 
-	if		((offset=0) || fastcmp(params[0], "PLAYTIME")
-	||		  (++offset && fastcmp(params[0], "MATCHESPLAYED")))
+	if (fastcmp(params[0], "PLAYTIME"))
 	{
 		PARAMCHECK(1);
 		ty = UC_PLAYTIME + offset;
 		re = atoi(params[1]);
+	}
+	else if (fastcmp(params[0], "ROUNDSPLAYED"))
+	{
+		PARAMCHECK(1);
+		ty = UC_ROUNDSPLAYED;
+		re = atoi(params[1]);
+		x1 = GDGT_MAX;
+
+		if (re == 0)
+		{
+			deh_warning("Rounds played requirement is %d for condition ID %d", re, id+1);
+			return;
+		}
+
+		if (params[2])
+		{
+			if (fastcmp(params[2], "RACE"))
+				x1 = GDGT_RACE;
+			else if (fastcmp(params[2], "BATTLE"))
+				x1 = GDGT_BATTLE;
+			else if (fastcmp(params[2], "CAPSULE"))
+				x1 = GDGT_CAPSULES;
+			else if (fastcmp(params[2], "SPECIAL"))
+				x1 = GDGT_SPECIAL;
+			else if (fastcmp(params[2], "CUSTOM"))
+				x1 = GDGT_CUSTOM;
+			else
+			{
+				deh_warning("gametype requirement \"%s\" invalid for condition ID %d", params[2], id+1);
+				return;
+			}
+		}
 	}
 	else if (fastcmp(params[0], "TOTALRINGS"))
 	{

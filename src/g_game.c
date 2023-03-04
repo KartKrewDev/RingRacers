@@ -3994,8 +3994,18 @@ static void G_DoCompleted(void)
 
 	if (legitimateexit && !demo.playback && !mapreset) // (yes you're allowed to unlock stuff this way when the game is modified)
 	{
+		UINT8 roundtype = GDGT_CUSTOM;
+
+		if (gametype == GT_RACE)
+			roundtype = GDGT_RACE;
+		else if (gametype == GT_BATTLE)
+			roundtype = (battlecapsules ? GDGT_CAPSULES : GDGT_BATTLE);
+		else if (gametype == GT_SPECIAL || gametype == GT_VERSUS)
+			roundtype = GDGT_SPECIAL;
+
+		gamedata->roundsplayed[roundtype]++;
+
 		// Done before forced addition of PF_NOCONTEST to make UCRP_NOCONTEST harder to achieve
-		gamedata->matchesplayed++;
 		M_UpdateUnlockablesAndExtraEmblems(true);
 		gamedata->deferredsave = true;
 	}
@@ -4348,11 +4358,8 @@ void G_LoadGameData(void)
 	// to new gamedata
 	// see also M_EraseDataResponse
 	G_ClearRecords(); // records
+	M_ClearStats(); // statistics
 	M_ClearSecrets(); // emblems, unlocks, maps visited, etc
-
-	gamedata->totalplaytime = 0;
-	gamedata->matchesplayed = 0;
-	gamedata->totalrings = 0;
 
 	if (M_CheckParm("-nodata"))
 	{
@@ -4398,15 +4405,23 @@ void G_LoadGameData(void)
 	}
 
 	gamedata->totalplaytime = READUINT32(save.p);
-	gamedata->matchesplayed = READUINT32(save.p);
 
 	if (versionMinor > 1)
 	{
 		gamedata->totalrings = READUINT32(save.p);
 
+		for (i = 0; i < GDGT_MAX; i++)
+		{
+			gamedata->roundsplayed[i] = READUINT32(save.p);
+		}
+
 		gamedata->crashflags = READUINT8(save.p);
 		if (gamedata->crashflags & GDCRASH_LAST)
 			gamedata->crashflags |= GDCRASH_ANY;
+	}
+	else
+	{
+		save.p += 4; // no direct equivalent to matchesplayed
 	}
 
 	{
@@ -4574,7 +4589,7 @@ void G_SaveGameData(boolean dirty)
 		return;
 	}
 
-	length = (4+1+4+4+4+1+4+(MAXEMBLEMS+(MAXUNLOCKABLES*2)+MAXCONDITIONSETS)+4+4+2);
+	length = (4+1+4+4+(4*GDGT_MAX)+1+4+(MAXEMBLEMS+(MAXUNLOCKABLES*2)+MAXCONDITIONSETS)+4+4+2);
 	if (gamedata->challengegrid)
 	{
 		length += gamedata->challengegridwidth * CHALLENGEGRIDHEIGHT;
@@ -4592,8 +4607,12 @@ void G_SaveGameData(boolean dirty)
 	WRITEUINT32(save.p, GD_VERSIONCHECK); // 4
 	WRITEUINT8(save.p, GD_VERSIONMINOR); // 1
 	WRITEUINT32(save.p, gamedata->totalplaytime); // 4
-	WRITEUINT32(save.p, gamedata->matchesplayed); // 4
 	WRITEUINT32(save.p, gamedata->totalrings); // 4
+
+	for (i = 0; i < GDGT_MAX; i++) // 4 * GDGT_MAX
+	{
+		WRITEUINT32(save.p, gamedata->roundsplayed[i]);
+	}
 
 	{
 		UINT8 crashflags = (gamedata->crashflags & GDCRASH_ANY);

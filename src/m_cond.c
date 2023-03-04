@@ -524,6 +524,17 @@ void M_ClearConditionSet(UINT8 set)
 }
 
 // Clear ALL secrets.
+void M_ClearStats(void)
+{
+	UINT8 i;
+	gamedata->totalplaytime = 0;
+	gamedata->totalrings = 0;
+	for (i = 0; i < GDGT_MAX; ++i)
+		gamedata->roundsplayed[i] = 0;
+	gamedata->timesBeaten = 0;
+	gamedata->crashflags = 0;
+}
+
 void M_ClearSecrets(void)
 {
 	INT32 i;
@@ -543,9 +554,6 @@ void M_ClearSecrets(void)
 	Z_Free(gamedata->challengegrid);
 	gamedata->challengegrid = NULL;
 	gamedata->challengegridwidth = 0;
-
-	gamedata->timesBeaten = 0;
-	gamedata->crashflags = 0;
 
 	// Re-unlock any always unlocked things
 	M_UpdateUnlockablesAndExtraEmblems(false);
@@ -627,8 +635,22 @@ boolean M_CheckCondition(condition_t *cn, player_t *player)
 	{
 		case UC_PLAYTIME: // Requires total playing time >= x
 			return (gamedata->totalplaytime >= (unsigned)cn->requirement);
-		case UC_MATCHESPLAYED: // Requires any level completed >= x times
-			return (gamedata->matchesplayed >= (unsigned)cn->requirement);
+		case UC_ROUNDSPLAYED: // Requires any level completed >= x times
+		{
+			if (cn->extrainfo1 == GDGT_MAX)
+			{
+				UINT8 i;
+				UINT32 sum = 0;
+
+				for (i = 0; i < GDGT_MAX; i++)
+				{
+					sum += gamedata->roundsplayed[i];
+				}
+
+				return (sum >= (unsigned)cn->requirement);
+			}
+			return (gamedata->roundsplayed[cn->extrainfo1] >= (unsigned)cn->requirement);
+		}
 		case UC_TOTALRINGS: // Requires grabbing >= x rings
 			return (gamedata->totalrings >= (unsigned)cn->requirement);
 		case UC_POWERLEVEL: // Requires power level >= x on a certain gametype
@@ -834,33 +856,70 @@ static const char *M_GetConditionString(condition_t *cn)
 	switch (cn->type)
 	{
 		case UC_PLAYTIME: // Requires total playing time >= x
+
 			return va("Play for %i:%02i:%02i",
 				G_TicsToHours(cn->requirement),
 				G_TicsToMinutes(cn->requirement, false),
 				G_TicsToSeconds(cn->requirement));
-		case UC_MATCHESPLAYED: // Requires any level completed >= x times
-			return va("Play %d Rounds", cn->requirement);
+
+		case UC_ROUNDSPLAYED: // Requires any level completed >= x times
+
+			if (cn->extrainfo1 == GDGT_MAX)
+				work = "";
+			else if (cn->extrainfo1 != GDGT_RACE
+				&& cn->extrainfo1 != GDGT_BATTLE
+				&& cn->extrainfo1 != GDGT_CUSTOM
+				&& gamedata->roundsplayed[cn->extrainfo1] == 0)
+					work = " ???";
+			else switch (cn->extrainfo1)
+			{
+				case GDGT_RACE:
+					work = " Race";
+					break;
+				case GDGT_CAPSULES:
+					work = " Capsule";
+					break;
+				case GDGT_BATTLE:
+					work = " Battle";
+					break;
+				case GDGT_SPECIAL:
+					work = " Special";
+					break;
+				case GDGT_CUSTOM:
+					work = " custom gametype";
+					break;
+				default:
+					return va("INVALID GAMETYPE CONDITION \"%d:%d:%d\"", cn->type, cn->extrainfo1, cn->requirement);
+			}
+
+			return va("Play %d%s Round%s", cn->requirement, work,
+				(cn->requirement == 1 ? "" : "s"));
+
 		case UC_TOTALRINGS: // Requires collecting >= x rings
 			if (cn->requirement >= 1000000)
 				return va("Collect %u,%u,%u Rings", (cn->requirement/1000000), (cn->requirement/1000)%1000, (cn->requirement%1000));
 			if (cn->requirement >= 1000)
 				return va("Collect %u,%u Rings", (cn->requirement/1000), (cn->requirement%1000));
 			return va("Collect %u Rings", cn->requirement);
+
 		case UC_POWERLEVEL: // Requires power level >= x on a certain gametype
 			return va("Get a PWR of %d in %s", cn->requirement,
 				(cn->extrainfo1 == PWRLV_RACE)
 				? "Race"
 				: "Battle");
+
 		case UC_GAMECLEAR: // Requires game beaten >= x times
 			if (cn->requirement > 1)
 				return va("Beat game %d times", cn->requirement);
 			else
 				return va("Beat the game");
+
 		case UC_OVERALLTIME: // Requires overall time <= x
 			return va("Get overall time of %i:%02i:%02i",
 				G_TicsToHours(cn->requirement),
 				G_TicsToMinutes(cn->requirement, false),
 				G_TicsToSeconds(cn->requirement));
+
 		case UC_MAPVISITED: // Requires map x to be visited
 		case UC_MAPBEATEN: // Requires map x to be beaten
 		case UC_MAPENCORE: // Requires map x to be beaten in encore
@@ -876,6 +935,7 @@ static const char *M_GetConditionString(condition_t *cn)
 			Z_Free(title);
 			return work;
 		}
+
 		case UC_MAPTIME: // Requires time on map <= x
 		{
 			if (cn->extrainfo1 >= nummapheaders || !mapheaderinfo[cn->extrainfo1])
@@ -890,8 +950,10 @@ static const char *M_GetConditionString(condition_t *cn)
 			Z_Free(title);
 			return work;
 		}
+
 		case UC_TOTALMEDALS: // Requires number of emblems >= x
 			return va("Get %d medals", cn->requirement);
+
 		case UC_EMBLEM: // Requires emblem x to be obtained
 		{
 			INT32 checkLevel;
@@ -987,7 +1049,9 @@ static const char *M_GetConditionString(condition_t *cn)
 		case UCRP_PREFIX_BREAKTHECAPSULES:
 			return "BREAK THE CAPSULES:";
 		case UCRP_PREFIX_SEALEDSTAR:
-			return "SEALED STAR:";
+			if (gamedata->roundsplayed[GDGT_SPECIAL] == 0)
+				return NULL;
+			return "SEALED STARS:";
 
 		case UCRP_PREFIX_ISMAP:
 			if (cn->requirement >= nummapheaders || !mapheaderinfo[cn->requirement])

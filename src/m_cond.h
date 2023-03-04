@@ -29,7 +29,7 @@ extern "C" {
 typedef enum
 {
 	UC_PLAYTIME,		// PLAYTIME [tics]
-	UC_MATCHESPLAYED,	// SRB2Kart: MATCHESPLAYED [x played]
+	UC_ROUNDSPLAYED,	// ROUNDSPLAYED [x played]
 	UC_TOTALRINGS,		// TOTALRINGS [x collected]
 	UC_POWERLEVEL,		// SRB2Kart: POWERLEVEL [power level to reach] [gametype, "0" for race, "1" for battle]
 	UC_GAMECLEAR,		// GAMECLEAR <x times>
@@ -191,6 +191,15 @@ typedef enum
 // This is the largest number of 9s that will fit in UINT32.
 #define GDMAX_RINGS 999999999
 
+typedef enum {
+	GDGT_RACE,
+	GDGT_BATTLE,
+	GDGT_CAPSULES,
+	GDGT_SPECIAL,
+	GDGT_CUSTOM,
+	GDGT_MAX
+} roundsplayed_t;
+
 // GAMEDATA STRUCTURE
 // Everything that would get saved in gamedata.dat
 struct gamedata_t
@@ -218,7 +227,7 @@ struct gamedata_t
 
 	// PLAY TIME
 	UINT32 totalplaytime;
-	UINT32 matchesplayed;
+	UINT32 roundsplayed[GDGT_MAX];
 	UINT32 totalrings;
 
 	// Funny
@@ -267,6 +276,7 @@ void M_UpdateConditionSetsPending(void);
 // Clearing secrets
 void M_ClearConditionSet(UINT8 set);
 void M_ClearSecrets(void);
+void M_ClearStats(void);
 
 // Updating conditions and unlockables
 boolean M_CheckCondition(condition_t *cn, player_t *player);
