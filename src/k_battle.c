@@ -781,7 +781,6 @@ void K_BattleInit(boolean singleplayercontext)
 				P_SpawnMapThing(mt);
 		}
 
-		g_gpRank.totalCapsules += maptargets;
 		battlecapsules = true;
 	}
 
