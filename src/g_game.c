@@ -2940,15 +2940,9 @@ mapthing_t *G_FindPodiumStart(INT32 playernum)
 		UINT8 i;
 		UINT8 pos = 0;
 
-		// SRB2Kart: figure out player spawn pos from points
-		if (!playeringame[playernum] || players[playernum].spectator)
-		{
-			return playerstarts[0]; // go to first spot if you're a spectator
-		}
-
 		for (i = 0; i < MAXPLAYERS; i++)
 		{
-			if (!playeringame[i] || players[i].spectator)
+			if (!playeringame[i])
 			{
 				continue;
 			}
