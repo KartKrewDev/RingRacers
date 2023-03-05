@@ -691,7 +691,7 @@ void M_SetMenuDelay(UINT8 i)
 	}
 }
 
-static void M_UpdateMenuCMD(UINT8 i)
+void M_UpdateMenuCMD(UINT8 i)
 {
 	UINT8 mp = max(1, setup_numplayers);
 
@@ -733,12 +733,6 @@ void M_MapMenuControls(event_t *ev)
 	{
 		// update keys current state
 		G_MapEventsToControls(ev);
-	}
-
-	// Update menu CMD
-	for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
-	{
-		M_UpdateMenuCMD(i);
 	}
 }
 

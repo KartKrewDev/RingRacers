@@ -178,6 +178,7 @@ boolean capslock = 0;	// gee i wonder what this does.
 void D_ProcessEvents(void)
 {
 	event_t *ev;
+	int i;
 
 	boolean eaten;
 	boolean menuresponse = false;
@@ -250,6 +251,12 @@ void D_ProcessEvents(void)
 	if (!menuresponse)
 	{
 		M_MapMenuControls(NULL);
+	}
+
+	// Update menu CMD
+	for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
+	{
+		M_UpdateMenuCMD(i);
 	}
 }
 
