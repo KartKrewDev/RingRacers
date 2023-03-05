@@ -797,7 +797,11 @@ static boolean M_CheckConditionSet(conditionset_t *c, player_t *player)
 			return true;
 
 		// Skip future conditions with the same ID if one fails, for obvious reasons
-		else if (lastID && lastID == cn->id && !achievedSoFar)
+		if (lastID && lastID == cn->id && !achievedSoFar)
+			continue;
+
+		// Skip entries that are JUST for string building
+		if (cn->type == UC_AND || cn->type == UC_COMMA)
 			continue;
 
 		lastID = cn->id;
