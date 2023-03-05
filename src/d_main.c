@@ -171,6 +171,54 @@ UINT8 ctrldown = 0; // 0x1 left, 0x2 right
 UINT8 altdown = 0; // 0x1 left, 0x2 right
 boolean capslock = 0;	// gee i wonder what this does.
 
+static void HandleGamepadDeviceAdded(event_t *ev)
+{
+	I_Assert(ev != NULL);
+	I_Assert(ev->type == ev_gamepad_device_added);
+
+	G_RegisterAvailableGamepad(ev->device);
+	CONS_Debug(DBG_GAMELOGIC, "Registered available gamepad device %d\n", ev->device);
+}
+
+static void HandleGamepadDeviceRemoved(event_t *ev)
+{
+	int i = 0;
+	I_Assert(ev != NULL);
+	I_Assert(ev->type == ev_gamepad_device_removed);
+
+	G_UnregisterAvailableGamepad(ev->device);
+	CONS_Debug(DBG_GAMELOGIC, "Unregistered available gamepad device %d\n", ev->device);
+
+	// Downstream responders need to update player gamepad assignments, pause, etc
+
+	for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
+	{
+		INT32 device = G_GetDeviceForPlayer(i);
+		if (device == ev->device)
+		{
+			G_SetDeviceForPlayer(i, -1);
+		}
+	}
+}
+
+/// Respond to added/removed device events, for bookkeeping available gamepads.
+static void HandleGamepadDeviceEvents(event_t *ev)
+{
+	I_Assert(ev != NULL);
+
+	switch (ev->type)
+	{
+	case ev_gamepad_device_added:
+		HandleGamepadDeviceAdded(ev);
+		break;
+	case ev_gamepad_device_removed:
+		HandleGamepadDeviceRemoved(ev);
+		break;
+	default:
+		break;
+	}
+}
+
 //
 // D_ProcessEvents
 // Send all the events of the given timestamp down the responder chain
@@ -183,10 +231,12 @@ void D_ProcessEvents(void)
 	boolean eaten;
 	boolean menuresponse = false;
 
-	memset(deviceResponding, false, sizeof (deviceResponding));
+	G_ResetAllDeviceResponding();
 	for (; eventtail != eventhead; eventtail = (eventtail+1) & (MAXEVENTS-1))
 	{
 		ev = &events[eventtail];
+
+		HandleGamepadDeviceEvents(ev);
 
 		// Screenshots over everything so that they can be taken anywhere.
 		if (M_ScreenshotResponder(ev))
@@ -976,7 +1026,7 @@ void D_ClearState(void)
 
 	// clear cmd building stuff
 	memset(gamekeydown, 0, sizeof (gamekeydown));
-	memset(deviceResponding, false, sizeof (deviceResponding));
+	G_ResetAllDeviceResponding();
 
 	// Reset the palette
 	if (rendermode != render_none)
@@ -1506,6 +1556,8 @@ void D_SRB2Main(void)
 
 	CONS_Printf("I_StartupGraphics()...\n");
 	I_StartupGraphics();
+
+	I_StartupInput();
 
 	if (rendermode != render_none)
 	{

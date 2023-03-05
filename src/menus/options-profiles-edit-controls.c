@@ -123,7 +123,7 @@ static void SetDeviceOnPress(void)
 	{
 		if (deviceResponding[i])
 		{
-			CV_SetValue(&cv_usejoystick[0], i);	// Force-set this joystick as the current joystick we're using for P1 (which is the only one controlling menus)
+			G_SetDeviceForPlayer(0, i); // Force-set this joystick as the current joystick we're using for P1 (which is the only one controlling menus)
 			CONS_Printf("SetDeviceOnPress: Device for %d set to %d\n", 0, i);
 			return;
 		}
@@ -307,7 +307,7 @@ void M_MapProfileControl(event_t *ev)
 	UINT8 where = n;										// By default, we'll save the bind where we're supposed to map.
 	INT32 i;
 
-	//SetDeviceOnPress();	// Update cv_usejoystick
+	//SetDeviceOnPress();	// Update player gamepad assignments
 
 	// Only consider keydown and joystick events to make sure we ignore ev_mouse and other events
 	// See also G_MapEventsToControls
@@ -325,11 +325,11 @@ void M_MapProfileControl(event_t *ev)
 			}
 #endif
 			break;
-		case ev_joystick:
+		case ev_gamepad_axis:
 			if (ev->data1 >= JOYAXES)
 			{
 #ifdef PARANOIA
-				CONS_Debug(DBG_GAMELOGIC, "Bad joystick axis event %d\n", ev->data1);
+				CONS_Debug(DBG_GAMELOGIC, "Bad gamepad axis event %d\n", ev->data1);
 #endif
 				return;
 			}

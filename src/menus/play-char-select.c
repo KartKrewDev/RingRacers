@@ -380,10 +380,10 @@ void M_CharacterSelectInit(void)
 	{
 		for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
 		{
-			// Un-set devices for other players.
-			if (i != 0 || optionsmenu.profile)
+			// Un-set devices for all players if not editing profile
+			if (!optionsmenu.profile)
 			{
-				CV_SetValue(&cv_usejoystick[i], -1);
+				G_SetDeviceForPlayer(i, -1);
 				CONS_Printf("M_CharacterSelectInit: Device for %d set to %d\n", i, -1);
 			}
 		}
@@ -526,7 +526,12 @@ static boolean M_DeviceAvailable(INT32 deviceID, UINT8 numPlayers)
 
 	for (i = 0; i < numPlayers; i++)
 	{
-		if (cv_usejoystick[i].value == deviceID)
+		int player_device = G_GetDeviceForPlayer(i);
+		if (player_device == -1)
+		{
+			continue;
+		}
+		if (player_device == deviceID)
 		{
 			// This one's already being used.
 			return false;
@@ -540,6 +545,7 @@ static boolean M_DeviceAvailable(INT32 deviceID, UINT8 numPlayers)
 static boolean M_HandlePressStart(setup_player_t *p, UINT8 num)
 {
 	INT32 i, j;
+	INT32 num_gamepads_available;
 
 	if (optionsmenu.profile)
 		return false;	// Don't allow for the possibility of SOMEHOW another player joining in.
@@ -568,24 +574,32 @@ static boolean M_HandlePressStart(setup_player_t *p, UINT8 num)
 	}
 
 	// Now detect new devices trying to join.
-	for (i = 0; i < MAXDEVICES; i++)
+	num_gamepads_available = G_GetNumAvailableGamepads();
+	for (i = 0; i < num_gamepads_available + 1; i++)
 	{
-		if (deviceResponding[i] != true)
+		INT32 device = 0;
+
+		if (i > 0)
+		{
+			device = G_GetAvailableGamepadDevice(i - 1);
+		}
+
+		if (G_IsDeviceResponding(device) != true)
 		{
 			// No buttons are being pushed.
 			continue;
 		}
 
-		if (M_DeviceAvailable(i, setup_numplayers) == true)
+		if (M_DeviceAvailable(device, setup_numplayers) == true)
 		{
 			// Available!! Let's use this one!!
 
 			// if P1 is setting up using keyboard (device 0), save their last used device.
 			// this is to allow them to retain controller usage when they play alone.
 			// Because let's face it, when you test mods, you're often lazy to grab your controller for menuing :)
-			if (!i && !num)
+			if (i == 0 && num == 0)
 			{
-				setup_player[num].ponedevice = cv_usejoystick[num].value;
+				setup_player[num].ponedevice = G_GetDeviceForPlayer(num);
 			}
 			else if (num)
 			{
@@ -593,14 +607,13 @@ static boolean M_HandlePressStart(setup_player_t *p, UINT8 num)
 				memcpy(&gamecontrol[num], gamecontroldefault, sizeof(gamecontroldefault));
 			}
 
+			G_SetDeviceForPlayer(num, device);
+			CONS_Printf("M_HandlePressStart: Device for %d set to %d\n", num, device);
 
-			CV_SetValue(&cv_usejoystick[num], i);
-			CONS_Printf("M_HandlePressStart: Device for %d set to %d\n", num, i);
-
-			for (j = num+1; j < MAXSPLITSCREENPLAYERS; j++)
+			for (j = num + 1; j < MAXSPLITSCREENPLAYERS; j++)
 			{
 				// Un-set devices for other players.
-				CV_SetValue(&cv_usejoystick[j], -1);
+				G_SetDeviceForPlayer(j, -1);
 				CONS_Printf("M_HandlePressStart: Device for %d set to %d\n", j, -1);
 			}
 
@@ -616,7 +629,7 @@ static boolean M_HandlePressStart(setup_player_t *p, UINT8 num)
 				menucmd[j].buttonsHeld |= MBT_X;
 			}
 
-			memset(deviceResponding, false, sizeof(deviceResponding));
+			G_ResetAllDeviceResponding();
 			return true;
 		}
 	}
@@ -668,11 +681,8 @@ static boolean M_HandleCSelectProfile(setup_player_t *p, UINT8 num)
 				menucmd[i].buttonsHeld |= MBT_X;
 			}
 
-			if (num > 0)
-			{
-				CV_StealthSetValue(&cv_usejoystick[num], -1);
-				CONS_Printf("M_HandleCSelectProfile: Device for %d set to %d\n", num, -1);
-			}
+			G_SetDeviceForPlayer(num, -1);
+			CONS_Printf("M_HandleCSelectProfile: Device for %d set to %d\n", num, -1);
 
 			return true;
 		}
@@ -1482,18 +1492,12 @@ void M_CharacterSelectTick(void)
 
 				CV_StealthSetValue(&cv_splitplayers, setup_numplayers);
 
-				// P1 is alone, set their old device just in case.
-				if (setup_numplayers < 2 && setup_player[0].ponedevice)
-				{
-					CV_StealthSetValue(&cv_usejoystick[0], setup_player[0].ponedevice);
-				}
-
 				#if defined (TESTERS)
 					M_MPOptSelectInit(0);
 				#else
 					M_SetupNextMenu(&PLAY_MainDef, false);
 				#endif
-				
+
 			}
 		}
 		else	// In a game

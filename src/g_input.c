@@ -19,6 +19,7 @@
 #include "d_net.h"
 #include "console.h"
 #include "i_joy.h" // JOYAXISRANGE
+#include "z_zone.h"
 
 #define MAXMOUSESENSITIVITY 100 // sensitivity steps
 
@@ -35,7 +36,6 @@ consvar_t cv_controlperkey = CVAR_INIT ("controlperkey", "One", CV_SAVE, onecont
 // current state of the keys
 // FRACUNIT for fully pressed, 0 for not pressed
 INT32 gamekeydown[MAXDEVICES][NUMINPUTS];
-boolean deviceResponding[MAXDEVICES];
 
 // two key codes (or virtual key) per game control
 INT32 gamecontrol[MAXSPLITSCREENPLAYERS][num_gamecontrols][MAXINPUTMAPPING];
@@ -68,14 +68,249 @@ const INT32 gcl_full[num_gcl_full] = {
 };
 */
 
-INT32 G_GetDevicePlayer(INT32 deviceID)
+static INT32 g_gamekeydown_device0[NUMINPUTS];
+
+static INT32 g_available_gamepad_devices;
+static INT32 g_gamepad_device_ids[MAXGAMEPADS];
+static INT32* g_gamepad_gamekeydown[MAXGAMEPADS];
+static boolean g_device0_responding;
+static boolean g_gamepad_responding[MAXGAMEPADS];
+static INT32 g_player_devices[MAXSPLITSCREENPLAYERS] = {-1, -1, -1, -1};
+
+void G_RegisterAvailableGamepad(INT32 device_id)
+{
+	I_Assert(device_id >= 1);
+
+	if (g_available_gamepad_devices == MAXGAMEPADS)
+	{
+		// too many!
+		return;
+	}
+
+	g_gamepad_device_ids[g_available_gamepad_devices] = device_id;
+
+	g_gamepad_gamekeydown[g_available_gamepad_devices] = Z_CallocAlign(NUMINPUTS * sizeof(INT32), PU_STATIC, NULL, 4);
+
+	g_gamepad_responding[g_available_gamepad_devices] = false;
+
+	g_available_gamepad_devices += 1;
+}
+
+void G_UnregisterAvailableGamepad(INT32 device_id)
+{
+	int i = 0;
+
+	I_Assert(device_id >= 1);
+
+	if (g_available_gamepad_devices <= 0)
+	{
+		return;
+	}
+
+	for (i = 0; i < g_available_gamepad_devices; i++)
+	{
+		if (g_gamepad_device_ids[i] == device_id)
+		{
+			int32_t *old_gamekeydown = g_gamepad_gamekeydown[i];
+			g_gamepad_device_ids[i] = g_gamepad_device_ids[g_available_gamepad_devices - 1];
+			g_gamepad_gamekeydown[i] = g_gamepad_gamekeydown[g_available_gamepad_devices - 1];
+			g_gamepad_responding[i] = g_gamepad_responding[g_available_gamepad_devices - 1];
+			Z_Free(old_gamekeydown);
+			g_available_gamepad_devices -= 1;
+			return;
+		}
+	}
+}
+
+INT32 G_GetNumAvailableGamepads(void)
+{
+	return g_available_gamepad_devices;
+}
+
+INT32 G_GetAvailableGamepadDevice(INT32 available_index)
+{
+	if (available_index < 0 || available_index >= G_GetNumAvailableGamepads())
+	{
+		return -1;
+	}
+
+	return g_gamepad_device_ids[available_index];
+}
+
+INT32 G_GetPlayerForDevice(INT32 device_id)
 {
 	INT32 i;
 
 	for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
 	{
-		if (deviceID == cv_usejoystick[i].value)
+		if (device_id == g_player_devices[i])
 		{
+			return i;
+		}
+	}
+
+	return -1;
+}
+
+INT32 G_GetDeviceForPlayer(INT32 player)
+{
+	int i;
+
+	if (G_GetPlayerForDevice(KEYBOARD_MOUSE_DEVICE) == player)
+	{
+		return KEYBOARD_MOUSE_DEVICE;
+	}
+
+	for (i = 0; i < G_GetNumAvailableGamepads() + 1; i++)
+	{
+		INT32 device = G_GetAvailableGamepadDevice(i);
+		if (G_GetPlayerForDevice(device) == player)
+		{
+			return device;
+		}
+	}
+
+	return -1;
+}
+
+void G_SetDeviceForPlayer(INT32 player, INT32 device)
+{
+	int i;
+
+	I_Assert(player >= 0 && player < MAXSPLITSCREENPLAYERS);
+	I_Assert(device >= -1);
+
+	g_player_devices[player] = device;
+
+	if (device == -1)
+	{
+		return;
+	}
+
+	if (device != KEYBOARD_MOUSE_DEVICE)
+	{
+		I_SetGamepadPlayerIndex(device, player);
+	}
+
+	for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
+	{
+		if (i == player)
+		{
+			continue;
+		}
+
+		if (g_player_devices[i] == device)
+		{
+			g_player_devices[i] = -1;
+			if (device > 0)
+			{
+				I_SetGamepadPlayerIndex(device, -1);
+			}
+		}
+	}
+}
+
+INT32* G_GetDeviceGameKeyDownArray(INT32 device)
+{
+	int i;
+
+	I_Assert(device >= 0);
+
+	if (device == KEYBOARD_MOUSE_DEVICE)
+	{
+		return g_gamekeydown_device0;
+	}
+
+	for (i = 0; i < g_available_gamepad_devices; i++)
+	{
+		if (g_gamepad_device_ids[i] == device)
+		{
+			return g_gamepad_gamekeydown[i];
+		}
+	}
+
+	return NULL;
+}
+
+boolean G_IsDeviceResponding(INT32 device)
+{
+	int i;
+
+	I_Assert(device >= 0);
+
+	if (device == KEYBOARD_MOUSE_DEVICE)
+	{
+		return g_device0_responding;
+	}
+
+	for (i = 0; i < g_available_gamepad_devices; i++)
+	{
+		INT32 device_id = G_GetAvailableGamepadDevice(i);
+		if (device_id == device)
+		{
+			return g_gamepad_responding[i];
+		}
+	}
+
+	return false;
+}
+
+void G_SetDeviceResponding(INT32 device, boolean responding)
+{
+	int i;
+
+	I_Assert(device >= 0);
+
+	if (device == KEYBOARD_MOUSE_DEVICE)
+	{
+		g_device0_responding = responding;
+		return;
+	}
+
+	for (i = 0; i < g_available_gamepad_devices; i++)
+	{
+		INT32 device_id = G_GetAvailableGamepadDevice(i);
+		if (device_id == device)
+		{
+			g_gamepad_responding[i] = responding;
+			return;
+		}
+	}
+}
+
+void G_ResetAllDeviceResponding(void)
+{
+	int i;
+	int num_gamepads;
+
+	g_device0_responding = false;
+
+	num_gamepads = G_GetNumAvailableGamepads();
+
+	for (i = 0; i < num_gamepads; i++)
+	{
+		g_gamepad_responding[i] = false;
+	}
+}
+
+static boolean AutomaticControllerReassignmentIsAllowed(INT32 device)
+{
+	boolean device_is_gamepad = device > 0;
+	boolean device_is_unassigned = G_GetPlayerForDevice(device) == -1;
+	boolean gamestate_is_in_level = gamestate == GS_LEVEL;
+
+	return device_is_gamepad && device_is_unassigned && gamestate_is_in_level;
+}
+
+static INT32 AssignDeviceToFirstUnassignedPlayer(INT32 device)
+{
+	int i;
+
+	for (i = 0; i < splitscreen + 1; i++)
+	{
+		if (G_GetDeviceForPlayer(i) == -1)
+		{
+			G_SetDeviceForPlayer(i, device);
 			return i;
 		}
 	}
@@ -94,15 +329,15 @@ void G_MapEventsToControls(event_t *ev)
 {
 	INT32 i;
 
-	if (ev->device >= 0 && ev->device < MAXDEVICES)
+	if (ev->device >= 0)
 	{
 		switch (ev->type)
 		{
 			case ev_keydown:
 			//case ev_keyup:
 			//case ev_mouse:
-			//case ev_joystick:
-				deviceResponding[ev->device] = true;
+			//case ev_gamepad_axis:
+				G_SetDeviceResponding(ev->device, true);
 				break;
 
 			default:
@@ -119,7 +354,16 @@ void G_MapEventsToControls(event_t *ev)
 		case ev_keydown:
 			if (ev->data1 < NUMINPUTS)
 			{
-				gamekeydown[ev->device][ev->data1] = JOYAXISRANGE;
+				G_GetDeviceGameKeyDownArray(ev->device)[ev->data1] = JOYAXISRANGE;
+
+				if (AutomaticControllerReassignmentIsAllowed(ev->device))
+				{
+					INT32 assigned = AssignDeviceToFirstUnassignedPlayer(ev->device);
+					if (assigned >= 0)
+					{
+						CONS_Alert(CONS_NOTICE, "Player %d device was reassigned\n", assigned + 1);
+					}
+				}
 			}
 #ifdef PARANOIA
 			else
@@ -132,7 +376,7 @@ void G_MapEventsToControls(event_t *ev)
 		case ev_keyup:
 			if (ev->data1 < NUMINPUTS)
 			{
-				gamekeydown[ev->device][ev->data1] = 0;
+				G_GetDeviceGameKeyDownArray(ev->device)[ev->data1] = 0;
 			}
 #ifdef PARANOIA
 			else
@@ -147,32 +391,32 @@ void G_MapEventsToControls(event_t *ev)
 			if (ev->data2 < 0)
 			{
 				// Left
-				gamekeydown[ev->device][KEY_MOUSEMOVE + 2] = abs(ev->data2);
-				gamekeydown[ev->device][KEY_MOUSEMOVE + 3] = 0;
+				G_GetDeviceGameKeyDownArray(ev->device)[KEY_MOUSEMOVE + 2] = abs(ev->data2);
+				G_GetDeviceGameKeyDownArray(ev->device)[KEY_MOUSEMOVE + 3] = 0;
 			}
 			else
 			{
 				// Right
-				gamekeydown[ev->device][KEY_MOUSEMOVE + 2] = 0;
-				gamekeydown[ev->device][KEY_MOUSEMOVE + 3] = abs(ev->data2);
+				G_GetDeviceGameKeyDownArray(ev->device)[KEY_MOUSEMOVE + 2] = 0;
+				G_GetDeviceGameKeyDownArray(ev->device)[KEY_MOUSEMOVE + 3] = abs(ev->data2);
 			}
 
 			// Y axis
 			if (ev->data3 < 0)
 			{
 				// Up
-				gamekeydown[ev->device][KEY_MOUSEMOVE] = abs(ev->data3);
-				gamekeydown[ev->device][KEY_MOUSEMOVE + 1] = 0;
+				G_GetDeviceGameKeyDownArray(ev->device)[KEY_MOUSEMOVE] = abs(ev->data3);
+				G_GetDeviceGameKeyDownArray(ev->device)[KEY_MOUSEMOVE + 1] = 0;
 			}
 			else
 			{
 				// Down
-				gamekeydown[ev->device][KEY_MOUSEMOVE] = 0;
-				gamekeydown[ev->device][KEY_MOUSEMOVE + 1] = abs(ev->data3);
+				G_GetDeviceGameKeyDownArray(ev->device)[KEY_MOUSEMOVE] = 0;
+				G_GetDeviceGameKeyDownArray(ev->device)[KEY_MOUSEMOVE + 1] = abs(ev->data3);
 			}
 			break;
 
-		case ev_joystick: // buttons are virtual keys
+		case ev_gamepad_axis: // buttons are virtual keys
 			if (ev->data1 >= JOYAXISSETS)
 			{
 #ifdef PARANOIA
@@ -190,12 +434,12 @@ void G_MapEventsToControls(event_t *ev)
 
 				if (ev->data2 != INT32_MAX)
 				{
-					gamekeydown[ev->device][KEY_AXIS1 + (JOYANALOGS * 4) + (i * 2)] = max(0, ev->data2);
+					G_GetDeviceGameKeyDownArray(ev->device)[KEY_AXIS1 + (JOYANALOGS * 4) + (i * 2)] = max(0, ev->data2);
 				}
 
 				if (ev->data3 != INT32_MAX)
 				{
-					gamekeydown[ev->device][KEY_AXIS1 + (JOYANALOGS * 4) + (i * 2) + 1] = max(0, ev->data3);
+					G_GetDeviceGameKeyDownArray(ev->device)[KEY_AXIS1 + (JOYANALOGS * 4) + (i * 2) + 1] = max(0, ev->data3);
 				}
 			}
 			else
@@ -206,14 +450,14 @@ void G_MapEventsToControls(event_t *ev)
 					if (ev->data2 < 0)
 					{
 						// Left
-						gamekeydown[ev->device][KEY_AXIS1 + (i * 4)] = abs(ev->data2);
-						gamekeydown[ev->device][KEY_AXIS1 + (i * 4) + 1] = 0;
+						G_GetDeviceGameKeyDownArray(ev->device)[KEY_AXIS1 + (i * 4)] = abs(ev->data2);
+						G_GetDeviceGameKeyDownArray(ev->device)[KEY_AXIS1 + (i * 4) + 1] = 0;
 					}
 					else
 					{
 						// Right
-						gamekeydown[ev->device][KEY_AXIS1 + (i * 4)] = 0;
-						gamekeydown[ev->device][KEY_AXIS1 + (i * 4) + 1] = abs(ev->data2);
+						G_GetDeviceGameKeyDownArray(ev->device)[KEY_AXIS1 + (i * 4)] = 0;
+						G_GetDeviceGameKeyDownArray(ev->device)[KEY_AXIS1 + (i * 4) + 1] = abs(ev->data2);
 					}
 				}
 
@@ -222,14 +466,14 @@ void G_MapEventsToControls(event_t *ev)
 					if (ev->data3 < 0)
 					{
 						// Up
-						gamekeydown[ev->device][KEY_AXIS1 + (i * 4) + 2] = abs(ev->data3);
-						gamekeydown[ev->device][KEY_AXIS1 + (i * 4) + 3] = 0;
+						G_GetDeviceGameKeyDownArray(ev->device)[KEY_AXIS1 + (i * 4) + 2] = abs(ev->data3);
+						G_GetDeviceGameKeyDownArray(ev->device)[KEY_AXIS1 + (i * 4) + 3] = 0;
 					}
 					else
 					{
 						// Down
-						gamekeydown[ev->device][KEY_AXIS1 + (i * 4) + 2] = 0;
-						gamekeydown[ev->device][KEY_AXIS1 + (i * 4) + 3] = abs(ev->data3);
+						G_GetDeviceGameKeyDownArray(ev->device)[KEY_AXIS1 + (i * 4) + 2] = 0;
+						G_GetDeviceGameKeyDownArray(ev->device)[KEY_AXIS1 + (i * 4) + 3] = abs(ev->data3);
 					}
 				}
 			}

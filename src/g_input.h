@@ -107,8 +107,8 @@ extern consvar_t cv_controlperkey;
 // current state of the keys: JOYAXISRANGE or 0 when boolean.
 // Or anything inbetween for analog values
 #define MAXDEVICES (MAXGAMEPADS + 1) // Gamepads + keyboard & mouse
+#define KEYBOARD_MOUSE_DEVICE 0
 extern INT32 gamekeydown[MAXDEVICES][NUMINPUTS];
-extern boolean deviceResponding[MAXDEVICES];
 
 // several key codes (or virtual key) per game control
 extern INT32 gamecontrol[MAXSPLITSCREENPLAYERS][num_gamecontrols][MAXINPUTMAPPING];
@@ -135,7 +135,31 @@ extern const INT32 gcl_full[num_gcl_full];
 // peace to my little coder fingers!
 // check a gamecontrol being active or not
 
-INT32 G_GetDevicePlayer(INT32 deviceID);
+/*
+*/
+
+/// Register a device index (from ev_gamepad_device_added) as an Available Gamepad
+void G_RegisterAvailableGamepad(INT32 device_id);
+/// Unregister a device index (from ev_gamepad_device_removed) as an Available Gamepad
+void G_UnregisterAvailableGamepad(INT32 device_id);
+/// Get the number of Available Gamepads registered.
+INT32 G_GetNumAvailableGamepads(void);
+/// Get the device ID for a given Available Gamepad Index, or -1. 0 <= available_index < G_GetNumAvailableGamepads()
+INT32 G_GetAvailableGamepadDevice(INT32 available_index);
+
+INT32 G_GetPlayerForDevice(INT32 deviceID);
+/// Get gamepad device for given player, or -1.
+INT32 G_GetDeviceForPlayer(INT32 player);
+
+/// Set the given player index's assigned device. If the device is in use by another player, that player is unassigned.
+void G_SetDeviceForPlayer(INT32 player, INT32 device);
+
+/// Get the gamekeydown array (NUMINPUTS values) for the given device, or NULL if the device id is invalid.
+INT32* G_GetDeviceGameKeyDownArray(INT32 device);
+
+boolean G_IsDeviceResponding(INT32 device);
+void G_SetDeviceResponding(INT32 device, boolean responding);
+void G_ResetAllDeviceResponding(void);
 
 // remaps the input event to a game control.
 void G_MapEventsToControls(event_t *ev);

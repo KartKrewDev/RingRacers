@@ -222,6 +222,22 @@ boolean M_Responder(event_t *ev)
 		return false;
 	}
 
+	if (gamestate == GS_MENU && ev->type == ev_gamepad_device_removed && G_GetPlayerForDevice(ev->device) != -1)
+	{
+		int i;
+		INT32 player = G_GetPlayerForDevice(ev->device);
+
+		// Unassign all controllers
+		for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
+		{
+			G_SetDeviceForPlayer(i, -1);
+		}
+
+		// Return to the title because a controller was removed at the menu.
+		CONS_Alert(CONS_NOTICE, "Player %d's assigned gamepad was removed. Returning to the title screen.", player);
+		D_StartTitle();
+	}
+
 	if (ev->type == ev_keydown && ev->data1 < NUMKEYS)
 	{
 		// Record keyboard presses

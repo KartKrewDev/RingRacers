@@ -205,9 +205,8 @@ void I_JoyScale4(void);
 
 // Called by D_SRB2Main.
 
-/**	\brief to startup a joystick
-*/
-void I_InitJoystick(UINT8 index);
+/// Startup input subsystems.
+void I_StartupInput(void);
 
 /**	\brief to startup the first joystick
 */

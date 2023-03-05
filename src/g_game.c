@@ -513,7 +513,7 @@ void G_UpdateTimeStickerMedals(UINT16 map, boolean showownrecord)
 				break;
 			}
 			case ET_MAP:
-			{	
+			{
 				if (emblem->flags & ME_SPBATTACK && cv_dummyspbattack.value)
 					break;
 				goto bademblem;
@@ -884,6 +884,7 @@ static INT32 keyboardMenuDefaults[][2] = {
 INT32 G_PlayerInputAnalog(UINT8 p, INT32 gc, UINT8 menuPlayers)
 {
 	INT32 deviceID;
+	INT32 avail_gamepad_id = 0;
 	INT32 i, j;
 	INT32 deadzone = 0;
 	boolean trydefaults = true;
@@ -900,7 +901,22 @@ INT32 G_PlayerInputAnalog(UINT8 p, INT32 gc, UINT8 menuPlayers)
 
 	deadzone = (JOYAXISRANGE * cv_deadzone[p].value) / FRACUNIT;
 
-	deviceID = cv_usejoystick[p].value;
+	deviceID = G_GetDeviceForPlayer(p);
+
+	if (deviceID == -1)
+	{
+		INT32 keyboard_player = G_GetPlayerForDevice(KEYBOARD_MOUSE_DEVICE);
+
+		// Player 1 is always allowed to use the keyboard in 1P (there is a check for splitscreen later in this func)
+		if (p == KEYBOARD_MOUSE_DEVICE && keyboard_player == -1)
+		{
+			deviceID = KEYBOARD_MOUSE_DEVICE;
+		}
+		else
+		{
+			goto deviceunassigned;
+		}
+	}
 
 retrygetcontrol:
 	for (i = 0; i < MAXINPUTMAPPING; i++)
@@ -909,7 +925,6 @@ retrygetcontrol:
 		INT32 menukey = KEY_NULL;
 		INT32 value = 0;
 		boolean processinput = true;
-
 
 		// for menus, keyboards have defaults!
 		if (deviceID == 0)
@@ -951,9 +966,9 @@ retrygetcontrol:
 			// It's possible to access this control right now, so let's disable the default control backup for later.
 			trydefaults = false;
 
-			value = gamekeydown[deviceID][key];
-			if (menukey && gamekeydown[deviceID][menukey])
-				value = gamekeydown[deviceID][menukey];
+			value = G_GetDeviceGameKeyDownArray(deviceID)[key];
+			if (menukey && G_GetDeviceGameKeyDownArray(deviceID)[menukey])
+				value = G_GetDeviceGameKeyDownArray(deviceID)[menukey];
 
 			if (value >= deadzone)
 			{
@@ -962,11 +977,13 @@ retrygetcontrol:
 		}
 	}
 
+deviceunassigned:
+
 	// If you're on controller, try your keyboard-based binds as an immediate backup.
 	// Do not do this if there are more than 1 local player.
 	if (p == 0 && deviceID > 0 && !tryingotherID && menuPlayers < 2 && !splitscreen)
 	{
-		deviceID = 0;
+		deviceID = KEYBOARD_MOUSE_DEVICE;
 		goto retrygetcontrol;
 	}
 
@@ -981,16 +998,21 @@ retrygetcontrol:
 
 	if (!tryingotherID)
 	{
-		deviceID = MAXDEVICES;
+		avail_gamepad_id = 0;
 		tryingotherID = true;
 	}
 loweringid:
-	deviceID--;
+	if (avail_gamepad_id >= G_GetNumAvailableGamepads())
+	{
+		return 0;
+	}
+	deviceID = G_GetAvailableGamepadDevice(avail_gamepad_id);
+	avail_gamepad_id += 1;
 	if (deviceID > 0)
 	{
 		for (i = 0; i < menuPlayers; i++)
 		{
-			if (deviceID != cv_usejoystick[i].value)
+			if (deviceID != G_GetDeviceForPlayer(i))
 				continue;
 			// Controller taken? Try again...
 			goto loweringid;
@@ -1005,7 +1027,7 @@ loweringid:
 		trydefaults = false;
 		controltable = &(gamecontroldefault[gc][0]);
 		tryingotherID = false;
-		deviceID = cv_usejoystick[p].value;
+		deviceID = G_GetDeviceForPlayer(p);
 		goto retrygetcontrol;
 
 	}
@@ -1530,7 +1552,7 @@ void G_DoLoadLevel(boolean resetplayer)
 
 	// clear cmd building stuff
 	memset(gamekeydown, 0, sizeof (gamekeydown));
-	memset(deviceResponding, false, sizeof (deviceResponding));
+	G_ResetAllDeviceResponding();
 
 	// clear hud messages remains (usually from game startup)
 	CON_ClearHUD();
@@ -1828,7 +1850,7 @@ boolean G_Responder(event_t *ev)
 		case ev_mouse:
 			return true; // eat events
 
-		case ev_joystick:
+		case ev_gamepad_axis:
 			return true; // eat events
 
 		default:
