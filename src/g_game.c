@@ -1472,8 +1472,6 @@ void G_DoLoadLevelEx(boolean resetplayer, gamestate_t newstate)
 	if (gamestate == GS_VOTING)
 		Y_EndVote();
 
-	K_ResetCeremony();
-
 	// cleanup
 	// Is this actually necessary? Doesn't F_StartTitleScreen already do a significantly more comprehensive check?
 	if (newstate == GS_TITLESCREEN)
@@ -1499,6 +1497,8 @@ void G_DoLoadLevelEx(boolean resetplayer, gamestate_t newstate)
 	if (wipegamestate == GS_MENU)
 		M_ClearMenus(true);
 	I_UpdateMouseGrab();
+
+	K_ResetCeremony();
 
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
