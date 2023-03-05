@@ -2382,6 +2382,28 @@ void M_DrawTimeAttack(void)
 
 		V_DrawRightAlignedString(rightedge-12, timeheight, highlightflags, "BEST TIME:");
 		K_drawKartTimestamp(timerec, 162+t, timeheight+6, 0, 1);
+
+		// SPB Attack control hint + menu overlay
+		if (levellist.newgametype == GT_RACE && levellist.levelsearch.timeattack == true)
+		{
+			const UINT8 anim_duration = 16;
+			const UINT8 anim = (timeattackmenu.ticker % (anim_duration * 2)) < anim_duration;
+
+			INT32 buttonx = 162 + t;
+			INT32 buttony = timeheight;
+
+			if (anim)
+				V_DrawScaledPatch(buttonx + 35, buttony - 3, V_SNAPTOLEFT, W_CachePatchName("TLB_I", PU_CACHE));
+			else
+				V_DrawScaledPatch(buttonx + 35, buttony - 3, V_SNAPTOLEFT, W_CachePatchName("TLB_IB", PU_CACHE));
+
+			if (timeattackmenu.ticker > (timeattackmenu.spbflicker + TICRATE/6) || timeattackmenu.ticker % 2)
+			{
+				if (cv_dummyspbattack.value)
+					V_DrawMappedPatch(buttonx + 7, buttony - 1, 0, W_CachePatchName("K_SPBATK", PU_CACHE), R_GetTranslationColormap(TC_DEFAULT, SKINCOLOR_RED, GTC_MENUCACHE));
+			}
+		}
+
 	}
 	else
 		opty = 80;

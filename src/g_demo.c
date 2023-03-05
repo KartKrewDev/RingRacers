@@ -119,7 +119,7 @@ demoghost *ghosts = NULL;
 #define DEMOVERSION 0x0007
 #define DEMOHEADER  "\xF0" "KartReplay" "\x0F"
 
-#define DF_ATTACKMASK   (ATTACKING_TIME|ATTACKING_LAP) // This demo contains time/lap data
+#define DF_ATTACKMASK   (ATTACKING_TIME|ATTACKING_LAP|ATTACKING_SPB) // This demo contains time/lap data
 
 #define DF_GHOST		0x08 // This demo contains ghost data too!
 

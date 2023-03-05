@@ -180,19 +180,19 @@ patch_t *kp_capsuletarget_far[2];
 patch_t *kp_capsuletarget_far_text[2];
 patch_t *kp_capsuletarget_near[8];
 
-static patch_t *kp_button_a[2][2];
-static patch_t *kp_button_b[2][2];
-static patch_t *kp_button_c[2][2];
-static patch_t *kp_button_x[2][2];
-static patch_t *kp_button_y[2][2];
-static patch_t *kp_button_z[2][2];
-static patch_t *kp_button_start[2];
-static patch_t *kp_button_l[2];
-static patch_t *kp_button_r[2];
-static patch_t *kp_button_up[2];
-static patch_t *kp_button_down[2];
-static patch_t *kp_button_right[2];
-static patch_t *kp_button_left[2];
+patch_t *kp_button_a[2][2];
+patch_t *kp_button_b[2][2];
+patch_t *kp_button_c[2][2];
+patch_t *kp_button_x[2][2];
+patch_t *kp_button_y[2][2];
+patch_t *kp_button_z[2][2];
+patch_t *kp_button_start[2];
+patch_t *kp_button_l[2];
+patch_t *kp_button_r[2];
+patch_t *kp_button_up[2];
+patch_t *kp_button_down[2];
+patch_t *kp_button_right[2];
+patch_t *kp_button_left[2];
 
 static void K_LoadButtonGraphics(patch_t *kp[2], int letter)
 {
@@ -1653,6 +1653,22 @@ void K_drawKartTimestamp(tic_t drawtime, INT32 TX, INT32 TY, INT32 splitflags, U
 
 			workx += 6;
 		}
+	}
+
+	if (modeattacking & ATTACKING_SPB && stplyr->SPBdistance > 0)
+	{
+		UINT8 *colormap = R_GetTranslationColormap(stplyr->skin, stplyr->skincolor, GTC_CACHE);
+		int ybar = 180;
+		int widthbar = 120;
+
+		V_DrawFill(160 - widthbar / 2, ybar, widthbar, 1, 6);
+		V_DrawMappedPatch(160 + widthbar/2 - 7, ybar - 7, FRACUNIT, faceprefix[stplyr->skin][FACE_MINIMAP], colormap);
+
+		// vibes-based math
+		int bombxoff = (stplyr->SPBdistance/mapobjectscale - mobjinfo[MT_SPB].radius/FRACUNIT - mobjinfo[MT_PLAYER].radius/FRACUNIT) * 8;
+		bombxoff = sqrt(bombxoff) - 5;
+		bombxoff = max(0, min(bombxoff, widthbar));
+		V_DrawScaledPatch(160 + widthbar/2 - bombxoff, ybar - 7, FRACUNIT, W_CachePatchName("SPBMMAP", PU_CACHE));
 	}
 }
 
@@ -4639,13 +4655,16 @@ K_drawMiniPing (void)
 	}
 }
 
+void K_drawButtonAnim(INT32 x, INT32 y, INT32 flags, patch_t *button[2], tic_t animtic)
+{
+	const UINT8 anim_duration = 16;
+	const UINT8 anim = (animtic % (anim_duration * 2)) < anim_duration;
+	V_DrawScaledPatch(x, y, flags, button[anim]);
+}
+
 static void K_DrawDirectorButton(INT32 idx, const char *label, patch_t *kp[2], INT32 textflags)
 {
 	INT32 flags = V_SNAPTORIGHT | V_SLIDEIN | V_SPLITSCREEN;
-
-	const UINT8 anim_duration = 16;
-	const UINT8 anim = (leveltime % (anim_duration * 2)) < anim_duration;
-
 	INT32 x = (BASEVIDWIDTH/2) - 10;
 	INT32 y = (idx * 16);
 
@@ -4660,7 +4679,7 @@ static void K_DrawDirectorButton(INT32 idx, const char *label, patch_t *kp[2], I
 
 	textflags |= (flags | V_6WIDTHSPACE | V_ALLOWLOWERCASE);
 
-	V_DrawScaledPatch(x, y - 4, flags, kp[anim]);
+	K_drawButtonAnim(x, y - 4, flags, kp, leveltime);
 	V_DrawRightAlignedThinString(x - 2, y, textflags, label);
 }
 

@@ -230,6 +230,9 @@ boolean M_LevelListFromGametype(INT16 gt)
 		first = false;
 	}
 
+	if (levellist.levelsearch.timeattack == false || levellist.newgametype != GT_RACE)
+		CV_SetValue(&cv_dummyspbattack, 0);
+
 	// Obviously go to Cup Select in gametypes that have cups.
 	// Use a really long level select in gametypes that don't use cups.
 

@@ -12175,7 +12175,7 @@ static boolean P_AllowMobjSpawn(mapthing_t* mthing, mobjtype_t i)
 				boolean isRingCapsule = (mthing->args[0] < 1 || mthing->args[0] == KITEM_SUPERRING || mthing->args[0] >= NUMKARTITEMS);
 
 				// don't spawn ring capsules in GTR_SPHERES gametypes
-				if (isRingCapsule && (gametyperules & GTR_SPHERES))
+				if (isRingCapsule && ((gametyperules & GTR_SPHERES) || (modeattacking & ATTACKING_SPB)))
 					return false;
 
 				// in record attack, only spawn ring capsules
@@ -12184,6 +12184,10 @@ static boolean P_AllowMobjSpawn(mapthing_t* mthing, mobjtype_t i)
 				&& (!(mthing->args[2] & TMICF_INVERTTIMEATTACK) == !isRingCapsule))
 					return false;
 			}
+			break;
+		case MT_RING:
+			if (modeattacking & ATTACKING_SPB)
+				return false;
 			break;
 		default:
 			break;
@@ -12224,7 +12228,7 @@ static mobjtype_t P_GetMobjtypeSubstitute(mapthing_t *mthing, mobjtype_t i)
 
 	if ((i == MT_RANDOMITEM) && (gametyperules & (GTR_PAPERITEMS|GTR_CIRCUIT)) == (GTR_PAPERITEMS|GTR_CIRCUIT))
 		return MT_PAPERITEMSPOT;
-
+	
 	return i;
 }
 

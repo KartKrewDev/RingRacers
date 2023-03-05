@@ -4095,6 +4095,13 @@ INT32 K_ExplodePlayer(player_t *player, mobj_t *inflictor, mobj_t *source) // A 
 	{
 		if (inflictor->type == MT_SPBEXPLOSION && inflictor->movefactor)
 		{
+			if (modeattacking & ATTACKING_SPB) 
+			{
+				P_DamageMobj(player->mo, inflictor, source, 1, DMG_INSTAKILL);
+				player->SPBdistance = 0;
+				S_StopMusic();
+			}
+
 			spbMultiplier = inflictor->movefactor;
 
 			if (spbMultiplier <= 0)

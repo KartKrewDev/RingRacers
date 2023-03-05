@@ -923,8 +923,10 @@ boolean CON_Responder(event_t *ev)
 	// check for console toggle key
 	if (ev->type != ev_console)
 	{
+		#ifndef DEVELOP // I have driven this course 45 times and I just want to give myself rocketsneakers
 		if (modeattacking || metalrecording || marathonmode)
 			return false;
+		#endif
 
 		if (ev->data1 >= NUMKEYS) // See also: HUD_Responder
 		{

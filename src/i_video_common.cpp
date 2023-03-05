@@ -193,14 +193,16 @@ static InternalPassData build_pass_manager()
 	);
 	basic_rendering->insert("pp_final_simple_blit", pp_simple_blit_pass);
 
-	basic_rendering->insert(
+	auto screenshot_rendering = std::make_shared<PassManager>();
+
+	screenshot_rendering->insert(
 		"screenshot_prepare",
 		[screenshot_pass, framebuffer_manager](PassManager&, Rhi&)
 		{
 			screenshot_pass->set_source(framebuffer_manager->current_post_color(), vid.width, vid.height);
 		}
 	);
-	basic_rendering->insert("screenshot", screenshot_pass);
+	screenshot_rendering->insert("screenshot", screenshot_pass);
 
 	// Composite-present takes the current postprocess result and outputs it to the default framebuffer.
 	// It also renders imgui and presents the screen.
@@ -233,6 +235,7 @@ static InternalPassData build_pass_manager()
 
 	normal_rendering->insert("resource_manager", resource_manager);
 	normal_rendering->insert("basic_rendering", basic_rendering);
+	normal_rendering->insert("screenshot_rendering", screenshot_rendering);
 	normal_rendering->insert("composite_present_rendering", composite_present_rendering);
 
 	// Wipe Start Screen Capture rendering
@@ -305,14 +308,7 @@ static InternalPassData build_pass_manager()
 		}
 	);
 	wipe_rendering->insert("pp_final_wipe", pp_wipe_pass);
-	wipe_rendering->insert(
-		"screenshot_prepare",
-		[screenshot_pass, framebuffer_manager](PassManager&, Rhi&)
-		{
-			screenshot_pass->set_source(framebuffer_manager->current_post_color(), vid.width, vid.height);
-		}
-	);
-	wipe_rendering->insert("screenshot", screenshot_pass);
+	wipe_rendering->insert("screenshot_rendering", screenshot_rendering);
 	wipe_rendering->insert("composite_present_rendering", composite_present_rendering);
 
 	InternalPassData ret;
