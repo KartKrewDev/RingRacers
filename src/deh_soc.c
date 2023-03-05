@@ -2290,6 +2290,8 @@ void readunlockable(MYFILE *f, INT32 num)
 						unlockables[num].type = SECRET_BREAKTHECAPSULES;
 					else if (fastcmp(word2, "SPECIALATTACK"))
 						unlockables[num].type = SECRET_SPECIALATTACK;
+					else if (fastcmp(word2, "SPBATTACK"))
+						unlockables[num].type = SECRET_SPBATTACK;
 					else if (fastcmp(word2, "ONLINE"))
 						unlockables[num].type = SECRET_ONLINE;
 					else if (fastcmp(word2, "ADDONS"))
@@ -2445,7 +2447,8 @@ static void readcondition(UINT8 set, UINT32 id, char *word2)
 	}
 	else if ((offset=0) || fastcmp(params[0], "MAPVISITED")
 	||        (++offset && fastcmp(params[0], "MAPBEATEN"))
-	||        (++offset && fastcmp(params[0], "MAPENCORE")))
+	||        (++offset && fastcmp(params[0], "MAPENCORE"))
+	||        (++offset && fastcmp(params[0], "MAPSPBATTACK")))
 	{
 		PARAMCHECK(1);
 		ty = UC_MAPVISITED + offset;

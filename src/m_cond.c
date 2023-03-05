@@ -674,12 +674,15 @@ boolean M_CheckCondition(condition_t *cn, player_t *player)
 		case UC_MAPVISITED: // Requires map x to be visited
 		case UC_MAPBEATEN: // Requires map x to be beaten
 		case UC_MAPENCORE: // Requires map x to be beaten in encore
+		case UC_MAPSPBATTACK: // Requires map x to be beaten in SPB Attack
 		{
 			UINT8 mvtype = MV_VISITED;
 			if (cn->type == UC_MAPBEATEN)
 				mvtype = MV_BEATEN;
 			else if (cn->type == UC_MAPENCORE)
 				mvtype = MV_ENCORE;
+			else if (cn->type == UC_MAPSPBATTACK)
+				mvtype = MV_SPBATTACK;
 
 			return ((cn->requirement < nummapheaders)
 				&& (mapheaderinfo[cn->requirement])
@@ -928,13 +931,29 @@ static const char *M_GetConditionString(condition_t *cn)
 		case UC_MAPVISITED: // Requires map x to be visited
 		case UC_MAPBEATEN: // Requires map x to be beaten
 		case UC_MAPENCORE: // Requires map x to be beaten in encore
+		case UC_MAPSPBATTACK: // Requires map x to be beaten in SPB Attack
 		{
+			const char *prefix = "";
+
 			if (cn->requirement >= nummapheaders || !mapheaderinfo[cn->requirement])
 				return va("INVALID MAP CONDITION \"%d:%d\"", cn->type, cn->requirement);
 
 			title = BUILDCONDITIONTITLE(cn->requirement);
-			work = va("%s %s%s",
-				(cn->type == UC_MAPVISITED) ? "Visit" : "Finish a round on",
+
+			if (cn->type == UC_MAPSPBATTACK)
+				prefix = (M_SecretUnlocked(SECRET_SPBATTACK, true) ? "SPB ATTACK: " : "???: ");
+			else if (cn->type == UC_MAPENCORE)
+				prefix = (M_SecretUnlocked(SECRET_ENCORE, true) ? "ENCORE MODE: " : "???: ");
+
+			work = "Finish a round on";
+			if (cn->type == UC_MAPVISITED)
+				work = "Visit";
+			else if (cn->type == UC_MAPSPBATTACK)
+				work = "Conquer";
+
+			work = va("%s%s %s%s",
+				prefix,
+				work,
 				title,
 				(cn->type == UC_MAPENCORE) ? " in Encore Mode" : "");
 			Z_Free(title);
@@ -973,7 +992,16 @@ static const char *M_GetConditionString(condition_t *cn)
 			switch (emblemlocations[i].type)
 			{
 				case ET_MAP:
-					work = va("Beat %s", title);
+					work = "";
+					if (emblemlocations[i].flags & ME_SPBATTACK)
+						work = (M_SecretUnlocked(SECRET_SPBATTACK, true) ? "SPB ATTACK: " : "???: ");
+					else if (emblemlocations[i].flags & ME_ENCORE)
+						work = (M_SecretUnlocked(SECRET_ENCORE, true) ? "ENCORE MODE: " : "???: ");
+
+					work = va("%s%s %s",
+						work,
+						(emblemlocations[i].flags & ME_SPBATTACK) ? "Conquer" : "Finish a round on",
+						title);
 					break;
 				case ET_TIME:
 					if (emblemlocations[i].color <= 0 || emblemlocations[i].color >= numskincolors)

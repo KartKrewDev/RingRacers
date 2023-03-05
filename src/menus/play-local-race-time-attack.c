@@ -9,6 +9,7 @@
 #include "../d_main.h" // srb2home
 #include "../m_misc.h" // M_MkdirEach
 #include "../z_zone.h" // Z_StrDup/Z_Free
+#include "../m_cond.h"
 
 static void CV_SPBAttackChanged(void)
 {
@@ -21,7 +22,11 @@ struct timeattackmenu_s timeattackmenu;
 
 void M_TimeAttackTick(void)
 {
-	timeattackmenu.ticker++; 
+	timeattackmenu.ticker++;
+	if (timeattackmenu.spbflicker > 0)
+	{
+		timeattackmenu.spbflicker--;
+	}
 }
 
 boolean M_TimeAttackInputs(INT32 ch)
@@ -30,10 +35,10 @@ boolean M_TimeAttackInputs(INT32 ch)
 	const boolean buttonR = M_MenuButtonPressed(pid, MBT_R);
 	(void) ch;
 
-	if (buttonR && levellist.newgametype == GT_RACE)
+	if (buttonR && levellist.newgametype == GT_RACE && M_SecretUnlocked(SECRET_SPBATTACK, true))
 	{
 		CV_AddValue(&cv_dummyspbattack, 1);
-		timeattackmenu.spbflicker = timeattackmenu.ticker;
+		timeattackmenu.spbflicker = TICRATE/6;
 		if (cv_dummyspbattack.value)
 		{
 			S_StartSound(NULL, sfx_s3k9f);
@@ -230,6 +235,9 @@ void M_PrepareTimeAttack(INT32 choice)
 				levellist.newgametype = guess;
 		}
 	}
+
+	if (levellist.levelsearch.timeattack == false || levellist.newgametype != GT_RACE || !M_SecretUnlocked(SECRET_SPBATTACK, true))
+		CV_SetValue(&cv_dummyspbattack, 0);
 
 	// Time-sticker Medals
 	G_UpdateTimeStickerMedals(levellist.choosemap, false);

@@ -37,6 +37,7 @@ typedef enum
 	UC_MAPVISITED,		// MAPVISITED [map]
 	UC_MAPBEATEN,		// MAPBEATEN [map]
 	UC_MAPENCORE,		// MAPENCORE [map]
+	UC_MAPSPBATTACK,	// MAPSPBATTACK [map]
 	UC_MAPTIME,			// MAPTIME [map] [time to beat, tics]
 	UC_TRIGGER,			// TRIGGER [trigger number]
 	UC_TOTALMEDALS,		// TOTALMEDALS [number of emblems]
@@ -160,6 +161,7 @@ typedef enum
 	SECRET_TIMEATTACK,			// Permit Time attack
 	SECRET_BREAKTHECAPSULES,	// Permit SP Capsule attack
 	SECRET_SPECIALATTACK,		// Permit Special attack (You're blue now!)
+	SECRET_SPBATTACK,			// Permit SPB mode of Time attack
 
 	// Option restrictions
 	SECRET_ONLINE,				// Permit netplay (ankle-high barrier to jumping in the deep end)

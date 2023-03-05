@@ -2384,7 +2384,7 @@ void M_DrawTimeAttack(void)
 		K_drawKartTimestamp(timerec, 162+t, timeheight+6, 0, 1);
 
 		// SPB Attack control hint + menu overlay
-		if (levellist.newgametype == GT_RACE && levellist.levelsearch.timeattack == true)
+		if (levellist.newgametype == GT_RACE && levellist.levelsearch.timeattack == true && M_SecretUnlocked(SECRET_SPBATTACK, true))
 		{
 			const UINT8 anim_duration = 16;
 			const UINT8 anim = (timeattackmenu.ticker % (anim_duration * 2)) < anim_duration;
@@ -2397,10 +2397,9 @@ void M_DrawTimeAttack(void)
 			else
 				V_DrawScaledPatch(buttonx + 35, buttony - 3, V_SNAPTOLEFT, W_CachePatchName("TLB_IB", PU_CACHE));
 
-			if (timeattackmenu.ticker > (timeattackmenu.spbflicker + TICRATE/6) || timeattackmenu.ticker % 2)
+			if ((timeattackmenu.spbflicker == 0 || timeattackmenu.ticker % 2) == (cv_dummyspbattack.value == 1))
 			{
-				if (cv_dummyspbattack.value)
-					V_DrawMappedPatch(buttonx + 7, buttony - 1, 0, W_CachePatchName("K_SPBATK", PU_CACHE), R_GetTranslationColormap(TC_DEFAULT, SKINCOLOR_RED, GTC_MENUCACHE));
+				V_DrawMappedPatch(buttonx + 7, buttony - 1, 0, W_CachePatchName("K_SPBATK", PU_CACHE), R_GetTranslationColormap(TC_DEFAULT, SKINCOLOR_RED, GTC_MENUCACHE));
 			}
 		}
 
@@ -4760,6 +4759,7 @@ static void M_DrawChallengeTile(INT16 i, INT16 j, INT32 x, INT32 y, boolean hili
 			case SECRET_TIMEATTACK:
 			case SECRET_BREAKTHECAPSULES:
 			case SECRET_SPECIALATTACK:
+			case SECRET_SPBATTACK:
 				categoryid = '7';
 				break;
 		}
@@ -4844,6 +4844,9 @@ static void M_DrawChallengeTile(INT16 i, INT16 j, INT32 x, INT32 y, boolean hili
 				break;
 			case SECRET_SPECIALATTACK:
 				iconid = 9;
+				break;
+			case SECRET_SPBATTACK:
+				iconid = 0; // TEMPORARY
 				break;
 
 			default:
@@ -5062,6 +5065,16 @@ static void M_DrawChallengePreview(INT32 x, INT32 y)
 			specialmap = sscmapcache;
 			break;
 		}
+		case SECRET_SPBATTACK:
+		{
+			static UINT16 spbmapcache = NEXTMAP_INVALID;
+			if (spbmapcache > nummapheaders)
+			{
+				spbmapcache = G_RandMap(G_TOLFlag(GT_RACE), -1, 2, 0, false, NULL);
+			}
+			specialmap = spbmapcache;
+			break;
+		}
 		case SECRET_HARDSPEED:
 		{
 			static UINT16 hardmapcache = NEXTMAP_INVALID;
@@ -5123,6 +5136,13 @@ static void M_DrawChallengePreview(INT32 x, INT32 y)
 		const fixed_t rubyheight = FINESINE(rubyfloattime>>ANGLETOFINESHIFT);
 		V_DrawFixedPatch((x+40)<<FRACBITS, ((y+25)<<FRACBITS) - (rubyheight<<1), FRACUNIT, 0, W_CachePatchName("RUBYICON", PU_CACHE), NULL);
 		rubyfloattime += FixedMul(ANGLE_MAX/NEWTICRATE, renderdeltatics);
+	}
+	else if (ref->type == SECRET_SPBATTACK)
+	{
+		V_DrawFixedPatch((x+40-25)<<FRACBITS, ((y+25-25)<<FRACBITS),
+			FRACUNIT, 0,
+			W_CachePatchName(K_GetItemPatch(KITEM_SPB, false), PU_CACHE),
+			NULL);
 	}
 	else if (ref->type == SECRET_HARDSPEED)
 	{
