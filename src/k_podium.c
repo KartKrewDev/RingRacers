@@ -99,6 +99,7 @@ boolean K_StartCeremony(void)
 			}
 		}
 
+		G_SetGametype(GT_RACE);
 		G_DoLoadLevelEx(false, GS_CEREMONY);
 
 		r_splitscreen = 0; // Only one screen for the ceremony
