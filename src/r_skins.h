@@ -91,8 +91,9 @@ void ClearFakePlayerSkin(player_t* player);
 boolean R_SkinUsable(INT32 playernum, INT32 skinnum, boolean demoskins);
 INT32 GetSkinNumClosestToStats(UINT8 kartspeed, UINT8 kartweight, UINT32 flags, boolean unlock);
 
-UINT8 *R_GetSkinAvailabilities(boolean demolock);
+UINT8 *R_GetSkinAvailabilities(boolean demolock, boolean forbots);
 INT32 R_SkinAvailable(const char *name);
+UINT8 R_BotDefaultSkin(void);
 
 void R_PatchSkins(UINT16 wadnum, boolean mainfile);
 void R_AddSkins(UINT16 wadnum, boolean mainfile);

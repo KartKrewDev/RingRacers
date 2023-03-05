@@ -824,7 +824,7 @@ static boolean CL_SendJoin(void)
 	for (; i < MAXSPLITSCREENPLAYERS; i++)
 		strncpy(netbuffer->u.clientcfg.names[i], va("Player %c", 'A' + i), MAXPLAYERNAME);
 
-	memcpy(&netbuffer->u.clientcfg.availabilities, R_GetSkinAvailabilities(false), MAXAVAILABILITY*sizeof(UINT8));
+	memcpy(&netbuffer->u.clientcfg.availabilities, R_GetSkinAvailabilities(false, false), MAXAVAILABILITY*sizeof(UINT8));
 
 	return HSendPacket(servernode, false, 0, sizeof (clientconfig_pak));
 }
@@ -3723,7 +3723,7 @@ static void Got_RemovePlayer(UINT8 **p, INT32 playernum)
 static void Got_AddBot(UINT8 **p, INT32 playernum)
 {
 	INT16 newplayernum;
-	UINT8 i, skinnum = 0;
+	UINT8 skinnum = 0;
 	UINT8 difficulty = DIFFICULTBOT;
 
 	if (playernum != serverplayer && !IsPlayerAdmin(playernum))
@@ -3753,14 +3753,8 @@ static void Got_AddBot(UINT8 **p, INT32 playernum)
 
 	playernode[newplayernum] = servernode;
 
-	// todo find a way to have all auto unlocked for dedicated
-	if (playeringame[0])
-	{
-		for (i = 0; i < MAXAVAILABILITY; i++)
-		{
-			players[newplayernum].availabilities[i] = players[0].availabilities[i];
-		}
-	}
+	// this will permit unlocks
+	memcpy(&players[newplayernum].availabilities, R_GetSkinAvailabilities(false, true), MAXAVAILABILITY*sizeof(UINT8));
 
 	players[newplayernum].splitscreenindex = 0;
 	players[newplayernum].bot = true;
@@ -3936,7 +3930,7 @@ boolean SV_SpawnServer(void)
 	// strictly speaking, i'm not convinced the following is necessary
 	// but I'm not confident enough to remove it entirely in case it breaks something
 	{
-		UINT8 *availabilitiesbuffer = R_GetSkinAvailabilities(false);
+		UINT8 *availabilitiesbuffer = R_GetSkinAvailabilities(false, false);
 		SINT8 node = 0;
 		for (; node < MAXNETNODES; node++)
 			result |= SV_AddWaitingPlayers(node, availabilitiesbuffer, cv_playername[0].zstring, cv_playername[1].zstring, cv_playername[2].zstring, cv_playername[3].zstring);

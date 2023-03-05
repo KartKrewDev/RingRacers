@@ -108,13 +108,15 @@ boolean K_AddBot(UINT8 skin, UINT8 difficulty, UINT8 *p)
 --------------------------------------------------*/
 void K_UpdateMatchRaceBots(void)
 {
+	const UINT8 defaultbotskin = R_BotDefaultSkin();
 	const UINT8 difficulty = cv_kartbot.value;
 	UINT8 pmax = min((dedicated ? MAXPLAYERS-1 : MAXPLAYERS), cv_maxconnections.value);
 	UINT8 numplayers = 0;
 	UINT8 numbots = 0;
 	UINT8 numwaiting = 0;
 	SINT8 wantedbots = 0;
-	boolean skinusable[MAXSKINS];
+	UINT8 usableskins = 0;
+	UINT8 grabskins[MAXSKINS+1];
 	UINT8 i;
 
 	if (!server)
@@ -122,18 +124,12 @@ void K_UpdateMatchRaceBots(void)
 		return;
 	}
 
-	// init usable bot skins list
-	for (i = 0; i < MAXSKINS; i++)
+	// Init usable bot skins list
+	for (i = 0; i < numskins; i++)
 	{
-		if (i < numskins)
-		{
-			skinusable[i] = true;
-		}
-		else
-		{
-			skinusable[i] = false;
-		}
+		grabskins[usableskins++] = i;
 	}
+	grabskins[usableskins] = MAXSKINS;
 
 	if (cv_maxplayers.value > 0)
 	{
@@ -146,7 +142,7 @@ void K_UpdateMatchRaceBots(void)
 		{
 			if (!players[i].spectator)
 			{
-				skinusable[players[i].skin] = false;
+				grabskins[players[i].skin] = MAXSKINS;
 
 				if (players[i].bot)
 				{
@@ -185,48 +181,42 @@ void K_UpdateMatchRaceBots(void)
 	{
 		// We require MORE bots!
 		UINT8 newplayernum = 0;
-		boolean usedallskins = false;
 
 		if (dedicated)
 		{
 			newplayernum = 1;
 		}
 
+		// Rearrange usable bot skins list to prevent gaps for randomised selection
+		for (i = 0; i < usableskins; i++)
+		{
+			if (!(grabskins[i] == MAXSKINS || !R_SkinUsable(-1, grabskins[i], true)))
+				continue;
+			while (usableskins > i && (grabskins[usableskins] == MAXSKINS || !R_SkinUsable(-1, grabskins[usableskins], true)))
+			{
+				usableskins--;
+			}
+			grabskins[i] = grabskins[usableskins];
+			grabskins[usableskins] = MAXSKINS;
+		}
+
 		while (numbots < wantedbots)
 		{
-			UINT8 skin = M_RandomKey(numskins);
+			UINT8 skinnum = defaultbotskin;
 
-			if (usedallskins == false)
+			if (usableskins > 0)
 			{
-				UINT8 loops = 0;
-
-				while (!skinusable[skin])
-				{
-					if (loops >= numskins)
-					{
-						// no more skins, stick to our first choice
-						usedallskins = true;
-						break;
-					}
-
-					skin++;
-
-					if (skin >= numskins)
-					{
-						skin = 0;
-					}
-
-					loops++;
-				}
+				UINT8 index = M_RandomKey(usableskins);
+				skinnum = grabskins[index];
+				grabskins[index] = grabskins[--usableskins];
 			}
 
-			if (!K_AddBot(skin, difficulty, &newplayernum))
+			if (!K_AddBot(skinnum, difficulty, &newplayernum))
 			{
 				// Not enough player slots to add the bot, break the loop.
 				break;
 			}
 
-			skinusable[skin] = false;
 			numbots++;
 		}
 	}

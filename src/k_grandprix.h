@@ -72,16 +72,6 @@ INT16 K_CalculateGPRankPoints(UINT8 position, UINT8 numplayers);
 
 
 /*--------------------------------------------------
-	UINT8 K_BotDefaultSkin(void);
-
-		Returns the skin number of the skin the game
-		uses as a fallback option.
---------------------------------------------------*/
-
-UINT8 K_BotDefaultSkin(void);
-
-
-/*--------------------------------------------------
 	void K_InitGrandPrixBots(void);
 
 		Spawns bots specifically tailored for Grand Prix mode.
