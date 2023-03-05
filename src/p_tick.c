@@ -532,10 +532,12 @@ void P_Ticker(boolean run)
 
 	// Increment jointime and quittime even if paused
 	for (i = 0; i < MAXPLAYERS; i++)
+	{
 		if (playeringame[i])
 		{
 			players[i].jointime++;
 		}
+	}
 
 	if (objectplacing)
 	{
@@ -602,32 +604,16 @@ void P_Ticker(boolean run)
 
 		ps_playerthink_time = I_GetPreciseTime();
 
-#define PLAYERCONDITION(i) (playeringame[i] && players[i].mo && !P_MobjWasRemoved(players[i].mo))
-		// First loop: Ensure all players' distance to the finish line are all accurate
-		for (i = 0; i < MAXPLAYERS; i++)
-		{
-			if (!PLAYERCONDITION(i))
-				continue;
-			K_UpdateDistanceFromFinishLine(&players[i]);
-		}
-
-		// Second loop: Ensure all player positions reflect everyone's distances
-		for (i = 0; i < MAXPLAYERS; i++)
-		{
-			if (!PLAYERCONDITION(i))
-				continue;
-			K_KartUpdatePosition(&players[i]);
-		}
+		K_UpdateAllPlayerPositions();
 
 		// OK! Now that we got all of that sorted, players can think!
 		for (i = 0; i < MAXPLAYERS; i++)
 		{
-			if (!PLAYERCONDITION(i))
+			if (!(playeringame[i] && players[i].mo && !P_MobjWasRemoved(players[i].mo)))
 				continue;
 			P_PlayerThink(&players[i]);
 			K_KartPlayerHUDUpdate(&players[i]);
 		}
-#undef PLAYERCONDITION
 
 		ps_playerthink_time = I_GetPreciseTime() - ps_playerthink_time;
 	}
@@ -869,19 +855,11 @@ void P_PreTicker(INT32 frames)
 
 		R_UpdateMobjInterpolators();
 
-		// First loop: Ensure all players' distance to the finish line are all accurate
-		for (i = 0; i < MAXPLAYERS; i++)
-			if (playeringame[i] && players[i].mo && !P_MobjWasRemoved(players[i].mo))
-				K_UpdateDistanceFromFinishLine(&players[i]);
-
-		// Second loop: Ensure all player positions reflect everyone's distances
-		for (i = 0; i < MAXPLAYERS; i++)
-			if (playeringame[i] && players[i].mo && !P_MobjWasRemoved(players[i].mo))
-				K_KartUpdatePosition(&players[i]);
-
-		// OK! Now that we got all of that sorted, players can think!
 		LUA_HOOK(PreThinkFrame);
 
+		K_UpdateAllPlayerPositions();
+
+		// OK! Now that we got all of that sorted, players can think!
 		for (i = 0; i < MAXPLAYERS; i++)
 			if (playeringame[i] && players[i].mo && !P_MobjWasRemoved(players[i].mo))
 			{

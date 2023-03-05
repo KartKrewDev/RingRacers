@@ -1284,7 +1284,7 @@ void P_DoPlayerExit(player_t *player)
 
 		if ((gametyperules & GTR_CIRCUIT)) // If in Race Mode, allow
 		{
-			K_KartUpdatePosition(player);
+			K_UpdateAllPlayerPositions();
 
 			if (cv_kartvoices.value)
 			{

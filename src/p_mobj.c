@@ -11951,6 +11951,8 @@ void P_AfterPlayerSpawn(INT32 playernum)
 
 	if (CheckForReverseGravity)
 		P_CheckGravity(mobj, false);
+
+	K_UpdateAllPlayerPositions();
 }
 
 // spawn it at a playerspawn mapthing

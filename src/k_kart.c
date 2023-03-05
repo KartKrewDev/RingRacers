@@ -9507,6 +9507,29 @@ void K_KartUpdatePosition(player_t *player)
 	player->position = position;
 }
 
+void K_UpdateAllPlayerPositions(void)
+{
+	INT32 i;
+
+	// First loop: Ensure all players' distance to the finish line are all accurate
+	for (i = 0; i < MAXPLAYERS; i++)
+	{
+		if (playeringame[i] && players[i].mo && !P_MobjWasRemoved(players[i].mo))
+		{
+			K_UpdateDistanceFromFinishLine(&players[i]);
+		}
+	}
+
+	// Second loop: Ensure all player positions reflect everyone's distances
+	for (i = 0; i < MAXPLAYERS; i++)
+	{
+		if (playeringame[i] && players[i].mo && !P_MobjWasRemoved(players[i].mo))
+		{
+			K_KartUpdatePosition(&players[i]);
+		}
+	}
+}
+
 //
 // K_StripItems
 //
