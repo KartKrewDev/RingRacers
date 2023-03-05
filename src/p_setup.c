@@ -7382,6 +7382,25 @@ static void P_InitGametype(void)
 	spectateGriefed = 0;
 	K_CashInPowerLevels(); // Pushes power level changes even if intermission was skipped
 
+	if (grandprixinfo.gp == true)
+	{
+		if (grandprixinfo.initalize == true)
+		{
+			K_InitGrandPrixBots();
+			grandprixinfo.initalize = false;
+		}
+		else if (grandprixinfo.wonround == true)
+		{
+			K_UpdateGrandPrixBots();
+			grandprixinfo.wonround = false;
+		}
+	}
+	else if (!modeattacking)
+	{
+		// We're in a Match Race, use simplistic randomized bots.
+		K_UpdateMatchRaceBots();
+	}
+
 	P_InitPlayers();
 
 	if (modeattacking && !demo.playback)
@@ -7967,27 +7986,6 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 			// If you're looking for saving sp file progression (distinct from G_SaveGameOver), check G_DoCompleted.
 		}
 		lastmaploaded = gamemap; // HAS to be set after saving!!
-	}
-
-	if (reloadinggamestate)
-		;
-	else if (grandprixinfo.gp == true)
-	{
-		if (grandprixinfo.initalize == true)
-		{
-			K_InitGrandPrixBots();
-			grandprixinfo.initalize = false;
-		}
-		else if (grandprixinfo.wonround == true)
-		{
-			K_UpdateGrandPrixBots();
-			grandprixinfo.wonround = false;
-		}
-	}
-	else if (!modeattacking)
-	{
-		// We're in a Match Race, use simplistic randomized bots.
-		K_UpdateMatchRaceBots();
 	}
 
 	if (!fromnetsave) // uglier hack

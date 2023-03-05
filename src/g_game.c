@@ -2940,9 +2940,14 @@ mapthing_t *G_FindPodiumStart(INT32 playernum)
 		UINT8 i;
 		UINT8 pos = 0;
 
+		if (!playeringame[playernum] || players[playernum].spectator)
+		{
+			return playerstarts[0]; // go to first spot if you're a spectator
+		}
+
 		for (i = 0; i < MAXPLAYERS; i++)
 		{
-			if (!playeringame[i])
+			if (!playeringame[i] || players[i].spectator)
 			{
 				continue;
 			}
