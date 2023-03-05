@@ -10,6 +10,47 @@
 #include "../m_misc.h" // M_MkdirEach
 #include "../z_zone.h" // Z_StrDup/Z_Free
 
+static void CV_SPBAttackChanged(void)
+{
+	G_UpdateTimeStickerMedals(levellist.choosemap, false);
+}
+
+consvar_t cv_dummyspbattack = CVAR_INIT ("dummyspbattack", "Off", CV_HIDDEN|CV_CALL, CV_OnOff, CV_SPBAttackChanged);
+
+struct timeattackmenu_s timeattackmenu;
+
+void M_TimeAttackTick(void)
+{
+	timeattackmenu.ticker++; 
+}
+
+boolean M_TimeAttackInputs(INT32 ch)
+{
+	const UINT8 pid = 0;
+	const boolean buttonR = M_MenuButtonPressed(pid, MBT_R);
+	(void) ch;
+
+	if (buttonR && levellist.newgametype == GT_RACE)
+	{
+		CV_AddValue(&cv_dummyspbattack, 1);
+		timeattackmenu.spbflicker = timeattackmenu.ticker;
+		if (cv_dummyspbattack.value)
+		{
+			S_StartSound(NULL, sfx_s3k9f);
+			S_StopSoundByID(NULL, sfx_s3k92);
+		}
+		else
+		{
+			S_StartSound(NULL, sfx_s3k92);
+			S_StopSoundByID(NULL, sfx_s3k9f);
+		}
+
+		return true;
+	}
+
+	return false;
+}
+
 // see ta_e
 menuitem_t PLAY_TimeAttack[] =
 {
@@ -30,10 +71,10 @@ menu_t PLAY_TimeAttackDef = {
 	NULL,
 	2, 5,
 	M_DrawTimeAttack,
+	M_TimeAttackTick,
 	NULL,
 	NULL,
-	NULL,
-	NULL
+	M_TimeAttackInputs
 };
 
 
@@ -424,6 +465,11 @@ void M_StartTimeAttack(INT32 choice)
 		&& (mapheaderinfo[levellist.choosemap]->numlaps != 1))
 	{
 		modeattacking |= ATTACKING_LAP;
+	}
+
+	if (cv_dummyspbattack.value)
+	{
+		modeattacking |= ATTACKING_SPB;
 	}
 
 	// Still need to reset devmode

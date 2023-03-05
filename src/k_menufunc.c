@@ -1138,6 +1138,8 @@ void M_Init(void)
 	CV_RegisterVar(&cv_dummygpencore);
 	CV_RegisterVar(&cv_dummymatchbots);
 
+	CV_RegisterVar(&cv_dummyspbattack);
+
 	CV_RegisterVar(&cv_dummyaddonsearch);
 
 	M_UpdateMenuBGImage(true);

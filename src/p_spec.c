@@ -1973,6 +1973,13 @@ static void K_HandleLapIncrement(player_t *player)
 				rainbowstartavailable = false;
 			}
 
+			if (player->laps == 1 && modeattacking & ATTACKING_SPB)
+			{
+				P_SpawnMobj(player->mo->x - FixedMul(1000*mapobjectscale, FINECOSINE(player->mo->angle >> ANGLETOFINESHIFT)),
+					player->mo->y - FixedMul(1000*mapobjectscale, FINESINE(player->mo->angle >> ANGLETOFINESHIFT)),
+					player->mo->z, MT_SPB);
+			}
+
 			if (netgame && player->laps > numlaps)
 				CON_LogMessage(va(M_GetText("%s has finished the race.\n"), player_names[player-players]));
 

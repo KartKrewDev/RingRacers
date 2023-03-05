@@ -74,6 +74,7 @@ struct conditionset_t
 
 // Map emblem flags
 #define ME_ENCORE		1	// Achieve in Encore
+#define ME_SPBATTACK	2	// Achieve in SPB Attack
 
 struct emblem_t
 {

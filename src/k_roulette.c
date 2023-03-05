@@ -189,6 +189,13 @@ static kartitems_t K_KartItemReelTimeAttack[] =
 	KITEM_NONE
 };
 
+static kartitems_t K_KartItemReelSPBAttack[] =
+{
+	KITEM_GACHABOM,
+	KITEM_SUPERRING,
+	KITEM_NONE
+};
+
 static kartitems_t K_KartItemReelBreakTheCapsules[] =
 {
 	KITEM_GACHABOM,
@@ -1236,6 +1243,10 @@ void K_FillItemRouletteData(const player_t *player, itemroulette_t *const roulet
 		if (gametyperules & GTR_CAPSULES)
 		{
 			presetlist = K_KartItemReelBreakTheCapsules;
+		}
+		else if (modeattacking & ATTACKING_SPB)
+		{
+			presetlist = K_KartItemReelSPBAttack;
 		}
 
 		for (i = 0; presetlist[i] != KITEM_NONE; i++)

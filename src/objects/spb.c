@@ -83,6 +83,9 @@ static void SPBMantaRings(mobj_t *spb)
 	const fixed_t floatHeight = 24 * spb->scale;
 	fixed_t floorDist = INT32_MAX;
 
+	if (modeattacking & ATTACKING_SPB)
+		return; // no one else to use 'em
+
 	if (leveltime % SPB_MANTA_VRATE == 0)
 	{
 		spb_manta_vscale(spb) = max(spb_manta_vscale(spb) - 1, SPB_MANTA_VMAX);
@@ -729,6 +732,8 @@ static void SPBChase(mobj_t *spb, mobj_t *bestMobj)
 	}
 
 	dist = P_AproxDistance(P_AproxDistance(spb->x - chase->x, spb->y - chase->y), spb->z - chase->z);
+
+	chasePlayer->SPBdistance = dist;
 
 	desiredSpeed = FixedMul(baseSpeed, FRACUNIT + FixedDiv(dist - range, range));
 

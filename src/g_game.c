@@ -512,9 +512,18 @@ void G_UpdateTimeStickerMedals(UINT16 map, boolean showownrecord)
 			{
 				break;
 			}
+			case ET_MAP:
+			{	
+				if (emblem->flags & ME_SPBATTACK && cv_dummyspbattack.value)
+					break;
+				goto bademblem;
+			}
 			default:
 				goto bademblem;
 		}
+
+		if (cv_dummyspbattack.value && !(emblem->flags & ME_SPBATTACK))
+			return;
 
 		if (!gamedata->collected[(emblem-emblemlocations)] && gonnadrawtime)
 			break;
@@ -2442,7 +2451,18 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 		itemamount = 0;
 		growshrinktimer = 0;
 		bumper = ((gametyperules & GTR_BUMPERS) ? K_StartingBumperCount() : 0);
-		rings = ((gametyperules & GTR_SPHERES) ? 0 : 5);
+		if (gametyperules & GTR_SPHERES)
+		{
+			rings = 0;
+		}
+		else if (modeattacking & ATTACKING_SPB)
+		{
+			rings = 20;
+		}
+		else
+		{
+			rings = 5;
+		}
 		spheres = 0;
 		kickstartaccel = 0;
 		khudfault = 0;
@@ -3695,6 +3715,11 @@ static void G_UpdateVisited(void)
 	if (encoremode == true)
 	{
 		mapheaderinfo[prevmap]->mapvisited |= MV_ENCORE;
+	}
+
+	if (modeattacking & ATTACKING_SPB)
+	{
+		mapheaderinfo[prevmap]->mapvisited |= MV_SPBATTACK;
 	}
 
 	if (modeattacking)
