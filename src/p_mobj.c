@@ -11721,7 +11721,9 @@ void P_SpawnPlayer(INT32 playernum)
 	mobj_t *mobj;
 
 	if (p->playerstate == PST_REBORN)
-		G_PlayerReborn(playernum, false);
+	{
+		G_PlayerReborn(playernum, (p->jointime <= 1));
+	}
 
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
