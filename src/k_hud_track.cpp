@@ -2,6 +2,8 @@
 #include <cstddef>
 #include <vector>
 
+#include "core/static_vec.hpp"
+
 #include "k_battle.h"
 #include "k_boss.h"
 #include "k_hud.h"
@@ -14,6 +16,8 @@
 #include "r_main.h"
 #include "st_stuff.h"
 #include "v_video.h"
+
+using namespace srb2;
 
 namespace
 {
@@ -35,9 +39,51 @@ struct TargetTracking
 		case MT_EMERALD:
 			return static_cast<skincolornum_t>(mobj->color);
 
+		case MT_PLAYER:
+			return player_emeralds_color();
+
 		default:
 			return SKINCOLOR_NONE;
 		}
+	}
+
+	StaticVec<uint32_t, 7> player_emeralds_vec() const
+	{
+		StaticVec<uint32_t, 7> emeralds;
+
+		const player_t* player = mobj->player;
+
+		if (player == nullptr)
+		{
+			return emeralds;
+		}
+
+		for (int i = 0; i < 7; ++i)
+		{
+			const uint32_t emeraldFlag = (1U << i);
+
+			if (player->emeralds & emeraldFlag)
+			{
+				emeralds.push_back(emeraldFlag);
+			}
+		}
+
+		return emeralds;
+	}
+
+	skincolornum_t player_emeralds_color() const
+	{
+		const StaticVec emeralds = player_emeralds_vec();
+
+		if (emeralds.empty())
+		{
+			return SKINCOLOR_NONE;
+		}
+
+		constexpr tic_t kPeriod = TICRATE / 2;
+		const int idx = (leveltime / kPeriod) % emeralds.size();
+
+		return static_cast<skincolornum_t>(K_GetChaosEmeraldColor(emeralds[idx]));
 	}
 
 	const uint8_t* colormap() const
