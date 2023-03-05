@@ -88,7 +88,7 @@ void M_EraseData(INT32 choice)
 	else if (optionsmenu.erasecontext == EC_ALLGAME)
 		eschoice = M_GetText("ALL game data");
 	else
-		eschoice = va("[misconfigured erasecontext %d]", optionsmenu.erasecontext);
+		eschoice = "[misconfigured erasecontext]";
 	
 
 	M_StartMessage(va(esstr, eschoice), FUNCPTRCAST(M_EraseDataResponse), MM_YESNO);
