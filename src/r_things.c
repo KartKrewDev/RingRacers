@@ -939,6 +939,8 @@ static void R_DrawVisSprite(vissprite_t *vis)
 	if (!dc_colormap)
 		dc_colormap = colormaps;
 
+	dc_lightmap = colormaps;
+
 	dc_fullbright = colormaps;
 
 	if (encoremap && !vis->mobj->color && !(vis->mobj->flags & MF_DONTENCOREMAP))
@@ -1142,6 +1144,8 @@ static void R_DrawPrecipitationVisSprite(vissprite_t *vis)
 		dc_colormap += COLORMAP_REMAPOFFSET;
 		dc_fullbright += COLORMAP_REMAPOFFSET;
 	}
+
+	dc_lightmap = colormaps;
 
 	dc_iscale = FixedDiv(FRACUNIT, vis->scale);
 	dc_texturemid = FixedDiv(vis->texturemid, this_scale);
@@ -3209,6 +3213,8 @@ static void R_DrawSprite(vissprite_t *spr)
 {
 	mfloorclip = spr->clipbot;
 	mceilingclip = spr->cliptop;
+
+	R_CheckDebugHighlight(SW_HI_THINGS);
 
 	if (spr->cut & SC_BBOX)
 		R_DrawThingBoundingBox(spr);

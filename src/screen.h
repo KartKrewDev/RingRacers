@@ -179,6 +179,7 @@ extern void (*spanfuncs_npo2[SPANDRAWFUNC_MAX])(void);
 #ifdef USE_COL_SPAN_ASM
 extern void (*spanfuncs_asm[SPANDRAWFUNC_MAX])(void);
 #endif
+extern void (*spanfuncs_flat[SPANDRAWFUNC_MAX])(void);
 
 // -----
 // CPUID

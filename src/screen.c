@@ -64,6 +64,7 @@ void (*spanfuncs_npo2[SPANDRAWFUNC_MAX])(void);
 #ifdef USE_COL_SPAN_ASM
 void (*spanfuncs_asm[SPANDRAWFUNC_MAX])(void);
 #endif
+void (*spanfuncs_flat[SPANDRAWFUNC_MAX])(void);
 
 // ------------------
 // global video state
@@ -170,6 +171,22 @@ void SCR_SetDrawFuncs(void)
 		spanfuncs_npo2[SPANDRAWFUNC_TILTEDWATER] = R_DrawTiltedTranslucentWaterSpan_NPO2_8;
 		spanfuncs_npo2[SPANDRAWFUNC_FOG] = NULL; // Not needed
 
+		// Debugging - highlight surfaces in flat colors
+		spanfuncs_flat[BASEDRAWFUNC] = R_DrawSpan_Flat_8;
+		spanfuncs_flat[SPANDRAWFUNC_TRANS] = R_DrawSpan_Flat_8;
+		spanfuncs_flat[SPANDRAWFUNC_TILTED] = R_DrawTiltedSpan_Flat_8;
+		spanfuncs_flat[SPANDRAWFUNC_TILTEDTRANS] = R_DrawTiltedSpan_Flat_8;
+		spanfuncs_flat[SPANDRAWFUNC_SPLAT] = R_DrawSpan_Flat_8;
+		spanfuncs_flat[SPANDRAWFUNC_TRANSSPLAT] = R_DrawSpan_Flat_8;
+		spanfuncs_flat[SPANDRAWFUNC_TILTEDSPLAT] = R_DrawTiltedSpan_Flat_8;
+		spanfuncs_flat[SPANDRAWFUNC_SPRITE] = R_DrawSpan_Flat_8;
+		spanfuncs_flat[SPANDRAWFUNC_TRANSSPRITE] = R_DrawSpan_Flat_8;
+		spanfuncs_flat[SPANDRAWFUNC_TILTEDSPRITE] = R_DrawTiltedSpan_Flat_8;
+		spanfuncs_flat[SPANDRAWFUNC_TILTEDTRANSSPRITE] = R_DrawTiltedSpan_Flat_8;
+		spanfuncs_flat[SPANDRAWFUNC_WATER] = R_DrawSpan_Flat_8;
+		spanfuncs_flat[SPANDRAWFUNC_TILTEDWATER] = R_DrawTiltedSpan_Flat_8;
+		spanfuncs_flat[SPANDRAWFUNC_FOG] = R_DrawSpan_Flat_8; // Not needed
+
 #if (defined(RUSEASM) && defined(USE_COL_SPAN_ASM))
 		if (R_ASM)
 		{
@@ -220,13 +237,17 @@ void R_SetColumnFunc(size_t id, boolean brightmapped)
 
 	colfunctype = id;
 
+	if (debugrender_highlight != 0)
+	{
+		colfunc = R_DrawColumn_Flat_8;
+	}
 #ifdef USE_COL_SPAN_ASM
-	if (colfuncs_asm[id] != NULL && brightmapped == false)
+	else if (colfuncs_asm[id] != NULL && brightmapped == false)
 	{
 		colfunc = colfuncs_asm[id];
 	}
-	else
 #endif
+	else
 	{
 		colfunc = colfuncs[id];
 	}
@@ -236,7 +257,11 @@ void R_SetSpanFunc(size_t id, boolean npo2, boolean brightmapped)
 {
 	I_Assert(id < SPANDRAWFUNC_MAX);
 
-	if (spanfuncs_npo2[id] != NULL && npo2 == true)
+	if (spanfuncs_flat[id] != NULL && debugrender_highlight != 0)
+	{
+		spanfunc = spanfuncs_flat[id];
+	}
+	else if (spanfuncs_npo2[id] != NULL && npo2 == true)
 	{
 		spanfunc = spanfuncs_npo2[id];
 	}

@@ -68,6 +68,8 @@ INT32 columnofs[MAXVIDWIDTH*4];
 
 UINT8 *topleft;
 
+UINT8 r8_flatcolor;
+
 // =========================================================================
 //                      COLUMN DRAWING CODE STUFF
 // =========================================================================
@@ -81,6 +83,7 @@ UINT8 dc_hires; // under MSVC boolean is a byte, while on other systems, it a bi
                // soo lets make it a byte on all system for the ASM code
 UINT8 *dc_source;
 UINT8 *dc_brightmap;
+UINT8 *dc_lightmap;
 
 // -----------------------
 // translucency stuff here
@@ -638,6 +641,7 @@ void R_DrawViewBorder(void)
 
 #include "r_draw8.c"
 #include "r_draw8_npo2.c"
+#include "r_draw8_flat.c"
 
 // ==========================================================================
 //                   INCLUDE 16bpp DRAWING CODE HERE

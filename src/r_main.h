@@ -125,7 +125,24 @@ extern consvar_t cv_drawpickups;
 
 // debugging
 
+typedef enum {
+	SW_HI_PLANES,
+	SW_HI_FOFPLANES,
+	SW_HI_FOFSIDES,
+	SW_HI_MIDTEXTURES,
+	SW_HI_WALLS,
+	SW_HI_THINGS,
+	SW_HI_SKY,
+
+	NUM_SW_HI
+} debugrender_highlight_t;
+
+extern UINT32 debugrender_highlight;
+
+void R_CheckDebugHighlight(debugrender_highlight_t type);
 INT32 R_AdjustLightLevel(INT32 light);
+
+void Command_Debugrender_highlight(void);
 
 extern consvar_t
 	cv_debugrender_contrast;

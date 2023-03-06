@@ -65,6 +65,7 @@ add_executable(SRB2SDL2 MACOSX_BUNDLE WIN32
 	r_bsp.c
 	r_data.c
 	r_debug.cpp
+	r_debug_parser.cpp
 	r_draw.c
 	r_fps.c
 	r_main.c
