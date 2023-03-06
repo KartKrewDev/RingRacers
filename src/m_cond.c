@@ -906,7 +906,7 @@ static const char *M_GetConditionString(condition_t *cn)
 	{
 		case UC_PLAYTIME: // Requires total playing time >= x
 
-			return va("Play for %i:%02i:%02i",
+			return va("play for %i:%02i:%02i",
 				G_TicsToHours(cn->requirement),
 				G_TicsToMinutes(cn->requirement, false),
 				G_TicsToSeconds(cn->requirement));
@@ -940,30 +940,30 @@ static const char *M_GetConditionString(condition_t *cn)
 					return va("INVALID GAMETYPE CONDITION \"%d:%d:%d\"", cn->type, cn->extrainfo1, cn->requirement);
 			}
 
-			return va("Play %d%s Round%s", cn->requirement, work,
+			return va("play %d%s Round%s", cn->requirement, work,
 				(cn->requirement == 1 ? "" : "s"));
 
 		case UC_TOTALRINGS: // Requires collecting >= x rings
 			if (cn->requirement >= 1000000)
-				return va("Collect %u,%u,%u Rings", (cn->requirement/1000000), (cn->requirement/1000)%1000, (cn->requirement%1000));
+				return va("collect %u,%u,%u Rings", (cn->requirement/1000000), (cn->requirement/1000)%1000, (cn->requirement%1000));
 			if (cn->requirement >= 1000)
-				return va("Collect %u,%u Rings", (cn->requirement/1000), (cn->requirement%1000));
-			return va("Collect %u Rings", cn->requirement);
+				return va("collect %u,%u Rings", (cn->requirement/1000), (cn->requirement%1000));
+			return va("collect %u Rings", cn->requirement);
 
 		case UC_POWERLEVEL: // Requires power level >= x on a certain gametype
-			return va("Get a PWR of %d in %s", cn->requirement,
+			return va("get a PWR of %d in %s", cn->requirement,
 				(cn->extrainfo1 == PWRLV_RACE)
 				? "Race"
 				: "Battle");
 
 		case UC_GAMECLEAR: // Requires game beaten >= x times
 			if (cn->requirement > 1)
-				return va("Beat game %d times", cn->requirement);
+				return va("beat game %d times", cn->requirement);
 			else
-				return va("Beat the game");
+				return va("beat the game");
 
 		case UC_OVERALLTIME: // Requires overall time <= x
-			return va("Get overall time of %i:%02i:%02i",
+			return va("get overall time of %i:%02i:%02i",
 				G_TicsToHours(cn->requirement),
 				G_TicsToMinutes(cn->requirement, false),
 				G_TicsToSeconds(cn->requirement));
@@ -985,11 +985,11 @@ static const char *M_GetConditionString(condition_t *cn)
 			else if (cn->type == UC_MAPENCORE)
 				prefix = (M_SecretUnlocked(SECRET_ENCORE, true) ? "ENCORE MODE: " : "???: ");
 
-			work = "Finish a round on";
+			work = "finish a round on";
 			if (cn->type == UC_MAPVISITED)
-				work = "Visit";
+				work = "visit";
 			else if (cn->type == UC_MAPSPBATTACK)
-				work = "Conquer";
+				work = "conquer";
 
 			work = va("%s%s %s%s",
 				prefix,
@@ -1006,7 +1006,7 @@ static const char *M_GetConditionString(condition_t *cn)
 				return va("INVALID MAP CONDITION \"%d:%d:%d\"", cn->type, cn->extrainfo1, cn->requirement);
 
 			title = BUILDCONDITIONTITLE(cn->extrainfo1);
-			work = va("Beat %s in %i:%02i.%02i", title,
+			work = va("beat %s in %i:%02i.%02i", title,
 				G_TicsToMinutes(cn->requirement, true),
 				G_TicsToSeconds(cn->requirement),
 				G_TicsToCentiseconds(cn->requirement));
@@ -1016,7 +1016,7 @@ static const char *M_GetConditionString(condition_t *cn)
 		}
 
 		case UC_TOTALMEDALS: // Requires number of emblems >= x
-			return va("Get %d medals", cn->requirement);
+			return va("get %d medals", cn->requirement);
 
 		case UC_EMBLEM: // Requires emblem x to be obtained
 		{
@@ -1040,7 +1040,7 @@ static const char *M_GetConditionString(condition_t *cn)
 
 					work = va("%s%s %s",
 						work,
-						(emblemlocations[i].flags & ME_SPBATTACK) ? "Conquer" : "Finish a round on",
+						(emblemlocations[i].flags & ME_SPBATTACK) ? "conquer" : "finish a round on",
 						title);
 					break;
 				case ET_TIME:
@@ -1049,7 +1049,7 @@ static const char *M_GetConditionString(condition_t *cn)
 						Z_Free(title);
 						return va("INVALID MEDAL COLOR \"%d:%d\"", cn->requirement, checkLevel);
 					}
-					work = va("TIME ATTACK: Get the %s Medal for %s", skincolors[emblemlocations[i].color].name, title);
+					work = va("TIME ATTACK: get the %s Medal for %s", skincolors[emblemlocations[i].color].name, title);
 					break;
 				case ET_GLOBAL:
 				{
@@ -1075,7 +1075,7 @@ static const char *M_GetConditionString(condition_t *cn)
 
 					if (emblemlocations[i].flags & GE_TIMED)
 					{
-						work = va("%s: Find %s%s%s before %i:%02i.%02i",
+						work = va("%s: find %s%s%s before %i:%02i.%02i",
 							title, astr, colorstr, medalstr,
 							G_TicsToMinutes(emblemlocations[i].var, true),
 							G_TicsToSeconds(emblemlocations[i].var),
@@ -1083,13 +1083,13 @@ static const char *M_GetConditionString(condition_t *cn)
 					}
 					else
 					{
-						work = va("%s: Find %s%s%s",
+						work = va("%s: find %s%s%s",
 							title, astr, colorstr, medalstr);
 					}
 					break;
 				}
 				default:
-					work = va("Find a secret in %s", title);
+					work = va("find a secret in %s", title);
 					break;
 			}
 
@@ -1097,7 +1097,7 @@ static const char *M_GetConditionString(condition_t *cn)
 			return work;
 		}
 		case UC_UNLOCKABLE: // Requires unlockable x to be obtained
-			return va("Get \"%s\"",
+			return va("get \"%s\"",
 				gamedata->unlocked[cn->requirement-1]
 				? unlockables[cn->requirement-1].name
 				: "???");
@@ -1105,10 +1105,10 @@ static const char *M_GetConditionString(condition_t *cn)
 		case UC_ADDON:
 			if (!M_SecretUnlocked(SECRET_ADDONS, true) && !gamedata->everloadedaddon)
 				return NULL;
-			return "Load a custom addon into \"Dr. Robotnik's Ring Racers\"";
+			return "load a custom addon into \"Dr. Robotnik's Ring Racers\"";
 		case UC_CRASH:
 			if (gamedata->crashflags & (GDCRASH_LAST|GDCRASH_ANY))
-				return "Launch \"Dr. Robotnik's Ring Racers\" again after a game crash";
+				return "launch \"Dr. Robotnik's Ring Racers\" again after a game crash";
 			return NULL;
 
 		case UC_AND:
@@ -1133,7 +1133,7 @@ static const char *M_GetConditionString(condition_t *cn)
 
 		case UCRP_PREFIX_ISMAP:
 			if (cn->requirement >= nummapheaders || !mapheaderinfo[cn->requirement])
-				return va("INVALID MAP CONDITION \"%d:%d\"", cn->type, cn->requirement);
+				return va("INVALID MAP CONDITION \"%d:%d\":", cn->type, cn->requirement);
 
 			title = BUILDCONDITIONTITLE(cn->requirement);
 			work = va("%s:", title);
@@ -1144,7 +1144,7 @@ static const char *M_GetConditionString(condition_t *cn)
 				return va("INVALID MAP CONDITION \"%d:%d\"", cn->type, cn->requirement);
 
 			title = BUILDCONDITIONTITLE(cn->requirement);
-			work = va("On %s", title);
+			work = va("on %s", title);
 			Z_Free(title);
 			return work;
 		case UCRP_ISCHARACTER:
@@ -1300,6 +1300,14 @@ char *M_BuildConditionSetString(UINT8 unlockid)
 			max -= maxatstart;
 			start = 0;
 		}
+	}
+
+	for (i = 0; message[i]; i++)
+	{
+		if (message[i] == toupper(message[i]))
+			continue;
+		message[i] = toupper(message[i]);
+		break;
 	}
 
 	return message;
