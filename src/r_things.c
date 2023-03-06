@@ -2982,6 +2982,16 @@ static void R_CreateDrawNodes(maskcount_t* mask, drawnode_t* head, boolean temps
 
 		for (r2 = head->next; r2 != head; r2 = r2->next)
 		{
+			if (cv_debugrender_spriteclip.value)
+			{
+				// Only sort behind other sprites; sorts in
+				// front of everything else.
+				if (!r2->sprite)
+				{
+					continue;
+				}
+			}
+
 			if (r2->plane)
 			{
 				fixed_t planeobjectz, planecameraz;
@@ -3243,6 +3253,16 @@ void R_ClipVisSprite(vissprite_t *spr, INT32 x1, INT32 x2, portal_t* portal)
 	fixed_t		scale;
 	fixed_t		lowscale;
 	INT32		silhouette;
+
+	if (cv_debugrender_spriteclip.value)
+	{
+		for (x = x1; x <= x2; x++)
+		{
+			spr->clipbot[x] = (INT16)viewheight;
+			spr->cliptop[x] = (INT16)con_clipviewtop;
+		}
+		return;
+	}
 
 	for (x = x1; x <= x2; x++)
 	{

@@ -145,7 +145,8 @@ INT32 R_AdjustLightLevel(INT32 light);
 void Command_Debugrender_highlight(void);
 
 extern consvar_t
-	cv_debugrender_contrast;
+	cv_debugrender_contrast,
+	cv_debugrender_spriteclip;
 
 // Called by startup code.
 void R_Init(void);

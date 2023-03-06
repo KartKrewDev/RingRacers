@@ -1660,6 +1660,7 @@ void R_RegisterEngineStuff(void)
 	// debugging
 
 	CV_RegisterVar(&cv_debugrender_contrast);
+	CV_RegisterVar(&cv_debugrender_spriteclip);
 
 	COM_AddCommand("debugrender_highlight", Command_Debugrender_highlight);
 }
