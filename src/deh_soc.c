@@ -2338,7 +2338,7 @@ static void readcondition(UINT8 set, UINT32 id, char *word2)
 	INT32 i;
 	char *params[4]; // condition, requirement, extra info, extra info
 	char *spos;
-	char *pendingstring = NULL;
+	char *stringvar = NULL;
 
 	conditiontype_t ty;
 	INT32 re = 0;
@@ -2578,7 +2578,7 @@ static void readcondition(UINT8 set, UINT32 id, char *word2)
 		}
 #else
 		{
-			pendingstring = Z_StrDup(params[1]);
+			stringvar = Z_StrDup(params[1]);
 			re = -1;
 		}
 #endif
@@ -2623,7 +2623,7 @@ static void readcondition(UINT8 set, UINT32 id, char *word2)
 		return;
 	}
 
-	M_AddRawCondition(set, (UINT8)id, ty, re, x1, x2, pendingstring);
+	M_AddRawCondition(set, (UINT8)id, ty, re, x1, x2, stringvar);
 }
 
 void readconditionset(MYFILE *f, UINT8 setnum)

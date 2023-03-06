@@ -88,7 +88,7 @@ struct condition_t
 	INT32 requirement;   /// <- The requirement for this variable.
 	INT16 extrainfo1;    /// <- Extra information for the condition when needed.
 	INT16 extrainfo2;    /// <- Extra information for the condition when needed.
-	char *pendingstring; /// oooohhh my god i hate loading order for SOC VS skins
+	char *stringvar;     /// <- Extra z-allocated string for the condition when needed
 };
 struct conditionset_t
 {
@@ -275,7 +275,7 @@ char *M_BuildConditionSetString(UINT8 unlockid);
 #define DESCRIPTIONWIDTH 170
 
 // Condition set setup
-void M_AddRawCondition(UINT8 set, UINT8 id, conditiontype_t c, INT32 r, INT16 x1, INT16 x2, char *pendingstring);
+void M_AddRawCondition(UINT8 set, UINT8 id, conditiontype_t c, INT32 r, INT16 x1, INT16 x2, char *stringvar);
 void M_UpdateConditionSetsPending(void);
 
 // Clearing secrets

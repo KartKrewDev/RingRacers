@@ -485,7 +485,7 @@ void M_UpdateChallengeGridExtraData(challengegridextradata_t *extradata)
 	}
 }
 
-void M_AddRawCondition(UINT8 set, UINT8 id, conditiontype_t c, INT32 r, INT16 x1, INT16 x2, char *pendingstring)
+void M_AddRawCondition(UINT8 set, UINT8 id, conditiontype_t c, INT32 r, INT16 x1, INT16 x2, char *stringvar)
 {
 	condition_t *cond;
 	UINT32 num, wnum;
@@ -504,7 +504,7 @@ void M_AddRawCondition(UINT8 set, UINT8 id, conditiontype_t c, INT32 r, INT16 x1
 	cond[wnum].requirement = r;
 	cond[wnum].extrainfo1 = x1;
 	cond[wnum].extrainfo2 = x2;
-	cond[wnum].pendingstring = pendingstring;
+	cond[wnum].stringvar = stringvar;
 }
 
 void M_ClearConditionSet(UINT8 set)
@@ -514,7 +514,7 @@ void M_ClearConditionSet(UINT8 set)
 		while (conditionSets[set].numconditions > 0)
 		{
 			--conditionSets[set].numconditions;
-			Z_Free(conditionSets[set].condition[conditionSets[set].numconditions].pendingstring);
+			Z_Free(conditionSets[set].condition[conditionSets[set].numconditions].stringvar);
 		}
 
 		Z_Free(conditionSets[set].condition);
@@ -577,28 +577,29 @@ void M_UpdateConditionSetsPending(void)
 		for (j = 0; j < c->numconditions; ++j)
 		{
 			cn = &c->condition[j];
-			if (cn->pendingstring == NULL)
+			if (cn->stringvar == NULL)
 				continue;
 
 			switch (cn->type)
 			{
 				case UCRP_ISCHARACTER:
 				{
-					cn->requirement = R_SkinAvailable(cn->pendingstring);
+					cn->requirement = R_SkinAvailable(cn->stringvar);
 
 					if (cn->requirement < 0)
 					{
-						CONS_Alert(CONS_WARNING, "UCRP_ISCHARACTER: Invalid character %s for condition ID %d", cn->pendingstring, cn->id+1);
+						CONS_Alert(CONS_WARNING, "UCRP_ISCHARACTER: Invalid character %s for condition ID %d", cn->stringvar, cn->id+1);
 						return;
 					}
+
+					Z_Free(cn->stringvar);
+					cn->stringvar = NULL;
+
 					break;
 				}
 				default:
 					break;
 			}
-
-			Z_Free(cn->pendingstring);
-			cn->pendingstring = NULL;
 		}
 
 		
