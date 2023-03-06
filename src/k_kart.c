@@ -3087,7 +3087,7 @@ static void K_GetKartBoostPower(player_t *player)
 
 	if (player->sliptideZipBoost)
 	{
-		ADDBOOST(3*FRACUNIT/4, 4*FRACUNIT, sliptidehandling/2); 
+		ADDBOOST(FRACUNIT, 4*FRACUNIT, sliptidehandling/2);  // + 100% top speed, + 400% acceleration, +25% handling
 	}
 
 	if (player->spindashboost) // Spindash boost
