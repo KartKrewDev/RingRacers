@@ -578,7 +578,7 @@ static void K_DebugWaypointDrawRadius(waypoint_t *const waypoint)
 
 	spawnX = waypointmobj->x;
 	spawnY = waypointmobj->y;
-	spawnZ = waypointmobj->z + 16*mapobjectscale;
+	spawnZ = waypointmobj->z;
 
 	radiusOrb = P_SpawnMobj(spawnX, spawnY, spawnZ, MT_SPARK);
 
@@ -588,6 +588,7 @@ static void K_DebugWaypointDrawRadius(waypoint_t *const waypoint)
 	radiusOrb->frame &= ~FF_TRANSMASK;
 	radiusOrb->frame |= FF_FULLBRIGHT;
 	radiusOrb->color = SKINCOLOR_PURPLE;
+	radiusOrb->renderflags |= RF_ALWAYSONTOP;
 
 	radiusOrb->destscale = FixedDiv(waypointmobj->radius, spriteRadius);
 	P_SetScale(radiusOrb, radiusOrb->destscale);
@@ -627,6 +628,7 @@ void K_DebugWaypointsVisualise(void)
 
 		debugmobj->frame &= ~FF_TRANSMASK;
 		debugmobj->frame |= FF_FULLBRIGHT; //FF_TRANS20
+		debugmobj->renderflags |= RF_ALWAYSONTOP;
 
 		// There's a waypoint setup for this mobj! So draw that it's a valid waypoint and draw lines to its connections
 		if (waypoint != NULL)
