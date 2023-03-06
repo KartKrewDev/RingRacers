@@ -23,8 +23,6 @@
 #include "fastcmp.h"
 #include "byteptr.h"
 
-gpRank_t g_gpRank = {0};
-
 // I was ALMOST tempted to start tearing apart all
 // of the map loading code and turning it into C++
 // and making it properly split between read-only

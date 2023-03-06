@@ -1355,7 +1355,7 @@ void P_DoPlayerExit(player_t *player)
 				if (RINGTOTAL(player) > 0)
 				{
 					player->totalring += RINGTOTAL(player);
-					g_gpRank.rings += RINGTOTAL(player);
+					grandprixinfo.rank.rings += RINGTOTAL(player);
 
 					extra = player->totalring / lifethreshold;
 
@@ -1369,15 +1369,15 @@ void P_DoPlayerExit(player_t *player)
 
 				if (grandprixinfo.eventmode == GPEVENT_NONE)
 				{
-					g_gpRank.winPoints += K_CalculateGPRankPoints(player->position, g_gpRank.totalPlayers);
-					g_gpRank.laps += player->lapPoints;
+					grandprixinfo.rank.winPoints += K_CalculateGPRankPoints(player->position, grandprixinfo.rank.totalPlayers);
+					grandprixinfo.rank.laps += player->lapPoints;
 				}
 				else if (grandprixinfo.eventmode == GPEVENT_SPECIAL)
 				{
-					g_gpRank.specialWon = true;
+					grandprixinfo.rank.specialWon = true;
 				}
 
-				g_gpRank.capsules += numtargets;
+				grandprixinfo.rank.capsules += numtargets;
 			}
 		}
 	}

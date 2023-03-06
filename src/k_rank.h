@@ -44,8 +44,6 @@ struct gpRank_t
 	boolean specialWon;
 };
 
-extern gpRank_t g_gpRank;
-
 typedef enum
 {
 	GRADE_E,

@@ -4818,22 +4818,22 @@ static void K_DrawGPRankDebugger(void)
 		return;
 	}
 
-	grade = K_CalculateGPGrade(&g_gpRank);
+	grade = K_CalculateGPGrade(&grandprixinfo.rank);
 
 	V_DrawThinString(0, 0, V_SNAPTOTOP|V_SNAPTOLEFT|V_6WIDTHSPACE|V_ALLOWLOWERCASE,
-		va("POS: %d / %d", g_gpRank.position, RANK_NEUTRAL_POSITION));
+		va("POS: %d / %d", grandprixinfo.rank.position, RANK_NEUTRAL_POSITION));
 	V_DrawThinString(0, 10, V_SNAPTOTOP|V_SNAPTOLEFT|V_6WIDTHSPACE|V_ALLOWLOWERCASE,
-		va("PTS: %d / %d", g_gpRank.winPoints, g_gpRank.totalPoints));
+		va("PTS: %d / %d", grandprixinfo.rank.winPoints, grandprixinfo.rank.totalPoints));
 	V_DrawThinString(0, 20, V_SNAPTOTOP|V_SNAPTOLEFT|V_6WIDTHSPACE|V_ALLOWLOWERCASE,
-		va("LAPS: %d / %d", g_gpRank.laps, g_gpRank.totalLaps));
+		va("LAPS: %d / %d", grandprixinfo.rank.laps, grandprixinfo.rank.totalLaps));
 	V_DrawThinString(0, 30, V_SNAPTOTOP|V_SNAPTOLEFT|V_6WIDTHSPACE|V_ALLOWLOWERCASE,
-		va("CONTINUES: %d", g_gpRank.continuesUsed));
+		va("CONTINUES: %d", grandprixinfo.rank.continuesUsed));
 	V_DrawThinString(0, 40, V_SNAPTOTOP|V_SNAPTOLEFT|V_6WIDTHSPACE|V_ALLOWLOWERCASE,
-		va("CAPSULES: %d / %d", g_gpRank.capsules, g_gpRank.totalCapsules));
+		va("CAPSULES: %d / %d", grandprixinfo.rank.capsules, grandprixinfo.rank.totalCapsules));
 	V_DrawThinString(0, 50, V_SNAPTOTOP|V_SNAPTOLEFT|V_6WIDTHSPACE|V_ALLOWLOWERCASE,
-		va("RINGS: %d / %d", g_gpRank.rings, g_gpRank.totalRings));
+		va("RINGS: %d / %d", grandprixinfo.rank.rings, grandprixinfo.rank.totalRings));
 	V_DrawThinString(0, 60, V_SNAPTOTOP|V_SNAPTOLEFT|V_6WIDTHSPACE|V_ALLOWLOWERCASE,
-		va("EMERALD: %s", (g_gpRank.specialWon == true) ? "YES" : "NO"));
+		va("EMERALD: %s", (grandprixinfo.rank.specialWon == true) ? "YES" : "NO"));
 
 	switch (grade)
 	{

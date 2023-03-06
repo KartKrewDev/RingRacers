@@ -3887,7 +3887,7 @@ static void G_GetNextMap(void)
 			// Special stage
 			else if (grandprixinfo.roundnum >= grandprixinfo.cup->numlevels)
 			{
-				gp_rank_e grade = K_CalculateGPGrade(&g_gpRank);
+				gp_rank_e grade = K_CalculateGPGrade(&grandprixinfo.rank);
 
 				if (grade >= GRADE_A) // On A rank pace? Then you get a chance for S rank!
 				{
@@ -4117,7 +4117,7 @@ static void G_DoCompleted(void)
 	G_SetGamestate(GS_NULL);
 	wipegamestate = GS_NULL;
 
-	g_gpRank.position = MAXPLAYERS;
+	grandprixinfo.rank.position = MAXPLAYERS;
 
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
@@ -4147,7 +4147,7 @@ static void G_DoCompleted(void)
 
 			if (players[i].bot == false)
 			{
-				g_gpRank.position = min(g_gpRank.position, K_GetPodiumPosition(&players[i]));
+				grandprixinfo.rank.position = min(grandprixinfo.rank.position, K_GetPodiumPosition(&players[i]));
 			}
 		}
 	}
@@ -5488,7 +5488,7 @@ void G_SetRetryFlag(void)
 {
 	if (retrying == false)
 	{
-		g_gpRank.continuesUsed++;
+		grandprixinfo.rank.continuesUsed++;
 	}
 
 	retrying = true;

@@ -50,7 +50,7 @@
 static struct podiumData_s
 {
 	boolean ranking;
-	gpRank_t rankData;
+	gpRank_t rank;
 	gp_rank_e grade;
 	UINT8 state;
 	UINT8 delay;
@@ -280,8 +280,8 @@ void K_ResetCeremony(void)
 		return;
 	}
 
-	podiumData.rankData = g_gpRank;
-	podiumData.grade = K_CalculateGPGrade(&podiumData.rankData);
+	podiumData.rank = grandprixinfo.rank;
+	podiumData.grade = K_CalculateGPGrade(&podiumData.rank);
 }
 
 /*--------------------------------------------------
@@ -430,49 +430,49 @@ void K_CeremonyDrawer(void)
 				case 1:
 				{
 					V_DrawString(x, y, V_ALLOWLOWERCASE,
-						va("POS: %d / %d", podiumData.rankData.position, RANK_NEUTRAL_POSITION)
+						va("POS: %d / %d", podiumData.rank.position, RANK_NEUTRAL_POSITION)
 					);
 					break;
 				}
 				case 2:
 				{
 					V_DrawString(x, y, V_ALLOWLOWERCASE,
-						va("PTS: %d / %d", podiumData.rankData.winPoints, podiumData.rankData.totalPoints)
+						va("PTS: %d / %d", podiumData.rank.winPoints, podiumData.rank.totalPoints)
 					);
 					break;
 				}
 				case 3:
 				{
 					V_DrawString(x, y, V_ALLOWLOWERCASE,
-						va("LAPS: %d / %d", podiumData.rankData.laps, podiumData.rankData.totalLaps)
+						va("LAPS: %d / %d", podiumData.rank.laps, podiumData.rank.totalLaps)
 					);
 					break;
 				}
 				case 4:
 				{
 					V_DrawString(x, y, V_ALLOWLOWERCASE,
-						va("CONTINUES: %d", podiumData.rankData.continuesUsed)
+						va("CONTINUES: %d", podiumData.rank.continuesUsed)
 					);
 					break;
 				}
 				case 5:
 				{
 					V_DrawString(x, y, V_ALLOWLOWERCASE,
-						va("CAPSULES: %d / %d", podiumData.rankData.capsules, podiumData.rankData.totalCapsules)
+						va("CAPSULES: %d / %d", podiumData.rank.capsules, podiumData.rank.totalCapsules)
 					);
 					break;
 				}
 				case 6:
 				{
 					V_DrawString(x, y, V_ALLOWLOWERCASE,
-						va("RINGS: %d / %d", podiumData.rankData.rings, podiumData.rankData.totalRings)
+						va("RINGS: %d / %d", podiumData.rank.rings, podiumData.rank.totalRings)
 					);
 					break;
 				}
 				case 7:
 				{
 					V_DrawString(x, y, V_ALLOWLOWERCASE,
-						va("EMERALD: %s", (podiumData.rankData.specialWon == true) ? "YES" : "NO")
+						va("EMERALD: %s", (podiumData.rank.specialWon == true) ? "YES" : "NO")
 					);
 					break;
 				}

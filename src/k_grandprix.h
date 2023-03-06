@@ -15,14 +15,18 @@
 
 #include "doomdef.h"
 #include "doomstat.h"
+#include "k_rank.h" // gpRank_t
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#define GPEVENT_NONE 0
-#define GPEVENT_BONUS 1
-#define GPEVENT_SPECIAL 2
+typedef enum
+{
+	GPEVENT_NONE = 0,
+	GPEVENT_BONUS,
+	GPEVENT_SPECIAL,
+} gpEvent_e;
 
 extern struct grandprixinfo
 {
@@ -34,7 +38,8 @@ extern struct grandprixinfo
 	boolean masterbots;		///< If true, all bots should be max difficulty (Master Mode)
 	boolean initalize;		///< If true, we need to initialize a new session.
 	boolean wonround;		///< If false, then we retry the map instead of going to the next.
-	UINT8 eventmode;		///< See GPEVENT_ constants
+	gpEvent_e eventmode;	///< Special event mode, bots are set to spectate and a special gametype is played
+	gpRank_t rank;			///< Struct containing grading information. (See also: k_rank.h)
 } grandprixinfo;
 
 /*--------------------------------------------------
