@@ -1809,6 +1809,11 @@ static void K_SpawnGenericSpeedLines(player_t *player, boolean top)
 		fast->colorized = true;
 		fast->renderflags |= RF_ADD;
 	}
+	else if (player->sliptideZipBoost)
+	{
+		fast->color = SKINCOLOR_WHITE;
+		fast->colorized = true;
+	}
 }
 
 void K_SpawnNormalSpeedLines(player_t *player)
@@ -3046,7 +3051,7 @@ static void K_GetKartBoostPower(player_t *player)
 	speedboost += FixedDiv(s, FRACUNIT + (metabolism * (numboosts-1))); \
 	accelboost += FixedDiv(a, FRACUNIT + (metabolism * (numboosts-1))); \
 	if (player->aizdriftstrat) \
-		handleboost += FixedDiv(h, FRACUNIT + (metabolism * (numboosts-1))); \
+		handleboost += FixedDiv(3*h/2, FRACUNIT + (metabolism * (numboosts-1))/4); \
 	else \
 		handleboost = max(h, handleboost); \
 }
@@ -3078,6 +3083,11 @@ static void K_GetKartBoostPower(player_t *player)
 			3*FRACUNIT, // + 300% acceleration
 			FixedMul(FixedDiv(dash, FRACUNIT/2), sliptidehandling/2) // + infinite handling
 		);
+	}
+
+	if (player->sliptideZipBoost)
+	{
+		ADDBOOST(3*FRACUNIT/4, 4*FRACUNIT, sliptidehandling/2); 
 	}
 
 	if (player->spindashboost) // Spindash boost
@@ -7483,7 +7493,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 			if (player->sneakertimer || player->ringboost
 				|| player->driftboost || player->startboost
 				|| player->eggmanexplode || player->trickboost
-				|| player->gateBoost)
+				|| player->gateBoost || player->sliptideZipBoost)
 			{
 #if 0
 				if (player->invincibilitytimer)
@@ -7743,6 +7753,11 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 	if (player->startboost > 0 && onground == true)
 	{
 		player->startboost--;
+	}
+
+	if (player->sliptideZipBoost > 0 && onground == true)
+	{
+		player->sliptideZipBoost--;
 	}
 
 	if (player->spindashboost)
@@ -9205,6 +9220,8 @@ static void K_KartDrift(player_t *player, boolean onground)
 	{
 		K_SpawnAIZDust(player);
 
+		player->sliptideZip++;
+
 		if (abs(player->aizdrifttilt) < ANGLE_22h)
 		{
 			player->aizdrifttilt =
@@ -9222,6 +9239,18 @@ static void K_KartDrift(player_t *player, boolean onground)
 
 	if (!K_Sliptiding(player))
 	{
+		if (player->sliptideZip > 0)
+		{
+			player->sliptideZipDelay++;
+			if (player->sliptideZipDelay > TICRATE && player->drift == 0)
+			{
+				S_StartSound(player->mo, sfx_s3kb6);
+				player->sliptideZipBoost += player->sliptideZip;
+				player->sliptideZip = 0;
+				player->sliptideZipDelay = 0;
+			}
+		}
+
 		player->aizdrifttilt -= player->aizdrifttilt / 4;
 		player->aizdriftturn -= player->aizdriftturn / 4;
 
@@ -9229,6 +9258,10 @@ static void K_KartDrift(player_t *player, boolean onground)
 			player->aizdrifttilt = 0;
 		if (abs(player->aizdriftturn) < ANGLE_11hh)
 			player->aizdriftturn = 0;
+	}
+	else
+	{
+		player->sliptideZipDelay = 0;
 	}
 
 	if (player->drift

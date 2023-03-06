@@ -397,6 +397,10 @@ static void P_NetArchivePlayers(savebuffer_t *save)
 
 		WRITEUINT8(save->p, players[i].tripwireReboundDelay);
 
+		WRITEUINT16(save->p, players[i].sliptideZip);
+		WRITEUINT8(save->p, players[i].sliptideZipDelay);
+		WRITEUINT16(save->p, players[i].sliptideZipBoost);
+
 		// respawnvars_t
 		WRITEUINT8(save->p, players[i].respawn.state);
 		WRITEUINT32(save->p, K_GetWaypointHeapIndex(players[i].respawn.wp));
@@ -766,6 +770,10 @@ static void P_NetUnArchivePlayers(savebuffer_t *save)
 		players[i].eggmanTransferDelay = READUINT8(save->p);
 
 		players[i].tripwireReboundDelay = READUINT8(save->p);
+
+		players[i].sliptideZip = READUINT16(save->p);
+		players[i].sliptideZipDelay = READUINT8(save->p);
+		players[i].sliptideZipBoost = READUINT16(save->p);
 
 		// respawnvars_t
 		players[i].respawn.state = READUINT8(save->p);
