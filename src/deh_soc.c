@@ -2643,7 +2643,6 @@ static void readcondition(UINT8 set, UINT32 id, char *word2)
 		ty = UCRP_WETPLAYER;
 		re = MFE_UNDERWATER;
 		x1 = 1;
-		stringvar = Z_StrDup(params[1]);
 
 		if (params[2])
 		{
@@ -2655,6 +2654,8 @@ static void readcondition(UINT8 set, UINT32 id, char *word2)
 				return;
 			}
 		}
+
+		stringvar = Z_StrDup(params[1]);
 	}
 	else
 	{
