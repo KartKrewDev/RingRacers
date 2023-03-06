@@ -346,6 +346,8 @@ struct roundconditions_t
 	boolean spb_neuter;
 	boolean landmine_dunk;
 	boolean hit_midair;
+
+	mobjeflag_t wet_player;
 };
 
 // player_t struct for all skybox variables
