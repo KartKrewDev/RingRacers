@@ -44,6 +44,7 @@ TYPEDEF (discordRequest_t);
 // d_player.h
 TYPEDEF (respawnvars_t);
 TYPEDEF (botvars_t);
+TYPEDEF (roundconditions_t);
 TYPEDEF (skybox_t);
 TYPEDEF (itemroulette_t);
 TYPEDEF (player_t);

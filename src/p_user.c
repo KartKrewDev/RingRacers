@@ -518,6 +518,11 @@ INT32 P_GivePlayerRings(player_t *player, INT32 num_rings)
 
 	player->rings += num_rings;
 
+	if (player->rings < 0)
+	{
+		player->roundconditions.debt_rings = true;
+	}
+
 	return num_rings;
 }
 

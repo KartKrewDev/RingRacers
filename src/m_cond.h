@@ -75,6 +75,18 @@ typedef enum
 	UCRP_FINISHTIME, // Finish <= [time, tics]
 	UCRP_FINISHTIMEEXACT, // Finish == [time, tics]
 	UCRP_FINISHTIMELEFT, // Finish with at least [time, tics] to spare
+
+	UCRP_FALLOFF, // Fall off (or don't)
+	UCRP_TOUCHOFFROAD, // Touch offroad (or don't)
+	UCRP_TOUCHSNEAKERPANEL, // Either touch sneaker panel (or don't)
+	UCRP_RINGDEBT, // Go into debt (or don't)
+
+	UCRP_TRIPWIREHYUU, // Go through tripwire with Hyudoro
+	UCRP_SPBNEUTER, // Kill an SPB with Lightning
+	UCRP_LANDMINEDUNK, // huh? you died? that's weird. all i did was try to hug you...
+	UCRP_HITMIDAIR, // Hit another player mid-air with a kartfielditem
+
+	UCRP_WETPLAYER, // Touch [fluid]
 } conditiontype_t;
 
 // Condition Set information

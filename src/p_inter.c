@@ -1940,6 +1940,7 @@ static boolean P_KillPlayer(player_t *player, mobj_t *inflictor, mobj_t *source,
 	{
 		case DMG_DEATHPIT:
 			// Respawn kill types
+			player->roundconditions.fell_off = true;
 			K_DoIngameRespawn(player);
 			return false;
 		case DMG_SPECTATOR:
@@ -2025,6 +2026,7 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 {
 	player_t *player;
 	boolean force = false;
+	boolean spbpop = false;
 
 	INT32 laglength = 6;
 
@@ -2058,6 +2060,14 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 			Obj_MonitorOnDamage(target, inflictor, damage);
 			break;
 
+		case MT_SPB:
+			spbpop = (damagetype & DMG_TYPEMASK) == DMG_VOLTAGE;
+			if (spbpop && source && source->player)
+			{
+				source->player->roundconditions.spb_neuter = true;
+			}
+			break;
+
 		default:
 			break;
 	}
@@ -2076,7 +2086,7 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 
 	if (!force)
 	{
-		if (!(target->type == MT_SPB && (damagetype & DMG_TYPEMASK) == DMG_VOLTAGE))
+		if (!spbpop)
 		{
 			if (!(target->flags & MF_SHOOTABLE))
 				return false; // shouldn't happen...
@@ -2128,6 +2138,14 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 				if (!P_PlayerHitsPlayer(target, inflictor, source, damage, damagetype))
 					return false;
 			}
+		}
+
+		if (inflictor && source && source->player)
+		{
+			if (P_IsKartFieldItem(source->type)
+			&& target->player->airtime > TICRATE/2
+			&& source->player->airtime > TICRATE/2)
+				source->player->roundconditions.hit_midair = true;
 		}
 
 		// Instant-Death

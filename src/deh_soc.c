@@ -2617,6 +2617,45 @@ static void readcondition(UINT8 set, UINT32 id, char *word2)
 			return;
 		}
 	}
+	else if ((offset=0) || fastcmp(params[0], "FALLOFF")
+	||        (++offset && fastcmp(params[0], "TOUCHOFFROAD"))
+	||        (++offset && fastcmp(params[0], "TOUCHSNEAKERPANEL"))
+	||        (++offset && fastcmp(params[0], "RINGDEBT")))
+	{
+		PARAMCHECK(1);
+		ty = UCRP_FALLOFF + offset;
+		re = 1;
+
+		if (params[1][0] == 'F' || params[1][0] == 'N' || params[1][0] == '0')
+			re = 0;
+	}
+	else if ((offset=0) || fastcmp(params[0], "TRIPWIREHYUU")
+	||        (++offset && fastcmp(params[0], "SPBNEUTER"))
+	||        (++offset && fastcmp(params[0], "LANDMINEDUNK"))
+	||        (++offset && fastcmp(params[0], "HITMIDAIR")))
+	{
+		//PARAMCHECK(1);
+		ty = UCRP_TRIPWIREHYUU + offset;
+	}
+	else if (fastcmp(params[0], "WETPLAYER"))
+	{
+		PARAMCHECK(1);
+		ty = UCRP_WETPLAYER;
+		re = MFE_UNDERWATER;
+		x1 = 1;
+		stringvar = Z_StrDup(params[1]);
+
+		if (params[2])
+		{
+			if (fastcmp(params[2], "STRICT"))
+				re |= MFE_TOUCHWATER;
+			else
+			{
+				deh_warning("liquid strictness requirement \"%s\" invalid for condition ID %d", params[2], id+1);
+				return;
+			}
+		}
+	}
 	else
 	{
 		deh_warning("Invalid condition name %s for condition ID %d", params[0], id+1);

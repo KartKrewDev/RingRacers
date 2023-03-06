@@ -1118,6 +1118,9 @@ static void K_UpdateOffroad(player_t *player)
 
 		if (player->offroad > offroadstrength)
 			player->offroad = offroadstrength;
+
+		if (player->offroad > (2*offroadstrength) / TICRATE)
+			player->roundconditions.touched_offroad = true;
 	}
 	else
 		player->offroad = 0;
@@ -4065,7 +4068,11 @@ void K_ApplyTripWire(player_t *player, tripwirestate_t state)
 		K_TumblePlayer(player, NULL, NULL);
 
 	if (state == TRIPSTATE_PASSED)
+	{
 		S_StartSound(player->mo, sfx_ssa015);
+		if (player->hyudorotimer > 0)
+			player->roundconditions.tripwire_hyuu = true;
+	}
 	else if (state == TRIPSTATE_BLOCKED)
 	{
 		S_StartSound(player->mo, sfx_kc40);
@@ -5730,6 +5737,9 @@ static void K_FlameDashLeftoverSmoke(mobj_t *src)
 void K_DoSneaker(player_t *player, INT32 type)
 {
 	const fixed_t intendedboost = FRACUNIT/2;
+
+	if (player->floorboost != 0)
+		player->roundconditions.touched_sneakerpanel = true;
 
 	if (player->floorboost == 0 || player->floorboost == 3)
 	{

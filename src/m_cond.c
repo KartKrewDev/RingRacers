@@ -593,6 +593,23 @@ void M_UpdateConditionSetsPending(void)
 
 					break;
 				}
+
+				case UCRP_WETPLAYER:
+				{
+					if (cn->extrainfo1)
+					{
+						char *l;
+
+						for (l = cn->stringvar; *l != '\0'; l++)
+						{
+							*l = tolower(*l);
+						}
+
+						cn->extrainfo1 = 0;
+					}
+					break;
+				}
+
 				default:
 					break;
 			}
@@ -773,6 +790,28 @@ boolean M_CheckCondition(condition_t *cn, player_t *player)
 				&& !K_CanChangeRules(false) // too easy to change cv_timelimit
 				&& player->realtime < timelimitintics
 				&& (timelimitintics + extratimeintics + secretextratime - player->realtime) >= (unsigned)cn->requirement);
+
+		case UCRP_FALLOFF:
+			return (player->roundconditions.fell_off == (cn->requirement == 1));
+		case UCRP_TOUCHOFFROAD:
+			return (player->roundconditions.touched_offroad == (cn->requirement == 1));
+		case UCRP_TOUCHSNEAKERPANEL:
+			return (player->roundconditions.touched_sneakerpanel == (cn->requirement == 1));
+		case UCRP_RINGDEBT:
+			return (!(gametyperules & GTR_SPHERES) && (player->roundconditions.debt_rings == (cn->requirement == 1)));
+
+		case UCRP_TRIPWIREHYUU:
+			return (player->roundconditions.tripwire_hyuu);
+		case UCRP_SPBNEUTER:
+			return (player->roundconditions.spb_neuter);
+		case UCRP_LANDMINEDUNK:
+			return (player->roundconditions.landmine_dunk);
+		case UCRP_HITMIDAIR:
+			return (player->roundconditions.hit_midair);
+
+		case UCRP_WETPLAYER:
+			return (((player->roundconditions.wet_player & cn->requirement) == 0)
+				|| player->roundconditions.fell_off); // Levels with water tend to texture their pits as water too
 	}
 	return false;
 }
@@ -1136,6 +1175,29 @@ static const char *M_GetConditionString(condition_t *cn)
 				G_TicsToMinutes(cn->requirement, true),
 				G_TicsToSeconds(cn->requirement),
 				G_TicsToCentiseconds(cn->requirement));
+
+		case UCRP_FALLOFF:
+			return (cn->requirement == 1) ? "fall off the course" : "without falling off";
+		case UCRP_TOUCHOFFROAD:
+			return (cn->requirement == 1) ? "touch offroad" : "without touching any offroad";
+		case UCRP_TOUCHSNEAKERPANEL:
+			return (cn->requirement == 1) ? "touch a Sneaker Panel" : "without touching any Sneaker Panels";
+		case UCRP_RINGDEBT:
+			return (cn->requirement == 1) ? "go into Ring debt" : "without going into Ring debt";
+
+		case UCRP_TRIPWIREHYUU:
+			return "go through Tripwire after getting snared by Hyudoro";
+		case UCRP_SPBNEUTER:
+			return "shock a Self Propelled Bomb into submission";
+		case UCRP_LANDMINEDUNK:
+			return "dunk a Landmine on another racer's head";
+		case UCRP_HITMIDAIR:
+			return "hit another racer with a projectile while you're both in the air";
+
+		case UCRP_WETPLAYER:
+			return va("without %s %s",
+				(cn->requirement & MFE_TOUCHWATER) ? "touching any" : "going into",
+				cn->stringvar);
 
 		default:
 			break;

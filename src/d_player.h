@@ -333,6 +333,21 @@ struct botvars_t
 	tic_t spindashconfirm; // When high enough, they will try spindashing
 };
 
+// player_t struct for round-specific condition tracking
+
+struct roundconditions_t
+{
+	// Trivial Yes/no events across multiple UCRP's
+	boolean fell_off;
+	boolean touched_offroad;
+	boolean touched_sneakerpanel;
+	boolean debt_rings;
+	boolean tripwire_hyuu;
+	boolean spb_neuter;
+	boolean landmine_dunk;
+	boolean hit_midair;
+};
+
 // player_t struct for all skybox variables
 struct skybox_t {
 	mobj_t * viewpoint;
@@ -682,6 +697,7 @@ struct player_t
 #endif
 
 	sonicloopvars_t loop;
+	roundconditions_t roundconditions;
 };
 
 #ifdef __cplusplus

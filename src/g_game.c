@@ -2371,6 +2371,9 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	INT32 khudfault;
 	INT32 kickstartaccel;
 
+	roundconditions_t roundconditions;
+	boolean saveroundconditions;
+
 	score = players[player].score;
 	lives = players[player].lives;
 	ctfteam = players[player].ctfteam;
@@ -2461,6 +2464,8 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 		khudfinish = 0;
 		khudcardanimation = 0;
 		starpostnum = 0;
+
+		saveroundconditions = false;
 	}
 	else
 	{
@@ -2509,6 +2514,9 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 		starpostnum = players[player].starpostnum;
 
 		pflags |= (players[player].pflags & (PF_STASIS|PF_ELIMINATED|PF_NOCONTEST|PF_FAULT|PF_LOSTLIFE));
+
+		memcpy(&roundconditions, &players[player].roundconditions, sizeof (roundconditions));
+		saveroundconditions = true;
 	}
 
 	if (!betweenmaps)
@@ -2591,6 +2599,9 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 
 	memcpy(&p->itemRoulette, &itemRoulette, sizeof (p->itemRoulette));
 	memcpy(&p->respawn, &respawn, sizeof (p->respawn));
+
+	if (saveroundconditions)
+		memcpy(&p->roundconditions, &roundconditions, sizeof (p->roundconditions));
 
 	if (follower)
 		P_RemoveMobj(follower);
