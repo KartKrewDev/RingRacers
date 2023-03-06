@@ -4039,8 +4039,6 @@ void K_UpdateSliptideZipIndicator(player_t *player)
 	mobj->angle = momentumAngle + ANGLE_90;
 	P_SetScale(mobj, 3 * player->mo->scale / 2);
 
-	mobj->renderflags &= ~RF_DONTDRAW;
-
 	// No stored boost
 	if (player->sliptideZip == 0)
 	{
@@ -4048,6 +4046,8 @@ void K_UpdateSliptideZipIndicator(player_t *player)
 		mobj->frame = 7;
 		return;
 	}
+
+	mobj->renderflags &= ~RF_DONTDRAW;
 
 	UINT32 chargeFrame = 7 - min(7, player->sliptideZip / 10);
 	UINT32 decayFrame = min(7, player->sliptideZipDelay / 5);
