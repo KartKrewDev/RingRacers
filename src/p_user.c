@@ -58,6 +58,8 @@
 #include "k_terrain.h" // K_SpawnSplashForMobj
 #include "k_color.h"
 #include "k_follower.h"
+#include "k_battle.h"
+#include "k_rank.h"
 
 #ifdef HW3SOUND
 #include "hardware/hw3sound.h"
@@ -1353,6 +1355,7 @@ void P_DoPlayerExit(player_t *player)
 				if (RINGTOTAL(player) > 0)
 				{
 					player->totalring += RINGTOTAL(player);
+					grandprixinfo.rank.rings += RINGTOTAL(player);
 
 					extra = player->totalring / lifethreshold;
 
@@ -1362,6 +1365,16 @@ void P_DoPlayerExit(player_t *player)
 						S_StartSound(NULL, sfx_cdfm73);
 						player->xtralife = extra;
 					}
+				}
+
+				if (grandprixinfo.eventmode == GPEVENT_NONE)
+				{
+					grandprixinfo.rank.winPoints += K_CalculateGPRankPoints(player->position, grandprixinfo.rank.totalPlayers);
+					grandprixinfo.rank.laps += player->lapPoints;
+				}
+				else if (grandprixinfo.eventmode == GPEVENT_SPECIAL)
+				{
+					grandprixinfo.rank.specialWon = true;
 				}
 			}
 		}

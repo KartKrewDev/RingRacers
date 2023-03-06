@@ -63,6 +63,7 @@
 #include "doomstat.h"
 #include "k_director.h"
 #include "k_podium.h"
+#include "k_rank.h"
 
 #ifdef HAVE_DISCORDRPC
 #include "discord.h"
@@ -1471,8 +1472,6 @@ void G_DoLoadLevelEx(boolean resetplayer, gamestate_t newstate)
 	if (gamestate == GS_VOTING)
 		Y_EndVote();
 
-	K_ResetCeremony();
-
 	// cleanup
 	// Is this actually necessary? Doesn't F_StartTitleScreen already do a significantly more comprehensive check?
 	if (newstate == GS_TITLESCREEN)
@@ -1498,6 +1497,8 @@ void G_DoLoadLevelEx(boolean resetplayer, gamestate_t newstate)
 	if (wipegamestate == GS_MENU)
 		M_ClearMenus(true);
 	I_UpdateMouseGrab();
+
+	K_ResetCeremony();
 
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
@@ -2388,6 +2389,7 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	INT16 totalring;
 	UINT8 laps;
 	UINT8 latestlap;
+	UINT32 lapPoints;
 	UINT16 skincolor;
 	INT32 skin;
 	UINT8 availabilities[MAXAVAILABILITY];
@@ -2497,6 +2499,7 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 		nocontrol = 0;
 		laps = 0;
 		latestlap = 0;
+		lapPoints = 0;
 		roundscore = 0;
 		exiting = 0;
 		khudfinish = 0;
@@ -2532,6 +2535,7 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 
 		laps = players[player].laps;
 		latestlap = players[player].latestlap;
+		lapPoints = players[player].lapPoints;
 
 		roundscore = players[player].roundscore;
 
@@ -2604,6 +2608,7 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 
 	p->laps = laps;
 	p->latestlap = latestlap;
+	p->lapPoints = lapPoints;
 	p->totalring = totalring;
 
 	p->bot = bot;
@@ -3882,20 +3887,9 @@ static void G_GetNextMap(void)
 			// Special stage
 			else if (grandprixinfo.roundnum >= grandprixinfo.cup->numlevels)
 			{
-				INT16 totaltotalring = 0;
+				gp_rank_e grade = K_CalculateGPGrade(&grandprixinfo.rank);
 
-				for (i = 0; i < MAXPLAYERS; i++)
-				{
-					if (!playeringame[i])
-						continue;
-					if (players[i].spectator)
-						continue;
-					if (players[i].bot)
-						continue;
-					totaltotalring += players[i].totalring;
-				}
-
-				if (totaltotalring >= 50)
+				if (grade >= GRADE_A) // On A rank pace? Then you get a chance for S rank!
 				{
 					const INT32 cupLevelNum = grandprixinfo.cup->cachedlevels[CUPCACHE_SPECIAL];
 					if (cupLevelNum < nummapheaders && mapheaderinfo[cupLevelNum])
@@ -4123,6 +4117,9 @@ static void G_DoCompleted(void)
 	G_SetGamestate(GS_NULL);
 	wipegamestate = GS_NULL;
 
+	grandprixinfo.rank.capsules += numtargets;
+	grandprixinfo.rank.position = MAXPLAYERS;
+
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
 		if (playeringame[i])
@@ -4148,6 +4145,11 @@ static void G_DoCompleted(void)
 			}
 
 			G_PlayerFinishLevel(i); // take away cards and stuff
+
+			if (players[i].bot == false)
+			{
+				grandprixinfo.rank.position = min(grandprixinfo.rank.position, K_GetPodiumPosition(&players[i]));
+			}
 		}
 	}
 
@@ -5485,6 +5487,11 @@ boolean G_GetExitGameFlag(void)
 // Same deal with retrying.
 void G_SetRetryFlag(void)
 {
+	if (retrying == false)
+	{
+		grandprixinfo.rank.continuesUsed++;
+	}
+
 	retrying = true;
 }
 

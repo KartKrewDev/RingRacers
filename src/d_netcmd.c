@@ -453,6 +453,7 @@ consvar_t cv_kartdebugcolorize = CVAR_INIT ("debugcolorize", "Off", CV_CHEAT, CV
 consvar_t cv_kartdebugdirector = CVAR_INIT ("debugdirector", "Off", CV_CHEAT, CV_OnOff, NULL);
 consvar_t cv_spbtest = CVAR_INIT ("spbtest", "Off", CV_CHEAT|CV_NETVAR, CV_OnOff, NULL);
 consvar_t cv_gptest = CVAR_INIT ("gptest", "Off", CV_CHEAT|CV_NETVAR, CV_OnOff, NULL);
+consvar_t cv_debugrank = CVAR_INIT ("debugrank", "Off", CV_CHEAT, CV_OnOff, NULL);
 
 static CV_PossibleValue_t capsuletest_cons_t[] = {
 	{CV_CAPSULETEST_OFF, "Off"},

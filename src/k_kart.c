@@ -347,6 +347,7 @@ void K_RegisterKartStuff(void)
 	CV_RegisterVar(&cv_kartdebugnodes);
 	CV_RegisterVar(&cv_kartdebugcolorize);
 	CV_RegisterVar(&cv_kartdebugdirector);
+	CV_RegisterVar(&cv_debugrank);
 	CV_RegisterVar(&cv_spbtest);
 	CV_RegisterVar(&cv_gptest);
 	CV_RegisterVar(&cv_capsuletest);
@@ -9318,84 +9319,78 @@ void K_KartUpdatePosition(player_t *player)
 		return;
 	}
 
-	for (i = 0; i < MAXPLAYERS; i++)
+	if (K_PodiumSequence() == true)
 	{
-		if (!playeringame[i] || players[i].spectator || !players[i].mo)
-			continue;
+		position = K_GetPodiumPosition(player);
 
-		realplayers++;
-
-		if (K_PodiumSequence() == true)
+		for (i = 0; i < MAXPLAYERS; i++)
 		{
-			if (players[i].score > player->score)
-			{
-				// Final score is the important part.
-				position++;
-			}
-			else if (players[i].score == player->score)
-			{
-				if (players[i].bot == false && player->bot == true)
-				{
-					// Bots are never as important as players.
-					position++;
-				}
-				else if (i < player - players)
-				{
-					// Port priority is the final tie breaker.
-					position++;
-				}
-			}
+			if (!playeringame[i] || players[i].spectator || !players[i].mo)
+				continue;
+
+			realplayers++;
 		}
-		else if (gametyperules & GTR_CIRCUIT)
+	}
+	else
+	{
+		for (i = 0; i < MAXPLAYERS; i++)
 		{
-			if (player->exiting) // End of match standings
-			{
-				// Only time matters
-				if (players[i].realtime < player->realtime)
-					position++;
-			}
-			else
-			{
-				// I'm a lap behind this player OR
-				// My distance to the finish line is higher, so I'm behind
-				if ((players[i].laps > player->laps)
-					|| (players[i].distancetofinish < player->distancetofinish))
-				{
-					position++;
-				}
-			}
-		}
-		else
-		{
-			if (player->exiting) // End of match standings
-			{
-				// Only score matters
-				if (players[i].roundscore > player->roundscore)
-					position++;
-			}
-			else
-			{
-				UINT8 myEmeralds = K_NumEmeralds(player);
-				UINT8 yourEmeralds = K_NumEmeralds(&players[i]);
+			if (!playeringame[i] || players[i].spectator || !players[i].mo)
+				continue;
 
-				// First compare all points
-				if (players[i].roundscore > player->roundscore)
+			realplayers++;
+
+			if (gametyperules & GTR_CIRCUIT)
+			{
+				if (player->exiting) // End of match standings
 				{
-					position++;
+					// Only time matters
+					if (players[i].realtime < player->realtime)
+						position++;
 				}
-				else if (players[i].roundscore == player->roundscore)
+				else
 				{
-					// Emeralds are a tie breaker
-					if (yourEmeralds > myEmeralds)
+					// I'm a lap behind this player OR
+					// My distance to the finish line is higher, so I'm behind
+					if ((players[i].laps > player->laps)
+						|| (players[i].distancetofinish < player->distancetofinish))
 					{
 						position++;
 					}
-					else if (yourEmeralds == myEmeralds)
+				}
+			}
+			else
+			{
+				if (player->exiting) // End of match standings
+				{
+					// Only score matters
+					if (players[i].roundscore > player->roundscore)
+						position++;
+				}
+				else
+				{
+					UINT8 myEmeralds = K_NumEmeralds(player);
+					UINT8 yourEmeralds = K_NumEmeralds(&players[i]);
+
+					// First compare all points
+					if (players[i].roundscore > player->roundscore)
 					{
-						// Bumpers are the second tier tie breaker
-						if (players[i].bumpers > player->bumpers)
+						position++;
+					}
+					else if (players[i].roundscore == player->roundscore)
+					{
+						// Emeralds are a tie breaker
+						if (yourEmeralds > myEmeralds)
 						{
 							position++;
+						}
+						else if (yourEmeralds == myEmeralds)
+						{
+							// Bumpers are the second tier tie breaker
+							if (players[i].bumpers > player->bumpers)
+							{
+								position++;
+							}
 						}
 					}
 				}

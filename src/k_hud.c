@@ -37,6 +37,8 @@
 #include "r_fps.h"
 #include "m_random.h"
 #include "k_roulette.h"
+#include "k_bot.h"
+#include "k_rank.h"
 
 //{ 	Patch Definitions
 static patch_t *kp_nodraw;
@@ -4796,6 +4798,58 @@ static void K_DrawWaypointDebugger(void)
 	}
 }
 
+static void K_DrawGPRankDebugger(void)
+{
+	gp_rank_e grade = GRADE_E;
+	char gradeChar = '?';
+
+	if (cv_debugrank.value == 0)
+	{
+		return;
+	}
+
+	if (stplyr != &players[displayplayers[0]]) // only for p1
+	{
+		return;
+	}
+
+	if (grandprixinfo.gp == false)
+	{
+		return;
+	}
+
+	grade = K_CalculateGPGrade(&grandprixinfo.rank);
+
+	V_DrawThinString(0, 0, V_SNAPTOTOP|V_SNAPTOLEFT|V_6WIDTHSPACE|V_ALLOWLOWERCASE,
+		va("POS: %d / %d", grandprixinfo.rank.position, RANK_NEUTRAL_POSITION));
+	V_DrawThinString(0, 10, V_SNAPTOTOP|V_SNAPTOLEFT|V_6WIDTHSPACE|V_ALLOWLOWERCASE,
+		va("PTS: %d / %d", grandprixinfo.rank.winPoints, grandprixinfo.rank.totalPoints));
+	V_DrawThinString(0, 20, V_SNAPTOTOP|V_SNAPTOLEFT|V_6WIDTHSPACE|V_ALLOWLOWERCASE,
+		va("LAPS: %d / %d", grandprixinfo.rank.laps, grandprixinfo.rank.totalLaps));
+	V_DrawThinString(0, 30, V_SNAPTOTOP|V_SNAPTOLEFT|V_6WIDTHSPACE|V_ALLOWLOWERCASE,
+		va("CONTINUES: %d", grandprixinfo.rank.continuesUsed));
+	V_DrawThinString(0, 40, V_SNAPTOTOP|V_SNAPTOLEFT|V_6WIDTHSPACE|V_ALLOWLOWERCASE,
+		va("CAPSULES: %d / %d", grandprixinfo.rank.capsules, grandprixinfo.rank.totalCapsules));
+	V_DrawThinString(0, 50, V_SNAPTOTOP|V_SNAPTOLEFT|V_6WIDTHSPACE|V_ALLOWLOWERCASE,
+		va("RINGS: %d / %d", grandprixinfo.rank.rings, grandprixinfo.rank.totalRings));
+	V_DrawThinString(0, 60, V_SNAPTOTOP|V_SNAPTOLEFT|V_6WIDTHSPACE|V_ALLOWLOWERCASE,
+		va("EMERALD: %s", (grandprixinfo.rank.specialWon == true) ? "YES" : "NO"));
+
+	switch (grade)
+	{
+		case GRADE_E: { gradeChar = 'E'; break; }
+		case GRADE_D: { gradeChar = 'D'; break; }
+		case GRADE_C: { gradeChar = 'C'; break; }
+		case GRADE_B: { gradeChar = 'B'; break; }
+		case GRADE_A: { gradeChar = 'A'; break; }
+		case GRADE_S: { gradeChar = 'S'; break; }
+		default: { break; }
+	}
+
+	V_DrawThinString(0, 80, V_SNAPTOTOP|V_SNAPTOLEFT|V_6WIDTHSPACE|V_ALLOWLOWERCASE|V_YELLOWMAP,
+		va(" ** FINAL GRADE: %c", gradeChar));
+}
+
 void K_drawKartHUD(void)
 {
 	boolean islonesome = false;
@@ -5067,4 +5121,5 @@ void K_drawKartHUD(void)
 
 	K_DrawWaypointDebugger();
 	K_DrawDirectorDebugger();
+	K_DrawGPRankDebugger();
 }

@@ -2000,6 +2000,40 @@ static void K_HandleLapIncrement(player_t *player)
 				}
 			}
 
+			if (player->laps > player->latestlap)
+			{
+				if (player->laps > 1)
+				{
+					// save best lap for record attack
+					if (modeattacking && player == &players[consoleplayer])
+					{
+						if (curlap < bestlap || bestlap == 0)
+						{
+							bestlap = curlap;
+						}
+
+						curlap = 0;
+					}
+
+					// Update power levels for this lap.
+					K_UpdatePowerLevels(player, player->laps, false);
+
+					if (nump > 1 && K_IsPlayerLosing(player) == false)
+					{
+						if (nump > 2 && player->position == 1) // 1st place in 1v1 uses thumbs up
+						{
+							player->lapPoints += 2;
+						}
+						else
+						{
+							player->lapPoints++;
+						}
+					}
+				}
+
+				player->latestlap = player->laps;
+			}
+
 			// finished race exit setup
 			if (player->laps > numlaps)
 			{
@@ -2027,32 +2061,8 @@ static void K_HandleLapIncrement(player_t *player)
 					SetRandomFakePlayerSkin(player, true);
 				}
 			}
-				
-
-			if (player->laps > player->latestlap)
-			{
-				if (player->laps > 1)
-				{
-					// save best lap for record attack
-					if (modeattacking && player == &players[consoleplayer])
-					{
-						if (curlap < bestlap || bestlap == 0)
-						{
-							bestlap = curlap;
-						}
-
-						curlap = 0;
-					}
-
-					// Update power levels for this lap.
-					K_UpdatePowerLevels(player, player->laps, false);
-				}
-
-				player->latestlap = player->laps;
-			}
 
 			thwompsactive = true; // Lap 2 effects
-
 			lowestLap = P_FindLowestLap();
 
 			for (i = 0; i < numlines; i++)

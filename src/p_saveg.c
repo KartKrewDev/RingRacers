@@ -178,6 +178,7 @@ static void P_NetArchivePlayers(savebuffer_t *save)
 		WRITEUINT32(save->p, players[i].realtime);
 		WRITEUINT8(save->p, players[i].laps);
 		WRITEUINT8(save->p, players[i].latestlap);
+		WRITEUINT32(save->p, players[i].lapPoints);
 		WRITEINT32(save->p, players[i].starpostnum);
 
 		WRITEUINT8(save->p, players[i].ctfteam);
@@ -567,6 +568,7 @@ static void P_NetUnArchivePlayers(savebuffer_t *save)
 		players[i].realtime = READUINT32(save->p); // integer replacement for leveltime
 		players[i].laps = READUINT8(save->p); // Number of laps (optional)
 		players[i].latestlap = READUINT8(save->p);
+		players[i].lapPoints = READUINT32(save->p);
 		players[i].starpostnum = READINT32(save->p);
 
 		players[i].ctfteam = READUINT8(save->p); // 1 == Red, 2 == Blue
