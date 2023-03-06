@@ -3051,7 +3051,7 @@ static void K_GetKartBoostPower(player_t *player)
 	speedboost += FixedDiv(s, FRACUNIT + (metabolism * (numboosts-1))); \
 	accelboost += FixedDiv(a, FRACUNIT + (metabolism * (numboosts-1))); \
 	if (player->aizdriftstrat) \
-		handleboost += FixedDiv(3*h/2, FRACUNIT + (metabolism * (numboosts-1))/4); \
+		handleboost += FixedDiv((3*h)/2, FRACUNIT + (metabolism * (numboosts-1))/4); \
 	else \
 		handleboost = max(h, handleboost); \
 }
