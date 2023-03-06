@@ -213,7 +213,7 @@ quickcheckagain:
 		}
 
 #if (CHALLENGEGRIDHEIGHT == 4)
-		if (nummajorunlocks == 1)
+		while (nummajorunlocks > 0)
 		{
 			UINT8 unlocktomoveup = MAXUNLOCKABLES;
 
@@ -229,11 +229,7 @@ quickcheckagain:
 
 			if (i == j)
 			{
-				UINT16 widthtoprint = gamedata->challengegridwidth;
-				Z_Free(gamedata->challengegrid);
-				gamedata->challengegrid = NULL;
-
-				I_Error("M_PopulateChallengeGrid: was not able to populate one large tile even after trying again (width %d)", widthtoprint);
+				break;
 			}
 
 			unlocktomoveup = gamedata->challengegrid[1 + (i*CHALLENGEGRIDHEIGHT)];
@@ -248,17 +244,17 @@ quickcheckagain:
 				j = i + 1;
 			}
 
+			nummajorunlocks--;
+
 			// Push one pair up.
 			gamedata->challengegrid[(i*CHALLENGEGRIDHEIGHT)] = gamedata->challengegrid[(j*CHALLENGEGRIDHEIGHT)] = unlocktomoveup;
 			// Wedge the remaining four underneath.
-			gamedata->challengegrid[2 + (i*CHALLENGEGRIDHEIGHT)] = gamedata->challengegrid[2 + (j*CHALLENGEGRIDHEIGHT)] = selection[1][0];
-			gamedata->challengegrid[3 + (i*CHALLENGEGRIDHEIGHT)] = gamedata->challengegrid[3 + (j*CHALLENGEGRIDHEIGHT)] = selection[1][0];
-
-			nummajorunlocks = 0;
+			gamedata->challengegrid[2 + (i*CHALLENGEGRIDHEIGHT)] = gamedata->challengegrid[2 + (j*CHALLENGEGRIDHEIGHT)] = selection[1][nummajorunlocks];
+			gamedata->challengegrid[3 + (i*CHALLENGEGRIDHEIGHT)] = gamedata->challengegrid[3 + (j*CHALLENGEGRIDHEIGHT)] = selection[1][nummajorunlocks];
 		}
-		else
 #endif
-			if (nummajorunlocks > 0)
+
+		if (nummajorunlocks > 0)
 		{
 			UINT16 widthtoprint = gamedata->challengegridwidth;
 			Z_Free(gamedata->challengegrid);
