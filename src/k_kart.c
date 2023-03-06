@@ -4059,7 +4059,7 @@ void K_UpdateSliptideZipIndicator(player_t *player)
 	mobj->renderflags &= ~RF_TRANSMASK;
 	mobj->renderflags |= RF_PAPERSPRITE;
 
-	if (!K_Sliptiding(player) && player->drift == 0)
+	if (!K_Sliptiding(player) && player->drift == 0 && P_IsObjectOnGround(player->mo))
 	{
 		// Decay timer's ticking
 		mobj->rollangle += 3*ANG30/4;
@@ -9329,10 +9329,10 @@ static void K_KartDrift(player_t *player, boolean onground)
 
 	if (!K_Sliptiding(player))
 	{
-		if (player->sliptideZip > 0 && player->drift == 0)
+		if (player->sliptideZip > 0 && player->drift == 0 && P_IsObjectOnGround(player->mo))
 		{
 			player->sliptideZipDelay++;
-			if (player->sliptideZipDelay > TICRATE && player->drift == 0)
+			if (player->sliptideZipDelay > TICRATE)
 			{
 				S_StartSound(player->mo, sfx_s3kb6);
 				player->sliptideZipBoost += player->sliptideZip;
