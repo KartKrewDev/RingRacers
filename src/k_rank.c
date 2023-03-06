@@ -336,6 +336,7 @@ void K_InitGrandPrixRank(gpRank_t *rankData)
 			}
 
 			rankData->totalCapsules += RankCapsules_CountFromMap(virt);
+			vres_Free(virt);
 		}
 	}
 }
