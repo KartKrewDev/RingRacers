@@ -67,6 +67,7 @@ typedef enum
 	SKYBOXCENTER = 0x10,
 	HOVERHYUDORO = 0x20,
 	STUMBLE = 0x40,
+	SLIPTIDEZIP = 0x80
 } player_saveflags;
 
 static inline void P_ArchivePlayer(savebuffer_t *save)
@@ -218,6 +219,9 @@ static void P_NetArchivePlayers(savebuffer_t *save)
 		if (players[i].stumbleIndicator)
 			flags |= STUMBLE;
 
+		if (players[i].sliptideZipIndicator)
+			flags |= SLIPTIDEZIP;
+
 		WRITEUINT16(save->p, flags);
 
 		if (flags & SKYBOXVIEW)
@@ -237,6 +241,9 @@ static void P_NetArchivePlayers(savebuffer_t *save)
 
 		if (flags & STUMBLE)
 			WRITEUINT32(save->p, players[i].stumbleIndicator->mobjnum);
+
+		if (flags & SLIPTIDEZIP)
+			WRITEUINT32(save->p, players[i].sliptideZipIndicator->mobjnum);
 
 		WRITEUINT32(save->p, (UINT32)players[i].followitem);
 
@@ -610,6 +617,9 @@ static void P_NetUnArchivePlayers(savebuffer_t *save)
 
 		if (flags & STUMBLE)
 			players[i].stumbleIndicator = (mobj_t *)(size_t)READUINT32(save->p);
+
+		if (flags & SLIPTIDEZIP)
+			players[i].sliptideZipIndicator = (mobj_t *)(size_t)READUINT32(save->p);
 
 		players[i].followitem = (mobjtype_t)READUINT32(save->p);
 
@@ -4753,6 +4763,13 @@ static void P_RelinkPointers(void)
 			players[i].stumbleIndicator = NULL;
 			if (!P_SetTarget(&players[i].stumbleIndicator, P_FindNewPosition(temp)))
 				CONS_Debug(DBG_GAMELOGIC, "stumbleIndicator not found on player %d\n", i);
+		}
+		if (players[i].sliptideZipIndicator)
+		{
+			temp = (UINT32)(size_t)players[i].sliptideZipIndicator;
+			players[i].sliptideZipIndicator = NULL;
+			if (!P_SetTarget(&players[i].sliptideZipIndicator, P_FindNewPosition(temp)))
+				CONS_Debug(DBG_GAMELOGIC, "sliptideZipIndicator not found on player %d\n", i);
 		}
 	}
 }
