@@ -727,8 +727,6 @@ void M_UpdateMenuCMD(UINT8 i)
 
 void M_MapMenuControls(event_t *ev)
 {
-	INT32 i;
-
 	if (ev)
 	{
 		// update keys current state
