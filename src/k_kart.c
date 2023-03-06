@@ -8498,59 +8498,6 @@ static waypoint_t *K_GetPlayerNextWaypoint(player_t *player)
 	return bestwaypoint;
 }
 
-static void K_UpdatePodiumWaypoint(player_t *const player, waypoint_t *const waypoint)
-{
-	// Set the new waypoint.
-	player->currentwaypoint = waypoint;
-
-	if ((waypoint == NULL)
-		|| (waypoint->nextwaypoints == NULL)
-		|| (waypoint->numnextwaypoints == 0U))
-	{
-		// No waypoint, or no next waypoint.
-		player->nextwaypoint = NULL;
-		return;
-	}
-
-	// Simply use the first available next waypoint.
-	// No need for split paths in these cutscenes.
-	player->nextwaypoint = waypoint->nextwaypoints[0];
-}
-
-static void K_UpdatePodiumWaypoints(player_t *const player)
-{
-	if ((player != NULL) && (player->mo != NULL))
-	{
-		if ((player->currentwaypoint == NULL)
-			&& (player->position > 0 && player->position <= MAXPLAYERS)
-			&& (leveltime <= introtime || player->jointime <= 1))
-		{
-			// Initialize our first waypoint to the one that
-			// matches our position.
-			K_UpdatePodiumWaypoint(player, K_GetWaypointFromID(player->position));
-		}
-
-		if (player->currentwaypoint != NULL)
-		{
-			const fixed_t xydist = P_AproxDistance(
-				player->mo->x - player->currentwaypoint->mobj->x,
-				player->mo->y - player->currentwaypoint->mobj->y
-			);
-			const fixed_t xyzdist = P_AproxDistance(
-				xydist,
-				player->mo->z - player->currentwaypoint->mobj->z
-			);
-			//const fixed_t speed = P_AproxDistance(player->mo->momx, player->mo->momy);
-
-			if (xyzdist <= player->mo->radius + player->currentwaypoint->mobj->radius)
-			{
-				// Reached waypoint, go to the next waypoint.
-				K_UpdatePodiumWaypoint(player, player->nextwaypoint);
-			}
-		}
-	}
-}
-
 /*--------------------------------------------------
 	void K_UpdateDistanceFromFinishLine(player_t *const player)
 

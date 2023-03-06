@@ -2140,10 +2140,20 @@ void G_Ticker(boolean run)
 	// do player reborns if needed
 	if (G_GamestateUsesLevel() == true)
 	{
+		boolean changed = false;
+
 		for (i = 0; i < MAXPLAYERS; i++)
 		{
 			if (playeringame[i] && players[i].playerstate == PST_REBORN)
+			{
 				G_DoReborn(i);
+				changed = true;
+			}
+		}
+
+		if (changed == true)
+		{
+			K_UpdateAllPlayerPositions();
 		}
 	}
 
@@ -2937,40 +2947,8 @@ mapthing_t *G_FindPodiumStart(INT32 playernum)
 
 	if (numcoopstarts)
 	{
+		UINT8 pos = K_GetPodiumPosition(&players[playernum]) - 1;
 		UINT8 i;
-		UINT8 pos = 0;
-
-		for (i = 0; i < MAXPLAYERS; i++)
-		{
-			if (!playeringame[i])
-			{
-				continue;
-			}
-
-			if (i == playernum)
-			{
-				continue;
-			}
-
-			if (players[i].score > players[playernum].score)
-			{
-				// Final score is the important part.
-				pos++;
-			}
-			else if (players[i].score == players[playernum].score)
-			{
-				if (players[i].bot == false && players[playernum].bot == true)
-				{
-					// Bots are never as important as players.
-					pos++;
-				}
-				else if (i < playernum)
-				{
-					// Port priority is the final tie breaker.
-					pos++;
-				}
-			}
-		}
 
 		if (G_CheckSpot(playernum, playerstarts[pos % numcoopstarts]))
 		{
@@ -2980,8 +2958,10 @@ mapthing_t *G_FindPodiumStart(INT32 playernum)
 		// Your spot isn't available? Find whatever you can get first.
 		for (i = 0; i < numcoopstarts; i++)
 		{
-			if (G_CheckSpot(playernum, playerstarts[i]))
-				return playerstarts[i];
+			if (G_CheckSpot(playernum, playerstarts[(pos + i) % numcoopstarts]))
+			{
+				return playerstarts[(pos + i) % numcoopstarts];
+			}
 		}
 
 		if (doprints)

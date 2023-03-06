@@ -11954,7 +11954,10 @@ void P_AfterPlayerSpawn(INT32 playernum)
 	if (CheckForReverseGravity)
 		P_CheckGravity(mobj, false);
 
-	K_UpdateAllPlayerPositions();
+	if (K_PodiumSequence() == true)
+	{
+		K_InitializePodiumWaypoint(p);
+	}
 }
 
 // spawn it at a playerspawn mapthing

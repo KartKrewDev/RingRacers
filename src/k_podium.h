@@ -38,6 +38,56 @@ boolean K_PodiumSequence(void);
 
 
 /*--------------------------------------------------
+	UINT8 K_GetPodiumPosition(player_t *player);
+
+		Calculates what the player's position would
+		be at the final standings.
+
+	Input Arguments:-
+		player - The player to do the calculation for.
+
+	Return:-
+		The player's final position, as a number
+		between 1 and MAXPLAYERS.
+--------------------------------------------------*/
+
+UINT8 K_GetPodiumPosition(player_t *player);
+
+
+/*--------------------------------------------------
+	void K_InitializePodiumWaypoint(player_t *const player);
+
+		Sets a bot's current waypoint to one matching
+		their final podium position.
+
+	Input Arguments:-
+		player - The podium bot to update.
+
+	Return:-
+		N/A
+--------------------------------------------------*/
+
+void K_InitializePodiumWaypoint(player_t *const player);
+
+
+/*--------------------------------------------------
+	void K_UpdatePodiumWaypoints(player_t *const player);
+
+		Helps a bot move along a predetermined path by
+		updating their current and next waypoints as
+		they move. Intended for the podium sequence.
+
+	Input Arguments:-
+		player - The podium bot to update.
+
+	Return:-
+		N/A
+--------------------------------------------------*/
+
+void K_UpdatePodiumWaypoints(player_t *const player);
+
+
+/*--------------------------------------------------
 	boolean K_StartCeremony(void);
 
 		Loads the podium map and changes the gamestate

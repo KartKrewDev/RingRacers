@@ -63,6 +63,140 @@ boolean K_PodiumSequence(void)
 }
 
 /*--------------------------------------------------
+	UINT8 K_GetPodiumPosition(player_t *player)
+
+		See header file for description.
+--------------------------------------------------*/
+UINT8 K_GetPodiumPosition(player_t *player)
+{
+	UINT8 position = 1;
+	INT32 i;
+
+	for (i = 0; i < MAXPLAYERS; i++)
+	{
+		player_t *other = NULL;
+		if (playeringame[i] == false)
+		{
+			continue;
+		}
+
+		other = &players[i];
+		if (other->spectator == true)
+		{
+			continue;
+		}
+
+		if (other->score > player->score)
+		{
+			// Final score is the important part.
+			position++;
+		}
+		else if (other->score == player->score)
+		{
+			if (other->bot == false && player->bot == true)
+			{
+				// Bots are never as important as players.
+				position++;
+			}
+			else if (i < player - players)
+			{
+				// Port priority is the final tie breaker.
+				position++;
+			}
+		}
+	}
+
+	return position;
+}
+
+/*--------------------------------------------------
+	static void K_SetPodiumWaypoint(player_t *const player, waypoint_t *const waypoint)
+
+		Changes the player's current and next waypoints, for
+		use during the podium sequence.
+
+	Input Arguments:-
+		player - The player to update the waypoints of.
+		waypoint - The new current waypoint.
+
+	Return:-
+		None
+--------------------------------------------------*/
+static void K_SetPodiumWaypoint(player_t *const player, waypoint_t *const waypoint)
+{
+	// Set the new waypoint.
+	player->currentwaypoint = waypoint;
+
+	if ((waypoint == NULL)
+		|| (waypoint->nextwaypoints == NULL)
+		|| (waypoint->numnextwaypoints == 0U))
+	{
+		// No waypoint, or no next waypoint.
+		player->nextwaypoint = NULL;
+		return;
+	}
+
+	// Simply use the first available next waypoint.
+	// No need for split paths in these cutscenes.
+	player->nextwaypoint = waypoint->nextwaypoints[0];
+}
+
+/*--------------------------------------------------
+	void K_InitializePodiumWaypoint(player_t *const player)
+
+		See header file for description.
+--------------------------------------------------*/
+void K_InitializePodiumWaypoint(player_t *const player)
+{
+	if ((player != NULL) && (player->mo != NULL))
+	{
+		player->position = K_GetPodiumPosition(player);
+
+		if (player->position > 0 && player->position <= MAXPLAYERS)
+		{
+			// Initialize our first waypoint to the one that
+			// matches our position.
+			K_SetPodiumWaypoint(player, K_GetWaypointFromID(player->position));
+		}
+		else
+		{
+			// None does, so remove it if we happen to have one.
+			K_SetPodiumWaypoint(player, NULL);
+		}
+	}
+}
+
+/*--------------------------------------------------
+	void K_UpdatePodiumWaypoints(player_t *const player)
+
+		See header file for description.
+--------------------------------------------------*/
+void K_UpdatePodiumWaypoints(player_t *const player)
+{
+	if ((player != NULL) && (player->mo != NULL))
+	{
+		if (player->currentwaypoint != NULL)
+		{
+			const fixed_t xydist = P_AproxDistance(
+				player->mo->x - player->currentwaypoint->mobj->x,
+				player->mo->y - player->currentwaypoint->mobj->y
+			);
+			const fixed_t xyzdist = P_AproxDistance(
+				xydist,
+				player->mo->z - player->currentwaypoint->mobj->z
+			);
+			//const fixed_t speed = P_AproxDistance(player->mo->momx, player->mo->momy);
+
+			if (xyzdist <= player->mo->radius + player->currentwaypoint->mobj->radius)
+			{
+				// Reached waypoint, go to the next waypoint.
+				K_SetPodiumWaypoint(player, player->nextwaypoint);
+			}
+		}
+	}
+}
+
+/*--------------------------------------------------
 	boolean K_StartCeremony(void)
 
 		See header file for description.
