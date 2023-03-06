@@ -586,7 +586,7 @@ static void K_DebugWaypointDrawRadius(waypoint_t *const waypoint)
 	radiusOrb->tics = 1;
 
 	radiusOrb->frame &= ~FF_TRANSMASK;
-	radiusOrb->frame |= FF_FULLBRIGHT;
+	radiusOrb->frame |= FF_FULLBRIGHT|FF_REVERSESUBTRACT;
 	radiusOrb->color = SKINCOLOR_PURPLE;
 	radiusOrb->renderflags |= RF_ALWAYSONTOP;
 
