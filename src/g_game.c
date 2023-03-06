@@ -4117,6 +4117,7 @@ static void G_DoCompleted(void)
 	G_SetGamestate(GS_NULL);
 	wipegamestate = GS_NULL;
 
+	grandprixinfo.rank.capsules += numtargets;
 	grandprixinfo.rank.position = MAXPLAYERS;
 
 	for (i = 0; i < MAXPLAYERS; i++)

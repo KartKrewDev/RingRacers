@@ -1376,8 +1376,6 @@ void P_DoPlayerExit(player_t *player)
 				{
 					grandprixinfo.rank.specialWon = true;
 				}
-
-				grandprixinfo.rank.capsules += numtargets;
 			}
 		}
 	}
