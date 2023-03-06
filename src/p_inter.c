@@ -2146,6 +2146,9 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 			const boolean hardhit = (type == DMG_EXPLODE || type == DMG_KARMA || type == DMG_TUMBLE); // This damage type can do evil stuff like ALWAYS combo
 			INT16 ringburst = 5;
 
+			// Do not die from damage outside of bumpers health system
+			damage = 0;
+
 			// Check if the player is allowed to be damaged!
 			// If not, then spawn the instashield effect instead.
 			if (!force)
@@ -2275,12 +2278,12 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 					K_TryHurtSoundExchange(target, source);
 
 					K_BattleAwardHit(source->player, player, inflictor, takeBumpers);
-					K_TakeBumpersFromPlayer(source->player, player, takeBumpers);
+					damage = K_TakeBumpersFromPlayer(source->player, player, takeBumpers);
 
 					if (type == DMG_KARMA)
 					{
 						// Destroy any remainder bumpers from the player for karma comeback damage
-						K_DestroyBumpers(player, player->bumpers);
+						damage = K_DestroyBumpers(player, player->bumpers);
 					}
 					else
 					{
@@ -2303,7 +2306,7 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 				}
 				else
 				{
-					K_DestroyBumpers(player, takeBumpers);
+					damage = K_DestroyBumpers(player, takeBumpers);
 				}
 
 				if (!(damagetype & DMG_STEAL))
@@ -2389,15 +2392,12 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 			if (type != DMG_STUMBLE)
 			{
 				player->instashield = 15;
-				K_SetHitLagForObjects(target, inflictor, laglength, true);
 			}
 
 			if (inflictor && !P_MobjWasRemoved(inflictor) && inflictor->type == MT_BANANA)
 			{
 				player->flipDI = true;
 			}
-
-			return true;
 		}
 	}
 	else
@@ -2433,16 +2433,16 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 
 	//K_SetHitLagForObjects(target, inflictor, laglength, true);
 
-	if (player)
-		P_ResetPlayer(target->player);
-	else
+	if (!player)
+	{
 		P_SetMobjState(target, target->info->painstate);
 
-	if (!P_MobjWasRemoved(target))
-	{
-		// if not intent on another player,
-		// chase after this one
-		P_SetTarget(&target->target, source);
+		if (!P_MobjWasRemoved(target))
+		{
+			// if not intent on another player,
+			// chase after this one
+			P_SetTarget(&target->target, source);
+		}
 	}
 
 	return true;

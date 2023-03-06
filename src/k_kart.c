@@ -4188,35 +4188,35 @@ void K_HandleBumperChanges(player_t *player, UINT8 prevBumpers)
 		{
 			player->pflags |= (PF_NOCONTEST|PF_ELIMINATED);
 		}
-
-		P_KillMobj(player->mo, NULL, NULL, DMG_NORMAL);
 	}
 
 	K_CalculateBattleWanted();
 	K_CheckBumpers();
 }
 
-void K_DestroyBumpers(player_t *player, UINT8 amount)
+UINT8 K_DestroyBumpers(player_t *player, UINT8 amount)
 {
 	UINT8 oldBumpers = player->bumpers;
 
 	if (!(gametyperules & GTR_BUMPERS))
 	{
-		return;
+		return 0;
 	}
 
 	amount = min(amount, player->bumpers);
 
 	if (amount == 0)
 	{
-		return;
+		return 0;
 	}
 
 	player->bumpers -= amount;
 	K_HandleBumperChanges(player, oldBumpers);
+
+	return amount;
 }
 
-void K_TakeBumpersFromPlayer(player_t *player, player_t *victim, UINT8 amount)
+UINT8 K_TakeBumpersFromPlayer(player_t *player, player_t *victim, UINT8 amount)
 {
 	UINT8 oldPlayerBumpers = player->bumpers;
 	UINT8 oldVictimBumpers = victim->bumpers;
@@ -4225,14 +4225,14 @@ void K_TakeBumpersFromPlayer(player_t *player, player_t *victim, UINT8 amount)
 
 	if (!(gametyperules & GTR_BUMPERS))
 	{
-		return;
+		return 0;
 	}
 
 	amount = min(amount, victim->bumpers);
 
 	if (amount == 0)
 	{
-		return;
+		return 0;
 	}
 
 	while ((tookBumpers < amount) && (victim->bumpers > 0))
@@ -4287,7 +4287,7 @@ void K_TakeBumpersFromPlayer(player_t *player, player_t *victim, UINT8 amount)
 	if (tookBumpers == 0)
 	{
 		// No change occured.
-		return;
+		return 0;
 	}
 
 	// Play steal sound
@@ -4295,6 +4295,8 @@ void K_TakeBumpersFromPlayer(player_t *player, player_t *victim, UINT8 amount)
 
 	K_HandleBumperChanges(player, oldPlayerBumpers);
 	K_HandleBumperChanges(victim, oldVictimBumpers);
+
+	return tookBumpers;
 }
 
 #define MINEQUAKEDIST 4096
