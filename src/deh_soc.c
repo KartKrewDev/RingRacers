@@ -2336,7 +2336,7 @@ void readunlockable(MYFILE *f, INT32 num)
 static void readcondition(UINT8 set, UINT32 id, char *word2)
 {
 	INT32 i;
-	char *params[4]; // condition, requirement, extra info, extra info
+	char *params[5]; // condition, requirement, extra info, extra info, stringvar
 	char *spos;
 	char *stringvar = NULL;
 
@@ -2348,7 +2348,7 @@ static void readcondition(UINT8 set, UINT32 id, char *word2)
 
 	spos = strtok(word2, " ");
 
-	for (i = 0; i < 4; ++i)
+	for (i = 0; i < 5; ++i)
 	{
 		if (spos != NULL)
 		{
