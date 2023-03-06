@@ -49,6 +49,11 @@ void R_CheckDebugHighlight(debugrender_highlight_t k)
 
 INT32 R_AdjustLightLevel(INT32 light)
 {
+	if (!debugrender_highlight && cv_debugrender_contrast.value == 0)
+	{
+		return light;
+	}
+
 	constexpr fixed_t kRange = (LIGHTLEVELS - 1) * FRACUNIT;
 	const fixed_t adjust = FixedMul(cv_debugrender_contrast.value, kRange);
 
