@@ -99,6 +99,7 @@ angle_t K_StumbleSlope(angle_t angle, angle_t pitch, angle_t roll);
 void K_StumblePlayer(player_t *player);
 boolean K_CheckStumble(player_t *player, angle_t oldPitch, angle_t oldRoll, boolean fromAir);
 void K_InitStumbleIndicator(player_t *player);
+void K_InitSliptideZipIndicator(player_t *player);
 void K_UpdateStumbleIndicator(player_t *player);
 INT32 K_ExplodePlayer(player_t *player, mobj_t *inflictor, mobj_t *source);
 void K_DebtStingPlayer(player_t *player, mobj_t *source);

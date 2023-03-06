@@ -3883,6 +3883,31 @@ void K_InitStumbleIndicator(player_t *player)
 	P_SetTarget(&new->target, player->mo);
 }
 
+void K_InitSliptideZipIndicator(player_t *player)
+{
+	mobj_t *new = NULL;
+
+	if (player == NULL)
+	{
+		return;
+	}
+
+	if (player->mo == NULL || P_MobjWasRemoved(player->mo) == true)
+	{
+		return;
+	}
+
+	if (player->stumbleIndicator != NULL && P_MobjWasRemoved(player->sliptideZipIndicator) == false)
+	{
+		P_RemoveMobj(player->sliptideZipIndicator);
+	}
+
+	new = P_SpawnMobjFromMobj(player->mo, 0, 0, 0, MT_SLIPTIDEZIP);
+
+	P_SetTarget(&player->sliptideZipIndicator, new);
+	P_SetTarget(&new->target, player->mo);
+}
+
 void K_UpdateStumbleIndicator(player_t *player)
 {
 	const angle_t fudge = ANG15;
@@ -3982,6 +4007,71 @@ void K_UpdateStumbleIndicator(player_t *player)
 		{
 			mobj->renderflags |= (trans << RF_TRANSSHIFT);
 		}
+	}
+}
+
+void K_UpdateSliptideZipIndicator(player_t *player)
+{
+	mobj_t *mobj = NULL;
+
+	if (player == NULL)
+	{
+		return;
+	}
+
+	if (player->mo == NULL || P_MobjWasRemoved(player->mo) == true)
+	{
+		return;
+	}
+
+	if (player->stumbleIndicator == NULL || P_MobjWasRemoved(player->stumbleIndicator) == true)
+	{
+		K_InitSliptideZipIndicator(player);
+		return;
+	}
+
+	mobj = player->sliptideZipIndicator;
+	angle_t momentumAngle = R_PointToAngle2(0, 0, player->mo->momx, player->mo->momy);
+
+	P_MoveOrigin(mobj, player->mo->x - FixedMul(40*mapobjectscale, FINECOSINE(momentumAngle >> ANGLETOFINESHIFT)),
+		player->mo->y - FixedMul(40*mapobjectscale, FINESINE(momentumAngle >> ANGLETOFINESHIFT)),
+		player->mo->z + (player->mo->height / 2));
+	mobj->angle = momentumAngle + ANGLE_90;
+	P_SetScale(mobj, 3 * player->mo->scale / 2);
+
+	mobj->renderflags &= ~RF_DONTDRAW;
+
+	// No stored boost
+	if (player->sliptideZip == 0)
+	{
+		mobj->renderflags |= RF_DONTDRAW;
+		mobj->frame = 7;
+		return;
+	}
+
+	UINT32 chargeFrame = 7 - min(7, player->sliptideZip / 10);
+	UINT32 decayFrame = min(7, player->sliptideZipDelay / 5);
+	if (max(chargeFrame, decayFrame) > mobj->frame)
+		mobj->frame++;
+	else if (max(chargeFrame, decayFrame) < mobj->frame)
+		mobj->frame--;
+
+	CONS_Printf("%d/%d\n", chargeFrame, decayFrame);
+
+	mobj->renderflags &= ~RF_TRANSMASK;
+	mobj->renderflags |= RF_PAPERSPRITE;
+
+	if (!K_Sliptiding(player) && player->drift == 0)
+	{
+		// Decay timer's ticking
+		mobj->rollangle += 3*ANG30/4;
+		if (leveltime % 2 == 0)
+			mobj->renderflags |= RF_TRANS50;
+	}
+	else 
+	{
+		// Storing boost
+		mobj->rollangle += 3*ANG15/4;
 	}
 }
 
@@ -8129,6 +8219,8 @@ void K_KartPlayerAfterThink(player_t *player)
 
 	K_UpdateStumbleIndicator(player);
 
+	K_UpdateSliptideZipIndicator(player);
+
 	// Move held objects (Bananas, Orbinaut, etc)
 	K_MoveHeldObjects(player);
 
@@ -9239,13 +9331,14 @@ static void K_KartDrift(player_t *player, boolean onground)
 
 	if (!K_Sliptiding(player))
 	{
-		if (player->sliptideZip > 0)
+		if (player->sliptideZip > 0 && player->drift == 0)
 		{
 			player->sliptideZipDelay++;
 			if (player->sliptideZipDelay > TICRATE && player->drift == 0)
 			{
 				S_StartSound(player->mo, sfx_s3kb6);
 				player->sliptideZipBoost += player->sliptideZip;
+				K_SpawnDriftBoostExplosion(player, 0);
 				player->sliptideZip = 0;
 				player->sliptideZipDelay = 0;
 			}
@@ -9703,6 +9796,9 @@ static void K_KartSpindashWind(mobj_t *parent)
 
 	P_SetTarget(&wind->target, parent);
 
+	if (parent->player && parent->player->sliptideZipBoost)
+		P_SetScale(wind, wind->scale * 2);
+
 	if (parent->momx || parent->momy)
 		wind->angle = R_PointToAngle2(0, 0, parent->momx, parent->momy);
 	else
@@ -9774,6 +9870,11 @@ static void K_KartSpindash(player_t *player)
 
 
 	if ((player->spindashboost > 0) && (spawnWind == true))
+	{
+		K_KartSpindashWind(player->mo);
+	}
+
+	if ((player->sliptideZipBoost > 0) && (spawnWind == true))
 	{
 		K_KartSpindashWind(player->mo);
 	}

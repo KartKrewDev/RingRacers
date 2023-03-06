@@ -11794,6 +11794,8 @@ void P_SpawnPlayer(INT32 playernum)
 
 	K_InitStumbleIndicator(p);
 
+	K_InitSliptideZipIndicator(p);
+
 	if (gametyperules & GTR_ITEMARROWS)
 	{
 		mobj_t *overheadarrow = P_SpawnMobj(mobj->x, mobj->y, mobj->z + mobj->height + 16*FRACUNIT, MT_PLAYERARROW);

@@ -2561,6 +2561,7 @@ void CL_ClearPlayer(INT32 playernum)
 		P_SetTarget(&players[playernum].followmobj, NULL);
 		P_SetTarget(&players[playernum].hoverhyudoro, NULL);
 		P_SetTarget(&players[playernum].stumbleIndicator, NULL);
+		P_SetTarget(&players[playernum].sliptideZipIndicator, NULL);
 	}
 
 	// Handle parties.

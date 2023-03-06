@@ -680,6 +680,7 @@ struct player_t
 	UINT16 sliptideZipBoost; // The actual boost granted from sliptideZip.
 
 	mobj_t *stumbleIndicator;
+	mobj_t *sliptideZipIndicator;
 
 #ifdef HWRENDER
 	fixed_t fovadd; // adjust FOV for hw rendering
