@@ -3045,12 +3045,15 @@ static void K_GetKartBoostPower(player_t *player)
 		boostpower = (4*boostpower)/5;
 
 	// Note: Handling will ONLY stack when sliptiding!
+	// > (NB 2023-03-06: This was previously unintentionally applied while drifting as well.)
+	// > (This only affected drifts where you were under the effect of multiple handling boosts.)
+	// > (Revisit if Growvinciblity or sneaker-panels + power items feel too heavy while drifting!)
 	// When you're not, it just uses the best instead of adding together, like the old behavior.
 #define ADDBOOST(s,a,h) { \
 	numboosts++; \
 	speedboost += FixedDiv(s, FRACUNIT + (metabolism * (numboosts-1))); \
 	accelboost += FixedDiv(a, FRACUNIT + (metabolism * (numboosts-1))); \
-	if (player->aizdriftstrat) \
+	if (K_Sliptiding(player)) \
 		handleboost += FixedDiv((3*h)/2, FRACUNIT + (metabolism * (numboosts-1))/4); \
 	else \
 		handleboost = max(h, handleboost); \
@@ -3087,7 +3090,8 @@ static void K_GetKartBoostPower(player_t *player)
 
 	if (player->sliptideZipBoost)
 	{
-		ADDBOOST(FRACUNIT, 4*FRACUNIT, sliptidehandling/2);  // + 100% top speed, + 400% acceleration, +25% handling
+		// NB: This is intentionally under the 25% threshold required to initiate a sliptide
+		ADDBOOST(FRACUNIT, 4*FRACUNIT, 2*sliptidehandling/5);  // + 100% top speed, + 400% acceleration, +20% handling
 	}
 
 	if (player->spindashboost) // Spindash boost
@@ -9296,7 +9300,7 @@ static void K_KartDrift(player_t *player, boolean onground)
 		player->pflags &= ~PF_DRIFTEND;
 	}
 
-	if ((player->handleboost == 0)
+	if ((player->handleboost < FRACUNIT/4)
 	|| (!player->steering)
 	|| (!player->aizdriftstrat)
 	|| (player->steering > 0) != (player->aizdriftstrat > 0))
