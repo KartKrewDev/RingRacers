@@ -1030,6 +1030,8 @@ void R_DrawSinglePlane(visplane_t *pl)
 	if (light < 0)
 		light = 0;
 
+	light = R_AdjustLightLevel(light);
+
 	if (pl->slope)
 	{
 		mapfunc = R_MapTiltedPlane;

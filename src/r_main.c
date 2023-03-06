@@ -1656,4 +1656,8 @@ void R_RegisterEngineStuff(void)
 	CV_RegisterVar(&cv_fpscap);
 
 	CV_RegisterVar(&cv_drawpickups);
+
+	// debugging
+
+	CV_RegisterVar(&cv_debugrender_contrast);
 }
