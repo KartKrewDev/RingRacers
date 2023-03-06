@@ -101,6 +101,7 @@ boolean K_CheckStumble(player_t *player, angle_t oldPitch, angle_t oldRoll, bool
 void K_InitStumbleIndicator(player_t *player);
 void K_InitSliptideZipIndicator(player_t *player);
 void K_UpdateStumbleIndicator(player_t *player);
+void K_UpdateSliptideZipIndicator(player_t *player);
 INT32 K_ExplodePlayer(player_t *player, mobj_t *inflictor, mobj_t *source);
 void K_DebtStingPlayer(player_t *player, mobj_t *source);
 void K_HandleBumperChanges(player_t *player, UINT8 prevBumpers);

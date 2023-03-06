@@ -4056,8 +4056,6 @@ void K_UpdateSliptideZipIndicator(player_t *player)
 	else if (max(chargeFrame, decayFrame) < mobj->frame)
 		mobj->frame--;
 
-	CONS_Printf("%d/%d\n", chargeFrame, decayFrame);
-
 	mobj->renderflags &= ~RF_TRANSMASK;
 	mobj->renderflags |= RF_PAPERSPRITE;
 
