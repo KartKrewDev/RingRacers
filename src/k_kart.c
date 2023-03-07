@@ -374,9 +374,6 @@ boolean K_IsPlayerLosing(player_t *player)
 	if (battlecapsules && numtargets == 0)
 		return true; // Didn't even TRY?
 
-	if (battlecapsules || (gametyperules & GTR_BOSS))
-		return (player->bumpers <= 0); // anything short of DNF is COOL
-
 	if (player->position == 1)
 		return false;
 
@@ -3636,7 +3633,7 @@ void K_DoPowerClash(player_t *t1, player_t *t2) {
 	P_SetScale(clash, 3*clash->destscale/2);
 }
 
-void K_BattleAwardHit(player_t *player, player_t *victim, mobj_t *inflictor, UINT8 bumpersRemoved)
+void K_BattleAwardHit(player_t *player, player_t *victim, mobj_t *inflictor, UINT8 damage)
 {
 	UINT8 points = 1;
 	boolean trapItem = false;
@@ -3674,7 +3671,7 @@ void K_BattleAwardHit(player_t *player, player_t *victim, mobj_t *inflictor, UIN
 		}
 		else if (gametyperules & GTR_BUMPERS)
 		{
-			if ((victim->bumpers > 0) && (victim->bumpers <= bumpersRemoved))
+			if ((victim->mo->health > 0) && (victim->mo->health <= damage))
 			{
 				// +2 points for finishing off a player
 				points = 2;
@@ -4315,65 +4312,22 @@ void K_DebtStingPlayer(player_t *player, mobj_t *source)
 	P_SetPlayerMobjState(player->mo, S_KART_SPINOUT);
 }
 
-void K_HandleBumperChanges(player_t *player, UINT8 prevBumpers)
+void K_TakeBumpersFromPlayer(player_t *player, player_t *victim, UINT8 amount)
 {
-	(void)player;
-	(void)prevBumpers;
-
-	if (!(gametyperules & GTR_BUMPERS))
-	{
-		// Bumpers aren't being used
-		return;
-	}
-
-	K_CalculateBattleWanted();
-	K_CheckBumpers();
-}
-
-UINT8 K_DestroyBumpers(player_t *player, UINT8 amount)
-{
-	UINT8 oldBumpers = player->bumpers;
-
-	if (!(gametyperules & GTR_BUMPERS))
-	{
-		return 0;
-	}
-
-	amount = min(amount, player->bumpers);
-
-	if (amount == 0)
-	{
-		return 0;
-	}
-
-	player->bumpers -= amount;
-	K_HandleBumperChanges(player, oldBumpers);
-
-	return amount;
-}
-
-UINT8 K_TakeBumpersFromPlayer(player_t *player, player_t *victim, UINT8 amount)
-{
-	UINT8 oldPlayerBumpers = player->bumpers;
-	UINT8 oldVictimBumpers = victim->bumpers;
+	const UINT8 oldPlayerBumpers = K_Bumpers(player);
 
 	UINT8 tookBumpers = 0;
 
-	if (!(gametyperules & GTR_BUMPERS))
-	{
-		return 0;
-	}
-
-	amount = min(amount, victim->bumpers);
+	amount = min(amount, K_Bumpers(victim));
 
 	if (amount == 0)
 	{
-		return 0;
+		return;
 	}
 
-	while ((tookBumpers < amount) && (victim->bumpers > 0))
+	while (tookBumpers < amount)
 	{
-		UINT8 newbumper = player->bumpers;
+		const UINT8 newbumper = (oldPlayerBumpers + tookBumpers);
 
 		angle_t newangle, diff;
 		fixed_t newx, newy;
@@ -4415,24 +4369,14 @@ UINT8 K_TakeBumpersFromPlayer(player_t *player, player_t *victim, UINT8 amount)
 			P_SetMobjState(newmo, S_BATTLEBUMPER1);
 		}
 
-		player->bumpers++;
-		victim->bumpers--;
 		tookBumpers++;
 	}
 
-	if (tookBumpers == 0)
-	{
-		// No change occured.
-		return 0;
-	}
+	// :jartcookiedance:
+	player->mo->health += tookBumpers;
 
 	// Play steal sound
 	S_StartSound(player->mo, sfx_3db06);
-
-	K_HandleBumperChanges(player, oldPlayerBumpers);
-	K_HandleBumperChanges(victim, oldVictimBumpers);
-
-	return tookBumpers;
 }
 
 #define MINEQUAKEDIST 4096
@@ -7048,12 +6992,6 @@ mobj_t *K_FindJawzTarget(mobj_t *actor, player_t *source, angle_t range)
 		}
 		else
 		{
-			if (player->bumpers <= 0)
-			{
-				// Don't pay attention to dead players
-				continue;
-			}
-
 			// Z pos too high/low
 			if (abs(player->mo->z - (actor->z + actor->momz)) > FixedMul(RING_DIST/8, mapobjectscale))
 			{
@@ -7813,12 +7751,12 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 
 	if (!(gametyperules & GTR_KARMA) || (player->pflags & PF_ELIMINATED))
 	{
-		player->karmadelay = comebacktime;
+		player->karmadelay = 0;
 	}
 	else if (player->karmadelay > 0 && !P_PlayerInPain(player))
 	{
 		player->karmadelay--;
-		if (P_IsDisplayPlayer(player) && player->bumpers <= 0 && player->karmadelay <= 0)
+		if (P_IsDisplayPlayer(player) && player->karmadelay <= 0)
 			comebackshowninfo = true; // client has already seen the message
 	}
 
@@ -8011,7 +7949,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 
 	if (player->eggmanexplode)
 	{
-		if (player->spectator || ((gametyperules & GTR_BUMPERS) && player->bumpers <= 0))
+		if (player->spectator)
 			player->eggmanexplode = 0;
 		else
 		{
@@ -9531,7 +9469,7 @@ void K_KartUpdatePosition(player_t *player)
 						else if (yourEmeralds == myEmeralds)
 						{
 							// Bumpers are the second tier tie breaker
-							if (players[i].bumpers > player->bumpers)
+							if (K_Bumpers(&players[i]) > K_Bumpers(player))
 							{
 								position++;
 							}

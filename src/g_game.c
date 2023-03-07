@@ -2420,7 +2420,6 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	INT32 itemtype;
 	INT32 itemamount;
 	INT32 growshrinktimer;
-	INT32 bumper;
 	boolean songcredit = false;
 	UINT16 nocontrol;
 	INT32 khudfault;
@@ -2492,7 +2491,6 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 		itemtype = 0;
 		itemamount = 0;
 		growshrinktimer = 0;
-		bumper = ((gametyperules & GTR_BUMPERS) ? K_StartingBumperCount() : 0);
 		if (gametyperules & GTR_SPHERES)
 		{
 			rings = 0;
@@ -2537,7 +2535,6 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 		else
 			growshrinktimer = 0;
 
-		bumper = players[player].bumpers;
 		rings = players[player].rings;
 		spheres = players[player].spheres;
 		kickstartaccel = players[player].kickstartaccel;
@@ -2635,8 +2632,7 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	p->itemtype = itemtype;
 	p->itemamount = itemamount;
 	p->growshrinktimer = growshrinktimer;
-	p->bumpers = bumper;
-	p->karmadelay = comebacktime;
+	p->karmadelay = 0;
 	p->eggmanblame = -1;
 	p->lastdraft = -1;
 	p->karthud[khud_fault] = khudfault;

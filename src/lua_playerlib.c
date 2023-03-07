@@ -398,8 +398,6 @@ static int player_get(lua_State *L)
 		plr->roundscore = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"emeralds"))
 		lua_pushinteger(L, plr->emeralds);
-	else if (fastcmp(field,"bumpers"))
-		lua_pushinteger(L, plr->bumpers);
 	else if (fastcmp(field,"karmadelay"))
 		lua_pushinteger(L, plr->karmadelay);
 	else if (fastcmp(field,"spheres"))
@@ -782,8 +780,6 @@ static int player_set(lua_State *L)
 		lua_pushinteger(L, plr->roundscore);
 	else if (fastcmp(field,"emeralds"))
 		plr->emeralds = luaL_checkinteger(L, 3);
-	else if (fastcmp(field,"bumpers"))
-		plr->bumpers = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"karmadelay"))
 		plr->karmadelay = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"spheres"))

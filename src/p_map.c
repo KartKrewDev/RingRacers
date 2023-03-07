@@ -1390,13 +1390,6 @@ static BlockItReturn_t PIT_CheckThing(mobj_t *thing)
 				return BMIT_CONTINUE;
 			}
 
-			if ((gametyperules & GTR_BUMPERS)
-				&& ((thing->player->bumpers && !tm.thing->player->bumpers)
-				|| (tm.thing->player->bumpers && !thing->player->bumpers)))
-			{
-				return BMIT_CONTINUE;
-			}
-
 			// The bump has to happen last
 			if (P_IsObjectOnGround(thing) && tm.thing->momz < 0 && tm.thing->player->trickpanel)
 			{

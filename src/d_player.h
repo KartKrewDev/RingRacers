@@ -602,7 +602,6 @@ struct player_t
 
 	UINT32 roundscore; // battle score this round
 	UINT8 emeralds;
-	UINT8 bumpers;
 	INT16 karmadelay;
 	INT16 spheres;
 	tic_t spheredigestion;

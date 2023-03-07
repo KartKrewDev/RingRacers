@@ -113,7 +113,7 @@ void K_CheckBumpers(void)
 
 		numingame++;
 
-		if (players[i].bumpers <= 0) // if you don't have any bumpers, you're probably not a winner
+		if (!P_MobjWasRemoved(players[i].mo) && players[i].mo->health <= 0) // if you don't have any bumpers, you're probably not a winner
 		{
 			nobumpers++;
 		}
@@ -362,7 +362,7 @@ void K_RunPaperItemSpawners(void)
 		emeraldsSpawned |= players[i].emeralds;
 
 		if ((players[i].exiting > 0 || (players[i].pflags & PF_ELIMINATED))
-			|| ((gametyperules & GTR_BUMPERS) && players[i].bumpers <= 0))
+			|| ((gametyperules & GTR_BUMPERS) && !P_MobjWasRemoved(players[i].mo) && players[i].mo->health <= 0))
 		{
 			continue;
 		}
@@ -738,16 +738,20 @@ void K_SetupMovingCapsule(mapthing_t *mt, mobj_t *mobj)
 
 void K_SpawnPlayerBattleBumpers(player_t *p)
 {
-	if (!p->mo || p->bumpers <= 0)
+	const UINT8 bumpers = K_Bumpers(p);
+
+	if (bumpers <= 0)
+	{
 		return;
+	}
 
 	{
 		INT32 i;
-		angle_t diff = FixedAngle(360*FRACUNIT/p->bumpers);
+		angle_t diff = FixedAngle(360*FRACUNIT / bumpers);
 		angle_t newangle = p->mo->angle;
 		mobj_t *bump;
 
-		for (i = 0; i < p->bumpers; i++)
+		for (i = 0; i < bumpers; i++)
 		{
 			bump = P_SpawnMobjFromMobj(p->mo,
 				P_ReturnThrustX(p->mo, newangle + ANGLE_180, 64*FRACUNIT),
@@ -784,21 +788,49 @@ void K_BattleInit(boolean singleplayercontext)
 
 	if (gametyperules & GTR_BUMPERS)
 	{
-		INT32 maxbumpers = K_StartingBumperCount();
+		const INT32 startingHealth = K_BumpersToHealth(K_StartingBumperCount());
 
 		for (i = 0; i < MAXPLAYERS; i++)
 		{
 			if (!playeringame[i] || players[i].spectator)
 				continue;
 
-			players[i].bumpers = maxbumpers;
-
 			if (players[i].mo)
 			{
-				players[i].mo->health = maxbumpers;
+				players[i].mo->health = startingHealth;
 			}
 
 			K_SpawnPlayerBattleBumpers(players+i);
 		}
 	}
+}
+
+UINT8 K_Bumpers(player_t *player)
+{
+	if ((gametyperules & GTR_BUMPERS) == 0)
+	{
+		return 0;
+	}
+
+	if (P_MobjWasRemoved(player->mo))
+	{
+		return 0;
+	}
+
+	if (player->mo->health < 1)
+	{
+		return 0;
+	}
+
+	if (player->mo->health > UINT8_MAX)
+	{
+		return UINT8_MAX;
+	}
+
+	return player->mo->health;
+}
+
+INT32 K_BumpersToHealth(UINT8 bumpers)
+{
+	return bumpers;
 }
