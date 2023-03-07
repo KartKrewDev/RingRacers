@@ -519,6 +519,14 @@ typedef enum
 	TMLOOP_BETA  = 1,
 } textmaploopendpointtype_t;
 
+typedef enum
+{
+	TMCAM_FIRST = -1,
+	TMCAM_SECOND = -2,
+	TMCAM_THIRD = -3,
+	TMCAM_CONSOLE = -4,
+} textmapcamerafollow_t;
+
 // GETSECSPECIAL (specialval, section)
 //
 // Pulls out the special # from a particular section.
@@ -573,6 +581,8 @@ INT32 P_FindMinSurroundingLight(sector_t *sector, INT32 max);
 void P_CrossSpecialLine(line_t *line, INT32 side, mobj_t *thing);
 void P_PushSpecialLine(line_t *line, mobj_t *thing);
 void P_ActivateThingSpecial(mobj_t *mo, mobj_t *source);
+
+mobj_t* P_FindObjectTypeFromTag(mobjtype_t type, mtag_t tag);
 
 //
 // Special activation info

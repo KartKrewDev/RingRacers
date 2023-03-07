@@ -20,6 +20,7 @@
 #include "k_boss.h" // bossinfo.valid
 #include "p_spec.h"
 #include "k_objects.h"
+#include "k_rank.h"
 
 // Battle overtime info
 struct battleovertime battleovertime;

@@ -62,6 +62,8 @@
 #include "k_bot.h"
 #include "doomstat.h"
 #include "k_director.h"
+#include "k_podium.h"
+#include "k_rank.h"
 
 #ifdef HAVE_DISCORDRPC
 #include "discord.h"
@@ -163,6 +165,8 @@ char * bootmap = NULL; //bootmap for loading a map on startup
 
 char * tutorialmap = NULL; // map to load for tutorial
 boolean tutorialmode = false; // are we in a tutorial right now?
+
+char * podiummap = NULL; // map to load for podium
 
 boolean looptitle = true;
 
@@ -1449,9 +1453,9 @@ static void weaponPrefChange4(void)
 }
 
 //
-// G_DoLoadLevel
+// G_DoLoadLevelEx
 //
-void G_DoLoadLevel(boolean resetplayer)
+void G_DoLoadLevelEx(boolean resetplayer, gamestate_t newstate)
 {
 	boolean doAutomate = false;
 	INT32 i;
@@ -1461,7 +1465,7 @@ void G_DoLoadLevel(boolean resetplayer)
 
 	levelstarttic = gametic; // for time calculation
 
-	if (wipegamestate == GS_LEVEL)
+	if (wipegamestate == newstate)
 		wipegamestate = -1; // force a wipe
 
 	if (cv_currprofile.value == -1 && !demo.playback)
@@ -1478,30 +1482,32 @@ void G_DoLoadLevel(boolean resetplayer)
 		Y_EndVote();
 
 	// cleanup
-	if (titlemapinaction == TITLEMAP_LOADING)
+	// Is this actually necessary? Doesn't F_StartTitleScreen already do a significantly more comprehensive check?
+	if (newstate == GS_TITLESCREEN)
 	{
-		//if (W_CheckNumForName(G_BuildMapName(gamemap)) == LUMPERROR)
 		if (gamemap < 1 || gamemap > nummapheaders)
 		{
+			G_SetGamestate(GS_TITLESCREEN);
+			titlemapinaction = false;
+
 			Z_Free(titlemap);
 			titlemap = NULL; // let's not infinite recursion ok
+
 			Command_ExitGame_f();
 			return;
 		}
-
-		titlemapinaction = TITLEMAP_RUNNING;
 	}
-	else
-		titlemapinaction = TITLEMAP_OFF;
 
 	// Doing this matches HOSTMOD behavior.
 	// Is that desired? IDK
-	doAutomate = (gamestate != GS_LEVEL);
+	doAutomate = (gamestate != GS_LEVEL && newstate == GS_LEVEL);
 
-	G_SetGamestate(GS_LEVEL);
+	G_SetGamestate(newstate);
 	if (wipegamestate == GS_MENU)
 		M_ClearMenus(true);
 	I_UpdateMouseGrab();
+
+	K_ResetCeremony();
 
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
@@ -1543,6 +1549,11 @@ void G_DoLoadLevel(boolean resetplayer)
 	}
 }
 
+void G_DoLoadLevel(boolean resetplayer)
+{
+	G_DoLoadLevelEx(resetplayer, GS_LEVEL);
+}
+
 //
 // Start the title card.
 //
@@ -1573,7 +1584,7 @@ void G_StartTitleCard(void)
 	}
 
 	// start the title card
-	WipeStageTitle = (!titlemapinaction);
+	WipeStageTitle = (gamestate == GS_LEVEL);
 }
 
 //
@@ -1717,6 +1728,21 @@ boolean G_Responder(event_t *ev)
 			return true;
 		}
 	}
+	else if (gamestate == GS_CEREMONY)
+	{
+		if (HU_Responder(ev))
+		{
+			hu_keystrokes = true;
+			return true; // chat ate the event
+		}
+
+		if (K_CeremonyResponder(ev))
+		{
+			nextmap = NEXTMAP_TITLE;
+			G_EndGame();
+			return true;
+		}
+	}
 	else if (gamestate == GS_CONTINUING)
 	{
 		return true;
@@ -1727,11 +1753,13 @@ boolean G_Responder(event_t *ev)
 		return true;
 	}
 	else if (gamestate == GS_INTERMISSION || gamestate == GS_VOTING || gamestate == GS_EVALUATION)
+	{
 		if (HU_Responder(ev))
 		{
 			hu_keystrokes = true;
 			return true; // chat ate the event
 		}
+	}
 
 	if (gamestate == GS_LEVEL && ev->type == ev_keydown && multiplayer && demo.playback && !demo.freecam)
 	{
@@ -2099,7 +2127,7 @@ void G_Ticker(boolean run)
 		marathontime++;
 
 	P_MapStart();
-	// do player reborns if needed
+
 	if (gamestate == GS_LEVEL)
 	{
 		// Or, alternatively, retry.
@@ -2117,11 +2145,28 @@ void G_Ticker(boolean run)
 
 			D_MapChange(gamemap, gametype, (cv_kartencore.value == 1), false, 1, false, false);
 		}
+	}
+
+	// do player reborns if needed
+	if (G_GamestateUsesLevel() == true)
+	{
+		boolean changed = false;
 
 		for (i = 0; i < MAXPLAYERS; i++)
+		{
 			if (playeringame[i] && players[i].playerstate == PST_REBORN)
+			{
 				G_DoReborn(i);
+				changed = true;
+			}
+		}
+
+		if (changed == true)
+		{
+			K_UpdateAllPlayerPositions();
+		}
 	}
+
 	P_MapEnd();
 
 	// do things to change the game state
@@ -2175,7 +2220,6 @@ void G_Ticker(boolean run)
 			F_TextPromptTicker();
 			AM_Ticker();
 			HU_Ticker();
-
 			break;
 
 		case GS_INTERMISSION:
@@ -2235,6 +2279,11 @@ void G_Ticker(boolean run)
 				P_Ticker(run);
 
 			F_TitleScreenTicker(run);
+			break;
+
+		case GS_CEREMONY:
+			P_Ticker(run);
+			K_CeremonyTicker(run);
 			break;
 
 		case GS_WAITINGPLAYERS:
@@ -2349,6 +2398,7 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	INT16 totalring;
 	UINT8 laps;
 	UINT8 latestlap;
+	UINT32 lapPoints;
 	UINT16 skincolor;
 	INT32 skin;
 	UINT8 availabilities[MAXAVAILABILITY];
@@ -2469,6 +2519,7 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 		nocontrol = 0;
 		laps = 0;
 		latestlap = 0;
+		lapPoints = 0;
 		roundscore = 0;
 		exiting = 0;
 		khudfinish = 0;
@@ -2504,6 +2555,7 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 
 		laps = players[player].laps;
 		latestlap = players[player].latestlap;
+		lapPoints = players[player].lapPoints;
 
 		roundscore = players[player].roundscore;
 
@@ -2528,7 +2580,7 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	{
 		follower = players[player].follower;
 		P_SetTarget(&players[player].follower, NULL);
-		P_SetTarget(&players[player].awayviewmobj, NULL);
+		P_SetTarget(&players[player].awayview.mobj, NULL);
 		P_SetTarget(&players[player].stumbleIndicator, NULL);
 		P_SetTarget(&players[player].followmobj, NULL);
 
@@ -2576,6 +2628,7 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 
 	p->laps = laps;
 	p->latestlap = latestlap;
+	p->lapPoints = lapPoints;
 	p->totalring = totalring;
 
 	p->bot = bot;
@@ -2732,7 +2785,7 @@ void G_MovePlayerToSpawnOrStarpost(INT32 playernum)
 #else
 	// Player's first spawn should be at the "map start".
 	// I.e. level load or join mid game.
-	if (leveltime > starttime && players[playernum].jointime > 0)
+	if (leveltime > starttime && players[playernum].jointime > 1 && K_PodiumSequence() == false)
 		P_MovePlayerToStarpost(playernum);
 	else
 		P_MovePlayerToSpawn(playernum, G_FindMapStart(playernum));
@@ -2828,7 +2881,9 @@ mapthing_t *G_FindRaceStart(INT32 playernum)
 
 		// SRB2Kart: figure out player spawn pos from points
 		if (!playeringame[playernum] || players[playernum].spectator)
+		{
 			return playerstarts[0]; // go to first spot if you're a spectator
+		}
 
 		for (i = 0; i < MAXPLAYERS; i++)
 		{
@@ -2911,6 +2966,42 @@ mapthing_t *G_FindRaceStart(INT32 playernum)
 	return NULL;
 }
 
+mapthing_t *G_FindPodiumStart(INT32 playernum)
+{
+	const boolean doprints = P_IsLocalPlayer(&players[playernum]);
+
+	if (numcoopstarts)
+	{
+		UINT8 pos = K_GetPodiumPosition(&players[playernum]) - 1;
+		UINT8 i;
+
+		if (G_CheckSpot(playernum, playerstarts[pos % numcoopstarts]))
+		{
+			return playerstarts[pos % numcoopstarts];
+		}
+
+		// Your spot isn't available? Find whatever you can get first.
+		for (i = 0; i < numcoopstarts; i++)
+		{
+			if (G_CheckSpot(playernum, playerstarts[(pos + i) % numcoopstarts]))
+			{
+				return playerstarts[(pos + i) % numcoopstarts];
+			}
+		}
+
+		if (doprints)
+		{
+			CONS_Alert(CONS_WARNING, M_GetText("Could not spawn at any Podium starts!\n"));
+		}
+
+		return NULL;
+	}
+
+	if (doprints)
+		CONS_Alert(CONS_WARNING, M_GetText("No Podium starts in this map!\n"));
+	return NULL;
+}
+
 // Find a Co-op start, or fallback into other types of starts.
 static inline mapthing_t *G_FindRaceStartOrFallback(INT32 playernum)
 {
@@ -2947,9 +3038,14 @@ mapthing_t *G_FindMapStart(INT32 playernum)
 	if (!playeringame[playernum])
 		return NULL;
 
+	// -- Podium -- 
+	// Single special behavior
+	if (K_PodiumSequence() == true)
+		spawnpoint = G_FindPodiumStart(playernum);
+
 	// -- Time Attack --
 	// Order: Race->DM->CTF
-	if (K_TimeAttackRules() == true)
+	else if (K_TimeAttackRules() == true)
 		spawnpoint = G_FindRaceStartOrFallback(playernum);
 
 	// -- CTF --
@@ -3096,13 +3192,20 @@ void G_ExitLevel(void)
 			if (i == MAXPLAYERS)
 			{
 				// GAME OVER, try again from the start!
-
-				if (netgame)
+				if (grandprixinfo.gp == true
+					&& grandprixinfo.eventmode == GPEVENT_SPECIAL)
 				{
-					; // restart cup here if we do online GP
+					// We were in a Special Stage.
+					// We can still progress to the podium when we game over here.
+					doretry = false;
+				}
+				else if (netgame)
+				{
+					; // Restart cup here whenever we do Online GP
 				}
 				else
 				{
+					// Back to the menu with you.
 					D_QuitNetGame();
 					CL_Reset();
 					D_ClearState();
@@ -3111,11 +3214,14 @@ void G_ExitLevel(void)
 			}
 			else
 			{
-				// Go redo this course.
+				// We have lives, just redo this one course.
 				G_SetRetryFlag();
 			}
 
-			return;
+			if (doretry == true)
+			{
+				return;
+			}
 		}
 
 		gameaction = ga_completed;
@@ -3806,20 +3912,9 @@ static void G_GetNextMap(void)
 			// Special stage
 			else if (grandprixinfo.roundnum >= grandprixinfo.cup->numlevels)
 			{
-				INT16 totaltotalring = 0;
+				gp_rank_e grade = K_CalculateGPGrade(&grandprixinfo.rank);
 
-				for (i = 0; i < MAXPLAYERS; i++)
-				{
-					if (!playeringame[i])
-						continue;
-					if (players[i].spectator)
-						continue;
-					if (players[i].bot)
-						continue;
-					totaltotalring += players[i].totalring;
-				}
-
-				if (totaltotalring >= 50)
+				if (grade >= GRADE_A) // On A rank pace? Then you get a chance for S rank!
 				{
 					const INT32 cupLevelNum = grandprixinfo.cup->cachedlevels[CUPCACHE_SPECIAL];
 					if (cupLevelNum < nummapheaders && mapheaderinfo[cupLevelNum])
@@ -4047,6 +4142,9 @@ static void G_DoCompleted(void)
 	G_SetGamestate(GS_NULL);
 	wipegamestate = GS_NULL;
 
+	grandprixinfo.rank.capsules += numtargets;
+	grandprixinfo.rank.position = MAXPLAYERS;
+
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
 		if (playeringame[i])
@@ -4072,6 +4170,11 @@ static void G_DoCompleted(void)
 			}
 
 			G_PlayerFinishLevel(i); // take away cards and stuff
+
+			if (players[i].bot == false)
+			{
+				grandprixinfo.rank.position = min(grandprixinfo.rank.position, K_GetPodiumPosition(&players[i]));
+			}
 		}
 	}
 
@@ -4281,8 +4384,10 @@ void G_EndGame(void)
 	{
 		if (nextmap == NEXTMAP_CEREMONY) // end game with ceremony
 		{
-			/*F_StartEnding(); -- temporary
-			return;*/
+			if (K_StartCeremony() == true)
+			{
+				return;
+			}
 		}
 		if (nextmap == NEXTMAP_CREDITS) // end game with credits
 		{
@@ -5061,6 +5166,16 @@ void G_InitNew(UINT8 pencoremode, INT32 map, boolean resetplayer, boolean skippr
 		return;
 	}
 
+	if (map == G_MapNumber(podiummap)+1)
+	{
+		// Didn't want to do this, but it needs to be here
+		// for it to work on startup.
+		if (K_StartCeremony() == true)
+		{
+			return;
+		}
+	}
+
 	gamemap = map;
 
 	maptol = mapheaderinfo[gamemap-1]->typeoflevel;
@@ -5355,6 +5470,22 @@ void G_SetGamestate(gamestate_t newstate)
 #endif
 }
 
+boolean G_GamestateUsesLevel(void)
+{
+	switch (gamestate)
+	{
+		case GS_TITLESCREEN:
+			return titlemapinaction;
+
+		case GS_LEVEL:
+		case GS_CEREMONY:
+			return true;
+
+		default:
+			return false;
+	}
+}
+
 /* These functions handle the exitgame flag. Before, when the user
    chose to end a game, it happened immediately, which could cause
    crashes if the game was in the middle of something. Now, a flag
@@ -5381,6 +5512,11 @@ boolean G_GetExitGameFlag(void)
 // Same deal with retrying.
 void G_SetRetryFlag(void)
 {
+	if (retrying == false)
+	{
+		grandprixinfo.rank.continuesUsed++;
+	}
+
 	retrying = true;
 }
 
@@ -5438,4 +5574,3 @@ INT32 G_TicsToMilliseconds(tic_t tics)
 {
 	return (INT32)((tics%TICRATE) * (1000.00f/TICRATE));
 }
-

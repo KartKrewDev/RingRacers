@@ -58,6 +58,8 @@
 #include "k_terrain.h" // K_SpawnSplashForMobj
 #include "k_color.h"
 #include "k_follower.h"
+#include "k_battle.h"
+#include "k_rank.h"
 
 #ifdef HW3SOUND
 #include "hardware/hw3sound.h"
@@ -1284,7 +1286,7 @@ void P_DoPlayerExit(player_t *player)
 
 		if ((gametyperules & GTR_CIRCUIT)) // If in Race Mode, allow
 		{
-			K_KartUpdatePosition(player);
+			K_UpdateAllPlayerPositions();
 
 			if (cv_kartvoices.value)
 			{
@@ -1353,6 +1355,7 @@ void P_DoPlayerExit(player_t *player)
 				if (RINGTOTAL(player) > 0)
 				{
 					player->totalring += RINGTOTAL(player);
+					grandprixinfo.rank.rings += RINGTOTAL(player);
 
 					extra = player->totalring / lifethreshold;
 
@@ -1362,6 +1365,16 @@ void P_DoPlayerExit(player_t *player)
 						S_StartSound(NULL, sfx_cdfm73);
 						player->xtralife = extra;
 					}
+				}
+
+				if (grandprixinfo.eventmode == GPEVENT_NONE)
+				{
+					grandprixinfo.rank.winPoints += K_CalculateGPRankPoints(player->position, grandprixinfo.rank.totalPlayers);
+					grandprixinfo.rank.laps += player->lapPoints;
+				}
+				else if (grandprixinfo.eventmode == GPEVENT_SPECIAL)
+				{
+					grandprixinfo.rank.specialWon = true;
 				}
 			}
 		}
@@ -3670,10 +3683,10 @@ static void P_CalcPostImg(player_t *player)
 	else
 		pviewheight = player->mo->z + player->viewheight;
 
-	if (player->awayviewtics && player->awayviewmobj && !P_MobjWasRemoved(player->awayviewmobj))
+	if (player->awayview.tics && player->awayview.mobj && !P_MobjWasRemoved(player->awayview.mobj))
 	{
-		sector = player->awayviewmobj->subsector->sector;
-		pviewheight = player->awayviewmobj->z + 20*FRACUNIT;
+		sector = player->awayview.mobj->subsector->sector;
+		pviewheight = player->awayview.mobj->z;
 	}
 
 	for (i = 0; i <= (unsigned)r_splitscreen; i++)
@@ -3997,6 +4010,25 @@ DoABarrelRoll (player_t *player)
 		player->tilt  = slope;
 }
 
+void P_TickAltView(altview_t *view)
+{
+	if (view->mobj != NULL && P_MobjWasRemoved(view->mobj) == true)
+	{
+		P_SetTarget(&view->mobj, NULL); // remove view->mobj asap if invalid
+		view->tics = 0; // reset to zero
+	}
+
+	if (view->tics > 0)
+	{
+		view->tics--;
+
+		if (view->tics == 0)
+		{
+			P_SetTarget(&view->mobj, NULL);
+		}
+	}
+}
+
 //
 // P_PlayerThink
 //
@@ -4020,17 +4052,10 @@ void P_PlayerThink(player_t *player)
 
 	player->old_drawangle = player->drawangle;
 
-	if (player->awayviewmobj && P_MobjWasRemoved(player->awayviewmobj))
-	{
-		P_SetTarget(&player->awayviewmobj, NULL); // remove awayviewmobj asap if invalid
-		player->awayviewtics = 0; // reset to zero
-	}
+	P_TickAltView(&player->awayview);
 
 	if (player->flashcount)
 		player->flashcount--;
-
-	if (player->awayviewtics && player->awayviewtics != -1)
-		player->awayviewtics--;
 
 	// Track airtime
 	if (P_IsObjectOnGround(player->mo)

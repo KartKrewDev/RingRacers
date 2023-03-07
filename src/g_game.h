@@ -156,6 +156,7 @@ INT32 G_FindMapByNameOrCode(const char *query, char **foundmapnamep);
 mapthing_t *G_FindTeamStart(INT32 playernum);
 mapthing_t *G_FindBattleStart(INT32 playernum);
 mapthing_t *G_FindRaceStart(INT32 playernum);
+mapthing_t *G_FindPodiumStart(INT32 playernum);
 mapthing_t *G_FindMapStart(INT32 playernum);
 void G_MovePlayerToSpawnOrStarpost(INT32 playernum);
 void G_SpawnPlayer(INT32 playernum);
@@ -164,6 +165,7 @@ void G_SpawnPlayer(INT32 playernum);
 // A normal game starts at map 1, but a warp test can start elsewhere
 void G_DeferedInitNew(boolean pencoremode, INT32 map, INT32 pickedchar,
 	UINT8 ssplayers, boolean FLS);
+void G_DoLoadLevelEx(boolean resetplayer, gamestate_t newstate);
 void G_DoLoadLevel(boolean resetplayer);
 
 void G_StartTitleCard(void);
@@ -249,8 +251,6 @@ void G_LoadGameSettings(void);
 
 void G_SetGameModified(boolean silent, boolean major);
 void G_SetUsedCheats(void);
-
-void G_SetGamestate(gamestate_t newstate);
 
 // Gamedata record shit
 void G_AllocMainRecordData(INT16 i);

@@ -1839,6 +1839,25 @@ static void CON_DrawConsole(void)
 
 // Console refresh drawer, call each frame
 //
+static boolean CON_GamestateDrawHudLines(void)
+{
+	switch (gamestate)
+	{
+		case GS_LEVEL:
+		case GS_INTERMISSION:
+		case GS_VOTING:
+		case GS_CUTSCENE:
+		case GS_CREDITS:
+		case GS_EVALUATION:
+		case GS_WAITINGPLAYERS:
+		case GS_CEREMONY:
+			return true;
+
+		default:
+			return false;
+	}
+}
+
 void CON_Drawer(void)
 {
 	Lock_state();
@@ -1858,8 +1877,7 @@ void CON_Drawer(void)
 
 	if (con_curlines > 0)
 		CON_DrawConsole();
-	else if (gamestate == GS_LEVEL || gamestate == GS_INTERMISSION || gamestate == GS_CUTSCENE || gamestate == GS_CREDITS
-		|| gamestate == GS_VOTING || gamestate == GS_EVALUATION || gamestate == GS_WAITINGPLAYERS)
+	else if (CON_GamestateDrawHudLines() == true)
 		CON_DrawHudlines();
 
 	Unlock_state();

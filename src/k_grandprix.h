@@ -15,14 +15,18 @@
 
 #include "doomdef.h"
 #include "doomstat.h"
+#include "k_rank.h" // gpRank_t
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#define GPEVENT_NONE 0
-#define GPEVENT_BONUS 1
-#define GPEVENT_SPECIAL 2
+typedef enum
+{
+	GPEVENT_NONE = 0,
+	GPEVENT_BONUS,
+	GPEVENT_SPECIAL,
+} gpEvent_e;
 
 extern struct grandprixinfo
 {
@@ -34,9 +38,9 @@ extern struct grandprixinfo
 	boolean masterbots;		///< If true, all bots should be max difficulty (Master Mode)
 	boolean initalize;		///< If true, we need to initialize a new session.
 	boolean wonround;		///< If false, then we retry the map instead of going to the next.
-	UINT8 eventmode;		///< See GPEVENT_ constants
+	gpEvent_e eventmode;	///< Special event mode, bots are set to spectate and a special gametype is played
+	gpRank_t rank;			///< Struct containing grading information. (See also: k_rank.h)
 } grandprixinfo;
-
 
 /*--------------------------------------------------
 	UINT8 K_BotStartingDifficulty(SINT8 value);
@@ -79,6 +83,23 @@ INT16 K_CalculateGPRankPoints(UINT8 position, UINT8 numplayers);
 --------------------------------------------------*/
 
 UINT8 K_BotDefaultSkin(void);
+
+
+/*--------------------------------------------------
+	UINT8 K_GetGPPlayerCount(UINT8 humans)
+
+		Counts the number of total players,
+		including humans and bots, to put into
+		a GP session.
+
+	Input Arguments:-
+		humans - Number of human players.
+
+	Return:-
+		Number of both human players and CPU.
+--------------------------------------------------*/
+
+UINT8 K_GetGPPlayerCount(UINT8 humans);
 
 
 /*--------------------------------------------------
@@ -169,6 +190,7 @@ void K_PlayerLoseLife(player_t *player);
 --------------------------------------------------*/
 
 boolean K_CanChangeRules(boolean allowdemos);
+
 
 #ifdef __cplusplus
 } // extern "C"

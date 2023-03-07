@@ -236,6 +236,29 @@ INT32 K_GetWaypointID(waypoint_t *waypoint)
 }
 
 /*--------------------------------------------------
+	waypoint_t *K_GetWaypointFromID(INT32 waypointID)
+
+		See header file for description.
+--------------------------------------------------*/
+waypoint_t *K_GetWaypointFromID(INT32 waypointID)
+{
+	waypoint_t *waypoint = NULL;
+	size_t i = SIZE_MAX;
+
+	for (i = 0; i < numwaypoints; i++)
+	{
+		waypoint = &waypointheap[i];
+
+		if (K_GetWaypointID(waypoint) == waypointID)
+		{
+			return waypoint;
+		}
+	}
+
+	return NULL;
+}
+
+/*--------------------------------------------------
 	UINT32 K_GetCircuitLength(void)
 
 		See header file for description.

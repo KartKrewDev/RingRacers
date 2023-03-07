@@ -255,10 +255,7 @@ static void M_DrawRenderStats(void)
 	perfstatcol_t     batchcalls_col = {220, 200, V_PURPLEMAP,     batchcalls_row};
 
 
-	boolean rendering = (
-			gamestate == GS_LEVEL ||
-			(gamestate == GS_TITLESCREEN && titlemapinaction)
-	);
+	boolean rendering = G_GamestateUsesLevel();
 
 	draw_row = 10;
 	M_DrawPerfTiming(&frametime_col);
@@ -619,8 +616,9 @@ void M_DrawPerfStats(void)
 	}
 	else if (cv_perfstats.value == PS_THINKFRAME) // lua thinkframe
 	{
-		if (!(gamestate == GS_LEVEL || (gamestate == GS_TITLESCREEN && titlemapinaction)))
+		if (G_GamestateUsesLevel() == false)
 			return;
+
 		if (vid.width < 640 || vid.height < 400) // low resolution
 		{
 			// it's not gonna fit very well..

@@ -2559,6 +2559,10 @@ void readmaincfg(MYFILE *f, boolean mainfile)
 	INT32 value;
 	boolean doClearLevels = false;
 
+#ifdef DEVELOP
+	(void)mainfile;
+#endif
+
 	do
 	{
 		if (myfgets(s, MAXLINELEN, f))
@@ -2630,10 +2634,12 @@ void readmaincfg(MYFILE *f, boolean mainfile)
 				//clear_levels();
 				doClearLevels = true;
 			}
+#ifndef DEVELOP
 			else if (!mainfile && !gamedataadded)
 			{
 				deh_warning("You must define a custom gamedata to use \"%s\"", word);
 			}
+#endif
 			else if (fastcmp(word, "CLEARLEVELS"))
 			{
 				doClearLevels = (UINT8)(value == 0 || word2[0] == 'F' || word2[0] == 'N');
@@ -2741,6 +2747,7 @@ void readmaincfg(MYFILE *f, boolean mainfile)
 			}
 			else if (fastcmp(word, "TITLEMAP"))
 			{
+				Z_Free(titlemap);
 				titlemap = Z_StrDup(word2);
 				titlechanged = true;
 			}
@@ -2835,12 +2842,19 @@ void readmaincfg(MYFILE *f, boolean mainfile)
 			}
 			else if (fastcmp(word, "BOOTMAP"))
 			{
+				Z_Free(bootmap);
 				bootmap = Z_StrDup(word2);
 				//titlechanged = true;
 			}
 			else if (fastcmp(word, "TUTORIALMAP"))
 			{
+				Z_Free(tutorialmap);
 				tutorialmap = Z_StrDup(word2);
+			}
+			else if (fastcmp(word, "PODIUMMAP"))
+			{
+				Z_Free(podiummap);
+				podiummap = Z_StrDup(word2);
 			}
 			else
 				deh_warning("Maincfg: unknown word '%s'", word);
@@ -2979,6 +2993,14 @@ void readwipes(MYFILE *f)
 					wipeoffset = wipe_gameend_toblack;
 				else if (fastcmp(pword, "FINAL"))
 					wipeoffset = wipe_gameend_final;
+			}
+			else if (fastncmp(word, "CEREMONY_", 9))
+			{
+				pword = word + 9;
+				if (fastcmp(pword, "TOBLACK"))
+					wipeoffset = wipe_ceremony_toblack;
+				else if (fastcmp(pword, "FINAL"))
+					wipeoffset = wipe_ceremony_final;
 			}
 			else if (fastncmp(word, "ENCORE_", 7))
 			{

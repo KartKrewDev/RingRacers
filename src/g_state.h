@@ -36,6 +36,7 @@ typedef enum
 	GS_CREDITS,         // credit sequence
 	GS_EVALUATION,      // Evaluation at the end of a game.
 	GS_GAMEEND,         // game end sequence - "did you get all those chaos emeralds?"
+	GS_CEREMONY,        // RR: Podium sequence
 
 	// Hardcoded fades or other fading methods
 	GS_INTRO,           // introduction
@@ -58,9 +59,12 @@ typedef enum
 } gameaction_t;
 
 extern gamestate_t gamestate;
-extern UINT8 titlemapinaction;
+extern boolean titlemapinaction;
 extern UINT8 ultimatemode; // was sk_insane
 extern gameaction_t gameaction;
+
+void G_SetGamestate(gamestate_t newstate);
+boolean G_GamestateUsesLevel(void);
 
 #ifdef __cplusplus
 } // extern "C"

@@ -4165,8 +4165,8 @@ void A_OverlayThink(mobj_t *actor)
 	{
 		angle_t viewingangle;
 
-		if (players[displayplayers[0]].awayviewtics)
-			viewingangle = R_PointToAngle2(actor->target->x, actor->target->y, players[displayplayers[0]].awayviewmobj->x, players[displayplayers[0]].awayviewmobj->y);
+		if (players[displayplayers[0]].awayview.tics)
+			viewingangle = R_PointToAngle2(actor->target->x, actor->target->y, players[displayplayers[0]].awayview.mobj->x, players[displayplayers[0]].awayview.mobj->y);
 		else if (!camera[0].chase && players[displayplayers[0]].mo)
 			viewingangle = R_PointToAngle2(actor->target->x, actor->target->y, players[displayplayers[0]].mo->x, players[displayplayers[0]].mo->y);
 		else
@@ -9390,6 +9390,10 @@ void A_SetScale(mobj_t *actor)
 	}
 
 	locvar1 = FixedMul(locvar1, mapobjectscale); // SRB2Kart
+	if (target->spawnpoint != NULL)
+	{
+		locvar1 = FixedMul(locvar1, target->spawnpoint->scale);
+	}
 
 	target->destscale = locvar1; // destination scale
 	if (!(locvar2 & 65535))

@@ -43,6 +43,7 @@
 #include "k_boss.h"
 #include "k_specialstage.h"
 #include "k_roulette.h"
+#include "k_podium.h"
 
 // SOME IMPORTANT VARIABLES DEFINED IN DOOMDEF.H:
 // gamespeed is cc (0 for easy, 1 for normal, 2 for hard)
@@ -108,6 +109,12 @@ void K_TimerInit(void)
 	UINT8 numPlayers = 0;
 	boolean domodeattack = ((modeattacking != ATTACKING_NONE)
 		|| (grandprixinfo.gp == true && grandprixinfo.eventmode != GPEVENT_NONE));
+
+	if (K_PodiumSequence() == true)
+	{
+		// Leave it alone for podium
+		return;
+	}
 
 	// Rooooooolllling staaaaaaart
 	if ((gametyperules & (GTR_ROLLINGSTART|GTR_CIRCUIT)) == (GTR_ROLLINGSTART|GTR_CIRCUIT))
@@ -340,6 +347,7 @@ void K_RegisterKartStuff(void)
 	CV_RegisterVar(&cv_kartdebugnodes);
 	CV_RegisterVar(&cv_kartdebugcolorize);
 	CV_RegisterVar(&cv_kartdebugdirector);
+	CV_RegisterVar(&cv_debugrank);
 	CV_RegisterVar(&cv_spbtest);
 	CV_RegisterVar(&cv_gptest);
 	CV_RegisterVar(&cv_capsuletest);
@@ -353,6 +361,12 @@ boolean K_IsPlayerLosing(player_t *player)
 {
 	INT32 winningpos = 1;
 	UINT8 i, pcount = 0;
+
+	if (K_PodiumSequence() == true)
+	{
+		// Need to be in top 3 to win.
+		return (player->position > 3);
+	}
 
 	if (player->pflags & PF_NOCONTEST)
 		return true;
@@ -1225,6 +1239,11 @@ static boolean K_TryDraft(player_t *player, mobj_t *dest, fixed_t minDist, fixed
 #ifndef EASYDRAFTTEST
 	angle_t yourangle, theirangle, diff;
 #endif
+
+	if (K_PodiumSequence() == true)
+	{
+		return false;
+	}
 
 #ifndef EASYDRAFTTEST
 	// Don't draft on yourself :V
@@ -3215,27 +3234,42 @@ fixed_t K_GetKartSpeedFromStat(UINT8 kartspeed)
 fixed_t K_GetKartSpeed(player_t *player, boolean doboostpower, boolean dorubberband)
 {
 	const boolean mobjValid = (player->mo != NULL && P_MobjWasRemoved(player->mo) == false);
-	fixed_t finalspeed = K_GetKartSpeedFromStat(player->kartspeed);
+	fixed_t finalspeed = 0;
 
-	if (gametyperules & GTR_BUMPERS && player->bumpers <= 0)
-		finalspeed = 3 * finalspeed / 2;
-
-	if (player->spheres > 0)
+	if (K_PodiumSequence() == true)
 	{
-		fixed_t sphereAdd = (FRACUNIT/40); // 100% at max
-		finalspeed = FixedMul(finalspeed, FRACUNIT + (sphereAdd * player->spheres));
+		// Make 1st reach their podium faster!
+		finalspeed = K_GetKartSpeedFromStat(max(1, 11 - (player->position * 3)));
+
+		// Ignore other speed boosts.
+		doboostpower = dorubberband = false;
 	}
-
-	if (K_PlayerUsesBotMovement(player))
+	else
 	{
-		// Increase bot speed by 1-10% depending on difficulty
-		fixed_t add = (player->botvars.difficulty * (FRACUNIT/10)) / DIFFICULTBOT;
-		finalspeed = FixedMul(finalspeed, FRACUNIT + add);
+		finalspeed = K_GetKartSpeedFromStat(player->kartspeed);
 
-		if (player->bot && player->botvars.rival)
+		if (gametyperules & GTR_BUMPERS && player->bumpers <= 0)
 		{
-			// +10% top speed for the rival
-			finalspeed = FixedMul(finalspeed, 11*FRACUNIT/10);
+			finalspeed = 3 * finalspeed / 2;
+		}
+
+		if (player->spheres > 0)
+		{
+			fixed_t sphereAdd = (FRACUNIT/40); // 100% at max
+			finalspeed = FixedMul(finalspeed, FRACUNIT + (sphereAdd * player->spheres));
+		}
+
+		if (K_PlayerUsesBotMovement(player))
+		{
+			// Increase bot speed by 1-10% depending on difficulty
+			fixed_t add = (player->botvars.difficulty * (FRACUNIT/10)) / DIFFICULTBOT;
+			finalspeed = FixedMul(finalspeed, FRACUNIT + add);
+
+			if (player->bot && player->botvars.rival)
+			{
+				// +10% top speed for the rival
+				finalspeed = FixedMul(finalspeed, 11*FRACUNIT/10);
+			}
 		}
 	}
 
@@ -3263,16 +3297,32 @@ fixed_t K_GetKartSpeed(player_t *player, boolean doboostpower, boolean dorubberb
 fixed_t K_GetKartAccel(player_t *player)
 {
 	fixed_t k_accel = 121;
+	UINT8 stat = (9 - player->kartspeed);
 
-	k_accel += 17 * (9 - player->kartspeed); // 121 - 257
+	if (K_PodiumSequence() == true)
+	{
+		// Normalize to Metal's accel
+		stat = 1;
+	}
+
+	k_accel += 17 * stat; // 121 - 257
+
+	if (K_PodiumSequence() == true)
+	{
+		return FixedMul(k_accel, FRACUNIT / 4);
+	}
 
 	// karma bomb gets 2x acceleration
 	if ((gametyperules & GTR_BUMPERS) && player->bumpers <= 0)
+	{
 		k_accel *= 2;
+	}
 
 	// Marble Garden Top gets 1200% accel
 	if (player->curshield == KSHIELD_TOP)
+	{
 		k_accel *= 12;
+	}
 
 	return FixedMul(k_accel, (FRACUNIT + player->accelboost) / 4);
 }
@@ -3403,7 +3453,7 @@ fixed_t K_GetNewSpeed(player_t *player)
 	// Don't calculate the acceleration as ever being above top speed
 	if (oldspeed > p_speed)
 		oldspeed = p_speed;
-	newspeed = FixedDiv(FixedDiv(FixedMul(oldspeed, accelmax - p_accel) + FixedMul(p_speed, p_accel), accelmax), ORIG_FRICTION);
+	newspeed = FixedDiv(FixedDiv(FixedMul(oldspeed, accelmax - p_accel) + FixedMul(p_speed, p_accel), accelmax), K_PlayerBaseFriction(ORIG_FRICTION));
 
 	finalspeed = newspeed - oldspeed;
 
@@ -6975,6 +7025,13 @@ static void K_UpdateEngineSounds(player_t *player)
 	INT32 targetsnd = 0;
 	INT32 i;
 
+	if (leveltime < 8 || player->spectator || gamestate != GS_LEVEL)
+	{
+		// Silence the engines, and reset sound number while we're at it.
+		player->karthud[khud_enginesnd] = 0;
+		return;
+	}
+
 	s = (player->kartspeed - 1) / 3;
 	w = (player->kartweight - 1) / 3;
 
@@ -6986,13 +7043,6 @@ static void K_UpdateEngineSounds(player_t *player)
 #undef LOCKSTAT
 
 	class = s + (3*w);
-
-	if (leveltime < 8 || player->spectator)
-	{
-		// Silence the engines, and reset sound number while we're at it.
-		player->karthud[khud_enginesnd] = 0;
-		return;
-	}
 
 #if 0
 	if ((leveltime % 8) != ((player-players) % 8)) // Per-player offset, to make engines sound distinct!
@@ -8471,6 +8521,12 @@ static waypoint_t *K_GetPlayerNextWaypoint(player_t *player)
 --------------------------------------------------*/
 void K_UpdateDistanceFromFinishLine(player_t *const player)
 {
+	if (K_PodiumSequence() == true)
+	{
+		K_UpdatePodiumWaypoints(player);
+		return;
+	}
+
 	if ((player != NULL) && (player->mo != NULL))
 	{
 		waypoint_t *finishline   = K_GetFinishLineWaypoint();
@@ -8835,6 +8891,15 @@ INT16 K_GetKartTurnValue(player_t *player, INT16 turnvalue)
 	else
 	{
 		p_speed = min(currentSpeed, (p_maxspeed * 2));
+	}
+
+	if (K_PodiumSequence() == true)
+	{
+		// Normalize turning for podium
+		weightadjust = FixedDiv((p_maxspeed * 3), (p_maxspeed * 3) + (2 * FRACUNIT));
+		turnfixed = FixedMul(turnfixed, weightadjust);
+		turnfixed *= 2;
+		return (turnfixed / FRACUNIT);
 	}
 
 	weightadjust = FixedDiv((p_maxspeed * 3) - p_speed, (p_maxspeed * 3) + (player->kartweight * FRACUNIT));
@@ -9263,63 +9328,78 @@ void K_KartUpdatePosition(player_t *player)
 		return;
 	}
 
-	for (i = 0; i < MAXPLAYERS; i++)
+	if (K_PodiumSequence() == true)
 	{
-		if (!playeringame[i] || players[i].spectator || !players[i].mo)
-			continue;
+		position = K_GetPodiumPosition(player);
 
-		realplayers++;
-
-		if (gametyperules & GTR_CIRCUIT)
+		for (i = 0; i < MAXPLAYERS; i++)
 		{
-			if (player->exiting) // End of match standings
-			{
-				// Only time matters
-				if (players[i].realtime < player->realtime)
-					position++;
-			}
-			else
-			{
-				// I'm a lap behind this player OR
-				// My distance to the finish line is higher, so I'm behind
-				if ((players[i].laps > player->laps)
-					|| (players[i].distancetofinish < player->distancetofinish))
-				{
-					position++;
-				}
-			}
+			if (!playeringame[i] || players[i].spectator || !players[i].mo)
+				continue;
+
+			realplayers++;
 		}
-		else
+	}
+	else
+	{
+		for (i = 0; i < MAXPLAYERS; i++)
 		{
-			if (player->exiting) // End of match standings
-			{
-				// Only score matters
-				if (players[i].roundscore > player->roundscore)
-					position++;
-			}
-			else
-			{
-				UINT8 myEmeralds = K_NumEmeralds(player);
-				UINT8 yourEmeralds = K_NumEmeralds(&players[i]);
+			if (!playeringame[i] || players[i].spectator || !players[i].mo)
+				continue;
 
-				// First compare all points
-				if (players[i].roundscore > player->roundscore)
+			realplayers++;
+
+			if (gametyperules & GTR_CIRCUIT)
+			{
+				if (player->exiting) // End of match standings
 				{
-					position++;
+					// Only time matters
+					if (players[i].realtime < player->realtime)
+						position++;
 				}
-				else if (players[i].roundscore == player->roundscore)
+				else
 				{
-					// Emeralds are a tie breaker
-					if (yourEmeralds > myEmeralds)
+					// I'm a lap behind this player OR
+					// My distance to the finish line is higher, so I'm behind
+					if ((players[i].laps > player->laps)
+						|| (players[i].distancetofinish < player->distancetofinish))
 					{
 						position++;
 					}
-					else if (yourEmeralds == myEmeralds)
+				}
+			}
+			else
+			{
+				if (player->exiting) // End of match standings
+				{
+					// Only score matters
+					if (players[i].roundscore > player->roundscore)
+						position++;
+				}
+				else
+				{
+					UINT8 myEmeralds = K_NumEmeralds(player);
+					UINT8 yourEmeralds = K_NumEmeralds(&players[i]);
+
+					// First compare all points
+					if (players[i].roundscore > player->roundscore)
 					{
-						// Bumpers are the second tier tie breaker
-						if (players[i].bumpers > player->bumpers)
+						position++;
+					}
+					else if (players[i].roundscore == player->roundscore)
+					{
+						// Emeralds are a tie breaker
+						if (yourEmeralds > myEmeralds)
 						{
 							position++;
+						}
+						else if (yourEmeralds == myEmeralds)
+						{
+							// Bumpers are the second tier tie breaker
+							if (players[i].bumpers > player->bumpers)
+							{
+								position++;
+							}
 						}
 					}
 				}
@@ -9376,6 +9456,29 @@ void K_KartUpdatePosition(player_t *player)
 	}
 
 	player->position = position;
+}
+
+void K_UpdateAllPlayerPositions(void)
+{
+	INT32 i;
+
+	// First loop: Ensure all players' distance to the finish line are all accurate
+	for (i = 0; i < MAXPLAYERS; i++)
+	{
+		if (playeringame[i] && players[i].mo && !P_MobjWasRemoved(players[i].mo))
+		{
+			K_UpdateDistanceFromFinishLine(&players[i]);
+		}
+	}
+
+	// Second loop: Ensure all player positions reflect everyone's distances
+	for (i = 0; i < MAXPLAYERS; i++)
+	{
+		if (playeringame[i] && players[i].mo && !P_MobjWasRemoved(players[i].mo))
+		{
+			K_KartUpdatePosition(&players[i]);
+		}
+	}
 }
 
 //
@@ -9918,16 +10021,36 @@ static void K_AirFailsafe(player_t *player)
 }
 
 //
+// K_PlayerBaseFriction
+//
+fixed_t K_PlayerBaseFriction(fixed_t original)
+{
+	fixed_t frict = original;
+
+	if (K_PodiumSequence() == true)
+	{
+		frict -= FRACUNIT >> 4;
+	}
+
+	if (frict > FRACUNIT) { frict = FRACUNIT; }
+	if (frict < 0) { frict = 0; }
+
+	return frict;
+}
+
+//
 // K_AdjustPlayerFriction
 //
 void K_AdjustPlayerFriction(player_t *player)
 {
-	fixed_t prevfriction = player->mo->friction;
+	const fixed_t prevfriction = K_PlayerBaseFriction(player->mo->friction);
 
 	if (P_IsObjectOnGround(player->mo) == false)
 	{
 		return;
 	}
+
+	player->mo->friction = prevfriction;
 
 	// Reduce friction after hitting a spring
 	if (player->tiregrease)

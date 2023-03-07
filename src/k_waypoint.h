@@ -141,7 +141,23 @@ INT32 K_GetWaypointNextID(waypoint_t *waypoint);
 	Return:-
 		The waypoint ID, -1 if there is no waypoint or mobj.
 --------------------------------------------------*/
+
 INT32 K_GetWaypointID(waypoint_t *waypoint);
+
+
+/*--------------------------------------------------
+	waypoint_t *K_GetWaypointFromID(INT32 waypointID)
+
+		Returns the first waypoint with the specified ID.
+
+	Input Arguments:-
+		waypointID - The ID of the waypoint to get
+
+	Return:-
+		The first waypoint with this ID, NULL if the ID doesn't exist at all in the map
+--------------------------------------------------*/
+
+waypoint_t *K_GetWaypointFromID(INT32 waypointID);
 
 
 /*--------------------------------------------------
