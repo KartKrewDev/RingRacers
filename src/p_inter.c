@@ -1934,13 +1934,12 @@ static boolean P_KillPlayer(player_t *player, mobj_t *inflictor, mobj_t *source,
 		return false;
 	}
 
-	K_DestroyBumpers(player, 1);
-
 	switch (type)
 	{
 		case DMG_DEATHPIT:
 			// Respawn kill types
 			K_DoIngameRespawn(player);
+			player->mo->health -= K_DestroyBumpers(player, 1);
 			return false;
 		case DMG_SPECTATOR:
 			// disappearifies, but still gotta put items back in play
@@ -1997,9 +1996,10 @@ static boolean P_KillPlayer(player_t *player, mobj_t *inflictor, mobj_t *source,
 			P_SetTarget(&boom->target, player->mo);
 		}
 
-		K_DestroyBumpers(player, player->bumpers);
 		player->pflags |= PF_ELIMINATED;
 	}
+
+	K_DestroyBumpers(player, player->bumpers);
 
 	return true;
 }
