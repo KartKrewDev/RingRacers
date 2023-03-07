@@ -1666,6 +1666,9 @@ void R_RegisterEngineStuff(void)
 	CV_RegisterVar(&cv_maxportals);
 
 	CV_RegisterVar(&cv_movebob);
+#ifdef SCRAMBLE_REMOVED
+	CV_RegisterVar(&cv_scrambleremoved);
+#endif
 
 	// Frame interpolation/uncapped
 	CV_RegisterVar(&cv_fpscap);
