@@ -1199,6 +1199,11 @@ typedef enum
 	sfx_gate04,
 	sfx_gate05,
 
+	// Wavedashing
+	sfx_waved1,
+	sfx_waved2,
+	sfx_waved3,
+	
 	// Passing sounds
 	sfx_pass01,
 	sfx_pass02,

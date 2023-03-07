@@ -9411,6 +9411,9 @@ static void K_KartDrift(player_t *player, boolean onground)
 	{
 		if (K_IsLosingSliptideZip(player) && player->sliptideZip > 0)
 		{
+			if (!S_SoundPlaying(player->mo, sfx_waved2))
+				S_StartSound(player->mo, sfx_waved2);
+			S_StopSoundByID(player->mo, sfx_waved1);
 			player->sliptideZipDelay++;
 			if (player->sliptideZipDelay > TICRATE)
 			{
@@ -9439,8 +9442,15 @@ static void K_KartDrift(player_t *player, boolean onground)
 				K_SpawnDriftBoostExplosion(player, 0);
 				player->sliptideZip = 0;
 				player->sliptideZipDelay = 0;
-				S_StartSound(player->mo, sfx_s3kb6);
+				S_StopSoundByID(player->mo, sfx_waved1);
+				S_StopSoundByID(player->mo, sfx_waved2);
+				S_StartSound(player->mo, sfx_waved3);
 			}
+		}
+		else
+		{
+			S_StopSoundByID(player->mo, sfx_waved1);
+			S_StopSoundByID(player->mo, sfx_waved2);
 		}
 
 		player->aizdrifttilt -= player->aizdrifttilt / 4;
@@ -9454,6 +9464,9 @@ static void K_KartDrift(player_t *player, boolean onground)
 	else
 	{
 		player->sliptideZipDelay = 0;
+		S_StopSoundByID(player->mo, sfx_waved2);
+		if (!S_SoundPlaying(player->mo, sfx_waved1))
+			S_StartSound(player->mo, sfx_waved1);
 	}
 
 	if (player->drift

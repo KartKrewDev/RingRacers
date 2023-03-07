@@ -1131,6 +1131,10 @@ sfxinfo_t S_sfx[NUMSFX] =
   {"gate04", false,  32, 64, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
   {"gate05", false,  32, 64, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
 
+  {"waved1", false,  32, 64, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
+  {"waved2", false,  32, 64, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
+  {"waved3", false,  32, 64, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
+
   // Passing sounds
   {"pass01", false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
   {"pass02", false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
