@@ -1488,6 +1488,8 @@ void M_CharacterSelectTick(void)
 					else
 						CV_StealthSet(&cv_follower[i], followers[setup_player[i].followern].name);
 					CV_StealthSetValue(&cv_followercolor[i], setup_player[i].followercolor);
+
+					G_SetPlayerGamepadIndicatorToPlayerColor(i);
 				}
 
 				CV_StealthSetValue(&cv_splitplayers, setup_numplayers);

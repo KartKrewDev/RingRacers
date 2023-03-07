@@ -154,6 +154,8 @@ INT32 G_GetDeviceForPlayer(INT32 player);
 /// Set the given player index's assigned device. If the device is in use by another player, that player is unassigned.
 void G_SetDeviceForPlayer(INT32 player, INT32 device);
 
+void G_SetPlayerGamepadIndicatorToPlayerColor(INT32 player);
+
 /// Get the gamekeydown array (NUMINPUTS values) for the given device, or NULL if the device id is invalid.
 INT32* G_GetDeviceGameKeyDownArray(INT32 device);
 

@@ -6207,6 +6207,7 @@ static void FollowerAny_OnChange(UINT8 pnum)
 		return; // don't send anything there.
 
 	SendNameAndColor(pnum);
+	G_SetPlayerGamepadIndicatorToPlayerColor(pnum);
 }
 
 // sends the follower change for players
@@ -6358,6 +6359,8 @@ static void Color_OnChange(void)
 		}
 	}
 	lastgoodcolor[0] = cv_playercolor[0].value;
+
+	G_SetPlayerGamepadIndicatorToPlayerColor(0);
 }
 
 /** Sends a color change for the secondary splitscreen player, unless that
@@ -6386,6 +6389,8 @@ static void Color2_OnChange(void)
 		}
 	}
 	lastgoodcolor[1] = cv_playercolor[1].value;
+
+	G_SetPlayerGamepadIndicatorToPlayerColor(1);
 }
 
 static void Color3_OnChange(void)
@@ -6409,6 +6414,8 @@ static void Color3_OnChange(void)
 		}
 	}
 	lastgoodcolor[2] = cv_playercolor[2].value;
+
+	G_SetPlayerGamepadIndicatorToPlayerColor(2);
 }
 
 static void Color4_OnChange(void)
@@ -6432,6 +6439,8 @@ static void Color4_OnChange(void)
 		}
 	}
 	lastgoodcolor[3] = cv_playercolor[3].value;
+
+	G_SetPlayerGamepadIndicatorToPlayerColor(3);
 }
 
 /** Displays the result of the chat being muted or unmuted.
