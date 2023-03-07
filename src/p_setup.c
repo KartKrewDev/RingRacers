@@ -101,6 +101,8 @@
 #include "k_specialstage.h"
 #include "acs/interface.h"
 #include "doomstat.h" // MAXMUSNAMES
+#include "k_podium.h"
+#include "k_rank.h"
 
 // Replay names have time
 #if !defined (UNDER_CE)
@@ -1278,7 +1280,7 @@ static void P_LoadThings(UINT8 *data)
 		mt->options = READUINT16(data);
 		mt->extrainfo = (UINT8)(mt->type >> 12);
 		Tag_FSet(&mt->tags, 0);
-		mt->scale = mapobjectscale;
+		mt->scale = FRACUNIT;
 		memset(mt->args, 0, NUMMAPTHINGARGS*sizeof(*mt->args));
 		memset(mt->stringargs, 0x00, NUMMAPTHINGSTRINGARGS*sizeof(*mt->stringargs));
 		mt->special = 0;
@@ -1783,7 +1785,7 @@ static void ParseTextmapThingParameter(UINT32 i, const char *param, const char *
 	else if (fastcmp(param, "type"))
 		mapthings[i].type = atol(val);
 	else if (fastcmp(param, "scale") || fastcmp(param, "scalex") || fastcmp(param, "scaley"))
-		mapthings[i].scale = FixedMul(mapobjectscale, FLOAT_TO_FIXED(atof(val)));
+		mapthings[i].scale = FLOAT_TO_FIXED(atof(val));
 	// Flags
 	else if (fastcmp(param, "flip") && fastcmp("true", val))
 		mapthings[i].options |= MTF_OBJECTFLIP;
@@ -2731,7 +2733,7 @@ static void P_LoadTextmap(void)
 		mt->z = 0;
 		mt->extrainfo = 0;
 		Tag_FSet(&mt->tags, 0);
-		mt->scale = mapobjectscale;
+		mt->scale = FRACUNIT;
 		memset(mt->args, 0, NUMMAPTHINGARGS*sizeof(*mt->args));
 		memset(mt->stringargs, 0x00, NUMMAPTHINGSTRINGARGS*sizeof(*mt->stringargs));
 		mt->special = 0;
@@ -7083,7 +7085,11 @@ static void P_InitLevelSettings(void)
 	gamespeed = KARTSPEED_EASY;
 	franticitems = false;
 
-	if (grandprixinfo.gp == true)
+	if (K_PodiumSequence() == true)
+	{
+		; // NOP
+	}
+	else if (grandprixinfo.gp == true)
 	{
 		if (gametyperules & GTR_CIRCUIT)
 		{
@@ -7108,8 +7114,6 @@ static void P_InitLevelSettings(void)
 		}
 		franticitems = (boolean)cv_kartfrantic.value;
 	}
-
-	g_hiscore = 0;
 
 	memset(&battleovertime, 0, sizeof(struct battleovertime));
 	speedscramble = encorescramble = -1;
@@ -7359,7 +7363,7 @@ static void P_InitPlayers(void)
 
 		players[i].mo = NULL;
 
-		if (!(gametyperules & GTR_CIRCUIT))
+		if (!(gametyperules & GTR_CIRCUIT) && K_PodiumSequence() == false)
 		{
 			G_DoReborn(i);
 		}
@@ -7368,6 +7372,8 @@ static void P_InitPlayers(void)
 			G_SpawnPlayer(i);
 		}
 	}
+
+	K_UpdateAllPlayerPositions();
 }
 
 static void P_InitGametype(void)
@@ -7376,6 +7382,26 @@ static void P_InitGametype(void)
 
 	spectateGriefed = 0;
 	K_CashInPowerLevels(); // Pushes power level changes even if intermission was skipped
+
+	if (grandprixinfo.gp == true)
+	{
+		if (grandprixinfo.initalize == true)
+		{
+			K_InitGrandPrixRank(&grandprixinfo.rank);
+			K_InitGrandPrixBots();
+			grandprixinfo.initalize = false;
+		}
+		else if (grandprixinfo.wonround == true)
+		{
+			K_UpdateGrandPrixBots();
+			grandprixinfo.wonround = false;
+		}
+	}
+	else if (!modeattacking)
+	{
+		// We're in a Match Race, use simplistic randomized bots.
+		K_UpdateMatchRaceBots();
+	}
 
 	P_InitPlayers();
 
@@ -7419,7 +7445,7 @@ static void P_InitGametype(void)
 
 	// Start recording replay in multiplayer with a temp filename
 	//@TODO I'd like to fix dedis crashing when recording replays for the future too...
-	if (!demo.playback && multiplayer && !dedicated)
+	if (gamestate == GS_LEVEL && !demo.playback && multiplayer && !dedicated)
 	{
 		char buf[MAX_WADPATH];
 		char ver[128];
@@ -7698,7 +7724,7 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 
 		// Fade out music here. Deduct 2 tics so the fade volume actually reaches 0.
 		// But don't halt the music! S_Start will take care of that. This dodges a MIDI crash bug.
-		if (!(reloadinggamestate || titlemapinaction))
+		if (!(reloadinggamestate || gamestate != GS_LEVEL))
 			S_FadeMusic(0, FixedMul(
 				FixedDiv((F_GetWipeLength(wipedefs[wipe_level_toblack])-2)*NEWTICRATERATIO, NEWTICRATE), MUSICRATE));
 
@@ -7706,7 +7732,7 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 		if (rendermode != render_none)
 			V_ReloadPalette(); // Set the level palette
 
-		if (!(reloadinggamestate || titlemapinaction))
+		if (!(reloadinggamestate || gamestate != GS_LEVEL))
 		{
 			if (ranspecialwipe == 2)
 			{
@@ -7746,8 +7772,11 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 
 		F_RunWipe(wipetype, wipedefs[wipetype], false, ((levelfadecol == 0) ? "FADEMAP1" : "FADEMAP0"), false, false);
 	}
-	/*if (!titlemapinaction)
-		wipegamestate = GS_LEVEL;*/
+
+	/*
+	if (!titlemapinaction)
+		wipegamestate = GS_LEVEL;
+	*/
 
 	// Close text prompt before freeing the old level
 	F_EndTextPrompt(false, true);
@@ -7949,7 +7978,7 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 	P_MapEnd(); // tm.thing is no longer needed from this point onwards
 
 	// Took me 3 hours to figure out why my progression kept on getting overwritten with the titlemap...
-	if (!titlemapinaction)
+	if (gamestate == GS_LEVEL)
 	{
 		if (!lastmaploaded) // Start a new game?
 		{
@@ -7960,27 +7989,6 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 			// If you're looking for saving sp file progression (distinct from G_SaveGameOver), check G_DoCompleted.
 		}
 		lastmaploaded = gamemap; // HAS to be set after saving!!
-	}
-
-	if (reloadinggamestate)
-		;
-	else if (grandprixinfo.gp == true)
-	{
-		if (grandprixinfo.initalize == true)
-		{
-			K_InitGrandPrixBots();
-			grandprixinfo.initalize = false;
-		}
-		else if (grandprixinfo.wonround == true)
-		{
-			K_UpdateGrandPrixBots();
-			grandprixinfo.wonround = false;
-		}
-	}
-	else if (!modeattacking)
-	{
-		// We're in a Match Race, use simplistic randomized bots.
-		K_UpdateMatchRaceBots();
 	}
 
 	if (!fromnetsave) // uglier hack

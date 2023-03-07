@@ -64,6 +64,8 @@ add_executable(SRB2SDL2 MACOSX_BUNDLE WIN32
 	tables.c
 	r_bsp.c
 	r_data.c
+	r_debug.cpp
+	r_debug_parser.cpp
 	r_draw.c
 	r_fps.c
 	r_main.c
@@ -134,6 +136,8 @@ add_executable(SRB2SDL2 MACOSX_BUNDLE WIN32
 	k_profiles.c
 	k_specialstage.c
 	k_roulette.c
+	k_podium.c
+	k_rank.c
 )
 
 if(SRB2_CONFIG_ENABLE_WEBM_MOVIES)

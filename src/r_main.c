@@ -928,7 +928,22 @@ void R_ApplyViewMorph(int s)
 
 angle_t R_ViewRollAngle(const player_t *player)
 {
-	angle_t roll = player->viewrollangle;
+	angle_t roll = 0;
+
+	if (gamestate != GS_LEVEL)
+	{
+		// FIXME: The way this is implemented is totally
+		// incompatible with cameras that aren't directly
+		// tied to the player. (podium, titlemap,
+		// MT_ALTVIEWMAN in general)
+
+		// All of these player variables should affect their
+		// camera_t in P_MoveChaseCamera, and then this
+		// just returns that variable instead.
+		return 0;
+	}
+
+	roll = player->viewrollangle;
 
 	if (cv_tilting.value)
 	{
@@ -1192,10 +1207,10 @@ static void R_SetupAimingFrame(int s)
 	player_t *player = &players[displayplayers[s]];
 	camera_t *thiscam = &camera[s];
 
-	if (player->awayviewtics)
+	if (player->awayview.tics)
 	{
-		newview->aim = player->awayviewaiming;
-		newview->angle = player->awayviewmobj->angle;
+		newview->aim = player->awayview.mobj->pitch;
+		newview->angle = player->awayview.mobj->angle;
 	}
 	else if (thiscam && thiscam->chase)
 	{
@@ -1237,15 +1252,15 @@ void R_SetupFrame(int s)
 
 	R_SetupAimingFrame(s);
 
-	if (player->awayviewtics)
+	if (player->awayview.tics)
 	{
 		// cut-away view stuff
-		r_viewmobj = player->awayviewmobj; // should be a MT_ALTVIEWMAN
+		r_viewmobj = player->awayview.mobj; // should be a MT_ALTVIEWMAN
 		I_Assert(r_viewmobj != NULL);
 
 		newview->x = r_viewmobj->x;
 		newview->y = r_viewmobj->y;
-		newview->z = r_viewmobj->z + 20*FRACUNIT;
+		newview->z = r_viewmobj->z;
 
 		R_SetupCommonFrame(player, r_viewmobj->subsector);
 	}
@@ -1306,10 +1321,10 @@ void R_SkyboxFrame(int s)
 		vector3_t campos = {0,0,0}; // Position of player's actual view point
 		mobj_t *center = player->skybox.centerpoint;
 
-		if (player->awayviewtics) {
-			campos.x = player->awayviewmobj->x;
-			campos.y = player->awayviewmobj->y;
-			campos.z = player->awayviewmobj->z + 20*FRACUNIT;
+		if (player->awayview.tics) {
+			campos.x = player->awayview.mobj->x;
+			campos.y = player->awayview.mobj->y;
+			campos.z = player->awayview.mobj->z;
 		} else if (thiscam->chase) {
 			campos.x = thiscam->x;
 			campos.y = thiscam->y;
@@ -1403,7 +1418,7 @@ boolean R_IsViewpointThirdPerson(player_t *player, boolean skybox)
 	boolean chasecam = R_ViewpointHasChasecam(player);
 
 	// cut-away view stuff
-	if (player->awayviewtics || skybox)
+	if (player->awayview.tics || skybox)
 		return chasecam;
 	// use outside cam view
 	else if (!player->spectator && chasecam)
@@ -1651,9 +1666,19 @@ void R_RegisterEngineStuff(void)
 	CV_RegisterVar(&cv_maxportals);
 
 	CV_RegisterVar(&cv_movebob);
+#ifdef SCRAMBLE_REMOVED
+	CV_RegisterVar(&cv_scrambleremoved);
+#endif
 
 	// Frame interpolation/uncapped
 	CV_RegisterVar(&cv_fpscap);
 
 	CV_RegisterVar(&cv_drawpickups);
+
+	// debugging
+
+	CV_RegisterVar(&cv_debugrender_contrast);
+	CV_RegisterVar(&cv_debugrender_spriteclip);
+
+	COM_AddCommand("debugrender_highlight", Command_Debugrender_highlight);
 }

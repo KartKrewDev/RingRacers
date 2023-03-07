@@ -150,8 +150,10 @@ void K_DoIngameRespawn(player_t *player)
 	// FAULT
 	if ((gametyperules & GTR_CIRCUIT) && leveltime < starttime)
 	{
-		if (!(mapheaderinfo[gamemap-1]->levelflags & LF_SECTIONRACE))
-			player->respawn.wp = K_GetFinishLineWaypoint()->prevwaypoints[0];
+		const waypoint_t *finish = K_GetFinishLineWaypoint();
+
+		if (!(mapheaderinfo[gamemap-1]->levelflags & LF_SECTIONRACE) && finish != NULL)
+			player->respawn.wp = finish->prevwaypoints[0];
 		K_DoFault(player);
 	}
 
@@ -159,6 +161,7 @@ void K_DoIngameRespawn(player_t *player)
 	player->ringboost = 0;
 	player->driftboost = player->strongdriftboost = 0;
 	player->gateBoost = 0;
+	player->sliptideZip = player->sliptideZipBoost = player->sliptideZipDelay = 0;
 
 	K_TumbleInterrupt(player);
 	P_ResetPlayer(player);

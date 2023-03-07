@@ -139,7 +139,7 @@ void COM_Lua_f(void);
 // #define HAVE_LUA_SEGS
 
 #define ISINLEVEL \
-	(gamestate == GS_LEVEL || titlemapinaction)
+	(G_GamestateUsesLevel())
 
 #define INLEVEL if (! ISINLEVEL)\
 return luaL_error(L, "This can only be used in a level!");

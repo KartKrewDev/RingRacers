@@ -36,6 +36,7 @@ extern "C" {
 #include "../p_spec.h"
 #include "../w_wad.h"
 #include "../z_zone.h"
+#include "../p_local.h"
 }
 
 #include "environment.hpp"
@@ -160,6 +161,10 @@ Environment::Environment()
 	addFuncDataACS0( 307, addCallFunc(CallFunc_PlayerLap));
 	addFuncDataACS0( 308, addCallFunc(CallFunc_LowestLap));
 	addFuncDataACS0( 309, addCallFunc(CallFunc_EncoreMode));
+
+	addFuncDataACS0( 500, addCallFunc(CallFunc_CameraWait));
+	addFuncDataACS0( 501, addCallFunc(CallFunc_PodiumPosition));
+	addFuncDataACS0( 502, addCallFunc(CallFunc_PodiumFinish));
 }
 
 ACSVM::Thread *Environment::allocThread()
@@ -261,6 +266,17 @@ bool Environment::checkTag(ACSVM::Word type, ACSVM::Word tag)
 		{
 			const polyobj_t *po = Polyobj_GetForNum(tag);
 			return (po == nullptr || po->thinker == nullptr);
+		}
+
+		case ACS_TAGTYPE_CAMERA:
+		{
+			const mobj_t *camera = P_FindObjectTypeFromTag(MT_ALTVIEWMAN, tag);
+			if (camera == nullptr || camera->spawnpoint == nullptr)
+			{
+				return true;
+			}
+
+			return (camera->tracer == nullptr || P_MobjWasRemoved(camera->tracer) == true);
 		}
 	}
 

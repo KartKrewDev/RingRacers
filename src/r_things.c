@@ -939,6 +939,8 @@ static void R_DrawVisSprite(vissprite_t *vis)
 	if (!dc_colormap)
 		dc_colormap = colormaps;
 
+	dc_lightmap = colormaps;
+
 	dc_fullbright = colormaps;
 
 	if (encoremap && !vis->mobj->color && !(vis->mobj->flags & MF_DONTENCOREMAP))
@@ -1142,6 +1144,8 @@ static void R_DrawPrecipitationVisSprite(vissprite_t *vis)
 		dc_colormap += COLORMAP_REMAPOFFSET;
 		dc_fullbright += COLORMAP_REMAPOFFSET;
 	}
+
+	dc_lightmap = colormaps;
 
 	dc_iscale = FixedDiv(FRACUNIT, vis->scale);
 	dc_texturemid = FixedDiv(vis->texturemid, this_scale);
@@ -2971,6 +2975,9 @@ static void R_CreateDrawNodes(maskcount_t* mask, drawnode_t* head, boolean temps
 
 	for (rover = vsprsortedhead.prev; rover != &vsprsortedhead; rover = rover->prev)
 	{
+		const boolean alwaysontop = cv_debugrender_spriteclip.value || (rover->renderflags & RF_ALWAYSONTOP);
+		const INT32 ontopflag = cv_debugrender_spriteclip.value ? 0 : (rover->renderflags & RF_ALWAYSONTOP);
+
 		if (rover->szt > vid.height || rover->sz < 0)
 			continue;
 
@@ -2978,6 +2985,25 @@ static void R_CreateDrawNodes(maskcount_t* mask, drawnode_t* head, boolean temps
 
 		for (r2 = head->next; r2 != head; r2 = r2->next)
 		{
+			if (alwaysontop)
+			{
+				// Only sort behind other sprites; sorts in
+				// front of everything else.
+				if (!r2->sprite)
+				{
+					continue;
+				}
+
+				// Only sort behind other RF_ALWAYSONTOP sprites.
+				// This avoids sorting behind a sprite that is
+				// behind level geometry and thus sorting this
+				// one behind level geometry too.
+				if (r2->sprite->renderflags ^ ontopflag)
+				{
+					continue;
+				}
+			}
+
 			if (r2->plane)
 			{
 				fixed_t planeobjectz, planecameraz;
@@ -3210,6 +3236,8 @@ static void R_DrawSprite(vissprite_t *spr)
 	mfloorclip = spr->clipbot;
 	mceilingclip = spr->cliptop;
 
+	R_CheckDebugHighlight(SW_HI_THINGS);
+
 	if (spr->cut & SC_BBOX)
 		R_DrawThingBoundingBox(spr);
 	else if (spr->cut & SC_SPLAT)
@@ -3237,6 +3265,16 @@ void R_ClipVisSprite(vissprite_t *spr, INT32 x1, INT32 x2, portal_t* portal)
 	fixed_t		scale;
 	fixed_t		lowscale;
 	INT32		silhouette;
+
+	if ((spr->renderflags & RF_ALWAYSONTOP) || cv_debugrender_spriteclip.value)
+	{
+		for (x = x1; x <= x2; x++)
+		{
+			spr->clipbot[x] = (INT16)viewheight;
+			spr->cliptop[x] = (INT16)con_clipviewtop;
+		}
+		return;
+	}
 
 	for (x = x1; x <= x2; x++)
 	{

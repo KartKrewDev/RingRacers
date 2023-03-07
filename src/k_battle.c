@@ -20,6 +20,7 @@
 #include "k_boss.h" // bossinfo.valid
 #include "p_spec.h"
 #include "k_objects.h"
+#include "k_rank.h"
 
 // Battle overtime info
 struct battleovertime battleovertime;
@@ -91,8 +92,10 @@ void K_CheckBumpers(void)
 {
 	UINT8 i;
 	UINT8 numingame = 0;
-	UINT32 toproundscore = 0;
 	UINT8 nobumpers = 0;
+	UINT8 eliminated = 0;
+
+	const boolean singleplayer = (battlecapsules || bossinfo.valid);
 
 	if (!(gametyperules & GTR_BUMPERS))
 		return;
@@ -110,36 +113,34 @@ void K_CheckBumpers(void)
 
 		numingame++;
 
-		if (players[i].roundscore > toproundscore)
-		{
-			toproundscore = players[i].roundscore;
-		}
-
 		if (players[i].bumpers <= 0) // if you don't have any bumpers, you're probably not a winner
 		{
 			nobumpers++;
 		}
+
+		if (players[i].pflags & PF_ELIMINATED)
+		{
+			eliminated++;
+		}
 	}
 
-	if (battlecapsules || bossinfo.valid)
+	if (singleplayer
+			? nobumpers > 0 && nobumpers >= numingame
+			: eliminated >= numingame - 1)
 	{
-		if (nobumpers > 0 && nobumpers >= numingame)
+		for (i = 0; i < MAXPLAYERS; i++)
 		{
-			for (i = 0; i < MAXPLAYERS; i++)
-			{
-				if (!playeringame[i])
-					continue;
-				if (players[i].spectator)
-					continue;
+			if (!playeringame[i])
+				continue;
+			if (players[i].spectator)
+				continue;
+
+			if (singleplayer)
 				players[i].pflags |= PF_NOCONTEST;
-				P_DoPlayerExit(&players[i]);
-			}
+
+			P_DoPlayerExit(&players[i]);
 		}
 		return;
-	}
-	else
-	{
-		g_hiscore = toproundscore;
 	}
 
 	if (numingame <= 1)
@@ -183,10 +184,8 @@ void K_CheckEmeralds(player_t *player)
 			continue;
 		}
 
-		players[i].bumpers = 0;
+		P_DoPlayerExit(&players[i]);
 	}
-
-	K_CheckBumpers();
 }
 
 UINT16 K_GetChaosEmeraldColor(UINT32 emeraldType)
@@ -791,7 +790,14 @@ void K_BattleInit(boolean singleplayercontext)
 		{
 			if (!playeringame[i] || players[i].spectator)
 				continue;
+
 			players[i].bumpers = maxbumpers;
+
+			if (players[i].mo)
+			{
+				players[i].mo->health = maxbumpers;
+			}
+
 			K_SpawnPlayerBattleBumpers(players+i);
 		}
 	}

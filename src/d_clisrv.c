@@ -1272,7 +1272,7 @@ static void CL_LoadReceivedSavegame(boolean reloading)
 	paused = false;
 	demo.playback = false;
 	demo.title = false;
-	titlemapinaction = TITLEMAP_OFF;
+	titlemapinaction = false;
 	automapactive = false;
 
 	// load a base level
@@ -2542,7 +2542,7 @@ void CL_ClearPlayer(INT32 playernum)
 	int i;
 
 	// Handle mobj_t pointers.
-	if (gamestate == GS_LEVEL)
+	if (G_GamestateUsesLevel() == true)
 	{
 		if (players[playernum].follower)
 		{
@@ -2557,10 +2557,11 @@ void CL_ClearPlayer(INT32 playernum)
 
 		P_SetTarget(&players[playernum].skybox.viewpoint, NULL);
 		P_SetTarget(&players[playernum].skybox.centerpoint, NULL);
-		P_SetTarget(&players[playernum].awayviewmobj, NULL);
+		P_SetTarget(&players[playernum].awayview.mobj, NULL);
 		P_SetTarget(&players[playernum].followmobj, NULL);
 		P_SetTarget(&players[playernum].hoverhyudoro, NULL);
 		P_SetTarget(&players[playernum].stumbleIndicator, NULL);
+		P_SetTarget(&players[playernum].sliptideZipIndicator, NULL);
 	}
 
 	// Handle parties.
@@ -3764,9 +3765,6 @@ static void Got_AddBot(UINT8 **p, INT32 playernum)
 	players[newplayernum].skincolor = skins[skinnum].prefcolor;
 	sprintf(player_names[newplayernum], "%s", skins[skinnum].realname);
 	SetPlayerSkinByNum(newplayernum, skinnum);
-
-	players[newplayernum].spectator = !(gametyperules & GTR_BOTS)
-		|| (grandprixinfo.gp == true && grandprixinfo.eventmode != GPEVENT_NONE);
 
 	if (netgame)
 	{

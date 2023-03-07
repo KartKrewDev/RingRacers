@@ -540,9 +540,9 @@ void S_StartSoundAtVolume(const void *origin_p, sfxenum_t sfx_id, INT32 volume)
 			continue;
 		}
 
-		if (player->awayviewtics)
+		if (player->awayview.tics)
 		{
-			listenmobj[i] = player->awayviewmobj;
+			listenmobj[i] = player->awayview.mobj;
 		}
 		else
 		{
@@ -572,7 +572,7 @@ void S_StartSoundAtVolume(const void *origin_p, sfxenum_t sfx_id, INT32 volume)
 			continue;
 		}
 
-		if (camera[i].chase && !player->awayviewtics)
+		if (camera[i].chase && !player->awayview.tics)
 		{
 			listener[i].x = camera[i].x;
 			listener[i].y = camera[i].y;
@@ -827,9 +827,9 @@ void S_UpdateSounds(void)
 			continue;
 		}
 
-		if (player->awayviewtics)
+		if (player->awayview.tics)
 		{
-			listenmobj[i] = player->awayviewmobj;
+			listenmobj[i] = player->awayview.mobj;
 		}
 		else
 		{
@@ -858,7 +858,7 @@ void S_UpdateSounds(void)
 			continue;
 		}
 
-		if (camera[i].chase && !player->awayviewtics)
+		if (camera[i].chase && !player->awayview.tics)
 		{
 			listener[i].x = camera[i].x;
 			listener[i].y = camera[i].y;

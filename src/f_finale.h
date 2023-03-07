@@ -104,17 +104,10 @@ extern INT16 ttloop;
 extern UINT16 tttics;
 extern boolean ttavailable[6];
 
-
-typedef enum
-{
-	TITLEMAP_OFF = 0,
-	TITLEMAP_LOADING,
-	TITLEMAP_RUNNING
-} titlemap_enum;
-
 // Current menu parameters
 
-extern mobj_t *titlemapcameraref;
+extern altview_t titlemapcam;
+
 extern char curbgname[9];
 extern SINT8 curfadevalue;
 extern INT32 curbgcolor;
@@ -184,6 +177,7 @@ enum
 	wipe_credits_toblack,
 	wipe_evaluation_toblack,
 	wipe_gameend_toblack,
+	wipe_ceremony_toblack,
 	wipe_intro_toblack,
 	wipe_ending_toblack,
 	wipe_cutscene_toblack,
@@ -202,6 +196,7 @@ enum
 	wipe_credits_final,
 	wipe_evaluation_final,
 	wipe_gameend_final,
+	wipe_ceremony_final,
 	wipe_intro_final,
 	wipe_ending_final,
 	wipe_cutscene_final,

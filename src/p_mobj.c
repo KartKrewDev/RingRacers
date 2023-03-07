@@ -47,9 +47,13 @@
 #include "k_objects.h"
 #include "k_grandprix.h"
 #include "k_director.h"
+#include "m_easing.h"
+#include "k_podium.h"
 
 static CV_PossibleValue_t CV_BobSpeed[] = {{0, "MIN"}, {4*FRACUNIT, "MAX"}, {0, NULL}};
 consvar_t cv_movebob = CVAR_INIT ("movebob", "1.0", CV_FLOAT|CV_SAVE, CV_BobSpeed, NULL);
+
+consvar_t cv_scrambleremoved = CVAR_INIT ("scrambleremoved", "On", CV_NETVAR, CV_OnOff, NULL);
 
 actioncache_t actioncachehead;
 
@@ -3783,15 +3787,16 @@ void P_CalcChasePostImg(player_t *player, camera_t *thiscam)
 	{
 		postimg = postimg_mirror;
 	}
-	else if (player->awayviewtics && player->awayviewmobj && !P_MobjWasRemoved(player->awayviewmobj)) // Camera must obviously exist
+	else if (player->awayview.tics && player->awayview.mobj && !P_MobjWasRemoved(player->awayview.mobj)) // Camera must obviously exist
 	{
 		camera_t dummycam;
-		dummycam.subsector = player->awayviewmobj->subsector;
-		dummycam.x = player->awayviewmobj->x;
-		dummycam.y = player->awayviewmobj->y;
-		dummycam.z = player->awayviewmobj->z;
-		//dummycam.height = 40*FRACUNIT; // alt view height is 20*FRACUNIT
-		dummycam.height = 0;			 // Why? Remote viewpoint cameras have no height.
+
+		dummycam.subsector = player->awayview.mobj->subsector;
+		dummycam.x = player->awayview.mobj->x;
+		dummycam.y = player->awayview.mobj->y;
+		dummycam.z = player->awayview.mobj->z;
+		dummycam.height = 0;
+
 		// Are we in water?
 		if (P_CameraCheckWater(&dummycam))
 			postimg = postimg_water;
@@ -5269,6 +5274,11 @@ static boolean P_IsTrackerType(INT32 type)
 		case MT_PLAYER:
 			return true;
 
+		case MT_OVERTIME_CENTER:
+		case MT_MONITOR:
+		case MT_EMERALD:
+			return true;
+
 		default:
 			return false;
 	}
@@ -6390,6 +6400,7 @@ static void P_MobjSceneryThink(mobj_t *mobj)
 					numx->destscale = scale;
 				}
 
+#if 0
 				if (K_IsPlayerWanted(mobj->target->player) && mobj->movecount != 1)
 				{
 					mobj_t *wanted = P_SpawnMobj(mobj->x, mobj->y, mobj->z, MT_PLAYERWANTED);
@@ -6400,6 +6411,7 @@ static void P_MobjSceneryThink(mobj_t *mobj)
 					mobj->movecount = 1;
 				}
 				else if (!K_IsPlayerWanted(mobj->target->player))
+#endif
 					mobj->movecount = 0;
 			}
 			else
@@ -8092,8 +8104,8 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 			angle_t viewingangle;
 			statenum_t curstate = ((mobj->tics == 1) ? (mobj->state->nextstate) : ((statenum_t)(mobj->state-states)));
 
-			if (players[displayplayers[0]].awayviewtics)
-				viewingangle = R_PointToAngle2(mobj->target->x, mobj->target->y, players[displayplayers[0]].awayviewmobj->x, players[displayplayers[0]].awayviewmobj->y);
+			if (players[displayplayers[0]].awayview.tics)
+				viewingangle = R_PointToAngle2(mobj->target->x, mobj->target->y, players[displayplayers[0]].awayview.mobj->x, players[displayplayers[0]].awayview.mobj->y);
 			else if (!camera[0].chase && players[displayplayers[0]].mo)
 				viewingangle = R_PointToAngle2(mobj->target->x, mobj->target->y, players[displayplayers[0]].mo->x, players[displayplayers[0]].mo->y);
 			else
@@ -8223,8 +8235,8 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 		{
 			angle_t viewingangle;
 
-			if (players[displayplayers[0]].awayviewtics)
-				viewingangle = R_PointToAngle2(mobj->target->x, mobj->target->y, players[displayplayers[0]].awayviewmobj->x, players[displayplayers[0]].awayviewmobj->y);
+			if (players[displayplayers[0]].awayview.tics)
+				viewingangle = R_PointToAngle2(mobj->target->x, mobj->target->y, players[displayplayers[0]].awayview.mobj->x, players[displayplayers[0]].awayview.mobj->y);
 			else if (!camera[0].chase && players[displayplayers[0]].mo)
 				viewingangle = R_PointToAngle2(mobj->target->x, mobj->target->y, players[displayplayers[0]].mo->x, players[displayplayers[0]].mo->y);
 			else
@@ -8328,8 +8340,8 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 		{
 			angle_t viewingangle;
 
-			if (players[displayplayers[0]].awayviewtics)
-				viewingangle = R_PointToAngle2(mobj->target->x, mobj->target->y, players[displayplayers[0]].awayviewmobj->x, players[displayplayers[0]].awayviewmobj->y);
+			if (players[displayplayers[0]].awayview.tics)
+				viewingangle = R_PointToAngle2(mobj->target->x, mobj->target->y, players[displayplayers[0]].awayview.mobj->x, players[displayplayers[0]].awayview.mobj->y);
 			else if (!camera[0].chase && players[displayplayers[0]].mo)
 				viewingangle = R_PointToAngle2(mobj->target->x, mobj->target->y, players[displayplayers[0]].mo->x, players[displayplayers[0]].mo->y);
 			else
@@ -9491,6 +9503,66 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 	case MT_MONITOR_PART:
 		Obj_MonitorPartThink(mobj);
 		break;
+	case MT_ALTVIEWMAN:
+		{
+			mobj->momx = mobj->momy = mobj->momz = 0;
+
+			if (mobj->movefactor <= 0)
+			{
+				mobj->movefactor = FRACUNIT / TICRATE; // default speed
+			}
+
+			if (mobj->tracer != NULL && P_MobjWasRemoved(mobj->tracer) == false)
+			{
+				fixed_t newX = Easing_Linear(mobj->movecount, mobj->extravalue1, mobj->tracer->x);
+				fixed_t newY = Easing_Linear(mobj->movecount, mobj->extravalue2, mobj->tracer->y);
+				fixed_t newZ = Easing_Linear(mobj->movecount, mobj->cusval, mobj->tracer->z);
+
+				mobj->angle = Easing_Linear(mobj->movecount, mobj->movedir, mobj->tracer->angle);
+				mobj->pitch = Easing_Linear(mobj->movecount, mobj->lastlook, mobj->tracer->pitch);
+
+				mobj->momx = newX - mobj->x;
+				mobj->momy = newY - mobj->y;
+				mobj->momz = newZ - mobj->z;
+
+				mobj->movecount += mobj->movefactor;
+
+				if (mobj->movecount >= FRACUNIT)
+				{
+					mobj->movecount = mobj->movecount % FRACUNIT; // time
+
+					mobj->movedir = mobj->tracer->angle; // start angle
+					mobj->lastlook = mobj->tracer->pitch; // start pitch
+					mobj->extravalue1 = mobj->tracer->x; // start x
+					mobj->extravalue2 = mobj->tracer->y; // start y
+					mobj->cusval = mobj->tracer->z; // start z
+
+					P_SetTarget(&mobj->tracer, P_GetNextTubeWaypoint(mobj->tracer, false));
+				}
+			}
+
+			// If target is valid, then we'll focus on it.
+			if (mobj->target != NULL && P_MobjWasRemoved(mobj->target) == false)
+			{
+				mobj->angle = R_PointToAngle2(
+					mobj->x,
+					mobj->y,
+					mobj->target->x,
+					mobj->target->y
+				);
+
+				mobj->pitch = R_PointToAngle2(
+					0,
+					mobj->z,
+					R_PointToDist2(
+						mobj->x, mobj->y,
+						mobj->target->x, mobj->target->y
+					),
+					mobj->target->z + (mobj->target->height >> 1)
+				);
+			}
+		}
+		break;
 	default:
 		// check mobj against possible water content, before movement code
 		P_MobjCheckWater(mobj);
@@ -10468,9 +10540,6 @@ mobj_t *P_SpawnMobj(fixed_t x, fixed_t y, fixed_t z, mobjtype_t type)
 	else
 	switch (mobj->type)
 	{
-		case MT_ALTVIEWMAN:
-			if (titlemapinaction) mobj->flags &= ~MF_NOTHINK;
-			break;
 		case MT_LOCKONINF:
 			P_SetScale(mobj, (mobj->destscale = 3*mobj->scale));
 			break;
@@ -11056,9 +11125,6 @@ mapthing_t *itemrespawnque[ITEMQUESIZE];
 tic_t itemrespawntime[ITEMQUESIZE];
 size_t iquehead, iquetail;
 
-#ifdef PARANOIA
-#define SCRAMBLE_REMOVED // Force debug build to crash when Removed mobj is accessed
-#endif
 void P_RemoveMobj(mobj_t *mobj)
 {
 	I_Assert(mobj != NULL);
@@ -11194,7 +11260,10 @@ void P_RemoveMobj(mobj_t *mobj)
 	// DBG: set everything in mobj_t to 0xFF instead of leaving it. debug memory error.
 #ifdef SCRAMBLE_REMOVED
 	// Invalidate mobj_t data to cause crashes if accessed!
-	memset((UINT8 *)mobj + sizeof(thinker_t), 0xff, sizeof(mobj_t) - sizeof(thinker_t));
+	if (cv_scrambleremoved.value)
+	{
+		memset((UINT8 *)mobj + sizeof(thinker_t), 0xff, sizeof(mobj_t) - sizeof(thinker_t));
+	}
 #endif
 }
 
@@ -11665,7 +11734,9 @@ void P_SpawnPlayer(INT32 playernum)
 	mobj_t *mobj;
 
 	if (p->playerstate == PST_REBORN)
-		G_PlayerReborn(playernum, false);
+	{
+		G_PlayerReborn(playernum, (p->jointime <= 1));
+	}
 
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
@@ -11690,7 +11761,8 @@ void P_SpawnPlayer(INT32 playernum)
 	}
 	else if (p->bot)
 	{
-		if (grandprixinfo.gp == true && grandprixinfo.eventmode != GPEVENT_NONE)
+		if (K_PodiumSequence() == false
+			&& (!(gametyperules & GTR_BOTS) || (grandprixinfo.gp == true && grandprixinfo.eventmode != GPEVENT_NONE)))
 		{
 			// Bots aren't supposed to be here.
 			p->spectator = true;
@@ -11754,7 +11826,7 @@ void P_SpawnPlayer(INT32 playernum)
 			p->skincolor = skincolor_blueteam;
 	}
 
-	if (leveltime > introtime)
+	if (leveltime > introtime && K_PodiumSequence() == false)
 		p->flashing = K_GetKartFlashing(p); // Babysitting deterrent
 
 	mobj = P_SpawnMobj(0, 0, 0, MT_PLAYER);
@@ -11798,6 +11870,8 @@ void P_SpawnPlayer(INT32 playernum)
 
 	K_InitStumbleIndicator(p);
 
+	K_InitSliptideZipIndicator(p);
+
 	if (gametyperules & GTR_ITEMARROWS)
 	{
 		mobj_t *overheadarrow = P_SpawnMobj(mobj->x, mobj->y, mobj->z + mobj->height + 16*FRACUNIT, MT_PLAYERARROW);
@@ -11832,6 +11906,11 @@ void P_SpawnPlayer(INT32 playernum)
 		{
 			p->bumpers = K_StartingBumperCount();
 			K_SpawnPlayerBattleBumpers(p);
+		}
+
+		if (p->bumpers > 0)
+		{
+			mobj->health = p->bumpers;
 		}
 	}
 
@@ -11894,6 +11973,11 @@ void P_AfterPlayerSpawn(INT32 playernum)
 
 	if (CheckForReverseGravity)
 		P_CheckGravity(mobj, false);
+
+	if (K_PodiumSequence() == true)
+	{
+		K_InitializePodiumWaypoint(p);
+	}
 }
 
 // spawn it at a playerspawn mapthing
@@ -11976,7 +12060,7 @@ void P_MovePlayerToSpawn(INT32 playernum, mapthing_t *mthing)
 	mobj->angle = angle;
 
 	// FAULT
-	if (leveltime > introtime && !p->spectator)
+	if (gamestate == GS_LEVEL && leveltime > introtime && !p->spectator)
 	{
 		K_DoIngameRespawn(p);
 	}
@@ -12054,6 +12138,7 @@ void P_MovePlayerToStarpost(INT32 playernum)
 
 fixed_t P_GetMobjSpawnHeight(const mobjtype_t mobjtype, const fixed_t x, const fixed_t y, const fixed_t dz, const fixed_t offset, const boolean flip, const fixed_t scale)
 {
+	const fixed_t finalScale = FixedMul(scale, mapobjectscale);
 	const subsector_t *ss = R_PointInSubsector(x, y);
 
 	// Axis objects snap to the floor.
@@ -12062,9 +12147,9 @@ fixed_t P_GetMobjSpawnHeight(const mobjtype_t mobjtype, const fixed_t x, const f
 
 	// Establish height.
 	if (flip)
-		return P_GetSectorCeilingZAt(ss->sector, x, y) - dz - FixedMul(scale, offset + mobjinfo[mobjtype].height);
+		return P_GetSectorCeilingZAt(ss->sector, x, y) - dz - FixedMul(finalScale, offset + mobjinfo[mobjtype].height);
 	else
-		return P_GetSectorFloorZAt(ss->sector, x, y) + dz + FixedMul(scale, offset);
+		return P_GetSectorFloorZAt(ss->sector, x, y) + dz + FixedMul(finalScale, offset);
 }
 
 fixed_t P_GetMapThingSpawnHeight(const mobjtype_t mobjtype, const mapthing_t* mthing, const fixed_t x, const fixed_t y)
@@ -13363,16 +13448,14 @@ static boolean P_SetupSpawnedMapThing(mapthing_t *mthing, mobj_t *mobj, boolean 
 
 static mobj_t *P_SpawnMobjFromMapThing(mapthing_t *mthing, fixed_t x, fixed_t y, fixed_t z, mobjtype_t i)
 {
-	fixed_t relativise = FixedDiv(mthing->scale, mapobjectscale);
-
 	mobj_t *mobj = NULL;
 	boolean doangle = true;
 
 	mobj = P_SpawnMobj(x, y, z, i);
 	mobj->spawnpoint = mthing;
 
-	P_SetScale(mobj, FixedMul(mobj->scale, relativise));
-	mobj->destscale = FixedMul(mobj->destscale, relativise);
+	P_SetScale(mobj, FixedMul(mobj->scale, mthing->scale));
+	mobj->destscale = FixedMul(mobj->destscale, mthing->scale);
 
 	if (!P_SetupSpawnedMapThing(mthing, mobj, &doangle))
 		return mobj;

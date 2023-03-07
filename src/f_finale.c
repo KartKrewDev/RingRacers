@@ -44,13 +44,14 @@
 
 // SRB2Kart
 #include "k_menu.h"
+#include "k_grandprix.h"
 
 // Stage of animation:
 // 0 = text, 1 = art screen
 INT32 finalecount;
 INT32 titlescrollxspeed = 16;
 INT32 titlescrollyspeed = 0;
-UINT8 titlemapinaction = TITLEMAP_OFF;
+boolean titlemapinaction = false;
 
 static INT32 timetonext; // Delay between screen changes
 
@@ -62,7 +63,7 @@ static tic_t stoptimer;
 static boolean keypressed = false;
 
 static INT32 menuanimtimer; // Title screen: background animation timing
-mobj_t *titlemapcameraref = NULL;
+altview_t titlemapcam = {0};
 
 // menu presentation state
 char curbgname[9];
@@ -1835,14 +1836,14 @@ void F_StartTitleScreen(void)
 		mapthing_t *startpos;
 
 		gamestate_t prevwipegamestate = wipegamestate;
-		titlemapinaction = TITLEMAP_LOADING;
-		titlemapcameraref = NULL;
+		titlemapinaction = true;
+		P_SetTarget(&titlemapcam.mobj, NULL);
 		gamemap = titleMapNum+1;
 
 		maptol = mapheaderinfo[titleMapNum]->typeoflevel;
 		globalweather = mapheaderinfo[titleMapNum]->weather;
 
-		G_DoLoadLevel(true);
+		G_DoLoadLevelEx(true, GS_TITLESCREEN);
 		if (!titlemap)
 			return;
 
@@ -1878,12 +1879,11 @@ void F_StartTitleScreen(void)
 	}
 	else
 	{
-		titlemapinaction = TITLEMAP_OFF;
+		G_SetGamestate(GS_TITLESCREEN);
+		titlemapinaction = false;
 		gamemap = 1; // g_game.c
 		CON_ClearHUD();
 	}
-
-	G_SetGamestate(GS_TITLESCREEN);
 
 	// IWAD dependent stuff.
 
@@ -2139,7 +2139,7 @@ void F_TitleScreenTicker(boolean run)
 		mobj_t *cameraref = NULL;
 
 		// If there's a Line 422 Switch Cut-Away view, don't force us.
-		if (!titlemapcameraref || titlemapcameraref->type != MT_ALTVIEWMAN)
+		if (titlemapcam.mobj == NULL || titlemapcam.mobj->type != MT_ALTVIEWMAN)
 		{
 			for (th = thlist[THINK_MOBJ].next; th != &thlist[THINK_MOBJ]; th = th->next)
 			{
@@ -2154,20 +2154,27 @@ void F_TitleScreenTicker(boolean run)
 				if (mo2->type != MT_ALTVIEWMAN)
 					continue;
 
-				cameraref = titlemapcameraref = mo2;
+				cameraref = mo2;
 				break;
+			}
+
+			if (cameraref != NULL)
+			{
+				P_SetTarget(&titlemapcam.mobj, cameraref);
 			}
 		}
 		else
-			cameraref = titlemapcameraref;
+		{
+			cameraref = titlemapcam.mobj;
+		}
 
-		if (cameraref)
+		if (cameraref != NULL)
 		{
 			camera[0].x = cameraref->x;
 			camera[0].y = cameraref->y;
 			camera[0].z = cameraref->z;
 			camera[0].angle = cameraref->angle;
-			camera[0].aiming = cameraref->cusval;
+			camera[0].aiming = cameraref->pitch;
 			camera[0].subsector = cameraref->subsector;
 		}
 		else

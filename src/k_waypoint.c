@@ -236,6 +236,29 @@ INT32 K_GetWaypointID(waypoint_t *waypoint)
 }
 
 /*--------------------------------------------------
+	waypoint_t *K_GetWaypointFromID(INT32 waypointID)
+
+		See header file for description.
+--------------------------------------------------*/
+waypoint_t *K_GetWaypointFromID(INT32 waypointID)
+{
+	waypoint_t *waypoint = NULL;
+	size_t i = SIZE_MAX;
+
+	for (i = 0; i < numwaypoints; i++)
+	{
+		waypoint = &waypointheap[i];
+
+		if (K_GetWaypointID(waypoint) == waypointID)
+		{
+			return waypoint;
+		}
+	}
+
+	return NULL;
+}
+
+/*--------------------------------------------------
 	UINT32 K_GetCircuitLength(void)
 
 		See header file for description.
@@ -578,7 +601,7 @@ static void K_DebugWaypointDrawRadius(waypoint_t *const waypoint)
 
 	spawnX = waypointmobj->x;
 	spawnY = waypointmobj->y;
-	spawnZ = waypointmobj->z + 16*mapobjectscale;
+	spawnZ = waypointmobj->z;
 
 	radiusOrb = P_SpawnMobj(spawnX, spawnY, spawnZ, MT_SPARK);
 
@@ -586,8 +609,9 @@ static void K_DebugWaypointDrawRadius(waypoint_t *const waypoint)
 	radiusOrb->tics = 1;
 
 	radiusOrb->frame &= ~FF_TRANSMASK;
-	radiusOrb->frame |= FF_FULLBRIGHT;
+	radiusOrb->frame |= FF_FULLBRIGHT|FF_REVERSESUBTRACT;
 	radiusOrb->color = SKINCOLOR_PURPLE;
+	radiusOrb->renderflags |= RF_ALWAYSONTOP;
 
 	radiusOrb->destscale = FixedDiv(waypointmobj->radius, spriteRadius);
 	P_SetScale(radiusOrb, radiusOrb->destscale);
@@ -627,6 +651,7 @@ void K_DebugWaypointsVisualise(void)
 
 		debugmobj->frame &= ~FF_TRANSMASK;
 		debugmobj->frame |= FF_FULLBRIGHT; //FF_TRANS20
+		debugmobj->renderflags |= RF_ALWAYSONTOP;
 
 		// There's a waypoint setup for this mobj! So draw that it's a valid waypoint and draw lines to its connections
 		if (waypoint != NULL)

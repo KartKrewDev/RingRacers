@@ -28,7 +28,7 @@
 #include "r_things.h" // numskins
 #include "k_race.h" // finishBeamLine
 #include "m_perfstats.h"
-
+#include "k_podium.h"
 
 /*--------------------------------------------------
 	boolean K_AddBot(UINT8 skin, UINT8 difficulty, UINT8 *p)
@@ -251,6 +251,9 @@ void K_UpdateMatchRaceBots(void)
 --------------------------------------------------*/
 boolean K_PlayerUsesBotMovement(player_t *player)
 {
+	if (K_PodiumSequence() == true)
+		return true;
+
 	if (player->exiting)
 		return true;
 
@@ -1255,6 +1258,63 @@ static INT32 K_HandleBotReverse(player_t *player, ticcmd_t *cmd, botprediction_t
 }
 
 /*--------------------------------------------------
+	static void K_BotPodiumTurning(player_t *player, ticcmd_t *cmd)
+
+		Calculates bot turning for the podium cutscene.
+--------------------------------------------------*/
+static void K_BotPodiumTurning(player_t *player, ticcmd_t *cmd)
+{
+	const angle_t destAngle = R_PointToAngle2(
+		player->mo->x, player->mo->y,
+		player->currentwaypoint->mobj->x, player->currentwaypoint->mobj->y
+	);
+	const INT32 delta = AngleDeltaSigned(destAngle, player->mo->angle);
+	const INT16 handling = K_GetKartTurnValue(player, KART_FULLTURN);
+	fixed_t mul = FixedDiv(delta, (angle_t)(handling << TICCMD_REDUCE));
+
+	if (mul > FRACUNIT)
+	{
+		mul = FRACUNIT;
+	}
+
+	if (mul < -FRACUNIT)
+	{
+		mul = -FRACUNIT;
+	}
+
+	cmd->turning = FixedMul(mul, KART_FULLTURN);
+}
+
+/*--------------------------------------------------
+	static void K_BuildBotPodiumTiccmd(player_t *player, ticcmd_t *cmd)
+
+		Calculates all bot movement for the podium cutscene.
+--------------------------------------------------*/
+static void K_BuildBotPodiumTiccmd(player_t *player, ticcmd_t *cmd)
+{
+	if (player->currentwaypoint == NULL)
+	{
+		// We've reached the end of our path.
+		// Simply stop moving.
+		return;
+	}
+
+	if (K_GetWaypointIsSpawnpoint(player->currentwaypoint) == false)
+	{
+		// Hacky flag reuse: slow down before reaching your podium stand.
+		cmd->forwardmove = MAXPLMOVE * 3 / 4;
+	}
+	else
+	{
+		cmd->forwardmove = MAXPLMOVE;
+	}
+
+	cmd->buttons |= BT_ACCELERATE;
+
+	K_BotPodiumTurning(player, cmd);
+}
+
+/*--------------------------------------------------
 	void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 
 		See header file for description.
@@ -1272,7 +1332,9 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 	// Remove any existing controls
 	memset(cmd, 0, sizeof(ticcmd_t));
 
-	if (gamestate != GS_LEVEL || !player->mo || player->spectator)
+	if (player->mo == NULL
+		|| player->spectator == true
+		|| G_GamestateUsesLevel() == false)
 	{
 		// Not in the level.
 		return;
@@ -1281,6 +1343,12 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 	// Complete override of all ticcmd functionality
 	if (LUA_HookTiccmd(player, cmd, HOOK(BotTiccmd)) == true)
 	{
+		return;
+	}
+
+	if (K_PodiumSequence() == true)
+	{
+		K_BuildBotPodiumTiccmd(player, cmd);
 		return;
 	}
 
@@ -1545,6 +1613,9 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 void K_UpdateBotGameplayVars(player_t *player)
 {
 	const line_t *botController;
+
+	player->botvars.controller = UINT16_MAX;
+	player->botvars.rubberband = FRACUNIT;
 
 	if (gamestate != GS_LEVEL || !player->mo)
 	{

@@ -185,6 +185,8 @@ void R_RenderMaskedSegRange(drawseg_t *ds, INT32 x1, INT32 x2)
 		transtable = 0;
 	}
 
+	R_CheckDebugHighlight(SW_HI_MIDTEXTURES);
+
 	if (blendmode == AST_FOG)
 	{
 		R_SetColumnFunc(COLDRAWFUNC_FOG, bmnum != 0);
@@ -297,6 +299,8 @@ void R_RenderMaskedSegRange(drawseg_t *ds, INT32 x1, INT32 x2)
 			;
 		else if (P_ApplyLightOffset(lightnum))
 			lightnum += curline->lightOffset;
+
+		lightnum = R_AdjustLightLevel(lightnum);
 
 		if (lightnum < 0)
 			walllights = scalelight[0];
@@ -413,12 +417,14 @@ void R_RenderMaskedSegRange(drawseg_t *ds, INT32 x1, INT32 x2)
 						if ((rlight->flags & FOF_NOSHADE))
 							continue;
 
-						if (rlight->lightnum < 0)
+						lightnum = R_AdjustLightLevel(rlight->lightnum);
+
+						if (lightnum < 0)
 							xwalllights = scalelight[0];
-						else if (rlight->lightnum >= LIGHTLEVELS)
+						else if (lightnum >= LIGHTLEVELS)
 							xwalllights = scalelight[LIGHTLEVELS-1];
 						else
-							xwalllights = scalelight[rlight->lightnum];
+							xwalllights = scalelight[lightnum];
 
 						pindex = FixedMul(spryscale, LIGHTRESOLUTIONFIX)>>LIGHTSCALESHIFT;
 
@@ -436,6 +442,7 @@ void R_RenderMaskedSegRange(drawseg_t *ds, INT32 x1, INT32 x2)
 						if (height <= windowtop)
 						{
 							dc_colormap = rlight->rcolormap;
+							dc_lightmap = xwalllights[pindex];
 							dc_fullbright = colormaps;
 							if (encoremap && !(ldef->flags & ML_TFERLINE))
 							{
@@ -461,6 +468,7 @@ void R_RenderMaskedSegRange(drawseg_t *ds, INT32 x1, INT32 x2)
 						colfunc_2s(col, bmCol, -1);
 						windowtop = windowbottom + 1;
 						dc_colormap = rlight->rcolormap;
+						dc_lightmap = xwalllights[pindex];
 						dc_fullbright = colormaps;
 						if (encoremap && !(ldef->flags & ML_TFERLINE))
 						{
@@ -483,6 +491,7 @@ void R_RenderMaskedSegRange(drawseg_t *ds, INT32 x1, INT32 x2)
 					pindex = MAXLIGHTSCALE - 1;
 
 				dc_colormap = walllights[pindex];
+				dc_lightmap = walllights[pindex];
 				dc_fullbright = colormaps;
 				if (encoremap && !(ldef->flags & ML_TFERLINE))
 				{
@@ -638,6 +647,8 @@ void R_RenderThickSideRange(drawseg_t *ds, INT32 x1, INT32 x2, ffloor_t *pfloor)
 	texnum = R_GetTextureNum(sides[pfloor->master->sidenum[0]].midtexture);
 	bmnum = R_GetTextureBrightmap(texnum);
 
+	R_CheckDebugHighlight(SW_HI_FOFSIDES);
+
 	R_SetColumnFunc(BASEDRAWFUNC, bmnum != 0);
 
 	if (pfloor->master->flags & ML_TFERLINE)
@@ -788,6 +799,8 @@ void R_RenderThickSideRange(drawseg_t *ds, INT32 x1, INT32 x2, ffloor_t *pfloor)
 			;
 		else if (P_ApplyLightOffset(lightnum))
 			lightnum += curline->lightOffset;
+
+		lightnum = R_AdjustLightLevel(lightnum);
 
 		if (lightnum < 0)
 			walllights = scalelight[0];
@@ -954,16 +967,15 @@ void R_RenderThickSideRange(drawseg_t *ds, INT32 x1, INT32 x2, ffloor_t *pfloor)
 				fixed_t height;
 				fixed_t bheight = 0;
 				INT32 solid = 0;
-				INT32 lighteffect = 0;
 
 				for (i = 0; i < dc_numlights; i++)
 				{
 					// Check if the current light effects the colormap/lightlevel
 					rlight = &dc_lightlist[i];
-					lighteffect = !(dc_lightlist[i].flags & FOF_NOSHADE);
-					if (lighteffect)
+					xwalllights = NULL;
+					if (!(dc_lightlist[i].flags & FOF_NOSHADE))
 					{
-						lightnum = rlight->lightnum;
+						lightnum = R_AdjustLightLevel(rlight->lightnum);
 
 						if (lightnum < 0)
 							xwalllights = scalelight[0];
@@ -1024,9 +1036,10 @@ void R_RenderThickSideRange(drawseg_t *ds, INT32 x1, INT32 x2, ffloor_t *pfloor)
 
 					if (height <= windowtop)
 					{
-						if (lighteffect)
+						if (xwalllights)
 						{
 							dc_colormap = rlight->rcolormap;
+							dc_lightmap = xwalllights[pindex];
 							dc_fullbright = colormaps;
 							if (encoremap && !(curline->linedef->flags & ML_TFERLINE))
 							{
@@ -1060,9 +1073,10 @@ void R_RenderThickSideRange(drawseg_t *ds, INT32 x1, INT32 x2, ffloor_t *pfloor)
 						windowtop = bheight;
 					else
 						windowtop = windowbottom + 1;
-					if (lighteffect)
+					if (xwalllights)
 					{
 						dc_colormap = rlight->rcolormap;
+						dc_lightmap = xwalllights[pindex];
 						dc_fullbright = colormaps;
 						if (encoremap && !(curline->linedef->flags & ML_TFERLINE))
 						{
@@ -1087,6 +1101,7 @@ void R_RenderThickSideRange(drawseg_t *ds, INT32 x1, INT32 x2, ffloor_t *pfloor)
 				pindex = MAXLIGHTSCALE - 1;
 
 			dc_colormap = walllights[pindex];
+			dc_lightmap = walllights[pindex];
 			dc_fullbright = colormaps;
 
 			if (encoremap && !(curline->linedef->flags & ML_TFERLINE))
@@ -1353,6 +1368,7 @@ static void R_RenderSegLoop (void)
 				pindex = MAXLIGHTSCALE-1;
 
 			dc_colormap = walllights[pindex];
+			dc_lightmap = walllights[pindex];
 			dc_fullbright = colormaps;
 			if (encoremap && !(curline->linedef->flags & ML_TFERLINE))
 			{
@@ -1378,6 +1394,8 @@ static void R_RenderSegLoop (void)
 					;
 				else if (P_ApplyLightOffset(lightnum))
 					lightnum += curline->lightOffset;
+
+				lightnum = R_AdjustLightLevel(lightnum);
 
 				if (lightnum < 0)
 					xwalllights = scalelight[0];
@@ -1617,6 +1635,8 @@ void R_StoreWallRange(INT32 start, INT32 stop)
 	//initialize segleft and segright
 	memset(&segleft, 0x00, sizeof(segleft));
 	memset(&segright, 0x00, sizeof(segright));
+
+	R_CheckDebugHighlight(SW_HI_WALLS);
 
 	R_SetColumnFunc(BASEDRAWFUNC, false);
 
@@ -2424,6 +2444,8 @@ void R_StoreWallRange(INT32 start, INT32 stop)
 
 		if (P_ApplyLightOffset(lightnum))
 			lightnum += curline->lightOffset;
+
+		lightnum = R_AdjustLightLevel(lightnum);
 
 		if (lightnum < 0)
 			walllights = scalelight[0];

@@ -50,6 +50,7 @@ extern "C" {
 #include "../m_cond.h"
 #include "../r_skins.h"
 #include "../k_battle.h"
+#include "../k_podium.h"
 }
 
 #include "call-funcs.hpp"
@@ -440,6 +441,25 @@ bool CallFunc_PolyWait(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Wo
 		ACSVM::ThreadState::WaitTag,
 		argV[0],
 		ACS_TAGTYPE_POLYOBJ
+	};
+
+	return true; // Execution interrupted
+}
+
+/*--------------------------------------------------
+	bool CallFunc_CameraWait(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
+
+		Pauses the thread until the tagged
+		camera is done moving.
+--------------------------------------------------*/
+bool CallFunc_CameraWait(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
+{
+	(void)argC;
+
+	thread->state = {
+		ACSVM::ThreadState::WaitTag,
+		argV[0],
+		ACS_TAGTYPE_CAMERA
 	};
 
 	return true; // Execution interrupted
@@ -1333,5 +1353,61 @@ bool CallFunc_EncoreMode(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::
 	(void)argC;
 
 	thread->dataStk.push(encoremode);
+	return false;
+}
+
+/*--------------------------------------------------
+	bool CallFunc_PodiumPosition(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
+
+		Returns the best position of all non-CPU players.
+--------------------------------------------------*/
+bool CallFunc_PodiumPosition(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
+{
+	UINT8 ret = MAXPLAYERS;
+	INT32 i;
+
+	(void)argV;
+	(void)argC;
+
+	for (i = 0; i < MAXPLAYERS; i++)
+	{
+		player_t *player = NULL;
+
+		if (playeringame[i] == false)
+		{
+			continue;
+		}
+
+		player = &players[i];
+
+		if (player->spectator == true)
+		{
+			continue;
+		}
+
+		if (player->bot == true)
+		{
+			continue;
+		}
+
+		ret = std::min(ret, player->position);
+	}
+
+	thread->dataStk.push(ret);
+	return false;
+}
+
+/*--------------------------------------------------
+	bool CallFunc_PodiumFinish(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
+
+		Ends the podium sequence. Doesn't do anything
+		outside of podium maps.
+--------------------------------------------------*/
+bool CallFunc_PodiumFinish(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
+{
+	(void)argV;
+	(void)argC;
+
+	K_FinishCeremony();
 	return false;
 }

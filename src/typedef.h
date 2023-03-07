@@ -47,6 +47,7 @@ TYPEDEF (botvars_t);
 TYPEDEF (roundconditions_t);
 TYPEDEF (skybox_t);
 TYPEDEF (itemroulette_t);
+TYPEDEF (altview_t);
 TYPEDEF (player_t);
 
 // d_clisrv.h
@@ -197,6 +198,9 @@ TYPEDEF (t_floor_t);
 
 // k_waypoint.h
 TYPEDEF (waypoint_t);
+
+// k_rank.h
+TYPEDEF (gpRank_t);
 
 // lua_hudlib_drawlist.h
 typedef struct huddrawlist_s *huddrawlist_h;

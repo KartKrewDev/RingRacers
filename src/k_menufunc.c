@@ -202,6 +202,23 @@ boolean M_PrevOpt(void)
 	return true;
 }
 
+static boolean M_GamestateCanOpenMenu(void)
+{
+	switch (gamestate)
+	{
+		case GS_INTRO:
+		case GS_CUTSCENE:
+		case GS_GAMEEND:
+		case GS_CREDITS:
+		case GS_EVALUATION:
+		case GS_CEREMONY:
+			return false;
+
+		default:
+			return true;
+	}
+}
+
 //
 // M_Responder
 //
@@ -209,9 +226,9 @@ boolean M_Responder(event_t *ev)
 {
 	menuKey = -1;
 
-	if (dedicated || (demo.playback && demo.title)
-		|| gamestate == GS_INTRO || gamestate == GS_CUTSCENE || gamestate == GS_GAMEEND
-		|| gamestate == GS_CREDITS || gamestate == GS_EVALUATION)
+	if (dedicated
+		|| (demo.playback && demo.title)
+		|| M_GamestateCanOpenMenu() == false)
 	{
 		return false;
 	}
@@ -713,7 +730,7 @@ void M_SetMenuDelay(UINT8 i)
 	}
 }
 
-static void M_UpdateMenuCMD(UINT8 i)
+void M_UpdateMenuCMD(UINT8 i)
 {
 	UINT8 mp = max(1, setup_numplayers);
 
@@ -749,18 +766,10 @@ static void M_UpdateMenuCMD(UINT8 i)
 
 void M_MapMenuControls(event_t *ev)
 {
-	INT32 i;
-
 	if (ev)
 	{
 		// update keys current state
 		G_MapEventsToControls(ev);
-	}
-
-	// Update menu CMD
-	for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
-	{
-		M_UpdateMenuCMD(i);
 	}
 }
 

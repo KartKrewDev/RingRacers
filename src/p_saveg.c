@@ -67,6 +67,7 @@ typedef enum
 	SKYBOXCENTER = 0x10,
 	HOVERHYUDORO = 0x20,
 	STUMBLE = 0x40,
+	SLIPTIDEZIP = 0x80
 } player_saveflags;
 
 static inline void P_ArchivePlayer(savebuffer_t *save)
@@ -137,8 +138,7 @@ static void P_NetArchivePlayers(savebuffer_t *save)
 		WRITEANGLE(save->p, players[i].drawangle);
 		WRITEANGLE(save->p, players[i].viewrollangle);
 		WRITEANGLE(save->p, players[i].tilt);
-		WRITEANGLE(save->p, players[i].awayviewaiming);
-		WRITEINT32(save->p, players[i].awayviewtics);
+		WRITEINT32(save->p, players[i].awayview.tics);
 
 		WRITEUINT8(save->p, players[i].playerstate);
 		WRITEUINT32(save->p, players[i].pflags);
@@ -179,6 +179,7 @@ static void P_NetArchivePlayers(savebuffer_t *save)
 		WRITEUINT32(save->p, players[i].realtime);
 		WRITEUINT8(save->p, players[i].laps);
 		WRITEUINT8(save->p, players[i].latestlap);
+		WRITEUINT32(save->p, players[i].lapPoints);
 		WRITEINT32(save->p, players[i].starpostnum);
 
 		WRITEUINT8(save->p, players[i].ctfteam);
@@ -197,7 +198,7 @@ static void P_NetArchivePlayers(savebuffer_t *save)
 
 		WRITEUINT8(save->p, players[i].splitscreenindex);
 
-		if (players[i].awayviewmobj)
+		if (players[i].awayview.mobj)
 			flags |= AWAYVIEW;
 
 		if (players[i].followmobj)
@@ -218,6 +219,9 @@ static void P_NetArchivePlayers(savebuffer_t *save)
 		if (players[i].stumbleIndicator)
 			flags |= STUMBLE;
 
+		if (players[i].sliptideZipIndicator)
+			flags |= SLIPTIDEZIP;
+
 		WRITEUINT16(save->p, flags);
 
 		if (flags & SKYBOXVIEW)
@@ -227,7 +231,7 @@ static void P_NetArchivePlayers(savebuffer_t *save)
 			WRITEUINT32(save->p, players[i].skybox.centerpoint->mobjnum);
 
 		if (flags & AWAYVIEW)
-			WRITEUINT32(save->p, players[i].awayviewmobj->mobjnum);
+			WRITEUINT32(save->p, players[i].awayview.mobj->mobjnum);
 
 		if (flags & FOLLOWITEM)
 			WRITEUINT32(save->p, players[i].followmobj->mobjnum);
@@ -237,6 +241,9 @@ static void P_NetArchivePlayers(savebuffer_t *save)
 
 		if (flags & STUMBLE)
 			WRITEUINT32(save->p, players[i].stumbleIndicator->mobjnum);
+
+		if (flags & SLIPTIDEZIP)
+			WRITEUINT32(save->p, players[i].sliptideZipIndicator->mobjnum);
 
 		WRITEUINT32(save->p, (UINT32)players[i].followitem);
 
@@ -397,6 +404,10 @@ static void P_NetArchivePlayers(savebuffer_t *save)
 
 		WRITEUINT8(save->p, players[i].tripwireReboundDelay);
 
+		WRITEUINT16(save->p, players[i].sliptideZip);
+		WRITEUINT8(save->p, players[i].sliptideZipDelay);
+		WRITEUINT16(save->p, players[i].sliptideZipBoost);
+
 		// respawnvars_t
 		WRITEUINT8(save->p, players[i].respawn.state);
 		WRITEUINT32(save->p, K_GetWaypointHeapIndex(players[i].respawn.wp));
@@ -527,8 +538,7 @@ static void P_NetUnArchivePlayers(savebuffer_t *save)
 		players[i].drawangle = players[i].old_drawangle = READANGLE(save->p);
 		players[i].viewrollangle = READANGLE(save->p);
 		players[i].tilt = READANGLE(save->p);
-		players[i].awayviewaiming = READANGLE(save->p);
-		players[i].awayviewtics = READINT32(save->p);
+		players[i].awayview.tics = READINT32(save->p);
 
 		players[i].playerstate = READUINT8(save->p);
 		players[i].pflags = READUINT32(save->p);
@@ -569,6 +579,7 @@ static void P_NetUnArchivePlayers(savebuffer_t *save)
 		players[i].realtime = READUINT32(save->p); // integer replacement for leveltime
 		players[i].laps = READUINT8(save->p); // Number of laps (optional)
 		players[i].latestlap = READUINT8(save->p);
+		players[i].lapPoints = READUINT32(save->p);
 		players[i].starpostnum = READINT32(save->p);
 
 		players[i].ctfteam = READUINT8(save->p); // 1 == Red, 2 == Blue
@@ -596,7 +607,7 @@ static void P_NetUnArchivePlayers(savebuffer_t *save)
 			players[i].skybox.centerpoint = (mobj_t *)(size_t)READUINT32(save->p);
 
 		if (flags & AWAYVIEW)
-			players[i].awayviewmobj = (mobj_t *)(size_t)READUINT32(save->p);
+			players[i].awayview.mobj = (mobj_t *)(size_t)READUINT32(save->p);
 
 		if (flags & FOLLOWITEM)
 			players[i].followmobj = (mobj_t *)(size_t)READUINT32(save->p);
@@ -606,6 +617,9 @@ static void P_NetUnArchivePlayers(savebuffer_t *save)
 
 		if (flags & STUMBLE)
 			players[i].stumbleIndicator = (mobj_t *)(size_t)READUINT32(save->p);
+
+		if (flags & SLIPTIDEZIP)
+			players[i].sliptideZipIndicator = (mobj_t *)(size_t)READUINT32(save->p);
 
 		players[i].followitem = (mobjtype_t)READUINT32(save->p);
 
@@ -766,6 +780,10 @@ static void P_NetUnArchivePlayers(savebuffer_t *save)
 		players[i].eggmanTransferDelay = READUINT8(save->p);
 
 		players[i].tripwireReboundDelay = READUINT8(save->p);
+
+		players[i].sliptideZip = READUINT16(save->p);
+		players[i].sliptideZipDelay = READUINT8(save->p);
+		players[i].sliptideZipBoost = READUINT16(save->p);
 
 		// respawnvars_t
 		players[i].respawn.state = READUINT8(save->p);
@@ -4684,12 +4702,12 @@ static void P_RelinkPointers(void)
 			if (!P_SetTarget(&players[i].skybox.centerpoint, P_FindNewPosition(temp)))
 				CONS_Debug(DBG_GAMELOGIC, "skybox.centerpoint not found on player %d\n", i);
 		}
-		if (players[i].awayviewmobj)
+		if (players[i].awayview.mobj)
 		{
-			temp = (UINT32)(size_t)players[i].awayviewmobj;
-			players[i].awayviewmobj = NULL;
-			if (!P_SetTarget(&players[i].awayviewmobj, P_FindNewPosition(temp)))
-				CONS_Debug(DBG_GAMELOGIC, "awayviewmobj not found on player %d\n", i);
+			temp = (UINT32)(size_t)players[i].awayview.mobj;
+			players[i].awayview.mobj = NULL;
+			if (!P_SetTarget(&players[i].awayview.mobj, P_FindNewPosition(temp)))
+				CONS_Debug(DBG_GAMELOGIC, "awayview.mobj not found on player %d\n", i);
 		}
 		if (players[i].followmobj)
 		{
@@ -4745,6 +4763,13 @@ static void P_RelinkPointers(void)
 			players[i].stumbleIndicator = NULL;
 			if (!P_SetTarget(&players[i].stumbleIndicator, P_FindNewPosition(temp)))
 				CONS_Debug(DBG_GAMELOGIC, "stumbleIndicator not found on player %d\n", i);
+		}
+		if (players[i].sliptideZipIndicator)
+		{
+			temp = (UINT32)(size_t)players[i].sliptideZipIndicator;
+			players[i].sliptideZipIndicator = NULL;
+			if (!P_SetTarget(&players[i].sliptideZipIndicator, P_FindNewPosition(temp)))
+				CONS_Debug(DBG_GAMELOGIC, "sliptideZipIndicator not found on player %d\n", i);
 		}
 	}
 }
@@ -4983,8 +5008,6 @@ static void P_NetArchiveMisc(savebuffer_t *save, boolean resending)
 	WRITESINT8(save->p, speedscramble);
 	WRITESINT8(save->p, encorescramble);
 
-	WRITEUINT32(save->p, g_hiscore);
-
 	// battleovertime_t
 	WRITEUINT16(save->p, battleovertime.enabled);
 	WRITEFIXED(save->p, battleovertime.radius);
@@ -5153,8 +5176,6 @@ static inline boolean P_NetUnArchiveMisc(savebuffer_t *save, boolean reloading)
 
 	speedscramble = READSINT8(save->p);
 	encorescramble = READSINT8(save->p);
-
-	g_hiscore = READUINT32(save->p);
 
 	// battleovertime_t
 	battleovertime.enabled = READUINT16(save->p);

@@ -3304,6 +3304,8 @@ const char *const STATE_LIST[] = { // array length left dynamic for sanity testi
 	"S_MAGICIANBOXTOP",
 	"S_MAGICIANBOXBOTTOM",
 
+	"S_SLIPTIDEZIP",
+
 	// Signpost sparkles
 	"S_SIGNSPARK1",
 	"S_SIGNSPARK2",
@@ -5323,6 +5325,8 @@ const char *const MOBJTYPE_LIST[] = {  // array length left dynamic for sanity t
 	"MT_MONITOR_PART",
 	"MT_MONITOR_SHARD",
 	"MT_MAGICIANBOX",
+	
+	"MT_SLIPTIDEZIP",
 
 	"MT_SIGNSPARKLE",
 
@@ -6303,6 +6307,7 @@ struct int_const_s const INT_CONST[] = {
 	{"RF_FULLDARK",RF_FULLDARK},
 	{"RF_SEMIBRIGHT",RF_SEMIBRIGHT},
 	{"RF_NOCOLORMAPS",RF_NOCOLORMAPS},
+	{"RF_ALWAYSONTOP",RF_ALWAYSONTOP},
 	{"RF_SPRITETYPEMASK",RF_SPRITETYPEMASK},
 	{"RF_PAPERSPRITE",RF_PAPERSPRITE},
 	{"RF_FLOORSPRITE",RF_FLOORSPRITE},

@@ -96,6 +96,24 @@ INT16 K_CalculateGPRankPoints(UINT8 position, UINT8 numplayers)
 }
 
 /*--------------------------------------------------
+	UINT8 K_GetGPPlayerCount(UINT8 humans)
+
+		See header file for description.
+--------------------------------------------------*/
+UINT8 K_GetGPPlayerCount(UINT8 humans)
+{
+	UINT8 playerCount = 8;
+
+	if (humans > 2)
+	{
+		// Add 3 bots per player beyond 2P
+		playerCount += (humans - 2) * 3;
+	}
+
+	return playerCount;
+}
+
+/*--------------------------------------------------
 	void K_InitGrandPrixBots(void)
 
 		See header file for description.
@@ -179,12 +197,7 @@ void K_InitGrandPrixBots(void)
 		}
 	}
 
-	if (numplayers > 2)
-	{
-		// Add 3 bots per player beyond 2P
-		playercount += (numplayers-2) * 3;
-	}
-
+	playercount = K_GetGPPlayerCount(numplayers);
 	wantedbots = playercount - numplayers;
 
 	// Create rival list

@@ -76,6 +76,7 @@
 #include "m_random.h" // P_ClearRandom
 #include "k_specialstage.h"
 #include "acs/interface.h"
+#include "k_podium.h"
 
 #ifdef HWRENDER
 #include "hardware/hw_main.h" // 3D View Rendering
@@ -178,6 +179,7 @@ boolean capslock = 0;	// gee i wonder what this does.
 void D_ProcessEvents(void)
 {
 	event_t *ev;
+	int i;
 
 	boolean eaten;
 	boolean menuresponse = false;
@@ -250,6 +252,12 @@ void D_ProcessEvents(void)
 	if (!menuresponse)
 	{
 		M_MapMenuControls(NULL);
+	}
+
+	// Update menu CMD
+	for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
+	{
+		M_UpdateMenuCMD(i);
 	}
 }
 
@@ -337,8 +345,8 @@ static void D_Display(void)
 		if (rendermode != render_none)
 		{
 			// Fade to black first
-			if (!(gamestate == GS_LEVEL || (gamestate == GS_TITLESCREEN && titlemapinaction)) // fades to black on its own timing, always
-			 && wipetypepre != UINT8_MAX)
+			if (G_GamestateUsesLevel() == false // fades to black on its own timing, always
+				&& wipetypepre != UINT8_MAX)
 			{
 				F_WipeStartScreen();
 				F_WipeColorFill(31);
@@ -346,7 +354,7 @@ static void D_Display(void)
 				F_RunWipe(wipedefindex, wipetypepre, gamestate != GS_MENU, "FADEMAP0", false, false);
 			}
 
-			if (gamestate != GS_LEVEL && rendermode != render_none)
+			if (G_GamestateUsesLevel() == false && rendermode != render_none)
 			{
 				V_SetPaletteLump("PLAYPAL"); // Reset the palette
 				R_ReInitColormaps(0, NULL, 0);
@@ -395,6 +403,13 @@ static void D_Display(void)
 
 		case GS_VOTING:
 			Y_VoteDrawer();
+			HU_Erase();
+			HU_Drawer();
+			break;
+
+		case GS_CEREMONY:
+			if (!gametic)
+				break;
 			HU_Erase();
 			HU_Drawer();
 			break;
@@ -463,7 +478,7 @@ static void D_Display(void)
 
 		// clean up border stuff
 		// see if the border needs to be initially drawn
-		if (gamestate == GS_LEVEL || (gamestate == GS_TITLESCREEN && titlemapinaction && curbghide && (!hidetitlemap)))
+		if (G_GamestateUsesLevel() == true)
 		{
 			if (!automapactive && !dedicated && cv_renderview.value)
 			{
@@ -559,14 +574,30 @@ static void D_Display(void)
 
 			ps_uitime = I_GetPreciseTime();
 
-			if (gamestate == GS_LEVEL)
+			switch (gamestate)
 			{
-				ST_Drawer();
-				F_TextPromptDrawer();
-				HU_Drawer();
+				case GS_LEVEL:
+				{
+					ST_Drawer();
+					F_TextPromptDrawer();
+					HU_Drawer();
+					break;
+				}
+				case GS_TITLESCREEN:
+				{
+					F_TitleScreenDrawer();
+					break;
+				}
+				case GS_CEREMONY:
+				{
+					K_CeremonyDrawer();
+					break;
+				}
+				default:
+				{
+					break;
+				}
 			}
-			else
-				F_TitleScreenDrawer();
 		}
 		else
 		{
@@ -576,7 +607,7 @@ static void D_Display(void)
 
 	// change gamma if needed
 	// (GS_LEVEL handles this already due to level-specific palettes)
-	if (forcerefresh && !(gamestate == GS_LEVEL || (gamestate == GS_TITLESCREEN && titlemapinaction)))
+	if (forcerefresh && G_GamestateUsesLevel() == false)
 		V_SetPalette(0);
 
 	// draw pause pic
@@ -744,17 +775,6 @@ void D_SRB2Loop(void)
 	LMFAO this was showing garbage under OpenGL
 	because I_FinishUpdate was called afterward
 	*/
-
-#if 0
-	/* Smells like a hack... Don't fade Sonic's ass into the title screen. */
-	if (gamestate != GS_TITLESCREEN)
-	{
-		static lumpnum_t gstartuplumpnum = W_CheckNumForName("STARTUP");
-		if (gstartuplumpnum == LUMPERROR)
-			gstartuplumpnum = W_GetNumForName("MISSING");
-		V_DrawScaledPatch(0, 0, 0, W_CachePatchNum(gstartuplumpnum, PU_PATCH));
-	}
-#endif
 
 	for (;;)
 	{

@@ -212,7 +212,7 @@ int LUA_PushGlobals(lua_State *L, const char *word)
 		lua_pushstring(L, titlemap);
 		return 1;
 	} else if (fastcmp(word,"titlemapinaction")) {
-		lua_pushboolean(L, (titlemapinaction != TITLEMAP_OFF));
+		lua_pushboolean(L, titlemapinaction);
 		return 1;
 	} else if (fastcmp(word,"bootmap")) {
 		lua_pushstring(L, bootmap);
@@ -222,6 +222,9 @@ int LUA_PushGlobals(lua_State *L, const char *word)
 		return 1;
 	} else if (fastcmp(word,"tutorialmode")) {
 		lua_pushboolean(L, tutorialmode);
+		return 1;
+	} else if (fastcmp(word,"podiummap")) {
+		lua_pushstring(L, podiummap);
 		return 1;
 	// end map vars
 	// begin CTF colors

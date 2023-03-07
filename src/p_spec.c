@@ -2008,6 +2008,40 @@ static void K_HandleLapIncrement(player_t *player)
 				}
 			}
 
+			if (player->laps > player->latestlap)
+			{
+				if (player->laps > 1)
+				{
+					// save best lap for record attack
+					if (modeattacking && player == &players[consoleplayer])
+					{
+						if (curlap < bestlap || bestlap == 0)
+						{
+							bestlap = curlap;
+						}
+
+						curlap = 0;
+					}
+
+					// Update power levels for this lap.
+					K_UpdatePowerLevels(player, player->laps, false);
+
+					if (nump > 1 && K_IsPlayerLosing(player) == false)
+					{
+						if (nump > 2 && player->position == 1) // 1st place in 1v1 uses thumbs up
+						{
+							player->lapPoints += 2;
+						}
+						else
+						{
+							player->lapPoints++;
+						}
+					}
+				}
+
+				player->latestlap = player->laps;
+			}
+
 			// finished race exit setup
 			if (player->laps > numlaps)
 			{
@@ -2035,32 +2069,8 @@ static void K_HandleLapIncrement(player_t *player)
 					SetRandomFakePlayerSkin(player, true);
 				}
 			}
-				
-
-			if (player->laps > player->latestlap)
-			{
-				if (player->laps > 1)
-				{
-					// save best lap for record attack
-					if (modeattacking && player == &players[consoleplayer])
-					{
-						if (curlap < bestlap || bestlap == 0)
-						{
-							bestlap = curlap;
-						}
-
-						curlap = 0;
-					}
-
-					// Update power levels for this lap.
-					K_UpdatePowerLevels(player, player->laps, false);
-				}
-
-				player->latestlap = player->laps;
-			}
 
 			thwompsactive = true; // Lap 2 effects
-
 			lowestLap = P_FindLowestLap();
 
 			for (i = 0; i < numlines; i++)
@@ -2413,7 +2423,7 @@ static void P_SwitchSkybox(INT32 args, player_t *player, skybox_t *skybox)
 	}
 }
 
-static mobj_t* P_FindObjectTypeFromTag(mobjtype_t type, mtag_t tag)
+mobj_t* P_FindObjectTypeFromTag(mobjtype_t type, mtag_t tag)
 {
 	if (udmf)
 	{
@@ -3002,35 +3012,139 @@ boolean P_ProcessSpecial(activator_t *activator, INT16 special, INT32 *args, cha
 
 		case 422: // Cut away to another view
 			{
-				mobj_t *altview;
-				INT32 aim;
+				altview_t *modifyView = NULL;
+				mobj_t *newViewMobj = NULL;
 
-				if ((!mo || !mo->player) && !titlemapinaction) // only players have views, and title screens
-					return false;
-
-				altview = P_FindObjectTypeFromTag(MT_ALTVIEWMAN, args[0]);
-				if (!altview || !altview->spawnpoint)
-					return false;
-
-				// If titlemap, set the camera ref for title's thinker
-				// This is not revoked until overwritten; awayviewtics is ignored
-				if (titlemapinaction)
-					titlemapcameraref = altview;
+				if (gamestate != GS_LEVEL)
+				{
+					modifyView = &titlemapcam;
+				}
+				else if (mo != NULL && mo->player != NULL)
+				{
+					modifyView = &mo->player->awayview;
+				}
 				else
 				{
-					P_SetTarget(&mo->player->awayviewmobj, altview);
-					mo->player->awayviewtics = args[1];
+					return false;
 				}
 
-				aim = (backwardsCompat) ? args[2] : altview->spawnpoint->pitch;
-				aim = (aim + 360) % 360;
-				aim *= (ANGLE_90>>8);
-				aim /= 90;
-				aim <<= 8;
-				if (titlemapinaction)
-					titlemapcameraref->cusval = (angle_t)aim;
+				newViewMobj = P_FindObjectTypeFromTag(MT_ALTVIEWMAN, args[0]);
+				if (newViewMobj == NULL || newViewMobj->spawnpoint == NULL)
+				{
+					return false;
+				}
+
+				P_SetTarget(&modifyView->mobj, newViewMobj);
+
+				if (gamestate != GS_LEVEL)
+				{
+					// If titlemap, awayview.tics is ignored
+					modifyView->tics = -1;
+				}
 				else
-					mo->player->awayviewaiming = (angle_t)aim;
+				{
+					modifyView->tics = args[1];
+				}
+
+				if (args[2] != 0)
+				{
+					switch (args[2])
+					{
+						case TMCAM_FIRST:
+						case TMCAM_SECOND:
+						case TMCAM_THIRD:
+						{
+							mobj_t *firstPlace = NULL;
+							INT32 i;
+
+							for (i = 0; i < MAXPLAYERS; i++)
+							{
+								player_t *player = NULL;
+
+								if (playeringame[i] == false)
+								{
+									continue;
+								}
+
+								player = &players[i];
+								if (player->spectator == true)
+								{
+									continue;
+								}
+
+								if (player->mo == NULL || P_MobjWasRemoved(player->mo) == true)
+								{
+									continue;
+								}
+
+								if (player->position == abs(args[2])) // a bit of a hack
+								{
+									firstPlace = player->mo;
+									break;
+								}
+							}
+
+							P_SetTarget(
+								&newViewMobj->target,
+								firstPlace
+							);
+							break;
+						}
+						case TMCAM_CONSOLE:
+						{
+							mobj_t *consoleMo = NULL;
+							if (playeringame[consoleplayer] == true)
+							{
+								consoleMo = players[consoleplayer].mo;
+							}
+
+							P_SetTarget(
+								&newViewMobj->target,
+								consoleMo
+							);
+							break;
+						}
+						default:
+						{
+							P_SetTarget(
+								&newViewMobj->target,
+								P_FindMobjFromTID(args[2], NULL, NULL)
+							);
+							break;
+						}
+					}
+				}
+				else
+				{
+					P_SetTarget(&newViewMobj->target, NULL);
+				}
+
+				if (args[3] > 0 && args[3] <= NUMTUBEWAYPOINTSEQUENCES)
+				{
+					P_SetTarget(
+						&newViewMobj->tracer,
+						P_GetFirstTubeWaypoint(args[3] - 1)
+					);
+					newViewMobj->movecount = 0; // time
+					newViewMobj->movedir = newViewMobj->angle; // start angle
+					newViewMobj->lastlook = newViewMobj->pitch; // start pitch
+					newViewMobj->extravalue1 = newViewMobj->x; // start x
+					newViewMobj->extravalue2 = newViewMobj->y; // start y
+					newViewMobj->cusval = newViewMobj->z; // start z
+
+					if (args[4] > 0)
+					{
+						newViewMobj->movefactor = FRACUNIT / args[4];
+					}
+					else
+					{
+						newViewMobj->movefactor = FRACUNIT / TICRATE; // default speed
+					}
+				}
+				else
+				{
+					P_SetTarget(&newViewMobj->tracer, NULL);
+				}
 			}
 			break;
 
