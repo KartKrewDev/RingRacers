@@ -1162,6 +1162,7 @@ bool CallFunc_HaveUnlockableTrigger(ACSVM::Thread *thread, const ACSVM::Word *ar
 {
 	UINT8 id = 0;
 	bool unlocked = false;
+	auto info = &static_cast<Thread *>(thread)->info;
 
 	(void)argC;
 
@@ -1171,9 +1172,11 @@ bool CallFunc_HaveUnlockableTrigger(ACSVM::Thread *thread, const ACSVM::Word *ar
 	{
 		CONS_Printf("Bad unlockable trigger ID %d\n", id);
 	}
-	else
+	else if ((info != NULL)
+		&& (info->mo != NULL && P_MobjWasRemoved(info->mo) == false)
+		&& (info->mo->player != NULL))
 	{
-		unlocked = (unlocktriggers & (1 << id));
+		unlocked = (info->mo->player->roundconditions.unlocktriggers & (1 << id));
 	}
 
 	thread->dataStk.push(unlocked);

@@ -39,7 +39,6 @@ typedef enum
 	UC_MAPENCORE,		// MAPENCORE [map]
 	UC_MAPSPBATTACK,	// MAPSPBATTACK [map]
 	UC_MAPTIME,			// MAPTIME [map] [time to beat, tics]
-	UC_TRIGGER,			// TRIGGER [trigger number]
 	UC_TOTALMEDALS,		// TOTALMEDALS [number of emblems]
 	UC_EMBLEM,			// EMBLEM [emblem number]
 	UC_UNLOCKABLE,		// UNLOCKABLE [unlockable number]
@@ -75,6 +74,8 @@ typedef enum
 	UCRP_FINISHTIME, // Finish <= [time, tics]
 	UCRP_FINISHTIMEEXACT, // Finish == [time, tics]
 	UCRP_FINISHTIMELEFT, // Finish with at least [time, tics] to spare
+
+	UCRP_TRIGGER,	// Map execution trigger [id]
 
 	UCRP_FALLOFF, // Fall off (or don't)
 	UCRP_TOUCHOFFROAD, // Touch offroad (or don't)
@@ -261,8 +262,6 @@ extern emblem_t emblemlocations[MAXEMBLEMS];
 extern unlockable_t unlockables[MAXUNLOCKABLES];
 
 extern INT32 numemblems;
-
-extern UINT32 unlocktriggers;
 
 void M_NewGameDataStruct(void);
 

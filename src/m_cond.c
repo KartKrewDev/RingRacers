@@ -35,10 +35,6 @@
 gamedata_t *gamedata = NULL;
 boolean netUnlocked[MAXUNLOCKABLES];
 
-// Map triggers for linedef executors
-// 32 triggers, one bit each
-UINT32 unlocktriggers;
-
 // The meat of this system lies in condition sets
 conditionset_t conditionSets[MAXCONDITIONSETS];
 
@@ -704,8 +700,6 @@ boolean M_CheckCondition(condition_t *cn, player_t *player)
 		}
 		case UC_MAPTIME: // Requires time on map <= x
 			return (G_GetBestTime(cn->extrainfo1) <= (unsigned)cn->requirement);
-		case UC_TRIGGER: // requires map trigger set
-			return !!(unlocktriggers & (1 << cn->requirement));
 		case UC_TOTALMEDALS: // Requires number of emblems >= x
 			return (M_GotEnoughMedals(cn->requirement));
 		case UC_EMBLEM: // Requires emblem x to be obtained
@@ -790,6 +784,9 @@ boolean M_CheckCondition(condition_t *cn, player_t *player)
 				&& !K_CanChangeRules(false) // too easy to change cv_timelimit
 				&& player->realtime < timelimitintics
 				&& (timelimitintics + extratimeintics + secretextratime - player->realtime) >= (unsigned)cn->requirement);
+
+		case UCRP_TRIGGER: // requires map trigger set
+			return !!(player->roundconditions.unlocktriggers & (1 << cn->requirement));
 
 		case UCRP_FALLOFF:
 			return (player->roundconditions.fell_off == (cn->requirement == 1));
@@ -1175,6 +1172,9 @@ static const char *M_GetConditionString(condition_t *cn)
 				G_TicsToMinutes(cn->requirement, true),
 				G_TicsToSeconds(cn->requirement),
 				G_TicsToCentiseconds(cn->requirement));
+
+		case UCRP_TRIGGER:
+			return cn->stringvar;
 
 		case UCRP_FALLOFF:
 			return (cn->requirement == 1) ? "fall off the course" : "without falling off";

@@ -2346,6 +2346,10 @@ static void readcondition(UINT8 set, UINT32 id, char *word2)
 
 	INT32 offset = 0;
 
+#if 0
+	char *endpos = word2 + strlen(word2);
+#endif
+
 	spos = strtok(word2, " ");
 
 	for (i = 0; i < 5; ++i)
@@ -2470,19 +2474,6 @@ static void readcondition(UINT8 set, UINT32 id, char *word2)
 		if (x1 >= nummapheaders)
 		{
 			deh_warning("Invalid level %s for condition ID %d", params[1], id+1);
-			return;
-		}
-	}
-	else if (fastcmp(params[0], "TRIGGER"))
-	{
-		PARAMCHECK(1);
-		ty = UC_TRIGGER;
-		re = atoi(params[1]);
-
-		// constrained by 32 bits
-		if (re < 0 || re > 31)
-		{
-			deh_warning("Trigger ID %d out of range (0 - 31) for condition ID %d", re, id+1);
 			return;
 		}
 	}
@@ -2616,6 +2607,40 @@ static void readcondition(UINT8 set, UINT32 id, char *word2)
 			deh_warning("Invalid time %s for condition ID %d", params[1], id+1);
 			return;
 		}
+	}
+	else if (fastcmp(params[0], "TRIGGER"))
+	{
+		PARAMCHECK(2); // strictly speaking at LEAST two
+		ty = UCRP_TRIGGER;
+		re = atoi(params[1]);
+
+		// constrained by 32 bits
+		if (re < 0 || re > 31)
+		{
+			deh_warning("Trigger ID %d out of range (0 - 31) for condition ID %d", re, id+1);
+			return;
+		}
+
+		// The following undid the effects of strtok.
+		// Unfortunately, there is no way it can reasonably undo the effects of strupr.
+		// If we want custom descriptions for map execution triggers, we're gonna need a different method.
+#if 0
+		// undo affect of strtok
+		i = 5;
+		// so spos will still be the strtok from earlier
+		while (i >= 2)
+		{
+			if (!spos)
+				continue;
+			while (*spos != '\0')
+				spos++;
+			if (spos < endpos)
+				*spos = ' ';
+			spos = params[--i];
+		}
+#endif
+
+		stringvar = Z_StrDup(params[2]);
 	}
 	else if ((offset=0) || fastcmp(params[0], "FALLOFF")
 	||        (++offset && fastcmp(params[0], "TOUCHOFFROAD"))

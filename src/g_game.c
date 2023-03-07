@@ -5096,9 +5096,6 @@ void G_InitNew(UINT8 pencoremode, INT32 map, boolean resetplayer, boolean skippr
 		}
 	}
 
-	// Reset unlockable triggers
-	unlocktriggers = 0;
-
 	// clear itemfinder, just in case
 	if (!dedicated)	// except in dedicated servers, where it is not registered and can actually I_Error debug builds
 		CV_StealthSetValue(&cv_itemfinder, 0);

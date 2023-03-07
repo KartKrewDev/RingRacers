@@ -348,6 +348,9 @@ struct roundconditions_t
 	boolean hit_midair;
 
 	mobjeflag_t wet_player;
+
+	// 32 triggers, one bit each, for map execution
+	UINT32 unlocktriggers;
 };
 
 // player_t struct for all skybox variables

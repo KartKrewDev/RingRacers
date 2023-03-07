@@ -1541,17 +1541,18 @@ boolean P_RunTriggerLinedef(line_t *triggerline, mobj_t *actor, sector_t *caller
 				return false;
 			break;
 		case 317:
+			if (actor && actor->player)
 			{ // Unlockable triggers required
 				INT32 trigid = triggerline->args[1];
 
-				if ((modifiedgame && !savemoddata) || (netgame || multiplayer))
-					return false;
-				else if (trigid < 0 || trigid > 31) // limited by 32 bit variable
+				if (trigid < 0 || trigid > 31) // limited by 32 bit variable
 				{
 					CONS_Debug(DBG_GAMELOGIC, "Unlockable trigger (sidedef %hu): bad trigger ID %d\n", triggerline->sidenum[0], trigid);
 					return false;
 				}
-				else if (!(unlocktriggers & (1 << trigid)))
+				else if (!(actor && actor->player))
+					return false;
+				else if (!(actor->player->roundconditions.unlocktriggers & (1 << trigid)))
 					return false;
 			}
 			break;
@@ -3296,26 +3297,25 @@ boolean P_ProcessSpecial(activator_t *activator, INT16 special, INT32 *args, cha
 			break;
 
 		case 441: // Trigger unlockable
-			if (!(demo.playback || netgame || multiplayer))
 			{
 				INT32 trigid = args[0];
 
 				if (trigid < 0 || trigid > 31) // limited by 32 bit variable
 					CONS_Debug(DBG_GAMELOGIC, "Unlockable trigger: bad trigger ID %d\n", trigid);
-				else
+				else if (mo && mo->player)
 				{
 					UINT32 flag = 1 << trigid;
 
-					if (unlocktriggers & flag)
+					if (mo->player->roundconditions.unlocktriggers & flag)
 					{
 						// Execute one time only
 						break;
 					}
 
-					unlocktriggers |= flag;
+					mo->player->roundconditions.unlocktriggers |= flag;
 
 					// Unlocked something?
-					if (M_UpdateUnlockablesAndExtraEmblems(true))
+					if (!demo.playback && M_UpdateUnlockablesAndExtraEmblems(true))
 					{
 						gamedata->deferredsave = true; // only save if unlocked something
 					}
