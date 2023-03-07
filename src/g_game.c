@@ -1890,13 +1890,6 @@ boolean G_CouldView(INT32 playernum)
 	if (( player->pflags & PF_NOCONTEST ))
 		return false;
 
-	// I don't know if we want this actually, but I'll humor the suggestion anyway
-	if ((gametyperules & GTR_BUMPERS) && !demo.playback)
-	{
-		if (player->bumpers <= 0)
-			return false;
-	}
-
 	// SRB2Kart: we have no team-based modes, YET...
 	if (G_GametypeHasTeams())
 	{
