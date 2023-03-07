@@ -967,14 +967,13 @@ void R_RenderThickSideRange(drawseg_t *ds, INT32 x1, INT32 x2, ffloor_t *pfloor)
 				fixed_t height;
 				fixed_t bheight = 0;
 				INT32 solid = 0;
-				INT32 lighteffect = 0;
 
 				for (i = 0; i < dc_numlights; i++)
 				{
 					// Check if the current light effects the colormap/lightlevel
 					rlight = &dc_lightlist[i];
-					lighteffect = !(dc_lightlist[i].flags & FOF_NOSHADE);
-					if (lighteffect)
+					xwalllights = NULL;
+					if (!(dc_lightlist[i].flags & FOF_NOSHADE))
 					{
 						lightnum = R_AdjustLightLevel(rlight->lightnum);
 
@@ -1037,7 +1036,7 @@ void R_RenderThickSideRange(drawseg_t *ds, INT32 x1, INT32 x2, ffloor_t *pfloor)
 
 					if (height <= windowtop)
 					{
-						if (lighteffect)
+						if (xwalllights)
 						{
 							dc_colormap = rlight->rcolormap;
 							dc_lightmap = xwalllights[pindex];
@@ -1074,7 +1073,7 @@ void R_RenderThickSideRange(drawseg_t *ds, INT32 x1, INT32 x2, ffloor_t *pfloor)
 						windowtop = bheight;
 					else
 						windowtop = windowbottom + 1;
-					if (lighteffect)
+					if (xwalllights)
 					{
 						dc_colormap = rlight->rcolormap;
 						dc_lightmap = xwalllights[pindex];
