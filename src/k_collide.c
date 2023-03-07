@@ -182,10 +182,7 @@ boolean K_EggItemCollide(mobj_t *t1, mobj_t *t2)
 
 			if (t1->target && t1->target->player)
 			{
-				if ((gametyperules & GTR_CIRCUIT) || t1->target->player->bumpers > 0)
-					t2->player->eggmanblame = t1->target->player-players;
-				else
-					t2->player->eggmanblame = t2->player-players;
+				t2->player->eggmanblame = t1->target->player - players;
 
 				if (t1->target->hnext == t1)
 				{

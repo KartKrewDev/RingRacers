@@ -2910,10 +2910,7 @@ static void K_drawKartBumpersOrKarma(void)
 			else
 				V_DrawMappedPatch(LAPS_X, LAPS_Y, V_HUDTRANS|V_SLIDEIN|splitflags, kp_bumpersticker, colormap);
 
-			if (gametyperules & GTR_KARMA)  // TODO BETTER HUD
-				V_DrawKartString(LAPS_X+47, LAPS_Y+3, V_HUDTRANS|V_SLIDEIN|splitflags, va("%d/%d  %d", stplyr->bumpers, maxbumper, stplyr->overtimekarma / TICRATE));
-			else
-				V_DrawKartString(LAPS_X+47, LAPS_Y+3, V_HUDTRANS|V_SLIDEIN|splitflags, va("%d/%d", stplyr->bumpers, maxbumper));
+			V_DrawKartString(LAPS_X+47, LAPS_Y+3, V_HUDTRANS|V_SLIDEIN|splitflags, va("%d/%d", stplyr->bumpers, maxbumper));
 		}
 	}
 }
@@ -3363,12 +3360,6 @@ static void K_drawKartNameTags(void)
 		if (ntplayer->mo->renderflags & K_GetPlayerDontDrawFlag(stplyr))
 		{
 			// Invisible on this screen
-			continue;
-		}
-
-		if ((gametyperules & GTR_BUMPERS) && (ntplayer->bumpers <= 0))
-		{
-			// Dead in Battle
 			continue;
 		}
 

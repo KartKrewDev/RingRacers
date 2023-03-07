@@ -3262,11 +3262,6 @@ fixed_t K_GetKartSpeed(player_t *player, boolean doboostpower, boolean dorubberb
 	{
 		finalspeed = K_GetKartSpeedFromStat(player->kartspeed);
 
-		if (gametyperules & GTR_BUMPERS && player->bumpers <= 0)
-		{
-			finalspeed = 3 * finalspeed / 2;
-		}
-
 		if (player->spheres > 0)
 		{
 			fixed_t sphereAdd = (FRACUNIT/40); // 100% at max
@@ -3324,12 +3319,6 @@ fixed_t K_GetKartAccel(player_t *player)
 	if (K_PodiumSequence() == true)
 	{
 		return FixedMul(k_accel, FRACUNIT / 4);
-	}
-
-	// karma bomb gets 2x acceleration
-	if ((gametyperules & GTR_BUMPERS) && player->bumpers <= 0)
-	{
-		k_accel *= 2;
 	}
 
 	// Marble Garden Top gets 1200% accel
@@ -4334,18 +4323,7 @@ void K_HandleBumperChanges(player_t *player, UINT8 prevBumpers)
 		return;
 	}
 
-	// TODO: replace all console text print-outs with a real visual
-
-	if (player->bumpers > 0 && prevBumpers == 0)
-	{
-		K_DoInvincibility(player, 8 * TICRATE);
-
-		if (netgame)
-		{
-			CONS_Printf(M_GetText("%s is back in the game!\n"), player_names[player-players]);
-		}
-	}
-	else if (player->bumpers == 0 && prevBumpers > 0)
+	if (player->bumpers == 0 && prevBumpers > 0)
 	{
 		if (battlecapsules || bossinfo.valid)
 		{
@@ -5123,8 +5101,7 @@ void K_SpawnBoostTrail(player_t *player)
 	I_Assert(!P_MobjWasRemoved(player->mo));
 
 	if (!P_IsObjectOnGround(player->mo)
-		|| player->hyudorotimer != 0
-		|| ((gametyperules & GTR_BUMPERS) && player->bumpers <= 0 && player->karmadelay))
+		|| player->hyudorotimer != 0)
 		return;
 
 	if (player->mo->eflags & MFE_VERTICALFLIP)
@@ -7797,13 +7774,6 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		player->spheres = 40;
 	// where's the < 0 check? see below the following block!
 
-	if ((gametyperules & GTR_BUMPERS) && (player->bumpers <= 0))
-	{
-		// Deplete 1 every tic when removed from the game.
-		player->spheres--;
-		player->spheredigestion = 0;
-	}
-	else
 	{
 		tic_t spheredigestion = TICRATE; // Base rate of 1 every second when playing.
 		tic_t digestionpower = ((10 - player->kartspeed) + (10 - player->kartweight))-1; // 1 to 17
@@ -8016,14 +7986,6 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 	}
 
 	K_UpdateTripwire(player);
-
-	if (battleovertime.enabled && !(player->pflags & PF_ELIMINATED) && player->bumpers <= 0 && player->karmadelay <= 0)
-	{
-		if (player->overtimekarma)
-			player->overtimekarma--;
-		else
-			P_DamageMobj(player->mo, NULL, NULL, 1, DMG_TIMEOVER);
-	}
 
 	if ((battleovertime.enabled >= 10*TICRATE) && !(player->pflags & PF_ELIMINATED) && !player->exiting)
 	{
@@ -11182,18 +11144,6 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 		else if (player->hyudorotimer == 0)
 		{
 			player->mo->renderflags &= ~RF_DONTDRAW;
-		}
-
-		if (!(gametyperules & GTR_BUMPERS) || player->bumpers > 0)
-		{
-			player->mo->renderflags &= ~(RF_TRANSMASK|RF_BRIGHTMASK);
-		}
-		else // dead in match? you da bomb
-		{
-			K_DropItems(player); //K_StripItems(player);
-			K_StripOther(player);
-			player->mo->renderflags |= RF_GHOSTLY;
-			player->flashing = player->karmadelay;
 		}
 
 		if (player->trickpanel == 1)

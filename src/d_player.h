@@ -604,7 +604,6 @@ struct player_t
 	UINT8 emeralds;
 	UINT8 bumpers;
 	INT16 karmadelay;
-	tic_t overtimekarma; // time to live in overtime comeback
 	INT16 spheres;
 	tic_t spheredigestion;
 
