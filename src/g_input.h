@@ -107,12 +107,14 @@ extern consvar_t cv_controlperkey;
 // current state of the keys: JOYAXISRANGE or 0 when boolean.
 // Or anything inbetween for analog values
 #define MAXDEVICES (MAXGAMEPADS + 1) // Gamepads + keyboard & mouse
-#define KEYBOARD_MOUSE_DEVICE 0
+#define KEYBOARD_MOUSE_DEVICE (0)
+#define UNASSIGNED_DEVICE (-1)
 extern INT32 gamekeydown[MAXDEVICES][NUMINPUTS];
 
 // several key codes (or virtual key) per game control
 extern INT32 gamecontrol[MAXSPLITSCREENPLAYERS][num_gamecontrols][MAXINPUTMAPPING];
 extern INT32 gamecontroldefault[num_gamecontrols][MAXINPUTMAPPING]; // default control storage
+extern INT32 menucontrolreserved[num_gamecontrols][MAXINPUTMAPPING];
 
 /*
 #define num_gcl_accelerate 1
