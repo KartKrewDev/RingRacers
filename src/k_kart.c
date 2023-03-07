@@ -9455,7 +9455,7 @@ static void K_KartDrift(player_t *player, boolean onground)
 		{
 			S_StopSoundByID(player->mo, sfx_waved1);
 			S_StopSoundByID(player->mo, sfx_waved2);
-			if (!S_SoundPlaying(player->mo, sfx_waved4) && player->sliptideZip > 0)
+			if (player->sliptideZip > 0 && !S_SoundPlaying(player->mo, sfx_waved4))
 				S_StartSound(player->mo, sfx_waved4);
 		}
 
