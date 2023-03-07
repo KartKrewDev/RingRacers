@@ -3110,7 +3110,7 @@ static void K_GetKartBoostPower(player_t *player)
 	if (player->sliptideZipBoost)
 	{
 		// NB: This is intentionally under the 25% threshold required to initiate a sliptide
-		ADDBOOST(13*FRACUNIT/20, 4*FRACUNIT, 2*SLIPTIDEHANDLING/5);  // + 65% top speed, + 400% acceleration, +20% handling
+		ADDBOOST(9*FRACUNIT/10, 4*FRACUNIT, 2*SLIPTIDEHANDLING/5);  // + 90% top speed, + 400% acceleration, +20% handling
 	}
 
 	if (player->spindashboost) // Spindash boost
@@ -4068,7 +4068,9 @@ static boolean K_IsLosingSliptideZip(player_t *player)
 {
 	if (player->mo == NULL || P_MobjWasRemoved(player->mo) == true)
 		return true;
-	if (!K_Sliptiding(player) && player->drift == 0 && P_IsObjectOnGround(player->mo) && player->sneakertimer == 0)
+	if (!K_Sliptiding(player) && player->drift == 0 
+		&& P_IsObjectOnGround(player->mo) && player->sneakertimer == 0
+		&& player->driftboost == 0)
 		return true;
 	return false;
 }
@@ -4113,7 +4115,7 @@ void K_UpdateSliptideZipIndicator(player_t *player)
 	mobj->renderflags &= ~RF_DONTDRAW;
 
 	UINT32 chargeFrame = 7 - min(7, player->sliptideZip / 10);
-	UINT32 decayFrame = min(7, player->sliptideZipDelay / 5);
+	UINT32 decayFrame = min(7, player->sliptideZipDelay / 2);
 	if (max(chargeFrame, decayFrame) > mobj->frame)
 		mobj->frame++;
 	else if (max(chargeFrame, decayFrame) < mobj->frame)
@@ -9414,8 +9416,9 @@ static void K_KartDrift(player_t *player, boolean onground)
 			if (!S_SoundPlaying(player->mo, sfx_waved2))
 				S_StartSound(player->mo, sfx_waved2);
 			S_StopSoundByID(player->mo, sfx_waved1);
+			S_StopSoundByID(player->mo, sfx_waved4);
 			player->sliptideZipDelay++;
-			if (player->sliptideZipDelay > TICRATE)
+			if (player->sliptideZipDelay > TICRATE/2)
 			{
 				fixed_t maxZipPower = 2*FRACUNIT;
 				fixed_t minZipPower = 1*FRACUNIT;
@@ -9444,6 +9447,7 @@ static void K_KartDrift(player_t *player, boolean onground)
 				player->sliptideZipDelay = 0;
 				S_StopSoundByID(player->mo, sfx_waved1);
 				S_StopSoundByID(player->mo, sfx_waved2);
+				S_StopSoundByID(player->mo, sfx_waved4);
 				S_StartSound(player->mo, sfx_waved3);
 			}
 		}
@@ -9451,6 +9455,8 @@ static void K_KartDrift(player_t *player, boolean onground)
 		{
 			S_StopSoundByID(player->mo, sfx_waved1);
 			S_StopSoundByID(player->mo, sfx_waved2);
+			if (!S_SoundPlaying(player->mo, sfx_waved4) && player->sliptideZip > 0)
+				S_StartSound(player->mo, sfx_waved4);
 		}
 
 		player->aizdrifttilt -= player->aizdrifttilt / 4;
@@ -9465,6 +9471,7 @@ static void K_KartDrift(player_t *player, boolean onground)
 	{
 		player->sliptideZipDelay = 0;
 		S_StopSoundByID(player->mo, sfx_waved2);
+		S_StopSoundByID(player->mo, sfx_waved4);
 		if (!S_SoundPlaying(player->mo, sfx_waved1))
 			S_StartSound(player->mo, sfx_waved1);
 	}
