@@ -4678,7 +4678,7 @@ void G_LoadGameData(void)
 				G_AllocMainRecordData((INT16)i);
 				mapheaderinfo[i]->mainrecord->time = rectime;
 				mapheaderinfo[i]->mainrecord->lap = reclap;
-				CONS_Printf("ID %d, Time = %d, Lap = %d\n", i, rectime/35, reclap/35);
+				//CONS_Printf("ID %d, Time = %d, Lap = %d\n", i, rectime/35, reclap/35);
 			}
 		}
 		else
