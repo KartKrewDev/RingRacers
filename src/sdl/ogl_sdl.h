@@ -35,6 +35,7 @@ boolean OglSdlSurface(INT32 w, INT32 h);
 void OglSdlFinishUpdate(boolean vidwait);
 
 extern SDL_GLContext sdlglcontext;
+extern SDL_GLContext g_legacy_gl_context;
 extern Uint16      realwidth;
 extern Uint16      realheight;
 

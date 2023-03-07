@@ -1468,6 +1468,11 @@ void VID_PrepareModeList(void)
 
 static void init_imgui()
 {
+	if (ImGui::GetCurrentContext() != NULL)
+	{
+		return;
+	}
+
 	ImGui::CreateContext();
     ImGuiIO& io = ImGui::GetIO(); (void)io;
 	io.IniFilename = NULL;
@@ -1488,22 +1493,27 @@ static SDL_bool Impl_CreateContext(void)
 #ifdef HWRENDER
 	if (rendermode == render_opengl)
 	{
-		if (!sdlglcontext)
-			sdlglcontext = SDL_GL_CreateContext(window);
-		if (sdlglcontext == NULL)
+		if (!g_legacy_gl_context)
+		{
+			SDL_GL_ResetAttributes();
+			g_legacy_gl_context = SDL_GL_CreateContext(window);
+		}
+		if (g_legacy_gl_context == NULL)
 		{
 			SDL_DestroyWindow(window);
-			I_Error("Failed to create a GL context: %s\n", SDL_GetError());
+			I_Error("Failed to create a Legacy GL context: %s\n", SDL_GetError());
 		}
 		init_imgui();
-		SDL_GL_MakeCurrent(window, sdlglcontext);
+		SDL_GL_MakeCurrent(window, g_legacy_gl_context);
 		return SDL_TRUE;
 	}
 #endif
 
 	// RHI always uses OpenGL 3.2 Core (for now)
+
 	if (!sdlglcontext)
 	{
+		SDL_GL_ResetAttributes();
 		SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
 		SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
 		SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 2);
@@ -1512,15 +1522,18 @@ static SDL_bool Impl_CreateContext(void)
 	if (sdlglcontext == NULL)
 	{
 		SDL_DestroyWindow(window);
-		I_Error("Failed to create a GL context: %s\n", SDL_GetError());
+		I_Error("Failed to create an RHI GL context: %s\n", SDL_GetError());
 	}
 	init_imgui();
 	SDL_GL_MakeCurrent(window, sdlglcontext);
 
-	std::unique_ptr<rhi::SdlGlCorePlatform> platform = std::make_unique<rhi::SdlGlCorePlatform>();
-	platform->window = window;
-	g_rhi = std::make_unique<rhi::GlCoreRhi>(std::move(platform), reinterpret_cast<rhi::GlLoadFunc>(SDL_GL_GetProcAddress));
-	g_rhi_generation += 1;
+	if (!g_rhi)
+	{
+		std::unique_ptr<rhi::SdlGlCorePlatform> platform = std::make_unique<rhi::SdlGlCorePlatform>();
+		platform->window = window;
+		g_rhi = std::make_unique<rhi::GlCoreRhi>(std::move(platform), reinterpret_cast<rhi::GlLoadFunc>(SDL_GL_GetProcAddress));
+		g_rhi_generation += 1;
+	}
 
 	return SDL_TRUE;
 }
@@ -1528,29 +1541,11 @@ static SDL_bool Impl_CreateContext(void)
 void VID_CheckGLLoaded(rendermode_t oldrender)
 {
 	(void)oldrender;
-#ifdef HWRENDER
-	if (vid.glstate == VID_GL_LIBRARY_ERROR) // Well, it didn't work the first time anyway.
-	{
-		CONS_Alert(CONS_ERROR, "OpenGL never loaded\n");
-		rendermode = oldrender;
-		if (chosenrendermode == render_opengl) // fallback to software
-			rendermode = render_soft;
-		if (setrenderneeded)
-		{
-			CV_StealthSetValue(&cv_renderer, oldrender);
-			setrenderneeded = 0;
-		}
-	}
-#endif
 }
 
 boolean VID_CheckRenderer(void)
 {
 	boolean rendererchanged = false;
-	boolean contextcreated = false;
-#ifdef HWRENDER
-	rendermode_t oldrenderer = rendermode;
-#endif
 
 	if (dedicated)
 		return false;
@@ -1560,41 +1555,20 @@ boolean VID_CheckRenderer(void)
 		rendermode = static_cast<rendermode_t>(setrenderneeded);
 		rendererchanged = true;
 
-#ifdef HWRENDER
-		if (rendermode == render_opengl)
+		if (rendererchanged)
 		{
-			VID_CheckGLLoaded(oldrenderer);
-
-			// Initialise OpenGL before calling SDLSetMode!!!
-			// This is because SDLSetMode calls OglSdlSurface.
-			if (vid.glstate == VID_GL_LIBRARY_NOTLOADED)
+			Impl_CreateContext();
+#ifdef HWRENDER
+			if (rendermode == render_opengl)
 			{
 				VID_StartupOpenGL();
-
-				// Loaded successfully!
-				if (vid.glstate == VID_GL_LIBRARY_LOADED)
+				if (vid.glstate != VID_GL_LIBRARY_LOADED)
 				{
-					// Destroy the current window, if it exists.
-					if (window)
-					{
-						SDL_DestroyWindow(window);
-						window = NULL;
-					}
-
-					// Create a new window.
-					Impl_CreateWindow(static_cast<SDL_bool>(USE_FULLSCREEN));
-
-					// From there, the OpenGL context was already created.
-					contextcreated = true;
+					rendererchanged = false;
 				}
 			}
-			else if (vid.glstate == VID_GL_LIBRARY_ERROR)
-				rendererchanged = false;
-		}
 #endif
-
-		if (!contextcreated)
-			Impl_CreateContext();
+		}
 
 		setrenderneeded = 0;
 	}
@@ -1874,15 +1848,16 @@ void VID_StartupOpenGL(void)
 
 		*(void**)&HWD.pfnSetShaderInfo    = hwSym("SetShaderInfo",NULL);
 		*(void**)&HWD.pfnLoadCustomShader = hwSym("LoadCustomShader",NULL);
-
-		vid.glstate = HWD.pfnInit() ? VID_GL_LIBRARY_LOADED : VID_GL_LIBRARY_ERROR; // let load the OpenGL library
-
-		if (vid.glstate == VID_GL_LIBRARY_ERROR)
-		{
-			rendermode = render_soft;
-			setrenderneeded = 0;
-		}
 		glstartup = true;
+	}
+
+	// For RHI-Legacy GL compatibility: Init always fetches GL functions, but only dlsym's libraries once.
+	vid.glstate = HWD.pfnInit() ? VID_GL_LIBRARY_LOADED : VID_GL_LIBRARY_ERROR; // let load the OpenGL library
+
+	if (vid.glstate == VID_GL_LIBRARY_ERROR)
+	{
+		rendermode = render_soft;
+		setrenderneeded = 0;
 	}
 #endif
 }
