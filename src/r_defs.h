@@ -932,6 +932,8 @@ typedef enum
 
 	RF_NOCOLORMAPS      = 0x00000400,   // Sprite is not drawn with colormaps
 
+	RF_ALWAYSONTOP      = 0x00000800,   // Sprite is drawn on top of level geometry
+
 	RF_SPRITETYPEMASK   = 0x00003000,   // --Different sprite types
 	RF_PAPERSPRITE      = 0x00001000,   // Paper sprite
 	RF_FLOORSPRITE      = 0x00002000,   // Floor sprite

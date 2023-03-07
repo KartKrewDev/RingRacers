@@ -1674,4 +1674,11 @@ void R_RegisterEngineStuff(void)
 	CV_RegisterVar(&cv_fpscap);
 
 	CV_RegisterVar(&cv_drawpickups);
+
+	// debugging
+
+	CV_RegisterVar(&cv_debugrender_contrast);
+	CV_RegisterVar(&cv_debugrender_spriteclip);
+
+	COM_AddCommand("debugrender_highlight", Command_Debugrender_highlight);
 }

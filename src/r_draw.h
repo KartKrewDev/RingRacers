@@ -30,6 +30,7 @@ extern UINT8 *ylookup3[MAXVIDHEIGHT*4];
 extern UINT8 *ylookup4[MAXVIDHEIGHT*4];
 extern INT32 columnofs[MAXVIDWIDTH*4];
 extern UINT8 *topleft;
+extern UINT8 r8_flatcolor;
 
 // -------------------------
 // COLUMN DRAWING CODE STUFF
@@ -43,6 +44,7 @@ extern UINT8 dc_hires;
 
 extern UINT8 *dc_source; // first pixel in a column
 extern UINT8 *dc_brightmap; // brightmap texture column, can be NULL
+extern UINT8 *dc_lightmap; // lighting only
 
 // translucency stuff here
 extern UINT8 *dc_transmap;
@@ -75,6 +77,8 @@ extern boolean ds_powersoftwo;
 extern UINT8 *ds_source;
 extern UINT8 *ds_brightmap;
 extern UINT8 *ds_transmap;
+
+extern UINT8 ds_flatcolor;
 
 struct floatv3_t {
 	float x, y, z;
@@ -231,6 +235,11 @@ void R_DrawTiltedTranslucentFloorSprite_NPO2_8(void);
 
 void R_DrawTranslucentWaterSpan_NPO2_8(void);
 void R_DrawTiltedTranslucentWaterSpan_NPO2_8(void);
+
+// Debugging - highlight surfaces in flat colors
+void R_DrawColumn_Flat_8(void);
+void R_DrawSpan_Flat_8(void);
+void R_DrawTiltedSpan_Flat_8(void);
 
 #ifdef USEASM
 void ASMCALL R_DrawColumn_8_ASM(void);
