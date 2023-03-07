@@ -1828,6 +1828,11 @@ static void K_SpawnGenericSpeedLines(player_t *player, boolean top)
 		fast->colorized = true;
 		fast->renderflags |= RF_ADD;
 	}
+	else if (player->sliptideZipBoost)
+	{
+		fast->color = SKINCOLOR_WHITE;
+		fast->colorized = true;
+	}
 }
 
 void K_SpawnNormalSpeedLines(player_t *player)
@@ -3030,16 +3035,16 @@ fixed_t K_GetSpindashChargeSpeed(player_t *player)
 	return val;
 }
 
+// v2 almost broke sliptiding when it fixed turning bugs!
+// This value is fine-tuned to feel like v1 again without reverting any of those changes.
+#define SLIPTIDEHANDLING 7*FRACUNIT/8
+
 // sets boostpower, speedboost, accelboost, and handleboost to whatever we need it to be
 static void K_GetKartBoostPower(player_t *player)
 {
 	// Light weights have stronger boost stacking -- aka, better metabolism than heavies XD
 	const fixed_t maxmetabolismincrease = FRACUNIT/2;
 	const fixed_t metabolism = FRACUNIT - ((9-player->kartweight) * maxmetabolismincrease / 8);
-
-	// v2 almost broke sliptiding when it fixed turning bugs!
-	// This value is fine-tuned to feel like v1 again without reverting any of those changes.
-	const fixed_t sliptidehandling = FRACUNIT/2;
 
 	fixed_t boostpower = FRACUNIT;
 	fixed_t speedboost = 0, accelboost = 0, handleboost = 0;
@@ -3059,13 +3064,16 @@ static void K_GetKartBoostPower(player_t *player)
 		boostpower = (4*boostpower)/5;
 
 	// Note: Handling will ONLY stack when sliptiding!
+	// > (NB 2023-03-06: This was previously unintentionally applied while drifting as well.)
+	// > (This only affected drifts where you were under the effect of multiple handling boosts.)
+	// > (Revisit if Growvinciblity or sneaker-panels + power items feel too heavy while drifting!)
 	// When you're not, it just uses the best instead of adding together, like the old behavior.
 #define ADDBOOST(s,a,h) { \
 	numboosts++; \
 	speedboost += FixedDiv(s, FRACUNIT + (metabolism * (numboosts-1))); \
 	accelboost += FixedDiv(a, FRACUNIT + (metabolism * (numboosts-1))); \
-	if (player->aizdriftstrat) \
-		handleboost += FixedDiv(h, FRACUNIT + (metabolism * (numboosts-1))); \
+	if (K_Sliptiding(player)) \
+		handleboost += FixedDiv(h, FRACUNIT + (metabolism * (numboosts-1))/4); \
 	else \
 		handleboost = max(h, handleboost); \
 }
@@ -3075,18 +3083,18 @@ static void K_GetKartBoostPower(player_t *player)
 		UINT8 i;
 		for (i = 0; i < player->numsneakers; i++)
 		{
-			ADDBOOST(FRACUNIT/2, 8*FRACUNIT, sliptidehandling); // + 50% top speed, + 800% acceleration, +50% handling
+			ADDBOOST(FRACUNIT/2, 8*FRACUNIT, SLIPTIDEHANDLING); // + 50% top speed, + 800% acceleration, +50% handling
 		}
 	}
 
 	if (player->invincibilitytimer) // Invincibility
 	{
-		ADDBOOST(3*FRACUNIT/8, 3*FRACUNIT, sliptidehandling/2); // + 37.5% top speed, + 300% acceleration, +25% handling
+		ADDBOOST(3*FRACUNIT/8, 3*FRACUNIT, SLIPTIDEHANDLING/2); // + 37.5% top speed, + 300% acceleration, +25% handling
 	}
 
 	if (player->growshrinktimer > 0) // Grow
 	{
-		ADDBOOST(0, 0, sliptidehandling/2); // + 0% top speed, + 0% acceleration, +25% handling
+		ADDBOOST(0, 0, SLIPTIDEHANDLING/2); // + 0% top speed, + 0% acceleration, +25% handling
 	}
 
 	if (player->flamedash) // Flame Shield dash
@@ -3095,8 +3103,14 @@ static void K_GetKartBoostPower(player_t *player)
 		ADDBOOST(
 			dash, // + infinite top speed
 			3*FRACUNIT, // + 300% acceleration
-			FixedMul(FixedDiv(dash, FRACUNIT/2), sliptidehandling/2) // + infinite handling
+			FixedMul(FixedDiv(dash, FRACUNIT/2), SLIPTIDEHANDLING/2) // + infinite handling
 		);
+	}
+
+	if (player->sliptideZipBoost)
+	{
+		// NB: This is intentionally under the 25% threshold required to initiate a sliptide
+		ADDBOOST(13*FRACUNIT/20, 4*FRACUNIT, 2*SLIPTIDEHANDLING/5);  // + 65% top speed, + 400% acceleration, +20% handling
 	}
 
 	if (player->spindashboost) // Spindash boost
@@ -3114,7 +3128,7 @@ static void K_GetKartBoostPower(player_t *player)
 
 	if (player->startboost) // Startup Boost
 	{
-		ADDBOOST(FRACUNIT, 4*FRACUNIT, sliptidehandling); // + 100% top speed, + 400% acceleration, +50% handling
+		ADDBOOST(FRACUNIT, 4*FRACUNIT, SLIPTIDEHANDLING); // + 100% top speed, + 400% acceleration, +50% handling
 	}
 
 	if (player->driftboost) // Drift Boost
@@ -3144,7 +3158,7 @@ static void K_GetKartBoostPower(player_t *player)
 
 	if (player->gateBoost) // SPB Juicebox boost
 	{
-		ADDBOOST(3*FRACUNIT/4, 4*FRACUNIT, sliptidehandling/2); // + 75% top speed, + 400% acceleration, +25% handling
+		ADDBOOST(3*FRACUNIT/4, 4*FRACUNIT, SLIPTIDEHANDLING/2); // + 75% top speed, + 400% acceleration, +25% handling
 	}
 
 	if (player->ringboost) // Ring Boost
@@ -3923,6 +3937,31 @@ void K_InitStumbleIndicator(player_t *player)
 	P_SetTarget(&new->target, player->mo);
 }
 
+void K_InitSliptideZipIndicator(player_t *player)
+{
+	mobj_t *new = NULL;
+
+	if (player == NULL)
+	{
+		return;
+	}
+
+	if (player->mo == NULL || P_MobjWasRemoved(player->mo) == true)
+	{
+		return;
+	}
+
+	if (player->stumbleIndicator != NULL && P_MobjWasRemoved(player->sliptideZipIndicator) == false)
+	{
+		P_RemoveMobj(player->sliptideZipIndicator);
+	}
+
+	new = P_SpawnMobjFromMobj(player->mo, 0, 0, 0, MT_SLIPTIDEZIP);
+
+	P_SetTarget(&player->sliptideZipIndicator, new);
+	P_SetTarget(&new->target, player->mo);
+}
+
 void K_UpdateStumbleIndicator(player_t *player)
 {
 	const angle_t fudge = ANG15;
@@ -4022,6 +4061,78 @@ void K_UpdateStumbleIndicator(player_t *player)
 		{
 			mobj->renderflags |= (trans << RF_TRANSSHIFT);
 		}
+	}
+}
+
+static boolean K_IsLosingSliptideZip(player_t *player)
+{
+	if (player->mo == NULL || P_MobjWasRemoved(player->mo) == true)
+		return true;
+	if (!K_Sliptiding(player) && player->drift == 0 && P_IsObjectOnGround(player->mo) && player->sneakertimer == 0)
+		return true;
+	return false;
+}
+
+void K_UpdateSliptideZipIndicator(player_t *player)
+{
+	mobj_t *mobj = NULL;
+
+	if (player == NULL)
+	{
+		return;
+	}
+
+	if (player->mo == NULL || P_MobjWasRemoved(player->mo) == true)
+	{
+		return;
+	}
+
+	if (player->stumbleIndicator == NULL || P_MobjWasRemoved(player->stumbleIndicator) == true)
+	{
+		K_InitSliptideZipIndicator(player);
+		return;
+	}
+
+	mobj = player->sliptideZipIndicator;
+	angle_t momentumAngle = R_PointToAngle2(0, 0, player->mo->momx, player->mo->momy);
+
+	P_MoveOrigin(mobj, player->mo->x - FixedMul(40*mapobjectscale, FINECOSINE(momentumAngle >> ANGLETOFINESHIFT)),
+		player->mo->y - FixedMul(40*mapobjectscale, FINESINE(momentumAngle >> ANGLETOFINESHIFT)),
+		player->mo->z + (player->mo->height / 2));
+	mobj->angle = momentumAngle + ANGLE_90;
+	P_SetScale(mobj, 3 * player->mo->scale / 2);
+
+	// No stored boost
+	if (player->sliptideZip == 0)
+	{
+		mobj->renderflags |= RF_DONTDRAW;
+		mobj->frame = 7;
+		return;
+	}
+
+	mobj->renderflags &= ~RF_DONTDRAW;
+
+	UINT32 chargeFrame = 7 - min(7, player->sliptideZip / 10);
+	UINT32 decayFrame = min(7, player->sliptideZipDelay / 5);
+	if (max(chargeFrame, decayFrame) > mobj->frame)
+		mobj->frame++;
+	else if (max(chargeFrame, decayFrame) < mobj->frame)
+		mobj->frame--;
+
+	mobj->renderflags &= ~RF_TRANSMASK;
+	mobj->renderflags |= RF_PAPERSPRITE;
+
+	if (K_IsLosingSliptideZip(player))
+	{
+		// Decay timer's ticking
+		mobj->rollangle += 3*ANG30/4;
+		if (leveltime % 2 == 0)
+			mobj->renderflags |= RF_TRANS50;
+	}
+	else 
+	{
+		// Storing boost
+		mobj->rollangle += 3*ANG15/4;
 	}
 }
 
@@ -7535,7 +7646,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 			if (player->sneakertimer || player->ringboost
 				|| player->driftboost || player->startboost
 				|| player->eggmanexplode || player->trickboost
-				|| player->gateBoost)
+				|| player->gateBoost || player->sliptideZipBoost)
 			{
 #if 0
 				if (player->invincibilitytimer)
@@ -7795,6 +7906,11 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 	if (player->startboost > 0 && onground == true)
 	{
 		player->startboost--;
+	}
+
+	if (player->sliptideZipBoost > 0 && onground == true)
+	{
+		player->sliptideZipBoost--;
 	}
 
 	if (player->spindashboost)
@@ -8165,6 +8281,8 @@ void K_KartPlayerAfterThink(player_t *player)
 	K_KartResetPlayerColor(player);
 
 	K_UpdateStumbleIndicator(player);
+
+	K_UpdateSliptideZipIndicator(player);
 
 	// Move held objects (Bananas, Orbinaut, etc)
 	K_MoveHeldObjects(player);
@@ -9258,7 +9376,7 @@ static void K_KartDrift(player_t *player, boolean onground)
 		player->pflags &= ~PF_DRIFTEND;
 	}
 
-	if ((player->handleboost == 0)
+	if ((player->handleboost < (SLIPTIDEHANDLING/2))
 	|| (!player->steering)
 	|| (!player->aizdriftstrat)
 	|| (player->steering > 0) != (player->aizdriftstrat > 0))
@@ -9271,6 +9389,8 @@ static void K_KartDrift(player_t *player, boolean onground)
 	else if (player->aizdriftstrat && !player->drift)
 	{
 		K_SpawnAIZDust(player);
+
+		player->sliptideZip++;
 
 		if (abs(player->aizdrifttilt) < ANGLE_22h)
 		{
@@ -9289,6 +9409,40 @@ static void K_KartDrift(player_t *player, boolean onground)
 
 	if (!K_Sliptiding(player))
 	{
+		if (K_IsLosingSliptideZip(player) && player->sliptideZip > 0)
+		{
+			player->sliptideZipDelay++;
+			if (player->sliptideZipDelay > TICRATE)
+			{
+				fixed_t maxZipPower = 2*FRACUNIT;
+				fixed_t minZipPower = 1*FRACUNIT;
+				fixed_t powerSpread = maxZipPower - minZipPower;
+
+				int minPenalty = 2*1 + (9-9); // Kinda doing a similar thing to driftspark stage timers here.
+				int maxPenalty = 2*9 + (9-1); // 1/9 gets max, 9/1 gets min, everyone else gets something in between.
+				int penaltySpread = maxPenalty - minPenalty;
+				int yourPenalty = 2*player->kartspeed + (9 - player->kartweight); // And like driftsparks, speed hurts double.
+
+				yourPenalty -= minPenalty; // Normalize; minimum penalty should take away 0 power.
+
+				fixed_t yourPowerReduction = FixedDiv(yourPenalty * FRACUNIT, penaltySpread * FRACUNIT);
+				fixed_t yourPower = maxZipPower - FixedMul(yourPowerReduction, powerSpread);
+				int yourBoost = FixedInt(FixedMul(yourPower, player->sliptideZip * FRACUNIT));
+
+				/*
+				CONS_Printf("SZ %d MZ %d mZ %d pwS %d mP %d MP %d peS %d yPe %d yPR %d yPw %d yB %d\n",
+					player->sliptideZip, maxZipPower, minZipPower, powerSpread, minPenalty, maxPenalty, penaltySpread, yourPenalty, yourPowerReduction, yourPower, yourBoost);
+				*/
+
+				player->sliptideZipBoost += yourBoost;
+
+				K_SpawnDriftBoostExplosion(player, 0);
+				player->sliptideZip = 0;
+				player->sliptideZipDelay = 0;
+				S_StartSound(player->mo, sfx_s3kb6);
+			}
+		}
+
 		player->aizdrifttilt -= player->aizdrifttilt / 4;
 		player->aizdriftturn -= player->aizdriftturn / 4;
 
@@ -9296,6 +9450,10 @@ static void K_KartDrift(player_t *player, boolean onground)
 			player->aizdrifttilt = 0;
 		if (abs(player->aizdriftturn) < ANGLE_11hh)
 			player->aizdriftturn = 0;
+	}
+	else
+	{
+		player->sliptideZipDelay = 0;
 	}
 
 	if (player->drift
@@ -9775,6 +9933,9 @@ static void K_KartSpindashWind(mobj_t *parent)
 
 	P_SetTarget(&wind->target, parent);
 
+	if (parent->player && parent->player->sliptideZipBoost)
+		P_SetScale(wind, wind->scale * 2);
+
 	if (parent->momx || parent->momy)
 		wind->angle = R_PointToAngle2(0, 0, parent->momx, parent->momy);
 	else
@@ -9846,6 +10007,11 @@ static void K_KartSpindash(player_t *player)
 
 
 	if ((player->spindashboost > 0) && (spawnWind == true))
+	{
+		K_KartSpindashWind(player->mo);
+	}
+
+	if ((player->sliptideZipBoost > 0) && (spawnWind == true))
 	{
 		K_KartSpindashWind(player->mo);
 	}

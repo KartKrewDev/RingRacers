@@ -4687,7 +4687,7 @@ void G_SaveGameData(void)
 	UINT8 btemp;
 	savebuffer_t save = {0};
 
-	if (!gamedata->loaded)
+	if (gamedata == NULL || !gamedata->loaded)
 		return; // If never loaded (-nodata), don't save
 
 	if (usedCheats)

@@ -308,6 +308,12 @@ static int player_get(lua_State *L)
 		lua_pushinteger(L, plr->tripwireLeniency);
 	else if (fastcmp(field,"tripwireReboundDelay"))
 		lua_pushinteger(L, plr->tripwireReboundDelay);
+	else if (fastcmp(field,"sliptideZip"))
+		lua_pushinteger(L, plr->sliptideZip);
+	else if (fastcmp(field,"sliptideZipDelay"))
+		lua_pushinteger(L, plr->sliptideZipDelay);
+	else if (fastcmp(field,"sliptideZipBoost"))
+		lua_pushinteger(L, plr->sliptideZipBoost);
 	/*
 	else if (fastcmp(field,"itemroulette"))
 		lua_pushinteger(L, plr->itemroulette);
@@ -686,6 +692,12 @@ static int player_set(lua_State *L)
 		plr->tripwireLeniency = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"tripwireReboundDelay"))
 		plr->tripwireReboundDelay = luaL_checkinteger(L, 3);
+	else if (fastcmp(field,"sliptideZip"))
+		plr->sliptideZip = luaL_checkinteger(L, 3);
+	else if (fastcmp(field,"sliptideZipDelay"))
+		plr->sliptideZipDelay = luaL_checkinteger(L, 3);
+	else if (fastcmp(field,"sliptideZipBoost"))
+		plr->sliptideZipBoost = luaL_checkinteger(L, 3);
 	/*
 	else if (fastcmp(field,"itemroulette"))
 		plr->itemroulette = luaL_checkinteger(L, 3);
