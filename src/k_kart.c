@@ -3110,7 +3110,7 @@ static void K_GetKartBoostPower(player_t *player)
 	if (player->sliptideZipBoost)
 	{
 		// NB: This is intentionally under the 25% threshold required to initiate a sliptide
-		ADDBOOST(9*FRACUNIT/10, 4*FRACUNIT, 2*SLIPTIDEHANDLING/5);  // + 90% top speed, + 400% acceleration, +20% handling
+		ADDBOOST(8*FRACUNIT/10, 4*FRACUNIT, 2*SLIPTIDEHANDLING/5);  // + 80% top speed, + 400% acceleration, +20% handling
 	}
 
 	if (player->spindashboost) // Spindash boost
