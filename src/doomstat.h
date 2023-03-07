@@ -699,7 +699,6 @@ extern UINT8 gamespeed;
 extern boolean franticitems;
 extern boolean encoremode, prevencoremode;
 
-extern UINT32 g_hiscore;
 extern tic_t wantedcalcdelay;
 extern tic_t itemCooldowns[NUMKARTITEMS - 1];
 extern tic_t mapreset;
