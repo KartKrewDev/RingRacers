@@ -356,7 +356,7 @@ void G_ReadDemoExtraData(void)
 			if (players[p].mo)
 			{
 				// Is this how this should work..?
-				K_DoIngameRespawn(&players[p]);
+				P_DamageMobj(players[p].mo, NULL, NULL, 1, DMG_DEATHPIT);
 			}
 		}
 		if (extradata & DXD_WEAPONPREF)
