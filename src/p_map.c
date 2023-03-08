@@ -1412,12 +1412,15 @@ static BlockItReturn_t PIT_CheckThing(mobj_t *thing)
 				K_PvPTouchDamage(tm.thing, thing);
 			}
 
-			if (thing->player->eggmanexplode)
+			if (!P_MobjWasRemoved(thing) && !P_MobjWasRemoved(tm.thing))
 			{
-				K_EggmanTransfer(thing->player, tm.thing->player);
-			} else if (tm.thing->player->eggmanexplode)
-			{
-				K_EggmanTransfer(tm.thing->player, thing->player);
+				if (thing->player->eggmanexplode)
+				{
+					K_EggmanTransfer(thing->player, tm.thing->player);
+				} else if (tm.thing->player->eggmanexplode)
+				{
+					K_EggmanTransfer(tm.thing->player, thing->player);
+				}
 			}
 
 			return BMIT_CONTINUE;
