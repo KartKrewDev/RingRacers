@@ -168,16 +168,11 @@ void K_CheckEmeralds(player_t *player)
 		return;
 	}
 
-	player->roundscore++; // lol
+	player->roundscore = 100; // lmao
 
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
 		if (!playeringame[i] || players[i].spectator)
-		{
-			continue;
-		}
-
-		if (&players[i] == player)
 		{
 			continue;
 		}
