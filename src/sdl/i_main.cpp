@@ -202,14 +202,17 @@ static void InitLogging(void)
 static void init_exchndl()
 {
 	HMODULE exchndl_module = LoadLibraryA("exchndl.dll");
-	if (exchndl_module != NULL)
+
+	if (exchndl_module == NULL)
 	{
-		using PFN_ExcHndlInit = void(*)(void);
-		PFN_ExcHndlInit pfnExcHndlInit = reinterpret_cast<PFN_ExcHndlInit>(
-			GetProcAddress(exchndl_module, "ExcHndlInit"));
-		if (pfnExcHndlInit != NULL)
-			(pfnExcHndlInit)();
+		I_Error("exchndl.dll or mgwhelp.dll is missing");
 	}
+
+	using PFN_ExcHndlInit = void(*)(void);
+	PFN_ExcHndlInit pfnExcHndlInit = reinterpret_cast<PFN_ExcHndlInit>(
+		GetProcAddress(exchndl_module, "ExcHndlInit"));
+	if (pfnExcHndlInit != NULL)
+		(pfnExcHndlInit)();
 }
 #endif
 
