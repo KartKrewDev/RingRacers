@@ -39,6 +39,7 @@
 #include "p_spec.h"
 #include "k_objects.h"
 #include "k_roulette.h"
+#include "k_boss.h"
 
 // CTF player names
 #define CTFTEAMCODE(pl) pl->ctfteam ? (pl->ctfteam == 1 ? "\x85" : "\x84") : ""
@@ -1395,6 +1396,11 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 
 				P_PlayDeathSound(target);
 			}
+
+			if (battlecapsules || bossinfo.valid)
+			{
+				target->player->pflags |= (PF_NOCONTEST|PF_ELIMINATED);
+			}
 			break;
 
 		case MT_METALSONIC_RACE:
@@ -1937,13 +1943,21 @@ static boolean P_KillPlayer(player_t *player, mobj_t *inflictor, mobj_t *source,
 	switch (type)
 	{
 		case DMG_DEATHPIT:
-			// Respawn kill types
-			K_DoIngameRespawn(player);
+			// Battle
 			player->mo->health -= K_DestroyBumpers(player, 1);
-			return false;
+
+			if (player->mo->health <= 0)
+			{
+				return true;
+			}
+
+			// Quick respawn; does not kill
+			return K_DoIngameRespawn(player), false;
+
 		case DMG_SPECTATOR:
 			// disappearifies, but still gotta put items back in play
 			break;
+
 		default:
 			// Everything else REALLY kills
 			if (leveltime < starttime)

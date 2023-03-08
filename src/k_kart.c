@@ -4317,18 +4317,13 @@ void K_DebtStingPlayer(player_t *player, mobj_t *source)
 
 void K_HandleBumperChanges(player_t *player, UINT8 prevBumpers)
 {
+	(void)player;
+	(void)prevBumpers;
+
 	if (!(gametyperules & GTR_BUMPERS))
 	{
 		// Bumpers aren't being used
 		return;
-	}
-
-	if (player->bumpers == 0 && prevBumpers > 0)
-	{
-		if (battlecapsules || bossinfo.valid)
-		{
-			player->pflags |= (PF_NOCONTEST|PF_ELIMINATED);
-		}
 	}
 
 	K_CalculateBattleWanted();
