@@ -39,7 +39,7 @@ UINT8 numtargets = 0; // Capsules busted
 INT32 K_StartingBumperCount(void)
 {
 	if (battlecapsules)
-		return 1; // always 1 hit in Break the Capsules
+		return 0; // always 1 hit in Break the Capsules
 
 	return cv_kartbumpers.value;
 }
@@ -827,10 +827,10 @@ UINT8 K_Bumpers(player_t *player)
 		return UINT8_MAX;
 	}
 
-	return player->mo->health;
+	return (player->mo->health - 1);
 }
 
 INT32 K_BumpersToHealth(UINT8 bumpers)
 {
-	return bumpers;
+	return (bumpers + 1);
 }
