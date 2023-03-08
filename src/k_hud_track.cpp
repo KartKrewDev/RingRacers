@@ -5,8 +5,8 @@
 #include "core/static_vec.hpp"
 
 #include "k_battle.h"
-#include "k_boss.h"
 #include "k_hud.h"
+#include "k_kart.h"
 #include "k_objects.h"
 #include "m_fixed.h"
 #include "p_local.h"
@@ -314,7 +314,7 @@ bool is_player_tracking_target(player_t *player = stplyr)
 		return false;
 	}
 
-	if (battlecapsules || bossinfo.valid)
+	if (K_Cooperative())
 	{
 		return false;
 	}

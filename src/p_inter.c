@@ -1382,7 +1382,7 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 				P_PlayDeathSound(target);
 			}
 
-			if (battlecapsules || bossinfo.valid)
+			if (K_Cooperative())
 			{
 				target->player->pflags |= (PF_NOCONTEST|PF_ELIMINATED);
 			}

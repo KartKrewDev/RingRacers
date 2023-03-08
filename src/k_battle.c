@@ -95,8 +95,6 @@ void K_CheckBumpers(void)
 	UINT8 nobumpers = 0;
 	UINT8 eliminated = 0;
 
-	const boolean singleplayer = (battlecapsules || bossinfo.valid);
-
 	if (!(gametyperules & GTR_BUMPERS))
 		return;
 
@@ -124,7 +122,7 @@ void K_CheckBumpers(void)
 		}
 	}
 
-	if (singleplayer
+	if (K_Cooperative()
 			? nobumpers > 0 && nobumpers >= numingame
 			: eliminated >= numingame - 1)
 	{
@@ -135,7 +133,7 @@ void K_CheckBumpers(void)
 			if (players[i].spectator)
 				continue;
 
-			if (singleplayer)
+			if (K_Cooperative())
 				players[i].pflags |= PF_NOCONTEST;
 
 			P_DoPlayerExit(&players[i]);

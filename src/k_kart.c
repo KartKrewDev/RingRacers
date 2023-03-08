@@ -11577,7 +11577,7 @@ UINT32 K_PointLimitForGametype(void)
 		return cv_pointlimit.value;
 	}
 
-	if (battlecapsules || bossinfo.valid)
+	if (K_Cooperative())
 	{
 		return 0;
 	}
@@ -11599,6 +11599,21 @@ UINT32 K_PointLimitForGametype(void)
 	}
 
 	return ptsCap;
+}
+
+boolean K_Cooperative(void)
+{
+	if (battlecapsules)
+	{
+		return true;
+	}
+
+	if (bossinfo.valid)
+	{
+		return true;
+	}
+
+	return false;
 }
 
 //}
