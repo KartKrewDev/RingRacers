@@ -1397,6 +1397,17 @@ static BlockItReturn_t PIT_CheckThing(mobj_t *thing)
 				return BMIT_CONTINUE;
 			}
 
+			if (!P_MobjWasRemoved(thing) && !P_MobjWasRemoved(tm.thing))
+			{
+				if (thing->player->eggmanexplode)
+				{
+					K_EggmanTransfer(thing->player, tm.thing->player);
+				} else if (tm.thing->player->eggmanexplode)
+				{
+					K_EggmanTransfer(tm.thing->player, thing->player);
+				}
+			}
+
 			// The bump has to happen last
 			if (P_IsObjectOnGround(thing) && tm.thing->momz < 0 && tm.thing->player->trickpanel)
 			{
@@ -1410,17 +1421,6 @@ static BlockItReturn_t PIT_CheckThing(mobj_t *thing)
 			if (K_KartBouncing(tm.thing, thing) == true)
 			{
 				K_PvPTouchDamage(tm.thing, thing);
-			}
-
-			if (!P_MobjWasRemoved(thing) && !P_MobjWasRemoved(tm.thing))
-			{
-				if (thing->player->eggmanexplode)
-				{
-					K_EggmanTransfer(thing->player, tm.thing->player);
-				} else if (tm.thing->player->eggmanexplode)
-				{
-					K_EggmanTransfer(tm.thing->player, thing->player);
-				}
 			}
 
 			return BMIT_CONTINUE;
