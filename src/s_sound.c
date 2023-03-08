@@ -72,8 +72,8 @@ consvar_t stereoreverse = CVAR_INIT ("stereoreverse", "Off", CV_SAVE, CV_OnOff, 
 static consvar_t precachesound = CVAR_INIT ("precachesound", "Off", CV_SAVE, CV_OnOff, NULL);
 
 // actual general (maximum) sound & music volume, saved into the config
-consvar_t cv_soundvolume = CVAR_INIT ("soundvolume", "50", CV_SAVE, soundvolume_cons_t, NULL);
-consvar_t cv_digmusicvolume = CVAR_INIT ("musicvolume", "50", CV_SAVE, soundvolume_cons_t, NULL);
+consvar_t cv_soundvolume = CVAR_INIT ("soundvolume", "80", CV_SAVE, soundvolume_cons_t, NULL);
+consvar_t cv_digmusicvolume = CVAR_INIT ("musicvolume", "80", CV_SAVE, soundvolume_cons_t, NULL);
 
 // number of channels available
 consvar_t cv_numChannels = CVAR_INIT ("snd_channels", "64", CV_SAVE|CV_CALL, CV_Unsigned, SetChannelsNum);
@@ -791,9 +791,9 @@ void S_UpdateSounds(void)
 	mobj_t *listenmobj[MAXSPLITSCREENPLAYERS];
 
 	// Update sound/music volumes, if changed manually at console
-	if (actualsfxvolume != cv_soundvolume.value * USER_VOLUME_SCALE)
+	if (actualsfxvolume != cv_soundvolume.value)
 		S_SetSfxVolume (cv_soundvolume.value);
-	if (actualdigmusicvolume != cv_digmusicvolume.value * USER_VOLUME_SCALE)
+	if (actualdigmusicvolume != cv_digmusicvolume.value)
 		S_SetDigMusicVolume (cv_digmusicvolume.value);
 
 	// We're done now, if we're not in a level.
@@ -990,7 +990,7 @@ void S_UpdateClosedCaptions(void)
 void S_SetSfxVolume(INT32 volume)
 {
 	//CV_SetValue(&cv_soundvolume, volume);
-	actualsfxvolume = volume * USER_VOLUME_SCALE;
+	actualsfxvolume = volume;
 
 #ifdef HW3SOUND
 	hws_mode == HWS_DEFAULT_MODE ? I_SetSfxVolume(volume&0x1F) : HW3S_SetSfxVolume(volume&0x1F);
@@ -2350,7 +2350,7 @@ void S_SetMusicVolume(INT32 digvolume)
 		digvolume = cv_digmusicvolume.value;
 
 	//CV_SetValue(&cv_digmusicvolume, digvolume);
-	actualdigmusicvolume = digvolume * USER_VOLUME_SCALE;
+	actualdigmusicvolume = digvolume;
 	I_SetMusicVolume(digvolume);
 }
 
