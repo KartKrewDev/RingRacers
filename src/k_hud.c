@@ -2025,7 +2025,7 @@ static boolean K_drawKartPositionFaces(void)
 		if (i == strank)
 			V_DrawScaledPatch(FACE_X, Y, V_HUDTRANS|V_SLIDEIN|V_SNAPTOLEFT, kp_facehighlight[(leveltime / 4) % 8]);
 
-		if ((gametyperules & GTR_BUMPERS) && players[rankplayer[i]].mo->health <= 0)
+		if ((gametyperules & GTR_BUMPERS) && (players[rankplayer[i]].pflags & PF_ELIMINATED))
 			V_DrawScaledPatch(FACE_X-4, Y-3, V_HUDTRANS|V_SLIDEIN|V_SNAPTOLEFT, kp_ranknobumpers);
 		else
 		{
@@ -2358,7 +2358,7 @@ void K_DrawTabRankings(INT32 x, INT32 y, playersort_t *tab, INT32 scorelines, IN
 		if (tab[i].num == whiteplayer)
 			V_DrawScaledPatch(x, y-4, 0, kp_facehighlight[(leveltime / 4) % 8]);
 
-		if ((gametyperules & GTR_BUMPERS) && players[tab[i].num].mo->health <= 0)
+		if ((gametyperules & GTR_BUMPERS) && (players[tab[i].num].pflags & PF_ELIMINATED))
 			V_DrawScaledPatch(x-4, y-7, 0, kp_ranknobumpers);
 		else
 		{
@@ -3640,16 +3640,16 @@ static void K_drawKartMinimap(void)
 			if (!players[i].mo || players[i].spectator || !players[i].mo->skin || players[i].exiting)
 				continue;
 
+			// This player is out of the game!
+			if ((gametyperules & GTR_BUMPERS) && (players[i].pflags & PF_ELIMINATED))
+				continue;
+
 			if (i == displayplayers[0] || i == displayplayers[1] || i == displayplayers[2] || i == displayplayers[3])
 			{
 				// Draw display players on top of everything else
 				localplayers[numlocalplayers++] = i;
 				continue;
 			}
-
-			// Now we know it's not a display player, handle non-local player exceptions.
-			if ((gametyperules & GTR_BUMPERS) && players[i].mo->health <= 0)
-				continue;
 
 			if (players[i].hyudorotimer > 0)
 			{
