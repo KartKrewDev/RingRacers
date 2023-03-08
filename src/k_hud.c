@@ -3862,19 +3862,22 @@ static void K_drawKartFinish(boolean finish)
 
 	//else -- 1/2p, scrolling FINISH
 	{
-		INT32 x, xval, ox, interpx;
+		INT32 x, xval, ox, interpx, pwidth;
 
 		x = ((vid.width<<FRACBITS)/vid.dupx);
 		xval = (SHORT(kptodraw[pnum]->width)<<FRACBITS);
-		x = ((TICRATE - timer)*(xval > x ? xval : x))/TICRATE;
-		ox = ((TICRATE - (timer - 1))*(xval > x ? xval : x))/TICRATE;
+
+		pwidth = max(xval, x);
+
+		x = ((TICRATE - timer) * pwidth) / TICRATE;
+		ox = ((TICRATE - (timer - 1)) * pwidth) / TICRATE;
 
 		interpx = R_InterpolateFixed(ox, x);
 
 		if (r_splitscreen && stplyr == &players[displayplayers[1]])
 			interpx = -interpx;
 
-		V_DrawFixedPatch(interpx + (STCD_X<<FRACBITS) - (xval>>1),
+		V_DrawFixedPatch(interpx + (STCD_X<<FRACBITS) - (pwidth / 2),
 			(STCD_Y<<FRACBITS) - (SHORT(kptodraw[pnum]->height)<<(FRACBITS-1)),
 			FRACUNIT,
 			splitflags, kptodraw[pnum], NULL);
