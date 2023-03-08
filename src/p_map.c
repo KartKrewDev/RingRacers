@@ -956,6 +956,8 @@ static BlockItReturn_t PIT_CheckThing(mobj_t *thing)
 		|| tm.thing->type == MT_BANANA || tm.thing->type == MT_EGGMANITEM || tm.thing->type == MT_BALLHOG
 		|| tm.thing->type == MT_SSMINE || tm.thing->type == MT_LANDMINE || tm.thing->type == MT_SINK
 		|| tm.thing->type == MT_GARDENTOP
+		|| tm.thing->type == MT_MONITOR
+		|| tm.thing->type == MT_BATTLECAPSULE
 		|| (tm.thing->type == MT_PLAYER)))
 	{
 		// see if it went over / under
@@ -971,6 +973,8 @@ static BlockItReturn_t PIT_CheckThing(mobj_t *thing)
 		|| thing->type == MT_BANANA || thing->type == MT_EGGMANITEM || thing->type == MT_BALLHOG
 		|| thing->type == MT_SSMINE || thing->type == MT_LANDMINE || thing->type == MT_SINK
 		|| thing->type == MT_GARDENTOP
+		|| thing->type == MT_MONITOR
+		|| thing->type == MT_BATTLECAPSULE
 		|| (thing->type == MT_PLAYER)))
 	{
 		// see if it went over / under
