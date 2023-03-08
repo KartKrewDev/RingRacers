@@ -1360,7 +1360,6 @@ static tic_t     pause_starttic;
 
 musicdef_t *musicdefstart = NULL;
 struct cursongcredit cursongcredit; // Currently displayed song credit info
-int musicdef_volume;
 
 //
 // S_FindMusicDef
@@ -2249,14 +2248,12 @@ void S_ChangeMusicEx(const char *mmusic, UINT16 mflags, boolean looping, UINT32 
 		music_flags = mflags;
 		music_looping = looping;
 
-		musicdef_volume = DEFAULT_MUSICDEF_VOLUME;
-
 		{
 			musicdef_t *def = S_FindMusicDef(music_name);
 
 			if (def)
 			{
-				musicdef_volume = def->volume;
+				I_SetCurrentSongVolume(def->volume);
 			}
 		}
 

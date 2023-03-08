@@ -36,7 +36,7 @@ size_t Gain<C>::filter(tcb::span<Sample<C>> input_buffer, tcb::span<Sample<C>> b
 template <size_t C>
 void Gain<C>::gain(float new_gain)
 {
-	new_gain_ = std::clamp(new_gain, 0.0f, 1.0f);
+	new_gain_ = std::max(new_gain, 0.f);
 }
 
 template <size_t C>
