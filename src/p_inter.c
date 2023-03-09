@@ -2145,9 +2145,6 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 			const boolean hardhit = (type == DMG_EXPLODE || type == DMG_KARMA || type == DMG_TUMBLE); // This damage type can do evil stuff like ALWAYS combo
 			INT16 ringburst = 5;
 
-			// Do not die from damage outside of bumpers health system
-			damage = 0;
-
 			// Check if the player is allowed to be damaged!
 			// If not, then spawn the instashield effect instead.
 			if (!force)
@@ -2227,28 +2224,27 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 				}
 			}
 
-			// We successfully damaged them! Give 'em some bumpers!
-			if (type != DMG_STING && type != DMG_STUMBLE)
+			if (gametyperules & GTR_BUMPERS)
 			{
-				damage = 1;
-
 				if (damagetype & DMG_STEAL)
 				{
+					// Steals 2 bumpers
 					damage = 2;
+				}
+			}
+			else
+			{
+				// Do not die from damage outside of bumpers health system
+				damage = 0;
+			}
 
-					if (type == DMG_KARMA)
-					{
-						damage = K_Bumpers(player);
-					}
-				}
-				else
-				{
-					if (type == DMG_KARMA)
-					{
-						// Take half of their bumpers for karma comeback damage
-						damage = max(1, K_Bumpers(player) / 2);
-					}
-				}
+			if (type == DMG_STING || type == DMG_STUMBLE)
+			{
+				damage = 0;
+			}
+			else
+			{
+				// We successfully damaged them! Give 'em some bumpers!
 
 				if (source && source != player->mo && source->player)
 				{
