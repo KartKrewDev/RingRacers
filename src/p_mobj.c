@@ -9844,6 +9844,8 @@ void P_MobjThinker(mobj_t *mobj)
 	if ((mobj->flags & MF_BOSS) && mobj->spawnpoint && (bossdisabled & (1<<mobj->spawnpoint->args[0])))
 		return;
 
+	mobj->flags2 &= ~(MF2_ALREADYHIT);
+
 	// Don't run any thinker code while in hitlag
 	if ((mobj->player ? mobj->hitlag - mobj->player->nullHitlag : mobj->hitlag) > 0)
 	{

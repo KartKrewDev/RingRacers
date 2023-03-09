@@ -2272,6 +2272,11 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 						K_DoInstashield(player);
 						return false;
 					}
+					else if (target->flags2 & MF2_ALREADYHIT) // do not deal extra damage in the same tic
+					{
+						K_SetHitLagForObjects(target, inflictor, laglength, true);
+						return false;
+					}
 				}
 			}
 
@@ -2451,6 +2456,8 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 		G_GhostAddHit((INT32) (source->player - players), target);
 
 	K_SetHitLagForObjects(target, inflictor, laglength, true);
+
+	target->flags2 |= MF2_ALREADYHIT;
 
 	if (target->health <= 0)
 	{
