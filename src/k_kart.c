@@ -3467,7 +3467,7 @@ fixed_t K_GetNewSpeed(player_t *player)
 	// Don't calculate the acceleration as ever being above top speed
 	if (oldspeed > p_speed)
 		oldspeed = p_speed;
-	newspeed = FixedDiv(FixedDiv(FixedMul(oldspeed, accelmax - p_accel) + FixedMul(p_speed, p_accel), accelmax), K_PlayerBaseFriction(ORIG_FRICTION));
+	newspeed = FixedDiv(FixedDiv(FixedMul(oldspeed, accelmax - p_accel) + FixedMul(p_speed, p_accel), accelmax), K_PlayerBaseFriction(player, ORIG_FRICTION));
 
 	finalspeed = newspeed - oldspeed;
 
@@ -10209,13 +10209,27 @@ static void K_AirFailsafe(player_t *player)
 //
 // K_PlayerBaseFriction
 //
-fixed_t K_PlayerBaseFriction(fixed_t original)
+fixed_t K_PlayerBaseFriction(player_t *player, fixed_t original)
 {
 	fixed_t frict = original;
 
 	if (K_PodiumSequence() == true)
 	{
 		frict -= FRACUNIT >> 4;
+	}
+	else if (K_PlayerUsesBotMovement(player) == true)
+	{
+		// A bit extra friction to help them without drifting.
+		// Remove this line once they can drift.
+		frict -= FRACUNIT >> 5;
+
+		// Bots gain more traction as they rubberband.
+		if (player->botvars.rubberband > FRACUNIT)
+		{
+			static const fixed_t extraFriction = FRACUNIT >> 5;
+			const fixed_t mul = player->botvars.rubberband - FRACUNIT;
+			frict -= FixedMul(extraFriction, mul);
+		}
 	}
 
 	if (frict > FRACUNIT) { frict = FRACUNIT; }
@@ -10229,7 +10243,7 @@ fixed_t K_PlayerBaseFriction(fixed_t original)
 //
 void K_AdjustPlayerFriction(player_t *player)
 {
-	const fixed_t prevfriction = K_PlayerBaseFriction(player->mo->friction);
+	const fixed_t prevfriction = K_PlayerBaseFriction(player, player->mo->friction);
 
 	if (P_IsObjectOnGround(player->mo) == false)
 	{
