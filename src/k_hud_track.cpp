@@ -338,10 +338,21 @@ bool is_player_tracking_target(player_t *player = stplyr)
 		return false;
 	}
 
-	// WANTED player sees TARGETs on players holding emeralds
 	if (player->emeralds != 0 && K_IsPlayerWanted(stplyr))
 	{
-		return true;
+		// The player who is about to win because of emeralds
+		// gets a TARGET on them
+		if (K_NumEmeralds(player) == 6) // 6 out of 7
+		{
+			return true;
+		}
+
+		// WANTED player sees TARGETs on players holding
+		// emeralds
+		if (K_IsPlayerWanted(stplyr))
+		{
+			return true;
+		}
 	}
 
 	return K_IsPlayerWanted(player);
