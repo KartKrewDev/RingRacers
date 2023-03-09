@@ -338,6 +338,12 @@ bool is_player_tracking_target(player_t *player = stplyr)
 		return false;
 	}
 
+	// WANTED player sees TARGETs on players holding emeralds
+	if (player->emeralds != 0 && K_IsPlayerWanted(stplyr))
+	{
+		return true;
+	}
+
 	return K_IsPlayerWanted(player);
 }
 
