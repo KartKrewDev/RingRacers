@@ -309,6 +309,8 @@ void F_StartCustomCutscene(INT32 cutscenenum, boolean precutscene, boolean reset
 
 void F_StartIntro(void)
 {
+	cursongcredit.def = NULL;
+
 	if (gamestate)
 	{
 		F_WipeStartScreen();
