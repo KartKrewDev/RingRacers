@@ -584,6 +584,12 @@ static boolean M_HandlePressStart(setup_player_t *p, UINT8 num)
 			device = G_GetAvailableGamepadDevice(i - 1);
 		}
 
+		if (device == KEYBOARD_MOUSE_DEVICE && num != 0)
+		{
+			// Only player 1 can be assigned to the KBM device.
+			continue;
+		}
+
 		if (G_IsDeviceResponding(device) != true)
 		{
 			// No buttons are being pushed.
