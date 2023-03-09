@@ -4141,6 +4141,7 @@ static void G_DoCompleted(void)
 			roundtype = GDGT_SPECIAL;
 
 		gamedata->roundsplayed[roundtype]++;
+		gamedata->pendingkeyrounds++;
 
 		// Done before forced addition of PF_NOCONTEST to make UCRP_NOCONTEST harder to achieve
 		M_UpdateUnlockablesAndExtraEmblems(true);
@@ -4562,6 +4563,12 @@ void G_LoadGameData(void)
 			gamedata->roundsplayed[i] = READUINT32(save.p);
 		}
 
+		gamedata->pendingkeyrounds = READUINT32(save.p);
+		gamedata->pendingkeyroundoffset = READUINT8(save.p);
+		gamedata->keyspending = READUINT8(save.p);
+		gamedata->chaokeys = READUINT8(save.p);
+		gamedata->usedkeys = READUINT8(save.p);
+
 		gamedata->crashflags = READUINT8(save.p);
 		if (gamedata->crashflags & GDCRASH_LAST)
 			gamedata->crashflags |= GDCRASH_ANY;
@@ -4740,7 +4747,12 @@ void G_SaveGameData(boolean dirty)
 		return;
 	}
 
-	length = (4+1+4+4+(4*GDGT_MAX)+1+1+4+(MAXEMBLEMS+(MAXUNLOCKABLES*2)+MAXCONDITIONSETS)+4+4+2);
+	length = (4+1+4+4+
+		(4*GDGT_MAX)+
+		4+1+1+1+1+
+		1+1+4+
+		(MAXEMBLEMS+(MAXUNLOCKABLES*2)+MAXCONDITIONSETS)+
+		4+4+2);
 	if (gamedata->challengegrid)
 	{
 		length += gamedata->challengegridwidth * CHALLENGEGRIDHEIGHT;
@@ -4764,6 +4776,12 @@ void G_SaveGameData(boolean dirty)
 	{
 		WRITEUINT32(save.p, gamedata->roundsplayed[i]);
 	}
+
+	WRITEUINT32(save.p, gamedata->pendingkeyrounds); // 4
+	WRITEUINT8(save.p, gamedata->pendingkeyroundoffset); // 1
+	WRITEUINT8(save.p, gamedata->keyspending); // 1
+	WRITEUINT8(save.p, gamedata->chaokeys); // 1
+	WRITEUINT8(save.p, gamedata->usedkeys); // 1
 
 	{
 		UINT8 crashflags = (gamedata->crashflags & GDCRASH_ANY);

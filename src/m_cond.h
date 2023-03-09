@@ -207,6 +207,13 @@ typedef enum
 
 // This is the largest number of 9s that will fit in UINT32.
 #define GDMAX_RINGS 999999999
+#define GDMAX_CHAOKEYS MAXUNLOCKABLES
+
+#ifdef DEVELOP
+#define GDCONVERT_ROUNDSTOKEY 4
+#else
+#define GDCONVERT_ROUNDSTOKEY 50
+#endif
 
 typedef enum {
 	GDGT_RACE,
@@ -246,6 +253,13 @@ struct gamedata_t
 	UINT32 totalplaytime;
 	UINT32 roundsplayed[GDGT_MAX];
 	UINT32 totalrings;
+
+	// Chao Key condition bypass
+	UINT32 pendingkeyrounds;
+	UINT8 pendingkeyroundoffset;
+	UINT8 keyspending;
+	UINT8 chaokeys;
+	UINT8 usedkeys;
 
 	// SPECIFIC SPECIAL EVENTS
 	boolean everloadedaddon;
@@ -297,7 +311,10 @@ void M_ClearStats(void);
 // Updating conditions and unlockables
 boolean M_CheckCondition(condition_t *cn, player_t *player);
 boolean M_UpdateUnlockablesAndExtraEmblems(boolean loud);
-UINT8 M_GetNextAchievedUnlock(void);
+
+#define PENDING_CHAOKEYS (UINT16_MAX-1)
+UINT16 M_GetNextAchievedUnlock(void);
+
 UINT8 M_CheckLevelEmblems(void);
 UINT8 M_CompletionEmblems(void);
 

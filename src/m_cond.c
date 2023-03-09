@@ -548,6 +548,12 @@ void M_ClearSecrets(void)
 	Z_Free(gamedata->challengegrid);
 	gamedata->challengegrid = NULL;
 	gamedata->challengegridwidth = 0;
+
+	gamedata->pendingkeyrounds = 0;
+	gamedata->pendingkeyroundoffset = 0;
+	gamedata->keyspending = 0;
+	gamedata->chaokeys = 3; // Start with 3 !!
+	gamedata->usedkeys = 0;
 }
 
 // ----------------------
@@ -1336,8 +1342,7 @@ static boolean M_CheckUnlockConditions(player_t *player)
 
 boolean M_UpdateUnlockablesAndExtraEmblems(boolean loud)
 {
-	INT32 i;
-	UINT8 response = 0;
+	UINT16 i = 0, response = 0, newkeys = 0;
 
 	if (!gamedata)
 	{
@@ -1355,6 +1360,14 @@ boolean M_UpdateUnlockablesAndExtraEmblems(boolean loud)
 
 	response = M_CheckUnlockConditions(NULL);
 
+	while ((gamedata->keyspending + gamedata->chaokeys + gamedata->usedkeys) < GDMAX_CHAOKEYS
+		&& ((gamedata->pendingkeyrounds + gamedata->pendingkeyroundoffset)/GDCONVERT_ROUNDSTOKEY) > gamedata->keyspending)
+	{
+		gamedata->keyspending++;
+		newkeys++;
+		response |= true;
+	}
+
 	if (!demo.playback && Playing() && (gamestate == GS_LEVEL))
 	{
 		for (i = 0; i <= splitscreen; i++)
@@ -1367,7 +1380,7 @@ boolean M_UpdateUnlockablesAndExtraEmblems(boolean loud)
 		}
 	}
 
-	if (!response && loud)
+	if (loud && response == 0)
 	{
 		return false;
 	}
@@ -1397,8 +1410,10 @@ boolean M_UpdateUnlockablesAndExtraEmblems(boolean loud)
 		response++;
 	}
 
+	response += newkeys;
+
 	// Announce
-	if (response)
+	if (response != 0)
 	{
 		if (loud)
 		{
@@ -1409,7 +1424,7 @@ boolean M_UpdateUnlockablesAndExtraEmblems(boolean loud)
 	return false;
 }
 
-UINT8 M_GetNextAchievedUnlock(void)
+UINT16 M_GetNextAchievedUnlock(void)
 {
 	UINT8 i;
 
@@ -1432,6 +1447,11 @@ UINT8 M_GetNextAchievedUnlock(void)
 		}
 
 		return i;
+	}
+
+	if (gamedata->keyspending > 0)
+	{
+		return PENDING_CHAOKEYS;
 	}
 
 	return MAXUNLOCKABLES;

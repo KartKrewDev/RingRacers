@@ -49,17 +49,59 @@ menu_t MISC_StatisticsDef = {
 
 struct challengesmenu_s challengesmenu;
 
-static void M_ChallengesAutoFocus(UINT8 unlockid, boolean fresh)
+static void M_ChallengesAutoFocus(UINT16 unlockid, boolean fresh)
 {
 	UINT8 i;
 	SINT8 work;
+
+	if (unlockid >= MAXUNLOCKABLES && gamedata->pendingkeyrounds > 0
+		&& ((gamedata->chaokeys + gamedata->usedkeys) < GDMAX_CHAOKEYS))
+		challengesmenu.chaokeyadd = true;
+
+	if (fresh && unlockid >= MAXUNLOCKABLES)
+	{
+		UINT8 selection[MAXUNLOCKABLES];
+		UINT8 numunlocks = 0;
+
+		// Get a random available unlockable.
+		for (i = 0; i < MAXUNLOCKABLES; i++)
+		{
+			if (!unlockables[i].conditionset)
+			{
+				continue;
+			}
+
+			if (!gamedata->unlocked[i])
+			{
+				continue;
+			}
+
+			selection[numunlocks++] = i;
+		}
+
+		if (!numunlocks)
+		{
+			// ...OK, get a random unlockable.
+			for (i = 0; i < MAXUNLOCKABLES; i++)
+			{
+				if (!unlockables[i].conditionset)
+				{
+					continue;
+				}
+
+				selection[numunlocks++] = i;
+			}
+		}
+
+		unlockid = selection[M_RandomKey(numunlocks)];
+	}
 
 	if (unlockid >= MAXUNLOCKABLES)
 		return;
 
 	challengesmenu.currentunlock = unlockid;
 	challengesmenu.unlockcondition = M_BuildConditionSetString(challengesmenu.currentunlock);
-	challengesmenu.unlockanim = 0;
+	challengesmenu.unlockanim = (challengesmenu.pending && !challengesmenu.chaokeyadd ? 0 : MAXUNLOCKTIME);
 
 	if (gamedata->challengegrid == NULL || challengesmenu.extradata == NULL)
 		return;
@@ -161,12 +203,13 @@ static void M_ChallengesAutoFocus(UINT8 unlockid, boolean fresh)
 
 menu_t *M_InterruptMenuWithChallenges(menu_t *desiredmenu)
 {
-	UINT8 i;
-	UINT16 newunlock = M_GetNextAchievedUnlock();
+	UINT16 i, newunlock;
 
 	M_UpdateUnlockablesAndExtraEmblems(false);
 
-	if ((challengesmenu.pending = (newunlock < MAXUNLOCKABLES)))
+	newunlock = M_GetNextAchievedUnlock();
+
+	if ((challengesmenu.pending = (newunlock != MAXUNLOCKABLES)))
 	{
 		S_StopMusic();
 		MISC_ChallengesDef.prevMenu = desiredmenu;
@@ -177,6 +220,7 @@ menu_t *M_InterruptMenuWithChallenges(menu_t *desiredmenu)
 		challengesmenu.ticker = 0;
 		challengesmenu.requestflip = false;
 		challengesmenu.requestnew = false;
+		challengesmenu.chaokeyadd = false;
 		challengesmenu.currentunlock = MAXUNLOCKABLES;
 		challengesmenu.unlockcondition = NULL;
 
@@ -210,6 +254,9 @@ menu_t *M_InterruptMenuWithChallenges(menu_t *desiredmenu)
 
 		if (challengesmenu.pending)
 			M_ChallengesAutoFocus(newunlock, true);
+		else if (newunlock >= MAXUNLOCKABLES && gamedata->pendingkeyrounds > 0
+			&& ((gamedata->chaokeys + gamedata->usedkeys) < GDMAX_CHAOKEYS))
+			challengesmenu.chaokeyadd = true;
 
 		return &MISC_ChallengesDef;
 	}
@@ -219,7 +266,6 @@ menu_t *M_InterruptMenuWithChallenges(menu_t *desiredmenu)
 
 void M_Challenges(INT32 choice)
 {
-	UINT8 i;
 	(void)choice;
 
 	M_InterruptMenuWithChallenges(NULL);
@@ -227,40 +273,7 @@ void M_Challenges(INT32 choice)
 
 	if (gamedata->challengegrid != NULL && !challengesmenu.pending)
 	{
-		UINT8 selection[MAXUNLOCKABLES];
-		UINT8 numunlocks = 0;
-
-		// Get a random available unlockable.
-		for (i = 0; i < MAXUNLOCKABLES; i++)
-		{
-			if (!unlockables[i].conditionset)
-			{
-				continue;
-			}
-
-			if (!gamedata->unlocked[i])
-			{
-				continue;
-			}
-
-			selection[numunlocks++] = i;
-		}
-
-		if (!numunlocks)
-		{
-			// ...OK, get a random unlockable.
-			for (i = 0; i < MAXUNLOCKABLES; i++)
-			{
-				if (!unlockables[i].conditionset)
-				{
-					continue;
-				}
-
-				selection[numunlocks++] = i;
-			}
-		}
-
-		M_ChallengesAutoFocus(selection[M_RandomKey(numunlocks)], true);
+		M_ChallengesAutoFocus(UINT16_MAX, true);
 	}
 
 	M_SetupNextMenu(&MISC_ChallengesDef, false);
@@ -270,7 +283,7 @@ void M_ChallengesTick(void)
 {
 	const UINT8 pid = 0;
 	UINT16 i;
-	UINT8 newunlock = MAXUNLOCKABLES;
+	UINT16 newunlock = MAXUNLOCKABLES;
 
 	// Ticking
 	challengesmenu.ticker++;
@@ -280,8 +293,11 @@ void M_ChallengesTick(void)
 		if (setup_explosions[i].tics > 0)
 			setup_explosions[i].tics--;
 	}
-	if (challengesmenu.unlockcount[CC_ANIM] > 0)
-		challengesmenu.unlockcount[CC_ANIM]--;
+	for (i = CC_ANIM; i < CC_MAX; i++)
+	{
+		if (challengesmenu.unlockcount[i] > 0)
+			challengesmenu.unlockcount[i]--;
+	}
 	M_CupSelectTick();
 
 	// Update tile flip state.
@@ -307,27 +323,61 @@ void M_ChallengesTick(void)
 		}
 	}
 
-	if (challengesmenu.pending)
+	if (challengesmenu.chaokeyadd == true)
 	{
-		// Pending mode.
-
-		if (challengesmenu.requestnew)
+		if (challengesmenu.ticker <= 5)
+			; // recreate the slight delay the unlock fades provide
+		else if (gamedata->pendingkeyrounds == 0)
 		{
-			// The menu apparatus is requesting a new unlock.
-			challengesmenu.requestnew = false;
-			if ((newunlock = M_GetNextAchievedUnlock()) < MAXUNLOCKABLES)
+			challengesmenu.chaokeyadd = false;
+			challengesmenu.requestnew = true;
+		}
+		else if ((gamedata->chaokeys + gamedata->usedkeys) >= GDMAX_CHAOKEYS)
+		{
+			gamedata->keyspending = 0;
+			gamedata->pendingkeyrounds = 0;
+		}
+		else
+		{
+			if (!(--gamedata->pendingkeyrounds & 1))
 			{
-				// We got one!
-				M_ChallengesAutoFocus(newunlock, false);
+				S_StartSound(NULL, sfx_ptally);
 			}
-			else
+
+			if (++gamedata->pendingkeyroundoffset >= GDCONVERT_ROUNDSTOKEY)
 			{
-				// All done! Let's save the unlocks we've busted open.
-				challengesmenu.pending = false;
-				G_SaveGameData(true);
+				gamedata->pendingkeyroundoffset %= GDCONVERT_ROUNDSTOKEY;
+
+				if (gamedata->keyspending > 0)
+				{
+					S_StartSound(NULL, sfx_achiev);
+					gamedata->keyspending--;
+					gamedata->chaokeys++;
+					challengesmenu.unlockcount[CC_CHAOANIM]++;
+				}
 			}
 		}
-		else if (challengesmenu.fade < 5)
+	}
+	else if (challengesmenu.requestnew)
+	{
+		// The menu apparatus is requesting a new unlock.
+		challengesmenu.requestnew = false;
+		if ((newunlock = M_GetNextAchievedUnlock()) != MAXUNLOCKABLES)
+		{
+			// We got one!
+			M_ChallengesAutoFocus(newunlock, false);
+		}
+		else
+		{
+			// All done! Let's save the unlocks we've busted open.
+			challengesmenu.pending = challengesmenu.chaokeyadd = false;
+			G_SaveGameData(true);
+		}
+	}
+	else if (challengesmenu.pending)
+	{
+		// Pending mode.
+		if (challengesmenu.fade < 5)
 		{
 			// Fade increase.
 			challengesmenu.fade++;
@@ -441,28 +491,58 @@ boolean M_ChallengesInputs(INT32 ch)
 	const boolean move = (menucmd[pid].dpad_ud != 0 || menucmd[pid].dpad_lr != 0);
 	(void) ch;
 
-	if (challengesmenu.fade)
+	if (challengesmenu.fade || challengesmenu.chaokeyadd)
 	{
 		;
 	}
-#ifdef DEVELOP
-	else if (M_MenuExtraPressed(pid) && challengesmenu.extradata) // debugging
+	else if (M_MenuExtraPressed(pid)
+		&& challengesmenu.extradata)
 	{
-		if (challengesmenu.currentunlock < MAXUNLOCKABLES)
-		{
-			Z_Free(gamedata->challengegrid);
-			gamedata->challengegrid = NULL;
-			gamedata->challengegridwidth = 0;
-			M_PopulateChallengeGrid();
-			M_UpdateChallengeGridExtraData(challengesmenu.extradata);
+		i = (challengesmenu.hilix * CHALLENGEGRIDHEIGHT) + challengesmenu.hiliy;
 
-			M_ChallengesAutoFocus(challengesmenu.currentunlock, true);
+		if (challengesmenu.currentunlock < MAXUNLOCKABLES
+			&& !gamedata->unlocked[challengesmenu.currentunlock]
+			&& !unlockables[challengesmenu.currentunlock].majorunlock
+			&& ((challengesmenu.extradata[i].flags & CHE_HINT)
+				|| (challengesmenu.unlockcount[CC_UNLOCKED] + challengesmenu.unlockcount[CC_TALLY] == 0))
+			&& gamedata->chaokeys > 0)
+		{
+			gamedata->chaokeys--;
+			gamedata->usedkeys++;
+			challengesmenu.unlockcount[CC_CHAOANIM]++;
+
+			S_StartSound(NULL, sfx_chchng);
 
 			challengesmenu.pending = true;
+			M_ChallengesAutoFocus(challengesmenu.currentunlock, false);
+		}
+		else
+		{
+			challengesmenu.unlockcount[CC_CHAONOPE] = 6;
+			S_StartSound(NULL, sfx_s3k7b); //sfx_s3kb2
+#if 0 // debugging
+			if (challengesmenu.currentunlock < MAXUNLOCKABLES)
+			{
+				if (gamedata->unlocked[challengesmenu.currentunlock] && challengesmenu.unlockanim >= UNLOCKTIME)
+				{
+					if (challengesmenu.unlockcount[CC_TALLY] > 0)
+						challengesmenu.unlockcount[CC_TALLY]--;
+					else
+						challengesmenu.unlockcount[CC_UNLOCKED]--;
+				}
+
+				Z_Free(gamedata->challengegrid);
+				gamedata->challengegrid = NULL;
+				gamedata->challengegridwidth = 0;
+				M_PopulateChallengeGrid();
+				M_UpdateChallengeGridExtraData(challengesmenu.extradata);
+				challengesmenu.pending = true;
+				M_ChallengesAutoFocus(challengesmenu.currentunlock, true);
+			}
+#endif
 		}
 		return true;
 	}
-#endif
 	else
 	{
 		if (M_MenuBackPressed(pid) || start)

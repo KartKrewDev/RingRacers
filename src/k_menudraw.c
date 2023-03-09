@@ -5170,6 +5170,7 @@ static void M_DrawChallengePreview(INT32 x, INT32 y)
 
 #define challengetransparentstrength 8
 #define challengesgridstep 22
+#define challengekeybarwidth 50
 
 void M_DrawChallenges(void)
 {
@@ -5293,6 +5294,26 @@ void M_DrawChallenges(void)
 
 challengedesc:
 
+	// Chao Keys
+	{
+		patch_t *key = W_CachePatchName("UN_CHA00", PU_CACHE);
+		INT32 offs = challengesmenu.unlockcount[CC_CHAONOPE];
+		if (offs & 1)
+			offs = -offs;
+		offs /= 2;
+		V_DrawFixedPatch((6+offs)*FRACUNIT, 5*FRACUNIT, FRACUNIT, 0, key, NULL);
+		V_DrawKartString((25+offs), 9-challengesmenu.unlockcount[CC_CHAOANIM], 0, va("%u", gamedata->chaokeys));
+
+		offs = challengekeybarwidth;
+		if ((gamedata->chaokeys + gamedata->usedkeys) < GDMAX_CHAOKEYS)
+			offs = ((gamedata->pendingkeyroundoffset * challengekeybarwidth)/GDCONVERT_ROUNDSTOKEY);
+
+		if (offs > 0)
+			V_DrawFill(1, 25, offs, 2, 0);
+		if (offs < challengekeybarwidth)
+			V_DrawFadeFill(1+offs, 25, challengekeybarwidth-offs, 2, 0, 31, challengetransparentstrength);
+	}
+
 	// Tally
 	{
 		str = va("%d/%d",
@@ -5347,6 +5368,7 @@ challengedesc:
 
 #undef challengetransparentstrength
 #undef challengesgridstep
+#undef challengekeybarwidth
 
 // Statistics menu
 

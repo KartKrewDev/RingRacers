@@ -1144,7 +1144,9 @@ void M_DrawAddons(void);
 #define CC_UNLOCKED 1
 #define CC_TALLY 2
 #define CC_ANIM 3
-#define CC_MAX 4
+#define CC_CHAOANIM 4
+#define CC_CHAONOPE 5
+#define CC_MAX 6
 
 #define TILEFLIP_MAX 16
 
@@ -1154,7 +1156,6 @@ extern struct timeattackmenu_s {
 	tic_t spbflicker;	// used for SPB flicker-in
 
 } timeattackmenu;
-
 
 // Keep track of some pause menu data for visual goodness.
 extern struct challengesmenu_s {
@@ -1174,6 +1175,7 @@ extern struct challengesmenu_s {
 
 	boolean pending;
 	boolean requestnew;
+	boolean chaokeyadd;
 
 	boolean requestflip;
 
