@@ -42,6 +42,7 @@ INT32 gamekeydown[MAXDEVICES][NUMINPUTS];
 // two key codes (or virtual key) per game control
 INT32 gamecontrol[MAXSPLITSCREENPLAYERS][num_gamecontrols][MAXINPUTMAPPING];
 INT32 gamecontroldefault[num_gamecontrols][MAXINPUTMAPPING]; // default control storage
+INT32 menucontrolreserved[num_gamecontrols][MAXINPUTMAPPING];
 
 // lists of GC codes for selective operation
 /*
@@ -682,12 +683,13 @@ boolean G_KeyBindIsNecessary(INT32 gc)
 	switch (gc)
 	{
 		case gc_a:
-		case gc_b:
+		case gc_c:
+		case gc_x:
 		case gc_up:
 		case gc_down:
 		case gc_left:
 		case gc_right:
-		case gc_start:
+		//case gc_start: // Is necessary, but handled special.
 			return true;
 		default:
 			return false;
@@ -698,25 +700,31 @@ boolean G_KeyBindIsNecessary(INT32 gc)
 // Returns false if a key is deemed unreachable for this device.
 boolean G_KeyIsAvailable(INT32 key, INT32 deviceID)
 {
+	boolean gamepad_key = false;
+
 	// Invalid key number.
 	if (key <= 0 || key >= NUMINPUTS)
 	{
 		return false;
 	}
 
-	// Valid controller-specific virtual key, but no controller attached for player.
-	if (key >= KEY_JOY1 && key < JOYINPUTEND && deviceID <= 0)
+	// Only allow gamepad keys for gamepad devices,
+	// and vice versa.
+	gamepad_key = (key >= KEY_JOY1 && key < JOYINPUTEND);
+	if (deviceID == KEYBOARD_MOUSE_DEVICE)
 	{
-		return false;
+		if (gamepad_key == true)
+		{
+			return false;
+		}
 	}
-
-	// Valid mouse-specific virtual key, but no mouse attached for player. TODO HOW TO DETECT ACTIVE MOUSE CONNECTION
-	/*
-	if (key >= KEY_MOUSE1 && key < MOUSEINPUTEND && ????????)
+	else
 	{
-		return false;
+		if (gamepad_key == false)
+		{
+			return false;
+		}
 	}
-	*/
 
 	return true;
 }
@@ -815,7 +823,7 @@ void G_DefineDefaultControls(void)
 	gamecontroldefault[gc_z       ][0] = 'd';
 	gamecontroldefault[gc_l       ][0] = 'q';
 	gamecontroldefault[gc_r       ][0] = 'e';
-	gamecontroldefault[gc_start   ][0] = KEY_ESCAPE;	// *
+	gamecontroldefault[gc_start   ][0] = KEY_ESCAPE;
 	gamecontroldefault[gc_rankings][0] = KEY_TAB;
 
 	// Gamepad controls
@@ -837,6 +845,16 @@ void G_DefineDefaultControls(void)
 	gamecontroldefault[gc_down ][2] = KEY_AXIS1+3; // Axis Y+
 	gamecontroldefault[gc_left ][2] = KEY_AXIS1+0; // Axis X-
 	gamecontroldefault[gc_right][2] = KEY_AXIS1+1; // Axis X+
+
+	// Menu reserved controls
+	menucontrolreserved[gc_up   ][0] = KEY_UPARROW;
+	menucontrolreserved[gc_down ][0] = KEY_DOWNARROW;
+	menucontrolreserved[gc_left ][0] = KEY_LEFTARROW;
+	menucontrolreserved[gc_right][0] = KEY_RIGHTARROW;
+	menucontrolreserved[gc_a    ][0] = KEY_ENTER;
+	menucontrolreserved[gc_c    ][0] = KEY_BACKSPACE;
+	menucontrolreserved[gc_x    ][0] = KEY_ESCAPE;
+	menucontrolreserved[gc_start][0] = KEY_ESCAPE; // Handled special
 }
 
 void G_CopyControls(INT32 (*setupcontrols)[MAXINPUTMAPPING], INT32 (*fromcontrols)[MAXINPUTMAPPING], const INT32 *gclist, INT32 gclen)

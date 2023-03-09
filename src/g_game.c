@@ -863,33 +863,48 @@ INT16 G_SoftwareClipAimingPitch(INT32 *aiming)
 	return (INT16)((*aiming)>>16);
 }
 
-// Default controls for keyboard. These are hardcoded and cannot be changed.
-static INT32 keyboardMenuDefaults[][2] = {
-	{gc_a, 		KEY_ENTER},
-	{gc_c, 		KEY_BACKSPACE},
-	{gc_x, 		KEY_ESCAPE},
-	{gc_left, 	KEY_LEFTARROW},
-	{gc_right, 	KEY_RIGHTARROW},
-	{gc_up, 	KEY_UPARROW},
-	{gc_down, 	KEY_DOWNARROW},
+static INT32 G_GetValueFromControlTable(INT32 deviceID, INT32 deadzone, INT32 *controltable)
+{
+	INT32 i;
 
-	// special control
-	{gc_start, 	KEY_ESCAPE},
-	// 8 total controls*
-};
+	if (deviceID <= UNASSIGNED_DEVICE)
+	{
+		// An invalid device can't have any binds!
+		return 0;
+	}
 
-#define KEYBOARDDEFAULTSSPLIT 7
+	for (i = 0; i < MAXINPUTMAPPING; i++)
+	{
+		INT32 key = controltable[i];
+		INT32 value = 0;
 
+		// Invalid key number.
+		if (G_KeyIsAvailable(key, deviceID) == false)
+		{
+			continue;
+		}
+
+		value = G_GetDeviceGameKeyDownArray(deviceID)[key];
+
+		if (value >= deadzone)
+		{
+			return value;
+		}
+	}
+
+	// Not pressed.
+	return 0;
+}
 
 INT32 G_PlayerInputAnalog(UINT8 p, INT32 gc, UINT8 menuPlayers)
 {
-	INT32 deviceID;
+	const INT32 deadzone = (JOYAXISRANGE * cv_deadzone[p].value) / FRACUNIT;
+	const INT32 keyboard_player = G_GetPlayerForDevice(KEYBOARD_MOUSE_DEVICE);
+	const boolean is_main_menu_controller = (p == 0 && menuPlayers > 0);
+	INT32 deviceID = UNASSIGNED_DEVICE;
+	INT32 value = -1;
 	INT32 avail_gamepad_id = 0;
-	INT32 i, j;
-	INT32 deadzone = 0;
-	boolean trydefaults = true;
-	boolean tryingotherID = false;
-	INT32 *controltable = &(gamecontrol[p][gc][0]);
+	INT32 i;
 
 	if (p >= MAXSPLITSCREENPLAYERS)
 	{
@@ -899,139 +914,93 @@ INT32 G_PlayerInputAnalog(UINT8 p, INT32 gc, UINT8 menuPlayers)
 		return 0;
 	}
 
-	deadzone = (JOYAXISRANGE * cv_deadzone[p].value) / FRACUNIT;
-
 	deviceID = G_GetDeviceForPlayer(p);
 
-	if (deviceID == -1)
+	if ((menuPlayers > 0 && G_KeyBindIsNecessary(gc) == true) // In menu: check for all unoverrideable menu default controls.
+		|| (menuPlayers == 0 && gc == gc_start)) // In gameplay: check for the unoverrideable start button to be able to bring up the menu.
 	{
-		INT32 keyboard_player = G_GetPlayerForDevice(KEYBOARD_MOUSE_DEVICE);
-
-		// Player 1 is always allowed to use the keyboard in 1P (there is a check for splitscreen later in this func)
-		if (p == KEYBOARD_MOUSE_DEVICE && keyboard_player == -1)
+		value = G_GetValueFromControlTable(KEYBOARD_MOUSE_DEVICE, JOYAXISRANGE/4, &(menucontrolreserved[gc][0]));
+		if (value > 0) // Check for press instead of bound.
 		{
-			deviceID = KEYBOARD_MOUSE_DEVICE;
-		}
-		else
-		{
-			goto deviceunassigned;
-		}
-	}
-
-retrygetcontrol:
-	for (i = 0; i < MAXINPUTMAPPING; i++)
-	{
-		INT32 key = controltable[i];
-		INT32 menukey = KEY_NULL;
-		INT32 value = 0;
-		boolean processinput = true;
-
-		// for menus, keyboards have defaults!
-		if (deviceID == 0)
-		{
-
-			// In menus, check indexes 0 through 5 (everything besides gc_start)
-			// Outside of menus, only consider the hardcoded input for gc_start at index 6
-
-			INT32 maxj = menuactive ? KEYBOARDDEFAULTSSPLIT : KEYBOARDDEFAULTSSPLIT+1;
-			j = (!menuactive) ? KEYBOARDDEFAULTSSPLIT : 0;
-
-			for (; j < maxj; j++)	// check keyboardMenuDefaults
-			{
-				// the gc we're looking for
-				if (gc == keyboardMenuDefaults[j][0])
-				{
-					menukey = keyboardMenuDefaults[j][1];
-					break;
-				}
-
-				// The key is mapped to *something else*...?
-				// Then don't process that as it would conflict with our hardcoded inputs.
-				else if (key == keyboardMenuDefaults[j][1])
-				{
-					processinput = false;
-					break;
-				}
-			}
-		}
-
-		// Invalid key number.
-		if (!G_KeyIsAvailable(key, deviceID) && !G_KeyIsAvailable(menukey, deviceID))
-		{
-			continue;
-		}
-
-		if (processinput)
-		{
-			// It's possible to access this control right now, so let's disable the default control backup for later.
-			trydefaults = false;
-
-			value = G_GetDeviceGameKeyDownArray(deviceID)[key];
-			if (menukey && G_GetDeviceGameKeyDownArray(deviceID)[menukey])
-				value = G_GetDeviceGameKeyDownArray(deviceID)[menukey];
-
-			if (value >= deadzone)
+			// This is only intended for P1.
+			if (p == 0)
 			{
 				return value;
 			}
+			else
+			{
+				return 0;
+			}
 		}
 	}
 
-deviceunassigned:
-
-	// If you're on controller, try your keyboard-based binds as an immediate backup.
-	// Do not do this if there are more than 1 local player.
-	if (p == 0 && deviceID > 0 && !tryingotherID && menuPlayers < 2 && !splitscreen)
+	// Player 1 is always allowed to use the keyboard in 1P, even if they got disconnected.
+	if (p == 0 && keyboard_player == -1 && deviceID == UNASSIGNED_DEVICE)
 	{
 		deviceID = KEYBOARD_MOUSE_DEVICE;
-		goto retrygetcontrol;
 	}
 
-	if (menuPlayers == 0)
+	// First, try our actual binds.
+	value = G_GetValueFromControlTable(deviceID, deadzone, &(gamecontrol[p][gc][0]));
+	if (value > 0)
 	{
-		return 0;
+		return value;
 	}
 
-	// We don't want menus to become unnavigable if people unbind
-	// all of their controls, so we do several things in this scenario.
-	// First: try other controllers.
-
-	if (!tryingotherID)
+	// If you're on gamepad in 1P, and you didn't have a gamepad bind for this, then try your keyboard binds.
+	if (p == 0 && keyboard_player == -1 && deviceID > KEYBOARD_MOUSE_DEVICE)
 	{
-		avail_gamepad_id = 0;
-		tryingotherID = true;
-	}
-loweringid:
-	if (avail_gamepad_id >= G_GetNumAvailableGamepads())
-	{
-		return 0;
-	}
-	deviceID = G_GetAvailableGamepadDevice(avail_gamepad_id);
-	avail_gamepad_id += 1;
-	if (deviceID > 0)
-	{
-		for (i = 0; i < menuPlayers; i++)
+		value = G_GetValueFromControlTable(KEYBOARD_MOUSE_DEVICE, deadzone, &(gamecontrol[p][gc][0]));
+		if (value > 0)
 		{
-			if (deviceID != G_GetDeviceForPlayer(i))
-				continue;
-			// Controller taken? Try again...
-			goto loweringid;
+			return value;
 		}
-		goto retrygetcontrol;
 	}
 
-	if (trydefaults && G_KeyBindIsNecessary(gc))
+	if (is_main_menu_controller == true)
 	{
-		// If we still haven't found anything and the keybind is necessary,
-		// try it all again but with default binds.
-		trydefaults = false;
-		controltable = &(gamecontroldefault[gc][0]);
-		tryingotherID = false;
-		deviceID = G_GetDeviceForPlayer(p);
-		goto retrygetcontrol;
+		// We are P1 controlling menus. We should be able to
+		// control the menu with any unused gamepads, so
+		// that gamepads are able to navigate to the player
+		// setup menu in the first place.
+		for (avail_gamepad_id = 0; avail_gamepad_id < G_GetNumAvailableGamepads(); avail_gamepad_id++)
+		{
+			INT32 tryDevice = G_GetAvailableGamepadDevice(avail_gamepad_id);
+			if (tryDevice <= KEYBOARD_MOUSE_DEVICE)
+			{
+				continue;
+			}
 
+			for (i = 0; i < menuPlayers; i++)
+			{
+				if (tryDevice == G_GetDeviceForPlayer(i))
+				{
+					// Don't do this for already taken devices.
+					break;
+				}
+			}
+
+			if (i == menuPlayers)
+			{
+				// This gamepad isn't being used, so we can
+				// use it for P1 menu navigation.
+				value = G_GetValueFromControlTable(tryDevice, deadzone, &(gamecontrol[p][gc][0]));
+				if (value > 0)
+				{
+					return value;
+				}
+			}
+		}
+
+		// Still nothing bound after everything. Try default gamepad controls.
+		value = G_GetValueFromControlTable(deviceID, deadzone, &(gamecontroldefault[gc][0]));
+		if (value > 0)
+		{
+			return value;
+		}
 	}
 
+	// Literally not bound at all, so it can't be pressed at all.
 	return 0;
 }
 

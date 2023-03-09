@@ -194,25 +194,7 @@ static char returnWadPath[256];
 #include "../byteptr.h"
 #endif
 
-/**	\brief	The JoyReset function
-
-	\param	JoySet	Joystick info to reset
-
-	\return	void
-*/
-static void JoyReset(SDLJoyInfo_t *JoySet)
-{
-	JoySet->dev = NULL;
-	JoySet->oldjoy = -1;
-	JoySet->axises = JoySet->buttons = JoySet->hats = JoySet->balls = 0;
-	//JoySet->scale
-}
-
-/**	\brief First joystick up and running
-*/
-static INT32 joystick_started[MAXSPLITSCREENPLAYERS] = {0,0,0,0};
-
-/**	\brief SDL info about joystick 1
+/**	\brief SDL info about joysticks
 */
 SDLJoyInfo_t JoyInfo[MAXSPLITSCREENPLAYERS];
 
@@ -1041,7 +1023,7 @@ const char *I_GetJoyName(INT32 joyindex)
 	joyname[0] = 0;
 	joyindex--; //SDL's Joystick System starts at 0, not 1
 
-	if (!SDL_WasInit(SDL_INIT_JOYSTICK) == SDL_INIT_JOYSTICK)
+	if (SDL_WasInit(SDL_INIT_JOYSTICK) != SDL_INIT_JOYSTICK)
 	{
 		return joyname;
 	}
