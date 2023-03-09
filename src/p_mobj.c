@@ -3427,8 +3427,6 @@ void P_MobjCheckWater(mobj_t *mobj)
 		}
 
 		p->roundconditions.wet_player |= (mobj->eflags & (MFE_TOUCHWATER|MFE_UNDERWATER|MFE_GOOWATER));
-		if (p->roundconditions.wet_player)
-			CONS_Printf("%u\n", p->roundconditions.wet_player);
 	}
 
 	if (mobj->flags & MF_APPLYTERRAIN)
