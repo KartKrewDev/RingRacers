@@ -7587,6 +7587,8 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 	sector_t *ss;
 	virtlump_t *encoreLump = NULL;
 
+	K_TimerReset();
+
 	levelloading = true;
 
 	// This is needed. Don't touch.
@@ -8007,8 +8009,6 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 		LUA_HookInt(gamemap, HOOK(MapLoad));
 		P_MapEnd(); // just in case MapLoad modifies tm.thing
 	}
-
-	K_TimerReset();
 
 	// No render mode or reloading gamestate, stop here.
 	if (rendermode == render_none || reloadinggamestate)
