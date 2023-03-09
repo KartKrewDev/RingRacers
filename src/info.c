@@ -8880,8 +8880,8 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		S_SPIKED2,      // xdeathstate
 		sfx_mspogo,     // deathsound
 		2*TICRATE,      // speed
-		8*FRACUNIT,     // radius
-		32*FRACUNIT,    // height
+		14*FRACUNIT,     // radius
+		64*FRACUNIT,    // height
 		0,              // display offset
 		4,              // mass
 		0,              // damage
