@@ -1628,7 +1628,11 @@ static void Got_NameAndColor(UINT8 **cp, INT32 playernum)
 
 #ifdef PARANOIA
 			if (snacpending[i] < 0)
+			{
+				S_StartSound(NULL, sfx_monch);
+				I_Sleep(1000); // let the monch play out for 1 second
 				I_Error("snacpending[%d] negative!", i);
+			}
 #endif
 
 			localplayer = i;
