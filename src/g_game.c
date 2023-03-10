@@ -3926,6 +3926,13 @@ static void G_GetNextMap(void)
 						grandprixinfo.eventmode = GPEVENT_SPECIAL;
 						nextmap = cupLevelNum;
 						newgametype = G_GuessGametypeByTOL(mapheaderinfo[cupLevelNum]->typeoflevel);
+
+						if (gamedata->everseenspecial == false)
+						{
+							gamedata->everseenspecial = true;
+							M_UpdateUnlockablesAndExtraEmblems(true);
+							G_SaveGameData(true);
+						}
 					}
 				}
 			}
@@ -4583,6 +4590,7 @@ void G_LoadGameData(void)
 
 		gamedata->everloadedaddon = (boolean)READUINT8(save.p);
 		gamedata->eversavedreplay = (boolean)READUINT8(save.p);
+		gamedata->everseenspecial = (boolean)READUINT8(save.p);
 	}
 	else
 	{
@@ -4796,7 +4804,8 @@ void G_SaveGameData(boolean dirty)
 	length = (4+1+4+4+
 		(4*GDGT_MAX)+
 		4+1+1+1+1+
-		1+1+1+4+
+		1+1+1+1+
+		4+
 		(MAXEMBLEMS+(MAXUNLOCKABLES*2)+MAXCONDITIONSETS)+
 		4+2);
 
@@ -4846,6 +4855,7 @@ void G_SaveGameData(boolean dirty)
 
 	WRITEUINT8(save.p, gamedata->everloadedaddon); // 1
 	WRITEUINT8(save.p, gamedata->eversavedreplay); // 1
+	WRITEUINT8(save.p, gamedata->everseenspecial); // 1
 
 	WRITEUINT32(save.p, quickncasehash(timeattackfolder, 64));
 

@@ -270,6 +270,7 @@ struct gamedata_t
 	// SPECIFIC SPECIAL EVENTS
 	boolean everloadedaddon;
 	boolean eversavedreplay;
+	boolean everseenspecial;
 	UINT8 crashflags;
 };
 

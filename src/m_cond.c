@@ -527,6 +527,7 @@ void M_ClearStats(void)
 
 	gamedata->everloadedaddon = false;
 	gamedata->eversavedreplay = false;
+	gamedata->everseenspecial = false;
 	gamedata->crashflags = 0;
 }
 
@@ -1139,7 +1140,7 @@ static const char *M_GetConditionString(condition_t *cn)
 		case UCRP_PREFIX_BREAKTHECAPSULES:
 			return "BREAK THE CAPSULES:";
 		case UCRP_PREFIX_SEALEDSTAR:
-			if (gamedata->roundsplayed[GDGT_SPECIAL] == 0)
+			if (!gamedata->everseenspecial)
 				return NULL;
 			return "SEALED STARS:";
 
