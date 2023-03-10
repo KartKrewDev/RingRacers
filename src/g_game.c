@@ -3911,7 +3911,7 @@ static void G_GetNextMap(void)
 			{
 				gp_rank_e grade = K_CalculateGPGrade(&grandprixinfo.rank);
 
-				if (grade >= GRADE_A) // On A rank pace? Then you get a chance for S rank!
+				if (grade >= GRADE_A && grandprixinfo.gamespeed >= KARTSPEED_NORMAL) // On A rank pace? Then you get a chance for S rank!
 				{
 					const INT32 cupLevelNum = grandprixinfo.cup->cachedlevels[CUPCACHE_SPECIAL];
 					if (cupLevelNum < nummapheaders && mapheaderinfo[cupLevelNum])
