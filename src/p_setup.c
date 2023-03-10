@@ -4400,7 +4400,7 @@ static void P_ConvertBinaryLinedefTypes(void)
 			break;
 		case 80: //Raise tagged things by type to this FOF
 			lines[i].args[0] = sides[lines[i].sidenum[0]].textureoffset >> FRACBITS;
-			// angle will be converted to tags elsewhere, because they aren't ready yet...
+			lines[i].args[1] = tag;
 			break;
 		case 81: //Block enemies
 			lines[i].flags |= ML_BLOCKMONSTERS;
