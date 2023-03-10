@@ -264,6 +264,10 @@ void K_FinishCeremony(void)
 	}
 
 	podiumData.ranking = true;
+
+	// Play the noise now
+	M_UpdateUnlockablesAndExtraEmblems(true);
+	G_SaveGameData(true);
 }
 
 /*--------------------------------------------------
@@ -273,6 +277,8 @@ void K_FinishCeremony(void)
 --------------------------------------------------*/
 void K_ResetCeremony(void)
 {
+	UINT8 i;
+
 	memset(&podiumData, 0, sizeof(struct podiumData_s));
 
 	if (K_PodiumSequence() == false)
@@ -280,8 +286,36 @@ void K_ResetCeremony(void)
 		return;
 	}
 
+	// Establish rank and grade for this play session.
 	podiumData.rank = grandprixinfo.rank;
 	podiumData.grade = K_CalculateGPGrade(&podiumData.rank);
+
+	if (!grandprixinfo.cup)
+	{
+		return;
+	}
+
+	// Write grade, position, and emerald-having-ness for later sessions!
+	i = (grandprixinfo.masterbots) ? KARTGP_MASTER : grandprixinfo.gamespeed;
+
+	if ((grandprixinfo.cup->windata[i].best_placement == 0) // First run
+		|| (podiumData.rank.position < grandprixinfo.cup->windata[i].best_placement)) // Later, better run
+	{
+		grandprixinfo.cup->windata[i].best_placement = podiumData.rank.position;
+
+		// The following will not occour in unmodified builds, but pre-emptively sanitise gamedata if someone just changes MAXPLAYERS and calls it a day
+		if (grandprixinfo.cup->windata[i].best_placement > 0x0F)
+			grandprixinfo.cup->windata[i].best_placement = 0x0F;
+	}
+
+	if (podiumData.grade > grandprixinfo.cup->windata[i].best_grade)
+		grandprixinfo.cup->windata[i].best_grade = podiumData.grade;
+
+	if (i != KARTSPEED_EASY && podiumData.rank.specialWon == true)
+		grandprixinfo.cup->windata[i].got_emerald = true;
+
+	// Save before playing the noise
+	G_SaveGameData(true);
 }
 
 /*--------------------------------------------------

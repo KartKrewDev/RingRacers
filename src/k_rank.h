@@ -44,15 +44,7 @@ struct gpRank_t
 	boolean specialWon;
 };
 
-typedef enum
-{
-	GRADE_E,
-	GRADE_D,
-	GRADE_C,
-	GRADE_B,
-	GRADE_A,
-	GRADE_S
-} gp_rank_e;
+// gp_rank_e was once defined here, but moved to doomstat.h to prevent circular dependency
 
 // 3rd place is neutral, anything below is a penalty
 #define RANK_NEUTRAL_POSITION (3)

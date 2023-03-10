@@ -463,6 +463,8 @@ void G_AllocMainRecordData(INT16 i)
 void G_ClearRecords(void)
 {
 	INT16 i;
+	cupheader_t *cup;
+
 	for (i = 0; i < nummapheaders; ++i)
 	{
 		if (mapheaderinfo[i]->mainrecord)
@@ -470,6 +472,11 @@ void G_ClearRecords(void)
 			Z_Free(mapheaderinfo[i]->mainrecord);
 			mapheaderinfo[i]->mainrecord = NULL;
 		}
+	}
+
+	for (cup = kartcupheaders; cup; cup = cup->next)
+	{
+		memset(&cup->windata, 0, sizeof(cup->windata));
 	}
 }
 
@@ -4498,6 +4505,7 @@ void G_LoadGameData(void)
 
 	//For records
 	UINT32 numgamedatamapheaders;
+	UINT32 numgamedatacups;
 
 	// Stop saving, until we successfully load it again.
 	gamedata->loaded = false;
@@ -4696,21 +4704,57 @@ void G_LoadGameData(void)
 		}
 	}
 
+	if (versionMinor > 1)
+	{
+		numgamedatacups = READUINT32(save.p);
+
+		for (i = 0; i < numgamedatacups; i++)
+		{
+			char cupname[16];
+			cupheader_t *cup;
+
+			READSTRINGN(save.p, cupname, sizeof(cupname));
+			for (cup = kartcupheaders; cup; cup = cup->next)
+			{
+				if (strcmp(cup->name, cupname))
+					continue;
+
+				for (j = 0; j < KARTGP_MAX; j++)
+				{
+					rtemp = READUINT8(save.p);
+
+					cup->windata[j].best_placement = (rtemp & 0x0F);
+					cup->windata[j].best_grade = (rtemp & 0x70)>>4;
+					if (rtemp & 0x80)
+					{
+						if (j == 0)
+							goto datacorrupt;
+
+						cup->windata[j].got_emerald = true;
+					}
+				}
+
+				break;
+			}
+		}
+	}
+
 	// done
 	P_SaveBufferFree(&save);
 
-finalisegamedata:
+	finalisegamedata:
+	{
+		// Don't consider loaded until it's a success!
+		// It used to do this much earlier, but this would cause the gamedata to
+		// save over itself when it I_Errors from the corruption landing point below,
+		// which can accidentally delete players' legitimate data if the code ever has any tiny mistakes!
+		gamedata->loaded = true;
 
-	// Don't consider loaded until it's a success!
-	// It used to do this much earlier, but this would cause the gamedata to
-	// save over itself when it I_Errors from the corruption landing point below,
-	// which can accidentally delete players' legitimate data if the code ever has any tiny mistakes!
-	gamedata->loaded = true;
+		// Silent update unlockables in case they're out of sync with conditions
+		M_UpdateUnlockablesAndExtraEmblems(false);
 
-	// Silent update unlockables in case they're out of sync with conditions
-	M_UpdateUnlockablesAndExtraEmblems(false);
-
-	return;
+		return;
+	}
 
 	// Landing point for corrupt gamedata
 	datacorrupt:
@@ -4730,7 +4774,8 @@ finalisegamedata:
 void G_SaveGameData(boolean dirty)
 {
 	size_t length;
-	INT32 i, j;
+	INT32 i, j, numcups;
+	cupheader_t *cup;
 	UINT8 btemp;
 	savebuffer_t save = {0};
 
@@ -4752,12 +4797,20 @@ void G_SaveGameData(boolean dirty)
 		4+1+1+1+1+
 		1+1+4+
 		(MAXEMBLEMS+(MAXUNLOCKABLES*2)+MAXCONDITIONSETS)+
-		4+4+2);
+		4+2);
+
 	if (gamedata->challengegrid)
 	{
 		length += gamedata->challengegridwidth * CHALLENGEGRIDHEIGHT;
 	}
-	length += nummapheaders * (MAXMAPLUMPNAME+1+4+4);
+	length += 4 + (nummapheaders * (MAXMAPLUMPNAME+1+4+4));
+
+	numcups = 0;
+	for (cup = kartcupheaders; cup; cup = cup->next)
+	{
+		numcups++;
+	}
+	length += 4 + (numcups * 4);
 
 	if (P_SaveBufferAlloc(&save, length) == false)
 	{
@@ -4851,7 +4904,7 @@ void G_SaveGameData(boolean dirty)
 
 	for (i = 0; i < nummapheaders; i++) // nummapheaders * (255+1+4+4)
 	{
-		// For figuring out which header to assing it to on load
+		// For figuring out which header to assign it to on load
 		WRITESTRINGN(save.p, mapheaderinfo[i]->lumpname, MAXMAPLUMPNAME);
 
 		WRITEUINT8(save.p, (mapheaderinfo[i]->mapvisited & MV_MAX));
@@ -4865,6 +4918,24 @@ void G_SaveGameData(boolean dirty)
 		{
 			WRITEUINT32(save.p, 0);
 			WRITEUINT32(save.p, 0);
+		}
+	}
+
+	WRITEUINT32(save.p, numcups); // 4
+
+	for (cup = kartcupheaders; cup; cup = cup->next)
+	{
+		// For figuring out which header to assign it to on load
+		WRITESTRINGN(save.p, cup->name, 16);
+
+		for (i = 0; i < KARTGP_MAX; i++)
+		{
+			btemp = min(cup->windata[i].best_placement, 0x0F);
+			btemp |= (cup->windata[i].best_grade<<4);
+			if (i != 0 && cup->windata[i].got_emerald == true)
+				btemp |= 0x80;
+
+			WRITEUINT8(save.p, btemp); // 4 * numcups
 		}
 	}
 

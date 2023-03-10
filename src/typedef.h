@@ -108,6 +108,7 @@ TYPEDEF (skincolor_t);
 // doomstat.h
 TYPEDEF (precipprops_t);
 TYPEDEF (recorddata_t);
+TYPEDEF (cupwindata_t);
 TYPEDEF (scene_t);
 TYPEDEF (cutscene_t);
 TYPEDEF (textpage_t);

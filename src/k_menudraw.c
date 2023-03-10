@@ -2113,6 +2113,8 @@ static void M_DrawCupTitle(INT16 y, levelsearch_t *levelsearch)
 void M_DrawCupSelect(void)
 {
 	UINT8 i, j, temp = 0;
+	UINT8 *colormap = NULL;
+	cupwindata_t *windata = NULL;
 	levelsearch_t templevelsearch = levellist.levelsearch; // full copy
 
 	for (i = 0; i < CUPMENU_COLUMNS; i++)
@@ -2123,26 +2125,62 @@ void M_DrawCupSelect(void)
 			patch_t *patch = NULL;
 			INT16 x, y;
 			INT16 icony = 7;
+			char status =  'A';
+			UINT8 monitor = 1;
+			INT32 rankx = 0;
 
 			if (!cupgrid.builtgrid[id])
 				break;
 
 			templevelsearch.cup = cupgrid.builtgrid[id];
 
-			/*if (templevelsearch.cup->emeraldnum == 0)
-				patch = W_CachePatchName("CUPMON3A", PU_CACHE);
-			else*/ if (templevelsearch.cup->emeraldnum > 7)
+			if (cupgrid.grandprix
+				&& (cv_dummygpdifficulty.value >= 0 && cv_dummygpdifficulty.value < KARTGP_MAX))
 			{
-				patch = W_CachePatchName("CUPMON2A", PU_CACHE);
-				icony = 5;
+				UINT16 col = SKINCOLOR_NONE;
+
+				windata = &templevelsearch.cup->windata[cv_dummygpdifficulty.value];
+
+				switch (windata->best_placement)
+				{
+					case 0:
+						break;
+					case 1:
+						col = SKINCOLOR_GOLD;
+						status = 'B';
+						break;
+					case 2:
+						col = SKINCOLOR_SILVER;
+						status = 'B';
+						break;
+					case 3:
+						col = SKINCOLOR_BRONZE;
+						status = 'B';
+						break;
+					default:
+						col = SKINCOLOR_BEIGE;
+						break;
+				}
+
+				if (col != SKINCOLOR_NONE)
+					colormap = R_GetTranslationColormap(TC_RAINBOW, col, GTC_MENUCACHE);
+				else
+					colormap = NULL;
 			}
-			else
-				patch = W_CachePatchName("CUPMON1A", PU_CACHE);
+
+			if (templevelsearch.cup->emeraldnum > 7)
+			{
+				monitor = 2;
+				icony = 5;
+				rankx = 2;
+			}
+
+			patch = W_CachePatchName(va("CUPMON%d%c", monitor, status), PU_CACHE);
 
 			x = 14 + (i*42);
 			y = 20 + (j*44) - (30*menutransition.tics);
 
-			V_DrawScaledPatch(x, y, 0, patch);
+			V_DrawFixedPatch((x)*FRACUNIT, (y)<<FRACBITS, FRACUNIT, 0, patch, colormap);
 
 			if (M_GetFirstLevelInList(&temp, &templevelsearch) == NEXTMAP_INVALID)
 			{
@@ -2153,6 +2191,39 @@ void M_DrawCupSelect(void)
 			{
 				V_DrawScaledPatch(x + 8, y + icony, 0, W_CachePatchName(templevelsearch.cup->icon, PU_CACHE));
 				V_DrawScaledPatch(x + 8, y + icony, 0, W_CachePatchName("CUPBOX", PU_CACHE));
+
+				if (!windata)
+					;
+				else if (windata->best_placement != 0)
+				{
+					char gradeChar = '?';
+
+					switch (windata->best_grade)
+					{
+						case GRADE_E: { gradeChar = 'E'; break; }
+						case GRADE_D: { gradeChar = 'D'; break; }
+						case GRADE_C: { gradeChar = 'C'; break; }
+						case GRADE_B: { gradeChar = 'B'; break; }
+						case GRADE_A: { gradeChar = 'A'; break; }
+						case GRADE_S: { gradeChar = 'S'; break; }
+						default: { break; }
+					}
+
+					V_DrawCharacter(x + 5 + rankx, y + icony + 14, gradeChar, false); // rank
+
+					if (windata->got_emerald == true)
+					{
+						if (templevelsearch.cup->emeraldnum == 0)
+							V_DrawCharacter(x + 26 - rankx, y + icony + 14, '*', false); // rank
+						else
+						{
+							UINT16 col = SKINCOLOR_CHAOSEMERALD1 + (templevelsearch.cup->emeraldnum-1) % 7;
+							colormap = R_GetTranslationColormap(TC_DEFAULT, col, GTC_MENUCACHE);
+
+							V_DrawFixedPatch((x + 26 - rankx)*FRACUNIT, (y + icony + 13)*FRACUNIT, FRACUNIT, 0, W_CachePatchName("K_EMERC", PU_CACHE), colormap);
+						}
+					}
+				}
 			}
 		}
 	}
