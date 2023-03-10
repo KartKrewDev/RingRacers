@@ -64,7 +64,7 @@
 #include "k_director.h"
 #include "k_podium.h"
 #include "k_rank.h"
-#include "acs\interface.h"
+#include "acs/interface.h"
 
 #ifdef HAVE_DISCORDRPC
 #include "discord.h"
