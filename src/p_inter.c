@@ -2118,9 +2118,6 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 			if (!(target->flags & MF_SHOOTABLE))
 				return false; // shouldn't happen...
 		}
-
-		if (!(damagetype & DMG_DEATHMASK) && (target->eflags & MFE_PAUSED))
-			return false;
 	}
 
 	if (target->flags2 & MF2_SKULLFLY)
@@ -2215,6 +2212,24 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 				{
 					const INT32 oldHitlag = target->hitlag;
 					const INT32 oldHitlagInflictor = inflictor ? inflictor->hitlag : 0;
+
+					// Damage during hitlag should be a no-op
+					// for invincibility states because there
+					// are no flashing tics. If the damage is
+					// from a constant source, a deadlock
+					// would occur.
+
+					if (target->eflags & MFE_PAUSED)
+					{
+						player->timeshit--; // doesn't count
+
+						if (playerInflictor)
+						{
+							playerInflictor->timeshit--;
+						}
+
+						return false;
+					}
 
 					laglength = max(laglength / 2, 1);
 					K_SetHitLagForObjects(target, inflictor, laglength, false);
