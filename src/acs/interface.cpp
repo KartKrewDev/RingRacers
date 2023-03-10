@@ -141,6 +141,68 @@ void ACS_LoadLevelScripts(size_t mapID)
 }
 
 /*--------------------------------------------------
+	void ACS_RunLevelStartScripts(void)
+
+		See header file for description.
+--------------------------------------------------*/
+void ACS_RunLevelStartScripts(void)
+{
+	Environment *env = &ACSEnv;
+
+	ACSVM::GlobalScope *const global = env->getGlobalScope(0);
+	ACSVM::HubScope *const hub = global->getHubScope(0);
+	ACSVM::MapScope *const map = hub->getMapScope(0);
+
+	map->scriptStartType(ACS_ST_OPEN, {});
+}
+
+/*--------------------------------------------------
+	void ACS_RunPlayerRespawnScript(player_t *player)
+
+		See header file for description.
+--------------------------------------------------*/
+void ACS_RunPlayerRespawnScript(player_t *player)
+{
+	Environment *env = &ACSEnv;
+
+	ACSVM::GlobalScope *const global = env->getGlobalScope(0);
+	ACSVM::HubScope *const hub = global->getHubScope(0);
+	ACSVM::MapScope *const map = hub->getMapScope(0);
+
+	ACSVM::MapScope::ScriptStartInfo scriptInfo;
+	ThreadInfo info;
+
+	P_SetTarget(&info.mo, player->mo);
+
+	scriptInfo.info = &info;
+
+	map->scriptStartTypeForced(ACS_ST_RESPAWN, scriptInfo);
+}
+
+/*--------------------------------------------------
+	void ACS_RunPlayerDeathScript(player_t *player)
+
+		See header file for description.
+--------------------------------------------------*/
+void ACS_RunPlayerDeathScript(player_t *player)
+{
+	Environment *env = &ACSEnv;
+
+	ACSVM::GlobalScope *const global = env->getGlobalScope(0);
+	ACSVM::HubScope *const hub = global->getHubScope(0);
+	ACSVM::MapScope *const map = hub->getMapScope(0);
+
+	ACSVM::MapScope::ScriptStartInfo scriptInfo;
+	ThreadInfo info;
+
+	P_SetTarget(&info.mo, player->mo);
+
+	scriptInfo.info = &info;
+
+	map->scriptStartTypeForced(ACS_ST_DEATH, scriptInfo);
+}
+
+/*--------------------------------------------------
 	void ACS_RunPlayerEnterScript(player_t *player)
 
 		See header file for description.
@@ -161,40 +223,6 @@ void ACS_RunPlayerEnterScript(player_t *player)
 	scriptInfo.info = &info;
 
 	map->scriptStartTypeForced(ACS_ST_ENTER, scriptInfo);
-}
-
-/*--------------------------------------------------
-	void ACS_RunLevelStartScripts(void)
-
-		See header file for description.
---------------------------------------------------*/
-void ACS_RunLevelStartScripts(void)
-{
-	Environment *env = &ACSEnv;
-
-	ACSVM::GlobalScope *const global = env->getGlobalScope(0);
-	ACSVM::HubScope *const hub = global->getHubScope(0);
-	ACSVM::MapScope *const map = hub->getMapScope(0);
-
-	map->scriptStartType(ACS_ST_OPEN, {});
-
-	for (int i = 0; i < MAXPLAYERS; i++)
-	{
-		player_t *player = NULL;
-
-		if (playeringame[i] == false)
-		{
-			continue;
-		}
-
-		player = &players[i];
-		if (player->spectator == true)
-		{
-			continue;
-		}
-
-		ACS_RunPlayerEnterScript(player);
-	}
 }
 
 /*--------------------------------------------------

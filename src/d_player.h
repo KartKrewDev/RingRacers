@@ -656,6 +656,7 @@ struct player_t
 
 	boolean spectator;
 	tic_t spectatewait;		// reimplementable as UINT8 queue - How long have you been waiting as a spectator
+	boolean enteredGame;
 
 	boolean bot;
 	botvars_t botvars;

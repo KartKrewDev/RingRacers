@@ -60,6 +60,38 @@ void ACS_LoadLevelScripts(size_t mapID);
 
 
 /*--------------------------------------------------
+	void ACS_RunPlayerRespawnScript(player_t *player);
+
+		Runs the map's special script for a player
+		respawning.
+
+	Input Arguments:-
+		player: The player to run the script for.
+
+	Return:-
+		None
+--------------------------------------------------*/
+
+void ACS_RunPlayerRespawnScript(player_t *player);
+
+
+/*--------------------------------------------------
+	void ACS_RunPlayerDeathScript(player_t *player);
+
+		Runs the map's special script for a player
+		dying.
+
+	Input Arguments:-
+		player: The player to run the script for.
+
+	Return:-
+		None
+--------------------------------------------------*/
+
+void ACS_RunPlayerDeathScript(player_t *player);
+
+
+/*--------------------------------------------------
 	void ACS_RunPlayerEnterScript(player_t *player);
 
 		Runs the map's special script for a player
