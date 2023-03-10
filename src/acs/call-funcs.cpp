@@ -1408,3 +1408,52 @@ bool CallFunc_PodiumFinish(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM
 	K_FinishCeremony();
 	return false;
 }
+
+/*--------------------------------------------------
+	bool CallFunc_SetLineRenderStyle(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
+
+		Changes a linedef's blend mode and alpha.
+--------------------------------------------------*/
+bool CallFunc_SetLineRenderStyle(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
+{
+	mtag_t tag = 0;
+	patchalphastyle_t blend = AST_COPY;
+	fixed_t alpha = FRACUNIT;
+
+	INT32 lineId = -1;
+
+	tag = argV[0];
+
+	switch (argV[1])
+	{
+		case TMB_TRANSLUCENT:
+		default:
+			blend = AST_COPY;
+			break;
+		case TMB_ADD:
+			blend = AST_ADD;
+			break;
+		case TMB_SUBTRACT:
+			blend = AST_SUBTRACT;
+			break;
+		case TMB_REVERSESUBTRACT:
+			blend = AST_REVERSESUBTRACT;
+			break;
+		case TMB_MODULATE:
+			blend = AST_MODULATE;
+			break;
+	}
+
+	alpha = argV[2];
+	alpha = std::clamp(alpha, 0, FRACUNIT);
+
+	TAG_ITER_LINES(tag, lineId)
+	{
+		line_t *line = &lines[lineId];
+
+		line->blendmode = blend;
+		line->alpha = alpha;
+	}
+
+	return false;
+}
