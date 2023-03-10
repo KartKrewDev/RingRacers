@@ -161,6 +161,7 @@ Environment::Environment()
 	addFuncDataACS0( 307, addCallFunc(CallFunc_PlayerLap));
 	addFuncDataACS0( 308, addCallFunc(CallFunc_LowestLap));
 	addFuncDataACS0( 309, addCallFunc(CallFunc_EncoreMode));
+	addFuncDataACS0( 310, addCallFunc(CallFunc_BreakTheCapsules));
 
 	addFuncDataACS0( 500, addCallFunc(CallFunc_CameraWait));
 	addFuncDataACS0( 501, addCallFunc(CallFunc_PodiumPosition));
