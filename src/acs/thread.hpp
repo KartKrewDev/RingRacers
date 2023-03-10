@@ -48,6 +48,9 @@ enum acs_scriptType_e
 	ACS_ST_DEATH		=  3, // DEATH: Runs when a player dies.
 	ACS_ST_ENTER		=  4, // ENTER: Runs when a player enters the game; both on start of the level, and when un-spectating.
 	ACS_ST_LAP			=  5, // LAP: Runs when a player's lap increases from crossing the finish line.
+	ACS_ST_POSITION		=  6, // POSITION: Runs when the POSITION period ends.
+	ACS_ST_OVERTIME		=  7, // OVERTIME: Runs when Overtime starts in timed game modes.
+	ACS_ST_EMERALD		=  8, // EMERALD: Runs when the Chaos Emerald is collected in a Special Stage.
 };
 
 //
