@@ -302,7 +302,12 @@ void K_InitGrandPrixRank(gpRank_t *rankData)
 		const INT32 cupLevelNum = grandprixinfo.cup->cachedlevels[i];
 		if (cupLevelNum < nummapheaders && mapheaderinfo[cupLevelNum] != NULL)
 		{
-			laps += mapheaderinfo[cupLevelNum]->numlaps;
+			if (!cv_gptest.value)
+			{
+				laps += mapheaderinfo[cupLevelNum]->numlaps;
+				continue;
+			}
+			laps++;
 		}
 	}
 
