@@ -672,6 +672,10 @@ boolean M_CheckCondition(condition_t *cn, player_t *player)
 		case UC_POWERLEVEL: // Requires power level >= x on a certain gametype
 		{
 			UINT8 i;
+
+			if (gamestate == GS_LEVEL)
+				return false; // this one could be laggy with many profiles available
+
 			for (i = PROFILE_GUEST; i < PR_GetNumProfiles(); i++)
 			{
 				profile_t *p = PR_GetProfile(i);
