@@ -2477,6 +2477,28 @@ static void readcondition(UINT8 set, UINT32 id, char *word2)
 			return;
 		}
 	}
+	else if ((offset=0) || fastcmp(params[0], "ALLCHAOS")
+	||        (++offset && fastcmp(params[0], "ALLSUPER"))
+	||        (++offset && fastcmp(params[0], "ALLEMERALDS")))
+	{
+		//PARAMCHECK(1);
+		ty = UC_ALLCHAOS + offset;
+		re = 1;
+		if (params[1])
+		{
+			if (fastcmp(params[1], "NORMAL"))
+				;
+			else if (fastcmp(params[1], "HARD"))
+				x1 = 2;
+			else if (fastcmp(params[1], "MASTER"))
+				x1 = 3;
+			else
+			{
+				deh_warning("gamespeed requirement \"%s\" invalid for condition ID %d", params[1], id+1);
+				return;
+			}
+		}
+	}
 	else if (fastcmp(params[0], "TOTALMEDALS"))
 	{
 		PARAMCHECK(1);

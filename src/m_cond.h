@@ -43,6 +43,10 @@ typedef enum
 	UC_MAPSPBATTACK,	// MAPSPBATTACK [map]
 	UC_MAPTIME,			// MAPTIME [map] [time to beat, tics]
 
+	UC_ALLCHAOS,		// ALLCHAOS [minimum difficulty]
+	UC_ALLSUPER,		// ALLSUPER [minimum difficulty]
+	UC_ALLEMERALDS,		// ALLEMERALDS [minimum difficulty]
+
 	UC_TOTALMEDALS,		// TOTALMEDALS [number of emblems]
 	UC_EMBLEM,			// EMBLEM [emblem number]
 

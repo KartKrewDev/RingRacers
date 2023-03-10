@@ -712,6 +712,43 @@ boolean M_CheckCondition(condition_t *cn, player_t *player)
 		}
 		case UC_MAPTIME: // Requires time on map <= x
 			return (G_GetBestTime(cn->extrainfo1) <= (unsigned)cn->requirement);
+
+		case UC_ALLCHAOS:
+		case UC_ALLSUPER:
+		case UC_ALLEMERALDS:
+		{
+			cupheader_t *cup;
+			UINT16 ret = 0;
+			UINT8 i;
+
+			if (gamestate == GS_LEVEL)
+				return false; // this one could be laggy with many cups available
+
+			for (cup = kartcupheaders; cup; cup = cup->next)
+			{
+				if (cup->emeraldnum == 0)
+					continue;
+
+				i = cn->requirement;
+				for (i = cn->requirement; i < KARTGP_MAX; i++)
+				{
+					if (cup->windata[i].got_emerald == true)
+						break;
+				}
+
+				if (i == KARTGP_MAX)
+					continue;
+
+				ret |= 1<<(cup->emeraldnum-1);
+			}
+
+			if (cn->type == UC_ALLCHAOS)
+				return ALLCHAOSEMERALDS(ret);
+			if (cn->type == UC_ALLSUPER)
+				return ALLSUPEREMERALDS(ret);
+			return ALLEMERALDS(ret);
+		}
+
 		case UC_TOTALMEDALS: // Requires number of emblems >= x
 			return (M_GotEnoughMedals(cn->requirement));
 		case UC_EMBLEM: // Requires emblem x to be obtained
@@ -1024,6 +1061,42 @@ static const char *M_GetConditionString(condition_t *cn)
 
 			Z_Free(title);
 			return work;
+		}
+
+		case UC_ALLCHAOS:
+		case UC_ALLSUPER:
+		case UC_ALLEMERALDS:
+		{
+			const char *chaostext, *speedtext = "", *orbetter = "";
+
+			if (!gamedata->everseenspecial)
+				return NULL;
+
+			if (cn->type == UC_ALLCHAOS)
+				chaostext = "7 Chaos";
+			else if (cn->type == UC_ALLSUPER)
+				chaostext = "7 Super";
+			else
+				chaostext = "14";
+
+			if (cn->requirement == 1)
+			{
+				speedtext = " on Normal difficulty";
+				//if (M_SecretUnlocked(SECRET_HARDSPEED, true))
+					orbetter = " or better";
+			}
+			else if (cn->requirement == 2)
+			{
+				speedtext = " on Hard difficulty";
+				if (M_SecretUnlocked(SECRET_MASTERMODE, true))
+					orbetter = " or better";
+			}
+			else if (cn->requirement == 3)
+			{
+				speedtext = " on Master difficulty";
+			}
+
+			return va("collect all %s Emeralds%s%s", chaostext, speedtext, orbetter);
 		}
 
 		case UC_TOTALMEDALS: // Requires number of emblems >= x
