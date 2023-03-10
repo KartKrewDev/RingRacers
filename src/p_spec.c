@@ -3163,11 +3163,24 @@ boolean P_ProcessSpecial(activator_t *activator, INT16 special, INT32 *args, cha
 			break;
 
 		case 425: // Calls P_SetMobjState on calling mobj
-			if (mo && !mo->player)
 			{
-				statenum_t state = stringargs[0] ? get_number(stringargs[0]) : S_NULL;
-				if (state >= 0 && state < NUMSTATES)
-					P_SetMobjState(mo, state);
+				mobj_t *targetThing = NULL;
+
+				while ((targetThing = P_FindMobjFromTID(args[1], targetThing, mo)) != NULL)
+				{
+					statenum_t state = S_NULL;
+
+					if (targetThing->player != NULL)
+					{
+						continue;
+					}
+
+					state = stringargs[0] ? get_number(stringargs[0]) : S_NULL;
+					if (state >= 0 && state < NUMSTATES)
+					{
+						P_SetMobjState(targetThing, state);
+					}
+				}
 			}
 			break;
 
