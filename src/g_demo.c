@@ -26,6 +26,7 @@
 #include "g_game.h"
 #include "g_demo.h"
 #include "m_misc.h"
+#include "m_cond.h"
 #include "k_menu.h"
 #include "m_argv.h"
 #include "hu_stuff.h"
@@ -4188,7 +4189,15 @@ void G_SaveDemo(void)
 	if (!modeattacking)
 	{
 		if (demo.savemode == DSM_SAVED)
+		{
 			CONS_Printf(M_GetText("Demo %s recorded\n"), demoname);
+			if (gamedata->eversavedreplay == false)
+			{
+				gamedata->eversavedreplay = true;
+				M_UpdateUnlockablesAndExtraEmblems(true);
+				G_SaveGameData(true);
+			}
+		}
 		else
 			CONS_Alert(CONS_WARNING, M_GetText("Demo %s not saved\n"), demoname);
 	}

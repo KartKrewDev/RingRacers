@@ -31,20 +31,26 @@ typedef enum
 	UC_PLAYTIME,		// PLAYTIME [tics]
 	UC_ROUNDSPLAYED,	// ROUNDSPLAYED [x played]
 	UC_TOTALRINGS,		// TOTALRINGS [x collected]
+
 	UC_POWERLEVEL,		// SRB2Kart: POWERLEVEL [power level to reach] [gametype, "0" for race, "1" for battle]
+
 	UC_GAMECLEAR,		// GAMECLEAR <x times>
 	UC_OVERALLTIME,		// OVERALLTIME [time to beat, tics]
+
 	UC_MAPVISITED,		// MAPVISITED [map]
 	UC_MAPBEATEN,		// MAPBEATEN [map]
 	UC_MAPENCORE,		// MAPENCORE [map]
 	UC_MAPSPBATTACK,	// MAPSPBATTACK [map]
 	UC_MAPTIME,			// MAPTIME [map] [time to beat, tics]
+
 	UC_TOTALMEDALS,		// TOTALMEDALS [number of emblems]
 	UC_EMBLEM,			// EMBLEM [emblem number]
+
 	UC_UNLOCKABLE,		// UNLOCKABLE [unlockable number]
 	UC_CONDITIONSET,	// CONDITIONSET [condition set number]
 
 	UC_ADDON,			// Ever loaded a custom file?
+	UC_REPLAY,			// Save a replay
 	UC_CRASH,			// Hee ho !
 
 	 // Just for string building
@@ -263,6 +269,7 @@ struct gamedata_t
 
 	// SPECIFIC SPECIAL EVENTS
 	boolean everloadedaddon;
+	boolean eversavedreplay;
 	UINT8 crashflags;
 };
 

@@ -526,6 +526,7 @@ void M_ClearStats(void)
 	gamedata->timesBeaten = 0;
 
 	gamedata->everloadedaddon = false;
+	gamedata->eversavedreplay = false;
 	gamedata->crashflags = 0;
 }
 
@@ -721,6 +722,8 @@ boolean M_CheckCondition(condition_t *cn, player_t *player)
 				M_SecretUnlocked(SECRET_ADDONS, true) &&
 #endif
 				(gamedata->everloadedaddon == true));
+		case UC_REPLAY:
+			return (gamedata->eversavedreplay == true);
 		case UC_CRASH:
 			if (gamedata->crashflags & (GDCRASH_LAST|GDCRASH_ANY))
 			{
@@ -1109,6 +1112,8 @@ static const char *M_GetConditionString(condition_t *cn)
 			if (!M_SecretUnlocked(SECRET_ADDONS, true) && !gamedata->everloadedaddon)
 				return NULL;
 			return "load a custom addon into \"Dr. Robotnik's Ring Racers\"";
+		case UC_REPLAY:
+			return "save a replay after finishing a round";
 		case UC_CRASH:
 			if (gamedata->crashflags & (GDCRASH_LAST|GDCRASH_ANY))
 				return "launch \"Dr. Robotnik's Ring Racers\" again after a game crash";

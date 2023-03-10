@@ -4582,6 +4582,7 @@ void G_LoadGameData(void)
 			gamedata->crashflags |= GDCRASH_ANY;
 
 		gamedata->everloadedaddon = (boolean)READUINT8(save.p);
+		gamedata->eversavedreplay = (boolean)READUINT8(save.p);
 	}
 	else
 	{
@@ -4795,7 +4796,7 @@ void G_SaveGameData(boolean dirty)
 	length = (4+1+4+4+
 		(4*GDGT_MAX)+
 		4+1+1+1+1+
-		1+1+4+
+		1+1+1+4+
 		(MAXEMBLEMS+(MAXUNLOCKABLES*2)+MAXCONDITIONSETS)+
 		4+2);
 
@@ -4844,6 +4845,7 @@ void G_SaveGameData(boolean dirty)
 	}
 
 	WRITEUINT8(save.p, gamedata->everloadedaddon); // 1
+	WRITEUINT8(save.p, gamedata->eversavedreplay); // 1
 
 	WRITEUINT32(save.p, quickncasehash(timeattackfolder, 64));
 
