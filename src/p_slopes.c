@@ -1146,7 +1146,6 @@ void P_ButteredSlope(mobj_t *mo)
 
 	thrust = FINESINE(mo->standingslope->zangle>>ANGLETOFINESHIFT) * 5 / 4 * (mo->eflags & MFE_VERTICALFLIP ? 1 : -1);
 
-	// Make uphill easier to climb, and downhill even faster.
 	if (mo->momx || mo->momy)
 	{
 		fixed_t mult = FRACUNIT;
@@ -1157,7 +1156,10 @@ void P_ButteredSlope(mobj_t *mo)
 			angle ^= ANGLE_180;
 		}
 
-		// Make downhills goofier for Hard, and climbing slopes easier for Easy.
+		// Make uphill easier to climb, and downhill even faster.
+		mult = FINECOSINE(angle >> ANGLETOFINESHIFT);
+
+		// Make relative to game speed
 		mult = FixedMul(mult, gameSpeed);
 
 		mult = FRACUNIT + (FRACUNIT + mult)*4/3;
