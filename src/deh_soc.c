@@ -2597,6 +2597,87 @@ static void readcondition(UINT8 set, UINT32 id, char *word2)
 		}
 #endif
 	}
+	else if (fastcmp(params[0], "ISDIFFICULTY"))
+	{
+		//PARAMCHECK(1);
+		ty = UCRP_ISDIFFICULTY;
+		re = KARTSPEED_NORMAL;
+		if (params[1])
+		{
+			if (fastcmp(params[1], "NORMAL"))
+				;
+			else if (fastcmp(params[1], "HARD"))
+				x1 = KARTSPEED_HARD;
+			else if (fastcmp(params[1], "MASTER"))
+				x1 = KARTGP_MASTER;
+			else
+			{
+				deh_warning("gamespeed requirement \"%s\" invalid for condition ID %d", params[1], id+1);
+				return;
+			}
+		}
+	}
+	else if (fastcmp(params[0], "PODIUMCUP"))
+	{
+		PARAMCHECK(1);
+		ty = UCRP_PODIUMCUP;
+		{
+			cupheader_t *cup = kartcupheaders;
+			while (cup)
+			{
+				if (!strcmp(cup->name, params[1]))
+					break;
+				cup = cup->next;
+			}
+
+			if (!cup)
+			{
+				deh_warning("Invalid cup %s for condition ID %d", params[1], id+1);
+				return;
+			}
+
+			re = cup->id;
+		}
+
+		if (params[2])
+		{
+			if (params[2][0] && !params[2][1])
+			{
+				x2 = 1;
+
+				switch (params[2][0])
+				{
+					case 'E': { x1 = GRADE_E; break; }
+					case 'D': { x1 = GRADE_D; break; }
+					case 'C': { x1 = GRADE_C; break; }
+					case 'B': { x1 = GRADE_B; break; }
+					case 'A': { x1 = GRADE_A; break; }
+					case 'S': { x1 = GRADE_S; break; }
+					default:
+						deh_warning("Invalid grade %s for condition ID %d", params[2], id+1);
+						return;
+				}
+			}
+			else if ((offset=0) || fastcmp(params[2], "GOLD")
+				||    (++offset && fastcmp(params[2], "SILVER"))
+				||    (++offset && fastcmp(params[2], "BRONZE")))
+			{
+				x1 = offset + 1;
+			}
+			else
+			{
+				deh_warning("Invalid cup result %s for condition ID %d", params[2], id+1);
+				return;
+			}
+				
+		}
+	}
+	else if ((offset=0) || fastcmp(params[0], "PODIUMEMERALD")
+	||        (++offset && fastcmp(params[0], "PODIUMPRIZE")))
+	{
+		//PARAMCHECK(1);
+		ty = UCRP_PODIUMEMERALD + offset;
+	}
 	else if ((offset=0) || fastcmp(params[0], "FINISHCOOL")
 	||        (++offset && fastcmp(params[0], "FINISHALLCAPSULES"))
 	||        (++offset && fastcmp(params[0], "NOCONTEST")))

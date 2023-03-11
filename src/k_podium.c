@@ -13,7 +13,6 @@
 #include "k_podium.h"
 
 #include "doomdef.h"
-#include "doomstat.h"
 #include "d_main.h"
 #include "d_netcmd.h"
 #include "f_finale.h"
@@ -67,6 +66,31 @@ static struct podiumData_s
 boolean K_PodiumSequence(void)
 {
 	return (gamestate == GS_CEREMONY);
+}
+
+/*--------------------------------------------------
+	boolean K_PodiumRanking(void)
+
+		See header file for description.
+--------------------------------------------------*/
+boolean K_PodiumRanking(void)
+{
+	return (gamestate == GS_CEREMONY && podiumData.ranking == true);
+}
+
+/*--------------------------------------------------
+	boolean K_PodiumGrade(void)
+
+		See header file for description.
+--------------------------------------------------*/
+gp_rank_e K_PodiumGrade(void)
+{
+	if (K_PodiumSequence() == false)
+	{
+		return 0;
+	}
+
+	return podiumData.grade;
 }
 
 /*--------------------------------------------------

@@ -14,6 +14,7 @@
 #define __K_PODIUM__
 
 #include "doomtype.h"
+#include "doomstat.h" // gp_rank_e
 #include "d_event.h"
 #include "p_mobj.h"
 
@@ -35,6 +36,37 @@ extern "C" {
 --------------------------------------------------*/
 
 boolean K_PodiumSequence(void);
+
+
+/*--------------------------------------------------
+	boolean K_PodiumRanking(void);
+
+		Returns whenver or not we are in the podium
+		final state.
+
+	Input Arguments:-
+		N/A
+
+	Return:-
+		true if we're in GS_CEREMONY, otherwise false.
+--------------------------------------------------*/
+
+boolean K_PodiumRanking(void);
+
+
+/*--------------------------------------------------
+	boolean K_PodiumGrade(void)
+
+		Returns the podium grade.
+
+	Input Arguments:-
+		N/A
+
+	Return:-
+		gp_rank_e constant if we're in GS_CEREMONY, otherwise 0.
+--------------------------------------------------*/
+
+gp_rank_e K_PodiumGrade(void);
 
 
 /*--------------------------------------------------

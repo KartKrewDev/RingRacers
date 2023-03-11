@@ -29,6 +29,7 @@
 #include "k_grandprix.h" // grandprixinfo
 #include "k_battle.h" // battlecapsules
 #include "k_specialstage.h" // specialstageinfo
+#include "k_podium.h"
 #include "k_pwrlv.h"
 #include "k_profiles.h"
 
@@ -795,6 +796,29 @@ boolean M_CheckCondition(condition_t *cn, player_t *player)
 			return (gamemap == cn->requirement+1);
 		case UCRP_ISCHARACTER:
 			return (player->skin == cn->requirement);
+		case UCRP_ISDIFFICULTY:
+			if (grandprixinfo.gp == false)
+				return (gamespeed >= cn->requirement);
+			if (cn->requirement == KARTGP_MASTER)
+				return (grandprixinfo.masterbots == true);
+			return (grandprixinfo.gamespeed >= cn->requirement);
+
+		case UCRP_PODIUMCUP:
+			if (K_PodiumRanking() == false)
+				return false;
+			if (grandprixinfo.cup == NULL
+				|| grandprixinfo.cup->id != cn->requirement)
+				return false;
+			if (cn->extrainfo2)
+				return (K_PodiumGrade() >= (unsigned)cn->requirement);
+			if (cn->extrainfo1 != 0)
+				return (player->position != 0
+					&& player->position <= cn->extrainfo1);
+			return true;
+		case UCRP_PODIUMEMERALD:
+		case UCRP_PODIUMPRIZE:
+			return (K_PodiumRanking() == true
+				&& grandprixinfo.rank.specialWon == true);
 
 		case UCRP_FINISHCOOL:
 			return (player->exiting
@@ -1241,6 +1265,85 @@ static const char *M_GetConditionString(condition_t *cn)
 			if (cn->requirement < 0 || !skins[cn->requirement].realname[0])
 				return va("INVALID CHAR CONDITION \"%d:%d\"", cn->type, cn->requirement);
 			return va("as %s", skins[cn->requirement].realname);
+		case UCRP_ISDIFFICULTY:
+		{
+			const char *speedtext = "", *orbetter = "";
+
+			if (cn->requirement == KARTSPEED_NORMAL)
+			{
+				speedtext = "on Normal difficulty";
+				//if (M_SecretUnlocked(SECRET_HARDSPEED, true))
+					orbetter = " or better";
+			}
+			else if (cn->requirement == KARTSPEED_HARD)
+			{
+				speedtext = "on Hard difficulty";
+				if (M_SecretUnlocked(SECRET_MASTERMODE, true))
+					orbetter = " or better";
+			}
+			else if (cn->requirement == KARTGP_MASTER)
+			{
+				if (M_SecretUnlocked(SECRET_MASTERMODE, true))
+					speedtext = "on Master difficulty";
+				else
+					speedtext = "on ???";
+			}
+
+			return va("%s%s", speedtext, orbetter);
+		}
+
+		case UCRP_PODIUMCUP:
+		{
+			cupheader_t *cup;
+			const char *completetype = "complete", *orbetter = "";
+
+			if (cn->extrainfo2)
+			{
+				switch (cn->requirement)
+				{
+					case GRADE_E: { completetype = "get grade E"; break; }
+					case GRADE_D: { completetype = "get grade D"; break; }
+					case GRADE_C: { completetype = "get grade C"; break; }
+					case GRADE_B: { completetype = "get grade B"; break; }
+					case GRADE_A: { completetype = "get grade A"; break; }
+					case GRADE_S: { completetype = "get grade S"; break; }
+					default: { break; }
+				}
+
+				if (cn->requirement < GRADE_S)
+					orbetter = " or better in";
+				else
+					orbetter = " in";
+			}
+			else if (cn->extrainfo1 == 0)
+				;
+			else if (cn->extrainfo1 == 1)
+				completetype = "get Gold in";
+			else
+			{
+				if (cn->extrainfo1 == 2)
+					completetype = "get Silver";
+				else if (cn->extrainfo1 == 3)
+					completetype = "get Bronze";
+				orbetter = " or better in";
+			}
+
+			for (cup = kartcupheaders; cup; cup = cup->next)
+			{
+				if (cup->id != cn->requirement)
+					continue;
+				return va("%s%s %s CUP", completetype, orbetter, cup->name);
+			}
+			return va("INVALID CUP CONDITION \"%d:%d\"", cn->type, cn->requirement);
+		}
+		case UCRP_PODIUMEMERALD:
+			if (!gamedata->everseenspecial)
+				return "???";
+			return "collect the Emerald";
+		case UCRP_PODIUMPRIZE:
+			if (!gamedata->everseenspecial)
+				return "???";
+			return "collect the prize";
 
 		case UCRP_FINISHCOOL:
 			return "finish in good standing";
@@ -1455,7 +1558,7 @@ boolean M_UpdateUnlockablesAndExtraEmblems(boolean loud)
 		response |= true;
 	}
 
-	if (!demo.playback && Playing() && (gamestate == GS_LEVEL))
+	if (!demo.playback && Playing() && (gamestate == GS_LEVEL || K_PodiumRanking() == true))
 	{
 		for (i = 0; i <= splitscreen; i++)
 		{

@@ -73,6 +73,11 @@ typedef enum
 	UCRP_ISMAP, // gamemap == [map]
 
 	UCRP_ISCHARACTER, // character == [skin]
+	UCRP_ISDIFFICULTY, // difficulty >= [difficulty]
+
+	UCRP_PODIUMCUP, // cup == [cup] [optional: >= grade OR place]
+	UCRP_PODIUMEMERALD, // Get to podium sequence with that cup's emerald
+	UCRP_PODIUMPRIZE, // Get to podium sequence with that cup's bonus (alternate string version of UCRP_PODIUMEMERALD
 
 	UCRP_FINISHCOOL, // Finish in good standing
 	UCRP_FINISHALLCAPSULES, // Break all capsules
