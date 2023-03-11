@@ -2003,6 +2003,43 @@ static boolean P_KillPlayer(player_t *player, mobj_t *inflictor, mobj_t *source,
 	return true;
 }
 
+static void AddTimesHit(player_t *player)
+{
+	const INT32 oldtimeshit = player->timeshit;
+
+	player->timeshit++;
+
+	// overflow prevention
+	if (player->timeshit < oldtimeshit)
+	{
+		player->timeshit = oldtimeshit;
+	}
+}
+
+static void AddNullHitlag(player_t *player, tic_t oldHitlag)
+{
+	if (player == NULL)
+	{
+		return;
+	}
+
+	// Hitlag from what would normally be damage but the
+	// player was invulnerable.
+	//
+	// If we're constantly getting hit the same number of
+	// times, we're probably standing on a damage floor.
+	//
+	// Checking if we're hit more than before ensures that:
+	//
+	// 1) repeating damage doesn't count
+	// 2) new damage sources still count
+
+	if (player->timeshit <= player->timeshitprev)
+	{
+		player->nullHitlag += (player->mo->hitlag - oldHitlag);
+	}
+}
+
 /** Damages an object, which may or may not be a player.
   * For melee attacks, source and inflictor are the same.
   *
@@ -2104,17 +2141,8 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 
 	if (player) // Player is the target
 	{
-		{
-			const INT32 oldtimeshit = player->timeshit;
 
-			player->timeshit++;
-
-			// overflow prevention
-			if (player->timeshit < oldtimeshit)
-			{
-				player->timeshit = oldtimeshit;
-			}
-		}
+		AddTimesHit(player);
 
 		if (player->pflags & PF_GODMODE)
 			return false;
@@ -2179,12 +2207,12 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 
 				if (invincible && type != DMG_STUMBLE)
 				{
-					const INT32	oldhitlag = target->hitlag;
+					const INT32 oldHitlag = target->hitlag;
 
 					laglength = max(laglength / 2, 1);
 					K_SetHitLagForObjects(target, inflictor, laglength, false);
 
-					player->invulnhitlag += (target->hitlag - oldhitlag);
+					AddNullHitlag(player, oldHitlag);
 
 					if (player->timeshit > player->timeshitprev)
 					{

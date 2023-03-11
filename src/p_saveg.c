@@ -276,7 +276,7 @@ static void P_NetArchivePlayers(savebuffer_t *save)
 		WRITEUINT16(save->p, players[i].spinouttimer);
 		WRITEUINT8(save->p, players[i].spinouttype);
 		WRITEUINT8(save->p, players[i].instashield);
-		WRITEINT32(save->p, players[i].invulnhitlag);
+		WRITEINT32(save->p, players[i].nullHitlag);
 		WRITEUINT8(save->p, players[i].wipeoutslow);
 		WRITEUINT8(save->p, players[i].justbumped);
 		WRITEUINT8(save->p, players[i].tumbleBounces);
@@ -651,7 +651,7 @@ static void P_NetUnArchivePlayers(savebuffer_t *save)
 		players[i].spinouttimer = READUINT16(save->p);
 		players[i].spinouttype = READUINT8(save->p);
 		players[i].instashield = READUINT8(save->p);
-		players[i].invulnhitlag = READINT32(save->p);
+		players[i].nullHitlag = READINT32(save->p);
 		players[i].wipeoutslow = READUINT8(save->p);
 		players[i].justbumped = READUINT8(save->p);
 		players[i].tumbleBounces = READUINT8(save->p);

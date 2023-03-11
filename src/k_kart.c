@@ -8290,30 +8290,14 @@ void K_KartPlayerAfterThink(player_t *player)
 		K_LookForRings(player->mo);
 	}
 
-	if (player->invulnhitlag > 0)
+	if (player->nullHitlag > 0)
 	{
-		// Hitlag from what would normally be damage but the
-		// player was invulnerable.
-		//
-		// If we're constantly getting hit the same number of
-		// times, we're probably standing on a damage floor.
-		//
-		// Checking if we're hit more than before ensures
-		// that:
-		//
-		// 1) repeating damage doesn't count
-		// 2) new damage sources still count
-
-		if (player->timeshit <= player->timeshitprev)
+		if (!P_MobjWasRemoved(player->mo))
 		{
-			if (!P_MobjWasRemoved(player->mo))
-			{
-				player->mo->hitlag -= player->invulnhitlag;
-				player->mo->eflags &= ~(MFE_DAMAGEHITLAG);
-			}
+			player->mo->hitlag -= player->nullHitlag;
 		}
 
-		player->invulnhitlag = 0;
+		player->nullHitlag = 0;
 	}
 }
 

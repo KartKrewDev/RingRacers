@@ -490,7 +490,7 @@ struct player_t
 	UINT16 spinouttimer;	// Spin-out from a banana peel or oil slick (was "pw_bananacam")
 	UINT8 spinouttype;		// Determines the mode of spinout/wipeout, see kartspinoutflags_t
 	UINT8 instashield;		// Instashield no-damage animation timer
-	INT32 invulnhitlag;		// Numbers of tics of hitlag added this tic for "potential" damage -- not real damage
+	INT32 nullHitlag;		// Numbers of tics of hitlag that will ultimately be ignored by subtracting from hitlag
 	UINT8 wipeoutslow;		// Timer before you slowdown when getting wiped out
 	UINT8 justbumped;		// Prevent players from endlessly bumping into each other
 	UINT8 tumbleBounces;
