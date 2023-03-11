@@ -8246,7 +8246,9 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 			desty = mobj->target->y;
 		}
 
+		mobj->flags &= ~(MF_NOCLIPTHING);
 		P_MoveOrigin(mobj, destx, desty, mobj->target->z);
+		mobj->flags |= MF_NOCLIPTHING;
 		break;
 	}
 	case MT_FLAMESHIELD:

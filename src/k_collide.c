@@ -678,6 +678,17 @@ void K_LightningShieldAttack(mobj_t *actor, fixed_t size)
 
 boolean K_BubbleShieldCollide(mobj_t *t1, mobj_t *t2)
 {
+	if (t1->type == MT_PLAYER)
+	{
+		// Bubble Shield already has a hitbox, and it gets
+		// teleported every tic so the Bubble itself will
+		// always make contact with other objects.
+		//
+		// Therefore, we don't need a second, smaller hitbox
+		// on the player. It'll just cause unwanted hitlag.
+		return true;
+	}
+
 	if (t2->type == MT_PLAYER)
 	{
 		// Counter desyncs
@@ -697,7 +708,7 @@ boolean K_BubbleShieldCollide(mobj_t *t1, mobj_t *t2)
 		}
 
 		// Player Damage
-		P_DamageMobj(t2, ((t1->type == MT_BUBBLESHIELD) ? t1->target : t1), t1, 1, DMG_NORMAL|DMG_WOMBO);
+		P_DamageMobj(t2, t1->target, t1, 1, DMG_NORMAL|DMG_WOMBO);
 		S_StartSound(t1, sfx_s3k44);
 	}
 	else
