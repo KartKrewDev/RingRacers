@@ -1257,11 +1257,11 @@ static BlockItReturn_t PIT_CheckThing(mobj_t *thing)
 		{
 			if (thing->z + thing->height <= tm.thing->z + FixedMul(FRACUNIT, tm.thing->scale)
 			&& thing->z + thing->height + thing->momz  >= tm.thing->z + FixedMul(FRACUNIT, tm.thing->scale) + tm.thing->momz)
-				P_DamageMobj(thing, tm.thing, tm.thing, 1, DMG_NORMAL);
+				P_DamageMobj(thing, tm.thing, tm.thing, 1, DMG_TUMBLE);
 		}
 		else if (thing->z >= tm.thing->z + tm.thing->height - FixedMul(FRACUNIT, tm.thing->scale)
 		&& thing->z + thing->momz <= tm.thing->z + tm.thing->height - FixedMul(FRACUNIT, tm.thing->scale) + tm.thing->momz)
-			P_DamageMobj(thing, tm.thing, tm.thing, 1, DMG_NORMAL);
+			P_DamageMobj(thing, tm.thing, tm.thing, 1, DMG_TUMBLE);
 	}
 	else if (thing->type == MT_SPIKE && thing->flags & MF_SOLID && tm.thing->player) // unfortunate player falls into spike?!
 	{
@@ -1269,11 +1269,11 @@ static BlockItReturn_t PIT_CheckThing(mobj_t *thing)
 		{
 			if (tm.thing->z + tm.thing->height <= thing->z - FixedMul(FRACUNIT, thing->scale)
 			&& tm.thing->z + tm.thing->height + tm.thing->momz >= thing->z - FixedMul(FRACUNIT, thing->scale))
-				P_DamageMobj(tm.thing, thing, thing, 1, DMG_NORMAL);
+				P_DamageMobj(tm.thing, thing, thing, 1, DMG_TUMBLE);
 		}
 		else if (tm.thing->z >= thing->z + thing->height + FixedMul(FRACUNIT, thing->scale)
 		&& tm.thing->z + tm.thing->momz <= thing->z + thing->height + FixedMul(FRACUNIT, thing->scale))
-			P_DamageMobj(tm.thing, thing, thing, 1, DMG_NORMAL);
+			P_DamageMobj(tm.thing, thing, thing, 1, DMG_TUMBLE);
 	}
 
 	if (tm.thing->type == MT_WALLSPIKE && tm.thing->flags & MF_SOLID && thing->player) // wall spike impales player
@@ -1397,6 +1397,17 @@ static BlockItReturn_t PIT_CheckThing(mobj_t *thing)
 				return BMIT_CONTINUE;
 			}
 
+			if (!P_MobjWasRemoved(thing) && !P_MobjWasRemoved(tm.thing))
+			{
+				if (thing->player->eggmanexplode)
+				{
+					K_EggmanTransfer(thing->player, tm.thing->player);
+				} else if (tm.thing->player->eggmanexplode)
+				{
+					K_EggmanTransfer(tm.thing->player, thing->player);
+				}
+			}
+
 			// The bump has to happen last
 			if (P_IsObjectOnGround(thing) && tm.thing->momz < 0 && tm.thing->player->trickpanel)
 			{
@@ -1410,14 +1421,6 @@ static BlockItReturn_t PIT_CheckThing(mobj_t *thing)
 			if (K_KartBouncing(tm.thing, thing) == true)
 			{
 				K_PvPTouchDamage(tm.thing, thing);
-			}
-
-			if (thing->player->eggmanexplode)
-			{
-				K_EggmanTransfer(thing->player, tm.thing->player);
-			} else if (tm.thing->player->eggmanexplode)
-			{
-				K_EggmanTransfer(tm.thing->player, thing->player);
 			}
 
 			return BMIT_CONTINUE;

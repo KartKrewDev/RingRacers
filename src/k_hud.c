@@ -4865,7 +4865,7 @@ static void K_DrawGPRankDebugger(void)
 		default: { break; }
 	}
 
-	V_DrawThinString(0, 80, V_SNAPTOTOP|V_SNAPTOLEFT|V_6WIDTHSPACE|V_ALLOWLOWERCASE|V_YELLOWMAP,
+	V_DrawThinString(0, 90, V_SNAPTOTOP|V_SNAPTOLEFT|V_6WIDTHSPACE|V_ALLOWLOWERCASE|V_YELLOWMAP,
 		va(" ** FINAL GRADE: %c", gradeChar));
 }
 

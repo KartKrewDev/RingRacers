@@ -625,6 +625,60 @@ fixed_t K_DistanceOfLineFromPoint(fixed_t v1x, fixed_t v1y, fixed_t v2x, fixed_t
 }
 
 /*--------------------------------------------------
+	static fixed_t K_GetBotWaypointRadius(waypoint_t *waypoint)
+
+		Calculates a new waypoint radius size to use, making it
+		thinner depending on how harsh the turn is.
+
+	Input Arguments:-
+		waypoint - Waypoint to retrieve the radius of.
+
+	Return:-
+		New radius value.
+--------------------------------------------------*/
+static fixed_t K_GetBotWaypointRadius(waypoint_t *const waypoint)
+{
+	static const fixed_t maxReduce = FRACUNIT/32;
+	static const angle_t maxDelta = ANGLE_45;
+
+	fixed_t radius = waypoint->mobj->radius;
+	fixed_t reduce = FRACUNIT;
+	angle_t delta = 0;
+
+	size_t i, j;
+
+	for (i = 0; i < waypoint->numnextwaypoints; i++)
+	{
+		const waypoint_t *next = waypoint->nextwaypoints[i];
+		const angle_t nextAngle = R_PointToAngle2(
+			waypoint->mobj->x, waypoint->mobj->y,
+			next->mobj->x, next->mobj->y
+		);
+
+		for (j = 0; j < waypoint->numprevwaypoints; j++)
+		{
+			const waypoint_t *prev = waypoint->prevwaypoints[j];
+			const angle_t prevAngle = R_PointToAngle2(
+				prev->mobj->x, prev->mobj->y,
+				waypoint->mobj->x, waypoint->mobj->y
+			);
+
+			delta = max(delta, AngleDelta(nextAngle, prevAngle));
+		}
+	}
+
+	if (delta > maxDelta)
+	{
+		delta = maxDelta;
+	}
+
+	reduce = FixedDiv(delta, maxDelta);
+	reduce = FRACUNIT + FixedMul(reduce, maxReduce - FRACUNIT);
+
+	return FixedMul(radius, reduce);
+}
+
+/*--------------------------------------------------
 	static botprediction_t *K_CreateBotPrediction(player_t *player)
 
 		Calculates a point further along the track to attempt to drive towards.
@@ -685,6 +739,8 @@ static botprediction_t *K_CreateBotPrediction(player_t *player)
 	{
 		for (i = 0; i < pathtofinish.numnodes; i++)
 		{
+			fixed_t radius = 0;
+
 			wp = (waypoint_t *)pathtofinish.array[i].nodedata;
 
 			if (i == 0)
@@ -706,9 +762,10 @@ static botprediction_t *K_CreateBotPrediction(player_t *player)
 				radreduce = FRACUNIT >> 1;
 			}
 
-			if (wp->mobj->radius < smallestradius)
+			radius = K_GetBotWaypointRadius(wp);
+			if (radius < smallestradius)
 			{
-				smallestradius = wp->mobj->radius;
+				smallestradius = radius;
 			}
 
 			distanceleft -= disttonext;
@@ -1376,7 +1433,7 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 		return;
 	}
 
-	if (botController != NULL && (botController->args[1] & TMBOT_NOCONTROL)) // FIXME: UDMF-ify
+	if (botController != NULL && (botController->args[1] & TMBOT_NOCONTROL))
 	{
 		// Disable bot controls entirely.
 		return;
@@ -1384,7 +1441,7 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 
 	destangle = player->mo->angle;
 
-	if (botController != NULL && (botController->args[1] & TMBOT_FORCEDIR)) // FIXME: UDMF-ify
+	if (botController != NULL && (botController->args[1] & TMBOT_FORCEDIR))
 	{
 		const fixed_t dist = DEFAULT_WAYPOINT_RADIUS * player->mo->scale;
 

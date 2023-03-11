@@ -3113,7 +3113,7 @@ static void K_GetKartBoostPower(player_t *player)
 	if (player->sliptideZipBoost)
 	{
 		// NB: This is intentionally under the 25% threshold required to initiate a sliptide
-		ADDBOOST(13*FRACUNIT/20, 4*FRACUNIT, 2*SLIPTIDEHANDLING/5);  // + 65% top speed, + 400% acceleration, +20% handling
+		ADDBOOST(8*FRACUNIT/10, 4*FRACUNIT, 2*SLIPTIDEHANDLING/5);  // + 80% top speed, + 400% acceleration, +20% handling
 	}
 
 	if (player->spindashboost) // Spindash boost
@@ -3470,7 +3470,7 @@ fixed_t K_GetNewSpeed(player_t *player)
 	// Don't calculate the acceleration as ever being above top speed
 	if (oldspeed > p_speed)
 		oldspeed = p_speed;
-	newspeed = FixedDiv(FixedDiv(FixedMul(oldspeed, accelmax - p_accel) + FixedMul(p_speed, p_accel), accelmax), K_PlayerBaseFriction(ORIG_FRICTION));
+	newspeed = FixedDiv(FixedDiv(FixedMul(oldspeed, accelmax - p_accel) + FixedMul(p_speed, p_accel), accelmax), K_PlayerBaseFriction(player, ORIG_FRICTION));
 
 	finalspeed = newspeed - oldspeed;
 
@@ -4071,7 +4071,9 @@ static boolean K_IsLosingSliptideZip(player_t *player)
 {
 	if (player->mo == NULL || P_MobjWasRemoved(player->mo) == true)
 		return true;
-	if (!K_Sliptiding(player) && player->drift == 0 && P_IsObjectOnGround(player->mo) && player->sneakertimer == 0)
+	if (!K_Sliptiding(player) && player->drift == 0 
+		&& P_IsObjectOnGround(player->mo) && player->sneakertimer == 0
+		&& player->driftboost == 0)
 		return true;
 	return false;
 }
@@ -4116,7 +4118,7 @@ void K_UpdateSliptideZipIndicator(player_t *player)
 	mobj->renderflags &= ~RF_DONTDRAW;
 
 	UINT32 chargeFrame = 7 - min(7, player->sliptideZip / 10);
-	UINT32 decayFrame = min(7, player->sliptideZipDelay / 5);
+	UINT32 decayFrame = min(7, player->sliptideZipDelay / 2);
 	if (max(chargeFrame, decayFrame) > mobj->frame)
 		mobj->frame++;
 	else if (max(chargeFrame, decayFrame) < mobj->frame)
@@ -9421,8 +9423,12 @@ static void K_KartDrift(player_t *player, boolean onground)
 	{
 		if (K_IsLosingSliptideZip(player) && player->sliptideZip > 0)
 		{
+			if (!S_SoundPlaying(player->mo, sfx_waved2))
+				S_StartSoundAtVolume(player->mo, sfx_waved2, 255/2); // Losing combo time, going to boost
+			S_StopSoundByID(player->mo, sfx_waved1);
+			S_StopSoundByID(player->mo, sfx_waved4);
 			player->sliptideZipDelay++;
-			if (player->sliptideZipDelay > TICRATE)
+			if (player->sliptideZipDelay > TICRATE/2)
 			{
 				fixed_t maxZipPower = 2*FRACUNIT;
 				fixed_t minZipPower = 1*FRACUNIT;
@@ -9449,8 +9455,18 @@ static void K_KartDrift(player_t *player, boolean onground)
 				K_SpawnDriftBoostExplosion(player, 0);
 				player->sliptideZip = 0;
 				player->sliptideZipDelay = 0;
-				S_StartSound(player->mo, sfx_s3kb6);
+				S_StopSoundByID(player->mo, sfx_waved1);
+				S_StopSoundByID(player->mo, sfx_waved2);
+				S_StopSoundByID(player->mo, sfx_waved4);
+				S_StartSoundAtVolume(player->mo, sfx_waved3, 2*255/3); // Boost
 			}
+		}
+		else
+		{
+			S_StopSoundByID(player->mo, sfx_waved1);
+			S_StopSoundByID(player->mo, sfx_waved2);
+			if (player->sliptideZip > 0 && !S_SoundPlaying(player->mo, sfx_waved4))
+				S_StartSoundAtVolume(player->mo, sfx_waved4, 2*255/5); // Passive woosh
 		}
 
 		player->aizdrifttilt -= player->aizdrifttilt / 4;
@@ -9464,6 +9480,10 @@ static void K_KartDrift(player_t *player, boolean onground)
 	else
 	{
 		player->sliptideZipDelay = 0;
+		S_StopSoundByID(player->mo, sfx_waved2);
+		S_StopSoundByID(player->mo, sfx_waved4);
+		if (!S_SoundPlaying(player->mo, sfx_waved1))
+			S_StartSoundAtVolume(player->mo, sfx_waved1, 255/2); // Charging
 	}
 
 	if (player->drift
@@ -10199,13 +10219,27 @@ static void K_AirFailsafe(player_t *player)
 //
 // K_PlayerBaseFriction
 //
-fixed_t K_PlayerBaseFriction(fixed_t original)
+fixed_t K_PlayerBaseFriction(player_t *player, fixed_t original)
 {
 	fixed_t frict = original;
 
 	if (K_PodiumSequence() == true)
 	{
 		frict -= FRACUNIT >> 4;
+	}
+	else if (K_PlayerUsesBotMovement(player) == true)
+	{
+		// A bit extra friction to help them without drifting.
+		// Remove this line once they can drift.
+		frict -= FRACUNIT >> 5;
+
+		// Bots gain more traction as they rubberband.
+		if (player->botvars.rubberband > FRACUNIT)
+		{
+			static const fixed_t extraFriction = FRACUNIT >> 5;
+			const fixed_t mul = player->botvars.rubberband - FRACUNIT;
+			frict -= FixedMul(extraFriction, mul);
+		}
 	}
 
 	if (frict > FRACUNIT) { frict = FRACUNIT; }
@@ -10219,7 +10253,7 @@ fixed_t K_PlayerBaseFriction(fixed_t original)
 //
 void K_AdjustPlayerFriction(player_t *player)
 {
-	const fixed_t prevfriction = K_PlayerBaseFriction(player->mo->friction);
+	const fixed_t prevfriction = K_PlayerBaseFriction(player, player->mo->friction);
 
 	if (P_IsObjectOnGround(player->mo) == false)
 	{

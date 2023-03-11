@@ -1199,6 +1199,12 @@ typedef enum
 	sfx_gate04,
 	sfx_gate05,
 
+	// Wavedashing
+	sfx_waved1,
+	sfx_waved2,
+	sfx_waved3,
+	sfx_waved4,
+
 	// Passing sounds
 	sfx_pass01,
 	sfx_pass02,
@@ -1242,6 +1248,8 @@ typedef enum
 	sfx_clawzm,
 	sfx_clawk1,
 	sfx_clawk2,
+
+	sfx_monch,
 
 	// Next up: UNIQUE ENGINE SOUNDS! Hoooooo boy...
 	// Engine class A - Low Speed, Low Weight
