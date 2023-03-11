@@ -9843,7 +9843,7 @@ void P_MobjThinker(mobj_t *mobj)
 		return;
 
 	// Don't run any thinker code while in hitlag
-	if (mobj->hitlag > 0)
+	if ((mobj->player ? mobj->hitlag - mobj->player->nullHitlag : mobj->hitlag) > 0)
 	{
 		mobj->eflags |= MFE_PAUSED;
 		mobj->hitlag--;
