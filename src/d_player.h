@@ -641,8 +641,10 @@ struct player_t
 
 	INT16 lastsidehit, lastlinehit;
 
-	// These track how many things tried to damage you, not
-	// whether you actually took damage.
+	// TimesHit tracks how many times something tried to
+	// damage you or how many times you tried to damage
+	// something else. It does not track whether damage was
+	// actually dealt.
 	UINT8 timeshit; // times hit this tic
 	UINT8 timeshitprev; // times hit before
 	// That's TIMES HIT, not TIME SHIT, you doofus! -- in memoriam

@@ -2060,6 +2060,7 @@ static void AddNullHitlag(player_t *player, tic_t oldHitlag)
 boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 damage, UINT8 damagetype)
 {
 	player_t *player;
+	player_t *playerInflictor;
 	boolean force = false;
 
 	INT32 laglength = 6;
@@ -2138,10 +2139,15 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 	}
 
 	player = target->player;
+	playerInflictor = inflictor ? inflictor->player : NULL;
+
+	if (playerInflictor)
+	{
+		AddTimesHit(playerInflictor);
+	}
 
 	if (player) // Player is the target
 	{
-
 		AddTimesHit(player);
 
 		if (player->pflags & PF_GODMODE)
@@ -2208,11 +2214,13 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 				if (invincible && type != DMG_STUMBLE)
 				{
 					const INT32 oldHitlag = target->hitlag;
+					const INT32 oldHitlagInflictor = inflictor ? inflictor->hitlag : 0;
 
 					laglength = max(laglength / 2, 1);
 					K_SetHitLagForObjects(target, inflictor, laglength, false);
 
 					AddNullHitlag(player, oldHitlag);
+					AddNullHitlag(playerInflictor, oldHitlagInflictor);
 
 					if (player->timeshit > player->timeshitprev)
 					{
