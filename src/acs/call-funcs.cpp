@@ -1368,6 +1368,20 @@ bool CallFunc_BreakTheCapsules(ACSVM::Thread *thread, const ACSVM::Word *argV, A
 }
 
 /*--------------------------------------------------
+	bool CallFunc_TimeAttack(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
+
+		Returns if the map is a Time Attack session.
+--------------------------------------------------*/
+bool CallFunc_TimeAttack(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
+{
+	(void)argV;
+	(void)argC;
+
+	thread->dataStk.push((modeattacking != ATTACKING_NONE));
+	return false;
+}
+
+/*--------------------------------------------------
 	bool CallFunc_PodiumPosition(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
 
 		Returns the best position of all non-CPU players.
