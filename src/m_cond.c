@@ -812,6 +812,7 @@ boolean M_CheckCondition(condition_t *cn, player_t *player)
 			return (player->exiting
 				&& !(player->pflags & PF_NOCONTEST)
 				&& M_NotFreePlay(player)
+				&& player->position != 0
 				&& player->position <= cn->requirement);
 		case UCRP_FINISHPLACEEXACT:
 			return (player->exiting 
