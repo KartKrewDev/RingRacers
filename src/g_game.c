@@ -2138,7 +2138,7 @@ void G_Ticker(boolean run)
 			{
 				if (playeringame[i])
 				{
-					if (players[i].bot == true)
+					if (players[i].bot == true && grandprixinfo.gp == true && grandprixinfo.masterbots == false)
 					{
 						players[i].botvars.difficulty--;
 
