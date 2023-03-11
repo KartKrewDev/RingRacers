@@ -2483,15 +2483,15 @@ static void readcondition(UINT8 set, UINT32 id, char *word2)
 	{
 		//PARAMCHECK(1);
 		ty = UC_ALLCHAOS + offset;
-		re = 1;
+		re = KARTSPEED_NORMAL;
 		if (params[1])
 		{
 			if (fastcmp(params[1], "NORMAL"))
 				;
 			else if (fastcmp(params[1], "HARD"))
-				x1 = 2;
+				x1 = KARTSPEED_HARD;
 			else if (fastcmp(params[1], "MASTER"))
-				x1 = 3;
+				x1 = KARTGP_MASTER;
 			else
 			{
 				deh_warning("gamespeed requirement \"%s\" invalid for condition ID %d", params[1], id+1);

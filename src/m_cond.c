@@ -1079,19 +1079,19 @@ static const char *M_GetConditionString(condition_t *cn)
 			else
 				chaostext = "14";
 
-			if (cn->requirement == 1)
+			if (cn->requirement == KARTSPEED_NORMAL)
 			{
 				speedtext = " on Normal difficulty";
 				//if (M_SecretUnlocked(SECRET_HARDSPEED, true))
 					orbetter = " or better";
 			}
-			else if (cn->requirement == 2)
+			else if (cn->requirement == KARTSPEED_HARD)
 			{
 				speedtext = " on Hard difficulty";
 				if (M_SecretUnlocked(SECRET_MASTERMODE, true))
 					orbetter = " or better";
 			}
-			else if (cn->requirement == 3)
+			else if (cn->requirement == KARTGP_MASTER)
 			{
 				speedtext = " on Master difficulty";
 			}
