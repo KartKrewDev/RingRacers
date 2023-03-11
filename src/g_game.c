@@ -4562,7 +4562,11 @@ void G_LoadGameData(void)
 		P_SaveBufferFree(&save);
 		I_Error("Game data is from the future! (expected %d, got %d)\nRename or delete %s (maybe in %s) and try again.", GD_VERSIONMINOR, versionMinor, gamedatafilename, gdfolder);
 	}
-	if (versionMinor == 0 || versionMinor == 1)
+	if ((versionMinor == 0 || versionMinor == 1)
+#ifdef DEVELOP
+		|| M_CheckParm("-resetchallengegrid")
+#endif
+		)
 	{
 		gridunusable = true;
 	}
