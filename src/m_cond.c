@@ -1094,7 +1094,10 @@ static const char *M_GetConditionString(condition_t *cn)
 			}
 			else if (cn->requirement == KARTGP_MASTER)
 			{
-				speedtext = " on Master difficulty";
+				if (M_SecretUnlocked(SECRET_MASTERMODE, true))
+					speedtext = " on Master difficulty";
+				else
+					speedtext = " on ???";
 			}
 
 			return va("collect all %s Emeralds%s%s", chaostext, speedtext, orbetter);
