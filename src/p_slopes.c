@@ -1112,13 +1112,18 @@ void P_HandleSlopeLanding(mobj_t *thing, pslope_t *slope)
 // Handles sliding down slopes, like if they were made of butter :)
 void P_ButteredSlope(mobj_t *mo)
 {
-	fixed_t thrust;
+	const fixed_t gameSpeed = K_GetKartGameSpeedScalar(gamespeed);
+	fixed_t thrust = 0;
 
 	if (mo->flags & (MF_NOCLIPHEIGHT|MF_NOGRAVITY))
+	{
 		return; // don't slide down slopes if you can't touch them or you're not affected by gravity
+	}
 
 	if (P_CanApplySlopePhysics(mo, mo->standingslope) == false)
+	{
 		return; // No physics, no butter.
+	}
 
 	if (mo->player != NULL)
 	{
@@ -1141,17 +1146,21 @@ void P_ButteredSlope(mobj_t *mo)
 
 	thrust = FINESINE(mo->standingslope->zangle>>ANGLETOFINESHIFT) * 5 / 4 * (mo->eflags & MFE_VERTICALFLIP ? 1 : -1);
 
-	if (mo->player) {
+	// Make uphill easier to climb, and downhill even faster.
+	if (mo->momx || mo->momy)
+	{
 		fixed_t mult = FRACUNIT;
-		if (mo->momx || mo->momy) {
-			angle_t angle = R_PointToAngle2(0, 0, mo->momx, mo->momy) - mo->standingslope->xydirection;
+		angle_t angle = R_PointToAngle2(0, 0, mo->momx, mo->momy) - mo->standingslope->xydirection;
 
-			if (P_MobjFlip(mo) * mo->standingslope->zdelta < 0)
-				angle ^= ANGLE_180;
-
-			mult = FRACUNIT + (FRACUNIT + FINECOSINE(angle>>ANGLETOFINESHIFT))*4/3;
+		if (P_MobjFlip(mo) * mo->standingslope->zdelta < 0)
+		{
+			angle ^= ANGLE_180;
 		}
 
+		// Make downhills goofier for Hard, and climbing slopes easier for Easy.
+		mult = FixedMul(mult, gameSpeed);
+
+		mult = FRACUNIT + (FRACUNIT + mult)*4/3;
 		thrust = FixedMul(thrust, mult);
 	}
 
