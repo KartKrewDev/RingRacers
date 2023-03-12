@@ -205,7 +205,8 @@ static void init_exchndl()
 
 	if (exchndl_module == NULL)
 	{
-		I_Error("exchndl.dll or mgwhelp.dll is missing");
+		I_Error("exchndl.dll or mgwhelp.dll is missing, RPT files cannot be generated.\n"
+			"If you NEED to run without them, use -noexchndl.");
 	}
 
 	using PFN_ExcHndlInit = void(*)(void);
@@ -297,6 +298,7 @@ int main(int argc, char **argv)
 	//I_OutputMsg("I_StartupSystem() ...\n");
 	I_StartupSystem();
 #if defined (_WIN32)
+	if (!M_CheckParm("-noexchndl"))
 	{
 #if 0 // just load the DLL
 		p_IsDebuggerPresent pfnIsDebuggerPresent = (p_IsDebuggerPresent)GetProcAddress(GetModuleHandleA("kernel32.dll"), "IsDebuggerPresent");
