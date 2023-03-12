@@ -35,8 +35,8 @@ extern openmpt_module *openmpt_mhandle;
 #define PICKUP_SOUND 0x8000
 
 //
-#define SOUND_VOLUME_RANGE 256
-#define MAX_SOUND_VOLUME 255
+#define SOUND_VOLUME_RANGE 100
+#define MAX_SOUND_VOLUME 100
 
 #define DEFAULT_MUSICDEF_VOLUME 100
 
