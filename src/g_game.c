@@ -3980,7 +3980,7 @@ static void G_GetNextMap(void)
 				}
 				else
 				{
-					nextmap = prevmap; // Prevent uninitialised use
+					nextmap = 0; // Prevent uninitialised use -- go to TEST RUN, it's very obvious
 				}
 
 				grandprixinfo.roundnum++;
