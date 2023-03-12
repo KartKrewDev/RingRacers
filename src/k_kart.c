@@ -11457,8 +11457,9 @@ void K_CheckSpectateStatus(void)
 		P_SpectatorJoinGame(&players[respawnlist[i]]);
 	}
 
-	// Reset the match if you're in an empty server
-	if (!mapreset && gamestate == GS_LEVEL && leveltime >= starttime && (numingame < 2 && numingame+i >= 2)) // use previous i value
+	// Reset the match when 2P joins 1P, DUEL mode
+	// Reset the match when 3P joins 1P and 2P, DUEL mode must be disabled
+	if (!mapreset && gamestate == GS_LEVEL && (numingame < 3 && numingame+i >= 2)) // use previous i value
 	{
 		S_ChangeMusicInternal("chalng", false); // COME ON
 		mapreset = 3*TICRATE; // Even though only the server uses this for game logic, set for everyone for HUD
