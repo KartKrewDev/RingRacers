@@ -1530,7 +1530,7 @@ static boolean M_CheckUnlockConditions(player_t *player)
 	return ret;
 }
 
-boolean M_UpdateUnlockablesAndExtraEmblems(boolean loud)
+boolean M_UpdateUnlockablesAndExtraEmblems(boolean loud, boolean doall)
 {
 	UINT16 i = 0, response = 0, newkeys = 0;
 
@@ -1546,16 +1546,27 @@ boolean M_UpdateUnlockablesAndExtraEmblems(boolean loud)
 		// Done first so that emblems are ready before check
 		M_CheckLevelEmblems();
 		M_CompletionEmblems();
+		doall = true;
 	}
 
-	response = M_CheckUnlockConditions(NULL);
-
-	while ((gamedata->keyspending + gamedata->chaokeys + gamedata->usedkeys) < GDMAX_CHAOKEYS
-		&& ((gamedata->pendingkeyrounds + gamedata->pendingkeyroundoffset)/GDCONVERT_ROUNDSTOKEY) > gamedata->keyspending)
+	if (gamedata->deferredconditioncheck == true)
 	{
-		gamedata->keyspending++;
-		newkeys++;
-		response |= true;
+		// Handle deferred all-condition checks
+		gamedata->deferredconditioncheck = false;
+		doall = true;
+	}
+
+	if (doall)
+	{
+		response = M_CheckUnlockConditions(NULL);
+
+		while ((gamedata->keyspending + gamedata->chaokeys + gamedata->usedkeys) < GDMAX_CHAOKEYS
+			&& ((gamedata->pendingkeyrounds + gamedata->pendingkeyroundoffset)/GDCONVERT_ROUNDSTOKEY) > gamedata->keyspending)
+		{
+			gamedata->keyspending++;
+			newkeys++;
+			response |= true;
+		}
 	}
 
 	if (!demo.playback && Playing() && (gamestate == GS_LEVEL || K_PodiumRanking() == true))
@@ -1566,7 +1577,10 @@ boolean M_UpdateUnlockablesAndExtraEmblems(boolean loud)
 				continue;
 			if (players[g_localplayers[i]].spectator)
 				continue;
+			if (!doall && players[g_localplayers[i]].roundconditions.checkthisframe == false)
+				continue;
 			response |= M_CheckUnlockConditions(&players[g_localplayers[i]]);
+			players[g_localplayers[i]].roundconditions.checkthisframe = false;
 		}
 	}
 

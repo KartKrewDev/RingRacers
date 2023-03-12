@@ -337,6 +337,9 @@ struct botvars_t
 
 struct roundconditions_t
 {
+	// Reduce the number of checks by only updating when this is true
+	boolean checkthisframe;
+
 	// Trivial Yes/no events across multiple UCRP's
 	boolean fell_off;
 	boolean touched_offroad;

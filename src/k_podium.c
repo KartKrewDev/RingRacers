@@ -290,7 +290,7 @@ void K_FinishCeremony(void)
 	podiumData.ranking = true;
 
 	// Play the noise now
-	M_UpdateUnlockablesAndExtraEmblems(true);
+	M_UpdateUnlockablesAndExtraEmblems(true, true);
 	G_SaveGameData(true);
 }
 

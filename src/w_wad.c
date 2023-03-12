@@ -818,7 +818,7 @@ UINT16 W_InitFile(const char *filename, boolean mainfile, boolean startup)
 	if ((mainfile == false) && (gamedata != NULL) && (gamedata->everloadedaddon == false))
 	{
 		gamedata->everloadedaddon = true;
-		M_UpdateUnlockablesAndExtraEmblems(true);
+		M_UpdateUnlockablesAndExtraEmblems(true, true);
 		G_SaveGameData(true);
 	}
 

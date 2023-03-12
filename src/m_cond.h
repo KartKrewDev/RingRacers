@@ -246,6 +246,7 @@ struct gamedata_t
 	// WHENEVER OR NOT WE'RE READY TO SAVE
 	boolean loaded;
 	boolean deferredsave;
+	boolean deferredconditioncheck;
 
 	// CONDITION SETS ACHIEVED
 	boolean achieved[MAXCONDITIONSETS];
@@ -327,7 +328,7 @@ void M_ClearStats(void);
 
 // Updating conditions and unlockables
 boolean M_CheckCondition(condition_t *cn, player_t *player);
-boolean M_UpdateUnlockablesAndExtraEmblems(boolean loud);
+boolean M_UpdateUnlockablesAndExtraEmblems(boolean loud, boolean doall);
 
 #define PENDING_CHAOKEYS (UINT16_MAX-1)
 UINT16 M_GetNextAchievedUnlock(void);

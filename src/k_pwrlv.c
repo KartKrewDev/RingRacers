@@ -427,7 +427,7 @@ void K_CashInPowerLevels(void)
 
 	if (gamedataupdate)
 	{
-		M_UpdateUnlockablesAndExtraEmblems(true);
+		M_UpdateUnlockablesAndExtraEmblems(true, true);
 		G_SaveGameData(true);
 	}
 
@@ -643,7 +643,7 @@ void K_PlayerForfeit(UINT8 playerNum, boolean pointLoss)
 	{
 		pr->powerlevels[powerType] = yourPower + inc;
 
-		M_UpdateUnlockablesAndExtraEmblems(true);
+		M_UpdateUnlockablesAndExtraEmblems(true, true);
 		G_SaveGameData(true);
 	}
 }

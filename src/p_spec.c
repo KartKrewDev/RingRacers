@@ -2115,6 +2115,12 @@ static void K_HandleLapIncrement(player_t *player)
 			}
 
 			lastLowestLap = lowestLap;
+
+			if (P_IsLocalPlayer(player))
+			{
+				player->roundconditions.checkthisframe = true;
+				gamedata->deferredconditioncheck = true;
+			}
 		}
 		else if (player->starpostnum)
 		{
@@ -3427,12 +3433,7 @@ boolean P_ProcessSpecial(activator_t *activator, INT16 special, INT32 *args, cha
 					}
 
 					mo->player->roundconditions.unlocktriggers |= flag;
-
-					// Unlocked something?
-					if (!demo.playback && M_UpdateUnlockablesAndExtraEmblems(true))
-					{
-						gamedata->deferredsave = true; // only save if unlocked something
-					}
+					mo->player->roundconditions.checkthisframe = true;
 				}
 			}
 			break;

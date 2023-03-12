@@ -667,7 +667,7 @@ void G_UpdateRecords(void)
 		S_StartSound(NULL, sfx_ncitem);
 	}
 
-	M_UpdateUnlockablesAndExtraEmblems(true);
+	M_UpdateUnlockablesAndExtraEmblems(true, true);
 	gamedata->deferredsave = true;
 }
 
@@ -3838,7 +3838,7 @@ static void G_UpdateVisited(void)
 	if ((earnedEmblems = M_CompletionEmblems()))
 		CONS_Printf(M_GetText("\x82" "Earned %hu emblem%s for level completion.\n"), (UINT16)earnedEmblems, earnedEmblems > 1 ? "s" : "");
 
-	M_UpdateUnlockablesAndExtraEmblems(true);
+	M_UpdateUnlockablesAndExtraEmblems(true, true);
 	G_SaveGameData(true);
 }
 
@@ -3930,7 +3930,7 @@ static void G_GetNextMap(void)
 						if (gamedata->everseenspecial == false)
 						{
 							gamedata->everseenspecial = true;
-							M_UpdateUnlockablesAndExtraEmblems(true);
+							M_UpdateUnlockablesAndExtraEmblems(true, true);
 							G_SaveGameData(true);
 						}
 					}
@@ -4158,7 +4158,7 @@ static void G_DoCompleted(void)
 		gamedata->pendingkeyrounds++;
 
 		// Done before forced addition of PF_NOCONTEST to make UCRP_NOCONTEST harder to achieve
-		M_UpdateUnlockablesAndExtraEmblems(true);
+		M_UpdateUnlockablesAndExtraEmblems(true, true);
 		gamedata->deferredsave = true;
 	}
 
@@ -4528,7 +4528,7 @@ void G_LoadGameData(void)
 	{
 		// Don't load at all.
 		// The following used to be in M_ClearSecrets, but that was silly.
-		M_UpdateUnlockablesAndExtraEmblems(false);
+		M_UpdateUnlockablesAndExtraEmblems(false, true);
 		return;
 	}
 
@@ -4764,7 +4764,7 @@ void G_LoadGameData(void)
 		gamedata->loaded = true;
 
 		// Silent update unlockables in case they're out of sync with conditions
-		M_UpdateUnlockablesAndExtraEmblems(false);
+		M_UpdateUnlockablesAndExtraEmblems(false, true);
 
 		return;
 	}

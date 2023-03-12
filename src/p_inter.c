@@ -552,7 +552,7 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 				if (P_IsLocalPlayer(player) && !gamedata->collected[special->health-1])
 				{
 					gamedata->collected[special->health-1] = gotcollected = true;
-					if (!M_UpdateUnlockablesAndExtraEmblems(true))
+					if (!M_UpdateUnlockablesAndExtraEmblems(true, true))
 						S_StartSound(NULL, sfx_ncitem);
 					gamedata->deferredsave = true;
 				}
@@ -1938,7 +1938,11 @@ static boolean P_KillPlayer(player_t *player, mobj_t *inflictor, mobj_t *source,
 	{
 		case DMG_DEATHPIT:
 			// Respawn kill types
-			player->roundconditions.fell_off = true;
+			if (player->roundconditions.fell_off == true)
+			{
+				player->roundconditions.fell_off = true;
+				player->roundconditions.checkthisframe = true;
+			}
 			K_DoIngameRespawn(player);
 			player->mo->health -= K_DestroyBumpers(player, 1);
 			return false;
@@ -2062,9 +2066,11 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 
 		case MT_SPB:
 			spbpop = (damagetype & DMG_TYPEMASK) == DMG_VOLTAGE;
-			if (spbpop && source && source->player)
+			if (spbpop && source && source->player
+				&& source->player->roundconditions.spb_neuter == false)
 			{
 				source->player->roundconditions.spb_neuter = true;
+				source->player->roundconditions.checkthisframe = true;
 			}
 			break;
 
@@ -2142,10 +2148,14 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 
 		if (inflictor && source && source->player)
 		{
-			if (P_IsKartFieldItem(source->type)
-			&& target->player->airtime > TICRATE/2
-			&& source->player->airtime > TICRATE/2)
+			if (source->player->roundconditions.hit_midair == false
+				&& P_IsKartFieldItem(source->type)
+				&& target->player->airtime > TICRATE/2
+				&& source->player->airtime > TICRATE/2)
+			{
 				source->player->roundconditions.hit_midair = true;
+				source->player->roundconditions.checkthisframe = true;
+			}
 		}
 
 		// Instant-Death

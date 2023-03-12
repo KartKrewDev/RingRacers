@@ -3426,7 +3426,19 @@ void P_MobjCheckWater(mobj_t *mobj)
 			return;
 		}
 
-		p->roundconditions.wet_player |= (mobj->eflags & (MFE_TOUCHWATER|MFE_UNDERWATER|MFE_GOOWATER));
+		if (!(p->roundconditions.wet_player & MFE_TOUCHWATER)
+			&& (mobj->eflags & MFE_TOUCHWATER))
+		{
+			p->roundconditions.wet_player |= MFE_TOUCHWATER;
+			p->roundconditions.checkthisframe = true;
+		}
+
+		if (!(p->roundconditions.wet_player & MFE_UNDERWATER)
+			&& (mobj->eflags & MFE_UNDERWATER))
+		{
+			p->roundconditions.wet_player |= MFE_UNDERWATER;
+			p->roundconditions.checkthisframe = true;
+		}
 	}
 
 	if (mobj->flags & MF_APPLYTERRAIN)

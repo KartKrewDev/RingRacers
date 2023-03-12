@@ -7965,7 +7965,7 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 	{
 		mapheaderinfo[gamemap-1]->mapvisited |= MV_VISITED;
 
-		M_UpdateUnlockablesAndExtraEmblems(true);
+		M_UpdateUnlockablesAndExtraEmblems(true, true);
 		G_SaveGameData(true);
 	}
 

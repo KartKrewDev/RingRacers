@@ -205,7 +205,7 @@ menu_t *M_InterruptMenuWithChallenges(menu_t *desiredmenu)
 {
 	UINT16 i, newunlock;
 
-	M_UpdateUnlockablesAndExtraEmblems(false);
+	M_UpdateUnlockablesAndExtraEmblems(false, true);
 
 	newunlock = M_GetNextAchievedUnlock();
 
@@ -397,7 +397,7 @@ void M_ChallengesTick(void)
 			{
 				// Unlock animation... also tied directly to the actual unlock!
 				gamedata->unlocked[challengesmenu.currentunlock] = true;
-				M_UpdateUnlockablesAndExtraEmblems(true);
+				M_UpdateUnlockablesAndExtraEmblems(true, true);
 
 				// Update shown description just in case..?
 				challengesmenu.unlockcondition = M_BuildConditionSetString(challengesmenu.currentunlock);

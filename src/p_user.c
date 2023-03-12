@@ -521,9 +521,10 @@ INT32 P_GivePlayerRings(player_t *player, INT32 num_rings)
 
 	player->rings += num_rings;
 
-	if (player->rings < 0)
+	if (player->roundconditions.debt_rings == false && player->rings < 0)
 	{
 		player->roundconditions.debt_rings = true;
+		player->roundconditions.checkthisframe = true;
 	}
 
 	return num_rings;
@@ -1281,7 +1282,11 @@ void P_DoPlayerExit(player_t *player)
 		return;
 
 	if (P_IsLocalPlayer(player) && (!player->spectator && !demo.playback))
+	{
 		legitimateexit = true;
+		player->roundconditions.checkthisframe = true;
+		gamedata->deferredconditioncheck = true;
+	}
 
 	if (G_GametypeUsesLives() && losing)
 	{
@@ -3819,6 +3824,8 @@ void P_DoTimeOver(player_t *player)
 	if (P_IsLocalPlayer(player) && !demo.playback)
 	{
 		legitimateexit = true; // SRB2kart: losing a race is still seeing it through to the end :p
+		player->roundconditions.checkthisframe = true;
+		gamedata->deferredconditioncheck = true;
 	}
 
 	if (netgame && !player->bot && !(gametyperules & GTR_BOSS))
