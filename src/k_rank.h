@@ -35,8 +35,8 @@ struct gpRank_t
 
 	UINT32 continuesUsed;
 
-	UINT32 capsules;
-	UINT32 totalCapsules;
+	UINT32 prisons;
+	UINT32 totalPrisons;
 
 	UINT32 rings;
 	UINT32 totalRings;

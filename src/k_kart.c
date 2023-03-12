@@ -371,10 +371,10 @@ boolean K_IsPlayerLosing(player_t *player)
 	if (player->pflags & PF_NOCONTEST)
 		return true;
 
-	if (battlecapsules && numtargets == 0)
+	if (battleprisons && numtargets == 0)
 		return true; // Didn't even TRY?
 
-	if (battlecapsules || (gametyperules & GTR_BOSS))
+	if (battleprisons || (gametyperules & GTR_BOSS))
 		return (player->bumpers <= 0); // anything short of DNF is COOL
 
 	if (player->position == 1)
@@ -561,7 +561,7 @@ boolean K_TimeAttackRules(void)
 		return true;
 	}
 
-	if (battlecapsules == true)
+	if (battleprisons == true)
 	{
 		// Break the Capsules always uses Time Attack
 		// rules, since you can bring 2-4 players in
@@ -4362,7 +4362,7 @@ void K_HandleBumperChanges(player_t *player, UINT8 prevBumpers)
 	}
 	else if (player->bumpers == 0 && prevBumpers > 0)
 	{
-		if (battlecapsules || bossinfo.valid)
+		if (battleprisons || bossinfo.valid)
 		{
 			player->pflags |= (PF_NOCONTEST|PF_ELIMINATED);
 		}
@@ -11681,7 +11681,7 @@ tic_t K_TimeLimitForGametype(void)
 	// Grand Prix
 	if (!K_CanChangeRules(true))
 	{
-		if (battlecapsules)
+		if (battleprisons)
 		{
 			return 20*TICRATE;
 		}
@@ -11695,7 +11695,7 @@ tic_t K_TimeLimitForGametype(void)
 	}
 
 	// No time limit for Break the Capsules FREE PLAY
-	if (battlecapsules)
+	if (battleprisons)
 	{
 		return 0;
 	}
@@ -11720,7 +11720,7 @@ UINT32 K_PointLimitForGametype(void)
 		return cv_pointlimit.value;
 	}
 
-	if (battlecapsules || bossinfo.valid)
+	if (battleprisons || bossinfo.valid)
 	{
 		return 0;
 	}

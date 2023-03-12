@@ -516,7 +516,7 @@ void K_CeremonyDrawer(void)
 				case 5:
 				{
 					V_DrawString(x, y, V_ALLOWLOWERCASE,
-						va("CAPSULES: %d / %d", podiumData.rank.capsules, podiumData.rank.totalCapsules)
+						va("PRISONS: %d / %d", podiumData.rank.prisons, podiumData.rank.totalPrisons)
 					);
 					break;
 				}

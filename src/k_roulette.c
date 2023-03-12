@@ -1240,7 +1240,7 @@ void K_FillItemRouletteData(const player_t *player, itemroulette_t *const roulet
 		kartitems_t *presetlist = K_KartItemReelTimeAttack;
 
 		// If the objective is not to go fast, it's to cause serious damage.
-		if (gametyperules & GTR_CAPSULES)
+		if (gametyperules & GTR_PRISONS)
 		{
 			presetlist = K_KartItemReelBreakTheCapsules;
 		}

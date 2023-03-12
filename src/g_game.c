@@ -3274,7 +3274,7 @@ static gametype_t defaultgametypes[] =
 	{
 		"Battle",
 		"GT_BATTLE",
-		GTR_SPHERES|GTR_BUMPERS|GTR_PAPERITEMS|GTR_POWERSTONES|GTR_KARMA|GTR_ITEMARROWS|GTR_CAPSULES|GTR_BATTLESTARTS|GTR_POINTLIMIT|GTR_TIMELIMIT|GTR_OVERTIME|GTR_CLOSERPLAYERS,
+		GTR_SPHERES|GTR_BUMPERS|GTR_PAPERITEMS|GTR_POWERSTONES|GTR_KARMA|GTR_ITEMARROWS|GTR_PRISONS|GTR_BATTLESTARTS|GTR_POINTLIMIT|GTR_TIMELIMIT|GTR_OVERTIME|GTR_CLOSERPLAYERS,
 		TOL_BATTLE,
 		int_scoreortimeattack,
 		0,
@@ -4150,7 +4150,7 @@ static void G_DoCompleted(void)
 		if (gametype == GT_RACE)
 			roundtype = GDGT_RACE;
 		else if (gametype == GT_BATTLE)
-			roundtype = (battlecapsules ? GDGT_CAPSULES : GDGT_BATTLE);
+			roundtype = (battleprisons ? GDGT_PRISONS : GDGT_BATTLE);
 		else if (gametype == GT_SPECIAL || gametype == GT_VERSUS)
 			roundtype = GDGT_SPECIAL;
 
@@ -4177,7 +4177,7 @@ static void G_DoCompleted(void)
 	G_SetGamestate(GS_NULL);
 	wipegamestate = GS_NULL;
 
-	grandprixinfo.rank.capsules += numtargets;
+	grandprixinfo.rank.prisons += numtargets;
 	grandprixinfo.rank.position = MAXPLAYERS;
 
 	for (i = 0; i < MAXPLAYERS; i++)

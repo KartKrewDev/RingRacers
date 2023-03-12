@@ -27,7 +27,7 @@
 
 #include "k_kart.h" // K_IsPLayerLosing
 #include "k_grandprix.h" // grandprixinfo
-#include "k_battle.h" // battlecapsules
+#include "k_battle.h" // battleprisons
 #include "k_specialstage.h" // specialstageinfo
 #include "k_podium.h"
 #include "k_pwrlv.h"
@@ -786,8 +786,8 @@ boolean M_CheckCondition(condition_t *cn, player_t *player)
 			return ((grandprixinfo.gp == true) && (grandprixinfo.eventmode == GPEVENT_BONUS));
 		case UCRP_PREFIX_TIMEATTACK:
 			return (modeattacking != ATTACKING_NONE);
-		case UCRP_PREFIX_BREAKTHECAPSULES:
-			return ((gametyperules & GTR_CAPSULES) && battlecapsules);
+		case UCRP_PREFIX_PRISONBREAK:
+			return ((gametyperules & GTR_PRISONS) && battleprisons);
 		case UCRP_PREFIX_SEALEDSTAR:
 			return (specialstageinfo.valid == true);
 
@@ -833,7 +833,7 @@ boolean M_CheckCondition(condition_t *cn, player_t *player)
 				&& M_NotFreePlay(player)
 				&& !K_IsPlayerLosing(player));
 		case UCRP_FINISHALLCAPSULES:
-			return (battlecapsules
+			return (battleprisons
 				&& !(player->pflags & PF_NOCONTEST)
 				//&& M_NotFreePlay(player)
 				&& numtargets >= maptargets);
@@ -1004,7 +1004,7 @@ static const char *M_GetConditionString(condition_t *cn)
 				case GDGT_RACE:
 					work = " Race";
 					break;
-				case GDGT_CAPSULES:
+				case GDGT_PRISONS:
 					work = " Capsule";
 					break;
 				case GDGT_BATTLE:
@@ -1245,8 +1245,8 @@ static const char *M_GetConditionString(condition_t *cn)
 			if (!M_SecretUnlocked(SECRET_TIMEATTACK, true))
 				return NULL;
 			return "TIME ATTACK:";
-		case UCRP_PREFIX_BREAKTHECAPSULES:
-			return "BREAK THE CAPSULES:";
+		case UCRP_PREFIX_PRISONBREAK:
+			return "PRISON BREAK:";
 		case UCRP_PREFIX_SEALEDSTAR:
 			if (!gamedata->everseenspecial)
 				return NULL;

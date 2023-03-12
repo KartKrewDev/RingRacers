@@ -4836,7 +4836,7 @@ static void M_DrawChallengeTile(INT16 i, INT16 j, INT32 x, INT32 y, boolean hili
 				categoryid = '6';
 				break;
 			case SECRET_TIMEATTACK:
-			case SECRET_BREAKTHECAPSULES:
+			case SECRET_PRISONBREAK:
 			case SECRET_SPECIALATTACK:
 			case SECRET_SPBATTACK:
 				categoryid = '7';
@@ -4918,7 +4918,7 @@ static void M_DrawChallengeTile(INT16 i, INT16 j, INT32 x, INT32 y, boolean hili
 			case SECRET_TIMEATTACK:
 				iconid = 7;
 				break;
-			case SECRET_BREAKTHECAPSULES:
+			case SECRET_PRISONBREAK:
 				iconid = 8;
 				break;
 			case SECRET_SPECIALATTACK:
@@ -5221,7 +5221,7 @@ static void M_DrawChallengePreview(INT32 x, INT32 y)
 			specialmap = tamapcache;
 			break;
 		}
-		case SECRET_BREAKTHECAPSULES:
+		case SECRET_PRISONBREAK:
 		{
 			static UINT16 btcmapcache = NEXTMAP_INVALID;
 			if (btcmapcache > nummapheaders)
@@ -5769,9 +5769,9 @@ void M_DrawStatistics(void)
 
 	strcat(beststr, va("%u Race", gamedata->roundsplayed[GDGT_RACE]));
 
-	if (gamedata->roundsplayed[GDGT_CAPSULES] > 0)
+	if (gamedata->roundsplayed[GDGT_PRISONS] > 0)
 	{
-		strcat(beststr, va(", %u Capsule", gamedata->roundsplayed[GDGT_CAPSULES]));
+		strcat(beststr, va(", %u Prisons", gamedata->roundsplayed[GDGT_PRISONS]));
 	}
 
 	strcat(beststr, va(", %u Battle", gamedata->roundsplayed[GDGT_BATTLE]));

@@ -338,7 +338,7 @@ void K_InitGrandPrixRank(gpRank_t *rankData)
 				continue;
 			}
 
-			rankData->totalCapsules += RankCapsules_CountFromMap(virt);
+			rankData->totalPrisons += RankCapsules_CountFromMap(virt);
 			vres_Free(virt);
 		}
 	}
@@ -363,9 +363,9 @@ gp_rank_e K_CalculateGPGrade(gpRank_t *rankData)
 	const INT32 positionWeight = 150;
 	const INT32 pointsWeight = 100;
 	const INT32 lapsWeight = 100;
-	const INT32 capsulesWeight = 100;
+	const INT32 prisonsWeight = 100;
 	const INT32 ringsWeight = 50;
-	const INT32 total = positionWeight + pointsWeight + lapsWeight + capsulesWeight + ringsWeight;
+	const INT32 total = positionWeight + pointsWeight + lapsWeight + prisonsWeight + ringsWeight;
 	const INT32 continuesPenalty = 20;
 
 	INT32 ours = 0;
@@ -388,9 +388,9 @@ gp_rank_e K_CalculateGPGrade(gpRank_t *rankData)
 		ours += (rankData->laps * lapsWeight) / rankData->totalLaps;
 	}
 
-	if (rankData->totalCapsules > 0)
+	if (rankData->totalPrisons > 0)
 	{
-		ours += (rankData->capsules * capsulesWeight) / rankData->totalCapsules;
+		ours += (rankData->prisons * prisonsWeight) / rankData->totalPrisons;
 	}
 
 	if (rankData->totalRings > 0)

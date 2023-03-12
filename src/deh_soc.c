@@ -2286,8 +2286,8 @@ void readunlockable(MYFILE *f, INT32 num)
 						unlockables[num].type = SECRET_ENCORE;
 					else if (fastcmp(word2, "TIMEATTACK"))
 						unlockables[num].type = SECRET_TIMEATTACK;
-					else if (fastcmp(word2, "BREAKTHECAPSULES"))
-						unlockables[num].type = SECRET_BREAKTHECAPSULES;
+					else if (fastcmp(word2, "PRISONBREAK"))
+						unlockables[num].type = SECRET_PRISONBREAK;
 					else if (fastcmp(word2, "SPECIALATTACK"))
 						unlockables[num].type = SECRET_SPECIALATTACK;
 					else if (fastcmp(word2, "SPBATTACK"))
@@ -2394,8 +2394,8 @@ static void readcondition(UINT8 set, UINT32 id, char *word2)
 				x1 = GDGT_RACE;
 			else if (fastcmp(params[2], "BATTLE"))
 				x1 = GDGT_BATTLE;
-			else if (fastcmp(params[2], "CAPSULE"))
-				x1 = GDGT_CAPSULES;
+			else if (fastcmp(params[2], "PRISONS"))
+				x1 = GDGT_PRISONS;
 			else if (fastcmp(params[2], "SPECIAL"))
 				x1 = GDGT_SPECIAL;
 			else if (fastcmp(params[2], "CUSTOM"))
@@ -2557,7 +2557,7 @@ static void readcondition(UINT8 set, UINT32 id, char *word2)
 	else if ((offset=0) || fastcmp(params[0], "PREFIX_GRANDPRIX")
 	||        (++offset && fastcmp(params[0], "PREFIX_BONUSROUND"))
 	||        (++offset && fastcmp(params[0], "PREFIX_TIMEATTACK"))
-	||        (++offset && fastcmp(params[0], "PREFIX_BREAKTHECAPSULES"))
+	||        (++offset && fastcmp(params[0], "PREFIX_PRISONBREAK"))
 	||        (++offset && fastcmp(params[0], "PREFIX_SEALEDSTAR")))
 	{
 		//PARAMCHECK(1);

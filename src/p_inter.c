@@ -808,7 +808,7 @@ void P_CheckPointLimit(void)
 	if (!(gametyperules & GTR_POINTLIMIT))
 		return;
 
-	if (battlecapsules)
+	if (battleprisons)
 		return;
 
 	// pointlimit is nonzero, check if it's been reached by this player

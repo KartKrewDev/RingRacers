@@ -9446,7 +9446,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 		{
 			if (gametyperules & GTR_PAPERITEMS)
 			{
-				if (battlecapsules == true)
+				if (battleprisons == true)
 				{
 					;
 				}

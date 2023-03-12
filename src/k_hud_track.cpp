@@ -314,7 +314,7 @@ bool is_player_tracking_target(player_t *player = stplyr)
 		return false;
 	}
 
-	if (battlecapsules || bossinfo.valid)
+	if (battleprisons || bossinfo.valid)
 	{
 		return false;
 	}

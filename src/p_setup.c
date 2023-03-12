@@ -7040,7 +7040,7 @@ static void P_InitLevelSettings(void)
 	nummaprings = 0;
 	nummapboxes = numgotboxes = 0;
 	maptargets = numtargets = 0;
-	battlecapsules = false;
+	battleprisons = false;
 
 	// emerald hunt
 	hunt1 = hunt2 = hunt3 = NULL;

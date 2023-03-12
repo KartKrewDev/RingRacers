@@ -552,7 +552,7 @@ enum GameTypeRules
 	GTR_ITEMARROWS			= 1<<9,		// Show item box arrows above players
 
 	// Bonus gametype rules
-	GTR_CAPSULES			= 1<<10,	// Can enter Break The Capsules mode
+	GTR_PRISONS				= 1<<10,	// Can enter Prison Break mode
 	GTR_CATCHER				= 1<<11, // UFO Catcher (only works with GTR_CIRCUIT)
 	GTR_ROLLINGSTART		= 1<<12, // Rolling start (only works with GTR_CIRCUIT)
 	GTR_SPECIALSTART		= 1<<13, // White fade instant start
