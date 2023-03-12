@@ -698,7 +698,12 @@ boolean K_BubbleShieldCollide(mobj_t *t1, mobj_t *t2)
 
 		// Player Damage
 		P_DamageMobj(t2, t1->target, t1, 1, DMG_NORMAL|DMG_WOMBO);
-		S_StartSound(t1, sfx_s3k44);
+
+		if (t2->player->timeshit > t2->player->timeshitprev)
+		{
+			// Don't play from t1 else it gets cut out... for some reason.
+			S_StartSound(t2, sfx_s3k44);
+		}
 	}
 	else
 	{
