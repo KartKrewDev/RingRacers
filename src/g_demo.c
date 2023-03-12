@@ -54,6 +54,7 @@
 #include "k_bot.h"
 #include "k_color.h"
 #include "k_follower.h"
+#include "k_vote.h"
 
 #ifdef TESTERS
 static CV_PossibleValue_t recordmultiplayerdemos_cons_t[] = {{2, "Auto Save"}, {0, NULL}};

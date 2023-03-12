@@ -64,6 +64,7 @@
 #include "k_specialstage.h"
 #include "k_race.h"
 #include "g_party.h"
+#include "k_vote.h"
 
 #ifdef SRB2_CONFIG_ENABLE_WEBM_MOVIES
 #include "m_avrecorder.h"

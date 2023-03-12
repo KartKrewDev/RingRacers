@@ -60,6 +60,7 @@
 #include "s_sound.h" // sfx_syfail
 #include "m_cond.h" // netUnlocked
 #include "g_party.h"
+#include "k_vote.h"
 
 // cl loading screen
 #include "v_video.h"

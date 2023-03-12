@@ -43,6 +43,7 @@
 #include "k_terrain.h"
 #include "acs/interface.h"
 #include "g_party.h"
+#include "k_vote.h"
 
 savedata_t savedata;
 
