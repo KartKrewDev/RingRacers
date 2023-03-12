@@ -1838,7 +1838,7 @@ boolean M_CupLocked(cupheader_t *cup)
 	return false;
 }
 
-boolean M_MapLocked(INT32 mapnum)
+boolean M_MapLocked(UINT16 mapnum)
 {
 	UINT8 i;
 
@@ -1851,7 +1851,7 @@ boolean M_MapLocked(INT32 mapnum)
 	if (marathonmode)
 		return false;
 
-	if (!mapnum || mapnum > nummapheaders)
+	if (mapnum <= 1 || mapnum > nummapheaders)
 		return false;
 	
 	if (!mapheaderinfo[mapnum-1])

@@ -58,7 +58,7 @@ boolean M_CanShowLevelInList(INT16 mapnum, levelsearch_t *levelsearch)
 		return false;
 
 	// Check for TOL
-	if (!(mapheaderinfo[mapnum]->typeoflevel & levelsearch->typeoflevel))
+	if (mapheaderinfo[mapnum]->typeoflevel && !(mapheaderinfo[mapnum]->typeoflevel & levelsearch->typeoflevel))
 		return false;
 
 	// Should the map be hidden?
