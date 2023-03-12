@@ -1961,6 +1961,13 @@ static void P_WriteTextmap(void)
 		subsector_t *ss;
 		INT32 s;
 
+		if (wmapthings[i].type == mobjinfo[MT_WAYPOINT].doomednum
+			|| wmapthings[i].type == mobjinfo[MT_WAYPOINT_ANCHOR].doomednum
+			|| wmapthings[i].type == mobjinfo[MT_WAYPOINT_RISER].doomednum)
+		{
+			CONS_Alert(CONS_WARNING, M_GetText("Thing %s is a waypoint or waypoint parameter, which cannot be converted fully.\n"), sizeu1(i));
+		}
+
 		if (wmapthings[i].type != 751 && wmapthings[i].type != 752 && wmapthings[i].type != 758)
 			continue;
 
@@ -6880,10 +6887,8 @@ static void P_ConvertBinaryMap(void)
 	P_ConvertBinaryThingTypes();
 	P_ConvertBinaryLinedefFlags();
 
-#if 0 // Don't do this yet...
 	if (M_CheckParm("-writetextmap"))
 		P_WriteTextmap();
-#endif
 }
 
 /** Compute MD5 message digest for bytes read from memory source
@@ -7886,10 +7891,6 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 	{
 		// Backwards compatibility for non-UDMF maps
 		K_AdjustWaypointsParameters();
-
-		// Moved over here...
-		if (M_CheckParm("-writetextmap"))
-			P_WriteTextmap();
 	}
 
 	if (!fromnetsave) //  ugly hack for P_NetUnArchiveMisc (and P_LoadNetGame)
