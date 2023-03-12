@@ -2241,7 +2241,7 @@ static void P_UpdatePlayerAngle(player_t *player)
 		angle_t leniency = (2*ANG1/3) * min(player->cmd.latency, 6);
 		// Don't force another turning tic, just give them the desired angle!
 
-		if (targetDelta == angleChange || player->pflags & PF_DRIFTEND || (maxTurnRight == 0 && maxTurnLeft == 0))
+		if (targetDelta == angleChange || player->pflags & PF_DRIFTEND || K_Sliptiding(player) || (maxTurnRight == 0 && maxTurnLeft == 0))
 		{
 			// We are where we need to be.
 			// ...Or we aren't, but shouldn't be able to steer.

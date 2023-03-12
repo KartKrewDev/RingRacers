@@ -4064,9 +4064,13 @@ void K_UpdateStumbleIndicator(player_t *player)
 	}
 }
 
+#define MIN_WAVEDASH_CHARGE (5*TICRATE/8)
+
 static boolean K_IsLosingSliptideZip(player_t *player)
 {
 	if (player->mo == NULL || P_MobjWasRemoved(player->mo) == true)
+		return true;
+	if (!K_Sliptiding(player) && player->sliptideZip < MIN_WAVEDASH_CHARGE)
 		return true;
 	if (!K_Sliptiding(player) && player->drift == 0 
 		&& P_IsObjectOnGround(player->mo) && player->sneakertimer == 0
@@ -9393,6 +9397,8 @@ static void K_KartDrift(player_t *player, boolean onground)
 		K_SpawnAIZDust(player);
 
 		player->sliptideZip++;
+		if (player->sliptideZip == MIN_WAVEDASH_CHARGE)
+			S_StartSound(player->mo, sfx_cock);
 
 		if (abs(player->aizdrifttilt) < ANGLE_22h)
 		{
@@ -9420,35 +9426,38 @@ static void K_KartDrift(player_t *player, boolean onground)
 			player->sliptideZipDelay++;
 			if (player->sliptideZipDelay > TICRATE/2)
 			{
-				fixed_t maxZipPower = 2*FRACUNIT;
-				fixed_t minZipPower = 1*FRACUNIT;
-				fixed_t powerSpread = maxZipPower - minZipPower;
+				if (player->sliptideZip >= MIN_WAVEDASH_CHARGE)
+				{
+					fixed_t maxZipPower = 2*FRACUNIT;
+					fixed_t minZipPower = 1*FRACUNIT;
+					fixed_t powerSpread = maxZipPower - minZipPower;
 
-				int minPenalty = 2*1 + (9-9); // Kinda doing a similar thing to driftspark stage timers here.
-				int maxPenalty = 2*9 + (9-1); // 1/9 gets max, 9/1 gets min, everyone else gets something in between.
-				int penaltySpread = maxPenalty - minPenalty;
-				int yourPenalty = 2*player->kartspeed + (9 - player->kartweight); // And like driftsparks, speed hurts double.
+					int minPenalty = 2*1 + (9-9); // Kinda doing a similar thing to driftspark stage timers here.
+					int maxPenalty = 2*9 + (9-1); // 1/9 gets max, 9/1 gets min, everyone else gets something in between.
+					int penaltySpread = maxPenalty - minPenalty;
+					int yourPenalty = 2*player->kartspeed + (9 - player->kartweight); // And like driftsparks, speed hurts double.
 
-				yourPenalty -= minPenalty; // Normalize; minimum penalty should take away 0 power.
+					yourPenalty -= minPenalty; // Normalize; minimum penalty should take away 0 power.
 
-				fixed_t yourPowerReduction = FixedDiv(yourPenalty * FRACUNIT, penaltySpread * FRACUNIT);
-				fixed_t yourPower = maxZipPower - FixedMul(yourPowerReduction, powerSpread);
-				int yourBoost = FixedInt(FixedMul(yourPower, player->sliptideZip * FRACUNIT));
+					fixed_t yourPowerReduction = FixedDiv(yourPenalty * FRACUNIT, penaltySpread * FRACUNIT);
+					fixed_t yourPower = maxZipPower - FixedMul(yourPowerReduction, powerSpread);
+					int yourBoost = FixedInt(FixedMul(yourPower, player->sliptideZip * FRACUNIT));
 
-				/*
-				CONS_Printf("SZ %d MZ %d mZ %d pwS %d mP %d MP %d peS %d yPe %d yPR %d yPw %d yB %d\n",
-					player->sliptideZip, maxZipPower, minZipPower, powerSpread, minPenalty, maxPenalty, penaltySpread, yourPenalty, yourPowerReduction, yourPower, yourBoost);
-				*/
+					/*
+					CONS_Printf("SZ %d MZ %d mZ %d pwS %d mP %d MP %d peS %d yPe %d yPR %d yPw %d yB %d\n",
+						player->sliptideZip, maxZipPower, minZipPower, powerSpread, minPenalty, maxPenalty, penaltySpread, yourPenalty, yourPowerReduction, yourPower, yourBoost);
+					*/
 
-				player->sliptideZipBoost += yourBoost;
+					player->sliptideZipBoost += yourBoost;
 
-				K_SpawnDriftBoostExplosion(player, 0);
-				player->sliptideZip = 0;
-				player->sliptideZipDelay = 0;
+					K_SpawnDriftBoostExplosion(player, 0);
+					S_StartSoundAtVolume(player->mo, sfx_waved3, 2*255/3); // Boost
+				}
 				S_StopSoundByID(player->mo, sfx_waved1);
 				S_StopSoundByID(player->mo, sfx_waved2);
 				S_StopSoundByID(player->mo, sfx_waved4);
-				S_StartSoundAtVolume(player->mo, sfx_waved3, 2*255/3); // Boost
+				player->sliptideZip = 0;
+				player->sliptideZipDelay = 0;
 			}
 		}
 		else
