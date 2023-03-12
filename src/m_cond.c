@@ -796,6 +796,13 @@ boolean M_CheckCondition(condition_t *cn, player_t *player)
 			return (gamemap == cn->requirement+1);
 		case UCRP_ISCHARACTER:
 			return (player->skin == cn->requirement);
+		case UCRP_ISENGINECLASS:
+			return (player->skin < numskins
+				&& R_GetEngineClass(
+					skins[player->skin].kartspeed,
+					skins[player->skin].kartweight,
+					skins[player->skin].flags
+				) == (unsigned)cn->requirement);
 		case UCRP_ISDIFFICULTY:
 			if (grandprixinfo.gp == false)
 				return (gamespeed >= cn->requirement);
@@ -1265,6 +1272,8 @@ static const char *M_GetConditionString(condition_t *cn)
 			if (cn->requirement < 0 || !skins[cn->requirement].realname[0])
 				return va("INVALID CHAR CONDITION \"%d:%d\"", cn->type, cn->requirement);
 			return va("as %s", skins[cn->requirement].realname);
+		case UCRP_ISENGINECLASS:
+			return va("with engine class %c", 'A' + cn->requirement);
 		case UCRP_ISDIFFICULTY:
 		{
 			const char *speedtext = "", *orbetter = "";

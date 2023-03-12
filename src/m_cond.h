@@ -73,6 +73,7 @@ typedef enum
 	UCRP_ISMAP, // gamemap == [map]
 
 	UCRP_ISCHARACTER, // character == [skin]
+	UCRP_ISENGINECLASS, // engine class [class]
 	UCRP_ISDIFFICULTY, // difficulty >= [difficulty]
 
 	UCRP_PODIUMCUP, // cup == [cup] [optional: >= grade OR place]

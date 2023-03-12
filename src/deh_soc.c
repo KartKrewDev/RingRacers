@@ -2597,6 +2597,21 @@ static void readcondition(UINT8 set, UINT32 id, char *word2)
 		}
 #endif
 	}
+	else if (fastcmp(params[0], "ISENGINECLASS"))
+	{
+		PARAMCHECK(1);
+		ty = UCRP_ISENGINECLASS;
+		if (!params[1][1]
+			&& params[1][0] >= 'A' && params[1][0] <= 'J')
+		{
+			re = params[1][0] - 'A';
+		}
+		else
+		{
+			deh_warning("engine class requirement \"%s\" invalid for condition ID %d", params[1], id+1);
+			return;
+		}
+	}
 	else if (fastcmp(params[0], "ISDIFFICULTY"))
 	{
 		//PARAMCHECK(1);
