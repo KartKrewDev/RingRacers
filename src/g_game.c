@@ -2138,7 +2138,19 @@ void G_Ticker(boolean run)
 			{
 				if (playeringame[i])
 				{
-					K_PlayerLoseLife(&players[i]);
+					if (players[i].bot == true && grandprixinfo.gp == true && grandprixinfo.masterbots == false)
+					{
+						players[i].botvars.difficulty--;
+
+						if (players[i].botvars.difficulty < 1)
+						{
+							players[i].botvars.difficulty = 1;
+						}
+					}
+					else
+					{
+						K_PlayerLoseLife(&players[i]);
+					}
 				}
 			}
 
