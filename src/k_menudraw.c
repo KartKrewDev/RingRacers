@@ -5729,18 +5729,19 @@ void M_DrawStatistics(void)
 	{
 		if (besttime >= 24)
 		{
-			strcat(beststr, va("%u days, ", besttime/24));
+			strcat(beststr, va("%u day%s, ", besttime/24, (besttime < 48 ? "" : "s")));
 			besttime %= 24;
 		}
 
-		strcat(beststr, va("%u hours, ", besttime));
+		strcat(beststr, va("%u hour%s, ", besttime, (besttime == 1 ? "" : "s")));
 	}
 	besttime = G_TicsToMinutes(gamedata->totalplaytime, false);
 	if (besttime)
 	{
-		strcat(beststr, va("%u minutes, ", besttime));
+		strcat(beststr, va("%u minute%s, ", besttime, (besttime == 1 ? "" : "s")));
 	}
-	strcat(beststr, va("%i seconds", G_TicsToSeconds(gamedata->totalplaytime)));
+	besttime = G_TicsToSeconds(gamedata->totalplaytime);
+	strcat(beststr, va("%i second%s", besttime, (besttime == 1 ? "" : "s")));
 	V_DrawRightAlignedThinString(BASEVIDWIDTH-20, 22, V_6WIDTHSPACE, beststr);
 	beststr[0] = 0;
 
