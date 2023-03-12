@@ -1488,23 +1488,31 @@ static void M_DrawCharSelectPreview(UINT8 num)
 
 	if (p->showextra == true)
 	{
+		INT32 randomskin = 0;
 		switch (p->mdepth)
 		{
-			case CSSTEP_CHARS: // Character Select grid
-				V_DrawThinString(x-3, y+2, V_6WIDTHSPACE, va("Speed %u - Weight %u", p->gridx+1, p->gridy+1));
-				break;
 			case CSSTEP_ALTS: // Select clone
 			case CSSTEP_READY:
 				if (p->clonenum < setup_chargrid[p->gridx][p->gridy].numskins
 					&& setup_chargrid[p->gridx][p->gridy].skinlist[p->clonenum] < numskins)
 				{
-					V_DrawThinString(x-3, y+2, V_6WIDTHSPACE,
+					V_DrawThinString(x-3, y+12, V_6WIDTHSPACE,
 						skins[setup_chargrid[p->gridx][p->gridy].skinlist[p->clonenum]].name);
+					randomskin = (skins[setup_chargrid[p->gridx][p->gridy].skinlist[p->clonenum]].flags & SF_IRONMAN);
 				}
 				else
 				{
-					V_DrawThinString(x-3, y+2, V_6WIDTHSPACE, va("BAD CLONENUM %u", p->clonenum));
+					V_DrawThinString(x-3, y+12, V_6WIDTHSPACE, va("BAD CLONENUM %u", p->clonenum));
 				}
+				/* FALLTHRU */
+			case CSSTEP_CHARS: // Character Select grid
+				V_DrawThinString(x-3, y+2, V_6WIDTHSPACE, va("Class %c (s %c - w %c)",
+					('A' + R_GetEngineClass(p->gridx+1, p->gridy+1, randomskin)),
+					(randomskin
+						? '?' : ('1'+p->gridx)),
+					(randomskin
+						? '?' : ('1'+p->gridy))
+					));
 				break;
 			case CSSTEP_COLORS: // Select color
 				if (p->color < numskincolors)

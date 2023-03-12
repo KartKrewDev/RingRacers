@@ -7152,7 +7152,7 @@ static void K_UpdateEngineSounds(player_t *player)
 
 	const UINT16 buttons = K_GetKartButtons(player);
 
-	INT32 class, s, w; // engine class number
+	INT32 class; // engine class number
 
 	UINT8 volume = 255;
 	fixed_t volumedampen = FRACUNIT;
@@ -7167,17 +7167,7 @@ static void K_UpdateEngineSounds(player_t *player)
 		return;
 	}
 
-	s = (player->kartspeed - 1) / 3;
-	w = (player->kartweight - 1) / 3;
-
-#define LOCKSTAT(stat) \
-	if (stat < 0) { stat = 0; } \
-	if (stat > 2) { stat = 2; }
-	LOCKSTAT(s);
-	LOCKSTAT(w);
-#undef LOCKSTAT
-
-	class = s + (3*w);
+	class = R_GetEngineClass(player->kartspeed, player->kartweight, 0); // there are no unique sounds for ENGINECLASS_J
 
 #if 0
 	if ((leveltime % 8) != ((player-players) % 8)) // Per-player offset, to make engines sound distinct!

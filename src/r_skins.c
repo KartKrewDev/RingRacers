@@ -299,6 +299,25 @@ INT32 R_SkinAvailable(const char *name)
 	return -1;
 }
 
+// Returns engine class dependent on skin properties
+engineclass_t R_GetEngineClass(SINT8 speed, SINT8 weight, skinflags_t flags)
+{
+	if (flags & SF_IRONMAN)
+		return ENGINECLASS_J;
+
+	speed = (speed - 1) / 3;
+	weight = (weight - 1) / 3;
+
+#define LOCKSTAT(stat) \
+	if (stat < 0) { stat = 0; } \
+	if (stat > 2) { stat = 2; }
+	LOCKSTAT(speed);
+	LOCKSTAT(weight);
+#undef LOCKSTAT
+
+	return (speed + (3*weight));
+}
+
 // Auxillary function that actually sets the skin
 static void SetSkin(player_t *player, INT32 skinnum)
 {

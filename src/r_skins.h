@@ -75,6 +75,25 @@ enum facepatches {
 	NUMFACES
 };
 
+typedef enum {
+	ENGINECLASS_A,
+	ENGINECLASS_B,
+	ENGINECLASS_C,
+
+	ENGINECLASS_D,
+	ENGINECLASS_E,
+	ENGINECLASS_F,
+
+	ENGINECLASS_G,
+	ENGINECLASS_H,
+	ENGINECLASS_I,
+
+	ENGINECLASS_J
+	
+} engineclass_t;
+
+engineclass_t R_GetEngineClass(SINT8 speed, SINT8 weight, skinflags_t flags);
+
 /// Externs
 extern INT32 numskins;
 extern skin_t skins[MAXSKINS];
