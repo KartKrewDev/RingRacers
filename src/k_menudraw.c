@@ -5004,6 +5004,8 @@ drawborder:
 	}
 }
 
+#define challengetransparentstrength 8
+
 static void M_DrawChallengePreview(INT32 x, INT32 y)
 {
 	unlockable_t *ref = NULL;
@@ -5050,12 +5052,57 @@ static void M_DrawChallengePreview(INT32 x, INT32 y)
 	{
 		case SECRET_SKIN:
 		{
-			INT32 skin = M_UnlockableSkinNum(ref);
+			INT32 skin = M_UnlockableSkinNum(ref), i;
 			// Draw our character!
 			if (skin != -1)
 			{
 				colormap = R_GetTranslationColormap(skin, skins[skin].prefcolor, GTC_MENUCACHE);
 				M_DrawCharacterSprite(x, y, skin, false, false, 0, colormap);
+
+				for (i = 0; i < skin; i++)
+				{
+					if (!R_SkinUsable(-1, i, false))
+						continue;
+					if (skins[i].kartspeed != skins[skin].kartspeed)
+						continue;
+					if (skins[i].kartweight != skins[skin].kartweight)
+						continue;
+
+					colormap = R_GetTranslationColormap(i, skins[i].prefcolor, GTC_MENUCACHE);
+					break;
+				}
+
+				V_DrawFixedPatch(4*FRACUNIT, (BASEVIDHEIGHT-(4+16))*FRACUNIT,
+					FRACUNIT,
+					0, faceprefix[i][FACE_RANK],
+					colormap);
+
+				if (i != skin)
+				{
+					V_DrawScaledPatch(4, (11 + BASEVIDHEIGHT-(4+16)), 0, W_CachePatchName("ALTSDOT", PU_CACHE));
+				}
+
+				V_DrawFadeFill(4+16, (BASEVIDHEIGHT-(4+16)), 16, 16, 0, 31, challengetransparentstrength);
+
+				V_DrawFill(4+16+5,   (BASEVIDHEIGHT-(4+16))+1,    1, 14,  0);
+				V_DrawFill(4+16+5+5, (BASEVIDHEIGHT-(4+16))+1,    1, 14,  0);
+				V_DrawFill(4+16+1,   (BASEVIDHEIGHT-(4+16))+5,   14,  1,  0);
+				V_DrawFill(4+16+1,   (BASEVIDHEIGHT-(4+16))+5+5, 14,  1,  0);
+
+				// The following is a partial duplication of R_GetEngineClass
+				{
+					INT32 s = (skins[skin].kartspeed - 1)/3;
+					INT32 w = (skins[skin].kartweight - 1)/3;
+
+					#define LOCKSTAT(stat) \
+						if (stat < 0) { stat = 0; } \
+						if (stat > 2) { stat = 2; }
+						LOCKSTAT(s);
+						LOCKSTAT(w);
+					#undef LOCKSTAT
+
+					V_DrawFill(4+16+1 + (s*5), (BASEVIDHEIGHT-(4+16))+1 + (w*5), 4, 4, 0);
+				}
 			}
 			break;
 		}
@@ -5076,20 +5123,70 @@ static void M_DrawChallengePreview(INT32 x, INT32 y)
 				UINT16 col = K_GetEffectiveFollowerColor(followers[fskin].defaultcolor, cv_playercolor[0].value);
 				colormap = R_GetTranslationColormap(TC_DEFAULT, col, GTC_MENUCACHE);
 				M_DrawFollowerSprite(x - 16, y, fskin, false, 0, colormap, NULL);
+
+				if (followers[fskin].category < numfollowercategories)
+				{
+					V_DrawFixedPatch(4*FRACUNIT, (BASEVIDHEIGHT-(4+16))*FRACUNIT,
+						FRACUNIT,
+						0, W_CachePatchName(followercategories[followers[fskin].category].icon, PU_CACHE),
+						NULL);
+				}
 			}
 			break;
 		}
 		case SECRET_CUP:
 		{
 			levelsearch_t templevelsearch;
+			UINT32 i, id, maxid, offset;
+			cupheader_t *temp = M_UnlockableCup(ref);
 
-			templevelsearch.cup = M_UnlockableCup(ref);
+			if (!temp)
+				break;
+
+			templevelsearch.cup = temp;
 			templevelsearch.typeoflevel = G_TOLFlag(GT_RACE)|G_TOLFlag(GT_BATTLE);
 			templevelsearch.cupmode = true;
 			templevelsearch.timeattack = false;
 			templevelsearch.checklocked = false;
 
 			M_DrawCupPreview(146, &templevelsearch);
+
+			maxid = id = (temp->id % 14);
+			offset = (temp->id - id) * 2;
+			while (temp && maxid < 14)
+			{
+				maxid++;
+				temp = temp->next;
+			}
+
+			V_DrawFadeFill(4, (BASEVIDHEIGHT-(4+16)), 28 + offset, 16, 0, 31, challengetransparentstrength);
+
+			for (i = 0; i < offset; i += 4)
+			{
+				V_DrawFill(4+1 + i, (BASEVIDHEIGHT-(4+16))+3,   2, 2, 15);
+				V_DrawFill(4+1 + i, (BASEVIDHEIGHT-(4+16))+8+3, 2, 2, 15);
+			}
+
+			for (i = 0; i < 7; i++)
+			{
+				if (templevelsearch.cup && id == i)
+				{
+					V_DrawFill(offset + 4   + (i*4), (BASEVIDHEIGHT-(4+16)),     4, 8, 0);
+				}
+				else if (i < maxid)
+				{
+					V_DrawFill(offset + 4+1 + (i*4), (BASEVIDHEIGHT-(4+16))+3, 2, 2, 0);
+				}
+
+				if (templevelsearch.cup && (templevelsearch.cup->id % 14) == i+7)
+				{
+					V_DrawFill(offset + 4 + (i*4), (BASEVIDHEIGHT-(4+16))+8, 4, 8, 0);
+				}
+				else if (i+7 < maxid)
+				{
+					V_DrawFill(offset + 4+1 + (i*4), (BASEVIDHEIGHT-(4+16))+8+3, 2, 2, 0);
+				}
+			}
 
 			break;
 		}
@@ -5247,7 +5344,6 @@ static void M_DrawChallengePreview(INT32 x, INT32 y)
 	}
 }
 
-#define challengetransparentstrength 8
 #define challengesgridstep 22
 #define challengekeybarwidth 50
 
