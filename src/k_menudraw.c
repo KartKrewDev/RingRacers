@@ -60,13 +60,6 @@
 // And just some randomness for the exits.
 #include "m_random.h"
 
-#if defined(HAVE_SDL)
-#include "SDL.h"
-#if SDL_VERSION_ATLEAST(2,0,0)
-#include "sdl/sdlmain.h" // JOYSTICK_HOTPLUG
-#endif
-#endif
-
 #ifdef PC_DOS
 #include <stdio.h> // for snprintf
 int	snprintf(char *str, size_t n, const char *fmt, ...);
@@ -3385,11 +3378,18 @@ void M_DrawProfileControls(void)
 					// Get userbound controls...
 					for (k = 0; k < MAXINPUTMAPPING; k++)
 					{
+						int device;
 						keys[k] = optionsmenu.tempcontrols[gc][k];
 						if (keys[k] == KEY_NULL)
 							continue;
 						set++;
-						if (!G_KeyIsAvailable(keys[k], cv_usejoystick[0].value))
+
+						device = G_GetDeviceForPlayer(0);
+						if (device == -1)
+						{
+							device = 0;
+						}
+						if (!G_KeyIsAvailable(keys[k], device))
 							continue;
 						available++;
 					};

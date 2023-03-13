@@ -449,7 +449,7 @@ boolean AM_Responder(event_t *ev)
 			{
 				//faB: prevent alt-tab in win32 version to activate automap just before
 				//     minimizing the app; doesn't do any harm to the DOS version
-				if (!gamekeydown[0][KEY_LALT] && !gamekeydown[0][KEY_RALT])
+				if (!G_GetDeviceGameKeyDownArray(0)[KEY_LALT] && !G_GetDeviceGameKeyDownArray(0)[KEY_RALT])
 				{
 					bigstate = 0; //added : 24-01-98 : toggle off large view
 					AM_Start();
@@ -1069,7 +1069,7 @@ static void AM_drawWalls(UINT8 pass)
 			else if (backc1 != frontc1 || backc2 != frontc2)
 			{
 				if (!(pass & PASS_INTANGIBLE))
-					;	
+					;
 				else if (abs(backc1 - frontc1) < maxstep
 					|| abs(backc2 - frontc2) < maxstep)
 				{
@@ -1115,7 +1115,7 @@ static void AM_drawWalls(UINT8 pass)
 				else
 				{
 					ffloor_t *rover = NULL;
-					
+
 					if (lines[i].frontsector->ffloors || lines[i].backsector->ffloors)
 					{
 						if (lines[i].backsector->ffloors == NULL)

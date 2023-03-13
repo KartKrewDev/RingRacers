@@ -237,9 +237,6 @@ static CV_PossibleValue_t usemouse_cons_t[] = {{0, "Off"}, {1, "On"}, {2, "Force
 #ifdef LJOYSTICK
 static CV_PossibleValue_t joyport_cons_t[] = {{1, "/dev/js0"}, {2, "/dev/js1"}, {3, "/dev/js2"},
 	{4, "/dev/js3"}, {0, NULL}};
-#else
-// accept whatever value - it is in fact the joystick device number
-static CV_PossibleValue_t usejoystick_cons_t[] = {{-1, "MIN"}, {MAXGAMEPADS, "MAX"}, {0, NULL}};
 #endif
 
 static CV_PossibleValue_t teamscramble_cons_t[] = {{0, "Off"}, {1, "Random"}, {2, "Points"}, {0, NULL}};
@@ -331,13 +328,6 @@ consvar_t cv_splitdevice = CVAR_INIT ("splitdevice", "Off", CV_SAVE, CV_OnOff, N
 consvar_t cv_skipmapcheck = CVAR_INIT ("skipmapcheck", "Off", CV_SAVE, CV_OnOff, NULL);
 
 consvar_t cv_usemouse = CVAR_INIT ("use_mouse", "Off", CV_SAVE|CV_CALL,usemouse_cons_t, I_StartupMouse);
-
-consvar_t cv_usejoystick[MAXSPLITSCREENPLAYERS] = {
-	CVAR_INIT ("use_device", "1", CV_SAVE|CV_CALL, usejoystick_cons_t, I_InitJoystick1),
-	CVAR_INIT ("use_device2", "2", CV_SAVE|CV_CALL, usejoystick_cons_t, I_InitJoystick2),
-	CVAR_INIT ("use_device3", "3", CV_SAVE|CV_CALL, usejoystick_cons_t, I_InitJoystick3),
-	CVAR_INIT ("use_device4", "4", CV_SAVE|CV_CALL, usejoystick_cons_t, I_InitJoystick4)
-};
 
 #if (defined (LJOYSTICK) || defined (HAVE_SDL))
 consvar_t cv_joyscale[MAXSPLITSCREENPLAYERS] = {
@@ -1040,7 +1030,6 @@ void D_RegisterClientCommands(void)
 
 	for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
 	{
-		CV_RegisterVar(&cv_usejoystick[i]);
 		CV_RegisterVar(&cv_joyscale[i]);
 #ifdef LJOYSTICK
 		CV_RegisterVar(&cv_joyport[i]);
@@ -6231,6 +6220,7 @@ static void FollowerAny_OnChange(UINT8 pnum)
 		return; // don't send anything there.
 
 	SendNameAndColor(pnum);
+	G_SetPlayerGamepadIndicatorToPlayerColor(pnum);
 }
 
 // sends the follower change for players
@@ -6382,6 +6372,8 @@ static void Color_OnChange(void)
 		}
 	}
 	lastgoodcolor[0] = cv_playercolor[0].value;
+
+	G_SetPlayerGamepadIndicatorToPlayerColor(0);
 }
 
 /** Sends a color change for the secondary splitscreen player, unless that
@@ -6410,6 +6402,8 @@ static void Color2_OnChange(void)
 		}
 	}
 	lastgoodcolor[1] = cv_playercolor[1].value;
+
+	G_SetPlayerGamepadIndicatorToPlayerColor(1);
 }
 
 static void Color3_OnChange(void)
@@ -6433,6 +6427,8 @@ static void Color3_OnChange(void)
 		}
 	}
 	lastgoodcolor[2] = cv_playercolor[2].value;
+
+	G_SetPlayerGamepadIndicatorToPlayerColor(2);
 }
 
 static void Color4_OnChange(void)
@@ -6456,6 +6452,8 @@ static void Color4_OnChange(void)
 		}
 	}
 	lastgoodcolor[3] = cv_playercolor[3].value;
+
+	G_SetPlayerGamepadIndicatorToPlayerColor(3);
 }
 
 /** Displays the result of the chat being muted or unmuted.
