@@ -2092,7 +2092,11 @@ static void M_DrawCupTitle(INT16 y, levelsearch_t *levelsearch)
 
 	V_DrawScaledPatch(0, y, 0, W_CachePatchName("MENUHINT", PU_CACHE));
 
-	if (levelsearch->cup)
+	if (levelsearch->cup == &dummy_lostandfound)
+	{
+		V_DrawCenteredLSTitleLowString(BASEVIDWIDTH/2, y+6, 0, "Lost and Found");
+	}
+	else if (levelsearch->cup)
 	{
 		boolean unlocked = (M_GetFirstLevelInList(&temp, levelsearch) != NEXTMAP_INVALID);
 		UINT8 *colormap = R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_GREY, GTC_MENUCACHE);
@@ -2176,6 +2180,12 @@ void M_DrawCupSelect(void)
 					colormap = NULL;
 			}
 
+			if (templevelsearch.cup == &dummy_lostandfound)
+			{
+				// No cup? Lost and found!
+				monitor = '0';
+			}
+			else
 			{
 				if (templevelsearch.cup->monitor < 10)
 				{
@@ -2200,7 +2210,9 @@ void M_DrawCupSelect(void)
 
 			V_DrawFixedPatch((x)*FRACUNIT, (y)<<FRACBITS, FRACUNIT, 0, patch, colormap);
 
-			if (M_GetFirstLevelInList(&temp, &templevelsearch) == NEXTMAP_INVALID)
+			if (templevelsearch.cup == &dummy_lostandfound)
+				; // Only ever placed on the list if valid
+			else if (M_GetFirstLevelInList(&temp, &templevelsearch) == NEXTMAP_INVALID)
 			{
 				patch_t *st = W_CachePatchName(va("ICONST0%d", (cupgrid.previewanim % 4) + 1), PU_CACHE);
 				V_DrawScaledPatch(x + 8, y + icony, 0, st);

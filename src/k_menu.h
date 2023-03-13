@@ -743,6 +743,8 @@ extern struct levellist_s {
 	boolean netgame;	// Start the game in an actual server
 } levellist;
 
+extern cupheader_t dummy_lostandfound;
+
 boolean M_CanShowLevelInList(INT16 mapnum, levelsearch_t *levelsearch);
 UINT16 M_CountLevelsToShowInList(levelsearch_t *levelsearch);
 UINT16 M_GetFirstLevelInList(UINT8 *i, levelsearch_t *levelsearch);
