@@ -84,7 +84,7 @@ void M_CupSelectHandler(INT32 choice)
 
 	if (M_MenuConfirmPressed(pid) /*|| M_MenuButtonPressed(pid, MBT_START)*/)
 	{
-		INT16 count;
+		UINT16 count;
 		cupheader_t *newcup = cupgrid.builtgrid[CUPMENU_CURSORID];
 		cupheader_t *oldcup = levellist.levelsearch.cup;
 
@@ -94,7 +94,7 @@ void M_CupSelectHandler(INT32 choice)
 		count = M_CountLevelsToShowInList(&levellist.levelsearch);
 
 		if ((!newcup)
-			|| (count <= 0)
+			|| (count == 0)
 			|| (cupgrid.grandprix == true && newcup->cachedlevels[0] == NEXTMAP_INVALID))
 		{
 			S_StartSound(NULL, sfx_s3kb2);
