@@ -1136,10 +1136,20 @@ void R_LoadTextures(void)
 {
 	INT32 i, w;
 	INT32 newtextures = 0;
+#ifdef DEVELOP
+	INT32 maintextures = 0;
+#endif
 
 	for (w = 0; w < numwadfiles; w++)
 	{
 		newtextures += R_CountTextures((UINT16)w);
+
+#ifdef DEVELOP
+		if (w == mainwads)
+		{
+			maintextures = newtextures;
+		}
+#endif
 	}
 
 	// If no textures found by this point, bomb out
@@ -1154,6 +1164,10 @@ void R_LoadTextures(void)
 	}
 
 	R_FinishLoadingTextures(newtextures);
+
+#ifdef DEVELOP
+	R_CheckTextureDuplicates(0, maintextures);
+#endif
 }
 
 void R_LoadTexturesPwad(UINT16 wadnum)

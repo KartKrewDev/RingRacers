@@ -1873,6 +1873,11 @@ void CON_Drawer(void)
 		CON_RecalcSize();
 		if (con_curlines <= 0)
 			CON_ClearHUD();
+
+#ifdef DEVELOP
+		// Must be done here so lines don't get reflowed to 320x200
+		R_PrintTextureDuplicates();
+#endif
 	}
 
 	if (con_curlines > 0)

@@ -109,6 +109,9 @@ INT32 R_TextureNumForName(const char *name);
 INT32 R_CheckTextureNumForName(const char *name);
 lumpnum_t R_GetFlatNumForName(const char *name);
 
+void R_CheckTextureDuplicates(INT32 start, INT32 end);
+void R_PrintTextureDuplicates(void);
+
 extern INT32 numtextures;
 
 #ifdef __cplusplus
