@@ -1908,7 +1908,7 @@ void D_SRB2Main(void)
 				I_Error("Can't get first map of gametype\n");
 			}
 
-			if (M_MapLocked(pstartmap))
+			if (pstartmap != 1 && M_MapLocked(pstartmap))
 			{
 				G_SetUsedCheats();
 			}

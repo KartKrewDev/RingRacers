@@ -1851,7 +1851,7 @@ boolean M_MapLocked(UINT16 mapnum)
 	if (marathonmode)
 		return false;
 
-	if (mapnum <= 1 || mapnum > nummapheaders)
+	if (mapnum == 0 || mapnum > nummapheaders)
 		return false;
 	
 	if (!mapheaderinfo[mapnum-1])
