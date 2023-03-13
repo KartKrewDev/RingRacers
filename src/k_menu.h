@@ -736,7 +736,7 @@ extern struct levellist_s {
 	SINT8 cursor;
 	UINT16 y;
 	UINT16 dest;
-	INT16 choosemap;
+	UINT16 choosemap;
 	UINT8 newgametype;
 	UINT8 guessgt;
 	levelsearch_t levelsearch;

@@ -2439,7 +2439,7 @@ void M_DrawLevelSelect(void)
 
 void M_DrawTimeAttack(void)
 {
-	INT16 map = levellist.choosemap;
+	UINT16 map = levellist.choosemap;
 	INT16 t = (48*menutransition.tics);
 	INT16 leftedge = 149+t+16;
 	INT16 rightedge = 149+t+155;
