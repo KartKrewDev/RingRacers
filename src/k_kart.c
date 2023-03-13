@@ -9398,7 +9398,7 @@ static void K_KartDrift(player_t *player, boolean onground)
 
 		player->sliptideZip++;
 		if (player->sliptideZip == MIN_WAVEDASH_CHARGE)
-			S_StartSound(player->mo, sfx_cock);
+			S_StartSound(player->mo, sfx_waved5);
 
 		if (abs(player->aizdrifttilt) < ANGLE_22h)
 		{
