@@ -375,6 +375,7 @@ struct customoption_t
 struct cupheader_t
 {
 	UINT16 id;								///< Cup ID
+	UINT8 monitor;							///< Monitor graphic 1-9 or A-Z
 	char name[15];							///< Cup title (14 chars)
 	char icon[9];							///< Name of the icon patch
 	char *levellist[CUPCACHE_MAX];			///< List of levels that belong to this cup

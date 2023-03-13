@@ -3432,7 +3432,16 @@ void readcupheader(MYFILE *f, cupheader_t *cup)
 			i = atoi(word2); // used for numerical settings
 			strupr(word2);
 
-			if (fastcmp(word, "ICON"))
+			if (fastcmp(word, "MONITOR"))
+			{
+				if (i > 0 && i < 10)
+					cup->monitor = i;
+				else if (!word2[0] || word2[1] != '\0' || word2[0] == '0')
+					deh_warning("%s Cup: Invalid monitor type \"%s\" (should be 1-9 or A-Z)\n", cup->name, word2);
+				else
+					cup->monitor = (word2[0] - 'A') + 10;
+			}
+			else if (fastcmp(word, "ICON"))
 			{
 				deh_strlcpy(cup->icon, word2,
 					sizeof(cup->icon), va("%s Cup: icon", cup->name));

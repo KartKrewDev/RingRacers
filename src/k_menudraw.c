@@ -2134,7 +2134,7 @@ void M_DrawCupSelect(void)
 			INT16 x, y;
 			INT16 icony = 7;
 			char status =  'A';
-			UINT8 monitor = 1;
+			char monitor;
 			INT32 rankx = 0;
 
 			if (!cupgrid.builtgrid[id])
@@ -2176,14 +2176,24 @@ void M_DrawCupSelect(void)
 					colormap = NULL;
 			}
 
-			if (templevelsearch.cup->emeraldnum > 7)
 			{
-				monitor = 2;
-				icony = 5;
-				rankx = 2;
+				if (templevelsearch.cup->monitor < 10)
+				{
+					monitor = '0' + templevelsearch.cup->monitor;
+
+					if (templevelsearch.cup->monitor == '2')
+					{
+						icony = 5;
+						rankx = 2;
+					}
+				}
+				else
+				{
+					monitor = 'A' + (templevelsearch.cup->monitor - 10);
+				}
 			}
 
-			patch = W_CachePatchName(va("CUPMON%d%c", monitor, status), PU_CACHE);
+			patch = W_CachePatchName(va("CUPMON%c%c", monitor, status), PU_CACHE);
 
 			x = 14 + (i*42);
 			y = 20 + (j*44) - (30*menutransition.tics);
