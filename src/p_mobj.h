@@ -191,7 +191,7 @@ typedef enum
 	MF2_JUSTATTACKED   = 1<<16, // can be pushed by other moving mobjs
 	MF2_FIRING         = 1<<17, // turret fire
 	MF2_SUPERFIRE      = 1<<18, // Firing something with Super Sonic-stopping properties. Or, if mobj has MF_MISSILE, this is the actual fire from it.
-	// free: 1<<19
+	MF2_ALREADYHIT     = 1<<19, // This object was already damaged THIS tic, resets even during hitlag
 	MF2_STRONGBOX      = 1<<20, // Flag used for "strong" random monitors.
 	MF2_OBJECTFLIP     = 1<<21, // Flag for objects that always have flipped gravity.
 	MF2_SKULLFLY       = 1<<22, // Special handling: skull in flight.

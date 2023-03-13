@@ -232,8 +232,8 @@ static int player_get(lua_State *L)
 		lua_pushinteger(L, plr->spinouttimer);
 	else if (fastcmp(field,"instashield"))
 		lua_pushinteger(L, plr->instashield);
-	else if (fastcmp(field,"invulnhitlag"))
-		lua_pushinteger(L, plr->invulnhitlag);
+	else if (fastcmp(field,"nullHitlag"))
+		lua_pushinteger(L, plr->nullHitlag);
 	else if (fastcmp(field,"wipeoutslow"))
 		lua_pushinteger(L, plr->wipeoutslow);
 	else if (fastcmp(field,"justbumped"))
@@ -614,8 +614,8 @@ static int player_set(lua_State *L)
 		plr->spinouttimer = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"instashield"))
 		plr->instashield = luaL_checkinteger(L, 3);
-	else if (fastcmp(field,"invulnhitlag"))
-		plr->invulnhitlag = luaL_checkinteger(L, 3);
+	else if (fastcmp(field,"nullHitlag"))
+		plr->nullHitlag = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"wipeoutslow"))
 		plr->wipeoutslow = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"justbumped"))
