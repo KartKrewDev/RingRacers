@@ -2265,6 +2265,11 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 							allowcombo = false;
 					}
 
+					if (allowcombo == false && (target->eflags & MFE_PAUSED))
+					{
+						return false;
+					}
+
 					// DMG_EXPLODE excluded from flashtic checks to prevent dodging eggbox/SPB with weak spinout
 					if ((target->hitlag == 0 || allowcombo == false) && player->flashing > 0 && type != DMG_EXPLODE && type != DMG_STUMBLE)
 					{
