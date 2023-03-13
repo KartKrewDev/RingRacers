@@ -161,7 +161,7 @@ void M_CupSelectHandler(INT32 choice)
 
 			restoreMenu = &PLAY_CupSelectDef;
 		}
-		else if (count == 1)
+		else if (count == 1 && levellist.levelsearch.timeattack == true)
 		{
 			PLAY_TimeAttackDef.transitionID = currentMenu->transitionID+1;
 			M_LevelSelected(0);
@@ -174,6 +174,7 @@ void M_CupSelectHandler(INT32 choice)
 				levellist.cursor = 0;
 			}
 
+			levellist.mapcount = count;
 			M_LevelSelectScrollDest();
 			levellist.y = levellist.dest;
 

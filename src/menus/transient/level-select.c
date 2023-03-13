@@ -195,14 +195,14 @@ UINT16 M_GetNextLevelInList(UINT16 mapnum, UINT8 *i, levelsearch_t *levelsearch)
 
 void M_LevelSelectScrollDest(void)
 {
-	UINT16 m = M_CountLevelsToShowInList(&levellist.levelsearch)-1;
+	UINT16 m = levellist.mapcount-1;
 
 	levellist.dest = (6*levellist.cursor);
 
 	if (levellist.dest < 3)
 		levellist.dest = 3;
 
-	if (levellist.dest > (6*m)-3)
+	if (m && levellist.dest > (6*m)-3)
 		levellist.dest = (6*m)-3;
 }
 
@@ -400,6 +400,7 @@ boolean M_LevelListFromGametype(INT16 gt)
 		levellist.levelsearch.cup = NULL;
 	}
 
+	levellist.mapcount = M_CountLevelsToShowInList(&levellist.levelsearch);
 	M_LevelSelectScrollDest();
 	levellist.y = levellist.dest;
 
@@ -562,7 +563,6 @@ void M_LevelSelected(INT16 add)
 
 void M_LevelSelectHandler(INT32 choice)
 {
-	INT16 maxlevels = M_CountLevelsToShowInList(&levellist.levelsearch);
 	const UINT8 pid = 0;
 
 	(void)choice;
@@ -575,7 +575,7 @@ void M_LevelSelectHandler(INT32 choice)
 	if (menucmd[pid].dpad_ud > 0)
 	{
 		levellist.cursor++;
-		if (levellist.cursor >= maxlevels)
+		if (levellist.cursor >= levellist.mapcount)
 			levellist.cursor = 0;
 		S_StartSound(NULL, sfx_s3k5b);
 		M_SetMenuDelay(pid);
@@ -584,7 +584,7 @@ void M_LevelSelectHandler(INT32 choice)
 	{
 		levellist.cursor--;
 		if (levellist.cursor < 0)
-			levellist.cursor = maxlevels-1;
+			levellist.cursor = levellist.mapcount-1;
 		S_StartSound(NULL, sfx_s3k5b);
 		M_SetMenuDelay(pid);
 	}
