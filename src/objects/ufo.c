@@ -728,9 +728,31 @@ void Obj_PlayerUFOCollide(mobj_t *ufo, mobj_t *other)
 	{
 		// Bump and deal damage.
 		Obj_SpecialUFODamage(ufo, other, other, DMG_STEAL);
-		K_KartBouncing(other, ufo);
 		other->player->sneakertimer = 0;
 	}
+	else
+	{
+		const angle_t moveAngle = K_MomentumAngle(ufo);
+		const angle_t clipAngle = R_PointToAngle2(ufo->x, ufo->y, other->x, other->y);
+
+		if (other->z > ufo->z + ufo->height)
+		{
+			return; // overhead
+		}
+
+		if (other->z + other->height < ufo->z)
+		{
+			return; // underneath
+		}
+
+		if (AngleDelta(moveAngle, clipAngle) < ANG60)
+		{
+			// in front
+			K_StumblePlayer(other->player);
+		}
+	}
+
+	K_KartBouncing(other, ufo);
 }
 
 void Obj_UFOPieceThink(mobj_t *piece)
