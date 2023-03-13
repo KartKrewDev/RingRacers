@@ -23907,7 +23907,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		16,             // mass
 		0,              // damage
 		sfx_None,       // activesound
-		MF_SOLID|MF_NOCLIP|MF_NOGRAVITY|MF_DONTENCOREMAP, // flags
+		MF_SOLID|MF_NOCLIP|MF_NOCLIPTHING|MF_NOGRAVITY|MF_DONTENCOREMAP, // flags
 		S_NULL          // raisestate
 	},
 

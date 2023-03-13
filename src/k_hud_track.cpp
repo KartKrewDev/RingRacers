@@ -5,8 +5,8 @@
 #include "core/static_vec.hpp"
 
 #include "k_battle.h"
-#include "k_boss.h"
 #include "k_hud.h"
+#include "k_kart.h"
 #include "k_objects.h"
 #include "m_fixed.h"
 #include "p_local.h"
@@ -314,7 +314,7 @@ bool is_player_tracking_target(player_t *player = stplyr)
 		return false;
 	}
 
-	if (battlecapsules || bossinfo.valid)
+	if (K_Cooperative())
 	{
 		return false;
 	}
@@ -336,6 +336,23 @@ bool is_player_tracking_target(player_t *player = stplyr)
 	if (battleovertime.enabled)
 	{
 		return false;
+	}
+
+	if (player->emeralds != 0 && K_IsPlayerWanted(stplyr))
+	{
+		// The player who is about to win because of emeralds
+		// gets a TARGET on them
+		if (K_NumEmeralds(player) == 6) // 6 out of 7
+		{
+			return true;
+		}
+
+		// WANTED player sees TARGETs on players holding
+		// emeralds
+		if (K_IsPlayerWanted(stplyr))
+		{
+			return true;
+		}
 	}
 
 	return K_IsPlayerWanted(player);

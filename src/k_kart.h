@@ -208,6 +208,8 @@ void K_EggmanTransfer(player_t *source, player_t *victim);
 tic_t K_TimeLimitForGametype(void);
 UINT32 K_PointLimitForGametype(void);
 
+boolean K_Cooperative(void);
+
 #ifdef __cplusplus
 } // extern "C"
 #endif

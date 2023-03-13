@@ -1382,7 +1382,7 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 				P_PlayDeathSound(target);
 			}
 
-			if (battlecapsules || bossinfo.valid)
+			if (K_Cooperative())
 			{
 				target->player->pflags |= (PF_NOCONTEST|PF_ELIMINATED);
 			}
@@ -2003,6 +2003,43 @@ static boolean P_KillPlayer(player_t *player, mobj_t *inflictor, mobj_t *source,
 	return true;
 }
 
+static void AddTimesHit(player_t *player)
+{
+	const INT32 oldtimeshit = player->timeshit;
+
+	player->timeshit++;
+
+	// overflow prevention
+	if (player->timeshit < oldtimeshit)
+	{
+		player->timeshit = oldtimeshit;
+	}
+}
+
+static void AddNullHitlag(player_t *player, tic_t oldHitlag)
+{
+	if (player == NULL)
+	{
+		return;
+	}
+
+	// Hitlag from what would normally be damage but the
+	// player was invulnerable.
+	//
+	// If we're constantly getting hit the same number of
+	// times, we're probably standing on a damage floor.
+	//
+	// Checking if we're hit more than before ensures that:
+	//
+	// 1) repeating damage doesn't count
+	// 2) new damage sources still count
+
+	if (player->timeshit <= player->timeshitprev)
+	{
+		player->nullHitlag += (player->mo->hitlag - oldHitlag);
+	}
+}
+
 /** Damages an object, which may or may not be a player.
   * For melee attacks, source and inflictor are the same.
   *
@@ -2023,6 +2060,7 @@ static boolean P_KillPlayer(player_t *player, mobj_t *inflictor, mobj_t *source,
 boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 damage, UINT8 damagetype)
 {
 	player_t *player;
+	player_t *playerInflictor;
 	boolean force = false;
 
 	INT32 laglength = 6;
@@ -2080,9 +2118,6 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 			if (!(target->flags & MF_SHOOTABLE))
 				return false; // shouldn't happen...
 		}
-
-		if (!(damagetype & DMG_DEATHMASK) && (target->eflags & MFE_PAUSED))
-			return false;
 	}
 
 	if (target->flags2 & MF2_SKULLFLY)
@@ -2101,20 +2136,16 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 	}
 
 	player = target->player;
+	playerInflictor = inflictor ? inflictor->player : NULL;
+
+	if (playerInflictor)
+	{
+		AddTimesHit(playerInflictor);
+	}
 
 	if (player) // Player is the target
 	{
-		{
-			const INT32 oldtimeshit = player->timeshit;
-
-			player->timeshit++;
-
-			// overflow prevention
-			if (player->timeshit < oldtimeshit)
-			{
-				player->timeshit = oldtimeshit;
-			}
-		}
+		AddTimesHit(player);
 
 		if (player->pflags & PF_GODMODE)
 			return false;
@@ -2179,12 +2210,32 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 
 				if (invincible && type != DMG_STUMBLE)
 				{
-					const INT32	oldhitlag = target->hitlag;
+					const INT32 oldHitlag = target->hitlag;
+					const INT32 oldHitlagInflictor = inflictor ? inflictor->hitlag : 0;
+
+					// Damage during hitlag should be a no-op
+					// for invincibility states because there
+					// are no flashing tics. If the damage is
+					// from a constant source, a deadlock
+					// would occur.
+
+					if (target->eflags & MFE_PAUSED)
+					{
+						player->timeshit--; // doesn't count
+
+						if (playerInflictor)
+						{
+							playerInflictor->timeshit--;
+						}
+
+						return false;
+					}
 
 					laglength = max(laglength / 2, 1);
 					K_SetHitLagForObjects(target, inflictor, laglength, false);
 
-					player->invulnhitlag += (target->hitlag - oldhitlag);
+					AddNullHitlag(player, oldHitlag);
+					AddNullHitlag(playerInflictor, oldHitlagInflictor);
 
 					if (player->timeshit > player->timeshitprev)
 					{
@@ -2214,11 +2265,21 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 							allowcombo = false;
 					}
 
+					if (allowcombo == false && (target->eflags & MFE_PAUSED))
+					{
+						return false;
+					}
+
 					// DMG_EXPLODE excluded from flashtic checks to prevent dodging eggbox/SPB with weak spinout
 					if ((target->hitlag == 0 || allowcombo == false) && player->flashing > 0 && type != DMG_EXPLODE && type != DMG_STUMBLE)
 					{
 						// Post-hit invincibility
 						K_DoInstashield(player);
+						return false;
+					}
+					else if (target->flags2 & MF2_ALREADYHIT) // do not deal extra damage in the same tic
+					{
+						K_SetHitLagForObjects(target, inflictor, laglength, true);
 						return false;
 					}
 				}
@@ -2263,7 +2324,11 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 
 					K_TryHurtSoundExchange(target, source);
 
-					K_BattleAwardHit(source->player, player, inflictor, damage);
+					if (K_Cooperative() == false)
+					{
+						K_BattleAwardHit(source->player, player, inflictor, damage);
+					}
+
 					K_TakeBumpersFromPlayer(source->player, player, damage);
 
 					if (damagetype & DMG_STEAL)
@@ -2396,6 +2461,8 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 		G_GhostAddHit((INT32) (source->player - players), target);
 
 	K_SetHitLagForObjects(target, inflictor, laglength, true);
+
+	target->flags2 |= MF2_ALREADYHIT;
 
 	if (target->health <= 0)
 	{

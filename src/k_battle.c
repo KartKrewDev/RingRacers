@@ -39,7 +39,7 @@ UINT8 numtargets = 0; // Capsules busted
 INT32 K_StartingBumperCount(void)
 {
 	if (battlecapsules)
-		return 1; // always 1 hit in Break the Capsules
+		return 0; // always 1 hit in Break the Capsules
 
 	return cv_kartbumpers.value;
 }
@@ -95,8 +95,6 @@ void K_CheckBumpers(void)
 	UINT8 nobumpers = 0;
 	UINT8 eliminated = 0;
 
-	const boolean singleplayer = (battlecapsules || bossinfo.valid);
-
 	if (!(gametyperules & GTR_BUMPERS))
 		return;
 
@@ -124,7 +122,7 @@ void K_CheckBumpers(void)
 		}
 	}
 
-	if (singleplayer
+	if (K_Cooperative()
 			? nobumpers > 0 && nobumpers >= numingame
 			: eliminated >= numingame - 1)
 	{
@@ -135,7 +133,7 @@ void K_CheckBumpers(void)
 			if (players[i].spectator)
 				continue;
 
-			if (singleplayer)
+			if (K_Cooperative())
 				players[i].pflags |= PF_NOCONTEST;
 
 			P_DoPlayerExit(&players[i]);
@@ -170,16 +168,11 @@ void K_CheckEmeralds(player_t *player)
 		return;
 	}
 
-	player->roundscore++; // lol
+	player->roundscore = 100; // lmao
 
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
 		if (!playeringame[i] || players[i].spectator)
-		{
-			continue;
-		}
-
-		if (&players[i] == player)
 		{
 			continue;
 		}
@@ -319,6 +312,21 @@ static inline boolean IsOnInterval(tic_t interval)
 	return ((leveltime - starttime) % interval) == 0;
 }
 
+static UINT32 CountEmeraldsSpawned(const mobj_t *mo)
+{
+	switch (mo->type)
+	{
+		case MT_EMERALD:
+			return mo->extravalue1;
+
+		case MT_MONITOR:
+			return Obj_MonitorGetEmerald(mo);
+
+		default:
+			return 0U;
+	}
+}
+
 void K_RunPaperItemSpawners(void)
 {
 	const boolean overtime = (battleovertime.enabled >= 10*TICRATE);
@@ -382,10 +390,7 @@ void K_RunPaperItemSpawners(void)
 
 			mo = (mobj_t *)th;
 
-			if (mo->type == MT_EMERALD)
-			{
-				emeraldsSpawned |= mo->extravalue1;
-			}
+			emeraldsSpawned |= CountEmeraldsSpawned(mo);
 		}
 
 		if (canmakeemeralds)
@@ -444,15 +449,7 @@ void K_RunPaperItemSpawners(void)
 
 				mo = (mobj_t *)th;
 
-				if (mo->type == MT_EMERALD)
-				{
-					emeraldsSpawned |= mo->extravalue1;
-				}
-
-				if (mo->type == MT_MONITOR)
-				{
-					emeraldsSpawned |= Obj_MonitorGetEmerald(mo);
-				}
+				emeraldsSpawned |= CountEmeraldsSpawned(mo);
 
 				if (mo->type != MT_PAPERITEMSPOT)
 					continue;
@@ -827,10 +824,10 @@ UINT8 K_Bumpers(player_t *player)
 		return UINT8_MAX;
 	}
 
-	return player->mo->health;
+	return (player->mo->health - 1);
 }
 
 INT32 K_BumpersToHealth(UINT8 bumpers)
 {
-	return bumpers;
+	return (bumpers + 1);
 }

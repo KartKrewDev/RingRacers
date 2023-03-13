@@ -8246,7 +8246,9 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 			desty = mobj->target->y;
 		}
 
+		mobj->flags &= ~(MF_NOCLIPTHING);
 		P_MoveOrigin(mobj, destx, desty, mobj->target->z);
+		mobj->flags |= MF_NOCLIPTHING;
 		break;
 	}
 	case MT_FLAMESHIELD:
@@ -9842,8 +9844,10 @@ void P_MobjThinker(mobj_t *mobj)
 	if ((mobj->flags & MF_BOSS) && mobj->spawnpoint && (bossdisabled & (1<<mobj->spawnpoint->args[0])))
 		return;
 
+	mobj->flags2 &= ~(MF2_ALREADYHIT);
+
 	// Don't run any thinker code while in hitlag
-	if (mobj->hitlag > 0)
+	if ((mobj->player ? mobj->hitlag - mobj->player->nullHitlag : mobj->hitlag) > 0)
 	{
 		mobj->eflags |= MFE_PAUSED;
 		mobj->hitlag--;
