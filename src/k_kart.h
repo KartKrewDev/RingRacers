@@ -104,9 +104,7 @@ void K_UpdateStumbleIndicator(player_t *player);
 void K_UpdateSliptideZipIndicator(player_t *player);
 INT32 K_ExplodePlayer(player_t *player, mobj_t *inflictor, mobj_t *source);
 void K_DebtStingPlayer(player_t *player, mobj_t *source);
-void K_HandleBumperChanges(player_t *player, UINT8 prevBumpers);
-UINT8 K_DestroyBumpers(player_t *player, UINT8 amount);
-UINT8 K_TakeBumpersFromPlayer(player_t *player, player_t *victim, UINT8 amount);
+void K_TakeBumpersFromPlayer(player_t *player, player_t *victim, UINT8 amount);
 void K_MineFlashScreen(mobj_t *source);
 void K_SpawnMineExplosion(mobj_t *source, UINT8 color, tic_t delay);
 void K_RunFinishLineBeam(void);
@@ -209,6 +207,8 @@ void K_EggmanTransfer(player_t *source, player_t *victim);
 
 tic_t K_TimeLimitForGametype(void);
 UINT32 K_PointLimitForGametype(void);
+
+boolean K_Cooperative(void);
 
 #ifdef __cplusplus
 } // extern "C"

@@ -39,6 +39,7 @@
 #include "p_spec.h"
 #include "k_objects.h"
 #include "k_roulette.h"
+#include "k_boss.h"
 
 // CTF player names
 #define CTFTEAMCODE(pl) pl->ctfteam ? (pl->ctfteam == 1 ? "\x85" : "\x84") : ""
@@ -112,13 +113,6 @@ void P_RampConstant(const BasicFF_t *FFInfo, INT32 Start, INT32 End)
 boolean P_CanPickupItem(player_t *player, UINT8 weapon)
 {
 	if (player->exiting || mapreset || (player->pflags & PF_ELIMINATED))
-		return false;
-
-	if ((gametyperules & GTR_BUMPERS) // No bumpers in Match
-#ifndef OTHERKARMAMODES
-	&& !weapon
-#endif
-	&& player->bumpers <= 0)
 		return false;
 
 	if (weapon)
@@ -285,9 +279,6 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 			if (!P_CanPickupItem(player, 3) || (player->itemamount && player->itemtype != special->threshold))
 				return;
 
-			if ((gametyperules & GTR_BUMPERS) && player->bumpers <= 0)
-				return;
-
 			player->itemtype = special->threshold;
 			if ((UINT16)(player->itemamount) + special->movecount > 255)
 				player->itemamount = 255;
@@ -320,9 +311,6 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 			P_KillMobj(special, toucher, toucher, DMG_NORMAL);
 			return;
 		case MT_ITEMCAPSULE:
-			if ((gametyperules & GTR_BUMPERS) && player->bumpers <= 0)
-				return;
-
 			if (special->scale < special->extravalue1) // don't break it while it's respawning
 				return;
 
@@ -349,8 +337,6 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 			if (!special->target->player)
 				return;
 			if (player == special->target->player)
-				return;
-			if (player->bumpers <= 0)
 				return;
 			if (special->target->player->exiting || player->exiting)
 				return;
@@ -452,7 +438,7 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 			S_StartSound(special, sfx_s1a2);
 			return;
 		case MT_CDUFO: // SRB2kart
-			if (special->fuse || !P_CanPickupItem(player, 1) || ((gametyperules & GTR_BUMPERS) && player->bumpers <= 0))
+			if (special->fuse || !P_CanPickupItem(player, 1))
 				return;
 
 			K_StartItemRoulette(player);
@@ -1395,6 +1381,11 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 
 				P_PlayDeathSound(target);
 			}
+
+			if (K_Cooperative())
+			{
+				target->player->pflags |= (PF_NOCONTEST|PF_ELIMINATED);
+			}
 			break;
 
 		case MT_METALSONIC_RACE:
@@ -1937,13 +1928,23 @@ static boolean P_KillPlayer(player_t *player, mobj_t *inflictor, mobj_t *source,
 	switch (type)
 	{
 		case DMG_DEATHPIT:
-			// Respawn kill types
-			K_DoIngameRespawn(player);
-			player->mo->health -= K_DestroyBumpers(player, 1);
-			return false;
+			if (gametyperules & GTR_BUMPERS)
+			{
+				player->mo->health--;
+			}
+
+			if (player->mo->health <= 0)
+			{
+				return true;
+			}
+
+			// Quick respawn; does not kill
+			return K_DoIngameRespawn(player), false;
+
 		case DMG_SPECTATOR:
 			// disappearifies, but still gotta put items back in play
 			break;
+
 		default:
 			// Everything else REALLY kills
 			if (leveltime < starttime)
@@ -1999,9 +2000,44 @@ static boolean P_KillPlayer(player_t *player, mobj_t *inflictor, mobj_t *source,
 		player->pflags |= PF_ELIMINATED;
 	}
 
-	K_DestroyBumpers(player, player->bumpers);
-
 	return true;
+}
+
+static void AddTimesHit(player_t *player)
+{
+	const INT32 oldtimeshit = player->timeshit;
+
+	player->timeshit++;
+
+	// overflow prevention
+	if (player->timeshit < oldtimeshit)
+	{
+		player->timeshit = oldtimeshit;
+	}
+}
+
+static void AddNullHitlag(player_t *player, tic_t oldHitlag)
+{
+	if (player == NULL)
+	{
+		return;
+	}
+
+	// Hitlag from what would normally be damage but the
+	// player was invulnerable.
+	//
+	// If we're constantly getting hit the same number of
+	// times, we're probably standing on a damage floor.
+	//
+	// Checking if we're hit more than before ensures that:
+	//
+	// 1) repeating damage doesn't count
+	// 2) new damage sources still count
+
+	if (player->timeshit <= player->timeshitprev)
+	{
+		player->nullHitlag += (player->mo->hitlag - oldHitlag);
+	}
 }
 
 /** Damages an object, which may or may not be a player.
@@ -2024,6 +2060,7 @@ static boolean P_KillPlayer(player_t *player, mobj_t *inflictor, mobj_t *source,
 boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 damage, UINT8 damagetype)
 {
 	player_t *player;
+	player_t *playerInflictor;
 	boolean force = false;
 
 	INT32 laglength = 6;
@@ -2081,9 +2118,6 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 			if (!(target->flags & MF_SHOOTABLE))
 				return false; // shouldn't happen...
 		}
-
-		if (!(damagetype & DMG_DEATHMASK) && (target->eflags & MFE_PAUSED))
-			return false;
 	}
 
 	if (target->flags2 & MF2_SKULLFLY)
@@ -2102,20 +2136,16 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 	}
 
 	player = target->player;
+	playerInflictor = inflictor ? inflictor->player : NULL;
+
+	if (playerInflictor)
+	{
+		AddTimesHit(playerInflictor);
+	}
 
 	if (player) // Player is the target
 	{
-		{
-			const INT32 oldtimeshit = player->timeshit;
-
-			player->timeshit++;
-
-			// overflow prevention
-			if (player->timeshit < oldtimeshit)
-			{
-				player->timeshit = oldtimeshit;
-			}
-		}
+		AddTimesHit(player);
 
 		if (player->pflags & PF_GODMODE)
 			return false;
@@ -2146,9 +2176,6 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 			const boolean hardhit = (type == DMG_EXPLODE || type == DMG_KARMA || type == DMG_TUMBLE); // This damage type can do evil stuff like ALWAYS combo
 			INT16 ringburst = 5;
 
-			// Do not die from damage outside of bumpers health system
-			damage = 0;
-
 			// Check if the player is allowed to be damaged!
 			// If not, then spawn the instashield effect instead.
 			if (!force)
@@ -2156,16 +2183,7 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 				boolean invincible = true;
 				sfxenum_t sfx = sfx_None;
 
-				if (gametyperules & GTR_BUMPERS)
-				{
-					if (player->bumpers <= 0 && player->karmadelay)
-					{
-						// No bumpers & in WAIT, can't be hurt
-						K_DoInstashield(player);
-						return false;
-					}
-				}
-				else
+				if (!(gametyperules & GTR_BUMPERS))
 				{
 					if (damagetype & DMG_STEAL)
 					{
@@ -2192,12 +2210,32 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 
 				if (invincible && type != DMG_STUMBLE)
 				{
-					const INT32	oldhitlag = target->hitlag;
+					const INT32 oldHitlag = target->hitlag;
+					const INT32 oldHitlagInflictor = inflictor ? inflictor->hitlag : 0;
+
+					// Damage during hitlag should be a no-op
+					// for invincibility states because there
+					// are no flashing tics. If the damage is
+					// from a constant source, a deadlock
+					// would occur.
+
+					if (target->eflags & MFE_PAUSED)
+					{
+						player->timeshit--; // doesn't count
+
+						if (playerInflictor)
+						{
+							playerInflictor->timeshit--;
+						}
+
+						return false;
+					}
 
 					laglength = max(laglength / 2, 1);
 					K_SetHitLagForObjects(target, inflictor, laglength, false);
 
-					player->invulnhitlag += (target->hitlag - oldhitlag);
+					AddNullHitlag(player, oldHitlag);
+					AddNullHitlag(playerInflictor, oldHitlagInflictor);
 
 					if (player->timeshit > player->timeshitprev)
 					{
@@ -2227,6 +2265,11 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 							allowcombo = false;
 					}
 
+					if (allowcombo == false && (target->eflags & MFE_PAUSED))
+					{
+						return false;
+					}
+
 					// DMG_EXPLODE excluded from flashtic checks to prevent dodging eggbox/SPB with weak spinout
 					if ((target->hitlag == 0 || allowcombo == false) && player->flashing > 0 && type != DMG_EXPLODE && type != DMG_STUMBLE)
 					{
@@ -2234,31 +2277,35 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 						K_DoInstashield(player);
 						return false;
 					}
+					else if (target->flags2 & MF2_ALREADYHIT) // do not deal extra damage in the same tic
+					{
+						K_SetHitLagForObjects(target, inflictor, laglength, true);
+						return false;
+					}
 				}
 			}
 
-			// We successfully damaged them! Give 'em some bumpers!
-			if (type != DMG_STING && type != DMG_STUMBLE)
+			if (gametyperules & GTR_BUMPERS)
 			{
-				UINT8 takeBumpers = 1;
-
 				if (damagetype & DMG_STEAL)
 				{
-					takeBumpers = 2;
+					// Steals 2 bumpers
+					damage = 2;
+				}
+			}
+			else
+			{
+				// Do not die from damage outside of bumpers health system
+				damage = 0;
+			}
 
-					if (type == DMG_KARMA)
-					{
-						takeBumpers = player->bumpers;
-					}
-				}
-				else
-				{
-					if (type == DMG_KARMA)
-					{
-						// Take half of their bumpers for karma comeback damage
-						takeBumpers = max(1, player->bumpers / 2);
-					}
-				}
+			if (type == DMG_STING || type == DMG_STUMBLE)
+			{
+				damage = 0;
+			}
+			else
+			{
+				// We successfully damaged them! Give 'em some bumpers!
 
 				if (source && source != player->mo && source->player)
 				{
@@ -2277,18 +2324,12 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 
 					K_TryHurtSoundExchange(target, source);
 
-					K_BattleAwardHit(source->player, player, inflictor, takeBumpers);
-					damage = K_TakeBumpersFromPlayer(source->player, player, takeBumpers);
+					if (K_Cooperative() == false)
+					{
+						K_BattleAwardHit(source->player, player, inflictor, damage);
+					}
 
-					if (type == DMG_KARMA)
-					{
-						// Destroy any remainder bumpers from the player for karma comeback damage
-						damage = K_DestroyBumpers(player, player->bumpers);
-					}
-					else
-					{
-						source->player->overtimekarma += 5*TICRATE;
-					}
+					K_TakeBumpersFromPlayer(source->player, player, damage);
 
 					if (damagetype & DMG_STEAL)
 					{
@@ -2303,10 +2344,6 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 					{
 						Obj_GardenTopDestroy(source->player);
 					}
-				}
-				else
-				{
-					damage = K_DestroyBumpers(player, takeBumpers);
 				}
 
 				if (!(damagetype & DMG_STEAL))
@@ -2424,6 +2461,8 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 		G_GhostAddHit((INT32) (source->player - players), target);
 
 	K_SetHitLagForObjects(target, inflictor, laglength, true);
+
+	target->flags2 |= MF2_ALREADYHIT;
 
 	if (target->health <= 0)
 	{

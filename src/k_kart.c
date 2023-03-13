@@ -374,9 +374,6 @@ boolean K_IsPlayerLosing(player_t *player)
 	if (battlecapsules && numtargets == 0)
 		return true; // Didn't even TRY?
 
-	if (battlecapsules || (gametyperules & GTR_BOSS))
-		return (player->bumpers <= 0); // anything short of DNF is COOL
-
 	if (player->position == 1)
 		return false;
 
@@ -3262,11 +3259,6 @@ fixed_t K_GetKartSpeed(player_t *player, boolean doboostpower, boolean dorubberb
 	{
 		finalspeed = K_GetKartSpeedFromStat(player->kartspeed);
 
-		if (gametyperules & GTR_BUMPERS && player->bumpers <= 0)
-		{
-			finalspeed = 3 * finalspeed / 2;
-		}
-
 		if (player->spheres > 0)
 		{
 			fixed_t sphereAdd = (FRACUNIT/40); // 100% at max
@@ -3324,12 +3316,6 @@ fixed_t K_GetKartAccel(player_t *player)
 	if (K_PodiumSequence() == true)
 	{
 		return FixedMul(k_accel, FRACUNIT / 4);
-	}
-
-	// karma bomb gets 2x acceleration
-	if ((gametyperules & GTR_BUMPERS) && player->bumpers <= 0)
-	{
-		k_accel *= 2;
 	}
 
 	// Marble Garden Top gets 1200% accel
@@ -3647,7 +3633,7 @@ void K_DoPowerClash(player_t *t1, player_t *t2) {
 	P_SetScale(clash, 3*clash->destscale/2);
 }
 
-void K_BattleAwardHit(player_t *player, player_t *victim, mobj_t *inflictor, UINT8 bumpersRemoved)
+void K_BattleAwardHit(player_t *player, player_t *victim, mobj_t *inflictor, UINT8 damage)
 {
 	UINT8 points = 1;
 	boolean trapItem = false;
@@ -3685,7 +3671,7 @@ void K_BattleAwardHit(player_t *player, player_t *victim, mobj_t *inflictor, UIN
 		}
 		else if (gametyperules & GTR_BUMPERS)
 		{
-			if ((victim->bumpers > 0) && (victim->bumpers <= bumpersRemoved))
+			if ((victim->mo->health > 0) && (victim->mo->health <= damage))
 			{
 				// +2 points for finishing off a player
 				points = 2;
@@ -4330,81 +4316,22 @@ void K_DebtStingPlayer(player_t *player, mobj_t *source)
 	P_SetPlayerMobjState(player->mo, S_KART_SPINOUT);
 }
 
-void K_HandleBumperChanges(player_t *player, UINT8 prevBumpers)
+void K_TakeBumpersFromPlayer(player_t *player, player_t *victim, UINT8 amount)
 {
-	if (!(gametyperules & GTR_BUMPERS))
-	{
-		// Bumpers aren't being used
-		return;
-	}
-
-	// TODO: replace all console text print-outs with a real visual
-
-	if (player->bumpers > 0 && prevBumpers == 0)
-	{
-		K_DoInvincibility(player, 8 * TICRATE);
-
-		if (netgame)
-		{
-			CONS_Printf(M_GetText("%s is back in the game!\n"), player_names[player-players]);
-		}
-	}
-	else if (player->bumpers == 0 && prevBumpers > 0)
-	{
-		if (battlecapsules || bossinfo.valid)
-		{
-			player->pflags |= (PF_NOCONTEST|PF_ELIMINATED);
-		}
-	}
-
-	K_CalculateBattleWanted();
-	K_CheckBumpers();
-}
-
-UINT8 K_DestroyBumpers(player_t *player, UINT8 amount)
-{
-	UINT8 oldBumpers = player->bumpers;
-
-	if (!(gametyperules & GTR_BUMPERS))
-	{
-		return 0;
-	}
-
-	amount = min(amount, player->bumpers);
-
-	if (amount == 0)
-	{
-		return 0;
-	}
-
-	player->bumpers -= amount;
-	K_HandleBumperChanges(player, oldBumpers);
-
-	return amount;
-}
-
-UINT8 K_TakeBumpersFromPlayer(player_t *player, player_t *victim, UINT8 amount)
-{
-	UINT8 oldPlayerBumpers = player->bumpers;
-	UINT8 oldVictimBumpers = victim->bumpers;
+	const UINT8 oldPlayerBumpers = K_Bumpers(player);
 
 	UINT8 tookBumpers = 0;
 
-	if (!(gametyperules & GTR_BUMPERS))
-	{
-		return 0;
-	}
-
-	amount = min(amount, victim->bumpers);
+	amount = min(amount, K_Bumpers(victim));
 
 	if (amount == 0)
 	{
-		return 0;
+		return;
 	}
 
-	while ((tookBumpers < amount) && (victim->bumpers > 0))
+	while (tookBumpers < amount)
 	{
-		UINT8 newbumper = player->bumpers;
+		const UINT8 newbumper = (oldPlayerBumpers + tookBumpers);
 
 		angle_t newangle, diff;
 		fixed_t newx, newy;
@@ -4446,24 +4373,14 @@ UINT8 K_TakeBumpersFromPlayer(player_t *player, player_t *victim, UINT8 amount)
 			P_SetMobjState(newmo, S_BATTLEBUMPER1);
 		}
 
-		player->bumpers++;
-		victim->bumpers--;
 		tookBumpers++;
 	}
 
-	if (tookBumpers == 0)
-	{
-		// No change occured.
-		return 0;
-	}
+	// :jartcookiedance:
+	player->mo->health += tookBumpers;
 
 	// Play steal sound
 	S_StartSound(player->mo, sfx_3db06);
-
-	K_HandleBumperChanges(player, oldPlayerBumpers);
-	K_HandleBumperChanges(victim, oldVictimBumpers);
-
-	return tookBumpers;
 }
 
 #define MINEQUAKEDIST 4096
@@ -5127,8 +5044,7 @@ void K_SpawnBoostTrail(player_t *player)
 	I_Assert(!P_MobjWasRemoved(player->mo));
 
 	if (!P_IsObjectOnGround(player->mo)
-		|| player->hyudorotimer != 0
-		|| ((gametyperules & GTR_BUMPERS) && player->bumpers <= 0 && player->karmadelay))
+		|| player->hyudorotimer != 0)
 		return;
 
 	if (player->mo->eflags & MFE_VERTICALFLIP)
@@ -7080,12 +6996,6 @@ mobj_t *K_FindJawzTarget(mobj_t *actor, player_t *source, angle_t range)
 		}
 		else
 		{
-			if (player->bumpers <= 0)
-			{
-				// Don't pay attention to dead players
-				continue;
-			}
-
 			// Z pos too high/low
 			if (abs(player->mo->z - (actor->z + actor->momz)) > FixedMul(RING_DIST/8, mapobjectscale))
 			{
@@ -7801,13 +7711,6 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		player->spheres = 40;
 	// where's the < 0 check? see below the following block!
 
-	if ((gametyperules & GTR_BUMPERS) && (player->bumpers <= 0))
-	{
-		// Deplete 1 every tic when removed from the game.
-		player->spheres--;
-		player->spheredigestion = 0;
-	}
-	else
 	{
 		tic_t spheredigestion = TICRATE; // Base rate of 1 every second when playing.
 		tic_t digestionpower = ((10 - player->kartspeed) + (10 - player->kartweight))-1; // 1 to 17
@@ -7852,12 +7755,12 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 
 	if (!(gametyperules & GTR_KARMA) || (player->pflags & PF_ELIMINATED))
 	{
-		player->karmadelay = comebacktime;
+		player->karmadelay = 0;
 	}
 	else if (player->karmadelay > 0 && !P_PlayerInPain(player))
 	{
 		player->karmadelay--;
-		if (P_IsDisplayPlayer(player) && player->bumpers <= 0 && player->karmadelay <= 0)
+		if (P_IsDisplayPlayer(player) && player->karmadelay <= 0)
 			comebackshowninfo = true; // client has already seen the message
 	}
 
@@ -8021,14 +7924,6 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 
 	K_UpdateTripwire(player);
 
-	if (battleovertime.enabled && !(player->pflags & PF_ELIMINATED) && player->bumpers <= 0 && player->karmadelay <= 0)
-	{
-		if (player->overtimekarma)
-			player->overtimekarma--;
-		else
-			P_DamageMobj(player->mo, NULL, NULL, 1, DMG_TIMEOVER);
-	}
-
 	if ((battleovertime.enabled >= 10*TICRATE) && !(player->pflags & PF_ELIMINATED) && !player->exiting)
 	{
 		fixed_t distanceToBarrier = 0;
@@ -8058,7 +7953,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 
 	if (player->eggmanexplode)
 	{
-		if (player->spectator || ((gametyperules & GTR_BUMPERS) && player->bumpers <= 0))
+		if (player->spectator)
 			player->eggmanexplode = 0;
 		else
 		{
@@ -8399,30 +8294,14 @@ void K_KartPlayerAfterThink(player_t *player)
 		K_LookForRings(player->mo);
 	}
 
-	if (player->invulnhitlag > 0)
+	if (player->nullHitlag > 0)
 	{
-		// Hitlag from what would normally be damage but the
-		// player was invulnerable.
-		//
-		// If we're constantly getting hit the same number of
-		// times, we're probably standing on a damage floor.
-		//
-		// Checking if we're hit more than before ensures
-		// that:
-		//
-		// 1) repeating damage doesn't count
-		// 2) new damage sources still count
-
-		if (player->timeshit <= player->timeshitprev)
+		if (!P_MobjWasRemoved(player->mo))
 		{
-			if (!P_MobjWasRemoved(player->mo))
-			{
-				player->mo->hitlag -= player->invulnhitlag;
-				player->mo->eflags &= ~(MFE_DAMAGEHITLAG);
-			}
+			player->mo->hitlag -= player->nullHitlag;
 		}
 
-		player->invulnhitlag = 0;
+		player->nullHitlag = 0;
 	}
 }
 
@@ -9583,7 +9462,7 @@ void K_KartUpdatePosition(player_t *player)
 						else if (yourEmeralds == myEmeralds)
 						{
 							// Bumpers are the second tier tie breaker
-							if (players[i].bumpers > player->bumpers)
+							if (K_Bumpers(&players[i]) > K_Bumpers(player))
 							{
 								position++;
 							}
@@ -11207,18 +11086,6 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 			player->mo->renderflags &= ~RF_DONTDRAW;
 		}
 
-		if (!(gametyperules & GTR_BUMPERS) || player->bumpers > 0)
-		{
-			player->mo->renderflags &= ~(RF_TRANSMASK|RF_BRIGHTMASK);
-		}
-		else // dead in match? you da bomb
-		{
-			K_DropItems(player); //K_StripItems(player);
-			K_StripOther(player);
-			player->mo->renderflags |= RF_GHOSTLY;
-			player->flashing = player->karmadelay;
-		}
-
 		if (player->trickpanel == 1)
 		{
 			const angle_t lr = ANGLE_45;
@@ -11718,7 +11585,7 @@ UINT32 K_PointLimitForGametype(void)
 		return cv_pointlimit.value;
 	}
 
-	if (battlecapsules || bossinfo.valid)
+	if (K_Cooperative())
 	{
 		return 0;
 	}
@@ -11740,6 +11607,21 @@ UINT32 K_PointLimitForGametype(void)
 	}
 
 	return ptsCap;
+}
+
+boolean K_Cooperative(void)
+{
+	if (battlecapsules)
+	{
+		return true;
+	}
+
+	if (bossinfo.valid)
+	{
+		return true;
+	}
+
+	return false;
 }
 
 //}

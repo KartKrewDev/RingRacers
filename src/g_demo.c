@@ -95,7 +95,8 @@ static struct {
 
 	// EZT_ITEMDATA
 	SINT8 itemtype;
-	UINT8 itemamount, bumpers;
+	UINT8 itemamount;
+	INT32 health;
 
 	// EZT_STATDATA
 	UINT8 skinid, kartspeed, kartweight;
@@ -355,7 +356,7 @@ void G_ReadDemoExtraData(void)
 			if (players[p].mo)
 			{
 				// Is this how this should work..?
-				K_DoIngameRespawn(&players[p]);
+				P_DamageMobj(players[p].mo, NULL, NULL, 1, DMG_DEATHPIT);
 			}
 		}
 		if (extradata & DXD_WEAPONPREF)
@@ -813,13 +814,13 @@ void G_WriteGhostTic(mobj_t *ghost, INT32 playernum)
 	if (ghost->player && (
 			ghostext[playernum].itemtype != ghost->player->itemtype ||
 			ghostext[playernum].itemamount != ghost->player->itemamount ||
-			ghostext[playernum].bumpers != ghost->player->bumpers
+			ghostext[playernum].health < ghost->health
 		))
 	{
 		ghostext[playernum].flags |= EZT_ITEMDATA;
 		ghostext[playernum].itemtype = ghost->player->itemtype;
 		ghostext[playernum].itemamount = ghost->player->itemamount;
-		ghostext[playernum].bumpers = ghost->player->bumpers;
+		ghostext[playernum].health = ghost->health;
 	}
 
 	if (ghost->player && (
@@ -881,7 +882,7 @@ void G_WriteGhostTic(mobj_t *ghost, INT32 playernum)
 		{
 			WRITESINT8(demobuf.p, ghostext[playernum].itemtype);
 			WRITEUINT8(demobuf.p, ghostext[playernum].itemamount);
-			WRITEUINT8(demobuf.p, ghostext[playernum].bumpers);
+			WRITEINT32(demobuf.p, ghostext[playernum].health);
 		}
 		if (ghostext[playernum].flags & EZT_STATDATA)
 		{
@@ -1064,7 +1065,7 @@ void G_ConsGhostTic(INT32 playernum)
 		{
 			ghostext[playernum].itemtype = READSINT8(demobuf.p);
 			ghostext[playernum].itemamount = READUINT8(demobuf.p);
-			ghostext[playernum].bumpers = READUINT8(demobuf.p);
+			ghostext[playernum].health = READINT32(demobuf.p);
 		}
 		if (xziptic & EZT_STATDATA)
 		{
@@ -1134,7 +1135,7 @@ void G_ConsGhostTic(INT32 playernum)
 
 		if (players[playernum].itemtype != ghostext[playernum].itemtype
 			|| players[playernum].itemamount != ghostext[playernum].itemamount
-			|| players[playernum].bumpers != ghostext[playernum].bumpers)
+			|| testmo->health < ghostext[playernum].health)
 		{
 			if (demosynced)
 				CONS_Alert(CONS_WARNING, M_GetText("Demo playback has desynced (item/bumpers)!\n"));
@@ -1142,7 +1143,7 @@ void G_ConsGhostTic(INT32 playernum)
 
 			players[playernum].itemtype = ghostext[playernum].itemtype;
 			players[playernum].itemamount = ghostext[playernum].itemamount;
-			players[playernum].bumpers = ghostext[playernum].bumpers;
+			testmo->health = ghostext[playernum].health;
 		}
 
 		if (players[playernum].kartspeed != ghostext[playernum].kartspeed

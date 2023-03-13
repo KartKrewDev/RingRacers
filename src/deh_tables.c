@@ -5730,7 +5730,7 @@ const char *const MOBJFLAG2_LIST[] = {
 	"JUSTATTACKED",	  // can be pushed by other moving mobjs
 	"FIRING",		  // turret fire
 	"SUPERFIRE",	  // Firing something with Super Sonic-stopping properties. Or, if mobj has MF_MISSILE, this is the actual fire from it.
-	"\x01",			  // free: 1<<20 (name un-matchable)
+	"ALREADYHIT",	  // This object was already damaged THIS tic, resets even during hitlag
 	"STRONGBOX",	  // Flag used for "strong" random monitors.
 	"OBJECTFLIP",	  // Flag for objects that always have flipped gravity.
 	"SKULLFLY",		  // Special handling: skull in flight.

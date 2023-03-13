@@ -232,8 +232,8 @@ static int player_get(lua_State *L)
 		lua_pushinteger(L, plr->spinouttimer);
 	else if (fastcmp(field,"instashield"))
 		lua_pushinteger(L, plr->instashield);
-	else if (fastcmp(field,"invulnhitlag"))
-		lua_pushinteger(L, plr->invulnhitlag);
+	else if (fastcmp(field,"nullHitlag"))
+		lua_pushinteger(L, plr->nullHitlag);
 	else if (fastcmp(field,"wipeoutslow"))
 		lua_pushinteger(L, plr->wipeoutslow);
 	else if (fastcmp(field,"justbumped"))
@@ -398,8 +398,6 @@ static int player_get(lua_State *L)
 		plr->roundscore = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"emeralds"))
 		lua_pushinteger(L, plr->emeralds);
-	else if (fastcmp(field,"bumpers"))
-		lua_pushinteger(L, plr->bumpers);
 	else if (fastcmp(field,"karmadelay"))
 		lua_pushinteger(L, plr->karmadelay);
 	else if (fastcmp(field,"spheres"))
@@ -616,8 +614,8 @@ static int player_set(lua_State *L)
 		plr->spinouttimer = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"instashield"))
 		plr->instashield = luaL_checkinteger(L, 3);
-	else if (fastcmp(field,"invulnhitlag"))
-		plr->invulnhitlag = luaL_checkinteger(L, 3);
+	else if (fastcmp(field,"nullHitlag"))
+		plr->nullHitlag = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"wipeoutslow"))
 		plr->wipeoutslow = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"justbumped"))
@@ -782,8 +780,6 @@ static int player_set(lua_State *L)
 		lua_pushinteger(L, plr->roundscore);
 	else if (fastcmp(field,"emeralds"))
 		plr->emeralds = luaL_checkinteger(L, 3);
-	else if (fastcmp(field,"bumpers"))
-		plr->bumpers = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"karmadelay"))
 		plr->karmadelay = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"spheres"))

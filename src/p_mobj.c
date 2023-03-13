@@ -4588,9 +4588,6 @@ boolean P_SupermanLook4Players(mobj_t *actor)
 			if (players[c].mo->health <= 0)
 				continue; // dead
 
-			if ((gametyperules & GTR_BUMPERS) && players[c].bumpers <= 0)
-				continue; // other dead
-
 			playersinthegame[stop] = &players[c];
 			stop++;
 		}
@@ -6129,6 +6126,8 @@ static void P_MobjSceneryThink(mobj_t *mobj)
 		if (mobj->target && !P_MobjWasRemoved(mobj->target) && mobj->target->player
 			&& mobj->target->health > 0 && !mobj->target->player->spectator)
 		{
+			const UINT8 bumpers = K_Bumpers(mobj->target->player);
+
 			fixed_t rad = 32*mobj->target->scale;
 			fixed_t offz;
 			angle_t ang, diff;
@@ -6138,10 +6137,10 @@ static void P_MobjSceneryThink(mobj_t *mobj)
 			else
 				ang = FixedAngle(mobj->info->speed);
 
-			if (mobj->target->player->bumpers <= 1)
+			if (bumpers <= 1)
 				diff = 0;
 			else
-				diff = FixedAngle(360*FRACUNIT/mobj->target->player->bumpers);
+				diff = FixedAngle(360*FRACUNIT / bumpers);
 
 			ang = (ang*leveltime) + (diff * (mobj->threshold-1));
 
@@ -6178,9 +6177,9 @@ static void P_MobjSceneryThink(mobj_t *mobj)
 				mobj->color = mobj->target->color;
 			}
 
-			if (mobj->target->player->bumpers < 2)
+			if (bumpers < 2)
 				P_SetMobjState(mobj, S_BATTLEBUMPER3);
-			else if (mobj->target->player->bumpers < 3)
+			else if (bumpers < 3)
 				P_SetMobjState(mobj, S_BATTLEBUMPER2);
 			else
 				P_SetMobjState(mobj, S_BATTLEBUMPER1);
@@ -6197,7 +6196,7 @@ static void P_MobjSceneryThink(mobj_t *mobj)
 				P_SetThingPosition(mobj);
 			}
 
-			if (mobj->target->player->bumpers <= mobj->threshold)
+			if (bumpers <= mobj->threshold)
 			{
 				// Do bumper destruction
 				P_KillMobj(mobj, NULL, NULL, DMG_NORMAL);
@@ -6231,7 +6230,7 @@ static void P_MobjSceneryThink(mobj_t *mobj)
 			mobj->color = mobj->target->color;
 			K_MatchGenericExtraFlags(mobj, mobj->target);
 
-			if ((!(gametyperules & GTR_BUMPERS) || mobj->target->player->bumpers <= 0)
+			if (!(gametyperules & GTR_BUMPERS)
 #if 1 // Set to 0 to test without needing to host
 				|| (P_IsDisplayPlayer(mobj->target->player))
 #endif
@@ -8247,7 +8246,9 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 			desty = mobj->target->y;
 		}
 
+		mobj->flags &= ~(MF_NOCLIPTHING);
 		P_MoveOrigin(mobj, destx, desty, mobj->target->z);
+		mobj->flags |= MF_NOCLIPTHING;
 		break;
 	}
 	case MT_FLAMESHIELD:
@@ -8428,7 +8429,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 			statenum_t state = (mobj->state-states);
 
 			if (!mobj->target || !mobj->target->health || !mobj->target->player || mobj->target->player->spectator
-				|| (!(gametyperules & GTR_BUMPERS) || mobj->target->player->bumpers))
+				|| !(gametyperules & GTR_BUMPERS))
 			{
 				P_RemoveMobj(mobj);
 				return false;
@@ -9843,8 +9844,10 @@ void P_MobjThinker(mobj_t *mobj)
 	if ((mobj->flags & MF_BOSS) && mobj->spawnpoint && (bossdisabled & (1<<mobj->spawnpoint->args[0])))
 		return;
 
+	mobj->flags2 &= ~(MF2_ALREADYHIT);
+
 	// Don't run any thinker code while in hitlag
-	if (mobj->hitlag > 0)
+	if ((mobj->player ? mobj->hitlag - mobj->player->nullHitlag : mobj->hitlag) > 0)
 	{
 		mobj->eflags |= MFE_PAUSED;
 		mobj->hitlag--;
@@ -11876,37 +11879,14 @@ void P_SpawnPlayer(INT32 playernum)
 		P_SetScale(overheadarrow, mobj->destscale);
 	}
 
-	if (gametyperules & GTR_BUMPERS)
+	if ((gametyperules & GTR_BUMPERS) && !p->spectator)
 	{
-		if (p->spectator)
+		// At leveltime == 2, K_TimerInit will get called and reset
+		// the bumpers to the initial value for the level.
+		if (leveltime > 2) // Reset those bumpers!
 		{
-			// HEY! No being cheap...
-			p->bumpers = 0;
-		}
-		else if ((p->bumpers > 0) || (leveltime < starttime) || (pcount <= 1))
-		{
-			if ((leveltime < starttime) || (pcount <= 1)) // Start of the map?
-			{
-				if (leveltime > 2) // Reset those bumpers!
-				{
-					p->bumpers = K_StartingBumperCount();
-					K_SpawnPlayerBattleBumpers(p);
-				}
-				else // temp, will get overwritten in K_BattleInit
-				{
-					p->bumpers = 1;
-				}
-			}
-		}
-		else if (p->bumpers <= 0)
-		{
-			p->bumpers = K_StartingBumperCount();
+			mobj->health = K_BumpersToHealth(K_StartingBumperCount());
 			K_SpawnPlayerBattleBumpers(p);
-		}
-
-		if (p->bumpers > 0)
-		{
-			mobj->health = p->bumpers;
 		}
 	}
 

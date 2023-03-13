@@ -38,6 +38,8 @@ void K_RunBattleOvertime(void);
 void K_SetupMovingCapsule(mapthing_t *mt, mobj_t *mobj);
 void K_SpawnPlayerBattleBumpers(player_t *p);
 void K_BattleInit(boolean singleplayercontext);
+UINT8 K_Bumpers(player_t *player);
+INT32 K_BumpersToHealth(UINT8 bumpers);
 
 #ifdef __cplusplus
 } // extern "C"

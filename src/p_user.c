@@ -526,10 +526,6 @@ INT32 P_GivePlayerSpheres(player_t *player, INT32 num_spheres)
 	if (!(gametyperules & GTR_SPHERES)) // No spheres in Race mode)
 		return 0;
 
-	// Not alive
-	if ((gametyperules & GTR_BUMPERS) && (player->bumpers <= 0))
-		return 0;
-
 	if (num_spheres > 40) // Reached the cap, don't waste 'em!
 		num_spheres = 40;
 	else if (num_spheres < 0)
@@ -4387,7 +4383,7 @@ void P_PlayerThink(player_t *player)
 		|| player->growshrinktimer > 0 // Grow doesn't flash either.
 		|| (player->respawn.state != RESPAWNST_NONE && player->respawn.truedeath == true) // Respawn timer (for drop dash effect)
 		|| (player->pflags & PF_NOCONTEST) // NO CONTEST explosion
-		|| ((gametyperules & GTR_BUMPERS) && player->bumpers <= 0 && player->karmadelay)))
+		|| player->karmadelay))
 	{
 		if (player->flashing > 1 && player->flashing < K_GetKartFlashing(player)
 			&& (leveltime & 1))

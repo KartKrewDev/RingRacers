@@ -39,7 +39,7 @@ UINT8 numtargets = 0; // Capsules busted
 INT32 K_StartingBumperCount(void)
 {
 	if (battlecapsules)
-		return 1; // always 1 hit in Break the Capsules
+		return 0; // always 1 hit in Break the Capsules
 
 	return cv_kartbumpers.value;
 }
@@ -95,8 +95,6 @@ void K_CheckBumpers(void)
 	UINT8 nobumpers = 0;
 	UINT8 eliminated = 0;
 
-	const boolean singleplayer = (battlecapsules || bossinfo.valid);
-
 	if (!(gametyperules & GTR_BUMPERS))
 		return;
 
@@ -113,7 +111,7 @@ void K_CheckBumpers(void)
 
 		numingame++;
 
-		if (players[i].bumpers <= 0) // if you don't have any bumpers, you're probably not a winner
+		if (!P_MobjWasRemoved(players[i].mo) && players[i].mo->health <= 0) // if you don't have any bumpers, you're probably not a winner
 		{
 			nobumpers++;
 		}
@@ -124,7 +122,7 @@ void K_CheckBumpers(void)
 		}
 	}
 
-	if (singleplayer
+	if (K_Cooperative()
 			? nobumpers > 0 && nobumpers >= numingame
 			: eliminated >= numingame - 1)
 	{
@@ -135,7 +133,7 @@ void K_CheckBumpers(void)
 			if (players[i].spectator)
 				continue;
 
-			if (singleplayer)
+			if (K_Cooperative())
 				players[i].pflags |= PF_NOCONTEST;
 
 			P_DoPlayerExit(&players[i]);
@@ -170,16 +168,11 @@ void K_CheckEmeralds(player_t *player)
 		return;
 	}
 
-	player->roundscore++; // lol
+	player->roundscore = 100; // lmao
 
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
 		if (!playeringame[i] || players[i].spectator)
-		{
-			continue;
-		}
-
-		if (&players[i] == player)
 		{
 			continue;
 		}
@@ -319,6 +312,21 @@ static inline boolean IsOnInterval(tic_t interval)
 	return ((leveltime - starttime) % interval) == 0;
 }
 
+static UINT32 CountEmeraldsSpawned(const mobj_t *mo)
+{
+	switch (mo->type)
+	{
+		case MT_EMERALD:
+			return mo->extravalue1;
+
+		case MT_MONITOR:
+			return Obj_MonitorGetEmerald(mo);
+
+		default:
+			return 0U;
+	}
+}
+
 void K_RunPaperItemSpawners(void)
 {
 	const boolean overtime = (battleovertime.enabled >= 10*TICRATE);
@@ -362,7 +370,7 @@ void K_RunPaperItemSpawners(void)
 		emeraldsSpawned |= players[i].emeralds;
 
 		if ((players[i].exiting > 0 || (players[i].pflags & PF_ELIMINATED))
-			|| ((gametyperules & GTR_BUMPERS) && players[i].bumpers <= 0))
+			|| ((gametyperules & GTR_BUMPERS) && !P_MobjWasRemoved(players[i].mo) && players[i].mo->health <= 0))
 		{
 			continue;
 		}
@@ -382,10 +390,7 @@ void K_RunPaperItemSpawners(void)
 
 			mo = (mobj_t *)th;
 
-			if (mo->type == MT_EMERALD)
-			{
-				emeraldsSpawned |= mo->extravalue1;
-			}
+			emeraldsSpawned |= CountEmeraldsSpawned(mo);
 		}
 
 		if (canmakeemeralds)
@@ -444,15 +449,7 @@ void K_RunPaperItemSpawners(void)
 
 				mo = (mobj_t *)th;
 
-				if (mo->type == MT_EMERALD)
-				{
-					emeraldsSpawned |= mo->extravalue1;
-				}
-
-				if (mo->type == MT_MONITOR)
-				{
-					emeraldsSpawned |= Obj_MonitorGetEmerald(mo);
-				}
+				emeraldsSpawned |= CountEmeraldsSpawned(mo);
 
 				if (mo->type != MT_PAPERITEMSPOT)
 					continue;
@@ -738,16 +735,20 @@ void K_SetupMovingCapsule(mapthing_t *mt, mobj_t *mobj)
 
 void K_SpawnPlayerBattleBumpers(player_t *p)
 {
-	if (!p->mo || p->bumpers <= 0)
+	const UINT8 bumpers = K_Bumpers(p);
+
+	if (bumpers <= 0)
+	{
 		return;
+	}
 
 	{
 		INT32 i;
-		angle_t diff = FixedAngle(360*FRACUNIT/p->bumpers);
+		angle_t diff = FixedAngle(360*FRACUNIT / bumpers);
 		angle_t newangle = p->mo->angle;
 		mobj_t *bump;
 
-		for (i = 0; i < p->bumpers; i++)
+		for (i = 0; i < bumpers; i++)
 		{
 			bump = P_SpawnMobjFromMobj(p->mo,
 				P_ReturnThrustX(p->mo, newangle + ANGLE_180, 64*FRACUNIT),
@@ -784,21 +785,49 @@ void K_BattleInit(boolean singleplayercontext)
 
 	if (gametyperules & GTR_BUMPERS)
 	{
-		INT32 maxbumpers = K_StartingBumperCount();
+		const INT32 startingHealth = K_BumpersToHealth(K_StartingBumperCount());
 
 		for (i = 0; i < MAXPLAYERS; i++)
 		{
 			if (!playeringame[i] || players[i].spectator)
 				continue;
 
-			players[i].bumpers = maxbumpers;
-
 			if (players[i].mo)
 			{
-				players[i].mo->health = maxbumpers;
+				players[i].mo->health = startingHealth;
 			}
 
 			K_SpawnPlayerBattleBumpers(players+i);
 		}
 	}
+}
+
+UINT8 K_Bumpers(player_t *player)
+{
+	if ((gametyperules & GTR_BUMPERS) == 0)
+	{
+		return 0;
+	}
+
+	if (P_MobjWasRemoved(player->mo))
+	{
+		return 0;
+	}
+
+	if (player->mo->health < 1)
+	{
+		return 0;
+	}
+
+	if (player->mo->health > UINT8_MAX)
+	{
+		return UINT8_MAX;
+	}
+
+	return (player->mo->health - 1);
+}
+
+INT32 K_BumpersToHealth(UINT8 bumpers)
+{
+	return (bumpers + 1);
 }
