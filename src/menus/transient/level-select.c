@@ -57,8 +57,9 @@ boolean M_CanShowLevelInList(INT16 mapnum, levelsearch_t *levelsearch)
 	if (mapheaderinfo[mapnum]->lumpnum == LUMPERROR)
 		return false;
 
-	// Check for TOL
-	if (mapheaderinfo[mapnum]->typeoflevel && !(mapheaderinfo[mapnum]->typeoflevel & levelsearch->typeoflevel))
+	// Check for TOL (permits TEST RUN outside of time attack)
+	if ((levelsearch->timeattack || mapheaderinfo[mapnum]->typeoflevel)
+		&& !(mapheaderinfo[mapnum]->typeoflevel & levelsearch->typeoflevel))
 		return false;
 
 	// Should the map be hidden?
