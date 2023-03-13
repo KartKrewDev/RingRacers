@@ -730,6 +730,7 @@ void Obj_PlayerUFOCollide(mobj_t *ufo, mobj_t *other)
 		Obj_SpecialUFODamage(ufo, other, other, DMG_STEAL);
 		K_KartBouncing(other, ufo);
 		other->player->sneakertimer = 0;
+		other->player->numsneakers = 0;
 	}
 }
 
