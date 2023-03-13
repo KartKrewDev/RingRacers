@@ -900,7 +900,8 @@ INT32 G_PlayerInputAnalog(UINT8 p, INT32 gc, UINT8 menuPlayers)
 {
 	const INT32 deadzone = (JOYAXISRANGE * cv_deadzone[p].value) / FRACUNIT;
 	const INT32 keyboard_player = G_GetPlayerForDevice(KEYBOARD_MOUSE_DEVICE);
-	const boolean is_main_menu_controller = (p == 0 && menuPlayers > 0);
+	const boolean in_menu = (menuPlayers > 0);
+	const boolean main_player = (p == 0);
 	INT32 deviceID = UNASSIGNED_DEVICE;
 	INT32 value = -1;
 	INT32 avail_gamepad_id = 0;
@@ -916,14 +917,14 @@ INT32 G_PlayerInputAnalog(UINT8 p, INT32 gc, UINT8 menuPlayers)
 
 	deviceID = G_GetDeviceForPlayer(p);
 
-	if ((menuPlayers > 0 && G_KeyBindIsNecessary(gc) == true) // In menu: check for all unoverrideable menu default controls.
-		|| (menuPlayers == 0 && gc == gc_start)) // In gameplay: check for the unoverrideable start button to be able to bring up the menu.
+	if ((in_menu == true && G_KeyBindIsNecessary(gc) == true) // In menu: check for all unoverrideable menu default controls.
+		|| (in_menu == false && gc == gc_start)) // In gameplay: check for the unoverrideable start button to be able to bring up the menu.
 	{
 		value = G_GetValueFromControlTable(KEYBOARD_MOUSE_DEVICE, JOYAXISRANGE/4, &(menucontrolreserved[gc][0]));
 		if (value > 0) // Check for press instead of bound.
 		{
 			// This is only intended for P1.
-			if (p == 0)
+			if (main_player == true)
 			{
 				return value;
 			}
@@ -935,7 +936,7 @@ INT32 G_PlayerInputAnalog(UINT8 p, INT32 gc, UINT8 menuPlayers)
 	}
 
 	// Player 1 is always allowed to use the keyboard in 1P, even if they got disconnected.
-	if (p == 0 && keyboard_player == -1 && deviceID == UNASSIGNED_DEVICE)
+	if (main_player == true && keyboard_player == -1 && deviceID == UNASSIGNED_DEVICE)
 	{
 		deviceID = KEYBOARD_MOUSE_DEVICE;
 	}
@@ -948,7 +949,7 @@ INT32 G_PlayerInputAnalog(UINT8 p, INT32 gc, UINT8 menuPlayers)
 	}
 
 	// If you're on gamepad in 1P, and you didn't have a gamepad bind for this, then try your keyboard binds.
-	if (p == 0 && keyboard_player == -1 && deviceID > KEYBOARD_MOUSE_DEVICE)
+	if (main_player == true && keyboard_player == -1 && deviceID > KEYBOARD_MOUSE_DEVICE)
 	{
 		value = G_GetValueFromControlTable(KEYBOARD_MOUSE_DEVICE, deadzone, &(gamecontrol[p][gc][0]));
 		if (value > 0)
@@ -957,37 +958,40 @@ INT32 G_PlayerInputAnalog(UINT8 p, INT32 gc, UINT8 menuPlayers)
 		}
 	}
 
-	if (is_main_menu_controller == true)
+	if (in_menu == true)
 	{
-		// We are P1 controlling menus. We should be able to
-		// control the menu with any unused gamepads, so
-		// that gamepads are able to navigate to the player
-		// setup menu in the first place.
-		for (avail_gamepad_id = 0; avail_gamepad_id < G_GetNumAvailableGamepads(); avail_gamepad_id++)
+		if (main_player == true)
 		{
-			INT32 tryDevice = G_GetAvailableGamepadDevice(avail_gamepad_id);
-			if (tryDevice <= KEYBOARD_MOUSE_DEVICE)
+			// We are P1 controlling menus. We should be able to
+			// control the menu with any unused gamepads, so
+			// that gamepads are able to navigate to the player
+			// setup menu in the first place.
+			for (avail_gamepad_id = 0; avail_gamepad_id < G_GetNumAvailableGamepads(); avail_gamepad_id++)
 			{
-				continue;
-			}
-
-			for (i = 0; i < menuPlayers; i++)
-			{
-				if (tryDevice == G_GetDeviceForPlayer(i))
+				INT32 tryDevice = G_GetAvailableGamepadDevice(avail_gamepad_id);
+				if (tryDevice <= KEYBOARD_MOUSE_DEVICE)
 				{
-					// Don't do this for already taken devices.
-					break;
+					continue;
 				}
-			}
 
-			if (i == menuPlayers)
-			{
-				// This gamepad isn't being used, so we can
-				// use it for P1 menu navigation.
-				value = G_GetValueFromControlTable(tryDevice, deadzone, &(gamecontrol[p][gc][0]));
-				if (value > 0)
+				for (i = 0; i < menuPlayers; i++)
 				{
-					return value;
+					if (tryDevice == G_GetDeviceForPlayer(i))
+					{
+						// Don't do this for already taken devices.
+						break;
+					}
+				}
+
+				if (i == menuPlayers)
+				{
+					// This gamepad isn't being used, so we can
+					// use it for P1 menu navigation.
+					value = G_GetValueFromControlTable(tryDevice, deadzone, &(gamecontrol[p][gc][0]));
+					if (value > 0)
+					{
+						return value;
+					}
 				}
 			}
 		}
