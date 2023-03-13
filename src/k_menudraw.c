@@ -5214,13 +5214,46 @@ static void M_DrawChallengePreview(INT32 x, INT32 y)
 		}
 		case SECRET_MAP:
 		{
+			const char *gtname = "INVALID HEADER";
 			UINT16 mapnum = M_UnlockableMapNum(ref);
+
 			K_DrawMapThumbnail(
-				(x-30)<<FRACBITS, (146+2)<<FRACBITS,
-				60<<FRACBITS,
+				(x-50)<<FRACBITS, (146+2)<<FRACBITS,
+				80<<FRACBITS,
 				0,
 				mapnum,
 				NULL);
+
+			if (mapnum < nummapheaders && mapheaderinfo[mapnum] != NULL)
+			{
+				INT32 guessgt = G_GuessGametypeByTOL(mapheaderinfo[mapnum]->typeoflevel);
+
+				if (guessgt == -1)
+				{
+					// No Time Attack support, so specify...
+					gtname = "Match Race/Online";
+				}
+				else
+				{
+					if (guessgt == GT_VERSUS)
+					{
+						// Fudge since there's no Versus-specific menu right now...
+						guessgt = GT_SPECIAL;
+					}
+
+					if (guessgt == GT_SPECIAL && !M_SecretUnlocked(SECRET_SPECIALATTACK, true))
+					{
+						gtname = "???";
+					}
+					else
+					{
+						gtname = gametypes[guessgt]->name;
+					}
+				}
+			}
+
+			V_DrawThinString(1, BASEVIDHEIGHT-(9+3), V_ALLOWLOWERCASE|V_6WIDTHSPACE, gtname);
+			
 			break;
 		}
 		case SECRET_ENCORE:
