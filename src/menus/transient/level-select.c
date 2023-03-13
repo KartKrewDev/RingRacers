@@ -98,7 +98,7 @@ UINT16 M_CountLevelsToShowInList(levelsearch_t *levelsearch)
 	INT16 i, count = 0;
 
 	if (!levelsearch)
-		return false;
+		return 0;
 
 	if (levelsearch->cup)
 	{
@@ -127,7 +127,7 @@ UINT16 M_GetFirstLevelInList(UINT8 *i, levelsearch_t *levelsearch)
 	INT16 mapnum = NEXTMAP_INVALID;
 
 	if (!levelsearch)
-		return false;
+		return NEXTMAP_INVALID;
 
 	if (levelsearch->cup)
 	{
@@ -152,6 +152,9 @@ UINT16 M_GetFirstLevelInList(UINT8 *i, levelsearch_t *levelsearch)
 		for (mapnum = 0; mapnum < nummapheaders; mapnum++)
 			if (M_CanShowLevelInList(mapnum, levelsearch))
 				break;
+
+		if (mapnum >= nummapheaders)
+			mapnum = NEXTMAP_INVALID;
 	}
 
 	return mapnum;
@@ -160,7 +163,7 @@ UINT16 M_GetFirstLevelInList(UINT8 *i, levelsearch_t *levelsearch)
 UINT16 M_GetNextLevelInList(UINT16 mapnum, UINT8 *i, levelsearch_t *levelsearch)
 {
 	if (!levelsearch)
-		return false;
+		return NEXTMAP_INVALID;
 
 	if (levelsearch->cup)
 	{
