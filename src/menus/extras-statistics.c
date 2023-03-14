@@ -20,6 +20,10 @@ static boolean M_StatisticsAddMap(UINT16 map, cupheader_t *cup, boolean *headere
 	if (mapheaderinfo[map]->menuflags & (LF2_NOTIMEATTACK|LF2_HIDEINSTATS|LF2_HIDEINMENU))
 		return false;
 
+	// No TEST RUN, as that's another exception to Time Attack too
+	if (!mapheaderinfo[map]->typeoflevel)
+		return false;
+
 	// Check for completion
 	if ((mapheaderinfo[map]->menuflags & LF2_FINISHNEEDED)
 	&& !(mapheaderinfo[map]->mapvisited & MV_BEATEN))
