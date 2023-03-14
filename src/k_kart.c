@@ -10057,6 +10057,7 @@ boolean K_FastFallBounce(player_t *player)
 		player->mo->momz = bounce * P_MobjFlip(player->mo);
 
 		player->fastfall = 0;
+		player->fastfallBase = 0;
 		return true;
 	}
 
