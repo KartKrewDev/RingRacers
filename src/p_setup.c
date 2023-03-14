@@ -122,6 +122,7 @@ unsigned char mapmd5[16];
 
 boolean udmf;
 size_t numvertexes, numsegs, numsectors, numsubsectors, numnodes, numlines, numsides, nummapthings;
+size_t num_orig_vertexes;
 vertex_t *vertexes;
 seg_t *segs;
 sector_t *sectors;
@@ -1921,6 +1922,7 @@ static void P_WriteTextmap(void)
 	side_t *wsides;
 	mtag_t freetag;
 	sectorspecialthings_t *specialthings;
+	boolean *wusedvertexes;
 
 	f = fopen(filepath, "w");
 	if (!f)
@@ -1930,14 +1932,15 @@ static void P_WriteTextmap(void)
 	}
 
 	wmapthings = Z_Calloc(nummapthings * sizeof(*mapthings), PU_LEVEL, NULL);
-	wvertexes = Z_Calloc(numvertexes * sizeof(*vertexes), PU_LEVEL, NULL);
+	wvertexes = Z_Calloc(num_orig_vertexes * sizeof(*vertexes), PU_LEVEL, NULL);
 	wsectors = Z_Calloc(numsectors * sizeof(*sectors), PU_LEVEL, NULL);
 	wlines = Z_Calloc(numlines * sizeof(*lines), PU_LEVEL, NULL);
 	wsides = Z_Calloc(numsides * sizeof(*sides), PU_LEVEL, NULL);
 	specialthings = Z_Calloc(numsectors * sizeof(*sectors), PU_LEVEL, NULL);
+	wusedvertexes = Z_Calloc(num_orig_vertexes * sizeof(boolean), PU_LEVEL, NULL);
 
 	memcpy(wmapthings, mapthings, nummapthings * sizeof(*mapthings));
-	memcpy(wvertexes, vertexes, numvertexes * sizeof(*vertexes));
+	memcpy(wvertexes, vertexes, num_orig_vertexes * sizeof(*vertexes));
 	memcpy(wsectors, sectors, numsectors * sizeof(*sectors));
 	memcpy(wlines, lines, numlines * sizeof(*lines));
 	memcpy(wsides, sides, numsides * sizeof(*sides));
@@ -1951,8 +1954,18 @@ static void P_WriteTextmap(void)
 			wsectors[i].tags.tags = memcpy(Z_Malloc(sectors[i].tags.count*sizeof(mtag_t), PU_LEVEL, NULL), sectors[i].tags.tags, sectors[i].tags.count*sizeof(mtag_t));
 
 	for (i = 0; i < numlines; i++)
+	{
+		size_t v;
+
 		if (lines[i].tags.count)
 			wlines[i].tags.tags = memcpy(Z_Malloc(lines[i].tags.count * sizeof(mtag_t), PU_LEVEL, NULL), lines[i].tags.tags, lines[i].tags.count * sizeof(mtag_t));
+
+		v = lines[i].v1 - vertexes;
+		wusedvertexes[v] = true;
+
+		v = lines[i].v2 - vertexes;
+		wusedvertexes[v] = true;
+	}
 
 	freetag = Tag_NextUnused(0);
 
@@ -1960,6 +1973,13 @@ static void P_WriteTextmap(void)
 	{
 		subsector_t *ss;
 		INT32 s;
+
+		if (wmapthings[i].type == mobjinfo[MT_WAYPOINT].doomednum
+			|| wmapthings[i].type == mobjinfo[MT_WAYPOINT_ANCHOR].doomednum
+			|| wmapthings[i].type == mobjinfo[MT_WAYPOINT_RISER].doomednum)
+		{
+			CONS_Alert(CONS_WARNING, M_GetText("Thing %s is a waypoint or waypoint parameter, which cannot be converted fully.\n"), sizeu1(i));
+		}
 
 		if (wmapthings[i].type != 751 && wmapthings[i].type != 752 && wmapthings[i].type != 758)
 			continue;
@@ -2232,18 +2252,26 @@ static void P_WriteTextmap(void)
 		fprintf(f, "\n");
 	}
 
-	for (i = 0; i < numvertexes; i++)
+	j = 0;
+	for (i = 0; i < num_orig_vertexes; i++)
 	{
-		fprintf(f, "vertex // %s\n", sizeu1(i));
+		if (wusedvertexes[i] == false)
+		{
+			continue;
+		}
+
+		fprintf(f, "vertex // %s\n", sizeu1(j));
 		fprintf(f, "{\n");
-		fprintf(f, "x = %f;\n", FIXED_TO_FLOAT(wvertexes[i].x));
-		fprintf(f, "y = %f;\n", FIXED_TO_FLOAT(wvertexes[i].y));
-		if (wvertexes[i].floorzset)
-			fprintf(f, "zfloor = %f;\n", FIXED_TO_FLOAT(wvertexes[i].floorz));
-		if (wvertexes[i].ceilingzset)
-			fprintf(f, "zceiling = %f;\n", FIXED_TO_FLOAT(wvertexes[i].ceilingz));
+		fprintf(f, "x = %f;\n", FIXED_TO_FLOAT(wvertexes[j].x));
+		fprintf(f, "y = %f;\n", FIXED_TO_FLOAT(wvertexes[j].y));
+		if (wvertexes[j].floorzset)
+			fprintf(f, "zfloor = %f;\n", FIXED_TO_FLOAT(wvertexes[j].floorz));
+		if (wvertexes[j].ceilingzset)
+			fprintf(f, "zceiling = %f;\n", FIXED_TO_FLOAT(wvertexes[j].ceilingz));
 		fprintf(f, "}\n");
 		fprintf(f, "\n");
+
+		j++;
 	}
 
 	for (i = 0; i < numlines; i++)
@@ -2563,6 +2591,7 @@ static void P_WriteTextmap(void)
 	Z_Free(wlines);
 	Z_Free(wsides);
 	Z_Free(specialthings);
+	Z_Free(wusedvertexes);
 }
 
 /** Loads the textmap data, after obtaining the elements count and allocating their respective space.
@@ -2938,6 +2967,10 @@ static boolean P_LoadMapData(const virtres_t *virt)
 		I_Error("Level has no sidedefs");
 	if (numlines <= 0)
 		I_Error("Level has no linedefs");
+
+	// Copy original vertex count before BSP modifications,
+	// as it can alter how -writetextmap works.
+	num_orig_vertexes = numvertexes;
 
 	vertexes  = Z_Calloc(numvertexes * sizeof (*vertexes), PU_LEVEL, NULL);
 	sectors   = Z_Calloc(numsectors * sizeof (*sectors), PU_LEVEL, NULL);
@@ -4400,7 +4433,7 @@ static void P_ConvertBinaryLinedefTypes(void)
 			break;
 		case 80: //Raise tagged things by type to this FOF
 			lines[i].args[0] = sides[lines[i].sidenum[0]].textureoffset >> FRACBITS;
-			// angle will be converted to tags elsewhere, because they aren't ready yet...
+			lines[i].args[1] = tag;
 			break;
 		case 81: //Block enemies
 			lines[i].flags |= ML_BLOCKMONSTERS;
@@ -6880,10 +6913,8 @@ static void P_ConvertBinaryMap(void)
 	P_ConvertBinaryThingTypes();
 	P_ConvertBinaryLinedefFlags();
 
-#if 0 // Don't do this yet...
 	if (M_CheckParm("-writetextmap"))
 		P_WriteTextmap();
-#endif
 }
 
 /** Compute MD5 message digest for bytes read from memory source
@@ -7588,6 +7619,8 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 	sector_t *ss;
 	virtlump_t *encoreLump = NULL;
 
+	K_TimerReset();
+
 	levelloading = true;
 
 	// This is needed. Don't touch.
@@ -7885,10 +7918,6 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 	{
 		// Backwards compatibility for non-UDMF maps
 		K_AdjustWaypointsParameters();
-
-		// Moved over here...
-		if (M_CheckParm("-writetextmap"))
-			P_WriteTextmap();
 	}
 
 	if (!fromnetsave) //  ugly hack for P_NetUnArchiveMisc (and P_LoadNetGame)
@@ -8008,8 +8037,6 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 		LUA_HookInt(gamemap, HOOK(MapLoad));
 		P_MapEnd(); // just in case MapLoad modifies tm.thing
 	}
-
-	K_TimerReset();
 
 	// No render mode or reloading gamestate, stop here.
 	if (rendermode == render_none || reloadinggamestate)

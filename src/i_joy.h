@@ -58,6 +58,9 @@ struct JoyType_t
 
 extern JoyType_t Joystick[MAXSPLITSCREENPLAYERS];
 
+void I_SetGamepadPlayerIndex(INT32 device_id, INT32 index);
+void I_SetGamepadIndicatorColor(INT32 device_id, UINT8 red, UINT8 green, UINT8 blue);
+
 #ifdef __cplusplus
 } // extern "C"
 #endif

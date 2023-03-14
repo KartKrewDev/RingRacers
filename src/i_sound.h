@@ -214,13 +214,21 @@ void I_PauseSong(void);
 */
 void I_ResumeSong(void);
 
-/**	\brief	The I_SetMusicVolume function
+/**	\brief	Sets the volume of the Music mixing channel. Distinguished from the song's individual volume. The scale of
+            the volume is determined by the interface implementation.
 
 	\param	volume	volume to set at
 
 	\return	void
 */
 void I_SetMusicVolume(int volume);
+
+/** \brief Sets the current song's volume, independent of the overall music channel volume. The volume scale is 0-100,
+ * as a linear gain multiplier. This is distinguished from SetMusicVolume which may or may not be linear.
+*/
+void I_SetCurrentSongVolume(int volume);
+
+// TODO refactor fades to control Song Volume exclusively in tandem with RR musicdef volume multiplier.
 
 boolean I_SetSongTrack(INT32 track);
 

@@ -36,9 +36,6 @@ extern "C" {
 #define SDL2STUB() CONS_Printf("SDL2: stubbed: %s:%d\n", __func__, __LINE__)
 #endif
 
-// So m_menu knows whether to store cv_usejoystick value or string
-#define JOYSTICK_HOTPLUG
-
 /**	\brief	The JoyInfo_s struct
 
   info about joystick
@@ -65,26 +62,11 @@ typedef struct SDLJoyInfo_s
 /**	\brief SDL info about controllers
 */
 extern SDLJoyInfo_t JoyInfo[MAXSPLITSCREENPLAYERS];
-extern SDL_GameController *ExJoystick[MAXGAMEPADS];
-
-void I_StoreExJoystick(SDL_GameController *dev);
 
 /**	\brief joystick axis deadzone
 */
 #define SDL_JDEADZONE 153
 #undef SDL_JDEADZONE
-
-void I_GetConsoleEvents(void);
-
-// So we can call this from i_video event loop
-void I_ShutdownJoystick(UINT8 index);
-
-// Cheat to get the device index for a game controller handle
-INT32 I_GetJoystickDeviceIndex(SDL_GameController *dev);
-
-// Quick thing to make SDL_JOYDEVICEADDED events less of an abomination
-void I_UpdateJoystickDeviceIndex(UINT8 player);
-void I_UpdateJoystickDeviceIndices(UINT8 excludePlayer);
 
 void I_GetConsoleEvents(void);
 

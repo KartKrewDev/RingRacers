@@ -1995,10 +1995,12 @@ static boolean K_drawKartPositionFaces(void)
 
 			if (LUA_HudEnabled(hud_battlebumpers))
 			{
-				if ((gametyperules & GTR_BUMPERS) && players[rankplayer[i]].bumpers > 0)
+				const UINT8 bumpers = K_Bumpers(&players[rankplayer[i]]);
+
+				if (bumpers > 0)
 				{
 					V_DrawMappedPatch(bumperx-2, Y, V_HUDTRANS|V_SLIDEIN|V_SNAPTOLEFT, kp_tinybumper[0], colormap);
-					for (j = 1; j < players[rankplayer[i]].bumpers; j++)
+					for (j = 1; j < bumpers; j++)
 					{
 						bumperx += 5;
 						V_DrawMappedPatch(bumperx, Y, V_HUDTRANS|V_SLIDEIN|V_SNAPTOLEFT, kp_tinybumper[1], colormap);
@@ -2023,7 +2025,7 @@ static boolean K_drawKartPositionFaces(void)
 		if (i == strank)
 			V_DrawScaledPatch(FACE_X, Y, V_HUDTRANS|V_SLIDEIN|V_SNAPTOLEFT, kp_facehighlight[(leveltime / 4) % 8]);
 
-		if ((gametyperules & GTR_BUMPERS) && players[rankplayer[i]].bumpers <= 0)
+		if ((gametyperules & GTR_BUMPERS) && (players[rankplayer[i]].pflags & PF_ELIMINATED))
 			V_DrawScaledPatch(FACE_X-4, Y-3, V_HUDTRANS|V_SLIDEIN|V_SNAPTOLEFT, kp_ranknobumpers);
 		else
 		{
@@ -2356,7 +2358,7 @@ void K_DrawTabRankings(INT32 x, INT32 y, playersort_t *tab, INT32 scorelines, IN
 		if (tab[i].num == whiteplayer)
 			V_DrawScaledPatch(x, y-4, 0, kp_facehighlight[(leveltime / 4) % 8]);
 
-		if ((gametyperules & GTR_BUMPERS) && players[tab[i].num].bumpers <= 0)
+		if ((gametyperules & GTR_BUMPERS) && (players[tab[i].num].pflags & PF_ELIMINATED))
 			V_DrawScaledPatch(x-4, y-7, 0, kp_ranknobumpers);
 		else
 		{
@@ -2866,14 +2868,16 @@ static void K_drawKartBumpersOrKarma(void)
 		}
 		else
 		{
-			INT32 maxbumper = K_StartingBumperCount();
+			const INT32 maxbumper = K_StartingBumperCount();
+			const UINT8 bumpers = K_Bumpers(stplyr);
+
 			V_DrawMappedPatch(fx+1, fy-2, V_HUDTRANS|V_SLIDEIN|splitflags, kp_rankbumper, colormap);
 
-			if (stplyr->bumpers > 9 || maxbumper > 9)
+			if (bumpers > 9 || maxbumper > 9)
 			{
 				UINT8 ln[2];
-				ln[0] = (stplyr->bumpers / 10 % 10);
-				ln[1] = (stplyr->bumpers % 10);
+				ln[0] = (bumpers / 10 % 10);
+				ln[1] = (bumpers % 10);
 
 				V_DrawScaledPatch(fx+13, fy, V_HUDTRANS|V_SLIDEIN|splitflags, fontv[PINGNUM_FONT].font[ln[0]]);
 				V_DrawScaledPatch(fx+17, fy, V_HUDTRANS|V_SLIDEIN|splitflags, fontv[PINGNUM_FONT].font[ln[1]]);
@@ -2886,7 +2890,7 @@ static void K_drawKartBumpersOrKarma(void)
 			}
 			else
 			{
-				V_DrawScaledPatch(fx+13, fy, V_HUDTRANS|V_SLIDEIN|splitflags, kp_facenum[(stplyr->bumpers) % 10]);
+				V_DrawScaledPatch(fx+13, fy, V_HUDTRANS|V_SLIDEIN|splitflags, kp_facenum[(bumpers) % 10]);
 				V_DrawScaledPatch(fx+27, fy, V_HUDTRANS|V_SLIDEIN|splitflags, kp_facenum[(maxbumper) % 10]);
 			}
 		}
@@ -2903,17 +2907,15 @@ static void K_drawKartBumpersOrKarma(void)
 		}
 		else
 		{
-			INT32 maxbumper = K_StartingBumperCount();
+			const INT32 maxbumper = K_StartingBumperCount();
+			const UINT8 bumpers = K_Bumpers(stplyr);
 
-			if (stplyr->bumpers > 9 && maxbumper > 9)
+			if (bumpers > 9 && maxbumper > 9)
 				V_DrawMappedPatch(LAPS_X, LAPS_Y, V_HUDTRANS|V_SLIDEIN|splitflags, kp_bumperstickerwide, colormap);
 			else
 				V_DrawMappedPatch(LAPS_X, LAPS_Y, V_HUDTRANS|V_SLIDEIN|splitflags, kp_bumpersticker, colormap);
 
-			if (gametyperules & GTR_KARMA)  // TODO BETTER HUD
-				V_DrawKartString(LAPS_X+47, LAPS_Y+3, V_HUDTRANS|V_SLIDEIN|splitflags, va("%d/%d  %d", stplyr->bumpers, maxbumper, stplyr->overtimekarma / TICRATE));
-			else
-				V_DrawKartString(LAPS_X+47, LAPS_Y+3, V_HUDTRANS|V_SLIDEIN|splitflags, va("%d/%d", stplyr->bumpers, maxbumper));
+			V_DrawKartString(LAPS_X+47, LAPS_Y+3, V_HUDTRANS|V_SLIDEIN|splitflags, va("%d/%d", bumpers, maxbumper));
 		}
 	}
 }
@@ -3366,12 +3368,6 @@ static void K_drawKartNameTags(void)
 			continue;
 		}
 
-		if ((gametyperules & GTR_BUMPERS) && (ntplayer->bumpers <= 0))
-		{
-			// Dead in Battle
-			continue;
-		}
-
 		if (!P_CheckSight(stplyr->mo, ntplayer->mo))
 		{
 			// Can't see
@@ -3644,16 +3640,16 @@ static void K_drawKartMinimap(void)
 			if (!players[i].mo || players[i].spectator || !players[i].mo->skin || players[i].exiting)
 				continue;
 
+			// This player is out of the game!
+			if ((gametyperules & GTR_BUMPERS) && (players[i].pflags & PF_ELIMINATED))
+				continue;
+
 			if (i == displayplayers[0] || i == displayplayers[1] || i == displayplayers[2] || i == displayplayers[3])
 			{
 				// Draw display players on top of everything else
 				localplayers[numlocalplayers++] = i;
 				continue;
 			}
-
-			// Now we know it's not a display player, handle non-local player exceptions.
-			if ((gametyperules & GTR_BUMPERS) && players[i].bumpers <= 0)
-				continue;
 
 			if (players[i].hyudorotimer > 0)
 			{
@@ -3866,19 +3862,22 @@ static void K_drawKartFinish(boolean finish)
 
 	//else -- 1/2p, scrolling FINISH
 	{
-		INT32 x, xval, ox, interpx;
+		INT32 x, xval, ox, interpx, pwidth;
 
 		x = ((vid.width<<FRACBITS)/vid.dupx);
 		xval = (SHORT(kptodraw[pnum]->width)<<FRACBITS);
-		x = ((TICRATE - timer)*(xval > x ? xval : x))/TICRATE;
-		ox = ((TICRATE - (timer - 1))*(xval > x ? xval : x))/TICRATE;
+
+		pwidth = max(xval, x);
+
+		x = ((TICRATE - timer) * pwidth) / TICRATE;
+		ox = ((TICRATE - (timer - 1)) * pwidth) / TICRATE;
 
 		interpx = R_InterpolateFixed(ox, x);
 
 		if (r_splitscreen && stplyr == &players[displayplayers[1]])
 			interpx = -interpx;
 
-		V_DrawFixedPatch(interpx + (STCD_X<<FRACBITS) - (xval>>1),
+		V_DrawFixedPatch(interpx + (STCD_X<<FRACBITS) - (pwidth / 2),
 			(STCD_Y<<FRACBITS) - (SHORT(kptodraw[pnum]->height)<<(FRACBITS-1)),
 			FRACUNIT,
 			splitflags, kptodraw[pnum], NULL);
@@ -4160,7 +4159,7 @@ static void K_drawBattleFullscreen(void)
 
 		K_drawKartFinish(true);
 	}
-	else if (stplyr->bumpers <= 0 && stplyr->karmadelay && !stplyr->spectator && drawcomebacktimer)
+	else if (stplyr->karmadelay && !stplyr->spectator && drawcomebacktimer)
 	{
 		UINT16 t = stplyr->karmadelay/(10*TICRATE);
 		INT32 txoff, adjust = (r_splitscreen > 1) ? 4 : 6; // normal string is 8, kart string is 12, half of that for ease
@@ -4894,8 +4893,7 @@ void K_drawKartHUD(void)
 
 	battlefullscreen = (!(gametyperules & GTR_CIRCUIT)
 		&& (stplyr->exiting
-		|| ((gametyperules & GTR_BUMPERS) && (stplyr->bumpers <= 0)
-		&& ((gametyperules & GTR_KARMA) && (stplyr->karmadelay > 0))
+		|| (((gametyperules & GTR_KARMA) && (stplyr->karmadelay > 0))
 		&& !(stplyr->pflags & PF_ELIMINATED)
 		&& stplyr->playerstate == PST_LIVE)));
 

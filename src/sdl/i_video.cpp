@@ -542,7 +542,7 @@ static void Impl_HandleWindowEvent(SDL_WindowEvent evt)
 			SDLforceUngrabMouse();
 		}
 		memset(gamekeydown, 0, sizeof(gamekeydown)); // TODO this is a scary memset
-		memset(deviceResponding, false, sizeof (deviceResponding));
+		G_ResetAllDeviceResponding();
 
 		if (MOUSE_MENU)
 		{
@@ -701,7 +701,7 @@ static void Impl_HandleControllerAxisEvent(SDL_ControllerAxisEvent evt)
 	event_t event;
 	INT32 value;
 
-	event.type = ev_joystick;
+	event.type = ev_gamepad_axis;
 
 	event.device = 1 + evt.which;
 	if (event.device == INT32_MAX)
@@ -775,6 +775,40 @@ static void Impl_HandleControllerButtonEvent(SDL_ControllerButtonEvent evt, Uint
 	{
 		D_PostEvent(&event);
 	}
+}
+
+static void Impl_HandleControllerDeviceAddedEvent(SDL_ControllerDeviceEvent event)
+{
+	// The game is always interested in controller events, even if they aren't internally assigned to a player.
+	// Thus, we *always* open SDL controllers as they become available, to begin receiving their events.
+
+	SDL_GameController* controller = SDL_GameControllerOpen(event.which);
+	if (controller == NULL)
+	{
+		return;
+	}
+
+	SDL_Joystick* joystick = SDL_GameControllerGetJoystick(controller);
+	SDL_JoystickID joystick_instance_id = SDL_JoystickInstanceID(joystick);
+
+	event_t engine_event {};
+
+	engine_event.type = ev_gamepad_device_added;
+	engine_event.device = 1 + joystick_instance_id;
+
+	D_PostEvent(&engine_event);
+}
+
+static void Impl_HandleControllerDeviceRemovedEvent(SDL_ControllerDeviceEvent event)
+{
+	// SDL only posts Device Removed events for controllers that have actually been opened.
+	// Thus, we don't need to filter out controllers that may not have opened successfully prior to this event.
+	event_t engine_event {};
+
+	engine_event.type = ev_gamepad_device_removed;
+	engine_event.device = 1 + event.which;
+
+	D_PostEvent(&engine_event);
 }
 
 static ImGuiKey ImGui_ImplSDL2_KeycodeToImGuiKey(int keycode)
@@ -983,8 +1017,6 @@ void I_GetEvent(void)
 	// otherwise we'll end up catching the warp back to center.
 	//int mouseMotionOnce = 0;
 
-	UINT8 i;
-
 	if (!graphics_started)
 	{
 		return;
@@ -1031,147 +1063,14 @@ void I_GetEvent(void)
 				Impl_HandleControllerButtonEvent(evt.cbutton, evt.type);
 				break;
 
-			////////////////////////////////////////////////////////////
-
 			case SDL_CONTROLLERDEVICEADDED:
-				{
-					// OH BOY are you in for a good time! #abominationstation
-
-					SDL_GameController *newcontroller = SDL_GameControllerOpen(evt.cdevice.which);
-
-					CONS_Debug(DBG_GAMELOGIC, "Controller device index %d added\n", evt.cdevice.which + 1);
-
-					////////////////////////////////////////////////////////////
-					// Because SDL's device index is unstable, we're going to cheat here a bit:
-					// For the first joystick setting that is NOT active:
-					//
-					// 1. Set cv_usejoystickX.value to the new device index (this does not change what is written to config.cfg)
-					//
-					// 2. Set OTHERS' cv_usejoystickX.value to THEIR new device index, because it likely changed
-					//    * If device doesn't exist, switch cv_usejoystick back to default value (.string)
-					//      * BUT: If that default index is being occupied, use ANOTHER cv_usejoystick's default value!
-					////////////////////////////////////////////////////////////
-
-					for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
-					{
-						if (newcontroller && (!JoyInfo[i].dev || !SDL_GameControllerGetAttached(JoyInfo[i].dev)))
-						{
-							UINT8 j;
-
-							for (j = 0; j < MAXSPLITSCREENPLAYERS; j++)
-							{
-								if (i == j)
-									continue;
-
-								if (JoyInfo[j].dev == newcontroller)
-									break;
-							}
-
-							if (j == MAXSPLITSCREENPLAYERS)
-							{
-								// ensures we aren't overriding a currently active device
-								cv_usejoystick[i].value = evt.cdevice.which + 1;
-								I_UpdateJoystickDeviceIndices(0);
-							}
-						}
-					}
-
-					////////////////////////////////////////////////////////////
-					// Was cv_usejoystick disabled in settings?
-					////////////////////////////////////////////////////////////
-
-					for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
-					{
-						if (!strcmp(cv_usejoystick[i].string, "0") || !cv_usejoystick[i].value)
-							cv_usejoystick[i].value = 0;
-						else if (atoi(cv_usejoystick[i].string) <= I_NumJoys() // don't mess if we intentionally set higher than NumJoys
-								 && cv_usejoystick[i].value) // update the cvar ONLY if a device exists
-							CV_SetValue(&cv_usejoystick[i], cv_usejoystick[i].value);
-					}
-
-					////////////////////////////////////////////////////////////
-					// Update all joysticks' init states
-					// This is a little wasteful since cv_usejoystick already calls this, but
-					// we need to do this in case CV_SetValue did nothing because the string was already same.
-					// if the device is already active, this should do nothing, effectively.
-					////////////////////////////////////////////////////////////
-
-					for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
-						I_InitJoystick(i);
-
-					////////////////////////////////////////////////////////////
-
-					for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
-						CONS_Debug(DBG_GAMELOGIC, "Joystick%d device index: %d\n", i+1, JoyInfo[i].oldjoy);
-
-#if 0
-					// update the menu
-					if (currentMenu == &OP_JoystickSetDef)
-						M_SetupJoystickMenu(0);
-#endif
-
-					for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
-					{
-						if (JoyInfo[i].dev == newcontroller)
-							break;
-					}
-
-					if (i == MAXSPLITSCREENPLAYERS)
-						I_StoreExJoystick(newcontroller);
-				}
+				Impl_HandleControllerDeviceAddedEvent(evt.cdevice);
 				break;
-
-			////////////////////////////////////////////////////////////
 
 			case SDL_CONTROLLERDEVICEREMOVED:
-				for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
-				{
-					if (JoyInfo[i].dev && !SDL_GameControllerGetAttached(JoyInfo[i].dev))
-					{
-						CONS_Debug(DBG_GAMELOGIC, "Joystick%d removed, device index: %d\n", i+1, JoyInfo[i].oldjoy);
-						I_ShutdownJoystick(i);
-					}
-				}
-
-				////////////////////////////////////////////////////////////
-				// Update the device indexes, because they likely changed
-				// * If device doesn't exist, switch cv_usejoystick back to default value (.string)
-				//   * BUT: If that default index is being occupied, use ANOTHER cv_usejoystick's default value!
-				////////////////////////////////////////////////////////////
-
-				for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
-				{
-					I_UpdateJoystickDeviceIndex(i);
-				}
-
-				////////////////////////////////////////////////////////////
-				// Was cv_usejoystick disabled in settings?
-				////////////////////////////////////////////////////////////
-
-				for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
-				{
-					if (!strcmp(cv_usejoystick[i].string, "0"))
-					{
-						cv_usejoystick[i].value = 0;
-					}
-					else if (atoi(cv_usejoystick[i].string) <= I_NumJoys() // don't mess if we intentionally set higher than NumJoys
-						&& cv_usejoystick[i].value) // update the cvar ONLY if a device exists
-					{
-						CV_SetValue(&cv_usejoystick[i], cv_usejoystick[i].value);
-					}
-				}
-
-				////////////////////////////////////////////////////////////
-
-				for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
-					CONS_Debug(DBG_GAMELOGIC, "Joystick%d device index: %d\n", i+1, JoyInfo[i].oldjoy);
-
-#if 0
-				// update the menu
-				if (currentMenu == &OP_JoystickSetDef)
-					M_SetupJoystickMenu(0);
-#endif
+				Impl_HandleControllerDeviceRemovedEvent(evt.cdevice);
 				break;
+
 			case SDL_QUIT:
 				LUA_HookBool(true, HOOK(GameQuit));
 				I_Quit();
@@ -1195,10 +1094,7 @@ void I_GetEvent(void)
 
 	// In order to make wheels act like buttons, we have to set their state to Up.
 	// This is because wheel messages don't have an up/down state.
-	for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
-	{
-		gamekeydown[i][KEY_MOUSEWHEELDOWN] = gamekeydown[i][KEY_MOUSEWHEELUP] = 0;
-	}
+	G_GetDeviceGameKeyDownArray(0)[KEY_MOUSEWHEELDOWN] = G_GetDeviceGameKeyDownArray(0)[KEY_MOUSEWHEELUP] = 0;
 }
 
 static void half_warp_mouse(uint16_t x, uint16_t y) {

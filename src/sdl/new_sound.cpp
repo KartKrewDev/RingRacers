@@ -57,7 +57,8 @@ static shared_ptr<Mixer<2>> mixer_sound_effects;
 static shared_ptr<Mixer<2>> mixer_music;
 static shared_ptr<MusicPlayer> music_player;
 static shared_ptr<Gain<2>> gain_sound_effects;
-static shared_ptr<Gain<2>> gain_music;
+static shared_ptr<Gain<2>> gain_music_player;
+static shared_ptr<Gain<2>> gain_music_channel;
 
 static vector<shared_ptr<SoundEffectPlayer>> sound_effect_channels;
 
@@ -187,12 +188,14 @@ void initialize_sound()
 		mixer_music = make_shared<Mixer<2>>();
 		music_player = make_shared<MusicPlayer>();
 		gain_sound_effects = make_shared<Gain<2>>();
-		gain_music = make_shared<Gain<2>>();
+		gain_music_player = make_shared<Gain<2>>();
+		gain_music_channel = make_shared<Gain<2>>();
 		gain_sound_effects->bind(mixer_sound_effects);
-		gain_music->bind(mixer_music);
+		gain_music_player->bind(music_player);
+		gain_music_channel->bind(mixer_music);
 		master->add_source(gain_sound_effects);
-		master->add_source(gain_music);
-		mixer_music->add_source(music_player);
+		master->add_source(gain_music_channel);
+		mixer_music->add_source(gain_music_player);
 		for (size_t i = 0; i < static_cast<size_t>(cv_numChannels.value); i++)
 		{
 			shared_ptr<SoundEffectPlayer> player = make_shared<SoundEffectPlayer>();
@@ -356,7 +359,7 @@ void I_SetSfxVolume(int volume)
 
 	if (gain_sound_effects)
 	{
-		gain_sound_effects->gain(vol * vol * vol);
+		gain_sound_effects->gain(std::clamp(vol * vol * vol, 0.f, 1.f));
 	}
 }
 
@@ -597,6 +600,12 @@ boolean I_LoadSong(char* data, size_t len)
 		return false;
 	}
 
+	if (gain_music_player)
+	{
+		// Reset song volume to 1.0 for newly loaded songs.
+		gain_music_player->gain(1.0);
+	}
+
 	return true;
 }
 
@@ -663,9 +672,22 @@ void I_SetMusicVolume(int volume)
 {
 	float vol = static_cast<float>(volume) / 100.f;
 
-	if (gain_music)
+	if (gain_music_channel)
 	{
-		gain_music->gain(vol * vol * vol);
+		// Music channel volume is interpreted as logarithmic rather than linear.
+		// We approximate by cubing the gain level so vol 50 roughly sounds half as loud.
+		gain_music_channel->gain(std::clamp(vol * vol * vol, 0.f, 1.f));
+	}
+}
+
+void I_SetCurrentSongVolume(int volume)
+{
+	float vol = static_cast<float>(volume) / 100.f;
+
+	if (gain_music_player)
+	{
+		// However, different from music channel volume, musicdef volumes are explicitly linear.
+		gain_music_player->gain(std::max(vol, 0.f));
 	}
 }
 

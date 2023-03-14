@@ -1485,7 +1485,7 @@ void CL_UpdateServerList (void)
 
 static void M_ConfirmConnect(void)
 {
-	if (G_PlayerInputDown(0, gc_a, 1) || gamekeydown[0][KEY_ENTER])
+	if (G_PlayerInputDown(0, gc_a, 1) || G_GetDeviceGameKeyDownArray(0)[KEY_ENTER])
 	{
 		if (totalfilesrequestednum > 0)
 		{
@@ -1512,7 +1512,7 @@ static void M_ConfirmConnect(void)
 
 		M_StopMessage(0);
 	}
-	else if (G_PlayerInputDown(0, gc_b, 1) || G_PlayerInputDown(0, gc_x, 1) || gamekeydown[0][KEY_ESCAPE])
+	else if (G_PlayerInputDown(0, gc_b, 1) || G_PlayerInputDown(0, gc_x, 1) || G_GetDeviceGameKeyDownArray(0)[KEY_ESCAPE])
 	{
 		cl_mode = CL_ABORTED;
 		M_StopMessage(0);
@@ -1962,7 +1962,7 @@ static boolean CL_ServerConnectionTicker(const char *tmpsave, tic_t *oldtic, tic
 		renderdeltatics = FRACUNIT;
 		rendertimefrac = FRACUNIT;
 
-		memset(deviceResponding, false, sizeof (deviceResponding));
+		G_ResetAllDeviceResponding();
 
 		if (netgame)
 		{
@@ -1979,7 +1979,7 @@ static boolean CL_ServerConnectionTicker(const char *tmpsave, tic_t *oldtic, tic
 			{
 				if (G_PlayerInputDown(0, gc_b, 1)
 					|| G_PlayerInputDown(0, gc_x, 1)
-					|| gamekeydown[0][KEY_ESCAPE])
+					|| G_GetDeviceGameKeyDownArray(0)[KEY_ESCAPE])
 					cl_mode = CL_ABORTED;
 			}
 		}

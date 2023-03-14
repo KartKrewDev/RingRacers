@@ -6185,7 +6185,7 @@ static ffloor_t *P_AddFakeFloor(sector_t *sec, sector_t *sec2, line_t *master, I
 static void
 P_RaiseTaggedThingsToFakeFloor (
 		UINT16    type,
-		const taglist_t *tags,
+		mtag_t    tag,
 		sector_t *control
 ){
 	sector_t *target;
@@ -6210,20 +6210,9 @@ P_RaiseTaggedThingsToFakeFloor (
 				continue;
 			}
 
-			if (!udmf)
-			{
-				// We have to convert these here, as mobjs, let alone
-				// sector thing lists, don't exist at the time of the rest
-				// of the binary map conversion.
-				const mtag_t convertTag = mthing->angle;
-
-				Tag_Add(&mthing->tags, convertTag);
-				Taggroup_Add(tags_mapthings, convertTag, (size_t)(mthing - mapthings));
-			}
-
 			if (
 					(type == 0 || mthing->type == type) &&
-					(tags->count == 0 || Tag_Share(&mthing->tags, tags))
+					(tag == 0 || udmf ? Tag_Find(&mthing->tags, tag) : mthing->angle == tag)
 			){
 				if (( mo->flags2 & MF2_OBJECTFLIP ))
 				{
@@ -7771,7 +7760,7 @@ void P_SpawnSpecialsThatRequireObjects(boolean fromnetsave)
 				{
 					P_RaiseTaggedThingsToFakeFloor(
 							lines[i].args[0],
-							&lines[i].tags,
+							lines[i].args[1],
 							lines[i].frontsector
 					);
 				}

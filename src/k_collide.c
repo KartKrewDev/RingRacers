@@ -43,9 +43,6 @@ boolean K_BananaBallhogCollide(mobj_t *t1, mobj_t *t2)
 {
 	boolean damageitem = false;
 
-	if ((t1->threshold > 0 && t2->hitlag > 0) || (t2->threshold > 0 && t1->hitlag > 0))
-		return true;
-
 	if (((t1->target == t2) || (!(t2->flags & (MF_ENEMY|MF_BOSS)) && (t1->target == t2->target))) && (t1->threshold > 0 || (t2->type != MT_PLAYER && t2->threshold > 0)))
 		return true;
 
@@ -133,9 +130,6 @@ boolean K_BananaBallhogCollide(mobj_t *t1, mobj_t *t2)
 
 boolean K_EggItemCollide(mobj_t *t1, mobj_t *t2)
 {
-	if ((t1->threshold > 0 && t2->hitlag > 0) || (t2->threshold > 0 && t1->hitlag > 0))
-		return true;
-
 	// Push fakes out of other item boxes
 	if (t2->type == MT_RANDOMITEM || t2->type == MT_EGGMANITEM)
 	{
@@ -154,14 +148,7 @@ boolean K_EggItemCollide(mobj_t *t1, mobj_t *t2)
 		if (!P_CanPickupItem(t2->player, 2))
 			return true;
 
-		if ((gametyperules & GTR_BUMPERS) && t2->player->bumpers <= 0)
-		{
-			return true;
-		}
-		else
-		{
-			K_StartEggmanRoulette(t2->player);
-		}
+		K_StartEggmanRoulette(t2->player);
 
 		if (t2->player->flamedash && t2->player->itemtype == KITEM_FLAMESHIELD)
 		{
@@ -182,10 +169,7 @@ boolean K_EggItemCollide(mobj_t *t1, mobj_t *t2)
 
 			if (t1->target && t1->target->player)
 			{
-				if ((gametyperules & GTR_CIRCUIT) || t1->target->player->bumpers > 0)
-					t2->player->eggmanblame = t1->target->player-players;
-				else
-					t2->player->eggmanblame = t2->player-players;
+				t2->player->eggmanblame = t1->target->player - players;
 
 				if (t1->target->hnext == t1)
 				{
@@ -323,6 +307,10 @@ tic_t K_MineExplodeAttack(mobj_t *actor, fixed_t size, boolean spin)
 	// Set this flag to ensure that the inital action won't be triggered twice.
 	actor->flags2 |= MF2_DEBRIS;
 
+	// Set this flag to ensure the hitbox timer doesn't get extended with every player hit
+	actor->flags |= MF_NOHITLAGFORME;
+	actor->hitlag = 0; // same deal
+
 	if (!spin)
 	{
 		if (minehitlag == 0)
@@ -340,9 +328,6 @@ tic_t K_MineExplodeAttack(mobj_t *actor, fixed_t size, boolean spin)
 
 boolean K_MineCollide(mobj_t *t1, mobj_t *t2)
 {
-	if ((t1->threshold > 0 && t2->hitlag > 0) || (t2->threshold > 0 && t1->hitlag > 0))
-		return true;
-
 	if (((t1->target == t2) || (!(t2->flags & (MF_ENEMY|MF_BOSS)) && (t1->target == t2->target))) && (t1->threshold > 0 || (t2->type != MT_PLAYER && t2->threshold > 0)))
 		return true;
 
@@ -394,9 +379,6 @@ boolean K_MineCollide(mobj_t *t1, mobj_t *t2)
 
 boolean K_LandMineCollide(mobj_t *t1, mobj_t *t2)
 {
-	if ((t1->threshold > 0 && t2->hitlag > 0) || (t2->threshold > 0 && t1->hitlag > 0))
-		return true;
-
 	if (((t1->target == t2) || (!(t2->flags & (MF_ENEMY|MF_BOSS)) && (t1->target == t2->target))) && (t1->threshold > 0 || (t2->type != MT_PLAYER && t2->threshold > 0)))
 		return true;
 
@@ -482,9 +464,6 @@ boolean K_LandMineCollide(mobj_t *t1, mobj_t *t2)
 boolean K_DropTargetCollide(mobj_t *t1, mobj_t *t2)
 {
 	mobj_t *draggeddroptarget = (t1->type == MT_DROPTARGET_SHIELD) ? t1->target : NULL;
-
-	if ((t1->threshold > 0 && t2->hitlag > 0) || (t2->threshold > 0 && t1->hitlag > 0))
-		return true;
 
 	if (((t1->target == t2) || (t1->target == t2->target)) && ((t1->threshold > 0 && t2->type == MT_PLAYER) || (t2->type != MT_PLAYER && t2->threshold > 0)))
 		return true;
@@ -696,6 +675,17 @@ void K_LightningShieldAttack(mobj_t *actor, fixed_t size)
 
 boolean K_BubbleShieldCollide(mobj_t *t1, mobj_t *t2)
 {
+	if (t1->type == MT_PLAYER)
+	{
+		// Bubble Shield already has a hitbox, and it gets
+		// teleported every tic so the Bubble itself will
+		// always make contact with other objects.
+		//
+		// Therefore, we don't need a second, smaller hitbox
+		// on the player. It'll just cause unwanted hitlag.
+		return true;
+	}
+
 	if (t2->type == MT_PLAYER)
 	{
 		// Counter desyncs
@@ -715,8 +705,13 @@ boolean K_BubbleShieldCollide(mobj_t *t1, mobj_t *t2)
 		}
 
 		// Player Damage
-		P_DamageMobj(t2, ((t1->type == MT_BUBBLESHIELD) ? t1->target : t1), t1, 1, DMG_NORMAL|DMG_WOMBO);
-		S_StartSound(t1, sfx_s3k44);
+		P_DamageMobj(t2, t1->target, t1, 1, DMG_NORMAL|DMG_WOMBO);
+
+		if (t2->player->timeshit > t2->player->timeshitprev)
+		{
+			// Don't play from t1 else it gets cut out... for some reason.
+			S_StartSound(t2, sfx_s3k44);
+		}
 	}
 	else
 	{
@@ -746,9 +741,6 @@ boolean K_BubbleShieldCollide(mobj_t *t1, mobj_t *t2)
 
 boolean K_KitchenSinkCollide(mobj_t *t1, mobj_t *t2)
 {
-	if ((t1->threshold > 0 && t2->hitlag > 0) || (t2->threshold > 0 && t1->hitlag > 0))
-		return true;
-
 	if (((t1->target == t2) || (!(t2->flags & (MF_ENEMY|MF_BOSS)) && (t1->target == t2->target))) && (t1->threshold > 0 || (t2->type != MT_PLAYER && t2->threshold > 0)))
 		return true;
 

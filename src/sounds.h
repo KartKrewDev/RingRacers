@@ -1204,6 +1204,7 @@ typedef enum
 	sfx_waved2,
 	sfx_waved3,
 	sfx_waved4,
+	sfx_waved5,
 
 	// Passing sounds
 	sfx_pass01,

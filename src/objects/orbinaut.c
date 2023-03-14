@@ -167,12 +167,6 @@ boolean Obj_OrbinautJawzCollide(mobj_t *t1, mobj_t *t2)
 	boolean tumbleitem = false;
 	boolean sprung = false;
 
-	if ((orbinaut_selfdelay(t1) > 0 && t2->hitlag > 0)
-		|| (orbinaut_selfdelay(t2) > 0 && t1->hitlag > 0))
-	{
-		return true;
-	}
-
 	if (t1->health <= 0 || t2->health <= 0)
 	{
 		return true;
