@@ -5531,8 +5531,12 @@ challengedesc:
 		if (offs & 1)
 			offs = -offs;
 		offs /= 2;
-		V_DrawFixedPatch((6+offs)*FRACUNIT, 5*FRACUNIT, FRACUNIT, 0, key, NULL);
-		V_DrawKartString((25+offs), 9-challengesmenu.unlockcount[CC_CHAOANIM], 0, va("%u", gamedata->chaokeys));
+
+		if (gamedata->chaokeys > 9)
+			offs -= 6;
+
+		V_DrawFixedPatch((8+offs)*FRACUNIT, 5*FRACUNIT, FRACUNIT, 0, key, NULL);
+		V_DrawKartString((27+offs), 9-challengesmenu.unlockcount[CC_CHAOANIM], 0, va("%u", gamedata->chaokeys));
 
 		offs = challengekeybarwidth;
 		if ((gamedata->chaokeys + gamedata->usedkeys) < GDMAX_CHAOKEYS)
