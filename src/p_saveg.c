@@ -487,6 +487,10 @@ static void P_NetArchivePlayers(savebuffer_t *save)
 		WRITEFIXED(save->p, players[i].loop.shift.x);
 		WRITEFIXED(save->p, players[i].loop.shift.y);
 		WRITEUINT8(save->p, players[i].loop.flip);
+
+		// ACS has read access to this, so it has to be net-communicated.
+		// It is the ONLY roundcondition that is sent over the wire and I'd like it to stay that way.
+		WRITEUINT32(save->p, players[i].roundconditions.unlocktriggers);
 	}
 }
 
@@ -873,6 +877,10 @@ static void P_NetUnArchivePlayers(savebuffer_t *save)
 		players[i].loop.shift.x = READFIXED(save->p);
 		players[i].loop.shift.y = READFIXED(save->p);
 		players[i].loop.flip = READUINT8(save->p);
+
+		// ACS has read access to this, so it has to be net-communicated.
+		// It is the ONLY roundcondition that is sent over the wire and I'd like it to stay that way.
+		players[i].roundconditions.unlocktriggers = READUINT32(save->p);
 
 		//players[i].viewheight = P_GetPlayerViewHeight(players[i]); // scale cannot be factored in at this point
 	}
