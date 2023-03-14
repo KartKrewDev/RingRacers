@@ -1316,7 +1316,7 @@ static inline moviemode_t M_StartMovieAVRecorder(const char *pathname)
 #endif
 }
 
-void M_StartMovie(void)
+void M_StartMovie(moviemode_t mode)
 {
 #if NUMSCREENS > 2
 	char pathname[MAX_WADPATH];
@@ -1331,7 +1331,7 @@ void M_StartMovie(void)
 	if (rendermode == render_none)
 		I_Error("Can't make a movie without a render system\n");
 
-	switch (cv_moviemode.value)
+	switch (mode)
 	{
 		case MM_GIF:
 			moviemode = M_StartMovieGIF(pathname);
@@ -1842,12 +1842,38 @@ boolean M_ScreenshotResponder(event_t *ev)
 	if (ch >= NUMKEYS && menuactive) // If it's not a keyboard key, then don't allow it in the menus!
 		return false;
 
-	if (ch == KEY_F8 /*|| ch == gamecontrol[0][gc_screenshot][0] || ch == gamecontrol[0][gc_screenshot][1]*/) // remappable F8
+	switch (ch)
+	{
+	case KEY_F8:
 		M_ScreenShot();
-	else if (ch == KEY_F9 /*|| ch == gamecontrol[0][gc_recordgif][0] || ch == gamecontrol[0][gc_recordgif][1]*/) // remappable F9
-		((moviemode) ? M_StopMovie : M_StartMovie)();
-	else
+		break;
+
+	case KEY_F9:
+		if (moviemode)
+		{
+			M_StopMovie();
+		}
+		else
+		{
+			M_StartMovie(MM_AVRECORDER);
+		}
+		break;
+
+	case KEY_F10:
+		if (moviemode)
+		{
+			M_StopMovie();
+		}
+		else
+		{
+			M_StartMovie(static_cast<moviemode_t>(cv_moviemode.value));
+		}
+		break;
+
+	default:
 		return false;
+	}
+
 	return true;
 }
 

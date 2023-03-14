@@ -2503,7 +2503,7 @@ static void Command_Stopdemo_f(void)
 
 static void Command_StartMovie_f(void)
 {
-	M_StartMovie();
+	M_StartMovie(cv_moviemode.value);
 }
 
 static void Command_StopMovie_f(void)

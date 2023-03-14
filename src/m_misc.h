@@ -48,7 +48,7 @@ extern consvar_t cv_zlib_memory, cv_zlib_level, cv_zlib_strategy, cv_zlib_window
 extern consvar_t cv_zlib_memorya, cv_zlib_levela, cv_zlib_strategya, cv_zlib_window_bitsa;
 extern consvar_t cv_apng_delay, cv_apng_downscale;
 
-void M_StartMovie(void);
+void M_StartMovie(moviemode_t mode);
 void M_LegacySaveFrame(void);
 void M_StopMovie(void);
 
