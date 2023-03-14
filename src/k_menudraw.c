@@ -5662,27 +5662,53 @@ static void M_DrawStatsMaps(void)
 		V_DrawCharacter(10, y-(skullAnimCounter/5),
 			'\x1A' | highlightflags, false); // up arrow
 
-	while (statisticsmenu.maplist[++i] != NEXTMAP_INVALID)
+	while ((mnum = statisticsmenu.maplist[++i]) != NEXTMAP_INVALID)
 	{
 		if (location)
 		{
 			--location;
 			continue;
 		}
-		else if (dotopname)
+
+		if (dotopname || mnum >= nummapheaders)
 		{
-			V_DrawThinString(20,  y, V_6WIDTHSPACE|highlightflags, "LEVEL NAME");
-			V_DrawRightAlignedThinString(BASEVIDWIDTH-20, y, V_6WIDTHSPACE|highlightflags, "MEDALS");
+			if (mnum >= nummapheaders)
+			{
+				mnum = statisticsmenu.maplist[1+i];
+				if (mnum >= nummapheaders)
+					mnum = statisticsmenu.maplist[i-1];
+			}
+
+			if (mnum < nummapheaders)
+			{
+				const char *str;
+
+				if (mapheaderinfo[mnum]->cup)
+					str = va("%s CUP", mapheaderinfo[mnum]->cup->name);
+				else
+					str = "LOST AND FOUND";
+
+				V_DrawThinString(20,  y, V_6WIDTHSPACE|highlightflags, str);
+			}
+
+			if (dotopname)
+			{
+				V_DrawRightAlignedThinString(BASEVIDWIDTH-20, y, V_6WIDTHSPACE|highlightflags, "MEDALS");
+				dotopname = false;
+			}
+
 			y += STATSSTEP;
-			dotopname = false;
+			if (y >= BASEVIDHEIGHT-STATSSTEP)
+				goto bottomarrow;
+
+			continue;
 		}
 
-		mnum = statisticsmenu.maplist[i]+1;
-		M_DrawMapMedals(mnum, 291, y);
+		M_DrawMapMedals(mnum+1, 291, y);
 
 		{
-			char *title = G_BuildMapTitle(mnum);
-			V_DrawThinString(20, y, V_6WIDTHSPACE, title);
+			char *title = G_BuildMapTitle(mnum+1);
+			V_DrawThinString(24, y, V_6WIDTHSPACE, title);
 			Z_Free(title);
 		}
 
@@ -5691,14 +5717,11 @@ static void M_DrawStatsMaps(void)
 		if (y >= BASEVIDHEIGHT-STATSSTEP)
 			goto bottomarrow;
 	}
-	if (dotopname && !location)
-	{
-		V_DrawString(20,  y, V_6WIDTHSPACE|highlightflags, "LEVEL NAME");
-		V_DrawString(256, y, V_6WIDTHSPACE|highlightflags, "MEDALS");
-		y += STATSSTEP;
-	}
-	else if (location)
+	if (location)
 		--location;
+
+	if (statisticsmenu.numextramedals == 0)
+		goto bottomarrow;
 
 	// Extra Emblem headers
 	for (i = 0; i < 2; ++i)
@@ -5738,7 +5761,6 @@ static void M_DrawStatsMaps(void)
 			continue;
 		}
 
-		if (i >= 0)
 		{
 			if (gamedata->unlocked[i])
 			{
@@ -5753,7 +5775,7 @@ static void M_DrawStatsMaps(void)
 				V_DrawSmallScaledPatch(291, y+1, V_6WIDTHSPACE, W_CachePatchName("NEEDIT", PU_CACHE));
 			}
 
-			V_DrawThinString(20, y, V_6WIDTHSPACE, va("%s", unlockables[i].name));
+			V_DrawThinString(24, y, V_6WIDTHSPACE, va("%s", unlockables[i].name));
 		}
 
 		y += STATSSTEP;

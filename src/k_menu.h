@@ -1196,6 +1196,7 @@ boolean M_ChallengesInputs(INT32 ch);
 extern struct statisticsmenu_s {
 	INT32 location;
 	INT32 nummaps;
+	INT32 numextramedals;
 	INT32 maxscroll;
 	UINT16 *maplist;
 } statisticsmenu;
