@@ -5496,6 +5496,8 @@ mobj_t *K_ThrowKartItem(player_t *player, boolean missile, mobjtype_t mapthing, 
 
 		if (mapthing == MT_DROPTARGET && mo)
 		{
+			mo->health++;
+			mo->color = SKINCOLOR_WHITE;
 			mo->reactiontime = TICRATE/2;
 			P_SetMobjState(mo, mo->info->painstate);
 		}
