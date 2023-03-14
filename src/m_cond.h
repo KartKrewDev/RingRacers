@@ -81,7 +81,7 @@ typedef enum
 	UCRP_PODIUMPRIZE, // Get to podium sequence with that cup's bonus (alternate string version of UCRP_PODIUMEMERALD
 
 	UCRP_FINISHCOOL, // Finish in good standing
-	UCRP_FINISHALLCAPSULES, // Break all capsules
+	UCRP_FINISHALLPRISONS, // Break all prisons
 	UCRP_NOCONTEST, // No Contest
 
 	UCRP_FINISHPLACE, // Finish at least [place]

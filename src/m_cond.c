@@ -832,7 +832,7 @@ boolean M_CheckCondition(condition_t *cn, player_t *player)
 				&& !(player->pflags & PF_NOCONTEST)
 				&& M_NotFreePlay(player)
 				&& !K_IsPlayerLosing(player));
-		case UCRP_FINISHALLCAPSULES:
+		case UCRP_FINISHALLPRISONS:
 			return (battleprisons
 				&& !(player->pflags & PF_NOCONTEST)
 				//&& M_NotFreePlay(player)
@@ -1276,19 +1276,15 @@ static const char *M_GetConditionString(condition_t *cn)
 			return va("with engine class %c", 'A' + cn->requirement);
 		case UCRP_ISDIFFICULTY:
 		{
-			const char *speedtext = "", *orbetter = "";
+			const char *speedtext = "";
 
 			if (cn->requirement == KARTSPEED_NORMAL)
 			{
-				speedtext = "on Normal difficulty";
-				//if (M_SecretUnlocked(SECRET_HARDSPEED, true))
-					orbetter = " or better";
+				speedtext = "on Normal difficulty or better";
 			}
 			else if (cn->requirement == KARTSPEED_HARD)
 			{
 				speedtext = "on Hard difficulty";
-				if (M_SecretUnlocked(SECRET_MASTERMODE, true))
-					orbetter = " or better";
 			}
 			else if (cn->requirement == KARTGP_MASTER)
 			{
@@ -1298,7 +1294,7 @@ static const char *M_GetConditionString(condition_t *cn)
 					speedtext = "on ???";
 			}
 
-			return va("%s%s", speedtext, orbetter);
+			return speedtext;
 		}
 
 		case UCRP_PODIUMCUP:
@@ -1356,8 +1352,8 @@ static const char *M_GetConditionString(condition_t *cn)
 
 		case UCRP_FINISHCOOL:
 			return "finish in good standing";
-		case UCRP_FINISHALLCAPSULES:
-			return "break every capsule";
+		case UCRP_FINISHALLPRISONS:
+			return "break every prison";
 		case UCRP_NOCONTEST:
 			return "NO CONTEST";
 		case UCRP_FINISHPLACE:
