@@ -1319,13 +1319,27 @@ static inline moviemode_t M_StartMovieAVRecorder(const char *pathname)
 void M_StartMovie(moviemode_t mode)
 {
 #if NUMSCREENS > 2
+	const char *folder;
 	char pathname[MAX_WADPATH];
 
 	if (moviemode)
 		return;
 
-	strcpy(pathname, srb2home);
-	strcat(pathname, PATHSEP "media" PATHSEP "movies" PATHSEP);
+	switch (mode)
+	{
+	case MM_GIF:
+		folder = "gifs";
+		break;
+
+	case MM_AVRECORDER:
+		folder = "movies";
+		break;
+
+	default:
+		folder = "slideshows";
+	}
+
+	sprintf(pathname, "%s" PATHSEP "media" PATHSEP "%s" PATHSEP, srb2home, folder);
 	M_MkdirEach(pathname, M_PathParts(pathname) - 2, 0755);
 
 	if (rendermode == render_none)
