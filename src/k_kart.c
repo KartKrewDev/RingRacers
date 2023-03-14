@@ -9946,6 +9946,13 @@ static void K_KartSpindash(player_t *player)
 		// Update fastfall.
 		player->fastfall = player->mo->momz;
 		player->spindash = 0;
+
+		if (player->fastfallBase == 0)
+		{
+			// Factors 3D momentum.
+			player->fastfallBase = FixedHypot(player->speed, player->mo->momz);
+		}
+
 		return;
 	}
 	else if (player->fastfall != 0)
