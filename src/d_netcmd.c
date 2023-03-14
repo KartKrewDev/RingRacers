@@ -894,12 +894,8 @@ void D_RegisterClientCommands(void)
 	COM_AddCommand("stopmovie", Command_StopMovie_f);
 	COM_AddCommand("minigen", M_MinimapGenerate);
 
-	CV_RegisterVar(&cv_screenshot_option);
-	CV_RegisterVar(&cv_screenshot_folder);
 	CV_RegisterVar(&cv_screenshot_colorprofile);
 	CV_RegisterVar(&cv_moviemode);
-	CV_RegisterVar(&cv_movie_option);
-	CV_RegisterVar(&cv_movie_folder);
 
 #ifdef SRB2_CONFIG_ENABLE_WEBM_MOVIES
 	M_AVRecorder_AddCommands();
@@ -1013,8 +1009,6 @@ void D_RegisterClientCommands(void)
 	}
 
 	// filesrch.c
-	CV_RegisterVar(&cv_addons_option);
-	CV_RegisterVar(&cv_addons_folder);
 	CV_RegisterVar(&cv_addons_md5);
 	CV_RegisterVar(&cv_addons_showall);
 	CV_RegisterVar(&cv_addons_search_type);

@@ -112,17 +112,10 @@ typedef off_t off64_t;
  #endif
 #endif
 
-static CV_PossibleValue_t screenshot_cons_t[] = {{0, "Default"}, {1, "HOME"}, {2, "SRB2"}, {3, "CUSTOM"}, {0, NULL}};
-consvar_t cv_screenshot_option = CVAR_INIT ("screenshot_option", "Default", CV_SAVE|CV_CALL, screenshot_cons_t, Screenshot_option_Onchange);
-consvar_t cv_screenshot_folder = CVAR_INIT ("screenshot_folder", "", CV_SAVE, NULL, NULL);
-
 consvar_t cv_screenshot_colorprofile = CVAR_INIT ("screenshot_colorprofile", "Yes", CV_SAVE, CV_YesNo, NULL);
 
 static CV_PossibleValue_t moviemode_cons_t[] = {{MM_GIF, "GIF"}, {MM_APNG, "aPNG"}, {MM_SCREENSHOT, "Screenshots"}, {MM_AVRECORDER, "WebM"}, {0, NULL}};
 consvar_t cv_moviemode = CVAR_INIT ("moviemode_mode", "WebM", CV_SAVE|CV_CALL, moviemode_cons_t, Moviemode_mode_Onchange);
-
-consvar_t cv_movie_option = CVAR_INIT ("movie_option", "Default", CV_SAVE|CV_CALL, screenshot_cons_t, Moviemode_option_Onchange);
-consvar_t cv_movie_folder = CVAR_INIT ("movie_folder", "", CV_SAVE, NULL, NULL);
 
 static CV_PossibleValue_t zlib_mem_level_t[] = {
 	{1, "(Min Memory) 1"},
@@ -1331,20 +1324,9 @@ void M_StartMovie(void)
 	if (moviemode)
 		return;
 
-	if (cv_movie_option.value == 0)
-		strcpy(pathname, usehome ? srb2home : srb2path);
-	else if (cv_movie_option.value == 1)
-		strcpy(pathname, srb2home);
-	else if (cv_movie_option.value == 2)
-		strcpy(pathname, srb2path);
-	else if (cv_movie_option.value == 3 && *cv_movie_folder.string != '\0')
-		strcpy(pathname, cv_movie_folder.string);
-
-	if (cv_movie_option.value != 3)
-	{
-		strcat(pathname, PATHSEP "media" PATHSEP "movies" PATHSEP);
-		M_MkdirEach(pathname, M_PathParts(pathname) - 2, 0755);
-	}
+	strcpy(pathname, srb2home);
+	strcat(pathname, PATHSEP "media" PATHSEP "movies" PATHSEP);
+	M_MkdirEach(pathname, M_PathParts(pathname) - 2, 0755);
 
 	if (rendermode == render_none)
 		I_Error("Can't make a movie without a render system\n");
@@ -1799,20 +1781,9 @@ void M_DoScreenShot(UINT32 width, UINT32 height, tcb::span<const std::byte> data
 	if (rendermode == render_none)
 		return;
 
-	if (cv_screenshot_option.value == 0)
-		strcpy(pathname, usehome ? srb2home : srb2path);
-	else if (cv_screenshot_option.value == 1)
-		strcpy(pathname, srb2home);
-	else if (cv_screenshot_option.value == 2)
-		strcpy(pathname, srb2path);
-	else if (cv_screenshot_option.value == 3 && *cv_screenshot_folder.string != '\0')
-		strcpy(pathname, cv_screenshot_folder.string);
-
-	if (cv_screenshot_option.value != 3)
-	{
-		strcat(pathname, PATHSEP "media" PATHSEP "screenshots" PATHSEP);
-		M_MkdirEach(pathname, M_PathParts(pathname) - 2, 0755);
-	}
+	strcpy(pathname, srb2home);
+	strcat(pathname, PATHSEP "media" PATHSEP "screenshots" PATHSEP);
+	M_MkdirEach(pathname, M_PathParts(pathname) - 2, 0755);
 
 #ifdef USE_PNG
 	freename = Newsnapshotfile(pathname,"png");

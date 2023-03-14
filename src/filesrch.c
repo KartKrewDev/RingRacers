@@ -32,7 +32,6 @@
 #include "d_netfil.h"
 #include "m_misc.h"
 #include "z_zone.h"
-#include "k_menu.h" // Addons_option_Onchange
 
 #if (defined (_WIN32) && !defined (_WIN32_WCE)) && defined (_MSC_VER) && !defined (_XBOX)
 
@@ -310,15 +309,6 @@ closedir (DIR * dirp)
   return rc;
 }
 #endif
-
-static CV_PossibleValue_t addons_cons_t[] = {{0, "Addons"},
-#if 1
-												{1, "HOME"}, {2, "IWAD"},
-#endif
-													{3, "CUSTOM"}, {0, NULL}};
-
-consvar_t cv_addons_option = CVAR_INIT ("addons_option", "Addons", CV_SAVE|CV_CALL, addons_cons_t, Addons_option_Onchange);
-consvar_t cv_addons_folder = CVAR_INIT ("addons_folder", "", CV_SAVE, NULL, NULL);
 
 static CV_PossibleValue_t addons_md5_cons_t[] = {{0, "Name"}, {1, "Contents"}, {0, NULL}};
 consvar_t cv_addons_md5 = CVAR_INIT ("addons_md5", "Name", CV_SAVE, addons_md5_cons_t, NULL);
