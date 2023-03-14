@@ -4143,6 +4143,9 @@ static void G_DoCompleted(void)
 	if (modeattacking && pausedelay)
 		pausedelay = 0;
 
+	// We do this here so Challenges-related sounds aren't insta-killed
+	S_StopSounds();
+
 	if (legitimateexit && !demo.playback && !mapreset) // (yes you're allowed to unlock stuff this way when the game is modified)
 	{
 		UINT8 roundtype = GDGT_CUSTOM;
@@ -4220,8 +4223,6 @@ static void G_DoCompleted(void)
 
 	if (automapactive)
 		AM_Stop();
-
-	S_StopSounds();
 
 	prevmap = (INT16)(gamemap-1);
 
