@@ -2884,18 +2884,18 @@ boolean P_ProcessSpecial(activator_t *activator, INT16 special, INT32 *args, cha
 
 		case 413: // Change music
 			// console player only unless TMM_ALLPLAYERS is set
-			if ((args[0] & TMM_ALLPLAYERS) || (mo && mo->player && P_IsLocalPlayer(mo->player)) || titlemapinaction)
+			if ((args[1] & TMM_ALLPLAYERS) || (mo && mo->player && P_IsLocalPlayer(mo->player)) || titlemapinaction)
 			{
 				boolean musicsame = (!stringargs[0] || !stringargs[0][0] || !strnicmp(stringargs[0], S_MusicName(), 7));
-				UINT16 tracknum = (UINT16)max(args[6], 0);
-				INT32 position = (INT32)max(args[1], 0);
-				UINT32 prefadems = (UINT32)max(args[2], 0);
-				UINT32 postfadems = (UINT32)max(args[3], 0);
-				UINT8 fadetarget = (UINT8)max(args[4], 0);
-				INT16 fadesource = (INT16)max(args[5], -1);
+				UINT16 tracknum = (UINT16)max(args[7], 0);
+				INT32 position = (INT32)max(args[2], 0);
+				UINT32 prefadems = (UINT32)max(args[3], 0);
+				UINT32 postfadems = (UINT32)max(args[4], 0);
+				UINT8 fadetarget = (UINT8)max(args[5], 0);
+				INT16 fadesource = (INT16)max(args[6], -1);
 
 				// Seek offset from current song position
-				if (args[0] & TMM_OFFSET)
+				if (args[1] & TMM_OFFSET)
 				{
 					// adjust for loop point if subtracting
 					if (position < 0 && S_GetMusicLength() &&
@@ -2907,7 +2907,7 @@ boolean P_ProcessSpecial(activator_t *activator, INT16 special, INT32 *args, cha
 				}
 
 				// Fade current music to target volume (if music won't be changed)
-				if ((args[0] & TMM_FADE) && fadetarget && musicsame)
+				if ((args[1] & TMM_FADE) && fadetarget && musicsame)
 				{
 					// 0 fadesource means fade from current volume.
 					// meaning that we can't specify volume 0 as the source volume -- this starts at 1.
@@ -2932,22 +2932,22 @@ boolean P_ProcessSpecial(activator_t *activator, INT16 special, INT32 *args, cha
 					mapmusname[6] = 0;
 
 					mapmusflags = tracknum & MUSIC_TRACKMASK;
-					if (!(args[0] & TMM_NORELOAD))
+					if (!(args[1] & TMM_NORELOAD))
 						mapmusflags |= MUSIC_RELOADRESET;
-					if (args[0] & TMM_FORCERESET)
+					if (args[1] & TMM_FORCERESET)
 						mapmusflags |= MUSIC_FORCERESET;
 
 					mapmusposition = position;
 					mapmusresume = 0;
 
-					S_ChangeMusicEx(mapmusname, mapmusflags, !(args[0] & TMM_NOLOOP), position,
-						!(args[0] & TMM_FADE) ? prefadems : 0,
-						!(args[0] & TMM_FADE) ? postfadems : 0);
+					S_ChangeMusicEx(mapmusname, mapmusflags, !(args[1] & TMM_NOLOOP), position,
+						!(args[1] & TMM_FADE) ? prefadems : 0,
+						!(args[1] & TMM_FADE) ? postfadems : 0);
 
-					if (!(args[0] & TMM_NOCREDIT))
+					if (!(args[1] & TMM_NOCREDIT))
 						S_ShowMusicCredit();
 
-					if ((args[0] & TMM_FADE) && fadetarget)
+					if ((args[1] & TMM_FADE) && fadetarget)
 					{
 						if (!postfadems)
 							S_SetInternalMusicVolume(fadetarget);
@@ -2962,7 +2962,7 @@ boolean P_ProcessSpecial(activator_t *activator, INT16 special, INT32 *args, cha
 			break;
 
 		case 414: // Play SFX
-			P_PlaySFX(stringargs[0] ? get_number(stringargs[0]) : sfx_None, mo, callsec, args[2], args[0], args[1]);
+			P_PlaySFX(stringargs[0] ? get_number(stringargs[0]) : sfx_None, mo, callsec, args[3], args[1], args[2]);
 			break;
 
 		case 415: // Run a script
@@ -3459,7 +3459,7 @@ boolean P_ProcessSpecial(activator_t *activator, INT16 special, INT32 *args, cha
 			if (type < 0 || type >= NUMMOBJTYPES)
 				break;
 
-			if (!args[1])
+			if (!args[3])
 			{
 				state = stringargs[1] ? get_number(stringargs[1]) : S_NULL;
 
@@ -3467,7 +3467,7 @@ boolean P_ProcessSpecial(activator_t *activator, INT16 special, INT32 *args, cha
 					break;
 			}
 
-			TAG_ITER_SECTORS(args[0], secnum)
+			TAG_ITER_SECTORS(args[2], secnum)
 			{
 				boolean tryagain;
 				do {
@@ -3477,7 +3477,7 @@ boolean P_ProcessSpecial(activator_t *activator, INT16 special, INT32 *args, cha
 						if (thing->type != type)
 							continue;
 
-						if (!P_SetMobjState(thing, args[1] ? thing->state->nextstate : state))
+						if (!P_SetMobjState(thing, args[3] ? thing->state->nextstate : state))
 						{ // mobj was removed
 							tryagain = true; // snext is corrupt, we'll have to start over.
 							break;
@@ -4130,17 +4130,17 @@ boolean P_ProcessSpecial(activator_t *activator, INT16 special, INT32 *args, cha
 			// console player only
 			if (mo && mo->player && P_IsLocalPlayer(mo->player))
 			{
-				INT32 promptnum = max(0, args[0] - 1);
-				INT32 pagenum = max(0, args[1] - 1);
-				INT32 postexectag = abs(args[3]);
+				INT32 promptnum = max(0, args[1] - 1);
+				INT32 pagenum = max(0, args[2] - 1);
+				INT32 postexectag = abs(args[4]);
 
-				boolean closetextprompt = (args[2] & TMP_CLOSE);
-				//boolean allplayers = (args[2] & TMP_ALLPLAYERS);
-				boolean runpostexec = (args[2] & TMP_RUNPOSTEXEC);
-				boolean blockcontrols = !(args[2] & TMP_KEEPCONTROLS);
-				boolean freezerealtime = !(args[2] & TMP_KEEPREALTIME);
-				//boolean freezethinkers = (args[2] & TMP_FREEZETHINKERS);
-				boolean callbynamedtag = (args[2] & TMP_CALLBYNAME);
+				boolean closetextprompt = (args[3] & TMP_CLOSE);
+				//boolean allplayers = (args[3] & TMP_ALLPLAYERS);
+				boolean runpostexec = (args[3] & TMP_RUNPOSTEXEC);
+				boolean blockcontrols = !(args[3] & TMP_KEEPCONTROLS);
+				boolean freezerealtime = !(args[3] & TMP_KEEPREALTIME);
+				//boolean freezethinkers = (args[3] & TMP_FREEZETHINKERS);
+				boolean callbynamedtag = (args[3] & TMP_CALLBYNAME);
 
 				if (closetextprompt)
 					F_EndTextPrompt(false, false);
@@ -4179,23 +4179,23 @@ boolean P_ProcessSpecial(activator_t *activator, INT16 special, INT32 *args, cha
 
 				fixed_t x, y, z;
 
-				if (args[4]) // If args[4] is set, spawn randomly within a range
+				if (args[5]) // If args[5] is set, spawn randomly within a range
 				{
-					x = P_RandomRange(PR_UNDEFINED, args[0], args[5])<<FRACBITS;
-					y = P_RandomRange(PR_UNDEFINED, args[1], args[6])<<FRACBITS;
-					z = P_RandomRange(PR_UNDEFINED, args[2], args[7])<<FRACBITS;
+					x = P_RandomRange(PR_UNDEFINED, args[1], args[6])<<FRACBITS;
+					y = P_RandomRange(PR_UNDEFINED, args[2], args[7])<<FRACBITS;
+					z = P_RandomRange(PR_UNDEFINED, args[3], args[8])<<FRACBITS;
 				}
 				else
 				{
-					x = args[0] << FRACBITS;
-					y = args[1] << FRACBITS;
-					z = args[2] << FRACBITS;
+					x = args[1] << FRACBITS;
+					y = args[2] << FRACBITS;
+					z = args[3] << FRACBITS;
 				}
 
 				mobj = P_SpawnMobj(x, y, z, type);
 				if (mobj)
 				{
-					mobj->angle = FixedAngle(args[3] << FRACBITS);
+					mobj->angle = FixedAngle(args[4] << FRACBITS);
 					CONS_Debug(DBG_GAMELOGIC, "Special Type %d - Spawn Object: %d spawned at (%d, %d, %d)\n", special, mobj->type, mobj->x>>FRACBITS, mobj->y>>FRACBITS, mobj->z>>FRACBITS); //TODO: Convert mobj->type to a string somehow.
 				}
 				else
@@ -4357,16 +4357,16 @@ boolean P_ProcessSpecial(activator_t *activator, INT16 special, INT32 *args, cha
 
 			gravityvalue = FloatToFixed(atof(stringargs[0]));
 
-			TAG_ITER_SECTORS(args[0], secnum)
+			TAG_ITER_SECTORS(args[1], secnum)
 			{
-				if (args[1])
+				if (args[2])
 					sectors[secnum].gravity = FixedMul(sectors[secnum].gravity, gravityvalue);
 				else
 					sectors[secnum].gravity = gravityvalue;
 
-				if (args[2] == TMF_ADD)
+				if (args[3] == TMF_ADD)
 					sectors[secnum].flags |= MSF_GRAVITYFLIP;
-				else if (args[2] == TMF_REMOVE)
+				else if (args[3] == TMF_REMOVE)
 					sectors[secnum].flags &= ~MSF_GRAVITYFLIP;
 			}
 		}

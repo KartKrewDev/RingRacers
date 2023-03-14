@@ -5158,25 +5158,25 @@ static void P_ConvertBinaryLinedefTypes(void)
 			break;
 		case 413: //Change music
 			if (lines[i].flags & ML_NOCLIMB)
-				lines[i].args[0] |= TMM_ALLPLAYERS;
+				lines[i].args[1] |= TMM_ALLPLAYERS;
 			if (lines[i].flags & ML_SKEWTD)
-				lines[i].args[0] |= TMM_OFFSET;
+				lines[i].args[1] |= TMM_OFFSET;
 			if (lines[i].flags & ML_NOSKEW)
-				lines[i].args[0] |= TMM_FADE;
+				lines[i].args[1] |= TMM_FADE;
 			if (lines[i].flags & ML_BLOCKPLAYERS)
-				lines[i].args[0] |= TMM_NORELOAD;
+				lines[i].args[1] |= TMM_NORELOAD;
 			if (lines[i].flags & ML_NOTBOUNCY)
-				lines[i].args[0] |= TMM_FORCERESET;
+				lines[i].args[1] |= TMM_FORCERESET;
 			if (lines[i].flags & ML_MIDSOLID)
-				lines[i].args[0] |= TMM_NOLOOP;
+				lines[i].args[1] |= TMM_NOLOOP;
 			if (lines[i].flags & ML_MIDPEG)
-				lines[i].args[0] |= TMM_NOCREDIT;
-			lines[i].args[1] = sides[lines[i].sidenum[0]].midtexture;
-			lines[i].args[2] = sides[lines[i].sidenum[0]].textureoffset >> FRACBITS;
-			lines[i].args[3] = sides[lines[i].sidenum[0]].rowoffset >> FRACBITS;
-			lines[i].args[4] = (lines[i].sidenum[1] != 0xffff) ? sides[lines[i].sidenum[1]].textureoffset >> FRACBITS : 0;
-			lines[i].args[5] = (lines[i].sidenum[1] != 0xffff) ? sides[lines[i].sidenum[1]].rowoffset >> FRACBITS : -1;
-			lines[i].args[6] = sides[lines[i].sidenum[0]].bottomtexture;
+				lines[i].args[1] |= TMM_NOCREDIT;
+			lines[i].args[2] = sides[lines[i].sidenum[0]].midtexture;
+			lines[i].args[3] = sides[lines[i].sidenum[0]].textureoffset >> FRACBITS;
+			lines[i].args[4] = sides[lines[i].sidenum[0]].rowoffset >> FRACBITS;
+			lines[i].args[5] = (lines[i].sidenum[1] != 0xffff) ? sides[lines[i].sidenum[1]].textureoffset >> FRACBITS : 0;
+			lines[i].args[6] = (lines[i].sidenum[1] != 0xffff) ? sides[lines[i].sidenum[1]].rowoffset >> FRACBITS : -1;
+			lines[i].args[7] = sides[lines[i].sidenum[0]].bottomtexture;
 			if (sides[lines[i].sidenum[0]].text)
 			{
 				lines[i].stringargs[0] = Z_Malloc(strlen(sides[lines[i].sidenum[0]].text) + 1, PU_LEVEL, NULL);
@@ -5184,41 +5184,41 @@ static void P_ConvertBinaryLinedefTypes(void)
 			}
 			break;
 		case 414: //Play sound effect
-			lines[i].args[2] = tag;
+			lines[i].args[3] = tag;
 			if (tag != 0)
 			{
 				if (lines[i].flags & ML_WRAPMIDTEX)
 				{
-					lines[i].args[0] = TMSS_TAGGEDSECTOR;
-					lines[i].args[1] = TMSL_EVERYONE;
+					lines[i].args[1] = TMSS_TAGGEDSECTOR;
+					lines[i].args[2] = TMSL_EVERYONE;
 				}
 				else
 				{
-					lines[i].args[0] = TMSS_NOWHERE;
-					lines[i].args[1] = TMSL_TAGGEDSECTOR;
+					lines[i].args[1] = TMSS_NOWHERE;
+					lines[i].args[2] = TMSL_TAGGEDSECTOR;
 				}
 			}
 			else
 			{
 				if (lines[i].flags & ML_NOCLIMB)
 				{
-					lines[i].args[0] = TMSS_NOWHERE;
-					lines[i].args[1] = TMSL_TRIGGERER;
+					lines[i].args[1] = TMSS_NOWHERE;
+					lines[i].args[2] = TMSL_TRIGGERER;
 				}
 				else if (lines[i].flags & ML_MIDSOLID)
 				{
-					lines[i].args[0] = TMSS_NOWHERE;
-					lines[i].args[1] = TMSL_EVERYONE;
+					lines[i].args[1] = TMSS_NOWHERE;
+					lines[i].args[2] = TMSL_EVERYONE;
 				}
 				else if (lines[i].flags & ML_BLOCKPLAYERS)
 				{
-					lines[i].args[0] = TMSS_TRIGGERSECTOR;
-					lines[i].args[1] = TMSL_EVERYONE;
+					lines[i].args[1] = TMSS_TRIGGERSECTOR;
+					lines[i].args[2] = TMSL_EVERYONE;
 				}
 				else
 				{
-					lines[i].args[0] = TMSS_TRIGGERMOBJ;
-					lines[i].args[1] = TMSL_EVERYONE;
+					lines[i].args[1] = TMSS_TRIGGERMOBJ;
+					lines[i].args[2] = TMSL_EVERYONE;
 				}
 			}
 			if (sides[lines[i].sidenum[0]].text)
@@ -5398,17 +5398,17 @@ static void P_ConvertBinaryLinedefTypes(void)
 			lines[i].args[0] = sides[lines[i].sidenum[0]].textureoffset >> FRACBITS;
 			break;
 		case 442: //Change object type state
-			lines[i].args[0] = tag;
+			lines[i].args[2] = tag;
 			if (sides[lines[i].sidenum[0]].text)
 			{
 				lines[i].stringargs[0] = Z_Malloc(strlen(sides[lines[i].sidenum[0]].text) + 1, PU_LEVEL, NULL);
 				M_Memcpy(lines[i].stringargs[0], sides[lines[i].sidenum[0]].text, strlen(sides[lines[i].sidenum[0]].text) + 1);
 			}
 			if (lines[i].sidenum[1] == 0xffff)
-				lines[i].args[1] = 1;
+				lines[i].args[3] = 1;
 			else
 			{
-				lines[i].args[1] = 0;
+				lines[i].args[3] = 0;
 				if (sides[lines[i].sidenum[1]].text)
 				{
 					lines[i].stringargs[1] = Z_Malloc(strlen(sides[lines[i].sidenum[1]].text) + 1, PU_LEVEL, NULL);
@@ -5558,23 +5558,23 @@ static void P_ConvertBinaryLinedefTypes(void)
 			lines[i].args[4] = !!(lines[i].flags & ML_NOSKEW);
 			break;
 		case 459: //Control text prompt
-			lines[i].args[0] = sides[lines[i].sidenum[0]].textureoffset >> FRACBITS;
-			lines[i].args[1] = sides[lines[i].sidenum[0]].rowoffset >> FRACBITS;
+			lines[i].args[1] = sides[lines[i].sidenum[0]].textureoffset >> FRACBITS;
+			lines[i].args[2] = sides[lines[i].sidenum[0]].rowoffset >> FRACBITS;
 			if (lines[i].flags & ML_BLOCKPLAYERS)
-				lines[i].args[2] |= TMP_CLOSE;
+				lines[i].args[3] |= TMP_CLOSE;
 			if (lines[i].flags & ML_SKEWTD)
-				lines[i].args[2] |= TMP_RUNPOSTEXEC;
+				lines[i].args[3] |= TMP_RUNPOSTEXEC;
 			if (lines[i].flags & ML_TFERLINE)
-				lines[i].args[2] |= TMP_CALLBYNAME;
+				lines[i].args[3] |= TMP_CALLBYNAME;
 			if (lines[i].flags & ML_NOSKEW)
-				lines[i].args[2] |= TMP_KEEPCONTROLS;
+				lines[i].args[3] |= TMP_KEEPCONTROLS;
 			if (lines[i].flags & ML_MIDPEG)
-				lines[i].args[2] |= TMP_KEEPREALTIME;
+				lines[i].args[3] |= TMP_KEEPREALTIME;
 			/*if (lines[i].flags & ML_NOCLIMB)
-				lines[i].args[2] |= TMP_ALLPLAYERS;
+				lines[i].args[3] |= TMP_ALLPLAYERS;
 			if (lines[i].flags & ML_MIDSOLID)
-				lines[i].args[2] |= TMP_FREEZETHINKERS;*/
-			lines[i].args[3] = (lines[i].sidenum[1] != 0xFFFF) ? sides[lines[i].sidenum[1]].textureoffset >> FRACBITS : tag;
+				lines[i].args[3] |= TMP_FREEZETHINKERS;*/
+			lines[i].args[4] = (lines[i].sidenum[1] != 0xFFFF) ? sides[lines[i].sidenum[1]].textureoffset >> FRACBITS : tag;
 			if (sides[lines[i].sidenum[0]].text)
 			{
 				lines[i].stringargs[0] = Z_Malloc(strlen(sides[lines[i].sidenum[0]].text) + 1, PU_LEVEL, NULL);
@@ -5587,27 +5587,27 @@ static void P_ConvertBinaryLinedefTypes(void)
 			lines[i].args[2] = !!(lines[i].flags & ML_NOCLIMB);
 			break;
 		case 461: //Spawn object
-			lines[i].args[0] = sides[lines[i].sidenum[0]].textureoffset >> FRACBITS;
-			lines[i].args[1] = sides[lines[i].sidenum[0]].rowoffset >> FRACBITS;
-			lines[i].args[2] = lines[i].frontsector->floorheight >> FRACBITS;
-			lines[i].args[3] = (lines[i].flags & ML_SKEWTD) ? AngleFixed(R_PointToAngle2(lines[i].v1->x, lines[i].v1->y, lines[i].v2->x, lines[i].v2->y)) >> FRACBITS : 0;
+			lines[i].args[1] = sides[lines[i].sidenum[0]].textureoffset >> FRACBITS;
+			lines[i].args[2] = sides[lines[i].sidenum[0]].rowoffset >> FRACBITS;
+			lines[i].args[3] = lines[i].frontsector->floorheight >> FRACBITS;
+			lines[i].args[4] = (lines[i].flags & ML_SKEWTD) ? AngleFixed(R_PointToAngle2(lines[i].v1->x, lines[i].v1->y, lines[i].v2->x, lines[i].v2->y)) >> FRACBITS : 0;
 			if (lines[i].flags & ML_NOCLIMB)
 			{
 				if (lines[i].sidenum[1] != 0xffff) // Make sure the linedef has a back side
 				{
-					lines[i].args[4] = 1;
-					lines[i].args[5] = sides[lines[i].sidenum[1]].textureoffset >> FRACBITS;
-					lines[i].args[6] = sides[lines[i].sidenum[1]].rowoffset >> FRACBITS;
-					lines[i].args[7] = lines[i].frontsector->ceilingheight >> FRACBITS;
+					lines[i].args[5] = 1;
+					lines[i].args[6] = sides[lines[i].sidenum[1]].textureoffset >> FRACBITS;
+					lines[i].args[7] = sides[lines[i].sidenum[1]].rowoffset >> FRACBITS;
+					lines[i].args[8] = lines[i].frontsector->ceilingheight >> FRACBITS;
 				}
 				else
 				{
 					CONS_Alert(CONS_WARNING, "Linedef Type %d - Spawn Object: Linedef is set for random range but has no back side.\n", lines[i].special);
-					lines[i].args[4] = 0;
+					lines[i].args[5] = 0;
 				}
 			}
 			else
-				lines[i].args[4] = 0;
+				lines[i].args[5] = 0;
 			if (sides[lines[i].sidenum[0]].text)
 			{
 				lines[i].stringargs[0] = Z_Malloc(strlen(sides[lines[i].sidenum[0]].text) + 1, PU_LEVEL, NULL);
