@@ -344,12 +344,28 @@ void M_ChallengesTick(void)
 		}
 		else
 		{
-			if (!(--gamedata->pendingkeyrounds & 1))
+			UINT32 keyexchange = gamedata->keyspending;
+
+			if (keyexchange > gamedata->pendingkeyrounds)
+			{
+				keyexchange = 1;
+			}
+			else if (keyexchange >= GDCONVERT_ROUNDSTOKEY/2)
+			{
+				keyexchange = GDCONVERT_ROUNDSTOKEY/2;
+			}
+
+			keyexchange |= 1; // guarantee an odd delta for the sake of the sound
+
+			gamedata->pendingkeyrounds -= keyexchange;
+			gamedata->pendingkeyroundoffset += keyexchange;
+
+			if (!(gamedata->pendingkeyrounds & 1))
 			{
 				S_StartSound(NULL, sfx_ptally);
 			}
 
-			if (++gamedata->pendingkeyroundoffset >= GDCONVERT_ROUNDSTOKEY)
+			if (gamedata->pendingkeyroundoffset >= GDCONVERT_ROUNDSTOKEY)
 			{
 				gamedata->pendingkeyroundoffset %= GDCONVERT_ROUNDSTOKEY;
 
