@@ -323,7 +323,12 @@ void M_ChallengesTick(void)
 		}
 	}
 
-	if (challengesmenu.chaokeyadd == true)
+	if (challengesmenu.pending && challengesmenu.fade < 5)
+	{
+		// Fade increase.
+		challengesmenu.fade++;
+	}
+	else if (challengesmenu.chaokeyadd == true)
 	{
 		if (challengesmenu.ticker <= 5)
 			; // recreate the slight delay the unlock fades provide
@@ -376,87 +381,77 @@ void M_ChallengesTick(void)
 	}
 	else if (challengesmenu.pending)
 	{
-		// Pending mode.
-		if (challengesmenu.fade < 5)
+		tic_t nexttime = M_MenuExtraHeld(pid) ? (UNLOCKTIME*2) : MAXUNLOCKTIME;
+
+		if (++challengesmenu.unlockanim >= nexttime)
 		{
-			// Fade increase.
-			challengesmenu.fade++;
+			challengesmenu.requestnew = true;
 		}
-		else
+
+		if (challengesmenu.currentunlock < MAXUNLOCKABLES
+			&& challengesmenu.unlockanim == UNLOCKTIME)
 		{
-			// Unlock sequence.
-			tic_t nexttime = M_MenuExtraHeld(pid) ? (UNLOCKTIME*2) : MAXUNLOCKTIME;
+			// Unlock animation... also tied directly to the actual unlock!
+			gamedata->unlocked[challengesmenu.currentunlock] = true;
+			M_UpdateUnlockablesAndExtraEmblems(true, true);
 
-			if (++challengesmenu.unlockanim >= nexttime)
+			// Update shown description just in case..?
+			challengesmenu.unlockcondition = M_BuildConditionSetString(challengesmenu.currentunlock);
+
+			challengesmenu.unlockcount[CC_TALLY]++;
+			challengesmenu.unlockcount[CC_ANIM]++;
+
+			if (challengesmenu.extradata)
 			{
-				challengesmenu.requestnew = true;
-			}
+				unlockable_t *ref;
+				UINT16 bombcolor;
 
-			if (challengesmenu.currentunlock < MAXUNLOCKABLES
-				&& challengesmenu.unlockanim == UNLOCKTIME)
-			{
-				// Unlock animation... also tied directly to the actual unlock!
-				gamedata->unlocked[challengesmenu.currentunlock] = true;
-				M_UpdateUnlockablesAndExtraEmblems(true, true);
+				M_UpdateChallengeGridExtraData(challengesmenu.extradata);
 
-				// Update shown description just in case..?
-				challengesmenu.unlockcondition = M_BuildConditionSetString(challengesmenu.currentunlock);
+				ref = &unlockables[challengesmenu.currentunlock];
+				bombcolor = SKINCOLOR_NONE;
 
-				challengesmenu.unlockcount[CC_TALLY]++;
-				challengesmenu.unlockcount[CC_ANIM]++;
-
-				if (challengesmenu.extradata)
+				if (ref->color != SKINCOLOR_NONE && ref->color < numskincolors)
 				{
-					unlockable_t *ref;
-					UINT16 bombcolor;
-
-					M_UpdateChallengeGridExtraData(challengesmenu.extradata);
-
-					ref = &unlockables[challengesmenu.currentunlock];
-					bombcolor = SKINCOLOR_NONE;
-
-					if (ref->color != SKINCOLOR_NONE && ref->color < numskincolors)
-					{
-						bombcolor = ref->color;
-					}
-					else switch (ref->type)
-					{
-						case SECRET_SKIN:
-						{
-							INT32 skin = M_UnlockableSkinNum(ref);
-							if (skin != -1)
-							{
-								bombcolor = skins[skin].prefcolor;
-							}
-							break;
-						}
-						case SECRET_FOLLOWER:
-						{
-							INT32 skin = M_UnlockableFollowerNum(ref);
-							if (skin != -1)
-							{
-								bombcolor = K_GetEffectiveFollowerColor(followers[skin].defaultcolor, cv_playercolor[0].value);
-							}
-							break;
-						}
-						default:
-							break;
-					}
-
-					if (bombcolor == SKINCOLOR_NONE)
-					{
-						bombcolor = cv_playercolor[0].value;
-					}
-
-					i = (ref->majorunlock && M_RandomChance(FRACUNIT/2)) ? 1 : 0;
-					M_SetupReadyExplosions(false, challengesmenu.hilix, challengesmenu.hiliy+i, bombcolor);
-					if (ref->majorunlock)
-					{
-						M_SetupReadyExplosions(false, challengesmenu.hilix+1, challengesmenu.hiliy+(1-i), bombcolor);
-					}
-
-					S_StartSound(NULL, sfx_s3k4e);
+					bombcolor = ref->color;
 				}
+				else switch (ref->type)
+				{
+					case SECRET_SKIN:
+					{
+						INT32 skin = M_UnlockableSkinNum(ref);
+						if (skin != -1)
+						{
+							bombcolor = skins[skin].prefcolor;
+						}
+						break;
+					}
+					case SECRET_FOLLOWER:
+					{
+						INT32 skin = M_UnlockableFollowerNum(ref);
+						if (skin != -1)
+						{
+							bombcolor = K_GetEffectiveFollowerColor(followers[skin].defaultcolor, cv_playercolor[0].value);
+						}
+						break;
+					}
+					default:
+						break;
+				}
+
+				if (bombcolor == SKINCOLOR_NONE)
+				{
+					bombcolor = cv_playercolor[0].value;
+				}
+
+				i = (ref->majorunlock && M_RandomChance(FRACUNIT/2)) ? 1 : 0;
+				M_SetupReadyExplosions(false, challengesmenu.hilix, challengesmenu.hiliy+i, bombcolor);
+				if (ref->majorunlock)
+				{
+					M_SetupReadyExplosions(false, challengesmenu.hilix+1, challengesmenu.hiliy+(1-i), bombcolor);
+				}
+
+				S_StartSound(NULL, sfx_s3k4e);
 			}
 		}
 	}
