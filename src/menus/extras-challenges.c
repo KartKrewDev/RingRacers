@@ -205,6 +205,9 @@ menu_t *M_InterruptMenuWithChallenges(menu_t *desiredmenu)
 {
 	UINT16 i, newunlock;
 
+	if (Playing())
+		return desiredmenu;
+
 	M_UpdateUnlockablesAndExtraEmblems(false, true);
 
 	newunlock = M_GetNextAchievedUnlock();
