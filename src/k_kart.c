@@ -4050,7 +4050,7 @@ void K_UpdateStumbleIndicator(player_t *player)
 	}
 }
 
-#define MIN_WAVEDASH_CHARGE (5*TICRATE/8)
+#define MIN_WAVEDASH_CHARGE (7*TICRATE/16)
 
 static boolean K_IsLosingSliptideZip(player_t *player)
 {
