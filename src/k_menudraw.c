@@ -5630,6 +5630,17 @@ static void M_DrawMapMedals(INT32 mapnum, INT32 x, INT32 y)
 				curtype = 2;
 				break;
 			}
+			case ET_MAP:
+			{
+				if (((emblem->flags & ME_ENCORE) && !M_SecretUnlocked(SECRET_ENCORE, true))
+					|| ((emblem->flags & ME_SPBATTACK) && !M_SecretUnlocked(SECRET_SPBATTACK, true)))
+				{
+					emblem = M_GetLevelEmblems(-1);
+					continue;
+				}
+				curtype = 0;
+				break;
+			}
 			default:
 				curtype = 0;
 				break;
