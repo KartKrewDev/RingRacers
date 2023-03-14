@@ -334,13 +334,17 @@ void M_ChallengesTick(void)
 			; // recreate the slight delay the unlock fades provide
 		else if (gamedata->pendingkeyrounds == 0)
 		{
+			gamedata->keyspending = 0;
+			gamedata->pendingkeyroundoffset %= GDCONVERT_ROUNDSTOKEY;
+
 			challengesmenu.chaokeyadd = false;
 			challengesmenu.requestnew = true;
 		}
 		else if ((gamedata->chaokeys + gamedata->usedkeys) >= GDMAX_CHAOKEYS)
 		{
-			gamedata->keyspending = 0;
+			// The above condition will run on the next tic because of this set
 			gamedata->pendingkeyrounds = 0;
+			gamedata->pendingkeyroundoffset = 0;
 		}
 		else
 		{

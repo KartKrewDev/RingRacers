@@ -1569,7 +1569,12 @@ boolean M_UpdateUnlockablesAndExtraEmblems(boolean loud, boolean doall)
 	{
 		response = M_CheckUnlockConditions(NULL);
 
-		while ((gamedata->keyspending + gamedata->chaokeys + gamedata->usedkeys) < GDMAX_CHAOKEYS
+		if (gamedata->pendingkeyrounds == 0
+			|| ((gamedata->chaokeys + gamedata->usedkeys) >= GDMAX_CHAOKEYS))
+		{
+			gamedata->keyspending = 0;
+		}
+		else while ((gamedata->keyspending + gamedata->chaokeys + gamedata->usedkeys) < GDMAX_CHAOKEYS
 			&& ((gamedata->pendingkeyrounds + gamedata->pendingkeyroundoffset)/GDCONVERT_ROUNDSTOKEY) > gamedata->keyspending)
 		{
 			gamedata->keyspending++;
@@ -1662,7 +1667,7 @@ UINT16 M_GetNextAchievedUnlock(void)
 		return i;
 	}
 
-	if (gamedata->keyspending > 0)
+	if (gamedata->keyspending != 0)
 	{
 		return PENDING_CHAOKEYS;
 	}
