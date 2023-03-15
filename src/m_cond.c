@@ -1025,9 +1025,9 @@ static const char *M_GetConditionString(condition_t *cn)
 
 		case UC_TOTALRINGS: // Requires collecting >= x rings
 			if (cn->requirement >= 1000000)
-				return va("collect %u,%u,%u Rings", (cn->requirement/1000000), (cn->requirement/1000)%1000, (cn->requirement%1000));
+				return va("collect %u,%03u,%03u Rings", (cn->requirement/1000000), (cn->requirement/1000)%1000, (cn->requirement%1000));
 			if (cn->requirement >= 1000)
-				return va("collect %u,%u Rings", (cn->requirement/1000), (cn->requirement%1000));
+				return va("collect %u,%03u Rings", (cn->requirement/1000), (cn->requirement%1000));
 			return va("collect %u Rings", cn->requirement);
 
 		case UC_POWERLEVEL: // Requires power level >= x on a certain gametype

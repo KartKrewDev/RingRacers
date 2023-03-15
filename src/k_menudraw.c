@@ -5844,11 +5844,11 @@ void M_DrawStatistics(void)
 	}
 	else if (gamedata->totalrings >= 1000000)
 	{
-		sprintf(beststr, "%u,%u,%u", (gamedata->totalrings/1000000), (gamedata->totalrings/1000)%1000, (gamedata->totalrings%1000));
+		sprintf(beststr, "%u,%03u,%03u", (gamedata->totalrings/1000000), (gamedata->totalrings/1000)%1000, (gamedata->totalrings%1000));
 	}
 	else if (gamedata->totalrings >= 1000)
 	{
-		sprintf(beststr, "%u,%u", (gamedata->totalrings/1000), (gamedata->totalrings%1000));
+		sprintf(beststr, "%u,%03u", (gamedata->totalrings/1000), (gamedata->totalrings%1000));
 	}
 	else
 	{
