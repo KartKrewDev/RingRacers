@@ -4581,8 +4581,7 @@ void G_LoadGameData(void)
 		gamedata->pendingkeyrounds = READUINT32(save.p);
 		gamedata->pendingkeyroundoffset = READUINT8(save.p);
 		gamedata->keyspending = READUINT8(save.p);
-		gamedata->chaokeys = READUINT8(save.p);
-		gamedata->usedkeys = READUINT8(save.p);
+		gamedata->chaokeys = READUINT16(save.p);
 
 		gamedata->crashflags = READUINT8(save.p);
 		if (gamedata->crashflags & GDCRASH_LAST)
@@ -4803,7 +4802,7 @@ void G_SaveGameData(boolean dirty)
 
 	length = (4+1+4+4+
 		(4*GDGT_MAX)+
-		4+1+1+1+1+
+		4+1+1+2+
 		1+1+1+1+
 		4+
 		(MAXEMBLEMS+(MAXUNLOCKABLES*2)+MAXCONDITIONSETS)+
@@ -4843,8 +4842,7 @@ void G_SaveGameData(boolean dirty)
 	WRITEUINT32(save.p, gamedata->pendingkeyrounds); // 4
 	WRITEUINT8(save.p, gamedata->pendingkeyroundoffset); // 1
 	WRITEUINT8(save.p, gamedata->keyspending); // 1
-	WRITEUINT8(save.p, gamedata->chaokeys); // 1
-	WRITEUINT8(save.p, gamedata->usedkeys); // 1
+	WRITEUINT16(save.p, gamedata->chaokeys); // 2
 
 	{
 		UINT8 crashflags = (gamedata->crashflags & GDCRASH_ANY);

@@ -5543,7 +5543,7 @@ challengedesc:
 		V_DrawKartString((27+offs), 9-challengesmenu.unlockcount[CC_CHAOANIM], 0, va("%u", gamedata->chaokeys));
 
 		offs = challengekeybarwidth;
-		if ((gamedata->chaokeys + gamedata->usedkeys) < GDMAX_CHAOKEYS)
+		if (gamedata->chaokeys < GDMAX_CHAOKEYS)
 			offs = ((gamedata->pendingkeyroundoffset * challengekeybarwidth)/GDCONVERT_ROUNDSTOKEY);
 
 		if (offs > 0)

@@ -55,7 +55,7 @@ static void M_ChallengesAutoFocus(UINT16 unlockid, boolean fresh)
 	SINT8 work;
 
 	if (unlockid >= MAXUNLOCKABLES && gamedata->pendingkeyrounds > 0
-		&& ((gamedata->chaokeys + gamedata->usedkeys) < GDMAX_CHAOKEYS))
+		&& (gamedata->chaokeys < GDMAX_CHAOKEYS))
 		challengesmenu.chaokeyadd = true;
 
 	if (fresh && unlockid >= MAXUNLOCKABLES)
@@ -258,7 +258,7 @@ menu_t *M_InterruptMenuWithChallenges(menu_t *desiredmenu)
 		if (challengesmenu.pending)
 			M_ChallengesAutoFocus(newunlock, true);
 		else if (newunlock >= MAXUNLOCKABLES && gamedata->pendingkeyrounds > 0
-			&& ((gamedata->chaokeys + gamedata->usedkeys) < GDMAX_CHAOKEYS))
+			&& (gamedata->chaokeys < GDMAX_CHAOKEYS))
 			challengesmenu.chaokeyadd = true;
 
 		return &MISC_ChallengesDef;
@@ -343,7 +343,7 @@ void M_ChallengesTick(void)
 			challengesmenu.chaokeyadd = false;
 			challengesmenu.requestnew = true;
 		}
-		else if ((gamedata->chaokeys + gamedata->usedkeys) >= GDMAX_CHAOKEYS)
+		else if (gamedata->chaokeys >= GDMAX_CHAOKEYS)
 		{
 			// The above condition will run on the next tic because of this set
 			gamedata->pendingkeyrounds = 0;
@@ -526,7 +526,6 @@ boolean M_ChallengesInputs(INT32 ch)
 			&& gamedata->chaokeys > 0)
 		{
 			gamedata->chaokeys--;
-			gamedata->usedkeys++;
 			challengesmenu.unlockcount[CC_CHAOANIM]++;
 
 			S_StartSound(NULL, sfx_chchng);

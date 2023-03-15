@@ -556,7 +556,6 @@ void M_ClearSecrets(void)
 	gamedata->pendingkeyroundoffset = 0;
 	gamedata->keyspending = 0;
 	gamedata->chaokeys = 3; // Start with 3 !!
-	gamedata->usedkeys = 0;
 }
 
 // ----------------------
@@ -1566,11 +1565,11 @@ boolean M_UpdateUnlockablesAndExtraEmblems(boolean loud, boolean doall)
 		response = M_CheckUnlockConditions(NULL);
 
 		if (gamedata->pendingkeyrounds == 0
-			|| ((gamedata->chaokeys + gamedata->usedkeys) >= GDMAX_CHAOKEYS))
+			|| (gamedata->chaokeys >= GDMAX_CHAOKEYS))
 		{
 			gamedata->keyspending = 0;
 		}
-		else while ((gamedata->keyspending + gamedata->chaokeys + gamedata->usedkeys) < GDMAX_CHAOKEYS
+		else while ((gamedata->keyspending + gamedata->chaokeys) < GDMAX_CHAOKEYS
 			&& ((gamedata->pendingkeyrounds + gamedata->pendingkeyroundoffset)/GDCONVERT_ROUNDSTOKEY) > gamedata->keyspending)
 		{
 			gamedata->keyspending++;

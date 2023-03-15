@@ -221,9 +221,9 @@ typedef enum
 #define GDCRASH_ANY			0x02
 #define GDCRASH_LOSERCLUB	0x04
 
-// This is the largest number of 9s that will fit in UINT32.
+// This is the largest number of 9s that will fit in UINT32 and UINT16 respectively.
 #define GDMAX_RINGS 999999999
-#define GDMAX_CHAOKEYS MAXUNLOCKABLES
+#define GDMAX_CHAOKEYS 9999
 
 #ifdef DEVELOP
 #define GDCONVERT_ROUNDSTOKEY 20
@@ -275,8 +275,7 @@ struct gamedata_t
 	UINT32 pendingkeyrounds;
 	UINT8 pendingkeyroundoffset;
 	UINT8 keyspending;
-	UINT8 chaokeys;
-	UINT8 usedkeys;
+	UINT16 chaokeys;
 
 	// SPECIFIC SPECIAL EVENTS
 	boolean everloadedaddon;
