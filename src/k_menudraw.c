@@ -4478,13 +4478,14 @@ void M_DrawAddons(void)
 	}
 
 	if (Playing())
-		V_DrawCenteredString(BASEVIDWIDTH/2, 5, warningflags, "Adding files mid-game may cause problems.");
+		V_DrawCenteredString(BASEVIDWIDTH/2, 4, warningflags, "Adding files mid-game may cause problems.");
 	else
-		V_DrawCenteredString(BASEVIDWIDTH/2, 5, 0, (recommendedflags == V_SKYMAP ? LOCATIONSTRING2 : LOCATIONSTRING1));
+		V_DrawCenteredString(BASEVIDWIDTH/2, 4, 0,
+		LOCATIONSTRING1);
 
 	// DRAW MENU
 	x = currentMenu->x;
-	y = currentMenu->y + 1;
+	y = currentMenu->y - 1;
 
 	hilicol = V_GetStringColormap(highlightflags)[0];
 
