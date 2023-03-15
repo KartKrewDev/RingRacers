@@ -380,20 +380,30 @@ static void rewrite_patch_quad_vertices(Draw2dList& list, const Draw2dPatchQuad&
 	// Calculate positions
 	const float cmd_xrange = cmd.xmax - cmd.xmin;
 	const float cmd_yrange = cmd.ymax - cmd.ymin;
+
 	const float clipped_xmin = cmd.clip ? std::clamp(cmd.xmin, cmd.clip_xmin, cmd.clip_xmax) : cmd.xmin;
 	const float clipped_xmax = cmd.clip ? std::clamp(cmd.xmax, cmd.clip_xmin, cmd.clip_xmax) : cmd.xmax;
 	const float clipped_ymin = cmd.clip ? std::clamp(cmd.ymin, cmd.clip_ymin, cmd.clip_ymax) : cmd.ymin;
 	const float clipped_ymax = cmd.clip ? std::clamp(cmd.ymax, cmd.clip_ymin, cmd.clip_ymax) : cmd.ymax;
-	const float trimmed_xmin = cmd.xmin + trim_umin * cmd_xrange;
-	const float trimmed_xmax = cmd.xmax - (1.f - trim_umax) * cmd_xrange;
-	const float trimmed_ymin = cmd.ymin + trim_vmin * cmd_yrange;
-	const float trimmed_ymax = cmd.ymax - (1.f - trim_vmax) * cmd_yrange;
+
+	const float trimmed_left = cmd.flip ? (1.f - trim_umax) : trim_umin;
+	const float trimmed_right = cmd.flip ? trim_umin : (1.f - trim_umax);
+	const float trimmed_top = cmd.vflip ? (1.f - trim_vmax) : trim_vmin;
+	const float trimmed_bottom = cmd.vflip ? trim_vmin : (1.f - trim_vmax);
+
+	const float trimmed_xmin = cmd.xmin + trimmed_left * cmd_xrange;
+	const float trimmed_xmax = cmd.xmax - trimmed_right * cmd_xrange;
+	const float trimmed_ymin = cmd.ymin + trimmed_top * cmd_yrange;
+	const float trimmed_ymax = cmd.ymax - trimmed_bottom * cmd_yrange;
+
 	const float trimmed_xrange = trimmed_xmax - trimmed_xmin;
 	const float trimmed_yrange = trimmed_ymax - trimmed_ymin;
+
 	float clipped_trimmed_xmin = std::max(clipped_xmin, trimmed_xmin);
 	float clipped_trimmed_xmax = std::min(clipped_xmax, trimmed_xmax);
 	float clipped_trimmed_ymin = std::max(clipped_ymin, trimmed_ymin);
 	float clipped_trimmed_ymax = std::min(clipped_ymax, trimmed_ymax);
+
 	clipped_trimmed_xmin = std::min(clipped_trimmed_xmin, clipped_trimmed_xmax);
 	clipped_trimmed_ymin = std::min(clipped_trimmed_ymin, clipped_trimmed_ymax);
 
