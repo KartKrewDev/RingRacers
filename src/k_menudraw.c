@@ -5533,7 +5533,11 @@ challengedesc:
 		offs /= 2;
 
 		if (gamedata->chaokeys > 9)
+		{
 			offs -= 6;
+			if (gamedata->chaokeys > 99)
+				offs -= 2; // as far as we can go
+		}
 
 		V_DrawFixedPatch((8+offs)*FRACUNIT, 5*FRACUNIT, FRACUNIT, 0, key, NULL);
 		V_DrawKartString((27+offs), 9-challengesmenu.unlockcount[CC_CHAOANIM], 0, va("%u", gamedata->chaokeys));
