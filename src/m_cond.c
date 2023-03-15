@@ -1431,6 +1431,13 @@ char *M_BuildConditionSetString(UINT8 unlockid)
 		return NULL;
 	}
 
+	if (gamedata->unlocked[unlockid] == true && M_Achieved(unlockables[unlockid].conditionset - 1) == false)
+	{
+		message[0] = '\x86'; // the following text will be grey
+		message[1] = '\0';
+		len--;
+	}
+
 	c = &conditionSets[unlockables[unlockid].conditionset-1];
 
 	for (i = 0; i < c->numconditions; ++i)
