@@ -101,10 +101,7 @@ void M_InitOptions(INT32 choice)
 	OPTIONS_MainDef.prevMenu = currentMenu;
 
 	// This will disable or enable the textboxes of the affected menus before we get to them.
-	Screenshot_option_Onchange();
 	Moviemode_mode_Onchange();
-	Moviemode_option_Onchange();
-	Addons_option_Onchange();
 
 	M_SetupNextMenu(&OPTIONS_MainDef, false);
 }

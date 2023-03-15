@@ -464,9 +464,6 @@ typedef enum
 
 // K_MENUFUNC.C
 
-// Moviemode menu updating
-void Moviemode_option_Onchange(void);
-
 extern menu_t *currentMenu;
 extern menu_t *restoreMenu;
 
@@ -565,8 +562,6 @@ extern consvar_t cv_autorecord;
 void M_SetMenuDelay(UINT8 i);
 
 void Moviemode_mode_Onchange(void);
-void Screenshot_option_Onchange(void);
-void Addons_option_Onchange(void);
 
 void M_SortServerList(void);
 
