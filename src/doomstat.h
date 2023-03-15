@@ -132,6 +132,7 @@ struct recorddata_t
 extern boolean modifiedgame;
 extern boolean majormods;
 extern UINT16 mainwads;
+extern UINT16 musicwads;
 extern boolean savemoddata; // This mod saves time/emblem data.
 extern boolean usedCheats;
 extern boolean imcontinuing; // Temporary flag while continuing
