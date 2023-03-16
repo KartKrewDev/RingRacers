@@ -2184,7 +2184,7 @@ void M_DrawCupSelect(void)
 				{
 					monitor = '0' + templevelsearch.cup->monitor;
 
-					if (templevelsearch.cup->monitor == '2')
+					if (monitor == '2')
 					{
 						icony = 5;
 						rankx = 2;
