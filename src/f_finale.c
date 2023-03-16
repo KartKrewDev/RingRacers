@@ -2131,6 +2131,12 @@ void F_TitleScreenTicker(boolean run)
 	if (gameaction != ga_nothing || gamestate != GS_TITLESCREEN)
 		return;
 
+#ifdef DEVELOP
+	// Done here so lines don't get reflowed to 320x200
+	// IDK if it works most of the time.
+	R_PrintTextureDuplicates();
+#endif
+
 	// Execute the titlemap camera settings
 	if (titlemapinaction)
 	{
