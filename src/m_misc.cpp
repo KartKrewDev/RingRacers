@@ -114,8 +114,8 @@ typedef off_t off64_t;
 
 consvar_t cv_screenshot_colorprofile = CVAR_INIT ("screenshot_colorprofile", "Yes", CV_SAVE, CV_YesNo, NULL);
 
-static CV_PossibleValue_t moviemode_cons_t[] = {{MM_GIF, "GIF"}, {MM_APNG, "aPNG"}, {MM_SCREENSHOT, "Screenshots"}, {MM_AVRECORDER, "WebM"}, {0, NULL}};
-consvar_t cv_moviemode = CVAR_INIT ("moviemode_mode", "WebM", CV_SAVE|CV_CALL, moviemode_cons_t, Moviemode_mode_Onchange);
+static CV_PossibleValue_t lossless_recorder_cons_t[] = {{MM_GIF, "GIF"}, {MM_APNG, "aPNG"}, {MM_SCREENSHOT, "Screenshots"}, {0, NULL}};
+consvar_t cv_lossless_recorder = CVAR_INIT ("lossless_recorder", "GIF", CV_SAVE, lossless_recorder_cons_t, NULL);
 
 static CV_PossibleValue_t zlib_mem_level_t[] = {
 	{1, "(Min Memory) 1"},
@@ -1866,7 +1866,7 @@ boolean M_ScreenshotResponder(event_t *ev)
 		}
 		else
 		{
-			M_StartMovie(static_cast<moviemode_t>(cv_moviemode.value));
+			M_StartMovie(static_cast<moviemode_t>(cv_lossless_recorder.value));
 		}
 		break;
 

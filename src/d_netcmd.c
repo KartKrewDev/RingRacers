@@ -895,7 +895,7 @@ void D_RegisterClientCommands(void)
 	COM_AddCommand("minigen", M_MinimapGenerate);
 
 	CV_RegisterVar(&cv_screenshot_colorprofile);
-	CV_RegisterVar(&cv_moviemode);
+	CV_RegisterVar(&cv_lossless_recorder);
 
 #ifdef SRB2_CONFIG_ENABLE_WEBM_MOVIES
 	M_AVRecorder_AddCommands();
@@ -2503,7 +2503,7 @@ static void Command_Stopdemo_f(void)
 
 static void Command_StartMovie_f(void)
 {
-	M_StartMovie(cv_moviemode.value);
+	M_StartMovie(cv_lossless_recorder.value);
 }
 
 static void Command_StopMovie_f(void)
