@@ -729,6 +729,7 @@ void Obj_PlayerUFOCollide(mobj_t *ufo, mobj_t *other)
 		// Bump and deal damage.
 		Obj_SpecialUFODamage(ufo, other, other, DMG_STEAL);
 		other->player->sneakertimer = 0;
+		other->player->numsneakers = 0;
 	}
 	else
 	{
