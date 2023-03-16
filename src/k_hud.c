@@ -2473,6 +2473,19 @@ static void K_drawKartLaps(void)
 
 #define RINGANIM_FLIPFRAME (RINGANIM_NUMFRAMES/2)
 
+static void K_DrawLivesDigits(INT32 x, INT32 y, INT32 width, INT32 flags, patch_t *font[10])
+{
+	const SINT8 tens = stplyr->lives / 10;
+
+	if (tens)
+	{
+		V_DrawScaledPatch(x, y, flags, font[tens % 10]);
+		x += width;
+	}
+
+	V_DrawScaledPatch(x, y, flags, font[stplyr->lives % 10]);
+}
+
 static void K_drawRingCounter(void)
 {
 	const boolean uselives = G_GametypeUsesLives();
@@ -2560,11 +2573,7 @@ static void K_drawRingCounter(void)
 			UINT8 *colormap = R_GetTranslationColormap(stplyr->skin, stplyr->skincolor, GTC_CACHE);
 			V_DrawMappedPatch(fr+21, fy-13, V_HUDTRANS|V_SLIDEIN|splitflags, faceprefix[stplyr->skin][FACE_MINIMAP], colormap);
 			if (stplyr->lives >= 0)
-			{
-				// make sure this doesn't overflow OR underflow
-				V_DrawScaledPatch(fr+34, fy-10, V_HUDTRANS|V_SLIDEIN|splitflags, fontv[PINGNUM_FONT].font[(stplyr->lives / 10 % 10)]);
-				V_DrawScaledPatch(fr+38, fy-10, V_HUDTRANS|V_SLIDEIN|splitflags, fontv[PINGNUM_FONT].font[(stplyr->lives % 10)]);
-			}
+				K_DrawLivesDigits(fr+34, fy-10, 4, V_HUDTRANS|V_SLIDEIN|splitflags, fontv[PINGNUM_FONT].font);
 		}
 	}
 	else
@@ -2604,11 +2613,7 @@ static void K_drawRingCounter(void)
 			UINT8 *colormap = R_GetTranslationColormap(stplyr->skin, stplyr->skincolor, GTC_CACHE);
 			V_DrawMappedPatch(LAPS_X+40, fy-5, V_HUDTRANS|V_SLIDEIN|splitflags, faceprefix[stplyr->skin][FACE_RANK], colormap);
 			if (stplyr->lives >= 0)
-			{
-				// make sure this doesn't overflow OR underflow
-				V_DrawScaledPatch(LAPS_X+57, fy, V_HUDTRANS|V_SLIDEIN|splitflags, kp_facenum[(stplyr->lives / 10 % 10)]);
-				V_DrawScaledPatch(LAPS_X+63, fy, V_HUDTRANS|V_SLIDEIN|splitflags, kp_facenum[(stplyr->lives % 10)]);
-			}
+				K_DrawLivesDigits(LAPS_X + (stplyr->lives < 10 ? 60 : 57), fy, 6, V_HUDTRANS|V_SLIDEIN|splitflags, kp_facenum);
 		}
 	}
 }
