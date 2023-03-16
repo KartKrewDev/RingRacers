@@ -858,7 +858,7 @@ boolean M_CheckCondition(condition_t *cn, player_t *player)
 			return (player->exiting
 				&& !(player->pflags & PF_NOCONTEST)
 				//&& M_NotFreePlay(player)
-				&& player->realtime == (unsigned)cn->requirement);
+				&& player->realtime/TICRATE == (unsigned)cn->requirement/TICRATE);
 		case UCRP_FINISHTIMELEFT:
 			return (timelimitintics
 				&& player->exiting
@@ -1361,12 +1361,14 @@ static const char *M_GetConditionString(condition_t *cn)
 				((cn->type == UCRP_FINISHPLACE && cn->requirement > 1)
 					? " or better" : ""));
 		case UCRP_FINISHTIME:
-		case UCRP_FINISHTIMEEXACT:
-			return va("finish in %s%i:%02i.%02i",
-				(cn->type == UCRP_FINISHTIMEEXACT ? "exactly " : ""),
+			return va("finish in %i:%02i.%02i",
 				G_TicsToMinutes(cn->requirement, true),
 				G_TicsToSeconds(cn->requirement),
 				G_TicsToCentiseconds(cn->requirement));
+		case UCRP_FINISHTIMEEXACT:
+			return va("finish in exactly %i:%02i",
+				G_TicsToMinutes(cn->requirement, true),
+				G_TicsToSeconds(cn->requirement));
 		case UCRP_FINISHTIMELEFT:
 			return va("finish with %i:%02i.%02i remaining",
 				G_TicsToMinutes(cn->requirement, true),
