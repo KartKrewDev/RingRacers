@@ -842,13 +842,13 @@ void V_DrawStretchyFixedPatch(fixed_t x, fixed_t y, fixed_t pscale, fixed_t vsca
 
 		// left offset
 		if (scrn & V_FLIP)
-			offsetx = FixedMul((patch->width - patch->leftoffset)<<FRACBITS, pscale) + 1;
+			offsetx = FixedMul((patch->width - patch->leftoffset)<<FRACBITS, pscale);
 		else
 			offsetx = FixedMul(patch->leftoffset<<FRACBITS, pscale);
 
 		// top offset
 		if (scrn & V_VFLIP)
-			offsety = FixedMul((patch->height - patch->topoffset)<<FRACBITS, vscale) + 1;
+			offsety = FixedMul((patch->height - patch->topoffset)<<FRACBITS, vscale);
 		else
 			offsety = FixedMul(patch->topoffset<<FRACBITS, vscale);
 
