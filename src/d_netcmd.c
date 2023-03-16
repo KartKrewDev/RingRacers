@@ -154,6 +154,7 @@ static void Command_Playdemo_f(void);
 static void Command_Timedemo_f(void);
 static void Command_Stopdemo_f(void);
 static void Command_StartMovie_f(void);
+static void Command_StartLossless_f(void);
 static void Command_StopMovie_f(void);
 static void Command_Map_f(void);
 static void Command_RandomMap(void);
@@ -891,6 +892,7 @@ void D_RegisterClientCommands(void)
 
 	COM_AddCommand("screenshot", M_ScreenShot);
 	COM_AddCommand("startmovie", Command_StartMovie_f);
+	COM_AddCommand("startlossless", Command_StartLossless_f);
 	COM_AddCommand("stopmovie", Command_StopMovie_f);
 	COM_AddCommand("minigen", M_MinimapGenerate);
 
@@ -2502,6 +2504,11 @@ static void Command_Stopdemo_f(void)
 }
 
 static void Command_StartMovie_f(void)
+{
+	M_StartMovie(MM_AVRECORDER);
+}
+
+static void Command_StartLossless_f(void)
 {
 	M_StartMovie(cv_lossless_recorder.value);
 }
