@@ -1366,7 +1366,7 @@ static const char *M_GetConditionString(condition_t *cn)
 				G_TicsToSeconds(cn->requirement),
 				G_TicsToCentiseconds(cn->requirement));
 		case UCRP_FINISHTIMEEXACT:
-			return va("finish in exactly %i:%02i",
+			return va("finish in exactly %i:%02i.XX",
 				G_TicsToMinutes(cn->requirement, true),
 				G_TicsToSeconds(cn->requirement));
 		case UCRP_FINISHTIMELEFT:
