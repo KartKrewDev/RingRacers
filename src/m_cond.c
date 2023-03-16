@@ -1511,12 +1511,30 @@ char *M_BuildConditionSetString(UINT8 unlockid)
 		}
 	}
 
-	for (i = 0; message[i]; i++)
+	// Valid sentence capitalisation handling.
 	{
-		if (message[i] == toupper(message[i]))
-			continue;
-		message[i] = toupper(message[i]);
-		break;
+		// Finds the first : character, indicating the end of the prefix.
+		for (i = 0; message[i]; i++)
+		{
+			if (message[i] != ':')
+				continue;
+			i++;
+			break;
+		}
+
+		// If we didn't find a prefix, just start from the first character again.
+		if (!message[i])
+			i = 0;
+
+		// Okay, now make the first non-whitespace character after the prefix a capital.
+		// Doesn't matter if !isalpha() - toupper is a no-op.
+		for (; message[i]; i++)
+		{
+			if ((message[i] & 0x80) || isspace(message[i]))
+				continue;
+			message[i] = toupper(message[i]);
+			break;
+		}
 	}
 
 	return message;
