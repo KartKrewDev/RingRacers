@@ -759,11 +759,8 @@ boolean M_CheckCondition(condition_t *cn, player_t *player)
 			return M_Achieved(cn->requirement-1);
 
 		case UC_ADDON:
-			return (
-#ifndef DEVELOP
-				M_SecretUnlocked(SECRET_ADDONS, true) &&
-#endif
-				(gamedata->everloadedaddon == true));
+			return ((gamedata->everloadedaddon == true)
+				&& M_SecretUnlocked(SECRET_ADDONS, true));
 		case UC_REPLAY:
 			return (gamedata->eversavedreplay == true);
 		case UC_CRASH:
@@ -1221,7 +1218,7 @@ static const char *M_GetConditionString(condition_t *cn)
 				: "???");
 
 		case UC_ADDON:
-			if (!M_SecretUnlocked(SECRET_ADDONS, true) && !gamedata->everloadedaddon)
+			if (!M_SecretUnlocked(SECRET_ADDONS, true))
 				return NULL;
 			return "load a custom addon into \"Dr. Robotnik's Ring Racers\"";
 		case UC_REPLAY:
