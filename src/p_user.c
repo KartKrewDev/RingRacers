@@ -548,8 +548,8 @@ void P_GivePlayerLives(player_t *player, INT32 numlives)
 {
 	player->lives += numlives;
 
-	if (player->lives > 9)
-		player->lives = 9;
+	if (player->lives > 10)
+		player->lives = 10;
 	else if (player->lives < 1)
 		player->lives = 1;
 }
