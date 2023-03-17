@@ -1634,6 +1634,10 @@ void R_RegisterEngineStuff(void)
 	CV_RegisterVar(&cv_tailspickup);
 	CV_RegisterVar(&cv_allowmlook);
 	CV_RegisterVar(&cv_homremoval);
+
+#ifdef SCRAMBLE_REMOVED
+	CV_RegisterVar(&cv_scrambleremoved);
+#endif
 	// Enough for dedicated server
 	if (dedicated)
 		return;
@@ -1666,9 +1670,6 @@ void R_RegisterEngineStuff(void)
 	CV_RegisterVar(&cv_maxportals);
 
 	CV_RegisterVar(&cv_movebob);
-#ifdef SCRAMBLE_REMOVED
-	CV_RegisterVar(&cv_scrambleremoved);
-#endif
 
 	// Frame interpolation/uncapped
 	CV_RegisterVar(&cv_fpscap);
