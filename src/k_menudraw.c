@@ -5123,7 +5123,7 @@ static void M_DrawChallengePreview(INT32 x, INT32 y)
 						LOCKSTAT(w);
 					#undef LOCKSTAT
 
-					V_DrawFill(4+16+1 + (s*5), (BASEVIDHEIGHT-(4+16))+1 + (w*5), 4, 4, 0);
+					V_DrawFill(4+16 + (s*5), (BASEVIDHEIGHT-(4+16)) + (w*5), 6, 6, 0);
 				}
 			}
 			break;
