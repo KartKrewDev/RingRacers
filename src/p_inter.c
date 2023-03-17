@@ -1604,11 +1604,14 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 					if (givelife)
 						S_StartSound(NULL, sfx_cdfm73);
 				}
-				else if (timelimitintics)
+				else
 				{
 					S_StartSound(NULL, sfx_s221);
-					extratimeintics += 10*TICRATE;
-					secretextratime = TICRATE/2;
+					if (timelimitintics)
+					{
+						extratimeintics += 10*TICRATE;
+						secretextratime = TICRATE/2;
+					}
 				}
 			}
 			break;
