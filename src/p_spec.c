@@ -4443,7 +4443,7 @@ boolean P_ProcessSpecial(activator_t *activator, INT16 special, INT32 *args, cha
 				if (waypointcap == NULL)
 				{
 					// No point in trying at all if no waypoints exist.
-					break;
+					return false;
 				}
 
 				TAG_ITER_SECTORS(args[0], secnum)
@@ -4454,7 +4454,7 @@ boolean P_ProcessSpecial(activator_t *activator, INT16 special, INT32 *args, cha
 					{
 						if (thing->type == MT_WAYPOINT)
 						{
-							if (line->args[1])
+							if (args[1])
 							{
 								thing->extravalue1 = 1;
 							}
