@@ -4373,27 +4373,47 @@ boolean P_ProcessSpecial(activator_t *activator, INT16 special, INT32 *args, cha
 		break;
 
 		case 475: // ACS_Execute
-			if (!stringargs[0])
 			{
-				CONS_Debug(DBG_GAMELOGIC, "Linedef type 475: No script name given\n");
-				return false;
-			}
+				INT32 newArgs[NUMLINEARGS-1] = {0};
+				INT32 i;
 
-			ACS_Execute(stringargs[0], args, NUMLINEARGS, activator);
+				if (!stringargs[0])
+				{
+					CONS_Debug(DBG_GAMELOGIC, "Special type 475: No script name given\n");
+					return false;
+				}
+
+				for (i = 1; i < NUMLINEARGS; i++)
+				{
+					newArgs[i - 1] = args[i];
+				}
+
+				ACS_Execute(stringargs[0], newArgs, NUMLINEARGS-1, activator);
+			}
 			break;
 		case 476: // ACS_ExecuteAlways
-			if (!stringargs[0])
 			{
-				CONS_Debug(DBG_GAMELOGIC, "Linedef type 476: No script name given\n");
-				return false;
-			}
+				INT32 newArgs[NUMLINEARGS-1] = {0};
+				INT32 i;
 
-			ACS_ExecuteAlways(stringargs[0], args, NUMLINEARGS, activator);
+				if (!stringargs[0])
+				{
+					CONS_Debug(DBG_GAMELOGIC, "Special type 475: No script name given\n");
+					return false;
+				}
+
+				for (i = 1; i < NUMLINEARGS; i++)
+				{
+					newArgs[i - 1] = args[i];
+				}
+
+				ACS_ExecuteAlways(stringargs[0], newArgs, NUMLINEARGS-1, activator);
+			}
 			break;
 		case 477: // ACS_Suspend
 			if (!stringargs[0])
 			{
-				CONS_Debug(DBG_GAMELOGIC, "Linedef type 477: No script name given\n");
+				CONS_Debug(DBG_GAMELOGIC, "Special type 477: No script name given\n");
 				return false;
 			}
 
@@ -4402,7 +4422,7 @@ boolean P_ProcessSpecial(activator_t *activator, INT16 special, INT32 *args, cha
 		case 478: // ACS_Terminate
 			if (!stringargs[0])
 			{
-				CONS_Debug(DBG_GAMELOGIC, "Linedef type 478: No script name given\n");
+				CONS_Debug(DBG_GAMELOGIC, "Special type 478: No script name given\n");
 				return false;
 			}
 
