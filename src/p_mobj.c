@@ -8226,6 +8226,8 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 
 		if (mobj->target->player->flamedash)
 		{
+			mobj->dispoffset = 1;
+
 			if (!(curstate >= S_FLAMESHIELDDASH1 && curstate <= S_FLAMESHIELDDASH12))
 				P_SetMobjState(mobj, S_FLAMESHIELDDASH1);
 
@@ -8267,6 +8269,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 		{
 			if (curstate >= S_FLAMESHIELDDASH1 && curstate <= S_FLAMESHIELDDASH12)
 				P_SetMobjState(mobj, S_FLAMESHIELD1);
+			mobj->dispoffset = ((curstate - S_FLAMESHIELD1) & 1) ? -1 : 1;
 		}
 
 		mobj->extravalue1 = mobj->target->player->flamedash;
@@ -8291,8 +8294,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 
 		if (underlayst != S_NULL)
 		{
-			mobj_t *underlay = P_SpawnMobj(mobj->target->x, mobj->target->y, mobj->target->z, MT_FLAMESHIELDUNDERLAY);
-			underlay->angle = mobj->angle;
+			mobj_t *underlay = P_SpawnMobjFromMobj(mobj, 0, 0, 0, MT_FLAMESHIELDUNDERLAY);
 			P_SetMobjState(underlay, underlayst);
 		}
 		break;
