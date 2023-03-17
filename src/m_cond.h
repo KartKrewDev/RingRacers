@@ -103,7 +103,7 @@ typedef enum
 	UCRP_LANDMINEDUNK, // huh? you died? that's weird. all i did was try to hug you...
 	UCRP_HITMIDAIR, // Hit another player mid-air with a kartfielditem
 
-	UCRP_WETPLAYER, // Touch [fluid]
+	UCRP_WETPLAYER, // Don't touch [fluid]
 } conditiontype_t;
 
 // Condition Set information

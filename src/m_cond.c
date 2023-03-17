@@ -887,7 +887,7 @@ boolean M_CheckCondition(condition_t *cn, player_t *player)
 
 		case UCRP_WETPLAYER:
 			return (((player->roundconditions.wet_player & cn->requirement) == 0)
-				|| player->roundconditions.fell_off); // Levels with water tend to texture their pits as water too
+				&& !player->roundconditions.fell_off); // Levels with water tend to texture their pits as water too
 	}
 	return false;
 }
