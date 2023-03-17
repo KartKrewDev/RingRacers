@@ -4721,16 +4721,23 @@ void G_LoadGameData(void)
 			char cupname[16];
 			cupheader_t *cup;
 
+			// Find the relevant cup.
 			READSTRINGN(save.p, cupname, sizeof(cupname));
 			for (cup = kartcupheaders; cup; cup = cup->next)
 			{
 				if (strcmp(cup->name, cupname))
 					continue;
+				break;
+			}
 
-				for (j = 0; j < KARTGP_MAX; j++)
+			// Digest its data...
+			for (j = 0; j < KARTGP_MAX; j++)
+			{
+				rtemp = READUINT8(save.p);
+
+				// ...but only record it if we actually found the associated cup.
+				if (cup)
 				{
-					rtemp = READUINT8(save.p);
-
 					cup->windata[j].best_placement = (rtemp & 0x0F);
 					cup->windata[j].best_grade = (rtemp & 0x70)>>4;
 					if (rtemp & 0x80)
@@ -4741,8 +4748,6 @@ void G_LoadGameData(void)
 						cup->windata[j].got_emerald = true;
 					}
 				}
-
-				break;
 			}
 		}
 	}
@@ -4819,7 +4824,7 @@ void G_SaveGameData(boolean dirty)
 	{
 		numcups++;
 	}
-	length += 4 + (numcups * 4);
+	length += 4 + (numcups * (4+16));
 
 	if (P_SaveBufferAlloc(&save, length) == false)
 	{
