@@ -357,6 +357,7 @@ static void signal_handler(INT32 num)
 		sigmsg = sigdef;
 	}
 
+	G_DirtyGameData();
 	I_OutputMsg("signal_handler() error: %s\n", sigmsg);
 	signal(num, SIG_DFL);               //default signal action
 	raise(num);
@@ -2983,7 +2984,7 @@ void I_Quit(void)
 	if (Playing())
 		K_PlayerForfeit(consoleplayer, true);
 
-	G_SaveGameData(false); // Tails 12-08-2002 -- undirty your save
+	G_SaveGameData(); // Tails 12-08-2002
 	//added:16-02-98: when recording a demo, should exit using 'q' key,
 	//        but sometimes we forget and use 'F10'.. so save here too.
 
@@ -3078,7 +3079,8 @@ void I_Error(const char *error, ...)
 		if (errorcount == 9)
 		{
 			M_SaveConfig(NULL);
-			G_SaveGameData(true);
+			G_DirtyGameData(); // done first in case an error is in G_SaveGameData
+			G_SaveGameData();
 		}
 		if (errorcount > 20)
 		{
@@ -3142,7 +3144,8 @@ void I_Error(const char *error, ...)
 #ifndef NONET
 	D_SaveBan(); // save the ban list
 #endif
-	G_SaveGameData(true); // Tails 12-08-2002
+	G_DirtyGameData(); // done first in case an error is in G_SaveGameData
+	G_SaveGameData(); // Tails 12-08-2002
 
 	// Shutdown. Here might be other errors.
 	if (demorecording)

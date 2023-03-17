@@ -819,7 +819,7 @@ UINT16 W_InitFile(const char *filename, boolean mainfile, boolean startup)
 	{
 		gamedata->everloadedaddon = true;
 		M_UpdateUnlockablesAndExtraEmblems(true, true);
-		G_SaveGameData(true);
+		G_SaveGameData();
 	}
 
 	switch(type = ResourceFileDetect(filename))

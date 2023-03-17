@@ -328,6 +328,7 @@ FUNCNORETURN static ATTRNORETURN void signal_handler(INT32 num)
 {
 	D_QuitNetGame(); // Fix server freezes
 	CL_AbortDownloadResume();
+	G_DirtyGameData();
 #ifdef UNIXBACKTRACE
 	write_backtrace(num);
 #endif
@@ -1448,7 +1449,7 @@ void I_Quit(void)
 	if (Playing())
 		K_PlayerForfeit(consoleplayer, true);
 
-	G_SaveGameData(false); // Tails 12-08-2002 -- undirty your save
+	G_SaveGameData(); // Tails 12-08-2002
 	//added:16-02-98: when recording a demo, should exit using 'q' key,
 	//        but sometimes we forget and use 'F10'.. so save here too.
 
@@ -1532,7 +1533,8 @@ void I_Error(const char *error, ...)
 		if (errorcount == 8)
 		{
 			M_SaveConfig(NULL);
-			G_SaveGameData(true);
+			G_DirtyGameData(); // done first in case an error is in G_SaveGameData
+			G_SaveGameData();
 		}
 		if (errorcount > 20)
 		{
@@ -1563,7 +1565,8 @@ void I_Error(const char *error, ...)
 
 	M_SaveConfig(NULL); // save game config, cvars..
 	D_SaveBan(); // save the ban list
-	G_SaveGameData(true); // Tails 12-08-2002
+	G_DirtyGameData(); // done first in case an error is in G_SaveGameData
+	G_SaveGameData(); // Tails 12-08-2002
 
 	// Shutdown. Here might be other errors.
 

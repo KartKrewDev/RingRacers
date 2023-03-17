@@ -1051,7 +1051,7 @@ void D_ClearState(void)
 	cursongcredit.def = NULL;
 
 	if (gamedata && gamedata->deferredsave)
-		G_SaveGameData(true);
+		G_SaveGameData();
 
 	G_SetGamestate(GS_NULL);
 	wipegamestate = GS_NULL;

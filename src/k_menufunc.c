@@ -373,7 +373,7 @@ void M_PlayMenuJam(void)
 {
 	menu_t *refMenu = (menuactive ? currentMenu : restoreMenu);
 	static boolean loserclubpermitted = false;
-	boolean loserclub = (loserclubpermitted && (gamedata->crashflags & GDCRASH_LOSERCLUB));
+	boolean loserclub = (loserclubpermitted && (gamedata->musicflags & GDMUSIC_LOSERCLUB));
 
 	if (challengesmenu.pending)
 	{

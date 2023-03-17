@@ -217,9 +217,7 @@ typedef enum
 #endif
 #define challengegridloops (gamedata->challengegridwidth >= CHALLENGEGRIDLOOPWIDTH)
 
-#define GDCRASH_LAST		0x01
-#define GDCRASH_ANY			0x02
-#define GDCRASH_LOSERCLUB	0x04
+#define GDMUSIC_LOSERCLUB	0x01
 
 // This is the largest number of 9s that will fit in UINT32 and UINT16 respectively.
 #define GDMAX_RINGS 999999999
@@ -281,7 +279,8 @@ struct gamedata_t
 	boolean everloadedaddon;
 	boolean eversavedreplay;
 	boolean everseenspecial;
-	UINT8 crashflags;
+	boolean evercrashed;
+	UINT8 musicflags;
 };
 
 extern gamedata_t *gamedata;

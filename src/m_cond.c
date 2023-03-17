@@ -529,7 +529,8 @@ void M_ClearStats(void)
 	gamedata->everloadedaddon = false;
 	gamedata->eversavedreplay = false;
 	gamedata->everseenspecial = false;
-	gamedata->crashflags = 0;
+	gamedata->evercrashed = false;
+	gamedata->musicflags = 0;
 }
 
 void M_ClearSecrets(void)
@@ -764,9 +765,9 @@ boolean M_CheckCondition(condition_t *cn, player_t *player)
 		case UC_REPLAY:
 			return (gamedata->eversavedreplay == true);
 		case UC_CRASH:
-			if (gamedata->crashflags & (GDCRASH_LAST|GDCRASH_ANY))
+			if (gamedata->evercrashed)
 			{
-				gamedata->crashflags |= GDCRASH_LOSERCLUB;
+				gamedata->musicflags |= GDMUSIC_LOSERCLUB;
 				return true;
 			}
 			return false;
@@ -1224,7 +1225,7 @@ static const char *M_GetConditionString(condition_t *cn)
 		case UC_REPLAY:
 			return "save a replay after finishing a round";
 		case UC_CRASH:
-			if (gamedata->crashflags & (GDCRASH_LAST|GDCRASH_ANY))
+			if (gamedata->evercrashed)
 				return "launch \"Dr. Robotnik's Ring Racers\" again after a game crash";
 			return NULL;
 

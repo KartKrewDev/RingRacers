@@ -2931,7 +2931,7 @@ void readmaincfg(MYFILE *f, boolean mainfile)
 				if (!GoodDataFileName(word2))
 					I_Error("Maincfg: bad data file name '%s'\n", word2);
 
-				G_SaveGameData(false); // undirty your old gamedata
+				G_SaveGameData();
 				strlcpy(gamedatafilename, word2, sizeof (gamedatafilename));
 				strlwr(gamedatafilename);
 				savemoddata = true;

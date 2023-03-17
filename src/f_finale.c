@@ -1084,7 +1084,7 @@ void F_GameEvaluationTicker(void)
 			++gamedata->timesBeaten;
 
 			M_UpdateUnlockablesAndExtraEmblems(true, true);
-			G_SaveGameData(true);
+			G_SaveGameData();
 		}
 		else
 		{

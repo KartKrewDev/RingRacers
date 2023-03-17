@@ -7501,7 +7501,7 @@ static void P_InitGametype(void)
 
 	// Started a game? Move on to the next jam when you go back to the title screen
 	CV_SetValue(&cv_menujam_update, 1);
-	gamedata->crashflags &= ~GDCRASH_LOSERCLUB;
+	gamedata->musicflags = 0;
 }
 
 struct minimapinfo minimapinfo;
@@ -7995,7 +7995,7 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 		mapheaderinfo[gamemap-1]->mapvisited |= MV_VISITED;
 
 		M_UpdateUnlockablesAndExtraEmblems(true, true);
-		G_SaveGameData(true);
+		G_SaveGameData();
 	}
 
 	G_AddMapToBuffer(gamemap-1);

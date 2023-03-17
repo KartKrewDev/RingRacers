@@ -4196,7 +4196,7 @@ void G_SaveDemo(void)
 			{
 				gamedata->eversavedreplay = true;
 				M_UpdateUnlockablesAndExtraEmblems(true, true);
-				G_SaveGameData(true);
+				G_SaveGameData();
 			}
 		}
 		else

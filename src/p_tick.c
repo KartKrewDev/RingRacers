@@ -620,7 +620,7 @@ void P_Ticker(boolean run)
 		// TODO would this be laggy with more conditions in play...
 		if (((!demo.playback && leveltime > introtime && M_UpdateUnlockablesAndExtraEmblems(true, false))
 			|| (gamedata && gamedata->deferredsave)))
-			G_SaveGameData(true);
+			G_SaveGameData();
 	}
 
 	// Keep track of how long they've been playing!

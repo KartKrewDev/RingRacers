@@ -291,7 +291,7 @@ void K_FinishCeremony(void)
 
 	// Play the noise now
 	M_UpdateUnlockablesAndExtraEmblems(true, true);
-	G_SaveGameData(true);
+	G_SaveGameData();
 }
 
 /*--------------------------------------------------
@@ -339,7 +339,7 @@ void K_ResetCeremony(void)
 		grandprixinfo.cup->windata[i].got_emerald = true;
 
 	// Save before playing the noise
-	G_SaveGameData(true);
+	G_SaveGameData();
 }
 
 /*--------------------------------------------------

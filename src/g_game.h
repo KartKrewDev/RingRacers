@@ -175,7 +175,8 @@ boolean G_IsTitleCardAvailable(void);
 // Can be called by the startup code or M_Responder, calls P_SetupLevel.
 void G_LoadGame(UINT32 slot, INT16 mapoverride);
 
-void G_SaveGameData(boolean dirty);
+void G_SaveGameData(void);
+void G_DirtyGameData(void);
 
 void G_SaveGame(UINT32 slot, INT16 mapnum);
 

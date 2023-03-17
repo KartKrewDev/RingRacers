@@ -399,7 +399,7 @@ void M_ChallengesTick(void)
 		{
 			// All done! Let's save the unlocks we've busted open.
 			challengesmenu.pending = challengesmenu.chaokeyadd = false;
-			G_SaveGameData(true);
+			G_SaveGameData();
 		}
 	}
 	else if (challengesmenu.pending)

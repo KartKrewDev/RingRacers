@@ -3834,7 +3834,7 @@ static void G_UpdateVisited(void)
 		CONS_Printf(M_GetText("\x82" "Earned %hu emblem%s for level completion.\n"), (UINT16)earnedEmblems, earnedEmblems > 1 ? "s" : "");
 
 	M_UpdateUnlockablesAndExtraEmblems(true, true);
-	G_SaveGameData(true);
+	G_SaveGameData();
 }
 
 static boolean CanSaveLevel(INT32 mapnum)
@@ -3926,7 +3926,7 @@ static void G_GetNextMap(void)
 						{
 							gamedata->everseenspecial = true;
 							M_UpdateUnlockablesAndExtraEmblems(true, true);
-							G_SaveGameData(true);
+							G_SaveGameData();
 						}
 					}
 				}
@@ -4161,7 +4161,7 @@ static void G_DoCompleted(void)
 	}
 
 	if (gamedata->deferredsave)
-		G_SaveGameData(true);
+		G_SaveGameData();
 
 	legitimateexit = false;
 
@@ -4567,6 +4567,11 @@ void G_LoadGameData(void)
 		gridunusable = true;
 	}
 
+	if (versionMinor > 1)
+	{
+		gamedata->evercrashed = (boolean)READUINT8(save.p);
+	}
+
 	gamedata->totalplaytime = READUINT32(save.p);
 
 	if (versionMinor > 1)
@@ -4582,10 +4587,6 @@ void G_LoadGameData(void)
 		gamedata->pendingkeyroundoffset = READUINT8(save.p);
 		gamedata->keyspending = READUINT8(save.p);
 		gamedata->chaokeys = READUINT16(save.p);
-
-		gamedata->crashflags = READUINT8(save.p);
-		if (gamedata->crashflags & GDCRASH_LAST)
-			gamedata->crashflags |= GDCRASH_ANY;
 
 		gamedata->everloadedaddon = (boolean)READUINT8(save.p);
 		gamedata->eversavedreplay = (boolean)READUINT8(save.p);
@@ -4782,9 +4783,34 @@ void G_LoadGameData(void)
 	}
 }
 
+// G_DirtyGameData
+// Modifies the gamedata as little as possible to maintain safety in a crash event, while still recording it.
+void G_DirtyGameData(void)
+{
+	FILE *handle = NULL;
+	const UINT8 writebytesource = true;
+
+	if (gamedata)
+		gamedata->evercrashed = true;
+
+	//if (FIL_WriteFileOK(name))
+		handle = fopen(va(pandf, srb2home, gamedatafilename), "r+");
+
+	if (!handle)
+		return;
+
+	// Write a dirty byte immediately after the gamedata check + minor version.
+	if (fseek(handle, 5, SEEK_SET) != -1)
+		fwrite(&writebytesource, 1, 1, handle);
+
+	fclose(handle);
+
+	return;
+}
+
 // G_SaveGameData
 // Saves the main data file, which stores information such as emblems found, etc.
-void G_SaveGameData(boolean dirty)
+void G_SaveGameData(void)
 {
 	size_t length;
 	INT32 i, j, numcups;
@@ -4805,10 +4831,11 @@ void G_SaveGameData(boolean dirty)
 		return;
 	}
 
-	length = (4+1+4+4+
+	length = (4+1+1+
+		4+4+
 		(4*GDGT_MAX)+
 		4+1+1+2+
-		1+1+1+1+
+		1+1+1+
 		4+
 		(MAXEMBLEMS+(MAXUNLOCKABLES*2)+MAXCONDITIONSETS)+
 		4+2);
@@ -4836,6 +4863,13 @@ void G_SaveGameData(boolean dirty)
 
 	WRITEUINT32(save.p, GD_VERSIONCHECK); // 4
 	WRITEUINT8(save.p, GD_VERSIONMINOR); // 1
+
+	// Crash dirtiness
+	// cannot move, see G_DirtyGameData
+	WRITEUINT8(save.p, gamedata->evercrashed); // 1
+
+	// Statistics
+
 	WRITEUINT32(save.p, gamedata->totalplaytime); // 4
 	WRITEUINT32(save.p, gamedata->totalrings); // 4
 
@@ -4848,13 +4882,6 @@ void G_SaveGameData(boolean dirty)
 	WRITEUINT8(save.p, gamedata->pendingkeyroundoffset); // 1
 	WRITEUINT8(save.p, gamedata->keyspending); // 1
 	WRITEUINT16(save.p, gamedata->chaokeys); // 2
-
-	{
-		UINT8 crashflags = (gamedata->crashflags & GDCRASH_ANY);
-		if (dirty)
-			crashflags |= GDCRASH_LAST;
-		WRITEUINT8(save.p, crashflags); // 1
-	}
 
 	WRITEUINT8(save.p, gamedata->everloadedaddon); // 1
 	WRITEUINT8(save.p, gamedata->eversavedreplay); // 1
