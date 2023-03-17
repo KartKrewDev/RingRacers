@@ -561,8 +561,6 @@ extern consvar_t cv_autorecord;
 
 void M_SetMenuDelay(UINT8 i);
 
-void Moviemode_mode_Onchange(void);
-
 void M_SortServerList(void);
 
 void M_MapMenuControls(event_t *ev);

@@ -114,8 +114,8 @@ typedef off_t off64_t;
 
 consvar_t cv_screenshot_colorprofile = CVAR_INIT ("screenshot_colorprofile", "Yes", CV_SAVE, CV_YesNo, NULL);
 
-static CV_PossibleValue_t moviemode_cons_t[] = {{MM_GIF, "GIF"}, {MM_APNG, "aPNG"}, {MM_SCREENSHOT, "Screenshots"}, {MM_AVRECORDER, "WebM"}, {0, NULL}};
-consvar_t cv_moviemode = CVAR_INIT ("moviemode_mode", "WebM", CV_SAVE|CV_CALL, moviemode_cons_t, Moviemode_mode_Onchange);
+static CV_PossibleValue_t lossless_recorder_cons_t[] = {{MM_GIF, "GIF"}, {MM_APNG, "aPNG"}, {MM_SCREENSHOT, "Screenshots"}, {0, NULL}};
+consvar_t cv_lossless_recorder = CVAR_INIT ("lossless_recorder", "GIF", CV_SAVE, lossless_recorder_cons_t, NULL);
 
 static CV_PossibleValue_t zlib_mem_level_t[] = {
 	{1, "(Min Memory) 1"},
@@ -1316,22 +1316,36 @@ static inline moviemode_t M_StartMovieAVRecorder(const char *pathname)
 #endif
 }
 
-void M_StartMovie(void)
+void M_StartMovie(moviemode_t mode)
 {
 #if NUMSCREENS > 2
+	const char *folder;
 	char pathname[MAX_WADPATH];
 
 	if (moviemode)
 		return;
 
-	strcpy(pathname, srb2home);
-	strcat(pathname, PATHSEP "media" PATHSEP "movies" PATHSEP);
+	switch (mode)
+	{
+	case MM_GIF:
+		folder = "gifs";
+		break;
+
+	case MM_AVRECORDER:
+		folder = "movies";
+		break;
+
+	default:
+		folder = "slideshows";
+	}
+
+	sprintf(pathname, "%s" PATHSEP "media" PATHSEP "%s" PATHSEP, srb2home, folder);
 	M_MkdirEach(pathname, M_PathParts(pathname) - 2, 0755);
 
 	if (rendermode == render_none)
 		I_Error("Can't make a movie without a render system\n");
 
-	switch (cv_moviemode.value)
+	switch (mode)
 	{
 		case MM_GIF:
 			moviemode = M_StartMovieGIF(pathname);
@@ -1842,12 +1856,38 @@ boolean M_ScreenshotResponder(event_t *ev)
 	if (ch >= NUMKEYS && menuactive) // If it's not a keyboard key, then don't allow it in the menus!
 		return false;
 
-	if (ch == KEY_F8 /*|| ch == gamecontrol[0][gc_screenshot][0] || ch == gamecontrol[0][gc_screenshot][1]*/) // remappable F8
+	switch (ch)
+	{
+	case KEY_F8:
 		M_ScreenShot();
-	else if (ch == KEY_F9 /*|| ch == gamecontrol[0][gc_recordgif][0] || ch == gamecontrol[0][gc_recordgif][1]*/) // remappable F9
-		((moviemode) ? M_StopMovie : M_StartMovie)();
-	else
+		break;
+
+	case KEY_F9:
+		if (moviemode)
+		{
+			M_StopMovie();
+		}
+		else
+		{
+			M_StartMovie(MM_AVRECORDER);
+		}
+		break;
+
+	case KEY_F10:
+		if (moviemode)
+		{
+			M_StopMovie();
+		}
+		else
+		{
+			M_StartMovie(static_cast<moviemode_t>(cv_lossless_recorder.value));
+		}
+		break;
+
+	default:
 		return false;
+	}
+
 	return true;
 }
 

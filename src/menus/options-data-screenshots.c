@@ -9,19 +9,23 @@
 
 menuitem_t OPTIONS_DataScreenshot[] =
 {
+#ifdef SRB2_CONFIG_ENABLE_WEBM_MOVIES
 	{IT_HEADER, "MOVIE RECORDING (F9)", NULL,
 		NULL, {NULL}, 0, 0},
 
-	{IT_STRING | IT_CVAR, "Recording Format", "What file format will movies will be recorded in?",
-		NULL, {.cvar = &cv_moviemode}, 0, 0},
-
-#ifdef SRB2_CONFIG_ENABLE_WEBM_MOVIES
 	{IT_STRING | IT_CVAR, "Real-Time Data", "If enabled, shows fps, duration and filesize of recording in real-time.",
 		NULL, {.cvar = &cv_movie_showfps}, 0, 0},
-#else
-	{IT_SPACE | IT_NOTHING, NULL, NULL,
-		NULL, {NULL}, 0, 0},
 #endif
+
+	{IT_SPACE | IT_NOTHING, NULL,  NULL,
+		NULL, {NULL}, 0, 0},
+
+	{IT_HEADER, "LOSSLESS RECORDING (F10)", NULL,
+		NULL, {NULL}, 0, 0},
+
+	{IT_STRING | IT_CVAR, "Recording Format", "What file format will lossless recordings use?",
+		NULL, {.cvar = &cv_lossless_recorder}, 0, 0},
+
 };
 
 menu_t OPTIONS_DataScreenshotDef = {
@@ -39,10 +43,3 @@ menu_t OPTIONS_DataScreenshotDef = {
 	NULL,
 	NULL,
 };
-
-void Moviemode_mode_Onchange(void)
-{
-	// opt 3 in a 0 based array, you get the idea...
-	OPTIONS_DataScreenshot[2].status =
-		(cv_moviemode.value == MM_AVRECORDER ? IT_CVAR|IT_STRING : IT_DISABLED);
-}
