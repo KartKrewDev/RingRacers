@@ -8085,7 +8085,6 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 	}
 	case MT_LIGHTNINGSHIELD:
 	{
-		fixed_t destx, desty;
 		if (!mobj->target || !mobj->target->health || !mobj->target->player
 			|| mobj->target->player->curshield != KSHIELD_LIGHTNING)
 		{
@@ -8094,36 +8093,11 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 		}
 		P_SetScale(mobj, (mobj->destscale = (5*mobj->target->scale)>>2));
 
-		if (!r_splitscreen /*&& rendermode != render_soft*/)
-		{
-			angle_t viewingangle;
-			statenum_t curstate = ((mobj->tics == 1) ? (mobj->state->nextstate) : ((statenum_t)(mobj->state-states)));
-
-			if (players[displayplayers[0]].awayview.tics)
-				viewingangle = R_PointToAngle2(mobj->target->x, mobj->target->y, players[displayplayers[0]].awayview.mobj->x, players[displayplayers[0]].awayview.mobj->y);
-			else if (!camera[0].chase && players[displayplayers[0]].mo)
-				viewingangle = R_PointToAngle2(mobj->target->x, mobj->target->y, players[displayplayers[0]].mo->x, players[displayplayers[0]].mo->y);
-			else
-				viewingangle = R_PointToAngle2(mobj->target->x, mobj->target->y, camera[0].x, camera[0].y);
-
-			if (curstate > S_LIGHTNINGSHIELD15 && curstate <= S_LIGHTNINGSHIELD24)
-				viewingangle += ANGLE_180;
-
-			destx = mobj->target->x + P_ReturnThrustX(mobj->target, viewingangle, mobj->scale>>4);
-			desty = mobj->target->y + P_ReturnThrustY(mobj->target, viewingangle, mobj->scale>>4);
-		}
-		else
-		{
-			destx = mobj->target->x;
-			desty = mobj->target->y;
-		}
-
-		P_MoveOrigin(mobj, destx, desty, mobj->target->z);
+		P_MoveOrigin(mobj, mobj->target->x, mobj->target->y, mobj->target->z);
 		break;
 	}
 	case MT_BUBBLESHIELD:
 	{
-		fixed_t destx, desty;
 		fixed_t scale;
 		statenum_t curstate;
 
@@ -8226,34 +8200,13 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 		mobj->extravalue2 = mobj->target->player->bubbleblowup;
 		P_SetScale(mobj, (mobj->destscale = scale));
 
-		if (!splitscreen /*&& rendermode != render_soft*/)
-		{
-			angle_t viewingangle;
-
-			if (players[displayplayers[0]].awayview.tics)
-				viewingangle = R_PointToAngle2(mobj->target->x, mobj->target->y, players[displayplayers[0]].awayview.mobj->x, players[displayplayers[0]].awayview.mobj->y);
-			else if (!camera[0].chase && players[displayplayers[0]].mo)
-				viewingangle = R_PointToAngle2(mobj->target->x, mobj->target->y, players[displayplayers[0]].mo->x, players[displayplayers[0]].mo->y);
-			else
-				viewingangle = R_PointToAngle2(mobj->target->x, mobj->target->y, camera[0].x, camera[0].y);
-
-			destx = mobj->target->x + P_ReturnThrustX(mobj->target, viewingangle, mobj->scale>>4);
-			desty = mobj->target->y + P_ReturnThrustY(mobj->target, viewingangle, mobj->scale>>4);
-		}
-		else
-		{
-			destx = mobj->target->x;
-			desty = mobj->target->y;
-		}
-
 		mobj->flags &= ~(MF_NOCLIPTHING);
-		P_MoveOrigin(mobj, destx, desty, mobj->target->z);
+		P_MoveOrigin(mobj, mobj->target->x, mobj->target->y, mobj->target->z);
 		mobj->flags |= MF_NOCLIPTHING;
 		break;
 	}
 	case MT_FLAMESHIELD:
 	{
-		fixed_t destx, desty;
 		statenum_t curstate;
 		statenum_t underlayst = S_NULL;
 		INT32 flamemax = 0;
@@ -8333,30 +8286,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 			}
 		}
 
-		if (!splitscreen /*&& rendermode != render_soft*/)
-		{
-			angle_t viewingangle;
-
-			if (players[displayplayers[0]].awayview.tics)
-				viewingangle = R_PointToAngle2(mobj->target->x, mobj->target->y, players[displayplayers[0]].awayview.mobj->x, players[displayplayers[0]].awayview.mobj->y);
-			else if (!camera[0].chase && players[displayplayers[0]].mo)
-				viewingangle = R_PointToAngle2(mobj->target->x, mobj->target->y, players[displayplayers[0]].mo->x, players[displayplayers[0]].mo->y);
-			else
-				viewingangle = R_PointToAngle2(mobj->target->x, mobj->target->y, camera[0].x, camera[0].y);
-
-			if (curstate >= S_FLAMESHIELD1 && curstate < S_FLAMESHIELDDASH1 && ((curstate-S_FLAMESHIELD1) & 1))
-				viewingangle += ANGLE_180;
-
-			destx = mobj->target->x + P_ReturnThrustX(mobj->target, viewingangle, mobj->scale>>4);
-			desty = mobj->target->y + P_ReturnThrustY(mobj->target, viewingangle, mobj->scale>>4);
-		}
-		else
-		{
-			destx = mobj->target->x;
-			desty = mobj->target->y;
-		}
-
-		P_MoveOrigin(mobj, destx, desty, mobj->target->z);
+		P_MoveOrigin(mobj, mobj->target->x, mobj->target->y, mobj->target->z);
 		mobj->angle = K_MomentumAngle(mobj->target);
 
 		if (underlayst != S_NULL)
