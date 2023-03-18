@@ -1002,7 +1002,7 @@ static const char *M_GetConditionString(condition_t *cn)
 					work = " Race";
 					break;
 				case GDGT_PRISONS:
-					work = " Capsule";
+					work = " Prison";
 					break;
 				case GDGT_BATTLE:
 					work = " Battle";
