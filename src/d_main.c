@@ -1049,6 +1049,7 @@ void D_ClearState(void)
 	tutorialmode = false;
 
 	cursongcredit.def = NULL;
+	S_StopSounds();
 
 	G_SetGamestate(GS_NULL);
 	wipegamestate = GS_NULL;
