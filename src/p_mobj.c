@@ -1148,7 +1148,11 @@ fixed_t P_GetMobjGravity(mobj_t *mo)
 		else if (mo->player->fastfall != 0)
 		{
 			// Fast falling
-			gravityadd *= 4;
+
+			const fixed_t unit = 64 * mapobjectscale;
+			const fixed_t mult = 3*FRACUNIT + (3 * FixedDiv(mo->player->fastfallBase, unit));
+
+			gravityadd = FixedMul(gravityadd, mult);
 		}
 	}
 	else
