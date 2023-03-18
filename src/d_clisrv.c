@@ -1906,7 +1906,6 @@ static boolean CL_ServerConnectionTicker(const char *tmpsave, tic_t *oldtic, tic
 				return false;
 			}
 		case CL_LOADFILES:
-			CONS_Printf("loadfiles\n");
 			if (CL_LoadServerFiles())
 				cl_mode = CL_SETUPFILES;
 
@@ -1953,7 +1952,6 @@ static boolean CL_ServerConnectionTicker(const char *tmpsave, tic_t *oldtic, tic
 			}
 			break;
 		case CL_SENDKEY:
-			CONS_Printf("sendkey\n");
 			if (I_GetTime() >= *asksent && CL_SendKey())
 			{
 				*asksent = I_GetTime() + NEWTICRATE*3;
@@ -1961,7 +1959,6 @@ static boolean CL_ServerConnectionTicker(const char *tmpsave, tic_t *oldtic, tic
 			}
 			break;
 		case CL_WAITCHALLENGE:
-			CONS_Printf("waitchallenge\n");
 			if (I_GetTime() >= *asksent)
 			{
 				cl_mode = CL_SENDKEY;
