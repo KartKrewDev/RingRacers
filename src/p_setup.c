@@ -5750,7 +5750,7 @@ static void P_ConvertBinaryLinedefTypes(void)
 		case 500: //Scroll front wall left
 		case 501: //Scroll front wall right
 			lines[i].args[0] = 0;
-			lines[i].args[1] = (lines[i].special == 500) ? -1 : 1;
+			lines[i].args[1] = ((lines[i].special == 500) ? -1 : 1) * (1 << SCROLL_SHIFT);
 			lines[i].args[2] = 0;
 			lines[i].special = 500;
 			break;

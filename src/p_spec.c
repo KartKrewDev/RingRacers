@@ -8231,13 +8231,20 @@ static void P_SpawnScrollers(void)
 			case 500:
 			{
 				if (l->args[0] != TMSD_BACK)
-					Add_Scroller(sc_side, -l->args[1] << FRACBITS, l->args[2] << FRACBITS, -1, l->sidenum[0], accel, 0);
+				{
+					Add_Scroller(sc_side, -l->args[1] << (FRACBITS - SCROLL_SHIFT), l->args[2] << (FRACBITS - SCROLL_SHIFT), -1, l->sidenum[0], accel, 0);
+				}
+
 				if (l->args[0] != TMSD_FRONT)
 				{
 					if (l->sidenum[1] != 0xffff)
-						Add_Scroller(sc_side, -l->args[1] << FRACBITS, l->args[2] << FRACBITS, -1, l->sidenum[1], accel, 0);
+					{
+						Add_Scroller(sc_side, -l->args[1] << (FRACBITS - SCROLL_SHIFT), l->args[2] << (FRACBITS - SCROLL_SHIFT), -1, l->sidenum[1], accel, 0);
+					}
 					else
+					{
 						CONS_Debug(DBG_GAMELOGIC, "Line special 500 (line #%s) missing back side!\n", sizeu1(i));
+					}
 				}
 				break;
 			}
