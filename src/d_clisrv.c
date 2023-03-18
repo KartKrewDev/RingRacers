@@ -47,6 +47,7 @@
 #include "lua_hook.h"
 #include "md5.h"
 #include "m_perfstats.h"
+#include "monocypher/monocypher.h"
 
 // SRB2Kart
 #include "k_kart.h"
@@ -156,13 +157,13 @@ char connectedservername[MAXSERVERNAME];
 /// \todo WORK!
 boolean acceptnewnode = true;
 
-char lastReceivedKey[MAXNETNODES][32];
-char lastComputedChallenge[MAXNETNODES][32];
+uint8_t lastReceivedKey[MAXNETNODES][32];
+uint8_t lastSentChallenge[MAXNETNODES][32];
 
 boolean serverisfull = false; //lets us be aware if the server was full after we check files, but before downloading, so we can ask if the user still wants to download or not
 tic_t firstconnectattempttime = 0;
 
-char awaitingChallenge[32];
+uint8_t awaitingChallenge[32];
 
 // engine
 
@@ -833,7 +834,16 @@ static boolean CL_SendJoin(void)
 
 	memcpy(&netbuffer->u.clientcfg.availabilities, R_GetSkinAvailabilities(false, false), MAXAVAILABILITY*sizeof(UINT8));
 
-	memcpy(&netbuffer->u.clientcfg.challengeResponse, awaitingChallenge, 32);
+	uint8_t signature[64];
+	crypto_eddsa_sign(signature, secret_key, awaitingChallenge, 32);
+
+	if (crypto_eddsa_check(signature, public_key, awaitingChallenge, 32) != 0)
+		I_Error("Couldn't verify own key?");
+
+	// Testing
+	// memset(signature, 0, sizeof(signature));
+
+	memcpy(&netbuffer->u.clientcfg.challengeResponse, signature, sizeof(signature));
 
 	return HSendPacket(servernode, false, 0, sizeof (clientconfig_pak));
 }
@@ -4059,6 +4069,11 @@ static void HandleConnect(SINT8 node)
 		if (playernode[i] != UINT8_MAX) // We use this to count players because it is affected by SV_AddWaitingPlayers when more than one client joins on the same tic, unlike playeringame and D_NumPlayers. UINT8_MAX denotes no node for that player
 			connectedplayers++;
 
+	// Testing
+	// memset(netbuffer->u.clientcfg.challengeResponse, 0, sizeof(netbuffer->u.clientcfg.challengeResponse));
+
+	int sigcheck = crypto_eddsa_check(netbuffer->u.clientcfg.challengeResponse, lastReceivedKey[node], lastSentChallenge[node], 32);
+
 	if (bannednode && bannednode[node].banid != SIZE_MAX)
 	{
 		const char *reason = NULL;
@@ -4140,9 +4155,9 @@ static void HandleConnect(SINT8 node)
 		SV_SendRefuse(node, va(M_GetText("Too many people are connecting.\nPlease wait %d seconds and then\ntry rejoining."),
 			(joindelay - 2 * cv_joindelay.value * TICRATE) / TICRATE));
 	}
-	else if (netgame && node != 0 && !memcmp(netbuffer->u.clientcfg.challengeResponse, lastComputedChallenge[node], 32))
+	else if (netgame && node != 0 && sigcheck != 0)
 	{
-		SV_SendRefuse(node, M_GetText("Failed to validate key exchange."));
+		SV_SendRefuse(node, M_GetText("Signature verification failed."));
 	}
 	else
 	{
@@ -4536,7 +4551,7 @@ static void HandlePacketFromAwayNode(SINT8 node)
 				PT_ClientKey(node);
 			break;
 		case PT_SERVERCHALLENGE:
-			memset(awaitingChallenge, 0, 32); // TODO: ACTUALLY COMPUTE CHALLENGE RESPONSE IDIOT
+			memcpy(awaitingChallenge, netbuffer->u.serverchallenge.secret, sizeof(awaitingChallenge));
 			cl_mode = CL_ASKJOIN;
 			break;
 		default:

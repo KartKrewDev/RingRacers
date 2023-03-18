@@ -161,7 +161,7 @@ boolean dedicated = false;
 
 // For identity negotiation with netgame servers
 uint8_t	public_key[32];
-uint8_t	secret_key[32];
+uint8_t	secret_key[64];
 
 //
 // D_PostEvent
@@ -1715,31 +1715,35 @@ void D_SRB2Main(void)
 	ACS_Init();
 	CON_SetLoadingProgress(LOADED_ACSINIT);
 
-	// -- IT'S HOMEGROWN CRYPTO TIME --
-
 	// TODO: This file should probably give a fuck about command line params,
 	// or not be stored next to the EXE in a way that allows people to unknowingly send it to others.
 	static char keyfile[16] = "rrid.dat";
 
-	csprng(secret_key, 32);
+	static uint8_t seed[32];
+	csprng(seed, 32);
+	crypto_eddsa_key_pair(secret_key, public_key, seed);
+
+	int sk_size = sizeof(secret_key);
+	int pk_size = sizeof(public_key);
+	int totalsize = sk_size + pk_size;
 
 	if (FIL_ReadFileOK(keyfile))
 	{
 		UINT8 *readbuffer = NULL;
 		UINT16 lengthRead = FIL_ReadFile(keyfile, &readbuffer);
-		if (readbuffer == NULL || lengthRead != 32)
+		if (readbuffer == NULL || lengthRead != totalsize)
 			I_Error("Malformed keyfile");
-		memcpy(secret_key, readbuffer, 32);
+		memcpy(secret_key, readbuffer, sk_size);
+		memcpy(public_key, readbuffer + sk_size, pk_size);
 	}
 	else
 	{
-		if (!FIL_WriteFile(keyfile, secret_key, 32))
+		uint8_t keybuffer[totalsize];
+		memcpy(keybuffer, secret_key, sk_size);
+		memcpy(keybuffer + sk_size, public_key, pk_size);
+		if (!FIL_WriteFile(keyfile, keybuffer, totalsize))
 			I_Error("Couldn't open keyfile");
 	}
-
-	crypto_x25519_public_key(public_key, secret_key);
-
-	// -- END HOMEGROWN CRYPTO TIME --
 
 	//------------------------------------------------ COMMAND LINE PARAMS
 

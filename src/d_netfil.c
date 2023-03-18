@@ -1320,14 +1320,15 @@ void PT_ClientKey(INT32 node)
 
 	// TODO
 	// Stage 1: Exchange packets with no verification of their contents
-	// Stage 2: Exchange packets with a check, but no crypto (YOU ARE HERE)
-	// Stage 3: The crypto part
+	// Stage 2: Exchange packets with a check, but no crypto
+	// Stage 3: The crypto part (YOU ARE HERE)
 
 	memcpy(lastReceivedKey[node], packet->key, 32);
 
 	netbuffer->packettype = PT_SERVERCHALLENGE;
-	csprng(lastComputedChallenge[node], sizeof(serverchallenge_pak));
-	memcpy(&netbuffer->u.serverchallenge, lastComputedChallenge[node], sizeof(serverchallenge_pak));
+
+	csprng(lastSentChallenge[node], sizeof(serverchallenge_pak));
+	memcpy(&netbuffer->u.serverchallenge, lastSentChallenge[node], sizeof(serverchallenge_pak));
 	HSendPacket(node, false, 0, sizeof (serverchallenge_pak));
 }
 

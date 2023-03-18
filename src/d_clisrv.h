@@ -256,7 +256,7 @@ struct clientconfig_pak
 	UINT8 mode;
 	char names[MAXSPLITSCREENPLAYERS][MAXPLAYERNAME];
 	UINT8 availabilities[MAXAVAILABILITY];
-	char challengeResponse[32];
+	uint8_t challengeResponse[64];
 } ATTRPACK;
 
 #define SV_SPEEDMASK 0x03		// used to send kartspeed
@@ -460,8 +460,8 @@ extern UINT16 software_MAXPACKETLENGTH;
 extern boolean acceptnewnode;
 extern SINT8 servernode;
 extern char connectedservername[MAXSERVERNAME];
-extern char lastReceivedKey[MAXNETNODES][32];
-extern char lastComputedChallenge[MAXNETNODES][32];
+extern uint8_t lastReceivedKey[MAXNETNODES][32];
+extern uint8_t lastSentChallenge[MAXNETNODES][32];
 
 void Command_Ping_f(void);
 extern tic_t connectiontimeout;
