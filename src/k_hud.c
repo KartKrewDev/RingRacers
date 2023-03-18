@@ -957,7 +957,7 @@ void K_ObjectTracking(trackingResult_t *result, const vector3_t *point, boolean 
 
 	// Determine viewpoint factors.
 	h = R_PointToDist2(point->x, point->y, viewx, viewy);
-	da = AngleDeltaSigned(viewpointAngle, R_PointToAngle2(point->x, point->y, viewx, viewy));
+	da = AngleDeltaSigned(viewpointAngle, R_PointToAngle2(viewx, viewy, point->x, point->y));
 	dp = AngleDeltaSigned(viewpointAiming, R_PointToAngle2(0, 0, h, viewz));
 
 	if (reverse)
@@ -967,7 +967,7 @@ void K_ObjectTracking(trackingResult_t *result, const vector3_t *point, boolean 
 
 	// Set results relative to top left!
 	result->x = FixedMul(NEWTAN(da), fg);
-	result->y = FixedMul((NEWTAN(viewpointAiming) - FixedDiv((viewz - point->z), 1 + FixedMul(NEWCOS(da), h))), fg);
+	result->y = FixedMul((NEWTAN(viewpointAiming) - FixedDiv((point->z-viewz), 1 + FixedMul(NEWCOS(da), h))), fg);
 
 	result->angle = da;
 	result->pitch = dp;
@@ -994,7 +994,7 @@ void K_ObjectTracking(trackingResult_t *result, const vector3_t *point, boolean 
 
 	result->scale = FixedDiv(screenHalfW, h+1);
 
-	result->onScreen = ((abs(da) > ANG60) || (abs(AngleDeltaSigned(viewpointAiming, R_PointToAngle2(0, 0, h, (viewz - point->z)))) > ANGLE_45));
+	result->onScreen = !((abs(da) > ANG60) || (abs(AngleDeltaSigned(viewpointAiming, R_PointToAngle2(0, 0, h, (viewz - point->z)))) > ANGLE_45));
 
 	// Cheap dirty hacks for some split-screen related cases
 	if (result->x < 0 || result->x > (screenWidth << FRACBITS))
