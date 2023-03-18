@@ -2719,7 +2719,7 @@ static void readcondition(UINT8 set, UINT32 id, char *word2)
 	{
 		PARAMCHECK(1);
 		ty = UCRP_FINISHTIME + offset;
-		re = atoi(params[1]);
+		re = get_number(params[1]);
 
 		if (re < 0)
 		{
