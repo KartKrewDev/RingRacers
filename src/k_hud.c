@@ -76,7 +76,7 @@ patch_t *kp_facehighlight[8];
 
 static patch_t *kp_nocontestminimap;
 static patch_t *kp_spbminimap;
-static patch_t *kp_capsuleminimap[2];
+static patch_t *kp_capsuleminimap[3];
 
 static patch_t *kp_ringsticker[2];
 static patch_t *kp_ringstickersplit[4];
@@ -350,6 +350,7 @@ void K_LoadKartHUDGraphics(void)
 	HU_UpdatePatch(&kp_spbminimap, "SPBMMAP");
 	HU_UpdatePatch(&kp_capsuleminimap[0], "MINICAP1");
 	HU_UpdatePatch(&kp_capsuleminimap[1], "MINICAP2");
+	HU_UpdatePatch(&kp_capsuleminimap[2], "MINICAP3");
 
 	// Rings & Lives
 	HU_UpdatePatch(&kp_ringsticker[0], "RNGBACKA");
@@ -3743,6 +3744,10 @@ static void K_drawKartMinimap(void)
 				break;
 			case MT_BATTLECAPSULE:
 				workingPic = kp_capsuleminimap[(mobj->extravalue1 != 0 ? 1 : 0)];
+				break;
+			case MT_CDUFO:
+				if (battlecapsules) //!battleprisons
+					workingPic = kp_capsuleminimap[2];
 				break;
 			default:
 				break;

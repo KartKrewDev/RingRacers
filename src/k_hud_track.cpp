@@ -181,7 +181,8 @@ void K_DrawTargetTracking(const TargetTracking& target)
 			borderDir.y = FRACUNIT;
 		}
 
-		if (target.mobj->type == MT_BATTLECAPSULE)
+		if (target.mobj->type == MT_BATTLECAPSULE
+			|| target.mobj->type == MT_CDUFO)
 		{
 			targetPatch = kp_capsuletarget_icon[timer & 1];
 		}
@@ -363,6 +364,9 @@ bool is_object_tracking_target(const mobj_t* mobj)
 	switch (mobj->type)
 	{
 	case MT_BATTLECAPSULE:
+	case MT_CDUFO:
+		return battlecapsules; // battleprisons
+
 	case MT_SPECIAL_UFO:
 		return true;
 
