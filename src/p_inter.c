@@ -40,6 +40,7 @@
 #include "k_objects.h"
 #include "k_roulette.h"
 #include "k_boss.h"
+#include "acs/interface.h"
 
 // CTF player names
 #define CTFTEAMCODE(pl) pl->ctfteam ? (pl->ctfteam == 1 ? "\x85" : "\x84") : ""
@@ -1171,6 +1172,8 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 		}
 
 		target->player->trickpanel = 0;
+
+		ACS_RunPlayerDeathScript(target->player);
 	}
 
 	if (source && target && target->player && source->player)

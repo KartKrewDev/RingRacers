@@ -16,17 +16,7 @@
 #include <ostream>
 #include <vector>
 
-#include <ACSVM/Action.hpp>
-#include <ACSVM/Code.hpp>
-#include <ACSVM/CodeData.hpp>
-#include <ACSVM/Environment.hpp>
-#include <ACSVM/Error.hpp>
-#include <ACSVM/Module.hpp>
-#include <ACSVM/Scope.hpp>
-#include <ACSVM/Script.hpp>
-#include <ACSVM/Serial.hpp>
-#include <ACSVM/Thread.hpp>
-#include <Util/Floats.hpp>
+#include "acsvm.hpp"
 
 extern "C" {
 #include "interface.h"
@@ -141,6 +131,68 @@ void ACS_LoadLevelScripts(size_t mapID)
 }
 
 /*--------------------------------------------------
+	void ACS_RunLevelStartScripts(void)
+
+		See header file for description.
+--------------------------------------------------*/
+void ACS_RunLevelStartScripts(void)
+{
+	Environment *env = &ACSEnv;
+
+	ACSVM::GlobalScope *const global = env->getGlobalScope(0);
+	ACSVM::HubScope *const hub = global->getHubScope(0);
+	ACSVM::MapScope *const map = hub->getMapScope(0);
+
+	map->scriptStartType(ACS_ST_OPEN, {});
+}
+
+/*--------------------------------------------------
+	void ACS_RunPlayerRespawnScript(player_t *player)
+
+		See header file for description.
+--------------------------------------------------*/
+void ACS_RunPlayerRespawnScript(player_t *player)
+{
+	Environment *env = &ACSEnv;
+
+	ACSVM::GlobalScope *const global = env->getGlobalScope(0);
+	ACSVM::HubScope *const hub = global->getHubScope(0);
+	ACSVM::MapScope *const map = hub->getMapScope(0);
+
+	ACSVM::MapScope::ScriptStartInfo scriptInfo;
+	ThreadInfo info;
+
+	P_SetTarget(&info.mo, player->mo);
+
+	scriptInfo.info = &info;
+
+	map->scriptStartTypeForced(ACS_ST_RESPAWN, scriptInfo);
+}
+
+/*--------------------------------------------------
+	void ACS_RunPlayerDeathScript(player_t *player)
+
+		See header file for description.
+--------------------------------------------------*/
+void ACS_RunPlayerDeathScript(player_t *player)
+{
+	Environment *env = &ACSEnv;
+
+	ACSVM::GlobalScope *const global = env->getGlobalScope(0);
+	ACSVM::HubScope *const hub = global->getHubScope(0);
+	ACSVM::MapScope *const map = hub->getMapScope(0);
+
+	ACSVM::MapScope::ScriptStartInfo scriptInfo;
+	ThreadInfo info;
+
+	P_SetTarget(&info.mo, player->mo);
+
+	scriptInfo.info = &info;
+
+	map->scriptStartTypeForced(ACS_ST_DEATH, scriptInfo);
+}
+
+/*--------------------------------------------------
 	void ACS_RunPlayerEnterScript(player_t *player)
 
 		See header file for description.
@@ -161,40 +213,6 @@ void ACS_RunPlayerEnterScript(player_t *player)
 	scriptInfo.info = &info;
 
 	map->scriptStartTypeForced(ACS_ST_ENTER, scriptInfo);
-}
-
-/*--------------------------------------------------
-	void ACS_RunLevelStartScripts(void)
-
-		See header file for description.
---------------------------------------------------*/
-void ACS_RunLevelStartScripts(void)
-{
-	Environment *env = &ACSEnv;
-
-	ACSVM::GlobalScope *const global = env->getGlobalScope(0);
-	ACSVM::HubScope *const hub = global->getHubScope(0);
-	ACSVM::MapScope *const map = hub->getMapScope(0);
-
-	map->scriptStartType(ACS_ST_OPEN, {});
-
-	for (int i = 0; i < MAXPLAYERS; i++)
-	{
-		player_t *player = NULL;
-
-		if (playeringame[i] == false)
-		{
-			continue;
-		}
-
-		player = &players[i];
-		if (player->spectator == true)
-		{
-			continue;
-		}
-
-		ACS_RunPlayerEnterScript(player);
-	}
 }
 
 /*--------------------------------------------------
@@ -219,6 +237,61 @@ void ACS_RunLapScript(mobj_t *mo, line_t *line)
 	scriptInfo.info = &info;
 
 	map->scriptStartTypeForced(ACS_ST_LAP, scriptInfo);
+}
+
+/*--------------------------------------------------
+	void ACS_RunPositionScript(void)
+
+		See header file for description.
+--------------------------------------------------*/
+void ACS_RunPositionScript(void)
+{
+	Environment *env = &ACSEnv;
+
+	ACSVM::GlobalScope *const global = env->getGlobalScope(0);
+	ACSVM::HubScope *const hub = global->getHubScope(0);
+	ACSVM::MapScope *const map = hub->getMapScope(0);
+
+	map->scriptStartType(ACS_ST_POSITION, {});
+}
+
+/*--------------------------------------------------
+	void ACS_RunOvertimeScript(void)
+
+		See header file for description.
+--------------------------------------------------*/
+void ACS_RunOvertimeScript(void)
+{
+	Environment *env = &ACSEnv;
+
+	ACSVM::GlobalScope *const global = env->getGlobalScope(0);
+	ACSVM::HubScope *const hub = global->getHubScope(0);
+	ACSVM::MapScope *const map = hub->getMapScope(0);
+
+	map->scriptStartType(ACS_ST_OVERTIME, {});
+}
+
+/*--------------------------------------------------
+	void ACS_RunEmeraldScript(mobj_t *mo)
+
+		See header file for description.
+--------------------------------------------------*/
+void ACS_RunEmeraldScript(mobj_t *mo)
+{
+	Environment *env = &ACSEnv;
+
+	ACSVM::GlobalScope *const global = env->getGlobalScope(0);
+	ACSVM::HubScope *const hub = global->getHubScope(0);
+	ACSVM::MapScope *const map = hub->getMapScope(0);
+
+	ACSVM::MapScope::ScriptStartInfo scriptInfo;
+	ThreadInfo info;
+
+	P_SetTarget(&info.mo, mo);
+
+	scriptInfo.info = &info;
+
+	map->scriptStartTypeForced(ACS_ST_EMERALD, scriptInfo);
 }
 
 /*--------------------------------------------------

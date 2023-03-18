@@ -3649,6 +3649,7 @@ boolean P_SpectatorJoinGame(player_t *player)
 	player->spectatewait = 0;
 	player->ctfteam = changeto;
 	player->playerstate = PST_REBORN;
+	player->enteredGame = true;
 
 	// Reset away view (some code referenced from Got_Teamchange)
 	{

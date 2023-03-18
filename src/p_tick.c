@@ -695,7 +695,19 @@ void P_Ticker(boolean run)
 	P_PrecipitationEffects();
 
 	if (run)
+	{
 		leveltime++;
+
+		if (starttime > introtime && leveltime == starttime)
+		{
+			ACS_RunPositionScript();
+		}
+
+		if (timelimitintics > 0 && leveltime == (timelimitintics + starttime + 1))
+		{
+			ACS_RunOvertimeScript();
+		}
+	}
 
 	timeinmap++;
 

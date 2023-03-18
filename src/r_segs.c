@@ -132,14 +132,18 @@ static void R_Render2sidedMultiPatchColumn(column_t *column, column_t *brightmap
 
 transnum_t R_GetLinedefTransTable(fixed_t alpha)
 {
-	transnum_t transnum = NUMTRANSMAPS; // Send back NUMTRANSMAPS for none
-
-	if (alpha > 0 && alpha < FRACUNIT)
+	if (alpha >= FRACUNIT)
 	{
-		transnum = (20*(FRACUNIT - alpha - 1) + FRACUNIT) >> (FRACBITS+1);
+		return 0;
 	}
-
-	return transnum;
+	else if (alpha <= 0)
+	{
+		return NUMTRANSMAPS;
+	}
+	else
+	{
+		return (20*(FRACUNIT - alpha - 1) + FRACUNIT) >> (FRACBITS+1);
+	}
 }
 
 void R_RenderMaskedSegRange(drawseg_t *ds, INT32 x1, INT32 x2)
@@ -172,16 +176,18 @@ void R_RenderMaskedSegRange(drawseg_t *ds, INT32 x1, INT32 x2)
 	windowbottom = windowtop = sprbotscreen = INT32_MAX;
 
 	ldef = curline->linedef;
-	if (!ldef->alpha)
-		return;
 
 	transtable = R_GetLinedefTransTable(ldef->alpha);
-	blendmode = ldef->blendmode;
-
-	if (transtable == NUMTRANSMAPS
-		|| blendmode == AST_MODULATE
-		|| blendmode == AST_FOG)
+	if (transtable == NUMTRANSMAPS)
 	{
+		// Invisible, so don't render
+		return;
+	}
+
+	blendmode = ldef->blendmode;
+	if (blendmode == AST_MODULATE || blendmode == AST_FOG)
+	{
+		// These blend modes don't use translucency
 		transtable = 0;
 	}
 

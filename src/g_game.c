@@ -64,6 +64,7 @@
 #include "k_director.h"
 #include "k_podium.h"
 #include "k_rank.h"
+#include "acs/interface.h"
 
 #ifdef HAVE_DISCORDRPC
 #include "discord.h"
@@ -2431,6 +2432,7 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	UINT16 nocontrol;
 	INT32 khudfault;
 	INT32 kickstartaccel;
+	boolean enteredGame;
 
 	score = players[player].score;
 	lives = players[player].lives;
@@ -2590,6 +2592,8 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 		skyboxviewpoint = skyboxcenterpoint = NULL;
 	}
 
+	enteredGame = players[player].enteredGame;
+
 	p = &players[player];
 	memset(p, 0, sizeof (*p));
 
@@ -2694,6 +2698,18 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 					break;
 				}
 			}
+		}
+	}
+
+	if (p->spectator == false)
+	{
+		if (betweenmaps || enteredGame == true)
+		{
+			ACS_RunPlayerEnterScript(p);
+		}
+		else
+		{
+			ACS_RunPlayerRespawnScript(p);
 		}
 	}
 

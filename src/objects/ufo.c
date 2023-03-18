@@ -24,6 +24,7 @@
 #include "../k_waypoint.h"
 #include "../k_specialstage.h"
 #include "../r_skins.h"
+#include "../acs/interface.h"
 
 #define UFO_BASE_SPEED (42 * FRACUNIT) // UFO's slowest speed.
 #define UFO_SPEEDUP (FRACUNIT >> 1) // Acceleration
@@ -697,7 +698,7 @@ boolean Obj_SpecialUFODamage(mobj_t *ufo, mobj_t *inflictor, mobj_t *source, UIN
 		ufo->flags = (ufo->flags & ~MF_SHOOTABLE) | (MF_SPECIAL|MF_PICKUPFROMBELOW);
 		ufo->shadowscale = FRACUNIT/3;
 
-		P_LinedefExecute(LE_PINCHPHASE, ufo, NULL);
+		ACS_RunEmeraldScript(source);
 
 		S_StopSound(ufo);
 		S_StartSound(ufo, sfx_clawk2);

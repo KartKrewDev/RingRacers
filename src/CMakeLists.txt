@@ -247,8 +247,6 @@ if(SRB2_CONFIG_ENABLE_WEBM_MOVIES)
 	target_compile_definitions(SRB2SDL2 PRIVATE -DSRB2_CONFIG_ENABLE_WEBM_MOVIES)
 endif()
 
-target_link_libraries(SRB2SDL2 PRIVATE acsvm)
-
 set(SRB2_HAVE_THREADS ON)
 target_compile_definitions(SRB2SDL2 PRIVATE -DHAVE_THREADS)
 

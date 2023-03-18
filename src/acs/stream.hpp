@@ -19,16 +19,7 @@
 
 #include <streambuf>
 
-#include <ACSVM/Code.hpp>
-#include <ACSVM/CodeData.hpp>
-#include <ACSVM/Environment.hpp>
-#include <ACSVM/Error.hpp>
-#include <ACSVM/Module.hpp>
-#include <ACSVM/Scope.hpp>
-#include <ACSVM/Script.hpp>
-#include <ACSVM/Serial.hpp>
-#include <ACSVM/Thread.hpp>
-#include <Util/Floats.hpp>
+#include "acsvm.hpp"
 
 extern "C" {
 #include "../doomtype.h"
