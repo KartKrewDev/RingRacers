@@ -156,6 +156,8 @@ char connectedservername[MAXSERVERNAME];
 /// \todo WORK!
 boolean acceptnewnode = true;
 
+char lastReceivedKey[MAXNETNODES][32];
+
 boolean serverisfull = false; //lets us be aware if the server was full after we check files, but before downloading, so we can ask if the user still wants to download or not
 tic_t firstconnectattempttime = 0;
 
@@ -545,6 +547,8 @@ typedef enum
 	CL_PREPAREHTTPFILES,
 	CL_DOWNLOADHTTPFILES,
 #endif
+	CL_SENDKEY,
+	CL_WAITCHALLENGE,
 } cl_mode_t;
 
 static void GetPackets(void);
@@ -1923,6 +1927,10 @@ static boolean CL_ServerConnectionTicker(const char *tmpsave, tic_t *oldtic, tic
 			{
 				cl_mode = CL_ASKJOIN;
 			}
+			break;
+		case CL_SENDKEY:
+			break;
+		case CL_WAITCHALLENGE:
 			break;
 		case CL_DOWNLOADSAVEGAME:
 			// At this state, the first (and only) needed file is the gamestate
@@ -4494,6 +4502,10 @@ static void HandlePacketFromAwayNode(SINT8 node)
 				break;
 			/* FALLTHRU */
 
+		case PT_CLIENTKEY:
+			if (server)
+				PT_ClientKey(node);
+			break;
 		default:
 			DEBFILE(va("unknown packet received (%d) from unknown host\n",netbuffer->packettype));
 			Net_CloseConnection(node);

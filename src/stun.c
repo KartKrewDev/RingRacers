@@ -84,7 +84,7 @@ STUN_node (void)
 	return node;
 }
 
-static void
+void
 csprng
 (
 		void * const buffer,

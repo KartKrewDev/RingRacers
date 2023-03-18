@@ -119,6 +119,10 @@ typedef enum
 	PT_LOGIN,         // Login attempt from the client.
 
 	PT_PING,          // Packet sent to tell clients the other client's latency to server.
+
+	PT_CLIENTKEY,		// "Here's my public key"
+	PT_SERVERCHALLENGE,		// "Prove it"
+
 	NUMPACKETTYPE
 } packettype_t;
 
@@ -346,6 +350,16 @@ struct filesneededconfig_pak
 	UINT8 files[MAXFILENEEDED]; // is filled with writexxx (byteptr.h)
 } ATTRPACK;
 
+struct clientkey_pak
+{
+	char key[32];
+} ATTRPACK;
+
+struct serverchallenge_pak
+{
+	char secret[32];
+} ATTRPACK;
+
 //
 // Network packet data
 //
@@ -380,6 +394,8 @@ struct doomdata_t
 		INT32 filesneedednum;               //           4 bytes
 		filesneededconfig_pak filesneededcfg; //       ??? bytes
 		UINT32 pingtable[MAXPLAYERS+1];     //          68 bytes
+		clientkey_pak clientkey;				// TODO: Tyron, does anyone take any of these sizes even remotely seriously
+		serverchallenge_pak serverchallenge;	// Are you even going to update this shit, are you even going to remove this comment
 	} u; // This is needed to pack diff packet types data together
 } ATTRPACK;
 
@@ -443,6 +459,7 @@ extern UINT16 software_MAXPACKETLENGTH;
 extern boolean acceptnewnode;
 extern SINT8 servernode;
 extern char connectedservername[MAXSERVERNAME];
+extern char lastReceivedKey[MAXNETNODES][32];
 
 void Command_Ping_f(void);
 extern tic_t connectiontimeout;

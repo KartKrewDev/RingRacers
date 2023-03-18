@@ -71,6 +71,9 @@
 #include "g_input.h" // tutorial mode control scheming
 #include "m_perfstats.h"
 
+#include "monocypher/monocypher.h"
+#include "stun.h"
+
 // SRB2Kart
 #include "k_grandprix.h"
 #include "doomstat.h"
@@ -155,6 +158,10 @@ event_t events[MAXEVENTS];
 INT32 eventhead, eventtail;
 
 boolean dedicated = false;
+
+// For identity negotiation with netgame servers
+uint8_t	public_key[32];
+uint8_t	secret_key[32];
 
 //
 // D_PostEvent
@@ -1707,6 +1714,32 @@ void D_SRB2Main(void)
 	CONS_Printf("ACS_Init(): Init Action Code Script VM.\n");
 	ACS_Init();
 	CON_SetLoadingProgress(LOADED_ACSINIT);
+
+	// -- IT'S HOMEGROWN CRYPTO TIME --
+
+	// TODO: This file should probably give a fuck about command line params,
+	// or not be stored next to the EXE in a way that allows people to unknowingly send it to others.
+	static char keyfile[16] = "rrid.dat";
+
+	csprng(secret_key, 32);
+
+	if (FIL_ReadFileOK(keyfile))
+	{
+		UINT8 *readbuffer = NULL;
+		UINT16 lengthRead = FIL_ReadFile(keyfile, &readbuffer);
+		if (readbuffer == NULL || lengthRead != 32)
+			I_Error("Malformed keyfile");
+		memcpy(secret_key, readbuffer, 32);
+	}
+	else
+	{
+		if (!FIL_WriteFile(keyfile, secret_key, 32))
+			I_Error("Couldn't open keyfile");
+	}
+
+	crypto_x25519_public_key(public_key, secret_key);
+
+	// -- END HOMEGROWN CRYPTO TIME --
 
 	//------------------------------------------------ COMMAND LINE PARAMS
 

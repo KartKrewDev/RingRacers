@@ -71,6 +71,8 @@ TYPEDEF (filesneededconfig_pak);
 TYPEDEF (doomdata_t);
 TYPEDEF (serverelem_t);
 TYPEDEF (rewind_t);
+TYPEDEF (clientkey_pak);
+TYPEDEF (serverchallenge_pak);
 
 // d_event.h
 TYPEDEF (event_t);

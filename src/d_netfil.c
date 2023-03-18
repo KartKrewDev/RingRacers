@@ -53,6 +53,7 @@
 #include "k_menu.h"
 #include "md5.h"
 #include "filesrch.h"
+#include "stun.h"
 
 #include <errno.h>
 
@@ -1311,6 +1312,21 @@ void PT_FileReceived(void)
 
 	if (trans && netbuffer->u.filereceived == trans->fileid)
 		SV_EndFileSend(doomcom->remotenode);
+}
+
+void PT_ClientKey(INT32 node)
+{
+	clientkey_pak *packet = (void*)&netbuffer->u.clientkey;
+
+	// TODO
+	// Stage 1: Exchange packets with no verification of their contents (YOU ARE HERE)
+	// Stage 2: Exchange packets with a check, but no crypto
+	// Stage 3: The crypto part
+
+	memcpy(lastReceivedKey[node], packet->key, 32);
+
+	netbuffer->packettype = PT_SERVERCHALLENGE;
+	HSendPacket(node, false, 0, sizeof (serverchallenge_pak));
 }
 
 static void SendAckPacket(fileack_pak *packet, UINT8 fileid)
