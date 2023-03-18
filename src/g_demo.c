@@ -1344,7 +1344,7 @@ void G_GhostTicker(void)
 			if (xziptic & EZT_SPRITE)
 				g->mo->sprite = READUINT16(g->p);
 			if (xziptic & EZT_ITEMDATA)
-				g->p += 3; // itemtype, itemamount, bumpers
+				g->p += 1 + 1 + 4; // itemtype, itemamount, health
 			if (xziptic & EZT_STATDATA)
 			{
 				UINT8 skinid = READUINT8(g->p);
