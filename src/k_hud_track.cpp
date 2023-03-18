@@ -159,7 +159,7 @@ void K_DrawTargetTracking(const TargetTracking& target)
 		// Simply pointing towards the result doesn't work, so inaccurate hack...
 		borderDir.x = FixedMul(
 			FixedMul(
-				FINESINE((-result.angle >> ANGLETOFINESHIFT) & FINEMASK),
+				FINESINE((result.angle >> ANGLETOFINESHIFT) & FINEMASK),
 				FINECOSINE((-result.pitch >> ANGLETOFINESHIFT) & FINEMASK)
 			),
 			result.fov
