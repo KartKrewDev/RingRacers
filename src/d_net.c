@@ -29,6 +29,7 @@
 #include "z_zone.h"
 #include "i_tcp.h"
 #include "d_main.h" // srb2home
+#include "stun.h"
 
 //
 // NETWORKING
@@ -629,7 +630,12 @@ static void InitAck(void)
 		ackpak[i].acknum = 0;
 
 	for (i = 0; i < MAXNETNODES; i++)
+	{
 		InitNode(&nodes[i]);
+
+		csprng(lastSentChallenge[i], sizeof(lastSentChallenge[i]));
+		csprng(lastReceivedKey[i], sizeof(lastReceivedKey[i]));
+	}
 }
 
 /** Removes all acks of a given packet type
@@ -699,6 +705,9 @@ void Net_CloseConnection(INT32 node)
 	if (server)
 		SV_AbortLuaFileTransfer(node);
 	I_NetFreeNodenum(node);
+
+	csprng(lastSentChallenge[node], sizeof(lastSentChallenge[node]));
+	csprng(lastReceivedKey[node], sizeof(lastReceivedKey[node]));
 }
 
 //
