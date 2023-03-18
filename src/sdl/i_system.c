@@ -725,6 +725,8 @@ static void I_RegisterSignals (void)
 #ifdef NEWSIGNALHANDLER
 static void signal_handler_child(INT32 num)
 {
+	G_DirtyGameData();
+
 #ifdef UNIXBACKTRACE
 	write_backtrace(num);
 #endif
