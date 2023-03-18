@@ -161,6 +161,8 @@ char lastReceivedKey[MAXNETNODES][32];
 boolean serverisfull = false; //lets us be aware if the server was full after we check files, but before downloading, so we can ask if the user still wants to download or not
 tic_t firstconnectattempttime = 0;
 
+char awaitingChallenge[32];
+
 // engine
 
 // Must be a power of two
@@ -831,6 +833,14 @@ static boolean CL_SendJoin(void)
 	memcpy(&netbuffer->u.clientcfg.availabilities, R_GetSkinAvailabilities(false, false), MAXAVAILABILITY*sizeof(UINT8));
 
 	return HSendPacket(servernode, false, 0, sizeof (clientconfig_pak));
+}
+
+static boolean CL_SendKey(void)
+{
+	netbuffer->packettype = PT_CLIENTKEY;
+
+	memcpy(netbuffer->u.clientkey.key, public_key, sizeof(public_key));
+	return HSendPacket(servernode, false, 0, sizeof (clientkey_pak) );
 }
 
 static void
@@ -1883,6 +1893,7 @@ static boolean CL_ServerConnectionTicker(const char *tmpsave, tic_t *oldtic, tic
 				return false;
 			}
 		case CL_LOADFILES:
+			CONS_Printf("loadfiles\n");
 			if (CL_LoadServerFiles())
 				cl_mode = CL_SETUPFILES;
 
@@ -1892,7 +1903,7 @@ static boolean CL_ServerConnectionTicker(const char *tmpsave, tic_t *oldtic, tic
 			{
 				*asksent = 0; //This ensure the first join ask is right away
 				firstconnectattempttime = I_GetTime();
-				cl_mode = CL_ASKJOIN;
+				cl_mode = CL_SENDKEY;
 			}
 			break;
 		case CL_ASKJOIN:
@@ -1929,8 +1940,19 @@ static boolean CL_ServerConnectionTicker(const char *tmpsave, tic_t *oldtic, tic
 			}
 			break;
 		case CL_SENDKEY:
+			CONS_Printf("sendkey\n");
+			if (I_GetTime() >= *asksent && CL_SendKey())
+			{
+				*asksent = I_GetTime() + NEWTICRATE*3;
+				cl_mode = CL_WAITCHALLENGE;
+			}
 			break;
 		case CL_WAITCHALLENGE:
+			CONS_Printf("waitchallenge\n");
+			if (I_GetTime() >= *asksent)
+			{
+				cl_mode = CL_SENDKEY;
+			}
 			break;
 		case CL_DOWNLOADSAVEGAME:
 			// At this state, the first (and only) needed file is the gamestate
@@ -4501,10 +4523,13 @@ static void HandlePacketFromAwayNode(SINT8 node)
 			if (node == servernode)
 				break;
 			/* FALLTHRU */
-
 		case PT_CLIENTKEY:
 			if (server)
 				PT_ClientKey(node);
+			break;
+		case PT_SERVERCHALLENGE:
+			memset(awaitingChallenge, 0, 32); // TODO: ACTUALLY COMPUTE CHALLENGE RESPONSE IDIOT
+			cl_mode = CL_ASKJOIN;
 			break;
 		default:
 			DEBFILE(va("unknown packet received (%d) from unknown host\n",netbuffer->packettype));

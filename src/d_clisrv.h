@@ -256,6 +256,7 @@ struct clientconfig_pak
 	UINT8 mode;
 	char names[MAXSPLITSCREENPLAYERS][MAXPLAYERNAME];
 	UINT8 availabilities[MAXAVAILABILITY];
+	char challengeResponse[32];
 } ATTRPACK;
 
 #define SV_SPEEDMASK 0x03		// used to send kartspeed
