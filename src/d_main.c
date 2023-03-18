@@ -1208,7 +1208,10 @@ static void IdentifyVersion(void)
 		const char *musicpath = va(pandf,srb2waddir,str);\
 		int ms = W_VerifyNMUSlumps(musicpath, false); \
 		if (ms == 1) \
+		{ \
 			D_AddFile(startupiwads, musicpath); \
+			musicwads++; \
+		} \
 		else if (ms == 0) \
 			I_Error("File "str" has been modified with non-music/sound lumps"); \
 	}

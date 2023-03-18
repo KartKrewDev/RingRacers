@@ -8314,7 +8314,9 @@ boolean P_AddWadFile(const char *wadfilename)
 	if ((wadnum = P_PartialAddWadFile(wadfilename)) == UINT16_MAX)
 		return false;
 
-	P_MultiSetupWadFiles(true);
+	if (P_PartialAddGetStage() >= 0)
+		P_MultiSetupWadFiles(true);
+
 	return true;
 }
 

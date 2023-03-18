@@ -1122,7 +1122,6 @@ void M_DrawReplayStartMenu(void);
 
 // Misc menus:
 #define LOCATIONSTRING1 "Visit \x83SRB2.ORG/MODS\x80 to get & make addons!"
-#define LOCATIONSTRING2 "Visit \x88SRB2.ORG/MODS\x80 to get & make addons!"
 void M_DrawAddons(void);
 
 // Challenges menu:

@@ -4653,7 +4653,7 @@ static void Command_ListWADS_f(void)
 		else if (i <= mainwads)
 			CONS_Printf("\x82 * %.2d\x80: %s\n", i, tempname);
 		else if (!wadfiles[i]->important)
-			CONS_Printf("\x86   %.2d: %s\n", i, tempname);
+			CONS_Printf("\x86 %c %.2d: %s\n", ((i <= mainwads + musicwads) ? '*' : ' '), i, tempname);
 		else
 			CONS_Printf("   %.2d: %s\n", i, tempname);
 	}
