@@ -157,6 +157,7 @@ char connectedservername[MAXSERVERNAME];
 boolean acceptnewnode = true;
 
 char lastReceivedKey[MAXNETNODES][32];
+char lastComputedChallenge[MAXNETNODES][32];
 
 boolean serverisfull = false; //lets us be aware if the server was full after we check files, but before downloading, so we can ask if the user still wants to download or not
 tic_t firstconnectattempttime = 0;
@@ -831,6 +832,8 @@ static boolean CL_SendJoin(void)
 		strncpy(netbuffer->u.clientcfg.names[i], va("Player %c", 'A' + i), MAXPLAYERNAME);
 
 	memcpy(&netbuffer->u.clientcfg.availabilities, R_GetSkinAvailabilities(false, false), MAXAVAILABILITY*sizeof(UINT8));
+
+	memcpy(&netbuffer->u.clientcfg.challengeResponse, awaitingChallenge, 32);
 
 	return HSendPacket(servernode, false, 0, sizeof (clientconfig_pak));
 }
@@ -3684,6 +3687,7 @@ static void Got_AddPlayer(UINT8 **p, INT32 playernum)
 
 	players[newplayernum].splitscreenindex = splitscreenplayer;
 	players[newplayernum].bot = false;
+	memcpy(players[newplayernum].public_key, lastReceivedKey[node], sizeof(public_key));
 
 	playerconsole[newplayernum] = console;
 	splitscreen_original_party_size[console] =
@@ -4135,6 +4139,10 @@ static void HandleConnect(SINT8 node)
 	{
 		SV_SendRefuse(node, va(M_GetText("Too many people are connecting.\nPlease wait %d seconds and then\ntry rejoining."),
 			(joindelay - 2 * cv_joindelay.value * TICRATE) / TICRATE));
+	}
+	else if (netgame && node != 0 && !memcmp(netbuffer->u.clientcfg.challengeResponse, lastComputedChallenge[node], 32))
+	{
+		SV_SendRefuse(node, M_GetText("Failed to validate key exchange."));
 	}
 	else
 	{
