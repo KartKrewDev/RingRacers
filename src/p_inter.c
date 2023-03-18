@@ -1622,7 +1622,7 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 			break;
 
 		case MT_CDUFO:
-			S_StartSound(inflictor, sfx_cdfm73); // they don't make this sound in the original game but it's nice to have a "reward" for good play
+			S_StartSound(inflictor, sfx_mbs60);
 
 			target->momz = -(3*mapobjectscale)/2;
 			target->fuse = 2*TICRATE;
