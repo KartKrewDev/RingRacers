@@ -1457,6 +1457,11 @@ void I_Quit(void)
 	if (metalrecording)
 		G_StopMetalRecording(false);
 
+#ifdef DEVELOP
+	// Join up with thread if waiting
+	R_PrintTextureDuplicates();
+#endif
+
 	D_QuitNetGame();
 	CL_AbortDownloadResume();
 	M_FreePlayerSetupColors();
