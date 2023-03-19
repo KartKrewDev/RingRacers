@@ -1968,6 +1968,7 @@ static boolean CL_ServerConnectionTicker(const char *tmpsave, tic_t *oldtic, tic
 		{
 			for (; eventtail != eventhead; eventtail = (eventtail+1) & (MAXEVENTS-1))
 			{
+				HandleGamepadDeviceEvents(&events[eventtail]);
 				G_MapEventsToControls(&events[eventtail]);
 			}
 

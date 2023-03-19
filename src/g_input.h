@@ -165,6 +165,8 @@ boolean G_IsDeviceResponding(INT32 device);
 void G_SetDeviceResponding(INT32 device, boolean responding);
 void G_ResetAllDeviceResponding(void);
 
+void HandleGamepadDeviceEvents(event_t *ev);
+
 // remaps the input event to a game control.
 void G_MapEventsToControls(event_t *ev);
 
