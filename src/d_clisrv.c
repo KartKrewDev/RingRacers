@@ -842,7 +842,10 @@ static boolean CL_SendJoin(void)
 		uint8_t signature[64];
 		profile_t *localProfile = PR_GetLocalPlayerProfile(i);
 
-		if (cv_lastprofile[0].value == 0) // GUESTS don't have keys
+		char allZero[32];
+		memset(allZero, 0, 32);
+
+		if (cv_lastprofile[i].value == 0) // GUESTS don't have keys
 		{
 			memset(signature, 0, 64);
 		}
