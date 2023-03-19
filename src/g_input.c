@@ -362,6 +362,7 @@ static INT32 AssignDeviceToFirstUnassignedPlayer(INT32 device)
 void G_MapEventsToControls(event_t *ev)
 {
 	INT32 i;
+	INT32 *DeviceGameKeyDownArray;
 
 	if (ev->device >= 0)
 	{
@@ -383,12 +384,17 @@ void G_MapEventsToControls(event_t *ev)
 		return;
 	}
 
+	DeviceGameKeyDownArray = G_GetDeviceGameKeyDownArray(ev->device);
+
+	if (!DeviceGameKeyDownArray)
+		return;
+
 	switch (ev->type)
 	{
 		case ev_keydown:
 			if (ev->data1 < NUMINPUTS)
 			{
-				G_GetDeviceGameKeyDownArray(ev->device)[ev->data1] = JOYAXISRANGE;
+				DeviceGameKeyDownArray[ev->data1] = JOYAXISRANGE;
 
 				if (AutomaticControllerReassignmentIsAllowed(ev->device))
 				{
@@ -410,7 +416,7 @@ void G_MapEventsToControls(event_t *ev)
 		case ev_keyup:
 			if (ev->data1 < NUMINPUTS)
 			{
-				G_GetDeviceGameKeyDownArray(ev->device)[ev->data1] = 0;
+				DeviceGameKeyDownArray[ev->data1] = 0;
 			}
 #ifdef PARANOIA
 			else
@@ -425,28 +431,28 @@ void G_MapEventsToControls(event_t *ev)
 			if (ev->data2 < 0)
 			{
 				// Left
-				G_GetDeviceGameKeyDownArray(ev->device)[KEY_MOUSEMOVE + 2] = abs(ev->data2);
-				G_GetDeviceGameKeyDownArray(ev->device)[KEY_MOUSEMOVE + 3] = 0;
+				DeviceGameKeyDownArray[KEY_MOUSEMOVE + 2] = abs(ev->data2);
+				DeviceGameKeyDownArray[KEY_MOUSEMOVE + 3] = 0;
 			}
 			else
 			{
 				// Right
-				G_GetDeviceGameKeyDownArray(ev->device)[KEY_MOUSEMOVE + 2] = 0;
-				G_GetDeviceGameKeyDownArray(ev->device)[KEY_MOUSEMOVE + 3] = abs(ev->data2);
+				DeviceGameKeyDownArray[KEY_MOUSEMOVE + 2] = 0;
+				DeviceGameKeyDownArray[KEY_MOUSEMOVE + 3] = abs(ev->data2);
 			}
 
 			// Y axis
 			if (ev->data3 < 0)
 			{
 				// Up
-				G_GetDeviceGameKeyDownArray(ev->device)[KEY_MOUSEMOVE] = abs(ev->data3);
-				G_GetDeviceGameKeyDownArray(ev->device)[KEY_MOUSEMOVE + 1] = 0;
+				DeviceGameKeyDownArray[KEY_MOUSEMOVE] = abs(ev->data3);
+				DeviceGameKeyDownArray[KEY_MOUSEMOVE + 1] = 0;
 			}
 			else
 			{
 				// Down
-				G_GetDeviceGameKeyDownArray(ev->device)[KEY_MOUSEMOVE] = 0;
-				G_GetDeviceGameKeyDownArray(ev->device)[KEY_MOUSEMOVE + 1] = abs(ev->data3);
+				DeviceGameKeyDownArray[KEY_MOUSEMOVE] = 0;
+				DeviceGameKeyDownArray[KEY_MOUSEMOVE + 1] = abs(ev->data3);
 			}
 			break;
 
@@ -468,12 +474,12 @@ void G_MapEventsToControls(event_t *ev)
 
 				if (ev->data2 != INT32_MAX)
 				{
-					G_GetDeviceGameKeyDownArray(ev->device)[KEY_AXIS1 + (JOYANALOGS * 4) + (i * 2)] = max(0, ev->data2);
+					DeviceGameKeyDownArray[KEY_AXIS1 + (JOYANALOGS * 4) + (i * 2)] = max(0, ev->data2);
 				}
 
 				if (ev->data3 != INT32_MAX)
 				{
-					G_GetDeviceGameKeyDownArray(ev->device)[KEY_AXIS1 + (JOYANALOGS * 4) + (i * 2) + 1] = max(0, ev->data3);
+					DeviceGameKeyDownArray[KEY_AXIS1 + (JOYANALOGS * 4) + (i * 2) + 1] = max(0, ev->data3);
 				}
 			}
 			else
@@ -484,14 +490,14 @@ void G_MapEventsToControls(event_t *ev)
 					if (ev->data2 < 0)
 					{
 						// Left
-						G_GetDeviceGameKeyDownArray(ev->device)[KEY_AXIS1 + (i * 4)] = abs(ev->data2);
-						G_GetDeviceGameKeyDownArray(ev->device)[KEY_AXIS1 + (i * 4) + 1] = 0;
+						DeviceGameKeyDownArray[KEY_AXIS1 + (i * 4)] = abs(ev->data2);
+						DeviceGameKeyDownArray[KEY_AXIS1 + (i * 4) + 1] = 0;
 					}
 					else
 					{
 						// Right
-						G_GetDeviceGameKeyDownArray(ev->device)[KEY_AXIS1 + (i * 4)] = 0;
-						G_GetDeviceGameKeyDownArray(ev->device)[KEY_AXIS1 + (i * 4) + 1] = abs(ev->data2);
+						DeviceGameKeyDownArray[KEY_AXIS1 + (i * 4)] = 0;
+						DeviceGameKeyDownArray[KEY_AXIS1 + (i * 4) + 1] = abs(ev->data2);
 					}
 				}
 
@@ -500,14 +506,14 @@ void G_MapEventsToControls(event_t *ev)
 					if (ev->data3 < 0)
 					{
 						// Up
-						G_GetDeviceGameKeyDownArray(ev->device)[KEY_AXIS1 + (i * 4) + 2] = abs(ev->data3);
-						G_GetDeviceGameKeyDownArray(ev->device)[KEY_AXIS1 + (i * 4) + 3] = 0;
+						DeviceGameKeyDownArray[KEY_AXIS1 + (i * 4) + 2] = abs(ev->data3);
+						DeviceGameKeyDownArray[KEY_AXIS1 + (i * 4) + 3] = 0;
 					}
 					else
 					{
 						// Down
-						G_GetDeviceGameKeyDownArray(ev->device)[KEY_AXIS1 + (i * 4) + 2] = 0;
-						G_GetDeviceGameKeyDownArray(ev->device)[KEY_AXIS1 + (i * 4) + 3] = abs(ev->data3);
+						DeviceGameKeyDownArray[KEY_AXIS1 + (i * 4) + 2] = 0;
+						DeviceGameKeyDownArray[KEY_AXIS1 + (i * 4) + 3] = abs(ev->data3);
 					}
 				}
 			}
