@@ -164,6 +164,8 @@ boolean serverisfull = false; //lets us be aware if the server was full after we
 tic_t firstconnectattempttime = 0;
 
 uint8_t awaitingChallenge[32];
+consvar_t cv_allowguests = CVAR_INIT ("allowguests", "On", CV_SAVE, CV_OnOff, NULL);
+
 
 // engine
 
@@ -4207,9 +4209,19 @@ static void HandleConnect(SINT8 node)
 			{
 				CONS_Printf("We're a client. Doing sigcheck for node %d, ID %s\n", node, GetPrettyRRID(lastReceivedKey[node][i], true));
 				if (memcmp(lastReceivedKey[node], allZero, 32)) // We're a GUEST and the server throws out our keys anyway.
+				{
 					sigcheck = 0; // Always succeeds. Yes, this is a success response. C R Y P T O
+					if (!cv_allowguests.value)
+					{
+						SV_SendRefuse(node, M_GetText("The server doesn't allow GUESTs.\nCreate a profile to join!"));
+						return;	
+					}
+				}
 				else
+				{
 					sigcheck = crypto_eddsa_check(netbuffer->u.clientcfg.challengeResponse[i], lastReceivedKey[node][i], lastSentChallenge[node][i], 32);
+				}
+
 
 				if (netgame && sigcheck != 0)
 				{
@@ -4680,8 +4692,8 @@ static void HandlePacketFromPlayer(SINT8 node)
 				if (crypto_eddsa_check(netbuffer->signature[splitnodes], lastReceivedKey[node][splitnodes], message, doomcom->datalength - BASEPACKETSIZE))
 				{
 					//CONS_Printf("Failed signature check on packet type %d from node %d player %d\nkey %s size %d\n", 
-						netbuffer->packettype, node, splitnodes,
-						GetPrettyRRID(lastReceivedKey[node][splitnodes], true), doomcom->datalength - BASEPACKETSIZE);
+					//	netbuffer->packettype, node, splitnodes,
+					//	GetPrettyRRID(lastReceivedKey[node][splitnodes], true), doomcom->datalength - BASEPACKETSIZE);
 					SendKick(netconsole, KICK_MSG_CON_FAIL);
 					return;
 				}

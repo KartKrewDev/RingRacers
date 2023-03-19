@@ -946,6 +946,8 @@ void D_RegisterClientCommands(void)
 	CV_RegisterVar(&cv_netticbuffer);
 	CV_RegisterVar(&cv_mindelay);
 
+	CV_RegisterVar(&cv_allowguests);
+
 	// HUD
 	CV_RegisterVar(&cv_alttitle);
 	CV_RegisterVar(&cv_itemfinder);

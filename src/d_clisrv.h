@@ -485,6 +485,8 @@ extern consvar_t cv_joinnextround;
 
 extern consvar_t cv_discordinvites;
 
+extern consvar_t cv_allowguests;
+
 // Used in d_net, the only dependence
 tic_t ExpandTics(INT32 low, tic_t basetic);
 void D_ClientServerInit(void);
