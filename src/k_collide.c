@@ -148,6 +148,7 @@ boolean K_EggItemCollide(mobj_t *t1, mobj_t *t2)
 		if (!P_CanPickupItem(t2->player, 2))
 			return true;
 
+		K_DropItems(t2->player);
 		K_StartEggmanRoulette(t2->player);
 
 		if (t2->player->flamedash && t2->player->itemtype == KITEM_FLAMESHIELD)
