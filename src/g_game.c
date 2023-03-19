@@ -2436,6 +2436,8 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 
 	SINT8 xtralife;
 
+	uint8_t public_key[32];
+
 	// SRB2kart
 	itemroulette_t itemRoulette;
 	respawnvars_t respawn;
@@ -2509,6 +2511,7 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	// SRB2kart
 	memcpy(&itemRoulette, &players[player].itemRoulette, sizeof (itemRoulette));
 	memcpy(&respawn, &players[player].respawn, sizeof (respawn));
+	memcpy(&public_key, &players[player].public_key, sizeof(public_key));
 
 	if (betweenmaps || leveltime < introtime)
 	{
@@ -2677,6 +2680,8 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 
 	memcpy(&p->itemRoulette, &itemRoulette, sizeof (p->itemRoulette));
 	memcpy(&p->respawn, &respawn, sizeof (p->respawn));
+
+	memcpy(&p->public_key, &public_key, sizeof(p->public_key));
 
 	if (saveroundconditions)
 		memcpy(&p->roundconditions, &roundconditions, sizeof (p->roundconditions));

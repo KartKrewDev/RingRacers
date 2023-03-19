@@ -723,6 +723,9 @@ struct player_t
 	roundconditions_t roundconditions;
 };
 
+// WARNING FOR ANYONE ABOUT TO ADD SOMETHING TO THE PLAYER STRUCT, G_PlayerReborn WANTS YOU TO SUFFER
+// If data on player_t needs to persist between rounds or during the join process, modify G_PlayerReborn to preserve it.
+
 #ifdef __cplusplus
 } // extern "C"
 #endif

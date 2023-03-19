@@ -2818,6 +2818,8 @@ static void Command_Nodes(void)
 					CONS_Printf(" - %s", address);
 			}
 
+			CONS_Printf(" [RRID-%s] ", GetPrettyRRID(players[i].public_key, true));
+
 			if (IsPlayerAdmin(i))
 				CONS_Printf(M_GetText(" (verified admin)"));
 
@@ -3714,7 +3716,9 @@ static void Got_AddPlayer(UINT8 **p, INT32 playernum)
 
 	players[newplayernum].splitscreenindex = splitscreenplayer;
 	players[newplayernum].bot = false;
+	CONS_Printf("Adding player from node %d with ID %s\n", node, GetPrettyRRID(lastReceivedKey[node][splitscreenplayer], true));
 	memcpy(players[newplayernum].public_key, lastReceivedKey[node][splitscreenplayer], sizeof(players[newplayernum].public_key));
+	CONS_Printf("Node %d now has ID %s\n", node, GetPrettyRRID(players[newplayernum].public_key, true));
 
 	playerconsole[newplayernum] = console;
 	splitscreen_original_party_size[console] =
@@ -4186,15 +4190,24 @@ static void HandleConnect(SINT8 node)
 				return;
 			}
 
-			if (memcmp(lastReceivedKey[node], allZero, 32)) // We're a GUEST and the server throws out our keys anyway.
-				sigcheck = 0; // Always succeeds. Yes, this is a success response. C R Y P T O
-			else
-				sigcheck = crypto_eddsa_check(netbuffer->u.clientcfg.challengeResponse[i], lastReceivedKey[node][i], lastSentChallenge[node][i], 32);
-
-			if (netgame && node != 0 && sigcheck != 0)
+			if (node == 0) // Server
 			{
-				SV_SendRefuse(node, M_GetText("Signature verification failed."));
-				return;
+				memcpy(lastReceivedKey[node][i], PR_GetLocalPlayerProfile(i)->public_key, sizeof(lastReceivedKey[node][i]));
+				CONS_Printf("We're SERVER! Setting lastReceivedKey on node %d to %s\n", node, GetPrettyRRID(lastReceivedKey[node][i], true));
+			}
+			else 
+			{
+				CONS_Printf("We're a client. Doing sigcheck for node %d, ID %s\n", node, GetPrettyRRID(lastReceivedKey[node][i], true));
+				if (memcmp(lastReceivedKey[node], allZero, 32)) // We're a GUEST and the server throws out our keys anyway.
+					sigcheck = 0; // Always succeeds. Yes, this is a success response. C R Y P T O
+				else
+					sigcheck = crypto_eddsa_check(netbuffer->u.clientcfg.challengeResponse[i], lastReceivedKey[node][i], lastSentChallenge[node][i], 32);
+
+				if (netgame && sigcheck != 0)
+				{
+					SV_SendRefuse(node, M_GetText("Signature verification failed."));
+					return;
+				}
 			}
 		}
 

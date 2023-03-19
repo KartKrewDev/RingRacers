@@ -43,6 +43,9 @@ profile_t* PR_MakeProfile(
 
 	new->version = PROFILEVER;
 
+	uint8_t secret_key[64];
+	uint8_t public_key[32];
+
 	memset(new->secret_key, 0, sizeof(secret_key));
 	memset(new->public_key, 0, sizeof(public_key));
 
@@ -572,4 +575,29 @@ profile_t *PR_GetLocalPlayerProfile(INT32 player)
 	if (player >= MAXSPLITSCREENPLAYERS)
 		return NULL;
 	return PR_GetProfile(cv_lastprofile[player].value);
+}
+
+char *GetPrettyRRID(const unsigned char *bin, boolean brief)
+{
+	char   *out;
+	size_t i;
+	size_t len = 32;
+
+	if (brief)
+		len = 8;
+
+	if (bin == NULL || len == 0)
+		return NULL;
+
+	out = malloc(len*2 + 1);
+
+	for (i=0; i<len; i++)
+	{
+		out[i*2]   = "0123456789ABCDEF"[bin[i] >> 4];
+		out[i*2+1] = "0123456789ABCDEF"[bin[i] & 0x0F];
+	}
+	
+	out[len*2] = '\0';
+
+	return out;
 }
