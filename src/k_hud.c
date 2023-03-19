@@ -967,7 +967,7 @@ void K_ObjectTracking(trackingResult_t *result, const vector3_t *point, boolean 
 
 	// Set results relative to top left!
 	result->x = FixedMul(NEWTAN(da), fg);
-	result->y = FixedMul((NEWTAN(viewpointAiming) - FixedDiv((point->z-viewz), 1 + FixedMul(NEWCOS(da), h))), fg);
+	result->y = FixedMul((NEWTAN(viewpointAiming) - FixedDiv((point->z - viewz), 1 + FixedMul(NEWCOS(da), h))), fg);
 
 	result->angle = da;
 	result->pitch = dp;
