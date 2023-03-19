@@ -467,20 +467,20 @@ void G_MapEventsToControls(event_t *ev)
 
 			i = ev->data1;
 
-			if (AutomaticControllerReassignmentIsAllowed(ev->device)
-				&& (abs(ev->data2) > JOYAXISRANGE/2 || abs(ev->data3) > JOYAXISRANGE/2))
-			{
-				INT32 assigned = AssignDeviceToFirstUnassignedPlayer(ev->device);
-				if (assigned >= 0)
-				{
-					CONS_Alert(CONS_NOTICE, "Player %d device was reassigned\n", assigned + 1);
-				}
-			}
-
 			if (i >= JOYANALOGS)
 			{
 				// The trigger axes are handled specially.
 				i -= JOYANALOGS;
+
+				if (AutomaticControllerReassignmentIsAllowed(ev->device)
+					&& (abs(ev->data2) > JOYAXISRANGE/2 || abs(ev->data3) > JOYAXISRANGE/2))
+				{
+					INT32 assigned = AssignDeviceToFirstUnassignedPlayer(ev->device);
+					if (assigned >= 0)
+					{
+						CONS_Alert(CONS_NOTICE, "Player %d device was reassigned\n", assigned + 1);
+					}
+				}
 
 				if (ev->data2 != INT32_MAX)
 				{
