@@ -5264,6 +5264,7 @@ static boolean P_IsTrackerType(INT32 type)
 		// Primarily for minimap data, handle with care
 		case MT_SPB:
 		case MT_BATTLECAPSULE:
+		case MT_CDUFO:
 		case MT_SPECIAL_UFO:
 			return true;
 
@@ -8581,7 +8582,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 			mobj->movecount--;
 			break;
 		}
-		else if (P_AproxDistance(mobj->x - (mobj->spawnpoint->x<<FRACBITS), mobj->y - (mobj->spawnpoint->y<<FRACBITS)) < (420<<FRACBITS))
+		else if (P_AproxDistance(mobj->x - (mobj->spawnpoint->x<<FRACBITS), mobj->y - (mobj->spawnpoint->y<<FRACBITS)) < (840*mapobjectscale))
 			break;
 
 		mobj->movecount = 3;
@@ -10752,6 +10753,9 @@ mobj_t *P_SpawnMobj(fixed_t x, fixed_t y, fixed_t z, mobjtype_t type)
 			break;
 		case MT_BIGRING:
 			P_SetScale(mobj, (mobj->destscale = 3*FRACUNIT));
+			break;
+		case MT_CDUFO:
+			P_SetScale(mobj, (mobj->destscale = 3*FRACUNIT/2));
 			break;
 		case MT_RANDOMAUDIENCE:
 		{

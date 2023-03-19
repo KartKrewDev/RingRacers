@@ -201,7 +201,6 @@ boolean P_EmblemWasCollected(INT32 emblemID)
 void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 {
 	player_t *player;
-	INT32 i;
 
 	if (objectplacing)
 		return;
@@ -445,7 +444,7 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 			K_StartItemRoulette(player);
 
 			// Karma fireworks
-			for (i = 0; i < 5; i++)
+			/*for (i = 0; i < 5; i++)
 			{
 				mobj_t *firework = P_SpawnMobj(special->x, special->y, special->z, MT_KARMAFIREWORK);
 				firework->momx = toucher->momx;
@@ -454,14 +453,10 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 				P_Thrust(firework, FixedAngle((72*i)<<FRACBITS), P_RandomRange(PR_ITEM_DEBRIS, 1,8)*special->scale);
 				P_SetObjectMomZ(firework, P_RandomRange(PR_ITEM_DEBRIS, 1,8)*special->scale, false);
 				firework->color = toucher->color;
-			}
+			}*/
 
-			S_StartSound(toucher, sfx_cdfm73); // they don't make this sound in the original game but it's nice to have a "reward" for good play
+			K_SetHitLagForObjects(special, toucher, 2, true);
 
-			//special->momx = special->momy = special->momz = 0;
-			special->momz = -(3*special->scale)/2;
-			//P_SetTarget(&special->target, toucher);
-			special->fuse = 2*TICRATE;
 			break;
 
 		case MT_BALLOON: // SRB2kart
@@ -635,6 +630,61 @@ void P_TouchStarPost(mobj_t *post, player_t *player, boolean snaptopost)
 		return; // Already hit this post
 
 	player->starpostnum = post->health;
+}
+
+static void P_AddBrokenPrison(mobj_t *target, mobj_t *source)
+{
+	(void)target;
+
+	if (!battlecapsules) // !battleprisons
+		return;
+
+	if ((gametyperules & GTR_POINTLIMIT) && (source && source->player))
+	{
+		/*mobj_t * ring;
+		for (i = 0; i < 2; i++)
+		{
+			dir += (ANGLE_MAX/3);
+			ring = P_SpawnMobj(target->x, target->y, target->z, MT_RING);
+			ring->angle = dir;
+			P_InstaThrust(ring, dir, 16*ring->scale);
+			ring->momz = 8 * target->scale * P_MobjFlip(target);
+			P_SetTarget(&ring->tracer, source);
+			source->player->pickuprings++;
+		}*/
+
+		P_AddPlayerScore(source->player, 1);
+		K_SpawnBattlePoints(source->player, NULL, 1);
+	}
+
+	if (++numtargets >= maptargets)
+	{
+		UINT8 i;
+		boolean givelife = false;
+
+		for (i = 0; i < MAXPLAYERS; i++)
+		{
+			if (!playeringame[i] || players[i].spectator)
+				continue;
+			P_DoPlayerExit(&players[i]);
+			if (!G_GametypeUsesLives())
+				continue;
+			P_GivePlayerLives(&players[i], 1);
+			givelife = true;
+		}
+
+		if (givelife)
+			S_StartSound(NULL, sfx_cdfm73);
+	}
+	else
+	{
+		S_StartSound(NULL, sfx_s221);
+		if (timelimitintics)
+		{
+			extratimeintics += 10*TICRATE;
+			secretextratime = TICRATE/2;
+		}
+	}
 }
 
 /** Checks if the level timer is over the timelimit and the round should end,
@@ -1524,7 +1574,6 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 
 		case MT_BATTLECAPSULE:
 			{
-				UINT8 i;
 				mobj_t *cur;
 				angle_t dir = 0;
 
@@ -1571,52 +1620,17 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 
 				S_StartSound(target, sfx_mbs60);
 
-				if ((gametyperules & GTR_POINTLIMIT) && (source && source->player))
-				{
-					/*mobj_t * ring;
-					for (i = 0; i < 2; i++)
-					{
-						dir += (ANGLE_MAX/3);
-						ring = P_SpawnMobj(target->x, target->y, target->z, MT_RING);
-						ring->angle = dir;
-						P_InstaThrust(ring, dir, 16*ring->scale);
-						ring->momz = 8 * target->scale * P_MobjFlip(target);
-						P_SetTarget(&ring->tracer, source);
-						source->player->pickuprings++;
-					}*/
-
-					P_AddPlayerScore(source->player, 1);
-					K_SpawnBattlePoints(source->player, NULL, 1);
-				}
-
-				// All targets busted!
-				if (++numtargets >= maptargets)
-				{
-					boolean givelife = false;
-					for (i = 0; i < MAXPLAYERS; i++)
-					{
-						if (!playeringame[i] || players[i].spectator)
-							continue;
-						P_DoPlayerExit(&players[i]);
-						if (!grandprixinfo.gp)
-							continue;
-						P_GivePlayerLives(&players[i], 1);
-						givelife = true;
-					}
-
-					if (givelife)
-						S_StartSound(NULL, sfx_cdfm73);
-				}
-				else
-				{
-					S_StartSound(NULL, sfx_s221);
-					if (timelimitintics)
-					{
-						extratimeintics += 10*TICRATE;
-						secretextratime = TICRATE/2;
-					}
-				}
+				P_AddBrokenPrison(target, source);
 			}
+			break;
+
+		case MT_CDUFO:
+			S_StartSound(inflictor, sfx_mbs60);
+
+			target->momz = -(3*mapobjectscale)/2;
+			target->fuse = 2*TICRATE;
+
+			P_AddBrokenPrison(target, source);
 			break;
 
 		case MT_BATTLEBUMPER:
@@ -2099,6 +2113,11 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 		case MT_MONITOR:
 			damage = Obj_MonitorGetDamage(target, inflictor, damagetype);
 			Obj_MonitorOnDamage(target, inflictor, damage);
+			break;
+		case MT_CDUFO:
+			// Make it possible to pick them up during race
+			if (inflictor->type == MT_ORBINAUT_SHIELD || inflictor->type == MT_JAWZ_SHIELD)
+				return false;
 			break;
 
 		default:

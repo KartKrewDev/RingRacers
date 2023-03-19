@@ -5891,7 +5891,8 @@ static void K_DoShrink(player_t *user)
 			next = mobj->itnext;
 
 			if (mobj->type == MT_SPB
-				|| mobj->type == MT_BATTLECAPSULE)
+				|| mobj->type == MT_BATTLECAPSULE
+				|| mobj->type == MT_CDUFO)
 			{
 				continue;
 			}

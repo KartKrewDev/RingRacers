@@ -1973,6 +1973,8 @@ void D_SRB2Main(void)
 						grandprixinfo.eventmode = GPEVENT_SPECIAL;
 					else if (gametype != GT_RACE)
 						grandprixinfo.eventmode = GPEVENT_BONUS;
+
+					multiplayer = true;
 				}
 
 				G_SetUsedCheats();

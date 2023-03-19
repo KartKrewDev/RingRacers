@@ -778,6 +778,8 @@ void K_BattleInit(boolean singleplayercontext)
 		{
 			if (mt->type == mobjinfo[MT_BATTLECAPSULE].doomednum)
 				P_SpawnMapThing(mt);
+			else if (mt->type == mobjinfo[MT_CDUFO].doomednum)
+				maptargets++;
 		}
 
 		battlecapsules = true;
