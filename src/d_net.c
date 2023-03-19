@@ -30,6 +30,7 @@
 #include "i_tcp.h"
 #include "d_main.h" // srb2home
 #include "stun.h"
+#include "monocypher/monocypher.h"
 
 //
 // NETWORKING
@@ -992,12 +993,59 @@ static boolean ShouldDropPacket(void)
 }
 #endif
 
+boolean IsPacketSigned(int packettype)
+{
+	switch (packettype)
+	{
+		case PT_CLIENTCMD:
+		case PT_CLIENT2CMD:
+		case PT_CLIENT3CMD:
+		case PT_CLIENT4CMD:
+		case PT_CLIENTMIS:
+		case PT_CLIENT2MIS:
+		case PT_CLIENT3MIS:
+		case PT_CLIENT4MIS:
+		case PT_TEXTCMD:
+		case PT_TEXTCMD2:
+		case PT_TEXTCMD3:
+		case PT_TEXTCMD4:
+		case PT_LOGIN:
+		case PT_ASKLUAFILE:
+		case PT_SENDINGLUAFILE:
+			return true;
+		default:
+			return false;
+	}
+}
+
 //
 // HSendPacket
 //
 boolean HSendPacket(INT32 node, boolean reliable, UINT8 acknum, size_t packetlength)
 {
 	doomcom->datalength = (INT16)(packetlength + BASEPACKETSIZE);
+
+	if (IsPacketSigned(netbuffer->packettype))
+	{	
+		int i;
+		netbuffer->payloadsize = packetlength;
+
+		for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
+		{
+			const void* message = &netbuffer->u;
+			//CONS_Printf("Signing packet type %d of length %d\n", netbuffer->packettype, packetlength);
+			if (cv_lastprofile[i].value == 0)	
+				memset(netbuffer->signature[i], 0, sizeof(netbuffer->signature[i]));
+			else
+				crypto_eddsa_sign(netbuffer->signature[i], PR_GetLocalPlayerProfile(i)->secret_key, message, packetlength);
+		}
+	}
+	else
+	{
+		//CONS_Printf("NOT signing PT_%d of length %d, it doesn't need to be\n", netbuffer->packettype, packetlength);
+		memset(netbuffer->signature, 0, sizeof(netbuffer->signature));
+	}
+
 	if (node == 0) // Packet is to go back to us
 	{
 		if ((rebound_head+1) % MAXREBOUND == rebound_tail)

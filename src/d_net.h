@@ -68,6 +68,8 @@ void Net_AbortPacketType(UINT8 packettype);
 void Net_SendAcks(INT32 node);
 void Net_WaitAllAckReceived(UINT32 timeout);
 
+boolean IsPacketSigned(int packettype);
+
 #ifdef __cplusplus
 } // extern "C"
 #endif

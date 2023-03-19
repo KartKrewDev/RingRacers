@@ -4661,6 +4661,35 @@ static void HandlePacketFromPlayer(SINT8 node)
 	if (netconsole >= MAXPLAYERS)
 		I_Error("bad table nodetoplayer: node %d player %d", doomcom->remotenode, netconsole);
 #endif
+	
+	uint8_t allzero[32];
+	memset(allzero, 0, sizeof(allzero));
+
+	int splitnodes;
+	if (IsPacketSigned(netbuffer->packettype))
+	{
+		for (splitnodes = 0; splitnodes < MAXSPLITSCREENPLAYERS; splitnodes++)
+		{
+			const void* message = &netbuffer->u;
+			if (memcmp(allzero, lastReceivedKey[node][splitnodes], sizeof(allzero)) == 0)
+			{
+				//CONS_Printf("Throwing out a guest signature from node %d player %d\n", node, splitnodes);
+			}
+			else
+			{
+				if (crypto_eddsa_check(netbuffer->signature[splitnodes], lastReceivedKey[node][splitnodes], message, doomcom->datalength - BASEPACKETSIZE))
+				{
+					//CONS_Printf("Failed signature check on packet type %d from node %d player %d\nkey %s size %d\n", 
+						netbuffer->packettype, node, splitnodes,
+						GetPrettyRRID(lastReceivedKey[node][splitnodes], true), doomcom->datalength - BASEPACKETSIZE);
+					SendKick(netconsole, KICK_MSG_CON_FAIL);
+					return;
+				}
+			}
+				
+		}
+	}
+
 
 	switch (netbuffer->packettype)
 	{
