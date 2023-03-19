@@ -372,7 +372,6 @@ struct doomdata_t
 
 	UINT8 packettype;
 	uint8_t signature[MAXSPLITSCREENPLAYERS][64];
-	UINT16 payloadsize;
 	UINT8 reserved; // Padding
 	union
 	{

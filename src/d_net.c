@@ -1028,7 +1028,6 @@ boolean HSendPacket(INT32 node, boolean reliable, UINT8 acknum, size_t packetlen
 	if (IsPacketSigned(netbuffer->packettype))
 	{	
 		int i;
-		netbuffer->payloadsize = packetlength;
 
 		for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
 		{
