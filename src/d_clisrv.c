@@ -4595,6 +4595,8 @@ static void HandlePacketFromAwayNode(SINT8 node)
 				PT_ClientKey(node);
 			break;
 		case PT_SERVERCHALLENGE:
+			if (cl_mode != CL_WAITCHALLENGE)
+				break;
 			memcpy(awaitingChallenge, netbuffer->u.serverchallenge.secret, sizeof(awaitingChallenge));
 			cl_mode = CL_ASKJOIN;
 			break;
