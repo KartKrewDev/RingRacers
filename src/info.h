@@ -6452,6 +6452,7 @@ typedef enum mobj_type
 
 	MT_DROPTARGET, // Drop Target
 	MT_DROPTARGET_SHIELD,
+	MT_DROPTARGET_MORPH,
 
 	MT_BALLHOG, // Ballhog
 	MT_BALLHOGBOOM,

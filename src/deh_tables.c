@@ -5380,6 +5380,7 @@ const char *const MOBJTYPE_LIST[] = {  // array length left dynamic for sanity t
 
 	"MT_DROPTARGET", // Drop Target
 	"MT_DROPTARGET_SHIELD",
+	"MT_DROPTARGET_MORPH",
 
 	"MT_BALLHOG", // Ballhog
 	"MT_BALLHOGBOOM",
