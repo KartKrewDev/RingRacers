@@ -9713,6 +9713,10 @@ void K_KartEbrakeVisuals(player_t *p)
 			K_FlipFromObject(p->mo->hprev, p->mo);
 			K_ReduceVFX(p->mo->hprev, p);
 			p->mo->hprev->sprzoff = p->mo->sprzoff;
+
+			p->mo->hprev->colorized = false;
+			p->mo->hprev->spritexoffset = 0;
+			p->mo->hprev->spriteyoffset = 0;
 		}
 
 		if (!p->spindash)
@@ -9740,13 +9744,32 @@ void K_KartEbrakeVisuals(player_t *p)
 			// update HOLD bubble with numbers based on charge.
 			if (p->mo->hprev && !P_MobjWasRemoved(p->mo->hprev))
 			{
+				const INT16 overcharge = (p->spindash - MAXCHARGETIME);
+				const boolean desperation = (p->rings <= 0); // desperation spindash
+
 				UINT8 frame = min(1 + ((p->spindash*3) / MAXCHARGETIME), 4);
 
 				// ?! limit.
-				if (p->spindash >= MAXCHARGETIME +TICRATE)
+				if (overcharge >= TICRATE)
 					frame = 5;
 
 				p->mo->hprev->frame = frame|FF_FULLBRIGHT;
+
+				if (overcharge >= 0)
+				{
+					// overcharged spindash flashes red.
+					p->mo->hprev->color = SKINCOLOR_MAROON;
+					p->mo->hprev->colorized = (overcharge % 12) >= 6;
+
+					p->mo->hprev->spritexoffset = P_AltFlip(2*FRACUNIT, 2);
+				}
+
+				if (desperation)
+				{
+					// desperation spindash shakes VIOLENTLY.
+					p->mo->hprev->spritexoffset = P_AltFlip(4*FRACUNIT, 2);
+					p->mo->hprev->spriteyoffset = P_AltFlip(2*FRACUNIT, 1);
+				}
 			}
 
 			// shake the player as they charge their spindash!
