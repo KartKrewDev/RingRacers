@@ -1318,12 +1318,7 @@ void PT_ClientKey(INT32 node)
 {
 	clientkey_pak *packet = (void*)&netbuffer->u.clientkey;
 
-	// TODO
-	// Stage 1: Exchange packets with no verification of their contents
-	// Stage 2: Exchange packets with a check, but no crypto
-	// Stage 3: The crypto part (YOU ARE HERE)
-
-	memcpy(lastReceivedKey[node], packet->key, 32);
+	memcpy(lastReceivedKey[node], packet->key, sizeof(lastReceivedKey[node]));
 
 	netbuffer->packettype = PT_SERVERCHALLENGE;
 

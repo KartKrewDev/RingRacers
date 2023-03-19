@@ -159,10 +159,6 @@ INT32 eventhead, eventtail;
 
 boolean dedicated = false;
 
-// For identity negotiation with netgame servers
-uint8_t	public_key[32];
-uint8_t	secret_key[64];
-
 //
 // D_PostEvent
 // Called by the I/O functions when input is detected
@@ -1714,36 +1710,6 @@ void D_SRB2Main(void)
 	CONS_Printf("ACS_Init(): Init Action Code Script VM.\n");
 	ACS_Init();
 	CON_SetLoadingProgress(LOADED_ACSINIT);
-
-	// TODO: This file should probably give a fuck about command line params,
-	// or not be stored next to the EXE in a way that allows people to unknowingly send it to others.
-	static char keyfile[16] = "rrid.dat";
-
-	static uint8_t seed[32];
-	csprng(seed, 32);
-	crypto_eddsa_key_pair(secret_key, public_key, seed);
-
-	int sk_size = sizeof(secret_key);
-	int pk_size = sizeof(public_key);
-	int totalsize = sk_size + pk_size;
-
-	if (FIL_ReadFileOK(keyfile))
-	{
-		UINT8 *readbuffer = NULL;
-		UINT16 lengthRead = FIL_ReadFile(keyfile, &readbuffer);
-		if (readbuffer == NULL || lengthRead != totalsize)
-			I_Error("Malformed keyfile");
-		memcpy(secret_key, readbuffer, sk_size);
-		memcpy(public_key, readbuffer + sk_size, pk_size);
-	}
-	else
-	{
-		uint8_t keybuffer[totalsize];
-		memcpy(keybuffer, secret_key, sk_size);
-		memcpy(keybuffer + sk_size, public_key, pk_size);
-		if (!FIL_WriteFile(keyfile, keybuffer, totalsize))
-			I_Error("Couldn't open keyfile");
-	}
 
 	//------------------------------------------------ COMMAND LINE PARAMS
 

@@ -157,8 +157,8 @@ char connectedservername[MAXSERVERNAME];
 /// \todo WORK!
 boolean acceptnewnode = true;
 
-uint8_t lastReceivedKey[MAXNETNODES][32];
-uint8_t lastSentChallenge[MAXNETNODES][32];
+uint8_t lastReceivedKey[MAXNETNODES][MAXSPLITSCREENPLAYERS][32];
+uint8_t lastSentChallenge[MAXNETNODES][MAXSPLITSCREENPLAYERS][32];
 
 boolean serverisfull = false; //lets us be aware if the server was full after we check files, but before downloading, so we can ask if the user still wants to download or not
 tic_t firstconnectattempttime = 0;
@@ -834,25 +834,45 @@ static boolean CL_SendJoin(void)
 
 	memcpy(&netbuffer->u.clientcfg.availabilities, R_GetSkinAvailabilities(false, false), MAXAVAILABILITY*sizeof(UINT8));
 
-	uint8_t signature[64];
-	crypto_eddsa_sign(signature, secret_key, awaitingChallenge, 32);
+	// Don't leak old signatures from prior sessions.
+	memset(&netbuffer->u.clientcfg.challengeResponse, 0, sizeof(((clientconfig_pak *)0)->challengeResponse));
 
-	if (crypto_eddsa_check(signature, public_key, awaitingChallenge, 32) != 0)
-		I_Error("Couldn't verify own key?");
+	for (i = 0; i <= splitscreen; i++)
+	{
+		uint8_t signature[64];
+		profile_t *localProfile = PR_GetLocalPlayerProfile(i);
 
-	// Testing
-	// memset(signature, 0, sizeof(signature));
+		if (cv_lastprofile[0].value == 0) // GUESTS don't have keys
+		{
+			memset(signature, 0, 64);
+		}
+		else
+		{
+			crypto_eddsa_sign(signature, localProfile->secret_key, awaitingChallenge, 32);
+			if (crypto_eddsa_check(signature, localProfile->public_key, awaitingChallenge, 32) != 0)
+				I_Error("Couldn't self-verify key associated with player %d, profile %d.\nProfile data may be corrupted.", i, cv_lastprofile[i].value); // I guess this is the most reasonable way to catch a malformed key.
+		}
 
-	memcpy(&netbuffer->u.clientcfg.challengeResponse, signature, sizeof(signature));
+		// Testing
+		// memset(signature, 0, sizeof(signature));
+
+		memcpy(&netbuffer->u.clientcfg.challengeResponse[i], signature, sizeof(signature));
+	}
 
 	return HSendPacket(servernode, false, 0, sizeof (clientconfig_pak));
 }
 
 static boolean CL_SendKey(void)
 {
+	int i;
 	netbuffer->packettype = PT_CLIENTKEY;
 
-	memcpy(netbuffer->u.clientkey.key, public_key, sizeof(public_key));
+	memset(netbuffer->u.clientkey.key, 0, sizeof(((clientkey_pak *)0)->key));
+	for (i = 0; i <= splitscreen; i++)
+	{
+		// GUEST profiles have all-zero keys. This will be handled at the end of the challenge process, don't worry about it.
+		memcpy(netbuffer->u.clientkey.key[i], PR_GetProfile(cv_lastprofile[i].value)->public_key, 32);
+	}
 	return HSendPacket(servernode, false, 0, sizeof (clientkey_pak) );
 }
 
@@ -3694,7 +3714,7 @@ static void Got_AddPlayer(UINT8 **p, INT32 playernum)
 
 	players[newplayernum].splitscreenindex = splitscreenplayer;
 	players[newplayernum].bot = false;
-	memcpy(players[newplayernum].public_key, lastReceivedKey[node], sizeof(public_key));
+	memcpy(players[newplayernum].public_key, lastReceivedKey[node][splitscreenplayer], sizeof(players[newplayernum].public_key));
 
 	playerconsole[newplayernum] = console;
 	splitscreen_original_party_size[console] =
@@ -4069,8 +4089,6 @@ static void HandleConnect(SINT8 node)
 	// Testing
 	// memset(netbuffer->u.clientcfg.challengeResponse, 0, sizeof(netbuffer->u.clientcfg.challengeResponse));
 
-	int sigcheck = crypto_eddsa_check(netbuffer->u.clientcfg.challengeResponse, lastReceivedKey[node], lastSentChallenge[node], 32);
-
 	if (bannednode && bannednode[node].banid != SIZE_MAX)
 	{
 		const char *reason = NULL;
@@ -4152,13 +4170,12 @@ static void HandleConnect(SINT8 node)
 		SV_SendRefuse(node, va(M_GetText("Too many people are connecting.\nPlease wait %d seconds and then\ntry rejoining."),
 			(joindelay - 2 * cv_joindelay.value * TICRATE) / TICRATE));
 	}
-	else if (netgame && node != 0 && sigcheck != 0)
-	{
-		SV_SendRefuse(node, M_GetText("Signature verification failed."));
-	}
 	else
 	{
+		int sigcheck;
 		boolean newnode = false;
+		char allZero[32];
+		memset(allZero, 0, 32);
 
 		for (i = 0; i < netbuffer->u.clientcfg.localplayers - playerpernode[node]; i++)
 		{
@@ -4166,6 +4183,17 @@ static void HandleConnect(SINT8 node)
 			if (!EnsurePlayerNameIsGood(names[i], -1))
 			{
 				SV_SendRefuse(node, "Bad player name");
+				return;
+			}
+
+			if (memcmp(lastReceivedKey[node], allZero, 32)) // We're a GUEST and the server throws out our keys anyway.
+				sigcheck = 0; // Always succeeds. Yes, this is a success response. C R Y P T O
+			else
+				sigcheck = crypto_eddsa_check(netbuffer->u.clientcfg.challengeResponse[i], lastReceivedKey[node][i], lastSentChallenge[node][i], 32);
+
+			if (netgame && node != 0 && sigcheck != 0)
+			{
+				SV_SendRefuse(node, M_GetText("Signature verification failed."));
 				return;
 			}
 		}

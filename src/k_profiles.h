@@ -59,6 +59,9 @@ struct profile_t
 	// Profile header
 	char profilename[PROFILENAMELEN+1];	// Profile name (not to be confused with player name)
 
+	uint8_t public_key[32];				// Netgame authentication
+	uint8_t secret_key[64];				// TODO: Is it a potential vuln to have keys in memory?
+
 	// Player data
 	char playername[MAXPLAYERNAME+1];	// Player name
 	char skinname[SKINNAMESIZE+1];		// Default Skin
@@ -155,6 +158,8 @@ UINT8 PR_GetProfileNum(profile_t *p);
 SINT8 PR_ProfileUsedBy(profile_t *p);
 
 profile_t *PR_GetPlayerProfile(player_t *player);
+
+profile_t *PR_GetLocalPlayerProfile(INT32 player);
 
 #ifdef __cplusplus
 } // extern "C"

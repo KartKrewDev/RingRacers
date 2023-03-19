@@ -18,6 +18,8 @@
 #include "k_profiles.h"
 #include "z_zone.h"
 #include "r_skins.h"
+#include "monocypher/monocypher.h"
+#include "stun.h"
 
 // List of all the profiles.
 static profile_t *profilesList[MAXPROFILES+1]; // +1 because we're gonna add a default "GUEST' profile.
@@ -40,6 +42,16 @@ profile_t* PR_MakeProfile(
 	UINT8 i;
 
 	new->version = PROFILEVER;
+
+	memset(new->secret_key, 0, sizeof(secret_key));
+	memset(new->public_key, 0, sizeof(public_key));
+
+	if (!guest)
+	{
+		static uint8_t seed[32];
+		csprng(seed, 32);
+		crypto_eddsa_key_pair(new->secret_key, new->public_key, seed);
+	}
 
 	strcpy(new->profilename, prname);
 	new->profilename[sizeof new->profilename - 1] = '\0';
@@ -238,8 +250,10 @@ void PR_SaveProfiles(void)
 
 	for (i = 1; i < numprofiles; i++)
 	{
-		// Names.
+		// Names and keys, all the string data up front
 		WRITESTRINGN(save.p, profilesList[i]->profilename, PROFILENAMELEN);
+		WRITESTRINGN(save.p, profilesList[i]->public_key, sizeof(((profile_t *)0)->public_key));
+		WRITESTRINGN(save.p, profilesList[i]->secret_key, sizeof(((profile_t *)0)->secret_key));
 		WRITESTRINGN(save.p, profilesList[i]->playername, MAXPLAYERNAME);
 
 		// Character and colour.
@@ -329,8 +343,10 @@ void PR_LoadProfiles(void)
 		// Version. (We always update this on successful forward step)
 		profilesList[i]->version = PROFILEVER;
 
-		// Names.
+		// Names and keys, all the identity stuff up front
 		READSTRINGN(save.p, profilesList[i]->profilename, PROFILENAMELEN);
+		READSTRINGN(save.p, profilesList[i]->public_key, sizeof(((profile_t *)0)->public_key));
+		READSTRINGN(save.p, profilesList[i]->secret_key, sizeof(((profile_t *)0)->secret_key));
 		READSTRINGN(save.p, profilesList[i]->playername, MAXPLAYERNAME);
 
 		// Character and colour.
@@ -549,4 +565,11 @@ profile_t *PR_GetPlayerProfile(player_t *player)
 	}
 
 	return NULL;
+}
+
+profile_t *PR_GetLocalPlayerProfile(INT32 player)
+{
+	if (player >= MAXSPLITSCREENPLAYERS)
+		return NULL;
+	return PR_GetProfile(cv_lastprofile[player].value);
 }
