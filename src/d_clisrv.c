@@ -3716,8 +3716,11 @@ static void Got_AddPlayer(UINT8 **p, INT32 playernum)
 
 	players[newplayernum].splitscreenindex = splitscreenplayer;
 	players[newplayernum].bot = false;
+
+	// player_t is the only place in the game that a key is null-terminated, for ease of Lua push.
+	memset(players[newplayernum].public_key, 0, 32 + 1);
 	CONS_Printf("Adding player from node %d with ID %s\n", node, GetPrettyRRID(lastReceivedKey[node][splitscreenplayer], true));
-	memcpy(players[newplayernum].public_key, lastReceivedKey[node][splitscreenplayer], sizeof(players[newplayernum].public_key));
+	memcpy(players[newplayernum].public_key, lastReceivedKey[node][splitscreenplayer], 32);
 	CONS_Printf("Node %d now has ID %s\n", node, GetPrettyRRID(players[newplayernum].public_key, true));
 
 	playerconsole[newplayernum] = console;

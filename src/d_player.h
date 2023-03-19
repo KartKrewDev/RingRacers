@@ -713,7 +713,7 @@ struct player_t
 	mobj_t *stumbleIndicator;
 	mobj_t *sliptideZipIndicator;
 
-	uint8_t public_key[32];
+	uint8_t public_key[32 + 1];
 
 #ifdef HWRENDER
 	fixed_t fovadd; // adjust FOV for hw rendering

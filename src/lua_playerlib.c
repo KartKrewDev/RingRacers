@@ -507,6 +507,8 @@ static int player_get(lua_State *L)
 #endif
 	else if (fastcmp(field,"ping"))
 		lua_pushinteger(L, playerpingtable[( plr - players )]);
+	else if (fastcmp(field, "public_key"))
+		lua_pushstring(L, plr->public_key);
 	else {
 		lua_getfield(L, LUA_REGISTRYINDEX, LREG_EXTVARS);
 		I_Assert(lua_istable(L, -1));
