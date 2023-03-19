@@ -1671,7 +1671,11 @@ boolean G_Responder(event_t *ev)
 	if (gameaction == ga_nothing && !demo.quitafterplaying &&
 		((demo.playback && !modeattacking && !demo.title && !multiplayer) || gamestate == GS_TITLESCREEN))
 	{
-		if (ev->type == ev_keydown)
+		if (ev->type == ev_keydown
+		|| (ev->type == ev_gamepad_axis && ev->data1 >= JOYANALOGS
+			&& ((abs(ev->data2) > JOYAXISRANGE/2
+			|| abs(ev->data3) > JOYAXISRANGE/2))
+		))
 		{
 			M_StartControlPanel();
 			return true;
