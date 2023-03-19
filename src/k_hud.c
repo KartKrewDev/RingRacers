@@ -76,7 +76,7 @@ patch_t *kp_facehighlight[8];
 
 static patch_t *kp_nocontestminimap;
 static patch_t *kp_spbminimap;
-static patch_t *kp_capsuleminimap[2];
+static patch_t *kp_capsuleminimap[3];
 
 static patch_t *kp_ringsticker[2];
 static patch_t *kp_ringstickersplit[4];
@@ -350,6 +350,7 @@ void K_LoadKartHUDGraphics(void)
 	HU_UpdatePatch(&kp_spbminimap, "SPBMMAP");
 	HU_UpdatePatch(&kp_capsuleminimap[0], "MINICAP1");
 	HU_UpdatePatch(&kp_capsuleminimap[1], "MINICAP2");
+	HU_UpdatePatch(&kp_capsuleminimap[2], "MINICAP3");
 
 	// Rings & Lives
 	HU_UpdatePatch(&kp_ringsticker[0], "RNGBACKA");
@@ -956,7 +957,7 @@ void K_ObjectTracking(trackingResult_t *result, const vector3_t *point, boolean 
 
 	// Determine viewpoint factors.
 	h = R_PointToDist2(point->x, point->y, viewx, viewy);
-	da = AngleDeltaSigned(viewpointAngle, R_PointToAngle2(point->x, point->y, viewx, viewy));
+	da = AngleDeltaSigned(viewpointAngle, R_PointToAngle2(viewx, viewy, point->x, point->y));
 	dp = AngleDeltaSigned(viewpointAiming, R_PointToAngle2(0, 0, h, viewz));
 
 	if (reverse)
@@ -966,7 +967,7 @@ void K_ObjectTracking(trackingResult_t *result, const vector3_t *point, boolean 
 
 	// Set results relative to top left!
 	result->x = FixedMul(NEWTAN(da), fg);
-	result->y = FixedMul((NEWTAN(viewpointAiming) - FixedDiv((viewz - point->z), 1 + FixedMul(NEWCOS(da), h))), fg);
+	result->y = FixedMul((NEWTAN(viewpointAiming) - FixedDiv((point->z - viewz), 1 + FixedMul(NEWCOS(da), h))), fg);
 
 	result->angle = da;
 	result->pitch = dp;
@@ -993,7 +994,7 @@ void K_ObjectTracking(trackingResult_t *result, const vector3_t *point, boolean 
 
 	result->scale = FixedDiv(screenHalfW, h+1);
 
-	result->onScreen = ((abs(da) > ANG60) || (abs(AngleDeltaSigned(viewpointAiming, R_PointToAngle2(0, 0, h, (viewz - point->z)))) > ANGLE_45));
+	result->onScreen = !((abs(da) > ANG60) || (abs(AngleDeltaSigned(viewpointAiming, R_PointToAngle2(0, 0, h, (viewz - point->z)))) > ANGLE_45));
 
 	// Cheap dirty hacks for some split-screen related cases
 	if (result->x < 0 || result->x > (screenWidth << FRACBITS))
@@ -2473,6 +2474,19 @@ static void K_drawKartLaps(void)
 
 #define RINGANIM_FLIPFRAME (RINGANIM_NUMFRAMES/2)
 
+static void K_DrawLivesDigits(INT32 x, INT32 y, INT32 width, INT32 flags, patch_t *font[10])
+{
+	const SINT8 tens = stplyr->lives / 10;
+
+	if (tens)
+	{
+		V_DrawScaledPatch(x, y, flags, font[tens % 10]);
+		x += width;
+	}
+
+	V_DrawScaledPatch(x, y, flags, font[stplyr->lives % 10]);
+}
+
 static void K_drawRingCounter(void)
 {
 	const boolean uselives = G_GametypeUsesLives();
@@ -2560,7 +2574,7 @@ static void K_drawRingCounter(void)
 			UINT8 *colormap = R_GetTranslationColormap(stplyr->skin, stplyr->skincolor, GTC_CACHE);
 			V_DrawMappedPatch(fr+21, fy-13, V_HUDTRANS|V_SLIDEIN|splitflags, faceprefix[stplyr->skin][FACE_MINIMAP], colormap);
 			if (stplyr->lives >= 0)
-				V_DrawScaledPatch(fr+34, fy-10, V_HUDTRANS|V_SLIDEIN|splitflags, fontv[PINGNUM_FONT].font[(stplyr->lives % 10)]); // make sure this doesn't overflow OR underflow
+				K_DrawLivesDigits(fr+34, fy-10, 4, V_HUDTRANS|V_SLIDEIN|splitflags, fontv[PINGNUM_FONT].font);
 		}
 	}
 	else
@@ -2598,9 +2612,9 @@ static void K_drawRingCounter(void)
 		if (uselives)
 		{
 			UINT8 *colormap = R_GetTranslationColormap(stplyr->skin, stplyr->skincolor, GTC_CACHE);
-			V_DrawMappedPatch(LAPS_X+46, fy-5, V_HUDTRANS|V_SLIDEIN|splitflags, faceprefix[stplyr->skin][FACE_RANK], colormap);
+			V_DrawMappedPatch(LAPS_X+40, fy-5, V_HUDTRANS|V_SLIDEIN|splitflags, faceprefix[stplyr->skin][FACE_RANK], colormap);
 			if (stplyr->lives >= 0)
-				V_DrawScaledPatch(LAPS_X+63, fy, V_HUDTRANS|V_SLIDEIN|splitflags, kp_facenum[(stplyr->lives % 10)]); // make sure this doesn't overflow OR underflow
+				K_DrawLivesDigits(LAPS_X + (stplyr->lives < 10 ? 60 : 57), fy, 6, V_HUDTRANS|V_SLIDEIN|splitflags, kp_facenum);
 		}
 	}
 }
@@ -3730,6 +3744,10 @@ static void K_drawKartMinimap(void)
 				break;
 			case MT_BATTLECAPSULE:
 				workingPic = kp_capsuleminimap[(mobj->extravalue1 != 0 ? 1 : 0)];
+				break;
+			case MT_CDUFO:
+				if (battlecapsules) //!battleprisons
+					workingPic = kp_capsuleminimap[2];
 				break;
 			default:
 				break;

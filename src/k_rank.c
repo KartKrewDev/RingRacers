@@ -123,7 +123,8 @@ static void RankCapsules_LoadTextmap(void)
 			{
 				UINT16 type = atol(val);
 
-				if (type == mobjinfo[MT_BATTLECAPSULE].doomednum)
+				if (type == mobjinfo[MT_BATTLECAPSULE].doomednum
+					|| type == mobjinfo[MT_CDUFO].doomednum)
 				{
 					g_rankCapsules_count++;
 				}
@@ -163,7 +164,8 @@ static void RankCapsules_LoadThingsLump(UINT8 *data)
 
 		data += 2; // options
 
-		if (type == mobjinfo[MT_BATTLECAPSULE].doomednum)
+		if (type == mobjinfo[MT_BATTLECAPSULE].doomednum
+			|| type == mobjinfo[MT_CDUFO].doomednum)
 		{
 			g_rankCapsules_count++;
 		}

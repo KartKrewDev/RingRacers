@@ -73,6 +73,7 @@ PFNglGetString pglGetString;
 INT32 oglflags = 0;
 void *GLUhandle = NULL;
 SDL_GLContext sdlglcontext = 0;
+SDL_GLContext g_legacy_gl_context = 0;
 
 void *GetGLFunc(const char *proc)
 {
@@ -89,8 +90,14 @@ void *GetGLFunc(const char *proc)
 boolean LoadGL(void)
 {
 #ifndef STATIC_OPENGL
+	static boolean loaded_libraries = false;
 	const char *OGLLibname = NULL;
 	const char *GLULibname = NULL;
+
+	if (loaded_libraries)
+	{
+		return SetupGLfunc();
+	}
 
 	if (M_CheckParm("-OGLlib") && M_IsNextParm())
 		OGLLibname = M_GetNextParm();
@@ -140,6 +147,7 @@ boolean LoadGL(void)
 		CONS_Alert(CONS_ERROR, "Could not load GLU Library\n");
 		CONS_Printf("If you know what is the GLU library's name, use -GLUlib\n");;
 	}
+	loaded_libraries = true;
 #endif
 	return SetupGLfunc();
 }

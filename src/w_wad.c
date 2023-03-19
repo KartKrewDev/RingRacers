@@ -825,7 +825,7 @@ UINT16 W_InitFile(const char *filename, boolean mainfile, boolean startup)
 	switch(type = ResourceFileDetect(filename))
 	{
 	case RET_SOC:
-		lumpinfo = ResGetLumpsStandalone(handle, &numlumps, "OBJCTCFG");
+		lumpinfo = ResGetLumpsStandalone(handle, &numlumps, "SOC_INIT");
 		break;
 	case RET_LUA:
 		lumpinfo = ResGetLumpsStandalone(handle, &numlumps, "LUA_INIT");

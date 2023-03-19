@@ -77,6 +77,7 @@ add_executable(SRB2SDL2 MACOSX_BUNDLE WIN32
 	r_things.c
 	r_bbox.c
 	r_textures.c
+	r_textures_dups.cpp
 	r_patch.cpp
 	r_patchrotation.c
 	r_picformats.c
@@ -246,8 +247,6 @@ if(SRB2_CONFIG_ENABLE_WEBM_MOVIES)
 	target_link_libraries(SRB2SDL2 PRIVATE Vorbis::vorbis Vorbis::vorbisenc)
 	target_compile_definitions(SRB2SDL2 PRIVATE -DSRB2_CONFIG_ENABLE_WEBM_MOVIES)
 endif()
-
-target_link_libraries(SRB2SDL2 PRIVATE acsvm)
 
 set(SRB2_HAVE_THREADS ON)
 target_compile_definitions(SRB2SDL2 PRIVATE -DHAVE_THREADS)

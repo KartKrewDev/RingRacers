@@ -64,6 +64,7 @@
 #include "k_director.h"
 #include "k_podium.h"
 #include "k_rank.h"
+#include "acs/interface.h"
 
 #ifdef HAVE_DISCORDRPC
 #include "discord.h"
@@ -129,6 +130,7 @@ UINT8 numgameovers = 0; // for startinglives balance
 SINT8 startinglivesbalance[maxgameovers+1] = {3, 5, 7, 9, 12, 15, 20, 25, 30, 40, 50, 75, 99, 0x7F};
 
 UINT16 mainwads = 0;
+UINT16 musicwads = 0;
 boolean modifiedgame = false; // Set if homebrew PWAD stuff has been added.
 boolean majormods = false; // Set if Lua/Gameplay SOC/replacement map has been added.
 boolean savemoddata = false;
@@ -2425,6 +2427,7 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	UINT16 nocontrol;
 	INT32 khudfault;
 	INT32 kickstartaccel;
+	boolean enteredGame;
 
 	roundconditions_t roundconditions;
 	boolean saveroundconditions;
@@ -2592,6 +2595,8 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 		skyboxviewpoint = skyboxcenterpoint = NULL;
 	}
 
+	enteredGame = players[player].enteredGame;
+
 	p = &players[player];
 	memset(p, 0, sizeof (*p));
 
@@ -2699,6 +2704,18 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 					break;
 				}
 			}
+		}
+	}
+
+	if (p->spectator == false)
+	{
+		if (betweenmaps || enteredGame == true)
+		{
+			ACS_RunPlayerEnterScript(p);
+		}
+		else
+		{
+			ACS_RunPlayerRespawnScript(p);
 		}
 	}
 

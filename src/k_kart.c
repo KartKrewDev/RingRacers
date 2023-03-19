@@ -4057,7 +4057,7 @@ void K_UpdateStumbleIndicator(player_t *player)
 	}
 }
 
-#define MIN_WAVEDASH_CHARGE (5*TICRATE/8)
+#define MIN_WAVEDASH_CHARGE (7*TICRATE/16)
 
 static boolean K_IsLosingSliptideZip(player_t *player)
 {
@@ -5913,7 +5913,8 @@ static void K_DoShrink(player_t *user)
 			next = mobj->itnext;
 
 			if (mobj->type == MT_SPB
-				|| mobj->type == MT_BATTLECAPSULE)
+				|| mobj->type == MT_BATTLECAPSULE
+				|| mobj->type == MT_CDUFO)
 			{
 				continue;
 			}
@@ -9958,6 +9959,13 @@ static void K_KartSpindash(player_t *player)
 		// Update fastfall.
 		player->fastfall = player->mo->momz;
 		player->spindash = 0;
+
+		if (player->fastfallBase == 0)
+		{
+			// Factors 3D momentum.
+			player->fastfallBase = FixedHypot(player->speed, player->mo->momz);
+		}
+
 		return;
 	}
 	else if (player->fastfall != 0)
@@ -10069,6 +10077,7 @@ boolean K_FastFallBounce(player_t *player)
 		player->mo->momz = bounce * P_MobjFlip(player->mo);
 
 		player->fastfall = 0;
+		player->fastfallBase = 0;
 		return true;
 	}
 

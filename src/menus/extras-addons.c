@@ -43,17 +43,7 @@ void M_Addons(INT32 choice)
 
 	(void)choice;
 
-#if 1
-	if (cv_addons_option.value == 0)
-		pathname = addonsdir;
-	else if (cv_addons_option.value == 1)
-		pathname = srb2home;
-	else if (cv_addons_option.value == 2)
-		pathname = srb2path;
-	else
-#endif
-	if (cv_addons_option.value == 3 && *cv_addons_folder.string != '\0')
-		pathname = cv_addons_folder.string;
+	pathname = addonsdir;
 
 	strlcpy(menupath, pathname, 1024);
 	menupathindex[(menudepthleft = menudepth-1)] = strlen(menupath) + 1;
@@ -86,7 +76,7 @@ char *M_AddonsHeaderPath(void)
 	UINT32 len;
 	static char header[1024];
 
-	strlcpy(header, va("%s folder%s", cv_addons_option.string, menupath+menupathindex[menudepth-1]-1), 1024);
+	strlcpy(header, va("addons%s", menupath+menupathindex[menudepth-1]-1), 1024);
 	len = strlen(header);
 	if (len > 34)
 	{

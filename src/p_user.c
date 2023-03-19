@@ -482,6 +482,7 @@ void P_ResetPlayer(player_t *player)
 	player->trickpanel = 0;
 	player->glanceDir = 0;
 	player->fastfall = 0;
+	player->fastfallBase = 0;
 
 	if (player->mo != NULL && P_MobjWasRemoved(player->mo) == false)
 	{
@@ -559,8 +560,8 @@ void P_GivePlayerLives(player_t *player, INT32 numlives)
 {
 	player->lives += numlives;
 
-	if (player->lives > 9)
-		player->lives = 9;
+	if (player->lives > 10)
+		player->lives = 10;
 	else if (player->lives < 1)
 		player->lives = 1;
 }
@@ -3664,6 +3665,7 @@ boolean P_SpectatorJoinGame(player_t *player)
 	player->spectatewait = 0;
 	player->ctfteam = changeto;
 	player->playerstate = PST_REBORN;
+	player->enteredGame = true;
 
 	// Reset away view (some code referenced from Got_Teamchange)
 	{

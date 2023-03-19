@@ -1049,6 +1049,7 @@ void D_ClearState(void)
 	tutorialmode = false;
 
 	cursongcredit.def = NULL;
+	S_StopSounds();
 
 	if (gamedata && gamedata->deferredsave)
 		G_SaveGameData();
@@ -1211,7 +1212,10 @@ static void IdentifyVersion(void)
 		const char *musicpath = va(pandf,srb2waddir,str);\
 		int ms = W_VerifyNMUSlumps(musicpath, false); \
 		if (ms == 1) \
+		{ \
 			D_AddFile(startupiwads, musicpath); \
+			musicwads++; \
+		} \
 		else if (ms == 0) \
 			I_Error("File "str" has been modified with non-music/sound lumps"); \
 	}
@@ -1981,6 +1985,8 @@ void D_SRB2Main(void)
 						grandprixinfo.eventmode = GPEVENT_SPECIAL;
 					else if (gametype != GT_RACE)
 						grandprixinfo.eventmode = GPEVENT_BONUS;
+
+					multiplayer = true;
 				}
 
 				G_SetUsedCheats();

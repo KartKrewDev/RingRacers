@@ -547,6 +547,7 @@ struct player_t
 	UINT8 spindashboost;	// Spindash release boost timer
 
 	fixed_t fastfall;		// Fast fall momentum
+	fixed_t fastfallBase;	// Fast fall base speed multiplier
 
 	UINT8 numboosts;		// Count of how many boosts are being stacked, for after image spawning
 	fixed_t boostpower;		// Base boost value, for offroad
@@ -679,6 +680,7 @@ struct player_t
 
 	boolean spectator;
 	tic_t spectatewait;		// reimplementable as UINT8 queue - How long have you been waiting as a spectator
+	boolean enteredGame;
 
 	boolean bot;
 	botvars_t botvars;

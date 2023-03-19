@@ -4593,13 +4593,14 @@ void M_DrawAddons(void)
 	}
 
 	if (Playing())
-		V_DrawCenteredString(BASEVIDWIDTH/2, 5, warningflags, "Adding files mid-game may cause problems.");
+		V_DrawCenteredString(BASEVIDWIDTH/2, 4, warningflags, "Adding files mid-game may cause problems.");
 	else
-		V_DrawCenteredString(BASEVIDWIDTH/2, 5, 0, (recommendedflags == V_SKYMAP ? LOCATIONSTRING2 : LOCATIONSTRING1));
+		V_DrawCenteredString(BASEVIDWIDTH/2, 4, 0,
+		LOCATIONSTRING1);
 
 	// DRAW MENU
 	x = currentMenu->x;
-	y = currentMenu->y + 1;
+	y = currentMenu->y - 1;
 
 	hilicol = V_GetStringColormap(highlightflags)[0];
 
@@ -4717,7 +4718,7 @@ void M_DrawAddons(void)
 	if (modifiedgame)
 		V_DrawSmallScaledPatch(x, y, 0, addonsp[NUM_EXT+2]);
 
-	m = numwadfiles-(mainwads+2+1);
+	m = numwadfiles-(mainwads+musicwads+1);
 
 	V_DrawCenteredString(BASEVIDWIDTH/2, y+4, (majormods ? highlightflags : V_TRANSLUCENT), va("%ld ADD-ON%s LOADED", (long)m, (m == 1) ? "" : "S")); //+2 for music, sounds, +1 for main.kart
 }

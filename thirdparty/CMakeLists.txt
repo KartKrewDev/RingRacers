@@ -22,7 +22,6 @@ include("cpm-discordrpc.cmake")
 include("cpm-xmp-lite.cmake")
 include("cpm-fmt.cmake")
 include("cpm-imgui.cmake")
-include("cpm-acsvm.cmake")
 
 if (SRB2_CONFIG_ENABLE_WEBM_MOVIES)
 	if (NOT "${SRB2_CONFIG_SYSTEM_LIBRARIES}")

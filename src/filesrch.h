@@ -12,7 +12,7 @@
 extern "C" {
 #endif
 
-extern consvar_t cv_addons_option, cv_addons_folder, cv_addons_md5, cv_addons_showall, cv_addons_search_case, cv_addons_search_type;
+extern consvar_t cv_addons_md5, cv_addons_showall, cv_addons_search_case, cv_addons_search_type;
 
 /**	\brief	The filesearch function
 

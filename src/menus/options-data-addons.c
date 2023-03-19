@@ -10,12 +10,6 @@ menuitem_t OPTIONS_DataAddon[] =
 	{IT_HEADER, "MENU", NULL,
 		NULL, {NULL}, 0, 0},
 
-	{IT_STRING | IT_CVAR, "Location", "Where to start searching addons from in the menu.",
-		NULL, {.cvar = &cv_addons_option}, 0, 0},
-
-	{IT_STRING | IT_CVAR | IT_CV_STRING, "Custom Folder", "Specify which folder to start searching from if the location is set to custom.",
-		NULL, {.cvar = &cv_addons_folder}, 24, 0},
-
 	{IT_STRING | IT_CVAR, "Identify Addons via", "Set whether to consider the extension or contents of a file.",
 		NULL, {.cvar = &cv_addons_md5}, 0, 0},
 
@@ -51,11 +45,3 @@ menu_t OPTIONS_DataAddonDef = {
 	NULL,
 	NULL,
 };
-
-void Addons_option_Onchange(void)
-{
-	// Option 2 will always be the textbar.
-	// (keep in mind this is a 0 indexed array and the first element is a header...)
-	OPTIONS_DataAddon[2].status =
-		(cv_addons_option.value == 3 ? IT_CVAR|IT_STRING|IT_CV_STRING : IT_DISABLED);
-}

@@ -10,3 +10,11 @@ target_sources(SRB2SDL2 PRIVATE
 	interface.cpp
 	interface.h
 )
+
+target_include_directories(SRB2SDL2 PRIVATE vm) # This sucks
+
+set(ACSVM_NOFLAGS ON)
+set(ACSVM_SHARED OFF)
+add_subdirectory(vm)
+
+target_link_libraries(SRB2SDL2 PRIVATE acsvm)

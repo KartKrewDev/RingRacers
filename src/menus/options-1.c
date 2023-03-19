@@ -103,12 +103,6 @@ void M_InitOptions(INT32 choice)
 	// So that pause doesn't go to the main menu...
 	OPTIONS_MainDef.prevMenu = currentMenu;
 
-	// This will disable or enable the textboxes of the affected menus before we get to them.
-	Screenshot_option_Onchange();
-	Moviemode_mode_Onchange();
-	Moviemode_option_Onchange();
-	Addons_option_Onchange();
-
 	M_SetupNextMenu(&OPTIONS_MainDef, false);
 }
 

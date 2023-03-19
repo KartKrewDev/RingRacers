@@ -464,9 +464,6 @@ typedef enum
 
 // K_MENUFUNC.C
 
-// Moviemode menu updating
-void Moviemode_option_Onchange(void);
-
 extern menu_t *currentMenu;
 extern menu_t *restoreMenu;
 
@@ -563,10 +560,6 @@ extern consvar_t cv_chooseskin, cv_serversort, cv_menujam_update;
 extern consvar_t cv_autorecord;
 
 void M_SetMenuDelay(UINT8 i);
-
-void Moviemode_mode_Onchange(void);
-void Screenshot_option_Onchange(void);
-void Addons_option_Onchange(void);
 
 void M_SortServerList(void);
 
@@ -1134,7 +1127,6 @@ void M_DrawReplayStartMenu(void);
 
 // Misc menus:
 #define LOCATIONSTRING1 "Visit \x83SRB2.ORG/MODS\x80 to get & make addons!"
-#define LOCATIONSTRING2 "Visit \x88SRB2.ORG/MODS\x80 to get & make addons!"
 void M_DrawAddons(void);
 
 // Challenges menu:

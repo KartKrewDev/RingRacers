@@ -154,6 +154,7 @@ static void Command_Playdemo_f(void);
 static void Command_Timedemo_f(void);
 static void Command_Stopdemo_f(void);
 static void Command_StartMovie_f(void);
+static void Command_StartLossless_f(void);
 static void Command_StopMovie_f(void);
 static void Command_Map_f(void);
 static void Command_RandomMap(void);
@@ -891,15 +892,12 @@ void D_RegisterClientCommands(void)
 
 	COM_AddCommand("screenshot", M_ScreenShot);
 	COM_AddCommand("startmovie", Command_StartMovie_f);
+	COM_AddCommand("startlossless", Command_StartLossless_f);
 	COM_AddCommand("stopmovie", Command_StopMovie_f);
 	COM_AddCommand("minigen", M_MinimapGenerate);
 
-	CV_RegisterVar(&cv_screenshot_option);
-	CV_RegisterVar(&cv_screenshot_folder);
 	CV_RegisterVar(&cv_screenshot_colorprofile);
-	CV_RegisterVar(&cv_moviemode);
-	CV_RegisterVar(&cv_movie_option);
-	CV_RegisterVar(&cv_movie_folder);
+	CV_RegisterVar(&cv_lossless_recorder);
 
 #ifdef SRB2_CONFIG_ENABLE_WEBM_MOVIES
 	M_AVRecorder_AddCommands();
@@ -1013,8 +1011,6 @@ void D_RegisterClientCommands(void)
 	}
 
 	// filesrch.c
-	CV_RegisterVar(&cv_addons_option);
-	CV_RegisterVar(&cv_addons_folder);
 	CV_RegisterVar(&cv_addons_md5);
 	CV_RegisterVar(&cv_addons_showall);
 	CV_RegisterVar(&cv_addons_search_type);
@@ -2509,7 +2505,12 @@ static void Command_Stopdemo_f(void)
 
 static void Command_StartMovie_f(void)
 {
-	M_StartMovie();
+	M_StartMovie(MM_AVRECORDER);
+}
+
+static void Command_StartLossless_f(void)
+{
+	M_StartMovie(cv_lossless_recorder.value);
 }
 
 static void Command_StopMovie_f(void)
@@ -4652,7 +4653,7 @@ static void Command_ListWADS_f(void)
 		else if (i <= mainwads)
 			CONS_Printf("\x82 * %.2d\x80: %s\n", i, tempname);
 		else if (!wadfiles[i]->important)
-			CONS_Printf("\x86   %.2d: %s\n", i, tempname);
+			CONS_Printf("\x86 %c %.2d: %s\n", ((i <= mainwads + musicwads) ? '*' : ' '), i, tempname);
 		else
 			CONS_Printf("   %.2d: %s\n", i, tempname);
 	}

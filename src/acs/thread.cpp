@@ -11,17 +11,7 @@
 /// \file  thread.cpp
 /// \brief Action Code Script: Thread definition
 
-#include <ACSVM/Code.hpp>
-#include <ACSVM/CodeData.hpp>
-#include <ACSVM/Environment.hpp>
-#include <ACSVM/Error.hpp>
-#include <ACSVM/Module.hpp>
-#include <ACSVM/Scope.hpp>
-#include <ACSVM/Script.hpp>
-#include <ACSVM/Serial.hpp>
-#include <ACSVM/Thread.hpp>
-#include <ACSVM/BinaryIO.hpp>
-#include <Util/Floats.hpp>
+#include "acsvm.hpp"
 
 #include "thread.hpp"
 

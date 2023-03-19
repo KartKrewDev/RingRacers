@@ -1148,7 +1148,11 @@ fixed_t P_GetMobjGravity(mobj_t *mo)
 		else if (mo->player->fastfall != 0)
 		{
 			// Fast falling
-			gravityadd *= 4;
+
+			const fixed_t unit = 64 * mapobjectscale;
+			const fixed_t mult = 3*FRACUNIT + (3 * FixedDiv(mo->player->fastfallBase, unit));
+
+			gravityadd = FixedMul(gravityadd, mult);
 		}
 	}
 	else
@@ -5274,6 +5278,7 @@ static boolean P_IsTrackerType(INT32 type)
 		// Primarily for minimap data, handle with care
 		case MT_SPB:
 		case MT_BATTLECAPSULE:
+		case MT_CDUFO:
 		case MT_SPECIAL_UFO:
 			return true;
 
@@ -8099,7 +8104,6 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 	}
 	case MT_LIGHTNINGSHIELD:
 	{
-		fixed_t destx, desty;
 		if (!mobj->target || !mobj->target->health || !mobj->target->player
 			|| mobj->target->player->curshield != KSHIELD_LIGHTNING)
 		{
@@ -8108,36 +8112,11 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 		}
 		P_SetScale(mobj, (mobj->destscale = (5*mobj->target->scale)>>2));
 
-		if (!r_splitscreen /*&& rendermode != render_soft*/)
-		{
-			angle_t viewingangle;
-			statenum_t curstate = ((mobj->tics == 1) ? (mobj->state->nextstate) : ((statenum_t)(mobj->state-states)));
-
-			if (players[displayplayers[0]].awayview.tics)
-				viewingangle = R_PointToAngle2(mobj->target->x, mobj->target->y, players[displayplayers[0]].awayview.mobj->x, players[displayplayers[0]].awayview.mobj->y);
-			else if (!camera[0].chase && players[displayplayers[0]].mo)
-				viewingangle = R_PointToAngle2(mobj->target->x, mobj->target->y, players[displayplayers[0]].mo->x, players[displayplayers[0]].mo->y);
-			else
-				viewingangle = R_PointToAngle2(mobj->target->x, mobj->target->y, camera[0].x, camera[0].y);
-
-			if (curstate > S_LIGHTNINGSHIELD15 && curstate <= S_LIGHTNINGSHIELD24)
-				viewingangle += ANGLE_180;
-
-			destx = mobj->target->x + P_ReturnThrustX(mobj->target, viewingangle, mobj->scale>>4);
-			desty = mobj->target->y + P_ReturnThrustY(mobj->target, viewingangle, mobj->scale>>4);
-		}
-		else
-		{
-			destx = mobj->target->x;
-			desty = mobj->target->y;
-		}
-
-		P_MoveOrigin(mobj, destx, desty, mobj->target->z);
+		P_MoveOrigin(mobj, mobj->target->x, mobj->target->y, mobj->target->z);
 		break;
 	}
 	case MT_BUBBLESHIELD:
 	{
-		fixed_t destx, desty;
 		fixed_t scale;
 		statenum_t curstate;
 
@@ -8240,34 +8219,13 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 		mobj->extravalue2 = mobj->target->player->bubbleblowup;
 		P_SetScale(mobj, (mobj->destscale = scale));
 
-		if (!splitscreen /*&& rendermode != render_soft*/)
-		{
-			angle_t viewingangle;
-
-			if (players[displayplayers[0]].awayview.tics)
-				viewingangle = R_PointToAngle2(mobj->target->x, mobj->target->y, players[displayplayers[0]].awayview.mobj->x, players[displayplayers[0]].awayview.mobj->y);
-			else if (!camera[0].chase && players[displayplayers[0]].mo)
-				viewingangle = R_PointToAngle2(mobj->target->x, mobj->target->y, players[displayplayers[0]].mo->x, players[displayplayers[0]].mo->y);
-			else
-				viewingangle = R_PointToAngle2(mobj->target->x, mobj->target->y, camera[0].x, camera[0].y);
-
-			destx = mobj->target->x + P_ReturnThrustX(mobj->target, viewingangle, mobj->scale>>4);
-			desty = mobj->target->y + P_ReturnThrustY(mobj->target, viewingangle, mobj->scale>>4);
-		}
-		else
-		{
-			destx = mobj->target->x;
-			desty = mobj->target->y;
-		}
-
 		mobj->flags &= ~(MF_NOCLIPTHING);
-		P_MoveOrigin(mobj, destx, desty, mobj->target->z);
+		P_MoveOrigin(mobj, mobj->target->x, mobj->target->y, mobj->target->z);
 		mobj->flags |= MF_NOCLIPTHING;
 		break;
 	}
 	case MT_FLAMESHIELD:
 	{
-		fixed_t destx, desty;
 		statenum_t curstate;
 		statenum_t underlayst = S_NULL;
 		INT32 flamemax = 0;
@@ -8287,6 +8245,8 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 
 		if (mobj->target->player->flamedash)
 		{
+			mobj->dispoffset = 1;
+
 			if (!(curstate >= S_FLAMESHIELDDASH1 && curstate <= S_FLAMESHIELDDASH12))
 				P_SetMobjState(mobj, S_FLAMESHIELDDASH1);
 
@@ -8328,6 +8288,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 		{
 			if (curstate >= S_FLAMESHIELDDASH1 && curstate <= S_FLAMESHIELDDASH12)
 				P_SetMobjState(mobj, S_FLAMESHIELD1);
+			mobj->dispoffset = ((curstate - S_FLAMESHIELD1) & 1) ? -1 : 1;
 		}
 
 		mobj->extravalue1 = mobj->target->player->flamedash;
@@ -8347,36 +8308,12 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 			}
 		}
 
-		if (!splitscreen /*&& rendermode != render_soft*/)
-		{
-			angle_t viewingangle;
-
-			if (players[displayplayers[0]].awayview.tics)
-				viewingangle = R_PointToAngle2(mobj->target->x, mobj->target->y, players[displayplayers[0]].awayview.mobj->x, players[displayplayers[0]].awayview.mobj->y);
-			else if (!camera[0].chase && players[displayplayers[0]].mo)
-				viewingangle = R_PointToAngle2(mobj->target->x, mobj->target->y, players[displayplayers[0]].mo->x, players[displayplayers[0]].mo->y);
-			else
-				viewingangle = R_PointToAngle2(mobj->target->x, mobj->target->y, camera[0].x, camera[0].y);
-
-			if (curstate >= S_FLAMESHIELD1 && curstate < S_FLAMESHIELDDASH1 && ((curstate-S_FLAMESHIELD1) & 1))
-				viewingangle += ANGLE_180;
-
-			destx = mobj->target->x + P_ReturnThrustX(mobj->target, viewingangle, mobj->scale>>4);
-			desty = mobj->target->y + P_ReturnThrustY(mobj->target, viewingangle, mobj->scale>>4);
-		}
-		else
-		{
-			destx = mobj->target->x;
-			desty = mobj->target->y;
-		}
-
-		P_MoveOrigin(mobj, destx, desty, mobj->target->z);
+		P_MoveOrigin(mobj, mobj->target->x, mobj->target->y, mobj->target->z);
 		mobj->angle = K_MomentumAngle(mobj->target);
 
 		if (underlayst != S_NULL)
 		{
-			mobj_t *underlay = P_SpawnMobj(mobj->target->x, mobj->target->y, mobj->target->z, MT_FLAMESHIELDUNDERLAY);
-			underlay->angle = mobj->angle;
+			mobj_t *underlay = P_SpawnMobjFromMobj(mobj, 0, 0, 0, MT_FLAMESHIELDUNDERLAY);
 			P_SetMobjState(underlay, underlayst);
 		}
 		break;
@@ -8659,7 +8596,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 			mobj->movecount--;
 			break;
 		}
-		else if (P_AproxDistance(mobj->x - (mobj->spawnpoint->x<<FRACBITS), mobj->y - (mobj->spawnpoint->y<<FRACBITS)) < (420<<FRACBITS))
+		else if (P_AproxDistance(mobj->x - (mobj->spawnpoint->x<<FRACBITS), mobj->y - (mobj->spawnpoint->y<<FRACBITS)) < (840*mapobjectscale))
 			break;
 
 		mobj->movecount = 3;
@@ -10830,6 +10767,9 @@ mobj_t *P_SpawnMobj(fixed_t x, fixed_t y, fixed_t z, mobjtype_t type)
 			break;
 		case MT_BIGRING:
 			P_SetScale(mobj, (mobj->destscale = 3*FRACUNIT));
+			break;
+		case MT_CDUFO:
+			P_SetScale(mobj, (mobj->destscale = 3*FRACUNIT/2));
 			break;
 		case MT_RANDOMAUDIENCE:
 		{

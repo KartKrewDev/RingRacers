@@ -24,6 +24,7 @@
 #include "../k_waypoint.h"
 #include "../k_specialstage.h"
 #include "../r_skins.h"
+#include "../acs/interface.h"
 
 #define UFO_BASE_SPEED (42 * FRACUNIT) // UFO's slowest speed.
 #define UFO_SPEEDUP (FRACUNIT >> 1) // Acceleration
@@ -697,7 +698,7 @@ boolean Obj_SpecialUFODamage(mobj_t *ufo, mobj_t *inflictor, mobj_t *source, UIN
 		ufo->flags = (ufo->flags & ~MF_SHOOTABLE) | (MF_SPECIAL|MF_PICKUPFROMBELOW);
 		ufo->shadowscale = FRACUNIT/3;
 
-		P_LinedefExecute(LE_PINCHPHASE, ufo, NULL);
+		ACS_RunEmeraldScript(source);
 
 		S_StopSound(ufo);
 		S_StartSound(ufo, sfx_clawk2);
@@ -728,9 +729,32 @@ void Obj_PlayerUFOCollide(mobj_t *ufo, mobj_t *other)
 	{
 		// Bump and deal damage.
 		Obj_SpecialUFODamage(ufo, other, other, DMG_STEAL);
-		K_KartBouncing(other, ufo);
 		other->player->sneakertimer = 0;
+		other->player->numsneakers = 0;
 	}
+	else
+	{
+		const angle_t moveAngle = K_MomentumAngle(ufo);
+		const angle_t clipAngle = R_PointToAngle2(ufo->x, ufo->y, other->x, other->y);
+
+		if (other->z > ufo->z + ufo->height)
+		{
+			return; // overhead
+		}
+
+		if (other->z + other->height < ufo->z)
+		{
+			return; // underneath
+		}
+
+		if (AngleDelta(moveAngle, clipAngle) < ANG60)
+		{
+			// in front
+			K_StumblePlayer(other->player);
+		}
+	}
+
+	K_KartBouncing(other, ufo);
 }
 
 void Obj_UFOPieceThink(mobj_t *piece)
