@@ -3715,6 +3715,8 @@ static void Got_AddPlayer(UINT8 **p, INT32 playernum)
 
 		D_SendPlayerConfig(splitscreenplayer);
 		addedtogame = true;
+		CONS_Printf("It's me, node %d, with ID %s! (This is uninitialized memory because Tyron is a dumbass!)\n", node, GetPrettyRRID(lastReceivedKey[node][splitscreenplayer], true));
+		memcpy(lastReceivedKey[node][splitscreenplayer], PR_GetLocalPlayerProfile(splitscreenplayer)->public_key, 32);
 	}
 
 	players[newplayernum].splitscreenindex = splitscreenplayer;
