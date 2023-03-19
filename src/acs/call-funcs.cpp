@@ -1357,7 +1357,7 @@ bool CallFunc_BreakTheCapsules(ACSVM::Thread *thread, const ACSVM::Word *argV, A
 	(void)argV;
 	(void)argC;
 
-	thread->dataStk.push(battlecapsules);
+	thread->dataStk.push(battleprisons);
 	return false;
 }
 

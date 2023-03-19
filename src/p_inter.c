@@ -636,7 +636,7 @@ static void P_AddBrokenPrison(mobj_t *target, mobj_t *source)
 {
 	(void)target;
 
-	if (!battlecapsules) // !battleprisons
+	if (!battleprisons)
 		return;
 
 	if ((gametyperules & GTR_POINTLIMIT) && (source && source->player))

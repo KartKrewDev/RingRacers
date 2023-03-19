@@ -3746,7 +3746,7 @@ static void K_drawKartMinimap(void)
 				workingPic = kp_capsuleminimap[(mobj->extravalue1 != 0 ? 1 : 0)];
 				break;
 			case MT_CDUFO:
-				if (battlecapsules) //!battleprisons
+				if (battleprisons)
 					workingPic = kp_capsuleminimap[2];
 				break;
 			default:
