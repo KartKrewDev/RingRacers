@@ -825,20 +825,20 @@ INT32 G_KeyStringtoNum(const char *keystr)
 
 void G_DefineDefaultControls(void)
 {
-	// These defaults are bad & temporary.
+	// These defaults are less bad than they used to be.
 	// Keyboard controls
 	gamecontroldefault[gc_up      ][0] = KEY_UPARROW;
 	gamecontroldefault[gc_down    ][0] = KEY_DOWNARROW;
 	gamecontroldefault[gc_left    ][0] = KEY_LEFTARROW;
 	gamecontroldefault[gc_right   ][0] = KEY_RIGHTARROW;
-	gamecontroldefault[gc_a       ][0] = 'z';
-	gamecontroldefault[gc_b       ][0] = 'x';
-	gamecontroldefault[gc_c       ][0] = 'c';
-	gamecontroldefault[gc_x       ][0] = 'a';
-	gamecontroldefault[gc_y       ][0] = 's';
-	gamecontroldefault[gc_z       ][0] = 'd';
-	gamecontroldefault[gc_l       ][0] = 'q';
-	gamecontroldefault[gc_r       ][0] = 'e';
+	gamecontroldefault[gc_a       ][0] = 'f';
+	gamecontroldefault[gc_b       ][0] = 'a';
+	gamecontroldefault[gc_c       ][0] = 'v';
+	gamecontroldefault[gc_x       ][0] = 's';
+	gamecontroldefault[gc_y       ][0] = 'x';
+	gamecontroldefault[gc_z       ][0] = 'c';
+	gamecontroldefault[gc_l       ][0] = KEY_SPACE;
+	gamecontroldefault[gc_r       ][0] = 'd';
 	gamecontroldefault[gc_start   ][0] = KEY_ESCAPE;
 	gamecontroldefault[gc_rankings][0] = KEY_TAB;
 
@@ -848,19 +848,23 @@ void G_DefineDefaultControls(void)
 	gamecontroldefault[gc_left ][1] = KEY_HAT1+2; // D-Pad Left
 	gamecontroldefault[gc_right][1] = KEY_HAT1+3; // D-Pad Right
 	gamecontroldefault[gc_a    ][1] = KEY_JOY1+0; // A
-	gamecontroldefault[gc_b    ][1] = KEY_JOY1+2; // X
+	gamecontroldefault[gc_b    ][1] = KEY_JOY1+1; // B
 	gamecontroldefault[gc_c    ][1] = KEY_JOY1+3; // Y
-	gamecontroldefault[gc_x    ][1] = KEY_JOY1+1; // B
-	gamecontroldefault[gc_y    ][1] = KEY_JOY1+6;
-	gamecontroldefault[gc_z    ][1] = KEY_JOY1+8;
-	gamecontroldefault[gc_l    ][1] = KEY_JOY1+4; // LB
-	gamecontroldefault[gc_r    ][1] = KEY_JOY1+5; // RB
-	gamecontroldefault[gc_start][1] = KEY_JOY1+7; // Start
+	gamecontroldefault[gc_x    ][1] = KEY_JOY1+2; // X
+	gamecontroldefault[gc_y    ][1] = KEY_JOY1+9; // LB
+	gamecontroldefault[gc_z    ][1] = KEY_JOY1+10; // RB
+	gamecontroldefault[gc_l    ][1] = KEY_AXIS1+8; // LT
+	gamecontroldefault[gc_r    ][1] = KEY_AXIS1+9; // RT
+	gamecontroldefault[gc_start][1] = KEY_JOY1+6; // Start
 
 	gamecontroldefault[gc_up   ][2] = KEY_AXIS1+2; // Axis Y-
 	gamecontroldefault[gc_down ][2] = KEY_AXIS1+3; // Axis Y+
 	gamecontroldefault[gc_left ][2] = KEY_AXIS1+0; // Axis X-
 	gamecontroldefault[gc_right][2] = KEY_AXIS1+1; // Axis X+
+
+	#ifdef DEVELOP
+		gamecontroldefault[gc_console][0] = '`';
+	#endif
 
 	// Menu reserved controls
 	menucontrolreserved[gc_up   ][0] = KEY_UPARROW;
