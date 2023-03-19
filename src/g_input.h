@@ -109,6 +109,7 @@ extern consvar_t cv_controlperkey;
 #define MAXDEVICES (MAXGAMEPADS + 1) // Gamepads + keyboard & mouse
 #define KEYBOARD_MOUSE_DEVICE (0)
 #define UNASSIGNED_DEVICE (-1)
+#define NO_BINDS_REACHABLE (-1)
 extern INT32 gamekeydown[MAXDEVICES][NUMINPUTS];
 
 // several key codes (or virtual key) per game control
