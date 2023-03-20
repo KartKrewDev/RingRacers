@@ -1033,7 +1033,7 @@ boolean HSendPacket(INT32 node, boolean reliable, UINT8 acknum, size_t packetlen
 		{
 			const void* message = &netbuffer->u;
 			//CONS_Printf("Signing packet type %d of length %d\n", netbuffer->packettype, packetlength);
-			if (cv_lastprofile[i].value == 0)	
+			if (PR_IsLocalPlayerGuest(i))	
 				memset(netbuffer->signature[i], 0, sizeof(netbuffer->signature[i]));
 			else
 				crypto_eddsa_sign(netbuffer->signature[i], PR_GetLocalPlayerProfile(i)->secret_key, message, packetlength);

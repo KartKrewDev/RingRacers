@@ -844,10 +844,7 @@ static boolean CL_SendJoin(void)
 		uint8_t signature[64];
 		profile_t *localProfile = PR_GetLocalPlayerProfile(i);
 
-		char allZero[32];
-		memset(allZero, 0, 32);
-
-		if (cv_lastprofile[i].value == 0) // GUESTS don't have keys
+		if (PR_IsLocalPlayerGuest(i)) // GUESTS don't have keys
 		{
 			memset(signature, 0, 64);
 		}
@@ -4203,11 +4200,11 @@ static void HandleConnect(SINT8 node)
 			if (node == 0) // Server
 			{
 				memcpy(lastReceivedKey[node][i], PR_GetLocalPlayerProfile(i)->public_key, sizeof(lastReceivedKey[node][i]));
-				CONS_Printf("We're SERVER! Setting lastReceivedKey on node %d to %s\n", node, GetPrettyRRID(lastReceivedKey[node][i], true));
+				CONS_Printf("Adding SERVER. Setting lastReceivedKey on node %d to %s\n", node, GetPrettyRRID(lastReceivedKey[node][i], true));
 			}
 			else 
 			{
-				CONS_Printf("We're a client. Doing sigcheck for node %d, ID %s\n", node, GetPrettyRRID(lastReceivedKey[node][i], true));
+				CONS_Printf("Adding clients. Doing sigcheck for node %d, ID %s\n", node, GetPrettyRRID(lastReceivedKey[node][i], true));
 				if (memcmp(lastReceivedKey[node], allZero, 32)) // We're a GUEST and the server throws out our keys anyway.
 				{
 					sigcheck = 0; // Always succeeds. Yes, this is a success response. C R Y P T O

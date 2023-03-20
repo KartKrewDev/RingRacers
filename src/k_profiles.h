@@ -161,6 +161,8 @@ profile_t *PR_GetPlayerProfile(player_t *player);
 
 profile_t *PR_GetLocalPlayerProfile(INT32 player);
 
+boolean PR_IsLocalPlayerGuest(INT32 player);
+
 char *GetPrettyRRID(const unsigned char *bin, boolean brief);
 
 #ifdef __cplusplus

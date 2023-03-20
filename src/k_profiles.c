@@ -577,6 +577,11 @@ profile_t *PR_GetLocalPlayerProfile(INT32 player)
 	return PR_GetProfile(cv_lastprofile[player].value);
 }
 
+boolean PR_IsLocalPlayerGuest(INT32 player)
+{
+	return !(cv_lastprofile[player].value);
+}
+
 char *GetPrettyRRID(const unsigned char *bin, boolean brief)
 {
 	char   *out;
