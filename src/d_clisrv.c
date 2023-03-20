@@ -3248,6 +3248,8 @@ static void Got_KickCmd(UINT8 **p, INT32 playernum)
 			M_StartMessage(va(M_GetText("You have been kicked\n(%s)\nPress (B)\n"), reason), NULL, MM_NOTHING);
 		else if (msg == KICK_MSG_CUSTOM_BAN)
 			M_StartMessage(va(M_GetText("You have been banned\n(%s)\nPress (B)\n"), reason), NULL, MM_NOTHING);
+		else if (msg == KICK_MSG_SIGFAIL)
+			M_StartMessage(M_GetText("Server closed connection\n(Invalid signature)\nPress (B)\n"), NULL, MM_NOTHING);
 		else
 			M_StartMessage(M_GetText("You have been kicked by the server\n\nPress (B)\n"), NULL, MM_NOTHING);
 	}
@@ -4712,12 +4714,13 @@ static void HandlePacketFromPlayer(SINT8 node)
 			{
 				if (crypto_eddsa_check(netbuffer->signature[splitnodes], lastReceivedKey[node][splitnodes], message, doomcom->datalength - BASEPACKETSIZE))
 				{
-					CONS_Alert(CONS_ERROR, "SIGFAIL! Packet type %d from node %d player %d\nkey %s size %d\n", 
+					CONS_Alert(CONS_ERROR, "SIGFAIL! Packet type %d from node %d player %d\nkey %s size %d netconsole %d\n", 
 						netbuffer->packettype, node, splitnodes,
-						GetPrettyRRID(lastReceivedKey[node][splitnodes], true), doomcom->datalength - BASEPACKETSIZE);
-					SendKick(netconsole, KICK_MSG_SIGFAIL);
-					Net_CloseConnection(node);
-					nodeingame[node] = false;
+						GetPrettyRRID(lastReceivedKey[node][splitnodes], true), doomcom->datalength - BASEPACKETSIZE, netconsole);
+					if (netconsole != -1) // NO IDEA.
+						SendKick(netconsole, KICK_MSG_SIGFAIL);
+					// Net_CloseConnection(node);
+					// nodeingame[node] = false;
 					return;
 				}
 			}
