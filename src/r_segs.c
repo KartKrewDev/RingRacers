@@ -26,6 +26,10 @@
 #include "p_slopes.h"
 #include "console.h" // con_clipviewtop
 #include "taglist.h"
+#include "r_draw.h"
+
+#define HEIGHTBITS              12
+#define HEIGHTUNIT              (1<<HEIGHTBITS)
 
 // OPTIMIZE: closed two sided lines as single sided
 
@@ -168,6 +172,32 @@ void R_RenderMaskedSegRange(drawseg_t *ds, INT32 x1, INT32 x2)
 	//   for horizontal / vertical / diagonal. Diagonal?
 	// OPTIMIZE: get rid of LIGHTSEGSHIFT globally
 	curline = ds->curline;
+
+	if (R_IsDebugLine(curline))
+	{
+		const UINT8 thickness = 4;
+		const UINT8 pal = (leveltime % 70 < 35) ? 0x23 : 0x00;
+
+		const INT32 horizon = ((centeryfrac>>4) + 1 + HEIGHTUNIT - 1) >> HEIGHTBITS;
+		const INT32 y = max(0, min(horizon, vid.height - thickness));
+
+		UINT8 *p = &topleft[x1 + (y * vid.width)];
+
+		range = max(x2 - x1, 0) + 1;
+
+		for (i = 0; i < thickness; ++i)
+		{
+			memset(p, pal, range);
+			p += vid.width;
+		}
+
+		return;
+	}
+
+	if (ds->maskedtexturecol == NULL)
+	{
+		return;
+	}
 
 	frontsector = curline->frontsector;
 	backsector = curline->backsector;
@@ -1161,8 +1191,6 @@ static boolean R_FFloorCanClip(visffloor_t *pfloor)
 //  textures.
 // CALLED: CORE LOOPING ROUTINE.
 //
-#define HEIGHTBITS              12
-#define HEIGHTUNIT              (1<<HEIGHTBITS)
 
 
 //profile stuff ---------------------------------------------------------

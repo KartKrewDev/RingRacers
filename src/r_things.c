@@ -2899,7 +2899,7 @@ static void R_CreateDrawNodes(maskcount_t* mask, drawnode_t* head, boolean temps
 			}
 			ds->curline->polyseg->visplane = NULL;
 		}
-		if (ds->maskedtexturecol)
+		if (ds->maskedtexturecol || R_IsDebugLine(ds->curline))
 		{
 			entry = R_CreateDrawNode(head);
 			entry->seg = ds;
@@ -3698,11 +3698,10 @@ static void R_DrawMaskedList (drawnode_t* head)
 			R_DoneWithNode(r2);
 			r2 = next;
 		}
-		else if (r2->seg && r2->seg->maskedtexturecol != NULL)
+		else if (r2->seg)
 		{
 			next = r2->prev;
 			R_RenderMaskedSegRange(r2->seg, r2->seg->x1, r2->seg->x2);
-			r2->seg->maskedtexturecol = NULL;
 			R_DoneWithNode(r2);
 			r2 = next;
 		}
