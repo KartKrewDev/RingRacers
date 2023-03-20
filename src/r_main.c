@@ -1533,9 +1533,6 @@ void R_RenderPlayerView(void)
 	R_ClearSprites();
 	Portal_InitList();
 
-	// check for new console commands.
-	NetUpdate();
-
 	// The head node is the last node output.
 
 	Mask_Pre(&masks[nummasks - 1]);
