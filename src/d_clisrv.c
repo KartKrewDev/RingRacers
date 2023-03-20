@@ -4712,10 +4712,12 @@ static void HandlePacketFromPlayer(SINT8 node)
 			{
 				if (crypto_eddsa_check(netbuffer->signature[splitnodes], lastReceivedKey[node][splitnodes], message, doomcom->datalength - BASEPACKETSIZE))
 				{
-					//CONS_Alert(CONS_ERROR, "SIGFAIL! Packet type %d from node %d player %d\nkey %s size %d\n", 
-					//	netbuffer->packettype, node, splitnodes,
-					//	GetPrettyRRID(lastReceivedKey[node][splitnodes], true), doomcom->datalength - BASEPACKETSIZE);
-					//SendKick(netconsole, KICK_MSG_SIGFAIL);
+					CONS_Alert(CONS_ERROR, "SIGFAIL! Packet type %d from node %d player %d\nkey %s size %d\n", 
+						netbuffer->packettype, node, splitnodes,
+						GetPrettyRRID(lastReceivedKey[node][splitnodes], true), doomcom->datalength - BASEPACKETSIZE);
+					SendKick(netconsole, KICK_MSG_SIGFAIL);
+					Net_CloseConnection(node);
+					nodeingame[node] = false;
 					return;
 				}
 			}
