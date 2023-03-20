@@ -437,6 +437,7 @@ extern consvar_t cv_playbackspeed;
 #define KICK_MSG_PING_HIGH   6
 #define KICK_MSG_CUSTOM_KICK 7
 #define KICK_MSG_CUSTOM_BAN  8
+#define KICK_MSG_SIGFAIL     9
 
 typedef enum
 {
@@ -486,6 +487,10 @@ extern consvar_t cv_joinnextround;
 extern consvar_t cv_discordinvites;
 
 extern consvar_t cv_allowguests;
+
+#ifdef DEVELOP
+extern consvar_t cv_sigfail;
+#endif
 
 // Used in d_net, the only dependence
 tic_t ExpandTics(INT32 low, tic_t basetic);

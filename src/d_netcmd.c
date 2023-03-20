@@ -948,6 +948,10 @@ void D_RegisterClientCommands(void)
 
 	CV_RegisterVar(&cv_allowguests);
 
+	#ifdef DEVELOP
+		CV_RegisterVar(&cv_sigfail);
+	#endif
+
 	// HUD
 	CV_RegisterVar(&cv_alttitle);
 	CV_RegisterVar(&cv_itemfinder);

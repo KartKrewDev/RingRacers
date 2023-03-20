@@ -1038,6 +1038,14 @@ boolean HSendPacket(INT32 node, boolean reliable, UINT8 acknum, size_t packetlen
 			else
 				crypto_eddsa_sign(netbuffer->signature[i], PR_GetLocalPlayerProfile(i)->secret_key, message, packetlength);
 		}
+
+		#ifdef DEVELOP
+			if (cv_sigfail.value)
+			{
+				CONS_Alert(CONS_WARNING, "SIGFAIL enabled, scrubbing signature from HSendPacket\n");
+				memset(netbuffer->signature, 0, sizeof(netbuffer->signature));
+			}
+		#endif
 	}
 	else
 	{

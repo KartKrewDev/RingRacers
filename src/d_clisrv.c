@@ -166,6 +166,9 @@ tic_t firstconnectattempttime = 0;
 uint8_t awaitingChallenge[32];
 consvar_t cv_allowguests = CVAR_INIT ("allowguests", "On", CV_SAVE, CV_OnOff, NULL);
 
+#ifdef DEVELOP
+	consvar_t cv_sigfail = CVAR_INIT ("sigfail", "Off", CV_SAVE, CV_OnOff, NULL);
+#endif
 
 // engine
 
@@ -854,6 +857,14 @@ static boolean CL_SendJoin(void)
 			if (crypto_eddsa_check(signature, localProfile->public_key, awaitingChallenge, 32) != 0)
 				I_Error("Couldn't self-verify key associated with player %d, profile %d.\nProfile data may be corrupted.", i, cv_lastprofile[i].value); // I guess this is the most reasonable way to catch a malformed key.
 		}
+
+		#ifdef DEVELOP
+			if (cv_sigfail.value)
+			{
+				CONS_Alert(CONS_WARNING, "SIGFAIL enabled, scrubbing signature from CL_SendJoin\n");
+				memset(signature, 0, 64);
+			}
+		#endif
 
 		// Testing
 		// memset(signature, 0, sizeof(signature));
@@ -3177,6 +3188,10 @@ static void Got_KickCmd(UINT8 **p, INT32 playernum)
 			HU_AddChatText(va("\x82*%s left the game (Connection timeout)", player_names[pnum]), false);
 			kickreason = KR_TIMEOUT;
 			break;
+		case KICK_MSG_SIGFAIL:
+			HU_AddChatText(va("\x82*%s left the game (Invalid signature)", player_names[pnum]), false);
+			kickreason = KR_TIMEOUT;
+			break;
 		case KICK_MSG_PLAYER_QUIT:
 			if (netgame) // not splitscreen/bots
 				HU_AddChatText(va("\x82*%s left the game", player_names[pnum]), false);
@@ -4205,7 +4220,7 @@ static void HandleConnect(SINT8 node)
 			else 
 			{
 				CONS_Printf("Adding clients. Doing sigcheck for node %d, ID %s\n", node, GetPrettyRRID(lastReceivedKey[node][i], true));
-				if (memcmp(lastReceivedKey[node], allZero, 32)) // We're a GUEST and the server throws out our keys anyway.
+				if (memcmp(lastReceivedKey[node][i], allZero, 32) == 0) // We're a GUEST and the server throws out our keys anyway.
 				{
 					sigcheck = 0; // Always succeeds. Yes, this is a success response. C R Y P T O
 					if (!cv_allowguests.value)
@@ -4215,8 +4230,9 @@ static void HandleConnect(SINT8 node)
 					}
 				}
 				else
-				{
+				{	
 					sigcheck = crypto_eddsa_check(netbuffer->u.clientcfg.challengeResponse[i], lastReceivedKey[node][i], lastSentChallenge[node][i], 32);
+					CONS_Printf("Sigcheck result: %d\n", sigcheck);
 				}
 
 
@@ -4679,6 +4695,14 @@ static void HandlePacketFromPlayer(SINT8 node)
 	{
 		for (splitnodes = 0; splitnodes < MAXSPLITSCREENPLAYERS; splitnodes++)
 		{
+			// Don't try to enforce signatures for players that aren't present.
+			if (splitnodes > 0 && nodetoplayer2[node] <= 0)
+				break;
+			if (splitnodes > 1 && nodetoplayer3[node] <= 0)
+				break;
+			if (splitnodes > 2 && nodetoplayer4[node] <= 0)
+				break;
+
 			const void* message = &netbuffer->u;
 			if (memcmp(allzero, lastReceivedKey[node][splitnodes], sizeof(allzero)) == 0)
 			{
@@ -4688,10 +4712,10 @@ static void HandlePacketFromPlayer(SINT8 node)
 			{
 				if (crypto_eddsa_check(netbuffer->signature[splitnodes], lastReceivedKey[node][splitnodes], message, doomcom->datalength - BASEPACKETSIZE))
 				{
-					//CONS_Printf("Failed signature check on packet type %d from node %d player %d\nkey %s size %d\n", 
+					//CONS_Alert(CONS_ERROR, "SIGFAIL! Packet type %d from node %d player %d\nkey %s size %d\n", 
 					//	netbuffer->packettype, node, splitnodes,
 					//	GetPrettyRRID(lastReceivedKey[node][splitnodes], true), doomcom->datalength - BASEPACKETSIZE);
-					SendKick(netconsole, KICK_MSG_CON_FAIL);
+					//SendKick(netconsole, KICK_MSG_SIGFAIL);
 					return;
 				}
 			}
