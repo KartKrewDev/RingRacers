@@ -4689,42 +4689,45 @@ static void HandlePacketFromPlayer(SINT8 node)
 		I_Error("bad table nodetoplayer: node %d player %d", doomcom->remotenode, netconsole);
 #endif
 	
-	uint8_t allzero[32];
-	memset(allzero, 0, sizeof(allzero));
-
-	int splitnodes;
-	if (IsPacketSigned(netbuffer->packettype))
+	if (server)
 	{
-		for (splitnodes = 0; splitnodes < MAXSPLITSCREENPLAYERS; splitnodes++)
-		{
-			// Don't try to enforce signatures for players that aren't present.
-			if (splitnodes > 0 && nodetoplayer2[node] <= 0)
-				break;
-			if (splitnodes > 1 && nodetoplayer3[node] <= 0)
-				break;
-			if (splitnodes > 2 && nodetoplayer4[node] <= 0)
-				break;
+		uint8_t allzero[32];
+		memset(allzero, 0, sizeof(allzero));
 
-			const void* message = &netbuffer->u;
-			if (memcmp(allzero, lastReceivedKey[node][splitnodes], sizeof(allzero)) == 0)
+		int splitnodes;
+		if (IsPacketSigned(netbuffer->packettype))
+		{
+			for (splitnodes = 0; splitnodes < MAXSPLITSCREENPLAYERS; splitnodes++)
 			{
-				//CONS_Printf("Throwing out a guest signature from node %d player %d\n", node, splitnodes);
-			}
-			else
-			{
-				if (crypto_eddsa_check(netbuffer->signature[splitnodes], lastReceivedKey[node][splitnodes], message, doomcom->datalength - BASEPACKETSIZE))
+				// Don't try to enforce signatures for players that aren't present.
+				if (splitnodes > 0 && nodetoplayer2[node] <= 0)
+					break;
+				if (splitnodes > 1 && nodetoplayer3[node] <= 0)
+					break;
+				if (splitnodes > 2 && nodetoplayer4[node] <= 0)
+					break;
+
+				const void* message = &netbuffer->u;
+				if (memcmp(allzero, lastReceivedKey[node][splitnodes], sizeof(allzero)) == 0)
 				{
-					CONS_Alert(CONS_ERROR, "SIGFAIL! Packet type %d from node %d player %d\nkey %s size %d netconsole %d\n", 
-						netbuffer->packettype, node, splitnodes,
-						GetPrettyRRID(lastReceivedKey[node][splitnodes], true), doomcom->datalength - BASEPACKETSIZE, netconsole);
-					if (netconsole != -1) // NO IDEA.
-						SendKick(netconsole, KICK_MSG_SIGFAIL);
-					// Net_CloseConnection(node);
-					// nodeingame[node] = false;
-					return;
+					//CONS_Printf("Throwing out a guest signature from node %d player %d\n", node, splitnodes);
 				}
+				else
+				{
+					if (crypto_eddsa_check(netbuffer->signature[splitnodes], lastReceivedKey[node][splitnodes], message, doomcom->datalength - BASEPACKETSIZE))
+					{
+						CONS_Alert(CONS_ERROR, "SIGFAIL! Packet type %d from node %d player %d\nkey %s size %d netconsole %d\n", 
+							netbuffer->packettype, node, splitnodes,
+							GetPrettyRRID(lastReceivedKey[node][splitnodes], true), doomcom->datalength - BASEPACKETSIZE, netconsole);
+						if (netconsole != -1) // NO IDEA.
+							SendKick(netconsole, KICK_MSG_SIGFAIL);
+						// Net_CloseConnection(node);
+						// nodeingame[node] = false;
+						return;
+					}
+				}
+					
 			}
-				
 		}
 	}
 
