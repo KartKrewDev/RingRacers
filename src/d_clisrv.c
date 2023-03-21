@@ -3484,9 +3484,7 @@ void D_ClientServerInit(void)
 	COM_AddCommand("drop", Command_Drop);
 	COM_AddCommand("droprate", Command_Droprate);
 #endif
-#ifdef _DEBUG
 	COM_AddCommand("numnodes", Command_Numnodes);
-#endif
 
 	RegisterNetXCmd(XD_KICK, Got_KickCmd);
 	RegisterNetXCmd(XD_ADDPLAYER, Got_AddPlayer);
@@ -3512,6 +3510,7 @@ static void ResetNode(INT32 node)
 	nodeingame[node] = false;
 	nodewaiting[node] = 0;
 	nodeneedsauth[node] = false;
+	CONS_Printf("2: node %d -> %d\n", node, nodeneedsauth[node]);
 
 	nettics[node] = gametic;
 	supposedtics[node] = gametic;
@@ -3680,6 +3679,7 @@ static inline void SV_AddNode(INT32 node)
 		nodeingame[node] = true;
 
 	nodeneedsauth[node] = false;
+	CONS_Printf("3: node %d -> %d\n", node, nodeneedsauth[node]);
 }
 
 // Xcmd XD_ADDPLAYER
@@ -4673,7 +4673,10 @@ static void HandlePacketFromAwayNode(SINT8 node)
 		case PT_NODETIMEOUT:
 		case PT_CLIENTQUIT:
 			if (server)
+			{
 				Net_CloseConnection(node);
+				nodeneedsauth[node] = false;
+			}
 			break;
 
 		case PT_CLIENTCMD:
@@ -4689,15 +4692,19 @@ static void HandlePacketFromAwayNode(SINT8 node)
 			{
 				PT_ClientKey(node);
 
-				nodeneedsauth[node] = true;
-				freezetimeout[node] = I_GetTime() + jointimeout;
+				CONS_Printf("4: node %d -> %d\n", node, nodeneedsauth[node]);
+				if (nodeneedsauth[node] == false)
+				{
+					freezetimeout[node] = I_GetTime() + jointimeout;
+					nodeneedsauth[node] = true;
+				}
 			}
 			break;
 		case PT_SERVERCHALLENGE:
 			if (cl_mode != CL_WAITCHALLENGE)
 				break;
 			memcpy(awaitingChallenge, netbuffer->u.serverchallenge.secret, sizeof(awaitingChallenge));
-			cl_mode = CL_ASKJOIN;
+			//cl_mode = CL_ASKJOIN;
 			break;
 		default:
 			DEBFILE(va("unknown packet received (%d) from unknown host\n",netbuffer->packettype));
@@ -5099,6 +5106,8 @@ static void HandlePacketFromPlayer(SINT8 node)
 			}
 			Net_CloseConnection(node);
 			nodeingame[node] = false;
+			nodeneedsauth[node] = false;
+			CONS_Printf("1: node %d -> %d\n", node, nodeneedsauth[node]);
 			break;
 		case PT_CANRECEIVEGAMESTATE:
 			PT_CanReceiveGamestate(node);

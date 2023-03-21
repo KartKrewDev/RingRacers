@@ -134,9 +134,7 @@ typedef enum
 void Command_Drop(void);
 void Command_Droprate(void);
 #endif
-#ifdef _DEBUG
 void Command_Numnodes(void);
-#endif
 
 #if defined(_MSC_VER)
 #pragma pack(1)

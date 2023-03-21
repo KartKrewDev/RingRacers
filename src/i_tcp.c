@@ -489,7 +489,6 @@ static SINT8 getfreenode(void)
 	return -1;
 }
 
-#ifdef _DEBUG
 void Command_Numnodes(void)
 {
 	INT32 connected = 0;
@@ -527,7 +526,6 @@ void Command_Numnodes(void)
 				"Ingame:    %d\n",
 				connected, ingame);
 }
-#endif
 
 static boolean hole_punch(ssize_t c)
 {
