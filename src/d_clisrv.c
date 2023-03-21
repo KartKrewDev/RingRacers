@@ -5353,6 +5353,7 @@ static void HandlePacketFromPlayer(SINT8 node)
 					}
 				}
 			}
+			expectChallenge = false;
 			break;
 		default:
 			DEBFILE(va("UNKNOWN PACKET TYPE RECEIVED %d from host %d\n",
