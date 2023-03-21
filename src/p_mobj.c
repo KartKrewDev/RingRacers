@@ -11769,7 +11769,9 @@ void P_SpawnPlayer(INT32 playernum)
 		p->flashing = K_GetKartFlashing(p); // Babysitting deterrent
 
 	mobj = P_SpawnMobj(0, 0, 0, MT_PLAYER);
-	(mobj->player = p)->mo = mobj;
+
+	mobj->player = p;
+	P_SetTarget(&p->mo, mobj);
 
 	mobj->angle = mobj->old_angle = 0;
 
