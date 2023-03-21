@@ -3067,9 +3067,12 @@ INT32 I_GetKey(void)
 {
 	event_t *ev;
 
+	G_ResetAllDeviceResponding();
+
 	if (eventtail != eventhead)
 	{
 		ev = &events[eventtail];
+		HandleGamepadDeviceEvents(ev);
 		eventtail = (eventtail+1) & (MAXEVENTS-1);
 		if (ev->type == ev_keydown || ev->type == ev_console)
 			return ev->data1;

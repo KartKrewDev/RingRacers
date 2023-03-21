@@ -910,10 +910,15 @@ INT32 I_GetKey (void)
 	event_t *ev;
 	INT32 rc = 0;
 
+	G_ResetAllDeviceResponding();
+
 	// return the first keypress from the event queue
 	for (; eventtail != eventhead; eventtail = (eventtail+1)&(MAXEVENTS-1))
 	{
 		ev = &events[eventtail];
+
+		HandleGamepadDeviceEvents(ev);
+
 		if (ev->type == ev_keydown || ev->type == ev_console)
 		{
 			rc = ev->data1;

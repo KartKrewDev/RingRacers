@@ -870,12 +870,12 @@ INT16 G_SoftwareClipAimingPitch(INT32 *aiming)
 
 static INT32 G_GetValueFromControlTable(INT32 deviceID, INT32 deadzone, INT32 *controltable)
 {
-	INT32 i;
+	INT32 i, failret = NO_BINDS_REACHABLE;
 
 	if (deviceID <= UNASSIGNED_DEVICE)
 	{
 		// An invalid device can't have any binds!
-		return 0;
+		return failret;
 	}
 
 	for (i = 0; i < MAXINPUTMAPPING; i++)
@@ -895,10 +895,12 @@ static INT32 G_GetValueFromControlTable(INT32 deviceID, INT32 deadzone, INT32 *c
 		{
 			return value;
 		}
+
+		failret = 0;
 	}
 
 	// Not pressed.
-	return 0;
+	return failret;
 }
 
 INT32 G_PlayerInputAnalog(UINT8 p, INT32 gc, UINT8 menuPlayers)
@@ -911,6 +913,7 @@ INT32 G_PlayerInputAnalog(UINT8 p, INT32 gc, UINT8 menuPlayers)
 	INT32 value = -1;
 	INT32 avail_gamepad_id = 0;
 	INT32 i;
+	boolean bind_was_reachable = false;
 
 	if (p >= MAXSPLITSCREENPLAYERS)
 	{
@@ -952,6 +955,10 @@ INT32 G_PlayerInputAnalog(UINT8 p, INT32 gc, UINT8 menuPlayers)
 	{
 		return value;
 	}
+	if (value != NO_BINDS_REACHABLE)
+	{
+		bind_was_reachable = true;
+	}
 
 	// If you're on gamepad in 1P, and you didn't have a gamepad bind for this, then try your keyboard binds.
 	if (main_player == true && keyboard_player == -1 && deviceID > KEYBOARD_MOUSE_DEVICE)
@@ -960,6 +967,10 @@ INT32 G_PlayerInputAnalog(UINT8 p, INT32 gc, UINT8 menuPlayers)
 		if (value > 0)
 		{
 			return value;
+		}
+		if (value != NO_BINDS_REACHABLE)
+		{
+			bind_was_reachable = true;
 		}
 	}
 
@@ -997,15 +1008,22 @@ INT32 G_PlayerInputAnalog(UINT8 p, INT32 gc, UINT8 menuPlayers)
 					{
 						return value;
 					}
+					if (value != NO_BINDS_REACHABLE)
+					{
+						bind_was_reachable = true;
+					}
 				}
 			}
 		}
 
-		// Still nothing bound after everything. Try default gamepad controls.
-		value = G_GetValueFromControlTable(deviceID, deadzone, &(gamecontroldefault[gc][0]));
-		if (value > 0)
+		if (bind_was_reachable == false)
 		{
-			return value;
+			// Still nothing bound after everything. Try default gamepad controls.
+			value = G_GetValueFromControlTable(deviceID, deadzone, &(gamecontroldefault[gc][0]));
+			if (value > 0)
+			{
+				return value;
+			}
 		}
 	}
 
@@ -1653,7 +1671,11 @@ boolean G_Responder(event_t *ev)
 	if (gameaction == ga_nothing && !demo.quitafterplaying &&
 		((demo.playback && !modeattacking && !demo.title && !multiplayer) || gamestate == GS_TITLESCREEN))
 	{
-		if (ev->type == ev_keydown)
+		if (ev->type == ev_keydown
+		|| (ev->type == ev_gamepad_axis && ev->data1 >= JOYANALOGS
+			&& ((abs(ev->data2) > JOYAXISRANGE/2
+			|| abs(ev->data3) > JOYAXISRANGE/2))
+		))
 		{
 			M_StartControlPanel();
 			return true;

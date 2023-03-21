@@ -203,7 +203,7 @@ static void HandleGamepadDeviceRemoved(event_t *ev)
 }
 
 /// Respond to added/removed device events, for bookkeeping available gamepads.
-static void HandleGamepadDeviceEvents(event_t *ev)
+void HandleGamepadDeviceEvents(event_t *ev)
 {
 	I_Assert(ev != NULL);
 

@@ -26,6 +26,7 @@
 #include "w_wad.h"
 #include "z_zone.h"
 #include "i_system.h"
+#include "i_joy.h"
 #include "i_threads.h"
 #include "dehacked.h"
 #include "g_input.h"
@@ -480,40 +481,48 @@ boolean F_IntroResponder(event_t *event)
 	INT32 key = event->data1;
 
 	// remap virtual keys (mouse & joystick buttons)
-	switch (key)
+	if (event->type == ev_gamepad_axis && key >= JOYANALOGS
+		&& (abs(event->data2) > JOYAXISRANGE/2 || abs(event->data3) > JOYAXISRANGE/2))
 	{
-		case KEY_MOUSE1:
-			key = KEY_ENTER;
-			break;
-		case KEY_MOUSE1 + 1:
-			key = KEY_BACKSPACE;
-			break;
-		case KEY_JOY1:
-		case KEY_JOY1 + 2:
-			key = KEY_ENTER;
-			break;
-		case KEY_JOY1 + 3:
-			key = 'n';
-			break;
-		case KEY_JOY1 + 1:
-			key = KEY_BACKSPACE;
-			break;
-		case KEY_HAT1:
-			key = KEY_UPARROW;
-			break;
-		case KEY_HAT1 + 1:
-			key = KEY_DOWNARROW;
-			break;
-		case KEY_HAT1 + 2:
-			key = KEY_LEFTARROW;
-			break;
-		case KEY_HAT1 + 3:
-			key = KEY_RIGHTARROW;
-			break;
+		key = KEY_ENTER;
 	}
+	else
+	{
+		switch (key)
+		{
+			case KEY_MOUSE1:
+				key = KEY_ENTER;
+				break;
+			case KEY_MOUSE1 + 1:
+				key = KEY_BACKSPACE;
+				break;
+			case KEY_JOY1:
+			case KEY_JOY1 + 2:
+				key = KEY_ENTER;
+				break;
+			case KEY_JOY1 + 3:
+				key = 'n';
+				break;
+			case KEY_JOY1 + 1:
+				key = KEY_BACKSPACE;
+				break;
+			case KEY_HAT1:
+				key = KEY_UPARROW;
+				break;
+			case KEY_HAT1 + 1:
+				key = KEY_DOWNARROW;
+				break;
+			case KEY_HAT1 + 2:
+				key = KEY_LEFTARROW;
+				break;
+			case KEY_HAT1 + 3:
+				key = KEY_RIGHTARROW;
+				break;
+		}
 
-	if (event->type != ev_keydown && key != 301)
-		return false;
+		if (event->type != ev_keydown && key != 301)
+			return false;
+	}
 
 	if (key != 27 && key != KEY_ENTER && key != KEY_SPACE && key != KEY_BACKSPACE)
 		return false;
