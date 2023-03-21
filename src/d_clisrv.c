@@ -168,8 +168,9 @@ uint8_t lastReceivedKey[MAXNETNODES][MAXSPLITSCREENPLAYERS][32]; // Player's pub
 uint8_t lastSentChallenge[MAXNETNODES][MAXSPLITSCREENPLAYERS][32]; // The random message we asked them to sign in PT_SERVERCHALLENGE, check it in PT_CLIENTJOIN
 uint8_t lastChallengeAll[32]; // The message we asked EVERYONE to sign for client-to-client identity proofs
 uint8_t lastReceivedSignature[MAXPLAYERS][64]; // Everyone's response to lastChallengeAll
-uint8_t involvedInChallenge[MAXPLAYERS][32];
-uint8_t knownWhenChallenged[MAXPLAYERS][32];
+uint8_t knownWhenChallenged[MAXPLAYERS][32]; // Everyone a client saw at the moment a challenge should be initiated
+
+uint8_t priorGamestateKeySave[MAXPLAYERS][32]; // Make a note of keys before consuming a new gamestate, and if the server tries to send us a gamestate where keys differ, assume shenanigans
 
 boolean serverisfull = false; //lets us be aware if the server was full after we check files, but before downloading, so we can ask if the user still wants to download or not
 tic_t firstconnectattempttime = 0;
@@ -1383,6 +1384,17 @@ static void CL_LoadReceivedSavegame(boolean reloading)
 	// so they know they can resume the game
 	netbuffer->packettype = PT_RECEIVEDGAMESTATE;
 	HSendPacket(servernode, true, 0, 0);
+
+	int i;
+	for (i = 0; i < MAXPLAYERS; i++)
+	{
+		if (memcmp(priorGamestateKeySave[i], players[i].public_key, sizeof(priorGamestateKeySave[i])) != 0)
+		{
+			CONS_Printf("New gamestate has different public keys, shenanigans afoot?");
+			// TODO: Actually do something in this situation
+			break;
+		}
+	}
 }
 
 static void CL_ReloadReceivedSavegame(void)
@@ -4387,6 +4399,12 @@ static void PT_WillResendGamestate(void)
 
 	if (server || cl_redownloadinggamestate)
 		return;
+
+	int i;
+	for (i = 0; i < MAXPLAYERS; i++)
+	{
+		memcpy(priorGamestateKeySave[i], players[i].public_key, sizeof(priorGamestateKeySave[i]));
+	}
 
 	// Send back a PT_CANRECEIVEGAMESTATE packet to the server
 	// so they know they can start sending the game state
