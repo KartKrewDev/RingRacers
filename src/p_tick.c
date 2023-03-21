@@ -971,6 +971,15 @@ void P_Ticker(boolean run)
 		G_CopyTiccmd(&players[i].oldcmd, &players[i].cmd, 1);
 	}
 
+	if (leveltime <= CHALLENGEALL_START && client)
+		expectChallenge = true;
+
+	if (leveltime >= CHALLENGEALL_CLIENTCUTOFF && client)
+	{
+		HandleSigfail("Didn't receive client signatures.");
+		return;
+	}
+
 //	Z_CheckMemCleanup();
 }
 

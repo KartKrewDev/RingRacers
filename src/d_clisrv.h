@@ -486,6 +486,16 @@ extern SINT8 servernode;
 extern char connectedservername[MAXSERVERNAME];
 extern uint8_t lastReceivedKey[MAXNETNODES][MAXSPLITSCREENPLAYERS][32];
 extern uint8_t lastSentChallenge[MAXNETNODES][MAXSPLITSCREENPLAYERS][32];
+extern uint8_t lastChallengeAll[32];
+extern uint8_t lastReceivedSignature[MAXPLAYERS][64];
+extern uint8_t knownWhenChallenged[MAXPLAYERS][32];
+extern boolean expectChallenge;
+
+// We give clients a chance to verify each other once per race.
+// When is that challenge sent, and when should clients bail if they don't receive the responses?
+#define CHALLENGEALL_START (TICRATE*10)
+#define CHALLENGEALL_SERVERCUTOFF (TICRATE*12)
+#define CHALLENGEALL_CLIENTCUTOFF (TICRATE*14)
 
 void Command_Ping_f(void);
 extern tic_t connectiontimeout;
@@ -597,6 +607,8 @@ struct rewind_t {
 void CL_ClearRewinds(void);
 rewind_t *CL_SaveRewindPoint(size_t demopos);
 rewind_t *CL_RewindToTime(tic_t time);
+
+void HandleSigfail(const char *string);
 
 #ifdef __cplusplus
 } // extern "C"

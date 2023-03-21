@@ -158,17 +158,12 @@ char connectedservername[MAXSERVERNAME];
 /// \todo WORK!
 boolean acceptnewnode = true;
 
-// We give clients a chance to verify each other once per race.
-// When is that challenge sent, and when should clients bail if they don't receive the responses?
-#define CHALLENGEALL_START (TICRATE*10)
-#define CHALLENGEALL_SERVERCUTOFF (TICRATE*12)
-#define CHALLENGEALL_CLIENTCUTOFF (TICRATE*14)
-
 uint8_t lastReceivedKey[MAXNETNODES][MAXSPLITSCREENPLAYERS][32]; // Player's public key (join process only! active players have it on player_t)
 uint8_t lastSentChallenge[MAXNETNODES][MAXSPLITSCREENPLAYERS][32]; // The random message we asked them to sign in PT_SERVERCHALLENGE, check it in PT_CLIENTJOIN
 uint8_t lastChallengeAll[32]; // The message we asked EVERYONE to sign for client-to-client identity proofs
 uint8_t lastReceivedSignature[MAXPLAYERS][64]; // Everyone's response to lastChallengeAll
 uint8_t knownWhenChallenged[MAXPLAYERS][32]; // Everyone a client saw at the moment a challenge should be initiated
+boolean expectChallenge = false; // Were we in-game before a client-to-client challenge should have been sent?
 
 uint8_t priorGamestateKeySave[MAXPLAYERS][32]; // Make a note of keys before consuming a new gamestate, and if the server tries to send us a gamestate where keys differ, assume shenanigans
 
@@ -2771,6 +2766,8 @@ void CL_Reset(void)
 	serverisfull = false;
 	connectiontimeout = (tic_t)cv_nettimeout.value; //reset this temporary hack
 
+	expectChallenge = false;
+
 #ifdef HAVE_CURL
 	curl_failedwebdownload = false;
 	curl_transfers = 0;
@@ -3593,6 +3590,8 @@ void SV_ResetServer(void)
 	for (i = 0; i < MAXUNLOCKABLES; i++)
 		netUnlocked[i] = (dedicated || gamedata->unlocked[i]);
 
+	expectChallenge = false;
+
 	DEBFILE("\n-=-=-=-=-=-=-= Server Reset =-=-=-=-=-=-=-\n\n");
 }
 
@@ -4163,9 +4162,6 @@ static void HandleConnect(SINT8 node)
 		if (playernode[i] != UINT8_MAX) // We use this to count players because it is affected by SV_AddWaitingPlayers when more than one client joins on the same tic, unlike playeringame and D_NumPlayers. UINT8_MAX denotes no node for that player
 			connectedplayers++;
 
-	// Testing
-	// memset(netbuffer->u.clientcfg.challengeResponse, 0, sizeof(netbuffer->u.clientcfg.challengeResponse));
-
 	if (bannednode && bannednode[node].banid != SIZE_MAX)
 	{
 		const char *reason = NULL;
@@ -4366,6 +4362,17 @@ static void HandleTimeout(SINT8 node)
 	D_ClearState();
 	M_StartControlPanel();
 	M_StartMessage(M_GetText("Server Timeout\n\nPress (B)\n"), NULL, MM_NOTHING);
+}
+
+// Called when a signature check fails and we suspect the server is playing games.
+void HandleSigfail(const char *string)
+{
+	LUA_HookBool(false, HOOK(GameQuit));
+	D_QuitNetGame();
+	CL_Reset();
+	D_ClearState();
+	M_StartControlPanel();
+	M_StartMessage(va(M_GetText("Signature check failed.\n(%s)\nPress (B)\n"), string), NULL, MM_NOTHING);
 }
 
 /** Called when a PT_SERVERINFO packet is received
@@ -4767,7 +4774,7 @@ static void HandlePacketFromPlayer(SINT8 node)
 					continue;
 
 				const void* message = &netbuffer->u;
-				if (IsSplitPlayerOnNodeGuest(node, splitnodes))
+				if (IsSplitPlayerOnNodeGuest(node, splitnodes) || demo.playback)
 				{
 					//CONS_Printf("Throwing out a guest signature from node %d player %d\n", node, splitnodes);
 				}
@@ -4778,13 +4785,12 @@ static void HandlePacketFromPlayer(SINT8 node)
 						CONS_Alert(CONS_ERROR, "SIGFAIL! Packet type %d from node %d player %d\nkey %s size %d netconsole %d\n", 
 							netbuffer->packettype, node, splitnodes,
 							GetPrettyRRID(players[targetplayer].public_key, true), doomcom->datalength - BASEPACKETSIZE, netconsole);
-						/*
+						
 						if (netconsole != -1) // NO IDEA.
 							SendKick(netconsole, KICK_MSG_SIGFAIL);
 						// Net_CloseConnection(node);
 						// nodeingame[node] = false;
 						return;
-						*/
 					}
 				}
 					
@@ -5215,7 +5221,8 @@ static void HandlePacketFromPlayer(SINT8 node)
 			int challengeplayers;
 			memcpy(lastChallengeAll, netbuffer->u.challengeall.secret, sizeof(lastChallengeAll));
 
-			//CONS_Printf("Got PT_CHALLENGEALL from node %d\n", node);
+			if (demo.playback)
+				break;
 
 			if (node != servernode)
 				break;
@@ -5254,6 +5261,9 @@ static void HandlePacketFromPlayer(SINT8 node)
 			HSendPacket(servernode, true, 0, sizeof(netbuffer->u.responseall));
 			break;
 		case PT_RESPONSEALL:
+			if (demo.playback)
+				break;
+
 			if (server)
 			{
 				int responseplayer;
@@ -5277,7 +5287,7 @@ static void HandlePacketFromPlayer(SINT8 node)
 							CONS_Alert(CONS_WARNING, "Invalid PT_RESPONSEALL from node %d player %d split %d\n", node, targetplayer, responseplayer);
 							if (node != -1 && node != 0) // NO IDEA.
 							{
-								//SendKick(node, KICK_MSG_SIGFAIL);
+								SendKick(node, KICK_MSG_SIGFAIL);
 							}
 							break;
 						}
@@ -5295,11 +5305,14 @@ static void HandlePacketFromPlayer(SINT8 node)
 			uint8_t allzero[64];
 			memset(allzero, 0, sizeof(allzero));
 
-			if (server)
-			{
-				CONS_Printf("Got PT_RESULTSALL, but what the fuck are you going to do with that?\n");
+			if (demo.playback)
 				break;
-			}
+
+			if (server)
+				break;
+
+			if (!expectChallenge)
+				break;
 
 			for (resultsplayer = 0; resultsplayer < MAXPLAYERS; resultsplayer++)
 			{
@@ -5330,8 +5343,9 @@ static void HandlePacketFromPlayer(SINT8 node)
 					if (crypto_eddsa_check(netbuffer->u.resultsall.signature[resultsplayer],
 						knownWhenChallenged[resultsplayer], lastChallengeAll, sizeof(lastChallengeAll)))
 					{
-						CONS_Alert(CONS_WARNING, "PT_RESULTSALL had invalid signature for node %d player %d split %d, something doesn't add up!\nhas key %s, maybe fucked?\n",
-						playernode[resultsplayer], resultsplayer, players[resultsplayer].splitscreenindex, GetPrettyRRID(knownWhenChallenged[resultsplayer], true));
+						CONS_Alert(CONS_WARNING, "PT_RESULTSALL had invalid signature for node %d player %d split %d, something doesn't add up!\n",
+						playernode[resultsplayer], resultsplayer, players[resultsplayer].splitscreenindex);
+						HandleSigfail("Server sent invalid client signature.");
 					}
 					else
 					{
