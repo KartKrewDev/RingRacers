@@ -17,6 +17,8 @@
 #ifndef __D_THINK__
 #define __D_THINK__
 
+#include "doomdef.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -53,6 +55,10 @@ struct thinker_t
 	// killough 11/98: count of how many other objects reference
 	// this one using pointers. Used for garbage collection.
 	INT32 references;
+
+#ifdef PARANOIA
+	INT32 debug_mobjtype;
+#endif
 };
 
 #ifdef __cplusplus

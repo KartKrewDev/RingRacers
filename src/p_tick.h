@@ -14,6 +14,8 @@
 #ifndef __P_TICK__
 #define __P_TICK__
 
+#include "doomdef.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -33,7 +35,18 @@ void P_Ticker(boolean run);
 void P_PreTicker(INT32 frames);
 void P_DoTeamscrambling(void);
 void P_RemoveThinkerDelayed(thinker_t *thinker); //killed
-mobj_t *P_SetTarget(mobj_t **mo, mobj_t *target);   // killough 11/98
+
+mobj_t *P_SetTarget2(mobj_t **mo, mobj_t *target
+#ifdef PARANOIA
+		, const char *source_file, int source_line
+#endif
+);
+
+#ifdef PARANOIA
+#define P_SetTarget(...) P_SetTarget2(__VA_ARGS__, __FILE__, __LINE__)
+#else
+#define P_SetTarget P_SetTarget2
+#endif
 
 // Negate the value for tics
 INT32 P_AltFlip(INT32 value, tic_t tics);
