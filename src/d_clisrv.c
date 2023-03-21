@@ -4692,6 +4692,9 @@ static void HandlePacketFromAwayNode(SINT8 node)
 			{
 				PT_ClientKey(node);
 
+				nodeneedsauth[node] = true;
+				freezetimeout[node] = I_GetTime() + jointimeout;
+
 				CONS_Printf("4: node %d -> %d\n", node, nodeneedsauth[node]);
 				if (nodeneedsauth[node] == false)
 				{
