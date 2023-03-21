@@ -23387,7 +23387,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		S_ORBINAUT_DEAD,// deathstate
 		S_NULL,         // xdeathstate
 		sfx_s3k5d,      // deathsound
-		64*FRACUNIT,    // speed
+		24*FRACUNIT,    // speed
 		24*FRACUNIT,    // radius
 		32*FRACUNIT,    // height
 		0,              // display offset
@@ -23441,7 +23441,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		S_JAWZ_DEAD1,   // deathstate
 		S_JAWZ_DEAD2,   // xdeathstate
 		sfx_s3k5d,      // deathsound
-		64*FRACUNIT,    // speed
+		24*FRACUNIT,    // speed
 		16*FRACUNIT,    // radius
 		32*FRACUNIT,    // height
 		0,              // display offset
@@ -23738,7 +23738,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		S_BALLHOG_DEAD, // deathstate
 		S_NULL,         // xdeathstate
 		sfx_hogbom,     // deathsound
-		80*FRACUNIT,    // speed
+		20*FRACUNIT,    // speed
 		26*FRACUNIT,    // radius
 		32*FRACUNIT,    // height
 		0,              // display offset
@@ -24035,7 +24035,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		S_GARDENTOP_DEAD, // deathstate
 		S_NULL,         // xdeathstate
 		sfx_s3k7a,      // deathsound
-		40*FRACUNIT,    // speed
+		20*FRACUNIT,    // speed
 		30*FRACUNIT,    // radius
 		68*FRACUNIT,    // height
 		-1,             // display offset
@@ -24413,7 +24413,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		S_GACHABOM,     // deathstate
 		S_NULL,         // xdeathstate
 		sfx_s3k5d,      // deathsound
-		64*FRACUNIT,    // speed
+		24*FRACUNIT,    // speed
 		24*FRACUNIT,    // radius
 		32*FRACUNIT,    // height
 		0,              // display offset
