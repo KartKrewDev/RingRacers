@@ -4621,6 +4621,8 @@ void P_SetupSignExit(player_t *player, boolean tie)
 	thinker_t *think;
 	INT32 numfound = 0;
 
+	angle_t bestAngle = K_MomentumAngle(player->mo) + ANGLE_180;
+
 	if (player->position != 1)
 		return;
 
@@ -4629,6 +4631,8 @@ void P_SetupSignExit(player_t *player, boolean tie)
 		thing = node->m_thing;
 		if (thing->type != MT_SIGN)
 			continue;
+
+		bestAngle = thing->angle;
 
 		if (tie)
 		{
@@ -4656,6 +4660,8 @@ void P_SetupSignExit(player_t *player, boolean tie)
 		if (thing->type != MT_SIGN)
 			continue;
 
+		bestAngle = thing->angle;
+
 		if (tie)
 		{
 			break;
@@ -4675,7 +4681,7 @@ void P_SetupSignExit(player_t *player, boolean tie)
 	if (player->mo && !P_MobjWasRemoved(player->mo))
 	{
 		thing = P_SpawnMobj(player->mo->x, player->mo->y, player->mo->floorz, MT_SIGN);
-		thing->angle = player->mo->angle;
+		thing->angle = bestAngle;
 		P_SetupSignObject(thing, player->mo, (tie == false)); // Use :youfuckedup: sign face, except during ties
 	}
 }
