@@ -3733,6 +3733,26 @@ static int lib_kKartUpdatePosition(lua_State *L)
 	return 0;
 }
 
+static int lib_kPopPlayerShield(lua_State *L)
+{
+	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
+	NOHUD
+	if (!player)
+		return LUA_ErrInvalid(L, "player_t");
+	K_PopPlayerShield(player);
+	return 0;
+}
+
+static int lib_kDropHnextList(lua_State *L)
+{
+	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
+	NOHUD
+	if (!player)
+		return LUA_ErrInvalid(L, "player_t");
+	K_DropHnextList(player);
+	return 0;
+}
+
 static int lib_kDropItems(lua_State *L)
 {
 	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
@@ -4153,6 +4173,8 @@ static luaL_Reg lib[] = {
 	{"K_FindJawzTarget",lib_kFindJawzTarget},
 	{"K_GetKartDriftSparkValue",lib_kGetKartDriftSparkValue},
 	{"K_KartUpdatePosition",lib_kKartUpdatePosition},
+	{"K_PopPlayerShield",lib_kPopPlayerShield},
+	{"K_DropHnextList",lib_kDropHnextList},
 	{"K_DropItems",lib_kDropItems},
 	{"K_StripItems",lib_kStripItems},
 	{"K_StripOther",lib_kStripOther},

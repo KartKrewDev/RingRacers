@@ -576,7 +576,7 @@ boolean K_DropTargetCollide(mobj_t *t1, mobj_t *t2)
 	{
 		// The following removes t1, be warned
 		// (its newly assigned properties are moved across)
-		K_DropHnextList(draggeddroptarget->player, true);
+		K_DropHnextList(draggeddroptarget->player);
 		// Do NOT modify or reference t1 after this line
 		// I mean it! Do not even absentmindedly try it
 	}

@@ -6097,13 +6097,39 @@ void K_UpdateHnextList(player_t *player, boolean clean)
 }
 
 // For getting hit!
-void K_DropHnextList(player_t *player, boolean keepshields)
+void K_PopPlayerShield(player_t *player)
+{
+	INT32 shield = K_GetShieldFromItem(player->itemtype);
+
+	// Doesn't apply if player is invalid.
+	if (player->mo == NULL || P_MobjWasRemoved(player->mo))
+	{
+		return;
+	}
+
+	// Doesn't apply to non-S3K shields.
+	if (shield == KSHIELD_NONE || shield == KSHIELD_TOP)
+	{
+		return;
+	}
+
+	if (shield == KSHIELD_LIGHTNING)
+	{
+		K_DoLightningShield(player);
+	}
+
+	player->curshield = KSHIELD_NONE;
+	player->itemtype = KITEM_NONE;
+	player->itemamount = 0;
+	K_UnsetItemOut(player);
+}
+
+void K_DropHnextList(player_t *player)
 {
 	mobj_t *work = player->mo, *nextwork, *dropwork;
 	INT32 flip;
 	mobjtype_t type;
 	boolean orbit, ponground, dropall = true;
-	INT32 shield = K_GetShieldFromItem(player->itemtype);
 
 	if (work == NULL || P_MobjWasRemoved(work))
 	{
@@ -6112,19 +6138,6 @@ void K_DropHnextList(player_t *player, boolean keepshields)
 
 	flip = P_MobjFlip(player->mo);
 	ponground = P_IsObjectOnGround(player->mo);
-
-	if (shield != KSHIELD_NONE && shield != KSHIELD_TOP && !keepshields)
-	{
-		if (shield == KSHIELD_LIGHTNING)
-		{
-			K_DoLightningShield(player);
-		}
-
-		player->curshield = KSHIELD_NONE;
-		player->itemtype = KITEM_NONE;
-		player->itemamount = 0;
-		K_UnsetItemOut(player);
-	}
 
 	nextwork = work->hnext;
 
@@ -6415,7 +6428,7 @@ mobj_t *K_CreatePaperItem(fixed_t x, fixed_t y, fixed_t z, angle_t angle, SINT8 
 // For getting EXTRA hit!
 void K_DropItems(player_t *player)
 {
-	K_DropHnextList(player, true);
+	K_DropHnextList(player);
 
 	if (player->mo && !P_MobjWasRemoved(player->mo) && player->itemamount > 0)
 	{
@@ -11153,7 +11166,10 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 				K_trickPanelTimingVisual(player, momz);	// fail trick visual
 				P_SetPlayerMobjState(player->mo, S_KART_SPINOUT);
 				if (player->pflags & (PF_ITEMOUT|PF_EGGMANOUT))
-					K_DropHnextList(player, true);
+				{
+					//K_PopPlayerShield(player); // shield is just being yeeted, don't pop
+					K_DropHnextList(player);
+				}
 			}
 
 			else if (!(player->pflags & PF_TRICKDELAY))	// don't allow tricking at the same frame you tumble obv

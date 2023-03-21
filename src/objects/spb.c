@@ -1058,7 +1058,8 @@ void Obj_SPBTouch(mobj_t *spb, mobj_t *toucher)
 		if (player->bubbleblowup > 0)
 		{
 			// Stun the SPB, and remove the shield.
-			K_DropHnextList(player, false);
+			K_PopPlayerShield(player);
+			K_DropHnextList(player);
 			spb_mode(spb) = SPB_MODE_WAIT;
 			spb_modetimer(spb) = 55; // Slightly over the respawn timer length
 			return;
