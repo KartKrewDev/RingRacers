@@ -2448,7 +2448,7 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 			}
 			else
 			{
-				K_DropHnextList(player, (type != DMG_STUMBLE));
+				K_DropHnextList(player, (type == DMG_STUMBLE));
 			}
 
 			if (type != DMG_STUMBLE)
