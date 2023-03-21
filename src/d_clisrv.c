@@ -1390,7 +1390,7 @@ static void CL_LoadReceivedSavegame(boolean reloading)
 	{
 		if (memcmp(priorGamestateKeySave[i], players[i].public_key, sizeof(priorGamestateKeySave[i])) != 0)
 		{
-			CONS_Printf("New gamestate has different public keys, shenanigans afoot?");
+			CONS_Printf("New gamestate has different public keys, shenanigans afoot?\n");
 			// TODO: Actually do something in this situation
 			break;
 		}
