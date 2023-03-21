@@ -53,8 +53,6 @@
 static CV_PossibleValue_t CV_BobSpeed[] = {{0, "MIN"}, {4*FRACUNIT, "MAX"}, {0, NULL}};
 consvar_t cv_movebob = CVAR_INIT ("movebob", "1.0", CV_FLOAT|CV_SAVE, CV_BobSpeed, NULL);
 
-consvar_t cv_scrambleremoved = CVAR_INIT ("scrambleremoved", "On", CV_NETVAR, CV_OnOff, NULL);
-
 actioncache_t actioncachehead;
 
 static mobj_t *overlaycap = NULL;
@@ -11064,6 +11062,9 @@ mapthing_t *itemrespawnque[ITEMQUESIZE];
 tic_t itemrespawntime[ITEMQUESIZE];
 size_t iquehead, iquetail;
 
+#ifdef PARANOIA
+#define SCRAMBLE_REMOVED // Force debug build to crash when Removed mobj is accessed
+#endif
 void P_RemoveMobj(mobj_t *mobj)
 {
 	I_Assert(mobj != NULL);
@@ -11204,10 +11205,7 @@ void P_RemoveMobj(mobj_t *mobj)
 	// DBG: set everything in mobj_t to 0xFF instead of leaving it. debug memory error.
 #ifdef SCRAMBLE_REMOVED
 	// Invalidate mobj_t data to cause crashes if accessed!
-	if (cv_scrambleremoved.value)
-	{
-		memset((UINT8 *)mobj + sizeof(thinker_t), 0xff, sizeof(mobj_t) - sizeof(thinker_t));
-	}
+	memset((UINT8 *)mobj + sizeof(thinker_t), 0xff, sizeof(mobj_t) - sizeof(thinker_t));
 #endif
 }
 

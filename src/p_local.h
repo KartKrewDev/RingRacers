@@ -66,10 +66,6 @@ extern "C" {
 
 #define P_GetPlayerViewHeight(player) (41*player->mo->height/48)
 
-#ifdef PARANOIA
-#define SCRAMBLE_REMOVED // Force debug build to crash when Removed mobj is accessed
-#endif
-
 typedef enum
 {
 	THINK_POLYOBJ,
@@ -288,9 +284,6 @@ extern mapthing_t *itemrespawnque[ITEMQUESIZE];
 extern tic_t itemrespawntime[ITEMQUESIZE];
 extern size_t iquehead, iquetail;
 extern consvar_t cv_gravity, cv_movebob;
-#ifdef SCRAMBLE_REMOVED
-extern consvar_t cv_scrambleremoved;
-#endif
 
 void P_RespawnBattleBoxes(void);
 mobjtype_t P_GetMobjtype(UINT16 mthingtype);
