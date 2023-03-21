@@ -3882,7 +3882,7 @@ const char *name, uint8_t *key, const char *name2, uint8_t *key2,
 const char *name3, uint8_t *key3, const char *name4, uint8_t *key4)
 {
 	INT32 n, newplayernum, i;
-	UINT8 buf[4 + MAXPLAYERNAME + MAXAVAILABILITY];
+	UINT8 buf[4 + MAXPLAYERNAME + 32 + MAXAVAILABILITY];
 	UINT8 *buf_p = buf;
 	boolean newplayer = false;
 
