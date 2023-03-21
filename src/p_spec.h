@@ -600,7 +600,7 @@ struct activator_t
 boolean P_CanActivateSpecial(INT16 special);
 boolean P_ProcessSpecial(activator_t *activator, INT16 special, INT32 *args, char **stringargs);
 
-void P_SetupSignExit(player_t *player);
+void P_SetupSignExit(player_t *player, boolean tie);
 
 boolean P_IsMobjTouchingSectorPlane(mobj_t *mo, sector_t *sec);
 boolean P_IsMobjTouching3DFloor(mobj_t *mo, ffloor_t *ffloor, sector_t *sec);

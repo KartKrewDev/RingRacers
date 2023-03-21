@@ -629,9 +629,37 @@ void P_Ticker(boolean run)
 		ps_thinkertime = I_GetPreciseTime() - ps_thinkertime;
 
 		// Run any "after all the other thinkers" stuff
-		for (i = 0; i < MAXPLAYERS; i++)
-			if (playeringame[i] && players[i].mo && !P_MobjWasRemoved(players[i].mo))
-				P_PlayerAfterThink(&players[i]);
+		{
+			player_t *finishingPlayers[MAXPLAYERS];
+			UINT8 numFinishingPlayers = 0;
+
+			for (i = 0; i < MAXPLAYERS; i++)
+			{
+				if (playeringame[i] && players[i].mo && !P_MobjWasRemoved(players[i].mo))
+				{
+					P_PlayerAfterThink(&players[i]);
+
+					// Check for the number of ties for first place after every player has thunk run for this tic
+					if (players[i].exiting == 1 && players[i].position == 1 &&
+							(players[i].pflags & (PF_HITFINISHLINE|PF_NOCONTEST)) == PF_HITFINISHLINE)
+					{
+						finishingPlayers[numFinishingPlayers++] = &players[i];
+					}
+				}
+			}
+
+			if (numFinishingPlayers > 1)
+			{
+				for (i = 0; i < numFinishingPlayers; i++)
+				{
+					P_SetupSignExit(finishingPlayers[i], true);
+				}
+			}
+			else if (numFinishingPlayers == 1)
+			{
+				P_SetupSignExit(finishingPlayers[0], false);
+			}
+		}
 
 		if (K_CheckBossIntro() == true)
 		{
