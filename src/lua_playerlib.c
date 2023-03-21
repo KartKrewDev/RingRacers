@@ -878,7 +878,7 @@ static int player_set(lua_State *L)
 	else if (fastcmp(field,"bot"))
 		return NOSET;
 	else if (fastcmp(field,"jointime"))
-		plr->jointime = (tic_t)luaL_checkinteger(L, 3);
+		return NOSET;
 	else if (fastcmp(field,"splitscreenindex"))
 		return NOSET;
 #ifdef HWRENDER

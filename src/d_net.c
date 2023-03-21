@@ -813,7 +813,14 @@ static const char *packettypename[NUMPACKETTYPE] =
 
 	"LOGIN",
 
-	"PING"
+	"PING",
+
+	"CLIENTKEY",
+	"SERVERCHALLENGE",
+
+	"CHALLENGEALL",
+	"RESPONSEALL",
+	"RESULTSALL"
 };
 
 static void DebugPrintpacket(const char *header)

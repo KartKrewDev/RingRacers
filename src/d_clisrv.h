@@ -123,6 +123,10 @@ typedef enum
 	PT_CLIENTKEY,		// "Here's my public key"
 	PT_SERVERCHALLENGE,		// "Prove it"
 
+	PT_CHALLENGEALL,	// Prove to the other clients you are who you say you are, sign this random bullshit!
+	PT_RESPONSEALL,		// OK, here is my signature on that random bullshit
+	PT_RESULTSALL,		// Here's what everyone responded to PT_CHALLENGEALL with, if this is wrong or you don't receive it disconnect
+
 	NUMPACKETTYPE
 } packettype_t;
 
@@ -361,6 +365,21 @@ struct serverchallenge_pak
 	char secret[MAXSPLITSCREENPLAYERS][32];
 } ATTRPACK;
 
+struct challengeall_pak
+{
+	uint8_t secret[64];
+} ATTRPACK;
+
+struct responseall_pak
+{
+	uint8_t signature[MAXSPLITSCREENPLAYERS][64];
+} ATTRPACK;
+
+struct resultsall_pak
+{
+	uint8_t signature[MAXPLAYERS][64];
+} ATTRPACK;
+
 //
 // Network packet data
 //
@@ -398,6 +417,9 @@ struct doomdata_t
 		UINT32 pingtable[MAXPLAYERS+1];     //          68 bytes
 		clientkey_pak clientkey;				// TODO: Tyron, does anyone take any of these sizes even remotely seriously
 		serverchallenge_pak serverchallenge;	// Are you even going to update this shit, are you even going to remove this comment
+		challengeall_pak challengeall;
+		responseall_pak responseall;
+		resultsall_pak resultsall;
 	} u; // This is needed to pack diff packet types data together
 } ATTRPACK;
 
