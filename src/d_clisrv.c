@@ -4704,7 +4704,7 @@ static void HandlePacketFromAwayNode(SINT8 node)
 			if (cl_mode != CL_WAITCHALLENGE)
 				break;
 			memcpy(awaitingChallenge, netbuffer->u.serverchallenge.secret, sizeof(awaitingChallenge));
-			//cl_mode = CL_ASKJOIN;
+			cl_mode = CL_ASKJOIN;
 			break;
 		default:
 			DEBFILE(va("unknown packet received (%d) from unknown host\n",netbuffer->packettype));
