@@ -123,6 +123,7 @@ SINT8 nodetoplayer3[MAXNETNODES]; // say the numplayer for this node if any (spl
 SINT8 nodetoplayer4[MAXNETNODES]; // say the numplayer for this node if any (splitscreen == 3)
 UINT8 playerpernode[MAXNETNODES]; // used specialy for splitscreen
 boolean nodeingame[MAXNETNODES]; // set false as nodes leave game
+boolean nodeneedsauth[MAXNETNODES];
 
 tic_t servermaxping = 20; // server's max delay, in frames. Defaults to 20
 static tic_t nettics[MAXNETNODES]; // what tic the client have received
@@ -3510,6 +3511,7 @@ static void ResetNode(INT32 node)
 {
 	nodeingame[node] = false;
 	nodewaiting[node] = 0;
+	nodeneedsauth[node] = false;
 
 	nettics[node] = gametic;
 	supposedtics[node] = gametic;
@@ -3676,6 +3678,8 @@ static inline void SV_AddNode(INT32 node)
 	// nodeingame when connected not here
 	if (node)
 		nodeingame[node] = true;
+
+	nodeneedsauth[node] = false;
 }
 
 // Xcmd XD_ADDPLAYER
@@ -4157,6 +4161,8 @@ static void HandleConnect(SINT8 node)
 	// It's too much effort to legimately fix right now. Just prevent it from reaching that state.
 	UINT8 maxplayers = min((dedicated ? MAXPLAYERS-1 : MAXPLAYERS), cv_maxconnections.value);
 	UINT8 connectedplayers = 0;
+
+	CONS_Printf(">>>> node %d (%s)\n", node, I_GetNodeAddress(node));
 
 	for (i = dedicated ? 1 : 0; i < MAXPLAYERS; i++)
 		if (playernode[i] != UINT8_MAX) // We use this to count players because it is affected by SV_AddWaitingPlayers when more than one client joins on the same tic, unlike playeringame and D_NumPlayers. UINT8_MAX denotes no node for that player
@@ -4680,7 +4686,12 @@ static void HandlePacketFromAwayNode(SINT8 node)
 			/* FALLTHRU */
 		case PT_CLIENTKEY:
 			if (server)
+			{
 				PT_ClientKey(node);
+
+				nodeneedsauth[node] = true;
+				freezetimeout[node] = I_GetTime() + jointimeout;
+			}
 			break;
 		case PT_SERVERCHALLENGE:
 			if (cl_mode != CL_WAITCHALLENGE)
@@ -6289,7 +6300,7 @@ static void HandleNodeTimeouts(void)
 	if (server)
 	{
 		for (i = 1; i < MAXNETNODES; i++)
-			if (nodeingame[i] && freezetimeout[i] < I_GetTime())
+			if ((nodeingame[i] || nodeneedsauth[i]) && freezetimeout[i] < I_GetTime())
 				Net_ConnectionTimeout(i);
 
 		// In case the cvar value was lowered
