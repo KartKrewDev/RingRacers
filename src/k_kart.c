@@ -4535,31 +4535,23 @@ static mobj_t *K_SpawnKartMissile(mobj_t *source, mobjtype_t type, angle_t an, I
 {
 	mobj_t *th;
 	fixed_t x, y, z;
-	fixed_t topspeed = K_GetKartSpeed(source->player, false, false);
 	fixed_t finalspeed = speed;
 	fixed_t finalscale = mapobjectscale;
 	mobj_t *throwmo;
 
 	if (source->player != NULL)
 	{
+		const angle_t delta = AngleDelta(source->angle, an);
+		const fixed_t deltaFactor = FixedDiv(AngleFixed(ANGLE_180 - delta), 180 * FRACUNIT);
+
 		if (source->player->itemscale == ITEMSCALE_SHRINK)
 		{
 			// Nerf the base item speed a bit.
 			speed = finalspeed = FixedMul(speed, SHRINK_PHYSICS_SCALE);
 		}
 
-		if (source->player->speed > topspeed)
-		{
-			angle_t delta = AngleDelta(source->angle, an);
-
-			finalspeed = max(speed, FixedMul(
-				speed,
-				FixedMul(
-					FixedDiv(source->player->speed, topspeed), // Multiply speed to be proportional to your own, boosted maxspeed.
-					FixedDiv(AngleFixed(ANGLE_180 - delta), 180 * FRACUNIT) // multiply speed based on angle diff... i.e: don't do this for firing backward :V
-				)
-			));
-		}
+		// Add player speed on top, multiplied based on angle diff... i.e: don't do this for firing backward :V
+		finalspeed += FixedMul(source->player->speed, deltaFactor);
 
 		finalscale = K_ItemScaleForPlayer(source->player);
 	}
