@@ -1437,7 +1437,12 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 
 			if (K_Cooperative())
 			{
-				target->player->pflags |= (PF_NOCONTEST|PF_ELIMINATED);
+				target->player->pflags |= PF_ELIMINATED;
+
+				if (!target->player->exiting)
+				{
+					target->player->pflags |= PF_NOCONTEST;
+				}
 			}
 			break;
 
