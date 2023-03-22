@@ -161,7 +161,7 @@ boolean acceptnewnode = true;
 
 uint8_t lastReceivedKey[MAXNETNODES][MAXSPLITSCREENPLAYERS][32]; // Player's public key (join process only! active players have it on player_t)
 uint8_t lastSentChallenge[MAXNETNODES][MAXSPLITSCREENPLAYERS][32]; // The random message we asked them to sign in PT_SERVERCHALLENGE, check it in PT_CLIENTJOIN
-uint8_t lastChallengeAll[32]; // The message we asked EVERYONE to sign for client-to-client identity proofs
+uint8_t lastChallengeAll[64]; // The message we asked EVERYONE to sign for client-to-client identity proofs
 uint8_t lastReceivedSignature[MAXPLAYERS][64]; // Everyone's response to lastChallengeAll
 uint8_t knownWhenChallenged[MAXPLAYERS][32]; // Everyone a client saw at the moment a challenge should be initiated
 boolean expectChallenge = false; // Were we in-game before a client-to-client challenge should have been sent?
@@ -5262,7 +5262,29 @@ static void HandlePacketFromPlayer(SINT8 node)
 				break;
 			
 			int challengeplayers;
+			time_t now, then;
+			INT16 sentmap; // if gamemap ever needs to change type, god forbid, change this too
+
 			memcpy(lastChallengeAll, netbuffer->u.challengeall.secret, sizeof(lastChallengeAll));
+
+			now = time(NULL);
+			memcpy(&then, lastChallengeAll, sizeof(then));
+
+			CONS_Printf("Time offset: %d\n", abs(now - then));
+
+			if (abs(now - then) > 300)
+			{
+				HandleSigfail("Bad challenge - time difference, check clocks");
+				break;
+			}
+
+			memcpy(&sentmap, lastChallengeAll + sizeof(then), sizeof(sentmap));
+			CONS_Printf("Got map %hd, current map %hd\n", sentmap, gamemap);
+			if (sentmap != gamemap)
+			{
+				HandleSigfail("Bad challenge - wrong gamemap");
+				break;
+			}
 
 			netbuffer->packettype = PT_RESPONSEALL;
 
@@ -6246,12 +6268,14 @@ static void UpdateChallenges(void)
 			memset(knownWhenChallenged, 0, sizeof(knownWhenChallenged));
 
 			// Random noise so it's difficult to reuse the response
-			// Current time so that difficult to reuse the challenge (TODO: ACTUALLY DO THIS)
+			// Current time so that difficult to reuse the challenge
 			const time_t now = time(NULL);
-			CONS_Printf("now: %d\n", now);
-			csprng(netbuffer->u.serverchallenge.secret, sizeof(netbuffer->u.serverchallenge.secret));
+			CONS_Printf("now: %ld, gamemap: %hd\n", now, gamemap);
+			csprng(netbuffer->u.challengeall.secret, sizeof(netbuffer->u.challengeall.secret));
+			memcpy(netbuffer->u.challengeall.secret, &now, sizeof(now)); // First few bytes are the timestamp...
+			memcpy(netbuffer->u.challengeall.secret + sizeof(now), &gamemap, sizeof(gamemap)); // And the next two are the current map. (TODO: This works but I don't think it's doing what I think it's doing, pointers suck.)
 
-			memcpy(lastChallengeAll, netbuffer->u.serverchallenge.secret, sizeof(lastChallengeAll));
+			memcpy(lastChallengeAll, netbuffer->u.challengeall.secret, sizeof(lastChallengeAll));
 
 			memset(lastReceivedSignature, 0, sizeof(lastReceivedSignature));
 
@@ -6260,7 +6284,7 @@ static void UpdateChallenges(void)
 				if (nodeingame[i])
 				{
 					CONS_Printf("challenge to node %d, player %d\n", i, nodetoplayer[i]);
-					HSendPacket(i, true, 0, sizeof(serverchallenge_pak));
+					HSendPacket(i, true, 0, sizeof(challengeall_pak));
 					memcpy(knownWhenChallenged[nodetoplayer[i]], players[nodetoplayer[i]].public_key, sizeof(knownWhenChallenged[nodetoplayer[i]]));
 				}
 			}

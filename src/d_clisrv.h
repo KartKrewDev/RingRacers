@@ -355,12 +355,12 @@ struct filesneededconfig_pak
 
 struct clientkey_pak
 {
-	char key[MAXSPLITSCREENPLAYERS][32];
+	uint8_t key[MAXSPLITSCREENPLAYERS][32];
 } ATTRPACK;
 
 struct serverchallenge_pak
 {
-	char secret[MAXSPLITSCREENPLAYERS][32];
+	uint8_t secret[MAXSPLITSCREENPLAYERS][32];
 } ATTRPACK;
 
 struct challengeall_pak
@@ -484,7 +484,7 @@ extern SINT8 servernode;
 extern char connectedservername[MAXSERVERNAME];
 extern uint8_t lastReceivedKey[MAXNETNODES][MAXSPLITSCREENPLAYERS][32];
 extern uint8_t lastSentChallenge[MAXNETNODES][MAXSPLITSCREENPLAYERS][32];
-extern uint8_t lastChallengeAll[32];
+extern uint8_t lastChallengeAll[64];
 extern uint8_t lastReceivedSignature[MAXPLAYERS][64];
 extern uint8_t knownWhenChallenged[MAXPLAYERS][32];
 extern boolean expectChallenge;
