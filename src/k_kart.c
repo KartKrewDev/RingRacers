@@ -3485,9 +3485,14 @@ fixed_t K_3dKartMovement(player_t *player)
 	return finalspeed;
 }
 
+fixed_t K_MomentumThreshold(const mobj_t *mo)
+{
+	return 6 * mo->scale;
+}
+
 angle_t K_MomentumAngle(mobj_t *mo)
 {
-	if (FixedHypot(mo->momx, mo->momy) >= mo->scale)
+	if (FixedHypot(mo->momx, mo->momy) > K_MomentumThreshold(mo))
 	{
 		return R_PointToAngle2(0, 0, mo->momx, mo->momy);
 	}
@@ -10076,7 +10081,7 @@ boolean K_FastFallBounce(player_t *player)
 
 static void K_AirFailsafe(player_t *player)
 {
-	const fixed_t maxSpeed = 6*player->mo->scale;
+	const fixed_t maxSpeed = K_MomentumThreshold(player->mo);
 	const fixed_t thrustSpeed = 6*player->mo->scale; // 10*player->mo->scale
 
 	if (player->speed > maxSpeed // Above the max speed that you're allowed to use this technique.
