@@ -3161,8 +3161,10 @@ void G_DoReborn(INT32 playernum)
 		if (player->mo)
 		{
 			oldmo = player->mo;
+
 			// Don't leave your carcass stuck 10-billion feet in the ground!
 			P_RemoveMobj(player->mo);
+			P_SetTarget(&player->mo, NULL);
 		}
 
 		G_SpawnPlayer(playernum);

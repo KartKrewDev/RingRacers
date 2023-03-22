@@ -10476,6 +10476,9 @@ mobj_t *P_SpawnMobj(fixed_t x, fixed_t y, fixed_t z, mobjtype_t type)
 	// Set shadowscale here, before spawn hook so that Lua can change it
 	P_DefaultMobjShadowScale(mobj);
 
+	if (!(mobj->flags & MF_NOTHINK))
+		P_AddThinker(THINK_MOBJ, &mobj->thinker);
+
 	// DANGER! This can cause P_SpawnMobj to return NULL!
 	// Avoid using P_RemoveMobj on the newly created mobj in "MobjSpawn" Lua hooks!
 	if (LUA_HookMobj(mobj, MOBJ_HOOK(MobjSpawn)))
@@ -10937,9 +10940,6 @@ mobj_t *P_SpawnMobj(fixed_t x, fixed_t y, fixed_t z, mobjtype_t type)
 			}
 		}
 	}
-
-	if (!(mobj->flags & MF_NOTHINK))
-		P_AddThinker(THINK_MOBJ, &mobj->thinker);
 
 	if (mobj->skin) // correct inadequecies above.
 	{
@@ -11781,7 +11781,9 @@ void P_SpawnPlayer(INT32 playernum)
 		p->flashing = K_GetKartFlashing(p); // Babysitting deterrent
 
 	mobj = P_SpawnMobj(0, 0, 0, MT_PLAYER);
-	(mobj->player = p)->mo = mobj;
+
+	mobj->player = p;
+	P_SetTarget(&p->mo, mobj);
 
 	mobj->angle = mobj->old_angle = 0;
 
