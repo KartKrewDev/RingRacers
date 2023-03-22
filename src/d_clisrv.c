@@ -4713,6 +4713,11 @@ static void HandlePacketFromAwayNode(SINT8 node)
 			}
 			break;
 		case PT_SERVERCHALLENGE:
+			if (server && serverrunning && node != servernode)
+			{
+				Net_CloseConnection(node);
+				break;
+			}
 			if (cl_mode != CL_WAITCHALLENGE)
 				break;
 			memcpy(awaitingChallenge, netbuffer->u.serverchallenge.secret, sizeof(awaitingChallenge));
@@ -5250,14 +5255,17 @@ static void HandlePacketFromPlayer(SINT8 node)
 				CL_PrepareDownloadLuaFile();
 			break;
 		case PT_CHALLENGEALL: ; // -Wpedantic
-			int challengeplayers;
-			memcpy(lastChallengeAll, netbuffer->u.challengeall.secret, sizeof(lastChallengeAll));
+			if (server)
+				break;
 
 			if (demo.playback)
 				break;
 
 			if (node != servernode)
 				break;
+			
+			int challengeplayers;
+			memcpy(lastChallengeAll, netbuffer->u.challengeall.secret, sizeof(lastChallengeAll));
 
 			netbuffer->packettype = PT_RESPONSEALL;
 
@@ -5353,6 +5361,9 @@ static void HandlePacketFromPlayer(SINT8 node)
 				break;
 
 			if (server)
+				break;
+
+			if (node != servernode)
 				break;
 
 			if (!expectChallenge)
@@ -6234,11 +6245,13 @@ static void UpdateChallenges(void)
 				}
 			#endif
 
+			memset(knownWhenChallenged, 0, sizeof(knownWhenChallenged));
+
 			// Random noise so it's difficult to reuse the response
 			// Current time so that difficult to reuse the challenge (TODO: ACTUALLY DO THIS)
+			const time_t now = time(NULL);
+			CONS_Printf("now: %d\n", now);
 			csprng(netbuffer->u.serverchallenge.secret, sizeof(netbuffer->u.serverchallenge.secret));
-			// Why the fuck doesn't this work
-			// memcpy(netbuffer->u.serverchallenge.secret, time(NULL), sizeof(int));
 
 			memcpy(lastChallengeAll, netbuffer->u.serverchallenge.secret, sizeof(lastChallengeAll));
 
@@ -6250,6 +6263,7 @@ static void UpdateChallenges(void)
 				{
 					CONS_Printf("challenge to node %d, player %d\n", i, nodetoplayer[i]);
 					HSendPacket(i, true, 0, sizeof(serverchallenge_pak));
+					memcpy(knownWhenChallenged[nodetoplayer[i]], players[nodetoplayer[i]].public_key, sizeof(knownWhenChallenged[nodetoplayer[i]]));
 				}
 			}
 		}
@@ -6265,10 +6279,13 @@ static void UpdateChallenges(void)
 					continue;
 				if (memcmp(lastReceivedSignature[i], allZero, sizeof(allZero)) == 0) // We never got a response!
 				{
-					if (!IsPlayerGuest(i))
+					if (!IsPlayerGuest(i) && memcmp(knownWhenChallenged[i], players[i].public_key, sizeof(knownWhenChallenged[i]) == 0))
 					{
-						CONS_Printf("We never got a response from player %d, goodbye\n", i);
-						SendKick(i, KICK_MSG_SIGFAIL);
+						if (playernode[i] != servernode)
+						{
+							CONS_Printf("We never got a response from player %d, goodbye\n", i);
+							SendKick(i, KICK_MSG_SIGFAIL);
+						}	
 					}
 				}
 			}
