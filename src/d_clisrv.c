@@ -175,7 +175,13 @@ uint8_t awaitingChallenge[32];
 consvar_t cv_allowguests = CVAR_INIT ("allowguests", "On", CV_SAVE, CV_OnOff, NULL);
 
 #ifdef DEVELOP
-	consvar_t cv_sigfail = CVAR_INIT ("sigfail", "Off", CV_SAVE, CV_OnOff, NULL);
+	consvar_t cv_badjoin = CVAR_INIT ("badjoin", "0", 0, CV_Unsigned, NULL);
+	consvar_t cv_badtraffic = CVAR_INIT ("badtraffic", "0", 0, CV_Unsigned, NULL);
+	consvar_t cv_badresponse = CVAR_INIT ("badresponse", "0", 0, CV_Unsigned, NULL);
+	consvar_t cv_noresponse = CVAR_INIT ("noresponse", "0", 0, CV_Unsigned, NULL);
+	consvar_t cv_nochallenge = CVAR_INIT ("nochallenge", "0", 0, CV_Unsigned, NULL);
+	consvar_t cv_badresults = CVAR_INIT ("badresults", "0", 0, CV_Unsigned, NULL);
+	consvar_t cv_noresults = CVAR_INIT ("noresults", "0", 0, CV_Unsigned, NULL);
 #endif
 
 // engine
@@ -867,9 +873,10 @@ static boolean CL_SendJoin(void)
 		}
 
 		#ifdef DEVELOP
-			if (cv_sigfail.value)
+			if (cv_badjoin.value)
 			{
-				CONS_Alert(CONS_WARNING, "SIGFAIL enabled, scrubbing signature from CL_SendJoin\n");
+				CV_AddValue(&cv_badjoin, -1);
+				CONS_Alert(CONS_WARNING, "cv_badjoin enabled, scrubbing signature from CL_SendJoin\n");
 				memset(signature, 0, 64);
 			}
 		#endif
@@ -5252,6 +5259,15 @@ static void HandlePacketFromPlayer(SINT8 node)
 
 			netbuffer->packettype = PT_RESPONSEALL;
 
+				#ifdef DEVELOP
+				if (cv_noresponse.value)
+				{
+					CV_AddValue(&cv_noresponse, -1);
+					CONS_Alert(CONS_WARNING, "cv_noresponse enabled, not sending PT_RESPONSEALL\n");
+					break;
+				}
+			#endif
+
 			memset(&netbuffer->u.responseall, 0, sizeof(netbuffer->u.responseall));
 
 			for (challengeplayers = 0; challengeplayers <= splitscreen; challengeplayers++)
@@ -5271,9 +5287,10 @@ static void HandlePacketFromPlayer(SINT8 node)
 				}
 
 				#ifdef DEVELOP
-					if (cv_sigfail.value)
+					if (cv_badresponse.value)
 					{
-						CONS_Alert(CONS_WARNING, "SIGFAIL enabled, scrubbing signature from PT_RESPONSEALL\n");
+						CV_AddValue(&cv_badresponse, -1);
+						CONS_Alert(CONS_WARNING, "cv_badresponse enabled, scrubbing signature from PT_RESPONSEALL\n");
 						memset(signature, 0, 64);
 					}
 				#endif
@@ -5308,9 +5325,9 @@ static void HandlePacketFromPlayer(SINT8 node)
 							players[targetplayer].public_key, lastChallengeAll, sizeof(lastChallengeAll)))
 						{
 							CONS_Alert(CONS_WARNING, "Invalid PT_RESPONSEALL from node %d player %d split %d\n", node, targetplayer, responseplayer);
-							if (node != -1 && node != 0) // NO IDEA.
+							if (playernode[targetplayer] != 0) // NO IDEA.
 							{
-								SendKick(node, KICK_MSG_SIGFAIL);
+								SendKick(targetplayer, KICK_MSG_SIGFAIL);
 							}
 							break;
 						}
@@ -5328,6 +5345,8 @@ static void HandlePacketFromPlayer(SINT8 node)
 			uint8_t allzero[64];
 			memset(allzero, 0, sizeof(allzero));
 
+			CONS_Printf("Got PT_RESULTSALL\n");
+
 			if (demo.playback)
 				break;
 
@@ -5336,6 +5355,8 @@ static void HandlePacketFromPlayer(SINT8 node)
 
 			if (!expectChallenge)
 				break;
+
+			CONS_Printf("Checking PT_RESULTSALL\n");
 
 			for (resultsplayer = 0; resultsplayer < MAXPLAYERS; resultsplayer++)
 			{
@@ -5376,6 +5397,7 @@ static void HandlePacketFromPlayer(SINT8 node)
 					}
 				}
 			}
+			csprng(lastChallengeAll, sizeof(lastChallengeAll));
 			expectChallenge = false;
 			break;
 		default:
@@ -6201,6 +6223,15 @@ static void UpdateChallenges(void)
 		{
 			netbuffer->packettype = PT_CHALLENGEALL;
 
+			#ifdef DEVELOP
+				if (cv_nochallenge.value)
+				{
+					CV_AddValue(&cv_nochallenge, -1);
+					CONS_Alert(CONS_WARNING, "cv_nochallenge enabled, not sending PT_CHALLENGEALL\n");
+					return;
+				}
+			#endif
+
 			// Random noise so it's difficult to reuse the response
 			// Current time so that difficult to reuse the challenge (TODO: ACTUALLY DO THIS)
 			csprng(netbuffer->u.serverchallenge.secret, sizeof(netbuffer->u.serverchallenge.secret));
@@ -6221,9 +6252,38 @@ static void UpdateChallenges(void)
 			}
 		}
 
-		if (Playing() && (leveltime == CHALLENGEALL_SERVERCUTOFF))
+		if (Playing() && (leveltime == CHALLENGEALL_KICKUNRESPONSIVE))
+		{
+			uint8_t allZero[64];
+			memset(allZero, 0, sizeof(allZero));
+
+			for (i = 0; i < MAXPLAYERS; i++)
+			{
+				if (!playeringame[i])
+					continue;
+				if (memcmp(lastReceivedSignature[i], allZero, sizeof(allZero)) == 0) // We never got a response!
+				{
+					if (!IsPlayerGuest(i))
+					{
+						CONS_Printf("We never got a response from player %d, goodbye\n", i);
+						SendKick(i, KICK_MSG_SIGFAIL);
+					}
+				}
+			}
+		}
+
+		if (Playing() && (leveltime == CHALLENGEALL_SENDRESULTS))
 		{
 			netbuffer->packettype = PT_RESULTSALL;
+
+			#ifdef DEVELOP
+				if (cv_noresults.value)
+				{
+					CV_AddValue(&cv_noresults, -1);
+					CONS_Alert(CONS_WARNING, "cv_noresults enabled, not sending PT_RESULTSALL\n");
+					return;
+				}
+			#endif
 
 			uint8_t allZero[64];
 			memset(allZero, 0, sizeof(allZero));
@@ -6235,16 +6295,20 @@ static void UpdateChallenges(void)
 					continue;
 				if (memcmp(lastReceivedSignature[i], allZero, sizeof(allZero)) == 0) // We never got a response!
 				{
-					if (!IsPlayerGuest(i))
-					{
-						CONS_Printf("We never got a response from player %d, goodbye\n", i);
-						//SendKick(i, KICK_MSG_SIGFAIL);
-					}
+					CONS_Alert(CONS_WARNING, "Unreceived signature for player %d, who is still in-game\n", i);
 				}
 				else
 				{
 					CONS_Printf("Player %d passed checkall and has key %s, adding...\n", i, GetPrettyRRID(players[i].public_key, true));
 					memcpy(netbuffer->u.resultsall.signature[i], lastReceivedSignature[i], sizeof(netbuffer->u.resultsall.signature[i]));
+					#ifdef DEVELOP
+						if (cv_badresults.value)
+						{
+							CV_AddValue(&cv_badresults, -1);
+							CONS_Alert(CONS_WARNING, "cv_badresults enabled, scrubbing signature from PT_RESULTSALL\n");
+							memset(netbuffer->u.resultsall.signature[i], 0, sizeof(netbuffer->u.resultsall.signature[i]));
+						}
+					#endif
 				}
 			}
 

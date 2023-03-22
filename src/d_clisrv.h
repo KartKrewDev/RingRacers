@@ -492,8 +492,9 @@ extern boolean expectChallenge;
 // We give clients a chance to verify each other once per race.
 // When is that challenge sent, and when should clients bail if they don't receive the responses?
 #define CHALLENGEALL_START (TICRATE*10)
-#define CHALLENGEALL_SERVERCUTOFF (TICRATE*12)
-#define CHALLENGEALL_CLIENTCUTOFF (TICRATE*14)
+#define CHALLENGEALL_KICKUNRESPONSIVE (TICRATE*12)
+#define CHALLENGEALL_SENDRESULTS (TICRATE*14)
+#define CHALLENGEALL_CLIENTCUTOFF (TICRATE*16)
 
 void Command_Ping_f(void);
 extern tic_t connectiontimeout;
@@ -519,7 +520,13 @@ extern consvar_t cv_discordinvites;
 extern consvar_t cv_allowguests;
 
 #ifdef DEVELOP
-extern consvar_t cv_sigfail;
+	extern consvar_t cv_badjoin;
+	extern consvar_t cv_badtraffic;
+	extern consvar_t cv_badresponse;
+	extern consvar_t cv_noresponse;
+	extern consvar_t cv_nochallenge;
+	extern consvar_t cv_badresults;
+	extern consvar_t cv_noresults;
 #endif
 
 // Used in d_net, the only dependence

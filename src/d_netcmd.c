@@ -949,7 +949,13 @@ void D_RegisterClientCommands(void)
 	CV_RegisterVar(&cv_allowguests);
 
 	#ifdef DEVELOP
-		CV_RegisterVar(&cv_sigfail);
+		CV_RegisterVar(&cv_badjoin); // implemented
+		CV_RegisterVar(&cv_badtraffic); // implemented
+		CV_RegisterVar(&cv_badresponse); // implemented
+		CV_RegisterVar(&cv_noresponse);
+		CV_RegisterVar(&cv_nochallenge); // implemented
+		CV_RegisterVar(&cv_badresults); // implemented
+		CV_RegisterVar(&cv_noresults); // implemented
 	#endif
 
 	// HUD

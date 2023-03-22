@@ -1047,9 +1047,10 @@ boolean HSendPacket(INT32 node, boolean reliable, UINT8 acknum, size_t packetlen
 		}
 
 		#ifdef DEVELOP
-			if (cv_sigfail.value)
+			if (cv_badtraffic.value)
 			{
-				CONS_Alert(CONS_WARNING, "SIGFAIL enabled, scrubbing signature from HSendPacket\n");
+				CV_AddValue(&cv_badtraffic, -1);
+				CONS_Alert(CONS_WARNING, "cv_badtraffic enabled, scrubbing signature from HSendPacket\n");
 				memset(netbuffer->signature, 0, sizeof(netbuffer->signature));
 			}
 		#endif
