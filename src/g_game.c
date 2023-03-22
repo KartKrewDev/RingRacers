@@ -1813,9 +1813,6 @@ boolean G_Responder(event_t *ev)
 		}
 	}
 
-	// update keys current state
-	G_MapEventsToControls(ev);
-
 	switch (ev->type)
 	{
 		case ev_keydown:

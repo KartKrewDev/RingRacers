@@ -230,7 +230,6 @@ void D_ProcessEvents(void)
 	int i;
 
 	boolean eaten;
-	boolean menuresponse = false;
 
 	G_ResetAllDeviceResponding();
 	for (; eventtail != eventhead; eventtail = (eventtail+1) & (MAXEVENTS-1))
@@ -272,8 +271,10 @@ void D_ProcessEvents(void)
 			continue; // ate the event
 		}
 
+		// update keys current state
+		G_MapEventsToControls(ev);
+
 		// Menu input
-		menuresponse = true;
 #ifdef HAVE_THREADS
 		I_lock_mutex(&k_menu_mutex);
 #endif
@@ -296,12 +297,6 @@ void D_ProcessEvents(void)
 
 
 		G_Responder(ev);
-	}
-
-	// Reset menu controls when no event is processed
-	if (!menuresponse)
-	{
-		M_MapMenuControls(NULL);
 	}
 
 	// Update menu CMD

@@ -261,8 +261,6 @@ boolean M_Responder(event_t *ev)
 		menuKey = ev->data1;
 	}
 
-	M_MapMenuControls(ev);
-
 	// Profiles: Control mapping.
 	// We take the WHOLE EVENT for convenience.
 	if (optionsmenu.bindcontrol)
@@ -755,15 +753,6 @@ void M_UpdateMenuCMD(UINT8 i)
 		// Reset delay count with no buttons.
 		menucmd[i].delay = min(menucmd[i].delay, MENUMINDELAY);
 		menucmd[i].delayCount = 0;
-	}
-}
-
-void M_MapMenuControls(event_t *ev)
-{
-	if (ev)
-	{
-		// update keys current state
-		G_MapEventsToControls(ev);
 	}
 }
 
