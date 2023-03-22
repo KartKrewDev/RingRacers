@@ -178,6 +178,7 @@ boolean S_SpeedMusic(float speed);
 struct musicdef_t
 {
 	char name[7];
+	UINT32 hash;
 	char *title;
 	char *author;
 	char *source;
