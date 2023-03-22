@@ -3519,7 +3519,7 @@ static void ResetNode(INT32 node)
 	nodeingame[node] = false;
 	nodewaiting[node] = 0;
 	nodeneedsauth[node] = false;
-	CONS_Printf("2: node %d -> %d\n", node, nodeneedsauth[node]);
+	//CONS_Printf("2: node %d -> %d\n", node, nodeneedsauth[node]);
 
 	nettics[node] = gametic;
 	supposedtics[node] = gametic;
@@ -5255,9 +5255,6 @@ static void HandlePacketFromPlayer(SINT8 node)
 				CL_PrepareDownloadLuaFile();
 			break;
 		case PT_CHALLENGEALL: ; // -Wpedantic
-			if (server)
-				break;
-
 			if (demo.playback)
 				break;
 
@@ -5343,8 +5340,8 @@ static void HandlePacketFromPlayer(SINT8 node)
 						}
 						else 
 						{
-							CONS_Printf("Writing signature for node %d player %d split %d\n", node, targetplayer, responseplayer);
 							memcpy(lastReceivedSignature[targetplayer], netbuffer->u.responseall.signature[responseplayer], sizeof(lastReceivedSignature[targetplayer]));
+							CONS_Printf("Writing signature %s for node %d player %d split %d\n", GetPrettyRRID(lastReceivedSignature[targetplayer], true), node, targetplayer, responseplayer);
 						}
 					}
 				}
@@ -5375,12 +5372,12 @@ static void HandlePacketFromPlayer(SINT8 node)
 			{
 				if (!playeringame[resultsplayer])
 				{
-					//CONS_Printf("Player %d isn't in the game, excluded from checkall\n", resultsplayer);
+					CONS_Printf("Player %d isn't in the game, excluded from checkall\n", resultsplayer);
 					continue;
 				}
 				else if (IsPlayerGuest(resultsplayer))
 				{
-					//CONS_Printf("GUEST on node %d player %d split %d, not enforcing\n", playernode[resultsplayer], resultsplayer, players[resultsplayer].splitscreenindex);
+					CONS_Printf("GUEST on node %d player %d split %d, not enforcing\n", playernode[resultsplayer], resultsplayer, players[resultsplayer].splitscreenindex);
 					continue;
 				}
 				else if (memcmp(knownWhenChallenged[resultsplayer], allzero, sizeof(allzero)) == 0)
@@ -5400,9 +5397,10 @@ static void HandlePacketFromPlayer(SINT8 node)
 					if (crypto_eddsa_check(netbuffer->u.resultsall.signature[resultsplayer],
 						knownWhenChallenged[resultsplayer], lastChallengeAll, sizeof(lastChallengeAll)))
 					{
-						CONS_Alert(CONS_WARNING, "PT_RESULTSALL had invalid signature for node %d player %d split %d, something doesn't add up!\n",
-						playernode[resultsplayer], resultsplayer, players[resultsplayer].splitscreenindex);
+						CONS_Alert(CONS_WARNING, "PT_RESULTSALL had invalid signature %s for node %d player %d split %d, something doesn't add up!\n",
+						GetPrettyRRID(netbuffer->u.resultsall.signature[resultsplayer], true), playernode[resultsplayer], resultsplayer, players[resultsplayer].splitscreenindex);
 						HandleSigfail("Server sent invalid client signature.");
+						break;
 					}
 					else
 					{
@@ -6314,11 +6312,12 @@ static void UpdateChallenges(void)
 					continue;
 				if (memcmp(lastReceivedSignature[i], allZero, sizeof(allZero)) == 0) // We never got a response!
 				{
-					CONS_Alert(CONS_WARNING, "Unreceived signature for player %d, who is still in-game\n", i);
+					if (!IsPlayerGuest(i))
+						CONS_Alert(CONS_WARNING, "Unreceived signature for player %d, who is still in-game\n", i);
 				}
 				else
 				{
-					CONS_Printf("Player %d passed checkall and has key %s, adding...\n", i, GetPrettyRRID(players[i].public_key, true));
+					CONS_Printf("Player %d passed with key %s sig %s, adding...\n", i, GetPrettyRRID(players[i].public_key, true), GetPrettyRRID(lastReceivedSignature[i], true));
 					memcpy(netbuffer->u.resultsall.signature[i], lastReceivedSignature[i], sizeof(netbuffer->u.resultsall.signature[i]));
 					#ifdef DEVELOP
 						if (cv_badresults.value)
@@ -6329,6 +6328,11 @@ static void UpdateChallenges(void)
 						}
 					#endif
 				}
+			}
+
+			for (i = 0; i < MAXPLAYERS; i++)
+			{
+				CONS_Printf("SIG %d: %s\n", i, GetPrettyRRID(netbuffer->u.resultsall.signature[i], true));
 			}
 
 			for (i = 0; i < MAXNETNODES; i++)
