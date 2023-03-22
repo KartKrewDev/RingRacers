@@ -1388,14 +1388,16 @@ static void CL_LoadReceivedSavegame(boolean reloading)
 	netbuffer->packettype = PT_RECEIVEDGAMESTATE;
 	HSendPacket(servernode, true, 0, 0);
 
-	int i;
-	for (i = 0; i < MAXPLAYERS; i++)
+	if (reloading)
 	{
-		if (memcmp(priorGamestateKeySave[i], players[i].public_key, sizeof(priorGamestateKeySave[i])) != 0)
+		int i;
+		for (i = 0; i < MAXPLAYERS; i++)
 		{
-			CONS_Printf("New gamestate has different public keys, shenanigans afoot?\n");
-			// TODO: Actually do something in this situation
-			break;
+			if (memcmp(priorGamestateKeySave[i], players[i].public_key, sizeof(priorGamestateKeySave[i])) != 0)
+			{
+				HandleSigfail("Gamestate reload contained new keys");
+				break;
+			}
 		}
 	}
 }
