@@ -26,7 +26,7 @@ function(git_current_branch variable)
 
 	# If a detached head, a ref could still be resolved.
 	if("${output}" STREQUAL "")
-		_git_command(describe --all --exact-match)
+		_git_command(describe --all --exact-match --exclude */HEAD)
 
 		# Get the ref, in the form heads/master or
 		# remotes/origin/master so isolate the final part.
