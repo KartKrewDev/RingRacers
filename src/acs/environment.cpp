@@ -310,8 +310,7 @@ ACSVM::Word Environment::callSpecImpl
 
 	int i = 0;
 
-
-	for (i = 0; i < NUMLINESTRINGARGS; i++)
+	for (i = 0; i < std::min((signed)(argC), NUMLINESTRINGARGS); i++)
 	{
 		ACSVM::String *strPtr = map->getString(argV[i]);
 
@@ -319,7 +318,7 @@ ACSVM::Word Environment::callSpecImpl
 		M_Memcpy(stringargs[i], strPtr->str, strPtr->len + 1);
 	}
 
-	for (i = 0; i < NUMLINEARGS; i++)
+	for (i = 0; i < std::min((signed)(argC), NUMLINEARGS); i++)
 	{
 		args[i] = argV[i];
 	}
