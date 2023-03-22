@@ -6619,6 +6619,12 @@ static void P_MobjSceneryThink(mobj_t *mobj)
 	case MT_MONITOR_SHARD:
 		Obj_MonitorShardThink(mobj);
 		break;
+	case MT_DROPTARGET_MORPH:
+		if (Obj_DropTargetMorphThink(mobj) == false)
+		{
+			return;
+		}
+		break;
 	case MT_VWREF:
 	case MT_VWREB:
 	{
@@ -7417,6 +7423,12 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 			if (!--mobj->reactiontime)
 			{
 				P_SetMobjState(mobj, mobj->info->spawnstate);
+
+				// forward thrown
+				if (mobj->health == 4)
+				{
+					Obj_BeginDropTargetMorph(mobj, SKINCOLOR_LIME);
+				}
 			}
 		}
 		else

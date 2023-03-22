@@ -101,6 +101,10 @@ void Obj_InitLoopCenter(mobj_t *center);
 void Obj_LinkLoopAnchor(mobj_t *anchor, mobj_t *center, UINT8 type);
 void Obj_LoopEndpointCollide(mobj_t *special, mobj_t *toucher);
 
+/* Drop Target */
+void Obj_BeginDropTargetMorph(mobj_t *target, skincolornum_t color);
+boolean Obj_DropTargetMorphThink(mobj_t *morph);
+
 #ifdef __cplusplus
 } // extern "C"
 #endif

@@ -13,4 +13,5 @@ target_sources(SRB2SDL2 PRIVATE
 	monitor.c
 	item-spot.c
 	loops.c
+	drop-target.c
 )

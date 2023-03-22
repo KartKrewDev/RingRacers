@@ -457,6 +457,7 @@ boolean K_LandMineCollide(mobj_t *t1, mobj_t *t2)
 boolean K_DropTargetCollide(mobj_t *t1, mobj_t *t2)
 {
 	mobj_t *draggeddroptarget = (t1->type == MT_DROPTARGET_SHIELD) ? t1->target : NULL;
+	UINT8 strength;
 
 	if (((t1->target == t2) || (t1->target == t2->target)) && ((t1->threshold > 0 && t2->type == MT_PLAYER) || (t2->type != MT_PLAYER && t2->threshold > 0)))
 		return true;
@@ -467,9 +468,21 @@ boolean K_DropTargetCollide(mobj_t *t1, mobj_t *t2)
 	if (t2->player && (t2->player->hyudorotimer || t2->player->justbumped))
 		return true;
 
+	if (t1->health > 3) // forward thrown
+	{
+		strength = 0;
+	}
+	else if (t1->reactiontime == 0 || draggeddroptarget)
+	{
+		strength = 80;
+	}
+	else
+	{
+		strength = 140;
+	}
+
 	// Intensify bumps if already spinning...
-	P_Thrust(t1, R_PointToAngle2(t1->x, t1->y, t2->x, t2->y),
-		((t1->reactiontime && !draggeddroptarget) ? 140 : 80) * t1->scale);
+	P_Thrust(t1, R_PointToAngle2(t1->x, t1->y, t2->x, t2->y), strength * t1->scale);
 
 	if (draggeddroptarget)
 	{
@@ -548,9 +561,22 @@ boolean K_DropTargetCollide(mobj_t *t1, mobj_t *t2)
 	t1->flags |= MF_SHOOTABLE;
 	// The following sets t1->target to t2, so draggeddroptarget keeps it persisting...
 	P_DamageMobj(t1, t2, (t2->target ? t2->target : t2), 1, DMG_NORMAL);
-	t1->color = (t1->health > 1)
-		? SKINCOLOR_GOLD
-		: SKINCOLOR_CRIMSON;
+
+	switch (t1->health)
+	{
+		case 3:
+			t1->color = SKINCOLOR_LIME;
+			break;
+
+		case 2:
+			t1->color = SKINCOLOR_GOLD;
+			break;
+
+		case 1:
+			t1->color = SKINCOLOR_CRIMSON;
+			break;
+	}
+
 	t1->flags &= ~MF_SHOOTABLE;
 
 	t1->spritexscale = 3*FRACUNIT;
