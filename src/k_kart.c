@@ -4086,7 +4086,7 @@ void K_UpdateSliptideZipIndicator(player_t *player)
 	}
 
 	mobj = player->sliptideZipIndicator;
-	angle_t momentumAngle = R_PointToAngle2(0, 0, player->mo->momx, player->mo->momy);
+	angle_t momentumAngle = K_MomentumAngle(player->mo);
 
 	P_MoveOrigin(mobj, player->mo->x - FixedMul(40*mapobjectscale, FINECOSINE(momentumAngle >> ANGLETOFINESHIFT)),
 		player->mo->y - FixedMul(40*mapobjectscale, FINESINE(momentumAngle >> ANGLETOFINESHIFT)),
