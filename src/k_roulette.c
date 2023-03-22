@@ -441,40 +441,30 @@ static UINT32 K_GetItemRouletteDistance(const player_t *player, UINT8 numPlayers
 --------------------------------------------------*/
 static boolean K_DenyShieldOdds(kartitems_t item)
 {
-	INT32 shieldType = K_GetShieldFromItem(item);
+	const INT32 shieldType = K_GetShieldFromItem(item);
+	size_t i;
 
 	if ((gametyperules & GTR_CIRCUIT) == 0)
 	{
 		return false;
 	}
 
-	switch (shieldType)
+	if (shieldType == KSHIELD_NONE)
 	{
-		case KSHIELD_NONE:
-			/* Marble Garden Top is not REALLY
-				a Sonic 3 shield */
-		case KSHIELD_TOP:
+		return false;
+	}
+
+	for (i = 0; i < MAXPLAYERS; i++)
+	{
+		if (playeringame[i] == false || players[i].spectator == true)
 		{
-			break;
+			continue;
 		}
 
-		default:
+		if (shieldType == K_GetShieldFromItem(players[i].itemtype))
 		{
-			size_t i;
-
-			for (i = 0; i < MAXPLAYERS; i++)
-			{
-				if (playeringame[i] == false || players[i].spectator == true)
-				{
-					continue;
-				}
-
-				if (shieldType == K_GetShieldFromItem(players[i].itemtype))
-				{
-					// Don't allow more than one of each shield type at a time
-					return true;
-				}
-			}
+			// Don't allow more than one of each shield type at a time
+			return true;
 		}
 	}
 
