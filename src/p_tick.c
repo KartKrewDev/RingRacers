@@ -832,86 +832,9 @@ void P_Ticker(boolean run)
 	if (demo.playback)
 		G_StoreRewindInfo();
 
-	if (leveltime == 2)
-	{
-		// The values needed to set this properly are not correct at map load,
-		// so we have to do it at the second tick instead...
-		K_TimerInit();
-	}
-
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
 		G_CopyTiccmd(&players[i].oldcmd, &players[i].cmd, 1);
 	}
-
 //	Z_CheckMemCleanup();
-}
-
-// Abbreviated ticker for pre-loading, calls thinkers and assorted things
-void P_PreTicker(INT32 frames)
-{
-	INT32 i;
-	ticcmd_t temptic;
-
-	for (i = 0; i <= r_splitscreen; i++)
-		postimgtype[i] = postimg_none;
-
-	if (marathonmode & MA_INGAME)
-		marathonmode |= MA_INIT;
-
-	hook_defrosting = frames;
-
-	while (hook_defrosting)
-	{
-		P_MapStart();
-
-		R_UpdateMobjInterpolators();
-
-		LUA_HOOK(PreThinkFrame);
-
-		K_UpdateAllPlayerPositions();
-
-		// OK! Now that we got all of that sorted, players can think!
-		for (i = 0; i < MAXPLAYERS; i++)
-			if (playeringame[i] && players[i].mo && !P_MobjWasRemoved(players[i].mo))
-			{
-				// stupid fucking cmd hack
-				// if it isn't for this, players can move in preticker time
-				// (and disrupt demo recording and other things !!)
-				memcpy(&temptic, &players[i].cmd, sizeof(ticcmd_t));
-				memset(&players[i].cmd, 0, sizeof(ticcmd_t));
-
-				P_PlayerThink(&players[i]);
-
-				memcpy(&players[i].cmd, &temptic, sizeof(ticcmd_t));
-			}
-
-		P_RunThinkers();
-
-		// Run any "after all the other thinkers" stuff
-		for (i = 0; i < MAXPLAYERS; i++)
-			if (playeringame[i] && players[i].mo && !P_MobjWasRemoved(players[i].mo))
-				P_PlayerAfterThink(&players[i]);
-
-		LUA_HOOK(ThinkFrame);
-
-		// Run shield positioning
-		P_RunOverlays();
-
-		P_UpdateSpecials();
-		P_RespawnSpecials();
-
-		LUA_HOOK(PostThinkFrame);
-
-		R_UpdateLevelInterpolators();
-		R_UpdateViewInterpolation();
-		R_ResetViewInterpolation(0);
-
-		P_MapEnd();
-
-		hook_defrosting--;
-	}
-
-	if (marathonmode & MA_INGAME)
-		marathonmode &= ~MA_INIT;
 }

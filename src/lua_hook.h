@@ -118,7 +118,6 @@ ENUM (STRING_HOOK);
 //#define LUA_HUDHOOK(type) LUA_HookHUD(HUD_HOOK(type))
 
 extern boolean hook_cmd_running;
-extern int hook_defrosting;
 
 void LUA_HookVoid(int hook);
 void LUA_HookHUD(huddrawlist_h, int hook);

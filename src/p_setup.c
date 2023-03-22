@@ -7064,6 +7064,8 @@ static void P_InitLevelSettings(void)
 	leveltime = 0;
 	modulothing = 0;
 
+	K_TimerReset();
+
 	// special stage tokens, emeralds, and ring total
 	runemeraldmanager = false;
 	emeraldspawndelay = 60*TICRATE;
@@ -7618,8 +7620,6 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 	sector_t *ss;
 	virtlump_t *encoreLump = NULL;
 
-	K_TimerReset();
-
 	levelloading = true;
 
 	// This is needed. Don't touch.
@@ -7999,10 +7999,6 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 
 	G_AddMapToBuffer(gamemap-1);
 
-	levelloading = false;
-
-	P_RunCachedActions();
-
 	P_MapEnd(); // tm.thing is no longer needed from this point onwards
 
 	// Took me 3 hours to figure out why my progression kept on getting overwritten with the titlemap...
@@ -8012,54 +8008,82 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 		{
 			// I'd love to do this in the menu code instead of here, but everything's a mess and I can't guarantee saving proper player struct info before the first act's started. You could probably refactor it, but it'd be a lot of effort. Easier to just work off known good code. ~toast 22/06/2020
 			if (!(ultimatemode || netgame || multiplayer || demo.playback || demo.recording || metalrecording || modeattacking || marathonmode)
-			&& !usedCheats && cursaveslot > 0)
+				&& !usedCheats && cursaveslot > 0)
+			{
 				G_SaveGame((UINT32)cursaveslot, gamemap);
+			}
 			// If you're looking for saving sp file progression (distinct from G_SaveGameOver), check G_DoCompleted.
 		}
 		lastmaploaded = gamemap; // HAS to be set after saving!!
 	}
 
-	if (!fromnetsave) // uglier hack
-	{ // to make a newly loaded level start on the second frame.
+	if (!fromnetsave)
+	{
 		INT32 buf = gametic % BACKUPTICS;
 
 		for (i = 0; i < MAXPLAYERS; i++)
 		{
 			if (playeringame[i])
+			{
 				G_CopyTiccmd(&players[i].cmd, &netcmds[buf][i], 1);
+			}
 		}
 
-		P_PreTicker(2);
+		for (i = 0; i <= r_splitscreen; i++)
+		{
+			postimgtype[i] = postimg_none;
+		}
+
+		if (marathonmode & MA_INGAME)
+		{
+			marathonmode |= MA_INIT;
+		}
 
 		P_MapStart(); // just in case MapLoad modifies tm.thing
+
 		ACS_RunLevelStartScripts();
 		LUA_HookInt(gamemap, HOOK(MapLoad));
+
 		P_MapEnd(); // just in case MapLoad modifies tm.thing
 	}
+	else
+	{
+		// Don't run P_PostLoadLevel when loading netgames.
+		levelloading = false;
+	}
 
-	// No render mode or reloading gamestate, stop here.
-	if (rendermode == render_none || reloadinggamestate)
-		return true;
+	if (rendermode != render_none && reloadinggamestate == false)
+	{
+		R_ResetViewInterpolation(0);
+		R_ResetViewInterpolation(0);
+		R_UpdateMobjInterpolators();
 
-	R_ResetViewInterpolation(0);
-	R_ResetViewInterpolation(0);
-	R_UpdateMobjInterpolators();
+		// Title card!
+		G_StartTitleCard();
 
-	// Title card!
-	G_StartTitleCard();
-
-	// Can the title card actually run, though?
-	if (!WipeStageTitle)
-		return true;
-	if (ranspecialwipe == 2)
-		return true;
-
-	// If so...
-	// but not if joining because the fade may time us out
-	if (!fromnetsave)
-		G_PreLevelTitleCard();
+		// Can the title card actually run, though?
+		if (WipeStageTitle && ranspecialwipe != 2 && fromnetsave == false)
+		{
+			G_PreLevelTitleCard();
+		}
+	}
 
 	return true;
+}
+
+void P_PostLoadLevel(void)
+{
+	K_TimerInit();
+
+	P_RunCachedActions();
+
+	if (marathonmode & MA_INGAME)
+	{
+		marathonmode &= ~MA_INIT;
+	}
+
+	// We're now done loading the level.
+	levelloading = false;
 }
 
 //

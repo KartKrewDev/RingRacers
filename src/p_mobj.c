@@ -10938,7 +10938,7 @@ mobj_t *P_SpawnMobj(fixed_t x, fixed_t y, fixed_t z, mobjtype_t type)
 	// Call action functions when the state is set
 	if (st->action.acp1 && (mobj->flags & MF_RUNSPAWNFUNC))
 	{
-		if (levelloading)
+		if (levelloading == true)
 		{
 			// Cache actions in a linked list
 			// with function pointer, and
