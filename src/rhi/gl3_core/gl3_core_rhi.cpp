@@ -18,6 +18,7 @@
 
 #include <fmt/format.h>
 #include <glad/gl.h>
+#include <glm/gtc/type_ptr.hpp>
 
 using namespace srb2;
 using namespace rhi;
@@ -1426,19 +1427,19 @@ void GlCoreRhi::bind_uniform_set(Handle<GraphicsContext> ctx, uint32_t slot, Han
 				gl_->Uniform1f(pipeline_uniform, value);
 				GL_ASSERT
 			},
-			[&](const std::array<float, 2>& value)
+			[&](const glm::vec2& value)
 			{
-				gl_->Uniform2f(pipeline_uniform, value[0], value[1]);
+				gl_->Uniform2f(pipeline_uniform, value.x, value.y);
 				GL_ASSERT
 			},
-			[&](const std::array<float, 3>& value)
+			[&](const glm::vec3& value)
 			{
-				gl_->Uniform3f(pipeline_uniform, value[0], value[1], value[2]);
+				gl_->Uniform3f(pipeline_uniform, value.x, value.y, value.z);
 				GL_ASSERT
 			},
-			[&](const std::array<float, 4>& value)
+			[&](const glm::vec4& value)
 			{
-				gl_->Uniform4f(pipeline_uniform, value[0], value[1], value[2], value[3]);
+				gl_->Uniform4f(pipeline_uniform, value.x, value.y, value.z, value.w);
 				GL_ASSERT
 			},
 			[&](const int32_t& value)
@@ -1446,34 +1447,34 @@ void GlCoreRhi::bind_uniform_set(Handle<GraphicsContext> ctx, uint32_t slot, Han
 				gl_->Uniform1i(pipeline_uniform, value);
 				GL_ASSERT
 			},
-			[&](const std::array<int32_t, 2>& value)
+			[&](const glm::ivec2& value)
 			{
-				gl_->Uniform2i(pipeline_uniform, value[0], value[1]);
+				gl_->Uniform2i(pipeline_uniform, value.x, value.y);
 				GL_ASSERT
 			},
-			[&](const std::array<int32_t, 3>& value)
+			[&](const glm::ivec3& value)
 			{
-				gl_->Uniform3i(pipeline_uniform, value[0], value[1], value[2]);
+				gl_->Uniform3i(pipeline_uniform, value.x, value.y, value.z);
 				GL_ASSERT
 			},
-			[&](const std::array<int32_t, 4>& value)
+			[&](const glm::ivec4& value)
 			{
-				gl_->Uniform4i(pipeline_uniform, value[0], value[1], value[2], value[3]);
+				gl_->Uniform4i(pipeline_uniform, value.x, value.y, value.z, value.w);
 				GL_ASSERT
 			},
-			[&](const std::array<std::array<float, 2>, 2>& value)
+			[&](const glm::mat2& value)
 			{
-				gl_->UniformMatrix2fv(pipeline_uniform, 1, false, reinterpret_cast<const GLfloat*>(&value));
+				gl_->UniformMatrix2fv(pipeline_uniform, 1, false, glm::value_ptr(value));
 				GL_ASSERT
 			},
-			[&](const std::array<std::array<float, 3>, 3>& value)
+			[&](const glm::mat3& value)
 			{
-				gl_->UniformMatrix3fv(pipeline_uniform, 1, false, reinterpret_cast<const GLfloat*>(&value));
+				gl_->UniformMatrix3fv(pipeline_uniform, 1, false, glm::value_ptr(value));
 				GL_ASSERT
 			},
-			[&](const std::array<std::array<float, 4>, 4>& value)
+			[&](const glm::mat4& value)
 			{
-				gl_->UniformMatrix4fv(pipeline_uniform, 1, false, reinterpret_cast<const GLfloat*>(&value));
+				gl_->UniformMatrix4fv(pipeline_uniform, 1, false, glm::value_ptr(value));
 				GL_ASSERT
 			},
 		};
