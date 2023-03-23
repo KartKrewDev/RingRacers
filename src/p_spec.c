@@ -2054,9 +2054,6 @@ static void K_HandleLapIncrement(player_t *player)
 				}
 
 				P_DoPlayerExit(player);
-
-				if (!(player->pflags & PF_NOCONTEST))
-					P_SetupSignExit(player);
 			}
 			else
 			{
@@ -4617,12 +4614,14 @@ static void P_SetupSignObject(mobj_t *sign, mobj_t *pmo, boolean error)
 // Finds the exit sign in the current sector and
 // sets its target to the player who passed the map.
 //
-void P_SetupSignExit(player_t *player)
+void P_SetupSignExit(player_t *player, boolean tie)
 {
 	mobj_t *thing;
 	msecnode_t *node = player->mo->subsector->sector->touching_thinglist; // things touching this sector
 	thinker_t *think;
 	INT32 numfound = 0;
+
+	angle_t bestAngle = K_MomentumAngle(player->mo) + ANGLE_180;
 
 	if (player->position != 1)
 		return;
@@ -4632,6 +4631,13 @@ void P_SetupSignExit(player_t *player)
 		thing = node->m_thing;
 		if (thing->type != MT_SIGN)
 			continue;
+
+		bestAngle = thing->angle;
+
+		if (tie)
+		{
+			break;
+		}
 
 		if (thing->state != &states[thing->info->spawnstate])
 			continue;
@@ -4654,6 +4660,13 @@ void P_SetupSignExit(player_t *player)
 		if (thing->type != MT_SIGN)
 			continue;
 
+		bestAngle = thing->angle;
+
+		if (tie)
+		{
+			break;
+		}
+
 		if (thing->state != &states[thing->info->spawnstate])
 			continue;
 
@@ -4668,8 +4681,8 @@ void P_SetupSignExit(player_t *player)
 	if (player->mo && !P_MobjWasRemoved(player->mo))
 	{
 		thing = P_SpawnMobj(player->mo->x, player->mo->y, player->mo->floorz, MT_SIGN);
-		thing->angle = player->mo->angle;
-		P_SetupSignObject(thing, player->mo, true); // Use :youfuckedup: sign face
+		thing->angle = bestAngle;
+		P_SetupSignObject(thing, player->mo, (tie == false)); // Use :youfuckedup: sign face, except during ties
 	}
 }
 
@@ -5166,7 +5179,7 @@ static void P_ProcessExitSector(player_t *player, mtag_t sectag)
 	// Exit (for FOF exits; others are handled in P_PlayerThink in p_user.c)
 	P_DoPlayerExit(player);
 
-	P_SetupSignExit(player);
+	P_SetupSignExit(player, false);
 
 #if 0
 	if (!G_CoopGametype())
