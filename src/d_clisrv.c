@@ -885,16 +885,16 @@ static boolean CL_SendJoin(void)
 	// Don't leak old signatures from prior sessions.
 	memset(&netbuffer->u.clientcfg.challengeResponse, 0, sizeof(((clientconfig_pak *)0)->challengeResponse));
 
-	UINT32 claimedIP;
-	UINT32 realIP = *I_GetNodeAddressInt(servernode);
-	time_t receivedTime;
-	time_t now = time(NULL);
-
-	memcpy(&claimedIP, awaitingChallenge, sizeof(claimedIP));
-	memcpy(&receivedTime, awaitingChallenge + sizeof(claimedIP), sizeof(receivedTime));
-
 	if (client && netgame)
 	{
+		UINT32 claimedIP;
+		UINT32 realIP = *I_GetNodeAddressInt(servernode);
+		time_t receivedTime;
+		time_t now = time(NULL);
+
+		memcpy(&claimedIP, awaitingChallenge, sizeof(claimedIP));
+		memcpy(&receivedTime, awaitingChallenge + sizeof(claimedIP), sizeof(receivedTime));
+
 		if (realIP != claimedIP && IsExternalAddress(&realIP))
 		{
 			I_Error("External server IP didn't match the message it sent.\nSomething is very wrong here.");
@@ -4107,7 +4107,8 @@ boolean SV_SpawnServer(void)
 	}
 
 	ourIP = 0;
-	STUN_bind(GotOurIP);
+	if (netgame && server)
+		STUN_bind(GotOurIP);
 
 	// strictly speaking, i'm not convinced the following is necessary
 	// but I'm not confident enough to remove it entirely in case it breaks something
@@ -6519,7 +6520,8 @@ void NetKeepAlive(void)
 
 	UpdatePingTable();
 
-	UpdateChallenges();
+	if (netgame)
+		UpdateChallenges();
 
 	GetPackets();
 
