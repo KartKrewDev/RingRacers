@@ -124,6 +124,7 @@ boolean K_BananaBallhogCollide(mobj_t *t1, mobj_t *t2)
 		else
 		{
 			bounceangle = K_MomentumAngle(t1) + ANGLE_90;
+			t2 = NULL; // handles the arguments to P_KillMobj
 		}
 
 		// This Item Damage
