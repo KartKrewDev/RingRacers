@@ -83,6 +83,7 @@ void K_KartPlayerHUDUpdate(player_t *player);
 void K_KartResetPlayerColor(player_t *player);
 void K_KartPlayerThink(player_t *player, ticcmd_t *cmd);
 void K_KartPlayerAfterThink(player_t *player);
+fixed_t K_MomentumThreshold(const mobj_t *mo);
 angle_t K_MomentumAngle(mobj_t *mo);
 void K_AddHitLag(mobj_t *mo, INT32 tics, boolean fromDamage);
 void K_SetHitLagForObjects(mobj_t *mo1, mobj_t *mo2, INT32 tics, boolean fromDamage);
