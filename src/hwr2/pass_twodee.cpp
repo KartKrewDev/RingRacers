@@ -12,6 +12,7 @@
 #include <unordered_set>
 
 #include <stb_rect_pack.h>
+#include <glm/gtc/matrix_transform.hpp>
 
 #include "../r_patch.h"
 #include "../v_video.h"
@@ -831,8 +832,8 @@ void TwodeePass::transfer(Rhi& rhi, Handle<TransferContext> ctx)
 
 		tcb::span<const std::byte> vertex_data = tcb::as_bytes(tcb::span(orig_list.vertices));
 		tcb::span<const std::byte> index_data = tcb::as_bytes(tcb::span(orig_list.indices));
-		rhi.update_buffer_contents(ctx, merged_list.vbo, 0, vertex_data);
-		rhi.update_buffer_contents(ctx, merged_list.ibo, 0, index_data);
+		rhi.update_buffer(ctx, merged_list.vbo, 0, vertex_data);
+		rhi.update_buffer(ctx, merged_list.ibo, 0, index_data);
 
 		// Update the binding sets for each individual merged command
 		VertexAttributeBufferBinding vbos[] = {{0, merged_list.vbo}};
@@ -879,27 +880,28 @@ void TwodeePass::transfer(Rhi& rhi, Handle<TransferContext> ctx)
 	}
 
 	// Uniform sets
-	std::array<UniformVariant, 1> g1_uniforms = {{
+	std::array<UniformVariant, 1> g1_uniforms = {
 		// Projection
-		std::array<std::array<float, 4>, 4> {
-			{{2.f / vid.width, 0.f, 0.f, 0.f},
-			 {0.f, -2.f / vid.height, 0.f, 0.f},
-			 {0.f, 0.f, 1.f, 0.f},
-			 {-1.f, 1.f, 0.f, 1.f}}},
-	}};
+		glm::mat4(
+			glm::vec4(2.f / vid.width, 0.f, 0.f, 0.f),
+			glm::vec4(0.f, -2.f / vid.height, 0.f, 0.f),
+			glm::vec4(0.f, 0.f, 1.f, 0.f),
+			glm::vec4(-1.f, 1.f, 0.f, 1.f)
+		),
+	};
 	std::array<UniformVariant, 3> g2_uniforms = {
-		{// ModelView
-		 std::array<std::array<float, 4>, 4> {
-			 {{1.f, 0.f, 0.f, 0.f}, {0.f, 1.f, 0.f, 0.f}, {0.f, 0.f, 1.f, 0.f}, {0.f, 0.f, 0.f, 1.f}}},
-		 // Texcoord0 Transform
-		 std::array<std::array<float, 3>, 3> {{{1.f, 0.f, 0.f}, {0.f, 1.f, 0.f}, {0.f, 0.f, 1.f}}},
-		 // Sampler 0 Is Indexed Alpha (yes, it always is)
-		 static_cast<int32_t>(1)}};
+		// ModelView
+		glm::identity<glm::mat4>(),
+		// Texcoord0 Transform
+		glm::identity<glm::mat3>(),
+		// Sampler 0 Is Indexed Alpha (yes, it always is)
+		static_cast<int32_t>(1)
+	};
 	us_1 = rhi.create_uniform_set(ctx, {tcb::span(g1_uniforms)});
 	us_2 = rhi.create_uniform_set(ctx, {tcb::span(g2_uniforms)});
 }
 
-static constexpr const rhi::Color kClearColor = {0, 0, 0, 1};
+static constexpr const glm::vec4 kClearColor = {0, 0, 0, 1};
 
 void TwodeePass::graphics(Rhi& rhi, Handle<GraphicsContext> ctx)
 {

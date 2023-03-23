@@ -12,72 +12,9 @@
 #include "../i_video.h"
 #include "../v_video.h"
 
-#include "../d_netcmd.h"
-#ifdef HAVE_DISCORDRPC
-#include "../discord.h"
-#endif
-#include "../doomstat.h"
-#ifdef SRB2_CONFIG_ENABLE_WEBM_MOVIES
-#include "../m_avrecorder.h"
-#endif
-#include "../st_stuff.h"
-#include "../s_sound.h"
-#include "../st_stuff.h"
-#include "../v_video.h"
-
 using namespace srb2;
 using namespace srb2::hwr2;
 using namespace srb2::rhi;
-
-static void temp_legacy_finishupdate_draws()
-{
-	SCR_CalculateFPS();
-	if (st_overlay)
-	{
-		if (cv_songcredits.value)
-			HU_DrawSongCredits();
-
-		if (cv_ticrate.value)
-			SCR_DisplayTicRate();
-
-		if (cv_showping.value && netgame && (consoleplayer != serverplayer || !server_lagless))
-		{
-			if (server_lagless)
-			{
-				if (consoleplayer != serverplayer)
-					SCR_DisplayLocalPing();
-			}
-			else
-			{
-				for (int player = 1; player < MAXPLAYERS; player++)
-				{
-					if (D_IsPlayerHumanAndGaming(player))
-					{
-						SCR_DisplayLocalPing();
-						break;
-					}
-				}
-			}
-		}
-		if (cv_mindelay.value && consoleplayer == serverplayer && Playing())
-			SCR_DisplayLocalPing();
-#ifdef SRB2_CONFIG_ENABLE_WEBM_MOVIES
-		M_AVRecorder_DrawFrameRate();
-#endif
-	}
-
-	if (marathonmode)
-		SCR_DisplayMarathonInfo();
-
-	// draw captions if enabled
-	if (cv_closedcaptioning.value)
-		SCR_ClosedCaptions();
-
-#ifdef HAVE_DISCORDRPC
-	if (discordRequestList != NULL)
-		ST_AskToJoinEnvelope();
-#endif
-}
 
 SoftwarePass::SoftwarePass() : Pass()
 {
@@ -95,8 +32,6 @@ void SoftwarePass::prepass(Rhi& rhi)
 	// Render the player views... or not yet? Needs to be moved out of D_Display in d_main.c
 	// Assume it's already been done and vid.buffer contains the composited splitscreen view.
 	// In the future though, we will want to treat each player viewport separately for postprocessing.
-
-	temp_legacy_finishupdate_draws();
 
 	// Prepare RHI resources
 	if (screen_texture_ && (static_cast<int32_t>(width_) != vid.width || static_cast<int32_t>(height_) != vid.height))

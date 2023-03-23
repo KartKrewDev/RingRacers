@@ -11,6 +11,7 @@
 
 #include <optional>
 
+#include <glm/gtc/matrix_transform.hpp>
 #include <tcb/span.hpp>
 
 #include "../cxxutil.hpp"
@@ -122,13 +123,13 @@ void BlitRectPass::transfer(Rhi& rhi, Handle<TransferContext> ctx)
 {
 	if (quad_vbo_needs_upload_ && quad_vbo_)
 	{
-		rhi.update_buffer_contents(ctx, quad_vbo_, 0, tcb::as_bytes(tcb::span(kVerts)));
+		rhi.update_buffer(ctx, quad_vbo_, 0, tcb::as_bytes(tcb::span(kVerts)));
 		quad_vbo_needs_upload_ = false;
 	}
 
 	if (quad_ibo_needs_upload_ && quad_ibo_)
 	{
-		rhi.update_buffer_contents(ctx, quad_ibo_, 0, tcb::as_bytes(tcb::span(kIndices)));
+		rhi.update_buffer(ctx, quad_ibo_, 0, tcb::as_bytes(tcb::span(kIndices)));
 		quad_ibo_needs_upload_ = false;
 	}
 
@@ -143,23 +144,25 @@ void BlitRectPass::transfer(Rhi& rhi, Handle<TransferContext> ctx)
 
 	std::array<rhi::UniformVariant, 1> g1_uniforms = {{
 		// Projection
-		std::array<std::array<float, 4>, 4> {
-			{{taller ? 1.f : 1.f / output_aspect, 0.f, 0.f, 0.f},
-			 {0.f, taller ? -1.f / (1.f / output_aspect) : -1.f, 0.f, 0.f},
-			 {0.f, 0.f, 1.f, 0.f},
-			 {0.f, 0.f, 0.f, 1.f}}},
+		glm::scale(
+			glm::identity<glm::mat4>(),
+			glm::vec3(taller ? 1.f : 1.f / output_aspect, taller ? -1.f / (1.f / output_aspect) : -1.f, 1.f)
+		)
 	}};
 
 	std::array<rhi::UniformVariant, 2> g2_uniforms = {
-		{// ModelView
-		 std::array<std::array<float, 4>, 4> {
-			 {{taller ? 2.f : 2.f * aspect, 0.f, 0.f, 0.f},
-			  {0.f, taller ? 2.f * (1.f / aspect) : 2.f, 0.f, 0.f},
-			  {0.f, 0.f, 1.f, 0.f},
-			  {0.f, 0.f, 0.f, 1.f}}},
-		 // Texcoord0 Transform
-		 std::array<std::array<float, 3>, 3> {
-			 {{1.f, 0.f, 0.f}, {0.f, output_flip_ ? -1.f : 1.f, 0.f}, {0.f, 0.f, 1.f}}}}};
+		// ModelView
+		glm::scale(
+			glm::identity<glm::mat4>(),
+			glm::vec3(taller ? 2.f : 2.f * aspect, taller ? 2.f * (1.f / aspect) : 2.f, 1.f)
+		),
+		// Texcoord0 Transform
+		glm::mat3(
+			glm::vec3(1.f, 0.f, 0.f),
+			glm::vec3(0.f, output_flip_ ? -1.f : 1.f, 0.f),
+			glm::vec3(0.f, 0.f, 1.f)
+		)
+	};
 
 	uniform_sets_[0] = rhi.create_uniform_set(ctx, {g1_uniforms});
 	uniform_sets_[1] = rhi.create_uniform_set(ctx, {g2_uniforms});
@@ -178,7 +181,7 @@ void BlitRectPass::transfer(Rhi& rhi, Handle<TransferContext> ctx)
 	}
 }
 
-static constexpr const rhi::Color kClearColor = {0, 0, 0, 1};
+static constexpr const glm::vec4 kClearColor = {0, 0, 0, 1};
 
 void BlitRectPass::graphics(Rhi& rhi, Handle<GraphicsContext> ctx)
 {

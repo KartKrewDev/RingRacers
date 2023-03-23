@@ -16,6 +16,12 @@
 #include <variant>
 #include <vector>
 
+#include <glm/vec2.hpp>
+#include <glm/vec3.hpp>
+#include <glm/vec4.hpp>
+#include <glm/mat2x2.hpp>
+#include <glm/mat3x3.hpp>
+#include <glm/mat4x4.hpp>
 #include <tcb/span.hpp>
 
 #include "../core/static_vec.hpp"
@@ -209,14 +215,6 @@ enum class SamplerName
 	kSampler3
 };
 
-struct Color
-{
-	float r;
-	float g;
-	float b;
-	float a;
-};
-
 struct Rect
 {
 	int32_t x;
@@ -391,7 +389,7 @@ struct PipelineDesc
 	PrimitiveType primitive;
 	CullMode cull;
 	FaceWinding winding;
-	Color blend_color;
+	glm::vec4 blend_color;
 };
 
 struct RenderPassDesc
@@ -428,50 +426,40 @@ struct RenderPassBeginInfo
 	Handle<RenderPass> render_pass;
 	TextureOrRenderbuffer color_attachment;
 	std::optional<TextureOrRenderbuffer> depth_attachment;
-	Color clear_color;
+	glm::vec4 clear_color;
 };
 
 using UniformVariant = std::variant<
 	float,
-	std::array<float, 2>,
-	std::array<float, 3>,
-	std::array<float, 4>,
+	glm::vec2,
+	glm::vec3,
+	glm::vec4,
 
 	int32_t,
-	std::array<int32_t, 2>,
-	std::array<int32_t, 3>,
-	std::array<int32_t, 4>,
+	glm::ivec2,
+	glm::ivec3,
+	glm::ivec4,
 
-	// The indexing order of matrices is [row][column].
-
-	std::array<std::array<float, 2>, 2>,
-	std::array<std::array<float, 3>, 3>,
-	std::array<std::array<float, 4>, 4>>;
+	glm::mat2,
+	glm::mat3,
+	glm::mat4
+>;
 
 inline constexpr UniformFormat uniform_variant_format(const UniformVariant& variant)
 {
 	struct Visitor
 	{
 		UniformFormat operator()(const float&) const noexcept { return UniformFormat::kFloat; }
-		UniformFormat operator()(const std::array<float, 2>&) const noexcept { return UniformFormat::kFloat2; }
-		UniformFormat operator()(const std::array<float, 3>&) const noexcept { return UniformFormat::kFloat3; }
-		UniformFormat operator()(const std::array<float, 4>&) const noexcept { return UniformFormat::kFloat4; }
+		UniformFormat operator()(const glm::vec2&) const noexcept { return UniformFormat::kFloat2; }
+		UniformFormat operator()(const glm::vec3&) const noexcept { return UniformFormat::kFloat3; }
+		UniformFormat operator()(const glm::vec4&) const noexcept { return UniformFormat::kFloat4; }
 		UniformFormat operator()(const int32_t&) const noexcept { return UniformFormat::kInt; }
-		UniformFormat operator()(const std::array<int32_t, 2>&) const noexcept { return UniformFormat::kInt2; }
-		UniformFormat operator()(const std::array<int32_t, 3>&) const noexcept { return UniformFormat::kInt3; }
-		UniformFormat operator()(const std::array<int32_t, 4>&) const noexcept { return UniformFormat::kInt4; }
-		UniformFormat operator()(const std::array<std::array<float, 2>, 2>&) const noexcept
-		{
-			return UniformFormat::kMat2;
-		}
-		UniformFormat operator()(const std::array<std::array<float, 3>, 3>&) const noexcept
-		{
-			return UniformFormat::kMat3;
-		}
-		UniformFormat operator()(const std::array<std::array<float, 4>, 4>&) const noexcept
-		{
-			return UniformFormat::kMat4;
-		}
+		UniformFormat operator()(const glm::ivec2&) const noexcept { return UniformFormat::kInt2; }
+		UniformFormat operator()(const glm::ivec3&) const noexcept { return UniformFormat::kInt3; }
+		UniformFormat operator()(const glm::ivec4&) const noexcept { return UniformFormat::kInt4; }
+		UniformFormat operator()(const glm::mat2&) const noexcept { return UniformFormat::kMat2; }
+		UniformFormat operator()(const glm::mat3&) const noexcept { return UniformFormat::kMat3; }
+		UniformFormat operator()(const glm::mat4&) const noexcept { return UniformFormat::kMat4; }
 	};
 	return std::visit(Visitor {}, variant);
 }
@@ -537,7 +525,7 @@ struct Rhi
 	virtual void end_transfer(Handle<TransferContext> handle) = 0;
 
 	// Transfer Context functions
-	virtual void update_buffer_contents(
+	virtual void update_buffer(
 		Handle<TransferContext> ctx,
 		Handle<Buffer> buffer,
 		uint32_t offset,

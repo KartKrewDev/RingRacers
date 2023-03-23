@@ -192,7 +192,7 @@ public:
 	virtual Handle<TransferContext> begin_transfer() override;
 	virtual void end_transfer(Handle<TransferContext> handle) override;
 
-	virtual void update_buffer_contents(
+	virtual void update_buffer(
 		Handle<TransferContext> ctx,
 		Handle<Buffer> buffer,
 		uint32_t offset,

@@ -12,6 +12,7 @@
 #include <string>
 
 #include <fmt/format.h>
+#include <glm/gtc/matrix_transform.hpp>
 #include <tcb/span.hpp>
 
 #include "../f_finale.h"
@@ -174,13 +175,13 @@ void PostprocessWipePass::transfer(Rhi& rhi, Handle<TransferContext> ctx)
 
 	if (upload_vbo_)
 	{
-		rhi.update_buffer_contents(ctx, vbo_, 0, tcb::as_bytes(tcb::span(kPostprocessVerts)));
+		rhi.update_buffer(ctx, vbo_, 0, tcb::as_bytes(tcb::span(kPostprocessVerts)));
 		upload_vbo_ = false;
 	}
 
 	if (upload_ibo_)
 	{
-		rhi.update_buffer_contents(ctx, ibo_, 0, tcb::as_bytes(tcb::span(kPostprocessIndices)));
+		rhi.update_buffer(ctx, ibo_, 0, tcb::as_bytes(tcb::span(kPostprocessIndices)));
 		upload_ibo_ = false;
 	}
 
@@ -188,10 +189,10 @@ void PostprocessWipePass::transfer(Rhi& rhi, Handle<TransferContext> ctx)
 	rhi.update_texture(ctx, wipe_tex_, {0, 0, mask_w_, mask_h_}, PixelFormat::kR8, data);
 
 	UniformVariant uniforms[] = {
-		{std::array<std::array<float, 4>, 4> {
-			{{2.f, 0.f, 0.f, 0.f}, {0.f, 2.f, 0.f, 0.f}, {0.f, 0.f, 1.f, 0.f}, {0.f, 0.f, 0.f, 1.f}}}},
-		{static_cast<int32_t>(wipe_color_mode_)},
-		{static_cast<int32_t>(wipe_swizzle_)}};
+		glm::scale(glm::identity<glm::mat4>(), glm::vec3(2.f, 2.f, 1.f)),
+		static_cast<int32_t>(wipe_color_mode_),
+		static_cast<int32_t>(wipe_swizzle_)
+	};
 	us_ = rhi.create_uniform_set(ctx, {tcb::span(uniforms)});
 
 	VertexAttributeBufferBinding vbos[] = {{0, vbo_}};

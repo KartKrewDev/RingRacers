@@ -17,6 +17,7 @@ if(NOT "${SRB2_CONFIG_SYSTEM_LIBRARIES}")
 	include("cpm-libgme.cmake")
 endif()
 
+include("cpm-glm.cmake")
 include("cpm-rapidjson.cmake")
 include("cpm-discordrpc.cmake")
 include("cpm-xmp-lite.cmake")

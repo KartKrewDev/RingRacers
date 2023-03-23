@@ -36,6 +36,20 @@
 #include "sdl/ogl_sdl.h"
 #include "st_stuff.h" // kill
 
+// Legacy FinishUpdate Draws
+#include "d_netcmd.h"
+#ifdef HAVE_DISCORDRPC
+#include "discord.h"
+#endif
+#include "doomstat.h"
+#ifdef SRB2_CONFIG_ENABLE_WEBM_MOVIES
+#include "m_avrecorder.h"
+#endif
+#include "st_stuff.h"
+#include "s_sound.h"
+#include "st_stuff.h"
+#include "v_video.h"
+
 using namespace srb2;
 using namespace srb2::hwr2;
 using namespace srb2::rhi;
@@ -116,6 +130,56 @@ static void finish_legacy_ogl_update()
 	OglSdlFinishUpdate(cv_vidwait.value);
 }
 #endif
+
+static void temp_legacy_finishupdate_draws()
+{
+	SCR_CalculateFPS();
+	if (st_overlay)
+	{
+		if (cv_songcredits.value)
+			HU_DrawSongCredits();
+
+		if (cv_ticrate.value)
+			SCR_DisplayTicRate();
+
+		if (cv_showping.value && netgame && (consoleplayer != serverplayer || !server_lagless))
+		{
+			if (server_lagless)
+			{
+				if (consoleplayer != serverplayer)
+					SCR_DisplayLocalPing();
+			}
+			else
+			{
+				for (int player = 1; player < MAXPLAYERS; player++)
+				{
+					if (D_IsPlayerHumanAndGaming(player))
+					{
+						SCR_DisplayLocalPing();
+						break;
+					}
+				}
+			}
+		}
+		if (cv_mindelay.value && consoleplayer == serverplayer && Playing())
+			SCR_DisplayLocalPing();
+#ifdef SRB2_CONFIG_ENABLE_WEBM_MOVIES
+		M_AVRecorder_DrawFrameRate();
+#endif
+	}
+
+	if (marathonmode)
+		SCR_DisplayMarathonInfo();
+
+	// draw captions if enabled
+	if (cv_closedcaptioning.value)
+		SCR_ClosedCaptions();
+
+#ifdef HAVE_DISCORDRPC
+	if (discordRequestList != NULL)
+		ST_AskToJoinEnvelope();
+#endif
+}
 
 static InternalPassData build_pass_manager()
 {
@@ -227,6 +291,7 @@ static InternalPassData build_pass_manager()
 			rhi.present();
 			rhi.finish();
 			framebuffer_manager->reset_post();
+			I_NewImguiFrame();
 		}
 	);
 
@@ -364,6 +429,8 @@ void I_FinishUpdate(void)
 	}
 #endif
 
+	temp_legacy_finishupdate_draws();
+
 	rhi::Rhi* rhi = sys::get_rhi(sys::g_current_rhi);
 
 	if (rhi == nullptr)
@@ -392,6 +459,8 @@ void I_FinishUpdateWipeStartScreen(void)
 	}
 #endif
 
+	temp_legacy_finishupdate_draws();
+
 	rhi::Rhi* rhi = sys::get_rhi(sys::g_current_rhi);
 
 	if (rhi == nullptr)
@@ -403,6 +472,7 @@ void I_FinishUpdateWipeStartScreen(void)
 	maybe_reinit_passes(rhi);
 
 	g_passes->wipe_capture_start_rendering->render(*rhi);
+	I_NewImguiFrame();
 }
 
 void I_FinishUpdateWipeEndScreen(void)
@@ -420,6 +490,8 @@ void I_FinishUpdateWipeEndScreen(void)
 	}
 #endif
 
+	temp_legacy_finishupdate_draws();
+
 	rhi::Rhi* rhi = sys::get_rhi(sys::g_current_rhi);
 
 	if (rhi == nullptr)
@@ -431,6 +503,7 @@ void I_FinishUpdateWipeEndScreen(void)
 	maybe_reinit_passes(rhi);
 
 	g_passes->wipe_capture_end_rendering->render(*rhi);
+	I_NewImguiFrame();
 }
 
 void I_FinishUpdateWipe(void)
@@ -447,6 +520,8 @@ void I_FinishUpdateWipe(void)
 		return;
 	}
 #endif
+
+	temp_legacy_finishupdate_draws();
 
 	rhi::Rhi* rhi = sys::get_rhi(sys::g_current_rhi);
 
