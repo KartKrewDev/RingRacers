@@ -723,6 +723,16 @@ void Obj_PlayerUFOCollide(mobj_t *ufo, mobj_t *other)
 		return;
 	}
 
+	if (other->z > ufo->z + ufo->height)
+	{
+		return; // overhead
+	}
+
+	if (other->z + other->height < ufo->z)
+	{
+		return; // underneath
+	}
+
 	if ((other->player->sneakertimer > 0)
 		&& !P_PlayerInPain(other->player)
 		&& (other->player->flashing == 0))
@@ -736,16 +746,6 @@ void Obj_PlayerUFOCollide(mobj_t *ufo, mobj_t *other)
 	{
 		const angle_t moveAngle = K_MomentumAngle(ufo);
 		const angle_t clipAngle = R_PointToAngle2(ufo->x, ufo->y, other->x, other->y);
-
-		if (other->z > ufo->z + ufo->height)
-		{
-			return; // overhead
-		}
-
-		if (other->z + other->height < ufo->z)
-		{
-			return; // underneath
-		}
 
 		if (AngleDelta(moveAngle, clipAngle) < ANG60)
 		{
