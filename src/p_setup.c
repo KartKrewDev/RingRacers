@@ -7476,6 +7476,8 @@ static void P_InitGametype(void)
 	lastLowestLap = 0;
 	spbplace = -1;
 
+	G_ClearRetryFlag();
+
 	// Start recording replay in multiplayer with a temp filename
 	//@TODO I'd like to fix dedis crashing when recording replays for the future too...
 	if (gamestate == GS_LEVEL && !demo.playback && multiplayer && !dedicated)
