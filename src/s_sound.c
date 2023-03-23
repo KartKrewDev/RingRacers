@@ -1366,22 +1366,26 @@ struct cursongcredit cursongcredit; // Currently displayed song credit info
 //
 // Find music def by 6 char name
 //
-musicdef_t *S_FindMusicDef(const char *name)
+musicdef_t *S_FindMusicDef(const char *name, UINT8 *i)
 {
 	UINT32 hash = quickncasehash (name, 6);
 	musicdef_t *def;
 
 	for (def = musicdefstart; def; def = def->next)
 	{
-		if (hash != def->hash)
-			continue;
+		for (*i = 0; *i < def->numtracks; (*i)++)
+		{
+			if (hash != def->hash[*i])
+				continue;
 
-		if (stricmp(def->name, name))
-			continue;
+			if (stricmp(def->name[*i], name))
+				continue;
 
-		return def;
+			return def;
+		}
 	}
 
+	*i = 0;
 	return NULL;
 }
 
@@ -1423,7 +1427,7 @@ ReadMusicDefFields
 
 	if (!stricmp(stoken, "lump"))
 	{
-		value = strtok(NULL, " ");
+		value = strtok(NULL, " ,");
 		if (!value)
 		{
 			return MusicDefError(CONS_WARNING,
@@ -1432,16 +1436,32 @@ ReadMusicDefFields
 		}
 		else
 		{
-			def = S_FindMusicDef(value);
+			UINT8 i = 0;
+
+			def = S_FindMusicDef(value, &i);
 
 			// Nothing found, add to the end.
 			if (!def)
 			{
 				def = Z_Calloc(sizeof (musicdef_t), PU_STATIC, NULL);
 
-				STRBUFCPY(def->name, value);
-				strlwr(def->name);
-				def->hash = quickncasehash (def->name, 6);
+				do {
+					if (i >= MAXDEFTRACKS)
+						break;
+					STRBUFCPY(def->name[i], value);
+					strlwr(def->name[i]);
+					def->hash[i] = quickncasehash (def->name[i], 6);
+					i++;
+				} while ((value = strtok(NULL," ,")) != NULL);
+
+				if (value != NULL)
+				{
+					return MusicDefError(CONS_ERROR,
+							"Extra tracks for field '%s' beyond 3 discarded.", // MAXDEFTRACKS
+							stoken, lumpnum, line);
+				}
+
+				def->numtracks = i;
 				def->volume = DEFAULT_MUSICDEF_VOLUME;
 
 				def->next = musicdefstart;
@@ -1622,7 +1642,8 @@ void S_InitMusicDefs(void)
 //
 void S_ShowMusicCredit(void)
 {
-	musicdef_t *def = S_FindMusicDef(music_name);
+	UINT8 i = 0;
+	musicdef_t *def = S_FindMusicDef(music_name, &i);
 
 	char credittext[128] = "";
 	char *work = NULL;
@@ -1645,6 +1666,17 @@ void S_ShowMusicCredit(void)
 	{
 		strncat(credittext, work, len);
 		len -= worklen;
+
+		if (def->numtracks > 1)
+		{
+			work = va(" (%c)", i+'A');
+			worklen = strlen(work);
+			if (worklen <= len)
+			{
+				strncat(credittext, work, len);
+				len -= worklen;
+			}
+		}
 
 #define MUSICCREDITAPPEND(field)\
 		if (field)\
@@ -2252,7 +2284,8 @@ void S_ChangeMusicEx(const char *mmusic, UINT16 mflags, boolean looping, UINT32 
 		music_looping = looping;
 
 		{
-			musicdef_t *def = S_FindMusicDef(music_name);
+			UINT8 i = 0;
+			musicdef_t *def = S_FindMusicDef(music_name, &i);
 
 			if (def)
 			{
@@ -2468,9 +2501,16 @@ static inline void PrintMusicDefField(const char *label, const char *field)
 	}
 }
 
-static void PrintSongAuthors(const musicdef_t *def)
+static void PrintSongAuthors(const musicdef_t *def, UINT8 i)
 {
-	PrintMusicDefField("Title:  ", def->title);
+	if (def->numtracks > 1)
+	{
+		PrintMusicDefField("Title:  ", va("%s (%c)", def->title, i+'A'));
+	}
+	else
+	{
+		PrintMusicDefField("Title:  ", def->title);
+	}
 	PrintMusicDefField("Author: ", def->author);
 
 	CONS_Printf("\n");
@@ -2504,27 +2544,29 @@ static void Command_Tunes_f(void)
 
 	if (!strcasecmp(tunearg, "-show"))
 	{
-		const musicdef_t *def = S_FindMusicDef(music_name);
+		UINT8 i = 0;
+		const musicdef_t *def = S_FindMusicDef(music_name, &i);
 
 		CONS_Printf(M_GetText("The current tune is: %s [track %d]\n"),
 			music_name, (music_flags & MUSIC_TRACKMASK));
 
 		if (def != NULL)
 		{
-			PrintSongAuthors(def);
+			PrintSongAuthors(def, i);
 		}
 		return;
 	}
 	if (!strcasecmp(tunearg, "-showdefault"))
 	{
-		const musicdef_t *def = S_FindMusicDef(mapmusname);
+		UINT8 i = 0;
+		const musicdef_t *def = S_FindMusicDef(mapmusname, &i);
 
 		CONS_Printf(M_GetText("The default tune is: %s [track %d]\n"),
 			mapmusname, (mapmusflags & MUSIC_TRACKMASK));
 
 		if (def != NULL)
 		{
-			PrintSongAuthors(def);
+			PrintSongAuthors(def, i);
 		}
 		return;
 	}
