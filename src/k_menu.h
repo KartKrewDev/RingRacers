@@ -563,7 +563,6 @@ void M_SetMenuDelay(UINT8 i);
 
 void M_SortServerList(void);
 
-void M_MapMenuControls(event_t *ev);
 void M_UpdateMenuCMD(UINT8 i);
 boolean M_Responder(event_t *ev);
 boolean M_MenuButtonPressed(UINT8 pid, UINT32 bt);
