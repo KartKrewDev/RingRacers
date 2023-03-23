@@ -2438,9 +2438,12 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 
 				P_PlayRinglossSound(target);
 				P_PlayerRingBurst(player, ringburst);
-			}
 
-			K_PlayPainSound(target, source);
+				K_PopPlayerShield(player);
+				player->instashield = 15;
+
+				K_PlayPainSound(target, source);
+			}
 
 			if ((hardhit == true) || cv_kartdebughuddrop.value)
 			{
@@ -2448,12 +2451,7 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 			}
 			else
 			{
-				K_DropHnextList(player, (type != DMG_STUMBLE));
-			}
-
-			if (type != DMG_STUMBLE)
-			{
-				player->instashield = 15;
+				K_DropHnextList(player);
 			}
 
 			if (inflictor && !P_MobjWasRemoved(inflictor) && inflictor->type == MT_BANANA)
