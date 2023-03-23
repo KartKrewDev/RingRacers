@@ -5328,7 +5328,7 @@ static void HandlePacketFromPlayer(SINT8 node)
 			
 			int challengeplayers;
 			time_t now, then;
-			INT16 sentmap; // if gamemap ever needs to change type, god forbid, change this too
+			UINT32 claimedIP;
 
 			memcpy(lastChallengeAll, netbuffer->u.challengeall.secret, sizeof(lastChallengeAll));
 
@@ -5343,11 +5343,14 @@ static void HandlePacketFromPlayer(SINT8 node)
 				break;
 			}
 
-			memcpy(&sentmap, lastChallengeAll + sizeof(then), sizeof(sentmap));
-			CONS_Printf("Got map %hd, current map %hd\n", sentmap, gamemap);
-			if (sentmap != gamemap)
+			memcpy(&claimedIP, lastChallengeAll + sizeof(then), sizeof(claimedIP));
+			UINT32 realIP = *I_GetNodeAddressInt(servernode);
+
+			CONS_Printf("Got IP %u, known IP %u\n", claimedIP, gamemap);
+
+			if (realIP != claimedIP && IsExternalAddress(&realIP))
 			{
-				HandleSigfail("Bad challenge - wrong gamemap");
+				HandleSigfail("Bad challenge - server claimed wrong IP");
 				break;
 			}
 
@@ -6332,8 +6335,6 @@ static void UpdateChallenges(void)
 
 			memset(knownWhenChallenged, 0, sizeof(knownWhenChallenged));
 
-			// Random noise so it's difficult to reuse the response
-			// Current time so that difficult to reuse the challenge
 			time_t now = time(NULL);
 			#ifdef DEVELOP
 				if (cv_badchallengetime.value)
@@ -6343,10 +6344,10 @@ static void UpdateChallenges(void)
 					now = 0;
 				}
 			#endif
-			CONS_Printf("now: %ld, gamemap: %hd\n", now, gamemap);
-			csprng(netbuffer->u.challengeall.secret, sizeof(netbuffer->u.challengeall.secret));
-			memcpy(netbuffer->u.challengeall.secret, &now, sizeof(now)); // First few bytes are the timestamp...
-			memcpy(netbuffer->u.challengeall.secret + sizeof(now), &gamemap, sizeof(gamemap)); // And the next two are the current map. (TODO: This works but I don't think it's doing what I think it's doing, pointers suck.)
+			CONS_Printf("now: %ld, ip: %u\n", now, ourIP);
+			csprng(netbuffer->u.challengeall.secret, sizeof(netbuffer->u.challengeall.secret)); // Random noise so the client can't guess...
+			memcpy(netbuffer->u.challengeall.secret, &now, sizeof(now)); // ...timestamp...
+			memcpy(netbuffer->u.challengeall.secret + sizeof(now), &ourIP, sizeof(ourIP)); // ...and server IP so the server can't reuse it.
 
 			memcpy(lastChallengeAll, netbuffer->u.challengeall.secret, sizeof(lastChallengeAll));
 
