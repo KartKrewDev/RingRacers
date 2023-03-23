@@ -876,7 +876,6 @@ void D_SRB2Loop(void)
 		if (rendermode != render_none)
 		{
 			I_NewTwodeeFrame();
-			I_NewImguiFrame();
 		}
 
 		if (realtics > 0 || singletics)

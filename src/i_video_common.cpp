@@ -291,6 +291,7 @@ static InternalPassData build_pass_manager()
 			rhi.present();
 			rhi.finish();
 			framebuffer_manager->reset_post();
+			I_NewImguiFrame();
 		}
 	);
 
@@ -471,6 +472,7 @@ void I_FinishUpdateWipeStartScreen(void)
 	maybe_reinit_passes(rhi);
 
 	g_passes->wipe_capture_start_rendering->render(*rhi);
+	I_NewImguiFrame();
 }
 
 void I_FinishUpdateWipeEndScreen(void)
@@ -501,6 +503,7 @@ void I_FinishUpdateWipeEndScreen(void)
 	maybe_reinit_passes(rhi);
 
 	g_passes->wipe_capture_end_rendering->render(*rhi);
+	I_NewImguiFrame();
 }
 
 void I_FinishUpdateWipe(void)
