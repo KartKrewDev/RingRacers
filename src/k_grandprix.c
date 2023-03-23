@@ -18,6 +18,7 @@
 #include "k_bot.h"
 #include "k_kart.h"
 #include "m_random.h"
+#include "p_local.h"
 #include "r_things.h"
 
 struct grandprixinfo grandprixinfo;
@@ -740,4 +741,52 @@ boolean K_CanChangeRules(boolean allowdemos)
 	}
 
 	return true;
+}
+
+/*--------------------------------------------------
+	void K_PlayerFinishGrandPrix(player_t *player);
+
+		See header file for description.
+--------------------------------------------------*/
+void K_PlayerFinishGrandPrix(player_t *player)
+{
+	if (player->exiting == false)
+	{
+		// You did not finish
+		return;
+	}
+
+	if (player->bot)
+	{
+		// Bots are going to get harder... :)
+		K_IncreaseBotDifficulty(player);
+		return;
+	}
+
+	if (K_IsPlayerLosing(player))
+	{
+		return;
+	}
+
+	// YOU WIN
+	grandprixinfo.wonround = true;
+
+	// Increase your total rings
+	if (RINGTOTAL(player) > 0)
+	{
+		player->totalring += RINGTOTAL(player);
+		grandprixinfo.rank.rings += RINGTOTAL(player);
+	}
+
+	if (grandprixinfo.eventmode == GPEVENT_NONE)
+	{
+		grandprixinfo.rank.winPoints += K_CalculateGPRankPoints(player->position, grandprixinfo.rank.totalPlayers);
+		grandprixinfo.rank.laps += player->lapPoints;
+	}
+	else if (grandprixinfo.eventmode == GPEVENT_SPECIAL)
+	{
+		grandprixinfo.rank.specialWon = true;
+	}
+
+	P_GivePlayerLives(player, player->xtralife);
 }

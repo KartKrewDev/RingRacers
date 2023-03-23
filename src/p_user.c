@@ -1334,46 +1334,17 @@ void P_DoPlayerExit(player_t *player)
 				exitcountdown = raceexittime+2;
 		}
 
-		if (grandprixinfo.gp == true)
+		if (grandprixinfo.gp == true && player->bot == false && losing == false)
 		{
-			if (player->bot)
+			const UINT8 lifethreshold = 20;
+
+			const UINT8 oldExtra = player->totalring / lifethreshold;
+			const UINT8 extra = (player->totalring + RINGTOTAL(player)) / lifethreshold;
+
+			if (extra > oldExtra)
 			{
-				// Bots are going to get harder... :)
-				K_IncreaseBotDifficulty(player);
-			}
-			else if (!losing)
-			{
-				const UINT8 lifethreshold = 20;
-				UINT8 extra = 0;
-
-				// YOU WIN
-				grandprixinfo.wonround = true;
-
-				// Increase your total rings
-				if (RINGTOTAL(player) > 0)
-				{
-					player->totalring += RINGTOTAL(player);
-					grandprixinfo.rank.rings += RINGTOTAL(player);
-
-					extra = player->totalring / lifethreshold;
-
-					if (extra > player->xtralife)
-					{
-						P_GivePlayerLives(player, extra - player->xtralife);
-						S_StartSound(NULL, sfx_cdfm73);
-						player->xtralife = extra;
-					}
-				}
-
-				if (grandprixinfo.eventmode == GPEVENT_NONE)
-				{
-					grandprixinfo.rank.winPoints += K_CalculateGPRankPoints(player->position, grandprixinfo.rank.totalPlayers);
-					grandprixinfo.rank.laps += player->lapPoints;
-				}
-				else if (grandprixinfo.eventmode == GPEVENT_SPECIAL)
-				{
-					grandprixinfo.rank.specialWon = true;
-				}
+				S_StartSound(NULL, sfx_cdfm73);
+				player->xtralife = (extra - oldExtra);
 			}
 		}
 	}

@@ -7402,6 +7402,8 @@ static void P_InitPlayers(void)
 		{
 			G_SpawnPlayer(i);
 		}
+
+		players[i].xtralife = 0; // extra lives do not ever carry over from the previous round
 	}
 
 	K_UpdateAllPlayerPositions();

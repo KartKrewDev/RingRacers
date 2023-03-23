@@ -3206,6 +3206,14 @@ void G_ExitLevel(void)
 		}
 		else if (grandprixinfo.gp == true && grandprixinfo.eventmode == GPEVENT_NONE)
 		{
+			for (i = 0; i < MAXPLAYERS; i++)
+			{
+				if (playeringame[i] && !players[i].spectator)
+				{
+					K_PlayerFinishGrandPrix(&players[i]);
+				}
+			}
+
 			doretry = (grandprixinfo.wonround != true);
 		}
 
