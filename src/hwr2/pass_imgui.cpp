@@ -156,10 +156,10 @@ void ImguiPass::transfer(Rhi& rhi, Handle<TransferContext> ctx)
 		}
 
 		tcb::span<ImDrawVert> vert_span = tcb::span(im_list->VtxBuffer.Data, im_list->VtxBuffer.size());
-		rhi.update_buffer_contents(ctx, vbo, 0, tcb::as_bytes(vert_span));
+		rhi.update_buffer(ctx, vbo, 0, tcb::as_bytes(vert_span));
 
 		tcb::span<ImDrawIdx> index_span = tcb::span(im_list->IdxBuffer.Data, im_list->IdxBuffer.size());
-		rhi.update_buffer_contents(ctx, ibo, 0, tcb::as_bytes(index_span));
+		rhi.update_buffer(ctx, ibo, 0, tcb::as_bytes(index_span));
 
 		// Uniform sets
 		std::array<UniformVariant, 1> g1_uniforms = {

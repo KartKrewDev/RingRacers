@@ -123,13 +123,13 @@ void BlitRectPass::transfer(Rhi& rhi, Handle<TransferContext> ctx)
 {
 	if (quad_vbo_needs_upload_ && quad_vbo_)
 	{
-		rhi.update_buffer_contents(ctx, quad_vbo_, 0, tcb::as_bytes(tcb::span(kVerts)));
+		rhi.update_buffer(ctx, quad_vbo_, 0, tcb::as_bytes(tcb::span(kVerts)));
 		quad_vbo_needs_upload_ = false;
 	}
 
 	if (quad_ibo_needs_upload_ && quad_ibo_)
 	{
-		rhi.update_buffer_contents(ctx, quad_ibo_, 0, tcb::as_bytes(tcb::span(kIndices)));
+		rhi.update_buffer(ctx, quad_ibo_, 0, tcb::as_bytes(tcb::span(kIndices)));
 		quad_ibo_needs_upload_ = false;
 	}
 

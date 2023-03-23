@@ -832,8 +832,8 @@ void TwodeePass::transfer(Rhi& rhi, Handle<TransferContext> ctx)
 
 		tcb::span<const std::byte> vertex_data = tcb::as_bytes(tcb::span(orig_list.vertices));
 		tcb::span<const std::byte> index_data = tcb::as_bytes(tcb::span(orig_list.indices));
-		rhi.update_buffer_contents(ctx, merged_list.vbo, 0, vertex_data);
-		rhi.update_buffer_contents(ctx, merged_list.ibo, 0, index_data);
+		rhi.update_buffer(ctx, merged_list.vbo, 0, vertex_data);
+		rhi.update_buffer(ctx, merged_list.ibo, 0, index_data);
 
 		// Update the binding sets for each individual merged command
 		VertexAttributeBufferBinding vbos[] = {{0, merged_list.vbo}};

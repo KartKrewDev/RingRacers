@@ -175,13 +175,13 @@ void PostprocessWipePass::transfer(Rhi& rhi, Handle<TransferContext> ctx)
 
 	if (upload_vbo_)
 	{
-		rhi.update_buffer_contents(ctx, vbo_, 0, tcb::as_bytes(tcb::span(kPostprocessVerts)));
+		rhi.update_buffer(ctx, vbo_, 0, tcb::as_bytes(tcb::span(kPostprocessVerts)));
 		upload_vbo_ = false;
 	}
 
 	if (upload_ibo_)
 	{
-		rhi.update_buffer_contents(ctx, ibo_, 0, tcb::as_bytes(tcb::span(kPostprocessIndices)));
+		rhi.update_buffer(ctx, ibo_, 0, tcb::as_bytes(tcb::span(kPostprocessIndices)));
 		upload_ibo_ = false;
 	}
 

@@ -647,7 +647,7 @@ void GlCoreRhi::destroy_buffer(rhi::Handle<rhi::Buffer> handle)
 	disposal_.push_back([this, name] { gl_->DeleteBuffers(1, &name); });
 }
 
-void GlCoreRhi::update_buffer_contents(
+void GlCoreRhi::update_buffer(
 	rhi::Handle<TransferContext> ctx,
 	rhi::Handle<rhi::Buffer> handle,
 	uint32_t offset,

@@ -525,7 +525,7 @@ struct Rhi
 	virtual void end_transfer(Handle<TransferContext> handle) = 0;
 
 	// Transfer Context functions
-	virtual void update_buffer_contents(
+	virtual void update_buffer(
 		Handle<TransferContext> ctx,
 		Handle<Buffer> buffer,
 		uint32_t offset,
