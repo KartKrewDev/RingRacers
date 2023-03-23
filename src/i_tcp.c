@@ -387,6 +387,20 @@ static const char *SOCK_GetNodeAddress(INT32 node)
 	return SOCK_AddrToStr(&clientaddress[node]);
 }
 
+static UINT32 SOCK_GetNodeAddressInt(INT32 node)
+{
+    if (nodeconnected[node] && clientaddress[node].any.sa_family == AF_INET)
+    {
+        return clientaddress[node].ip4.sin_addr.s_addr;
+    }
+    else
+    {
+        I_Error("SOCK_GetNodeAddressInt: Node %d is not IPv4!\n", node);
+    }
+
+    return 0;
+}
+
 static const char *SOCK_GetBanAddress(size_t ban)
 {
 	if (ban >= numbans)
@@ -1598,6 +1612,7 @@ boolean I_InitTcpNetwork(void)
 	I_Ban = SOCK_Ban;
 	I_ClearBans = SOCK_ClearBans;
 	I_GetNodeAddress = SOCK_GetNodeAddress;
+	I_GetNodeAddressInt = SOCK_GetNodeAddressInt;
 	I_GetBanAddress = SOCK_GetBanAddress;
 	I_GetBanMask = SOCK_GetBanMask;
 	I_GetBanUsername = SOCK_GetBanUsername;

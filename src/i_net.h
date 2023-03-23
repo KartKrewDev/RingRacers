@@ -166,6 +166,7 @@ extern void (*I_NetRegisterHolePunch)(void);
 extern boolean (*I_Ban) (INT32 node);
 extern void (*I_ClearBans)(void);
 extern const char *(*I_GetNodeAddress) (INT32 node);
+extern UINT32 *(*I_GetNodeAddressInt) (INT32 node);
 extern const char *(*I_GetBanAddress) (size_t ban);
 extern const char *(*I_GetBanMask) (size_t ban);
 extern const char *(*I_GetBanUsername) (size_t ban);

@@ -159,8 +159,9 @@ char connectedservername[MAXSERVERNAME];
 /// \todo WORK!
 boolean acceptnewnode = true;
 
+UINT32 ourIP; // Used when populating PT_SERVERCHALLENGE (guards against signature reuse)
 uint8_t lastReceivedKey[MAXNETNODES][MAXSPLITSCREENPLAYERS][32]; // Player's public key (join process only! active players have it on player_t)
-uint8_t lastSentChallenge[MAXNETNODES][MAXSPLITSCREENPLAYERS][32]; // The random message we asked them to sign in PT_SERVERCHALLENGE, check it in PT_CLIENTJOIN
+uint8_t lastSentChallenge[MAXNETNODES][32]; // The random message we asked them to sign in PT_SERVERCHALLENGE, check it in PT_CLIENTJOIN
 uint8_t lastChallengeAll[64]; // The message we asked EVERYONE to sign for client-to-client identity proofs
 uint8_t lastReceivedSignature[MAXPLAYERS][64]; // Everyone's response to lastChallengeAll
 uint8_t knownWhenChallenged[MAXPLAYERS][32]; // Everyone a client saw at the moment a challenge should be initiated
@@ -811,6 +812,31 @@ static boolean CL_AskFileList(INT32 firstfile)
 	return HSendPacket(servernode, false, 0, sizeof (INT32));
 }
 
+// https://github.com/jameds/holepunch/blob/master/holepunch.c#L75
+static int IsExternalAddress (const void *p)
+{
+	const int a = ((const unsigned char*)p)[0];
+	const int b = ((const unsigned char*)p)[1];
+
+	if (*(const int*)p == ~0)/* 255.255.255.255 */
+		return 0;
+
+	switch (a)
+	{
+		case 0:
+		case 10:
+		case 127:
+			return 0;
+		case 172:
+			return (b & ~15) != 16;/* 16 - 31 */
+		case 192:
+			return b != 168;
+		default:
+			return 1;
+	}
+}
+
+
 /** Sends a special packet to declare how many players in local
   * Used only in arbitratrenetstart()
   * Sends a PT_CLIENTJOIN packet to the server
@@ -855,6 +881,27 @@ static boolean CL_SendJoin(void)
 
 	// Don't leak old signatures from prior sessions.
 	memset(&netbuffer->u.clientcfg.challengeResponse, 0, sizeof(((clientconfig_pak *)0)->challengeResponse));
+
+	UINT32 claimedIP;
+	UINT32 realIP = *I_GetNodeAddressInt(servernode);
+	time_t receivedTime;
+	time_t now = time(NULL);
+
+	memcpy(&claimedIP, awaitingChallenge, sizeof(claimedIP));
+	memcpy(&receivedTime, awaitingChallenge + sizeof(claimedIP), sizeof(receivedTime));
+
+	if (client && netgame)
+	{
+		if (realIP != claimedIP && IsExternalAddress(&realIP))
+		{
+			I_Error("External server IP didn't match the message it sent.\nSomething is very wrong here.");
+		}
+
+		if (abs(now - receivedTime) > 60*5)
+		{
+			I_Error("External server sent a message with an unusual timestamp.\nReceived: %ld\nNow: %ld\nCheck your clocks!", receivedTime, now);
+		}
+	}
 
 	for (i = 0; i <= splitscreen; i++)
 	{
@@ -4011,6 +4058,15 @@ void CL_RemoveSplitscreenPlayer(UINT8 p)
 	SendKick(p, KICK_MSG_PLAYER_QUIT);
 }
 
+static void GotOurIP(UINT32 address)
+{
+	const unsigned char * p = (const unsigned char *)&address;
+	#ifdef DEVELOP
+		CONS_Printf("Got IP of %u.%u.%u.%u\n", p[0], p[1], p[2], p[3]);
+	#endif
+	ourIP = address;
+}
+
 // is there a game running
 boolean Playing(void)
 {
@@ -4047,14 +4103,17 @@ boolean SV_SpawnServer(void)
 		else doomcom->numslots = 1;
 	}
 
+	ourIP = 0;
+	STUN_bind(GotOurIP);
+
 	// strictly speaking, i'm not convinced the following is necessary
 	// but I'm not confident enough to remove it entirely in case it breaks something
 	{
 		UINT8 *availabilitiesbuffer = R_GetSkinAvailabilities(false, false);
 		SINT8 node = 0;
 		for (; node < MAXNETNODES; node++)
-			result |= SV_AddWaitingPlayers(node, availabilitiesbuffer, cv_playername[0].zstring, &PR_GetLocalPlayerProfile(0)->public_key, cv_playername[1].zstring, &PR_GetLocalPlayerProfile(1)->public_key,  
-			cv_playername[2].zstring, &PR_GetLocalPlayerProfile(2)->public_key, cv_playername[3].zstring, &PR_GetLocalPlayerProfile(3)->public_key);
+			result |= SV_AddWaitingPlayers(node, availabilitiesbuffer, cv_playername[0].zstring, PR_GetLocalPlayerProfile(0)->public_key, cv_playername[1].zstring, PR_GetLocalPlayerProfile(1)->public_key,  
+			cv_playername[2].zstring, PR_GetLocalPlayerProfile(2)->public_key, cv_playername[3].zstring, PR_GetLocalPlayerProfile(3)->public_key);
 	}
 	return result;
 #endif
@@ -4290,7 +4349,7 @@ static void HandleConnect(SINT8 node)
 				}
 				else
 				{	
-					sigcheck = crypto_eddsa_check(netbuffer->u.clientcfg.challengeResponse[i], lastReceivedKey[node][i], lastSentChallenge[node][i], 32);
+					sigcheck = crypto_eddsa_check(netbuffer->u.clientcfg.challengeResponse[i], lastReceivedKey[node][i], lastSentChallenge[node], 32);
 				}
 
 
