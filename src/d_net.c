@@ -1001,30 +1001,33 @@ static boolean ShouldDropPacket(void)
 }
 #endif
 
-boolean IsPacketSigned(int packettype)
-{
-	switch (packettype)
+// Unused because Eidolon correctly pointed out that +512b on every packet was scary.
+#ifdef SIGNGAMETRAFFIC
+	boolean IsPacketSigned(int packettype)
 	{
-		case PT_CLIENTCMD:
-		case PT_CLIENT2CMD:
-		case PT_CLIENT3CMD:
-		case PT_CLIENT4CMD:
-		case PT_CLIENTMIS:
-		case PT_CLIENT2MIS:
-		case PT_CLIENT3MIS:
-		case PT_CLIENT4MIS:
-		case PT_TEXTCMD:
-		case PT_TEXTCMD2:
-		case PT_TEXTCMD3:
-		case PT_TEXTCMD4:
-		case PT_LOGIN:
-		case PT_ASKLUAFILE:
-		case PT_SENDINGLUAFILE:
-			return true;
-		default:
-			return false;
+		switch (packettype)
+		{
+			case PT_CLIENTCMD:
+			case PT_CLIENT2CMD:
+			case PT_CLIENT3CMD:
+			case PT_CLIENT4CMD:
+			case PT_CLIENTMIS:
+			case PT_CLIENT2MIS:
+			case PT_CLIENT3MIS:
+			case PT_CLIENT4MIS:
+			case PT_TEXTCMD:
+			case PT_TEXTCMD2:
+			case PT_TEXTCMD3:
+			case PT_TEXTCMD4:
+			case PT_LOGIN:
+			case PT_ASKLUAFILE:
+			case PT_SENDINGLUAFILE:
+				return true;
+			default:
+				return false;
+		}
 	}
-}
+#endif
 
 //
 // HSendPacket
@@ -1033,6 +1036,7 @@ boolean HSendPacket(INT32 node, boolean reliable, UINT8 acknum, size_t packetlen
 {
 	doomcom->datalength = (INT16)(packetlength + BASEPACKETSIZE);
 
+#ifdef SIGNGAMETRAFFIC
 	if (IsPacketSigned(netbuffer->packettype))
 	{	
 		int i;
@@ -1061,6 +1065,7 @@ boolean HSendPacket(INT32 node, boolean reliable, UINT8 acknum, size_t packetlen
 		//CONS_Printf("NOT signing PT_%d of length %d, it doesn't need to be\n", netbuffer->packettype, packetlength);
 		memset(netbuffer->signature, 0, sizeof(netbuffer->signature));
 	}
+#endif
 
 	if (node == 0) // Packet is to go back to us
 	{

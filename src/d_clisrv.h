@@ -388,7 +388,9 @@ struct doomdata_t
 	UINT8 ackreturn; // The return of the ack number
 
 	UINT8 packettype;
+#ifdef SIGNGAMETRAFFIC
 	uint8_t signature[MAXSPLITSCREENPLAYERS][64];
+#endif
 	UINT8 reserved; // Padding
 	union
 	{

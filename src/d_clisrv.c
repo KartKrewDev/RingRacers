@@ -4855,6 +4855,8 @@ static void HandlePacketFromPlayer(SINT8 node)
 		I_Error("bad table nodetoplayer: node %d player %d", doomcom->remotenode, netconsole);
 #endif
 	
+
+#ifdef SIGNGAMETRAFFIC
 	if (server)
 	{
 
@@ -4891,7 +4893,7 @@ static void HandlePacketFromPlayer(SINT8 node)
 			}
 		}
 	}
-
+#endif
 
 	switch (netbuffer->packettype)
 	{
