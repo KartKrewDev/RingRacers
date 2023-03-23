@@ -668,6 +668,8 @@ static void SPBChase(mobj_t *spb, mobj_t *bestMobj)
 		S_StartSound(spb, spb->info->activesound);
 	}
 
+	dist = P_AproxDistance(P_AproxDistance(spb->x - chase->x, spb->y - chase->y), spb->z - chase->z);
+
 	chasePlayer = chase->player;
 
 	if (chasePlayer != NULL)
@@ -723,6 +725,8 @@ static void SPBChase(mobj_t *spb, mobj_t *bestMobj)
 				spb_intangible(spb) = SPB_FLASHING;
 			}
 		}
+
+		chasePlayer->SPBdistance = dist;
 	}
 	else
 	{
@@ -730,10 +734,6 @@ static void SPBChase(mobj_t *spb, mobj_t *bestMobj)
 		spbplace = 1;
 		spb_modetimer(spb) = SPB_HOTPOTATO;
 	}
-
-	dist = P_AproxDistance(P_AproxDistance(spb->x - chase->x, spb->y - chase->y), spb->z - chase->z);
-
-	chasePlayer->SPBdistance = dist;
 
 	desiredSpeed = FixedMul(baseSpeed, FRACUNIT + FixedDiv(dist - range, range));
 
