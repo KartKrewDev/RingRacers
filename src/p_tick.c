@@ -300,17 +300,19 @@ void P_RemoveThinkerDelayed(thinker_t *thinker)
 	if (thinker->references != 0)
 	{
 #ifdef PARANOIA
-		if (thinker->debug_time > leveltime)
-		{
-			thinker->debug_time = leveltime + 2; // do not print errors again
-		}
 		// Removed mobjs can be the target of another mobj. In
 		// that case, the other mobj will manage its reference
 		// to the removed mobj in P_MobjThinker. However, if
 		// the removed mobj is removed after the other object
 		// thinks, the reference management is delayed by one
-		// tic.
-		else if (thinker->debug_time < leveltime)
+		// tic (or two?)
+		const UINT8 delay = 2;
+
+		if (thinker->debug_time > leveltime)
+		{
+			thinker->debug_time = leveltime + delay + 1; // do not print errors again
+		}
+		else if ((thinker->debug_time + delay) <= leveltime)
 		{
 			CONS_Printf(
 					"PARANOIA/P_RemoveThinkerDelayed: %p %s references=%d\n",
@@ -319,7 +321,7 @@ void P_RemoveThinkerDelayed(thinker_t *thinker)
 					thinker->references
 			);
 
-			thinker->debug_time = leveltime + 2; // do not print this error again
+			thinker->debug_time = leveltime + delay + 1; // do not print this error again
 		}
 #endif
 		return;
