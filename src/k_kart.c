@@ -6109,15 +6109,19 @@ void K_PopPlayerShield(player_t *player)
 		return;
 	}
 
-	// Doesn't apply to non-S3K shields.
-	if (shield == KSHIELD_NONE || shield == KSHIELD_TOP)
+	switch (shield)
 	{
-		return;
-	}
+		case KSHIELD_NONE:
+			// Doesn't apply to non-S3K shields.
+			return;
 
-	if (shield == KSHIELD_LIGHTNING)
-	{
-		K_DoLightningShield(player);
+		case KSHIELD_TOP:
+			Obj_GardenTopDestroy(player);
+			return; // everything is handled by Obj_GardenTopDestroy
+
+		case KSHIELD_LIGHTNING:
+			K_DoLightningShield(player);
+			break;
 	}
 
 	player->curshield = KSHIELD_NONE;
@@ -6180,12 +6184,10 @@ void K_DropHnextList(player_t *player)
 				orbit = false;
 				type = MT_EGGMANITEM;
 				break;
-			case MT_GARDENTOP:
-				Obj_GardenTopDestroy(player);
-				return;
 			// intentionally do nothing
 			case MT_ROCKETSNEAKER:
 			case MT_SINK_SHIELD:
+			case MT_GARDENTOP:
 				return;
 			default:
 				continue;
