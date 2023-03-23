@@ -122,6 +122,7 @@ extern consvar_t cv_fov[MAXSPLITSCREENPLAYERS];
 extern consvar_t cv_skybox;
 extern consvar_t cv_tailspickup;
 extern consvar_t cv_drawpickups;
+extern consvar_t cv_debugfinishline;
 
 // debugging
 

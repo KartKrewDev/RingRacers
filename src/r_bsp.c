@@ -395,6 +395,7 @@ sector_t *R_FakeFlat(sector_t *sec, sector_t *tempsec, INT32 *floorlightlevel,
 boolean R_IsEmptyLine(seg_t *line, sector_t *front, sector_t *back)
 {
 	return (
+		!R_IsDebugLine(line) &&
 		!line->polyseg &&
 		back->ceilingpic == front->ceilingpic
 		&& back->floorpic == front->floorpic
@@ -420,6 +421,19 @@ boolean R_IsEmptyLine(seg_t *line, sector_t *front, sector_t *back)
 		&& back->extra_colormap == front->extra_colormap
 		&& ((!front->ffloors && !back->ffloors)
 		|| Tag_Compare(&front->tags, &back->tags)));
+}
+
+boolean R_IsDebugLine(seg_t *line)
+{
+	if (line->linedef->special == 2001) // Ring Racers: Finish Line
+	{
+		if (cv_debugfinishline.value)
+		{
+			return true;
+		}
+	}
+
+	return false;
 }
 
 //
@@ -518,6 +532,14 @@ static void R_AddLine(seg_t *line)
 	if (!backsector)
 		goto clipsolid;
 
+	// Finish line debug: make solid walls pitch black. This
+	// contrasts areas that are impossible to traverse next to
+	// finish lines.
+	if (cv_debugfinishline.value && (line->linedef->flags & (ML_IMPASSABLE|ML_BLOCKPLAYERS)))
+	{
+		goto clipsolid;
+	}
+
 	backsector = R_FakeFlat(backsector, &tempsec, NULL, NULL, true);
 
 	doorclosed = 0;
@@ -529,7 +551,8 @@ static void R_AddLine(seg_t *line)
 
 	if (bothceilingssky && bothfloorssky) // everything's sky? let's save us a bit of time then
 	{
-		if (!line->polyseg &&
+		if (!R_IsDebugLine(line) &&
+			!line->polyseg &&
 			!line->sidedef->midtexture
 			&& ((!frontsector->ffloors && !backsector->ffloors)
 				|| Tag_Compare(&frontsector->tags, &backsector->tags)))

@@ -3528,6 +3528,61 @@ static void K_drawKartMinimapIcon(fixed_t objx, fixed_t objy, INT32 hudx, INT32 
 	V_DrawFixedPatch(amxpos, amypos, FRACUNIT, flags, icon, colormap);
 }
 
+static void K_drawKartMinimapDot(fixed_t objx, fixed_t objy, INT32 hudx, INT32 hudy, INT32 flags, UINT8 color, UINT8 size)
+{
+	fixed_t amnumxpos, amnumypos;
+	INT32 amxpos, amypos;
+
+	amnumxpos = (FixedMul(objx, minimapinfo.zoom) - minimapinfo.offs_x);
+	amnumypos = -(FixedMul(objy, minimapinfo.zoom) - minimapinfo.offs_y);
+
+	if (encoremode)
+		amnumxpos = -amnumxpos;
+
+	amxpos = (amnumxpos / FRACUNIT) + (SHORT(minimapinfo.minimap_pic->width) / 2);
+	amypos = (amnumypos / FRACUNIT) + (SHORT(minimapinfo.minimap_pic->height) / 2);
+
+	if (flags & V_NOSCALESTART)
+	{
+		amxpos *= vid.dupx;
+		amypos *= vid.dupy;
+	}
+
+	V_DrawFill((amxpos + hudx) - (size / 2), (amypos + hudy) - (size / 2), size, size, flags | color);
+}
+
+static void K_drawKartMinimapWaypoint(waypoint_t *wp, INT32 hudx, INT32 hudy, INT32 flags)
+{
+	UINT8 pal = 0x95; // blue
+	UINT8 size = 3;
+
+	if (wp == stplyr->nextwaypoint)
+	{
+		pal = 0x70; // green
+		size = 6;
+	}
+	else if (K_GetWaypointIsShortcut(wp)) // shortcut
+	{
+		pal = 0x20; // pink
+	}
+	else if (!K_GetWaypointIsEnabled(wp)) // disabled
+	{
+		pal = 0x10; // gray
+	}
+	else if (wp->numnextwaypoints == 0 || wp->numprevwaypoints == 0)
+	{
+		pal = 0x40; // yellow
+	}
+
+	if (!(flags & V_NOSCALESTART))
+	{
+		hudx *= vid.dupx;
+		hudy *= vid.dupy;
+	}
+
+	K_drawKartMinimapDot(wp->mobj->x, wp->mobj->y, hudx, hudy, flags | V_NOSCALESTART, pal, size);
+}
+
 static void K_drawKartMinimap(void)
 {
 	patch_t *workingPic;
@@ -3841,6 +3896,26 @@ static void K_drawKartMinimap(void)
 			|| ((gametyperules & (GTR_BOSS|GTR_POINTLIMIT)) == GTR_POINTLIMIT && K_IsPlayerWanted(&players[localplayers[i]])))
 		{
 			K_drawKartMinimapIcon(interpx, interpy, x, y, splitflags, kp_wantedreticle, NULL);
+		}
+	}
+
+	if (cv_kartdebugwaypoints.value != 0)
+	{
+		size_t idx;
+
+		for (idx = 0; idx < K_GetNumWaypoints(); ++idx)
+		{
+			waypoint_t *wp = K_GetWaypointFromIndex(idx);
+
+			I_Assert(wp != NULL);
+
+			K_drawKartMinimapWaypoint(wp, x, y, splitflags);
+		}
+
+		if (stplyr->nextwaypoint != NULL)
+		{
+			// should be drawn on top of the others
+			K_drawKartMinimapWaypoint(stplyr->nextwaypoint, x, y, splitflags);
 		}
 	}
 }
