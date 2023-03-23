@@ -534,9 +534,9 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 				if (P_IsLocalPlayer(player) && !gamedata->collected[special->health-1])
 				{
 					gamedata->collected[special->health-1] = gotcollected = true;
-					if (!M_UpdateUnlockablesAndExtraEmblems(true))
+					if (!M_UpdateUnlockablesAndExtraEmblems(true, true))
 						S_StartSound(NULL, sfx_ncitem);
-					G_SaveGameData();
+					gamedata->deferredsave = true;
 				}
 
 				if (netgame)
@@ -636,7 +636,7 @@ static void P_AddBrokenPrison(mobj_t *target, mobj_t *source)
 {
 	(void)target;
 
-	if (!battlecapsules) // !battleprisons
+	if (!battleprisons)
 		return;
 
 	if ((gametyperules & GTR_POINTLIMIT) && (source && source->player))
@@ -845,7 +845,7 @@ void P_CheckPointLimit(void)
 	if (!(gametyperules & GTR_POINTLIMIT))
 		return;
 
-	if (battlecapsules)
+	if (battleprisons)
 		return;
 
 	// pointlimit is nonzero, check if it's been reached by this player
@@ -1953,6 +1953,13 @@ static boolean P_KillPlayer(player_t *player, mobj_t *inflictor, mobj_t *source,
 	switch (type)
 	{
 		case DMG_DEATHPIT:
+			// Fell off the stage
+			if (player->roundconditions.fell_off == false)
+			{
+				player->roundconditions.fell_off = true;
+				player->roundconditions.checkthisframe = true;
+			}
+
 			if (gametyperules & GTR_BUMPERS)
 			{
 				player->mo->health--;
@@ -2087,6 +2094,7 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 	player_t *player;
 	player_t *playerInflictor;
 	boolean force = false;
+	boolean spbpop = false;
 
 	INT32 laglength = 6;
 
@@ -2125,6 +2133,16 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 				return false;
 			break;
 
+		case MT_SPB:
+			spbpop = (damagetype & DMG_TYPEMASK) == DMG_VOLTAGE;
+			if (spbpop && source && source->player
+				&& source->player->roundconditions.spb_neuter == false)
+			{
+				source->player->roundconditions.spb_neuter = true;
+				source->player->roundconditions.checkthisframe = true;
+			}
+			break;
+
 		default:
 			break;
 	}
@@ -2143,7 +2161,7 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 
 	if (!force)
 	{
-		if (!(target->type == MT_SPB && (damagetype & DMG_TYPEMASK) == DMG_VOLTAGE))
+		if (!spbpop)
 		{
 			if (!(target->flags & MF_SHOOTABLE))
 				return false; // shouldn't happen...
@@ -2187,6 +2205,18 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 			{
 				if (!P_PlayerHitsPlayer(target, inflictor, source, damage, damagetype))
 					return false;
+			}
+		}
+
+		if (inflictor && source && source->player)
+		{
+			if (source->player->roundconditions.hit_midair == false
+				&& K_IsMissileOrKartItem(source)
+				&& target->player->airtime > TICRATE/2
+				&& source->player->airtime > TICRATE/2)
+			{
+				source->player->roundconditions.hit_midair = true;
+				source->player->roundconditions.checkthisframe = true;
 			}
 		}
 

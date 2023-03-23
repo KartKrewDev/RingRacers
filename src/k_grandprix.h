@@ -76,16 +76,6 @@ INT16 K_CalculateGPRankPoints(UINT8 position, UINT8 numplayers);
 
 
 /*--------------------------------------------------
-	UINT8 K_BotDefaultSkin(void);
-
-		Returns the skin number of the skin the game
-		uses as a fallback option.
---------------------------------------------------*/
-
-UINT8 K_BotDefaultSkin(void);
-
-
-/*--------------------------------------------------
 	UINT8 K_GetGPPlayerCount(UINT8 humans)
 
 		Counts the number of total players,

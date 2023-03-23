@@ -2474,8 +2474,8 @@ static void HU_DrawRankings(void)
 	// draw the current gametype in the lower right
 	if (grandprixinfo.gp == true)
 		V_DrawString(4, 188, hilicol|V_SNAPTOBOTTOM|V_SNAPTOLEFT, "Grand Prix");
-	else if (battlecapsules)
-		V_DrawString(4, 188, hilicol|V_SNAPTOBOTTOM|V_SNAPTOLEFT, "Capsules");
+	else if (battleprisons)
+		V_DrawString(4, 188, hilicol|V_SNAPTOBOTTOM|V_SNAPTOLEFT, "Prisons");
 	else if (gametype >= 0 && gametype < numgametypes)
 		V_DrawString(4, 188, hilicol|V_SNAPTOBOTTOM|V_SNAPTOLEFT, gametypes[gametype]->name);
 
@@ -2533,11 +2533,11 @@ static void HU_DrawRankings(void)
 	}
 
 	// Right hand side
-	if (battlecapsules == true)
+	if (battleprisons == true)
 	{
 		if (numtargets < maptargets)
 		{
-			V_DrawCenteredString(256, 8, 0, "CAPSULES");
+			V_DrawCenteredString(256, 8, 0, "PRISONS");
 			V_DrawCenteredString(256, 16, hilicol, va("%d", maptargets - numtargets));
 		}
 	}

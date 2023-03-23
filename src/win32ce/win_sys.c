@@ -469,6 +469,7 @@ static void signal_handler(int num)
 	char sigdef[64];
 
 	D_QuitNetGame(); // Fix server freezes
+	G_DirtyGameData();
 	I_ShutdownSystem();
 
 	switch (num)
@@ -607,6 +608,7 @@ void I_Error(const char *error, ...)
 		if (errorcount == 7)
 		{
 			M_SaveConfig(NULL);
+			G_DirtyGameData(); // done first in case an error is in G_SaveGameData
 			G_SaveGameData();
 		}
 		if (errorcount > 20)
@@ -636,6 +638,7 @@ void I_Error(const char *error, ...)
 	if (!errorcount)
 	{
 		M_SaveConfig(NULL); // save game config, cvars..
+		G_DirtyGameData(); // done first in case an error is in G_SaveGameData
 		G_SaveGameData();
 	}
 
@@ -726,7 +729,7 @@ void I_Quit(void)
 		G_CheckDemoStatus();
 
 	M_SaveConfig(NULL); // save game config, cvars..
-	G_SaveGameData();
+	G_SaveGameData(); // undirty your save
 
 	// maybe it needs that the ticcount continues,
 	// or something else that will be finished by I_ShutdownSystem(),

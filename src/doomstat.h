@@ -120,6 +120,30 @@ struct recorddata_t
 	//UINT16 rings; ///< Rings when the level was finished.
 };
 
+#define KARTSPEED_AUTO -1
+#define KARTSPEED_EASY 0
+#define KARTSPEED_NORMAL 1
+#define KARTSPEED_HARD 2
+#define KARTGP_MASTER 3 // Not a speed setting, gives the hardest speed with maxed out bots
+#define KARTGP_MAX 4
+
+typedef enum
+{
+	GRADE_E,
+	GRADE_D,
+	GRADE_C,
+	GRADE_B,
+	GRADE_A,
+	GRADE_S
+} gp_rank_e;
+
+struct cupwindata_t
+{
+	UINT8 best_placement;
+	gp_rank_e best_grade;
+	boolean got_emerald;
+};
+
 // mapvisited is now a set of flags that says what we've done in the map.
 #define MV_VISITED      (1)
 #define MV_BEATEN       (1<<1)
@@ -352,6 +376,7 @@ struct customoption_t
 struct cupheader_t
 {
 	UINT16 id;								///< Cup ID
+	UINT8 monitor;							///< Monitor graphic 1-9 or A-Z
 	char name[15];							///< Cup title (14 chars)
 	char icon[9];							///< Name of the icon patch
 	char *levellist[CUPCACHE_MAX];			///< List of levels that belong to this cup
@@ -359,6 +384,7 @@ struct cupheader_t
 	UINT8 numlevels;						///< Number of levels defined in levellist
 	UINT8 numbonus;							///< Number of bonus stages defined
 	UINT8 emeraldnum;						///< ID of Emerald to use for special stage (1-7 for Chaos Emeralds, 8-14 for Super Emeralds, 0 for no emerald)
+	cupwindata_t windata[4];				///< Data for cup visitation
 	cupheader_t *next;						///< Next cup in linked list
 };
 
@@ -528,7 +554,7 @@ enum GameTypeRules
 	GTR_ITEMARROWS			= 1<<9,		// Show item box arrows above players
 
 	// Bonus gametype rules
-	GTR_CAPSULES			= 1<<10,	// Can enter Break The Capsules mode
+	GTR_PRISONS				= 1<<10,	// Can enter Prison Break mode
 	GTR_CATCHER				= 1<<11, // UFO Catcher (only works with GTR_CIRCUIT)
 	GTR_ROLLINGSTART		= 1<<12, // Rolling start (only works with GTR_CIRCUIT)
 	GTR_SPECIALSTART		= 1<<13, // White fade instant start

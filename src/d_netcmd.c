@@ -2811,7 +2811,7 @@ static void Command_Map_f(void)
 		return;
 	}
 
-	if (M_MapLocked(newmapnum))
+	if (/*newmapnum != 1 &&*/ M_MapLocked(newmapnum))
 	{
 		ischeating = true;
 	}

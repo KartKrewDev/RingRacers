@@ -12,7 +12,7 @@ menuitem_t PLAY_GamemodesMenu[] =
 	{IT_STRING | IT_CALL, "Battle", "It's last kart standing in this free-for-all!",
 		"MENIMG00", {.routine = M_LevelSelectInit}, 0, GT_BATTLE},
 
-	{IT_STRING | IT_CALL, "Capsules", "Bust up all of the capsules in record time!",
+	{IT_STRING | IT_CALL, "Prisons", "Bust up all of the Prison Eggs in record time!",
 		NULL, {.routine = M_LevelSelectInit}, 1, GT_BATTLE},
 
 	{IT_STRING | IT_CALL, "Special", "Strike your target and secure the prize!",
@@ -42,7 +42,7 @@ void M_SetupGametypeMenu(INT32 choice)
 	{
 		boolean anyunlocked = false;
 
-		if (M_SecretUnlocked(SECRET_BREAKTHECAPSULES, true))
+		if (M_SecretUnlocked(SECRET_PRISONBREAK, true))
 		{
 			// Re-add Capsules
 			PLAY_GamemodesMenu[2].status = IT_STRING | IT_CALL;
@@ -59,7 +59,7 @@ void M_SetupGametypeMenu(INT32 choice)
 		if (!anyunlocked)
 		{
 			// Only one non-Back entry, let's skip straight to Race.
-			M_SetupRaceMenu(0);
+			M_SetupRaceMenu(choice);
 			return;
 		}
 	}

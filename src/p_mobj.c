@@ -3427,6 +3427,20 @@ void P_MobjCheckWater(mobj_t *mobj)
 		{
 			return;
 		}
+
+		if (!(p->roundconditions.wet_player & MFE_TOUCHWATER)
+			&& (mobj->eflags & MFE_TOUCHWATER))
+		{
+			p->roundconditions.wet_player |= MFE_TOUCHWATER;
+			p->roundconditions.checkthisframe = true;
+		}
+
+		if (!(p->roundconditions.wet_player & MFE_UNDERWATER)
+			&& (mobj->eflags & MFE_UNDERWATER))
+		{
+			p->roundconditions.wet_player |= MFE_UNDERWATER;
+			p->roundconditions.checkthisframe = true;
+		}
 	}
 
 	if (mobj->flags & MF_APPLYTERRAIN)
@@ -9381,7 +9395,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 		{
 			if (gametyperules & GTR_PAPERITEMS)
 			{
-				if (battlecapsules == true)
+				if (battleprisons == true)
 				{
 					;
 				}

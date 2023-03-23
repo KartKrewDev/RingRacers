@@ -6,26 +6,30 @@
 #include "../m_cond.h" // Condition Sets
 #include "../f_finale.h"
 
+#define EC_CHALLENGES	0x01
+#define EC_STATISTICS	0x02
+#define EC_TIMEATTACK	0x04
+#define EC_ALLGAME		(EC_CHALLENGES|EC_STATISTICS|EC_TIMEATTACK)
+
 menuitem_t OPTIONS_DataErase[] =
 {
+	{IT_STRING | IT_CALL, "Erase Challenges Data", "Be careful! What's deleted is gone forever!",
+		NULL, {.routine = M_EraseData}, EC_CHALLENGES, 0},
 
-	{IT_STRING | IT_CALL, "Erase Time Attack Data", "Be careful! What's deleted is gone forever!",
-		NULL, {.routine = M_EraseData}, 0, 0},
+	{IT_STRING | IT_CALL, "Erase Statistics Data", "Be careful! What's deleted is gone forever!",
+		NULL, {.routine = M_EraseData}, EC_STATISTICS, 0},
 
-	{IT_STRING | IT_CALL, "Erase Unlockable Data", "Be careful! What's deleted is gone forever!",
-		NULL, {.routine = M_EraseData}, 0, 0},
+	{IT_STRING | IT_CALL, "Erase GP & Time Attack Data", "Be careful! What's deleted is gone forever!",
+		NULL, {.routine = M_EraseData}, EC_TIMEATTACK, 0},
+
+	{IT_STRING | IT_CALL, "\x85\x45rase all Game Data", "Be careful! What's deleted is gone forever!",
+		NULL, {.routine = M_EraseData}, EC_ALLGAME, 0},
 
 	{IT_SPACE | IT_NOTHING, NULL,  NULL,
 		NULL, {NULL}, 0, 0},
 
-	{IT_STRING | IT_CALL, "Erase Profile Data...", "Select a Profile to erase.",
+	{IT_STRING | IT_CALL, "Erase a Profile...", "Select a Profile to erase.",
 		NULL, {.routine = M_CheckProfileData}, 0, 0},
-
-	{IT_SPACE | IT_NOTHING, NULL,  NULL,
-		NULL, {NULL}, 0, 0},
-
-	{IT_STRING | IT_CALL, "\x85\x45rase all Data", "Be careful! What's deleted is gone forever!",
-		NULL, {.routine = M_EraseData}, 0, 0},
 
 };
 
@@ -53,16 +57,16 @@ static void M_EraseDataResponse(INT32 ch)
 	S_StartSound(NULL, sfx_itrole); // bweh heh heh
 
 	// Delete the data
-	if (optionsmenu.erasecontext == 2)
-	{
-		// SRB2Kart: This actually needs to be done FIRST, so that you don't immediately regain playtime/matches secrets
-		gamedata->totalplaytime = 0;
-		gamedata->matchesplayed = 0;
-	}
-	if (optionsmenu.erasecontext != 1)
+	// see also G_LoadGameData
+	// We do these in backwards order to prevent things from being immediately re-unlocked.
+	if (optionsmenu.erasecontext & EC_TIMEATTACK)
 		G_ClearRecords();
-	if (optionsmenu.erasecontext != 0)
+	if (optionsmenu.erasecontext & EC_STATISTICS)
+		M_ClearStats();
+	if (optionsmenu.erasecontext & EC_CHALLENGES)
 		M_ClearSecrets();
+
+	M_UpdateUnlockablesAndExtraEmblems(false, true);
 
 	F_StartIntro();
 	M_ClearMenus(true);
@@ -71,15 +75,21 @@ static void M_EraseDataResponse(INT32 ch)
 void M_EraseData(INT32 choice)
 {
 	const char *eschoice, *esstr = M_GetText("Are you sure you want to erase\n%s?\n\nPress (A) to confirm or (B) to cancel\n");
+	(void)choice;
 
-	optionsmenu.erasecontext = (UINT8)choice;
+	optionsmenu.erasecontext = (UINT8)currentMenu->menuitems[itemOn].mvar1;
 
-	if (choice == 0)
-		eschoice = M_GetText("Time Attack data");
-	else if (choice == 1)
-		eschoice = M_GetText("Secrets data");
-	else
+	if (optionsmenu.erasecontext == EC_CHALLENGES)
+		eschoice = M_GetText("Challenges data");
+	else if (optionsmenu.erasecontext == EC_STATISTICS)
+		eschoice = M_GetText("Statistics data");
+	else if (optionsmenu.erasecontext == EC_TIMEATTACK)
+		eschoice = M_GetText("GP & Time Attack data");
+	else if (optionsmenu.erasecontext == EC_ALLGAME)
 		eschoice = M_GetText("ALL game data");
+	else
+		eschoice = "[misconfigured erasecontext]";
+	
 
 	M_StartMessage(va(esstr, eschoice), FUNCPTRCAST(M_EraseDataResponse), MM_YESNO);
 }

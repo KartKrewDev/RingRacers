@@ -406,7 +406,15 @@ boolean K_LandMineCollide(mobj_t *t1, mobj_t *t2)
 
 		// Banana snipe!
 		if (t1->health > 1)
+		{
+			if (t1->target && t1->target->player)
+			{
+				t1->target->player->roundconditions.landmine_dunk = true;
+				t1->target->player->roundconditions.checkthisframe = true;
+			}
+
 			S_StartSound(t2, sfx_bsnipe);
+		}
 
 		if (t2->player->flamedash && t2->player->itemtype == KITEM_FLAMESHIELD)
 		{

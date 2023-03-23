@@ -2855,7 +2855,7 @@ static void K_drawKartBumpersOrKarma(void)
 		V_DrawScaledPatch(fx-2 + (flipflag ? (SHORT(kp_ringstickersplit[1]->width) - 3) : 0), fy, V_HUDTRANS|V_SLIDEIN|splitflags|flipflag, kp_ringstickersplit[0]);
 		V_DrawScaledPatch(fx+22, fy, V_HUDTRANS|V_SLIDEIN|splitflags, frameslash);
 
-		if (battlecapsules)
+		if (battleprisons)
 		{
 			V_DrawMappedPatch(fx+1, fy-2, V_HUDTRANS|V_SLIDEIN|splitflags, kp_rankcapsule, NULL);
 
@@ -2911,7 +2911,7 @@ static void K_drawKartBumpersOrKarma(void)
 	}
 	else
 	{
-		if (battlecapsules)
+		if (battleprisons)
 		{
 			if (numtargets > 9 && maptargets > 9)
 				V_DrawMappedPatch(LAPS_X, LAPS_Y, V_HUDTRANS|V_SLIDEIN|splitflags, kp_capsulestickerwide, NULL);
@@ -3801,7 +3801,7 @@ static void K_drawKartMinimap(void)
 				workingPic = kp_capsuleminimap[(mobj->extravalue1 != 0 ? 1 : 0)];
 				break;
 			case MT_CDUFO:
-				if (battlecapsules) //!battleprisons
+				if (battleprisons)
 					workingPic = kp_capsuleminimap[2];
 				break;
 			default:
@@ -4244,7 +4244,7 @@ static void K_drawBattleFullscreen(void)
 
 			if (K_IsPlayerLosing(stplyr))
 				p = kp_battlelose;
-			else if (stplyr->position == 1 && (!battlecapsules || numtargets >= maptargets))
+			else if (stplyr->position == 1 && (!battleprisons || numtargets >= maptargets))
 				p = kp_battlewin;
 
 			V_DrawFixedPatch(x<<FRACBITS, y<<FRACBITS, scale, splitflags, p, NULL);
@@ -4940,7 +4940,7 @@ static void K_DrawGPRankDebugger(void)
 	V_DrawThinString(0, 30, V_SNAPTOTOP|V_SNAPTOLEFT|V_6WIDTHSPACE|V_ALLOWLOWERCASE,
 		va("CONTINUES: %d", grandprixinfo.rank.continuesUsed));
 	V_DrawThinString(0, 40, V_SNAPTOTOP|V_SNAPTOLEFT|V_6WIDTHSPACE|V_ALLOWLOWERCASE,
-		va("CAPSULES: %d / %d", grandprixinfo.rank.capsules, grandprixinfo.rank.totalCapsules));
+		va("PRISONS: %d / %d", grandprixinfo.rank.prisons, grandprixinfo.rank.totalPrisons));
 	V_DrawThinString(0, 50, V_SNAPTOTOP|V_SNAPTOLEFT|V_6WIDTHSPACE|V_ALLOWLOWERCASE,
 		va("RINGS: %d / %d", grandprixinfo.rank.rings, grandprixinfo.rank.totalRings));
 	V_DrawThinString(0, 60, V_SNAPTOTOP|V_SNAPTOLEFT|V_6WIDTHSPACE|V_ALLOWLOWERCASE,
@@ -5090,7 +5090,7 @@ void K_drawKartHUD(void)
 					;
 				else if ((gametyperules & GTR_POWERSTONES))
 				{
-					if (!battlecapsules)
+					if (!battleprisons)
 						K_drawKartEmeralds();
 				}
 				else if (!islonesome)

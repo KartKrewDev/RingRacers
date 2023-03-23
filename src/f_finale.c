@@ -310,6 +310,8 @@ void F_StartCustomCutscene(INT32 cutscenenum, boolean precutscene, boolean reset
 
 void F_StartIntro(void)
 {
+	cursongcredit.def = NULL;
+
 	if (gamestate)
 	{
 		F_WipeStartScreen();
@@ -1090,7 +1092,7 @@ void F_GameEvaluationTicker(void)
 		{
 			++gamedata->timesBeaten;
 
-			M_UpdateUnlockablesAndExtraEmblems(true);
+			M_UpdateUnlockablesAndExtraEmblems(true, true);
 			G_SaveGameData();
 		}
 		else

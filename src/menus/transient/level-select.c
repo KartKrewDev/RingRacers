@@ -9,6 +9,8 @@
 #include "../../f_finale.h" // F_WipeStartScreen
 #include "../../v_video.h"
 
+cupheader_t dummy_lostandfound;
+
 menuitem_t PLAY_LevelSelect[] =
 {
 	{IT_NOTHING | IT_KEYHANDLER, NULL, NULL, NULL, {.routine = M_LevelSelectHandler}, 0, 0},
@@ -57,8 +59,9 @@ boolean M_CanShowLevelInList(INT16 mapnum, levelsearch_t *levelsearch)
 	if (mapheaderinfo[mapnum]->lumpnum == LUMPERROR)
 		return false;
 
-	// Check for TOL
-	if (!(mapheaderinfo[mapnum]->typeoflevel & levelsearch->typeoflevel))
+	// Check for TOL (permits TEST RUN outside of time attack)
+	if ((levelsearch->timeattack || mapheaderinfo[mapnum]->typeoflevel)
+		&& !(mapheaderinfo[mapnum]->typeoflevel & levelsearch->typeoflevel))
 		return false;
 
 	// Should the map be hidden?
@@ -70,10 +73,14 @@ boolean M_CanShowLevelInList(INT16 mapnum, levelsearch_t *levelsearch)
 		return false;
 
 	// Don't permit cup when no cup requested (also no dupes in time attack)
-	if (levelsearch->cupmode
-		&& (levelsearch->timeattack || !levelsearch->cup)
-		&& mapheaderinfo[mapnum]->cup != levelsearch->cup)
-		return false;
+	if (levelsearch->cupmode)
+	{
+		cupheader_t *cup = (levelsearch->cup == &dummy_lostandfound) ? NULL : levelsearch->cup;
+
+		if ((!cup || levelsearch->timeattack)
+			&& mapheaderinfo[mapnum]->cup != cup)
+			return false;
+	}
 
 	// Finally, the most complex check: does the map have lock conditions?
 	if (levelsearch->checklocked)
@@ -97,9 +104,9 @@ UINT16 M_CountLevelsToShowInList(levelsearch_t *levelsearch)
 	INT16 i, count = 0;
 
 	if (!levelsearch)
-		return false;
+		return 0;
 
-	if (levelsearch->cup)
+	if (levelsearch->cup && levelsearch->cup != &dummy_lostandfound)
 	{
 		if (levelsearch->checklocked && M_CupLocked(levelsearch->cup))
 			return 0;
@@ -126,9 +133,9 @@ UINT16 M_GetFirstLevelInList(UINT8 *i, levelsearch_t *levelsearch)
 	INT16 mapnum = NEXTMAP_INVALID;
 
 	if (!levelsearch)
-		return false;
+		return NEXTMAP_INVALID;
 
-	if (levelsearch->cup)
+	if (levelsearch->cup && levelsearch->cup != &dummy_lostandfound)
 	{
 		if (levelsearch->checklocked && M_CupLocked(levelsearch->cup))
 		{
@@ -151,6 +158,9 @@ UINT16 M_GetFirstLevelInList(UINT8 *i, levelsearch_t *levelsearch)
 		for (mapnum = 0; mapnum < nummapheaders; mapnum++)
 			if (M_CanShowLevelInList(mapnum, levelsearch))
 				break;
+
+		if (mapnum >= nummapheaders)
+			mapnum = NEXTMAP_INVALID;
 	}
 
 	return mapnum;
@@ -159,9 +169,9 @@ UINT16 M_GetFirstLevelInList(UINT8 *i, levelsearch_t *levelsearch)
 UINT16 M_GetNextLevelInList(UINT16 mapnum, UINT8 *i, levelsearch_t *levelsearch)
 {
 	if (!levelsearch)
-		return false;
+		return NEXTMAP_INVALID;
 
-	if (levelsearch->cup)
+	if (levelsearch->cup && levelsearch->cup != &dummy_lostandfound)
 	{
 		mapnum = NEXTMAP_INVALID;
 		(*i)++;
@@ -185,14 +195,14 @@ UINT16 M_GetNextLevelInList(UINT16 mapnum, UINT8 *i, levelsearch_t *levelsearch)
 
 void M_LevelSelectScrollDest(void)
 {
-	UINT16 m = M_CountLevelsToShowInList(&levellist.levelsearch)-1;
+	UINT16 m = levellist.mapcount-1;
 
 	levellist.dest = (6*levellist.cursor);
 
 	if (levellist.dest < 3)
 		levellist.dest = 3;
 
-	if (levellist.dest > (6*m)-3)
+	if (m && levellist.dest > (6*m)-3)
 		levellist.dest = (6*m)-3;
 }
 
@@ -209,6 +219,9 @@ boolean M_LevelListFromGametype(INT16 gt)
 		{
 			cupgrid.cappages = 0;
 			cupgrid.builtgrid = NULL;
+			dummy_lostandfound.cachedlevels[0] = NEXTMAP_INVALID;
+
+			first = false;
 		}
 
 		levellist.newgametype = gt;
@@ -227,11 +240,8 @@ boolean M_LevelListFromGametype(INT16 gt)
 
 		levellist.levelsearch.cupmode = (!(gametypes[gt]->rules & GTR_NOCUPSELECT));
 
-		first = false;
-	}
-
-	if (levellist.levelsearch.timeattack == false || levellist.newgametype != GT_RACE)
 		CV_SetValue(&cv_dummyspbattack, 0);
+	}
 
 	// Obviously go to Cup Select in gametypes that have cups.
 	// Use a really long level select in gametypes that don't use cups.
@@ -266,6 +276,31 @@ boolean M_LevelListFromGametype(INT16 gt)
 		}
 		memset(cupgrid.builtgrid, 0, cupgrid.cappages * pagelen);
 
+		// The following doubles the size of the buffer if necessary.
+#define GRID_INSERTCUP \
+			if ((currentid * sizeof(cupheader_t*)) >= cupgrid.cappages * pagelen) \
+			{ \
+				const size_t firstlen = cupgrid.cappages * pagelen; \
+				cupgrid.builtgrid = Z_Realloc(cupgrid.builtgrid, \
+					firstlen * 2, \
+					PU_STATIC, NULL); \
+				\
+				if (!cupgrid.builtgrid) \
+				{ \
+					I_Error("M_LevelListFromGametype: Not enough memory to reallocate builtgrid"); \
+				} \
+				\
+				cupgrid.cappages *= 2; \
+			} \
+			\
+			cupgrid.builtgrid[currentid] = templevelsearch.cup;
+
+#define GRID_FOCUSCUP \
+					cupgrid.x = currentid % CUPMENU_COLUMNS; \
+					cupgrid.y = (currentid / CUPMENU_COLUMNS) % CUPMENU_ROWS; \
+					cupgrid.pageno = currentid / (CUPMENU_COLUMNS * CUPMENU_ROWS); \
+					currentvalid = true;
+
 		while (templevelsearch.cup)
 		{
 			templevelsearch.checklocked = false;
@@ -278,23 +313,7 @@ boolean M_LevelListFromGametype(INT16 gt)
 
 			foundany = true;
 
-			if ((currentid * sizeof(cupheader_t*)) >= cupgrid.cappages * pagelen)
-			{
-				// Double the size of the buffer, and clear the other stuff.
-				const size_t firstlen = cupgrid.cappages * pagelen;
-				cupgrid.builtgrid = Z_Realloc(cupgrid.builtgrid,
-					firstlen * 2,
-					PU_STATIC, NULL);
-
-				if (!cupgrid.builtgrid)
-				{
-					I_Error("M_LevelListFromGametype: Not enough memory to reallocate builtgrid");
-				}
-
-				cupgrid.cappages *= 2;
-			}
-
-			cupgrid.builtgrid[currentid] = templevelsearch.cup;
+			GRID_INSERTCUP;
 
 			templevelsearch.checklocked = true;
 			if (M_GetFirstLevelInList(&temp, &templevelsearch) != NEXTMAP_INVALID)
@@ -305,16 +324,41 @@ boolean M_LevelListFromGametype(INT16 gt)
 					? (mapheaderinfo[gamemap-1] && mapheaderinfo[gamemap-1]->cup == templevelsearch.cup)
 					: (gt == -1 && levellist.levelsearch.cup == templevelsearch.cup))
 				{
-					cupgrid.x = currentid % CUPMENU_COLUMNS;
-					cupgrid.y = (currentid / CUPMENU_COLUMNS) % CUPMENU_ROWS;
-					cupgrid.pageno = currentid / (CUPMENU_COLUMNS * CUPMENU_ROWS);
-					currentvalid = true;
+					GRID_FOCUSCUP;
 				}
 			}
 
 			currentid++;
 			templevelsearch.cup = templevelsearch.cup->next;
 		}
+
+		// Lost and found, a simplified version of the above loop.
+		if (cupgrid.grandprix == false)
+		{
+			templevelsearch.cup = &dummy_lostandfound;
+			templevelsearch.checklocked = true;
+
+			if (M_GetFirstLevelInList(&temp, &levellist.levelsearch) != NEXTMAP_INVALID)
+			{
+				foundany = true;
+				GRID_INSERTCUP;
+				highestunlockedid = currentid;
+
+				if (Playing()
+					? (mapheaderinfo[gamemap-1] && mapheaderinfo[gamemap-1]->cup == NULL)
+					: (gt == -1 && levellist.levelsearch.cup == templevelsearch.cup))
+				{
+					GRID_FOCUSCUP;
+				}
+
+				currentid++;
+			}
+
+			templevelsearch.cup = NULL;
+		}
+
+#undef GRID_INSERTCUP
+#undef GRID_FOCUSCUP
 
 		if (foundany == false)
 		{
@@ -356,6 +400,7 @@ boolean M_LevelListFromGametype(INT16 gt)
 		levellist.levelsearch.cup = NULL;
 	}
 
+	levellist.mapcount = M_CountLevelsToShowInList(&levellist.levelsearch);
 	M_LevelSelectScrollDest();
 	levellist.y = levellist.dest;
 
@@ -518,7 +563,6 @@ void M_LevelSelected(INT16 add)
 
 void M_LevelSelectHandler(INT32 choice)
 {
-	INT16 maxlevels = M_CountLevelsToShowInList(&levellist.levelsearch);
 	const UINT8 pid = 0;
 
 	(void)choice;
@@ -531,7 +575,7 @@ void M_LevelSelectHandler(INT32 choice)
 	if (menucmd[pid].dpad_ud > 0)
 	{
 		levellist.cursor++;
-		if (levellist.cursor >= maxlevels)
+		if (levellist.cursor >= levellist.mapcount)
 			levellist.cursor = 0;
 		S_StartSound(NULL, sfx_s3k5b);
 		M_SetMenuDelay(pid);
@@ -540,7 +584,7 @@ void M_LevelSelectHandler(INT32 choice)
 	{
 		levellist.cursor--;
 		if (levellist.cursor < 0)
-			levellist.cursor = maxlevels-1;
+			levellist.cursor = levellist.mapcount-1;
 		S_StartSound(NULL, sfx_s3k5b);
 		M_SetMenuDelay(pid);
 	}

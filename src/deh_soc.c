@@ -2280,16 +2280,24 @@ void readunlockable(MYFILE *f, INT32 num)
 						unlockables[num].type = SECRET_FOLLOWER;
 					else if (fastcmp(word2, "HARDSPEED"))
 						unlockables[num].type = SECRET_HARDSPEED;
+					else if (fastcmp(word2, "MASTERMODE"))
+						unlockables[num].type = SECRET_MASTERMODE;
 					else if (fastcmp(word2, "ENCORE"))
 						unlockables[num].type = SECRET_ENCORE;
-					else if (fastcmp(word2, "LEGACYBOXRUMMAGE"))
-						unlockables[num].type = SECRET_LEGACYBOXRUMMAGE;
 					else if (fastcmp(word2, "TIMEATTACK"))
 						unlockables[num].type = SECRET_TIMEATTACK;
-					else if (fastcmp(word2, "BREAKTHECAPSULES"))
-						unlockables[num].type = SECRET_BREAKTHECAPSULES;
+					else if (fastcmp(word2, "PRISONBREAK"))
+						unlockables[num].type = SECRET_PRISONBREAK;
 					else if (fastcmp(word2, "SPECIALATTACK"))
 						unlockables[num].type = SECRET_SPECIALATTACK;
+					else if (fastcmp(word2, "SPBATTACK"))
+						unlockables[num].type = SECRET_SPBATTACK;
+					else if (fastcmp(word2, "ONLINE"))
+						unlockables[num].type = SECRET_ONLINE;
+					else if (fastcmp(word2, "ADDONS"))
+						unlockables[num].type = SECRET_ADDONS;
+					else if (fastcmp(word2, "EGGTV"))
+						unlockables[num].type = SECRET_EGGTV;
 					else if (fastcmp(word2, "SOUNDTEST"))
 						unlockables[num].type = SECRET_SOUNDTEST;
 					else if (fastcmp(word2, "ALTTITLE"))
@@ -2328,18 +2336,23 @@ void readunlockable(MYFILE *f, INT32 num)
 static void readcondition(UINT8 set, UINT32 id, char *word2)
 {
 	INT32 i;
-	char *params[4]; // condition, requirement, extra info, extra info
+	char *params[5]; // condition, requirement, extra info, extra info, stringvar
 	char *spos;
+	char *stringvar = NULL;
 
 	conditiontype_t ty;
-	INT32 re;
+	INT32 re = 0;
 	INT16 x1 = 0, x2 = 0;
 
 	INT32 offset = 0;
 
+#if 0
+	char *endpos = word2 + strlen(word2);
+#endif
+
 	spos = strtok(word2, " ");
 
-	for (i = 0; i < 4; ++i)
+	for (i = 0; i < 5; ++i)
 	{
 		if (spos != NULL)
 		{
@@ -2356,12 +2369,55 @@ static void readcondition(UINT8 set, UINT32 id, char *word2)
 		return;
 	}
 
-	if				(fastcmp(params[0], "PLAYTIME")
-	|| (++offset && fastcmp(params[0], "MATCHESPLAYED")))
+	if (fastcmp(params[0], "PLAYTIME"))
 	{
 		PARAMCHECK(1);
 		ty = UC_PLAYTIME + offset;
 		re = atoi(params[1]);
+	}
+	else if (fastcmp(params[0], "ROUNDSPLAYED"))
+	{
+		PARAMCHECK(1);
+		ty = UC_ROUNDSPLAYED;
+		re = atoi(params[1]);
+		x1 = GDGT_MAX;
+
+		if (re == 0)
+		{
+			deh_warning("Rounds played requirement is %d for condition ID %d", re, id+1);
+			return;
+		}
+
+		if (params[2])
+		{
+			if (fastcmp(params[2], "RACE"))
+				x1 = GDGT_RACE;
+			else if (fastcmp(params[2], "BATTLE"))
+				x1 = GDGT_BATTLE;
+			else if (fastcmp(params[2], "PRISONS"))
+				x1 = GDGT_PRISONS;
+			else if (fastcmp(params[2], "SPECIAL"))
+				x1 = GDGT_SPECIAL;
+			else if (fastcmp(params[2], "CUSTOM"))
+				x1 = GDGT_CUSTOM;
+			else
+			{
+				deh_warning("gametype requirement \"%s\" invalid for condition ID %d", params[2], id+1);
+				return;
+			}
+		}
+	}
+	else if (fastcmp(params[0], "TOTALRINGS"))
+	{
+		PARAMCHECK(1);
+		ty = UC_TOTALRINGS;
+		re = atoi(params[1]);
+
+		if (re < 2 || re > GDMAX_RINGS)
+		{
+			deh_warning("Total Rings requirement %d out of range (%d - %d) for condition ID %d", re, 2, GDMAX_RINGS, id+1);
+			return;
+		}
 	}
 	else if (fastcmp(params[0], "POWERLEVEL"))
 	{
@@ -2394,7 +2450,9 @@ static void readcondition(UINT8 set, UINT32 id, char *word2)
 		re = atoi(params[1]);
 	}
 	else if ((offset=0) || fastcmp(params[0], "MAPVISITED")
-	||        (++offset && fastcmp(params[0], "MAPBEATEN")))
+	||        (++offset && fastcmp(params[0], "MAPBEATEN"))
+	||        (++offset && fastcmp(params[0], "MAPENCORE"))
+	||        (++offset && fastcmp(params[0], "MAPSPBATTACK")))
 	{
 		PARAMCHECK(1);
 		ty = UC_MAPVISITED + offset;
@@ -2419,17 +2477,26 @@ static void readcondition(UINT8 set, UINT32 id, char *word2)
 			return;
 		}
 	}
-	else if (fastcmp(params[0], "TRIGGER"))
+	else if ((offset=0) || fastcmp(params[0], "ALLCHAOS")
+	||        (++offset && fastcmp(params[0], "ALLSUPER"))
+	||        (++offset && fastcmp(params[0], "ALLEMERALDS")))
 	{
-		PARAMCHECK(1);
-		ty = UC_TRIGGER;
-		re = atoi(params[1]);
-
-		// constrained by 32 bits
-		if (re < 0 || re > 31)
+		//PARAMCHECK(1);
+		ty = UC_ALLCHAOS + offset;
+		re = KARTSPEED_NORMAL;
+		if (params[1])
 		{
-			deh_warning("Trigger ID %d out of range (0 - 31) for condition ID %d", re, id+1);
-			return;
+			if (fastcmp(params[1], "NORMAL"))
+				;
+			else if (fastcmp(params[1], "HARD"))
+				x1 = KARTSPEED_HARD;
+			else if (fastcmp(params[1], "MASTER"))
+				x1 = KARTGP_MASTER;
+			else
+			{
+				deh_warning("gamespeed requirement \"%s\" invalid for condition ID %d", params[1], id+1);
+				return;
+			}
 		}
 	}
 	else if (fastcmp(params[0], "TOTALMEDALS"))
@@ -2474,13 +2541,273 @@ static void readcondition(UINT8 set, UINT32 id, char *word2)
 			return;
 		}
 	}
+	else if ((offset=0) || fastcmp(params[0], "ADDON")
+	||        (++offset && fastcmp(params[0], "REPLAY"))
+	||        (++offset && fastcmp(params[0], "CRASH")))
+	{
+		//PARAMCHECK(1);
+		ty = UC_ADDON + offset;
+	}
+	else if ((offset=0) || fastcmp(params[0], "AND")
+	||        (++offset && fastcmp(params[0], "COMMA")))
+	{
+		//PARAMCHECK(1);
+		ty = UC_AND + offset;
+	}
+	else if ((offset=0) || fastcmp(params[0], "PREFIX_GRANDPRIX")
+	||        (++offset && fastcmp(params[0], "PREFIX_BONUSROUND"))
+	||        (++offset && fastcmp(params[0], "PREFIX_TIMEATTACK"))
+	||        (++offset && fastcmp(params[0], "PREFIX_PRISONBREAK"))
+	||        (++offset && fastcmp(params[0], "PREFIX_SEALEDSTAR")))
+	{
+		//PARAMCHECK(1);
+		ty = UCRP_PREFIX_GRANDPRIX + offset;
+	}
+	else if ((offset=0) || fastcmp(params[0], "PREFIX_ISMAP")
+	||        (++offset && fastcmp(params[0], "ISMAP")))
+	{
+		PARAMCHECK(1);
+		ty = UCRP_PREFIX_ISMAP + offset;
+		re = G_MapNumber(params[1]);
+
+		if (re >= nummapheaders)
+		{
+			deh_warning("Invalid level %s for condition ID %d", params[1], id+1);
+			return;
+		}
+	}
+	else if (fastcmp(params[0], "ISCHARACTER"))
+	{
+		PARAMCHECK(1);
+		ty = UCRP_ISCHARACTER;
+#if 0
+		{
+			re = R_SkinAvailable(params[1]);
+
+			if (re < 0)
+			{
+				deh_warning("Invalid character %s for condition ID %d", params[1], id+1);
+				return;
+			}
+		}
+#else
+		{
+			stringvar = Z_StrDup(params[1]);
+			re = -1;
+		}
+#endif
+	}
+	else if (fastcmp(params[0], "ISENGINECLASS"))
+	{
+		PARAMCHECK(1);
+		ty = UCRP_ISENGINECLASS;
+		if (!params[1][1]
+			&& params[1][0] >= 'A' && params[1][0] <= 'J')
+		{
+			re = params[1][0] - 'A';
+		}
+		else
+		{
+			deh_warning("engine class requirement \"%s\" invalid for condition ID %d", params[1], id+1);
+			return;
+		}
+	}
+	else if (fastcmp(params[0], "ISDIFFICULTY"))
+	{
+		//PARAMCHECK(1);
+		ty = UCRP_ISDIFFICULTY;
+		re = KARTSPEED_NORMAL;
+		if (params[1])
+		{
+			if (fastcmp(params[1], "NORMAL"))
+				;
+			else if (fastcmp(params[1], "HARD"))
+				x1 = KARTSPEED_HARD;
+			else if (fastcmp(params[1], "MASTER"))
+				x1 = KARTGP_MASTER;
+			else
+			{
+				deh_warning("gamespeed requirement \"%s\" invalid for condition ID %d", params[1], id+1);
+				return;
+			}
+		}
+	}
+	else if (fastcmp(params[0], "PODIUMCUP"))
+	{
+		PARAMCHECK(1);
+		ty = UCRP_PODIUMCUP;
+		{
+			cupheader_t *cup = kartcupheaders;
+			while (cup)
+			{
+				if (!strcmp(cup->name, params[1]))
+					break;
+				cup = cup->next;
+			}
+
+			if (!cup)
+			{
+				deh_warning("Invalid cup %s for condition ID %d", params[1], id+1);
+				return;
+			}
+
+			re = cup->id;
+		}
+
+		if (params[2])
+		{
+			if (params[2][0] && !params[2][1])
+			{
+				x2 = 1;
+
+				switch (params[2][0])
+				{
+					case 'E': { x1 = GRADE_E; break; }
+					case 'D': { x1 = GRADE_D; break; }
+					case 'C': { x1 = GRADE_C; break; }
+					case 'B': { x1 = GRADE_B; break; }
+					case 'A': { x1 = GRADE_A; break; }
+					case 'S': { x1 = GRADE_S; break; }
+					default:
+						deh_warning("Invalid grade %s for condition ID %d", params[2], id+1);
+						return;
+				}
+			}
+			else if ((offset=0) || fastcmp(params[2], "GOLD")
+				||    (++offset && fastcmp(params[2], "SILVER"))
+				||    (++offset && fastcmp(params[2], "BRONZE")))
+			{
+				x1 = offset + 1;
+			}
+			else
+			{
+				deh_warning("Invalid cup result %s for condition ID %d", params[2], id+1);
+				return;
+			}
+				
+		}
+	}
+	else if ((offset=0) || fastcmp(params[0], "PODIUMEMERALD")
+	||        (++offset && fastcmp(params[0], "PODIUMPRIZE")))
+	{
+		//PARAMCHECK(1);
+		ty = UCRP_PODIUMEMERALD + offset;
+	}
+	else if ((offset=0) || fastcmp(params[0], "FINISHCOOL")
+	||        (++offset && fastcmp(params[0], "FINISHALLPRISONS"))
+	||        (++offset && fastcmp(params[0], "NOCONTEST")))
+	{
+		//PARAMCHECK(1);
+		ty = UCRP_FINISHCOOL + offset;
+	}
+	else if ((offset=0) || fastcmp(params[0], "FINISHPLACE")
+	||        (++offset && fastcmp(params[0], "FINISHPLACEEXACT")))
+	{
+		PARAMCHECK(1);
+		ty = UCRP_FINISHPLACE + offset;
+		re = atoi(params[1]);
+
+		if (re < 1 || re > MAXPLAYERS)
+		{
+			deh_warning("Invalid place %s for condition ID %d", params[1], id+1);
+			return;
+		}
+	}
+	else if ((offset=0) || fastcmp(params[0], "FINISHTIME")
+	||        (++offset && fastcmp(params[0], "FINISHTIMEEXACT"))
+	||        (++offset && fastcmp(params[0], "FINISHTIMELEFT")))
+	{
+		PARAMCHECK(1);
+		ty = UCRP_FINISHTIME + offset;
+		re = get_number(params[1]);
+
+		if (re < 0)
+		{
+			deh_warning("Invalid time %s for condition ID %d", params[1], id+1);
+			return;
+		}
+	}
+	else if (fastcmp(params[0], "TRIGGER"))
+	{
+		PARAMCHECK(2); // strictly speaking at LEAST two
+		ty = UCRP_TRIGGER;
+		re = atoi(params[1]);
+
+		// constrained by 32 bits
+		if (re < 0 || re > 31)
+		{
+			deh_warning("Trigger ID %d out of range (0 - 31) for condition ID %d", re, id+1);
+			return;
+		}
+
+		// The following undid the effects of strtok.
+		// Unfortunately, there is no way it can reasonably undo the effects of strupr.
+		// If we want custom descriptions for map execution triggers, we're gonna need a different method.
+#if 0
+		// undo affect of strtok
+		i = 5;
+		// so spos will still be the strtok from earlier
+		while (i >= 2)
+		{
+			if (!spos)
+				continue;
+			while (*spos != '\0')
+				spos++;
+			if (spos < endpos)
+				*spos = ' ';
+			spos = params[--i];
+		}
+#endif
+
+		stringvar = Z_StrDup(params[2]);
+	}
+	else if ((offset=0) || fastcmp(params[0], "FALLOFF")
+	||        (++offset && fastcmp(params[0], "TOUCHOFFROAD"))
+	||        (++offset && fastcmp(params[0], "TOUCHSNEAKERPANEL"))
+	||        (++offset && fastcmp(params[0], "RINGDEBT")))
+	{
+		PARAMCHECK(1);
+		ty = UCRP_FALLOFF + offset;
+		re = 1;
+
+		if (params[1][0] == 'F' || params[1][0] == 'N' || params[1][0] == '0')
+			re = 0;
+	}
+	else if ((offset=0) || fastcmp(params[0], "TRIPWIREHYUU")
+	||        (++offset && fastcmp(params[0], "SPBNEUTER"))
+	||        (++offset && fastcmp(params[0], "LANDMINEDUNK"))
+	||        (++offset && fastcmp(params[0], "HITMIDAIR")))
+	{
+		//PARAMCHECK(1);
+		ty = UCRP_TRIPWIREHYUU + offset;
+	}
+	else if (fastcmp(params[0], "WETPLAYER"))
+	{
+		PARAMCHECK(1);
+		ty = UCRP_WETPLAYER;
+		re = MFE_UNDERWATER;
+		x1 = 1;
+
+		if (params[2])
+		{
+			if (fastcmp(params[2], "STRICT"))
+				re |= MFE_TOUCHWATER;
+			else
+			{
+				deh_warning("liquid strictness requirement \"%s\" invalid for condition ID %d", params[2], id+1);
+				return;
+			}
+		}
+
+		stringvar = Z_StrDup(params[1]);
+	}
 	else
 	{
 		deh_warning("Invalid condition name %s for condition ID %d", params[0], id+1);
 		return;
 	}
 
-	M_AddRawCondition(set, (UINT8)id, ty, re, x1, x2);
+	M_AddRawCondition(set, (UINT8)id, ty, re, x1, x2, stringvar);
 }
 
 void readconditionset(MYFILE *f, UINT8 setnum)
@@ -2633,6 +2960,10 @@ void readmaincfg(MYFILE *f, boolean mainfile)
 				clear_emblems();
 				//clear_levels();
 				doClearLevels = true;
+
+				G_ClearRecords();
+				M_ClearStats();
+				M_ClearSecrets();
 			}
 #ifndef DEVELOP
 			else if (!mainfile && !gamedataadded)
@@ -3101,7 +3432,16 @@ void readcupheader(MYFILE *f, cupheader_t *cup)
 			i = atoi(word2); // used for numerical settings
 			strupr(word2);
 
-			if (fastcmp(word, "ICON"))
+			if (fastcmp(word, "MONITOR"))
+			{
+				if (i > 0 && i < 10)
+					cup->monitor = i;
+				else if (!word2[0] || word2[1] != '\0' || word2[0] == '0')
+					deh_warning("%s Cup: Invalid monitor type \"%s\" (should be 1-9 or A-Z)\n", cup->name, word2);
+				else
+					cup->monitor = (word2[0] - 'A') + 10;
+			}
+			else if (fastcmp(word, "ICON"))
 			{
 				deh_strlcpy(cup->icon, word2,
 					sizeof(cup->icon), va("%s Cup: icon", cup->name));

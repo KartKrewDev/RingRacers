@@ -5,6 +5,7 @@
 #include "../r_skins.h"
 #include "../s_sound.h"
 #include "../k_grandprix.h" // K_CanChangeRules
+#include "../m_cond.h" // Condition Sets
 
 menuitem_t PLAY_CharSelect[] =
 {
@@ -1503,7 +1504,7 @@ void M_CharacterSelectTick(void)
 				#if defined (TESTERS)
 					M_MPOptSelectInit(0);
 				#else
-					M_SetupNextMenu(&PLAY_MainDef, false);
+					M_SetupPlayMenu(0);
 				#endif
 
 			}

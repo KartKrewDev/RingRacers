@@ -26,6 +26,7 @@
 #include "g_game.h"
 #include "g_demo.h"
 #include "m_misc.h"
+#include "m_cond.h"
 #include "k_menu.h"
 #include "m_argv.h"
 #include "hu_stuff.h"
@@ -2240,7 +2241,7 @@ static void G_SaveDemoSkins(UINT8 **pp)
 {
 	char skin[16];
 	UINT8 i;
-	UINT8 *availabilitiesbuffer = R_GetSkinAvailabilities(true);
+	UINT8 *availabilitiesbuffer = R_GetSkinAvailabilities(true, false);
 
 	WRITEUINT8((*pp), numskins);
 	for (i = 0; i < numskins; i++)
@@ -4189,7 +4190,15 @@ void G_SaveDemo(void)
 	if (!modeattacking)
 	{
 		if (demo.savemode == DSM_SAVED)
+		{
 			CONS_Printf(M_GetText("Demo %s recorded\n"), demoname);
+			if (gamedata->eversavedreplay == false)
+			{
+				gamedata->eversavedreplay = true;
+				M_UpdateUnlockablesAndExtraEmblems(true, true);
+				G_SaveGameData();
+			}
+		}
 		else
 			CONS_Alert(CONS_WARNING, M_GetText("Demo %s not saved\n"), demoname);
 	}

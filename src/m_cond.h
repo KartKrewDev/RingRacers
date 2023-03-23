@@ -1,6 +1,6 @@
 // SONIC ROBO BLAST 2
 //-----------------------------------------------------------------------------
-// Copyright (C) 2022-2023 by Vivian "toaster" Grannell.
+// Copyright (C) 2022-2023 by Vivian "toastergrl" Grannell.
 // Copyright (C) 2012-2016 by Matthew "Kaito Sinclaire" Walsh.
 // Copyright (C) 2012-2020 by Sonic Team Junior.
 //
@@ -29,19 +29,81 @@ extern "C" {
 typedef enum
 {
 	UC_PLAYTIME,		// PLAYTIME [tics]
-	UC_MATCHESPLAYED,	// SRB2Kart: MATCHESPLAYED [x played]
+	UC_ROUNDSPLAYED,	// ROUNDSPLAYED [x played]
+	UC_TOTALRINGS,		// TOTALRINGS [x collected]
+
 	UC_POWERLEVEL,		// SRB2Kart: POWERLEVEL [power level to reach] [gametype, "0" for race, "1" for battle]
+
 	UC_GAMECLEAR,		// GAMECLEAR <x times>
 	UC_OVERALLTIME,		// OVERALLTIME [time to beat, tics]
-	UC_MAPVISITED,		// MAPVISITED [map number]
-	UC_MAPBEATEN,		// MAPBEATEN [map number]
-	UC_MAPENCORE,		// MAPENCORE [map number]
-	UC_MAPTIME,			// MAPTIME [map number] [time to beat, tics]
-	UC_TRIGGER,			// TRIGGER [trigger number]
+
+	UC_MAPVISITED,		// MAPVISITED [map]
+	UC_MAPBEATEN,		// MAPBEATEN [map]
+	UC_MAPENCORE,		// MAPENCORE [map]
+	UC_MAPSPBATTACK,	// MAPSPBATTACK [map]
+	UC_MAPTIME,			// MAPTIME [map] [time to beat, tics]
+
+	UC_ALLCHAOS,		// ALLCHAOS [minimum difficulty]
+	UC_ALLSUPER,		// ALLSUPER [minimum difficulty]
+	UC_ALLEMERALDS,		// ALLEMERALDS [minimum difficulty]
+
 	UC_TOTALMEDALS,		// TOTALMEDALS [number of emblems]
 	UC_EMBLEM,			// EMBLEM [emblem number]
+
 	UC_UNLOCKABLE,		// UNLOCKABLE [unlockable number]
 	UC_CONDITIONSET,	// CONDITIONSET [condition set number]
+
+	UC_ADDON,			// Ever loaded a custom file?
+	UC_REPLAY,			// Save a replay
+	UC_CRASH,			// Hee ho !
+
+	 // Just for string building
+	UC_AND,
+	UC_COMMA,
+
+	UCRP_REQUIRESPLAYING, // All conditions below this can only be checked if (Playing() && gamestate == GS_LEVEL).
+
+	UCRP_PREFIX_GRANDPRIX = UCRP_REQUIRESPLAYING, // GRAND PRIX:
+	UCRP_PREFIX_BONUSROUND, // BONUS ROUND:
+	UCRP_PREFIX_TIMEATTACK, // TIME ATTACK:
+	UCRP_PREFIX_PRISONBREAK, // PRISON BREAK:
+	UCRP_PREFIX_SEALEDSTAR, // SEALED STAR:
+
+	UCRP_PREFIX_ISMAP, // name of [map]:
+	UCRP_ISMAP, // gamemap == [map]
+
+	UCRP_ISCHARACTER, // character == [skin]
+	UCRP_ISENGINECLASS, // engine class [class]
+	UCRP_ISDIFFICULTY, // difficulty >= [difficulty]
+
+	UCRP_PODIUMCUP, // cup == [cup] [optional: >= grade OR place]
+	UCRP_PODIUMEMERALD, // Get to podium sequence with that cup's emerald
+	UCRP_PODIUMPRIZE, // Get to podium sequence with that cup's bonus (alternate string version of UCRP_PODIUMEMERALD
+
+	UCRP_FINISHCOOL, // Finish in good standing
+	UCRP_FINISHALLPRISONS, // Break all prisons
+	UCRP_NOCONTEST, // No Contest
+
+	UCRP_FINISHPLACE, // Finish at least [place]
+	UCRP_FINISHPLACEEXACT, // Finish at [place] exactly
+
+	UCRP_FINISHTIME, // Finish <= [time, tics]
+	UCRP_FINISHTIMEEXACT, // Finish == [time, tics]
+	UCRP_FINISHTIMELEFT, // Finish with at least [time, tics] to spare
+
+	UCRP_TRIGGER,	// Map execution trigger [id]
+
+	UCRP_FALLOFF, // Fall off (or don't)
+	UCRP_TOUCHOFFROAD, // Touch offroad (or don't)
+	UCRP_TOUCHSNEAKERPANEL, // Either touch sneaker panel (or don't)
+	UCRP_RINGDEBT, // Go into debt (or don't)
+
+	UCRP_TRIPWIREHYUU, // Go through tripwire with Hyudoro
+	UCRP_SPBNEUTER, // Kill an SPB with Lightning
+	UCRP_LANDMINEDUNK, // huh? you died? that's weird. all i did was try to hug you...
+	UCRP_HITMIDAIR, // Hit another player mid-air with a kartfielditem
+
+	UCRP_WETPLAYER, // Don't touch [fluid]
 } conditiontype_t;
 
 // Condition Set information
@@ -55,6 +117,7 @@ struct condition_t
 	INT32 requirement;   /// <- The requirement for this variable.
 	INT16 extrainfo1;    /// <- Extra information for the condition when needed.
 	INT16 extrainfo2;    /// <- Extra information for the condition when needed.
+	char *stringvar;     /// <- Extra z-allocated string for the condition when needed
 };
 struct conditionset_t
 {
@@ -120,13 +183,19 @@ typedef enum
 
 	// Difficulty restrictions
 	SECRET_HARDSPEED,			// Permit Hard gamespeed
+	SECRET_MASTERMODE,			// Permit Master Mode bots in GP
 	SECRET_ENCORE,				// Permit Encore option
-	SECRET_LEGACYBOXRUMMAGE,	// Permit the Legacy Box for record attack, etc
 
 	// Menu restrictions
 	SECRET_TIMEATTACK,			// Permit Time attack
-	SECRET_BREAKTHECAPSULES,	// Permit SP Capsule attack
+	SECRET_PRISONBREAK,			// Permit SP Prison attack
 	SECRET_SPECIALATTACK,		// Permit Special attack (You're blue now!)
+	SECRET_SPBATTACK,			// Permit SPB mode of Time attack
+
+	// Option restrictions
+	SECRET_ONLINE,				// Permit netplay (ankle-high barrier to jumping in the deep end)
+	SECRET_ADDONS,				// Permit menu addfile
+	SECRET_EGGTV,				// Permit replay playback menu
 	SECRET_SOUNDTEST,			// Permit Sound Test
 	SECRET_ALTTITLE,			// Permit alternate titlescreen
 
@@ -148,12 +217,35 @@ typedef enum
 #endif
 #define challengegridloops (gamedata->challengegridwidth >= CHALLENGEGRIDLOOPWIDTH)
 
+#define GDMUSIC_LOSERCLUB	0x01
+
+// This is the largest number of 9s that will fit in UINT32 and UINT16 respectively.
+#define GDMAX_RINGS 999999999
+#define GDMAX_CHAOKEYS 9999
+
+#ifdef DEVELOP
+#define GDCONVERT_ROUNDSTOKEY 20
+#else
+#define GDCONVERT_ROUNDSTOKEY 50
+#endif
+
+typedef enum {
+	GDGT_RACE,
+	GDGT_BATTLE,
+	GDGT_PRISONS,
+	GDGT_SPECIAL,
+	GDGT_CUSTOM,
+	GDGT_MAX
+} roundsplayed_t;
+
 // GAMEDATA STRUCTURE
 // Everything that would get saved in gamedata.dat
 struct gamedata_t
 {
 	// WHENEVER OR NOT WE'RE READY TO SAVE
 	boolean loaded;
+	boolean deferredsave;
+	boolean deferredconditioncheck;
 
 	// CONDITION SETS ACHIEVED
 	boolean achieved[MAXCONDITIONSETS];
@@ -174,7 +266,21 @@ struct gamedata_t
 
 	// PLAY TIME
 	UINT32 totalplaytime;
-	UINT32 matchesplayed;
+	UINT32 roundsplayed[GDGT_MAX];
+	UINT32 totalrings;
+
+	// Chao Key condition bypass
+	UINT32 pendingkeyrounds;
+	UINT8 pendingkeyroundoffset;
+	UINT8 keyspending;
+	UINT16 chaokeys;
+
+	// SPECIFIC SPECIAL EVENTS
+	boolean everloadedaddon;
+	boolean eversavedreplay;
+	boolean everseenspecial;
+	boolean evercrashed;
+	UINT8 musicflags;
 };
 
 extern gamedata_t *gamedata;
@@ -187,8 +293,6 @@ extern emblem_t emblemlocations[MAXEMBLEMS];
 extern unlockable_t unlockables[MAXUNLOCKABLES];
 
 extern INT32 numemblems;
-
-extern UINT32 unlocktriggers;
 
 void M_NewGameDataStruct(void);
 
@@ -213,16 +317,21 @@ char *M_BuildConditionSetString(UINT8 unlockid);
 #define DESCRIPTIONWIDTH 170
 
 // Condition set setup
-void M_AddRawCondition(UINT8 set, UINT8 id, conditiontype_t c, INT32 r, INT16 x1, INT16 x2);
+void M_AddRawCondition(UINT8 set, UINT8 id, conditiontype_t c, INT32 r, INT16 x1, INT16 x2, char *stringvar);
+void M_UpdateConditionSetsPending(void);
 
 // Clearing secrets
 void M_ClearConditionSet(UINT8 set);
 void M_ClearSecrets(void);
+void M_ClearStats(void);
 
 // Updating conditions and unlockables
-UINT8 M_CheckCondition(condition_t *cn);
-boolean M_UpdateUnlockablesAndExtraEmblems(boolean loud);
-UINT8 M_GetNextAchievedUnlock(void);
+boolean M_CheckCondition(condition_t *cn, player_t *player);
+boolean M_UpdateUnlockablesAndExtraEmblems(boolean loud, boolean doall);
+
+#define PENDING_CHAOKEYS (UINT16_MAX-1)
+UINT16 M_GetNextAchievedUnlock(void);
+
 UINT8 M_CheckLevelEmblems(void);
 UINT8 M_CompletionEmblems(void);
 
@@ -230,7 +339,7 @@ UINT8 M_CompletionEmblems(void);
 boolean M_CheckNetUnlockByID(UINT8 unlockid);
 boolean M_SecretUnlocked(INT32 type, boolean local);
 boolean M_CupLocked(cupheader_t *cup);
-boolean M_MapLocked(INT32 mapnum);
+boolean M_MapLocked(UINT16 mapnum);
 INT32 M_CountMedals(boolean all, boolean extraonly);
 
 // Emblem shit

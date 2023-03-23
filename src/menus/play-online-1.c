@@ -2,6 +2,8 @@
 /// \brief MULTIPLAYER OPTION SELECT
 
 #include "../k_menu.h"
+#include "../m_cond.h"
+#include "../s_sound.h"
 
 #if defined (TESTERS)
 	#define IT_STRING_CALL_NOTESTERS IT_DISABLED
@@ -61,6 +63,15 @@ void M_MPOptSelectInit(INT32 choice)
 {
 	INT16 arrcpy[3][3] = {{0,68,0}, {0,12,0}, {0,74,0}};
 	const UINT32 forbidden = GTR_FORBIDMP;
+
+#ifndef TESTERS
+	if (choice != -1 && !M_SecretUnlocked(SECRET_ONLINE, true))
+	{
+		M_StartMessage("Online play is ""\x8B""not yet unlocked""\x80"".\n\nYou'll want experience in ""\x8B""Grand Prix""\x80""\nbefore even thinking about facing\nopponents from across the world.\n\nPress (B)", NULL, MM_NOTHING);
+		S_StartSound(NULL, sfx_s3k36);
+		return;
+	}
+#endif
 
 	mpmenu.modechoice = 0;
 	mpmenu.ticker = 0;

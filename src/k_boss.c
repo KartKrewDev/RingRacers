@@ -1,7 +1,7 @@
 // SONIC ROBO BLAST 2 KART
 //-----------------------------------------------------------------------------
-// Copyright (C) 2018-2022 by Viv "toaster" Grannell
-// Copyright (C) 2018-2022 by Kart Krew
+// Copyright (C) 2018-2023 by Vivian "toastergrl" Grannell
+// Copyright (C) 2018-2023 by Kart Krew
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.

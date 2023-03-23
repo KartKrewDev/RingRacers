@@ -328,6 +328,7 @@ FUNCNORETURN static ATTRNORETURN void signal_handler(INT32 num)
 {
 	D_QuitNetGame(); // Fix server freezes
 	CL_AbortDownloadResume();
+	G_DirtyGameData();
 #ifdef UNIXBACKTRACE
 	write_backtrace(num);
 #endif
@@ -724,6 +725,8 @@ static void I_RegisterSignals (void)
 #ifdef NEWSIGNALHANDLER
 static void signal_handler_child(INT32 num)
 {
+	G_DirtyGameData();
+
 #ifdef UNIXBACKTRACE
 	write_backtrace(num);
 #endif
@@ -1542,6 +1545,7 @@ void I_Error(const char *error, ...)
 		if (errorcount == 8)
 		{
 			M_SaveConfig(NULL);
+			G_DirtyGameData(); // done first in case an error is in G_SaveGameData
 			G_SaveGameData();
 		}
 		if (errorcount > 20)
@@ -1573,6 +1577,7 @@ void I_Error(const char *error, ...)
 
 	M_SaveConfig(NULL); // save game config, cvars..
 	D_SaveBan(); // save the ban list
+	G_DirtyGameData(); // done first in case an error is in G_SaveGameData
 	G_SaveGameData(); // Tails 12-08-2002
 
 	// Shutdown. Here might be other errors.

@@ -18,7 +18,7 @@ extern struct battleovertime
 	fixed_t x, y, z; ///< Position to center on
 } battleovertime;
 
-extern boolean battlecapsules;
+extern boolean battleprisons;
 extern INT32 nummapboxes, numgotboxes; // keep track of spawned battle mode items
 extern UINT8 maptargets, numtargets;
 

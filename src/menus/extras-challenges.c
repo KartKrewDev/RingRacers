@@ -49,17 +49,59 @@ menu_t MISC_StatisticsDef = {
 
 struct challengesmenu_s challengesmenu;
 
-static void M_ChallengesAutoFocus(UINT8 unlockid, boolean fresh)
+static void M_ChallengesAutoFocus(UINT16 unlockid, boolean fresh)
 {
 	UINT8 i;
 	SINT8 work;
+
+	if (unlockid >= MAXUNLOCKABLES && gamedata->pendingkeyrounds > 0
+		&& (gamedata->chaokeys < GDMAX_CHAOKEYS))
+		challengesmenu.chaokeyadd = true;
+
+	if (fresh && unlockid >= MAXUNLOCKABLES)
+	{
+		UINT8 selection[MAXUNLOCKABLES];
+		UINT8 numunlocks = 0;
+
+		// Get a random available unlockable.
+		for (i = 0; i < MAXUNLOCKABLES; i++)
+		{
+			if (!unlockables[i].conditionset)
+			{
+				continue;
+			}
+
+			if (!gamedata->unlocked[i])
+			{
+				continue;
+			}
+
+			selection[numunlocks++] = i;
+		}
+
+		if (!numunlocks)
+		{
+			// ...OK, get a random unlockable.
+			for (i = 0; i < MAXUNLOCKABLES; i++)
+			{
+				if (!unlockables[i].conditionset)
+				{
+					continue;
+				}
+
+				selection[numunlocks++] = i;
+			}
+		}
+
+		unlockid = selection[M_RandomKey(numunlocks)];
+	}
 
 	if (unlockid >= MAXUNLOCKABLES)
 		return;
 
 	challengesmenu.currentunlock = unlockid;
 	challengesmenu.unlockcondition = M_BuildConditionSetString(challengesmenu.currentunlock);
-	challengesmenu.unlockanim = 0;
+	challengesmenu.unlockanim = (challengesmenu.pending && !challengesmenu.chaokeyadd ? 0 : MAXUNLOCKTIME);
 
 	if (gamedata->challengegrid == NULL || challengesmenu.extradata == NULL)
 		return;
@@ -161,12 +203,16 @@ static void M_ChallengesAutoFocus(UINT8 unlockid, boolean fresh)
 
 menu_t *M_InterruptMenuWithChallenges(menu_t *desiredmenu)
 {
-	UINT8 i;
-	UINT16 newunlock = M_GetNextAchievedUnlock();
+	UINT16 i, newunlock;
 
-	M_UpdateUnlockablesAndExtraEmblems(false);
+	if (Playing())
+		return desiredmenu;
 
-	if ((challengesmenu.pending = (newunlock < MAXUNLOCKABLES)))
+	M_UpdateUnlockablesAndExtraEmblems(false, true);
+
+	newunlock = M_GetNextAchievedUnlock();
+
+	if ((challengesmenu.pending = (newunlock != MAXUNLOCKABLES)))
 	{
 		S_StopMusic();
 		MISC_ChallengesDef.prevMenu = desiredmenu;
@@ -177,6 +223,7 @@ menu_t *M_InterruptMenuWithChallenges(menu_t *desiredmenu)
 		challengesmenu.ticker = 0;
 		challengesmenu.requestflip = false;
 		challengesmenu.requestnew = false;
+		challengesmenu.chaokeyadd = false;
 		challengesmenu.currentunlock = MAXUNLOCKABLES;
 		challengesmenu.unlockcondition = NULL;
 
@@ -210,6 +257,9 @@ menu_t *M_InterruptMenuWithChallenges(menu_t *desiredmenu)
 
 		if (challengesmenu.pending)
 			M_ChallengesAutoFocus(newunlock, true);
+		else if (newunlock >= MAXUNLOCKABLES && gamedata->pendingkeyrounds > 0
+			&& (gamedata->chaokeys < GDMAX_CHAOKEYS))
+			challengesmenu.chaokeyadd = true;
 
 		return &MISC_ChallengesDef;
 	}
@@ -219,7 +269,6 @@ menu_t *M_InterruptMenuWithChallenges(menu_t *desiredmenu)
 
 void M_Challenges(INT32 choice)
 {
-	UINT8 i;
 	(void)choice;
 
 	M_InterruptMenuWithChallenges(NULL);
@@ -227,40 +276,7 @@ void M_Challenges(INT32 choice)
 
 	if (gamedata->challengegrid != NULL && !challengesmenu.pending)
 	{
-		UINT8 selection[MAXUNLOCKABLES];
-		UINT8 numunlocks = 0;
-
-		// Get a random available unlockable.
-		for (i = 0; i < MAXUNLOCKABLES; i++)
-		{
-			if (!unlockables[i].conditionset)
-			{
-				continue;
-			}
-
-			if (!gamedata->unlocked[i])
-			{
-				continue;
-			}
-
-			selection[numunlocks++] = i;
-		}
-
-		if (!numunlocks)
-		{
-			// ...OK, get a random unlockable.
-			for (i = 0; i < MAXUNLOCKABLES; i++)
-			{
-				if (!unlockables[i].conditionset)
-				{
-					continue;
-				}
-
-				selection[numunlocks++] = i;
-			}
-		}
-
-		M_ChallengesAutoFocus(selection[M_RandomKey(numunlocks)], true);
+		M_ChallengesAutoFocus(UINT16_MAX, true);
 	}
 
 	M_SetupNextMenu(&MISC_ChallengesDef, false);
@@ -270,7 +286,7 @@ void M_ChallengesTick(void)
 {
 	const UINT8 pid = 0;
 	UINT16 i;
-	UINT8 newunlock = MAXUNLOCKABLES;
+	UINT16 newunlock = MAXUNLOCKABLES;
 
 	// Ticking
 	challengesmenu.ticker++;
@@ -280,8 +296,11 @@ void M_ChallengesTick(void)
 		if (setup_explosions[i].tics > 0)
 			setup_explosions[i].tics--;
 	}
-	if (challengesmenu.unlockcount[CC_ANIM] > 0)
-		challengesmenu.unlockcount[CC_ANIM]--;
+	for (i = CC_ANIM; i < CC_MAX; i++)
+	{
+		if (challengesmenu.unlockcount[i] > 0)
+			challengesmenu.unlockcount[i]--;
+	}
 	M_CupSelectTick();
 
 	// Update tile flip state.
@@ -307,106 +326,155 @@ void M_ChallengesTick(void)
 		}
 	}
 
-	if (challengesmenu.pending)
+	if (challengesmenu.pending && challengesmenu.fade < 5)
 	{
-		// Pending mode.
+		// Fade increase.
+		challengesmenu.fade++;
+	}
+	else if (challengesmenu.chaokeyadd == true)
+	{
+		if (challengesmenu.ticker <= 5)
+			; // recreate the slight delay the unlock fades provide
+		else if (gamedata->pendingkeyrounds == 0)
+		{
+			gamedata->keyspending = 0;
+			gamedata->pendingkeyroundoffset %= GDCONVERT_ROUNDSTOKEY;
 
-		if (challengesmenu.requestnew)
-		{
-			// The menu apparatus is requesting a new unlock.
-			challengesmenu.requestnew = false;
-			if ((newunlock = M_GetNextAchievedUnlock()) < MAXUNLOCKABLES)
-			{
-				// We got one!
-				M_ChallengesAutoFocus(newunlock, false);
-			}
-			else
-			{
-				// All done! Let's save the unlocks we've busted open.
-				challengesmenu.pending = false;
-				G_SaveGameData();
-			}
+			challengesmenu.chaokeyadd = false;
+			challengesmenu.requestnew = true;
 		}
-		else if (challengesmenu.fade < 5)
+		else if (gamedata->chaokeys >= GDMAX_CHAOKEYS)
 		{
-			// Fade increase.
-			challengesmenu.fade++;
+			// The above condition will run on the next tic because of this set
+			gamedata->pendingkeyrounds = 0;
+			gamedata->pendingkeyroundoffset = 0;
 		}
 		else
 		{
-			// Unlock sequence.
-			tic_t nexttime = M_MenuExtraHeld(pid) ? (UNLOCKTIME*2) : MAXUNLOCKTIME;
+			UINT32 keyexchange = gamedata->keyspending;
 
-			if (++challengesmenu.unlockanim >= nexttime)
+			if (keyexchange > gamedata->pendingkeyrounds)
 			{
-				challengesmenu.requestnew = true;
+				keyexchange = 1;
+			}
+			else if (keyexchange >= GDCONVERT_ROUNDSTOKEY/2)
+			{
+				keyexchange = GDCONVERT_ROUNDSTOKEY/2;
 			}
 
-			if (challengesmenu.currentunlock < MAXUNLOCKABLES
-				&& challengesmenu.unlockanim == UNLOCKTIME)
+			keyexchange |= 1; // guarantee an odd delta for the sake of the sound
+
+			gamedata->pendingkeyrounds -= keyexchange;
+			gamedata->pendingkeyroundoffset += keyexchange;
+
+			if (!(gamedata->pendingkeyrounds & 1))
 			{
-				// Unlock animation... also tied directly to the actual unlock!
-				gamedata->unlocked[challengesmenu.currentunlock] = true;
-				M_UpdateUnlockablesAndExtraEmblems(true);
+				S_StartSound(NULL, sfx_ptally);
+			}
 
-				// Update shown description just in case..?
-				challengesmenu.unlockcondition = M_BuildConditionSetString(challengesmenu.currentunlock);
+			if (gamedata->pendingkeyroundoffset >= GDCONVERT_ROUNDSTOKEY)
+			{
+				gamedata->pendingkeyroundoffset %= GDCONVERT_ROUNDSTOKEY;
 
-				challengesmenu.unlockcount[CC_TALLY]++;
-				challengesmenu.unlockcount[CC_ANIM]++;
-
-				if (challengesmenu.extradata)
+				if (gamedata->keyspending > 0)
 				{
-					unlockable_t *ref;
-					UINT16 bombcolor;
-
-					M_UpdateChallengeGridExtraData(challengesmenu.extradata);
-
-					ref = &unlockables[challengesmenu.currentunlock];
-					bombcolor = SKINCOLOR_NONE;
-
-					if (ref->color != SKINCOLOR_NONE && ref->color < numskincolors)
-					{
-						bombcolor = ref->color;
-					}
-					else switch (ref->type)
-					{
-						case SECRET_SKIN:
-						{
-							INT32 skin = M_UnlockableSkinNum(ref);
-							if (skin != -1)
-							{
-								bombcolor = skins[skin].prefcolor;
-							}
-							break;
-						}
-						case SECRET_FOLLOWER:
-						{
-							INT32 skin = M_UnlockableFollowerNum(ref);
-							if (skin != -1)
-							{
-								bombcolor = K_GetEffectiveFollowerColor(followers[skin].defaultcolor, cv_playercolor[0].value);
-							}
-							break;
-						}
-						default:
-							break;
-					}
-
-					if (bombcolor == SKINCOLOR_NONE)
-					{
-						bombcolor = cv_playercolor[0].value;
-					}
-
-					i = (ref->majorunlock && M_RandomChance(FRACUNIT/2)) ? 1 : 0;
-					M_SetupReadyExplosions(false, challengesmenu.hilix, challengesmenu.hiliy+i, bombcolor);
-					if (ref->majorunlock)
-					{
-						M_SetupReadyExplosions(false, challengesmenu.hilix+1, challengesmenu.hiliy+(1-i), bombcolor);
-					}
-
-					S_StartSound(NULL, sfx_s3k4e);
+					S_StartSound(NULL, sfx_achiev);
+					gamedata->keyspending--;
+					gamedata->chaokeys++;
+					challengesmenu.unlockcount[CC_CHAOANIM]++;
 				}
+			}
+		}
+	}
+	else if (challengesmenu.requestnew)
+	{
+		// The menu apparatus is requesting a new unlock.
+		challengesmenu.requestnew = false;
+		if ((newunlock = M_GetNextAchievedUnlock()) != MAXUNLOCKABLES)
+		{
+			// We got one!
+			M_ChallengesAutoFocus(newunlock, false);
+		}
+		else
+		{
+			// All done! Let's save the unlocks we've busted open.
+			challengesmenu.pending = challengesmenu.chaokeyadd = false;
+			G_SaveGameData();
+		}
+	}
+	else if (challengesmenu.pending)
+	{
+		tic_t nexttime = M_MenuExtraHeld(pid) ? (UNLOCKTIME*2) : MAXUNLOCKTIME;
+
+		if (++challengesmenu.unlockanim >= nexttime)
+		{
+			challengesmenu.requestnew = true;
+		}
+
+		if (challengesmenu.currentunlock < MAXUNLOCKABLES
+			&& challengesmenu.unlockanim == UNLOCKTIME)
+		{
+			// Unlock animation... also tied directly to the actual unlock!
+			gamedata->unlocked[challengesmenu.currentunlock] = true;
+			M_UpdateUnlockablesAndExtraEmblems(true, true);
+
+			// Update shown description just in case..?
+			challengesmenu.unlockcondition = M_BuildConditionSetString(challengesmenu.currentunlock);
+
+			challengesmenu.unlockcount[CC_TALLY]++;
+			challengesmenu.unlockcount[CC_ANIM]++;
+
+			if (challengesmenu.extradata)
+			{
+				unlockable_t *ref;
+				UINT16 bombcolor;
+
+				M_UpdateChallengeGridExtraData(challengesmenu.extradata);
+
+				ref = &unlockables[challengesmenu.currentunlock];
+				bombcolor = SKINCOLOR_NONE;
+
+				if (ref->color != SKINCOLOR_NONE && ref->color < numskincolors)
+				{
+					bombcolor = ref->color;
+				}
+				else switch (ref->type)
+				{
+					case SECRET_SKIN:
+					{
+						INT32 skin = M_UnlockableSkinNum(ref);
+						if (skin != -1)
+						{
+							bombcolor = skins[skin].prefcolor;
+						}
+						break;
+					}
+					case SECRET_FOLLOWER:
+					{
+						INT32 skin = M_UnlockableFollowerNum(ref);
+						if (skin != -1)
+						{
+							bombcolor = K_GetEffectiveFollowerColor(followers[skin].defaultcolor, cv_playercolor[0].value);
+						}
+						break;
+					}
+					default:
+						break;
+				}
+
+				if (bombcolor == SKINCOLOR_NONE)
+				{
+					bombcolor = cv_playercolor[0].value;
+				}
+
+				i = (ref->majorunlock && M_RandomChance(FRACUNIT/2)) ? 1 : 0;
+				M_SetupReadyExplosions(false, challengesmenu.hilix, challengesmenu.hiliy+i, bombcolor);
+				if (ref->majorunlock)
+				{
+					M_SetupReadyExplosions(false, challengesmenu.hilix+1, challengesmenu.hiliy+(1-i), bombcolor);
+				}
+
+				S_StartSound(NULL, sfx_s3k4e);
 			}
 		}
 	}
@@ -441,28 +509,57 @@ boolean M_ChallengesInputs(INT32 ch)
 	const boolean move = (menucmd[pid].dpad_ud != 0 || menucmd[pid].dpad_lr != 0);
 	(void) ch;
 
-	if (challengesmenu.fade)
+	if (challengesmenu.fade || challengesmenu.chaokeyadd)
 	{
 		;
 	}
-#ifdef DEVELOP
-	else if (M_MenuExtraPressed(pid) && challengesmenu.extradata) // debugging
+	else if (M_MenuExtraPressed(pid)
+		&& challengesmenu.extradata)
 	{
-		if (challengesmenu.currentunlock < MAXUNLOCKABLES)
-		{
-			Z_Free(gamedata->challengegrid);
-			gamedata->challengegrid = NULL;
-			gamedata->challengegridwidth = 0;
-			M_PopulateChallengeGrid();
-			M_UpdateChallengeGridExtraData(challengesmenu.extradata);
+		i = (challengesmenu.hilix * CHALLENGEGRIDHEIGHT) + challengesmenu.hiliy;
 
-			M_ChallengesAutoFocus(challengesmenu.currentunlock, true);
+		if (challengesmenu.currentunlock < MAXUNLOCKABLES
+			&& !gamedata->unlocked[challengesmenu.currentunlock]
+			&& !unlockables[challengesmenu.currentunlock].majorunlock
+			&& ((challengesmenu.extradata[i].flags & CHE_HINT)
+				|| (challengesmenu.unlockcount[CC_UNLOCKED] + challengesmenu.unlockcount[CC_TALLY] == 0))
+			&& gamedata->chaokeys > 0)
+		{
+			gamedata->chaokeys--;
+			challengesmenu.unlockcount[CC_CHAOANIM]++;
+
+			S_StartSound(NULL, sfx_chchng);
 
 			challengesmenu.pending = true;
+			M_ChallengesAutoFocus(challengesmenu.currentunlock, false);
+		}
+		else
+		{
+			challengesmenu.unlockcount[CC_CHAONOPE] = 6;
+			S_StartSound(NULL, sfx_s3k7b); //sfx_s3kb2
+#if 0 // debugging
+			if (challengesmenu.currentunlock < MAXUNLOCKABLES)
+			{
+				if (gamedata->unlocked[challengesmenu.currentunlock] && challengesmenu.unlockanim >= UNLOCKTIME)
+				{
+					if (challengesmenu.unlockcount[CC_TALLY] > 0)
+						challengesmenu.unlockcount[CC_TALLY]--;
+					else
+						challengesmenu.unlockcount[CC_UNLOCKED]--;
+				}
+
+				Z_Free(gamedata->challengegrid);
+				gamedata->challengegrid = NULL;
+				gamedata->challengegridwidth = 0;
+				M_PopulateChallengeGrid();
+				M_UpdateChallengeGridExtraData(challengesmenu.extradata);
+				challengesmenu.pending = true;
+				M_ChallengesAutoFocus(challengesmenu.currentunlock, true);
+			}
+#endif
 		}
 		return true;
 	}
-#endif
 	else
 	{
 		if (M_MenuBackPressed(pid) || start)

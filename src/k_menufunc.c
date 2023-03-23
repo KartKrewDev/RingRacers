@@ -15,6 +15,7 @@
 #include "v_video.h"
 #include "f_finale.h"
 #include "m_misc.h"
+#include "m_cond.h"
 
 #ifdef PC_DOS
 #include <stdio.h> // for snprintf
@@ -369,9 +370,17 @@ boolean M_Responder(event_t *ev)
 void M_PlayMenuJam(void)
 {
 	menu_t *refMenu = (menuactive ? currentMenu : restoreMenu);
+	static boolean loserclubpermitted = false;
+	boolean loserclub = (loserclubpermitted && (gamedata->musicflags & GDMUSIC_LOSERCLUB));
 
 	if (challengesmenu.pending)
+	{
+		S_StopMusic();
+		cursongcredit.def = NULL;
+
+		loserclubpermitted = true;
 		return;
+	}
 
 	if (Playing())
 		return;
@@ -382,15 +391,27 @@ void M_PlayMenuJam(void)
 		{
 			S_StopMusic();
 			cursongcredit.def = NULL;
+			return;
 		}
-		else
+		else if (!loserclub)
 		{
 			if (NotCurrentlyPlaying(refMenu->music))
 			{
 				S_ChangeMusicInternal(refMenu->music, true);
 				S_ShowMusicCredit();
 			}
+			return;
 		}
+	}
+
+	if (loserclub)
+	{
+		if (refMenu != NULL && NotCurrentlyPlaying("LOSERC"))
+		{
+			S_ChangeMusicInternal("LOSERC", true);
+			S_ShowMusicCredit();
+		}
+
 		return;
 	}
 
@@ -478,6 +499,7 @@ menu_t *M_SpecificMenuRestore(menu_t *torestore)
 	}
 
 	// One last catch.
+	M_SetupPlayMenu(-1);
 	PLAY_CharSelectDef.prevMenu = &MainDef;
 
 	return torestore;
@@ -945,7 +967,7 @@ static void M_HandleMenuInput(void)
 			{
 				if (((currentMenu->menuitems[itemOn].status & IT_CALLTYPE) & IT_CALL_NOTMODIFIED) && majormods)
 				{
-					M_StartMessage(M_GetText("This cannot be done with complex addons\nor in a cheated game.\n\nPress (B)\n"), NULL, MM_NOTHING);
+					M_StartMessage(M_GetText("This cannot be done with complex addons\nor in a cheated game.\n\nPress (B)"), NULL, MM_NOTHING);
 					return;
 				}
 			}

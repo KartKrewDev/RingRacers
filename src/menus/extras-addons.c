@@ -341,7 +341,7 @@ void M_HandleAddons(INT32 choice)
 		//MainMenu[secrets].status = (M_AnySecretUnlocked()) ? (IT_STRING | IT_CALL) : (IT_DISABLED);
 
 		if (currentMenu->prevMenu)
-			M_SetupNextMenu(currentMenu->prevMenu, false);
+			M_SetupNextMenu(M_InterruptMenuWithChallenges(currentMenu->prevMenu), false);
 		else
 			M_ClearMenus(true);
 

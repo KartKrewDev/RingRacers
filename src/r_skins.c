@@ -1,5 +1,6 @@
 // SONIC ROBO BLAST 2
 //-----------------------------------------------------------------------------
+// Copyright (C) 2016-2023 by Vivian "toastergrl" Grannell
 // Copyright (C) 1993-1996 by id Software, Inc.
 // Copyright (C) 1998-2000 by DooM Legacy Team.
 // Copyright (C) 1999-2020 by Sonic Team Junior.
@@ -129,6 +130,27 @@ static void Sk_SetDefaultValue(skin_t *skin)
 			skin->soundsid[S_sfx[i].skinsound] = i;
 }
 
+// Grab the default skin
+UINT8 R_BotDefaultSkin(void)
+{
+	static INT32 defaultbotskin = -1;
+
+	if (defaultbotskin == -1)
+	{
+		const char *defaultbotskinname = "eggrobo";
+
+		defaultbotskin = R_SkinAvailable(defaultbotskinname);
+
+		if (defaultbotskin == -1)
+		{
+			// This shouldn't happen, but just in case
+			defaultbotskin = 0;
+		}
+	}
+
+	return (UINT8)defaultbotskin;
+}
+
 //
 // Initialize the basic skins
 //
@@ -156,13 +178,15 @@ void R_InitSkins(void)
 		R_LoadSpriteInfoLumps(i, wadfiles[i]->numlumps);
 	}
 	ST_ReloadSkinFaceGraphics();
+	M_UpdateConditionSetsPending();
 }
 
-UINT8 *R_GetSkinAvailabilities(boolean demolock)
+UINT8 *R_GetSkinAvailabilities(boolean demolock, boolean forbots)
 {
 	UINT8 i, shif, byte;
 	INT32 skinid;
 	static UINT8 responsebuffer[MAXAVAILABILITY];
+	UINT8 defaultbotskin = R_BotDefaultSkin();
 
 	memset(&responsebuffer, 0, sizeof(responsebuffer));
 
@@ -171,13 +195,15 @@ UINT8 *R_GetSkinAvailabilities(boolean demolock)
 		if (unlockables[i].type != SECRET_SKIN)
 			continue;
 
-		// NEVER EVER EVER M_CheckNetUnlockByID
-		if (gamedata->unlocked[i] != true && !demolock)
-			continue;
-
 		skinid = M_UnlockableSkinNum(&unlockables[i]);
 
 		if (skinid < 0 || skinid >= MAXSKINS)
+			continue;
+
+		if ((forbots
+			? (M_CheckNetUnlockByID(i) || skinid == defaultbotskin) // Assert the host's lock.
+			: gamedata->unlocked[i]) // Assert the local lock.
+				!= true && !demolock)
 			continue;
 
 		shif = (skinid % 8);
@@ -250,8 +276,11 @@ boolean R_SkinUsable(INT32 playernum, INT32 skinnum, boolean demoskins)
 		return !!(players[playernum].availabilities[byte] & (1 << shif));
 	}
 
+	// Use the host's if it's checking general state
+	if (playernum == -1)
+		return M_CheckNetUnlockByID(i);
+
 	// Use the unlockables table directly
-	// NOTE: M_CheckNetUnlockByID would be correct in many circumstances... but not all. TODO figure out how to discern.
 	return (boolean)(gamedata->unlocked[i]);
 }
 
@@ -268,6 +297,25 @@ INT32 R_SkinAvailable(const char *name)
 			return i;
 	}
 	return -1;
+}
+
+// Returns engine class dependent on skin properties
+engineclass_t R_GetEngineClass(SINT8 speed, SINT8 weight, skinflags_t flags)
+{
+	if (flags & SF_IRONMAN)
+		return ENGINECLASS_J;
+
+	speed = (speed - 1) / 3;
+	weight = (weight - 1) / 3;
+
+#define LOCKSTAT(stat) \
+	if (stat < 0) { stat = 0; } \
+	if (stat > 2) { stat = 2; }
+	LOCKSTAT(speed);
+	LOCKSTAT(weight);
+#undef LOCKSTAT
+
+	return (speed + (3*weight));
 }
 
 // Auxillary function that actually sets the skin

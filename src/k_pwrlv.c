@@ -397,6 +397,7 @@ void K_CashInPowerLevels(void)
 {
 	SINT8 powerType = K_UsingPowerLevels();
 	UINT8 i;
+	boolean gamedataupdate;
 
 	//CONS_Printf("\n========\n");
 	//CONS_Printf("Cashing in power level changes...\n");
@@ -417,12 +418,17 @@ void K_CashInPowerLevels(void)
 			{
 				pr->powerlevels[powerType] = clientpowerlevels[i][powerType];
 
-				M_UpdateUnlockablesAndExtraEmblems(true);
-				G_SaveGameData();
+				gamedataupdate = true;
 			}
 		}
 
 		clientPowerAdd[i] = 0;
+	}
+
+	if (gamedataupdate)
+	{
+		M_UpdateUnlockablesAndExtraEmblems(true, true);
+		G_SaveGameData();
 	}
 
 	//CONS_Printf("========\n");
@@ -637,7 +643,7 @@ void K_PlayerForfeit(UINT8 playerNum, boolean pointLoss)
 	{
 		pr->powerlevels[powerType] = yourPower + inc;
 
-		M_UpdateUnlockablesAndExtraEmblems(true);
+		M_UpdateUnlockablesAndExtraEmblems(true, true);
 		G_SaveGameData();
 	}
 }

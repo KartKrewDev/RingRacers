@@ -96,25 +96,6 @@ INT16 K_CalculateGPRankPoints(UINT8 position, UINT8 numplayers)
 }
 
 /*--------------------------------------------------
-	UINT8 K_BotDefaultSkin(void)
-
-		See header file for description.
---------------------------------------------------*/
-UINT8 K_BotDefaultSkin(void)
-{
-	const char *defaultbotskinname = "eggrobo";
-	INT32 defaultbotskin = R_SkinAvailable(defaultbotskinname);
-
-	if (defaultbotskin == -1)
-	{
-		// This shouldn't happen, but just in case
-		defaultbotskin = 0;
-	}
-
-	return (UINT8)defaultbotskin;
-}
-
-/*--------------------------------------------------
 	UINT8 K_GetGPPlayerCount(UINT8 humans)
 
 		See header file for description.
@@ -139,7 +120,7 @@ UINT8 K_GetGPPlayerCount(UINT8 humans)
 --------------------------------------------------*/
 void K_InitGrandPrixBots(void)
 {
-	const UINT8 defaultbotskin = K_BotDefaultSkin();
+	const UINT8 defaultbotskin = R_BotDefaultSkin();
 
 	const UINT8 startingdifficulty = K_BotStartingDifficulty(grandprixinfo.gamespeed);
 	UINT8 difficultylevels[MAXPLAYERS];
@@ -532,7 +513,7 @@ void K_IncreaseBotDifficulty(player_t *bot)
 --------------------------------------------------*/
 void K_RetireBots(void)
 {
-	const UINT8 defaultbotskin = K_BotDefaultSkin();
+	const UINT8 defaultbotskin = R_BotDefaultSkin();
 	SINT8 newDifficulty;
 
 	UINT8 usableskins;

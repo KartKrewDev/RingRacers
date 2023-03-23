@@ -465,6 +465,8 @@ void G_AllocMainRecordData(INT16 i)
 void G_ClearRecords(void)
 {
 	INT16 i;
+	cupheader_t *cup;
+
 	for (i = 0; i < nummapheaders; ++i)
 	{
 		if (mapheaderinfo[i]->mainrecord)
@@ -472,6 +474,11 @@ void G_ClearRecords(void)
 			Z_Free(mapheaderinfo[i]->mainrecord);
 			mapheaderinfo[i]->mainrecord = NULL;
 		}
+	}
+
+	for (cup = kartcupheaders; cup; cup = cup->next)
+	{
+		memset(&cup->windata, 0, sizeof(cup->windata));
 	}
 }
 
@@ -662,8 +669,8 @@ void G_UpdateRecords(void)
 		S_StartSound(NULL, sfx_ncitem);
 	}
 
-	M_UpdateUnlockablesAndExtraEmblems(true);
-	G_SaveGameData();
+	M_UpdateUnlockablesAndExtraEmblems(true, true);
+	gamedata->deferredsave = true;
 }
 
 //
@@ -2367,19 +2374,6 @@ static inline void G_PlayerFinishLevel(INT32 player)
 
 	p->starpostnum = 0;
 	memset(&p->respawn, 0, sizeof (p->respawn));
-
-	// SRB2kart: Increment the "matches played" counter.
-	if (player == consoleplayer)
-	{
-		if (legitimateexit && !demo.playback && !mapreset) // (yes you're allowed to unlock stuff this way when the game is modified)
-		{
-			gamedata->matchesplayed++;
-			M_UpdateUnlockablesAndExtraEmblems(true);
-			G_SaveGameData();
-		}
-
-		legitimateexit = false;
-	}
 }
 
 //
@@ -2453,6 +2447,9 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	INT32 khudfault;
 	INT32 kickstartaccel;
 	boolean enteredGame;
+
+	roundconditions_t roundconditions;
+	boolean saveroundconditions;
 
 	score = players[player].score;
 	lives = players[player].lives;
@@ -2544,6 +2541,8 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 		khudfinish = 0;
 		khudcardanimation = 0;
 		starpostnum = 0;
+
+		saveroundconditions = false;
 	}
 	else
 	{
@@ -2592,6 +2591,9 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 		starpostnum = players[player].starpostnum;
 
 		pflags |= (players[player].pflags & (PF_STASIS|PF_ELIMINATED|PF_NOCONTEST|PF_FAULT|PF_LOSTLIFE));
+
+		memcpy(&roundconditions, &players[player].roundconditions, sizeof (roundconditions));
+		saveroundconditions = true;
 	}
 
 	if (!betweenmaps)
@@ -2675,6 +2677,9 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 
 	memcpy(&p->itemRoulette, &itemRoulette, sizeof (p->itemRoulette));
 	memcpy(&p->respawn, &respawn, sizeof (p->respawn));
+
+	if (saveroundconditions)
+		memcpy(&p->roundconditions, &roundconditions, sizeof (p->roundconditions));
 
 	if (follower)
 		P_RemoveMobj(follower);
@@ -3302,7 +3307,7 @@ static gametype_t defaultgametypes[] =
 	{
 		"Battle",
 		"GT_BATTLE",
-		GTR_SPHERES|GTR_BUMPERS|GTR_PAPERITEMS|GTR_POWERSTONES|GTR_KARMA|GTR_ITEMARROWS|GTR_CAPSULES|GTR_BATTLESTARTS|GTR_POINTLIMIT|GTR_TIMELIMIT|GTR_OVERTIME|GTR_CLOSERPLAYERS,
+		GTR_SPHERES|GTR_BUMPERS|GTR_PAPERITEMS|GTR_POWERSTONES|GTR_KARMA|GTR_ITEMARROWS|GTR_PRISONS|GTR_BATTLESTARTS|GTR_POINTLIMIT|GTR_TIMELIMIT|GTR_OVERTIME|GTR_CLOSERPLAYERS,
 		TOL_BATTLE,
 		int_scoreortimeattack,
 		0,
@@ -3866,7 +3871,7 @@ static void G_UpdateVisited(void)
 	if ((earnedEmblems = M_CompletionEmblems()))
 		CONS_Printf(M_GetText("\x82" "Earned %hu emblem%s for level completion.\n"), (UINT16)earnedEmblems, earnedEmblems > 1 ? "s" : "");
 
-	M_UpdateUnlockablesAndExtraEmblems(true);
+	M_UpdateUnlockablesAndExtraEmblems(true, true);
 	G_SaveGameData();
 }
 
@@ -3946,7 +3951,7 @@ static void G_GetNextMap(void)
 			{
 				gp_rank_e grade = K_CalculateGPGrade(&grandprixinfo.rank);
 
-				if (grade >= GRADE_A) // On A rank pace? Then you get a chance for S rank!
+				if (grade >= GRADE_A && grandprixinfo.gamespeed >= KARTSPEED_NORMAL) // On A rank pace? Then you get a chance for S rank!
 				{
 					const INT32 cupLevelNum = grandprixinfo.cup->cachedlevels[CUPCACHE_SPECIAL];
 					if (cupLevelNum < nummapheaders && mapheaderinfo[cupLevelNum])
@@ -3954,6 +3959,13 @@ static void G_GetNextMap(void)
 						grandprixinfo.eventmode = GPEVENT_SPECIAL;
 						nextmap = cupLevelNum;
 						newgametype = G_GuessGametypeByTOL(mapheaderinfo[cupLevelNum]->typeoflevel);
+
+						if (gamedata->everseenspecial == false)
+						{
+							gamedata->everseenspecial = true;
+							M_UpdateUnlockablesAndExtraEmblems(true, true);
+							G_SaveGameData();
+						}
 					}
 				}
 			}
@@ -4001,7 +4013,7 @@ static void G_GetNextMap(void)
 				}
 				else
 				{
-					nextmap = prevmap; // Prevent uninitialised use
+					nextmap = 0; // Prevent uninitialised use -- go to TEST RUN, it's very obvious
 				}
 
 				grandprixinfo.roundnum++;
@@ -4164,6 +4176,33 @@ static void G_DoCompleted(void)
 	if (modeattacking && pausedelay)
 		pausedelay = 0;
 
+	// We do this here so Challenges-related sounds aren't insta-killed
+	S_StopSounds();
+
+	if (legitimateexit && !demo.playback && !mapreset) // (yes you're allowed to unlock stuff this way when the game is modified)
+	{
+		UINT8 roundtype = GDGT_CUSTOM;
+
+		if (gametype == GT_RACE)
+			roundtype = GDGT_RACE;
+		else if (gametype == GT_BATTLE)
+			roundtype = (battleprisons ? GDGT_PRISONS : GDGT_BATTLE);
+		else if (gametype == GT_SPECIAL || gametype == GT_VERSUS)
+			roundtype = GDGT_SPECIAL;
+
+		gamedata->roundsplayed[roundtype]++;
+		gamedata->pendingkeyrounds++;
+
+		// Done before forced addition of PF_NOCONTEST to make UCRP_NOCONTEST harder to achieve
+		M_UpdateUnlockablesAndExtraEmblems(true, true);
+		gamedata->deferredsave = true;
+	}
+
+	if (gamedata->deferredsave)
+		G_SaveGameData();
+
+	legitimateexit = false;
+
 	gameaction = ga_nothing;
 
 	if (metalplayback)
@@ -4174,7 +4213,7 @@ static void G_DoCompleted(void)
 	G_SetGamestate(GS_NULL);
 	wipegamestate = GS_NULL;
 
-	grandprixinfo.rank.capsules += numtargets;
+	grandprixinfo.rank.prisons += numtargets;
 	grandprixinfo.rank.position = MAXPLAYERS;
 
 	for (i = 0; i < MAXPLAYERS; i++)
@@ -4217,8 +4256,6 @@ static void G_DoCompleted(void)
 
 	if (automapactive)
 		AM_Stop();
-
-	S_StopSounds();
 
 	prevmap = (INT16)(gamemap-1);
 
@@ -4486,7 +4523,7 @@ void G_LoadGameSettings(void)
 }
 
 #define GD_VERSIONCHECK 0xBA5ED123 // Change every major version, as usual
-#define GD_VERSIONMINOR 1 // Change every format update
+#define GD_VERSIONMINOR 2 // Change every format update
 
 static const char *G_GameDataFolder(void)
 {
@@ -4509,36 +4546,36 @@ void G_LoadGameData(void)
 
 	//For records
 	UINT32 numgamedatamapheaders;
+	UINT32 numgamedatacups;
 
 	// Stop saving, until we successfully load it again.
 	gamedata->loaded = false;
 
 	// Clear things so previously read gamedata doesn't transfer
 	// to new gamedata
+	// see also M_EraseDataResponse
 	G_ClearRecords(); // records
+	M_ClearStats(); // statistics
 	M_ClearSecrets(); // emblems, unlocks, maps visited, etc
-
-	gamedata->totalplaytime = 0; // total play time (separate from all)
-	gamedata->matchesplayed = 0; // SRB2Kart: matches played & finished
 
 	if (M_CheckParm("-nodata"))
 	{
 		// Don't load at all.
+		// The following used to be in M_ClearSecrets, but that was silly.
+		M_UpdateUnlockablesAndExtraEmblems(false, true);
 		return;
 	}
 
 	if (M_CheckParm("-resetdata"))
 	{
 		// Don't load, but do save. (essentially, reset)
-		gamedata->loaded = true;
-		return;
+		goto finalisegamedata;
 	}
 
 	if (P_SaveBufferFromFile(&save, va(pandf, srb2home, gamedatafilename)) == false)
 	{
 		// No gamedata. We can save a new one.
-		gamedata->loaded = true;
-		return;
+		goto finalisegamedata;
 	}
 
 	// Version check
@@ -4559,13 +4596,44 @@ void G_LoadGameData(void)
 		P_SaveBufferFree(&save);
 		I_Error("Game data is from the future! (expected %d, got %d)\nRename or delete %s (maybe in %s) and try again.", GD_VERSIONMINOR, versionMinor, gamedatafilename, gdfolder);
 	}
-	if (versionMinor == 0)
+	if ((versionMinor == 0 || versionMinor == 1)
+#ifdef DEVELOP
+		|| M_CheckParm("-resetchallengegrid")
+#endif
+		)
 	{
 		gridunusable = true;
 	}
 
+	if (versionMinor > 1)
+	{
+		gamedata->evercrashed = (boolean)READUINT8(save.p);
+	}
+
 	gamedata->totalplaytime = READUINT32(save.p);
-	gamedata->matchesplayed = READUINT32(save.p);
+
+	if (versionMinor > 1)
+	{
+		gamedata->totalrings = READUINT32(save.p);
+
+		for (i = 0; i < GDGT_MAX; i++)
+		{
+			gamedata->roundsplayed[i] = READUINT32(save.p);
+		}
+
+		gamedata->pendingkeyrounds = READUINT32(save.p);
+		gamedata->pendingkeyroundoffset = READUINT8(save.p);
+		gamedata->keyspending = READUINT8(save.p);
+		gamedata->chaokeys = READUINT16(save.p);
+
+		gamedata->everloadedaddon = (boolean)READUINT8(save.p);
+		gamedata->eversavedreplay = (boolean)READUINT8(save.p);
+		gamedata->everseenspecial = (boolean)READUINT8(save.p);
+	}
+	else
+	{
+		save.p += 4; // no direct equivalent to matchesplayed
+	}
 
 	{
 		// Quick & dirty hash for what mod this save file is for.
@@ -4672,7 +4740,7 @@ void G_LoadGameData(void)
 				G_AllocMainRecordData((INT16)i);
 				mapheaderinfo[i]->mainrecord->time = rectime;
 				mapheaderinfo[i]->mainrecord->lap = reclap;
-				CONS_Printf("ID %d, Time = %d, Lap = %d\n", i, rectime/35, reclap/35);
+				//CONS_Printf("ID %d, Time = %d, Lap = %d\n", i, rectime/35, reclap/35);
 			}
 		}
 		else
@@ -4683,19 +4751,62 @@ void G_LoadGameData(void)
 		}
 	}
 
+	if (versionMinor > 1)
+	{
+		numgamedatacups = READUINT32(save.p);
+
+		for (i = 0; i < numgamedatacups; i++)
+		{
+			char cupname[16];
+			cupheader_t *cup;
+
+			// Find the relevant cup.
+			READSTRINGN(save.p, cupname, sizeof(cupname));
+			for (cup = kartcupheaders; cup; cup = cup->next)
+			{
+				if (strcmp(cup->name, cupname))
+					continue;
+				break;
+			}
+
+			// Digest its data...
+			for (j = 0; j < KARTGP_MAX; j++)
+			{
+				rtemp = READUINT8(save.p);
+
+				// ...but only record it if we actually found the associated cup.
+				if (cup)
+				{
+					cup->windata[j].best_placement = (rtemp & 0x0F);
+					cup->windata[j].best_grade = (rtemp & 0x70)>>4;
+					if (rtemp & 0x80)
+					{
+						if (j == 0)
+							goto datacorrupt;
+
+						cup->windata[j].got_emerald = true;
+					}
+				}
+			}
+		}
+	}
+
 	// done
 	P_SaveBufferFree(&save);
 
-	// Don't consider loaded until it's a success!
-	// It used to do this much earlier, but this would cause the gamedata to
-	// save over itself when it I_Errors from the corruption landing point below,
-	// which can accidentally delete players' legitimate data if the code ever has any tiny mistakes!
-	gamedata->loaded = true;
+	finalisegamedata:
+	{
+		// Don't consider loaded until it's a success!
+		// It used to do this much earlier, but this would cause the gamedata to
+		// save over itself when it I_Errors from the corruption landing point below,
+		// which can accidentally delete players' legitimate data if the code ever has any tiny mistakes!
+		gamedata->loaded = true;
 
-	// Silent update unlockables in case they're out of sync with conditions
-	M_UpdateUnlockablesAndExtraEmblems(false);
+		// Silent update unlockables in case they're out of sync with conditions
+		M_UpdateUnlockablesAndExtraEmblems(false, true);
 
-	return;
+		return;
+	}
 
 	// Landing point for corrupt gamedata
 	datacorrupt:
@@ -4710,17 +4821,45 @@ void G_LoadGameData(void)
 	}
 }
 
+// G_DirtyGameData
+// Modifies the gamedata as little as possible to maintain safety in a crash event, while still recording it.
+void G_DirtyGameData(void)
+{
+	FILE *handle = NULL;
+	const UINT8 writebytesource = true;
+
+	if (gamedata)
+		gamedata->evercrashed = true;
+
+	//if (FIL_WriteFileOK(name))
+		handle = fopen(va(pandf, srb2home, gamedatafilename), "r+");
+
+	if (!handle)
+		return;
+
+	// Write a dirty byte immediately after the gamedata check + minor version.
+	if (fseek(handle, 5, SEEK_SET) != -1)
+		fwrite(&writebytesource, 1, 1, handle);
+
+	fclose(handle);
+
+	return;
+}
+
 // G_SaveGameData
 // Saves the main data file, which stores information such as emblems found, etc.
 void G_SaveGameData(void)
 {
 	size_t length;
-	INT32 i, j;
+	INT32 i, j, numcups;
+	cupheader_t *cup;
 	UINT8 btemp;
 	savebuffer_t save = {0};
 
 	if (gamedata == NULL || !gamedata->loaded)
 		return; // If never loaded (-nodata), don't save
+
+	gamedata->deferredsave = false;
 
 	if (usedCheats)
 	{
@@ -4730,12 +4869,27 @@ void G_SaveGameData(void)
 		return;
 	}
 
-	length = (4+1+4+4+1+(MAXEMBLEMS+(MAXUNLOCKABLES*2)+MAXCONDITIONSETS)+4+4+2);
+	length = (4+1+1+
+		4+4+
+		(4*GDGT_MAX)+
+		4+1+1+2+
+		1+1+1+
+		4+
+		(MAXEMBLEMS+(MAXUNLOCKABLES*2)+MAXCONDITIONSETS)+
+		4+2);
+
 	if (gamedata->challengegrid)
 	{
 		length += gamedata->challengegridwidth * CHALLENGEGRIDHEIGHT;
 	}
-	length += nummapheaders * (MAXMAPLUMPNAME+1+4+4);
+	length += 4 + (nummapheaders * (MAXMAPLUMPNAME+1+4+4));
+
+	numcups = 0;
+	for (cup = kartcupheaders; cup; cup = cup->next)
+	{
+		numcups++;
+	}
+	length += 4 + (numcups * (4+16));
 
 	if (P_SaveBufferAlloc(&save, length) == false)
 	{
@@ -4747,8 +4901,30 @@ void G_SaveGameData(void)
 
 	WRITEUINT32(save.p, GD_VERSIONCHECK); // 4
 	WRITEUINT8(save.p, GD_VERSIONMINOR); // 1
+
+	// Crash dirtiness
+	// cannot move, see G_DirtyGameData
+	WRITEUINT8(save.p, gamedata->evercrashed); // 1
+
+	// Statistics
+
 	WRITEUINT32(save.p, gamedata->totalplaytime); // 4
-	WRITEUINT32(save.p, gamedata->matchesplayed); // 4
+	WRITEUINT32(save.p, gamedata->totalrings); // 4
+
+	for (i = 0; i < GDGT_MAX; i++) // 4 * GDGT_MAX
+	{
+		WRITEUINT32(save.p, gamedata->roundsplayed[i]);
+	}
+
+	WRITEUINT32(save.p, gamedata->pendingkeyrounds); // 4
+	WRITEUINT8(save.p, gamedata->pendingkeyroundoffset); // 1
+	WRITEUINT8(save.p, gamedata->keyspending); // 1
+	WRITEUINT16(save.p, gamedata->chaokeys); // 2
+
+	WRITEUINT8(save.p, gamedata->everloadedaddon); // 1
+	WRITEUINT8(save.p, gamedata->eversavedreplay); // 1
+	WRITEUINT8(save.p, gamedata->everseenspecial); // 1
+
 	WRITEUINT32(save.p, quickncasehash(timeattackfolder, 64));
 
 	// To save space, use one bit per collected/achieved/unlocked flag
@@ -4808,7 +4984,7 @@ void G_SaveGameData(void)
 
 	for (i = 0; i < nummapheaders; i++) // nummapheaders * (255+1+4+4)
 	{
-		// For figuring out which header to assing it to on load
+		// For figuring out which header to assign it to on load
 		WRITESTRINGN(save.p, mapheaderinfo[i]->lumpname, MAXMAPLUMPNAME);
 
 		WRITEUINT8(save.p, (mapheaderinfo[i]->mapvisited & MV_MAX));
@@ -4822,6 +4998,24 @@ void G_SaveGameData(void)
 		{
 			WRITEUINT32(save.p, 0);
 			WRITEUINT32(save.p, 0);
+		}
+	}
+
+	WRITEUINT32(save.p, numcups); // 4
+
+	for (cup = kartcupheaders; cup; cup = cup->next)
+	{
+		// For figuring out which header to assign it to on load
+		WRITESTRINGN(save.p, cup->name, 16);
+
+		for (i = 0; i < KARTGP_MAX; i++)
+		{
+			btemp = min(cup->windata[i].best_placement, 0x0F);
+			btemp |= (cup->windata[i].best_grade<<4);
+			if (i != 0 && cup->windata[i].got_emerald == true)
+				btemp |= 0x80;
+
+			WRITEUINT8(save.p, btemp); // 4 * numcups
 		}
 	}
 
@@ -5174,9 +5368,6 @@ void G_InitNew(UINT8 pencoremode, INT32 map, boolean resetplayer, boolean skippr
 			players[i].score = 0;
 		}
 	}
-
-	// Reset unlockable triggers
-	unlocktriggers = 0;
 
 	// clear itemfinder, just in case
 	if (!dedicated)	// except in dedicated servers, where it is not registered and can actually I_Error debug builds

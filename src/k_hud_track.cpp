@@ -365,7 +365,7 @@ bool is_object_tracking_target(const mobj_t* mobj)
 	{
 	case MT_BATTLECAPSULE:
 	case MT_CDUFO:
-		return battlecapsules; // battleprisons
+		return battleprisons;
 
 	case MT_SPECIAL_UFO:
 		return true;

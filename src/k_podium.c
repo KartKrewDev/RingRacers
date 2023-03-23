@@ -13,7 +13,6 @@
 #include "k_podium.h"
 
 #include "doomdef.h"
-#include "doomstat.h"
 #include "d_main.h"
 #include "d_netcmd.h"
 #include "f_finale.h"
@@ -67,6 +66,31 @@ static struct podiumData_s
 boolean K_PodiumSequence(void)
 {
 	return (gamestate == GS_CEREMONY);
+}
+
+/*--------------------------------------------------
+	boolean K_PodiumRanking(void)
+
+		See header file for description.
+--------------------------------------------------*/
+boolean K_PodiumRanking(void)
+{
+	return (gamestate == GS_CEREMONY && podiumData.ranking == true);
+}
+
+/*--------------------------------------------------
+	boolean K_PodiumGrade(void)
+
+		See header file for description.
+--------------------------------------------------*/
+gp_rank_e K_PodiumGrade(void)
+{
+	if (K_PodiumSequence() == false)
+	{
+		return 0;
+	}
+
+	return podiumData.grade;
 }
 
 /*--------------------------------------------------
@@ -264,6 +288,10 @@ void K_FinishCeremony(void)
 	}
 
 	podiumData.ranking = true;
+
+	// Play the noise now
+	M_UpdateUnlockablesAndExtraEmblems(true, true);
+	G_SaveGameData();
 }
 
 /*--------------------------------------------------
@@ -273,6 +301,8 @@ void K_FinishCeremony(void)
 --------------------------------------------------*/
 void K_ResetCeremony(void)
 {
+	UINT8 i;
+
 	memset(&podiumData, 0, sizeof(struct podiumData_s));
 
 	if (K_PodiumSequence() == false)
@@ -280,8 +310,36 @@ void K_ResetCeremony(void)
 		return;
 	}
 
+	// Establish rank and grade for this play session.
 	podiumData.rank = grandprixinfo.rank;
 	podiumData.grade = K_CalculateGPGrade(&podiumData.rank);
+
+	if (!grandprixinfo.cup)
+	{
+		return;
+	}
+
+	// Write grade, position, and emerald-having-ness for later sessions!
+	i = (grandprixinfo.masterbots) ? KARTGP_MASTER : grandprixinfo.gamespeed;
+
+	if ((grandprixinfo.cup->windata[i].best_placement == 0) // First run
+		|| (podiumData.rank.position < grandprixinfo.cup->windata[i].best_placement)) // Later, better run
+	{
+		grandprixinfo.cup->windata[i].best_placement = podiumData.rank.position;
+
+		// The following will not occour in unmodified builds, but pre-emptively sanitise gamedata if someone just changes MAXPLAYERS and calls it a day
+		if (grandprixinfo.cup->windata[i].best_placement > 0x0F)
+			grandprixinfo.cup->windata[i].best_placement = 0x0F;
+	}
+
+	if (podiumData.grade > grandprixinfo.cup->windata[i].best_grade)
+		grandprixinfo.cup->windata[i].best_grade = podiumData.grade;
+
+	if (i != KARTSPEED_EASY && podiumData.rank.specialWon == true)
+		grandprixinfo.cup->windata[i].got_emerald = true;
+
+	// Save before playing the noise
+	G_SaveGameData();
 }
 
 /*--------------------------------------------------
@@ -458,7 +516,7 @@ void K_CeremonyDrawer(void)
 				case 5:
 				{
 					V_DrawString(x, y, V_ALLOWLOWERCASE,
-						va("CAPSULES: %d / %d", podiumData.rank.capsules, podiumData.rank.totalCapsules)
+						va("PRISONS: %d / %d", podiumData.rank.prisons, podiumData.rank.totalPrisons)
 					);
 					break;
 				}

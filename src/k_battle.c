@@ -26,7 +26,7 @@
 struct battleovertime battleovertime;
 
 // Capsules mode enabled for this map?
-boolean battlecapsules = false;
+boolean battleprisons = false;
 
 // box respawning in battle mode
 INT32 nummapboxes = 0;
@@ -38,8 +38,8 @@ UINT8 numtargets = 0; // Capsules busted
 
 INT32 K_StartingBumperCount(void)
 {
-	if (battlecapsules)
-		return 0; // always 1 hit in Break the Capsules
+	if (battleprisons)
+		return 0; // always 1 hit in Prison Break
 
 	return cv_kartbumpers.value;
 }
@@ -143,7 +143,7 @@ void K_CheckBumpers(void)
 
 	if (numingame <= 1)
 	{
-		if ((gametyperules & GTR_CAPSULES) && (K_CanChangeRules(true) == true))
+		if ((gametyperules & GTR_PRISONS) && (K_CanChangeRules(true) == true))
 		{
 			// Reset map to turn on battle capsules
 			if (server)
@@ -343,7 +343,7 @@ void K_RunPaperItemSpawners(void)
 	UINT8 pcount = 0;
 	INT16 i;
 
-	if (battlecapsules)
+	if (battleprisons)
 	{
 		// Gametype uses paper items, but this specific expression doesn't
 		return;
@@ -771,7 +771,7 @@ void K_BattleInit(boolean singleplayercontext)
 {
 	size_t i;
 
-	if ((gametyperules & GTR_CAPSULES) && singleplayercontext && !battlecapsules)
+	if ((gametyperules & GTR_PRISONS) && singleplayercontext && !battleprisons)
 	{
 		mapthing_t *mt = mapthings;
 		for (i = 0; i < nummapthings; i++, mt++)
@@ -782,7 +782,7 @@ void K_BattleInit(boolean singleplayercontext)
 				maptargets++;
 		}
 
-		battlecapsules = true;
+		battleprisons = true;
 	}
 
 	if (gametyperules & GTR_BUMPERS)

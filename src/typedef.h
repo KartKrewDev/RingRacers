@@ -44,6 +44,7 @@ TYPEDEF (discordRequest_t);
 // d_player.h
 TYPEDEF (respawnvars_t);
 TYPEDEF (botvars_t);
+TYPEDEF (roundconditions_t);
 TYPEDEF (skybox_t);
 TYPEDEF (itemroulette_t);
 TYPEDEF (altview_t);
@@ -107,6 +108,7 @@ TYPEDEF (skincolor_t);
 // doomstat.h
 TYPEDEF (precipprops_t);
 TYPEDEF (recorddata_t);
+TYPEDEF (cupwindata_t);
 TYPEDEF (scene_t);
 TYPEDEF (cutscene_t);
 TYPEDEF (textpage_t);

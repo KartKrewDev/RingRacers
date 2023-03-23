@@ -176,6 +176,7 @@ boolean G_IsTitleCardAvailable(void);
 void G_LoadGame(UINT32 slot, INT16 mapoverride);
 
 void G_SaveGameData(void);
+void G_DirtyGameData(void);
 
 void G_SaveGame(UINT32 slot, INT16 mapnum);
 

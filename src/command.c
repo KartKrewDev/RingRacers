@@ -2242,6 +2242,11 @@ void CV_AddValue(consvar_t *var, INT32 increment)
 					if (var->PossibleValue == kartspeed_cons_t)
 						max++; // Accommodate KARTSPEED_AUTO
 				}
+				else if (var->PossibleValue == gpdifficulty_cons_t
+					&& !M_SecretUnlocked(SECRET_MASTERMODE, false))
+				{
+					max = KARTSPEED_HARD+1;
+				}
 			}
 #ifdef PARANOIA
 			if (currentindice == -1)

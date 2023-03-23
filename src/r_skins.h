@@ -1,5 +1,6 @@
 // SONIC ROBO BLAST 2
 //-----------------------------------------------------------------------------
+// Copyright (C) 2016-2023 by Vivian "toastergrl" Grannell
 // Copyright (C) 1993-1996 by id Software, Inc.
 // Copyright (C) 1998-2000 by DooM Legacy Team.
 // Copyright (C) 1999-2020 by Sonic Team Junior.
@@ -74,6 +75,25 @@ enum facepatches {
 	NUMFACES
 };
 
+typedef enum {
+	ENGINECLASS_A,
+	ENGINECLASS_B,
+	ENGINECLASS_C,
+
+	ENGINECLASS_D,
+	ENGINECLASS_E,
+	ENGINECLASS_F,
+
+	ENGINECLASS_G,
+	ENGINECLASS_H,
+	ENGINECLASS_I,
+
+	ENGINECLASS_J
+	
+} engineclass_t;
+
+engineclass_t R_GetEngineClass(SINT8 speed, SINT8 weight, skinflags_t flags);
+
 /// Externs
 extern INT32 numskins;
 extern skin_t skins[MAXSKINS];
@@ -91,8 +111,9 @@ void ClearFakePlayerSkin(player_t* player);
 boolean R_SkinUsable(INT32 playernum, INT32 skinnum, boolean demoskins);
 INT32 GetSkinNumClosestToStats(UINT8 kartspeed, UINT8 kartweight, UINT32 flags, boolean unlock);
 
-UINT8 *R_GetSkinAvailabilities(boolean demolock);
+UINT8 *R_GetSkinAvailabilities(boolean demolock, boolean forbots);
 INT32 R_SkinAvailable(const char *name);
+UINT8 R_BotDefaultSkin(void);
 
 void R_PatchSkins(UINT16 wadnum, boolean mainfile);
 void R_AddSkins(UINT16 wadnum, boolean mainfile);

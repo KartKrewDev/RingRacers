@@ -1045,6 +1045,9 @@ void D_ClearState(void)
 	cursongcredit.def = NULL;
 	S_StopSounds();
 
+	if (gamedata && gamedata->deferredsave)
+		G_SaveGameData();
+
 	G_SetGamestate(GS_NULL);
 	wipegamestate = GS_NULL;
 }
@@ -1920,23 +1923,32 @@ void D_SRB2Main(void)
 					newskill = (INT16)j;
 			}
 
-			if (grandprixinfo.gp == true)
+			// Invalidate if locked.
+			if ((newskill >= KARTSPEED_HARD && !M_SecretUnlocked(SECRET_HARDSPEED, true))
+				|| (newskill >= KARTGP_MASTER && !M_SecretUnlocked(SECRET_MASTERMODE, true)))
 			{
-				if (newskill == KARTGP_MASTER)
-				{
-					grandprixinfo.masterbots = true;
-					newskill = KARTSPEED_HARD;
-				}
-
-				grandprixinfo.gamespeed = newskill;
-			}
-			else if (newskill == KARTGP_MASTER)
-			{
-				newskill = KARTSPEED_HARD;
+				newskill = -1;
 			}
 
 			if (newskill != -1)
+			{
+				if (grandprixinfo.gp == true)
+				{
+					if (newskill == KARTGP_MASTER)
+					{
+						grandprixinfo.masterbots = true;
+						newskill = KARTSPEED_HARD;
+					}
+
+					grandprixinfo.gamespeed = newskill;
+				}
+				else if (newskill == KARTGP_MASTER)
+				{
+					newskill = KARTSPEED_HARD;
+				}
+
 				CV_SetValue(&cv_kartspeed, newskill);
+			}
 		}
 
 		if (server && (dedicated || !M_CheckParm("+map")))
@@ -1946,7 +1958,7 @@ void D_SRB2Main(void)
 				I_Error("Can't get first map of gametype\n");
 			}
 
-			if (M_MapLocked(pstartmap))
+			if (pstartmap != 1 && M_MapLocked(pstartmap))
 			{
 				G_SetUsedCheats();
 			}

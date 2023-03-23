@@ -698,6 +698,7 @@ boolean M_CharacterSelectHandler(INT32 choice);
 void M_CharacterSelectTick(void);
 boolean M_CharacterSelectQuit(void);
 
+void M_SetupPlayMenu(INT32 choice);
 void M_SetupGametypeMenu(INT32 choice);
 void M_SetupRaceMenu(INT32 choice);
 
@@ -727,12 +728,15 @@ extern struct levellist_s {
 	SINT8 cursor;
 	UINT16 y;
 	UINT16 dest;
-	INT16 choosemap;
+	UINT16 choosemap;
+	UINT16 mapcount;
 	UINT8 newgametype;
 	UINT8 guessgt;
 	levelsearch_t levelsearch;
 	boolean netgame;	// Start the game in an actual server
 } levellist;
+
+extern cupheader_t dummy_lostandfound;
 
 boolean M_CanShowLevelInList(INT16 mapnum, levelsearch_t *levelsearch);
 UINT16 M_CountLevelsToShowInList(levelsearch_t *levelsearch);
@@ -776,6 +780,7 @@ extern struct mpmenu_s {
 								// See M_OptSelectTick, it'll make more sense there. Sorry if this is a bit of a mess!
 
 	UINT8 room;
+	boolean roomforced;
 	tic_t ticker;
 
 	UINT8 servernum;
@@ -1133,7 +1138,9 @@ void M_DrawAddons(void);
 #define CC_UNLOCKED 1
 #define CC_TALLY 2
 #define CC_ANIM 3
-#define CC_MAX 4
+#define CC_CHAOANIM 4
+#define CC_CHAONOPE 5
+#define CC_MAX 6
 
 #define TILEFLIP_MAX 16
 
@@ -1143,7 +1150,6 @@ extern struct timeattackmenu_s {
 	tic_t spbflicker;	// used for SPB flicker-in
 
 } timeattackmenu;
-
 
 // Keep track of some pause menu data for visual goodness.
 extern struct challengesmenu_s {
@@ -1163,6 +1169,7 @@ extern struct challengesmenu_s {
 
 	boolean pending;
 	boolean requestnew;
+	boolean chaokeyadd;
 
 	boolean requestflip;
 
@@ -1180,6 +1187,7 @@ boolean M_ChallengesInputs(INT32 ch);
 extern struct statisticsmenu_s {
 	INT32 location;
 	INT32 nummaps;
+	INT32 numextramedals;
 	INT32 maxscroll;
 	UINT16 *maplist;
 } statisticsmenu;

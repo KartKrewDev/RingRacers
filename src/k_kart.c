@@ -371,7 +371,7 @@ boolean K_IsPlayerLosing(player_t *player)
 	if (player->pflags & PF_NOCONTEST)
 		return true;
 
-	if (battlecapsules && numtargets == 0)
+	if (battleprisons && numtargets == 0)
 		return true; // Didn't even TRY?
 
 	if (player->position == 1)
@@ -558,7 +558,7 @@ boolean K_TimeAttackRules(void)
 		return true;
 	}
 
-	if (battlecapsules == true)
+	if (battleprisons == true)
 	{
 		// Break the Capsules always uses Time Attack
 		// rules, since you can bring 2-4 players in
@@ -1129,6 +1129,13 @@ static void K_UpdateOffroad(player_t *player)
 
 		if (player->offroad > offroadstrength)
 			player->offroad = offroadstrength;
+
+		if (player->roundconditions.touched_offroad == false
+			&& player->offroad > (2*offroadstrength) / TICRATE)
+		{
+			player->roundconditions.touched_offroad = true;
+			player->roundconditions.checkthisframe = true;
+		}
 	}
 	else
 		player->offroad = 0;
@@ -4223,7 +4230,15 @@ void K_ApplyTripWire(player_t *player, tripwirestate_t state)
 		K_TumblePlayer(player, NULL, NULL);
 
 	if (state == TRIPSTATE_PASSED)
+	{
 		S_StartSound(player->mo, sfx_ssa015);
+		if (player->roundconditions.tripwire_hyuu == false
+			&& player->hyudorotimer > 0)
+		{
+			player->roundconditions.tripwire_hyuu = true;
+			player->roundconditions.checkthisframe = true;
+		}
+	}
 	else if (state == TRIPSTATE_BLOCKED)
 	{
 		S_StartSound(player->mo, sfx_kc40);
@@ -5823,6 +5838,13 @@ void K_DoSneaker(player_t *player, INT32 type)
 {
 	const fixed_t intendedboost = FRACUNIT/2;
 
+	if (player->roundconditions.touched_sneakerpanel == false
+		&& player->floorboost != 0)
+	{
+		player->roundconditions.touched_sneakerpanel = true;
+		player->roundconditions.checkthisframe = true;
+	}
+
 	if (player->floorboost == 0 || player->floorboost == 3)
 	{
 		const sfxenum_t normalsfx = sfx_cdfm01;
@@ -7067,7 +7089,7 @@ static void K_UpdateEngineSounds(player_t *player)
 
 	const UINT16 buttons = K_GetKartButtons(player);
 
-	INT32 class, s, w; // engine class number
+	INT32 class; // engine class number
 
 	UINT8 volume = 255;
 	fixed_t volumedampen = FRACUNIT;
@@ -7082,17 +7104,7 @@ static void K_UpdateEngineSounds(player_t *player)
 		return;
 	}
 
-	s = (player->kartspeed - 1) / 3;
-	w = (player->kartweight - 1) / 3;
-
-#define LOCKSTAT(stat) \
-	if (stat < 0) { stat = 0; } \
-	if (stat > 2) { stat = 2; }
-	LOCKSTAT(s);
-	LOCKSTAT(w);
-#undef LOCKSTAT
-
-	class = s + (3*w);
+	class = R_GetEngineClass(player->kartspeed, player->kartweight, 0); // there are no unique sounds for ENGINECLASS_J
 
 #if 0
 	if ((leveltime % 8) != ((player-players) % 8)) // Per-player offset, to make engines sound distinct!
@@ -11603,7 +11615,7 @@ tic_t K_TimeLimitForGametype(void)
 	// Grand Prix
 	if (!K_CanChangeRules(true))
 	{
-		if (battlecapsules)
+		if (battleprisons)
 		{
 			return 20*TICRATE;
 		}
@@ -11617,7 +11629,7 @@ tic_t K_TimeLimitForGametype(void)
 	}
 
 	// No time limit for Break the Capsules FREE PLAY
-	if (battlecapsules)
+	if (battleprisons)
 	{
 		return 0;
 	}
@@ -11668,7 +11680,7 @@ UINT32 K_PointLimitForGametype(void)
 
 boolean K_Cooperative(void)
 {
-	if (battlecapsules)
+	if (battleprisons)
 	{
 		return true;
 	}

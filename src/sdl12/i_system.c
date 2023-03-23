@@ -357,6 +357,7 @@ static void signal_handler(INT32 num)
 		sigmsg = sigdef;
 	}
 
+	G_DirtyGameData();
 	I_OutputMsg("signal_handler() error: %s\n", sigmsg);
 	signal(num, SIG_DFL);               //default signal action
 	raise(num);
@@ -3083,6 +3084,7 @@ void I_Error(const char *error, ...)
 		if (errorcount == 9)
 		{
 			M_SaveConfig(NULL);
+			G_DirtyGameData(); // done first in case an error is in G_SaveGameData
 			G_SaveGameData();
 		}
 		if (errorcount > 20)
@@ -3147,6 +3149,7 @@ void I_Error(const char *error, ...)
 #ifndef NONET
 	D_SaveBan(); // save the ban list
 #endif
+	G_DirtyGameData(); // done first in case an error is in G_SaveGameData
 	G_SaveGameData(); // Tails 12-08-2002
 
 	// Shutdown. Here might be other errors.

@@ -7071,7 +7071,7 @@ static void P_InitLevelSettings(void)
 	nummaprings = 0;
 	nummapboxes = numgotboxes = 0;
 	maptargets = numtargets = 0;
-	battlecapsules = false;
+	battleprisons = false;
 
 	// emerald hunt
 	hunt1 = hunt2 = hunt3 = NULL;
@@ -7501,6 +7501,7 @@ static void P_InitGametype(void)
 
 	// Started a game? Move on to the next jam when you go back to the title screen
 	CV_SetValue(&cv_menujam_update, 1);
+	gamedata->musicflags = 0;
 }
 
 struct minimapinfo minimapinfo;
@@ -7993,7 +7994,7 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 	{
 		mapheaderinfo[gamemap-1]->mapvisited |= MV_VISITED;
 
-		M_UpdateUnlockablesAndExtraEmblems(true);
+		M_UpdateUnlockablesAndExtraEmblems(true, true);
 		G_SaveGameData();
 	}
 

@@ -1,6 +1,6 @@
 // SONIC ROBO BLAST 2
 //-----------------------------------------------------------------------------
-// Copyright (C) 2022-2023 by Vivian "toaster" Grannell.
+// Copyright (C) 2022-2023 by Vivian "toastergrl" Grannell.
 // Copyright (C) 2012-2016 by Matthew "Kaito Sinclaire" Walsh.
 // Copyright (C) 2012-2020 by Sonic Team Junior.
 //
@@ -25,15 +25,16 @@
 #include "r_draw.h" // R_GetColorByName
 #include "s_sound.h" // S_StartSound
 
+#include "k_kart.h" // K_IsPLayerLosing
+#include "k_grandprix.h" // grandprixinfo
+#include "k_battle.h" // battleprisons
+#include "k_specialstage.h" // specialstageinfo
+#include "k_podium.h"
 #include "k_pwrlv.h"
 #include "k_profiles.h"
 
 gamedata_t *gamedata = NULL;
 boolean netUnlocked[MAXUNLOCKABLES];
-
-// Map triggers for linedef executors
-// 32 triggers, one bit each
-UINT32 unlocktriggers;
 
 // The meat of this system lies in condition sets
 conditionset_t conditionSets[MAXCONDITIONSETS];
@@ -208,9 +209,55 @@ quickcheckagain:
 			}
 		}
 
+#if (CHALLENGEGRIDHEIGHT == 4)
+		while (nummajorunlocks > 0)
+		{
+			UINT8 unlocktomoveup = MAXUNLOCKABLES;
+
+			j = gamedata->challengegridwidth-1;
+
+			// Attempt to fix our whoopsie.
+			for (i = 0; i < j; i++)
+			{
+				if (gamedata->challengegrid[1 + (i*CHALLENGEGRIDHEIGHT)] != MAXUNLOCKABLES
+					&& gamedata->challengegrid[(i*CHALLENGEGRIDHEIGHT)] == MAXUNLOCKABLES)
+					break;
+			}
+
+			if (i == j)
+			{
+				break;
+			}
+
+			unlocktomoveup = gamedata->challengegrid[1 + (i*CHALLENGEGRIDHEIGHT)];
+
+			if (i == 0
+				&& challengegridloops
+				&& (gamedata->challengegrid [1 + (j*CHALLENGEGRIDHEIGHT)]
+					== gamedata->challengegrid[1]))
+				;
+			else
+			{
+				j = i + 1;
+			}
+
+			nummajorunlocks--;
+
+			// Push one pair up.
+			gamedata->challengegrid[(i*CHALLENGEGRIDHEIGHT)] = gamedata->challengegrid[(j*CHALLENGEGRIDHEIGHT)] = unlocktomoveup;
+			// Wedge the remaining four underneath.
+			gamedata->challengegrid[2 + (i*CHALLENGEGRIDHEIGHT)] = gamedata->challengegrid[2 + (j*CHALLENGEGRIDHEIGHT)] = selection[1][nummajorunlocks];
+			gamedata->challengegrid[3 + (i*CHALLENGEGRIDHEIGHT)] = gamedata->challengegrid[3 + (j*CHALLENGEGRIDHEIGHT)] = selection[1][nummajorunlocks];
+		}
+#endif
+
 		if (nummajorunlocks > 0)
 		{
-			I_Error("M_PopulateChallengeGrid: was not able to populate %d large tiles (width %d)", nummajorunlocks, gamedata->challengegridwidth);
+			UINT16 widthtoprint = gamedata->challengegridwidth;
+			Z_Free(gamedata->challengegrid);
+			gamedata->challengegrid = NULL;
+
+			I_Error("M_PopulateChallengeGrid: was not able to populate %d large tiles (width %d)", nummajorunlocks, widthtoprint);
 		}
 	}
 
@@ -228,6 +275,10 @@ quickcheckagain:
 
 	if (numunlocks > numempty)
 	{
+		gamedata->challengegridwidth = 0;
+		Z_Free(gamedata->challengegrid);
+		gamedata->challengegrid = NULL;
+
 		I_Error("M_PopulateChallengeGrid: %d small unlocks vs %d empty spaces (%d gap)", numunlocks, numempty, (numunlocks-numempty));
 	}
 
@@ -427,7 +478,7 @@ void M_UpdateChallengeGridExtraData(challengegridextradata_t *extradata)
 	}
 }
 
-void M_AddRawCondition(UINT8 set, UINT8 id, conditiontype_t c, INT32 r, INT16 x1, INT16 x2)
+void M_AddRawCondition(UINT8 set, UINT8 id, conditiontype_t c, INT32 r, INT16 x1, INT16 x2, char *stringvar)
 {
 	condition_t *cond;
 	UINT32 num, wnum;
@@ -446,20 +497,42 @@ void M_AddRawCondition(UINT8 set, UINT8 id, conditiontype_t c, INT32 r, INT16 x1
 	cond[wnum].requirement = r;
 	cond[wnum].extrainfo1 = x1;
 	cond[wnum].extrainfo2 = x2;
+	cond[wnum].stringvar = stringvar;
 }
 
 void M_ClearConditionSet(UINT8 set)
 {
 	if (conditionSets[set].numconditions)
 	{
+		while (conditionSets[set].numconditions > 0)
+		{
+			--conditionSets[set].numconditions;
+			Z_Free(conditionSets[set].condition[conditionSets[set].numconditions].stringvar);
+		}
+
 		Z_Free(conditionSets[set].condition);
 		conditionSets[set].condition = NULL;
-		conditionSets[set].numconditions = 0;
 	}
 	gamedata->achieved[set] = false;
 }
 
 // Clear ALL secrets.
+void M_ClearStats(void)
+{
+	UINT8 i;
+	gamedata->totalplaytime = 0;
+	gamedata->totalrings = 0;
+	for (i = 0; i < GDGT_MAX; ++i)
+		gamedata->roundsplayed[i] = 0;
+	gamedata->timesBeaten = 0;
+
+	gamedata->everloadedaddon = false;
+	gamedata->eversavedreplay = false;
+	gamedata->everseenspecial = false;
+	gamedata->evercrashed = false;
+	gamedata->musicflags = 0;
+}
+
 void M_ClearSecrets(void)
 {
 	INT32 i;
@@ -480,28 +553,131 @@ void M_ClearSecrets(void)
 	gamedata->challengegrid = NULL;
 	gamedata->challengegridwidth = 0;
 
-	gamedata->timesBeaten = 0;
-
-	// Re-unlock any always unlocked things
-	M_UpdateUnlockablesAndExtraEmblems(false);
+	gamedata->pendingkeyrounds = 0;
+	gamedata->pendingkeyroundoffset = 0;
+	gamedata->keyspending = 0;
+	gamedata->chaokeys = 3; // Start with 3 !!
 }
 
 // ----------------------
 // Condition set checking
 // ----------------------
 
+void M_UpdateConditionSetsPending(void)
+{
+	UINT32 i, j;
+	conditionset_t *c;
+	condition_t *cn;
+
+	for (i = 0; i < MAXCONDITIONSETS; ++i)
+	{
+		c = &conditionSets[i];
+		if (!c->numconditions)
+			continue;
+
+		for (j = 0; j < c->numconditions; ++j)
+		{
+			cn = &c->condition[j];
+			if (cn->stringvar == NULL)
+				continue;
+
+			switch (cn->type)
+			{
+				case UCRP_ISCHARACTER:
+				{
+					cn->requirement = R_SkinAvailable(cn->stringvar);
+
+					if (cn->requirement < 0)
+					{
+						CONS_Alert(CONS_WARNING, "UCRP_ISCHARACTER: Invalid character %s for condition ID %d", cn->stringvar, cn->id+1);
+						return;
+					}
+
+					Z_Free(cn->stringvar);
+					cn->stringvar = NULL;
+
+					break;
+				}
+
+				case UCRP_WETPLAYER:
+				{
+					if (cn->extrainfo1)
+					{
+						char *l;
+
+						for (l = cn->stringvar; *l != '\0'; l++)
+						{
+							*l = tolower(*l);
+						}
+
+						cn->extrainfo1 = 0;
+					}
+					break;
+				}
+
+				default:
+					break;
+			}
+		}
+
+		
+	}
+}
+
+static boolean M_NotFreePlay(player_t *player)
+{
+	UINT8 i;
+
+	for (i = 0; i < MAXPLAYERS; i++)
+	{
+		if (playeringame[i] == false || players[i].spectator == true)
+		{
+			continue;
+		}
+
+		if (player == &players[i])
+		{
+			continue;
+		}
+
+		return true;
+	}
+
+	return false;
+}
+
 // See also M_GetConditionString
-UINT8 M_CheckCondition(condition_t *cn)
+boolean M_CheckCondition(condition_t *cn, player_t *player)
 {
 	switch (cn->type)
 	{
 		case UC_PLAYTIME: // Requires total playing time >= x
 			return (gamedata->totalplaytime >= (unsigned)cn->requirement);
-		case UC_MATCHESPLAYED: // Requires any level completed >= x times
-			return (gamedata->matchesplayed >= (unsigned)cn->requirement);
+		case UC_ROUNDSPLAYED: // Requires any level completed >= x times
+		{
+			if (cn->extrainfo1 == GDGT_MAX)
+			{
+				UINT8 i;
+				UINT32 sum = 0;
+
+				for (i = 0; i < GDGT_MAX; i++)
+				{
+					sum += gamedata->roundsplayed[i];
+				}
+
+				return (sum >= (unsigned)cn->requirement);
+			}
+			return (gamedata->roundsplayed[cn->extrainfo1] >= (unsigned)cn->requirement);
+		}
+		case UC_TOTALRINGS: // Requires grabbing >= x rings
+			return (gamedata->totalrings >= (unsigned)cn->requirement);
 		case UC_POWERLEVEL: // Requires power level >= x on a certain gametype
 		{
 			UINT8 i;
+
+			if (gamestate == GS_LEVEL)
+				return false; // this one could be laggy with many profiles available
+
 			for (i = PROFILE_GUEST; i < PR_GetNumProfiles(); i++)
 			{
 				profile_t *p = PR_GetProfile(i);
@@ -521,12 +697,15 @@ UINT8 M_CheckCondition(condition_t *cn)
 		case UC_MAPVISITED: // Requires map x to be visited
 		case UC_MAPBEATEN: // Requires map x to be beaten
 		case UC_MAPENCORE: // Requires map x to be beaten in encore
+		case UC_MAPSPBATTACK: // Requires map x to be beaten in SPB Attack
 		{
 			UINT8 mvtype = MV_VISITED;
 			if (cn->type == UC_MAPBEATEN)
 				mvtype = MV_BEATEN;
 			else if (cn->type == UC_MAPENCORE)
 				mvtype = MV_ENCORE;
+			else if (cn->type == UC_MAPSPBATTACK)
+				mvtype = MV_SPBATTACK;
 
 			return ((cn->requirement < nummapheaders)
 				&& (mapheaderinfo[cn->requirement])
@@ -534,8 +713,43 @@ UINT8 M_CheckCondition(condition_t *cn)
 		}
 		case UC_MAPTIME: // Requires time on map <= x
 			return (G_GetBestTime(cn->extrainfo1) <= (unsigned)cn->requirement);
-		case UC_TRIGGER: // requires map trigger set
-			return !!(unlocktriggers & (1 << cn->requirement));
+
+		case UC_ALLCHAOS:
+		case UC_ALLSUPER:
+		case UC_ALLEMERALDS:
+		{
+			cupheader_t *cup;
+			UINT16 ret = 0;
+			UINT8 i;
+
+			if (gamestate == GS_LEVEL)
+				return false; // this one could be laggy with many cups available
+
+			for (cup = kartcupheaders; cup; cup = cup->next)
+			{
+				if (cup->emeraldnum == 0)
+					continue;
+
+				i = cn->requirement;
+				for (i = cn->requirement; i < KARTGP_MAX; i++)
+				{
+					if (cup->windata[i].got_emerald == true)
+						break;
+				}
+
+				if (i == KARTGP_MAX)
+					continue;
+
+				ret |= 1<<(cup->emeraldnum-1);
+			}
+
+			if (cn->type == UC_ALLCHAOS)
+				return ALLCHAOSEMERALDS(ret);
+			if (cn->type == UC_ALLSUPER)
+				return ALLSUPEREMERALDS(ret);
+			return ALLEMERALDS(ret);
+		}
+
 		case UC_TOTALMEDALS: // Requires number of emblems >= x
 			return (M_GotEnoughMedals(cn->requirement));
 		case UC_EMBLEM: // Requires emblem x to be obtained
@@ -544,16 +758,147 @@ UINT8 M_CheckCondition(condition_t *cn)
 			return gamedata->unlocked[cn->requirement-1];
 		case UC_CONDITIONSET: // requires condition set x to already be achieved
 			return M_Achieved(cn->requirement-1);
+
+		case UC_ADDON:
+			return ((gamedata->everloadedaddon == true)
+				&& M_SecretUnlocked(SECRET_ADDONS, true));
+		case UC_REPLAY:
+			return (gamedata->eversavedreplay == true);
+		case UC_CRASH:
+			if (gamedata->evercrashed)
+			{
+				gamedata->musicflags |= GDMUSIC_LOSERCLUB;
+				return true;
+			}
+			return false;
+
+		// Just for string building
+		case UC_AND:
+		case UC_COMMA:
+			return true;
+
+		case UCRP_PREFIX_GRANDPRIX:
+			return (grandprixinfo.gp == true);
+		case UCRP_PREFIX_BONUSROUND:
+			return ((grandprixinfo.gp == true) && (grandprixinfo.eventmode == GPEVENT_BONUS));
+		case UCRP_PREFIX_TIMEATTACK:
+			return (modeattacking != ATTACKING_NONE);
+		case UCRP_PREFIX_PRISONBREAK:
+			return ((gametyperules & GTR_PRISONS) && battleprisons);
+		case UCRP_PREFIX_SEALEDSTAR:
+			return (specialstageinfo.valid == true);
+
+		case UCRP_PREFIX_ISMAP:
+		case UCRP_ISMAP:
+			return (gamemap == cn->requirement+1);
+		case UCRP_ISCHARACTER:
+			return (player->skin == cn->requirement);
+		case UCRP_ISENGINECLASS:
+			return (player->skin < numskins
+				&& R_GetEngineClass(
+					skins[player->skin].kartspeed,
+					skins[player->skin].kartweight,
+					skins[player->skin].flags
+				) == (unsigned)cn->requirement);
+		case UCRP_ISDIFFICULTY:
+			if (grandprixinfo.gp == false)
+				return (gamespeed >= cn->requirement);
+			if (cn->requirement == KARTGP_MASTER)
+				return (grandprixinfo.masterbots == true);
+			return (grandprixinfo.gamespeed >= cn->requirement);
+
+		case UCRP_PODIUMCUP:
+			if (K_PodiumRanking() == false)
+				return false;
+			if (grandprixinfo.cup == NULL
+				|| grandprixinfo.cup->id != cn->requirement)
+				return false;
+			if (cn->extrainfo2)
+				return (K_PodiumGrade() >= (unsigned)cn->requirement);
+			if (cn->extrainfo1 != 0)
+				return (player->position != 0
+					&& player->position <= cn->extrainfo1);
+			return true;
+		case UCRP_PODIUMEMERALD:
+		case UCRP_PODIUMPRIZE:
+			return (K_PodiumRanking() == true
+				&& grandprixinfo.rank.specialWon == true);
+
+		case UCRP_FINISHCOOL:
+			return (player->exiting
+				&& !(player->pflags & PF_NOCONTEST)
+				&& M_NotFreePlay(player)
+				&& !K_IsPlayerLosing(player));
+		case UCRP_FINISHALLPRISONS:
+			return (battleprisons
+				&& !(player->pflags & PF_NOCONTEST)
+				//&& M_NotFreePlay(player)
+				&& numtargets >= maptargets);
+		case UCRP_NOCONTEST:
+			return (player->pflags & PF_NOCONTEST);
+		case UCRP_FINISHPLACE:
+			return (player->exiting
+				&& !(player->pflags & PF_NOCONTEST)
+				&& M_NotFreePlay(player)
+				&& player->position != 0
+				&& player->position <= cn->requirement);
+		case UCRP_FINISHPLACEEXACT:
+			return (player->exiting 
+				&& !(player->pflags & PF_NOCONTEST)
+				&& M_NotFreePlay(player)
+				&& player->position == cn->requirement);
+		case UCRP_FINISHTIME:
+			return (player->exiting
+				&& !(player->pflags & PF_NOCONTEST)
+				//&& M_NotFreePlay(player)
+				&& player->realtime <= (unsigned)cn->requirement);
+		case UCRP_FINISHTIMEEXACT:
+			return (player->exiting
+				&& !(player->pflags & PF_NOCONTEST)
+				//&& M_NotFreePlay(player)
+				&& player->realtime/TICRATE == (unsigned)cn->requirement/TICRATE);
+		case UCRP_FINISHTIMELEFT:
+			return (timelimitintics
+				&& player->exiting
+				&& !(player->pflags & PF_NOCONTEST)
+				&& !K_CanChangeRules(false) // too easy to change cv_timelimit
+				&& player->realtime < timelimitintics
+				&& (timelimitintics + extratimeintics + secretextratime - player->realtime) >= (unsigned)cn->requirement);
+
+		case UCRP_TRIGGER: // requires map trigger set
+			return !!(player->roundconditions.unlocktriggers & (1 << cn->requirement));
+
+		case UCRP_FALLOFF:
+			return (player->roundconditions.fell_off == (cn->requirement == 1));
+		case UCRP_TOUCHOFFROAD:
+			return (player->roundconditions.touched_offroad == (cn->requirement == 1));
+		case UCRP_TOUCHSNEAKERPANEL:
+			return (player->roundconditions.touched_sneakerpanel == (cn->requirement == 1));
+		case UCRP_RINGDEBT:
+			return (!(gametyperules & GTR_SPHERES) && (player->roundconditions.debt_rings == (cn->requirement == 1)));
+
+		case UCRP_TRIPWIREHYUU:
+			return (player->roundconditions.tripwire_hyuu);
+		case UCRP_SPBNEUTER:
+			return (player->roundconditions.spb_neuter);
+		case UCRP_LANDMINEDUNK:
+			return (player->roundconditions.landmine_dunk);
+		case UCRP_HITMIDAIR:
+			return (player->roundconditions.hit_midair);
+
+		case UCRP_WETPLAYER:
+			return (((player->roundconditions.wet_player & cn->requirement) == 0)
+				&& !player->roundconditions.fell_off); // Levels with water tend to texture their pits as water too
 	}
 	return false;
 }
 
-static UINT8 M_CheckConditionSet(conditionset_t *c)
+static boolean M_CheckConditionSet(conditionset_t *c, player_t *player)
 {
 	UINT32 i;
 	UINT32 lastID = 0;
 	condition_t *cn;
-	UINT8 achievedSoFar = true;
+	boolean achievedSoFar = true;
 
 	for (i = 0; i < c->numconditions; ++i)
 	{
@@ -565,11 +910,24 @@ static UINT8 M_CheckConditionSet(conditionset_t *c)
 			return true;
 
 		// Skip future conditions with the same ID if one fails, for obvious reasons
-		else if (lastID && lastID == cn->id && !achievedSoFar)
+		if (lastID && lastID == cn->id && !achievedSoFar)
+			continue;
+
+		// Skip entries that are JUST for string building
+		if (cn->type == UC_AND || cn->type == UC_COMMA)
 			continue;
 
 		lastID = cn->id;
-		achievedSoFar = M_CheckCondition(cn);
+
+		if ((player != NULL) != (cn->type >= UCRP_REQUIRESPLAYING))
+		{
+			//CONS_Printf("skipping %s:%u:%u (%s)\n", sizeu1(c-conditionSets), cn->id, i, player ? "player exists" : "player does not exist");
+			achievedSoFar = false;
+			continue;
+		}
+
+		achievedSoFar = M_CheckCondition(cn, player);
+		//CONS_Printf("%s:%u:%u - %u is %s\n", sizeu1(c-conditionSets), cn->id, i, cn->type, achievedSoFar ? "true" : "false");
 	}
 
 	return achievedSoFar;
@@ -599,6 +957,17 @@ static char *M_BuildConditionTitle(UINT16 map)
 	return title;
 }
 
+static const char *M_GetNthType(UINT8 position)
+{
+	if (position == 1)
+		return "st";
+	if (position == 2)
+		return "nd";
+	if (position == 3)
+		return "rd";
+	return "th";
+}
+
 // See also M_CheckCondition
 static const char *M_GetConditionString(condition_t *cn)
 {
@@ -606,54 +975,115 @@ static const char *M_GetConditionString(condition_t *cn)
 	char *title = NULL;
 	const char *work = NULL;
 
+	// If this function returns NULL, it stops building the condition and just does ???'s.
+
 #define BUILDCONDITIONTITLE(i) (M_BuildConditionTitle(i))
 
 	switch (cn->type)
 	{
 		case UC_PLAYTIME: // Requires total playing time >= x
-			return va("Play for %i:%02i:%02i",
+
+			return va("play for %i:%02i:%02i",
 				G_TicsToHours(cn->requirement),
 				G_TicsToMinutes(cn->requirement, false),
 				G_TicsToSeconds(cn->requirement));
-		case UC_MATCHESPLAYED: // Requires any level completed >= x times
-			return va("Play %d matches", cn->requirement);
+
+		case UC_ROUNDSPLAYED: // Requires any level completed >= x times
+
+			if (cn->extrainfo1 == GDGT_MAX)
+				work = "";
+			else if (cn->extrainfo1 != GDGT_RACE && cn->extrainfo1 != GDGT_BATTLE // Base gametypes
+				&& (cn->extrainfo1 != GDGT_CUSTOM || M_SecretUnlocked(SECRET_ADDONS, true) == false) // Custom is visible at 0 if addons are unlocked
+				&& gamedata->roundsplayed[cn->extrainfo1] == 0)
+					work = " ???";
+			else switch (cn->extrainfo1)
+			{
+				case GDGT_RACE:
+					work = " Race";
+					break;
+				case GDGT_PRISONS:
+					work = " Prison";
+					break;
+				case GDGT_BATTLE:
+					work = " Battle";
+					break;
+				case GDGT_SPECIAL:
+					work = " Special";
+					break;
+				case GDGT_CUSTOM:
+					work = " custom gametype";
+					break;
+				default:
+					return va("INVALID GAMETYPE CONDITION \"%d:%d:%d\"", cn->type, cn->extrainfo1, cn->requirement);
+			}
+
+			return va("play %d%s Round%s", cn->requirement, work,
+				(cn->requirement == 1 ? "" : "s"));
+
+		case UC_TOTALRINGS: // Requires collecting >= x rings
+			if (cn->requirement >= 1000000)
+				return va("collect %u,%03u,%03u Rings", (cn->requirement/1000000), (cn->requirement/1000)%1000, (cn->requirement%1000));
+			if (cn->requirement >= 1000)
+				return va("collect %u,%03u Rings", (cn->requirement/1000), (cn->requirement%1000));
+			return va("collect %u Rings", cn->requirement);
+
 		case UC_POWERLEVEL: // Requires power level >= x on a certain gametype
-			return va("Get a PWR of %d in %s", cn->requirement,
+			return va("get a PWR of %d in %s", cn->requirement,
 				(cn->extrainfo1 == PWRLV_RACE)
 				? "Race"
 				: "Battle");
+
 		case UC_GAMECLEAR: // Requires game beaten >= x times
 			if (cn->requirement > 1)
-				return va("Beat game %d times", cn->requirement);
+				return va("beat game %d times", cn->requirement);
 			else
-				return va("Beat the game");
+				return va("beat the game");
+
 		case UC_OVERALLTIME: // Requires overall time <= x
-			return va("Get overall time of %i:%02i:%02i",
+			return va("get overall time of %i:%02i:%02i",
 				G_TicsToHours(cn->requirement),
 				G_TicsToMinutes(cn->requirement, false),
 				G_TicsToSeconds(cn->requirement));
+
 		case UC_MAPVISITED: // Requires map x to be visited
 		case UC_MAPBEATEN: // Requires map x to be beaten
 		case UC_MAPENCORE: // Requires map x to be beaten in encore
+		case UC_MAPSPBATTACK: // Requires map x to be beaten in SPB Attack
 		{
+			const char *prefix = "";
+
 			if (cn->requirement >= nummapheaders || !mapheaderinfo[cn->requirement])
 				return va("INVALID MAP CONDITION \"%d:%d\"", cn->type, cn->requirement);
 
 			title = BUILDCONDITIONTITLE(cn->requirement);
-			work = va("%s %s%s",
-				(cn->type == UC_MAPVISITED) ? "Visit" : "Finish a round on",
+
+			if (cn->type == UC_MAPSPBATTACK)
+				prefix = (M_SecretUnlocked(SECRET_SPBATTACK, true) ? "SPB ATTACK: " : "???: ");
+			else if (cn->type == UC_MAPENCORE)
+				prefix = (M_SecretUnlocked(SECRET_ENCORE, true) ? "ENCORE MODE: " : "???: ");
+
+			work = "finish a round on";
+			if (cn->type == UC_MAPVISITED)
+				work = "visit";
+			else if (cn->type == UC_MAPSPBATTACK)
+				work = "conquer";
+
+			work = va("%s%s %s%s",
+				prefix,
+				work,
 				title,
 				(cn->type == UC_MAPENCORE) ? " in Encore Mode" : "");
 			Z_Free(title);
 			return work;
 		}
+
 		case UC_MAPTIME: // Requires time on map <= x
 		{
 			if (cn->extrainfo1 >= nummapheaders || !mapheaderinfo[cn->extrainfo1])
 				return va("INVALID MAP CONDITION \"%d:%d:%d\"", cn->type, cn->extrainfo1, cn->requirement);
 
 			title = BUILDCONDITIONTITLE(cn->extrainfo1);
-			work = va("Beat %s in %i:%02i.%02i", title,
+			work = va("beat %s in %i:%02i.%02i", title,
 				G_TicsToMinutes(cn->requirement, true),
 				G_TicsToSeconds(cn->requirement),
 				G_TicsToCentiseconds(cn->requirement));
@@ -661,8 +1091,49 @@ static const char *M_GetConditionString(condition_t *cn)
 			Z_Free(title);
 			return work;
 		}
+
+		case UC_ALLCHAOS:
+		case UC_ALLSUPER:
+		case UC_ALLEMERALDS:
+		{
+			const char *chaostext, *speedtext = "", *orbetter = "";
+
+			if (!gamedata->everseenspecial)
+				return NULL;
+
+			if (cn->type == UC_ALLCHAOS)
+				chaostext = "7 Chaos";
+			else if (cn->type == UC_ALLSUPER)
+				chaostext = "7 Super";
+			else
+				chaostext = "14";
+
+			if (cn->requirement == KARTSPEED_NORMAL)
+			{
+				speedtext = " on Normal difficulty";
+				//if (M_SecretUnlocked(SECRET_HARDSPEED, true))
+					orbetter = " or better";
+			}
+			else if (cn->requirement == KARTSPEED_HARD)
+			{
+				speedtext = " on Hard difficulty";
+				if (M_SecretUnlocked(SECRET_MASTERMODE, true))
+					orbetter = " or better";
+			}
+			else if (cn->requirement == KARTGP_MASTER)
+			{
+				if (M_SecretUnlocked(SECRET_MASTERMODE, true))
+					speedtext = " on Master difficulty";
+				else
+					speedtext = " on ???";
+			}
+
+			return va("collect all %s Emeralds%s%s", chaostext, speedtext, orbetter);
+		}
+
 		case UC_TOTALMEDALS: // Requires number of emblems >= x
-			return va("Get %d medals", cn->requirement);
+			return va("get %d medals", cn->requirement);
+
 		case UC_EMBLEM: // Requires emblem x to be obtained
 		{
 			INT32 checkLevel;
@@ -677,7 +1148,16 @@ static const char *M_GetConditionString(condition_t *cn)
 			switch (emblemlocations[i].type)
 			{
 				case ET_MAP:
-					work = va("Beat %s", title);
+					work = "";
+					if (emblemlocations[i].flags & ME_SPBATTACK)
+						work = (M_SecretUnlocked(SECRET_SPBATTACK, true) ? "SPB ATTACK: " : "???: ");
+					else if (emblemlocations[i].flags & ME_ENCORE)
+						work = (M_SecretUnlocked(SECRET_ENCORE, true) ? "ENCORE MODE: " : "???: ");
+
+					work = va("%s%s %s",
+						work,
+						(emblemlocations[i].flags & ME_SPBATTACK) ? "conquer" : "finish a round on",
+						title);
 					break;
 				case ET_TIME:
 					if (emblemlocations[i].color <= 0 || emblemlocations[i].color >= numskincolors)
@@ -685,7 +1165,7 @@ static const char *M_GetConditionString(condition_t *cn)
 						Z_Free(title);
 						return va("INVALID MEDAL COLOR \"%d:%d\"", cn->requirement, checkLevel);
 					}
-					work = va("Get the %s Medal for %s", skincolors[emblemlocations[i].color].name, title);
+					work = va("TIME ATTACK: get the %s Medal for %s", skincolors[emblemlocations[i].color].name, title);
 					break;
 				case ET_GLOBAL:
 				{
@@ -711,21 +1191,21 @@ static const char *M_GetConditionString(condition_t *cn)
 
 					if (emblemlocations[i].flags & GE_TIMED)
 					{
-						work = va("Find %s%s%s in %s before %i:%02i.%02i",
-							astr, colorstr, medalstr, title,
+						work = va("%s: find %s%s%s before %i:%02i.%02i",
+							title, astr, colorstr, medalstr,
 							G_TicsToMinutes(emblemlocations[i].var, true),
 							G_TicsToSeconds(emblemlocations[i].var),
 							G_TicsToCentiseconds(emblemlocations[i].var));
 					}
 					else
 					{
-						work = va("Find %s%s%s in %s",
-							astr, colorstr, medalstr, title);
+						work = va("%s: find %s%s%s",
+							title, astr, colorstr, medalstr);
 					}
 					break;
 				}
 				default:
-					work = va("Find a secret in %s", title);
+					work = va("find a secret in %s", title);
 					break;
 			}
 
@@ -733,10 +1213,192 @@ static const char *M_GetConditionString(condition_t *cn)
 			return work;
 		}
 		case UC_UNLOCKABLE: // Requires unlockable x to be obtained
-			return va("Get \"%s\"",
+			return va("get \"%s\"",
 				gamedata->unlocked[cn->requirement-1]
 				? unlockables[cn->requirement-1].name
 				: "???");
+
+		case UC_ADDON:
+			if (!M_SecretUnlocked(SECRET_ADDONS, true))
+				return NULL;
+			return "load a custom addon into \"Dr. Robotnik's Ring Racers\"";
+		case UC_REPLAY:
+			return "save a replay after finishing a round";
+		case UC_CRASH:
+			if (gamedata->evercrashed)
+				return "launch \"Dr. Robotnik's Ring Racers\" again after a game crash";
+			return NULL;
+
+		case UC_AND:
+			return "&";
+		case UC_COMMA:
+			return ",";
+
+		case UCRP_PREFIX_GRANDPRIX:
+			return "GRAND PRIX:";
+		case UCRP_PREFIX_BONUSROUND:
+			return "BONUS ROUND:";
+		case UCRP_PREFIX_TIMEATTACK:
+			if (!M_SecretUnlocked(SECRET_TIMEATTACK, true))
+				return NULL;
+			return "TIME ATTACK:";
+		case UCRP_PREFIX_PRISONBREAK:
+			return "PRISON BREAK:";
+		case UCRP_PREFIX_SEALEDSTAR:
+			if (!gamedata->everseenspecial)
+				return NULL;
+			return "SEALED STARS:";
+
+		case UCRP_PREFIX_ISMAP:
+			if (cn->requirement >= nummapheaders || !mapheaderinfo[cn->requirement])
+				return va("INVALID MAP CONDITION \"%d:%d\":", cn->type, cn->requirement);
+
+			title = BUILDCONDITIONTITLE(cn->requirement);
+			work = va("%s:", title);
+			Z_Free(title);
+			return work;
+		case UCRP_ISMAP:
+			if (cn->requirement >= nummapheaders || !mapheaderinfo[cn->requirement])
+				return va("INVALID MAP CONDITION \"%d:%d\"", cn->type, cn->requirement);
+
+			title = BUILDCONDITIONTITLE(cn->requirement);
+			work = va("on %s", title);
+			Z_Free(title);
+			return work;
+		case UCRP_ISCHARACTER:
+			if (cn->requirement < 0 || !skins[cn->requirement].realname[0])
+				return va("INVALID CHAR CONDITION \"%d:%d\"", cn->type, cn->requirement);
+			return va("as %s", skins[cn->requirement].realname);
+		case UCRP_ISENGINECLASS:
+			return va("with engine class %c", 'A' + cn->requirement);
+		case UCRP_ISDIFFICULTY:
+		{
+			const char *speedtext = "";
+
+			if (cn->requirement == KARTSPEED_NORMAL)
+			{
+				speedtext = "on Normal difficulty or better";
+			}
+			else if (cn->requirement == KARTSPEED_HARD)
+			{
+				speedtext = "on Hard difficulty";
+			}
+			else if (cn->requirement == KARTGP_MASTER)
+			{
+				if (M_SecretUnlocked(SECRET_MASTERMODE, true))
+					speedtext = "on Master difficulty";
+				else
+					speedtext = "on ???";
+			}
+
+			return speedtext;
+		}
+
+		case UCRP_PODIUMCUP:
+		{
+			cupheader_t *cup;
+			const char *completetype = "complete", *orbetter = "";
+
+			if (cn->extrainfo2)
+			{
+				switch (cn->requirement)
+				{
+					case GRADE_E: { completetype = "get grade E"; break; }
+					case GRADE_D: { completetype = "get grade D"; break; }
+					case GRADE_C: { completetype = "get grade C"; break; }
+					case GRADE_B: { completetype = "get grade B"; break; }
+					case GRADE_A: { completetype = "get grade A"; break; }
+					case GRADE_S: { completetype = "get grade S"; break; }
+					default: { break; }
+				}
+
+				if (cn->requirement < GRADE_S)
+					orbetter = " or better in";
+				else
+					orbetter = " in";
+			}
+			else if (cn->extrainfo1 == 0)
+				;
+			else if (cn->extrainfo1 == 1)
+				completetype = "get Gold in";
+			else
+			{
+				if (cn->extrainfo1 == 2)
+					completetype = "get Silver";
+				else if (cn->extrainfo1 == 3)
+					completetype = "get Bronze";
+				orbetter = " or better in";
+			}
+
+			for (cup = kartcupheaders; cup; cup = cup->next)
+			{
+				if (cup->id != cn->requirement)
+					continue;
+				return va("%s%s %s CUP", completetype, orbetter, cup->name);
+			}
+			return va("INVALID CUP CONDITION \"%d:%d\"", cn->type, cn->requirement);
+		}
+		case UCRP_PODIUMEMERALD:
+			if (!gamedata->everseenspecial)
+				return "???";
+			return "collect the Emerald";
+		case UCRP_PODIUMPRIZE:
+			if (!gamedata->everseenspecial)
+				return "???";
+			return "collect the prize";
+
+		case UCRP_FINISHCOOL:
+			return "finish in good standing";
+		case UCRP_FINISHALLPRISONS:
+			return "break every prison";
+		case UCRP_NOCONTEST:
+			return "NO CONTEST";
+		case UCRP_FINISHPLACE:
+		case UCRP_FINISHPLACEEXACT:
+			return va("finish in %d%s%s", cn->requirement, M_GetNthType(cn->requirement),
+				((cn->type == UCRP_FINISHPLACE && cn->requirement > 1)
+					? " or better" : ""));
+		case UCRP_FINISHTIME:
+			return va("finish in %i:%02i.%02i",
+				G_TicsToMinutes(cn->requirement, true),
+				G_TicsToSeconds(cn->requirement),
+				G_TicsToCentiseconds(cn->requirement));
+		case UCRP_FINISHTIMEEXACT:
+			return va("finish in exactly %i:%02i.XX",
+				G_TicsToMinutes(cn->requirement, true),
+				G_TicsToSeconds(cn->requirement));
+		case UCRP_FINISHTIMELEFT:
+			return va("finish with %i:%02i.%02i remaining",
+				G_TicsToMinutes(cn->requirement, true),
+				G_TicsToSeconds(cn->requirement),
+				G_TicsToCentiseconds(cn->requirement));
+
+		case UCRP_TRIGGER:
+			return cn->stringvar;
+
+		case UCRP_FALLOFF:
+			return (cn->requirement == 1) ? "fall off the course" : "without falling off";
+		case UCRP_TOUCHOFFROAD:
+			return (cn->requirement == 1) ? "touch offroad" : "without touching any offroad";
+		case UCRP_TOUCHSNEAKERPANEL:
+			return (cn->requirement == 1) ? "touch a Sneaker Panel" : "without touching any Sneaker Panels";
+		case UCRP_RINGDEBT:
+			return (cn->requirement == 1) ? "go into Ring debt" : "without going into Ring debt";
+
+		case UCRP_TRIPWIREHYUU:
+			return "go through Tripwire after getting snared by Hyudoro";
+		case UCRP_SPBNEUTER:
+			return "shock a Self Propelled Bomb into submission";
+		case UCRP_LANDMINEDUNK:
+			return "dunk a Landmine on another racer's head";
+		case UCRP_HITMIDAIR:
+			return "hit another racer with a projectile while you're both in the air";
+
+		case UCRP_WETPLAYER:
+			return va("without %s %s",
+				(cn->requirement & MFE_TOUCHWATER) ? "touching any" : "going into",
+				cn->stringvar);
+
 		default:
 			break;
 	}
@@ -746,20 +1408,16 @@ static const char *M_GetConditionString(condition_t *cn)
 #undef BUILDCONDITIONTITLE
 }
 
-//#define ACHIEVEDBRITE
-
 char *M_BuildConditionSetString(UINT8 unlockid)
 {
 	conditionset_t *c = NULL;
 	UINT32 lastID = 0;
 	condition_t *cn;
-#ifdef ACHIEVEDBRITE
-	boolean achieved = false;
-#endif
 	size_t len = 1024, worklen;
 	static char message[1024] = "";
 	const char *work = NULL;
-	size_t max = 0, start = 0, strlines = 0, i;
+	size_t max = 0, maxatstart = 0, start = 0, i;
+	boolean stopasap = false;
 
 	message[0] = '\0';
 
@@ -773,51 +1431,51 @@ char *M_BuildConditionSetString(UINT8 unlockid)
 		return NULL;
 	}
 
+	if (gamedata->unlocked[unlockid] == true && M_Achieved(unlockables[unlockid].conditionset - 1) == false)
+	{
+		message[0] = '\x86'; // the following text will be grey
+		message[1] = '\0';
+		len--;
+	}
+
 	c = &conditionSets[unlockables[unlockid].conditionset-1];
 
 	for (i = 0; i < c->numconditions; ++i)
 	{
 		cn = &c->condition[i];
 
-		if (i > 0)
+		if (i > 0 && (cn->type != UC_COMMA))
 		{
-			worklen = 3;
-			if (lastID == cn->id)
+			if (lastID != cn->id)
 			{
-				strncat(message, "\n& ", len);
+				worklen = 4;
+				strncat(message, "\nOR ", len);
 			}
 			else
 			{
-				strncat(message, "\nOR ", len);
-				worklen++;
+				worklen = 1;
+				strncat(message, " ", len);
 			}
 			len -= worklen;
 		}
+
 		lastID = cn->id;
 
-#ifdef ACHIEVEDBRITE
-		achieved = M_CheckCondition(cn);
-
-		if (achieved)
-		{
-			strncat(message, "\0x82", len);
-			len--;
-		}
-#endif
-
 		work = M_GetConditionString(cn);
+		if (work == NULL)
+		{
+			stopasap = true;
+			work = "???";
+		}
 		worklen = strlen(work);
 
 		strncat(message, work, len);
 		len -= worklen;
 
-#ifdef ACHIEVEDBRITE
-		if (achieved)
+		if (stopasap)
 		{
-			strncat(message, "\0x80", len);
-			len--;
+			break;
 		}
-#endif
 	}
 
 	// Rudementary word wrapping.
@@ -828,12 +1486,13 @@ char *M_BuildConditionSetString(UINT8 unlockid)
 		{
 			start = i;
 			max += 4;
+			maxatstart = max;
 		}
 		else if (message[i] == '\n')
 		{
-			strlines = i;
 			start = 0;
 			max = 0;
+			maxatstart = 0;
 			continue;
 		}
 		else if (message[i] & 0x80)
@@ -845,19 +1504,45 @@ char *M_BuildConditionSetString(UINT8 unlockid)
 		if (max >= DESCRIPTIONWIDTH && start > 0)
 		{
 			message[start] = '\n';
-			max -= (start-strlines)*8;
-			strlines = start;
+			max -= maxatstart;
 			start = 0;
+		}
+	}
+
+	// Valid sentence capitalisation handling.
+	{
+		// Finds the first : character, indicating the end of the prefix.
+		for (i = 0; message[i]; i++)
+		{
+			if (message[i] != ':')
+				continue;
+			i++;
+			break;
+		}
+
+		// If we didn't find a prefix, just start from the first character again.
+		if (!message[i])
+			i = 0;
+
+		// Okay, now make the first non-whitespace character after the prefix a capital.
+		// Doesn't matter if !isalpha() - toupper is a no-op.
+		for (; message[i]; i++)
+		{
+			if ((message[i] & 0x80) || isspace(message[i]))
+				continue;
+			message[i] = toupper(message[i]);
+			break;
 		}
 	}
 
 	return message;
 }
 
-static void M_CheckUnlockConditions(void)
+static boolean M_CheckUnlockConditions(player_t *player)
 {
 	INT32 i;
 	conditionset_t *c;
+	boolean ret;
 
 	for (i = 0; i < MAXCONDITIONSETS; ++i)
 	{
@@ -865,14 +1550,24 @@ static void M_CheckUnlockConditions(void)
 		if (!c->numconditions || gamedata->achieved[i])
 			continue;
 
-		gamedata->achieved[i] = (M_CheckConditionSet(c));
+		if ((gamedata->achieved[i] = (M_CheckConditionSet(c, player))) != true)
+			continue;
+
+		ret = true;
 	}
+
+	return ret;
 }
 
-boolean M_UpdateUnlockablesAndExtraEmblems(boolean loud)
+boolean M_UpdateUnlockablesAndExtraEmblems(boolean loud, boolean doall)
 {
-	INT32 i;
-	UINT8 response = 0;
+	UINT16 i = 0, response = 0, newkeys = 0;
+
+	if (!gamedata)
+	{
+		// Don't attempt to write/check anything.
+		return false;
+	}
 
 	if (!loud)
 	{
@@ -880,9 +1575,55 @@ boolean M_UpdateUnlockablesAndExtraEmblems(boolean loud)
 		// Done first so that emblems are ready before check
 		M_CheckLevelEmblems();
 		M_CompletionEmblems();
+		doall = true;
 	}
 
-	M_CheckUnlockConditions();
+	if (gamedata->deferredconditioncheck == true)
+	{
+		// Handle deferred all-condition checks
+		gamedata->deferredconditioncheck = false;
+		doall = true;
+	}
+
+	if (doall)
+	{
+		response = M_CheckUnlockConditions(NULL);
+
+		if (gamedata->pendingkeyrounds == 0
+			|| (gamedata->chaokeys >= GDMAX_CHAOKEYS))
+		{
+			gamedata->keyspending = 0;
+		}
+		else while ((gamedata->keyspending + gamedata->chaokeys) < GDMAX_CHAOKEYS
+			&& ((gamedata->pendingkeyrounds + gamedata->pendingkeyroundoffset)/GDCONVERT_ROUNDSTOKEY) > gamedata->keyspending)
+		{
+			gamedata->keyspending++;
+			newkeys++;
+			response |= true;
+		}
+	}
+
+	if (!demo.playback && Playing() && (gamestate == GS_LEVEL || K_PodiumRanking() == true))
+	{
+		for (i = 0; i <= splitscreen; i++)
+		{
+			if (!playeringame[g_localplayers[i]])
+				continue;
+			if (players[g_localplayers[i]].spectator)
+				continue;
+			if (!doall && players[g_localplayers[i]].roundconditions.checkthisframe == false)
+				continue;
+			response |= M_CheckUnlockConditions(&players[g_localplayers[i]]);
+			players[g_localplayers[i]].roundconditions.checkthisframe = false;
+		}
+	}
+
+	if (loud && response == 0)
+	{
+		return false;
+	}
+
+	response = 0;
 
 	// Go through unlockables
 	for (i = 0; i < MAXUNLOCKABLES; ++i)
@@ -907,8 +1648,10 @@ boolean M_UpdateUnlockablesAndExtraEmblems(boolean loud)
 		response++;
 	}
 
+	response += newkeys;
+
 	// Announce
-	if (response)
+	if (response != 0)
 	{
 		if (loud)
 		{
@@ -919,7 +1662,7 @@ boolean M_UpdateUnlockablesAndExtraEmblems(boolean loud)
 	return false;
 }
 
-UINT8 M_GetNextAchievedUnlock(void)
+UINT16 M_GetNextAchievedUnlock(void)
 {
 	UINT8 i;
 
@@ -942,6 +1685,11 @@ UINT8 M_GetNextAchievedUnlock(void)
 		}
 
 		return i;
+	}
+
+	if (gamedata->keyspending != 0)
+	{
+		return PENDING_CHAOKEYS;
 	}
 
 	return MAXUNLOCKABLES;
@@ -1115,7 +1863,7 @@ boolean M_CupLocked(cupheader_t *cup)
 	return false;
 }
 
-boolean M_MapLocked(INT32 mapnum)
+boolean M_MapLocked(UINT16 mapnum)
 {
 	UINT8 i;
 
@@ -1128,7 +1876,7 @@ boolean M_MapLocked(INT32 mapnum)
 	if (marathonmode)
 		return false;
 
-	if (!mapnum || mapnum > nummapheaders)
+	if (mapnum == 0 || mapnum > nummapheaders)
 		return false;
 	
 	if (!mapheaderinfo[mapnum-1])
