@@ -183,6 +183,9 @@ consvar_t cv_allowguests = CVAR_INIT ("allowguests", "On", CV_SAVE, CV_OnOff, NU
 	consvar_t cv_nochallenge = CVAR_INIT ("nochallenge", "0", 0, CV_Unsigned, NULL);
 	consvar_t cv_badresults = CVAR_INIT ("badresults", "0", 0, CV_Unsigned, NULL);
 	consvar_t cv_noresults = CVAR_INIT ("noresults", "0", 0, CV_Unsigned, NULL);
+	consvar_t cv_badjointime = CVAR_INIT ("badjointime", "0", 0, CV_Unsigned, NULL);
+	consvar_t cv_badip = CVAR_INIT ("badip", "0", 0, CV_Unsigned, NULL);
+	consvar_t cv_badchallengetime = CVAR_INIT ("badchallengetime", "0", 0, CV_Unsigned, NULL);
 #endif
 
 // engine
@@ -6330,7 +6333,15 @@ static void UpdateChallenges(void)
 
 			// Random noise so it's difficult to reuse the response
 			// Current time so that difficult to reuse the challenge
-			const time_t now = time(NULL);
+			time_t now = time(NULL);
+			#ifdef DEVELOP
+				if (cv_badchallengetime.value)
+				{
+					CV_AddValue(&cv_badchallengetime, -1);
+					CONS_Alert(CONS_WARNING, "cv_badchallengetime enabled, scrubbing time from PT_CHALLENGEALL\n");
+					now = 0;
+				}
+			#endif
 			CONS_Printf("now: %ld, gamemap: %hd\n", now, gamemap);
 			csprng(netbuffer->u.challengeall.secret, sizeof(netbuffer->u.challengeall.secret));
 			memcpy(netbuffer->u.challengeall.secret, &now, sizeof(now)); // First few bytes are the timestamp...

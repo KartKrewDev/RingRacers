@@ -530,6 +530,9 @@ extern consvar_t cv_allowguests;
 	extern consvar_t cv_nochallenge;
 	extern consvar_t cv_badresults;
 	extern consvar_t cv_noresults;
+	extern consvar_t cv_badjointime;
+	extern consvar_t cv_badip;
+	extern consvar_t cv_badchallengetime;
 #endif
 
 // Used in d_net, the only dependence
