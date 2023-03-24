@@ -432,11 +432,20 @@ struct RenderbufferDesc
 	uint32_t height;
 };
 
+enum class TextureWrapMode
+{
+	kRepeat,
+	kMirroredRepeat,
+	kClamp
+};
+
 struct TextureDesc
 {
 	TextureFormat format;
 	uint32_t width;
 	uint32_t height;
+	TextureWrapMode u_wrap;
+	TextureWrapMode v_wrap;
 };
 
 struct BufferDesc

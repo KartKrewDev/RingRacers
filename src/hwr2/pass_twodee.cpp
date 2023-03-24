@@ -88,7 +88,13 @@ static Rect trimmed_patch_dim(const patch_t* patch);
 static void create_atlas(Rhi& rhi, TwodeePassData& pass_data)
 {
 	Atlas new_atlas;
-	new_atlas.tex = rhi.create_texture({TextureFormat::kLuminanceAlpha, 2048, 2048});
+	new_atlas.tex = rhi.create_texture({
+		TextureFormat::kLuminanceAlpha,
+		2048,
+		2048,
+		TextureWrapMode::kClamp,
+		TextureWrapMode::kClamp
+	});
 	new_atlas.tex_width = 2048;
 	new_atlas.tex_height = 2048;
 	new_atlas.rp_ctx = std::make_unique<stbrp_context>();
@@ -501,12 +507,24 @@ void TwodeePass::prepass(Rhi& rhi)
 
 	if (!data_->default_tex)
 	{
-		data_->default_tex = rhi.create_texture({TextureFormat::kLuminanceAlpha, 2, 1});
+		data_->default_tex = rhi.create_texture({
+			TextureFormat::kLuminanceAlpha,
+			2,
+			1,
+			TextureWrapMode::kClamp,
+			TextureWrapMode::kClamp
+		});
 		data_->upload_default_tex = true;
 	}
 	if (!data_->default_colormap_tex)
 	{
-		data_->default_colormap_tex = rhi.create_texture({TextureFormat::kLuminance, 256, 1});
+		data_->default_colormap_tex = rhi.create_texture({
+			TextureFormat::kLuminance,
+			256,
+			1,
+			TextureWrapMode::kClamp,
+			TextureWrapMode::kClamp
+		});
 		data_->upload_default_tex = true;
 	}
 	if (!render_pass_)

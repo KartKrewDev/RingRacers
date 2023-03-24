@@ -64,7 +64,13 @@ void ImguiPass::prepass(Rhi& rhi)
 		uint32_t uwidth = static_cast<uint32_t>(width);
 		uint32_t uheight = static_cast<uint32_t>(height);
 
-		font_atlas_ = rhi.create_texture({TextureFormat::kRGBA, uwidth, uheight});
+		font_atlas_ = rhi.create_texture({
+			TextureFormat::kRGBA,
+			uwidth,
+			uheight,
+			TextureWrapMode::kRepeat,
+			TextureWrapMode::kRepeat
+		});
 		io.Fonts->SetTexID(font_atlas_);
 	}
 

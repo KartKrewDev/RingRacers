@@ -166,7 +166,13 @@ void PostprocessWipePass::prepass(Rhi& rhi)
 		}
 	}
 
-	wipe_tex_ = rhi.create_texture({TextureFormat::kLuminance, mask_w_, mask_h_});
+	wipe_tex_ = rhi.create_texture({
+		TextureFormat::kLuminance,
+		mask_w_,
+		mask_h_,
+		TextureWrapMode::kClamp,
+		TextureWrapMode::kClamp
+	});
 }
 
 void PostprocessWipePass::transfer(Rhi& rhi, Handle<TransferContext> ctx)

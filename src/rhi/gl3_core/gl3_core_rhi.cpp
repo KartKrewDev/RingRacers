@@ -110,6 +110,21 @@ constexpr GLenum map_texture_format(rhi::TextureFormat format)
 	}
 }
 
+constexpr GLenum map_texture_wrap(rhi::TextureWrapMode wrap)
+{
+	switch (wrap)
+	{
+	case rhi::TextureWrapMode::kClamp:
+		return GL_CLAMP_TO_EDGE;
+	case rhi::TextureWrapMode::kRepeat:
+		return GL_REPEAT;
+	case rhi::TextureWrapMode::kMirroredRepeat:
+		return GL_MIRRORED_REPEAT;
+	default:
+		return GL_NEAREST;
+	}
+}
+
 constexpr GLenum map_internal_texture_format(rhi::TextureFormat format)
 {
 	switch (format)
@@ -527,9 +542,9 @@ rhi::Handle<rhi::Texture> GlCoreRhi::create_texture(const rhi::TextureDesc& desc
 	GL_ASSERT;
 	gl_->TexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	GL_ASSERT;
-	gl_->TexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	gl_->TexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, map_texture_wrap(desc.u_wrap));
 	GL_ASSERT;
-	gl_->TexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	gl_->TexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, map_texture_wrap(desc.v_wrap));
 	GL_ASSERT;
 	gl_->TexImage2D(GL_TEXTURE_2D, 0, internal_format, desc.width, desc.height, 0, format, GL_UNSIGNED_BYTE, nullptr);
 	GL_ASSERT;
