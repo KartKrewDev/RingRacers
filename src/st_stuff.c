@@ -377,6 +377,7 @@ static void ST_drawMusicDebug(INT32 *height)
 	char mname[7];
 	UINT16 mflags; // unused
 	boolean looping;
+	UINT8 i = 0;
 
 	const musicdef_t *def;
 	const char *format;
@@ -387,7 +388,7 @@ static void ST_drawMusicDebug(INT32 *height)
 		return;
 	}
 
-	def = S_FindMusicDef(mname);
+	def = S_FindMusicDef(mname, &i);
 	format = S_MusicType();
 
 	ST_pushDebugTimeMS(height, " Elapsed: ", S_GetMusicPosition());
