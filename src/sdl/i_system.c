@@ -963,6 +963,62 @@ void I_SetGamepadIndicatorColor(INT32 device_id, UINT8 red, UINT8 green, UINT8 b
 #endif
 }
 
+void I_GetGamepadGuid(INT32 device_id, char *out, int out_len)
+{
+	SDL_GameController *controller;
+	SDL_Joystick *joystick;
+	SDL_JoystickGUID guid;
+
+	I_Assert(device_id > 0);
+	I_Assert(out != NULL);
+	I_Assert(out_len > 0);
+
+	if (out_len < 33)
+	{
+		out[0] = 0;
+		return;
+	}
+
+	controller = SDL_GameControllerFromInstanceID(device_id - 1);
+	if (controller == NULL)
+	{
+		out[0] = 0;
+		return;
+	}
+	joystick = SDL_GameControllerGetJoystick(controller);
+	if (joystick == NULL)
+	{
+		out[0] = 0;
+		return;
+	}
+
+	guid = SDL_JoystickGetGUID(joystick);
+	SDL_JoystickGetGUIDString(guid, out, out_len);
+}
+
+void I_GetGamepadName(INT32 device_id, char *out, int out_len)
+{
+	SDL_GameController *controller;
+	const char *name;
+	int name_len;
+
+	I_Assert(device_id > 0);
+	I_Assert(out != NULL);
+	I_Assert(out_len > 0);
+
+	controller = SDL_GameControllerFromInstanceID(device_id - 1);
+	if (controller == NULL)
+	{
+		out[0] = 0;
+		return;
+	}
+
+	name = SDL_GameControllerName(controller);
+	name_len = strlen(name) + 1;
+	memcpy(out, name, out_len < name_len ? out_len : name_len);
+	out[out_len - 1] = 0;
+}
+
 //
 // I_StartupInput
 //

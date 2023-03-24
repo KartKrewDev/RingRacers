@@ -38,6 +38,7 @@
 #include "f_finale.h"
 #include "g_game.h"
 #include "hu_stuff.h"
+#include "i_joy.h"
 #include "i_sound.h"
 #include "i_system.h"
 #include "i_time.h"
@@ -174,11 +175,16 @@ boolean capslock = 0;	// gee i wonder what this does.
 
 static void HandleGamepadDeviceAdded(event_t *ev)
 {
+	char guid[64];
+	char name[256];
+
 	I_Assert(ev != NULL);
 	I_Assert(ev->type == ev_gamepad_device_added);
 
 	G_RegisterAvailableGamepad(ev->device);
-	CONS_Debug(DBG_GAMELOGIC, "Registered available gamepad device %d\n", ev->device);
+	I_GetGamepadGuid(ev->device, guid, sizeof(guid));
+	I_GetGamepadName(ev->device, name, sizeof(name));
+	CONS_Alert(CONS_NOTICE, "Gamepad device %d connected: %s (%s)\n", ev->device, name, guid);
 }
 
 static void HandleGamepadDeviceRemoved(event_t *ev)
@@ -188,7 +194,7 @@ static void HandleGamepadDeviceRemoved(event_t *ev)
 	I_Assert(ev->type == ev_gamepad_device_removed);
 
 	G_UnregisterAvailableGamepad(ev->device);
-	CONS_Debug(DBG_GAMELOGIC, "Unregistered available gamepad device %d\n", ev->device);
+	CONS_Alert(CONS_NOTICE, "Gamepad device %d disconnected\n", ev->device);
 
 	// Downstream responders need to update player gamepad assignments, pause, etc
 
