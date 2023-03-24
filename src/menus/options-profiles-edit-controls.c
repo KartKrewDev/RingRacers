@@ -316,6 +316,10 @@ void M_MapProfileControl(event_t *ev)
 	INT32 controln = currentMenu->menuitems[itemOn].mvar1;	// gc_
 	UINT8 where = n;										// By default, we'll save the bind where we're supposed to map.
 	INT32 i;
+	INT32 *DeviceGameKeyDownArray = G_GetDeviceGameKeyDownArray(ev->device);
+
+	if (!DeviceGameKeyDownArray)
+		return;
 
 	//SetDeviceOnPress();	// Update player gamepad assignments
 
@@ -412,6 +416,10 @@ void M_MapProfileControl(event_t *ev)
 
 	// Set menu delay regardless of what we're doing to avoid stupid stuff.
 	M_SetMenuDelay(0);
+
+	// Reset this input so (keyboard keys at least) are not
+	// buffered and caught by menucmd.
+	DeviceGameKeyDownArray[c] = 0;
 
 	// Check if this particular key (c) is already bound in any slot.
 	// If that's the case, simply do nothing.
