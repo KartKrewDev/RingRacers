@@ -963,6 +963,7 @@ static boolean CL_SendJoin(void)
 		}
 		else
 		{
+			// If our keys are garbage (corrupted profile?), fail here instead of when the server boots us, so the player knows what's going on.
 			crypto_eddsa_sign(signature, localProfile->secret_key, awaitingChallenge, 32);
 			if (crypto_eddsa_check(signature, localProfile->public_key, awaitingChallenge, 32) != 0)
 				I_Error("Couldn't self-verify key associated with player %d, profile %d.\nProfile data may be corrupted.", i, cv_lastprofile[i].value); // I guess this is the most reasonable way to catch a malformed key.
@@ -5499,7 +5500,7 @@ static void HandlePacketFromPlayer(SINT8 node)
 				else if (memcmp(knownWhenChallenged[resultsplayer], players[resultsplayer].public_key, sizeof(knownWhenChallenged[resultsplayer])) != 0)
 				{
 					// A player left after the challenge process started, and someone else took their place.
-					// That means haven't received a challenge either.
+					// That means they haven't received a challenge either.
 					CONS_Printf("Has key %s but I remember key %s - node %d player %d split %d, not enforcing\n",
 					GetPrettyRRID(knownWhenChallenged[resultsplayer], true), GetPrettyRRID(players[resultsplayer].public_key, true),
 					playernode[resultsplayer], resultsplayer, players[resultsplayer].splitscreenindex);
