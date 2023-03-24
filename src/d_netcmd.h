@@ -96,6 +96,7 @@ extern consvar_t cv_kartdebugnodes, cv_kartdebugcolorize, cv_kartdebugdirector;
 extern consvar_t cv_spbtest, cv_gptest, cv_reducevfx;
 extern consvar_t cv_kartdebugwaypoints, cv_kartdebugbotpredict;
 extern consvar_t cv_debugrank;
+extern consvar_t cv_battletest;
 
 typedef enum {
 	CV_CAPSULETEST_OFF,
