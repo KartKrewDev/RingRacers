@@ -75,7 +75,7 @@ void FramebufferManager::prepass(Rhi& rhi)
 	}
 	if (main_depth_ == kNullHandle)
 	{
-		main_depth_ = rhi.create_renderbuffer({PixelFormat::kDepth16, current_width, current_height});
+		main_depth_ = rhi.create_renderbuffer({current_width, current_height});
 	}
 
 	if (post_colors_[0] == kNullHandle)

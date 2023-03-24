@@ -111,10 +111,15 @@ void BlitRectPass::prepass(Rhi& rhi)
 	if (!render_pass_)
 	{
 		render_pass_ = rhi.create_render_pass(
-			{std::nullopt,
-			 PixelFormat::kRGBA8,
-			 output_clear_ ? AttachmentLoadOp::kClear : AttachmentLoadOp::kLoad,
-			 AttachmentStoreOp::kStore}
+			{
+				false,
+			 	output_clear_ ? AttachmentLoadOp::kClear : AttachmentLoadOp::kLoad,
+			 	AttachmentStoreOp::kStore,
+				AttachmentLoadOp::kDontCare,
+				AttachmentStoreOp::kDontCare,
+				AttachmentLoadOp::kDontCare,
+				AttachmentStoreOp::kDontCare
+			}
 		);
 	}
 }

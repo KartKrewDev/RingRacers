@@ -524,15 +524,15 @@ rhi::Handle<rhi::Texture> GlCoreRhi::create_texture(const rhi::TextureDesc& desc
 	gl_->BindTexture(GL_TEXTURE_2D, name);
 
 	gl_->TexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	GL_ASSERT
+	GL_ASSERT;
 	gl_->TexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	GL_ASSERT
+	GL_ASSERT;
 	gl_->TexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-	GL_ASSERT
+	GL_ASSERT;
 	gl_->TexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-	GL_ASSERT
+	GL_ASSERT;
 	gl_->TexImage2D(GL_TEXTURE_2D, 0, internal_format, desc.width, desc.height, 0, format, GL_UNSIGNED_BYTE, nullptr);
-	GL_ASSERT
+	GL_ASSERT;
 
 	GlCoreTexture texture;
 	texture.texture = name;
@@ -586,9 +586,9 @@ void GlCoreRhi::update_texture(
 	SRB2_ASSERT(region.x + region.w <= t.desc.width && region.y + region.h <= t.desc.height);
 
 	gl_->ActiveTexture(GL_TEXTURE0);
-	GL_ASSERT
+	GL_ASSERT;
 	gl_->BindTexture(GL_TEXTURE_2D, t.texture);
-	GL_ASSERT
+	GL_ASSERT;
 	gl_->TexSubImage2D(
 		GL_TEXTURE_2D,
 		0,
@@ -600,7 +600,7 @@ void GlCoreRhi::update_texture(
 		type,
 		reinterpret_cast<const void*>(data.data())
 	);
-	GL_ASSERT
+	GL_ASSERT;
 }
 
 rhi::Handle<rhi::Buffer> GlCoreRhi::create_buffer(const rhi::BufferDesc& desc)
@@ -615,13 +615,13 @@ rhi::Handle<rhi::Buffer> GlCoreRhi::create_buffer(const rhi::BufferDesc& desc)
 
 	GLuint name = 0;
 	gl_->GenBuffers(1, &name);
-	GL_ASSERT
+	GL_ASSERT;
 
 	gl_->BindBuffer(target, name);
-	GL_ASSERT
+	GL_ASSERT;
 
 	gl_->BufferData(target, desc.size, nullptr, usage);
-	GL_ASSERT
+	GL_ASSERT;
 
 	GlCoreBuffer buffer;
 	buffer.buffer = name;
@@ -674,9 +674,9 @@ void GlCoreRhi::update_buffer(
 	}
 
 	gl_->BindBuffer(target, b.buffer);
-	GL_ASSERT
+	GL_ASSERT;
 	gl_->BufferSubData(target, offset, data.size(), data.data());
-	GL_ASSERT
+	GL_ASSERT;
 }
 
 rhi::Handle<rhi::UniformSet>
@@ -715,9 +715,9 @@ rhi::Handle<rhi::BindingSet> GlCoreRhi::create_binding_set(
 
 	GLuint vao = 0;
 	gl_->GenVertexArrays(1, &vao);
-	GL_ASSERT
+	GL_ASSERT;
 	gl_->BindVertexArray(vao);
-	GL_ASSERT
+	GL_ASSERT;
 
 	for (auto& attr_layout : pl.desc.vertex_input.attr_layouts)
 	{
@@ -728,7 +728,7 @@ rhi::Handle<rhi::BindingSet> GlCoreRhi::create_binding_set(
 		auto& buffer_layout = pl.desc.vertex_input.buffer_layouts[attr_layout.buffer_index];
 
 		gl_->BindBuffer(GL_ARRAY_BUFFER, buf.buffer);
-		GL_ASSERT
+		GL_ASSERT;
 
 		GLuint attrib_location = pl.attrib_locations[attr_layout.name];
 		VertexAttributeFormat vert_attr_format = rhi::vertex_attribute_format(attr_layout.name);
@@ -738,7 +738,7 @@ rhi::Handle<rhi::BindingSet> GlCoreRhi::create_binding_set(
 		SRB2_ASSERT(vertex_attr_size != 0);
 		uint32_t vertex_buffer_offset = 0; // TODO allow binding set to specify
 		gl_->EnableVertexAttribArray(pl.attrib_locations[attr_layout.name]);
-		GL_ASSERT
+		GL_ASSERT;
 		gl_->VertexAttribPointer(
 			attrib_location,
 			vertex_attr_size,
@@ -747,7 +747,7 @@ rhi::Handle<rhi::BindingSet> GlCoreRhi::create_binding_set(
 			buffer_layout.stride,
 			reinterpret_cast<const void*>(vertex_buffer_offset + attr_layout.offset)
 		);
-		GL_ASSERT
+		GL_ASSERT;
 	}
 
 	binding_set.vao = vao;
@@ -776,9 +776,24 @@ rhi::Handle<rhi::Renderbuffer> GlCoreRhi::create_renderbuffer(const rhi::Renderb
 
 	// Obtain storage up-front.
 	gl_->BindRenderbuffer(GL_RENDERBUFFER, name);
-	GL_ASSERT
-	gl_->RenderbufferStorage(GL_RENDERBUFFER, map_pixel_format(desc.format), desc.width, desc.height);
-	GL_ASSERT
+	GL_ASSERT;
+
+	// For consistency, while RHI does not specify the bit size of the depth or stencil components,
+	// nor if they are packed or separate, each backend should be expected to create a packed depth-stencil
+	// D24S8 format image.
+	// This is despite modern AMD apparently not supporting this format in hardware. It ensures the
+	// depth behavior between backends is the same. We should not brush up against performance issues in practice.
+
+	// - GL Core requires both D24S8 and D32FS8 format support.
+	// - GL 2 via ARB_framebuffer_object requires D24S8. Backend must require this extension.
+	// - GLES 2 via OES_packed_depth_stencil requires D24S8. Backend must require this extension.
+	// - Vulkan requires **one of** D24S8 or D32FS8. The backend must decide which format to use based on caps.
+	//   (Even if D32FS8 is available, D24S8 should be preferred)
+
+	// For reference, D32FS8 at 4k requires 64 MiB of linear memory. D24S8 is 32 MiB.
+
+	gl_->RenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, desc.width, desc.height);
+	GL_ASSERT;
 
 	GlCoreRenderbuffer rb;
 	rb.renderbuffer = name;
@@ -994,9 +1009,9 @@ rhi::Handle<rhi::Pipeline> GlCoreRhi::create_pipeline(const PipelineDesc& desc)
 		GLenum type = GL_ZERO;
 		char name[256];
 		gl_->GetActiveAttrib(program, i, 255, &name_len, &size, &type, name);
-		GL_ASSERT
+		GL_ASSERT;
 		GLint location = gl_->GetAttribLocation(program, name);
-		GL_ASSERT
+		GL_ASSERT;
 		active_attributes.insert({std::string(name), GlCoreActiveUniform {type, static_cast<GLuint>(location)}});
 	}
 
@@ -1036,9 +1051,9 @@ rhi::Handle<rhi::Pipeline> GlCoreRhi::create_pipeline(const PipelineDesc& desc)
 		GLenum type = GL_ZERO;
 		char name[256];
 		gl_->GetActiveUniform(program, i, 255, &name_len, &size, &type, name);
-		GL_ASSERT
+		GL_ASSERT;
 		GLint location = gl_->GetUniformLocation(program, name);
-		GL_ASSERT
+		GL_ASSERT;
 		active_uniforms.insert({std::string(name), GlCoreActiveUniform {type, static_cast<GLuint>(location)}});
 	}
 
@@ -1161,7 +1176,7 @@ void GlCoreRhi::end_graphics(rhi::Handle<rhi::GraphicsContext> handle)
 	graphics_context_generation_ += 1;
 	graphics_context_active_ = false;
 	gl_->Flush();
-	GL_ASSERT
+	GL_ASSERT;
 }
 
 rhi::Handle<rhi::TransferContext> GlCoreRhi::begin_transfer()
@@ -1200,11 +1215,11 @@ void GlCoreRhi::begin_default_render_pass(Handle<GraphicsContext> ctx, bool clea
 	const Rect fb_rect = platform_->get_default_framebuffer_dimensions();
 
 	gl_->BindFramebuffer(GL_FRAMEBUFFER, 0);
-	GL_ASSERT
+	GL_ASSERT;
 	gl_->Disable(GL_SCISSOR_TEST);
-	GL_ASSERT
+	GL_ASSERT;
 	gl_->Viewport(0, 0, fb_rect.w, fb_rect.h);
-	GL_ASSERT
+	GL_ASSERT;
 
 	if (clear)
 	{
@@ -1212,7 +1227,7 @@ void GlCoreRhi::begin_default_render_pass(Handle<GraphicsContext> ctx, bool clea
 		gl_->ClearDepth(1.0f);
 		gl_->ClearStencil(0);
 		gl_->Clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		GL_ASSERT
+		GL_ASSERT;
 	}
 
 	current_render_pass_ = GlCoreRhi::DefaultRenderPassState {};
@@ -1225,65 +1240,73 @@ void GlCoreRhi::begin_render_pass(Handle<GraphicsContext> ctx, const RenderPassB
 
 	SRB2_ASSERT(render_pass_slab_.is_valid(info.render_pass) == true);
 	auto& rp = render_pass_slab_[info.render_pass];
-	SRB2_ASSERT(rp.desc.depth_format.has_value() == info.depth_attachment.has_value());
+	SRB2_ASSERT(rp.desc.use_depth_stencil == info.depth_stencil_attachment.has_value());
 
-	auto fb_itr = framebuffers_.find(GlCoreFramebufferKey {info.color_attachment, info.depth_attachment});
+	auto fb_itr = framebuffers_.find(GlCoreFramebufferKey {info.color_attachment, info.depth_stencil_attachment});
 	if (fb_itr == framebuffers_.end())
 	{
 		// Create a new framebuffer for this color-depth pair
 		GLuint fb_name;
 		gl_->GenFramebuffers(1, &fb_name);
-		GL_ASSERT
+		GL_ASSERT;
 		gl_->BindFramebuffer(GL_FRAMEBUFFER, fb_name);
-		GL_ASSERT
+		GL_ASSERT;
 		fb_itr = framebuffers_
 					 .insert(
-						 {GlCoreFramebufferKey {info.color_attachment, info.depth_attachment},
+						 {GlCoreFramebufferKey {info.color_attachment, info.depth_stencil_attachment},
 						  static_cast<uint32_t>(fb_name)}
 					 )
 					 .first;
 
-		GLuint attachment = GL_COLOR_ATTACHMENT0;
-		auto visitor = srb2::Overload {
-			[&, this](const Handle<Texture>& handle)
-			{
-				SRB2_ASSERT(texture_slab_.is_valid(handle));
-				auto& texture = texture_slab_[handle];
-				gl_->FramebufferTexture2D(GL_FRAMEBUFFER, attachment, GL_TEXTURE_2D, texture.texture, 0);
-				GL_ASSERT
-			},
-			[&, this](const Handle<Renderbuffer>& handle)
-			{
-				SRB2_ASSERT(renderbuffer_slab_.is_valid(handle));
-				auto& renderbuffer = renderbuffer_slab_[handle];
-				gl_->FramebufferRenderbuffer(
-					GL_FRAMEBUFFER,
-					attachment,
-					GL_RENDERBUFFER,
-					renderbuffer.renderbuffer
-				);
-				GL_ASSERT
-			}};
-		std::visit(visitor, info.color_attachment);
-		if (info.depth_attachment)
+		SRB2_ASSERT(texture_slab_.is_valid(info.color_attachment));
+		auto& texture = texture_slab_[info.color_attachment];
+		gl_->FramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, texture.texture, 0);
+		GL_ASSERT;
+
+		if (rp.desc.use_depth_stencil && info.depth_stencil_attachment.has_value())
 		{
-			attachment = GL_DEPTH_ATTACHMENT;
-			std::visit(visitor, *info.depth_attachment);
+			SRB2_ASSERT(renderbuffer_slab_.is_valid(*info.depth_stencil_attachment));
+			auto& renderbuffer = renderbuffer_slab_[*info.depth_stencil_attachment];
+			gl_->FramebufferRenderbuffer(
+				GL_FRAMEBUFFER,
+				GL_DEPTH_ATTACHMENT,
+				GL_RENDERBUFFER,
+				renderbuffer.renderbuffer
+			);
+			GL_ASSERT;
 		}
 	}
 	auto& fb = *fb_itr;
 	gl_->BindFramebuffer(GL_FRAMEBUFFER, fb.second);
-	GL_ASSERT
+	GL_ASSERT;
 	gl_->Disable(GL_SCISSOR_TEST);
-	GL_ASSERT
+	GL_ASSERT;
 
-	if (rp.desc.load_op == rhi::AttachmentLoadOp::kClear)
+	GLint clear_bits = 0;
+	if (rp.desc.color_load_op == rhi::AttachmentLoadOp::kClear)
 	{
 		gl_->ClearColor(info.clear_color.r, info.clear_color.g, info.clear_color.b, info.clear_color.a);
-		gl_->ClearDepth(1.f);
-		gl_->ClearStencil(0);
-		gl_->Clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
-		GL_ASSERT
+		clear_bits |= GL_COLOR_BUFFER_BIT;
+	}
+
+	if (rp.desc.use_depth_stencil)
+	{
+		if (rp.desc.depth_load_op == rhi::AttachmentLoadOp::kClear)
+		{
+			gl_->ClearDepth(1.f);
+			clear_bits |= GL_DEPTH_BUFFER_BIT;
+		}
+		if (rp.desc.stencil_load_op == rhi::AttachmentLoadOp::kClear)
+		{
+			gl_->ClearStencil(0);
+			clear_bits |= GL_STENCIL_BUFFER_BIT;
+		}
+	}
+
+	if (clear_bits != 0)
+	{
+		gl_->Clear(clear_bits);
+		GL_ASSERT;
 	}
 
 	current_render_pass_ = info;
@@ -1308,44 +1331,98 @@ void GlCoreRhi::bind_pipeline(Handle<GraphicsContext> ctx, Handle<Pipeline> pipe
 	auto& desc = pl.desc;
 
 	gl_->UseProgram(pl.program);
-	GL_ASSERT
+	GL_ASSERT;
 
 	gl_->Disable(GL_SCISSOR_TEST);
-	GL_ASSERT
+	GL_ASSERT;
 
-	if (desc.depth_attachment)
+	if (desc.depth_stencil_state)
 	{
-		gl_->Enable(GL_DEPTH_TEST);
-		GL_ASSERT
-		GLenum depth_func = map_compare_func(desc.depth_attachment->func);
-		SRB2_ASSERT(depth_func != GL_ZERO);
-		gl_->DepthFunc(depth_func);
-		GL_ASSERT
-		gl_->DepthMask(desc.depth_attachment->write ? GL_TRUE : GL_FALSE);
-		GL_ASSERT
+		if (desc.depth_stencil_state->depth_test)
+		{
+			gl_->Enable(GL_DEPTH_TEST);
+			GL_ASSERT;
+			GLenum depth_func = map_compare_func(desc.depth_stencil_state->depth_func);
+			SRB2_ASSERT(depth_func != GL_ZERO);
+			gl_->DepthFunc(depth_func);
+			GL_ASSERT;
+			gl_->DepthMask(desc.depth_stencil_state->depth_write ? GL_TRUE : GL_FALSE);
+			GL_ASSERT;
+		}
+		else
+		{
+			gl_->Disable(GL_DEPTH_TEST);
+			GL_ASSERT;
+		}
+
+		if (desc.depth_stencil_state->depth_write)
+		{
+			gl_->DepthMask(GL_TRUE);
+			GL_ASSERT;
+		}
+		else
+		{
+			gl_->DepthMask(GL_FALSE);
+			GL_ASSERT;
+		}
+
+		if (desc.depth_stencil_state->stencil_test)
+		{
+			gl_->Enable(GL_STENCIL_TEST);
+			GL_ASSERT;
+
+			gl_->StencilFuncSeparate(
+				GL_FRONT,
+				map_compare_func(desc.depth_stencil_state->front.stencil_compare),
+				desc.depth_stencil_state->front.reference,
+				desc.depth_stencil_state->front.compare_mask
+			);
+			GL_ASSERT;
+			gl_->StencilFuncSeparate(
+				GL_BACK,
+				map_compare_func(desc.depth_stencil_state->back.stencil_compare),
+				desc.depth_stencil_state->back.reference,
+				desc.depth_stencil_state->back.compare_mask
+			);
+			GL_ASSERT;
+
+			gl_->StencilMaskSeparate(GL_FRONT, desc.depth_stencil_state->front.write_mask);
+			GL_ASSERT;
+			gl_->StencilMaskSeparate(GL_BACK, desc.depth_stencil_state->back.write_mask);
+			GL_ASSERT;
+		}
+		else
+		{
+			gl_->Disable(GL_STENCIL_TEST);
+			GL_ASSERT;
+		}
 	}
 	else
 	{
 		gl_->Disable(GL_DEPTH_TEST);
-		GL_ASSERT
+		GL_ASSERT;
+		gl_->Disable(GL_STENCIL_TEST);
+		GL_ASSERT;
+		gl_->StencilMask(0);
+		GL_ASSERT;
 	}
 
-	if (desc.color_attachment.blend)
+	if (desc.color_state.blend)
 	{
-		rhi::BlendDesc& bl = *desc.color_attachment.blend;
+		rhi::BlendDesc& bl = *desc.color_state.blend;
 		gl_->Enable(GL_BLEND);
-		GL_ASSERT
+		GL_ASSERT;
 		gl_->BlendFuncSeparate(
 			map_blend_factor(bl.source_factor_color),
 			map_blend_factor(bl.dest_factor_color),
 			map_blend_factor(bl.source_factor_alpha),
 			map_blend_factor(bl.dest_factor_alpha)
 		);
-		GL_ASSERT
+		GL_ASSERT;
 		gl_->BlendEquationSeparate(map_blend_function(bl.color_function), map_blend_function(bl.alpha_function));
-		GL_ASSERT
+		GL_ASSERT;
 		gl_->BlendColor(desc.blend_color.r, desc.blend_color.g, desc.blend_color.b, desc.blend_color.a);
-		GL_ASSERT
+		GL_ASSERT;
 	}
 	else
 	{
@@ -1353,28 +1430,28 @@ void GlCoreRhi::bind_pipeline(Handle<GraphicsContext> ctx, Handle<Pipeline> pipe
 	}
 
 	gl_->ColorMask(
-		desc.color_attachment.color_mask.r ? GL_TRUE : GL_FALSE,
-		desc.color_attachment.color_mask.g ? GL_TRUE : GL_FALSE,
-		desc.color_attachment.color_mask.b ? GL_TRUE : GL_FALSE,
-		desc.color_attachment.color_mask.a ? GL_TRUE : GL_FALSE
+		desc.color_state.color_mask.r ? GL_TRUE : GL_FALSE,
+		desc.color_state.color_mask.g ? GL_TRUE : GL_FALSE,
+		desc.color_state.color_mask.b ? GL_TRUE : GL_FALSE,
+		desc.color_state.color_mask.a ? GL_TRUE : GL_FALSE
 	);
-	GL_ASSERT
+	GL_ASSERT;
 
 	GLenum cull_face = map_cull_mode(desc.cull);
 	if (cull_face == GL_NONE)
 	{
 		gl_->Disable(GL_CULL_FACE);
-		GL_ASSERT
+		GL_ASSERT;
 	}
 	else
 	{
 		gl_->Enable(GL_CULL_FACE);
-		GL_ASSERT
+		GL_ASSERT;
 		gl_->CullFace(cull_face);
-		GL_ASSERT
+		GL_ASSERT;
 	}
 	gl_->FrontFace(map_winding(desc.winding));
-	GL_ASSERT
+	GL_ASSERT;
 
 	current_pipeline_ = pipeline;
 	current_primitive_type_ = desc.primitive;
@@ -1419,57 +1496,57 @@ void GlCoreRhi::bind_uniform_set(Handle<GraphicsContext> ctx, uint32_t slot, Han
 			[&](const float& value)
 			{
 				gl_->Uniform1f(pipeline_uniform, value);
-				GL_ASSERT
+				GL_ASSERT;
 			},
 			[&](const glm::vec2& value)
 			{
 				gl_->Uniform2f(pipeline_uniform, value.x, value.y);
-				GL_ASSERT
+				GL_ASSERT;
 			},
 			[&](const glm::vec3& value)
 			{
 				gl_->Uniform3f(pipeline_uniform, value.x, value.y, value.z);
-				GL_ASSERT
+				GL_ASSERT;
 			},
 			[&](const glm::vec4& value)
 			{
 				gl_->Uniform4f(pipeline_uniform, value.x, value.y, value.z, value.w);
-				GL_ASSERT
+				GL_ASSERT;
 			},
 			[&](const int32_t& value)
 			{
 				gl_->Uniform1i(pipeline_uniform, value);
-				GL_ASSERT
+				GL_ASSERT;
 			},
 			[&](const glm::ivec2& value)
 			{
 				gl_->Uniform2i(pipeline_uniform, value.x, value.y);
-				GL_ASSERT
+				GL_ASSERT;
 			},
 			[&](const glm::ivec3& value)
 			{
 				gl_->Uniform3i(pipeline_uniform, value.x, value.y, value.z);
-				GL_ASSERT
+				GL_ASSERT;
 			},
 			[&](const glm::ivec4& value)
 			{
 				gl_->Uniform4i(pipeline_uniform, value.x, value.y, value.z, value.w);
-				GL_ASSERT
+				GL_ASSERT;
 			},
 			[&](const glm::mat2& value)
 			{
 				gl_->UniformMatrix2fv(pipeline_uniform, 1, false, glm::value_ptr(value));
-				GL_ASSERT
+				GL_ASSERT;
 			},
 			[&](const glm::mat3& value)
 			{
 				gl_->UniformMatrix3fv(pipeline_uniform, 1, false, glm::value_ptr(value));
-				GL_ASSERT
+				GL_ASSERT;
 			},
 			[&](const glm::mat4& value)
 			{
 				gl_->UniformMatrix4fv(pipeline_uniform, 1, false, glm::value_ptr(value));
-				GL_ASSERT
+				GL_ASSERT;
 			},
 		};
 		std::visit(visitor, update_data);
@@ -1524,11 +1601,11 @@ void GlCoreRhi::bind_binding_set(Handle<GraphicsContext> ctx, Handle<BindingSet>
 			break;
 		}
 		gl_->ActiveTexture(active_texture);
-		GL_ASSERT
+		GL_ASSERT;
 		gl_->BindTexture(GL_TEXTURE_2D, texture_gl_name);
-		GL_ASSERT
+		GL_ASSERT;
 		gl_->Uniform1i(sampler_uniform_loc, uniform_value);
-		GL_ASSERT
+		GL_ASSERT;
 	}
 }
 
@@ -1571,7 +1648,7 @@ void GlCoreRhi::draw(Handle<GraphicsContext> ctx, uint32_t vertex_count, uint32_
 	SRB2_ASSERT(current_render_pass_.has_value() == true && current_pipeline_.has_value() == true);
 
 	gl_->DrawArrays(map_primitive_mode(current_primitive_type_), first_vertex, vertex_count);
-	GL_ASSERT
+	GL_ASSERT;
 }
 
 void GlCoreRhi::draw_indexed(Handle<GraphicsContext> ctx, uint32_t index_count, uint32_t first_index)
@@ -1592,7 +1669,7 @@ void GlCoreRhi::draw_indexed(Handle<GraphicsContext> ctx, uint32_t index_count, 
 		GL_UNSIGNED_SHORT,
 		(const void*)((size_t)first_index * 2 + index_buffer_offset_)
 	);
-	GL_ASSERT
+	GL_ASSERT;
 }
 
 void GlCoreRhi::read_pixels(Handle<GraphicsContext> ctx, const Rect& rect, PixelFormat format, tcb::span<std::byte> out)
@@ -1617,10 +1694,10 @@ void GlCoreRhi::finish()
 	for (auto it = binding_set_slab_.cbegin(); it != binding_set_slab_.cend(); it++)
 	{
 		gl_->BindVertexArray(0);
-		GL_ASSERT
+		GL_ASSERT;
 		GLuint vao = reinterpret_cast<const GlCoreBindingSet&>(*it).vao;
 		gl_->DeleteVertexArrays(1, &vao);
-		GL_ASSERT
+		GL_ASSERT;
 	}
 	binding_set_slab_.clear();
 	uniform_set_slab_.clear();
@@ -1638,5 +1715,5 @@ void GlCoreRhi::finish()
 	}
 
 	disposal_.clear();
-	GL_ASSERT
+	GL_ASSERT;
 }

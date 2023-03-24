@@ -26,10 +26,13 @@ void ScreenshotPass::prepass(Rhi& rhi)
 	{
 		render_pass_ = rhi.create_render_pass(
 			{
-				std::nullopt,
-				PixelFormat::kRGBA8,
+				false,
 				AttachmentLoadOp::kLoad,
-				AttachmentStoreOp::kStore
+				AttachmentStoreOp::kStore,
+				AttachmentLoadOp::kDontCare,
+				AttachmentStoreOp::kDontCare,
+				AttachmentLoadOp::kDontCare,
+				AttachmentStoreOp::kDontCare
 			}
 		);
 	}

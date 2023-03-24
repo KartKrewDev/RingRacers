@@ -34,6 +34,7 @@ struct Buffer
 {
 };
 
+/// @brief Sampler image source or color image attachment.
 struct Texture
 {
 };
@@ -46,11 +47,10 @@ struct RenderPass
 {
 };
 
+/// @brief Depth-stencil image attachment.
 struct Renderbuffer
 {
 };
-
-using TextureOrRenderbuffer = std::variant<Handle<Texture>, Handle<Renderbuffer>>;
 
 enum class VertexAttributeFormat
 {
@@ -362,14 +362,40 @@ struct BlendDesc
 	BlendFunction alpha_function;
 };
 
-struct PipelineDepthAttachmentDesc
+enum class StencilOp
 {
-	PixelFormat format;
-	CompareFunc func;
-	bool write;
+	kKeep,
+	kZero,
+	kReplace,
+	kIncrementClamp,
+	kDecrementClamp,
+	kInvert,
+	kIncrementWrap,
+	kDecrementWrap
 };
 
-struct PipelineColorAttachmentDesc
+struct PipelineStencilOpStateDesc
+{
+	StencilOp fail;
+	StencilOp pass;
+	StencilOp depth_fail;
+	CompareFunc stencil_compare;
+	uint32_t compare_mask;
+	uint32_t write_mask;
+	uint32_t reference;
+};
+
+struct PipelineDepthStencilStateDesc
+{
+	bool depth_test;
+	bool depth_write;
+	CompareFunc depth_func;
+	bool stencil_test;
+	PipelineStencilOpStateDesc front;
+	PipelineStencilOpStateDesc back;
+};
+
+struct PipelineColorStateDesc
 {
 	PixelFormat format;
 	std::optional<BlendDesc> blend;
@@ -382,9 +408,8 @@ struct PipelineDesc
 	VertexInputDesc vertex_input;
 	UniformInputDesc uniform_input;
 	SamplerInputDesc sampler_input;
-	std::optional<PipelineDepthAttachmentDesc> depth_attachment;
-	// std::optional<StencilAttachmentDesc> stencil_attachment;
-	PipelineColorAttachmentDesc color_attachment;
+	std::optional<PipelineDepthStencilStateDesc> depth_stencil_state;
+	PipelineColorStateDesc color_state;
 	PrimitiveType primitive;
 	CullMode cull;
 	FaceWinding winding;
@@ -393,15 +418,17 @@ struct PipelineDesc
 
 struct RenderPassDesc
 {
-	std::optional<PixelFormat> depth_format;
-	PixelFormat color_format;
-	AttachmentLoadOp load_op;
-	AttachmentStoreOp store_op;
+	bool use_depth_stencil;
+	AttachmentLoadOp color_load_op;
+	AttachmentStoreOp color_store_op;
+	AttachmentLoadOp depth_load_op;
+	AttachmentStoreOp depth_store_op;
+	AttachmentLoadOp stencil_load_op;
+	AttachmentStoreOp stencil_store_op;
 };
 
 struct RenderbufferDesc
 {
-	PixelFormat format;
 	uint32_t width;
 	uint32_t height;
 };
@@ -423,8 +450,8 @@ struct BufferDesc
 struct RenderPassBeginInfo
 {
 	Handle<RenderPass> render_pass;
-	TextureOrRenderbuffer color_attachment;
-	std::optional<TextureOrRenderbuffer> depth_attachment;
+	Handle<Texture> color_attachment;
+	std::optional<Handle<Renderbuffer>> depth_stencil_attachment;
 	glm::vec4 clear_color;
 };
 
