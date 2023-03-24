@@ -351,6 +351,7 @@ void K_RegisterKartStuff(void)
 	CV_RegisterVar(&cv_spbtest);
 	CV_RegisterVar(&cv_gptest);
 	CV_RegisterVar(&cv_capsuletest);
+	CV_RegisterVar(&cv_battletest);
 
 	CV_RegisterVar(&cv_reducevfx);
 }

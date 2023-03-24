@@ -771,7 +771,7 @@ void K_BattleInit(boolean singleplayercontext)
 {
 	size_t i;
 
-	if ((gametyperules & GTR_PRISONS) && singleplayercontext && !battleprisons)
+	if ((gametyperules & GTR_PRISONS) && singleplayercontext && !battleprisons && !cv_battletest.value)
 	{
 		mapthing_t *mt = mapthings;
 		for (i = 0; i < nummapthings; i++, mt++)
