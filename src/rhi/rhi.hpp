@@ -90,8 +90,7 @@ enum class TextureFormat
 	kLuminance,
 	kLuminanceAlpha,
 	kRGB,
-	kRGBA,
-	kDepth
+	kRGBA
 };
 
 enum class CompareFunc

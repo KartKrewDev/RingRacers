@@ -122,8 +122,6 @@ constexpr GLenum map_internal_texture_format(rhi::TextureFormat format)
 		return GL_R8;
 	case rhi::TextureFormat::kLuminanceAlpha:
 		return GL_RG8;
-	case rhi::TextureFormat::kDepth:
-		return GL_DEPTH_COMPONENT24;
 	default:
 		return GL_ZERO;
 	}
@@ -519,10 +517,6 @@ rhi::Handle<rhi::Texture> GlCoreRhi::create_texture(const rhi::TextureDesc& desc
 	GLenum internal_format = map_internal_texture_format(desc.format);
 	SRB2_ASSERT(internal_format != GL_ZERO);
 	GLenum format = GL_RGBA;
-	if (desc.format == TextureFormat::kDepth)
-	{
-		format = GL_DEPTH_COMPONENT;
-	}
 
 	GLuint name = 0;
 	gl_->GenTextures(1, &name);
