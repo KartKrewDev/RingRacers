@@ -6555,8 +6555,6 @@ void NetKeepAlive(void)
 
 	UpdatePingTable();
 
-	UpdateChallenges();
-
 	GetPackets();
 
 #ifdef MASTERSERVER

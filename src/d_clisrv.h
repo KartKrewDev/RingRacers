@@ -133,8 +133,8 @@ typedef enum
 typedef enum
 {
 	SIGN_OK,
-	SIGN_BADTIME,
-	SIGN_BADIP
+	SIGN_BADTIME, // Timestamp differs by too much, suspect reuse of an old challenge.
+	SIGN_BADIP // Asked to sign the wrong IP by an external host, suspect reuse of another server's challenge.
 } shouldsign_t;
 
 #ifdef PACKETDROP
@@ -501,10 +501,10 @@ extern boolean expectChallenge;
 
 // We give clients a chance to verify each other once per race.
 // When is that challenge sent, and when should clients bail if they don't receive the responses?
-#define CHALLENGEALL_START (TICRATE*5)
-#define CHALLENGEALL_KICKUNRESPONSIVE (TICRATE*10)
-#define CHALLENGEALL_SENDRESULTS (TICRATE*15)
-#define CHALLENGEALL_CLIENTCUTOFF (TICRATE*20)
+#define CHALLENGEALL_START (TICRATE*5) // Server sends challenges here.
+#define CHALLENGEALL_KICKUNRESPONSIVE (TICRATE*10) // Server kicks players that haven't submitted signatures here.
+#define CHALLENGEALL_SENDRESULTS (TICRATE*15) // Server waits for kicks to process until here. (Failing players shouldn't be in-game when results are received, or clients get spooked.)
+#define CHALLENGEALL_CLIENTCUTOFF (TICRATE*20) // If challenge process hasn't completed by now, clients who were in-game for CHALLENGEALL_START should leave.
 
 void Command_Ping_f(void);
 extern tic_t connectiontimeout;
