@@ -9636,6 +9636,7 @@ static boolean P_CanFlickerFuse(mobj_t *mobj)
 		case MT_FLOATINGITEM:
 		case MT_POGOSPRING:
 		case MT_KART_LEFTOVER:
+		case MT_EMERALD:
 			if (mobj->fuse <= TICRATE)
 			{
 				return true;
