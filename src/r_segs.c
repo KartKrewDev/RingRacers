@@ -150,130 +150,32 @@ transnum_t R_GetLinedefTransTable(fixed_t alpha)
 	}
 }
 
-void R_RenderMaskedSegRange(drawseg_t *ds, INT32 x1, INT32 x2)
+static boolean R_OverflowTest(void)
+{
+	INT64 overflow_test;
+	overflow_test = (INT64)centeryfrac - (((INT64)dc_texturemid*spryscale)>>FRACBITS);
+	if (overflow_test < 0) overflow_test = -overflow_test;
+	if ((UINT64)overflow_test&0xFFFFFFFF80000000ULL)
+		return true;
+	return false;
+}
+
+static void R_RenderMaskedSegLoop(drawseg_t *ds, INT32 x1, INT32 x2, INT32 texnum, INT32 bmnum, void (*colfunc_2s)(column_t *, column_t *, INT32))
 {
 	size_t pindex;
 	column_t *col, *bmCol = NULL;
-	INT32 lightnum, texnum, bmnum, i;
+	INT32 lightnum, i;
 	fixed_t height, realbot;
 	lightlist_t *light;
 	r_lightlist_t *rlight;
-	void (*colfunc_2s)(column_t *, column_t *, INT32);
 	line_t *ldef;
+	INT32 range;
 	sector_t *front, *back;
 	INT32 times, repeats;
-	INT64 overflow_test;
-	INT32 range;
-	transnum_t transtable = NUMTRANSMAPS;
-	patchalphastyle_t blendmode = 0;
-
-	// Calculate light table.
-	// Use different light tables
-	//   for horizontal / vertical / diagonal. Diagonal?
-	// OPTIMIZE: get rid of LIGHTSEGSHIFT globally
-	curline = ds->curline;
-
-	if (R_IsDebugLine(curline))
-	{
-		const UINT8 thickness = 4;
-		const UINT8 pal = (leveltime % 70 < 35) ? 0x23 : 0x00;
-
-		const INT32 horizon = ((centeryfrac>>4) + 1 + HEIGHTUNIT - 1) >> HEIGHTBITS;
-		const INT32 y = max(0, min(horizon, vid.height - thickness));
-
-		UINT8 *p = &topleft[x1 + (y * vid.width)];
-
-		range = max(x2 - x1, 0) + 1;
-
-		for (i = 0; i < thickness; ++i)
-		{
-			memset(p, pal, range);
-			p += vid.width;
-		}
-
-		return;
-	}
-
-	if (ds->maskedtexturecol == NULL)
-	{
-		return;
-	}
-
-	frontsector = curline->frontsector;
-	backsector = curline->backsector;
-	texnum = R_GetTextureNum(curline->sidedef->midtexture);
-	bmnum = R_GetTextureBrightmap(texnum);
-	windowbottom = windowtop = sprbotscreen = INT32_MAX;
 
 	ldef = curline->linedef;
 
-	transtable = R_GetLinedefTransTable(ldef->alpha);
-	if (transtable == NUMTRANSMAPS)
-	{
-		// Invisible, so don't render
-		return;
-	}
-
-	blendmode = ldef->blendmode;
-	if (blendmode == AST_MODULATE || blendmode == AST_FOG)
-	{
-		// These blend modes don't use translucency
-		transtable = 0;
-	}
-
-	R_CheckDebugHighlight(SW_HI_MIDTEXTURES);
-
-	if (blendmode == AST_FOG)
-	{
-		R_SetColumnFunc(COLDRAWFUNC_FOG, bmnum != 0);
-		windowtop = frontsector->ceilingheight;
-		windowbottom = frontsector->floorheight;
-	}
-	else if (transtable != NUMTRANSMAPS && (blendmode || transtable))
-	{
-		dc_transmap = R_GetBlendTable(blendmode, transtable);
-		R_SetColumnFunc(COLDRAWFUNC_FUZZY, bmnum != 0);
-	}
-	else
-	{
-		R_SetColumnFunc(BASEDRAWFUNC, bmnum != 0);
-	}
-
-	if (curline->polyseg && curline->polyseg->translucency > 0)
-	{
-		if (curline->polyseg->translucency >= NUMTRANSMAPS)
-			return;
-
-		dc_transmap = R_GetTranslucencyTable(curline->polyseg->translucency);
-		R_SetColumnFunc(COLDRAWFUNC_FUZZY, bmnum != 0);
-	}
-
 	range = max(ds->x2-ds->x1, 1);
-	rw_scalestep = ds->scalestep;
-	spryscale = ds->scale1 + (x1 - ds->x1)*rw_scalestep;
-
-	// Texture must be cached before setting colfunc_2s,
-	// otherwise texture[texnum]->holes may be false when it shouldn't be
-	R_CheckTextureCache(texnum);
-	if (bmnum) { R_CheckTextureCache(bmnum); }
-
-	// handle case where multipatch texture is drawn on a 2sided wall, multi-patch textures
-	// are not stored per-column with post info in SRB2
-	if (textures[texnum]->holes)
-	{
-		if (textures[texnum]->flip & 2) // vertically flipped?
-		{
-			colfunc_2s = R_DrawFlippedMaskedColumn;
-			lengthcol = textures[texnum]->height;
-		}
-		else
-			colfunc_2s = R_DrawMaskedColumn; // render the usual 2sided single-patch packed texture
-	}
-	else
-	{
-		colfunc_2s = R_Render2sidedMultiPatchColumn; // render multipatch with no holes (no post_t info)
-		lengthcol = textures[texnum]->height;
-	}
 
 	// Setup lighting based on the presence/lack-of 3D floors.
 	dc_numlights = 0;
@@ -346,11 +248,6 @@ void R_RenderMaskedSegRange(drawseg_t *ds, INT32 x1, INT32 x2)
 			walllights = scalelight[lightnum];
 	}
 
-	maskedtexturecol = ds->maskedtexturecol;
-
-	mfloorclip = ds->sprbottomclip;
-	mceilingclip = ds->sprtopclip;
-
 	if (frontsector->heightsec != -1)
 		front = &sectors[frontsector->heightsec];
 	else
@@ -415,9 +312,7 @@ void R_RenderMaskedSegRange(drawseg_t *ds, INT32 x1, INT32 x2)
 			if (maskedtexturecol[dc_x] != INT16_MAX)
 			{
 				// Check for overflows first
-				overflow_test = (INT64)centeryfrac - (((INT64)dc_texturemid*spryscale)>>FRACBITS);
-				if (overflow_test < 0) overflow_test = -overflow_test;
-				if ((UINT64)overflow_test&0xFFFFFFFF80000000ULL)
+				if (R_OverflowTest())
 				{
 					// Eh, no, go away, don't waste our time
 					if (dc_numlights)
@@ -603,6 +498,141 @@ void R_RenderMaskedSegRange(drawseg_t *ds, INT32 x1, INT32 x2)
 			spryscale += rw_scalestep;
 		}
 	}
+}
+
+static boolean R_CheckBlendMode(const line_t *ldef, INT32 bmnum)
+{
+	transnum_t transtable = NUMTRANSMAPS;
+	patchalphastyle_t blendmode = 0;
+
+	transtable = R_GetLinedefTransTable(ldef->alpha);
+	if (transtable == NUMTRANSMAPS)
+	{
+		// Invisible, so don't render
+		return false;
+	}
+
+	blendmode = ldef->blendmode;
+	if (blendmode == AST_MODULATE || blendmode == AST_FOG)
+	{
+		// These blend modes don't use translucency
+		transtable = 0;
+	}
+
+	if (blendmode == AST_FOG)
+	{
+		R_SetColumnFunc(COLDRAWFUNC_FOG, bmnum != 0);
+		windowtop = frontsector->ceilingheight;
+		windowbottom = frontsector->floorheight;
+	}
+	else if (transtable != NUMTRANSMAPS && (blendmode || transtable))
+	{
+		dc_transmap = R_GetBlendTable(blendmode, transtable);
+		R_SetColumnFunc(COLDRAWFUNC_FUZZY, bmnum != 0);
+	}
+	else
+	{
+		R_SetColumnFunc(BASEDRAWFUNC, bmnum != 0);
+	}
+
+	if (curline->polyseg && curline->polyseg->translucency > 0)
+	{
+		if (curline->polyseg->translucency >= NUMTRANSMAPS)
+			return false;
+
+		dc_transmap = R_GetTranslucencyTable(curline->polyseg->translucency);
+		R_SetColumnFunc(COLDRAWFUNC_FUZZY, bmnum != 0);
+	}
+
+	return true;
+}
+
+void R_RenderMaskedSegRange(drawseg_t *ds, INT32 x1, INT32 x2)
+{
+	INT32 texnum, bmnum, i;
+	void (*colfunc_2s)(column_t *, column_t *, INT32);
+	line_t *ldef;
+	INT32 range;
+
+	// Calculate light table.
+	// Use different light tables
+	//   for horizontal / vertical / diagonal. Diagonal?
+	// OPTIMIZE: get rid of LIGHTSEGSHIFT globally
+	curline = ds->curline;
+
+	if (R_IsDebugLine(curline))
+	{
+		const UINT8 thickness = 4;
+		const UINT8 pal = (leveltime % 70 < 35) ? 0x23 : 0x00;
+
+		const INT32 horizon = ((centeryfrac>>4) + 1 + HEIGHTUNIT - 1) >> HEIGHTBITS;
+		const INT32 y = max(0, min(horizon, vid.height - thickness));
+
+		UINT8 *p = &topleft[x1 + (y * vid.width)];
+
+		range = max(x2 - x1, 0) + 1;
+
+		for (i = 0; i < thickness; ++i)
+		{
+			memset(p, pal, range);
+			p += vid.width;
+		}
+
+		return;
+	}
+
+	if (ds->maskedtexturecol == NULL)
+	{
+		return;
+	}
+
+	frontsector = curline->frontsector;
+	backsector = curline->backsector;
+	texnum = R_GetTextureNum(curline->sidedef->midtexture);
+	bmnum = R_GetTextureBrightmap(texnum);
+	windowbottom = windowtop = sprbotscreen = INT32_MAX;
+
+	ldef = curline->linedef;
+
+	R_CheckDebugHighlight(SW_HI_MIDTEXTURES);
+
+	if (R_CheckBlendMode(ldef, bmnum) == false)
+	{
+		return; // does not render
+	}
+
+	rw_scalestep = ds->scalestep;
+	spryscale = ds->scale1 + (x1 - ds->x1)*rw_scalestep;
+
+	// Texture must be cached before setting colfunc_2s,
+	// otherwise texture[texnum]->holes may be false when it shouldn't be
+	R_CheckTextureCache(texnum);
+	if (bmnum) { R_CheckTextureCache(bmnum); }
+
+	// handle case where multipatch texture is drawn on a 2sided wall, multi-patch textures
+	// are not stored per-column with post info in SRB2
+	if (textures[texnum]->holes)
+	{
+		if (textures[texnum]->flip & 2) // vertically flipped?
+		{
+			colfunc_2s = R_DrawFlippedMaskedColumn;
+			lengthcol = textures[texnum]->height;
+		}
+		else
+			colfunc_2s = R_DrawMaskedColumn; // render the usual 2sided single-patch packed texture
+	}
+	else
+	{
+		colfunc_2s = R_Render2sidedMultiPatchColumn; // render multipatch with no holes (no post_t info)
+		lengthcol = textures[texnum]->height;
+	}
+
+	maskedtexturecol = ds->maskedtexturecol;
+
+	mfloorclip = ds->sprbottomclip;
+	mceilingclip = ds->sprtopclip;
+
+	R_RenderMaskedSegLoop(ds, x1, x2, texnum, bmnum, colfunc_2s);
 
 	R_SetColumnFunc(BASEDRAWFUNC, false);
 }
