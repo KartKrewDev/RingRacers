@@ -130,6 +130,13 @@ typedef enum
 	NUMPACKETTYPE
 } packettype_t;
 
+typedef enum
+{
+	SIGN_OK,
+	SIGN_BADTIME,
+	SIGN_BADIP
+} shouldsign_t;
+
 #ifdef PACKETDROP
 void Command_Drop(void);
 void Command_Droprate(void);
@@ -530,14 +537,16 @@ extern consvar_t cv_allowguests;
 	extern consvar_t cv_nochallenge;
 	extern consvar_t cv_badresults;
 	extern consvar_t cv_noresults;
-	extern consvar_t cv_badjointime;
+	extern consvar_t cv_badtime;
 	extern consvar_t cv_badip;
-	extern consvar_t cv_badchallengetime;
 #endif
 
 // Used in d_net, the only dependence
 tic_t ExpandTics(INT32 low, tic_t basetic);
 void D_ClientServerInit(void);
+
+void GenerateChallenge(uint8_t *buf);
+shouldsign_t ShouldSignChallenge(uint8_t *message);
 
 // Initialise the other field
 void RegisterNetXCmd(netxcmd_t id, void (*cmd_f)(UINT8 **p, INT32 playernum));

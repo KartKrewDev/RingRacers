@@ -183,9 +183,8 @@ consvar_t cv_allowguests = CVAR_INIT ("allowguests", "On", CV_SAVE, CV_OnOff, NU
 	consvar_t cv_nochallenge = CVAR_INIT ("nochallenge", "0", 0, CV_Unsigned, NULL);
 	consvar_t cv_badresults = CVAR_INIT ("badresults", "0", 0, CV_Unsigned, NULL);
 	consvar_t cv_noresults = CVAR_INIT ("noresults", "0", 0, CV_Unsigned, NULL);
-	consvar_t cv_badjointime = CVAR_INIT ("badjointime", "0", 0, CV_Unsigned, NULL);
+	consvar_t cv_badtime = CVAR_INIT ("badtime", "0", 0, CV_Unsigned, NULL);
 	consvar_t cv_badip = CVAR_INIT ("badip", "0", 0, CV_Unsigned, NULL);
-	consvar_t cv_badchallengetime = CVAR_INIT ("badchallengetime", "0", 0, CV_Unsigned, NULL);
 #endif
 
 // engine
@@ -219,6 +218,74 @@ consvar_t cv_playbackspeed = CVAR_INIT ("playbackspeed", "1", 0, playbackspeed_c
 consvar_t cv_httpsource = CVAR_INIT ("http_source", "", CV_SAVE, NULL, NULL);
 
 consvar_t cv_kicktime = CVAR_INIT ("kicktime", "10", CV_SAVE, CV_Unsigned, NULL);
+
+// https://github.com/jameds/holepunch/blob/master/holepunch.c#L75
+static int IsExternalAddress (const void *p)
+{
+	const int a = ((const unsigned char*)p)[0];
+	const int b = ((const unsigned char*)p)[1];
+
+	if (*(const int*)p == ~0)/* 255.255.255.255 */
+		return 0;
+
+	switch (a)
+	{
+		case 0:
+		case 10:
+		case 127:
+			return 0;
+		case 172:
+			return (b & ~15) != 16;/* 16 - 31 */
+		case 192:
+			return b != 168;
+		default:
+			return 1;
+	}
+}
+
+
+void GenerateChallenge(uint8_t *buf)
+{
+	time_t now = time(NULL);
+	csprng(buf, sizeof(&buf)); // Random noise so the client can't guess...
+	memcpy(buf, &now, sizeof(now)); // ...timestamp so we can't reuse it...
+	memcpy(buf + sizeof(now), &ourIP, sizeof(ourIP)); // ...and server IP so others can't reuse it.
+
+	#ifdef DEVELOP
+		if (cv_badtime.value)
+		{
+			CV_AddValue(&cv_badtime, -1);
+			CONS_Alert(CONS_WARNING, "cv_badtime enabled, trashing time in auth message\n");
+			memset(buf, 0, sizeof(now));
+		}
+
+		if (cv_badip.value)
+		{
+			CV_AddValue(&cv_badip, -1);
+			CONS_Alert(CONS_WARNING, "cv_badip enabled, trashing IP in auth message\n");
+			memset(buf + sizeof(now), 0, sizeof(ourIP));
+		}
+	#endif
+}
+
+shouldsign_t ShouldSignChallenge(uint8_t *message)
+{
+	time_t then, now;
+	UINT32 claimedIP, realIP;
+
+	now = time(NULL);
+	memcpy(&then, message, sizeof(then));
+	memcpy(&claimedIP, message + sizeof(then), sizeof(claimedIP));
+	realIP = *I_GetNodeAddressInt(servernode);
+
+	if (abs(now - then) > 60*5)
+		return SIGN_BADTIME;
+
+	if (realIP != claimedIP && IsExternalAddress(&realIP))
+		return SIGN_BADIP;
+
+	return SIGN_OK;
+}
 
 static inline void *G_DcpyTiccmd(void* dest, const ticcmd_t* src, const size_t n)
 {
@@ -815,31 +882,6 @@ static boolean CL_AskFileList(INT32 firstfile)
 	return HSendPacket(servernode, false, 0, sizeof (INT32));
 }
 
-// https://github.com/jameds/holepunch/blob/master/holepunch.c#L75
-static int IsExternalAddress (const void *p)
-{
-	const int a = ((const unsigned char*)p)[0];
-	const int b = ((const unsigned char*)p)[1];
-
-	if (*(const int*)p == ~0)/* 255.255.255.255 */
-		return 0;
-
-	switch (a)
-	{
-		case 0:
-		case 10:
-		case 127:
-			return 0;
-		case 172:
-			return (b & ~15) != 16;/* 16 - 31 */
-		case 192:
-			return b != 168;
-		default:
-			return 1;
-	}
-}
-
-
 /** Sends a special packet to declare how many players in local
   * Used only in arbitratrenetstart()
   * Sends a PT_CLIENTJOIN packet to the server
@@ -887,22 +929,23 @@ static boolean CL_SendJoin(void)
 
 	if (client && netgame)
 	{
-		UINT32 claimedIP;
-		UINT32 realIP = *I_GetNodeAddressInt(servernode);
-		time_t receivedTime;
-		time_t now = time(NULL);
+		shouldsign_t safe = ShouldSignChallenge(awaitingChallenge);
 
-		memcpy(&claimedIP, awaitingChallenge, sizeof(claimedIP));
-		memcpy(&receivedTime, awaitingChallenge + sizeof(claimedIP), sizeof(receivedTime));
-
-		if (realIP != claimedIP && IsExternalAddress(&realIP))
+		if (safe != SIGN_OK)
 		{
-			I_Error("External server IP didn't match the message it sent.\nSomething is very wrong here.");
-		}
-
-		if (abs(now - receivedTime) > 60*5)
-		{
-			I_Error("External server sent a message with an unusual timestamp.\nReceived: %ld\nNow: %ld\nCheck your clocks!", receivedTime, now);
+			if (safe == SIGN_BADIP)
+			{
+				I_Error("External server IP didn't match the message it sent.");
+			}
+			else if (safe == SIGN_BADTIME)
+			{
+				I_Error("External server sent a message with an unusual timestamp.\nCheck your clocks!");
+			}
+			else
+			{
+				I_Error("External server asked for a signature on something strange.\nPlease notify a developer if you've seen this more than once.");
+			}
+			return;
 		}
 	}
 
@@ -4342,6 +4385,7 @@ static void HandleConnect(SINT8 node)
 			else 
 			{
 				CONS_Printf("Adding remote. Doing sigcheck for node %d, ID %s\n", node, GetPrettyRRID(lastReceivedKey[node][i], true));
+				
 				if (IsSplitPlayerOnNodeGuest(node, i)) // We're a GUEST and the server throws out our keys anyway.
 				{
 					sigcheck = 0; // Always succeeds. Yes, this is a success response. C R Y P T O
@@ -4355,7 +4399,6 @@ static void HandleConnect(SINT8 node)
 				{	
 					sigcheck = crypto_eddsa_check(netbuffer->u.clientcfg.challengeResponse[i], lastReceivedKey[node][i], lastSentChallenge[node], 32);
 				}
-
 
 				if (netgame && sigcheck != 0)
 				{
@@ -5320,37 +5363,29 @@ static void HandlePacketFromPlayer(SINT8 node)
 				CL_PrepareDownloadLuaFile();
 			break;
 		case PT_CHALLENGEALL: ; // -Wpedantic
-			if (demo.playback)
+			if (demo.playback || node != servernode) // SERVER should still respond to this to prove its own identity, just not from clients.
 				break;
 
-			if (node != servernode)
-				break;
-			
 			int challengeplayers;
-			time_t now, then;
-			UINT32 claimedIP;
 
 			memcpy(lastChallengeAll, netbuffer->u.challengeall.secret, sizeof(lastChallengeAll));
 
-			now = time(NULL);
-			memcpy(&then, lastChallengeAll, sizeof(then));
+			shouldsign_t safe = ShouldSignChallenge(lastChallengeAll);
 
-			CONS_Printf("Time offset: %d\n", abs(now - then));
-
-			if (abs(now - then) > 300)
+			if (safe != SIGN_OK)
 			{
-				HandleSigfail("Bad challenge - time difference, check clocks");
-				break;
-			}
-
-			memcpy(&claimedIP, lastChallengeAll + sizeof(then), sizeof(claimedIP));
-			UINT32 realIP = *I_GetNodeAddressInt(servernode);
-
-			CONS_Printf("Got IP %u, known IP %u\n", claimedIP, gamemap);
-
-			if (realIP != claimedIP && IsExternalAddress(&realIP))
-			{
-				HandleSigfail("Bad challenge - server claimed wrong IP");
+				if (safe == SIGN_BADIP)
+				{
+					HandleSigfail("External server sent the wrong IP");
+				}
+				else if (safe == SIGN_BADTIME)
+				{
+					HandleSigfail("Bad timestamp - check your clocks");
+				}
+				else
+				{
+					HandleSigfail("Unknown auth error - contact a developer");
+				}
 				break;
 			}
 
@@ -5398,41 +5433,38 @@ static void HandlePacketFromPlayer(SINT8 node)
 			HSendPacket(servernode, true, 0, sizeof(netbuffer->u.responseall));
 			break;
 		case PT_RESPONSEALL:
-			if (demo.playback)
+			if (demo.playback || client)
 				break;
 
-			if (server)
+			int responseplayer;
+			//CONS_Printf("Got PT_RESPONSEALL from node %d, player %d\n", node, nodetoplayer[node]);
+			for (responseplayer = 0; responseplayer < MAXSPLITSCREENPLAYERS; responseplayer++)
 			{
-				int responseplayer;
-				//CONS_Printf("Got PT_RESPONSEALL from node %d, player %d\n", node, nodetoplayer[node]);
-				for (responseplayer = 0; responseplayer < MAXSPLITSCREENPLAYERS; responseplayer++)
-				{
-					int targetplayer = NodeToSplitPlayer(node, responseplayer);
-					if (targetplayer == -1)
-						continue;
+				int targetplayer = NodeToSplitPlayer(node, responseplayer);
+				if (targetplayer == -1)
+					continue;
 
-					if (IsSplitPlayerOnNodeGuest(node, responseplayer))
+				if (IsSplitPlayerOnNodeGuest(node, responseplayer))
+				{
+					CONS_Printf("GUEST on node %d player %d split %d, leaving blank\n", node, targetplayer, responseplayer);
+				}
+				else
+				{
+					CONS_Printf("receiving %s pk %s\n", GetPrettyRRID(lastChallengeAll, true), GetPrettyRRID(players[targetplayer].public_key, true));
+					if (crypto_eddsa_check(netbuffer->u.responseall.signature[responseplayer],
+						players[targetplayer].public_key, lastChallengeAll, sizeof(lastChallengeAll)))
 					{
-						CONS_Printf("GUEST on node %d player %d split %d, leaving blank\n", node, targetplayer, responseplayer);
+						CONS_Alert(CONS_WARNING, "Invalid PT_RESPONSEALL from node %d player %d split %d\n", node, targetplayer, responseplayer);
+						if (playernode[targetplayer] != 0) // NO IDEA.
+						{
+							SendKick(targetplayer, KICK_MSG_SIGFAIL);
+						}
+						break;
 					}
-					else
+					else 
 					{
-						CONS_Printf("receiving %s pk %s\n", GetPrettyRRID(lastChallengeAll, true), GetPrettyRRID(players[targetplayer].public_key, true));
-						if (crypto_eddsa_check(netbuffer->u.responseall.signature[responseplayer],
-							players[targetplayer].public_key, lastChallengeAll, sizeof(lastChallengeAll)))
-						{
-							CONS_Alert(CONS_WARNING, "Invalid PT_RESPONSEALL from node %d player %d split %d\n", node, targetplayer, responseplayer);
-							if (playernode[targetplayer] != 0) // NO IDEA.
-							{
-								SendKick(targetplayer, KICK_MSG_SIGFAIL);
-							}
-							break;
-						}
-						else 
-						{
-							memcpy(lastReceivedSignature[targetplayer], netbuffer->u.responseall.signature[responseplayer], sizeof(lastReceivedSignature[targetplayer]));
-							CONS_Printf("Writing signature %s for node %d player %d split %d\n", GetPrettyRRID(lastReceivedSignature[targetplayer], true), node, targetplayer, responseplayer);
-						}
+						memcpy(lastReceivedSignature[targetplayer], netbuffer->u.responseall.signature[responseplayer], sizeof(lastReceivedSignature[targetplayer]));
+						CONS_Printf("Writing signature %s for node %d player %d split %d\n", GetPrettyRRID(lastReceivedSignature[targetplayer], true), node, targetplayer, responseplayer);
 					}
 				}
 			}
@@ -5444,16 +5476,7 @@ static void HandlePacketFromPlayer(SINT8 node)
 
 			CONS_Printf("Got PT_RESULTSALL\n");
 
-			if (demo.playback)
-				break;
-
-			if (server)
-				break;
-
-			if (node != servernode)
-				break;
-
-			if (!expectChallenge)
+			if (demo.playback || server || node != servernode || !expectChallenge)
 				break;
 
 			CONS_Printf("Checking PT_RESULTSALL\n");
@@ -6335,20 +6358,7 @@ static void UpdateChallenges(void)
 
 			memset(knownWhenChallenged, 0, sizeof(knownWhenChallenged));
 
-			time_t now = time(NULL);
-			#ifdef DEVELOP
-				if (cv_badchallengetime.value)
-				{
-					CV_AddValue(&cv_badchallengetime, -1);
-					CONS_Alert(CONS_WARNING, "cv_badchallengetime enabled, scrubbing time from PT_CHALLENGEALL\n");
-					now = 0;
-				}
-			#endif
-			CONS_Printf("now: %ld, ip: %u\n", now, ourIP);
-			csprng(netbuffer->u.challengeall.secret, sizeof(netbuffer->u.challengeall.secret)); // Random noise so the client can't guess...
-			memcpy(netbuffer->u.challengeall.secret, &now, sizeof(now)); // ...timestamp...
-			memcpy(netbuffer->u.challengeall.secret + sizeof(now), &ourIP, sizeof(ourIP)); // ...and server IP so the server can't reuse it.
-
+			GenerateChallenge(netbuffer->u.challengeall.secret);
 			memcpy(lastChallengeAll, netbuffer->u.challengeall.secret, sizeof(lastChallengeAll));
 
 			memset(lastReceivedSignature, 0, sizeof(lastReceivedSignature));

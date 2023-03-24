@@ -956,9 +956,8 @@ void D_RegisterClientCommands(void)
 		CV_RegisterVar(&cv_nochallenge);
 		CV_RegisterVar(&cv_badresults);
 		CV_RegisterVar(&cv_noresults);
-		CV_RegisterVar(&cv_badjointime);
+		CV_RegisterVar(&cv_badtime);
 		CV_RegisterVar(&cv_badip);
-		CV_RegisterVar(&cv_badchallengetime);
 	#endif
 
 	// HUD

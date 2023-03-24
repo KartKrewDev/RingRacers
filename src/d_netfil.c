@@ -1323,30 +1323,8 @@ void PT_ClientKey(INT32 node)
 	CONS_Printf("Got keys from node %d, %s / %s / %s / %s\n", node, GetPrettyRRID(lastReceivedKey[node][0], true), GetPrettyRRID(lastReceivedKey[node][1], true), GetPrettyRRID(lastReceivedKey[node][2], true), GetPrettyRRID(lastReceivedKey[node][3], true));
 
 	netbuffer->packettype = PT_SERVERCHALLENGE;
-	time_t now = time(NULL);
 
-	#ifdef DEVELOP
-		if (cv_badjointime.value)
-		{
-			CV_AddValue(&cv_badjointime, -1);
-			CONS_Alert(CONS_WARNING, "cv_badjointime enabled, scrubbing time from PT_SERVERCHALLENGE\n");
-			now = 0;
-		}
-	#endif
-
-	// Include our IP and current time in the message to be signed, to guard against signature reuse.
-	csprng(lastSentChallenge[node], sizeof(serverchallenge_pak));
-	memcpy(lastSentChallenge[node], &ourIP, sizeof(ourIP));
-	memcpy(lastSentChallenge[node] + sizeof(ourIP), &now, sizeof(time_t));
-
-	#ifdef DEVELOP
-		if (cv_badip.value)
-		{
-			CV_AddValue(&cv_badip, -1);
-			CONS_Alert(CONS_WARNING, "cv_badip enabled, scrubbing IP from PT_SERVERCHALLENGE\n");
-			memset(lastSentChallenge[node], 0, sizeof(ourIP));
-		}
-	#endif
+	GenerateChallenge(lastSentChallenge[node]);
 
 	memcpy(&netbuffer->u.serverchallenge, lastSentChallenge[node], sizeof(serverchallenge_pak));
 	HSendPacket(node, false, 0, sizeof (serverchallenge_pak));
