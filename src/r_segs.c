@@ -549,42 +549,15 @@ static boolean R_CheckBlendMode(const line_t *ldef, INT32 bmnum)
 
 void R_RenderMaskedSegRange(drawseg_t *ds, INT32 x1, INT32 x2)
 {
-	INT32 texnum, bmnum, i;
+	INT32 texnum, bmnum;
 	void (*colfunc_2s)(column_t *, column_t *, INT32);
 	line_t *ldef;
-	INT32 range;
 
 	// Calculate light table.
 	// Use different light tables
 	//   for horizontal / vertical / diagonal. Diagonal?
 	// OPTIMIZE: get rid of LIGHTSEGSHIFT globally
 	curline = ds->curline;
-
-	if (R_IsDebugLine(curline))
-	{
-		const UINT8 thickness = 4;
-		const UINT8 pal = (leveltime % 70 < 35) ? 0x23 : 0x00;
-
-		const INT32 horizon = ((centeryfrac>>4) + 1 + HEIGHTUNIT - 1) >> HEIGHTBITS;
-		const INT32 y = max(0, min(horizon, vid.height - thickness));
-
-		UINT8 *p = &topleft[x1 + (y * vid.width)];
-
-		range = max(x2 - x1, 0) + 1;
-
-		for (i = 0; i < thickness; ++i)
-		{
-			memset(p, pal, range);
-			p += vid.width;
-		}
-
-		return;
-	}
-
-	if (ds->maskedtexturecol == NULL)
-	{
-		return;
-	}
 
 	frontsector = curline->frontsector;
 	backsector = curline->backsector;
