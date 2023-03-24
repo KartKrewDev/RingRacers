@@ -80,6 +80,9 @@ UINT8 R_DebugLineColor(const line_t *ld)
 	switch (ld->special)
 	{
 	case 2001: // Ring Racers: Finish Line
+		return alt ? 0x1F : 0x49; // black, yellow
+
+	case 2003: // Ring Racers: Respawn Line
 		return alt ? 0x23 : 0x00; // red, white
 	}
 
