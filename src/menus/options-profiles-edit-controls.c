@@ -53,11 +53,14 @@ menuitem_t OPTIONS_ProfileControls[] = {
 	{IT_HEADER, "OPTIONAL CONTROLS", "Take a screenshot, chat...",
 		NULL, {NULL}, 0, 0},
 
-	{IT_CONTROL, "SCREENSHOT", "Also usable with F8 on Keyboard.",
+	{IT_CONTROL, "SCREENSHOT", "Take a high resolution screenshot.",
 		NULL, {.routine = M_ProfileSetControl}, gc_screenshot, 0},
 
-	{IT_CONTROL, "GIF CAPTURE", "Also usable with F9 on Keyboard.",
-		NULL, {.routine = M_ProfileSetControl}, gc_recordgif, 0},
+	{IT_CONTROL, "RECORD VIDEO", "Record a video with sound.",
+		NULL, {.routine = M_ProfileSetControl}, gc_startmovie, 0},
+
+	{IT_CONTROL, "RECORD LOSSLESS", "Record a pixel perfect GIF.",
+		NULL, {.routine = M_ProfileSetControl}, gc_startlossless, 0},
 
 	{IT_CONTROL, "OPEN CHAT", "Opens chatbox in online games.",
 		NULL, {.routine = M_ProfileSetControl}, gc_talk, 0},

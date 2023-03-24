@@ -750,7 +750,8 @@ static const char *gamecontrolname[num_gamecontrols] =
 	"teamtalk",
 	"rankings",
 	"screenshot",
-	"recordgif",
+	"startmovie",
+	"startlossless",
 };
 
 #define NUMKEYNAMES (sizeof (keynames)/sizeof (keyname_t))
@@ -889,20 +890,23 @@ void G_DefineDefaultControls(void)
 {
 	// These defaults are less bad than they used to be.
 	// Keyboard controls
-	gamecontroldefault[gc_up      ][0] = KEY_UPARROW;
-	gamecontroldefault[gc_down    ][0] = KEY_DOWNARROW;
-	gamecontroldefault[gc_left    ][0] = KEY_LEFTARROW;
-	gamecontroldefault[gc_right   ][0] = KEY_RIGHTARROW;
-	gamecontroldefault[gc_a       ][0] = 'f';
-	gamecontroldefault[gc_b       ][0] = 'a';
-	gamecontroldefault[gc_c       ][0] = 'v';
-	gamecontroldefault[gc_x       ][0] = 's';
-	gamecontroldefault[gc_y       ][0] = 'x';
-	gamecontroldefault[gc_z       ][0] = 'c';
-	gamecontroldefault[gc_l       ][0] = KEY_SPACE;
-	gamecontroldefault[gc_r       ][0] = 'd';
-	gamecontroldefault[gc_start   ][0] = KEY_ESCAPE;
-	gamecontroldefault[gc_rankings][0] = KEY_TAB;
+	gamecontroldefault[gc_up           ][0] = KEY_UPARROW;
+	gamecontroldefault[gc_down         ][0] = KEY_DOWNARROW;
+	gamecontroldefault[gc_left         ][0] = KEY_LEFTARROW;
+	gamecontroldefault[gc_right        ][0] = KEY_RIGHTARROW;
+	gamecontroldefault[gc_a            ][0] = 'f';
+	gamecontroldefault[gc_b            ][0] = 'a';
+	gamecontroldefault[gc_c            ][0] = 'v';
+	gamecontroldefault[gc_x            ][0] = 's';
+	gamecontroldefault[gc_y            ][0] = 'x';
+	gamecontroldefault[gc_z            ][0] = 'c';
+	gamecontroldefault[gc_l            ][0] = KEY_SPACE;
+	gamecontroldefault[gc_r            ][0] = 'd';
+	gamecontroldefault[gc_start        ][0] = KEY_ESCAPE;
+	gamecontroldefault[gc_rankings     ][0] = KEY_TAB;
+	gamecontroldefault[gc_screenshot   ][0] = KEY_F8;
+	gamecontroldefault[gc_startmovie   ][0] = KEY_F9;
+	gamecontroldefault[gc_startlossless][0] = KEY_F10;
 
 	// Gamepad controls
 	gamecontroldefault[gc_up   ][1] = KEY_HAT1+0; // D-Pad Up
