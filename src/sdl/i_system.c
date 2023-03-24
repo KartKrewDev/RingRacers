@@ -1046,6 +1046,18 @@ void I_StartupInput(void)
 		return;
 	}
 
+	{
+		char dbpath[1024];
+		sprintf(dbpath, "%s" PATHSEP "gamecontrollerdb.txt", srb2path);
+		SDL_GameControllerAddMappingsFromFile(dbpath);
+	}
+
+	{
+		char dbpath[1024];
+		sprintf(dbpath, "%s" PATHSEP "gamecontrollerdb_user.txt", srb2home);
+		SDL_GameControllerAddMappingsFromFile(dbpath);
+	}
+
 	// Upon initialization, the gamecontroller subsystem will automatically dispatch controller device added events
 	// for controllers connected before initialization.
 }
