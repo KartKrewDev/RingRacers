@@ -1260,6 +1260,7 @@ void GlCoreRhi::begin_render_pass(Handle<GraphicsContext> ctx, const RenderPassB
 
 		SRB2_ASSERT(texture_slab_.is_valid(info.color_attachment));
 		auto& texture = texture_slab_[info.color_attachment];
+		SRB2_ASSERT(texture.desc.format == TextureFormat::kRGBA);
 		gl_->FramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, texture.texture, 0);
 		GL_ASSERT;
 

@@ -47,7 +47,7 @@ static const PipelineDesc kPalettedPipelineDescription = {
 	  // 256x1 palette texture
 	  SamplerName::kSampler1}},
 	std::nullopt,
-	{PixelFormat::kRGBA8, std::nullopt, {true, true, true, true}},
+	{std::nullopt, {true, true, true, true}},
 	PrimitiveType::kTriangles,
 	CullMode::kNone,
 	FaceWinding::kCounterClockwise,
@@ -61,7 +61,7 @@ static const PipelineDesc kUnshadedPipelineDescription = {
 	{{// RGB/A texture
 	  SamplerName::kSampler0}},
 	std::nullopt,
-	{PixelFormat::kRGBA8, std::nullopt, {true, true, true, true}},
+	{std::nullopt, {true, true, true, true}},
 	PrimitiveType::kTriangles,
 	CullMode::kNone,
 	FaceWinding::kCounterClockwise,

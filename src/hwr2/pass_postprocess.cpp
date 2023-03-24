@@ -50,7 +50,7 @@ static const PipelineDesc kWipePipelineDesc = {
 	{{{{UniformName::kProjection, UniformName::kWipeColorizeMode, UniformName::kWipeEncoreSwizzle}}}},
 	{{SamplerName::kSampler0, SamplerName::kSampler1, SamplerName::kSampler2}},
 	std::nullopt,
-	{PixelFormat::kRGBA8, std::nullopt, {true, true, true, true}},
+	{std::nullopt, {true, true, true, true}},
 	PrimitiveType::kTriangles,
 	CullMode::kNone,
 	FaceWinding::kCounterClockwise,

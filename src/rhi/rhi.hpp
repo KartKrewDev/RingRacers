@@ -397,7 +397,6 @@ struct PipelineDepthStencilStateDesc
 
 struct PipelineColorStateDesc
 {
-	PixelFormat format;
 	std::optional<BlendDesc> blend;
 	ColorMask color_mask;
 };

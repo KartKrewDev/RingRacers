@@ -26,8 +26,7 @@ static const PipelineDesc kPipelineDesc = {
 	{{{{UniformName::kProjection}}, {{UniformName::kModelView, UniformName::kTexCoord0Transform}}}},
 	{{SamplerName::kSampler0}},
 	PipelineDepthStencilStateDesc {true, true, CompareFunc::kAlways, false, {}, {}},
-	{PixelFormat::kRGBA8,
-	 BlendDesc {
+	{BlendDesc {
 		 BlendFactor::kSourceAlpha,
 		 BlendFactor::kOneMinusSourceAlpha,
 		 BlendFunction::kAdd,

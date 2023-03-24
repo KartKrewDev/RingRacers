@@ -345,7 +345,7 @@ static PipelineDesc make_pipeline_desc(TwodeePipelineKey key)
 		  {{UniformName::kModelView, UniformName::kTexCoord0Transform, UniformName::kSampler0IsIndexedAlpha}}}},
 		{{SamplerName::kSampler0, SamplerName::kSampler1, SamplerName::kSampler2}},
 		std::nullopt,
-		{PixelFormat::kRGBA8, blend_desc, {true, true, true, true}},
+		{blend_desc, {true, true, true, true}},
 		key.lines ? PrimitiveType::kLines : PrimitiveType::kTriangles,
 		CullMode::kNone,
 		FaceWinding::kCounterClockwise,
