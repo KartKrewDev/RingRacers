@@ -248,10 +248,6 @@ void D_ProcessEvents(void)
 
 		HandleGamepadDeviceEvents(ev);
 
-		// Screenshots over everything so that they can be taken anywhere.
-		if (M_ScreenshotResponder(ev))
-			continue; // ate the event
-
 		if (gameaction == ga_nothing && gamestate == GS_TITLESCREEN)
 		{
 			if (cht_Responder(ev))

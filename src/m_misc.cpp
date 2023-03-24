@@ -1846,24 +1846,16 @@ failure:
 #endif
 }
 
-boolean M_ScreenshotResponder(event_t *ev)
+void M_ScreenshotTicker(void)
 {
-	INT32 ch = -1;
-	if (dedicated || ev->type != ev_keydown)
-		return false;
+	const UINT8 pid = 0; // TODO: should splitscreen players be allowed to use this too?
 
-	ch = ev->data1;
-
-	if (ch >= NUMKEYS && menuactive) // If it's not a keyboard key, then don't allow it in the menus!
-		return false;
-
-	switch (ch)
+	if (M_MenuButtonPressed(pid, MBT_SCREENSHOT))
 	{
-	case KEY_F8:
 		M_ScreenShot();
-		break;
-
-	case KEY_F9:
+	}
+	else if (M_MenuButtonPressed(pid, MBT_STARTMOVIE))
+	{
 		if (moviemode)
 		{
 			M_StopMovie();
@@ -1872,9 +1864,9 @@ boolean M_ScreenshotResponder(event_t *ev)
 		{
 			M_StartMovie(MM_AVRECORDER);
 		}
-		break;
-
-	case KEY_F10:
+	}
+	else if (M_MenuButtonPressed(pid, MBT_STARTLOSSLESS))
+	{
 		if (moviemode)
 		{
 			M_StopMovie();
@@ -1883,13 +1875,7 @@ boolean M_ScreenshotResponder(event_t *ev)
 		{
 			M_StartMovie(static_cast<moviemode_t>(cv_lossless_recorder.value));
 		}
-		break;
-
-	default:
-		return false;
 	}
-
-	return true;
 }
 
 void M_MinimapGenerate(void)
