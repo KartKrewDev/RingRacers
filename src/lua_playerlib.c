@@ -22,6 +22,7 @@
 #include "lua_libs.h"
 #include "lua_hud.h" // hud_running errors
 #include "lua_hook.h" // hook_cmd_running errors
+#include "k_profiles.h" // GetPrettyRRID
 
 static int lib_iteratePlayers(lua_State *L)
 {
@@ -508,7 +509,7 @@ static int player_get(lua_State *L)
 	else if (fastcmp(field,"ping"))
 		lua_pushinteger(L, playerpingtable[( plr - players )]);
 	else if (fastcmp(field, "public_key"))
-		lua_pushstring(L, plr->public_key);
+		lua_pushstring(L, GetPrettyRRID(plr->public_key, false));
 	else {
 		lua_getfield(L, LUA_REGISTRYINDEX, LREG_EXTVARS);
 		I_Assert(lua_istable(L, -1));
