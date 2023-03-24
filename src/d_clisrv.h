@@ -422,11 +422,11 @@ struct doomdata_t
 		INT32 filesneedednum;               //           4 bytes
 		filesneededconfig_pak filesneededcfg; //       ??? bytes
 		UINT32 pingtable[MAXPLAYERS+1];     //          68 bytes
-		clientkey_pak clientkey;				// TODO: Tyron, does anyone take any of these sizes even remotely seriously
-		serverchallenge_pak serverchallenge;	// Are you even going to update this shit, are you even going to remove this comment
-		challengeall_pak challengeall;
-		responseall_pak responseall;
-		resultsall_pak resultsall;
+		clientkey_pak clientkey;				// 32 bytes
+		serverchallenge_pak serverchallenge;	// 64 bytes
+		challengeall_pak challengeall;			// 256 bytes
+		responseall_pak responseall;			// 256 bytes
+		resultsall_pak resultsall;				// 1024 bytes. Also, you really shouldn't trust anything here.
 	} u; // This is needed to pack diff packet types data together
 } ATTRPACK;
 
@@ -501,10 +501,10 @@ extern boolean expectChallenge;
 
 // We give clients a chance to verify each other once per race.
 // When is that challenge sent, and when should clients bail if they don't receive the responses?
-#define CHALLENGEALL_START (TICRATE*10)
-#define CHALLENGEALL_KICKUNRESPONSIVE (TICRATE*12)
-#define CHALLENGEALL_SENDRESULTS (TICRATE*14)
-#define CHALLENGEALL_CLIENTCUTOFF (TICRATE*16)
+#define CHALLENGEALL_START (TICRATE*5)
+#define CHALLENGEALL_KICKUNRESPONSIVE (TICRATE*10)
+#define CHALLENGEALL_SENDRESULTS (TICRATE*15)
+#define CHALLENGEALL_CLIENTCUTOFF (TICRATE*20)
 
 void Command_Ping_f(void);
 extern tic_t connectiontimeout;

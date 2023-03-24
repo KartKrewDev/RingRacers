@@ -1314,6 +1314,8 @@ void PT_FileReceived(void)
 		SV_EndFileSend(doomcom->remotenode);
 }
 
+// Someone knocked on the door with their public key.
+// Give them a challenge to sign in their PT_CLIENTJOIN.
 void PT_ClientKey(INT32 node)
 {
 	clientkey_pak *packet = (void*)&netbuffer->u.clientkey;
