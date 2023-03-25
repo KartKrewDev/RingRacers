@@ -200,6 +200,8 @@ extern struct cursongcredit
 	fixed_t old_x;
 } cursongcredit;
 
+boolean S_PlaysimMusicDisabled(void);
+
 extern musicdef_t *musicdefstart;
 
 void S_LoadMusicDefs(UINT16 wadnum);

@@ -1360,6 +1360,11 @@ static tic_t     pause_starttic;
 
 musicdef_t *musicdefstart = NULL;
 struct cursongcredit cursongcredit; // Currently displayed song credit info
+boolean S_PlaysimMusicDisabled(void)
+{
+	return (demo.rewinding // Don't mess with music while rewinding!
+		|| demo.title); // SRB2Kart: Demos don't interrupt title screen music
+}
 
 //
 // S_FindMusicDef
@@ -1649,7 +1654,7 @@ void S_ShowMusicCredit(void)
 	char *work = NULL;
 	size_t len = 128, worklen;
 
-	if (!cv_songcredits.value || demo.rewinding)
+	if (!cv_songcredits.value || S_PlaysimMusicDisabled())
 		return;
 
 	if (!def) // No definitions
@@ -1796,8 +1801,7 @@ UINT32 S_GetMusicLoopPoint(void)
 
 boolean S_SetMusicPosition(UINT32 position)
 {
-	if (demo.rewinding // Don't mess with music while rewinding!
-		|| demo.title) // SRB2Kart: Demos don't interrupt title screen music
+	if (S_PlaysimMusicDisabled())
 		return false;
 
 	return I_SetSongPosition(position);
@@ -2003,8 +2007,7 @@ boolean S_RecallMusic(UINT16 status, boolean fromfirst)
 	musicstack_t *result;
 	musicstack_t *entry;
 
-	if (demo.rewinding // Don't mess with music while rewinding!
-		|| demo.title) // SRB2Kart: Demos don't interrupt title screen music
+	if (S_PlaysimMusicDisabled())
 		return false;
 
 	entry = Z_Calloc(sizeof (*result), PU_MUSIC, NULL);
@@ -2241,9 +2244,7 @@ void S_ChangeMusicEx(const char *mmusic, UINT16 mflags, boolean looping, UINT32 
 		&fadeinms
 	};
 
-	if (S_MusicDisabled()
-		|| demo.rewinding // Don't mess with music while rewinding!
-		|| demo.title) // SRB2Kart: Demos don't interrupt title screen music
+	if (S_MusicDisabled() || S_PlaysimMusicDisabled())
 		return;
 
 	strncpy(newmusic, mmusic, 7);
@@ -2323,9 +2324,7 @@ void S_ChangeMusicSpecial (const char *mmusic)
 
 void S_StopMusic(void)
 {
-	if (!I_SongPlaying()
-		|| demo.rewinding // Don't mess with music while rewinding!
-		|| demo.title) // SRB2Kart: Demos don't interrupt title screen music
+	if (!I_SongPlaying() || S_PlaysimMusicDisabled())
 		return;
 
 	if (strcasecmp(music_name, mapmusname) == 0)
@@ -2431,8 +2430,7 @@ void S_StopFadingMusic(void)
 
 boolean S_FadeMusicFromVolume(UINT8 target_volume, INT16 source_volume, UINT32 ms)
 {
-	if (demo.rewinding // Don't mess with music while rewinding!
-		|| demo.title) // SRB2Kart: Demos don't interrupt title screen music
+	if (S_PlaysimMusicDisabled())
 		return false;
 
 	if (source_volume < 0)
@@ -2443,8 +2441,7 @@ boolean S_FadeMusicFromVolume(UINT8 target_volume, INT16 source_volume, UINT32 m
 
 boolean S_FadeOutStopMusic(UINT32 ms)
 {
-	if (demo.rewinding // Don't mess with music while rewinding!
-		|| demo.title) // SRB2Kart: Demos don't interrupt title screen music
+	if (S_PlaysimMusicDisabled())
 		return false;
 
 	return I_FadeSong(0, ms, &S_StopMusic);
