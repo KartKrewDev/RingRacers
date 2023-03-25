@@ -426,10 +426,14 @@ extern menuitem_t MISC_ChallengesStatsDummyMenu[];
 extern menu_t MISC_ChallengesDef;
 extern menu_t MISC_StatisticsDef;
 
+extern menuitem_t MISC_SoundTest[];
+extern menu_t MISC_SoundTestDef;
+
 // We'll need this since we're gonna have to dynamically enable and disable options depending on which state we're in.
 typedef enum
 {
 	mpause_addons = 0,
+	mpause_stereo,
 	mpause_changegametype,
 	mpause_switchmap,
 	mpause_restartmap,
@@ -1202,6 +1206,9 @@ extern struct statisticsmenu_s {
 void M_Statistics(INT32 choice);
 void M_DrawStatistics(void);
 boolean M_StatisticsInputs(INT32 ch);
+
+void M_SoundTest(INT32 choice);
+void M_DrawSoundTest(void);
 
 // These defines make it a little easier to make menus
 #define DEFAULTMENUSTYLE(source, prev, x, y)\

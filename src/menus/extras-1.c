@@ -22,6 +22,9 @@ menuitem_t EXTRAS_Main[] =
 
 	{IT_STRING | IT_CALL, NULL, NULL,
 		NULL, {.routine = M_ReplayHut}, 0, 0},
+
+	{IT_STRING | IT_CALL, NULL, NULL,
+		NULL, {.routine = M_SoundTest}, 0, 0},
 };
 
 // the extras menu essentially reuses the options menu stuff
@@ -49,6 +52,8 @@ struct extrasmenu_s extrasmenu;
 
 void M_InitExtras(INT32 choice)
 {
+	UINT32 maxvalid = 2;
+
 	(void)choice;
 
 	extrasmenu.ticker = 0;
@@ -82,6 +87,7 @@ void M_InitExtras(INT32 choice)
 		EXTRAS_Main[3].status = IT_STRING | IT_CALL;
 		EXTRAS_Main[3].text = "Egg TV";
 		EXTRAS_Main[3].tooltip = "Watch the replays you've saved throughout your many races & battles!";
+		maxvalid = 3;
 	}
 	else
 	{
@@ -89,7 +95,25 @@ void M_InitExtras(INT32 choice)
 		EXTRAS_Main[3].text = EXTRAS_Main[3].tooltip = "???";
 		if (EXTRAS_MainDef.lastOn == 3)
 		{
-			EXTRAS_MainDef.lastOn = 2;
+			EXTRAS_MainDef.lastOn = maxvalid;
+		}
+	}
+
+	// Stereo Mode
+	if (M_SecretUnlocked(SECRET_SOUNDTEST, true))
+	{
+		EXTRAS_Main[4].status = IT_STRING | IT_CALL;
+		EXTRAS_Main[4].text = "Stereo Mode";
+		EXTRAS_Main[4].tooltip = "You can listen to your favourite tunes here!";
+		maxvalid = 4;
+	}
+	else
+	{
+		EXTRAS_Main[4].status = IT_STRING | IT_TRANSTEXT;
+		EXTRAS_Main[4].text = EXTRAS_Main[4].tooltip = "???";
+		if (EXTRAS_MainDef.lastOn == 4)
+		{
+			EXTRAS_MainDef.lastOn = maxvalid;
 		}
 	}
 

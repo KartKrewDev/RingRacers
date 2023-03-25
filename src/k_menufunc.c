@@ -382,7 +382,7 @@ void M_PlayMenuJam(void)
 		return;
 	}
 
-	if (Playing())
+	if (Playing() || soundtest.playing)
 		return;
 
 	if (refMenu != NULL && refMenu->music != NULL)

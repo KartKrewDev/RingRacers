@@ -1360,9 +1360,108 @@ static tic_t     pause_starttic;
 
 musicdef_t *musicdefstart = NULL;
 struct cursongcredit cursongcredit; // Currently displayed song credit info
+struct soundtest soundtest; // Sound Test (sound test)
+
+void S_UpdateSoundTestDef(boolean reverse, boolean skipnull)
+{
+	musicdef_t *newdef;
+
+	// Naive implementation for now.
+
+	newdef = (soundtest.current != NULL
+		&& (skipnull == false || soundtest.current->next != NULL))
+			? soundtest.current->next
+			: musicdefstart;
+
+	if (reverse == false)
+	{
+		// Due to how musicdefs are populated, we have to traverse backwards when attempting forwards.
+		musicdef_t *def;
+
+		if (soundtest.current == musicdefstart)
+		{
+			newdef = NULL;
+			if (skipnull == false)
+			{
+				goto conclusion;
+			}
+		}
+
+		for (def = musicdefstart; def; def = def->next)
+		{
+			if (def->next != soundtest.current)
+				continue;
+
+			newdef = def;
+			break;
+		}
+	}
+
+conclusion:
+	soundtest.current = newdef;
+	soundtest.currenttrack = 0;
+
+	if (soundtest.playing == true)
+	{
+		if (newdef == NULL)
+		{
+			S_SoundTestStop(false);
+		}
+		else
+		{
+			S_SoundTestPlay();
+		}
+	}
+}
+
+void S_SoundTestPlay(void)
+{
+	soundtest.privilegedrequest = true;
+
+	S_StopMusic();
+
+	soundtest.playing = true;
+
+	S_ChangeMusicInternal(soundtest.current->name[soundtest.currenttrack], true);
+	S_ShowMusicCredit();
+
+	soundtest.privilegedrequest = false;
+}
+
+void S_SoundTestStop(boolean pause)
+{
+	if (soundtest.playing == false)
+	{
+		return;
+	}
+
+	soundtest.privilegedrequest = true;
+
+	S_StopMusic();
+	cursongcredit.def = NULL;
+
+	if (pause == false)
+	{
+		soundtest.playing = false;
+		soundtest.current = NULL;
+		soundtest.currenttrack = 0;
+
+		if (gamestate == GS_LEVEL)
+		{
+			P_RestoreMusic(&players[consoleplayer]);
+		}
+	}
+
+	soundtest.privilegedrequest = false;
+}
+
 boolean S_PlaysimMusicDisabled(void)
 {
-	return (demo.rewinding // Don't mess with music while rewinding!
+	if (soundtest.privilegedrequest)
+		return false;
+
+	return (soundtest.playing // Ring Racers: Stereo Mode
+		|| demo.rewinding // Don't mess with music while rewinding!
 		|| demo.title); // SRB2Kart: Demos don't interrupt title screen music
 }
 

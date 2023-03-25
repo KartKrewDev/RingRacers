@@ -15,6 +15,9 @@ menuitem_t PAUSE_Main[] =
 	{IT_STRING | IT_CALL, "ADDONS", "M_ICOADD",
 		NULL, {.routine = M_Addons}, 0, 0},
 
+	{IT_STRING | IT_CALL, "STEREO MODE", "M_ICOSTM",
+		NULL, {.routine = M_SoundTest}, 0, 0},
+
 	{IT_STRING | IT_KEYHANDLER, "GAMETYPE", "M_ICOGAM",
 		NULL, {.routine = M_HandlePauseMenuGametype}, 0, 0},
 
@@ -111,6 +114,7 @@ void M_OpenPauseMenu(void)
 	// By default, disable anything sensitive:
 
 	PAUSE_Main[mpause_addons].status = IT_DISABLED;
+	PAUSE_Main[mpause_stereo].status = IT_DISABLED;
 	PAUSE_Main[mpause_changegametype].status = IT_DISABLED;
 	PAUSE_Main[mpause_switchmap].status = IT_DISABLED;
 	PAUSE_Main[mpause_restartmap].status = IT_DISABLED;
@@ -126,6 +130,11 @@ void M_OpenPauseMenu(void)
 	PAUSE_Main[mpause_psetup].status = IT_DISABLED;
 
 	Dummymenuplayer_OnChange();	// Make sure the consvar is within bounds of the amount of splitscreen players we have.
+
+	if (M_SecretUnlocked(SECRET_SOUNDTEST, true))
+	{
+		PAUSE_Main[mpause_stereo].status = IT_STRING | IT_CALL;
+	}
 
 	if (K_CanChangeRules(false))
 	{

@@ -5925,3 +5925,54 @@ void M_DrawStatistics(void)
 }
 
 #undef STATSSTEP
+
+void M_DrawSoundTest(void)
+{
+	INT32 x = currentMenu->x - menutransition.tics*48, y, i, w, cursorx = 0;
+
+	if (gamestate == GS_MENU)
+	{
+		patch_t *bg = W_CachePatchName("M_XTRABG", PU_CACHE);
+		V_DrawFixedPatch(0, 0, FRACUNIT, 0, bg, NULL);
+	}
+
+	y = 50;
+
+	if (soundtest.current != NULL)
+	{
+		V_DrawThinString(x, y, (soundtest.playing ? highlightflags : 0)|V_ALLOWLOWERCASE|V_6WIDTHSPACE, soundtest.current->title);
+		V_DrawThinString(x, (y += 10), V_ALLOWLOWERCASE|V_6WIDTHSPACE, va("%d", soundtest.currenttrack));
+		if (soundtest.current->author)
+			V_DrawThinString(x, (y += 10), V_ALLOWLOWERCASE|V_6WIDTHSPACE, soundtest.current->author);
+		if (soundtest.current->source)
+			V_DrawThinString(x, (y += 10), V_ALLOWLOWERCASE|V_6WIDTHSPACE, soundtest.current->source);
+		if (soundtest.current->composers)
+			V_DrawThinString(x, (y += 10), V_ALLOWLOWERCASE|V_6WIDTHSPACE, soundtest.current->composers);
+	}
+	else
+	{
+		const char *sfxstr = (cv_soundtest.value) ? S_sfx[cv_soundtest.value].name : "N/A";
+		V_DrawThinString(x, y, V_ALLOWLOWERCASE|V_6WIDTHSPACE, sfxstr);
+		V_DrawThinString(x, (y += 10), V_ALLOWLOWERCASE|V_6WIDTHSPACE, va("%d", cv_soundtest.value));
+	}
+
+	y = currentMenu->y;
+
+	for (i = 0; i < currentMenu->numitems; i++)
+	{
+		w = V_ThinStringWidth(currentMenu->menuitems[i].text, V_6WIDTHSPACE);
+		if (i == itemOn)
+		{
+			cursorx = x + w/2;
+			V_DrawThinString(x, y, V_6WIDTHSPACE|highlightflags, currentMenu->menuitems[i].text);
+		}
+		else
+		{
+			V_DrawThinString(x, y, V_6WIDTHSPACE, currentMenu->menuitems[i].text);
+		}
+		x += w + 8;
+	}
+
+	V_DrawCharacter(cursorx - 4, currentMenu->y - 8 - (skullAnimCounter/5),
+		'\x1B' | V_SNAPTOTOP|highlightflags, false); // up arrow
+}
