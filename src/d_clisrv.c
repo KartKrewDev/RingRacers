@@ -4236,23 +4236,25 @@ static size_t TotalTextCmdPerTic(tic_t tic)
 	return total;
 }
 
-static boolean IsSplitPlayerOnNodeGuest(int node, int split)
-{
-	char allZero[32];
-	memset(allZero, 0, 32);
+#ifdef SIGNGAMETRAFFIC
+	static boolean IsSplitPlayerOnNodeGuest(int node, int split)
+	{
+		char allZero[32];
+		memset(allZero, 0, 32);
 
-	if (split == 0)
-		return (memcmp(players[nodetoplayer[node]].public_key, allZero, 32) == 0);
-	else if (split == 1)
-		return (memcmp(players[nodetoplayer2[node]].public_key, allZero, 32) == 0);
-	else if (split == 2)
-		return (memcmp(players[nodetoplayer3[node]].public_key, allZero, 32) == 0);
-	else if (split == 3)
-		return (memcmp(players[nodetoplayer4[node]].public_key, allZero, 32) == 0);
-	else
-		I_Error("IsSplitPlayerOnNodeGuest: Out of bounds");
-	return false; // unreachable
-}
+		if (split == 0)
+			return (memcmp(players[nodetoplayer[node]].public_key, allZero, 32) == 0);
+		else if (split == 1)
+			return (memcmp(players[nodetoplayer2[node]].public_key, allZero, 32) == 0);
+		else if (split == 2)
+			return (memcmp(players[nodetoplayer3[node]].public_key, allZero, 32) == 0);
+		else if (split == 3)
+			return (memcmp(players[nodetoplayer4[node]].public_key, allZero, 32) == 0);
+		else
+			I_Error("IsSplitPlayerOnNodeGuest: Out of bounds");
+		return false; // unreachable
+	}
+#endif
 
 static boolean IsPlayerGuest(int player)
 {
