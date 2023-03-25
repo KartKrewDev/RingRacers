@@ -441,7 +441,7 @@ anchor_top (mobj_t *top)
 static void
 loose_think (mobj_t *top)
 {
-	const fixed_t thrustamount = top->movefactor;
+	const fixed_t thrustamount = top->movefactor / 2;
 	const angle_t momangle = K_MomentumAngle(top);
 
 	angle_t ang = top->angle;
