@@ -1599,10 +1599,14 @@ void R_RenderPlayerView(void)
 			Mask_Pre(&masks[nummasks - 1]);
 			curdrawsegs = ds_p;
 
+			portalskipprecipmobjs = portal->isskybox;
+
 			// Render the BSP from the new viewpoint, and clip
 			// any sprites with the new clipsegs and window.
 			R_RenderBSPNode((INT32)numnodes - 1);
 			Mask_Post(&masks[nummasks - 1]);
+
+			portalskipprecipmobjs = false;
 
 			R_ClipSprites(ds_p - (masks[nummasks - 1].drawsegs[1] - masks[nummasks - 1].drawsegs[0]), portal);
 

@@ -21,6 +21,7 @@
 #include "r_sky.h"
 
 UINT8 portalrender;			/**< When rendering a portal, it establishes the depth of the current BSP traversal. */
+boolean portalskipprecipmobjs = false;
 
 // Linked list for portals.
 portal_t *portal_base, *portal_cap;
@@ -126,6 +127,8 @@ static portal_t* Portal_Add (const INT16 x1, const INT16 x2)
 
 	// Increase recursion level.
 	portal->pass = portalrender+1;
+
+	portal->isskybox = false;
 
 	return portal;
 }
@@ -309,6 +312,7 @@ void Portal_AddSkybox
 		portal->viewz += viewz * -mh->skybox_scalez;
 
 	portal->clipline = -1;
+	portal->isskybox = true;
 }
 
 /** Creates portals for the currently existing sky visplanes.
