@@ -4390,8 +4390,11 @@ static void HandleConnect(SINT8 node)
 			else // Remote player, gotta check their signature.
 			{
 				CONS_Printf("Adding remote. Doing sigcheck for node %d, ID %s\n", node, GetPrettyRRID(lastReceivedKey[node][i], true));
+
+				char allZero[32];
+				memset(allZero, 0, sizeof(allZero));
 				
-				if (IsSplitPlayerOnNodeGuest(node, i)) // We're a GUEST and the server throws out our keys anyway.
+				if (memcmp(lastReceivedKey[node][i], allZero, sizeof(allZero)) == 0) // IsSplitPlayerOnNodeGuest isn't appropriate here, they're not in-game yet!
 				{
 					if (!cv_allowguests.value)
 					{
