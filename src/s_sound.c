@@ -2623,10 +2623,18 @@ static void Command_RestartAudio_f(void)
 
 	S_StartSound(NULL, sfx_strpst);
 
-	if (Playing()) // Gotta make sure the player is in a level
+	if (gamestate == GS_LEVEL) // Gotta make sure the player is in a level
+	{
 		P_RestoreMusic(&players[consoleplayer]);
+	}
+	else if (gamestate == GS_TITLESCREEN)
+	{
+		S_ChangeMusicInternal("_title", looptitle);
+	}
 	else
-		S_ChangeMusicInternal("titles", looptitle);
+	{
+		M_PlayMenuJam();
+	}
 }
 
 static void Command_PlaySound(void)
@@ -2726,7 +2734,7 @@ void GameDigiMusic_OnChange(void)
 		I_StartupSound(); // will return early if initialised
 		I_InitMusic();
 
-		if (Playing())
+		if (gamestate == GS_LEVEL)
 		{
 			P_RestoreMusic(&players[consoleplayer]);
 		}
