@@ -6110,6 +6110,8 @@ const char *COLOR_ENUMS[] = {
 	"POSNUM_BEST4",
 	"POSNUM_BEST5",
 	"POSNUM_BEST6",
+	
+	"INTERMISSION",
 };
 
 const char *const KARTHUD_LIST[] = {
