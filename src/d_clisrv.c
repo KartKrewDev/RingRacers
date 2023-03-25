@@ -247,7 +247,7 @@ static int IsExternalAddress (const void *p)
 // Generate a message for an authenticating client to sign, with some guarantees about who we are.
 void GenerateChallenge(uint8_t *buf)
 {
-	time_t now = time(NULL);
+	UINT64 now = time(NULL);
 	csprng(buf, sizeof(&buf)); // Random noise as a baseline, but...
 	memcpy(buf, &now, sizeof(now)); // Timestamp limits the reuse window.
 	memcpy(buf + sizeof(now), &ourIP, sizeof(ourIP)); // IP prevents captured signatures from being used elsewhere.
@@ -273,16 +273,15 @@ void GenerateChallenge(uint8_t *buf)
 // Don't sign anything that wasn't generated just for us!
 shouldsign_t ShouldSignChallenge(uint8_t *message)
 {
-	time_t then, now;
+	UINT64 then, now;
 	UINT32 claimedIP, realIP;
 
 	now = time(NULL);
 	memcpy(&then, message, sizeof(then));
 	memcpy(&claimedIP, message + sizeof(then), sizeof(claimedIP));
-	CONS_Printf("servernode: %d\n", servernode);
 	realIP = I_GetNodeAddressInt(servernode);
 
-	if (abs(now - then) > 60*5)
+	if ((max(now, then) - min(now, then)) > 60*5)
 		return SIGN_BADTIME;
 
 	if (realIP != claimedIP && IsExternalAddress(&realIP))
