@@ -22,6 +22,8 @@ class StaticVec
 	size_t size_ = 0;
 
 public:
+	using value_type = T;
+
 	constexpr StaticVec() {}
 
 	StaticVec(const StaticVec& rhs)
