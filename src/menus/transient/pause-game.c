@@ -64,6 +64,7 @@ menu_t PAUSE_MainDef = {
 	PAUSE_Main,
 	0, 0,
 	0, 0,
+	0,
 	NULL,
 	1, 10,	// For transition with some menus!
 	M_DrawPause,

@@ -33,6 +33,7 @@ menu_t OPTIONS_DataDiscordDef = {
 	OPTIONS_DataDiscord,
 	48, 80,
 	SKINCOLOR_BLUEBERRY, 0,
+	0,
 	NULL,
 	2, 5,
 	M_DrawGenericOptions,

@@ -45,6 +45,7 @@ menu_t OPTIONS_HUDOnlineDef = {
 	OPTIONS_HUDOnline,
 	48, 80,
 	SKINCOLOR_SUNSLAM, 0,
+	0,
 	NULL,
 	2, 5,
 	M_DrawGenericOptions,

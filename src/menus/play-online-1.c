@@ -37,6 +37,7 @@ menu_t PLAY_MP_OptSelectDef = {
 	PLAY_MP_OptSelect,
 	0, 0,
 	0, 0,
+	0,
 	"NETMD2",
 	-1, 1,
 	M_DrawMPOptSelect,

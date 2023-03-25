@@ -55,6 +55,7 @@ menu_t OPTIONS_GameplayItemsDef = {
 	OPTIONS_GameplayItems,
 	14, 40,
 	SKINCOLOR_SCARLET, 0,
+	0,
 	NULL,
 	2, 5,
 	M_DrawItemToggles,

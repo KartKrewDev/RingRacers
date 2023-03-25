@@ -36,6 +36,7 @@ menu_t OPTIONS_DataDef = {
 	OPTIONS_Data,
 	48, 80,
 	SKINCOLOR_BLUEBERRY, 0,
+	0,
 	NULL,
 	2, 5,
 	M_DrawGenericOptions,

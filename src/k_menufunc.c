@@ -902,8 +902,7 @@ static void M_HandleMenuInput(void)
 	lr = menucmd[pid].dpad_lr;
 	ud = menucmd[pid].dpad_ud;
 
-	// If we ever add a second horizontal menu, make it a menu_t property, not an extra check.
-	if (currentMenu == &PAUSE_PlaybackMenuDef)
+	if (currentMenu->behaviourflags & MBF_UD_LR_FLIPPED)
 	{
 		ud = menucmd[pid].dpad_lr;
 		lr = -menucmd[pid].dpad_ud;
@@ -916,14 +915,14 @@ static void M_HandleMenuInput(void)
 	// Keys usable within menu
 	if (ud > 0)
 	{
-		if (M_NextOpt())
+		if (M_NextOpt() && !(currentMenu->behaviourflags & MBF_SOUNDLESS))
 			S_StartSound(NULL, sfx_s3k5b);
 		M_SetMenuDelay(pid);
 		return;
 	}
 	else if (ud < 0)
 	{
-		if (M_PrevOpt())
+		if (M_PrevOpt() && !(currentMenu->behaviourflags & MBF_SOUNDLESS))
 			S_StartSound(NULL, sfx_s3k5b);
 		M_SetMenuDelay(pid);
 		return;
@@ -933,7 +932,8 @@ static void M_HandleMenuInput(void)
 		if (routine && ((currentMenu->menuitems[itemOn].status & IT_TYPE) == IT_ARROWS
 			|| (currentMenu->menuitems[itemOn].status & IT_TYPE) == IT_CVAR))
 		{
-			S_StartSound(NULL, sfx_s3k5b);
+			if (!(currentMenu->behaviourflags & MBF_SOUNDLESS))
+				S_StartSound(NULL, sfx_s3k5b);
 			routine(0);
 			M_SetMenuDelay(pid);
 		}
@@ -945,7 +945,8 @@ static void M_HandleMenuInput(void)
 		if (routine && ((currentMenu->menuitems[itemOn].status & IT_TYPE) == IT_ARROWS
 			|| (currentMenu->menuitems[itemOn].status & IT_TYPE) == IT_CVAR))
 		{
-			S_StartSound(NULL, sfx_s3k5b);
+			if (!(currentMenu->behaviourflags & MBF_SOUNDLESS))
+				S_StartSound(NULL, sfx_s3k5b);
 			routine(1);
 			M_SetMenuDelay(pid);
 		}
@@ -959,7 +960,8 @@ static void M_HandleMenuInput(void)
 
 		if (routine)
 		{
-			S_StartSound(NULL, sfx_s3k5b);
+			if (!(currentMenu->behaviourflags & MBF_SOUNDLESS))
+				S_StartSound(NULL, sfx_s3k5b);
 
 			if (((currentMenu->menuitems[itemOn].status & IT_TYPE) == IT_CALL
 				|| (currentMenu->menuitems[itemOn].status & IT_TYPE) == IT_SUBMENU)
@@ -1014,7 +1016,8 @@ static void M_HandleMenuInput(void)
 				return;
 			}*/
 
-			S_StartSound(NULL, sfx_s3k5b);
+			if (!(currentMenu->behaviourflags & MBF_SOUNDLESS))
+				S_StartSound(NULL, sfx_s3k5b);
 
 			routine(-1);
 			M_SetMenuDelay(pid);

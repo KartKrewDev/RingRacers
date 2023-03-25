@@ -51,6 +51,7 @@ menu_t OPTIONS_VideoOGLDef = {
 	OPTIONS_VideoOGL,
 	32, 80,
 	SKINCOLOR_PLAGUE, 0,
+	0,
 	NULL,
 	2, 5,
 	M_DrawGenericOptions,

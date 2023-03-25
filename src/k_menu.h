@@ -129,6 +129,12 @@ void M_HandlePauseMenuGametype(INT32 choice);
 // MENU TYPEDEFS
 //
 
+typedef enum
+{
+	MBF_UD_LR_FLIPPED		= 1, // flip up-down and left-right axes
+	MBF_SOUNDLESS		 	= 2, // do not play base menu sounds
+} menubehaviourflags_t;
+
 struct menuitem_t
 {
 	UINT16 status; // show IT_xxx
@@ -154,6 +160,7 @@ struct menu_t
 
 	INT16          x, y;               // x, y of menu
 	INT16 		   extra1, extra2;	   // Can be whatever really! Options menu uses extra1 for bg colour.
+	INT16          behaviourflags;     // menubehaviourflags_t
 	const char    *music;              // Track to play in M_PlayMenuJam. NULL for default, "." to stop
 
 	INT16          transitionID;       // only transition if IDs match
@@ -1204,6 +1211,8 @@ boolean M_StatisticsInputs(INT32 ch);
 	0,\
 	source,\
 	x, y,\
+	0, 0,\
+	0,\
 	NULL,\
 	0, 0,\
 	M_DrawGenericMenu,\
@@ -1222,6 +1231,7 @@ boolean M_StatisticsInputs(INT32 ch);
 	source,\
 	0, 0,\
 	0, 0,\
+	0,\
 	NULL,\
 	1, 5,\
 	M_DrawKartGamemodeMenu,\
@@ -1239,6 +1249,7 @@ boolean M_StatisticsInputs(INT32 ch);
 	source,\
 	0, 0,\
 	0, 0,\
+	0,\
 	"EXTRAS",\
 	1, 5,\
 	M_DrawImageDef,\

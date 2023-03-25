@@ -39,6 +39,7 @@ menu_t PLAY_RaceDifficultyDef = {
 	PLAY_RaceDifficulty,
 	0, 0,
 	0, 0,
+	0,
 	NULL,
 	1, 5,
 	M_DrawRaceDifficulty,
