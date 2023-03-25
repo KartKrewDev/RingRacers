@@ -279,7 +279,8 @@ shouldsign_t ShouldSignChallenge(uint8_t *message)
 	now = time(NULL);
 	memcpy(&then, message, sizeof(then));
 	memcpy(&claimedIP, message + sizeof(then), sizeof(claimedIP));
-	realIP = *I_GetNodeAddressInt(servernode);
+	CONS_Printf("servernode: %d\n", servernode);
+	realIP = I_GetNodeAddressInt(servernode);
 
 	if (abs(now - then) > 60*5)
 		return SIGN_BADTIME;
