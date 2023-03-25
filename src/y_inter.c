@@ -628,8 +628,8 @@ skiptallydrawer:
 	// Scrolling marquee
 	patch_t *rrmq = W_CachePatchName("R_RRMQ", PU_PATCH);
 	
-	// fuck me dude holy shit
-	patch_t *white = W_CachePatchName("R_WHIT", PU_PATCH);
+	// Blending mask for the background
+	patch_t *mask = W_CachePatchName("R_MASK", PU_PATCH);
 	
 	UINT8 *color = R_GetTranslationColormap(TC_DEFAULT, SKINCOLOR_YELLOW, GTC_CACHE); // I don't even know how necessary this is anymore but I don't want the game yelling at me
 	UINT8 *greymap = R_GetTranslationColormap(TC_DEFAULT, SKINCOLOR_GREY, GTC_CACHE);
@@ -654,7 +654,7 @@ skiptallydrawer:
 	
 	// Drawfill over the BG to get the correct colorization
 	//V_DrawFill(0, 0, BASEVIDWIDTH<<FRACBITS, BASEVIDHEIGHT<<FRACBITS, V_ADD|V_TRANSLUCENT);
-	V_DrawMappedPatch(0, 0, V_ADD|V_TRANSLUCENT, white, 0);
+	V_DrawMappedPatch(0, 0, V_ADD|V_TRANSLUCENT, mask, 0);
 	
 	// Draw the marquee (scroll pending)
 	V_DrawMappedPatch(0, 154, V_SUBTRACT, rrmq, 0);
