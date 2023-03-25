@@ -6381,13 +6381,17 @@ static void KickUnverifiedPlayers(void)
 	uint8_t allZero[64];
 	memset(allZero, 0, sizeof(allZero));
 
+	CONS_Printf("KickUnverifiedPlayers start\n");
+
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
 		if (!playeringame[i])
 			continue;
 		if (memcmp(lastReceivedSignature[i], allZero, sizeof(allZero)) == 0) // We never got a response!
 		{
-			if (!IsPlayerGuest(i) && memcmp(knownWhenChallenged[i], players[i].public_key, sizeof(knownWhenChallenged[i]) == 0))
+			CONS_Printf("No sig from %d\n", i);
+			CONS_Printf("pk then %s, pk now %s\n", GetPrettyRRID(knownWhenChallenged[i], true), GetPrettyRRID(players[i].public_key, true));
+			if (!IsPlayerGuest(i) && memcmp(&knownWhenChallenged[i], &players[i].public_key, sizeof(knownWhenChallenged[i])) == 0)
 			{
 				if (playernode[i] != servernode)
 				{
