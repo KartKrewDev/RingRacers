@@ -60,7 +60,7 @@ struct profile_t
 	char profilename[PROFILENAMELEN+1];	// Profile name (not to be confused with player name)
 
 	uint8_t public_key[32];				// Netgame authentication
-	uint8_t secret_key[64];				// TODO: Is it a potential vuln to have keys in memory?
+	uint8_t secret_key[64];
 
 	// Player data
 	char playername[MAXPLAYERNAME+1];	// Player name
