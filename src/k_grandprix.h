@@ -182,6 +182,21 @@ void K_PlayerLoseLife(player_t *player);
 boolean K_CanChangeRules(boolean allowdemos);
 
 
+/*--------------------------------------------------
+	void K_PlayerFinishGrandPrix(player_t *player);
+
+		Increases rank and bot difficulties, wins the round.
+
+	Input Arguments:-
+		player - Player to do this for.
+
+	Return:-
+		None
+--------------------------------------------------*/
+
+void K_PlayerFinishGrandPrix(player_t *player);
+
+
 #ifdef __cplusplus
 } // extern "C"
 #endif

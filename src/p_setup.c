@@ -7402,6 +7402,8 @@ static void P_InitPlayers(void)
 		{
 			G_SpawnPlayer(i);
 		}
+
+		players[i].xtralife = 0; // extra lives do not ever carry over from the previous round
 	}
 
 	K_UpdateAllPlayerPositions();
@@ -7473,6 +7475,8 @@ static void P_InitGametype(void)
 	thwompsactive = false;
 	lastLowestLap = 0;
 	spbplace = -1;
+
+	G_ClearRetryFlag();
 
 	// Start recording replay in multiplayer with a temp filename
 	//@TODO I'd like to fix dedis crashing when recording replays for the future too...
