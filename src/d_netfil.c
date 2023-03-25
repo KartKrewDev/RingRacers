@@ -1322,8 +1322,6 @@ void PT_ClientKey(INT32 node)
 
 	memcpy(lastReceivedKey[node], packet->key, sizeof(lastReceivedKey[node]));
 
-	CONS_Printf("Got keys from node %d, %s / %s / %s / %s\n", node, GetPrettyRRID(lastReceivedKey[node][0], true), GetPrettyRRID(lastReceivedKey[node][1], true), GetPrettyRRID(lastReceivedKey[node][2], true), GetPrettyRRID(lastReceivedKey[node][3], true));
-
 	netbuffer->packettype = PT_SERVERCHALLENGE;
 
 	GenerateChallenge(lastSentChallenge[node]);
