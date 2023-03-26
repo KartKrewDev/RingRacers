@@ -37,7 +37,7 @@ menu_t EXTRAS_MainDef = {
 	0, 0,
 	0,
 	"EXTRAS",
-	2, 5,
+	28, 5,
 	M_DrawExtras,
 	M_ExtrasTick,
 	NULL,
@@ -52,8 +52,6 @@ struct extrasmenu_s extrasmenu;
 
 void M_InitExtras(INT32 choice)
 {
-	UINT32 maxvalid = 2;
-
 	(void)choice;
 
 	extrasmenu.ticker = 0;
@@ -67,54 +65,44 @@ void M_InitExtras(INT32 choice)
 	// Addons
 	if (M_SecretUnlocked(SECRET_ADDONS, true))
 	{
-		EXTRAS_Main[0].status = IT_STRING | IT_CALL;
-		EXTRAS_Main[0].text = "Addons";
-		EXTRAS_Main[0].tooltip = "Add files to customize your experience.";
+		EXTRAS_Main[extras_addons].status = IT_STRING | IT_CALL;
+		EXTRAS_Main[extras_addons].text = "Addons";
+		EXTRAS_Main[extras_addons].tooltip = "Add files to customize your experience.";
 	}
 	else
 	{
-		EXTRAS_Main[0].status = IT_STRING | IT_TRANSTEXT;
-		EXTRAS_Main[0].text = EXTRAS_Main[0].tooltip = "???";
-		if (EXTRAS_MainDef.lastOn == 0)
+		EXTRAS_Main[extras_addons].status = IT_STRING | IT_TRANSTEXT;
+		EXTRAS_Main[extras_addons].text = EXTRAS_Main[extras_addons].tooltip = "???";
+		if (EXTRAS_MainDef.lastOn == extras_addons)
 		{
-			EXTRAS_MainDef.lastOn = 1;
+			EXTRAS_MainDef.lastOn = extras_challenges;
 		}
 	}
 
 	// Egg TV
 	if (M_SecretUnlocked(SECRET_EGGTV, true))
 	{
-		EXTRAS_Main[3].status = IT_STRING | IT_CALL;
-		EXTRAS_Main[3].text = "Egg TV";
-		EXTRAS_Main[3].tooltip = "Watch the replays you've saved throughout your many races & battles!";
-		maxvalid = 3;
+		EXTRAS_Main[extras_eggtv].status = IT_STRING | IT_CALL;
+		EXTRAS_Main[extras_eggtv].text = "Egg TV";
+		EXTRAS_Main[extras_eggtv].tooltip = "Watch the replays you've saved throughout your many races & battles!";
 	}
 	else
 	{
-		EXTRAS_Main[3].status = IT_STRING | IT_TRANSTEXT;
-		EXTRAS_Main[3].text = EXTRAS_Main[3].tooltip = "???";
-		if (EXTRAS_MainDef.lastOn == 3)
-		{
-			EXTRAS_MainDef.lastOn = maxvalid;
-		}
+		EXTRAS_Main[extras_eggtv].status = IT_STRING | IT_TRANSTEXT;
+		EXTRAS_Main[extras_eggtv].text = EXTRAS_Main[extras_eggtv].tooltip = "???";
 	}
 
 	// Stereo Mode
 	if (M_SecretUnlocked(SECRET_SOUNDTEST, true))
 	{
-		EXTRAS_Main[4].status = IT_STRING | IT_CALL;
-		EXTRAS_Main[4].text = "Stereo Mode";
-		EXTRAS_Main[4].tooltip = "You can listen to your favourite tunes here!";
-		maxvalid = 4;
+		EXTRAS_Main[extras_stereo].status = IT_STRING | IT_CALL;
+		EXTRAS_Main[extras_stereo].text = "Stereo Mode";
+		EXTRAS_Main[extras_stereo].tooltip = "You can listen to your favourite tunes here!";
 	}
 	else
 	{
-		EXTRAS_Main[4].status = IT_STRING | IT_TRANSTEXT;
-		EXTRAS_Main[4].text = EXTRAS_Main[4].tooltip = "???";
-		if (EXTRAS_MainDef.lastOn == 4)
-		{
-			EXTRAS_MainDef.lastOn = maxvalid;
-		}
+		EXTRAS_Main[extras_stereo].status = IT_STRING | IT_TRANSTEXT;
+		EXTRAS_Main[extras_stereo].text = EXTRAS_Main[extras_stereo].tooltip = "???";
 	}
 
 	M_SetupNextMenu(&EXTRAS_MainDef, false);

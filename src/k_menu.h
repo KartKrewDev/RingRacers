@@ -1011,6 +1011,16 @@ extern struct extrasmenu_s {
 
 } extrasmenu;
 
+typedef enum
+{
+	extras_addons = 0,
+	extras_challenges,
+	extras_tutorial,
+	extras_statistics,
+	extras_eggtv,
+	extras_stereo,
+} extras_e;
+
 void M_InitExtras(INT32 choice); // init for the struct
 void M_ExtrasTick(void);
 boolean M_ExtrasInputs(INT32 ch);
