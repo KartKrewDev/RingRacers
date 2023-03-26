@@ -208,6 +208,8 @@ void G_SetDeviceForPlayer(INT32 player, INT32 device)
 			if (device > 0)
 			{
 				I_SetGamepadPlayerIndex(device, -1);
+				I_GamepadRumble(device, 0, 0);
+				I_GamepadRumbleTriggers(device, 0, 0);
 			}
 		}
 	}
@@ -325,6 +327,34 @@ void G_ResetAllDeviceResponding(void)
 	{
 		g_gamepad_responding[i] = false;
 	}
+}
+
+void G_PlayerDeviceRumble(INT32 player, UINT16 low_strength, UINT16 high_strength)
+{
+	INT32 device_id;
+
+	device_id = G_GetDeviceForPlayer(player);
+
+	if (device_id < 1)
+	{
+		return;
+	}
+
+	I_GamepadRumble(device_id, low_strength, high_strength);
+}
+
+void G_PlayerDeviceRumbleTriggers(INT32 player, UINT16 left_strength, UINT16 right_strength)
+{
+	INT32 device_id;
+
+	device_id = G_GetDeviceForPlayer(player);
+
+	if (device_id < 1)
+	{
+		return;
+	}
+
+	I_GamepadRumbleTriggers(device_id, left_strength, right_strength);
 }
 
 static boolean AutomaticControllerReassignmentIsAllowed(INT32 device)

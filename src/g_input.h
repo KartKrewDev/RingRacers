@@ -159,6 +159,9 @@ void G_SetDeviceForPlayer(INT32 player, INT32 device);
 
 void G_SetPlayerGamepadIndicatorToPlayerColor(INT32 player);
 
+void G_PlayerDeviceRumble(INT32 player, UINT16 low_strength, UINT16 high_strength);
+void G_PlayerDeviceRumbleTriggers(INT32 player, UINT16 left_strength, UINT16 right_strength);
+
 /// Get the gamekeydown array (NUMINPUTS values) for the given device, or NULL if the device id is invalid.
 INT32* G_GetDeviceGameKeyDownArray(INT32 device);
 
