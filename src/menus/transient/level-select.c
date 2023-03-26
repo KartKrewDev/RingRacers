@@ -61,7 +61,7 @@ boolean M_CanShowLevelInList(INT16 mapnum, levelsearch_t *levelsearch)
 		return false;
 
 	// Check for TOL (permits TEST RUN outside of time attack)
-	if ((levelsearch->timeattack || mapheaderinfo[mapnum]->typeoflevel)
+	if ((levelsearch->timeattack || levelsearch->tutorial || mapheaderinfo[mapnum]->typeoflevel)
 		&& !(mapheaderinfo[mapnum]->typeoflevel & levelsearch->typeoflevel))
 		return false;
 
@@ -427,6 +427,7 @@ void M_LevelSelectInit(INT32 choice)
 	// Make sure this is reset as we'll only be using this function for offline games!
 	levellist.netgame = false;
 	levellist.levelsearch.checklocked = true;
+	levellist.levelsearch.tutorial = (gt == GT_TUTORIAL);
 
 	switch (currentMenu->menuitems[itemOn].mvar1)
 	{
@@ -498,7 +499,7 @@ void M_LevelSelected(INT16 add)
 	{
 		if (gamestate == GS_MENU)
 		{
-			UINT8 ssplayers = cv_splitplayers.value-1;
+			UINT8 ssplayers = levellist.levelsearch.tutorial ? 0 : cv_splitplayers.value-1;
 
 			netgame = false;
 			multiplayer = true;
@@ -543,7 +544,11 @@ void M_LevelSelected(INT16 add)
 
 			D_MapChange(levellist.choosemap+1, levellist.newgametype, (cv_kartencore.value == 1), 1, 1, false, false);
 
-			if (levellist.netgame == true)
+			if (levellist.levelsearch.tutorial)
+			{
+				restoreMenu = currentMenu;
+			}
+			else if (levellist.netgame == true)
 			{
 				restoreMenu = &PLAY_MP_OptSelectDef;
 			}

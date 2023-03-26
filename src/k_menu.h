@@ -733,6 +733,7 @@ typedef struct levelsearch_s {
 	UINT32 typeoflevel;
 	cupheader_t *cup;
 	boolean timeattack;
+	boolean tutorial;
 	boolean cupmode;
 	boolean checklocked;
 } levelsearch_t;

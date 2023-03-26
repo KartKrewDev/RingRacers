@@ -17,6 +17,9 @@ menuitem_t EXTRAS_Main[] =
 	{IT_STRING | IT_CALL, "Challenges", "View the requirements for some of the secret content you can unlock!",
 		NULL, {.routine = M_Challenges}, 0, 0},
 
+	{IT_STRING | IT_CALL, "Tutorial", "Help Dr. Eggman and Tails test out their new Ring Racers.",
+		NULL, {.routine = M_LevelSelectInit}, 0, GT_TUTORIAL},
+
 	{IT_STRING | IT_CALL, "Statistics", "Look back on some of your greatest achievements such as your playtime and wins!",
 		NULL, {.routine = M_Statistics}, 0, 0},
 
@@ -77,6 +80,25 @@ void M_InitExtras(INT32 choice)
 		{
 			EXTRAS_MainDef.lastOn = extras_challenges;
 		}
+	}
+
+	// Tutorial
+	{
+		levelsearch_t templevelsearch;
+		UINT8 i = 0;
+		INT16 map;
+
+		templevelsearch.cup = NULL;
+		templevelsearch.typeoflevel = G_TOLFlag(GT_TUTORIAL);
+		templevelsearch.cupmode = false;
+		templevelsearch.timeattack = false;
+		templevelsearch.tutorial = true;
+		templevelsearch.checklocked = true;
+
+		map = M_GetFirstLevelInList(&i, &templevelsearch);
+
+		EXTRAS_Main[extras_tutorial].status = (IT_STRING | 
+			((map == NEXTMAP_INVALID) ? IT_TRANSTEXT : IT_CALL));
 	}
 
 	// Egg TV

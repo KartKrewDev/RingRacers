@@ -3638,6 +3638,7 @@ INT16 G_GetFirstMapOfGametype(UINT8 pgametype)
 	templevelsearch.typeoflevel = G_TOLFlag(pgametype);
 	templevelsearch.cupmode = (!(gametypes[pgametype]->rules & GTR_NOCUPSELECT));
 	templevelsearch.timeattack = false;
+	templevelsearch.tutorial = false;
 	templevelsearch.checklocked = true;
 
 	if (templevelsearch.cupmode)
