@@ -150,7 +150,7 @@ transnum_t R_GetLinedefTransTable(fixed_t alpha)
 	}
 }
 
-static boolean R_OverflowTest(void)
+static inline boolean R_OverflowTest(void)
 {
 	INT64 overflow_test;
 	overflow_test = (INT64)centeryfrac - (((INT64)dc_texturemid*spryscale)>>FRACBITS);
