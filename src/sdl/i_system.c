@@ -1019,6 +1019,46 @@ void I_GetGamepadName(INT32 device_id, char *out, int out_len)
 	out[out_len - 1] = 0;
 }
 
+void I_GamepadRumble(INT32 device_id, UINT16 low_strength, UINT16 high_strength)
+{
+#if !(SDL_VERSION_ATLEAST(2,0,9))
+	(void)device_id;
+	(void)low_strength;
+	(void)high_strength;
+	(void)length_ms;
+#else
+	I_Assert(device_id > 0); // Gamepad devices are always ID 1 or higher
+
+	SDL_GameController *controller = SDL_GameControllerFromInstanceID(device_id - 1);
+	if (controller == NULL)
+	{
+		return;
+	}
+
+	SDL_GameControllerRumble(controller, low_strength, high_strength, 0);
+#endif
+}
+
+void I_GamepadRumbleTriggers(INT32 device_id, UINT16 left_strength, UINT16 right_strength)
+{
+#if !(SDL_VERSION_ATLEAST(2,0,14))
+	(void)device_id;
+	(void)low_strength;
+	(void)high_strength;
+	(void)length_ms;
+#else
+	I_Assert(device_id > 0); // Gamepad devices are always ID 1 or higher
+
+	SDL_GameController *controller = SDL_GameControllerFromInstanceID(device_id - 1);
+	if (controller == NULL)
+	{
+		return;
+	}
+
+	SDL_GameControllerRumbleTriggers(controller, left_strength, right_strength, 0);
+#endif
+}
+
 //
 // I_StartupInput
 //
