@@ -2762,6 +2762,8 @@ void CL_ClearPlayer(INT32 playernum)
 	splitscreen_party_size[playernum] = 0;
 	splitscreen_original_party_size[playernum] = 0;
 
+	playerconsole[playernum] = playernum;
+
 	// Wipe the struct.
 	memset(&players[playernum], 0, sizeof (player_t));
 
