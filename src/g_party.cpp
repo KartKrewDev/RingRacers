@@ -223,30 +223,39 @@ public:
 			pool_[other].add(local_party[guest]);
 		}
 
-		pool_[guest] = party;
-
-		party.rebuild_displayplayers();
+		reset(guest, party); // assign new party to guest
 
 		return true;
 	}
 
-	// Removes player from another party and restores their
-	// local splitscreen party. Viewports are updated for
-	// every player involved.
-	void leave(Party::Console player)
+	// Removes a player from another party and assigns a new
+	// party. Viewports are updated for all players involved.
+	void reset(Party::Console player, const Party &party)
+	{
+		SRB2_ASSERT(party.size() > 0);
+
+		remove(player);
+
+		pool_[player] = party;
+
+		party.rebuild_displayplayers();
+	}
+
+private:
+	// Removes a player from every party they're in. Updates
+	// viewports for the players left behind.
+	void remove(Party::Console player)
 	{
 		Party &party = pool_[player];
 
 		// Iterate a COPY of party because this very party
-		// could be modified.
+		// will be modified.
 		for (Party::Console member : Party(party))
 		{
 			pool_[member].remove(player);
 		}
 
 		party.rebuild_displayplayers(); // restore viewports for left behind party
-		party = local_party[player];
-		party.rebuild_displayplayers(); // restore local viewports
 	}
 }
 final_party;
@@ -280,7 +289,7 @@ void G_JoinParty(UINT8 host, UINT8 guest)
 
 void G_LeaveParty(UINT8 player)
 {
-	final_party.leave(player);
+	final_party.reset(player, local_party[player]);
 }
 
 UINT8 G_LocalSplitscreenPartySize(UINT8 player)
