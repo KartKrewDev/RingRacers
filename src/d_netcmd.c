@@ -2316,6 +2316,7 @@ Command_Invite_f (void)
 	{
 		CONS_Alert(CONS_WARNING,
 				"That player has already been invited to join another party.\n");
+		return;
 	}
 
 	if (( splitscreen_party_size[consoleplayer] +
@@ -2324,6 +2325,7 @@ Command_Invite_f (void)
 		CONS_Alert(CONS_WARNING,
 				"That player joined with too many "
 				"splitscreen players for your party.\n");
+		return;
 	}
 
 	CONS_Printf(
@@ -2367,6 +2369,7 @@ Command_CancelInvite_f (void)
 	{
 		CONS_Alert(CONS_WARNING,
 				"You have not invited this player!\n");
+		return;
 	}
 
 	CONS_Printf(
