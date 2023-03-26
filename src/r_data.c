@@ -314,6 +314,8 @@ void R_ReInitColormaps(UINT16 num, void *newencoremap, size_t encoremapsize)
 		lighttable_t *colormap_p, *colormap_p2;
 		size_t p, i;
 
+		I_Assert(encoremapsize == 256);
+
 		encoremap = Z_MallocAlign(256 + 10, PU_LEVEL, NULL, 8);
 		M_Memcpy(encoremap, newencoremap, encoremapsize);
 		colormap_p = colormap_p2 = colormaps;
