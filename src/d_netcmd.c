@@ -2291,9 +2291,9 @@ Command_Invite_f (void)
 		return;
 	}
 
-	if (invitee == consoleplayer)
+	if (G_IsPartyLocal(invitee))
 	{
-		CONS_Alert(CONS_WARNING, "You cannot invite yourself! Bruh!\n");
+		CONS_Alert(CONS_WARNING, "That player is already a member of your party.\n");
 		return;
 	}
 
