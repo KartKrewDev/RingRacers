@@ -214,34 +214,42 @@ boolean M_LevelListFromGametype(INT16 gt)
 	static boolean first = true;
 	UINT8 temp = 0;
 
-	if (gt != -1 && (first || gt != levellist.newgametype || levellist.guessgt != MAXGAMETYPES))
+	if (gt != -1)
 	{
-		if (first)
+		if (first || gt != levellist.newgametype || levellist.guessgt != MAXGAMETYPES)
 		{
-			cupgrid.cappages = 0;
-			cupgrid.builtgrid = NULL;
-			dummy_lostandfound.cachedlevels[0] = NEXTMAP_INVALID;
+			if (first)
+			{
+				cupgrid.cappages = 0;
+				cupgrid.builtgrid = NULL;
+				dummy_lostandfound.cachedlevels[0] = NEXTMAP_INVALID;
 
-			first = false;
+				first = false;
+			}
+
+			levellist.newgametype = gt;
+
+			levellist.levelsearch.typeoflevel = G_TOLFlag(gt);
+			if (levellist.levelsearch.timeattack == true && gt == GT_SPECIAL)
+			{
+				// Sneak in an extra.
+				levellist.levelsearch.typeoflevel |= G_TOLFlag(GT_VERSUS);
+				levellist.guessgt = gt;
+			}
+			else
+			{
+				levellist.guessgt = MAXGAMETYPES;
+			}
+
+			levellist.levelsearch.cupmode = (!(gametypes[gt]->rules & GTR_NOCUPSELECT));
+
+			CV_SetValue(&cv_dummyspbattack, 0);
 		}
 
-		levellist.newgametype = gt;
-
-		levellist.levelsearch.typeoflevel = G_TOLFlag(gt);
-		if (levellist.levelsearch.timeattack == true && gt == GT_SPECIAL)
-		{
-			// Sneak in an extra.
-			levellist.levelsearch.typeoflevel |= G_TOLFlag(GT_VERSUS);
-			levellist.guessgt = gt;
-		}
-		else
-		{
-			levellist.guessgt = MAXGAMETYPES;
-		}
-
-		levellist.levelsearch.cupmode = (!(gametypes[gt]->rules & GTR_NOCUPSELECT));
-
-		CV_SetValue(&cv_dummyspbattack, 0);
+		PLAY_CupSelectDef.music = \
+		PLAY_LevelSelectDef.music = \
+		PLAY_TimeAttackDef.music = \
+			currentMenu->music;
 	}
 
 	// Obviously go to Cup Select in gametypes that have cups.
