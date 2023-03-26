@@ -2698,7 +2698,7 @@ void R_AddSprites(sector_t *sec, INT32 lightlevel)
 	}
 
 	// no, no infinite draw distance for precipitation. this option at zero is supposed to turn it off
-	if ((limit_dist = (fixed_t)cv_drawdist_precip.value * mapobjectscale))
+	if ((limit_dist = (fixed_t)cv_drawdist_precip.value * mapobjectscale) && !portalskipprecipmobjs)
 	{
 		for (precipthing = sec->preciplist; precipthing; precipthing = precipthing->snext)
 		{
