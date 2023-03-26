@@ -5193,7 +5193,7 @@ void K_drawKartHUD(void)
 		K_drawMiniPing();
 	}
 
-	if (displayplayers[viewnum] != g_localplayers[viewnum] && !demo.playback)
+	if (G_IsPartyLocal(displayplayers[viewnum]) == false && !demo.playback)
 	{
 		K_drawDirectorHUD();
 	}

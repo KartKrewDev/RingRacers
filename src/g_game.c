@@ -65,6 +65,7 @@
 #include "k_podium.h"
 #include "k_rank.h"
 #include "acs/interface.h"
+#include "g_party.h"
 
 #ifdef HAVE_DISCORDRPC
 #include "discord.h"
@@ -1206,7 +1207,7 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 		goto aftercmdinput;
 	}
 
-	if (displayplayers[forplayer] != g_localplayers[forplayer])
+	if (G_IsPartyLocal(displayplayers[forplayer]) == false)
 	{
 		if (M_MenuButtonPressed(forplayer, MBT_A))
 		{
@@ -2036,8 +2037,13 @@ void G_ResetView(UINT8 viewnum, INT32 playernum, boolean onlyactive)
 	/* Check if anyone is available to view. */
 	if (( playernum = G_FindView(playernum, viewnum, onlyactive, playernum < olddisplayplayer) ) == -1)
 	{
+		if (G_PartySize(consoleplayer) < viewnum)
+		{
+			return;
+		}
+
 		/* Fall back on true self */
-		playernum = g_localplayers[viewnum-1];
+		playernum = G_PartyMember(consoleplayer, viewnum - 1);
 	}
 
 	// Call ViewpointSwitch hooks here.
@@ -2112,7 +2118,7 @@ void G_ResetViews(void)
 	/* Demote splits */
 	if (playersviewable < splits)
 	{
-		splits = max(playersviewable, splitscreen + 1); // don't delete local players
+		splits = max(playersviewable, G_PartySize(consoleplayer)); // don't delete local players
 		r_splitscreen = splits - 1;
 		R_ExecuteSetViewSize();
 	}
