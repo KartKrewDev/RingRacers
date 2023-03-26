@@ -4294,6 +4294,7 @@ static void K_drawBattleFullscreen(void)
 	}
 
 	// FREE PLAY?
+	if (K_Cooperative() == false)
 	{
 		UINT8 i;
 
@@ -4306,7 +4307,7 @@ static void K_drawBattleFullscreen(void)
 				break;
 		}
 
-		if (i != MAXPLAYERS)
+		if (i == MAXPLAYERS)
 			K_drawKartFreePlay();
 	}
 }
@@ -5180,7 +5181,7 @@ void K_drawKartHUD(void)
 		V_DrawScaledPatch(BASEVIDWIDTH/2 - (SHORT(kp_yougotem->width)/2), 32, V_HUDTRANS, kp_yougotem);
 
 	// Draw FREE PLAY.
-	if (islonesome)
+	if (islonesome && K_Cooperative() == false)
 		K_drawKartFreePlay();
 
 	if (r_splitscreen == 0 && (stplyr->pflags & PF_WRONGWAY) && ((leveltime / 8) & 1))

@@ -11699,6 +11699,11 @@ boolean K_Cooperative(void)
 		return true;
 	}
 
+	if (specialstageinfo.valid)
+	{
+		return true;
+	}
+
 	return false;
 }
 

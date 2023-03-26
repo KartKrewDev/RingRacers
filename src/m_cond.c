@@ -628,6 +628,10 @@ static boolean M_NotFreePlay(player_t *player)
 {
 	UINT8 i;
 
+	// Rounds that permit Cooperative play can be played by yourself without being FREE PLAY.
+	if (K_Cooperative())
+		return true;
+
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
 		if (playeringame[i] == false || players[i].spectator == true)
