@@ -4500,6 +4500,7 @@ static void Command_Addfile(void)
 			memset(md5sum,0,16);
 #else
 			FILE *fhandle;
+			boolean valid = true;
 
 			if ((fhandle = W_OpenWadFile(&fn, true)) != NULL)
 			{
@@ -4517,8 +4518,14 @@ static void Command_Addfile(void)
 				if (!memcmp(wadfiles[i]->md5sum, md5sum, 16))
 				{
 					CONS_Alert(CONS_ERROR, M_GetText("%s is already loaded\n"), fn);
-					continue;
+					valid = false;
+					break;
 				}
+			}
+
+			if (valid == false)
+			{
+				continue;
 			}
 #endif
 			WRITEMEM(buf_p, md5sum, 16);
