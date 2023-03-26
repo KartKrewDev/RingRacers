@@ -3211,11 +3211,6 @@ void readmaincfg(MYFILE *f, boolean mainfile)
 				bootmap = Z_StrDup(word2);
 				//titlechanged = true;
 			}
-			else if (fastcmp(word, "TUTORIALMAP"))
-			{
-				Z_Free(tutorialmap);
-				tutorialmap = Z_StrDup(word2);
-			}
 			else if (fastcmp(word, "PODIUMMAP"))
 			{
 				Z_Free(podiummap);

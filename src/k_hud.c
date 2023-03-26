@@ -5181,7 +5181,7 @@ void K_drawKartHUD(void)
 		V_DrawScaledPatch(BASEVIDWIDTH/2 - (SHORT(kp_yougotem->width)/2), 32, V_HUDTRANS, kp_yougotem);
 
 	// Draw FREE PLAY.
-	if (islonesome && K_Cooperative() == false)
+	if (islonesome && K_Cooperative() == false && gametype != GT_TUTORIAL)
 		K_drawKartFreePlay();
 
 	if (r_splitscreen == 0 && (stplyr->pflags & PF_WRONGWAY) && ((leveltime / 8) & 1))

@@ -222,9 +222,6 @@ extern char * titlemap;
 extern boolean hidetitlepics;
 extern char * bootmap; //bootmap for loading a map on startup
 
-extern char * tutorialmap; // map to load for tutorial
-extern boolean tutorialmode; // are we in a tutorial right now?
-
 extern char * podiummap; // map to load for podium
 
 extern boolean looptitle;
@@ -499,6 +496,7 @@ enum GameType
 	GT_BATTLE,
 	GT_SPECIAL,
 	GT_VERSUS,
+	GT_TUTORIAL,
 
 	GT_FIRSTFREESLOT,
 	GT_LASTFREESLOT = 127, // Previously (GT_FIRSTFREESLOT + NUMGAMETYPEFREESLOTS - 1) - it would be necessary to rewrite VOTEMODIFIER_ENCORE to go higher than this.
@@ -578,10 +576,11 @@ enum GameTypeRules
 enum TypeOfLevel
 {
 	// Gametypes
-	TOL_RACE	= 0x0001, ///< Race
-	TOL_BATTLE	= 0x0002, ///< Battle
-	TOL_BOSS	= 0x0004, ///< Boss (variant of battle, but forbidden)
-	TOL_SPECIAL	= 0x0008, ///< Special Stage (variant of race, but forbidden)
+	TOL_RACE	 = 0x0001, ///< Race
+	TOL_BATTLE	 = 0x0002, ///< Battle
+	TOL_BOSS	 = 0x0004, ///< Boss (variant of battle, but forbidden)
+	TOL_SPECIAL	 = 0x0008, ///< Special Stage (variant of race, but forbidden)
+	TOL_TUTORIAL = 0x0010, ///< Tutorial (variant of race, but forbidden)
 
 	// Modifiers
 	TOL_TV		= 0x0100 ///< Midnight Channel specific: draw TV like overlay on HUD

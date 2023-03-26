@@ -166,9 +166,6 @@ char * titlemap = NULL;
 boolean hidetitlepics = false;
 char * bootmap = NULL; //bootmap for loading a map on startup
 
-char * tutorialmap = NULL; // map to load for tutorial
-boolean tutorialmode = false; // are we in a tutorial right now?
-
 char * podiummap = NULL; // map to load for podium
 
 boolean looptitle = true;
@@ -3359,6 +3356,17 @@ static gametype_t defaultgametypes[] =
 		0,
 		0,
 	},
+
+	// GT_TUTORIAL
+	{
+		"Tutorial",
+		"GT_TUTORIAL",
+		GTR_NOMP|GTR_NOCUPSELECT|GTR_NOPOSITION,
+		TOL_TUTORIAL,
+		int_none,
+		0,
+		0,
+	},
 };
 
 gametype_t *gametypes[MAXGAMETYPES+1] =
@@ -3367,6 +3375,7 @@ gametype_t *gametypes[MAXGAMETYPES+1] =
 	&defaultgametypes[GT_BATTLE],
 	&defaultgametypes[GT_SPECIAL],
 	&defaultgametypes[GT_VERSUS],
+	&defaultgametypes[GT_TUTORIAL],
 };
 
 //
@@ -3502,6 +3511,7 @@ tolinfo_t TYPEOFLEVEL[NUMTOLNAMES] = {
 	{"BATTLE",TOL_BATTLE},
 	{"BOSS",TOL_BOSS},
 	{"SPECIAL",TOL_SPECIAL},
+	{"TUTORIAL",TOL_TUTORIAL},
 	{"TV",TOL_TV},
 	{NULL, 0}
 };
@@ -4207,16 +4217,19 @@ static void G_DoCompleted(void)
 
 	if (legitimateexit && !demo.playback && !mapreset) // (yes you're allowed to unlock stuff this way when the game is modified)
 	{
-		UINT8 roundtype = GDGT_CUSTOM;
+		if (gametype != GT_TUTORIAL)
+		{
+			UINT8 roundtype = GDGT_CUSTOM;
 
-		if (gametype == GT_RACE)
-			roundtype = GDGT_RACE;
-		else if (gametype == GT_BATTLE)
-			roundtype = (battleprisons ? GDGT_PRISONS : GDGT_BATTLE);
-		else if (gametype == GT_SPECIAL || gametype == GT_VERSUS)
-			roundtype = GDGT_SPECIAL;
+			if (gametype == GT_RACE)
+				roundtype = GDGT_RACE;
+			else if (gametype == GT_BATTLE)
+				roundtype = (battleprisons ? GDGT_PRISONS : GDGT_BATTLE);
+			else if (gametype == GT_SPECIAL || gametype == GT_VERSUS)
+				roundtype = GDGT_SPECIAL;
 
-		gamedata->roundsplayed[roundtype]++;
+			gamedata->roundsplayed[roundtype]++;
+		}
 		gamedata->pendingkeyrounds++;
 
 		// Done before forced addition of PF_NOCONTEST to make UCRP_NOCONTEST harder to achieve
