@@ -1119,7 +1119,7 @@ INT32 localsteering[MAXSPLITSCREENPLAYERS];
 
 // Turning was removed from G_BuildTiccmd to prevent easy client hacking.
 // This brings back the camera prediction that was lost.
-static void G_DoAnglePrediction(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer, player_t *player)
+static void G_DoAnglePrediction(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer, UINT8 viewnum, player_t *player)
 {
 	angle_t angleChange = 0;
 
@@ -1147,13 +1147,15 @@ static void G_DoAnglePrediction(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer, p
 	else
 #endif
 	{
-		localangle[ssplayer - 1] += angleChange;
+		localangle[viewnum] += angleChange;
 	}
 }
 
 void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 {
 	const UINT8 forplayer = ssplayer-1;
+	const UINT8 viewnum = G_PartyPosition(g_localplayers[forplayer]);
+
 	INT32 forward;
 
 	joystickvector2_t joystickvector;
@@ -1184,7 +1186,7 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 			break;
 	}
 
-	cmd->angle = localangle[forplayer] >> TICCMD_REDUCE;
+	cmd->angle = localangle[viewnum] >> TICCMD_REDUCE;
 
 	// why build a ticcmd if we're paused?
 	// Or, for that matter, if we're being reborn.
@@ -1425,7 +1427,7 @@ aftercmdinput:
 	else if (cmd->throwdir < -KART_FULLTURN)
 		cmd->throwdir = -KART_FULLTURN;
 
-	G_DoAnglePrediction(cmd, realtics, ssplayer, player);
+	G_DoAnglePrediction(cmd, realtics, ssplayer, viewnum, player);
 }
 
 ticcmd_t *G_CopyTiccmd(ticcmd_t* dest, const ticcmd_t* src, const size_t n)
