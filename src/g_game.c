@@ -1571,6 +1571,8 @@ void G_DoLoadLevelEx(boolean resetplayer, gamestate_t newstate)
 	{
 		Automate_Run(AEV_ROUNDSTART);
 	}
+
+	G_ResetAllDeviceRumbles();
 }
 
 void G_DoLoadLevel(boolean resetplayer)
@@ -3197,6 +3199,8 @@ void G_AddPlayer(INT32 playernum)
 
 void G_ExitLevel(void)
 {
+	G_ResetAllDeviceRumbles();
+
 	if (gamestate == GS_LEVEL)
 	{
 		UINT8 i;
