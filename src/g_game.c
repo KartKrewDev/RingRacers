@@ -4172,6 +4172,8 @@ static void G_GetNextMap(void)
 	if (!spec)
 #endif //#if 0
 		lastmap = nextmap;
+
+	deferencoremode = (cv_kartencore.value == 1);
 }
 
 //
@@ -4343,7 +4345,6 @@ void G_NextLevel(void)
 	}
 
 	forceresetplayers = false;
-	deferencoremode = (cv_kartencore.value == 1);
 
 	gameaction = ga_worlddone;
 }
