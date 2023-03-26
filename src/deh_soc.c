@@ -1122,6 +1122,11 @@ void readlevelheader(MYFILE *f, char * name)
 				deh_strlcpy(mapheaderinfo[num]->zonttl, word2,
 					sizeof(mapheaderinfo[num]->zonttl), va("Level header %d: zonetitle", num));
 			}
+			else if (fastcmp(word, "RELEVANTSKIN"))
+			{
+				deh_strlcpy(mapheaderinfo[num]->relevantskin, word2,
+					sizeof(mapheaderinfo[num]->relevantskin), va("Level header %d: relevantskin", num));
+			}
 			else if (fastcmp(word, "SCRIPTNAME"))
 			{
 				deh_strlcpy(mapheaderinfo[num]->scriptname, word2,
