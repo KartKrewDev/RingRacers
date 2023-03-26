@@ -357,6 +357,22 @@ void G_PlayerDeviceRumbleTriggers(INT32 player, UINT16 left_strength, UINT16 rig
 	I_GamepadRumbleTriggers(device_id, left_strength, right_strength);
 }
 
+void G_ResetAllDeviceRumbles(void)
+{
+	int i;
+	int devices;
+
+	devices = G_GetNumAvailableGamepads();
+
+	for (i = 0; i < devices; i++)
+	{
+		INT32 device_id = G_GetAvailableGamepadDevice(i);
+
+		I_GamepadRumble(device_id, 0, 0);
+		I_GamepadRumbleTriggers(device_id, 0, 0);
+	}
+}
+
 static boolean AutomaticControllerReassignmentIsAllowed(INT32 device)
 {
 	boolean device_is_gamepad = device > 0;
