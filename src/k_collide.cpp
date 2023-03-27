@@ -735,18 +735,13 @@ boolean K_BubbleShieldCollide(mobj_t *t1, mobj_t *t2)
 		thing = oldthing;
 		P_SetTarget(&tm.thing, oldtm.thing);*/
 
-		if (P_PlayerInPain(t2->player)
-			|| t2->player->flashing || t2->player->hyudorotimer
-			|| t2->player->justbumped || K_IsBigger(t2, t1))
+		if (K_KartBouncing(t2, t1->target) == true)
 		{
-			return true;
-		}
+			if (t2->player && t1->target && t1->target->player)
+			{
+				K_PvPTouchDamage(t2, t1->target);
+			}
 
-		// Player Damage
-		P_DamageMobj(t2, t1->target, t1, 1, DMG_NORMAL|DMG_WOMBO);
-
-		if (t2->player->timeshit > t2->player->timeshitprev)
-		{
 			// Don't play from t1 else it gets cut out... for some reason.
 			S_StartSound(t2, sfx_s3k44);
 		}
@@ -857,7 +852,8 @@ boolean K_PvPTouchDamage(mobj_t *t1, mobj_t *t2)
 		return (K_IsBigger(t1, t2) == true)
 			|| (t1->player->invincibilitytimer > 0)
 			|| (t1->player->flamedash > 0 && t1->player->itemtype == KITEM_FLAMESHIELD)
-			|| (t1->player->curshield == KSHIELD_TOP && !K_IsHoldingDownTop(t1->player));
+			|| (t1->player->curshield == KSHIELD_TOP && !K_IsHoldingDownTop(t1->player))
+			|| (t1->player->bubbleblowup > 0);
 	};
 
 	if (canClash(t1, t2) && canClash(t2, t1))
@@ -905,9 +901,11 @@ boolean K_PvPTouchDamage(mobj_t *t1, mobj_t *t2)
 	}
 
 	// Flame Shield dash damage
+	// Bubble Shield blowup damage
 	auto shouldWipeout = [](mobj_t *t1, mobj_t *t2)
 	{
-		return (t1->player->flamedash > 0 && t1->player->itemtype == KITEM_FLAMESHIELD);
+		return (t1->player->flamedash > 0 && t1->player->itemtype == KITEM_FLAMESHIELD)
+			|| (t1->player->bubbleblowup > 0);
 	};
 
 	if (forEither(shouldWipeout, doDamage(DMG_WIPEOUT | DMG_WOMBO)))
