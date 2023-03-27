@@ -1,16 +1,5 @@
 // Monocypher version 4.0.0
 //
-// This file is dual-licensed.  Choose whichever licence you want from
-// the two licences listed below.
-//
-// The first licence is a regular 2-clause BSD licence.  The second licence
-// is the CC-0 from Creative Commons. It is intended to release Monocypher
-// to the public domain.  The BSD licence serves as a fallback option.
-//
-// SPDX-License-Identifier: BSD-2-Clause OR CC0-1.0
-//
-// ------------------------------------------------------------------------
-//
 // Copyright (c) 2017-2020, Loup Vaillant
 // All rights reserved.
 //
@@ -38,18 +27,6 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// ------------------------------------------------------------------------
-//
-// Written in 2017-2020 by Loup Vaillant
-//
-// To the extent possible under law, the author(s) have dedicated all copyright
-// and related neighboring rights to this software to the public domain
-// worldwide.  This software is distributed without any warranty.
-//
-// You should have received a copy of the CC0 Public Domain Dedication along
-// with this software.  If not, see
-// <https://creativecommons.org/publicdomain/zero/1.0/>
 
 #include "monocypher.h"
 
