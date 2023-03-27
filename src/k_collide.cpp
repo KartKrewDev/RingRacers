@@ -845,11 +845,6 @@ boolean K_SMKIceBlockCollide(mobj_t *t1, mobj_t *t2)
 
 boolean K_PvPTouchDamage(mobj_t *t1, mobj_t *t2)
 {
-	boolean t1Condition = false;
-	boolean t2Condition = false;
-	boolean stungT1 = false;
-	boolean stungT2 = false;
-
 	if (K_PodiumSequence() == true)
 	{
 		// Always regular bumps, no ring toss.
@@ -857,49 +852,66 @@ boolean K_PvPTouchDamage(mobj_t *t1, mobj_t *t2)
 	}
 
 	// Clash instead of damage if both parties have any of these conditions
-	t1Condition = (K_IsBigger(t1, t2) == true)
-		|| (t1->player->invincibilitytimer > 0)
-		|| (t1->player->flamedash > 0 && t1->player->itemtype == KITEM_FLAMESHIELD)
-		|| (t1->player->curshield == KSHIELD_TOP && !K_IsHoldingDownTop(t1->player));
+	auto canClash = [](mobj_t *t1, mobj_t *t2)
+	{
+		return (K_IsBigger(t1, t2) == true)
+			|| (t1->player->invincibilitytimer > 0)
+			|| (t1->player->flamedash > 0 && t1->player->itemtype == KITEM_FLAMESHIELD)
+			|| (t1->player->curshield == KSHIELD_TOP && !K_IsHoldingDownTop(t1->player));
+	};
 
-	t2Condition = (K_IsBigger(t2, t1) == true)
-		|| (t2->player->invincibilitytimer > 0)
-		|| (t2->player->flamedash > 0 && t2->player->itemtype == KITEM_FLAMESHIELD)
-		|| (t2->player->curshield == KSHIELD_TOP && !K_IsHoldingDownTop(t2->player));
-
-	if (t1Condition == true && t2Condition == true)
+	if (canClash(t1, t2) && canClash(t2, t1))
 	{
 		K_DoPowerClash(t1->player, t2->player);
 		return false;
 	}
 
-	// Cause tumble on invincibility
-	t1Condition = (t1->player->invincibilitytimer > 0);
-	t2Condition = (t2->player->invincibilitytimer > 0);
+	auto forEither = [t1, t2](auto conditionCallable, auto damageCallable)
+	{
+		const bool t1Condition = conditionCallable(t1, t2);
+		const bool t2Condition = conditionCallable(t2, t1);
 
-	if (t1Condition == true && t2Condition == false)
+		if (t1Condition == true && t2Condition == false)
+		{
+			damageCallable(t1, t2);
+			return true;
+		}
+		else if (t1Condition == false && t2Condition == true)
+		{
+			damageCallable(t2, t1);
+			return true;
+		}
+
+		return false;
+	};
+
+	auto doDamage = [](UINT8 damageType)
 	{
-		P_DamageMobj(t2, t1, t1, 1, DMG_TUMBLE);
-		return true;
-	}
-	else if (t1Condition == false && t2Condition == true)
+		return [damageType](mobj_t *t1, mobj_t *t2)
+		{
+			P_DamageMobj(t2, t1, t1, 1, damageType);
+		};
+	};
+
+	// Cause tumble on invincibility
+	auto shouldTumble = [](mobj_t *t1, mobj_t *t2)
 	{
-		P_DamageMobj(t1, t2, t2, 1, DMG_TUMBLE);
+		return (t1->player->invincibilitytimer > 0);
+	};
+
+	if (forEither(shouldTumble, doDamage(DMG_TUMBLE)))
+	{
 		return true;
 	}
 
 	// Flame Shield dash damage
-	t1Condition = (t1->player->flamedash > 0 && t1->player->itemtype == KITEM_FLAMESHIELD);
-	t2Condition = (t2->player->flamedash > 0 && t2->player->itemtype == KITEM_FLAMESHIELD);
+	auto shouldWipeout = [](mobj_t *t1, mobj_t *t2)
+	{
+		return (t1->player->flamedash > 0 && t1->player->itemtype == KITEM_FLAMESHIELD);
+	};
 
-	if (t1Condition == true && t2Condition == false)
+	if (forEither(shouldWipeout, doDamage(DMG_WIPEOUT | DMG_WOMBO)))
 	{
-		P_DamageMobj(t2, t1, t1, 1, DMG_WIPEOUT|DMG_WOMBO);
-		return true;
-	}
-	else if (t1Condition == false && t2Condition == true)
-	{
-		P_DamageMobj(t1, t2, t2, 1, DMG_WIPEOUT|DMG_WOMBO);
 		return true;
 	}
 
@@ -907,75 +919,66 @@ boolean K_PvPTouchDamage(mobj_t *t1, mobj_t *t2)
 	// (Pogo Spring damage is handled in head-stomping code)
 	if (gametyperules & GTR_BUMPERS)
 	{
-		t1Condition = ((t1->player->sneakertimer > 0)
-			&& !P_PlayerInPain(t1->player)
-			&& (t1->player->flashing == 0));
-		t2Condition = ((t2->player->sneakertimer > 0)
-			&& !P_PlayerInPain(t2->player)
-			&& (t2->player->flashing == 0));
+		auto shouldSteal = [](mobj_t *t1, mobj_t *t2)
+		{
+			return ((t1->player->sneakertimer > 0)
+				&& !P_PlayerInPain(t1->player)
+				&& (t1->player->flashing == 0));
+		};
 
-		if (t1Condition == true && t2Condition == false)
+		if (forEither(shouldSteal, doDamage(DMG_WIPEOUT | DMG_STEAL | DMG_WOMBO)))
 		{
-			P_DamageMobj(t2, t1, t1, 1, DMG_WIPEOUT|DMG_STEAL|DMG_WOMBO);
-			return true;
-		}
-		else if (t1Condition == false && t2Condition == true)
-		{
-			P_DamageMobj(t1, t2, t2, 1, DMG_WIPEOUT|DMG_STEAL|DMG_WOMBO);
 			return true;
 		}
 	}
 
 	// Cause stumble on scale difference
-	t1Condition = K_IsBigger(t1, t2);
-	t2Condition = K_IsBigger(t2, t1);
+	auto shouldStumble = [](mobj_t *t1, mobj_t *t2)
+	{
+		return K_IsBigger(t1, t2);
+	};
 
-	if (t1Condition == true && t2Condition == false)
+	auto doStumble = [](mobj_t *t1, mobj_t *t2)
 	{
 		K_StumblePlayer(t2->player);
-		return true;
-	}
-	else if (t1Condition == false && t2Condition == true)
+	};
+
+	if (forEither(shouldStumble, doStumble))
 	{
-		K_StumblePlayer(t1->player);
 		return true;
 	}
 
 	// Ring sting, this is a bit more unique
-	t1Condition = (K_GetShieldFromItem(t2->player->itemtype) == KSHIELD_NONE);
-	t2Condition = (K_GetShieldFromItem(t1->player->itemtype) == KSHIELD_NONE);
-
-	if (t1Condition == true)
+	auto doSting = [](mobj_t *t1, mobj_t *t2)
 	{
+		if (K_GetShieldFromItem(t2->player->itemtype) != KSHIELD_NONE)
+		{
+			return false;
+		}
+
+		bool stung = false;
+
 		if (t2->player->rings <= 0)
 		{
 			P_DamageMobj(t2, t1, t1, 1, DMG_STING|DMG_WOMBO);
-			stungT2 = true;
+			stung = true;
 		}
 
 		P_PlayerRingBurst(t2->player, 1);
-	}
 
-	if (t2Condition == true)
-	{
-		if (t1->player->rings <= 0)
-		{
-			P_DamageMobj(t1, t2, t2, 1, DMG_STING|DMG_WOMBO);
-			stungT1 = true;
-		}
-
-		P_PlayerRingBurst(t1->player, 1);
-	}
+		return stung;
+	};
 
 	// No damage hitlag for stinging.
-	if (stungT1 == true && stungT2 == false)
-	{
-		t2->eflags &= ~MFE_DAMAGEHITLAG;
-	}
-	else if (stungT2 == true && stungT1 == false)
+	auto removeDamageHitlag = [](mobj_t *t1, mobj_t *t2)
 	{
 		t1->eflags &= ~MFE_DAMAGEHITLAG;
+	};
+
+	if (forEither(doSting, removeDamageHitlag))
+	{
+		return true;
 	}
 
-	return (stungT1 || stungT2);
+	return false;
 }
