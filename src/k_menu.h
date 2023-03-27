@@ -1015,7 +1015,7 @@ typedef enum
 {
 	extras_addons = 0,
 	extras_challenges,
-	extras_tutorial,
+	//extras_tutorial,
 	extras_statistics,
 	extras_eggtv,
 	extras_stereo,
