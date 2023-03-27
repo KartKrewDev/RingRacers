@@ -6441,7 +6441,7 @@ mobj_t *K_CreatePaperItem(fixed_t x, fixed_t y, fixed_t z, angle_t angle, SINT8 
 	P_SetTarget(&backdrop->tracer, drop);
 	backdrop->flags2 |= MF2_LINKDRAW;
 
-	if (gametyperules & GTR_BUMPERS)
+	if (gametyperules & GTR_CLOSERPLAYERS)
 	{
 		drop->fuse = BATTLE_DESPAWN_TIME;
 	}

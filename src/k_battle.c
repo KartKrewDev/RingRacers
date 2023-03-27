@@ -247,6 +247,11 @@ mobj_t *K_SpawnChaosEmerald(fixed_t x, fixed_t y, fixed_t z, angle_t angle, SINT
 	P_SetMobjState(overlay, S_CHAOSEMERALD_UNDER);
 	overlay->color = emerald->color;
 
+	if (gametyperules & GTR_CLOSERPLAYERS)
+	{
+		emerald->fuse = BATTLE_DESPAWN_TIME;
+	}
+
 	return emerald;
 }
 
