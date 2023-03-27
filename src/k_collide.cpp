@@ -1,4 +1,4 @@
-/// \file  k_collide.c
+/// \file  k_collide.cpp
 /// \brief SRB2Kart item collision hooks
 
 #include "k_collide.h"
