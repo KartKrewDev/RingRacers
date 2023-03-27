@@ -2488,7 +2488,7 @@ static void K_DrawLivesDigits(INT32 x, INT32 y, INT32 width, INT32 flags, patch_
 	V_DrawScaledPatch(x, y, flags, font[stplyr->lives % 10]);
 }
 
-static void K_drawRingCounter(void)
+static void K_drawRingCounter(boolean gametypeinfoshown)
 {
 	const boolean uselives = G_GametypeUsesLives();
 	SINT8 ringanim_realframe = stplyr->karthud[khud_ringframe];
@@ -2547,43 +2547,57 @@ static void K_drawRingCounter(void)
 
 		fr = fx;
 
+		if (gametypeinfoshown)
+		{
+			fy -= 10;
+		}
+
 		// Rings
 		if (!uselives)
 		{
-			V_DrawScaledPatch(fx-2 + (flipflag ? (SHORT(kp_ringstickersplit[1]->width) - 3) : 0), fy-10, V_HUDTRANS|V_SLIDEIN|splitflags|flipflag, kp_ringstickersplit[1]);
+			V_DrawScaledPatch(fx-2 + (flipflag ? (SHORT(kp_ringstickersplit[1]->width) - 3) : 0), fy, V_HUDTRANS|V_SLIDEIN|splitflags|flipflag, kp_ringstickersplit[1]);
 			if (flipflag)
 				fr += 15;
 		}
 		else
-			V_DrawScaledPatch(fx-2 + (flipflag ? (SHORT(kp_ringstickersplit[0]->width) - 3) : 0), fy-10, V_HUDTRANS|V_SLIDEIN|splitflags|flipflag, kp_ringstickersplit[0]);
+			V_DrawScaledPatch(fx-2 + (flipflag ? (SHORT(kp_ringstickersplit[0]->width) - 3) : 0), fy, V_HUDTRANS|V_SLIDEIN|splitflags|flipflag, kp_ringstickersplit[0]);
 
-		V_DrawMappedPatch(fr+ringx, fy-13, V_HUDTRANS|V_SLIDEIN|splitflags|ringflip, kp_smallring[ringanim_realframe], (colorring ? ringmap : NULL));
+		V_DrawMappedPatch(fr+ringx, fy-3, V_HUDTRANS|V_SLIDEIN|splitflags|ringflip, kp_smallring[ringanim_realframe], (colorring ? ringmap : NULL));
 
 		if (stplyr->rings < 0) // Draw the minus for ring debt
-			V_DrawMappedPatch(fr+7, fy-10, V_HUDTRANS|V_SLIDEIN|splitflags, kp_ringdebtminussmall, ringmap);
+			V_DrawMappedPatch(fr+7, fy, V_HUDTRANS|V_SLIDEIN|splitflags, kp_ringdebtminussmall, ringmap);
 
-		V_DrawMappedPatch(fr+11, fy-10, V_HUDTRANS|V_SLIDEIN|splitflags, fontv[PINGNUM_FONT].font[rn[0]], ringmap);
-		V_DrawMappedPatch(fr+15, fy-10, V_HUDTRANS|V_SLIDEIN|splitflags, fontv[PINGNUM_FONT].font[rn[1]], ringmap);
+		V_DrawMappedPatch(fr+11, fy, V_HUDTRANS|V_SLIDEIN|splitflags, fontv[PINGNUM_FONT].font[rn[0]], ringmap);
+		V_DrawMappedPatch(fr+15, fy, V_HUDTRANS|V_SLIDEIN|splitflags, fontv[PINGNUM_FONT].font[rn[1]], ringmap);
 
 		// SPB ring lock
 		if (stplyr->pflags & PF_RINGLOCK)
-			V_DrawScaledPatch(fr-12, fy-23, V_HUDTRANS|V_SLIDEIN|splitflags, kp_ringspblocksmall[stplyr->karthud[khud_ringspblock]]);
+			V_DrawScaledPatch(fr-12, fy-13, V_HUDTRANS|V_SLIDEIN|splitflags, kp_ringspblocksmall[stplyr->karthud[khud_ringspblock]]);
 
 		// Lives
 		if (uselives)
 		{
 			UINT8 *colormap = R_GetTranslationColormap(stplyr->skin, stplyr->skincolor, GTC_CACHE);
-			V_DrawMappedPatch(fr+21, fy-13, V_HUDTRANS|V_SLIDEIN|splitflags, faceprefix[stplyr->skin][FACE_MINIMAP], colormap);
+			V_DrawMappedPatch(fr+21, fy-3, V_HUDTRANS|V_SLIDEIN|splitflags, faceprefix[stplyr->skin][FACE_MINIMAP], colormap);
 			if (stplyr->lives >= 0)
-				K_DrawLivesDigits(fr+34, fy-10, 4, V_HUDTRANS|V_SLIDEIN|splitflags, fontv[PINGNUM_FONT].font);
+				K_DrawLivesDigits(fr+34, fy, 4, V_HUDTRANS|V_SLIDEIN|splitflags, fontv[PINGNUM_FONT].font);
 		}
 	}
 	else
 	{
-		fy = LAPS_Y-11;
+		fy = LAPS_Y;
 
-		if ((gametyperules & (GTR_BUMPERS|GTR_CIRCUIT)) == GTR_BUMPERS)
-			fy -= 4;
+		if (gametypeinfoshown)
+		{
+			fy -= 11;
+
+			if ((gametyperules & (GTR_BUMPERS|GTR_CIRCUIT)) == GTR_BUMPERS)
+				fy -= 4;
+		}
+		else
+		{
+			fy += 9;
+		}
 
 		// Rings
 		if (!uselives)
@@ -2622,9 +2636,9 @@ static void K_drawRingCounter(void)
 
 #undef RINGANIM_FLIPFRAME
 
-static void K_drawKartAccessibilityIcons(INT32 fx)
+static void K_drawKartAccessibilityIcons(boolean gametypeinfoshown, INT32 fx)
 {
-	INT32 fy = LAPS_Y-25;
+	INT32 fy = LAPS_Y-14;
 	INT32 splitflags = V_SNAPTOLEFT|V_SNAPTOBOTTOM|V_SPLITSCREEN;
 	//INT32 step = 1; -- if there's ever more than one accessibility icon
 
@@ -2632,8 +2646,17 @@ static void K_drawKartAccessibilityIcons(INT32 fx)
 
 	if (r_splitscreen < 2) // adjust to speedometer height
 	{
-		if ((gametyperules & (GTR_BUMPERS|GTR_CIRCUIT)) == GTR_BUMPERS)
-			fy -= 4;
+		if (gametypeinfoshown)
+		{
+			fy -= 11;
+
+			if ((gametyperules & (GTR_BUMPERS|GTR_CIRCUIT)) == GTR_BUMPERS)
+				fy -= 4;
+		}
+		else
+		{
+			fy += 9;
+		}
 	}
 	else
 	{
@@ -2681,13 +2704,13 @@ static void K_drawKartAccessibilityIcons(INT32 fx)
 	}
 }
 
-static void K_drawKartSpeedometer(void)
+static void K_drawKartSpeedometer(boolean gametypeinfoshown)
 {
 	static fixed_t convSpeed;
 	UINT8 labeln = 0;
 	UINT8 numbers[3];
 	INT32 splitflags = V_SNAPTOBOTTOM|V_SNAPTOLEFT|V_SPLITSCREEN;
-	INT32 battleoffset = 0;
+	INT32 fy = LAPS_Y-14;
 
 	if (!stplyr->exiting) // Keep the same speed value as when you crossed the finish line!
 	{
@@ -2722,19 +2745,28 @@ static void K_drawKartSpeedometer(void)
 	numbers[1] = ((convSpeed / 10) % 10);
 	numbers[2] = (convSpeed % 10);
 
-	if ((gametyperules & (GTR_BUMPERS|GTR_CIRCUIT)) == GTR_BUMPERS)
-		battleoffset = -4;
+	if (gametypeinfoshown)
+	{
+		fy -= 11;
 
-	V_DrawScaledPatch(LAPS_X, LAPS_Y-25 + battleoffset, V_HUDTRANS|V_SLIDEIN|splitflags, kp_speedometersticker);
-	V_DrawScaledPatch(LAPS_X+7, LAPS_Y-25 + battleoffset, V_HUDTRANS|V_SLIDEIN|splitflags, kp_facenum[numbers[0]]);
-	V_DrawScaledPatch(LAPS_X+13, LAPS_Y-25 + battleoffset, V_HUDTRANS|V_SLIDEIN|splitflags, kp_facenum[numbers[1]]);
-	V_DrawScaledPatch(LAPS_X+19, LAPS_Y-25 + battleoffset, V_HUDTRANS|V_SLIDEIN|splitflags, kp_facenum[numbers[2]]);
-	V_DrawScaledPatch(LAPS_X+29, LAPS_Y-25 + battleoffset, V_HUDTRANS|V_SLIDEIN|splitflags, kp_speedometerlabel[labeln]);
+		if ((gametyperules & (GTR_BUMPERS|GTR_CIRCUIT)) == GTR_BUMPERS)
+			fy -= 4;
+	}
+	else
+	{
+		fy += 9;
+	}
 
-	K_drawKartAccessibilityIcons(56);
+	V_DrawScaledPatch(LAPS_X, fy, V_HUDTRANS|V_SLIDEIN|splitflags, kp_speedometersticker);
+	V_DrawScaledPatch(LAPS_X+7, fy, V_HUDTRANS|V_SLIDEIN|splitflags, kp_facenum[numbers[0]]);
+	V_DrawScaledPatch(LAPS_X+13, fy, V_HUDTRANS|V_SLIDEIN|splitflags, kp_facenum[numbers[1]]);
+	V_DrawScaledPatch(LAPS_X+19, fy, V_HUDTRANS|V_SLIDEIN|splitflags, kp_facenum[numbers[2]]);
+	V_DrawScaledPatch(LAPS_X+29, fy, V_HUDTRANS|V_SLIDEIN|splitflags, kp_speedometerlabel[labeln]);
+
+	K_drawKartAccessibilityIcons(gametypeinfoshown, 56);
 }
 
-static void K_drawBlueSphereMeter(void)
+static void K_drawBlueSphereMeter(boolean gametypeinfoshown)
 {
 	const UINT8 maxBars = 4;
 	const UINT8 segColors[] = {73, 64, 52, 54, 55, 35, 34, 33, 202, 180, 181, 182, 164, 165, 166, 153, 152};
@@ -2752,7 +2784,17 @@ static void K_drawBlueSphereMeter(void)
 	if (r_splitscreen < 2)	// don't change shit for THIS splitscreen.
 	{
 		fx = LAPS_X;
-		fy = LAPS_Y-22;
+		fy = LAPS_Y-7;
+
+		if (gametypeinfoshown)
+		{
+			fy -= 11 + 4;
+		}
+		else
+		{
+			fy += 9;
+		}
+
 		V_DrawScaledPatch(fx, fy, splitflags|flipflag, kp_spheresticker);
 	}
 	else
@@ -2771,7 +2813,12 @@ static void K_drawBlueSphereMeter(void)
 			flipflag = V_FLIP; // make the string right aligned and other shit
 			xstep = -xstep;
 		}
-		fy -= 16;
+
+		if (gametypeinfoshown)
+		{
+			fy -= 16;
+		}
+
 		V_DrawScaledPatch(fx, fy, splitflags|flipflag, kp_splitspheresticker);
 	}
 
@@ -5068,6 +5115,8 @@ void K_drawKartHUD(void)
 		}
 		else
 		{
+			boolean gametypeinfoshown = false;
+
 			if (LUA_HudEnabled(hud_position))
 			{
 				if (bossinfo.valid)
@@ -5089,31 +5138,36 @@ void K_drawKartHUD(void)
 			{
 				if (gametyperules & GTR_CIRCUIT)
 				{
-					K_drawKartLaps();
+					if (numlaps > 1)
+					{
+						K_drawKartLaps();
+						gametypeinfoshown = true;
+					}
 				}
 				else if (gametyperules & GTR_BUMPERS)
 				{
 					K_drawKartBumpersOrKarma();
+					gametypeinfoshown = true;
 				}
 			}
 
 			// Draw the speedometer and/or accessibility icons
 			if (cv_kartspeedometer.value && !r_splitscreen && (LUA_HudEnabled(hud_speedometer)))
 			{
-				K_drawKartSpeedometer();
+				K_drawKartSpeedometer(gametypeinfoshown);
 			}
 			else
 			{
-				K_drawKartAccessibilityIcons(0);
+				K_drawKartAccessibilityIcons(gametypeinfoshown, 0);
 			}
 
 			if (gametyperules & GTR_SPHERES)
 			{
-				K_drawBlueSphereMeter();
+				K_drawBlueSphereMeter(gametypeinfoshown);
 			}
 			else
 			{
-				K_drawRingCounter();
+				K_drawRingCounter(gametypeinfoshown);
 			}
 
 			if (modeattacking && !bossinfo.valid)
