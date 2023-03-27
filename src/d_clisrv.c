@@ -6330,19 +6330,22 @@ static void SendChallenges(void)
 	#endif
 
 	memset(knownWhenChallenged, 0, sizeof(knownWhenChallenged));
+	memset(lastReceivedSignature, 0, sizeof(lastReceivedSignature));
 
 	GenerateChallenge(netbuffer->u.challengeall.secret);
 	memcpy(lastChallengeAll, netbuffer->u.challengeall.secret, sizeof(lastChallengeAll));
 
-	memset(lastReceivedSignature, 0, sizeof(lastReceivedSignature));
+	// Take note of everyone's current key, so that players who disconnect and are replaced aren't held to the old player's challenge.
+	for (i = 0; i < MAXPLAYERS; i++)
+	{
+		if (playeringame[i])
+			memcpy(knownWhenChallenged[i], players[i].public_key, sizeof(knownWhenChallenged[i]));
+	}
 
 	for (i = 0; i < MAXNETNODES; i++)
 	{
 		if (nodeingame[i])
-		{
 			HSendPacket(i, true, 0, sizeof(challengeall_pak));
-			memcpy(knownWhenChallenged[nodetoplayer[i]], players[nodetoplayer[i]].public_key, sizeof(knownWhenChallenged[nodetoplayer[i]]));
-		}
 	}
 }
 
