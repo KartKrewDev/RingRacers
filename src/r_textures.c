@@ -57,6 +57,8 @@ fixed_t *textureheight; // needed for texture pegging
 INT32 *texturetranslation;
 INT32 *texturebrightmaps;
 
+INT32 g_texturenum_dbgline;
+
 // Painfully simple texture id cacheing to make maps load faster. :3
 static struct {
 	char name[9];
@@ -1126,6 +1128,8 @@ static void R_FinishLoadingTextures(INT32 add)
 	if (rendermode == render_opengl)
 		HWR_LoadMapTextures(numtextures);
 #endif
+
+	g_texturenum_dbgline = R_CheckTextureNumForName("DBGLINE");
 }
 
 //

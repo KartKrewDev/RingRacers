@@ -142,6 +142,7 @@ extern UINT32 debugrender_highlight;
 
 void R_CheckDebugHighlight(debugrender_highlight_t type);
 INT32 R_AdjustLightLevel(INT32 light);
+UINT8 R_DebugLineColor(const line_t *ld);
 
 void Command_Debugrender_highlight(void);
 

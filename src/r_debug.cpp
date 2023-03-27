@@ -15,6 +15,7 @@
 #include "r_debug_detail.hpp"
 
 #include "command.h"
+#include "i_time.h"
 #include "m_fixed.h"
 #include "r_draw.h"
 #include "r_main.h"
@@ -70,6 +71,22 @@ INT32 R_AdjustLightLevel(INT32 light)
 	}
 
 	return light / FRACUNIT;
+}
+
+UINT8 R_DebugLineColor(const line_t *ld)
+{
+	const bool alt = (I_GetTime() % 70 < 35);
+
+	switch (ld->special)
+	{
+	case 2001: // Ring Racers: Finish Line
+		return alt ? 0x1F : 0x49; // black, yellow
+
+	case 2003: // Ring Racers: Respawn Line
+		return alt ? 0x23 : 0x00; // red, white
+	}
+
+	return 0x00;
 }
 
 void Command_Debugrender_highlight(void)

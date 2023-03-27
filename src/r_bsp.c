@@ -425,11 +425,13 @@ boolean R_IsEmptyLine(seg_t *line, sector_t *front, sector_t *back)
 
 boolean R_IsDebugLine(seg_t *line)
 {
-	if (line->linedef->special == 2001) // Ring Racers: Finish Line
+	if (cv_debugfinishline.value)
 	{
-		if (cv_debugfinishline.value)
+		switch (line->linedef->special)
 		{
-			return true;
+			case 2001: // Ring Racers: Finish Line
+			case 2003: // Ring Racers: Respawn Line
+				return true;
 		}
 	}
 

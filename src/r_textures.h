@@ -114,6 +114,8 @@ void R_PrintTextureDuplicates(void);
 
 extern INT32 numtextures;
 
+extern INT32 g_texturenum_dbgline;
+
 #ifdef __cplusplus
 } // extern "C"
 #endif
