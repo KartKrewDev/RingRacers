@@ -624,13 +624,21 @@ void M_UpdateConditionSetsPending(void)
 	}
 }
 
-static boolean M_NotFreePlay(player_t *player)
+boolean M_NotFreePlay(player_t *player)
 {
 	UINT8 i;
 
-	// Rounds that permit Cooperative play can be played by yourself without being FREE PLAY.
-	if (K_Cooperative())
+	if (K_CanChangeRules(true) == false)
+	{
+		// Rounds with direction are never FREE PLAY.
 		return true;
+	}
+
+	if (battleprisons)
+	{
+		// Prison Break is battle's FREE PLAY.
+		return false;
+	}
 
 	for (i = 0; i < MAXPLAYERS; i++)
 	{

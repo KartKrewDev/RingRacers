@@ -4294,22 +4294,7 @@ static void K_drawBattleFullscreen(void)
 	}
 
 	// FREE PLAY?
-	if (K_Cooperative() == false)
-	{
-		UINT8 i;
-
-		// check to see if there's anyone else at all
-		for (i = 0; i < MAXPLAYERS; i++)
-		{
-			if (i == displayplayers[0])
-				continue;
-			if (playeringame[i] && !players[i].spectator)
-				break;
-		}
-
-		if (i == MAXPLAYERS)
-			K_drawKartFreePlay();
-	}
+	K_drawKartFreePlay();
 }
 
 static void K_drawKartFirstPerson(void)
@@ -4701,12 +4686,13 @@ static void K_drawTrickCool(void)
 
 void K_drawKartFreePlay(void)
 {
-	// Doesn't support splitscreens higher than 2 for real estate reasons.
-
 	if (!LUA_HudEnabled(hud_freeplay))
 		return;
 
-	if (modeattacking || grandprixinfo.gp || bossinfo.valid || stplyr->spectator)
+	if (stplyr->spectator == true)
+		return;
+
+	if (M_NotFreePlay(stplyr) == true)
 		return;
 
 	if (lt_exitticker < TICRATE/2)
@@ -5181,8 +5167,7 @@ void K_drawKartHUD(void)
 		V_DrawScaledPatch(BASEVIDWIDTH/2 - (SHORT(kp_yougotem->width)/2), 32, V_HUDTRANS, kp_yougotem);
 
 	// Draw FREE PLAY.
-	if (islonesome && K_Cooperative() == false && gametype != GT_TUTORIAL)
-		K_drawKartFreePlay();
+	K_drawKartFreePlay();
 
 	if (r_splitscreen == 0 && (stplyr->pflags & PF_WRONGWAY) && ((leveltime / 8) & 1))
 	{

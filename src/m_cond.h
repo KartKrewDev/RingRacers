@@ -325,6 +325,8 @@ void M_ClearConditionSet(UINT8 set);
 void M_ClearSecrets(void);
 void M_ClearStats(void);
 
+boolean M_NotFreePlay(player_t *player);
+
 // Updating conditions and unlockables
 boolean M_CheckCondition(condition_t *cn, player_t *player);
 boolean M_UpdateUnlockablesAndExtraEmblems(boolean loud, boolean doall);
