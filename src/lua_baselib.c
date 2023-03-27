@@ -651,6 +651,23 @@ static int lib_pSpawnMobjFromMobj(lua_State *L)
 	return 1;
 }
 
+static int lib_pSpawnMobjFromMobjUnscaled(lua_State *L)
+{
+	mobj_t *actor = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
+	fixed_t x = luaL_checkfixed(L, 2);
+	fixed_t y = luaL_checkfixed(L, 3);
+	fixed_t z = luaL_checkfixed(L, 4);
+	mobjtype_t type = luaL_checkinteger(L, 5);
+	NOHUD
+	INLEVEL
+	if (!actor)
+		return LUA_ErrInvalid(L, "mobj_t");
+	if (type >= NUMMOBJTYPES)
+		return luaL_error(L, "mobj type %d out of range (0 - %d)", type, NUMMOBJTYPES-1);
+	LUA_PushUserdata(L, P_SpawnMobjFromMobjUnscaled(actor, x, y, z, type), META_MOBJ);
+	return 1;
+}
+
 static int lib_pRemoveMobj(lua_State *L)
 {
 	mobj_t *th = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
@@ -3950,6 +3967,7 @@ static luaL_Reg lib[] = {
 	// don't add P_SetMobjState or P_SetPlayerMobjState, use "mobj.state = S_NEWSTATE" instead.
 	{"P_SpawnMobj",lib_pSpawnMobj},
 	{"P_SpawnMobjFromMobj",lib_pSpawnMobjFromMobj},
+	{"P_SpawnMobjFromMobjUnscaled",lib_pSpawnMobjFromMobjUnscaled},
 	{"P_RemoveMobj",lib_pRemoveMobj},
 	{"P_IsValidSprite2", lib_pIsValidSprite2},
 	{"P_SpawnLockOn", lib_pSpawnLockOn},
