@@ -3263,13 +3263,12 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 
 	if (demo.playback)
 	{
-		// Hack-adjacent.
-		// Sometimes stale ticcmds send a weird angle at the start of the race.
-		// P_UpdatePlayerAngle knows to ignore cmd angle when you literally can't turn, so we do the same here.
-		if (leveltime > introtime)
-			focusangle = player->cmd.angle << TICCMD_REDUCE;
+		if (K_PlayerUsesBotMovement(player))
+			focusangle = mo->angle; // Bots don't even send cmd angle; they always turn where they want to!
+		else if (leveltime <= introtime)
+			focusangle = mo->angle; // Can't turn yet. P_UpdatePlayerAngle will ignore angle in stale ticcmds, chasecam should too.
 		else
-			focusangle = mo->angle; // Just use something known sane.
+			focusangle = player->cmd.angle << TICCMD_REDUCE;
 		focusaiming = 0;
 	}
 	else
