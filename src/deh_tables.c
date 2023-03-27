@@ -5685,7 +5685,7 @@ const char *const MOBJFLAG_LIST[] = {
 	"BOSS",
 	"SPAWNCEILING",
 	"NOGRAVITY",
-	"\x01",	// free: 1<<10 (name un-matchable)
+	"DRAWFROMFARAWAY",
 	"SLIDEME",
 	"NOCLIP",
 	"FLOAT",

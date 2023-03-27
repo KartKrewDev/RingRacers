@@ -3618,9 +3618,23 @@ boolean R_ThingWithinDist (mobj_t *thing, fixed_t limit_dist)
 {
 	const fixed_t dist = R_PointToDist(thing->x, thing->y);
 
-	if (limit_dist && dist > limit_dist)
+	if (limit_dist)
 	{
-		return false;
+		if (thing->flags & MF_DRAWFROMFARAWAY)
+		{
+			// MF_DRAWFROMFARAWAY: visible from 2x drawdist
+			if (dist > limit_dist * 2)
+			{
+				return false;
+			}
+		}
+		else
+		{
+			if (dist > limit_dist)
+			{
+				return false;
+			}
+		}
 	}
 
 	return true;
