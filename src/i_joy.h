@@ -60,6 +60,8 @@ extern JoyType_t Joystick[MAXSPLITSCREENPLAYERS];
 
 void I_SetGamepadPlayerIndex(INT32 device_id, INT32 index);
 void I_SetGamepadIndicatorColor(INT32 device_id, UINT8 red, UINT8 green, UINT8 blue);
+void I_GetGamepadGuid(INT32 device_id, char *out, int out_len);
+void I_GetGamepadName(INT32 device_id, char *out, int out_len);
 
 #ifdef __cplusplus
 } // extern "C"
