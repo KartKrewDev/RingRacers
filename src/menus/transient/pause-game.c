@@ -188,6 +188,8 @@ void M_OpenPauseMenu(void)
 				PAUSE_Main[mpause_entergame].status = IT_STRING | IT_CALL;
 		}
 	}
+
+	G_ResetAllDeviceRumbles();
 }
 
 void M_QuitPauseMenu(INT32 choice)

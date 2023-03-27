@@ -3315,6 +3315,7 @@ static void Got_Pause(UINT8 **cp, INT32 playernum)
 	}
 
 	I_UpdateMouseGrab();
+	G_ResetAllDeviceRumbles();
 }
 
 // Command for stuck characters in netgames, griefing, etc.
