@@ -30,6 +30,13 @@ INT32 PR_GetNumProfiles(void)
 	return numprofiles;
 }
 
+static void PR_GenerateProfileKeys(profile_t *new)
+{
+	static uint8_t seed[32];
+	csprng(seed, 32);
+	crypto_eddsa_key_pair(new->secret_key, new->public_key, seed);
+}
+
 profile_t* PR_MakeProfile(
 	const char *prname,
 	const char *pname,
@@ -43,17 +50,12 @@ profile_t* PR_MakeProfile(
 
 	new->version = PROFILEVER;
 
-	uint8_t secret_key[64];
-	uint8_t public_key[32];
-
-	memset(new->secret_key, 0, sizeof(secret_key));
-	memset(new->public_key, 0, sizeof(public_key));
+	memset(new->secret_key, 0, sizeof(new->secret_key));
+	memset(new->public_key, 0, sizeof(new->public_key));
 
 	if (!guest)
 	{
-		static uint8_t seed[32];
-		csprng(seed, 32);
-		crypto_eddsa_key_pair(new->secret_key, new->public_key, seed);
+		PR_GenerateProfileKeys(new);
 	}
 
 	strcpy(new->profilename, prname);
@@ -348,8 +350,19 @@ void PR_LoadProfiles(void)
 
 		// Names and keys, all the identity stuff up front
 		READSTRINGN(save.p, profilesList[i]->profilename, PROFILENAMELEN);
-		READMEM(save.p, profilesList[i]->public_key, sizeof(((profile_t *)0)->public_key));
-		READMEM(save.p, profilesList[i]->secret_key, sizeof(((profile_t *)0)->secret_key));
+
+		// Profile update 2-->3: Add profile keys.
+		if (version < 3)
+		{
+			// Generate missing keys.
+			PR_GenerateProfileKeys(profilesList[i]);
+		}
+		else
+		{
+			READMEM(save.p, profilesList[i]->public_key, sizeof(((profile_t *)0)->public_key));
+			READMEM(save.p, profilesList[i]->secret_key, sizeof(((profile_t *)0)->secret_key));
+		}
+
 		READSTRINGN(save.p, profilesList[i]->playername, MAXPLAYERNAME);
 
 		// Character and colour.
