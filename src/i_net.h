@@ -176,6 +176,7 @@ extern boolean (*I_SetBanAddress) (const char *address,const char *mask);
 extern boolean (*I_SetBanUsername) (const char *username);
 extern boolean (*I_SetBanReason) (const char *reason);
 extern boolean (*I_SetUnbanTime) (time_t timestamp);
+extern boolean (*I_IsExternalAddress) (const void *p);
 
 struct bannednode_t
 {

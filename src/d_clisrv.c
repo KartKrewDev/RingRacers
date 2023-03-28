@@ -219,31 +219,6 @@ consvar_t cv_httpsource = CVAR_INIT ("http_source", "", CV_SAVE, NULL, NULL);
 
 consvar_t cv_kicktime = CVAR_INIT ("kicktime", "10", CV_SAVE, CV_Unsigned, NULL);
 
-// https://github.com/jameds/holepunch/blob/master/holepunch.c#L75
-static int IsExternalAddress (const void *p)
-{
-	const int a = ((const unsigned char*)p)[0];
-	const int b = ((const unsigned char*)p)[1];
-
-	if (*(const int*)p == ~0)/* 255.255.255.255 */
-		return 0;
-
-	switch (a)
-	{
-		case 0:
-		case 10:
-		case 127:
-			return 0;
-		case 172:
-			return (b & ~15) != 16;/* 16 - 31 */
-		case 192:
-			return b != 168;
-		default:
-			return 1;
-	}
-}
-
-
 // Generate a message for an authenticating client to sign, with some guarantees about who we are.
 void GenerateChallenge(uint8_t *buf)
 {
@@ -292,7 +267,7 @@ shouldsign_t ShouldSignChallenge(uint8_t *message)
 	if ((max(now, then) - min(now, then)) > 60*5)
 		return SIGN_BADTIME;
 
-	if (realIP != claimedIP && IsExternalAddress(&realIP))
+	if (realIP != claimedIP && I_IsExternalAddress(&realIP))
 		return SIGN_BADIP;
 
 	return SIGN_OK;

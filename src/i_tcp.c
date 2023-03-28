@@ -1522,6 +1522,31 @@ static void SOCK_ClearBans(void)
 	banned = NULL;
 }
 
+// https://github.com/jameds/holepunch/blob/master/holepunch.c#L75
+static int SOCK_IsExternalAddress (const void *p)
+{
+	const int a = ((const unsigned char*)p)[0];
+	const int b = ((const unsigned char*)p)[1];
+
+	if (*(const UINT32*)p == (UINT32)~0)/* 255.255.255.255 */
+		return 0;
+
+	switch (a)
+	{
+		case 0:
+		case 10:
+		case 127:
+			return 0;
+		case 172:
+			return (b & ~15) != 16;/* 16 - 31 */
+		case 192:
+			return b != 168;
+		default:
+			return 1;
+	}
+}
+
+
 boolean I_InitTcpNetwork(void)
 {
 	char serverhostname[255];
@@ -1622,6 +1647,8 @@ boolean I_InitTcpNetwork(void)
 	I_SetBanUsername = SOCK_SetBanUsername;
 	I_SetBanReason = SOCK_SetBanReason;
 	I_SetUnbanTime = SOCK_SetUnbanTime;
+	I_IsExternalAddress = SOCK_IsExternalAddress;
+
 	bannednode = SOCK_bannednode;
 
 	return ret;

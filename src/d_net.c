@@ -93,6 +93,7 @@ boolean (*I_SetBanAddress) (const char *address, const char *mask) = NULL;
 boolean (*I_SetBanUsername) (const char *username) = NULL;
 boolean (*I_SetBanReason) (const char *reason) = NULL;
 boolean (*I_SetUnbanTime) (time_t timestamp) = NULL;
+boolean (*I_IsExternalAddress) (const void *p) = NULL;
 bannednode_t *bannednode = NULL;
 
 
