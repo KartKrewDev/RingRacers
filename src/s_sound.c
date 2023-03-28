@@ -1403,19 +1403,18 @@ conclusion:
 
 	if (soundtest.playing == true)
 	{
-		if (newdef == NULL)
-		{
-			S_SoundTestStop(false);
-		}
-		else
-		{
-			S_SoundTestPlay();
-		}
+		S_SoundTestPlay();
 	}
 }
 
 void S_SoundTestPlay(void)
 {
+	if (soundtest.current == NULL)
+	{
+		S_SoundTestStop(false);
+		return;
+	}
+
 	soundtest.privilegedrequest = true;
 
 	S_StopMusic();
