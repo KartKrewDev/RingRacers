@@ -1472,6 +1472,12 @@ static boolean S_SoundTestDefLocked(musicdef_t *def)
 	if (def->sequence.map >= nummapheaders)
 		return false;
 
+	// Is the level tied to SP progression?
+	if ((mapheaderinfo[def->sequence.map]->menuflags & LF2_FINISHNEEDED)
+	&& !(mapheaderinfo[def->sequence.map]->mapvisited & MV_BEATEN))
+		return true;
+
+	// Finally, do a full-fat map check.
 	return M_MapLocked(def->sequence.map+1);
 }
 
