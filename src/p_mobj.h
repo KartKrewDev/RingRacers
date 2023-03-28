@@ -122,8 +122,8 @@ typedef enum
 	// Don't apply gravity (every tic); object will float, keeping current height
 	//  or changing it actively.
 	MF_NOGRAVITY        = 1<<9,
-	// This object is an ambient sound. Obsolete, but keep this around for backwards compatibility.
-	MF_AMBIENT          = 1<<10,
+	// This object is visible from a greater distance than normal objects.
+	MF_DRAWFROMFARAWAY  = 1<<10,
 	// Slide this object when it hits a wall.
 	MF_SLIDEME          = 1<<11,
 	// Don't collide with walls or solid objects. Two MF_NOCLIP objects can't touch each other at all!
