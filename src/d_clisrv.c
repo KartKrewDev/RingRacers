@@ -280,7 +280,7 @@ shouldsign_t ShouldSignChallenge(uint8_t *message)
 	#ifndef SRB2_LITTLE_ENDIAN
 		#error  "FIXME: 64-bit timestamp field is not supported on Big Endian"
 	#endif
-
+	
 	UINT64 then, now;
 	UINT32 claimedIP, realIP;
 
@@ -4945,7 +4945,10 @@ static void HandlePacketFromPlayer(SINT8 node)
 							netbuffer->packettype, node, splitnodes,
 							GetPrettyRRID(players[targetplayer].public_key, true), doomcom->datalength - BASEPACKETSIZE, netconsole);
 						
-						if (netconsole != -1) // NO IDEA.
+						// Something scary can happen when multiple kicks that resolve to the same node are processed in quick succession.
+						// Sometimes, a kick will still be left to process after the player's been disposed, and that causes the kick to resolve on the server instead!
+						// This sucks, so we check for a stale/misfiring kick beforehand.
+						if (netconsole != -1)
 							SendKick(netconsole, KICK_MSG_SIGFAIL);
 						// Net_CloseConnection(node);
 						// nodeingame[node] = false;
@@ -5453,7 +5456,10 @@ static void HandlePacketFromPlayer(SINT8 node)
 				{
 					if (crypto_eddsa_check(netbuffer->u.responseall.signature[responseplayer], players[targetplayer].public_key, lastChallengeAll, sizeof(lastChallengeAll)))
 					{
-						if (playernode[targetplayer] != 0) // NO IDEA.
+						// Something scary can happen when multiple kicks that resolve to the same node are processed in quick succession.
+						// Sometimes, a kick will still be left to process after the player's been disposed, and that causes the kick to resolve on the server instead!
+						// This sucks, so we check for a stale/misfiring kick beforehand.
+						if (playernode[targetplayer] != 0)
 							SendKick(targetplayer, KICK_MSG_SIGFAIL);
 						break;
 					}
