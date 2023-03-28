@@ -4061,25 +4061,25 @@ const char *name3, uint8_t *key3, const char *name4, uint8_t *key4)
 			{
 				nodetoplayer[node] = newplayernum;
 				WRITESTRINGN(buf_p, name, MAXPLAYERNAME);
-				WRITESTRINGN(buf_p, key, 32);
+				WRITEMEM(buf_p, key, 32);
 			}
 			else if (playerpernode[node] < 2)
 			{
 				nodetoplayer2[node] = newplayernum;
 				WRITESTRINGN(buf_p, name2, MAXPLAYERNAME);
-				WRITESTRINGN(buf_p, key2, 32);
+				WRITEMEM(buf_p, key2, 32);
 			}
 			else if (playerpernode[node] < 3)
 			{
 				nodetoplayer3[node] = newplayernum;
 				WRITESTRINGN(buf_p, name3, MAXPLAYERNAME);
-				WRITESTRINGN(buf_p, key3, 32);
+				WRITEMEM(buf_p, key3, 32);
 			}
 			else if (playerpernode[node] < 4)
 			{
 				nodetoplayer4[node] = newplayernum;
 				WRITESTRINGN(buf_p, name4, MAXPLAYERNAME);
-				WRITESTRINGN(buf_p, key4, 32);
+				WRITEMEM(buf_p, key4, 32);
 			}
 
 			WRITEUINT8(buf_p, nodetoplayer[node]); // consoleplayer
