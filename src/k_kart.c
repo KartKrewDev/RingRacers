@@ -776,9 +776,14 @@ static void K_PlayerJustBumped(player_t *player)
 	player->justbumped = bumptime;
 	player->spindash = 0;
 
+	// If spinouttimer is not set yet but could be set later,
+	// this lets the bump still trigger wipeout friction. If
+	// spinouttimer never gets set, then this has no effect on
+	// friction and gets unset anyway.
+	player->wipeoutslow = wipeoutslowtime+1;
+
 	if (player->spinouttimer)
 	{
-		player->wipeoutslow = wipeoutslowtime+1;
 		player->spinouttimer = max(wipeoutslowtime+1, player->spinouttimer);
 		//player->spinouttype = KSPIN_WIPEOUT; // Enforce type
 	}
