@@ -161,8 +161,8 @@ boolean acceptnewnode = true;
 
 UINT32 ourIP; // Used when populating PT_SERVERCHALLENGE (guards against signature reuse)
 uint8_t lastReceivedKey[MAXNETNODES][MAXSPLITSCREENPLAYERS][32]; // Player's public key (join process only! active players have it on player_t)
-uint8_t lastSentChallenge[MAXNETNODES][32]; // The random message we asked them to sign in PT_SERVERCHALLENGE, check it in PT_CLIENTJOIN
-uint8_t lastChallengeAll[64]; // The message we asked EVERYONE to sign for client-to-client identity proofs
+uint8_t lastSentChallenge[MAXNETNODES][CHALLENGELENGTH]; // The random message we asked them to sign in PT_SERVERCHALLENGE, check it in PT_CLIENTJOIN
+uint8_t lastChallengeAll[CHALLENGELENGTH]; // The message we asked EVERYONE to sign for client-to-client identity proofs
 uint8_t lastReceivedSignature[MAXPLAYERS][64]; // Everyone's response to lastChallengeAll
 uint8_t knownWhenChallenged[MAXPLAYERS][32]; // Everyone a client saw at the moment a challenge should be initiated
 boolean expectChallenge = false; // Were we in-game before a client-to-client challenge should have been sent?
@@ -227,7 +227,7 @@ void GenerateChallenge(uint8_t *buf)
 	#endif
 
 	UINT64 now = time(NULL);
-	csprng(buf, sizeof(&buf)); // Random noise as a baseline, but...
+	csprng(buf, CHALLENGELENGTH); // Random noise as a baseline, but...
 	memcpy(buf, &now, sizeof(now)); // Timestamp limits the reuse window.
 	memcpy(buf + sizeof(now), &ourIP, sizeof(ourIP)); // IP prevents captured signatures from being used elsewhere.
 
@@ -4385,7 +4385,7 @@ static void HandleConnect(SINT8 node)
 				}
 				else
 				{	
-					sigcheck = crypto_eddsa_check(netbuffer->u.clientcfg.challengeResponse[i], lastReceivedKey[node][i], lastSentChallenge[node], 32);
+					sigcheck = crypto_eddsa_check(netbuffer->u.clientcfg.challengeResponse[i], lastReceivedKey[node][i], lastSentChallenge[node], CHALLENGELENGTH);
 				}
 
 				if (netgame && sigcheck != 0)

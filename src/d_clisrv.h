@@ -54,6 +54,9 @@ applications may follow different packet versions.
 // This just works as a quick implementation.
 #define MAXGENTLEMENDELAY TICRATE
 
+// Servers verify client identity by giving them messages to sign. How long are these messages?
+#define CHALLENGELENGTH 64
+
 //
 // Packet structure
 //
@@ -367,12 +370,12 @@ struct clientkey_pak
 
 struct serverchallenge_pak
 {
-	uint8_t secret[32];
+	uint8_t secret[CHALLENGELENGTH];
 } ATTRPACK;
 
 struct challengeall_pak
 {
-	uint8_t secret[64];
+	uint8_t secret[CHALLENGELENGTH];
 } ATTRPACK;
 
 struct responseall_pak
@@ -423,7 +426,7 @@ struct doomdata_t
 		filesneededconfig_pak filesneededcfg; //       ??? bytes
 		UINT32 pingtable[MAXPLAYERS+1];     //          68 bytes
 		clientkey_pak clientkey;				// 32 bytes
-		serverchallenge_pak serverchallenge;	// 64 bytes
+		serverchallenge_pak serverchallenge;	// 256 bytes
 		challengeall_pak challengeall;			// 256 bytes
 		responseall_pak responseall;			// 256 bytes
 		resultsall_pak resultsall;				// 1024 bytes. Also, you really shouldn't trust anything here.
@@ -493,8 +496,8 @@ extern SINT8 servernode;
 extern char connectedservername[MAXSERVERNAME];
 extern UINT32 ourIP;
 extern uint8_t lastReceivedKey[MAXNETNODES][MAXSPLITSCREENPLAYERS][32];
-extern uint8_t lastSentChallenge[MAXNETNODES][32];
-extern uint8_t lastChallengeAll[64];
+extern uint8_t lastSentChallenge[MAXNETNODES][CHALLENGELENGTH];
+extern uint8_t lastChallengeAll[CHALLENGELENGTH];
 extern uint8_t lastReceivedSignature[MAXPLAYERS][64];
 extern uint8_t knownWhenChallenged[MAXPLAYERS][32];
 extern boolean expectChallenge;
