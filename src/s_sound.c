@@ -1479,8 +1479,6 @@ void S_UpdateSoundTestDef(boolean reverse, boolean skipnull)
 {
 	musicdef_t *newdef;
 
-	// Naive implementation for now.
-
 	newdef = NULL;
 
 	if (reverse == false)
@@ -1490,7 +1488,7 @@ void S_UpdateSoundTestDef(boolean reverse, boolean skipnull)
 			: soundtest.sequence.next;
 		while (newdef != NULL && S_SoundTestDefLocked(newdef))
 			newdef = newdef->sequence.next;
-		if (newdef == NULL && skipnull == false)
+		if (newdef == NULL && skipnull == true)
 		{
 			newdef = soundtest.sequence.next;
 			while (newdef != NULL && S_SoundTestDefLocked(newdef))
