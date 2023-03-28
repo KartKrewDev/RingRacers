@@ -1475,7 +1475,7 @@ static boolean S_SoundTestDefLocked(musicdef_t *def)
 	return M_MapLocked(def->sequence.map+1);
 }
 
-void S_UpdateSoundTestDef(boolean reverse, boolean skipnull)
+void S_UpdateSoundTestDef(boolean reverse, boolean dotracks, boolean skipnull)
 {
 	musicdef_t *newdef;
 
@@ -1483,6 +1483,13 @@ void S_UpdateSoundTestDef(boolean reverse, boolean skipnull)
 
 	if (reverse == false)
 	{
+		if (dotracks == true && soundtest.current != NULL
+			&& soundtest.currenttrack < soundtest.current->numtracks-1)
+		{
+			soundtest.currenttrack++;
+			goto updatetrackonly;
+		}
+
 		newdef = (soundtest.current != NULL)
 			? soundtest.current->sequence.next
 			: soundtest.sequence.next;
@@ -1499,10 +1506,17 @@ void S_UpdateSoundTestDef(boolean reverse, boolean skipnull)
 	{
 		musicdef_t *def, *lastdef = NULL;
 
+		if (dotracks == true && soundtest.current != NULL
+			&& soundtest.currenttrack > 0)
+		{
+			soundtest.currenttrack--;
+			goto updatetrackonly;
+		}
+
 		if (soundtest.current == soundtest.sequence.next
 			&& skipnull == false)
 		{
-			goto conclusion;
+			goto updatecurrent;
 		}
 
 		for (def = soundtest.sequence.next; def; def = def->sequence.next)
@@ -1522,10 +1536,14 @@ void S_UpdateSoundTestDef(boolean reverse, boolean skipnull)
 		}
 	}
 
-conclusion:
+updatecurrent:
 	soundtest.current = newdef;
-	soundtest.currenttrack = 0;
+	soundtest.currenttrack =
+		(reverse == true && dotracks == true && newdef != NULL)
+			? newdef->numtracks-1
+			: 0;
 
+updatetrackonly:
 	if (soundtest.playing == true)
 	{
 		S_SoundTestPlay();

@@ -15,7 +15,7 @@ static void M_SoundTestMainControl(INT32 choice)
 		{
 			soundtest.playing = true;
 			//soundtest.sequence = true;
-			S_UpdateSoundTestDef(false, false);
+			S_UpdateSoundTestDef(false, false, false);
 		}
 		else if (cv_soundtest.value != 0)
 		{
@@ -44,7 +44,7 @@ static void M_SoundTestNextPrev(INT32 choice)
 {
 	(void)choice;
 
-	S_UpdateSoundTestDef((currentMenu->menuitems[itemOn].mvar1 < 0), false);
+	S_UpdateSoundTestDef((currentMenu->menuitems[itemOn].mvar1 < 0), true, false);
 }
 
 static void M_SoundTestTrack(INT32 choice)

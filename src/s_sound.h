@@ -218,7 +218,7 @@ extern struct soundtest
 } soundtest;
 
 void S_PopulateSoundTestSequence(void);
-void S_UpdateSoundTestDef(boolean reverse, boolean skipnull);
+void S_UpdateSoundTestDef(boolean reverse, boolean dotracks, boolean skipnull);
 void S_SoundTestPlay(void);
 void S_SoundTestStop(boolean pause);
 
