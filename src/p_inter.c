@@ -391,18 +391,11 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 			K_CheckEmeralds(player);
 			break;
 		case MT_SPECIAL_UFO:
-			if (!P_CanPickupItem(player, 0))
+			if (Obj_UFOEmeraldCollect(special, toucher) == false)
+			{
 				return;
+			}
 
-			if (special->threshold > 0)
-				return;
-
-			if (toucher->hitlag > 0)
-				return;
-
-			P_LinedefExecute(LE_BOSSDEAD, toucher, NULL);
-
-			CONS_Printf("You win!\n");
 			break;
 		/*
 		case MT_EERIEFOG:

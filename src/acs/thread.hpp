@@ -41,7 +41,8 @@ enum acs_scriptType_e
 	ACS_ST_LAP			=  5, // LAP: Runs when a player's lap increases from crossing the finish line.
 	ACS_ST_POSITION		=  6, // POSITION: Runs when the POSITION period ends.
 	ACS_ST_OVERTIME		=  7, // OVERTIME: Runs when Overtime starts in timed game modes.
-	ACS_ST_EMERALD		=  8, // EMERALD: Runs when the Chaos Emerald is collected in a Special Stage.
+	ACS_ST_UFO			=  8, // UFO: Runs when the UFO Catcher is destroyed in a Special Stage.
+	ACS_ST_EMERALD		=  9, // EMERALD: Runs when the Chaos Emerald is collected in a Special Stage.
 };
 
 //
