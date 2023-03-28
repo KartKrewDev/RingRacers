@@ -280,7 +280,7 @@ shouldsign_t ShouldSignChallenge(uint8_t *message)
 	#ifndef SRB2_LITTLE_ENDIAN
 		#error  "FIXME: 64-bit timestamp field is not supported on Big Endian"
 	#endif
-	
+
 	UINT64 then, now;
 	UINT32 claimedIP, realIP;
 
@@ -3833,7 +3833,7 @@ static void Got_AddPlayer(UINT8 **p, INT32 playernum)
 	newplayer->jointime = 0;
 
 	READSTRINGN(*p, player_names[newplayernum], MAXPLAYERNAME);
-	READSTRINGN(*p, players[newplayernum].public_key, 32);
+	READMEM(*p, players[newplayernum].public_key, 32);
 
 	console = READUINT8(*p);
 	splitscreenplayer = READUINT8(*p);

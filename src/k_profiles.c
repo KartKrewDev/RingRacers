@@ -255,8 +255,8 @@ void PR_SaveProfiles(void)
 	{
 		// Names and keys, all the string data up front
 		WRITESTRINGN(save.p, profilesList[i]->profilename, PROFILENAMELEN);
-		WRITESTRINGN(save.p, profilesList[i]->public_key, sizeof(((profile_t *)0)->public_key));
-		WRITESTRINGN(save.p, profilesList[i]->secret_key, sizeof(((profile_t *)0)->secret_key));
+		WRITEMEM(save.p, profilesList[i]->public_key, sizeof(((profile_t *)0)->public_key));
+		WRITEMEM(save.p, profilesList[i]->secret_key, sizeof(((profile_t *)0)->secret_key));
 		WRITESTRINGN(save.p, profilesList[i]->playername, MAXPLAYERNAME);
 
 		// Character and colour.
@@ -348,8 +348,8 @@ void PR_LoadProfiles(void)
 
 		// Names and keys, all the identity stuff up front
 		READSTRINGN(save.p, profilesList[i]->profilename, PROFILENAMELEN);
-		READSTRINGN(save.p, profilesList[i]->public_key, sizeof(((profile_t *)0)->public_key));
-		READSTRINGN(save.p, profilesList[i]->secret_key, sizeof(((profile_t *)0)->secret_key));
+		READMEM(save.p, profilesList[i]->public_key, sizeof(((profile_t *)0)->public_key));
+		READMEM(save.p, profilesList[i]->secret_key, sizeof(((profile_t *)0)->secret_key));
 		READSTRINGN(save.p, profilesList[i]->playername, MAXPLAYERNAME);
 
 		// Character and colour.
