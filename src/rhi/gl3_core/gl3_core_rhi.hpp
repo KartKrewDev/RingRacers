@@ -25,10 +25,13 @@ namespace srb2::rhi
 
 struct GlCoreFramebufferKey
 {
-	TextureOrRenderbuffer color;
-	std::optional<TextureOrRenderbuffer> depth;
+	Handle<Texture> color;
+	std::optional<Handle<Renderbuffer>> depth_stencil;
 
-	bool operator==(const GlCoreFramebufferKey& rhs) const noexcept { return color == rhs.color && depth == rhs.depth; }
+	bool operator==(const GlCoreFramebufferKey& rhs) const noexcept
+	{
+		return color == rhs.color && depth_stencil == rhs.depth_stencil;
+	}
 
 	bool operator!=(const GlCoreFramebufferKey& rhs) const noexcept { return !(*this == rhs); }
 };
@@ -43,24 +46,13 @@ struct std::hash<srb2::rhi::GlCoreFramebufferKey>
 {
 	std::size_t operator()(const srb2::rhi::GlCoreFramebufferKey& key) const
 	{
-		struct GetHandleHashVisitor
+		std::size_t color_hash = std::hash<const srb2::rhi::Handle<srb2::rhi::Texture>>()(key.color);
+		std::size_t depth_stencil_hash = 0;
+		if (key.depth_stencil)
 		{
-			uint32_t operator()(const srb2::rhi::Handle<srb2::rhi::Texture>& handle) const noexcept
-			{
-				return std::hash<srb2::rhi::Handle<srb2::rhi::Texture>>()(handle);
-			}
-			uint32_t operator()(const srb2::rhi::Handle<srb2::rhi::Renderbuffer>& handle) const noexcept
-			{
-				return std::hash<srb2::rhi::Handle<srb2::rhi::Renderbuffer>>()(handle);
-			}
-		};
-		std::size_t color_hash = std::visit(GetHandleHashVisitor {}, key.color);
-		std::size_t depth_hash = 0;
-		if (key.depth)
-		{
-			depth_hash = std::visit(GetHandleHashVisitor {}, *key.depth);
+			depth_stencil_hash = std::hash<const srb2::rhi::Handle<srb2::rhi::Renderbuffer>>()(*key.depth_stencil);
 		}
-		return color_hash ^ (depth_hash << 1);
+		return color_hash ^ (depth_stencil_hash << 1);
 	}
 };
 

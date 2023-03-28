@@ -46,7 +46,13 @@ void SoftwarePass::prepass(Rhi& rhi)
 
 	if (!screen_texture_)
 	{
-		screen_texture_ = rhi.create_texture({TextureFormat::kLuminance, width_, height_});
+		screen_texture_ = rhi.create_texture({
+			TextureFormat::kLuminance,
+			width_,
+			height_,
+			TextureWrapMode::kClamp,
+			TextureWrapMode::kClamp
+		});
 	}
 
 	// If the screen width won't fit the unpack alignment, we need to copy the screen.

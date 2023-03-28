@@ -47,7 +47,7 @@ static const PipelineDesc kPalettedPipelineDescription = {
 	  // 256x1 palette texture
 	  SamplerName::kSampler1}},
 	std::nullopt,
-	{PixelFormat::kRGBA8, std::nullopt, {true, true, true, true}},
+	{std::nullopt, {true, true, true, true}},
 	PrimitiveType::kTriangles,
 	CullMode::kNone,
 	FaceWinding::kCounterClockwise,
@@ -61,7 +61,7 @@ static const PipelineDesc kUnshadedPipelineDescription = {
 	{{// RGB/A texture
 	  SamplerName::kSampler0}},
 	std::nullopt,
-	{PixelFormat::kRGBA8, std::nullopt, {true, true, true, true}},
+	{std::nullopt, {true, true, true, true}},
 	PrimitiveType::kTriangles,
 	CullMode::kNone,
 	FaceWinding::kCounterClockwise,
@@ -111,10 +111,15 @@ void BlitRectPass::prepass(Rhi& rhi)
 	if (!render_pass_)
 	{
 		render_pass_ = rhi.create_render_pass(
-			{std::nullopt,
-			 PixelFormat::kRGBA8,
-			 output_clear_ ? AttachmentLoadOp::kClear : AttachmentLoadOp::kLoad,
-			 AttachmentStoreOp::kStore}
+			{
+				false,
+			 	output_clear_ ? AttachmentLoadOp::kClear : AttachmentLoadOp::kLoad,
+			 	AttachmentStoreOp::kStore,
+				AttachmentLoadOp::kDontCare,
+				AttachmentStoreOp::kDontCare,
+				AttachmentLoadOp::kDontCare,
+				AttachmentStoreOp::kDontCare
+			}
 		);
 	}
 }
@@ -160,7 +165,7 @@ void BlitRectPass::transfer(Rhi& rhi, Handle<TransferContext> ctx)
 		glm::mat3(
 			glm::vec3(1.f, 0.f, 0.f),
 			glm::vec3(0.f, output_flip_ ? -1.f : 1.f, 0.f),
-			glm::vec3(0.f, 0.f, 1.f)
+			glm::vec3(0.f, output_flip_ ? 1.f : 0.f, 1.f)
 		)
 	};
 

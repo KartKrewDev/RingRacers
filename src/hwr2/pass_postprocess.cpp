@@ -50,7 +50,7 @@ static const PipelineDesc kWipePipelineDesc = {
 	{{{{UniformName::kProjection, UniformName::kWipeColorizeMode, UniformName::kWipeEncoreSwizzle}}}},
 	{{SamplerName::kSampler0, SamplerName::kSampler1, SamplerName::kSampler2}},
 	std::nullopt,
-	{PixelFormat::kRGBA8, std::nullopt, {true, true, true, true}},
+	{std::nullopt, {true, true, true, true}},
 	PrimitiveType::kTriangles,
 	CullMode::kNone,
 	FaceWinding::kCounterClockwise,
@@ -67,7 +67,15 @@ void PostprocessWipePass::prepass(Rhi& rhi)
 	if (!render_pass_)
 	{
 		render_pass_ = rhi.create_render_pass(
-			{std::nullopt, PixelFormat::kRGBA8, AttachmentLoadOp::kLoad, AttachmentStoreOp::kStore}
+			{
+				false,
+				AttachmentLoadOp::kLoad,
+				AttachmentStoreOp::kStore,
+				AttachmentLoadOp::kDontCare,
+				AttachmentStoreOp::kDontCare,
+				AttachmentLoadOp::kDontCare,
+				AttachmentStoreOp::kDontCare
+			}
 		);
 	}
 
@@ -158,7 +166,13 @@ void PostprocessWipePass::prepass(Rhi& rhi)
 		}
 	}
 
-	wipe_tex_ = rhi.create_texture({TextureFormat::kLuminance, mask_w_, mask_h_});
+	wipe_tex_ = rhi.create_texture({
+		TextureFormat::kLuminance,
+		mask_w_,
+		mask_h_,
+		TextureWrapMode::kClamp,
+		TextureWrapMode::kClamp
+	});
 }
 
 void PostprocessWipePass::transfer(Rhi& rhi, Handle<TransferContext> ctx)

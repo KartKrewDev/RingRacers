@@ -71,29 +71,59 @@ void FramebufferManager::prepass(Rhi& rhi)
 	// Recreate the framebuffer textures
 	if (main_color_ == kNullHandle)
 	{
-		main_color_ = rhi.create_texture({TextureFormat::kRGBA, current_width, current_height});
+		main_color_ = rhi.create_texture({
+			TextureFormat::kRGBA,
+			current_width,
+			current_height,
+			TextureWrapMode::kClamp,
+			TextureWrapMode::kClamp
+		});
 	}
 	if (main_depth_ == kNullHandle)
 	{
-		main_depth_ = rhi.create_renderbuffer({PixelFormat::kDepth16, current_width, current_height});
+		main_depth_ = rhi.create_renderbuffer({current_width, current_height});
 	}
 
 	if (post_colors_[0] == kNullHandle)
 	{
-		post_colors_[0] = rhi.create_texture({TextureFormat::kRGBA, current_width, current_height});
+		post_colors_[0] = rhi.create_texture({
+			TextureFormat::kRGBA,
+			current_width,
+			current_height,
+			TextureWrapMode::kClamp,
+			TextureWrapMode::kClamp
+		});
 	}
 	if (post_colors_[1] == kNullHandle)
 	{
-		post_colors_[1] = rhi.create_texture({TextureFormat::kRGBA, current_width, current_height});
+		post_colors_[1] = rhi.create_texture({
+			TextureFormat::kRGBA,
+			current_width,
+			current_height,
+			TextureWrapMode::kClamp,
+			TextureWrapMode::kClamp
+		});
 	}
 
 	if (wipe_start_color_ == kNullHandle)
 	{
-		wipe_start_color_ = rhi.create_texture({TextureFormat::kRGBA, current_width, current_height});
+		wipe_start_color_ = rhi.create_texture({
+			TextureFormat::kRGBA,
+			current_width,
+			current_height,
+			TextureWrapMode::kClamp,
+			TextureWrapMode::kClamp
+		});
 	}
 	if (wipe_end_color_ == kNullHandle)
 	{
-		wipe_end_color_ = rhi.create_texture({TextureFormat::kRGBA, current_width, current_height});
+		wipe_end_color_ = rhi.create_texture({
+			TextureFormat::kRGBA,
+			current_width,
+			current_height,
+			TextureWrapMode::kClamp,
+			TextureWrapMode::kClamp
+		});
 	}
 }
 
@@ -119,7 +149,7 @@ void MainPaletteManager::prepass(Rhi& rhi)
 {
 	if (!palette_)
 	{
-		palette_ = rhi.create_texture({TextureFormat::kRGBA, 256, 1});
+		palette_ = rhi.create_texture({TextureFormat::kRGBA, 256, 1, TextureWrapMode::kClamp, TextureWrapMode::kClamp});
 	}
 }
 
@@ -148,9 +178,15 @@ void CommonResourcesManager::prepass(Rhi& rhi)
 {
 	if (!init_)
 	{
-		black_ = rhi.create_texture({TextureFormat::kRGBA, 1, 1});
-		white_ = rhi.create_texture({TextureFormat::kRGBA, 1, 1});
-		transparent_ = rhi.create_texture({TextureFormat::kRGBA, 1, 1});
+		black_ = rhi.create_texture({TextureFormat::kRGBA, 1, 1, TextureWrapMode::kClamp, TextureWrapMode::kClamp});
+		white_ = rhi.create_texture({TextureFormat::kRGBA, 1, 1, TextureWrapMode::kClamp, TextureWrapMode::kClamp});
+		transparent_ = rhi.create_texture({
+			TextureFormat::kRGBA,
+			1,
+			1,
+			TextureWrapMode::kClamp,
+			TextureWrapMode::kClamp
+		});
 	}
 }
 
@@ -266,7 +302,13 @@ Handle<Texture> FlatTextureManager::find_or_create_indexed(Rhi& rhi, lumpnum_t l
 	}
 
 	uint32_t flat_size = get_flat_size(lump);
-	Handle<Texture> new_tex = rhi.create_texture({TextureFormat::kLuminanceAlpha, flat_size, flat_size});
+	Handle<Texture> new_tex = rhi.create_texture({
+		TextureFormat::kLuminanceAlpha,
+		flat_size,
+		flat_size,
+		TextureWrapMode::kRepeat,
+		TextureWrapMode::kRepeat
+	});
 	flats_.insert({lump, new_tex});
 	to_upload_.push_back(lump);
 	return new_tex;
