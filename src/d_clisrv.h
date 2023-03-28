@@ -54,8 +54,10 @@ applications may follow different packet versions.
 // This just works as a quick implementation.
 #define MAXGENTLEMENDELAY TICRATE
 
-// Servers verify client identity by giving them messages to sign. How long are these messages?
-#define CHALLENGELENGTH 64
+#define PUBKEYLENGTH 32 // Enforced by Monocypher EdDSA
+#define PRIVKEYLENGTH 64 // Enforced by Monocypher EdDSA
+#define SIGNATURELENGTH 64 // Enforced by Monocypher EdDSA
+#define CHALLENGELENGTH 64 // Servers verify client identity by giving them messages to sign. How long are these messages?
 
 //
 // Packet structure

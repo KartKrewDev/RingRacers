@@ -160,19 +160,19 @@ char connectedservername[MAXSERVERNAME];
 boolean acceptnewnode = true;
 
 UINT32 ourIP; // Used when populating PT_SERVERCHALLENGE (guards against signature reuse)
-uint8_t lastReceivedKey[MAXNETNODES][MAXSPLITSCREENPLAYERS][32]; // Player's public key (join process only! active players have it on player_t)
+uint8_t lastReceivedKey[MAXNETNODES][MAXSPLITSCREENPLAYERS][PUBKEYLENGTH]; // Player's public key (join process only! active players have it on player_t)
 uint8_t lastSentChallenge[MAXNETNODES][CHALLENGELENGTH]; // The random message we asked them to sign in PT_SERVERCHALLENGE, check it in PT_CLIENTJOIN
+uint8_t awaitingChallenge[SIGNATURELENGTH]; // The message the server asked our client to sign when joining
 uint8_t lastChallengeAll[CHALLENGELENGTH]; // The message we asked EVERYONE to sign for client-to-client identity proofs
-uint8_t lastReceivedSignature[MAXPLAYERS][64]; // Everyone's response to lastChallengeAll
-uint8_t knownWhenChallenged[MAXPLAYERS][32]; // Everyone a client saw at the moment a challenge should be initiated
+uint8_t lastReceivedSignature[MAXPLAYERS][SIGNATURELENGTH]; // Everyone's response to lastChallengeAll
+uint8_t knownWhenChallenged[MAXPLAYERS][PUBKEYLENGTH]; // Everyone a client saw at the moment a challenge should be initiated
 boolean expectChallenge = false; // Were we in-game before a client-to-client challenge should have been sent?
 
-uint8_t priorKeys[MAXPLAYERS][32]; // Make a note of keys before consuming a new gamestate, and if the server tries to send us a gamestate where keys differ, assume shenanigans
+uint8_t priorKeys[MAXPLAYERS][PUBKEYLENGTH]; // Make a note of keys before consuming a new gamestate, and if the server tries to send us a gamestate where keys differ, assume shenanigans
 
 boolean serverisfull = false; //lets us be aware if the server was full after we check files, but before downloading, so we can ask if the user still wants to download or not
 tic_t firstconnectattempttime = 0;
 
-uint8_t awaitingChallenge[32];
 consvar_t cv_allowguests = CVAR_INIT ("allowguests", "On", CV_SAVE, CV_OnOff, NULL);
 
 #ifdef DEVELOP
@@ -947,8 +947,8 @@ static boolean CL_SendJoin(void)
 		else
 		{
 			// If our keys are garbage (corrupted profile?), fail here instead of when the server boots us, so the player knows what's going on.
-			crypto_eddsa_sign(signature, localProfile->secret_key, awaitingChallenge, 32);
-			if (crypto_eddsa_check(signature, localProfile->public_key, awaitingChallenge, 32) != 0)
+			crypto_eddsa_sign(signature, localProfile->secret_key, awaitingChallenge, sizeof(awaitingChallenge));
+			if (crypto_eddsa_check(signature, localProfile->public_key, awaitingChallenge, sizeof(awaitingChallenge)) != 0)
 				I_Error("Couldn't self-verify key associated with player %d, profile %d.\nProfile data may be corrupted.", i, cv_lastprofile[i].value); // I guess this is the most reasonable way to catch a malformed key.
 		}
 
@@ -4222,17 +4222,17 @@ static size_t TotalTextCmdPerTic(tic_t tic)
 #ifdef SIGNGAMETRAFFIC
 	static boolean IsSplitPlayerOnNodeGuest(int node, int split)
 	{
-		char allZero[32];
-		memset(allZero, 0, 32);
+		char allZero[PUBKEYLENGTH];
+		memset(allZero, 0, PUBKEYLENGTH);
 
 		if (split == 0)
-			return (memcmp(players[nodetoplayer[node]].public_key, allZero, 32) == 0);
+			return (memcmp(players[nodetoplayer[node]].public_key, allZero, PUBKEYLENGTH) == 0);
 		else if (split == 1)
-			return (memcmp(players[nodetoplayer2[node]].public_key, allZero, 32) == 0);
+			return (memcmp(players[nodetoplayer2[node]].public_key, allZero, PUBKEYLENGTH) == 0);
 		else if (split == 2)
-			return (memcmp(players[nodetoplayer3[node]].public_key, allZero, 32) == 0);
+			return (memcmp(players[nodetoplayer3[node]].public_key, allZero, PUBKEYLENGTH) == 0);
 		else if (split == 3)
-			return (memcmp(players[nodetoplayer4[node]].public_key, allZero, 32) == 0);
+			return (memcmp(players[nodetoplayer4[node]].public_key, allZero, PUBKEYLENGTH) == 0);
 		else
 			I_Error("IsSplitPlayerOnNodeGuest: Out of bounds");
 		return false; // unreachable
@@ -4241,10 +4241,10 @@ static size_t TotalTextCmdPerTic(tic_t tic)
 
 static boolean IsPlayerGuest(int player)
 {
-	char allZero[32];
-	memset(allZero, 0, 32);
+	char allZero[PUBKEYLENGTH];
+	memset(allZero, 0, PUBKEYLENGTH);
 
-	return (memcmp(players[player].public_key, allZero, 32) == 0);
+	return (memcmp(players[player].public_key, allZero, PUBKEYLENGTH) == 0);
 }
 
 /** Called when a PT_CLIENTJOIN packet is received
@@ -4370,10 +4370,10 @@ static void HandleConnect(SINT8 node)
 			}
 			else // Remote player, gotta check their signature.
 			{
-				char allZero[32];
+				char allZero[PUBKEYLENGTH];
 				memset(allZero, 0, sizeof(allZero));
 				
-				if (memcmp(lastReceivedKey[node][i], allZero, sizeof(allZero)) == 0) // IsSplitPlayerOnNodeGuest isn't appropriate here, they're not in-game yet!
+				if (memcmp(lastReceivedKey[node][i], allZero, PUBKEYLENGTH) == 0) // IsSplitPlayerOnNodeGuest isn't appropriate here, they're not in-game yet!
 				{
 					if (!cv_allowguests.value)
 					{
@@ -5450,8 +5450,8 @@ static void HandlePacketFromPlayer(SINT8 node)
 				break;
 
 			int resultsplayer;
-			uint8_t allzero[64];
-			memset(allzero, 0, sizeof(allzero));
+			uint8_t allZero[PUBKEYLENGTH];
+			memset(allZero, 0, sizeof(PUBKEYLENGTH));
 
 			for (resultsplayer = 0; resultsplayer < MAXPLAYERS; resultsplayer++)
 			{
@@ -5463,7 +5463,7 @@ static void HandlePacketFromPlayer(SINT8 node)
 				{
 					continue;
 				}
-				else if (memcmp(knownWhenChallenged[resultsplayer], allzero, sizeof(allzero)) == 0)
+				else if (memcmp(knownWhenChallenged[resultsplayer], allZero, sizeof(PUBKEYLENGTH)) == 0)
 				{
 					// Wasn't here for the challenge.
 					continue;
@@ -6343,14 +6343,14 @@ static void SendChallenges(void)
 static void KickUnverifiedPlayers(void)
 {
 	int i;
-	uint8_t allZero[64];
-	memset(allZero, 0, sizeof(allZero));
+	uint8_t allZero[SIGNATURELENGTH];
+	memset(allZero, 0, SIGNATURELENGTH);
 
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
 		if (!playeringame[i])
 			continue;
-		if (memcmp(lastReceivedSignature[i], allZero, sizeof(allZero)) == 0) // We never got a response!
+		if (memcmp(lastReceivedSignature[i], allZero, SIGNATURELENGTH) == 0) // We never got a response!
 		{
 			if (!IsPlayerGuest(i) && memcmp(&knownWhenChallenged[i], &players[i].public_key, sizeof(knownWhenChallenged[i])) == 0)
 			{
@@ -6376,7 +6376,7 @@ static void SendChallengeResults(void)
 		}
 	#endif
 
-	uint8_t allZero[64];
+	uint8_t allZero[SIGNATURELENGTH];
 	memset(allZero, 0, sizeof(allZero));
 
 	memset(&netbuffer->u.resultsall, 0, sizeof(netbuffer->u.resultsall));
@@ -6388,7 +6388,7 @@ static void SendChallengeResults(void)
 
 		// Don't try to transmit signatures for players who didn't get here in time to send one.
 		// (Everyone who had their chance should have been kicked by KickUnverifiedPlayers by now.)
-		if (memcmp(lastReceivedSignature[i], allZero, sizeof(allZero)) == 0)
+		if (memcmp(lastReceivedSignature[i], allZero, SIGNATURELENGTH) == 0)
 			continue;
 
 		memcpy(netbuffer->u.resultsall.signature[i], lastReceivedSignature[i], sizeof(netbuffer->u.resultsall.signature[i]));
