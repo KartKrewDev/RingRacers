@@ -5369,7 +5369,7 @@ static void HandlePacketFromPlayer(SINT8 node)
 			if (client)
 				CL_PrepareDownloadLuaFile();
 			break;
-		case PT_CHALLENGEALL: ; // -Wpedantic
+		case PT_CHALLENGEALL:
 			if (demo.playback || node != servernode) // SERVER should still respond to this to prove its own identity, just not from clients.
 				break;
 
@@ -5456,13 +5456,13 @@ static void HandlePacketFromPlayer(SINT8 node)
 				}
 			}
 			break;
-		case PT_RESULTSALL: ; // -Wpedantic
+		case PT_RESULTSALL:
+			if (demo.playback || server || node != servernode || !expectChallenge)
+				break;
+
 			int resultsplayer;
 			uint8_t allzero[64];
 			memset(allzero, 0, sizeof(allzero));
-
-			if (demo.playback || server || node != servernode || !expectChallenge)
-				break;
 
 			for (resultsplayer = 0; resultsplayer < MAXPLAYERS; resultsplayer++)
 			{
