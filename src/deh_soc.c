@@ -1187,8 +1187,30 @@ void readlevelheader(MYFILE *f, char * name)
 					mapheaderinfo[num]->musname_size = j;
 				}
 			}
-			else if (fastcmp(word, "MUSICSLOT"))
-				deh_warning("Level header %d: MusicSlot parameter is deprecated and will be removed.\nUse \"Music\" instead.", num);
+			else if (fastcmp(word, "ASSOCIATEDMUSIC"))
+			{
+				if (fastcmp(word2, "NONE"))
+				{
+					mapheaderinfo[num]->associatedmus[0][0] = 0; // becomes empty string
+					mapheaderinfo[num]->associatedmus_size = 0;
+				}
+				else
+				{
+					UINT8 j = 0; // i was declared elsewhere
+					tmp = strtok(word2, ",");
+					do {
+						if (j >= MAXMUSNAMES)
+							break;
+						deh_strlcpy(mapheaderinfo[num]->associatedmus[j], tmp,
+							sizeof(mapheaderinfo[num]->associatedmus[j]), va("Level header %d: music", num));
+						j++;
+					} while ((tmp = strtok(NULL,",")) != NULL);
+					
+					if (tmp != NULL)
+						deh_warning("Level header %d: additional associated music slots past %d discarded", num, MAXMUSNAMES);
+					mapheaderinfo[num]->associatedmus_size = j;
+				}
+			}
 			else if (fastcmp(word, "MUSICTRACK"))
 				mapheaderinfo[num]->mustrack = ((UINT16)i - 1);
 			else if (fastcmp(word, "MUSICPOS"))

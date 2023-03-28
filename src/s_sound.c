@@ -1362,33 +1362,43 @@ musicdef_t *musicdefstart = NULL;
 struct cursongcredit cursongcredit; // Currently displayed song credit info
 struct soundtest soundtest; // Sound Test (sound test)
 
+static void S_InsertMusicAtSoundTestSequenceTail(const char *musname, UINT16 map, musicdef_t ***tail)
+{
+	UINT8 i = 0;
+	musicdef_t *def = S_FindMusicDef(musname, &i);
+
+	if (def == NULL)
+		return;
+
+	if (def->sequence.id == soundtest.sequence.id)
+		return;
+
+	def->sequence.id = soundtest.sequence.id;
+	def->sequence.map = map;
+
+	// So what we're doing here is to avoid iterating
+	// for every insertion, we dereference the pointer
+	// to get **tail from S_PopulateSoundTestSequence,
+	// then dereference that to get the musicdef_t *.
+	// We do it this way so that soundtest.sequence.next
+	// can be handled natively without special cases.
+	// I have officially lost my MIND. ~toast 270323
+	*(*tail) = def;
+	*tail = &def->sequence.next;
+}
+
 static void S_InsertMapIntoSoundTestSequence(UINT16 map, musicdef_t ***tail)
 {
-	UINT8 i, j;
-	(void)tail;
+	UINT8 i;
 
 	for (i = 0; i < mapheaderinfo[map]->musname_size; i++)
 	{
-		musicdef_t *def = S_FindMusicDef(mapheaderinfo[map]->musname[i], &j);
+		S_InsertMusicAtSoundTestSequenceTail(mapheaderinfo[map]->musname[i], map, tail);
+	}
 
-		if (def == NULL)
-			continue;
-
-		if (def->sequence.id == soundtest.sequence.id)
-			continue;
-
-		def->sequence.id = soundtest.sequence.id;
-		def->sequence.map = map;
-
-		// So what we're doing here is to avoid iterating
-		// for every insertion, we dereference the pointer
-		// to get **tail from S_PopulateSoundTestSequence,
-		// then dereference that to get the musicdef_t *.
-		// We do it this way so that soundtest.sequence.next
-		// can be handled natively without special cases.
-		// I have officially lost my MIND. ~toast 270323
-		*(*tail) = def;
-		*tail = &def->sequence.next;
+	for (i = 0; i < mapheaderinfo[map]->associatedmus_size; i++)
+	{
+		S_InsertMusicAtSoundTestSequenceTail(mapheaderinfo[map]->associatedmus[i], map, tail);
 	}
 }
 
