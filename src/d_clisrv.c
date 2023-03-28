@@ -247,6 +247,10 @@ static int IsExternalAddress (const void *p)
 // Generate a message for an authenticating client to sign, with some guarantees about who we are.
 void GenerateChallenge(uint8_t *buf)
 {
+	#ifndef SRB2_LITTLE_ENDIAN
+		#error  "FIXME: 64-bit timestamp field is not supported on Big Endian"
+	#endif
+
 	UINT64 now = time(NULL);
 	csprng(buf, sizeof(&buf)); // Random noise as a baseline, but...
 	memcpy(buf, &now, sizeof(now)); // Timestamp limits the reuse window.
@@ -273,6 +277,10 @@ void GenerateChallenge(uint8_t *buf)
 // Don't sign anything that wasn't generated just for us!
 shouldsign_t ShouldSignChallenge(uint8_t *message)
 {
+	#ifndef SRB2_LITTLE_ENDIAN
+		#error  "FIXME: 64-bit timestamp field is not supported on Big Endian"
+	#endif
+	
 	UINT64 then, now;
 	UINT32 claimedIP, realIP;
 
