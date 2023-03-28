@@ -283,6 +283,8 @@ void K_DoIngameRespawn(player_t *player)
 
 	player->respawn.airtimer = player->airtime;
 	player->respawn.truedeath = !!(player->pflags & PF_FAULT);
+
+	player->mo->flags |= MF_NOCLIPTHING;
 }
 
 /*--------------------------------------------------
@@ -790,6 +792,8 @@ static void K_HandleDropDash(player_t *player)
 		P_PlayerRingBurst(player, 3);
 
 		player->respawn.state = RESPAWNST_NONE;
+
+		player->mo->flags &= ~(MF_NOCLIPTHING);
 	}
 }
 
