@@ -8564,6 +8564,9 @@ boolean P_MultiSetupWadFiles(boolean fullsetup)
 
 	if (partadd_stage < 0)
 	{
+		// possible future work: only do this if musicdefs/map headers changed
+		S_PopulateSoundTestSequence();
+
 		partadd_important = false;
 		partadd_earliestfile = UINT16_MAX;
 		return true;

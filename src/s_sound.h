@@ -176,6 +176,13 @@ boolean S_SpeedMusic(float speed);
 
 #define MAXDEFTRACKS 3
 
+struct soundtestsequence_t
+{
+	UINT8 id;
+	UINT16 map;
+	musicdef_t *next;
+};
+
 // Music credits
 struct musicdef_t
 {
@@ -188,6 +195,7 @@ struct musicdef_t
 	char *composers;
 	int volume;
 	musicdef_t *next;
+	soundtestsequence_t sequence;
 };
 
 extern struct cursongcredit
@@ -202,12 +210,14 @@ extern struct cursongcredit
 
 extern struct soundtest
 {
-	boolean playing; 			// Music is playing?
-	boolean privilegedrequest; 	// Overrides S_PlaysimMusicDisabled w/o changing every function signature
-	musicdef_t *current;		// Current selected music definition
-	SINT8 currenttrack;			// Current selected music track for definition
+	boolean playing; 					// Music is playing?
+	boolean privilegedrequest; 			// Overrides S_PlaysimMusicDisabled w/o changing every function signature
+	musicdef_t *current;				// Current selected music definition
+	SINT8 currenttrack;					// Current selected music track for definition
+	soundtestsequence_t sequence;		// Sequence head
 } soundtest;
 
+void S_PopulateSoundTestSequence(void);
 void S_UpdateSoundTestDef(boolean reverse, boolean skipnull);
 void S_SoundTestPlay(void);
 void S_SoundTestStop(boolean pause);

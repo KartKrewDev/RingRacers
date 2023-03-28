@@ -1362,37 +1362,164 @@ musicdef_t *musicdefstart = NULL;
 struct cursongcredit cursongcredit; // Currently displayed song credit info
 struct soundtest soundtest; // Sound Test (sound test)
 
+static void S_InsertMapIntoSoundTestSequence(UINT16 map, musicdef_t ***tail)
+{
+	UINT8 i, j;
+	(void)tail;
+
+	for (i = 0; i < mapheaderinfo[map]->musname_size; i++)
+	{
+		musicdef_t *def = S_FindMusicDef(mapheaderinfo[map]->musname[i], &j);
+
+		if (def == NULL)
+			continue;
+
+		if (def->sequence.id == soundtest.sequence.id)
+			continue;
+
+		def->sequence.id = soundtest.sequence.id;
+		def->sequence.map = map;
+
+		// So what we're doing here is to avoid iterating
+		// for every insertion, we dereference the pointer
+		// to get **tail from S_PopulateSoundTestSequence,
+		// then dereference that to get the musicdef_t *.
+		// We do it this way so that soundtest.sequence.next
+		// can be handled natively without special cases.
+		// I have officially lost my MIND. ~toast 270323
+		*(*tail) = def;
+		*tail = &def->sequence.next;
+	}
+}
+
+void S_PopulateSoundTestSequence(void)
+{
+	UINT16 i;
+	musicdef_t **tail;
+
+	// First, increment the sequence and wipe the HEAD.
+	// This invalidates all existing musicdefs without us
+	// having to iterate through everything all the time,
+	// and offers a very convenient checking mechanism.
+	// ...preventing id 0 protects against inconsistencies
+	// caused by newly Calloc'd music definitions.
+	soundtest.sequence.id = (soundtest.sequence.id + 1) & 255;
+	if (soundtest.sequence.id == 0)
+		soundtest.sequence.id = 1;
+
+	soundtest.sequence.next = NULL;
+
+	tail = &soundtest.sequence.next;
+
+	// We iterate over all cups.
+	{
+		cupheader_t *cup;
+		for (cup = kartcupheaders; cup; cup = cup->next)
+		{
+			for (i = 0; i < CUPCACHE_MAX; i++)
+			{
+				if (cup->cachedlevels[i] >= nummapheaders)
+					continue;
+
+				if (!mapheaderinfo[cup->cachedlevels[i]])
+					continue;
+
+				if (mapheaderinfo[cup->cachedlevels[i]]->cup != cup)
+					continue;
+
+				S_InsertMapIntoSoundTestSequence(cup->cachedlevels[i], &tail);
+			}
+		}
+	}
+
+	// Then, we iterate over all non-cupped maps.
+	for (i = 0; i < nummapheaders; i++)
+	{
+		if (!mapheaderinfo[i])
+			continue;
+
+		if (mapheaderinfo[i]->cup != NULL)
+			continue;
+
+		S_InsertMapIntoSoundTestSequence(i, &tail);
+	}
+
+	// Finally, we insert all other musicdefstart at the head.
+	// It's being added to the sequence in reverse order...
+	// but because musicdefstart is ALSO populated in reverse,
+	// the reverse of the reverse is the right way around!
+	{
+		musicdef_t *def;
+
+		for (def = musicdefstart; def; def = def->next)
+		{
+			if (def->sequence.id == soundtest.sequence.id)
+				continue;
+
+			def->sequence.id = soundtest.sequence.id;
+			def->sequence.map = NEXTMAP_INVALID;
+
+			def->sequence.next = soundtest.sequence.next;
+			soundtest.sequence.next = def;
+		}
+	}
+}
+
+static boolean S_SoundTestDefLocked(musicdef_t *def)
+{
+	// temporary - i'd like to find a way to conditionally hide
+	// specific musicdefs that don't have any map associated.
+	if (def->sequence.map >= nummapheaders)
+		return false;
+
+	return M_MapLocked(def->sequence.map+1);
+}
+
 void S_UpdateSoundTestDef(boolean reverse, boolean skipnull)
 {
 	musicdef_t *newdef;
 
 	// Naive implementation for now.
 
-	newdef = (soundtest.current != NULL
-		&& (skipnull == false || soundtest.current->next != NULL))
-			? soundtest.current->next
-			: musicdefstart;
+	newdef = NULL;
 
 	if (reverse == false)
 	{
-		// Due to how musicdefs are populated, we have to traverse backwards when attempting forwards.
-		musicdef_t *def;
-
-		if (soundtest.current == musicdefstart)
+		newdef = (soundtest.current != NULL)
+			? soundtest.current->sequence.next
+			: soundtest.sequence.next;
+		while (newdef != NULL && S_SoundTestDefLocked(newdef))
+			newdef = newdef->sequence.next;
+		if (newdef == NULL && skipnull == false)
 		{
-			newdef = NULL;
-			if (skipnull == false)
-			{
-				goto conclusion;
-			}
+			newdef = soundtest.sequence.next;
+			while (newdef != NULL && S_SoundTestDefLocked(newdef))
+				newdef = newdef->sequence.next;
+		}
+	}
+	else
+	{
+		musicdef_t *def, *lastdef = NULL;
+
+		if (soundtest.current == soundtest.sequence.next
+			&& skipnull == false)
+		{
+			goto conclusion;
 		}
 
-		for (def = musicdefstart; def; def = def->next)
+		for (def = soundtest.sequence.next; def; def = def->sequence.next)
 		{
-			if (def->next != soundtest.current)
-				continue;
+			if (!S_SoundTestDefLocked(def))
+			{
+				lastdef = def;
+			}
 
-			newdef = def;
+			if (def->sequence.next != soundtest.current)
+			{
+				continue;
+			}
+
+			newdef = lastdef;
 			break;
 		}
 	}
@@ -1736,6 +1863,7 @@ void S_InitMusicDefs(void)
 	UINT16 i;
 	for (i = 0; i < numwadfiles; i++)
 		S_LoadMusicDefs(i);
+	S_PopulateSoundTestSequence();
 }
 
 //

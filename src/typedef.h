@@ -388,6 +388,7 @@ TYPEDEF (listener_t);
 TYPEDEF (channel_t);
 TYPEDEF (caption_t);
 TYPEDEF (musicdef_t);
+TYPEDEF (soundtestsequence_t);
 TYPEDEF (musicstack_t);
 
 // screen.h
