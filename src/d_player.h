@@ -457,7 +457,7 @@ struct player_t
 
 	// Bit flags.
 	// See pflags_t, above.
-	pflags_t pflags;
+	UINT32 pflags;
 
 	// playing animation.
 	panim_t panim;

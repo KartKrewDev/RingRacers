@@ -112,7 +112,7 @@ add_executable(SRB2SDL2 MACOSX_BUNDLE WIN32
 	lua_hudlib_drawlist.c
 	k_kart.c
 	k_respawn.c
-	k_collide.c
+	k_collide.cpp
 	k_color.c
 	k_race.c
 	k_battle.c
