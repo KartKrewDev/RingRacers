@@ -1202,7 +1202,7 @@ void readlevelheader(MYFILE *f, char * name)
 						if (j >= MAXMUSNAMES)
 							break;
 						deh_strlcpy(mapheaderinfo[num]->associatedmus[j], tmp,
-							sizeof(mapheaderinfo[num]->associatedmus[j]), va("Level header %d: music", num));
+							sizeof(mapheaderinfo[num]->associatedmus[j]), va("Level header %d: associated music", num));
 						j++;
 					} while ((tmp = strtok(NULL,",")) != NULL);
 					
