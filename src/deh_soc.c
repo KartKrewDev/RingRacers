@@ -1211,6 +1211,18 @@ void readlevelheader(MYFILE *f, char * name)
 					mapheaderinfo[num]->associatedmus_size = j;
 				}
 			}
+			else if (fastcmp(word, "POSITIONMUSIC"))
+			{
+				if (fastcmp(word2, "NONE"))
+				{
+					mapheaderinfo[num]->positionmus[0] = 0; // becomes empty string
+				}
+				else
+				{
+					deh_strlcpy(mapheaderinfo[num]->positionmus, word2,
+						sizeof(mapheaderinfo[num]->positionmus), va("Level header %d: POSITION!! music", num));
+				}
+			}
 			else if (fastcmp(word, "MUSICTRACK"))
 				mapheaderinfo[num]->mustrack = ((UINT16)i - 1);
 			else if (fastcmp(word, "MUSICPOS"))

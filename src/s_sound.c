@@ -1391,6 +1391,11 @@ static void S_InsertMapIntoSoundTestSequence(UINT16 map, musicdef_t ***tail)
 {
 	UINT8 i;
 
+	if (mapheaderinfo[map]->positionmus[0])
+	{
+		S_InsertMusicAtSoundTestSequenceTail(mapheaderinfo[map]->positionmus, map, tail);
+	}
+
 	for (i = 0; i < mapheaderinfo[map]->musname_size; i++)
 	{
 		S_InsertMusicAtSoundTestSequenceTail(mapheaderinfo[map]->musname[i], map, tail);
