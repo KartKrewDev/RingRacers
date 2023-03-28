@@ -407,7 +407,7 @@ static void P_NetArchivePlayers(savebuffer_t *save)
 		WRITEUINT8(save->p, players[i].sliptideZipDelay);
 		WRITEUINT16(save->p, players[i].sliptideZipBoost);
 
-		WRITEMEM(save->p, players[i].public_key, 32);
+		WRITEMEM(save->p, players[i].public_key, PUBKEYLENGTH);
 
 		// respawnvars_t
 		WRITEUINT8(save->p, players[i].respawn.state);
@@ -789,7 +789,7 @@ static void P_NetUnArchivePlayers(savebuffer_t *save)
 		players[i].sliptideZipDelay = READUINT8(save->p);
 		players[i].sliptideZipBoost = READUINT16(save->p);
 
-		READMEM(save->p, players[i].public_key, 32);
+		READMEM(save->p, players[i].public_key, PUBKEYLENGTH);
 
 		// respawnvars_t
 		players[i].respawn.state = READUINT8(save->p);

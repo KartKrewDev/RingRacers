@@ -270,7 +270,7 @@ struct clientconfig_pak
 	UINT8 mode;
 	char names[MAXSPLITSCREENPLAYERS][MAXPLAYERNAME];
 	UINT8 availabilities[MAXAVAILABILITY];
-	uint8_t challengeResponse[MAXSPLITSCREENPLAYERS][64];
+	uint8_t challengeResponse[MAXSPLITSCREENPLAYERS][SIGNATURELENGTH];
 } ATTRPACK;
 
 #define SV_SPEEDMASK 0x03		// used to send kartspeed
@@ -367,7 +367,7 @@ struct filesneededconfig_pak
 
 struct clientkey_pak
 {
-	uint8_t key[MAXSPLITSCREENPLAYERS][32];
+	uint8_t key[MAXSPLITSCREENPLAYERS][PUBKEYLENGTH];
 } ATTRPACK;
 
 struct serverchallenge_pak
@@ -382,12 +382,12 @@ struct challengeall_pak
 
 struct responseall_pak
 {
-	uint8_t signature[MAXSPLITSCREENPLAYERS][64];
+	uint8_t signature[MAXSPLITSCREENPLAYERS][SIGNATURELENGTH];
 } ATTRPACK;
 
 struct resultsall_pak
 {
-	uint8_t signature[MAXPLAYERS][64];
+	uint8_t signature[MAXPLAYERS][SIGNATURELENGTH];
 } ATTRPACK;
 
 //
@@ -401,7 +401,7 @@ struct doomdata_t
 
 	UINT8 packettype;
 #ifdef SIGNGAMETRAFFIC
-	uint8_t signature[MAXSPLITSCREENPLAYERS][64];
+	uint8_t signature[MAXSPLITSCREENPLAYERS][SIGNATURELENGTH];
 #endif
 	UINT8 reserved; // Padding
 	union
@@ -497,11 +497,11 @@ extern boolean acceptnewnode;
 extern SINT8 servernode;
 extern char connectedservername[MAXSERVERNAME];
 extern UINT32 ourIP;
-extern uint8_t lastReceivedKey[MAXNETNODES][MAXSPLITSCREENPLAYERS][32];
+extern uint8_t lastReceivedKey[MAXNETNODES][MAXSPLITSCREENPLAYERS][PUBKEYLENGTH];
 extern uint8_t lastSentChallenge[MAXNETNODES][CHALLENGELENGTH];
 extern uint8_t lastChallengeAll[CHALLENGELENGTH];
-extern uint8_t lastReceivedSignature[MAXPLAYERS][64];
-extern uint8_t knownWhenChallenged[MAXPLAYERS][32];
+extern uint8_t lastReceivedSignature[MAXPLAYERS][SIGNATURELENGTH];
+extern uint8_t knownWhenChallenged[MAXPLAYERS][PUBKEYLENGTH];
 extern boolean expectChallenge;
 
 // We give clients a chance to verify each other once per race.

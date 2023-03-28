@@ -2436,7 +2436,7 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 
 	SINT8 xtralife;
 
-	uint8_t public_key[32];
+	uint8_t public_key[PUBKEYLENGTH];
 
 	// SRB2kart
 	itemroulette_t itemRoulette;

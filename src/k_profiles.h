@@ -59,8 +59,8 @@ struct profile_t
 	// Profile header
 	char profilename[PROFILENAMELEN+1];	// Profile name (not to be confused with player name)
 
-	uint8_t public_key[32];				// Netgame authentication
-	uint8_t secret_key[64];
+	uint8_t public_key[PUBKEYLENGTH];	// Netgame authentication
+	uint8_t secret_key[PRIVKEYLENGTH];
 
 	// Player data
 	char playername[MAXPLAYERNAME+1];	// Player name

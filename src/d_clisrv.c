@@ -937,12 +937,12 @@ static boolean CL_SendJoin(void)
 
 	for (i = 0; i <= splitscreen; i++)
 	{
-		uint8_t signature[64];
+		uint8_t signature[SIGNATURELENGTH];
 		profile_t *localProfile = PR_GetLocalPlayerProfile(i);
 
 		if (PR_IsLocalPlayerGuest(i)) // GUESTS don't have keys
 		{
-			memset(signature, 0, 64);
+			memset(signature, 0, sizeof(signature));
 		}
 		else
 		{
@@ -957,7 +957,7 @@ static boolean CL_SendJoin(void)
 			{
 				CV_AddValue(&cv_badjoin, -1);
 				CONS_Alert(CONS_WARNING, "cv_badjoin enabled, scrubbing signature from CL_SendJoin\n");
-				memset(signature, 0, 64);
+				memset(signature, 0, sizeof(signature));
 			}
 		#endif
 
@@ -979,7 +979,7 @@ static boolean CL_SendKey(void)
 	for (i = 0; i <= splitscreen; i++)
 	{
 		// GUEST profiles have all-zero keys. This will be handled at the end of the challenge process, don't worry about it.
-		memcpy(netbuffer->u.clientkey.key[i], PR_GetProfile(cv_lastprofile[i].value)->public_key, 32);
+		memcpy(netbuffer->u.clientkey.key[i], PR_GetProfile(cv_lastprofile[i].value)->public_key, PUBKEYLENGTH);
 	}
 	return HSendPacket(servernode, false, 0, sizeof (clientkey_pak) );
 }
@@ -3808,7 +3808,7 @@ static void Got_AddPlayer(UINT8 **p, INT32 playernum)
 	newplayer->jointime = 0;
 
 	READSTRINGN(*p, player_names[newplayernum], MAXPLAYERNAME);
-	READMEM(*p, players[newplayernum].public_key, 32);
+	READMEM(*p, players[newplayernum].public_key, PUBKEYLENGTH);
 
 	console = READUINT8(*p);
 	splitscreenplayer = READUINT8(*p);
@@ -3973,7 +3973,7 @@ const char *name, uint8_t *key, const char *name2, uint8_t *key2,
 const char *name3, uint8_t *key3, const char *name4, uint8_t *key4)
 {
 	INT32 n, newplayernum, i;
-	UINT8 buf[4 + MAXPLAYERNAME + 32 + MAXAVAILABILITY];
+	UINT8 buf[4 + MAXPLAYERNAME + PUBKEYLENGTH + MAXAVAILABILITY];
 	UINT8 *buf_p = buf;
 	boolean newplayer = false;
 
@@ -4036,25 +4036,25 @@ const char *name3, uint8_t *key3, const char *name4, uint8_t *key4)
 			{
 				nodetoplayer[node] = newplayernum;
 				WRITESTRINGN(buf_p, name, MAXPLAYERNAME);
-				WRITEMEM(buf_p, key, 32);
+				WRITEMEM(buf_p, key, PUBKEYLENGTH);
 			}
 			else if (playerpernode[node] < 2)
 			{
 				nodetoplayer2[node] = newplayernum;
 				WRITESTRINGN(buf_p, name2, MAXPLAYERNAME);
-				WRITEMEM(buf_p, key2, 32);
+				WRITEMEM(buf_p, key2, PUBKEYLENGTH);
 			}
 			else if (playerpernode[node] < 3)
 			{
 				nodetoplayer3[node] = newplayernum;
 				WRITESTRINGN(buf_p, name3, MAXPLAYERNAME);
-				WRITEMEM(buf_p, key3, 32);
+				WRITEMEM(buf_p, key3, PUBKEYLENGTH);
 			}
 			else if (playerpernode[node] < 4)
 			{
 				nodetoplayer4[node] = newplayernum;
 				WRITESTRINGN(buf_p, name4, MAXPLAYERNAME);
-				WRITEMEM(buf_p, key4, 32);
+				WRITEMEM(buf_p, key4, PUBKEYLENGTH);
 			}
 
 			WRITEUINT8(buf_p, nodetoplayer[node]); // consoleplayer
@@ -5391,7 +5391,7 @@ static void HandlePacketFromPlayer(SINT8 node)
 
 			for (challengeplayers = 0; challengeplayers <= splitscreen; challengeplayers++)
 			{
-				uint8_t signature[64];
+				uint8_t signature[SIGNATURELENGTH];
 				profile_t *localProfile = PR_GetLocalPlayerProfile(challengeplayers);
 				if (!PR_IsLocalPlayerGuest(challengeplayers)) // GUESTS don't have keys
 				{
@@ -5407,7 +5407,7 @@ static void HandlePacketFromPlayer(SINT8 node)
 					{
 						CV_AddValue(&cv_badresponse, -1);
 						CONS_Alert(CONS_WARNING, "cv_badresponse enabled, scrubbing signature from PT_RESPONSEALL\n");
-						memset(signature, 0, 64);
+						memset(signature, 0, sizeof(signature));
 					}
 				#endif
 

@@ -600,7 +600,7 @@ static char rrid_buf[256];
 char *GetPrettyRRID(const unsigned char *bin, boolean brief)
 {
 	size_t i;
-	size_t len = 32;
+	size_t len = PUBKEYLENGTH;
 
 	if (brief)
 		len = 8;
