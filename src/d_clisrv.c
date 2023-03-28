@@ -383,11 +383,13 @@ static UINT8* D_GetTextcmd(tic_t tic, INT32 playernum)
 	return textcmdplayer->cmd;
 }
 
-static void ExtraDataTicker(void)
+static boolean ExtraDataTicker(void)
 {
+	boolean anyNetCmd = false;
 	INT32 i;
 
 	for (i = 0; i < MAXPLAYERS; i++)
+	{
 		if (playeringame[i] || i == 0)
 		{
 			UINT8 *bufferstart = D_GetExistingTextcmd(gametic, i);
@@ -407,6 +409,7 @@ static void ExtraDataTicker(void)
 						DEBFILE(va("executing x_cmd %s ply %u ", netxcmdnames[id - 1], i));
 						(listnetxcmd[id])(&curpos, i);
 						DEBFILE("done\n");
+						anyNetCmd = true;
 					}
 					else
 					{
@@ -421,12 +424,17 @@ static void ExtraDataTicker(void)
 				}
 			}
 		}
+	}
 
 	// If you are a client, you can safely forget the net commands for this tic
 	// If you are the server, you need to remember them until every client has been acknowledged,
 	// because if you need to resend a PT_SERVERTICS packet, you will need to put the commands in it
 	if (client)
+	{
 		D_FreeTextcmd(gametic);
+	}
+
+	return anyNetCmd;
 }
 
 static void D_Clearticcmd(tic_t tic)
@@ -4995,7 +5003,7 @@ static void GetPackets(void)
 
 		if (netbuffer->packettype == PT_CLIENTJOIN && server)
 		{
-			if (!levelloading) // Otherwise just ignore
+			if (levelloading == false) // Otherwise just ignore
 			{
 				HandleConnect(node);
 			}
@@ -5578,35 +5586,55 @@ boolean TryRunTics(tic_t realtics)
 
 	if (ticking)
 	{
+		// run the count * tics
+		while (neededtic > gametic)
 		{
-			// run the count * tics
-			while (neededtic > gametic)
+			boolean dontRun = false;
+
+			DEBFILE(va("============ Running tic %d (local %d)\n", gametic, localgametic));
+
+			ps_tictime = I_GetPreciseTime();
+
+			dontRun = ExtraDataTicker();
+
+			if (levelloading == false
+				|| gametic > levelstarttic + 5) // Don't lock-up if a malicious client is sending tons of netxcmds
 			{
-				DEBFILE(va("============ Running tic %d (local %d)\n", gametic, localgametic));
+				// During level load, we want to pause
+				// execution until we've finished loading
+				// all of the netxcmds in our buffer.
+				dontRun = false;
+			}
 
-				ps_tictime = I_GetPreciseTime();
-
-				G_Ticker((gametic % NEWTICRATERATIO) == 0);
-				if (Playing() && netgame && (gametic % TICRATE == 0))
+			if (dontRun == false)
+			{
+				if (levelloading == true)
 				{
-					Schedule_Run();
-
-					if (cv_livestudioaudience.value)
-					{
-						LiveStudioAudience();
-					}
+					P_PostLoadLevel();
 				}
 
-				ExtraDataTicker();
+				G_Ticker((gametic % NEWTICRATERATIO) == 0);
+			}
 
-				gametic++;
-				consistancy[gametic%BACKUPTICS] = Consistancy();
+			if (Playing() && netgame && (gametic % TICRATE == 0))
+			{
+				Schedule_Run();
 
-				ps_tictime = I_GetPreciseTime() - ps_tictime;
+				if (cv_livestudioaudience.value)
+				{
+					LiveStudioAudience();
+				}
+			}
 
-				// Leave a certain amount of tics present in the net buffer as long as we've ran at least one tic this frame.
-				if (client && gamestate == GS_LEVEL && leveltime > 3 && neededtic <= gametic + cv_netticbuffer.value)
-					break;
+			gametic++;
+			consistancy[gametic % BACKUPTICS] = Consistancy();
+
+			ps_tictime = I_GetPreciseTime() - ps_tictime;
+
+			// Leave a certain amount of tics present in the net buffer as long as we've ran at least one tic this frame.
+			if (client && gamestate == GS_LEVEL && leveltime > 1 && neededtic <= gametic + cv_netticbuffer.value)
+			{
+				break;
 			}
 		}
 	}
