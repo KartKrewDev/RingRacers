@@ -162,7 +162,7 @@ boolean acceptnewnode = true;
 UINT32 ourIP; // Used when populating PT_SERVERCHALLENGE (guards against signature reuse)
 uint8_t lastReceivedKey[MAXNETNODES][MAXSPLITSCREENPLAYERS][PUBKEYLENGTH]; // Player's public key (join process only! active players have it on player_t)
 uint8_t lastSentChallenge[MAXNETNODES][CHALLENGELENGTH]; // The random message we asked them to sign in PT_SERVERCHALLENGE, check it in PT_CLIENTJOIN
-uint8_t awaitingChallenge[SIGNATURELENGTH]; // The message the server asked our client to sign when joining
+uint8_t awaitingChallenge[CHALLENGELENGTH]; // The message the server asked our client to sign when joining
 uint8_t lastChallengeAll[CHALLENGELENGTH]; // The message we asked EVERYONE to sign for client-to-client identity proofs
 uint8_t lastReceivedSignature[MAXPLAYERS][SIGNATURELENGTH]; // Everyone's response to lastChallengeAll
 uint8_t knownWhenChallenged[MAXPLAYERS][PUBKEYLENGTH]; // Everyone a client saw at the moment a challenge should be initiated
