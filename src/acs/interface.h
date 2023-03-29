@@ -156,6 +156,16 @@ void ACS_RunOvertimeScript(void);
 
 
 /*--------------------------------------------------
+	void ACS_RunCatcherScript(mobj_t *mo);
+
+		Runs the map's special script for when the
+		Special Stage UFO Catcher is destroyed.
+--------------------------------------------------*/
+
+void ACS_RunCatcherScript(mobj_t *mo);
+
+
+/*--------------------------------------------------
 	void ACS_RunEmeraldScript(mobj_t *mo);
 
 		Runs the map's special script for when the

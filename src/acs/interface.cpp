@@ -272,6 +272,29 @@ void ACS_RunOvertimeScript(void)
 }
 
 /*--------------------------------------------------
+	void ACS_RunCatcherScript(mobj_t *mo)
+
+		See header file for description.
+--------------------------------------------------*/
+void ACS_RunCatcherScript(mobj_t *mo)
+{
+	Environment *env = &ACSEnv;
+
+	ACSVM::GlobalScope *const global = env->getGlobalScope(0);
+	ACSVM::HubScope *const hub = global->getHubScope(0);
+	ACSVM::MapScope *const map = hub->getMapScope(0);
+
+	ACSVM::MapScope::ScriptStartInfo scriptInfo;
+	ThreadInfo info;
+
+	P_SetTarget(&info.mo, mo);
+
+	scriptInfo.info = &info;
+
+	map->scriptStartType(ACS_ST_UFO, scriptInfo);
+}
+
+/*--------------------------------------------------
 	void ACS_RunEmeraldScript(mobj_t *mo)
 
 		See header file for description.
@@ -291,7 +314,7 @@ void ACS_RunEmeraldScript(mobj_t *mo)
 
 	scriptInfo.info = &info;
 
-	map->scriptStartTypeForced(ACS_ST_EMERALD, scriptInfo);
+	map->scriptStartType(ACS_ST_EMERALD, scriptInfo);
 }
 
 /*--------------------------------------------------

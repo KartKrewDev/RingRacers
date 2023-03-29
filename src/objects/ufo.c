@@ -698,7 +698,7 @@ boolean Obj_SpecialUFODamage(mobj_t *ufo, mobj_t *inflictor, mobj_t *source, UIN
 		ufo->flags = (ufo->flags & ~MF_SHOOTABLE) | (MF_SPECIAL|MF_PICKUPFROMBELOW);
 		ufo->shadowscale = FRACUNIT/3;
 
-		ACS_RunEmeraldScript(source);
+		ACS_RunCatcherScript(source);
 
 		S_StopSound(ufo);
 		S_StartSound(ufo, sfx_clawk2);
@@ -755,6 +755,32 @@ void Obj_PlayerUFOCollide(mobj_t *ufo, mobj_t *other)
 	}
 
 	K_KartBouncing(other, ufo);
+}
+
+boolean Obj_UFOEmeraldCollect(mobj_t *ufo, mobj_t *toucher)
+{
+	if (toucher->player != NULL)
+	{
+		if (P_CanPickupItem(toucher->player, 0) == false)
+		{
+			return false;
+		}
+	}
+
+	if (ufo_collectdelay(ufo) > 0)
+	{
+		return false;
+	}
+
+	if (toucher->hitlag > 0)
+	{
+		return false;
+	}
+
+	ACS_RunEmeraldScript(toucher);
+
+	CONS_Printf("You win!\n");
+	return true;
 }
 
 void Obj_UFOPieceThink(mobj_t *piece)

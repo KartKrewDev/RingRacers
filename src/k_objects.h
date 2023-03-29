@@ -72,6 +72,7 @@ waypoint_t *K_GetSpecialUFOWaypoint(mobj_t *ufo);
 void Obj_SpecialUFOThinker(mobj_t *ufo);
 boolean Obj_SpecialUFODamage(mobj_t *ufo, mobj_t *inflictor, mobj_t *source, UINT8 damageType);
 void Obj_PlayerUFOCollide(mobj_t *ufo, mobj_t *other);
+boolean Obj_UFOEmeraldCollect(mobj_t *ufo, mobj_t *toucher);
 void Obj_UFOPieceThink(mobj_t *piece);
 void Obj_UFOPieceDead(mobj_t *piece);
 void Obj_UFOPieceRemoved(mobj_t *piece);
