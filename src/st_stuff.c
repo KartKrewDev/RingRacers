@@ -360,10 +360,15 @@ static INT32 SCR(INT32 r)
 
 // Devmode information
 
+static void ST_pushRow(INT32 *height)
+{
+	*height -= 4;
+}
+
 static void ST_pushDebugString(INT32 *height, const char *string)
 {
 	V_DrawRightAlignedSmallString(319, *height, V_MONOSPACE, string);
-	*height -= 4;
+	ST_pushRow(height);
 }
 
 static void ST_pushDebugTimeMS(INT32 *height, const char *label, UINT32 ms)
@@ -401,10 +406,7 @@ static void ST_drawMusicDebug(INT32 *height)
 		ST_pushDebugTimeMS(height, "  Loop A: ", S_GetMusicLoopPoint());
 	}
 
-	if (def)
-	{
-		ST_pushDebugString(height, va("  Volume: %4d/100", def->volume));
-	}
+	ST_pushRow(height);
 
 	if (format)
 	{
@@ -412,6 +414,12 @@ static void ST_drawMusicDebug(INT32 *height)
 	}
 
 	ST_pushDebugString(height, va("    Song: %8s", mname));
+
+	if (def)
+	{
+		ST_pushRow(height);
+		ST_pushDebugString(height, va("  Volume: %4d/100", def->volume));
+	}
 }
 
 void ST_drawDebugInfo(void)
