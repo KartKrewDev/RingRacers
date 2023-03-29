@@ -8350,7 +8350,7 @@ void K_KartPlayerAfterThink(player_t *player)
 				UINT16 low = 0;
 				UINT16 high = 0;
 
-				if (player->offroad > 0 && (player->mo->momx != 0 || player->mo->momy != 0 || player->mo->momz != 0))
+				if (player->boostpower < FRACUNIT && P_IsObjectOnGround(player->mo))
 				{
 					low = 65536 / 4;
 					high = 65536 / 4;
