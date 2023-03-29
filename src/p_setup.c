@@ -7753,6 +7753,10 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 	S_StopSounds();
 	S_ClearSfx();
 
+	// Reset the palette now all fades have been done
+	if (rendermode != render_none)
+		V_ReloadPalette(); // Set the level palette
+
 	// Let's fade to white here
 	// But only if we didn't do the encore startup wipe
 	if (!demo.rewinding && !reloadinggamestate)
@@ -7764,10 +7768,6 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 		if (!(reloadinggamestate || gamestate != GS_LEVEL))
 			S_FadeMusic(0, FixedMul(
 				FixedDiv((F_GetWipeLength(wipedefs[wipe_level_toblack])-2)*NEWTICRATERATIO, NEWTICRATE), MUSICRATE));
-
-		// Reset the palette now all fades have been done
-		if (rendermode != render_none)
-			V_ReloadPalette(); // Set the level palette
 
 		if (!(reloadinggamestate || gamestate != GS_LEVEL))
 		{
