@@ -70,6 +70,22 @@ boolean K_GenerateFinishBeamLine(void);
 
 void K_RunFinishLineBeam(void);
 
+
+/*--------------------------------------------------
+	UINT8 K_RaceLapCount(INT16 mapNum);
+
+		Returns the effective final lap count of the race.
+
+	Input Arguments:-
+		mapNum - The level to count laps for, 0-indexed.
+
+	Return:-
+		The lap count to finish.
+--------------------------------------------------*/
+
+UINT8 K_RaceLapCount(INT16 mapNum);
+
+
 #ifdef __cplusplus
 } // extern "C"
 #endif

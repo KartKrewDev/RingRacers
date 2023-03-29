@@ -62,6 +62,7 @@
 #include "deh_tables.h"
 #include "m_perfstats.h"
 #include "k_specialstage.h"
+#include "k_race.h"
 
 #ifdef SRB2_CONFIG_ENABLE_WEBM_MOVIES
 #include "m_avrecorder.h"
@@ -443,7 +444,6 @@ consvar_t cv_kartdebugnodes = CVAR_INIT ("debugnodes", "Off", CV_CHEAT, CV_OnOff
 consvar_t cv_kartdebugcolorize = CVAR_INIT ("debugcolorize", "Off", CV_CHEAT, CV_OnOff, NULL);
 consvar_t cv_kartdebugdirector = CVAR_INIT ("debugdirector", "Off", CV_CHEAT, CV_OnOff, NULL);
 consvar_t cv_spbtest = CVAR_INIT ("spbtest", "Off", CV_CHEAT|CV_NETVAR, CV_OnOff, NULL);
-consvar_t cv_gptest = CVAR_INIT ("gptest", "Off", CV_CHEAT|CV_NETVAR, CV_OnOff, NULL);
 consvar_t cv_debugrank = CVAR_INIT ("debugrank", "Off", CV_CHEAT, CV_OnOff, NULL);
 consvar_t cv_battletest = CVAR_INIT ("battletest", "Off", CV_CHEAT|CV_NETVAR, CV_OnOff, NULL);
 
@@ -490,7 +490,7 @@ consvar_t cv_pointlimit = CVAR_INIT ("pointlimit", "Default", CV_NETVAR|CV_CALL|
 static CV_PossibleValue_t timelimit_cons_t[] = {{1, "MIN"}, {30*60, "MAX"}, {0, "None"}, {-1, "Default"}, {0, NULL}};
 consvar_t cv_timelimit = CVAR_INIT ("timelimit", "Default", CV_NETVAR|CV_CALL|CV_NOINIT, timelimit_cons_t, TimeLimit_OnChange);
 
-static CV_PossibleValue_t numlaps_cons_t[] = {{1, "MIN"}, {MAX_LAPS, "MAX"}, {0, "Map default"}, {0, NULL}};
+static CV_PossibleValue_t numlaps_cons_t[] = {{0, "MIN"}, {MAX_LAPS, "MAX"}, {-1, "Map default"}, {0, NULL}};
 consvar_t cv_numlaps = CVAR_INIT ("numlaps", "Map default", CV_SAVE|CV_NETVAR|CV_CALL|CV_CHEAT, numlaps_cons_t, NumLaps_OnChange);
 
 consvar_t cv_forceskin = CVAR_INIT ("forcecharacter", "None", CV_NETVAR|CV_CALL|CV_CHEAT, NULL, ForceSkin_OnChange);
@@ -6544,15 +6544,18 @@ static void Command_ShowTime_f(void)
 // SRB2Kart: On change messages
 static void NumLaps_OnChange(void)
 {
-	if (K_CanChangeRules(false) == false)
+	if (gamestate == GS_LEVEL)
 	{
-		return;
-	}
+		numlaps = K_RaceLapCount(gamemap - 1);
 
-	if (gamestate == GS_LEVEL && leveltime < starttime)
-	{
-		CONS_Printf(M_GetText("Number of laps have been set to %d.\n"), cv_numlaps.value);
-		numlaps = (UINT8)cv_numlaps.value;
+		if (cv_numlaps.value == -1)
+		{
+			CONS_Printf(M_GetText("Number of laps have been set to %d (map default).\n"), numlaps);
+		}
+		else
+		{
+			CONS_Printf(M_GetText("Number of laps have been set to %d.\n"), numlaps);
+		}
 	}
 	else
 	{

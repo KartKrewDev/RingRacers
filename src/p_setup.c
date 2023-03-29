@@ -7443,29 +7443,7 @@ static void P_InitGametype(void)
 	if (modeattacking && !demo.playback)
 		P_LoadRecordGhosts();
 
-	if (gametyperules & GTR_CIRCUIT)
-	{
-		if (K_CanChangeRules(true) && cv_numlaps.value
-		&& (!(mapheaderinfo[gamemap - 1]->levelflags & LF_SECTIONRACE)
-		|| (mapheaderinfo[gamemap - 1]->numlaps > cv_numlaps.value)))
-		{
-			numlaps = cv_numlaps.value;
-		}
-		else if ((grandprixinfo.gp == true)
-			&& (grandprixinfo.eventmode == GPEVENT_NONE)
-			&& cv_gptest.value)
-		{
-			numlaps = 1;
-		}
-		else
-		{
-			numlaps = mapheaderinfo[gamemap - 1]->numlaps;
-		}
-	}
-	else
-	{
-		numlaps = 0;
-	}
+	numlaps = K_RaceLapCount(gamemap - 1);
 
 	wantedcalcdelay = wantedfrequency*2;
 
