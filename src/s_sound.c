@@ -1354,6 +1354,24 @@ static UINT32    queue_fadeinms;
 
 static tic_t     pause_starttic;
 
+static void S_AttemptToRestoreMusic(void)
+{
+	switch (gamestate)
+	{
+		case GS_LEVEL:
+			P_RestoreMusic(&players[consoleplayer]);
+			break;
+		case GS_TITLESCREEN:
+			S_ChangeMusicInternal("_title", looptitle);
+			break;
+		case GS_MENU:
+			M_PlayMenuJam();
+			break;
+		default:
+			break;
+	}
+}
+
 /// ------------------------
 /// Music Definitions
 /// ------------------------
@@ -1609,10 +1627,7 @@ void S_SoundTestStop(boolean pause)
 		soundtest.current = NULL;
 		soundtest.currenttrack = 0;
 
-		if (gamestate == GS_LEVEL)
-		{
-			P_RestoreMusic(&players[consoleplayer]);
-		}
+		S_AttemptToRestoreMusic();
 	}
 
 	soundtest.privilegedrequest = false;
@@ -2891,18 +2906,7 @@ static void Command_RestartAudio_f(void)
 
 	S_StartSound(NULL, sfx_strpst);
 
-	if (gamestate == GS_LEVEL) // Gotta make sure the player is in a level
-	{
-		P_RestoreMusic(&players[consoleplayer]);
-	}
-	else if (gamestate == GS_TITLESCREEN)
-	{
-		S_ChangeMusicInternal("_title", looptitle);
-	}
-	else
-	{
-		M_PlayMenuJam();
-	}
+	S_AttemptToRestoreMusic();
 }
 
 static void Command_PlaySound(void)
@@ -3002,18 +3006,7 @@ void GameDigiMusic_OnChange(void)
 		I_StartupSound(); // will return early if initialised
 		I_InitMusic();
 
-		if (gamestate == GS_LEVEL)
-		{
-			P_RestoreMusic(&players[consoleplayer]);
-		}
-		else if (gamestate == GS_TITLESCREEN)
-		{
-			S_ChangeMusicInternal("_title", looptitle);
-		}
-		else
-		{
-			M_PlayMenuJam();
-		}
+		S_AttemptToRestoreMusic();
 	}
 	else
 	{
