@@ -46,6 +46,7 @@ extern SINT8 nodetoplayer3[MAXNETNODES]; // Say the numplayer for this node if a
 extern SINT8 nodetoplayer4[MAXNETNODES]; // Say the numplayer for this node if any (splitscreen == 3)
 extern UINT8 playerpernode[MAXNETNODES]; // Used specially for splitscreen
 extern boolean nodeingame[MAXNETNODES]; // Set false as nodes leave game
+extern boolean nodeneedsauth[MAXNETNODES];
 
 extern boolean serverrunning;
 
@@ -67,6 +68,8 @@ void Net_ConnectionTimeout(INT32 node);
 void Net_AbortPacketType(UINT8 packettype);
 void Net_SendAcks(INT32 node);
 void Net_WaitAllAckReceived(UINT32 timeout);
+
+boolean IsPacketSigned(int packettype);
 
 #ifdef __cplusplus
 } // extern "C"

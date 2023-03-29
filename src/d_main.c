@@ -71,6 +71,9 @@
 #include "g_input.h" // tutorial mode control scheming
 #include "m_perfstats.h"
 
+#include "monocypher/monocypher.h"
+#include "stun.h"
+
 // SRB2Kart
 #include "k_grandprix.h"
 #include "doomstat.h"

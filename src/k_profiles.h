@@ -31,7 +31,7 @@ extern "C" {
 #define SKINNAMESIZE 16
 
 #define PROFILENAMELEN 6
-#define PROFILEVER 2
+#define PROFILEVER 3
 #define MAXPROFILES 16
 #define PROFILESFILE "ringprofiles.prf"
 #define PROFILE_GUEST 0
@@ -58,6 +58,9 @@ struct profile_t
 
 	// Profile header
 	char profilename[PROFILENAMELEN+1];	// Profile name (not to be confused with player name)
+
+	uint8_t public_key[PUBKEYLENGTH];	// Netgame authentication
+	uint8_t secret_key[PRIVKEYLENGTH];
 
 	// Player data
 	char playername[MAXPLAYERNAME+1];	// Player name
@@ -155,6 +158,12 @@ UINT8 PR_GetProfileNum(profile_t *p);
 SINT8 PR_ProfileUsedBy(profile_t *p);
 
 profile_t *PR_GetPlayerProfile(player_t *player);
+
+profile_t *PR_GetLocalPlayerProfile(INT32 player);
+
+boolean PR_IsLocalPlayerGuest(INT32 player);
+
+char *GetPrettyRRID(const unsigned char *bin, boolean brief);
 
 #ifdef __cplusplus
 } // extern "C"

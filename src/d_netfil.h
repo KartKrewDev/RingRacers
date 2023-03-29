@@ -106,6 +106,8 @@ boolean CL_CheckDownloadable(void);
 boolean CL_SendFileRequest(void);
 boolean PT_RequestFile(INT32 node);
 
+void PT_ClientKey(INT32 node);
+
 typedef enum
 {
 	LFTNS_NONE,    // This node is not connected

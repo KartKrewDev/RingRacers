@@ -47,6 +47,8 @@
 #include "lua_hook.h"
 #include "md5.h"
 #include "m_perfstats.h"
+#include "monocypher/monocypher.h"
+#include "stun.h"
 
 // SRB2Kart
 #include "k_kart.h"
@@ -121,6 +123,7 @@ SINT8 nodetoplayer3[MAXNETNODES]; // say the numplayer for this node if any (spl
 SINT8 nodetoplayer4[MAXNETNODES]; // say the numplayer for this node if any (splitscreen == 3)
 UINT8 playerpernode[MAXNETNODES]; // used specialy for splitscreen
 boolean nodeingame[MAXNETNODES]; // set false as nodes leave game
+boolean nodeneedsauth[MAXNETNODES];
 
 tic_t servermaxping = 20; // server's max delay, in frames. Defaults to 20
 static tic_t nettics[MAXNETNODES]; // what tic the client have received
@@ -156,8 +159,33 @@ char connectedservername[MAXSERVERNAME];
 /// \todo WORK!
 boolean acceptnewnode = true;
 
+UINT32 ourIP; // Used when populating PT_SERVERCHALLENGE (guards against signature reuse)
+uint8_t lastReceivedKey[MAXNETNODES][MAXSPLITSCREENPLAYERS][PUBKEYLENGTH]; // Player's public key (join process only! active players have it on player_t)
+uint8_t lastSentChallenge[MAXNETNODES][CHALLENGELENGTH]; // The random message we asked them to sign in PT_SERVERCHALLENGE, check it in PT_CLIENTJOIN
+uint8_t awaitingChallenge[CHALLENGELENGTH]; // The message the server asked our client to sign when joining
+uint8_t lastChallengeAll[CHALLENGELENGTH]; // The message we asked EVERYONE to sign for client-to-client identity proofs
+uint8_t lastReceivedSignature[MAXPLAYERS][SIGNATURELENGTH]; // Everyone's response to lastChallengeAll
+uint8_t knownWhenChallenged[MAXPLAYERS][PUBKEYLENGTH]; // Everyone a client saw at the moment a challenge should be initiated
+boolean expectChallenge = false; // Were we in-game before a client-to-client challenge should have been sent?
+
+uint8_t priorKeys[MAXPLAYERS][PUBKEYLENGTH]; // Make a note of keys before consuming a new gamestate, and if the server tries to send us a gamestate where keys differ, assume shenanigans
+
 boolean serverisfull = false; //lets us be aware if the server was full after we check files, but before downloading, so we can ask if the user still wants to download or not
 tic_t firstconnectattempttime = 0;
+
+consvar_t cv_allowguests = CVAR_INIT ("allowguests", "On", CV_SAVE, CV_OnOff, NULL);
+
+#ifdef DEVELOP
+	consvar_t cv_badjoin = CVAR_INIT ("badjoin", "0", 0, CV_Unsigned, NULL);
+	consvar_t cv_badtraffic = CVAR_INIT ("badtraffic", "0", 0, CV_Unsigned, NULL);
+	consvar_t cv_badresponse = CVAR_INIT ("badresponse", "0", 0, CV_Unsigned, NULL);
+	consvar_t cv_noresponse = CVAR_INIT ("noresponse", "0", 0, CV_Unsigned, NULL);
+	consvar_t cv_nochallenge = CVAR_INIT ("nochallenge", "0", 0, CV_Unsigned, NULL);
+	consvar_t cv_badresults = CVAR_INIT ("badresults", "0", 0, CV_Unsigned, NULL);
+	consvar_t cv_noresults = CVAR_INIT ("noresults", "0", 0, CV_Unsigned, NULL);
+	consvar_t cv_badtime = CVAR_INIT ("badtime", "0", 0, CV_Unsigned, NULL);
+	consvar_t cv_badip = CVAR_INIT ("badip", "0", 0, CV_Unsigned, NULL);
+#endif
 
 // engine
 
@@ -190,6 +218,60 @@ consvar_t cv_playbackspeed = CVAR_INIT ("playbackspeed", "1", 0, playbackspeed_c
 consvar_t cv_httpsource = CVAR_INIT ("http_source", "", CV_SAVE, NULL, NULL);
 
 consvar_t cv_kicktime = CVAR_INIT ("kicktime", "10", CV_SAVE, CV_Unsigned, NULL);
+
+// Generate a message for an authenticating client to sign, with some guarantees about who we are.
+void GenerateChallenge(uint8_t *buf)
+{
+	#ifndef SRB2_LITTLE_ENDIAN
+		#error  "FIXME: 64-bit timestamp field is not supported on Big Endian"
+	#endif
+
+	UINT64 now = time(NULL);
+	csprng(buf, CHALLENGELENGTH); // Random noise as a baseline, but...
+	memcpy(buf, &now, sizeof(now)); // Timestamp limits the reuse window.
+	memcpy(buf + sizeof(now), &ourIP, sizeof(ourIP)); // IP prevents captured signatures from being used elsewhere.
+
+	#ifdef DEVELOP
+		if (cv_badtime.value)
+		{
+			CV_AddValue(&cv_badtime, -1);
+			CONS_Alert(CONS_WARNING, "cv_badtime enabled, trashing time in auth message\n");
+			memset(buf, 0, sizeof(now));
+		}
+
+		if (cv_badip.value)
+		{
+			CV_AddValue(&cv_badip, -1);
+			CONS_Alert(CONS_WARNING, "cv_badip enabled, trashing IP in auth message\n");
+			memset(buf + sizeof(now), 0, sizeof(ourIP));
+		}
+	#endif
+}
+
+// Modified servers can throw softballs or reuse challenges.
+// Don't sign anything that wasn't generated just for us!
+shouldsign_t ShouldSignChallenge(uint8_t *message)
+{
+	#ifndef SRB2_LITTLE_ENDIAN
+		#error  "FIXME: 64-bit timestamp field is not supported on Big Endian"
+	#endif
+	
+	UINT64 then, now;
+	UINT32 claimedIP, realIP;
+
+	now = time(NULL);
+	memcpy(&then, message, sizeof(then));
+	memcpy(&claimedIP, message + sizeof(then), sizeof(claimedIP));
+	realIP = I_GetNodeAddressInt(servernode);
+
+	if ((max(now, then) - min(now, then)) > 60*5)
+		return SIGN_BADTIME;
+
+	if (realIP != claimedIP && I_IsExternalAddress(&realIP))
+		return SIGN_BADIP;
+
+	return SIGN_OK;
+}
 
 static inline void *G_DcpyTiccmd(void* dest, const ticcmd_t* src, const size_t n)
 {
@@ -545,6 +627,8 @@ typedef enum
 	CL_PREPAREHTTPFILES,
 	CL_DOWNLOADHTTPFILES,
 #endif
+	CL_SENDKEY,
+	CL_WAITCHALLENGE,
 } cl_mode_t;
 
 static void GetPackets(void);
@@ -826,7 +910,78 @@ static boolean CL_SendJoin(void)
 
 	memcpy(&netbuffer->u.clientcfg.availabilities, R_GetSkinAvailabilities(false, false), MAXAVAILABILITY*sizeof(UINT8));
 
+	// Don't leak old signatures from prior sessions.
+	memset(&netbuffer->u.clientcfg.challengeResponse, 0, sizeof(((clientconfig_pak *)0)->challengeResponse));
+
+	if (client && netgame)
+	{
+		shouldsign_t safe = ShouldSignChallenge(awaitingChallenge);
+
+		if (safe != SIGN_OK)
+		{
+			if (safe == SIGN_BADIP)
+			{
+				I_Error("External server IP didn't match the message it sent.");
+			}
+			else if (safe == SIGN_BADTIME)
+			{
+				I_Error("External server sent a message with an unusual timestamp.\nCheck your clocks!");
+			}
+			else
+			{
+				I_Error("External server asked for a signature on something strange.\nPlease notify a developer if you've seen this more than once.");
+			}
+			return false;
+		}
+	}
+
+	for (i = 0; i <= splitscreen; i++)
+	{
+		uint8_t signature[SIGNATURELENGTH];
+		profile_t *localProfile = PR_GetLocalPlayerProfile(i);
+
+		if (PR_IsLocalPlayerGuest(i)) // GUESTS don't have keys
+		{
+			memset(signature, 0, sizeof(signature));
+		}
+		else
+		{
+			// If our keys are garbage (corrupted profile?), fail here instead of when the server boots us, so the player knows what's going on.
+			crypto_eddsa_sign(signature, localProfile->secret_key, awaitingChallenge, sizeof(awaitingChallenge));
+			if (crypto_eddsa_check(signature, localProfile->public_key, awaitingChallenge, sizeof(awaitingChallenge)) != 0)
+				I_Error("Couldn't self-verify key associated with player %d, profile %d.\nProfile data may be corrupted.", i, cv_lastprofile[i].value); // I guess this is the most reasonable way to catch a malformed key.
+		}
+
+		#ifdef DEVELOP
+			if (cv_badjoin.value)
+			{
+				CV_AddValue(&cv_badjoin, -1);
+				CONS_Alert(CONS_WARNING, "cv_badjoin enabled, scrubbing signature from CL_SendJoin\n");
+				memset(signature, 0, sizeof(signature));
+			}
+		#endif
+
+		// Testing
+		// memset(signature, 0, sizeof(signature));
+
+		memcpy(&netbuffer->u.clientcfg.challengeResponse[i], signature, sizeof(signature));
+	}
+
 	return HSendPacket(servernode, false, 0, sizeof (clientconfig_pak));
+}
+
+static boolean CL_SendKey(void)
+{
+	int i;
+	netbuffer->packettype = PT_CLIENTKEY;
+
+	memset(netbuffer->u.clientkey.key, 0, sizeof(((clientkey_pak *)0)->key));
+	for (i = 0; i <= splitscreen; i++)
+	{
+		// GUEST profiles have all-zero keys. This will be handled at the end of the challenge process, don't worry about it.
+		memcpy(netbuffer->u.clientkey.key[i], PR_GetProfile(cv_lastprofile[i].value)->public_key, PUBKEYLENGTH);
+	}
+	return HSendPacket(servernode, false, 0, sizeof (clientkey_pak) );
 }
 
 static void
@@ -1312,6 +1467,19 @@ static void CL_LoadReceivedSavegame(boolean reloading)
 	// so they know they can resume the game
 	netbuffer->packettype = PT_RECEIVEDGAMESTATE;
 	HSendPacket(servernode, true, 0, 0);
+
+	if (reloading)
+	{
+		int i;
+		for (i = 0; i < MAXPLAYERS; i++)
+		{
+			if (memcmp(priorKeys[i], players[i].public_key, sizeof(priorKeys[i])) != 0)
+			{
+				HandleSigfail("Gamestate reload contained new keys");
+				break;
+			}
+		}
+	}
 }
 
 static void CL_ReloadReceivedSavegame(void)
@@ -1888,7 +2056,7 @@ static boolean CL_ServerConnectionTicker(const char *tmpsave, tic_t *oldtic, tic
 			{
 				*asksent = 0; //This ensure the first join ask is right away
 				firstconnectattempttime = I_GetTime();
-				cl_mode = CL_ASKJOIN;
+				cl_mode = CL_SENDKEY;
 			}
 			break;
 		case CL_ASKJOIN:
@@ -1922,6 +2090,19 @@ static boolean CL_ServerConnectionTicker(const char *tmpsave, tic_t *oldtic, tic
 			if (I_GetTime() >= *asksent)
 			{
 				cl_mode = CL_ASKJOIN;
+			}
+			break;
+		case CL_SENDKEY:
+			if (I_GetTime() >= *asksent && CL_SendKey())
+			{
+				*asksent = I_GetTime() + NEWTICRATE*3;
+				cl_mode = CL_WAITCHALLENGE;
+			}
+			break;
+		case CL_WAITCHALLENGE:
+			if (I_GetTime() >= *asksent)
+			{
+				cl_mode = CL_SENDKEY;
 			}
 			break;
 		case CL_DOWNLOADSAVEGAME:
@@ -2675,6 +2856,8 @@ void CL_Reset(void)
 	serverisfull = false;
 	connectiontimeout = (tic_t)cv_nettimeout.value; //reset this temporary hack
 
+	expectChallenge = false;
+
 #ifdef HAVE_CURL
 	curl_failedwebdownload = false;
 	curl_transfers = 0;
@@ -2757,6 +2940,8 @@ static void Command_Nodes(void)
 				if (I_GetNodeAddress && (address = I_GetNodeAddress(playernode[i])) != NULL)
 					CONS_Printf(" - %s", address);
 			}
+
+			CONS_Printf(" [RRID-%s] ", GetPrettyRRID(players[i].public_key, true));
 
 			if (IsPlayerAdmin(i))
 				CONS_Printf(M_GetText(" (verified admin)"));
@@ -3113,6 +3298,10 @@ static void Got_KickCmd(UINT8 **p, INT32 playernum)
 			HU_AddChatText(va("\x82*%s left the game (Connection timeout)", player_names[pnum]), false);
 			kickreason = KR_TIMEOUT;
 			break;
+		case KICK_MSG_SIGFAIL:
+			HU_AddChatText(va("\x82*%s left the game (Invalid signature)", player_names[pnum]), false);
+			kickreason = KR_TIMEOUT;
+			break;
 		case KICK_MSG_PLAYER_QUIT:
 			if (netgame) // not splitscreen/bots
 				HU_AddChatText(va("\x82*%s left the game", player_names[pnum]), false);
@@ -3169,6 +3358,8 @@ static void Got_KickCmd(UINT8 **p, INT32 playernum)
 			M_StartMessage(va(M_GetText("You have been kicked\n(%s)\nPress (B)\n"), reason), NULL, MM_NOTHING);
 		else if (msg == KICK_MSG_CUSTOM_BAN)
 			M_StartMessage(va(M_GetText("You have been banned\n(%s)\nPress (B)\n"), reason), NULL, MM_NOTHING);
+		else if (msg == KICK_MSG_SIGFAIL)
+			M_StartMessage(M_GetText("Server closed connection\n(Invalid signature)\nPress (B)\n"), NULL, MM_NOTHING);
 		else
 			M_StartMessage(M_GetText("You have been kicked by the server\n\nPress (B)\n"), NULL, MM_NOTHING);
 	}
@@ -3382,9 +3573,7 @@ void D_ClientServerInit(void)
 	COM_AddCommand("drop", Command_Drop);
 	COM_AddCommand("droprate", Command_Droprate);
 #endif
-#ifdef _DEBUG
 	COM_AddCommand("numnodes", Command_Numnodes);
-#endif
 
 	RegisterNetXCmd(XD_KICK, Got_KickCmd);
 	RegisterNetXCmd(XD_ADDPLAYER, Got_AddPlayer);
@@ -3409,6 +3598,7 @@ static void ResetNode(INT32 node)
 {
 	nodeingame[node] = false;
 	nodewaiting[node] = 0;
+	nodeneedsauth[node] = false;
 
 	nettics[node] = gametic;
 	supposedtics[node] = gametic;
@@ -3488,6 +3678,8 @@ void SV_ResetServer(void)
 	// (permits all unlocks in dedicated)
 	for (i = 0; i < MAXUNLOCKABLES; i++)
 		netUnlocked[i] = (dedicated || gamedata->unlocked[i]);
+
+	expectChallenge = false;
 
 	DEBFILE("\n-=-=-=-=-=-=-= Server Reset =-=-=-=-=-=-=-\n\n");
 }
@@ -3573,6 +3765,8 @@ static inline void SV_AddNode(INT32 node)
 	// nodeingame when connected not here
 	if (node)
 		nodeingame[node] = true;
+
+	nodeneedsauth[node] = false;
 }
 
 // Xcmd XD_ADDPLAYER
@@ -3614,6 +3808,7 @@ static void Got_AddPlayer(UINT8 **p, INT32 playernum)
 	newplayer->jointime = 0;
 
 	READSTRINGN(*p, player_names[newplayernum], MAXPLAYERNAME);
+	READMEM(*p, players[newplayernum].public_key, PUBKEYLENGTH);
 
 	console = READUINT8(*p);
 	splitscreenplayer = READUINT8(*p);
@@ -3773,10 +3968,12 @@ static void Got_AddBot(UINT8 **p, INT32 playernum)
 	LUA_HookInt(newplayernum, HOOK(PlayerJoin));
 }
 
-static boolean SV_AddWaitingPlayers(SINT8 node, UINT8 *availabilities, const char *name, const char *name2, const char *name3, const char *name4)
+static boolean SV_AddWaitingPlayers(SINT8 node, UINT8 *availabilities, 
+const char *name, uint8_t *key, const char *name2, uint8_t *key2,
+const char *name3, uint8_t *key3, const char *name4, uint8_t *key4)
 {
 	INT32 n, newplayernum, i;
-	UINT8 buf[4 + MAXPLAYERNAME + MAXAVAILABILITY];
+	UINT8 buf[4 + MAXPLAYERNAME + PUBKEYLENGTH + MAXAVAILABILITY];
 	UINT8 *buf_p = buf;
 	boolean newplayer = false;
 
@@ -3839,21 +4036,25 @@ static boolean SV_AddWaitingPlayers(SINT8 node, UINT8 *availabilities, const cha
 			{
 				nodetoplayer[node] = newplayernum;
 				WRITESTRINGN(buf_p, name, MAXPLAYERNAME);
+				WRITEMEM(buf_p, key, PUBKEYLENGTH);
 			}
 			else if (playerpernode[node] < 2)
 			{
 				nodetoplayer2[node] = newplayernum;
 				WRITESTRINGN(buf_p, name2, MAXPLAYERNAME);
+				WRITEMEM(buf_p, key2, PUBKEYLENGTH);
 			}
 			else if (playerpernode[node] < 3)
 			{
 				nodetoplayer3[node] = newplayernum;
 				WRITESTRINGN(buf_p, name3, MAXPLAYERNAME);
+				WRITEMEM(buf_p, key3, PUBKEYLENGTH);
 			}
 			else if (playerpernode[node] < 4)
 			{
 				nodetoplayer4[node] = newplayernum;
 				WRITESTRINGN(buf_p, name4, MAXPLAYERNAME);
+				WRITEMEM(buf_p, key4, PUBKEYLENGTH);
 			}
 
 			WRITEUINT8(buf_p, nodetoplayer[node]); // consoleplayer
@@ -3886,6 +4087,15 @@ void CL_RemoveSplitscreenPlayer(UINT8 p)
 		return;
 
 	SendKick(p, KICK_MSG_PLAYER_QUIT);
+}
+
+static void GotOurIP(UINT32 address)
+{
+	const unsigned char * p = (const unsigned char *)&address;
+	#ifdef DEVELOP
+		CONS_Printf("Got IP of %u.%u.%u.%u\n", p[0], p[1], p[2], p[3]);
+	#endif
+	ourIP = address;
 }
 
 // is there a game running
@@ -3924,13 +4134,18 @@ boolean SV_SpawnServer(void)
 		else doomcom->numslots = 1;
 	}
 
+	ourIP = 0;
+	if (netgame && server)
+		STUN_bind(GotOurIP);
+
 	// strictly speaking, i'm not convinced the following is necessary
 	// but I'm not confident enough to remove it entirely in case it breaks something
 	{
 		UINT8 *availabilitiesbuffer = R_GetSkinAvailabilities(false, false);
 		SINT8 node = 0;
 		for (; node < MAXNETNODES; node++)
-			result |= SV_AddWaitingPlayers(node, availabilitiesbuffer, cv_playername[0].zstring, cv_playername[1].zstring, cv_playername[2].zstring, cv_playername[3].zstring);
+			result |= SV_AddWaitingPlayers(node, availabilitiesbuffer, cv_playername[0].zstring, PR_GetLocalPlayerProfile(0)->public_key, cv_playername[1].zstring, PR_GetLocalPlayerProfile(1)->public_key,  
+			cv_playername[2].zstring, PR_GetLocalPlayerProfile(2)->public_key, cv_playername[3].zstring, PR_GetLocalPlayerProfile(3)->public_key);
 	}
 	return result;
 #endif
@@ -4004,6 +4219,34 @@ static size_t TotalTextCmdPerTic(tic_t tic)
 	return total;
 }
 
+#ifdef SIGNGAMETRAFFIC
+	static boolean IsSplitPlayerOnNodeGuest(int node, int split)
+	{
+		char allZero[PUBKEYLENGTH];
+		memset(allZero, 0, PUBKEYLENGTH);
+
+		if (split == 0)
+			return (memcmp(players[nodetoplayer[node]].public_key, allZero, PUBKEYLENGTH) == 0);
+		else if (split == 1)
+			return (memcmp(players[nodetoplayer2[node]].public_key, allZero, PUBKEYLENGTH) == 0);
+		else if (split == 2)
+			return (memcmp(players[nodetoplayer3[node]].public_key, allZero, PUBKEYLENGTH) == 0);
+		else if (split == 3)
+			return (memcmp(players[nodetoplayer4[node]].public_key, allZero, PUBKEYLENGTH) == 0);
+		else
+			I_Error("IsSplitPlayerOnNodeGuest: Out of bounds");
+		return false; // unreachable
+	}
+#endif
+
+static boolean IsPlayerGuest(int player)
+{
+	char allZero[PUBKEYLENGTH];
+	memset(allZero, 0, PUBKEYLENGTH);
+
+	return (memcmp(players[player].public_key, allZero, PUBKEYLENGTH) == 0);
+}
+
 /** Called when a PT_CLIENTJOIN packet is received
   *
   * \param node The packet sender
@@ -4020,6 +4263,7 @@ static void HandleConnect(SINT8 node)
 	// It's too much effort to legimately fix right now. Just prevent it from reaching that state.
 	UINT8 maxplayers = min((dedicated ? MAXPLAYERS-1 : MAXPLAYERS), cv_maxconnections.value);
 	UINT8 connectedplayers = 0;
+
 
 	for (i = dedicated ? 1 : 0; i < MAXPLAYERS; i++)
 		if (playernode[i] != UINT8_MAX) // We use this to count players because it is affected by SV_AddWaitingPlayers when more than one client joins on the same tic, unlike playeringame and D_NumPlayers. UINT8_MAX denotes no node for that player
@@ -4108,6 +4352,7 @@ static void HandleConnect(SINT8 node)
 	}
 	else
 	{
+		int sigcheck;
 		boolean newnode = false;
 
 		for (i = 0; i < netbuffer->u.clientcfg.localplayers - playerpernode[node]; i++)
@@ -4117,6 +4362,37 @@ static void HandleConnect(SINT8 node)
 			{
 				SV_SendRefuse(node, "Bad player name");
 				return;
+			}
+
+			if (node == 0) // Hey, that's us. We're always allowed to do what we want.
+			{
+				memcpy(lastReceivedKey[node][i], PR_GetLocalPlayerProfile(i)->public_key, sizeof(lastReceivedKey[node][i]));
+			}
+			else // Remote player, gotta check their signature.
+			{
+				char allZero[PUBKEYLENGTH];
+				memset(allZero, 0, sizeof(allZero));
+				
+				if (memcmp(lastReceivedKey[node][i], allZero, PUBKEYLENGTH) == 0) // IsSplitPlayerOnNodeGuest isn't appropriate here, they're not in-game yet!
+				{
+					if (!cv_allowguests.value)
+					{
+						SV_SendRefuse(node, M_GetText("The server doesn't allow GUESTs.\nCreate a profile to join!"));
+						return;	
+					}
+
+					sigcheck = 0; // Always succeeds. Yes, this is a success response. C R Y P T O
+				}
+				else
+				{	
+					sigcheck = crypto_eddsa_check(netbuffer->u.clientcfg.challengeResponse[i], lastReceivedKey[node][i], lastSentChallenge[node], CHALLENGELENGTH);
+				}
+
+				if (netgame && sigcheck != 0)
+				{
+					SV_SendRefuse(node, M_GetText("Signature verification failed."));
+					return;
+				}
 			}
 		}
 
@@ -4157,7 +4433,8 @@ static void HandleConnect(SINT8 node)
 				DEBFILE("send savegame\n");
 			}
 
-			SV_AddWaitingPlayers(node, availabilitiesbuffer, names[0], names[1], names[2], names[3]);
+			SV_AddWaitingPlayers(node, availabilitiesbuffer, names[0], lastReceivedKey[node][0], names[1], lastReceivedKey[node][1],
+				names[2], lastReceivedKey[node][2], names[3], lastReceivedKey[node][3]);
 			joindelay += cv_joindelay.value * TICRATE;
 			player_joining = true;
 		}
@@ -4196,6 +4473,23 @@ static void HandleTimeout(SINT8 node)
 	M_StartMessage(M_GetText("Server Timeout\n\nPress (B)\n"), NULL, MM_NOTHING);
 }
 
+// Called when a signature check fails and we suspect the server is playing games.
+void HandleSigfail(const char *string)
+{
+	if (server) // This situation is basically guaranteed to be nonsense.
+	{
+		CONS_Alert(CONS_ERROR, "Auth error! %s\n", string);
+		return; // Keep the game running, you're probably testing.
+	}
+
+	LUA_HookBool(false, HOOK(GameQuit));
+	D_QuitNetGame();
+	CL_Reset();
+	D_ClearState();
+	M_StartControlPanel();
+	M_StartMessage(va(M_GetText("Signature check failed.\n(%s)\nPress (B)\n"), string), NULL, MM_NOTHING);
+}
+
 /** Called when a PT_SERVERINFO packet is received
   *
   * \param node The packet sender
@@ -4227,6 +4521,14 @@ static void PT_WillResendGamestate(void)
 
 	if (server || cl_redownloadinggamestate)
 		return;
+
+	// Don't let the server pull a fast one with everyone's identity!
+	// Save the public keys we see, so if the server tries to swap one, we'll know.
+	int i;
+	for (i = 0; i < MAXPLAYERS; i++)
+	{
+		memcpy(priorKeys[i], players[i].public_key, sizeof(priorKeys[i]));
+	}
 
 	// Send back a PT_CANRECEIVEGAMESTATE packet to the server
 	// so they know they can start sending the game state
@@ -4482,7 +4784,10 @@ static void HandlePacketFromAwayNode(SINT8 node)
 		case PT_NODETIMEOUT:
 		case PT_CLIENTQUIT:
 			if (server)
+			{
 				Net_CloseConnection(node);
+				nodeneedsauth[node] = false;
+			}
 			break;
 
 		case PT_CLIENTCMD:
@@ -4493,7 +4798,28 @@ static void HandlePacketFromAwayNode(SINT8 node)
 			if (node == servernode)
 				break;
 			/* FALLTHRU */
+		case PT_CLIENTKEY:
+			if (server)
+			{
+				PT_ClientKey(node);
 
+				// Client's not in the server yet, but we still need to lock up the node.
+				// Otherwise, someone else could request a challenge on the same node and trash it.
+				nodeneedsauth[node] = true;
+				freezetimeout[node] = I_GetTime() + jointimeout;
+			}
+			break;
+		case PT_SERVERCHALLENGE:
+			if (server && serverrunning && node != servernode)
+			{
+				Net_CloseConnection(node);
+				break;
+			}
+			if (cl_mode != CL_WAITCHALLENGE)
+				break;
+			memcpy(awaitingChallenge, netbuffer->u.serverchallenge.secret, sizeof(awaitingChallenge));
+			cl_mode = CL_ASKJOIN;
+			break;
 		default:
 			DEBFILE(va("unknown packet received (%d) from unknown host\n",netbuffer->packettype));
 			Net_CloseConnection(node);
@@ -4526,6 +4852,19 @@ static boolean CheckForSpeedHacks(UINT8 p)
 	return false;
 }
 
+static char NodeToSplitPlayer(int node, int split)
+{
+	if (split == 0)
+		return nodetoplayer[node];
+	else if (split == 1)
+		return nodetoplayer2[node];
+	else if (split == 2)
+		return nodetoplayer3[node];
+	else if (split == 3)
+		return nodetoplayer4[node];
+	return -1;
+} 
+
 /** Handles a packet received from a node that is in game
   *
   * \param node The packet sender
@@ -4552,6 +4891,49 @@ static void HandlePacketFromPlayer(SINT8 node)
 #ifdef PARANOIA
 	if (netconsole >= MAXPLAYERS)
 		I_Error("bad table nodetoplayer: node %d player %d", doomcom->remotenode, netconsole);
+#endif
+	
+
+#ifdef SIGNGAMETRAFFIC
+	if (server)
+	{
+
+		int splitnodes;
+		if (IsPacketSigned(netbuffer->packettype))
+		{
+			for (splitnodes = 0; splitnodes < MAXSPLITSCREENPLAYERS; splitnodes++)
+			{
+				int targetplayer = NodeToSplitPlayer(node, splitnodes);
+				if (targetplayer == -1)
+					continue;
+
+				const void* message = &netbuffer->u;
+				if (IsSplitPlayerOnNodeGuest(node, splitnodes) || demo.playback)
+				{
+					//CONS_Printf("Throwing out a guest signature from node %d player %d\n", node, splitnodes);
+				}
+				else
+				{
+					if (crypto_eddsa_check(netbuffer->signature[splitnodes], players[targetplayer].public_key, message, doomcom->datalength - BASEPACKETSIZE))
+					{
+						CONS_Alert(CONS_ERROR, "SIGFAIL! Packet type %d from node %d player %d\nkey %s size %d netconsole %d\n", 
+							netbuffer->packettype, node, splitnodes,
+							GetPrettyRRID(players[targetplayer].public_key, true), doomcom->datalength - BASEPACKETSIZE, netconsole);
+						
+						// Something scary can happen when multiple kicks that resolve to the same node are processed in quick succession.
+						// Sometimes, a kick will still be left to process after the player's been disposed, and that causes the kick to resolve on the server instead!
+						// This sucks, so we check for a stale/misfiring kick beforehand.
+						if (netconsole != -1)
+							SendKick(netconsole, KICK_MSG_SIGFAIL);
+						// Net_CloseConnection(node);
+						// nodeingame[node] = false;
+						return;
+					}
+				}
+					
+			}
+		}
+	}
 #endif
 
 	switch (netbuffer->packettype)
@@ -4843,6 +5225,7 @@ static void HandlePacketFromPlayer(SINT8 node)
 			}
 			Net_CloseConnection(node);
 			nodeingame[node] = false;
+			nodeneedsauth[node] = false;
 			break;
 		case PT_CANRECEIVEGAMESTATE:
 			PT_CanReceiveGamestate(node);
@@ -4971,6 +5354,140 @@ static void HandlePacketFromPlayer(SINT8 node)
 		case PT_SENDINGLUAFILE:
 			if (client)
 				CL_PrepareDownloadLuaFile();
+			break;
+		case PT_CHALLENGEALL:
+			if (demo.playback || node != servernode) // SERVER should still respond to this to prove its own identity, just not from clients.
+				break;
+
+			int challengeplayers;
+
+			memcpy(lastChallengeAll, netbuffer->u.challengeall.secret, sizeof(lastChallengeAll));
+
+			shouldsign_t safe = ShouldSignChallenge(lastChallengeAll);
+			if (safe != SIGN_OK)
+			{
+				if (safe == SIGN_BADIP)
+					HandleSigfail("External server sent the wrong IP");
+				else if (safe == SIGN_BADTIME)
+					HandleSigfail("Bad timestamp - check your clocks");
+				else
+					HandleSigfail("Unknown auth error - contact a developer");
+				break;
+			}
+
+			netbuffer->packettype = PT_RESPONSEALL;
+
+			#ifdef DEVELOP
+				if (cv_noresponse.value)
+				{
+					CV_AddValue(&cv_noresponse, -1);
+					CONS_Alert(CONS_WARNING, "cv_noresponse enabled, not sending PT_RESPONSEALL\n");
+					break;
+				}
+			#endif
+
+			// Don't leak uninitialized memory.
+			memset(&netbuffer->u.responseall, 0, sizeof(netbuffer->u.responseall));
+
+			for (challengeplayers = 0; challengeplayers <= splitscreen; challengeplayers++)
+			{
+				uint8_t signature[SIGNATURELENGTH];
+				profile_t *localProfile = PR_GetLocalPlayerProfile(challengeplayers);
+				if (!PR_IsLocalPlayerGuest(challengeplayers)) // GUESTS don't have keys
+				{
+					crypto_eddsa_sign(signature, localProfile->secret_key, lastChallengeAll, sizeof(lastChallengeAll));
+
+					// If our keys are garbage (corrupted profile?), fail here instead of when the server boots us, so the player knows what's going on.
+					if (crypto_eddsa_check(signature, localProfile->public_key, lastChallengeAll, sizeof(lastChallengeAll)) != 0)
+						I_Error("Couldn't self-verify key associated with player %d, profile %d.\nProfile data may be corrupted.", challengeplayers, cv_lastprofile[challengeplayers].value);
+				}
+
+				#ifdef DEVELOP
+					if (cv_badresponse.value)
+					{
+						CV_AddValue(&cv_badresponse, -1);
+						CONS_Alert(CONS_WARNING, "cv_badresponse enabled, scrubbing signature from PT_RESPONSEALL\n");
+						memset(signature, 0, sizeof(signature));
+					}
+				#endif
+
+				memcpy(netbuffer->u.responseall.signature[challengeplayers], signature, sizeof(signature));
+			}
+
+			HSendPacket(servernode, true, 0, sizeof(netbuffer->u.responseall));
+			break;
+		case PT_RESPONSEALL:
+			if (demo.playback || client)
+				break;
+
+			int responseplayer;
+			for (responseplayer = 0; responseplayer < MAXSPLITSCREENPLAYERS; responseplayer++)
+			{
+				int targetplayer = NodeToSplitPlayer(node, responseplayer);
+				if (targetplayer == -1)
+					continue;
+
+				if (!IsPlayerGuest(targetplayer))
+				{
+					if (crypto_eddsa_check(netbuffer->u.responseall.signature[responseplayer], players[targetplayer].public_key, lastChallengeAll, sizeof(lastChallengeAll)))
+					{
+						// Something scary can happen when multiple kicks that resolve to the same node are processed in quick succession.
+						// Sometimes, a kick will still be left to process after the player's been disposed, and that causes the kick to resolve on the server instead!
+						// This sucks, so we check for a stale/misfiring kick beforehand.
+						if (playernode[targetplayer] != 0)
+							SendKick(targetplayer, KICK_MSG_SIGFAIL);
+						break;
+					}
+					else 
+					{
+						memcpy(lastReceivedSignature[targetplayer], netbuffer->u.responseall.signature[responseplayer], sizeof(lastReceivedSignature[targetplayer]));
+					}
+				}
+			}
+			break;
+		case PT_RESULTSALL:
+			if (demo.playback || server || node != servernode || !expectChallenge)
+				break;
+
+			int resultsplayer;
+			uint8_t allZero[PUBKEYLENGTH];
+			memset(allZero, 0, sizeof(PUBKEYLENGTH));
+
+			for (resultsplayer = 0; resultsplayer < MAXPLAYERS; resultsplayer++)
+			{
+				if (!playeringame[resultsplayer])
+				{
+					continue;
+				}
+				else if (IsPlayerGuest(resultsplayer))
+				{
+					continue;
+				}
+				else if (memcmp(knownWhenChallenged[resultsplayer], allZero, sizeof(PUBKEYLENGTH)) == 0)
+				{
+					// Wasn't here for the challenge.
+					continue;
+				}
+				else if (memcmp(knownWhenChallenged[resultsplayer], players[resultsplayer].public_key, sizeof(knownWhenChallenged[resultsplayer])) != 0)
+				{
+					// A player left after the challenge process started, and someone else took their place.
+					// That means they haven't received a challenge either.
+					continue;
+				}
+				else
+				{
+					if (crypto_eddsa_check(netbuffer->u.resultsall.signature[resultsplayer],
+						knownWhenChallenged[resultsplayer], lastChallengeAll, sizeof(lastChallengeAll)))
+					{
+						CONS_Alert(CONS_WARNING, "PT_RESULTSALL had invalid signature %s for node %d player %d split %d, something doesn't add up!\n",
+							GetPrettyRRID(netbuffer->u.resultsall.signature[resultsplayer], true), playernode[resultsplayer], resultsplayer, players[resultsplayer].splitscreenindex);
+						HandleSigfail("Server sent invalid client signature.");
+						break;
+					}
+				}
+			}
+			csprng(lastChallengeAll, sizeof(lastChallengeAll));
+			expectChallenge = false;
 			break;
 		default:
 			DEBFILE(va("UNKNOWN PACKET TYPE RECEIVED %d from host %d\n",
@@ -5786,6 +6303,168 @@ static void UpdatePingTable(void)
 	}
 }
 
+// It's that time again! Send everyone a safe message to sign, so we can show off their signature and prove we're playing fair.
+static void SendChallenges(void)
+{
+	int i;
+	netbuffer->packettype = PT_CHALLENGEALL;
+
+	#ifdef DEVELOP
+		if (cv_nochallenge.value)
+		{
+			CV_AddValue(&cv_nochallenge, -1);
+			CONS_Alert(CONS_WARNING, "cv_nochallenge enabled, not sending PT_CHALLENGEALL\n");
+			return;
+		}
+	#endif
+
+	memset(knownWhenChallenged, 0, sizeof(knownWhenChallenged));
+	memset(lastReceivedSignature, 0, sizeof(lastReceivedSignature));
+
+	GenerateChallenge(netbuffer->u.challengeall.secret);
+	memcpy(lastChallengeAll, netbuffer->u.challengeall.secret, sizeof(lastChallengeAll));
+
+	// Take note of everyone's current key, so that players who disconnect and are replaced aren't held to the old player's challenge.
+	for (i = 0; i < MAXPLAYERS; i++)
+	{
+		if (playeringame[i])
+			memcpy(knownWhenChallenged[i], players[i].public_key, sizeof(knownWhenChallenged[i]));
+	}
+
+	for (i = 0; i < MAXNETNODES; i++)
+	{
+		if (nodeingame[i])
+			HSendPacket(i, true, 0, sizeof(challengeall_pak));
+	}
+}
+
+// Before we start sending out the results, we need to kick everyone who didn't respond.
+// (If we try to do both at once, clients will still see players who failled in-game when the results arrive...)
+static void KickUnverifiedPlayers(void)
+{
+	int i;
+	uint8_t allZero[SIGNATURELENGTH];
+	memset(allZero, 0, SIGNATURELENGTH);
+
+	for (i = 0; i < MAXPLAYERS; i++)
+	{
+		if (!playeringame[i])
+			continue;
+		if (memcmp(lastReceivedSignature[i], allZero, SIGNATURELENGTH) == 0) // We never got a response!
+		{
+			if (!IsPlayerGuest(i) && memcmp(&knownWhenChallenged[i], &players[i].public_key, sizeof(knownWhenChallenged[i])) == 0)
+			{
+				if (playernode[i] != servernode)
+					SendKick(i, KICK_MSG_SIGFAIL);
+			}
+		}
+	}	
+}
+
+// 
+static void SendChallengeResults(void)
+{
+	int i;
+	netbuffer->packettype = PT_RESULTSALL;
+
+	#ifdef DEVELOP
+		if (cv_noresults.value)
+		{
+			CV_AddValue(&cv_noresults, -1);
+			CONS_Alert(CONS_WARNING, "cv_noresults enabled, not sending PT_RESULTSALL\n");
+			return;
+		}
+	#endif
+
+	uint8_t allZero[SIGNATURELENGTH];
+	memset(allZero, 0, sizeof(allZero));
+
+	memset(&netbuffer->u.resultsall, 0, sizeof(netbuffer->u.resultsall));
+
+	for (i = 0; i < MAXPLAYERS; i++)
+	{
+		if (!playeringame[i])
+			continue;
+
+		// Don't try to transmit signatures for players who didn't get here in time to send one.
+		// (Everyone who had their chance should have been kicked by KickUnverifiedPlayers by now.)
+		if (memcmp(lastReceivedSignature[i], allZero, SIGNATURELENGTH) == 0)
+			continue;
+
+		memcpy(netbuffer->u.resultsall.signature[i], lastReceivedSignature[i], sizeof(netbuffer->u.resultsall.signature[i]));
+		#ifdef DEVELOP
+			if (cv_badresults.value)
+			{
+				CV_AddValue(&cv_badresults, -1);
+				CONS_Alert(CONS_WARNING, "cv_badresults enabled, scrubbing signature from PT_RESULTSALL\n");
+				memset(netbuffer->u.resultsall.signature[i], 0, sizeof(netbuffer->u.resultsall.signature[i]));
+			}
+		#endif
+	}
+
+	for (i = 0; i < MAXNETNODES; i++)
+	{
+		if (nodeingame[i])
+			HSendPacket(i, true, 0, sizeof(resultsall_pak));
+	}
+}
+
+// Who should we try to verify when results come in?
+// Store a public key for every active slot, so if players shuffle during challenge leniency,
+// we don't incorrectly try to verify someone who didn't even get a challenge, throw a tantrum, and bail.
+static void CheckPresentPlayers(void)
+{
+	int i;
+	memset(knownWhenChallenged, 0, sizeof(knownWhenChallenged));
+
+	for (i = 0; i < MAXPLAYERS; i++)
+	{
+		if (!playeringame[i])
+		{
+			continue;
+		}
+		else if (IsPlayerGuest(i))
+		{
+			continue;
+		}
+		else
+		{
+			memcpy(knownWhenChallenged[i], players[i].public_key, sizeof(knownWhenChallenged[i]));
+		}
+	}
+}
+
+// Handle "client-to-client" auth challenge flow.
+static void UpdateChallenges(void)
+{
+	if (!(Playing() && netgame))
+		return;
+
+	if (server)
+	{
+		if (leveltime == CHALLENGEALL_START)
+			SendChallenges();
+
+		if (leveltime == CHALLENGEALL_KICKUNRESPONSIVE)
+			KickUnverifiedPlayers();
+
+		if (leveltime == CHALLENGEALL_SENDRESULTS)
+			SendChallengeResults();
+
+	}
+	else // client
+	{
+		if (leveltime <= CHALLENGEALL_START)
+		expectChallenge = true;
+
+		if (leveltime == CHALLENGEALL_START)
+			CheckPresentPlayers();
+
+		if (leveltime > CHALLENGEALL_CLIENTCUTOFF && expectChallenge)
+			HandleSigfail("Didn't receive client signatures.");
+	}
+}
+
 static void RenewHolePunch(void)
 {
 	static time_t past;
@@ -5807,7 +6486,7 @@ static void HandleNodeTimeouts(void)
 	if (server)
 	{
 		for (i = 1; i < MAXNETNODES; i++)
-			if (nodeingame[i] && freezetimeout[i] < I_GetTime())
+			if ((nodeingame[i] || nodeneedsauth[i]) && freezetimeout[i] < I_GetTime())
 				Net_ConnectionTimeout(i);
 
 		// In case the cvar value was lowered
@@ -5936,6 +6615,8 @@ void NetUpdate(void)
 	gametime = nowtime;
 
 	UpdatePingTable();
+
+	UpdateChallenges();
 
 	if (client)
 		maketic = neededtic;
