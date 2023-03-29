@@ -187,6 +187,7 @@ struct musicdef_t
 	char *source;
 	char *composers;
 	int volume;
+	int debug_volume;
 	musicdef_t *next;
 };
 
