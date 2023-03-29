@@ -1628,8 +1628,6 @@ void S_SoundTestStop(void)
 
 	soundtest.playing = false;
 	soundtest.paused = false;
-	soundtest.current = NULL;
-	soundtest.currenttrack = 0;
 
 	S_AttemptToRestoreMusic();
 

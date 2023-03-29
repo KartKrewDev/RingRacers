@@ -11,13 +11,7 @@ static void M_SoundTestMainControl(INT32 choice)
 	// Sound test exception
 	if (soundtest.current == NULL || soundtest.current->numtracks == 0)
 	{
-		if (currentMenu->menuitems[itemOn].mvar1 == 1) // Play
-		{
-			soundtest.playing = true;
-			//soundtest.sequence = true;
-			S_UpdateSoundTestDef(false, false, false);
-		}
-		else if (cv_soundtest.value != 0)
+		if (cv_soundtest.value != 0)
 		{
 			S_StopSounds();
 
@@ -25,6 +19,16 @@ static void M_SoundTestMainControl(INT32 choice)
 			{
 				CV_SetValue(&cv_soundtest, 0);
 			}
+			else if (currentMenu->menuitems[itemOn].mvar1 == 1) // Play
+			{
+				S_StartSound(NULL, cv_soundtest.value);
+			}
+		}
+		else if (currentMenu->menuitems[itemOn].mvar1 == 1) // Play
+		{
+			soundtest.playing = true;
+			//soundtest.sequence = true;
+			S_UpdateSoundTestDef(false, false, false);
 		}
 
 		return;
@@ -32,18 +36,33 @@ static void M_SoundTestMainControl(INT32 choice)
 
 	if (currentMenu->menuitems[itemOn].mvar1 == 1) // Play
 	{
-		S_SoundTestPlay();
-	}
-	else if (soundtest.playing == true)
-	{
-		if (currentMenu->menuitems[itemOn].mvar1 == 2)
+		if (soundtest.paused == true)
 		{
 			S_SoundTestTogglePause();
 		}
-		else
+		else if (soundtest.playing == false)
+		{
+			S_SoundTestPlay();
+		}
+	}
+	else if (soundtest.playing == true)
+	{
+		if (currentMenu->menuitems[itemOn].mvar1 == 2) // Pause
+		{
+			if (soundtest.paused == false)
+			{
+				S_SoundTestTogglePause();
+			}
+		}
+		else // Stop
 		{
 			S_SoundTestStop();
 		}
+	}
+	else if (currentMenu->menuitems[itemOn].mvar1 == 0) // Stop while stopped?
+	{
+		soundtest.current = NULL;
+		soundtest.currenttrack = 0;
 	}
 }
 
@@ -58,53 +77,34 @@ static void M_SoundTestTrack(INT32 choice)
 {
 	const UINT8 numtracks = (soundtest.current != NULL) ? soundtest.current->numtracks : 0;
 
-	if (numtracks == 1)
+	if (numtracks == 1 // No cycling
+		|| choice == -1) // Extra
 	{
 		return;
 	}
+
+	// Confirm is generally treated as Up.
 
 	// Soundtest exception
 	if (numtracks == 0)
 	{
 		S_StopSounds();
-
-		if (choice == -1) // Extra
-		{
-			if (cv_soundtest.value != 0)
-				CV_SetValue(&cv_soundtest, 0);
-		}
-		else if (choice == 2) // Confirm
-		{
-			if (cv_soundtest.value != 0)
-				S_StartSound(NULL, cv_soundtest.value);
-		}
-		else // Up or Down
-		{
-			CV_AddValue(&cv_soundtest, ((choice == 0) ? -1 : 1));
-		}
+		CV_AddValue(&cv_soundtest, ((choice == 0) ? -1 : 1));
 
 		return;
 	}
 
-	if (choice == -1) // Extra
+	if (choice == 0) // Down
 	{
-		soundtest.currenttrack = 0;
+		soundtest.currenttrack--;
+		if (soundtest.currenttrack < 0)
+			soundtest.currenttrack = numtracks-1;
 	}
-	else
+	else //if (choice == 1) -- Up
 	{
-		// Confirm resets the current instance
-		if (choice == 0) // Down
-		{
-			soundtest.currenttrack--;
-			if (soundtest.currenttrack < 0)
-				soundtest.currenttrack = numtracks-1;
-		}
-		else if (choice == 1) // Up
-		{
-			soundtest.currenttrack++;
-			if (soundtest.currenttrack >= numtracks)
-				soundtest.currenttrack = 0;
-		}
+		soundtest.currenttrack++;
+		if (soundtest.currenttrack >= numtracks)
+			soundtest.currenttrack = 0;
 	}
 
 	if (soundtest.playing)
