@@ -172,14 +172,16 @@ static void R_RenderMaskedSegLoop(drawseg_t *ds, INT32 x1, INT32 x2, INT32 texnu
 	INT32 range;
 	sector_t *front, *back;
 	INT32 times, repeats;
+	boolean tripwire;
 
 	ldef = curline->linedef;
+	tripwire = P_IsLineTripWire(ldef);
 
 	range = max(ds->x2-ds->x1, 1);
 
 	// Setup lighting based on the presence/lack-of 3D floors.
 	dc_numlights = 0;
-	if (frontsector->numlights)
+	if (tripwire == false && frontsector->numlights)
 	{
 		dc_numlights = frontsector->numlights;
 		if (dc_numlights >= dc_maxlights)
@@ -226,19 +228,29 @@ static void R_RenderMaskedSegLoop(drawseg_t *ds, INT32 x1, INT32 x2, INT32 texnu
 	}
 	else
 	{
-		if ((R_CheckColumnFunc(COLDRAWFUNC_FUZZY) == false)
-			|| (frontsector->extra_colormap && (frontsector->extra_colormap->flags & CMF_FOG)))
-			lightnum = (frontsector->lightlevel >> LIGHTSEGSHIFT);
+		if (tripwire)
+		{
+			lightnum = LIGHTLEVELS - 1; // tripwires are full bright
+		}
 		else
-			lightnum = LIGHTLEVELS - 1;
+		{
+			if ((R_CheckColumnFunc(COLDRAWFUNC_FUZZY) == false)
+				|| (frontsector->extra_colormap && (frontsector->extra_colormap->flags & CMF_FOG)))
+			{
+				lightnum = (frontsector->lightlevel >> LIGHTSEGSHIFT);
+			}
+			else
+			{
+				lightnum = LIGHTLEVELS - 1;
 
-		if ((R_CheckColumnFunc(COLDRAWFUNC_FOG) == true)
-			|| (frontsector->extra_colormap && (frontsector->extra_colormap->flags & CMF_FOG)))
-			;
-		else if (P_ApplyLightOffset(lightnum))
-			lightnum += curline->lightOffset;
+				if (P_ApplyLightOffset(lightnum))
+				{
+					lightnum += curline->lightOffset;
+				}
+			}
 
-		lightnum = R_AdjustLightLevel(lightnum);
+			lightnum = R_AdjustLightLevel(lightnum);
+		}
 
 		if (lightnum < 0)
 			walllights = scalelight[0];
