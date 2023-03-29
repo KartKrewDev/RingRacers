@@ -1219,6 +1219,15 @@ void M_Statistics(INT32 choice);
 void M_DrawStatistics(void);
 boolean M_StatisticsInputs(INT32 ch);
 
+typedef enum
+{
+	stereospecial_none = 0,
+	stereospecial_back,
+	stereospecial_pause,
+	stereospecial_play,
+	stereospecial_track,
+} stereospecial_e;
+
 void M_SoundTest(INT32 choice);
 void M_DrawSoundTest(void);
 

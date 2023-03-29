@@ -6001,7 +6001,7 @@ void M_DrawSoundTest(void)
 			);
 
 			// Special cases
-			if (currentMenu->menuitems[i].mvar2 == 1) // back
+			if (currentMenu->menuitems[i].mvar2 == stereospecial_back) // back
 			{
 				if (!soundtest.justopened && M_MenuBackHeld(pid))
 				{
@@ -6009,12 +6009,12 @@ void M_DrawSoundTest(void)
 				}
 			}
 			// The following are springlocks.
-			else if (currentMenu->menuitems[i].mvar2 == 2) // pause
+			else if (currentMenu->menuitems[i].mvar2 == stereospecial_pause) // pause
 			{
 				if (soundtest.paused == true)
 					y = currentMenu->y + 6;
 			}
-			else if (currentMenu->menuitems[i].mvar2 == 3) // play
+			else if (currentMenu->menuitems[i].mvar2 == stereospecial_play) // play
 			{
 				if (soundtest.playing == true && soundtest.paused == false)
 					y = currentMenu->y + 6;
@@ -6043,7 +6043,7 @@ void M_DrawSoundTest(void)
 
 			V_DrawFill(x+2, currentMenu->y + 22, 23, 1, 30);
 		}
-		else if (currentMenu->menuitems[i].mvar2 == 4) // Track
+		else if (currentMenu->menuitems[i].mvar2 == stereospecial_track) // Track
 		{
 			if (i == itemOn)
 			{
