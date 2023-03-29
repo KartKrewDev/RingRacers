@@ -127,6 +127,8 @@ static void finish_legacy_ogl_update()
 		ST_AskToJoinEnvelope();
 #endif
 
+	ST_drawDebugInfo();
+
 	OglSdlFinishUpdate(cv_vidwait.value);
 }
 #endif
@@ -179,6 +181,8 @@ static void temp_legacy_finishupdate_draws()
 	if (discordRequestList != NULL)
 		ST_AskToJoinEnvelope();
 #endif
+
+	ST_drawDebugInfo();
 }
 
 static InternalPassData build_pass_manager()

@@ -414,7 +414,7 @@ static void ST_drawMusicDebug(INT32 *height)
 	ST_pushDebugString(height, va("    Song: %8s", mname));
 }
 
-static void ST_drawDebugInfo(void)
+void ST_drawDebugInfo(void)
 {
 	INT32 height = 192;
 
@@ -1357,6 +1357,4 @@ void ST_Drawer(void)
 			break;
 		}
 	}
-
-	ST_drawDebugInfo();
 }

@@ -41,6 +41,9 @@ void ST_DrawDemoTitleEntry(void);
 void ST_AskToJoinEnvelope(void);
 #endif
 
+// devmode
+void ST_drawDebugInfo(void);
+
 // Called by main loop.
 void ST_Drawer(void);
 
