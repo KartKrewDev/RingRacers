@@ -362,8 +362,8 @@ static INT32 SCR(INT32 r)
 
 static void ST_pushDebugString(INT32 *height, const char *string)
 {
-	V_DrawRightAlignedString(320, *height, V_MONOSPACE, string);
-	*height -= 8;
+	V_DrawRightAlignedSmallString(319, *height, V_MONOSPACE, string);
+	*height -= 4;
 }
 
 static void ST_pushDebugTimeMS(INT32 *height, const char *label, UINT32 ms)
