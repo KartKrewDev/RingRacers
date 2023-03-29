@@ -36,6 +36,7 @@
 
 #include "doomstat.h"
 #include "g_state.h"
+#include "m_argv.h"
 
 lua_State *gL = NULL;
 
@@ -579,6 +580,12 @@ void LUA_LoadLump(UINT16 wad, UINT16 lump, boolean noresults)
 	MYFILE f;
 	char *name;
 	size_t len;
+
+	if (M_CheckParm("-nolua"))
+	{
+		return;
+	}
+
 	f.wad = wad;
 	f.size = W_LumpLengthPwad(wad, lump);
 	f.data = Z_Malloc(f.size, PU_LUA, NULL);
