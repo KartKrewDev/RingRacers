@@ -36,7 +36,14 @@ static void M_SoundTestMainControl(INT32 choice)
 	}
 	else if (soundtest.playing == true)
 	{
-		S_SoundTestStop((currentMenu->menuitems[itemOn].mvar1 == 2));
+		if (currentMenu->menuitems[itemOn].mvar1 == 2)
+		{
+			S_SoundTestTogglePause();
+		}
+		else
+		{
+			S_SoundTestStop();
+		}
 	}
 }
 

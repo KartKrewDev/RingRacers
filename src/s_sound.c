@@ -1593,7 +1593,7 @@ void S_SoundTestPlay(void)
 {
 	if (soundtest.current == NULL)
 	{
-		S_SoundTestStop(false);
+		S_SoundTestStop();
 		return;
 	}
 
@@ -1603,13 +1603,18 @@ void S_SoundTestPlay(void)
 
 	soundtest.playing = true;
 
+	if (soundtest.paused == true)
+	{
+		S_SoundTestTogglePause();
+	}
+
 	S_ChangeMusicInternal(soundtest.current->name[soundtest.currenttrack], true);
 	S_ShowMusicCredit();
 
 	soundtest.privilegedrequest = false;
 }
 
-void S_SoundTestStop(boolean pause)
+void S_SoundTestStop(void)
 {
 	if (soundtest.playing == false)
 	{
@@ -1621,16 +1626,33 @@ void S_SoundTestStop(boolean pause)
 	S_StopMusic();
 	cursongcredit.def = NULL;
 
-	if (pause == false)
-	{
-		soundtest.playing = false;
-		soundtest.current = NULL;
-		soundtest.currenttrack = 0;
+	soundtest.playing = false;
+	soundtest.paused = false;
+	soundtest.current = NULL;
+	soundtest.currenttrack = 0;
 
-		S_AttemptToRestoreMusic();
-	}
+	S_AttemptToRestoreMusic();
 
 	soundtest.privilegedrequest = false;
+}
+
+void S_SoundTestTogglePause(void)
+{
+	if (soundtest.playing == false)
+	{
+		return;
+	}
+
+	if (soundtest.paused == true)
+	{
+		soundtest.paused = false;
+		S_ResumeAudio();
+	}
+	else
+	{
+		soundtest.paused = true;
+		S_PauseAudio();
+	}
 }
 
 boolean S_PlaysimMusicDisabled(void)
@@ -2651,6 +2673,9 @@ void S_PauseAudio(void)
 void S_ResumeAudio(void)
 {
 	if (S_MusicNotInFocus())
+		return;
+
+	if (soundtest.paused == true)
 		return;
 
 	if (I_SongPlaying() && I_SongPaused())

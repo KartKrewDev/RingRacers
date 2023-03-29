@@ -211,6 +211,7 @@ extern struct cursongcredit
 extern struct soundtest
 {
 	boolean playing; 					// Music is playing?
+	boolean paused;						// System paused?
 	boolean privilegedrequest; 			// Overrides S_PlaysimMusicDisabled w/o changing every function signature
 	musicdef_t *current;				// Current selected music definition
 	SINT8 currenttrack;					// Current selected music track for definition
@@ -220,7 +221,8 @@ extern struct soundtest
 void S_PopulateSoundTestSequence(void);
 void S_UpdateSoundTestDef(boolean reverse, boolean dotracks, boolean skipnull);
 void S_SoundTestPlay(void);
-void S_SoundTestStop(boolean pause);
+void S_SoundTestStop(void);
+void S_SoundTestTogglePause(void);
 
 boolean S_PlaysimMusicDisabled(void);
 
