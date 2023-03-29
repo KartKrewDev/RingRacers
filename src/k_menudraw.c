@@ -5928,7 +5928,10 @@ void M_DrawStatistics(void)
 
 void M_DrawSoundTest(void)
 {
-	INT32 x = currentMenu->x - menutransition.tics*48, y, i, w, cursorx = 0;
+	UINT8 pid = 0; // todo: Add ability for any splitscreen player to bring up the menu.
+
+	INT32 x, y, i, cursorx = 0;
+	patch_t *btn = W_CachePatchName("STER_BTN", PU_CACHE);
 
 	if (gamestate == GS_MENU)
 	{
@@ -5936,10 +5939,20 @@ void M_DrawSoundTest(void)
 		V_DrawFixedPatch(0, 0, FRACUNIT, 0, bg, NULL);
 	}
 
-	y = 50;
+	V_DrawFixedPatch(0, 0, FRACUNIT, 0, W_CachePatchName("STER_BG", PU_CACHE), NULL);
+
+	x = 24;
+	y = 18;
 
 	if (soundtest.current != NULL)
 	{
+		K_DrawMapThumbnail(
+			x<<FRACBITS, y<<FRACBITS,
+			80<<FRACBITS,
+			0,
+			soundtest.current->sequence.map,
+			NULL);
+
 		V_DrawThinString(x, y, (soundtest.playing ? highlightflags : 0)|V_ALLOWLOWERCASE|V_6WIDTHSPACE, soundtest.current->title);
 		V_DrawThinString(x, (y += 10), V_ALLOWLOWERCASE|V_6WIDTHSPACE, va("%d", soundtest.currenttrack));
 		if (soundtest.current->author)
@@ -5956,21 +5969,106 @@ void M_DrawSoundTest(void)
 		V_DrawThinString(x, (y += 10), V_ALLOWLOWERCASE|V_6WIDTHSPACE, va("%d", cv_soundtest.value));
 	}
 
-	y = currentMenu->y;
+	x = currentMenu->x;
 
 	for (i = 0; i < currentMenu->numitems; i++)
 	{
-		w = V_ThinStringWidth(currentMenu->menuitems[i].text, V_6WIDTHSPACE);
+		if (currentMenu->menuitems[i].status == IT_SPACE)
+		{
+			if (currentMenu->menuitems[i].mvar2 != 0)
+			{
+				x = currentMenu->menuitems[i].mvar2;
+			}
+
+			x += currentMenu->menuitems[i].mvar1;
+
+			continue;
+		}
+
+		y = currentMenu->y;
+
 		if (i == itemOn)
 		{
-			cursorx = x + w/2;
-			V_DrawThinString(x, y, V_6WIDTHSPACE|highlightflags, currentMenu->menuitems[i].text);
+			cursorx = x + 13;
+		}
+
+		if (currentMenu->menuitems[i].tooltip)
+		{
+			V_SetClipRect(
+				x << FRACBITS, y << FRACBITS,
+				27 << FRACBITS, 22 << FRACBITS,
+				0
+			);
+
+			// Special cases
+			if (currentMenu->menuitems[i].mvar2 == 1) // back
+			{
+				if (!soundtest.justopened && M_MenuBackHeld(pid))
+				{
+					y = currentMenu->y + 7;
+				}
+			}
+			// The following are springlocks.
+			else if (currentMenu->menuitems[i].mvar2 == 2) // pause
+			{
+				if (soundtest.paused == true)
+					y = currentMenu->y + 6;
+			}
+			else if (currentMenu->menuitems[i].mvar2 == 3) // play
+			{
+				if (soundtest.playing == true && soundtest.paused == false)
+					y = currentMenu->y + 6;
+			}
+
+			// Button is being pressed
+			if (i == itemOn && !soundtest.justopened && M_MenuConfirmHeld(pid))
+			{
+				y = currentMenu->y + 7;
+			}
+
+			// Button itself
+			V_DrawFixedPatch(x << FRACBITS, y << FRACBITS, FRACUNIT, 0, btn, NULL);
+
+			// Icon
+			V_DrawFixedPatch(x << FRACBITS, y << FRACBITS,
+				FRACUNIT, 0,
+				W_CachePatchName(currentMenu->menuitems[i].tooltip, PU_CACHE),
+				NULL
+			);
+
+			// Text
+			V_DrawCenteredThinString(x + 13, y + 1, V_6WIDTHSPACE, currentMenu->menuitems[i].text);
+
+			V_ClearClipRect();
+
+			V_DrawFill(x+2, currentMenu->y + 22, 23, 1, 30);
+		}
+		else if (currentMenu->menuitems[i].mvar2 == 4) // Track
+		{
+			if (i == itemOn)
+			{
+				if (menucmd[pid].dpad_ud < 0 || M_MenuConfirmHeld(pid))
+				{
+					y--;
+				}
+				else if (menucmd[pid].dpad_ud > 0)
+				{
+					y++;
+				}
+			}
+
+			V_DrawFixedPatch(x << FRACBITS, (y-1) << FRACBITS,
+				FRACUNIT, 0,
+				W_CachePatchName("STER_WH0", PU_CACHE),
+				NULL
+			);
 		}
 		else
 		{
-			V_DrawThinString(x, y, V_6WIDTHSPACE, currentMenu->menuitems[i].text);
+			V_DrawCenteredThinString(x + 13, y + 1, V_6WIDTHSPACE, currentMenu->menuitems[i].text);
 		}
-		x += w + 8;
+
+		x += 27;
 	}
 
 	V_DrawCharacter(cursorx - 4, currentMenu->y - 8 - (skullAnimCounter/5),

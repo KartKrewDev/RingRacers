@@ -212,6 +212,7 @@ extern struct soundtest
 {
 	boolean playing; 					// Music is playing?
 	boolean paused;						// System paused?
+	boolean justopened;					// Menu visual assist
 	boolean privilegedrequest; 			// Overrides S_PlaysimMusicDisabled w/o changing every function signature
 	musicdef_t *current;				// Current selected music definition
 	SINT8 currenttrack;					// Current selected music track for definition

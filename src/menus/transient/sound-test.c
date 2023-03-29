@@ -113,15 +113,26 @@ static void M_SoundTestTrack(INT32 choice)
 	}
 }
 
+static boolean M_SoundTestInputs(INT32 ch)
+{
+	(void)ch;
+	soundtest.justopened = false;
+	return false;
+}
+
 menuitem_t MISC_SoundTest[] =
 {
-	{IT_STRING | IT_CALL,   "Back",  NULL, NULL, {.routine = M_GoBack},               0,  0},
-	{IT_STRING | IT_CALL,   "Stop",  NULL, NULL, {.routine = M_SoundTestMainControl}, 0,  0},
-	{IT_STRING | IT_CALL,   "Pause", NULL, NULL, {.routine = M_SoundTestMainControl}, 2,  0},
-	{IT_STRING | IT_CALL,   "Play",  NULL, NULL, {.routine = M_SoundTestMainControl}, 1,  0},
-	{IT_STRING | IT_ARROWS, "Track", NULL, NULL, {.routine = M_SoundTestTrack},       0,  0},
-	{IT_STRING | IT_CALL,   "Prev",  NULL, NULL, {.routine = M_SoundTestNextPrev},   -1,  0},
-	{IT_STRING | IT_CALL,   "Next",  NULL, NULL, {.routine = M_SoundTestNextPrev},    1,  0},
+	{IT_STRING | IT_CALL,   "Back",  "STER_IC0", NULL, {.routine = M_GoBack},               0,  1},
+	{IT_SPACE, NULL, NULL, NULL, {NULL}, 11, 0},
+	{IT_STRING | IT_CALL,   "Stop",  "STER_IC1", NULL, {.routine = M_SoundTestMainControl}, 0,  0},
+	{IT_SPACE, NULL, NULL, NULL, {NULL},  8, 0},
+	{IT_STRING | IT_CALL,   "Pause", "STER_IC2", NULL, {.routine = M_SoundTestMainControl}, 2,  2},
+	{IT_STRING | IT_CALL,   "Play",  "STER_IC3", NULL, {.routine = M_SoundTestMainControl}, 1,  3},
+	{IT_SPACE, NULL, NULL, NULL, {NULL},  8, 0},
+	{IT_STRING | IT_CALL,   "Prev",  "STER_IC4", NULL, {.routine = M_SoundTestNextPrev},   -1,  0},
+	{IT_STRING | IT_CALL,   "Next",  "STER_IC5", NULL, {.routine = M_SoundTestNextPrev},    1,  0},
+	{IT_SPACE, NULL, NULL, NULL, {NULL}, 0, 276},
+	{IT_STRING | IT_ARROWS, "Track", NULL,       NULL, {.routine = M_SoundTestTrack},       0,  4},
 };
 
 menu_t MISC_SoundTestDef = {
@@ -129,7 +140,7 @@ menu_t MISC_SoundTestDef = {
 	&MainDef,
 	0,
 	MISC_SoundTest,
-	42, BASEVIDHEIGHT/2,
+	19, 140,
 	0, 0,
 	MBF_UD_LR_FLIPPED|MBF_SOUNDLESS,
 	".",
@@ -138,7 +149,7 @@ menu_t MISC_SoundTestDef = {
 	NULL,
 	NULL,
 	NULL,
-	NULL,
+	M_SoundTestInputs,
 };
 
 void M_SoundTest(INT32 choice)
@@ -146,6 +157,7 @@ void M_SoundTest(INT32 choice)
 	(void)choice;
 
 	// I reserve the right to add some sort of setup here -- toast 250323
+	soundtest.justopened = true;
 
 	MISC_SoundTestDef.prevMenu = currentMenu;
 	M_SetupNextMenu(&MISC_SoundTestDef, false);
