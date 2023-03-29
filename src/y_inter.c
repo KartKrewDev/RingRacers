@@ -98,6 +98,10 @@ static INT32 endtic = -1;
 static INT32 sorttic = -1;
 static INT32 replayprompttic;
 
+// FUCK YOU
+static fixed_t mqscroll = 0;
+static fixed_t chkscroll = 0;
+
 intertype_t intertype = int_none;
 
 static huddrawlist_h luahuddrawlist_intermission;
@@ -631,6 +635,9 @@ skiptallydrawer:
 	// Blending mask for the background
 	patch_t *mask = W_CachePatchName("R_MASK", PU_PATCH);
 	
+	fixed_t mqloop = SHORT(rrmq->height)*FRACUNIT;
+	fixed_t chkloop = SHORT(rbgchk->width)*FRACUNIT;
+	
 	UINT8 *color = R_GetTranslationColormap(TC_DEFAULT, SKINCOLOR_YELLOW, GTC_CACHE); // I don't even know how necessary this is anymore but I don't want the game yelling at me
 	UINT8 *greymap = R_GetTranslationColormap(TC_DEFAULT, SKINCOLOR_GREY, GTC_CACHE);
 	
@@ -652,15 +659,30 @@ skiptallydrawer:
 	// Draw the background
 	K_DrawMapThumbnail(0, 0, BASEVIDWIDTH<<FRACBITS, 0, prevmap, color);
 	
-	// Drawfill over the BG to get the correct colorization
-	//V_DrawFill(0, 0, BASEVIDWIDTH<<FRACBITS, BASEVIDHEIGHT<<FRACBITS, V_ADD|V_TRANSLUCENT);
+	// Draw a mask over the BG to get the correct colorization
 	V_DrawMappedPatch(0, 0, V_ADD|V_TRANSLUCENT, mask, 0);
 	
 	// Draw the marquee (scroll pending)
-	V_DrawMappedPatch(0, 154, V_SUBTRACT, rrmq, 0);
+	//V_DrawMappedPatch(0, 154, V_SUBTRACT, rrmq, 0);
 	
 	// Draw the checker pattern (scroll pending)
-	V_DrawMappedPatch(0, 0, V_SUBTRACT, rbgchk, 0);
+	//V_DrawMappedPatch(0, 0, V_SUBTRACT, rbgchk, 0);
+	
+	V_DrawFixedPatch(-mqscroll, 154<<FRACBITS, FRACUNIT, V_SUBTRACT, rrmq, NULL);
+	V_DrawFixedPatch(-mqscroll + mqloop, 154<<FRACBITS, FRACUNIT, V_SUBTRACT, rrmq, NULL);
+
+	mqscroll += (6*renderdeltatics);
+
+	while (mqscroll > mqloop)
+		mqscroll -= mqloop;
+
+	V_DrawFixedPatch(-chkscroll, 0, FRACUNIT, V_SUBTRACT, rbgchk, NULL);
+	V_DrawFixedPatch(-chkscroll + chkloop, 0, FRACUNIT, V_SUBTRACT, rbgchk, NULL);
+
+	chkscroll += (6*renderdeltatics);
+
+	while (chkscroll > chkloop)
+		chkscroll -= chkloop;
 	
 	// Draw the header bar
 	V_DrawMappedPatch(20, 24, 0, rtpbr, 0);
