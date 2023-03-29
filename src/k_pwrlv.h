@@ -14,6 +14,7 @@
 #include "doomtype.h"
 #include "doomdef.h"
 #include "d_player.h"
+#include "command.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -34,6 +35,8 @@ typedef enum
 
 extern SINT8 speedscramble;
 extern SINT8 encorescramble;
+
+extern consvar_t cv_debugencorevote;
 
 extern UINT16 clientpowerlevels[MAXPLAYERS][PWRLV_NUMTYPES];
 extern INT16 clientPowerAdd[MAXPLAYERS];

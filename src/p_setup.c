@@ -7877,6 +7877,13 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 
 	if (encoreLump)
 	{
+		if (encoreLump->size != 256)
+		{
+			I_Error("%s: %s lump is not 256 bytes (actual size %s bytes)\n"
+					"Make sure the lump is in DOOM Flat or SRB2 Encore format and 16x16",
+					maplumpname, encoreLump->name, sizeu1(encoreLump->size));
+		}
+
 		R_ReInitColormaps(mapheaderinfo[gamemap-1]->palette, encoreLump->data, encoreLump->size);
 	}
 	else

@@ -33,6 +33,8 @@ UINT8 spectateGriefed = 0;
 SINT8 speedscramble = -1;
 SINT8 encorescramble = -1;
 
+consvar_t cv_debugencorevote = CVAR_INIT ("debugencorevote", "Off", CV_CHEAT|CV_NETVAR, CV_OnOff, NULL);
+
 SINT8 K_UsingPowerLevels(void)
 {
 	SINT8 pt = PWRLV_DISABLED;
@@ -548,7 +550,9 @@ void K_SetPowerLevelScrambles(SINT8 powertype)
 				else
 					speedscramble = -1;
 
-				if (cv_kartencore.value == -1)
+				if (cv_debugencorevote.value)
+					encorescramble = 1;
+				else if (cv_kartencore.value == -1)
 					encorescramble = (encore ? 1 : 0);
 				else
 					encorescramble = -1;
