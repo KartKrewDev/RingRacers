@@ -418,6 +418,9 @@ static void ST_drawDebugInfo(void)
 {
 	INT32 height = 192;
 
+	// devmode_screen = 1..4
+	stplyr = &players[displayplayers[min(r_splitscreen, cv_devmode_screen.value - 1)]];
+
 	if (!stplyr->mo)
 		return;
 
