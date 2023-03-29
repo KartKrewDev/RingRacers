@@ -585,7 +585,9 @@ boolean M_NextOpt(void);
 boolean M_PrevOpt(void);
 
 boolean M_MenuConfirmPressed(UINT8 pid);
+boolean M_MenuConfirmHeld(UINT8 pid);
 boolean M_MenuBackPressed(UINT8 pid);
+boolean M_MenuBackHeld(UINT8 pid);
 boolean M_MenuExtraPressed(UINT8 pid);
 boolean M_MenuExtraHeld(UINT8 pid);
 

@@ -799,10 +799,10 @@ boolean M_MenuConfirmPressed(UINT8 pid)
 	 return M_MenuButtonPressed(pid, MBT_A);
 }
 
-/*static boolean M_MenuConfirmHeld(UINT8 pid)
+boolean M_MenuConfirmHeld(UINT8 pid)
 {
 	 return M_MenuButtonHeld(pid, MBT_A);
-}*/
+}
 
 // Returns true if we press the Cancel button
 boolean M_MenuBackPressed(UINT8 pid)
@@ -810,10 +810,10 @@ boolean M_MenuBackPressed(UINT8 pid)
 	 return (M_MenuButtonPressed(pid, MBT_B) || M_MenuButtonPressed(pid, MBT_X));
 }
 
-/*static boolean M_MenuBackHeld(UINT8 pid)
+boolean M_MenuBackHeld(UINT8 pid)
 {
 	 return (M_MenuButtonHeld(pid, MBT_B) || M_MenuButtonHeld(pid, MBT_X));
-}*/
+}
 
 // Retrurns true if we press the tertiary option button (C)
 boolean M_MenuExtraPressed(UINT8 pid)
