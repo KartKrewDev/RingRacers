@@ -17,6 +17,9 @@
           Copyright (c) 2010, The WebM Project authors. All rights reserved.
           All rights reserved.
           https://chromium.googlesource.com/webm/libvpx
+        - libvorbis + libvorbisenc
+          Copyright (c) 2002-2020 Xiph.org Foundation
+          https://github.com/xiph/vorbis
 --------------------------------------------------------------------------------
 
 Redistribution and use in source and binary forms, with or without
@@ -843,6 +846,10 @@ Public License instead of this License.  But first, please read
         - libxmp
           https://github.com/libxmp/libxmp/blob/master/docs/CREDITS
           https://github.com/libxmp/libxmp
+
+        - ACSVM
+          https://github.com/DavidPH/ACSVM
+
 --------------------------------------------------------------------------------
 
 		  GNU LESSER GENERAL PUBLIC LICENSE
@@ -1635,6 +1642,9 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         - imgui
           Copyright (c) 2014-2023 Omar Cornut
           https://github.com/ocornut/imgui
+        - stb_vorbis + stb_rect_pack
+          Copyright (c) 2017 Sean Barrett
+          https://github.com/nothings/stb
 --------------------------------------------------------------------------------
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -1685,3 +1695,9 @@ SHALL THE COPYRIGHT HOLDERS OR ANYONE DISTRIBUTING THE SOFTWARE BE LIABLE
 FOR ANY DAMAGES OR OTHER LIABILITY, WHETHER IN CONTRACT, TORT OR OTHERWISE,
 ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
+
+-------------------------------------------------------------------------------
+
+In addition to the above, we make use of the following public-domain software:
+
+* glad - https://github.com/Dav1dde/glad
