@@ -5944,14 +5944,23 @@ void M_DrawSoundTest(void)
 	x = 24;
 	y = 18;
 
+	V_SetClipRect(
+		x << FRACBITS, y << FRACBITS,
+		272 << FRACBITS, 106 << FRACBITS,
+		0
+	);
+
 	if (soundtest.current != NULL)
 	{
-		K_DrawMapThumbnail(
-			x<<FRACBITS, y<<FRACBITS,
-			80<<FRACBITS,
-			0,
-			soundtest.current->sequence.map,
-			NULL);
+		if (soundtest.current->sequence.map < nummapheaders)
+		{
+			K_DrawMapThumbnail(
+				0, 0,
+				BASEVIDWIDTH<<FRACBITS,
+				V_60TRANS|V_ADD,
+				soundtest.current->sequence.map,
+				NULL);
+		}
 
 		V_DrawThinString(x, y, (soundtest.playing ? highlightflags : 0)|V_ALLOWLOWERCASE|V_6WIDTHSPACE, soundtest.current->title);
 		V_DrawThinString(x, (y += 10), V_ALLOWLOWERCASE|V_6WIDTHSPACE, va("%d", soundtest.currenttrack));
@@ -5968,6 +5977,8 @@ void M_DrawSoundTest(void)
 		V_DrawThinString(x, y, V_ALLOWLOWERCASE|V_6WIDTHSPACE, sfxstr);
 		V_DrawThinString(x, (y += 10), V_ALLOWLOWERCASE|V_6WIDTHSPACE, va("%d", cv_soundtest.value));
 	}
+
+	V_ClearClipRect();
 
 	x = currentMenu->x;
 
