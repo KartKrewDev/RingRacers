@@ -27,7 +27,7 @@ static void M_SoundTestMainControl(INT32 choice)
 		else if (currentMenu->menuitems[itemOn].mvar1 == 1) // Play
 		{
 			soundtest.playing = true;
-			//soundtest.sequence = true;
+			soundtest.autosequence = true;
 			S_UpdateSoundTestDef(false, false, false);
 		}
 
@@ -72,6 +72,13 @@ static void M_SoundTestNextPrev(INT32 choice)
 	(void)choice;
 
 	S_UpdateSoundTestDef((currentMenu->menuitems[itemOn].mvar1 < 0), true, false);
+}
+
+static void M_SoundTestSeq(INT32 choice)
+{
+	(void)choice;
+
+	soundtest.autosequence ^= true;
 }
 
 consvar_t *M_GetSoundTestVolumeCvar(void)
@@ -160,6 +167,8 @@ menuitem_t MISC_SoundTest[] =
 	{IT_SPACE, NULL, NULL, NULL, {NULL},  8, 0},
 	{IT_STRING | IT_CALL,   "Prev",  "STER_IC4", NULL, {.routine = M_SoundTestNextPrev},   -1,  0},
 	{IT_STRING | IT_CALL,   "Next",  "STER_IC5", NULL, {.routine = M_SoundTestNextPrev},    1,  0},
+	{IT_SPACE, NULL, NULL, NULL, {NULL},  8, 0},
+	{IT_STRING | IT_ARROWS, "Seq",   "STER_IC6", NULL, {.routine = M_SoundTestSeq},         0,  stereospecial_seq},
 	{IT_SPACE, NULL, NULL, NULL, {NULL}, 0, 244},
 	{IT_STRING | IT_ARROWS, "Vol",   NULL,       NULL, {.routine = M_SoundTestVol},         0,  stereospecial_vol},
 	{IT_STRING | IT_ARROWS, "Track", NULL,       NULL, {.routine = M_SoundTestTrack},       0,  stereospecial_track},

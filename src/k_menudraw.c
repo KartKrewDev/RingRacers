@@ -6004,6 +6004,31 @@ void M_DrawSoundTest(void)
 		titleoffset += titlewidth;
 	}
 
+	V_DrawRightAlignedString(x + 272-1, 18+32, 0,
+		va("%02u:%02u",
+			G_TicsToMinutes(soundtest.currenttime, true),
+			G_TicsToSeconds(soundtest.currenttime)
+		)
+	);
+
+	if ((soundtest.playing && soundtest.current)
+		&& (soundtest.current->basenoloop[soundtest.currenttrack] == true
+		|| soundtest.autosequence == true))
+	{
+		UINT32 exittime = soundtest.sequencemaxtime;
+		if (soundtest.dosequencefadeout == true)
+		{
+			exittime += 3*TICRATE;
+		}
+
+		V_DrawRightAlignedString(x + 272-1, 18+32+10, 0,
+			va("%02u:%02u",
+				G_TicsToMinutes(exittime, true),
+				G_TicsToSeconds(exittime)
+			)
+		);
+	}
+
 	V_ClearClipRect();
 
 	x = currentMenu->x;
@@ -6054,6 +6079,11 @@ void M_DrawSoundTest(void)
 			else if (currentMenu->menuitems[i].mvar2 == stereospecial_play) // play
 			{
 				if (soundtest.playing == true && soundtest.paused == false)
+					y = currentMenu->y + 6;
+			}
+			else if (currentMenu->menuitems[i].mvar2 == stereospecial_seq) // seq
+			{
+				if (soundtest.autosequence == true)
 					y = currentMenu->y + 6;
 			}
 

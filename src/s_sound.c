@@ -33,6 +33,7 @@
 #include "byteptr.h"
 #include "k_menu.h" // M_PlayMenuJam
 #include "m_random.h" // P_RandomKey
+#include "i_time.h"
 
 #ifdef HW3SOUND
 // 3D Sound Interface
@@ -1617,6 +1618,28 @@ void S_SoundTestPlay(void)
 		!soundtest.current->basenoloop[soundtest.currenttrack]);
 	S_ShowMusicCredit();
 
+	soundtest.currenttime = 0;
+	soundtest.sequencemaxtime = S_GetMusicLength();
+	soundtest.sequencefadeout = 0;
+
+	if (soundtest.sequencemaxtime)
+	{
+		// Does song have default loop?
+		if (soundtest.current->basenoloop[soundtest.currenttrack] == false)
+		{
+			soundtest.dosequencefadeout = (soundtest.currenttrack == soundtest.current->numtracks-1);
+			soundtest.sequencemaxtime *= 2; // Two loops by default.
+			soundtest.sequencemaxtime -= S_GetMusicLoopPoint(); // Otherwise the intro is counted twice.
+		}
+		else
+		{
+			soundtest.dosequencefadeout = false;
+		}
+
+		// ms to TICRATE conversion
+		soundtest.sequencemaxtime = (TICRATE*soundtest.sequencemaxtime)/1000;
+	}
+
 	soundtest.privilegedrequest = false;
 }
 
@@ -1629,11 +1652,17 @@ void S_SoundTestStop(void)
 
 	soundtest.privilegedrequest = true;
 
+	soundtest.playing = false;
+	soundtest.paused = false;
+	soundtest.autosequence = false;
+
 	S_StopMusic();
 	cursongcredit.def = NULL;
 
-	soundtest.playing = false;
-	soundtest.paused = false;
+	soundtest.currenttime = 0;
+	soundtest.sequencemaxtime = 0;
+	soundtest.sequencefadeout = 0;
+	soundtest.dosequencefadeout = false;
 
 	S_AttemptToRestoreMusic();
 
@@ -1657,6 +1686,73 @@ void S_SoundTestTogglePause(void)
 		soundtest.paused = true;
 		S_PauseAudio();
 	}
+}
+
+void S_TickSoundTest(void)
+{
+	static UINT32 storetime = 0;
+	UINT32 lasttime = storetime;
+	boolean donext = false;
+
+	storetime = I_GetTime();
+
+	if (soundtest.playing == false || soundtest.current == NULL)
+	{
+		return;
+	}
+
+	if (I_SongPlaying() == false)
+	{
+		S_SoundTestStop();
+		return;
+	}
+
+	if (I_SongPaused() == false)
+	{
+		soundtest.currenttime += (storetime - lasttime);
+	}
+
+	if (soundtest.sequencefadeout > 0)
+	{
+		if (soundtest.currenttime >= soundtest.sequencefadeout)
+		{
+			donext = true;
+		}
+	}
+	else if (soundtest.currenttime >= soundtest.sequencemaxtime)
+	{
+		if (soundtest.autosequence == false)
+		{
+			if (soundtest.current->basenoloop[soundtest.currenttrack] == true)
+			{
+				S_SoundTestStop();
+			}
+
+			return;
+		}
+		else if (soundtest.dosequencefadeout == false)
+		{
+			donext = true;
+		}
+		else
+		{
+			if (soundtest.sequencemaxtime > 0)
+			{
+				soundtest.privilegedrequest = true;
+				S_FadeMusic(0, 3000);
+				soundtest.privilegedrequest = false;
+			}
+
+			soundtest.sequencefadeout = soundtest.currenttime + 3*TICRATE;
+		}
+	}
+
+	if (donext == false)
+	{
+		return;
+	}
+
+	S_UpdateSoundTestDef(false, true, true);
 }
 
 boolean S_PlaysimMusicDisabled(void)

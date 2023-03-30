@@ -949,7 +949,10 @@ void D_SRB2Loop(void)
 		// consoleplayer -> displayplayers (hear sounds from viewpoint)
 		S_UpdateSounds(); // move positional sounds
 		if (realtics > 0 || singletics)
+		{
 			S_UpdateClosedCaptions();
+			S_TickSoundTest();
+		}
 
 #ifdef HW3SOUND
 		HW3S_EndFrameUpdate();

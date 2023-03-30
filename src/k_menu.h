@@ -1225,6 +1225,7 @@ typedef enum
 	stereospecial_back,
 	stereospecial_pause,
 	stereospecial_play,
+	stereospecial_seq,
 	stereospecial_vol,
 	stereospecial_track,
 } stereospecial_e;
