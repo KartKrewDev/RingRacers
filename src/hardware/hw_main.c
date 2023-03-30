@@ -1008,9 +1008,11 @@ static void HWR_ProcessSeg(void) // Sort of like GLWall::Process in GZDoom
 	fixed_t h, l; // 3D sides and 2s middle textures
 	fixed_t hS, lS;
 
-	FUINT lightnum = 255; // shut up compiler
+	FUINT lightnum = 255;
 	extracolormap_t *colormap;
 	FSurfaceInfo Surf;
+
+	boolean tripwire;
 
 	gl_sidedef = gl_curline->sidedef;
 	gl_linedef = gl_curline->linedef;
@@ -1051,7 +1053,13 @@ static void HWR_ProcessSeg(void) // Sort of like GLWall::Process in GZDoom
 		cliphigh = (float)(texturehpeg + (gl_curline->flength*FRACUNIT));
 	}
 
-	lightnum = HWR_CalcWallLight(gl_frontsector->lightlevel, gl_curline);
+	tripwire = P_IsLineTripWire(gl_linedef);
+
+	if (tripwire == false)
+	{
+		lightnum = HWR_CalcWallLight(gl_frontsector->lightlevel, gl_curline);
+	}
+
 	colormap = gl_frontsector->extra_colormap;
 
 	if (gl_frontsector)
@@ -1427,7 +1435,7 @@ static void HWR_ProcessSeg(void) // Sort of like GLWall::Process in GZDoom
 			// This will cause the midtexture appear on top, if a FOF overlaps with it.
 			blendmode |= PF_Decal;
 
-			if (gl_frontsector->numlights)
+			if (tripwire == false && gl_frontsector->numlights)
 			{
 				if (!(blendmode & PF_Masked))
 					HWR_SplitWall(gl_frontsector, wallVerts, gl_midtexture, &Surf, FOF_TRANSLUCENT, NULL, blendmode); // vanilla just uses PF_Masked here - if we run into any issues, maybe change to that
