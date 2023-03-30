@@ -6043,6 +6043,48 @@ void M_DrawSoundTest(void)
 
 			V_DrawFill(x+2, currentMenu->y + 22, 23, 1, 30);
 		}
+		else if (currentMenu->menuitems[i].mvar2 == stereospecial_vol) // Vol
+		{
+			consvar_t *voltoadjust = M_GetSoundTestVolumeCvar();
+			INT32 j, vol = 0;
+			const INT32 barheight = 22;
+
+			V_DrawFixedPatch((x+1) << FRACBITS, y << FRACBITS,
+				FRACUNIT, 0,
+				W_CachePatchName("STER_KNB", PU_CACHE),
+				NULL
+			);
+
+			V_DrawFill(x+1+24, y+1, 5, barheight, 30);
+
+			if (voltoadjust != NULL)
+			{
+				vol = (barheight*voltoadjust->value)/(MAX_SOUND_VOLUME*3);
+			}
+
+			for (j = 0; j <= barheight/3; j++)
+			{
+				UINT8 col = 130;
+
+				if (j == 0)
+				{
+					continue;
+				}
+
+				if (j > vol)
+				{
+					col = 20;
+				}
+				else if (j > (barheight/3)-2)
+				{
+					col = 34;
+				}
+
+				V_DrawFill(x+1+24+2, y+1 + (barheight-(j*3)), 1, 2, col);
+			}
+
+			x += 5;
+		}
 		else if (currentMenu->menuitems[i].mvar2 == stereospecial_track) // Track
 		{
 			if (i == itemOn)

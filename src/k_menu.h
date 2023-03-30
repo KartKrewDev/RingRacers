@@ -1225,11 +1225,13 @@ typedef enum
 	stereospecial_back,
 	stereospecial_pause,
 	stereospecial_play,
+	stereospecial_vol,
 	stereospecial_track,
 } stereospecial_e;
 
 void M_SoundTest(INT32 choice);
 void M_DrawSoundTest(void);
+consvar_t *M_GetSoundTestVolumeCvar(void);
 
 // These defines make it a little easier to make menus
 #define DEFAULTMENUSTYLE(source, prev, x, y)\

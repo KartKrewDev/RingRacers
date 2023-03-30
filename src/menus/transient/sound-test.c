@@ -73,6 +73,29 @@ static void M_SoundTestNextPrev(INT32 choice)
 	S_UpdateSoundTestDef((currentMenu->menuitems[itemOn].mvar1 < 0), true, false);
 }
 
+consvar_t *M_GetSoundTestVolumeCvar(void)
+{
+	if (soundtest.current == NULL)
+	{
+		if (cv_soundtest.value == 0)
+			return NULL;
+
+		return &cv_soundvolume;
+	}
+
+	return &cv_digmusicvolume;
+}
+
+static void M_SoundTestVol(INT32 choice)
+{
+	consvar_t *voltoadjust = M_GetSoundTestVolumeCvar();
+
+	if (!voltoadjust)
+		return;
+
+	M_ChangeCvarDirect(choice, voltoadjust);
+}
+
 static void M_SoundTestTrack(INT32 choice)
 {
 	const UINT8 numtracks = (soundtest.current != NULL) ? soundtest.current->numtracks : 0;
@@ -131,7 +154,8 @@ menuitem_t MISC_SoundTest[] =
 	{IT_SPACE, NULL, NULL, NULL, {NULL},  8, 0},
 	{IT_STRING | IT_CALL,   "Prev",  "STER_IC4", NULL, {.routine = M_SoundTestNextPrev},   -1,  0},
 	{IT_STRING | IT_CALL,   "Next",  "STER_IC5", NULL, {.routine = M_SoundTestNextPrev},    1,  0},
-	{IT_SPACE, NULL, NULL, NULL, {NULL}, 0, 276},
+	{IT_SPACE, NULL, NULL, NULL, {NULL}, 0, 244},
+	{IT_STRING | IT_ARROWS, "Vol",   NULL,       NULL, {.routine = M_SoundTestVol},         0,  stereospecial_vol},
 	{IT_STRING | IT_ARROWS, "Track", NULL,       NULL, {.routine = M_SoundTestTrack},       0,  stereospecial_track},
 };
 
