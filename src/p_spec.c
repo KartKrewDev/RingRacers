@@ -2415,6 +2415,16 @@ static mobj_t *P_GetObjectTypeInSectorNum(mobjtype_t type, size_t s)
 
 static void P_SwitchSkybox(INT32 args, player_t *player, skybox_t *skybox)
 {
+	// After a player finishes, their camera is locked at the
+	// finish line. If bot behavior drives them through the
+	// circuit and changes the skybox, that can look very
+	// strange if the skybox change is intended to be
+	// localized to a certain section of the level.
+	if (player->exiting)
+	{
+		return;
+	}
+
 	if (args != TMS_CENTERPOINT) // Only viewpoint, or both.
 	{
 		P_SetTarget(&player->skybox.viewpoint, skybox->viewpoint);
@@ -3707,7 +3717,7 @@ boolean P_ProcessSpecial(activator_t *activator, INT16 special, INT32 *args, cha
 					else
 						set = NULL;
 
-					P_SetTarget(&skybox.viewpoint, set);
+					skybox.viewpoint = set;
 				}
 
 				// set centerpoint mobj
@@ -3718,7 +3728,7 @@ boolean P_ProcessSpecial(activator_t *activator, INT16 special, INT32 *args, cha
 					else
 						set = NULL;
 
-					P_SetTarget(&skybox.centerpoint, set);
+					skybox.centerpoint = set;
 				}
 
 				if (args[3]) // Applies to all players
