@@ -635,7 +635,7 @@ skiptallydrawer:
 	// Blending mask for the background
 	patch_t *mask = W_CachePatchName("R_MASK", PU_PATCH);
 	
-	fixed_t mqloop = SHORT(rrmq->height)*FRACUNIT;
+	fixed_t mqloop = SHORT(rrmq->width)*FRACUNIT;
 	fixed_t chkloop = SHORT(rbgchk->width)*FRACUNIT;
 	
 	UINT8 *color = R_GetTranslationColormap(TC_DEFAULT, SKINCOLOR_YELLOW, GTC_CACHE); // I don't even know how necessary this is anymore but I don't want the game yelling at me
@@ -671,15 +671,15 @@ skiptallydrawer:
 	V_DrawFixedPatch(-mqscroll, 154<<FRACBITS, FRACUNIT, V_SUBTRACT, rrmq, NULL);
 	V_DrawFixedPatch(-mqscroll + mqloop, 154<<FRACBITS, FRACUNIT, V_SUBTRACT, rrmq, NULL);
 
-	mqscroll += (6*renderdeltatics);
+	mqscroll += (1*renderdeltatics);
 
 	while (mqscroll > mqloop)
 		mqscroll -= mqloop;
 
-	V_DrawFixedPatch(-chkscroll, 0, FRACUNIT, V_SUBTRACT, rbgchk, NULL);
-	V_DrawFixedPatch(-chkscroll + chkloop, 0, FRACUNIT, V_SUBTRACT, rbgchk, NULL);
+	V_DrawFixedPatch(chkscroll, 0, FRACUNIT, V_SUBTRACT, rbgchk, NULL);
+	V_DrawFixedPatch(chkscroll - chkloop, 0, FRACUNIT, V_SUBTRACT, rbgchk, NULL);
 
-	chkscroll += (6*renderdeltatics);
+	chkscroll += (1*renderdeltatics);
 
 	while (chkscroll > chkloop)
 		chkscroll -= chkloop;
