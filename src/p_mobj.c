@@ -9855,8 +9855,8 @@ void P_MobjThinker(mobj_t *mobj)
 
 	if (udmf)
 	{
-		// Check for sector special actions
-		P_CheckMobjTouchingSectorActions(mobj);
+		// Check for continuous sector special actions
+		P_CheckMobjTouchingSectorActions(mobj, true);
 	}
 	else
 	{

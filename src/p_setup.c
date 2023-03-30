@@ -1613,7 +1613,9 @@ static void ParseTextmapSectorParameter(UINT32 i, const char *param, const char 
 		sectors[i].args[argnum] = atol(val);
 	}
 	else if (fastcmp(param, "repeatspecial") && fastcmp("true", val))
-		sectors[i].activation |= SECSPAC_REPEATSPECIAL;
+		sectors[i].activation |= ((sectors[i].activation & ~SECSPAC_TRIGGERMASK) | SECSPAC_REPEATSPECIAL);
+	else if (fastcmp(param, "continuousspecial") && fastcmp("true", val))
+		sectors[i].activation |= ((sectors[i].activation & ~SECSPAC_TRIGGERMASK) | SECSPAC_CONTINUOUSSPECIAL);
 	else if (fastcmp(param, "playerenter") && fastcmp("true", val))
 		sectors[i].activation |= SECSPAC_ENTER;
 	else if (fastcmp(param, "playerfloor") && fastcmp("true", val))
@@ -2551,8 +2553,19 @@ static void P_WriteTextmap(void)
 		for (j = 0; j < NUMSECTORSTRINGARGS; j++)
 			if (wsectors[i].stringargs[j])
 				fprintf(f, "stringarg%s = \"%s\";\n", sizeu1(j), wsectors[i].stringargs[j]);
-		if (wsectors[i].activation & SECSPAC_REPEATSPECIAL)
-			fprintf(f, "repeatspecial = true;\n");
+		switch (wsectors[i].activation & SECSPAC_TRIGGERMASK)
+		{
+			case SECSPAC_REPEATSPECIAL:
+			{
+				fprintf(f, "repeatspecial = true;\n");
+				break;
+			}
+			case SECSPAC_CONTINUOUSSPECIAL:
+			{
+				fprintf(f, "continuousspecial = true;\n");
+				break;
+			}
+		}
 		if (wsectors[i].activation & SECSPAC_ENTER)
 			fprintf(f, "playerenter = true;\n");
 		if (wsectors[i].activation & SECSPAC_FLOOR)

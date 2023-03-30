@@ -5647,10 +5647,15 @@ void P_CheckMobjTrigger(mobj_t *mobj, boolean pushable)
 
 static void P_SectorActionWasActivated(sector_t *sec)
 {
-	if ((sec->activation & SECSPAC_REPEATSPECIAL) == 0)
+	if ((sec->activation & SECSPAC_TRIGGERMASK) == SECSPAC_ONCESPECIAL)
 	{
 		sec->action = 0;
 	}
+}
+
+static boolean P_SectorActionIsContinuous(sector_t *sec)
+{
+	return ((sec->activation & SECSPAC_TRIGGERMASK) == SECSPAC_CONTINUOUSSPECIAL);
 }
 
 static boolean P_AllowSpecialEnter(sector_t *sec, mobj_t *thing)
@@ -5710,7 +5715,7 @@ static boolean P_AllowSpecialCeiling(sector_t *sec, mobj_t *thing)
 	return false;
 }
 
-static void P_CheckMobj3DFloorAction(mobj_t *mo, sector_t *sec)
+static void P_CheckMobj3DFloorAction(mobj_t *mo, sector_t *sec, boolean continuous)
 {
 	sector_t *originalsector = mo->subsector->sector;
 	ffloor_t *rover;
@@ -5722,6 +5727,12 @@ static void P_CheckMobj3DFloorAction(mobj_t *mo, sector_t *sec)
 	for (rover = sec->ffloors; rover; rover = rover->next)
 	{
 		roversec = rover->master->frontsector;
+
+		if (P_SectorActionIsContinuous(roversec) != continuous)
+		{
+			// Does not match continuous state.
+			continue;
+		}
 
 		if (P_CanActivateSpecial(roversec->action) == false)
 		{
@@ -5770,7 +5781,7 @@ static void P_CheckMobj3DFloorAction(mobj_t *mo, sector_t *sec)
 	}
 }
 
-static void P_CheckMobjPolyobjAction(mobj_t *mo)
+static void P_CheckMobjPolyobjAction(mobj_t *mo, boolean continuous)
 {
 	sector_t *originalsector = mo->subsector->sector;
 	polyobj_t *po;
@@ -5785,15 +5796,23 @@ static void P_CheckMobjPolyobjAction(mobj_t *mo)
 	{
 		polysec = po->lines[0]->backsector;
 
-		touching = P_MobjTouchingPolyobj(po, mo);
-		inside = P_MobjInsidePolyobj(po, mo);
-
-		if (!(inside || touching))
+		if (P_SectorActionIsContinuous(polysec) != continuous)
+		{
+			// Does not match continuous state.
 			continue;
+		}
 
 		if (P_CanActivateSpecial(polysec->action) == false)
 		{
 			// No special to even activate.
+			continue;
+		}
+
+		touching = P_MobjTouchingPolyobj(po, mo);
+		inside = P_MobjInsidePolyobj(po, mo);
+
+		if (!(inside || touching))
+		{
 			continue;
 		}
 
@@ -5838,10 +5857,16 @@ static void P_CheckMobjPolyobjAction(mobj_t *mo)
 	}
 }
 
-static void P_CheckMobjSectorAction(mobj_t *mo, sector_t *sec)
+static void P_CheckMobjSectorAction(mobj_t *mo, sector_t *sec, boolean continuous)
 {
 	activator_t *activator = NULL;
 	boolean result = false;
+
+	if (P_SectorActionIsContinuous(sec) != continuous)
+	{
+		// Does not match continuous state.
+		return;
+	}
 
 	if (P_CanActivateSpecial(sec->action) == false)
 	{
@@ -5887,7 +5912,7 @@ static void P_CheckMobjSectorAction(mobj_t *mo, sector_t *sec)
 	}
 }
 
-void P_CheckMobjTouchingSectorActions(mobj_t *mobj)
+void P_CheckMobjTouchingSectorActions(mobj_t *mobj, boolean continuous)
 {
 	sector_t *originalsector;
 
@@ -5896,13 +5921,13 @@ void P_CheckMobjTouchingSectorActions(mobj_t *mobj)
 
 	originalsector = mobj->subsector->sector;
 
-	P_CheckMobj3DFloorAction(mobj, originalsector);
+	P_CheckMobj3DFloorAction(mobj, originalsector, continuous);
 	if TELEPORTED(mobj)	return;
 
-	P_CheckMobjPolyobjAction(mobj);
+	P_CheckMobjPolyobjAction(mobj, continuous);
 	if TELEPORTED(mobj)	return;
 
-	P_CheckMobjSectorAction(mobj, originalsector);
+	P_CheckMobjSectorAction(mobj, originalsector, continuous);
 }
 
 #undef TELEPORTED
