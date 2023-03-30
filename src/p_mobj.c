@@ -12089,22 +12089,6 @@ void P_MovePlayerToStarpost(INT32 playernum)
 	P_AfterPlayerSpawn(playernum);
 }
 
-fixed_t P_GetMobjSpawnHeight(const mobjtype_t mobjtype, const fixed_t x, const fixed_t y, const fixed_t dz, const fixed_t offset, const boolean flip, const fixed_t scale)
-{
-	const fixed_t finalScale = FixedMul(scale, mapobjectscale);
-	const subsector_t *ss = R_PointInSubsector(x, y);
-
-	// Axis objects snap to the floor.
-	if (mobjtype == MT_AXIS || mobjtype == MT_AXISTRANSFER || mobjtype == MT_AXISTRANSFERLINE)
-		return ONFLOORZ;
-
-	// Establish height.
-	if (flip)
-		return P_GetSectorCeilingZAt(ss->sector, x, y) - dz - FixedMul(finalScale, offset + mobjinfo[mobjtype].height);
-	else
-		return P_GetSectorFloorZAt(ss->sector, x, y) + dz + FixedMul(finalScale, offset);
-}
-
 fixed_t P_GetMapThingSpawnHeight(const mobjtype_t mobjtype, const mapthing_t* mthing, const fixed_t x, const fixed_t y)
 {
 	fixed_t dz = mthing->z << FRACBITS; // Base offset from the floor.

@@ -50,6 +50,7 @@ add_executable(SRB2SDL2 MACOSX_BUNDLE WIN32
 	p_lights.c
 	p_loop.c
 	p_map.c
+	p_mapthing.cpp
 	p_maputl.c
 	p_mobj.c
 	p_polyobj.c
