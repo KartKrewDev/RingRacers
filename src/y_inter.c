@@ -668,8 +668,14 @@ skiptallydrawer:
 	// Draw the checker pattern (scroll pending)
 	//V_DrawMappedPatch(0, 0, V_SUBTRACT, rbgchk, 0);
 	
-	V_DrawFixedPatch(-mqscroll, 154<<FRACBITS, FRACUNIT, V_SUBTRACT, rrmq, NULL);
-	V_DrawFixedPatch(-mqscroll + mqloop, 154<<FRACBITS, FRACUNIT, V_SUBTRACT, rrmq, NULL);
+	{
+		fixed_t x;
+
+		for (x = -mqscroll; x < (BASEVIDWIDTH * FRACUNIT); x += mqloop)
+		{
+			V_DrawFixedPatch(x, 154<<FRACBITS, FRACUNIT, V_SUBTRACT, rrmq, NULL);
+		}
+	}
 
 	mqscroll += (1*renderdeltatics);
 
