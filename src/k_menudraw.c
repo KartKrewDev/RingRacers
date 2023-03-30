@@ -5969,7 +5969,7 @@ void M_DrawSoundTest(void)
 
 		titletext = soundtest.current->title;
 
-		y -= 10;
+		V_DrawThinString(x, y, V_ALLOWLOWERCASE|V_6WIDTHSPACE, titletext);
 		if (soundtest.current->numtracks > 1)
 			V_DrawThinString(x, (y += 10), V_ALLOWLOWERCASE|V_6WIDTHSPACE, va("Track %c", 'A'+soundtest.currenttrack));
 		if (soundtest.current->author)
