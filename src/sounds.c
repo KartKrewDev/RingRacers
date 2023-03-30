@@ -1182,6 +1182,7 @@ sfxinfo_t S_sfx[NUMSFX] =
   {"clawk2", false,  64, 16, -1, NULL, 0,         -1,  -1, LUMPERROR, ""}, // SF_X8AWAYSOUND
 
   {"monch", false,  255, 0, -1, NULL, 0,         -1,  -1, LUMPERROR, ""},
+  {"etexpl", false,  255, 0, -1, NULL, 0,        -1,  -1, LUMPERROR, "Game crash"},
 
   // SRB2Kart - Engine sounds
   // Engine class A
