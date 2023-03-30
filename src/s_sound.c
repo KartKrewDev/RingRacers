@@ -2771,7 +2771,7 @@ static void Command_MusicDef_f(void)
 
 					for (i = 1; i < def->numtracks; ++i)
 					{
-						CONS_Printf(", %s", def->name[1]);
+						CONS_Printf(", %s", def->name[i]);
 					}
 
 					CONS_Printf(
