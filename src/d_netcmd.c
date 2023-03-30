@@ -1086,6 +1086,7 @@ void D_RegisterClientCommands(void)
 	COM_AddCommand("weather", Command_Weather_f);
 	COM_AddCommand("grayscale", Command_Grayscale_f);
 	CV_RegisterVar(&cv_renderhitbox);
+	CV_RegisterVar(&cv_devmode_screen);
 
 #ifdef HAVE_DISCORDRPC
 	CV_RegisterVar(&cv_discordrp);

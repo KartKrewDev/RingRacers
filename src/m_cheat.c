@@ -694,6 +694,9 @@ struct debugFlagNames_s const debug_flag_names[] =
 	{NULL, 0}
 };
 
+static CV_PossibleValue_t devmode_screen_t[] = {{1, "MIN"}, {4, "MAX"}, {0, NULL}};
+consvar_t cv_devmode_screen = CVAR_INIT ("devmode_screen", "1", CV_CHEAT, devmode_screen_t, NULL);
+
 void Command_Devmode_f(void)
 {
 	size_t argc = 0;

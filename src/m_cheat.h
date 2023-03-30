@@ -89,6 +89,8 @@ void Command_CauseCfail_f(void);
 void Command_Dumplua_f(void);
 #endif
 
+extern consvar_t cv_devmode_screen;
+
 #ifdef __cplusplus
 } // extern "C"
 #endif
