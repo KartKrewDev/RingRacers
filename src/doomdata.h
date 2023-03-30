@@ -251,6 +251,7 @@ struct mapthing_t
 	INT16 special;
 	INT32 args[NUMMAPTHINGARGS];
 	char *stringargs[NUMMAPTHINGSTRINGARGS];
+	UINT8 layer; // FOF layer to spawn on, see P_GetMobjSpawnHeight
 	mobj_t *mobj;
 };
 
