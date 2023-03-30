@@ -5962,9 +5962,17 @@ void M_DrawSoundTest(void)
 			K_DrawMapThumbnail(
 				0, 0,
 				BASEVIDWIDTH<<FRACBITS,
-				V_60TRANS|V_ADD,
+				V_20TRANS|V_ADD,
 				soundtest.current->sequence.map,
 				NULL);
+
+			V_DrawFixedPatch(
+				0, 0,
+				FRACUNIT,
+				V_60TRANS|V_SUBTRACT,
+				W_CachePatchName("STER_DOT", PU_CACHE),
+				NULL
+			);
 		}
 
 		titletext = soundtest.current->title;
