@@ -144,6 +144,11 @@ static boolean M_SoundTestInputs(INT32 ch)
 	return false;
 }
 
+static void M_SoundTestTick(void)
+{
+	soundtest.menutick++;
+}
+
 menuitem_t MISC_SoundTest[] =
 {
 	{IT_STRING | IT_CALL,   "Back",  "STER_IC0", NULL, {.routine = M_GoBack},               0,  stereospecial_back},
@@ -171,7 +176,7 @@ menu_t MISC_SoundTestDef = {
 	".",
 	98, 0,
 	M_DrawSoundTest,
-	NULL,
+	M_SoundTestTick,
 	NULL,
 	NULL,
 	M_SoundTestInputs,
@@ -182,6 +187,7 @@ void M_SoundTest(INT32 choice)
 	(void)choice;
 
 	// I reserve the right to add some sort of setup here -- toast 250323
+	soundtest.menutick = 0;
 	soundtest.justopened = true;
 
 	MISC_SoundTestDef.prevMenu = currentMenu;

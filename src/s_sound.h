@@ -214,8 +214,12 @@ extern struct soundtest
 	boolean paused;						// System paused?
 	boolean justopened;					// Menu visual assist
 	boolean privilegedrequest; 			// Overrides S_PlaysimMusicDisabled w/o changing every function signature
+
+	INT32 menutick;
+
 	musicdef_t *current;				// Current selected music definition
 	SINT8 currenttrack;					// Current selected music track for definition
+
 	soundtestsequence_t sequence;		// Sequence head
 } soundtest;
 

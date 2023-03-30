@@ -5931,6 +5931,9 @@ void M_DrawSoundTest(void)
 	UINT8 pid = 0; // todo: Add ability for any splitscreen player to bring up the menu.
 
 	INT32 x, y, i, cursorx = 0;
+	INT32 titleoffset = 0, titlewidth;
+	const char *titletext;
+
 	patch_t *btn = W_CachePatchName("STER_BTN", PU_CACHE);
 
 	if (gamestate == GS_MENU)
@@ -5950,6 +5953,8 @@ void M_DrawSoundTest(void)
 		0
 	);
 
+	y += 32;
+
 	if (soundtest.current != NULL)
 	{
 		if (soundtest.current->sequence.map < nummapheaders)
@@ -5962,8 +5967,11 @@ void M_DrawSoundTest(void)
 				NULL);
 		}
 
-		V_DrawThinString(x, y, (soundtest.playing ? highlightflags : 0)|V_ALLOWLOWERCASE|V_6WIDTHSPACE, soundtest.current->title);
-		V_DrawThinString(x, (y += 10), V_ALLOWLOWERCASE|V_6WIDTHSPACE, va("%d", soundtest.currenttrack));
+		titletext = soundtest.current->title;
+
+		y -= 10;
+		if (soundtest.current->numtracks > 1)
+			V_DrawThinString(x, (y += 10), V_ALLOWLOWERCASE|V_6WIDTHSPACE, va("Track %c", 'A'+soundtest.currenttrack));
 		if (soundtest.current->author)
 			V_DrawThinString(x, (y += 10), V_ALLOWLOWERCASE|V_6WIDTHSPACE, soundtest.current->author);
 		if (soundtest.current->source)
@@ -5974,8 +5982,26 @@ void M_DrawSoundTest(void)
 	else
 	{
 		const char *sfxstr = (cv_soundtest.value) ? S_sfx[cv_soundtest.value].name : "N/A";
-		V_DrawThinString(x, y, V_ALLOWLOWERCASE|V_6WIDTHSPACE, sfxstr);
-		V_DrawThinString(x, (y += 10), V_ALLOWLOWERCASE|V_6WIDTHSPACE, va("%d", cv_soundtest.value));
+
+		titletext = "Sound Test";
+
+		V_DrawThinString(x, y, V_ALLOWLOWERCASE|V_6WIDTHSPACE, "Track ");
+		V_DrawThinString(
+			x + V_ThinStringWidth("Track ", V_ALLOWLOWERCASE|V_6WIDTHSPACE),
+			y,
+			V_6WIDTHSPACE,
+			va("%04X - %s", cv_soundtest.value, sfxstr)
+		);
+	}
+
+	titletext = va("%s - ", titletext);
+	titlewidth = V_LSTitleHighStringWidth(titletext, 0);
+	titleoffset = (-soundtest.menutick) % titlewidth;
+
+	while (titleoffset < 272)
+	{
+		V_DrawLSTitleHighString(x + titleoffset, 18+1, 0, titletext);
+		titleoffset += titlewidth;
 	}
 
 	V_ClearClipRect();
