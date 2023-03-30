@@ -63,6 +63,7 @@ static void M_SoundTestMainControl(INT32 choice)
 	{
 		soundtest.current = NULL;
 		soundtest.currenttrack = 0;
+		CV_SetValue(&cv_soundtest, 0);
 	}
 }
 

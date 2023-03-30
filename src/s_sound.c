@@ -1582,6 +1582,11 @@ updatecurrent:
 			? newdef->numtracks-1
 			: 0;
 
+	if (newdef == NULL)
+	{
+		CV_SetValue(&cv_soundtest, 0);
+	}
+
 updatetrackonly:
 	if (soundtest.playing == true)
 	{
