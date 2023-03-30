@@ -188,6 +188,7 @@ struct musicdef_t
 {
 	char name[MAXDEFTRACKS][7];
 	UINT32 hash[MAXDEFTRACKS];
+	boolean basenoloop[MAXDEFTRACKS];
 	UINT8 numtracks;
 	char *title;
 	char *author;

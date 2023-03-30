@@ -1613,7 +1613,8 @@ void S_SoundTestPlay(void)
 		S_SoundTestTogglePause();
 	}
 
-	S_ChangeMusicInternal(soundtest.current->name[soundtest.currenttrack], true);
+	S_ChangeMusicInternal(soundtest.current->name[soundtest.currenttrack],
+		!soundtest.current->basenoloop[soundtest.currenttrack]);
 	S_ShowMusicCredit();
 
 	soundtest.privilegedrequest = false;
@@ -1760,6 +1761,11 @@ ReadMusicDefFields
 				do {
 					if (i >= MAXDEFTRACKS)
 						break;
+					if (value[0] == '\\')
+					{
+						def->basenoloop[i] = true;
+						value++;
+					}
 					STRBUFCPY(def->name[i], value);
 					strlwr(def->name[i]);
 					def->hash[i] = quickncasehash (def->name[i], 6);
