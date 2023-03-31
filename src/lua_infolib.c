@@ -43,7 +43,8 @@ enum sfxinfo_read {
 	sfxinfor_flags, // "pitch"
 	sfxinfor_volume,
 	sfxinfor_caption,
-	sfxinfor_skinsound
+	sfxinfor_skinsound,
+	sfxinfor_string,
 };
 const char *const sfxinfo_ropt[] = {
 	"name",
@@ -53,6 +54,7 @@ const char *const sfxinfo_ropt[] = {
 	"volume",
 	"caption",
 	"skinsound",
+	"string",
 	NULL};
 
 enum sfxinfo_write {
@@ -948,6 +950,24 @@ static int state_get(lua_State *L)
 		number = st->var2;
 	else if (fastcmp(field,"nextstate"))
 		number = st->nextstate;
+	else if (fastcmp(field,"string"))
+	{
+		statenum_t id = st-states;
+		if (id < S_FIRSTFREESLOT)
+		{
+			lua_pushstring(L, STATE_LIST[id]+2);
+			return 1;
+		}
+
+		id -= S_FIRSTFREESLOT;
+		if (id < NUMSTATEFREESLOTS && FREE_STATES[id])
+		{
+			lua_pushstring(L, FREE_STATES[id]);
+			return 1;
+		}
+
+		return 0;
+	}
 	else if (devparm)
 		return luaL_error(L, LUA_QL("state_t") " has no field named " LUA_QS, field);
 	else
@@ -1213,6 +1233,23 @@ static int mobjinfo_get(lua_State *L)
 		lua_pushinteger(L, info->flags);
 	else if (fastcmp(field,"raisestate"))
 		lua_pushinteger(L, info->raisestate);
+	else if (fastcmp(field,"string")) {
+		mobjtype_t id = info-mobjinfo;
+		if (id < MT_FIRSTFREESLOT)
+		{
+			lua_pushstring(L, MOBJTYPE_LIST[id]+3);
+			return 1;
+		}
+
+		id -= MT_FIRSTFREESLOT;
+		if (id < NUMMOBJFREESLOTS && FREE_MOBJS[id])
+		{
+			lua_pushstring(L, FREE_MOBJS[id]);
+			return 1;
+		}
+
+		return 0;
+	}
 	else {
 		lua_getfield(L, LUA_REGISTRYINDEX, LREG_EXTVARS);
 		I_Assert(lua_istable(L, -1));
@@ -1436,6 +1473,10 @@ static int sfxinfo_get(lua_State *L)
 	case sfxinfor_skinsound:
 		lua_pushinteger(L, sfx->skinsound);
 		return 1;
+	case sfxinfor_string: {
+		lua_pushstring(L, sfx->name);
+		return 1;
+	}
 	default:
 		return luaL_error(L, "Field does not exist in sfxinfo_t");
 	}
