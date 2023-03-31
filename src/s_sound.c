@@ -47,6 +47,7 @@ static void Command_Tunes_f(void);
 static void Command_RestartAudio_f(void);
 static void Command_PlaySound(void);
 static void Got_PlaySound(UINT8 **p, INT32 playernum);
+static void Command_MusicDef_f(void);
 
 // Sound system toggles
 static void GameSounds_OnChange(void);
@@ -266,6 +267,7 @@ void S_RegisterSoundStuff(void)
 	COM_AddCommand("restartaudio", Command_RestartAudio_f);
 	COM_AddCommand("playsound", Command_PlaySound);
 	RegisterNetXCmd(XD_PLAYSOUND, Got_PlaySound);
+	COM_AddCommand("musicdef", Command_MusicDef_f);
 }
 
 static void SetChannelsNum(void)
@@ -2289,7 +2291,7 @@ void S_ChangeMusicEx(const char *mmusic, UINT16 mflags, boolean looping, UINT32 
 
 			if (def)
 			{
-				I_SetCurrentSongVolume(def->volume);
+				I_SetCurrentSongVolume(def->debug_volume != 0 ? def->debug_volume : def->volume);
 			}
 		}
 
@@ -2695,6 +2697,96 @@ static void Got_PlaySound(UINT8 **cp, INT32 playernum)
 	}
 
 	S_StartSound(NULL, sound_id);
+}
+
+static void Command_MusicDef_f(void)
+{
+	const char *arg1 = COM_Argv(1);
+	const char *arg2 = COM_Argv(2);
+
+	enum {
+		CMD_VOLUME,
+		CMD_SHOW,
+	} cmd;
+
+	musicdef_t *def;
+
+	if (!stricmp(arg1, "-volume"))
+	{
+		cmd = CMD_VOLUME;
+	}
+	else if (!stricmp(arg1, "-show"))
+	{
+		cmd = CMD_SHOW;
+	}
+	else
+	{
+		CONS_Printf(
+				"\nmusicdef -volume <volume>\n"
+				"    Change the volume for the current song.\n"
+				"    Changes are saved while the game is open.\n"
+				"    Hint: turn on devmode music too!\n"
+				"\nmusicdef -show\n"
+				"    Print a list of changed musicdefs.\n"
+		);
+		return;
+	}
+
+	switch (cmd)
+	{
+		case CMD_VOLUME:
+			if (!strcmp(arg2, ""))
+			{
+				CONS_Printf("musicdef %s: missing argument\n", arg1);
+				return;
+			}
+
+			// This command uses the current musicdef
+			{
+				UINT8 i = 0;
+
+				def = S_FindMusicDef(music_name, &i);
+				def->debug_volume = atoi(arg2);
+				I_SetCurrentSongVolume(def->debug_volume);
+
+				CONS_Printf("Changed %s", def->name[0]);
+
+				for (i = 1; i < def->numtracks; ++i)
+				{
+					CONS_Printf(", %s", def->name[i]);
+				}
+
+				CONS_Printf("\n");
+			}
+			break;
+
+		case CMD_SHOW:
+			for (def = musicdefstart; def; def = def->next)
+			{
+				if (def->debug_volume != 0)
+				{
+					UINT8 i;
+
+					CONS_Printf("Lump %s", def->name[0]);
+
+					for (i = 1; i < def->numtracks; ++i)
+					{
+						CONS_Printf(", %s", def->name[i]);
+					}
+
+					CONS_Printf(
+							"\n"
+							"Volume = %d\n"
+							"\n",
+							def->debug_volume
+					);
+				}
+			}
+			break;
+
+		default:
+			I_Assert(false);
+	}
 }
 
 void GameSounds_OnChange(void)

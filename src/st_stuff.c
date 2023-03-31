@@ -371,6 +371,12 @@ static void ST_pushDebugString(INT32 *height, const char *string)
 	ST_pushRow(height);
 }
 
+static void ST_pushDebugStringHighlighted(INT32 *height, const char *string)
+{
+	V_DrawRightAlignedSmallString(319, *height, V_MONOSPACE | V_YELLOWMAP, string);
+	ST_pushRow(height);
+}
+
 static void ST_pushDebugTimeMS(INT32 *height, const char *label, UINT32 ms)
 {
 	ST_pushDebugString(height, va("%s%02d:%05.2f", label,
@@ -418,6 +424,12 @@ static void ST_drawMusicDebug(INT32 *height)
 	if (def)
 	{
 		ST_pushRow(height);
+
+		if (def->debug_volume != 0)
+		{
+			ST_pushDebugStringHighlighted(height, va("Debug Volume: %4d/100", def->debug_volume));
+		}
+
 		ST_pushDebugString(height, va("  Volume: %4d/100", def->volume));
 	}
 }
