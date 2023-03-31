@@ -397,6 +397,12 @@ void M_ChallengesTick(void)
 			// We got one!
 			M_ChallengesAutoFocus(newunlock, false);
 		}
+		else if (gamedata->pendingkeyrounds > 0
+			&& (gamedata->chaokeys < GDMAX_CHAOKEYS))
+		{
+			// Get ready to finish with pending chao key round tallying.
+			challengesmenu.chaokeyadd = true;
+		}
 		else
 		{
 			// All done! Let's save the unlocks we've busted open.
