@@ -132,7 +132,12 @@ if("${SRB2_CONFIG_SYSTEM_LIBRARIES}")
 	find_package(PNG REQUIRED)
 	find_package(SDL2 REQUIRED)
 	find_package(CURL REQUIRED)
-	find_package(GME REQUIRED)
+
+	# libgme defaults to "Nuked" YM2612 emulator, which is
+	# very SLOW. The system library probably uses the
+	# default so just always build it.
+	#find_package(GME REQUIRED)
+
 	if (SRB2_CONFIG_ENABLE_WEBM_MOVIES)
 		find_package(VPX REQUIRED)
 		find_package(Vorbis REQUIRED)
