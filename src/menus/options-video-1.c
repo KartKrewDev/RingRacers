@@ -59,6 +59,7 @@ menu_t OPTIONS_VideoDef = {
 	OPTIONS_Video,
 	32, 80,
 	SKINCOLOR_PLAGUE, 0,
+	0,
 	NULL,
 	2, 5,
 	M_DrawGenericOptions,

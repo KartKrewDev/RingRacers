@@ -176,11 +176,19 @@ boolean S_SpeedMusic(float speed);
 
 #define MAXDEFTRACKS 3
 
+struct soundtestsequence_t
+{
+	UINT8 id;
+	UINT16 map;
+	musicdef_t *next;
+};
+
 // Music credits
 struct musicdef_t
 {
 	char name[MAXDEFTRACKS][7];
 	UINT32 hash[MAXDEFTRACKS];
+	boolean basenoloop[MAXDEFTRACKS];
 	UINT8 numtracks;
 	char *title;
 	char *author;
@@ -189,6 +197,7 @@ struct musicdef_t
 	int volume;
 	int debug_volume;
 	musicdef_t *next;
+	soundtestsequence_t sequence;
 };
 
 extern struct cursongcredit
@@ -200,6 +209,36 @@ extern struct cursongcredit
 	fixed_t x;
 	fixed_t old_x;
 } cursongcredit;
+
+extern struct soundtest
+{
+	boolean playing; 					// Music is playing?
+	boolean paused;						// System paused?
+	boolean justopened;					// Menu visual assist
+	boolean privilegedrequest; 			// Overrides S_PlaysimMusicDisabled w/o changing every function signature
+
+	INT32 menutick;						// Menu visual timer
+
+	musicdef_t *current;				// Current selected music definition
+	SINT8 currenttrack;					// Current selected music track for definition
+	UINT32 currenttime;					// Current music playing time
+
+	soundtestsequence_t sequence;		// Sequence head
+
+	boolean autosequence;				// In auto sequence mode?
+	boolean dosequencefadeout;			// Fade out when reaching the end?
+	UINT32 sequencemaxtime;				// Maximum playing time for current music
+	UINT32 sequencefadeout;				// auto sequence fadeout
+} soundtest;
+
+void S_PopulateSoundTestSequence(void);
+void S_UpdateSoundTestDef(boolean reverse, boolean dotracks, boolean skipnull);
+void S_SoundTestPlay(void);
+void S_SoundTestStop(void);
+void S_SoundTestTogglePause(void);
+void S_TickSoundTest(void);
+
+boolean S_PlaysimMusicDisabled(void);
 
 extern musicdef_t *musicdefstart;
 

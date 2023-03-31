@@ -5925,3 +5925,269 @@ void M_DrawStatistics(void)
 }
 
 #undef STATSSTEP
+
+void M_DrawSoundTest(void)
+{
+	UINT8 pid = 0; // todo: Add ability for any splitscreen player to bring up the menu.
+
+	INT32 x, y, i, cursorx = 0;
+	INT32 titleoffset = 0, titlewidth;
+	const char *titletext;
+
+	patch_t *btn = W_CachePatchName("STER_BTN", PU_CACHE);
+
+	if (gamestate == GS_MENU)
+	{
+		patch_t *bg = W_CachePatchName("M_XTRABG", PU_CACHE);
+		V_DrawFixedPatch(0, 0, FRACUNIT, 0, bg, NULL);
+	}
+
+	V_DrawFixedPatch(0, 0, FRACUNIT, 0, W_CachePatchName("STER_BG", PU_CACHE), NULL);
+
+	x = 24;
+	y = 18;
+
+	V_SetClipRect(
+		x << FRACBITS, y << FRACBITS,
+		272 << FRACBITS, 106 << FRACBITS,
+		0
+	);
+
+	y += 32;
+
+	if (soundtest.current != NULL)
+	{
+		if (soundtest.current->sequence.map < nummapheaders)
+		{
+			K_DrawMapThumbnail(
+				0, 0,
+				BASEVIDWIDTH<<FRACBITS,
+				V_20TRANS|V_ADD,
+				soundtest.current->sequence.map,
+				NULL);
+
+			V_DrawFixedPatch(
+				0, 0,
+				FRACUNIT,
+				V_60TRANS|V_SUBTRACT,
+				W_CachePatchName("STER_DOT", PU_CACHE),
+				NULL
+			);
+		}
+
+		titletext = soundtest.current->title;
+
+		V_DrawThinString(x, y, V_ALLOWLOWERCASE|V_6WIDTHSPACE, titletext);
+		if (soundtest.current->numtracks > 1)
+			V_DrawThinString(x, (y += 10), V_ALLOWLOWERCASE|V_6WIDTHSPACE, va("Track %c", 'A'+soundtest.currenttrack));
+		if (soundtest.current->author)
+			V_DrawThinString(x, (y += 10), V_ALLOWLOWERCASE|V_6WIDTHSPACE, soundtest.current->author);
+		if (soundtest.current->source)
+			V_DrawThinString(x, (y += 10), V_ALLOWLOWERCASE|V_6WIDTHSPACE, soundtest.current->source);
+		if (soundtest.current->composers)
+			V_DrawThinString(x, (y += 10), V_ALLOWLOWERCASE|V_6WIDTHSPACE, soundtest.current->composers);
+	}
+	else
+	{
+		const char *sfxstr = (cv_soundtest.value) ? S_sfx[cv_soundtest.value].name : "N/A";
+
+		titletext = "Sound Test";
+
+		V_DrawThinString(x, y, V_ALLOWLOWERCASE|V_6WIDTHSPACE, "Track ");
+		V_DrawThinString(
+			x + V_ThinStringWidth("Track ", V_ALLOWLOWERCASE|V_6WIDTHSPACE),
+			y,
+			V_6WIDTHSPACE,
+			va("%04X - %s", cv_soundtest.value, sfxstr)
+		);
+	}
+
+	titletext = va("%s - ", titletext);
+	titlewidth = V_LSTitleHighStringWidth(titletext, 0);
+	titleoffset = (-soundtest.menutick) % titlewidth;
+
+	while (titleoffset < 272)
+	{
+		V_DrawLSTitleHighString(x + titleoffset, 18+1, 0, titletext);
+		titleoffset += titlewidth;
+	}
+
+	V_DrawRightAlignedString(x + 272-1, 18+32, 0,
+		va("%02u:%02u",
+			G_TicsToMinutes(soundtest.currenttime, true),
+			G_TicsToSeconds(soundtest.currenttime)
+		)
+	);
+
+	if ((soundtest.playing && soundtest.current)
+		&& (soundtest.current->basenoloop[soundtest.currenttrack] == true
+		|| soundtest.autosequence == true))
+	{
+		UINT32 exittime = soundtest.sequencemaxtime;
+		if (soundtest.dosequencefadeout == true)
+		{
+			exittime += 3*TICRATE;
+		}
+
+		V_DrawRightAlignedString(x + 272-1, 18+32+10, 0,
+			va("%02u:%02u",
+				G_TicsToMinutes(exittime, true),
+				G_TicsToSeconds(exittime)
+			)
+		);
+	}
+
+	V_ClearClipRect();
+
+	x = currentMenu->x;
+
+	for (i = 0; i < currentMenu->numitems; i++)
+	{
+		if (currentMenu->menuitems[i].status == IT_SPACE)
+		{
+			if (currentMenu->menuitems[i].mvar2 != 0)
+			{
+				x = currentMenu->menuitems[i].mvar2;
+			}
+
+			x += currentMenu->menuitems[i].mvar1;
+
+			continue;
+		}
+
+		y = currentMenu->y;
+
+		if (i == itemOn)
+		{
+			cursorx = x + 13;
+		}
+
+		if (currentMenu->menuitems[i].tooltip)
+		{
+			V_SetClipRect(
+				x << FRACBITS, y << FRACBITS,
+				27 << FRACBITS, 22 << FRACBITS,
+				0
+			);
+
+			// Special cases
+			if (currentMenu->menuitems[i].mvar2 == stereospecial_back) // back
+			{
+				if (!soundtest.justopened && M_MenuBackHeld(pid))
+				{
+					y = currentMenu->y + 7;
+				}
+			}
+			// The following are springlocks.
+			else if (currentMenu->menuitems[i].mvar2 == stereospecial_pause) // pause
+			{
+				if (soundtest.paused == true)
+					y = currentMenu->y + 6;
+			}
+			else if (currentMenu->menuitems[i].mvar2 == stereospecial_play) // play
+			{
+				if (soundtest.playing == true && soundtest.paused == false)
+					y = currentMenu->y + 6;
+			}
+			else if (currentMenu->menuitems[i].mvar2 == stereospecial_seq) // seq
+			{
+				if (soundtest.autosequence == true)
+					y = currentMenu->y + 6;
+			}
+
+			// Button is being pressed
+			if (i == itemOn && !soundtest.justopened && M_MenuConfirmHeld(pid))
+			{
+				y = currentMenu->y + 7;
+			}
+
+			// Button itself
+			V_DrawFixedPatch(x << FRACBITS, y << FRACBITS, FRACUNIT, 0, btn, NULL);
+
+			// Icon
+			V_DrawFixedPatch(x << FRACBITS, y << FRACBITS,
+				FRACUNIT, 0,
+				W_CachePatchName(currentMenu->menuitems[i].tooltip, PU_CACHE),
+				NULL
+			);
+
+			// Text
+			V_DrawCenteredThinString(x + 13, y + 1, V_6WIDTHSPACE, currentMenu->menuitems[i].text);
+
+			V_ClearClipRect();
+
+			V_DrawFill(x+2, currentMenu->y + 22, 23, 1, 30);
+		}
+		else if (currentMenu->menuitems[i].mvar2 == stereospecial_vol) // Vol
+		{
+			consvar_t *voltoadjust = M_GetSoundTestVolumeCvar();
+			INT32 j, vol = 0;
+			const INT32 barheight = 22;
+
+			V_DrawFixedPatch((x+1) << FRACBITS, y << FRACBITS,
+				FRACUNIT, 0,
+				W_CachePatchName("STER_KNB", PU_CACHE),
+				NULL
+			);
+
+			V_DrawFill(x+1+24, y+1, 5, barheight, 30);
+
+			if (voltoadjust != NULL)
+			{
+				vol = (barheight*voltoadjust->value)/(MAX_SOUND_VOLUME*3);
+			}
+
+			for (j = 0; j <= barheight/3; j++)
+			{
+				UINT8 col = 130;
+
+				if (j == 0)
+				{
+					continue;
+				}
+
+				if (j > vol)
+				{
+					col = 20;
+				}
+				else if (j > (barheight/3)-2)
+				{
+					col = 34;
+				}
+
+				V_DrawFill(x+1+24+2, y+1 + (barheight-(j*3)), 1, 2, col);
+			}
+
+			x += 5;
+		}
+		else if (currentMenu->menuitems[i].mvar2 == stereospecial_track) // Track
+		{
+			if (i == itemOn)
+			{
+				if (menucmd[pid].dpad_ud < 0 || M_MenuConfirmHeld(pid))
+				{
+					y--;
+				}
+				else if (menucmd[pid].dpad_ud > 0)
+				{
+					y++;
+				}
+			}
+
+			V_DrawFixedPatch(x << FRACBITS, (y-1) << FRACBITS,
+				FRACUNIT, 0,
+				W_CachePatchName("STER_WH0", PU_CACHE),
+				NULL
+			);
+		}
+		else
+		{
+			V_DrawCenteredThinString(x + 13, y + 1, V_6WIDTHSPACE, currentMenu->menuitems[i].text);
+		}
+
+		x += 27;
+	}
+
+	V_DrawCharacter(cursorx - 4, currentMenu->y - 8 - (skullAnimCounter/5),
+		'\x1B' | V_SNAPTOTOP|highlightflags, false); // up arrow
+}

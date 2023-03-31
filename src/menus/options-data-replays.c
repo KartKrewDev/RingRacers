@@ -19,6 +19,7 @@ menu_t OPTIONS_DataReplayDef = {
 	OPTIONS_DataReplay,
 	48, 80,
 	SKINCOLOR_BLUEBERRY, 0,
+	0,
 	NULL,
 	2, 5,
 	M_DrawGenericOptions,

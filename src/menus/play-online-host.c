@@ -33,6 +33,7 @@ menu_t PLAY_MP_HostDef = {
 	PLAY_MP_Host,
 	0, 0,
 	0, 0,
+	0,
 	"NETMD2",
 	-1, 1,	// 1 frame transition.... This is really just because I don't want the black fade when we press esc, hehe
 	M_DrawMPHost,

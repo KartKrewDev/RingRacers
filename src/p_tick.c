@@ -803,7 +803,11 @@ void P_Ticker(boolean run)
 			{
 				// Plays the POSITION music after the camera spin
 				if (leveltime == introtime)
-					S_ChangeMusicInternal("postn", true);
+					S_ChangeMusicInternal(
+						(mapheaderinfo[gamemap-1]->positionmus[0]
+							? mapheaderinfo[gamemap-1]->positionmus
+							: "postn"
+						), true);
 			}
 		}
 

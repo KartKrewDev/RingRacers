@@ -33,6 +33,7 @@
 #include "byteptr.h"
 #include "k_menu.h" // M_PlayMenuJam
 #include "m_random.h" // P_RandomKey
+#include "i_time.h"
 
 #ifdef HW3SOUND
 // 3D Sound Interface
@@ -1356,12 +1357,415 @@ static UINT32    queue_fadeinms;
 
 static tic_t     pause_starttic;
 
+static void S_AttemptToRestoreMusic(void)
+{
+	switch (gamestate)
+	{
+		case GS_LEVEL:
+			P_RestoreMusic(&players[consoleplayer]);
+			break;
+		case GS_TITLESCREEN:
+			S_ChangeMusicInternal("_title", looptitle);
+			break;
+		case GS_MENU:
+			M_PlayMenuJam();
+			break;
+		default:
+			break;
+	}
+}
+
 /// ------------------------
 /// Music Definitions
 /// ------------------------
 
 musicdef_t *musicdefstart = NULL;
 struct cursongcredit cursongcredit; // Currently displayed song credit info
+struct soundtest soundtest; // Sound Test (sound test)
+
+static void S_InsertMusicAtSoundTestSequenceTail(const char *musname, UINT16 map, musicdef_t ***tail)
+{
+	UINT8 i = 0;
+	musicdef_t *def = S_FindMusicDef(musname, &i);
+
+	if (def == NULL)
+		return;
+
+	if (def->sequence.id == soundtest.sequence.id)
+		return;
+
+	def->sequence.id = soundtest.sequence.id;
+	def->sequence.map = map;
+
+	// So what we're doing here is to avoid iterating
+	// for every insertion, we dereference the pointer
+	// to get **tail from S_PopulateSoundTestSequence,
+	// then dereference that to get the musicdef_t *.
+	// We do it this way so that soundtest.sequence.next
+	// can be handled natively without special cases.
+	// I have officially lost my MIND. ~toast 270323
+	*(*tail) = def;
+	*tail = &def->sequence.next;
+}
+
+static void S_InsertMapIntoSoundTestSequence(UINT16 map, musicdef_t ***tail)
+{
+	UINT8 i;
+
+	if (mapheaderinfo[map]->positionmus[0])
+	{
+		S_InsertMusicAtSoundTestSequenceTail(mapheaderinfo[map]->positionmus, map, tail);
+	}
+
+	for (i = 0; i < mapheaderinfo[map]->musname_size; i++)
+	{
+		S_InsertMusicAtSoundTestSequenceTail(mapheaderinfo[map]->musname[i], map, tail);
+	}
+
+	for (i = 0; i < mapheaderinfo[map]->associatedmus_size; i++)
+	{
+		S_InsertMusicAtSoundTestSequenceTail(mapheaderinfo[map]->associatedmus[i], map, tail);
+	}
+}
+
+void S_PopulateSoundTestSequence(void)
+{
+	UINT16 i;
+	musicdef_t **tail;
+
+	// First, increment the sequence and wipe the HEAD.
+	// This invalidates all existing musicdefs without us
+	// having to iterate through everything all the time,
+	// and offers a very convenient checking mechanism.
+	// ...preventing id 0 protects against inconsistencies
+	// caused by newly Calloc'd music definitions.
+	soundtest.sequence.id = (soundtest.sequence.id + 1) & 255;
+	if (soundtest.sequence.id == 0)
+		soundtest.sequence.id = 1;
+
+	soundtest.sequence.next = NULL;
+
+	tail = &soundtest.sequence.next;
+
+	// We iterate over all cups.
+	{
+		cupheader_t *cup;
+		for (cup = kartcupheaders; cup; cup = cup->next)
+		{
+			for (i = 0; i < CUPCACHE_MAX; i++)
+			{
+				if (cup->cachedlevels[i] >= nummapheaders)
+					continue;
+
+				if (!mapheaderinfo[cup->cachedlevels[i]])
+					continue;
+
+				if (mapheaderinfo[cup->cachedlevels[i]]->cup != cup)
+					continue;
+
+				S_InsertMapIntoSoundTestSequence(cup->cachedlevels[i], &tail);
+			}
+		}
+	}
+
+	// Then, we iterate over all non-cupped maps.
+	for (i = 0; i < nummapheaders; i++)
+	{
+		if (!mapheaderinfo[i])
+			continue;
+
+		if (mapheaderinfo[i]->cup != NULL)
+			continue;
+
+		S_InsertMapIntoSoundTestSequence(i, &tail);
+	}
+
+	// Finally, we insert all other musicdefstart at the head.
+	// It's being added to the sequence in reverse order...
+	// but because musicdefstart is ALSO populated in reverse,
+	// the reverse of the reverse is the right way around!
+	{
+		musicdef_t *def;
+
+		for (def = musicdefstart; def; def = def->next)
+		{
+			if (def->sequence.id == soundtest.sequence.id)
+				continue;
+
+			def->sequence.id = soundtest.sequence.id;
+			def->sequence.map = NEXTMAP_INVALID;
+
+			def->sequence.next = soundtest.sequence.next;
+			soundtest.sequence.next = def;
+		}
+	}
+}
+
+static boolean S_SoundTestDefLocked(musicdef_t *def)
+{
+	// temporary - i'd like to find a way to conditionally hide
+	// specific musicdefs that don't have any map associated.
+	if (def->sequence.map >= nummapheaders)
+		return false;
+
+	// Is the level tied to SP progression?
+	if ((mapheaderinfo[def->sequence.map]->menuflags & LF2_FINISHNEEDED)
+	&& !(mapheaderinfo[def->sequence.map]->mapvisited & MV_BEATEN))
+		return true;
+
+	// Finally, do a full-fat map check.
+	return M_MapLocked(def->sequence.map+1);
+}
+
+void S_UpdateSoundTestDef(boolean reverse, boolean dotracks, boolean skipnull)
+{
+	musicdef_t *newdef;
+
+	newdef = NULL;
+
+	if (reverse == false)
+	{
+		if (dotracks == true && soundtest.current != NULL
+			&& soundtest.currenttrack < soundtest.current->numtracks-1)
+		{
+			soundtest.currenttrack++;
+			goto updatetrackonly;
+		}
+
+		newdef = (soundtest.current != NULL)
+			? soundtest.current->sequence.next
+			: soundtest.sequence.next;
+		while (newdef != NULL && S_SoundTestDefLocked(newdef))
+			newdef = newdef->sequence.next;
+		if (newdef == NULL && skipnull == true)
+		{
+			newdef = soundtest.sequence.next;
+			while (newdef != NULL && S_SoundTestDefLocked(newdef))
+				newdef = newdef->sequence.next;
+		}
+	}
+	else
+	{
+		musicdef_t *def, *lastdef = NULL;
+
+		if (dotracks == true && soundtest.current != NULL
+			&& soundtest.currenttrack > 0)
+		{
+			soundtest.currenttrack--;
+			goto updatetrackonly;
+		}
+
+		if (soundtest.current == soundtest.sequence.next
+			&& skipnull == false)
+		{
+			goto updatecurrent;
+		}
+
+		for (def = soundtest.sequence.next; def; def = def->sequence.next)
+		{
+			if (!S_SoundTestDefLocked(def))
+			{
+				lastdef = def;
+			}
+
+			if (def->sequence.next != soundtest.current)
+			{
+				continue;
+			}
+
+			newdef = lastdef;
+			break;
+		}
+	}
+
+updatecurrent:
+	soundtest.current = newdef;
+	soundtest.currenttrack =
+		(reverse == true && dotracks == true && newdef != NULL)
+			? newdef->numtracks-1
+			: 0;
+
+	if (newdef == NULL)
+	{
+		CV_SetValue(&cv_soundtest, 0);
+	}
+
+updatetrackonly:
+	if (soundtest.playing == true)
+	{
+		S_SoundTestPlay();
+	}
+}
+
+void S_SoundTestPlay(void)
+{
+	if (soundtest.current == NULL)
+	{
+		S_SoundTestStop();
+		return;
+	}
+
+	soundtest.privilegedrequest = true;
+
+	S_StopMusic();
+
+	soundtest.playing = true;
+
+	if (soundtest.paused == true)
+	{
+		S_SoundTestTogglePause();
+	}
+
+	S_ChangeMusicInternal(soundtest.current->name[soundtest.currenttrack],
+		!soundtest.current->basenoloop[soundtest.currenttrack]);
+	S_ShowMusicCredit();
+
+	soundtest.currenttime = 0;
+	soundtest.sequencemaxtime = S_GetMusicLength();
+	soundtest.sequencefadeout = 0;
+
+	if (soundtest.sequencemaxtime)
+	{
+		// Does song have default loop?
+		if (soundtest.current->basenoloop[soundtest.currenttrack] == false)
+		{
+			soundtest.dosequencefadeout = (soundtest.currenttrack == soundtest.current->numtracks-1);
+			soundtest.sequencemaxtime *= 2; // Two loops by default.
+			soundtest.sequencemaxtime -= S_GetMusicLoopPoint(); // Otherwise the intro is counted twice.
+		}
+		else
+		{
+			soundtest.dosequencefadeout = false;
+		}
+
+		// ms to TICRATE conversion
+		soundtest.sequencemaxtime = (TICRATE*soundtest.sequencemaxtime)/1000;
+	}
+
+	soundtest.privilegedrequest = false;
+}
+
+void S_SoundTestStop(void)
+{
+	if (soundtest.playing == false)
+	{
+		return;
+	}
+
+	soundtest.privilegedrequest = true;
+
+	soundtest.playing = false;
+	soundtest.paused = false;
+	soundtest.autosequence = false;
+
+	S_StopMusic();
+	cursongcredit.def = NULL;
+
+	soundtest.currenttime = 0;
+	soundtest.sequencemaxtime = 0;
+	soundtest.sequencefadeout = 0;
+	soundtest.dosequencefadeout = false;
+
+	S_AttemptToRestoreMusic();
+
+	soundtest.privilegedrequest = false;
+}
+
+void S_SoundTestTogglePause(void)
+{
+	if (soundtest.playing == false)
+	{
+		return;
+	}
+
+	if (soundtest.paused == true)
+	{
+		soundtest.paused = false;
+		S_ResumeAudio();
+	}
+	else
+	{
+		soundtest.paused = true;
+		S_PauseAudio();
+	}
+}
+
+void S_TickSoundTest(void)
+{
+	static UINT32 storetime = 0;
+	UINT32 lasttime = storetime;
+	boolean donext = false;
+
+	storetime = I_GetTime();
+
+	if (soundtest.playing == false || soundtest.current == NULL)
+	{
+		return;
+	}
+
+	if (I_SongPlaying() == false)
+	{
+		S_SoundTestStop();
+		return;
+	}
+
+	if (I_SongPaused() == false)
+	{
+		soundtest.currenttime += (storetime - lasttime);
+	}
+
+	if (soundtest.sequencefadeout > 0)
+	{
+		if (soundtest.currenttime >= soundtest.sequencefadeout)
+		{
+			donext = true;
+		}
+	}
+	else if (soundtest.currenttime >= soundtest.sequencemaxtime)
+	{
+		if (soundtest.autosequence == false)
+		{
+			if (soundtest.current->basenoloop[soundtest.currenttrack] == true)
+			{
+				S_SoundTestStop();
+			}
+
+			return;
+		}
+		else if (soundtest.dosequencefadeout == false)
+		{
+			donext = true;
+		}
+		else
+		{
+			if (soundtest.sequencemaxtime > 0)
+			{
+				soundtest.privilegedrequest = true;
+				S_FadeMusic(0, 3000);
+				soundtest.privilegedrequest = false;
+			}
+
+			soundtest.sequencefadeout = soundtest.currenttime + 3*TICRATE;
+		}
+	}
+
+	if (donext == false)
+	{
+		return;
+	}
+
+	S_UpdateSoundTestDef(false, true, true);
+}
+
+boolean S_PlaysimMusicDisabled(void)
+{
+	if (soundtest.privilegedrequest)
+		return false;
+
+	return (soundtest.playing // Ring Racers: Stereo Mode
+		|| demo.rewinding // Don't mess with music while rewinding!
+		|| demo.title); // SRB2Kart: Demos don't interrupt title screen music
+}
 
 //
 // S_FindMusicDef
@@ -1370,8 +1774,13 @@ struct cursongcredit cursongcredit; // Currently displayed song credit info
 //
 musicdef_t *S_FindMusicDef(const char *name, UINT8 *i)
 {
-	UINT32 hash = quickncasehash (name, 6);
+	UINT32 hash;
 	musicdef_t *def;
+
+	if (!name || !name[0])
+		return NULL;
+
+	hash = quickncasehash (name, 6);
 
 	for (def = musicdefstart; def; def = def->next)
 	{
@@ -1450,6 +1859,11 @@ ReadMusicDefFields
 				do {
 					if (i >= MAXDEFTRACKS)
 						break;
+					if (value[0] == '\\')
+					{
+						def->basenoloop[i] = true;
+						value++;
+					}
 					STRBUFCPY(def->name[i], value);
 					strlwr(def->name[i]);
 					def->hash[i] = quickncasehash (def->name[i], 6);
@@ -1635,6 +2049,7 @@ void S_InitMusicDefs(void)
 	UINT16 i;
 	for (i = 0; i < numwadfiles; i++)
 		S_LoadMusicDefs(i);
+	S_PopulateSoundTestSequence();
 }
 
 //
@@ -1651,7 +2066,7 @@ void S_ShowMusicCredit(void)
 	char *work = NULL;
 	size_t len = 128, worklen;
 
-	if (!cv_songcredits.value || demo.rewinding)
+	if (!cv_songcredits.value || S_PlaysimMusicDisabled())
 		return;
 
 	if (!def) // No definitions
@@ -1798,8 +2213,7 @@ UINT32 S_GetMusicLoopPoint(void)
 
 boolean S_SetMusicPosition(UINT32 position)
 {
-	if (demo.rewinding // Don't mess with music while rewinding!
-		|| demo.title) // SRB2Kart: Demos don't interrupt title screen music
+	if (S_PlaysimMusicDisabled())
 		return false;
 
 	return I_SetSongPosition(position);
@@ -2005,8 +2419,7 @@ boolean S_RecallMusic(UINT16 status, boolean fromfirst)
 	musicstack_t *result;
 	musicstack_t *entry;
 
-	if (demo.rewinding // Don't mess with music while rewinding!
-		|| demo.title) // SRB2Kart: Demos don't interrupt title screen music
+	if (S_PlaysimMusicDisabled())
 		return false;
 
 	entry = Z_Calloc(sizeof (*result), PU_MUSIC, NULL);
@@ -2243,9 +2656,7 @@ void S_ChangeMusicEx(const char *mmusic, UINT16 mflags, boolean looping, UINT32 
 		&fadeinms
 	};
 
-	if (S_MusicDisabled()
-		|| demo.rewinding // Don't mess with music while rewinding!
-		|| demo.title) // SRB2Kart: Demos don't interrupt title screen music
+	if (S_MusicDisabled() || S_PlaysimMusicDisabled())
 		return;
 
 	strncpy(newmusic, mmusic, 7);
@@ -2325,9 +2736,7 @@ void S_ChangeMusicSpecial (const char *mmusic)
 
 void S_StopMusic(void)
 {
-	if (!I_SongPlaying()
-		|| demo.rewinding // Don't mess with music while rewinding!
-		|| demo.title) // SRB2Kart: Demos don't interrupt title screen music
+	if (!I_SongPlaying() || S_PlaysimMusicDisabled())
 		return;
 
 	if (strcasecmp(music_name, mapmusname) == 0)
@@ -2371,6 +2780,9 @@ void S_PauseAudio(void)
 void S_ResumeAudio(void)
 {
 	if (S_MusicNotInFocus())
+		return;
+
+	if (soundtest.paused == true)
 		return;
 
 	if (I_SongPlaying() && I_SongPaused())
@@ -2433,8 +2845,7 @@ void S_StopFadingMusic(void)
 
 boolean S_FadeMusicFromVolume(UINT8 target_volume, INT16 source_volume, UINT32 ms)
 {
-	if (demo.rewinding // Don't mess with music while rewinding!
-		|| demo.title) // SRB2Kart: Demos don't interrupt title screen music
+	if (S_PlaysimMusicDisabled())
 		return false;
 
 	if (source_volume < 0)
@@ -2445,8 +2856,7 @@ boolean S_FadeMusicFromVolume(UINT8 target_volume, INT16 source_volume, UINT32 m
 
 boolean S_FadeOutStopMusic(UINT32 ms)
 {
-	if (demo.rewinding // Don't mess with music while rewinding!
-		|| demo.title) // SRB2Kart: Demos don't interrupt title screen music
+	if (S_PlaysimMusicDisabled())
 		return false;
 
 	return I_FadeSong(0, ms, &S_StopMusic);
@@ -2628,10 +3038,7 @@ static void Command_RestartAudio_f(void)
 
 	S_StartSound(NULL, sfx_strpst);
 
-	if (Playing()) // Gotta make sure the player is in a level
-		P_RestoreMusic(&players[consoleplayer]);
-	else
-		S_ChangeMusicInternal("titles", looptitle);
+	S_AttemptToRestoreMusic();
 }
 
 static void Command_PlaySound(void)
@@ -2821,18 +3228,7 @@ void GameDigiMusic_OnChange(void)
 		I_StartupSound(); // will return early if initialised
 		I_InitMusic();
 
-		if (Playing())
-		{
-			P_RestoreMusic(&players[consoleplayer]);
-		}
-		else if (gamestate == GS_TITLESCREEN)
-		{
-			S_ChangeMusicInternal("_title", looptitle);
-		}
-		else
-		{
-			M_PlayMenuJam();
-		}
+		S_AttemptToRestoreMusic();
 	}
 	else
 	{

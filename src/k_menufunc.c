@@ -382,7 +382,7 @@ void M_PlayMenuJam(void)
 		return;
 	}
 
-	if (Playing())
+	if (Playing() || soundtest.playing)
 		return;
 
 	if (refMenu != NULL && refMenu->music != NULL)
@@ -799,10 +799,10 @@ boolean M_MenuConfirmPressed(UINT8 pid)
 	 return M_MenuButtonPressed(pid, MBT_A);
 }
 
-/*static boolean M_MenuConfirmHeld(UINT8 pid)
+boolean M_MenuConfirmHeld(UINT8 pid)
 {
 	 return M_MenuButtonHeld(pid, MBT_A);
-}*/
+}
 
 // Returns true if we press the Cancel button
 boolean M_MenuBackPressed(UINT8 pid)
@@ -810,10 +810,10 @@ boolean M_MenuBackPressed(UINT8 pid)
 	 return (M_MenuButtonPressed(pid, MBT_B) || M_MenuButtonPressed(pid, MBT_X));
 }
 
-/*static boolean M_MenuBackHeld(UINT8 pid)
+boolean M_MenuBackHeld(UINT8 pid)
 {
 	 return (M_MenuButtonHeld(pid, MBT_B) || M_MenuButtonHeld(pid, MBT_X));
-}*/
+}
 
 // Retrurns true if we press the tertiary option button (C)
 boolean M_MenuExtraPressed(UINT8 pid)
@@ -902,8 +902,7 @@ static void M_HandleMenuInput(void)
 	lr = menucmd[pid].dpad_lr;
 	ud = menucmd[pid].dpad_ud;
 
-	// If we ever add a second horizontal menu, make it a menu_t property, not an extra check.
-	if (currentMenu == &PAUSE_PlaybackMenuDef)
+	if (currentMenu->behaviourflags & MBF_UD_LR_FLIPPED)
 	{
 		ud = menucmd[pid].dpad_lr;
 		lr = -menucmd[pid].dpad_ud;
@@ -916,14 +915,14 @@ static void M_HandleMenuInput(void)
 	// Keys usable within menu
 	if (ud > 0)
 	{
-		if (M_NextOpt())
+		if (M_NextOpt() && !(currentMenu->behaviourflags & MBF_SOUNDLESS))
 			S_StartSound(NULL, sfx_s3k5b);
 		M_SetMenuDelay(pid);
 		return;
 	}
 	else if (ud < 0)
 	{
-		if (M_PrevOpt())
+		if (M_PrevOpt() && !(currentMenu->behaviourflags & MBF_SOUNDLESS))
 			S_StartSound(NULL, sfx_s3k5b);
 		M_SetMenuDelay(pid);
 		return;
@@ -933,7 +932,8 @@ static void M_HandleMenuInput(void)
 		if (routine && ((currentMenu->menuitems[itemOn].status & IT_TYPE) == IT_ARROWS
 			|| (currentMenu->menuitems[itemOn].status & IT_TYPE) == IT_CVAR))
 		{
-			S_StartSound(NULL, sfx_s3k5b);
+			if (!(currentMenu->behaviourflags & MBF_SOUNDLESS))
+				S_StartSound(NULL, sfx_s3k5b);
 			routine(0);
 			M_SetMenuDelay(pid);
 		}
@@ -945,7 +945,8 @@ static void M_HandleMenuInput(void)
 		if (routine && ((currentMenu->menuitems[itemOn].status & IT_TYPE) == IT_ARROWS
 			|| (currentMenu->menuitems[itemOn].status & IT_TYPE) == IT_CVAR))
 		{
-			S_StartSound(NULL, sfx_s3k5b);
+			if (!(currentMenu->behaviourflags & MBF_SOUNDLESS))
+				S_StartSound(NULL, sfx_s3k5b);
 			routine(1);
 			M_SetMenuDelay(pid);
 		}
@@ -959,7 +960,8 @@ static void M_HandleMenuInput(void)
 
 		if (routine)
 		{
-			S_StartSound(NULL, sfx_s3k5b);
+			if (!(currentMenu->behaviourflags & MBF_SOUNDLESS))
+				S_StartSound(NULL, sfx_s3k5b);
 
 			if (((currentMenu->menuitems[itemOn].status & IT_TYPE) == IT_CALL
 				|| (currentMenu->menuitems[itemOn].status & IT_TYPE) == IT_SUBMENU)
@@ -1014,7 +1016,8 @@ static void M_HandleMenuInput(void)
 				return;
 			}*/
 
-			S_StartSound(NULL, sfx_s3k5b);
+			if (!(currentMenu->behaviourflags & MBF_SOUNDLESS))
+				S_StartSound(NULL, sfx_s3k5b);
 
 			routine(-1);
 			M_SetMenuDelay(pid);

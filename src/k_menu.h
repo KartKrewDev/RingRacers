@@ -129,6 +129,12 @@ void M_HandlePauseMenuGametype(INT32 choice);
 // MENU TYPEDEFS
 //
 
+typedef enum
+{
+	MBF_UD_LR_FLIPPED		= 1, // flip up-down and left-right axes
+	MBF_SOUNDLESS		 	= 2, // do not play base menu sounds
+} menubehaviourflags_t;
+
 struct menuitem_t
 {
 	UINT16 status; // show IT_xxx
@@ -154,6 +160,7 @@ struct menu_t
 
 	INT16          x, y;               // x, y of menu
 	INT16 		   extra1, extra2;	   // Can be whatever really! Options menu uses extra1 for bg colour.
+	INT16          behaviourflags;     // menubehaviourflags_t
 	const char    *music;              // Track to play in M_PlayMenuJam. NULL for default, "." to stop
 
 	INT16          transitionID;       // only transition if IDs match
@@ -419,10 +426,14 @@ extern menuitem_t MISC_ChallengesStatsDummyMenu[];
 extern menu_t MISC_ChallengesDef;
 extern menu_t MISC_StatisticsDef;
 
+extern menuitem_t MISC_SoundTest[];
+extern menu_t MISC_SoundTestDef;
+
 // We'll need this since we're gonna have to dynamically enable and disable options depending on which state we're in.
 typedef enum
 {
 	mpause_addons = 0,
+	mpause_stereo,
 	mpause_changegametype,
 	mpause_switchmap,
 	mpause_restartmap,
@@ -574,7 +585,9 @@ boolean M_NextOpt(void);
 boolean M_PrevOpt(void);
 
 boolean M_MenuConfirmPressed(UINT8 pid);
+boolean M_MenuConfirmHeld(UINT8 pid);
 boolean M_MenuBackPressed(UINT8 pid);
+boolean M_MenuBackHeld(UINT8 pid);
 boolean M_MenuExtraPressed(UINT8 pid);
 boolean M_MenuExtraHeld(UINT8 pid);
 
@@ -1000,6 +1013,16 @@ extern struct extrasmenu_s {
 
 } extrasmenu;
 
+typedef enum
+{
+	extras_addons = 0,
+	extras_challenges,
+	//extras_tutorial,
+	extras_statistics,
+	extras_eggtv,
+	extras_stereo,
+} extras_e;
+
 void M_InitExtras(INT32 choice); // init for the struct
 void M_ExtrasTick(void);
 boolean M_ExtrasInputs(INT32 ch);
@@ -1196,6 +1219,21 @@ void M_Statistics(INT32 choice);
 void M_DrawStatistics(void);
 boolean M_StatisticsInputs(INT32 ch);
 
+typedef enum
+{
+	stereospecial_none = 0,
+	stereospecial_back,
+	stereospecial_pause,
+	stereospecial_play,
+	stereospecial_seq,
+	stereospecial_vol,
+	stereospecial_track,
+} stereospecial_e;
+
+void M_SoundTest(INT32 choice);
+void M_DrawSoundTest(void);
+consvar_t *M_GetSoundTestVolumeCvar(void);
+
 // These defines make it a little easier to make menus
 #define DEFAULTMENUSTYLE(source, prev, x, y)\
 {\
@@ -1204,6 +1242,8 @@ boolean M_StatisticsInputs(INT32 ch);
 	0,\
 	source,\
 	x, y,\
+	0, 0,\
+	0,\
 	NULL,\
 	0, 0,\
 	M_DrawGenericMenu,\
@@ -1222,6 +1262,7 @@ boolean M_StatisticsInputs(INT32 ch);
 	source,\
 	0, 0,\
 	0, 0,\
+	0,\
 	NULL,\
 	1, 5,\
 	M_DrawKartGamemodeMenu,\
@@ -1239,6 +1280,7 @@ boolean M_StatisticsInputs(INT32 ch);
 	source,\
 	0, 0,\
 	0, 0,\
+	0,\
 	"EXTRAS",\
 	1, 5,\
 	M_DrawImageDef,\
