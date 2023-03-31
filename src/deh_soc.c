@@ -2763,7 +2763,7 @@ static void readcondition(UINT8 set, UINT32 id, char *word2)
 	}
 	else if (fastcmp(params[0], "TRIGGER"))
 	{
-		PARAMCHECK(2); // strictly speaking at LEAST two
+		PARAMCHECK(1);
 		ty = UCRP_TRIGGER;
 		re = atoi(params[1]);
 
@@ -2791,9 +2791,9 @@ static void readcondition(UINT8 set, UINT32 id, char *word2)
 				*spos = ' ';
 			spos = params[--i];
 		}
-#endif
 
 		stringvar = Z_StrDup(params[2]);
+#endif
 	}
 	else if ((offset=0) || fastcmp(params[0], "FALLOFF")
 	||        (++offset && fastcmp(params[0], "TOUCHOFFROAD"))

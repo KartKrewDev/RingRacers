@@ -1374,7 +1374,7 @@ static const char *M_GetConditionString(condition_t *cn)
 				G_TicsToCentiseconds(cn->requirement));
 
 		case UCRP_TRIGGER:
-			return cn->stringvar;
+			return "do something special";
 
 		case UCRP_FALLOFF:
 			return (cn->requirement == 1) ? "fall off the course" : "without falling off";
