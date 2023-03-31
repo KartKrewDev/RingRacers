@@ -4451,6 +4451,12 @@ static void P_RefreshItemCapsuleParts(mobj_t *mobj)
 			part->tracer->spriteyoffset = 10*FRACUNIT;
 			part->tracer->spritexoffset = 13*numNumbers*FRACUNIT;
 			part->tracer->threshold = OV_DONTSCREENOFFSET;
+
+			if (encoremode)
+			{
+				// Don't render these digits mirrored. Handles flipping spritexoffset too.
+				part->tracer->renderflags ^= RF_HORIZONTALFLIP;
+			}
 		}
 		part = part->tracer;
 		part->sprite = SPR_ITMN;
