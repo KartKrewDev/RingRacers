@@ -13,7 +13,11 @@ target_sources(SRB2SDL2 PRIVATE
 
 target_include_directories(SRB2SDL2 PRIVATE vm) # This sucks
 
-set(ACSVM_NOFLAGS ON)
+# This breaks Apple Clang 14 compile. It should be totally
+# unecessary since even though vm/CMakeLists.txt sets
+# CMAKE_CXX_FLAGS, it is in a lower scope.
+#set(ACSVM_NOFLAGS ON)
+
 set(ACSVM_SHARED OFF)
 add_subdirectory(vm)
 
