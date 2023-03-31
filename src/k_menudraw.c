@@ -1768,7 +1768,8 @@ static void M_DrawProfileCard(INT32 x, INT32 y, boolean greyedout, profile_t *p)
 	if (p != NULL)
 	{
 		V_DrawProfileNum(x + 37 + 10, y + 131, 0, PR_GetProfileNum(p));
-		V_DrawCenteredThinString(x, y + 151, V_GRAYMAP|V_6WIDTHSPACE, p->playername);
+		V_DrawCenteredThinString(x, y + 141, V_GRAYMAP|V_6WIDTHSPACE, p->playername);
+		V_DrawCenteredThinString(x, y + 151, V_GRAYMAP|V_6WIDTHSPACE, GetPrettyRRID(p->public_key, true));
 	}
 }
 

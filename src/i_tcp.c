@@ -387,6 +387,20 @@ static const char *SOCK_GetNodeAddress(INT32 node)
 	return SOCK_AddrToStr(&clientaddress[node]);
 }
 
+static UINT32 SOCK_GetNodeAddressInt(INT32 node)
+{
+    if (nodeconnected[node] && clientaddress[node].any.sa_family == AF_INET)
+    {
+        return clientaddress[node].ip4.sin_addr.s_addr;
+    }
+    else
+    {
+        I_Error("SOCK_GetNodeAddressInt: Node %d is not IPv4!\n", node);
+    }
+
+    return 0;
+}
+
 static const char *SOCK_GetBanAddress(size_t ban)
 {
 	if (ban >= numbans)
@@ -459,7 +473,7 @@ static void cleanupnodes(void)
 
 	// Why can't I start at zero?
 	for (j = 1; j < MAXNETNODES; j++)
-		if (!(nodeingame[j] || SendingFile(j)))
+		if (!(nodeingame[j] || nodeneedsauth[j] || SendingFile(j)))
 			nodeconnected[j] = false;
 }
 
@@ -489,7 +503,6 @@ static SINT8 getfreenode(void)
 	return -1;
 }
 
-#ifdef _DEBUG
 void Command_Numnodes(void)
 {
 	INT32 connected = 0;
@@ -527,7 +540,6 @@ void Command_Numnodes(void)
 				"Ingame:    %d\n",
 				connected, ingame);
 }
-#endif
 
 static boolean hole_punch(ssize_t c)
 {
@@ -1510,6 +1522,31 @@ static void SOCK_ClearBans(void)
 	banned = NULL;
 }
 
+// https://github.com/jameds/holepunch/blob/master/holepunch.c#L75
+static int SOCK_IsExternalAddress (const void *p)
+{
+	const int a = ((const unsigned char*)p)[0];
+	const int b = ((const unsigned char*)p)[1];
+
+	if (*(const UINT32*)p == (UINT32)~0)/* 255.255.255.255 */
+		return 0;
+
+	switch (a)
+	{
+		case 0:
+		case 10:
+		case 127:
+			return 0;
+		case 172:
+			return (b & ~15) != 16;/* 16 - 31 */
+		case 192:
+			return b != 168;
+		default:
+			return 1;
+	}
+}
+
+
 boolean I_InitTcpNetwork(void)
 {
 	char serverhostname[255];
@@ -1600,6 +1637,7 @@ boolean I_InitTcpNetwork(void)
 	I_Ban = SOCK_Ban;
 	I_ClearBans = SOCK_ClearBans;
 	I_GetNodeAddress = SOCK_GetNodeAddress;
+	I_GetNodeAddressInt = SOCK_GetNodeAddressInt;
 	I_GetBanAddress = SOCK_GetBanAddress;
 	I_GetBanMask = SOCK_GetBanMask;
 	I_GetBanUsername = SOCK_GetBanUsername;
@@ -1609,6 +1647,8 @@ boolean I_InitTcpNetwork(void)
 	I_SetBanUsername = SOCK_SetBanUsername;
 	I_SetBanReason = SOCK_SetBanReason;
 	I_SetUnbanTime = SOCK_SetUnbanTime;
+	I_IsExternalAddress = SOCK_IsExternalAddress;
+
 	bannednode = SOCK_bannednode;
 
 	return ret;

@@ -713,6 +713,8 @@ struct player_t
 	mobj_t *stumbleIndicator;
 	mobj_t *sliptideZipIndicator;
 
+	uint8_t public_key[PUBKEYLENGTH];
+
 #ifdef HWRENDER
 	fixed_t fovadd; // adjust FOV for hw rendering
 #endif
@@ -720,6 +722,9 @@ struct player_t
 	sonicloopvars_t loop;
 	roundconditions_t roundconditions;
 };
+
+// WARNING FOR ANYONE ABOUT TO ADD SOMETHING TO THE PLAYER STRUCT, G_PlayerReborn WANTS YOU TO SUFFER
+// If data on player_t needs to persist between rounds or during the join process, modify G_PlayerReborn to preserve it.
 
 #ifdef __cplusplus
 } // extern "C"

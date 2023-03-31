@@ -946,6 +946,20 @@ void D_RegisterClientCommands(void)
 	CV_RegisterVar(&cv_netticbuffer);
 	CV_RegisterVar(&cv_mindelay);
 
+	CV_RegisterVar(&cv_allowguests);
+
+	#ifdef DEVELOP
+		CV_RegisterVar(&cv_badjoin);
+		CV_RegisterVar(&cv_badtraffic);
+		CV_RegisterVar(&cv_badresponse);
+		CV_RegisterVar(&cv_noresponse);
+		CV_RegisterVar(&cv_nochallenge);
+		CV_RegisterVar(&cv_badresults);
+		CV_RegisterVar(&cv_noresults);
+		CV_RegisterVar(&cv_badtime);
+		CV_RegisterVar(&cv_badip);
+	#endif
+
 	// HUD
 	CV_RegisterVar(&cv_alttitle);
 	CV_RegisterVar(&cv_itemfinder);

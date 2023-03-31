@@ -53,6 +53,7 @@
 #include "k_menu.h"
 #include "md5.h"
 #include "filesrch.h"
+#include "stun.h"
 
 #include <errno.h>
 
@@ -1311,6 +1312,22 @@ void PT_FileReceived(void)
 
 	if (trans && netbuffer->u.filereceived == trans->fileid)
 		SV_EndFileSend(doomcom->remotenode);
+}
+
+// Someone knocked on the door with their public key.
+// Give them a challenge to sign in their PT_CLIENTJOIN.
+void PT_ClientKey(INT32 node)
+{
+	clientkey_pak *packet = (void*)&netbuffer->u.clientkey;
+
+	memcpy(lastReceivedKey[node], packet->key, sizeof(lastReceivedKey[node]));
+
+	netbuffer->packettype = PT_SERVERCHALLENGE;
+
+	GenerateChallenge(lastSentChallenge[node]);
+
+	memcpy(&netbuffer->u.serverchallenge, lastSentChallenge[node], sizeof(serverchallenge_pak));
+	HSendPacket(node, false, 0, sizeof (serverchallenge_pak));
 }
 
 static void SendAckPacket(fileack_pak *packet, UINT8 fileid)

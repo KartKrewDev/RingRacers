@@ -18,6 +18,8 @@
 #include "k_profiles.h"
 #include "z_zone.h"
 #include "r_skins.h"
+#include "monocypher/monocypher.h"
+#include "stun.h"
 
 // List of all the profiles.
 static profile_t *profilesList[MAXPROFILES+1]; // +1 because we're gonna add a default "GUEST' profile.
@@ -26,6 +28,13 @@ static UINT8 numprofiles = 0; // # of loaded profiles
 INT32 PR_GetNumProfiles(void)
 {
 	return numprofiles;
+}
+
+static void PR_GenerateProfileKeys(profile_t *new)
+{
+	static uint8_t seed[32];
+	csprng(seed, 32);
+	crypto_eddsa_key_pair(new->secret_key, new->public_key, seed);
 }
 
 profile_t* PR_MakeProfile(
@@ -40,6 +49,14 @@ profile_t* PR_MakeProfile(
 	UINT8 i;
 
 	new->version = PROFILEVER;
+
+	memset(new->secret_key, 0, sizeof(new->secret_key));
+	memset(new->public_key, 0, sizeof(new->public_key));
+
+	if (!guest)
+	{
+		PR_GenerateProfileKeys(new);
+	}
 
 	strcpy(new->profilename, prname);
 	new->profilename[sizeof new->profilename - 1] = '\0';
@@ -238,8 +255,10 @@ void PR_SaveProfiles(void)
 
 	for (i = 1; i < numprofiles; i++)
 	{
-		// Names.
+		// Names and keys, all the string data up front
 		WRITESTRINGN(save.p, profilesList[i]->profilename, PROFILENAMELEN);
+		WRITEMEM(save.p, profilesList[i]->public_key, sizeof(((profile_t *)0)->public_key));
+		WRITEMEM(save.p, profilesList[i]->secret_key, sizeof(((profile_t *)0)->secret_key));
 		WRITESTRINGN(save.p, profilesList[i]->playername, MAXPLAYERNAME);
 
 		// Character and colour.
@@ -329,8 +348,21 @@ void PR_LoadProfiles(void)
 		// Version. (We always update this on successful forward step)
 		profilesList[i]->version = PROFILEVER;
 
-		// Names.
+		// Names and keys, all the identity stuff up front
 		READSTRINGN(save.p, profilesList[i]->profilename, PROFILENAMELEN);
+
+		// Profile update 2-->3: Add profile keys.
+		if (version < 3)
+		{
+			// Generate missing keys.
+			PR_GenerateProfileKeys(profilesList[i]);
+		}
+		else
+		{
+			READMEM(save.p, profilesList[i]->public_key, sizeof(((profile_t *)0)->public_key));
+			READMEM(save.p, profilesList[i]->secret_key, sizeof(((profile_t *)0)->secret_key));
+		}
+
 		READSTRINGN(save.p, profilesList[i]->playername, MAXPLAYERNAME);
 
 		// Character and colour.
@@ -549,4 +581,40 @@ profile_t *PR_GetPlayerProfile(player_t *player)
 	}
 
 	return NULL;
+}
+
+profile_t *PR_GetLocalPlayerProfile(INT32 player)
+{
+	if (player >= MAXSPLITSCREENPLAYERS)
+		return NULL;
+	return PR_GetProfile(cv_lastprofile[player].value);
+}
+
+boolean PR_IsLocalPlayerGuest(INT32 player)
+{
+	return !(cv_lastprofile[player].value);
+}
+
+static char rrid_buf[256];
+
+char *GetPrettyRRID(const unsigned char *bin, boolean brief)
+{
+	size_t i;
+	size_t len = PUBKEYLENGTH;
+
+	if (brief)
+		len = 8;
+
+	if (bin == NULL || len == 0)
+		return NULL;
+
+	for (i=0; i<len; i++)
+	{
+		rrid_buf[i*2]   = "0123456789ABCDEF"[bin[i] >> 4];
+		rrid_buf[i*2+1] = "0123456789ABCDEF"[bin[i] & 0x0F];
+	}
+	
+	rrid_buf[len*2] = '\0';
+
+	return rrid_buf;
 }

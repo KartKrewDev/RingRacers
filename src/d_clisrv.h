@@ -54,6 +54,11 @@ applications may follow different packet versions.
 // This just works as a quick implementation.
 #define MAXGENTLEMENDELAY TICRATE
 
+#define PUBKEYLENGTH 32 // Enforced by Monocypher EdDSA
+#define PRIVKEYLENGTH 64 // Enforced by Monocypher EdDSA
+#define SIGNATURELENGTH 64 // Enforced by Monocypher EdDSA
+#define CHALLENGELENGTH 64 // Servers verify client identity by giving them messages to sign. How long are these messages?
+
 //
 // Packet structure
 //
@@ -119,16 +124,29 @@ typedef enum
 	PT_LOGIN,         // Login attempt from the client.
 
 	PT_PING,          // Packet sent to tell clients the other client's latency to server.
+
+	PT_CLIENTKEY,		// "Here's my public key"
+	PT_SERVERCHALLENGE,		// "Prove it"
+
+	PT_CHALLENGEALL,	// Prove to the other clients you are who you say you are, sign this random bullshit!
+	PT_RESPONSEALL,		// OK, here is my signature on that random bullshit
+	PT_RESULTSALL,		// Here's what everyone responded to PT_CHALLENGEALL with, if this is wrong or you don't receive it disconnect
+
 	NUMPACKETTYPE
 } packettype_t;
+
+typedef enum
+{
+	SIGN_OK,
+	SIGN_BADTIME, // Timestamp differs by too much, suspect reuse of an old challenge.
+	SIGN_BADIP // Asked to sign the wrong IP by an external host, suspect reuse of another server's challenge.
+} shouldsign_t;
 
 #ifdef PACKETDROP
 void Command_Drop(void);
 void Command_Droprate(void);
 #endif
-#ifdef _DEBUG
 void Command_Numnodes(void);
-#endif
 
 #if defined(_MSC_VER)
 #pragma pack(1)
@@ -252,6 +270,7 @@ struct clientconfig_pak
 	UINT8 mode;
 	char names[MAXSPLITSCREENPLAYERS][MAXPLAYERNAME];
 	UINT8 availabilities[MAXAVAILABILITY];
+	uint8_t challengeResponse[MAXSPLITSCREENPLAYERS][SIGNATURELENGTH];
 } ATTRPACK;
 
 #define SV_SPEEDMASK 0x03		// used to send kartspeed
@@ -346,6 +365,31 @@ struct filesneededconfig_pak
 	UINT8 files[MAXFILENEEDED]; // is filled with writexxx (byteptr.h)
 } ATTRPACK;
 
+struct clientkey_pak
+{
+	uint8_t key[MAXSPLITSCREENPLAYERS][PUBKEYLENGTH];
+} ATTRPACK;
+
+struct serverchallenge_pak
+{
+	uint8_t secret[CHALLENGELENGTH];
+} ATTRPACK;
+
+struct challengeall_pak
+{
+	uint8_t secret[CHALLENGELENGTH];
+} ATTRPACK;
+
+struct responseall_pak
+{
+	uint8_t signature[MAXSPLITSCREENPLAYERS][SIGNATURELENGTH];
+} ATTRPACK;
+
+struct resultsall_pak
+{
+	uint8_t signature[MAXPLAYERS][SIGNATURELENGTH];
+} ATTRPACK;
+
 //
 // Network packet data
 //
@@ -356,6 +400,9 @@ struct doomdata_t
 	UINT8 ackreturn; // The return of the ack number
 
 	UINT8 packettype;
+#ifdef SIGNGAMETRAFFIC
+	uint8_t signature[MAXSPLITSCREENPLAYERS][SIGNATURELENGTH];
+#endif
 	UINT8 reserved; // Padding
 	union
 	{
@@ -380,6 +427,11 @@ struct doomdata_t
 		INT32 filesneedednum;               //           4 bytes
 		filesneededconfig_pak filesneededcfg; //       ??? bytes
 		UINT32 pingtable[MAXPLAYERS+1];     //          68 bytes
+		clientkey_pak clientkey;				// 32 bytes
+		serverchallenge_pak serverchallenge;	// 256 bytes
+		challengeall_pak challengeall;			// 256 bytes
+		responseall_pak responseall;			// 256 bytes
+		resultsall_pak resultsall;				// 1024 bytes. Also, you really shouldn't trust anything here.
 	} u; // This is needed to pack diff packet types data together
 } ATTRPACK;
 
@@ -419,6 +471,7 @@ extern consvar_t cv_playbackspeed;
 #define KICK_MSG_PING_HIGH   6
 #define KICK_MSG_CUSTOM_KICK 7
 #define KICK_MSG_CUSTOM_BAN  8
+#define KICK_MSG_SIGFAIL     9
 
 typedef enum
 {
@@ -443,6 +496,20 @@ extern UINT16 software_MAXPACKETLENGTH;
 extern boolean acceptnewnode;
 extern SINT8 servernode;
 extern char connectedservername[MAXSERVERNAME];
+extern UINT32 ourIP;
+extern uint8_t lastReceivedKey[MAXNETNODES][MAXSPLITSCREENPLAYERS][PUBKEYLENGTH];
+extern uint8_t lastSentChallenge[MAXNETNODES][CHALLENGELENGTH];
+extern uint8_t lastChallengeAll[CHALLENGELENGTH];
+extern uint8_t lastReceivedSignature[MAXPLAYERS][SIGNATURELENGTH];
+extern uint8_t knownWhenChallenged[MAXPLAYERS][PUBKEYLENGTH];
+extern boolean expectChallenge;
+
+// We give clients a chance to verify each other once per race.
+// When is that challenge sent, and when should clients bail if they don't receive the responses?
+#define CHALLENGEALL_START (TICRATE*5) // Server sends challenges here.
+#define CHALLENGEALL_KICKUNRESPONSIVE (TICRATE*10) // Server kicks players that haven't submitted signatures here.
+#define CHALLENGEALL_SENDRESULTS (TICRATE*15) // Server waits for kicks to process until here. (Failing players shouldn't be in-game when results are received, or clients get spooked.)
+#define CHALLENGEALL_CLIENTCUTOFF (TICRATE*20) // If challenge process hasn't completed by now, clients who were in-game for CHALLENGEALL_START should leave.
 
 void Command_Ping_f(void);
 extern tic_t connectiontimeout;
@@ -465,9 +532,26 @@ extern consvar_t cv_joinnextround;
 
 extern consvar_t cv_discordinvites;
 
+extern consvar_t cv_allowguests;
+
+#ifdef DEVELOP
+	extern consvar_t cv_badjoin;
+	extern consvar_t cv_badtraffic;
+	extern consvar_t cv_badresponse;
+	extern consvar_t cv_noresponse;
+	extern consvar_t cv_nochallenge;
+	extern consvar_t cv_badresults;
+	extern consvar_t cv_noresults;
+	extern consvar_t cv_badtime;
+	extern consvar_t cv_badip;
+#endif
+
 // Used in d_net, the only dependence
 tic_t ExpandTics(INT32 low, tic_t basetic);
 void D_ClientServerInit(void);
+
+void GenerateChallenge(uint8_t *buf);
+shouldsign_t ShouldSignChallenge(uint8_t *message);
 
 // Initialise the other field
 void RegisterNetXCmd(netxcmd_t id, void (*cmd_f)(UINT8 **p, INT32 playernum));
@@ -548,6 +632,8 @@ struct rewind_t {
 void CL_ClearRewinds(void);
 rewind_t *CL_SaveRewindPoint(size_t demopos);
 rewind_t *CL_RewindToTime(tic_t time);
+
+void HandleSigfail(const char *string);
 
 #ifdef __cplusplus
 } // extern "C"

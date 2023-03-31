@@ -29,6 +29,8 @@
 #include "z_zone.h"
 #include "i_tcp.h"
 #include "d_main.h" // srb2home
+#include "stun.h"
+#include "monocypher/monocypher.h"
 
 //
 // NETWORKING
@@ -81,6 +83,7 @@ boolean (*I_NetOpenSocket)(void) = NULL;
 boolean (*I_Ban) (INT32 node) = NULL;
 void (*I_ClearBans)(void) = NULL;
 const char *(*I_GetNodeAddress) (INT32 node) = NULL;
+UINT32 (*I_GetNodeAddressInt) (INT32 node) = NULL;
 const char *(*I_GetBanAddress) (size_t ban) = NULL;
 const char *(*I_GetBanMask) (size_t ban) = NULL;
 const char *(*I_GetBanUsername) (size_t ban) = NULL;
@@ -90,6 +93,7 @@ boolean (*I_SetBanAddress) (const char *address, const char *mask) = NULL;
 boolean (*I_SetBanUsername) (const char *username) = NULL;
 boolean (*I_SetBanReason) (const char *reason) = NULL;
 boolean (*I_SetUnbanTime) (time_t timestamp) = NULL;
+boolean (*I_IsExternalAddress) (const void *p) = NULL;
 bannednode_t *bannednode = NULL;
 
 
@@ -629,7 +633,12 @@ static void InitAck(void)
 		ackpak[i].acknum = 0;
 
 	for (i = 0; i < MAXNETNODES; i++)
+	{
 		InitNode(&nodes[i]);
+
+		csprng(lastSentChallenge[i], sizeof(lastSentChallenge[i]));
+		csprng(lastReceivedKey[i], sizeof(lastReceivedKey[i]));
+	}
 }
 
 /** Removes all acks of a given packet type
@@ -699,6 +708,9 @@ void Net_CloseConnection(INT32 node)
 	if (server)
 		SV_AbortLuaFileTransfer(node);
 	I_NetFreeNodenum(node);
+
+	csprng(lastSentChallenge[node], sizeof(lastSentChallenge[node]));
+	csprng(lastReceivedKey[node], sizeof(lastReceivedKey[node]));
 }
 
 //
@@ -803,7 +815,14 @@ static const char *packettypename[NUMPACKETTYPE] =
 
 	"LOGIN",
 
-	"PING"
+	"PING",
+
+	"CLIENTKEY",
+	"SERVERCHALLENGE",
+
+	"CHALLENGEALL",
+	"RESPONSEALL",
+	"RESULTSALL"
 };
 
 static void DebugPrintpacket(const char *header)
@@ -983,12 +1002,72 @@ static boolean ShouldDropPacket(void)
 }
 #endif
 
+// Unused because Eidolon correctly pointed out that +512b on every packet was scary.
+#ifdef SIGNGAMETRAFFIC
+	boolean IsPacketSigned(int packettype)
+	{
+		switch (packettype)
+		{
+			case PT_CLIENTCMD:
+			case PT_CLIENT2CMD:
+			case PT_CLIENT3CMD:
+			case PT_CLIENT4CMD:
+			case PT_CLIENTMIS:
+			case PT_CLIENT2MIS:
+			case PT_CLIENT3MIS:
+			case PT_CLIENT4MIS:
+			case PT_TEXTCMD:
+			case PT_TEXTCMD2:
+			case PT_TEXTCMD3:
+			case PT_TEXTCMD4:
+			case PT_LOGIN:
+			case PT_ASKLUAFILE:
+			case PT_SENDINGLUAFILE:
+				return true;
+			default:
+				return false;
+		}
+	}
+#endif
+
 //
 // HSendPacket
 //
 boolean HSendPacket(INT32 node, boolean reliable, UINT8 acknum, size_t packetlength)
 {
 	doomcom->datalength = (INT16)(packetlength + BASEPACKETSIZE);
+
+#ifdef SIGNGAMETRAFFIC
+	if (IsPacketSigned(netbuffer->packettype))
+	{	
+		int i;
+
+		for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
+		{
+			const void* message = &netbuffer->u;
+			//CONS_Printf("Signing packet type %d of length %d\n", netbuffer->packettype, packetlength);
+			if (PR_IsLocalPlayerGuest(i))	
+				memset(netbuffer->signature[i], 0, sizeof(netbuffer->signature[i]));
+			else
+				crypto_eddsa_sign(netbuffer->signature[i], PR_GetLocalPlayerProfile(i)->secret_key, message, packetlength);
+		}
+
+		#ifdef DEVELOP
+			if (cv_badtraffic.value)
+			{
+				CV_AddValue(&cv_badtraffic, -1);
+				CONS_Alert(CONS_WARNING, "cv_badtraffic enabled, scrubbing signature from HSendPacket\n");
+				memset(netbuffer->signature, 0, sizeof(netbuffer->signature));
+			}
+		#endif
+	}
+	else
+	{
+		//CONS_Printf("NOT signing PT_%d of length %d, it doesn't need to be\n", netbuffer->packettype, packetlength);
+		memset(netbuffer->signature, 0, sizeof(netbuffer->signature));
+	}
+#endif
+
 	if (node == 0) // Packet is to go back to us
 	{
 		if ((rebound_head+1) % MAXREBOUND == rebound_tail)
