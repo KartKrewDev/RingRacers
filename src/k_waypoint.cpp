@@ -7,7 +7,7 @@
 // terms of the GNU General Public License, version 2.
 // See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
-/// \file  k_waypoint.c
+/// \file  k_waypoint.cpp
 /// \brief Waypoint handling from the relevant mobjs
 ///        Setup and interfacing with waypoints for the main game
 
@@ -1768,7 +1768,7 @@ static waypoint_t *K_SearchWaypointGraph(
 	I_Assert(conditionalfunc != NULL);
 	I_Assert(firstwaypoint != NULL);
 
-	visitedarray = Z_Calloc(numwaypoints * sizeof(boolean), PU_STATIC, NULL);
+	visitedarray = static_cast<boolean*>(Z_Calloc(numwaypoints * sizeof(boolean), PU_STATIC, NULL));
 	foundwaypoint = K_TraverseWaypoints(firstwaypoint, conditionalfunc, condition, visitedarray);
 	Z_Free(visitedarray);
 
@@ -1929,16 +1929,18 @@ static void K_AddPrevToWaypoint(waypoint_t *const waypoint, waypoint_t *const pr
 	I_Assert(prevwaypoint != NULL);
 
 	waypoint->numprevwaypoints++;
-	waypoint->prevwaypoints =
-		Z_Realloc(waypoint->prevwaypoints, waypoint->numprevwaypoints * sizeof(waypoint_t *), PU_LEVEL, NULL);
+	waypoint->prevwaypoints = static_cast<waypoint_t**>(
+		Z_Realloc(waypoint->prevwaypoints, waypoint->numprevwaypoints * sizeof(waypoint_t *), PU_LEVEL, NULL)
+	);
 
 	if (!waypoint->prevwaypoints)
 	{
 		I_Error("K_AddPrevToWaypoint: Failed to reallocate memory for previous waypoints.");
 	}
 
-	waypoint->prevwaypointdistances =
-		Z_Realloc(waypoint->prevwaypointdistances, waypoint->numprevwaypoints * sizeof(fixed_t), PU_LEVEL, NULL);
+	waypoint->prevwaypointdistances = static_cast<UINT32*>(
+		Z_Realloc(waypoint->prevwaypointdistances, waypoint->numprevwaypoints * sizeof(fixed_t), PU_LEVEL, NULL)
+	);
 
 	if (!waypoint->prevwaypointdistances)
 	{
@@ -1994,14 +1996,16 @@ static waypoint_t *K_MakeWaypoint(mobj_t *const mobj)
 	if (madewaypoint->numnextwaypoints != 0)
 	{
 		// Allocate memory to hold enough pointers to all of the next waypoints
-		madewaypoint->nextwaypoints =
-			Z_Calloc(madewaypoint->numnextwaypoints * sizeof(waypoint_t *), PU_LEVEL, NULL);
+		madewaypoint->nextwaypoints = static_cast<waypoint_t**>(
+			Z_Calloc(madewaypoint->numnextwaypoints * sizeof(waypoint_t *), PU_LEVEL, NULL)
+		);
 		if (madewaypoint->nextwaypoints == NULL)
 		{
 			I_Error("K_MakeWaypoint: Out of Memory allocating next waypoints.");
 		}
-		madewaypoint->nextwaypointdistances =
-			Z_Calloc(madewaypoint->numnextwaypoints * sizeof(fixed_t), PU_LEVEL, NULL);
+		madewaypoint->nextwaypointdistances = static_cast<UINT32*>(
+			Z_Calloc(madewaypoint->numnextwaypoints * sizeof(fixed_t), PU_LEVEL, NULL)
+		);
 		if (madewaypoint->nextwaypointdistances == NULL)
 		{
 			I_Error("K_MakeWaypoint: Out of Memory allocating next waypoint distances.");
@@ -2153,7 +2157,7 @@ static boolean K_AllocateWaypointHeap(void)
 	{
 		// Allocate space in the heap for every mobj, it's possible some mobjs aren't linked up and not all of the
 		// heap allocated will be used, but it's a fairly reasonable assumption that this isn't going to be awful
-		waypointheap = Z_Calloc(numwaypointmobjs * sizeof(waypoint_t), PU_LEVEL, NULL);
+		waypointheap = static_cast<waypoint_t*>(Z_Calloc(numwaypointmobjs * sizeof(waypoint_t), PU_LEVEL, NULL));
 
 		if (waypointheap == NULL)
 		{

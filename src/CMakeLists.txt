@@ -117,7 +117,7 @@ add_executable(SRB2SDL2 MACOSX_BUNDLE WIN32
 	k_race.c
 	k_battle.c
 	k_pwrlv.c
-	k_waypoint.c
+	k_waypoint.cpp
 	k_pathfind.c
 	k_bheap.c
 	k_bot.c
