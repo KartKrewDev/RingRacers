@@ -196,11 +196,12 @@ waypoint_t *K_GetClosestWaypointToMobj(mobj_t *const mobj);
 
 	Input Arguments:-
 		mobj - mobj to get the waypoint for.
+		hint - a previously known nearby waypoint to optimize searching.
 
 	Return:-
 		The best waypoint for the mobj, or NULL if there were no matches
 --------------------------------------------------*/
-waypoint_t *K_GetBestWaypointForMobj(mobj_t *const mobj);
+waypoint_t *K_GetBestWaypointForMobj(mobj_t *const mobj, waypoint_t *const hint);
 
 
 /*--------------------------------------------------

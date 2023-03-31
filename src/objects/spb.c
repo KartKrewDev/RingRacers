@@ -403,7 +403,7 @@ static void SPBSeek(mobj_t *spb, mobj_t *bestMobj)
 	if (spb_curwaypoint(spb) == -1)
 	{
 		// Determine first waypoint.
-		curWaypoint = K_GetBestWaypointForMobj(spb);
+		curWaypoint = K_GetBestWaypointForMobj(spb, NULL);
 		spb_curwaypoint(spb) = (INT32)K_GetWaypointHeapIndex(curWaypoint);
 	}
 	else
@@ -421,7 +421,7 @@ static void SPBSeek(mobj_t *spb, mobj_t *bestMobj)
 	}
 	else
 	{
-		destWaypoint = K_GetBestWaypointForMobj(bestMobj);
+		destWaypoint = K_GetBestWaypointForMobj(bestMobj, NULL);
 	}
 
 	if (curWaypoint != NULL)

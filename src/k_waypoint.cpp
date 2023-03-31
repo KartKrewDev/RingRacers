@@ -343,11 +343,11 @@ static void K_CompareOverlappingWaypoint
 }
 
 /*--------------------------------------------------
-	waypoint_t *K_GetBestWaypointForMobj(mobj_t *const mobj)
+	waypoint_t *K_GetBestWaypointForMobj(mobj_t *const mobj, waypoint_t *const hint)
 
 		See header file for description.
 --------------------------------------------------*/
-waypoint_t *K_GetBestWaypointForMobj(mobj_t *const mobj)
+waypoint_t *K_GetBestWaypointForMobj(mobj_t *const mobj, waypoint_t *const hint)
 {
 	waypoint_t *bestwaypoint = NULL;
 
@@ -357,21 +357,15 @@ waypoint_t *K_GetBestWaypointForMobj(mobj_t *const mobj)
 	}
 	else
 	{
-		size_t     i              = 0U;
-		waypoint_t *checkwaypoint = NULL;
 		fixed_t    closestdist    = INT32_MAX;
 		fixed_t    checkdist      = INT32_MAX;
 		fixed_t    bestfindist    = INT32_MAX;
 
-		for (i = 0; i < numwaypoints; i++)
+		auto sort_waypoint = [&](waypoint_t *const checkwaypoint)
 		{
-			fixed_t rad;
-
-			checkwaypoint = &waypointheap[i];
-
 			if (!K_GetWaypointIsEnabled(checkwaypoint))
 			{
-				continue;
+				return;
 			}
 
 			checkdist = P_AproxDistance(
@@ -379,7 +373,7 @@ waypoint_t *K_GetBestWaypointForMobj(mobj_t *const mobj)
 				(mobj->y / FRACUNIT) - (checkwaypoint->mobj->y / FRACUNIT));
 			checkdist = P_AproxDistance(checkdist, ((mobj->z / FRACUNIT) - (checkwaypoint->mobj->z / FRACUNIT)) * 4);
 
-			rad = (checkwaypoint->mobj->radius / FRACUNIT);
+			fixed_t rad = (checkwaypoint->mobj->radius / FRACUNIT);
 
 			// remember: huge radius
 			if (closestdist <= rad && checkdist <= rad && finishline != NULL)
@@ -387,7 +381,7 @@ waypoint_t *K_GetBestWaypointForMobj(mobj_t *const mobj)
 				if (!P_TraceWaypointTraversal(mobj, checkwaypoint->mobj))
 				{
 					// Save sight checks when all of the other checks pass, so we only do it if we have to
-					continue;
+					return;
 				}
 
 				// If the mobj is touching multiple waypoints at once,
@@ -405,12 +399,24 @@ waypoint_t *K_GetBestWaypointForMobj(mobj_t *const mobj)
 				if (!P_TraceWaypointTraversal(mobj, checkwaypoint->mobj))
 				{
 					// Save sight checks when all of the other checks pass, so we only do it if we have to
-					continue;
+					return;
 				}
 
 				bestwaypoint = checkwaypoint;
 				closestdist = checkdist;
 			}
+		};
+
+		if (hint != NULL)
+		{
+			// The hint is a waypoint that is already known to be close to the player. It is used to exclude
+			// most of the other waypoints by distance so fewer expensive sight checks are performed.
+			sort_waypoint(hint);
+		}
+
+		for (size_t i = 0U; i < numwaypoints; i++)
+		{
+			sort_waypoint(&waypointheap[i]);
 		}
 	}
 
