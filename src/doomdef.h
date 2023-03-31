@@ -753,6 +753,12 @@ extern int
 
 #define MAX_VOLUME 100
 
+// Crypto/RRID primitives
+#define PUBKEYLENGTH 32 // Enforced by Monocypher EdDSA
+#define PRIVKEYLENGTH 64 // Enforced by Monocypher EdDSA
+#define SIGNATURELENGTH 64 // Enforced by Monocypher EdDSA
+#define CHALLENGELENGTH 64 // Servers verify client identity by giving them messages to sign. How long are these messages?
+
 #ifdef HAVE_CURL
 #define MASTERSERVER
 #else
