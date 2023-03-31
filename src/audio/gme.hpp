@@ -56,7 +56,7 @@ public:
 	std::size_t get_samples(tcb::span<short> buffer);
 	void seek(int sample);
 
-	std::optional<float> duration_seconds() const;
+	float duration_seconds() const;
 	std::optional<float> loop_point_seconds() const;
 	float position_seconds() const;
 

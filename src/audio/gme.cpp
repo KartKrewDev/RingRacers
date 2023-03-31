@@ -72,7 +72,7 @@ void Gme::seek(int sample)
 	gme_seek_samples(instance_, sample);
 }
 
-std::optional<float> Gme::duration_seconds() const
+float Gme::duration_seconds() const
 {
 	SRB2_ASSERT(instance_ != nullptr);
 
@@ -83,7 +83,10 @@ std::optional<float> Gme::duration_seconds() const
 	auto info_finally = srb2::finally([&info] { gme_free_info(info); });
 
 	if (info->length == -1)
-		return std::nullopt;
+	{
+		// these two fields added together also make the length of the song
+		return static_cast<float>(info->intro_length + info->loop_length) / 1000.f;
+	}
 
 	// info lengths are in ms
 	return static_cast<float>(info->length) / 1000.f;
