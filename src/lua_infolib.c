@@ -944,6 +944,28 @@ static int state_get(lua_State *L)
 		// because the metatable will trigger.
 		lua_getglobal(L, name); // actually gets from LREG_ACTIONS if applicable, and pushes a META_ACTION userdata if not.
 		return 1; // return just the function
+#ifdef DEVELOP
+	} else if (fastcmp(field,"actionname")) {
+		if (!st->action.acp1) { // Action is NULL.
+			lua_pushstring(L, "NULL");
+		} else if (st->action.acp1 == (actionf_p1)A_Lua) { // This is a Lua function?
+			lua_Debug ar;
+			lua_getfield(L, LUA_REGISTRYINDEX, LREG_STATEACTION);
+			I_Assert(lua_istable(L, -1));
+			lua_pushlightuserdata(L, st); // Push the state pointer and
+			lua_rawget(L, -2); // use it to get the actual Lua function.
+			lua_remove(L, -2); // pop LREG_STATEACTION
+			// This normally doesn't get a function's name because the same Lua function can have many names.
+			// It only works because of a hack called 'canonicalname' in blua/lparser.c, which records the
+			// name a GLOBAL function was defined with. This does not work for local functions! (Lua actions
+			// are almost always global functions though.)
+			lua_getinfo(L, ">n", &ar);
+			lua_pushstring(L, ar.name);
+		} else {
+			lua_pushstring(L, LUA_GetActionName(&st->action)); // find a hardcoded function name
+		}
+		return 1;
+#endif
 	} else if (fastcmp(field,"var1"))
 		number = st->var1;
 	else if (fastcmp(field,"var2"))
