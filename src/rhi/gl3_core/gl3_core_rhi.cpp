@@ -20,6 +20,8 @@
 #include <glad/gl.h>
 #include <glm/gtc/type_ptr.hpp>
 
+#include "../shader_load_context.hpp"
+
 using namespace srb2;
 using namespace rhi;
 
@@ -871,112 +873,82 @@ rhi::Handle<rhi::Pipeline> GlCoreRhi::create_pipeline(const PipelineDesc& desc)
 	GLuint program = 0;
 	GlCorePipeline pipeline;
 
-	auto [vert_src, frag_src] = platform_->find_shader_sources(desc.program);
+	auto [vert_srcs, frag_srcs] = platform_->find_shader_sources(desc.program);
 
-	// TODO make use of multiple source files.
-	// In Khronos Group's brilliance, #version is required to be the first directive,
-	// but we need to insert #defines in-between.
-	std::string vert_src_processed;
-	std::string::size_type string_i = 0;
-	do
+	// Process vertex shader sources
+	std::vector<const char*> vert_sources;
+	ShaderLoadContext vert_ctx;
+	vert_ctx.set_version("150 core");
+	for (auto& attribute : desc.vertex_input.attr_layouts)
 	{
-		std::string::size_type new_i = vert_src.find('\n', string_i);
-		if (new_i == std::string::npos)
+		for (auto const& require_attr : reqs.vertex_input.attributes)
 		{
-			break;
-		}
-		std::string_view line_view(vert_src.c_str() + string_i, new_i - string_i + 1);
-		vert_src_processed.append(line_view);
-		if (line_view.rfind("#version ", 0) == 0)
-		{
-			for (auto& attribute : desc.vertex_input.attr_layouts)
+			if (require_attr.name == attribute.name && !require_attr.required)
 			{
-				for (auto const& require_attr : reqs.vertex_input.attributes)
-				{
-					if (require_attr.name == attribute.name && !require_attr.required)
-					{
-						vert_src_processed.append("#define ");
-						vert_src_processed.append(map_vertex_attribute_enable_define(attribute.name));
-						vert_src_processed.append("\n");
-					}
-				}
-			}
-			for (auto& uniform_group : desc.uniform_input.enabled_uniforms)
-			{
-				for (auto& uniform : uniform_group)
-				{
-					for (auto const& req_uni_group : reqs.uniforms.uniform_groups)
-					{
-						for (auto const& req_uni : req_uni_group)
-						{
-							if (req_uni.name == uniform && !req_uni.required)
-							{
-								vert_src_processed.append("#define ");
-								vert_src_processed.append(map_uniform_enable_define(uniform));
-								vert_src_processed.append("\n");
-							}
-						}
-					}
-				}
+				vert_ctx.define(map_vertex_attribute_enable_define(attribute.name));
 			}
 		}
-		string_i = new_i + 1;
-	} while (string_i != std::string::npos);
-
-	std::string frag_src_processed;
-	string_i = 0;
-	do
+	}
+	for (auto& uniform_group : desc.uniform_input.enabled_uniforms)
 	{
-		std::string::size_type new_i = frag_src.find('\n', string_i);
-		if (new_i == std::string::npos)
+		for (auto& uniform : uniform_group)
 		{
-			break;
-		}
-		std::string_view line_view(frag_src.c_str() + string_i, new_i - string_i + 1);
-		frag_src_processed.append(line_view);
-		if (line_view.rfind("#version ", 0) == 0)
-		{
-			for (auto& sampler : desc.sampler_input.enabled_samplers)
+			for (auto const& req_uni_group : reqs.uniforms.uniform_groups)
 			{
-				for (auto const& require_sampler : reqs.samplers.samplers)
+				for (auto const& req_uni : req_uni_group)
 				{
-					if (sampler == require_sampler.name && !require_sampler.required)
+					if (req_uni.name == uniform && !req_uni.required)
 					{
-						frag_src_processed.append("#define ");
-						frag_src_processed.append(map_sampler_enable_define(sampler));
-						frag_src_processed.append("\n");
-					}
-				}
-			}
-			for (auto& uniform_group : desc.uniform_input.enabled_uniforms)
-			{
-				for (auto& uniform : uniform_group)
-				{
-					for (auto const& req_uni_group : reqs.uniforms.uniform_groups)
-					{
-						for (auto const& req_uni : req_uni_group)
-						{
-							if (req_uni.name == uniform && !req_uni.required)
-							{
-								frag_src_processed.append("#define ");
-								frag_src_processed.append(map_uniform_enable_define(uniform));
-								frag_src_processed.append("\n");
-							}
-						}
+						vert_ctx.define(map_uniform_enable_define(uniform));
 					}
 				}
 			}
 		}
-		string_i = new_i + 1;
-	} while (string_i != std::string::npos);
+	}
+	for (auto& src : vert_srcs)
+	{
+		vert_ctx.add_source(std::move(src));
+	}
+	vert_sources = vert_ctx.get_sources_array();
 
-	const char* vert_src_arr[1] = {vert_src_processed.c_str()};
-	const GLint vert_src_arr_lens[1] = {static_cast<GLint>(vert_src_processed.size())};
-	const char* frag_src_arr[1] = {frag_src_processed.c_str()};
-	const GLint frag_src_arr_lens[1] = {static_cast<GLint>(frag_src_processed.size())};
+	// Process vertex shader sources
+	std::vector<const char*> frag_sources;
+	ShaderLoadContext frag_ctx;
+	frag_ctx.set_version("150 core");
+	for (auto& sampler : desc.sampler_input.enabled_samplers)
+	{
+		for (auto const& require_sampler : reqs.samplers.samplers)
+		{
+			if (sampler == require_sampler.name && !require_sampler.required)
+			{
+				frag_ctx.define(map_sampler_enable_define(sampler));
+			}
+		}
+	}
+	for (auto& uniform_group : desc.uniform_input.enabled_uniforms)
+	{
+		for (auto& uniform : uniform_group)
+		{
+			for (auto const& req_uni_group : reqs.uniforms.uniform_groups)
+			{
+				for (auto const& req_uni : req_uni_group)
+				{
+					if (req_uni.name == uniform && !req_uni.required)
+					{
+						frag_ctx.define(map_uniform_enable_define(uniform));
+					}
+				}
+			}
+		}
+	}
+	for (auto& src : frag_srcs)
+	{
+		frag_ctx.add_source(std::move(src));
+	}
+	frag_sources = frag_ctx.get_sources_array();
 
 	vertex = gl_->CreateShader(GL_VERTEX_SHADER);
-	gl_->ShaderSource(vertex, 1, vert_src_arr, vert_src_arr_lens);
+	gl_->ShaderSource(vertex, vert_sources.size(), vert_sources.data(), NULL);
 	gl_->CompileShader(vertex);
 	GLint is_compiled = 0;
 	gl_->GetShaderiv(vertex, GL_COMPILE_STATUS, &is_compiled);
@@ -992,7 +964,7 @@ rhi::Handle<rhi::Pipeline> GlCoreRhi::create_pipeline(const PipelineDesc& desc)
 		);
 	}
 	fragment = gl_->CreateShader(GL_FRAGMENT_SHADER);
-	gl_->ShaderSource(fragment, 1, frag_src_arr, frag_src_arr_lens);
+	gl_->ShaderSource(fragment, frag_sources.size(), frag_sources.data(), NULL);
 	gl_->CompileShader(fragment);
 	gl_->GetShaderiv(vertex, GL_COMPILE_STATUS, &is_compiled);
 	if (is_compiled == GL_FALSE)

@@ -70,7 +70,7 @@ struct GlCorePlatform
 	virtual ~GlCorePlatform();
 
 	virtual void present() = 0;
-	virtual std::tuple<std::string, std::string> find_shader_sources(PipelineProgram program) = 0;
+	virtual std::tuple<std::vector<std::string>, std::vector<std::string>> find_shader_sources(PipelineProgram program) = 0;
 	virtual Rect get_default_framebuffer_dimensions() = 0;
 };
 

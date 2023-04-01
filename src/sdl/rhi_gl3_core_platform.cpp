@@ -9,7 +9,11 @@
 
 #include "rhi_gl3_core_platform.hpp"
 
+#include <array>
+#include <sstream>
+
 #include <SDL.h>
+#include <fmt/core.h>
 
 #include "../cxxutil.hpp"
 #include "../w_wad.h"
@@ -28,39 +32,75 @@ void SdlGlCorePlatform::present()
 	SDL_GL_SwapWindow(window);
 }
 
-std::tuple<std::string, std::string> SdlGlCorePlatform::find_shader_sources(rhi::PipelineProgram program)
+static constexpr const char* pipeline_lump_slug(rhi::PipelineProgram program)
 {
-	const char* vertex_lump_name = nullptr;
-	const char* fragment_lump_name = nullptr;
 	switch (program)
 	{
 	case rhi::PipelineProgram::kUnshaded:
-		vertex_lump_name = "rhi_glcore_vertex_unshaded";
-		fragment_lump_name = "rhi_glcore_fragment_unshaded";
-		break;
+		return "unshaded";
 	case rhi::PipelineProgram::kUnshadedPaletted:
-		vertex_lump_name = "rhi_glcore_vertex_unshadedpaletted";
-		fragment_lump_name = "rhi_glcore_fragment_unshadedpaletted";
-		break;
+		return "unshadedpaletted";
 	case rhi::PipelineProgram::kPostprocessWipe:
-		vertex_lump_name = "rhi_glcore_vertex_postprocesswipe";
-		fragment_lump_name = "rhi_glcore_fragment_postprocesswipe";
-		break;
+		return "postprocesswipe";
 	default:
-		std::terminate();
+		return "";
+	}
+}
+
+static std::array<std::string, 2> glsllist_lump_names(rhi::PipelineProgram program)
+{
+	const char* pipeline_slug = pipeline_lump_slug(program);
+
+	std::string vertex_list_name = fmt::format("rhi_glsllist_{}_vertex", pipeline_slug);
+	std::string fragment_list_name = fmt::format("rhi_glsllist_{}_fragment", pipeline_slug);
+
+	return {std::move(vertex_list_name), std::move(fragment_list_name)};
+}
+
+static std::vector<std::string> get_sources_from_glsllist_lump(const char* lumpname)
+{
+	lumpnum_t glsllist_lump_num = W_GetNumForLongName(lumpname);
+	void* glsllist_lump = W_CacheLumpNum(glsllist_lump_num, PU_CACHE);
+	size_t glsllist_lump_length = W_LumpLength(glsllist_lump_num);
+
+	std::istringstream glsllist(std::string(static_cast<const char*>(glsllist_lump), glsllist_lump_length));
+	std::vector<std::string> sources;
+	for (std::string line; std::getline(glsllist, line); )
+	{
+		if (line.empty())
+		{
+			continue;
+		}
+
+		if (line[0] == '#')
+		{
+			continue;
+		}
+
+		if (line.back() == '\r')
+		{
+			line.pop_back();
+		}
+
+		lumpnum_t source_lump_num = W_GetNumForLongName(line.c_str());
+		void* source_lump = W_CacheLumpNum(source_lump_num, PU_CACHE);
+		size_t source_lump_length = W_LumpLength(source_lump_num);
+
+		sources.emplace_back(static_cast<const char*>(source_lump), source_lump_length);
 	}
 
-	lumpnum_t vertex_lump_num = W_GetNumForLongName(vertex_lump_name);
-	lumpnum_t fragment_lump_num = W_GetNumForLongName(fragment_lump_name);
-	size_t vertex_lump_length = W_LumpLength(vertex_lump_num);
-	size_t fragment_lump_length = W_LumpLength(fragment_lump_num);
-	void* vertex_lump = W_CacheLumpNum(vertex_lump_num, PU_CACHE);
-	void* fragment_lump = W_CacheLumpNum(fragment_lump_num, PU_CACHE);
+	return sources;
+}
 
-	std::string vertex_shader(static_cast<const char*>(vertex_lump), vertex_lump_length);
-	std::string fragment_shader(static_cast<const char*>(fragment_lump), fragment_lump_length);
+std::tuple<std::vector<std::string>, std::vector<std::string>>
+SdlGlCorePlatform::find_shader_sources(rhi::PipelineProgram program)
+{
+	std::array<std::string, 2> glsllist_names = glsllist_lump_names(program);
 
-	return std::make_tuple(std::move(vertex_shader), std::move(fragment_shader));
+	std::vector<std::string> vertex_sources = get_sources_from_glsllist_lump(glsllist_names[0].c_str());
+	std::vector<std::string> fragment_sources = get_sources_from_glsllist_lump(glsllist_names[1].c_str());
+
+	return std::make_tuple(std::move(vertex_sources), std::move(fragment_sources));
 }
 
 rhi::Rect SdlGlCorePlatform::get_default_framebuffer_dimensions()
