@@ -7,7 +7,7 @@
 // terms of the GNU General Public License, version 2.
 // See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
-/// \file  k_waypoint.c
+/// \file  k_waypoint.cpp
 /// \brief Waypoint handling from the relevant mobjs
 ///        Setup and interfacing with waypoints for the main game
 
@@ -343,11 +343,11 @@ static void K_CompareOverlappingWaypoint
 }
 
 /*--------------------------------------------------
-	waypoint_t *K_GetBestWaypointForMobj(mobj_t *const mobj)
+	waypoint_t *K_GetBestWaypointForMobj(mobj_t *const mobj, waypoint_t *const hint)
 
 		See header file for description.
 --------------------------------------------------*/
-waypoint_t *K_GetBestWaypointForMobj(mobj_t *const mobj)
+waypoint_t *K_GetBestWaypointForMobj(mobj_t *const mobj, waypoint_t *const hint)
 {
 	waypoint_t *bestwaypoint = NULL;
 
@@ -357,21 +357,15 @@ waypoint_t *K_GetBestWaypointForMobj(mobj_t *const mobj)
 	}
 	else
 	{
-		size_t     i              = 0U;
-		waypoint_t *checkwaypoint = NULL;
 		fixed_t    closestdist    = INT32_MAX;
 		fixed_t    checkdist      = INT32_MAX;
 		fixed_t    bestfindist    = INT32_MAX;
 
-		for (i = 0; i < numwaypoints; i++)
+		auto sort_waypoint = [&](waypoint_t *const checkwaypoint)
 		{
-			fixed_t rad;
-
-			checkwaypoint = &waypointheap[i];
-
 			if (!K_GetWaypointIsEnabled(checkwaypoint))
 			{
-				continue;
+				return;
 			}
 
 			checkdist = P_AproxDistance(
@@ -379,7 +373,7 @@ waypoint_t *K_GetBestWaypointForMobj(mobj_t *const mobj)
 				(mobj->y / FRACUNIT) - (checkwaypoint->mobj->y / FRACUNIT));
 			checkdist = P_AproxDistance(checkdist, ((mobj->z / FRACUNIT) - (checkwaypoint->mobj->z / FRACUNIT)) * 4);
 
-			rad = (checkwaypoint->mobj->radius / FRACUNIT);
+			fixed_t rad = (checkwaypoint->mobj->radius / FRACUNIT);
 
 			// remember: huge radius
 			if (closestdist <= rad && checkdist <= rad && finishline != NULL)
@@ -387,7 +381,7 @@ waypoint_t *K_GetBestWaypointForMobj(mobj_t *const mobj)
 				if (!P_TraceWaypointTraversal(mobj, checkwaypoint->mobj))
 				{
 					// Save sight checks when all of the other checks pass, so we only do it if we have to
-					continue;
+					return;
 				}
 
 				// If the mobj is touching multiple waypoints at once,
@@ -405,12 +399,24 @@ waypoint_t *K_GetBestWaypointForMobj(mobj_t *const mobj)
 				if (!P_TraceWaypointTraversal(mobj, checkwaypoint->mobj))
 				{
 					// Save sight checks when all of the other checks pass, so we only do it if we have to
-					continue;
+					return;
 				}
 
 				bestwaypoint = checkwaypoint;
 				closestdist = checkdist;
 			}
+		};
+
+		if (hint != NULL)
+		{
+			// The hint is a waypoint that is already known to be close to the player. It is used to exclude
+			// most of the other waypoints by distance so fewer expensive sight checks are performed.
+			sort_waypoint(hint);
+		}
+
+		for (size_t i = 0U; i < numwaypoints; i++)
+		{
+			sort_waypoint(&waypointheap[i]);
 		}
 	}
 
@@ -1768,7 +1774,7 @@ static waypoint_t *K_SearchWaypointGraph(
 	I_Assert(conditionalfunc != NULL);
 	I_Assert(firstwaypoint != NULL);
 
-	visitedarray = Z_Calloc(numwaypoints * sizeof(boolean), PU_STATIC, NULL);
+	visitedarray = static_cast<boolean*>(Z_Calloc(numwaypoints * sizeof(boolean), PU_STATIC, NULL));
 	foundwaypoint = K_TraverseWaypoints(firstwaypoint, conditionalfunc, condition, visitedarray);
 	Z_Free(visitedarray);
 
@@ -1929,16 +1935,18 @@ static void K_AddPrevToWaypoint(waypoint_t *const waypoint, waypoint_t *const pr
 	I_Assert(prevwaypoint != NULL);
 
 	waypoint->numprevwaypoints++;
-	waypoint->prevwaypoints =
-		Z_Realloc(waypoint->prevwaypoints, waypoint->numprevwaypoints * sizeof(waypoint_t *), PU_LEVEL, NULL);
+	waypoint->prevwaypoints = static_cast<waypoint_t**>(
+		Z_Realloc(waypoint->prevwaypoints, waypoint->numprevwaypoints * sizeof(waypoint_t *), PU_LEVEL, NULL)
+	);
 
 	if (!waypoint->prevwaypoints)
 	{
 		I_Error("K_AddPrevToWaypoint: Failed to reallocate memory for previous waypoints.");
 	}
 
-	waypoint->prevwaypointdistances =
-		Z_Realloc(waypoint->prevwaypointdistances, waypoint->numprevwaypoints * sizeof(fixed_t), PU_LEVEL, NULL);
+	waypoint->prevwaypointdistances = static_cast<UINT32*>(
+		Z_Realloc(waypoint->prevwaypointdistances, waypoint->numprevwaypoints * sizeof(fixed_t), PU_LEVEL, NULL)
+	);
 
 	if (!waypoint->prevwaypointdistances)
 	{
@@ -1994,14 +2002,16 @@ static waypoint_t *K_MakeWaypoint(mobj_t *const mobj)
 	if (madewaypoint->numnextwaypoints != 0)
 	{
 		// Allocate memory to hold enough pointers to all of the next waypoints
-		madewaypoint->nextwaypoints =
-			Z_Calloc(madewaypoint->numnextwaypoints * sizeof(waypoint_t *), PU_LEVEL, NULL);
+		madewaypoint->nextwaypoints = static_cast<waypoint_t**>(
+			Z_Calloc(madewaypoint->numnextwaypoints * sizeof(waypoint_t *), PU_LEVEL, NULL)
+		);
 		if (madewaypoint->nextwaypoints == NULL)
 		{
 			I_Error("K_MakeWaypoint: Out of Memory allocating next waypoints.");
 		}
-		madewaypoint->nextwaypointdistances =
-			Z_Calloc(madewaypoint->numnextwaypoints * sizeof(fixed_t), PU_LEVEL, NULL);
+		madewaypoint->nextwaypointdistances = static_cast<UINT32*>(
+			Z_Calloc(madewaypoint->numnextwaypoints * sizeof(fixed_t), PU_LEVEL, NULL)
+		);
 		if (madewaypoint->nextwaypointdistances == NULL)
 		{
 			I_Error("K_MakeWaypoint: Out of Memory allocating next waypoint distances.");
@@ -2153,7 +2163,7 @@ static boolean K_AllocateWaypointHeap(void)
 	{
 		// Allocate space in the heap for every mobj, it's possible some mobjs aren't linked up and not all of the
 		// heap allocated will be used, but it's a fairly reasonable assumption that this isn't going to be awful
-		waypointheap = Z_Calloc(numwaypointmobjs * sizeof(waypoint_t), PU_LEVEL, NULL);
+		waypointheap = static_cast<waypoint_t*>(Z_Calloc(numwaypointmobjs * sizeof(waypoint_t), PU_LEVEL, NULL));
 
 		if (waypointheap == NULL)
 		{

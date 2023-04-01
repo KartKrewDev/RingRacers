@@ -8358,7 +8358,7 @@ static waypoint_t *K_GetPlayerNextWaypoint(player_t *player)
 
 	if ((player != NULL) && (player->mo != NULL) && (P_MobjWasRemoved(player->mo) == false))
 	{
-		waypoint_t *waypoint     = K_GetBestWaypointForMobj(player->mo);
+		waypoint_t *waypoint     = K_GetBestWaypointForMobj(player->mo, player->currentwaypoint);
 		boolean    updaterespawn = false;
 
 		// Our current waypoint.
