@@ -844,6 +844,7 @@ rhi::Handle<rhi::Renderbuffer> GlCoreRhi::create_renderbuffer(const rhi::Renderb
 
 	GlCoreRenderbuffer rb;
 	rb.renderbuffer = name;
+	rb.desc = desc;
 	return renderbuffer_slab_.insert(std::move(rb));
 }
 
@@ -1733,6 +1734,33 @@ void GlCoreRhi::read_pixels(Handle<GraphicsContext> ctx, const Rect& rect, Pixel
 	SRB2_ASSERT(out.size_bytes() == rect.w * rect.h * size);
 
 	gl_->ReadPixels(rect.x, rect.y, rect.w, rect.h, layout, type, out.data());
+}
+
+TextureDetails GlCoreRhi::get_texture_details(Handle<Texture> texture)
+{
+	SRB2_ASSERT(texture_slab_.is_valid(texture));
+	auto& t = texture_slab_[texture];
+
+	TextureDetails ret {};
+	ret.format = t.desc.format;
+	ret.width = t.desc.width;
+	ret.height = t.desc.height;
+
+	return ret;
+}
+
+Rect GlCoreRhi::get_renderbuffer_size(Handle<Renderbuffer> renderbuffer)
+{
+	SRB2_ASSERT(renderbuffer_slab_.is_valid(renderbuffer));
+	auto& rb = renderbuffer_slab_[renderbuffer];
+
+	Rect ret {};
+	ret.x = 0;
+	ret.y = 0;
+	ret.w = rb.desc.width;
+	ret.h = rb.desc.height;
+
+	return ret;
 }
 
 void GlCoreRhi::finish()

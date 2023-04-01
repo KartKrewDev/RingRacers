@@ -559,6 +559,13 @@ struct GraphicsContext
 {
 };
 
+struct TextureDetails
+{
+	uint32_t width;
+	uint32_t height;
+	TextureFormat format;
+};
+
 /// @brief The unpack alignment of a row span when uploading pixels to the device.
 constexpr const std::size_t kPixelRowUnpackAlignment = 4;
 
@@ -578,6 +585,9 @@ struct Rhi
 	virtual void destroy_buffer(Handle<Buffer> handle) = 0;
 	virtual Handle<Renderbuffer> create_renderbuffer(const RenderbufferDesc& desc) = 0;
 	virtual void destroy_renderbuffer(Handle<Renderbuffer> handle) = 0;
+
+	virtual TextureDetails get_texture_details(Handle<Texture> texture) = 0;
+	virtual Rect get_renderbuffer_size(Handle<Renderbuffer> renderbuffer) = 0;
 
 	virtual Handle<TransferContext> begin_transfer() = 0;
 	virtual void end_transfer(Handle<TransferContext> handle) = 0;
