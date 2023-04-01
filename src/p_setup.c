@@ -391,6 +391,7 @@ static void P_ClearSingleMapHeaderInfo(INT16 num)
 	mapheaderinfo[num]->keywords[0] = '\0';
 	mapheaderinfo[num]->musname[0][0] = 0;
 	mapheaderinfo[num]->musname_size = 0;
+	mapheaderinfo[num]->positionmus[0] = '\0';
 	mapheaderinfo[num]->associatedmus[0][0] = 0;
 	mapheaderinfo[num]->associatedmus_size = 0;
 	mapheaderinfo[num]->mustrack = 0;
