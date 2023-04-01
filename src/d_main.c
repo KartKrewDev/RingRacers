@@ -1874,6 +1874,27 @@ void D_SRB2Main(void)
 		{
 			PR_ApplyProfile(cv_lastprofile[i].value, i);
 		}
+
+		if (M_CheckParm("-profile"))
+		{
+			UINT8 num = atoi(M_GetNextParm());
+			PR_ApplyProfile(num, 0);
+		}
+		if (M_CheckParm("-profile2"))
+		{
+			UINT8 num = atoi(M_GetNextParm());
+			PR_ApplyProfile(num, 1);
+		}
+		if (M_CheckParm("-profile3"))
+		{
+			UINT8 num = atoi(M_GetNextParm());
+			PR_ApplyProfile(num, 2);
+		}
+		if (M_CheckParm("-profile4"))
+		{
+			UINT8 num = atoi(M_GetNextParm());
+			PR_ApplyProfile(num, 3);
+		}
 	}
 
 	if (autostart || netgame)
