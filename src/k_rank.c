@@ -22,6 +22,7 @@
 #include "r_things.h"
 #include "fastcmp.h"
 #include "byteptr.h"
+#include "k_race.h"
 
 // I was ALMOST tempted to start tearing apart all
 // of the map loading code and turning it into C++
@@ -304,12 +305,7 @@ void K_InitGrandPrixRank(gpRank_t *rankData)
 		const INT32 cupLevelNum = grandprixinfo.cup->cachedlevels[i];
 		if (cupLevelNum < nummapheaders && mapheaderinfo[cupLevelNum] != NULL)
 		{
-			if (!cv_gptest.value)
-			{
-				laps += mapheaderinfo[cupLevelNum]->numlaps;
-				continue;
-			}
-			laps++;
+			laps += K_RaceLapCount(cupLevelNum);
 		}
 	}
 
