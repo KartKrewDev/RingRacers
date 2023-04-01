@@ -346,8 +346,24 @@ constexpr const char* map_uniform_attribute_symbol_name(rhi::UniformName name)
 		return "u_projection";
 	case rhi::UniformName::kTexCoord0Transform:
 		return "u_texcoord0_transform";
+	case rhi::UniformName::kTexCoord1Transform:
+		return "u_texcoord1_transform";
 	case rhi::UniformName::kSampler0IsIndexedAlpha:
 		return "u_sampler0_is_indexed_alpha";
+	case rhi::UniformName::kSampler1IsIndexedAlpha:
+		return "u_sampler1_is_indexed_alpha";
+	case rhi::UniformName::kSampler2IsIndexedAlpha:
+		return "u_sampler2_is_indexed_alpha";
+	case rhi::UniformName::kSampler3IsIndexedAlpha:
+		return "u_sampler3_is_indexed_alpha";
+	case rhi::UniformName::kSampler0Size:
+		return "u_sampler0_size";
+	case rhi::UniformName::kSampler1Size:
+		return "u_sampler1_size";
+	case rhi::UniformName::kSampler2Size:
+		return "u_sampler2_size";
+	case rhi::UniformName::kSampler3Size:
+		return "u_sampler3_size";
 	case rhi::UniformName::kWipeColorizeMode:
 		return "u_wipe_colorize_mode";
 	case rhi::UniformName::kWipeEncoreSwizzle:
@@ -369,8 +385,24 @@ constexpr const char* map_uniform_enable_define(rhi::UniformName name)
 		return "ENABLE_U_MODELVIEW";
 	case rhi::UniformName::kTexCoord0Transform:
 		return "ENABLE_U_TEXCOORD0_TRANSFORM";
+	case rhi::UniformName::kTexCoord1Transform:
+		return "ENABLE_U_TEXCOORD1_TRANSFORM";
 	case rhi::UniformName::kSampler0IsIndexedAlpha:
 		return "ENABLE_U_SAMPLER0_IS_INDEXED_ALPHA";
+	case rhi::UniformName::kSampler1IsIndexedAlpha:
+		return "ENABLE_U_SAMPLER1_IS_INDEXED_ALPHA";
+	case rhi::UniformName::kSampler2IsIndexedAlpha:
+		return "ENABLE_U_SAMPLER2_IS_INDEXED_ALPHA";
+	case rhi::UniformName::kSampler3IsIndexedAlpha:
+		return "ENABLE_U_SAMPLER3_IS_INDEXED_ALPHA";
+	case rhi::UniformName::kSampler0Size:
+		return "ENABLE_U_SAMPLER0_SIZE";
+	case rhi::UniformName::kSampler1Size:
+		return "ENABLE_U_SAMPLER1_SIZE";
+	case rhi::UniformName::kSampler2Size:
+		return "ENABLE_U_SAMPLER2_SIZE";
+	case rhi::UniformName::kSampler3Size:
+		return "ENABLE_U_SAMPLER3_SIZE";
 	case rhi::UniformName::kWipeColorizeMode:
 		return "ENABLE_U_WIPE_COLORIZE_MODE";
 	case rhi::UniformName::kWipeEncoreSwizzle:
