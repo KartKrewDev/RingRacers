@@ -913,7 +913,8 @@ boolean CON_Responder(event_t *ev)
 	// let go keyup events, don't eat them
 	if (ev->type != ev_keydown && ev->type != ev_console)
 	{
-		if (ev->data1 == gamecontrol[0][gc_console][0] || ev->data1 == gamecontrol[0][gc_console][1])
+		if (ev->data1 == gamecontrol[0][gc_console][0] || ev->data1 == gamecontrol[0][gc_console][1]
+		|| ev->data1 == gamecontrol[0][gc_console][2] || ev->data1 == gamecontrol[0][gc_console][3])
 			consdown = false;
 		return false;
 	}
@@ -933,7 +934,8 @@ boolean CON_Responder(event_t *ev)
 			INT32 i;
 			for (i = 0; i < num_gamecontrols; i++)
 			{
-				if (gamecontrol[0][i][0] == ev->data1 || gamecontrol[0][i][1] == ev->data1)
+				if (gamecontrol[0][i][0] == ev->data1 || gamecontrol[0][i][1] == ev->data1
+				|| gamecontrol[0][i][2] == ev->data1 || gamecontrol[0][i][3] == ev->data1)
 					break;
 			}
 
@@ -941,7 +943,8 @@ boolean CON_Responder(event_t *ev)
 				return false;
 		}
 
-		if (key == gamecontrol[0][gc_console][0] || key == gamecontrol[0][gc_console][1])
+		if (key == gamecontrol[0][gc_console][0] || key == gamecontrol[0][gc_console][1]
+			|| key == gamecontrol[0][gc_console][2] || key == gamecontrol[0][gc_console][3])
 		{
 			if (consdown) // ignore repeat
 				return true;
