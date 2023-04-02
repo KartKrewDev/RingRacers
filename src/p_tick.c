@@ -759,10 +759,15 @@ void P_Ticker(boolean run)
 					if (player->mo == NULL)
 						continue;
 
-					if (player->boostpower < FRACUNIT && P_IsObjectOnGround(player->mo))
+					if ((player->mo->eflags & MFE_DAMAGEHITLAG) && player->mo->hitlag)
 					{
-						low = 65536 / 4;
-						high = 65536 / 4;
+						low = 65536 / 2;
+						high = 65536 / 2;
+					}
+					else if (player->boostpower < FRACUNIT && P_IsObjectOnGround(player->mo))
+					{
+						low = 65536 / 32;
+						high = 65536 / 32;
 					}
 
 					G_PlayerDeviceRumble(i, low, high);
