@@ -8337,31 +8337,6 @@ void K_KartPlayerAfterThink(player_t *player)
 
 		player->nullHitlag = 0;
 	}
-
-	// Apply rumble to player if local to machine and not in demo playback
-	if (!demo.playback)
-	{
-		int i;
-
-		for (i = 0; i <= splitscreen; i++)
-		{
-			if (player == &players[g_localplayers[i]])
-			{
-				UINT16 low = 0;
-				UINT16 high = 0;
-
-				if (player->boostpower < FRACUNIT && P_IsObjectOnGround(player->mo))
-				{
-					low = 65536 / 4;
-					high = 65536 / 4;
-				}
-
-				G_PlayerDeviceRumble(i, low, high);
-
-				break;
-			}
-		}
-	}
 }
 
 /*--------------------------------------------------

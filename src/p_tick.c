@@ -747,6 +747,28 @@ void P_Ticker(boolean run)
 				}
 			}
 
+			// Apply rumble to player if local to machine and not in demo playback
+			if (!demo.playback)
+			{
+				for (i = 0; i <= splitscreen; i++)
+				{
+					player_t *player = &players[g_localplayers[i]];
+					UINT16 low = 0;
+					UINT16 high = 0;
+
+					if (player->mo == NULL)
+						continue;
+
+					if (player->boostpower < FRACUNIT && P_IsObjectOnGround(player->mo))
+					{
+						low = 65536 / 4;
+						high = 65536 / 4;
+					}
+
+					G_PlayerDeviceRumble(i, low, high);
+				}
+			}
+
 			if (numFinishingPlayers > 1)
 			{
 				for (i = 0; i < numFinishingPlayers; i++)
