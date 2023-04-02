@@ -284,6 +284,25 @@ boolean R_SkinUsable(INT32 playernum, INT32 skinnum, boolean demoskins)
 	return (boolean)(gamedata->unlocked[i]);
 }
 
+// Returns a random unlocked skin ID.
+UINT32 R_GetLocalRandomSkin(void)
+{
+	UINT8 i, usableskins = 0;
+	UINT8 grabskins[MAXSKINS];
+
+	for (i = 0; i < numskins; i++)
+	{
+		if (!R_SkinUsable(-1, i, false))
+			continue;
+		grabskins[usableskins++] = i;
+	}
+
+	if (!usableskins)
+		I_Error("R_GetLocalRandomSkin: No valid skins to pick from!?");
+
+	return grabskins[M_RandomKey(usableskins)];
+}
+
 // returns true if the skin name is found (loaded from pwad)
 // warning return -1 if not found
 INT32 R_SkinAvailable(const char *name)

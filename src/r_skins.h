@@ -101,23 +101,34 @@ extern skin_t skins[MAXSKINS];
 extern CV_PossibleValue_t Forceskin_cons_t[];
 
 /// Function prototypes
-void R_InitSkins(void);
 
+// Loading
+void R_InitSkins(void);
+void R_AddSkins(UINT16 wadnum, boolean mainfile);
+void R_PatchSkins(UINT16 wadnum, boolean mainfile);
+
+// Access
+INT32 R_SkinAvailable(const char *name);
+boolean R_SkinUsable(INT32 playernum, INT32 skinnum, boolean demoskins);
+UINT8 *R_GetSkinAvailabilities(boolean demolock, boolean forbots);
+
+// Setting
 void SetPlayerSkin(INT32 playernum,const char *skinname);
 void SetPlayerSkinByNum(INT32 playernum,INT32 skinnum); // Tails 03-16-2002
+
+// Set backup
+INT32 GetSkinNumClosestToStats(UINT8 kartspeed, UINT8 kartweight, UINT32 flags, boolean unlock);
+UINT8 R_BotDefaultSkin(void);
+
+// Heavy Magician
 void SetFakePlayerSkin(player_t* player, INT32 skinnum);
 void SetRandomFakePlayerSkin(player_t* player, boolean fast);
 void ClearFakePlayerSkin(player_t* player);
-boolean R_SkinUsable(INT32 playernum, INT32 skinnum, boolean demoskins);
-INT32 GetSkinNumClosestToStats(UINT8 kartspeed, UINT8 kartweight, UINT32 flags, boolean unlock);
 
-UINT8 *R_GetSkinAvailabilities(boolean demolock, boolean forbots);
-INT32 R_SkinAvailable(const char *name);
-UINT8 R_BotDefaultSkin(void);
+// Visual flair
+UINT32 R_GetLocalRandomSkin(void);
 
-void R_PatchSkins(UINT16 wadnum, boolean mainfile);
-void R_AddSkins(UINT16 wadnum, boolean mainfile);
-
+// Sprite2
 UINT8 P_GetSkinSprite2(skin_t *skin, UINT8 spr2, player_t *player);
 
 #ifdef __cplusplus
