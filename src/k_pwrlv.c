@@ -17,6 +17,7 @@
 #include "p_tick.h" // leveltime
 #include "k_grandprix.h"
 #include "k_profiles.h"
+#include "k_serverstats.h"
 
 // Client-sided calculations done for Power Levels.
 // This is done so that clients will never be able to hack someone else's score over the server.
@@ -636,18 +637,9 @@ void K_PlayerForfeit(UINT8 playerNum, boolean pointLoss)
 		return;
 	}
 
-	if (inc < 0 && pointLoss == false)
+	if (pointLoss)
 	{
-		// Don't record point losses for sync-out / crashes.
-		return;
-	}
-
-	pr = PR_GetPlayerProfile(&players[playerNum]);
-	if (pr != NULL)
-	{
-		pr->powerlevels[powerType] = yourPower + inc;
-
-		M_UpdateUnlockablesAndExtraEmblems(true, true);
-		G_SaveGameData();
+		CONS_Printf("Stats update by %d\n", inc);
+		SV_UpdateStats();
 	}
 }

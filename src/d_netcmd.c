@@ -1809,6 +1809,9 @@ static void Got_WeaponPref(UINT8 **cp,INT32 playernum)
 
 static void Got_PowerLevel(UINT8 **cp,INT32 playernum)
 {
+	// Server keeps track of this now, no-sell XD_POWERLEVEL
+
+	/*
 	UINT16 race = (UINT16)READUINT16(*cp);
 	UINT16 battle = (UINT16)READUINT16(*cp);
 
@@ -1816,6 +1819,7 @@ static void Got_PowerLevel(UINT8 **cp,INT32 playernum)
 	clientpowerlevels[playernum][PWRLV_BATTLE] = min(PWRLVRECORD_MAX, battle);
 
 	CONS_Debug(DBG_GAMELOGIC, "set player %d to power %d\n", playernum, race);
+	*/
 }
 
 static void Got_PartyInvite(UINT8 **cp,INT32 playernum)
@@ -1977,6 +1981,7 @@ void D_SendPlayerConfig(UINT8 n)
 	SendNameAndColor(n);
 	WeaponPref_Send(n);
 
+	/*
 	if (pr != NULL)
 	{
 		// Send it over
@@ -1991,6 +1996,7 @@ void D_SendPlayerConfig(UINT8 n)
 	}
 
 	SendNetXCmdForPlayer(n, XD_POWERLEVEL, buf, p-buf);
+	*/
 }
 
 void D_Cheat(INT32 playernum, INT32 cheat, ...)

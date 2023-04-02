@@ -1,0 +1,49 @@
+// SONIC ROBO BLAST 2
+//-----------------------------------------------------------------------------
+// Copyright (C) 1993-1996 by id Software, Inc.
+// Copyright (C) 1998-2000 by DooM Legacy Team.
+// Copyright (C) 2011-2016 by Matthew "Inuyasha" Walsh.
+// Copyright (C) 1999-2018 by Sonic Team Junior.
+//
+// This program is free software distributed under the
+// terms of the GNU General Public License, version 2.
+// See the 'LICENSE' file for more details.
+//-----------------------------------------------------------------------------
+/// \file  k_serverstats.h
+/// \brief serverside stat tracking definitions
+
+#ifndef __SERVERSTATS_H__
+#define __SERVERSTATS_H__
+
+#include "doomdef.h"		// MAXPLAYERNAME
+#include "g_input.h"		// Input related stuff
+#include "string.h"			// strcpy etc
+#include "g_game.h"			// game CVs
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+#define SERVERSTATSFILE "srvstats.dat"
+#define MAXTRACKEDSERVERPLAYERS 9999
+#define SERVERSTATSHEADER "Doctor Robotnik's Ring Racers Server Stats"
+
+struct serverplayer_t
+{
+	uint8_t public_key[PUBKEYLENGTH];
+	UINT16 powerlevels[PWRLV_NUMTYPES];
+};
+
+void SV_SaveStats(void);
+
+void SV_LoadStats(void);
+
+void SV_RetrieveStats(int player);
+
+void SV_UpdateStats(void);
+
+#ifdef __cplusplus
+} // extern "C"
+#endif
+
+#endif

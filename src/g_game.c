@@ -67,6 +67,7 @@
 #include "acs/interface.h"
 #include "g_party.h"
 #include "k_vote.h"
+#include "k_serverstats.h"
 
 #ifdef HAVE_DISCORDRPC
 #include "discord.h"
@@ -1579,6 +1580,8 @@ void G_DoLoadLevelEx(boolean resetplayer, gamestate_t newstate)
 
 	// clear hud messages remains (usually from game startup)
 	CON_ClearHUD();
+
+	SV_UpdateStats();
 
 	server_lagless = cv_lagless.value;
 

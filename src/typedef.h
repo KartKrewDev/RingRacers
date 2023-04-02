@@ -195,6 +195,9 @@ TYPEDEF (pathfindsetup_t);
 // k_profiles.h
 TYPEDEF (profile_t);
 
+// h_serverstats.h
+TYPEDEF (serverplayer_t);
+
 // k_terrain.h
 TYPEDEF (t_splash_t);
 TYPEDEF (t_footstep_t);

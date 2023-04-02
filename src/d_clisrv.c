@@ -61,6 +61,7 @@
 #include "m_cond.h" // netUnlocked
 #include "g_party.h"
 #include "k_vote.h"
+#include "k_serverstats.h"
 
 // cl loading screen
 #include "v_video.h"
@@ -2972,12 +2973,18 @@ static void Command_Nodes(void)
 
 			if (playernode[i] != UINT8_MAX)
 			{
-				CONS_Printf(" - node %.2d", playernode[i]);
+				CONS_Printf(" [node %.2d]", playernode[i]);
 				if (I_GetNodeAddress && (address = I_GetNodeAddress(playernode[i])) != NULL)
 					CONS_Printf(" - %s", address);
 			}
 
-			CONS_Printf(" [RRID-%s] ", GetPrettyRRID(players[i].public_key, true));
+			if (K_UsingPowerLevels() != PWRLV_DISABLED) // No power type?!
+			{
+				CONS_Printf(" [%.4d PWR]", clientpowerlevels[i][K_UsingPowerLevels()]);
+			}
+
+
+			CONS_Printf(" [RRID-%s]", GetPrettyRRID(players[i].public_key, true));
 
 			if (IsPlayerAdmin(i))
 				CONS_Printf(M_GetText(" (verified admin)"));
@@ -3909,6 +3916,8 @@ static void Got_AddPlayer(UINT8 **p, INT32 playernum)
 
 		HU_AddChatText(joinmsg, false);
 	}
+
+	SV_RetrieveStats(newplayernum);
 
 	if (server && multiplayer && motd[0] != '\0')
 		COM_BufAddText(va("sayto %d %s\n", newplayernum, motd));
