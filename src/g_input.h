@@ -100,8 +100,6 @@ typedef enum
 } gamecontrols_e;
 
 // mouse values are used once
-extern consvar_t cv_mousesens, cv_mouseysens;
-extern consvar_t cv_mousesens2, cv_mouseysens2;
 extern consvar_t cv_controlperkey;
 
 // current state of the keys: JOYAXISRANGE or 0 when boolean.

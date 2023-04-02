@@ -1035,10 +1035,6 @@ void D_RegisterClientCommands(void)
 	CV_RegisterVar(&cv_controlperkey);
 
 	CV_RegisterVar(&cv_usemouse);
-	CV_RegisterVar(&cv_invertmouse);
-	CV_RegisterVar(&cv_mousesens);
-	CV_RegisterVar(&cv_mouseysens);
-	//CV_RegisterVar(&cv_mousemove);
 
 	for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
 	{

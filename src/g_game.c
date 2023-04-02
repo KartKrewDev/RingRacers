@@ -416,8 +416,6 @@ consvar_t cv_pauseifunfocused = CVAR_INIT ("pauseifunfocused", "Yes", CV_SAVE, C
 // Display song credits
 consvar_t cv_songcredits = CVAR_INIT ("songcredits", "On", CV_SAVE, CV_OnOff, NULL);
 
-consvar_t cv_invertmouse = CVAR_INIT ("invertmouse", "Off", CV_SAVE, CV_OnOff, NULL);
-
 consvar_t cv_invincmusicfade = CVAR_INIT ("invincmusicfade", "300", CV_SAVE, CV_Unsigned, NULL);
 consvar_t cv_growmusicfade = CVAR_INIT ("growmusicfade", "500", CV_SAVE, CV_Unsigned, NULL);
 
