@@ -456,7 +456,7 @@ void F_IntroTicker(void)
 		else if (finalecount == 47)
 		{
 			// Need to use M_Random otherwise it always uses the same sound
-			INT32 rskin = M_RandomKey(numskins);
+			UINT32 rskin = R_GetLocalRandomSkin();
 			UINT8 rtaunt = M_RandomKey(2);
 			sfxenum_t rsound = skins[rskin].soundsid[SKSKBST1+rtaunt];
 			S_StartSound(NULL, rsound);
@@ -2282,7 +2282,7 @@ void F_StartWaitingPlayers(void)
 {
 #ifdef NOWAY
 	INT32 i;
-	INT32 randskin;
+	UINT32 randskin;
 	spritedef_t *sprdef;
 	spriteframe_t *sprframe;
 #endif
@@ -2291,7 +2291,7 @@ void F_StartWaitingPlayers(void)
 	finalecount = 0;
 
 #ifdef NOWAY
-	randskin = M_RandomKey(numskins);
+	randskin = R_GetLocalRandomSkin();
 
 	if (waitcolormap)
 		Z_Free(waitcolormap);
