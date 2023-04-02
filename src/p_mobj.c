@@ -2839,8 +2839,9 @@ void P_PlayerZMovement(mobj_t *mo)
 		P_AdjustMobjFloorZ_PolyObjs(mo, mo->subsector);
 
 	// check for smooth step up
-	if ((mo->eflags & MFE_VERTICALFLIP && mo->z + mo->height > mo->ceilingz)
-		|| (!(mo->eflags & MFE_VERTICALFLIP) && mo->z < mo->floorz))
+	if (!(mo->flags & MF_NOCLIPHEIGHT)
+		&& ((mo->eflags & MFE_VERTICALFLIP && mo->z + mo->height > mo->ceilingz)
+		|| (!(mo->eflags & MFE_VERTICALFLIP) && mo->z < mo->floorz)))
 	{
 		if (mo->eflags & MFE_VERTICALFLIP)
 			mo->player->viewheight -= (mo->z+mo->height) - mo->ceilingz;

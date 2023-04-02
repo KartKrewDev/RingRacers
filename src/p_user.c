@@ -220,12 +220,20 @@ void P_CalcHeight(player_t *player)
 		if (mo->eflags & MFE_VERTICALFLIP)
 		{
 			player->viewz = mo->z + mo->height - player->viewheight;
+
+			if (mo->flags & MF_NOCLIPHEIGHT)
+				return;
+
 			if (player->viewz < mo->floorz + FixedMul(FRACUNIT, mo->scale))
 				player->viewz = mo->floorz + FixedMul(FRACUNIT, mo->scale);
 		}
 		else
 		{
 			player->viewz = mo->z + player->viewheight;
+
+			if (mo->flags & MF_NOCLIPHEIGHT)
+				return;
+
 			if (player->viewz > mo->ceilingz - FixedMul(FRACUNIT, mo->scale))
 				player->viewz = mo->ceilingz - FixedMul(FRACUNIT, mo->scale);
 		}
@@ -2300,10 +2308,13 @@ static void P_SpectatorMovement(player_t *player)
 	else if (cmd->buttons & BT_BRAKE)
 		player->mo->z -= 32*mapobjectscale;
 
-	if (player->mo->z > player->mo->ceilingz - player->mo->height)
-		player->mo->z = player->mo->ceilingz - player->mo->height;
-	if (player->mo->z < player->mo->floorz)
-		player->mo->z = player->mo->floorz;
+	if (!(player->mo->flags & MF_NOCLIPHEIGHT))
+	{
+		if (player->mo->z > player->mo->ceilingz - player->mo->height)
+			player->mo->z = player->mo->ceilingz - player->mo->height;
+		if (player->mo->z < player->mo->floorz)
+			player->mo->z = player->mo->floorz;
+	}
 
 	player->mo->momx = player->mo->momy = player->mo->momz = 0;
 	if (cmd->forwardmove != 0)
