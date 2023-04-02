@@ -353,6 +353,11 @@ static void weaponPrefChange2(void);
 static void weaponPrefChange3(void);
 static void weaponPrefChange4(void);
 
+static void rumble_off_handle(void);
+static void rumble_off_handle2(void);
+static void rumble_off_handle3(void);
+static void rumble_off_handle4(void);
+
 // don't mind me putting these here, I was lazy to figure out where else I could put those without blowing up the compiler.
 
 // chat timer thingy
@@ -443,6 +448,13 @@ consvar_t cv_deadzone[MAXSPLITSCREENPLAYERS] = {
 	CVAR_INIT ("deadzone2", "0.25", CV_FLOAT|CV_SAVE, zerotoone_cons_t, NULL),
 	CVAR_INIT ("deadzone3", "0.25", CV_FLOAT|CV_SAVE, zerotoone_cons_t, NULL),
 	CVAR_INIT ("deadzone4", "0.25", CV_FLOAT|CV_SAVE, zerotoone_cons_t, NULL)
+};
+
+consvar_t cv_rumble[MAXSPLITSCREENPLAYERS] = {
+	CVAR_INIT ("rumble", "On", CV_SAVE|CV_CALL, CV_OnOff, rumble_off_handle),
+	CVAR_INIT ("rumble", "On", CV_SAVE|CV_CALL, CV_OnOff, rumble_off_handle2),
+	CVAR_INIT ("rumble", "On", CV_SAVE|CV_CALL, CV_OnOff, rumble_off_handle3),
+	CVAR_INIT ("rumble", "On", CV_SAVE|CV_CALL, CV_OnOff, rumble_off_handle4)
 };
 
 // now automatically allocated in D_RegisterClientCommands
@@ -1472,6 +1484,30 @@ static void weaponPrefChange4(void)
 {
 	if (Playing())
 		WeaponPref_Send(3);
+}
+
+static void rumble_off_handle(void)
+{
+	if (cv_rumble[0].value == 0)
+		G_ResetPlayerDeviceRumble(0);
+}
+
+static void rumble_off_handle2(void)
+{
+	if (cv_rumble[1].value == 0)
+		G_ResetPlayerDeviceRumble(1);
+}
+
+static void rumble_off_handle3(void)
+{
+	if (cv_rumble[2].value == 0)
+		G_ResetPlayerDeviceRumble(2);
+}
+
+static void rumble_off_handle4(void)
+{
+	if (cv_rumble[3].value == 0)
+		G_ResetPlayerDeviceRumble(3);
 }
 
 //

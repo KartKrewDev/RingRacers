@@ -324,6 +324,11 @@ void G_PlayerDeviceRumble(INT32 player, UINT16 low_strength, UINT16 high_strengt
 {
 	INT32 device_id;
 
+	if (cv_rumble[player].value == 0)
+	{
+		return;
+	}
+
 	device_id = G_GetDeviceForPlayer(player);
 
 	if (device_id < 1)
@@ -338,6 +343,11 @@ void G_PlayerDeviceRumbleTriggers(INT32 player, UINT16 left_strength, UINT16 rig
 {
 	INT32 device_id;
 
+	if (cv_rumble[player].value == 0)
+	{
+		return;
+	}
+
 	device_id = G_GetDeviceForPlayer(player);
 
 	if (device_id < 1)
@@ -346,6 +356,21 @@ void G_PlayerDeviceRumbleTriggers(INT32 player, UINT16 left_strength, UINT16 rig
 	}
 
 	I_GamepadRumbleTriggers(device_id, left_strength, right_strength);
+}
+
+void G_ResetPlayerDeviceRumble(INT32 player)
+{
+	INT32 device_id;
+
+	device_id = G_GetDeviceForPlayer(player);
+
+	if (device_id < 1)
+	{
+		return;
+	}
+
+	I_GamepadRumble(device_id, 0, 0);
+	I_GamepadRumbleTriggers(device_id, 0, 0);
 }
 
 void G_ResetAllDeviceRumbles(void)

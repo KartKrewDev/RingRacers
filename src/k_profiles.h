@@ -31,7 +31,7 @@ extern "C" {
 #define SKINNAMESIZE 16
 
 #define PROFILENAMELEN 6
-#define PROFILEVER 3
+#define PROFILEVER 4
 #define MAXPROFILES 16
 #define PROFILESFILE "ringprofiles.prf"
 #define PROFILE_GUEST 0
@@ -74,6 +74,7 @@ struct profile_t
 	// Player-specific consvars.
 	// @TODO: List all of those
 	boolean kickstartaccel;				// cv_kickstartaccel
+	boolean rumble;						// cv_rumble
 
 	// Finally, control data itself
 	INT32 controls[num_gamecontrols][MAXINPUTMAPPING];	// Lists of all the controls, defined the same way as default inputs in g_input.c

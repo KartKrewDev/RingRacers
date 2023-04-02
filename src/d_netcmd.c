@@ -1024,6 +1024,7 @@ void D_RegisterClientCommands(void)
 		CV_RegisterVar(&cv_kickstartaccel[i]);
 		CV_RegisterVar(&cv_shrinkme[i]);
 		CV_RegisterVar(&cv_deadzone[i]);
+		CV_RegisterVar(&cv_rumble[i]);
 	}
 
 	// filesrch.c

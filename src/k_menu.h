@@ -945,6 +945,7 @@ extern INT16 controlleroffsets[][2];
 extern consvar_t cv_dummyprofilename;
 extern consvar_t cv_dummyprofileplayername;
 extern consvar_t cv_dummyprofilekickstart;
+extern consvar_t cv_dummyprofilerumble;
 
 void M_ResetOptions(void);
 void M_InitOptions(INT32 choice); // necessary for multiplayer since there's some options we won't want to access
