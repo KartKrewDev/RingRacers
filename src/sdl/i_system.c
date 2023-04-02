@@ -1633,6 +1633,12 @@ void I_Error(const char *error, ...)
 			exit(-1); // recursive errors detected
 		}
 	}
+	else
+	{
+		// This makes crashes funnier by stimulating the funnicampus of the brain
+		S_StopSounds();
+		S_StartSound(NULL, sfx_etexpl);
+	}
 
 	shutdowning = true;
 
@@ -1661,13 +1667,10 @@ void I_Error(const char *error, ...)
 	D_QuitNetGame();
 	CL_AbortDownloadResume();
 	M_FreePlayerSetupColors();
+
 	I_ShutdownMusic();
-	I_ShutdownSound();
-	// use this for 1.28 19990220 by Kin
 	I_ShutdownGraphics();
 	I_ShutdownInput();
-	I_ShutdownSystem();
-	SDL_Quit();
 
 	// Implement message box with SDL_ShowSimpleMessageBox,
 	// which should fail gracefully if it can't put a message box up
@@ -1676,6 +1679,12 @@ void I_Error(const char *error, ...)
 		SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR,
 			"Dr. Robotnik's Ring Racers "VERSIONSTRING" Error",
 			buffer, NULL);
+
+	// We wait until now to do this so the funny sound can be heard
+	I_ShutdownSound();
+	// use this for 1.28 19990220 by Kin
+	I_ShutdownSystem();
+	SDL_Quit();
 
 	// Note that SDL_ShowSimpleMessageBox does *not* require SDL to be
 	// initialized at the time, so calling it after SDL_Quit() is

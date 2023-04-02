@@ -1251,6 +1251,7 @@ typedef enum
 	sfx_clawk2,
 
 	sfx_monch,
+	sfx_etexpl,
 
 	// Next up: UNIQUE ENGINE SOUNDS! Hoooooo boy...
 	// Engine class A - Low Speed, Low Weight
