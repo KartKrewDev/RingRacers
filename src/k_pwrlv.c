@@ -639,7 +639,8 @@ void K_PlayerForfeit(UINT8 playerNum, boolean pointLoss)
 
 	if (pointLoss)
 	{
-		CONS_Printf("Stats update by %d\n", inc);
+		clientpowerlevels[playerNum][powerType] += clientPowerAdd[playerNum];
+		clientPowerAdd[playerNum] = 0;
 		SV_UpdateStats();
 	}
 }

@@ -141,8 +141,6 @@ void SV_UpdateStats(void)
 	if (!server)
 		return;
 
-	CONS_Printf("SV_UpdateStats\n");
-
 	for(i = 0; i < MAXPLAYERS; i++)
 	{
 		if (!playeringame[i])
@@ -152,8 +150,6 @@ void SV_UpdateStats(void)
 		{
 			continue;
 		}
-
-		CONS_Printf("updating %d\n", i);
 
 		boolean match = false;
 		for(j = 0; j < numtracked; j++)
