@@ -2267,6 +2267,29 @@ static void CL_ConnectToServer(void)
 		{
 			PR_ApplyProfile(cv_lastprofile[i].value, i);
 		}
+		
+		// Slightly sucks that we have to duplicate these from d_main.c, but
+		// the change to cv_lastprofile doesn't take in time for this codepath.
+		if (M_CheckParm("-profile"))
+		{
+			UINT8 num = atoi(M_GetNextParm());
+			PR_ApplyProfile(num, 0);
+		}
+		if (M_CheckParm("-profile2"))
+		{
+			UINT8 num = atoi(M_GetNextParm());
+			PR_ApplyProfile(num, 1);
+		}
+		if (M_CheckParm("-profile3"))
+		{
+			UINT8 num = atoi(M_GetNextParm());
+			PR_ApplyProfile(num, 2);
+		}
+		if (M_CheckParm("-profile4"))
+		{
+			UINT8 num = atoi(M_GetNextParm());
+			PR_ApplyProfile(num, 3);
+		}
 	}
 	if (gamestate == GS_INTERMISSION)
 		Y_EndIntermission(); // clean up intermission graphics etc
