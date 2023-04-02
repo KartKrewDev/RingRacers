@@ -5593,11 +5593,21 @@ static void Got_Cheat(UINT8 **cp, INT32 playernum)
 
 			if (!P_MobjWasRemoved(player->mo))
 			{
-				player->mo->flags ^= MF_NOCLIP;
+				UINT32 noclipFlags = MF_NOCLIP;
 
-				if (!(player->mo->flags & MF_NOCLIP))
+				if (player->spectator)
 				{
+					noclipFlags |= MF_NOCLIPHEIGHT;
+				}
+
+				if (player->mo->flags & MF_NOCLIP)
+				{
+					player->mo->flags &= ~(noclipFlags);
 					status = "off";
+				}
+				else
+				{
+					player->mo->flags |= noclipFlags;
 				}
 			}
 
