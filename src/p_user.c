@@ -1157,7 +1157,7 @@ boolean P_IsLocalPlayer(player_t *player)
 		return false;
 
 	// handles both online parties and local players (no need to call P_IsMachineLocalPlayer here)
-	return G_IsPartyLocal(consoleplayer);
+	return G_IsPartyLocal(player-players);
 }
 
 //
