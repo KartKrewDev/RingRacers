@@ -148,7 +148,8 @@ void Command_Debugrender_highlight(void);
 
 extern consvar_t
 	cv_debugrender_contrast,
-	cv_debugrender_spriteclip;
+	cv_debugrender_spriteclip,
+	cv_debugrender_portal;
 
 // Called by startup code.
 void R_Init(void);

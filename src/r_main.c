@@ -1567,7 +1567,7 @@ void R_RenderPlayerView(void)
 
 	// Portal rendering. Hijacks the BSP traversal.
 	ps_sw_portaltime = I_GetPreciseTime();
-	if (portal_base)
+	if (portal_base && !cv_debugrender_portal.value)
 	{
 		portal_t *portal;
 
@@ -1621,6 +1621,32 @@ void R_RenderPlayerView(void)
 	ps_sw_maskedtime = I_GetPreciseTime();
 	R_DrawMasked(masks, nummasks);
 	ps_sw_maskedtime = I_GetPreciseTime() - ps_sw_maskedtime;
+
+	// debugrender_portal: fill portals with red, draw over everything
+	if (portal_base && cv_debugrender_portal.value)
+	{
+		const UINT8 pal = 0x23; // red
+		portal_t *portal;
+
+		for(portal = portal_base; portal; portal = portal_base)
+		{
+			INT32 width = (portal->end - portal->start);
+			INT32 i;
+
+			for (i = 0; i < width; ++i)
+			{
+				INT32 yl = max(portal->ceilingclip[i] + 1, 0);
+				INT32 yh = min(portal->floorclip[i], viewheight);
+
+				for (; yl < yh; ++yl)
+				{
+					screens[0][portal->start + i + (yl * vid.width)] = pal;
+				}
+			}
+
+			Portal_Remove(portal);
+		}
+	}
 
 	free(masks);
 }
@@ -1685,6 +1711,7 @@ void R_RegisterEngineStuff(void)
 
 	CV_RegisterVar(&cv_debugrender_contrast);
 	CV_RegisterVar(&cv_debugrender_spriteclip);
+	CV_RegisterVar(&cv_debugrender_portal);
 
 	COM_AddCommand("debugrender_highlight", Command_Debugrender_highlight);
 }
