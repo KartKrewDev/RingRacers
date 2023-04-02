@@ -218,18 +218,6 @@ extern INT32 displayplayers[MAXSPLITSCREENPLAYERS];
 /* g_localplayers[0] = consoleplayer */
 extern INT32 g_localplayers[MAXSPLITSCREENPLAYERS];
 
-/* spitscreen players sync */
-extern INT32 splitscreen_original_party_size[MAXPLAYERS];
-extern INT32 splitscreen_original_party[MAXPLAYERS][MAXSPLITSCREENPLAYERS];
-
-/* parties */
-extern INT32 splitscreen_invitations[MAXPLAYERS];
-extern INT32 splitscreen_party_size[MAXPLAYERS];
-extern INT32 splitscreen_party[MAXPLAYERS][MAXSPLITSCREENPLAYERS];
-
-/* the only local one */
-extern boolean splitscreen_partied[MAXPLAYERS];
-
 extern char * titlemap;
 extern boolean hidetitlepics;
 extern char * bootmap; //bootmap for loading a map on startup

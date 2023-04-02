@@ -19,7 +19,7 @@ add_executable(SRB2SDL2 MACOSX_BUNDLE WIN32
 	g_demo.c
 	g_game.c
 	g_input.c
-	g_splitscreen.c
+	g_party.cpp
 	am_map.c
 	command.c
 	console.c

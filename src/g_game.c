@@ -65,6 +65,7 @@
 #include "k_podium.h"
 #include "k_rank.h"
 #include "acs/interface.h"
+#include "g_party.h"
 
 #ifdef HAVE_DISCORDRPC
 #include "discord.h"
@@ -1118,7 +1119,7 @@ INT32 localsteering[MAXSPLITSCREENPLAYERS];
 
 // Turning was removed from G_BuildTiccmd to prevent easy client hacking.
 // This brings back the camera prediction that was lost.
-static void G_DoAnglePrediction(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer, player_t *player)
+static void G_DoAnglePrediction(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer, UINT8 viewnum, player_t *player)
 {
 	angle_t angleChange = 0;
 
@@ -1146,13 +1147,15 @@ static void G_DoAnglePrediction(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer, p
 	else
 #endif
 	{
-		localangle[ssplayer - 1] += angleChange;
+		localangle[viewnum] += angleChange;
 	}
 }
 
 void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 {
 	const UINT8 forplayer = ssplayer-1;
+	const UINT8 viewnum = G_PartyPosition(g_localplayers[forplayer]);
+
 	INT32 forward;
 
 	joystickvector2_t joystickvector;
@@ -1183,7 +1186,7 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 			break;
 	}
 
-	cmd->angle = localangle[forplayer] >> TICCMD_REDUCE;
+	cmd->angle = localangle[viewnum] >> TICCMD_REDUCE;
 
 	// why build a ticcmd if we're paused?
 	// Or, for that matter, if we're being reborn.
@@ -1206,7 +1209,7 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 		goto aftercmdinput;
 	}
 
-	if (displayplayers[forplayer] != g_localplayers[forplayer])
+	if (G_IsPartyLocal(displayplayers[forplayer]) == false)
 	{
 		if (M_MenuButtonPressed(forplayer, MBT_A))
 		{
@@ -1424,7 +1427,7 @@ aftercmdinput:
 	else if (cmd->throwdir < -KART_FULLTURN)
 		cmd->throwdir = -KART_FULLTURN;
 
-	G_DoAnglePrediction(cmd, realtics, ssplayer, player);
+	G_DoAnglePrediction(cmd, realtics, ssplayer, viewnum, player);
 }
 
 ticcmd_t *G_CopyTiccmd(ticcmd_t* dest, const ticcmd_t* src, const size_t n)
@@ -2036,8 +2039,13 @@ void G_ResetView(UINT8 viewnum, INT32 playernum, boolean onlyactive)
 	/* Check if anyone is available to view. */
 	if (( playernum = G_FindView(playernum, viewnum, onlyactive, playernum < olddisplayplayer) ) == -1)
 	{
+		if (G_PartySize(consoleplayer) < viewnum)
+		{
+			return;
+		}
+
 		/* Fall back on true self */
-		playernum = g_localplayers[viewnum-1];
+		playernum = G_PartyMember(consoleplayer, viewnum - 1);
 	}
 
 	// Call ViewpointSwitch hooks here.
@@ -2112,7 +2120,7 @@ void G_ResetViews(void)
 	/* Demote splits */
 	if (playersviewable < splits)
 	{
-		splits = max(playersviewable, splitscreen + 1); // don't delete local players
+		splits = max(playersviewable, G_PartySize(consoleplayer)); // don't delete local players
 		r_splitscreen = splits - 1;
 		R_ExecuteSetViewSize();
 	}

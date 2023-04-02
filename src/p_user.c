@@ -61,6 +61,7 @@
 #include "k_battle.h"
 #include "k_rank.h"
 #include "k_director.h"
+#include "g_party.h"
 
 #ifdef HW3SOUND
 #include "hardware/hw3sound.h"
@@ -754,7 +755,7 @@ boolean P_EndingMusic(player_t *player)
 
 	if (r_splitscreen)
 	{
-		INT32 *localplayertable = (splitscreen_partied[consoleplayer] ? splitscreen_party[consoleplayer] : g_localplayers);
+		const UINT8 *localplayertable = G_PartyArray(consoleplayer);
 
 		if (!((players[localplayertable[0]].exiting || (players[localplayertable[0]].pflags & PF_NOCONTEST))
 			|| (players[localplayertable[1]].exiting || (players[localplayertable[1]].pflags & PF_NOCONTEST))
@@ -856,7 +857,7 @@ void P_RestoreMusic(player_t *player)
 		if (r_splitscreen)
 		{
 			INT32 bestlocaltimer = 1;
-			INT32 *localplayertable = (splitscreen_partied[consoleplayer] ? splitscreen_party[consoleplayer] : g_localplayers);
+			const UINT8 *localplayertable = G_PartyArray(consoleplayer);
 
 #define setbests(p) \
 	if (players[p].playerstate == PST_LIVE) \
@@ -1146,8 +1147,6 @@ boolean P_IsMachineLocalPlayer(player_t *player)
 //
 boolean P_IsLocalPlayer(player_t *player)
 {
-	UINT8 i;
-
 	if (player == NULL)
 	{
 		return false;
@@ -1157,18 +1156,8 @@ boolean P_IsLocalPlayer(player_t *player)
 	if (demo.playback)
 		return false;
 
-	// parties - treat everyone as if it's couch co-op
-	if (splitscreen_partied[consoleplayer])
-	{
-		for (i = 0; i < splitscreen_party_size[consoleplayer]; i++)
-		{
-			if (splitscreen_party[consoleplayer][i] == (player-players))
-				return true;
-		}
-		return false;
-	}
-
-	return P_IsMachineLocalPlayer(player);
+	// handles both online parties and local players (no need to call P_IsMachineLocalPlayer here)
+	return G_IsPartyLocal(player-players);
 }
 
 //
@@ -3640,7 +3629,7 @@ boolean P_SpectatorJoinGame(player_t *player)
 	// Reset away view (some code referenced from Got_Teamchange)
 	{
 		UINT8 i = 0;
-		INT32 *localplayertable = (splitscreen_partied[consoleplayer] ? splitscreen_party[consoleplayer] : g_localplayers);
+		const UINT8 *localplayertable = G_PartyArray(consoleplayer);
 
 		for (i = 0; i <= r_splitscreen; i++)
 		{

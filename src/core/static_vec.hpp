@@ -22,6 +22,8 @@ class StaticVec
 	size_t size_ = 0;
 
 public:
+	using value_type = T;
+
 	constexpr StaticVec() {}
 
 	StaticVec(const StaticVec& rhs)
@@ -101,7 +103,7 @@ public:
 
 	void push_back(const T& value) { arr_[size_++] = value; }
 
-	void pop_back() { arr_[size_--] = T(); }
+	void pop_back() { arr_[--size_] = T(); }
 
 	void resize(size_t size, T value = T())
 	{

@@ -39,6 +39,7 @@
 #include "k_roulette.h"
 #include "k_bot.h"
 #include "k_rank.h"
+#include "g_party.h"
 
 //{ 	Patch Definitions
 static patch_t *kp_nodraw;
@@ -4779,7 +4780,7 @@ static void K_DrawDirectorButton(INT32 idx, const char *label, patch_t *kp[2], I
 
 static void K_drawDirectorHUD(void)
 {
-	const INT32 p = (splitscreen_partied[consoleplayer] ? splitscreen_party[consoleplayer] : g_localplayers)[R_GetViewNumber()];
+	const INT32 p = G_PartyMember(consoleplayer, R_GetViewNumber());
 	const char *itemtxt = "Join";
 	UINT8 offs = 0;
 
@@ -5192,7 +5193,7 @@ void K_drawKartHUD(void)
 		K_drawMiniPing();
 	}
 
-	if (displayplayers[viewnum] != g_localplayers[viewnum] && !demo.playback)
+	if (G_IsPartyLocal(displayplayers[viewnum]) == false && !demo.playback)
 	{
 		K_drawDirectorHUD();
 	}
