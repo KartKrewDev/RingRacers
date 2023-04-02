@@ -2242,9 +2242,21 @@ void M_DrawCupSelect(void)
 						else
 						{
 							UINT16 col = SKINCOLOR_CHAOSEMERALD1 + (templevelsearch.cup->emeraldnum-1) % 7;
+							patch_t *em;
+
 							colormap = R_GetTranslationColormap(TC_DEFAULT, col, GTC_MENUCACHE);
 
-							V_DrawFixedPatch((x + 26 - rankx)*FRACUNIT, (y + icony + 13)*FRACUNIT, FRACUNIT, 0, W_CachePatchName("K_EMERC", PU_CACHE), colormap);
+							if (templevelsearch.cup->emeraldnum > 7)
+							{
+								em = W_CachePatchName("K_SUPER1", PU_CACHE);
+								rankx += 2;
+							}
+							else
+							{
+								em = W_CachePatchName("K_EMERC", PU_CACHE);
+							}
+
+							V_DrawFixedPatch((x + 26 - rankx)*FRACUNIT, (y + icony + 13)*FRACUNIT, FRACUNIT, 0, em, colormap);
 						}
 					}
 				}

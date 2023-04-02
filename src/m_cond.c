@@ -1268,7 +1268,10 @@ static const char *M_GetConditionString(condition_t *cn)
 		case UCRP_ISCHARACTER:
 			if (cn->requirement < 0 || !skins[cn->requirement].realname[0])
 				return va("INVALID CHAR CONDITION \"%d:%d\"", cn->type, cn->requirement);
-			return va("as %s", skins[cn->requirement].realname);
+			work = (R_SkinUsable(-1, cn->requirement, false))
+				? skins[cn->requirement].realname
+				: "???";
+			return va("as %s", work);
 		case UCRP_ISENGINECLASS:
 			return va("with engine class %c", 'A' + cn->requirement);
 		case UCRP_ISDIFFICULTY:
@@ -1374,7 +1377,7 @@ static const char *M_GetConditionString(condition_t *cn)
 				G_TicsToCentiseconds(cn->requirement));
 
 		case UCRP_TRIGGER:
-			return cn->stringvar;
+			return "do something special";
 
 		case UCRP_FALLOFF:
 			return (cn->requirement == 1) ? "fall off the course" : "without falling off";
