@@ -456,11 +456,6 @@ void G_MapEventsToControls(event_t *ev)
 		case ev_keydown:
 			if (ev->data1 < NUMINPUTS)
 			{
-				if (ev->data2) // OS repeat? We handle that ourselves
-				{
-					break;
-				}
-
 				DeviceGameKeyDownArray[ev->data1] = JOYAXISRANGE;
 
 				if (AutomaticControllerReassignmentIsAllowed(ev->device))

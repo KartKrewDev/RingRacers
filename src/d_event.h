@@ -38,7 +38,7 @@ struct event_t
 {
 	evtype_t type;
 	INT32 data1; // keys / mouse/joystick buttons
-	INT32 data2; // mouse/joystick x move; key repeat
+	INT32 data2; // mouse/joystick x move
 	INT32 data3; // mouse/joystick y move
 	INT32 device; // which device ID it belongs to (controller ID)
 };
