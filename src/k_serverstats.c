@@ -46,7 +46,8 @@ void SV_LoadStats(void)
 	}
 
 	save.p += headerlen;
-
+	UINT8 version = READUINT8(save.p);
+	
 	numtracked = READUINT32(save.p);
 	if (numtracked > MAXTRACKEDSERVERPLAYERS)
 		numtracked = MAXTRACKEDSERVERPLAYERS;
@@ -73,7 +74,8 @@ void SV_SaveStats(void)
 	}
 	*/
 
-	if (P_SaveBufferAlloc(&save, headerlen + sizeof(UINT32) + (numtracked * sizeof(serverplayer_t))) == false)
+	// header + version + numtracked + payload
+	if (P_SaveBufferAlloc(&save, headerlen + sizeof(UINT32) + sizeof(UINT8) + (numtracked * sizeof(serverplayer_t))) == false)
 	{
 		I_Error("No more free memory for saving server stats\n");
 		return;
@@ -81,6 +83,8 @@ void SV_SaveStats(void)
 
 	// Add header.
 	WRITESTRINGN(save.p, SERVERSTATSHEADER, headerlen);
+
+	WRITEUINT8(save.p, SERVERSTATSVER);
 
 	WRITEUINT32(save.p, numtracked);
 

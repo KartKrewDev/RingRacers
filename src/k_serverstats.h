@@ -27,6 +27,7 @@ extern "C" {
 #define SERVERSTATSFILE "srvstats.dat"
 #define MAXTRACKEDSERVERPLAYERS 9999
 #define SERVERSTATSHEADER "Doctor Robotnik's Ring Racers Server Stats"
+#define SERVERSTATSVER 1
 
 struct serverplayer_t
 {
