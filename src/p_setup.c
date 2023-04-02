@@ -1286,6 +1286,7 @@ static void P_LoadThings(UINT8 *data)
 		memset(mt->stringargs, 0x00, NUMMAPTHINGSTRINGARGS*sizeof(*mt->stringargs));
 		mt->special = 0;
 		mt->pitch = mt->roll = 0;
+		mt->layer = 0;
 
 		mt->type &= 4095;
 
@@ -1793,6 +1794,8 @@ static void ParseTextmapThingParameter(UINT32 i, const char *param, const char *
 
 	else if (fastcmp(param, "special"))
 		mapthings[i].special = atol(val);
+	else if (fastcmp(param, "foflayer"))
+		mapthings[i].layer = atol(val);
 	else if (fastncmp(param, "stringarg", 9) && strlen(param) > 9)
 	{
 		size_t argnum = atol(param + 9);
@@ -2766,6 +2769,7 @@ static void P_LoadTextmap(void)
 		memset(mt->args, 0, NUMMAPTHINGARGS*sizeof(*mt->args));
 		memset(mt->stringargs, 0x00, NUMMAPTHINGSTRINGARGS*sizeof(*mt->stringargs));
 		mt->special = 0;
+		mt->layer = 0;
 		mt->mobj = NULL;
 
 		TextmapParse(mapthingsPos[i], i, ParseTextmapThingParameter);

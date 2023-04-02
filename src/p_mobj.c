@@ -12095,22 +12095,6 @@ void P_MovePlayerToStarpost(INT32 playernum)
 	P_AfterPlayerSpawn(playernum);
 }
 
-fixed_t P_GetMobjSpawnHeight(const mobjtype_t mobjtype, const fixed_t x, const fixed_t y, const fixed_t dz, const fixed_t offset, const boolean flip, const fixed_t scale)
-{
-	const fixed_t finalScale = FixedMul(scale, mapobjectscale);
-	const subsector_t *ss = R_PointInSubsector(x, y);
-
-	// Axis objects snap to the floor.
-	if (mobjtype == MT_AXIS || mobjtype == MT_AXISTRANSFER || mobjtype == MT_AXISTRANSFERLINE)
-		return ONFLOORZ;
-
-	// Establish height.
-	if (flip)
-		return P_GetSectorCeilingZAt(ss->sector, x, y) - dz - FixedMul(finalScale, offset + mobjinfo[mobjtype].height);
-	else
-		return P_GetSectorFloorZAt(ss->sector, x, y) + dz + FixedMul(finalScale, offset);
-}
-
 fixed_t P_GetMapThingSpawnHeight(const mobjtype_t mobjtype, const mapthing_t* mthing, const fixed_t x, const fixed_t y)
 {
 	fixed_t dz = mthing->z << FRACBITS; // Base offset from the floor.
@@ -12142,7 +12126,7 @@ fixed_t P_GetMapThingSpawnHeight(const mobjtype_t mobjtype, const mapthing_t* mt
 		break;
 	}
 
-	if (!(dz + offset)) // Snap to the surfaces when there's no offset set.
+	if (!(dz + offset) && mthing->layer == 0) // Snap to the surfaces when there's no offset set.
 	{
 		if (flip)
 			return ONCEILINGZ;
@@ -12150,7 +12134,7 @@ fixed_t P_GetMapThingSpawnHeight(const mobjtype_t mobjtype, const mapthing_t* mt
 			return ONFLOORZ;
 	}
 
-	return P_GetMobjSpawnHeight(mobjtype, x, y, dz, offset, flip, mthing->scale);
+	return P_GetMobjSpawnHeight(mobjtype, x, y, dz, offset, mthing->layer, flip, mthing->scale);
 }
 
 static boolean P_SpawnNonMobjMapThing(mapthing_t *mthing)
@@ -13509,7 +13493,7 @@ void P_SpawnHoop(mapthing_t *mthing)
 	TVector v, *res;
 	fixed_t x = mthing->x << FRACBITS;
 	fixed_t y = mthing->y << FRACBITS;
-	fixed_t z = P_GetMobjSpawnHeight(MT_HOOP, x, y, mthing->z << FRACBITS, 0, false, mthing->scale);
+	fixed_t z = P_GetMobjSpawnHeight(MT_HOOP, x, y, mthing->z << FRACBITS, 0, mthing->layer, false, mthing->scale);
 
 	hoopcenter = P_SpawnMobj(x, y, z, MT_HOOPCENTER);
 	hoopcenter->spawnpoint = mthing;
@@ -13631,7 +13615,7 @@ static void P_SpawnItemRow(mapthing_t *mthing, mobjtype_t *itemtypes, UINT8 numi
 			itemtypes[r] = P_GetMobjtypeSubstitute(&dummything, itemtypes[r]);
 		}
 	}
-	z = P_GetMobjSpawnHeight(itemtypes[0], x, y, z, 0, mthing->options & MTF_OBJECTFLIP, mthing->scale);
+	z = P_GetMobjSpawnHeight(itemtypes[0], x, y, z, 0, mthing->layer, mthing->options & MTF_OBJECTFLIP, mthing->scale);
 
 	if (isloopend)
 	{
@@ -13711,7 +13695,7 @@ static void P_SpawnItemCircle(mapthing_t *mthing, mobjtype_t *itemtypes, UINT8 n
 			itemtypes[i] = P_GetMobjtypeSubstitute(&dummything, itemtypes[i]);
 		}
 	}
-	z = P_GetMobjSpawnHeight(itemtypes[0], x, y, z, 0, false, mthing->scale);
+	z = P_GetMobjSpawnHeight(itemtypes[0], x, y, z, 0, mthing->layer, false, mthing->scale);
 
 	for (i = 0; i < numitems; i++)
 	{
