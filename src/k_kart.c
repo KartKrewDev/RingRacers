@@ -9735,6 +9735,12 @@ void K_KartEbrakeVisuals(player_t *p)
 
 			P_SetTarget(&p->mo->hprev, P_SpawnMobj(p->mo->x, p->mo->y, p->mo->z, MT_HOLDBUBBLE));
 			p->mo->hprev->renderflags |= (RF_DONTDRAW & ~K_GetPlayerDontDrawFlag(p));
+			if (encoremode)
+			{
+				// Don't render this text/digit mirrored.
+				p->mo->hprev->renderflags ^= RF_HORIZONTALFLIP;
+			}
+
 		}
 
 		// Update HOLD bubble.
