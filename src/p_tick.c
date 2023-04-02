@@ -764,6 +764,11 @@ void P_Ticker(boolean run)
 						low = 65536 / 2;
 						high = 65536 / 2;
 					}
+					else if (player->sneakertimer > (sneakertime-(TICRATE/2)))
+					{
+						low = 65536 / (3+player->numsneakers);
+						high = 65536 / (3+player->numsneakers);
+					}
 					else if (player->boostpower < FRACUNIT && P_IsObjectOnGround(player->mo))
 					{
 						low = 65536 / 32;
