@@ -34,6 +34,7 @@
 #include "k_menu.h" // M_PlayMenuJam
 #include "m_random.h" // P_RandomKey
 #include "i_time.h"
+#include "v_video.h" // V_ThinStringWidth
 
 #ifdef HW3SOUND
 // 3D Sound Interface
@@ -2079,6 +2080,7 @@ void S_ShowMusicCredit(void)
 	char credittext[128] = "";
 	char *work = NULL;
 	size_t len = 128, worklen;
+	INT32 widthused = BASEVIDWIDTH, workwidth;
 
 	if (!cv_songcredits.value || S_PlaysimMusicDisabled())
 		return;
@@ -2109,6 +2111,8 @@ void S_ShowMusicCredit(void)
 			}
 		}
 
+		widthused -= V_ThinStringWidth(credittext, V_ALLOWLOWERCASE|V_6WIDTHSPACE);
+
 #define MUSICCREDITAPPEND(field)\
 		if (field)\
 		{\
@@ -2116,8 +2120,13 @@ void S_ShowMusicCredit(void)
 			worklen = strlen(work);\
 			if (worklen <= len)\
 			{\
-				strncat(credittext, work, len);\
-				len -= worklen;\
+				workwidth = V_ThinStringWidth(work, V_ALLOWLOWERCASE|V_6WIDTHSPACE);\
+				if (widthused >= workwidth)\
+				{\
+					strncat(credittext, work, len);\
+					len -= worklen;\
+					widthused -= workwidth;\
+				}\
 			}\
 		}
 
