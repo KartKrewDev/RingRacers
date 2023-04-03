@@ -38,32 +38,6 @@ void Portal_InitList (void)
 	portal_base = portal_cap = NULL;
 }
 
-/** Store the clipping window for a portal in its given range.
- *
- * The window is copied from the current window at the time
- * the function is called, so it is useful for converting one-sided
- * lines into portals.
- */
-void Portal_ClipRange (portal_t* portal)
-{
-	INT32 start	= portal->start;
-	INT32 end	= portal->end;
-	INT16 *ceil		= portal->ceilingclip;
-	INT16 *floor	= portal->floorclip;
-	fixed_t *scale	= portal->frontscale;
-
-	INT32 i;
-	for (i = 0; i < end-start; i++)
-	{
-		*ceil = ceilingclip[start+i];
-		ceil++;
-		*floor = floorclip[start+i];
-		floor++;
-		*scale = frontscale[start+i];
-		scale++;
-	}
-}
-
 /** Apply the clipping window from a portal.
  */
 void Portal_ClipApply (const portal_t* portal)
@@ -186,8 +160,6 @@ void Portal_Add2Lines (const INT32 line1, const INT32 line2, const INT32 x1, con
 	portal->viewangle = viewangle + dangle;
 
 	portal->clipline = line2;
-
-	Portal_ClipRange(portal);
 
 	g_portal = portal; // this tells R_StoreWallRange that curline is a portal seg
 }
