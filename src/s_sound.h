@@ -210,8 +210,6 @@ extern struct cursongcredit
 	fixed_t old_x;
 } cursongcredit;
 
-#define SOUNDTEST_FADEOUTSECONDS 3
-
 extern struct soundtest
 {
 	boolean playing; 					// Music is playing?
@@ -239,6 +237,7 @@ void S_SoundTestPlay(void);
 void S_SoundTestStop(void);
 void S_SoundTestTogglePause(void);
 void S_TickSoundTest(void);
+#define SOUNDTEST_FADEOUTSECONDS 5
 
 boolean S_PlaysimMusicDisabled(void);
 
