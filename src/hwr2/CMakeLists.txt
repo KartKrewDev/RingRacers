@@ -1,4 +1,6 @@
 target_sources(SRB2SDL2 PRIVATE
+	pass_blit_postimg_screens.cpp
+	pass_blit_postimg_screens.hpp
 	pass_blit_rect.cpp
 	pass_blit_rect.hpp
 	pass_imgui.cpp

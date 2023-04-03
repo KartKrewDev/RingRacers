@@ -50,6 +50,23 @@ const ProgramRequirements srb2::rhi::kProgramRequirementsPostprocessWipe = {
 		   {UniformName::kWipeEncoreSwizzle, true}}}}},
 	ProgramSamplerRequirements {{{SamplerName::kSampler0, true}, {SamplerName::kSampler1, true}, {SamplerName::kSampler2, true}}}};
 
+const ProgramRequirements srb2::rhi::kProgramRequirementsPostimg = {
+	ProgramVertexInputRequirements {
+		{ProgramVertexInput {VertexAttributeName::kPosition, VertexAttributeFormat::kFloat3, true},
+		 ProgramVertexInput {VertexAttributeName::kTexCoord0, VertexAttributeFormat::kFloat2, true}}},
+	ProgramUniformRequirements {
+		{{
+		  {UniformName::kTime, true},
+		  {UniformName::kProjection, true},
+		  {UniformName::kModelView, true},
+		  {UniformName::kTexCoord0Transform, true},
+		  {UniformName::kTexCoord0Min, true},
+		  {UniformName::kTexCoord0Max, true},
+		  {UniformName::kPostimgWater, true},
+		  {UniformName::kPostimgHeat, true}}}},
+	ProgramSamplerRequirements {{{SamplerName::kSampler0, true}, {SamplerName::kSampler1, false}}}
+};
+
 const ProgramRequirements& rhi::program_requirements_for_program(PipelineProgram program) noexcept
 {
 	switch (program)
@@ -60,6 +77,8 @@ const ProgramRequirements& rhi::program_requirements_for_program(PipelineProgram
 		return kProgramRequirementsUnshadedPaletted;
 	case PipelineProgram::kPostprocessWipe:
 		return kProgramRequirementsPostprocessWipe;
+	case PipelineProgram::kPostimg:
+		return kProgramRequirementsPostimg;
 	default:
 		std::terminate();
 	}

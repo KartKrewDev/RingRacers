@@ -348,8 +348,16 @@ constexpr const char* map_uniform_attribute_symbol_name(rhi::UniformName name)
 		return "u_projection";
 	case rhi::UniformName::kTexCoord0Transform:
 		return "u_texcoord0_transform";
+	case rhi::UniformName::kTexCoord0Min:
+		return "u_texcoord0_min";
+	case rhi::UniformName::kTexCoord0Max:
+		return "u_texcoord0_max";
 	case rhi::UniformName::kTexCoord1Transform:
 		return "u_texcoord1_transform";
+	case rhi::UniformName::kTexCoord1Min:
+		return "u_texcoord1_min";
+	case rhi::UniformName::kTexCoord1Max:
+		return "u_texcoord1_max";
 	case rhi::UniformName::kSampler0IsIndexedAlpha:
 		return "u_sampler0_is_indexed_alpha";
 	case rhi::UniformName::kSampler1IsIndexedAlpha:
@@ -370,6 +378,10 @@ constexpr const char* map_uniform_attribute_symbol_name(rhi::UniformName name)
 		return "u_wipe_colorize_mode";
 	case rhi::UniformName::kWipeEncoreSwizzle:
 		return "u_wipe_encore_swizzle";
+	case rhi::UniformName::kPostimgWater:
+		return "u_postimg_water";
+	case rhi::UniformName::kPostimgHeat:
+		return "u_postimg_heat";
 	default:
 		return nullptr;
 	}
@@ -387,8 +399,16 @@ constexpr const char* map_uniform_enable_define(rhi::UniformName name)
 		return "ENABLE_U_MODELVIEW";
 	case rhi::UniformName::kTexCoord0Transform:
 		return "ENABLE_U_TEXCOORD0_TRANSFORM";
+	case rhi::UniformName::kTexCoord0Min:
+		return "ENABLE_U_TEXCOORD0_MIN";
+	case rhi::UniformName::kTexCoord0Max:
+		return "ENABLE_U_TEXCOORD0_MAX";
 	case rhi::UniformName::kTexCoord1Transform:
 		return "ENABLE_U_TEXCOORD1_TRANSFORM";
+	case rhi::UniformName::kTexCoord1Min:
+		return "ENABLE_U_TEXCOORD1_MIN";
+	case rhi::UniformName::kTexCoord1Max:
+		return "ENABLE_U_TEXCOORD1_MAX";
 	case rhi::UniformName::kSampler0IsIndexedAlpha:
 		return "ENABLE_U_SAMPLER0_IS_INDEXED_ALPHA";
 	case rhi::UniformName::kSampler1IsIndexedAlpha:
@@ -409,6 +429,10 @@ constexpr const char* map_uniform_enable_define(rhi::UniformName name)
 		return "ENABLE_U_WIPE_COLORIZE_MODE";
 	case rhi::UniformName::kWipeEncoreSwizzle:
 		return "ENABLE_U_WIPE_ENCORE_SWIZZLE";
+	case rhi::UniformName::kPostimgWater:
+		return "ENABLE_U_POSTIMG_WATER";
+	case rhi::UniformName::kPostimgHeat:
+		return "ENABLE_U_POSTIMG_HEAT";
 	default:
 		return nullptr;
 	}

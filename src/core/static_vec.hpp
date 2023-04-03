@@ -130,6 +130,12 @@ public:
 		}
 	}
 
+	void clear()
+	{
+		arr_ = {{}};
+		size_ = 0;
+	}
+
 	constexpr T* begin() noexcept { return &arr_[0]; }
 
 	constexpr const T* begin() const noexcept { return cbegin(); }

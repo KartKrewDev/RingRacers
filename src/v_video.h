@@ -409,8 +409,6 @@ void V_DrawRightAlignedLSTitleHighString(INT32 x, INT32 y, INT32 option, const c
 void V_DrawCenteredLSTitleLowString(INT32 x, INT32 y, INT32 option, const char *string);
 void V_DrawRightAlignedLSTitleLowString(INT32 x, INT32 y, INT32 option, const char *string);
 
-void V_DoPostProcessor(INT32 view, postimg_t type, INT32 param);
-
 void V_DrawPatchFill(patch_t *pat);
 
 void VID_BlitLinearScreen(const UINT8 *srcptr, UINT8 *destptr, INT32 width, INT32 height, size_t srcrowbytes,

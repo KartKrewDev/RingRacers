@@ -42,6 +42,8 @@ static constexpr const char* pipeline_lump_slug(rhi::PipelineProgram program)
 		return "unshadedpaletted";
 	case rhi::PipelineProgram::kPostprocessWipe:
 		return "postprocesswipe";
+	case rhi::PipelineProgram::kPostimg:
+		return "postimg";
 	default:
 		return "";
 	}

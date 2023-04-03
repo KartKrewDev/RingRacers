@@ -603,9 +603,6 @@ static void D_Display(void)
 					for (i = 0; i <= r_splitscreen; i++)
 					{
 						R_ApplyViewMorph(i);
-
-						if (postimgtype[i])
-							V_DoPostProcessor(i, postimgtype[i], postimgparam[i]);
 					}
 				}
 

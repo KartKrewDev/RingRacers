@@ -171,7 +171,8 @@ enum class PipelineProgram
 {
 	kUnshaded,
 	kUnshadedPaletted,
-	kPostprocessWipe
+	kPostprocessWipe,
+	kPostimg
 };
 
 enum class BufferType
@@ -201,7 +202,11 @@ enum class UniformName
 	kModelView,
 	kProjection,
 	kTexCoord0Transform,
+	kTexCoord0Min,
+	kTexCoord0Max,
 	kTexCoord1Transform,
+	kTexCoord1Min,
+	kTexCoord1Max,
 	kSampler0IsIndexedAlpha,
 	kSampler1IsIndexedAlpha,
 	kSampler2IsIndexedAlpha,
@@ -211,7 +216,9 @@ enum class UniformName
 	kSampler2Size,
 	kSampler3Size,
 	kWipeColorizeMode,
-	kWipeEncoreSwizzle
+	kWipeEncoreSwizzle,
+	kPostimgWater,
+	kPostimgHeat
 };
 
 enum class SamplerName
@@ -277,6 +284,7 @@ struct ProgramRequirements
 extern const ProgramRequirements kProgramRequirementsUnshaded;
 extern const ProgramRequirements kProgramRequirementsUnshadedPaletted;
 extern const ProgramRequirements kProgramRequirementsPostprocessWipe;
+extern const ProgramRequirements kProgramRequirementsPostimg;
 
 const ProgramRequirements& program_requirements_for_program(PipelineProgram program) noexcept;
 
@@ -311,8 +319,16 @@ inline constexpr const UniformFormat uniform_format(UniformName name) noexcept
 		return UniformFormat::kMat4;
 	case UniformName::kTexCoord0Transform:
 		return UniformFormat::kMat3;
+	case UniformName::kTexCoord0Min:
+		return UniformFormat::kFloat2;
+	case UniformName::kTexCoord0Max:
+		return UniformFormat::kFloat2;
 	case UniformName::kTexCoord1Transform:
 		return UniformFormat::kMat3;
+	case UniformName::kTexCoord1Min:
+		return UniformFormat::kFloat2;
+	case UniformName::kTexCoord1Max:
+		return UniformFormat::kFloat2;
 	case UniformName::kSampler0IsIndexedAlpha:
 		return UniformFormat::kInt;
 	case UniformName::kSampler1IsIndexedAlpha:
@@ -332,6 +348,10 @@ inline constexpr const UniformFormat uniform_format(UniformName name) noexcept
 	case UniformName::kWipeColorizeMode:
 		return UniformFormat::kInt;
 	case UniformName::kWipeEncoreSwizzle:
+		return UniformFormat::kInt;
+	case UniformName::kPostimgWater:
+		return UniformFormat::kInt;
+	case UniformName::kPostimgHeat:
 		return UniformFormat::kInt;
 	default:
 		return UniformFormat::kFloat;
@@ -365,7 +385,7 @@ struct UniformInputDesc
 
 struct SamplerInputDesc
 {
-	std::vector<SamplerName> enabled_samplers;
+	srb2::StaticVec<SamplerName, 4> enabled_samplers;
 };
 
 struct ColorMask
