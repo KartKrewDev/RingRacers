@@ -353,6 +353,11 @@ static void weaponPrefChange2(void);
 static void weaponPrefChange3(void);
 static void weaponPrefChange4(void);
 
+static void rumble_off_handle(void);
+static void rumble_off_handle2(void);
+static void rumble_off_handle3(void);
+static void rumble_off_handle4(void);
+
 // don't mind me putting these here, I was lazy to figure out where else I could put those without blowing up the compiler.
 
 // chat timer thingy
@@ -416,8 +421,6 @@ consvar_t cv_pauseifunfocused = CVAR_INIT ("pauseifunfocused", "Yes", CV_SAVE, C
 // Display song credits
 consvar_t cv_songcredits = CVAR_INIT ("songcredits", "On", CV_SAVE, CV_OnOff, NULL);
 
-consvar_t cv_invertmouse = CVAR_INIT ("invertmouse", "Off", CV_SAVE, CV_OnOff, NULL);
-
 consvar_t cv_invincmusicfade = CVAR_INIT ("invincmusicfade", "300", CV_SAVE, CV_Unsigned, NULL);
 consvar_t cv_growmusicfade = CVAR_INIT ("growmusicfade", "500", CV_SAVE, CV_Unsigned, NULL);
 
@@ -445,6 +448,13 @@ consvar_t cv_deadzone[MAXSPLITSCREENPLAYERS] = {
 	CVAR_INIT ("deadzone2", "0.25", CV_FLOAT|CV_SAVE, zerotoone_cons_t, NULL),
 	CVAR_INIT ("deadzone3", "0.25", CV_FLOAT|CV_SAVE, zerotoone_cons_t, NULL),
 	CVAR_INIT ("deadzone4", "0.25", CV_FLOAT|CV_SAVE, zerotoone_cons_t, NULL)
+};
+
+consvar_t cv_rumble[MAXSPLITSCREENPLAYERS] = {
+	CVAR_INIT ("rumble", "On", CV_SAVE|CV_CALL, CV_OnOff, rumble_off_handle),
+	CVAR_INIT ("rumble2", "On", CV_SAVE|CV_CALL, CV_OnOff, rumble_off_handle2),
+	CVAR_INIT ("rumble3", "On", CV_SAVE|CV_CALL, CV_OnOff, rumble_off_handle3),
+	CVAR_INIT ("rumble4", "On", CV_SAVE|CV_CALL, CV_OnOff, rumble_off_handle4)
 };
 
 // now automatically allocated in D_RegisterClientCommands
@@ -1476,6 +1486,30 @@ static void weaponPrefChange4(void)
 		WeaponPref_Send(3);
 }
 
+static void rumble_off_handle(void)
+{
+	if (cv_rumble[0].value == 0)
+		G_ResetPlayerDeviceRumble(0);
+}
+
+static void rumble_off_handle2(void)
+{
+	if (cv_rumble[1].value == 0)
+		G_ResetPlayerDeviceRumble(1);
+}
+
+static void rumble_off_handle3(void)
+{
+	if (cv_rumble[2].value == 0)
+		G_ResetPlayerDeviceRumble(2);
+}
+
+static void rumble_off_handle4(void)
+{
+	if (cv_rumble[3].value == 0)
+		G_ResetPlayerDeviceRumble(3);
+}
+
 //
 // G_DoLoadLevelEx
 //
@@ -1571,6 +1605,8 @@ void G_DoLoadLevelEx(boolean resetplayer, gamestate_t newstate)
 	{
 		Automate_Run(AEV_ROUNDSTART);
 	}
+
+	G_ResetAllDeviceRumbles();
 }
 
 void G_DoLoadLevel(boolean resetplayer)
@@ -3197,6 +3233,8 @@ void G_AddPlayer(INT32 playernum)
 
 void G_ExitLevel(void)
 {
+	G_ResetAllDeviceRumbles();
+
 	if (gamestate == GS_LEVEL)
 	{
 		UINT8 i;

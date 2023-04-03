@@ -1024,6 +1024,7 @@ void D_RegisterClientCommands(void)
 		CV_RegisterVar(&cv_kickstartaccel[i]);
 		CV_RegisterVar(&cv_shrinkme[i]);
 		CV_RegisterVar(&cv_deadzone[i]);
+		CV_RegisterVar(&cv_rumble[i]);
 	}
 
 	// filesrch.c
@@ -1035,10 +1036,6 @@ void D_RegisterClientCommands(void)
 	CV_RegisterVar(&cv_controlperkey);
 
 	CV_RegisterVar(&cv_usemouse);
-	CV_RegisterVar(&cv_invertmouse);
-	CV_RegisterVar(&cv_mousesens);
-	CV_RegisterVar(&cv_mouseysens);
-	//CV_RegisterVar(&cv_mousemove);
 
 	for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
 	{
@@ -3315,6 +3312,7 @@ static void Got_Pause(UINT8 **cp, INT32 playernum)
 	}
 
 	I_UpdateMouseGrab();
+	G_ResetAllDeviceRumbles();
 }
 
 // Command for stuck characters in netgames, griefing, etc.

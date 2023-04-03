@@ -83,6 +83,9 @@ menuitem_t OPTIONS_ProfileControls[] = {
 	{IT_HEADER, "TOGGLES", "For per-player commands",
 		NULL, {NULL}, 0, 0},
 
+	{IT_CONTROL | IT_CVAR, "RUMBLE", "For gamepad users - should your device rumble?",
+		NULL, {.cvar = &cv_dummyprofilerumble}, 0, 0},
+
 	{IT_CONTROL | IT_CVAR, "KICKSTART ACCEL", "Hold A to auto-accel. Tap it to cancel.",
 		NULL, {.cvar = &cv_dummyprofilekickstart}, 0, 0},
 
@@ -182,6 +185,7 @@ static void M_ProfileControlSaveResponse(INT32 choice)
 		SINT8 belongsto = PR_ProfileUsedBy(optionsmenu.profile);
 		// Save the profile
 		optionsmenu.profile->kickstartaccel = cv_dummyprofilekickstart.value;
+		optionsmenu.profile->rumble = cv_dummyprofilerumble.value;
 		memcpy(&optionsmenu.profile->controls, optionsmenu.tempcontrols, sizeof(gamecontroldefault));
 
 		// If this profile is in-use by anyone, apply the changes immediately upon exiting.
@@ -190,6 +194,7 @@ static void M_ProfileControlSaveResponse(INT32 choice)
 		{
 			memcpy(&gamecontrol[belongsto], optionsmenu.tempcontrols, sizeof(gamecontroldefault));
 			CV_SetValue(&cv_kickstartaccel[belongsto], cv_dummyprofilekickstart.value);
+			CV_SetValue(&cv_rumble[belongsto], cv_dummyprofilerumble.value);
 		}
 
 		M_GoBack(0);
@@ -206,6 +211,7 @@ void M_ProfileControlsConfirm(INT32 choice)
 	M_ProfileControlSaveResponse(MA_YES);
 
 	optionsmenu.profile->kickstartaccel = cv_dummyprofilekickstart.value;		// Make sure to save kickstart accel.
+	optionsmenu.profile->rumble = cv_dummyprofilerumble.value;		// And rumble too!
 
 	// Reapply player 1's real profile.
 	if (cv_currprofile.value > -1)

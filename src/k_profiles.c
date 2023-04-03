@@ -88,6 +88,7 @@ profile_t* PR_MakeProfileFromPlayer(const char *prname, const char *pname, const
 
 	// Player bound cvars:
 	new->kickstartaccel = cv_kickstartaccel[pnum].value;
+	new->rumble = cv_rumble[pnum].value;
 
 	return new;
 }
@@ -277,6 +278,7 @@ void PR_SaveProfiles(void)
 
 		// Consvars.
 		WRITEUINT8(save.p, profilesList[i]->kickstartaccel);
+		WRITEUINT8(save.p, profilesList[i]->rumble);
 
 		// Controls.
 		for (j = 0; j < num_gamecontrols; j++)
@@ -409,6 +411,14 @@ void PR_LoadProfiles(void)
 
 		// Consvars.
 		profilesList[i]->kickstartaccel = (boolean)READUINT8(save.p);
+		if (version < 4)
+		{
+			profilesList[i]->rumble = true;
+		}
+		else
+		{
+			profilesList[i]->rumble = (boolean)READUINT8(save.p);
+		}
 
 		// Controls.
 		for (j = 0; j < num_gamecontrols; j++)

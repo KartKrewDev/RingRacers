@@ -62,6 +62,8 @@ void I_SetGamepadPlayerIndex(INT32 device_id, INT32 index);
 void I_SetGamepadIndicatorColor(INT32 device_id, UINT8 red, UINT8 green, UINT8 blue);
 void I_GetGamepadGuid(INT32 device_id, char *out, int out_len);
 void I_GetGamepadName(INT32 device_id, char *out, int out_len);
+void I_GamepadRumble(INT32 device_id, UINT16 low_strength, UINT16 high_strength);
+void I_GamepadRumbleTriggers(INT32 device_id, UINT16 left_strength, UINT16 right_strength);
 
 #ifdef __cplusplus
 } // extern "C"

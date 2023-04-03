@@ -100,8 +100,6 @@ typedef enum
 } gamecontrols_e;
 
 // mouse values are used once
-extern consvar_t cv_mousesens, cv_mouseysens;
-extern consvar_t cv_mousesens2, cv_mouseysens2;
 extern consvar_t cv_controlperkey;
 
 // current state of the keys: JOYAXISRANGE or 0 when boolean.
@@ -158,6 +156,13 @@ INT32 G_GetDeviceForPlayer(INT32 player);
 void G_SetDeviceForPlayer(INT32 player, INT32 device);
 
 void G_SetPlayerGamepadIndicatorToPlayerColor(INT32 player);
+
+extern consvar_t cv_rumble[MAXSPLITSCREENPLAYERS];
+
+void G_PlayerDeviceRumble(INT32 player, UINT16 low_strength, UINT16 high_strength);
+void G_PlayerDeviceRumbleTriggers(INT32 player, UINT16 left_strength, UINT16 right_strength);
+void G_ResetPlayerDeviceRumble(INT32 player);
+void G_ResetAllDeviceRumbles(void);
 
 /// Get the gamekeydown array (NUMINPUTS values) for the given device, or NULL if the device id is invalid.
 INT32* G_GetDeviceGameKeyDownArray(INT32 device);

@@ -70,18 +70,9 @@ extern consvar_t cv_songcredits;
 
 extern consvar_t cv_pauseifunfocused;
 
-extern consvar_t cv_invertmouse;
-
 extern consvar_t cv_kickstartaccel[MAXSPLITSCREENPLAYERS];
 extern consvar_t cv_shrinkme[MAXSPLITSCREENPLAYERS];
 
-extern consvar_t cv_turnaxis[MAXSPLITSCREENPLAYERS];
-extern consvar_t cv_moveaxis[MAXSPLITSCREENPLAYERS];
-extern consvar_t cv_brakeaxis[MAXSPLITSCREENPLAYERS];
-extern consvar_t cv_aimaxis[MAXSPLITSCREENPLAYERS];
-extern consvar_t cv_lookaxis[MAXSPLITSCREENPLAYERS];
-extern consvar_t cv_fireaxis[MAXSPLITSCREENPLAYERS];
-extern consvar_t cv_driftaxis[MAXSPLITSCREENPLAYERS];
 extern consvar_t cv_deadzone[MAXSPLITSCREENPLAYERS];
 
 extern consvar_t cv_ghost_besttime, cv_ghost_bestlap, cv_ghost_last, cv_ghost_guest, cv_ghost_staff;
