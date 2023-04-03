@@ -5997,15 +5997,15 @@ void M_DrawSoundTest(void)
 
 		titletext = soundtest.current->title;
 
-		V_DrawThinString(x, y, V_ALLOWLOWERCASE|V_6WIDTHSPACE, titletext);
+		V_DrawThinString(x+1, y, V_ALLOWLOWERCASE|V_6WIDTHSPACE, titletext);
 		if (soundtest.current->numtracks > 1)
-			V_DrawThinString(x, (y += 10), V_ALLOWLOWERCASE|V_6WIDTHSPACE, va("Track %c", 'A'+soundtest.currenttrack));
+			V_DrawThinString(x+1, (y += 10), V_ALLOWLOWERCASE|V_6WIDTHSPACE, va("Track %c", 'A'+soundtest.currenttrack));
 		if (soundtest.current->author)
-			V_DrawThinString(x, (y += 10), V_ALLOWLOWERCASE|V_6WIDTHSPACE, soundtest.current->author);
+			V_DrawThinString(x+1, (y += 10), V_ALLOWLOWERCASE|V_6WIDTHSPACE, soundtest.current->author);
 		if (soundtest.current->source)
-			V_DrawThinString(x, (y += 10), V_ALLOWLOWERCASE|V_6WIDTHSPACE, soundtest.current->source);
+			V_DrawThinString(x+1, (y += 10), V_ALLOWLOWERCASE|V_6WIDTHSPACE, soundtest.current->source);
 		if (soundtest.current->composers)
-			V_DrawThinString(x, (y += 10), V_ALLOWLOWERCASE|V_6WIDTHSPACE, soundtest.current->composers);
+			V_DrawThinString(x+1, (y += 10), V_ALLOWLOWERCASE|V_6WIDTHSPACE, soundtest.current->composers);
 	}
 	else
 	{
@@ -6013,9 +6013,9 @@ void M_DrawSoundTest(void)
 
 		titletext = "Sound Test";
 
-		V_DrawThinString(x, y, V_ALLOWLOWERCASE|V_6WIDTHSPACE, "Track ");
+		V_DrawThinString(x+1, y, V_ALLOWLOWERCASE|V_6WIDTHSPACE, "Track ");
 		V_DrawThinString(
-			x + V_ThinStringWidth("Track ", V_ALLOWLOWERCASE|V_6WIDTHSPACE),
+			x+1 + V_ThinStringWidth("Track ", V_ALLOWLOWERCASE|V_6WIDTHSPACE),
 			y,
 			V_6WIDTHSPACE,
 			va("%04X - %s", cv_soundtest.value, sfxstr)
