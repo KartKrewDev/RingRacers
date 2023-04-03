@@ -452,9 +452,9 @@ consvar_t cv_deadzone[MAXSPLITSCREENPLAYERS] = {
 
 consvar_t cv_rumble[MAXSPLITSCREENPLAYERS] = {
 	CVAR_INIT ("rumble", "On", CV_SAVE|CV_CALL, CV_OnOff, rumble_off_handle),
-	CVAR_INIT ("rumble", "On", CV_SAVE|CV_CALL, CV_OnOff, rumble_off_handle2),
-	CVAR_INIT ("rumble", "On", CV_SAVE|CV_CALL, CV_OnOff, rumble_off_handle3),
-	CVAR_INIT ("rumble", "On", CV_SAVE|CV_CALL, CV_OnOff, rumble_off_handle4)
+	CVAR_INIT ("rumble2", "On", CV_SAVE|CV_CALL, CV_OnOff, rumble_off_handle2),
+	CVAR_INIT ("rumble3", "On", CV_SAVE|CV_CALL, CV_OnOff, rumble_off_handle3),
+	CVAR_INIT ("rumble4", "On", CV_SAVE|CV_CALL, CV_OnOff, rumble_off_handle4)
 };
 
 // now automatically allocated in D_RegisterClientCommands
