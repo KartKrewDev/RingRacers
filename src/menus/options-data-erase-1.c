@@ -69,6 +69,10 @@ static void M_EraseDataResponse(INT32 ch)
 
 	M_UpdateUnlockablesAndExtraEmblems(false, true);
 
+	// Don't softlock the Stereo on if you won't be able to access it anymore!?
+	if (soundtest.playing && M_SecretUnlocked(SECRET_SOUNDTEST, true) == false)
+		S_SoundTestStop();
+
 	F_StartIntro();
 	M_ClearMenus(true);
 }
