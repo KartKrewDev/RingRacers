@@ -6184,7 +6184,7 @@ void M_DrawSoundTest(void)
 		{
 			if (i == itemOn)
 			{
-				if (menucmd[pid].dpad_ud < 0 || M_MenuConfirmHeld(pid))
+				if (menucmd[pid].dpad_ud < 0 || M_MenuConfirmPressed(pid))
 				{
 					y--;
 				}
