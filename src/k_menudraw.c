@@ -6046,7 +6046,7 @@ void M_DrawSoundTest(void)
 		UINT32 exittime = soundtest.sequencemaxtime;
 		if (soundtest.dosequencefadeout == true)
 		{
-			exittime += 3*TICRATE;
+			exittime += SOUNDTEST_FADEOUTSECONDS*TICRATE;
 		}
 
 		V_DrawRightAlignedString(x + 272-1, 18+32+10, 0,

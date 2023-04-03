@@ -1694,66 +1694,75 @@ void S_TickSoundTest(void)
 {
 	static UINT32 storetime = 0;
 	UINT32 lasttime = storetime;
-	boolean donext = false;
 
 	storetime = I_GetTime();
 
 	if (soundtest.playing == false || soundtest.current == NULL)
 	{
+		// Nothing worth discussing.
 		return;
 	}
 
 	if (I_SongPlaying() == false)
 	{
-		S_SoundTestStop();
-		return;
+		// We stopped for some reason. Accomodate this.
+		goto handlenextsong;
 	}
 
 	if (I_SongPaused() == false)
 	{
+		// Increment the funny little timer.
 		soundtest.currenttime += (storetime - lasttime);
 	}
 
-	if (soundtest.sequencefadeout > 0)
+	if (soundtest.sequencefadeout != 0)
 	{
-		if (soundtest.currenttime >= soundtest.sequencefadeout)
+		// Are we done fading out?
+		if (soundtest.currenttime > soundtest.sequencefadeout)
 		{
-			donext = true;
+			goto handlenextsong;
 		}
-	}
-	else if (soundtest.currenttime >= soundtest.sequencemaxtime)
-	{
-		if (soundtest.autosequence == false)
-		{
-			if (soundtest.current->basenoloop[soundtest.currenttrack] == true)
-			{
-				S_SoundTestStop();
-			}
 
-			return;
-		}
-		else if (soundtest.dosequencefadeout == false)
-		{
-			donext = true;
-		}
-		else
-		{
-			if (soundtest.sequencemaxtime > 0)
-			{
-				soundtest.privilegedrequest = true;
-				S_FadeMusic(0, 3000);
-				soundtest.privilegedrequest = false;
-			}
-
-			soundtest.sequencefadeout = soundtest.currenttime + 3*TICRATE;
-		}
-	}
-
-	if (donext == false)
-	{
 		return;
 	}
 
+	if (soundtest.autosequence == false)
+	{
+		// There's nothing else for us here.
+		return;
+	}
+
+	if (soundtest.currenttime >= soundtest.sequencemaxtime)
+	{
+		if (soundtest.dosequencefadeout == false)
+		{
+			// Handle the immediate progression.
+			goto handlenextsong;
+		}
+
+		if (soundtest.sequencemaxtime > 0)
+		{
+			// Handle the fade.
+			soundtest.privilegedrequest = true;
+			S_FadeMusic(0, SOUNDTEST_FADEOUTSECONDS*1000);
+			soundtest.privilegedrequest = false;
+		}
+
+		// Set the conclusion.
+		soundtest.sequencefadeout = soundtest.currenttime + SOUNDTEST_FADEOUTSECONDS*TICRATE;
+	}
+
+	return;
+
+handlenextsong:
+	// If the song's stopped while not in autosequence, stop visibly playing.
+	if (soundtest.autosequence == false)
+	{
+		S_SoundTestStop();
+		return;
+	}
+
+	// Okay, this is autosequence in action.
 	S_UpdateSoundTestDef(false, true, true);
 }
 

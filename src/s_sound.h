@@ -210,6 +210,8 @@ extern struct cursongcredit
 	fixed_t old_x;
 } cursongcredit;
 
+#define SOUNDTEST_FADEOUTSECONDS 3
+
 extern struct soundtest
 {
 	boolean playing; 					// Music is playing?
