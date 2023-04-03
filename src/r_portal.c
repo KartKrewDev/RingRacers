@@ -30,7 +30,7 @@ line_t *portalclipline;
 sector_t *portalcullsector;
 INT32 portalclipstart, portalclipend;
 
-boolean portalline; // is curline a portal seg?
+portal_t *g_portal; // is curline a portal seg?
 
 void Portal_InitList (void)
 {
@@ -189,7 +189,7 @@ void Portal_Add2Lines (const INT32 line1, const INT32 line2, const INT32 x1, con
 
 	Portal_ClipRange(portal);
 
-	portalline = true; // this tells R_StoreWallRange that curline is a portal seg
+	g_portal = portal; // this tells R_StoreWallRange that curline is a portal seg
 }
 
 /** Store the clipping window for a portal using a visplane.

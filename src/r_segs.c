@@ -2973,7 +2973,7 @@ void R_StoreWallRange(INT32 start, INT32 stop)
 	R_RenderSegLoop();
 	R_SetColumnFunc(BASEDRAWFUNC, false);
 
-	if (portalline) // if curline is a portal, set portalrender for drawseg
+	if (g_portal) // if curline is a portal, set portalrender for drawseg
 		ds_p->portalpass = portalrender+1;
 	else
 		ds_p->portalpass = 0;
