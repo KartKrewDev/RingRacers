@@ -1622,20 +1622,25 @@ void S_SoundTestPlay(void)
 
 	soundtest.currenttime = 0;
 	soundtest.sequencemaxtime = S_GetMusicLength();
+
+	// ensure default is always set
 	soundtest.sequencefadeout = 0;
+	soundtest.dosequencefadeout = false;
 
 	if (soundtest.sequencemaxtime)
 	{
 		// Does song have default loop?
 		if (soundtest.current->basenoloop[soundtest.currenttrack] == false)
 		{
+			if (soundtest.sequencemaxtime < 3*60*1000)
+			{
+				// I'd personally like songs in sequence to last between 3 and 6 minutes.
+				const UINT32 loopduration = (soundtest.sequencemaxtime - S_GetMusicLoopPoint());
+				soundtest.sequencemaxtime += loopduration;
+			}
+
+			// Only fade out if we're the last track for this song.
 			soundtest.dosequencefadeout = (soundtest.currenttrack == soundtest.current->numtracks-1);
-			soundtest.sequencemaxtime *= 2; // Two loops by default.
-			soundtest.sequencemaxtime -= S_GetMusicLoopPoint(); // Otherwise the intro is counted twice.
-		}
-		else
-		{
-			soundtest.dosequencefadeout = false;
 		}
 
 		// ms to TICRATE conversion
