@@ -71,7 +71,7 @@ add_executable(SRB2SDL2 MACOSX_BUNDLE WIN32
 	r_fps.c
 	r_main.c
 	r_plane.c
-	r_segs.c
+	r_segs.cpp
 	r_skins.c
 	r_sky.c
 	r_splats.c
