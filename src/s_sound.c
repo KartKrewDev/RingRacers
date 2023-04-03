@@ -1665,7 +1665,7 @@ void S_SoundTestStop(void)
 	soundtest.autosequence = false;
 
 	S_StopMusic();
-	cursongcredit.def = NULL;
+	S_StopMusicCredit();
 
 	soundtest.currenttime = 0;
 	soundtest.sequencemaxtime = 0;
@@ -2145,6 +2145,14 @@ void S_ShowMusicCredit(void)
 	cursongcredit.anim = 5*TICRATE;
 	cursongcredit.x = cursongcredit.old_x = 0;
 	cursongcredit.trans = NUMTRANSMAPS;
+}
+
+void S_StopMusicCredit(void)
+{
+	if (S_PlaysimMusicDisabled())
+		return;
+
+	cursongcredit.def = NULL;
 }
 
 /// ------------------------

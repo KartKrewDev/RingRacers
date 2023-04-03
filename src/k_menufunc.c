@@ -376,7 +376,7 @@ void M_PlayMenuJam(void)
 	if (challengesmenu.pending)
 	{
 		S_StopMusic();
-		cursongcredit.def = NULL;
+		S_StopMusicCredit();
 
 		loserclubpermitted = true;
 		return;
@@ -390,7 +390,7 @@ void M_PlayMenuJam(void)
 		if (refMenu->music[0] == '.' && refMenu->music[1] == '\0')
 		{
 			S_StopMusic();
-			cursongcredit.def = NULL;
+			S_StopMusicCredit();
 			return;
 		}
 		else if (!loserclub)

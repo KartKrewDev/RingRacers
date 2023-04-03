@@ -247,6 +247,7 @@ void S_LoadMusicDefs(UINT16 wadnum);
 void S_InitMusicDefs(void);
 musicdef_t *S_FindMusicDef(const char *name, UINT8 *i);
 void S_ShowMusicCredit(void);
+void S_StopMusicCredit(void);
 
 //
 // Music Seeking
