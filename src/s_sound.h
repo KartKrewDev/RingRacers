@@ -196,6 +196,7 @@ struct musicdef_t
 	char *composers;
 	int volume;
 	int debug_volume;
+	boolean important;
 	musicdef_t *next;
 	soundtestsequence_t sequence;
 };

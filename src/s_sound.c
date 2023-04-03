@@ -1481,7 +1481,8 @@ void S_PopulateSoundTestSequence(void)
 		S_InsertMapIntoSoundTestSequence(i, &tail);
 	}
 
-	// Finally, we insert all other musicdefstart at the head.
+	// Finally, we insert all important musicdefs at the  head,
+	// and all others at the tail.
 	// It's being added to the sequence in reverse order...
 	// but because musicdefstart is ALSO populated in reverse,
 	// the reverse of the reverse is the right way around!
@@ -1493,11 +1494,26 @@ void S_PopulateSoundTestSequence(void)
 			if (def->sequence.id == soundtest.sequence.id)
 				continue;
 
+			if (def->important == false)
+				continue;
+
 			def->sequence.id = soundtest.sequence.id;
 			def->sequence.map = NEXTMAP_INVALID;
 
 			def->sequence.next = soundtest.sequence.next;
 			soundtest.sequence.next = def;
+		}
+
+		for (def = musicdefstart; def; def = def->next)
+		{
+			if (def->sequence.id == soundtest.sequence.id)
+				continue;
+
+			def->sequence.id = soundtest.sequence.id;
+			def->sequence.map = NEXTMAP_INVALID;
+
+			def->sequence.next = *tail;
+			*tail = def;
 		}
 	}
 }
@@ -1960,6 +1976,10 @@ ReadMusicDefFields
 			else if (!stricmp(stoken, "volume"))
 			{
 				def->volume = atoi(textline);
+			}
+			else if (!stricmp(stoken, "important"))
+			{
+				def->important = (textline[0] == 'Y' || textline[0] == 'T' || textline[0] == '1');
 			}
 			else
 			{
