@@ -6141,12 +6141,31 @@ void M_DrawSoundTest(void)
 		else if (currentMenu->menuitems[i].mvar2 == stereospecial_vol) // Vol
 		{
 			consvar_t *voltoadjust = M_GetSoundTestVolumeCvar();
-			INT32 j, vol = 0;
+			INT32 j = 0, vol = 0;
 			const INT32 barheight = 22;
+			patch_t *knob = NULL;
+			INT32 knobflags = 0;
 
-			V_DrawFixedPatch((x+1) << FRACBITS, y << FRACBITS,
-				FRACUNIT, 0,
-				W_CachePatchName("STER_KNB", PU_CACHE),
+			if (i == itemOn)
+			{
+				if ((menucmd[pid].dpad_ud < 0 && (soundtest.menutick & 2)) || M_MenuConfirmPressed(pid))
+				{
+					knob = W_CachePatchName("STER_KNT", PU_CACHE);
+					knobflags = V_FLIP;
+					j = 24;
+				}
+				else if (menucmd[pid].dpad_ud > 0 && (soundtest.menutick & 2))
+				{
+					knob = W_CachePatchName("STER_KNT", PU_CACHE);
+				}
+			}
+
+			if (knob == NULL)
+				knob = W_CachePatchName("STER_KNB", PU_CACHE);
+
+			V_DrawFixedPatch((x+1+j) << FRACBITS, y << FRACBITS,
+				FRACUNIT, knobflags,
+				knob,
 				NULL
 			);
 
