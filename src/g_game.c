@@ -298,9 +298,9 @@ boolean prevencoremode;
 boolean franticitems; // Frantic items currently enabled?
 
 // Voting system
-INT16 votelevels[4][2]; // Levels that were rolled by the host
-SINT8 votes[MAXPLAYERS]; // Each player's vote
-SINT8 pickedvote; // What vote the host rolls
+INT16 g_voteLevels[4][2]; // Levels that were rolled by the host
+SINT8 g_votes[MAXPLAYERS]; // Each player's vote
+SINT8 g_pickedVote; // What vote the host rolls
 
 // Server-sided, synched variables
 tic_t wantedcalcdelay; // Time before it recalculates WANTED
@@ -3627,20 +3627,16 @@ boolean G_GametypeHasSpectators(void)
 }
 
 //
-// G_SometimesGetDifferentGametype
+// G_SometimesGetDifferentEncore
 //
 // Because gametypes are no longer on the vote screen, all this does is sometimes flip encore mode.
 // However, it remains a seperate function for long-term possibility.
 //
-INT16 G_SometimesGetDifferentGametype(void)
+INT16 G_SometimesGetDifferentEncore(void)
 {
 	boolean encorepossible = ((M_SecretUnlocked(SECRET_ENCORE, false) || encorescramble == 1)
 		&& (gametyperules & GTR_ENCORE));
 	UINT8 encoremodifier = 0;
-
-	// -- the below is only necessary if you want to use randmaps.mapbuffer here
-	//if (randmaps.lastnummapheaders != nummapheaders)
-		//G_ResetRandMapBuffer();
 
 	// FORCE to what was scrambled on intermission?
 	if (encorepossible && encorescramble != -1)
@@ -3648,11 +3644,11 @@ INT16 G_SometimesGetDifferentGametype(void)
 		// FORCE to what was scrambled on intermission
 		if ((encorescramble != 0) != (cv_kartencore.value == 1))
 		{
-			encoremodifier = VOTEMODIFIER_ENCORE;
+			encoremodifier = VOTE_MOD_ENCORE;
 		}
 	}
 
-	return (gametype|encoremodifier);
+	return encoremodifier;
 }
 
 /** Get the typeoflevel flag needed to indicate support of a gametype.
@@ -3736,10 +3732,11 @@ INT16 G_RandMap(UINT32 tolflags, INT16 pprevmap, UINT8 ignorebuffer, UINT8 maphe
 	UINT32 numokmaps = 0;
 	INT16 ix, bufx;
 	UINT16 extbufsize = 0;
-	boolean usehellmaps; // Only consider Hell maps in this pick
 
 	if (randmaps.lastnummapheaders != nummapheaders)
+	{
 		G_ResetRandMapBuffer();
+	}
 
 	if (!okmaps)
 	{
@@ -3750,15 +3747,15 @@ INT16 G_RandMap(UINT32 tolflags, INT16 pprevmap, UINT8 ignorebuffer, UINT8 maphe
 	if (extbuffer != NULL)
 	{
 		bufx = 0;
+
 		while (extbuffer[bufx])
 		{
-			extbufsize++; bufx++;
+			extbufsize++;
+			bufx++;
 		}
 	}
 
 tryagain:
-
-	usehellmaps = (maphell == 0 ? false : (maphell == 2 || M_RandomChance(FRACUNIT/100))); // 1% chance of Hell
 
 	// Find all the maps that are ok and and put them in an array.
 	for (ix = 0; ix < nummapheaders; ix++)
@@ -3766,17 +3763,23 @@ tryagain:
 		boolean isokmap = true;
 
 		if (!mapheaderinfo[ix] || mapheaderinfo[ix]->lumpnum == LUMPERROR)
+		{
 			continue;
+		}
 
 		if (!(mapheaderinfo[ix]->typeoflevel & tolflags)
 			|| ix == pprevmap
 			|| M_MapLocked(ix+1)
-			|| (usehellmaps != (mapheaderinfo[ix]->menuflags & LF2_HIDEINMENU))) // this is bad
+			|| (mapheaderinfo[ix]->menuflags & LF2_HIDEINMENU)) // this is bad
+		{
 			continue; //isokmap = false;
+		}
 
 		if (pprevmap == -2 // title demo hack
 			&& mapheaderinfo[ix]->ghostCount == 0)
+		{
 			continue;
+		}
 
 		if (!ignorebuffer)
 		{
@@ -3785,7 +3788,10 @@ tryagain:
 				for (bufx = 0; bufx < extbufsize; bufx++)
 				{
 					if (extbuffer[bufx] == -1) // Rest of buffer SHOULD be empty
+					{
 						break;
+					}
+
 					if (ix == extbuffer[bufx])
 					{
 						isokmap = false;
@@ -3794,13 +3800,18 @@ tryagain:
 				}
 
 				if (!isokmap)
+				{
 					continue;
+				}
 			}
 
 			for (bufx = 0; bufx < (maphell ? 3 : randmaps.lastnummapheaders); bufx++)
 			{
 				if (randmaps.mapbuffer[bufx] == -1) // Rest of buffer SHOULD be empty
+				{
 					break;
+				}
+
 				if (ix == randmaps.mapbuffer[bufx])
 				{
 					isokmap = false;
@@ -3819,33 +3830,32 @@ tryagain:
 	{
 		if (!ignorebuffer)
 		{
-			if (randmaps.mapbuffer[3] == -1) // Is the buffer basically empty?
+			if (randmaps.mapbuffer[VOTE_NUM_LEVELS] == -1) // Is the buffer basically empty?
 			{
 				ignorebuffer = 1; // This will probably only help in situations where there's very few maps, but it's folly not to at least try it
 				//CONS_Printf("RANDMAP - ignoring buffer\n");
 				goto tryagain;
 			}
 
-			for (bufx = 3; bufx < randmaps.lastnummapheaders; bufx++) // Let's clear all but the three most recent maps...
+			for (bufx = VOTE_NUM_LEVELS; bufx < randmaps.lastnummapheaders; bufx++) // Let's clear all but the three most recent maps...
+			{
 				randmaps.mapbuffer[bufx] = -1;
-			//CONS_Printf("RANDMAP - emptying randmapbuffer\n");
-			goto tryagain;
-		}
+			}
 
-		if (maphell) // Any wiggle room to loosen our restrictions here?
-		{
-			//CONS_Printf("RANDMAP -maphell decrement\n");
-			maphell--;
+			//CONS_Printf("RANDMAP - emptying randmapbuffer\n");
 			goto tryagain;
 		}
 
 		//CONS_Printf("RANDMAP - defaulting to map01\n");
 		ix = 0; // Sorry, none match. You get MAP01.
+
 		if (ignorebuffer == 1)
 		{
 			//CONS_Printf("(emptying randmapbuffer entirely)\n");
 			for (bufx = 0; bufx < randmaps.lastnummapheaders; bufx++)
+			{
 				randmaps.mapbuffer[bufx] = -1; // if we're having trouble finding a map we should probably clear it
+			}
 		}
 	}
 	else
@@ -3867,10 +3877,12 @@ tryagain:
 void G_AddMapToBuffer(INT16 map)
 {
 	INT16 bufx;
-	INT16 refreshnum = (TOLMaps(gametype))-3;
+	INT16 refreshnum = (TOLMaps(gametype)) - VOTE_NUM_LEVELS;
 
 	if (refreshnum < 0)
-		refreshnum = 3;
+	{
+		refreshnum = 0;
+	}
 
 	if (nummapheaders != randmaps.lastnummapheaders)
 	{
@@ -3878,8 +3890,10 @@ void G_AddMapToBuffer(INT16 map)
 	}
 	else
 	{
-		for (bufx = randmaps.lastnummapheaders-1; bufx > 0; bufx--)
+		for (bufx = randmaps.lastnummapheaders - 1; bufx > 0; bufx--)
+		{
 			randmaps.mapbuffer[bufx] = randmaps.mapbuffer[bufx-1];
+		}
 	}
 
 	randmaps.mapbuffer[0] = map;
@@ -3887,9 +3901,11 @@ void G_AddMapToBuffer(INT16 map)
 	// We're getting pretty full, so lets flush this for future usage.
 	if (randmaps.mapbuffer[refreshnum] != -1)
 	{
-		// Clear all but the five most recent maps.
-		for (bufx = 5; bufx < randmaps.lastnummapheaders; bufx++)
+		// Clear all but the most recent maps.
+		for (bufx = VOTE_NUM_LEVELS; bufx < randmaps.lastnummapheaders; bufx++)
+		{
 			randmaps.mapbuffer[bufx] = -1;
+		}
 		//CONS_Printf("Random map buffer has been flushed.\n");
 	}
 }

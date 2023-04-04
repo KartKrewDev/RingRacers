@@ -2615,30 +2615,18 @@ void D_MapChange(INT32 mapnum, INT32 newgametype, boolean pencoremode, boolean r
 
 void D_SetupVote(void)
 {
-	UINT8 buf[5*2]; // four UINT16 maps (at twice the width of a UINT8), and two gametypes
+	UINT8 buf[(VOTE_NUM_LEVELS * 2) + 2]; // four UINT16 maps (at twice the width of a UINT8), and two gametypes
 	UINT8 *p = buf;
 	INT32 i;
-	UINT8 secondgt = G_SometimesGetDifferentGametype();
-	INT16 votebuffer[4] = {-1,-1,-1,0};
+	INT16 votebuffer[VOTE_NUM_LEVELS] = {-1};
 
-	if ((cv_kartencore.value == 1) && (gametyperules & GTR_ENCORE))
-		WRITEUINT8(p, (gametype|VOTEMODIFIER_ENCORE));
-	else
-		WRITEUINT8(p, gametype);
-	WRITEUINT8(p, secondgt);
-	secondgt &= ~VOTEMODIFIER_ENCORE;
+	WRITEUINT8(p, ((cv_kartencore.value == 1) && (gametyperules & GTR_ENCORE)));
+	WRITEUINT8(p, G_SometimesGetDifferentEncore());
 
-	for (i = 0; i < 4; i++)
+	for (i = 0; i < VOTE_NUM_LEVELS; i++)
 	{
-		UINT16 m;
-		if (i == 2) // sometimes a different gametype
-			m = G_RandMap(G_TOLFlag(secondgt), prevmap, ((secondgt != gametype) ? 2 : 0), 0, true, votebuffer);
-		else if (i >= 3) // Don't Care. Pick any of the available choices.
-			m = votebuffer[M_RandomRange(0, 2)];
-		else
-			m = G_RandMap(G_TOLFlag(gametype), prevmap, 0, 0, true, votebuffer);
-		if (i < 3)
-			votebuffer[i] = m;
+		UINT16 m = G_RandMap(G_TOLFlag(gametype), prevmap, 0, 0, true, votebuffer);
+		votebuffer[i] = m;
 		WRITEUINT16(p, m);
 	}
 
@@ -2672,13 +2660,13 @@ void D_PickVote(void)
 	{
 		if (!playeringame[i] || players[i].spectator)
 			continue;
-		if (votes[i] != -1)
+		if (g_votes[i] != -1)
 		{
 			temppicks[numvotes] = i;
-			templevels[numvotes] = votes[i];
+			templevels[numvotes] = g_votes[i];
 			numvotes++;
 			if (votecompare == -1)
-				votecompare = votes[i];
+				votecompare = g_votes[i];
 		}
 	}
 
@@ -5371,75 +5359,55 @@ static void Got_ExitLevelcmd(UINT8 **cp, INT32 playernum)
 
 static void Got_SetupVotecmd(UINT8 **cp, INT32 playernum)
 {
+	boolean baseEncore = false;
+	boolean optionalEncore = false;
+	INT16 tempVoteLevels[VOTE_NUM_LEVELS][2];
 	INT32 i;
-	UINT8 gt, secondgt;
-	INT16 tempvotelevels[4][2];
 
 	if (playernum != serverplayer) // admin shouldn't be able to set up vote...
 	{
 		CONS_Alert(CONS_WARNING, M_GetText("Illegal vote setup received from %s\n"), player_names[playernum]);
 		if (server)
-			SendKick(playernum, KICK_MSG_CON_FAIL);
-		return;
-	}
-
-	gt = (UINT8)READUINT8(*cp);
-	secondgt = (UINT8)READUINT8(*cp);
-
-	// Strip illegal Encore flag.
-	if ((gt & VOTEMODIFIER_ENCORE)
-		&& !(gametypes[(gt & ~VOTEMODIFIER_ENCORE)]->rules & GTR_ENCORE))
-	{
-		gt &= ~VOTEMODIFIER_ENCORE;
-	}
-
-	if ((gt & ~VOTEMODIFIER_ENCORE) >= numgametypes)
-	{
-		gt &= ~VOTEMODIFIER_ENCORE;
-		if (server)
-			I_Error("Got_SetupVotecmd: Internal gametype ID %d not found (numgametypes = %d)", gt, numgametypes);
-		CONS_Alert(CONS_WARNING, M_GetText("Vote setup with bad gametype ID %d received from %s\n"), gt, player_names[playernum]);
-		return;
-	}
-
-	if ((secondgt & ~VOTEMODIFIER_ENCORE) >= numgametypes)
-	{
-		secondgt &= ~VOTEMODIFIER_ENCORE;
-		if (server)
-			I_Error("Got_SetupVotecmd: Internal second gametype ID %d not found (numgametypes = %d)", secondgt, numgametypes);
-		CONS_Alert(CONS_WARNING, M_GetText("Vote setup with bad second gametype ID %d received from %s\n"), secondgt, player_names[playernum]);
-		return;
-	}
-
-	for (i = 0; i < 4; i++)
-	{
-		tempvotelevels[i][0] = (UINT16)READUINT16(*cp);
-		tempvotelevels[i][1] = gt;
-		if (tempvotelevels[i][0] < nummapheaders && mapheaderinfo[tempvotelevels[i][0]])
-			continue;
-
-		if (server)
-			I_Error("Got_SetupVotecmd: Internal map ID %d not found (nummapheaders = %d)", tempvotelevels[i][0], nummapheaders);
-		CONS_Alert(CONS_WARNING, M_GetText("Vote setup with bad map ID %d received from %s\n"), tempvotelevels[i][0], player_names[playernum]);
-		return;
-	}
-
-	// If third entry has an illelegal Encore flag... (illelegal!?)
-	if ((secondgt & VOTEMODIFIER_ENCORE)
-		&& !(gametypes[(secondgt & ~VOTEMODIFIER_ENCORE)]->rules & GTR_ENCORE))
-	{
-		secondgt &= ~VOTEMODIFIER_ENCORE;
-		// Apply it to the second entry instead, gametype permitting!
-		if (gametypes[gt]->rules & GTR_ENCORE)
 		{
-			tempvotelevels[1][1] |= VOTEMODIFIER_ENCORE;
+			SendKick(playernum, KICK_MSG_CON_FAIL);
 		}
+		return;
 	}
 
-	// Finally, set third entry's gametype/Encore status.
-	tempvotelevels[2][1] = secondgt;
+	baseEncore = (boolean)READUINT8(*cp);
+	optionalEncore = (boolean)READUINT8(*cp);
 
-	memcpy(votelevels, tempvotelevels, sizeof(votelevels));
+	if (!(gametyperules & GTR_ENCORE))
+	{
+		// Strip illegal Encore flags.
+		baseEncore = optionalEncore = false;
+	}
+
+	for (i = 0; i < VOTE_NUM_LEVELS; i++)
+	{
+		tempVoteLevels[i][0] = (UINT16)READUINT16(*cp);
+		tempVoteLevels[i][1] = (baseEncore == true) ? VOTE_MOD_ENCORE : 0;
+
+		if (tempVoteLevels[i][0] < nummapheaders && mapheaderinfo[tempVoteLevels[i][0]])
+		{
+			continue;
+		}
+
+		if (server)
+		{
+			I_Error("Got_SetupVotecmd: Internal map ID %d not found (nummapheaders = %d)", tempVoteLevels[i][0], nummapheaders);
+		}
+
+		CONS_Alert(CONS_WARNING, M_GetText("Vote setup with bad map ID %d received from %s\n"), tempVoteLevels[i][0], player_names[playernum]);
+		return;
+	}
+
+	if (optionalEncore == true)
+	{
+		tempVoteLevels[VOTE_NUM_LEVELS - 1][1] ^= VOTE_MOD_ENCORE;
+	}
+
+	memcpy(g_voteLevels, tempVoteLevels, sizeof(g_voteLevels));
 
 	G_SetGamestate(GS_VOTING);
 	Y_StartVote();
@@ -5451,7 +5419,7 @@ static void Got_ModifyVotecmd(UINT8 **cp, INT32 playernum)
 	UINT8 p = READUINT8(*cp);
 
 	(void)playernum;
-	votes[p] = voted;
+	g_votes[p] = voted;
 }
 
 static void Got_PickVotecmd(UINT8 **cp, INT32 playernum)

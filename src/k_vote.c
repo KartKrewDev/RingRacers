@@ -50,66 +50,147 @@
 #include "k_boss.h"
 #include "k_pwrlv.h"
 #include "k_grandprix.h"
+#include "k_color.h"
 
 #ifdef HWRENDER
 #include "hardware/hw_main.h"
 #endif
 
-static INT32 timer;
-
 #define UNLOAD(x) if (x) {Patch_Free(x);} x = NULL;
 #define CLEANUP(x) x = NULL;
 
-// SRB2Kart: voting stuff
-// Level images
+#define PLANET_FRAMES (9)
+#define TEXT_LEVEL_SCROLL (2*FRACUNIT)
+#define TEXT_DERR_SCROLL (2*FRACUNIT)
+
+#define ARM_FRAMES (4)
+#define BULB_FRAMES (4)
+
+// Catcher data
 typedef struct
 {
-	char str[62];
-	UINT8 gtc;
-	const char *gts;
-	boolean encore;
-} y_votelvlinfo;
+	fixed_t x, y;
+	UINT8 spr;
+	boolean small;
+} y_vote_catcher;
 
 // Clientside & splitscreen player info.
 typedef struct
 {
+	y_vote_catcher catcher;
 	SINT8 selection;
 	UINT8 delay;
-} y_voteplayer;
+} y_vote_player;
 
 typedef struct
 {
-	y_voteplayer playerinfo[4];
+	INT32 timer;
+	INT32 tic, endtic;
+	boolean notYetPicked;
+	boolean loaded;
+
+	y_vote_player players[MAXSPLITSCREENPLAYERS];
 	UINT8 ranim;
 	UINT8 rtics;
 	UINT8 roffset;
 	UINT8 rsynctime;
 	UINT8 rendoff;
-	boolean loaded;
-} y_voteclient;
 
-static y_votelvlinfo levelinfo[5];
-static y_voteclient voteclient;
-static INT32 votetic;
-static INT32 voteendtic = -1;
-static boolean votenotyetpicked;
-static patch_t *cursor = NULL;
-static patch_t *cursor1 = NULL;
-static patch_t *cursor2 = NULL;
-static patch_t *cursor3 = NULL;
-static patch_t *cursor4 = NULL;
-static patch_t *randomlvl = NULL;
-static patch_t *rubyicon = NULL;
+	SINT8 deferredLevel;
+} y_vote_data;
 
-#define PLANET_FRAMES (9)
-#define TEXT_LEVEL_SCROLL (2*FRACUNIT)
-#define TEXT_DERR_SCROLL (2*FRACUNIT)
-static patch_t *bg_planet[PLANET_FRAMES] = { NULL };
-static patch_t *bg_checker = NULL;
-static patch_t *bg_levelText = NULL;
-static patch_t *bg_derrText = NULL;
+typedef struct
+{
+	char str[62];
+	boolean encore;
+	fixed_t hop;
+} y_vote_draw_level;
 
-static void Y_UnloadVoteData(void);
+typedef struct
+{
+	patch_t *ruby_icon;
+	patch_t *bg_planet[PLANET_FRAMES];
+	patch_t *bg_checker;
+	patch_t *bg_levelText;
+	patch_t *bg_derrText;
+	patch_t *catcher_ufo;
+	patch_t *catcher_arms[ARM_FRAMES];
+	patch_t *catcher_pole;
+	patch_t *catcher_bulb[BULB_FRAMES];
+	y_vote_draw_level levels[VOTE_NUM_LEVELS];
+} y_vote_draw;
+
+static y_vote_data vote = {0};
+static y_vote_draw vote_draw = {0};
+
+static boolean Y_PlayerIDCanVote(const UINT8 id)
+{
+	if (id >= MAXPLAYERS)
+	{
+		return false;
+	}
+
+	if (playeringame[id] == false || players[id].spectator == true)
+	{
+		return false;
+	}
+
+	if (players[id].bot == true)
+	{
+		return false;
+	}
+
+	return true;
+}
+
+static void Y_DrawCatcher(y_vote_catcher *catcher)
+{
+#define NUM_BULB_COLORS (2)
+	static const skincolornum_t bulbColors[NUM_BULB_COLORS] = {
+		SKINCOLOR_JAWZ,
+		SKINCOLOR_LILAC,
+	};
+
+	const tic_t anim = gametic / 3; // Using gametic for this is probably a bit goofy
+
+	fixed_t x = catcher->x - (vote_draw.catcher_ufo->width * FRACUNIT / 2);
+	fixed_t y = catcher->y - (vote_draw.catcher_ufo->height * FRACUNIT * 7 / 8);
+
+	UINT8 *craneColor = NULL;
+	UINT8 *bulbColor = NULL;
+
+	craneColor = R_GetTranslationColormap(TC_DEFAULT, K_RainbowColor(anim), GTC_MENUCACHE);
+	bulbColor = R_GetTranslationColormap(TC_DEFAULT, bulbColors[(anim / BULB_FRAMES) % NUM_BULB_COLORS], GTC_MENUCACHE);
+
+	V_DrawFixedPatch(
+		x, y,
+		FRACUNIT, 0,
+		vote_draw.catcher_arms[catcher->spr % ARM_FRAMES],
+		craneColor
+	);
+
+	V_DrawFixedPatch(
+		x, y,
+		FRACUNIT, 0,
+		vote_draw.catcher_bulb[anim % BULB_FRAMES],
+		bulbColor
+	);
+
+	V_DrawFixedPatch(
+		x, y,
+		FRACUNIT, 0,
+		vote_draw.catcher_ufo,
+		craneColor
+	);
+
+	V_DrawFixedPatch(
+		x, y,
+		FRACUNIT, 0,
+		vote_draw.catcher_pole,
+		NULL
+	);
+#undef NUM_BULB_COLORS
+}
 
 //
 // Y_VoteDrawer
@@ -121,27 +202,27 @@ static void Y_DrawVoteBackground(void)
 	static fixed_t bgTimer = 0;
 
 	static fixed_t derrPos = 0;
-	const fixed_t derrLoop = bg_derrText->width * FRACUNIT;
+	const fixed_t derrLoop = vote_draw.bg_derrText->width * FRACUNIT;
 
 	static fixed_t levelPos = 0;
-	const fixed_t levelLoop = bg_levelText->height * FRACUNIT;
+	const fixed_t levelLoop = vote_draw.bg_levelText->height * FRACUNIT;
 
 	const UINT8 planetFrame = (bgTimer / FRACUNIT) % PLANET_FRAMES;
 
 	V_DrawFixedPatch(
 		0, 0,
 		FRACUNIT, 0,
-		bg_planet[planetFrame], NULL
+		vote_draw.bg_planet[planetFrame], NULL
 	);
 	V_DrawFixedPatch(
-		(BASEVIDWIDTH - bg_checker->width) * FRACUNIT, 0,
+		(BASEVIDWIDTH - vote_draw.bg_checker->width) * FRACUNIT, 0,
 		FRACUNIT, V_ADD,
-		bg_checker, NULL
+		vote_draw.bg_checker, NULL
 	);
 	V_DrawFixedPatch(
-		(BASEVIDWIDTH - bg_checker->width) * FRACUNIT, 0,
+		(BASEVIDWIDTH - vote_draw.bg_checker->width) * FRACUNIT, 0,
 		FRACUNIT, V_ADD,
-		bg_checker, NULL
+		vote_draw.bg_checker, NULL
 	);
 
 	levelPos += FixedMul(TEXT_DERR_SCROLL, renderdeltatics);
@@ -151,16 +232,16 @@ static void Y_DrawVoteBackground(void)
 	}
 
 	V_DrawFixedPatch(
-		((BASEVIDWIDTH - bg_levelText->width) * FRACUNIT) - levelPos,
+		((BASEVIDWIDTH - vote_draw.bg_levelText->width) * FRACUNIT) - levelPos,
 		-levelPos,
 		FRACUNIT, V_ADD,
-		bg_levelText, NULL
+		vote_draw.bg_levelText, NULL
 	);
 	V_DrawFixedPatch(
-		((BASEVIDWIDTH - bg_levelText->width) * FRACUNIT) - levelPos + levelLoop,
+		((BASEVIDWIDTH - vote_draw.bg_levelText->width) * FRACUNIT) - levelPos + levelLoop,
 		-levelPos + levelLoop,
 		FRACUNIT, V_ADD,
-		bg_levelText, NULL
+		vote_draw.bg_levelText, NULL
 	);
 
 	derrPos += FixedMul(TEXT_DERR_SCROLL, renderdeltatics);
@@ -171,15 +252,15 @@ static void Y_DrawVoteBackground(void)
 
 	V_DrawFixedPatch(
 		-derrPos,
-		(BASEVIDHEIGHT - bg_derrText->height) * FRACUNIT,
+		(BASEVIDHEIGHT - vote_draw.bg_derrText->height) * FRACUNIT,
 		FRACUNIT, V_SUBTRACT,
-		bg_derrText, NULL
+		vote_draw.bg_derrText, NULL
 	);
 	V_DrawFixedPatch(
 		-derrPos + derrLoop,
-		(BASEVIDHEIGHT - bg_derrText->height) * FRACUNIT,
+		(BASEVIDHEIGHT - vote_draw.bg_derrText->height) * FRACUNIT,
 		FRACUNIT, V_SUBTRACT,
-		bg_derrText, NULL
+		vote_draw.bg_derrText, NULL
 	);
 
 	bgTimer += renderdeltatics;
@@ -187,200 +268,116 @@ static void Y_DrawVoteBackground(void)
 
 void Y_VoteDrawer(void)
 {
-	INT32 i, x, y = 0, height = 0;
-	UINT8 selected[4];
-	fixed_t rubyheight = 0;
+	fixed_t x, y;
+	fixed_t rubyHeight = 0;
+	INT32 i, j;
 
 	// If we early return, skip drawing the 3D scene (software buffer) so it doesn't clobber the frame for the wipe
 	g_wipeskiprender = true;
 
 	if (rendermode == render_none)
+	{
 		return;
+	}
 
-	if (votetic >= voteendtic && voteendtic != -1)
+	if (vote.tic >= vote.endtic && vote.endtic != -1)
+	{
 		return;
+	}
 
-	if (!voteclient.loaded)
+	if (vote.loaded == false)
+	{
 		return;
+	}
 
 	g_wipeskiprender = false;
 
 	{
-		static angle_t rubyfloattime = 0;
-		rubyheight = FINESINE(rubyfloattime>>ANGLETOFINESHIFT);
-		rubyfloattime += FixedMul(ANGLE_MAX/NEWTICRATE, renderdeltatics);
+		static angle_t rubyFloatTime = 0;
+		rubyHeight = FINESINE(rubyFloatTime >> ANGLETOFINESHIFT);
+		rubyFloatTime += FixedMul(ANGLE_MAX / NEWTICRATE, renderdeltatics);
 	}
 
 	Y_DrawVoteBackground();
 
-	for (i = 0; i < 4; i++) // First, we need to figure out the height of this thing...
-	{
-		UINT8 j;
-		selected[i] = 0; // Initialize
+	x = 10 * FRACUNIT;
+	y = 144 * FRACUNIT;
 
-		for (j = 0; j <= splitscreen; j++)
+	for (i = 0; i < VOTE_NUM_LEVELS; i++)
+	{
+		boolean selected = false;
+		INT32 flags = 0;
+		fixed_t destHop = 0;
+
+		for (j = 0; j <= splitscreen; j++) // another loop for drawing the selection backgrounds in the right order, grumble grumble..
 		{
-			if (voteclient.playerinfo[j].selection == i)
-				selected[i]++;
+			const UINT8 p = g_localplayers[j];
+
+			if (vote.players[j].selection != i)
+			{
+				continue;
+			}
+
+			if (g_votes[p] != VOTE_NOT_PICKED || Y_PlayerIDCanVote(p) == false)
+			{
+				continue;
+			}
+
+			selected = true;
+			break;
 		}
 
-		if (selected[i])
-			height += 50;
-		else
-			height += 25;
-
-		if (i < 3)
-			height += 5-splitscreen;
-	}
-
-	y = (200-height)/2;
-	for (i = 0; i < 4; i++)
-	{
-		UINT8 j, color;
-
-		if (selected[i])
+		if (selected == true)
 		{
-			const char *str;
-			UINT8 sizeadd = selected[i];
-
-			for (j = 0; j <= splitscreen; j++) // another loop for drawing the selection backgrounds in the right order, grumble grumble..
-			{
-				INT32 handy = y;
-				UINT8 p;
-				UINT8 *colormap;
-				patch_t *thiscurs;
-
-				if (voteclient.playerinfo[j].selection != i)
-					continue;
-
-				if (!splitscreen)
-				{
-					thiscurs = cursor;
-					p = consoleplayer;
-					color = levelinfo[i].gtc;
-					colormap = NULL;
-				}
-				else
-				{
-					switch (j)
-					{
-						case 1:
-							thiscurs = cursor2;
-							p = g_localplayers[1];
-							break;
-						case 2:
-							thiscurs = cursor3;
-							p = g_localplayers[2];
-							break;
-						case 3:
-							thiscurs = cursor4;
-							p = g_localplayers[3];
-							break;
-						default:
-							thiscurs = cursor1;
-							p = g_localplayers[0];
-							break;
-					}
-
-					color = skincolors[players[p].skincolor].ramp[7];
-					colormap = R_GetTranslationColormap(TC_DEFAULT, players[p].skincolor, GTC_CACHE);
-				}
-
-				if (votes[p] != -1 || players[p].spectator)
-					continue;
-
-				handy += 6*(3-splitscreen) + (13*j);
-				V_DrawMappedPatch(BASEVIDWIDTH-124, handy, V_SNAPTORIGHT, thiscurs, colormap);
-
-				if (votetic % 10 < 4)
-					V_DrawFill(BASEVIDWIDTH-100-sizeadd, y-sizeadd, 80+(sizeadd*2), 50+(sizeadd*2), 0|V_SNAPTORIGHT);
-				else
-					V_DrawFill(BASEVIDWIDTH-100-sizeadd, y-sizeadd, 80+(sizeadd*2), 50+(sizeadd*2), color|V_SNAPTORIGHT);
-
-				sizeadd--;
-			}
-
-			if (i == 3)
-			{
-				str = "RANDOM";
-				K_DrawLikeMapThumbnail(
-					(BASEVIDWIDTH-100)<<FRACBITS, (y)<<FRACBITS,
-					80<<FRACBITS,
-					V_SNAPTORIGHT|(levelinfo[i].encore ? V_FLIP : 0),
-					randomlvl,
-					NULL
-				);
-			}
-			else
-			{
-				str = levelinfo[i].str;
-				K_DrawMapThumbnail(
-					(BASEVIDWIDTH-100)<<FRACBITS, (y)<<FRACBITS,
-					80<<FRACBITS,
-					V_SNAPTORIGHT|(levelinfo[i].encore ? V_FLIP : 0),
-					votelevels[i][0],
-					NULL
-				);
-			}
-
-			if (levelinfo[i].encore)
-			{
-				V_DrawFixedPatch((BASEVIDWIDTH-60)<<FRACBITS, ((y+25)<<FRACBITS) - (rubyheight<<1), FRACUNIT, V_SNAPTORIGHT, rubyicon, NULL);
-			}
-
-			V_DrawRightAlignedThinString(BASEVIDWIDTH-21, 40+y, V_SNAPTORIGHT|V_6WIDTHSPACE, str);
-
-			if (levelinfo[i].gts)
-			{
-				INT32 w = V_ThinStringWidth(levelinfo[i].gts, V_SNAPTORIGHT)+1;
-				V_DrawFill(BASEVIDWIDTH-100, y+10, w+1, 2, V_SNAPTORIGHT|31);
-				V_DrawFill(BASEVIDWIDTH-100, y, w, 11, V_SNAPTORIGHT|levelinfo[i].gtc);
-				V_DrawDiag(BASEVIDWIDTH-100+w+1, y, 12, V_SNAPTORIGHT|31);
-				V_DrawDiag(BASEVIDWIDTH-100+w, y, 11, V_SNAPTORIGHT|levelinfo[i].gtc);
-				V_DrawThinString(BASEVIDWIDTH-99, y+1, V_SNAPTORIGHT, levelinfo[i].gts);
-			}
-
-			y += 50;
+			destHop = 10*FRACUNIT;
 		}
 		else
 		{
-			if (i == 3)
-			{
-				K_DrawLikeMapThumbnail(
-					(BASEVIDWIDTH-60)<<FRACBITS, (y)<<FRACBITS,
-					40<<FRACBITS,
-					V_SNAPTORIGHT|(levelinfo[i].encore ? V_FLIP : 0),
-					randomlvl,
-					NULL
-				);
-			}
-			else
-			{
-				K_DrawMapThumbnail(
-					(BASEVIDWIDTH-60)<<FRACBITS, (y)<<FRACBITS,
-					40<<FRACBITS,
-					V_SNAPTORIGHT|(levelinfo[i].encore ? V_FLIP : 0),
-					votelevels[i][0],
-					NULL
-				);
-			}
-
-			if (levelinfo[i].encore)
-			{
-				V_DrawFixedPatch((BASEVIDWIDTH-40)<<FRACBITS, (y<<FRACBITS) + (25<<(FRACBITS-1)) - rubyheight, FRACUNIT/2, V_SNAPTORIGHT, rubyicon, NULL);
-			}
-
-			if (levelinfo[i].gts)
-			{
-				V_DrawDiag(BASEVIDWIDTH-60, y, 8, V_SNAPTORIGHT|31);
-				V_DrawDiag(BASEVIDWIDTH-60, y, 6, V_SNAPTORIGHT|levelinfo[i].gtc);
-			}
-			y += 25;
+			flags |= V_TRANSLUCENT;
 		}
 
-		y += 5-splitscreen;
+		if (vote_draw.levels[i].encore == true)
+		{
+			flags |= V_FLIP;
+		}
+
+		if (vote_draw.levels[i].hop < destHop)
+		{
+			vote_draw.levels[i].hop += FixedMul(
+				(destHop - vote_draw.levels[i].hop) / 2,
+				renderdeltatics
+			);
+		}
+		else
+		{
+			vote_draw.levels[i].hop = destHop;
+		}
+
+		K_DrawMapThumbnail(
+			x, y - vote_draw.levels[i].hop,
+			72 << FRACBITS, flags,
+			g_voteLevels[i][0],
+			NULL
+		);
+
+		if (vote_draw.levels[i].encore == true)
+		{
+			V_DrawFixedPatch(
+				x + (40 << FRACBITS),
+				((y + 25) << FRACBITS) - (rubyHeight << 1),
+				FRACUNIT, (flags & ~V_FLIP),
+				vote_draw.ruby_icon, 
+				NULL
+			);
+		}
+
+		x += (75 << FRACBITS);
 	}
 
+	// TODO: draw + update catchers
+	Y_DrawCatcher(&vote.players[0].catcher);
+
+	/*
 	x = 20;
 	y = 10;
 
@@ -389,7 +386,7 @@ void Y_VoteDrawer(void)
 		if (dedicated && i == 0) // While leaving blank spots for non-existent players is largely intentional, the first spot *always* being blank looks a tad silly :V
 			continue;
 
-		if ((playeringame[i] && !players[i].spectator) && votes[i] != -1)
+		if ((playeringame[i] && !players[i].spectator) && g_votes[i] != VOTE_NOT_PICKED)
 		{
 			if (!timer && i == voteclient.ranim)
 			{
@@ -397,38 +394,26 @@ void Y_VoteDrawer(void)
 				if (voteendtic != -1 && !(votetic % 4))
 					V_DrawFill(x-1, y-1, 42, 27, 0|V_SNAPTOLEFT);
 				else
-					V_DrawFill(x-1, y-1, 42, 27, levelinfo[votes[i]].gtc|V_SNAPTOLEFT);
+					V_DrawFill(x-1, y-1, 42, 27, levelinfo[g_votes[i]].gtc|V_SNAPTOLEFT);
 			}
 
-			if (votes[i] >= 3 && (i != pickedvote || voteendtic == -1))
-			{
-				K_DrawLikeMapThumbnail(
-					(x)<<FRACBITS, (y)<<FRACBITS,
-					40<<FRACBITS,
-					V_SNAPTOLEFT|(levelinfo[votes[i]].encore ? V_FLIP : 0),
-					randomlvl,
-					NULL
-				);
-			}
-			else
-			{
-				K_DrawMapThumbnail(
-					(x)<<FRACBITS, (y)<<FRACBITS,
-					40<<FRACBITS,
-					V_SNAPTOLEFT|(levelinfo[votes[i]].encore ? V_FLIP : 0),
-					votelevels[votes[i]][0],
-					NULL);
-			}
+			K_DrawMapThumbnail(
+				(x)<<FRACBITS, (y)<<FRACBITS,
+				40<<FRACBITS,
+				V_SNAPTOLEFT|(levelinfo[g_votes[i]].encore ? V_FLIP : 0),
+				g_voteLevels[g_votes[i]][0],
+				NULL
+			);
 
-			if (levelinfo[votes[i]].encore)
+			if (levelinfo[g_votes[i]].encore)
 			{
 				V_DrawFixedPatch((x+20)<<FRACBITS, (y<<FRACBITS) + (25<<(FRACBITS-1)) - rubyheight, FRACUNIT/2, V_SNAPTOLEFT, rubyicon, NULL);
 			}
 
-			if (levelinfo[votes[i]].gts)
+			if (levelinfo[g_votes[i]].gts)
 			{
 				V_DrawDiag(x, y, 8, V_SNAPTOLEFT|31);
-				V_DrawDiag(x, y, 6, V_SNAPTOLEFT|levelinfo[votes[i]].gtc);
+				V_DrawDiag(x, y, 6, V_SNAPTOLEFT|levelinfo[g_votes[i]].gtc);
 			}
 
 			if (players[i].skincolor)
@@ -452,12 +437,17 @@ void Y_VoteDrawer(void)
 			y = 10;
 		}
 	}
+	*/
 
-	if (timer)
+	if (vote.timer > 0)
 	{
-		INT32 tickdown = (timer+1)/TICRATE;
-		V_DrawCenteredString(BASEVIDWIDTH/2, 188, V_YELLOWMAP,
-			va("Vote ends in %d", tickdown));
+		const INT32 tickDown = (vote.timer + 1) / TICRATE;
+
+		V_DrawCenteredString(
+			BASEVIDWIDTH/2, 188,
+			V_YELLOWMAP,
+			va("Vote ends in %d", tickDown)
+		);
 	}
 
 	M_DrawMenuForeground();
@@ -468,29 +458,20 @@ void Y_VoteDrawer(void)
 //
 // Vote screen's selection stops moving
 //
-SINT8 deferredlevel = 0;
 static void Y_VoteStops(SINT8 pick, SINT8 level)
 {
-	nextmap = votelevels[level][0];
+	nextmap = g_voteLevels[level][0];
 
-	//if (level == 4)
-	//	S_StartSound(NULL, sfx_noooo2); // gasp
-	if (mapheaderinfo[nextmap] && (mapheaderinfo[nextmap]->menuflags & LF2_HIDEINMENU))
-		S_StartSound(NULL, sfx_noooo1); // this is bad
-	else if (netgame && P_IsLocalPlayer(&players[pick]))
-		S_StartSound(NULL, sfx_yeeeah); // yeeeah!
-	else
-		S_StartSound(NULL, sfx_kc48); // just a cool sound
-
-	if (gametype != votelevels[level][1])
+	if (netgame && P_IsLocalPlayer(&players[pick]))
 	{
-		INT16 lastgametype = gametype;
-		G_SetGametype(votelevels[level][1]);
-		D_GameTypeChanged(lastgametype);
-		forceresetplayers = true;
+		S_StartSound(NULL, sfx_yeeeah); // yeeeah!
+	}
+	else
+	{
+		S_StartSound(NULL, sfx_kc48); // just a cool sound
 	}
 
-	deferencoremode = (levelinfo[level].encore);
+	deferencoremode = (g_voteLevels[level][1] & VOTE_MOD_ENCORE);
 }
 
 //
@@ -503,14 +484,16 @@ void Y_VoteTicker(void)
 	INT32 i;
 	boolean everyone_voted;
 
-	if (paused || P_AutoPause() || !voteclient.loaded)
+	if (paused || P_AutoPause() || vote.loaded == false)
+	{
 		return;
+	}
 
 	LUA_HOOK(VoteThinker);
 
-	votetic++;
+	vote.tic++;
 
-	if (votetic == voteendtic)
+	if (vote.tic == vote.endtic)
 	{
 		Y_EndVote();
 		G_AfterIntermission();
@@ -519,38 +502,49 @@ void Y_VoteTicker(void)
 
 	for (i = 0; i < MAXPLAYERS; i++) // Correct votes as early as possible, before they're processed by the game at all
 	{
-		if (!playeringame[i] || players[i].spectator)
-			votes[i] = -1; // Spectators are the lower class, and have effectively no voice in the government. Democracy sucks.
-		else if (pickedvote != -1 && votes[i] == -1)
-			votes[i] = 3; // Slow people get random
+		if (playeringame[i] == false || players[i].spectator == true)
+		{
+			g_votes[i] = VOTE_NOT_PICKED; // Spectators are the lower class, and have effectively no voice in the government. Democracy sucks.
+		}
+		else if (g_pickedVote != VOTE_NOT_PICKED && g_votes[i] == VOTE_NOT_PICKED)
+		{
+			g_votes[i] = 3; // Slow people get random values -- TODO: random vote doesn't exist anymore
+		}
 	}
 
-	if (server && pickedvote != -1 && votes[pickedvote] == -1) // Uh oh! The person who got picked left! Recalculate, quick!
+	if (server && g_pickedVote != VOTE_NOT_PICKED && g_votes[g_pickedVote] == VOTE_NOT_PICKED) // Uh oh! The person who got picked left! Recalculate, quick!
+	{
 		D_PickVote();
+	}
 
-	if (!votetic)
+	if (vote.tic == 0)
 	{
 		S_ChangeMusicInternal("vote", true);
 		S_ShowMusicCredit();
 	}
 
-	if (timer)
-		timer--;
-
-	if (pickedvote != -1)
+	if (vote.timer)
 	{
-		timer = 0;
-		voteclient.rsynctime++;
+		vote.timer--;
+	}
 
-		if (voteendtic == -1)
+	if (g_pickedVote != VOTE_NOT_PICKED)
+	{
+		vote.timer = 0;
+		vote.rsynctime++;
+
+		if (vote.endtic == -1)
 		{
 			UINT8 tempvotes[MAXPLAYERS];
 			UINT8 numvotes = 0;
 
 			for (i = 0; i < MAXPLAYERS; i++)
 			{
-				if (votes[i] == -1)
+				if (g_votes[i] == VOTE_NOT_PICKED)
+				{
 					continue;
+				}
+
 				tempvotes[numvotes] = i;
 				numvotes++;
 			}
@@ -562,114 +556,116 @@ void Y_VoteTicker(void)
 				return;
 			}
 
-			voteclient.rtics--;
+			vote.rtics--;
 
-			if (voteclient.rtics <= 0)
+			if (vote.rtics <= 0)
 			{
-				voteclient.roffset++;
-				voteclient.rtics = min(20, (3*voteclient.roffset/4)+5);
+				vote.roffset++;
+				vote.rtics = min(20, (3*vote.roffset/4)+5);
 				S_StartSound(NULL, sfx_kc39);
 			}
 
-			if (voteclient.rendoff == 0 || voteclient.roffset < voteclient.rendoff)
-				voteclient.ranim = tempvotes[((pickedvote + voteclient.roffset) % numvotes)];
-
-			if (voteclient.roffset >= 20)
+			if (vote.rendoff == 0 || vote.roffset < vote.rendoff)
 			{
-				if (voteclient.rendoff == 0)
+				vote.ranim = tempvotes[((g_pickedVote + vote.roffset) % numvotes)];
+			}
+
+			if (vote.roffset >= 20)
+			{
+				if (vote.rendoff == 0)
 				{
-					if (voteclient.rsynctime % 51 == 0) // Song is 1.45 seconds long (sorry @ whoever wants to replace it in a music wad :V)
+					if (vote.rsynctime % 51 == 0) // Song is 1.45 seconds long (sorry @ whoever wants to replace it in a music wad :V)
 					{
 						for (i = 5; i >= 3; i--) // Find a suitable place to stop
 						{
-							if (tempvotes[((pickedvote + voteclient.roffset + i) % numvotes)] == pickedvote)
+							if (tempvotes[((g_pickedVote + vote.roffset + i) % numvotes)] == g_pickedVote)
 							{
-								voteclient.rendoff = voteclient.roffset+i;
+								vote.rendoff = vote.roffset + i;
+
 								if (M_RandomChance(FRACUNIT/32)) // Let it cheat occasionally~
-									voteclient.rendoff++;
+								{
+									vote.rendoff++;
+								}
+
 								S_ChangeMusicInternal("voteeb", false);
 								break;
 							}
 						}
 					}
 				}
-				else if (voteclient.roffset >= voteclient.rendoff)
+				else if (vote.roffset >= vote.rendoff)
 				{
-					voteendtic = votetic + (3*TICRATE);
-					Y_VoteStops(pickedvote, deferredlevel);
+					vote.endtic = vote.tic + (3*TICRATE);
+					Y_VoteStops(g_pickedVote, vote.deferredLevel);
 				}
 			}
 		}
 		else
-			voteclient.ranim = pickedvote;
+		{
+			vote.ranim = g_pickedVote;
+		}
 	}
-	else if (votenotyetpicked)
+	else if (vote.notYetPicked)
 	{
-		if (votetic < 3*(NEWTICRATE/7)) // give it some time before letting you control it :V
+		if (vote.tic < 3*(NEWTICRATE/7)) // give it some time before letting you control it :V
+		{
 			return;
+		}
 
 		/*
 		The vote ended, but it will take at least a tic for that to reach us from
 		the server. Don't let me change the vote now, it won't matter anyway!
 		*/
-		if (timer)
+		if (vote.timer)
 		{
 			for (i = 0; i <= splitscreen; i++)
 			{
-				UINT8 p;
-				boolean pressed = false;
+				const UINT8 p = g_localplayers[i];
+				boolean moved = false;
 
-				switch (i)
+				if (vote.players[i].delay)
 				{
-					case 1:
-						p = g_localplayers[1];
-						break;
-					case 2:
-						p = g_localplayers[2];
-						break;
-					case 3:
-						p = g_localplayers[3];
-						break;
-					default:
-						p = consoleplayer;
-						break;
+					vote.players[i].delay--;
 				}
 
-				if (voteclient.playerinfo[i].delay)
-					voteclient.playerinfo[i].delay--;
-
-				if ((playeringame[p] && !players[p].spectator)
-						&& !voteclient.playerinfo[i].delay
-						&& pickedvote == -1 && votes[p] == -1 && menuactive == false)
+				if (Y_PlayerIDCanVote(p) == true
+					&& vote.players[i].delay == 0
+					&& g_pickedVote == VOTE_NOT_PICKED && g_votes[p] == VOTE_NOT_PICKED
+					&& menuactive == false)
 				{
-					if (G_PlayerInputDown(i, gc_up, 0))
+					if (G_PlayerInputDown(i, gc_left, 0))
 					{
-						voteclient.playerinfo[i].selection--;
-						pressed = true;
+						vote.players[i].selection--;
+						moved = true;
 					}
 
-					if (G_PlayerInputDown(i, gc_down, 0) && pressed == false)
+					if (G_PlayerInputDown(i, gc_right, 0))
 					{
-						voteclient.playerinfo[i].selection++;
-						pressed = true;
+						vote.players[i].selection++;
+						moved = true;
 					}
 
-					if (voteclient.playerinfo[i].selection < 0)
-						voteclient.playerinfo[i].selection = 3;
-					if (voteclient.playerinfo[i].selection > 3)
-						voteclient.playerinfo[i].selection = 0;
-
-					if (G_PlayerInputDown(i, gc_a, 0) && pressed == false)
+					if (vote.players[i].selection < 0)
 					{
-						D_ModifyClientVote(consoleplayer, voteclient.playerinfo[i].selection, i);
-						pressed = true;
+						vote.players[i].selection = VOTE_NUM_LEVELS - 1;
+					}
+
+					if (vote.players[i].selection >= VOTE_NUM_LEVELS)
+					{
+						vote.players[i].selection = 0;
+					}
+
+					if (G_PlayerInputDown(i, gc_a, 0) && moved == false)
+					{
+						D_ModifyClientVote(consoleplayer, vote.players[i].selection, i);
+						moved = true;
 					}
 				}
 
-				if (pressed)
+				if (moved)
 				{
 					S_StartSound(NULL, sfx_kc4a);
-					voteclient.playerinfo[i].delay = NEWTICRATE/7;
+					vote.players[i].delay = NEWTICRATE/7;
 				}
 			}
 		}
@@ -678,38 +674,33 @@ void Y_VoteTicker(void)
 		{
 			everyone_voted = true;/* the default condition */
 
-			if (timer == 0)
+			for (i = 0; i < MAXPLAYERS; i++)
 			{
-				for (i = 0; i < MAXPLAYERS; i++)
+				if (Y_PlayerIDCanVote(i) == false)
 				{
-					if ((playeringame[i] && !players[i].spectator) && votes[i] == -1)
-						votes[i] = 3;
+					continue;
 				}
-			}
-			else
-			{
-				for (i = 0; i < MAXPLAYERS; i++)
-				{
-					if ((playeringame[i] && !players[i].spectator) && votes[i] == -1)
-					{
-						if (players[i].bot)
-						{
-							if (( M_RandomFixed() % 100 ) == 0)
-								D_ModifyClientVote(i, M_RandomKey(4), 0);
-						}
 
-						if (votes[i] == -1)
-							everyone_voted = false;
+				if (g_votes[i] == VOTE_NOT_PICKED)
+				{
+					if (vote.timer == 0)
+					{
+						g_votes[i] = 3; // RANDOMIZE LATER
+					}
+					else
+					{
+						everyone_voted = false;
 					}
 				}
 			}
 
-			if (everyone_voted)
+			if (everyone_voted == true)
 			{
-				timer = 0;
-				if (voteendtic == -1)
+				vote.timer = 0;
+
+				if (vote.endtic == -1)
 				{
-					votenotyetpicked = false;/* don't pick vote twice */
+					vote.notYetPicked = false; /* don't pick vote twice */
 					D_PickVote();
 				}
 			}
@@ -725,107 +716,93 @@ void Y_VoteTicker(void)
 void Y_StartVote(void)
 {
 	INT32 i = 0;
-	//boolean battlemode = ((votelevels[0][1] & ~VOTEMODIFIER_ENCORE) == GT_BATTLE); // todo gametyperules
 
-	votetic = -1;
+	vote.tic = vote.endtic = -1;
 
-#ifdef PARANOIA
-	if (voteendtic != -1)
-		I_Error("voteendtic is dirty");
-#endif
-
-	cursor = W_CachePatchName("M_CURSOR", PU_STATIC);
-	cursor1 = W_CachePatchName("P1CURSOR", PU_STATIC);
-	cursor2 = W_CachePatchName("P2CURSOR", PU_STATIC);
-	cursor3 = W_CachePatchName("P3CURSOR", PU_STATIC);
-	cursor4 = W_CachePatchName("P4CURSOR", PU_STATIC);
-	randomlvl = W_CachePatchName("RANDOMLV", PU_STATIC);
-	rubyicon = W_CachePatchName("RUBYICON", PU_STATIC);
+	vote_draw.ruby_icon = W_CachePatchName("RUBYICON", PU_STATIC);
 
 	for (i = 0; i < PLANET_FRAMES; i++)
 	{
-		bg_planet[i] = W_CachePatchName(va("VT_BG_%d", i + 1), PU_STATIC);
+		vote_draw.bg_planet[i] = W_CachePatchName(va("VT_BG_%d", i + 1), PU_STATIC);
 	}
 
-	bg_checker = W_CachePatchName("VT_RACE", PU_STATIC);
-	bg_levelText = W_CachePatchName("VT_WELC", PU_STATIC);
-	bg_derrText = W_CachePatchName("VT_DERR", PU_STATIC);
+	vote_draw.bg_checker = W_CachePatchName("VT_RACE", PU_STATIC);
+	vote_draw.bg_levelText = W_CachePatchName("VT_WELC", PU_STATIC);
+	vote_draw.bg_derrText = W_CachePatchName("VT_DERR", PU_STATIC);
 
-	timer = cv_votetime.value*TICRATE;
-	pickedvote = -1;
-
-	votenotyetpicked = true;
-
-	for (i = 0; i < 3; i++)
+	vote_draw.catcher_ufo = W_CachePatchName("VT_UFO1", PU_STATIC);
+	for (i = 0; i < ARM_FRAMES; i++)
 	{
-		voteclient.playerinfo[i].selection = 0;
-		voteclient.playerinfo[i].delay = 0;
+		vote_draw.catcher_arms[i] = W_CachePatchName(va("VT_ARMS%d", i + 1), PU_STATIC);
+	}
+	vote_draw.catcher_pole = W_CachePatchName("VT_POLE", PU_STATIC);
+	for (i = 0; i < BULB_FRAMES; i++)
+	{
+		vote_draw.catcher_bulb[i] = W_CachePatchName(va("VT_BULB%d", i + 1), PU_STATIC);
 	}
 
-	voteclient.ranim = 0;
-	voteclient.rtics = 1;
-	voteclient.roffset = 0;
-	voteclient.rsynctime = 0;
-	voteclient.rendoff = 0;
+	vote.timer = cv_votetime.value * TICRATE;
+
+	g_pickedVote = VOTE_NOT_PICKED;
+	vote.notYetPicked = true;
+
+	for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
+	{
+		vote.players[i].selection = 0;
+		vote.players[i].delay = 0;
+		vote.players[i].catcher.x = 10*FRACUNIT + (72*FRACUNIT/2);
+		vote.players[i].catcher.y = 144*FRACUNIT + (48*FRACUNIT/2);
+	}
+
+	vote.ranim = 0;
+	vote.rtics = 1;
+	vote.roffset = 0;
+	vote.rsynctime = 0;
+	vote.rendoff = 0;
 
 	for (i = 0; i < MAXPLAYERS; i++)
-		votes[i] = -1;
-
-	for (i = 0; i < 4; i++)
 	{
-		// set up the encore
-		levelinfo[i].encore = (votelevels[i][1] & VOTEMODIFIER_ENCORE);
-		votelevels[i][1] &= ~VOTEMODIFIER_ENCORE;
-
-		// set up the levelstring
-		if (mapheaderinfo[votelevels[i][0]]->levelflags & LF_NOZONE || !mapheaderinfo[votelevels[i][0]]->zonttl[0])
-		{
-			if (mapheaderinfo[votelevels[i][0]]->actnum > 0)
-				snprintf(levelinfo[i].str,
-					sizeof levelinfo[i].str,
-					"%s %d",
-					mapheaderinfo[votelevels[i][0]]->lvlttl, mapheaderinfo[votelevels[i][0]]->actnum);
-			else
-				snprintf(levelinfo[i].str,
-					sizeof levelinfo[i].str,
-					"%s",
-					mapheaderinfo[votelevels[i][0]]->lvlttl);
-		}
-		else
-		{
-			if (mapheaderinfo[votelevels[i][0]]->actnum > 0)
-				snprintf(levelinfo[i].str,
-					sizeof levelinfo[i].str,
-					"%s %s %d",
-					mapheaderinfo[votelevels[i][0]]->lvlttl, mapheaderinfo[votelevels[i][0]]->zonttl, mapheaderinfo[votelevels[i][0]]->actnum);
-			else
-				snprintf(levelinfo[i].str,
-					sizeof levelinfo[i].str,
-					"%s %s",
-					mapheaderinfo[votelevels[i][0]]->lvlttl, mapheaderinfo[votelevels[i][0]]->zonttl);
-		}
-
-		levelinfo[i].str[sizeof levelinfo[i].str - 1] = '\0';
-
-		// set up the gtc and gts
-		levelinfo[i].gtc = 73; // yellowmap[0] -- TODO rewrite vote screen
-		if (i == 2 && votelevels[i][1] != votelevels[0][1])
-			levelinfo[i].gts = gametypes[votelevels[i][1]]->name;
-		else
-			levelinfo[i].gts = NULL;
+		g_votes[i] = VOTE_NOT_PICKED;
 	}
 
-	voteclient.loaded = true;
-	Automate_Run(AEV_VOTESTART);
-}
+	for (i = 0; i < VOTE_NUM_LEVELS; i++)
+	{
+		// set up the encore
+		vote_draw.levels[i].encore = (g_voteLevels[i][1] & VOTE_MOD_ENCORE);
 
-//
-// Y_EndVote
-//
-void Y_EndVote(void)
-{
-	Y_UnloadVoteData();
-	voteendtic = -1;
+		// set up the levelstring
+		if (mapheaderinfo[g_voteLevels[i][0]]->levelflags & LF_NOZONE || !mapheaderinfo[g_voteLevels[i][0]]->zonttl[0])
+		{
+			if (mapheaderinfo[g_voteLevels[i][0]]->actnum > 0)
+				snprintf(vote_draw.levels[i].str,
+					sizeof vote_draw.levels[i].str,
+					"%s %d",
+					mapheaderinfo[g_voteLevels[i][0]]->lvlttl, mapheaderinfo[g_voteLevels[i][0]]->actnum);
+			else
+				snprintf(vote_draw.levels[i].str,
+					sizeof vote_draw.levels[i].str,
+					"%s",
+					mapheaderinfo[g_voteLevels[i][0]]->lvlttl);
+		}
+		else
+		{
+			if (mapheaderinfo[g_voteLevels[i][0]]->actnum > 0)
+				snprintf(vote_draw.levels[i].str,
+					sizeof vote_draw.levels[i].str,
+					"%s %s %d",
+					mapheaderinfo[g_voteLevels[i][0]]->lvlttl, mapheaderinfo[g_voteLevels[i][0]]->zonttl, mapheaderinfo[g_voteLevels[i][0]]->actnum);
+			else
+				snprintf(vote_draw.levels[i].str,
+					sizeof vote_draw.levels[i].str,
+					"%s %s",
+					mapheaderinfo[g_voteLevels[i][0]]->lvlttl, mapheaderinfo[g_voteLevels[i][0]]->zonttl);
+		}
+
+		vote_draw.levels[i].str[sizeof vote_draw.levels[i].str - 1] = '\0';
+	}
+
+	vote.loaded = true;
+	Automate_Run(AEV_VOTESTART);
 }
 
 //
@@ -835,89 +812,131 @@ static void Y_UnloadVoteData(void)
 {
 	INT32 i;
 
-	voteclient.loaded = false;
+	vote.loaded = false;
 
 	if (rendermode != render_soft)
+	{
 		return;
+	}
 
-	UNLOAD(cursor);
-	UNLOAD(cursor1);
-	UNLOAD(cursor2);
-	UNLOAD(cursor3);
-	UNLOAD(cursor4);
-	UNLOAD(randomlvl);
-	UNLOAD(rubyicon);
+	UNLOAD(vote_draw.ruby_icon);
 
 	for (i = 0; i < PLANET_FRAMES; i++)
 	{
-		UNLOAD(bg_planet[i]);
+		UNLOAD(vote_draw.bg_planet[i]);
 	}
+	UNLOAD(vote_draw.bg_checker);
+	UNLOAD(vote_draw.bg_levelText);
+	UNLOAD(vote_draw.bg_derrText);
 
-	UNLOAD(bg_checker);
-	UNLOAD(bg_levelText);
-	UNLOAD(bg_derrText);
+	UNLOAD(vote_draw.catcher_ufo);
+	for (i = 0; i < ARM_FRAMES; i++)
+	{
+		UNLOAD(vote_draw.catcher_arms[i]);
+	}
+	UNLOAD(vote_draw.catcher_pole);
+	for (i = 0; i < BULB_FRAMES; i++)
+	{
+		UNLOAD(vote_draw.catcher_bulb[i]);
+	}
+}
+
+//
+// Y_EndVote
+//
+void Y_EndVote(void)
+{
+	Y_UnloadVoteData();
+	vote.endtic = -1;
 }
 
 //
 // Y_SetupVoteFinish
 //
+
+enum
+{
+	VOTE_END_IMMEDIATE = 0,
+	VOTE_END_QUICK,
+	VOTE_END_NORMAL,
+};
+
 void Y_SetupVoteFinish(SINT8 pick, SINT8 level)
 {
-	if (!voteclient.loaded)
+	if (vote.loaded == false)
+	{
 		return;
+	}
 
-	if (pick == -1) // No other votes? We gotta get out of here, then!
+	if (pick == VOTE_NOT_PICKED) // No other votes? We gotta get out of here, then!
 	{
 		Y_EndVote();
 		G_AfterIntermission();
 		return;
 	}
 
-	if (pickedvote == -1)
+	if (g_pickedVote == VOTE_NOT_PICKED)
 	{
 		INT32 i;
-		SINT8 votecompare = -1;
-		INT32 endtype = 0;
+		SINT8 votecompare = VOTE_NOT_PICKED;
+		INT32 endtype = VOTE_END_IMMEDIATE;
 
-		voteclient.rsynctime = 0;
+		vote.rsynctime = 0;
 
 		for (i = 0; i < MAXPLAYERS; i++)
 		{
-			if ((playeringame[i] && !players[i].spectator) && votes[i] == -1)
-				votes[i] = 3;
-
-			if (votes[i] == -1 || endtype > 1) // Don't need to go on
-				continue;
-
-			if (endtype == 2)
-				continue;
-
-			if (votecompare == -1)
+			if (Y_PlayerIDCanVote(i) == true && g_votes[i] == VOTE_NOT_PICKED)
 			{
-				votecompare = votes[i];
-				endtype = 1;
+				g_votes[i] = 3; // RANDOMIZE
 			}
-			else if (votes[i] != votecompare)
-				endtype = 2;
+
+			if (g_votes[i] == VOTE_NOT_PICKED || endtype > VOTE_END_QUICK) // Don't need to go on
+			{
+				continue;
+			}
+
+			if (endtype == VOTE_END_NORMAL)
+			{
+				continue;
+			}
+
+			if (votecompare == VOTE_NOT_PICKED)
+			{
+				votecompare = g_votes[i];
+				endtype = VOTE_END_QUICK;
+			}
+			else if (g_votes[i] != votecompare)
+			{
+				endtype = VOTE_END_NORMAL;
+			}
 		}
 
-		if (endtype == 1) // Only one unique vote, so just end it immediately.
+		switch (endtype)
 		{
-			voteendtic = votetic + (5*TICRATE);
-			S_ChangeMusicInternal("voteeb", false);
-			Y_VoteStops(pick, level);
+			case VOTE_END_IMMEDIATE:
+			{
+				// Might as well put it here, too, just in case.
+				Y_EndVote();
+				G_AfterIntermission();
+				return;
+			}
+			case VOTE_END_QUICK:
+			{
+				// Only one unique vote, so just end it immediately.
+				vote.endtic = vote.tic + (5*TICRATE);
+				S_ChangeMusicInternal("voteeb", false);
+				Y_VoteStops(pick, level);
+				break;
+			}
+			default:
+			{
+				S_ChangeMusicInternal("voteea", true);
+				break;
+			}
 		}
-		else if (endtype == 0) // Might as well put this here, too.
-		{
-			Y_EndVote();
-			G_AfterIntermission();
-			return;
-		}
-		else
-			S_ChangeMusicInternal("voteea", true);
 	}
 
-	deferredlevel = level;
-	pickedvote = pick;
-	timer = 0;
+	vote.deferredLevel = level;
+	g_pickedVote = pick;
+	vote.timer = 0;
 }

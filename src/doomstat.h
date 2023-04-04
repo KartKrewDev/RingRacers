@@ -488,8 +488,8 @@ extern mapheader_t** mapheaderinfo;
 extern INT32 nummapheaders, mapallocsize;
 
 // Gametypes
-#define NUMGAMETYPEFREESLOTS (MAXGAMETYPES-GT_FIRSTFREESLOT)
-#define MAXGAMETYPELENGTH 32
+#define NUMGAMETYPEFREESLOTS (128)
+#define MAXGAMETYPELENGTH (32)
 
 enum GameType
 {
@@ -500,7 +500,7 @@ enum GameType
 	GT_TUTORIAL,
 
 	GT_FIRSTFREESLOT,
-	GT_LASTFREESLOT = 127, // Previously (GT_FIRSTFREESLOT + NUMGAMETYPEFREESLOTS - 1) - it would be necessary to rewrite VOTEMODIFIER_ENCORE to go higher than this.
+	GT_LASTFREESLOT = GT_FIRSTFREESLOT + NUMGAMETYPEFREESLOTS - 1,
 	MAXGAMETYPES
 };
 // If you alter this list, update defaultgametypes and *gametypes in g_game.c
@@ -732,9 +732,9 @@ extern boolean legitimateexit;
 extern boolean comebackshowninfo;
 extern tic_t curlap, bestlap;
 
-extern INT16 votelevels[4][2];
-extern SINT8 votes[MAXPLAYERS];
-extern SINT8 pickedvote;
+extern INT16 g_voteLevels[4][2];
+extern SINT8 g_votes[MAXPLAYERS];
+extern SINT8 g_pickedVote;
 
 // ===========================
 // Internal parameters, fixed.
