@@ -55,10 +55,6 @@
 #include "hardware/hw_main.h"
 #endif
 
-// graphics
-static patch_t *bgpatch = NULL;     // INTERSCR
-static patch_t *widebgpatch = NULL;
-
 static INT32 timer;
 
 #define UNLOAD(x) if (x) {Patch_Free(x);} x = NULL;
@@ -105,6 +101,14 @@ static patch_t *cursor4 = NULL;
 static patch_t *randomlvl = NULL;
 static patch_t *rubyicon = NULL;
 
+#define PLANET_FRAMES (9)
+#define TEXT_LEVEL_SCROLL (2*FRACUNIT)
+#define TEXT_DERR_SCROLL (2*FRACUNIT)
+static patch_t *bg_planet[PLANET_FRAMES] = { NULL };
+static patch_t *bg_checker = NULL;
+static patch_t *bg_levelText = NULL;
+static patch_t *bg_derrText = NULL;
+
 static void Y_UnloadVoteData(void);
 
 //
@@ -112,6 +116,75 @@ static void Y_UnloadVoteData(void);
 //
 // Draws the voting screen!
 //
+static void Y_DrawVoteBackground(void)
+{
+	static fixed_t bgTimer = 0;
+
+	static fixed_t derrPos = 0;
+	const fixed_t derrLoop = bg_derrText->width * FRACUNIT;
+
+	static fixed_t levelPos = 0;
+	const fixed_t levelLoop = bg_levelText->height * FRACUNIT;
+
+	const UINT8 planetFrame = (bgTimer / FRACUNIT) % PLANET_FRAMES;
+
+	V_DrawFixedPatch(
+		0, 0,
+		FRACUNIT, 0,
+		bg_planet[planetFrame], NULL
+	);
+	V_DrawFixedPatch(
+		(BASEVIDWIDTH - bg_checker->width) * FRACUNIT, 0,
+		FRACUNIT, V_ADD,
+		bg_checker, NULL
+	);
+	V_DrawFixedPatch(
+		(BASEVIDWIDTH - bg_checker->width) * FRACUNIT, 0,
+		FRACUNIT, V_ADD,
+		bg_checker, NULL
+	);
+
+	levelPos += FixedMul(TEXT_DERR_SCROLL, renderdeltatics);
+	while (levelPos > levelLoop)
+	{
+		levelPos -= levelLoop;
+	}
+
+	V_DrawFixedPatch(
+		((BASEVIDWIDTH - bg_levelText->width) * FRACUNIT) - levelPos,
+		-levelPos,
+		FRACUNIT, V_ADD,
+		bg_levelText, NULL
+	);
+	V_DrawFixedPatch(
+		((BASEVIDWIDTH - bg_levelText->width) * FRACUNIT) - levelPos + levelLoop,
+		-levelPos + levelLoop,
+		FRACUNIT, V_ADD,
+		bg_levelText, NULL
+	);
+
+	derrPos += FixedMul(TEXT_DERR_SCROLL, renderdeltatics);
+	while (derrPos > derrLoop)
+	{
+		derrPos -= derrLoop;
+	}
+
+	V_DrawFixedPatch(
+		-derrPos,
+		(BASEVIDHEIGHT - bg_derrText->height) * FRACUNIT,
+		FRACUNIT, V_SUBTRACT,
+		bg_derrText, NULL
+	);
+	V_DrawFixedPatch(
+		-derrPos + derrLoop,
+		(BASEVIDHEIGHT - bg_derrText->height) * FRACUNIT,
+		FRACUNIT, V_SUBTRACT,
+		bg_derrText, NULL
+	);
+
+	bgTimer += renderdeltatics;
+}
+
 void Y_VoteDrawer(void)
 {
 	INT32 i, x, y = 0, height = 0;
@@ -138,16 +211,7 @@ void Y_VoteDrawer(void)
 		rubyfloattime += FixedMul(ANGLE_MAX/NEWTICRATE, renderdeltatics);
 	}
 
-	V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 31);
-
-	if (widebgpatch && rendermode == render_soft && vid.width / vid.dupx > 320)
-		V_DrawScaledPatch(((vid.width/2) / vid.dupx) - (SHORT(widebgpatch->width)/2),
-							(vid.height / vid.dupy) - SHORT(widebgpatch->height),
-							V_SNAPTOTOP|V_SNAPTOLEFT, widebgpatch);
-	else
-		V_DrawScaledPatch(((vid.width/2) / vid.dupx) - (SHORT(bgpatch->width)/2), // Keep the width/height adjustments, for screens that are less wide than 320(?)
-							(vid.height / vid.dupy) - SHORT(bgpatch->height),
-							V_SNAPTOTOP|V_SNAPTOLEFT, bgpatch);
+	Y_DrawVoteBackground();
 
 	for (i = 0; i < 4; i++) // First, we need to figure out the height of this thing...
 	{
@@ -395,6 +459,8 @@ void Y_VoteDrawer(void)
 		V_DrawCenteredString(BASEVIDWIDTH/2, 188, V_YELLOWMAP,
 			va("Vote ends in %d", tickdown));
 	}
+
+	M_DrawMenuForeground();
 }
 
 //
@@ -659,7 +725,7 @@ void Y_VoteTicker(void)
 void Y_StartVote(void)
 {
 	INT32 i = 0;
-	boolean battlemode = ((votelevels[0][1] & ~VOTEMODIFIER_ENCORE) == GT_BATTLE); // todo gametyperules
+	//boolean battlemode = ((votelevels[0][1] & ~VOTEMODIFIER_ENCORE) == GT_BATTLE); // todo gametyperules
 
 	votetic = -1;
 
@@ -668,8 +734,6 @@ void Y_StartVote(void)
 		I_Error("voteendtic is dirty");
 #endif
 
-	widebgpatch = W_CachePatchName((battlemode ? "BATTLSCW" : "INTERSCW"), PU_STATIC);
-	bgpatch = W_CachePatchName((battlemode ? "BATTLSCR" : "INTERSCR"), PU_STATIC);
 	cursor = W_CachePatchName("M_CURSOR", PU_STATIC);
 	cursor1 = W_CachePatchName("P1CURSOR", PU_STATIC);
 	cursor2 = W_CachePatchName("P2CURSOR", PU_STATIC);
@@ -677,6 +741,15 @@ void Y_StartVote(void)
 	cursor4 = W_CachePatchName("P4CURSOR", PU_STATIC);
 	randomlvl = W_CachePatchName("RANDOMLV", PU_STATIC);
 	rubyicon = W_CachePatchName("RUBYICON", PU_STATIC);
+
+	for (i = 0; i < PLANET_FRAMES; i++)
+	{
+		bg_planet[i] = W_CachePatchName(va("VT_BG_%d", i + 1), PU_STATIC);
+	}
+
+	bg_checker = W_CachePatchName("VT_RACE", PU_STATIC);
+	bg_levelText = W_CachePatchName("VT_WELC", PU_STATIC);
+	bg_derrText = W_CachePatchName("VT_DERR", PU_STATIC);
 
 	timer = cv_votetime.value*TICRATE;
 	pickedvote = -1;
@@ -760,13 +833,13 @@ void Y_EndVote(void)
 //
 static void Y_UnloadVoteData(void)
 {
+	INT32 i;
+
 	voteclient.loaded = false;
 
 	if (rendermode != render_soft)
 		return;
 
-	UNLOAD(widebgpatch);
-	UNLOAD(bgpatch);
 	UNLOAD(cursor);
 	UNLOAD(cursor1);
 	UNLOAD(cursor2);
@@ -774,6 +847,15 @@ static void Y_UnloadVoteData(void)
 	UNLOAD(cursor4);
 	UNLOAD(randomlvl);
 	UNLOAD(rubyicon);
+
+	for (i = 0; i < PLANET_FRAMES; i++)
+	{
+		UNLOAD(bg_planet[i]);
+	}
+
+	UNLOAD(bg_checker);
+	UNLOAD(bg_levelText);
+	UNLOAD(bg_derrText);
 }
 
 //
