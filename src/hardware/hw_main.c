@@ -5653,6 +5653,12 @@ static void HWR_ProjectPrecipitationSprite(precipmobj_t *thing)
 	// uncapped/interpolation
 	interpmobjstate_t interp = {0};
 
+	// okay... this is a hack, but weather isn't networked, so it should be ok
+	if (!P_PrecipThinker(thing))
+	{
+		return;
+	}
+
 	// do interpolation
 	if (R_UsingFrameInterpolation() && !paused)
 	{
@@ -5752,13 +5758,6 @@ static void HWR_ProjectPrecipitationSprite(precipmobj_t *thing)
 
 	vis->precip = true;
 	vis->bbox = false;
-
-	// okay... this is a hack, but weather isn't networked, so it should be ok
-	if (!(thing->precipflags & PCF_THUNK))
-	{
-		P_PrecipThinker(thing);
-		thing->precipflags |= PCF_THUNK;
-	}
 }
 #endif
 

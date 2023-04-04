@@ -2465,6 +2465,12 @@ static void R_ProjectPrecipitationSprite(precipmobj_t *thing)
 	// uncapped/interpolation
 	interpmobjstate_t interp = {0};
 
+	// okay... this is a hack, but weather isn't networked, so it should be ok
+	if (!P_PrecipThinker(thing))
+	{
+		return;
+	}
+
 	// do interpolation
 	if (R_UsingFrameInterpolation() && !paused)
 	{
@@ -2554,7 +2560,7 @@ static void R_ProjectPrecipitationSprite(precipmobj_t *thing)
 	if (thing->subsector->sector->cullheight)
 	{
 		if (R_DoCulling(thing->subsector->sector->cullheight, viewsector->cullheight, viewz, gz, gzt))
-			goto weatherthink;
+			return;
 	}
 
 	// Determine the blendmode and translucency value
@@ -2565,7 +2571,7 @@ static void R_ProjectPrecipitationSprite(precipmobj_t *thing)
 
 		trans = (thing->frame & FF_TRANSMASK) >> FF_TRANSSHIFT;
 		if (trans >= NUMTRANSMAPS)
-			goto weatherthink; // cap
+			return; // cap
 	}
 
 	// store information in a vissprite
@@ -2623,14 +2629,6 @@ static void R_ProjectPrecipitationSprite(precipmobj_t *thing)
 
 	// Fullbright
 	vis->colormap = colormaps;
-
-weatherthink:
-	// okay... this is a hack, but weather isn't networked, so it should be ok
-	if (!(thing->precipflags & PCF_THUNK))
-	{
-		P_PrecipThinker(thing);
-		thing->precipflags |= PCF_THUNK;
-	}
 }
 
 // R_AddSprites
