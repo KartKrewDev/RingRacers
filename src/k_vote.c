@@ -123,7 +123,7 @@ typedef struct
 static y_vote_data vote = {0};
 static y_vote_draw vote_draw = {0};
 
-static boolean Y_PlayerIDCanVote(const UINT8 id)
+boolean Y_PlayerIDCanVote(const UINT8 id)
 {
 	if (id >= MAXPLAYERS)
 	{
@@ -386,7 +386,7 @@ void Y_VoteDrawer(void)
 		if (dedicated && i == 0) // While leaving blank spots for non-existent players is largely intentional, the first spot *always* being blank looks a tad silly :V
 			continue;
 
-		if ((playeringame[i] && !players[i].spectator) && g_votes[i] != VOTE_NOT_PICKED)
+		if (Y_PlayerIDCanVote(i) == true && g_votes[i] != VOTE_NOT_PICKED)
 		{
 			if (!timer && i == voteclient.ranim)
 			{
@@ -502,7 +502,7 @@ void Y_VoteTicker(void)
 
 	for (i = 0; i < MAXPLAYERS; i++) // Correct votes as early as possible, before they're processed by the game at all
 	{
-		if (playeringame[i] == false || players[i].spectator == true)
+		if (Y_PlayerIDCanVote(i) == false)
 		{
 			g_votes[i] = VOTE_NOT_PICKED; // Spectators are the lower class, and have effectively no voice in the government. Democracy sucks.
 		}
@@ -657,7 +657,7 @@ void Y_VoteTicker(void)
 
 					if (G_PlayerInputDown(i, gc_a, 0) && moved == false)
 					{
-						D_ModifyClientVote(consoleplayer, vote.players[i].selection, i);
+						D_ModifyClientVote(i, vote.players[i].selection);
 						moved = true;
 					}
 				}

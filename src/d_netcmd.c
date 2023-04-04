@@ -2633,17 +2633,18 @@ void D_SetupVote(void)
 	SendNetXCmd(XD_SETUPVOTE, buf, p - buf);
 }
 
-void D_ModifyClientVote(UINT8 player, SINT8 voted, UINT8 splitplayer)
+void D_ModifyClientVote(UINT8 player, SINT8 voted)
 {
-	char buf[2];
+	char buf[1];
 	char *p = buf;
 
-	if (splitplayer > 0)
-		player = g_localplayers[splitplayer];
+	if (player >= MAXSPLITSCREENPLAYERS)
+	{
+		return;
+	}
 
 	WRITESINT8(p, voted);
-	WRITEUINT8(p, player);
-	SendNetXCmd(XD_MODIFYVOTE, &buf, 2);
+	SendNetXCmdForPlayer(player, XD_MODIFYVOTE, &buf, 2);
 }
 
 void D_PickVote(void)
@@ -2652,21 +2653,27 @@ void D_PickVote(void)
 	char* p = buf;
 	SINT8 temppicks[MAXPLAYERS];
 	SINT8 templevels[MAXPLAYERS];
-	SINT8 votecompare = -1;
+	SINT8 votecompare = VOTE_NOT_PICKED;
 	UINT8 numvotes = 0, key = 0;
 	INT32 i;
 
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
-		if (!playeringame[i] || players[i].spectator)
+		if (Y_PlayerIDCanVote(i) == false)
+		{
 			continue;
-		if (g_votes[i] != -1)
+		}
+
+		if (g_votes[i] != VOTE_NOT_PICKED)
 		{
 			temppicks[numvotes] = i;
 			templevels[numvotes] = g_votes[i];
 			numvotes++;
-			if (votecompare == -1)
+
+			if (votecompare == VOTE_NOT_PICKED)
+			{
 				votecompare = g_votes[i];
+			}
 		}
 	}
 
@@ -2679,7 +2686,7 @@ void D_PickVote(void)
 	}
 	else
 	{
-		WRITESINT8(p, -1);
+		WRITESINT8(p, VOTE_NOT_PICKED);
 		WRITESINT8(p, 0);
 	}
 
@@ -5415,11 +5422,7 @@ static void Got_SetupVotecmd(UINT8 **cp, INT32 playernum)
 
 static void Got_ModifyVotecmd(UINT8 **cp, INT32 playernum)
 {
-	SINT8 voted = READSINT8(*cp);
-	UINT8 p = READUINT8(*cp);
-
-	(void)playernum;
-	g_votes[p] = voted;
+	g_votes[playernum] = READSINT8(*cp);
 }
 
 static void Got_PickVotecmd(UINT8 **cp, INT32 playernum)
