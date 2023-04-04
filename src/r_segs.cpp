@@ -2061,59 +2061,18 @@ void R_StoreWallRange(INT32 start, INT32 stop)
 			}
 		}
 
-		if (!bothceilingssky && !bothfloorssky)
-		{
-			if (worldhigh <= worldbottom && worldhighslope <= worldbottomslope)
-			{
-				ds_p->sprbottomclip = negonearray;
-				ds_p->bsilheight = INT32_MAX;
-				ds_p->silhouette |= SIL_BOTTOM;
-			}
-
-			if (worldlow >= worldtop && worldlowslope >= worldtopslope)
-			{
-				ds_p->sprtopclip = screenheightarray;
-				ds_p->tsilheight = INT32_MIN;
-				ds_p->silhouette |= SIL_TOP;
-			}
-		}
-
 		//SoM: 3/25/2000: This code fixes an automap bug that didn't check
 		// frontsector->ceiling and backsector->floor to see if a door was closed.
 		// Without the following code, sprites get displayed behind closed doors.
-		if (!bothceilingssky && !bothfloorssky)
+		if (doorclosed)
 		{
-			if (doorclosed || (worldhigh <= worldbottom && worldhighslope <= worldbottomslope))
-			{
-				ds_p->sprbottomclip = negonearray;
-				ds_p->bsilheight = INT32_MAX;
-				ds_p->silhouette |= SIL_BOTTOM;
-			}
+			ds_p->sprbottomclip = negonearray;
+			ds_p->bsilheight = INT32_MAX;
+			ds_p->silhouette |= SIL_BOTTOM;
 
-			if (doorclosed || (worldlow >= worldtop && worldlowslope >= worldtopslope))
-			{                   // killough 1/17/98, 2/8/98
-				ds_p->sprtopclip = screenheightarray;
-				ds_p->tsilheight = INT32_MIN;
-				ds_p->silhouette |= SIL_TOP;
-			}
-
-			//SoM: 3/25/2000: This code fixes an automap bug that didn't check
-			// frontsector->ceiling and backsector->floor to see if a door was closed.
-			// Without the following code, sprites get displayed behind closed doors.
-			{
-				if (doorclosed || (worldhigh <= worldbottom && worldhighslope <= worldbottomslope))
-				{
-					ds_p->sprbottomclip = negonearray;
-					ds_p->bsilheight = INT32_MAX;
-					ds_p->silhouette |= SIL_BOTTOM;
-				}
-				if (doorclosed || (worldlow >= worldtop && worldlowslope >= worldtopslope))
-				{                   // killough 1/17/98, 2/8/98
-					ds_p->sprtopclip = screenheightarray;
-					ds_p->tsilheight = INT32_MIN;
-					ds_p->silhouette |= SIL_TOP;
-				}
-			}
+			ds_p->sprtopclip = screenheightarray;
+			ds_p->tsilheight = INT32_MIN;
+			ds_p->silhouette |= SIL_TOP;
 		}
 
 		if (bothfloorssky)
@@ -2122,7 +2081,8 @@ void R_StoreWallRange(INT32 start, INT32 stop)
 			// this is the same but for upside down thok barriers where the floor is sky and the ceiling is normal
 			markfloor = false;
 		}
-		else if (worldlow != worldbottom
+		else if (doorclosed
+			|| worldlow != worldbottom
 			|| worldlowslope != worldbottomslope
 			|| backsector->f_slope != frontsector->f_slope
 			|| backsector->floorpic != frontsector->floorpic
@@ -2157,7 +2117,8 @@ void R_StoreWallRange(INT32 start, INT32 stop)
 			// so we can see the floor of thok barriers always regardless of sector properties
 			markceiling = false;
 		}
-		else if (worldhigh != worldtop
+		else if (doorclosed
+			|| worldhigh != worldtop
 			|| worldhighslope != worldtopslope
 			|| backsector->c_slope != frontsector->c_slope
 			|| backsector->ceilingpic != frontsector->ceilingpic
@@ -2183,16 +2144,6 @@ void R_StoreWallRange(INT32 start, INT32 stop)
 		{
 			// same plane on both sides
 			markceiling = false;
-		}
-
-		if (!bothceilingssky && !bothfloorssky)
-		{
-			if ((worldhigh <= worldbottom && worldhighslope <= worldbottomslope)
-			 || (worldlow >= worldtop && worldlowslope >= worldtopslope))
-			{
-				// closed door
-				markceiling = markfloor = true;
-			}
 		}
 
 		// check TOP TEXTURE
