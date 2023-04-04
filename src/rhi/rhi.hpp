@@ -171,7 +171,8 @@ enum class PipelineProgram
 {
 	kUnshaded,
 	kUnshadedPaletted,
-	kPostprocessWipe
+	kPostprocessWipe,
+	kPostimg
 };
 
 enum class BufferType
@@ -201,9 +202,23 @@ enum class UniformName
 	kModelView,
 	kProjection,
 	kTexCoord0Transform,
+	kTexCoord0Min,
+	kTexCoord0Max,
+	kTexCoord1Transform,
+	kTexCoord1Min,
+	kTexCoord1Max,
 	kSampler0IsIndexedAlpha,
+	kSampler1IsIndexedAlpha,
+	kSampler2IsIndexedAlpha,
+	kSampler3IsIndexedAlpha,
+	kSampler0Size,
+	kSampler1Size,
+	kSampler2Size,
+	kSampler3Size,
 	kWipeColorizeMode,
-	kWipeEncoreSwizzle
+	kWipeEncoreSwizzle,
+	kPostimgWater,
+	kPostimgHeat
 };
 
 enum class SamplerName
@@ -269,6 +284,7 @@ struct ProgramRequirements
 extern const ProgramRequirements kProgramRequirementsUnshaded;
 extern const ProgramRequirements kProgramRequirementsUnshadedPaletted;
 extern const ProgramRequirements kProgramRequirementsPostprocessWipe;
+extern const ProgramRequirements kProgramRequirementsPostimg;
 
 const ProgramRequirements& program_requirements_for_program(PipelineProgram program) noexcept;
 
@@ -303,11 +319,39 @@ inline constexpr const UniformFormat uniform_format(UniformName name) noexcept
 		return UniformFormat::kMat4;
 	case UniformName::kTexCoord0Transform:
 		return UniformFormat::kMat3;
+	case UniformName::kTexCoord0Min:
+		return UniformFormat::kFloat2;
+	case UniformName::kTexCoord0Max:
+		return UniformFormat::kFloat2;
+	case UniformName::kTexCoord1Transform:
+		return UniformFormat::kMat3;
+	case UniformName::kTexCoord1Min:
+		return UniformFormat::kFloat2;
+	case UniformName::kTexCoord1Max:
+		return UniformFormat::kFloat2;
 	case UniformName::kSampler0IsIndexedAlpha:
 		return UniformFormat::kInt;
+	case UniformName::kSampler1IsIndexedAlpha:
+		return UniformFormat::kInt;
+	case UniformName::kSampler2IsIndexedAlpha:
+		return UniformFormat::kInt;
+	case UniformName::kSampler3IsIndexedAlpha:
+		return UniformFormat::kInt;
+	case UniformName::kSampler0Size:
+		return UniformFormat::kFloat2;
+	case UniformName::kSampler1Size:
+		return UniformFormat::kFloat2;
+	case UniformName::kSampler2Size:
+		return UniformFormat::kFloat2;
+	case UniformName::kSampler3Size:
+		return UniformFormat::kFloat2;
 	case UniformName::kWipeColorizeMode:
 		return UniformFormat::kInt;
 	case UniformName::kWipeEncoreSwizzle:
+		return UniformFormat::kInt;
+	case UniformName::kPostimgWater:
+		return UniformFormat::kInt;
+	case UniformName::kPostimgHeat:
 		return UniformFormat::kInt;
 	default:
 		return UniformFormat::kFloat;
@@ -341,7 +385,7 @@ struct UniformInputDesc
 
 struct SamplerInputDesc
 {
-	std::vector<SamplerName> enabled_samplers;
+	srb2::StaticVec<SamplerName, 4> enabled_samplers;
 };
 
 struct ColorMask
@@ -535,6 +579,13 @@ struct GraphicsContext
 {
 };
 
+struct TextureDetails
+{
+	uint32_t width;
+	uint32_t height;
+	TextureFormat format;
+};
+
 /// @brief The unpack alignment of a row span when uploading pixels to the device.
 constexpr const std::size_t kPixelRowUnpackAlignment = 4;
 
@@ -554,6 +605,9 @@ struct Rhi
 	virtual void destroy_buffer(Handle<Buffer> handle) = 0;
 	virtual Handle<Renderbuffer> create_renderbuffer(const RenderbufferDesc& desc) = 0;
 	virtual void destroy_renderbuffer(Handle<Renderbuffer> handle) = 0;
+
+	virtual TextureDetails get_texture_details(Handle<Texture> texture) = 0;
+	virtual Rect get_renderbuffer_size(Handle<Renderbuffer> renderbuffer) = 0;
 
 	virtual Handle<TransferContext> begin_transfer() = 0;
 	virtual void end_transfer(Handle<TransferContext> handle) = 0;

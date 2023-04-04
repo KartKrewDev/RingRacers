@@ -17,6 +17,7 @@
 
 #include "cxxutil.hpp"
 #include "f_finale.h"
+#include "hwr2/pass_blit_postimg_screens.hpp"
 #include "hwr2/pass_blit_rect.hpp"
 #include "hwr2/pass_imgui.hpp"
 #include "hwr2/pass_manager.hpp"
@@ -205,7 +206,7 @@ static InternalPassData build_pass_manager()
 	auto basic_rendering = std::make_shared<PassManager>();
 
 	auto software_pass = std::make_shared<SoftwarePass>();
-	auto blit_sw_pass = std::make_shared<BlitRectPass>(palette_manager, true);
+	auto blit_postimg_screens = std::make_shared<BlitPostimgScreens>(palette_manager);
 	auto twodee = std::make_shared<TwodeePass>();
 	twodee->flat_manager_ = flat_texture_manager;
 	twodee->data_ = make_twodee_pass_data();
@@ -222,20 +223,77 @@ static InternalPassData build_pass_manager()
 			const bool sw_enabled = rendermode == render_soft && gamestate != GS_NULL;
 
 			mgr.set_pass_enabled("software", sw_enabled);
-			mgr.set_pass_enabled("blit_sw_prepare", sw_enabled);
-			mgr.set_pass_enabled("blit_sw", sw_enabled && !g_wipeskiprender);
+			mgr.set_pass_enabled("blit_postimg_screens_prepare", sw_enabled);
+			mgr.set_pass_enabled("blit_postimg_screens", sw_enabled && !g_wipeskiprender);
 		}
 	);
 	basic_rendering->insert("software", software_pass);
 	basic_rendering->insert(
-		"blit_sw_prepare",
-		[blit_sw_pass, software_pass, framebuffer_manager](PassManager&, Rhi&)
+		"blit_postimg_screens_prepare",
+		[blit_postimg_screens, software_pass, framebuffer_manager](PassManager&, Rhi&)
 		{
-			blit_sw_pass->set_texture(software_pass->screen_texture(), vid.width, vid.height);
-			blit_sw_pass->set_output(framebuffer_manager->main_color(), vid.width, vid.height, false, false);
+			const bool sw_enabled = rendermode == render_soft && gamestate != GS_NULL;
+			const int screens = std::clamp(r_splitscreen + 1, 1, MAXSPLITSCREENPLAYERS);
+
+			blit_postimg_screens->set_num_screens(screens);
+			for (int i = 0; i < screens; i++)
+			{
+				if (sw_enabled)
+				{
+					glm::vec2 uv_offset {0.f, 0.f};
+					glm::vec2 uv_size {1.f, 1.f};
+
+					if (screens > 2)
+					{
+						uv_size = glm::vec2(.5f, .5f);
+						switch (i)
+						{
+						case 0:
+							uv_offset = glm::vec2(0.f, 0.f);
+							break;
+						case 1:
+							uv_offset = glm::vec2(.5f, 0.f);
+							break;
+						case 2:
+							uv_offset = glm::vec2(0.f, .5f);
+							break;
+						case 3:
+							uv_offset = glm::vec2(.5f, .5f);
+							break;
+						}
+					}
+					else if (screens > 1)
+					{
+						uv_size = glm::vec2(1.0, 0.5);
+						if (i == 1)
+						{
+							uv_offset = glm::vec2(0.f, .5f);
+						}
+					}
+
+					// "You should probably never have more than 3 levels of indentation" -- Eidolon, the author of this
+
+					blit_postimg_screens->set_screen(
+						i,
+						{
+							software_pass->screen_texture(),
+							true,
+							uv_offset,
+							uv_size,
+							{
+								postimgtype[i] == postimg_water,
+								postimgtype[i] == postimg_heat,
+								postimgtype[i] == postimg_flip,
+								postimgtype[i] == postimg_mirror
+							}
+						}
+					);
+				}
+			}
+			blit_postimg_screens->set_target(framebuffer_manager->main_color(), vid.width, vid.height);
 		}
 	);
-	basic_rendering->insert("blit_sw", blit_sw_pass);
+	basic_rendering->insert("blit_postimg_screens", blit_postimg_screens);
 
 	basic_rendering->insert(
 		"2d_prepare",

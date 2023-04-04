@@ -20,6 +20,8 @@
 #include <glad/gl.h>
 #include <glm/gtc/type_ptr.hpp>
 
+#include "../shader_load_context.hpp"
+
 using namespace srb2;
 using namespace rhi;
 
@@ -346,12 +348,40 @@ constexpr const char* map_uniform_attribute_symbol_name(rhi::UniformName name)
 		return "u_projection";
 	case rhi::UniformName::kTexCoord0Transform:
 		return "u_texcoord0_transform";
+	case rhi::UniformName::kTexCoord0Min:
+		return "u_texcoord0_min";
+	case rhi::UniformName::kTexCoord0Max:
+		return "u_texcoord0_max";
+	case rhi::UniformName::kTexCoord1Transform:
+		return "u_texcoord1_transform";
+	case rhi::UniformName::kTexCoord1Min:
+		return "u_texcoord1_min";
+	case rhi::UniformName::kTexCoord1Max:
+		return "u_texcoord1_max";
 	case rhi::UniformName::kSampler0IsIndexedAlpha:
 		return "u_sampler0_is_indexed_alpha";
+	case rhi::UniformName::kSampler1IsIndexedAlpha:
+		return "u_sampler1_is_indexed_alpha";
+	case rhi::UniformName::kSampler2IsIndexedAlpha:
+		return "u_sampler2_is_indexed_alpha";
+	case rhi::UniformName::kSampler3IsIndexedAlpha:
+		return "u_sampler3_is_indexed_alpha";
+	case rhi::UniformName::kSampler0Size:
+		return "u_sampler0_size";
+	case rhi::UniformName::kSampler1Size:
+		return "u_sampler1_size";
+	case rhi::UniformName::kSampler2Size:
+		return "u_sampler2_size";
+	case rhi::UniformName::kSampler3Size:
+		return "u_sampler3_size";
 	case rhi::UniformName::kWipeColorizeMode:
 		return "u_wipe_colorize_mode";
 	case rhi::UniformName::kWipeEncoreSwizzle:
 		return "u_wipe_encore_swizzle";
+	case rhi::UniformName::kPostimgWater:
+		return "u_postimg_water";
+	case rhi::UniformName::kPostimgHeat:
+		return "u_postimg_heat";
 	default:
 		return nullptr;
 	}
@@ -369,12 +399,40 @@ constexpr const char* map_uniform_enable_define(rhi::UniformName name)
 		return "ENABLE_U_MODELVIEW";
 	case rhi::UniformName::kTexCoord0Transform:
 		return "ENABLE_U_TEXCOORD0_TRANSFORM";
+	case rhi::UniformName::kTexCoord0Min:
+		return "ENABLE_U_TEXCOORD0_MIN";
+	case rhi::UniformName::kTexCoord0Max:
+		return "ENABLE_U_TEXCOORD0_MAX";
+	case rhi::UniformName::kTexCoord1Transform:
+		return "ENABLE_U_TEXCOORD1_TRANSFORM";
+	case rhi::UniformName::kTexCoord1Min:
+		return "ENABLE_U_TEXCOORD1_MIN";
+	case rhi::UniformName::kTexCoord1Max:
+		return "ENABLE_U_TEXCOORD1_MAX";
 	case rhi::UniformName::kSampler0IsIndexedAlpha:
 		return "ENABLE_U_SAMPLER0_IS_INDEXED_ALPHA";
+	case rhi::UniformName::kSampler1IsIndexedAlpha:
+		return "ENABLE_U_SAMPLER1_IS_INDEXED_ALPHA";
+	case rhi::UniformName::kSampler2IsIndexedAlpha:
+		return "ENABLE_U_SAMPLER2_IS_INDEXED_ALPHA";
+	case rhi::UniformName::kSampler3IsIndexedAlpha:
+		return "ENABLE_U_SAMPLER3_IS_INDEXED_ALPHA";
+	case rhi::UniformName::kSampler0Size:
+		return "ENABLE_U_SAMPLER0_SIZE";
+	case rhi::UniformName::kSampler1Size:
+		return "ENABLE_U_SAMPLER1_SIZE";
+	case rhi::UniformName::kSampler2Size:
+		return "ENABLE_U_SAMPLER2_SIZE";
+	case rhi::UniformName::kSampler3Size:
+		return "ENABLE_U_SAMPLER3_SIZE";
 	case rhi::UniformName::kWipeColorizeMode:
 		return "ENABLE_U_WIPE_COLORIZE_MODE";
 	case rhi::UniformName::kWipeEncoreSwizzle:
 		return "ENABLE_U_WIPE_ENCORE_SWIZZLE";
+	case rhi::UniformName::kPostimgWater:
+		return "ENABLE_U_POSTIMG_WATER";
+	case rhi::UniformName::kPostimgHeat:
+		return "ENABLE_U_POSTIMG_HEAT";
 	default:
 		return nullptr;
 	}
@@ -812,6 +870,7 @@ rhi::Handle<rhi::Renderbuffer> GlCoreRhi::create_renderbuffer(const rhi::Renderb
 
 	GlCoreRenderbuffer rb;
 	rb.renderbuffer = name;
+	rb.desc = desc;
 	return renderbuffer_slab_.insert(std::move(rb));
 }
 
@@ -838,112 +897,82 @@ rhi::Handle<rhi::Pipeline> GlCoreRhi::create_pipeline(const PipelineDesc& desc)
 	GLuint program = 0;
 	GlCorePipeline pipeline;
 
-	auto [vert_src, frag_src] = platform_->find_shader_sources(desc.program);
+	auto [vert_srcs, frag_srcs] = platform_->find_shader_sources(desc.program);
 
-	// TODO make use of multiple source files.
-	// In Khronos Group's brilliance, #version is required to be the first directive,
-	// but we need to insert #defines in-between.
-	std::string vert_src_processed;
-	std::string::size_type string_i = 0;
-	do
+	// Process vertex shader sources
+	std::vector<const char*> vert_sources;
+	ShaderLoadContext vert_ctx;
+	vert_ctx.set_version("150 core");
+	for (auto& attribute : desc.vertex_input.attr_layouts)
 	{
-		std::string::size_type new_i = vert_src.find('\n', string_i);
-		if (new_i == std::string::npos)
+		for (auto const& require_attr : reqs.vertex_input.attributes)
 		{
-			break;
-		}
-		std::string_view line_view(vert_src.c_str() + string_i, new_i - string_i + 1);
-		vert_src_processed.append(line_view);
-		if (line_view.rfind("#version ", 0) == 0)
-		{
-			for (auto& attribute : desc.vertex_input.attr_layouts)
+			if (require_attr.name == attribute.name && !require_attr.required)
 			{
-				for (auto const& require_attr : reqs.vertex_input.attributes)
-				{
-					if (require_attr.name == attribute.name && !require_attr.required)
-					{
-						vert_src_processed.append("#define ");
-						vert_src_processed.append(map_vertex_attribute_enable_define(attribute.name));
-						vert_src_processed.append("\n");
-					}
-				}
-			}
-			for (auto& uniform_group : desc.uniform_input.enabled_uniforms)
-			{
-				for (auto& uniform : uniform_group)
-				{
-					for (auto const& req_uni_group : reqs.uniforms.uniform_groups)
-					{
-						for (auto const& req_uni : req_uni_group)
-						{
-							if (req_uni.name == uniform && !req_uni.required)
-							{
-								vert_src_processed.append("#define ");
-								vert_src_processed.append(map_uniform_enable_define(uniform));
-								vert_src_processed.append("\n");
-							}
-						}
-					}
-				}
+				vert_ctx.define(map_vertex_attribute_enable_define(attribute.name));
 			}
 		}
-		string_i = new_i + 1;
-	} while (string_i != std::string::npos);
-
-	std::string frag_src_processed;
-	string_i = 0;
-	do
+	}
+	for (auto& uniform_group : desc.uniform_input.enabled_uniforms)
 	{
-		std::string::size_type new_i = frag_src.find('\n', string_i);
-		if (new_i == std::string::npos)
+		for (auto& uniform : uniform_group)
 		{
-			break;
-		}
-		std::string_view line_view(frag_src.c_str() + string_i, new_i - string_i + 1);
-		frag_src_processed.append(line_view);
-		if (line_view.rfind("#version ", 0) == 0)
-		{
-			for (auto& sampler : desc.sampler_input.enabled_samplers)
+			for (auto const& req_uni_group : reqs.uniforms.uniform_groups)
 			{
-				for (auto const& require_sampler : reqs.samplers.samplers)
+				for (auto const& req_uni : req_uni_group)
 				{
-					if (sampler == require_sampler.name && !require_sampler.required)
+					if (req_uni.name == uniform && !req_uni.required)
 					{
-						frag_src_processed.append("#define ");
-						frag_src_processed.append(map_sampler_enable_define(sampler));
-						frag_src_processed.append("\n");
-					}
-				}
-			}
-			for (auto& uniform_group : desc.uniform_input.enabled_uniforms)
-			{
-				for (auto& uniform : uniform_group)
-				{
-					for (auto const& req_uni_group : reqs.uniforms.uniform_groups)
-					{
-						for (auto const& req_uni : req_uni_group)
-						{
-							if (req_uni.name == uniform && !req_uni.required)
-							{
-								frag_src_processed.append("#define ");
-								frag_src_processed.append(map_uniform_enable_define(uniform));
-								frag_src_processed.append("\n");
-							}
-						}
+						vert_ctx.define(map_uniform_enable_define(uniform));
 					}
 				}
 			}
 		}
-		string_i = new_i + 1;
-	} while (string_i != std::string::npos);
+	}
+	for (auto& src : vert_srcs)
+	{
+		vert_ctx.add_source(std::move(src));
+	}
+	vert_sources = vert_ctx.get_sources_array();
 
-	const char* vert_src_arr[1] = {vert_src_processed.c_str()};
-	const GLint vert_src_arr_lens[1] = {static_cast<GLint>(vert_src_processed.size())};
-	const char* frag_src_arr[1] = {frag_src_processed.c_str()};
-	const GLint frag_src_arr_lens[1] = {static_cast<GLint>(frag_src_processed.size())};
+	// Process vertex shader sources
+	std::vector<const char*> frag_sources;
+	ShaderLoadContext frag_ctx;
+	frag_ctx.set_version("150 core");
+	for (auto& sampler : desc.sampler_input.enabled_samplers)
+	{
+		for (auto const& require_sampler : reqs.samplers.samplers)
+		{
+			if (sampler == require_sampler.name && !require_sampler.required)
+			{
+				frag_ctx.define(map_sampler_enable_define(sampler));
+			}
+		}
+	}
+	for (auto& uniform_group : desc.uniform_input.enabled_uniforms)
+	{
+		for (auto& uniform : uniform_group)
+		{
+			for (auto const& req_uni_group : reqs.uniforms.uniform_groups)
+			{
+				for (auto const& req_uni : req_uni_group)
+				{
+					if (req_uni.name == uniform && !req_uni.required)
+					{
+						frag_ctx.define(map_uniform_enable_define(uniform));
+					}
+				}
+			}
+		}
+	}
+	for (auto& src : frag_srcs)
+	{
+		frag_ctx.add_source(std::move(src));
+	}
+	frag_sources = frag_ctx.get_sources_array();
 
 	vertex = gl_->CreateShader(GL_VERTEX_SHADER);
-	gl_->ShaderSource(vertex, 1, vert_src_arr, vert_src_arr_lens);
+	gl_->ShaderSource(vertex, vert_sources.size(), vert_sources.data(), NULL);
 	gl_->CompileShader(vertex);
 	GLint is_compiled = 0;
 	gl_->GetShaderiv(vertex, GL_COMPILE_STATUS, &is_compiled);
@@ -959,7 +988,7 @@ rhi::Handle<rhi::Pipeline> GlCoreRhi::create_pipeline(const PipelineDesc& desc)
 		);
 	}
 	fragment = gl_->CreateShader(GL_FRAGMENT_SHADER);
-	gl_->ShaderSource(fragment, 1, frag_src_arr, frag_src_arr_lens);
+	gl_->ShaderSource(fragment, frag_sources.size(), frag_sources.data(), NULL);
 	gl_->CompileShader(fragment);
 	gl_->GetShaderiv(vertex, GL_COMPILE_STATUS, &is_compiled);
 	if (is_compiled == GL_FALSE)
@@ -1701,6 +1730,33 @@ void GlCoreRhi::read_pixels(Handle<GraphicsContext> ctx, const Rect& rect, Pixel
 	SRB2_ASSERT(out.size_bytes() == rect.w * rect.h * size);
 
 	gl_->ReadPixels(rect.x, rect.y, rect.w, rect.h, layout, type, out.data());
+}
+
+TextureDetails GlCoreRhi::get_texture_details(Handle<Texture> texture)
+{
+	SRB2_ASSERT(texture_slab_.is_valid(texture));
+	auto& t = texture_slab_[texture];
+
+	TextureDetails ret {};
+	ret.format = t.desc.format;
+	ret.width = t.desc.width;
+	ret.height = t.desc.height;
+
+	return ret;
+}
+
+Rect GlCoreRhi::get_renderbuffer_size(Handle<Renderbuffer> renderbuffer)
+{
+	SRB2_ASSERT(renderbuffer_slab_.is_valid(renderbuffer));
+	auto& rb = renderbuffer_slab_[renderbuffer];
+
+	Rect ret {};
+	ret.x = 0;
+	ret.y = 0;
+	ret.w = rb.desc.width;
+	ret.h = rb.desc.height;
+
+	return ret;
 }
 
 void GlCoreRhi::finish()

@@ -70,7 +70,7 @@ struct GlCorePlatform
 	virtual ~GlCorePlatform();
 
 	virtual void present() = 0;
-	virtual std::tuple<std::string, std::string> find_shader_sources(PipelineProgram program) = 0;
+	virtual std::tuple<std::vector<std::string>, std::vector<std::string>> find_shader_sources(PipelineProgram program) = 0;
 	virtual Rect get_default_framebuffer_dimensions() = 0;
 };
 
@@ -94,6 +94,7 @@ struct GlCoreRenderPass : public rhi::RenderPass
 struct GlCoreRenderbuffer : public rhi::Renderbuffer
 {
 	uint32_t renderbuffer;
+	rhi::RenderbufferDesc desc;
 };
 
 struct GlCoreUniformSet : public rhi::UniformSet
@@ -180,6 +181,9 @@ public:
 	virtual void destroy_buffer(Handle<Buffer> handle) override;
 	virtual Handle<Renderbuffer> create_renderbuffer(const RenderbufferDesc& desc) override;
 	virtual void destroy_renderbuffer(Handle<Renderbuffer> handle) override;
+
+	virtual TextureDetails get_texture_details(Handle<Texture> texture) override;
+	virtual Rect get_renderbuffer_size(Handle<Renderbuffer> renderbuffer) override;
 
 	virtual Handle<TransferContext> begin_transfer() override;
 	virtual void end_transfer(Handle<TransferContext> handle) override;

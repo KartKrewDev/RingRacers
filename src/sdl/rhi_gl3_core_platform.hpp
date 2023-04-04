@@ -25,7 +25,8 @@ struct SdlGlCorePlatform final : public GlCorePlatform
 	virtual ~SdlGlCorePlatform();
 
 	virtual void present() override;
-	virtual std::tuple<std::string, std::string> find_shader_sources(PipelineProgram program) override;
+	virtual std::tuple<std::vector<std::string>, std::vector<std::string>>
+	find_shader_sources(PipelineProgram program) override;
 	virtual Rect get_default_framebuffer_dimensions() override;
 };
 
