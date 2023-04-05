@@ -119,7 +119,7 @@ void R_CrunchWallSegment(cliprange_t *start, cliprange_t *next)
 
 	// NO MORE CRASHING!
 	if (newend - solidsegs > MAXSEGS)
-		I_Error("R_ClipSolidWallSegment: Solid Segs overflow!\n");
+		I_Error("R_CrunchWallSegment: Solid Segs overflow!\n");
 }
 
 template <ClipType Type>
