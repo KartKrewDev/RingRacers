@@ -63,7 +63,7 @@ add_executable(SRB2SDL2 MACOSX_BUNDLE WIN32
 	p_user.c
 	p_slopes.c
 	tables.c
-	r_bsp.c
+	r_bsp.cpp
 	r_data.c
 	r_debug.cpp
 	r_debug_parser.cpp
