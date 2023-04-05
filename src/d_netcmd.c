@@ -2617,15 +2617,23 @@ void D_SetupVote(void)
 {
 	UINT8 buf[(VOTE_NUM_LEVELS * 2) + 2]; // four UINT16 maps (at twice the width of a UINT8), and two gametypes
 	UINT8 *p = buf;
+
 	INT32 i;
-	INT16 votebuffer[VOTE_NUM_LEVELS] = {-1};
+
+	INT16 votebuffer[VOTE_NUM_LEVELS + 1] = {-1};
+	votebuffer[VOTE_NUM_LEVELS] = 0; // End marker for G_RandMap
 
 	WRITEUINT8(p, ((cv_kartencore.value == 1) && (gametyperules & GTR_ENCORE)));
 	WRITEUINT8(p, G_SometimesGetDifferentEncore());
 
 	for (i = 0; i < VOTE_NUM_LEVELS; i++)
 	{
-		UINT16 m = G_RandMap(G_TOLFlag(gametype), prevmap, 0, 0, true, votebuffer);
+		UINT16 m = G_RandMap(
+			G_TOLFlag(gametype),
+			prevmap, false,
+			(i < VOTE_NUM_LEVELS-1),
+			votebuffer
+		);
 		votebuffer[i] = m;
 		WRITEUINT16(p, m);
 	}
@@ -3202,7 +3210,7 @@ static void Command_RandomMap(void)
 		oldmapnum = -1;
 	}
 
-	newmapnum = G_RandMap(G_TOLFlag(newgametype), oldmapnum, 0, 0, false, NULL) + 1;
+	newmapnum = G_RandMap(G_TOLFlag(newgametype), oldmapnum, false, false, NULL) + 1;
 	D_MapChange(newmapnum, newgametype, newencore, newresetplayers, 0, false, false);
 }
 

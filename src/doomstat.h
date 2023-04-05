@@ -410,6 +410,8 @@ struct mapheader_t
 
 	cupheader_t *cup;					///< Cached cup
 
+	size_t justPlayed;					///< Prevent this map from showing up in votes if it was recently picked.
+
 	// Titlecard information
 	char lvlttl[22];					///< Level name without "Zone". (21 character limit instead of 32, 21 characters can display on screen max anyway)
 	char subttl[33];					///< Subtitle for level

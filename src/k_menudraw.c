@@ -5282,7 +5282,7 @@ static void M_DrawChallengePreview(INT32 x, INT32 y)
 			static UINT16 encoremapcache = NEXTMAP_INVALID;
 			if (encoremapcache > nummapheaders)
 			{
-				encoremapcache = G_RandMap(G_TOLFlag(GT_RACE), -1, 2, 0, false, NULL);
+				encoremapcache = G_RandMap(G_TOLFlag(GT_RACE), -1, true, false, NULL);
 			}
 			specialmap = encoremapcache;
 			break;
@@ -5292,7 +5292,7 @@ static void M_DrawChallengePreview(INT32 x, INT32 y)
 			static UINT16 tamapcache = NEXTMAP_INVALID;
 			if (tamapcache > nummapheaders)
 			{
-				tamapcache = G_RandMap(G_TOLFlag(GT_RACE), -1, 2, 0, false, NULL);
+				tamapcache = G_RandMap(G_TOLFlag(GT_RACE), -1, true, false, NULL);
 			}
 			specialmap = tamapcache;
 			break;
@@ -5302,7 +5302,7 @@ static void M_DrawChallengePreview(INT32 x, INT32 y)
 			static UINT16 btcmapcache = NEXTMAP_INVALID;
 			if (btcmapcache > nummapheaders)
 			{
-				btcmapcache = G_RandMap(G_TOLFlag(GT_BATTLE), -1, 2, 0, false, NULL);
+				btcmapcache = G_RandMap(G_TOLFlag(GT_BATTLE), -1, true, false, NULL);
 			}
 			specialmap = btcmapcache;
 			break;
@@ -5312,7 +5312,7 @@ static void M_DrawChallengePreview(INT32 x, INT32 y)
 			static UINT16 sscmapcache = NEXTMAP_INVALID;
 			if (sscmapcache > nummapheaders)
 			{
-				sscmapcache = G_RandMap(G_TOLFlag(GT_SPECIAL), -1, 2, 0, false, NULL);
+				sscmapcache = G_RandMap(G_TOLFlag(GT_SPECIAL), -1, true, false, NULL);
 			}
 			specialmap = sscmapcache;
 			break;
@@ -5322,7 +5322,7 @@ static void M_DrawChallengePreview(INT32 x, INT32 y)
 			static UINT16 spbmapcache = NEXTMAP_INVALID;
 			if (spbmapcache > nummapheaders)
 			{
-				spbmapcache = G_RandMap(G_TOLFlag(GT_RACE), -1, 2, 0, false, NULL);
+				spbmapcache = G_RandMap(G_TOLFlag(GT_RACE), -1, true, false, NULL);
 			}
 			specialmap = spbmapcache;
 			break;
@@ -5332,7 +5332,7 @@ static void M_DrawChallengePreview(INT32 x, INT32 y)
 			static UINT16 hardmapcache = NEXTMAP_INVALID;
 			if (hardmapcache > nummapheaders)
 			{
-				hardmapcache = G_RandMap(G_TOLFlag(GT_RACE), -1, 2, 0, false, NULL);
+				hardmapcache = G_RandMap(G_TOLFlag(GT_RACE), -1, true, false, NULL);
 			}
 			specialmap = hardmapcache;
 			break;
@@ -5342,7 +5342,7 @@ static void M_DrawChallengePreview(INT32 x, INT32 y)
 			static UINT16 mastermapcache = NEXTMAP_INVALID;
 			if (mastermapcache > nummapheaders)
 			{
-				mastermapcache = G_RandMap(G_TOLFlag(GT_RACE), -1, 2, 0, false, NULL);
+				mastermapcache = G_RandMap(G_TOLFlag(GT_RACE), -1, true, false, NULL);
 			}
 			specialmap = mastermapcache;
 			break;
