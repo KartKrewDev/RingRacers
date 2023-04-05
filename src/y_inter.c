@@ -62,10 +62,10 @@ typedef struct
 
 typedef struct
 {
-	INT32 *character[MAXPLAYERS]; // Winner's character #
-	UINT16 *color[MAXPLAYERS]; // Winner's color #
-	SINT8 num[MAXPLAYERS]; // Winner's player #
-	char *name[MAXPLAYERS]; // Winner's name
+	INT32 *character[MAXPLAYERS]; // Character #
+	UINT16 *color[MAXPLAYERS]; // Color #
+	SINT8 num[MAXPLAYERS]; // Player #
+	char *name[MAXPLAYERS]; // Player's name
 
 	UINT8 numplayers; // Number of players being displayed
 
@@ -596,8 +596,6 @@ skiptallydrawer:
 
 	// INFO SEGMENT
 	// Numbers are V_DrawRightAlignedThinString WITH v_6widthspace as flags
-	// TAILS GOT THROUGH ROUND, V_DrawTitleCardString, V_6WIDTHSPACE, T is 13x32, try (51,7) origin
-	// TT_RND lumps for round numbers 74x74, origin (204,2)
 	// resbar 1 (48,82)  5 (176, 82)
 	// 2 (48, 96)
 	
@@ -621,6 +619,8 @@ skiptallydrawer:
 	patch_t *rrmrk2 = W_CachePatchName("R_RRMRK2", PU_PATCH);
 	patch_t *rrmrk3 = W_CachePatchName("R_RRMRK3", PU_PATCH);
 	patch_t *rrmrk4 = W_CachePatchName("R_RRMRK4", PU_PATCH);
+	patch_t *rrmrk5 = W_CachePatchName("R_RRMRK5", PU_PATCH);
+	patch_t *rrmrk6 = W_CachePatchName("R_RRMRK6", PU_PATCH);
 	
 	// Progression lines
 	patch_t *rrmln1 = W_CachePatchName("R_RRMLN1", PU_PATCH);
@@ -711,7 +711,7 @@ skiptallydrawer:
 		char buf[9];
 		sprintf(buf, "TT_RND%d", grandprixinfo.roundnum);
 		patch_t *roundpatch = W_CachePatchName(buf, PU_PATCH);
-		V_DrawMappedPatch(204, 2, 0, roundpatch, 0);
+		V_DrawMappedPatch(240, 39, 0, roundpatch, 0);
 	}
 	
 	
@@ -774,28 +774,38 @@ skiptallydrawer:
 			V_DrawMappedPatch(x, 179, 0, rrmln5, 0);
 		}
 		
-		// Draw the progress markers
-		V_DrawMappedPatch(16, 179, 0, rrmrk1, 0);
-		V_DrawMappedPatch(40, 171, 0, rrmrk2, 0);
-		V_DrawMappedPatch(64, 179, 0, rrmrk3, 0);
-		
-		V_DrawMappedPatch(88, 171, 0, rrmrk2, 0);
-		V_DrawMappedPatch(112, 179, 0, rrmrk2, 0);
-		V_DrawMappedPatch(136, 171, 0, rrmrk3, 0);
-		V_DrawMappedPatch(160, 179, 0, rrmrk2, 0);
-		
-		V_DrawMappedPatch(282, 179, 0, rrmrk4, 0);
-		
-		// Draw rank icon
-		V_DrawMappedPatch(14, 165, 0, rpmark, 0);
 		
 		for (SINT8 i = 0; i < data.numplayers; i++)
 		{
 			if (data.num[i] != MAXPLAYERS && playeringame[data.num[i]] && !players[data.num[i]].spectator && data.num[i] == consoleplayer)
 			{
 				UINT8 *colormap = R_GetTranslationColormap(*data.character[i], *data.color[i], GTC_CACHE);
-				V_DrawMappedPatch(15, 166, 0, faceprefix[*data.character[i]][FACE_RANK], colormap); // get an icon in there for now
-				V_DrawTitleCardString(51, 7, data.name[i], V_6WIDTHSPACE, false, 0, 0);
+				UINT8 *oppositemap = R_GetTranslationColormap(*data.character[i], skincolors[*data.color[i]].invcolor, GTC_CACHE);
+				INT32 roundx[6] = {0, 14, 38, 86, 110, 158};
+				INT32 roundy[6] = {0, 165, 157, 157, 165, 165};
+				INT32 rankx = roundx[grandprixinfo.roundnum];
+				INT32 ranky = roundy[grandprixinfo.roundnum];
+				
+				// Draw the progress markers
+				V_DrawMappedPatch(16, 179, 0, grandprixinfo.roundnum > 0 ? rrmrk1 : rrmrk2, grandprixinfo.roundnum == 1 ? oppositemap : colormap);
+				V_DrawMappedPatch(40, 171, 0, grandprixinfo.roundnum > 1 ? rrmrk1 : rrmrk2, grandprixinfo.roundnum == 2 ? oppositemap : colormap);
+				V_DrawMappedPatch(64, 179, 0, grandprixinfo.roundnum > 2 ? rrmrk5 : rrmrk3, colormap); // CAPSULE
+				
+				V_DrawMappedPatch(88, 171, 0, grandprixinfo.roundnum > 2 ? rrmrk1 : rrmrk2, grandprixinfo.roundnum == 3 ? oppositemap : colormap);
+				V_DrawMappedPatch(112, 179, 0, grandprixinfo.roundnum > 3 ? rrmrk1 : rrmrk2, grandprixinfo.roundnum == 4 ? oppositemap : colormap);
+				V_DrawMappedPatch(136, 171, 0, grandprixinfo.roundnum > 4 ? rrmrk5 : rrmrk3, colormap); // CAPSULE
+				V_DrawMappedPatch(160, 179, 0, grandprixinfo.roundnum > 4 ? rrmrk1 : rrmrk2, grandprixinfo.roundnum == 5 ? oppositemap : colormap);
+				
+				V_DrawMappedPatch(282, 179, 0, grandprixinfo.roundnum > 5 ? rrmrk6 : rrmrk4, colormap); // EMERALD
+				
+				// Draw outline for rank icon
+				V_DrawMappedPatch(rankx, ranky, 0, rpmark, 0);
+				
+				// Draw the player's rank icon
+				V_DrawMappedPatch(rankx + 1, ranky + 1, 0, faceprefix[*data.character[i]][FACE_RANK], colormap);
+				
+				// Draw the player's name
+				V_DrawTitleCardString(51, 7, skins[*data.character[i]].realname, V_6WIDTHSPACE, false, 0, 0);
 			}
 		}
 	}
