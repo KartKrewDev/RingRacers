@@ -11,6 +11,8 @@
 /// \file  r_bsp.c
 /// \brief BSP traversal, handling of LineSegs for rendering
 
+#include <algorithm>
+
 #include "doomdef.h"
 #include "g_game.h"
 #include "r_local.h"
@@ -88,13 +90,40 @@ void R_ClearDrawSegs(void)
 static cliprange_t *newend;
 static cliprange_t solidsegs[MAXSEGS];
 
-//
-// R_ClipSolidWallSegment
-// Does handle solid walls,
-//  e.g. single sided LineDefs (middle texture)
-//  that entirely block the view.
-//
-static void R_ClipSolidWallSegment(INT32 first, INT32 last)
+namespace
+{
+
+enum class ClipType
+{
+	// Does handle solid walls,
+	//  e.g. single sided LineDefs (middle texture)
+	//  that entirely block the view.
+	kSolid,
+
+	// Clips the given range of columns, but does not include it in the clip list.
+	// Does handle windows, e.g. LineDefs with upper and lower texture.
+	kPass,
+};
+
+void R_CrunchWallSegment(cliprange_t *start, cliprange_t *next)
+{
+	// Remove start+1 to next from the clip list, because start now covers their area.
+
+	if (next == start)
+		return; // Post just extended past the bottom of one post.
+
+	while (next++ != newend)
+		*++start = *next; // Remove a post.
+
+	newend = start + 1;
+
+	// NO MORE CRASHING!
+	if (newend - solidsegs > MAXSEGS)
+		I_Error("R_CrunchWallSegment: Solid Segs overflow!\n");
+}
+
+template <ClipType Type>
+void R_ClipWallSegment(INT32 first, INT32 last)
 {
 	cliprange_t *next;
 	cliprange_t *start;
@@ -110,26 +139,35 @@ static void R_ClipSolidWallSegment(INT32 first, INT32 last)
 		{
 			// Post is entirely visible (above start), so insert a new clippost.
 			R_StoreWallRange(first, last);
-			next = newend;
-			newend++;
-			// NO MORE CRASHING!
-			if (newend - solidsegs > MAXSEGS)
-				I_Error("R_ClipSolidWallSegment: Solid Segs overflow!\n");
 
-			while (next != start)
+			if constexpr (Type != ClipType::kPass)
 			{
-				*next = *(next-1);
-				next--;
+				next = newend;
+				newend++;
+				// NO MORE CRASHING!
+				if (newend - solidsegs > MAXSEGS)
+					I_Error("R_ClipSolidWallSegment: Solid Segs overflow!\n");
+
+				while (next != start)
+				{
+					*next = *(next-1);
+					next--;
+				}
+				next->first = first;
+				next->last = last;
 			}
-			next->first = first;
-			next->last = last;
+
 			return;
 		}
 
 		// There is a fragment above *start.
 		R_StoreWallRange(first, start->first - 1);
-		// Now adjust the clip size.
-		start->first = first;
+
+		if constexpr (Type != ClipType::kPass)
+		{
+			// Now adjust the clip size.
+			start->first = first;
+		}
 	}
 
 	// Bottom contained in start?
@@ -140,83 +178,35 @@ static void R_ClipSolidWallSegment(INT32 first, INT32 last)
 	while (last >= (next+1)->first - 1)
 	{
 		// There is a fragment between two posts.
-		R_StoreWallRange(next->last + 1, (next+1)->first - 1);
+		R_StoreWallRange(start->last + 1, (start+1)->first - 1);
 		next++;
 
 		if (last <= next->last)
 		{
-			// Bottom is contained in next.
-			// Adjust the clip size.
-			start->last = next->last;
-			goto crunch;
-		}
-	}
+			if constexpr (Type != ClipType::kPass)
+			{
+				// Bottom is contained in next.
+				// Adjust the clip size.
+				start->last = next->last;
+				R_CrunchWallSegment(start, next);
+			}
 
-	// There is a fragment after *next.
-	R_StoreWallRange(next->last + 1, last);
-	// Adjust the clip size.
-	start->last = last;
-
-	// Remove start+1 to next from the clip list, because start now covers their area.
-crunch:
-	if (next == start)
-		return; // Post just extended past the bottom of one post.
-
-	while (next++ != newend)
-		*++start = *next; // Remove a post.
-
-	newend = start + 1;
-
-	// NO MORE CRASHING!
-	if (newend - solidsegs > MAXSEGS)
-		I_Error("R_ClipSolidWallSegment: Solid Segs overflow!\n");
-}
-
-//
-// R_ClipPassWallSegment
-// Clips the given range of columns, but does not include it in the clip list.
-// Does handle windows, e.g. LineDefs with upper and lower texture.
-//
-static inline void R_ClipPassWallSegment(INT32 first, INT32 last)
-{
-	cliprange_t *start;
-
-	// Find the first range that touches the range
-	//  (adjacent pixels are touching).
-	start = solidsegs;
-	while (start->last < first - 1)
-		start++;
-
-	if (first < start->first)
-	{
-		if (last < start->first - 1)
-		{
-			// Post is entirely visible (above start).
-			R_StoreWallRange(first, last);
 			return;
 		}
-
-		// There is a fragment above *start.
-		R_StoreWallRange(first, start->first - 1);
-	}
-
-	// Bottom contained in start?
-	if (last <= start->last)
-		return;
-
-	while (last >= (start+1)->first - 1)
-	{
-		// There is a fragment between two posts.
-		R_StoreWallRange(start->last + 1, (start+1)->first - 1);
-		start++;
-
-		if (last <= start->last)
-			return;
 	}
 
 	// There is a fragment after *next.
 	R_StoreWallRange(start->last + 1, last);
+
+	if constexpr (Type != ClipType::kPass)
+	{
+		// Adjust the clip size.
+		start->last = last;
+		R_CrunchWallSegment(start, next);
+	}
 }
+
+}; // namespace
 
 //
 // R_ClearClipSegs
@@ -271,11 +261,11 @@ sector_t *R_FakeFlat(sector_t *sec, sector_t *tempsec, INT32 *floorlightlevel,
 {
 	if (floorlightlevel)
 		*floorlightlevel = sec->floorlightsec == -1 ?
-			(sec->floorlightabsolute ? sec->floorlightlevel : max(0, min(255, sec->lightlevel + sec->floorlightlevel))) : sectors[sec->floorlightsec].lightlevel;
+			(sec->floorlightabsolute ? sec->floorlightlevel : std::max(0, std::min(255, sec->lightlevel + sec->floorlightlevel))) : sectors[sec->floorlightsec].lightlevel;
 
 	if (ceilinglightlevel)
 		*ceilinglightlevel = sec->ceilinglightsec == -1 ?
-			(sec->ceilinglightabsolute ? sec->ceilinglightlevel : max(0, min(255, sec->lightlevel + sec->ceilinglightlevel))) : sectors[sec->ceilinglightsec].lightlevel;
+			(sec->ceilinglightabsolute ? sec->ceilinglightlevel : std::max(0, std::min(255, sec->lightlevel + sec->ceilinglightlevel))) : sectors[sec->ceilinglightsec].lightlevel;
 
 	// if (sec->midmap != -1)
 	//	mapnum = sec->midmap;
@@ -341,11 +331,11 @@ sector_t *R_FakeFlat(sector_t *sec, sector_t *tempsec, INT32 *floorlightlevel,
 			tempsec->lightlevel = s->lightlevel;
 
 			if (floorlightlevel)
-				*floorlightlevel = s->floorlightsec == -1 ? (s->floorlightabsolute ? s->floorlightlevel : max(0, min(255, s->lightlevel + s->floorlightlevel)))
+				*floorlightlevel = s->floorlightsec == -1 ? (s->floorlightabsolute ? s->floorlightlevel : std::max(0, std::min(255, s->lightlevel + s->floorlightlevel)))
 					: sectors[s->floorlightsec].lightlevel;
 
 			if (ceilinglightlevel)
-				*ceilinglightlevel = s->ceilinglightsec == -1 ? (s->ceilinglightabsolute ? s->ceilinglightlevel : max(0, min(255, s->lightlevel + s->ceilinglightlevel)))
+				*ceilinglightlevel = s->ceilinglightsec == -1 ? (s->ceilinglightabsolute ? s->ceilinglightlevel : std::max(0, std::min(255, s->lightlevel + s->ceilinglightlevel)))
 					: sectors[s->ceilinglightsec].lightlevel;
 		}
 		else if (heightsec != -1 && viewz >= sectors[heightsec].ceilingheight
@@ -379,11 +369,11 @@ sector_t *R_FakeFlat(sector_t *sec, sector_t *tempsec, INT32 *floorlightlevel,
 			tempsec->lightlevel = s->lightlevel;
 
 			if (floorlightlevel)
-				*floorlightlevel = s->floorlightsec == -1 ? (s->floorlightabsolute ? s->floorlightlevel : max(0, min(255, s->lightlevel + s->floorlightlevel)))
+				*floorlightlevel = s->floorlightsec == -1 ? (s->floorlightabsolute ? s->floorlightlevel : std::max(0, std::min(255, s->lightlevel + s->floorlightlevel)))
 					: sectors[s->floorlightsec].lightlevel;
 
 			if (ceilinglightlevel)
-				*ceilinglightlevel = s->ceilinglightsec == -1 ? (s->ceilinglightabsolute ? s->ceilinglightlevel : max(0, min(255, s->lightlevel + s->ceilinglightlevel)))
+				*ceilinglightlevel = s->ceilinglightsec == -1 ? (s->ceilinglightabsolute ? s->ceilinglightlevel : std::max(0, std::min(255, s->lightlevel + s->ceilinglightlevel)))
 					: sectors[s->ceilinglightsec].lightlevel;
 		}
 		sec = tempsec;
@@ -639,11 +629,11 @@ static void R_AddLine(seg_t *line)
 		return;
 
 clippass:
-	R_ClipPassWallSegment(x1, x2 - 1);
+	R_ClipWallSegment<ClipType::kPass>(x1, x2 - 1);
 	return;
 
 clipsolid:
-	R_ClipSolidWallSegment(x1, x2 - 1);
+	R_ClipWallSegment<ClipType::kSolid>(x1, x2 - 1);
 }
 
 //
@@ -760,8 +750,7 @@ void R_SortPolyObjects(subsector_t *sub)
 		{
 			// use free instead realloc since faster (thanks Lee ^_^)
 			free(po_ptrs);
-			po_ptrs = malloc((num_po_ptrs = numpolys*2)
-				* sizeof(*po_ptrs));
+			po_ptrs = static_cast<polyobj_t**>(malloc((num_po_ptrs = numpolys*2) * sizeof(*po_ptrs)));
 		}
 
 		po = sub->polyList;
@@ -805,8 +794,8 @@ static int R_PolysegCompare(const void *p1, const void *p2)
 	dist2v1 = vxdist(seg2->v1);
 	dist2v2 = vxdist(seg2->v2);
 
-	if (min(dist1v1, dist1v2) != min(dist2v1, dist2v2))
-		return min(dist1v1, dist1v2) - min(dist2v1, dist2v2);
+	if (std::min(dist1v1, dist1v2) != std::min(dist2v1, dist2v2))
+		return std::min(dist1v1, dist1v2) - std::min(dist2v1, dist2v2);
 
 	{ // That didn't work, so now let's try this.......
 		fixed_t delta1, delta2, x1, y1, x2, y2;
@@ -959,11 +948,11 @@ static void R_Subsector(size_t num)
 
 		light = R_GetPlaneLight(frontsector, floorcenterz, false);
 		if (frontsector->floorlightsec == -1 && !frontsector->floorlightabsolute)
-			floorlightlevel = max(0, min(255, *frontsector->lightlist[light].lightlevel + frontsector->floorlightlevel));
+			floorlightlevel = std::max(0, std::min(255, *frontsector->lightlist[light].lightlevel + frontsector->floorlightlevel));
 		floorcolormap = *frontsector->lightlist[light].extra_colormap;
 		light = R_GetPlaneLight(frontsector, ceilingcenterz, false);
 		if (frontsector->ceilinglightsec == -1 && !frontsector->ceilinglightabsolute)
-			ceilinglightlevel = max(0, min(255, *frontsector->lightlist[light].lightlevel + frontsector->ceilinglightlevel));
+			ceilinglightlevel = std::max(0, std::min(255, *frontsector->lightlist[light].lightlevel + frontsector->ceilinglightlevel));
 		ceilingcolormap = *frontsector->lightlist[light].extra_colormap;
 	}
 
@@ -1232,7 +1221,7 @@ void R_Prep3DFloors(sector_t *sector)
 	if (count != sector->numlights)
 	{
 		Z_Free(sector->lightlist);
-		sector->lightlist = Z_Calloc(sizeof (*sector->lightlist) * count, PU_LEVEL, NULL);
+		sector->lightlist = static_cast<lightlist_t*>(Z_Calloc(sizeof (*sector->lightlist) * count, PU_LEVEL, NULL));
 		sector->numlights = count;
 	}
 	else
