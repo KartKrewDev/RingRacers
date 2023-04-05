@@ -4011,7 +4011,7 @@ void M_DrawPause(void)
 
 
 		i++;	// Regardless of whether we drew or not, go to the next item in the menu.
-		if (i > currentMenu->numitems)
+		if (i >= currentMenu->numitems)
 		{
 			i = 0;
 			while (!(currentMenu->menuitems[i].status & IT_DISPLAY))
