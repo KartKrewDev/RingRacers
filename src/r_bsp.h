@@ -14,6 +14,8 @@
 #ifndef __R_BSP__
 #define __R_BSP__
 
+#include "typedef.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -27,7 +29,7 @@ extern side_t *sidedef;
 extern line_t *linedef;
 extern sector_t *frontsector;
 extern sector_t *backsector;
-extern boolean portalline; // is curline a portal seg?
+extern portal_t *g_portal; // is curline a portal seg?
 
 // drawsegs are allocated on the fly... see r_segs.c
 

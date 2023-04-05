@@ -1526,6 +1526,21 @@ static void R_RenderSegLoop (void)
 
 		frontscale[rw_x] = rw_scale;
 
+		const INT16 topclip = (yl >= 0) ? ((yl > viewheight) ? (INT16)viewheight : (INT16)((INT16)yl - 1)) : -1;
+		const INT16 bottomclip = (yh < viewheight) ? ((yh < -1) ? -1 : (INT16)((INT16)yh + 1)) : (INT16)viewheight;
+
+		// Portal line
+		// Spans the entire height of a single-sided line or
+		// the "window" of a double-sided line.
+		if (g_portal)
+		{
+			I_Assert(rw_x >= g_portal->start && rw_x < g_portal->end);
+			i = rw_x - g_portal->start;
+			g_portal->frontscale[i] = rw_scale;
+			g_portal->ceilingclip[i] = topclip;
+			g_portal->floorclip[i] = bottomclip;
+		}
+
 		// draw the wall tiers
 		if (midtexture)
 		{
@@ -1567,16 +1582,13 @@ static void R_RenderSegLoop (void)
 			{
 				// note: don't use min/max macros, since casting from INT32 to INT16 is involved here
 				if (markceiling && (!rw_ceilingmarked))
-					ceilingclip[rw_x] = (yl >= 0) ? ((yl > viewheight) ? (INT16)viewheight : (INT16)((INT16)yl - 1)) : -1;
+					ceilingclip[rw_x] = topclip;
 				if (markfloor && (!rw_floormarked))
-					floorclip[rw_x] = (yh < viewheight) ? ((yh < -1) ? -1 : (INT16)((INT16)yh + 1)) : (INT16)viewheight;
+					floorclip[rw_x] = bottomclip;
 			}
 		}
 		else
 		{
-			INT16 topclip = (yl >= 0) ? ((yl > viewheight) ? (INT16)viewheight : (INT16)((INT16)yl - 1)) : -1;
-			INT16 bottomclip = (yh < viewheight) ? ((yh < -1) ? -1 : (INT16)((INT16)yh + 1)) : (INT16)viewheight;
-
 			// two sided line
 			if (toptexture)
 			{
@@ -2146,7 +2158,9 @@ void R_StoreWallRange(INT32 start, INT32 stop)
 			|| backsector->floorlightsec != frontsector->floorlightsec
 			//SoM: 4/3/2000: Check for colormaps
 			|| frontsector->extra_colormap != backsector->extra_colormap
-			|| (frontsector->ffloors != backsector->ffloors && !Tag_Compare(&frontsector->tags, &backsector->tags)))
+			|| (frontsector->ffloors != backsector->ffloors && !Tag_Compare(&frontsector->tags, &backsector->tags))
+			// Portals block traversal behind them
+			|| g_portal)
 		{
 			markfloor = true;
 		}
@@ -2179,7 +2193,9 @@ void R_StoreWallRange(INT32 start, INT32 stop)
 			|| backsector->ceilinglightsec != frontsector->ceilinglightsec
 			//SoM: 4/3/2000: Check for colormaps
 			|| frontsector->extra_colormap != backsector->extra_colormap
-			|| (frontsector->ffloors != backsector->ffloors && !Tag_Compare(&frontsector->tags, &backsector->tags)))
+			|| (frontsector->ffloors != backsector->ffloors && !Tag_Compare(&frontsector->tags, &backsector->tags))
+			// Portals block traversal behind them
+			|| g_portal)
 		{
 				markceiling = true;
 		}
@@ -2974,7 +2990,7 @@ void R_StoreWallRange(INT32 start, INT32 stop)
 	R_RenderSegLoop();
 	R_SetColumnFunc(BASEDRAWFUNC, false);
 
-	if (portalline) // if curline is a portal, set portalrender for drawseg
+	if (g_portal) // if curline is a portal, set portalrender for drawseg
 		ds_p->portalpass = portalrender+1;
 	else
 		ds_p->portalpass = 0;

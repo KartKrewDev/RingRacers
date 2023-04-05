@@ -439,7 +439,7 @@ static void R_AddLine(seg_t *line)
 	static sector_t tempsec;
 	boolean bothceilingssky = false, bothfloorssky = false;
 
-	portalline = false;
+	g_portal = NULL;
 
 	if (line->polyseg && !(line->polyseg->flags & POF_RENDERSIDES))
 		return;
