@@ -425,6 +425,8 @@ static void R_RasterizeFloorSplat(floorsplat_t *pSplat, vector2_t *verts, visspr
 
 	ds_colormap = vis->colormap;
 	ds_fullbright = colormaps;
+	ds_brightmap = NULL;
+
 	ds_translation = R_GetSpriteTranslation(vis);
 	if (ds_translation == NULL)
 		ds_translation = colormaps;
