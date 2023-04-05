@@ -2635,7 +2635,7 @@ void D_SetupVote(void)
 
 void D_ModifyClientVote(UINT8 player, SINT8 voted)
 {
-	char buf[1];
+	char buf[2];
 	char *p = buf;
 
 	if (player >= MAXSPLITSCREENPLAYERS)
@@ -2643,8 +2643,10 @@ void D_ModifyClientVote(UINT8 player, SINT8 voted)
 		return;
 	}
 
+	WRITEUINT8(p, g_localplayers[player]);
 	WRITESINT8(p, voted);
-	SendNetXCmdForPlayer(player, XD_MODIFYVOTE, &buf, 2);
+
+	SendNetXCmdForPlayer(player, XD_MODIFYVOTE, buf, p - buf);
 }
 
 void D_PickVote(void)
@@ -5422,7 +5424,26 @@ static void Got_SetupVotecmd(UINT8 **cp, INT32 playernum)
 
 static void Got_ModifyVotecmd(UINT8 **cp, INT32 playernum)
 {
-	g_votes[playernum] = READSINT8(*cp);
+	UINT8 targetID = READUINT8(*cp);
+	SINT8 vote = READSINT8(*cp);
+
+	if (targetID >= MAXPLAYERS
+		|| playernode[targetID] != playernode[playernum])
+	{
+		CONS_Alert(CONS_WARNING,
+			M_GetText ("Illegal modify vote command received from %s\n"),
+			player_names[playernum]
+		);
+
+		if (server)
+		{
+			SendKick(playernum, KICK_MSG_CON_FAIL);
+		}
+
+		return;
+	}
+
+	Y_SetPlayersVote(targetID, vote);
 }
 
 static void Got_PickVotecmd(UINT8 **cp, INT32 playernum)
