@@ -2737,23 +2737,26 @@ void R_StoreWallRange(INT32 start, INT32 stop)
 
 		if (toptexture)
 		{
-			pixhigh = (centeryfrac>>4) - FixedMul (worldhigh, rw_scale);
-			pixhighstep = -FixedMul (rw_scalestep,worldhigh);
+			fixed_t topfracend = (centeryfrac>>4) - FixedMul (worldhighslope, ds_p->scale2);
 
-			if (backsector->c_slope) {
-				fixed_t topfracend = (centeryfrac>>4) - FixedMul (worldhighslope, ds_p->scale2);
-				pixhighstep = (topfracend-pixhigh)/(range);
-			}
+			pixhigh = (centeryfrac>>4) - FixedMul (worldhigh, rw_scale);
+			pixhighstep = (topfracend-pixhigh)/(range);
+
+			// If the lowest part of a ceiling stretching down covers the entire screen
+			if (min(pixhigh, topfracend)>>HEIGHTBITS >= viewheight-1)
+				g_walloffscreen = true;
 		}
 
 		if (bottomtexture)
 		{
+			fixed_t bottomfracend = (centeryfrac>>4) - FixedMul (worldlowslope, ds_p->scale2);
+
 			pixlow = (centeryfrac>>4) - FixedMul (worldlow, rw_scale);
-			pixlowstep = -FixedMul (rw_scalestep,worldlow);
-			if (backsector->f_slope) {
-				fixed_t bottomfracend = (centeryfrac>>4) - FixedMul (worldlowslope, ds_p->scale2);
-				pixlowstep = (bottomfracend-pixlow)/(range);
-			}
+			pixlowstep = (bottomfracend-pixlow)/(range);
+
+			// If the highest part of a floor stretching up covers the entire screen
+			if ((max(pixlow, bottomfracend)+HEIGHTUNIT-1)>>HEIGHTBITS <= 0)
+				g_walloffscreen = true;
 		}
 
 		{
