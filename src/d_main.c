@@ -81,6 +81,7 @@
 #include "k_specialstage.h"
 #include "acs/interface.h"
 #include "k_podium.h"
+#include "k_vote.h"
 
 #ifdef HWRENDER
 #include "hardware/hw_main.h" // 3D View Rendering
