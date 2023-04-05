@@ -90,13 +90,40 @@ void R_ClearDrawSegs(void)
 static cliprange_t *newend;
 static cliprange_t solidsegs[MAXSEGS];
 
-//
-// R_ClipSolidWallSegment
-// Does handle solid walls,
-//  e.g. single sided LineDefs (middle texture)
-//  that entirely block the view.
-//
-static void R_ClipSolidWallSegment(INT32 first, INT32 last)
+namespace
+{
+
+enum class ClipType
+{
+	// Does handle solid walls,
+	//  e.g. single sided LineDefs (middle texture)
+	//  that entirely block the view.
+	kSolid,
+
+	// Clips the given range of columns, but does not include it in the clip list.
+	// Does handle windows, e.g. LineDefs with upper and lower texture.
+	kPass,
+};
+
+void R_CrunchWallSegment(cliprange_t *start, cliprange_t *next)
+{
+	// Remove start+1 to next from the clip list, because start now covers their area.
+
+	if (next == start)
+		return; // Post just extended past the bottom of one post.
+
+	while (next++ != newend)
+		*++start = *next; // Remove a post.
+
+	newend = start + 1;
+
+	// NO MORE CRASHING!
+	if (newend - solidsegs > MAXSEGS)
+		I_Error("R_ClipSolidWallSegment: Solid Segs overflow!\n");
+}
+
+template <ClipType Type>
+void R_ClipWallSegment(INT32 first, INT32 last)
 {
 	cliprange_t *next;
 	cliprange_t *start;
@@ -112,26 +139,35 @@ static void R_ClipSolidWallSegment(INT32 first, INT32 last)
 		{
 			// Post is entirely visible (above start), so insert a new clippost.
 			R_StoreWallRange(first, last);
-			next = newend;
-			newend++;
-			// NO MORE CRASHING!
-			if (newend - solidsegs > MAXSEGS)
-				I_Error("R_ClipSolidWallSegment: Solid Segs overflow!\n");
 
-			while (next != start)
+			if constexpr (Type != ClipType::kPass)
 			{
-				*next = *(next-1);
-				next--;
+				next = newend;
+				newend++;
+				// NO MORE CRASHING!
+				if (newend - solidsegs > MAXSEGS)
+					I_Error("R_ClipSolidWallSegment: Solid Segs overflow!\n");
+
+				while (next != start)
+				{
+					*next = *(next-1);
+					next--;
+				}
+				next->first = first;
+				next->last = last;
 			}
-			next->first = first;
-			next->last = last;
+
 			return;
 		}
 
 		// There is a fragment above *start.
 		R_StoreWallRange(first, start->first - 1);
-		// Now adjust the clip size.
-		start->first = first;
+
+		if constexpr (Type != ClipType::kPass)
+		{
+			// Now adjust the clip size.
+			start->first = first;
+		}
 	}
 
 	// Bottom contained in start?
@@ -142,83 +178,35 @@ static void R_ClipSolidWallSegment(INT32 first, INT32 last)
 	while (last >= (next+1)->first - 1)
 	{
 		// There is a fragment between two posts.
-		R_StoreWallRange(next->last + 1, (next+1)->first - 1);
+		R_StoreWallRange(start->last + 1, (start+1)->first - 1);
 		next++;
 
 		if (last <= next->last)
 		{
-			// Bottom is contained in next.
-			// Adjust the clip size.
-			start->last = next->last;
-			goto crunch;
-		}
-	}
+			if constexpr (Type != ClipType::kPass)
+			{
+				// Bottom is contained in next.
+				// Adjust the clip size.
+				start->last = next->last;
+				R_CrunchWallSegment(start, next);
+			}
 
-	// There is a fragment after *next.
-	R_StoreWallRange(next->last + 1, last);
-	// Adjust the clip size.
-	start->last = last;
-
-	// Remove start+1 to next from the clip list, because start now covers their area.
-crunch:
-	if (next == start)
-		return; // Post just extended past the bottom of one post.
-
-	while (next++ != newend)
-		*++start = *next; // Remove a post.
-
-	newend = start + 1;
-
-	// NO MORE CRASHING!
-	if (newend - solidsegs > MAXSEGS)
-		I_Error("R_ClipSolidWallSegment: Solid Segs overflow!\n");
-}
-
-//
-// R_ClipPassWallSegment
-// Clips the given range of columns, but does not include it in the clip list.
-// Does handle windows, e.g. LineDefs with upper and lower texture.
-//
-static inline void R_ClipPassWallSegment(INT32 first, INT32 last)
-{
-	cliprange_t *start;
-
-	// Find the first range that touches the range
-	//  (adjacent pixels are touching).
-	start = solidsegs;
-	while (start->last < first - 1)
-		start++;
-
-	if (first < start->first)
-	{
-		if (last < start->first - 1)
-		{
-			// Post is entirely visible (above start).
-			R_StoreWallRange(first, last);
 			return;
 		}
-
-		// There is a fragment above *start.
-		R_StoreWallRange(first, start->first - 1);
-	}
-
-	// Bottom contained in start?
-	if (last <= start->last)
-		return;
-
-	while (last >= (start+1)->first - 1)
-	{
-		// There is a fragment between two posts.
-		R_StoreWallRange(start->last + 1, (start+1)->first - 1);
-		start++;
-
-		if (last <= start->last)
-			return;
 	}
 
 	// There is a fragment after *next.
 	R_StoreWallRange(start->last + 1, last);
+
+	if constexpr (Type != ClipType::kPass)
+	{
+		// Adjust the clip size.
+		start->last = last;
+		R_CrunchWallSegment(start, next);
+	}
 }
+
+}; // namespace
 
 //
 // R_ClearClipSegs
@@ -641,11 +629,11 @@ static void R_AddLine(seg_t *line)
 		return;
 
 clippass:
-	R_ClipPassWallSegment(x1, x2 - 1);
+	R_ClipWallSegment<ClipType::kPass>(x1, x2 - 1);
 	return;
 
 clipsolid:
-	R_ClipSolidWallSegment(x1, x2 - 1);
+	R_ClipWallSegment<ClipType::kSolid>(x1, x2 - 1);
 }
 
 //
