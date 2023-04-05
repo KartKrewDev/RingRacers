@@ -625,7 +625,10 @@ skiptallydrawer:
 	// Progression lines
 	patch_t *rrmln1 = W_CachePatchName("R_RRMLN1", PU_PATCH);
 	patch_t *rrmln2 = W_CachePatchName("R_RRMLN2", PU_PATCH);
+	patch_t *rrmln3 = W_CachePatchName("R_RRMLN3", PU_PATCH);
+	patch_t *rrmln4 = W_CachePatchName("R_RRMLN4", PU_PATCH);
 	patch_t *rrmln5 = W_CachePatchName("R_RRMLN5", PU_PATCH);
+	patch_t *rrmln6 = W_CachePatchName("R_RRMLN6", PU_PATCH);
 	
 	// Shadows for progression lines
 	patch_t *rrmls1 = W_CachePatchName("R_RRMLS1", PU_PATCH);
@@ -758,22 +761,6 @@ skiptallydrawer:
 		V_DrawMappedPatch(119, 178, 0, rrmls1, 0);
 		V_DrawMappedPatch(143, 178, 0, rrmls2, 0);
 		
-		// now draw the actual lines 
-		V_DrawMappedPatch(23, 179, 0, rrmln1, 0);
-		V_DrawMappedPatch(47, 179, 0, rrmln2, 0);
-		V_DrawMappedPatch(71, 179, 0, rrmln1, 0);
-		V_DrawMappedPatch(95, 179, 0, rrmln2, 0);
-		V_DrawMappedPatch(119, 179, 0, rrmln1, 0);
-		V_DrawMappedPatch(143, 179, 0, rrmln2, 0);
-		
-		// haha funny 54-part progress bar
-		// i am a dumbass and there is probably a better way to do this
-		for (UINT16 x = 172; x < 284; x += 2)
-		{
-			V_DrawMappedPatch(x, 177, 0, rrmls3, 0);
-			V_DrawMappedPatch(x, 179, 0, rrmln5, 0);
-		}
-		
 		
 		for (SINT8 i = 0; i < data.numplayers; i++)
 		{
@@ -785,6 +772,23 @@ skiptallydrawer:
 				INT32 roundy[6] = {0, 165, 157, 157, 165, 165};
 				INT32 rankx = roundx[grandprixinfo.roundnum];
 				INT32 ranky = roundy[grandprixinfo.roundnum];
+				
+				// now draw the actual lines 
+				V_DrawMappedPatch(23, 179, 0, grandprixinfo.roundnum > 1 ? rrmln3 : rrmln1, grandprixinfo.roundnum > 1 ? colormap : 0);
+				V_DrawMappedPatch(47, 179, 0, grandprixinfo.roundnum > 2 ? rrmln4 : rrmln2, grandprixinfo.roundnum > 2 ? colormap : 0);
+				V_DrawMappedPatch(71, 179, 0, grandprixinfo.roundnum > 2 ? rrmln3 : rrmln1, grandprixinfo.roundnum > 2 ? colormap : 0);
+				V_DrawMappedPatch(95, 179, 0, grandprixinfo.roundnum > 3 ? rrmln4 : rrmln2, grandprixinfo.roundnum > 3 ? colormap : 0);
+				V_DrawMappedPatch(119, 179, 0, grandprixinfo.roundnum > 4 ? rrmln3 : rrmln1, grandprixinfo.roundnum > 4 ? colormap : 0);
+				V_DrawMappedPatch(143, 179, 0, grandprixinfo.roundnum > 4 ? rrmln4 : rrmln2, grandprixinfo.roundnum > 4 ? colormap : 0);
+				
+				// haha funny 54-part progress bar
+				// i am a dumbass and there is probably a better way to do this
+				for (UINT16 x = 172; x < 284; x += 2)
+				{
+					// does not account for colormap since at the moment that will never be seen
+					V_DrawMappedPatch(x, 177, 0, rrmls3, 0);
+					V_DrawMappedPatch(x, 179, 0, rrmln5, 0);
+				}
 				
 				// Draw the progress markers
 				V_DrawMappedPatch(16, 179, 0, grandprixinfo.roundnum > 0 ? rrmrk1 : rrmrk2, grandprixinfo.roundnum == 1 ? oppositemap : colormap);
