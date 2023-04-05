@@ -438,8 +438,10 @@ void ST_drawDebugInfo(void)
 {
 	INT32 height = 192;
 
+	const UINT8 screen = cv_devmode_screen.value - 1;
+
 	// devmode_screen = 1..4
-	stplyr = &players[displayplayers[min(r_splitscreen, cv_devmode_screen.value - 1)]];
+	stplyr = &players[displayplayers[min(r_splitscreen, screen)]];
 
 	if (!stplyr->mo)
 		return;
