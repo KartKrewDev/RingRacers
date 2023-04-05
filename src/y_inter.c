@@ -594,6 +594,15 @@ skiptallydrawer:
 	M_DrawMenuForeground();
 #endif
 
+	// INFO SEGMENT
+	// Numbers are V_DrawRightAlignedThinString WITH v_6widthspace as flags
+	// TAILS GOT THROUGH ROUND, V_DrawTitleCardString, V_6WIDTHSPACE, T is 13x32, try (51,7) origin
+	// TT_RND lumps for round numbers 74x74, origin (204,2)
+	// resbar 1 (48,82)  5 (176, 82)
+	// 2 (48, 96)
+	
+	//player icon 1 (55,79) 2 (55,93) 5 (183,79)
+
 	// Patches
 	
 	
@@ -696,6 +705,15 @@ skiptallydrawer:
 	// Draw "GOT THROUGH ROUND"
 	V_DrawMappedPatch(50, 42, 0, gthro, 0);
 	
+	// Draw round numbers (in GP)
+	if (grandprixinfo.roundnum > 0)
+	{
+		char buf[9];
+		sprintf(buf, "TT_RND%d", grandprixinfo.roundnum);
+		patch_t *roundpatch = W_CachePatchName(buf, PU_PATCH);
+		V_DrawMappedPatch(204, 2, 0, roundpatch, 0);
+	}
+	
 	
 	// TODO: Clean this bullshit up
 	// Draw resbars
@@ -710,71 +728,75 @@ skiptallydrawer:
 	V_DrawMappedPatch(169, 126, 0, resbar, 0);
 	
 	// Draw bottom pieces
-	V_DrawMappedPatch(0, 167, 0, rmbg1, greymap);
-	V_DrawMappedPatch(24, 167, 0, rmbg2, greymap);
-	V_DrawMappedPatch(48, 167, 0, rmbg3, greymap);
-	
-	V_DrawMappedPatch(72, 167, 0, rmbg2, greymap);
-	V_DrawMappedPatch(96, 167, 0, rmbg3, greymap);
-	
-	V_DrawMappedPatch(120, 167, 0, rmbg2, greymap);
-	V_DrawMappedPatch(144, 167, 0, rmbg3, greymap);
-	
-	V_DrawMappedPatch(168, 167, 0, rmbg1, greymap);
-	V_DrawMappedPatch(192, 167, 0, rmbg1, greymap);
-	V_DrawMappedPatch(216, 167, 0, rmbg1, greymap);
-	V_DrawMappedPatch(240, 167, 0, rmbg1, greymap);
-	
-	V_DrawMappedPatch(253, 167, 0, rmbg1, greymap);
-	V_DrawMappedPatch(277, 167, 0, rmbg4, greymap);
-	V_DrawMappedPatch(301, 167, 0, rmbg1, greymap);
-	
-	// Draw the lines
-	// Draw the shadows first, so they don't draw over the lines
-	V_DrawMappedPatch(23, 178, 0, rrmls1, 0);
-	V_DrawMappedPatch(47, 178, 0, rrmls2, 0);
-	V_DrawMappedPatch(71, 178, 0, rrmls1, 0);
-	V_DrawMappedPatch(95, 178, 0, rrmls2, 0);
-	V_DrawMappedPatch(119, 178, 0, rrmls1, 0);
-	V_DrawMappedPatch(143, 178, 0, rrmls2, 0);
-	
-	// now draw the actual lines 
-	V_DrawMappedPatch(23, 179, 0, rrmln1, 0);
-	V_DrawMappedPatch(47, 179, 0, rrmln2, 0);
-	V_DrawMappedPatch(71, 179, 0, rrmln1, 0);
-	V_DrawMappedPatch(95, 179, 0, rrmln2, 0);
-	V_DrawMappedPatch(119, 179, 0, rrmln1, 0);
-	V_DrawMappedPatch(143, 179, 0, rrmln2, 0);
-	
-	// haha funny 54-part progress bar
-	// i am a dumbass and there is probably a better way to do this
-	for (UINT16 x = 172; x < 284; x += 2)
+	if (grandprixinfo.gp)
 	{
-		V_DrawMappedPatch(x, 177, 0, rrmls3, 0);
-		V_DrawMappedPatch(x, 179, 0, rrmln5, 0);
-	}
-	
-	// Draw the progress markers
-	V_DrawMappedPatch(16, 179, 0, rrmrk1, 0);
-	V_DrawMappedPatch(40, 171, 0, rrmrk2, 0);
-	V_DrawMappedPatch(64, 179, 0, rrmrk3, 0);
-	
-	V_DrawMappedPatch(88, 171, 0, rrmrk2, 0);
-	V_DrawMappedPatch(112, 179, 0, rrmrk2, 0);
-	V_DrawMappedPatch(136, 171, 0, rrmrk3, 0);
-	V_DrawMappedPatch(160, 179, 0, rrmrk2, 0);
-	
-	V_DrawMappedPatch(282, 179, 0, rrmrk4, 0);
-	
-	// Draw rank icon
-	V_DrawMappedPatch(14, 165, 0, rpmark, 0);
-	
-	for (SINT8 i = 0; i < data.numplayers; i++)
-	{
-		if (data.num[i] != MAXPLAYERS && playeringame[data.num[i]] && !players[data.num[i]].spectator && data.num[i] == consoleplayer)
+		V_DrawMappedPatch(0, 167, 0, rmbg1, greymap);
+		V_DrawMappedPatch(24, 167, 0, rmbg2, greymap);
+		V_DrawMappedPatch(48, 167, 0, rmbg3, greymap);
+		
+		V_DrawMappedPatch(72, 167, 0, rmbg2, greymap);
+		V_DrawMappedPatch(96, 167, 0, rmbg3, greymap);
+		
+		V_DrawMappedPatch(120, 167, 0, rmbg2, greymap);
+		V_DrawMappedPatch(144, 167, 0, rmbg3, greymap);
+		
+		V_DrawMappedPatch(168, 167, 0, rmbg1, greymap);
+		V_DrawMappedPatch(192, 167, 0, rmbg1, greymap);
+		V_DrawMappedPatch(216, 167, 0, rmbg1, greymap);
+		V_DrawMappedPatch(240, 167, 0, rmbg1, greymap);
+		
+		V_DrawMappedPatch(253, 167, 0, rmbg1, greymap);
+		V_DrawMappedPatch(277, 167, 0, rmbg4, greymap);
+		V_DrawMappedPatch(301, 167, 0, rmbg1, greymap);
+		
+		// Draw the lines
+		// Draw the shadows first, so they don't draw over the lines
+		V_DrawMappedPatch(23, 178, 0, rrmls1, 0);
+		V_DrawMappedPatch(47, 178, 0, rrmls2, 0);
+		V_DrawMappedPatch(71, 178, 0, rrmls1, 0);
+		V_DrawMappedPatch(95, 178, 0, rrmls2, 0);
+		V_DrawMappedPatch(119, 178, 0, rrmls1, 0);
+		V_DrawMappedPatch(143, 178, 0, rrmls2, 0);
+		
+		// now draw the actual lines 
+		V_DrawMappedPatch(23, 179, 0, rrmln1, 0);
+		V_DrawMappedPatch(47, 179, 0, rrmln2, 0);
+		V_DrawMappedPatch(71, 179, 0, rrmln1, 0);
+		V_DrawMappedPatch(95, 179, 0, rrmln2, 0);
+		V_DrawMappedPatch(119, 179, 0, rrmln1, 0);
+		V_DrawMappedPatch(143, 179, 0, rrmln2, 0);
+		
+		// haha funny 54-part progress bar
+		// i am a dumbass and there is probably a better way to do this
+		for (UINT16 x = 172; x < 284; x += 2)
 		{
-			UINT8 *colormap = R_GetTranslationColormap(*data.character[i], *data.color[i], GTC_CACHE);
-			V_DrawMappedPatch(15, 166, 0, faceprefix[*data.character[i]][FACE_RANK], colormap); // get an icon in there for now
+			V_DrawMappedPatch(x, 177, 0, rrmls3, 0);
+			V_DrawMappedPatch(x, 179, 0, rrmln5, 0);
+		}
+		
+		// Draw the progress markers
+		V_DrawMappedPatch(16, 179, 0, rrmrk1, 0);
+		V_DrawMappedPatch(40, 171, 0, rrmrk2, 0);
+		V_DrawMappedPatch(64, 179, 0, rrmrk3, 0);
+		
+		V_DrawMappedPatch(88, 171, 0, rrmrk2, 0);
+		V_DrawMappedPatch(112, 179, 0, rrmrk2, 0);
+		V_DrawMappedPatch(136, 171, 0, rrmrk3, 0);
+		V_DrawMappedPatch(160, 179, 0, rrmrk2, 0);
+		
+		V_DrawMappedPatch(282, 179, 0, rrmrk4, 0);
+		
+		// Draw rank icon
+		V_DrawMappedPatch(14, 165, 0, rpmark, 0);
+		
+		for (SINT8 i = 0; i < data.numplayers; i++)
+		{
+			if (data.num[i] != MAXPLAYERS && playeringame[data.num[i]] && !players[data.num[i]].spectator && data.num[i] == consoleplayer)
+			{
+				UINT8 *colormap = R_GetTranslationColormap(*data.character[i], *data.color[i], GTC_CACHE);
+				V_DrawMappedPatch(15, 166, 0, faceprefix[*data.character[i]][FACE_RANK], colormap); // get an icon in there for now
+				V_DrawTitleCardString(51, 7, data.name[i], V_6WIDTHSPACE, false, 0, 0);
+			}
 		}
 	}
 }
