@@ -2728,7 +2728,15 @@ static void R_SortVisSprites(vissprite_t* vsprsortedhead, UINT32 start, UINT32 e
 
 	for (i = start; i < end; ++i)
 	{
-		dsnext = R_GetVisSprite(i);
+		ds = R_GetVisSprite(i);
+
+		// Do not include this sprite, since it is completely obscured
+		if (ds->cut & SC_CULL)
+		{
+			continue;
+		}
+
+		dsnext = ds;
 		dsnext->linkdraw = NULL;
 
 		dsprev->next = dsnext;
@@ -3259,6 +3267,7 @@ void R_ClipVisSprite(vissprite_t *spr, INT32 x1, INT32 x2, portal_t* portal)
 	fixed_t		scale;
 	fixed_t		lowscale;
 	INT32		silhouette;
+	INT32		xclip;
 
 	if ((spr->renderflags & RF_ALWAYSONTOP) || cv_debugrender_spriteclip.value)
 	{
@@ -3441,7 +3450,7 @@ void R_ClipVisSprite(vissprite_t *spr, INT32 x1, INT32 x2, portal_t* portal)
 	// all clipping has been performed, so store the values - what, did you think we were drawing them NOW?
 
 	// check for unclipped columns
-	for (x = x1; x <= x2; x++)
+	for (xclip = x = x1; x <= x2; x++)
 	{
 		if (spr->clipbot[x] == CLIP_UNDEF)
 			spr->clipbot[x] = (INT16)viewheight;
@@ -3449,9 +3458,17 @@ void R_ClipVisSprite(vissprite_t *spr, INT32 x1, INT32 x2, portal_t* portal)
 		if (spr->cliptop[x] == CLIP_UNDEF)
 			//Fab : 26-04-98: was -1, now clips against console bottom
 			spr->cliptop[x] = (INT16)con_clipviewtop;
+
+		// Sprite is completely above or below clip plane
+		if (spr->szt >= spr->clipbot[x] || spr->sz <= spr->cliptop[x])
+			xclip++;
 	}
 
-	if (portal)
+	if (xclip == x)
+	{
+		spr->cut |= SC_CULL; // completely skip this sprite going forward
+	}
+	else if (portal)
 	{
 		INT32 start_index = max(portal->start, x1);
 		INT32 end_index = min(portal->start + portal->end - portal->start, x2);
