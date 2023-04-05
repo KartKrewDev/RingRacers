@@ -782,12 +782,13 @@ static void M_CreateScreenShotPalette(void)
 #if NUMSCREENS > 2
 static const char *Newsnapshotfile(const char *pathname, const char *ext)
 {
-	static char freename[19] = "ringracersXXXX.ext";
+	static char freename[20] = "ringracersXXXX.exte";
 	int i = 5000; // start in the middle: num screenshots divided by 2
 	int add = i; // how much to add or subtract if wrong; gets divided by 2 each time
 	int result; // -1 = guess too high, 0 = correct, 1 = guess too low
 
 	// find a file name to save it to
+	I_Assert(strlen(ext) < (sizeof freename) - 15);
 	strcpy(freename+15,ext);
 
 	for (;;)
