@@ -8592,10 +8592,15 @@ void K_UpdateDistanceFromFinishLine(player_t *const player)
 		}
 
 		// nextwaypoint is now the waypoint that is in front of us
-		if (player->exiting || player->spectator)
+		if ((player->exiting && !(player->pflags & PF_NOCONTEST)) || player->spectator)
 		{
 			// Player has finished, we don't need to calculate this
 			player->distancetofinish = 0U;
+		}
+		else if (player->pflags & PF_NOCONTEST)
+		{
+			// We also don't need to calculate this, but there's also no need to destroy the data...
+			;
 		}
 		else if ((player->currentwaypoint != NULL) && (player->nextwaypoint != NULL) && (finishline != NULL))
 		{
