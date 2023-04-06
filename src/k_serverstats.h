@@ -39,7 +39,7 @@ void SV_SaveStats(void);
 
 void SV_LoadStats(void);
 
-void SV_RetrieveStats(int player);
+UINT16 *SV_RetrievePWR(uint8_t *key);
 
 void SV_UpdateStats(void);
 

@@ -166,6 +166,8 @@ boolean PR_IsLocalPlayerGuest(INT32 player);
 
 char *GetPrettyRRID(const unsigned char *bin, boolean brief);
 
+boolean PR_IsKeyGuest(uint8_t *key);
+
 #ifdef __cplusplus
 } // extern "C"
 #endif

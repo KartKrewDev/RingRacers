@@ -630,3 +630,12 @@ char *GetPrettyRRID(const unsigned char *bin, boolean brief)
 
 	return rrid_buf;
 }
+
+
+char allZero[PUBKEYLENGTH];
+
+boolean PR_IsKeyGuest(uint8_t *key)
+{
+	memset(allZero, 0, PUBKEYLENGTH);
+	return (memcmp(key, allZero, PUBKEYLENGTH) == 0);
+}

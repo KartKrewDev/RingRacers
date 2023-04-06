@@ -400,7 +400,6 @@ void K_CashInPowerLevels(void)
 {
 	SINT8 powerType = K_UsingPowerLevels();
 	UINT8 i;
-	boolean gamedataupdate;
 
 	//CONS_Printf("\n========\n");
 	//CONS_Printf("Cashing in power level changes...\n");
@@ -410,29 +409,17 @@ void K_CashInPowerLevels(void)
 	{
 		if (playeringame[i] == true && powerType != PWRLV_DISABLED)
 		{
-			profile_t *pr = PR_GetPlayerProfile(&players[i]);
 			INT16 inc = K_FinalPowerIncrement(&players[i], clientpowerlevels[i][powerType], clientPowerAdd[i]);
 
 			clientpowerlevels[i][powerType] += inc;
 
 			//CONS_Printf("%s: %d -> %d (%d)\n", player_names[i], clientpowerlevels[i][powerType] - inc, clientpowerlevels[i][powerType], inc);
-
-			if (pr != NULL && inc != 0)
-			{
-				pr->powerlevels[powerType] = clientpowerlevels[i][powerType];
-
-				gamedataupdate = true;
-			}
 		}
 
 		clientPowerAdd[i] = 0;
 	}
 
-	if (gamedataupdate)
-	{
-		M_UpdateUnlockablesAndExtraEmblems(true, true);
-		G_SaveGameData();
-	}
+	SV_UpdateStats();
 
 	//CONS_Printf("========\n");
 }

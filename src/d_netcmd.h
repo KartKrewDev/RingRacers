@@ -169,7 +169,7 @@ typedef enum
 	XD_MODIFYVOTE,  // 24
 	XD_PICKVOTE,    // 25
 	XD_REMOVEPLAYER,// 26
-	XD_POWERLEVEL,  // 27
+	XD_POWERLEVEL,  // 27 [No longer used, might be repurposed - PWR is in XD_ADDPLAYER now]
 	XD_PARTYINVITE, // 28
 	XD_ACCEPTPARTYINVITE, // 29
 	XD_LEAVEPARTY,  // 30

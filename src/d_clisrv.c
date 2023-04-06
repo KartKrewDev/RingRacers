@@ -3853,6 +3853,7 @@ static void Got_AddPlayer(UINT8 **p, INT32 playernum)
 
 	READSTRINGN(*p, player_names[newplayernum], MAXPLAYERNAME);
 	READMEM(*p, players[newplayernum].public_key, PUBKEYLENGTH);
+	READMEM(*p, clientpowerlevels[newplayernum], sizeof(((serverplayer_t *)0)->powerlevels));
 
 	console = READUINT8(*p);
 	splitscreenplayer = READUINT8(*p);
@@ -3916,8 +3917,6 @@ static void Got_AddPlayer(UINT8 **p, INT32 playernum)
 
 		HU_AddChatText(joinmsg, false);
 	}
-
-	SV_RetrieveStats(newplayernum);
 
 	if (server && multiplayer && motd[0] != '\0')
 		COM_BufAddText(va("sayto %d %s\n", newplayernum, motd));
@@ -4011,8 +4010,10 @@ static void Got_AddBot(UINT8 **p, INT32 playernum)
 }
 
 static boolean SV_AddWaitingPlayers(SINT8 node, UINT8 *availabilities, 
-const char *name, uint8_t *key, const char *name2, uint8_t *key2,
-const char *name3, uint8_t *key3, const char *name4, uint8_t *key4)
+const char *name, uint8_t *key, UINT16 *pwr,
+const char *name2, uint8_t *key2, UINT16 *pwr2,
+const char *name3, uint8_t *key3, UINT16 *pwr3,
+const char *name4, uint8_t *key4, UINT16 *pwr4)
 {
 	INT32 n, newplayernum, i;
 	UINT8 buf[4 + MAXPLAYERNAME + PUBKEYLENGTH + MAXAVAILABILITY];
@@ -4079,24 +4080,28 @@ const char *name3, uint8_t *key3, const char *name4, uint8_t *key4)
 				nodetoplayer[node] = newplayernum;
 				WRITESTRINGN(buf_p, name, MAXPLAYERNAME);
 				WRITEMEM(buf_p, key, PUBKEYLENGTH);
+				WRITEMEM(buf_p, pwr, sizeof(((serverplayer_t *)0)->powerlevels));
 			}
 			else if (playerpernode[node] < 2)
 			{
 				nodetoplayer2[node] = newplayernum;
 				WRITESTRINGN(buf_p, name2, MAXPLAYERNAME);
 				WRITEMEM(buf_p, key2, PUBKEYLENGTH);
+				WRITEMEM(buf_p, pwr2, sizeof(((serverplayer_t *)0)->powerlevels));
 			}
 			else if (playerpernode[node] < 3)
 			{
 				nodetoplayer3[node] = newplayernum;
 				WRITESTRINGN(buf_p, name3, MAXPLAYERNAME);
 				WRITEMEM(buf_p, key3, PUBKEYLENGTH);
+				WRITEMEM(buf_p, pwr3, sizeof(((serverplayer_t *)0)->powerlevels));
 			}
 			else if (playerpernode[node] < 4)
 			{
 				nodetoplayer4[node] = newplayernum;
 				WRITESTRINGN(buf_p, name4, MAXPLAYERNAME);
 				WRITEMEM(buf_p, key4, PUBKEYLENGTH);
+				WRITEMEM(buf_p, pwr4, sizeof(((serverplayer_t *)0)->powerlevels));
 			}
 
 			WRITEUINT8(buf_p, nodetoplayer[node]); // consoleplayer
@@ -4186,8 +4191,11 @@ boolean SV_SpawnServer(void)
 		UINT8 *availabilitiesbuffer = R_GetSkinAvailabilities(false, false);
 		SINT8 node = 0;
 		for (; node < MAXNETNODES; node++)
-			result |= SV_AddWaitingPlayers(node, availabilitiesbuffer, cv_playername[0].zstring, PR_GetLocalPlayerProfile(0)->public_key, cv_playername[1].zstring, PR_GetLocalPlayerProfile(1)->public_key,  
-			cv_playername[2].zstring, PR_GetLocalPlayerProfile(2)->public_key, cv_playername[3].zstring, PR_GetLocalPlayerProfile(3)->public_key);
+			result |= SV_AddWaitingPlayers(node, availabilitiesbuffer,
+				cv_playername[0].zstring, PR_GetLocalPlayerProfile(0)->public_key, SV_RetrievePWR(PR_GetLocalPlayerProfile(0)->public_key),
+				cv_playername[1].zstring, PR_GetLocalPlayerProfile(1)->public_key, SV_RetrievePWR(PR_GetLocalPlayerProfile(1)->public_key),
+				cv_playername[2].zstring, PR_GetLocalPlayerProfile(2)->public_key, SV_RetrievePWR(PR_GetLocalPlayerProfile(2)->public_key),
+				cv_playername[3].zstring, PR_GetLocalPlayerProfile(3)->public_key, SV_RetrievePWR(PR_GetLocalPlayerProfile(3)->public_key));
 	}
 	return result;
 #endif
@@ -4268,13 +4276,13 @@ static size_t TotalTextCmdPerTic(tic_t tic)
 		memset(allZero, 0, PUBKEYLENGTH);
 
 		if (split == 0)
-			return (memcmp(players[nodetoplayer[node]].public_key, allZero, PUBKEYLENGTH) == 0);
+			return PR_IsKeyGuest(players[nodetoplayer[node]].public_key);
 		else if (split == 1)
-			return (memcmp(players[nodetoplayer2[node]].public_key, allZero, PUBKEYLENGTH) == 0);
+			return PR_IsKeyGuest(players[nodetoplayer2[node]].public_key);
 		else if (split == 2)
-			return (memcmp(players[nodetoplayer3[node]].public_key, allZero, PUBKEYLENGTH) == 0);
+			return PR_IsKeyGuest(players[nodetoplayer3[node]].public_key);
 		else if (split == 3)
-			return (memcmp(players[nodetoplayer4[node]].public_key, allZero, PUBKEYLENGTH) == 0);
+			return PR_IsKeyGuest(players[nodetoplayer4[node]].public_key);
 		else
 			I_Error("IsSplitPlayerOnNodeGuest: Out of bounds");
 		return false; // unreachable
@@ -4283,10 +4291,7 @@ static size_t TotalTextCmdPerTic(tic_t tic)
 
 static boolean IsPlayerGuest(int player)
 {
-	char allZero[PUBKEYLENGTH];
-	memset(allZero, 0, PUBKEYLENGTH);
-
-	return (memcmp(players[player].public_key, allZero, PUBKEYLENGTH) == 0);
+ 	return PR_IsKeyGuest(players[player].public_key);
 }
 
 /** Called when a PT_CLIENTJOIN packet is received
@@ -4396,8 +4401,6 @@ static void HandleConnect(SINT8 node)
 	{
 		int sigcheck;
 		boolean newnode = false;
-		char allZero[PUBKEYLENGTH];
-		memset(allZero, 0, sizeof(allZero));
 
 		for (i = 0; i < netbuffer->u.clientcfg.localplayers - playerpernode[node]; i++)
 		{
@@ -4414,7 +4417,7 @@ static void HandleConnect(SINT8 node)
 			}
 			else // Remote player, gotta check their signature.
 			{	
-				if (memcmp(lastReceivedKey[node][i], allZero, PUBKEYLENGTH) == 0) // IsSplitPlayerOnNodeGuest isn't appropriate here, they're not in-game yet!
+				if (PR_IsKeyGuest(lastReceivedKey[node][i])) // IsSplitPlayerOnNodeGuest isn't appropriate here, they're not in-game yet!
 				{
 					if (!cv_allowguests.value)
 					{
@@ -4437,7 +4440,7 @@ static void HandleConnect(SINT8 node)
 			}
 
 			// Check non-GUESTS for duplicate pubkeys, they'll create nonsense stats
-			if (memcmp(lastReceivedKey[node][i], allZero, PUBKEYLENGTH) != 0)
+			if (!PR_IsKeyGuest(lastReceivedKey[node][i]))
 			{
 				// Players already here
 				for (j = 0; j < MAXPLAYERS; j++)
@@ -4452,7 +4455,7 @@ static void HandleConnect(SINT8 node)
 				// Players we're trying to add
 				for (j = 0; j < netbuffer->u.clientcfg.localplayers - playerpernode[node]; j++)
 				{
-					if (memcmp(lastReceivedKey[node][i], allZero, PUBKEYLENGTH) == 0)
+					if (PR_IsKeyGuest(lastReceivedKey[node][j]))
 						continue;
 					if (i == j)
 						continue;
@@ -4502,8 +4505,11 @@ static void HandleConnect(SINT8 node)
 				DEBFILE("send savegame\n");
 			}
 
-			SV_AddWaitingPlayers(node, availabilitiesbuffer, names[0], lastReceivedKey[node][0], names[1], lastReceivedKey[node][1],
-				names[2], lastReceivedKey[node][2], names[3], lastReceivedKey[node][3]);
+			SV_AddWaitingPlayers(node, availabilitiesbuffer,
+				names[0], lastReceivedKey[node][0], SV_RetrievePWR(lastReceivedKey[node][0]),
+				names[1], lastReceivedKey[node][1], SV_RetrievePWR(lastReceivedKey[node][1]),
+				names[2], lastReceivedKey[node][2], SV_RetrievePWR(lastReceivedKey[node][2]),
+				names[3], lastReceivedKey[node][3], SV_RetrievePWR(lastReceivedKey[node][3]));
 			joindelay += cv_joindelay.value * TICRATE;
 			player_joining = true;
 		}

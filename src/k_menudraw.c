@@ -1673,7 +1673,6 @@ static void M_DrawProfileCard(INT32 x, INT32 y, boolean greyedout, profile_t *p)
 	UINT16 truecol = SKINCOLOR_BLACK;
 	UINT8 *colormap = R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_BLACK, GTC_CACHE);
 	INT32 skinnum = -1;
-	INT32 powerlevel = -1;
 
 	char pname[PROFILENAMELEN+1] = "NEW";
 
@@ -1683,7 +1682,6 @@ static void M_DrawProfileCard(INT32 x, INT32 y, boolean greyedout, profile_t *p)
 		colormap = R_GetTranslationColormap(TC_DEFAULT, truecol, GTC_CACHE);
 		strcpy(pname, p->profilename);
 		skinnum = R_SkinAvailable(p->skinname);
-		powerlevel = p->powerlevels[0];	// Only display race power level.
 	}
 
 	// check setup_player for colormap for the card.
@@ -1700,12 +1698,8 @@ static void M_DrawProfileCard(INT32 x, INT32 y, boolean greyedout, profile_t *p)
 	if (greyedout)
 		return;	// only used for profiles we can't select.
 
-	// Draw pwlv if we can
-	if (powerlevel > -1)
-	{
-		V_DrawFixedPatch((x+30)*FRACUNIT, (y+84)*FRACUNIT, FRACUNIT, 0, pwrlv, colormap);
-		V_DrawCenteredKartString(x+30, y+87, 0, va("%d\n", powerlevel));
-	}
+	V_DrawFixedPatch((x+30)*FRACUNIT, (y+84)*FRACUNIT, FRACUNIT, 0, pwrlv, colormap);
+	V_DrawCenteredKartString(x+30, y+87, 0, "TEMP");
 
 	// check what setup_player is doing in priority.
 	if (sp->mdepth >= CSSTEP_CHARS)

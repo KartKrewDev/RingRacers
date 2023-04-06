@@ -21,6 +21,8 @@
 static serverplayer_t trackedList[MAXTRACKEDSERVERPLAYERS];
 static UINT32 numtracked = 0;
 
+UINT16 guestpwr[PWRLV_NUMTYPES]; // All-zero power level to reference for guests
+
 // Read stats file to trackedList for ingame use
 void SV_LoadStats(void)
 {
@@ -106,41 +108,35 @@ void SV_SaveStats(void)
 }
 
 // New player, grab their stats from trackedList or initialize new ones if they're new
-void SV_RetrieveStats(int player)
+UINT16 *SV_RetrievePWR(uint8_t *key)
 {
-	if (!server)
-		return;
-
 	UINT32 j;
 
+	// Existing record?
 	for(j = 0; j < numtracked; j++)
 	{
-		if (memcmp(trackedList[j].public_key, players[player].public_key, PUBKEYLENGTH) == 0)
+		if (memcmp(trackedList[j].public_key, key, PUBKEYLENGTH) == 0)
 		{
-			memcpy(clientpowerlevels[player], trackedList[j].powerlevels, sizeof(trackedList[j].powerlevels));
-			return;
+			return trackedList[j].powerlevels;
 		}
 	}
 
-	uint8_t allZero[PUBKEYLENGTH];
-	memset(allZero, 0, PUBKEYLENGTH);
-
+	// Untracked, make a new record
+	memcpy(trackedList[numtracked].public_key, key, PUBKEYLENGTH);
 	for(j = 0; j < PWRLV_NUMTYPES; j++)
 	{
-		if (memcmp(players[player].public_key, allZero, PUBKEYLENGTH) == 0)
-			clientpowerlevels[player][j] = 0;
-		else
-			clientpowerlevels[player][j] = PWRLVRECORD_START;
+		trackedList[numtracked].powerlevels[j] = PR_IsKeyGuest(key) ? 0 : PWRLVRECORD_START;
 	}
+	
+	numtracked++;
 
+	return trackedList[numtracked - 1].powerlevels;
 }
 
 // Write player stats to trackedList, then save to disk
 void SV_UpdateStats(void)
 {	
 	UINT32 i, j;
-	uint8_t allZero[PUBKEYLENGTH];
-	memset(allZero, 0, PUBKEYLENGTH);
 
 	if (!server)
 		return;
@@ -150,29 +146,22 @@ void SV_UpdateStats(void)
 		if (!playeringame[i])
 			continue;
 
-		if (memcmp(players[i].public_key, allZero, PUBKEYLENGTH) == 0)
+		if (PR_IsKeyGuest(players[i].public_key))
 		{
 			continue;
 		}
 
-		boolean match = false;
 		for(j = 0; j < numtracked; j++)
 		{
 			if (memcmp(trackedList[j].public_key, players[i].public_key, PUBKEYLENGTH) == 0)
 			{
 				memcpy(trackedList[j].powerlevels, clientpowerlevels[i], sizeof(trackedList[j].powerlevels));
-				match = true;
 				break;
 			}
 		}
 
-		if (match)
-			continue;
-
-		memcpy(trackedList[numtracked].public_key, players[i].public_key, PUBKEYLENGTH);
-		memcpy(trackedList[numtracked].powerlevels, clientpowerlevels[i], sizeof(trackedList[numtracked].powerlevels));
-		
-		numtracked++;
+		// SV_RetrievePWR should always be called for a key before SV_UpdateStats runs,
+		// so this shouldn't be reachable.
 	}
 
 	SV_SaveStats();

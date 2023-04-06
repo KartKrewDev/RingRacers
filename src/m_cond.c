@@ -683,25 +683,6 @@ boolean M_CheckCondition(condition_t *cn, player_t *player)
 		}
 		case UC_TOTALRINGS: // Requires grabbing >= x rings
 			return (gamedata->totalrings >= (unsigned)cn->requirement);
-		case UC_POWERLEVEL: // Requires power level >= x on a certain gametype
-		{
-			UINT8 i;
-
-			if (gamestate == GS_LEVEL)
-				return false; // this one could be laggy with many profiles available
-
-			for (i = PROFILE_GUEST; i < PR_GetNumProfiles(); i++)
-			{
-				profile_t *p = PR_GetProfile(i);
-
-				if (p->powerlevels[cn->extrainfo1] >= (unsigned)cn->requirement)
-				{
-					return true;
-				}
-			}
-
-			return false;
-		}
 		case UC_GAMECLEAR: // Requires game beaten >= x times
 			return (gamedata->timesBeaten >= (unsigned)cn->requirement);
 		case UC_OVERALLTIME: // Requires overall time <= x
@@ -1038,12 +1019,6 @@ static const char *M_GetConditionString(condition_t *cn)
 			if (cn->requirement >= 1000)
 				return va("collect %u,%03u Rings", (cn->requirement/1000), (cn->requirement%1000));
 			return va("collect %u Rings", cn->requirement);
-
-		case UC_POWERLEVEL: // Requires power level >= x on a certain gametype
-			return va("get a PWR of %d in %s", cn->requirement,
-				(cn->extrainfo1 == PWRLV_RACE)
-				? "Race"
-				: "Battle");
 
 		case UC_GAMECLEAR: // Requires game beaten >= x times
 			if (cn->requirement > 1)
