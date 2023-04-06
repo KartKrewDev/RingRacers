@@ -2713,39 +2713,33 @@ void R_AddSprites(sector_t *sec, INT32 lightlevel)
 //
 static void R_SortVisSprites(vissprite_t* vsprsortedhead, UINT32 start, UINT32 end)
 {
-	UINT32       i, linkedvissprites = 0;
+	UINT32       i, count = 0;
 	vissprite_t *ds, *dsprev, *dsnext, *dsfirst;
 	vissprite_t *best = NULL;
 	vissprite_t  unsorted;
 	fixed_t      bestscale;
 	INT32        bestdispoffset;
 
-	unsorted.next = unsorted.prev = &unsorted;
+	dsfirst = &unsorted;
+	dsprev = dsfirst;
+	dsnext = dsfirst;
 
-	dsfirst = R_GetVisSprite(start);
+	I_Assert(start <= end);
 
-	// The first's prev and last's next will be set to
-	// nonsense, but are fixed in a moment
-	for (i = start, dsnext = dsfirst, ds = NULL; i < end; i++)
+	for (i = start; i < end; ++i)
 	{
-		dsprev = ds;
-		ds = dsnext;
-		if (i < end - 1) dsnext = R_GetVisSprite(i + 1);
+		dsnext = R_GetVisSprite(i);
+		dsnext->linkdraw = NULL;
 
-		ds->next = dsnext;
-		ds->prev = dsprev;
-		ds->linkdraw = NULL;
+		dsprev->next = dsnext;
+		dsnext->prev = dsprev;
+		dsprev = dsnext;
+
+		count++;
 	}
 
-	// Fix first and last. ds still points to the last one after the loop
-	dsfirst->prev = &unsorted;
-	unsorted.next = dsfirst;
-	if (ds)
-	{
-		ds->next = &unsorted;
-		ds->linkdraw = NULL;
-	}
-	unsorted.prev = ds;
+	dsnext->next = dsfirst;
+	dsfirst->prev = dsnext;
 
 	// bundle linkdraw
 	for (ds = unsorted.prev; ds != &unsorted; ds = ds->prev)
@@ -2791,7 +2785,7 @@ static void R_SortVisSprites(vissprite_t* vsprsortedhead, UINT32 start, UINT32 e
 		// remove from chain
 		ds->next->prev = ds->prev;
 		ds->prev->next = ds->next;
-		linkedvissprites++;
+		count--;
 
 		if (dsfirst != &unsorted)
 		{
@@ -2820,7 +2814,7 @@ static void R_SortVisSprites(vissprite_t* vsprsortedhead, UINT32 start, UINT32 e
 
 	// pull the vissprites out by scale
 	vsprsortedhead->next = vsprsortedhead->prev = vsprsortedhead;
-	for (i = start; i < end-linkedvissprites; i++)
+	for (i = 0; i < count; i++)
 	{
 		bestscale = bestdispoffset = INT32_MAX;
 		for (ds = unsorted.next; ds != &unsorted; ds = ds->next)
