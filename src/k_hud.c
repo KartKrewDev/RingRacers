@@ -77,6 +77,7 @@ patch_t *kp_facehighlight[8];
 
 static patch_t *kp_nocontestminimap;
 static patch_t *kp_spbminimap;
+static patch_t *kp_wouldyoustillcatchmeifiwereaworm;
 static patch_t *kp_capsuleminimap[3];
 
 static patch_t *kp_ringsticker[2];
@@ -348,7 +349,11 @@ void K_LoadKartHUDGraphics(void)
 
 	// Special minimap icons
 	HU_UpdatePatch(&kp_nocontestminimap, "MINIDEAD");
+
 	HU_UpdatePatch(&kp_spbminimap, "SPBMMAP");
+
+	HU_UpdatePatch(&kp_wouldyoustillcatchmeifiwereaworm, "MINIPROG");
+
 	HU_UpdatePatch(&kp_capsuleminimap[0], "MINICAP1");
 	HU_UpdatePatch(&kp_capsuleminimap[1], "MINICAP2");
 	HU_UpdatePatch(&kp_capsuleminimap[2], "MINICAP3");
@@ -1662,17 +1667,27 @@ void K_drawKartTimestamp(tic_t drawtime, INT32 TX, INT32 TY, INT32 splitflags, U
 	if (modeattacking & ATTACKING_SPB && stplyr->SPBdistance > 0)
 	{
 		UINT8 *colormap = R_GetTranslationColormap(stplyr->skin, stplyr->skincolor, GTC_CACHE);
-		int ybar = 180;
-		int widthbar = 120;
+		INT32 ybar = 180;
+		INT32 widthbar = 120, xbar = 160 - widthbar/2, currentx;
+		INT32 barflags = V_SNAPTOBOTTOM|V_SLIDEIN;
 
-		V_DrawFill(160 - widthbar / 2, ybar, widthbar, 1, 6);
-		V_DrawMappedPatch(160 + widthbar/2 - 7, ybar - 7, FRACUNIT, faceprefix[stplyr->skin][FACE_MINIMAP], colormap);
+		V_DrawScaledPatch(xbar, ybar - 2, barflags|minimaptrans, kp_wouldyoustillcatchmeifiwereaworm);
+
+		V_DrawMappedPatch(160 + widthbar/2 - 7, ybar - 7, barflags, faceprefix[stplyr->skin][FACE_MINIMAP], colormap);
 
 		// vibes-based math
-		int bombxoff = (stplyr->SPBdistance/mapobjectscale - mobjinfo[MT_SPB].radius/FRACUNIT - mobjinfo[MT_PLAYER].radius/FRACUNIT) * 8;
-		bombxoff = sqrt(bombxoff) - 5;
-		bombxoff = max(0, min(bombxoff, widthbar));
-		V_DrawScaledPatch(160 + widthbar/2 - bombxoff, ybar - 7, FRACUNIT, W_CachePatchName("SPBMMAP", PU_CACHE));
+		currentx = (stplyr->SPBdistance/mapobjectscale - mobjinfo[MT_SPB].radius/FRACUNIT - mobjinfo[MT_PLAYER].radius/FRACUNIT) * 8;
+		if (currentx > 0)
+		{
+			currentx = sqrt(currentx);
+			if (currentx > widthbar)
+				currentx = widthbar;
+		}
+		else
+		{
+			currentx = 0;
+		}
+		V_DrawScaledPatch(xbar - currentx - 5, ybar - 7, barflags, kp_spbminimap);
 	}
 }
 
