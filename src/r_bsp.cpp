@@ -43,6 +43,10 @@ drawseg_t *ds_p = NULL;
 // indicates doors closed wrt automap bugfix:
 INT32 doorclosed;
 
+// A wall was drawn covering the whole screen, which means we
+// can block off the BSP across that seg.
+boolean g_walloffscreen;
+
 boolean R_NoEncore(sector_t *sector, levelflat_t *flat, boolean ceiling)
 {
 	const boolean invertEncore = (sector->flags & MSF_INVERTENCORE);
@@ -99,6 +103,7 @@ enum class ClipType
 	//  e.g. single sided LineDefs (middle texture)
 	//  that entirely block the view.
 	kSolid,
+	kSolidDontRender,
 
 	// Clips the given range of columns, but does not include it in the clip list.
 	// Does handle windows, e.g. LineDefs with upper and lower texture.
@@ -138,7 +143,10 @@ void R_ClipWallSegment(INT32 first, INT32 last)
 		if (last < start->first - 1)
 		{
 			// Post is entirely visible (above start), so insert a new clippost.
-			R_StoreWallRange(first, last);
+			if constexpr (Type != ClipType::kSolidDontRender)
+			{
+				R_StoreWallRange(first, last);
+			}
 
 			if constexpr (Type != ClipType::kPass)
 			{
@@ -161,7 +169,10 @@ void R_ClipWallSegment(INT32 first, INT32 last)
 		}
 
 		// There is a fragment above *start.
-		R_StoreWallRange(first, start->first - 1);
+		if constexpr (Type != ClipType::kSolidDontRender)
+		{
+			R_StoreWallRange(first, start->first - 1);
+		}
 
 		if constexpr (Type != ClipType::kPass)
 		{
@@ -178,7 +189,11 @@ void R_ClipWallSegment(INT32 first, INT32 last)
 	while (last >= (next+1)->first - 1)
 	{
 		// There is a fragment between two posts.
-		R_StoreWallRange(start->last + 1, (start+1)->first - 1);
+		if constexpr (Type != ClipType::kSolidDontRender)
+		{
+			R_StoreWallRange(next->last + 1, (next+1)->first - 1);
+		}
+
 		next++;
 
 		if (last <= next->last)
@@ -196,7 +211,10 @@ void R_ClipWallSegment(INT32 first, INT32 last)
 	}
 
 	// There is a fragment after *next.
-	R_StoreWallRange(start->last + 1, last);
+	if constexpr (Type != ClipType::kSolidDontRender)
+	{
+		R_StoreWallRange(next->last + 1, last);
+	}
 
 	if constexpr (Type != ClipType::kPass)
 	{
@@ -629,10 +647,17 @@ static void R_AddLine(seg_t *line)
 		return;
 
 clippass:
+	g_walloffscreen = false;
 	R_ClipWallSegment<ClipType::kPass>(x1, x2 - 1);
+
+	if (g_walloffscreen)
+	{
+		R_ClipWallSegment<ClipType::kSolidDontRender>(x1, x2 -1);
+	}
 	return;
 
 clipsolid:
+	g_walloffscreen = false;
 	R_ClipWallSegment<ClipType::kSolid>(x1, x2 - 1);
 }
 
