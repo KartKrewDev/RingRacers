@@ -79,6 +79,8 @@
 #define CATCHER_Y_OFFSET (48*FRACUNIT)
 #define CATCHER_OFFSCREEN (-CATCHER_Y_OFFSET * 2)
 
+#define CATCHER_Y_OFFSET_SMALL (CATCHER_Y_OFFSET / 2)
+
 #define SELECTION_WIDTH (72*FRACUNIT)
 #define SELECTION_HEIGHT ((SELECTION_WIDTH * BASEVIDHEIGHT) / BASEVIDWIDTH)
 #define SELECTION_X (10*FRACUNIT + (SELECTION_WIDTH >> 1))
@@ -87,6 +89,14 @@
 #define SELECTION_SPACING_W (SELECTION_WIDTH + SELECTION_SPACE)
 #define SELECTION_SPACING_H (SELECTION_HEIGHT + SELECTION_SPACE)
 #define SELECTION_HOP (10*FRACUNIT)
+
+#define PILE_WIDTH (46*FRACUNIT)
+#define PILE_HEIGHT ((PILE_WIDTH * BASEVIDHEIGHT) / BASEVIDWIDTH)
+#define PILE_SPACE (4*FRACUNIT)
+#define PILE_SPACING_W (PILE_WIDTH + PILE_SPACE)
+#define PILE_SPACING_H (PILE_HEIGHT + PILE_SPACE)
+
+//#define TEST_VOTES (11)
 
 // Catcher data
 enum
@@ -117,6 +127,8 @@ typedef struct
 
 	SINT8 level;
 	UINT8 player;
+
+	fixed_t anim; // UI scope variable
 } y_vote_catcher;
 
 // Clientside & splitscreen player info.
@@ -177,10 +189,10 @@ typedef struct
 	patch_t *bg_levelText;
 	patch_t *bg_derrText;
 
-	patch_t *catcher_ufo;
-	patch_t *catcher_arms[ARM_FRAMES];
-	patch_t *catcher_pole;
-	patch_t *catcher_bulb[BULB_FRAMES];
+	patch_t *catcher_ufo[2];
+	patch_t *catcher_arms[2][ARM_FRAMES];
+	patch_t *catcher_pole[2];
+	patch_t *catcher_bulb[2][BULB_FRAMES];
 
 	fixed_t selectTransition;
 	y_vote_draw_level levels[VOTE_NUM_LEVELS];
@@ -207,8 +219,111 @@ boolean Y_PlayerIDCanVote(const UINT8 playerId)
 	return true;
 }
 
+static void Y_SortPile(void)
+{
+	UINT8 numVotes = 0;
+	UINT8 votesLeft = 0;
+	INT32 i;
+
+#ifdef TEST_VOTES
+	numVotes = TEST_VOTES;
+#else
+	for (i = 0; i < MAXPLAYERS; i++)
+	{
+		if (g_votes[i] == VOTE_NOT_PICKED)
+		{
+			continue;
+		}
+
+		numVotes++;
+	}
+#endif
+
+	if (numVotes == 0)
+	{
+		return;
+	}
+
+	votesLeft = numVotes;
+
+	for (i = 0; i < MAXPLAYERS; i++)
+	{
+		y_vote_pile *const pile = &vote.roulette.pile[i];
+
+#ifndef TEST_VOTES
+		if (g_votes[i] == VOTE_NOT_PICKED)
+		{
+			continue;
+		}
+#endif
+
+		// Just center it for now.
+		pile->destX = BASEVIDWIDTH << FRACBITS >> 1;
+		pile->destY = BASEVIDHEIGHT << FRACBITS >> 1;
+
+		if (numVotes <= 1)
+		{
+			; // NOP
+		}
+		else if (numVotes == 2)
+		{
+			// Offset just a bit from the center.
+			if (votesLeft <= 1)
+			{
+				pile->destX += PILE_SPACING_W >> 1;
+			}
+			else
+			{
+				pile->destX -= PILE_SPACING_W >> 1;
+			}
+		}
+		else if (numVotes <= 12)
+		{
+			const boolean odd = ((numVotes % 2) != 0);
+			UINT8 rowSize = (numVotes + 1) / 2;
+			INT32 xOffset = 0;
+
+			if (votesLeft > rowSize)
+			{
+				if (odd == true)
+				{
+					rowSize--;
+				}
+
+				const SINT8 topRowIndex = (rowSize - ((votesLeft - 1) % rowSize)) - 1;
+				xOffset = -(rowSize - 1) + (topRowIndex << 1);
+
+				pile->destY -= PILE_SPACING_H >> 1;
+			}
+			else
+			{
+				const SINT8 botRowIndex = votesLeft - 1;
+				xOffset = -(rowSize - 1) + (botRowIndex << 1);
+
+				pile->destY += PILE_SPACING_H >> 1;
+			}
+
+			pile->destX += (PILE_SPACING_W >> 1) * xOffset;
+		}
+		else
+		{
+			// TODO: 13+ votes
+		}
+
+		votesLeft--;
+
+		if (votesLeft == 0)
+		{
+			break;
+		}
+	}
+}
+
 void Y_SetPlayersVote(const UINT8 playerId, SINT8 newVote)
 {
+	y_vote_pile *const pile = &vote.roulette.pile[playerId];
+	y_vote_catcher *const catcher = &pile->catcher;
+
 	if (gamestate != GS_VOTING)
 	{
 		return;
@@ -220,6 +335,19 @@ void Y_SetPlayersVote(const UINT8 playerId, SINT8 newVote)
 	}
 
 	g_votes[playerId] = newVote;
+
+	Y_SortPile();
+
+	pile->x = pile->destX;
+	pile->y = pile->destY;
+
+	catcher->action = CATCHER_BG_LOWER;
+
+	catcher->x = catcher->destX = pile->x;
+	catcher->y = CATCHER_OFFSCREEN;
+	catcher->destY = pile->y;
+	catcher->spr = ARM_FRAMES-1;
+	catcher->level = g_votes[playerId];
 
 #ifdef VOTE_TIME_WAIT_FOR_VOTE
 	if (vote.timer == -1)
@@ -321,7 +449,7 @@ static void Y_DrawCatcher(y_vote_catcher *catcher)
 		SKINCOLOR_LILAC,
 	};
 
-	static fixed_t anim = 0;
+	const UINT8 sizeOffset = (catcher->small == true) ? 1 : 0;
 	tic_t colorTic = 0;
 
 	fixed_t baseX = INT32_MAX;
@@ -337,14 +465,14 @@ static void Y_DrawCatcher(y_vote_catcher *catcher)
 		return;
 	}
 
-	anim += renderdeltatics;
-	colorTic = (anim / 3) / FRACUNIT;
+	catcher->anim += renderdeltatics;
+	colorTic = (catcher->anim / 3) / FRACUNIT;
 
 	baseX = catcher->x;
 
 	if (catcher->action == CATCHER_FG_STRUGGLE)
 	{
-		if ((anim / FRACUNIT) & 1)
+		if ((catcher->anim / FRACUNIT) & 1)
 		{
 			baseX += FRACUNIT;
 		}
@@ -354,8 +482,8 @@ static void Y_DrawCatcher(y_vote_catcher *catcher)
 		}
 	}
 
-	x = baseX - (vote_draw.catcher_ufo->width * FRACUNIT / 2);
-	y = catcher->y - (vote_draw.catcher_ufo->height * FRACUNIT) + CATCHER_Y_OFFSET;
+	x = baseX - (vote_draw.catcher_ufo[sizeOffset]->width * FRACUNIT / 2);
+	y = catcher->y - (vote_draw.catcher_ufo[sizeOffset]->height * FRACUNIT) + ((catcher->small == true) ? CATCHER_Y_OFFSET_SMALL : CATCHER_Y_OFFSET);
 
 	craneColor = R_GetTranslationColormap(TC_DEFAULT, ufoColors[colorTic % NUM_UFO_COLORS], GTC_MENUCACHE);
 	bulbColor = R_GetTranslationColormap(TC_DEFAULT, bulbColors[(colorTic / BULB_FRAMES) % NUM_BULB_COLORS], GTC_MENUCACHE);
@@ -364,7 +492,7 @@ static void Y_DrawCatcher(y_vote_catcher *catcher)
 	{
 		Y_DrawVoteThumbnail(
 			baseX, catcher->y,
-			SELECTION_WIDTH, 0,
+			((catcher->small == true) ? PILE_WIDTH : SELECTION_WIDTH), 0,
 			catcher->level, false
 		);
 	}
@@ -372,28 +500,28 @@ static void Y_DrawCatcher(y_vote_catcher *catcher)
 	V_DrawFixedPatch(
 		x, y,
 		FRACUNIT, 0,
-		vote_draw.catcher_arms[catcher->spr % ARM_FRAMES],
+		vote_draw.catcher_arms[sizeOffset][catcher->spr % ARM_FRAMES],
 		craneColor
 	);
 
 	V_DrawFixedPatch(
 		x, y,
 		FRACUNIT, 0,
-		vote_draw.catcher_bulb[colorTic % BULB_FRAMES],
+		vote_draw.catcher_bulb[sizeOffset][colorTic % BULB_FRAMES],
 		bulbColor
 	);
 
 	V_DrawFixedPatch(
 		x, y,
 		FRACUNIT, 0,
-		vote_draw.catcher_ufo,
+		vote_draw.catcher_ufo[sizeOffset],
 		craneColor
 	);
 
 	V_DrawFixedPatch(
 		x, y,
 		FRACUNIT, 0,
-		vote_draw.catcher_pole,
+		vote_draw.catcher_pole[sizeOffset],
 		NULL
 	);
 #undef NUM_UFO_COLORS
@@ -554,7 +682,41 @@ static void Y_DrawVoteSelection(fixed_t offset)
 
 static void Y_DrawVotePile(void)
 {
-	// TODO
+	INT32 i;
+
+	for (i = 0; i < MAXPLAYERS; i++)
+	{
+		y_vote_pile *const pile = &vote.roulette.pile[i];
+		y_vote_catcher *const catcher = &pile->catcher;
+
+		if (catcher->level != VOTE_NOT_PICKED)
+		{
+			continue;
+		}
+
+#ifndef TEST_VOTES
+		if (g_votes[i] == VOTE_NOT_PICKED)
+		{
+			continue;
+		}
+#endif
+
+		Y_DrawVoteThumbnail(
+			pile->x, pile->y,
+			PILE_WIDTH, 0,
+#ifdef TEST_VOTES
+			0,
+#else
+			g_votes[i],
+#endif
+			(i != vote.roulette.anim || g_pickedVote == VOTE_NOT_PICKED)
+		);
+	}
+
+	for (i = 0; i < MAXPLAYERS; i++)
+	{
+		Y_DrawCatcher(&vote.roulette.pile[i].catcher);
+	}
 }
 
 void Y_VoteDrawer(void)
@@ -584,10 +746,13 @@ void Y_VoteDrawer(void)
 	vote_draw.ruby_height = FINESINE(rubyFloatTime >> ANGLETOFINESHIFT);
 	rubyFloatTime += FixedMul(ANGLE_MAX / NEWTICRATE, renderdeltatics);
 
-	vote_draw.selectTransition += FixedMul(
-		(((g_pickedVote != VOTE_NOT_PICKED) ? FRACUNIT : 0) - vote_draw.selectTransition) / 2,
-		renderdeltatics
-	);
+	if (vote.loaded == true)
+	{
+		vote_draw.selectTransition += FixedMul(
+			(((g_pickedVote != VOTE_NOT_PICKED) ? FRACUNIT : 0) - vote_draw.selectTransition) / 2,
+			renderdeltatics
+		);
+	}
 
 	Y_DrawVoteBackground();
 	Y_DrawVotePile();
@@ -644,11 +809,8 @@ static void Y_PlayerSendVote(const UINT8 localPlayer)
 	S_StartSound(NULL, sfx_kc37);
 }
 
-static void Y_TickPlayerCatcher(const UINT8 localPlayer)
+static boolean Y_TickGenericCatcher(y_vote_catcher *const catcher)
 {
-	y_vote_player *const player = &vote.players[localPlayer];
-	y_vote_catcher *const catcher = &player->catcher;
-
 	fixed_t spd = CATCHER_SPEED;
 	fixed_t xDelta = catcher->destX - catcher->x;
 
@@ -696,6 +858,19 @@ static void Y_TickPlayerCatcher(const UINT8 localPlayer)
 	if (catcher->delay > 0)
 	{
 		catcher->delay--;
+		return false;
+	}
+
+	return true;
+}
+
+static void Y_TickPlayerCatcher(const UINT8 localPlayer)
+{
+	y_vote_player *const player = &vote.players[localPlayer];
+	y_vote_catcher *const catcher = &player->catcher;
+
+	if (Y_TickGenericCatcher(catcher) == false)
+	{
 		return;
 	}
 
@@ -761,6 +936,278 @@ static void Y_TickPlayerCatcher(const UINT8 localPlayer)
 	}
 }
 
+static void Y_TickPileCatcher(const UINT8 playerId)
+{
+	y_vote_pile *const pile = &vote.roulette.pile[playerId];
+	y_vote_catcher *const catcher = &pile->catcher;
+
+	if (Y_TickGenericCatcher(catcher) == false)
+	{
+		return;
+	}
+
+	switch (catcher->action)
+	{
+		case CATCHER_BG_LOWER:
+		{
+			if (catcher->x == catcher->destX && catcher->y == catcher->destY)
+			{
+				catcher->level = VOTE_NOT_PICKED;
+				catcher->action++;
+			}
+			break;
+		}
+
+		case CATCHER_BG_RELEASE:
+		{
+			catcher->spr--;
+
+			if (catcher->spr == 0)
+			{
+				catcher->destY = CATCHER_OFFSCREEN;
+				catcher->action = CATCHER_BG_RISE;
+			}
+			break;
+		}
+
+		case CATCHER_BG_RISE:
+		{
+			if (catcher->x == catcher->destX && catcher->y == catcher->destY)
+			{
+				catcher->action = CATCHER_NA;
+			}
+			break;
+		}
+
+		default:
+		{
+			catcher->action = CATCHER_NA;
+			break;
+		}
+	}
+}
+
+static void Y_TickPlayerPile(const UINT8 playerId)
+{
+	y_vote_pile *const pile = &vote.roulette.pile[playerId];
+	y_vote_catcher *const catcher = &pile->catcher;
+
+	fixed_t movedX = 0;
+	fixed_t movedY = 0;
+
+#ifndef TEST_VOTES
+	if (g_votes[playerId] == VOTE_NOT_PICKED)
+	{
+		catcher->action = CATCHER_NA;
+		return;
+	}
+#endif
+
+	movedX = (pile->destX - pile->x) / 2;
+	movedY = (pile->destY - pile->y) / 2;
+
+	if (movedX != 0 || movedY != 0)
+	{
+		pile->x += movedX;
+		pile->y += movedY;
+
+		catcher->x += movedX;
+		catcher->y += movedY;
+
+		catcher->destX += movedX;
+		catcher->destY += movedY;
+	}
+
+	Y_TickPileCatcher(playerId);
+}
+
+static void Y_TickVoteRoulette(void)
+{
+	INT32 i;
+
+	vote.timer = 0;
+	vote.roulette.syncTime++;
+
+	if (vote.endtic == -1)
+	{
+		UINT8 tempvotes[MAXPLAYERS];
+		UINT8 numvotes = 0;
+
+		for (i = 0; i < MAXPLAYERS; i++)
+		{
+			if (g_votes[i] == VOTE_NOT_PICKED)
+			{
+				continue;
+			}
+
+			tempvotes[numvotes] = i;
+			numvotes++;
+		}
+
+		if (numvotes < 1) // Whoops! Get outta here.
+		{
+			Y_EndVote();
+			G_AfterIntermission();
+			return;
+		}
+
+		if (vote.roulette.tics > 0)
+		{
+			vote.roulette.tics--;
+		}
+		else
+		{
+			vote.roulette.offset++;
+			vote.roulette.tics = min(6, 9 * vote.roulette.offset / 40);
+			S_StartSound(NULL, sfx_kc39);
+		}
+
+		if (vote.roulette.endOffset == 0 || vote.roulette.offset < vote.roulette.endOffset)
+		{
+			vote.roulette.anim = tempvotes[((g_pickedVote + vote.roulette.offset) % numvotes)];
+		}
+
+		if (vote.roulette.offset > 30)
+		{
+			if (vote.roulette.endOffset == 0)
+			{
+				if (vote.roulette.syncTime % 51 == 0) // Song is 1.45 seconds long (sorry @ whoever wants to replace it in a music wad :V)
+				{
+					for (i = 5; i >= 3; i--) // Find a suitable place to stop
+					{
+						if (tempvotes[((g_pickedVote + vote.roulette.offset + i) % numvotes)] == g_pickedVote)
+						{
+							vote.roulette.endOffset = vote.roulette.offset + i;
+
+							if (M_RandomChance(FRACUNIT/32)) // Let it cheat occasionally~
+							{
+								vote.roulette.endOffset++;
+							}
+
+							S_ChangeMusicInternal("voteeb", false);
+							break;
+						}
+					}
+				}
+			}
+			else if (vote.roulette.offset >= vote.roulette.endOffset)
+			{
+				vote.endtic = vote.tic + (3*TICRATE);
+				Y_VoteStops(g_pickedVote, vote.deferredLevel);
+			}
+		}
+	}
+	else
+	{
+		vote.roulette.anim = g_pickedVote;
+	}
+}
+
+static void Y_TickVoteSelection(void)
+{
+	INT32 i;
+
+	if (vote.tic < 3*(NEWTICRATE/7)) // give it some time before letting you control it :V
+	{
+		return;
+	}
+
+	/*
+	The vote ended, but it will take at least a tic for that to reach us from
+	the server. Don't let me change the vote now, it won't matter anyway!
+	*/
+	if (vote.timer != 0)
+	{
+		for (i = 0; i <= splitscreen; i++)
+		{
+			const UINT8 p = g_localplayers[i];
+			boolean moved = false;
+
+			if (vote.players[i].delay)
+			{
+				vote.players[i].delay--;
+			}
+
+			if (Y_PlayerIDCanVote(p) == true
+				&& menuactive == false
+				&& vote.players[i].delay == 0
+				&& g_pickedVote == VOTE_NOT_PICKED && g_votes[p] == VOTE_NOT_PICKED
+				&& vote.players[i].catcher.action == CATCHER_NA)
+			{
+				if (G_PlayerInputDown(i, gc_left, 0))
+				{
+					vote.players[i].selection--;
+					moved = true;
+				}
+
+				if (G_PlayerInputDown(i, gc_right, 0))
+				{
+					vote.players[i].selection++;
+					moved = true;
+				}
+
+				if (vote.players[i].selection < 0)
+				{
+					vote.players[i].selection = VOTE_NUM_LEVELS - 1;
+				}
+
+				if (vote.players[i].selection >= VOTE_NUM_LEVELS)
+				{
+					vote.players[i].selection = 0;
+				}
+
+				if (G_PlayerInputDown(i, gc_a, 0) && moved == false)
+				{
+					Y_PlayerSendVote(i);
+					moved = true;
+				}
+			}
+
+			if (moved)
+			{
+				S_StartSound(NULL, sfx_kc4a);
+				vote.players[i].delay = NEWTICRATE/7;
+			}
+		}
+	}
+
+	if (server)
+	{
+		boolean everyone_voted = true;/* the default condition */
+
+		for (i = 0; i < MAXPLAYERS; i++)
+		{
+			if (Y_PlayerIDCanVote(i) == false)
+			{
+				continue;
+			}
+
+			if (g_votes[i] == VOTE_NOT_PICKED)
+			{
+				if (vote.timer == 0)
+				{
+					g_votes[i] = 3; // RANDOMIZE LATER
+				}
+				else
+				{
+					everyone_voted = false;
+				}
+			}
+		}
+
+		if (everyone_voted == true)
+		{
+			vote.timer = 0;
+
+			if (vote.endtic == -1)
+			{
+				vote.notYetPicked = false; /* don't pick vote twice */
+				D_PickVote();
+			}
+		}
+	}
+}
+
 //
 // Y_VoteTicker
 //
@@ -769,7 +1216,6 @@ static void Y_TickPlayerCatcher(const UINT8 localPlayer)
 void Y_VoteTicker(void)
 {
 	INT32 i;
-	boolean everyone_voted;
 
 	if (paused || P_AutoPause() || vote.loaded == false)
 	{
@@ -820,186 +1266,20 @@ void Y_VoteTicker(void)
 		Y_TickPlayerCatcher(i);
 	}
 
+	Y_SortPile();
+
+	for (i = 0; i < MAXPLAYERS; i++)
+	{
+		Y_TickPlayerPile(i);
+	}
+
 	if (g_pickedVote != VOTE_NOT_PICKED)
 	{
-		vote.timer = 0;
-		vote.roulette.syncTime++;
-
-		if (vote.endtic == -1)
-		{
-			UINT8 tempvotes[MAXPLAYERS];
-			UINT8 numvotes = 0;
-
-			for (i = 0; i < MAXPLAYERS; i++)
-			{
-				if (g_votes[i] == VOTE_NOT_PICKED)
-				{
-					continue;
-				}
-
-				tempvotes[numvotes] = i;
-				numvotes++;
-			}
-
-			if (numvotes < 1) // Whoops! Get outta here.
-			{
-				Y_EndVote();
-				G_AfterIntermission();
-				return;
-			}
-
-			if (vote.roulette.tics > 0)
-			{
-				vote.roulette.tics--;
-			}
-			else
-			{
-				vote.roulette.offset++;
-				vote.roulette.tics = min(6, 9 * vote.roulette.offset / 40);
-				S_StartSound(NULL, sfx_kc39);
-			}
-
-			if (vote.roulette.endOffset == 0 || vote.roulette.offset < vote.roulette.endOffset)
-			{
-				vote.roulette.anim = tempvotes[((g_pickedVote + vote.roulette.offset) % numvotes)];
-			}
-
-			if (vote.roulette.offset > 40)
-			{
-				if (vote.roulette.endOffset == 0)
-				{
-					if (vote.roulette.syncTime % 51 == 0) // Song is 1.45 seconds long (sorry @ whoever wants to replace it in a music wad :V)
-					{
-						for (i = 5; i >= 3; i--) // Find a suitable place to stop
-						{
-							if (tempvotes[((g_pickedVote + vote.roulette.offset + i) % numvotes)] == g_pickedVote)
-							{
-								vote.roulette.endOffset = vote.roulette.offset + i;
-
-								if (M_RandomChance(FRACUNIT/32)) // Let it cheat occasionally~
-								{
-									vote.roulette.endOffset++;
-								}
-
-								S_ChangeMusicInternal("voteeb", false);
-								break;
-							}
-						}
-					}
-				}
-				else if (vote.roulette.offset >= vote.roulette.endOffset)
-				{
-					vote.endtic = vote.tic + (3*TICRATE);
-					Y_VoteStops(g_pickedVote, vote.deferredLevel);
-				}
-			}
-		}
-		else
-		{
-			vote.roulette.anim = g_pickedVote;
-		}
+		Y_TickVoteRoulette();
 	}
 	else if (vote.notYetPicked)
 	{
-		if (vote.tic < 3*(NEWTICRATE/7)) // give it some time before letting you control it :V
-		{
-			return;
-		}
-
-		/*
-		The vote ended, but it will take at least a tic for that to reach us from
-		the server. Don't let me change the vote now, it won't matter anyway!
-		*/
-		if (vote.timer != 0)
-		{
-			for (i = 0; i <= splitscreen; i++)
-			{
-				const UINT8 p = g_localplayers[i];
-				boolean moved = false;
-
-				if (vote.players[i].delay)
-				{
-					vote.players[i].delay--;
-				}
-
-				if (Y_PlayerIDCanVote(p) == true
-					&& menuactive == false
-					&& vote.players[i].delay == 0
-					&& g_pickedVote == VOTE_NOT_PICKED && g_votes[p] == VOTE_NOT_PICKED
-					&& vote.players[i].catcher.action == CATCHER_NA)
-				{
-					if (G_PlayerInputDown(i, gc_left, 0))
-					{
-						vote.players[i].selection--;
-						moved = true;
-					}
-
-					if (G_PlayerInputDown(i, gc_right, 0))
-					{
-						vote.players[i].selection++;
-						moved = true;
-					}
-
-					if (vote.players[i].selection < 0)
-					{
-						vote.players[i].selection = VOTE_NUM_LEVELS - 1;
-					}
-
-					if (vote.players[i].selection >= VOTE_NUM_LEVELS)
-					{
-						vote.players[i].selection = 0;
-					}
-
-					if (G_PlayerInputDown(i, gc_a, 0) && moved == false)
-					{
-						Y_PlayerSendVote(i);
-						moved = true;
-					}
-				}
-
-				if (moved)
-				{
-					S_StartSound(NULL, sfx_kc4a);
-					vote.players[i].delay = NEWTICRATE/7;
-				}
-			}
-		}
-
-		if (server)
-		{
-			everyone_voted = true;/* the default condition */
-
-			for (i = 0; i < MAXPLAYERS; i++)
-			{
-				if (Y_PlayerIDCanVote(i) == false)
-				{
-					continue;
-				}
-
-				if (g_votes[i] == VOTE_NOT_PICKED)
-				{
-					if (vote.timer == 0)
-					{
-						g_votes[i] = 3; // RANDOMIZE LATER
-					}
-					else
-					{
-						everyone_voted = false;
-					}
-				}
-			}
-
-			if (everyone_voted == true)
-			{
-				vote.timer = 0;
-
-				if (vote.endtic == -1)
-				{
-					vote.notYetPicked = false; /* don't pick vote twice */
-					D_PickVote();
-				}
-			}
-		}
+		Y_TickVoteSelection();
 	}
 }
 
@@ -1025,15 +1305,19 @@ void Y_StartVote(void)
 	vote_draw.bg_levelText = W_CachePatchName("VT_WELC", PU_STATIC);
 	vote_draw.bg_derrText = W_CachePatchName("VT_DERR", PU_STATIC);
 
-	vote_draw.catcher_ufo = W_CachePatchName("VT_UFO1", PU_STATIC);
+	vote_draw.catcher_ufo[0] = W_CachePatchName("VT_UFO1", PU_STATIC);
+	vote_draw.catcher_ufo[1] = W_CachePatchName("VS_UFO1", PU_STATIC);
 	for (i = 0; i < ARM_FRAMES; i++)
 	{
-		vote_draw.catcher_arms[i] = W_CachePatchName(va("VT_ARMS%d", i + 1), PU_STATIC);
+		vote_draw.catcher_arms[0][i] = W_CachePatchName(va("VT_ARMS%d", i + 1), PU_STATIC);
+		vote_draw.catcher_arms[1][i] = W_CachePatchName(va("VS_ARMS%d", i + 1), PU_STATIC);
 	}
-	vote_draw.catcher_pole = W_CachePatchName("VT_POLE", PU_STATIC);
+	vote_draw.catcher_pole[0] = W_CachePatchName("VT_POLE", PU_STATIC);
+	vote_draw.catcher_pole[1] = W_CachePatchName("VS_POLE", PU_STATIC);
 	for (i = 0; i < BULB_FRAMES; i++)
 	{
-		vote_draw.catcher_bulb[i] = W_CachePatchName(va("VT_BULB%d", i + 1), PU_STATIC);
+		vote_draw.catcher_bulb[0][i] = W_CachePatchName(va("VT_BULB%d", i + 1), PU_STATIC);
+		vote_draw.catcher_bulb[1][i] = W_CachePatchName(va("VS_BULB%d", i + 1), PU_STATIC);
 	}
 
 #ifdef VOTE_TIME_WAIT_FOR_VOTE
@@ -1047,8 +1331,14 @@ void Y_StartVote(void)
 
 	for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
 	{
-		vote.players[i].selection = 0;
-		vote.players[i].delay = 0;
+		y_vote_player *const player = &vote.players[i];
+		y_vote_catcher *const catcher = &player->catcher;
+
+		player->selection = 0;
+		player->delay = 0;
+
+		catcher->action = CATCHER_NA;
+		catcher->small = false;
 	}
 
 	vote.roulette.anim = 0;
@@ -1059,7 +1349,13 @@ void Y_StartVote(void)
 
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
+		y_vote_pile *const pile = &vote.roulette.pile[i];
+		y_vote_catcher *const catcher = &pile->catcher;
+
 		g_votes[i] = VOTE_NOT_PICKED;
+
+		catcher->action = CATCHER_NA;
+		catcher->small = true;
 	}
 
 	for (i = 0; i < VOTE_NUM_LEVELS; i++)
@@ -1109,7 +1405,7 @@ void Y_StartVote(void)
 //
 static void Y_UnloadVoteData(void)
 {
-	INT32 i;
+	INT32 i, j;
 
 	vote.loaded = false;
 
@@ -1128,15 +1424,18 @@ static void Y_UnloadVoteData(void)
 	UNLOAD(vote_draw.bg_levelText);
 	UNLOAD(vote_draw.bg_derrText);
 
-	UNLOAD(vote_draw.catcher_ufo);
-	for (i = 0; i < ARM_FRAMES; i++)
+	for (j = 0; j < 2; j++)
 	{
-		UNLOAD(vote_draw.catcher_arms[i]);
-	}
-	UNLOAD(vote_draw.catcher_pole);
-	for (i = 0; i < BULB_FRAMES; i++)
-	{
-		UNLOAD(vote_draw.catcher_bulb[i]);
+		UNLOAD(vote_draw.catcher_ufo[j]);
+		for (i = 0; i < ARM_FRAMES; i++)
+		{
+			UNLOAD(vote_draw.catcher_arms[j][i]);
+		}
+		UNLOAD(vote_draw.catcher_pole[j]);
+		for (i = 0; i < BULB_FRAMES; i++)
+		{
+			UNLOAD(vote_draw.catcher_bulb[j][i]);
+		}
 	}
 }
 
