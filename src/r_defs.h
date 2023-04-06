@@ -524,7 +524,6 @@ struct sector_t
 	fixed_t floorspeed, ceilspeed;
 
 	// list of precipitation mobjs in sector
-	precipmobj_t *preciplist;
 	mprecipsecnode_t *touching_preciplist;
 
 	// Eternity engine slope

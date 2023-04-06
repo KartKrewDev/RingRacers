@@ -2639,7 +2639,6 @@ weatherthink:
 void R_AddSprites(sector_t *sec, INT32 lightlevel)
 {
 	mobj_t *thing;
-	precipmobj_t *precipthing; // Tails 08-25-2002
 	INT32 lightnum;
 	fixed_t limit_dist;
 
@@ -2696,14 +2695,45 @@ void R_AddSprites(sector_t *sec, INT32 lightlevel)
 			}
 		}
 	}
+}
+
+// R_AddPrecipitationSprites
+// This renders through the blockmap instead of BSP to avoid
+// iterating a huge amount of precipitation sprites in sectors
+// that are beyond drawdist.
+//
+void R_AddPrecipitationSprites(void)
+{
+	const fixed_t drawdist = cv_drawdist_precip.value * mapobjectscale;
+
+	INT32 xl, xh, yl, yh, bx, by;
+	precipmobj_t *th;
 
 	// no, no infinite draw distance for precipitation. this option at zero is supposed to turn it off
-	if ((limit_dist = (fixed_t)cv_drawdist_precip.value * mapobjectscale) && !portalskipprecipmobjs)
+	if (drawdist == 0)
 	{
-		for (precipthing = sec->preciplist; precipthing; precipthing = precipthing->snext)
+		return;
+	}
+
+	// do not render in skybox
+	if (portalskipprecipmobjs)
+	{
+		return;
+	}
+
+	R_GetRenderBlockMapDimensions(drawdist, &xl, &xh, &yl, &yh);
+
+	for (bx = xl; bx <= xh; bx++)
+	{
+		for (by = yl; by <= yh; by++)
 		{
-			if (R_PrecipThingVisible(precipthing, limit_dist))
-				R_ProjectPrecipitationSprite(precipthing);
+			for (th = precipblocklinks[(by * bmapwidth) + bx]; th; th = th->bnext)
+			{
+				if (R_PrecipThingVisible(th))
+				{
+					R_ProjectPrecipitationSprite(th);
+				}
+			}
 		}
 	}
 }
@@ -3641,17 +3671,12 @@ boolean R_ThingWithinDist (mobj_t *thing, fixed_t limit_dist)
 }
 
 /* Check if precipitation may be drawn from our current view. */
-boolean R_PrecipThingVisible (precipmobj_t *precipthing,
-		fixed_t limit_dist)
+boolean R_PrecipThingVisible (precipmobj_t *precipthing)
 {
-	fixed_t approx_dist;
-
 	if (( precipthing->precipflags & PCF_INVISIBLE ))
 		return false;
 
-	approx_dist = P_AproxDistance(viewx-precipthing->x, viewy-precipthing->y);
-
-	return ( approx_dist <= limit_dist );
+	return true;
 }
 
 boolean R_ThingHorizontallyFlipped(mobj_t *thing)

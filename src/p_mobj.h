@@ -291,9 +291,10 @@ struct mobj_t
 	mobjtype_t type;
 	const mobjinfo_t *info; // &mobjinfo[mobj->type]
 
-	// More list: links in sector (if needed)
-	mobj_t *snext;
-	mobj_t **sprev; // killough 8/11/98: change to ptr-to-ptr
+	// Interaction info, by BLOCKMAP.
+	// Links in blocks (if needed).
+	mobj_t *bnext;
+	mobj_t **bprev; // killough 8/11/98: change to ptr-to-ptr
 
 	// More drawing info: to determine current sprite.
 	angle_t angle, pitch, roll; // orientation
@@ -347,10 +348,9 @@ struct mobj_t
 	//  using an internal color lookup table for re-indexing.
 	UINT16 color; // This replaces MF_TRANSLATION. Use 0 for default (no translation).
 
-	// Interaction info, by BLOCKMAP.
-	// Links in blocks (if needed).
-	mobj_t *bnext;
-	mobj_t **bprev; // killough 8/11/98: change to ptr-to-ptr
+	// More list: links in sector (if needed)
+	mobj_t *snext;
+	mobj_t **sprev; // killough 8/11/98: change to ptr-to-ptr
 
 	// Additional pointers for NiGHTS hoops
 	mobj_t *hnext;
@@ -448,9 +448,10 @@ struct precipmobj_t
 	mobjtype_t type;
 	const mobjinfo_t *info; // &mobjinfo[mobj->type]
 
-	// More list: links in sector (if needed)
-	precipmobj_t *snext;
-	precipmobj_t **sprev; // killough 8/11/98: change to ptr-to-ptr
+	// Links in blocks (if needed).
+	// The blockmap is only used by precip to render.
+	precipmobj_t *bnext;
+	precipmobj_t **bprev; // killough 8/11/98: change to ptr-to-ptr
 
 	// More drawing info: to determine current sprite.
 	angle_t angle, pitch, roll; // orientation

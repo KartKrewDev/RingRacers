@@ -510,6 +510,7 @@ extern INT32 bmapheight; // in mapblocks
 extern fixed_t bmaporgx;
 extern fixed_t bmaporgy; // origin of block map
 extern mobj_t **blocklinks; // for thing chains
+extern precipmobj_t **precipblocklinks; // special blockmap for precip rendering
 
 extern struct minimapinfo
 {

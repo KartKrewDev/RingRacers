@@ -493,6 +493,33 @@ boolean R_DoCulling(line_t *cullheight, line_t *viewcullheight, fixed_t vz, fixe
 	return false;
 }
 
+// Returns search dimensions within a blockmap, in the direction of viewangle and out to a certain distance.
+void R_GetRenderBlockMapDimensions(fixed_t drawdist, INT32 *xl, INT32 *xh, INT32 *yl, INT32 *yh)
+{
+	const angle_t left = viewangle - clipangle[viewssnum];
+	const angle_t right = viewangle + clipangle[viewssnum];
+
+	const fixed_t vxleft = viewx + FixedMul(drawdist, FCOS(left));
+	const fixed_t vyleft = viewy + FixedMul(drawdist, FSIN(left));
+
+	const fixed_t vxright = viewx + FixedMul(drawdist, FCOS(right));
+	const fixed_t vyright = viewy + FixedMul(drawdist, FSIN(right));
+
+	// Try to narrow the search to within only the field of view
+	*xl = (unsigned)(min(viewx, min(vxleft, vxright)) - bmaporgx)>>MAPBLOCKSHIFT;
+	*xh = (unsigned)(max(viewx, max(vxleft, vxright)) - bmaporgx)>>MAPBLOCKSHIFT;
+	*yl = (unsigned)(min(viewy, min(vyleft, vyright)) - bmaporgy)>>MAPBLOCKSHIFT;
+	*yh = (unsigned)(max(viewy, max(vyleft, vyright)) - bmaporgy)>>MAPBLOCKSHIFT;
+
+	if (*xh >= bmapwidth)
+		*xh = bmapwidth - 1;
+
+	if (*yh >= bmapheight)
+		*yh = bmapheight - 1;
+
+	BMBOUNDFIX(*xl, *xh, *yl, *yh);
+}
+
 //
 // R_InitTextureMapping
 //
@@ -1485,6 +1512,7 @@ static void R_RenderViewpoint(maskcount_t* mask)
 	curdrawsegs = ds_p;
 
 	R_RenderBSPNode((INT32)numnodes - 1);
+	R_AddPrecipitationSprites();
 
 	Mask_Post(mask);
 }
@@ -1556,7 +1584,6 @@ void R_RenderPlayerView(void)
 	ps_bsptime = I_GetPreciseTime();
 	R_RenderViewpoint(&masks[nummasks - 1]);
 	ps_bsptime = I_GetPreciseTime() - ps_bsptime;
-	ps_numsprites = visspritecount;
 #ifdef TIMING
 	RDMSR(0x10, &mycount);
 	mytotal += mycount; // 64bit add
