@@ -80,7 +80,6 @@
 
 static void Got_NameAndColor(UINT8 **cp, INT32 playernum);
 static void Got_WeaponPref(UINT8 **cp, INT32 playernum);
-static void Got_PowerLevel(UINT8 **cp, INT32 playernum);
 static void Got_PartyInvite(UINT8 **cp, INT32 playernum);
 static void Got_AcceptPartyInvite(UINT8 **cp, INT32 playernum);
 static void Got_CancelPartyInvite(UINT8 **cp, INT32 playernum);
@@ -1803,23 +1802,6 @@ static void Got_WeaponPref(UINT8 **cp,INT32 playernum)
 
 	// SEE ALSO g_demo.c
 	demo_extradata[playernum] |= DXD_WEAPONPREF;
-}
-
-// Currently unused, PWR is sent in XD_ADDPLAYER
-static void Got_PowerLevel(UINT8 **cp,INT32 playernum)
-{
-	int i;
-
-	for(i = 0; i < MAXPLAYERS; i++)
-	{
-		UINT16 race = (UINT16)READUINT16(*cp);
-		UINT16 battle = (UINT16)READUINT16(*cp);
-
-		clientpowerlevels[i][PWRLV_RACE] = min(PWRLVRECORD_MAX, race);
-		clientpowerlevels[i][PWRLV_BATTLE] = min(PWRLVRECORD_MAX, battle);
-
-		CONS_Debug(DBG_GAMELOGIC, "set player %d to power %d\n", i, race);
-	}
 }
 
 static void Got_PartyInvite(UINT8 **cp,INT32 playernum)
