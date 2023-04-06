@@ -345,6 +345,7 @@ static void UFOMove(mobj_t *ufo)
 		ufo->momx = 0;
 		ufo->momy = 0;
 		ufo->momz = ufo_speed(ufo);
+		ufo_distancetofinish(ufo) = 0;
 		return;
 	}
 
@@ -901,6 +902,7 @@ static mobj_t *InitSpecialUFO(waypoint_t *start)
 		ufo = P_SpawnMobj(start->mobj->x, start->mobj->y, start->mobj->z, MT_SPECIAL_UFO);
 		ufo_waypoint(ufo) = (INT32)K_GetWaypointHeapIndex(start);
 		UFOUpdateDistanceToFinish(ufo);
+		specialstageinfo.maxDist = ufo_distancetofinish(ufo);
 	}
 
 	ufo_speed(ufo) = FixedMul(UFO_START_SPEED, K_GetKartGameSpeedScalar(gamespeed));
