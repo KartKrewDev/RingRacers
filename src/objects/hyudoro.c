@@ -482,6 +482,11 @@ award_immediately (mobj_t *hyu)
 
 	if (player)
 	{
+		if (player->position == 1)
+		{
+			return false;
+		}
+
 		if (player->itemamount &&
 				player->itemtype != hyudoro_itemtype(hyu))
 		{
