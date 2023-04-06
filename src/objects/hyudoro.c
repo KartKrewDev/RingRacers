@@ -15,6 +15,7 @@
 #include "../info.h"
 #include "../k_kart.h"
 #include "../k_objects.h"
+#include "../k_roulette.h"
 #include "../m_random.h"
 #include "../p_local.h"
 #include "../r_main.h"
@@ -379,6 +380,45 @@ pop_hyudoro (mobj_t **head)
 	*head = hyu;
 }
 
+static void hyudoro_set_held_item_from_player
+(		mobj_t * hyu,
+		player_t *player)
+{
+	if (K_ItemEnabled(KITEM_KITCHENSINK))
+	{
+		boolean convert = false;
+
+		switch (player->itemtype)
+		{
+			// The following permits a case-by-case balancing for items
+			// we don't want ending up in 2nd place's hands too often...
+			case KITEM_SPB:
+				convert = true;
+				break;
+			default:
+				break;
+		}
+
+		if (convert == true)
+		{
+			if (player->itemtype > 0 && player->itemtype < NUMKARTITEMS)
+			{
+				// A conversion has occoured, this is no longer on the
+				// playing field... someone else must manifest it!?
+				itemCooldowns[player->itemtype - 1] = 0;
+			}
+
+			hyudoro_itemtype(hyu) = KITEM_KITCHENSINK;
+			hyudoro_itemcount(hyu) = 1;
+
+			return;
+		}
+	}
+
+	hyudoro_itemtype(hyu) = player->itemtype;
+	hyudoro_itemcount(hyu) = player->itemamount;
+}
+
 static boolean
 hyudoro_patrol_hit_player
 (		mobj_t * hyu,
@@ -409,8 +449,8 @@ hyudoro_patrol_hit_player
 	K_AddHitLag(toucher, TICRATE/2, false);
 
 	hyudoro_mode(hyu) = HYU_RETURN;
-	hyudoro_itemtype(hyu) = player->itemtype;
-	hyudoro_itemcount(hyu) = player->itemamount;
+
+	hyudoro_set_held_item_from_player(hyu, player);
 
 	K_StripItems(player);
 
