@@ -246,8 +246,7 @@ static int singlevaraux (FuncState *fs, TString *n, expdesc *var, int base) {
 }
 
 
-static void singlevar (LexState *ls, expdesc *var) {
-  TString *varname = str_checkname(ls);
+static void singlevar (LexState *ls, expdesc *var, TString *varname) {
   FuncState *fs = ls->fs;
   if (singlevaraux(fs, varname, var, 1) == VGLOBAL)
     var->u.s.info = luaK_stringK(fs, varname);  /* info points to global name */
@@ -603,11 +602,16 @@ static void body_noparms (LexState *ls, expdesc *e, int line) {
   close_func(ls);
   pushclosure(ls, &new_fs, e);
 }
-static void body (LexState *ls, expdesc *e, int needself, int line) {
+static void body (LexState *ls, expdesc *e, int needself, int line, const char *name) {
   /* body ->  `(' parlist `)' chunk END */
   FuncState new_fs;
   open_func(ls, &new_fs);
   new_fs.f->linedefined = line;
+#ifdef DEVELOP
+  new_fs.f->canonicalname = name;
+#else
+  (void)name;
+#endif
   checknext(ls, '(');
   if (needself) {
     new_localvarliteral(ls, "self", 0);
@@ -706,7 +710,7 @@ static void prefixexp (LexState *ls, expdesc *v) {
       return;
     }
     case TK_NAME: {
-      singlevar(ls, v);
+      singlevar(ls, v, str_checkname(ls));
       return;
     }
     case '$': {
@@ -826,7 +830,7 @@ static void simpleexp (LexState *ls, expdesc *v) {
     }
     case TK_FUNCTION: {
       luaX_next(ls);
-      body(ls, v, 0, ls->linenumber);
+      body(ls, v, 0, ls->linenumber, NULL);
       return;
     }
     default: {
@@ -1315,11 +1319,12 @@ static void ifstat (LexState *ls, int line) {
 static void localfunc (LexState *ls) {
   expdesc v, b;
   FuncState *fs = ls->fs;
-  new_localvar(ls, str_checkname(ls), 0);
+  TString *name = str_checkname(ls);
+  new_localvar(ls, name, 0);
   init_exp(&v, VLOCAL, fs->freereg);
   luaK_reserveregs(fs, 1);
   adjustlocalvars(ls, 1);
-  body(ls, &b, 0, ls->linenumber);
+  body(ls, &b, 0, ls->linenumber, NULL);
   luaK_storevar(fs, &v, &b);
   /* debug information will only see the variable after this point! */
   getlocvar(fs, fs->nactvar - 1).startpc = fs->pc;
@@ -1345,10 +1350,10 @@ static void localstat (LexState *ls) {
 }
 
 
-static int funcname (LexState *ls, expdesc *v) {
+static int funcname (LexState *ls, expdesc *v, TString *varname) {
   /* funcname -> NAME {field} [`:' NAME] */
   int needself = 0;
-  singlevar(ls, v);
+  singlevar(ls, v, varname);
   while (ls->t.token == '.')
     field(ls, v);
   if (ls->t.token == ':') {
@@ -1363,9 +1368,16 @@ static void funcstat (LexState *ls, int line) {
   /* funcstat -> FUNCTION funcname body */
   int needself;
   expdesc v, b;
+  TString *name;
   luaX_next(ls);  /* skip FUNCTION */
-  needself = funcname(ls, &v);
-  body(ls, &b, needself, line);
+  name = str_checkname(ls);
+  needself = funcname(ls, &v, name);
+#ifdef DEVELOP
+  /* just strdup this because I couldn't figure out gc */
+  body(ls, &b, needself, line, name ? strdup(getstr(name)) : NULL);
+#else
+  body(ls, &b, needself, line, NULL);
+#endif
   luaK_storevar(ls->fs, &v, &b);
   luaK_fixline(ls->fs, line);  /* definition `happens' in the first line */
 }

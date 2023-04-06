@@ -237,6 +237,9 @@ typedef struct Proto {
   struct LocVar *locvars;  /* information about local variables */
   TString **upvalues;  /* upvalue names */
   TString  *source;
+#ifdef DEVELOP
+  const char *canonicalname;  /* function name, only for globals right now */
+#endif
   int sizeupvalues;
   int sizek;  /* size of `k' */
   int sizecode;

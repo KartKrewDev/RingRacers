@@ -31,6 +31,9 @@
 
 
 static const char *getfuncname (lua_State *L, CallInfo *ci, const char **name);
+#ifdef DEVELOP
+static const char *getcanonicalfuncname (Closure *f, const char **name);
+#endif
 
 
 static int currentpc (lua_State *L, CallInfo *ci) {
@@ -212,7 +215,11 @@ static int auxgetinfo (lua_State *L, const char *what, lua_Debug *ar,
         break;
       }
       case 'n': {
+#ifdef DEVELOP
+        ar->namewhat = (ci) ? getfuncname(L, ci, &ar->name) : getcanonicalfuncname(f, &ar->name);
+#else
         ar->namewhat = (ci) ? getfuncname(L, ci, &ar->name) : NULL;
+#endif
         if (ar->namewhat == NULL) {
           ar->namewhat = "";  /* not found */
           ar->name = NULL;
@@ -553,6 +560,19 @@ static const char *getfuncname (lua_State *L, CallInfo *ci, const char **name) {
   else
     return NULL;  /* no useful name can be found */
 }
+
+
+#ifdef DEVELOP
+static const char *getcanonicalfuncname (Closure *cl, const char **name) {
+  if (!cl->c.isC && cl->l.p->canonicalname)
+  {
+    *name = cl->l.p->canonicalname;
+    return "global";
+  }
+  else
+    return NULL;
+}
+#endif
 
 
 /* only ANSI way to check whether a pointer points to an array */

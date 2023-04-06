@@ -43,7 +43,8 @@ enum sfxinfo_read {
 	sfxinfor_flags, // "pitch"
 	sfxinfor_volume,
 	sfxinfor_caption,
-	sfxinfor_skinsound
+	sfxinfor_skinsound,
+	sfxinfor_string,
 };
 const char *const sfxinfo_ropt[] = {
 	"name",
@@ -53,6 +54,7 @@ const char *const sfxinfo_ropt[] = {
 	"volume",
 	"caption",
 	"skinsound",
+	"string",
 	NULL};
 
 enum sfxinfo_write {
@@ -942,12 +944,52 @@ static int state_get(lua_State *L)
 		// because the metatable will trigger.
 		lua_getglobal(L, name); // actually gets from LREG_ACTIONS if applicable, and pushes a META_ACTION userdata if not.
 		return 1; // return just the function
+#ifdef DEVELOP
+	} else if (fastcmp(field,"actionname")) {
+		if (!st->action.acp1) { // Action is NULL.
+			lua_pushstring(L, "NULL");
+		} else if (st->action.acp1 == (actionf_p1)A_Lua) { // This is a Lua function?
+			lua_Debug ar;
+			lua_getfield(L, LUA_REGISTRYINDEX, LREG_STATEACTION);
+			I_Assert(lua_istable(L, -1));
+			lua_pushlightuserdata(L, st); // Push the state pointer and
+			lua_rawget(L, -2); // use it to get the actual Lua function.
+			lua_remove(L, -2); // pop LREG_STATEACTION
+			// This normally doesn't get a function's name because the same Lua function can have many names.
+			// It only works because of a hack called 'canonicalname' in blua/lparser.c, which records the
+			// name a GLOBAL function was defined with. This does not work for local functions! (Lua actions
+			// are almost always global functions though.)
+			lua_getinfo(L, ">n", &ar);
+			lua_pushstring(L, ar.name);
+		} else {
+			lua_pushstring(L, LUA_GetActionName(&st->action)); // find a hardcoded function name
+		}
+		return 1;
+#endif
 	} else if (fastcmp(field,"var1"))
 		number = st->var1;
 	else if (fastcmp(field,"var2"))
 		number = st->var2;
 	else if (fastcmp(field,"nextstate"))
 		number = st->nextstate;
+	else if (fastcmp(field,"string"))
+	{
+		statenum_t id = st-states;
+		if (id < S_FIRSTFREESLOT)
+		{
+			lua_pushstring(L, STATE_LIST[id]+2);
+			return 1;
+		}
+
+		id -= S_FIRSTFREESLOT;
+		if (id < NUMSTATEFREESLOTS && FREE_STATES[id])
+		{
+			lua_pushstring(L, FREE_STATES[id]);
+			return 1;
+		}
+
+		return 0;
+	}
 	else if (devparm)
 		return luaL_error(L, LUA_QL("state_t") " has no field named " LUA_QS, field);
 	else
@@ -1213,6 +1255,23 @@ static int mobjinfo_get(lua_State *L)
 		lua_pushinteger(L, info->flags);
 	else if (fastcmp(field,"raisestate"))
 		lua_pushinteger(L, info->raisestate);
+	else if (fastcmp(field,"string")) {
+		mobjtype_t id = info-mobjinfo;
+		if (id < MT_FIRSTFREESLOT)
+		{
+			lua_pushstring(L, MOBJTYPE_LIST[id]+3);
+			return 1;
+		}
+
+		id -= MT_FIRSTFREESLOT;
+		if (id < NUMMOBJFREESLOTS && FREE_MOBJS[id])
+		{
+			lua_pushstring(L, FREE_MOBJS[id]);
+			return 1;
+		}
+
+		return 0;
+	}
 	else {
 		lua_getfield(L, LUA_REGISTRYINDEX, LREG_EXTVARS);
 		I_Assert(lua_istable(L, -1));
@@ -1436,6 +1495,10 @@ static int sfxinfo_get(lua_State *L)
 	case sfxinfor_skinsound:
 		lua_pushinteger(L, sfx->skinsound);
 		return 1;
+	case sfxinfor_string: {
+		lua_pushstring(L, sfx->name);
+		return 1;
+	}
 	default:
 		return luaL_error(L, "Field does not exist in sfxinfo_t");
 	}
