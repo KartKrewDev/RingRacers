@@ -3781,7 +3781,7 @@ static void K_drawKartMinimap(void)
 			if (mobj->health <= 0 && (players[i].pflags & PF_NOCONTEST))
 			{
 				workingPic = kp_nocontestminimap;
-				R_GetTranslationColormap(0, mobj->color, GTC_CACHE);
+				colormap = R_GetTranslationColormap(0, mobj->color, GTC_CACHE);
 
 				if (mobj->tracer && !P_MobjWasRemoved(mobj->tracer))
 					mobj = mobj->tracer;
@@ -3806,7 +3806,7 @@ static void K_drawKartMinimap(void)
 			interpx = R_InterpolateFixed(mobj->old_x, mobj->x);
 			interpy = R_InterpolateFixed(mobj->old_y, mobj->y);
 
-			K_drawKartMinimapIcon(interpx, interpy, x, y, splitflags, faceprefix[skin][FACE_MINIMAP], colormap);
+			K_drawKartMinimapIcon(interpx, interpy, x, y, splitflags, workingPic, colormap);
 
 			// Target reticule
 			if (((gametyperules & GTR_CIRCUIT) && players[i].position == spbplace)
@@ -3912,7 +3912,7 @@ static void K_drawKartMinimap(void)
 		if (mobj->health <= 0 && (players[localplayers[i]].pflags & PF_NOCONTEST))
 		{
 			workingPic = kp_nocontestminimap;
-			R_GetTranslationColormap(0, mobj->color, GTC_CACHE);
+			colormap = R_GetTranslationColormap(0, mobj->color, GTC_CACHE);
 
 			if (mobj->tracer && !P_MobjWasRemoved(mobj->tracer))
 				mobj = mobj->tracer;
