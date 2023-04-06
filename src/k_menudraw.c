@@ -2411,6 +2411,12 @@ void M_DrawLevelSelect(void)
 	INT16 y = 80 - (12 * levellist.y);
 	boolean tatransition = ((menutransition.startmenu == &PLAY_TimeAttackDef || menutransition.endmenu == &PLAY_TimeAttackDef) && menutransition.tics);
 
+	if (levellist.levelsearch.tutorial)
+	{
+		patch_t *bg = W_CachePatchName("M_XTRABG", PU_CACHE);
+		V_DrawFixedPatch(0, 0, FRACUNIT, 0, bg, NULL);
+	}
+
 	if (tatransition)
 	{
 		t = -t;
@@ -5183,6 +5189,7 @@ static void M_DrawChallengePreview(INT32 x, INT32 y)
 			templevelsearch.typeoflevel = G_TOLFlag(GT_RACE)|G_TOLFlag(GT_BATTLE);
 			templevelsearch.cupmode = true;
 			templevelsearch.timeattack = false;
+			templevelsearch.tutorial = false;
 			templevelsearch.checklocked = false;
 
 			M_DrawCupPreview(146, &templevelsearch);

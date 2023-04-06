@@ -1122,6 +1122,11 @@ void readlevelheader(MYFILE *f, char * name)
 				deh_strlcpy(mapheaderinfo[num]->zonttl, word2,
 					sizeof(mapheaderinfo[num]->zonttl), va("Level header %d: zonetitle", num));
 			}
+			else if (fastcmp(word, "RELEVANTSKIN"))
+			{
+				deh_strlcpy(mapheaderinfo[num]->relevantskin, word2,
+					sizeof(mapheaderinfo[num]->relevantskin), va("Level header %d: relevantskin", num));
+			}
 			else if (fastcmp(word, "SCRIPTNAME"))
 			{
 				deh_strlcpy(mapheaderinfo[num]->scriptname, word2,
@@ -3210,11 +3215,6 @@ void readmaincfg(MYFILE *f, boolean mainfile)
 				Z_Free(bootmap);
 				bootmap = Z_StrDup(word2);
 				//titlechanged = true;
-			}
-			else if (fastcmp(word, "TUTORIALMAP"))
-			{
-				Z_Free(tutorialmap);
-				tutorialmap = Z_StrDup(word2);
 			}
 			else if (fastcmp(word, "PODIUMMAP"))
 			{

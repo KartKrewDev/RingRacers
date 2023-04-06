@@ -389,6 +389,7 @@ static void P_ClearSingleMapHeaderInfo(INT16 num)
 	mapheaderinfo[num]->typeoflevel = 0;
 	mapheaderinfo[num]->gravity = DEFAULT_GRAVITY;
 	mapheaderinfo[num]->keywords[0] = '\0';
+	mapheaderinfo[num]->relevantskin[0] = '\0';
 	mapheaderinfo[num]->musname[0][0] = 0;
 	mapheaderinfo[num]->musname_size = 0;
 	mapheaderinfo[num]->positionmus[0] = '\0';
@@ -7392,6 +7393,27 @@ static void P_InitCamera(void)
 static void P_InitPlayers(void)
 {
 	UINT8 i;
+	INT32 skin = -1;
+
+	// Are we forcing a character?
+	if (gametype == GT_TUTORIAL)
+	{
+		// Get skin from name.
+		if (mapheaderinfo[gamemap-1] && mapheaderinfo[gamemap-1]->relevantskin[0])
+		{
+			skin = R_SkinAvailable(mapheaderinfo[gamemap-1]->relevantskin);
+		}
+		else
+		{
+			skin = R_SkinAvailable(DEFAULTSKIN);
+		}
+
+		// Handle invalid case.
+		if (skin == -1)
+		{
+			skin = 0;
+		}
+	}
 
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
@@ -7399,6 +7421,15 @@ static void P_InitPlayers(void)
 			continue;
 
 		players[i].mo = NULL;
+
+		// If we're forcing a character, do it now.
+		if (skin != -1)
+		{
+			players[i].skin = skin;
+			players[i].skincolor = skins[skin].prefcolor;
+			players[i].followerskin = -1;
+			// followercolor can be left alone for hopefully obvious reasons
+		}
 
 		if (!(gametyperules & GTR_CIRCUIT) && K_PodiumSequence() == false)
 		{

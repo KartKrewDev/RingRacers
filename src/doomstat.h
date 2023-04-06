@@ -222,9 +222,6 @@ extern char * titlemap;
 extern boolean hidetitlepics;
 extern char * bootmap; //bootmap for loading a map on startup
 
-extern char * tutorialmap; // map to load for tutorial
-extern boolean tutorialmode; // are we in a tutorial right now?
-
 extern char * podiummap; // map to load for podium
 
 extern boolean looptitle;
@@ -430,6 +427,7 @@ struct mapheader_t
 	UINT32 typeoflevel;					///< Combination of typeoflevel flags.
 	UINT8 numlaps;						///< Number of laps in circuit mode, unless overridden.
 	fixed_t gravity;					///< Map-wide gravity.
+	char relevantskin[SKINNAMESIZE+1];	///< Skin to use for tutorial (if not provided, uses Eggman.)
 
 	// Music information
 	char musname[MAXMUSNAMES][7];		///< Music tracks to play. First dimension is the track number, second is the music string. "" for no music.
@@ -499,6 +497,7 @@ enum GameType
 	GT_BATTLE,
 	GT_SPECIAL,
 	GT_VERSUS,
+	GT_TUTORIAL,
 
 	GT_FIRSTFREESLOT,
 	GT_LASTFREESLOT = 127, // Previously (GT_FIRSTFREESLOT + NUMGAMETYPEFREESLOTS - 1) - it would be necessary to rewrite VOTEMODIFIER_ENCORE to go higher than this.
@@ -546,10 +545,10 @@ enum GameTypeRules
 
 	// Bonus gametype rules
 	GTR_PRISONS				= 1<<10,	// Can enter Prison Break mode
-	GTR_CATCHER				= 1<<11, // UFO Catcher (only works with GTR_CIRCUIT)
-	GTR_ROLLINGSTART		= 1<<12, // Rolling start (only works with GTR_CIRCUIT)
-	GTR_SPECIALSTART		= 1<<13, // White fade instant start
-	GTR_BOSS				= 1<<14, // Boss intro and spawning
+	GTR_CATCHER				= 1<<11,	// UFO Catcher (only works with GTR_CIRCUIT)
+	GTR_ROLLINGSTART		= 1<<12,	// Rolling start (only works with GTR_CIRCUIT)
+	GTR_SPECIALSTART		= 1<<13,	// White fade instant start
+	GTR_BOSS				= 1<<14,	// Boss intro and spawning
 
 	// General purpose rules
 	GTR_POINTLIMIT			= 1<<15,	// Reaching point limit ends the round
@@ -557,12 +556,13 @@ enum GameTypeRules
 	GTR_OVERTIME			= 1<<17,	// Allow overtime behavior
 	GTR_ENCORE				= 1<<18,	// Alternate Encore mirroring, scripting, and texture remapping
 
-	GTR_TEAMS				= 1<<19, // Teams are forced on
-	GTR_NOTEAMS				= 1<<20, // Teams are forced off
-	GTR_TEAMSTARTS			= 1<<21, // Use team-based start positions
+	GTR_TEAMS				= 1<<19,	// Teams are forced on
+	GTR_NOTEAMS				= 1<<20,	// Teams are forced off
+	GTR_TEAMSTARTS			= 1<<21,	// Use team-based start positions
 
-	GTR_NOMP				= 1<<22, // No multiplayer
-	GTR_NOCUPSELECT			= 1<<23, // Your maps are not selected via cup.
+	GTR_NOMP				= 1<<22,	// No multiplayer
+	GTR_NOCUPSELECT			= 1<<23,	// Your maps are not selected via cup.
+	GTR_NOPOSITION			= 1<<24,	// No POSITION
 
 	// free: to and including 1<<31
 };
@@ -577,10 +577,11 @@ enum GameTypeRules
 enum TypeOfLevel
 {
 	// Gametypes
-	TOL_RACE	= 0x0001, ///< Race
-	TOL_BATTLE	= 0x0002, ///< Battle
-	TOL_BOSS	= 0x0004, ///< Boss (variant of battle, but forbidden)
-	TOL_SPECIAL	= 0x0008, ///< Special Stage (variant of race, but forbidden)
+	TOL_RACE	 = 0x0001, ///< Race
+	TOL_BATTLE	 = 0x0002, ///< Battle
+	TOL_BOSS	 = 0x0004, ///< Boss (variant of battle, but forbidden)
+	TOL_SPECIAL	 = 0x0008, ///< Special Stage (variant of race, but forbidden)
+	TOL_TUTORIAL = 0x0010, ///< Tutorial (variant of race, but forbidden)
 
 	// Modifiers
 	TOL_TV		= 0x0100 ///< Midnight Channel specific: draw TV like overlay on HUD

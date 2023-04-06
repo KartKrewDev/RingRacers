@@ -100,6 +100,7 @@ void M_MPSetupNetgameMapSelect(INT32 choice)
 	levellist.netgame = true;
 	// Make sure we reset those
 	levellist.levelsearch.timeattack = false;
+	levellist.levelsearch.tutorial = false;
 	levellist.levelsearch.checklocked = true;
 	cupgrid.grandprix = false;
 

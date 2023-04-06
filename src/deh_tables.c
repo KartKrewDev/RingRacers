@@ -5854,6 +5854,7 @@ const char *const GAMETYPERULE_LIST[] = {
 
 	"NOMP",
 	"NOCUPSELECT",
+	"NOPOSITION",
 	NULL
 };
 

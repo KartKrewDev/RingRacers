@@ -715,6 +715,12 @@ boolean K_CanChangeRules(boolean allowdemos)
 		return false;
 	}
 
+	if (gametype == GT_TUTORIAL)
+	{
+		// Tutorials are locked down.
+		return false;
+	}
+
 	if (!allowdemos && demo.playback)
 	{
 		// We've already got our important settings!

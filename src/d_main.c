@@ -1047,9 +1047,6 @@ void D_ClearState(void)
 	if (rendermode != render_none)
 		V_SetPaletteLump("PLAYPAL");
 
-	// The title screen is obviously not a tutorial! (Unless I'm mistaken)
-	tutorialmode = false;
-
 	cursongcredit.def = NULL;
 	S_StopSounds();
 

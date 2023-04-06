@@ -187,7 +187,12 @@ void K_TimerInit(void)
 			}
 		}
 
-		starttime = (introtime + (3*TICRATE)) + ((2*TICRATE) + (numbulbs * bulbtime)); // Start countdown time, + buffer time
+		starttime = introtime;
+		if (!(gametyperules & GTR_NOPOSITION))
+		{
+			// Start countdown time + buffer time
+			starttime += ((3*TICRATE) + ((2*TICRATE) + (numbulbs * bulbtime)));
+		}
 	}
 
 	K_BattleInit(domodeattack);
@@ -11691,6 +11696,11 @@ boolean K_Cooperative(void)
 	}
 
 	if (bossinfo.valid)
+	{
+		return true;
+	}
+
+	if (specialstageinfo.valid)
 	{
 		return true;
 	}

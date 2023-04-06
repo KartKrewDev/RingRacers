@@ -2826,7 +2826,7 @@ static boolean F_GetTextPromptTutorialTag(char *tag, INT32 length)
 	INT32 gcs = 0;
 	boolean suffixed = true;
 
-	if (!tag || !tag[0] || !tutorialmode)
+	if (!tag || !tag[0] || gametype == GT_TUTORIAL)
 		return false;
 
 	/*
@@ -2859,7 +2859,7 @@ static boolean F_GetTextPromptTutorialTag(char *tag, INT32 length)
 void F_GetPromptPageByNamedTag(const char *tag, INT32 *promptnum, INT32 *pagenum)
 {
 	INT32 nosuffixpromptnum = INT32_MAX, nosuffixpagenum = INT32_MAX;
-	INT32 tutorialpromptnum = (tutorialmode) ? TUTORIAL_PROMPT-1 : 0;
+	INT32 tutorialpromptnum = (gametype == GT_TUTORIAL) ? TUTORIAL_PROMPT-1 : 0;
 	boolean suffixed = false, found = false;
 	char suffixedtag[33];
 
@@ -2871,7 +2871,7 @@ void F_GetPromptPageByNamedTag(const char *tag, INT32 *promptnum, INT32 *pagenum
 	strncpy(suffixedtag, tag, 33);
 	suffixedtag[32] = 0;
 
-	if (tutorialmode)
+	if (gametype == GT_TUTORIAL)
 		suffixed = F_GetTextPromptTutorialTag(suffixedtag, 33);
 
 	for (*promptnum = 0 + tutorialpromptnum; *promptnum < MAX_PROMPTS; (*promptnum)++)

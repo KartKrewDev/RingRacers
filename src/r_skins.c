@@ -236,6 +236,12 @@ boolean R_SkinUsable(INT32 playernum, INT32 skinnum, boolean demoskins)
 		return true;
 	}
 
+	if (gametype == GT_TUTORIAL)
+	{
+		// Being forced to play as this character by the tutorial
+		return true;
+	}
+
 	// Determine if this character is supposed to be unlockable or not
 	if (useplayerstruct && demo.playback)
 	{

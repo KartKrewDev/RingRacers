@@ -1407,7 +1407,7 @@ boolean R_ViewpointHasChasecam(player_t *player)
 		}
 	}
 
-	if (player->playerstate == PST_DEAD || gamestate == GS_TITLESCREEN || tutorialmode)
+	if (player->playerstate == PST_DEAD || gamestate == GS_TITLESCREEN)
 		chasecam = true; // force chasecam on
 	else if (player->spectator) // no spectator chasecam
 		chasecam = false; // force chasecam off

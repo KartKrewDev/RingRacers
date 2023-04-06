@@ -3014,8 +3014,6 @@ static void Command_Map_f(void)
 		}
 	}
 
-	tutorialmode = false; // warping takes us out of tutorial mode
-
 	D_MapChange(newmapnum, newgametype, newencoremode, newresetplayers, 0, false, fromlevelselect);
 
 	Z_Free(realmapname);
