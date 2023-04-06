@@ -31,7 +31,7 @@ extern "C" {
 #define SKINNAMESIZE 16
 
 #define PROFILENAMELEN 6
-#define PROFILEVER 4
+#define PROFILEVER 5
 #define MAXPROFILES 16
 #define PROFILESFILE "ringprofiles.prf"
 #define PROFILE_GUEST 0
