@@ -6203,10 +6203,7 @@ static void HWR_SetShaderState(void)
 	HWD.pfnSetShader(SHADER_DEFAULT);
 }
 
-// ==========================================================================
-// Same as rendering the player view, but from the skybox object
-// ==========================================================================
-void HWR_RenderSkyboxView(player_t *player)
+static void HWR_RenderViewpoint(player_t *player, boolean drawSkyTexture, boolean timing)
 {
 	const float fpov = FIXED_TO_FLOAT(cv_fov[viewssnum].value+player->fovadd);
 	postimg_t *type = &postimgtype[viewssnum];
@@ -6221,212 +6218,6 @@ void HWR_RenderSkyboxView(player_t *player)
 		HWR_SetLights(viewssnum);
 #endif
 	}
-
-	// note: sets viewangle, viewx, viewy, viewz
-	R_SkyboxFrame(viewssnum);
-
-	// copy view cam position for local use
-	dup_viewx = viewx;
-	dup_viewy = viewy;
-	dup_viewz = viewz;
-	dup_viewangle = viewangle;
-
-	// set window position
-	HWR_ShiftViewPort();
-
-	gl_viewx = FIXED_TO_FLOAT(dup_viewx);
-	gl_viewy = FIXED_TO_FLOAT(dup_viewy);
-	gl_viewz = FIXED_TO_FLOAT(dup_viewz);
-	gl_viewsin = FIXED_TO_FLOAT(viewsin);
-	gl_viewcos = FIXED_TO_FLOAT(viewcos);
-
-	//04/01/2000: Hurdler: added for T&L
-	//                     It should replace all other gl_viewxxx when finished
-	memset(&atransform, 0x00, sizeof(FTransform));
-
-	HWR_SetTransformAiming(&atransform, player, true);
-	atransform.angley = (float)(viewangle>>ANGLETOFINESHIFT)*(360.0f/(float)FINEANGLES);
-
-	gl_viewludsin = FIXED_TO_FLOAT(FINECOSINE(gl_aimingangle>>ANGLETOFINESHIFT));
-	gl_viewludcos = FIXED_TO_FLOAT(-FINESINE(gl_aimingangle>>ANGLETOFINESHIFT));
-
-	if (*type == postimg_flip)
-		atransform.flip = true;
-	else
-		atransform.flip = false;
-
-	if (*type == postimg_mirror)
-		atransform.mirror = true;
-	else
-		atransform.mirror = false;
-
-	atransform.x      = gl_viewx;  // FIXED_TO_FLOAT(viewx)
-	atransform.y      = gl_viewy;  // FIXED_TO_FLOAT(viewy)
-	atransform.z      = gl_viewz;  // FIXED_TO_FLOAT(viewz)
-	atransform.scalex = 1;
-	atransform.scaley = (float)vid.width/vid.height;
-	atransform.scalez = 1;
-
-	atransform.fovxangle = fpov; // Tails
-	atransform.fovyangle = fpov; // Tails
-	HWR_RollTransform(&atransform, viewroll);
-	atransform.splitscreen = r_splitscreen;
-
-	gl_fovlud = (float)(1.0l/tan((double)(fpov*M_PIl/360l)));
-
-	//------------------------------------------------------------------------
-	HWR_ClearView();
-
-	if (drawsky)
-		HWR_DrawSkyBackground(player);
-
-	//Hurdler: it doesn't work in splitscreen mode
-	drawsky = r_splitscreen;
-
-	HWR_ClearSprites();
-
-	drawcount = 0;
-
-#ifdef NEWCLIP
-	{
-		angle_t a1 = gld_FrustumAngle(gl_aimingangle);
-		gld_clipper_Clear();
-		gld_clipper_SafeAddClipRange(viewangle + a1, viewangle - a1);
-#ifdef HAVE_SPHEREFRUSTRUM
-		gld_FrustrumSetup();
-#endif
-	}
-#else
-	HWR_ClearClipSegs();
-#endif
-
-	//04/01/2000: Hurdler: added for T&L
-	//                     Actually it only works on Walls and Planes
-	HWD.pfnSetTransform(&atransform);
-
-	// Reset the shader state.
-	HWR_SetShaderState();
-
-	validcount++;
-
-	if (cv_glbatching.value)
-		HWR_StartBatching();
-
-	HWR_RenderBSPNode((INT32)numnodes-1);
-
-#ifndef NEWCLIP
-	// Make a viewangle int so we can render things based on mouselook
-	viewangle = localaiming[viewssnum];
-
-	// Handle stuff when you are looking farther up or down.
-	if ((gl_aimingangle || fpov > 90.0f))
-	{
-		dup_viewangle += ANGLE_90;
-		HWR_ClearClipSegs();
-		HWR_RenderBSPNode((INT32)numnodes-1); //left
-
-		dup_viewangle += ANGLE_90;
-		if (((INT32)gl_aimingangle > ANGLE_45 || (INT32)gl_aimingangle<-ANGLE_45))
-		{
-			HWR_ClearClipSegs();
-			HWR_RenderBSPNode((INT32)numnodes-1); //back
-		}
-
-		dup_viewangle += ANGLE_90;
-		HWR_ClearClipSegs();
-		HWR_RenderBSPNode((INT32)numnodes-1); //right
-
-		dup_viewangle += ANGLE_90;
-	}
-#endif
-
-	if (cv_glbatching.value)
-		HWR_RenderBatches();
-
-#ifdef ALAM_LIGHTING
-	//14/11/99: Hurdler: moved here because it doesn't work with
-	// subsector, see other comments;
-	HWR_ResetLights();
-#endif
-
-	// Draw MD2 and sprites
-	HWR_SortVisSprites();
-	HWR_DrawSprites();
-
-#ifdef NEWCORONAS
-	//Hurdler: they must be drawn before translucent planes, what about gl fog?
-	HWR_DrawCoronas();
-#endif
-
-	if (numplanes || numpolyplanes || numwalls) //Hurdler: render 3D water and transparent walls after everything
-	{
-		HWR_CreateDrawNodes();
-	}
-
-	HWD.pfnSetTransform(NULL);
-	HWD.pfnUnSetShader();
-
-	// added by Hurdler for correct splitscreen
-	// moved here by hurdler so it works with the new near clipping plane
-	HWD.pfnGClipRect(0, 0, vid.width, vid.height, NZCLIP_PLANE);
-}
-
-// ==========================================================================
-//
-// ==========================================================================
-
-static void HWR_RollTransform(FTransform *tr, angle_t roll)
-{
-	if (roll != 0)
-	{
-		tr->rollangle = roll / (float)ANG1;
-		tr->roll = true;
-		tr->rollx = 1.0f;
-		tr->rollz = 0.0f;
-	}
-}
-
-void HWR_RenderPlayerView(void)
-{
-	player_t * player = &players[displayplayers[viewssnum]];
-
-	const float fpov = FIXED_TO_FLOAT(cv_fov[viewssnum].value+player->fovadd);
-	postimg_t *type = &postimgtype[viewssnum];
-
-	const boolean skybox = (player->skybox.viewpoint && cv_skybox.value); // True if there's a skybox object and skyboxes are on
-
-	FRGBAFloat ClearColor;
-
-	ClearColor.red = 0.0f;
-	ClearColor.green = 0.0f;
-	ClearColor.blue = 0.0f;
-	ClearColor.alpha = 1.0f;
-
-	if (cv_glshaders.value)
-		HWD.pfnSetShaderInfo(HWD_SHADERINFO_LEVELTIME, (INT32)leveltime); // The water surface shader needs the leveltime.
-
-	if (viewssnum == 0) // Only do it if it's the first screen being rendered
-		HWD.pfnClearBuffer(true, false, &ClearColor); // Clear the Color Buffer, stops HOMs. Also seems to fix the skybox issue on Intel GPUs.
-
-	ps_hw_skyboxtime = I_GetPreciseTime();
-	if (skybox && drawsky) // If there's a skybox and we should be drawing the sky, draw the skybox
-		HWR_RenderSkyboxView(player); // This is drawn before everything else so it is placed behind
-	ps_hw_skyboxtime = I_GetPreciseTime() - ps_hw_skyboxtime;
-
-	{
-		// do we really need to save player (is it not the same)?
-		player_t *saved_player = stplyr;
-		stplyr = player;
-		ST_doPaletteStuff();
-		stplyr = saved_player;
-#ifdef ALAM_LIGHTING
-		HWR_SetLights(viewssnum);
-#endif
-	}
-
-	// note: sets viewangle, viewx, viewy, viewz
-	R_SetupFrame(viewssnum);
-	framecount++; // timedemo
 
 	// copy view cam position for local use
 	dup_viewx = viewx;
@@ -6480,7 +6271,7 @@ void HWR_RenderPlayerView(void)
 	//------------------------------------------------------------------------
 	HWR_ClearView(); // Clears the depth buffer and resets the view I believe
 
-	if (!skybox && drawsky) // Don't draw the regular sky if there's a skybox
+	if (drawSkyTexture)
 		HWR_DrawSkyBackground(player);
 
 	//Hurdler: it doesn't work in splitscreen mode
@@ -6510,9 +6301,12 @@ void HWR_RenderPlayerView(void)
 	// Reset the shader state.
 	HWR_SetShaderState();
 
-	ps_numbspcalls = 0;
-	ps_numpolyobjects = 0;
-	ps_bsptime = I_GetPreciseTime();
+	if (timing)
+	{
+		ps_numbspcalls = 0;
+		ps_numpolyobjects = 0;
+		ps_bsptime = I_GetPreciseTime();
+	}
 
 	validcount++;
 
@@ -6547,7 +6341,10 @@ void HWR_RenderPlayerView(void)
 	}
 #endif
 
-	ps_bsptime = I_GetPreciseTime() - ps_bsptime;
+	if (timing)
+	{
+		ps_bsptime = I_GetPreciseTime() - ps_bsptime;
+	}
 
 	if (cv_glbatching.value)
 		HWR_RenderBatches();
@@ -6559,22 +6356,40 @@ void HWR_RenderPlayerView(void)
 #endif
 
 	// Draw MD2 and sprites
-	ps_numsprites = gl_visspritecount;
-	ps_hw_spritesorttime = I_GetPreciseTime();
+
+	if (timing)
+	{
+		ps_numsprites = gl_visspritecount;
+		ps_hw_spritesorttime = I_GetPreciseTime();
+	}
+
 	HWR_SortVisSprites();
-	ps_hw_spritesorttime = I_GetPreciseTime() - ps_hw_spritesorttime;
-	ps_hw_spritedrawtime = I_GetPreciseTime();
+
+	if (timing)
+	{
+		ps_hw_spritesorttime = I_GetPreciseTime() - ps_hw_spritesorttime;
+		ps_hw_spritedrawtime = I_GetPreciseTime();
+	}
+
 	HWR_DrawSprites();
-	ps_hw_spritedrawtime = I_GetPreciseTime() - ps_hw_spritedrawtime;
+
+	if (timing)
+	{
+		ps_hw_spritedrawtime = I_GetPreciseTime() - ps_hw_spritedrawtime;
+	}
 
 #ifdef NEWCORONAS
 	//Hurdler: they must be drawn before translucent planes, what about gl fog?
 	HWR_DrawCoronas();
 #endif
 
-	ps_numdrawnodes = 0;
-	ps_hw_nodesorttime = 0;
-	ps_hw_nodedrawtime = 0;
+	if (timing)
+	{
+		ps_numdrawnodes = 0;
+		ps_hw_nodesorttime = 0;
+		ps_hw_nodedrawtime = 0;
+	}
+
 	if (numplanes || numpolyplanes || numwalls) //Hurdler: render 3D water and transparent walls after everything
 	{
 		HWR_CreateDrawNodes();
@@ -6583,11 +6398,70 @@ void HWR_RenderPlayerView(void)
 	HWD.pfnSetTransform(NULL);
 	HWD.pfnUnSetShader();
 
-	HWR_DoPostProcessor(player);
-
 	// added by Hurdler for correct splitscreen
 	// moved here by hurdler so it works with the new near clipping plane
 	HWD.pfnGClipRect(0, 0, vid.width, vid.height, NZCLIP_PLANE);
+}
+
+// ==========================================================================
+// Same as rendering the player view, but from the skybox object
+// ==========================================================================
+void HWR_RenderSkyboxView(player_t *player)
+{
+	// note: sets viewangle, viewx, viewy, viewz
+	R_SkyboxFrame(viewssnum);
+
+	HWR_RenderViewpoint(player, drawsky, false);
+}
+
+// ==========================================================================
+//
+// ==========================================================================
+
+static void HWR_RollTransform(FTransform *tr, angle_t roll)
+{
+	if (roll != 0)
+	{
+		tr->rollangle = roll / (float)ANG1;
+		tr->roll = true;
+		tr->rollx = 1.0f;
+		tr->rollz = 0.0f;
+	}
+}
+
+void HWR_RenderPlayerView(void)
+{
+	player_t * player = &players[displayplayers[viewssnum]];
+
+	const boolean skybox = (player->skybox.viewpoint && cv_skybox.value); // True if there's a skybox object and skyboxes are on
+
+	FRGBAFloat ClearColor;
+
+	ClearColor.red = 0.0f;
+	ClearColor.green = 0.0f;
+	ClearColor.blue = 0.0f;
+	ClearColor.alpha = 1.0f;
+
+	if (cv_glshaders.value)
+		HWD.pfnSetShaderInfo(HWD_SHADERINFO_LEVELTIME, (INT32)leveltime); // The water surface shader needs the leveltime.
+
+	if (viewssnum == 0) // Only do it if it's the first screen being rendered
+		HWD.pfnClearBuffer(true, false, &ClearColor); // Clear the Color Buffer, stops HOMs. Also seems to fix the skybox issue on Intel GPUs.
+
+	ps_hw_skyboxtime = I_GetPreciseTime();
+	if (skybox && drawsky) // If there's a skybox and we should be drawing the sky, draw the skybox
+		HWR_RenderSkyboxView(player); // This is drawn before everything else so it is placed behind
+	ps_hw_skyboxtime = I_GetPreciseTime() - ps_hw_skyboxtime;
+
+	// note: sets viewangle, viewx, viewy, viewz
+	R_SetupFrame(viewssnum);
+	framecount++; // timedemo
+
+	HWR_RenderViewpoint(player,
+			!skybox && drawsky, // Don't draw the regular sky if there's a skybox
+			true); // Main view is profiled
+
+	HWR_DoPostProcessor(player);
 }
 
 void HWR_LoadLevel(void)
