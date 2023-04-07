@@ -903,7 +903,7 @@ void Obj_UFOPieceThink(mobj_t *piece)
 		case UFO_PIECE_TYPE_GLASS:
 		case UFO_PIECE_TYPE_GLASS_UNDER:
 		{
-			piece->destscale = ufo->destscale;
+			piece->destscale = 5 * ufo->destscale / 3;
 			UFOMoveTo(piece, ufo->x, ufo->y, ufo->z);
 			break;
 		}
