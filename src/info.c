@@ -22540,7 +22540,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		100,            // mass
 		0,              // damage
 		sfx_None,       // activesound
-		MF_NOGRAVITY|MF_NOBLOCKMAP|MF_NOCLIP|MF_NOCLIPTHING|MF_NOCLIPHEIGHT|MF_NOSQUISH, // flags
+		MF_NOGRAVITY|MF_NOBLOCKMAP|MF_NOCLIP|MF_NOCLIPTHING|MF_NOCLIPHEIGHT|MF_NOSQUISH|MF_DONTENCOREMAP, // flags
 		S_NULL          // raisestate
 	},
 
@@ -22567,7 +22567,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		100,            // mass
 		0,              // damage
 		sfx_None,       // activesound
-		MF_SCENERY|MF_NOBLOCKMAP|MF_NOCLIP|MF_NOCLIPTHING|MF_NOSQUISH, // flags
+		MF_SCENERY|MF_NOBLOCKMAP|MF_NOCLIP|MF_NOCLIPTHING|MF_NOSQUISH|MF_DONTENCOREMAP, // flags
 		S_NULL          // raisestate
 	},
 
@@ -22594,7 +22594,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		100,            // mass
 		0,              // damage
 		sfx_None,       // activesound
-		MF_NOGRAVITY|MF_NOCLIP|MF_NOCLIPTHING|MF_NOCLIPHEIGHT, // flags
+		MF_NOGRAVITY|MF_NOCLIP|MF_NOCLIPTHING|MF_NOCLIPHEIGHT|MF_DONTENCOREMAP, // flags
 		S_NULL          // raisestate
 	},
 
