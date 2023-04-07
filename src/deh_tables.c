@@ -4562,6 +4562,8 @@ const char *const STATE_LIST[] = { // array length left dynamic for sanity testi
 
 	"S_SPECIAL_UFO_POD",
 	"S_SPECIAL_UFO_OVERLAY",
+	"S_SPECIAL_UFO_GLASS",
+	"S_SPECIAL_UFO_GLASS_UNDER",
 	"S_SPECIAL_UFO_ARM",
 	"S_SPECIAL_UFO_STEM",
 

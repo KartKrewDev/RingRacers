@@ -54,6 +54,8 @@
 enum
 {
 	UFO_PIECE_TYPE_POD,
+	UFO_PIECE_TYPE_GLASS,
+	UFO_PIECE_TYPE_GLASS_UNDER,
 	UFO_PIECE_TYPE_ARM,
 	UFO_PIECE_TYPE_STEM,
 };
@@ -544,6 +546,8 @@ static void UFOKillPiece(mobj_t *piece)
 
 	switch (ufo_piece_type(piece))
 	{
+		case UFO_PIECE_TYPE_GLASS:
+		case UFO_PIECE_TYPE_GLASS_UNDER:
 		case UFO_PIECE_TYPE_STEM:
 		{
 			piece->tics = 1;
@@ -794,16 +798,23 @@ void Obj_UFOPieceThink(mobj_t *piece)
 		return;
 	}
 
-	piece->destscale = 3 * ufo->destscale / 2;
 	piece->scalespeed = ufo->scalespeed;
 
 	switch (ufo_piece_type(piece))
 	{
 		case UFO_PIECE_TYPE_POD:
 		{
+			piece->destscale = 3 * ufo->destscale / 2;
 			UFOMoveTo(piece, ufo->x, ufo->y, ufo->z + (132 * piece->scale));
 			if (S_SoundPlaying(ufo, sfx_clawzm) && ufo_speed(ufo) > 70*FRACUNIT)
 				SpawnUFOSpeedLines(piece);
+			break;
+		}
+		case UFO_PIECE_TYPE_GLASS:
+		case UFO_PIECE_TYPE_GLASS_UNDER:
+		{
+			piece->destscale = ufo->destscale;
+			UFOMoveTo(piece, ufo->x, ufo->y, ufo->z);
 			break;
 		}
 		case UFO_PIECE_TYPE_ARM:
@@ -813,6 +824,7 @@ void Obj_UFOPieceThink(mobj_t *piece)
 			fixed_t x = ufo->x - FixedMul(dis, FINECOSINE(piece->angle >> ANGLETOFINESHIFT));
 			fixed_t y = ufo->y - FixedMul(dis, FINESINE(piece->angle >> ANGLETOFINESHIFT));
 
+			piece->destscale = 3 * ufo->destscale / 2;
 			UFOMoveTo(piece, x, y, ufo->z + (24 * piece->scale));
 
 			piece->angle -= FixedMul(ANG2, FixedDiv(ufo_speed(ufo), UFO_BASE_SPEED));
@@ -823,6 +835,7 @@ void Obj_UFOPieceThink(mobj_t *piece)
 			fixed_t stemZ = ufo->z + (294 * piece->scale);
 			fixed_t sc = FixedDiv(FixedDiv(ufo->ceilingz - stemZ, piece->scale), 15 * FRACUNIT);
 
+			piece->destscale = 3 * ufo->destscale / 2;
 			UFOMoveTo(piece, ufo->x, ufo->y, stemZ);
 			if (sc > 0)
 			{
@@ -960,6 +973,39 @@ static mobj_t *InitSpecialUFO(waypoint_t *start)
 
 	P_SetTarget(&ufo_pieces(ufo), piece);
 	prevPiece = piece;
+
+	// Next, the glass ball.
+	{
+		piece = P_SpawnMobjFromMobj(ufo, 0, 0, 0, MT_SPECIAL_UFO_PIECE);
+		P_SetTarget(&ufo_piece_owner(piece), ufo);
+
+		P_SetMobjState(piece, S_SPECIAL_UFO_GLASS);
+		ufo_piece_type(piece) = UFO_PIECE_TYPE_GLASS;
+
+		/*overlay = P_SpawnMobjFromMobj(piece, 0, 0, 0, MT_OVERLAY);
+		P_SetTarget(&overlay->target, piece);
+		P_SetMobjState(overlay, S_SPECIAL_UFO_GLASS_UNDER);
+		overlay->dispoffset = -20;*/
+
+		P_SetTarget(&ufo_piece_next(prevPiece), piece);
+		P_SetTarget(&ufo_piece_prev(piece), prevPiece);
+		prevPiece = piece;
+	}
+
+	// This SHOULD have been an MT_OVERLAY... but it simply doesn't
+	// draw-order stack with the Emerald correctly any other way.
+	{
+		piece = P_SpawnMobjFromMobj(ufo, 0, 0, 0, MT_SPECIAL_UFO_PIECE);
+		P_SetTarget(&ufo_piece_owner(piece), ufo);
+
+		P_SetMobjState(piece, S_SPECIAL_UFO_GLASS_UNDER);
+		ufo_piece_type(piece) = UFO_PIECE_TYPE_GLASS_UNDER;
+		piece->dispoffset = -2;
+
+		P_SetTarget(&ufo_piece_next(prevPiece), piece);
+		P_SetTarget(&ufo_piece_prev(piece), prevPiece);
+		prevPiece = piece;
+	}
 
 	// Add the catcher arms.
 	for (i = 0; i < UFO_NUMARMS; i++)
