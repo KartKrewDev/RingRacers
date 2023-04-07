@@ -1047,6 +1047,8 @@ static mobj_t *InitSpecialUFO(waypoint_t *start)
 
 		overlay->color = ufo->color;
 		P_SetTarget(&overlay->target, ufo);
+
+		ufo->sprzoff = 32 * mapobjectscale;
 	}
 
 	// Create UFO pieces.
