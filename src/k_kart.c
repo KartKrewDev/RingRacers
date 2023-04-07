@@ -4567,6 +4567,7 @@ static mobj_t *K_SpawnKartMissile(mobj_t *source, mobjtype_t type, angle_t an, I
 {
 	mobj_t *th;
 	fixed_t x, y, z;
+	fixed_t topspeed = K_GetKartSpeed(source->player, false, false);
 	fixed_t finalspeed = speed;
 	fixed_t finalscale = mapobjectscale;
 	mobj_t *throwmo;
@@ -4574,6 +4575,7 @@ static mobj_t *K_SpawnKartMissile(mobj_t *source, mobjtype_t type, angle_t an, I
 	if (source->player != NULL)
 	{
 		const angle_t delta = AngleDelta(source->angle, an);
+		 // Correct for angle difference when applying missile speed boosts. (Don't boost backshots!)
 		const fixed_t deltaFactor = FixedDiv(AngleFixed(ANGLE_180 - delta), 180 * FRACUNIT);
 
 		if (source->player->itemscale == ITEMSCALE_SHRINK)
@@ -4582,7 +4584,20 @@ static mobj_t *K_SpawnKartMissile(mobj_t *source, mobjtype_t type, angle_t an, I
 			speed = finalspeed = FixedMul(speed, SHRINK_PHYSICS_SCALE);
 		}
 
-		// Add player speed on top, multiplied based on angle diff... i.e: don't do this for firing backward :V
+		if (source->player->speed > topspeed)
+		{
+			// Multiply speed to be proportional to your own, boosted maxspeed.
+			// (Dramatic "railgun" effect when fast players fire missiles.)
+			finalspeed = max(speed, FixedMul(
+				speed,
+				FixedMul(
+					FixedDiv(source->player->speed, topspeed),
+					deltaFactor 
+				)
+			));
+		}
+
+		// ...and add player speed on top, to make sure you're never traveling faster than an item you throw.
 		finalspeed += FixedMul(source->player->speed, deltaFactor);
 
 		finalscale = K_ItemScaleForPlayer(source->player);
