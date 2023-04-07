@@ -411,9 +411,9 @@ void K_drawTargetHUD(const vector3_t* origin, player_t* player)
 		}
 
 		vector3_t pos = {
-			R_InterpolateFixed(mobj->old_x, mobj->x),
-			R_InterpolateFixed(mobj->old_y, mobj->y),
-			R_InterpolateFixed(mobj->old_z, mobj->z) + (mobj->height >> 1),
+			R_InterpolateFixed(mobj->old_x, mobj->x) + mobj->sprxoff,
+			R_InterpolateFixed(mobj->old_y, mobj->y) + mobj->spryoff,
+			R_InterpolateFixed(mobj->old_z, mobj->z) + mobj->sprzoff + (mobj->height >> 1),
 		};
 
 		targetList.push_back({mobj, pos, R_PointToDist2(origin->x, origin->y, pos.x, pos.y)});
