@@ -62,6 +62,7 @@
 #include "k_rank.h"
 #include "k_director.h"
 #include "g_party.h"
+#include "k_profiles.h"
 
 #ifdef HW3SOUND
 #include "hardware/hw3sound.h"
@@ -1377,6 +1378,13 @@ void P_DoPlayerExit(player_t *player)
 
 	if (modeattacking)
 		G_UpdateRecords();
+
+	profile_t *pr = PR_GetPlayerProfile(player);
+	if (pr != NULL && !losing)
+	{
+		pr->wins++;
+		PR_SaveProfiles();
+	}
 
 	player->karthud[khud_cardanimation] = 0; // srb2kart: reset battle animation
 

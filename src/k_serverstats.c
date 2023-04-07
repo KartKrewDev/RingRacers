@@ -68,14 +68,6 @@ void SV_SaveStats(void)
 	if (!server)
 		return;
 
-	/*
-	if (profilesList[PROFILE_GUEST] == NULL)
-	{
-		// Profiles have not been loaded yet, don't overwrite with garbage.
-		return;
-	}
-	*/
-
 	// header + version + numtracked + payload
 	if (P_SaveBufferAlloc(&save, headerlen + sizeof(UINT32) + sizeof(UINT8) + (numtracked * sizeof(serverplayer_t))) == false)
 	{
@@ -91,11 +83,6 @@ void SV_SaveStats(void)
 	WRITEUINT32(save.p, numtracked);
 
 	WRITEMEM(save.p, trackedList, (numtracked * sizeof(serverplayer_t)));
-
-	for (i = 0; i < numtracked; i++)
-	{
-
-	}
 
 	length = save.p - save.buffer;
 

@@ -72,11 +72,7 @@ profile_t* PR_MakeProfile(
 	// Copy from gamecontrol directly as we'll be setting controls up directly in the profile.
 	memcpy(new->controls, controlarray, sizeof(new->controls));
 
-	// Init both power levels
-	for (i = 0; i < PWRLV_NUMTYPES; i++)
-	{
-		new->powerlevels[i] = (guest ? 0 : PWRLVRECORD_START);
-	}
+	new->wins = 0;
 
 	return new;
 }
@@ -270,11 +266,7 @@ void PR_SaveProfiles(void)
 		WRITESTRINGN(save.p, profilesList[i]->follower, SKINNAMESIZE);
 		WRITEUINT16(save.p, profilesList[i]->followercolor);
 
-		// PWR.
-		for (j = 0; j < PWRLV_NUMTYPES; j++)
-		{
-			WRITEUINT16(save.p, profilesList[i]->powerlevels[j]);
-		}
+		WRITEUINT32(save.p, profilesList[i]->wins);
 
 		// Consvars.
 		WRITEUINT8(save.p, profilesList[i]->kickstartaccel);
@@ -397,16 +389,18 @@ void PR_LoadProfiles(void)
 			profilesList[i]->followercolor = PROFILEDEFAULTFOLLOWERCOLOR;
 		}
 
-		// PWR.
-		for (j = 0; j < PWRLV_NUMTYPES; j++)
+		// Profile update 4-->5: PWR isn't in profile data anymore.
+		if (version < 5)
 		{
-			profilesList[i]->powerlevels[j] = READUINT16(save.p);
-			if (profilesList[i]->powerlevels[j] < PWRLVRECORD_MIN
-				|| profilesList[i]->powerlevels[j] > PWRLVRECORD_MAX)
+			for (j = 0; j < PWRLV_NUMTYPES; j++)
 			{
-				// invalid, reset
-				profilesList[i]->powerlevels[j] = PWRLVRECORD_START;
+				READUINT16(save.p);
 			}
+			profilesList[i]->wins = 0;
+		}
+		else
+		{
+			profilesList[i]->wins = READUINT32(save.p);
 		}
 
 		// Consvars.

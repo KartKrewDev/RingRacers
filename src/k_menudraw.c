@@ -1698,8 +1698,12 @@ static void M_DrawProfileCard(INT32 x, INT32 y, boolean greyedout, profile_t *p)
 	if (greyedout)
 		return;	// only used for profiles we can't select.
 
-	V_DrawFixedPatch((x+30)*FRACUNIT, (y+84)*FRACUNIT, FRACUNIT, 0, pwrlv, colormap);
-	V_DrawCenteredKartString(x+30, y+87, 0, "TEMP");
+	if (p != NULL)
+	{
+		V_DrawFixedPatch((x+30)*FRACUNIT, (y+84)*FRACUNIT, FRACUNIT, 0, pwrlv, colormap);
+		V_DrawCenteredKartString(x+30, y+87, 0, va("%d", p->wins));
+	}
+
 
 	// check what setup_player is doing in priority.
 	if (sp->mdepth >= CSSTEP_CHARS)
