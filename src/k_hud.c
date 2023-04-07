@@ -3045,7 +3045,7 @@ static void K_drawKartWanted(void)
 	}
 
 	if (battlewanted[0] != -1)
-		colormap = R_GetTranslationColormap(0, players[battlewanted[0]].skincolor, GTC_CACHE);
+		colormap = R_GetTranslationColormap(TC_DEFAULT, players[battlewanted[0]].skincolor, GTC_CACHE);
 	V_DrawFixedPatch(basex<<FRACBITS, basey<<FRACBITS, FRACUNIT, V_HUDTRANS|V_SLIDEIN|(r_splitscreen < 3 ? V_SNAPTORIGHT : 0)|V_SNAPTOBOTTOM, (r_splitscreen > 1 ? kp_wantedsplit : kp_wanted), colormap);
 	/*if (basey2)
 		V_DrawFixedPatch(basex<<FRACBITS, basey2<<FRACBITS, FRACUNIT, V_HUDTRANS|V_SLIDEIN|V_SNAPTOTOP, (splitscreen == 3 ? kp_wantedsplit : kp_wanted), colormap);	// < used for 4p splits.*/
@@ -3905,7 +3905,7 @@ static void K_drawKartMinimap(void)
 			if (mobj->health <= 0 && (players[i].pflags & PF_NOCONTEST))
 			{
 				workingPic = kp_nocontestminimap;
-				colormap = R_GetTranslationColormap(0, mobj->color, GTC_CACHE);
+				colormap = R_GetTranslationColormap(TC_DEFAULT, mobj->color, GTC_CACHE);
 
 				if (mobj->tracer && !P_MobjWasRemoved(mobj->tracer))
 					mobj = mobj->tracer;
@@ -4074,7 +4074,7 @@ static void K_drawKartMinimap(void)
 		if (mobj->health <= 0 && (players[localplayers[i]].pflags & PF_NOCONTEST))
 		{
 			workingPic = kp_nocontestminimap;
-			colormap = R_GetTranslationColormap(0, mobj->color, GTC_CACHE);
+			colormap = R_GetTranslationColormap(TC_DEFAULT, mobj->color, GTC_CACHE);
 
 			if (mobj->tracer && !P_MobjWasRemoved(mobj->tracer))
 				mobj = mobj->tracer;
@@ -4750,7 +4750,7 @@ static void K_drawInput(void)
 	else
 	{
 		UINT8 *colormap;
-		colormap = R_GetTranslationColormap(0, stplyr->skincolor, GTC_CACHE);
+		colormap = R_GetTranslationColormap(TC_DEFAULT, stplyr->skincolor, GTC_CACHE);
 		V_DrawFixedPatch(x<<FRACBITS, y<<FRACBITS, FRACUNIT, splitflags, kp_inputwheel[target], colormap);
 	}
 }
