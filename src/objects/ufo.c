@@ -517,6 +517,90 @@ void Obj_SpecialUFOThinker(mobj_t *ufo)
 	}
 }
 
+// The following is adapted from monitor.c for UFO Catcher damage
+// I couldn't just exose the relevant things via k_object.h
+// because they're *just* too specific to Monitors... ~toast 070423
+
+#define shard_can_roll(o) ((o)->extravalue1)
+
+static inline boolean
+can_shard_state_roll (statenum_t state)
+{
+	switch (state)
+	{
+		case S_MONITOR_BIG_SHARD:
+		case S_MONITOR_SMALL_SHARD:
+			return true;
+
+		default:
+			return false;
+	}
+}
+
+static void
+spawn_shard
+(		mobj_t * part,
+		statenum_t state)
+{
+	mobj_t *ufo = ufo_piece_owner(part);
+
+	// These divisions and multiplications are done on the
+	// offsets to give bigger increments of randomness.
+
+	const fixed_t h = FixedDiv(
+			ufo->height, ufo->scale);
+
+	const UINT16 rad = (ufo->radius / ufo->scale) / 4;
+	const UINT16 tall = (h / FRACUNIT);
+
+	mobj_t *p = P_SpawnMobjFromMobj(ufo,
+			P_RandomRange(PR_ITEM_DEBRIS, -(rad), rad) * 8 * FRACUNIT,
+			P_RandomRange(PR_ITEM_DEBRIS, -(rad), rad) * 8 * FRACUNIT,
+			P_RandomKey(PR_ITEM_DEBRIS, tall + 1) * 4 * FRACUNIT,
+			MT_MONITOR_SHARD);
+
+	P_SetScale(p, (p->destscale = p->destscale * 3));
+
+	angle_t th = R_PointToAngle2(ufo->x, ufo->y, p->x, p->y);
+
+	th -= P_RandomKey(PR_ITEM_DEBRIS, ANGLE_45) - ANGLE_22h;
+
+	p->hitlag = 0;
+
+	P_Thrust(p, th, 6 * p->scale);
+	p->momz = P_RandomRange(PR_ITEM_DEBRIS, 3, 10) * p->scale;
+
+	P_SetMobjState(p, state);
+
+	shard_can_roll(p) = can_shard_state_roll(state);
+
+	if (shard_can_roll(p))
+	{
+		p->rollangle = P_Random(PR_ITEM_DEBRIS);
+	}
+
+	if (P_RandomChance(PR_ITEM_DEBRIS, FRACUNIT/2))
+	{
+		p->renderflags |= RF_DONTDRAW;
+	}
+}
+
+static void
+spawn_debris (mobj_t *part)
+{
+	mobj_t *ufo = ufo_piece_owner(part);
+
+	INT32 i;
+
+	for (i = ufo->health;
+		i <= mobjinfo[ufo->type].spawnhealth; i += 5)
+	{
+		spawn_shard(part, S_MONITOR_BIG_SHARD);
+		spawn_shard(part, S_MONITOR_SMALL_SHARD);
+		spawn_shard(part, S_MONITOR_TWINKLE);
+	}
+}
+
 static void UFOCopyHitlagToPieces(mobj_t *ufo)
 {
 	mobj_t *piece = NULL;
@@ -526,6 +610,12 @@ static void UFOCopyHitlagToPieces(mobj_t *ufo)
 	{
 		piece->hitlag = ufo->hitlag;
 		piece->eflags = (piece->eflags & ~MFE_DAMAGEHITLAG) | (ufo->eflags & MFE_DAMAGEHITLAG);
+
+		if (ufo_piece_type(piece) == UFO_PIECE_TYPE_GLASS)
+		{
+			spawn_debris (piece);
+		}
+	
 		piece = ufo_piece_next(piece);
 	}
 }
@@ -691,15 +781,16 @@ boolean Obj_SpecialUFODamage(mobj_t *ufo, mobj_t *inflictor, mobj_t *source, UIN
 	// Speed up on damage!
 	ufo_speed(ufo) += addSpeed;
 
+	ufo->health = max(1, ufo->health - damage);
+
 	K_SetHitLagForObjects(ufo, inflictor, (damage / 3) + 2, true);
 	UFOCopyHitlagToPieces(ufo);
 
-	if (damage >= ufo->health - 1)
+	if (ufo->health == 1)
 	{
 		// Destroy the UFO parts, and make the emerald collectible!
 		UFOKillPieces(ufo);
 
-		ufo->health = 1;
 		ufo->flags = (ufo->flags & ~MF_SHOOTABLE) | (MF_SPECIAL|MF_PICKUPFROMBELOW);
 		ufo->shadowscale = FRACUNIT/3;
 
@@ -716,7 +807,6 @@ boolean Obj_SpecialUFODamage(mobj_t *ufo, mobj_t *inflictor, mobj_t *source, UIN
 	S_StartSound(ufo, sfx_clawht);
 	S_StopSoundByID(ufo, sfx_clawzm);
 	P_StartQuake(64<<FRACBITS, 10);
-	ufo->health -= damage;
 
 	return true;
 }
