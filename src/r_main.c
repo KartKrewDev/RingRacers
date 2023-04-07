@@ -1477,6 +1477,18 @@ static void Mask_Post (maskcount_t* m)
 // R_RenderView
 // ================
 
+// viewx, viewy, viewangle, all that good stuff must be set
+static void R_RenderViewpoint(maskcount_t* mask)
+{
+	Mask_Pre(mask);
+
+	curdrawsegs = ds_p;
+
+	R_RenderBSPNode((INT32)numnodes - 1);
+
+	Mask_Post(mask);
+}
+
 //                     FAB NOTE FOR WIN32 PORT !! I'm not finished already,
 // but I suspect network may have problems with the video buffer being locked
 // for all duration of rendering, and being released only once at the end..
@@ -1535,8 +1547,6 @@ void R_RenderPlayerView(void)
 
 	// The head node is the last node output.
 
-	Mask_Pre(&masks[nummasks - 1]);
-	curdrawsegs = ds_p;
 //profile stuff ---------------------------------------------------------
 #ifdef TIMING
 	mytotal = 0;
@@ -1544,7 +1554,7 @@ void R_RenderPlayerView(void)
 #endif
 	ps_numbspcalls = ps_numpolyobjects = ps_numdrawnodes = 0;
 	ps_bsptime = I_GetPreciseTime();
-	R_RenderBSPNode((INT32)numnodes - 1);
+	R_RenderViewpoint(&masks[nummasks - 1]);
 	ps_bsptime = I_GetPreciseTime() - ps_bsptime;
 	ps_numsprites = visspritecount;
 #ifdef TIMING
@@ -1554,7 +1564,6 @@ void R_RenderPlayerView(void)
 	CONS_Debug(DBG_RENDER, "RenderBSPNode: 0x%d %d\n", *((INT32 *)&mytotal + 1), (INT32)mytotal);
 #endif
 //profile stuff ---------------------------------------------------------
-	Mask_Post(&masks[nummasks - 1]);
 
 	ps_sw_spritecliptime = I_GetPreciseTime();
 	R_ClipSprites(drawsegs, NULL);
@@ -1593,15 +1602,11 @@ void R_RenderPlayerView(void)
 
 			masks = realloc(masks, (++nummasks)*sizeof(maskcount_t));
 
-			Mask_Pre(&masks[nummasks - 1]);
-			curdrawsegs = ds_p;
-
 			portalskipprecipmobjs = portal->isskybox;
 
 			// Render the BSP from the new viewpoint, and clip
 			// any sprites with the new clipsegs and window.
-			R_RenderBSPNode((INT32)numnodes - 1);
-			Mask_Post(&masks[nummasks - 1]);
+			R_RenderViewpoint(&masks[nummasks - 1]);
 
 			portalskipprecipmobjs = false;
 
