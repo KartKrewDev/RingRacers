@@ -1219,6 +1219,11 @@ const char *const STATE_LIST[] = { // array length left dynamic for sanity testi
 	"S_CHAOSEMERALD2",
 	"S_CHAOSEMERALD_UNDER",
 
+	// Super Emeralds
+	"S_SUPEREMERALD1",
+	"S_SUPEREMERALD2",
+	"S_SUPEREMERALD_UNDER",
+
 	"S_EMERALDSPARK1",
 	"S_EMERALDSPARK2",
 	"S_EMERALDSPARK3",

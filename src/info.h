@@ -695,6 +695,7 @@ typedef enum sprite
 	SPR_NSTR, // NiGHTS star
 	SPR_EMBM, // Emblem
 	SPR_EMRC, // Chaos Emeralds
+	SPR_SEMR, // Super Emeralds
 	SPR_ESPK,
 	SPR_SHRD, // Emerald Hunt
 
@@ -2255,6 +2256,11 @@ typedef enum state
 	S_CHAOSEMERALD1,
 	S_CHAOSEMERALD2,
 	S_CHAOSEMERALD_UNDER,
+
+	// Super Emeralds
+	S_SUPEREMERALD1,
+	S_SUPEREMERALD2,
+	S_SUPEREMERALD_UNDER,
 
 	S_EMERALDSPARK1,
 	S_EMERALDSPARK2,

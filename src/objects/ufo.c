@@ -907,15 +907,44 @@ static mobj_t *InitSpecialUFO(waypoint_t *start)
 
 	ufo_speed(ufo) = FixedMul(UFO_START_SPEED, K_GetKartGameSpeedScalar(gamespeed));
 
-	// TODO: Adjustable Special Stage emerald color
-	ufo->color = SKINCOLOR_CHAOSEMERALD1;
+	// Adjustable Special Stage emerald color/shape
+	{
+		overlay = P_SpawnMobjFromMobj(ufo, 0, 0, 0, MT_OVERLAY);
 
-	overlay = P_SpawnMobjFromMobj(ufo, 0, 0, 0, MT_OVERLAY);
-	P_SetTarget(&overlay->target, ufo);
-	overlay->color = ufo->color;
+		ufo->color = SKINCOLOR_CHAOSEMERALD1;
+		i = P_GetNextEmerald();
+		if (i > 0)
+		{
+			ufo->color += (i - 1) % 7;
+			if (i > 7)
+			{
+				// Super Emeralds
+				P_SetMobjState(ufo, S_SUPEREMERALD1);
+				P_SetMobjState(overlay, S_SUPEREMERALD_UNDER);
+			}
+			else
+			{
+				// Chaos Emerald
+				P_SetMobjState(ufo, S_CHAOSEMERALD1);
+				P_SetMobjState(overlay, S_CHAOSEMERALD_UNDER);
+			}
+		}
+		else
+		{
+			// Prize -- todo, currently using standard Emerald
+			P_SetMobjState(ufo, S_CHAOSEMERALD1);
+			P_SetMobjState(overlay, S_CHAOSEMERALD_UNDER);
+		}
 
-	// TODO: Super Emeralds / Chaos Rings
-	P_SetMobjState(overlay, S_CHAOSEMERALD_UNDER);
+		if (P_MobjWasRemoved(ufo)) // uh oh !
+		{
+			// Attempted crash prevention with custom SOC
+			return NULL;
+		}
+
+		overlay->color = ufo->color;
+		P_SetTarget(&overlay->target, ufo);
+	}
 
 	// Create UFO pieces.
 	// First: UFO center.

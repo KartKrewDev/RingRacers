@@ -144,6 +144,7 @@ char sprnames[NUMSPRITES + 1][5] =
 	"NSTR", // NiGHTS star
 	"EMBM", // Emblem
 	"EMRC", // Chaos Emeralds
+	"SEMR", // Super Emeralds
 	"ESPK",
 	"SHRD", // Emerald Hunt
 
@@ -1774,6 +1775,11 @@ state_t states[NUMSTATES] =
 	{SPR_EMRC, FF_SEMIBRIGHT,           1, {NULL}, 0, 0, S_CHAOSEMERALD2}, // S_CHAOSEMERALD1
 	{SPR_EMRC, FF_FULLBRIGHT|FF_ADD,    1, {NULL}, 0, 0, S_CHAOSEMERALD1}, // S_CHAOSEMERALD2
 	{SPR_EMRC, FF_FULLBRIGHT|1, -1, {NULL}, 1, 0, S_NULL}, // S_CHAOSEMERALD_UNDER
+
+	// Super Emeralds
+	{SPR_SEMR, FF_SEMIBRIGHT,           1, {NULL}, 0, 0, S_SUPEREMERALD2}, // S_SUPEREMERALD1
+	{SPR_SEMR, FF_FULLBRIGHT|FF_ADD,    1, {NULL}, 0, 0, S_SUPEREMERALD1}, // S_SUPEREMERALD2
+	{SPR_SEMR, FF_FULLBRIGHT|1, -1, {NULL}, 1, 0, S_NULL}, // S_SUPEREMERALD_UNDER
 
 	{SPR_ESPK, FF_FULLBRIGHT,   3, {NULL}, 0, 0, S_EMERALDSPARK2}, // S_EMERALDSPARK1
 	{SPR_ESPK, FF_FULLBRIGHT|1, 3, {NULL}, 0, 0, S_EMERALDSPARK3}, // S_EMERALDSPARK2
@@ -29318,7 +29324,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 
 	{           // MT_SPECIAL_UFO
 		-1,             // doomednum
-		S_CHAOSEMERALD1, // spawnstate
+		S_INVISIBLE,    // spawnstate
 		101,            // spawnhealth
 		S_NULL,         // seestate
 		sfx_None,       // seesound
