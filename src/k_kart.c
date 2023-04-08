@@ -9334,6 +9334,9 @@ static void K_KartDrift(player_t *player, boolean onground)
 		}
 	}
 
+	if (player->mo->eflags & MFE_UNDERWATER)
+		player->aizdriftstrat = 0;
+
 	if (!K_Sliptiding(player))
 	{
 		if (K_IsLosingSliptideZip(player) && player->sliptideZip > 0)
