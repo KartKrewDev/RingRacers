@@ -37,6 +37,7 @@ typedef enum {
 	CHEAT_DEVMODE,
 	CHEAT_GIVEITEM,
 	CHEAT_SCORE,
+	CHEAT_ANGLE,
 
 	NUMBER_OF_CHEATS
 } cheat_t;
@@ -84,6 +85,7 @@ void Command_Skynum_f(void);
 void Command_Weather_f(void);
 void Command_Grayscale_f(void);
 void Command_Goto_f(void);
+void Command_Angle_f(void);
 #ifdef _DEBUG
 void Command_CauseCfail_f(void);
 #endif

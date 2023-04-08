@@ -1099,6 +1099,7 @@ void D_RegisterClientCommands(void)
 	COM_AddCommand("weather", Command_Weather_f);
 	COM_AddCommand("grayscale", Command_Grayscale_f);
 	COM_AddCommand("goto", Command_Goto_f);
+	COM_AddCommand("angle", Command_Angle_f);
 	CV_RegisterVar(&cv_renderhitbox);
 	CV_RegisterVar(&cv_devmode_screen);
 
@@ -2050,6 +2051,10 @@ void D_Cheat(INT32 playernum, INT32 cheat, ...)
 
 		case CHEAT_SCORE:
 			COPY(WRITEUINT32, UINT32);
+			break;
+
+		case CHEAT_ANGLE:
+			COPY(WRITEANGLE, angle_t);
 			break;
 	}
 
@@ -5787,6 +5792,16 @@ static void Got_Cheat(UINT8 **cp, INT32 playernum)
 			player->roundscore = score;
 
 			CV_CheaterWarning(targetPlayer, va("score = %u", score));
+			break;
+		}
+
+		case CHEAT_ANGLE: {
+			angle_t angle = READANGLE(*cp);
+			float anglef = FIXED_TO_FLOAT(AngleFixed(angle));
+
+			P_SetPlayerAngle(player, angle);
+
+			CV_CheaterWarning(targetPlayer, va("angle = %d%s", (int)anglef, M_Ftrim(anglef)));
 			break;
 		}
 

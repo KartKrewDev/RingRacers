@@ -603,6 +603,17 @@ void Command_Goto_f(void)
 			wayp->mobj->x, wayp->mobj->y, wayp->mobj->z);
 }
 
+void Command_Angle_f(void)
+{
+	const float anglef = atof(COM_Argv(1));
+	const angle_t angle = FixedAngle(FLOAT_TO_FIXED(anglef));
+
+	REQUIRE_CHEATS;
+	REQUIRE_INLEVEL;
+
+	D_Cheat(consoleplayer, CHEAT_ANGLE, angle);
+}
+
 //
 // OBJECTPLACE (and related variables)
 //
