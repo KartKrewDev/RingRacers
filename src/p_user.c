@@ -2207,14 +2207,6 @@ static void P_UpdatePlayerAngle(player_t *player)
 		// With a full slam on the analog stick, how far could we steer in either direction?
 		INT16 steeringRight =  K_UpdateSteeringValue(player->steering, KART_FULLTURN);
 		INT16 steeringLeft =  K_UpdateSteeringValue(player->steering, -KART_FULLTURN);
-		
-		// Let the player kick out strongly when releasing MTs.
-		if (player->pflags & PF_DRIFTEND && !(steeringRight == 0 && steeringLeft == 0))
-		{
-			steeringRight = KART_FULLTURN;
-			steeringLeft = -KART_FULLTURN;
-		}
-		
 		angle_t maxTurnRight = K_GetKartTurnValue(player, steeringRight) << TICCMD_REDUCE;
 		angle_t maxTurnLeft = K_GetKartTurnValue(player, steeringLeft) << TICCMD_REDUCE;
 
