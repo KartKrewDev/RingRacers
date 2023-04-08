@@ -2713,39 +2713,41 @@ void R_AddSprites(sector_t *sec, INT32 lightlevel)
 //
 static void R_SortVisSprites(vissprite_t* vsprsortedhead, UINT32 start, UINT32 end)
 {
-	UINT32       i, linkedvissprites = 0;
+	UINT32       i, count = 0;
 	vissprite_t *ds, *dsprev, *dsnext, *dsfirst;
 	vissprite_t *best = NULL;
 	vissprite_t  unsorted;
 	fixed_t      bestscale;
 	INT32        bestdispoffset;
 
-	unsorted.next = unsorted.prev = &unsorted;
+	dsfirst = &unsorted;
+	dsprev = dsfirst;
+	dsnext = dsfirst;
 
-	dsfirst = R_GetVisSprite(start);
+	I_Assert(start <= end);
 
-	// The first's prev and last's next will be set to
-	// nonsense, but are fixed in a moment
-	for (i = start, dsnext = dsfirst, ds = NULL; i < end; i++)
+	for (i = start; i < end; ++i)
 	{
-		dsprev = ds;
-		ds = dsnext;
-		if (i < end - 1) dsnext = R_GetVisSprite(i + 1);
+		ds = R_GetVisSprite(i);
 
-		ds->next = dsnext;
-		ds->prev = dsprev;
-		ds->linkdraw = NULL;
+		// Do not include this sprite, since it is completely obscured
+		if (ds->cut & SC_CULL)
+		{
+			continue;
+		}
+
+		dsnext = ds;
+		dsnext->linkdraw = NULL;
+
+		dsprev->next = dsnext;
+		dsnext->prev = dsprev;
+		dsprev = dsnext;
+
+		count++;
 	}
 
-	// Fix first and last. ds still points to the last one after the loop
-	dsfirst->prev = &unsorted;
-	unsorted.next = dsfirst;
-	if (ds)
-	{
-		ds->next = &unsorted;
-		ds->linkdraw = NULL;
-	}
-	unsorted.prev = ds;
+	dsnext->next = dsfirst;
+	dsfirst->prev = dsnext;
 
 	// bundle linkdraw
 	for (ds = unsorted.prev; ds != &unsorted; ds = ds->prev)
@@ -2791,7 +2793,7 @@ static void R_SortVisSprites(vissprite_t* vsprsortedhead, UINT32 start, UINT32 e
 		// remove from chain
 		ds->next->prev = ds->prev;
 		ds->prev->next = ds->next;
-		linkedvissprites++;
+		count--;
 
 		if (dsfirst != &unsorted)
 		{
@@ -2820,7 +2822,7 @@ static void R_SortVisSprites(vissprite_t* vsprsortedhead, UINT32 start, UINT32 e
 
 	// pull the vissprites out by scale
 	vsprsortedhead->next = vsprsortedhead->prev = vsprsortedhead;
-	for (i = start; i < end-linkedvissprites; i++)
+	for (i = 0; i < count; i++)
 	{
 		bestscale = bestdispoffset = INT32_MAX;
 		for (ds = unsorted.next; ds != &unsorted; ds = ds->next)
@@ -3265,6 +3267,7 @@ void R_ClipVisSprite(vissprite_t *spr, INT32 x1, INT32 x2, portal_t* portal)
 	fixed_t		scale;
 	fixed_t		lowscale;
 	INT32		silhouette;
+	INT32		xclip;
 
 	if ((spr->renderflags & RF_ALWAYSONTOP) || cv_debugrender_spriteclip.value)
 	{
@@ -3447,7 +3450,7 @@ void R_ClipVisSprite(vissprite_t *spr, INT32 x1, INT32 x2, portal_t* portal)
 	// all clipping has been performed, so store the values - what, did you think we were drawing them NOW?
 
 	// check for unclipped columns
-	for (x = x1; x <= x2; x++)
+	for (xclip = x = x1; x <= x2; x++)
 	{
 		if (spr->clipbot[x] == CLIP_UNDEF)
 			spr->clipbot[x] = (INT16)viewheight;
@@ -3455,9 +3458,17 @@ void R_ClipVisSprite(vissprite_t *spr, INT32 x1, INT32 x2, portal_t* portal)
 		if (spr->cliptop[x] == CLIP_UNDEF)
 			//Fab : 26-04-98: was -1, now clips against console bottom
 			spr->cliptop[x] = (INT16)con_clipviewtop;
+
+		// Sprite is completely above or below clip plane
+		if (spr->szt >= spr->clipbot[x] || spr->sz <= spr->cliptop[x])
+			xclip++;
 	}
 
-	if (portal)
+	if (xclip == x)
+	{
+		spr->cut |= SC_CULL; // completely skip this sprite going forward
+	}
+	else if (portal)
 	{
 		INT32 start_index = max(portal->start, x1);
 		INT32 end_index = min(portal->start + portal->end - portal->start, x2);
