@@ -9214,8 +9214,10 @@ static void K_KartDrift(player_t *player, boolean onground)
 	{
 		// Stop drifting
 		player->drift = player->driftcharge = player->aizdriftstrat = 0;
-		player->sliptideZip = 0;
 		player->pflags &= ~(PF_BRAKEDRIFT|PF_GETSPARKS);
+		// And take away wavedash properties: advanced cornering demands advanced finesse
+		player->sliptideZip = 0;
+		player->sliptideZipBoost = 0;
 	}
 	else if ((player->pflags & PF_DRIFTINPUT) && player->drift != 0)
 	{
