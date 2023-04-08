@@ -2032,6 +2032,7 @@ void D_Cheat(INT32 playernum, INT32 cheat, ...)
 			break;
 
 		case CHEAT_RELATIVE_TELEPORT:
+		case CHEAT_TELEPORT:
 			COPY(WRITEFIXED, fixed_t);
 			COPY(WRITEFIXED, fixed_t);
 			COPY(WRITEFIXED, fixed_t);
@@ -5699,7 +5700,8 @@ static void Got_Cheat(UINT8 **cp, INT32 playernum)
 			break;
 		}
 
-		case CHEAT_RELATIVE_TELEPORT: {
+		case CHEAT_RELATIVE_TELEPORT:
+		case CHEAT_TELEPORT: {
 			fixed_t x = READFIXED(*cp);
 			fixed_t y = READFIXED(*cp);
 			fixed_t z = READFIXED(*cp);
@@ -5714,10 +5716,17 @@ static void Got_Cheat(UINT8 **cp, INT32 playernum)
 			if (!P_MobjWasRemoved(player->mo))
 			{
 				P_MapStart();
-				P_SetOrigin(player->mo,
-						player->mo->x + x,
-						player->mo->y + y,
-						player->mo->z + z);
+				if (cheat == CHEAT_RELATIVE_TELEPORT)
+				{
+					P_SetOrigin(player->mo,
+							player->mo->x + x,
+							player->mo->y + y,
+							player->mo->z + z);
+				}
+				else
+				{
+					P_SetOrigin(player->mo, x, y, z);
+				}
 				P_MapEnd();
 
 				S_StartSound(player->mo, sfx_mixup);
@@ -5727,7 +5736,10 @@ static void Got_Cheat(UINT8 **cp, INT32 playernum)
 			strlcpy(t[1], M_Ftrim(f[1]), sizeof t[1]);
 			strlcpy(t[2], M_Ftrim(f[2]), sizeof t[2]);
 
-			CV_CheaterWarning(targetPlayer, va("relative teleport by %d%s, %d%s, %d%s",
+			CV_CheaterWarning(targetPlayer, va("%s %d%s, %d%s, %d%s",
+						cheat == CHEAT_RELATIVE_TELEPORT
+						? "relative teleport by"
+						: "teleport to",
 						(int)f[0], t[0], (int)f[1], t[1], (int)f[2], t[2]));
 			break;
 		}
