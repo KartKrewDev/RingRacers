@@ -5805,6 +5805,8 @@ static void CL_SendClientCmd(void)
 		{
 			// Gentlemens' ping.
 			lagDelay = min(lowest_lag, MAXGENTLEMENDELAY);
+			if (server) // Clients have to wait for the gamestate to make it back. Servers don't!
+				lagDelay *= 2; // Simulate the HELLFUCK NIGHTMARE of a complete round trip.
 		}
 
 		packetsize = sizeof (clientcmd_pak);
