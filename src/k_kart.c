@@ -9207,6 +9207,7 @@ static void K_KartDrift(player_t *player, boolean onground)
 	{
 		// Stop drifting
 		player->drift = player->driftcharge = player->aizdriftstrat = 0;
+		player->sliptideZip = 0;
 		player->pflags &= ~(PF_BRAKEDRIFT|PF_GETSPARKS);
 	}
 	else if ((player->pflags & PF_DRIFTINPUT) && player->drift != 0)
