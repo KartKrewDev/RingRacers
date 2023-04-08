@@ -9693,6 +9693,8 @@ boolean K_PlayerEBrake(player_t *player)
 
 SINT8 K_Sliptiding(player_t *player)
 {
+	if (player->mo->eflags & MFE_UNDERWATER)
+		return 0;
 	return player->drift ? 0 : player->aizdriftstrat;
 }
 
