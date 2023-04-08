@@ -31,7 +31,6 @@ typedef enum
 extern struct grandprixinfo
 {
 	boolean gp;				///< If true, then we are in a Grand Prix.
-	UINT8 roundnum;			///< Round number. If 0, this is a single session from the warp command.
 	cupheader_t *cup;		///< Which cup are we playing?
 	UINT8 gamespeed;		///< Copy of gamespeed, just to make sure you can't cheat it with cvars
 	boolean encore;			///< Ditto, but for encore mode

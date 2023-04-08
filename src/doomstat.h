@@ -182,8 +182,7 @@ extern boolean multiplayer;
 extern UINT8 splitscreen;
 extern int r_splitscreen;
 
-extern boolean fromlevelselect;
-extern boolean forceresetplayers, deferencoremode;
+extern boolean forceresetplayers, deferencoremode, forcespecialstage;
 
 // ========================================
 // Internal parameters for sound rendering.

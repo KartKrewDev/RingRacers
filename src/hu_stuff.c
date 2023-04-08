@@ -2482,23 +2482,25 @@ static void HU_DrawRankings(void)
 		V_DrawString(4, 188, hilicol|V_SNAPTOBOTTOM|V_SNAPTOLEFT, gametypes[gametype]->name);
 
 	// Left hand side
-	if (grandprixinfo.gp == true)
+	if (grandprixinfo.gp == true && grandprixinfo.eventmode != GPEVENT_NONE)
 	{
 		const char *roundstr = NULL;
 		V_DrawCenteredString(64, 8, 0, "ROUND");
 		switch (grandprixinfo.eventmode)
 		{
-			case GPEVENT_BONUS:
-				roundstr = "BONUS";
-				break;
 			case GPEVENT_SPECIAL:
 				roundstr = "SPECIAL";
 				break;
 			default:
-				roundstr = va("%d", grandprixinfo.roundnum);
+				roundstr = "BONUS";
 				break;
 		}
 		V_DrawCenteredString(64, 16, hilicol, roundstr);
+	}
+	else if (roundqueue.size > 0)
+	{
+		V_DrawCenteredString(64, 8, 0, "ROUND");
+		V_DrawCenteredString(64, 16, hilicol, va("%d", roundqueue.roundnum));
 	}
 	else if ((gametyperules & GTR_TIMELIMIT) && timelimitintics > 0)
 	{

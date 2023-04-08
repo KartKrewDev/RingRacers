@@ -567,6 +567,8 @@ INT16 numgametypes = GT_FIRSTFREESLOT;
 
 boolean forceresetplayers = false;
 boolean deferencoremode = false;
+boolean forcespecialstage = false;
+
 UINT8 splitscreen = 0;
 INT32 adminplayers[MAXPLAYERS];
 
@@ -2541,42 +2543,27 @@ INT32 mapchangepending = 0;
   * 63 old events will get reexecuted, with ridiculous results. Just don't do
   * it (without setting delay to 1, which is the current solution).
   *
-  * \param mapnum          Map number to change to.
-  * \param gametype        Gametype to switch to.
-  * \param pencoremode     Is this 'Encore Mode'?
-  * \param resetplayers    1 to reset player scores and lives and such, 0 not to.
-  * \param delay           Determines how the function will be executed: 0 to do
-  *                        it all right now (must not be done from a menu), 1 to
-  *                        do step one and prepare step two, 2 to do step two.
-  * \param skipprecutscene To skip the precutscence or not?
+  * \param mapnum             Map number to change to.
+  * \param gametype           Gametype to switch to.
+  * \param pencoremode        Is this 'Encore Mode'?
+  * \param presetplayers      1 to reset player scores and lives and such, 0 not to.
+  * \param delay              Determines how the function will be executed: 0 to do
+  *                           it all right now (must not be done from a menu), 1 to
+  *                           do step one and prepare step two, 2 to do step two.
+  * \param skipprecutscene    To skip the precutscence or not?
+  * \param pforcespecialstage For certain contexts, forces a special stage.
   * \sa D_GameTypeChanged, Command_Map_f
   * \author Graue <graue@oceanbase.org>
   */
-void D_MapChange(INT32 mapnum, INT32 newgametype, boolean pencoremode, boolean resetplayers, INT32 delay, boolean skipprecutscene, boolean FLS)
+void D_MapChange(INT32 mapnum, INT32 newgametype, boolean pencoremode, boolean presetplayers, INT32 delay, boolean skipprecutscene, boolean pforcespecialstage)
 {
-	static char buf[2+MAX_WADPATH+1+4];
+	static char buf[1+1+1+1+1+2+4];
 	static char *buf_p = buf;
 	// The supplied data are assumed to be good.
 	I_Assert(delay >= 0 && delay <= 2);
 
-	/*
-	if (mapnum != -1)
-	{
-		CV_SetValue(&cv_nextmap, mapnum);
-	}
-	*/
-
-	CONS_Debug(DBG_GAMELOGIC, "Map change: mapnum=%d gametype=%d pencoremode=%d resetplayers=%d delay=%d skipprecutscene=%d\n",
-	           mapnum, newgametype, pencoremode, resetplayers, delay, skipprecutscene);
-
-	if ((netgame || multiplayer) && (grandprixinfo.gp != false))
-		FLS = false;
-
-	// Too lazy to change the input value for every instance of this function.......
-	if (grandprixinfo.gp == true)
-	{
-		pencoremode = grandprixinfo.encore;
-	}
+	CONS_Debug(DBG_GAMELOGIC, "Map change: mapnum=%d gametype=%d pencoremode=%d presetplayers=%d delay=%d skipprecutscene=%d pforcespecialstage = %d\n",
+	           mapnum, newgametype, pencoremode, presetplayers, delay, skipprecutscene, pforcespecialstage);
 
 	if (delay != 2)
 	{
@@ -2585,13 +2572,18 @@ void D_MapChange(INT32 mapnum, INT32 newgametype, boolean pencoremode, boolean r
 		buf_p = buf;
 		if (pencoremode)
 			flags |= 1;
-		if (!resetplayers)
+		if (presetplayers)
 			flags |= 1<<1;
 		if (skipprecutscene)
 			flags |= 1<<2;
-		if (FLS)
+		if (pforcespecialstage)
 			flags |= 1<<3;
 		WRITEUINT8(buf_p, flags);
+
+		// roundqueue state
+		WRITEUINT8(buf_p, roundqueue.position);
+		WRITEUINT8(buf_p, roundqueue.size);
+		WRITEUINT8(buf_p, roundqueue.roundnum);
 
 		// new gametype value
 		WRITEUINT8(buf_p, newgametype);
@@ -2784,6 +2776,7 @@ static void Command_Map_f(void)
 	size_t option_skill;
 	const char *gametypename;
 	boolean newresetplayers;
+	boolean newforcespecialstage;
 
 	boolean usingcheats;
 	boolean ischeating;
@@ -2809,6 +2802,7 @@ static void Command_Map_f(void)
 	option_encore   =   COM_CheckPartialParm("-e");
 	option_skill    =   COM_CheckPartialParm("-s");
 	newresetplayers = ! COM_CheckParm("-noresetplayers");
+	newforcespecialstage = COM_CheckParm("-forcespecialstage");
 
 	usingcheats = CV_CheatsEnabled();
 	ischeating = (!(netgame || multiplayer)) || (!newresetplayers);
@@ -2946,7 +2940,7 @@ static void Command_Map_f(void)
 	// don't use a gametype the map doesn't support
 	if (cht_debug || option_force || cv_skipmapcheck.value)
 	{
-		fromlevelselect = false; // The player wants us to trek on anyway.  Do so.
+		// The player wants us to trek on anyway.  Do so.
 	}
 	else
 	{
@@ -2960,12 +2954,6 @@ static void Command_Map_f(void)
 			Z_Free(realmapname);
 			Z_Free(mapname);
 			return;
-		}
-		else
-		{
-			fromlevelselect =
-				( netgame || multiplayer ) &&
-				grandprixinfo.gp != false;
 		}
 	}
 
@@ -3011,28 +2999,15 @@ static void Command_Map_f(void)
 			}
 		}
 
-		grandprixinfo.encore = newencoremode;
-
 		grandprixinfo.gp = true;
-		grandprixinfo.roundnum = 0;
-		grandprixinfo.cup = NULL;
 		grandprixinfo.wonround = false;
-		grandprixinfo.initalize = true;
-
-		grandprixinfo.eventmode = GPEVENT_NONE;
-
-		if (gametypes[newgametype]->rules & (GTR_BOSS|GTR_CATCHER))
-		{
-			grandprixinfo.eventmode = GPEVENT_SPECIAL;
-		}
-		else if (newgametype != GT_RACE)
-		{
-			grandprixinfo.eventmode = GPEVENT_BONUS;
-		}
 
 		if (!Playing())
 		{
 			UINT8 ssplayers = cv_splitplayers.value-1;
+
+			grandprixinfo.cup = NULL;
+			grandprixinfo.initalize = true;
 
 			multiplayer = true;
 			restoreMenu = NULL;
@@ -3050,7 +3025,7 @@ static void Command_Map_f(void)
 		}
 	}
 
-	D_MapChange(newmapnum, newgametype, newencoremode, newresetplayers, 0, false, fromlevelselect);
+	D_MapChange(newmapnum, newgametype, newencoremode, newresetplayers, 0, false, newforcespecialstage);
 
 	Z_Free(realmapname);
 }
@@ -3065,8 +3040,8 @@ static void Command_Map_f(void)
 static void Got_Mapcmd(UINT8 **cp, INT32 playernum)
 {
 	UINT8 flags;
-	INT32 resetplayer = 1, lastgametype;
-	UINT8 skipprecutscene, FLS;
+	INT32 presetplayer = 1, lastgametype;
+	UINT8 skipprecutscene, pforcespecialstage;
 	boolean pencoremode;
 	INT16 mapnumber;
 
@@ -3087,7 +3062,15 @@ static void Got_Mapcmd(UINT8 **cp, INT32 playernum)
 
 	pencoremode = ((flags & 1) != 0);
 
-	resetplayer = ((flags & (1<<1)) == 0);
+	presetplayer = ((flags & (1<<1)) != 0);
+
+	skipprecutscene = ((flags & (1<<2)) != 0);
+
+	pforcespecialstage = ((flags & (1<<3)) != 0);
+
+	roundqueue.position = READUINT8(*cp);
+	roundqueue.size = READUINT8(*cp);
+	roundqueue.roundnum = READUINT8(*cp);
 
 	lastgametype = gametype;
 	gametype = READUINT8(*cp);
@@ -3101,11 +3084,28 @@ static void Got_Mapcmd(UINT8 **cp, INT32 playernum)
 	if (!(gametyperules & GTR_ENCORE))
 		pencoremode = false;
 
-	skipprecutscene = ((flags & (1<<2)) != 0);
-
-	FLS = ((flags & (1<<3)) != 0);
-
 	mapnumber = READINT16(*cp);
+
+	// Handle some Grand Prix state.
+	if (grandprixinfo.gp)
+	{
+		boolean caughtretry = (gametype == lastgametype
+				&& mapnumber == gamemap);
+		if (pforcespecialstage // Forced.
+			|| (caughtretry && grandprixinfo.eventmode == GPEVENT_SPECIAL) // Catch retries of forced.
+			|| (gametyperules & (GTR_BOSS|GTR_CATCHER))) // Conventional rules.
+		{
+			grandprixinfo.eventmode = GPEVENT_SPECIAL;
+		}
+		else if (gametype != GT_RACE)
+		{
+			grandprixinfo.eventmode = GPEVENT_BONUS;
+		}
+		else
+		{
+			grandprixinfo.eventmode = GPEVENT_NONE;
+		}
+	}
 
 	if (netgame)
 		P_ClearRandom(READUINT32(*cp));
@@ -3113,23 +3113,17 @@ static void Got_Mapcmd(UINT8 **cp, INT32 playernum)
 	if (!skipprecutscene)
 	{
 		DEBFILE(va("Warping to %s [resetplayer=%d lastgametype=%d gametype=%d cpnd=%d]\n",
-			G_BuildMapName(mapnumber), resetplayer, lastgametype, gametype, chmappending));
+			G_BuildMapName(mapnumber), presetplayer, lastgametype, gametype, chmappending));
 		CON_LogMessage(M_GetText("Speeding off to level...\n"));
 	}
 
 	if (demo.playback && !demo.timing)
 		precache = false;
 
-	if (resetplayer && !FLS)
-	{
-		emeralds = 0;
-		memset(&luabanks, 0, sizeof(luabanks));
-	}
-
 	demo.savemode = (cv_recordmultiplayerdemos.value == 2) ? DSM_WILLAUTOSAVE : DSM_NOTSAVING;
 	demo.savebutton = 0;
 
-	G_InitNew(pencoremode, mapnumber, resetplayer, skipprecutscene, FLS);
+	G_InitNew(pencoremode, mapnumber, presetplayer, skipprecutscene);
 	if (demo.playback && !demo.timing)
 		precache = true;
 	if (demo.timing)

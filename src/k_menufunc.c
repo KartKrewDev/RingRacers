@@ -32,7 +32,6 @@ I_mutex k_menu_mutex;
 #endif
 
 boolean menuactive = false;
-boolean fromlevelselect = false;
 
 // current menudef
 menu_t *currentMenu = &MAIN_ProfilesDef;

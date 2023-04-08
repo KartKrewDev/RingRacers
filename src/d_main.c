@@ -1021,8 +1021,9 @@ void D_ClearState(void)
 	modeattacking = ATTACKING_NONE;
 	marathonmode = 0;
 
-	// Reset GP
+	// Reset GP and roundqueue
 	memset(&grandprixinfo, 0, sizeof(struct grandprixinfo));
+	memset(&roundqueue, 0, sizeof(struct roundqueue));
 
 	// empty maptol so mario/etc sounds don't play in sound test when they shouldn't
 	maptol = 0;
@@ -1740,13 +1741,12 @@ void D_SRB2Main(void)
 
 				// Start up a "minor" grand prix session
 				memset(&grandprixinfo, 0, sizeof(struct grandprixinfo));
+				memset(&roundqueue, 0, sizeof(struct roundqueue));
 
 				grandprixinfo.gamespeed = KARTSPEED_NORMAL;
-				grandprixinfo.encore = false;
 				grandprixinfo.masterbots = false;
 
 				grandprixinfo.gp = true;
-				grandprixinfo.roundnum = 0;
 				grandprixinfo.cup = NULL;
 				grandprixinfo.wonround = false;
 
@@ -1996,11 +1996,6 @@ void D_SRB2Main(void)
 						G_SetGametype(newgametype);
 						D_GameTypeChanged(j);
 					}
-
-					if (gametyperules & (GTR_BOSS|GTR_CATCHER))
-						grandprixinfo.eventmode = GPEVENT_SPECIAL;
-					else if (gametype != GT_RACE)
-						grandprixinfo.eventmode = GPEVENT_BONUS;
 
 					multiplayer = true;
 				}
