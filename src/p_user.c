@@ -2206,8 +2206,16 @@ static void P_UpdatePlayerAngle(player_t *player)
 	{
 		// With a full slam on the analog stick, how far could we steer in either direction?
 		INT16 steeringRight =  K_UpdateSteeringValue(player->steering, KART_FULLTURN);
-		angle_t maxTurnRight = K_GetKartTurnValue(player, steeringRight) << TICCMD_REDUCE;
 		INT16 steeringLeft =  K_UpdateSteeringValue(player->steering, -KART_FULLTURN);
+		
+		// Let the player kick out strongly when releasing MTs.
+		if (player->pflags & PF_DRIFTEND && !(steeringRight == 0 && steeringLeft == 0))
+		{
+			steeringRight = KART_FULLTURN;
+			steeringLeft = -KART_FULLTURN;
+		}
+		
+		angle_t maxTurnRight = K_GetKartTurnValue(player, steeringRight) << TICCMD_REDUCE;
 		angle_t maxTurnLeft = K_GetKartTurnValue(player, steeringLeft) << TICCMD_REDUCE;
 
 		// Grab local camera angle from ticcmd. Where do we actually want to go?
@@ -2221,15 +2229,12 @@ static void P_UpdatePlayerAngle(player_t *player)
 		angle_t leniency = (2*ANG1/3) * min(player->cmd.latency, 6);
 		// Don't force another turning tic, just give them the desired angle!
 
-		if (targetDelta == angleChange || player->pflags & PF_DRIFTEND || K_Sliptiding(player) || (maxTurnRight == 0 && maxTurnLeft == 0))
+		if (targetDelta == angleChange ||  K_Sliptiding(player) || (maxTurnRight == 0 && maxTurnLeft == 0))
 		{
-			// We are where we need to be.
-			// ...Or we aren't, but shouldn't be able to steer.
+			// Either we're dead on, we can't steer, or we're in a special handling state.
+			// Stuff like sliptiding requires some blind-faith steering:
+			// if a camera correction stops our turn input, the sliptide randomly fails!
 			player->steering = targetsteering;
-			// Alternatively, while in DRIFTEND we want to trust inputs for a bit, not camera.
-			// The game client doesn't know we're DRIFTEND until after a response gets back,
-			// so we momentarily ignore the camera angle and let the server trust our inputs instead.
-			// That way, even if you're steering blind, you get the intended "kick-out" effect.
 		}
 		else
 		{
