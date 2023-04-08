@@ -160,6 +160,7 @@ INT32 *blockmaplump; // Big blockmap
 fixed_t bmaporgx, bmaporgy;
 // for thing chains
 mobj_t **blocklinks;
+precipmobj_t **precipblocklinks;
 
 // REJECT
 // For fast sight rejection.
@@ -882,7 +883,6 @@ static void P_InitializeSector(sector_t *ss)
 
 	ss->floorspeed = ss->ceilspeed = 0;
 
-	ss->preciplist = NULL;
 	ss->touching_preciplist = NULL;
 
 	ss->f_slope = NULL;
@@ -3547,6 +3547,10 @@ static boolean P_LoadBlockMap(UINT8 *data, size_t count)
 	// haleyjd 2/22/06: setup polyobject blockmap
 	count = sizeof(*polyblocklinks) * bmapwidth * bmapheight;
 	polyblocklinks = Z_Calloc(count, PU_LEVEL, NULL);
+
+	count = sizeof (*precipblocklinks)* bmapwidth*bmapheight;
+	precipblocklinks = Z_Calloc(count, PU_LEVEL, NULL);
+
 	return true;
 }
 
@@ -3800,6 +3804,9 @@ static void P_CreateBlockMap(void)
 		// haleyjd 2/22/06: setup polyobject blockmap
 		count = sizeof(*polyblocklinks) * bmapwidth * bmapheight;
 		polyblocklinks = Z_Calloc(count, PU_LEVEL, NULL);
+
+		count = sizeof (*precipblocklinks)* bmapwidth*bmapheight;
+		precipblocklinks = Z_Calloc(count, PU_LEVEL, NULL);
 	}
 }
 

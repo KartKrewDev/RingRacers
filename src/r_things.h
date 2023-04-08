@@ -67,6 +67,7 @@ fixed_t R_GetShadowZ(mobj_t *thing, pslope_t **shadowslope);
 
 //SoM: 6/5/2000: Light sprites correctly!
 void R_AddSprites(sector_t *sec, INT32 lightlevel);
+void R_AddPrecipitationSprites(void);
 void R_InitSprites(void);
 void R_ClearSprites(void);
 
@@ -78,8 +79,7 @@ boolean R_ThingVisible (mobj_t *thing);
 boolean R_ThingWithinDist (mobj_t *thing,
 		fixed_t        draw_dist);
 
-boolean R_PrecipThingVisible (precipmobj_t *precipthing,
-		fixed_t precip_draw_dist);
+boolean R_PrecipThingVisible (precipmobj_t *precipthing);
 
 boolean R_ThingHorizontallyFlipped (mobj_t *thing);
 boolean R_ThingVerticallyFlipped (mobj_t *thing);

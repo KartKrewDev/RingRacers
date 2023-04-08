@@ -69,6 +69,7 @@ struct hwdriver_s hwdriver;
 static void HWR_AddSprites(sector_t *sec);
 static void HWR_ProjectSprite(mobj_t *thing);
 #ifdef HWPRECIP
+static void HWR_AddPrecipitationSprites(void);
 static void HWR_ProjectPrecipitationSprite(precipmobj_t *thing);
 #endif
 static void HWR_ProjectBoundingBox(mobj_t *thing);
@@ -5052,9 +5053,6 @@ static UINT8 sectorlight;
 static void HWR_AddSprites(sector_t *sec)
 {
 	mobj_t *thing;
-#ifdef HWPRECIP
-	precipmobj_t *precipthing;
-#endif
 	fixed_t limit_dist;
 
 	// BSP is traversed by subsector.
@@ -5085,19 +5083,45 @@ static void HWR_AddSprites(sector_t *sec)
 			HWR_ProjectBoundingBox(thing);
 		}
 	}
+}
 
 #ifdef HWPRECIP
+// --------------------------------------------------------------------------
+// HWR_AddPrecipitationSprites
+// This renders through the blockmap instead of BSP to avoid
+// iterating a huge amount of precipitation sprites in sectors
+// that are beyond drawdist.
+// --------------------------------------------------------------------------
+static void HWR_AddPrecipitationSprites(void)
+{
+	const fixed_t drawdist = cv_drawdist_precip.value * mapobjectscale;
+
+	INT32 xl, xh, yl, yh, bx, by;
+	precipmobj_t *th;
+
 	// no, no infinite draw distance for precipitation. this option at zero is supposed to turn it off
-	if ((limit_dist = (fixed_t)cv_drawdist_precip.value * mapobjectscale))
+	if (drawdist == 0)
 	{
-		for (precipthing = sec->preciplist; precipthing; precipthing = precipthing->snext)
+		return;
+	}
+
+	R_GetRenderBlockMapDimensions(drawdist, &xl, &xh, &yl, &yh);
+
+	for (bx = xl; bx <= xh; bx++)
+	{
+		for (by = yl; by <= yh; by++)
 		{
-			if (R_PrecipThingVisible(precipthing, limit_dist))
-				HWR_ProjectPrecipitationSprite(precipthing);
+			for (th = precipblocklinks[(by * bmapwidth) + bx]; th; th = th->bnext)
+			{
+				if (R_PrecipThingVisible(th))
+				{
+					HWR_ProjectPrecipitationSprite(th);
+				}
+			}
 		}
 	}
-#endif
 }
+#endif
 
 // --------------------------------------------------------------------------
 // HWR_ProjectSprite
@@ -6314,6 +6338,10 @@ static void HWR_RenderViewpoint(player_t *player, boolean drawSkyTexture, boolea
 		HWR_StartBatching();
 
 	HWR_RenderBSPNode((INT32)numnodes-1);
+
+#ifdef HWPRECIP
+	HWR_AddPrecipitationSprites();
+#endif
 
 #ifndef NEWCLIP
 	// Make a viewangle int so we can render things based on mouselook

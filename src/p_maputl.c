@@ -1006,13 +1006,43 @@ void P_UnsetThingPosition(mobj_t *thing)
 
 void P_UnsetPrecipThingPosition(precipmobj_t *thing)
 {
-	precipmobj_t **sprev = thing->sprev;
-	precipmobj_t  *snext = thing->snext;
-	if ((*sprev = snext) != NULL)  // unlink from sector list
-		snext->sprev = sprev;
+	precipmobj_t **bprev = thing->bprev;
+	precipmobj_t  *bnext = thing->bnext;
+
+	if (bprev && (*bprev = bnext) != NULL)  // unlink from block map
+		bnext->bprev = bprev;
 
 	precipsector_list = thing->touching_sectorlist;
 	thing->touching_sectorlist = NULL; //to be restored by P_SetPrecipThingPosition
+}
+
+static void P_LinkToBlockMap(mobj_t *thing, mobj_t **bmap)
+{
+	const INT32 blockx = (unsigned)(thing->x - bmaporgx) >> MAPBLOCKSHIFT;
+	const INT32 blocky = (unsigned)(thing->y - bmaporgy) >> MAPBLOCKSHIFT;
+
+	if (blockx >= 0 && blockx < bmapwidth
+		&& blocky >= 0 && blocky < bmapheight)
+	{
+		// killough 8/11/98: simpler scheme using
+		// pointer-to-pointer prev pointers --
+		// allows head nodes to be treated like everything else
+
+		mobj_t **link = &bmap[(blocky * bmapwidth) + blockx];
+		mobj_t *bnext = *link;
+
+		thing->bnext = bnext;
+
+		if (bnext != NULL)
+			bnext->bprev = &thing->bnext;
+
+		thing->bprev = link;
+		*link = thing;
+	}
+	else // thing is off the map
+	{
+		thing->bnext = NULL, thing->bprev = NULL;
+	}
 }
 
 //
@@ -1071,24 +1101,7 @@ void P_SetThingPosition(mobj_t *thing)
 	if (!(thing->flags & MF_NOBLOCKMAP))
 	{
 		// inert things don't need to be in blockmap
-		const INT32 blockx = (unsigned)(thing->x - bmaporgx)>>MAPBLOCKSHIFT;
-		const INT32 blocky = (unsigned)(thing->y - bmaporgy)>>MAPBLOCKSHIFT;
-		if (blockx >= 0 && blockx < bmapwidth
-			&& blocky >= 0 && blocky < bmapheight)
-		{
-			// killough 8/11/98: simpler scheme using
-			// pointer-to-pointer prev pointers --
-			// allows head nodes to be treated like everything else
-
-			mobj_t **link = &blocklinks[blocky*bmapwidth + blockx];
-			mobj_t *bnext = *link;
-			if ((thing->bnext = bnext) != NULL)
-				bnext->bprev = &thing->bnext;
-			thing->bprev = link;
-			*link = thing;
-		}
-		else // thing is off the map
-			thing->bnext = NULL, thing->bprev = NULL;
+		P_LinkToBlockMap(thing, blocklinks);
 	}
 
 	// Allows you to 'step' on a new linedef exec when the previous
@@ -1143,18 +1156,15 @@ void P_SetUnderlayPosition(mobj_t *thing)
 
 void P_SetPrecipitationThingPosition(precipmobj_t *thing)
 {
-	subsector_t *ss = thing->subsector = R_PointInSubsector(thing->x, thing->y);
-
-	precipmobj_t **link = &ss->sector->preciplist;
-	precipmobj_t *snext = *link;
-	if ((thing->snext = snext) != NULL)
-		snext->sprev = &thing->snext;
-	thing->sprev = link;
-	*link = thing;
+	thing->subsector = R_PointInSubsector(thing->x, thing->y);
 
 	P_CreatePrecipSecNodeList(thing, thing->x, thing->y);
 	thing->touching_sectorlist = precipsector_list; // Attach to Thing's precipmobj_t
 	precipsector_list = NULL; // clear for next time
+
+	// NOTE: this works because bnext/bprev are at the same
+	// offsets in precipmobj_t and mobj_t
+	P_LinkToBlockMap((mobj_t*)thing, (mobj_t**)precipblocklinks);
 }
 
 //
