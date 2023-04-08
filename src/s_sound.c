@@ -1635,34 +1635,38 @@ void S_SoundTestPlay(void)
 
 	S_ChangeMusicInternal(soundtest.current->name[soundtest.currenttrack],
 		!soundtest.current->basenoloop[soundtest.currenttrack]);
-	S_ShowMusicCredit();
 
 	soundtest.currenttime = 0;
 	soundtest.sequencemaxtime = S_GetMusicLength();
+
+	if (soundtest.sequencemaxtime == 0)
+	{
+		S_SoundTestStop(); // This sets soundtest.privilegedrequest to false
+		return;
+	}
+
+	S_ShowMusicCredit();
 
 	// ensure default is always set
 	soundtest.sequencefadeout = 0;
 	soundtest.dosequencefadeout = false;
 
-	if (soundtest.sequencemaxtime)
+	// Does song have default loop?
+	if (soundtest.current->basenoloop[soundtest.currenttrack] == false)
 	{
-		// Does song have default loop?
-		if (soundtest.current->basenoloop[soundtest.currenttrack] == false)
+		if (soundtest.sequencemaxtime < 3*60*1000)
 		{
-			if (soundtest.sequencemaxtime < 3*60*1000)
-			{
-				// I'd personally like songs in sequence to last between 3 and 6 minutes.
-				const UINT32 loopduration = (soundtest.sequencemaxtime - S_GetMusicLoopPoint());
-				soundtest.sequencemaxtime += loopduration;
-			}
-
-			// Only fade out if we're the last track for this song.
-			soundtest.dosequencefadeout = (soundtest.currenttrack == soundtest.current->numtracks-1);
+			// I'd personally like songs in sequence to last between 3 and 6 minutes.
+			const UINT32 loopduration = (soundtest.sequencemaxtime - S_GetMusicLoopPoint());
+			soundtest.sequencemaxtime += loopduration;
 		}
 
-		// ms to TICRATE conversion
-		soundtest.sequencemaxtime = (TICRATE*soundtest.sequencemaxtime)/1000;
+		// Only fade out if we're the last track for this song.
+		soundtest.dosequencefadeout = (soundtest.currenttrack == soundtest.current->numtracks-1);
 	}
+
+	// ms to TICRATE conversion
+	soundtest.sequencemaxtime = (TICRATE*soundtest.sequencemaxtime)/1000;
 
 	soundtest.privilegedrequest = false;
 }
