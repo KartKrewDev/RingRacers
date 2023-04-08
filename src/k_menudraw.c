@@ -5997,15 +5997,15 @@ void M_DrawSoundTest(void)
 
 		titletext = soundtest.current->title;
 
-		V_DrawThinString(x, y, V_ALLOWLOWERCASE|V_6WIDTHSPACE, titletext);
+		V_DrawThinString(x+1, y, V_ALLOWLOWERCASE|V_6WIDTHSPACE, titletext);
 		if (soundtest.current->numtracks > 1)
-			V_DrawThinString(x, (y += 10), V_ALLOWLOWERCASE|V_6WIDTHSPACE, va("Track %c", 'A'+soundtest.currenttrack));
+			V_DrawThinString(x+1, (y += 10), V_ALLOWLOWERCASE|V_6WIDTHSPACE, va("Track %c", 'A'+soundtest.currenttrack));
 		if (soundtest.current->author)
-			V_DrawThinString(x, (y += 10), V_ALLOWLOWERCASE|V_6WIDTHSPACE, soundtest.current->author);
+			V_DrawThinString(x+1, (y += 10), V_ALLOWLOWERCASE|V_6WIDTHSPACE, soundtest.current->author);
 		if (soundtest.current->source)
-			V_DrawThinString(x, (y += 10), V_ALLOWLOWERCASE|V_6WIDTHSPACE, soundtest.current->source);
+			V_DrawThinString(x+1, (y += 10), V_ALLOWLOWERCASE|V_6WIDTHSPACE, soundtest.current->source);
 		if (soundtest.current->composers)
-			V_DrawThinString(x, (y += 10), V_ALLOWLOWERCASE|V_6WIDTHSPACE, soundtest.current->composers);
+			V_DrawThinString(x+1, (y += 10), V_ALLOWLOWERCASE|V_6WIDTHSPACE, soundtest.current->composers);
 	}
 	else
 	{
@@ -6013,9 +6013,9 @@ void M_DrawSoundTest(void)
 
 		titletext = "Sound Test";
 
-		V_DrawThinString(x, y, V_ALLOWLOWERCASE|V_6WIDTHSPACE, "Track ");
+		V_DrawThinString(x+1, y, V_ALLOWLOWERCASE|V_6WIDTHSPACE, "Track ");
 		V_DrawThinString(
-			x + V_ThinStringWidth("Track ", V_ALLOWLOWERCASE|V_6WIDTHSPACE),
+			x+1 + V_ThinStringWidth("Track ", V_ALLOWLOWERCASE|V_6WIDTHSPACE),
 			y,
 			V_6WIDTHSPACE,
 			va("%04X - %s", cv_soundtest.value, sfxstr)
@@ -6046,7 +6046,7 @@ void M_DrawSoundTest(void)
 		UINT32 exittime = soundtest.sequencemaxtime;
 		if (soundtest.dosequencefadeout == true)
 		{
-			exittime += 3*TICRATE;
+			exittime += SOUNDTEST_FADEOUTSECONDS*TICRATE;
 		}
 
 		V_DrawRightAlignedString(x + 272-1, 18+32+10, 0,
@@ -6141,12 +6141,31 @@ void M_DrawSoundTest(void)
 		else if (currentMenu->menuitems[i].mvar2 == stereospecial_vol) // Vol
 		{
 			consvar_t *voltoadjust = M_GetSoundTestVolumeCvar();
-			INT32 j, vol = 0;
+			INT32 j = 0, vol = 0;
 			const INT32 barheight = 22;
+			patch_t *knob = NULL;
+			INT32 knobflags = 0;
 
-			V_DrawFixedPatch((x+1) << FRACBITS, y << FRACBITS,
-				FRACUNIT, 0,
-				W_CachePatchName("STER_KNB", PU_CACHE),
+			if (i == itemOn)
+			{
+				if ((menucmd[pid].dpad_ud < 0 && (soundtest.menutick & 2)) || M_MenuConfirmPressed(pid))
+				{
+					knob = W_CachePatchName("STER_KNT", PU_CACHE);
+					knobflags = V_FLIP;
+					j = 24;
+				}
+				else if (menucmd[pid].dpad_ud > 0 && (soundtest.menutick & 2))
+				{
+					knob = W_CachePatchName("STER_KNT", PU_CACHE);
+				}
+			}
+
+			if (knob == NULL)
+				knob = W_CachePatchName("STER_KNB", PU_CACHE);
+
+			V_DrawFixedPatch((x+1+j) << FRACBITS, y << FRACBITS,
+				FRACUNIT, knobflags,
+				knob,
 				NULL
 			);
 
@@ -6184,7 +6203,7 @@ void M_DrawSoundTest(void)
 		{
 			if (i == itemOn)
 			{
-				if (menucmd[pid].dpad_ud < 0 || M_MenuConfirmHeld(pid))
+				if (menucmd[pid].dpad_ud < 0 || M_MenuConfirmPressed(pid))
 				{
 					y--;
 				}

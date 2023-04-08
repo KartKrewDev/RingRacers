@@ -196,6 +196,7 @@ struct musicdef_t
 	char *composers;
 	int volume;
 	int debug_volume;
+	boolean important;
 	musicdef_t *next;
 	soundtestsequence_t sequence;
 };
@@ -237,6 +238,7 @@ void S_SoundTestPlay(void);
 void S_SoundTestStop(void);
 void S_SoundTestTogglePause(void);
 void S_TickSoundTest(void);
+#define SOUNDTEST_FADEOUTSECONDS 5
 
 boolean S_PlaysimMusicDisabled(void);
 
@@ -246,6 +248,7 @@ void S_LoadMusicDefs(UINT16 wadnum);
 void S_InitMusicDefs(void);
 musicdef_t *S_FindMusicDef(const char *name, UINT8 *i);
 void S_ShowMusicCredit(void);
+void S_StopMusicCredit(void);
 
 //
 // Music Seeking

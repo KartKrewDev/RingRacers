@@ -34,6 +34,7 @@
 #include "k_menu.h" // M_PlayMenuJam
 #include "m_random.h" // P_RandomKey
 #include "i_time.h"
+#include "v_video.h" // V_ThinStringWidth
 
 #ifdef HW3SOUND
 // 3D Sound Interface
@@ -1480,7 +1481,8 @@ void S_PopulateSoundTestSequence(void)
 		S_InsertMapIntoSoundTestSequence(i, &tail);
 	}
 
-	// Finally, we insert all other musicdefstart at the head.
+	// Finally, we insert all important musicdefs at the  head,
+	// and all others at the tail.
 	// It's being added to the sequence in reverse order...
 	// but because musicdefstart is ALSO populated in reverse,
 	// the reverse of the reverse is the right way around!
@@ -1492,11 +1494,26 @@ void S_PopulateSoundTestSequence(void)
 			if (def->sequence.id == soundtest.sequence.id)
 				continue;
 
+			if (def->important == false)
+				continue;
+
 			def->sequence.id = soundtest.sequence.id;
 			def->sequence.map = NEXTMAP_INVALID;
 
 			def->sequence.next = soundtest.sequence.next;
 			soundtest.sequence.next = def;
+		}
+
+		for (def = musicdefstart; def; def = def->next)
+		{
+			if (def->sequence.id == soundtest.sequence.id)
+				continue;
+
+			def->sequence.id = soundtest.sequence.id;
+			def->sequence.map = NEXTMAP_INVALID;
+
+			def->sequence.next = *tail;
+			*tail = def;
 		}
 	}
 }
@@ -1618,29 +1635,38 @@ void S_SoundTestPlay(void)
 
 	S_ChangeMusicInternal(soundtest.current->name[soundtest.currenttrack],
 		!soundtest.current->basenoloop[soundtest.currenttrack]);
-	S_ShowMusicCredit();
 
 	soundtest.currenttime = 0;
 	soundtest.sequencemaxtime = S_GetMusicLength();
-	soundtest.sequencefadeout = 0;
 
-	if (soundtest.sequencemaxtime)
+	if (soundtest.sequencemaxtime == 0)
 	{
-		// Does song have default loop?
-		if (soundtest.current->basenoloop[soundtest.currenttrack] == false)
+		S_SoundTestStop(); // This sets soundtest.privilegedrequest to false
+		return;
+	}
+
+	S_ShowMusicCredit();
+
+	// ensure default is always set
+	soundtest.sequencefadeout = 0;
+	soundtest.dosequencefadeout = false;
+
+	// Does song have default loop?
+	if (soundtest.current->basenoloop[soundtest.currenttrack] == false)
+	{
+		if (soundtest.sequencemaxtime < 3*60*1000)
 		{
-			soundtest.dosequencefadeout = (soundtest.currenttrack == soundtest.current->numtracks-1);
-			soundtest.sequencemaxtime *= 2; // Two loops by default.
-			soundtest.sequencemaxtime -= S_GetMusicLoopPoint(); // Otherwise the intro is counted twice.
-		}
-		else
-		{
-			soundtest.dosequencefadeout = false;
+			// I'd personally like songs in sequence to last between 3 and 6 minutes.
+			const UINT32 loopduration = (soundtest.sequencemaxtime - S_GetMusicLoopPoint());
+			soundtest.sequencemaxtime += loopduration;
 		}
 
-		// ms to TICRATE conversion
-		soundtest.sequencemaxtime = (TICRATE*soundtest.sequencemaxtime)/1000;
+		// Only fade out if we're the last track for this song.
+		soundtest.dosequencefadeout = (soundtest.currenttrack == soundtest.current->numtracks-1);
 	}
+
+	// ms to TICRATE conversion
+	soundtest.sequencemaxtime = (TICRATE*soundtest.sequencemaxtime)/1000;
 
 	soundtest.privilegedrequest = false;
 }
@@ -1659,7 +1685,7 @@ void S_SoundTestStop(void)
 	soundtest.autosequence = false;
 
 	S_StopMusic();
-	cursongcredit.def = NULL;
+	S_StopMusicCredit();
 
 	soundtest.currenttime = 0;
 	soundtest.sequencemaxtime = 0;
@@ -1694,66 +1720,75 @@ void S_TickSoundTest(void)
 {
 	static UINT32 storetime = 0;
 	UINT32 lasttime = storetime;
-	boolean donext = false;
 
 	storetime = I_GetTime();
 
 	if (soundtest.playing == false || soundtest.current == NULL)
 	{
+		// Nothing worth discussing.
 		return;
 	}
 
 	if (I_SongPlaying() == false)
 	{
-		S_SoundTestStop();
-		return;
+		// We stopped for some reason. Accomodate this.
+		goto handlenextsong;
 	}
 
 	if (I_SongPaused() == false)
 	{
+		// Increment the funny little timer.
 		soundtest.currenttime += (storetime - lasttime);
 	}
 
-	if (soundtest.sequencefadeout > 0)
+	if (soundtest.sequencefadeout != 0)
 	{
-		if (soundtest.currenttime >= soundtest.sequencefadeout)
+		// Are we done fading out?
+		if (soundtest.currenttime > soundtest.sequencefadeout)
 		{
-			donext = true;
+			goto handlenextsong;
 		}
-	}
-	else if (soundtest.currenttime >= soundtest.sequencemaxtime)
-	{
-		if (soundtest.autosequence == false)
-		{
-			if (soundtest.current->basenoloop[soundtest.currenttrack] == true)
-			{
-				S_SoundTestStop();
-			}
 
-			return;
-		}
-		else if (soundtest.dosequencefadeout == false)
-		{
-			donext = true;
-		}
-		else
-		{
-			if (soundtest.sequencemaxtime > 0)
-			{
-				soundtest.privilegedrequest = true;
-				S_FadeMusic(0, 3000);
-				soundtest.privilegedrequest = false;
-			}
-
-			soundtest.sequencefadeout = soundtest.currenttime + 3*TICRATE;
-		}
-	}
-
-	if (donext == false)
-	{
 		return;
 	}
 
+	if (soundtest.autosequence == false)
+	{
+		// There's nothing else for us here.
+		return;
+	}
+
+	if (soundtest.currenttime >= soundtest.sequencemaxtime)
+	{
+		if (soundtest.dosequencefadeout == false)
+		{
+			// Handle the immediate progression.
+			goto handlenextsong;
+		}
+
+		if (soundtest.sequencemaxtime > 0)
+		{
+			// Handle the fade.
+			soundtest.privilegedrequest = true;
+			S_FadeMusic(0, SOUNDTEST_FADEOUTSECONDS*1000);
+			soundtest.privilegedrequest = false;
+		}
+
+		// Set the conclusion.
+		soundtest.sequencefadeout = soundtest.currenttime + SOUNDTEST_FADEOUTSECONDS*TICRATE;
+	}
+
+	return;
+
+handlenextsong:
+	// If the song's stopped while not in autosequence, stop visibly playing.
+	if (soundtest.autosequence == false)
+	{
+		S_SoundTestStop();
+		return;
+	}
+
+	// Okay, this is autosequence in action.
 	S_UpdateSoundTestDef(false, true, true);
 }
 
@@ -1946,6 +1981,11 @@ ReadMusicDefFields
 			{
 				def->volume = atoi(textline);
 			}
+			else if (!stricmp(stoken, "important"))
+			{
+				textline[0] = toupper(textline[0]);
+				def->important = (textline[0] == 'Y' || textline[0] == 'T' || textline[0] == '1');
+			}
 			else
 			{
 				MusicDefError(CONS_WARNING,
@@ -2065,6 +2105,7 @@ void S_ShowMusicCredit(void)
 	char credittext[128] = "";
 	char *work = NULL;
 	size_t len = 128, worklen;
+	INT32 widthused = BASEVIDWIDTH, workwidth;
 
 	if (!cv_songcredits.value || S_PlaysimMusicDisabled())
 		return;
@@ -2095,6 +2136,8 @@ void S_ShowMusicCredit(void)
 			}
 		}
 
+		widthused -= V_ThinStringWidth(credittext, V_ALLOWLOWERCASE|V_6WIDTHSPACE);
+
 #define MUSICCREDITAPPEND(field)\
 		if (field)\
 		{\
@@ -2102,8 +2145,13 @@ void S_ShowMusicCredit(void)
 			worklen = strlen(work);\
 			if (worklen <= len)\
 			{\
-				strncat(credittext, work, len);\
-				len -= worklen;\
+				workwidth = V_ThinStringWidth(work, V_ALLOWLOWERCASE|V_6WIDTHSPACE);\
+				if (widthused >= workwidth)\
+				{\
+					strncat(credittext, work, len);\
+					len -= worklen;\
+					widthused -= workwidth;\
+				}\
 			}\
 		}
 
@@ -2122,6 +2170,14 @@ void S_ShowMusicCredit(void)
 	cursongcredit.anim = 5*TICRATE;
 	cursongcredit.x = cursongcredit.old_x = 0;
 	cursongcredit.trans = NUMTRANSMAPS;
+}
+
+void S_StopMusicCredit(void)
+{
+	if (S_PlaysimMusicDisabled())
+		return;
+
+	cursongcredit.def = NULL;
 }
 
 /// ------------------------

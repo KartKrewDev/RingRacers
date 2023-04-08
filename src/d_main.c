@@ -1047,7 +1047,7 @@ void D_ClearState(void)
 	if (rendermode != render_none)
 		V_SetPaletteLump("PLAYPAL");
 
-	cursongcredit.def = NULL;
+	S_StopMusicCredit();
 	S_StopSounds();
 
 	if (gamedata && gamedata->deferredsave)
