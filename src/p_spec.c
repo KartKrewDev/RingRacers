@@ -1838,12 +1838,12 @@ void P_SwitchWeather(preciptype_t newWeather)
 
 		for (think = thlist[THINK_PRECIP].next; think != &thlist[THINK_PRECIP]; think = next)
 		{
+			next = think->next;
+
 			if (think->function.acp1 != (actionf_p1)P_NullPrecipThinker)
 				continue; // not a precipmobj thinker
 
 			precipmobj = (precipmobj_t *)think;
-
-			next = think->next;
 			P_FreePrecipMobj(precipmobj);
 		}
 	}
