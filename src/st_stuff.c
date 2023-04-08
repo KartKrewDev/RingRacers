@@ -434,6 +434,18 @@ static void ST_drawMusicDebug(INT32 *height)
 	}
 }
 
+static void ST_drawRenderDebug(INT32 *height)
+{
+	const struct RenderStats *i = &g_renderstats;
+
+	ST_pushDebugString(height, va("     Visplanes: %4s", sizeu1(i->visplanes)));
+	ST_pushDebugString(height, va("      Drawsegs: %4s", sizeu1(i->drawsegs)));
+
+	ST_pushRow(height);
+
+	ST_pushDebugString(height, va("Skybox Portals: %4s", sizeu1(i->skybox_portals)));
+}
+
 void ST_drawDebugInfo(void)
 {
 	INT32 height = 192;
@@ -514,6 +526,11 @@ void ST_drawDebugInfo(void)
 	if (cht_debug & DBG_MUSIC)
 	{
 		ST_drawMusicDebug(&height);
+	}
+
+	if (cht_debug & DBG_RENDER)
+	{
+		ST_drawRenderDebug(&height);
 	}
 
 	if (cht_debug & DBG_MEMORY)

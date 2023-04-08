@@ -126,6 +126,8 @@ int ps_numsprites = 0;
 int ps_numdrawnodes = 0;
 int ps_numpolyobjects = 0;
 
+struct RenderStats g_renderstats;
+
 static CV_PossibleValue_t drawdist_cons_t[] = {
 	/*{256, "256"},*/	{512, "512"},	{768, "768"},
 	{1024, "1024"},	{1536, "1536"},	{2048, "2048"},
@@ -1524,6 +1526,8 @@ void R_RenderPlayerView(void)
 	R_SetupFrame(viewssnum);
 	framecount++;
 	validcount++;
+
+	memset(&g_renderstats, 0, sizeof g_renderstats);
 
 	// Clear buffers.
 	R_ClearPlanes();
