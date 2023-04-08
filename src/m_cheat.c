@@ -579,6 +579,30 @@ void Command_Grayscale_f(void)
 	COM_ImmedExecute("toggle palette \"\" GRAYPAL");
 }
 
+void Command_Goto_f(void)
+{
+	const INT32 id = atoi(COM_Argv(1));
+	const waypoint_t *wayp = K_GetWaypointFromID(id);
+
+	REQUIRE_CHEATS;
+	REQUIRE_INLEVEL;
+
+	if (COM_Argc() != 2)
+	{
+		CONS_Printf(M_GetText("goto <waypoint id>: teleport to a waypoint\n"));
+		return;
+	}
+
+	if (wayp == NULL)
+	{
+		CONS_Alert(CONS_WARNING, "goto %d: no waypoint with that ID\n", id);
+		return;
+	}
+
+	D_Cheat(consoleplayer, CHEAT_TELEPORT,
+			wayp->mobj->x, wayp->mobj->y, wayp->mobj->z);
+}
+
 //
 // OBJECTPLACE (and related variables)
 //

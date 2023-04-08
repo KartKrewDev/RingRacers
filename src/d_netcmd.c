@@ -1098,6 +1098,7 @@ void D_RegisterClientCommands(void)
 	COM_AddCommand("skynum", Command_Skynum_f);
 	COM_AddCommand("weather", Command_Weather_f);
 	COM_AddCommand("grayscale", Command_Grayscale_f);
+	COM_AddCommand("goto", Command_Goto_f);
 	CV_RegisterVar(&cv_renderhitbox);
 	CV_RegisterVar(&cv_devmode_screen);
 
