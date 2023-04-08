@@ -9317,7 +9317,7 @@ static void K_KartDrift(player_t *player, boolean onground)
 	|| (!player->aizdriftstrat)
 	|| (player->steering > 0) != (player->aizdriftstrat > 0))
 	{
-		if (!player->drift && player->steering && player->aizdriftstrat // If we were sliptiding last tic,
+		if (!player->drift && player->steering && player->aizdriftstrat && player->sliptideZip // If we were sliptiding last tic,
 			&& (player->steering > 0) == (player->aizdriftstrat > 0) // we're steering in the right direction,
 			&& player->speed >= K_GetKartSpeed(player, false, true)) // and we're above the threshold to spawn dust...
 		{
