@@ -446,15 +446,25 @@ void ST_drawDebugInfo(void)
 	if (!stplyr->mo)
 		return;
 
+	if (cv_ticrate.value)
+	{
+		height -= 20;
+	}
+
+	if (cv_showping.value)
+	{
+		height -= 20;
+	}
+
 	if (cht_debug & DBG_BASIC)
 	{
 		const fixed_t d = AngleFixed(stplyr->mo->angle);
-		V_DrawRightAlignedString(320, 168, V_MONOSPACE, va("X: %6d", stplyr->mo->x>>FRACBITS));
-		V_DrawRightAlignedString(320, 176, V_MONOSPACE, va("Y: %6d", stplyr->mo->y>>FRACBITS));
-		V_DrawRightAlignedString(320, 184, V_MONOSPACE, va("Z: %6d", stplyr->mo->z>>FRACBITS));
-		V_DrawRightAlignedString(320, 192, V_MONOSPACE, va("A: %6d", FixedInt(d)));
+		V_DrawRightAlignedString(320, height - 24, V_MONOSPACE, va("X: %6d", stplyr->mo->x>>FRACBITS));
+		V_DrawRightAlignedString(320, height - 16, V_MONOSPACE, va("Y: %6d", stplyr->mo->y>>FRACBITS));
+		V_DrawRightAlignedString(320, height - 8, V_MONOSPACE, va("Z: %6d", stplyr->mo->z>>FRACBITS));
+		V_DrawRightAlignedString(320, height, V_MONOSPACE, va("A: %6d", FixedInt(d)));
 
-		height = 152;
+		height -= 40;
 	}
 
 	if (cht_debug & DBG_DETAILED)
