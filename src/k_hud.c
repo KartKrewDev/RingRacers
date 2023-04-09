@@ -13,6 +13,8 @@
 #include "k_kart.h"
 #include "k_battle.h"
 #include "k_grandprix.h"
+#include "k_specialstage.h"
+#include "k_objects.h"
 #include "k_boss.h"
 #include "k_color.h"
 #include "k_director.h"
@@ -77,6 +79,9 @@ patch_t *kp_facehighlight[8];
 
 static patch_t *kp_nocontestminimap;
 static patch_t *kp_spbminimap;
+static patch_t *kp_wouldyoustillcatchmeifiwereaworm;
+static patch_t *kp_catcherminimap;
+static patch_t *kp_emeraldminimap;
 static patch_t *kp_capsuleminimap[3];
 
 static patch_t *kp_ringsticker[2];
@@ -348,7 +353,13 @@ void K_LoadKartHUDGraphics(void)
 
 	// Special minimap icons
 	HU_UpdatePatch(&kp_nocontestminimap, "MINIDEAD");
+
 	HU_UpdatePatch(&kp_spbminimap, "SPBMMAP");
+
+	HU_UpdatePatch(&kp_wouldyoustillcatchmeifiwereaworm, "MINIPROG");
+	HU_UpdatePatch(&kp_catcherminimap, "UFOMAP");
+	HU_UpdatePatch(&kp_emeraldminimap, "EMEMAP");
+
 	HU_UpdatePatch(&kp_capsuleminimap[0], "MINICAP1");
 	HU_UpdatePatch(&kp_capsuleminimap[1], "MINICAP2");
 	HU_UpdatePatch(&kp_capsuleminimap[2], "MINICAP3");
@@ -1662,17 +1673,27 @@ void K_drawKartTimestamp(tic_t drawtime, INT32 TX, INT32 TY, INT32 splitflags, U
 	if (modeattacking & ATTACKING_SPB && stplyr->SPBdistance > 0)
 	{
 		UINT8 *colormap = R_GetTranslationColormap(stplyr->skin, stplyr->skincolor, GTC_CACHE);
-		int ybar = 180;
-		int widthbar = 120;
+		INT32 ybar = 180;
+		INT32 widthbar = 120, xbar = 160 - widthbar/2, currentx;
+		INT32 barflags = V_SNAPTOBOTTOM|V_SLIDEIN;
 
-		V_DrawFill(160 - widthbar / 2, ybar, widthbar, 1, 6);
-		V_DrawMappedPatch(160 + widthbar/2 - 7, ybar - 7, FRACUNIT, faceprefix[stplyr->skin][FACE_MINIMAP], colormap);
+		V_DrawScaledPatch(xbar, ybar - 2, barflags, kp_wouldyoustillcatchmeifiwereaworm);
+
+		V_DrawMappedPatch(160 + widthbar/2 - 7, ybar - 7, barflags, faceprefix[stplyr->skin][FACE_MINIMAP], colormap);
 
 		// vibes-based math
-		int bombxoff = (stplyr->SPBdistance/mapobjectscale - mobjinfo[MT_SPB].radius/FRACUNIT - mobjinfo[MT_PLAYER].radius/FRACUNIT) * 8;
-		bombxoff = sqrt(bombxoff) - 5;
-		bombxoff = max(0, min(bombxoff, widthbar));
-		V_DrawScaledPatch(160 + widthbar/2 - bombxoff, ybar - 7, FRACUNIT, W_CachePatchName("SPBMMAP", PU_CACHE));
+		currentx = (stplyr->SPBdistance/mapobjectscale - mobjinfo[MT_SPB].radius/FRACUNIT - mobjinfo[MT_PLAYER].radius/FRACUNIT) * 8;
+		if (currentx > 0)
+		{
+			currentx = sqrt(currentx);
+			if (currentx > widthbar)
+				currentx = widthbar;
+		}
+		else
+		{
+			currentx = 0;
+		}
+		V_DrawScaledPatch(xbar - currentx - 5, ybar - 7, barflags, kp_spbminimap);
 	}
 }
 
@@ -3024,7 +3045,7 @@ static void K_drawKartWanted(void)
 	}
 
 	if (battlewanted[0] != -1)
-		colormap = R_GetTranslationColormap(0, players[battlewanted[0]].skincolor, GTC_CACHE);
+		colormap = R_GetTranslationColormap(TC_DEFAULT, players[battlewanted[0]].skincolor, GTC_CACHE);
 	V_DrawFixedPatch(basex<<FRACBITS, basey<<FRACBITS, FRACUNIT, V_HUDTRANS|V_SLIDEIN|(r_splitscreen < 3 ? V_SNAPTORIGHT : 0)|V_SNAPTOBOTTOM, (r_splitscreen > 1 ? kp_wantedsplit : kp_wanted), colormap);
 	/*if (basey2)
 		V_DrawFixedPatch(basex<<FRACBITS, basey2<<FRACBITS, FRACUNIT, V_HUDTRANS|V_SLIDEIN|V_SNAPTOTOP, (splitscreen == 3 ? kp_wantedsplit : kp_wanted), colormap);	// < used for 4p splits.*/
@@ -3552,6 +3573,47 @@ static void K_drawKartNameTags(void)
 	}
 }
 
+#define PROGRESSION_BAR_WIDTH 120
+
+static INT32 K_getKartProgressionMinimapDistance(UINT32 distancetofinish)
+{
+	INT32 dist;
+
+	if (specialstageinfo.maxDist == 0U)
+	{
+		return 0;
+	}
+
+	dist = specialstageinfo.maxDist/PROGRESSION_BAR_WIDTH;
+
+	dist = (specialstageinfo.maxDist-distancetofinish)/dist;
+
+	if (dist > PROGRESSION_BAR_WIDTH)
+	{
+		return PROGRESSION_BAR_WIDTH;
+	}
+
+	if (dist < 0)
+	{
+		return 0;
+	}
+
+	return dist;
+}
+
+static void K_drawKartProgressionMinimapIcon(UINT32 distancetofinish, INT32 hudx, INT32 hudy, INT32 flags, patch_t *icon, UINT8 *colormap)
+{
+	if (distancetofinish == UINT32_MAX)
+		return;
+
+	hudx += K_getKartProgressionMinimapDistance(distancetofinish);
+
+	hudx = ((hudx - (SHORT(icon->width)/2))<<FRACBITS);
+	hudy = ((hudy - (SHORT(icon->height)/2))<<FRACBITS);
+
+	V_DrawFixedPatch(hudx, hudy, FRACUNIT, flags, icon, colormap);
+}
+
 static void K_drawKartMinimapIcon(fixed_t objx, fixed_t objy, INT32 hudx, INT32 hudy, INT32 flags, patch_t *icon, UINT8 *colormap)
 {
 	// amnum xpos & ypos are the icon's speed around the HUD.
@@ -3570,8 +3632,8 @@ static void K_drawKartMinimapIcon(fixed_t objx, fixed_t objy, INT32 hudx, INT32 
 	if (encoremode)
 		amnumxpos = -amnumxpos;
 
-	amxpos = amnumxpos + ((hudx + (SHORT(minimapinfo.minimap_pic->width)-SHORT(icon->width))/2)<<FRACBITS);
-	amypos = amnumypos + ((hudy + (SHORT(minimapinfo.minimap_pic->height)-SHORT(icon->height))/2)<<FRACBITS);
+	amxpos = amnumxpos + ((hudx - (SHORT(icon->width))/2)<<FRACBITS);
+	amypos = amnumypos + ((hudy - (SHORT(icon->height))/2)<<FRACBITS);
 
 	V_DrawFixedPatch(amxpos, amypos, FRACUNIT, flags, icon, colormap);
 }
@@ -3587,8 +3649,8 @@ static void K_drawKartMinimapDot(fixed_t objx, fixed_t objy, INT32 hudx, INT32 h
 	if (encoremode)
 		amnumxpos = -amnumxpos;
 
-	amxpos = (amnumxpos / FRACUNIT) + (SHORT(minimapinfo.minimap_pic->width) / 2);
-	amypos = (amnumypos / FRACUNIT) + (SHORT(minimapinfo.minimap_pic->height) / 2);
+	amxpos = (amnumxpos / FRACUNIT);
+	amypos = (amnumypos / FRACUNIT);
 
 	if (flags & V_NOSCALESTART)
 	{
@@ -3634,16 +3696,25 @@ static void K_drawKartMinimapWaypoint(waypoint_t *wp, INT32 hudx, INT32 hudy, IN
 static void K_drawKartMinimap(void)
 {
 	patch_t *workingPic;
+
 	INT32 i = 0;
 	INT32 x, y;
+
 	INT32 minimaptrans = 4;
 	INT32 splitflags = 0;
+
 	UINT8 skin = 0;
 	UINT8 *colormap = NULL;
+
 	SINT8 localplayers[MAXSPLITSCREENPLAYERS];
 	SINT8 numlocalplayers = 0;
+
 	mobj_t *mobj, *next;	// for SPB drawing (or any other item(s) we may wanna draw, I dunno!)
+
 	fixed_t interpx, interpy;
+
+	boolean doprogressionbar = false;
+	boolean dofade = false, doencore = false;
 
 	// Draw the HUD only when playing in a level.
 	// hu_stuff needs this, unlike st_stuff.
@@ -3655,16 +3726,58 @@ static void K_drawKartMinimap(void)
 	if (stplyr != &players[displayplayers[0]])
 		return;
 
-	if (minimapinfo.minimap_pic == NULL)
+	if (specialstageinfo.valid == true)
 	{
-		return; // no pic, just get outta here
+		// future work: maybe make this a unique gametype rule?
+		// I would do this now if it were easier to get the
+		// distancetofinish for an arbitrary object. ~toast 070423
+		doprogressionbar = true;
 	}
 
-	if (r_splitscreen < 2) // 1/2P right aligned
+	if (doprogressionbar == false)
 	{
-		splitflags = (V_SLIDEIN|V_SNAPTORIGHT);
+		if (minimapinfo.minimap_pic == NULL)
+		{
+			return; // no pic, just get outta here
+		}
+
+		else if (r_splitscreen < 2) // 1/2P right aligned
+		{
+			splitflags = (V_SLIDEIN|V_SNAPTORIGHT);
+		}
+		else if (r_splitscreen == 3) // 4P splits
+		{
+			dofade = true;
+		}
+		// 3P lives in the middle of the bottom right
+		// viewport and shouldn't fade in OR slide
+
+		x = MINI_X;
+		y = MINI_Y;
+
+		workingPic = minimapinfo.minimap_pic;
+
+		doencore = encoremode;
 	}
-	else if (r_splitscreen == 3) // 4P centered
+	else
+	{
+		x = BASEVIDWIDTH/2;
+
+		if (r_splitscreen > 0)
+		{
+			y = BASEVIDHEIGHT/2;
+			dofade = true;
+		}
+		else
+		{
+			y = 180;
+			splitflags = (V_SLIDEIN|V_SNAPTOBOTTOM);
+		}
+
+		workingPic = kp_wouldyoustillcatchmeifiwereaworm;
+	}
+
+	if (dofade)
 	{
 		const tic_t length = TICRATE/2;
 
@@ -3672,34 +3785,49 @@ static void K_drawKartMinimap(void)
 			return;
 		if (lt_exitticker < length)
 			minimaptrans = (((INT32)lt_exitticker)*minimaptrans)/((INT32)length);
+
+		if (!minimaptrans)
+			return;
 	}
-	// 3P lives in the middle of the bottom right player and shouldn't fade in OR slide
-
-	if (!minimaptrans)
-		return;
-
-	x = MINI_X - (SHORT(minimapinfo.minimap_pic->width)/2);
-	y = MINI_Y - (SHORT(minimapinfo.minimap_pic->height)/2);
 
 	minimaptrans = ((10-minimaptrans)<<FF_TRANSSHIFT);
 
-	if (encoremode)
-		V_DrawScaledPatch(x+SHORT(minimapinfo.minimap_pic->width), y, splitflags|minimaptrans|V_FLIP, minimapinfo.minimap_pic);
+	if (doencore)
+	{
+		V_DrawScaledPatch(
+			x + (SHORT(workingPic->width)/2),
+			y - (SHORT(workingPic->height)/2),
+			splitflags|minimaptrans|V_FLIP,
+			workingPic
+		);
+	}
 	else
-		V_DrawScaledPatch(x, y, splitflags|minimaptrans, minimapinfo.minimap_pic);
+	{
+		V_DrawScaledPatch(
+			x - (SHORT(workingPic->width)/2),
+			y - (SHORT(workingPic->height)/2),
+			splitflags|minimaptrans,
+			workingPic
+		);
+	}
 
 	// most icons will be rendered semi-ghostly.
 	splitflags |= V_HUDTRANSHALF;
 
 	// let offsets transfer to the heads, too!
-	if (encoremode)
-		x += SHORT(minimapinfo.minimap_pic->leftoffset);
+	if (doencore)
+		x += SHORT(workingPic->leftoffset);
 	else
-		x -= SHORT(minimapinfo.minimap_pic->leftoffset);
-	y -= SHORT(minimapinfo.minimap_pic->topoffset);
+		x -= SHORT(workingPic->leftoffset);
+	y -= SHORT(workingPic->topoffset);
+
+	if (doprogressionbar == true)
+	{
+		x -= PROGRESSION_BAR_WIDTH/2;
+	}
 
 	// Draw the super item in Battle
-	if ((gametyperules & GTR_OVERTIME) && battleovertime.enabled)
+	if (doprogressionbar == false && (gametyperules & GTR_OVERTIME) && battleovertime.enabled)
 	{
 		if (battleovertime.enabled >= 10*TICRATE || (battleovertime.enabled & 1))
 		{
@@ -3717,7 +3845,7 @@ static void K_drawKartMinimap(void)
 		localplayers[i] = -1;
 
 	// Player's tiny icons on the Automap. (drawn opposite direction so player 1 is drawn last in splitscreen)
-	if (ghosts)
+	if (ghosts && doprogressionbar == true) // future work: show ghosts on progression bar
 	{
 		demoghost *g = ghosts;
 		while (g)
@@ -3742,19 +3870,15 @@ static void K_drawKartMinimap(void)
 			K_drawKartMinimapIcon(interpx, interpy, x, y, splitflags, faceprefix[skin][FACE_MINIMAP], colormap);
 			g = g->next;
 		}
-
-		if (!stplyr->mo || stplyr->spectator || stplyr->exiting)
-			return;
-
-		localplayers[numlocalplayers++] = stplyr-players;
 	}
-	else
+
 	{
 		for (i = MAXPLAYERS-1; i >= 0; i--)
 		{
 			if (!playeringame[i])
 				continue;
-			if (!players[i].mo || players[i].spectator || !players[i].mo->skin || players[i].exiting)
+			if (!players[i].mo || players[i].spectator || !players[i].mo->skin
+			|| (doprogressionbar == false && players[i].exiting))
 				continue;
 
 			// This player is out of the game!
@@ -3781,7 +3905,7 @@ static void K_drawKartMinimap(void)
 			if (mobj->health <= 0 && (players[i].pflags & PF_NOCONTEST))
 			{
 				workingPic = kp_nocontestminimap;
-				R_GetTranslationColormap(0, mobj->color, GTC_CACHE);
+				colormap = R_GetTranslationColormap(TC_DEFAULT, mobj->color, GTC_CACHE);
 
 				if (mobj->tracer && !P_MobjWasRemoved(mobj->tracer))
 					mobj = mobj->tracer;
@@ -3803,22 +3927,33 @@ static void K_drawKartMinimap(void)
 					colormap = NULL;
 			}
 
-			interpx = R_InterpolateFixed(mobj->old_x, mobj->x);
-			interpy = R_InterpolateFixed(mobj->old_y, mobj->y);
-
-			K_drawKartMinimapIcon(interpx, interpy, x, y, splitflags, faceprefix[skin][FACE_MINIMAP], colormap);
-
-			// Target reticule
-			if (((gametyperules & GTR_CIRCUIT) && players[i].position == spbplace)
-				|| ((gametyperules & (GTR_BOSS|GTR_POINTLIMIT)) == GTR_POINTLIMIT && K_IsPlayerWanted(&players[i])))
+			if (doprogressionbar == false)
 			{
-				K_drawKartMinimapIcon(interpx, interpy, x, y, splitflags, kp_wantedreticle, NULL);
+				interpx = R_InterpolateFixed(mobj->old_x, mobj->x);
+				interpy = R_InterpolateFixed(mobj->old_y, mobj->y);
+
+				K_drawKartMinimapIcon(interpx, interpy, x, y, splitflags, workingPic, colormap);
+
+				// Target reticule
+				if (((gametyperules & GTR_CIRCUIT) && players[i].position == spbplace)
+					|| ((gametyperules & (GTR_BOSS|GTR_POINTLIMIT)) == GTR_POINTLIMIT && K_IsPlayerWanted(&players[i])))
+				{
+					K_drawKartMinimapIcon(interpx, interpy, x, y, splitflags, kp_wantedreticle, NULL);
+				}
+			}
+			else
+			{
+				K_drawKartProgressionMinimapIcon(players[i].distancetofinish, x, y, splitflags, workingPic, colormap);
 			}
 		}
 	}
 
 	// draw minimap-pertinent objects
-	for (mobj = trackercap; mobj; mobj = next)
+	if (doprogressionbar == true)
+	{
+		// future work: support these specific objects on this
+	}
+	else for (mobj = trackercap; mobj; mobj = next)
 	{
 		next = mobj->itnext;
 
@@ -3872,7 +4007,34 @@ static void K_drawKartMinimap(void)
 	}
 
 	// ...but first, any boss targets.
-	if (bossinfo.valid == true)
+	if (doprogressionbar == true)
+	{
+		if (specialstageinfo.valid == true)
+		{
+			UINT32 distancetofinish = K_GetSpecialUFODistance();
+			if (distancetofinish > 0 && specialstageinfo.ufo != NULL && P_MobjWasRemoved(specialstageinfo.ufo) == false)
+			{
+				colormap = NULL;
+				if (specialstageinfo.ufo->health > 1)
+				{
+					workingPic = kp_catcherminimap;
+				}
+				else
+				{
+					workingPic = kp_emeraldminimap;
+					if (specialstageinfo.ufo->color)
+					{
+						colormap = R_GetTranslationColormap(TC_DEFAULT, specialstageinfo.ufo->color, GTC_CACHE);
+					}
+				}
+
+				K_drawKartProgressionMinimapIcon(distancetofinish, x, y, splitflags, workingPic, colormap);
+			}
+		}
+
+		// future work: support boss minimap icons on the progression bar
+	}
+	else if (bossinfo.valid == true)
 	{
 		for (i = 0; i < NUMWEAKSPOTS; i++)
 		{
@@ -3912,7 +4074,7 @@ static void K_drawKartMinimap(void)
 		if (mobj->health <= 0 && (players[localplayers[i]].pflags & PF_NOCONTEST))
 		{
 			workingPic = kp_nocontestminimap;
-			R_GetTranslationColormap(0, mobj->color, GTC_CACHE);
+			colormap = R_GetTranslationColormap(TC_DEFAULT, mobj->color, GTC_CACHE);
 
 			if (mobj->tracer && !P_MobjWasRemoved(mobj->tracer))
 				mobj = mobj->tracer;
@@ -3934,20 +4096,27 @@ static void K_drawKartMinimap(void)
 				colormap = NULL;
 		}
 
-		interpx = R_InterpolateFixed(mobj->old_x, mobj->x);
-		interpy = R_InterpolateFixed(mobj->old_y, mobj->y);
-
-		K_drawKartMinimapIcon(interpx, interpy, x, y, splitflags, workingPic, colormap);
-
-		// Target reticule
-		if (((gametyperules & GTR_CIRCUIT) && players[localplayers[i]].position == spbplace)
-			|| ((gametyperules & (GTR_BOSS|GTR_POINTLIMIT)) == GTR_POINTLIMIT && K_IsPlayerWanted(&players[localplayers[i]])))
+		if (doprogressionbar == false)
 		{
-			K_drawKartMinimapIcon(interpx, interpy, x, y, splitflags, kp_wantedreticle, NULL);
+			interpx = R_InterpolateFixed(mobj->old_x, mobj->x);
+			interpy = R_InterpolateFixed(mobj->old_y, mobj->y);
+
+			K_drawKartMinimapIcon(interpx, interpy, x, y, splitflags, workingPic, colormap);
+
+			// Target reticule
+			if (((gametyperules & GTR_CIRCUIT) && players[localplayers[i]].position == spbplace)
+				|| ((gametyperules & (GTR_BOSS|GTR_POINTLIMIT)) == GTR_POINTLIMIT && K_IsPlayerWanted(&players[localplayers[i]])))
+			{
+				K_drawKartMinimapIcon(interpx, interpy, x, y, splitflags, kp_wantedreticle, NULL);
+			}
+		}
+		else
+		{
+			K_drawKartProgressionMinimapIcon(players[i].distancetofinish, x, y, splitflags, workingPic, colormap);
 		}
 	}
 
-	if (cv_kartdebugwaypoints.value != 0)
+	if (doprogressionbar == false && cv_kartdebugwaypoints.value != 0)
 	{
 		size_t idx;
 
@@ -3967,6 +4136,8 @@ static void K_drawKartMinimap(void)
 		}
 	}
 }
+
+#undef PROGRESSION_BAR_WIDTH
 
 static void K_drawKartFinish(boolean finish)
 {
@@ -4579,7 +4750,7 @@ static void K_drawInput(void)
 	else
 	{
 		UINT8 *colormap;
-		colormap = R_GetTranslationColormap(0, stplyr->skincolor, GTC_CACHE);
+		colormap = R_GetTranslationColormap(TC_DEFAULT, stplyr->skincolor, GTC_CACHE);
 		V_DrawFixedPatch(x<<FRACBITS, y<<FRACBITS, FRACUNIT, splitflags, kp_inputwheel[target], colormap);
 	}
 }

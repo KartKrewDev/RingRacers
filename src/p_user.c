@@ -313,15 +313,29 @@ boolean P_PlayerMoving(INT32 pnum)
 //
 UINT8 P_GetNextEmerald(void)
 {
-	INT16 mapnum = gamemap-1;
+	cupheader_t *cup = NULL;
 
-	if (mapnum > nummapheaders || !mapheaderinfo[mapnum])
+	if (grandprixinfo.gp == true)
+	{
+		cup = grandprixinfo.cup;
+	}
+
+	if (cup == NULL)
+	{
+		INT16 mapnum = gamemap-1;
+
+		if (mapnum < nummapheaders && mapheaderinfo[mapnum])
+		{
+			cup = mapheaderinfo[mapnum]->cup;
+		}
+	}
+
+	if (cup == NULL)
+	{
 		return 0;
+	}
 
-	if (!mapheaderinfo[mapnum]->cup || mapheaderinfo[mapnum]->cup->cachedlevels[CUPCACHE_SPECIAL] != mapnum)
-		return 0;
-
-	return mapheaderinfo[mapnum]->cup->emeraldnum;
+	return cup->emeraldnum;
 }
 
 //

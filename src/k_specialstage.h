@@ -24,8 +24,10 @@ extern struct specialstageinfo
 {
 	boolean valid;						///< If true, then data in this struct is valid
 
-	UINT32 beamDist;					///< Where the exit beam is.
 	mobj_t *ufo;						///< The Chaos Emerald capsule.
+	UINT32 maxDist;						///< The distance from one end of the track to another.
+
+	UINT32 beamDist;					///< Where the exit beam is.
 } specialstageinfo;
 
 /*--------------------------------------------------

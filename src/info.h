@@ -695,6 +695,7 @@ typedef enum sprite
 	SPR_NSTR, // NiGHTS star
 	SPR_EMBM, // Emblem
 	SPR_EMRC, // Chaos Emeralds
+	SPR_SEMR, // Super Emeralds
 	SPR_ESPK,
 	SPR_SHRD, // Emerald Hunt
 
@@ -1345,6 +1346,8 @@ typedef enum sprite
 	SPR_UFOB,
 	SPR_UFOA,
 	SPR_UFOS,
+	SPR_SSCA,
+	SPR_SSCB,
 
 	SPR_UQMK,
 
@@ -2255,6 +2258,11 @@ typedef enum state
 	S_CHAOSEMERALD1,
 	S_CHAOSEMERALD2,
 	S_CHAOSEMERALD_UNDER,
+
+	// Super Emeralds
+	S_SUPEREMERALD1,
+	S_SUPEREMERALD2,
+	S_SUPEREMERALD_UNDER,
 
 	S_EMERALDSPARK1,
 	S_EMERALDSPARK2,
@@ -5610,6 +5618,8 @@ typedef enum state
 
 	S_SPECIAL_UFO_POD,
 	S_SPECIAL_UFO_OVERLAY,
+	S_SPECIAL_UFO_GLASS,
+	S_SPECIAL_UFO_GLASS_UNDER,
 	S_SPECIAL_UFO_ARM,
 	S_SPECIAL_UFO_STEM,
 

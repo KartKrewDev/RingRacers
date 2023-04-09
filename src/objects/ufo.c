@@ -54,6 +54,8 @@
 enum
 {
 	UFO_PIECE_TYPE_POD,
+	UFO_PIECE_TYPE_GLASS,
+	UFO_PIECE_TYPE_GLASS_UNDER,
 	UFO_PIECE_TYPE_ARM,
 	UFO_PIECE_TYPE_STEM,
 };
@@ -345,6 +347,7 @@ static void UFOMove(mobj_t *ufo)
 		ufo->momx = 0;
 		ufo->momy = 0;
 		ufo->momz = ufo_speed(ufo);
+		ufo_distancetofinish(ufo) = 0;
 		return;
 	}
 
@@ -514,6 +517,90 @@ void Obj_SpecialUFOThinker(mobj_t *ufo)
 	}
 }
 
+// The following is adapted from monitor.c for UFO Catcher damage
+// I couldn't just exose the relevant things via k_object.h
+// because they're *just* too specific to Monitors... ~toast 070423
+
+#define shard_can_roll(o) ((o)->extravalue1)
+
+static inline boolean
+can_shard_state_roll (statenum_t state)
+{
+	switch (state)
+	{
+		case S_MONITOR_BIG_SHARD:
+		case S_MONITOR_SMALL_SHARD:
+			return true;
+
+		default:
+			return false;
+	}
+}
+
+static void
+spawn_shard
+(		mobj_t * part,
+		statenum_t state)
+{
+	mobj_t *ufo = ufo_piece_owner(part);
+
+	// These divisions and multiplications are done on the
+	// offsets to give bigger increments of randomness.
+
+	const fixed_t h = FixedDiv(
+			ufo->height, ufo->scale);
+
+	const UINT16 rad = (ufo->radius / ufo->scale) / 4;
+	const UINT16 tall = (h / FRACUNIT);
+
+	mobj_t *p = P_SpawnMobjFromMobj(ufo,
+			P_RandomRange(PR_ITEM_DEBRIS, -(rad), rad) * 8 * FRACUNIT,
+			P_RandomRange(PR_ITEM_DEBRIS, -(rad), rad) * 8 * FRACUNIT,
+			P_RandomKey(PR_ITEM_DEBRIS, tall + 1) * 4 * FRACUNIT,
+			MT_MONITOR_SHARD);
+
+	P_SetScale(p, (p->destscale = p->destscale * 3));
+
+	angle_t th = R_PointToAngle2(ufo->x, ufo->y, p->x, p->y);
+
+	th -= P_RandomKey(PR_ITEM_DEBRIS, ANGLE_45) - ANGLE_22h;
+
+	p->hitlag = 0;
+
+	P_Thrust(p, th, 6 * p->scale);
+	p->momz = P_RandomRange(PR_ITEM_DEBRIS, 3, 10) * p->scale;
+
+	P_SetMobjState(p, state);
+
+	shard_can_roll(p) = can_shard_state_roll(state);
+
+	if (shard_can_roll(p))
+	{
+		p->rollangle = P_Random(PR_ITEM_DEBRIS);
+	}
+
+	if (P_RandomChance(PR_ITEM_DEBRIS, FRACUNIT/2))
+	{
+		p->renderflags |= RF_DONTDRAW;
+	}
+}
+
+static void
+spawn_debris (mobj_t *part)
+{
+	mobj_t *ufo = ufo_piece_owner(part);
+
+	INT32 i;
+
+	for (i = ufo->health;
+		i <= mobjinfo[ufo->type].spawnhealth; i += 5)
+	{
+		spawn_shard(part, S_MONITOR_BIG_SHARD);
+		spawn_shard(part, S_MONITOR_SMALL_SHARD);
+		spawn_shard(part, S_MONITOR_TWINKLE);
+	}
+}
+
 static void UFOCopyHitlagToPieces(mobj_t *ufo)
 {
 	mobj_t *piece = NULL;
@@ -523,6 +610,12 @@ static void UFOCopyHitlagToPieces(mobj_t *ufo)
 	{
 		piece->hitlag = ufo->hitlag;
 		piece->eflags = (piece->eflags & ~MFE_DAMAGEHITLAG) | (ufo->eflags & MFE_DAMAGEHITLAG);
+
+		if (ufo_piece_type(piece) == UFO_PIECE_TYPE_GLASS)
+		{
+			spawn_debris (piece);
+		}
+	
 		piece = ufo_piece_next(piece);
 	}
 }
@@ -543,6 +636,8 @@ static void UFOKillPiece(mobj_t *piece)
 
 	switch (ufo_piece_type(piece))
 	{
+		case UFO_PIECE_TYPE_GLASS:
+		case UFO_PIECE_TYPE_GLASS_UNDER:
 		case UFO_PIECE_TYPE_STEM:
 		{
 			piece->tics = 1;
@@ -686,15 +781,16 @@ boolean Obj_SpecialUFODamage(mobj_t *ufo, mobj_t *inflictor, mobj_t *source, UIN
 	// Speed up on damage!
 	ufo_speed(ufo) += addSpeed;
 
+	ufo->health = max(1, ufo->health - damage);
+
 	K_SetHitLagForObjects(ufo, inflictor, (damage / 3) + 2, true);
 	UFOCopyHitlagToPieces(ufo);
 
-	if (damage >= ufo->health - 1)
+	if (ufo->health == 1)
 	{
 		// Destroy the UFO parts, and make the emerald collectible!
 		UFOKillPieces(ufo);
 
-		ufo->health = 1;
 		ufo->flags = (ufo->flags & ~MF_SHOOTABLE) | (MF_SPECIAL|MF_PICKUPFROMBELOW);
 		ufo->shadowscale = FRACUNIT/3;
 
@@ -711,7 +807,6 @@ boolean Obj_SpecialUFODamage(mobj_t *ufo, mobj_t *inflictor, mobj_t *source, UIN
 	S_StartSound(ufo, sfx_clawht);
 	S_StopSoundByID(ufo, sfx_clawzm);
 	P_StartQuake(64<<FRACBITS, 10);
-	ufo->health -= damage;
 
 	return true;
 }
@@ -793,16 +888,23 @@ void Obj_UFOPieceThink(mobj_t *piece)
 		return;
 	}
 
-	piece->destscale = 3 * ufo->destscale / 2;
 	piece->scalespeed = ufo->scalespeed;
 
 	switch (ufo_piece_type(piece))
 	{
 		case UFO_PIECE_TYPE_POD:
 		{
+			piece->destscale = 3 * ufo->destscale / 2;
 			UFOMoveTo(piece, ufo->x, ufo->y, ufo->z + (132 * piece->scale));
 			if (S_SoundPlaying(ufo, sfx_clawzm) && ufo_speed(ufo) > 70*FRACUNIT)
 				SpawnUFOSpeedLines(piece);
+			break;
+		}
+		case UFO_PIECE_TYPE_GLASS:
+		case UFO_PIECE_TYPE_GLASS_UNDER:
+		{
+			piece->destscale = 5 * ufo->destscale / 3;
+			UFOMoveTo(piece, ufo->x, ufo->y, ufo->z);
 			break;
 		}
 		case UFO_PIECE_TYPE_ARM:
@@ -812,6 +914,7 @@ void Obj_UFOPieceThink(mobj_t *piece)
 			fixed_t x = ufo->x - FixedMul(dis, FINECOSINE(piece->angle >> ANGLETOFINESHIFT));
 			fixed_t y = ufo->y - FixedMul(dis, FINESINE(piece->angle >> ANGLETOFINESHIFT));
 
+			piece->destscale = 3 * ufo->destscale / 2;
 			UFOMoveTo(piece, x, y, ufo->z + (24 * piece->scale));
 
 			piece->angle -= FixedMul(ANG2, FixedDiv(ufo_speed(ufo), UFO_BASE_SPEED));
@@ -822,6 +925,7 @@ void Obj_UFOPieceThink(mobj_t *piece)
 			fixed_t stemZ = ufo->z + (294 * piece->scale);
 			fixed_t sc = FixedDiv(FixedDiv(ufo->ceilingz - stemZ, piece->scale), 15 * FRACUNIT);
 
+			piece->destscale = 3 * ufo->destscale / 2;
 			UFOMoveTo(piece, ufo->x, ufo->y, stemZ);
 			if (sc > 0)
 			{
@@ -901,19 +1005,51 @@ static mobj_t *InitSpecialUFO(waypoint_t *start)
 		ufo = P_SpawnMobj(start->mobj->x, start->mobj->y, start->mobj->z, MT_SPECIAL_UFO);
 		ufo_waypoint(ufo) = (INT32)K_GetWaypointHeapIndex(start);
 		UFOUpdateDistanceToFinish(ufo);
+		specialstageinfo.maxDist = ufo_distancetofinish(ufo);
 	}
 
 	ufo_speed(ufo) = FixedMul(UFO_START_SPEED, K_GetKartGameSpeedScalar(gamespeed));
 
-	// TODO: Adjustable Special Stage emerald color
-	ufo->color = SKINCOLOR_CHAOSEMERALD1;
+	// Adjustable Special Stage emerald color/shape
+	{
+		overlay = P_SpawnMobjFromMobj(ufo, 0, 0, 0, MT_OVERLAY);
 
-	overlay = P_SpawnMobjFromMobj(ufo, 0, 0, 0, MT_OVERLAY);
-	P_SetTarget(&overlay->target, ufo);
-	overlay->color = ufo->color;
+		ufo->color = SKINCOLOR_CHAOSEMERALD1;
+		i = P_GetNextEmerald();
+		if (i > 0)
+		{
+			ufo->color += (i - 1) % 7;
+			if (i > 7)
+			{
+				// Super Emeralds
+				P_SetMobjState(ufo, S_SUPEREMERALD1);
+				P_SetMobjState(overlay, S_SUPEREMERALD_UNDER);
+			}
+			else
+			{
+				// Chaos Emerald
+				P_SetMobjState(ufo, S_CHAOSEMERALD1);
+				P_SetMobjState(overlay, S_CHAOSEMERALD_UNDER);
+			}
+		}
+		else
+		{
+			// Prize -- todo, currently using standard Emerald
+			P_SetMobjState(ufo, S_CHAOSEMERALD1);
+			P_SetMobjState(overlay, S_CHAOSEMERALD_UNDER);
+		}
 
-	// TODO: Super Emeralds / Chaos Rings
-	P_SetMobjState(overlay, S_CHAOSEMERALD_UNDER);
+		if (P_MobjWasRemoved(ufo)) // uh oh !
+		{
+			// Attempted crash prevention with custom SOC
+			return NULL;
+		}
+
+		overlay->color = ufo->color;
+		P_SetTarget(&overlay->target, ufo);
+
+		ufo->sprzoff = 32 * mapobjectscale;
+	}
 
 	// Create UFO pieces.
 	// First: UFO center.
@@ -929,6 +1065,39 @@ static mobj_t *InitSpecialUFO(waypoint_t *start)
 
 	P_SetTarget(&ufo_pieces(ufo), piece);
 	prevPiece = piece;
+
+	// Next, the glass ball.
+	{
+		piece = P_SpawnMobjFromMobj(ufo, 0, 0, 0, MT_SPECIAL_UFO_PIECE);
+		P_SetTarget(&ufo_piece_owner(piece), ufo);
+
+		P_SetMobjState(piece, S_SPECIAL_UFO_GLASS);
+		ufo_piece_type(piece) = UFO_PIECE_TYPE_GLASS;
+
+		/*overlay = P_SpawnMobjFromMobj(piece, 0, 0, 0, MT_OVERLAY);
+		P_SetTarget(&overlay->target, piece);
+		P_SetMobjState(overlay, S_SPECIAL_UFO_GLASS_UNDER);
+		overlay->dispoffset = -20;*/
+
+		P_SetTarget(&ufo_piece_next(prevPiece), piece);
+		P_SetTarget(&ufo_piece_prev(piece), prevPiece);
+		prevPiece = piece;
+	}
+
+	// This SHOULD have been an MT_OVERLAY... but it simply doesn't
+	// draw-order stack with the Emerald correctly any other way.
+	{
+		piece = P_SpawnMobjFromMobj(ufo, 0, 0, 0, MT_SPECIAL_UFO_PIECE);
+		P_SetTarget(&ufo_piece_owner(piece), ufo);
+
+		P_SetMobjState(piece, S_SPECIAL_UFO_GLASS_UNDER);
+		ufo_piece_type(piece) = UFO_PIECE_TYPE_GLASS_UNDER;
+		piece->dispoffset = -2;
+
+		P_SetTarget(&ufo_piece_next(prevPiece), piece);
+		P_SetTarget(&ufo_piece_prev(piece), prevPiece);
+		prevPiece = piece;
+	}
 
 	// Add the catcher arms.
 	for (i = 0; i < UFO_NUMARMS; i++)

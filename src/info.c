@@ -144,6 +144,7 @@ char sprnames[NUMSPRITES + 1][5] =
 	"NSTR", // NiGHTS star
 	"EMBM", // Emblem
 	"EMRC", // Chaos Emeralds
+	"SEMR", // Super Emeralds
 	"ESPK",
 	"SHRD", // Emerald Hunt
 
@@ -794,6 +795,8 @@ char sprnames[NUMSPRITES + 1][5] =
 	"UFOB",
 	"UFOA",
 	"UFOS",
+	"SSCA",
+	"SSCB",
 
 	"UQMK",
 
@@ -1774,6 +1777,11 @@ state_t states[NUMSTATES] =
 	{SPR_EMRC, FF_SEMIBRIGHT,           1, {NULL}, 0, 0, S_CHAOSEMERALD2}, // S_CHAOSEMERALD1
 	{SPR_EMRC, FF_FULLBRIGHT|FF_ADD,    1, {NULL}, 0, 0, S_CHAOSEMERALD1}, // S_CHAOSEMERALD2
 	{SPR_EMRC, FF_FULLBRIGHT|1, -1, {NULL}, 1, 0, S_NULL}, // S_CHAOSEMERALD_UNDER
+
+	// Super Emeralds
+	{SPR_SEMR, FF_SEMIBRIGHT,           1, {NULL}, 0, 0, S_SUPEREMERALD2}, // S_SUPEREMERALD1
+	{SPR_SEMR, FF_FULLBRIGHT|FF_ADD,    1, {NULL}, 0, 0, S_SUPEREMERALD1}, // S_SUPEREMERALD2
+	{SPR_SEMR, FF_FULLBRIGHT|1, -1, {NULL}, 1, 0, S_NULL}, // S_SUPEREMERALD_UNDER
 
 	{SPR_ESPK, FF_FULLBRIGHT,   3, {NULL}, 0, 0, S_EMERALDSPARK2}, // S_EMERALDSPARK1
 	{SPR_ESPK, FF_FULLBRIGHT|1, 3, {NULL}, 0, 0, S_EMERALDSPARK3}, // S_EMERALDSPARK2
@@ -5184,6 +5192,8 @@ state_t states[NUMSTATES] =
 
 	{SPR_UFOB, 0, -1, {NULL}, 0, 0, S_NULL}, // S_SPECIAL_UFO_POD
 	{SPR_UFOB, 1|FF_FULLBRIGHT|FF_ANIMATE, -1, {NULL}, 1, 1, S_NULL}, // S_SPECIAL_UFO_OVERLAY
+	{SPR_SSCA, 0,           -1, {NULL}, 0, 0, S_NULL}, // S_SPECIAL_UFO_GLASS
+	{SPR_SSCB, FF_SUBTRACT, -1, {NULL}, 0, 0, S_NULL}, // S_SPECIAL_UFO_GLASS_UNDER
 	{SPR_UFOA, FF_PAPERSPRITE, -1, {NULL}, 0, 0, S_NULL}, // S_SPECIAL_UFO_ARM
 	{SPR_UFOS, 0, -1, {NULL}, 0, 0, S_NULL}, // S_SPECIAL_UFO_STEM
 
@@ -22530,7 +22540,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		100,            // mass
 		0,              // damage
 		sfx_None,       // activesound
-		MF_NOGRAVITY|MF_NOBLOCKMAP|MF_NOCLIP|MF_NOCLIPTHING|MF_NOCLIPHEIGHT|MF_NOSQUISH, // flags
+		MF_NOGRAVITY|MF_NOBLOCKMAP|MF_NOCLIP|MF_NOCLIPTHING|MF_NOCLIPHEIGHT|MF_NOSQUISH|MF_DONTENCOREMAP, // flags
 		S_NULL          // raisestate
 	},
 
@@ -22557,7 +22567,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		100,            // mass
 		0,              // damage
 		sfx_None,       // activesound
-		MF_SCENERY|MF_NOBLOCKMAP|MF_NOCLIP|MF_NOCLIPTHING|MF_NOSQUISH, // flags
+		MF_SCENERY|MF_NOBLOCKMAP|MF_NOCLIP|MF_NOCLIPTHING|MF_NOSQUISH|MF_DONTENCOREMAP, // flags
 		S_NULL          // raisestate
 	},
 
@@ -22584,7 +22594,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		100,            // mass
 		0,              // damage
 		sfx_None,       // activesound
-		MF_NOGRAVITY|MF_NOCLIP|MF_NOCLIPTHING|MF_NOCLIPHEIGHT, // flags
+		MF_NOGRAVITY|MF_NOCLIP|MF_NOCLIPTHING|MF_NOCLIPHEIGHT|MF_DONTENCOREMAP, // flags
 		S_NULL          // raisestate
 	},
 
@@ -29318,7 +29328,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 
 	{           // MT_SPECIAL_UFO
 		-1,             // doomednum
-		S_CHAOSEMERALD1, // spawnstate
+		S_INVISIBLE,    // spawnstate
 		101,            // spawnhealth
 		S_NULL,         // seestate
 		sfx_None,       // seesound
