@@ -348,6 +348,7 @@ void Y_SetPlayersVote(const UINT8 playerId, SINT8 newVote)
 	catcher->destY = pile->y;
 	catcher->spr = ARM_FRAMES-1;
 	catcher->level = g_votes[playerId];
+	catcher->player = playerId;
 
 #ifdef VOTE_TIME_WAIT_FOR_VOTE
 	if (vote.timer == -1)
@@ -358,7 +359,7 @@ void Y_SetPlayersVote(const UINT8 playerId, SINT8 newVote)
 #endif
 }
 
-static void Y_DrawVoteThumbnail(fixed_t x, fixed_t y, fixed_t width, INT32 flags, SINT8 v, boolean dim)
+static void Y_DrawVoteThumbnail(fixed_t x, fixed_t y, fixed_t width, INT32 flags, SINT8 v, boolean dim, SINT8 playerID)
 {
 	const fixed_t height = (width * BASEVIDHEIGHT) / BASEVIDWIDTH;
 	INT32 fx, fy, fw, fh;
@@ -427,6 +428,25 @@ static void Y_DrawVoteThumbnail(fixed_t x, fixed_t y, fixed_t width, INT32 flags
 			31, 5
 		);
 	}
+
+	if (playerID >= 0)
+	{
+		if (playerID < MAXPLAYERS)
+		{
+			UINT8 *playerMap = R_GetTranslationColormap(players[playerID].skin, players[playerID].skincolor, GTC_CACHE);
+			patch_t *playerPatch = faceprefix[players[playerID].skin][FACE_RANK];
+			V_DrawFixedPatch(
+				x + width - (playerPatch->width * FRACUNIT) + FRACUNIT - 1,
+				y + height - (playerPatch->height * FRACUNIT) + FRACUNIT,
+				FRACUNIT, flags,
+				playerPatch, playerMap
+			);
+		}
+		else
+		{
+			; // angry level goes here
+		}
+	}
 }
 
 static void Y_DrawCatcher(y_vote_catcher *catcher)
@@ -493,7 +513,8 @@ static void Y_DrawCatcher(y_vote_catcher *catcher)
 		Y_DrawVoteThumbnail(
 			baseX, catcher->y,
 			((catcher->small == true) ? PILE_WIDTH : SELECTION_WIDTH), 0,
-			catcher->level, false
+			catcher->level, false,
+			catcher->player
 		);
 	}
 
@@ -654,7 +675,7 @@ static void Y_DrawVoteSelection(fixed_t offset)
 		Y_DrawVoteThumbnail(
 			x, y - vote_draw.levels[i].hop,
 			SELECTION_WIDTH, flags,
-			i, (selected == false)
+			i, (selected == false), -1
 		);
 
 		if (vote_draw.levels[i].encore == true)
@@ -709,7 +730,8 @@ static void Y_DrawVotePile(void)
 #else
 			g_votes[i],
 #endif
-			(i != vote.roulette.anim || g_pickedVote == VOTE_NOT_PICKED)
+			(i != vote.roulette.anim || g_pickedVote == VOTE_NOT_PICKED),
+			i
 		);
 	}
 
@@ -1339,6 +1361,7 @@ void Y_StartVote(void)
 
 		catcher->action = CATCHER_NA;
 		catcher->small = false;
+		catcher->player = -1;
 	}
 
 	vote.roulette.anim = 0;
@@ -1356,6 +1379,7 @@ void Y_StartVote(void)
 
 		catcher->action = CATCHER_NA;
 		catcher->small = true;
+		catcher->player = i;
 	}
 
 	for (i = 0; i < VOTE_NUM_LEVELS; i++)
