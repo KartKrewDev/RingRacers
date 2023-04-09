@@ -246,26 +246,6 @@ void R_PortalClearClipSegs(INT32 start, INT32 end)
 	newend = solidsegs + 2;
 }
 
-// R_DoorClosed
-//
-// This function is used to fix the automap bug which
-// showed lines behind closed doors simply because the door had a dropoff.
-//
-// It assumes that Doom has already ruled out a door being closed because
-// of front-back closure (e.g. front floor is taller than back ceiling).
-static INT32 R_DoorClosed(void)
-{
-	return
-
-	// if door is closed because back is shut:
-	backsector->ceilingheight <= backsector->floorheight
-
-	// preserve a kind of transparent door/lift special effect:
-	&& (backsector->ceilingheight >= frontsector->ceilingheight || curline->sidedef->toptexture)
-
-	&& (backsector->floorheight <= frontsector->floorheight || curline->sidedef->bottomtexture);
-}
-
 //
 // If player's view height is underneath fake floor, lower the
 // drawn ceiling to be just under the floor height, and replace
@@ -589,16 +569,12 @@ static void R_AddLine(seg_t *line)
 		// same for floors
 		if (!bothceilingssky && !bothfloorssky)
 		{
-			if ((backc1 <= frontf1 && backc2 <= frontf2)
-				|| (backf1 >= frontc1 && backf2 >= frontc2))
-			{
-				goto clipsolid;
-			}
-
+			doorclosed = (backc1 <= frontf1 && backc2 <= frontf2)
+			|| (backf1 >= frontc1 && backf2 >= frontc2)
 			// Check for automap fix. Store in doorclosed for r_segs.c
-			doorclosed = (backc1 <= backf1 && backc2 <= backf2
-			&& ((backc1 >= frontc1 && backc2 >= frontc2) || curline->sidedef->toptexture)
-			&& ((backf1 <= frontf1 && backf2 >= frontf2) || curline->sidedef->bottomtexture));
+			|| (backc1 <= backf1 && backc2 <= backf2
+				&& ((backc1 >= frontc1 && backc2 >= frontc2) || curline->sidedef->toptexture)
+				&& ((backf1 <= frontf1 && backf2 >= frontf2) || curline->sidedef->bottomtexture));
 
 			if (doorclosed)
 				goto clipsolid;
@@ -618,14 +594,22 @@ static void R_AddLine(seg_t *line)
 		// same for floors
 		if (!bothceilingssky && !bothfloorssky)
 		{
-			if (backsector->ceilingheight <= frontsector->floorheight
-				|| backsector->floorheight >= frontsector->ceilingheight)
-			{
-				goto clipsolid;
-			}
-
+			doorclosed = backsector->ceilingheight <= frontsector->floorheight
+			|| backsector->floorheight >= frontsector->ceilingheight
 			// Check for automap fix. Store in doorclosed for r_segs.c
-			doorclosed = R_DoorClosed();
+			//
+			// This is used to fix the automap bug which
+			// showed lines behind closed doors simply because the door had a dropoff.
+			//
+			// It assumes that Doom has already ruled out a door being closed because
+			// of front-back closure (e.g. front floor is taller than back ceiling).
+			//
+			// if door is closed because back is shut:
+			|| (backsector->ceilingheight <= backsector->floorheight
+				// preserve a kind of transparent door/lift special effect:
+				&& (backsector->ceilingheight >= frontsector->ceilingheight || curline->sidedef->toptexture)
+				&& (backsector->floorheight <= frontsector->floorheight || curline->sidedef->bottomtexture));
+
 			if (doorclosed)
 				goto clipsolid;
 		}
