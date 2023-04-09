@@ -295,8 +295,6 @@ static thinker_t *currentthinker;
 //
 void P_RemoveThinkerDelayed(thinker_t *thinker)
 {
-	thinker_t *next;
-
 	if (thinker->references != 0)
 	{
 #ifdef PARANOIA
@@ -327,15 +325,30 @@ void P_RemoveThinkerDelayed(thinker_t *thinker)
 		return;
 	}
 
-	/* Remove from main thinker list */
-	next = thinker->next;
+	R_DestroyLevelInterpolators(thinker);
+
 	/* Note that currentthinker is guaranteed to point to us,
 	* and since we're freeing our memory, we had better change that. So
 	* point it to thinker->prev, so the iterator will correctly move on to
 	* thinker->prev->next = thinker->next */
-	(next->prev = currentthinker = thinker->prev)->next = next;
+	currentthinker = thinker->prev;
 
-	R_DestroyLevelInterpolators(thinker);
+	/* Remove from main thinker list */
+	P_UnlinkThinker(thinker);
+}
+
+//
+// P_UnlinkThinker()
+//
+// Actually removes thinker from the list and frees its memory.
+//
+void P_UnlinkThinker(thinker_t *thinker)
+{
+	thinker_t *next = thinker->next;
+
+	I_Assert(thinker->references == 0);
+
+	(next->prev = thinker->prev)->next = next;
 	Z_Free(thinker);
 }
 
@@ -437,7 +450,7 @@ static void P_RunThinkers(void)
 {
 	size_t i;
 
-	for (i = 0; i < NUM_THINKERLISTS; i++)
+	for (i = 0; i < NUM_ACTIVETHINKERLISTS; i++)
 	{
 		ps_thlist_times[i] = I_GetPreciseTime();
 		for (currentthinker = thlist[i].next; currentthinker != &thlist[i]; currentthinker = currentthinker->next)

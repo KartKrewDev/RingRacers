@@ -51,7 +51,7 @@ precise_t ps_playerthink_time = 0;
 precise_t ps_botticcmd_time = 0;
 precise_t ps_thinkertime = 0;
 
-precise_t ps_thlist_times[NUM_THINKERLISTS];
+precise_t ps_thlist_times[NUM_ACTIVETHINKERLISTS];
 precise_t ps_acs_time = 0;
 
 int ps_checkposition_calls = 0;
@@ -367,7 +367,6 @@ static void M_DrawTickStats(void)
 		{"main   ", "Main:           ", &ps_thlist_times[THINK_MAIN]},
 		{"mobjs  ", "Mobjs:          ", &ps_thlist_times[THINK_MOBJ]},
 		{"dynslop", "Dynamic slopes: ", &ps_thlist_times[THINK_DYNSLOPE]},
-		{"precip ", "Precipitation:  ", &ps_thlist_times[THINK_PRECIP]},
 		{0}
 	};
 

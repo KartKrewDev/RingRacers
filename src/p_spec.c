@@ -1833,16 +1833,18 @@ void P_SwitchWeather(preciptype_t newWeather)
 	if (purge == true)
 	{
 		thinker_t *think;
+		thinker_t *next;
 		precipmobj_t *precipmobj;
 
-		for (think = thlist[THINK_PRECIP].next; think != &thlist[THINK_PRECIP]; think = think->next)
+		for (think = thlist[THINK_PRECIP].next; think != &thlist[THINK_PRECIP]; think = next)
 		{
+			next = think->next;
+
 			if (think->function.acp1 != (actionf_p1)P_NullPrecipThinker)
 				continue; // not a precipmobj thinker
 
 			precipmobj = (precipmobj_t *)think;
-
-			P_RemovePrecipMobj(precipmobj);
+			P_FreePrecipMobj(precipmobj);
 		}
 	}
 	else if (swap != MT_NULL) // Rather than respawn all that crap, reuse it!
