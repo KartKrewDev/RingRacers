@@ -359,10 +359,12 @@ void Y_SetPlayersVote(const UINT8 playerId, SINT8 newVote)
 #endif
 }
 
-static void Y_DrawVoteThumbnail(fixed_t x, fixed_t y, fixed_t width, INT32 flags, SINT8 v, boolean dim, SINT8 playerID)
+static void Y_DrawVoteThumbnail(fixed_t center_x, fixed_t center_y, fixed_t width, INT32 flags, SINT8 v, boolean dim, SINT8 playerID)
 {
 	const boolean encore = vote_draw.levels[v].encore;
 	const fixed_t height = (width * BASEVIDHEIGHT) / BASEVIDWIDTH;
+	const fixed_t x = center_x - (width >> 1);
+	const fixed_t y = center_y - (height >> 1);
 	INT32 fx, fy, fw, fh;
 	INT32 dupx, dupy;
 
@@ -370,9 +372,6 @@ static void Y_DrawVoteThumbnail(fixed_t x, fixed_t y, fixed_t width, INT32 flags
 	{
 		return;
 	}
-
-	x -= width / 2;
-	y -= height / 2;
 
 	dupx = vid.dupx;
 	dupy = vid.dupy;
@@ -422,10 +421,10 @@ static void Y_DrawVoteThumbnail(fixed_t x, fixed_t y, fixed_t width, INT32 flags
 
 	if (encore == true)
 	{
+		const fixed_t rubyScale = width / 72;
 		V_DrawFixedPatch(
-			x + (width / 2) - (vote_draw.ruby_icon->width * (FRACUNIT >> 1)),
-			y + (height / 2) - (vote_draw.ruby_icon->height * (FRACUNIT >> 1)) - (vote_draw.ruby_height << 1),
-			FRACUNIT, flags,
+			center_x, center_y - FixedMul(vote_draw.ruby_height << 1, rubyScale),
+			rubyScale, flags,
 			vote_draw.ruby_icon,
 			NULL
 		);
