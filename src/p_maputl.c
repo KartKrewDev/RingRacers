@@ -1054,6 +1054,7 @@ static void P_LinkToBlockMap(mobj_t *thing, mobj_t **bmap)
 void P_SetThingPosition(mobj_t *thing)
 {                                                      // link into subsector
 	subsector_t *ss;
+	sector_t *prevsec = NULL;
 	sector_t *oldsec = NULL;
 	fixed_t tfloorz, tceilz;
 
@@ -1061,7 +1062,15 @@ void P_SetThingPosition(mobj_t *thing)
 	I_Assert(!P_MobjWasRemoved(thing));
 
 	if (thing->player && thing->z <= thing->floorz && thing->subsector)
+	{
+		// I don't trust this so I'm leaving it alone. -Sal
 		oldsec = thing->subsector->sector;
+	}
+
+	if (thing->subsector)
+	{
+		prevsec = thing->subsector->sector;
+	}
 
 	ss = thing->subsector = R_PointInSubsector(thing->x, thing->y);
 
@@ -1118,6 +1127,12 @@ void P_SetThingPosition(mobj_t *thing)
 		}
 		else if (thing->z <= tfloorz)
 			thing->eflags |= MFE_JUSTSTEPPEDDOWN;
+	}
+
+	if (udmf && prevsec != thing->subsector->sector)
+	{
+		// Check for each time / once sector special actions
+		P_CheckMobjTouchingSectorActions(thing, false);
 	}
 }
 
