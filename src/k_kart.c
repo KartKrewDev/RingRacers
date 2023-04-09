@@ -3088,10 +3088,7 @@ static void K_GetKartBoostPower(player_t *player)
 	numboosts++; \
 	speedboost += FixedDiv(s, FRACUNIT + (metabolism * (numboosts-1))); \
 	accelboost += FixedDiv(a, FRACUNIT + (metabolism * (numboosts-1))); \
-	if (K_Sliptiding(player)) \
-		handleboost += FixedDiv(h, FRACUNIT + (metabolism * (numboosts-1))/4); \
-	else \
-		handleboost = max(h, handleboost); \
+	handleboost = max(h, handleboost); \
 }
 
 	if (player->sneakertimer) // Sneaker
@@ -8965,9 +8962,19 @@ INT16 K_GetKartTurnValue(player_t *player, INT16 turnvalue)
 		return K_GetKartDriftValue(player, countersteer);
 	}
 
-	if (player->handleboost > 0)
+	fixed_t finalhandleboost = player->handleboost;
+
+	// If you're sliptiding, don't interact with handling boosts.
+	// You need turning power proportional to your speed, no matter what! 
+	fixed_t topspeed = K_GetKartSpeed(player, false, false);
+	if (K_Sliptiding(player))
 	{
-		turnfixed = FixedMul(turnfixed, FRACUNIT + player->handleboost);
+		finalhandleboost = FixedMul(5*SLIPTIDEHANDLING/4, FixedDiv(player->speed, topspeed));
+	}
+	
+	if (finalhandleboost > 0)
+	{
+		turnfixed = FixedMul(turnfixed, FRACUNIT + finalhandleboost);
 	}
 
 	if (player->curshield == KSHIELD_TOP)
@@ -9208,6 +9215,9 @@ static void K_KartDrift(player_t *player, boolean onground)
 		// Stop drifting
 		player->drift = player->driftcharge = player->aizdriftstrat = 0;
 		player->pflags &= ~(PF_BRAKEDRIFT|PF_GETSPARKS);
+		// And take away wavedash properties: advanced cornering demands advanced finesse
+		player->sliptideZip = 0;
+		player->sliptideZipBoost = 0;
 	}
 	else if ((player->pflags & PF_DRIFTINPUT) && player->drift != 0)
 	{
@@ -9300,21 +9310,37 @@ static void K_KartDrift(player_t *player, boolean onground)
 		player->pflags &= ~PF_DRIFTEND;
 	}
 
+	// No longer meet the conditions to sliptide?
+	// We'll spot you the sliptide as long as you keep turning, but no charging wavedashes.
+	boolean keepsliptide = false;
+
 	if ((player->handleboost < (SLIPTIDEHANDLING/2))
 	|| (!player->steering)
 	|| (!player->aizdriftstrat)
 	|| (player->steering > 0) != (player->aizdriftstrat > 0))
 	{
-		if (!player->drift)
-			player->aizdriftstrat = 0;
+		if (!player->drift && player->steering && player->aizdriftstrat && player->sliptideZip // If we were sliptiding last tic,
+			&& (player->steering > 0) == (player->aizdriftstrat > 0) // we're steering in the right direction,
+			&& player->speed >= K_GetKartSpeed(player, false, true)) // and we're above the threshold to spawn dust...
+		{
+			keepsliptide = true; // Then keep your current sliptide, but note the behavior change for sliptidezip handling.
+		}			
 		else
-			player->aizdriftstrat = ((player->drift > 0) ? 1 : -1);
+		{
+			if (!player->drift)
+				player->aizdriftstrat = 0;
+			else
+				player->aizdriftstrat = ((player->drift > 0) ? 1 : -1);
+		}
 	}
-	else if (player->aizdriftstrat && !player->drift)
+	
+	if ((player->aizdriftstrat && !player->drift)
+		|| (keepsliptide))
 	{
 		K_SpawnAIZDust(player);
 
-		player->sliptideZip++;
+		if (!keepsliptide)
+			player->sliptideZip++;
 		if (player->sliptideZip == MIN_WAVEDASH_CHARGE)
 			S_StartSound(player->mo, sfx_waved5);
 
@@ -9333,9 +9359,12 @@ static void K_KartDrift(player_t *player, boolean onground)
 		}
 	}
 
-	if (!K_Sliptiding(player))
+	if (player->mo->eflags & MFE_UNDERWATER)
+		player->aizdriftstrat = 0;
+
+	if (!K_Sliptiding(player) || keepsliptide)
 	{
-		if (K_IsLosingSliptideZip(player) && player->sliptideZip > 0)
+		if (!keepsliptide && K_IsLosingSliptideZip(player) && player->sliptideZip > 0)
 		{
 			if (!S_SoundPlaying(player->mo, sfx_waved2))
 				S_StartSoundAtVolume(player->mo, sfx_waved2, 255/2); // Losing combo time, going to boost
@@ -9693,6 +9722,8 @@ boolean K_PlayerEBrake(player_t *player)
 
 SINT8 K_Sliptiding(player_t *player)
 {
+	if (player->mo->eflags & MFE_UNDERWATER)
+		return 0;
 	return player->drift ? 0 : player->aizdriftstrat;
 }
 
