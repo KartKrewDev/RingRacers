@@ -361,6 +361,7 @@ void Y_SetPlayersVote(const UINT8 playerId, SINT8 newVote)
 
 static void Y_DrawVoteThumbnail(fixed_t x, fixed_t y, fixed_t width, INT32 flags, SINT8 v, boolean dim, SINT8 playerID)
 {
+	const boolean encore = vote_draw.levels[v].encore;
 	const fixed_t height = (width * BASEVIDHEIGHT) / BASEVIDWIDTH;
 	INT32 fx, fy, fw, fh;
 	INT32 dupx, dupy;
@@ -414,10 +415,21 @@ static void Y_DrawVoteThumbnail(fixed_t x, fixed_t y, fixed_t width, INT32 flags
 
 	K_DrawMapThumbnail(
 		x, y,
-		width, flags,
+		width, flags | ((encore == true) ? V_FLIP : 0),
 		g_voteLevels[v][0],
 		NULL
 	);
+
+	if (encore == true)
+	{
+		V_DrawFixedPatch(
+			x + (width / 2) - (vote_draw.ruby_icon->width * (FRACUNIT >> 1)),
+			y + (height / 2) - (vote_draw.ruby_icon->height * (FRACUNIT >> 1)) - (vote_draw.ruby_height << 1),
+			FRACUNIT, flags,
+			vote_draw.ruby_icon,
+			NULL
+		);
+	}
 
 	if (dim == true)
 	{
@@ -662,11 +674,6 @@ static void Y_DrawVoteSelection(fixed_t offset)
 			destHop = SELECTION_HOP;
 		}
 
-		if (vote_draw.levels[i].encore == true)
-		{
-			flags |= V_FLIP;
-		}
-
 		vote_draw.levels[i].hop += FixedMul(
 			(destHop - vote_draw.levels[i].hop) / 2,
 			renderdeltatics
@@ -675,19 +682,9 @@ static void Y_DrawVoteSelection(fixed_t offset)
 		Y_DrawVoteThumbnail(
 			x, y - vote_draw.levels[i].hop,
 			SELECTION_WIDTH, flags,
-			i, (selected == false), -1
+			i, (selected == false),
+			-1
 		);
-
-		if (vote_draw.levels[i].encore == true)
-		{
-			V_DrawFixedPatch(
-				x - (vote_draw.ruby_icon->width * (FRACUNIT >> 1)),
-				y - (vote_draw.ruby_icon->height * (FRACUNIT >> 1)) - (vote_draw.ruby_height << 1),
-				FRACUNIT, (flags & ~V_FLIP),
-				vote_draw.ruby_icon,
-				NULL
-			);
-		}
 
 		x += SELECTION_SPACING_W;
 	}
