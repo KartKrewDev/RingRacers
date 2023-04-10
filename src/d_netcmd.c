@@ -102,6 +102,8 @@ static void Got_DiscordInfo(UINT8 **cp, INT32 playernum);
 static void Got_ScheduleTaskcmd(UINT8 **cp, INT32 playernum);
 static void Got_ScheduleClearcmd(UINT8 **cp, INT32 playernum);
 static void Got_Automatecmd(UINT8 **cp, INT32 playernum);
+static void Got_RequestMapQueuecmd(UINT8 **cp, INT32 playernum);
+static void Got_MapQueuecmd(UINT8 **cp, INT32 playernum);
 static void Got_Cheat(UINT8 **cp, INT32 playernum);
 
 static void PointLimit_OnChange(void);
@@ -162,6 +164,7 @@ static void Command_StopMovie_f(void);
 static void Command_Map_f(void);
 static void Command_RandomMap(void);
 static void Command_RestartLevel(void);
+static void Command_QueueMap_f(void);
 static void Command_ResetCamera_f(void);
 
 static void Command_View_f (void);
@@ -632,6 +635,8 @@ const char *netxcmdnames[MAXNETXCMD - 1] =
 	"SCHEDULETASK", // XD_SCHEDULETASK
 	"SCHEDULECLEAR", // XD_SCHEDULECLEAR
 	"AUTOMATE", // XD_AUTOMATE
+	"REQMAPQUEUE", // XD_REQMAPQUEUE
+	"MAPQUEUE", // XD_MAPQUEUE
 };
 
 // =========================================================================
@@ -681,6 +686,8 @@ void D_RegisterServerCommands(void)
 	RegisterNetXCmd(XD_SCHEDULETASK, Got_ScheduleTaskcmd);
 	RegisterNetXCmd(XD_SCHEDULECLEAR, Got_ScheduleClearcmd);
 	RegisterNetXCmd(XD_AUTOMATE, Got_Automatecmd);
+	RegisterNetXCmd(XD_REQMAPQUEUE, Got_RequestMapQueuecmd);
+	RegisterNetXCmd(XD_MAPQUEUE, Got_MapQueuecmd);
 
 	RegisterNetXCmd(XD_CHEAT, Got_Cheat);
 
@@ -703,6 +710,7 @@ void D_RegisterServerCommands(void)
 	COM_AddCommand("map", Command_Map_f);
 	COM_AddCommand("randommap", Command_RandomMap);
 	COM_AddCommand("restartlevel", Command_RestartLevel);
+	COM_AddCommand("queuemap", Command_QueueMap_f);
 
 	COM_AddCommand("exitgame", Command_ExitGame_f);
 	COM_AddCommand("retry", Command_Retry_f);
@@ -3269,6 +3277,252 @@ static void Command_RestartLevel(void)
 	}
 
 	D_MapChange(gamemap, gametype, newencore, false, 0, false, false);
+}
+
+static void Command_QueueMap_f(void)
+{
+	size_t first_option;
+	size_t option_force;
+	size_t option_gametype;
+	size_t option_encore;
+
+	boolean usingcheats;
+	boolean ischeating;
+
+	INT32 newmapnum;
+
+	char   *    mapname;
+	char   *realmapname = NULL;
+
+	INT32 newgametype = gametype;
+	boolean newencoremode = (cv_kartencore.value == 1);
+
+	if (!Playing())
+	{
+		CONS_Printf(M_GetText("Levels can only be queued in-game.\n"));
+		return;
+	}
+
+	if (client && !IsPlayerAdmin(consoleplayer))
+	{
+		CONS_Printf(M_GetText("Only the server or a remote admin can use this.\n"));
+		return;
+	}
+
+	if (roundqueue.size >= ROUNDQUEUE_MAX)
+	{
+		CONS_Printf(M_GetText("Round queue is currently full.\n"));
+		return;
+	}
+
+	option_force    =   COM_CheckPartialParm("-f");
+	option_gametype =   COM_CheckPartialParm("-g");
+	option_encore   =   COM_CheckPartialParm("-e");
+
+	usingcheats = CV_CheatsEnabled();
+	ischeating = (!(netgame || multiplayer));
+
+	if (!( first_option = COM_FirstOption() ))
+		first_option = COM_Argc();
+
+	if (first_option < 2)
+	{
+		/* I'm going over the fucking lines and I DON'T CAREEEEE */
+		CONS_Printf("queuemap <name / number> [-gametype <type>] [-force]:\n");
+		CONS_Printf(M_GetText(
+					"Queue up a map by its name, or by its number (though why would you).\n"
+					"All parameters are case-insensitive and may be abbreviated.\n"));
+		return;
+	}
+
+	mapname = ConcatCommandArgv(1, first_option);
+
+	newmapnum = G_FindMapByNameOrCode(mapname, &realmapname);
+
+	if (newmapnum == 0)
+	{
+		CONS_Alert(CONS_ERROR, M_GetText("Could not find any map described as '%s'.\n"), mapname);
+		Z_Free(mapname);
+		return;
+	}
+
+	if (!K_CanChangeRules(false) || (/*newmapnum != 1 &&*/ M_MapLocked(newmapnum)))
+	{
+		ischeating = true;
+	}
+
+	if (ischeating && !usingcheats)
+	{
+		CONS_Printf(M_GetText("Cheats must be enabled.\n"));
+		return;
+	}
+
+	// new gametype value
+	// use current one by default
+	if (option_gametype)
+	{
+		newgametype = GetGametypeParm(option_gametype);
+		if (newgametype == -1)
+		{
+			Z_Free(realmapname);
+			Z_Free(mapname);
+			return;
+		}
+	}
+
+	// new encoremode value
+	if (option_encore)
+	{
+		newencoremode = !newencoremode;
+
+		if (!M_SecretUnlocked(SECRET_ENCORE, false) && newencoremode == true && !usingcheats)
+		{
+			CONS_Alert(CONS_NOTICE, M_GetText("You haven't unlocked Encore Mode yet!\n"));
+			Z_Free(realmapname);
+			Z_Free(mapname);
+			return;
+		}
+	}
+
+	// don't use a gametype the map doesn't support
+	if (cht_debug || option_force || cv_skipmapcheck.value)
+	{
+		// The player wants us to trek on anyway.  Do so.
+	}
+	else
+	{
+		// G_TOLFlag handles both multiplayer gametype and ignores it for !multiplayer
+		if (!(
+					mapheaderinfo[newmapnum-1] &&
+					mapheaderinfo[newmapnum-1]->typeoflevel & G_TOLFlag(newgametype)
+		))
+		{
+			CONS_Alert(CONS_WARNING, M_GetText("%s (%s) doesn't support %s mode!\n(Use -force to override)\n"), realmapname, G_BuildMapName(newmapnum), gametypes[newgametype]->name);
+			Z_Free(realmapname);
+			Z_Free(mapname);
+			return;
+		}
+	}
+
+	{
+		static char buf[1+1+2];
+		static char *buf_p = buf;
+
+		UINT8 flags = 0;
+
+		CONS_Debug(DBG_GAMELOGIC, "Map queue: mapnum=%d newgametype=%d newencoremode=%d\n",
+	           newmapnum-1, newgametype, newencoremode);
+
+		buf_p = buf;
+
+		if (newencoremode)
+			flags |= 1;
+
+		WRITEUINT8(buf_p, flags);
+		WRITEUINT8(buf_p, newgametype);
+
+		if (client)
+		{
+			WRITEUINT16(buf_p, (newmapnum-1));
+			SendNetXCmd(XD_REQMAPQUEUE, buf, buf_p - buf);
+		}
+		else
+		{
+			WRITEUINT8(buf_p, roundqueue.size);
+			SendNetXCmd(XD_MAPQUEUE, buf, buf_p - buf);
+
+			G_MapIntoRoundQueue(newmapnum-1, newgametype, newencoremode, false);
+		}
+	}
+
+	Z_Free(realmapname);
+	Z_Free(mapname);
+}
+
+static void Got_RequestMapQueuecmd(UINT8 **cp, INT32 playernum)
+{
+	UINT8 flags, setgametype;
+	boolean setencore;
+	UINT16 mapnumber;
+
+	flags = READUINT8(*cp);
+
+	setencore = ((flags & 1) != 0);
+
+	setgametype = READUINT8(*cp);
+
+	mapnumber = READUINT16(*cp);
+
+	if (!IsPlayerAdmin(playernum))
+	{
+		CONS_Alert(CONS_WARNING, M_GetText("Illegal request map queue command received from %s\n"), player_names[playernum]);
+		if (server && playernum != serverplayer)
+			SendKick(playernum, KICK_MSG_CON_FAIL);
+		return;
+	}
+
+	if (roundqueue.size >= ROUNDQUEUE_MAX)
+	{
+		CONS_Alert(CONS_ERROR, "queuemap: Unable to add map beyond %u\n", roundqueue.size);
+		return;
+	}
+
+	if (client)
+		return;
+
+	{
+		static char buf[1+1+1];
+		static char *buf_p = buf;
+
+		buf_p = buf;
+
+		WRITEUINT8(buf_p, flags);
+		WRITEUINT8(buf_p, setgametype);
+		WRITEUINT8(buf_p, roundqueue.size);
+
+		SendNetXCmd(XD_MAPQUEUE, buf, buf_p - buf);
+	}
+
+	G_MapIntoRoundQueue(mapnumber, setgametype, setencore, false);
+}
+
+static void Got_MapQueuecmd(UINT8 **cp, INT32 playernum)
+{
+	UINT8 flags, setgametype, queueposition;
+	boolean setencore;
+
+	flags = READUINT8(*cp);
+
+	setencore = ((flags & 1) != 0);
+
+	setgametype = READUINT8(*cp);
+
+	queueposition = READUINT8(*cp);
+
+	if (playernum != serverplayer)
+	{
+		CONS_Alert(CONS_WARNING, M_GetText("Illegal map queue command received from %s\n"), player_names[playernum]);
+		if (server)
+			SendKick(playernum, KICK_MSG_CON_FAIL);
+		return;
+	}
+
+	if (queueposition >= ROUNDQUEUE_MAX)
+	{
+		CONS_Alert(CONS_ERROR, "queuemap: Unable to add map beyond %u\n", roundqueue.size);
+		return;
+	}
+
+	if (server)
+		return;
+
+	while (roundqueue.size <= queueposition)
+	{
+		memset(&roundqueue.entries[roundqueue.size], 0, sizeof(roundentry_t));
+		roundqueue.size++;
+	}
+
+	G_MapSlipIntoRoundQueue(queueposition, 0, setgametype, setencore, false);
 }
 
 static void Command_Pause(void)
