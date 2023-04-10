@@ -3991,6 +3991,16 @@ static void G_HandleSaveLevel(void)
 // Next map apparatus
 struct roundqueue roundqueue;
 
+void G_MapSlipIntoRoundQueue(UINT8 position, UINT16 map, UINT8 setgametype, boolean setencore, boolean rankrestricted)
+{
+	I_Assert(position < ROUNDQUEUE_MAX);
+
+	roundqueue.entries[position].mapnum = map;
+	roundqueue.entries[position].gametype = setgametype;
+	roundqueue.entries[position].encore = setencore;
+	roundqueue.entries[position].rankrestricted = rankrestricted;
+}
+
 void G_MapIntoRoundQueue(UINT16 map, UINT8 setgametype, boolean setencore, boolean rankrestricted)
 {
 	if (roundqueue.size >= ROUNDQUEUE_MAX)
@@ -3999,11 +4009,7 @@ void G_MapIntoRoundQueue(UINT16 map, UINT8 setgametype, boolean setencore, boole
 		return;
 	}
 
-	roundqueue.entries[roundqueue.size].mapnum = map;
-	roundqueue.entries[roundqueue.size].gametype = setgametype;
-	roundqueue.entries[roundqueue.size].encore = setencore;
-	roundqueue.entries[roundqueue.size].rankrestricted = rankrestricted;
-
+	G_MapSlipIntoRoundQueue(roundqueue.size, map, setgametype, setencore, rankrestricted);
 	roundqueue.size++;
 }
 
