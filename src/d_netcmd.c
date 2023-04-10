@@ -2555,7 +2555,7 @@ INT32 mapchangepending = 0;
   * \sa D_GameTypeChanged, Command_Map_f
   * \author Graue <graue@oceanbase.org>
   */
-void D_MapChange(INT32 mapnum, INT32 newgametype, boolean pencoremode, boolean presetplayers, INT32 delay, boolean skipprecutscene, boolean pforcespecialstage)
+void D_MapChange(UINT16 mapnum, INT32 newgametype, boolean pencoremode, boolean presetplayers, INT32 delay, boolean skipprecutscene, boolean pforcespecialstage)
 {
 	static char buf[1+1+1+1+1+2+4];
 	static char *buf_p = buf;
@@ -2594,7 +2594,7 @@ void D_MapChange(INT32 mapnum, INT32 newgametype, boolean pencoremode, boolean p
 		// new gametype value
 		WRITEUINT8(buf_p, newgametype);
 
-		WRITEINT16(buf_p, mapnum);
+		WRITEUINT16(buf_p, mapnum);
 	}
 
 	if (delay == 1)
@@ -2874,7 +2874,7 @@ static void Command_Map_f(void)
 	if (first_option < 2)
 	{
 		/* I'm going over the fucking lines and I DON'T CAREEEEE */
-		CONS_Printf("map <name / [MAP]code / number> [-gametype <type>] [-force]:\n");
+		CONS_Printf("map <name / number> [-gametype <type>] [-force]:\n");
 		CONS_Printf(M_GetText(
 					"Warp to a map, by its name, two character code, with optional \"MAP\" prefix, or by its number (though why would you).\n"
 					"All parameters are case-insensitive and may be abbreviated.\n"));
@@ -3041,6 +3041,7 @@ static void Command_Map_f(void)
 	D_MapChange(newmapnum, newgametype, newencoremode, newresetplayers, 0, false, newforcespecialstage);
 
 	Z_Free(realmapname);
+	Z_Free(mapname);
 }
 
 /** Receives a map command and changes the map.
@@ -3056,7 +3057,7 @@ static void Got_Mapcmd(UINT8 **cp, INT32 playernum)
 	INT32 presetplayer = 1, lastgametype;
 	UINT8 skipprecutscene, pforcespecialstage;
 	boolean pencoremode, hasroundqueuedata;
-	INT16 mapnumber;
+	UINT16 mapnumber;
 
 	forceresetplayers = deferencoremode = false;
 
@@ -3130,7 +3131,7 @@ static void Got_Mapcmd(UINT8 **cp, INT32 playernum)
 	if (!(gametyperules & GTR_ENCORE))
 		pencoremode = false;
 
-	mapnumber = READINT16(*cp);
+	mapnumber = READUINT16(*cp);
 
 	// Handle some Grand Prix state.
 	if (grandprixinfo.gp)
