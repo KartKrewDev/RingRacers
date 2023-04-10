@@ -96,6 +96,10 @@
 #define PILE_SPACING_W (PILE_WIDTH + PILE_SPACE)
 #define PILE_SPACING_H (PILE_HEIGHT + PILE_SPACE)
 
+// Give time for the animations to finish before finalizing the vote stages.
+#define SELECT_DELAY_TIME (TICRATE*4)
+#define PICK_DELAY_TIME (TICRATE/2)
+
 //#define TEST_VOTES (11)
 
 // Catcher data
@@ -137,6 +141,7 @@ typedef struct
 	y_vote_catcher catcher;
 	SINT8 selection;
 	UINT8 delay;
+	boolean sentTimeOutVote;
 } y_vote_player;
 
 // Vote "pile" data. Objects for each vote scattered about.
@@ -163,6 +168,7 @@ typedef struct
 {
 	INT32 timer;
 	INT32 tic, endtic;
+	INT32 selectFinalize, pickFinalize;
 	boolean notYetPicked;
 	boolean loaded;
 	SINT8 deferredLevel;
@@ -795,9 +801,15 @@ void Y_VoteDrawer(void)
 //
 // Vote screen's selection stops moving
 //
-static void Y_VoteStops(SINT8 pick, SINT8 level)
+static void Y_FinalizeVote(const SINT8 level)
 {
 	nextmap = g_voteLevels[level][0];
+	deferencoremode = (g_voteLevels[level][1] & VOTE_MOD_ENCORE);
+}
+
+static void Y_VoteStops(SINT8 pick, SINT8 level)
+{
+	Y_FinalizeVote(level);
 
 	if (netgame && P_IsLocalPlayer(&players[pick]))
 	{
@@ -807,8 +819,6 @@ static void Y_VoteStops(SINT8 pick, SINT8 level)
 	{
 		S_StartSound(NULL, sfx_kc48); // just a cool sound
 	}
-
-	deferencoremode = (g_voteLevels[level][1] & VOTE_MOD_ENCORE);
 }
 
 static void Y_PlayerSendVote(const UINT8 localPlayer)
@@ -1121,8 +1131,31 @@ static void Y_TickVoteRoulette(void)
 	}
 }
 
+static boolean Y_PlayerCanSelect(const UINT8 localId)
+{
+	const UINT8 p = g_localplayers[localId];
+
+	if (g_pickedVote != VOTE_NOT_PICKED)
+	{
+		return false;
+	}
+
+	if (g_votes[p] != VOTE_NOT_PICKED)
+	{
+		return false;
+	}
+
+	if (vote.players[localId].catcher.action != CATCHER_NA)
+	{
+		return false;
+	}
+
+	return Y_PlayerIDCanVote(p);
+}
+
 static void Y_TickVoteSelection(void)
 {
+	boolean everyone_voted = true;/* the default condition */
 	INT32 i;
 
 	if (vote.tic < 3*(NEWTICRATE/7)) // give it some time before letting you control it :V
@@ -1134,23 +1167,27 @@ static void Y_TickVoteSelection(void)
 	The vote ended, but it will take at least a tic for that to reach us from
 	the server. Don't let me change the vote now, it won't matter anyway!
 	*/
-	if (vote.timer != 0)
+	for (i = 0; i <= splitscreen; i++)
 	{
-		for (i = 0; i <= splitscreen; i++)
+		boolean moved = false;
+
+		if (vote.players[i].delay)
 		{
-			const UINT8 p = g_localplayers[i];
-			boolean moved = false;
+			vote.players[i].delay--;
+		}
 
-			if (vote.players[i].delay)
+		if (Y_PlayerCanSelect(i) == true)
+		{
+			if (vote.timer == 0)
 			{
-				vote.players[i].delay--;
+				// Time's up, send our vote ASAP.
+				if (vote.players[i].sentTimeOutVote == false)
+				{
+					Y_PlayerSendVote(i);
+					vote.players[i].sentTimeOutVote = true;
+				}
 			}
-
-			if (Y_PlayerIDCanVote(p) == true
-				&& menuactive == false
-				&& vote.players[i].delay == 0
-				&& g_pickedVote == VOTE_NOT_PICKED && g_votes[p] == VOTE_NOT_PICKED
-				&& vote.players[i].catcher.action == CATCHER_NA)
+			else if (menuactive == false && vote.players[i].delay == 0)
 			{
 				if (G_PlayerInputDown(i, gc_left, 0))
 				{
@@ -1180,49 +1217,67 @@ static void Y_TickVoteSelection(void)
 					moved = true;
 				}
 			}
+		}
 
-			if (moved)
-			{
-				S_StartSound(NULL, sfx_kc4a);
-				vote.players[i].delay = NEWTICRATE/7;
-			}
+		if (moved == true)
+		{
+			S_StartSound(NULL, sfx_kc4a);
+			vote.players[i].delay = NEWTICRATE/7;
 		}
 	}
 
-	if (server)
+	for (i = 0; i < MAXPLAYERS; i++)
 	{
-		boolean everyone_voted = true;/* the default condition */
-
-		for (i = 0; i < MAXPLAYERS; i++)
+		if (Y_PlayerIDCanVote(i) == false)
 		{
-			if (Y_PlayerIDCanVote(i) == false)
-			{
-				continue;
-			}
-
-			if (g_votes[i] == VOTE_NOT_PICKED)
-			{
-				if (vote.timer == 0)
-				{
-					g_votes[i] = 3; // RANDOMIZE LATER
-				}
-				else
-				{
-					everyone_voted = false;
-				}
-			}
+			continue;
 		}
 
-		if (everyone_voted == true)
+		if (g_votes[i] == VOTE_NOT_PICKED)
 		{
-			vote.timer = 0;
+			everyone_voted = false;
+			break;
+		}
+	}
 
-			if (vote.endtic == -1)
+	if (everyone_voted == true)
+	{
+		vote.timer = 0;
+		vote.selectFinalize = SELECT_DELAY_TIME;
+	}
+
+	if (vote.timer == 0)
+	{
+		if (vote.selectFinalize < SELECT_DELAY_TIME)
+		{
+			vote.selectFinalize++;
+		}
+	}
+	else
+	{
+		vote.selectFinalize = 0;
+	}
+
+	if (vote.selectFinalize >= SELECT_DELAY_TIME)
+	{
+		if (vote.pickFinalize < PICK_DELAY_TIME)
+		{
+			vote.pickFinalize++;
+		}
+		else if (vote.endtic == -1)
+		{
+			vote.notYetPicked = false; /* don't pick vote twice */
+
+			if (server)
 			{
-				vote.notYetPicked = false; /* don't pick vote twice */
 				D_PickVote();
 			}
 		}
+	}
+	else if (vote.timer > 0)
+	{
+		vote.timer--;
+		vote.pickFinalize = 0;
 	}
 }
 
@@ -1257,10 +1312,6 @@ void Y_VoteTicker(void)
 		{
 			g_votes[i] = VOTE_NOT_PICKED; // Spectators are the lower class, and have effectively no voice in the government. Democracy sucks.
 		}
-		else if (g_pickedVote != VOTE_NOT_PICKED && g_votes[i] == VOTE_NOT_PICKED)
-		{
-			g_votes[i] = 3; // Slow people get random values -- TODO: random vote doesn't exist anymore
-		}
 	}
 
 	if (server && g_pickedVote != VOTE_NOT_PICKED && g_votes[g_pickedVote] == VOTE_NOT_PICKED) // Uh oh! The person who got picked left! Recalculate, quick!
@@ -1274,9 +1325,13 @@ void Y_VoteTicker(void)
 		S_ShowMusicCredit();
 	}
 
-	if (vote.timer > 0)
+	if (g_pickedVote != VOTE_NOT_PICKED)
 	{
-		vote.timer--;
+		Y_TickVoteRoulette();
+	}
+	else if (vote.notYetPicked == true)
+	{
+		Y_TickVoteSelection();
 	}
 
 	for (i = 0; i <= splitscreen; i++)
@@ -1290,15 +1345,6 @@ void Y_VoteTicker(void)
 	{
 		Y_TickPlayerPile(i);
 	}
-
-	if (g_pickedVote != VOTE_NOT_PICKED)
-	{
-		Y_TickVoteRoulette();
-	}
-	else if (vote.notYetPicked)
-	{
-		Y_TickVoteSelection();
-	}
 }
 
 //
@@ -1306,11 +1352,9 @@ void Y_VoteTicker(void)
 //
 // MK online style voting screen, appears after intermission
 //
-void Y_StartVote(void)
+static void Y_InitVoteDrawing(void)
 {
 	INT32 i = 0;
-
-	vote.tic = vote.endtic = -1;
 
 	vote_draw.ruby_icon = W_CachePatchName("RUBYICON", PU_STATIC);
 
@@ -1336,46 +1380,6 @@ void Y_StartVote(void)
 	{
 		vote_draw.catcher_bulb[0][i] = W_CachePatchName(va("VT_BULB%d", i + 1), PU_STATIC);
 		vote_draw.catcher_bulb[1][i] = W_CachePatchName(va("VS_BULB%d", i + 1), PU_STATIC);
-	}
-
-#ifdef VOTE_TIME_WAIT_FOR_VOTE
-	vote.timer = -1; // Timer is not set until the first vote is added
-#else
-	vote.timer = cv_votetime.value * TICRATE;
-#endif
-
-	g_pickedVote = VOTE_NOT_PICKED;
-	vote.notYetPicked = true;
-
-	for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
-	{
-		y_vote_player *const player = &vote.players[i];
-		y_vote_catcher *const catcher = &player->catcher;
-
-		player->selection = 0;
-		player->delay = 0;
-
-		catcher->action = CATCHER_NA;
-		catcher->small = false;
-		catcher->player = -1;
-	}
-
-	vote.roulette.anim = 0;
-	vote.roulette.tics = 0;
-	vote.roulette.offset = 0;
-	vote.roulette.endOffset = 0;
-	vote.roulette.syncTime = 0;
-
-	for (i = 0; i < MAXPLAYERS; i++)
-	{
-		y_vote_pile *const pile = &vote.roulette.pile[i];
-		y_vote_catcher *const catcher = &pile->catcher;
-
-		g_votes[i] = VOTE_NOT_PICKED;
-
-		catcher->action = CATCHER_NA;
-		catcher->small = true;
-		catcher->player = i;
 	}
 
 	for (i = 0; i < VOTE_NUM_LEVELS; i++)
@@ -1415,6 +1419,49 @@ void Y_StartVote(void)
 	}
 
 	vote_draw.selectTransition = FRACUNIT;
+}
+
+void Y_StartVote(void)
+{
+	INT32 i = 0;
+
+	memset(&vote, 0, sizeof(vote));
+	memset(&vote_draw, 0, sizeof(vote_draw));
+
+	vote.tic = vote.endtic = -1;
+
+#ifdef VOTE_TIME_WAIT_FOR_VOTE
+	vote.timer = -1; // Timer is not set until the first vote is added
+#else
+	vote.timer = cv_votetime.value * TICRATE;
+#endif
+
+	g_pickedVote = VOTE_NOT_PICKED;
+	vote.notYetPicked = true;
+
+	for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
+	{
+		y_vote_player *const player = &vote.players[i];
+		y_vote_catcher *const catcher = &player->catcher;
+
+		catcher->action = CATCHER_NA;
+		catcher->small = false;
+		catcher->player = -1;
+	}
+
+	for (i = 0; i < MAXPLAYERS; i++)
+	{
+		y_vote_pile *const pile = &vote.roulette.pile[i];
+		y_vote_catcher *const catcher = &pile->catcher;
+
+		g_votes[i] = VOTE_NOT_PICKED;
+
+		catcher->action = CATCHER_NA;
+		catcher->small = true;
+		catcher->player = i;
+	}
+
+	Y_InitVoteDrawing();
 
 	vote.loaded = true;
 	Automate_Run(AEV_VOTESTART);
@@ -1464,6 +1511,14 @@ static void Y_UnloadVoteData(void)
 //
 void Y_EndVote(void)
 {
+	if (nextmap >= NEXTMAP_SPECIAL)
+	{
+		// Don't leave nextmap unset if the vote is ended through
+		// weird means! (such as a dedicated server becoming empty)
+		// If nextmap was left at NEXTMAP_VOTING, we'd crash!
+		Y_FinalizeVote(0);
+	}
+
 	Y_UnloadVoteData();
 	vote.endtic = -1;
 }
@@ -1486,7 +1541,7 @@ void Y_SetupVoteFinish(SINT8 pick, SINT8 level)
 		return;
 	}
 
-	if (pick == VOTE_NOT_PICKED) // No other votes? We gotta get out of here, then!
+	if (pick == VOTE_NOT_PICKED || level == VOTE_NOT_PICKED) // No other votes? We gotta get out of here, then!
 	{
 		Y_EndVote();
 		G_AfterIntermission();
@@ -1503,17 +1558,7 @@ void Y_SetupVoteFinish(SINT8 pick, SINT8 level)
 
 		for (i = 0; i < MAXPLAYERS; i++)
 		{
-			if (Y_PlayerIDCanVote(i) == true && g_votes[i] == VOTE_NOT_PICKED)
-			{
-				g_votes[i] = 3; // RANDOMIZE
-			}
-
-			if (g_votes[i] == VOTE_NOT_PICKED || endtype > VOTE_END_QUICK) // Don't need to go on
-			{
-				continue;
-			}
-
-			if (endtype == VOTE_END_NORMAL)
+			if (g_votes[i] == VOTE_NOT_PICKED)
 			{
 				continue;
 			}
@@ -1526,6 +1571,7 @@ void Y_SetupVoteFinish(SINT8 pick, SINT8 level)
 			else if (g_votes[i] != votecompare)
 			{
 				endtype = VOTE_END_NORMAL;
+				break;
 			}
 		}
 
@@ -1538,7 +1584,6 @@ void Y_SetupVoteFinish(SINT8 pick, SINT8 level)
 				G_AfterIntermission();
 				return;
 			}
-			/*
 			case VOTE_END_QUICK:
 			{
 				// Only one unique vote, so just end it immediately.
@@ -1547,7 +1592,6 @@ void Y_SetupVoteFinish(SINT8 pick, SINT8 level)
 				Y_VoteStops(pick, level);
 				break;
 			}
-			*/
 			default:
 			{
 				S_ChangeMusicInternal("voteea", true);
@@ -1559,4 +1603,6 @@ void Y_SetupVoteFinish(SINT8 pick, SINT8 level)
 	vote.deferredLevel = level;
 	g_pickedVote = pick;
 	vote.timer = -1;
+	vote.selectFinalize = SELECT_DELAY_TIME;
+	vote.pickFinalize = PICK_DELAY_TIME;
 }
