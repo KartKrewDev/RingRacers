@@ -2773,6 +2773,64 @@ ConcatCommandArgv (int start, int end)
 //
 // Largely rewritten by James.
 //
+
+static INT32 GetGametypeParm(size_t option_gametype)
+{
+	const char *gametypename;
+	INT32 newgametype;
+
+	if (COM_Argc() < option_gametype + 2)/* no argument after? */
+	{
+		CONS_Alert(CONS_ERROR,
+				"No gametype name follows parameter '%s'.\n",
+				COM_Argv(option_gametype));
+		return -1;
+	}
+
+	// new gametype value
+	// use current one by default
+	gametypename = COM_Argv(option_gametype + 1);
+
+	newgametype = G_GetGametypeByName(gametypename);
+
+	if (newgametype == -1) // reached end of the list with no match
+	{
+		/* Did they give us a gametype number? That's okay too! */
+		if (isdigit(gametypename[0]))
+		{
+			INT16 d = atoi(gametypename);
+			if (d >= 0 && d < numgametypes)
+				newgametype = d;
+			else
+			{
+				CONS_Alert(CONS_ERROR,
+						"Gametype number %d is out of range. Use a number between"
+						" 0 and %d inclusive. ...Or just use the name. :v\n",
+						d,
+						numgametypes-1);
+				return -1;
+			}
+		}
+		else
+		{
+			CONS_Alert(CONS_ERROR,
+					"'%s' is not a valid gametype.\n",
+					gametypename);
+			return -1;
+		}
+	}
+
+	if (Playing() && netgame && (gametypes[newgametype]->rules & GTR_FORBIDMP))
+	{
+		CONS_Alert(CONS_ERROR,
+				"'%s' is not a net-compatible gametype.\n",
+				gametypename);
+		return -1;
+	}
+
+	return newgametype;
+}
+
 static void Command_Map_f(void)
 {
 	size_t first_option;
@@ -2780,7 +2838,6 @@ static void Command_Map_f(void)
 	size_t option_gametype;
 	size_t option_encore;
 	size_t option_skill;
-	const char *gametypename;
 	boolean newresetplayers;
 	boolean newforcespecialstage;
 
@@ -2794,8 +2851,6 @@ static void Command_Map_f(void)
 
 	INT32 newgametype = gametype;
 	boolean newencoremode = (cv_kartencore.value == 1);
-
-	INT32 d;
 
 	if (client && !IsPlayerAdmin(consoleplayer))
 	{
@@ -2812,17 +2867,6 @@ static void Command_Map_f(void)
 
 	usingcheats = CV_CheatsEnabled();
 	ischeating = (!(netgame || multiplayer)) || (!newresetplayers);
-
-	if (option_gametype)
-	{
-		if (COM_Argc() < option_gametype + 2)/* no argument after? */
-		{
-			CONS_Alert(CONS_ERROR,
-					"No gametype name follows parameter '%s'.\n",
-					COM_Argv(option_gametype));
-			return;
-		}
-	}
 
 	if (!( first_option = COM_FirstOption() ))
 		first_option = COM_Argc();
@@ -2863,46 +2907,9 @@ static void Command_Map_f(void)
 	// use current one by default
 	if (option_gametype)
 	{
-		gametypename = COM_Argv(option_gametype + 1);
-
-		newgametype = G_GetGametypeByName(gametypename);
-
-		if (newgametype == -1) // reached end of the list with no match
+		newgametype = GetGametypeParm(option_gametype);
+		if (newgametype == -1)
 		{
-			/* Did they give us a gametype number? That's okay too! */
-			if (isdigit(gametypename[0]))
-			{
-				d = atoi(gametypename);
-				if (d >= 0 && d < numgametypes)
-					newgametype = d;
-				else
-				{
-					CONS_Alert(CONS_ERROR,
-							"Gametype number %d is out of range. Use a number between"
-							" 0 and %d inclusive. ...Or just use the name. :v\n",
-							d,
-							numgametypes-1);
-					Z_Free(realmapname);
-					Z_Free(mapname);
-					return;
-				}
-			}
-			else
-			{
-				CONS_Alert(CONS_ERROR,
-						"'%s' is not a valid gametype.\n",
-						gametypename);
-				Z_Free(realmapname);
-				Z_Free(mapname);
-				return;
-			}
-		}
-
-		if (Playing() && netgame && (gametypes[newgametype]->rules & GTR_FORBIDMP))
-		{
-			CONS_Alert(CONS_ERROR,
-					"'%s' is not a net-compatible gametype.\n",
-					gametypename);
 			Z_Free(realmapname);
 			Z_Free(mapname);
 			return;
@@ -3204,56 +3211,9 @@ static void Command_RandomMap(void)
 
 	if ((option_gametype = COM_CheckPartialParm("-g")))
 	{
-		const char *gametypename;
-
-		if (COM_Argc() < option_gametype + 2)/* no argument after? */
-		{
-			CONS_Alert(CONS_ERROR,
-					"No gametype name follows parameter '%s'.\n",
-					COM_Argv(option_gametype));
+		newgametype = GetGametypeParm(option_gametype);
+		if (newgametype == -1)
 			return;
-		}
-
-		// new gametype value
-		// use current one by default
-		gametypename = COM_Argv(option_gametype + 1);
-
-		newgametype = G_GetGametypeByName(gametypename);
-
-		if (newgametype == -1) // reached end of the list with no match
-		{
-			/* Did they give us a gametype number? That's okay too! */
-			if (isdigit(gametypename[0]))
-			{
-				INT16 d = atoi(gametypename);
-				if (d >= 0 && d < numgametypes)
-					newgametype = d;
-				else
-				{
-					CONS_Alert(CONS_ERROR,
-							"Gametype number %d is out of range. Use a number between"
-							" 0 and %d inclusive. ...Or just use the name. :v\n",
-							d,
-							numgametypes-1);
-					return;
-				}
-			}
-			else
-			{
-				CONS_Alert(CONS_ERROR,
-						"'%s' is not a valid gametype.\n",
-						gametypename);
-				return;
-			}
-		}
-
-		if (Playing() && netgame && (gametypes[newgametype]->rules & GTR_FORBIDMP))
-		{
-			CONS_Alert(CONS_ERROR,
-					"'%s' is not a net-compatible gametype.\n",
-					gametypename);
-			return;
-		}
 	}
 
 	// TODO: Handle singleplayer conditions.
