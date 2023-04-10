@@ -39,7 +39,7 @@ SINT8 K_UsingPowerLevels(void)
 {
 	SINT8 pt = PWRLV_DISABLED;
 
-	if (!cv_kartusepwrlv.value || !(netgame || (demo.playback && demo.netgame)) || grandprixinfo.gp == true)
+	if (!cv_kartusepwrlv.value || !(netgame || (demo.playback && demo.netgame)) || grandprixinfo.gp == true || roundqueue.size > 0)
 	{
 		return PWRLV_DISABLED;
 	}
