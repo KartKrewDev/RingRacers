@@ -958,7 +958,7 @@ static void P_NetUnArchiveRoundQueue(savebuffer_t *save)
 {
 	UINT8 i;
 	if (READUINT32(save->p) != ARCHIVEBLOCK_ROUNDQUEUE)
-		I_Error("Bad $$$.sav at archive block Parties");
+		I_Error("Bad $$$.sav at archive block Round-queue");
 
 	memset(&roundqueue, 0, sizeof(struct roundqueue));
 
