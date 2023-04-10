@@ -4173,6 +4173,9 @@ static void G_GetNextMap(void)
 				forceresetplayers = true;
 			}
 		}
+
+		// Make sure the next D_MapChange sends updated roundqueue state.
+		roundqueue.netcommunicate = true;
 	}
 	else if (grandprixinfo.gp == true)
 	{

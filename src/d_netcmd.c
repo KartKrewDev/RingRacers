@@ -2578,12 +2578,18 @@ void D_MapChange(INT32 mapnum, INT32 newgametype, boolean pencoremode, boolean p
 			flags |= 1<<2;
 		if (pforcespecialstage)
 			flags |= 1<<3;
+		if (roundqueue.netcommunicate)
+			flags |= 1<<4;
 		WRITEUINT8(buf_p, flags);
 
-		// roundqueue state
-		WRITEUINT8(buf_p, roundqueue.position);
-		WRITEUINT8(buf_p, roundqueue.size);
-		WRITEUINT8(buf_p, roundqueue.roundnum);
+		if (roundqueue.netcommunicate)
+		{
+			// roundqueue state
+			WRITEUINT8(buf_p, roundqueue.position);
+			WRITEUINT8(buf_p, roundqueue.size);
+			WRITEUINT8(buf_p, roundqueue.roundnum);
+			roundqueue.netcommunicate = false;
+		}
 
 		// new gametype value
 		WRITEUINT8(buf_p, newgametype);
@@ -3042,7 +3048,7 @@ static void Got_Mapcmd(UINT8 **cp, INT32 playernum)
 	UINT8 flags;
 	INT32 presetplayer = 1, lastgametype;
 	UINT8 skipprecutscene, pforcespecialstage;
-	boolean pencoremode;
+	boolean pencoremode, hasroundqueuedata;
 	INT16 mapnumber;
 
 	forceresetplayers = deferencoremode = false;
@@ -3055,9 +3061,6 @@ static void Got_Mapcmd(UINT8 **cp, INT32 playernum)
 		return;
 	}
 
-	if (chmappending)
-		chmappending--;
-
 	flags = READUINT8(*cp);
 
 	pencoremode = ((flags & 1) != 0);
@@ -3068,9 +3071,38 @@ static void Got_Mapcmd(UINT8 **cp, INT32 playernum)
 
 	pforcespecialstage = ((flags & (1<<3)) != 0);
 
-	roundqueue.position = READUINT8(*cp);
-	roundqueue.size = READUINT8(*cp);
-	roundqueue.roundnum = READUINT8(*cp);
+	hasroundqueuedata = ((flags & (1<<4)) != 0);
+
+	if (hasroundqueuedata)
+	{
+		UINT8 position = READUINT8(*cp);
+		UINT8 size = READUINT8(*cp);
+		UINT8 roundnum = READUINT8(*cp);
+
+		if (playernum != serverplayer // Clients, even admin clients, don't have full roundqueue data
+			|| position > size // Sanity check A (intentionally not a >= comparison)
+			|| size > ROUNDQUEUE_MAX) // Sanity Check B (ditto)
+		{
+			CONS_Alert(CONS_WARNING, M_GetText("Illegal round-queue data received from %s\n"), player_names[playernum]);
+			if (server)
+				SendKick(playernum, KICK_MSG_CON_FAIL);
+			return;
+		}
+		
+		roundqueue.position = position;
+		while (roundqueue.size < size)
+		{
+			// We wipe rather than provide full data to prevent bloating the packet,
+			// and because only this data is necessary for sync. ~toast 100423
+			memset(&roundqueue.entries[roundqueue.size], 0, sizeof(roundentry_t));
+			roundqueue.size++;
+		}
+		roundqueue.roundnum = roundnum; // no sanity checking required, server is authoriative
+	}
+
+	// No more kicks below this line, we can now start modifying state beyond this function.
+	if (chmappending)
+		chmappending--;
 
 	lastgametype = gametype;
 	gametype = READUINT8(*cp);
@@ -3080,6 +3112,13 @@ static void Got_Mapcmd(UINT8 **cp, INT32 playernum)
 		gametype = lastgametype;
 	else if (gametype != lastgametype)
 		D_GameTypeChanged(lastgametype); // emulate consvar_t behavior for gametype
+
+	if (hasroundqueuedata && roundqueue.position > 0 && roundqueue.size > 0)
+	{
+		// ...we can evaluate CURRENT specifics for roundqueue data, though.
+		roundqueue.entries[roundqueue.position-1].gametype = gametype;
+		roundqueue.entries[roundqueue.position-1].encore = pencoremode;
+	}
 
 	if (!(gametyperules & GTR_ENCORE))
 		pencoremode = false;

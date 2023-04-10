@@ -68,6 +68,7 @@ extern struct roundqueue
 	UINT8 roundnum;							// Visible number on HUD
 	UINT8 position;							// Head position in the round queue
 	UINT8 size;								// Number of entries in the round queue
+	boolean netcommunicate;					// As server, should we net-communicate this in XD_MAP?
 	roundentry_t entries[ROUNDQUEUE_MAX];	// Entries in the round queue
 } roundqueue;
 
