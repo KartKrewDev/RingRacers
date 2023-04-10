@@ -429,6 +429,9 @@ static void P_ClearSingleMapHeaderInfo(INT16 num)
 	Z_Free(mapheaderinfo[num]->mainrecord);
 	mapheaderinfo[num]->mainrecord = NULL;
 
+	mapheaderinfo[num]->justPlayed = 0;
+	mapheaderinfo[num]->anger = 0;
+
 	mapheaderinfo[num]->customopts = NULL;
 	mapheaderinfo[num]->numCustomOptions = 0;
 }

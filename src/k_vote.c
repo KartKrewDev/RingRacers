@@ -96,11 +96,14 @@
 #define PILE_SPACING_W (PILE_WIDTH + PILE_SPACE)
 #define PILE_SPACING_H (PILE_HEIGHT + PILE_SPACE)
 
+#define LOTS_OF_VOTES_X (120*FRACUNIT)
+#define LOTS_OF_VOTES_Y (80*FRACUNIT)
+
 // Give time for the animations to finish before finalizing the vote stages.
 #define SELECT_DELAY_TIME (TICRATE*4)
 #define PICK_DELAY_TIME (TICRATE/2)
 
-//#define TEST_VOTES (11)
+#define MAP_ANGER_MAX (VOTE_NUM_LEVELS)
 
 // Catcher data
 enum
@@ -155,7 +158,7 @@ typedef struct
 // Voting roulette variables.
 typedef struct
 {
-	y_vote_pile pile[MAXPLAYERS];
+	y_vote_pile pile[VOTE_TOTAL];
 	UINT8 anim;
 	UINT8 tics;
 	UINT32 offset;
@@ -211,14 +214,26 @@ boolean Y_PlayerIDCanVote(const UINT8 playerId)
 {
 	player_t *player = NULL;
 
+	if (playerId == VOTE_SPECIAL)
+	{
+		// Special vote spot, always allow
+		return true;
+	}
+
 	if (playerId >= MAXPLAYERS || playeringame[playerId] == false)
 	{
 		return false;
 	}
 
 	player = &players[playerId];
-	if (player->spectator == true || player->bot == true)
+	if (player->spectator == true)
 	{
+		return false;
+	}
+
+	if (player->bot == true && cv_botscanvote.value == 0)
+	{
+		// Bots may only vote if the server allows it
 		return false;
 	}
 
@@ -231,10 +246,7 @@ static void Y_SortPile(void)
 	UINT8 votesLeft = 0;
 	INT32 i;
 
-#ifdef TEST_VOTES
-	numVotes = TEST_VOTES;
-#else
-	for (i = 0; i < MAXPLAYERS; i++)
+	for (i = 0; i < VOTE_TOTAL; i++)
 	{
 		if (g_votes[i] == VOTE_NOT_PICKED)
 		{
@@ -243,7 +255,6 @@ static void Y_SortPile(void)
 
 		numVotes++;
 	}
-#endif
 
 	if (numVotes == 0)
 	{
@@ -252,16 +263,14 @@ static void Y_SortPile(void)
 
 	votesLeft = numVotes;
 
-	for (i = 0; i < MAXPLAYERS; i++)
+	for (i = 0; i < VOTE_TOTAL; i++)
 	{
 		y_vote_pile *const pile = &vote.roulette.pile[i];
 
-#ifndef TEST_VOTES
 		if (g_votes[i] == VOTE_NOT_PICKED)
 		{
 			continue;
 		}
-#endif
 
 		// Just center it for now.
 		pile->destX = BASEVIDWIDTH << FRACBITS >> 1;
@@ -313,7 +322,9 @@ static void Y_SortPile(void)
 		}
 		else
 		{
-			// TODO: 13+ votes
+			angle_t a = ANGLE_90 + (ANGLE_MAX / numVotes) * (votesLeft - 1);
+			pile->destX += FixedMul(LOTS_OF_VOTES_X, FINECOSINE(a >> ANGLETOFINESHIFT));
+			pile->destY += FixedMul(LOTS_OF_VOTES_Y,  -FINESINE(a >> ANGLETOFINESHIFT));
 		}
 
 		votesLeft--;
@@ -448,20 +459,51 @@ static void Y_DrawVoteThumbnail(fixed_t center_x, fixed_t center_y, fixed_t widt
 
 	if (playerID >= 0)
 	{
+		const INT32 whiteSq = 16 * dupx;
+
 		if (playerID < MAXPLAYERS)
 		{
 			UINT8 *playerMap = R_GetTranslationColormap(players[playerID].skin, players[playerID].skincolor, GTC_CACHE);
 			patch_t *playerPatch = faceprefix[players[playerID].skin][FACE_RANK];
+
 			V_DrawFixedPatch(
-				x + width - (playerPatch->width * FRACUNIT) + FRACUNIT - 1,
-				y + height - (playerPatch->height * FRACUNIT) + FRACUNIT,
-				FRACUNIT, flags,
+				(fx + fw - whiteSq + dupx) * FRACUNIT,
+				(fy + fh - whiteSq + dupy) * FRACUNIT,
+				FRACUNIT, flags|V_NOSCALESTART,
 				playerPatch, playerMap
 			);
 		}
 		else
 		{
-			; // angry level goes here
+			const fixed_t iconHeight = (14 << FRACBITS);
+			const fixed_t iconWidth = (iconHeight * 320) / 200;
+
+			V_DrawFill(
+				fx + fw - whiteSq + dupx,
+				fy + fh - whiteSq + dupy,
+				whiteSq,
+				whiteSq,
+				0|flags|V_NOSCALESTART
+			);
+
+			V_SetClipRect(
+				fx + fw - whiteSq + (2 * dupx),
+				fy + fh - whiteSq + (2 * dupy),
+				whiteSq - (2 * dupx),
+				whiteSq - (2 * dupy),
+				flags|V_NOSCALESTART
+			);
+
+			K_DrawMapThumbnail(
+				((fx + fw - whiteSq + (2 * dupx)) * FRACUNIT) - (iconWidth - iconHeight),
+				(fy + fh - whiteSq + (2 * dupy)) * FRACUNIT,
+				iconWidth,
+				flags | V_NOSCALESTART | ((encore == true) ? V_FLIP : 0),
+				g_voteLevels[v][0],
+				NULL
+			);
+
+			V_ClearClipRect();
 		}
 	}
 }
@@ -707,7 +749,7 @@ static void Y_DrawVotePile(void)
 {
 	INT32 i;
 
-	for (i = 0; i < MAXPLAYERS; i++)
+	for (i = 0; i < VOTE_TOTAL; i++)
 	{
 		y_vote_pile *const pile = &vote.roulette.pile[i];
 		y_vote_catcher *const catcher = &pile->catcher;
@@ -717,27 +759,21 @@ static void Y_DrawVotePile(void)
 			continue;
 		}
 
-#ifndef TEST_VOTES
 		if (g_votes[i] == VOTE_NOT_PICKED)
 		{
 			continue;
 		}
-#endif
 
 		Y_DrawVoteThumbnail(
 			pile->x, pile->y,
 			PILE_WIDTH, 0,
-#ifdef TEST_VOTES
-			0,
-#else
 			g_votes[i],
-#endif
 			(i != vote.roulette.anim || g_pickedVote == VOTE_NOT_PICKED),
 			i
 		);
 	}
 
-	for (i = 0; i < MAXPLAYERS; i++)
+	for (i = 0; i < VOTE_TOTAL; i++)
 	{
 		Y_DrawCatcher(&vote.roulette.pile[i].catcher);
 	}
@@ -949,7 +985,7 @@ static void Y_TickPlayerCatcher(const UINT8 localPlayer)
 		{
 			if (catcher->x == catcher->destX && catcher->y == catcher->destY)
 			{
-				D_ModifyClientVote(localPlayer, vote.players[localPlayer].selection);
+				D_ModifyClientVote(g_localplayers[localPlayer], vote.players[localPlayer].selection);
 				catcher->action = CATCHER_NA;
 				S_StopSoundByNum(sfx_kc37);
 			}
@@ -1023,13 +1059,11 @@ static void Y_TickPlayerPile(const UINT8 playerId)
 	fixed_t movedX = 0;
 	fixed_t movedY = 0;
 
-#ifndef TEST_VOTES
 	if (g_votes[playerId] == VOTE_NOT_PICKED)
 	{
 		catcher->action = CATCHER_NA;
 		return;
 	}
-#endif
 
 	movedX = (pile->destX - pile->x) / 2;
 	movedY = (pile->destY - pile->y) / 2;
@@ -1058,10 +1092,10 @@ static void Y_TickVoteRoulette(void)
 
 	if (vote.endtic == -1)
 	{
-		UINT8 tempvotes[MAXPLAYERS];
+		UINT8 tempvotes[VOTE_TOTAL];
 		UINT8 numvotes = 0;
 
-		for (i = 0; i < MAXPLAYERS; i++)
+		for (i = 0; i < VOTE_TOTAL; i++)
 		{
 			if (g_votes[i] == VOTE_NOT_PICKED)
 			{
@@ -1086,7 +1120,7 @@ static void Y_TickVoteRoulette(void)
 		else
 		{
 			vote.roulette.offset++;
-			vote.roulette.tics = min(6, 9 * vote.roulette.offset / 40);
+			vote.roulette.tics = min(5, 7 * vote.roulette.offset / 40);
 			S_StartSound(NULL, sfx_kc39);
 		}
 
@@ -1095,7 +1129,7 @@ static void Y_TickVoteRoulette(void)
 			vote.roulette.anim = tempvotes[((g_pickedVote + vote.roulette.offset) % numvotes)];
 		}
 
-		if (vote.roulette.offset > 30)
+		if (vote.roulette.offset > 20)
 		{
 			if (vote.roulette.endOffset == 0)
 			{
@@ -1107,7 +1141,7 @@ static void Y_TickVoteRoulette(void)
 						{
 							vote.roulette.endOffset = vote.roulette.offset + i;
 
-							if (M_RandomChance(FRACUNIT/32)) // Let it cheat occasionally~
+							if (M_RandomChance(FRACUNIT/4)) // Let it cheat occasionally~
 							{
 								vote.roulette.endOffset++;
 							}
@@ -1151,6 +1185,74 @@ static boolean Y_PlayerCanSelect(const UINT8 localId)
 	}
 
 	return Y_PlayerIDCanVote(p);
+}
+
+static void Y_TryMapAngerVote(void)
+{
+	SINT8 angryMaps[VOTE_NUM_LEVELS] = { -1 };
+	size_t angryMapsCount = 0;
+
+	boolean mapVoted[VOTE_NUM_LEVELS] = { false };
+	INT32 pick = 0;
+
+	INT32 numPlayers = 0;
+	INT32 i = 0;
+	
+	for (i = 0; i < MAXPLAYERS; i++)
+	{
+		if (Y_PlayerIDCanVote(i) == false)
+		{
+			continue;
+		}
+
+		numPlayers++;
+
+		if (g_votes[i] != VOTE_NOT_PICKED)
+		{
+			mapVoted[ g_votes[i] ] = true;
+		}
+	}
+
+	if (numPlayers < 3)
+	{
+		// Don't handle map anger if there's not enough players.
+		return;
+	}
+
+	for (i = 0; i < VOTE_NUM_LEVELS; i++)
+	{
+		const INT16 mapID = g_voteLevels[i][0];
+
+		if (mapVoted[i] == true)
+		{
+			// Someone voted for us, no need to be angry anymore :)
+			mapheaderinfo[ mapID ]->anger = 0;
+		}
+		else
+		{
+			// Increment map anger for maps that weren't picked by a single soul.
+			mapheaderinfo[ mapID ]->anger++;
+
+			if (mapheaderinfo[ mapID ]->anger > MAP_ANGER_MAX)
+			{
+				// If they are angry enough, then it can vote for itself!
+				angryMaps[ angryMapsCount ] = i;
+				angryMapsCount++;
+			}
+		}
+	}
+
+	if (angryMapsCount == 0)
+	{
+		return;
+	}
+
+	// Set the special vote to a random angry map.
+	pick = M_RandomKey(angryMapsCount);
+	D_ModifyClientVote(UINT8_MAX, angryMaps[pick]);
+
+	// Make it not angry anymore.
+	mapheaderinfo[ g_voteLevels[ angryMaps[pick] ][0] ]->anger = 0;
 }
 
 static void Y_TickVoteSelection(void)
@@ -1233,10 +1335,18 @@ static void Y_TickVoteSelection(void)
 			continue;
 		}
 
+		if (players[i].bot == true && g_votes[i] == VOTE_NOT_PICKED)
+		{
+			if (( M_RandomFixed() % 100 ) == 0)
+			{
+				// bots vote randomly
+				D_ModifyClientVote(i, M_RandomKey(VOTE_NUM_LEVELS));
+			}
+		}
+
 		if (g_votes[i] == VOTE_NOT_PICKED)
 		{
 			everyone_voted = false;
-			break;
 		}
 	}
 
@@ -1270,6 +1380,7 @@ static void Y_TickVoteSelection(void)
 
 			if (server)
 			{
+				Y_TryMapAngerVote();
 				D_PickVote();
 			}
 		}
@@ -1306,11 +1417,15 @@ void Y_VoteTicker(void)
 		return;
 	}
 
-	for (i = 0; i < MAXPLAYERS; i++) // Correct votes as early as possible, before they're processed by the game at all
+	// Correct invalid votes as early as possible,
+	// before they're processed by the rest of the ticker
+	for (i = 0; i < MAXPLAYERS; i++)
 	{
 		if (Y_PlayerIDCanVote(i) == false)
 		{
-			g_votes[i] = VOTE_NOT_PICKED; // Spectators are the lower class, and have effectively no voice in the government. Democracy sucks.
+			// Spectators are the lower class, and have
+			// effectively no voice in the government. Democracy sucks.
+			g_votes[i] = VOTE_NOT_PICKED;
 		}
 	}
 
@@ -1341,7 +1456,7 @@ void Y_VoteTicker(void)
 
 	Y_SortPile();
 
-	for (i = 0; i < MAXPLAYERS; i++)
+	for (i = 0; i < VOTE_TOTAL; i++)
 	{
 		Y_TickPlayerPile(i);
 	}
@@ -1449,7 +1564,7 @@ void Y_StartVote(void)
 		catcher->player = -1;
 	}
 
-	for (i = 0; i < MAXPLAYERS; i++)
+	for (i = 0; i < VOTE_TOTAL; i++)
 	{
 		y_vote_pile *const pile = &vote.roulette.pile[i];
 		y_vote_catcher *const catcher = &pile->catcher;
@@ -1556,7 +1671,7 @@ void Y_SetupVoteFinish(SINT8 pick, SINT8 level)
 
 		vote.roulette.syncTime = 0;
 
-		for (i = 0; i < MAXPLAYERS; i++)
+		for (i = 0; i < VOTE_TOTAL; i++)
 		{
 			if (g_votes[i] == VOTE_NOT_PICKED)
 			{

@@ -4997,14 +4997,16 @@ static void P_NetArchiveMisc(savebuffer_t *save, boolean resending)
 	WRITEINT16(save->p, lastmap);
 	WRITEUINT16(save->p, bossdisabled);
 
-	for (i = 0; i < 4; i++)
+	for (i = 0; i < VOTE_NUM_LEVELS; i++)
 	{
 		WRITEINT16(save->p, g_voteLevels[i][0]);
 		WRITEINT16(save->p, g_voteLevels[i][1]);
 	}
 
-	for (i = 0; i < MAXPLAYERS; i++)
+	for (i = 0; i < VOTE_TOTAL; i++)
+	{
 		WRITESINT8(save->p, g_votes[i]);
+	}
 
 	WRITESINT8(save->p, g_pickedVote);
 
@@ -5169,13 +5171,13 @@ static inline boolean P_NetUnArchiveMisc(savebuffer_t *save, boolean reloading)
 	lastmap = READINT16(save->p);
 	bossdisabled = READUINT16(save->p);
 
-	for (i = 0; i < 4; i++)
+	for (i = 0; i < VOTE_NUM_LEVELS; i++)
 	{
 		g_voteLevels[i][0] = READINT16(save->p);
 		g_voteLevels[i][1] = READINT16(save->p);
 	}
 
-	for (i = 0; i < MAXPLAYERS; i++)
+	for (i = 0; i < VOTE_TOTAL; i++)
 	{
 		g_votes[i] = READSINT8(save->p);
 	}

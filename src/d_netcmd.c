@@ -468,6 +468,8 @@ consvar_t cv_reducevfx = CVAR_INIT ("reducevfx", "No", CV_SAVE, CV_YesNo, NULL);
 static CV_PossibleValue_t votetime_cons_t[] = {{10, "MIN"}, {3600, "MAX"}, {0, NULL}};
 consvar_t cv_votetime = CVAR_INIT ("votetime", "20", CV_NETVAR, votetime_cons_t, NULL);
 
+consvar_t cv_botscanvote = CVAR_INIT ("botscanvote", "No", CV_CHEAT, CV_YesNo, NULL);
+
 consvar_t cv_gravity = CVAR_INIT ("gravity", "0.8", CV_CHEAT|CV_FLOAT|CV_CALL, NULL, Gravity_OnChange); // change DEFAULT_GRAVITY if you change this
 
 consvar_t cv_soundtest = CVAR_INIT ("soundtest", "0", CV_CALL, NULL, SoundTest_OnChange);
@@ -2645,29 +2647,52 @@ void D_ModifyClientVote(UINT8 player, SINT8 voted)
 {
 	char buf[2];
 	char *p = buf;
+	UINT8 sendPlayer = consoleplayer;
 
-	if (player >= MAXSPLITSCREENPLAYERS)
+	if (player == UINT8_MAX)
 	{
-		return;
+		// Special game vote (map anger, duel)
+		if (!server)
+		{
+			return;
+		}
 	}
 
-	WRITEUINT8(p, g_localplayers[player]);
+	if (player == UINT8_MAX)
+	{
+		// special vote
+		WRITEUINT8(p, UINT8_MAX);
+	}
+	else
+	{
+		INT32 i = 0;
+		WRITEUINT8(p, player);
+
+		for (i = 0; i <= splitscreen; i++)
+		{
+			if (g_localplayers[i] == player)
+			{
+				sendPlayer = i;
+			}
+		}
+	}
+
 	WRITESINT8(p, voted);
 
-	SendNetXCmdForPlayer(player, XD_MODIFYVOTE, buf, p - buf);
+	SendNetXCmdForPlayer(sendPlayer, XD_MODIFYVOTE, buf, p - buf);
 }
 
 void D_PickVote(void)
 {
 	char buf[2];
 	char* p = buf;
-	SINT8 temppicks[MAXPLAYERS];
-	SINT8 templevels[MAXPLAYERS];
+	SINT8 temppicks[VOTE_TOTAL];
+	SINT8 templevels[VOTE_TOTAL];
 	SINT8 votecompare = VOTE_NOT_PICKED;
 	UINT8 numvotes = 0, key = 0;
 	INT32 i;
 
-	for (i = 0; i < MAXPLAYERS; i++)
+	for (i = 0; i < VOTE_TOTAL; i++)
 	{
 		if (Y_PlayerIDCanVote(i) == false)
 		{
@@ -5434,23 +5459,45 @@ static void Got_ModifyVotecmd(UINT8 **cp, INT32 playernum)
 	UINT8 targetID = READUINT8(*cp);
 	SINT8 vote = READSINT8(*cp);
 
-	if (targetID >= MAXPLAYERS
-		|| playernode[targetID] != playernode[playernum])
+	if (targetID == UINT8_MAX)
 	{
-		CONS_Alert(CONS_WARNING,
-			M_GetText ("Illegal modify vote command received from %s\n"),
-			player_names[playernum]
-		);
-
-		if (server)
+		if (playernum != serverplayer) // server-only special vote
 		{
-			SendKick(playernum, KICK_MSG_CON_FAIL);
+			goto fail;
 		}
 
-		return;
+		targetID = VOTE_SPECIAL;
+	}
+	else if (playeringame[targetID] == true && players[targetID].bot == true)
+	{
+		if (targetID >= MAXPLAYERS
+			|| playernum != serverplayer)
+		{
+			goto fail;
+		}
+	}
+	else
+	{
+		if (targetID >= MAXPLAYERS
+			|| playernode[targetID] != playernode[playernum])
+		{
+			goto fail;
+		}
 	}
 
 	Y_SetPlayersVote(targetID, vote);
+	return;
+
+fail:
+	CONS_Alert(CONS_WARNING,
+		M_GetText ("Illegal modify vote command received from %s\n"),
+		player_names[playernum]
+	);
+
+	if (server)
+	{
+		SendKick(playernum, KICK_MSG_CON_FAIL);
+	}
 }
 
 static void Got_PickVotecmd(UINT8 **cp, INT32 playernum)

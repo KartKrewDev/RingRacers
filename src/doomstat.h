@@ -411,6 +411,7 @@ struct mapheader_t
 	cupheader_t *cup;					///< Cached cup
 
 	size_t justPlayed;					///< Prevent this map from showing up in votes if it was recently picked.
+	size_t anger;						///< No one picked this map... it's mad now.
 
 	// Titlecard information
 	char lvlttl[22];					///< Level name without "Zone". (21 character limit instead of 32, 21 characters can display on screen max anyway)
@@ -734,8 +735,10 @@ extern boolean legitimateexit;
 extern boolean comebackshowninfo;
 extern tic_t curlap, bestlap;
 
+#define VOTE_SPECIAL (MAXPLAYERS)
+#define VOTE_TOTAL (MAXPLAYERS+1)
 extern INT16 g_voteLevels[4][2];
-extern SINT8 g_votes[MAXPLAYERS];
+extern SINT8 g_votes[VOTE_TOTAL];
 extern SINT8 g_pickedVote;
 
 // ===========================

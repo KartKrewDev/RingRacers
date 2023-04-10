@@ -90,6 +90,7 @@ extern consvar_t cv_karteliminatelast;
 extern consvar_t cv_kartusepwrlv;
 
 extern consvar_t cv_votetime;
+extern consvar_t cv_botscanvote;
 
 extern consvar_t cv_kartdebugitem, cv_kartdebugamount, cv_kartdebugdistribution, cv_kartdebughuddrop;
 extern consvar_t cv_kartdebugnodes, cv_kartdebugcolorize, cv_kartdebugdirector;

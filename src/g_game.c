@@ -299,7 +299,7 @@ boolean franticitems; // Frantic items currently enabled?
 
 // Voting system
 INT16 g_voteLevels[4][2]; // Levels that were rolled by the host
-SINT8 g_votes[MAXPLAYERS]; // Each player's vote
+SINT8 g_votes[VOTE_TOTAL]; // Each player's vote
 SINT8 g_pickedVote; // What vote the host rolls
 
 // Server-sided, synched variables
@@ -3687,14 +3687,33 @@ static INT32 TOLMaps(UINT8 pgametype)
 	// Find all the maps that are ok
 	for (i = 0; i < nummapheaders; i++)
 	{
-		if (!mapheaderinfo[i])
+		if (mapheaderinfo[i] == NULL)
+		{
 			continue;
+		}
+
 		if (mapheaderinfo[i]->lumpnum == LUMPERROR)
+		{
 			continue;
-		if (!(mapheaderinfo[i]->typeoflevel & tolflag))
+		}
+
+		if ((mapheaderinfo[i]->typeoflevel & tolflag) == 0)
+		{
 			continue;
-		if (mapheaderinfo[i]->menuflags & LF2_HIDEINMENU) // Don't include Map Hell
+		}
+
+		if (mapheaderinfo[i]->menuflags & LF2_HIDEINMENU)
+		{
+			// Don't include hidden
 			continue;
+		}
+
+		if (M_MapLocked(i + 1))
+		{
+			// Don't include locked
+			continue;
+		}
+
 		num++;
 	}
 
