@@ -4139,6 +4139,9 @@ static void G_GetNextMap(void)
 				D_GameTypeChanged(lastgametype);
 			}
 
+			// Is this special..?
+			forcespecialstage = roundqueue.entries[roundqueue.position].rankrestricted;
+
 			// On entering roundqueue mode, kill the non-PWR between-round scores.
 			// This makes it viable as a future tournament mode base.
 			if (roundqueue.position == 0)

@@ -3135,6 +3135,14 @@ static void Got_Mapcmd(UINT8 **cp, INT32 playernum)
 			|| (gametyperules & (GTR_BOSS|GTR_CATCHER))) // Conventional rules.
 		{
 			grandprixinfo.eventmode = GPEVENT_SPECIAL;
+
+			if (pforcespecialstage == true && gamedata->everseenspecial == false)
+			{
+				gamedata->everseenspecial = true;
+				// No need to do anything else here -- P_LoadLevel will get this for us!
+				//M_UpdateUnlockablesAndExtraEmblems(true, true);
+				//gamedata->deferredsave = true;
+			}
 		}
 		else if (gametype != GT_RACE)
 		{
