@@ -3084,7 +3084,7 @@ static void Got_Mapcmd(UINT8 **cp, INT32 playernum)
 			|| size > ROUNDQUEUE_MAX) // Sanity Check B (ditto)
 		{
 			CONS_Alert(CONS_WARNING, M_GetText("Illegal round-queue data received from %s\n"), player_names[playernum]);
-			if (server)
+			if (server && playernum != serverplayer)
 				SendKick(playernum, KICK_MSG_CON_FAIL);
 			return;
 		}
