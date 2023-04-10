@@ -1250,9 +1250,6 @@ static void Y_TryMapAngerVote(void)
 	// Set the special vote to a random angry map.
 	pick = M_RandomKey(angryMapsCount);
 	D_ModifyClientVote(UINT8_MAX, angryMaps[pick]);
-
-	// Make it not angry anymore.
-	mapheaderinfo[ g_voteLevels[ angryMaps[pick] ][0] ]->anger = 0;
 }
 
 static void Y_TickVoteSelection(void)

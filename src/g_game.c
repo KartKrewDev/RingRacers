@@ -3892,6 +3892,7 @@ void G_AddMapToBuffer(INT16 map)
 
 	// Set our map's justPlayed value.
 	mapheaderinfo[map]->justPlayed = TOLMaps(gametype) - VOTE_NUM_LEVELS;
+	mapheaderinfo[map]->anger = 0; // Reset voting anger now that we're playing it
 }
 
 //
