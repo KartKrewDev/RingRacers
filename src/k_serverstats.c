@@ -96,7 +96,8 @@ void SV_LoadStats(void)
 
 	save.p += headerlen;
 	UINT8 version = READUINT8(save.p);
-	
+	(void)version; // for now
+
 	numtracked = READUINT32(save.p);
 
 	SV_ExpandStats(numtracked);
@@ -109,7 +110,6 @@ void SV_SaveStats(void)
 {
 	size_t length = 0;
 	const size_t headerlen = strlen(SERVERSTATSHEADER);
-	UINT8 i;
 	savebuffer_t save = {0};
 
 	if (!server)

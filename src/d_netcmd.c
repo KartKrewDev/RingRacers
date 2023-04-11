@@ -1955,11 +1955,6 @@ static void Got_LeaveParty(UINT8 **cp,INT32 playernum)
 
 void D_SendPlayerConfig(UINT8 n)
 {
-	const profile_t *pr = PR_GetProfile(cv_lastprofile[n].value);
-
-	UINT8 buf[4];
-	UINT8 *p = buf;
-
 	SendNameAndColor(n);
 	WeaponPref_Send(n);
 }

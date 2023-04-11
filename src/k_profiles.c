@@ -46,7 +46,6 @@ profile_t* PR_MakeProfile(
 	boolean guest)
 {
 	profile_t *new = Z_Malloc(sizeof(profile_t), PU_STATIC, NULL);
-	UINT8 i;
 
 	new->version = PROFILEVER;
 
@@ -392,10 +391,7 @@ void PR_LoadProfiles(void)
 		// Profile update 5-->6: PWR isn't in profile data anymore.
 		if (version < 6)
 		{
-			for (j = 0; j < PWRLV_NUMTYPES; j++)
-			{
-				READUINT16(save.p);
-			}
+			save.p += PWRLV_NUMTYPES*2;
 			profilesList[i]->wins = 0;
 		}
 		else

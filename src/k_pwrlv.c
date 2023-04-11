@@ -553,7 +553,6 @@ void K_SetPowerLevelScrambles(SINT8 powertype)
 
 void K_PlayerForfeit(UINT8 playerNum, boolean pointLoss)
 {
-	profile_t *pr;
 	UINT8 p = 0;
 
 	SINT8 powerType = PWRLV_DISABLED;
