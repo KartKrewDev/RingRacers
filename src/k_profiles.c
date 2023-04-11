@@ -389,8 +389,8 @@ void PR_LoadProfiles(void)
 			profilesList[i]->followercolor = PROFILEDEFAULTFOLLOWERCOLOR;
 		}
 
-		// Profile update 4-->5: PWR isn't in profile data anymore.
-		if (version < 5)
+		// Profile update 5-->6: PWR isn't in profile data anymore.
+		if (version < 6)
 		{
 			for (j = 0; j < PWRLV_NUMTYPES; j++)
 			{
@@ -419,7 +419,7 @@ void PR_LoadProfiles(void)
 		{
 #ifdef DEVELOP
 			// Profile update 1-->2: Add gc_rankings.
-			// Profile update 3-->5: Add gc_startlossless.
+			// Profile update 4-->5: Add gc_startlossless.
 			if ((j == gc_rankings && version < 2) ||
 				(j == gc_startlossless && version < 5))
 			{
