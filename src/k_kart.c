@@ -8854,9 +8854,16 @@ INT16 K_UpdateSteeringValue(INT16 inputSteering, INT16 destSteering)
 	// player->steering is the turning value, but with easing applied.
 	// Keeps micro-turning from old easing, but isn't controller dependent.
 
-	const INT16 amount = KART_FULLTURN/3;
+	INT16 amount = KART_FULLTURN/3;
 	INT16 diff = destSteering - inputSteering;
 	INT16 outputSteering = inputSteering;
+
+	
+	if ((inputSteering > 0 && destSteering < inputSteering) || (inputSteering < 0 && destSteering > inputSteering))
+	{
+		amount = KART_FULLTURN;
+	}
+
 
 	if (abs(diff) <= amount)
 	{
