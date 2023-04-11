@@ -3279,6 +3279,37 @@ static void Command_RestartLevel(void)
 	D_MapChange(gamemap, gametype, newencore, false, 0, false, false);
 }
 
+static void Handle_MapQueueSend(UINT16 newmapnum, UINT8 newgametype, boolean newencoremode)
+{
+	static char buf[1+1+2];
+	static char *buf_p = buf;
+
+	UINT8 flags = 0;
+
+	CONS_Debug(DBG_GAMELOGIC, "Map queue: mapnum=%d newgametype=%d newencoremode=%d\n",
+	           newmapnum, newgametype, newencoremode);
+
+	buf_p = buf;
+
+	if (newencoremode)
+		flags |= 1;
+
+	WRITEUINT8(buf_p, flags);
+	WRITEUINT8(buf_p, newgametype);
+
+	if (client)
+	{
+		WRITEUINT16(buf_p, newmapnum);
+		SendNetXCmd(XD_REQMAPQUEUE, buf, buf_p - buf);
+		return;
+	}
+
+	WRITEUINT8(buf_p, roundqueue.size);
+	SendNetXCmd(XD_MAPQUEUE, buf, buf_p - buf);
+
+	G_MapIntoRoundQueue(newmapnum, newgametype, newencoremode, false);
+}
+
 static void Command_QueueMap_f(void)
 {
 	size_t first_option;
@@ -3404,36 +3435,7 @@ static void Command_QueueMap_f(void)
 		}
 	}
 
-	{
-		static char buf[1+1+2];
-		static char *buf_p = buf;
-
-		UINT8 flags = 0;
-
-		CONS_Debug(DBG_GAMELOGIC, "Map queue: mapnum=%d newgametype=%d newencoremode=%d\n",
-	           newmapnum-1, newgametype, newencoremode);
-
-		buf_p = buf;
-
-		if (newencoremode)
-			flags |= 1;
-
-		WRITEUINT8(buf_p, flags);
-		WRITEUINT8(buf_p, newgametype);
-
-		if (client)
-		{
-			WRITEUINT16(buf_p, (newmapnum-1));
-			SendNetXCmd(XD_REQMAPQUEUE, buf, buf_p - buf);
-		}
-		else
-		{
-			WRITEUINT8(buf_p, roundqueue.size);
-			SendNetXCmd(XD_MAPQUEUE, buf, buf_p - buf);
-
-			G_MapIntoRoundQueue(newmapnum-1, newgametype, newencoremode, false);
-		}
-	}
+	Handle_MapQueueSend(newmapnum-1, newgametype, newencoremode);
 
 	Z_Free(realmapname);
 	Z_Free(mapname);
@@ -3470,20 +3472,7 @@ static void Got_RequestMapQueuecmd(UINT8 **cp, INT32 playernum)
 	if (client)
 		return;
 
-	{
-		static char buf[1+1+1];
-		static char *buf_p = buf;
-
-		buf_p = buf;
-
-		WRITEUINT8(buf_p, flags);
-		WRITEUINT8(buf_p, setgametype);
-		WRITEUINT8(buf_p, roundqueue.size);
-
-		SendNetXCmd(XD_MAPQUEUE, buf, buf_p - buf);
-	}
-
-	G_MapIntoRoundQueue(mapnumber, setgametype, setencore, false);
+	Handle_MapQueueSend(mapnumber, setgametype, setencore);
 }
 
 static void Got_MapQueuecmd(UINT8 **cp, INT32 playernum)
