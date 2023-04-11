@@ -18,6 +18,10 @@
 #include "../doomdef.h"
 #include "../doomstat.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /*--------------------------------------------------
 	void ACS_Init(void);
 
@@ -314,5 +318,8 @@ void ACS_Archive(savebuffer_t *save);
 
 void ACS_UnArchive(savebuffer_t *save);
 
+#ifdef __cplusplus
+}
+#endif
 
 #endif // __SRB2_ACS_INTERFACE_H__

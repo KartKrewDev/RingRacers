@@ -16,7 +16,6 @@
 
 #include "acsvm.hpp"
 
-extern "C" {
 #include "../doomtype.h"
 #include "../doomdef.h"
 #include "../doomstat.h"
@@ -42,7 +41,6 @@ extern "C" {
 #include "../r_skins.h"
 #include "../k_battle.h"
 #include "../k_podium.h"
-}
 
 #include "call-funcs.hpp"
 

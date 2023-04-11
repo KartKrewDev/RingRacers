@@ -16,7 +16,6 @@
 
 #include "acsvm.hpp"
 
-extern "C" {
 #include "../doomtype.h"
 #include "../doomdef.h"
 #include "../doomstat.h"
@@ -28,7 +27,6 @@ extern "C" {
 #include "../w_wad.h"
 #include "../z_zone.h"
 #include "../p_local.h"
-}
 
 #include "environment.hpp"
 #include "thread.hpp"
@@ -95,7 +93,7 @@ Environment::Environment()
 	addCodeDataACS0(120, {"",        0, addCallFunc(CallFunc_PlayerRings)});
 
 	addCodeDataACS0(122, {"",        0, addCallFunc(CallFunc_PlayerScore)});
-	
+
 	// 136 to 137: Implemented by ACSVM
 
 	// 157: Implemented by ACSVM

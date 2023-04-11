@@ -18,7 +18,6 @@
 
 #include "acsvm.hpp"
 
-extern "C" {
 #include "interface.h"
 
 #include "../doomtype.h"
@@ -29,7 +28,6 @@ extern "C" {
 #include "../g_game.h"
 #include "../i_system.h"
 #include "../p_saveg.h"
-}
 
 #include "environment.hpp"
 #include "thread.hpp"
