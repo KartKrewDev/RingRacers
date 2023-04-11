@@ -1270,23 +1270,23 @@ static void Y_TickVoteSelection(void)
 	{
 		boolean moved = false;
 
-		if (vote.players[i].delay)
-		{
-			vote.players[i].delay--;
-		}
-
 		if (Y_PlayerCanSelect(i) == true)
 		{
-			if (vote.timer == 0)
+			if (vote.players[i].delay > 0)
+			{
+				vote.players[i].delay--;
+			}
+			else if (vote.timer == 0)
 			{
 				// Time's up, send our vote ASAP.
 				if (vote.players[i].sentTimeOutVote == false)
 				{
 					Y_PlayerSendVote(i);
 					vote.players[i].sentTimeOutVote = true;
+					vote.players[i].delay = NEWTICRATE/7;
 				}
 			}
-			else if (menuactive == false && vote.players[i].delay == 0)
+			else if (menuactive == false)
 			{
 				if (G_PlayerInputDown(i, gc_left, 0))
 				{
