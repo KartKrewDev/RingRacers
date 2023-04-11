@@ -429,6 +429,9 @@ static void P_ClearSingleMapHeaderInfo(INT16 num)
 	Z_Free(mapheaderinfo[num]->mainrecord);
 	mapheaderinfo[num]->mainrecord = NULL;
 
+	mapheaderinfo[num]->justPlayed = 0;
+	mapheaderinfo[num]->anger = 0;
+
 	mapheaderinfo[num]->customopts = NULL;
 	mapheaderinfo[num]->numCustomOptions = 0;
 }
@@ -8041,8 +8044,6 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 		M_UpdateUnlockablesAndExtraEmblems(true, true);
 		G_SaveGameData();
 	}
-
-	G_AddMapToBuffer(gamemap-1);
 
 	P_MapEnd(); // tm.thing is no longer needed from this point onwards
 

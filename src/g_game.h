@@ -182,8 +182,7 @@ INT32 G_GuessGametypeByTOL(UINT32 tol);
 boolean G_GametypeUsesLives(void);
 boolean G_GametypeHasTeams(void);
 boolean G_GametypeHasSpectators(void);
-#define VOTEMODIFIER_ENCORE 0x80
-INT16 G_SometimesGetDifferentGametype(void);
+INT16 G_SometimesGetDifferentEncore(void);
 void G_ExitLevel(void);
 void G_NextLevel(void);
 void G_Continue(void);
@@ -256,8 +255,8 @@ FUNCMATH INT32 G_TicsToMilliseconds(tic_t tics);
 UINT32 G_TOLFlag(INT32 pgametype);
 INT16 G_GetFirstMapOfGametype(UINT8 pgametype);
 
-INT16 G_RandMap(UINT32 tolflags, INT16 pprevmap, UINT8 ignorebuffer, UINT8 maphell, boolean callagainsoon, INT16 *extbuffer);
-void G_AddMapToBuffer(INT16 map);
+UINT16 G_RandMap(UINT32 tolflags, UINT16 pprevmap, boolean ignoreBuffers, boolean callAgainSoon, UINT16 *extBuffer);
+void G_AddMapToBuffer(UINT16 map);
 
 #ifdef __cplusplus
 } // extern "C"

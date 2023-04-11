@@ -1307,7 +1307,7 @@ void V_DrawFadeFill(INT32 x, INT32 y, INT32 w, INT32 h, INT32 c, UINT16 color, U
 		h *= dupy;
 
 		// Center it if necessary
-		// adjustxy
+		V_AdjustXYWithSnap(&x, &y, c, dupx, dupy);
 	}
 
 	if (x >= vid.width || y >= vid.height)
