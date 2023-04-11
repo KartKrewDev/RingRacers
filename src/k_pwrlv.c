@@ -37,23 +37,38 @@ consvar_t cv_debugencorevote = CVAR_INIT ("debugencorevote", "Off", CV_CHEAT|CV_
 
 SINT8 K_UsingPowerLevels(void)
 {
-	SINT8 pt = PWRLV_DISABLED;
-
-	if (!cv_kartusepwrlv.value || !(netgame || (demo.playback && demo.netgame)) || grandprixinfo.gp == true || roundqueue.size > 0)
+	if (!cv_kartusepwrlv.value)
 	{
+		// Explicitly forbidden.
+		return PWRLV_DISABLED;
+	}
+
+	if (!(netgame || (demo.playback && demo.netgame)))
+	{
+		// Servers only.
+		return PWRLV_DISABLED;
+	}
+
+	if (roundqueue.size > 0 && roundqueue.position > 0)
+	{
+		// When explicit progression is in place, we're going by different rules.
 		return PWRLV_DISABLED;
 	}
 
 	if (gametype == GT_RACE)
 	{
-		pt = PWRLV_RACE;
-	}
-	else if (gametype == GT_BATTLE)
-	{
-		pt = PWRLV_BATTLE;
+		// Race PWR.
+		return PWRLV_RACE;
 	}
 
-	return pt;
+	if (gametype == GT_BATTLE)
+	{
+		// Battle PWR.
+		return PWRLV_BATTLE;
+	}
+
+	// We do not support PWR for custom gametypes at this moment in time.
+	return PWRLV_DISABLED;
 }
 
 void K_ClearClientPowerLevels(void)
