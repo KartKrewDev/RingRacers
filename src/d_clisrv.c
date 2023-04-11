@@ -6757,6 +6757,8 @@ void NetUpdate(void)
 		I_unlock_mutex(k_menu_mutex);
 #endif
 		CON_Ticker();
+
+		M_ScreenshotTicker();
 	}
 
 	FileSendTicker();

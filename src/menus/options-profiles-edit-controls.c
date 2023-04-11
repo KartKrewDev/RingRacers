@@ -53,11 +53,14 @@ menuitem_t OPTIONS_ProfileControls[] = {
 	{IT_HEADER, "OPTIONAL CONTROLS", "Take a screenshot, chat...",
 		NULL, {NULL}, 0, 0},
 
-	{IT_CONTROL, "SCREENSHOT", "Also usable with F8 on Keyboard.",
+	{IT_CONTROL, "SCREENSHOT", "Take a high resolution screenshot.",
 		NULL, {.routine = M_ProfileSetControl}, gc_screenshot, 0},
 
-	{IT_CONTROL, "GIF CAPTURE", "Also usable with F9 on Keyboard.",
-		NULL, {.routine = M_ProfileSetControl}, gc_recordgif, 0},
+	{IT_CONTROL, "RECORD VIDEO", "Record a video with sound.",
+		NULL, {.routine = M_ProfileSetControl}, gc_startmovie, 0},
+
+	{IT_CONTROL, "RECORD LOSSLESS", "Record a pixel perfect GIF.",
+		NULL, {.routine = M_ProfileSetControl}, gc_startlossless, 0},
 
 	{IT_CONTROL, "OPEN CHAT", "Opens chatbox in online games.",
 		NULL, {.routine = M_ProfileSetControl}, gc_talk, 0},
@@ -313,6 +316,10 @@ void M_MapProfileControl(event_t *ev)
 	INT32 controln = currentMenu->menuitems[itemOn].mvar1;	// gc_
 	UINT8 where = n;										// By default, we'll save the bind where we're supposed to map.
 	INT32 i;
+	INT32 *DeviceGameKeyDownArray = G_GetDeviceGameKeyDownArray(ev->device);
+
+	if (!DeviceGameKeyDownArray)
+		return;
 
 	//SetDeviceOnPress();	// Update player gamepad assignments
 
@@ -409,6 +416,10 @@ void M_MapProfileControl(event_t *ev)
 
 	// Set menu delay regardless of what we're doing to avoid stupid stuff.
 	M_SetMenuDelay(0);
+
+	// Reset this input so (keyboard keys at least) are not
+	// buffered and caught by menucmd.
+	DeviceGameKeyDownArray[c] = 0;
 
 	// Check if this particular key (c) is already bound in any slot.
 	// If that's the case, simply do nothing.

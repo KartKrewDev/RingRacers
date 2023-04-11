@@ -425,7 +425,9 @@ void PR_LoadProfiles(void)
 		{
 #ifdef DEVELOP
 			// Profile update 1-->2: Add gc_rankings.
-			if (j == gc_rankings && version < 2)
+			// Profile update 3-->5: Add gc_startlossless.
+			if ((j == gc_rankings && version < 2) ||
+				(j == gc_startlossless && version < 5))
 			{
 				for (k = 0; k < MAXINPUTMAPPING; k++)
 				{
