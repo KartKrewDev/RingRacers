@@ -17,11 +17,56 @@
 #include "m_misc.h" //FIL_WriteFile()
 #include "k_serverstats.h"
 #include "z_zone.h"
+#include "time.h"
 
-static serverplayer_t trackedList[MAXTRACKEDSERVERPLAYERS];
-static UINT32 numtracked = 0;
+static serverplayer_t *trackedList;
+static size_t numtracked = 0;
+static size_t numallocated = 0;
+static boolean initialized = false;
 
 UINT16 guestpwr[PWRLV_NUMTYPES]; // All-zero power level to reference for guests
+
+static void SV_InitializeStats(void)
+{
+	if (!initialized)
+	{
+		numallocated = 8;
+		trackedList = Z_Calloc(
+			sizeof(serverplayer_t) * numallocated,
+			PU_STATIC,
+			&trackedList
+		);
+
+		if (trackedList == NULL)
+		{
+			I_Error("Not enough memory for server stats\n");
+		}
+
+		initialized = true;
+	}
+}
+
+static void SV_ExpandStats(size_t needed)
+{
+	I_Assert(trackedList != NULL);
+
+	while (numallocated < needed)
+	{
+		numallocated *= numtracked;
+		trackedList = Z_Realloc(
+			trackedList,
+			sizeof(serverplayer_t) * numallocated,
+			PU_STATIC,
+			&trackedList
+		);
+
+		if (trackedList == NULL)
+		{
+			I_Error("Not enough memory for server stats\n");
+		}
+	}
+
+}
 
 // Read stats file to trackedList for ingame use
 void SV_LoadStats(void)
@@ -37,6 +82,8 @@ void SV_LoadStats(void)
 		return;
 	}
 
+	SV_InitializeStats();
+
 	if (strncmp(SERVERSTATSHEADER, (const char *)save.buffer, headerlen))
 	{
 		const char *gdfolder = "the Ring Racers folder";
@@ -51,8 +98,8 @@ void SV_LoadStats(void)
 	UINT8 version = READUINT8(save.p);
 	
 	numtracked = READUINT32(save.p);
-	if (numtracked > MAXTRACKEDSERVERPLAYERS)
-		numtracked = MAXTRACKEDSERVERPLAYERS;
+
+	SV_ExpandStats(numtracked);
 
 	READMEM(save.p, trackedList, (numtracked * sizeof(serverplayer_t)));
 }
@@ -95,29 +142,33 @@ void SV_SaveStats(void)
 }
 
 // New player, grab their stats from trackedList or initialize new ones if they're new
-UINT16 *SV_RetrievePWR(uint8_t *key)
+serverplayer_t *SV_RetrieveStats(uint8_t *key)
 {
 	UINT32 j;
+
+	SV_InitializeStats();
 
 	// Existing record?
 	for(j = 0; j < numtracked; j++)
 	{
 		if (memcmp(trackedList[j].public_key, key, PUBKEYLENGTH) == 0)
-		{
-			return trackedList[j].powerlevels;
-		}
+			return &trackedList[j];
 	}
 
-	// Untracked, make a new record
-	memcpy(trackedList[numtracked].public_key, key, PUBKEYLENGTH);
+	// Untracked below this point, make a new record
+	SV_ExpandStats(numtracked+1);
+
+	// Default stats
+	trackedList[numtracked].lastseen = time(NULL);
+	memcpy(&trackedList[numtracked].public_key, key, PUBKEYLENGTH);
 	for(j = 0; j < PWRLV_NUMTYPES; j++)
 	{
 		trackedList[numtracked].powerlevels[j] = PR_IsKeyGuest(key) ? 0 : PWRLVRECORD_START;
 	}
-	
+
 	numtracked++;
 
-	return trackedList[numtracked - 1].powerlevels;
+	return &trackedList[numtracked - 1];
 }
 
 // Write player stats to trackedList, then save to disk
@@ -128,21 +179,22 @@ void SV_UpdateStats(void)
 	if (!server)
 		return;
 
+	SV_InitializeStats();
+
 	for(i = 0; i < MAXPLAYERS; i++)
 	{
 		if (!playeringame[i])
 			continue;
 
 		if (PR_IsKeyGuest(players[i].public_key))
-		{
 			continue;
-		}
 
 		for(j = 0; j < numtracked; j++)
 		{
-			if (memcmp(trackedList[j].public_key, players[i].public_key, PUBKEYLENGTH) == 0)
+			if (memcmp(&trackedList[j].public_key, players[i].public_key, PUBKEYLENGTH) == 0)
 			{
-				memcpy(trackedList[j].powerlevels, clientpowerlevels[i], sizeof(trackedList[j].powerlevels));
+				trackedList[j].lastseen = time(NULL);
+				memcpy(&trackedList[j].powerlevels, clientpowerlevels[i], sizeof(trackedList[j].powerlevels));
 				break;
 			}
 		}

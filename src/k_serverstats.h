@@ -25,13 +25,13 @@ extern "C" {
 #endif
 
 #define SERVERSTATSFILE "srvstats.dat"
-#define MAXTRACKEDSERVERPLAYERS 9999
 #define SERVERSTATSHEADER "Doctor Robotnik's Ring Racers Server Stats"
 #define SERVERSTATSVER 1
 
 struct serverplayer_t
 {
 	uint8_t public_key[PUBKEYLENGTH];
+	time_t lastseen;
 	UINT16 powerlevels[PWRLV_NUMTYPES];
 };
 
@@ -39,7 +39,7 @@ void SV_SaveStats(void);
 
 void SV_LoadStats(void);
 
-UINT16 *SV_RetrievePWR(uint8_t *key);
+serverplayer_t *SV_RetrieveStats(uint8_t *key);
 
 void SV_UpdateStats(void);
 

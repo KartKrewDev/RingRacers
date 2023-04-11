@@ -4192,10 +4192,10 @@ boolean SV_SpawnServer(void)
 		SINT8 node = 0;
 		for (; node < MAXNETNODES; node++)
 			result |= SV_AddWaitingPlayers(node, availabilitiesbuffer,
-				cv_playername[0].zstring, PR_GetLocalPlayerProfile(0)->public_key, SV_RetrievePWR(PR_GetLocalPlayerProfile(0)->public_key),
-				cv_playername[1].zstring, PR_GetLocalPlayerProfile(1)->public_key, SV_RetrievePWR(PR_GetLocalPlayerProfile(1)->public_key),
-				cv_playername[2].zstring, PR_GetLocalPlayerProfile(2)->public_key, SV_RetrievePWR(PR_GetLocalPlayerProfile(2)->public_key),
-				cv_playername[3].zstring, PR_GetLocalPlayerProfile(3)->public_key, SV_RetrievePWR(PR_GetLocalPlayerProfile(3)->public_key));
+				cv_playername[0].zstring, PR_GetLocalPlayerProfile(0)->public_key, SV_RetrieveStats(PR_GetLocalPlayerProfile(0)->public_key)->powerlevels,
+				cv_playername[1].zstring, PR_GetLocalPlayerProfile(1)->public_key, SV_RetrieveStats(PR_GetLocalPlayerProfile(1)->public_key)->powerlevels,
+				cv_playername[2].zstring, PR_GetLocalPlayerProfile(2)->public_key, SV_RetrieveStats(PR_GetLocalPlayerProfile(2)->public_key)->powerlevels,
+				cv_playername[3].zstring, PR_GetLocalPlayerProfile(3)->public_key, SV_RetrieveStats(PR_GetLocalPlayerProfile(3)->public_key)->powerlevels);
 	}
 	return result;
 #endif
@@ -4506,10 +4506,10 @@ static void HandleConnect(SINT8 node)
 			}
 
 			SV_AddWaitingPlayers(node, availabilitiesbuffer,
-				names[0], lastReceivedKey[node][0], SV_RetrievePWR(lastReceivedKey[node][0]),
-				names[1], lastReceivedKey[node][1], SV_RetrievePWR(lastReceivedKey[node][1]),
-				names[2], lastReceivedKey[node][2], SV_RetrievePWR(lastReceivedKey[node][2]),
-				names[3], lastReceivedKey[node][3], SV_RetrievePWR(lastReceivedKey[node][3]));
+				names[0], lastReceivedKey[node][0], SV_RetrieveStats(lastReceivedKey[node][0])->powerlevels,
+				names[1], lastReceivedKey[node][1], SV_RetrieveStats(lastReceivedKey[node][1])->powerlevels,
+				names[2], lastReceivedKey[node][2], SV_RetrieveStats(lastReceivedKey[node][2])->powerlevels,
+				names[3], lastReceivedKey[node][3], SV_RetrieveStats(lastReceivedKey[node][3])->powerlevels);
 			joindelay += cv_joindelay.value * TICRATE;
 			player_joining = true;
 		}
