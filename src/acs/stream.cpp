@@ -18,13 +18,11 @@
 #include <ostream>
 #include <streambuf>
 
-extern "C" {
 #include "../doomtype.h"
 #include "../doomdef.h"
 #include "../doomstat.h"
 
 #include "../p_saveg.h"
-}
 
 #include "stream.hpp"
 #include "../cxxutil.hpp"
