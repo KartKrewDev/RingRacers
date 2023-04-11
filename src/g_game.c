@@ -4125,6 +4125,8 @@ static void G_GetNextMap(void)
 
 		while (roundqueue.position < roundqueue.size
 			&& (roundqueue.entries[roundqueue.position].mapnum >= nummapheaders
+			|| mapheaderinfo[roundqueue.entries[roundqueue.position].mapnum] == NULL
+			|| (netgame && (gametypes[roundqueue.entries[roundqueue.position].gametype]->rules & GTR_FORBIDMP))
 			|| (permitrank == false && roundqueue.entries[roundqueue.position].rankrestricted == true)))
 		{
 			// Skip all restricted queue entries.
