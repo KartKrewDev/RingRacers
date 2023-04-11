@@ -106,6 +106,10 @@ void Obj_LoopEndpointCollide(mobj_t *special, mobj_t *toucher);
 void Obj_BeginDropTargetMorph(mobj_t *target, skincolornum_t color);
 boolean Obj_DropTargetMorphThink(mobj_t *morph);
 
+/* Ring Shooter */
+void Obj_RingShooterThinker(mobj_t *mo);
+void Obj_RingShooterInput(player_t *player);
+
 #ifdef __cplusplus
 } // extern "C"
 #endif

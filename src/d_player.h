@@ -506,7 +506,7 @@ struct player_t
 	waypoint_t *currentwaypoint;
 	waypoint_t *nextwaypoint;
 	respawnvars_t respawn; // Respawn info
-	tic_t airtime; 			// Keep track of how long you've been in the air
+	tic_t airtime; 			// Used to track just air time, but has evolved over time into a general "karted" timer. Rename this variable?
 	UINT8 startboost;		// (0 to 125) - Boost you get from start of race or respawn drop dash
 
 	UINT16 flashing;
