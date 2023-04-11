@@ -628,4 +628,3 @@ boolean PR_IsKeyGuest(uint8_t *key)
 {
 	memset(allZero, 0, PUBKEYLENGTH);
 	return (memcmp(key, allZero, PUBKEYLENGTH) == 0);
-}
