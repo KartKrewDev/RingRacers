@@ -8859,9 +8859,9 @@ INT16 K_UpdateSteeringValue(INT16 inputSteering, INT16 destSteering)
 	INT16 outputSteering = inputSteering;
 
 	
-	if ((inputSteering > 0 && destSteering < inputSteering) || (inputSteering < 0 && destSteering > inputSteering))
+	if ((inputSteering > 0 && destSteering < 0) || (inputSteering < 0 && destSteering > 0))
 	{
-		amount = KART_FULLTURN;
+		amount = max(min(KART_FULLTURN, abs(inputSteering)), amount);
 	}
 
 
