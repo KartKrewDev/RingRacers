@@ -1340,6 +1340,18 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 		cmd->buttons |= BT_LOOKBACK;
 	}
 
+	// respawn
+	if (G_PlayerInputDown(forplayer, gc_respawn, 0))
+	{
+		cmd->buttons |= BT_RESPAWN;
+	}
+
+	// mp general function button
+	if (G_PlayerInputDown(forplayer, gc_vote, 0))
+	{
+		cmd->buttons |= BT_VOTE;
+	}
+
 	// lua buttons a thru c
 	if (G_PlayerInputDown(forplayer, gc_luaa, 0)) { cmd->buttons |= BT_LUAA; }
 	if (G_PlayerInputDown(forplayer, gc_luab, 0)) { cmd->buttons |= BT_LUAB; }

@@ -11387,6 +11387,15 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 	{
 		player->pflags &= ~PF_AIRFAILSAFE;
 	}
+
+	if (K_AllowRingShooter(player) == true)
+	{
+		if ((cmd->buttons & BT_RESPAWN)
+			&& !(player->oldcmd.buttons & BT_RESPAWN))
+		{
+			K_SpawnRingShooter(player);
+		}
+	}
 }
 
 void K_CheckSpectateStatus(void)
@@ -11775,6 +11784,31 @@ boolean K_Cooperative(void)
 
 //}
 
+boolean K_AllowRingShooter(player_t *player)
+{
+	const fixed_t minSpeed = 6 * player->mo->scale;
+
+	if (player->respawn.state != RESPAWNST_NONE
+		&& player->respawn.init == true)
+	{
+		return false;
+	}
+
+	if (player->drift == 0
+		&& player->justbumped == 0
+		&& player->spindashboost == 0
+		&& player->nocontrol == 0
+		&& player->fastfall == 0
+		&& player->speed < minSpeed
+		&& P_PlayerInPain(player) == false
+		&& P_IsObjectOnGround(player->mo) == true)
+	{
+		return true;
+	}
+
+	return false;
+}
+
 // I've tried to reduce redundancy as much as I can,
 // but check P_UpdateRingShooterParts if you edit this
 void K_SpawnRingShooter(player_t *player)
@@ -11792,7 +11826,7 @@ void K_SpawnRingShooter(player_t *player)
 	K_FlipFromObject(base, mo);
 	P_SetTarget(&base->target, mo);
 	P_SetScale(base, base->destscale = FixedMul(base->destscale, scale));
-	P_InitAngle(base, mo->angle);
+	base->angle = mo->angle;
 	base->scalespeed = FRACUNIT/2;
 	base->extravalue1 = FRACUNIT; // horizontal scale
 	base->extravalue2 = 0; // vertical scale
@@ -11818,7 +11852,7 @@ void K_SpawnRingShooter(player_t *player)
 		part = part->hprev;
 		P_SetTarget(&part->target, base);
 
-		P_InitAngle(part, base->angle - i * ANGLE_45);
+		part->angle = base->angle - i * ANGLE_45;
 		P_SetMobjState(part, S_RINGSHOOTER_NIPPLES);
 		part->frame += frameNum;
 		part->flags |= MF_NOTHINK;
@@ -11849,7 +11883,7 @@ void K_SpawnRingShooter(player_t *player)
 			frameNum++;
 		frameNum ^= FF_HORIZONTALFLIP;
 		angle -= ANGLE_90;
-		P_InitAngle(part, angle);
+		part->angle = angle;
 		part->frame += frameNum;
 		part->extravalue1 = part->x - refNipple->x;
 		part->extravalue2 = part->y - refNipple->y;
@@ -11861,7 +11895,7 @@ void K_SpawnRingShooter(player_t *player)
 	part = P_SpawnMobjFromMobj(base, offset.x, offset.y, 0, MT_RINGSHOOTER_SCREEN);
 	P_SetTarget(&base->tracer, part);
 	P_SetTarget(&part->target, base);
-	P_InitAngle(part, base->angle - ANGLE_45);
+	part->angle = base->angle - ANGLE_45;
 	part->extravalue1 = part->x - refNipple->x;
 	part->extravalue2 = part->y - refNipple->y;
 	part->flags |= MF_NOTHINK;
@@ -11873,7 +11907,7 @@ void K_SpawnRingShooter(player_t *player)
 		P_SetTarget(&part->tracer, P_SpawnMobjFromMobj(part, 0, 0, 0, MT_OVERLAY));
 		P_SetTarget(&part->tracer->target, part);
 		part = part->tracer;
-		P_InitAngle(part, part->target->angle);
+		part->angle = part->target->angle;
 		P_SetMobjState(part, S_RINGSHOOTER_NUMBERBACK + i);
 		part->renderflags |= RF_DONTDRAW;
 	}
