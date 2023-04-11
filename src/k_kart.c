@@ -8859,9 +8859,13 @@ INT16 K_UpdateSteeringValue(INT16 inputSteering, INT16 destSteering)
 	INT16 outputSteering = inputSteering;
 
 	
+	// We switched steering directions, lighten up on easing for a more responsive countersteer.
+	// (Don't do this for steering 0, let digital inputs tap-adjust!)
 	if ((inputSteering > 0 && destSteering < 0) || (inputSteering < 0 && destSteering > 0))
 	{
-		amount = max(min(KART_FULLTURN, abs(inputSteering)), amount);
+		// Don't let small turns in direction X allow instant turns in direction Y.
+		INT16 countersteer = min(KART_FULLTURN, abs(inputSteering));  // The farthest we should go is to 0 -- neutral.
+		amount = max(countersteer, amount); // But don't reduce turning strength from baseline either.
 	}
 
 

@@ -2235,16 +2235,30 @@ static void P_UpdatePlayerAngle(player_t *player)
 		angle_t leniency = (4*ANG1/3) * min(player->cmd.latency, 6);
 		// Don't force another turning tic, just give them the desired angle!
 
-		if (targetDelta == angleChange ||  K_Sliptiding(player) || (maxTurnRight == 0 && maxTurnLeft == 0))
+		if (targetDelta == angleChange || (maxTurnRight == 0 && maxTurnLeft == 0))
 		{
-			// Either we're dead on, we can't steer, or we're in a special handling state.
-			// Stuff like sliptiding requires some blind-faith steering:
-			// if a camera correction stops our turn input, the sliptide randomly fails!
+			// Either we're dead on or we can't steer at all.
 			player->steering = targetsteering;
 		}
 		else
 		{
 			// We're off. Try to legally steer the player towards their camera.
+
+			if (K_Sliptiding(player) && P_IsObjectOnGround(player->mo) && (player->cmd.turning != 0) && ((player->cmd.turning > 0) == (player->aizdriftstrat > 0)))
+			{
+				// Don't change handling direction if someone's inputs are sliptiding, you'll break the sliptide!
+				if (player->cmd.turning > 0)
+				{
+					steeringRight = max(steeringRight, max(steeringLeft, 1));
+					steeringLeft = max(steeringLeft, 1);
+				}
+				else
+				{
+					steeringLeft = min(steeringLeft, max(steeringRight, -1));
+					steeringRight = min(steeringLeft, -1);
+				}
+			}
+
 			player->steering = P_FindClosestTurningForAngle(player, targetDelta, steeringLeft, steeringRight);
 			angleChange = K_GetKartTurnValue(player, player->steering) << TICCMD_REDUCE;
 
