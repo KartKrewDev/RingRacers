@@ -298,7 +298,7 @@ boolean prevencoremode;
 boolean franticitems; // Frantic items currently enabled?
 
 // Voting system
-INT16 g_voteLevels[4][2]; // Levels that were rolled by the host
+UINT16 g_voteLevels[4][2]; // Levels that were rolled by the host
 SINT8 g_votes[VOTE_TOTAL]; // Each player's vote
 SINT8 g_pickedVote; // What vote the host rolls
 
@@ -3728,17 +3728,17 @@ static INT32 TOLMaps(UINT8 pgametype)
   *         has those flags.
   * \author Graue <graue@oceanbase.org>
   */
-static INT16 *g_allowedMaps = NULL;
+static UINT16 *g_allowedMaps = NULL;
 
 #ifdef PARANOIA
-static INT32 g_randMapStack = 0;
+static size_t g_randMapStack = 0;
 #endif
 
-INT16 G_RandMap(UINT32 tolflags, INT16 pprevmap, boolean ignoreBuffers, boolean callAgainSoon, INT16 *extBuffer)
+UINT16 G_RandMap(UINT32 tolflags, UINT16 pprevmap, boolean ignoreBuffers, boolean callAgainSoon, UINT16 *extBuffer)
 {
 	INT32 allowedMapsCount = 0;
 	INT32 extBufferCount = 0;
-	INT16 ret = 0;
+	UINT16 ret = 0;
 	INT32 i, j;
 
 #ifdef PARANOIA
@@ -3747,12 +3747,12 @@ INT16 G_RandMap(UINT32 tolflags, INT16 pprevmap, boolean ignoreBuffers, boolean 
 
 	if (g_allowedMaps == NULL)
 	{
-		g_allowedMaps = Z_Malloc(nummapheaders * sizeof(INT16), PU_STATIC, NULL);
+		g_allowedMaps = Z_Malloc(nummapheaders * sizeof(UINT16), PU_STATIC, NULL);
 	}
 
 	if (extBuffer != NULL)
 	{
-		for (i = 0; extBuffer[i] != 0; i++)
+		for (i = 0; extBuffer[i] != UINT16_MAX; i++)
 		{
 			extBufferCount++;
 		}
@@ -3780,7 +3780,7 @@ tryAgain:
 			continue;
 		}
 
-		if (pprevmap == -2 // title demo hack
+		if (pprevmap == UINT16_MAX-1 // title demo hack (FUCK YOU, MAKE IT A BOOL)
 			&& mapheaderinfo[i]->ghostCount == 0)
 		{
 			// Doesn't have any ghosts, so it's not suitable for title demos.
@@ -3809,11 +3809,13 @@ tryAgain:
 
 			if (extBufferCount > 0)
 			{
+				boolean inExt = false;
+
 				// An optional additional buffer,
 				// to avoid duplicates on the voting screen.
 				for (j = 0; j < extBufferCount; j++)
 				{
-					if (extBuffer[j] < 0 || extBuffer[j] >= nummapheaders)
+					if (extBuffer[j] >= nummapheaders)
 					{
 						// Rest of buffer SHOULD be empty.
 						break;
@@ -3822,11 +3824,12 @@ tryAgain:
 					if (i == extBuffer[j])
 					{
 						// Map is in this other buffer, don't duplicate.
+						inExt = true;
 						break;
 					}
 				}
 
-				if (j < extBufferCount)
+				if (inExt == true)
 				{
 					// Didn't make it out of this buffer, so don't add this map.
 					continue;
@@ -3875,7 +3878,7 @@ tryAgain:
 	return ret;
 }
 
-void G_AddMapToBuffer(INT16 map)
+void G_AddMapToBuffer(UINT16 map)
 {
 	if (mapheaderinfo[map]->justPlayed == 0) // Started playing a new map.
 	{
@@ -5507,6 +5510,8 @@ void G_InitNew(UINT8 pencoremode, INT32 map, boolean resetplayer, boolean skippr
 		}
 		CON_LogMessage("\"\n");
 	}
+
+	G_AddMapToBuffer(gamemap - 1);
 }
 
 

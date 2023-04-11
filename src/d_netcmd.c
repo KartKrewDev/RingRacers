@@ -2622,8 +2622,8 @@ void D_SetupVote(void)
 
 	INT32 i;
 
-	INT16 votebuffer[VOTE_NUM_LEVELS + 1] = {-1};
-	votebuffer[VOTE_NUM_LEVELS] = 0; // End marker for G_RandMap
+	UINT16 votebuffer[VOTE_NUM_LEVELS + 1];
+	memset(votebuffer, UINT16_MAX, sizeof(votebuffer));
 
 	WRITEUINT8(p, ((cv_kartencore.value == 1) && (gametyperules & GTR_ENCORE)));
 	WRITEUINT8(p, G_SometimesGetDifferentEncore());

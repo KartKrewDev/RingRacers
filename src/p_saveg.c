@@ -4999,8 +4999,8 @@ static void P_NetArchiveMisc(savebuffer_t *save, boolean resending)
 
 	for (i = 0; i < VOTE_NUM_LEVELS; i++)
 	{
-		WRITEINT16(save->p, g_voteLevels[i][0]);
-		WRITEINT16(save->p, g_voteLevels[i][1]);
+		WRITEUINT16(save->p, g_voteLevels[i][0]);
+		WRITEUINT16(save->p, g_voteLevels[i][1]);
 	}
 
 	for (i = 0; i < VOTE_TOTAL; i++)
@@ -5173,8 +5173,8 @@ static inline boolean P_NetUnArchiveMisc(savebuffer_t *save, boolean reloading)
 
 	for (i = 0; i < VOTE_NUM_LEVELS; i++)
 	{
-		g_voteLevels[i][0] = READINT16(save->p);
-		g_voteLevels[i][1] = READINT16(save->p);
+		g_voteLevels[i][0] = READUINT16(save->p);
+		g_voteLevels[i][1] = READUINT16(save->p);
 	}
 
 	for (i = 0; i < VOTE_TOTAL; i++)

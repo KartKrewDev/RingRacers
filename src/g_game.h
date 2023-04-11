@@ -255,8 +255,8 @@ FUNCMATH INT32 G_TicsToMilliseconds(tic_t tics);
 UINT32 G_TOLFlag(INT32 pgametype);
 INT16 G_GetFirstMapOfGametype(UINT8 pgametype);
 
-INT16 G_RandMap(UINT32 tolflags, INT16 pprevmap, boolean ignoreBuffers, boolean callAgainSoon, INT16 *extBuffer);
-void G_AddMapToBuffer(INT16 map);
+UINT16 G_RandMap(UINT32 tolflags, UINT16 pprevmap, boolean ignoreBuffers, boolean callAgainSoon, UINT16 *extBuffer);
+void G_AddMapToBuffer(UINT16 map);
 
 #ifdef __cplusplus
 } // extern "C"

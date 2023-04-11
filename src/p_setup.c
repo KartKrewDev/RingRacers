@@ -8045,8 +8045,6 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 		G_SaveGameData();
 	}
 
-	G_AddMapToBuffer(gamemap-1);
-
 	P_MapEnd(); // tm.thing is no longer needed from this point onwards
 
 	// Took me 3 hours to figure out why my progression kept on getting overwritten with the titlemap...
