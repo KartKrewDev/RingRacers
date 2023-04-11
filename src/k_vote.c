@@ -625,6 +625,18 @@ static void Y_DrawVoteBackground(void)
 
 	const UINT8 planetFrame = (bgTimer / FRACUNIT) % PLANET_FRAMES;
 
+	if (cv_reducevfx.value)
+	{
+		// REMOVE ONCE THE RHI BUG IS FIXED,
+		// BUT UNTIL THEN, IVO NEEDS TO NOT DIE
+		V_DrawFill(
+			0, 0,
+			BASEVIDWIDTH, BASEVIDHEIGHT,
+			31
+		);
+		return;
+	}
+
 	V_DrawFixedPatch(
 		0, 0,
 		FRACUNIT, 0,
