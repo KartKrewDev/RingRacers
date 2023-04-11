@@ -69,7 +69,7 @@ struct profile_t
 	char follower[SKINNAMESIZE+1];		// Follower
 	UINT16 followercolor;				// Follower color
 
-	UINT32 wins;	// PWRLV for each gametype.
+	UINT32 wins;	// I win I win I win
 
 	// Player-specific consvars.
 	// @TODO: List all of those
