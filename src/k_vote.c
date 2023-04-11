@@ -808,8 +808,20 @@ void Y_VoteDrawer(void)
 
 	if (vote.loaded == true)
 	{
+		boolean slideOut = true;
+		INT32 i;
+
+		for (i = 0; i <= splitscreen; i++)
+		{
+			if (g_votes[ g_localplayers[i] ] == VOTE_NOT_PICKED)
+			{
+				slideOut = false;
+				break;
+			}
+		}
+
 		vote_draw.selectTransition += FixedMul(
-			(((g_pickedVote != VOTE_NOT_PICKED) ? FRACUNIT : 0) - vote_draw.selectTransition) / 2,
+			((slideOut ? FRACUNIT : 0) - vote_draw.selectTransition) / 2,
 			renderdeltatics
 		);
 	}
