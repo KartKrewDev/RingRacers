@@ -1100,6 +1100,8 @@ void D_RegisterClientCommands(void)
 	COM_AddCommand("skynum", Command_Skynum_f);
 	COM_AddCommand("weather", Command_Weather_f);
 	COM_AddCommand("grayscale", Command_Grayscale_f);
+	COM_AddCommand("goto", Command_Goto_f);
+	COM_AddCommand("angle", Command_Angle_f);
 	CV_RegisterVar(&cv_renderhitbox);
 	CV_RegisterVar(&cv_devmode_screen);
 
@@ -2034,6 +2036,7 @@ void D_Cheat(INT32 playernum, INT32 cheat, ...)
 			break;
 
 		case CHEAT_RELATIVE_TELEPORT:
+		case CHEAT_TELEPORT:
 			COPY(WRITEFIXED, fixed_t);
 			COPY(WRITEFIXED, fixed_t);
 			COPY(WRITEFIXED, fixed_t);
@@ -2050,6 +2053,10 @@ void D_Cheat(INT32 playernum, INT32 cheat, ...)
 
 		case CHEAT_SCORE:
 			COPY(WRITEUINT32, UINT32);
+			break;
+
+		case CHEAT_ANGLE:
+			COPY(WRITEANGLE, angle_t);
 			break;
 	}
 
@@ -5745,7 +5752,8 @@ static void Got_Cheat(UINT8 **cp, INT32 playernum)
 			break;
 		}
 
-		case CHEAT_RELATIVE_TELEPORT: {
+		case CHEAT_RELATIVE_TELEPORT:
+		case CHEAT_TELEPORT: {
 			fixed_t x = READFIXED(*cp);
 			fixed_t y = READFIXED(*cp);
 			fixed_t z = READFIXED(*cp);
@@ -5760,10 +5768,17 @@ static void Got_Cheat(UINT8 **cp, INT32 playernum)
 			if (!P_MobjWasRemoved(player->mo))
 			{
 				P_MapStart();
-				P_SetOrigin(player->mo,
-						player->mo->x + x,
-						player->mo->y + y,
-						player->mo->z + z);
+				if (cheat == CHEAT_RELATIVE_TELEPORT)
+				{
+					P_SetOrigin(player->mo,
+							player->mo->x + x,
+							player->mo->y + y,
+							player->mo->z + z);
+				}
+				else
+				{
+					P_SetOrigin(player->mo, x, y, z);
+				}
 				P_MapEnd();
 
 				S_StartSound(player->mo, sfx_mixup);
@@ -5773,7 +5788,10 @@ static void Got_Cheat(UINT8 **cp, INT32 playernum)
 			strlcpy(t[1], M_Ftrim(f[1]), sizeof t[1]);
 			strlcpy(t[2], M_Ftrim(f[2]), sizeof t[2]);
 
-			CV_CheaterWarning(targetPlayer, va("relative teleport by %d%s, %d%s, %d%s",
+			CV_CheaterWarning(targetPlayer, va("%s %d%s, %d%s, %d%s",
+						cheat == CHEAT_RELATIVE_TELEPORT
+						? "relative teleport by"
+						: "teleport to",
 						(int)f[0], t[0], (int)f[1], t[1], (int)f[2], t[2]));
 			break;
 		}
@@ -5820,6 +5838,16 @@ static void Got_Cheat(UINT8 **cp, INT32 playernum)
 			player->roundscore = score;
 
 			CV_CheaterWarning(targetPlayer, va("score = %u", score));
+			break;
+		}
+
+		case CHEAT_ANGLE: {
+			angle_t angle = READANGLE(*cp);
+			float anglef = FIXED_TO_FLOAT(AngleFixed(angle));
+
+			P_SetPlayerAngle(player, angle);
+
+			CV_CheaterWarning(targetPlayer, va("angle = %d%s", (int)anglef, M_Ftrim(anglef)));
 			break;
 		}
 

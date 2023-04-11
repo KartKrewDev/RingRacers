@@ -2957,4 +2957,6 @@ void R_StoreWallRange(INT32 start, INT32 stop)
 		ds_p->bsilheight = twosidedmidtexture ? INT32_MAX: INT32_MIN;
 	}
 	ds_p++;
+
+	g_renderstats.drawsegs++;
 }

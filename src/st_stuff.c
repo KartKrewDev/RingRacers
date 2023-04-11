@@ -434,6 +434,18 @@ static void ST_drawMusicDebug(INT32 *height)
 	}
 }
 
+static void ST_drawRenderDebug(INT32 *height)
+{
+	const struct RenderStats *i = &g_renderstats;
+
+	ST_pushDebugString(height, va("     Visplanes: %4s", sizeu1(i->visplanes)));
+	ST_pushDebugString(height, va("      Drawsegs: %4s", sizeu1(i->drawsegs)));
+
+	ST_pushRow(height);
+
+	ST_pushDebugString(height, va("Skybox Portals: %4s", sizeu1(i->skybox_portals)));
+}
+
 void ST_drawDebugInfo(void)
 {
 	INT32 height = 192;
@@ -446,15 +458,25 @@ void ST_drawDebugInfo(void)
 	if (!stplyr->mo)
 		return;
 
+	if (cv_ticrate.value)
+	{
+		height -= 20;
+	}
+
+	if (cv_showping.value)
+	{
+		height -= 20;
+	}
+
 	if (cht_debug & DBG_BASIC)
 	{
 		const fixed_t d = AngleFixed(stplyr->mo->angle);
-		V_DrawRightAlignedString(320, 168, V_MONOSPACE, va("X: %6d", stplyr->mo->x>>FRACBITS));
-		V_DrawRightAlignedString(320, 176, V_MONOSPACE, va("Y: %6d", stplyr->mo->y>>FRACBITS));
-		V_DrawRightAlignedString(320, 184, V_MONOSPACE, va("Z: %6d", stplyr->mo->z>>FRACBITS));
-		V_DrawRightAlignedString(320, 192, V_MONOSPACE, va("A: %6d", FixedInt(d)));
+		V_DrawRightAlignedString(320, height - 24, V_MONOSPACE, va("X: %6d", stplyr->mo->x>>FRACBITS));
+		V_DrawRightAlignedString(320, height - 16, V_MONOSPACE, va("Y: %6d", stplyr->mo->y>>FRACBITS));
+		V_DrawRightAlignedString(320, height - 8, V_MONOSPACE, va("Z: %6d", stplyr->mo->z>>FRACBITS));
+		V_DrawRightAlignedString(320, height, V_MONOSPACE, va("A: %6d", FixedInt(d)));
 
-		height = 152;
+		height -= 40;
 	}
 
 	if (cht_debug & DBG_DETAILED)
@@ -504,6 +526,11 @@ void ST_drawDebugInfo(void)
 	if (cht_debug & DBG_MUSIC)
 	{
 		ST_drawMusicDebug(&height);
+	}
+
+	if (cht_debug & DBG_RENDER)
+	{
+		ST_drawRenderDebug(&height);
 	}
 
 	if (cht_debug & DBG_MEMORY)
