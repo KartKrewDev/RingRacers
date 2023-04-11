@@ -58,7 +58,7 @@ typedef enum
 struct roundentry_t
 {
 	UINT16 mapnum;				// Map number at this position
-	UINT8 gametype;				// Gametype we want to play this in
+	UINT16 gametype;			// Gametype we want to play this in
 	boolean encore;				// Whether this will be flipped
 	boolean rankrestricted;		// For grand prix progression
 };

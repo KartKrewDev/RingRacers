@@ -2600,7 +2600,7 @@ void D_MapChange(UINT16 mapnum, INT32 newgametype, boolean pencoremode, boolean 
 		}
 
 		// new gametype value
-		WRITEUINT8(buf_p, newgametype);
+		WRITEUINT16(buf_p, newgametype);
 
 		WRITEUINT16(buf_p, mapnum);
 	}
@@ -3062,10 +3062,10 @@ static void Command_Map_f(void)
 static void Got_Mapcmd(UINT8 **cp, INT32 playernum)
 {
 	UINT8 flags;
-	INT32 presetplayer = 1, lastgametype;
+	INT32 presetplayer = 1;
 	UINT8 skipprecutscene, pforcespecialstage;
 	boolean pencoremode, hasroundqueuedata;
-	UINT16 mapnumber;
+	UINT16 mapnumber, lastgametype;
 
 	forceresetplayers = deferencoremode = false;
 
@@ -3121,7 +3121,7 @@ static void Got_Mapcmd(UINT8 **cp, INT32 playernum)
 		chmappending--;
 
 	lastgametype = gametype;
-	gametype = READUINT8(*cp);
+	gametype = READUINT16(*cp);
 	G_SetGametype(gametype); // I fear putting that macro as an argument
 
 	if (gametype < 0 || gametype >= numgametypes)
@@ -3279,9 +3279,9 @@ static void Command_RestartLevel(void)
 	D_MapChange(gamemap, gametype, newencore, false, 0, false, false);
 }
 
-static void Handle_MapQueueSend(UINT16 newmapnum, UINT8 newgametype, boolean newencoremode)
+static void Handle_MapQueueSend(UINT16 newmapnum, UINT16 newgametype, boolean newencoremode)
 {
-	static char buf[1+1+2];
+	static char buf[1+2+2];
 	static char *buf_p = buf;
 
 	UINT8 flags = 0;
@@ -3295,7 +3295,7 @@ static void Handle_MapQueueSend(UINT16 newmapnum, UINT8 newgametype, boolean new
 		flags |= 1;
 
 	WRITEUINT8(buf_p, flags);
-	WRITEUINT8(buf_p, newgametype);
+	WRITEUINT16(buf_p, newgametype);
 
 	if (client)
 	{
@@ -3443,15 +3443,15 @@ static void Command_QueueMap_f(void)
 
 static void Got_RequestMapQueuecmd(UINT8 **cp, INT32 playernum)
 {
-	UINT8 flags, setgametype;
+	UINT8 flags;
 	boolean setencore;
-	UINT16 mapnumber;
+	UINT16 mapnumber, setgametype;
 
 	flags = READUINT8(*cp);
 
 	setencore = ((flags & 1) != 0);
 
-	setgametype = READUINT8(*cp);
+	setgametype = READUINT16(*cp);
 
 	mapnumber = READUINT16(*cp);
 
@@ -3477,14 +3477,15 @@ static void Got_RequestMapQueuecmd(UINT8 **cp, INT32 playernum)
 
 static void Got_MapQueuecmd(UINT8 **cp, INT32 playernum)
 {
-	UINT8 flags, setgametype, queueposition;
+	UINT8 flags, queueposition;
 	boolean setencore;
+	UINT16 setgametype;
 
 	flags = READUINT8(*cp);
 
 	setencore = ((flags & 1) != 0);
 
-	setgametype = READUINT8(*cp);
+	setgametype = READUINT16(*cp);
 
 	queueposition = READUINT8(*cp);
 
