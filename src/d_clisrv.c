@@ -4447,8 +4447,12 @@ static void HandleConnect(SINT8 node)
 				{
 					if (memcmp(lastReceivedKey[node][i], players[j].public_key, PUBKEYLENGTH) == 0)
 					{
-						SV_SendRefuse(node, M_GetText("Duplicate pubkey already on server.\n(Did you share your profile?)"));
-						return;	
+						#ifdef DEVELOP
+							CONS_Alert(CONS_WARNING, "Joining player's pubkey matches existing player, stat updates will be nonsense!\n");
+						#else
+							SV_SendRefuse(node, M_GetText("Duplicate pubkey already on server.\n(Did you share your profile?)"));
+							return;	
+						#endif
 					}
 				}
 
@@ -4461,8 +4465,12 @@ static void HandleConnect(SINT8 node)
 						continue;
 					if (memcmp(lastReceivedKey[node][i], lastReceivedKey[node][j], PUBKEYLENGTH) == 0)
 					{
-						SV_SendRefuse(node, M_GetText("Duplicate pubkey in local party.\n(How did you even do this?)"));
-						return;	
+						#ifdef DEVELOP
+							CONS_Alert(CONS_WARNING, "Players with same pubkey in the joning party, stat updates will be nonsense!\n");
+						#else
+							SV_SendRefuse(node, M_GetText("Duplicate pubkey in local party.\n(How did you even do this?)"));
+							return;	
+						#endif
 					}
 				}
 			}
