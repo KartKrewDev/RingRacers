@@ -2254,7 +2254,7 @@ static void P_UpdatePlayerAngle(player_t *player)
 				}
 				else
 				{
-					steeringLeft = min(steeringLeft, max(steeringRight, -1));
+					steeringLeft = min(steeringLeft, min(steeringRight, -1));
 					steeringRight = min(steeringLeft, -1);
 				}
 			}
