@@ -297,7 +297,10 @@ static void I_ShowErrorMessageBox(const char *messagefordevelopers, boolean dump
 			".rpt crash dump"
 #endif
 			" (very important!) and " : "",
-		logfilename,
+#ifdef LOGMESSAGES
+		logfilename[0] ? logfilename :
+#endif
+		"uh oh, one wasn't made!?",
 		messagefordevelopers);
 
 	// Rudementary word wrapping.
