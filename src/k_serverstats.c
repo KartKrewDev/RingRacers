@@ -74,6 +74,7 @@ void SV_LoadStats(void)
 {
 	const size_t headerlen = strlen(SERVERSTATSHEADER);
 	savebuffer_t save = {0};
+	unsigned int i, j;
 
 	if (!server)
 		return;
@@ -103,7 +104,15 @@ void SV_LoadStats(void)
 
 	SV_ExpandStats(numtracked);
 
-	READMEM(save.p, trackedList, (numtracked * sizeof(serverplayer_t)));
+	for(i = 0; i < numtracked; i++)
+	{
+		READMEM(save.p, trackedList[i].public_key, PUBKEYLENGTH);
+		READMEM(save.p, &trackedList[i].lastseen, sizeof(trackedList[i].lastseen));
+		for(j = 0; j < PWRLV_NUMTYPES; j++)
+		{
+			trackedList[i].powerlevels[j] = READUINT16(save.p);
+		}
+	}
 }
 
 // Save trackedList to disc
@@ -112,6 +121,7 @@ void SV_SaveStats(void)
 	size_t length = 0;
 	const size_t headerlen = strlen(SERVERSTATSHEADER);
 	savebuffer_t save = {0};
+	unsigned int i, j;
 
 	if (!server)
 		return;
@@ -130,7 +140,15 @@ void SV_SaveStats(void)
 
 	WRITEUINT32(save.p, numtracked);
 
-	WRITEMEM(save.p, trackedList, (numtracked * sizeof(serverplayer_t)));
+	for(i = 0; i < numtracked; i++)
+	{
+		WRITEMEM(save.p, trackedList[i].public_key, PUBKEYLENGTH);
+		WRITEMEM(save.p, &trackedList[i].lastseen, sizeof(trackedList[i].lastseen));
+		for(j = 0; j < PWRLV_NUMTYPES; j++)
+		{
+			WRITEUINT16(save.p, trackedList[i].powerlevels[j]);
+		}
+	}
 
 	length = save.p - save.buffer;
 
