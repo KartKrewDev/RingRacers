@@ -747,6 +747,7 @@ static void Impl_HandleControllerButtonEvent(SDL_ControllerButtonEvent evt, Uint
 	}
 
 	event.data1 = KEY_JOY1;
+	event.data2 = 0;
 
 	if (type == SDL_CONTROLLERBUTTONUP)
 	{
