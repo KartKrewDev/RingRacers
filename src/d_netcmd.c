@@ -468,6 +468,8 @@ consvar_t cv_reducevfx = CVAR_INIT ("reducevfx", "No", CV_SAVE, CV_YesNo, NULL);
 static CV_PossibleValue_t votetime_cons_t[] = {{10, "MIN"}, {3600, "MAX"}, {0, NULL}};
 consvar_t cv_votetime = CVAR_INIT ("votetime", "20", CV_NETVAR, votetime_cons_t, NULL);
 
+consvar_t cv_botscanvote = CVAR_INIT ("botscanvote", "No", CV_CHEAT, CV_YesNo, NULL);
+
 consvar_t cv_gravity = CVAR_INIT ("gravity", "0.8", CV_CHEAT|CV_FLOAT|CV_CALL, NULL, Gravity_OnChange); // change DEFAULT_GRAVITY if you change this
 
 consvar_t cv_soundtest = CVAR_INIT ("soundtest", "0", CV_CALL, NULL, SoundTest_OnChange);
@@ -1098,6 +1100,8 @@ void D_RegisterClientCommands(void)
 	COM_AddCommand("skynum", Command_Skynum_f);
 	COM_AddCommand("weather", Command_Weather_f);
 	COM_AddCommand("grayscale", Command_Grayscale_f);
+	COM_AddCommand("goto", Command_Goto_f);
+	COM_AddCommand("angle", Command_Angle_f);
 	CV_RegisterVar(&cv_renderhitbox);
 	CV_RegisterVar(&cv_devmode_screen);
 
@@ -2032,6 +2036,7 @@ void D_Cheat(INT32 playernum, INT32 cheat, ...)
 			break;
 
 		case CHEAT_RELATIVE_TELEPORT:
+		case CHEAT_TELEPORT:
 			COPY(WRITEFIXED, fixed_t);
 			COPY(WRITEFIXED, fixed_t);
 			COPY(WRITEFIXED, fixed_t);
@@ -2048,6 +2053,10 @@ void D_Cheat(INT32 playernum, INT32 cheat, ...)
 
 		case CHEAT_SCORE:
 			COPY(WRITEUINT32, UINT32);
+			break;
+
+		case CHEAT_ANGLE:
+			COPY(WRITEANGLE, angle_t);
 			break;
 	}
 
@@ -2615,83 +2624,110 @@ void D_MapChange(INT32 mapnum, INT32 newgametype, boolean pencoremode, boolean r
 
 void D_SetupVote(void)
 {
-	UINT8 buf[5*2]; // four UINT16 maps (at twice the width of a UINT8), and two gametypes
+	UINT8 buf[(VOTE_NUM_LEVELS * 2) + 2]; // four UINT16 maps (at twice the width of a UINT8), and two gametypes
 	UINT8 *p = buf;
+
 	INT32 i;
-	UINT8 secondgt = G_SometimesGetDifferentGametype();
-	INT16 votebuffer[4] = {-1,-1,-1,0};
 
-	if ((cv_kartencore.value == 1) && (gametyperules & GTR_ENCORE))
-		WRITEUINT8(p, (gametype|VOTEMODIFIER_ENCORE));
-	else
-		WRITEUINT8(p, gametype);
-	WRITEUINT8(p, secondgt);
-	secondgt &= ~VOTEMODIFIER_ENCORE;
+	UINT16 votebuffer[VOTE_NUM_LEVELS + 1];
+	memset(votebuffer, UINT16_MAX, sizeof(votebuffer));
 
-	for (i = 0; i < 4; i++)
+	WRITEUINT8(p, ((cv_kartencore.value == 1) && (gametyperules & GTR_ENCORE)));
+	WRITEUINT8(p, G_SometimesGetDifferentEncore());
+
+	for (i = 0; i < VOTE_NUM_LEVELS; i++)
 	{
-		UINT16 m;
-		if (i == 2) // sometimes a different gametype
-			m = G_RandMap(G_TOLFlag(secondgt), prevmap, ((secondgt != gametype) ? 2 : 0), 0, true, votebuffer);
-		else if (i >= 3) // Don't Care. Pick any of the available choices.
-			m = votebuffer[M_RandomRange(0, 2)];
-		else
-			m = G_RandMap(G_TOLFlag(gametype), prevmap, 0, 0, true, votebuffer);
-		if (i < 3)
-			votebuffer[i] = m;
+		UINT16 m = G_RandMap(
+			G_TOLFlag(gametype),
+			prevmap, false,
+			(i < VOTE_NUM_LEVELS-1),
+			votebuffer
+		);
+		votebuffer[i] = m;
 		WRITEUINT16(p, m);
 	}
 
 	SendNetXCmd(XD_SETUPVOTE, buf, p - buf);
 }
 
-void D_ModifyClientVote(UINT8 player, SINT8 voted, UINT8 splitplayer)
+void D_ModifyClientVote(UINT8 player, SINT8 voted)
 {
 	char buf[2];
 	char *p = buf;
+	UINT8 sendPlayer = consoleplayer;
 
-	if (splitplayer > 0)
-		player = g_localplayers[splitplayer];
+	if (player == UINT8_MAX)
+	{
+		// Special game vote (map anger, duel)
+		if (!server)
+		{
+			return;
+		}
+	}
+
+	if (player == UINT8_MAX)
+	{
+		// special vote
+		WRITEUINT8(p, UINT8_MAX);
+	}
+	else
+	{
+		INT32 i = 0;
+		WRITEUINT8(p, player);
+
+		for (i = 0; i <= splitscreen; i++)
+		{
+			if (g_localplayers[i] == player)
+			{
+				sendPlayer = i;
+			}
+		}
+	}
 
 	WRITESINT8(p, voted);
-	WRITEUINT8(p, player);
-	SendNetXCmd(XD_MODIFYVOTE, &buf, 2);
+
+	SendNetXCmdForPlayer(sendPlayer, XD_MODIFYVOTE, buf, p - buf);
 }
 
 void D_PickVote(void)
 {
 	char buf[2];
 	char* p = buf;
-	SINT8 temppicks[MAXPLAYERS];
-	SINT8 templevels[MAXPLAYERS];
-	SINT8 votecompare = -1;
+	SINT8 temppicks[VOTE_TOTAL];
+	SINT8 templevels[VOTE_TOTAL];
+	SINT8 votecompare = VOTE_NOT_PICKED;
 	UINT8 numvotes = 0, key = 0;
 	INT32 i;
 
-	for (i = 0; i < MAXPLAYERS; i++)
+	for (i = 0; i < VOTE_TOTAL; i++)
 	{
-		if (!playeringame[i] || players[i].spectator)
+		if (Y_PlayerIDCanVote(i) == false)
+		{
 			continue;
-		if (votes[i] != -1)
+		}
+
+		if (g_votes[i] != VOTE_NOT_PICKED)
 		{
 			temppicks[numvotes] = i;
-			templevels[numvotes] = votes[i];
+			templevels[numvotes] = g_votes[i];
 			numvotes++;
-			if (votecompare == -1)
-				votecompare = votes[i];
+
+			if (votecompare == VOTE_NOT_PICKED)
+			{
+				votecompare = g_votes[i];
+			}
 		}
 	}
 
-	key = M_RandomKey(numvotes);
-
 	if (numvotes > 0)
 	{
+		key = M_RandomKey(numvotes);
 		WRITESINT8(p, temppicks[key]);
 		WRITESINT8(p, templevels[key]);
 	}
 	else
 	{
-		WRITESINT8(p, -1);
+		WRITESINT8(p, VOTE_NOT_PICKED);
 		WRITESINT8(p, 0);
 	}
 
@@ -3205,7 +3241,7 @@ static void Command_RandomMap(void)
 		oldmapnum = -1;
 	}
 
-	newmapnum = G_RandMap(G_TOLFlag(newgametype), oldmapnum, 0, 0, false, NULL) + 1;
+	newmapnum = G_RandMap(G_TOLFlag(newgametype), oldmapnum, false, false, NULL) + 1;
 	D_MapChange(newmapnum, newgametype, newencore, newresetplayers, 0, false, false);
 }
 
@@ -5371,75 +5407,55 @@ static void Got_ExitLevelcmd(UINT8 **cp, INT32 playernum)
 
 static void Got_SetupVotecmd(UINT8 **cp, INT32 playernum)
 {
+	boolean baseEncore = false;
+	boolean optionalEncore = false;
+	INT16 tempVoteLevels[VOTE_NUM_LEVELS][2];
 	INT32 i;
-	UINT8 gt, secondgt;
-	INT16 tempvotelevels[4][2];
 
 	if (playernum != serverplayer) // admin shouldn't be able to set up vote...
 	{
 		CONS_Alert(CONS_WARNING, M_GetText("Illegal vote setup received from %s\n"), player_names[playernum]);
 		if (server)
-			SendKick(playernum, KICK_MSG_CON_FAIL);
-		return;
-	}
-
-	gt = (UINT8)READUINT8(*cp);
-	secondgt = (UINT8)READUINT8(*cp);
-
-	// Strip illegal Encore flag.
-	if ((gt & VOTEMODIFIER_ENCORE)
-		&& !(gametypes[(gt & ~VOTEMODIFIER_ENCORE)]->rules & GTR_ENCORE))
-	{
-		gt &= ~VOTEMODIFIER_ENCORE;
-	}
-
-	if ((gt & ~VOTEMODIFIER_ENCORE) >= numgametypes)
-	{
-		gt &= ~VOTEMODIFIER_ENCORE;
-		if (server)
-			I_Error("Got_SetupVotecmd: Internal gametype ID %d not found (numgametypes = %d)", gt, numgametypes);
-		CONS_Alert(CONS_WARNING, M_GetText("Vote setup with bad gametype ID %d received from %s\n"), gt, player_names[playernum]);
-		return;
-	}
-
-	if ((secondgt & ~VOTEMODIFIER_ENCORE) >= numgametypes)
-	{
-		secondgt &= ~VOTEMODIFIER_ENCORE;
-		if (server)
-			I_Error("Got_SetupVotecmd: Internal second gametype ID %d not found (numgametypes = %d)", secondgt, numgametypes);
-		CONS_Alert(CONS_WARNING, M_GetText("Vote setup with bad second gametype ID %d received from %s\n"), secondgt, player_names[playernum]);
-		return;
-	}
-
-	for (i = 0; i < 4; i++)
-	{
-		tempvotelevels[i][0] = (UINT16)READUINT16(*cp);
-		tempvotelevels[i][1] = gt;
-		if (tempvotelevels[i][0] < nummapheaders && mapheaderinfo[tempvotelevels[i][0]])
-			continue;
-
-		if (server)
-			I_Error("Got_SetupVotecmd: Internal map ID %d not found (nummapheaders = %d)", tempvotelevels[i][0], nummapheaders);
-		CONS_Alert(CONS_WARNING, M_GetText("Vote setup with bad map ID %d received from %s\n"), tempvotelevels[i][0], player_names[playernum]);
-		return;
-	}
-
-	// If third entry has an illelegal Encore flag... (illelegal!?)
-	if ((secondgt & VOTEMODIFIER_ENCORE)
-		&& !(gametypes[(secondgt & ~VOTEMODIFIER_ENCORE)]->rules & GTR_ENCORE))
-	{
-		secondgt &= ~VOTEMODIFIER_ENCORE;
-		// Apply it to the second entry instead, gametype permitting!
-		if (gametypes[gt]->rules & GTR_ENCORE)
 		{
-			tempvotelevels[1][1] |= VOTEMODIFIER_ENCORE;
+			SendKick(playernum, KICK_MSG_CON_FAIL);
 		}
+		return;
 	}
 
-	// Finally, set third entry's gametype/Encore status.
-	tempvotelevels[2][1] = secondgt;
+	baseEncore = (boolean)READUINT8(*cp);
+	optionalEncore = (boolean)READUINT8(*cp);
 
-	memcpy(votelevels, tempvotelevels, sizeof(votelevels));
+	if (!(gametyperules & GTR_ENCORE))
+	{
+		// Strip illegal Encore flags.
+		baseEncore = optionalEncore = false;
+	}
+
+	for (i = 0; i < VOTE_NUM_LEVELS; i++)
+	{
+		tempVoteLevels[i][0] = (UINT16)READUINT16(*cp);
+		tempVoteLevels[i][1] = (baseEncore == true) ? VOTE_MOD_ENCORE : 0;
+
+		if (tempVoteLevels[i][0] < nummapheaders && mapheaderinfo[tempVoteLevels[i][0]])
+		{
+			continue;
+		}
+
+		if (server)
+		{
+			I_Error("Got_SetupVotecmd: Internal map ID %d not found (nummapheaders = %d)", tempVoteLevels[i][0], nummapheaders);
+		}
+
+		CONS_Alert(CONS_WARNING, M_GetText("Vote setup with bad map ID %d received from %s\n"), tempVoteLevels[i][0], player_names[playernum]);
+		return;
+	}
+
+	if (optionalEncore == true)
+	{
+		tempVoteLevels[VOTE_NUM_LEVELS - 1][1] ^= VOTE_MOD_ENCORE;
+	}
+
+	memcpy(g_voteLevels, tempVoteLevels, sizeof(g_voteLevels));
 
 	G_SetGamestate(GS_VOTING);
 	Y_StartVote();
@@ -5447,11 +5463,48 @@ static void Got_SetupVotecmd(UINT8 **cp, INT32 playernum)
 
 static void Got_ModifyVotecmd(UINT8 **cp, INT32 playernum)
 {
-	SINT8 voted = READSINT8(*cp);
-	UINT8 p = READUINT8(*cp);
+	UINT8 targetID = READUINT8(*cp);
+	SINT8 vote = READSINT8(*cp);
 
-	(void)playernum;
-	votes[p] = voted;
+	if (targetID == UINT8_MAX)
+	{
+		if (playernum != serverplayer) // server-only special vote
+		{
+			goto fail;
+		}
+
+		targetID = VOTE_SPECIAL;
+	}
+	else if (playeringame[targetID] == true && players[targetID].bot == true)
+	{
+		if (targetID >= MAXPLAYERS
+			|| playernum != serverplayer)
+		{
+			goto fail;
+		}
+	}
+	else
+	{
+		if (targetID >= MAXPLAYERS
+			|| playernode[targetID] != playernode[playernum])
+		{
+			goto fail;
+		}
+	}
+
+	Y_SetPlayersVote(targetID, vote);
+	return;
+
+fail:
+	CONS_Alert(CONS_WARNING,
+		M_GetText ("Illegal modify vote command received from %s\n"),
+		player_names[playernum]
+	);
+
+	if (server)
+	{
+		SendKick(playernum, KICK_MSG_CON_FAIL);
+	}
 }
 
 static void Got_PickVotecmd(UINT8 **cp, INT32 playernum)
@@ -5699,7 +5752,8 @@ static void Got_Cheat(UINT8 **cp, INT32 playernum)
 			break;
 		}
 
-		case CHEAT_RELATIVE_TELEPORT: {
+		case CHEAT_RELATIVE_TELEPORT:
+		case CHEAT_TELEPORT: {
 			fixed_t x = READFIXED(*cp);
 			fixed_t y = READFIXED(*cp);
 			fixed_t z = READFIXED(*cp);
@@ -5714,10 +5768,17 @@ static void Got_Cheat(UINT8 **cp, INT32 playernum)
 			if (!P_MobjWasRemoved(player->mo))
 			{
 				P_MapStart();
-				P_SetOrigin(player->mo,
-						player->mo->x + x,
-						player->mo->y + y,
-						player->mo->z + z);
+				if (cheat == CHEAT_RELATIVE_TELEPORT)
+				{
+					P_SetOrigin(player->mo,
+							player->mo->x + x,
+							player->mo->y + y,
+							player->mo->z + z);
+				}
+				else
+				{
+					P_SetOrigin(player->mo, x, y, z);
+				}
 				P_MapEnd();
 
 				S_StartSound(player->mo, sfx_mixup);
@@ -5727,7 +5788,10 @@ static void Got_Cheat(UINT8 **cp, INT32 playernum)
 			strlcpy(t[1], M_Ftrim(f[1]), sizeof t[1]);
 			strlcpy(t[2], M_Ftrim(f[2]), sizeof t[2]);
 
-			CV_CheaterWarning(targetPlayer, va("relative teleport by %d%s, %d%s, %d%s",
+			CV_CheaterWarning(targetPlayer, va("%s %d%s, %d%s, %d%s",
+						cheat == CHEAT_RELATIVE_TELEPORT
+						? "relative teleport by"
+						: "teleport to",
 						(int)f[0], t[0], (int)f[1], t[1], (int)f[2], t[2]));
 			break;
 		}
@@ -5774,6 +5838,16 @@ static void Got_Cheat(UINT8 **cp, INT32 playernum)
 			player->roundscore = score;
 
 			CV_CheaterWarning(targetPlayer, va("score = %u", score));
+			break;
+		}
+
+		case CHEAT_ANGLE: {
+			angle_t angle = READANGLE(*cp);
+			float anglef = FIXED_TO_FLOAT(AngleFixed(angle));
+
+			P_SetPlayerAngle(player, angle);
+
+			CV_CheaterWarning(targetPlayer, va("angle = %d%s", (int)anglef, M_Ftrim(anglef)));
 			break;
 		}
 

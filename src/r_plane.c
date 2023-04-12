@@ -341,6 +341,9 @@ static visplane_t *new_visplane(unsigned hash)
 	}
 	check->next = visplanes[hash];
 	visplanes[hash] = check;
+
+	g_renderstats.visplanes++;
+
 	return check;
 }
 

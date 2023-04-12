@@ -84,7 +84,8 @@ typedef enum
 	gc_teamtalk,
 	gc_rankings,
 	gc_screenshot,
-	gc_recordgif,
+	gc_startmovie,
+	gc_startlossless,
 
 	num_gamecontrols,
 

@@ -754,10 +754,18 @@ void M_UpdateMenuCMD(UINT8 i)
 	menucmd[i].buttonsHeld = menucmd[i].buttons;
 	menucmd[i].buttons = 0;
 
-	if (G_PlayerInputDown(i, gc_up, mp)) { menucmd[i].dpad_ud--; }
+	if (G_PlayerInputDown(i, gc_screenshot,    mp)) { menucmd[i].buttons |= MBT_SCREENSHOT; }
+	if (G_PlayerInputDown(i, gc_startmovie,    mp)) { menucmd[i].buttons |= MBT_STARTMOVIE; }
+	if (G_PlayerInputDown(i, gc_startlossless, mp)) { menucmd[i].buttons |= MBT_STARTLOSSLESS; }
+
+	// Screenshot et al take priority
+	if (menucmd[i].buttons != 0)
+		return;
+
+	if (G_PlayerInputDown(i, gc_up,   mp)) { menucmd[i].dpad_ud--; }
 	if (G_PlayerInputDown(i, gc_down, mp)) { menucmd[i].dpad_ud++; }
 
-	if (G_PlayerInputDown(i, gc_left, mp)) { menucmd[i].dpad_lr--; }
+	if (G_PlayerInputDown(i, gc_left,  mp)) { menucmd[i].dpad_lr--; }
 	if (G_PlayerInputDown(i, gc_right, mp)) { menucmd[i].dpad_lr++; }
 
 	if (G_PlayerInputDown(i, gc_a, mp)) { menucmd[i].buttons |= MBT_A; }
@@ -768,6 +776,7 @@ void M_UpdateMenuCMD(UINT8 i)
 	if (G_PlayerInputDown(i, gc_z, mp)) { menucmd[i].buttons |= MBT_Z; }
 	if (G_PlayerInputDown(i, gc_l, mp)) { menucmd[i].buttons |= MBT_L; }
 	if (G_PlayerInputDown(i, gc_r, mp)) { menucmd[i].buttons |= MBT_R; }
+
 	if (G_PlayerInputDown(i, gc_start, mp)) { menucmd[i].buttons |= MBT_START; }
 
 	if (menucmd[i].dpad_ud == 0 && menucmd[i].dpad_lr == 0 && menucmd[i].buttons == 0)

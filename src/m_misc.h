@@ -98,7 +98,7 @@ void M_ScreenShot(void);
 #ifdef HWRENDER
 void M_DoLegacyGLScreenShot(void);
 #endif
-boolean M_ScreenshotResponder(event_t *ev);
+void M_ScreenshotTicker(void);
 
 void M_MinimapGenerate(void);
 

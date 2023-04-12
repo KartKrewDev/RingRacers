@@ -541,7 +541,10 @@ typedef enum
 	MBT_Z = 1<<5,
 	MBT_L = 1<<6,
 	MBT_R = 1<<7,
-	MBT_START = 1<<8
+	MBT_START = 1<<8,
+	MBT_SCREENSHOT = 1<<9,
+	MBT_STARTMOVIE = 1<<10,
+	MBT_STARTLOSSLESS = 1<<11,
 } menuButtonCode_t;
 
 struct menucmd_t
