@@ -112,6 +112,7 @@ void SV_LoadStats(void)
 		{
 			trackedList[i].powerlevels[j] = READUINT16(save.p);
 		}
+		trackedList[i].hash = quickncasehash((char*)trackedList[i].public_key, PUBKEYLENGTH);
 	}
 }
 
@@ -163,13 +164,17 @@ void SV_SaveStats(void)
 // New player, grab their stats from trackedList or initialize new ones if they're new
 serverplayer_t *SV_RetrieveStats(uint8_t *key)
 {
-	UINT32 j;
+	UINT32 j, hash;
 
 	SV_InitializeStats();
+
+	hash = quickncasehash((char*)key, PUBKEYLENGTH);
 
 	// Existing record?
 	for(j = 0; j < numtracked; j++)
 	{
+		if (hash != trackedList[j].hash) // Not crypto magic, just an early out with a faster comparison
+			continue;
 		if (memcmp(trackedList[j].public_key, key, PUBKEYLENGTH) == 0)
 			return &trackedList[j];
 	}
@@ -184,6 +189,7 @@ serverplayer_t *SV_RetrieveStats(uint8_t *key)
 	{
 		trackedList[numtracked].powerlevels[j] = PR_IsKeyGuest(key) ? 0 : PWRLVRECORD_START;
 	}
+	trackedList[numtracked].hash = quickncasehash((char*)key, PUBKEYLENGTH);
 
 	numtracked++;
 
@@ -193,7 +199,7 @@ serverplayer_t *SV_RetrieveStats(uint8_t *key)
 // Write player stats to trackedList, then save to disk
 void SV_UpdateStats(void)
 {	
-	UINT32 i, j;
+	UINT32 i, j, hash;
 
 	if (!server)
 		return;
@@ -208,8 +214,12 @@ void SV_UpdateStats(void)
 		if (PR_IsKeyGuest(players[i].public_key))
 			continue;
 
+		hash = quickncasehash((char*)players[i].public_key, PUBKEYLENGTH);
+
 		for(j = 0; j < numtracked; j++)
-		{
+		{	
+			if (hash != trackedList[j].hash) // Not crypto magic, just an early out with a faster comparison
+				continue;
 			if (memcmp(&trackedList[j].public_key, players[i].public_key, PUBKEYLENGTH) == 0)
 			{
 				trackedList[j].lastseen = time(NULL);

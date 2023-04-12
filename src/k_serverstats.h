@@ -34,6 +34,8 @@ struct serverplayer_t
 	uint8_t public_key[PUBKEYLENGTH];
 	time_t lastseen;
 	UINT16 powerlevels[PWRLV_NUMTYPES];
+
+	UINT32 hash; // Not persisted! Used for early outs during key comparisons
 };
 
 void SV_SaveStats(void);
