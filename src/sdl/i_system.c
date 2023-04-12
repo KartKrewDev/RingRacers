@@ -270,7 +270,7 @@ static void write_backtrace(INT32 signal)
 
 static void I_ShowErrorMessageBox(const char *messagefordevelopers, boolean dumpmade)
 {
-	static char finalmessage[1024];
+	static char finalmessage[2048];
 	size_t firstimpressionsline = 3; // "Dr Robotnik's Ring Racers" has encountered...
 
 	if (M_CheckParm("-dedicated"))
