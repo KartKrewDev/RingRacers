@@ -584,7 +584,7 @@ void K_ProcessTerrainEffect(mobj_t *mo)
 		{
 			if (player->mo->floorrover != NULL)
 			{
-				slope = *player->mo->ceilingrover->t_slope;
+				slope = *player->mo->floorrover->t_slope;
 			}
 			else
 			{
