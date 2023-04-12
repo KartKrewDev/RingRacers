@@ -4,6 +4,7 @@
 // Copyright (C) 1998-2000 by DooM Legacy Team.
 // Copyright (C) 2011-2016 by Matthew "Inuyasha" Walsh.
 // Copyright (C) 1999-2018 by Sonic Team Junior.
+// Copyright (C) 2023 by AJ "Tyron" Martinez
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
