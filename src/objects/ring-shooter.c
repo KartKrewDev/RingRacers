@@ -40,14 +40,29 @@ static void ActivateRingShooter(mobj_t *mo)
 	}
 }
 
-#define scaleSpeed mo->scalespeed
-#define scaleState mo->threshold
-#define xScale mo->extravalue1
-#define yScale mo->extravalue2
-#define xOffset part->extravalue1
-#define yOffset part->extravalue2
-#define SCALEPART part->spritexscale = xScale; part->spriteyscale = yScale;
-#define MOVEPART P_MoveOrigin(part, refNipple->x + FixedMul(xOffset, xScale), refNipple->y + FixedMul(yOffset, xScale), part->z);
+#define rs_base_scalespeed(o) ((o)->scalespeed)
+#define rs_base_scalestate(o) ((o)->threshold)
+#define rs_base_xscale(o) ((o)->extravalue1)
+#define rs_base_yscale(o) ((o)->extravalue2)
+
+#define rs_part_xoffset(o) ((o)->extravalue1)
+#define rs_part_yoffset(o) ((o)->extravalue2)
+
+static void ScalePart(mobj_t *part, mobj_t *base)
+{
+	part->spritexscale = rs_base_xscale(base);
+	part->spriteyscale = rs_base_yscale(base);
+}
+
+static void MovePart(mobj_t *part, mobj_t *base, mobj_t *refNipple)
+{
+	P_MoveOrigin(
+		part,
+		refNipple->x + FixedMul(rs_part_xoffset(part), rs_base_xscale(base)),
+		refNipple->y + FixedMul(rs_part_yoffset(part), rs_base_xscale(base)),
+		part->z
+	);
+}
 
 // I've tried to reduce redundancy as much as I can,
 // but check K_SpawnRingShooter if you edit this
@@ -59,7 +74,7 @@ static void UpdateRingShooterParts(mobj_t *mo)
 	while (!P_MobjWasRemoved(part->hprev))
 	{
 		part = part->hprev;
-		SCALEPART
+		ScalePart(part, mo);
 	}
 	refNipple = part;
 
@@ -67,71 +82,63 @@ static void UpdateRingShooterParts(mobj_t *mo)
 	while (!P_MobjWasRemoved(part->hnext))
 	{
 		part = part->hnext;
-		MOVEPART
-		SCALEPART
+		MovePart(part, mo, refNipple);
+		ScalePart(part, mo);
 	}
 
 	part = mo->tracer;
-	part->z = mo->z + FixedMul(refNipple->height, yScale);
-	MOVEPART
-	SCALEPART
+	part->z = mo->z + FixedMul(refNipple->height, rs_base_yscale(mo));
+	MovePart(part, mo, refNipple);
+	ScalePart(part, mo);
 }
 
 static boolean RingShooterInit(mobj_t *mo)
 {
-	if (scaleState == -1)
+	if (rs_base_scalestate(mo) == -1)
 	{
 		return false;
 	}
 
-	switch (scaleState)
+	switch (rs_base_scalestate(mo))
 	{
 		case 0:
 		{
-			yScale += scaleSpeed;
-			if (yScale >= FRACUNIT)
+			rs_base_yscale(mo) += rs_base_scalespeed(mo);
+			if (rs_base_yscale(mo) >= FRACUNIT)
 			{
-				//xScale -= scaleSpeed;
-				scaleState++;
+				//rs_base_xscale(mo) -= rs_base_scalespeed(mo);
+				rs_base_scalestate(mo)++;
 			}
 			break;
 		}
 		case 1:
 		{
-			scaleSpeed -= FRACUNIT/5;
-			yScale += scaleSpeed;
-			xScale -= scaleSpeed;
-			if (yScale < 3*FRACUNIT/4)
+			rs_base_scalespeed(mo) -= FRACUNIT/5;
+			rs_base_yscale(mo) += rs_base_scalespeed(mo);
+			rs_base_xscale(mo) -= rs_base_scalespeed(mo);
+			if (rs_base_yscale(mo) < 3*FRACUNIT/4)
 			{
-				scaleState ++;
-				scaleSpeed = FRACUNIT >> 2;
+				rs_base_scalestate(mo)++;
+				rs_base_scalespeed(mo) = FRACUNIT >> 2;
 			}
 			break;
 		}
 		case 2:
 		{
-			yScale += scaleSpeed;
-			xScale -= scaleSpeed;
-			if (yScale >= FRACUNIT)
+			rs_base_yscale(mo) += rs_base_scalespeed(mo);
+			rs_base_xscale(mo) -= rs_base_scalespeed(mo);
+			if (rs_base_yscale(mo) >= FRACUNIT)
 			{
-				scaleState = -1;
-				xScale = yScale = FRACUNIT;
+				rs_base_scalestate(mo) = -1;
+				rs_base_xscale(mo) = rs_base_yscale(mo) = FRACUNIT;
 				ActivateRingShooter(mo);
 			}
 		}
 	}
 
 	UpdateRingShooterParts(mo);
-	return scaleState != -1;
+	return (rs_base_scalestate(mo) != -1);
 }
-#undef scaleSpeed
-#undef scaleState
-#undef xScale
-#undef yScale
-#undef xOffset
-#undef yOffset
-#undef MOVEPART
-#undef SCALEPART
 
 static void RingShooterCountdown(mobj_t *mo)
 {
