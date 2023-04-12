@@ -53,7 +53,7 @@ static void SV_ExpandStats(size_t needed)
 
 	while (numallocated < needed)
 	{
-		numallocated *= numtracked;
+		numallocated *= 2;
 		trackedList = Z_Realloc(
 			trackedList,
 			sizeof(serverplayer_t) * numallocated,
