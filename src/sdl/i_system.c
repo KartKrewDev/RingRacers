@@ -268,6 +268,93 @@ static void write_backtrace(INT32 signal)
 #undef CRASHLOG_STDERR_WRITE
 #endif // UNIXBACKTRACE
 
+static void I_ShowErrorMessageBox(const char *messagefordevelopers, boolean dumpmade)
+{
+	static char finalmessage[1024];
+	size_t firstimpressionsline = 3; // "Dr Robotnik's Ring Racers" has encountered...
+
+	if (M_CheckParm("-dedicated"))
+		return;
+
+	snprintf(
+		finalmessage,
+		sizeof(finalmessage),
+			"Hee Ho!\n"
+			"\n"
+			"\"Dr. Robotnik's Ring Racers\" has encountered an unrecoverable error and needs to close.\n"
+			"This is (usually) not your fault, but we encourage you to report it in the community. This should be done alongside your "
+			"%s"
+			"log file (%s).\n"
+			"\n"
+			"The following information is for a programmer (please be nice to them!) but\n"
+			"may also be useful for server hosts and add-on creators.\n"
+			"\n"
+			"%s",
+		dumpmade ?
+#if defined (UNIXBACKTRACE)
+			"crash-log.txt"
+#elif defined (_WIN32)
+			".rpt crash dump"
+#endif
+			" (very important!) and " : "",
+		logfilename,
+		messagefordevelopers);
+
+	// Rudementary word wrapping.
+	// Simple and effective. Does not handle nonuniform letter sizes, etc. but who cares.
+	{
+		size_t max = 0, maxatstart = 0, start = 0, width = 0, i;
+
+		for (i = 0; finalmessage[i]; i++)
+		{
+			if (finalmessage[i] == ' ')
+			{
+				start = i;
+				max += 4;
+				maxatstart = max;
+			}
+			else if (finalmessage[i] == '\n')
+			{
+				if (firstimpressionsline > 0)
+				{
+					firstimpressionsline--;
+					if (firstimpressionsline == 0)
+					{
+						width = max;
+					}
+				}
+				start = 0;
+				max = 0;
+				maxatstart = 0;
+				continue;
+			}
+			else
+				max += 8;
+
+			// Start trying to wrap if presumed length exceeds the space we want.
+			if (width > 0 && max >= width && start > 0)
+			{
+				finalmessage[start] = '\n';
+				max -= maxatstart;
+				start = 0;
+			}
+		}
+	}
+
+	// Implement message box with SDL_ShowSimpleMessageBox,
+	// which should fail gracefully if it can't put a message box up
+	// on the target system
+	SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR,
+		"Dr. Robotnik's Ring Racers "VERSIONSTRING" Error",
+		finalmessage, NULL);
+
+	// Note that SDL_ShowSimpleMessageBox does *not* require SDL to be
+	// initialized at the time, so calling it after SDL_Quit() is
+	// perfectly okay! In addition, we do this on purpose so the
+	// fullscreen window is closed before displaying the error message
+	// in case the fullscreen window blocks it for some absurd reason.
+}
+
 static void I_ReportSignal(int num, int coredumped)
 {
 	//static char msg[] = "oh no! back to reality!\r\n";
@@ -317,10 +404,15 @@ static void I_ReportSignal(int num, int coredumped)
 
 	I_OutputMsg("\nProcess killed by signal: %s\n\n", sigmsg);
 
-	if (!M_CheckParm("-dedicated"))
-		SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR,
-			"Process killed by signal",
-			sigmsg, NULL);
+	I_ShowErrorMessageBox(sigmsg,
+#if defined (UNIXBACKTRACE)
+		true
+#elif defined (_WIN32)
+		!M_CheckParm("-noexchndl")
+#else
+		false
+#endif
+	);
 }
 
 #ifndef NEWSIGNALHANDLER
@@ -1712,25 +1804,13 @@ void I_Error(const char *error, ...)
 	I_ShutdownGraphics();
 	I_ShutdownInput();
 
-	// Implement message box with SDL_ShowSimpleMessageBox,
-	// which should fail gracefully if it can't put a message box up
-	// on the target system
-	if (!M_CheckParm("-dedicated"))
-		SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR,
-			"Dr. Robotnik's Ring Racers "VERSIONSTRING" Error",
-			buffer, NULL);
+	I_ShowErrorMessageBox(buffer, false);
 
 	// We wait until now to do this so the funny sound can be heard
 	I_ShutdownSound();
 	// use this for 1.28 19990220 by Kin
 	I_ShutdownSystem();
 	SDL_Quit();
-
-	// Note that SDL_ShowSimpleMessageBox does *not* require SDL to be
-	// initialized at the time, so calling it after SDL_Quit() is
-	// perfectly okay! In addition, we do this on purpose so the
-	// fullscreen window is closed before displaying the error message
-	// in case the fullscreen window blocks it for some absurd reason.
 
 	W_Shutdown();
 
