@@ -2249,13 +2249,13 @@ static void P_UpdatePlayerAngle(player_t *player)
 				// Don't change handling direction if someone's inputs are sliptiding, you'll break the sliptide!
 				if (player->cmd.turning > 0)
 				{
-					steeringRight = max(steeringRight, max(steeringLeft, 1));
 					steeringLeft = max(steeringLeft, 1);
+					steeringRight = max(steeringRight, steeringLeft);
 				}
 				else
 				{
-					steeringLeft = min(steeringLeft, min(steeringRight, -1));
-					steeringRight = min(steeringLeft, -1);
+					steeringRight = min(steeringRight, -1);
+					steeringLeft = min(steeringLeft, steeringRight);
 				}
 			}
 
