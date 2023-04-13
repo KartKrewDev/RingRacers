@@ -4337,6 +4337,8 @@ static void P_NetUnArchiveThinkers(savebuffer_t *save)
 		{
 			next = currentthinker->next;
 
+			currentthinker->references = 0; // Heinous but this is the only place the assertion in P_UnlinkThinkers is wrong
+
 			if (currentthinker->function.acp1 == (actionf_p1)P_MobjThinker || currentthinker->function.acp1 == (actionf_p1)P_NullPrecipThinker)
 				P_RemoveSavegameMobj((mobj_t *)currentthinker); // item isn't saved, don't remove it
 			else
