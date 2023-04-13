@@ -13816,44 +13816,10 @@ A_SpawnItemDebrisCloud (mobj_t *actor)
 // vars do nothing
 void A_RingShooterFace(mobj_t *actor)
 {
-	player_t *player;
-	mobj_t *mo = actor;
-
 	if (LUA_CallAction(A_RINGSHOOTERFACE, actor))
-		return;
-
-	// get the player, if possible
-	while ((mo->player == NULL) && !P_MobjWasRemoved(mo->target))
-		mo = mo->target;
-
-	player = mo->player;
-
-	if (!player) // something changed my target, abort
-		return;
-
-	// it's a good idea to set the actor's skin *before* it uses this action,
-	// but just in case, if it doesn't have the player's skin, set its skin then call the state again to get the correct sprite
-	if (actor->skin != &skins[player->skin])
 	{
-		actor->skin = &skins[player->skin];
-		P_SetMobjState(actor, (statenum_t)(actor->state-states));
 		return;
 	}
 
-	// okay, now steal the player's color nyehehehe
-	actor->color = player->skincolor;
-
-	// set the frame to the WANTED pic
-	actor->frame = (actor->frame & ~FF_FRAMEMASK) | FACE_WANTED;
-
-	// we're going to assume the character's WANTED icon is 32 x 32
-	// let's squish the sprite a bit so that it matches the dimensions of the screen's sprite, which is 26 x 22
-	// (TODO: maybe get the dimensions/offsets from the patches themselves?)
-	actor->spritexscale = FixedDiv(26*FRACUNIT, 32*FRACUNIT);
-	actor->spriteyscale = FixedDiv(22*FRACUNIT, 32*FRACUNIT);
-
-	// a normal WANTED icon should have (0, 0) offsets
-	// so let's offset it such that it will match the position of the screen's sprite
-	actor->spritexoffset = 16*FRACUNIT; // 32 / 2
-	actor->spriteyoffset = 28*FRACUNIT + FixedDiv(11*FRACUNIT, actor->spriteyscale); // 32 - 4 (generic monster bottom) + 11 (vertical offset of screen sprite from the bottom)
+	Obj_UpdateRingShooterFace(actor);
 }

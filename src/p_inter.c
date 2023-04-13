@@ -580,6 +580,10 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 			Obj_LoopEndpointCollide(special, toucher);
 			return;
 
+		case MT_RINGSHOOTER:
+			Obj_PlayerUsedRingShooter(special, player);
+			return;
+
 		default: // SOC or script pickup
 			P_SetTarget(&special->target, toucher);
 			break;

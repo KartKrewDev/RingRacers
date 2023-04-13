@@ -28,6 +28,7 @@
 #include "../lua_hook.h"
 
 #define RS_FUSE_TIME (4*TICRATE)
+#define RS_FUSE_BLINK (TICRATE >> 1)
 
 #define RS_GRABBER_START (16 << FRACBITS)
 #define RS_GRABBER_SLIDE (RS_GRABBER_START >> 4)
@@ -36,7 +37,7 @@
 #define RS_KARTED_INC (3)
 
 #define rs_base_scalespeed(o) ((o)->scalespeed)
-#define rs_base_scalestate(o) ((o)->threshold)
+#define rs_base_initstate(o) ((o)->threshold)
 #define rs_base_xscale(o) ((o)->extravalue1)
 #define rs_base_yscale(o) ((o)->extravalue2)
 
@@ -44,6 +45,7 @@
 #define rs_base_karted(o) ((o)->movecount)
 #define rs_base_grabberdist(o) ((o)->movefactor)
 #define rs_base_canceled(o) ((o)->cvmem)
+#define rs_base_playerface(o) ((o)->cusval)
 
 #define rs_part_xoffset(o) ((o)->extravalue1)
 #define rs_part_yoffset(o) ((o)->extravalue2)
@@ -195,87 +197,11 @@ static void UpdateRingShooterPartsVisibility(mobj_t *mo)
 	ShowHidePart(part, mo);
 }
 
-static void ActivateRingShooter(mobj_t *mo)
-{
-	mobj_t *part = mo->tracer;
-
-	while (!P_MobjWasRemoved(part->tracer))
-	{
-		part = part->tracer;
-		part->renderflags &= ~RF_DONTDRAW;
-		part->frame += 4;
-	}
-}
-
-static boolean RingShooterInit(mobj_t *mo)
-{
-	if (rs_base_scalestate(mo) == -1)
-	{
-		return false;
-	}
-
-	switch (rs_base_scalestate(mo))
-	{
-		case 0:
-		{
-			rs_base_yscale(mo) += rs_base_scalespeed(mo);
-			if (rs_base_yscale(mo) >= FRACUNIT)
-			{
-				//rs_base_xscale(mo) -= rs_base_scalespeed(mo);
-				rs_base_scalestate(mo)++;
-			}
-			break;
-		}
-		case 1:
-		{
-			rs_base_scalespeed(mo) -= FRACUNIT/5;
-			rs_base_yscale(mo) += rs_base_scalespeed(mo);
-			rs_base_xscale(mo) -= rs_base_scalespeed(mo);
-			if (rs_base_yscale(mo) < 3*FRACUNIT/4)
-			{
-				rs_base_scalestate(mo)++;
-				rs_base_scalespeed(mo) = FRACUNIT >> 2;
-			}
-			break;
-		}
-		case 2:
-		{
-			rs_base_yscale(mo) += rs_base_scalespeed(mo);
-			rs_base_xscale(mo) -= rs_base_scalespeed(mo);
-			if (rs_base_yscale(mo) >= FRACUNIT)
-			{
-				rs_base_scalestate(mo)++;
-				rs_base_xscale(mo) = rs_base_yscale(mo) = FRACUNIT;
-			}
-			break;
-		}
-		case 3:
-		{
-			rs_base_grabberdist(mo) -= RS_GRABBER_SLIDE;
-			if (rs_base_grabberdist(mo) <= 0)
-			{
-				rs_base_scalestate(mo) = -1;
-				rs_base_grabberdist(mo) = 0;
-				ActivateRingShooter(mo);
-			}
-			break;
-		}
-		default:
-		{
-			rs_base_scalestate(mo) = 0; // fix invalid states
-			break;
-		}
-	}
-
-	UpdateRingShooterParts(mo);
-	return (rs_base_scalestate(mo) != -1);
-}
-
 static void RingShooterCountdown(mobj_t *mo)
 {
 	mobj_t *part = mo->tracer;
 
-	if (mo->reactiontime == -1)
+	if (mo->reactiontime < 0)
 	{
 		return;
 	}
@@ -296,7 +222,16 @@ static void RingShooterCountdown(mobj_t *mo)
 		case -1:
 		{
 			mo->reactiontime = -1;
-			part->skin = mo->skin;
+
+			if (rs_base_playerface(mo) >= 0 && rs_base_playerface(mo) < MAXPLAYERS)
+			{
+				if (playeringame[rs_base_playerface(mo)] == true)
+				{
+					player_t *player = &players[ rs_base_playerid(mo) ];
+					part->skin = &skins[player->skin];
+				}
+			}
+
 			P_SetMobjState(part, S_RINGSHOOTER_FACE);
 			break;
 		}
@@ -304,6 +239,15 @@ static void RingShooterCountdown(mobj_t *mo)
 		{
 			mo->reactiontime = TICRATE;
 			S_StartSound(mo, mo->info->deathsound);
+
+			if (rs_base_playerid(mo) >= 0 && rs_base_playerid(mo) < MAXPLAYERS)
+			{
+				if (playeringame[rs_base_playerid(mo)] == true)
+				{
+					player_t *player = &players[ rs_base_playerid(mo) ];
+					Obj_PlayerUsedRingShooter(mo, player);
+				}
+			}
 			break;
 		}
 		default:
@@ -337,6 +281,92 @@ static void RingShooterFlicker(mobj_t *mo)
 	part->target->frame = (part->target->frame & ~FF_TRANSMASK) | trans;
 }
 
+static void ActivateRingShooter(mobj_t *mo)
+{
+	mobj_t *part = mo->tracer;
+
+	while (!P_MobjWasRemoved(part->tracer))
+	{
+		part = part->tracer;
+		part->renderflags &= ~RF_DONTDRAW;
+		part->frame += 4;
+	}
+
+	RingShooterCountdown(mo);
+}
+
+static boolean RingShooterInit(mobj_t *mo)
+{
+	if (rs_base_initstate(mo) == -1)
+	{
+		return false;
+	}
+
+	switch (rs_base_initstate(mo))
+	{
+		case 0:
+		{
+			rs_base_yscale(mo) += rs_base_scalespeed(mo);
+			if (rs_base_yscale(mo) >= FRACUNIT)
+			{
+				//rs_base_xscale(mo) -= rs_base_scalespeed(mo);
+				rs_base_initstate(mo)++;
+			}
+			break;
+		}
+		case 1:
+		{
+			rs_base_scalespeed(mo) -= FRACUNIT/5;
+			rs_base_yscale(mo) += rs_base_scalespeed(mo);
+			rs_base_xscale(mo) -= rs_base_scalespeed(mo);
+			if (rs_base_yscale(mo) < 3*FRACUNIT/4)
+			{
+				rs_base_initstate(mo)++;
+				rs_base_scalespeed(mo) = FRACUNIT >> 2;
+			}
+			break;
+		}
+		case 2:
+		{
+			rs_base_yscale(mo) += rs_base_scalespeed(mo);
+			rs_base_xscale(mo) -= rs_base_scalespeed(mo);
+			if (rs_base_yscale(mo) >= FRACUNIT)
+			{
+				rs_base_initstate(mo)++;
+				rs_base_xscale(mo) = rs_base_yscale(mo) = FRACUNIT;
+			}
+			break;
+		}
+		case 3:
+		{
+			if (rs_base_canceled(mo) != 0)
+			{
+				rs_base_initstate(mo) = -1;
+				ActivateRingShooter(mo);
+			}
+			else
+			{
+				rs_base_grabberdist(mo) -= RS_GRABBER_SLIDE;
+				if (rs_base_grabberdist(mo) <= 0)
+				{
+					rs_base_initstate(mo) = -1;
+					rs_base_grabberdist(mo) = 0;
+					ActivateRingShooter(mo);
+				}
+			}
+			break;
+		}
+		default:
+		{
+			rs_base_initstate(mo) = 0; // fix invalid states
+			break;
+		}
+	}
+
+	UpdateRingShooterParts(mo);
+	return (rs_base_initstate(mo) != -1);
+}
+
 boolean Obj_RingShooterThinker(mobj_t *mo)
 {
 	if (RingShooterInit(mo) == true)
@@ -355,18 +385,22 @@ boolean Obj_RingShooterThinker(mobj_t *mo)
 		}
 	}
 
-	if (rs_base_canceled(mo) != 0)
+	if (rs_base_canceled(mo) == 0)
 	{
 		rs_base_karted(mo) += RS_KARTED_INC;
 
 		if (P_MobjWasRemoved(mo->tracer) == false)
 		{
 			RingShooterCountdown(mo);
-			RingShooterFlicker(mo);
 		}
 	}
 
-	if (mo->fuse < TICRATE)
+	if (P_MobjWasRemoved(mo->tracer) == false)
+	{
+		RingShooterFlicker(mo);
+	}
+
+	if (mo->fuse < RS_FUSE_BLINK)
 	{
 		if (leveltime & 1)
 		{
@@ -381,6 +415,29 @@ boolean Obj_RingShooterThinker(mobj_t *mo)
 	}
 
 	return true;
+}
+
+void Obj_PlayerUsedRingShooter(mobj_t *base, player_t *player)
+{
+	// The original player should no longer have control over it,
+	// if they are using it via releasing.
+	RemoveRingShooterPointer(base);
+
+	// Respawn using the respawner's karted value.
+	if (rs_base_karted(base) > 0)
+	{
+		player->airtime += rs_base_karted(base);
+	}
+	K_DoIngameRespawn(player);
+
+	// Now other players can run into it!
+	base->flags |= MF_SPECIAL;
+
+	if (base->fuse < RS_FUSE_TIME)
+	{
+		// Reset the fuse so everyone can conga line :B
+		base->fuse = RS_FUSE_TIME;
+	}
 }
 
 void Obj_RingShooterDelete(mobj_t *mo)
@@ -418,31 +475,6 @@ void Obj_RingShooterDelete(mobj_t *mo)
 	{
 		P_RemoveMobj(part);
 	}
-}
-
-static boolean AllowRingShooter(player_t *player)
-{
-	const fixed_t minSpeed = 6 * player->mo->scale;
-
-	if (player->respawn.state != RESPAWNST_NONE
-		&& player->respawn.init == true)
-	{
-		return false;
-	}
-
-	if (player->drift == 0
-		&& player->justbumped == 0
-		&& player->spindashboost == 0
-		&& player->nocontrol == 0
-		&& player->fastfall == 0
-		&& player->speed < minSpeed
-		&& P_PlayerInPain(player) == false
-		&& P_IsObjectOnGround(player->mo) == true)
-	{
-		return true;
-	}
-
-	return false;
 }
 
 // I've tried to reduce redundancy as much as I can,
@@ -553,6 +585,8 @@ static void SpawnRingShooter(player_t *player)
 		part->renderflags |= RF_DONTDRAW;
 	}
 
+	P_SetTarget(&part->hprev, base);
+
 	// spawn the grabbers
 	part = base;
 	angle = base->angle + ANGLE_45;
@@ -579,6 +613,36 @@ static void SpawnRingShooter(player_t *player)
 	}
 
 	ChangeRingShooterPointer(base, player);
+	rs_base_playerface(base) = (player - players);
+}
+
+static boolean AllowRingShooter(player_t *player)
+{
+	const fixed_t minSpeed = 6 * player->mo->scale;
+
+	if ((gametyperules & GTR_CIRCUIT) && leveltime < starttime)
+	{
+		return false;
+	}
+
+	if (player->respawn.state != RESPAWNST_NONE)
+	{
+		return false;
+	}
+
+	if (player->drift == 0
+		&& player->justbumped == 0
+		&& player->spindashboost == 0
+		&& player->nocontrol == 0
+		&& player->fastfall == 0
+		&& player->speed < minSpeed
+		&& P_PlayerInPain(player) == false
+		&& P_IsObjectOnGround(player->mo) == true)
+	{
+		return true;
+	}
+
+	return false;
 }
 
 void Obj_RingShooterInput(player_t *player)
@@ -596,22 +660,85 @@ void Obj_RingShooterInput(player_t *player)
 
 		if (rs_base_canceled(base) != 0)
 		{
-			if (base->fuse < TICRATE)
+			if (base->fuse < RS_FUSE_BLINK)
 			{
 				base->renderflags &= ~RF_DONTDRAW;
 				UpdateRingShooterPartsVisibility(base);
 			}
 
-			base->fuse = RS_FUSE_TIME;
+			if (base->fuse < RS_FUSE_TIME)
+			{
+				base->fuse = RS_FUSE_TIME;
+			}
 		}
 	}
 	else if (P_MobjWasRemoved(base) == false)
 	{
-		if (rs_base_scalestate(base) != -1)
+		if (rs_base_initstate(base) != -1)
 		{
 			// We released during the intro animation.
-			// Cancel it entirely.
+			// Cancel it entirely, prevent another one being created for a bit.
 			rs_base_canceled(base) = 1;
+
+			if (base->fuse > RS_FUSE_BLINK)
+			{
+				base->fuse = RS_FUSE_BLINK;
+			}
+		}
+		else if (rs_base_canceled(base) == 0)
+		{
+			// We released during the countdown.
+			// We activate with the current karted timer on the ring shooter.
+			Obj_PlayerUsedRingShooter(base, player);
 		}
 	}
+}
+
+void Obj_UpdateRingShooterFace(mobj_t *part)
+{
+	mobj_t *const base = part->hprev;
+	player_t *player = NULL;
+
+	if (P_MobjWasRemoved(base) == true)
+	{
+		return;
+	}
+
+	if (rs_base_playerface(base) < 0 || rs_base_playerface(base) >= MAXPLAYERS)
+	{
+		return;
+	}
+
+	if (playeringame[ rs_base_playerface(base) ] == false)
+	{
+		return;
+	}
+
+	player = &players[ rs_base_playerface(base) ];
+
+	// it's a good idea to set the actor's skin *before* it uses this action,
+	// but just in case, if it doesn't have the player's skin, set its skin then call the state again to get the correct sprite
+	if (part->skin != &skins[player->skin])
+	{
+		part->skin = &skins[player->skin];
+		P_SetMobjState(part, (statenum_t)(part->state - states));
+		return;
+	}
+
+	// okay, now steal the player's color nyehehehe
+	part->color = player->skincolor;
+
+	// set the frame to the WANTED pic
+	part->frame = (part->frame & ~FF_FRAMEMASK) | FACE_WANTED;
+
+	// we're going to assume the character's WANTED icon is 32 x 32
+	// let's squish the sprite a bit so that it matches the dimensions of the screen's sprite, which is 26 x 22
+	// (TODO: maybe get the dimensions/offsets from the patches themselves?)
+	part->spritexscale = FixedDiv(26*FRACUNIT, 32*FRACUNIT);
+	part->spriteyscale = FixedDiv(22*FRACUNIT, 32*FRACUNIT);
+
+	// a normal WANTED icon should have (0, 0) offsets
+	// so let's offset it such that it will match the position of the screen's sprite
+	part->spritexoffset = 16*FRACUNIT; // 32 / 2
+	part->spriteyoffset = 28*FRACUNIT + FixedDiv(11*FRACUNIT, part->spriteyscale); // 32 - 4 (generic monster bottom) + 11 (vertical offset of screen sprite from the bottom)
 }

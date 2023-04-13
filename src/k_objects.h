@@ -109,7 +109,9 @@ boolean Obj_DropTargetMorphThink(mobj_t *morph);
 /* Ring Shooter */
 boolean Obj_RingShooterThinker(mobj_t *mo);
 void Obj_RingShooterInput(player_t *player);
+void Obj_PlayerUsedRingShooter(mobj_t *base, player_t *player);
 void Obj_RingShooterDelete(mobj_t *mo);
+void Obj_UpdateRingShooterFace(mobj_t *part);
 
 #ifdef __cplusplus
 } // extern "C"
