@@ -3864,7 +3864,7 @@ static void Command_ServerTeamChange_f(void)
 static void Got_Teamchange(UINT8 **cp, INT32 playernum)
 {
 	changeteam_union NetPacket;
-	boolean error = false;
+	boolean error = false, wasspectator = false;
 	NetPacket.value.l = NetPacket.value.b = READINT16(*cp);
 
 	if (!G_GametypeHasTeams() && !G_GametypeHasSpectators()) //Make sure you're in the right gametype.
@@ -3935,7 +3935,9 @@ static void Got_Teamchange(UINT8 **cp, INT32 playernum)
 
 	//Safety first!
 	// (not respawning spectators here...)
-	if (!players[playernum].spectator && gamestate == GS_LEVEL)
+	wasspectator = (players[playernum].spectator == true);
+		
+	if (!wasspectator && gamestate == GS_LEVEL)
 	{
 		if (players[playernum].mo)
 		{
@@ -3996,7 +3998,7 @@ static void Got_Teamchange(UINT8 **cp, INT32 playernum)
 	{
 		CONS_Printf(M_GetText("%s switched to the %c%s%c.\n"), player_names[playernum], '\x84', M_GetText("Blue Team"), '\x80');
 	}
-	else if (NetPacket.packet.newteam == 0)
+	else if (NetPacket.packet.newteam == 0 && !wasspectator)
 		HU_AddChatText(va("\x82*%s became a spectator.", player_names[playernum]), false); // "entered the game" text was moved to P_SpectatorJoinGame
 
 	/*if (G_GametypeHasTeams())
