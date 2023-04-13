@@ -8578,6 +8578,9 @@ void K_UpdateDistanceFromFinishLine(player_t *const player)
 			player->nextwaypoint = nextwaypoint;
 		}
 
+		// Update prev value (used for grief prevention code)
+		player->distancetofinishprev = player->distancetofinish;
+
 		// nextwaypoint is now the waypoint that is in front of us
 		if ((player->exiting && !(player->pflags & PF_NOCONTEST)) || player->spectator)
 		{

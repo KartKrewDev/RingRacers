@@ -504,6 +504,7 @@ struct player_t
 	UINT8 oldposition;		// Used for taunting when you pass someone
 	UINT8 positiondelay;	// Used for position number, so it can grow when passing
 	UINT32 distancetofinish;
+	UINT32 distancetofinishprev;
 	waypoint_t *currentwaypoint;
 	waypoint_t *nextwaypoint;
 	respawnvars_t respawn;	// Respawn info
@@ -692,6 +693,9 @@ struct player_t
 	tic_t jointime; // Timer when player joins game to change skin/color
 
 	tic_t spectatorReentry;
+
+	UINT32 griefValue;
+	UINT8 griefStrikes;
 
 	UINT8 typing_timer; // Counts down while keystrokes are not emitted
 	UINT8 typing_duration; // How long since resumed timer

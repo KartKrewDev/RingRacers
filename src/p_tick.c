@@ -781,13 +781,18 @@ void P_Ticker(boolean run)
 		// Run any "after all the other thinkers" stuff
 		{
 			player_t *finishingPlayers[MAXPLAYERS];
-			UINT8 numFinishingPlayers = 0;
+			UINT8 numingame = 0, numFinishingPlayers = 0;
 
 			for (i = 0; i < MAXPLAYERS; i++)
 			{
 				if (playeringame[i] && players[i].mo && !P_MobjWasRemoved(players[i].mo))
 				{
 					P_PlayerAfterThink(&players[i]);
+
+					if (players[i].spectator == true)
+						continue;
+
+					numingame++;
 
 					// Check for the number of ties for first place after every player has thunk run for this tic
 					if (players[i].exiting == 1 && players[i].position == 1 &&
@@ -798,11 +803,25 @@ void P_Ticker(boolean run)
 				}
 			}
 
+			if ((netgame) // Antigrief is supposed to apply?
+				&& !(K_Cooperative() || timelimitintics > 0 || g_pointlimit > 0) // There are rules that will punish a griefing player
+				&& (gametyperules & GTR_CIRCUIT) && (leveltime > starttime)) // The following only detects race griefing
 			{
+				for (i = 0; i < MAXPLAYERS; i++)
 				{
+					if (playeringame[i] && players[i].mo && !P_MobjWasRemoved(players[i].mo))
+					{
+						if (players[i].spectator == true)
+							continue;
 
+						if (players[i].exiting || (players[i].pflags & PF_NOCONTEST))
+							continue;
 
+						if (players[i].bot == true)
+							continue;
 
+						P_CheckRaceGriefing(&players[i], (numingame > 1));
+					}
 				}
 			}
 

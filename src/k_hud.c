@@ -5116,6 +5116,11 @@ static void K_DrawWaypointDebugger(void)
 	if (stplyr != &players[displayplayers[0]]) // only for p1
 		return;
 
+	if (netgame)
+	{
+		V_DrawString(8, 146, 0, va("Online griefing: [%u, %u]", stplyr->griefValue/TICRATE, stplyr->griefStrikes));
+	}
+
 	V_DrawString(8, 156, 0, va("Current Waypoint ID: %d", K_GetWaypointID(stplyr->currentwaypoint)));
 	V_DrawString(8, 166, 0, va("Next Waypoint ID: %d", K_GetWaypointID(stplyr->nextwaypoint)));
 	V_DrawString(8, 176, 0, va("Finishline Distance: %d", stplyr->distancetofinish));

@@ -468,6 +468,7 @@ typedef enum
 	KICK_MSG_CUSTOM_BAN,		// Ban message w/ custom reason
 	KICK_MSG_TIMEOUT,			// Player's connection timed out
 	KICK_MSG_PING_HIGH,			// Player hit the ping limit
+	KICK_MSG_GRIEF,				// Player was detected by antigrief
 	KICK_MSG_CON_FAIL,			// Player failed to resync game state
 	KICK_MSG_SIGFAIL,			// Player failed signature check
 	KICK_MSG__MAX				// Number of unique messages

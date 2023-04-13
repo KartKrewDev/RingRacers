@@ -196,6 +196,8 @@ static void P_NetArchivePlayers(savebuffer_t *save)
 		WRITEUINT32(save->p, players[i].jointime);
 
 		WRITEUINT32(save->p, players[i].spectatorReentry);
+		WRITEUINT32(save->p, players[i].griefValue);
+		WRITEUINT8(save->p, players[i].griefStrikes);
 
 		WRITEUINT8(save->p, players[i].splitscreenindex);
 
@@ -274,6 +276,7 @@ static void P_NetArchivePlayers(savebuffer_t *save)
 		WRITEUINT8(save->p, players[i].oldposition);
 		WRITEUINT8(save->p, players[i].positiondelay);
 		WRITEUINT32(save->p, players[i].distancetofinish);
+		WRITEUINT32(save->p, players[i].distancetofinishprev);
 		WRITEUINT32(save->p, K_GetWaypointHeapIndex(players[i].currentwaypoint));
 		WRITEUINT32(save->p, K_GetWaypointHeapIndex(players[i].nextwaypoint));
 		WRITEUINT32(save->p, players[i].airtime);
@@ -601,6 +604,8 @@ static void P_NetUnArchivePlayers(savebuffer_t *save)
 		players[i].jointime = READUINT32(save->p);
 
 		players[i].spectatorReentry = READUINT32(save->p);
+		players[i].griefValue = READUINT32(save->p);
+		players[i].griefStrikes = READUINT8(save->p);
 
 		players[i].splitscreenindex = READUINT8(save->p);
 
@@ -653,6 +658,7 @@ static void P_NetUnArchivePlayers(savebuffer_t *save)
 		players[i].oldposition = READUINT8(save->p);
 		players[i].positiondelay = READUINT8(save->p);
 		players[i].distancetofinish = READUINT32(save->p);
+		players[i].distancetofinishprev = READUINT32(save->p);
 		players[i].currentwaypoint = (waypoint_t *)(size_t)READUINT32(save->p);
 		players[i].nextwaypoint = (waypoint_t *)(size_t)READUINT32(save->p);
 		players[i].airtime = READUINT32(save->p);

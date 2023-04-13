@@ -11774,6 +11774,8 @@ void P_SpawnPlayer(INT32 playernum)
 	P_SetScale(mobj, mobj->destscale);
 	P_FlashPal(p, 0, 0); // Resets
 
+	p->griefValue = 0;
+
 	K_InitStumbleIndicator(p);
 
 	K_InitSliptideZipIndicator(p);
