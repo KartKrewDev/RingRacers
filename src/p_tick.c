@@ -617,6 +617,37 @@ static inline void P_DoTeamStuff(void)
 	}
 }
 
+static inline void P_DeviceRumbleTick(void)
+{
+	UINT8 i;
+
+	for (i = 0; i <= splitscreen; i++)
+	{
+		player_t *player = &players[g_localplayers[i]];
+		UINT16 low = 0;
+		UINT16 high = 0;
+
+		if (player->mo == NULL)
+			continue;
+
+		if ((player->mo->eflags & MFE_DAMAGEHITLAG) && player->mo->hitlag)
+		{
+			low = high = 65536 / 2;
+		}
+		else if (player->sneakertimer > (sneakertime-(TICRATE/2)))
+		{
+			low = high = 65536 / (3+player->numsneakers);
+		}
+		else if (((player->boostpower < FRACUNIT) || (player->stairjank > 8))
+			&& P_IsObjectOnGround(player->mo))
+		{
+			low = high = 65536 / 32;
+		}
+
+		G_PlayerDeviceRumble(i, low, high);
+	}
+}
+
 void P_RunChaseCameras(void)
 {
 	UINT8 i;
@@ -767,37 +798,18 @@ void P_Ticker(boolean run)
 				}
 			}
 
-			// Apply rumble to player if local to machine and not in demo playback
+			{
+				{
+
+
+
+				}
+			}
+
+			// Apply rumble to local players
 			if (!demo.playback)
 			{
-				for (i = 0; i <= splitscreen; i++)
-				{
-					player_t *player = &players[g_localplayers[i]];
-					UINT16 low = 0;
-					UINT16 high = 0;
-
-					if (player->mo == NULL)
-						continue;
-
-					if ((player->mo->eflags & MFE_DAMAGEHITLAG) && player->mo->hitlag)
-					{
-						low = 65536 / 2;
-						high = 65536 / 2;
-					}
-					else if (player->sneakertimer > (sneakertime-(TICRATE/2)))
-					{
-						low = 65536 / (3+player->numsneakers);
-						high = 65536 / (3+player->numsneakers);
-					}
-					else if (((player->boostpower < FRACUNIT) || (player->stairjank > 8))
-						&& P_IsObjectOnGround(player->mo))
-					{
-						low = 65536 / 32;
-						high = 65536 / 32;
-					}
-
-					G_PlayerDeviceRumble(i, low, high);
-				}
+				P_DeviceRumbleTick();
 			}
 
 			if (numFinishingPlayers > 1)
