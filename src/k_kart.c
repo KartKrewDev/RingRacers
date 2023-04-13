@@ -3407,7 +3407,9 @@ SINT8 K_GetForwardMove(player_t *player)
 {
 	SINT8 forwardmove = player->cmd.forwardmove;
 
-	if ((player->pflags & PF_STASIS) || (player->carry == CR_SLIDING))
+	if ((player->pflags & PF_STASIS)
+		|| (player->carry == CR_SLIDING)
+		|| Obj_PlayerRingShooterFreeze(player) == true)
 	{
 		return 0;
 	}

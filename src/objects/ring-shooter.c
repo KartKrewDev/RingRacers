@@ -645,6 +645,20 @@ static boolean AllowRingShooter(player_t *player)
 	return false;
 }
 
+boolean Obj_PlayerRingShooterFreeze(player_t *const player)
+{
+	mobj_t *const base = player->ringShooter;
+
+	if (AllowRingShooter(player) == true
+		&& (player->cmd.buttons & BT_RESPAWN) == BT_RESPAWN
+		&& P_MobjWasRemoved(base) == false)
+	{
+		return (rs_base_canceled(base) == 0);
+	}
+
+	return false;
+}
+
 void Obj_RingShooterInput(player_t *player)
 {
 	mobj_t *const base = player->ringShooter;
@@ -658,7 +672,7 @@ void Obj_RingShooterInput(player_t *player)
 			return;
 		}
 
-		if (rs_base_canceled(base) != 0)
+		if (rs_base_canceled(base) == 0)
 		{
 			if (base->fuse < RS_FUSE_BLINK)
 			{

@@ -108,6 +108,7 @@ boolean Obj_DropTargetMorphThink(mobj_t *morph);
 
 /* Ring Shooter */
 boolean Obj_RingShooterThinker(mobj_t *mo);
+boolean Obj_PlayerRingShooterFreeze(player_t *const player);
 void Obj_RingShooterInput(player_t *player);
 void Obj_PlayerUsedRingShooter(mobj_t *base, player_t *player);
 void Obj_RingShooterDelete(mobj_t *mo);
