@@ -500,6 +500,8 @@ static int player_get(lua_State *L)
 		lua_pushboolean(L, plr->bot);
 	else if (fastcmp(field,"jointime"))
 		lua_pushinteger(L, plr->jointime);
+	else if (fastcmp(field,"spectatorReentry"))
+		lua_pushinteger(L, plr->spectatorReentry);
 	else if (fastcmp(field,"splitscreenindex"))
 		lua_pushinteger(L, plr->splitscreenindex);
 #ifdef HWRENDER
@@ -880,6 +882,8 @@ static int player_set(lua_State *L)
 		return NOSET;
 	else if (fastcmp(field,"jointime"))
 		return NOSET;
+	else if (fastcmp(field,"spectatorReentry"))
+		plr->spectatorReentry = (UINT32)luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"splitscreenindex"))
 		return NOSET;
 #ifdef HWRENDER

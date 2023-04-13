@@ -195,6 +195,8 @@ static void P_NetArchivePlayers(savebuffer_t *save)
 
 		WRITEUINT32(save->p, players[i].jointime);
 
+		WRITEUINT32(save->p, players[i].spectatorReentry);
+
 		WRITEUINT8(save->p, players[i].splitscreenindex);
 
 		if (players[i].awayview.mobj)
@@ -597,6 +599,8 @@ static void P_NetUnArchivePlayers(savebuffer_t *save)
 		players[i].onconveyor = READINT32(save->p);
 
 		players[i].jointime = READUINT32(save->p);
+
+		players[i].spectatorReentry = READUINT32(save->p);
 
 		players[i].splitscreenindex = READUINT8(save->p);
 

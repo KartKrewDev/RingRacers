@@ -691,6 +691,8 @@ struct player_t
 
 	tic_t jointime; // Timer when player joins game to change skin/color
 
+	tic_t spectatorReentry;
+
 	UINT8 typing_timer; // Counts down while keystrokes are not emitted
 	UINT8 typing_duration; // How long since resumed timer
 

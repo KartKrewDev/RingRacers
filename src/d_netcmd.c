@@ -262,6 +262,10 @@ consvar_t cv_allowteamchange = CVAR_INIT ("allowteamchange", "Yes", CV_NETVAR, C
 static CV_PossibleValue_t maxplayers_cons_t[] = {{1, "MIN"}, {MAXPLAYERS, "MAX"}, {0, NULL}};
 consvar_t cv_maxplayers = CVAR_INIT ("maxplayers", "8", CV_NETVAR, maxplayers_cons_t, NULL);
 
+static CV_PossibleValue_t spectatorreentry_cons_t[] = {{0, "MIN"}, {10*60, "MAX"}, {0, NULL}};
+consvar_t cv_spectatorreentry = CVAR_INIT ("spectatorreentry", "30", CV_NETVAR, spectatorreentry_cons_t, NULL);
+consvar_t cv_duelspectatorreentry = CVAR_INIT ("duelspectatorreentry", "180", CV_NETVAR, spectatorreentry_cons_t, NULL);
+
 consvar_t cv_startinglives = CVAR_INIT ("startinglives", "3", CV_NETVAR|CV_CHEAT|CV_NOSHOWHELP, startingliveslimit_cons_t, NULL);
 
 static CV_PossibleValue_t respawntime_cons_t[] = {{1, "MIN"}, {30, "MAX"}, {0, "Off"}, {0, NULL}};
@@ -788,6 +792,8 @@ void D_RegisterServerCommands(void)
 	CV_RegisterVar(&cv_restrictskinchange);
 	CV_RegisterVar(&cv_allowteamchange);
 	CV_RegisterVar(&cv_maxplayers);
+	CV_RegisterVar(&cv_spectatorreentry);
+	CV_RegisterVar(&cv_duelspectatorreentry);
 	CV_RegisterVar(&cv_respawntime);
 
 	// d_clisrv
@@ -1594,6 +1600,35 @@ static void FinalisePlaystateChange(INT32 playernum)
 	// Clear player score and rings if a spectator.
 	if (players[playernum].spectator)
 	{
+		// To attempt to discourage rage-spectators, we delay any rejoining.
+		// If you're engaging in a DUEL and quit early, in addition to the
+		// indignity of losing your PWR, you get a special extra-long delay.
+		if (netgame)
+		{
+			UINT8 pcount = 0;
+
+			if (cv_duelspectatorreentry.value > cv_spectatorreentry.value)
+			{
+				UINT8 i;
+
+				for (i = 0; i < MAXPLAYERS; i++)
+				{
+					if (!playeringame[i] || players[i].spectator)
+						continue;
+					if (++pcount < 2)
+						continue;
+					break;
+				}
+			}
+
+			players[playernum].spectatorReentry =
+				(pcount == 1)
+					? (cv_duelspectatorreentry.value * TICRATE)
+					: (cv_spectatorreentry.value * TICRATE);
+
+			//CONS_Printf("player %u got re-entry of %u\n", playernum, players[playernum].spectatorReentry);
+		}
+
 		if (gametyperules & GTR_POINTLIMIT) // SRB2kart
 		{
 			players[playernum].roundscore = 0;

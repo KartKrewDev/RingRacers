@@ -11682,12 +11682,7 @@ void P_SpawnPlayer(INT32 playernum)
 	else if (netgame && p->jointime <= 1 && pcount)
 	{
 		p->spectator = true;
-
-#if 0
-		if (pcount == 1 || leveltime < starttime)
-			p->pflags |= PF_WANTSTOJOIN;
-		p->jointime = 2;
-#endif
+		p->spectatorReentry = 0;
 	}
 	else if (multiplayer && !netgame)
 	{
@@ -11701,6 +11696,7 @@ void P_SpawnPlayer(INT32 playernum)
 			// Spawn as a spectator,
 			// yes even in splitscreen mode
 			p->spectator = true;
+
 			if (playernum&1) p->skincolor = skincolor_redteam;
 			else             p->skincolor = skincolor_blueteam;
 
@@ -11722,7 +11718,9 @@ void P_SpawnPlayer(INT32 playernum)
 	{
 		// Fix stupid non spectator spectators.
 		if (!p->spectator && !p->ctfteam)
+		{
 			p->spectator = true;
+		}
 
 		// Fix team colors.
 		// This code isn't being done right somewhere else. Oh well.
