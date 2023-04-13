@@ -782,7 +782,8 @@ void P_Ticker(boolean run)
 						low = 65536 / (3+player->numsneakers);
 						high = 65536 / (3+player->numsneakers);
 					}
-					else if (player->boostpower < FRACUNIT && P_IsObjectOnGround(player->mo))
+					else if (((player->boostpower < FRACUNIT) || (player->stairjank > 8))
+						&& P_IsObjectOnGround(player->mo))
 					{
 						low = 65536 / 32;
 						high = 65536 / 32;
