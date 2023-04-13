@@ -674,6 +674,8 @@ void Obj_RingShooterInput(player_t *player)
 
 		if (rs_base_canceled(base) == 0)
 		{
+			player->mo->momx = player->mo->momy = 0;
+
 			if (base->fuse < RS_FUSE_BLINK)
 			{
 				base->renderflags &= ~RF_DONTDRAW;
