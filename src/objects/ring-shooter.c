@@ -755,6 +755,9 @@ void Obj_UpdateRingShooterFace(mobj_t *part)
 	// set the frame to the WANTED pic
 	part->frame = (part->frame & ~FF_FRAMEMASK) | FACE_WANTED;
 
+	// set the threshold overlay flags
+	part->threshold = (OV_DONTXYSCALE|OV_DONTSCREENOFFSET);
+
 	// we're going to assume the character's WANTED icon is 32 x 32
 	// let's squish the sprite a bit so that it matches the dimensions of the screen's sprite, which is 26 x 22
 	// (TODO: maybe get the dimensions/offsets from the patches themselves?)
