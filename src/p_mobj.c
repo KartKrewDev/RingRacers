@@ -6642,7 +6642,10 @@ static void P_MobjSceneryThink(mobj_t *mobj)
 		}
 		break;
 	case MT_RINGSHOOTER:
-		Obj_RingShooterThinker(mobj);
+		if (Obj_RingShooterThinker(mobj) == false)
+		{
+			return;
+		}
 		break;
 	case MT_SPINDASHWIND:
 	case MT_DRIFTELECTRICSPARK:
@@ -11143,26 +11146,10 @@ void P_RemoveMobj(mobj_t *mobj)
 			iquetail = (iquetail+1)&(ITEMQUESIZE-1);
 	}
 
-	if (mobj->type == MT_KARMAHITBOX) // Remove linked list objects for certain types
-	{
-		mobj_t *cur = mobj->hnext;
-
-		while (cur && !P_MobjWasRemoved(cur))
-		{
-			mobj_t *prev = cur; // Kind of a dumb var, but we need to set cur before we remove the mobj
-			cur = cur->hnext;
-			P_RemoveMobj(prev);
-		}
-	}
-
-	if (mobj->type == MT_OVERLAY)
-		P_RemoveOverlay(mobj);
-
-	if (mobj->type == MT_SPB)
-		spbplace = -1;
-
 	if (P_IsTrackerType(mobj->type))
+	{
 		P_RemoveTracker(mobj);
+	}
 
 	if (mobj->player && mobj->player->followmobj)
 	{
@@ -11170,19 +11157,56 @@ void P_RemoveMobj(mobj_t *mobj)
 		P_SetTarget(&mobj->player->followmobj, NULL);
 	}
 
-	if (mobj->type == MT_SHRINK_POHBEE)
+	// Remove linked list objects for certain types
+	switch (mobj->type)
 	{
-		Obj_PohbeeRemoved(mobj);
-	}
+		case MT_KARMAHITBOX:
+		{
+			mobj_t *cur = mobj->hnext;
 
-	if (mobj->type == MT_SHRINK_GUN)
-	{
-		Obj_ShrinkGunRemoved(mobj);
-	}
+			while (cur && !P_MobjWasRemoved(cur))
+			{
+				mobj_t *prev = cur; // Kind of a dumb var, but we need to set cur before we remove the mobj
+				cur = cur->hnext;
+				P_RemoveMobj(prev);
+			}
 
-	if (mobj->type == MT_SPECIAL_UFO_PIECE)
-	{
-		Obj_UFOPieceRemoved(mobj);
+			break;
+		}
+		case MT_OVERLAY:
+		{
+			P_RemoveOverlay(mobj);
+			break;
+		}
+		case MT_SPB:
+		{
+			spbplace = -1;
+			break;
+		}
+		case MT_SHRINK_POHBEE:
+		{
+			Obj_PohbeeRemoved(mobj);
+			break;
+		}
+		case MT_SHRINK_GUN:
+		{
+			Obj_ShrinkGunRemoved(mobj);
+			break;
+		}
+		case MT_SPECIAL_UFO_PIECE:
+		{
+			Obj_UFOPieceRemoved(mobj);
+			break;
+		}
+		case MT_RINGSHOOTER:
+		{
+			Obj_RingShooterDelete(mobj);
+			break;
+		}
+		default:
+		{
+			break;
+		}
 	}
 
 	mobj->health = 0; // Just because

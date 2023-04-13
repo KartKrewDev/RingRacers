@@ -107,8 +107,9 @@ void Obj_BeginDropTargetMorph(mobj_t *target, skincolornum_t color);
 boolean Obj_DropTargetMorphThink(mobj_t *morph);
 
 /* Ring Shooter */
-void Obj_RingShooterThinker(mobj_t *mo);
+boolean Obj_RingShooterThinker(mobj_t *mo);
 void Obj_RingShooterInput(player_t *player);
+void Obj_RingShooterDelete(mobj_t *mo);
 
 #ifdef __cplusplus
 } // extern "C"

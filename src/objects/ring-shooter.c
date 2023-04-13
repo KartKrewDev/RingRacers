@@ -25,33 +25,76 @@
 #include "../k_waypoint.h"
 #include "../r_skins.h"
 #include "../k_respawn.h"
+#include "../lua_hook.h"
 
 #define RS_FUSE_TIME (4*TICRATE)
 
-static void ActivateRingShooter(mobj_t *mo)
-{
-	mobj_t *part = mo->tracer;
+#define RS_GRABBER_START (16 << FRACBITS)
+#define RS_GRABBER_SLIDE (RS_GRABBER_START >> 4)
+#define RS_GRABBER_EXTRA (18 << FRACBITS)
 
-	while (!P_MobjWasRemoved(part->tracer))
-	{
-		part = part->tracer;
-		part->renderflags &= ~RF_DONTDRAW;
-		part->frame += 4;
-	}
-}
+#define RS_KARTED_INC (3)
 
 #define rs_base_scalespeed(o) ((o)->scalespeed)
 #define rs_base_scalestate(o) ((o)->threshold)
 #define rs_base_xscale(o) ((o)->extravalue1)
 #define rs_base_yscale(o) ((o)->extravalue2)
 
+#define rs_base_playerid(o) ((o)->lastlook)
+#define rs_base_karted(o) ((o)->movecount)
+#define rs_base_grabberdist(o) ((o)->movefactor)
+#define rs_base_canceled(o) ((o)->cvmem)
+
 #define rs_part_xoffset(o) ((o)->extravalue1)
 #define rs_part_yoffset(o) ((o)->extravalue2)
+
+static void RemoveRingShooterPointer(mobj_t *base)
+{
+	player_t *player = NULL;
+
+	if (rs_base_playerid(base) < 0 || rs_base_playerid(base) >= MAXPLAYERS)
+	{
+		// No pointer set
+		return;
+	}
+
+	// NULL the player's pointer.
+	player = &players[ rs_base_playerid(base) ];
+	P_SetTarget(&player->ringShooter, NULL);
+
+	// Remove our player ID
+	rs_base_playerid(base) = -1;
+}
+
+
+static void ChangeRingShooterPointer(mobj_t *base, player_t *player)
+{
+	// Remove existing pointer first.
+	RemoveRingShooterPointer(base);
+
+	if (player == NULL)
+	{
+		// Just remove it.
+		return;
+	}
+
+	// Set new player pointer.
+	P_SetTarget(&player->ringShooter, base);
+
+	// Set new player ID.
+	rs_base_playerid(base) = (player - players);
+}
 
 static void ScalePart(mobj_t *part, mobj_t *base)
 {
 	part->spritexscale = rs_base_xscale(base);
 	part->spriteyscale = rs_base_yscale(base);
+
+	if (part->type == MT_TIREGRABBER)
+	{
+		part->spritexscale /= 2;
+		part->spriteyscale /= 2;
+	}
 }
 
 static void MovePart(mobj_t *part, mobj_t *base, mobj_t *refNipple)
@@ -64,11 +107,42 @@ static void MovePart(mobj_t *part, mobj_t *base, mobj_t *refNipple)
 	);
 }
 
+static void ShowHidePart(mobj_t *part, mobj_t *base)
+{
+	part->renderflags = (part->renderflags & ~RF_DONTDRAW) | (base->renderflags & RF_DONTDRAW);
+}
+
+static fixed_t GetTireDist(mobj_t *base)
+{
+	return -(RS_GRABBER_EXTRA + rs_base_grabberdist(base));
+}
+
+static void MoveTire(mobj_t *part, mobj_t *base)
+{
+	const fixed_t dis = FixedMul(GetTireDist(base), base->scale);
+	const fixed_t c = FINECOSINE(part->angle >> ANGLETOFINESHIFT);
+	const fixed_t s =   FINESINE(part->angle >> ANGLETOFINESHIFT);
+	P_MoveOrigin(
+		part,
+		base->x + FixedMul(dis, c),
+		base->y + FixedMul(dis, s),
+		part->z
+	);
+}
+
 // I've tried to reduce redundancy as much as I can,
 // but check K_SpawnRingShooter if you edit this
 static void UpdateRingShooterParts(mobj_t *mo)
 {
 	mobj_t *part, *refNipple;
+
+	part = mo;
+	while (!P_MobjWasRemoved(part->target))
+	{
+		part = part->target;
+		ScalePart(part, mo);
+		MoveTire(part, mo);
+	}
 
 	part = mo;
 	while (!P_MobjWasRemoved(part->hprev))
@@ -90,6 +164,47 @@ static void UpdateRingShooterParts(mobj_t *mo)
 	part->z = mo->z + FixedMul(refNipple->height, rs_base_yscale(mo));
 	MovePart(part, mo, refNipple);
 	ScalePart(part, mo);
+}
+
+static void UpdateRingShooterPartsVisibility(mobj_t *mo)
+{
+	mobj_t *part;
+
+	part = mo;
+	while (!P_MobjWasRemoved(part->target))
+	{
+		part = part->target;
+		ShowHidePart(part, mo);
+	}
+
+	part = mo;
+	while (!P_MobjWasRemoved(part->hprev))
+	{
+		part = part->hprev;
+		ShowHidePart(part, mo);
+	}
+
+	part = mo;
+	while (!P_MobjWasRemoved(part->hnext))
+	{
+		part = part->hnext;
+		ShowHidePart(part, mo);
+	}
+
+	part = mo->tracer;
+	ShowHidePart(part, mo);
+}
+
+static void ActivateRingShooter(mobj_t *mo)
+{
+	mobj_t *part = mo->tracer;
+
+	while (!P_MobjWasRemoved(part->tracer))
+	{
+		part = part->tracer;
+		part->renderflags &= ~RF_DONTDRAW;
+		part->frame += 4;
+	}
 }
 
 static boolean RingShooterInit(mobj_t *mo)
@@ -129,10 +244,26 @@ static boolean RingShooterInit(mobj_t *mo)
 			rs_base_xscale(mo) -= rs_base_scalespeed(mo);
 			if (rs_base_yscale(mo) >= FRACUNIT)
 			{
-				rs_base_scalestate(mo) = -1;
+				rs_base_scalestate(mo)++;
 				rs_base_xscale(mo) = rs_base_yscale(mo) = FRACUNIT;
+			}
+			break;
+		}
+		case 3:
+		{
+			rs_base_grabberdist(mo) -= RS_GRABBER_SLIDE;
+			if (rs_base_grabberdist(mo) <= 0)
+			{
+				rs_base_scalestate(mo) = -1;
+				rs_base_grabberdist(mo) = 0;
 				ActivateRingShooter(mo);
 			}
+			break;
+		}
+		default:
+		{
+			rs_base_scalestate(mo) = 0; // fix invalid states
+			break;
 		}
 	}
 
@@ -206,13 +337,87 @@ static void RingShooterFlicker(mobj_t *mo)
 	part->target->frame = (part->target->frame & ~FF_TRANSMASK) | trans;
 }
 
-void Obj_RingShooterThinker(mobj_t *mo)
+boolean Obj_RingShooterThinker(mobj_t *mo)
 {
-	if (P_MobjWasRemoved(mo->tracer) || RingShooterInit(mo))
-		return;
+	if (RingShooterInit(mo) == true)
+	{
+		return true;
+	}
 
-	RingShooterCountdown(mo);
-	RingShooterFlicker(mo);
+	if (mo->fuse > 0)
+	{
+		mo->fuse--;
+
+		if (mo->fuse == 0)
+		{
+			P_RemoveMobj(mo);
+			return false;
+		}
+	}
+
+	if (rs_base_canceled(mo) != 0)
+	{
+		rs_base_karted(mo) += RS_KARTED_INC;
+
+		if (P_MobjWasRemoved(mo->tracer) == false)
+		{
+			RingShooterCountdown(mo);
+			RingShooterFlicker(mo);
+		}
+	}
+
+	if (mo->fuse < TICRATE)
+	{
+		if (leveltime & 1)
+		{
+			mo->renderflags |= RF_DONTDRAW;
+		}
+		else
+		{
+			mo->renderflags &= ~RF_DONTDRAW;
+		}
+
+		UpdateRingShooterPartsVisibility(mo);
+	}
+
+	return true;
+}
+
+void Obj_RingShooterDelete(mobj_t *mo)
+{
+	mobj_t *part;
+
+	RemoveRingShooterPointer(mo);
+
+	part = mo->target;
+	while (P_MobjWasRemoved(part) == false)
+	{
+		mobj_t *delete = part;
+		part = part->target;
+		P_RemoveMobj(delete);
+	}
+
+	part = mo->hprev;
+	while (P_MobjWasRemoved(part) == false)
+	{
+		mobj_t *delete = part;
+		part = part->hprev;
+		P_RemoveMobj(delete);
+	}
+
+	part = mo->hnext;
+	while (P_MobjWasRemoved(part) == false)
+	{
+		mobj_t *delete = part;
+		part = part->hnext;
+		P_RemoveMobj(delete);
+	}
+
+	part = mo->tracer;
+	if (P_MobjWasRemoved(part) == false)
+	{
+		P_RemoveMobj(part);
+	}
 }
 
 static boolean AllowRingShooter(player_t *player)
@@ -254,8 +459,11 @@ static void SpawnRingShooter(player_t *player)
 	vector2_t offset;
 	SINT8 i;
 
+	rs_base_playerid(base) = -1;
+	rs_base_karted(base) = -(RS_KARTED_INC * TICRATE); // wait for "3"
+	rs_base_grabberdist(base) = RS_GRABBER_START;
+
 	K_FlipFromObject(base, mo);
-	P_SetTarget(&base->target, mo);
 	P_SetScale(base, base->destscale = FixedMul(base->destscale, scale));
 	base->angle = mo->angle;
 	base->scalespeed = FRACUNIT/2;
@@ -264,10 +472,11 @@ static void SpawnRingShooter(player_t *player)
 	base->fuse = RS_FUSE_TIME;
 
 	// the ring shooter object itself is invisible and acts as the thinker
-	// each ring shooter uses three linked lists to keep track of its parts
+	// each ring shooter uses four linked lists to keep track of its parts
 	// the hprev chain stores the two NIPPLE BARS
 	// the hnext chain stores the four sides of the box
 	// the tracer chain stores the screen and the screen layers
+	// the target chain stores the tire grabbers
 
 	// spawn the RING NIPPLES
 	part = base;
@@ -343,14 +552,66 @@ static void SpawnRingShooter(player_t *player)
 		P_SetMobjState(part, S_RINGSHOOTER_NUMBERBACK + i);
 		part->renderflags |= RF_DONTDRAW;
 	}
+
+	// spawn the grabbers
+	part = base;
+	angle = base->angle + ANGLE_45;
+	for (i = 0; i < 4; i++)
+	{
+		const fixed_t dis = GetTireDist(base);
+		P_SetTarget(
+			&part->target,
+			P_SpawnMobjFromMobj(
+				base,
+				P_ReturnThrustX(NULL, angle, dis),
+				P_ReturnThrustY(NULL, angle, dis),
+				0,
+				MT_TIREGRABBER
+			)
+		);
+		part = part->target;
+		P_SetTarget(&part->tracer, base);
+
+		angle -= ANGLE_90;
+		part->angle = angle;
+		part->extravalue1 = part->extravalue2 = 0;
+		part->old_spriteyscale = part->spriteyscale = 0;
+	}
+
+	ChangeRingShooterPointer(base, player);
 }
 
 void Obj_RingShooterInput(player_t *player)
 {
+	mobj_t *const base = player->ringShooter;
+
 	if (AllowRingShooter(player) == true
-		&& (player->cmd.buttons & BT_RESPAWN) == BT_RESPAWN
-		&& (player->oldcmd.buttons & BT_RESPAWN) == 0)
+		&& (player->cmd.buttons & BT_RESPAWN) == BT_RESPAWN)
 	{
-		SpawnRingShooter(player);
+		if (P_MobjWasRemoved(base) == true)
+		{
+			SpawnRingShooter(player);
+			return;
+		}
+
+		if (rs_base_canceled(base) != 0)
+		{
+			if (base->fuse < TICRATE)
+			{
+				base->renderflags &= ~RF_DONTDRAW;
+				UpdateRingShooterPartsVisibility(base);
+			}
+
+			base->fuse = RS_FUSE_TIME;
+		}
+	}
+	else if (P_MobjWasRemoved(base) == false)
+	{
+		if (rs_base_scalestate(base) != -1)
+		{
+			// We released during the intro animation.
+			// Cancel it entirely.
+			rs_base_canceled(base) = 1;
+		}
 	}
 }
