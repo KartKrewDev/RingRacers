@@ -956,13 +956,12 @@ static void K_SpawnFootstepParticle(mobj_t *mo, t_footstep_t *fs, tic_t timer)
 		See header file for description.
 --------------------------------------------------*/
 
-#define INVALIDFOOTSTEP (fs == NULL || fs->mobjType == MT_NULL || fs->frequency <= 0)
+#define INVALIDFOOTSTEP(footstep) (footstep == NULL || footstep->mobjType == MT_NULL || footstep->frequency <= 0)
 
 void K_HandleFootstepParticles(mobj_t *mo)
 {
 	tic_t timer = leveltime;
-	t_footstep_t *fs = NULL;
-	boolean offroadslowed = false;
+	t_footstep_t *fs = NULL, *ofs = NULL;
 
 	if (mo == NULL || P_MobjWasRemoved(mo) == true)
 	{
@@ -970,41 +969,32 @@ void K_HandleFootstepParticles(mobj_t *mo)
 		return;
 	}
 
-	offroadslowed = (mo->player != NULL && mo->player->boostpower < FRACUNIT);
-
-	if (!offroadslowed)
+	if (mo->player)
 	{
-		if (!(mo->flags & MF_APPLYTERRAIN) || mo->terrain == NULL)
+		// Offset the timer.
+		timer += mo->player - players;
+
+		if (mo->player->boostpower < FRACUNIT)
 		{
-			// No TERRAIN effects for this object.
-			return;
+			// Create default offroad footstep
+			ofs = K_GetFootstepByIndex(defaultOffroadFootstep);
+
+			if (!INVALIDFOOTSTEP(ofs))
+			{
+				K_SpawnFootstepParticle(mo, ofs, timer);
+			}
 		}
+	}
+
+	if (!(mo->flags & MF_APPLYTERRAIN) || mo->terrain == NULL)
+	{
+		// No TERRAIN effects for this object.
+		return;
 	}
 
 	fs = K_GetFootstepByIndex(mo->terrain->footstepID);
 
-	if (mo->player != NULL)
-	{
-		// Match behaviour of the previous entry in the series:
-		// Only do footsteps for offroad if you're slowed by it,
-		// and guarantee the defaults if none were found for this.
-		if (offroadslowed)
-		{
-			if (INVALIDFOOTSTEP)
-			{
-				fs = K_GetFootstepByIndex(defaultOffroadFootstep);
-			}
-		}
-		else if (mo->terrain->offroad != 0)
-		{
-			return;
-		}
-
-		// Offset timer by player ID.
-		timer += mo->player - players;
-	}
-
-	if (INVALIDFOOTSTEP)
+	if (INVALIDFOOTSTEP(fs) || ofs == fs)
 	{
 		// No particles to spawn.
 		return;
