@@ -979,9 +979,9 @@ void K_HandleFootstepParticles(mobj_t *mo)
 			// No TERRAIN effects for this object.
 			return;
 		}
-
-		fs = K_GetFootstepByIndex(mo->terrain->footstepID);
 	}
+
+	fs = K_GetFootstepByIndex(mo->terrain->footstepID);
 
 	if (mo->player != NULL)
 	{
