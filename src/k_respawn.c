@@ -178,9 +178,11 @@ void K_DoIngameRespawn(player_t *player)
 		if (player->respawn.fromRingShooter == true)
 		{
 			waypoint_t *prevWP = player->respawn.wp;
-			if (prevWP->numprevwaypoints > 0)
+			while (prevWP->numprevwaypoints > 0)
 			{
 				prevWP = prevWP->prevwaypoints[0];
+				if (K_GetWaypointIsSpawnpoint(prevWP) == true)
+					break;
 			}
 
 			const UINT32 dist = (player->airtime * 48);
