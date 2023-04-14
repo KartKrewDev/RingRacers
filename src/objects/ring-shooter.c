@@ -695,11 +695,24 @@ void Obj_RingShooterInput(player_t *player)
 		{
 			player->mo->momx = player->mo->momy = 0;
 			P_SetPlayerAngle(player, base->angle);
+			fixed_t setz;
+
+			if (base->eflags & MFE_VERTICALFLIP)
+			{
+				setz = base->z + base->height - player->mo->height;
+				setz = max(setz, player->mo->z);
+			}
+			else
+			{
+				setz = min(player->mo->z, base->z);
+			}
+
 			P_MoveOrigin(
 				player->mo,
 				base->x, base->y,
-				base->z // TODO: reverse gravity
+				setz
 			);
+			player->fastfall = 0;
 
 			if (base->fuse < RS_FUSE_TIME)
 			{
