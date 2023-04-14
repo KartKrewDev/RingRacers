@@ -8943,6 +8943,12 @@ INT16 K_GetKartTurnValue(player_t *player, INT16 turnvalue)
 		return 0;
 	}
 
+	if (Obj_PlayerRingShooterFreeze(player) == true)
+	{
+		// No turning while using Ring Shooter
+		return 0;
+	}
+
 	currentSpeed = FixedHypot(player->mo->momx, player->mo->momy);
 
 	if ((currentSpeed <= 0) // Not moving

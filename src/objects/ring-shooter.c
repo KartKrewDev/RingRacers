@@ -675,6 +675,7 @@ void Obj_RingShooterInput(player_t *player)
 		if (rs_base_canceled(base) == 0)
 		{
 			player->mo->momx = player->mo->momy = 0;
+			P_SetPlayerAngle(player, base->angle);
 
 			if (base->fuse < RS_FUSE_BLINK)
 			{
