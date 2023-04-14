@@ -639,7 +639,7 @@ static boolean AllowRingShooter(player_t *player)
 {
 	const fixed_t minSpeed = 6 * player->mo->scale;
 
-	if ((gametyperules & GTR_CIRCUIT) && leveltime < starttime)
+	if (/*(gametyperules & GTR_CIRCUIT) &&*/ leveltime < starttime)
 	{
 		return false;
 	}
