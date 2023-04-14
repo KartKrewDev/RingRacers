@@ -3420,7 +3420,9 @@ SINT8 K_GetForwardMove(player_t *player)
 		return MAXPLMOVE;
 	}
 
-	if (player->spinouttimer || K_PlayerEBrake(player))
+	if (player->spinouttimer != 0
+		|| K_PressingEBrake(player) == true
+		|| K_PlayerEBrake(player) == true)
 	{
 		return 0;
 	}
@@ -7549,6 +7551,11 @@ static void K_UpdateTripwire(player_t *player)
 	}
 }
 
+boolean K_PressingEBrake(player_t *player)
+{
+	return ((K_GetKartButtons(player) & BT_EBRAKEMASK) == BT_EBRAKEMASK);
+}
+
 /**	\brief	Decreases various kart timers and powers per frame. Called in P_PlayerThink in p_user.c
 
 	\param	player	player object passed from P_PlayerThink
@@ -8076,7 +8083,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 				K_SpawnGardenTopSpeedLines(player);
 		}
 		// Only allow drifting while NOT trying to do an spindash input.
-		else if ((K_GetKartButtons(player) & BT_EBRAKEMASK) != BT_EBRAKEMASK)
+		else if (K_PressingEBrake(player) == false)
 		{
 			player->pflags |= PF_DRIFTINPUT;
 		}
@@ -8952,7 +8959,7 @@ INT16 K_GetKartTurnValue(player_t *player, INT16 turnvalue)
 	currentSpeed = FixedHypot(player->mo->momx, player->mo->momy);
 
 	if ((currentSpeed <= 0) // Not moving
-	&& ((K_GetKartButtons(player) & BT_EBRAKEMASK) != BT_EBRAKEMASK) // Not e-braking
+	&& (K_PressingEBrake(player) == false) // Not e-braking
 	&& (player->respawn.state == RESPAWNST_NONE) // Not respawning
 	&& (player->curshield != KSHIELD_TOP) // Not riding a Top
 	&& (P_IsObjectOnGround(player->mo) == true)) // On the ground
@@ -9738,7 +9745,12 @@ static INT32 K_FlameShieldMax(player_t *player)
 boolean K_PlayerEBrake(player_t *player)
 {
 	if (player->respawn.state != RESPAWNST_NONE
-		&& player->respawn.init == true)
+		&& (player->respawn.init == true || player->respawn.fromRingShooter == true))
+	{
+		return false;
+	}
+
+	if (Obj_PlayerRingShooterFreeze(player) == true)
 	{
 		return false;
 	}
@@ -9748,7 +9760,7 @@ boolean K_PlayerEBrake(player_t *player)
 		return true;
 	}
 
-	if ((K_GetKartButtons(player) & BT_EBRAKEMASK) == BT_EBRAKEMASK
+	if (K_PressingEBrake(player) == true
 		&& player->drift == 0
 		&& P_PlayerInPain(player) == false
 		&& player->justbumped == 0

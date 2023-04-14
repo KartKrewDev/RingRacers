@@ -81,6 +81,7 @@ void K_SpawnBumpEffect(mobj_t *mo);
 void K_KartMoveAnimation(player_t *player);
 void K_KartPlayerHUDUpdate(player_t *player);
 void K_KartResetPlayerColor(player_t *player);
+boolean K_PressingEBrake(player_t *player);
 void K_KartPlayerThink(player_t *player, ticcmd_t *cmd);
 void K_KartPlayerAfterThink(player_t *player);
 fixed_t K_MomentumThreshold(const mobj_t *mo);

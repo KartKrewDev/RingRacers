@@ -428,6 +428,8 @@ void Obj_PlayerUsedRingShooter(mobj_t *base, player_t *player)
 	{
 		player->airtime += rs_base_karted(base);
 	}
+
+	player->respawn.fromRingShooter = true;
 	K_DoIngameRespawn(player);
 
 	// Now other players can run into it!
@@ -676,6 +678,11 @@ void Obj_RingShooterInput(player_t *player)
 		{
 			player->mo->momx = player->mo->momy = 0;
 			P_SetPlayerAngle(player, base->angle);
+			P_MoveOrigin(
+				player->mo,
+				base->x, base->y,
+				base->z // TODO: reverse gravity
+			);
 
 			if (base->fuse < RS_FUSE_BLINK)
 			{

@@ -175,9 +175,25 @@ void K_DoIngameRespawn(player_t *player)
 	}
 	else if (player->respawn.wp != NULL)
 	{
-		const UINT32 dist = RESPAWN_DIST + (player->airtime * 48);
-		player->respawn.distanceleft = (dist * mapobjectscale) / FRACUNIT;
-		K_RespawnAtWaypoint(player, player->respawn.wp);
+		if (player->respawn.fromRingShooter == true)
+		{
+			waypoint_t *prevWP = player->respawn.wp;
+			if (prevWP->numprevwaypoints > 0)
+			{
+				prevWP = prevWP->prevwaypoints[0];
+			}
+
+			const UINT32 dist = (player->airtime * 48);
+			player->respawn.distanceleft = (dist * mapobjectscale) / FRACUNIT;
+
+			K_RespawnAtWaypoint(player, prevWP);
+		}
+		else
+		{
+			const UINT32 dist = RESPAWN_DIST + (player->airtime * 48);
+			player->respawn.distanceleft = (dist * mapobjectscale) / FRACUNIT;
+			K_RespawnAtWaypoint(player, player->respawn.wp);
+		}
 	}
 	else
 	{
@@ -465,7 +481,9 @@ static void K_MovePlayerToRespawnPoint(player_t *player)
 		player->mo->momz = step.z;
 	}
 
-	if (player->respawn.init == false && K_PlayerEBrake(player) == true)
+	if (player->respawn.init == false
+		&& player->respawn.fromRingShooter == false
+		&& K_PlayerEBrake(player) == true)
 	{
 		// Manual drop!
 		player->respawn.state = RESPAWNST_DROP;
@@ -822,6 +840,7 @@ void K_RespawnChecker(player_t *player)
 			K_MovePlayerToRespawnPoint(player);
 			return;
 		case RESPAWNST_DROP:
+			player->respawn.fromRingShooter = false;
 			player->mo->momx = player->mo->momy = 0;
 			player->flashing = 3;
 			if (player->respawn.timer > 0)

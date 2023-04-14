@@ -310,6 +310,7 @@ struct respawnvars_t
 	tic_t dropdash; // Drop Dash charge timer
 	boolean truedeath; // Your soul has left your body
 	boolean manual; // Respawn coords were manually set, please respawn exactly there
+	boolean fromRingShooter; // Respawn was from Ring Shooter, don't allow E-Brake drop
 	boolean init;
 };
 
