@@ -42,10 +42,12 @@
 #define rs_base_yscale(o) ((o)->extravalue2)
 
 #define rs_base_playerid(o) ((o)->lastlook)
+#define rs_base_playerface(o) ((o)->cusval)
+#define rs_base_playerlast(o) ((o)->watertop)
+
 #define rs_base_karted(o) ((o)->movecount)
 #define rs_base_grabberdist(o) ((o)->movefactor)
 #define rs_base_canceled(o) ((o)->cvmem)
-#define rs_base_playerface(o) ((o)->cusval)
 
 #define rs_part_xoffset(o) ((o)->extravalue1)
 #define rs_part_yoffset(o) ((o)->extravalue2)
@@ -419,6 +421,12 @@ boolean Obj_RingShooterThinker(mobj_t *mo)
 
 void Obj_PlayerUsedRingShooter(mobj_t *base, player_t *player)
 {
+	const UINT8 playerID = player - players;
+	if (playerID == rs_base_playerlast(base))
+	{
+		return;
+	}
+
 	// The original player should no longer have control over it,
 	// if they are using it via releasing.
 	RemoveRingShooterPointer(base);
@@ -446,6 +454,9 @@ void Obj_PlayerUsedRingShooter(mobj_t *base, player_t *player)
 
 		base->fuse = RS_FUSE_TIME;
 	}
+
+	// Record the last person to use the ring shooter.
+	rs_base_playerlast(base) = playerID;
 }
 
 void Obj_RingShooterDelete(mobj_t *mo)
@@ -499,7 +510,7 @@ static void SpawnRingShooter(player_t *player)
 	vector2_t offset;
 	SINT8 i;
 
-	rs_base_playerid(base) = -1;
+	rs_base_playerid(base) = rs_base_playerlast(base) = -1;
 	rs_base_karted(base) = -(RS_KARTED_INC * TICRATE); // wait for "3"
 	rs_base_grabberdist(base) = RS_GRABBER_START;
 
