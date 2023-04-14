@@ -435,9 +435,15 @@ void Obj_PlayerUsedRingShooter(mobj_t *base, player_t *player)
 	// Now other players can run into it!
 	base->flags |= MF_SPECIAL;
 
+	// Reset the fuse so everyone can conga line :B
 	if (base->fuse < RS_FUSE_TIME)
 	{
-		// Reset the fuse so everyone can conga line :B
+		if (base->fuse < RS_FUSE_BLINK)
+		{
+			base->renderflags &= ~RF_DONTDRAW;
+			UpdateRingShooterPartsVisibility(base);
+		}
+
 		base->fuse = RS_FUSE_TIME;
 	}
 }
@@ -684,14 +690,14 @@ void Obj_RingShooterInput(player_t *player)
 				base->z // TODO: reverse gravity
 			);
 
-			if (base->fuse < RS_FUSE_BLINK)
-			{
-				base->renderflags &= ~RF_DONTDRAW;
-				UpdateRingShooterPartsVisibility(base);
-			}
-
 			if (base->fuse < RS_FUSE_TIME)
 			{
+				if (base->fuse < RS_FUSE_BLINK)
+				{
+					base->renderflags &= ~RF_DONTDRAW;
+					UpdateRingShooterPartsVisibility(base);
+				}
+
 				base->fuse = RS_FUSE_TIME;
 			}
 		}
