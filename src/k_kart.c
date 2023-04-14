@@ -6164,7 +6164,8 @@ void K_PopPlayerShield(player_t *player)
 			return; // everything is handled by Obj_GardenTopDestroy
 
 		case KSHIELD_LIGHTNING:
-			K_DoLightningShield(player);
+			S_StartSound(player->mo, sfx_s3k7c);
+			// K_DoLightningShield(player);
 			break;
 	}
 
