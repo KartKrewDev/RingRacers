@@ -7726,7 +7726,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 	}
 
 	// Make ABSOLUTELY SURE that your flashing tics don't get set WHILE you're still in hit animations.
-	if (player->spinouttimer != 0 || player->wipeoutslow != 0)
+	if (player->spinouttimer != 0)
 	{
 		if (( player->spinouttype & KSPIN_IFRAMES ) == 0)
 			player->flashing = 0;
