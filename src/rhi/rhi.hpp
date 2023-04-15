@@ -608,6 +608,7 @@ struct Rhi
 
 	virtual TextureDetails get_texture_details(Handle<Texture> texture) = 0;
 	virtual Rect get_renderbuffer_size(Handle<Renderbuffer> renderbuffer) = 0;
+	virtual uint32_t get_buffer_size(Handle<Buffer> buffer) = 0;
 
 	virtual Handle<TransferContext> begin_transfer() = 0;
 	virtual void end_transfer(Handle<TransferContext> handle) = 0;
