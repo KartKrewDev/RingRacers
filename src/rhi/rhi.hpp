@@ -654,6 +654,17 @@ struct Rhi
 	virtual void finish() = 0;
 };
 
+// Utility functions
+
+/// @brief If the buffer for the given handle is too small or does not exist, creates a new buffer with the given
+/// parameters.
+/// @param buffer the existing valid buffer handle or kNullHandle, replaced if recreated
+/// @param type
+/// @param usage
+/// @param size the target size of the new buffer
+/// @return true if the buffer was recreated, false otherwise
+bool recreate_buffer_to_size(Rhi& rhi, Handle<Buffer>& buffer, const BufferDesc& desc);
+
 } // namespace srb2::rhi
 
 #endif // __SRB2_RHI_RHI_HPP__
