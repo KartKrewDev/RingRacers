@@ -260,14 +260,25 @@ boolean Obj_OrbinautJawzCollide(mobj_t *t1, mobj_t *t2)
 		damageitem = false;
 	}
 
-	if (damageitem)
+	if (damageitem && P_MobjWasRemoved(t1) == false)
 	{
+		angle_t bounceangle;
+		if (P_MobjWasRemoved(t2) == false)
+		{
+			bounceangle = K_GetCollideAngle(t2, t1);
+		}
+		else
+		{
+			bounceangle = K_MomentumAngle(t1) + ANGLE_90;
+			t2 = NULL; // handles the arguments to P_KillMobj
+		}
+
 		// This Item Damage
-		angle_t bounceangle = K_GetCollideAngle(t2, t1);
 		S_StartSound(t1, t1->info->deathsound);
 		P_KillMobj(t1, t2, t2, DMG_NORMAL);
 
 		P_SetObjectMomZ(t1, 24*FRACUNIT, false);
+
 		P_InstaThrust(t1, bounceangle, 16*FRACUNIT);
 	}
 

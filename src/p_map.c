@@ -2232,7 +2232,8 @@ boolean P_CheckPosition(mobj_t *thing, fixed_t x, fixed_t y, TryMoveResult_t *re
 		// with MF_NOCLIP enabled, but they won't be blocked
 		// regardless of the result. This allows for SPBs and
 		// the UFO to collide.
-		return true;
+		// ...but be careful about removed obj! ~toast 140423
+		return !P_MobjWasRemoved(thing);
 	}
 
 	validcount++;

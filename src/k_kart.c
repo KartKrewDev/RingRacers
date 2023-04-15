@@ -6164,7 +6164,8 @@ void K_PopPlayerShield(player_t *player)
 			return; // everything is handled by Obj_GardenTopDestroy
 
 		case KSHIELD_LIGHTNING:
-			K_DoLightningShield(player);
+			S_StartSound(player->mo, sfx_s3k7c);
+			// K_DoLightningShield(player);
 			break;
 	}
 
@@ -8855,9 +8856,20 @@ INT16 K_UpdateSteeringValue(INT16 inputSteering, INT16 destSteering)
 	// player->steering is the turning value, but with easing applied.
 	// Keeps micro-turning from old easing, but isn't controller dependent.
 
-	const INT16 amount = KART_FULLTURN/3;
+	INT16 amount = KART_FULLTURN/3;
 	INT16 diff = destSteering - inputSteering;
 	INT16 outputSteering = inputSteering;
+
+	
+	// We switched steering directions, lighten up on easing for a more responsive countersteer.
+	// (Don't do this for steering 0, let digital inputs tap-adjust!)
+	if ((inputSteering > 0 && destSteering < 0) || (inputSteering < 0 && destSteering > 0))
+	{
+		// Don't let small turns in direction X allow instant turns in direction Y.
+		INT16 countersteer = min(KART_FULLTURN, abs(inputSteering));  // The farthest we should go is to 0 -- neutral.
+		amount = max(countersteer, amount); // But don't reduce turning strength from baseline either.
+	}
+
 
 	if (abs(diff) <= amount)
 	{
