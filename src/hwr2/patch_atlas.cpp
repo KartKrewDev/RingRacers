@@ -11,6 +11,8 @@
 
 #include <stb_rect_pack.h>
 
+#include "../r_patch.h"
+
 using namespace srb2;
 using namespace srb2::hwr2;
 using namespace srb2::rhi;
@@ -165,6 +167,10 @@ PatchAtlasCache::~PatchAtlasCache() = default;
 bool PatchAtlasCache::need_to_reset() const
 {
 	if (atlases_.size() > max_textures_)
+	{
+		return true;
+	}
+	if (Patch_WasFreedThisFrame())
 	{
 		return true;
 	}

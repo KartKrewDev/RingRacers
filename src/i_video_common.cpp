@@ -455,6 +455,7 @@ static InternalPassData build_pass_manager()
 void I_NewTwodeeFrame(void)
 {
 	g_2d = Twodee();
+	Patch_ResetFreedThisFrame();
 }
 
 void I_NewImguiFrame(void)
