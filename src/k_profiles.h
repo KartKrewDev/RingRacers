@@ -31,7 +31,7 @@ extern "C" {
 #define SKINNAMESIZE 16
 
 #define PROFILENAMELEN 6
-#define PROFILEVER 5
+#define PROFILEVER 6
 #define MAXPROFILES 16
 #define PROFILESFILE "ringprofiles.prf"
 #define PROFILE_GUEST 0
@@ -69,7 +69,7 @@ struct profile_t
 	char follower[SKINNAMESIZE+1];		// Follower
 	UINT16 followercolor;				// Follower color
 
-	UINT16 powerlevels[PWRLV_NUMTYPES];	// PWRLV for each gametype.
+	UINT32 wins;	// I win I win I win
 
 	// Player-specific consvars.
 	// @TODO: List all of those
@@ -165,6 +165,8 @@ profile_t *PR_GetLocalPlayerProfile(INT32 player);
 boolean PR_IsLocalPlayerGuest(INT32 player);
 
 char *GetPrettyRRID(const unsigned char *bin, boolean brief);
+
+boolean PR_IsKeyGuest(uint8_t *key);
 
 #ifdef __cplusplus
 } // extern "C"

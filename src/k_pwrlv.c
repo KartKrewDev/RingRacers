@@ -17,6 +17,7 @@
 #include "p_tick.h" // leveltime
 #include "k_grandprix.h"
 #include "k_profiles.h"
+#include "k_serverstats.h"
 
 // Client-sided calculations done for Power Levels.
 // This is done so that clients will never be able to hack someone else's score over the server.
@@ -399,7 +400,6 @@ void K_CashInPowerLevels(void)
 {
 	SINT8 powerType = K_UsingPowerLevels();
 	UINT8 i;
-	boolean gamedataupdate;
 
 	//CONS_Printf("\n========\n");
 	//CONS_Printf("Cashing in power level changes...\n");
@@ -409,29 +409,17 @@ void K_CashInPowerLevels(void)
 	{
 		if (playeringame[i] == true && powerType != PWRLV_DISABLED)
 		{
-			profile_t *pr = PR_GetPlayerProfile(&players[i]);
 			INT16 inc = K_FinalPowerIncrement(&players[i], clientpowerlevels[i][powerType], clientPowerAdd[i]);
 
 			clientpowerlevels[i][powerType] += inc;
 
 			//CONS_Printf("%s: %d -> %d (%d)\n", player_names[i], clientpowerlevels[i][powerType] - inc, clientpowerlevels[i][powerType], inc);
-
-			if (pr != NULL && inc != 0)
-			{
-				pr->powerlevels[powerType] = clientpowerlevels[i][powerType];
-
-				gamedataupdate = true;
-			}
 		}
 
 		clientPowerAdd[i] = 0;
 	}
 
-	if (gamedataupdate)
-	{
-		M_UpdateUnlockablesAndExtraEmblems(true, true);
-		G_SaveGameData();
-	}
+	SV_UpdateStats();
 
 	//CONS_Printf("========\n");
 }
@@ -565,7 +553,6 @@ void K_SetPowerLevelScrambles(SINT8 powertype)
 
 void K_PlayerForfeit(UINT8 playerNum, boolean pointLoss)
 {
-	profile_t *pr;
 	UINT8 p = 0;
 
 	SINT8 powerType = PWRLV_DISABLED;
@@ -636,18 +623,10 @@ void K_PlayerForfeit(UINT8 playerNum, boolean pointLoss)
 		return;
 	}
 
-	if (inc < 0 && pointLoss == false)
+	if (pointLoss)
 	{
-		// Don't record point losses for sync-out / crashes.
-		return;
-	}
-
-	pr = PR_GetPlayerProfile(&players[playerNum]);
-	if (pr != NULL)
-	{
-		pr->powerlevels[powerType] = yourPower + inc;
-
-		M_UpdateUnlockablesAndExtraEmblems(true, true);
-		G_SaveGameData();
+		clientpowerlevels[playerNum][powerType] += clientPowerAdd[playerNum];
+		clientPowerAdd[playerNum] = 0;
+		SV_UpdateStats();
 	}
 }

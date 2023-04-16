@@ -80,7 +80,6 @@
 
 static void Got_NameAndColor(UINT8 **cp, INT32 playernum);
 static void Got_WeaponPref(UINT8 **cp, INT32 playernum);
-static void Got_PowerLevel(UINT8 **cp, INT32 playernum);
 static void Got_PartyInvite(UINT8 **cp, INT32 playernum);
 static void Got_AcceptPartyInvite(UINT8 **cp, INT32 playernum);
 static void Got_CancelPartyInvite(UINT8 **cp, INT32 playernum);
@@ -618,7 +617,6 @@ const char *netxcmdnames[MAXNETXCMD - 1] =
 	"MODIFYVOTE", // XD_MODIFYVOTE
 	"PICKVOTE", // XD_PICKVOTE
 	"REMOVEPLAYER", // XD_REMOVEPLAYER
-	"POWERLEVEL", // XD_POWERLEVEL
 	"PARTYINVITE", // XD_PARTYINVITE
 	"ACCEPTPARTYINVITE", // XD_ACCEPTPARTYINVITE
 	"LEAVEPARTY", // XD_LEAVEPARTY
@@ -657,7 +655,6 @@ void D_RegisterServerCommands(void)
 
 	RegisterNetXCmd(XD_NAMEANDCOLOR, Got_NameAndColor);
 	RegisterNetXCmd(XD_WEAPONPREF, Got_WeaponPref);
-	RegisterNetXCmd(XD_POWERLEVEL, Got_PowerLevel);
 	RegisterNetXCmd(XD_PARTYINVITE, Got_PartyInvite);
 	RegisterNetXCmd(XD_ACCEPTPARTYINVITE, Got_AcceptPartyInvite);
 	RegisterNetXCmd(XD_CANCELPARTYINVITE, Got_CancelPartyInvite);
@@ -1807,17 +1804,6 @@ static void Got_WeaponPref(UINT8 **cp,INT32 playernum)
 	demo_extradata[playernum] |= DXD_WEAPONPREF;
 }
 
-static void Got_PowerLevel(UINT8 **cp,INT32 playernum)
-{
-	UINT16 race = (UINT16)READUINT16(*cp);
-	UINT16 battle = (UINT16)READUINT16(*cp);
-
-	clientpowerlevels[playernum][PWRLV_RACE] = min(PWRLVRECORD_MAX, race);
-	clientpowerlevels[playernum][PWRLV_BATTLE] = min(PWRLVRECORD_MAX, battle);
-
-	CONS_Debug(DBG_GAMELOGIC, "set player %d to power %d\n", playernum, race);
-}
-
 static void Got_PartyInvite(UINT8 **cp,INT32 playernum)
 {
 	UINT8 invitee;
@@ -1969,28 +1955,8 @@ static void Got_LeaveParty(UINT8 **cp,INT32 playernum)
 
 void D_SendPlayerConfig(UINT8 n)
 {
-	const profile_t *pr = PR_GetProfile(cv_lastprofile[n].value);
-
-	UINT8 buf[4];
-	UINT8 *p = buf;
-
 	SendNameAndColor(n);
 	WeaponPref_Send(n);
-
-	if (pr != NULL)
-	{
-		// Send it over
-		WRITEUINT16(p, pr->powerlevels[PWRLV_RACE]);
-		WRITEUINT16(p, pr->powerlevels[PWRLV_BATTLE]);
-	}
-	else
-	{
-		// Guest players have no power level
-		WRITEUINT16(p, 0);
-		WRITEUINT16(p, 0);
-	}
-
-	SendNetXCmdForPlayer(n, XD_POWERLEVEL, buf, p-buf);
 }
 
 void D_Cheat(INT32 playernum, INT32 cheat, ...)
