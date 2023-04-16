@@ -17,6 +17,7 @@
 
 #include "cxxutil.hpp"
 #include "f_finale.h"
+#include "hwr2/patch_atlas.hpp"
 #include "hwr2/pass_blit_postimg_screens.hpp"
 #include "hwr2/pass_blit_rect.hpp"
 #include "hwr2/pass_imgui.hpp"
@@ -192,12 +193,14 @@ static InternalPassData build_pass_manager()
 	auto palette_manager = std::make_shared<MainPaletteManager>();
 	auto common_resources_manager = std::make_shared<CommonResourcesManager>();
 	auto flat_texture_manager = std::make_shared<FlatTextureManager>();
+	auto patch_atlas_cache = std::make_shared<PatchAtlasCache>(2048, 2);
 	auto resource_manager = std::make_shared<PassManager>();
 
 	resource_manager->insert("framebuffer_manager", framebuffer_manager);
 	resource_manager->insert("palette_manager", palette_manager);
 	resource_manager->insert("common_resources_manager", common_resources_manager);
 	resource_manager->insert("flat_texture_manager", flat_texture_manager);
+	resource_manager->insert("patch_atlas_cache", patch_atlas_cache);
 
 	// Basic Rendering is responsible for drawing 3d, 2d, and postprocessing the image.
 	// This is drawn to an alternating internal color buffer.
@@ -209,6 +212,7 @@ static InternalPassData build_pass_manager()
 	auto blit_postimg_screens = std::make_shared<BlitPostimgScreens>(palette_manager);
 	auto twodee = std::make_shared<TwodeePass>();
 	twodee->flat_manager_ = flat_texture_manager;
+	twodee->patch_atlas_cache_ = patch_atlas_cache;
 	twodee->data_ = make_twodee_pass_data();
 	twodee->ctx_ = &g_2d;
 	auto pp_simple_blit_pass = std::make_shared<BlitRectPass>(false);
