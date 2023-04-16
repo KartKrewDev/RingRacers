@@ -83,3 +83,28 @@ const ProgramRequirements& rhi::program_requirements_for_program(PipelineProgram
 		std::terminate();
 	}
 }
+
+bool rhi::recreate_buffer_to_size(Rhi& rhi, Handle<Buffer>& buffer, const BufferDesc& desc)
+{
+	bool recreate = false;
+	if (buffer == kNullHandle)
+	{
+		recreate = true;
+	}
+	else
+	{
+		std::size_t existing_size = rhi.get_buffer_size(buffer);
+		if (existing_size < desc.size)
+		{
+			rhi.destroy_buffer(buffer);
+			recreate = true;
+		}
+	}
+
+	if (recreate)
+	{
+		buffer = rhi.create_buffer(desc);
+	}
+
+	return recreate;
+}

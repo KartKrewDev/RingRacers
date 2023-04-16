@@ -99,6 +99,8 @@ static void Patch_FreeData(patch_t *patch)
 	Z_Free(patch->columns);
 }
 
+static boolean g_patch_was_freed_this_frame = false;
+
 void Patch_Free(patch_t *patch)
 {
 	if (!patch || patch == missingpat)
@@ -106,6 +108,18 @@ void Patch_Free(patch_t *patch)
 
 	Patch_FreeData(patch);
 	Z_Free(patch);
+
+	g_patch_was_freed_this_frame = true;
+}
+
+boolean Patch_WasFreedThisFrame(void)
+{
+	return g_patch_was_freed_this_frame;
+}
+
+void Patch_ResetFreedThisFrame(void)
+{
+	g_patch_was_freed_this_frame = false;
 }
 
 //

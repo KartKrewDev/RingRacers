@@ -22,47 +22,10 @@ using namespace srb2;
 using namespace srb2::hwr2;
 using namespace srb2::rhi;
 
-namespace
-{
-
-struct AtlasEntry
-{
-	uint32_t x;
-	uint32_t y;
-	uint32_t w;
-	uint32_t h;
-
-	uint32_t trim_x;
-	uint32_t trim_y;
-	uint32_t orig_w;
-	uint32_t orig_h;
-};
-
-struct Atlas
-{
-	Atlas() = default;
-	Atlas(Atlas&&) = default;
-
-	Handle<Texture> tex;
-	uint32_t tex_width;
-	uint32_t tex_height;
-	std::unordered_map<const patch_t*, AtlasEntry> entries;
-
-	std::unique_ptr<stbrp_context> rp_ctx {nullptr};
-	std::unique_ptr<stbrp_node[]> rp_nodes {nullptr};
-
-	Atlas& operator=(Atlas&&) = default;
-};
-
-} // namespace
-
 struct srb2::hwr2::TwodeePassData
 {
 	Handle<Texture> default_tex;
 	Handle<Texture> default_colormap_tex;
-	std::vector<Atlas> patch_atlases;
-	std::unordered_map<const patch_t*, size_t> patch_lookup;
-	std::vector<const patch_t*> patches_to_upload;
 	std::unordered_map<const uint8_t*, Handle<Texture>> colormaps;
 	std::vector<const uint8_t*> colormaps_to_upload;
 	std::unordered_map<TwodeePipelineKey, Handle<Pipeline>> pipelines;
@@ -82,202 +45,6 @@ TwodeePass::~TwodeePass() = default;
 
 static constexpr const uint32_t kVboInitSize = 32768;
 static constexpr const uint32_t kIboInitSize = 4096;
-
-static Rect trimmed_patch_dim(const patch_t* patch);
-
-static void create_atlas(Rhi& rhi, TwodeePassData& pass_data)
-{
-	Atlas new_atlas;
-	new_atlas.tex = rhi.create_texture({
-		TextureFormat::kLuminanceAlpha,
-		2048,
-		2048,
-		TextureWrapMode::kClamp,
-		TextureWrapMode::kClamp
-	});
-	new_atlas.tex_width = 2048;
-	new_atlas.tex_height = 2048;
-	new_atlas.rp_ctx = std::make_unique<stbrp_context>();
-	new_atlas.rp_nodes = std::make_unique<stbrp_node[]>(4096);
-	for (size_t i = 0; i < 4096; i++)
-	{
-		new_atlas.rp_nodes[i] = {};
-	}
-	stbrp_init_target(new_atlas.rp_ctx.get(), 2048, 2048, new_atlas.rp_nodes.get(), 4096);
-	// it is CRITICALLY important that the atlas is MOVED, not COPIED, otherwise the node ptrs will be broken
-	pass_data.patch_atlases.push_back(std::move(new_atlas));
-}
-
-static void pack_patches(Rhi& rhi, TwodeePassData& pass_data, tcb::span<const patch_t*> patches)
-{
-	// Prepare stbrp rects for patches to be loaded.
-	std::vector<stbrp_rect> rects;
-	for (size_t i = 0; i < patches.size(); i++)
-	{
-		const patch_t* patch = patches[i];
-		Rect trimmed_rect = trimmed_patch_dim(patch);
-		stbrp_rect rect {};
-		rect.id = i;
-		rect.w = trimmed_rect.w;
-		rect.h = trimmed_rect.h;
-		rects.push_back(std::move(rect));
-	}
-
-	while (rects.size() > 0)
-	{
-		if (pass_data.patch_atlases.size() == 0)
-		{
-			create_atlas(rhi, pass_data);
-		}
-
-		for (size_t atlas_index = 0; atlas_index < pass_data.patch_atlases.size(); atlas_index++)
-		{
-			auto& atlas = pass_data.patch_atlases[atlas_index];
-
-			stbrp_pack_rects(atlas.rp_ctx.get(), rects.data(), rects.size());
-			for (auto itr = rects.begin(); itr != rects.end();)
-			{
-				auto& rect = *itr;
-				if (rect.was_packed)
-				{
-					AtlasEntry entry;
-					const patch_t* patch = patches[rect.id];
-					// TODO prevent unnecessary recalculation of trim?
-					Rect trimmed_rect = trimmed_patch_dim(patch);
-					entry.x = static_cast<uint32_t>(rect.x);
-					entry.y = static_cast<uint32_t>(rect.y);
-					entry.w = static_cast<uint32_t>(rect.w);
-					entry.h = static_cast<uint32_t>(rect.h);
-					entry.trim_x = static_cast<uint32_t>(trimmed_rect.x);
-					entry.trim_y = static_cast<uint32_t>(trimmed_rect.y);
-					entry.orig_w = static_cast<uint32_t>(patch->width);
-					entry.orig_h = static_cast<uint32_t>(patch->height);
-					atlas.entries.insert_or_assign(patch, std::move(entry));
-					pass_data.patch_lookup.insert_or_assign(patch, atlas_index);
-					pass_data.patches_to_upload.push_back(patch);
-					rects.erase(itr);
-					continue;
-				}
-				++itr;
-			}
-
-			// If we still have rects to pack, and we're at the last atlas, create another atlas.
-			// TODO This could end up in an infinite loop if the patches are bigger than an atlas. Such patches need to
-			// be loaded as individual RHI textures instead.
-			if (atlas_index == pass_data.patch_atlases.size() - 1 && rects.size() > 0)
-			{
-				create_atlas(rhi, pass_data);
-			}
-		}
-	}
-}
-
-/// @brief Derive the subrect of the given patch with empty columns and rows excluded.
-static Rect trimmed_patch_dim(const patch_t* patch)
-{
-	bool minx_found = false;
-	int32_t minx = 0;
-	int32_t maxx = 0;
-	int32_t miny = patch->height;
-	int32_t maxy = 0;
-	for (int32_t x = 0; x < patch->width; x++)
-	{
-		const int32_t columnofs = patch->columnofs[x];
-		const column_t* column = reinterpret_cast<const column_t*>(patch->columns + columnofs);
-
-		// If the first pole is empty (topdelta = 255), there are no pixels in this column
-		if (!minx_found && column->topdelta == 0xFF)
-		{
-			// Thus, the minx is at least one higher than the current column.
-			minx = x + 1;
-			continue;
-		}
-		minx_found = true;
-
-		if (minx_found && column->topdelta != 0xFF)
-		{
-			maxx = x;
-		}
-
-		miny = std::min(static_cast<int32_t>(column->topdelta), miny);
-
-		int32_t prevdelta = 0;
-		int32_t topdelta = 0;
-		while (column->topdelta != 0xFF)
-		{
-			topdelta = column->topdelta;
-
-			// Tall patches hack
-			if (topdelta <= prevdelta)
-			{
-				topdelta += prevdelta;
-			}
-			prevdelta = topdelta;
-
-			maxy = std::max(topdelta + column->length, maxy);
-
-			column = reinterpret_cast<const column_t*>(reinterpret_cast<const uint8_t*>(column) + column->length + 4);
-		}
-	}
-
-	maxx += 1;
-	maxx = std::max(minx, maxx);
-	maxy = std::max(miny, maxy);
-
-	return {minx, miny, static_cast<uint32_t>(maxx - minx), static_cast<uint32_t>(maxy - miny)};
-}
-
-static void convert_patch_to_trimmed_rg8_pixels(const patch_t* patch, std::vector<uint8_t>& out)
-{
-	Rect trimmed_rect = trimmed_patch_dim(patch);
-	if (trimmed_rect.w % 2 > 0)
-	{
-		// In order to force 4-byte row alignment, an extra column is added to the image data.
-		// Look up GL_UNPACK_ALIGNMENT (which defaults to 4 bytes)
-		trimmed_rect.w += 1;
-	}
-	out.clear();
-	// 2 bytes per pixel; 1 for the color index, 1 for the alpha. (RG8)
-	out.resize(trimmed_rect.w * trimmed_rect.h * 2, 0);
-	for (int32_t x = 0; x < static_cast<int32_t>(trimmed_rect.w) && x < (patch->width - trimmed_rect.x); x++)
-	{
-		const int32_t columnofs = patch->columnofs[x + trimmed_rect.x];
-		const column_t* column = reinterpret_cast<const column_t*>(patch->columns + columnofs);
-
-		int32_t prevdelta = 0;
-		int32_t topdelta = 0;
-		while (column->topdelta != 0xFF)
-		{
-			topdelta = column->topdelta;
-			// prevdelta is used to implement tall patches hack
-			if (topdelta <= prevdelta)
-			{
-				topdelta += prevdelta;
-			}
-
-			prevdelta = topdelta;
-			const uint8_t* source = reinterpret_cast<const uint8_t*>(column) + 3;
-			int32_t count = column->length; // is this byte order safe...?
-
-			for (int32_t i = 0; i < count; i++)
-			{
-				int32_t output_y = topdelta + i - trimmed_rect.y;
-				if (output_y < 0)
-				{
-					continue;
-				}
-				if (output_y >= static_cast<int32_t>(trimmed_rect.h))
-				{
-					break;
-				}
-				size_t pixel_index = (output_y * trimmed_rect.w + x) * 2;
-				out[pixel_index + 0] = source[i]; // index in luminance/red channel
-				out[pixel_index + 1] = 0xFF;	  // alpha/green value of 1
-			}
-			column = reinterpret_cast<const column_t*>(reinterpret_cast<const uint8_t*>(column) + column->length + 4);
-		}
-	}
-}
 
 static TwodeePipelineKey pipeline_key_for_cmd(const Draw2dCmd& cmd)
 {
@@ -358,24 +125,26 @@ static PipelineDesc make_pipeline_desc(TwodeePipelineKey key)
 		{0.f, 0.f, 0.f, 1.f}};
 }
 
-static void rewrite_patch_quad_vertices(Draw2dList& list, const Draw2dPatchQuad& cmd, TwodeePassData* data)
+void TwodeePass::rewrite_patch_quad_vertices(Draw2dList& list, const Draw2dPatchQuad& cmd) const
 {
 	// Patch quads are clipped according to the patch's atlas entry
-	if (cmd.patch == nullptr)
+	const patch_t* patch = cmd.patch;
+	if (patch == nullptr)
 	{
 		return;
 	}
 
-	std::size_t atlas_index = data->patch_lookup[cmd.patch];
-	auto& atlas = data->patch_atlases[atlas_index];
-	auto& entry = atlas.entries[cmd.patch];
+	srb2::NotNull<const PatchAtlas*> atlas = patch_atlas_cache_->find_patch(patch);
+	std::optional<PatchAtlas::Entry> entry_optional = atlas->find_patch(patch);
+	SRB2_ASSERT(entry_optional.has_value());
+	PatchAtlas::Entry entry = *entry_optional;
 
 	// Rewrite the vertex data completely.
 	// The UVs of the trimmed patch in atlas UV space.
-	const float atlas_umin = static_cast<float>(entry.x) / atlas.tex_width;
-	const float atlas_umax = static_cast<float>(entry.x + entry.w) / atlas.tex_width;
-	const float atlas_vmin = static_cast<float>(entry.y) / atlas.tex_height;
-	const float atlas_vmax = static_cast<float>(entry.y + entry.h) / atlas.tex_height;
+	const float atlas_umin = static_cast<float>(entry.x) / atlas->texture_size();
+	const float atlas_umax = static_cast<float>(entry.x + entry.w) / atlas->texture_size();
+	const float atlas_vmin = static_cast<float>(entry.y) / atlas->texture_size();
+	const float atlas_vmax = static_cast<float>(entry.y + entry.h) / atlas->texture_size();
 
 	// The UVs of the trimmed patch in untrimmed UV space.
 	// The command's UVs are in untrimmed UV space.
@@ -542,27 +311,6 @@ void TwodeePass::prepass(Rhi& rhi)
 		);
 	}
 
-	// Check for patches that are being freed after this frame. Those patches must be present in the atlases for this
-	// frame, but all atlases need to be cleared and rebuilt on next call to prepass.
-	// This is based on the assumption that patches are very rarely freed during runtime; occasionally repacking the
-	// atlases to free up space from patches that will never be referenced again is acceptable.
-	if (rebuild_atlases_)
-	{
-		for (auto& atlas : data_->patch_atlases)
-		{
-			rhi.destroy_texture(atlas.tex);
-		}
-		data_->patch_atlases.clear();
-		data_->patch_lookup.clear();
-		rebuild_atlases_ = false;
-	}
-
-	if (data_->patch_atlases.size() > 2)
-	{
-		// Rebuild the atlases next frame because we have too many patches in the atlas cache.
-		rebuild_atlases_ = true;
-	}
-
 	// Stage 1 - command list patch detection
 	std::unordered_set<const patch_t*> found_patches;
 	std::unordered_set<const uint8_t*> found_colormaps;
@@ -587,19 +335,11 @@ void TwodeePass::prepass(Rhi& rhi)
 		}
 	}
 
-	std::unordered_set<const patch_t*> patch_cache_hits;
-	std::unordered_set<const patch_t*> patch_cache_misses;
 	for (auto patch : found_patches)
 	{
-		if (data_->patch_lookup.find(patch) != data_->patch_lookup.end())
-		{
-			patch_cache_hits.insert(patch);
-		}
-		else
-		{
-			patch_cache_misses.insert(patch);
-		}
+		patch_atlas_cache_->queue_patch(patch);
 	}
+	patch_atlas_cache_->pack(rhi);
 
 	for (auto colormap : found_colormaps)
 	{
@@ -611,11 +351,6 @@ void TwodeePass::prepass(Rhi& rhi)
 
 		data_->colormaps_to_upload.push_back(colormap);
 	}
-
-	// Stage 2 - pack rects into atlases
-	std::vector<const patch_t*> patches_to_pack(patch_cache_misses.begin(), patch_cache_misses.end());
-	pack_patches(rhi, *data_, patches_to_pack);
-	// We now know what patches need to be uploaded.
 
 	size_t list_index = 0;
 	for (auto& list : *ctx_)
@@ -695,7 +430,6 @@ void TwodeePass::prepass(Rhi& rhi)
 			// We need to split the merged commands based on the kind of texture
 			// Patches are converted to atlas texture indexes, which we've just packed the patch rects for
 			// Flats are uploaded as individual textures.
-			// TODO actually implement flat drawing
 			auto tex_visitor = srb2::Overload {
 				[&](const Draw2dPatchQuad& cmd)
 				{
@@ -705,8 +439,8 @@ void TwodeePass::prepass(Rhi& rhi)
 					}
 					else
 					{
-						size_t atlas_index = data_->patch_lookup[cmd.patch];
-						typeof(merged_cmd.texture) atlas_index_texture = atlas_index;
+						srb2::NotNull<const PatchAtlas*> atlas = patch_atlas_cache_->find_patch(cmd.patch);
+						typeof(merged_cmd.texture) atlas_index_texture = atlas->texture();
 						new_cmd_needed = new_cmd_needed || (merged_cmd.texture != atlas_index_texture);
 					}
 
@@ -739,7 +473,8 @@ void TwodeePass::prepass(Rhi& rhi)
 					{
 						if (cmd.patch != nullptr)
 						{
-							the_new_one.texture = data_->patch_lookup[cmd.patch];
+							srb2::NotNull<const PatchAtlas*> atlas = patch_atlas_cache_->find_patch(cmd.patch);
+							the_new_one.texture = atlas->texture();
 						}
 						else
 						{
@@ -776,7 +511,7 @@ void TwodeePass::prepass(Rhi& rhi)
 			// Perform coordinate transformations
 			{
 				auto vtx_transform_visitor = srb2::Overload {
-					[&](const Draw2dPatchQuad& cmd) { rewrite_patch_quad_vertices(list, cmd, data_.get()); },
+					[&](const Draw2dPatchQuad& cmd) { rewrite_patch_quad_vertices(list, cmd); },
 					[&](const Draw2dVertices& cmd) {}};
 				std::visit(vtx_transform_visitor, cmd);
 			}
@@ -828,25 +563,6 @@ void TwodeePass::transfer(Rhi& rhi, Handle<TransferContext> ctx)
 	}
 	data_->colormaps_to_upload.clear();
 
-	// Convert patches to RG8 textures and upload to atlas pages
-	std::vector<uint8_t> patch_data;
-	for (const patch_t* patch_to_upload : data_->patches_to_upload)
-	{
-		Atlas& atlas = data_->patch_atlases[data_->patch_lookup[patch_to_upload]];
-		AtlasEntry& entry = atlas.entries[patch_to_upload];
-
-		convert_patch_to_trimmed_rg8_pixels(patch_to_upload, patch_data);
-
-		rhi.update_texture(
-			ctx,
-			atlas.tex,
-			{static_cast<int32_t>(entry.x), static_cast<int32_t>(entry.y), entry.w, entry.h},
-			PixelFormat::kRG8,
-			tcb::as_bytes(tcb::span(patch_data))
-		);
-	}
-	data_->patches_to_upload.clear();
-
 	Handle<Texture> palette_tex = palette_manager_->palette();
 
 	// Update the buffers for each list
@@ -867,10 +583,9 @@ void TwodeePass::transfer(Rhi& rhi, Handle<TransferContext> ctx)
 		{
 			TextureBinding tx[3];
 			auto tex_visitor = srb2::Overload {
-				[&](size_t atlas_index)
+				[&](Handle<Texture> texture)
 				{
-					Atlas& atlas = data_->patch_atlases[atlas_index];
-					tx[0] = {SamplerName::kSampler0, atlas.tex};
+					tx[0] = {SamplerName::kSampler0, texture};
 					tx[1] = {SamplerName::kSampler1, palette_tex};
 				},
 				[&](const MergedTwodeeCommandFlatTexture& tex)

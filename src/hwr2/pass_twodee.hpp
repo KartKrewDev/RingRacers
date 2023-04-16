@@ -18,6 +18,7 @@
 #include <vector>
 
 #include "../cxxutil.hpp"
+#include "patch_atlas.hpp"
 #include "pass.hpp"
 #include "pass_resource_managers.hpp"
 #include "twodee.hpp"
@@ -52,7 +53,7 @@ struct MergedTwodeeCommand
 {
 	TwodeePipelineKey pipeline_key = {};
 	rhi::Handle<rhi::BindingSet> binding_set = {};
-	std::optional<std::variant<size_t, MergedTwodeeCommandFlatTexture>> texture;
+	std::optional<std::variant<rhi::Handle<rhi::Texture>, MergedTwodeeCommandFlatTexture>> texture;
 	const uint8_t* colormap;
 	uint32_t index_offset = 0;
 	uint32_t elements = 0;
@@ -78,16 +79,18 @@ struct TwodeePass final : public Pass
 	std::shared_ptr<TwodeePassData> data_;
 	std::shared_ptr<MainPaletteManager> palette_manager_;
 	std::shared_ptr<FlatTextureManager> flat_manager_;
+	std::shared_ptr<PatchAtlasCache> patch_atlas_cache_;
 	rhi::Handle<rhi::UniformSet> us_1;
 	rhi::Handle<rhi::UniformSet> us_2;
 	std::vector<MergedTwodeeCommandList> cmd_lists_;
 	std::vector<std::tuple<rhi::Handle<rhi::Buffer>, std::size_t>> vbos_;
 	std::vector<std::tuple<rhi::Handle<rhi::Buffer>, std::size_t>> ibos_;
-	bool rebuild_atlases_ = false;
 	rhi::Handle<rhi::RenderPass> render_pass_;
 	rhi::Handle<rhi::Texture> output_;
 	uint32_t output_width_ = 0;
 	uint32_t output_height_ = 0;
+
+	void rewrite_patch_quad_vertices(Draw2dList& list, const Draw2dPatchQuad& cmd) const;
 
 	TwodeePass();
 	virtual ~TwodeePass();
