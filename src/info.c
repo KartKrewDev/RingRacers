@@ -22331,7 +22331,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 
 	// SRB2kart MT's
 	{           // MT_RANDOMITEM
-		2000,             // doomednum
+		2011,             // doomednum
 		S_RANDOMITEM1,    // spawnstate
 		1000,             // spawnhealth
 		S_NULL,           // seestate
@@ -23265,7 +23265,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		S_NULL,         // xdeathstate
 		sfx_kc2e,       // deathsound
 		0,              // speed
-		24*FRACUNIT,    // radius
+		16*FRACUNIT,    // radius
 		32*FRACUNIT,    // height
 		0,              // display offset
 		100,            // mass

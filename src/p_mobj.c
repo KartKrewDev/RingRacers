@@ -7309,6 +7309,12 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 				S_StartSound(mobj, mobj->info->activesound);
 				mobj->momx = mobj->momy = 0;
 				mobj->health = 1;
+
+				if (mobj->type == MT_EGGMANITEM)
+				{
+					// Grow to match the actual items
+					mobj->destscale *= 3;
+				}
 			}
 		}
 		else
@@ -10345,9 +10351,6 @@ static void P_DefaultMobjShadowScale(mobj_t *thing)
 			thing->whiteshadow = false;
 			break;
 		case MT_EGGMANITEM:
-			thing->shadowscale = FRACUNIT;
-			thing->whiteshadow = false;
-			break;
 		case MT_EGGMANITEM_SHIELD:
 			thing->shadowscale = 3*FRACUNIT/2;
 			thing->whiteshadow = false;
@@ -10916,6 +10919,11 @@ mobj_t *P_SpawnMobj(fixed_t x, fixed_t y, fixed_t z, mobjtype_t type)
 		case MT_BOSS3WAYPOINT:
 			// Remove before release
 			CONS_Alert(CONS_WARNING, "Boss waypoints are deprecated. Did you forget to remove the old checkpoints, too?\n");
+			break;
+		case MT_RANDOMITEM:
+		case MT_SPHEREBOX:
+			mobj->destscale *= 3;
+			P_SetScale(mobj, mobj->scale * 3);
 			break;
 		default:
 			break;
@@ -12194,7 +12202,15 @@ static boolean P_SpawnNonMobjMapThing(mapthing_t *mthing)
 
 static boolean P_AllowMobjSpawn(mapthing_t* mthing, mobjtype_t i)
 {
-	(void)mthing;
+	//(void)mthing;
+
+	if (mthing->type == 2000)
+	{
+		// TEMP: old item spot ID, while we're testing big items.
+		// Return MT_RANDOMITEM from 2011 to 2000 later,
+		// and then remove this when we're done.
+		return false;
+	}
 
 	switch (i)
 	{
