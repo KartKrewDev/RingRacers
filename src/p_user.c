@@ -1267,12 +1267,6 @@ void P_DoPlayerExit(player_t *player)
 		return;
 	}
 
-	if (player->griefStrikes > 0)
-	{
-		// Remove a strike for finishing a race normally
-		player->griefStrikes--;
-	}
-
 	if (P_IsLocalPlayer(player) && (!player->spectator && !demo.playback))
 	{
 		legitimateexit = true;
@@ -3796,12 +3790,6 @@ void P_DoTimeOver(player_t *player)
 	{
 		// NO! Don't do this!
 		return;
-	}
-
-	if (player->griefStrikes > 0)
-	{
-		// Remove a strike for finishing a race normally
-		player->griefStrikes--;
 	}
 
 	if (P_IsLocalPlayer(player) && !demo.playback)
