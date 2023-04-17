@@ -82,6 +82,7 @@
 #include "acs/interface.h"
 #include "k_podium.h"
 #include "k_vote.h"
+#include "k_serverstats.h"
 
 #ifdef HWRENDER
 #include "hardware/hw_main.h" // 3D View Rendering
@@ -1620,6 +1621,8 @@ void D_SRB2Main(void)
 	// Load Profiles now that default controls have been defined
 	PR_LoadProfiles();	// load control profiles
 
+	SV_LoadStats();
+
 #if (defined (__unix__) && !defined (MSDOS)) || defined (UNIXCOMMON) || defined (HAVE_SDL)
 	VID_PrepareModeList(); // Regenerate Modelist according to cv_fullscreen
 #endif
@@ -1887,6 +1890,8 @@ void D_SRB2Main(void)
 			PR_ApplyProfile(num, 3);
 		}
 	}
+
+	SV_SaveStats();
 
 	if (autostart || netgame)
 	{

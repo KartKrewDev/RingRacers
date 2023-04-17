@@ -35,13 +35,15 @@ typedef enum
 	BT_BRAKE		  = 1<<3,	// Brake
 	BT_ATTACK		  = 1<<4,	// Use Item
 	BT_LOOKBACK		  = 1<<5,	// Look Backward
+	BT_RESPAWN		  = 1<<6,	// Respawn
+	BT_VOTE			  = 1<<7,	// Vote
 
 	BT_EBRAKEMASK	= (BT_ACCELERATE|BT_BRAKE),
 	BT_SPINDASHMASK	= (BT_ACCELERATE|BT_BRAKE|BT_DRIFT),
 
-	// free: 1<<6 to 1<<12
+	// free: 1<<8 to 1<<12
 
-	// Lua garbage
+	// Lua garbage, replace with freeslottable buttons some day
 	BT_LUAA			= 1<<13,
 	BT_LUAB			= 1<<14,
 	BT_LUAC			= 1<<15,

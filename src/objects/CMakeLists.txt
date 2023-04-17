@@ -14,4 +14,5 @@ target_sources(SRB2SDL2 PRIVATE
 	item-spot.c
 	loops.c
 	drop-target.c
+	ring-shooter.c
 )

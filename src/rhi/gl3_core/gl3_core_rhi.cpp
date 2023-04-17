@@ -1759,6 +1759,14 @@ Rect GlCoreRhi::get_renderbuffer_size(Handle<Renderbuffer> renderbuffer)
 	return ret;
 }
 
+uint32_t GlCoreRhi::get_buffer_size(Handle<Buffer> buffer)
+{
+	SRB2_ASSERT(buffer_slab_.is_valid(buffer));
+	auto& buf = buffer_slab_[buffer];
+
+	return buf.desc.size;
+}
+
 void GlCoreRhi::finish()
 {
 	SRB2_ASSERT(graphics_context_active_ == false);

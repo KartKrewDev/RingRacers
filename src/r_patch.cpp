@@ -61,6 +61,8 @@ patch_t *Patch_Create(softwarepatch_t *source, size_t srcsize, void *dest)
 	return patch;
 }
 
+static boolean g_patch_was_freed_this_frame = false;
+
 //
 // Frees a patch from memory.
 //
@@ -97,6 +99,8 @@ static void Patch_FreeData(patch_t *patch)
 
 	Z_Free(patch->columnofs);
 	Z_Free(patch->columns);
+
+	g_patch_was_freed_this_frame = true;
 }
 
 void Patch_Free(patch_t *patch)
@@ -106,6 +110,16 @@ void Patch_Free(patch_t *patch)
 
 	Patch_FreeData(patch);
 	Z_Free(patch);
+}
+
+boolean Patch_WasFreedThisFrame(void)
+{
+	return g_patch_was_freed_this_frame;
+}
+
+void Patch_ResetFreedThisFrame(void)
+{
+	g_patch_was_freed_this_frame = false;
 }
 
 //

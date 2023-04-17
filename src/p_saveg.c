@@ -64,14 +64,15 @@ savedata_t savedata;
 // than an UINT16
 typedef enum
 {
-	AWAYVIEW   = 0x01,
-	FOLLOWITEM = 0x02,
-	FOLLOWER   = 0x04,
-	SKYBOXVIEW = 0x08,
-	SKYBOXCENTER = 0x10,
-	HOVERHYUDORO = 0x20,
-	STUMBLE = 0x40,
-	SLIPTIDEZIP = 0x80
+	AWAYVIEW   = 0x0001,
+	FOLLOWITEM = 0x0002,
+	FOLLOWER   = 0x0004,
+	SKYBOXVIEW = 0x0008,
+	SKYBOXCENTER = 0x0010,
+	HOVERHYUDORO = 0x0020,
+	STUMBLE = 0x0040,
+	SLIPTIDEZIP = 0x0080,
+	RINGSHOOTER = 0x0100
 } player_saveflags;
 
 static inline void P_ArchivePlayer(savebuffer_t *save)
@@ -218,6 +219,9 @@ static void P_NetArchivePlayers(savebuffer_t *save)
 		if (players[i].sliptideZipIndicator)
 			flags |= SLIPTIDEZIP;
 
+		if (players[i].ringShooter)
+			flags |= RINGSHOOTER;
+
 		WRITEUINT16(save->p, flags);
 
 		if (flags & SKYBOXVIEW)
@@ -240,6 +244,9 @@ static void P_NetArchivePlayers(savebuffer_t *save)
 
 		if (flags & SLIPTIDEZIP)
 			WRITEUINT32(save->p, players[i].sliptideZipIndicator->mobjnum);
+
+		if (flags & RINGSHOOTER)
+			WRITEUINT32(save->p, players[i].ringShooter->mobjnum);
 
 		WRITEUINT32(save->p, (UINT32)players[i].followitem);
 
@@ -613,6 +620,9 @@ static void P_NetUnArchivePlayers(savebuffer_t *save)
 
 		if (flags & SLIPTIDEZIP)
 			players[i].sliptideZipIndicator = (mobj_t *)(size_t)READUINT32(save->p);
+
+		if (flags & RINGSHOOTER)
+			players[i].ringShooter = (mobj_t *)(size_t)READUINT32(save->p);
 
 		players[i].followitem = (mobjtype_t)READUINT32(save->p);
 
@@ -4380,6 +4390,8 @@ static void P_NetUnArchiveThinkers(savebuffer_t *save)
 		{
 			next = currentthinker->next;
 
+			currentthinker->references = 0; // Heinous but this is the only place the assertion in P_UnlinkThinkers is wrong
+
 			if (currentthinker->function.acp1 == (actionf_p1)P_MobjThinker || currentthinker->function.acp1 == (actionf_p1)P_NullPrecipThinker)
 				P_RemoveSavegameMobj((mobj_t *)currentthinker); // item isn't saved, don't remove it
 			else
@@ -4863,6 +4875,13 @@ static void P_RelinkPointers(void)
 			players[i].sliptideZipIndicator = NULL;
 			if (!P_SetTarget(&players[i].sliptideZipIndicator, P_FindNewPosition(temp)))
 				CONS_Debug(DBG_GAMELOGIC, "sliptideZipIndicator not found on player %d\n", i);
+		}
+		if (players[i].ringShooter)
+		{
+			temp = (UINT32)(size_t)players[i].ringShooter;
+			players[i].ringShooter = NULL;
+			if (!P_SetTarget(&players[i].ringShooter, P_FindNewPosition(temp)))
+				CONS_Debug(DBG_GAMELOGIC, "ringShooter not found on player %d\n", i);
 		}
 	}
 }

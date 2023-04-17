@@ -571,6 +571,7 @@ static void Impl_HandleKeyboardEvent(SDL_KeyboardEvent evt, Uint32 type)
 		return;
 	}
 	event.data1 = Impl_SDL_Scancode_To_Keycode(evt.keysym.scancode);
+	event.data2 = evt.repeat;
 	if (event.data1) D_PostEvent(&event);
 }
 
@@ -746,6 +747,7 @@ static void Impl_HandleControllerButtonEvent(SDL_ControllerButtonEvent evt, Uint
 	}
 
 	event.data1 = KEY_JOY1;
+	event.data2 = 0;
 
 	if (type == SDL_CONTROLLERBUTTONUP)
 	{

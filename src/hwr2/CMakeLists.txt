@@ -19,6 +19,8 @@ target_sources(SRB2SDL2 PRIVATE
 	pass_twodee.hpp
 	pass.cpp
 	pass.hpp
+	patch_atlas.cpp
+	patch_atlas.hpp
 	twodee.cpp
 	twodee.hpp
 )

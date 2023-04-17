@@ -32,8 +32,6 @@ typedef enum
 	UC_ROUNDSPLAYED,	// ROUNDSPLAYED [x played]
 	UC_TOTALRINGS,		// TOTALRINGS [x collected]
 
-	UC_POWERLEVEL,		// SRB2Kart: POWERLEVEL [power level to reach] [gametype, "0" for race, "1" for battle]
-
 	UC_GAMECLEAR,		// GAMECLEAR <x times>
 	UC_OVERALLTIME,		// OVERALLTIME [time to beat, tics]
 

@@ -353,14 +353,6 @@ void G_ReadDemoExtraData(void)
 				}
 			}
 		}
-		if (extradata & DXD_RESPAWN)
-		{
-			if (players[p].mo)
-			{
-				// Is this how this should work..?
-				P_DamageMobj(players[p].mo, NULL, NULL, 1, DMG_DEATHPIT);
-			}
-		}
 		if (extradata & DXD_WEAPONPREF)
 		{
 			WeaponPref_Parse(&demobuf.p, p);

@@ -330,6 +330,7 @@ void A_MementosTPParticles(mobj_t *actor);
 void A_FlameShieldPaper(mobj_t *actor);
 void A_InvincSparkleRotate(mobj_t *actor);
 void A_SpawnItemDebrisCloud(mobj_t *actor);
+void A_RingShooterFace(mobj_t *actor);
 
 //for p_enemy.c
 
@@ -13809,4 +13810,16 @@ A_SpawnItemDebrisCloud (mobj_t *actor)
 		puff->momy += FixedMul(target->momy, fade);
 		puff->momz += FixedMul(target->momz, fade);
 	}
+}
+
+// sets the actor's 
+// vars do nothing
+void A_RingShooterFace(mobj_t *actor)
+{
+	if (LUA_CallAction(A_RINGSHOOTERFACE, actor))
+	{
+		return;
+	}
+
+	Obj_UpdateRingShooterFace(actor);
 }

@@ -127,7 +127,7 @@ extern UINT8 demo_writerng;
 #define DXD_NAME       0x08 // name changed
 #define DXD_COLOR      0x10 // color changed
 #define DXD_FOLLOWER   0x20 // follower was changed
-#define DXD_RESPAWN    0x40 // "respawn" command in console
+
 #define DXD_WEAPONPREF 0x80 // netsynced playsim settings were changed
 
 #define DXD_PST_PLAYING    0x01

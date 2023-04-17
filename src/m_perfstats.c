@@ -490,7 +490,7 @@ static void M_DrawTickStats(void)
 
 void M_DrawPerfStats(void)
 {
-	char s[100];
+	char s[363];
 
 	PS_SetFrameTime();
 

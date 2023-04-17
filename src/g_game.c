@@ -67,6 +67,7 @@
 #include "acs/interface.h"
 #include "g_party.h"
 #include "k_vote.h"
+#include "k_serverstats.h"
 
 #ifdef HAVE_DISCORDRPC
 #include "discord.h"
@@ -1323,7 +1324,6 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 	// C
 	if (G_PlayerInputDown(forplayer, gc_spindash, 0))
 	{
-		forward = 0;
 		cmd->buttons |= BT_SPINDASHMASK;
 	}
 
@@ -1337,6 +1337,18 @@ void G_BuildTiccmd(ticcmd_t *cmd, INT32 realtics, UINT8 ssplayer)
 	if (G_PlayerInputDown(forplayer, gc_lookback, 0))
 	{
 		cmd->buttons |= BT_LOOKBACK;
+	}
+
+	// respawn
+	if (G_PlayerInputDown(forplayer, gc_respawn, 0))
+	{
+		cmd->buttons |= (BT_RESPAWN | BT_EBRAKEMASK);
+	}
+
+	// mp general function button
+	if (G_PlayerInputDown(forplayer, gc_vote, 0))
+	{
+		cmd->buttons |= BT_VOTE;
 	}
 
 	// lua buttons a thru c
@@ -1579,6 +1591,8 @@ void G_DoLoadLevelEx(boolean resetplayer, gamestate_t newstate)
 
 	// clear hud messages remains (usually from game startup)
 	CON_ClearHUD();
+
+	SV_UpdateStats();
 
 	server_lagless = cv_lagless.value;
 
@@ -2630,6 +2644,7 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 		P_SetTarget(&players[player].follower, NULL);
 		P_SetTarget(&players[player].awayview.mobj, NULL);
 		P_SetTarget(&players[player].stumbleIndicator, NULL);
+		P_SetTarget(&players[player].ringShooter, NULL);
 		P_SetTarget(&players[player].followmobj, NULL);
 
 		hoverhyudoro = players[player].hoverhyudoro;

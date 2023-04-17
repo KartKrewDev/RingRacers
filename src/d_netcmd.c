@@ -80,7 +80,6 @@
 
 static void Got_NameAndColor(UINT8 **cp, INT32 playernum);
 static void Got_WeaponPref(UINT8 **cp, INT32 playernum);
-static void Got_PowerLevel(UINT8 **cp, INT32 playernum);
 static void Got_PartyInvite(UINT8 **cp, INT32 playernum);
 static void Got_AcceptPartyInvite(UINT8 **cp, INT32 playernum);
 static void Got_CancelPartyInvite(UINT8 **cp, INT32 playernum);
@@ -93,7 +92,6 @@ static void Got_PickVotecmd(UINT8 **cp, INT32 playernum);
 static void Got_RequestAddfilecmd(UINT8 **cp, INT32 playernum);
 static void Got_Addfilecmd(UINT8 **cp, INT32 playernum);
 static void Got_Pause(UINT8 **cp, INT32 playernum);
-static void Got_Respawn(UINT8 **cp, INT32 playernum);
 static void Got_RandomSeed(UINT8 **cp, INT32 playernum);
 static void Got_RunSOCcmd(UINT8 **cp, INT32 playernum);
 static void Got_Teamchange(UINT8 **cp, INT32 playernum);
@@ -181,7 +179,6 @@ static void Command_ListWADS_f(void);
 static void Command_ListDoomednums_f(void);
 static void Command_RunSOC(void);
 static void Command_Pause(void);
-static void Command_Respawn(void);
 
 static void Command_Version_f(void);
 #ifdef UPDATE_ALERT
@@ -612,7 +609,6 @@ const char *netxcmdnames[MAXNETXCMD - 1] =
 	"RUNSOC", // XD_RUNSOC
 	"REQADDFILE", // XD_REQADDFILE
 	"SETMOTD", // XD_SETMOTD
-	"RESPAWN", // XD_RESPAWN
 	"DEMOTED", // XD_DEMOTED
 	"LUACMD", // XD_LUACMD
 	"LUAVAR", // XD_LUAVAR
@@ -623,7 +619,6 @@ const char *netxcmdnames[MAXNETXCMD - 1] =
 	"MODIFYVOTE", // XD_MODIFYVOTE
 	"PICKVOTE", // XD_PICKVOTE
 	"REMOVEPLAYER", // XD_REMOVEPLAYER
-	"POWERLEVEL", // XD_POWERLEVEL
 	"PARTYINVITE", // XD_PARTYINVITE
 	"ACCEPTPARTYINVITE", // XD_ACCEPTPARTYINVITE
 	"LEAVEPARTY", // XD_LEAVEPARTY
@@ -664,7 +659,6 @@ void D_RegisterServerCommands(void)
 
 	RegisterNetXCmd(XD_NAMEANDCOLOR, Got_NameAndColor);
 	RegisterNetXCmd(XD_WEAPONPREF, Got_WeaponPref);
-	RegisterNetXCmd(XD_POWERLEVEL, Got_PowerLevel);
 	RegisterNetXCmd(XD_PARTYINVITE, Got_PartyInvite);
 	RegisterNetXCmd(XD_ACCEPTPARTYINVITE, Got_AcceptPartyInvite);
 	RegisterNetXCmd(XD_CANCELPARTYINVITE, Got_CancelPartyInvite);
@@ -674,7 +668,6 @@ void D_RegisterServerCommands(void)
 	RegisterNetXCmd(XD_ADDFILE, Got_Addfilecmd);
 	RegisterNetXCmd(XD_REQADDFILE, Got_RequestAddfilecmd);
 	RegisterNetXCmd(XD_PAUSE, Got_Pause);
-	RegisterNetXCmd(XD_RESPAWN, Got_Respawn);
 	RegisterNetXCmd(XD_RUNSOC, Got_RunSOCcmd);
 	RegisterNetXCmd(XD_LUACMD, Got_Luacmd);
 	RegisterNetXCmd(XD_LUAFILE, Got_LuaFile);
@@ -724,7 +717,6 @@ void D_RegisterServerCommands(void)
 
 	COM_AddCommand("runsoc", Command_RunSOC);
 	COM_AddCommand("pause", Command_Pause);
-	COM_AddCommand("respawn", Command_Respawn);
 
 	COM_AddCommand("gametype", Command_ShowGametype_f);
 	COM_AddCommand("version", Command_Version_f);
@@ -1817,17 +1809,6 @@ static void Got_WeaponPref(UINT8 **cp,INT32 playernum)
 	demo_extradata[playernum] |= DXD_WEAPONPREF;
 }
 
-static void Got_PowerLevel(UINT8 **cp,INT32 playernum)
-{
-	UINT16 race = (UINT16)READUINT16(*cp);
-	UINT16 battle = (UINT16)READUINT16(*cp);
-
-	clientpowerlevels[playernum][PWRLV_RACE] = min(PWRLVRECORD_MAX, race);
-	clientpowerlevels[playernum][PWRLV_BATTLE] = min(PWRLVRECORD_MAX, battle);
-
-	CONS_Debug(DBG_GAMELOGIC, "set player %d to power %d\n", playernum, race);
-}
-
 static void Got_PartyInvite(UINT8 **cp,INT32 playernum)
 {
 	UINT8 invitee;
@@ -1979,28 +1960,8 @@ static void Got_LeaveParty(UINT8 **cp,INT32 playernum)
 
 void D_SendPlayerConfig(UINT8 n)
 {
-	const profile_t *pr = PR_GetProfile(cv_lastprofile[n].value);
-
-	UINT8 buf[4];
-	UINT8 *p = buf;
-
 	SendNameAndColor(n);
 	WeaponPref_Send(n);
-
-	if (pr != NULL)
-	{
-		// Send it over
-		WRITEUINT16(p, pr->powerlevels[PWRLV_RACE]);
-		WRITEUINT16(p, pr->powerlevels[PWRLV_BATTLE]);
-	}
-	else
-	{
-		// Guest players have no power level
-		WRITEUINT16(p, 0);
-		WRITEUINT16(p, 0);
-	}
-
-	SendNetXCmdForPlayer(n, XD_POWERLEVEL, buf, p-buf);
 }
 
 void D_Cheat(INT32 playernum, INT32 cheat, ...)
@@ -3596,61 +3557,6 @@ static void Got_Pause(UINT8 **cp, INT32 playernum)
 	G_ResetAllDeviceRumbles();
 }
 
-// Command for stuck characters in netgames, griefing, etc.
-static void Command_Respawn(void)
-{
-	UINT8 buf[4];
-	UINT8 *cp = buf;
-
-
-
-	if (!(gamestate == GS_LEVEL || gamestate == GS_INTERMISSION || gamestate == GS_VOTING))
-	{
-		CONS_Printf(M_GetText("You must be in a level to use this.\n"));
-		return;
-	}
-
-	if (players[consoleplayer].mo && !P_IsObjectOnGround(players[consoleplayer].mo)) // KART: Nice try, but no, you won't be cheesing spb anymore.
-	{
-		CONS_Printf(M_GetText("You must be on the floor to use this.\n"));
-		return;
-	}
-
-	// todo: this probably isnt necessary anymore with v2
-	if (players[consoleplayer].mo && (P_PlayerInPain(&players[consoleplayer]) || spbplace == players[consoleplayer].position)) // KART: Nice try, but no, you won't be cheesing spb anymore (x2)
-	{
-		CONS_Printf(M_GetText("Nice try.\n"));
-		return;
-	}
-
-	WRITEINT32(cp, consoleplayer);
-	SendNetXCmd(XD_RESPAWN, &buf, 4);
-}
-
-static void Got_Respawn(UINT8 **cp, INT32 playernum)
-{
-	INT32 respawnplayer = READINT32(*cp);
-
-	// You can't respawn someone else. Nice try, there.
-	if (respawnplayer != playernum || P_PlayerInPain(&players[respawnplayer]) || spbplace == players[respawnplayer].position) // srb2kart: "|| (!(gametyperules & GTR_CIRCUIT))"
-	{
-		CONS_Alert(CONS_WARNING, M_GetText("Illegal respawn command received from %s\n"), player_names[playernum]);
-		if (server)
-			SendKick(playernum, KICK_MSG_CON_FAIL);
-		return;
-	}
-
-	if (players[respawnplayer].mo)
-	{
-		// incase the above checks were modified to allow sending a respawn on these occasions:
-		if (!P_IsObjectOnGround(players[respawnplayer].mo))
-			return;
-
-		P_DamageMobj(players[respawnplayer].mo, NULL, NULL, 1, DMG_DEATHPIT);
-		demo_extradata[playernum] |= DXD_RESPAWN;
-	}
-}
-
 /** Deals with an ::XD_RANDOMSEED message in a netgame.
   * These messages set the position of the random number LUT and are crucial to
   * correct synchronization.
@@ -4165,10 +4071,7 @@ static void Command_Login_f(void)
 
 boolean IsPlayerAdmin(INT32 playernum)
 {
-#if defined (TESTERS) || defined (HOSTTESTERS)
-	(void)playernum;
-	return false;
-#elif defined (DEVELOP)
+#if defined(DEVELOP) && !(defined(HOSTTESTERS) || defined(TESTERS))
 	return playernum != serverplayer;
 #else
 	INT32 i;

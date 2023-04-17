@@ -46,7 +46,6 @@ profile_t* PR_MakeProfile(
 	boolean guest)
 {
 	profile_t *new = Z_Malloc(sizeof(profile_t), PU_STATIC, NULL);
-	UINT8 i;
 
 	new->version = PROFILEVER;
 
@@ -72,11 +71,7 @@ profile_t* PR_MakeProfile(
 	// Copy from gamecontrol directly as we'll be setting controls up directly in the profile.
 	memcpy(new->controls, controlarray, sizeof(new->controls));
 
-	// Init both power levels
-	for (i = 0; i < PWRLV_NUMTYPES; i++)
-	{
-		new->powerlevels[i] = (guest ? 0 : PWRLVRECORD_START);
-	}
+	new->wins = 0;
 
 	return new;
 }
@@ -270,11 +265,7 @@ void PR_SaveProfiles(void)
 		WRITESTRINGN(save.p, profilesList[i]->follower, SKINNAMESIZE);
 		WRITEUINT16(save.p, profilesList[i]->followercolor);
 
-		// PWR.
-		for (j = 0; j < PWRLV_NUMTYPES; j++)
-		{
-			WRITEUINT16(save.p, profilesList[i]->powerlevels[j]);
-		}
+		WRITEUINT32(save.p, profilesList[i]->wins);
 
 		// Consvars.
 		WRITEUINT8(save.p, profilesList[i]->kickstartaccel);
@@ -397,16 +388,15 @@ void PR_LoadProfiles(void)
 			profilesList[i]->followercolor = PROFILEDEFAULTFOLLOWERCOLOR;
 		}
 
-		// PWR.
-		for (j = 0; j < PWRLV_NUMTYPES; j++)
+		// Profile update 5-->6: PWR isn't in profile data anymore.
+		if (version < 6)
 		{
-			profilesList[i]->powerlevels[j] = READUINT16(save.p);
-			if (profilesList[i]->powerlevels[j] < PWRLVRECORD_MIN
-				|| profilesList[i]->powerlevels[j] > PWRLVRECORD_MAX)
-			{
-				// invalid, reset
-				profilesList[i]->powerlevels[j] = PWRLVRECORD_START;
-			}
+			save.p += PWRLV_NUMTYPES*2;
+			profilesList[i]->wins = 0;
+		}
+		else
+		{
+			profilesList[i]->wins = READUINT32(save.p);
 		}
 
 		// Consvars.
@@ -425,7 +415,7 @@ void PR_LoadProfiles(void)
 		{
 #ifdef DEVELOP
 			// Profile update 1-->2: Add gc_rankings.
-			// Profile update 3-->5: Add gc_startlossless.
+			// Profile update 4-->5: Add gc_startlossless.
 			if ((j == gc_rankings && version < 2) ||
 				(j == gc_startlossless && version < 5))
 			{
@@ -629,4 +619,13 @@ char *GetPrettyRRID(const unsigned char *bin, boolean brief)
 	rrid_buf[len*2] = '\0';
 
 	return rrid_buf;
+}
+
+
+static char allZero[PUBKEYLENGTH];
+
+boolean PR_IsKeyGuest(uint8_t *key)
+{
+	//memset(allZero, 0, PUBKEYLENGTH); -- not required, allZero is 0's
+	return (memcmp(key, allZero, PUBKEYLENGTH) == 0);
 }

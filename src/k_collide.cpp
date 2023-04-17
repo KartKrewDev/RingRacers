@@ -444,15 +444,22 @@ boolean K_LandMineCollide(mobj_t *t1, mobj_t *t2)
 		else
 			t2->z += t2->height;
 
+		P_SpawnMobj(t2->x/2 + t1->x/2, t2->y/2 + t1->y/2, t2->z/2 + t1->z/2, MT_ITEMCLASH);
+
 		S_StartSound(t2, t2->info->deathsound);
 		P_KillMobj(t2, t1, t1, DMG_NORMAL);
 
-		P_SetObjectMomZ(t2, 24*FRACUNIT, false);
-		P_InstaThrust(t2, bounceangle, 16*FRACUNIT);
+		if (P_MobjWasRemoved(t2))
+		{
+			t2 = NULL; // handles the arguments to P_KillMobj
+		}
+		else
+		{
+			P_SetObjectMomZ(t2, 24*FRACUNIT, false);
+			P_InstaThrust(t2, bounceangle, 16*FRACUNIT);
 
-		P_SpawnMobj(t2->x/2 + t1->x/2, t2->y/2 + t1->y/2, t2->z/2 + t1->z/2, MT_ITEMCLASH);
-
-		t1->reactiontime = t2->hitlag;
+			t1->reactiontime = t2->hitlag;
+		}
 		P_KillMobj(t1, t2, t2, DMG_NORMAL);
 	}
 	else if (t2->type == MT_SSMINE_SHIELD || t2->type == MT_SSMINE || t2->type == MT_LANDMINE)
@@ -466,7 +473,15 @@ boolean K_LandMineCollide(mobj_t *t1, mobj_t *t2)
 		// Shootable damage
 		P_DamageMobj(t2, t1, t1->target, 1, DMG_NORMAL);
 
-		t1->reactiontime = t2->hitlag;
+		if (P_MobjWasRemoved(t2))
+		{
+			t2 = NULL; // handles the arguments to P_KillMobj
+		}
+		else
+		{
+			t1->reactiontime = t2->hitlag;
+		}
+
 		P_KillMobj(t1, t2, t2, DMG_NORMAL);
 	}
 
@@ -796,6 +811,10 @@ boolean K_KitchenSinkCollide(mobj_t *t1, mobj_t *t2)
 	{
 		// Shootable damage
 		P_KillMobj(t2, t2, t1->target, DMG_NORMAL);
+		if (P_MobjWasRemoved(t2))
+		{
+			t2 = NULL; // handles the arguments to P_KillMobj
+		}
 		// This item damage
 		P_KillMobj(t1, t2, t2, DMG_NORMAL);
 	}

@@ -3407,7 +3407,9 @@ SINT8 K_GetForwardMove(player_t *player)
 {
 	SINT8 forwardmove = player->cmd.forwardmove;
 
-	if ((player->pflags & PF_STASIS) || (player->carry == CR_SLIDING))
+	if ((player->pflags & PF_STASIS)
+		|| (player->carry == CR_SLIDING)
+		|| Obj_PlayerRingShooterFreeze(player) == true)
 	{
 		return 0;
 	}
@@ -3418,7 +3420,9 @@ SINT8 K_GetForwardMove(player_t *player)
 		return MAXPLMOVE;
 	}
 
-	if (player->spinouttimer || K_PlayerEBrake(player))
+	if (player->spinouttimer != 0
+		|| K_PressingEBrake(player) == true
+		|| K_PlayerEBrake(player) == true)
 	{
 		return 0;
 	}
@@ -6164,7 +6168,8 @@ void K_PopPlayerShield(player_t *player)
 			return; // everything is handled by Obj_GardenTopDestroy
 
 		case KSHIELD_LIGHTNING:
-			K_DoLightningShield(player);
+			S_StartSound(player->mo, sfx_s3k7c);
+			// K_DoLightningShield(player);
 			break;
 	}
 
@@ -7546,6 +7551,11 @@ static void K_UpdateTripwire(player_t *player)
 	}
 }
 
+boolean K_PressingEBrake(player_t *player)
+{
+	return ((K_GetKartButtons(player) & BT_EBRAKEMASK) == BT_EBRAKEMASK);
+}
+
 /**	\brief	Decreases various kart timers and powers per frame. Called in P_PlayerThink in p_user.c
 
 	\param	player	player object passed from P_PlayerThink
@@ -7725,7 +7735,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 	}
 
 	// Make ABSOLUTELY SURE that your flashing tics don't get set WHILE you're still in hit animations.
-	if (player->spinouttimer != 0 || player->wipeoutslow != 0)
+	if (player->spinouttimer != 0)
 	{
 		if (( player->spinouttype & KSPIN_IFRAMES ) == 0)
 			player->flashing = 0;
@@ -8073,7 +8083,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 				K_SpawnGardenTopSpeedLines(player);
 		}
 		// Only allow drifting while NOT trying to do an spindash input.
-		else if ((K_GetKartButtons(player) & BT_EBRAKEMASK) != BT_EBRAKEMASK)
+		else if (K_PressingEBrake(player) == false)
 		{
 			player->pflags |= PF_DRIFTINPUT;
 		}
@@ -8855,9 +8865,20 @@ INT16 K_UpdateSteeringValue(INT16 inputSteering, INT16 destSteering)
 	// player->steering is the turning value, but with easing applied.
 	// Keeps micro-turning from old easing, but isn't controller dependent.
 
-	const INT16 amount = KART_FULLTURN/3;
+	INT16 amount = KART_FULLTURN/3;
 	INT16 diff = destSteering - inputSteering;
 	INT16 outputSteering = inputSteering;
+
+	
+	// We switched steering directions, lighten up on easing for a more responsive countersteer.
+	// (Don't do this for steering 0, let digital inputs tap-adjust!)
+	if ((inputSteering > 0 && destSteering < 0) || (inputSteering < 0 && destSteering > 0))
+	{
+		// Don't let small turns in direction X allow instant turns in direction Y.
+		INT16 countersteer = min(KART_FULLTURN, abs(inputSteering));  // The farthest we should go is to 0 -- neutral.
+		amount = max(countersteer, amount); // But don't reduce turning strength from baseline either.
+	}
+
 
 	if (abs(diff) <= amount)
 	{
@@ -8929,10 +8950,16 @@ INT16 K_GetKartTurnValue(player_t *player, INT16 turnvalue)
 		return 0;
 	}
 
+	if (Obj_PlayerRingShooterFreeze(player) == true)
+	{
+		// No turning while using Ring Shooter
+		return 0;
+	}
+
 	currentSpeed = FixedHypot(player->mo->momx, player->mo->momy);
 
 	if ((currentSpeed <= 0) // Not moving
-	&& ((K_GetKartButtons(player) & BT_EBRAKEMASK) != BT_EBRAKEMASK) // Not e-braking
+	&& (K_PressingEBrake(player) == false) // Not e-braking
 	&& (player->respawn.state == RESPAWNST_NONE) // Not respawning
 	&& (player->curshield != KSHIELD_TOP) // Not riding a Top
 	&& (P_IsObjectOnGround(player->mo) == true)) // On the ground
@@ -9718,7 +9745,12 @@ static INT32 K_FlameShieldMax(player_t *player)
 boolean K_PlayerEBrake(player_t *player)
 {
 	if (player->respawn.state != RESPAWNST_NONE
-		&& player->respawn.init == true)
+		&& (player->respawn.init == true || player->respawn.fromRingShooter == true))
+	{
+		return false;
+	}
+
+	if (Obj_PlayerRingShooterFreeze(player) == true)
 	{
 		return false;
 	}
@@ -9728,7 +9760,7 @@ boolean K_PlayerEBrake(player_t *player)
 		return true;
 	}
 
-	if ((K_GetKartButtons(player) & BT_EBRAKEMASK) == BT_EBRAKEMASK
+	if (K_PressingEBrake(player) == true
 		&& player->drift == 0
 		&& P_PlayerInPain(player) == false
 		&& player->justbumped == 0
@@ -11375,6 +11407,8 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 	{
 		player->pflags &= ~PF_AIRFAILSAFE;
 	}
+
+	Obj_RingShooterInput(player);
 }
 
 void K_CheckSpectateStatus(void)
@@ -11644,6 +11678,7 @@ void K_EggmanTransfer(player_t *source, player_t *victim)
 		return;
 
 	K_AddHitLag(victim->mo, 2, true);
+	K_DropItems(victim);
 	victim->eggmanexplode = 6*TICRATE;
 	victim->itemRoulette.eggman = false;
 	victim->itemRoulette.active = false;

@@ -184,6 +184,7 @@ public:
 
 	virtual TextureDetails get_texture_details(Handle<Texture> texture) override;
 	virtual Rect get_renderbuffer_size(Handle<Renderbuffer> renderbuffer) override;
+	virtual uint32_t get_buffer_size(Handle<Buffer> buffer) override;
 
 	virtual Handle<TransferContext> begin_transfer() override;
 	virtual void end_transfer(Handle<TransferContext> handle) override;

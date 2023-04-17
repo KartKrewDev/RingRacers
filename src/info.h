@@ -294,6 +294,7 @@ enum actionnum
 	A_FLAMESHIELDPAPER,
 	A_INVINCSPARKLEROTATE,
 	A_SPAWNITEMDEBRISCLOUD,
+	A_RINGSHOOTERFACE,
 	NUMACTIONS
 };
 
@@ -568,6 +569,7 @@ void A_MementosTPParticles();
 void A_FlameShieldPaper();
 void A_InvincSparkleRotate();
 void A_SpawnItemDebrisCloud();
+void A_RingShooterFace();
 
 extern boolean actionsoverridden[NUMACTIONS];
 
@@ -1157,6 +1159,10 @@ typedef enum sprite
 	SPR_TWBS, // Tripwire Boost
 	SPR_TWBT, // Tripwire BLASTER
 	SPR_SMLD, // Smooth landing
+
+	SPR_TIRG, // Tire grabbers
+	SPR_RSHT, // DEZ Ring Shooter
+
 	SPR_DEZL, // DEZ Laser respawn
 
 	// Additional Kart Objects
@@ -4906,6 +4912,15 @@ typedef enum state
 
 	S_SMOOTHLANDING,
 
+	// DEZ Ring Shooter
+	S_TIREGRABBER,
+	S_RINGSHOOTER_SIDE,
+	S_RINGSHOOTER_NIPPLES,
+	S_RINGSHOOTER_SCREEN,
+	S_RINGSHOOTER_NUMBERBACK,
+	S_RINGSHOOTER_NUMBERFRONT,
+	S_RINGSHOOTER_FACE,
+
 	// DEZ Laser respawn
 	S_DEZLASER,
 	S_DEZLASER_TRAIL1,
@@ -6507,6 +6522,11 @@ typedef enum mobj_type
 	MT_TRIPWIREBOOST,
 
 	MT_SMOOTHLANDING,
+
+	MT_TIREGRABBER,
+	MT_RINGSHOOTER,
+	MT_RINGSHOOTER_PART,
+	MT_RINGSHOOTER_SCREEN,
 
 	MT_DEZLASER,
 
