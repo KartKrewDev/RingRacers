@@ -11656,6 +11656,7 @@ void K_EggmanTransfer(player_t *source, player_t *victim)
 		return;
 
 	K_AddHitLag(victim->mo, 2, true);
+	K_DropItems(victim);
 	victim->eggmanexplode = 6*TICRATE;
 	victim->itemRoulette.eggman = false;
 	victim->itemRoulette.active = false;
