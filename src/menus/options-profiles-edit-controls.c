@@ -22,11 +22,10 @@ menuitem_t OPTIONS_ProfileControls[] = {
 	{IT_CONTROL, "X", "Brake / Back",
 		"PR_BTX", {.routine = M_ProfileSetControl}, gc_x, 0},
 
-	// @TODO What does this do???
-	{IT_CONTROL, "Y", "N/A ?",
+	{IT_CONTROL, "Y", "Respawn",
 		"PR_BTY", {.routine = M_ProfileSetControl}, gc_y, 0},
 
-	{IT_CONTROL, "Z", "N/A ?",
+	{IT_CONTROL, "Z", "Multiplayer quick-chat / quick-vote",
 		"PR_BTZ", {.routine = M_ProfileSetControl}, gc_z, 0},
 
 	{IT_CONTROL, "L", "Use item",
@@ -62,13 +61,13 @@ menuitem_t OPTIONS_ProfileControls[] = {
 	{IT_CONTROL, "RECORD LOSSLESS", "Record a pixel perfect GIF.",
 		NULL, {.routine = M_ProfileSetControl}, gc_startlossless, 0},
 
-	{IT_CONTROL, "OPEN CHAT", "Opens chatbox in online games.",
+	{IT_CONTROL, "OPEN CHAT", "Opens full keyboard chatting for online games.",
 		NULL, {.routine = M_ProfileSetControl}, gc_talk, 0},
 
-	{IT_CONTROL, "OPEN TEAM CHAT", "Do we even have team gamemodes?",
+	{IT_CONTROL, "OPEN TEAM CHAT", "Opens team-only full chat for online games.",
 		NULL, {.routine = M_ProfileSetControl}, gc_teamtalk, 0},
 
-	{IT_CONTROL, "SHOW RANKINGS", "Show mid-game rankings.",
+	{IT_CONTROL, "SHOW RANKINGS", "Display the current rankings mid-game.",
 		NULL, {.routine = M_ProfileSetControl}, gc_rankings, 0},
 
 	{IT_CONTROL, "OPEN CONSOLE", "Opens the developer options console.",

@@ -91,13 +91,13 @@ typedef enum
 
 	// alias gameplay controls
 	gc_accel = gc_a,
-	gc_brake = gc_x,
-	gc_drift = gc_r,
-
-	gc_item = gc_l,
-	gc_spindash = gc_c,
-
 	gc_lookback = gc_b,
+	gc_spindash = gc_c,
+	gc_brake = gc_x,
+	gc_respawn = gc_y,
+	gc_vote = gc_z,
+	gc_item = gc_l,
+	gc_drift = gc_r,
 } gamecontrols_e;
 
 // mouse values are used once

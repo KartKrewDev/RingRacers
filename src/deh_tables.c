@@ -326,6 +326,7 @@ actionpointer_t actionpointers[] =
 	{{A_FlameShieldPaper},       "A_FLAMESHIELDPAPER"},
 	{{A_InvincSparkleRotate},    "A_INVINCSPARKLEROTATE"},
 	{{A_SpawnItemDebrisCloud},   "A_SPAWNITEMDEBRISCLOUD"},
+	{{A_RingShooterFace},        "A_RINGSHOOTERFACE"},
 
 	{{NULL},                     "NONE"},
 
@@ -3867,6 +3868,15 @@ const char *const STATE_LIST[] = { // array length left dynamic for sanity testi
 
 	"S_SMOOTHLANDING",
 
+	// DEZ Ring Shooter
+	"S_TIREGRABBER",
+	"S_RINGSHOOTER_SIDE",
+	"S_RINGSHOOTER_NIPPLES",
+	"S_RINGSHOOTER_SCREEN",
+	"S_RINGSHOOTER_NUMBERBACK",
+	"S_RINGSHOOTER_NUMBERFRONT",
+	"S_RINGSHOOTER_FACE",
+
 	// DEZ respawn laser
 	"S_DEZLASER",
 	"S_DEZLASER_TRAIL1",
@@ -5432,6 +5442,11 @@ const char *const MOBJTYPE_LIST[] = {  // array length left dynamic for sanity t
 	"MT_TRIPWIREBOOST",
 
 	"MT_SMOOTHLANDING",
+
+	"MT_TIREGRABBER",
+	"MT_RINGSHOOTER",
+	"MT_RINGSHOOTER_PART",
+	"MT_RINGSHOOTER_SCREEN",
 
 	"MT_DEZLASER",
 
