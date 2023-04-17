@@ -13143,8 +13143,8 @@ static boolean P_SetupSpawnedMapThing(mapthing_t *mthing, mobj_t *mobj, boolean 
 	}
 	case MT_RANDOMITEM:
 	{
-		boolean delayed = !(gametyperules & GTR_CIRCUIT);
-		if (leveltime < (delayed ? starttime : 3))
+		const boolean delayed = !(gametyperules & GTR_CIRCUIT);
+		if (leveltime == 0)
 		{
 			mobj->flags2 |= MF2_BOSSNOTRAP; // mark as here on map start
 			if (delayed)
