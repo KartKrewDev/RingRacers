@@ -4137,6 +4137,7 @@ void CL_RemoveSplitscreenPlayer(UINT8 p)
 	SendKick(p, KICK_MSG_PLAYER_QUIT);
 }
 
+#ifndef TESTERS
 static void GotOurIP(UINT32 address)
 {
 	const unsigned char * p = (const unsigned char *)&address;
@@ -4145,6 +4146,7 @@ static void GotOurIP(UINT32 address)
 	#endif
 	ourIP = address;
 }
+#endif
 
 // is there a game running
 boolean Playing(void)
