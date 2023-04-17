@@ -3474,6 +3474,11 @@ static void Got_MapQueuecmd(UINT8 **cp, INT32 playernum)
 	}
 
 	G_MapSlipIntoRoundQueue(queueposition, 0, setgametype, setencore, false);
+
+	if (!IsPlayerAdmin(playernum))
+		return;
+
+	CONS_Printf("queuemap: A map was successfully added to the round queue (position %u)\n", queueposition);
 }
 
 static void Command_Pause(void)
