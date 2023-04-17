@@ -1144,28 +1144,9 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 			{
 				target->fuse = 2;
 			}
-			else if (inDuel == false)
+			else
 			{
-				UINT8 i;
-
-				for (i = 0; i < MAXPLAYERS; i++)
-				{
-					if (&players[i] == source->player)
-					{
-						continue;
-					}
-
-					if (playeringame[i] && !players[i].spectator && players[i].lives != 0)
-					{
-						break;
-					}
-				}
-
-				if (i < MAXPLAYERS)
-				{
-					// Respawn items in multiplayer, don't respawn them when alone
-					target->fuse = 2*TICRATE + 2;
-				}
+				target->fuse = 2*TICRATE + 2;
 			}
 		}
 	}
