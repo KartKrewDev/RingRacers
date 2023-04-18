@@ -8084,13 +8084,6 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 		{
 			marathonmode |= MA_INIT;
 		}
-
-		P_MapStart(); // just in case MapLoad modifies tm.thing
-
-		ACS_RunLevelStartScripts();
-		LUA_HookInt(gamemap, HOOK(MapLoad));
-
-		P_MapEnd(); // just in case MapLoad modifies tm.thing
 	}
 	else
 	{
@@ -8127,6 +8120,13 @@ void P_PostLoadLevel(void)
 	{
 		marathonmode &= ~MA_INIT;
 	}
+
+	P_MapStart(); // just in case MapLoad modifies tm.thing
+
+	ACS_RunLevelStartScripts();
+	LUA_HookInt(gamemap, HOOK(MapLoad));
+
+	P_MapEnd(); // just in case MapLoad modifies tm.thing
 
 	// We're now done loading the level.
 	levelloading = false;
