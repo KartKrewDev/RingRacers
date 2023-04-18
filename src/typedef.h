@@ -135,6 +135,7 @@ TYPEDEF (menudemo_t);
 TYPEDEF (demoghost);
 
 // g_game.h
+TYPEDEF (roundentry_t);
 TYPEDEF (mapsearchfreq_t);
 
 // hu_stuff.h

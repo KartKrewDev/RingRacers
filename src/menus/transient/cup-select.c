@@ -104,7 +104,6 @@ void M_CupSelectHandler(INT32 choice)
 
 		if (cupgrid.grandprix == true)
 		{
-			INT32 levelNum;
 			UINT8 ssplayers = cv_splitplayers.value-1;
 
 			S_StartSound(NULL, sfx_s3k63);
@@ -130,13 +129,16 @@ void M_CupSelectHandler(INT32 choice)
 
 			grandprixinfo.gamespeed = min(KARTSPEED_HARD, cv_dummygpdifficulty.value);
 			grandprixinfo.masterbots = (cv_dummygpdifficulty.value == 3);
-			grandprixinfo.encore = (boolean)cv_dummygpencore.value;
-
-			grandprixinfo.cup = newcup;
 
 			grandprixinfo.gp = true;
-			grandprixinfo.roundnum = 1;
 			grandprixinfo.initalize = true;
+			grandprixinfo.cup = newcup;
+
+			// Populate the roundqueue
+			memset(&roundqueue, 0, sizeof(struct roundqueue));
+			G_GPCupIntoRoundQueue(newcup, levellist.newgametype, (boolean)cv_dummygpencore.value);
+			roundqueue.position = roundqueue.roundnum = 1;
+			roundqueue.netcommunicate = true; // relevant for future Online GP
 
 			paused = false;
 
@@ -146,16 +148,14 @@ void M_CupSelectHandler(INT32 choice)
 				SV_StartSinglePlayerServer(levellist.newgametype, levellist.netgame);
 			}
 
-			levelNum = grandprixinfo.cup->cachedlevels[0];
-
 			D_MapChange(
-				levelNum + 1,
-				GT_RACE,
-				grandprixinfo.encore,
+				roundqueue.entries[0].mapnum + 1,
+				roundqueue.entries[0].gametype,
+				roundqueue.entries[0].encore,
 				true,
 				1,
 				false,
-				false
+				roundqueue.entries[0].rankrestricted
 			);
 
 			M_ClearMenus(true);

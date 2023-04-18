@@ -53,6 +53,29 @@ typedef enum
 	NEXTMAP_SPECIAL = NEXTMAP_INVALID
 } nextmapspecial_t;
 
+#define ROUNDQUEUE_MAX 10 // sane max? maybe make dynamically allocated later
+
+struct roundentry_t
+{
+	UINT16 mapnum;				// Map number at this position
+	UINT16 gametype;			// Gametype we want to play this in
+	boolean encore;				// Whether this will be flipped
+	boolean rankrestricted;		// For grand prix progression
+};
+
+extern struct roundqueue
+{
+	UINT8 roundnum;							// Visible number on HUD
+	UINT8 position;							// Head position in the round queue
+	UINT8 size;								// Number of entries in the round queue
+	boolean netcommunicate;					// As server, should we net-communicate this in XD_MAP?
+	roundentry_t entries[ROUNDQUEUE_MAX];	// Entries in the round queue
+} roundqueue;
+
+void G_MapSlipIntoRoundQueue(UINT8 position, UINT16 map, UINT8 setgametype, boolean setencore, boolean rankrestricted);
+void G_MapIntoRoundQueue(UINT16 map, UINT8 setgametype, boolean setencore, boolean rankrestricted);
+void G_GPCupIntoRoundQueue(cupheader_t *cup, UINT8 setgametype, boolean setencore);
+
 extern INT32 gameovertics;
 extern UINT8 ammoremovaltics;
 extern tic_t timeinmap; // Ticker for time spent in level (used for levelcard display)
@@ -117,7 +140,7 @@ void G_ChangePlayerReferences(mobj_t *oldmo, mobj_t *newmo);
 void G_DoReborn(INT32 playernum);
 void G_PlayerReborn(INT32 player, boolean betweenmaps);
 void G_InitNew(UINT8 pencoremode, INT32 map, boolean resetplayer,
-	boolean skipprecutscene, boolean FLS);
+	boolean skipprecutscene);
 char *G_BuildMapTitle(INT32 mapnum);
 
 struct searchdim

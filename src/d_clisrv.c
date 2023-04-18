@@ -6139,7 +6139,7 @@ boolean TryRunTics(tic_t realtics)
 	{
 		COM_BufTicker();
 		if (mapchangepending)
-			D_MapChange(-1, 0, encoremode, false, 2, false, fromlevelselect); // finish the map change
+			D_MapChange(-1, 0, encoremode, false, 2, false, forcespecialstage); // finish the map change
 	}
 
 	NetUpdate();

@@ -283,10 +283,10 @@ static INT16 K_RivalScore(player_t *bot)
 	UINT8 lowestdifficulty = MAXBOTDIFFICULTY;
 	UINT8 i;
 
-	if (grandprixinfo.cup != NULL)
+	if (grandprixinfo.cup != NULL && roundqueue.size > 0)
 	{
-		roundnum = grandprixinfo.roundnum;
-		roundsleft = grandprixinfo.cup->numlevels - grandprixinfo.roundnum;
+		roundnum = roundqueue.roundnum;
+		roundsleft = grandprixinfo.cup->numlevels - roundnum;
 	}
 
 	for (i = 0; i < MAXPLAYERS; i++)
@@ -523,8 +523,10 @@ void K_RetireBots(void)
 	UINT8 i;
 
 	if (grandprixinfo.gp == true
-		&& ((grandprixinfo.cup != NULL && grandprixinfo.roundnum >= grandprixinfo.cup->numlevels)
-		|| grandprixinfo.eventmode != GPEVENT_NONE))
+		&& (grandprixinfo.eventmode != GPEVENT_NONE
+		|| (grandprixinfo.cup != NULL
+			&& roundqueue.size > 0
+			&& roundqueue.roundnum >= grandprixinfo.cup->numlevels)))
 	{
 		// No replacement.
 		return;
@@ -566,7 +568,11 @@ void K_RetireBots(void)
 	else
 	{
 		const UINT8 startingdifficulty = K_BotStartingDifficulty(grandprixinfo.gamespeed);
-		newDifficulty = startingdifficulty - 4 + grandprixinfo.roundnum;
+		newDifficulty = startingdifficulty - 4;
+		if (roundqueue.size > 0)
+		{
+			 newDifficulty += roundqueue.roundnum;
+		}
 	}
 
 	if (newDifficulty > MAXBOTDIFFICULTY)
@@ -697,7 +703,7 @@ void K_PlayerLoseLife(player_t *player)
 --------------------------------------------------*/
 boolean K_CanChangeRules(boolean allowdemos)
 {
-	if (grandprixinfo.gp == true /*&& grandprixinfo.roundnum > 0*/)
+	if (grandprixinfo.gp == true)
 	{
 		// Don't cheat the rules of the GP!
 		return false;

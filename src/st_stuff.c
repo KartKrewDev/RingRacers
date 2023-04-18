@@ -696,7 +696,7 @@ void ST_runTitleCard(void)
 {
 	boolean run = !(paused || P_AutoPause());
 	INT32 auxticker;
-	boolean gp = (marathonmode || (grandprixinfo.gp && grandprixinfo.roundnum));
+	boolean doroundicon = (marathonmode || (roundqueue.size > 0 && roundqueue.position > 0));
 
 	if (!G_IsTitleCardAvailable())
 		return;
@@ -818,7 +818,7 @@ void ST_runTitleCard(void)
 			roundnumy = eggy1;
 
 			// split both halves of the egg, but only do that in grand prix!
-			if (gp && lt_ticker > TTANIMTHRESHOLD + TICRATE/2)
+			if (doroundicon && lt_ticker > TTANIMTHRESHOLD + TICRATE/2)
 			{
 				auxticker = (INT32)lt_ticker - (TTANIMTHRESHOLD + TICRATE/2);
 
@@ -881,7 +881,7 @@ void ST_drawTitleCard(void)
 	char *lvlttl = mapheaderinfo[gamemap-1]->lvlttl;
 	char *zonttl = mapheaderinfo[gamemap-1]->zonttl; // SRB2kart
 	UINT8 actnum = mapheaderinfo[gamemap-1]->actnum;
-	boolean gp = (marathonmode || (grandprixinfo.gp && grandprixinfo.roundnum));
+	boolean doroundicon = (marathonmode || (roundqueue.size > 0 && roundqueue.position > 0));
 
 	INT32 acttimer;
 	fixed_t actscale;
@@ -1011,9 +1011,9 @@ void ST_drawTitleCard(void)
 	// Draw ROUND bar, scroll it downwards.
 	V_DrawFixedPatch(roundx*FRACUNIT, ((-32) + (lt_ticker%32))*FRACUNIT, FRACUNIT, V_SNAPTOTOP|V_SNAPTOLEFT, tcroundbar, NULL);
 	// Draw ROUND text
-	if (gp)
+	if (doroundicon)
 		V_DrawFixedPatch((roundx+10)*FRACUNIT, roundy*FRACUNIT, FRACUNIT, V_SNAPTOTOP|V_SNAPTOLEFT,
-			((grandprixinfo.gp && grandprixinfo.eventmode) ? tcbonus : tcround),
+			((grandprixinfo.gp && grandprixinfo.eventmode != GPEVENT_NONE) ? tcbonus : tcround),
 			NULL);
 
 	// round num background
@@ -1032,25 +1032,29 @@ void ST_drawTitleCard(void)
 	}
 
 	// If possible, draw round number/icon
-	if (gp)
+	if (doroundicon)
 	{
 		patch_t *roundico = NULL;
 		if (marathonmode)
 			; // TODO: Ruby
-		else switch (grandprixinfo.eventmode)
+		else if (grandprixinfo.gp == true && grandprixinfo.eventmode != GPEVENT_NONE)
 		{
-			case GPEVENT_BONUS:
-				roundico = tcroundbonus; // TODO don't show capsule if we have other bonus types
-				break;
-			/*case GPEVENT_SPECIAL:
-				; // TODO: Emerald/mount
-				break;*/
-			case GPEVENT_NONE:
-				if (grandprixinfo.roundnum > 0 && grandprixinfo.roundnum < 11)	// Check boundaries JUST IN CASE.
-					roundico = tcroundnum[grandprixinfo.roundnum-1];
-				break;
-			default:
-				break;
+			switch (grandprixinfo.eventmode)
+			{
+				case GPEVENT_BONUS:
+					roundico = tcroundbonus; // TODO don't show capsule if we have other bonus types
+					break;
+				/*case GPEVENT_SPECIAL:
+					; // TODO: Emerald/mount
+					break;*/
+				default:
+					break;
+			}
+		}
+		else if (roundqueue.size > 0)
+		{
+			if (roundqueue.roundnum > 0 && roundqueue.roundnum < 11) // We DEFINITELY need to check boundaries.
+				roundico = tcroundnum[roundqueue.roundnum-1];
 		}
 
 		if (roundico)

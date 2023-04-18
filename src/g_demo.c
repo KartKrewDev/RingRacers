@@ -3455,7 +3455,7 @@ void G_DoPlayDemo(char *defdemoname)
 		P_SetRandSeed(i, randseed[i]);
 	}
 
-	G_InitNew(demoflags & DF_ENCORE, gamemap, true, true, false); // Doesn't matter whether you reset or not here, given changes to resetplayer.
+	G_InitNew(demoflags & DF_ENCORE, gamemap, true, true); // Doesn't matter whether you reset or not here, given changes to resetplayer.
 
 	for (i = 0; i < numslots; i++)
 	{

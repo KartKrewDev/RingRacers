@@ -539,6 +539,9 @@ skiptallydrawer:
 
 			if (demo.playback)
 				string = va("Replay ends in %d", tickdown);
+			else if ((nextmapoverride != 0)
+			|| (roundqueue.size > 0 && roundqueue.position < roundqueue.size))
+				string = va("Next starts in %d", tickdown);
 			else
 				string = va("%s starts in %d", cv_advancemap.string, tickdown);
 
