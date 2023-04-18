@@ -696,7 +696,7 @@ void ST_runTitleCard(void)
 {
 	boolean run = !(paused || P_AutoPause());
 	INT32 auxticker;
-	boolean doroundicon = (marathonmode || roundqueue.size > 0);
+	boolean doroundicon = (marathonmode || (roundqueue.size > 0 && roundqueue.position > 0));
 
 	if (!G_IsTitleCardAvailable())
 		return;
@@ -881,7 +881,7 @@ void ST_drawTitleCard(void)
 	char *lvlttl = mapheaderinfo[gamemap-1]->lvlttl;
 	char *zonttl = mapheaderinfo[gamemap-1]->zonttl; // SRB2kart
 	UINT8 actnum = mapheaderinfo[gamemap-1]->actnum;
-	boolean doroundicon = (marathonmode || roundqueue.size > 0);
+	boolean doroundicon = (marathonmode || (roundqueue.size > 0 && roundqueue.position > 0));
 
 	INT32 acttimer;
 	fixed_t actscale;
