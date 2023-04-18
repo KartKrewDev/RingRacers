@@ -124,7 +124,7 @@ static Rect get_screen_viewport(uint32_t screen, uint32_t screens, uint32_t w, u
 	case 1:
 		return {0, 0, w, h};
 	case 2:
-		return {0, screen == 1 ? (static_cast<int32_t>(h) / 2) : 0, w, (h / 2)};
+		return {0, screen == 0 ? (static_cast<int32_t>(h) / 2) : 0, w, (h / 2)};
 	default:
 		switch (screen)
 		{
