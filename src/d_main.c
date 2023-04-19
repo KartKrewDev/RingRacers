@@ -1528,7 +1528,7 @@ void D_SRB2Main(void)
 	W_VerifyFileMD5(mainwads, ASSET_HASH_MAIN_KART);							// main.kart
 	mainwads++; W_VerifyFileMD5(mainwads, ASSET_HASH_GFX_PK3);					// gfx.pk3
 	mainwads++; W_VerifyFileMD5(mainwads, ASSET_HASH_TEXTURES_GENERAL_PK3);		// textures_general.pk3
-	mainwads++; W_VerifyFileMD5(mainwads, ASSET_HASH_TEXTURES_SEGA				// textures_segazones.pk3
+	mainwads++; W_VerifyFileMD5(mainwads, ASSET_HASH_TEXTURES_SEGA_PK3);		// textures_segazones.pk3
 	mainwads++; W_VerifyFileMD5(mainwads, ASSET_HASH_TEXTURES_ORIGINAL_PK3);	// textures_originalzones.pk3
 	mainwads++; W_VerifyFileMD5(mainwads, ASSET_HASH_CHARS_PK3);				// chars.pk3
 	mainwads++; W_VerifyFileMD5(mainwads, ASSET_HASH_MAPS_PK3);					// maps.pk3
@@ -1539,8 +1539,8 @@ void D_SRB2Main(void)
 #endif
 	mainwads++;	// gfx.pk3
 	mainwads++;	// textures_general.pk3
+	mainwads++;	// textures_segazones.pk3
 	mainwads++;	// textures_originalzones.pk3
-	mainwads++;	// textures_uniquezones.pk3
 	mainwads++;	// chars.pk3
 	mainwads++;	// maps.pk3
 	mainwads++; // followers.pk3
