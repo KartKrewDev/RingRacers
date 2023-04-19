@@ -3438,7 +3438,7 @@ static void Got_RequestMapQueuecmd(UINT8 **cp, INT32 playernum)
 
 static void Got_MapQueuecmd(UINT8 **cp, INT32 playernum)
 {
-	UINT8 flags, queueposition;
+	UINT8 flags, queueposition, i;
 	boolean setencore;
 	UINT16 setgametype;
 
@@ -3464,21 +3464,28 @@ static void Got_MapQueuecmd(UINT8 **cp, INT32 playernum)
 		return;
 	}
 
-	if (server)
-		return;
-
-	while (roundqueue.size <= queueposition)
+	if (!server)
 	{
-		memset(&roundqueue.entries[roundqueue.size], 0, sizeof(roundentry_t));
-		roundqueue.size++;
+		while (roundqueue.size <= queueposition)
+		{
+			memset(&roundqueue.entries[roundqueue.size], 0, sizeof(roundentry_t));
+			roundqueue.size++;
+		}
+
+		G_MapSlipIntoRoundQueue(queueposition, 0, setgametype, setencore, false);
+
+		for (i = 0; i <= splitscreen; i++)
+		{
+			if (!IsPlayerAdmin(g_localplayers[i]))
+				continue;
+			break;
+		}
+
+		if (i > splitscreen)
+			return;
 	}
 
-	G_MapSlipIntoRoundQueue(queueposition, 0, setgametype, setencore, false);
-
-	if (!IsPlayerAdmin(playernum))
-		return;
-
-	CONS_Printf("queuemap: A map was successfully added to the round queue (position %u)\n", queueposition);
+	CONS_Printf("queuemap: A map was added to the round queue (pos. %u)\n", queueposition+1);
 }
 
 static void Command_Pause(void)
