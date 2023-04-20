@@ -13420,6 +13420,9 @@ static boolean P_SetupSpawnedMapThing(mapthing_t *mthing, mobj_t *mobj, boolean 
 		break;
 	}
 
+	if (P_MobjWasRemoved(mobj))
+		return false;
+
 	if (mobj->flags & MF_BOSS)
 	{
 		if (mthing->args[1]) // No egg trap for this boss
@@ -13441,7 +13444,12 @@ static mobj_t *P_SpawnMobjFromMapThing(mapthing_t *mthing, fixed_t x, fixed_t y,
 	mobj->destscale = FixedMul(mobj->destscale, mthing->scale);
 
 	if (!P_SetupSpawnedMapThing(mthing, mobj, &doangle))
+	{
+		if (P_MobjWasRemoved(mobj))
+			return NULL;
+
 		return mobj;
+	}
 
 	if (doangle)
 	{
@@ -13669,7 +13677,8 @@ static void P_SpawnItemRow(mapthing_t *mthing, mobjtype_t *itemtypes, UINT8 numi
 				y + FixedMul(length, FINESINE(fineangle)),
 				z, MT_LOOPCENTERPOINT);
 
-		Obj_LinkLoopAnchor(loopanchor, loopcenter, mthing->args[0]);
+		if (!P_MobjWasRemoved(loopanchor))
+			Obj_LinkLoopAnchor(loopanchor, loopcenter, mthing->args[0]);
 	}
 
 	for (r = 0; r < numitems; r++)
