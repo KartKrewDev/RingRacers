@@ -807,8 +807,8 @@ static int libd_drawPingNum(lua_State *L)
 	UINT8 *colormap = NULL;
 	huddrawlist_h list;
 	HUDONLY
-	x = luaL_checkinteger(L, 1);
-	y = luaL_checkinteger(L, 2);
+	x = luaL_checkfixed(L, 1);
+	y = luaL_checkfixed(L, 2);
 	num = luaL_checkinteger(L, 3);
 	flags = luaL_optinteger(L, 4, 0);
 	flags &= ~V_PARAMMASK; // Don't let crashes happen.

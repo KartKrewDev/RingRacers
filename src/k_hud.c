@@ -2322,7 +2322,7 @@ void K_DrawTabRankings(INT32 x, INT32 y, playersort_t *tab, INT32 scorelines, IN
 			}
 			else if (tab[i].num != serverplayer || !server_lagless)
 			{
-				HU_drawPing(x + ((i < 8) ? -17 : rightoffset + 11), y-4, playerpingtable[tab[i].num], 0, false);
+				HU_drawPing((x + ((i < 8) ? -17 : rightoffset + 11)) * FRACUNIT, (y-4) * FRACUNIT, playerpingtable[tab[i].num], 0, false);
 			}
 		}
 
@@ -4955,11 +4955,16 @@ K_drawMiniPing (void)
 	}
 }
 
+void K_drawButton(fixed_t x, fixed_t y, INT32 flags, patch_t *button[2], boolean pressed)
+{
+	V_DrawFixedPatch(x, y, FRACUNIT, flags, button[pressed], NULL);
+}
+
 void K_drawButtonAnim(INT32 x, INT32 y, INT32 flags, patch_t *button[2], tic_t animtic)
 {
 	const UINT8 anim_duration = 16;
-	const UINT8 anim = (animtic % (anim_duration * 2)) < anim_duration;
-	V_DrawScaledPatch(x, y, flags, button[anim]);
+	const boolean anim = ((animtic % (anim_duration * 2)) < anim_duration);
+	K_drawButton(x << FRACBITS, y << FRACBITS, flags, button, anim);
 }
 
 static void K_DrawDirectorButton(INT32 idx, const char *label, patch_t *kp[2], INT32 textflags)

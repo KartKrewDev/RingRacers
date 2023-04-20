@@ -142,6 +142,7 @@ add_executable(SRB2SDL2 MACOSX_BUNDLE WIN32
 	k_rank.c
 	k_vote.c
 	k_serverstats.c
+	k_zvote.c
 )
 
 if(SRB2_CONFIG_ENABLE_WEBM_MOVIES)

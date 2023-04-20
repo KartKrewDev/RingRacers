@@ -1,0 +1,1123 @@
+// DR. ROBOTNIK'S RING RACERS
+//-----------------------------------------------------------------------------
+// Copyright (C) by Sally "TehRealSalt" Cochenour
+// Copyright (C) by Kart Krew
+//
+// This program is free software distributed under the
+// terms of the GNU General Public License, version 2.
+// See the 'LICENSE' file for more details.
+//-----------------------------------------------------------------------------
+/// \file  k_zvote.c
+/// \brief Player callable mid-game vote
+
+#include "k_zvote.h"
+
+#include "doomdef.h"
+#include "command.h"
+#include "g_game.h"
+#include "g_input.h"
+#include "d_clisrv.h"
+#include "p_local.h"
+#include "hu_stuff.h"
+#include "v_video.h"
+#include "k_hud.h"
+#include "r_draw.h"
+#include "byteptr.h"
+
+static CV_PossibleValue_t modulate_cons_t[] = {{0, "MIN"}, {FRACUNIT, "MAX"}, {0, NULL}};
+static consvar_t cv_zvote_quorum = CVAR_INIT ("zvote_quorum", "0.6", CV_SAVE|CV_NETVAR|CV_FLOAT, modulate_cons_t, NULL);
+
+static consvar_t cv_zvote_spectators = CVAR_INIT ("zvote_spectator_votes", "Off", CV_SAVE|CV_NETVAR, CV_OnOff, NULL);
+
+static consvar_t cv_zvote_length = CVAR_INIT ("zvote_length", "90", CV_SAVE|CV_NETVAR, CV_Unsigned, NULL);
+static consvar_t cv_zvote_delay = CVAR_INIT ("zvote_delay", "90", CV_SAVE|CV_NETVAR, CV_Unsigned, NULL);
+
+static consvar_t cv_zvote_allowed[MVT__MAX] = { // See also: midVoteType_e
+	CVAR_INIT ("zvote_kick_allowed", "Yes", CV_SAVE|CV_NETVAR, CV_YesNo, NULL), // MVT_KICK
+	CVAR_INIT ("zvote_rtv_allowed", "No", CV_SAVE|CV_NETVAR, CV_YesNo, NULL) // MVT_RTV
+};
+
+const char *g_midVoteTypeNames[MVT__MAX] = {
+	"KICK",		// MVT_KICK
+	"RTV"		// MVT_RTV
+};
+
+midVote_t g_midVote = {0};
+
+/*--------------------------------------------------
+	static boolean K_MidVoteTypeUsesVictim(midVoteType_e voteType)
+
+		Specifies whenever or not a vote type is intended
+		to specify a "victim", or a player that would be
+		negatively affected by the vote.
+
+	Input Arguments:-
+		voteType - The vote type to check.
+
+	Return:-
+		true if it uses a victim, otherwise false.
+--------------------------------------------------*/
+static boolean K_MidVoteTypeUsesVictim(midVoteType_e voteType)
+{
+	switch (voteType)
+	{
+		case MVT_KICK:
+		{
+			return true;
+		}
+		default:
+		{
+			return false;
+		}
+	}
+}
+
+/*--------------------------------------------------
+	static void Command_CallVote(void)
+
+		Callback function for the "zvote_call" console command.
+--------------------------------------------------*/
+static void Command_CallVote(void)
+{
+	UINT8 buf[MAXTEXTCMD];
+	UINT8 *buf_p = buf;
+
+	size_t numArgs = 0;
+
+	const char *voteTypeStr = NULL;
+	midVoteType_e voteType = MVT__MAX;
+
+	const char *voteVariableStr = NULL;
+	INT32 voteVariable = 0;
+
+	player_t *victim = NULL;
+
+	INT32 i = INT32_MAX;
+
+	if (netgame == false)
+	{
+		CONS_Printf(M_GetText("This only works in a netgame.\n"));
+		return;
+	}
+
+	numArgs = COM_Argc();
+	if (numArgs < 2)
+	{
+		CONS_Printf("%s <type> [variable]: calls a vote\n", COM_Argv(0));
+		return;
+	}
+
+	voteTypeStr = COM_Argv(1);
+
+	for (voteType = 0; voteType < MVT__MAX; voteType++)
+	{
+		if (strcasecmp(voteTypeStr, g_midVoteTypeNames[voteType]) == 0)
+		{
+			break;
+		}
+	}
+
+	if (voteType == MVT__MAX)
+	{
+		CONS_Printf("Unknown vote type \"%s\".\n", voteTypeStr);
+		return;
+	}
+
+	voteVariableStr = COM_Argv(2);
+	voteVariable = atoi(voteVariableStr);
+	CONS_Printf("voteVariable: %d\n", voteVariable);
+
+	if (K_MidVoteTypeUsesVictim(voteType) == true)
+	{
+		for (i = 0; i < MAXPLAYERS; i++)
+		{
+			if (strcasecmp(player_names[i], voteVariableStr) == 0)
+			{
+				voteVariable = i;
+				CONS_Printf("voteVariable as player name: %s\n", player_names[i]);
+				break;
+			}
+		}
+
+		if (voteVariable >= 0 && voteVariable < MAXPLAYERS)
+		{
+			CONS_Printf("victim set to %d\n", voteVariable);
+			victim = &players[voteVariable];
+		}
+	}
+
+	if (K_AllowNewMidVote(&players[consoleplayer], voteType, voteVariable, victim) == false)
+	{
+		// Invalid vote inputs.
+		return;
+	}
+
+	WRITEUINT8(buf_p, voteType);
+	WRITEINT32(buf_p, voteVariable);
+
+	SendNetXCmd(XD_CALLZVOTE, buf, buf_p - buf);
+}
+
+/*--------------------------------------------------
+	static void Got_CallZVote(UINT8 **cp, INT32 playernum)
+
+		Callback function for XD_CALLZVOTE NetXCmd.
+		Attempts to start a new vote using K_InitNewMidVote.
+
+	Input Arguments:-
+		cp - Pointer to readable byte stream.
+		playernum - The player this packet came from.
+
+	Return:-
+		N/A
+--------------------------------------------------*/
+static void Got_CallZVote(UINT8 **cp, INT32 playernum)
+{
+	midVoteType_e type = MVT__MAX;
+	INT32 variable = 0;
+	player_t *victim = NULL;
+
+	type = READUINT8(*cp);
+	variable = READINT32(*cp);
+
+	if (K_MidVoteTypeUsesVictim(type) == true)
+	{
+		if (variable >= 0 && variable < MAXPLAYERS)
+		{
+			victim = &players[variable];
+		}
+	}
+
+	K_InitNewMidVote(&players[playernum], type, variable, victim);
+}
+
+/*--------------------------------------------------
+	static void K_PlayerSendMidVote(const UINT8 id)
+
+		Sends a local player's confirmed vote to
+		the server.
+
+	Input Arguments:-
+		id - Local splitscreen player ID.
+
+	Return:-
+		N/A
+--------------------------------------------------*/
+static void K_PlayerSendMidVote(const UINT8 id)
+{
+	if (id >= MAXSPLITSCREENPLAYERS)
+	{
+		return;
+	}
+	
+	SendNetXCmdForPlayer(id, XD_SETZVOTE, NULL, 0);
+}
+
+/*--------------------------------------------------
+	static void Got_SetZVote(UINT8 **cp, INT32 playernum)
+
+		Callback function for XD_SETZVOTE NetXCmd.
+		Updates the vote table.
+
+	Input Arguments:-
+		cp - Pointer to readable byte stream.
+		playernum - The player this packet came from.
+
+	Return:-
+		N/A
+--------------------------------------------------*/
+static void Got_SetZVote(UINT8 **cp, INT32 playernum)
+{
+	(void)cp;
+	g_midVote.votes[playernum] = true;
+}
+
+/*--------------------------------------------------
+	void K_RegisterMidVoteCVars(void)
+
+		See header file for description.
+--------------------------------------------------*/
+void K_RegisterMidVoteCVars(void)
+{
+	INT32 i = INT32_MAX;
+
+	CV_RegisterVar(&cv_zvote_quorum);
+
+	CV_RegisterVar(&cv_zvote_spectators);
+
+	CV_RegisterVar(&cv_zvote_length);
+	CV_RegisterVar(&cv_zvote_delay);
+
+	for (i = 0; i < MVT__MAX; i++)
+	{
+		CV_RegisterVar(&cv_zvote_allowed[i]);
+	}
+
+	COM_AddCommand("zvote_call", Command_CallVote);
+
+	RegisterNetXCmd(XD_CALLZVOTE, Got_CallZVote);
+	RegisterNetXCmd(XD_SETZVOTE, Got_SetZVote);
+}
+
+/*--------------------------------------------------
+	void K_ResetMidVote(void)
+
+		See header file for description.
+--------------------------------------------------*/
+void K_ResetMidVote(void)
+{
+	memset(&g_midVote, 0, sizeof(g_midVote));
+}
+
+/*--------------------------------------------------
+	boolean K_AnyMidVotesAllowed(void)
+
+		See header file for description.
+--------------------------------------------------*/
+boolean K_AnyMidVotesAllowed(void)
+{
+	INT32 i = INT32_MAX;
+
+	for (i = 0; i < MVT__MAX; i++)
+	{
+		if (cv_zvote_allowed[i].value != 0)
+		{
+			return true;
+		}
+	}
+
+	return false;
+}
+
+/*--------------------------------------------------
+	boolean K_PlayerIDAllowedInMidVote(const UINT8 id)
+
+		See header file for description.
+--------------------------------------------------*/
+boolean K_PlayerIDAllowedInMidVote(const UINT8 id)
+{
+	const player_t *player = &players[id];
+
+	if (playeringame[id] == false)
+	{
+		// Needs to be present to vote.
+		return false;
+	}
+
+	if (player->bot == true)
+	{
+		// Bots don't vote on these issues.
+		return false;
+	}
+
+	if (cv_zvote_spectators.value == 0 && player->spectator == true)
+	{
+		// Spectators don't vote on these issues, unless the server allows it.
+		return false;
+	}
+
+	return true;
+}
+
+/*--------------------------------------------------
+	UINT8 K_RequiredMidVotes(void)
+
+		See header file for description.
+--------------------------------------------------*/
+UINT8 K_RequiredMidVotes(void)
+{
+	UINT8 allowedCount = 0;
+	UINT8 requiredCount = 0;
+	INT32 i = INT32_MAX;
+
+	if (g_midVote.active == false)
+	{
+		// No vote is currently running.
+		return 0;
+	}
+
+	for (i = 0; i < MAXPLAYERS; i++)
+	{
+		if (K_PlayerIDAllowedInMidVote(i) == true)
+		{
+			allowedCount++;
+		}
+	}
+
+	if (allowedCount > 1)
+	{
+		return max(
+			2, // require at least 2 votes, regardless of how low the quorum is
+			(FixedMul(
+				(allowedCount << FRACBITS),
+				cv_zvote_quorum.value
+			) + (FRACUNIT >> 1)) >> FRACBITS // Round up to bias towards more votes being required in small games
+		);
+	}
+	else
+	{
+		// 1P session, just require the one vote.
+		return requiredCount;
+	}
+}
+
+/*--------------------------------------------------
+	boolean K_PlayerIDMidVoted(const UINT8 id)
+
+		See header file for description.
+--------------------------------------------------*/
+boolean K_PlayerIDMidVoted(const UINT8 id)
+{
+	const player_t *player = &players[id];
+
+	if (K_PlayerIDAllowedInMidVote(id) == false)
+	{
+		// This person isn't allowed to participate in votes.
+		return false;
+	}
+
+	if (player == g_midVote.caller)
+	{
+		// The person who called the vote always votes for it.
+		return true;
+	}
+	else if (player == g_midVote.victim)
+	{
+		// The person being voted off never votes for it.
+		return false;
+	}
+
+	return g_midVote.votes[id];
+}
+
+/*--------------------------------------------------
+	UINT8 K_CountMidVotes(void)
+
+		See header file for description.
+--------------------------------------------------*/
+UINT8 K_CountMidVotes(void)
+{
+	UINT8 voteCount = 0;
+	INT32 i = INT32_MAX;
+
+	if (g_midVote.active == false)
+	{
+		// No vote is currently running.
+		return 0;
+	}
+
+	for (i = 0; i < MAXPLAYERS; i++)
+	{
+		if (K_PlayerIDMidVoted(i) == true)
+		{
+			voteCount++;
+		}
+	}
+
+	return voteCount;
+}
+
+/*--------------------------------------------------
+	boolean K_AllowNewMidVote(player_t *caller, midVoteType_e type, INT32 variable, player_t *victim)
+
+		See header file for description.
+--------------------------------------------------*/
+boolean K_AllowNewMidVote(player_t *caller, midVoteType_e type, INT32 variable, player_t *victim)
+{
+	(void)variable;
+
+	if (g_midVote.active == true)
+	{
+		// Don't allow another vote if one is already running.
+		if (P_IsLocalPlayer(caller) == true)
+		{
+			CONS_Alert(CONS_ERROR, "A vote is already in progress.\n");
+		}
+
+		return false;
+	}
+
+	if (g_midVote.delay > 0)
+	{
+		// Don't allow another vote if one has recently just ran.
+		if (P_IsLocalPlayer(caller) == true)
+		{
+			CONS_Alert(CONS_ERROR, "Another vote was called too recently.\n");
+		}
+
+		return false;
+	}
+
+	if (type < 0 || type >= MVT__MAX)
+	{
+		// Invalid range.
+		if (P_IsLocalPlayer(caller) == true)
+		{
+			CONS_Alert(CONS_ERROR, "Invalid vote type.\n");
+		}
+
+		return false;
+	}
+
+	if (cv_zvote_allowed[type].value == 0)
+	{
+		// These types of votes aren't allowed on this server.
+		if (P_IsLocalPlayer(caller) == true)
+		{
+			CONS_Alert(CONS_ERROR, "Vote type is not allowed in this server.\n");
+		}
+
+		return false;
+	}
+
+	if (caller == NULL || K_PlayerIDAllowedInMidVote(caller - players) == false)
+	{
+		// Invalid calling player.
+		if (caller != NULL && P_IsLocalPlayer(caller) == true)
+		{
+			CONS_Alert(CONS_ERROR, "Invalid calling player.\n");
+		}
+
+		return false;
+	}
+
+	if (K_MidVoteTypeUsesVictim(type) == true)
+	{
+		if (victim == NULL)
+		{
+			// Invalid victim.
+			if (P_IsLocalPlayer(caller) == true)
+			{
+				CONS_Alert(CONS_ERROR, "Can't kick this player; it's invalid.\n");
+			}
+
+			return false;
+		}
+
+		if (caller == victim)
+		{
+			if (P_IsLocalPlayer(caller) == true)
+			{
+				CONS_Alert(CONS_ERROR, "Can't kick yourself.\n");
+			}
+
+			return false;
+		}
+
+		if ((victim - players) == serverplayer
+#ifndef DEVELOP
+			|| IsPlayerAdmin((victim - players)) == true
+#endif
+			)
+		{
+			// Victim is the server or an admin.
+			if (P_IsLocalPlayer(caller) == true)
+			{
+				CONS_Alert(CONS_ERROR, "Can't kick this player; they are an administrator.\n");
+			}
+
+			return false;
+		}
+	}
+
+	return true;
+}
+
+/*--------------------------------------------------
+	void K_InitNewMidVote(player_t *caller, midVoteType_e type, INT32 variable, player_t *victim)
+
+		See header file for description.
+--------------------------------------------------*/
+void K_InitNewMidVote(player_t *caller, midVoteType_e type, INT32 variable, player_t *victim)
+{
+	INT32 i = INT32_MAX;
+
+	if (K_AllowNewMidVote(caller, type, variable, victim) == false)
+	{
+		// Invalid vote inputs.
+		return;
+	}
+
+	K_ResetMidVote();
+
+	g_midVote.active = true;
+	g_midVote.caller = caller;
+
+	g_midVote.type = type;
+	g_midVote.variable = variable;
+	g_midVote.victim = victim;
+
+	g_midVote.votes[caller - players] = true;
+
+	for (i = 0; i <= splitscreen; i++)
+	{
+		if (caller == &players[g_localplayers[i]])
+		{
+			// The person who voted should already be confirmed.
+			g_midVote.gui[i].confirm = ZVOTE_GUI_CONFIRM;
+		}
+	}
+}
+
+/*--------------------------------------------------
+	static void K_MidVoteKick(void)
+
+		MVT_KICK's success function.
+--------------------------------------------------*/
+static void K_MidVoteKick(void)
+{
+	if (g_midVote.victim == NULL)
+	{
+		return;
+	}
+
+	if (server)
+	{
+		SendKick(g_midVote.victim - players, KICK_MSG_VOTE_KICK);
+	}
+}
+
+/*--------------------------------------------------
+	static void K_MidVoteRockTheVote(void)
+
+		MVT_RTV's success function.
+--------------------------------------------------*/
+static void K_MidVoteRockTheVote(void)
+{
+	G_ExitLevel();
+}
+
+/*--------------------------------------------------
+	void K_MidVoteSuccess(void)
+
+		See header file for description.
+--------------------------------------------------*/
+void K_MidVoteSuccess(void)
+{
+	switch (g_midVote.type)
+	{
+		case MVT_KICK:
+		{
+			K_MidVoteKick();
+			break;
+		}
+		case MVT_RTV:
+		{
+			K_MidVoteRockTheVote();
+			break;
+		}
+		default:
+		{
+			break;
+		}
+	}
+
+	K_ResetMidVote();
+	g_midVote.delay = cv_zvote_delay.value * TICRATE; // Vote succeeded, so the delay is normal.
+}
+
+/*--------------------------------------------------
+	void K_MidVoteFailure(void)
+
+		See header file for description.
+--------------------------------------------------*/
+void K_MidVoteFailure(void)
+{
+	K_ResetMidVote();
+	g_midVote.delay = (cv_zvote_delay.value * 2) * TICRATE; // Vote failed, so the delay is longer.
+}
+
+/*--------------------------------------------------
+	static void K_HandleMidVoteInput(void)
+
+		See header file for description.
+--------------------------------------------------*/
+static void K_HandleMidVoteInput(void)
+{
+	INT32 i = INT32_MAX;
+
+	for (i = 0; i <= splitscreen; i++)
+	{
+		//player_t *const player = &players[ g_localplayers[i] ];
+		midVoteGUI_t *const gui = &g_midVote.gui[i];
+		boolean pressed = false;
+
+		if (menuactive == false)
+		{
+			pressed = G_PlayerInputDown(i, gc_z, 0);
+		}
+
+		// Between states, require us to unpress Z.
+		if (pressed == true)
+		{
+			if (gui->unpress == true)
+			{
+				pressed = false;
+			}
+		}
+		else
+		{
+			gui->unpress = false;
+		}
+
+		if (gui->slide < ZVOTE_GUI_SLIDE)
+		{
+			if (gui->slide > 0 || pressed == true)
+			{
+				gui->slide++;
+				gui->unpress = true;
+			}
+		}
+		else if (gui->confirm < ZVOTE_GUI_CONFIRM)
+		{
+			if (K_PlayerIDAllowedInMidVote(g_localplayers[i]) == false)
+			{
+				gui->confirm = 0;
+				continue;
+			}
+
+			if (pressed == true)
+			{
+				gui->confirm++;
+
+				if (gui->confirm == ZVOTE_GUI_CONFIRM)
+				{
+					K_PlayerSendMidVote(i);
+					gui->unpress = true;
+				}
+			}
+			else
+			{
+				gui->confirm = 0;
+			}
+		}
+	}
+}
+
+/*--------------------------------------------------
+	void K_TickMidVote(void)
+
+		See header file for description.
+--------------------------------------------------*/
+void K_TickMidVote(void)
+{
+	UINT8 numVotes = 0;
+	UINT8 requiredVotes = 0;
+
+	if (g_midVote.active == false)
+	{
+		// No vote is currently running.
+		if (g_midVote.delay > 0)
+		{
+			// Decrement timer for allowing the next vote.
+			g_midVote.delay--;
+		}
+
+		return;
+	}
+
+	if (g_midVote.end > 0)
+	{
+		g_midVote.end++;
+
+		if (g_midVote.end > ZVOTE_GUI_SUCCESS)
+		{
+			if (g_midVote.endVotes >= g_midVote.endRequired)
+			{
+				K_MidVoteSuccess();
+			}
+			else
+			{
+				K_MidVoteFailure();
+			}
+		}
+
+		return;
+	}
+
+	numVotes = K_CountMidVotes();
+	requiredVotes = K_RequiredMidVotes();
+
+	if (numVotes >= requiredVotes
+		|| g_midVote.time > (unsigned)(cv_zvote_length.value * TICRATE))
+	{
+		// Vote finished.
+		// Start the ending animation.
+		g_midVote.end++;
+		g_midVote.endVotes = numVotes;
+		g_midVote.endRequired = requiredVotes;
+		return;
+	}
+
+	K_HandleMidVoteInput();
+	g_midVote.time++;
+}
+
+/*--------------------------------------------------
+	void K_CacheMidVotePatches(void)
+
+		See header file for description.
+--------------------------------------------------*/
+
+#define ZVOTE_PATCH_EXC_START (4)
+#define ZVOTE_PATCH_EXC_LOOP (3)
+#define ZVOTE_PATCH_BAR_SEGS (12)
+
+static patch_t *g_exclamationSlide = NULL;
+static patch_t *g_exclamationStart[ZVOTE_PATCH_EXC_LOOP] = {NULL};
+static patch_t *g_exclamation = NULL;
+static patch_t *g_exclamationLoop[ZVOTE_PATCH_EXC_LOOP] = {NULL};
+
+static patch_t *g_zBar[2] = {NULL};
+static patch_t *g_zBarEnds[2][2][2] = {NULL};
+
+void K_UpdateMidVotePatches(void)
+{
+	HU_UpdatePatch(&g_exclamationSlide, "TLSBA0");
+
+	HU_UpdatePatch(&g_exclamationStart[0], "TLSBB0");
+	HU_UpdatePatch(&g_exclamationStart[1], "TLSBC0");
+	HU_UpdatePatch(&g_exclamationStart[2], "TLSBD0");
+
+	HU_UpdatePatch(&g_exclamation, "TLSBE0");
+
+	HU_UpdatePatch(&g_exclamationLoop[0], "TLSBF0");
+	HU_UpdatePatch(&g_exclamationLoop[1], "TLSBG0");
+	HU_UpdatePatch(&g_exclamationLoop[2], "TLSBD0");
+
+	HU_UpdatePatch(&g_zBar[0], "TLBWE0");
+
+	HU_UpdatePatch(&g_zBarEnds[0][0][0], "TLBWC0");
+	HU_UpdatePatch(&g_zBarEnds[0][0][1], "TLBWD0");
+
+	HU_UpdatePatch(&g_zBarEnds[0][1][0], "TLBWA0");
+	HU_UpdatePatch(&g_zBarEnds[0][1][1], "TLBWB0");
+
+	HU_UpdatePatch(&g_zBar[1], "TLBXE0");
+
+	HU_UpdatePatch(&g_zBarEnds[1][0][0], "TLBXC0");
+	HU_UpdatePatch(&g_zBarEnds[1][0][1], "TLBXD0");
+
+	HU_UpdatePatch(&g_zBarEnds[1][1][0], "TLBXA0");
+	HU_UpdatePatch(&g_zBarEnds[1][1][1], "TLBXB0");
+}
+
+/*--------------------------------------------------
+	static void K_DrawMidVoteBar(fixed_t x, fixed_t y, INT32 flags, fixed_t fill, skincolornum_t color, boolean flipped)
+
+		Draws a bar
+
+	Input Arguments:-
+		voteType - The vote type to check.
+
+	Return:-
+		true if it uses a victim, otherwise false.
+--------------------------------------------------*/
+static void K_DrawMidVoteBar(fixed_t x, fixed_t y, INT32 flags, fixed_t fill, skincolornum_t color, boolean flipped)
+{
+	const SINT8 sign = (flipped == true) ? -1 : 1;
+	patch_t *bar = g_zBar[0];
+	UINT8 *clm = NULL;
+	INT32 i = INT32_MAX;
+
+	if (color > SKINCOLOR_NONE)
+	{
+		clm = R_GetTranslationColormap(TC_BLINK, color, GTC_CACHE);
+	}
+
+	for (i = 0; i < ZVOTE_PATCH_BAR_SEGS; i++)
+	{
+		bar = g_zBar[0];
+
+		if (i == 0)
+		{
+			bar = g_zBarEnds[0][flipped][0];
+		}
+		else if (i == ZVOTE_PATCH_BAR_SEGS - 1)
+		{
+			bar = g_zBarEnds[0][flipped][1];
+		}
+
+		if (fill < FRACUNIT)
+		{
+			V_DrawFixedPatch(
+				x, y,
+				FRACUNIT, flags,
+				bar, NULL
+			);
+		}
+
+		x += bar->width * FRACUNIT * sign;
+	}
+
+	if (fill > 0)
+	{
+		const INT32 fillSegs = FixedMul(fill, ZVOTE_PATCH_BAR_SEGS);
+
+		for (i = 0; i < fillSegs; i++)
+		{
+			x -= bar->width * FRACUNIT * sign;
+
+			bar = g_zBar[1];
+
+			if (i == fillSegs - 1)
+			{
+				bar = g_zBarEnds[1][flipped][0];
+			}
+			else if (i == 0)
+			{
+				bar = g_zBarEnds[1][flipped][1];
+			}
+
+			V_DrawFixedPatch(
+				x, y,
+				FRACUNIT, flags,
+				bar, clm
+			);
+		}
+	}
+}
+
+/*--------------------------------------------------
+	void K_DrawMidVote(void)
+
+		See header file for description.
+--------------------------------------------------*/
+void K_DrawMidVote(void)
+{
+	midVoteGUI_t *gui = NULL;
+	boolean pressed = false;
+
+	UINT8 id = UINT8_MAX;
+	fixed_t x = INT32_MAX, y = INT32_MAX;
+
+	INT32 i = INT32_MAX;
+
+	// FIXME: We need a splitscreen version of this HUD!
+	for (i = 0; i <= splitscreen; i++)
+	{
+		if (stplyr == &players[ g_localplayers[i] ])
+		{
+			id = i;
+			break;
+		}
+	}
+
+	if (id == UINT8_MAX)
+	{
+		// Player we're drawing doesn't control the
+		// vote locally, so we shouldn't draw anything.
+		return;
+	}
+
+	pressed = G_PlayerInputDown(id, gc_z, 0);
+	gui = &g_midVote.gui[id];
+
+	if (gui->slide == 0)
+	{
+		// Draw the exclamation indicator.
+		patch_t *exc = g_exclamation;
+
+		x = 295 * FRACUNIT;
+		y = 127 * FRACUNIT;
+
+		if (g_midVote.time < ZVOTE_GUI_SLIDE)
+		{
+			x += ((ZVOTE_GUI_SLIDE - g_midVote.time) * (ZVOTE_GUI_SLIDE - g_midVote.time)) << (FRACBITS - 1);
+			exc = g_exclamationSlide;
+		}
+		else
+		{
+			const tic_t spd = 2;
+			const tic_t anim = (g_midVote.time - ZVOTE_GUI_SLIDE) / spd;
+			const UINT8 frame = anim % (ZVOTE_PATCH_EXC_LOOP + ZVOTE_GUI_SLIDE);
+
+			if (frame < ZVOTE_PATCH_EXC_LOOP)
+			{
+				if (anim > ZVOTE_GUI_SLIDE)
+				{
+					exc = g_exclamationLoop[frame];
+				}
+				else
+				{
+					exc = g_exclamationStart[frame];
+				}
+			}
+		}
+
+		V_DrawFixedPatch(
+			x, y, FRACUNIT,
+			V_SNAPTOBOTTOM|V_SNAPTORIGHT|V_SPLITSCREEN,
+			exc, NULL
+		);
+		K_drawButton(
+			x - (4 * FRACUNIT),
+			y + ((exc->height - kp_button_z[1][0]->height) * FRACUNIT),
+			V_SNAPTOBOTTOM|V_SNAPTORIGHT|V_SPLITSCREEN,
+			kp_button_z[1], pressed
+		);
+	}
+	else
+	{
+		// Draw the actual vote status
+		static const char *voteTitles[MVT__MAX] = {
+			"KICK PLAYER?",		// MVT_KICK
+			"SKIP LEVEL?"		// MVT_RTV
+		};
+
+		const fixed_t barHalf = (g_zBar[0]->width * FRACUNIT * (ZVOTE_PATCH_BAR_SEGS - 1)) >> 1;
+		const boolean blink = (gametic & 1);
+		boolean drawButton = blink;
+		boolean drawVotes = blink;
+
+		fixed_t strWidth = 0;
+
+		fixed_t fill = FRACUNIT;
+		skincolornum_t fillColor = SKINCOLOR_NONE;
+
+		x = (BASEVIDWIDTH * FRACUNIT) - barHalf;
+		y = 144 * FRACUNIT;
+
+		if (gui->slide < ZVOTE_GUI_SLIDE)
+		{
+			x += ((ZVOTE_GUI_SLIDE - gui->slide) * (ZVOTE_GUI_SLIDE - gui->slide)) << (FRACBITS - 1);
+		}
+
+		// Hold bar
+		if (g_midVote.end > 0)
+		{
+			if (g_midVote.endVotes >= g_midVote.endRequired)
+			{
+				fillColor = SKINCOLOR_GREEN;
+			}
+			else
+			{
+				fillColor = SKINCOLOR_RED;
+			}
+		}
+		else
+		{
+			if (gui->confirm < ZVOTE_GUI_CONFIRM)
+			{
+				fill = FixedDiv(gui->confirm, ZVOTE_GUI_CONFIRM);
+				fillColor = SKINCOLOR_WHITE;
+			}
+		}
+		K_DrawMidVoteBar(
+			x - barHalf, y,
+			V_SNAPTOBOTTOM|V_SNAPTORIGHT|V_SPLITSCREEN,
+			fill, fillColor,
+			(id & 1)
+		);
+
+		// Vote main label
+		strWidth = V__OneScaleStringWidth(
+			FRACUNIT,
+			V_SNAPTOBOTTOM|V_SNAPTORIGHT|V_SPLITSCREEN,
+			KART_FONT, voteTitles[g_midVote.type]
+		);
+
+		V__DrawOneScaleString(
+			x - (strWidth >> 1),
+			y - (18 * FRACUNIT),
+			FRACUNIT,
+			V_SNAPTOBOTTOM|V_SNAPTORIGHT|V_SPLITSCREEN, NULL,
+			KART_FONT, voteTitles[g_midVote.type]
+		);
+
+		// Vote extra text
+		switch (g_midVote.type)
+		{
+			case MVT_KICK:
+			{
+				// Draw victim name
+				if (g_midVote.victim != NULL)
+				{
+					strWidth = V__OneScaleStringWidth(
+						FRACUNIT,
+						V_SNAPTOBOTTOM|V_SNAPTORIGHT|V_SPLITSCREEN|V_6WIDTHSPACE,
+						TINY_FONT, player_names[g_midVote.victim - players]
+					);
+
+					V__DrawOneScaleString(
+						x - (strWidth >> 1),
+						y + (18 * FRACUNIT),
+						FRACUNIT,
+						V_SNAPTOBOTTOM|V_SNAPTORIGHT|V_SPLITSCREEN|V_6WIDTHSPACE, NULL,
+						TINY_FONT, player_names[g_midVote.victim - players]
+					);
+				}
+				break;
+			}
+			default:
+			{
+				break;
+			}
+		}
+
+		// Button
+		if (g_midVote.end == 0)
+		{
+			drawButton = true;
+		}
+
+		if (K_PlayerIDAllowedInMidVote(g_localplayers[id]) == false)
+		{
+			// Player isn't allowed to vote, so don't show it.
+			drawButton = false;
+		}
+
+		if (drawButton == true)
+		{
+			K_drawButton(
+				x - (20 * FRACUNIT),
+				y - (2 * FRACUNIT),
+				V_SNAPTOBOTTOM|V_SNAPTORIGHT|V_SPLITSCREEN,
+				kp_button_z[0], pressed
+			);
+		}
+
+		// Vote count
+		if (g_midVote.end == 0)
+		{
+			if (gui->confirm == ZVOTE_GUI_CONFIRM || pressed == false)
+			{
+				drawVotes = true;
+			}
+		}
+		
+		if (drawVotes == true)
+		{
+			const fixed_t voteY = y + (2 * FRACUNIT);
+			fixed_t voteX = x + (8 * FRACUNIT);
+			fixed_t voteWidth = 0;
+			UINT8 votes = 0;
+			UINT8 require = 0;
+
+			if (g_midVote.end > 0)
+			{
+				votes = g_midVote.endVotes;
+				require = g_midVote.endRequired;
+			}
+			else
+			{
+				votes = K_CountMidVotes();
+				require = K_RequiredMidVotes();
+			}
+
+			voteWidth = V__OneScaleStringWidth(
+				FRACUNIT,
+				V_SNAPTOBOTTOM|V_SNAPTORIGHT|V_SPLITSCREEN,
+				OPPRF_FONT, va("%d/%d", votes, require)
+			);
+
+			V__DrawOneScaleString(
+				voteX - (voteWidth >> 1),
+				voteY,
+				FRACUNIT,
+				V_SNAPTOBOTTOM|V_SNAPTORIGHT|V_SPLITSCREEN, NULL,
+				OPPRF_FONT, va("%d/%d", votes, require)
+			);
+		}
+	}
+}

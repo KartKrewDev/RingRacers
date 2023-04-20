@@ -62,6 +62,7 @@
 #include "g_party.h"
 #include "k_vote.h"
 #include "k_serverstats.h"
+#include "k_zvote.h"
 
 // cl loading screen
 #include "v_video.h"
@@ -2308,6 +2309,7 @@ static void CL_ConnectToServer(void)
 	Schedule_Clear();
 	Automate_Clear();
 	K_ClearClientPowerLevels();
+	K_ResetMidVote();
 
 	pnumnodes = 1;
 	oldtic = 0;
@@ -3151,7 +3153,7 @@ static void Command_Kick(void)
 
 		if (COM_Argc() == 2)
 		{
-			WRITEUINT8(p, KICK_MSG_GO_AWAY);
+			WRITEUINT8(p, KICK_MSG_KICKED);
 			SendNetXCmd(XD_KICK, &buf, 2);
 		}
 		else
@@ -3253,7 +3255,7 @@ static void Got_KickCmd(UINT8 **p, INT32 playernum)
 	// to keep it all in one place.
 	if (server)
 	{
-		if (msg == KICK_MSG_GO_AWAY || msg == KICK_MSG_CUSTOM_KICK)
+		if (msg == KICK_MSG_KICKED || msg == KICK_MSG_CUSTOM_KICK)
 		{
 			// Kick as a temporary ban.
 			banMinutes = cv_kicktime.value;
@@ -3293,7 +3295,7 @@ static void Got_KickCmd(UINT8 **p, INT32 playernum)
 
 	switch (msg)
 	{
-		case KICK_MSG_GO_AWAY:
+		case KICK_MSG_KICKED:
 			HU_AddChatText(va("\x82*%s has been kicked (No reason given)", player_names[pnum]), false);
 			kickreason = KR_KICK;
 			break;
@@ -3692,6 +3694,7 @@ void SV_ResetServer(void)
 	Automate_Clear();
 	K_ClearClientPowerLevels();
 	G_ObliterateParties();
+	K_ResetMidVote();
 
 	memset(splitscreen_invitations, -1, sizeof splitscreen_invitations);
 	memset(player_name_changes, 0, sizeof player_name_changes);
@@ -3788,6 +3791,7 @@ void D_QuitNetGame(void)
 	Automate_Clear();
 	K_ClearClientPowerLevels();
 	G_ObliterateParties();
+	K_ResetMidVote();
 
 	DEBFILE("===========================================================================\n"
 	        "                         Log finish\n"

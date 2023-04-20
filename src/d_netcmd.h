@@ -163,7 +163,7 @@ typedef enum
 	XD_LUAVAR,      // 20
 	XD_LUAFILE,     // 21
 
-	// SRB2Kart
+	// Ring Racers
 	XD_SETUPVOTE,   // 22
 	XD_MODIFYVOTE,  // 23
 	XD_PICKVOTE,    // 24
@@ -181,6 +181,8 @@ typedef enum
 	XD_AUTOMATE,    // 36
 	XD_REQMAPQUEUE, // 37
 	XD_MAPQUEUE,	// 38
+	XD_CALLZVOTE,   // 39
+	XD_SETZVOTE,    // 40
 
 	MAXNETXCMD
 } netxcmd_t;

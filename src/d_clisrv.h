@@ -458,15 +458,20 @@ extern consvar_t cv_playbackspeed;
 #define FILETXHEADER        offsetof(filetx_pak, data)
 #define BASESERVERTICSSIZE  offsetof(doomdata_t, u.serverpak.cmds[0])
 
-#define KICK_MSG_GO_AWAY     1
-#define KICK_MSG_CON_FAIL    2
-#define KICK_MSG_PLAYER_QUIT 3
-#define KICK_MSG_TIMEOUT     4
-#define KICK_MSG_BANNED      5
-#define KICK_MSG_PING_HIGH   6
-#define KICK_MSG_CUSTOM_KICK 7
-#define KICK_MSG_CUSTOM_BAN  8
-#define KICK_MSG_SIGFAIL     9
+typedef enum
+{
+	KICK_MSG_PLAYER_QUIT = 0,	// Player intentionally left
+	KICK_MSG_KICKED,			// Server kick message w/ no reason
+	KICK_MSG_CUSTOM_KICK,		// Server kick message w/ reason
+	KICK_MSG_VOTE_KICK,			// Vote kick message
+	KICK_MSG_BANNED,			// Ban message w/ no reason
+	KICK_MSG_CUSTOM_BAN,		// Ban message w/ custom reason
+	KICK_MSG_TIMEOUT,			// Player's connection timed out
+	KICK_MSG_PING_HIGH,			// Player hit the ping limit
+	KICK_MSG_CON_FAIL,			// Player failed to resync game state
+	KICK_MSG_SIGFAIL,			// Player failed signature check
+	KICK_MSG__MAX				// Number of unique messages
+} kickmsg_t;
 
 typedef enum
 {
@@ -476,7 +481,6 @@ typedef enum
 	KR_TIMEOUT       = 4, //Connection Timeout
 	KR_BAN           = 5, //Banned by server
 	KR_LEAVE         = 6, //Quit the game
-
 } kickreason_t;
 
 /* the max number of name changes in some time period */
