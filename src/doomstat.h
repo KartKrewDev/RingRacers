@@ -386,6 +386,7 @@ struct staffbrief_t
 };
 
 #define MAXMUSNAMES 3 // maximum definable music tracks per level
+#define MAXHEADERFOLLOWERS 32
 
 /** Map header information.
   */
@@ -458,9 +459,9 @@ struct mapheader_t
 	boolean use_light_angle;			///< When false, wall lighting is evenly distributed. When true, wall lighting is directional.
 	angle_t light_angle;				///< Angle of directional wall lighting.
 
-	// Freed animal information
-	UINT8 numFlickies;					///< Internal. For freed flicky support.
-	mobjtype_t *flickies;				///< List of freeable flickies in this level. Allocated dynamically for space reasons. Be careful.
+	// Audience information
+	UINT8 numFollowers;					///< Internal. For audience support.
+	UINT16 *followers;					///< List of audience followers in this level. Allocated dynamically for space reasons. Be careful.
 
 	// Script information
 	char runsoc[33];					///< SOC to execute at start of level (32 character limit instead of 63)

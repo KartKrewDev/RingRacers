@@ -347,31 +347,50 @@ FUNCNORETURN static ATTRNORETURN void CorruptMapError(const char *msg)
 	I_Error("Invalid or corrupt map.\nLook in log file or text console for technical details.");
 }
 
-/** Sets a header's flickies to be equivalent to the original Freed Animals
+/** Sets a header's followers to the default list
   *
-  * \param i The header to set flickies for
+  * \param i The header to set followers for
   */
-void P_SetDemoFlickies(INT16 i)
+void P_SetDefaultHeaderFollowers(UINT16 i)
 {
-	mapheaderinfo[i]->numFlickies = 5;
-	mapheaderinfo[i]->flickies = Z_Realloc(mapheaderinfo[i]->flickies, 5*sizeof(mobjtype_t), PU_STATIC, NULL);
-	mapheaderinfo[i]->flickies[0] = MT_FLICKY_02/*MT_BUNNY*/;
-	mapheaderinfo[i]->flickies[1] = MT_FLICKY_01/*MT_BIRD*/;
-	mapheaderinfo[i]->flickies[2] = MT_FLICKY_12/*MT_MOUSE*/;
-	mapheaderinfo[i]->flickies[3] = MT_FLICKY_11/*MT_COW*/;
-	mapheaderinfo[i]->flickies[4] = MT_FLICKY_03/*MT_CHICKEN*/;
+	static INT16 defaultfollowers[MAXHEADERFOLLOWERS];
+	static UINT8 validdefaultfollowers = 0;
+
+	if (validdefaultfollowers == 0)
+	{
+		const char *defaultfollowernames[] =
+		{
+			"Flicky",
+			"Chao",
+			NULL
+		};
+
+		for (validdefaultfollowers = 0; defaultfollowernames[validdefaultfollowers]; validdefaultfollowers++)
+		{
+			defaultfollowers[validdefaultfollowers] = K_FollowerAvailable(defaultfollowernames[validdefaultfollowers]);
+		}
+
+		I_Assert(validdefaultfollowers != 0);
+	}
+
+	mapheaderinfo[i]->followers = Z_Realloc(mapheaderinfo[i]->followers, sizeof(UINT16) * validdefaultfollowers, PU_STATIC, NULL);
+
+	for (mapheaderinfo[i]->numFollowers = 0; mapheaderinfo[i]->numFollowers < validdefaultfollowers; mapheaderinfo[i]->numFollowers++)
+	{
+		mapheaderinfo[i]->followers[mapheaderinfo[i]->numFollowers] = defaultfollowers[mapheaderinfo[i]->numFollowers];
+	}
 }
 
-/** Clears a header's flickies
+/** Clears a header's followers
   *
-  * \param i The header to clear flickies for
+  * \param i The header to clear followers for
   */
-void P_DeleteFlickies(INT16 i)
+void P_DeleteHeaderFollowers(UINT16 i)
 {
-	if (mapheaderinfo[i]->flickies)
-		Z_Free(mapheaderinfo[i]->flickies);
-	mapheaderinfo[i]->flickies = NULL;
-	mapheaderinfo[i]->numFlickies = 0;
+	if (mapheaderinfo[i]->followers)
+		Z_Free(mapheaderinfo[i]->followers);
+	mapheaderinfo[i]->followers = NULL;
+	mapheaderinfo[i]->numFollowers = 0;
 }
 
 #define NUMLAPS_DEFAULT 3
@@ -419,10 +438,10 @@ static void P_ClearSingleMapHeaderInfo(INT16 num)
 	mapheaderinfo[num]->light_contrast = 16;
 	mapheaderinfo[num]->use_light_angle = false;
 	mapheaderinfo[num]->light_angle = 0;
-#if 1 // equivalent to "FlickyList = DEMO"
-	P_SetDemoFlickies(num);
-#else // equivalent to "FlickyList = NONE"
-	P_DeleteFlickies(num);
+#if 1 // equivalent to "Followers = DEFAULT"
+	P_SetDefaultHeaderFollowers(num);
+#else
+	P_DeleteHeaderFollowers(num);
 #endif
 
 	mapheaderinfo[num]->mapvisited = 0;
@@ -486,7 +505,7 @@ void P_AllocMapHeader(INT16 i)
 		mapheaderinfo[i]->ghostCount = 0;
 		mapheaderinfo[i]->cup = NULL;
 		mapheaderinfo[i]->mainrecord = NULL;
-		mapheaderinfo[i]->flickies = NULL;
+		mapheaderinfo[i]->followers = NULL;
 		nummapheaders++;
 	}
 	P_ClearSingleMapHeaderInfo(i);

@@ -10234,13 +10234,8 @@ mobj_t *P_InternalFlickySpawn(mobj_t *actor, mobjtype_t flickytype, fixed_t momz
 
 	if (!flickytype)
 	{
-		if (!mapheaderinfo[gamemap-1] || !mapheaderinfo[gamemap-1]->numFlickies) // No mapheader, no shoes, no service.
-			return NULL;
-		else
-		{
-			INT32 prandom = P_RandomKey(PR_UNDEFINED, mapheaderinfo[gamemap-1]->numFlickies);
-			flickytype = mapheaderinfo[gamemap-1]->flickies[prandom];
-		}
+		// The flicky list system has been removed, so no backups are possible.
+		return NULL;
 	}
 
 	if (moveforward)

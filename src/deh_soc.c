@@ -187,7 +187,7 @@ void clear_levels(void)
 		// (no need to set num to 0, we're freeing the entire header shortly)
 		Z_Free(mapheaderinfo[nummapheaders]->customopts);
 
-		P_DeleteFlickies(nummapheaders);
+		P_DeleteHeaderFollowers(nummapheaders);
 
 		Z_Free(mapheaderinfo[nummapheaders]->mainrecord);
 
@@ -1042,77 +1042,47 @@ void readlevelheader(MYFILE *f, char * name)
 			// Now go to uppercase
 			strupr(word2);
 
-			// List of flickies that are be freed in this map
-			if (fastcmp(word, "FLICKYLIST") || fastcmp(word, "ANIMALLIST"))
+			// List of followers that are be freed in this map
+			if (fastcmp(word, "FOLLOWERS"))
 			{
 				if (fastcmp(word2, "NONE"))
-					P_DeleteFlickies(num);
-				else if (fastcmp(word2, "DEMO"))
-					P_SetDemoFlickies(num);
-				else if (fastcmp(word2, "ALL"))
-				{
-					mobjtype_t tmpflickies[MAXFLICKIES];
-
-					for (mapheaderinfo[num]->numFlickies = 0;
-					((mapheaderinfo[num]->numFlickies < MAXFLICKIES) && FLICKYTYPES[mapheaderinfo[num]->numFlickies].type);
-					mapheaderinfo[num]->numFlickies++)
-						tmpflickies[mapheaderinfo[num]->numFlickies] = FLICKYTYPES[mapheaderinfo[num]->numFlickies].type;
-
-					if (mapheaderinfo[num]->numFlickies) // just in case...
-					{
-						size_t newsize = sizeof(mobjtype_t) * mapheaderinfo[num]->numFlickies;
-						mapheaderinfo[num]->flickies = Z_Realloc(mapheaderinfo[num]->flickies, newsize, PU_STATIC, NULL);
-						M_Memcpy(mapheaderinfo[num]->flickies, tmpflickies, newsize);
-					}
-				}
+					P_DeleteHeaderFollowers(num);
+				else if (fastcmp(word2, "DEFAULT"))
+					P_SetDefaultHeaderFollowers(num);
 				else
 				{
-					mobjtype_t tmpflickies[MAXFLICKIES];
-					mapheaderinfo[num]->numFlickies = 0;
+					INT16 tmpfollowers[MAXHEADERFOLLOWERS];
+					mapheaderinfo[num]->numFollowers = 0;
 					tmp = strtok(word2,",");
-					// get up to the first MAXFLICKIES flickies
+					// get up to the first MAXHEADERFOLLOWERS followers
 					do {
-						if (mapheaderinfo[num]->numFlickies == MAXFLICKIES) // never going to get above that number
+						if (mapheaderinfo[num]->numFollowers == MAXHEADERFOLLOWERS) // never going to get above that number
 						{
-							deh_warning("Level header %d: too many flickies\n", num);
+							deh_warning("Level header %d: too many followers\n", num);
 							break;
 						}
 
-						if (fastncmp(tmp, "MT_", 3)) // support for specified mobjtypes...
 						{
-							i = get_mobjtype(tmp);
-							if (!i)
+							i = K_FollowerAvailable(tmp);
+							if (i == -1)
 							{
-								//deh_warning("Level header %d: unknown flicky mobj type %s\n", num, tmp); -- no need for this line as get_mobjtype complains too
+								deh_warning("Level header %d: unknown follower selection %s\n", num, tmp);
 								continue;
 							}
-							tmpflickies[mapheaderinfo[num]->numFlickies] = i;
+							tmpfollowers[mapheaderinfo[num]->numFollowers] = i;
+							mapheaderinfo[num]->numFollowers++;
 						}
-						else // ...or a quick, limited selection of default flickies!
-						{
-							for (i = 0; FLICKYTYPES[i].name; i++)
-								if (fastcmp(tmp, FLICKYTYPES[i].name))
-									break;
-
-							if (!FLICKYTYPES[i].name)
-							{
-								deh_warning("Level header %d: unknown flicky selection %s\n", num, tmp);
-								continue;
-							}
-							tmpflickies[mapheaderinfo[num]->numFlickies] = FLICKYTYPES[i].type;
-						}
-						mapheaderinfo[num]->numFlickies++;
 					} while ((tmp = strtok(NULL,",")) != NULL);
 
-					if (mapheaderinfo[num]->numFlickies)
+					if (mapheaderinfo[num]->numFollowers)
 					{
-						size_t newsize = sizeof(mobjtype_t) * mapheaderinfo[num]->numFlickies;
-						mapheaderinfo[num]->flickies = Z_Realloc(mapheaderinfo[num]->flickies, newsize, PU_STATIC, NULL);
+						size_t newsize = sizeof(UINT16) * mapheaderinfo[num]->numFollowers;
+						mapheaderinfo[num]->followers = Z_Realloc(mapheaderinfo[num]->followers, newsize, PU_STATIC, NULL);
 						// now we add them to the list!
-						M_Memcpy(mapheaderinfo[num]->flickies, tmpflickies, newsize);
+						M_Memcpy(mapheaderinfo[num]->followers, tmpfollowers, newsize);
 					}
 					else
-						deh_warning("Level header %d: no valid flicky types found\n", num);
+						deh_warning("Level header %d: no valid follower types found\n", num);
 				}
 			}
 
