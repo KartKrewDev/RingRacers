@@ -369,7 +369,10 @@ void K_HandleFollower(player_t *player)
 		{
 			// finally, add a cool floating effect to the z height.
 			// not stolen from k_kart I swear!!
-			fixed_t sine = FixedMul(fl.bobamp, FINESINE(((FixedMul(4 * M_TAU_FIXED, fl.bobspeed) * leveltime) >> ANGLETOFINESHIFT) & FINEMASK));
+			fixed_t sine = FixedMul(fl.bobamp,
+				FINESINE(((
+					FixedMul(4 * M_TAU_FIXED, fl.bobspeed) * leveltime
+				) >> ANGLETOFINESHIFT) & FINEMASK));
 			sz += FixedMul(player->mo->scale, sine) * P_MobjFlip(player->mo);
 			break;
 		}
