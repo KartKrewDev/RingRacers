@@ -1807,8 +1807,10 @@ static void ParseTextmapThingParameter(UINT32 i, const char *param, const char *
 		size_t argnum = atol(param + 9);
 		if (argnum >= NUMMAPTHINGSTRINGARGS)
 			return;
-		mapthings[i].stringargs[argnum] = Z_Malloc(strlen(val) + 1, PU_LEVEL, NULL);
-		M_Memcpy(mapthings[i].stringargs[argnum], val, strlen(val) + 1);
+		size_t len = strlen(val);
+		mapthings[i].stringargs[argnum] = Z_Malloc(len + 1, PU_LEVEL, NULL);
+		M_Memcpy(mapthings[i].stringargs[argnum], val, len);
+		mapthings[i].stringargs[argnum][len] = '\0';
 	}
 	else if (fastncmp(param, "arg", 3) && strlen(param) > 3)
 	{
