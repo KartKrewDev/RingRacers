@@ -30,7 +30,7 @@ Obj_RandomAudienceInit
 	UINT8 numref = 0;
 	INT32 followerpick = 0;
 
-	P_SetScale(mobj, (mobj->destscale <<= 1));
+	P_SetScale(mobj, (mobj->destscale *= 3));
 
 	audience_mainstate(mobj) = S_NULL;
 
