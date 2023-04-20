@@ -114,6 +114,10 @@ void Obj_PlayerUsedRingShooter(mobj_t *base, player_t *player);
 void Obj_RingShooterDelete(mobj_t *mo);
 void Obj_UpdateRingShooterFace(mobj_t *part);
 
+/* Follower Audience */
+void Obj_RandomAudienceInit(mobj_t * mobj, mapthing_t *mthing);
+void Obj_RandomAudienceThink(mobj_t * mobj);
+
 #ifdef __cplusplus
 } // extern "C"
 #endif

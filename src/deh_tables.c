@@ -3860,14 +3860,6 @@ const char *const STATE_LIST[] = { // array length left dynamic for sanity testi
 	"S_DEZLASER_TRAIL4",
 	"S_DEZLASER_TRAIL5",
 
-	// Audience Members
-	"S_RANDOMAUDIENCE",
-	"S_AUDIENCE_CHAO_CHEER1",
-	"S_AUDIENCE_CHAO_CHEER2",
-	"S_AUDIENCE_CHAO_WIN1",
-	"S_AUDIENCE_CHAO_WIN2",
-	"S_AUDIENCE_CHAO_LOSE",
-
 	// 1.0 Kart Decoratives
 	"S_FLAYM1",
 	"S_FLAYM2",
