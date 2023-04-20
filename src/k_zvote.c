@@ -125,7 +125,6 @@ static void Command_CallVote(void)
 
 	voteVariableStr = COM_Argv(2);
 	voteVariable = atoi(voteVariableStr);
-	CONS_Printf("voteVariable: %d\n", voteVariable);
 
 	if (K_MidVoteTypeUsesVictim(voteType) == true)
 	{
@@ -134,14 +133,12 @@ static void Command_CallVote(void)
 			if (strcasecmp(player_names[i], voteVariableStr) == 0)
 			{
 				voteVariable = i;
-				CONS_Printf("voteVariable as player name: %s\n", player_names[i]);
 				break;
 			}
 		}
 
 		if (voteVariable >= 0 && voteVariable < MAXPLAYERS)
 		{
-			CONS_Printf("victim set to %d\n", voteVariable);
 			victim = &players[voteVariable];
 		}
 	}
