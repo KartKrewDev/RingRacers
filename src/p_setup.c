@@ -362,6 +362,7 @@ void P_SetDefaultHeaderFollowers(UINT16 i)
 		{
 			"Flicky",
 			"Chao",
+			"Motobuddy",
 			NULL
 		};
 
