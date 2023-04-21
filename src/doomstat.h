@@ -581,8 +581,8 @@ enum TypeOfLevel
 	// Gametypes
 	TOL_RACE	 = 0x0001, ///< Race
 	TOL_BATTLE	 = 0x0002, ///< Battle
-	TOL_BOSS	 = 0x0004, ///< Boss (variant of battle, but forbidden)
-	TOL_SPECIAL	 = 0x0008, ///< Special Stage (variant of race, but forbidden)
+	TOL_SPECIAL	 = 0x0004, ///< Special Stage (variant of race, but forbidden)
+	TOL_VERSUS	 = 0x0008, ///< Versus (variant of battle, but forbidden)
 	TOL_TUTORIAL = 0x0010, ///< Tutorial (variant of race, but forbidden)
 
 	// Modifiers

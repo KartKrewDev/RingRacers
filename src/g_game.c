@@ -3388,7 +3388,7 @@ static gametype_t defaultgametypes[] =
 		"Versus",
 		"GT_VERSUS",
 		GTR_BOSS|GTR_SPHERES|GTR_BUMPERS|GTR_POINTLIMIT|GTR_CLOSERPLAYERS|GTR_NOCUPSELECT|GTR_ENCORE,
-		TOL_BOSS,
+		TOL_VERSUS,
 		int_scoreortimeattack,
 		0,
 		0,
@@ -3546,8 +3546,8 @@ char *G_PrepareGametypeConstant(const char *newgtconst)
 tolinfo_t TYPEOFLEVEL[NUMTOLNAMES] = {
 	{"RACE",TOL_RACE},
 	{"BATTLE",TOL_BATTLE},
-	{"BOSS",TOL_BOSS},
 	{"SPECIAL",TOL_SPECIAL},
+	{"VERSUS",TOL_VERSUS},
 	{"TUTORIAL",TOL_TUTORIAL},
 	{"TV",TOL_TV},
 	{NULL, 0}
