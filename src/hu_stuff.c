@@ -305,6 +305,10 @@ void HU_Init(void)
 		PR   ("MKFNT");
 		REG;
 
+		ADIM (TIMER);
+		PR   ("TMFNT");
+		REG;
+
 		ADIM (LT);
 		PR   ("GAMEM");
 		REG;

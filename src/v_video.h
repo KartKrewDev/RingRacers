@@ -364,14 +364,14 @@ void V_DrawProfileNum(INT32 x, INT32 y, INT32 flags, UINT8 num);
 	V__IntegerStringWidth ( FRACUNIT,0,CRED_FONT,string )
 
 // SRB2Kart
-#define V_DrawKartString( x,y,option,string ) \
-	V__DrawDupxString (x,y,FRACUNIT,option,NULL,KART_FONT,string)
+#define V_DrawTimerString( x,y,option,string ) \
+	V__DrawDupxString (x,y,FRACUNIT,option,NULL,TIMER_FONT,string)
 
-#define V_KartStringWidth( string,option ) \
-	V__IntegerStringWidth ( FRACUNIT,option,KART_FONT,string )
+#define V_TimerStringWidth( string,option ) \
+	V__IntegerStringWidth ( FRACUNIT,option,TIMER_FONT,string )
 
-void V_DrawCenteredKartString(INT32 x, INT32 y, INT32 option, const char *string);
-void V_DrawRightAlignedKartString(INT32 x, INT32 y, INT32 option, const char *string);
+void V_DrawCenteredTimerString(INT32 x, INT32 y, INT32 option, const char *string);
+void V_DrawRightAlignedTimerString(INT32 x, INT32 y, INT32 option, const char *string);
 
 #define V_DrawGamemodeString( x,y,option,cm,string ) \
 	V__DrawDupxString (x,y,FRACUNIT,option,cm,GM_FONT,string)

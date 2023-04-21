@@ -1701,7 +1701,7 @@ static void M_DrawProfileCard(INT32 x, INT32 y, boolean greyedout, profile_t *p)
 	if (p != NULL)
 	{
 		V_DrawFixedPatch((x+30)*FRACUNIT, (y+84)*FRACUNIT, FRACUNIT, 0, pwrlv, colormap);
-		V_DrawCenteredKartString(x+30, y+87, 0, va("%d", p->wins));
+		V_DrawCenteredTimerString(x+30, y+87, 0, va("%d", p->wins));
 	}
 
 
@@ -3839,7 +3839,7 @@ void M_DrawItemToggles(void)
 				V_DrawScaledPatch(onx-1, ony-2, 0, W_CachePatchName("K_ITMUL", PU_CACHE));
 				V_DrawScaledPatch(onx-1, ony-2, translucent, W_CachePatchName(K_GetItemPatch(currentMenu->menuitems[itemOn].mvar1, false), PU_CACHE));
 				V_DrawScaledPatch(onx+27, ony+39, translucent, W_CachePatchName("K_ITX", PU_CACHE));
-				V_DrawKartString(onx+37, ony+34, translucent, va("%d", drawnum));
+				V_DrawTimerString(onx+37, ony+34, translucent, va("%d", drawnum));
 			}
 			else
 				V_DrawScaledPatch(onx-1, ony-2, translucent, W_CachePatchName(K_GetItemPatch(currentMenu->menuitems[itemOn].mvar1, false), PU_CACHE));
@@ -5559,7 +5559,7 @@ challengedesc:
 		}
 
 		V_DrawFixedPatch((8+offs)*FRACUNIT, 5*FRACUNIT, FRACUNIT, 0, key, NULL);
-		V_DrawKartString((27+offs), 9-challengesmenu.unlockcount[CC_CHAOANIM], 0, va("%u", gamedata->chaokeys));
+		V_DrawTimerString((27+offs), 9-challengesmenu.unlockcount[CC_CHAOANIM], 0, va("%u", gamedata->chaokeys));
 
 		offs = challengekeybarwidth;
 		if (gamedata->chaokeys < GDMAX_CHAOKEYS)
@@ -5577,7 +5577,7 @@ challengedesc:
 			challengesmenu.unlockcount[CC_UNLOCKED] + challengesmenu.unlockcount[CC_TALLY],
 			challengesmenu.unlockcount[CC_TOTAL]
 			);
-		V_DrawRightAlignedKartString(BASEVIDWIDTH-7, 9-challengesmenu.unlockcount[CC_ANIM], 0, str);
+		V_DrawRightAlignedTimerString(BASEVIDWIDTH-7, 9-challengesmenu.unlockcount[CC_ANIM], 0, str);
 	}
 
 	// Name bar

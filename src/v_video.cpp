@@ -2800,16 +2800,16 @@ fixed_t V_DrawPingNum(fixed_t x, fixed_t y, INT32 flags, INT32 num, const UINT8 
 	return x;
 }
 
-void V_DrawCenteredKartString(INT32 x, INT32 y, INT32 option, const char *string)
+void V_DrawCenteredTimerString(INT32 x, INT32 y, INT32 option, const char *string)
 {
-	x -= V_KartStringWidth(string, option)/2;
-	V_DrawKartString(x, y, option, string);
+	x -= V_TimerStringWidth(string, option)/2;
+	V_DrawTimerString(x, y, option, string);
 }
 
-void V_DrawRightAlignedKartString(INT32 x, INT32 y, INT32 option, const char *string)
+void V_DrawRightAlignedTimerString(INT32 x, INT32 y, INT32 option, const char *string)
 {
-	x -= V_KartStringWidth(string, option);
-	V_DrawKartString(x, y, option, string);
+	x -= V_TimerStringWidth(string, option);
+	V_DrawTimerString(x, y, option, string);
 }
 
 void V_DrawCenteredGamemodeString(INT32 x, INT32 y, INT32 option, const UINT8 *colormap, const char *string)

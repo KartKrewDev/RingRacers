@@ -37,6 +37,11 @@ extern "C" {
 
 #define KART_FONTSIZE (KART_FONTEND - KART_FONTSTART + 1)
 
+#define TIMER_FONTSTART '"' // the first font character
+#define TIMER_FONTEND '9'
+
+#define TIMER_FONTSIZE (TIMER_FONTEND - TIMER_FONTSTART + 1)
+
 #define AZ_FONTSTART 'A' // the first font character
 #define AZ_FONTEND 'Z'
 
@@ -77,6 +82,7 @@ enum
 	X	(PROFNUM),
 
 	X      (KART),
+	X     (TIMER),
 	X        (GM),
 	X      (LSHI),
 	X     (LSLOW),

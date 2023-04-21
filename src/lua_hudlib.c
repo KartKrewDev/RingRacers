@@ -984,7 +984,7 @@ static int libd_drawKartString(lua_State *L)
 	if (LUA_HUD_IsDrawListValid(list))
 		LUA_HUD_AddDrawKartString(list, x, y, str, flags);
 	else
-		V_DrawKartString(x, y, flags, str);
+		V_DrawTimerString(x, y, flags, str);
 	return 0;
 }
 
