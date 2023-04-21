@@ -43,11 +43,21 @@ Obj_AudienceInit
 			// From mapthing
 			char *stringcopy = Z_StrDup(mthing->stringargs[0]);
 			char *tok = strtok(stringcopy, " ,");
+			char *c; // for erasing underscores
 
 			numref = 0;
 			while (tok && numref < MAXHEADERFOLLOWERS)
 			{
-				tempreflist[numref++] = K_FollowerAvailable(tok);
+				// Match follower name conversion
+				for (c = tok; *c; c++)
+				{
+					if (*c != '_')
+						continue;
+					*c = ' ';
+				}
+
+				if ((tempreflist[numref++] = K_FollowerAvailable(tok)) == -1)
+					CONS_Alert(CONS_WARNING, "Mapthing %s: Follower \"%s\" is invalid!\n", sizeu1(mthing-mapthings), tok);
 				tok = strtok(NULL, " ,");
 			}
 
