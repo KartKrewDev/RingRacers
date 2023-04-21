@@ -12244,10 +12244,11 @@ static boolean P_SetupEmblem(mapthing_t *mthing, mobj_t *mobj)
 	INT32 j;
 	emblem_t* emblem = M_GetLevelEmblems(gamemap);
 	skincolornum_t emcolor;
+	INT16 tagnum = Tag_FGet(&mthing->tags);
 
 	while (emblem)
 	{
-		if (emblem->type == ET_GLOBAL && emblem->tag == Tag_FGet(&mthing->tags))
+		if (emblem->type == ET_GLOBAL && emblem->tag == tagnum)
 			break;
 
 		emblem = M_GetLevelEmblems(-1);
@@ -12255,7 +12256,7 @@ static boolean P_SetupEmblem(mapthing_t *mthing, mobj_t *mobj)
 
 	if (!emblem)
 	{
-		CONS_Alert(CONS_WARNING, "P_SetupEmblem: No map emblem for map %d with tag %d found!\n", gamemap, Tag_FGet(&mthing->tags));
+		CONS_Alert(CONS_WARNING, "P_SetupEmblem: No map emblem for map %d with tag %d found!\n", gamemap, tagnum);
 		return false;
 	}
 
