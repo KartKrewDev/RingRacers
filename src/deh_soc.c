@@ -143,6 +143,9 @@ void clear_emblems(void)
 
 		Z_Free(emblemlocations[i].stringVar);
 		emblemlocations[i].stringVar = NULL;
+
+		Z_Free(emblemlocations[i].stringVar2);
+		emblemlocations[i].stringVar2 = NULL;
 	}
 
 	memset(&emblemlocations, 0, sizeof(emblemlocations));
@@ -2200,6 +2203,13 @@ void reademblemdata(MYFILE *f, INT32 num)
 				emblemlocations[num-1].stringVar = Z_StrDup(word2);
 
 				emblemlocations[num-1].var = get_number(word2);
+			}
+			else if (fastcmp(word, "VAR2"))
+			{
+				Z_Free(emblemlocations[num-1].stringVar2);
+				emblemlocations[num-1].stringVar2 = Z_StrDup(word2);
+
+				emblemlocations[num-1].var2 = get_number(word2);
 			}
 			else if (fastcmp(word, "FLAGS"))
 				emblemlocations[num-1].flags = get_number(word2);

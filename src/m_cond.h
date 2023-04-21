@@ -147,7 +147,9 @@ struct emblem_t
 	UINT16 color;		///< skincolor to use
 	INT32 flags;		///< GE or ME constants
 	INT32 var;			///< If needed, specifies extra information
+	INT32 var2;			///< Ditto
 	char *stringVar;	///< String version
+	char *stringVar2;	///< Ditto
 };
 
 // Unlockable information
