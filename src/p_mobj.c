@@ -40,6 +40,7 @@
 #include "k_kart.h"
 #include "k_battle.h"
 #include "k_color.h"
+#include "k_follower.h"
 #include "k_respawn.h"
 #include "k_bot.h"
 #include "k_terrain.h"
@@ -7102,6 +7103,13 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 	{
 		INT32 trans = 0;
 
+		if (mobj->flags2 & MF2_STRONGBOX)
+		{
+			Obj_AudienceThink(mobj, true);
+			if (P_MobjWasRemoved(mobj))
+				return false;
+		}
+
 		mobj->frame &= ~FF_TRANSMASK;
 		mobj->renderflags &= ~RF_TRANSMASK;
 
@@ -12274,6 +12282,44 @@ static boolean P_SetupEmblem(mapthing_t *mthing, mobj_t *mobj)
 	if (emblemlocations[j].flags & GE_TIMED)
 	{
 		mobj->reactiontime = emblemlocations[j].var;
+	}
+
+	if (emblemlocations[j].flags & GE_FOLLOWER)
+	{
+		INT32 followerpick;
+		char testname[SKINNAMESIZE+1];
+		size_t i;
+
+		// match deh_soc readfollower()
+		for (i = 0; emblemlocations[j].stringVar2[i]; i++)
+		{
+			testname[i] = emblemlocations[j].stringVar2[i];
+			if (emblemlocations[j].stringVar2[i] == '_')
+				testname[i] = ' ';
+		}
+		testname[i] = '\0';
+		followerpick = K_FollowerAvailable(testname);
+
+		if (followerpick == -1)
+		{
+			CONS_Alert(CONS_WARNING, "P_SetupEmblem: Follower \"%s\" on emblem for map %d with tag %d not found!\n", emblemlocations[j].stringVar2, gamemap, tagnum);
+			return false;
+		}
+
+		// Set up data
+		Obj_AudienceInit(mobj, NULL, followerpick);
+		if (P_MobjWasRemoved(mobj))
+		{
+			CONS_Alert(CONS_WARNING, "P_SetupEmblem: Follower \"%s\" causes emblem for map %d with tag %d to be removed immediately!\n", emblemlocations[j].stringVar2, gamemap, tagnum);
+			return false;
+		}
+
+		// Signal that you are to behave like a follower
+		mobj->flags2 |= MF2_STRONGBOX;
+		if (followers[followerpick].mode == FOLLOWERMODE_GROUND)
+		{
+			mobj->flags &= ~(MF_NOGRAVITY|MF_NOCLIPHEIGHT);
+		}
 	}
 
 	return true;

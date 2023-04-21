@@ -6395,6 +6395,7 @@ struct int_const_s const INT_CONST[] = {
 	// Global emblem var flags
 	{"GE_NOTMEDAL", GE_NOTMEDAL},
 	{"GE_TIMED", GE_TIMED},
+	{"GE_FOLLOWER", GE_FOLLOWER},
 
 	// Map emblem var flags
 	{"ME_ENCORE",ME_ENCORE},

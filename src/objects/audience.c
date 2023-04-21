@@ -10,10 +10,13 @@
 #include "../r_main.h" // R_PointToAngle2, R_PointToDist2
 #include "../z_zone.h" // Z_StrDup/Z_Free
 
+// The following cannot be used due to conflicts with MT_EMBLEM.
+//#define audience_emblem_reserved_1(o) ((o)->reactiontime)
+
 #define audience_mainstate(o) ((o)->cvmem)
 
-#define audience_bobamp(o) ((o)->cusval)
-#define audience_bobspeed(o) ((o)->reactiontime)
+#define audience_bobamp(o) ((o)->movefactor)
+#define audience_bobspeed(o) ((o)->cusval)
 
 #define audience_animoffset(o) ((o)->threshold)
 
@@ -231,17 +234,25 @@ Obj_AudienceThink
 
 	if (mobj->flags & MF_NOGRAVITY)
 	{
-		// This horrible calculation was inherited from k_follower.c, with only newlines (and a FRACUNIT offset) added
+		// This horrible calculation was inherited from k_follower.c
 		mobj->sprzoff = FixedMul(audience_bobamp(mobj),
-			FRACUNIT + FINESINE(((
+			FINESINE(((
 				FixedMul(4 * M_TAU_FIXED, audience_bobspeed(mobj))
 				* (leveltime + audience_animoffset(mobj))
 			) >> ANGLETOFINESHIFT) & FINEMASK));
 
-		// Gravity
-		if (mobj->flags2 & MF2_OBJECTFLIP)
+		// Offset to not go through floor...
+		if (mobj->type == MT_EMBLEM)
 		{
-			mobj->sprzoff = -mobj->sprzoff;
+			; // ...unless it's important to keep a centered hitbox
+		}
+		else if (mobj->flags2 & MF2_OBJECTFLIP)
+		{
+			mobj->sprzoff -= audience_bobamp(mobj);
+		}
+		else
+		{
+			mobj->sprzoff += audience_bobamp(mobj);
 		}
 	}
 	else if (audience_animoffset(mobj) > 0)
