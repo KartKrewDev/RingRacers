@@ -123,7 +123,7 @@ Obj_AudienceInit
 
 		if (mthing->stringargs[1] != NULL)
 		{
-			if (!strcmp("Random", mthing->stringargs[1]))
+			if (!stricmp("Random", mthing->stringargs[1]))
 			{
 				colorpick = FOLLOWERCOLOR_MATCH;
 			}
@@ -135,7 +135,8 @@ Obj_AudienceInit
 				numref = 0;
 				while (tok && numref < MAXHEADERFOLLOWERS)
 				{
-					tempreflist[numref++] = R_GetColorByName(tok);
+					if ((tempreflist[numref++] = R_GetColorByName(tok)) == SKINCOLOR_NONE)
+						CONS_Alert(CONS_WARNING, "Mapthing %s: Follower color \"%s\" is invalid!\n", sizeu1(mthing-mapthings), tok);
 					tok = strtok(NULL, " ");
 				}
 
@@ -148,13 +149,15 @@ Obj_AudienceInit
 			}
 		}
 
-		if (colorpick == SKINCOLOR_NONE)
+		if (colorpick == SKINCOLOR_NONE
+			|| (colorpick >= numskincolors
+				&& colorpick != FOLLOWERCOLOR_MATCH
+				&& colorpick != FOLLOWERCOLOR_OPPOSITE))
 		{
 			colorpick = followers[followerpick].defaultcolor;
 		}
 
-		if (colorpick == FOLLOWERCOLOR_MATCH
-			|| colorpick == FOLLOWERCOLOR_OPPOSITE)
+		if (colorpick >= numskincolors)
 		{
 			colorpick = P_RandomKey(PR_RANDOMAUDIENCE, numskincolors-1)+1;
 		}
