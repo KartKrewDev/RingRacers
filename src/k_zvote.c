@@ -613,6 +613,17 @@ void K_InitNewMidVote(player_t *caller, midVoteType_e type, INT32 variable, play
 }
 
 /*--------------------------------------------------
+	void K_MidVoteFinalize(fixed_t delayMul)
+
+		See header file for description.
+--------------------------------------------------*/
+void K_MidVoteFinalize(fixed_t delayMul)
+{
+	K_ResetMidVote();
+	g_midVote.delay = FixedMul(cv_zvote_delay.value * TICRATE, delayMul);
+}
+
+/*--------------------------------------------------
 	void K_MidVoteSuccess(void)
 
 		See header file for description.
@@ -624,8 +635,7 @@ void K_MidVoteSuccess(void)
 		g_midVoteTypeDefs[ g_midVote.type ].callback();
 	}
 
-	K_ResetMidVote();
-	g_midVote.delay = cv_zvote_delay.value * TICRATE; // Vote succeeded, so the delay is normal.
+	K_MidVoteFinalize(FRACUNIT); // Vote succeeded, so the delay is normal.
 }
 
 /*--------------------------------------------------
@@ -635,8 +645,7 @@ void K_MidVoteSuccess(void)
 --------------------------------------------------*/
 void K_MidVoteFailure(void)
 {
-	K_ResetMidVote();
-	g_midVote.delay = (cv_zvote_delay.value * 2) * TICRATE; // Vote failed, so the delay is longer.
+	K_MidVoteFinalize(2*FRACUNIT); // Vote failed, so the delay is longer.
 }
 
 /*--------------------------------------------------

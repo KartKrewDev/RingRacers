@@ -221,7 +221,7 @@ consvar_t cv_playbackspeed = CVAR_INIT ("playbackspeed", "1", 0, playbackspeed_c
 
 consvar_t cv_httpsource = CVAR_INIT ("http_source", "", CV_SAVE, NULL, NULL);
 
-consvar_t cv_kicktime = CVAR_INIT ("kicktime", "10", CV_SAVE, CV_Unsigned, NULL);
+consvar_t cv_kicktime = CVAR_INIT ("kicktime", "20", CV_SAVE, CV_Unsigned, NULL);
 
 // Generate a message for an authenticating client to sign, with some guarantees about who we are.
 void GenerateChallenge(uint8_t *buf)
@@ -3199,6 +3199,11 @@ static void Got_KickCmd(UINT8 **p, INT32 playernum)
 		return;
 	}
 
+	if (msg == KICK_MSG_CUSTOM_BAN || msg == KICK_MSG_CUSTOM_KICK)
+	{
+		READSTRINGN(*p, reason, MAX_REASONLENGTH+1);
+	}
+
 	// Is playernum authorized to make this kick?
 	if (playernum != serverplayer && !IsPlayerAdmin(playernum)
 		/*&& !(playernode[playernum] != UINT8_MAX && playerpernode[playernode[playernum]] == 2
@@ -3243,9 +3248,20 @@ static void Got_KickCmd(UINT8 **p, INT32 playernum)
 		msg = KICK_MSG_CON_FAIL;
 	}
 
-	if (msg == KICK_MSG_CUSTOM_BAN || msg == KICK_MSG_CUSTOM_KICK)
+	if (g_midVote.active == true && g_midVote.victim == &players[pnum])
 	{
-		READSTRINGN(*p, reason, MAX_REASONLENGTH+1);
+		if (g_midVote.type == MVT_KICK)
+		{
+			// Running the callback here would mean a very dumb infinite loop.
+			// We'll manually handle this here by changing the msg type.
+			msg = KICK_MSG_VOTE_KICK;
+			K_MidVoteFinalize(FRACUNIT); // Vote succeeded, so the delay is normal.
+		}
+		else
+		{
+			// It should be safe to run the vote callback directly.
+			K_MidVoteSuccess();
+		}
 	}
 
 	//CONS_Printf("\x82%s ", player_names[pnum]);
@@ -3255,7 +3271,7 @@ static void Got_KickCmd(UINT8 **p, INT32 playernum)
 	// to keep it all in one place.
 	if (server)
 	{
-		if (msg == KICK_MSG_KICKED || msg == KICK_MSG_CUSTOM_KICK)
+		if (msg == KICK_MSG_KICKED || msg == KICK_MSG_VOTE_KICK || msg == KICK_MSG_CUSTOM_KICK)
 		{
 			// Kick as a temporary ban.
 			banMinutes = cv_kicktime.value;
@@ -3297,6 +3313,10 @@ static void Got_KickCmd(UINT8 **p, INT32 playernum)
 	{
 		case KICK_MSG_KICKED:
 			HU_AddChatText(va("\x82*%s has been kicked (No reason given)", player_names[pnum]), false);
+			kickreason = KR_KICK;
+			break;
+		case KICK_MSG_VOTE_KICK:
+			HU_AddChatText(va("\x82*%s has been kicked (Popular demand)", player_names[pnum]), false);
 			kickreason = KR_KICK;
 			break;
 		case KICK_MSG_PING_HIGH:
@@ -3406,6 +3426,8 @@ static void Got_KickCmd(UINT8 **p, INT32 playernum)
 			M_StartMessage(va(M_GetText("You have been banned\n(%s)\nPress (B)\n"), reason), NULL, MM_NOTHING);
 		else if (msg == KICK_MSG_SIGFAIL)
 			M_StartMessage(M_GetText("Server closed connection\n(Invalid signature)\nPress (B)\n"), NULL, MM_NOTHING);
+		else if (msg == KICK_MSG_VOTE_KICK)
+			M_StartMessage(M_GetText("You have been kicked by popular demand\n\nPress (B)\n"), NULL, MM_NOTHING);
 		else
 			M_StartMessage(M_GetText("You have been kicked by the server\n\nPress (B)\n"), NULL, MM_NOTHING);
 	}

@@ -212,6 +212,16 @@ void K_InitNewMidVote(player_t *caller, midVoteType_e type, INT32 variable, play
 
 
 /*--------------------------------------------------
+	void K_MidVoteFinalize(fixed_t delayMul);
+
+		Ran when a vote is totally done, and we need to
+		reset the struct and set the delay timer.
+--------------------------------------------------*/
+
+void K_MidVoteFinalize(fixed_t delayMul);
+
+
+/*--------------------------------------------------
 	void K_MidVoteSuccess(void);
 
 		Ran whenever a vote meets the quorum, activates
