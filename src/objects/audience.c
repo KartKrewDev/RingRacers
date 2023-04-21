@@ -33,8 +33,6 @@ Obj_AudienceInit
 	UINT16 tempreflist[MAXHEADERFOLLOWERS];
 	UINT8 numref = 0;
 
-	P_SetScale(mobj, (mobj->destscale *= 3));
-
 	audience_mainstate(mobj) = S_NULL;
 
 	// Pick follower
@@ -90,6 +88,9 @@ Obj_AudienceInit
 
 	// Handle storing follower properties on the object
 	{
+		mobj->destscale = FixedMul(3*mobj->destscale, followers[followerpick].scale);
+		P_SetScale(mobj, mobj->destscale);
+
 		audience_mainstate(mobj) = followers[followerpick].followstate;
 
 		P_SetMobjState(mobj, audience_mainstate(mobj));
