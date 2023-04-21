@@ -12306,19 +12306,19 @@ static boolean P_SetupEmblem(mapthing_t *mthing, mobj_t *mobj)
 			return false;
 		}
 
+		// Signal that you are to behave like a follower
+		mobj->flags2 |= MF2_STRONGBOX;
+		if (followers[followerpick].mode == FOLLOWERMODE_GROUND)
+		{
+			mobj->flags &= ~(MF_NOGRAVITY|MF_NOCLIPHEIGHT);
+		}
+
 		// Set up data
 		Obj_AudienceInit(mobj, NULL, followerpick);
 		if (P_MobjWasRemoved(mobj))
 		{
 			CONS_Alert(CONS_WARNING, "P_SetupEmblem: Follower \"%s\" causes emblem for map %d with tag %d to be removed immediately!\n", emblemlocations[j].stringVar2, gamemap, tagnum);
 			return false;
-		}
-
-		// Signal that you are to behave like a follower
-		mobj->flags2 |= MF2_STRONGBOX;
-		if (followers[followerpick].mode == FOLLOWERMODE_GROUND)
-		{
-			mobj->flags &= ~(MF_NOGRAVITY|MF_NOCLIPHEIGHT);
 		}
 	}
 
