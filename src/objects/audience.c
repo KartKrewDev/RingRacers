@@ -223,12 +223,25 @@ Obj_AudienceThink
 
 		if (audience_focusplayer(mobj) < MAXPLAYERS && audience_focusplayer(mobj) >= 0)
 		{
-			mobj->angle = R_PointToAngle2(
+			angle_t diff = R_PointToAngle2(
 				mobj->x,
 				mobj->y,
 				players[audience_focusplayer(mobj)].mo->x,
 				players[audience_focusplayer(mobj)].mo->y
-			);
+			) - mobj->angle;
+
+			boolean reverse = (diff >= ANGLE_180);
+
+			if (reverse)
+				diff = InvAngle(diff);
+
+			if (diff > (ANG1*5))
+				diff /= 5;
+
+			if (reverse)
+				diff = InvAngle(diff);
+
+			mobj->angle += diff;
 		}
 	}
 
