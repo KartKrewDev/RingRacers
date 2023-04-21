@@ -374,7 +374,7 @@ void P_SetDefaultHeaderFollowers(UINT16 i)
 		I_Assert(validdefaultfollowers != 0);
 	}
 
-	mapheaderinfo[i]->followers = Z_Realloc(mapheaderinfo[i]->followers, sizeof(UINT16) * validdefaultfollowers, PU_STATIC, NULL);
+	mapheaderinfo[i]->followers = Z_Realloc(mapheaderinfo[i]->followers, sizeof(INT16) * validdefaultfollowers, PU_STATIC, NULL);
 
 	for (mapheaderinfo[i]->numFollowers = 0; mapheaderinfo[i]->numFollowers < validdefaultfollowers; mapheaderinfo[i]->numFollowers++)
 	{

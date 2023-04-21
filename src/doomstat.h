@@ -461,7 +461,7 @@ struct mapheader_t
 
 	// Audience information
 	UINT8 numFollowers;					///< Internal. For audience support.
-	UINT16 *followers;					///< List of audience followers in this level. Allocated dynamically for space reasons. Be careful.
+	INT16 *followers;					///< List of audience followers in this level. Allocated dynamically for space reasons. Be careful.
 
 	// Script information
 	char runsoc[33];					///< SOC to execute at start of level (32 character limit instead of 63)

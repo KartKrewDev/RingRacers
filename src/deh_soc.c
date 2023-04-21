@@ -1079,7 +1079,7 @@ void readlevelheader(MYFILE *f, char * name)
 
 					if (mapheaderinfo[num]->numFollowers)
 					{
-						size_t newsize = sizeof(UINT16) * mapheaderinfo[num]->numFollowers;
+						size_t newsize = sizeof(INT16) * mapheaderinfo[num]->numFollowers;
 						mapheaderinfo[num]->followers = Z_Realloc(mapheaderinfo[num]->followers, newsize, PU_STATIC, NULL);
 						// now we add them to the list!
 						M_Memcpy(mapheaderinfo[num]->followers, tmpfollowers, newsize);

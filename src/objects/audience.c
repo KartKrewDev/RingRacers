@@ -29,8 +29,8 @@ Obj_AudienceInit
 		mapthing_t *mthing,
 		INT32 followerpick)
 {
-	UINT16 *reflist = NULL;
-	UINT16 tempreflist[MAXHEADERFOLLOWERS];
+	INT16 *reflist = NULL;
+	INT16 tempreflist[MAXHEADERFOLLOWERS];
 	UINT8 numref = 0;
 
 	audience_mainstate(mobj) = S_NULL;
