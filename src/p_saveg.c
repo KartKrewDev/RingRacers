@@ -1033,6 +1033,7 @@ static void P_NetUnArchiveZVote(savebuffer_t *save)
 		I_Error("Bad $$$.sav at archive block Z-Vote");
 	}
 
+	K_ResetMidVote();
 	g_midVote.active = (boolean)READUINT8(save->p);
 
 	if (g_midVote.active == true)
@@ -1062,10 +1063,6 @@ static void P_NetUnArchiveZVote(savebuffer_t *save)
 		g_midVote.end = (tic_t)READUINT32(save->p);
 		g_midVote.endVotes = READUINT8(save->p);
 		g_midVote.endRequired = READUINT8(save->p);
-	}
-	else
-	{
-		K_ResetMidVote();
 	}
 
 	g_midVote.delay = (tic_t)READUINT32(save->p);

@@ -32,17 +32,62 @@ static consvar_t cv_zvote_spectators = CVAR_INIT ("zvote_spectator_votes", "Off"
 static consvar_t cv_zvote_length = CVAR_INIT ("zvote_length", "90", CV_SAVE|CV_NETVAR, CV_Unsigned, NULL);
 static consvar_t cv_zvote_delay = CVAR_INIT ("zvote_delay", "90", CV_SAVE|CV_NETVAR, CV_Unsigned, NULL);
 
-static consvar_t cv_zvote_allowed[MVT__MAX] = { // See also: midVoteType_e
-	CVAR_INIT ("zvote_kick_allowed", "Yes", CV_SAVE|CV_NETVAR, CV_YesNo, NULL), // MVT_KICK
-	CVAR_INIT ("zvote_rtv_allowed", "No", CV_SAVE|CV_NETVAR, CV_YesNo, NULL) // MVT_RTV
-};
-
-const char *g_midVoteTypeNames[MVT__MAX] = {
-	"KICK",		// MVT_KICK
-	"RTV"		// MVT_RTV
-};
-
 midVote_t g_midVote = {0};
+
+typedef void (*K_ZVoteFinishCallback)(void);
+
+typedef struct
+{
+	const char *name;
+	const char *label;
+	consvar_t cv_allowed;
+	K_ZVoteFinishCallback callback;
+} midVoteTypeDef_t;
+
+/*--------------------------------------------------
+	static void K_MidVoteKick(void)
+
+		MVT_KICK's success function.
+--------------------------------------------------*/
+static void K_MidVoteKick(void)
+{
+	if (g_midVote.victim == NULL)
+	{
+		return;
+	}
+
+	if (server)
+	{
+		SendKick(g_midVote.victim - players, KICK_MSG_VOTE_KICK);
+	}
+}
+
+/*--------------------------------------------------
+	static void K_MidVoteRockTheVote(void)
+
+		MVT_RTV's success function.
+--------------------------------------------------*/
+static void K_MidVoteRockTheVote(void)
+{
+	G_ExitLevel();
+}
+
+static midVoteTypeDef_t g_midVoteTypeDefs[MVT__MAX] =
+{
+	{ // MVT_KICK
+		"KICK",
+		"Kick Player?",
+		CVAR_INIT ("zvote_kick_allowed", "Yes", CV_SAVE|CV_NETVAR, CV_YesNo, NULL),
+		K_MidVoteKick
+	},
+
+	{ // MVT_RTV
+		"RTV",
+		"Skip Level?",
+		CVAR_INIT ("zvote_rtv_allowed", "No", CV_SAVE|CV_NETVAR, CV_YesNo, NULL),
+		K_MidVoteRockTheVote
+	},
+};
 
 /*--------------------------------------------------
 	static boolean K_MidVoteTypeUsesVictim(midVoteType_e voteType)
@@ -111,7 +156,7 @@ static void Command_CallVote(void)
 
 	for (voteType = 0; voteType < MVT__MAX; voteType++)
 	{
-		if (strcasecmp(voteTypeStr, g_midVoteTypeNames[voteType]) == 0)
+		if (strcasecmp(voteTypeStr, g_midVoteTypeDefs[voteType].name) == 0)
 		{
 			break;
 		}
@@ -123,23 +168,26 @@ static void Command_CallVote(void)
 		return;
 	}
 
-	voteVariableStr = COM_Argv(2);
-	voteVariable = atoi(voteVariableStr);
-
-	if (K_MidVoteTypeUsesVictim(voteType) == true)
+	if (numArgs > 2)
 	{
-		for (i = 0; i < MAXPLAYERS; i++)
-		{
-			if (strcasecmp(player_names[i], voteVariableStr) == 0)
-			{
-				voteVariable = i;
-				break;
-			}
-		}
+		voteVariableStr = COM_Argv(2);
+		voteVariable = atoi(voteVariableStr);
 
-		if (voteVariable >= 0 && voteVariable < MAXPLAYERS)
+		if (K_MidVoteTypeUsesVictim(voteType) == true)
 		{
-			victim = &players[voteVariable];
+			for (i = 0; i < MAXPLAYERS; i++)
+			{
+				if (strcasecmp(player_names[i], voteVariableStr) == 0)
+				{
+					voteVariable = i;
+					break;
+				}
+			}
+
+			if (voteVariable >= 0 && voteVariable < MAXPLAYERS)
+			{
+				victim = &players[voteVariable];
+			}
 		}
 	}
 
@@ -206,7 +254,7 @@ static void K_PlayerSendMidVote(const UINT8 id)
 	{
 		return;
 	}
-	
+
 	SendNetXCmdForPlayer(id, XD_SETZVOTE, NULL, 0);
 }
 
@@ -226,6 +274,12 @@ static void K_PlayerSendMidVote(const UINT8 id)
 static void Got_SetZVote(UINT8 **cp, INT32 playernum)
 {
 	(void)cp;
+
+	if (g_midVote.active == false)
+	{
+		return;
+	}
+
 	g_midVote.votes[playernum] = true;
 }
 
@@ -247,7 +301,7 @@ void K_RegisterMidVoteCVars(void)
 
 	for (i = 0; i < MVT__MAX; i++)
 	{
-		CV_RegisterVar(&cv_zvote_allowed[i]);
+		CV_RegisterVar(&g_midVoteTypeDefs[i].cv_allowed);
 	}
 
 	COM_AddCommand("zvote_call", Command_CallVote);
@@ -277,7 +331,7 @@ boolean K_AnyMidVotesAllowed(void)
 
 	for (i = 0; i < MVT__MAX; i++)
 	{
-		if (cv_zvote_allowed[i].value != 0)
+		if (g_midVoteTypeDefs[i].cv_allowed.value != 0)
 		{
 			return true;
 		}
@@ -456,7 +510,7 @@ boolean K_AllowNewMidVote(player_t *caller, midVoteType_e type, INT32 variable, 
 		return false;
 	}
 
-	if (cv_zvote_allowed[type].value == 0)
+	if (g_midVoteTypeDefs[type].cv_allowed.value == 0)
 	{
 		// These types of votes aren't allowed on this server.
 		if (P_IsLocalPlayer(caller) == true)
@@ -551,37 +605,11 @@ void K_InitNewMidVote(player_t *caller, midVoteType_e type, INT32 variable, play
 		if (caller == &players[g_localplayers[i]])
 		{
 			// The person who voted should already be confirmed.
+			g_midVote.gui[i].slide = ZVOTE_GUI_SLIDE;
 			g_midVote.gui[i].confirm = ZVOTE_GUI_CONFIRM;
+			g_midVote.gui[i].unpress = true;
 		}
 	}
-}
-
-/*--------------------------------------------------
-	static void K_MidVoteKick(void)
-
-		MVT_KICK's success function.
---------------------------------------------------*/
-static void K_MidVoteKick(void)
-{
-	if (g_midVote.victim == NULL)
-	{
-		return;
-	}
-
-	if (server)
-	{
-		SendKick(g_midVote.victim - players, KICK_MSG_VOTE_KICK);
-	}
-}
-
-/*--------------------------------------------------
-	static void K_MidVoteRockTheVote(void)
-
-		MVT_RTV's success function.
---------------------------------------------------*/
-static void K_MidVoteRockTheVote(void)
-{
-	G_ExitLevel();
 }
 
 /*--------------------------------------------------
@@ -591,22 +619,9 @@ static void K_MidVoteRockTheVote(void)
 --------------------------------------------------*/
 void K_MidVoteSuccess(void)
 {
-	switch (g_midVote.type)
+	if (g_midVoteTypeDefs[ g_midVote.type ].callback != NULL)
 	{
-		case MVT_KICK:
-		{
-			K_MidVoteKick();
-			break;
-		}
-		case MVT_RTV:
-		{
-			K_MidVoteRockTheVote();
-			break;
-		}
-		default:
-		{
-			break;
-		}
+		g_midVoteTypeDefs[ g_midVote.type ].callback();
 	}
 
 	K_ResetMidVote();
@@ -957,11 +972,6 @@ void K_DrawMidVote(void)
 	else
 	{
 		// Draw the actual vote status
-		static const char *voteTitles[MVT__MAX] = {
-			"KICK PLAYER?",		// MVT_KICK
-			"SKIP LEVEL?"		// MVT_RTV
-		};
-
 		const fixed_t barHalf = (g_zBar[0]->width * FRACUNIT * (ZVOTE_PATCH_BAR_SEGS - 1)) >> 1;
 		const boolean blink = (gametic & 1);
 		boolean drawButton = blink;
@@ -1011,7 +1021,7 @@ void K_DrawMidVote(void)
 		strWidth = V__OneScaleStringWidth(
 			FRACUNIT,
 			V_SNAPTOBOTTOM|V_SNAPTORIGHT|V_SPLITSCREEN,
-			KART_FONT, voteTitles[g_midVote.type]
+			KART_FONT, g_midVoteTypeDefs[g_midVote.type].label
 		);
 
 		V__DrawOneScaleString(
@@ -1019,7 +1029,7 @@ void K_DrawMidVote(void)
 			y - (18 * FRACUNIT),
 			FRACUNIT,
 			V_SNAPTOBOTTOM|V_SNAPTORIGHT|V_SPLITSCREEN, NULL,
-			KART_FONT, voteTitles[g_midVote.type]
+			KART_FONT, g_midVoteTypeDefs[g_midVote.type].label
 		);
 
 		// Vote extra text
@@ -1032,7 +1042,7 @@ void K_DrawMidVote(void)
 				{
 					strWidth = V__OneScaleStringWidth(
 						FRACUNIT,
-						V_SNAPTOBOTTOM|V_SNAPTORIGHT|V_SPLITSCREEN|V_6WIDTHSPACE,
+						V_SNAPTOBOTTOM|V_SNAPTORIGHT|V_SPLITSCREEN|V_6WIDTHSPACE|V_ALLOWLOWERCASE,
 						TINY_FONT, player_names[g_midVote.victim - players]
 					);
 
@@ -1040,7 +1050,7 @@ void K_DrawMidVote(void)
 						x - (strWidth >> 1),
 						y + (18 * FRACUNIT),
 						FRACUNIT,
-						V_SNAPTOBOTTOM|V_SNAPTORIGHT|V_SPLITSCREEN|V_6WIDTHSPACE, NULL,
+						V_SNAPTOBOTTOM|V_SNAPTORIGHT|V_SPLITSCREEN|V_6WIDTHSPACE|V_ALLOWLOWERCASE, NULL,
 						TINY_FONT, player_names[g_midVote.victim - players]
 					);
 				}
