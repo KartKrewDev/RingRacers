@@ -97,7 +97,7 @@ Obj_AudienceInit
 			return;
 
 		// The following is derived from the default bobamp
-		if (!(mobj->flags & MF_NOGRAVITY) && followers[followerpick].bobamp < 4*FRACUNIT)
+		if (mobj->type != MT_EMBLEM && !(mobj->flags & MF_NOGRAVITY) && followers[followerpick].bobamp < 4*FRACUNIT)
 		{
 			audience_bobamp(mobj) = 4*mobj->scale;
 		}
@@ -259,6 +259,11 @@ Obj_AudienceThink
 	{
 		// Skipped frames at spawn for offset in jumping
 		audience_animoffset(mobj)--;
+	}
+	else if (audience_bobamp(mobj) == 0)
+	{
+		// Just sit there
+		;
 	}
 	else if (mobj->flags2 & MF2_OBJECTFLIP)
 	{
