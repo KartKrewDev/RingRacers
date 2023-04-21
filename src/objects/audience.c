@@ -21,20 +21,21 @@
 #define audience_focusdelay(o) ((o)->movecount)
 
 void
-Obj_RandomAudienceInit
+Obj_AudienceInit
 (		mobj_t * mobj,
-		mapthing_t *mthing)
+		mapthing_t *mthing,
+		INT32 followerpick)
 {
 	UINT16 *reflist = NULL;
 	UINT16 tempreflist[MAXHEADERFOLLOWERS];
 	UINT8 numref = 0;
-	INT32 followerpick = 0;
 
 	P_SetScale(mobj, (mobj->destscale *= 3));
 
 	audience_mainstate(mobj) = S_NULL;
 
 	// Pick follower
+	if (mthing != NULL)
 	{
 		if (mthing->stringargs[0] != NULL)
 		{
@@ -92,16 +93,6 @@ Obj_RandomAudienceInit
 		if (P_MobjWasRemoved(mobj))
 			return;
 
-		if (mthing->args[2] != 0)
-		{
-			mobj->flags |= MF_NOGRAVITY;
-		}
-
-		if (mthing->args[3] != 0)
-		{
-			mobj->flags2 |= MF2_AMBUSH;
-		}
-
 		// The following is derived from the default bobamp
 		if (!(mobj->flags & MF_NOGRAVITY) && followers[followerpick].bobamp < 4*FRACUNIT)
 		{
@@ -122,6 +113,7 @@ Obj_RandomAudienceInit
 	}
 
 	// Handle colors
+	if (mthing != NULL)
 	{
 		UINT16 colorpick = SKINCOLOR_NONE;
 
@@ -168,8 +160,9 @@ Obj_RandomAudienceInit
 }
 
 void
-Obj_RandomAudienceThink
-(		mobj_t * mobj)
+Obj_AudienceThink
+(		mobj_t * mobj,
+		boolean focusonplayer)
 {
 	if (audience_mainstate(mobj) == S_NULL)
 	{
@@ -177,7 +170,7 @@ Obj_RandomAudienceThink
 		return;
 	}
 
-	if (mobj->flags2 & MF2_AMBUSH)
+	if (focusonplayer == true)
 	{
 		if (audience_focusdelay(mobj) == 0)
 		{

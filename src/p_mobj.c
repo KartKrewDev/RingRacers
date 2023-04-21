@@ -10269,7 +10269,7 @@ void P_SceneryThinker(mobj_t *mobj)
 
 	if (mobj->type == MT_RANDOMAUDIENCE)
 	{
-		Obj_RandomAudienceThink(mobj);
+		Obj_AudienceThink(mobj, !!(mobj->flags2 & MF2_AMBUSH));
 	}
 }
 
@@ -13154,7 +13154,17 @@ static boolean P_SetupSpawnedMapThing(mapthing_t *mthing, mobj_t *mobj, boolean 
 	}
 	case MT_RANDOMAUDIENCE:
 	{
-		Obj_RandomAudienceInit(mobj, mthing);
+		if (mthing->args[2] != 0)
+		{
+			mobj->flags |= MF_NOGRAVITY;
+		}
+
+		if (mthing->args[3] != 0)
+		{
+			mobj->flags2 |= MF2_AMBUSH;
+		}
+
+		Obj_AudienceInit(mobj, mthing, -1);
 
 		if (P_MobjWasRemoved(mobj))
 			return false;
