@@ -1182,7 +1182,7 @@ static void K_DrawDraftCombiring(player_t *player, mobj_t *victim, fixed_t curdi
 	}
 	else
 	{
-		c = FixedMul(CHAOTIXBANDCOLORS<<FRACBITS, FixedDiv(curdist-minimumdist, maxdist-minimumdist)) >> FRACBITS;
+		c = FixedMul((CHAOTIXBANDCOLORS - 1)<<FRACBITS, FixedDiv(curdist-minimumdist, maxdist-minimumdist)) >> FRACBITS;
 	}
 
 	stepx = (victim->x - player->mo->x) / CHAOTIXBANDLEN;
