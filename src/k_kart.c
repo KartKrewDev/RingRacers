@@ -9020,7 +9020,7 @@ INT16 K_GetKartTurnValue(player_t *player, INT16 turnvalue)
 		finalhandleboost = FixedMul(5*SLIPTIDEHANDLING/4, FixedDiv(player->speed, topspeed));
 	}
 	
-	if (finalhandleboost > 0)
+	if (finalhandleboost > 0 && player->respawn.state == RESPAWNST_NONE)
 	{
 		turnfixed = FixedMul(turnfixed, FRACUNIT + finalhandleboost);
 	}
