@@ -321,7 +321,7 @@ void readfreeslots(MYFILE *f)
 						CONS_Printf("Skincolor SKINCOLOR_%s allocated.\n",word);
 						FREE_SKINCOLORS[i] = Z_Malloc(strlen(word)+1, PU_STATIC, NULL);
 						strcpy(FREE_SKINCOLORS[i],word);
-						M_AddMenuColor(numskincolors++);
+						numskincolors++;
 						break;
 					}
 				if (i == NUMCOLORFREESLOTS)
@@ -2297,6 +2297,8 @@ void readunlockable(MYFILE *f, INT32 num)
 						unlockables[num].type = SECRET_SKIN;
 					else if (fastcmp(word2, "FOLLOWER"))
 						unlockables[num].type = SECRET_FOLLOWER;
+					else if (fastcmp(word2, "COLOR"))
+						unlockables[num].type = SECRET_COLOR;
 					else if (fastcmp(word2, "HARDSPEED"))
 						unlockables[num].type = SECRET_HARDSPEED;
 					else if (fastcmp(word2, "MASTERMODE"))

@@ -29546,7 +29546,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 };
 
 skincolor_t skincolors[MAXSKINCOLORS] = {
-	{"None",           {  0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0}, SKINCOLOR_NONE,             0, 0,             false}, // SKINCOLOR_NONE
+	{"Default",        {  0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0}, SKINCOLOR_NONE,             0, 0,             false}, // SKINCOLOR_NONE
 
 	{"White",          {  0,   0,   0,   0,   1,   2,   5,   8,   9,  11,  14,  17,  20,  22,  25,  28}, SKINCOLOR_BLACK,            8, 0,              true}, // SKINCOLOR_WHITE
 	{"Silver",         {  0,   1,   2,   3,   5,   7,   9,  12,  13,  15,  18,  20,  23,  25,  27,  30}, SKINCOLOR_NICKEL,           8, 0,              true}, // SKINCOLOR_SILVER

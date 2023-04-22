@@ -20,6 +20,7 @@
 #include "r_skins.h"
 #include "monocypher/monocypher.h"
 #include "stun.h"
+#include "k_color.h"
 
 // List of all the profiles.
 static profile_t *profilesList[MAXPROFILES+1]; // +1 because we're gonna add a default "GUEST' profile.
@@ -367,7 +368,7 @@ void PR_LoadProfiles(void)
 			; // Valid, even outside the bounds
 		}
 		else if (profilesList[i]->color >= numskincolors
-			|| skincolors[profilesList[i]->color].accessible == false)
+			|| K_ColorUsable(profilesList[i]->color, false) == false)
 		{
 			profilesList[i]->color = PROFILEDEFAULTCOLOR;
 		}
@@ -383,7 +384,7 @@ void PR_LoadProfiles(void)
 		}
 		else if (profilesList[i]->followercolor >= numskincolors
 			|| profilesList[i]->followercolor == SKINCOLOR_NONE
-			|| skincolors[profilesList[i]->followercolor].accessible == false)
+			|| K_ColorUsable(profilesList[i]->followercolor, true) == false)
 		{
 			profilesList[i]->followercolor = PROFILEDEFAULTFOLLOWERCOLOR;
 		}

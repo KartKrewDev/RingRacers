@@ -38,6 +38,7 @@
 #include "r_skins.h"
 #include "m_random.h"
 #include "p_local.h" // P_ResetPlayerCheats
+#include "k_color.h"
 
 //========
 // protos.
@@ -911,9 +912,9 @@ static void COM_Help_f(void)
 					CONS_Printf("  On or Off (Yes or No, 1 or 0)\n");
 				else if (cvar->PossibleValue == Color_cons_t)
 				{
-					for (i = 1; i < numskincolors; ++i)
+					for (i = SKINCOLOR_NONE; i < numskincolors; ++i)
 					{
-						if (skincolors[i].accessible)
+						if (K_ColorUsable(i, false) == true)
 						{
 							CONS_Printf("  %-2d : %s\n", i, skincolors[i].name);
 							if (i == cvar->value)

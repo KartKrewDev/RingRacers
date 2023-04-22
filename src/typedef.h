@@ -185,6 +185,7 @@ TYPEDEF (menucolor_t);
 TYPEDEF (menuitem_t);
 TYPEDEF (menu_t);
 TYPEDEF (menucmd_t);
+TYPEDEF (setup_player_colors_t);
 TYPEDEF (setup_player_t);
 TYPEDEF (modedesc_t);
 
