@@ -29,8 +29,8 @@ static consvar_t cv_zvote_quorum = CVAR_INIT ("zvote_quorum", "0.6", CV_SAVE|CV_
 
 static consvar_t cv_zvote_spectators = CVAR_INIT ("zvote_spectator_votes", "Off", CV_SAVE|CV_NETVAR, CV_OnOff, NULL);
 
-static consvar_t cv_zvote_length = CVAR_INIT ("zvote_length", "90", CV_SAVE|CV_NETVAR, CV_Unsigned, NULL);
-static consvar_t cv_zvote_delay = CVAR_INIT ("zvote_delay", "90", CV_SAVE|CV_NETVAR, CV_Unsigned, NULL);
+static consvar_t cv_zvote_length = CVAR_INIT ("zvote_length", "20", CV_SAVE|CV_NETVAR, CV_Unsigned, NULL);
+static consvar_t cv_zvote_delay = CVAR_INIT ("zvote_delay", "20", CV_SAVE|CV_NETVAR, CV_Unsigned, NULL);
 
 midVote_t g_midVote = {0};
 
