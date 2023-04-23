@@ -22,6 +22,7 @@
 #include "v_video.h"
 #include "k_hud.h"
 #include "r_draw.h"
+#include "r_fps.h"
 #include "byteptr.h"
 
 static CV_PossibleValue_t modulate_cons_t[] = {{0, "MIN"}, {FRACUNIT, "MAX"}, {0, NULL}};
@@ -367,6 +368,12 @@ boolean K_PlayerIDAllowedInMidVote(const UINT8 id)
 		return false;
 	}
 
+	if (g_midVote.active == true && player == g_midVote.victim)
+	{
+		// Don't allow the guy getting kicked to vote on it.
+		return false;
+	}
+
 	return true;
 }
 
@@ -378,7 +385,6 @@ boolean K_PlayerIDAllowedInMidVote(const UINT8 id)
 UINT8 K_RequiredMidVotes(void)
 {
 	UINT8 allowedCount = 0;
-	UINT8 requiredCount = 0;
 	INT32 i = INT32_MAX;
 
 	if (g_midVote.active == false)
@@ -408,7 +414,7 @@ UINT8 K_RequiredMidVotes(void)
 	else
 	{
 		// 1P session, just require the one vote.
-		return requiredCount;
+		return 1;
 	}
 }
 
@@ -906,30 +912,10 @@ static void K_DrawMidVoteBar(fixed_t x, fixed_t y, INT32 flags, fixed_t fill, sk
 --------------------------------------------------*/
 void K_DrawMidVote(void)
 {
+	const INT32 id = R_GetViewNumber();
 	midVoteGUI_t *gui = NULL;
 	boolean pressed = false;
-
-	UINT8 id = UINT8_MAX;
 	fixed_t x = INT32_MAX, y = INT32_MAX;
-
-	INT32 i = INT32_MAX;
-
-	// FIXME: We need a splitscreen version of this HUD!
-	for (i = 0; i <= splitscreen; i++)
-	{
-		if (stplyr == &players[ g_localplayers[i] ])
-		{
-			id = i;
-			break;
-		}
-	}
-
-	if (id == UINT8_MAX)
-	{
-		// Player we're drawing doesn't control the
-		// vote locally, so we shouldn't draw anything.
-		return;
-	}
 
 	pressed = G_PlayerInputDown(id, gc_z, 0);
 	gui = &g_midVote.gui[id];
@@ -1101,7 +1087,7 @@ void K_DrawMidVote(void)
 				drawVotes = true;
 			}
 		}
-		
+
 		if (drawVotes == true)
 		{
 			const fixed_t voteY = y + (2 * FRACUNIT);
