@@ -828,8 +828,29 @@ static void M_HandleCharRotate(setup_player_t *p, UINT8 num)
 	{
 		p->mdepth = CSSTEP_COLORS;
 		M_NewPlayerColors(p);
-		S_StartSound(NULL, sfx_s3k63);
-		M_SetMenuDelay(num);
+		if (p->colors.listLen == 1)
+		{
+			p->color = p->colors.list[0];
+			if (setup_numfollowercategories == 0)
+			{
+				p->followern = -1;
+				p->mdepth = CSSTEP_READY;
+				p->delay = TICRATE;
+				M_SetupReadyExplosions(true, p->gridx, p->gridy, p->color);
+				S_StartSound(NULL, sfx_s3k4e);
+			}
+			else
+			{
+				p->mdepth = CSSTEP_FOLLOWERCATEGORY;
+				S_StartSound(NULL, sfx_s3k63);
+				M_SetMenuDelay(num);
+			}
+		}
+		else
+		{
+			S_StartSound(NULL, sfx_s3k63);
+			M_SetMenuDelay(num);
+		}
 	}
 	else if (M_MenuBackPressed(num))
 	{
@@ -871,9 +892,20 @@ static void M_HandleColorRotate(setup_player_t *p, UINT8 num)
 
 	 if (M_MenuConfirmPressed(num) /*|| M_MenuButtonPressed(num, MBT_START)*/)
 	{
-		p->mdepth = CSSTEP_FOLLOWERCATEGORY;
-		S_StartSound(NULL, sfx_s3k63);
-		M_SetMenuDelay(num);
+		if (setup_numfollowercategories == 0)
+		{
+			p->followern = -1;
+			p->mdepth = CSSTEP_READY;
+			p->delay = TICRATE;
+			M_SetupReadyExplosions(true, p->gridx, p->gridy, p->color);
+			S_StartSound(NULL, sfx_s3k4e);
+		}
+		else
+		{
+			p->mdepth = CSSTEP_FOLLOWERCATEGORY;
+			S_StartSound(NULL, sfx_s3k63);
+			M_SetMenuDelay(num);
+		}
 	}
 	else if (M_MenuBackPressed(num))
 	{
