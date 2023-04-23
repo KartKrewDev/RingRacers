@@ -368,12 +368,6 @@ boolean K_PlayerIDAllowedInMidVote(const UINT8 id)
 		return false;
 	}
 
-	if (g_midVote.active == true && player == g_midVote.victim)
-	{
-		// Don't allow the guy getting kicked to vote on it.
-		return false;
-	}
-
 	return true;
 }
 
