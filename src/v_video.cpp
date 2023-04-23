@@ -2495,6 +2495,7 @@ fixed_t V_StringScaledWidth(
 	boolean uppercase;
 
 	fixed_t cx, cy;
+	fixed_t right;
 
 	fixed_t cw;
 
@@ -2697,6 +2698,7 @@ fixed_t V_StringScaledWidth(
 	}
 
 	cx = cy = 0;
+	right = 0;
 
 	for (; ( c = *s ); ++s)
 	{
@@ -2714,6 +2716,12 @@ fixed_t V_StringScaledWidth(
 				if (c >= 0 && c < font->size && font->font[c])
 				{
 					cw = SHORT (font->font[c]->width) * dupx;
+
+					// How bunched dims work is by incrementing cx slightly less than a full character width.
+					// This causes the next character to be drawn overlapping the previous.
+					// We need to count the full width to get the rightmost edge of the string though.
+					right = cx + (cw * scale);
+
 					(*dim_fn)(scale, chw, hchw, dupx, &cw);
 					cx += cw;
 				}
@@ -2721,7 +2729,7 @@ fixed_t V_StringScaledWidth(
 					cx += spacew;
 		}
 
-		fullwidth = std::max(cx, fullwidth);
+		fullwidth = std::max(right, std::max(cx, fullwidth));
 	}
 
 	return fullwidth;
