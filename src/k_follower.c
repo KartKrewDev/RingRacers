@@ -250,17 +250,23 @@ UINT16 K_GetEffectiveFollowerColor(UINT16 followercolor, follower_t *follower, U
 		return followercolor;
 	}
 
+	if (playercolor == SKINCOLOR_NONE) // get default color
+	{
+		if (playerskin == NULL)
+		{
+			// Nothing from this line down is valid if playerskin is invalid, just guess Eggman?
+			playerskin = &skins[0];
+		}
+
+		playercolor = playerskin->prefcolor;
+	}
+
 	if (followercolor == FOLLOWERCOLOR_OPPOSITE) // "Opposite"
 	{
 		return skincolors[playercolor].invcolor;
 	}
 
 	// "Match"
-	if (playercolor == SKINCOLOR_NONE && playerskin != NULL)
-	{
-		return playerskin->prefcolor;
-	}
-
 	return playercolor;
 }
 
