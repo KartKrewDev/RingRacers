@@ -3538,7 +3538,7 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 	{
 		thiscam->momx = x - thiscam->x;
 		thiscam->momy = y - thiscam->y;
-		thiscam->momz = FixedMul(z - thiscam->z, camspeed/2);
+		thiscam->momz = FixedMul(z - thiscam->z, camspeed*3/5);
 	}
 
 	thiscam->pan = pan;
