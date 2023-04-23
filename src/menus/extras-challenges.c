@@ -459,11 +459,13 @@ void M_ChallengesTick(void)
 					}
 					case SECRET_FOLLOWER:
 					{
-						INT32 skin = M_UnlockableFollowerNum(ref);
-						if (skin != -1)
+						INT32 fskin = M_UnlockableFollowerNum(ref);
+						if (fskin != -1)
 						{
 							INT32 psk = R_SkinAvailable(cv_skin[0].string);
-							bombcolor = K_GetEffectiveFollowerColor(followers[skin].defaultcolor, &followers[skin], cv_playercolor[0].value, (psk != -1) ? &skins[psk] : &skins[0]);
+							if (psk == -1)
+								psk = 0;
+							bombcolor = K_GetEffectiveFollowerColor(followers[fskin].defaultcolor, &followers[fskin], cv_playercolor[0].value, &skins[psk]);
 						}
 						break;
 					}
@@ -474,6 +476,13 @@ void M_ChallengesTick(void)
 				if (bombcolor == SKINCOLOR_NONE)
 				{
 					bombcolor = cv_playercolor[0].value;
+					if (bombcolor == SKINCOLOR_NONE)
+					{
+						INT32 psk = R_SkinAvailable(cv_skin[0].string);
+						if (psk == -1)
+							psk = 0;
+						bombcolor = skins[psk].prefcolor;
+					}
 				}
 
 				i = (ref->majorunlock && M_RandomChance(FRACUNIT/2)) ? 1 : 0;
