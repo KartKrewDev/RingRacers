@@ -886,12 +886,10 @@ void V_DrawStretchyFixedPatch(fixed_t x, fixed_t y, fixed_t pscale, fixed_t vsca
 	else
 		pwidth = patch->width * dupx;
 
-	float fdupy = FIXED_TO_FLOAT(vdup);
-
 	float fx = x;
 	float fy = y;
 	float fx2 = fx + pwidth;
-	float fy2 = fy + static_cast<float>(patch->height) * fdupy;
+	float fy2 = fy + ((patch->height * vdup) / FRACUNIT);
 	float falpha = 1.f;
 	float umin = 0.f;
 	float umax = 1.f;
