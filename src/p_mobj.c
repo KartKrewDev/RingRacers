@@ -3885,10 +3885,10 @@ boolean P_CameraThinker(player_t *player, camera_t *thiscam, boolean resetcalled
 	thiscam->floorz = tm.floorz;
 	thiscam->ceilingz = tm.ceilingz;
 
-	if (thiscam->momz || player->mo->pmomz)
+	if (thiscam->momz || thiscam->pmomz)
 	{
 		// adjust height
-		thiscam->z += thiscam->momz + player->mo->pmomz;
+		thiscam->z += thiscam->momz + thiscam->pmomz;
 	}
 
 	if (thiscam->ceilingz - thiscam->z < thiscam->height
