@@ -242,7 +242,7 @@ UINT16 K_GetEffectiveFollowerColor(UINT16 followercolor, follower_t *follower, U
 {
 	if (followercolor == SKINCOLOR_NONE && follower != NULL) // "Default"
 	{
-		return follower->defaultcolor;
+		followercolor = follower->defaultcolor;
 	}
 
 	if (followercolor > SKINCOLOR_NONE && followercolor < numskincolors) // bog standard
