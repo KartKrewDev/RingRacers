@@ -1061,6 +1061,7 @@ static void M_HandleFollowerRotate(setup_player_t *p, UINT8 num)
 		if (p->followern > -1)
 		{
 			p->mdepth = CSSTEP_FOLLOWERCOLORS;
+			M_NewPlayerColors(p);
 			S_StartSound(NULL, sfx_s3k63);
 		}
 		else
