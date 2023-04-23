@@ -196,7 +196,7 @@ static void M_SetupProfileGridPos(setup_player_t *p)
 		alt++;
 
 	p->clonenum = alt;
-	p->color = PR_GetProfileColor(pr);
+	p->color = pr->color;
 }
 
 static void M_SetupMidGameGridPos(setup_player_t *p, UINT8 num)

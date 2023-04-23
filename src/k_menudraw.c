@@ -1704,22 +1704,34 @@ static void M_DrawProfileCard(INT32 x, INT32 y, boolean greyedout, profile_t *p)
 
 	if (p != NULL && p->version)
 	{
-		truecol = PR_GetProfileColor(p);
-		colormap = R_GetTranslationColormap(TC_DEFAULT, truecol, GTC_CACHE);
-		strcpy(pname, p->profilename);
+		truecol = p->color;
 		skinnum = R_SkinAvailable(p->skinname);
+		strcpy(pname, p->profilename);
 	}
 
-	// check setup_player for colormap for the card.
-	// we'll need to check again for drawing afterwards unfortunately.
 	if (sp->mdepth >= CSSTEP_CHARS)
 	{
-		truecol = PR_GetProfileColor(p);
-		colormap = R_GetTranslationColormap(skinnum, sp->color, GTC_MENUCACHE);
+		truecol = sp->color;
+		skinnum = setup_chargrid[sp->gridx][sp->gridy].skinlist[sp->clonenum];
+	}
+
+	if (truecol == SKINCOLOR_NONE)
+	{
+		if (skinnum >= 0)
+		{
+			truecol = skins[skinnum].prefcolor;
+		}
+		else
+		{
+			truecol = SKINCOLOR_RED;
+		}
 	}
 
 	// Card
-	V_DrawFixedPatch(x*FRACUNIT, y*FRACUNIT, FRACUNIT, greyedout ? V_TRANSLUCENT : 0, card, colormap);
+	{
+		colormap = R_GetTranslationColormap(TC_DEFAULT, truecol, GTC_CACHE);
+		V_DrawFixedPatch(x*FRACUNIT, y*FRACUNIT, FRACUNIT, greyedout ? V_TRANSLUCENT : 0, card, colormap);
+	}
 
 	if (greyedout)
 		return;	// only used for profiles we can't select.
@@ -1734,12 +1746,12 @@ static void M_DrawProfileCard(INT32 x, INT32 y, boolean greyedout, profile_t *p)
 	// check what setup_player is doing in priority.
 	if (sp->mdepth >= CSSTEP_CHARS)
 	{
-		skinnum = setup_chargrid[sp->gridx][sp->gridy].skinlist[sp->clonenum];
-
 		if (skinnum >= 0)
 		{
-			if (M_DrawCharacterSprite(x-22, y+119, skinnum, false, false, 0, colormap))
-				V_DrawMappedPatch(x+14, y+66, 0, faceprefix[skinnum][FACE_RANK], colormap);
+			UINT8 *ccolormap = R_GetTranslationColormap(skinnum, truecol, GTC_MENUCACHE);
+
+			if (M_DrawCharacterSprite(x-22, y+119, skinnum, false, false, 0, ccolormap))
+				V_DrawMappedPatch(x+14, y+66, 0, faceprefix[skinnum][FACE_RANK], ccolormap);
 		}
 
 		M_DrawCharSelectCircle(sp, x-22, y+104);
@@ -1757,33 +1769,36 @@ static void M_DrawProfileCard(INT32 x, INT32 y, boolean greyedout, profile_t *p)
 	}
 	else if (skinnum > -1)	// otherwise, read from profile.
 	{
-		UINT8 *ccolormap, *fcolormap;
-		UINT8 fln = K_FollowerAvailable(p->follower);
-		UINT16 col = K_GetEffectiveFollowerColor(
-			p->followercolor,
-			K_FollowerUsable(fln) ? &followers[fln] : 0,
-			p->color,
-			&skins[skinnum]
-		);
+		UINT8 *ccolormap;
+		INT32 fln = K_FollowerAvailable(p->follower);
 
 		if (R_SkinUsable(g_localplayers[0], skinnum, false))
-			ccolormap = colormap;
+			ccolormap = R_GetTranslationColormap(skinnum, truecol, GTC_MENUCACHE);
 		else
 			ccolormap = R_GetTranslationColormap(TC_BLINK, truecol, GTC_MENUCACHE);
-
-		fcolormap = R_GetTranslationColormap(
-			(K_FollowerUsable(fln) ? TC_DEFAULT : TC_BLINK),
-				col, GTC_MENUCACHE);
 
 		if (M_DrawCharacterSprite(x-22, y+119, skinnum, false, false, 0, ccolormap))
 		{
 			V_DrawMappedPatch(x+14, y+66, 0, faceprefix[skinnum][FACE_RANK], ccolormap);
 		}
 
-		if (M_DrawFollowerSprite(x-22 - 16, y+119, fln, false, 0, fcolormap, NULL))
+		if (fln >= 0)
 		{
-			patch_t *ico = W_CachePatchName(followers[fln].icon, PU_CACHE);
-			V_DrawMappedPatch(x+14+18, y+66, 0, ico, fcolormap);
+			UINT16 fcol = K_GetEffectiveFollowerColor(
+				p->followercolor,
+				&followers[fln],
+				p->color,
+				&skins[skinnum]
+			);
+			UINT8 *fcolormap = R_GetTranslationColormap(
+			(K_FollowerUsable(fln) ? TC_DEFAULT : TC_BLINK),
+				fcol, GTC_MENUCACHE);
+
+			if (M_DrawFollowerSprite(x-22 - 16, y+119, fln, false, 0, fcolormap, NULL))
+			{
+				patch_t *ico = W_CachePatchName(followers[fln].icon, PU_CACHE);
+				V_DrawMappedPatch(x+14+18, y+66, 0, ico, fcolormap);
+			}
 		}
 	}
 

@@ -439,29 +439,10 @@ void PR_LoadProfiles(void)
 	profilesList[PROFILE_GUEST] = dprofile;
 }
 
-skincolornum_t PR_GetProfileColor(profile_t *p)
-{
-	if (p->color == SKINCOLOR_NONE)
-	{
-		// Get skin's prefcolor.
-		INT32 foundskin = R_SkinAvailable(p->skinname);
-		if (foundskin == -1)
-		{
-			// Return random default value
-			return SKINCOLOR_RED;
-		}
-
-		return skins[foundskin].prefcolor;
-	}
-
-	// Get exact color.
-	return p->color;
-}
-
 static void PR_ApplyProfile_Appearance(profile_t *p, UINT8 playernum)
 {
 	CV_StealthSet(&cv_skin[playernum], p->skinname);
-	CV_StealthSetValue(&cv_playercolor[playernum], PR_GetProfileColor(p));
+	CV_StealthSetValue(&cv_playercolor[playernum], p->color);
 	CV_StealthSet(&cv_playername[playernum], p->playername);
 
 	// Followers
