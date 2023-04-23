@@ -2984,6 +2984,8 @@ static void Command_Nodes(void)
 				CONS_Printf(" [%.4d PWR]", clientpowerlevels[i][K_UsingPowerLevels()]);
 			}
 
+			CONS_Printf(" [%d games]", SV_GetStatsByPlayerIndex(i)->finishedrounds);
+
 
 			CONS_Printf(" [RRID-%s]", GetPrettyRRID(players[i].public_key, true));
 
@@ -4195,10 +4197,10 @@ boolean SV_SpawnServer(void)
 		SINT8 node = 0;
 		for (; node < MAXNETNODES; node++)
 			result |= SV_AddWaitingPlayers(node, availabilitiesbuffer,
-				cv_playername[0].zstring, PR_GetLocalPlayerProfile(0)->public_key, SV_RetrieveStats(PR_GetLocalPlayerProfile(0)->public_key)->powerlevels,
-				cv_playername[1].zstring, PR_GetLocalPlayerProfile(1)->public_key, SV_RetrieveStats(PR_GetLocalPlayerProfile(1)->public_key)->powerlevels,
-				cv_playername[2].zstring, PR_GetLocalPlayerProfile(2)->public_key, SV_RetrieveStats(PR_GetLocalPlayerProfile(2)->public_key)->powerlevels,
-				cv_playername[3].zstring, PR_GetLocalPlayerProfile(3)->public_key, SV_RetrieveStats(PR_GetLocalPlayerProfile(3)->public_key)->powerlevels);
+				cv_playername[0].zstring, PR_GetLocalPlayerProfile(0)->public_key, SV_GetStatsByKey(PR_GetLocalPlayerProfile(0)->public_key)->powerlevels,
+				cv_playername[1].zstring, PR_GetLocalPlayerProfile(1)->public_key, SV_GetStatsByKey(PR_GetLocalPlayerProfile(1)->public_key)->powerlevels,
+				cv_playername[2].zstring, PR_GetLocalPlayerProfile(2)->public_key, SV_GetStatsByKey(PR_GetLocalPlayerProfile(2)->public_key)->powerlevels,
+				cv_playername[3].zstring, PR_GetLocalPlayerProfile(3)->public_key, SV_GetStatsByKey(PR_GetLocalPlayerProfile(3)->public_key)->powerlevels);
 	}
 	return result;
 #endif
@@ -4517,10 +4519,10 @@ static void HandleConnect(SINT8 node)
 			}
 
 			SV_AddWaitingPlayers(node, availabilitiesbuffer,
-				names[0], lastReceivedKey[node][0], SV_RetrieveStats(lastReceivedKey[node][0])->powerlevels,
-				names[1], lastReceivedKey[node][1], SV_RetrieveStats(lastReceivedKey[node][1])->powerlevels,
-				names[2], lastReceivedKey[node][2], SV_RetrieveStats(lastReceivedKey[node][2])->powerlevels,
-				names[3], lastReceivedKey[node][3], SV_RetrieveStats(lastReceivedKey[node][3])->powerlevels);
+				names[0], lastReceivedKey[node][0], SV_GetStatsByKey(lastReceivedKey[node][0])->powerlevels,
+				names[1], lastReceivedKey[node][1], SV_GetStatsByKey(lastReceivedKey[node][1])->powerlevels,
+				names[2], lastReceivedKey[node][2], SV_GetStatsByKey(lastReceivedKey[node][2])->powerlevels,
+				names[3], lastReceivedKey[node][3], SV_GetStatsByKey(lastReceivedKey[node][3])->powerlevels);
 			joindelay += cv_joindelay.value * TICRATE;
 			player_joining = true;
 		}

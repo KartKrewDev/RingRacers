@@ -47,6 +47,7 @@
 #include "k_boss.h"
 #include "k_pwrlv.h"
 #include "k_grandprix.h"
+#include "k_serverstats.h" // SV_BumpMatchStats
 
 #ifdef HWRENDER
 #include "hardware/hw_main.h"
@@ -847,6 +848,7 @@ void Y_StartIntermission(void)
 		}
 
 		K_CashInPowerLevels();
+		SV_BumpMatchStats();
 	}
 
 	Automate_Run(AEV_INTERMISSIONSTART);

@@ -27,13 +27,14 @@ extern "C" {
 
 #define SERVERSTATSFILE "srvstats.dat"
 #define SERVERSTATSHEADER "Doctor Robotnik's Ring Racers Server Stats"
-#define SERVERSTATSVER 1
+#define SERVERSTATSVER 2
 
 struct serverplayer_t
 {
 	uint8_t public_key[PUBKEYLENGTH];
 	UINT32 lastseen;
 	UINT16 powerlevels[PWRLV_NUMTYPES];
+	UINT32 finishedrounds;
 
 	UINT32 hash; // Not persisted! Used for early outs during key comparisons
 };
@@ -42,9 +43,13 @@ void SV_SaveStats(void);
 
 void SV_LoadStats(void);
 
-serverplayer_t *SV_RetrieveStats(uint8_t *key);
+serverplayer_t *SV_GetStatsByKey(uint8_t *key);
+serverplayer_t *SV_GetStatsByPlayerIndex(UINT8 p);
+serverplayer_t *SV_GetStats(player_t *player);
 
 void SV_UpdateStats(void);
+
+void SV_BumpMatchStats(void);
 
 #ifdef __cplusplus
 } // extern "C"

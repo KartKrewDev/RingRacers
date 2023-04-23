@@ -112,6 +112,13 @@ void SV_LoadStats(void)
 		{
 			trackedList[i].powerlevels[j] = READUINT16(save.p);
 		}
+
+		// Migration 1 -> 2: Add finishedrounds
+		if (version < 2)
+			trackedList[i].finishedrounds = 0;
+		else
+			trackedList[i].finishedrounds = READUINT32(save.p);
+
 		trackedList[i].hash = quickncasehash((char*)trackedList[i].public_key, PUBKEYLENGTH);
 	}
 }
@@ -149,6 +156,7 @@ void SV_SaveStats(void)
 		{
 			WRITEUINT16(save.p, trackedList[i].powerlevels[j]);
 		}
+		WRITEUINT32(save.p, trackedList[i].finishedrounds);
 	}
 
 	length = save.p - save.buffer;
@@ -162,7 +170,7 @@ void SV_SaveStats(void)
 }
 
 // New player, grab their stats from trackedList or initialize new ones if they're new
-serverplayer_t *SV_RetrieveStats(uint8_t *key)
+serverplayer_t *SV_GetStatsByKey(uint8_t *key)
 {
 	UINT32 j, hash;
 
@@ -189,6 +197,7 @@ serverplayer_t *SV_RetrieveStats(uint8_t *key)
 	{
 		trackedList[numtracked].powerlevels[j] = PR_IsKeyGuest(key) ? 0 : PWRLVRECORD_START;
 	}
+	trackedList[numtracked].finishedrounds = 0;
 	trackedList[numtracked].hash = quickncasehash((char*)key, PUBKEYLENGTH);
 
 	numtracked++;
@@ -196,7 +205,18 @@ serverplayer_t *SV_RetrieveStats(uint8_t *key)
 	return &trackedList[numtracked - 1];
 }
 
+serverplayer_t *SV_GetStatsByPlayerIndex(UINT8 p)
+{
+	return SV_GetStatsByKey(players[p].public_key);
+}
+
+serverplayer_t *SV_GetStats(player_t *player)
+{
+	return SV_GetStatsByKey(player->public_key);
+}
+
 // Write player stats to trackedList, then save to disk
+// (NB: Some stats changes are made directly to trackedList via K_CashInPowerLevels)
 void SV_UpdateStats(void)
 {	
 	UINT32 i, j, hash;
@@ -233,4 +253,22 @@ void SV_UpdateStats(void)
 	}
 
 	SV_SaveStats();
+}
+
+void SV_BumpMatchStats(void)
+{
+	int i;
+
+	for (i = 0; i < MAXPLAYERS; i++)
+	{
+		if (!playeringame[i])
+			continue;
+		if (players[i].spectator)
+			continue;
+
+		serverplayer_t *stat = SV_GetStatsByPlayerIndex(i);
+
+		if (!(players[i].pflags & PF_NOCONTEST))
+			stat->finishedrounds++;
+	}
 }
