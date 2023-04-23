@@ -2853,11 +2853,7 @@ boolean P_ProcessSpecial(activator_t *activator, INT16 special, INT32 *args, cha
 					y = args[3] << FRACBITS;
 					z = args[4] << FRACBITS;
 
-					P_UnsetThingPosition(mo);
-					mo->x += x;
-					mo->y += y;
-					mo->z += z;
-					P_SetThingPosition(mo);
+					P_SetOrigin(mo, mo->x + x, mo->y + y, mo->z + z);
 
 					if (mo->player)
 					{
