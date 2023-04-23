@@ -305,6 +305,10 @@ void HU_Init(void)
 		PR   ("MKFNT");
 		REG;
 
+		ADIM (TIMER);
+		PR   ("TMFNT");
+		REG;
+
 		ADIM (LT);
 		PR   ("GAMEM");
 		REG;
@@ -314,6 +318,14 @@ void HU_Init(void)
 		REG;
 
 		PR   ("TLWFN");
+		REG;
+
+		ADIM (NUM);
+		PR   ("OPPRF");
+		REG;
+
+		ADIM (NUM);
+		PR   ("PINGF");
 		REG;
 
 #undef  REG
@@ -2323,7 +2335,7 @@ Ping_gfx_color (int lag)
 //
 // HU_drawPing
 //
-void HU_drawPing(INT32 x, INT32 y, UINT32 lag, INT32 flags, boolean offline)
+void HU_drawPing(fixed_t x, fixed_t y, UINT32 lag, INT32 flags, boolean offline)
 {
 	UINT8 *colormap = NULL;
 	INT32 measureid = cv_pingmeasurement.value ? 1 : 0;
@@ -2339,12 +2351,36 @@ void HU_drawPing(INT32 x, INT32 y, UINT32 lag, INT32 flags, boolean offline)
 	gfxnum = Ping_gfx_num(lag);
 
 	if (measureid == 1)
-		V_DrawScaledPatch(x+11 - pingmeasure[measureid]->width, y+9, flags, pingmeasure[measureid]);
+	{
+		V_DrawFixedPatch(
+			x + ((11 - pingmeasure[measureid]->width) * FRACUNIT),
+			y + (9 * FRACUNIT),
+			FRACUNIT, flags,
+			pingmeasure[measureid],
+			NULL
+		);
+	}
 
 	if (drawlocal)
-		V_DrawScaledPatch(x+2, y, flags, pinglocal[0]);
+	{
+		V_DrawFixedPatch(
+			x + (2 * FRACUNIT),
+			y,
+			FRACUNIT, flags,
+			pinglocal[0],
+			NULL
+		);
+	}
 	else
-		V_DrawScaledPatch(x+2, y, flags, pinggfx[gfxnum]);
+	{
+		V_DrawFixedPatch(
+			x + (2 * FRACUNIT),
+			y,
+			FRACUNIT, flags,
+			pinggfx[gfxnum],
+			NULL
+		);
+	}
 
 	colormap = R_GetTranslationColormap(TC_RAINBOW, Ping_gfx_color(lag), GTC_CACHE);
 
@@ -2359,10 +2395,23 @@ void HU_drawPing(INT32 x, INT32 y, UINT32 lag, INT32 flags, boolean offline)
 		lag = (INT32)(lag * (1000.00f / TICRATE));
 	}
 
-	x = V_DrawPingNum(x + (measureid == 1 ? 11 - pingmeasure[measureid]->width : 10), y+9, flags, lag, colormap);
+	x = V_DrawPingNum(
+		x + (((measureid == 1) ? 11 - pingmeasure[measureid]->width : 10) * FRACUNIT),
+		y + (9 * FRACUNIT),
+		flags, lag,
+		colormap
+	);
 
 	if (measureid == 0)
-		V_DrawScaledPatch(x+1 - pingmeasure[measureid]->width, y+9, flags, pingmeasure[measureid]);
+	{
+		V_DrawFixedPatch(
+			x + ((1 - pingmeasure[measureid]->width) * FRACUNIT),
+			y + (9 * FRACUNIT),
+			FRACUNIT, flags,
+			pingmeasure[measureid],
+			NULL
+		);
+	}
 }
 
 void

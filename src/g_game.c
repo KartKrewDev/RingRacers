@@ -68,6 +68,7 @@
 #include "g_party.h"
 #include "k_vote.h"
 #include "k_serverstats.h"
+#include "k_zvote.h"
 
 #ifdef HAVE_DISCORDRPC
 #include "discord.h"
@@ -2389,6 +2390,11 @@ void G_Ticker(boolean run)
 		if (gametic % NAMECHANGERATE == 0)
 		{
 			memset(player_name_changes, 0, sizeof player_name_changes);
+		}
+
+		if (Playing() == true)
+		{
+			K_TickMidVote();
 		}
 	}
 }

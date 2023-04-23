@@ -65,6 +65,7 @@
 #include "k_race.h"
 #include "g_party.h"
 #include "k_vote.h"
+#include "k_zvote.h"
 
 #ifdef SRB2_CONFIG_ENABLE_WEBM_MOVIES
 #include "m_avrecorder.h"
@@ -632,6 +633,8 @@ const char *netxcmdnames[MAXNETXCMD - 1] =
 	"AUTOMATE", // XD_AUTOMATE
 	"REQMAPQUEUE", // XD_REQMAPQUEUE
 	"MAPQUEUE", // XD_MAPQUEUE
+	"CALLZVOTE", // XD_CALLZVOTE
+	"SETZVOTE", // XD_SETZVOTE
 };
 
 // =========================================================================
@@ -844,6 +847,8 @@ void D_RegisterServerCommands(void)
 #ifdef LUA_ALLOW_BYTECODE
 	COM_AddCommand("dumplua", Command_Dumplua_f);
 #endif
+
+	K_RegisterMidVoteCVars();
 }
 
 // =========================================================================

@@ -807,8 +807,8 @@ static int libd_drawPingNum(lua_State *L)
 	UINT8 *colormap = NULL;
 	huddrawlist_h list;
 	HUDONLY
-	x = luaL_checkinteger(L, 1);
-	y = luaL_checkinteger(L, 2);
+	x = luaL_checkfixed(L, 1);
+	y = luaL_checkfixed(L, 2);
 	num = luaL_checkinteger(L, 3);
 	flags = luaL_optinteger(L, 4, 0);
 	flags &= ~V_PARAMMASK; // Don't let crashes happen.
@@ -984,7 +984,7 @@ static int libd_drawKartString(lua_State *L)
 	if (LUA_HUD_IsDrawListValid(list))
 		LUA_HUD_AddDrawKartString(list, x, y, str, flags);
 	else
-		V_DrawKartString(x, y, flags, str);
+		V_DrawTimerString(x, y, flags, str);
 	return 0;
 }
 

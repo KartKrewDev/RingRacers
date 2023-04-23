@@ -212,6 +212,10 @@ TYPEDEF (waypoint_t);
 // k_rank.h
 TYPEDEF (gpRank_t);
 
+// k_zvote.h
+TYPEDEF (midVote_t);
+TYPEDEF (midVoteGUI_t);
+
 // lua_hudlib_drawlist.h
 typedef struct huddrawlist_s *huddrawlist_h;
 

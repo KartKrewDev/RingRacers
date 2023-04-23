@@ -32,15 +32,25 @@ extern "C" {
 #define HU_FONTSIZE (HU_FONTEND - HU_FONTSTART + 1)
 
 // SRB2kart
-#define KART_FONTSTART '\"' // the first font character
+#define KART_FONTSTART '!' // the first font character
 #define KART_FONTEND 'Z'
 
 #define KART_FONTSIZE (KART_FONTEND - KART_FONTSTART + 1)
+
+#define TIMER_FONTSTART '"' // the first font character
+#define TIMER_FONTEND '9'
+
+#define TIMER_FONTSIZE (TIMER_FONTEND - TIMER_FONTSTART + 1)
 
 #define AZ_FONTSTART 'A' // the first font character
 #define AZ_FONTEND 'Z'
 
 #define AZ_FONTSIZE (AZ_FONTEND - AZ_FONTSTART + 1)
+
+#define NUM_FONTSTART '-' // the first font character
+#define NUM_FONTEND '9'
+
+#define NUM_FONTSIZE (NUM_FONTEND - NUM_FONTSTART + 1)
 //
 
 // Level title font
@@ -72,9 +82,13 @@ enum
 	X	(PROFNUM),
 
 	X      (KART),
+	X     (TIMER),
 	X        (GM),
 	X      (LSHI),
 	X     (LSLOW),
+
+	X     (OPPRF),
+	X     (PINGF),
 };
 #undef  X
 
@@ -143,7 +157,7 @@ void HU_TickSongCredits(void);
 char HU_dequeueChatChar(void);
 void HU_Erase(void);
 void HU_clearChatChars(void);
-void HU_drawPing(INT32 x, INT32 y, UINT32 ping, INT32 flags, boolean offline); // Lat': Ping drawer for scoreboard.
+void HU_drawPing(fixed_t x, fixed_t y, UINT32 ping, INT32 flags, boolean offline); // Lat': Ping drawer for scoreboard.
 void HU_drawMiniPing(INT32 x, INT32 y, UINT32 ping, INT32 flags);
 
 INT32 HU_CreateTeamScoresTbl(playersort_t *tab, UINT32 dmtotals[]);

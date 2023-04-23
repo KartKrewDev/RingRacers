@@ -1448,7 +1448,7 @@ static void K_drawKartItem(void)
 			else
 			{
 				V_DrawScaledPatch(fy+28, fy+41, V_HUDTRANS|V_SLIDEIN|fflags, kp_itemx);
-				V_DrawKartString(fx+38, fy+36, V_HUDTRANS|V_SLIDEIN|fflags, va("%d", stplyr->itemamount));
+				V_DrawTimerString(fx+38, fy+36, V_HUDTRANS|V_SLIDEIN|fflags, va("%d", stplyr->itemamount));
 			}
 		}
 		else
@@ -1587,30 +1587,30 @@ void K_drawKartTimestamp(tic_t drawtime, INT32 TX, INT32 TY, INT32 splitflags, U
 	}
 
 	if (mode && !drawtime)
-		V_DrawKartString(TX, TY+3, splitflags, va("--'--\"--"));
+		V_DrawTimerString(TX, TY+3, splitflags, va("--'--\"--"));
 	else
 	{
 		// minutes time      00 __ __
-		V_DrawKartString(TX,    TY+3+jitter, splitflags, va("%d", worktime/10));
-		V_DrawKartString(TX+12, TY+3-jitter, splitflags, va("%d", worktime%10));
+		V_DrawTimerString(TX,    TY+3+jitter, splitflags, va("%d", worktime/10));
+		V_DrawTimerString(TX+12, TY+3-jitter, splitflags, va("%d", worktime%10));
 
 		// apostrophe location     _'__ __
-		V_DrawKartString(TX+24, TY+3, splitflags, va("'"));
+		V_DrawTimerString(TX+24, TY+3, splitflags, va("'"));
 
 		worktime = (drawtime/TICRATE % 60);
 
 		// seconds time       _ 00 __
-		V_DrawKartString(TX+36, TY+3+jitter, splitflags, va("%d", worktime/10));
-		V_DrawKartString(TX+48, TY+3-jitter, splitflags, va("%d", worktime%10));
+		V_DrawTimerString(TX+36, TY+3+jitter, splitflags, va("%d", worktime/10));
+		V_DrawTimerString(TX+48, TY+3-jitter, splitflags, va("%d", worktime%10));
 
 		// quotation mark location    _ __"__
-		V_DrawKartString(TX+60, TY+3, splitflags, va("\""));
+		V_DrawTimerString(TX+60, TY+3, splitflags, va("\""));
 
 		worktime = G_TicsToCentiseconds(drawtime);
 
 		// tics               _ __ 00
-		V_DrawKartString(TX+72, TY+3+jitter, splitflags, va("%d", worktime/10));
-		V_DrawKartString(TX+84, TY+3-jitter, splitflags, va("%d", worktime%10));
+		V_DrawTimerString(TX+72, TY+3+jitter, splitflags, va("%d", worktime/10));
+		V_DrawTimerString(TX+84, TY+3-jitter, splitflags, va("%d", worktime%10));
 	}
 
 	// Medal data!
@@ -2322,7 +2322,7 @@ void K_DrawTabRankings(INT32 x, INT32 y, playersort_t *tab, INT32 scorelines, IN
 			}
 			else if (tab[i].num != serverplayer || !server_lagless)
 			{
-				HU_drawPing(x + ((i < 8) ? -17 : rightoffset + 11), y-4, playerpingtable[tab[i].num], 0, false);
+				HU_drawPing((x + ((i < 8) ? -17 : rightoffset + 11)) * FRACUNIT, (y-4) * FRACUNIT, playerpingtable[tab[i].num], 0, false);
 			}
 		}
 
@@ -2490,7 +2490,7 @@ static void K_drawKartLaps(void)
 	{
 		// Laps
 		V_DrawScaledPatch(LAPS_X, LAPS_Y, V_HUDTRANS|V_SLIDEIN|splitflags, kp_lapsticker);
-		V_DrawKartString(LAPS_X+33, LAPS_Y+3, V_HUDTRANS|V_SLIDEIN|splitflags, va("%d/%d", min(stplyr->laps, numlaps), numlaps));
+		V_DrawTimerString(LAPS_X+33, LAPS_Y+3, V_HUDTRANS|V_SLIDEIN|splitflags, va("%d/%d", min(stplyr->laps, numlaps), numlaps));
 	}
 }
 
@@ -2986,7 +2986,7 @@ static void K_drawKartBumpersOrKarma(void)
 				V_DrawMappedPatch(LAPS_X, LAPS_Y, V_HUDTRANS|V_SLIDEIN|splitflags, kp_capsulestickerwide, NULL);
 			else
 				V_DrawMappedPatch(LAPS_X, LAPS_Y, V_HUDTRANS|V_SLIDEIN|splitflags, kp_capsulesticker, NULL);
-			V_DrawKartString(LAPS_X+47, LAPS_Y+3, V_HUDTRANS|V_SLIDEIN|splitflags, va("%d/%d", numtargets, maptargets));
+			V_DrawTimerString(LAPS_X+47, LAPS_Y+3, V_HUDTRANS|V_SLIDEIN|splitflags, va("%d/%d", numtargets, maptargets));
 		}
 		else
 		{
@@ -2998,7 +2998,7 @@ static void K_drawKartBumpersOrKarma(void)
 			else
 				V_DrawMappedPatch(LAPS_X, LAPS_Y, V_HUDTRANS|V_SLIDEIN|splitflags, kp_bumpersticker, colormap);
 
-			V_DrawKartString(LAPS_X+47, LAPS_Y+3, V_HUDTRANS|V_SLIDEIN|splitflags, va("%d/%d", bumpers, maxbumper));
+			V_DrawTimerString(LAPS_X+47, LAPS_Y+3, V_HUDTRANS|V_SLIDEIN|splitflags, va("%d/%d", bumpers, maxbumper));
 		}
 	}
 }
@@ -4507,7 +4507,7 @@ static void K_drawBattleFullscreen(void)
 		else
 		{
 			V_DrawFixedPatch(x<<FRACBITS, ty<<FRACBITS, scale, 0, kp_timeoutsticker, NULL);
-			V_DrawKartString(x-txoff, ty, 0, va("%d", stplyr->karmadelay/TICRATE));
+			V_DrawTimerString(x-txoff, ty, 0, va("%d", stplyr->karmadelay/TICRATE));
 		}
 	}
 
@@ -4919,8 +4919,17 @@ void K_drawKartFreePlay(void)
 	if (((leveltime-lt_endtime) % TICRATE) < TICRATE/2)
 		return;
 
-	V_DrawKartString((BASEVIDWIDTH - (LAPS_X+1)) - 72, // mirror the laps thingy
-		LAPS_Y+3, V_HUDTRANS|V_SLIDEIN|V_SNAPTOBOTTOM|V_SNAPTORIGHT|V_SPLITSCREEN, "FREE PLAY");
+	V_DrawStringScaled(
+		((BASEVIDWIDTH - (LAPS_X+1)) - 72) * FRACUNIT, // mirror the laps thingy
+		(LAPS_Y+3) * FRACUNIT,
+		FRACUNIT,
+		FRACUNIT,
+		FRACUNIT,
+		V_HUDTRANS|V_SLIDEIN|V_SNAPTOBOTTOM|V_SNAPTORIGHT|V_SPLITSCREEN,
+		NULL,
+		KART_FONT,
+		"FREE PLAY"
+	);
 }
 
 static void
@@ -4955,11 +4964,16 @@ K_drawMiniPing (void)
 	}
 }
 
+void K_drawButton(fixed_t x, fixed_t y, INT32 flags, patch_t *button[2], boolean pressed)
+{
+	V_DrawFixedPatch(x, y, FRACUNIT, flags, button[pressed], NULL);
+}
+
 void K_drawButtonAnim(INT32 x, INT32 y, INT32 flags, patch_t *button[2], tic_t animtic)
 {
 	const UINT8 anim_duration = 16;
-	const UINT8 anim = (animtic % (anim_duration * 2)) < anim_duration;
-	V_DrawScaledPatch(x, y, flags, button[anim]);
+	const boolean anim = ((animtic % (anim_duration * 2)) < anim_duration);
+	K_drawButton(x << FRACBITS, y << FRACBITS, flags, button, anim);
 }
 
 static void K_DrawDirectorButton(INT32 idx, const char *label, patch_t *kp[2], INT32 textflags)
@@ -5366,7 +5380,7 @@ void K_drawKartHUD(void)
 		else
 		{
 			INT32 karlen = strlen(countstr)*6; // half of 12
-			V_DrawKartString((BASEVIDWIDTH/2)-karlen, LAPS_Y+3, V_SPLITSCREEN, countstr);
+			V_DrawTimerString((BASEVIDWIDTH/2)-karlen, LAPS_Y+3, V_SPLITSCREEN, countstr);
 		}
 	}
 

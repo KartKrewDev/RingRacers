@@ -2264,7 +2264,7 @@ void V_DrawStringScaled(
 			spacew = 16;
 			break;
 		case KART_FONT:
-			spacew = 12;
+			spacew = 3;
 			switch (spacing)
 			{
 				case V_MONOSPACE:
@@ -2286,6 +2286,12 @@ void V_DrawStringScaled(
 		case LSHI_FONT:
 		case LSLOW_FONT:
 			spacew = 16;
+			break;
+		case OPPRF_FONT:
+			spacew = 5;
+			break;
+		case PINGF_FONT:
+			spacew = 3;
 			break;
 	}
 
@@ -2310,6 +2316,10 @@ void V_DrawStringScaled(
 			break;
 		case LSLOW_FONT:
 			lfh    = 38;
+			break;
+		case OPPRF_FONT:
+		case PINGF_FONT:
+			lfh = 10;
 			break;
 	}
 
@@ -2363,6 +2373,12 @@ void V_DrawStringScaled(
 			else
 				dim_fn = VariableCharacterDim;
 			break;
+		case KART_FONT:
+			if (chw)
+				dim_fn = FixedCharacterDim;
+			else
+				dim_fn = BunchedCharacterDim;
+			break;
 		case TINY_FONT:
 			if (chw)
 				dim_fn = FixedCharacterDim;
@@ -2393,6 +2409,13 @@ void V_DrawStringScaled(
 				dim_fn = FixedCharacterDim;
 			else
 				dim_fn = LSTitleCharacterDim;
+			break;
+		case OPPRF_FONT:
+		case PINGF_FONT:
+			if (chw)
+				dim_fn = FixedCharacterDim;
+			else
+				dim_fn = VariableCharacterDim;
 			break;
 	}
 
@@ -2535,7 +2558,7 @@ fixed_t V_StringScaledWidth(
 			spacew = 16;
 			break;
 		case KART_FONT:
-			spacew = 12;
+			spacew = 3;
 			switch (spacing)
 			{
 				case V_MONOSPACE:
@@ -2555,6 +2578,12 @@ fixed_t V_StringScaledWidth(
 		case LSHI_FONT:
 		case LSLOW_FONT:
 			spacew = 16;
+			break;
+		case OPPRF_FONT:
+			spacew = 5;
+			break;
+		case PINGF_FONT:
+			spacew = 3;
 			break;
 	}
 
@@ -2579,6 +2608,10 @@ fixed_t V_StringScaledWidth(
 			break;
 		case LSLOW_FONT:
 			lfh    = 38;
+			break;
+		case OPPRF_FONT:
+		case PINGF_FONT:
+			lfh = 10;
 			break;
 	}
 
@@ -2619,6 +2652,12 @@ fixed_t V_StringScaledWidth(
 			else
 				dim_fn = VariableCharacterDim;
 			break;
+		case KART_FONT:
+			if (chw)
+				dim_fn = FixedCharacterDim;
+			else
+				dim_fn = BunchedCharacterDim;
+			break;
 		case TINY_FONT:
 			if (chw)
 				dim_fn = FixedCharacterDim;
@@ -2649,6 +2688,13 @@ fixed_t V_StringScaledWidth(
 				dim_fn = FixedCharacterDim;
 			else
 				dim_fn = LSTitleCharacterDim;
+			break;
+		case OPPRF_FONT:
+		case PINGF_FONT:
+			if (chw)
+				dim_fn = FixedCharacterDim;
+			else
+				dim_fn = VariableCharacterDim;
 			break;
 	}
 
@@ -2734,37 +2780,36 @@ void V_DrawRightAlignedThinStringAtFixed(fixed_t x, fixed_t y, INT32 option, con
 // Draws a number using the PING font thingy.
 // TODO: Merge number drawing functions into one with "font name" selection.
 
-INT32 V_DrawPingNum(INT32 x, INT32 y, INT32 flags, INT32 num, const UINT8 *colormap)
+fixed_t V_DrawPingNum(fixed_t x, fixed_t y, INT32 flags, INT32 num, const UINT8 *colormap)
 {
-	INT32 w = SHORT(fontv[PINGNUM_FONT].font[0]->width);	// this SHOULD always be 5 but I guess custom graphics exist.
-
-	if (flags & V_NOSCALESTART)
-		w *= vid.dupx;
+	// this SHOULD always be 5 but I guess custom graphics exist.
+	const fixed_t w = (fontv[PINGNUM_FONT].font[0]->width) * FRACUNIT;
 
 	if (num < 0)
-		num = -num;
-
-	// draw the number
-	do
 	{
-		x -= (w-1);	// Oni wanted their outline to intersect.
-		V_DrawFixedPatch(x<<FRACBITS, y<<FRACBITS, FRACUNIT, flags, fontv[PINGNUM_FONT].font[num%10], colormap);
+		num = -num;
+	}
+
+	do // draw the number
+	{
+		x -= (w - FRACUNIT); // Oni wanted their outline to intersect.
+		V_DrawFixedPatch(x, y, FRACUNIT, flags, fontv[PINGNUM_FONT].font[num % 10], colormap);
 		num /= 10;
-	} while (num);
+	} while (num > 0);
 
 	return x;
 }
 
-void V_DrawCenteredKartString(INT32 x, INT32 y, INT32 option, const char *string)
+void V_DrawCenteredTimerString(INT32 x, INT32 y, INT32 option, const char *string)
 {
-	x -= V_KartStringWidth(string, option)/2;
-	V_DrawKartString(x, y, option, string);
+	x -= V_TimerStringWidth(string, option)/2;
+	V_DrawTimerString(x, y, option, string);
 }
 
-void V_DrawRightAlignedKartString(INT32 x, INT32 y, INT32 option, const char *string)
+void V_DrawRightAlignedTimerString(INT32 x, INT32 y, INT32 option, const char *string)
 {
-	x -= V_KartStringWidth(string, option);
-	V_DrawKartString(x, y, option, string);
+	x -= V_TimerStringWidth(string, option);
+	V_DrawTimerString(x, y, option, string);
 }
 
 void V_DrawCenteredGamemodeString(INT32 x, INT32 y, INT32 option, const UINT8 *colormap, const char *string)
