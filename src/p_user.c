@@ -2549,9 +2549,6 @@ void P_MovePlayer(player_t *player)
 	// Look for Quicksand!
 	if (CheckForQuicksand)
 		P_CheckQuicksand(player);
-
-	if (P_IsObjectOnGround(player->mo))
-		player->mo->pmomz = 0;
 }
 
 static void P_DoZoomTube(player_t *player)
@@ -3538,7 +3535,7 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 	{
 		thiscam->momx = x - thiscam->x;
 		thiscam->momy = y - thiscam->y;
-		thiscam->momz = FixedMul(z - thiscam->z, camspeed/2);
+		thiscam->momz = FixedMul(z - thiscam->z, camspeed*3/5);
 	}
 
 	thiscam->pan = pan;
@@ -4545,9 +4542,6 @@ void P_PlayerAfterThink(player_t *player)
 		player->mo->flags |= MF_NOGRAVITY;
 	}
 
-	if (P_IsObjectOnGround(player->mo))
-		player->mo->pmomz = 0;
-
 	K_KartPlayerAfterThink(player);
 
 	if (player->followmobj && (player->spectator || player->mo->health <= 0 || player->followmobj->type != player->followitem))
@@ -4598,11 +4592,19 @@ void P_PlayerAfterThink(player_t *player)
 		player->timeshit = 0;
 	}
 
-
 	if (K_PlayerUsesBotMovement(player))
 	{
 		K_UpdateBotGameplayVars(player);
 	}
+
+	if (thiscam)
+	{
+		// Store before it gets 0'd out
+		thiscam->pmomz = player->mo->pmomz;
+	}
+
+	if (P_IsObjectOnGround(player->mo))
+		player->mo->pmomz = 0;
 }
 
 void P_SetPlayerAngle(player_t *player, angle_t angle)
