@@ -53,6 +53,8 @@ typedef enum
 	PR_VOICES, // Player voice sounds
 	PR_RANDOMSKIN, // Random skin select from Heavy Magician(?)
 
+	PR_RANDOMAUDIENCE, // Audience randomisation
+
 	PR_RULESCRAMBLE, // Rule scrambing events
 	
 	PR_MUSICSELECT, // Randomized music selection

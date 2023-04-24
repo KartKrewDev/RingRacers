@@ -40,6 +40,7 @@
 #include "k_kart.h"
 #include "k_battle.h"
 #include "k_color.h"
+#include "k_follower.h"
 #include "k_respawn.h"
 #include "k_bot.h"
 #include "k_terrain.h"
@@ -7102,6 +7103,13 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 	{
 		INT32 trans = 0;
 
+		if (mobj->flags2 & MF2_STRONGBOX)
+		{
+			Obj_AudienceThink(mobj, true);
+			if (P_MobjWasRemoved(mobj))
+				return false;
+		}
+
 		mobj->frame &= ~FF_TRANSMASK;
 		mobj->renderflags &= ~RF_TRANSMASK;
 
@@ -10267,39 +10275,9 @@ void P_SceneryThinker(mobj_t *mobj)
 			mobj->renderflags &= ~RF_DONTDRAW;
 	}
 
-	if (mobj->type != MT_RANDOMAUDIENCE)
-		return;
-
+	if (mobj->type == MT_RANDOMAUDIENCE)
 	{
-		if (!mobj->colorized) // a fan of someone?
-			return;
-
-		if (mobj->threshold >= 0) // not already happy or sad?
-		{
-			if (!playeringame[mobj->threshold] || players[mobj->threshold].spectator) // focused on a valid player?
-				return;
-
-			if (!(players[mobj->threshold].exiting) && !(players[mobj->threshold].pflags & PF_NOCONTEST)) // not finished yet?
-				return;
-
-			if (K_IsPlayerLosing(&players[mobj->threshold]))
-				mobj->threshold = -2;
-			else
-			{
-				mobj->threshold = -1;
-				S_StartSound(mobj, sfx_chaooo);
-			}
-		}
-
-		if (mobj->threshold == -1)
-			mobj->angle += ANGLE_22h;
-
-		if (((statenum_t)(mobj->state-states) != S_AUDIENCE_CHAO_CHEER2) || (mobj->tics != states[S_AUDIENCE_CHAO_CHEER2].tics)) // not at the start of your cheer jump?
-			return;
-
-		mobj->momz = 0;
-
-		P_SetMobjState(mobj, ((mobj->threshold == -1) ? S_AUDIENCE_CHAO_WIN2 : S_AUDIENCE_CHAO_LOSE));
+		Obj_AudienceThink(mobj, !!(mobj->flags2 & MF2_AMBUSH));
 	}
 }
 
@@ -10814,41 +10792,6 @@ mobj_t *P_SpawnMobj(fixed_t x, fixed_t y, fixed_t z, mobjtype_t type)
 		case MT_CDUFO:
 			P_SetScale(mobj, (mobj->destscale = 3*FRACUNIT/2));
 			break;
-		case MT_RANDOMAUDIENCE:
-		{
-			fixed_t randu = P_RandomFixed(PR_UNDEFINED);
-			P_SetScale(mobj, (mobj->destscale <<= 1));
-			if (randu < (FRACUNIT/9)) // a fan of someone?
-			{
-				UINT8 i, pcount = 0;
-				UINT8 pnum[MAXPLAYERS];
-
-				for (i = 0; i < MAXPLAYERS; i++)
-				{
-					if (!playeringame[i])
-						continue;
-					pnum[pcount] = i;
-					pcount++;
-				}
-
-				if (pcount)
-				{
-					mobj->threshold = pnum[P_RandomKey(PR_UNDEFINED, pcount)];
-					mobj->color = players[mobj->threshold].skincolor;
-					mobj->colorized = true;
-					break;
-				}
-			}
-
-			if (randu > (FRACUNIT/2))
-			{
-				mobj->color = P_RandomKey(PR_UNDEFINED, numskincolors-1)+1;
-				break;
-			}
-
-			mobj->color = SKINCOLOR_CYAN;
-			break;
-		}
 		case MT_MARBLETORCH:
 			P_SpawnMobj(mobj->x, mobj->y, mobj->z + (29*mobj->scale), MT_MARBLELIGHT);
 			break;
@@ -12309,10 +12252,11 @@ static boolean P_SetupEmblem(mapthing_t *mthing, mobj_t *mobj)
 	INT32 j;
 	emblem_t* emblem = M_GetLevelEmblems(gamemap);
 	skincolornum_t emcolor;
+	INT16 tagnum = Tag_FGet(&mthing->tags);
 
 	while (emblem)
 	{
-		if (emblem->type == ET_GLOBAL && emblem->tag == Tag_FGet(&mthing->tags))
+		if (emblem->type == ET_GLOBAL && emblem->tag == tagnum)
 			break;
 
 		emblem = M_GetLevelEmblems(-1);
@@ -12320,7 +12264,7 @@ static boolean P_SetupEmblem(mapthing_t *mthing, mobj_t *mobj)
 
 	if (!emblem)
 	{
-		CONS_Alert(CONS_WARNING, "P_SetupEmblem: No map emblem for map %d with tag %d found!\n", gamemap, Tag_FGet(&mthing->tags));
+		CONS_Alert(CONS_WARNING, "P_SetupEmblem: No map emblem for map %d with tag %d found!\n", gamemap, tagnum);
 		return false;
 	}
 
@@ -12338,6 +12282,44 @@ static boolean P_SetupEmblem(mapthing_t *mthing, mobj_t *mobj)
 	if (emblemlocations[j].flags & GE_TIMED)
 	{
 		mobj->reactiontime = emblemlocations[j].var;
+	}
+
+	if (emblemlocations[j].flags & GE_FOLLOWER)
+	{
+		INT32 followerpick;
+		char testname[SKINNAMESIZE+1];
+		size_t i;
+
+		// match deh_soc readfollower()
+		for (i = 0; emblemlocations[j].stringVar2[i]; i++)
+		{
+			testname[i] = emblemlocations[j].stringVar2[i];
+			if (emblemlocations[j].stringVar2[i] == '_')
+				testname[i] = ' ';
+		}
+		testname[i] = '\0';
+		followerpick = K_FollowerAvailable(testname);
+
+		if (followerpick == -1)
+		{
+			CONS_Alert(CONS_WARNING, "P_SetupEmblem: Follower \"%s\" on emblem for map %d with tag %d not found!\n", emblemlocations[j].stringVar2, gamemap, tagnum);
+			return false;
+		}
+
+		// Signal that you are to behave like a follower
+		mobj->flags2 |= MF2_STRONGBOX;
+		if (followers[followerpick].mode == FOLLOWERMODE_GROUND)
+		{
+			mobj->flags &= ~(MF_NOGRAVITY|MF_NOCLIPHEIGHT);
+		}
+
+		// Set up data
+		Obj_AudienceInit(mobj, NULL, followerpick);
+		if (P_MobjWasRemoved(mobj))
+		{
+			CONS_Alert(CONS_WARNING, "P_SetupEmblem: Follower \"%s\" causes emblem for map %d with tag %d to be removed immediately!\n", emblemlocations[j].stringVar2, gamemap, tagnum);
+			return false;
+		}
 	}
 
 	return true;
@@ -13217,6 +13199,25 @@ static boolean P_SetupSpawnedMapThing(mapthing_t *mthing, mobj_t *mobj, boolean 
 		}
 		break;
 	}
+	case MT_RANDOMAUDIENCE:
+	{
+		if (mthing->args[2] != 0)
+		{
+			mobj->flags |= MF_NOGRAVITY;
+		}
+
+		if (mthing->args[3] != 0)
+		{
+			mobj->flags2 |= MF2_AMBUSH;
+		}
+
+		Obj_AudienceInit(mobj, mthing, -1);
+
+		if (P_MobjWasRemoved(mobj))
+			return false;
+
+		break;
+	}
 	case MT_AAZTREE_HELPER:
 	{
 		fixed_t top = mobj->z;
@@ -13420,6 +13421,9 @@ static boolean P_SetupSpawnedMapThing(mapthing_t *mthing, mobj_t *mobj, boolean 
 		break;
 	}
 
+	if (P_MobjWasRemoved(mobj))
+		return false;
+
 	if (mobj->flags & MF_BOSS)
 	{
 		if (mthing->args[1]) // No egg trap for this boss
@@ -13441,7 +13445,12 @@ static mobj_t *P_SpawnMobjFromMapThing(mapthing_t *mthing, fixed_t x, fixed_t y,
 	mobj->destscale = FixedMul(mobj->destscale, mthing->scale);
 
 	if (!P_SetupSpawnedMapThing(mthing, mobj, &doangle))
+	{
+		if (P_MobjWasRemoved(mobj))
+			return NULL;
+
 		return mobj;
+	}
 
 	if (doangle)
 	{
@@ -13669,7 +13678,8 @@ static void P_SpawnItemRow(mapthing_t *mthing, mobjtype_t *itemtypes, UINT8 numi
 				y + FixedMul(length, FINESINE(fineangle)),
 				z, MT_LOOPCENTERPOINT);
 
-		Obj_LinkLoopAnchor(loopanchor, loopcenter, mthing->args[0]);
+		if (!P_MobjWasRemoved(loopanchor))
+			Obj_LinkLoopAnchor(loopanchor, loopcenter, mthing->args[0]);
 	}
 
 	for (r = 0; r < numitems; r++)

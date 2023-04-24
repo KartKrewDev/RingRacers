@@ -1196,8 +1196,8 @@ static void IdentifyVersion(void)
 	D_AddFile(startupiwads, va(pandf,srb2waddir,"textures_segazones.pk3"));
 	D_AddFile(startupiwads, va(pandf,srb2waddir,"textures_originalzones.pk3"));
 	D_AddFile(startupiwads, va(pandf,srb2waddir,"chars.pk3"));
-	D_AddFile(startupiwads, va(pandf,srb2waddir,"maps.pk3"));
 	D_AddFile(startupiwads, va(pandf,srb2waddir,"followers.pk3"));
+	D_AddFile(startupiwads, va(pandf,srb2waddir,"maps.pk3"));
 #define UNLOCKTESTING
 #if defined(DEVELOP) && defined(UNLOCKTESTING)
 	D_AddFile(startupiwads, va(pandf,srb2waddir,"unlocks.pk3"));
@@ -1531,8 +1531,8 @@ void D_SRB2Main(void)
 	mainwads++; W_VerifyFileMD5(mainwads, ASSET_HASH_TEXTURES_SEGA_PK3);		// textures_segazones.pk3
 	mainwads++; W_VerifyFileMD5(mainwads, ASSET_HASH_TEXTURES_ORIGINAL_PK3);	// textures_originalzones.pk3
 	mainwads++; W_VerifyFileMD5(mainwads, ASSET_HASH_CHARS_PK3);				// chars.pk3
+	mainwads++; W_VerifyFileMd5(mainwads, ASSET_HASH_FOLLOWERS_PK3);			// followers.pk3
 	mainwads++; W_VerifyFileMD5(mainwads, ASSET_HASH_MAPS_PK3);					// maps.pk3
-	mainwads++; W_VerifyFileMd5(mainwads, ASSET_HASH_FOLLOWERS_PK3);  // followers.pk3
 #else
 #ifdef USE_PATCH_FILE
 	mainwads++;	// scripts.pk3
@@ -1542,8 +1542,8 @@ void D_SRB2Main(void)
 	mainwads++;	// textures_segazones.pk3
 	mainwads++;	// textures_originalzones.pk3
 	mainwads++;	// chars.pk3
-	mainwads++;	// maps.pk3
 	mainwads++; // followers.pk3
+	mainwads++;	// maps.pk3
 #ifdef UNLOCKTESTING
 	mainwads++; // unlocks.pk3
 #endif

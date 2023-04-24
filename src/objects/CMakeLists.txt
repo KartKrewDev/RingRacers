@@ -15,4 +15,5 @@ target_sources(SRB2SDL2 PRIVATE
 	loops.c
 	drop-target.c
 	ring-shooter.c
+	audience.c
 )

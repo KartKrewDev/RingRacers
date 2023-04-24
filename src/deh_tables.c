@@ -31,31 +31,6 @@ char *FREE_MOBJS[NUMMOBJFREESLOTS];
 char *FREE_SKINCOLORS[NUMCOLORFREESLOTS];
 UINT8 used_spr[(NUMSPRITEFREESLOTS / 8) + 1]; // Bitwise flag for sprite freeslot in use! I would use ceil() here if I could, but it only saves 1 byte of memory anyway.
 
-struct flickytypes_s FLICKYTYPES[] = {
-	{"BLUEBIRD", MT_FLICKY_01}, // Flicky (Flicky)
-	{"RABBIT",   MT_FLICKY_02}, // Pocky (1)
-	{"CHICKEN",  MT_FLICKY_03}, // Cucky (1)
-	{"SEAL",     MT_FLICKY_04}, // Rocky (1)
-	{"PIG",      MT_FLICKY_05}, // Picky (1)
-	{"CHIPMUNK", MT_FLICKY_06}, // Ricky (1)
-	{"PENGUIN",  MT_FLICKY_07}, // Pecky (1)
-	{"FISH",     MT_FLICKY_08}, // Nicky (CD)
-	{"RAM",      MT_FLICKY_09}, // Flocky (CD)
-	{"PUFFIN",   MT_FLICKY_10}, // Wicky (CD)
-	{"COW",      MT_FLICKY_11}, // Macky (SRB2)
-	{"RAT",      MT_FLICKY_12}, // Micky (2)
-	{"BEAR",     MT_FLICKY_13}, // Becky (2)
-	{"DOVE",     MT_FLICKY_14}, // Docky (CD)
-	{"CAT",      MT_FLICKY_15}, // Nyannyan (Flicky)
-	{"CANARY",   MT_FLICKY_16}, // Lucky (CD)
-	{"a", 0}, // End of normal flickies - a lower case character so will never fastcmp valid with uppercase tmp
-	//{"FLICKER",          MT_FLICKER}, // Flacky (SRB2)
-	{"SPIDER",   MT_SECRETFLICKY_01}, // Sticky (SRB2)
-	{"BAT",      MT_SECRETFLICKY_02}, // Backy (SRB2)
-	{"SEED",                MT_SEED}, // Seed (CD)
-	{NULL, 0}
-};
-
 // IMPORTANT!
 // DO NOT FORGET TO SYNC THIS LIST WITH THE ACTIONNUM ENUM IN INFO.H
 actionpointer_t actionpointers[] =
@@ -3885,14 +3860,6 @@ const char *const STATE_LIST[] = { // array length left dynamic for sanity testi
 	"S_DEZLASER_TRAIL4",
 	"S_DEZLASER_TRAIL5",
 
-	// Audience Members
-	"S_RANDOMAUDIENCE",
-	"S_AUDIENCE_CHAO_CHEER1",
-	"S_AUDIENCE_CHAO_CHEER2",
-	"S_AUDIENCE_CHAO_WIN1",
-	"S_AUDIENCE_CHAO_WIN2",
-	"S_AUDIENCE_CHAO_LOSE",
-
 	// 1.0 Kart Decoratives
 	"S_FLAYM1",
 	"S_FLAYM2",
@@ -6428,6 +6395,7 @@ struct int_const_s const INT_CONST[] = {
 	// Global emblem var flags
 	{"GE_NOTMEDAL", GE_NOTMEDAL},
 	{"GE_TIMED", GE_TIMED},
+	{"GE_FOLLOWER", GE_FOLLOWER},
 
 	// Map emblem var flags
 	{"ME_ENCORE",ME_ENCORE},
