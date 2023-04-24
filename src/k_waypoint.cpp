@@ -650,6 +650,13 @@ void K_DebugWaypointsVisualise(void)
 	// Hunt through the waypointcap so we can show all waypoint mobjs and not just ones that were able to be graphed
 	for (waypointmobj = waypointcap; waypointmobj != NULL; waypointmobj = waypointmobj->tracer)
 	{
+		// If this waypoint is outside of draw distance, don't spawn all the debug crap because it is SLOW
+		if (cv_drawdist.value != 0 &&
+			R_PointToDist(waypointmobj->x, waypointmobj->y) > cv_drawdist.value * mapobjectscale)
+		{
+			continue;
+		}
+
 		waypoint = K_SearchWaypointHeapForMobj(waypointmobj);
 
 		debugmobj = P_SpawnMobj(waypointmobj->x, waypointmobj->y, waypointmobj->z, MT_SPARK);
