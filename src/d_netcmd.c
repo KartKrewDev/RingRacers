@@ -1109,6 +1109,7 @@ void D_RegisterClientCommands(void)
 	COM_AddCommand("grayscale", Command_Grayscale_f);
 	COM_AddCommand("goto", Command_Goto_f);
 	COM_AddCommand("angle", Command_Angle_f);
+	COM_AddCommand("respawnat", Command_RespawnAt_f);
 	CV_RegisterVar(&cv_renderhitbox);
 	CV_RegisterVar(&cv_devmode_screen);
 
@@ -2033,6 +2034,10 @@ void D_Cheat(INT32 playernum, INT32 cheat, ...)
 
 		case CHEAT_ANGLE:
 			COPY(WRITEANGLE, angle_t);
+			break;
+
+		case CHEAT_RESPAWNAT:
+			COPY(WRITEINT32, INT32);
 			break;
 	}
 
@@ -6014,6 +6019,73 @@ static void Got_Cheat(UINT8 **cp, INT32 playernum)
 			P_SetPlayerAngle(player, angle);
 
 			CV_CheaterWarning(targetPlayer, va("angle = %d%s", (int)anglef, M_Ftrim(anglef)));
+			break;
+		}
+
+		case CHEAT_RESPAWNAT: {
+			INT32 id = READINT32(*cp);
+			waypoint_t *finish = K_GetFinishLineWaypoint();
+			waypoint_t *waypoint = K_GetWaypointFromID(id);
+			path_t path = {0};
+			boolean retryBackwards = false;
+			const UINT32 baseDist = FixedMul(RESPAWN_DIST, mapobjectscale);
+
+			CV_CheaterWarning(targetPlayer, va("respawnat %d", id));
+
+			if (waypoint == NULL)
+			{
+				CONS_Alert(CONS_WARNING, "respawnat: no waypoint with that ID\n");
+				break;
+			}
+
+			// First, just try to go forward normally
+			if (K_PathfindToWaypoint(player->respawn.wp, waypoint, &path, false, false))
+			{
+				// If the path forward is too short, extend it by moving the origin behind
+				if (path.totaldist < baseDist)
+				{
+					retryBackwards = true;
+				}
+				else
+				{
+					size_t i;
+
+					for (i = 0; i < path.numnodes; ++i)
+					{
+						// If we had to cross the finish line, this waypoint is behind us
+						if (path.array[i].nodedata == finish)
+						{
+							retryBackwards = true;
+							break;
+						}
+					}
+				}
+
+				Z_Free(path.array);
+			}
+			else
+			{
+				retryBackwards = true;
+			}
+
+			if (retryBackwards)
+			{
+				memset(&path, 0, sizeof path);
+				if (!K_PathfindThruCircuit(waypoint, baseDist, &path, false, true))
+				{
+					CONS_Alert(CONS_WARNING, "respawnat: no path to waypoint\n");
+					break;
+				}
+
+				// Update origin since lightsnake must go forwards
+				player->respawn.wp = path.array[path.numnodes - 1].nodedata;
+
+				Z_Free(path.array);
+			}
+
+			player->respawn.state = RESPAWNST_NONE;
+			K_DoIngameRespawn(player);
+			player->respawn.distanceleft = retryBackwards ? baseDist : path.totaldist;
 			break;
 		}
 

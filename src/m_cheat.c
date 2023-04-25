@@ -614,6 +614,20 @@ void Command_Angle_f(void)
 	D_Cheat(consoleplayer, CHEAT_ANGLE, angle);
 }
 
+void Command_RespawnAt_f(void)
+{
+	REQUIRE_CHEATS;
+	REQUIRE_INLEVEL;
+
+	if (COM_Argc() != 2)
+	{
+		CONS_Printf(M_GetText("respawnat <waypoint id>: lightsnake to a specific waypoint\n"));
+		return;
+	}
+
+	D_Cheat(consoleplayer, CHEAT_RESPAWNAT, atoi(COM_Argv(1)));
+}
+
 //
 // OBJECTPLACE (and related variables)
 //
