@@ -1119,6 +1119,19 @@ fixed_t P_GetMobjGravity(mobj_t *mo)
 
 	if (mo->player)
 	{
+		if (mo->player->respawn.state != RESPAWNST_NONE)
+		{
+			// Respawning forces gravity to match waypoint configuration
+			mo->flags2 &= ~(MF2_OBJECTFLIP);
+
+			// If this sector's gravity doesn't already match
+			if ((gravityadd > 0) != mo->player->respawn.flip)
+			{
+				mo->flags2 |= MF2_OBJECTFLIP;
+			}
+		}
+
+		// MF2_OBJECTFLIP is relative -- flips sector reverse gravity back to normal
 		if (mo->flags2 & MF2_OBJECTFLIP)
 		{
 			gravityadd = -gravityadd;
