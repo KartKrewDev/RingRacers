@@ -83,4 +83,7 @@ bool CallFunc_PodiumFinish(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM
 
 bool CallFunc_SetLineRenderStyle(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC);
 
+bool CallFunc_GetSectorProperty(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC);
+bool CallFunc_SetSectorProperty(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC);
+
 #endif // __SRB2_ACS_CALL_FUNCS_HPP__

@@ -41,6 +41,7 @@
 #include "../r_skins.h"
 #include "../k_battle.h"
 #include "../k_podium.h"
+#include "../z_zone.h"
 
 #include "call-funcs.hpp"
 
@@ -1473,6 +1474,236 @@ bool CallFunc_SetLineRenderStyle(ACSVM::Thread *thread, const ACSVM::Word *argV,
 
 		line->blendmode = blend;
 		line->alpha = alpha;
+	}
+
+	return false;
+}
+
+/*--------------------------------------------------
+	bool CallFunc_Get/SetSectorProperty(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
+
+		Generic sector property management.
+--------------------------------------------------*/
+enum
+{
+	SECTOR_PROP_FLOORHEIGHT,
+	SECTOR_PROP_CEILINGHEIGHT,
+	SECTOR_PROP_FLOORPIC,
+	SECTOR_PROP_CEILINGPIC,
+	SECTOR_PROP_LIGHTLEVEL,
+	SECTOR_PROP_FLOORLIGHTLEVEL,
+	SECTOR_PROP_CEILINGLIGHTLEVEL,
+	SECTOR_PROP_FLOORLIGHTABSOLUTE,
+	SECTOR_PROP_CEILINGLIGHTABSOLUTE,
+	SECTOR_PROP_SPECIAL,
+	SECTOR_PROP_FLAGS,
+	SECTOR_PROP_SPECIALFLAGS,
+	SECTOR_PROP_GRAVITY,
+	SECTOR_PROP_ACTIVATION,
+	SECTOR_PROP_ACTION,
+	SECTOR_PROP_ARG0,
+	SECTOR_PROP_ARG1,
+	SECTOR_PROP_ARG2,
+	SECTOR_PROP_ARG3,
+	SECTOR_PROP_ARG4,
+	SECTOR_PROP_ARG5,
+	SECTOR_PROP_ARG6,
+	SECTOR_PROP_ARG7,
+	SECTOR_PROP_ARG8,
+	SECTOR_PROP_ARG9,
+	SECTOR_PROP_ARG0STR,
+	SECTOR_PROP_ARG1STR,
+	SECTOR_PROP__MAX
+};
+
+bool CallFunc_GetSectorProperty(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
+{
+	Environment *env = &ACSEnv;
+
+	mtag_t tag = 0;
+	INT32 sectorID = -1;
+	sector_t *sector = NULL;
+
+	INT32 property = SECTOR_PROP__MAX;
+	INT32 value = 0;
+
+	tag = argV[0];
+	if ((sectorID = Tag_Iterate_Sectors(tag, 0)) != -1)
+	{
+		sector = &sectors[ sectorID ];
+	}
+
+	property = argV[1];
+
+	if (sector != NULL)
+	{
+
+#define PROP_INT(x, y) \
+	case x: \
+	{ \
+		value = static_cast<INT32>( sector->y ); \
+		break; \
+	}
+
+#define PROP_STR(x, y) \
+	case x: \
+	{ \
+		value = static_cast<INT32>( ~env->getString( sector->y )->idx ); \
+		break; \
+	}
+
+#define PROP_FLAT(x, y) \
+	case x: \
+	{ \
+		value = static_cast<INT32>( ~env->getString( levelflats[ sector->y ].name )->idx ); \
+		break; \
+	}
+
+		switch (property)
+		{
+			PROP_INT(SECTOR_PROP_FLOORHEIGHT, floorheight)
+			PROP_INT(SECTOR_PROP_CEILINGHEIGHT, ceilingheight)
+			PROP_FLAT(SECTOR_PROP_FLOORPIC, floorpic)
+			PROP_FLAT(SECTOR_PROP_CEILINGPIC, ceilingpic)
+			PROP_INT(SECTOR_PROP_LIGHTLEVEL, lightlevel)
+			PROP_INT(SECTOR_PROP_FLOORLIGHTLEVEL, floorlightlevel)
+			PROP_INT(SECTOR_PROP_CEILINGLIGHTLEVEL, ceilinglightlevel)
+			PROP_INT(SECTOR_PROP_FLOORLIGHTABSOLUTE, floorlightabsolute)
+			PROP_INT(SECTOR_PROP_CEILINGLIGHTABSOLUTE, ceilinglightabsolute)
+			PROP_INT(SECTOR_PROP_SPECIAL, special)
+			PROP_INT(SECTOR_PROP_FLAGS, flags)
+			PROP_INT(SECTOR_PROP_SPECIALFLAGS, specialflags)
+			PROP_INT(SECTOR_PROP_GRAVITY, gravity)
+			PROP_INT(SECTOR_PROP_ACTIVATION, activation)
+			PROP_INT(SECTOR_PROP_ACTION, action)
+			PROP_INT(SECTOR_PROP_ARG0, args[0])
+			PROP_INT(SECTOR_PROP_ARG1, args[1])
+			PROP_INT(SECTOR_PROP_ARG2, args[2])
+			PROP_INT(SECTOR_PROP_ARG3, args[3])
+			PROP_INT(SECTOR_PROP_ARG4, args[4])
+			PROP_INT(SECTOR_PROP_ARG5, args[5])
+			PROP_INT(SECTOR_PROP_ARG6, args[6])
+			PROP_INT(SECTOR_PROP_ARG7, args[7])
+			PROP_INT(SECTOR_PROP_ARG8, args[8])
+			PROP_INT(SECTOR_PROP_ARG9, args[9])
+			PROP_STR(SECTOR_PROP_ARG0STR, stringargs[0])
+			PROP_STR(SECTOR_PROP_ARG1STR, stringargs[1])
+			default:
+			{
+				CONS_Alert(CONS_WARNING, "GetSectorProperty type %d out of range (expected 0 - %d).\n", property, SECTOR_PROP__MAX-1);
+				break;
+			}
+		}
+
+#undef PROP_FLAT
+#undef PROP_STR
+#undef PROP_INT
+
+	}
+
+	thread->dataStk.push(value);
+	return false;
+}
+
+bool CallFunc_SetSectorProperty(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
+{
+	//Environment *env = &ACSEnv;
+
+	mtag_t tag = 0;
+	INT32 sectorID = -1;
+	sector_t *sector = NULL;
+
+	INT32 property = SECTOR_PROP__MAX;
+	INT32 value = 0;
+
+	tag = argV[0];
+	property = argV[1];
+	value = argV[2];
+
+	TAG_ITER_SECTORS(tag, sectorID)
+	{
+		sector = &sectors[sectorID];
+
+#define PROP_READONLY(x, y) \
+	case x: \
+	{ \
+		CONS_Alert(CONS_WARNING, "SetSectorProperty type '%s' cannot be written to.\n", "y"); \
+		break; \
+	}
+
+#define PROP_INT(x, y) \
+	case x: \
+	{ \
+		sector->y = static_cast< decltype(sector->y) >(value); \
+		break; \
+	}
+
+#define PROP_STR(x, y) \
+	case x: \
+	{ \
+		ACSVM::String *str = thread->scopeMap->getString( value ); \
+		if (str->len == 0) \
+		{ \
+			Z_Free(sector->y); \
+			sector->y = NULL; \
+		} \
+		else \
+		{ \
+			sector->y = static_cast<char *>(Z_Realloc(sector->y, str->len + 1, PU_LEVEL, NULL)); \
+			M_Memcpy(sector->y, str->str, str->len + 1); \
+			sector->y[str->len] = '\0'; \
+		} \
+		break; \
+	}
+
+#define PROP_FLAT(x, y) \
+	case x: \
+	{ \
+		sector->y = P_AddLevelFlatRuntime( thread->scopeMap->getString( value )->str ); \
+		break; \
+	}
+
+		switch (property)
+		{
+			PROP_INT(SECTOR_PROP_FLOORHEIGHT, floorheight)
+			PROP_INT(SECTOR_PROP_CEILINGHEIGHT, ceilingheight)
+			PROP_FLAT(SECTOR_PROP_FLOORPIC, floorpic)
+			PROP_FLAT(SECTOR_PROP_CEILINGPIC, ceilingpic)
+			PROP_INT(SECTOR_PROP_LIGHTLEVEL, lightlevel)
+			PROP_INT(SECTOR_PROP_FLOORLIGHTLEVEL, floorlightlevel)
+			PROP_INT(SECTOR_PROP_CEILINGLIGHTLEVEL, ceilinglightlevel)
+			PROP_INT(SECTOR_PROP_FLOORLIGHTABSOLUTE, floorlightabsolute)
+			PROP_INT(SECTOR_PROP_CEILINGLIGHTABSOLUTE, ceilinglightabsolute)
+			PROP_INT(SECTOR_PROP_SPECIAL, special)
+			PROP_INT(SECTOR_PROP_FLAGS, flags)
+			PROP_INT(SECTOR_PROP_SPECIALFLAGS, specialflags)
+			PROP_INT(SECTOR_PROP_GRAVITY, gravity)
+			PROP_INT(SECTOR_PROP_ACTIVATION, activation)
+			PROP_INT(SECTOR_PROP_ACTION, action)
+			PROP_INT(SECTOR_PROP_ARG0, args[0])
+			PROP_INT(SECTOR_PROP_ARG1, args[1])
+			PROP_INT(SECTOR_PROP_ARG2, args[2])
+			PROP_INT(SECTOR_PROP_ARG3, args[3])
+			PROP_INT(SECTOR_PROP_ARG4, args[4])
+			PROP_INT(SECTOR_PROP_ARG5, args[5])
+			PROP_INT(SECTOR_PROP_ARG6, args[6])
+			PROP_INT(SECTOR_PROP_ARG7, args[7])
+			PROP_INT(SECTOR_PROP_ARG8, args[8])
+			PROP_INT(SECTOR_PROP_ARG9, args[9])
+			PROP_STR(SECTOR_PROP_ARG0STR, stringargs[0])
+			PROP_STR(SECTOR_PROP_ARG1STR, stringargs[1])
+			default:
+			{
+				CONS_Alert(CONS_WARNING, "SetSectorProperty type %d out of range (expected 0 - %d).\n", property, SECTOR_PROP__MAX-1);
+				break;
+			}
+		}
+
+#undef PROP_FLAT
+#undef PROP_STR
+#undef PROP_INT
+#undef PROP_READONLY
+
 	}
 
 	return false;
