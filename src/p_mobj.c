@@ -11969,7 +11969,7 @@ void P_MovePlayerToSpawn(INT32 playernum, mapthing_t *mthing)
 		fixed_t offset = mthing->z << FRACBITS;
 
 		if (p->respawn.state != RESPAWNST_NONE || p->spectator)
-			offset += K_RespawnOffset(p, (mthing->options & MTF_OBJECTFLIP));
+			offset += K_RespawnOffset(p, (mthing->options & MTF_OBJECTFLIP) != 0);
 
 		// Setting the spawnpoint's args[0] will make the player start on the ceiling
 		// Objectflip inverts

@@ -251,7 +251,7 @@ void K_DoIngameRespawn(player_t *player)
 
 			s = R_PointInSubsector(beststart->x << FRACBITS, beststart->y << FRACBITS)->sector;
 
-			player->respawn.flip = (beststart->options & MTF_OBJECTFLIP);
+			player->respawn.flip = (beststart->options & MTF_OBJECTFLIP) != 0;
 
 			if (player->respawn.flip == true)
 			{
@@ -557,7 +557,7 @@ static void K_MovePlayerToRespawnPoint(player_t *player)
 			dest.x = laserwp->mobj->x;
 			dest.y = laserwp->mobj->y;
 			dest.z = laserwp->mobj->z;
-			laserflip = (laserwp->mobj->flags2 & MF2_OBJECTFLIP);
+			laserflip = (laserwp->mobj->flags2 & MF2_OBJECTFLIP) ? true : false; // K_RespawnOffset wants a boolean!
 
 			if (laserflip == true)
 			{
