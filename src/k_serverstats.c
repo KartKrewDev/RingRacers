@@ -191,6 +191,9 @@ serverplayer_t *SV_GetStatsByKey(uint8_t *key)
 	SV_ExpandStats(numtracked+1);
 
 	// Default stats
+	// (NB: This will make a GUEST record if someone tries to retrieve GUEST stats, because
+	// at the very least we should try to provide other codepaths the right  _data type_,
+	// but it will not be written back.)
 	trackedList[numtracked].lastseen = time(NULL);
 	memcpy(&trackedList[numtracked].public_key, key, PUBKEYLENGTH);
 	for(j = 0; j < PWRLV_NUMTYPES; j++)
@@ -215,8 +218,8 @@ serverplayer_t *SV_GetStats(player_t *player)
 	return SV_GetStatsByKey(player->public_key);
 }
 
-// Write player stats to trackedList, then save to disk
-// (NB: Some stats changes are made directly to trackedList via K_CashInPowerLevels)
+// Write clientpowerlevels and timestamps back to matching trackedList entries, then save trackedList to disk
+// (NB: Stats changes can be made directly to trackedList through other paths, but will only write to disk here)
 void SV_UpdateStats(void)
 {	
 	UINT32 i, j, hash;
@@ -264,6 +267,8 @@ void SV_BumpMatchStats(void)
 		if (!playeringame[i])
 			continue;
 		if (players[i].spectator)
+			continue;
+		if (PR_IsKeyGuest(players[i].public_key))
 			continue;
 
 		serverplayer_t *stat = SV_GetStatsByPlayerIndex(i);
