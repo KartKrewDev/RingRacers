@@ -1486,7 +1486,7 @@ static void SendNameAndColor(const UINT8 n)
 		}
 		else
 		{
-			// Use our old color
+			// Use our default color
 			CV_StealthSetValue(&cv_playercolor[n], SKINCOLOR_NONE);
 		}
 
@@ -1496,7 +1496,7 @@ static void SendNameAndColor(const UINT8 n)
 	// ditto for follower colour:
 	if (sendFollowerColor != SKINCOLOR_NONE && K_ColorUsable(sendFollowerColor, true) == false)
 	{
-		CV_StealthSet(&cv_followercolor[n], "Match"); // set it to "Match". I don't care about your stupidity!
+		CV_StealthSet(&cv_followercolor[n], "Default"); // set it to "Default". I don't care about your stupidity!
 		sendFollowerColor = cv_followercolor[n].value;
 	}
 
@@ -1563,7 +1563,14 @@ static void SendNameAndColor(const UINT8 n)
 
 	if (sendFollowerColor == SKINCOLOR_NONE)
 	{
-		sendFollowerColor = followers[cv_follower[n].value].defaultcolor;
+		if (cv_follower[n].value >= 0)
+		{
+			sendFollowerColor = followers[cv_follower[n].value].defaultcolor;
+		}
+		else
+		{
+			sendFollowerColor = SKINCOLOR_RED; // picked by dice roll, guaranteed to be random
+		}
 	}
 
 	// Finally write out the complete packet and send it off.
