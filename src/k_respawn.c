@@ -34,20 +34,10 @@ fixed_t K_RespawnOffset(player_t *player, boolean flip)
 
 	if (flip == true)
 	{
-		// Lat 24/7/20: Okay so before we even think about applying this flag, check if the sector we're in doesn't already have reverse gravity for that.
-		// Otherwise, we would reverse the reverse gravity and cancel it out. Yes, this is absolutely fucking dumb.
-		// I'm honestly not sure if this flag is even necessary anymore but we'll keep it just in case.
-
-		if (P_GetMobjGravity(player->mo) < 0)
-			player->mo->flags2 |= MF2_OBJECTFLIP;
-
-		player->mo->eflags |= MFE_VERTICALFLIP;
 		z -= ((128 * mapobjectscale) + (player->mo->height));
 	}
 	else
 	{
-		player->mo->flags2 &= ~MF2_OBJECTFLIP;
-		player->mo->eflags &= ~MFE_VERTICALFLIP;
 		z += (128 * mapobjectscale);
 	}
 
@@ -261,7 +251,7 @@ void K_DoIngameRespawn(player_t *player)
 
 			s = R_PointInSubsector(beststart->x << FRACBITS, beststart->y << FRACBITS)->sector;
 
-			player->respawn.flip = (beststart->options & MTF_OBJECTFLIP);
+			player->respawn.flip = (beststart->options & MTF_OBJECTFLIP) != 0;
 
 			if (player->respawn.flip == true)
 			{
@@ -447,6 +437,13 @@ static void K_MovePlayerToRespawnPoint(player_t *player)
 			player->respawn.wp = player->respawn.wp->nextwaypoints[nwp];
 			K_RespawnAtWaypoint(player, player->respawn.wp);
 
+			player->mo->eflags &= ~(MFE_VERTICALFLIP);
+
+			if (player->respawn.flip)
+			{
+				player->mo->eflags |= MFE_VERTICALFLIP;
+			}
+
 			dest.x = player->respawn.pointx;
 			dest.y = player->respawn.pointy;
 			dest.z = player->respawn.pointz;
@@ -560,7 +557,7 @@ static void K_MovePlayerToRespawnPoint(player_t *player)
 			dest.x = laserwp->mobj->x;
 			dest.y = laserwp->mobj->y;
 			dest.z = laserwp->mobj->z;
-			laserflip = (laserwp->mobj->flags2 & MF2_OBJECTFLIP);
+			laserflip = (laserwp->mobj->flags2 & MF2_OBJECTFLIP) ? true : false; // K_RespawnOffset wants a boolean!
 
 			if (laserflip == true)
 			{

@@ -1119,6 +1119,19 @@ fixed_t P_GetMobjGravity(mobj_t *mo)
 
 	if (mo->player)
 	{
+		if (mo->player->respawn.state != RESPAWNST_NONE)
+		{
+			// Respawning forces gravity to match waypoint configuration
+			mo->flags2 &= ~(MF2_OBJECTFLIP);
+
+			// If this sector's gravity doesn't already match
+			if ((gravityadd > 0) != mo->player->respawn.flip)
+			{
+				mo->flags2 |= MF2_OBJECTFLIP;
+			}
+		}
+
+		// MF2_OBJECTFLIP is relative -- flips sector reverse gravity back to normal
 		if (mo->flags2 & MF2_OBJECTFLIP)
 		{
 			gravityadd = -gravityadd;
@@ -11956,7 +11969,7 @@ void P_MovePlayerToSpawn(INT32 playernum, mapthing_t *mthing)
 		fixed_t offset = mthing->z << FRACBITS;
 
 		if (p->respawn.state != RESPAWNST_NONE || p->spectator)
-			offset += K_RespawnOffset(p, (mthing->options & MTF_OBJECTFLIP));
+			offset += K_RespawnOffset(p, (mthing->options & MTF_OBJECTFLIP) != 0);
 
 		// Setting the spawnpoint's args[0] will make the player start on the ceiling
 		// Objectflip inverts
