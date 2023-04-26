@@ -63,6 +63,7 @@ boolean P_SaveBufferFromExisting(savebuffer_t *save, UINT8 *existing_buffer, siz
 boolean P_SaveBufferFromLump(savebuffer_t *save, lumpnum_t lump);
 boolean P_SaveBufferFromFile(savebuffer_t *save, char const *name);
 void P_SaveBufferFree(savebuffer_t *save);
+size_t P_SaveBufferRemaining(const savebuffer_t *save);
 
 #ifdef __cplusplus
 } // extern "C"

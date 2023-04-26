@@ -5714,3 +5714,15 @@ void P_SaveBufferFree(savebuffer_t *save)
 	Z_Free(save->buffer);
 	P_SaveBufferInvalidate(save);
 }
+
+size_t P_SaveBufferRemaining(const savebuffer_t *save)
+{
+	if (save->p < save->end)
+	{
+		return save->end - save->p;
+	}
+	else
+	{
+		return 0;
+	}
+}
