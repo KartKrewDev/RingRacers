@@ -46,7 +46,7 @@ void K_UserPropertyPush(mapUserProperties_t *user, const char *key, mapUserPrope
 		user->properties = (mapUserProperty_t *)Z_ReallocAlign(
 			user->properties,
 			sizeof(mapUserProperty_t) * user->capacity,
-			PU_STATIC, // PU_LEVEL
+			PU_LEVEL,
 			NULL,
 			sizeof(mapUserProperty_t) * 8
 		);
@@ -54,7 +54,7 @@ void K_UserPropertyPush(mapUserProperties_t *user, const char *key, mapUserPrope
 
 	prop = &user->properties[ user->length ];
 
-	prop->key = Z_Malloc(keyLength + 1, PU_STATIC, NULL);
+	prop->key = Z_Malloc(keyLength + 1, PU_LEVEL, NULL);
 	M_Memcpy(prop->key, key, keyLength + 1);
 	prop->key[keyLength] = '\0';
 
@@ -83,7 +83,7 @@ void K_UserPropertyPush(mapUserProperties_t *user, const char *key, mapUserPrope
 			const char *string = *(const char **)value;
 			const size_t stringLength = strlen(string);
 
-			prop->valueStr = Z_Malloc(stringLength + 1, PU_STATIC, NULL);
+			prop->valueStr = Z_Malloc(stringLength + 1, PU_LEVEL, NULL);
 			M_Memcpy(prop->valueStr, string, stringLength + 1);
 			prop->valueStr[stringLength] = '\0';
 			break;
