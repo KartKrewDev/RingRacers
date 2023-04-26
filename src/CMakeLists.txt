@@ -85,6 +85,7 @@ add_executable(SRB2SDL2 MACOSX_BUNDLE WIN32
 	r_portal.c
 	screen.c
 	taglist.c
+	v_draw.cpp
 	v_video.cpp
 	s_sound.c
 	sounds.c
