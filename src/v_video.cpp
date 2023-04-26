@@ -891,7 +891,7 @@ void V_DrawStretchyFixedPatch(fixed_t x, fixed_t y, fixed_t pscale, fixed_t vsca
 	float fx = x;
 	float fy = y;
 	float fx2 = fx + pwidth;
-	float fy2 = fy + static_cast<float>(patch->height) * fdupy;
+	float fy2 = fy + std::round(static_cast<float>(patch->height) * fdupy);
 	float falpha = 1.f;
 	float umin = 0.f;
 	float umax = 1.f;
