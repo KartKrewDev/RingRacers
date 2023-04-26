@@ -73,6 +73,7 @@
 #define ROULETTE_SPEED_FASTEST (2)
 #define ROULETTE_SPEED_DIST (150*DISTVAR)
 #define ROULETTE_SPEED_TIMEATTACK (9)
+#define ROULETTE_SPEED_VERSUS_SLOWEST (12)
 
 static UINT8 K_KartItemOddsRace[NUMKARTRESULTS-1][8] =
 {
@@ -205,11 +206,15 @@ static kartitems_t K_KartItemReelBreakTheCapsules[] =
 
 static kartitems_t K_KartItemReelBoss[] =
 {
-	KITEM_ORBINAUT,
-	KITEM_BANANA,
-	KITEM_ORBINAUT,
-	KITEM_BANANA,
 	KITEM_GACHABOM,
+	KITEM_ORBINAUT,
+	KITEM_ORBINAUT,
+	KITEM_ORBINAUT,
+	KITEM_ORBINAUT,
+	KITEM_GACHABOM,
+	KITEM_ORBINAUT,
+	KITEM_ORBINAUT,
+	KITEM_ORBINAUT,
 	KITEM_NONE
 };
 
@@ -1130,6 +1135,14 @@ static void K_CalculateRouletteSpeed(itemroulette_t *const roulette)
 	fixed_t frontRun = 0;
 	fixed_t progress = 0;
 	fixed_t total = 0;
+
+	if (bossinfo.valid == true)
+	{
+		// Boss in action, use a speed controlled by boss health
+		total = FixedDiv(bossinfo.healthbar, BOSSHEALTHBARLEN);
+		roulette->tics = roulette->speed = ROULETTE_SPEED_FASTEST + FixedMul(ROULETTE_SPEED_VERSUS_SLOWEST - ROULETTE_SPEED_FASTEST, total);
+		return;
+	}
 
 	if (K_TimeAttackRules() == true)
 	{
