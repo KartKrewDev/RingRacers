@@ -1732,6 +1732,7 @@ enum
 	SIDE_PROP_TOPTEXTURE,
 	SIDE_PROP_BOTTOMTEXTURE,
 	SIDE_PROP_MIDTEXTURE,
+	SIDE_PROP_REPEATCOUNT,
 	SIDE_PROP__MAX
 };
 
@@ -1807,6 +1808,7 @@ bool CallFunc_GetSideProperty(ACSVM::Thread *thread, const ACSVM::Word *argV, AC
 			PROP_TEXTURE(SIDE_PROP_TOPTEXTURE, toptexture)
 			PROP_TEXTURE(SIDE_PROP_BOTTOMTEXTURE, bottomtexture)
 			PROP_TEXTURE(SIDE_PROP_MIDTEXTURE, midtexture)
+			PROP_INT(SIDE_PROP_REPEATCOUNT, repeatcnt)
 			default:
 			{
 				CONS_Alert(CONS_WARNING, "GetSideProperty type %d out of range (expected 0 - %d).\n", property, SIDE_PROP__MAX-1);
@@ -1917,6 +1919,7 @@ bool CallFunc_SetSideProperty(ACSVM::Thread *thread, const ACSVM::Word *argV, AC
 				PROP_TEXTURE(SIDE_PROP_TOPTEXTURE, toptexture)
 				PROP_TEXTURE(SIDE_PROP_BOTTOMTEXTURE, bottomtexture)
 				PROP_TEXTURE(SIDE_PROP_MIDTEXTURE, midtexture)
+				PROP_INT(SIDE_PROP_REPEATCOUNT, repeatcnt)
 				default:
 				{
 					CONS_Alert(CONS_WARNING, "SetSideProperty type %d out of range (expected 0 - %d).\n", property, SIDE_PROP__MAX-1);
