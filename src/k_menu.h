@@ -405,11 +405,6 @@ extern menu_t OPTIONS_DataProfileEraseDef;
 extern menuitem_t EXTRAS_Main[];
 extern menu_t EXTRAS_MainDef;
 
-extern menuitem_t EXTRAS_ReplayHut[];
-extern menu_t EXTRAS_ReplayHutDef;
-
-extern menuitem_t EXTRAS_ReplayStart[];
-extern menu_t EXTRAS_ReplayStartDef;
 
 extern menuitem_t EXTRAS_EggTV[];
 extern menu_t EXTRAS_EggTVDef;
@@ -1036,11 +1031,6 @@ void M_ExtrasTick(void);
 boolean M_ExtrasInputs(INT32 ch);
 boolean M_ExtrasQuit(void);	// resets buttons when you quit
 
-// Extras: Replay Hut
-void M_HandleReplayHutList(INT32 choice);
-boolean M_QuitReplayHut(void);
-void M_HutStartReplay(INT32 choice);
-void M_PrepReplayList(void);
 
 // Extras: Egg TV
 void M_EggTV(INT32 choice);
@@ -1089,8 +1079,6 @@ void M_PlaybackSetViews(INT32 choice);
 void M_PlaybackAdjustView(INT32 choice);
 void M_PlaybackToggleFreecam(INT32 choice);
 void M_PlaybackQuit(INT32 choice);
-
-void M_ReplayHut(INT32 choice);
 
 // Misc menus:
 #define numaddonsshown 4
@@ -1156,8 +1144,6 @@ extern tic_t shitsfree;
 // Extras menu:
 void M_DrawExtrasMovingButton(void);
 void M_DrawExtras(void);
-void M_DrawReplayHut(void);
-void M_DrawReplayStartMenu(void);
 
 // Misc menus:
 #define LOCATIONSTRING1 "Visit \x83SRB2.ORG/MODS\x80 to get & make addons!"
