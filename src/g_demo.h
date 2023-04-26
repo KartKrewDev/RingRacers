@@ -179,11 +179,12 @@ extern demoghost *ghosts;
 #define DFILE_ERROR_INCOMPLETEOUTOFORDER 0x03 // Some files are loaded out of order, but others are not.
 #define DFILE_ERROR_CANNOTLOAD           0x04 // Files are missing and cannot be loaded.
 #define DFILE_ERROR_EXTRAFILES           0x05 // Extra files outside of the replay's file list are loaded.
+#define DFILE_ERROR_CORRUPT              0x06 // Demo file is corrupted
 
 void G_DeferedPlayDemo(const char *demo);
 void G_DoPlayDemo(char *defdemoname);
 void G_TimeDemo(const char *name);
-void G_AddGhost(UINT8 *buffer, char *defdemoname);
+void G_AddGhost(savebuffer_t *buffer, char *defdemoname);
 staffbrief_t *G_GetStaffGhostBrief(UINT8 *buffer);
 void G_FreeGhosts(void);
 void G_DoneLevelLoad(void);

@@ -7301,13 +7301,14 @@ static void P_ResetSpawnpoints(void)
 
 static void P_TryAddExternalGhost(char *defdemoname)
 {
-	UINT8 *buffer = NULL;
-
 	if (FIL_FileExists(defdemoname))
 	{
-		if (FIL_ReadFileTag(defdemoname, &buffer, PU_LEVEL))
+		savebuffer_t buf = {0};
+
+		if (P_SaveBufferFromFile(&buf, defdemoname))
 		{
-			G_AddGhost(buffer, defdemoname);
+			Z_ChangeTag(buf.buffer, PU_LEVEL);
+			G_AddGhost(&buf, defdemoname);
 		}
 		else
 		{
@@ -7375,10 +7376,11 @@ static void P_LoadRecordGhosts(void)
 	{
 		char *defdemoname;
 		virtlump_t *vLump;
-		UINT8 *buffer = NULL;
 
 		for (i = mapheaderinfo[gamemap-1]->ghostCount; i > 0; i--)
 		{
+			savebuffer_t buf = {0};
+
 			defdemoname = va("GHOST_%u", i);
 			vLump = vres_Find(curmapvirt, defdemoname);
 			if (vLump == NULL)
@@ -7386,9 +7388,10 @@ static void P_LoadRecordGhosts(void)
 				CONS_Alert(CONS_ERROR, M_GetText("Failed to read virtlump '%s'.\n"), defdemoname);
 				continue;
 			}
-			buffer = Z_Malloc(vLump->size, PU_LEVEL, NULL);
-			memcpy(buffer, vLump->data, vLump->size);
-			G_AddGhost(buffer, defdemoname);
+
+			P_SaveBufferZAlloc(&buf, vLump->size, PU_LEVEL, NULL);
+			memcpy(buf.buffer, vLump->data, vLump->size);
+			G_AddGhost(&buf, defdemoname);
 		}
 	}
 
