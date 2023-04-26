@@ -801,7 +801,17 @@ bool CallFunc_SetLineTexture(ACSVM::Thread *thread, const ACSVM::Word *argV, ACS
 	TAG_ITER_LINES(tag, lineId)
 	{
 		line_t *line = &lines[lineId];
-		side_t *side = &sides[line->sidenum[sideId]];
+		side_t *side = NULL;
+
+		if (line->sidenum[sideId] != 0xffff)
+		{
+			side = &sides[line->sidenum[sideId]];
+		}
+
+		if (side == NULL)
+		{
+			continue;
+		}
 
 		switch (texPos)
 		{
@@ -1480,6 +1490,470 @@ bool CallFunc_SetLineRenderStyle(ACSVM::Thread *thread, const ACSVM::Word *argV,
 }
 
 /*--------------------------------------------------
+	bool CallFunc_Get/SetLineProperty(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
+
+		Generic line property management.
+--------------------------------------------------*/
+enum
+{
+	LINE_PROP_FLAGS,
+	LINE_PROP_ALPHA,
+	LINE_PROP_BLENDMODE,
+	LINE_PROP_ACTIVATION,
+	LINE_PROP_ACTION,
+	LINE_PROP_ARG0,
+	LINE_PROP_ARG1,
+	LINE_PROP_ARG2,
+	LINE_PROP_ARG3,
+	LINE_PROP_ARG4,
+	LINE_PROP_ARG5,
+	LINE_PROP_ARG6,
+	LINE_PROP_ARG7,
+	LINE_PROP_ARG8,
+	LINE_PROP_ARG9,
+	LINE_PROP_ARG0STR,
+	LINE_PROP_ARG1STR,
+	LINE_PROP__MAX
+};
+
+static INT32 NextLine(mtag_t tag, INT32 lineID, INT32 activatorID)
+{
+	if (tag == 0)
+	{
+		// 0 grabs the activator.
+
+		if (lineID != 0)
+		{
+			// Don't do more than once.
+			return -1;
+		}
+
+		return activatorID;
+	}
+
+	return Tag_Iterate_Lines(tag, lineID);
+}
+
+bool CallFunc_GetLineProperty(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
+{
+	auto info = &static_cast<Thread *>(thread)->info;
+	Environment *env = &ACSEnv;
+
+	mtag_t tag = 0;
+	INT32 lineID = 0;
+	INT32 activatorID = -1;
+	line_t *line = NULL;
+
+	INT32 property = LINE_PROP__MAX;
+	INT32 value = 0;
+
+	tag = argV[0];
+
+	if (info != NULL && info->line != NULL)
+	{
+		activatorID = info->line - lines;
+	}
+
+	if ((lineID = NextLine(tag, lineID, activatorID)) != -1)
+	{
+		line = &lines[ lineID ];
+	}
+
+	property = argV[1];
+
+	if (line != NULL)
+	{
+
+#define PROP_INT(x, y) \
+	case x: \
+	{ \
+		value = static_cast<INT32>( line->y ); \
+		break; \
+	}
+
+#define PROP_STR(x, y) \
+	case x: \
+	{ \
+		value = static_cast<INT32>( ~env->getString( line->y )->idx ); \
+		break; \
+	}
+
+		switch (property)
+		{
+			PROP_INT(LINE_PROP_FLAGS, flags)
+			PROP_INT(LINE_PROP_ALPHA, alpha)
+			PROP_INT(LINE_PROP_BLENDMODE, blendmode)
+			PROP_INT(LINE_PROP_ACTIVATION, activation)
+			PROP_INT(LINE_PROP_ACTION, special)
+			PROP_INT(LINE_PROP_ARG0, args[0])
+			PROP_INT(LINE_PROP_ARG1, args[1])
+			PROP_INT(LINE_PROP_ARG2, args[2])
+			PROP_INT(LINE_PROP_ARG3, args[3])
+			PROP_INT(LINE_PROP_ARG4, args[4])
+			PROP_INT(LINE_PROP_ARG5, args[5])
+			PROP_INT(LINE_PROP_ARG6, args[6])
+			PROP_INT(LINE_PROP_ARG7, args[7])
+			PROP_INT(LINE_PROP_ARG8, args[8])
+			PROP_INT(LINE_PROP_ARG9, args[9])
+			PROP_STR(LINE_PROP_ARG0STR, stringargs[0])
+			PROP_STR(LINE_PROP_ARG1STR, stringargs[1])
+			default:
+			{
+				CONS_Alert(CONS_WARNING, "GetLineProperty type %d out of range (expected 0 - %d).\n", property, LINE_PROP__MAX-1);
+				break;
+			}
+		}
+
+#undef PROP_STR
+#undef PROP_INT
+
+	}
+
+	thread->dataStk.push(value);
+	return false;
+}
+
+bool CallFunc_SetLineProperty(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
+{
+	auto info = &static_cast<Thread *>(thread)->info;
+	//Environment *env = &ACSEnv;
+
+	mtag_t tag = 0;
+	INT32 lineID = 0;
+	INT32 activatorID = -1;
+	line_t *line = NULL;
+
+	INT32 property = LINE_PROP__MAX;
+	INT32 value = 0;
+
+	tag = argV[0];
+
+	if (info != NULL && info->line != NULL)
+	{
+		activatorID = info->line - lines;
+	}
+
+	if ((lineID = NextLine(tag, lineID, activatorID)) != -1)
+	{
+		line = &lines[ lineID ];
+	}
+
+	property = argV[1];
+	value = argV[2];
+
+	while (line != NULL)
+	{
+
+#define PROP_READONLY(x, y) \
+	case x: \
+	{ \
+		CONS_Alert(CONS_WARNING, "SetLineProperty type '%s' cannot be written to.\n", "y"); \
+		break; \
+	}
+
+#define PROP_INT(x, y) \
+	case x: \
+	{ \
+		line->y = static_cast< decltype(line->y) >(value); \
+		break; \
+	}
+
+#define PROP_STR(x, y) \
+	case x: \
+	{ \
+		ACSVM::String *str = thread->scopeMap->getString( value ); \
+		if (str->len == 0) \
+		{ \
+			Z_Free(line->y); \
+			line->y = NULL; \
+		} \
+		else \
+		{ \
+			line->y = static_cast<char *>(Z_Realloc(line->y, str->len + 1, PU_LEVEL, NULL)); \
+			M_Memcpy(line->y, str->str, str->len + 1); \
+			line->y[str->len] = '\0'; \
+		} \
+		break; \
+	}
+
+		switch (property)
+		{
+			PROP_INT(LINE_PROP_FLAGS, flags)
+			PROP_INT(LINE_PROP_ALPHA, alpha)
+			PROP_INT(LINE_PROP_BLENDMODE, blendmode)
+			PROP_INT(LINE_PROP_ACTIVATION, activation)
+			PROP_INT(LINE_PROP_ACTION, special)
+			PROP_INT(LINE_PROP_ARG0, args[0])
+			PROP_INT(LINE_PROP_ARG1, args[1])
+			PROP_INT(LINE_PROP_ARG2, args[2])
+			PROP_INT(LINE_PROP_ARG3, args[3])
+			PROP_INT(LINE_PROP_ARG4, args[4])
+			PROP_INT(LINE_PROP_ARG5, args[5])
+			PROP_INT(LINE_PROP_ARG6, args[6])
+			PROP_INT(LINE_PROP_ARG7, args[7])
+			PROP_INT(LINE_PROP_ARG8, args[8])
+			PROP_INT(LINE_PROP_ARG9, args[9])
+			PROP_STR(LINE_PROP_ARG0STR, stringargs[0])
+			PROP_STR(LINE_PROP_ARG1STR, stringargs[1])
+			default:
+			{
+				CONS_Alert(CONS_WARNING, "SetLineProperty type %d out of range (expected 0 - %d).\n", property, LINE_PROP__MAX-1);
+				break;
+			}
+		}
+
+		if ((lineID = NextLine(tag, lineID, activatorID)) != -1)
+		{
+			line = &lines[ lineID ];
+		}
+		else
+		{
+			line = NULL;
+		}
+
+#undef PROP_STR
+#undef PROP_INT
+#undef PROP_READONLY
+
+	}
+
+	return false;
+}
+
+/*--------------------------------------------------
+	bool CallFunc_Get/SetSideProperty(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
+
+		Generic side property management.
+--------------------------------------------------*/
+enum
+{
+	SIDE_PROP_XOFFSET,
+	SIDE_PROP_YOFFSET,
+	SIDE_PROP_TOPTEXTURE,
+	SIDE_PROP_BOTTOMTEXTURE,
+	SIDE_PROP_MIDTEXTURE,
+	SIDE_PROP__MAX
+};
+
+bool CallFunc_GetSideProperty(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
+{
+	auto info = &static_cast<Thread *>(thread)->info;
+	Environment *env = &ACSEnv;
+
+	mtag_t tag = 0;
+	INT32 lineID = 0;
+	INT32 activatorID = -1;
+	line_t *line = NULL;
+
+	UINT8 sideID = 0;
+	side_t *side = NULL;
+
+	INT32 property = SIDE_PROP__MAX;
+	INT32 value = 0;
+
+	tag = argV[0];
+
+	if (info != NULL && info->line != NULL)
+	{
+		activatorID = info->line - lines;
+	}
+
+	if ((lineID = NextLine(tag, lineID, activatorID)) != -1)
+	{
+		line = &lines[ lineID ];
+	}
+
+	sideID = argV[1];
+	if (sideID < 0 || sideID > 1)
+	{
+		sideID = info->side;
+	}
+
+	if (line != NULL && line->sidenum[sideID] != 0xffff)
+	{
+		side = &sides[line->sidenum[sideID]];
+	}
+
+	property = argV[2];
+
+	if (side != NULL)
+	{
+
+#define PROP_INT(x, y) \
+	case x: \
+	{ \
+		value = static_cast<INT32>( side->y ); \
+		break; \
+	}
+
+#define PROP_STR(x, y) \
+	case x: \
+	{ \
+		value = static_cast<INT32>( ~env->getString( side->y )->idx ); \
+		break; \
+	}
+
+#define PROP_TEXTURE(x, y) \
+	case x: \
+	{ \
+		value = static_cast<INT32>( ~env->getString( textures[ side->y ]->name )->idx ); \
+		break; \
+	}
+
+		switch (property)
+		{
+			PROP_INT(SIDE_PROP_XOFFSET, textureoffset)
+			PROP_INT(SIDE_PROP_YOFFSET, rowoffset)
+			PROP_TEXTURE(SIDE_PROP_TOPTEXTURE, toptexture)
+			PROP_TEXTURE(SIDE_PROP_BOTTOMTEXTURE, bottomtexture)
+			PROP_TEXTURE(SIDE_PROP_MIDTEXTURE, midtexture)
+			default:
+			{
+				CONS_Alert(CONS_WARNING, "GetSideProperty type %d out of range (expected 0 - %d).\n", property, SIDE_PROP__MAX-1);
+				break;
+			}
+		}
+
+#undef PROP_TEXTURE
+#undef PROP_STR
+#undef PROP_INT
+
+	}
+
+	thread->dataStk.push(value);
+	return false;
+}
+
+bool CallFunc_SetSideProperty(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
+{
+	auto info = &static_cast<Thread *>(thread)->info;
+	//Environment *env = &ACSEnv;
+
+	mtag_t tag = 0;
+	INT32 lineID = 0;
+	INT32 activatorID = -1;
+	line_t *line = NULL;
+
+	UINT8 sideID = 0;
+	side_t *side = NULL;
+
+	INT32 property = SIDE_PROP__MAX;
+	INT32 value = 0;
+
+	tag = argV[0];
+
+	if (info != NULL && info->line != NULL)
+	{
+		activatorID = info->line - lines;
+	}
+
+	if ((lineID = NextLine(tag, lineID, activatorID)) != -1)
+	{
+		line = &lines[ lineID ];
+	}
+
+	sideID = argV[1];
+	if (sideID < 0 || sideID > 1)
+	{
+		sideID = info->side;
+	}
+
+	if (line != NULL && line->sidenum[sideID] != 0xffff)
+	{
+		side = &sides[line->sidenum[sideID]];
+	}
+
+	property = argV[2];
+	value = argV[3];
+
+	while (line != NULL)
+	{
+		if (side != NULL)
+		{
+
+#define PROP_READONLY(x, y) \
+	case x: \
+	{ \
+		CONS_Alert(CONS_WARNING, "SetSideProperty type '%s' cannot be written to.\n", "y"); \
+		break; \
+	}
+
+#define PROP_INT(x, y) \
+	case x: \
+	{ \
+		side->y = static_cast< decltype(side->y) >(value); \
+		break; \
+	}
+
+#define PROP_STR(x, y) \
+	case x: \
+	{ \
+		ACSVM::String *str = thread->scopeMap->getString( value ); \
+		if (str->len == 0) \
+		{ \
+			Z_Free(side->y); \
+			side->y = NULL; \
+		} \
+		else \
+		{ \
+			side->y = static_cast<char *>(Z_Realloc(side->y, str->len + 1, PU_LEVEL, NULL)); \
+			M_Memcpy(side->y, str->str, str->len + 1); \
+			side->y[str->len] = '\0'; \
+		} \
+		break; \
+	}
+
+#define PROP_TEXTURE(x, y) \
+	case x: \
+	{ \
+		side->y = R_TextureNumForName( thread->scopeMap->getString( value )->str ); \
+		break; \
+	}
+
+			switch (property)
+			{
+				PROP_INT(SIDE_PROP_XOFFSET, textureoffset)
+				PROP_INT(SIDE_PROP_YOFFSET, rowoffset)
+				PROP_TEXTURE(SIDE_PROP_TOPTEXTURE, toptexture)
+				PROP_TEXTURE(SIDE_PROP_BOTTOMTEXTURE, bottomtexture)
+				PROP_TEXTURE(SIDE_PROP_MIDTEXTURE, midtexture)
+				default:
+				{
+					CONS_Alert(CONS_WARNING, "SetSideProperty type %d out of range (expected 0 - %d).\n", property, SIDE_PROP__MAX-1);
+					break;
+				}
+			}
+		}
+
+		if ((lineID = NextLine(tag, lineID, activatorID)) != -1)
+		{
+			line = &lines[ lineID ];
+		}
+		else
+		{
+			line = NULL;
+		}
+
+		if (line != NULL && line->sidenum[sideID] != 0xffff)
+		{
+			side = &sides[line->sidenum[sideID]];
+		}
+		else
+		{
+			side = NULL;
+		}
+
+#undef PROP_TEXTURE
+#undef PROP_STR
+#undef PROP_INT
+#undef PROP_READONLY
+
+	}
+
+	return false;
+}
+
+/*--------------------------------------------------
 	bool CallFunc_Get/SetSectorProperty(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
 
 		Generic sector property management.
@@ -1516,19 +1990,45 @@ enum
 	SECTOR_PROP__MAX
 };
 
+static INT32 NextSector(mtag_t tag, INT32 sectorID, INT32 activatorID)
+{
+	if (tag == 0)
+	{
+		// 0 grabs the activator.
+
+		if (sectorID != 0)
+		{
+			// Don't do more than once.
+			return -1;
+		}
+
+		return activatorID;
+	}
+
+	return Tag_Iterate_Sectors(tag, sectorID);
+}
+
 bool CallFunc_GetSectorProperty(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
 {
+	auto info = &static_cast<Thread *>(thread)->info;
 	Environment *env = &ACSEnv;
 
 	mtag_t tag = 0;
-	INT32 sectorID = -1;
+	INT32 sectorID = 0;
+	INT32 activatorID = -1;
 	sector_t *sector = NULL;
 
 	INT32 property = SECTOR_PROP__MAX;
 	INT32 value = 0;
 
 	tag = argV[0];
-	if ((sectorID = Tag_Iterate_Sectors(tag, 0)) != -1)
+
+	if (info != NULL && info->sector != NULL)
+	{
+		activatorID = info->sector - sectors;
+	}
+
+	if ((sectorID = NextSector(tag, sectorID, activatorID)) != -1)
 	{
 		sector = &sectors[ sectorID ];
 	}
@@ -1607,22 +2107,34 @@ bool CallFunc_GetSectorProperty(ACSVM::Thread *thread, const ACSVM::Word *argV, 
 
 bool CallFunc_SetSectorProperty(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
 {
+	auto info = &static_cast<Thread *>(thread)->info;
 	//Environment *env = &ACSEnv;
 
 	mtag_t tag = 0;
-	INT32 sectorID = -1;
+	INT32 sectorID = 0;
+	INT32 activatorID = -1;
 	sector_t *sector = NULL;
 
 	INT32 property = SECTOR_PROP__MAX;
 	INT32 value = 0;
 
 	tag = argV[0];
+
+	if (info != NULL && info->sector != NULL)
+	{
+		activatorID = info->sector - sectors;
+	}
+
+	if ((sectorID = NextSector(tag, sectorID, activatorID)) != -1)
+	{
+		sector = &sectors[ sectorID ];
+	}
+
 	property = argV[1];
 	value = argV[2];
 
-	TAG_ITER_SECTORS(tag, sectorID)
+	while (sector != NULL)
 	{
-		sector = &sectors[sectorID];
 
 #define PROP_READONLY(x, y) \
 	case x: \
@@ -1697,6 +2209,15 @@ bool CallFunc_SetSectorProperty(ACSVM::Thread *thread, const ACSVM::Word *argV, 
 				CONS_Alert(CONS_WARNING, "SetSectorProperty type %d out of range (expected 0 - %d).\n", property, SECTOR_PROP__MAX-1);
 				break;
 			}
+		}
+
+		if ((sectorID = NextSector(tag, sectorID, activatorID)) != -1)
+		{
+			sector = &sectors[ sectorID ];
+		}
+		else
+		{
+			sector = NULL;
 		}
 
 #undef PROP_FLAT

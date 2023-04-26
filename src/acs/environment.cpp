@@ -128,14 +128,14 @@ Environment::Environment()
 	// This style is preferred for added functions
 	// that aren't mimicing one from Hexen's or ZDoom's
 	// ACS implementations.
-	//addFuncDataACS0(   1, addCallFunc(CallFunc_GetLineProperty));
-	//addFuncDataACS0(   2, addCallFunc(CallFunc_SetLineProperty));
+	addFuncDataACS0(   1, addCallFunc(CallFunc_GetLineProperty));
+	addFuncDataACS0(   2, addCallFunc(CallFunc_SetLineProperty));
 	//addFuncDataACS0(   3, addCallFunc(CallFunc_GetLineUserProperty));
 	addFuncDataACS0(   4, addCallFunc(CallFunc_GetSectorProperty));
 	addFuncDataACS0(   5, addCallFunc(CallFunc_SetSectorProperty));
 	//addFuncDataACS0(   6, addCallFunc(CallFunc_GetSectorUserProperty));
-	//addFuncDataACS0(   7, addCallFunc(CallFunc_GetSideProperty));
-	//addFuncDataACS0(   8, addCallFunc(CallFunc_SetSideProperty));
+	addFuncDataACS0(   7, addCallFunc(CallFunc_GetSideProperty));
+	addFuncDataACS0(   8, addCallFunc(CallFunc_SetSideProperty));
 	//addFuncDataACS0(   9, addCallFunc(CallFunc_GetSideUserProperty));
 	//addFuncDataACS0(  10, addCallFunc(CallFunc_GetThingProperty));
 	//addFuncDataACS0(  11, addCallFunc(CallFunc_SetThingProperty));
