@@ -137,8 +137,8 @@ Environment::Environment()
 	addFuncDataACS0(   7, addCallFunc(CallFunc_GetSideProperty));
 	addFuncDataACS0(   8, addCallFunc(CallFunc_SetSideProperty));
 	addFuncDataACS0(   9, addCallFunc(CallFunc_GetSideUserProperty));
-	//addFuncDataACS0(  10, addCallFunc(CallFunc_GetThingProperty));
-	//addFuncDataACS0(  11, addCallFunc(CallFunc_SetThingProperty));
+	addFuncDataACS0(  10, addCallFunc(CallFunc_GetThingProperty));
+	addFuncDataACS0(  11, addCallFunc(CallFunc_SetThingProperty));
 	addFuncDataACS0(  12, addCallFunc(CallFunc_GetThingUserProperty));
 	//addFuncDataACS0(  13, addCallFunc(CallFunc_GetPlayerProperty));
 	//addFuncDataACS0(  14, addCallFunc(CallFunc_SetPlayerProperty));

@@ -137,6 +137,173 @@ static bool ACS_GetSFXFromString(const char *word, sfxenum_t *type)
 }
 
 /*--------------------------------------------------
+	static bool ACS_GetSpriteFromString(const char *word, spritenum_t *type)
+
+		Helper function for CallFunc_Get/SetThingProperty.
+		Gets a sprite from a string.
+
+	Input Arguments:-
+		word: The sprite string.
+		type: Variable to store the result in.
+
+	Return:-
+		true if successful, otherwise false.
+--------------------------------------------------*/
+static bool ACS_GetSpriteFromString(const char *word, spritenum_t *type)
+{
+	if (fastncmp("SPR_", word, 4))
+	{
+		// take off the SPR_
+		word += 4;
+	}
+
+	for (int i = 0; i < NUMSPRITES; i++)
+	{
+		if (fastcmp(word, sprnames[i]))
+		{
+			*type = static_cast<spritenum_t>(i);
+			return true;
+		}
+	}
+
+	return false;
+}
+
+/*--------------------------------------------------
+	static bool ACS_GetSprite2FromString(const char *word, playersprite_t *type)
+
+		Helper function for CallFunc_Get/SetThingProperty.
+		Gets a sprite2 from a string.
+
+	Input Arguments:-
+		word: The sprite2 string.
+		type: Variable to store the result in.
+
+	Return:-
+		true if successful, otherwise false.
+--------------------------------------------------*/
+static bool ACS_GetSprite2FromString(const char *word, playersprite_t *type)
+{
+	if (fastncmp("SPR2_", word, 5))
+	{
+		// take off the SPR2_
+		word += 5;
+	}
+
+	for (int i = 0; i < free_spr2; i++)
+	{
+		if (fastcmp(word, spr2names[i]))
+		{
+			*type = static_cast<playersprite_t>(i);
+			return true;
+		}
+	}
+
+	return false;
+}
+
+/*--------------------------------------------------
+	static bool ACS_GetStateFromString(const char *word, playersprite_t *type)
+
+		Helper function for CallFunc_Get/SetThingProperty.
+		Gets a state from a string.
+
+	Input Arguments:-
+		word: The state string.
+		type: Variable to store the result in.
+
+	Return:-
+		true if successful, otherwise false.
+--------------------------------------------------*/
+static bool ACS_GetStateFromString(const char *word, statenum_t *type)
+{
+	if (fastncmp("S_", word, 2))
+	{
+		// take off the S_
+		word += 2;
+	}
+
+	for (int i = 0; i < NUMMOBJFREESLOTS; i++)
+	{
+		if (!FREE_STATES[i])
+		{
+			break;
+		}
+
+		if (fastcmp(word, FREE_STATES[i]))
+		{
+			*type = static_cast<statenum_t>(static_cast<int>(S_FIRSTFREESLOT) + i);
+			return true;
+		}
+	}
+
+	for (int i = 0; i < S_FIRSTFREESLOT; i++)
+	{
+		if (fastcmp(word, STATE_LIST[i] + 2))
+		{
+			*type = static_cast<statenum_t>(i);
+			return true;
+		}
+	}
+
+	return false;
+}
+
+/*--------------------------------------------------
+	static bool ACS_GetSkinFromString(const char *word, INT32 *type)
+
+		Helper function for CallFunc_Get/SetThingProperty.
+		Gets a skin from a string.
+
+	Input Arguments:-
+		word: The skin string.
+		type: Variable to store the result in.
+
+	Return:-
+		true if successful, otherwise false.
+--------------------------------------------------*/
+static bool ACS_GetSkinFromString(const char *word, INT32 *type)
+{
+	for (int i = 0; i < numskins; i++)
+	{
+		if (fastcmp(word, skins[i].name))
+		{
+			*type = i;
+			return true;
+		}
+	}
+
+	return false;
+}
+
+/*--------------------------------------------------
+	static bool ACS_GetColorFromString(const char *word, skincolornum_t *type)
+
+		Helper function for CallFunc_Get/SetThingProperty.
+		Gets a color from a string.
+
+	Input Arguments:-
+		word: The color string.
+		type: Variable to store the result in.
+
+	Return:-
+		true if successful, otherwise false.
+--------------------------------------------------*/
+static bool ACS_GetColorFromString(const char *word, skincolornum_t *type)
+{
+	for (int i = 0; i < numskincolors; i++)
+	{
+		if (fastcmp(word, skins[i].name))
+		{
+			*type = static_cast<skincolornum_t>(i);
+			return true;
+		}
+	}
+
+	return false;
+}
+
+/*--------------------------------------------------
 	static bool ACS_CountThing(mobj_t *mobj, mobjtype_t type)
 
 		Helper function for CallFunc_ThingCount.
@@ -2221,6 +2388,557 @@ bool CallFunc_SetSectorProperty(ACSVM::Thread *thread, const ACSVM::Word *argV, 
 		}
 
 #undef PROP_FLAT
+#undef PROP_STR
+#undef PROP_INT
+#undef PROP_READONLY
+
+	}
+
+	return false;
+}
+
+/*--------------------------------------------------
+	bool CallFunc_Get/SetThingProperty(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
+
+		Generic thing property management.
+--------------------------------------------------*/
+enum
+{
+	THING_PROP_X,
+	THING_PROP_Y,
+	THING_PROP_Z,
+	THING_PROP_TYPE,
+	THING_PROP_ANGLE,
+	THING_PROP_PITCH,
+	THING_PROP_ROLL,
+	THING_PROP_SPRITEROLL,
+	THING_PROP_FRAME,
+	THING_PROP_SPRITE,
+	THING_PROP_SPRITE2,
+	THING_PROP_RENDERFLAGS,
+	THING_PROP_SPRITEXSCALE,
+	THING_PROP_SPRITEYSCALE,
+	THING_PROP_SPRITEXOFFSET,
+	THING_PROP_SPRITEYOFFSET,
+	THING_PROP_FLOORZ,
+	THING_PROP_CEILINGZ,
+	THING_PROP_RADIUS,
+	THING_PROP_HEIGHT,
+	THING_PROP_MOMX,
+	THING_PROP_MOMY,
+	THING_PROP_MOMZ,
+	THING_PROP_TICS,
+	THING_PROP_STATE,
+	THING_PROP_FLAGS,
+	THING_PROP_FLAGS2,
+	THING_PROP_EFLAGS,
+	THING_PROP_SKIN,
+	THING_PROP_COLOR,
+	THING_PROP_HEALTH,
+	THING_PROP_MOVEDIR,
+	THING_PROP_MOVECOUNT,
+	THING_PROP_REACTIONTIME,
+	THING_PROP_THRESHOLD,
+	THING_PROP_LASTLOOK,
+	THING_PROP_FRICTION,
+	THING_PROP_MOVEFACTOR,
+	THING_PROP_FUSE,
+	THING_PROP_WATERTOP,
+	THING_PROP_WATERBOTTOM,
+	THING_PROP_SCALE,
+	THING_PROP_DESTSCALE,
+	THING_PROP_SCALESPEED,
+	THING_PROP_EXTRAVALUE1,
+	THING_PROP_EXTRAVALUE2,
+	THING_PROP_CUSVAL,
+	THING_PROP_CVMEM,
+	THING_PROP_COLORIZED,
+	THING_PROP_MIRRORED,
+	THING_PROP_SHADOWSCALE,
+	THING_PROP_WHITESHADOW,
+	THING_PROP_WORLDXOFFSET,
+	THING_PROP_WORLDYOFFSET,
+	THING_PROP_WORLDZOFFSET,
+	THING_PROP_HITLAG,
+	THING_PROP_WATERSKIP,
+	THING_PROP_DISPOFFSET,
+	THING_PROP_TARGET,
+	THING_PROP_TRACER,
+	THING_PROP_HNEXT,
+	THING_PROP_HPREV,
+	THING_PROP_ITNEXT,
+	THING_PROP__MAX
+};
+
+bool CallFunc_GetThingProperty(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
+{
+	auto info = &static_cast<Thread *>(thread)->info;
+	Environment *env = &ACSEnv;
+
+	mtag_t tag = 0;
+	mobj_t *mobj = NULL;
+
+	INT32 property = SECTOR_PROP__MAX;
+	INT32 value = 0;
+
+	tag = argV[0];
+	mobj = P_FindMobjFromTID(tag, mobj, info->mo);
+
+	property = argV[1];
+
+	if (mobj != NULL)
+	{
+
+#define PROP_INT(x, y) \
+	case x: \
+	{ \
+		value = static_cast<INT32>( mobj->y ); \
+		break; \
+	}
+
+#define PROP_STR(x, y) \
+	case x: \
+	{ \
+		value = static_cast<INT32>( ~env->getString( mobj->y )->idx ); \
+		break; \
+	}
+
+#define PROP_ANGLE(x, y) \
+	case x: \
+	{ \
+		value = static_cast<INT32>( AngleFixed( mobj->y ) ); \
+		break; \
+	}
+
+#define PROP_TYPE(x, y) \
+	case x: \
+	{ \
+		if (mobj->y >= MT_FIRSTFREESLOT) \
+		{ \
+			std::string	prefix = "MT_"; \
+			std::string	full = prefix + FREE_MOBJS[mobj->y - MT_FIRSTFREESLOT]; \
+			value = static_cast<INT32>( ~env->getString( full.c_str() )->idx ); \
+		} \
+		else \
+		{ \
+			value = static_cast<INT32>( ~env->getString( MOBJTYPE_LIST[ mobj->y ] )->idx ); \
+		} \
+		break; \
+	}
+
+#define PROP_SPR(x, y) \
+	case x: \
+	{ \
+		value = static_cast<INT32>( ~env->getString( sprnames[ mobj->y ] )->idx ); \
+		break; \
+	}
+
+#define PROP_SPR2(x, y) \
+	case x: \
+	{ \
+		value = static_cast<INT32>( ~env->getString( spr2names[ mobj->y ] )->idx ); \
+		break; \
+	}
+
+#define PROP_STATE(x, y) \
+	case x: \
+	{ \
+		statenum_t stateID = static_cast<statenum_t>(mobj->y - states); \
+		if (stateID >= S_FIRSTFREESLOT) \
+		{ \
+			std::string	prefix = "S_"; \
+			std::string	full = prefix + FREE_STATES[stateID - S_FIRSTFREESLOT]; \
+			value = static_cast<INT32>( ~env->getString( full.c_str() )->idx ); \
+		} \
+		else \
+		{ \
+			value = static_cast<INT32>( ~env->getString( STATE_LIST[ stateID ] )->idx ); \
+		} \
+		break; \
+	}
+
+#define PROP_SKIN(x, y) \
+	case x: \
+	{ \
+		if (mobj->y != NULL) \
+		{ \
+			skin_t *skin = static_cast<skin_t *>(mobj->y); \
+			value = static_cast<INT32>( ~env->getString( skin->name )->idx ); \
+		} \
+		break; \
+	}
+
+#define PROP_COLOR(x, y) \
+	case x: \
+	{ \
+		value = static_cast<INT32>( ~env->getString( skincolors[ mobj->y ].name )->idx ); \
+		break; \
+	}
+
+#define PROP_MOBJ(x, y) \
+	case x: \
+	{ \
+		if (P_MobjWasRemoved(mobj->y) == false) \
+		{ \
+			value = static_cast<INT32>( mobj->y->tid ); \
+		} \
+		break; \
+	}
+
+		switch (property)
+		{
+			PROP_INT(THING_PROP_X, x)
+			PROP_INT(THING_PROP_Y, y)
+			PROP_INT(THING_PROP_Z, z)
+			PROP_TYPE(THING_PROP_TYPE, type)
+			PROP_ANGLE(THING_PROP_ANGLE, angle)
+			PROP_ANGLE(THING_PROP_PITCH, pitch)
+			PROP_ANGLE(THING_PROP_ROLL, roll)
+			PROP_ANGLE(THING_PROP_SPRITEROLL, rollangle)
+			PROP_INT(THING_PROP_FRAME, frame)
+			PROP_SPR(THING_PROP_SPRITE, sprite)
+			PROP_SPR2(THING_PROP_SPRITE2, sprite2)
+			PROP_INT(THING_PROP_RENDERFLAGS, renderflags)
+			PROP_INT(THING_PROP_SPRITEXSCALE, spritexscale)
+			PROP_INT(THING_PROP_SPRITEYSCALE, spriteyscale)
+			PROP_INT(THING_PROP_SPRITEXOFFSET, spritexoffset)
+			PROP_INT(THING_PROP_SPRITEYOFFSET, spriteyoffset)
+			PROP_INT(THING_PROP_FLOORZ, floorz)
+			PROP_INT(THING_PROP_CEILINGZ, ceilingz)
+			PROP_INT(THING_PROP_RADIUS, radius)
+			PROP_INT(THING_PROP_HEIGHT, height)
+			PROP_INT(THING_PROP_MOMX, momx)
+			PROP_INT(THING_PROP_MOMY, momy)
+			PROP_INT(THING_PROP_MOMZ, momz)
+			PROP_INT(THING_PROP_TICS, tics)
+			PROP_STATE(THING_PROP_STATE, state)
+			PROP_INT(THING_PROP_FLAGS, flags)
+			PROP_INT(THING_PROP_FLAGS2, flags2)
+			PROP_INT(THING_PROP_EFLAGS, eflags)
+			PROP_SKIN(THING_PROP_SKIN, skin)
+			PROP_COLOR(THING_PROP_COLOR, color)
+			PROP_INT(THING_PROP_HEALTH, health)
+			PROP_INT(THING_PROP_MOVEDIR, movedir)
+			PROP_INT(THING_PROP_MOVECOUNT, movecount)
+			PROP_INT(THING_PROP_REACTIONTIME, reactiontime)
+			PROP_INT(THING_PROP_THRESHOLD, threshold)
+			PROP_INT(THING_PROP_LASTLOOK, lastlook)
+			PROP_INT(THING_PROP_FRICTION, friction)
+			PROP_INT(THING_PROP_MOVEFACTOR, movefactor)
+			PROP_INT(THING_PROP_FUSE, fuse)
+			PROP_INT(THING_PROP_WATERTOP, watertop)
+			PROP_INT(THING_PROP_WATERBOTTOM, waterbottom)
+			PROP_INT(THING_PROP_SCALE, scale)
+			PROP_INT(THING_PROP_DESTSCALE, destscale)
+			PROP_INT(THING_PROP_SCALESPEED, scalespeed)
+			PROP_INT(THING_PROP_EXTRAVALUE1, extravalue1)
+			PROP_INT(THING_PROP_EXTRAVALUE2, extravalue2)
+			PROP_INT(THING_PROP_CUSVAL, cusval)
+			PROP_INT(THING_PROP_CVMEM, cvmem)
+			PROP_INT(THING_PROP_COLORIZED, colorized)
+			PROP_INT(THING_PROP_MIRRORED, mirrored)
+			PROP_INT(THING_PROP_SHADOWSCALE, shadowscale)
+			PROP_INT(THING_PROP_WHITESHADOW, whiteshadow)
+			PROP_INT(THING_PROP_WORLDXOFFSET, sprxoff)
+			PROP_INT(THING_PROP_WORLDYOFFSET, spryoff)
+			PROP_INT(THING_PROP_WORLDZOFFSET, sprzoff)
+			PROP_INT(THING_PROP_HITLAG, hitlag)
+			PROP_INT(THING_PROP_WATERSKIP, waterskip)
+			PROP_INT(THING_PROP_DISPOFFSET, dispoffset)
+			PROP_MOBJ(THING_PROP_TARGET, target)
+			PROP_MOBJ(THING_PROP_TRACER, tracer)
+			PROP_MOBJ(THING_PROP_HNEXT, hnext)
+			PROP_MOBJ(THING_PROP_HPREV, hprev)
+			PROP_MOBJ(THING_PROP_ITNEXT, itnext)
+			default:
+			{
+				CONS_Alert(CONS_WARNING, "GetThingProperty type %d out of range (expected 0 - %d).\n", property, THING_PROP__MAX-1);
+				break;
+			}
+		}
+
+#undef PROP_MOBJ
+#undef PROP_COLOR
+#undef PROP_SKIN
+#undef PROP_STATE
+#undef PROP_SPR2
+#undef PROP_SPR
+#undef PROP_TYPE
+#undef PROP_ANGLE
+#undef PROP_STR
+#undef PROP_INT
+
+	}
+
+	thread->dataStk.push(value);
+	return false;
+}
+
+bool CallFunc_SetThingProperty(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
+{
+	auto info = &static_cast<Thread *>(thread)->info;
+	//Environment *env = &ACSEnv;
+
+	mtag_t tag = 0;
+	mobj_t *mobj = NULL;
+
+	INT32 property = SECTOR_PROP__MAX;
+	INT32 value = 0;
+
+	tag = argV[0];
+	mobj = P_FindMobjFromTID(tag, mobj, info->mo);
+
+	property = argV[1];
+	value = argV[2];
+
+	while (mobj != NULL)
+	{
+
+#define PROP_READONLY(x, y) \
+	case x: \
+	{ \
+		CONS_Alert(CONS_WARNING, "SetThingProperty type '%s' cannot be written to.\n", "y"); \
+		break; \
+	}
+
+#define PROP_INT(x, y) \
+	case x: \
+	{ \
+		mobj->y = static_cast< decltype(mobj->y) >(value); \
+		break; \
+	}
+
+#define PROP_STR(x, y) \
+	case x: \
+	{ \
+		ACSVM::String *str = thread->scopeMap->getString( value ); \
+		if (str->len == 0) \
+		{ \
+			Z_Free(mobj->y); \
+			mobj->y = NULL; \
+		} \
+		else \
+		{ \
+			mobj->y = static_cast<char *>(Z_Realloc(mobj->y, str->len + 1, PU_LEVEL, NULL)); \
+			M_Memcpy(mobj->y, str->str, str->len + 1); \
+			mobj->y[str->len] = '\0'; \
+		} \
+		break; \
+	}
+
+#define PROP_ANGLE(x, y) \
+	case x: \
+	{ \
+		mobj->y = static_cast<angle_t>( FixedAngle(value) ); \
+		break; \
+	}
+
+#define PROP_TYPE(x, y) \
+	case x: \
+	{ \
+		if (mobj->player == NULL) \
+		{ \
+			mobjtype_t newType = mobj->y; \
+			bool success = ACS_GetMobjTypeFromString(thread->scopeMap->getString( value )->str, &newType); \
+			if (success == true) \
+			{ \
+				mobj->y = newType; \
+				mobj->info = &mobjinfo[newType]; \
+				P_SetScale(mobj, mobj->scale); \
+			} \
+		} \
+		break; \
+	}
+
+#define PROP_SPR(x, y) \
+	case x: \
+	{ \
+		spritenum_t newSprite = mobj->y; \
+		bool success = ACS_GetSpriteFromString(thread->scopeMap->getString( value )->str, &newSprite); \
+		if (success == true) \
+		{ \
+			mobj->y = newSprite; \
+		} \
+		break; \
+	}
+
+#define PROP_SPR2(x, y) \
+	case x: \
+	{ \
+		playersprite_t newSprite2 = static_cast<playersprite_t>(mobj->y); \
+		bool success = ACS_GetSprite2FromString(thread->scopeMap->getString( value )->str, &newSprite2); \
+		if (success == true) \
+		{ \
+			mobj->y = static_cast< decltype(mobj->y) >(newSprite2); \
+		} \
+		break; \
+	}
+
+#define PROP_STATE(x, y) \
+	case x: \
+	{ \
+		statenum_t newState = static_cast<statenum_t>(mobj->y - states); \
+		bool success = ACS_GetStateFromString(thread->scopeMap->getString( value )->str, &newState); \
+		if (success == true) \
+		{ \
+			if (mobj->player != NULL) \
+			{ \
+				P_SetPlayerMobjState(mobj, newState); \
+			} \
+			else \
+			{ \
+				P_SetMobjState(mobj, newState); \
+			} \
+		} \
+		break; \
+	}
+
+#define PROP_SKIN(x, y) \
+	case x: \
+	{ \
+		INT32 newSkin = (mobj->skin != NULL) ? (static_cast<skin_t *>(mobj->skin)) - skins : -1; \
+		bool success = ACS_GetSkinFromString(thread->scopeMap->getString( value )->str, &newSkin); \
+		if (success == true) \
+		{ \
+			mobj->y = (newSkin >= 0 && newSkin < numskins) ? &skins[ newSkin ] : NULL; \
+		} \
+		break; \
+	}
+
+#define PROP_COLOR(x, y) \
+	case x: \
+	{ \
+		skincolornum_t newColor = static_cast<skincolornum_t>(mobj->y); \
+		bool success = ACS_GetColorFromString(thread->scopeMap->getString( value )->str, &newColor); \
+		if (success == true) \
+		{ \
+			mobj->y = static_cast< decltype(mobj->y) >(newColor); \
+		} \
+		break; \
+	}
+
+#define PROP_MOBJ(x, y) \
+	case x: \
+	{ \
+		mobj_t *newTarget = P_FindMobjFromTID(value, NULL, NULL); \
+		P_SetTarget(&mobj->y, newTarget); \
+		break; \
+	}
+
+#define PROP_SCALE(x, y) \
+	case x: \
+	{ \
+		P_SetScale(mobj, value); \
+		break; \
+	}
+
+#define PROP_FLAGS(x, y) \
+	case x: \
+	{ \
+		if ((value & (MF_NOBLOCKMAP|MF_NOSECTOR)) != (mobj->y & (MF_NOBLOCKMAP|MF_NOSECTOR))) \
+		{ \
+			P_UnsetThingPosition(mobj); \
+			mobj->y = value; \
+			if ((value & MF_NOSECTOR) && sector_list) \
+			{ \
+				P_DelSeclist(sector_list); \
+				sector_list = NULL; \
+			} \
+			mobj->snext = NULL, mobj->sprev = NULL; \
+			mobj->bnext = NULL, mobj->bprev = NULL; \
+			P_SetThingPosition(mobj); \
+		} \
+		else \
+		{ \
+			mobj->y = value; \
+		} \
+		break; \
+	}
+
+		switch (property)
+		{
+			PROP_READONLY(THING_PROP_X, x)
+			PROP_READONLY(THING_PROP_Y, y)
+			PROP_READONLY(THING_PROP_Z, z)
+			PROP_TYPE(THING_PROP_TYPE, type)
+			PROP_ANGLE(THING_PROP_ANGLE, angle)
+			PROP_ANGLE(THING_PROP_PITCH, pitch)
+			PROP_ANGLE(THING_PROP_ROLL, roll)
+			PROP_ANGLE(THING_PROP_SPRITEROLL, rollangle)
+			PROP_INT(THING_PROP_FRAME, frame)
+			PROP_SPR(THING_PROP_SPRITE, sprite)
+			PROP_SPR2(THING_PROP_SPRITE2, sprite2)
+			PROP_INT(THING_PROP_RENDERFLAGS, renderflags)
+			PROP_INT(THING_PROP_SPRITEXSCALE, spritexscale)
+			PROP_INT(THING_PROP_SPRITEYSCALE, spriteyscale)
+			PROP_INT(THING_PROP_SPRITEXOFFSET, spritexoffset)
+			PROP_INT(THING_PROP_SPRITEYOFFSET, spriteyoffset)
+			PROP_INT(THING_PROP_FLOORZ, floorz)
+			PROP_INT(THING_PROP_CEILINGZ, ceilingz)
+			PROP_READONLY(THING_PROP_RADIUS, radius)
+			PROP_READONLY(THING_PROP_HEIGHT, height)
+			PROP_INT(THING_PROP_MOMX, momx)
+			PROP_INT(THING_PROP_MOMY, momy)
+			PROP_INT(THING_PROP_MOMZ, momz)
+			PROP_INT(THING_PROP_TICS, tics)
+			PROP_STATE(THING_PROP_STATE, state)
+			PROP_FLAGS(THING_PROP_FLAGS, flags)
+			PROP_INT(THING_PROP_FLAGS2, flags2)
+			PROP_INT(THING_PROP_EFLAGS, eflags)
+			PROP_SKIN(THING_PROP_SKIN, skin)
+			PROP_COLOR(THING_PROP_COLOR, color)
+			PROP_INT(THING_PROP_HEALTH, health)
+			PROP_INT(THING_PROP_MOVEDIR, movedir)
+			PROP_INT(THING_PROP_MOVECOUNT, movecount)
+			PROP_INT(THING_PROP_REACTIONTIME, reactiontime)
+			PROP_INT(THING_PROP_THRESHOLD, threshold)
+			PROP_INT(THING_PROP_LASTLOOK, lastlook)
+			PROP_INT(THING_PROP_FRICTION, friction)
+			PROP_INT(THING_PROP_MOVEFACTOR, movefactor)
+			PROP_INT(THING_PROP_FUSE, fuse)
+			PROP_INT(THING_PROP_WATERTOP, watertop)
+			PROP_INT(THING_PROP_WATERBOTTOM, waterbottom)
+			PROP_SCALE(THING_PROP_SCALE, scale)
+			PROP_INT(THING_PROP_DESTSCALE, destscale)
+			PROP_INT(THING_PROP_SCALESPEED, scalespeed)
+			PROP_INT(THING_PROP_EXTRAVALUE1, extravalue1)
+			PROP_INT(THING_PROP_EXTRAVALUE2, extravalue2)
+			PROP_INT(THING_PROP_CUSVAL, cusval)
+			PROP_INT(THING_PROP_CVMEM, cvmem)
+			PROP_INT(THING_PROP_COLORIZED, colorized)
+			PROP_INT(THING_PROP_MIRRORED, mirrored)
+			PROP_INT(THING_PROP_SHADOWSCALE, shadowscale)
+			PROP_INT(THING_PROP_WHITESHADOW, whiteshadow)
+			PROP_INT(THING_PROP_WORLDXOFFSET, sprxoff)
+			PROP_INT(THING_PROP_WORLDYOFFSET, spryoff)
+			PROP_INT(THING_PROP_WORLDZOFFSET, sprzoff)
+			PROP_INT(THING_PROP_HITLAG, hitlag)
+			PROP_INT(THING_PROP_WATERSKIP, waterskip)
+			PROP_INT(THING_PROP_DISPOFFSET, dispoffset)
+			PROP_MOBJ(THING_PROP_TARGET, target)
+			PROP_MOBJ(THING_PROP_TRACER, tracer)
+			PROP_MOBJ(THING_PROP_HNEXT, hnext)
+			PROP_MOBJ(THING_PROP_HPREV, hprev)
+			PROP_MOBJ(THING_PROP_ITNEXT, itnext)
+			default:
+			{
+				CONS_Alert(CONS_WARNING, "SetThingProperty type %d out of range (expected 0 - %d).\n", property, THING_PROP__MAX-1);
+				break;
+			}
+		}
+
+		mobj = P_FindMobjFromTID(tag, mobj, info->mo);
+
+#undef PROP_FLAGS
+#undef PROP_SCALE
+#undef PROP_MOBJ
+#undef PROP_COLOR
+#undef PROP_SKIN
+#undef PROP_STATE
+#undef PROP_SPR2
+#undef PROP_SPR
+#undef PROP_TYPE
+#undef PROP_ANGLE
 #undef PROP_STR
 #undef PROP_INT
 #undef PROP_READONLY
