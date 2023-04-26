@@ -2226,3 +2226,268 @@ bool CallFunc_SetSectorProperty(ACSVM::Thread *thread, const ACSVM::Word *argV, 
 
 	return false;
 }
+
+/*--------------------------------------------------
+	bool CallFunc_Get[x]UserProperty(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
+
+		User-defined property management.
+--------------------------------------------------*/
+bool CallFunc_GetLineUserProperty(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
+{
+	auto info = &static_cast<Thread *>(thread)->info;
+	Environment *env = &ACSEnv;
+
+	mtag_t tag = 0;
+	INT32 lineID = 0;
+	INT32 activatorID = -1;
+	line_t *line = NULL;
+
+	const char *key = NULL;
+
+	mapUserProperty_t *prop = NULL;
+	INT32 ret = 0;
+
+	tag = argV[0];
+	key = thread->scopeMap->getString(argV[1])->str;
+
+	if (info != NULL && info->line != NULL)
+	{
+		activatorID = info->line - lines;
+	}
+
+	if ((lineID = NextLine(tag, lineID, activatorID)) != -1)
+	{
+		line = &lines[ lineID ];
+	}
+
+	if (line != NULL)
+	{
+		prop = K_UserPropertyFind(&line->user, key);
+	}
+
+	if (prop != NULL)
+	{
+		switch (prop->type)
+		{
+			case USER_PROP_BOOL:
+			{
+				ret = static_cast<INT32>(prop->valueBool);
+				break;
+			}
+			case USER_PROP_INT:
+			{
+				ret = prop->valueInt;
+				break;
+			}
+			case USER_PROP_FIXED:
+			{
+				ret = static_cast<INT32>(prop->valueFixed);
+				break;
+			}
+			case USER_PROP_STR:
+			{
+				ret = static_cast<INT32>( ~env->getString( prop->valueStr )->idx );
+				break;
+			}
+		}
+	}
+
+	thread->dataStk.push(ret);
+	return false;
+}
+
+bool CallFunc_GetSideUserProperty(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
+{
+	auto info = &static_cast<Thread *>(thread)->info;
+	Environment *env = &ACSEnv;
+
+	mtag_t tag = 0;
+	INT32 lineID = 0;
+	INT32 activatorID = -1;
+	line_t *line = NULL;
+
+	UINT8 sideID = 0;
+	side_t *side = NULL;
+
+	const char *key = NULL;
+
+	mapUserProperty_t *prop = NULL;
+	INT32 ret = 0;
+
+	tag = argV[0];
+	sideID = argV[1];
+	key = thread->scopeMap->getString(argV[2])->str;
+
+	if (info != NULL && info->line != NULL)
+	{
+		activatorID = info->line - lines;
+	}
+
+	if ((lineID = NextLine(tag, lineID, activatorID)) != -1)
+	{
+		line = &lines[ lineID ];
+	}
+
+	if (sideID < 0 || sideID > 1)
+	{
+		sideID = info->side;
+	}
+
+	if (line != NULL && line->sidenum[sideID] != 0xffff)
+	{
+		side = &sides[line->sidenum[sideID]];
+	}
+
+	if (side != NULL)
+	{
+		prop = K_UserPropertyFind(&side->user, key);
+	}
+
+	if (prop != NULL)
+	{
+		switch (prop->type)
+		{
+			case USER_PROP_BOOL:
+			{
+				ret = static_cast<INT32>(prop->valueBool);
+				break;
+			}
+			case USER_PROP_INT:
+			{
+				ret = prop->valueInt;
+				break;
+			}
+			case USER_PROP_FIXED:
+			{
+				ret = static_cast<INT32>(prop->valueFixed);
+				break;
+			}
+			case USER_PROP_STR:
+			{
+				ret = static_cast<INT32>( ~env->getString( prop->valueStr )->idx );
+				break;
+			}
+		}
+	}
+
+	thread->dataStk.push(ret);
+	return false;
+}
+
+bool CallFunc_GetSectorUserProperty(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
+{
+	auto info = &static_cast<Thread *>(thread)->info;
+	Environment *env = &ACSEnv;
+
+	mtag_t tag = 0;
+	INT32 sectorID = 0;
+	INT32 activatorID = -1;
+	sector_t *sector = NULL;
+
+	const char *key = NULL;
+
+	mapUserProperty_t *prop = NULL;
+	INT32 ret = 0;
+
+	tag = argV[0];
+	key = thread->scopeMap->getString(argV[1])->str;
+
+	if (info != NULL && info->sector != NULL)
+	{
+		activatorID = info->sector - sectors;
+	}
+
+	if ((sectorID = NextSector(tag, sectorID, activatorID)) != -1)
+	{
+		sector = &sectors[ sectorID ];
+	}
+
+	if (sector != NULL)
+	{
+		prop = K_UserPropertyFind(&sector->user, key);
+	}
+
+	if (prop != NULL)
+	{
+		switch (prop->type)
+		{
+			case USER_PROP_BOOL:
+			{
+				ret = static_cast<INT32>(prop->valueBool);
+				break;
+			}
+			case USER_PROP_INT:
+			{
+				ret = prop->valueInt;
+				break;
+			}
+			case USER_PROP_FIXED:
+			{
+				ret = static_cast<INT32>(prop->valueFixed);
+				break;
+			}
+			case USER_PROP_STR:
+			{
+				ret = static_cast<INT32>( ~env->getString( prop->valueStr )->idx );
+				break;
+			}
+		}
+	}
+
+	thread->dataStk.push(ret);
+	return false;
+}
+
+bool CallFunc_GetThingUserProperty(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
+{
+	auto info = &static_cast<Thread *>(thread)->info;
+	Environment *env = &ACSEnv;
+
+	mtag_t tag = 0;
+	mobj_t *mobj = NULL;
+
+	const char *key = NULL;
+
+	mapUserProperty_t *prop = NULL;
+	INT32 ret = 0;
+
+	tag = argV[0];
+	key = thread->scopeMap->getString(argV[1])->str;
+
+	mobj = P_FindMobjFromTID(tag, mobj, info->mo);
+
+	if (mobj != NULL && mobj->spawnpoint != NULL)
+	{
+		prop = K_UserPropertyFind(&mobj->spawnpoint->user, key);
+	}
+
+	if (prop != NULL)
+	{
+		switch (prop->type)
+		{
+			case USER_PROP_BOOL:
+			{
+				ret = static_cast<INT32>(prop->valueBool);
+				break;
+			}
+			case USER_PROP_INT:
+			{
+				ret = prop->valueInt;
+				break;
+			}
+			case USER_PROP_FIXED:
+			{
+				ret = static_cast<INT32>(prop->valueFixed);
+				break;
+			}
+			case USER_PROP_STR:
+			{
+				ret = static_cast<INT32>( ~env->getString( prop->valueStr )->idx );
+				break;
+			}
+		}
+	}
+
+	thread->dataStk.push(ret);
+	return false;
+}

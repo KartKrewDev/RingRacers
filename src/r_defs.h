@@ -30,6 +30,8 @@
 
 #include "taglist.h"
 
+#include "k_mapuser.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -551,6 +553,9 @@ struct sector_t
 	INT32 args[NUMSECTORARGS];
 	char *stringargs[NUMSECTORSTRINGARGS];
 	sectoractionflags_t activation;
+
+	// UDMF user-defined custom properties.
+	mapUserProperties_t user;
 };
 
 //
@@ -609,6 +614,9 @@ struct line_t
 
 	char *text; // a concatenation of all front and back texture names, for linedef specials that require a string.
 	INT16 callcount; // no. of calls left before triggering, for the "X calls" linedef specials, defaults to 0
+
+	// UDMF user-defined custom properties.
+	mapUserProperties_t user;
 };
 
 struct side_t
@@ -635,6 +643,9 @@ struct side_t
 	char *text; // a concatenation of all top, bottom, and mid texture names, for linedef specials that require a string.
 
 	extracolormap_t *colormap_data; // storage for colormaps; not applied to sectors.
+
+	// UDMF user-defined custom properties.
+	mapUserProperties_t user;
 };
 
 //
