@@ -2,6 +2,7 @@ target_sources(SRB2SDL2 PRIVATE
 	extras-1.c
 	extras-addons.c
 	extras-challenges.c
+	extras-egg-tv.cpp
 	extras-replay-hut.c
 	extras-statistics.c
 	main-1.c
@@ -40,4 +41,5 @@ target_sources(SRB2SDL2 PRIVATE
 	play-online-server-browser.c
 )
 
+add_subdirectory(class-egg-tv)
 add_subdirectory(transient)

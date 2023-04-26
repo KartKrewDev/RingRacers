@@ -411,6 +411,9 @@ extern menu_t EXTRAS_ReplayHutDef;
 extern menuitem_t EXTRAS_ReplayStart[];
 extern menu_t EXTRAS_ReplayStartDef;
 
+extern menuitem_t EXTRAS_EggTV[];
+extern menu_t EXTRAS_EggTVDef;
+
 // PAUSE
 extern menuitem_t PAUSE_Main[];
 extern menu_t PAUSE_MainDef;
@@ -1038,6 +1041,10 @@ void M_HandleReplayHutList(INT32 choice);
 boolean M_QuitReplayHut(void);
 void M_HutStartReplay(INT32 choice);
 void M_PrepReplayList(void);
+
+// Extras: Egg TV
+void M_EggTV(INT32 choice);
+void M_EggTV_RefreshButtonLabels(void);
 
 
 // Pause menu:
