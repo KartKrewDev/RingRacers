@@ -1400,10 +1400,18 @@ static void ParseUserProperty(mapUserProperties_t *user, const char *param, cons
 {
 	if (fastncmp(param, "user_", 5) && strlen(param) > 5)
 	{
+		const boolean valIsString = M_TokenizerJustReadString();
 		const char *key = param + 5;
 		const size_t valLen = strlen(val);
 		UINT8 numberType = PROP_NUM_TYPE_INT;
 		size_t i = 0;
+
+		if (valIsString == true)
+		{
+			// Value is a string. Upload directly!
+			K_UserPropertyPush(user, key, USER_PROP_STR, &val);
+			return;
+		}
 
 		for (i = 0; i < valLen; i++)
 		{
@@ -1420,30 +1428,6 @@ static void ParseUserProperty(mapUserProperties_t *user, const char *param, cons
 
 		switch (numberType)
 		{
-			case PROP_NUM_TYPE_NA:
-			default:
-			{
-				// Value is a boolean or a string.
-
-				// Unfortunately, our UDMF parser discards the quotation marks,
-				// so we can't differentiate strings from booleans properly.
-				// Don't feel like tearing it apart to fix that, so we just
-				// turn true & false into booleans, even if they were actually
-				// supposed to be text.
-
-				boolean vBool = fastcmp("true", val);
-				if (vBool == true || fastcmp("false", val))
-				{
-					// Value is *probably* a boolean.
-					K_UserPropertyPush(user, key, USER_PROP_BOOL, &vBool);
-				}
-				else
-				{
-					// Value is a string.
-					K_UserPropertyPush(user, key, USER_PROP_STR, &val);
-				}
-				break;
-			}
 			case PROP_NUM_TYPE_INT:
 			{
 				// Value is an integer.
@@ -1458,7 +1442,25 @@ static void ParseUserProperty(mapUserProperties_t *user, const char *param, cons
 				K_UserPropertyPush(user, key, USER_PROP_FIXED, &vFixed);
 				break;
 			}
-			
+			case PROP_NUM_TYPE_NA:
+			default:
+			{
+				// Value is some other kind of type.
+				// Currently we just support bool.
+
+				boolean vBool = fastcmp("true", val);
+				if (vBool == true || fastcmp("false", val))
+				{
+					// Value is a boolean.
+					K_UserPropertyPush(user, key, USER_PROP_BOOL, &vBool);
+				}
+				else
+				{
+					// Value is invalid.
+					CONS_Alert(CONS_WARNING, "Could not interpret user property \"%s\" value (%s)\n", param, val);
+				}
+				break;
+			}
 		}
 	}
 }
