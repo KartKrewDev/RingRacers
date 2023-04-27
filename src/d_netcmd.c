@@ -266,7 +266,7 @@ static CV_PossibleValue_t spectatorreentry_cons_t[] = {{0, "MIN"}, {10*60, "MAX"
 consvar_t cv_spectatorreentry = CVAR_INIT ("spectatorreentry", "30", CV_NETVAR, spectatorreentry_cons_t, NULL);
 consvar_t cv_duelspectatorreentry = CVAR_INIT ("duelspectatorreentry", "180", CV_NETVAR, spectatorreentry_cons_t, NULL);
 
-static CV_PossibleValue_t antigrief_cons_t[] = {{10, "MIN"}, {120, "MAX"}, {0, "Off"}, {0, NULL}};
+static CV_PossibleValue_t antigrief_cons_t[] = {{10, "MIN"}, {180, "MAX"}, {0, "Off"}, {0, NULL}};
 consvar_t cv_antigrief = CVAR_INIT ("antigrief", "30", CV_NETVAR, antigrief_cons_t, NULL);
 
 consvar_t cv_startinglives = CVAR_INIT ("startinglives", "3", CV_NETVAR|CV_CHEAT|CV_NOSHOWHELP, startingliveslimit_cons_t, NULL);
