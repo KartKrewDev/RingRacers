@@ -3625,6 +3625,9 @@ void D_ClientServerInit(void)
 	RegisterNetXCmd(XD_ADDPLAYER, Got_AddPlayer);
 	RegisterNetXCmd(XD_REMOVEPLAYER, Got_RemovePlayer);
 	RegisterNetXCmd(XD_ADDBOT, Got_AddBot);
+	RegisterNetXCmd(XD_SAY, Got_Saycmd);
+	RegisterNetXCmd(XD_REQSAY, Got_RequestSaycmd);
+
 #ifdef DUMPCONSISTENCY
 	CV_RegisterVar(&cv_dumpconsistency);
 #endif

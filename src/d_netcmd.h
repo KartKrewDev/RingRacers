@@ -181,6 +181,7 @@ typedef enum
 	XD_AUTOMATE,    // 36
 	XD_REQMAPQUEUE, // 37
 	XD_MAPQUEUE,	// 38
+	XD_REQSAY,		// 39
 
 	MAXNETXCMD
 } netxcmd_t;
@@ -287,6 +288,8 @@ void D_Cheat(INT32 playernum, INT32 cheat, ...);
 
 // used for the player setup menu
 boolean CanChangeSkin(INT32 playernum);
+
+void Got_RequestSaycmd(UINT8 **cp, INT32 playernum);
 
 #ifdef __cplusplus
 } // extern "C"

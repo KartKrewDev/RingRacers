@@ -162,6 +162,14 @@ void HU_ClearTitlecardCEcho(void);
 extern UINT32 hu_demotime;
 extern UINT32 hu_demolap;
 
+void Got_Saycmd(UINT8 **p, INT32 playernum);
+
+typedef enum
+{
+	HU_SHOUT		= 1,		// Shout message
+	HU_CSAY			= 1<<1,		// Middle-of-screen server message
+} sayflags_t;
+
 #ifdef __cplusplus
 } // extern "C"
 #endif
