@@ -1894,6 +1894,13 @@ bool CallFunc_SetLineProperty(ACSVM::Thread *thread, const ACSVM::Word *argV, AC
 --------------------------------------------------*/
 enum
 {
+	SIDE_FRONT = 0,
+	SIDE_BACK = 1,
+	SIDE_BOTH,
+};
+
+enum
+{
 	SIDE_PROP_XOFFSET,
 	SIDE_PROP_YOFFSET,
 	SIDE_PROP_TOPTEXTURE,
@@ -1932,9 +1939,20 @@ bool CallFunc_GetSideProperty(ACSVM::Thread *thread, const ACSVM::Word *argV, AC
 	}
 
 	sideID = argV[1];
-	if (sideID < 0 || sideID > 1)
+	switch (sideID)
 	{
-		sideID = info->side;
+		default: // Activator
+		case SIDE_BOTH: // Wouldn't make sense for this function.
+		{
+			sideID = info->side;
+			break;
+		}
+		case SIDE_FRONT:
+		case SIDE_BACK:
+		{
+			// Keep sideID as is.
+			break;
+		}
 	}
 
 	if (line != NULL && line->sidenum[sideID] != 0xffff)
@@ -2005,6 +2023,7 @@ bool CallFunc_SetSideProperty(ACSVM::Thread *thread, const ACSVM::Word *argV, AC
 
 	UINT8 sideID = 0;
 	side_t *side = NULL;
+	boolean tryBoth = false;
 
 	INT32 property = SIDE_PROP__MAX;
 	INT32 value = 0;
@@ -2022,9 +2041,25 @@ bool CallFunc_SetSideProperty(ACSVM::Thread *thread, const ACSVM::Word *argV, AC
 	}
 
 	sideID = argV[1];
-	if (sideID < 0 || sideID > 1)
+	switch (sideID)
 	{
-		sideID = info->side;
+		default: // Activator
+		{
+			sideID = info->side;
+			break;
+		}
+		case SIDE_BOTH:
+		{
+			sideID = SIDE_FRONT;
+			tryBoth = true;
+			break;
+		}
+		case SIDE_FRONT:
+		case SIDE_BACK:
+		{
+			// Keep sideID as is.
+			break;
+		}
 	}
 
 	if (line != NULL && line->sidenum[sideID] != 0xffff)
@@ -2095,9 +2130,25 @@ bool CallFunc_SetSideProperty(ACSVM::Thread *thread, const ACSVM::Word *argV, AC
 			}
 		}
 
+		if (tryBoth == true && sideID == SIDE_FRONT)
+		{
+			sideID = SIDE_BACK;
+
+			if (line->sidenum[sideID] != 0xffff)
+			{
+				side = &sides[line->sidenum[sideID]];
+				continue;
+			}
+		}
+
 		if ((lineID = NextLine(tag, lineID, activatorID)) != -1)
 		{
 			line = &lines[ lineID ];
+
+			if (tryBoth == true)
+			{
+				sideID = SIDE_FRONT;
+			}
 		}
 		else
 		{
