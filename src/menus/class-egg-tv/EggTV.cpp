@@ -439,6 +439,9 @@ void EggTV::watch() const
 
 		M_ClearMenus(false);
 
+		demo.loadfiles = true;
+		demo.ignorefiles = false;
+
 		G_DoPlayDemo(replay->path().string().c_str());
 	}
 }
