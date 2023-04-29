@@ -65,6 +65,12 @@
 #define HU_INPUTX 0
 #define HU_INPUTY 0
 
+typedef enum
+{
+	HU_SHOUT		= 1,		// Shout message
+	HU_CSAY			= 1<<1,		// Middle-of-screen server message
+} sayflags_t;
+
 //-------------------------------------------
 //              heads up font
 //-------------------------------------------
@@ -174,6 +180,7 @@ static void Command_Sayto_f(void);
 static void Command_Sayteam_f(void);
 static void Command_CSay_f(void);
 static void Command_Shout(void);
+static void Got_Saycmd(UINT8 **p, INT32 playernum);
 
 void HU_LoadGraphics(void)
 {
@@ -219,6 +226,7 @@ void HU_Init(void)
 	COM_AddCommand("sayteam", Command_Sayteam_f);
 	COM_AddCommand("csay", Command_CSay_f);
 	COM_AddCommand("shout", Command_Shout);
+	RegisterNetXCmd(XD_SAY, Got_Saycmd);
 
 	// only allocate if not present, to save us a lot of headache
 	if (missingpat == NULL)
@@ -687,7 +695,7 @@ static tic_t stop_spamming[MAXPLAYERS];
   * \sa DoSayCommand
   * \author Graue <graue@oceanbase.org>
   */
-void Got_Saycmd(UINT8 **p, INT32 playernum)
+static void Got_Saycmd(UINT8 **p, INT32 playernum)
 {
 	SINT8 target;
 	UINT8 flags;
@@ -699,8 +707,56 @@ void Got_Saycmd(UINT8 **p, INT32 playernum)
 
 	CONS_Debug(DBG_NETPLAY,"Received SAY cmd from Player %d (%s)\n", playernum+1, player_names[playernum]);
 
+	target = READSINT8(*p);
+	flags = READUINT8(*p);
+	msg = (char *)*p;
+	SKIPSTRINGL(*p, HU_MAXMSGLEN + 1);
+
+	if ((cv_mute.value || flags & (HU_CSAY|HU_SHOUT)) && playernum != serverplayer && !(IsPlayerAdmin(playernum)))
+	{
+		CONS_Alert(CONS_WARNING, cv_mute.value ?
+			M_GetText("Illegal say command received from %s while muted\n") : M_GetText("Illegal csay command received from non-admin %s\n"),
+			player_names[playernum]);
+		if (server)
+			SendKick(playernum, KICK_MSG_CON_FAIL);
+		return;
+	}
+
+	//check for invalid characters (0x80 or above)
+	{
+		size_t i;
+		const size_t j = strlen(msg);
+		for (i = 0; i < j; i++)
+		{
+			if (msg[i] & 0x80)
+			{
+				CONS_Alert(CONS_WARNING, M_GetText("Illegal say command received from %s containing invalid characters\n"), player_names[playernum]);
+				if (server)
+					SendKick(playernum, KICK_MSG_CON_FAIL);
+				return;
+			}
+		}
+	}
+
+	// before we do anything, let's verify the guy isn't spamming, get this easier on us.
+
+	//if (stop_spamming[playernum] != 0 && cv_chatspamprotection.value && !(flags & HU_CSAY))
+	if (stop_spamming[playernum] != 0 && consoleplayer != playernum && cv_chatspamprotection.value && !(flags & (HU_CSAY|HU_SHOUT)))
+	{
+		CONS_Debug(DBG_NETPLAY,"Received SAY cmd too quickly from Player %d (%s), assuming as spam and blocking message.\n", playernum+1, player_names[playernum]);
+		stop_spamming[playernum] = 4;
+		spam_eatmsg = 1;
+	}
+	else
+		stop_spamming[playernum] = 4; // you can hold off for 4 tics, can you?
+
+	// run the lua hook even if we were supposed to eat the msg, netgame consistency goes first.
+
 	if (LUA_HookPlayerMsg(playernum, target, flags, msg, spam_eatmsg))
 		return;
+
+	if (spam_eatmsg)
+		return; // don't proceed if we were supposed to eat the message.
 
 	// If it's a CSAY, just CECHO and be done with it.
 	if (flags & HU_CSAY)
@@ -1105,7 +1161,7 @@ static void HU_sendChatMessage(void)
 			buf[0] = target;
 
 		buf[1] = ((server || IsPlayerAdmin(consoleplayer)) && cv_autoshout.value) ? HU_SHOUT : 0; // flags
-		SendNetXCmd(XD_REQSAY, buf, 2 + strlen(&buf[2]) + 1);
+		SendNetXCmd(XD_SAY, buf, 2 + strlen(&buf[2]) + 1);
 	}
 }
 

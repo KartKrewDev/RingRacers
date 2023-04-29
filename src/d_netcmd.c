@@ -65,7 +65,6 @@
 #include "k_race.h"
 #include "g_party.h"
 #include "k_vote.h"
-#include "hu_stuff.h" // HU_ flags
 
 #ifdef SRB2_CONFIG_ENABLE_WEBM_MOVIES
 #include "m_avrecorder.h"
@@ -580,6 +579,7 @@ size_t schedule_len = 0;
 
 // Automation commands
 char *automate_commands[AEV__MAX];
+
 const char *automate_names[AEV__MAX] =
 {
 	"RoundStart", // AEV_ROUNDSTART
@@ -588,8 +588,6 @@ const char *automate_names[AEV__MAX] =
 };
 
 UINT32 livestudioaudience_timer = 90;
-
-static tic_t stop_spamming[MAXPLAYERS];
 
 /// \warning Keep this up-to-date if you add/remove/rename net text commands
 const char *netxcmdnames[MAXNETXCMD - 1] =
@@ -634,7 +632,6 @@ const char *netxcmdnames[MAXNETXCMD - 1] =
 	"AUTOMATE", // XD_AUTOMATE
 	"REQMAPQUEUE", // XD_REQMAPQUEUE
 	"MAPQUEUE", // XD_MAPQUEUE
-	"REQSAY", // XD_REQSAY
 };
 
 // =========================================================================
@@ -3490,74 +3487,6 @@ static void Got_MapQueuecmd(UINT8 **cp, INT32 playernum)
 
 	CONS_Printf("queuemap: A map was added to the round queue (pos. %u)\n", queueposition+1);
 }
-
-void Got_RequestSaycmd(UINT8 **p, INT32 playernum)
-{
-	SINT8 target;
-	UINT8 flags;
-	const char *dispname;
-	char *msg;
-	boolean action = false;
-	char *ptr;
-	INT32 spam_eatmsg = 0;
-
-	UINT8 *original = *p;
-
-	// Only the server processes this message.
-	if (client)
-		return;
-
-	CONS_Debug(DBG_NETPLAY,"Received REQSAY cmd from Player %d (%s)\n", playernum+1, player_names[playernum]);
-
-	target = READSINT8(*p);
-	flags = READUINT8(*p);
-	msg = (char *)*p;
-	SKIPSTRINGL(*p, HU_MAXMSGLEN + 1);
-
-	if ((cv_mute.value || flags & (HU_CSAY|HU_SHOUT)) && playernum != serverplayer && !(IsPlayerAdmin(playernum)))
-	{
-		CONS_Alert(CONS_WARNING, cv_mute.value ?
-			M_GetText("Illegal reqsay command received from %s while muted\n") : M_GetText("Illegal csay command received from non-admin %s\n"),
-			player_names[playernum]);
-		if (server)
-			SendKick(playernum, KICK_MSG_CON_FAIL);
-		return;
-	}
-
-	//check for invalid characters (0x80 or above)
-	{
-		size_t i;
-		const size_t j = strlen(msg);
-		for (i = 0; i < j; i++)
-		{
-			if (msg[i] & 0x80)
-			{
-				CONS_Alert(CONS_WARNING, M_GetText("Illegal reqsay command received from %s containing invalid characters\n"), player_names[playernum]);
-				if (server)
-					SendKick(playernum, KICK_MSG_CON_FAIL);
-				return;
-			}
-		}
-	}
-
-	// before we do anything, let's verify the guy isn't spamming, get this easier on us.
-
-	//if (stop_spamming[playernum] != 0 && cv_chatspamprotection.value && !(flags & HU_CSAY))
-	if (stop_spamming[playernum] != 0 && consoleplayer != playernum && cv_chatspamprotection.value && !(flags & (HU_CSAY|HU_SHOUT)))
-	{
-		CONS_Debug(DBG_NETPLAY,"Received REQSAY cmd too quickly from Player %d (%s), assuming as spam and blocking message.\n", playernum+1, player_names[playernum]);
-		stop_spamming[playernum] = 4;
-		spam_eatmsg = 1;
-	}
-	else
-		stop_spamming[playernum] = 4; // you can hold off for 4 tics, can you?
-
-	if (spam_eatmsg)
-		return; // don't proceed if we were supposed to eat the message.
-
-	SendNetXCmd(XD_SAY, original, *p - original);
-}
-
 
 static void Command_Pause(void)
 {
