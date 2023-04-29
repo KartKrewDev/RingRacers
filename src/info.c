@@ -22331,7 +22331,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 
 	// SRB2kart MT's
 	{           // MT_RANDOMITEM
-		2011,             // doomednum
+		2000,             // doomednum
 		S_RANDOMITEM1,    // spawnstate
 		1000,             // spawnhealth
 		S_NULL,           // seestate

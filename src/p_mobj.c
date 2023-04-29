@@ -12128,16 +12128,6 @@ static boolean P_SpawnNonMobjMapThing(mapthing_t *mthing)
 
 static boolean P_AllowMobjSpawn(mapthing_t* mthing, mobjtype_t i)
 {
-	//(void)mthing;
-
-	if (mthing->type == 2000)
-	{
-		// TEMP: old item spot ID, while we're testing big items.
-		// Return MT_RANDOMITEM from 2011 to 2000 later,
-		// and then remove this when we're done.
-		return false;
-	}
-
 	switch (i)
 	{
 		case MT_ITEMCAPSULE:

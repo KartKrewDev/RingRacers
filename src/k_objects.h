@@ -122,6 +122,7 @@ void Obj_AudienceThink(mobj_t * mobj, boolean focusonplayer);
 void Obj_RandomItemVisuals(mobj_t *mobj);
 boolean Obj_RandomItemSpawnIn(mobj_t *mobj);
 fixed_t Obj_RandomItemScale(fixed_t oldScale);
+void Obj_RandomItemSpawn(mobj_t *mobj);
 
 #ifdef __cplusplus
 } // extern "C"
