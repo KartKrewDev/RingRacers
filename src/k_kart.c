@@ -241,44 +241,6 @@ void K_ReduceVFX(mobj_t *mo, player_t *owner)
 	}
 }
 
-player_t *K_GetItemBoxPlayer(mobj_t *mobj)
-{
-	fixed_t closest = INT32_MAX;
-	player_t *player = NULL;
-	UINT8 i;
-
-	for (i = 0; i < MAXPLAYERS; i++)
-	{
-		if (!(playeringame[i] && players[i].mo && !P_MobjWasRemoved(players[i].mo) && !players[i].spectator))
-		{
-			continue;
-		}
-
-		// Always use normal item box rules -- could pass in "2" for fakes but they blend in better like this
-		if (P_CanPickupItem(&players[i], 1))
-		{
-			fixed_t dist = P_AproxDistance(P_AproxDistance(
-				players[i].mo->x - mobj->x,
-				players[i].mo->y - mobj->y),
-				players[i].mo->z - mobj->z
-			);
-
-			if (dist > 8192*mobj->scale)
-			{
-				continue;
-			}
-
-			if (dist < closest)
-			{
-				player = &players[i];
-				closest = dist;
-			}
-		}
-	}
-
-	return player;
-}
-
 // Angle reflection used by springs & speed pads
 angle_t K_ReflectAngle(angle_t yourangle, angle_t theirangle, fixed_t yourspeed, fixed_t theirspeed)
 {
@@ -6804,6 +6766,8 @@ static void K_MoveHeldObjects(player_t *player)
 
 					if (cur->type == MT_EGGMANITEM_SHIELD)
 					{
+						Obj_RandomItemVisuals(cur);
+
 						// Decided that this should use their "canon" color.
 						cur->color = SKINCOLOR_BLACK;
 					}

@@ -118,6 +118,11 @@ void Obj_UpdateRingShooterFace(mobj_t *part);
 void Obj_AudienceInit(mobj_t * mobj, mapthing_t *mthing, INT32 followerpick);
 void Obj_AudienceThink(mobj_t * mobj, boolean focusonplayer);
 
+/* Random Item Boxes */
+void Obj_RandomItemVisuals(mobj_t *mobj);
+boolean Obj_RandomItemSpawnIn(mobj_t *mobj);
+fixed_t Obj_RandomItemScale(fixed_t oldScale);
+
 #ifdef __cplusplus
 } // extern "C"
 #endif
