@@ -3130,24 +3130,11 @@ void G_DoPlayDemo(char *defdemoname)
 	}
 	demobuf.p += 4; // "PLAY"
 	READSTRINGN(demobuf.p, mapname, sizeof(mapname)); // gamemap
-	gamemap = G_MapNumber(mapname)+1;
 	demobuf.p += 16; // mapmd5
 
 	demoflags = READUINT8(demobuf.p);
 
 	READSTRINGN(demobuf.p, gtname, sizeof(gtname)); // gametype
-	i = G_GetGametypeByName(gtname);
-	if (i < 0)
-	{
-		snprintf(msg, 1024, M_GetText("%s is in a gametype that is not currently loaded and cannot be played.\n"), pdemoname);
-		CONS_Alert(CONS_ERROR, "%s", msg);
-		M_StartMessage(msg, NULL, MM_NOTHING);
-		Z_Free(pdemoname);
-		Z_Free(demobuf.buffer);
-		demo.playback = false;
-		return;
-	}
-	G_SetGametype(i);
 
 	numlaps = READUINT8(demobuf.p);
 
@@ -3205,6 +3192,21 @@ void G_DoPlayDemo(char *defdemoname)
 			return;
 		}
 	}
+
+	gamemap = G_MapNumber(mapname)+1;
+
+	i = G_GetGametypeByName(gtname);
+	if (i < 0)
+	{
+		snprintf(msg, 1024, M_GetText("%s is in a gametype that is not currently loaded and cannot be played.\n"), pdemoname);
+		CONS_Alert(CONS_ERROR, "%s", msg);
+		M_StartMessage(msg, NULL, MM_NOTHING);
+		Z_Free(pdemoname);
+		Z_Free(demobuf.buffer);
+		demo.playback = false;
+		return;
+	}
+	G_SetGametype(i);
 
 	// character list
 	demo.skinlist = G_LoadDemoSkins(&demobuf.p, &demo.numskins, true);
