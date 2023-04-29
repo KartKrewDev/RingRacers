@@ -1150,7 +1150,7 @@ static void K_initKartHUD(void)
 	}
 }
 
-void K_DrawMapThumbnail(INT32 x, INT32 y, INT32 width, UINT32 flags, UINT16 map, UINT8 *colormap)
+void K_DrawMapThumbnail(fixed_t x, fixed_t y, fixed_t width, UINT32 flags, UINT16 map, const UINT8 *colormap)
 {
 	patch_t *PictureOfLevel = NULL;
 
@@ -1170,7 +1170,7 @@ void K_DrawMapThumbnail(INT32 x, INT32 y, INT32 width, UINT32 flags, UINT16 map,
 	K_DrawLikeMapThumbnail(x, y, width, flags, PictureOfLevel, colormap);
 }
 
-void K_DrawLikeMapThumbnail(INT32 x, INT32 y, INT32 width, UINT32 flags, patch_t *patch, UINT8 *colormap)
+void K_DrawLikeMapThumbnail(fixed_t x, fixed_t y, fixed_t width, UINT32 flags, patch_t *patch, const UINT8 *colormap)
 {
 	if (flags & V_FLIP)
 		x += width;

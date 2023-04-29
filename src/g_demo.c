@@ -2950,13 +2950,14 @@ void G_DeferedPlayDemo(const char *name)
 
 #define SKIPERRORS
 
-void G_DoPlayDemo(char *defdemoname)
+void G_DoPlayDemo(const char *defdemoname)
 {
 	INT32 i;
 	UINT8 p, numslots = 0;
 	lumpnum_t l;
 	char color[MAXCOLORNAME+1],follower[17],mapname[MAXMAPLUMPNAME],gtname[MAXGAMETYPELENGTH];
-	char *n,*pdemoname;
+	const char *n;
+	char *pdemoname;
 	UINT8 availabilities[MAXPLAYERS][MAXAVAILABILITY];
 	UINT8 version,subversion;
 	UINT32 randseed[PRNUMCLASS];
