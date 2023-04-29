@@ -112,13 +112,13 @@ EggTVData::Folder::Cache::Cache(Folder& folder) : folder_(folder)
 	{
 		for (const fs::directory_entry& entry : fs::directory_iterator(folder_.path()))
 		{
-			if (!entry.is_regular_file())
-			{
-				continue;
-			}
-
 			try
 			{
+				if (!entry.is_regular_file())
+				{
+					continue;
+				}
+
 				replays_.emplace_back(
 					*this,
 					entry.path().filename(),
