@@ -328,6 +328,11 @@ void EggTVData::cache_folders()
 	{
 		try
 		{
+			if (!entry.is_directory())
+			{
+				continue;
+			}
+
 			Folder folder(*this, entry);
 
 			if (!folder.empty())
