@@ -2155,7 +2155,7 @@ static void G_SkipDemoExtraFiles(UINT8 **pp)
 
 // G_CheckDemoExtraFiles: checks if our loaded WAD list matches the demo's.
 // Enabling quick prevents filesystem checks to see if needed files are available to load.
-static UINT8 G_CheckDemoExtraFiles(UINT8 **pp, boolean quick)
+static UINT8 G_CheckDemoExtraFiles(savebuffer_t *info, boolean quick)
 {
 	UINT8 totalfiles, filesloaded, nmusfilecount;
 	char filename[MAX_WADPATH];
@@ -2165,18 +2165,27 @@ static UINT8 G_CheckDemoExtraFiles(UINT8 **pp, boolean quick)
 	UINT8 i, j;
 	UINT8 error = 0;
 
-	totalfiles = READUINT8((*pp));
+	if (P_SaveBufferRemaining(info) < 1)
+	{
+		return DFILE_ERROR_CORRUPT;
+	}
+
+	totalfiles = READUINT8(info->p);
 	filesloaded = 0;
 	for (i = 0; i < totalfiles; ++i)
 	{
-		if (toomany)
-			SKIPSTRING((*pp));
-		else
+		if (!toomany)
 		{
-			strlcpy(filename, (char *)(*pp), sizeof filename);
-			SKIPSTRING((*pp));
+			strlcpy(filename, (char *)info->p, min(P_SaveBufferRemaining(info) + 1, sizeof filename));
 		}
-		READMEM((*pp), md5sum, 16);
+		SKIPSTRINGN(info->p, P_SaveBufferRemaining(info));
+
+		if (P_SaveBufferRemaining(info) < 16)
+		{
+			return DFILE_ERROR_CORRUPT;
+		}
+
+		READMEM(info->p, md5sum, 16);
 
 		if (!toomany)
 		{
@@ -2256,13 +2265,18 @@ static void G_SaveDemoSkins(UINT8 **pp)
 	}
 }
 
-static democharlist_t *G_LoadDemoSkins(UINT8 **pp, UINT8 *worknumskins, boolean getclosest)
+static democharlist_t *G_LoadDemoSkins(savebuffer_t *info, UINT8 *worknumskins, boolean getclosest)
 {
 	char skin[17];
 	UINT8 i, byte, shif;
 	democharlist_t *skinlist = NULL;
 
-	(*worknumskins) = READUINT8((*pp));
+	if (P_SaveBufferRemaining(info) < 1)
+	{
+		return NULL;
+	}
+
+	(*worknumskins) = READUINT8(info->p);
 	if (!(*worknumskins))
 		return NULL;
 
@@ -2278,10 +2292,16 @@ static democharlist_t *G_LoadDemoSkins(UINT8 **pp, UINT8 *worknumskins, boolean 
 	{
 		INT32 result = -1;
 
-		READMEM((*pp), skin, 16);
-		skinlist[i].kartspeed = READUINT8((*pp));
-		skinlist[i].kartweight = READUINT8((*pp));
-		skinlist[i].flags = READUINT32((*pp));
+		if (P_SaveBufferRemaining(info) < 16+1+1+4)
+		{
+			Z_Free(skinlist);
+			return NULL;
+		}
+
+		READMEM(info->p, skin, 16);
+		skinlist[i].kartspeed = READUINT8(info->p);
+		skinlist[i].kartweight = READUINT8(info->p);
+		skinlist[i].flags = READUINT32(info->p);
 
 		result = R_SkinAvailable(skin);
 		if (result == -1)
@@ -2304,7 +2324,13 @@ static democharlist_t *G_LoadDemoSkins(UINT8 **pp, UINT8 *worknumskins, boolean 
 
 	for (byte = 0; byte < MAXAVAILABILITY; byte++)
 	{
-		UINT8 availabilitiesbuffer = READUINT8((*pp));
+		if (P_SaveBufferRemaining(info) < 1)
+		{
+			Z_Free(skinlist);
+			return NULL;
+		}
+
+		UINT8 availabilitiesbuffer = READUINT8(info->p);
 
 		for (shif = 0; shif < 8; shif++)
 		{
@@ -2770,23 +2796,26 @@ UINT8 G_CmpDemoTime(char *oldname, char *newname)
 
 void G_LoadDemoInfo(menudemo_t *pdemo)
 {
-	UINT8 *infobuffer, *info_p, *extrainfo_p;
+	savebuffer_t info = {0};
+	UINT8 *extrainfo_p;
 	UINT8 version, subversion, pdemoflags, worknumskins, skinid;
 	democharlist_t *skinlist = NULL;
 	UINT16 pdemoversion, count;
 	char mapname[MAXMAPLUMPNAME],gtname[MAXGAMETYPELENGTH];
 	INT32 i;
 
-	if (!FIL_ReadFile(pdemo->filepath, &infobuffer))
+	if (!P_SaveBufferFromFile(&info, pdemo->filepath))
 	{
 		CONS_Alert(CONS_ERROR, M_GetText("Failed to read file '%s'.\n"), pdemo->filepath);
-		infobuffer = NULL;
 		goto badreplay;
 	}
 
-	info_p = infobuffer;
+	if (info.size < 12)
+	{
+		goto corrupt;
+	}
 
-	if (memcmp(info_p, DEMOHEADER, 12))
+	if (memcmp(info.p, DEMOHEADER, 12))
 	{
 		CONS_Alert(CONS_ERROR, M_GetText("%s is not a Ring Racers replay file.\n"), pdemo->filepath);
 		goto badreplay;
@@ -2794,18 +2823,28 @@ void G_LoadDemoInfo(menudemo_t *pdemo)
 
 	pdemo->type = MD_LOADED;
 
-	info_p += 12; // DEMOHEADER
+	info.p += 12; // DEMOHEADER
 
-	version = READUINT8(info_p);
-	subversion = READUINT8(info_p);
-	pdemoversion = READUINT16(info_p);
+	if (P_SaveBufferRemaining(&info) < 1+1+2)
+	{
+		goto corrupt;
+	}
+
+	version = READUINT8(info.p);
+	subversion = READUINT8(info.p);
+	pdemoversion = READUINT16(info.p);
 
 	switch(pdemoversion)
 	{
 	case DEMOVERSION: // latest always supported
+		if (P_SaveBufferRemaining(&info) < 64)
+		{
+			goto corrupt;
+		}
+
 		// demo title
-		M_Memcpy(pdemo->title, info_p, 64);
-		info_p += 64;
+		M_Memcpy(pdemo->title, info.p, 64);
+		info.p += 64;
 
 		break;
 	// too old, cannot support.
@@ -2817,35 +2856,51 @@ void G_LoadDemoInfo(menudemo_t *pdemo)
 	if (version != VERSION || subversion != SUBVERSION)
 		pdemo->type = MD_OUTDATED;
 
-	info_p += 16; // demo checksum
-	if (memcmp(info_p, "PLAY", 4))
+	info.p += 16; // demo checksum
+
+	if (P_SaveBufferRemaining(&info) < 4)
+	{
+		goto corrupt;
+	}
+
+	if (memcmp(info.p, "PLAY", 4))
 	{
 		CONS_Alert(CONS_ERROR, M_GetText("%s is the wrong type of recording and cannot be played.\n"), pdemo->filepath);
 		goto badreplay;
 	}
-	info_p += 4; // "PLAY"
-	READSTRINGN(info_p, mapname, sizeof(mapname));
+	info.p += 4; // "PLAY"
+	READSTRINGN(info.p, mapname, min(P_SaveBufferRemaining(&info), sizeof(mapname)));
 	pdemo->map = G_MapNumber(mapname);
-	info_p += 16; // mapmd5
+	info.p += 16; // mapmd5
 
-	pdemoflags = READUINT8(info_p);
+	if (P_SaveBufferRemaining(&info) < 1)
+	{
+		goto corrupt;
+	}
+
+	pdemoflags = READUINT8(info.p);
 
 	// temp?
 	if (!(pdemoflags & DF_MULTIPLAYER))
 	{
 		CONS_Alert(CONS_ERROR, M_GetText("%s is not a multiplayer replay and can't be listed on this menu fully yet.\n"), pdemo->filepath);
-		Z_Free(infobuffer);
-		return;
+		goto badreplay;
 	}
 
-	READSTRINGN(info_p, gtname, sizeof(gtname)); // gametype
+	READSTRINGN(info.p, gtname, min(P_SaveBufferRemaining(&info), sizeof(gtname))); // gametype
 	pdemo->gametype = G_GetGametypeByName(gtname);
 
-	pdemo->numlaps = READUINT8(info_p);
+	if (P_SaveBufferRemaining(&info) < 1)
+	{
+		goto corrupt;
+	}
 
-	pdemo->addonstatus = G_CheckDemoExtraFiles(&info_p, true);
+	pdemo->numlaps = READUINT8(info.p);
 
-	skinlist = G_LoadDemoSkins(&info_p, &worknumskins, false);
+	pdemo->addonstatus = G_CheckDemoExtraFiles(&info, true);
+
+	skinlist = G_LoadDemoSkins(&info, &worknumskins, false);
+
 	if (!skinlist)
 	{
 		CONS_Alert(CONS_ERROR, M_GetText("%s has an invalid skin list.\n"), pdemo->filepath);
@@ -2854,23 +2909,33 @@ void G_LoadDemoInfo(menudemo_t *pdemo)
 
 	for (i = 0; i < PRNUMCLASS; i++)
 	{
-		info_p += 4; // RNG seed
+		info.p += 4; // RNG seed
 	}
 
-	extrainfo_p = infobuffer + READUINT32(info_p); // The extra UINT32 read is for a blank 4 bytes?
+	if (P_SaveBufferRemaining(&info) < 4+2)
+	{
+		goto corrupt;
+	}
+
+	extrainfo_p = info.buffer + READUINT32(info.p); // The extra UINT32 read is for a blank 4 bytes?
 
 	// Pared down version of CV_LoadNetVars to find the kart speed
 	pdemo->kartspeed = KARTSPEED_NORMAL; // Default to normal speed
-	count = READUINT16(info_p);
+	count = READUINT16(info.p);
 	while (count--)
 	{
 		UINT16 netid;
 		char *svalue;
 
-		netid = READUINT16(info_p);
-		svalue = (char *)info_p;
-		SKIPSTRING(info_p);
-		info_p++; // stealth
+		if (P_SaveBufferRemaining(&info) < 2)
+		{
+			goto corrupt;
+		}
+
+		netid = READUINT16(info.p);
+		svalue = (char *)info.p;
+		SKIPSTRINGN(info.p, P_SaveBufferRemaining(&info));
+		info.p++; // stealth
 
 		if (netid == cv_kartspeed.netid)
 		{
@@ -2887,25 +2952,28 @@ void G_LoadDemoInfo(menudemo_t *pdemo)
 	// Read standings!
 	count = 0;
 
-	while (READUINT8(extrainfo_p) == DW_STANDING) // Assume standings are always first in the extrainfo
+	info.p = extrainfo_p;
+
+	while (P_SaveBufferRemaining(&info) >= 1+1+16+1+16+4 &&
+			READUINT8(info.p) == DW_STANDING) // Assume standings are always first in the extrainfo
 	{
 		char temp[16];
 
-		pdemo->standings[count].ranking = READUINT8(extrainfo_p);
+		pdemo->standings[count].ranking = READUINT8(info.p);
 
 		// Name
-		M_Memcpy(pdemo->standings[count].name, extrainfo_p, 16);
-		extrainfo_p += 16;
+		M_Memcpy(pdemo->standings[count].name, info.p, 16);
+		info.p += 16;
 
 		// Skin
-		skinid = READUINT8(extrainfo_p);
+		skinid = READUINT8(info.p);
 		if (skinid > worknumskins)
 			skinid = 0;
 		pdemo->standings[count].skin = skinlist[skinid].mapping;
 
 		// Color
-		M_Memcpy(temp,extrainfo_p,16);
-		extrainfo_p += 16;
+		M_Memcpy(temp,info.p,16);
+		info.p += 16;
 		for (i = 0; i < numskincolors; i++)
 			if (!stricmp(skincolors[i].name,temp))				// SRB2kart
 			{
@@ -2914,7 +2982,7 @@ void G_LoadDemoInfo(menudemo_t *pdemo)
 			}
 
 		// Score/time/whatever
-		pdemo->standings[count].timeorscore = READUINT32(extrainfo_p);
+		pdemo->standings[count].timeorscore = READUINT32(info.p);
 
 		count++;
 
@@ -2922,16 +2990,24 @@ void G_LoadDemoInfo(menudemo_t *pdemo)
 			break; //@TODO still cycle through the rest of these if extra demo data is ever used
 	}
 
+	if (P_SaveBufferRemaining(&info) == 0)
+	{
+		goto corrupt;
+	}
+
 	// I think that's everything we need?
 	Z_Free(skinlist);
-	Z_Free(infobuffer);
+	P_SaveBufferFree(&info);
 	return;
+
+corrupt:
+	CONS_Alert(CONS_ERROR, "%s is corrupt.\n", pdemo->filepath);
 
 badreplay:
 	pdemo->type = MD_INVALID;
 	sprintf(pdemo->title, "INVALID REPLAY");
 	Z_Free(skinlist);
-	Z_Free(infobuffer);
+	P_SaveBufferFree(&info);
 }
 
 //
@@ -3160,7 +3236,7 @@ void G_DoPlayDemo(const char *defdemoname)
 		G_SkipDemoExtraFiles(&demobuf.p);
 	else
 	{
-		UINT8 error = G_CheckDemoExtraFiles(&demobuf.p, false);
+		UINT8 error = G_CheckDemoExtraFiles(&demobuf, false);
 
 		if (error)
 		{
@@ -3208,7 +3284,7 @@ void G_DoPlayDemo(const char *defdemoname)
 	}
 
 	// character list
-	demo.skinlist = G_LoadDemoSkins(&demobuf.p, &demo.numskins, true);
+	demo.skinlist = G_LoadDemoSkins(&demobuf, &demo.numskins, true);
 	if (!demo.skinlist)
 	{
 		snprintf(msg, 1024, M_GetText("%s has an invalid skin list and cannot be played.\n"), pdemoname);
@@ -3488,7 +3564,7 @@ void G_DoPlayDemo(const char *defdemoname)
 	demo.deferstart = true;
 }
 
-void G_AddGhost(UINT8 *buffer, char *defdemoname)
+void G_AddGhost(savebuffer_t *buffer, char *defdemoname)
 {
 	INT32 i;
 	char name[17], color[MAXCOLORNAME+1], md5[16];
@@ -3504,13 +3580,13 @@ void G_AddGhost(UINT8 *buffer, char *defdemoname)
 	name[16] = '\0';
 	color[16] = '\0';
 
-	p = buffer;
+	p = buffer->buffer;
 
 	// read demo header
 	if (memcmp(p, DEMOHEADER, 12))
 	{
 		CONS_Alert(CONS_NOTICE, M_GetText("Ghost %s: Not a SRB2 replay.\n"), defdemoname);
-		Z_Free(buffer);
+		P_SaveBufferFree(buffer);
 		return;
 	} p += 12; // DEMOHEADER
 
@@ -3525,7 +3601,7 @@ void G_AddGhost(UINT8 *buffer, char *defdemoname)
 	// too old, cannot support.
 	default:
 		CONS_Alert(CONS_NOTICE, M_GetText("Ghost %s: Demo version incompatible.\n"), defdemoname);
-		Z_Free(buffer);
+		P_SaveBufferFree(buffer);
 		return;
 	}
 
@@ -3536,14 +3612,14 @@ void G_AddGhost(UINT8 *buffer, char *defdemoname)
 		if (!memcmp(md5, gh->checksum, 16)) // another ghost in the game already has this checksum?
 		{ // Don't add another one, then!
 			CONS_Debug(DBG_SETUP, "Rejecting duplicate ghost %s (MD5 was matched)\n", defdemoname);
-			Z_Free(buffer);
+			P_SaveBufferFree(buffer);
 			return;
 		}
 
 	if (memcmp(p, "PLAY", 4))
 	{
 		CONS_Alert(CONS_NOTICE, M_GetText("Ghost %s: Demo format unacceptable.\n"), defdemoname);
-		Z_Free(buffer);
+		P_SaveBufferFree(buffer);
 		return;
 	} p += 4; // "PLAY"
 
@@ -3555,14 +3631,14 @@ void G_AddGhost(UINT8 *buffer, char *defdemoname)
 	if (!(flags & DF_GHOST))
 	{
 		CONS_Alert(CONS_NOTICE, M_GetText("Ghost %s: No ghost data in this demo.\n"), defdemoname);
-		Z_Free(buffer);
+		P_SaveBufferFree(buffer);
 		return;
 	}
 
 	if (flags & DF_LUAVARS) // can't be arsed to add support for grinding away ported lua material
 	{
 		CONS_Alert(CONS_NOTICE, M_GetText("Ghost %s: Replay data contains luavars, cannot continue.\n"), defdemoname);
-		Z_Free(buffer);
+		P_SaveBufferFree(buffer);
 		return;
 	}
 
@@ -3570,11 +3646,16 @@ void G_AddGhost(UINT8 *buffer, char *defdemoname)
 	p++; // numlaps
 	G_SkipDemoExtraFiles(&p); // Don't wanna modify the file list for ghosts.
 
-	skinlist = G_LoadDemoSkins(&p, &worknumskins, true);
+	{
+		// FIXME: the rest of this function is not modifying buffer->p directly so fuck it
+		buffer->p = p;
+		skinlist = G_LoadDemoSkins(buffer, &worknumskins, true);
+		p = buffer->p;
+	}
 	if (!skinlist)
 	{
 		CONS_Alert(CONS_NOTICE, M_GetText("Ghost %s: Replay data has invalid skin list, cannot continue.\n"), defdemoname);
-		Z_Free(buffer);
+		P_SaveBufferFree(buffer);
 		return;
 	}
 
@@ -3603,7 +3684,7 @@ void G_AddGhost(UINT8 *buffer, char *defdemoname)
 	{
 		CONS_Alert(CONS_NOTICE, M_GetText("Failed to add ghost %s: Replay is empty.\n"), defdemoname);
 		Z_Free(skinlist);
-		Z_Free(buffer);
+		P_SaveBufferFree(buffer);
 		return;
 	}
 
@@ -3615,7 +3696,7 @@ void G_AddGhost(UINT8 *buffer, char *defdemoname)
 	{
 		CONS_Alert(CONS_NOTICE, M_GetText("Failed to add ghost %s: Invalid player slot (spectator/bot)\n"), defdemoname);
 		Z_Free(skinlist);
-		Z_Free(buffer);
+		P_SaveBufferFree(buffer);
 		return;
 	}
 
@@ -3647,14 +3728,14 @@ void G_AddGhost(UINT8 *buffer, char *defdemoname)
 	{
 		CONS_Alert(CONS_NOTICE, M_GetText("Failed to add ghost %s: Invalid player slot (bad terminator)\n"), defdemoname);
 		Z_Free(skinlist);
-		Z_Free(buffer);
+		P_SaveBufferFree(buffer);
 		return;
 	}
 
 
 	gh = Z_Calloc(sizeof(demoghost), PU_LEVEL, NULL);
 	gh->next = ghosts;
-	gh->buffer = buffer;
+	gh->buffer = buffer->buffer;
 	M_Memcpy(gh->checksum, md5, 16);
 	gh->p = p;
 
