@@ -1023,6 +1023,7 @@ static boolean ShouldDropPacket(void)
 			case PT_LOGIN:
 			case PT_ASKLUAFILE:
 			case PT_SENDINGLUAFILE:
+			case PT_SAY:
 				return true;
 			default:
 				return false;

@@ -95,7 +95,6 @@ struct playersort_t
 //------------------------------------
 //           chat stuff
 //------------------------------------
-#define HU_MAXMSGLEN 223
 #define CHAT_BUFSIZE 64		// that's enough messages, right? We'll delete the older ones when that gets out of hand.
 #define NETSPLITSCREEN // why the hell WOULDN'T we want this?
 #ifdef NETSPLITSCREEN
@@ -157,6 +156,8 @@ void HU_DoCEcho(const char *msg);
 // Titlecard CECHO shite
 void HU_DoTitlecardCEcho(const char *msg);
 void HU_ClearTitlecardCEcho(void);
+
+void DoSayCommand(char *message, SINT8 target, UINT8 flags, UINT8 source);
 
 // Demo playback info
 extern UINT32 hu_demotime;

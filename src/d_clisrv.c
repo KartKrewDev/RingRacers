@@ -5241,10 +5241,16 @@ static void HandlePacketFromPlayer(SINT8 node)
 				textcmd[0] += (UINT8)netbuffer->u.textcmd[0];
 			}
 			break;
-		case PT_LOGIN:
+		case PT_SAY:
 			if (client)
 				break;
 
+			say_pak say = netbuffer->u.say;
+			DoSayCommand(say.message, say.target, say.flags, say.source);
+			break;
+		case PT_LOGIN:
+			if (client)
+				break;
 #ifndef NOMD5
 			if (doomcom->datalength < 16)/* ignore partial sends */
 				break;
@@ -6943,4 +6949,42 @@ void D_MD5PasswordPass(const UINT8 *buffer, size_t len, const char *salt, void *
 	// Yes, we intentionally md5 the ENTIRE buffer regardless of size...
 	md5_buffer(tmpbuf, 256, dest);
 #endif
+}
+
+// Want to say something? XD_SAY is server only, gotta request that they send one on our behalf
+void DoSayPacket(SINT8 target, UINT8 flags, UINT8 source, char *message)
+{
+	say_pak *packet = (void*)&netbuffer->u.say;
+	netbuffer->packettype = PT_SAY;
+
+	memset(packet->message, 0, sizeof(packet->message));
+	strcpy(packet->message, message);
+
+	packet->source = source;
+	packet->flags = flags;
+	packet->target = target;
+
+	HSendPacket(servernode, false, 0, sizeof(say_pak));
+}
+
+void DoSayPacketFromCommand(SINT8 target, size_t usedargs, UINT8 flags)
+{
+	char buf[2 + HU_MAXMSGLEN + 1];
+	size_t numwords, ix;
+	char *msg = &buf[3];
+	const size_t msgspace = sizeof buf - 2;
+
+	numwords = COM_Argc() - usedargs;
+	I_Assert(numwords > 0);
+
+	msg[0] = '\0';
+
+	for (ix = 0; ix < numwords; ix++)
+	{
+		if (ix > 0)
+			strlcat(msg, " ", msgspace);
+		strlcat(msg, COM_Argv(ix + usedargs), msgspace);
+	}
+
+	DoSayPacket(target, flags, consoleplayer, msg);
 }
