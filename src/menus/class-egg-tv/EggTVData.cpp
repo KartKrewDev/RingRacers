@@ -174,12 +174,23 @@ void EggTVData::Folder::Cache::release(const ReplayRef& ref)
 }
 
 EggTVData::Folder::Folder(EggTVData& tv, const fs::directory_entry& entry) :
-	size_(std::distance(fs::directory_iterator(entry.path()), fs::directory_iterator())),
-	time_(time_point_conv<decltype(time_)>(entry.last_write_time())),
 	tv_(&tv),
 	name_(entry.path().filename().string())
 {
 	SRB2_ASSERT(entry.path().parent_path() == tv_->root_);
+
+	time_ = time_point_t::min();
+	size_ = 0;
+
+	for (const fs::directory_entry& entry : fs::directory_iterator(entry.path()))
+	{
+		const time_point_t t = time_point_conv<time_point_t>(entry.last_write_time());
+
+		if (time_ < t)
+			time_ = t;
+
+		size_++;
+	}
 }
 
 EggTVData::Replay::Title::operator const std::string() const
