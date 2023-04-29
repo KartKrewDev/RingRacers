@@ -96,7 +96,12 @@ json EggTVData::cache_favorites() const
 
 	try
 	{
-		std::ifstream(favoritesPath_) >> object;
+		std::ifstream f(favoritesPath_);
+
+		if (f.is_open())
+		{
+			f >> object;
+		}
 	}
 	catch (const std::exception& ex)
 	{
