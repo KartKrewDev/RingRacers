@@ -139,7 +139,7 @@ boolean Obj_RandomItemSpawnIn(mobj_t *mobj)
 fixed_t Obj_RandomItemScale(fixed_t oldScale)
 {
 	const fixed_t intendedScale = oldScale * 3;
-	const fixed_t maxScale = FixedDiv(128*FRACUNIT, mobjinfo[MT_RANDOMITEM].radius); // don't make them larger than the blockmap can handle
+	const fixed_t maxScale = FixedDiv(MAPBLOCKSIZE, mobjinfo[MT_RANDOMITEM].radius); // don't make them larger than the blockmap can handle
 
 	return min(intendedScale, maxScale);
 }
