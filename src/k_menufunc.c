@@ -481,16 +481,6 @@ menu_t *M_SpecificMenuRestore(menu_t *torestore)
 		M_SetupRaceMenu(-1);
 		M_SetupDifficultyOptions((cupgrid.grandprix == false));
 	}
-	else if (torestore == &EXTRAS_ReplayHutDef)
-	{
-		// Handle modifications to the folder while playing
-		M_ReplayHut(0);
-
-		if (demo.inreplayhut == false)
-		{
-			torestore = &EXTRAS_MainDef;
-		}
-	}
 	else if (torestore == &PLAY_MP_OptSelectDef)
 	{
 		// Ticker init
