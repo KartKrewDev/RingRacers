@@ -188,7 +188,7 @@ boolean P_PlayerHitFloor(player_t *player, boolean fromAir, angle_t oldPitch, an
 
 void P_SetObjectMomZ(mobj_t *mo, fixed_t value, boolean relative);
 void P_RestoreMusic(player_t *player);
-boolean P_EndingMusic(player_t *player);
+void P_EndingMusic(void);
 mobj_t *P_SpawnGhostMobj(mobj_t *mobj);
 INT32 P_GivePlayerRings(player_t *player, INT32 num_rings);
 INT32 P_GivePlayerSpheres(player_t *player, INT32 num_spheres);

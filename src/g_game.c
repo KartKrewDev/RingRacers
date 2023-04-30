@@ -249,8 +249,7 @@ tic_t starttime = 3;
 const tic_t bulbtime = TICRATE/2;
 UINT8 numbulbs = 1;
 
-tic_t raceexittime = 5*TICRATE + (2*TICRATE/3);
-tic_t battleexittime = 8*TICRATE;
+tic_t raceexittime = 7*TICRATE + (TICRATE/2);
 
 INT32 hyudorotime = 7*TICRATE;
 INT32 stealtime = TICRATE/2;
@@ -277,7 +276,7 @@ mobj_t *hunt1;
 mobj_t *hunt2;
 mobj_t *hunt3;
 
-tic_t racecountdown, exitcountdown; // for racing
+tic_t racecountdown, exitcountdown, musiccountdown; // for racing
 
 fixed_t gravity;
 fixed_t mapobjectscale;
@@ -2392,6 +2391,19 @@ void G_Ticker(boolean run)
 
 		if (Playing() == true)
 		{
+			if (musiccountdown > 1)
+			{
+				musiccountdown--;
+				if (musiccountdown == 1)
+				{
+					S_ChangeMusicInternal("racent", true);
+				}
+				else if (musiccountdown == (MUSICCOUNTDOWNMAX - (3*TICRATE)/2))
+				{
+					P_EndingMusic();
+				}
+			}
+
 			K_TickMidVote();
 		}
 	}
@@ -4447,11 +4459,6 @@ static void G_DoCompleted(void)
 		}
 	}
 
-	// See Y_StartIntermission timer handling
-	if ((gametyperules & GTR_CIRCUIT) && ((multiplayer && demo.playback) || j == r_splitscreen+1) && (!K_CanChangeRules(false) || cv_inttime.value > 0))
-	// play some generic music if there's no win/cool/lose music going on (for exitlevel commands)
-		S_ChangeMusicInternal("racent", true);
-
 	if (automapactive)
 		AM_Stop();
 
@@ -5542,7 +5549,7 @@ void G_InitNew(UINT8 pencoremode, INT32 map, boolean resetplayer, boolean skippr
 
 	// Clear a bunch of variables
 	redscore = bluescore = lastmap = 0;
-	racecountdown = exitcountdown = mapreset = exitfadestarted = 0;
+	racecountdown = exitcountdown = musiccountdown = mapreset = exitfadestarted = 0;
 
 	for (i = 0; i < MAXPLAYERS; i++)
 	{

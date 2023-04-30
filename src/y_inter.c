@@ -805,7 +805,7 @@ void Y_StartIntermission(void)
 	if (prevmap >= nummapheaders || !mapheaderinfo[prevmap])
 		I_Error("Y_StartIntermission: Internal map ID %d not found (nummapheaders = %d)", prevmap, nummapheaders);
 
-	if (!(gametyperules & GTR_CIRCUIT) && (timer > 1))
+	if (timer > 1 && musiccountdown == 0)
 		S_ChangeMusicInternal("racent", true); // loop it
 
 	S_ShowMusicCredit(); // Always call

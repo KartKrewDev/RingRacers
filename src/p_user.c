@@ -36,6 +36,7 @@
 #include "r_splats.h"
 #include "z_zone.h"
 #include "w_wad.h"
+#include "y_inter.h" // Y_DetermineIntermissionType
 #include "hu_stuff.h"
 // We need to affect the NiGHTS hud
 #include "st_stuff.h"
@@ -710,91 +711,105 @@ void P_PlayVictorySound(mobj_t *source)
 //
 // Consistently sets ending music!
 //
-boolean P_EndingMusic(player_t *player)
+void P_EndingMusic(void)
 {
-	char buffer[9];
-	boolean looping = true;
-	boolean racetracks = !!(gametyperules & GTR_CIRCUIT);
-	INT32 bestlocalpos, test;
-	player_t *bestlocalplayer;
+	const char *jingle = NULL;
+	boolean nointer = false;
+	UINT8 bestPos = UINT8_MAX;
+	player_t *bestPlayer = NULL;
 
-	if (!P_IsLocalPlayer(player)) // Only applies to a local player
-		return false;
-
-	if (multiplayer && demo.playback) // Don't play this in multiplayer replays
-		return false;
+	SINT8 i;
 
 	// Event - Level Finish
 	// Check for if this is valid or not
-#define getplayerpos(p) \
-	(((players[p].position < 1) || (players[p].pflags & PF_NOCONTEST)) \
-		? MAXPLAYERS+1 \
-		: players[p].position);
-
-	if (r_splitscreen)
+	for (i = 0; i <= r_splitscreen; i++)
 	{
-		const UINT8 *localplayertable = G_PartyArray(consoleplayer);
+		UINT8 pos = UINT8_MAX;
+		player_t *checkPlayer = NULL;
 
-		if (!((players[localplayertable[0]].exiting || (players[localplayertable[0]].pflags & PF_NOCONTEST))
-			|| (players[localplayertable[1]].exiting || (players[localplayertable[1]].pflags & PF_NOCONTEST))
-			|| ((r_splitscreen > 1) && (players[localplayertable[2]].exiting || (players[localplayertable[2]].pflags & PF_NOCONTEST)))
-			|| ((r_splitscreen > 2) && (players[localplayertable[3]].exiting || (players[localplayertable[3]].pflags & PF_NOCONTEST)))))
-			return false;
+		checkPlayer = &players[displayplayers[i]];
+		if (!checkPlayer || checkPlayer->spectator == true)
+		{
+			continue;
+		}
 
-		bestlocalplayer = &players[localplayertable[0]];
-		bestlocalpos = getplayerpos(localplayertable[0]);
-#define setbests(p) \
-	test = getplayerpos(p); \
-	if (test < bestlocalpos) \
-	{ \
-		bestlocalplayer = &players[p]; \
-		bestlocalpos = test; \
-	}
-		setbests(localplayertable[1]);
-		if (r_splitscreen > 1)
-			setbests(localplayertable[2]);
-		if (r_splitscreen > 2)
-			setbests(localplayertable[3]);
-#undef setbests
-	}
-	else
-	{
-		if (!(player->exiting || (player->pflags & PF_NOCONTEST)))
-			return false;
-
-		bestlocalplayer = player;
-		bestlocalpos = getplayerpos((player-players));
-	}
-
-#undef getplayerpos
-
-	if (racetracks == true && bestlocalpos == MAXPLAYERS+1)
-		sprintf(buffer, "k*fail"); // F-Zero death results theme
-	else
-	{
-		if (K_IsPlayerLosing(bestlocalplayer))
-			sprintf(buffer, "k*lose");
-		else if (bestlocalpos == 1)
-			sprintf(buffer, "k*win");
+		if (checkPlayer->pflags & PF_NOCONTEST)
+		{
+			// No Contest, use special value
+			;
+		}
+		else if (checkPlayer->exiting)
+		{
+			// Standard exit, use their position
+			pos = checkPlayer->position;
+		}
 		else
-			sprintf(buffer, "k*ok");
+		{
+			// Not finished, ignore
+			continue;
+		}
+
+		if (pos <= bestPos)
+		{
+			bestPlayer = checkPlayer;
+			bestPos = pos;
+		}
 	}
+
+	// See G_DoCompleted and Y_DetermineIntermissionType
+	nointer = ((modeattacking && (players[consoleplayer].pflags & PF_NOCONTEST))
+		|| (grandprixinfo.gp == true && grandprixinfo.eventmode != GPEVENT_NONE));
+
+	if (bestPlayer == NULL)
+	{
+		// No jingle for you
+		return;
+	}
+
+	if (bestPos == UINT8_MAX)
+	{
+		jingle = "RETIRE";
+
+		if (G_GametypeUsesLives() == true)
+		{
+			// A retry will be happening
+			nointer = true;
+		}
+	}
+	else
+	{
+		if (bestPlayer->position == 1)
+		{
+			jingle = "_first";
+		}
+		else if (K_IsPlayerLosing(bestPlayer) == false)
+		{
+			jingle = "_win";
+		}
+		else
+		{
+			jingle = "_lose";
+
+			if (G_GametypeUsesLives() == true)
+			{
+				// A retry will be happening
+				nointer = true;
+			}
+		}
+	}
+
+	if (nointer == true)
+	{
+		// Do not set "racent" in G_Ticker
+		musiccountdown = 1;
+	}
+
+	if (jingle == NULL)
+		return;
 
 	S_SpeedMusic(1.0f);
 
-	if (racetracks == true)
-	{
-		buffer[1] = 'r';
-	}
-	else
-	{
-		buffer[1] = 'b';
-		looping = false;
-	}
-
-	S_ChangeMusicInternal(buffer, looping);
-
-	return true;
+	S_ChangeMusicInternal(jingle, false);
 }
 
 //
@@ -823,8 +838,10 @@ void P_RestoreMusic(player_t *player)
 	}
 
 	// Event - Level Ending
-	if (P_EndingMusic(player))
+	if (musiccountdown > 0)
+	{
 		return;
+	}
 
 	// Event - Level Start
 	if ((K_CheckBossIntro() == false)
@@ -1243,9 +1260,12 @@ mobj_t *P_SpawnGhostMobj(mobj_t *mobj)
 void P_DoPlayerExit(player_t *player)
 {
 	const boolean losing = K_IsPlayerLosing(player);
+	const boolean specialout = (specialstageinfo.valid == true && losing == true);
 
 	if (player->exiting || mapreset)
+	{
 		return;
+	}
 
 	if (P_IsLocalPlayer(player) && (!player->spectator && !demo.playback))
 	{
@@ -1260,13 +1280,19 @@ void P_DoPlayerExit(player_t *player)
 		K_PlayerLoseLife(player);
 	}
 
+	if (P_IsLocalPlayer(player) && !specialout)
+	{
+		S_StopMusic();
+		musiccountdown = MUSICCOUNTDOWNMAX;
+	}
+
 	player->exiting = 1;
 
 	if (!player->spectator)
 	{
 		ClearFakePlayerSkin(player);
 
-		if ((gametyperules & GTR_CIRCUIT)) // If in Race Mode, allow
+		if ((gametyperules & GTR_CIRCUIT)) // Special Race-like handling
 		{
 			K_UpdateAllPlayerPositions();
 
@@ -1290,13 +1316,9 @@ void P_DoPlayerExit(player_t *player)
 				}
 			}
 
-			// See Y_StartIntermission timer handling
-			if (!K_CanChangeRules(false) || cv_inttime.value > 0)
-				P_EndingMusic(player);
-
 			if (P_CheckRacers() && !exitcountdown)
 			{
-				if (specialstageinfo.valid == true && losing == true)
+				if (specialout == true)
 				{
 					exitcountdown = TICRATE;
 				}
@@ -1306,16 +1328,9 @@ void P_DoPlayerExit(player_t *player)
 				}
 			}
 		}
-		else if ((gametyperules & GTR_BUMPERS)) // Battle Mode exiting
+		else if (!exitcountdown) // All other gametypes
 		{
-			if (!exitcountdown)
-				exitcountdown = battleexittime+1;
-			P_EndingMusic(player);
-		}
-		else // Accidental death safeguard???
-		{
-			if (!exitcountdown)
-				exitcountdown = raceexittime+2;
+			exitcountdown = raceexittime+1;
 		}
 
 		if (grandprixinfo.gp == true && player->bot == false && losing == false)
@@ -1334,7 +1349,9 @@ void P_DoPlayerExit(player_t *player)
 	}
 
 	if (modeattacking)
+	{
 		G_UpdateRecords();
+	}
 
 	profile_t *pr = PR_GetPlayerProfile(player);
 	if (pr != NULL && !losing)
@@ -3801,10 +3818,16 @@ void P_DoTimeOver(player_t *player)
 		P_DamageMobj(player->mo, NULL, NULL, 1, DMG_TIMEOVER);
 	}
 
-	P_EndingMusic(player);
+	if (P_IsLocalPlayer(player))
+	{
+		S_StopMusic();
+		musiccountdown = MUSICCOUNTDOWNMAX;
+	}
 
 	if (!exitcountdown)
-		exitcountdown = 5*TICRATE;
+	{
+		exitcountdown = raceexittime;
+	}
 }
 
 // SRB2Kart: These are useful functions, but we aren't using them yet.

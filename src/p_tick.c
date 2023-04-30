@@ -813,7 +813,11 @@ void P_Ticker(boolean run)
 			}
 		}
 
-		if (K_CheckBossIntro() == true)
+		if (musiccountdown > 0)
+		{
+			// Music is controlled by completion sequence
+		}
+		else if (K_CheckBossIntro() == true)
 		{
 			// Bosses have a punchy start, so no position.
 			if (leveltime == 3)
