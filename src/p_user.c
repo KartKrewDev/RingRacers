@@ -86,18 +86,9 @@ jingle_t jingleinfo[NUMJINGLES] = {
 	{""        , false}, // JT_NONE
 	{""        , false}, // JT_OTHER
 	{""        , false}, // JT_MASTER
-	{"_1up"    , false},
-	{"_shoes"  ,  true},
-	{"_inv"    , false},
-	{"_minv"   , false},
-	{"_drown"  , false},
-	{"_super"  ,  true},
-	{"_gover"  , false},
-	{"_ntime"  , false},  // JT_NIGHTSTIMEOUT
-	{"_drown"  , false}   // JT_SSTIMEOUT
-	// {"_clear"  , false},
-	// {"_inter"  ,  true},
-	// {"_conti"  ,  true}
+
+	{"kinvnc"  ,  true}, // JT_INVINCIBILITY
+	{"kgrow"   ,  true}, // JT_GROW
 };
 
 //
@@ -606,24 +597,6 @@ void P_AddPlayerScore(player_t *player, UINT32 amount)
 		player->roundscore = MAXSCORE;
 }
 
-//
-// P_PlayLivesJingle
-//
-void P_PlayLivesJingle(player_t *player)
-{
-	if (player && !P_IsLocalPlayer(player))
-		return;
-
-	if (use1upSound)
-		S_StartSound(NULL, sfx_oneup);
-	else
-	{
-		P_PlayJingle(player, JT_1UP);
-		strlcpy(S_sfx[sfx_None].caption, "One-up", 7);
-		S_StartCaption(sfx_None, -1, extralifetics+1);
-	}
-}
-
 void P_PlayJingle(player_t *player, jingletype_t jingletype)
 {
 	const char *musname = jingleinfo[jingletype].musname;
@@ -651,7 +624,7 @@ void P_PlayJingleMusic(player_t *player, const char *musname, UINT16 musflags, b
 		return;
 
 	S_RetainMusic(musname, musflags, looping, 0, status);
-	S_StopMusic();
+	//S_StopMusic();
 	S_ChangeMusicInternal(musname, looping);
 }
 
@@ -668,48 +641,30 @@ boolean P_EvaluateMusicStatus(UINT16 status, const char *musname)
 
 		switch(status)
 		{
-			case JT_1UP: // Extra life
-				result = false; //(players[i].powers[pw_extralife] > 1);
-				break;
-
-			case JT_SHOES:  // Speed shoes
-				/*if (players[i].powers[pw_sneakers] > 1 && !players[i].powers[pw_super])
+			case JT_INVINCIBILITY: // Invincibility
+				if (players[i].invincibilitytimer > 1)
 				{
-					//strlcpy(S_sfx[sfx_None].caption, "Speed shoes", 12);
-					//S_StartCaption(sfx_None, -1, players[i].powers[pw_sneakers]);
+					strlcpy(S_sfx[sfx_None].caption, "Invincibility", 14);
+					S_StartCaption(sfx_None, -1, players[i].invincibilitytimer);
 					result = true;
 				}
-				else*/
+				else
+				{
 					result = false;
+				}
 				break;
 
-			case JT_INV: // Invincibility
-			case JT_MINV: // Mario Invincibility
-				/*if (players[i].powers[pw_invulnerability] > 1)
+			case JT_GROW: // Grow
+				if (players[i].growshrinktimer > 1)
 				{
-					//strlcpy(S_sfx[sfx_None].caption, "Invincibility", 14);
-					//S_StartCaption(sfx_None, -1, players[i].powers[pw_invulnerability]);
+					strlcpy(S_sfx[sfx_None].caption, "Grow", 14);
+					S_StartCaption(sfx_None, -1, players[i].growshrinktimer);
 					result = true;
 				}
-				else*/
+				else
+				{
 					result = false;
-				break;
-
-			case JT_DROWN:  // Drowning
-				result = false; //(players[i].powers[pw_underwater] && players[i].powers[pw_underwater] <= 11*TICRATE + 1);
-				break;
-
-			case JT_SUPER:  // Super Sonic
-				result = false; //(players[i].powers[pw_super]);
-				break;
-
-			case JT_GOVER: // Game Over
-				result = (players[i].lives <= 0);
-				break;
-
-			case JT_NIGHTSTIMEOUT: // NiGHTS Time Out (10 seconds)
-			case JT_SSTIMEOUT:
-				result = false; //(players[i].nightstime && players[i].nightstime <= 10*TICRATE);
+				}
 				break;
 
 			case JT_OTHER:  // Other state
@@ -849,19 +804,21 @@ boolean P_EndingMusic(player_t *player)
 //
 void P_RestoreMusic(player_t *player)
 {
-	UINT32 position;
+	UINT8 overrideLevel = 0;
+	SINT8 i;
 
-	if (!P_IsLocalPlayer(player)) // Only applies to a local player
+	if (P_IsLocalPlayer(player) == false)
+	{
+		// Only applies to local players
 		return;
+	}
 
 	S_SpeedMusic(1.0f);
-
-	// TO-DO: Use jingle system for Kart's stuff
 
 	// Event - HERE COMES A NEW CHALLENGER
 	if (mapreset)
 	{
-		S_ChangeMusicInternal("chalng", false); //S_StopMusic();
+		S_ChangeMusicInternal("chalng", false);
 		return;
 	}
 
@@ -872,73 +829,73 @@ void P_RestoreMusic(player_t *player)
 	// Event - Level Start
 	if ((K_CheckBossIntro() == false)
 		&& (leveltime < (starttime + (TICRATE/2)))) // see also where time overs are handled
-		return;
-
 	{
-		INT32 wantedmus = 0; // 0 is level music, 1 is invincibility, 2 is grow
-
-		if (r_splitscreen)
-		{
-			INT32 bestlocaltimer = 1;
-			const UINT8 *localplayertable = G_PartyArray(consoleplayer);
-
-#define setbests(p) \
-	if (players[p].playerstate == PST_LIVE) \
-	{ \
-		if (players[p].invincibilitytimer > bestlocaltimer) \
-		{ wantedmus = 1; bestlocaltimer = players[p].invincibilitytimer; } \
-		else if (players[p].growshrinktimer > bestlocaltimer) \
-		{ wantedmus = 2; bestlocaltimer = players[p].growshrinktimer; } \
+		return;
 	}
-			setbests(localplayertable[0]);
-			setbests(localplayertable[1]);
-			if (r_splitscreen > 1)
-				setbests(localplayertable[2]);
-			if (r_splitscreen > 2)
-				setbests(localplayertable[3]);
-#undef setbests
-		}
-		else
+
+	for (i = 0; i <= r_splitscreen; i++)
+	{
+		player_t *checkPlayer = &players[displayplayers[i]];
+		if (!checkPlayer)
 		{
-			if (player->playerstate == PST_LIVE)
-			{
-				if (player->invincibilitytimer > 1)
-					wantedmus = 1;
-				else if (player->growshrinktimer > 1)
-					wantedmus = 2;
-			}
+			continue;
 		}
 
-		// Item - Grow
-		if (wantedmus == 2)
+		if (checkPlayer->exiting)
 		{
-			S_ChangeMusicInternal("kgrow", true);
-			S_SetRestoreMusicFadeInCvar(&cv_growmusicfade);
+			return;
 		}
-		// Item - Invincibility
-		else if (wantedmus == 1)
+
+		if (checkPlayer->invincibilitytimer > 1)
 		{
-			S_ChangeMusicInternal("kinvnc", true);
-			S_SetRestoreMusicFadeInCvar(&cv_invincmusicfade);
+			overrideLevel = max(overrideLevel, 2);
 		}
-		else
+		else if (checkPlayer->growshrinktimer > 1)
 		{
+			overrideLevel = max(overrideLevel, 1);
+		}
+	}
+
+	if (overrideLevel != 0)
+	{
+		// Do a jingle override.
+		jingletype_t jt = JT_NONE;
+
+		switch (overrideLevel)
+		{
+			// Lowest priority to highest priority.
+			case 1:
+				jt = JT_GROW;
+				break;
+			case 2:
+				jt = JT_INVINCIBILITY;
+				break;
+			default:
+				break;
+		}
+
+		if (jt != JT_NONE)
+		{
+			//CONS_Printf("JINGLE: %d\n", jt);
+			//if (S_RecallMusic(jt, false) == false)
+			//{
+				P_PlayJingle(player, jt);
+			//}
+			return;
+		}
+	}
+
 #if 0
 			// Event - Final Lap
 			// Still works for GME, but disabled for consistency
 			if ((gametyperules & GTR_CIRCUIT) && player->laps >= numlaps)
 				S_SpeedMusic(1.2f);
 #endif
-			if (mapmusresume && cv_resume.value)
-				position = mapmusresume;
-			else
-				position = mapmusposition;
 
-			S_ChangeMusicEx(mapmusname, mapmusflags, true, position, 0,
-					S_GetRestoreMusicFadeIn());
-			S_ClearRestoreMusicFadeInCvar();
-			mapmusresume = 0;
-		}
+	if (S_RecallMusic(JT_NONE, false) == false) // go down the stack
+	{
+		CONS_Debug(DBG_BASIC, "Cannot find any music in resume stack!\n");
+	 	S_ChangeMusicEx(mapmusname, mapmusflags, true, mapmusposition, 0, 0);
 	}
 }
 
