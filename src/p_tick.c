@@ -820,7 +820,7 @@ void P_Ticker(boolean run)
 		else if (K_CheckBossIntro() == true)
 		{
 			// Bosses have a punchy start, so no position.
-			if (leveltime == 3)
+			if (leveltime == 1)
 			{
 				S_ChangeMusic(mapmusname, mapmusflags, true);
 				S_ShowMusicCredit();
