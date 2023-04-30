@@ -11652,7 +11652,7 @@ void P_RespawnSpecials(void)
 		}
 		else if (pcount > 1)
 		{
-			time = ((120 * TICRATE) / (((pcount - 1) * (pcount - 1)) / 3) + 1);
+			time = (120 * TICRATE) / ((((pcount - 1) * (pcount - 1)) / 3) + 1);
 
 			// If the map is longer or shorter than 3 laps, then adjust ring respawn to account for this.
 			// 5 lap courses would have more retreaded ground, while 2 lap courses would have less.
