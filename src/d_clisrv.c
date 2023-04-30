@@ -222,7 +222,7 @@ consvar_t cv_httpsource = CVAR_INIT ("http_source", "", CV_SAVE, NULL, NULL);
 
 consvar_t cv_kicktime = CVAR_INIT ("kicktime", "10", CV_SAVE, CV_Unsigned, NULL);
 
-consvar_t cv_gamestochat = CVAR_INIT ("gamestochat", "0", 0, CV_Unsigned, NULL);
+consvar_t cv_gamestochat = CVAR_INIT ("gamestochat", "0", CV_SAVE, CV_Unsigned, NULL);
 
 static tic_t stop_spamming[MAXPLAYERS];
 
