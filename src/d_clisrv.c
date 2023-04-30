@@ -5243,9 +5243,13 @@ static void HandlePacketFromPlayer(SINT8 node)
 			break;
 		case PT_SAY:
 			if (client)
-				break;
+				break; // Only sent to servers, why are we receiving this?
 
 			say_pak say = netbuffer->u.say;
+
+			if (playernode[say.source] != node)
+				break; // Spoofed source!
+
 			DoSayCommand(say.message, say.target, say.flags, say.source);
 			break;
 		case PT_LOGIN:
