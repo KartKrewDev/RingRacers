@@ -3466,6 +3466,12 @@ const char *const STATE_LIST[] = { // array length left dynamic for sanity testi
 	"S_WIPEOUTTRAIL3",
 	"S_WIPEOUTTRAIL4",
 	"S_WIPEOUTTRAIL5",
+	"S_WIPEOUTTRAIL6",
+	"S_WIPEOUTTRAIL7",
+	"S_WIPEOUTTRAIL8",
+	"S_WIPEOUTTRAIL9",
+	"S_WIPEOUTTRAIL10",
+	"S_WIPEOUTTRAIL11",
 
 	// Rocket sneaker
 	"S_ROCKETSNEAKER_L",
