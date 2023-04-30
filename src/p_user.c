@@ -4629,7 +4629,7 @@ void P_CheckRaceGriefing(player_t *player, boolean dopunishment)
 		player->griefValue--;
 	}
 
-	if (dopunishment && player->griefValue > griefMax)
+	if (dopunishment && player->griefValue >= griefMax)
 	{
 		if (player->griefStrikes < 3)
 		{
