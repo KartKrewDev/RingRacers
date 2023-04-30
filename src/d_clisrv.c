@@ -7061,6 +7061,7 @@ void DoSayPacketFromCommand(SINT8 target, size_t usedargs, UINT8 flags)
 	DoSayPacket(target, flags, consoleplayer, msg);
 }
 
+// This is meant to be targeted at player indices, not whatever the hell XD_SAY is doing with 1-indexed players.
 void SendServerNotice(SINT8 target, char *message)
 {
 	if (client)
