@@ -849,7 +849,7 @@ void P_Ticker(boolean run)
 			if (encoremode)
 			{
 				// Encore humming starts immediately.
-				if (leveltime == 3)
+				if (leveltime == 1)
 					S_ChangeMusicInternal("encore", true);
 			}
 			else
