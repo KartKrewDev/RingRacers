@@ -790,6 +790,13 @@ static void Got_Saycmd(UINT8 **p, INT32 playernum)
 			cstart = "\x82";
 			textcolor = "\x82";
 			fmt2 = "%s<%s%s>%s\x80 %s%s";
+
+			if (flags & HU_PRIVNOTICE)
+			{
+				dispname = "SERVER";
+				prefix = "\x82";
+				fmt2 = "%s[%s%s]%s %s%s";
+			}
 		}
 		else if (target > 0) // By you, to another player
 		{
@@ -799,6 +806,12 @@ static void Got_Saycmd(UINT8 **p, INT32 playernum)
 			cstart = "\x82";
 			fmt2 = "%s<%s%s>%s\x80 %s%s";
 
+			if (flags & HU_PRIVNOTICE)
+			{
+				if (tempchar)
+					Z_Free(tempchar);
+				return; // I pretend I do not see it
+			}
 		}
 		else // To everyone or sayteam, it doesn't change anything.
 			fmt2 = "%s<%s%s%s>\x80 %s%s";

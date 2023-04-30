@@ -542,6 +542,8 @@ extern consvar_t cv_discordinvites;
 
 extern consvar_t cv_allowguests;
 
+extern consvar_t cv_gamestochat;
+
 #ifdef DEVELOP
 	extern consvar_t cv_badjoin;
 	extern consvar_t cv_badtraffic;
@@ -645,6 +647,7 @@ void HandleSigfail(const char *string);
 
 void DoSayPacket(SINT8 target, UINT8 flags, UINT8 source, char *message);
 void DoSayPacketFromCommand(SINT8 target, size_t usedargs, UINT8 flags);
+void SendServerNotice(SINT8 target, char *message);
 
 #ifdef __cplusplus
 } // extern "C"

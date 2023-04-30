@@ -109,6 +109,7 @@ typedef enum
 {
 	HU_SHOUT		= 1,		// Shout message
 	HU_CSAY			= 1<<1,		// Middle-of-screen server message
+	HU_PRIVNOTICE	= 1<<2,		// Special server sayto, we don't want to see it as the sender.
 } sayflags_t;
 
 // some functions

@@ -222,6 +222,8 @@ consvar_t cv_httpsource = CVAR_INIT ("http_source", "", CV_SAVE, NULL, NULL);
 
 consvar_t cv_kicktime = CVAR_INIT ("kicktime", "10", CV_SAVE, CV_Unsigned, NULL);
 
+consvar_t cv_gamestochat = CVAR_INIT ("gamestochat", "0", 0, CV_Unsigned, NULL);
+
 static tic_t stop_spamming[MAXPLAYERS];
 
 // Generate a message for an authenticating client to sign, with some guarantees about who we are.
@@ -5258,6 +5260,13 @@ static void HandlePacketFromPlayer(SINT8 node)
 				break;
 			}
 
+			if ((say.flags & HU_PRIVNOTICE) && !(IsPlayerAdmin(say.source)))
+			{
+				CONS_Debug(DBG_NETPLAY,"Received SAY cmd from Player %d (%s) with an illegal HU_PRIVNOTICE flag.\n", say.source+1, player_names[say.source]);
+				SendKick(say.source, KICK_MSG_CON_FAIL);
+				return;
+			}
+
 			{
 				size_t i;
 				const size_t j = strlen(say.message);
@@ -5266,8 +5275,7 @@ static void HandlePacketFromPlayer(SINT8 node)
 					if (say.message[i] & 0x80)
 					{
 						CONS_Alert(CONS_WARNING, M_GetText("Illegal say command received from %s containing invalid characters\n"), player_names[say.source]);
-						if (server)
-							SendKick(say.source, KICK_MSG_CON_FAIL);
+						SendKick(say.source, KICK_MSG_CON_FAIL);
 						return;
 					}
 				}
@@ -5281,6 +5289,20 @@ static void HandlePacketFromPlayer(SINT8 node)
 			}
 
 			stop_spamming[say.source] = 4; 
+
+			serverplayer_t *stats = SV_GetStatsByPlayerIndex(say.source);
+			int remainingGames =  cv_gamestochat.value - stats->finishedrounds;
+
+			if (remainingGames > 0 && !(IsPlayerAdmin(say.source)))
+			{
+				CONS_Debug(DBG_NETPLAY,"Received SAY cmd from Player %d (%s), but they aren't permitted to chat yet.\n", say.source+1, player_names[say.source]);
+
+				char rejectmsg[256];
+				strlcpy(rejectmsg, va("Please play %d more games to use chat.", remainingGames), 256);
+				SendServerNotice(say.source, rejectmsg);
+
+				break;
+			}
 
 			DoSayCommand(say.message, say.target, say.flags, say.source);
 			break;
@@ -7032,4 +7054,11 @@ void DoSayPacketFromCommand(SINT8 target, size_t usedargs, UINT8 flags)
 	}
 
 	DoSayPacket(target, flags, consoleplayer, msg);
+}
+
+void SendServerNotice(SINT8 target, char *message)
+{
+	if (client)
+		return;
+	DoSayCommand(message, target + 1, HU_PRIVNOTICE, servernode); 
 }
