@@ -4944,6 +4944,69 @@ static boolean CheckForSpeedHacks(UINT8 p)
 	return false;
 }
 
+static void PT_Say(int node)
+{
+	if (client)
+		return; // Only sent to servers, why are we receiving this?
+
+	say_pak say = netbuffer->u.say;
+
+	if (playernode[say.source] != node)
+		return; // Spoofed source!
+
+	if ((cv_mute.value || say.flags & (HU_CSAY|HU_SHOUT)) && say.source != serverplayer && !(IsPlayerAdmin(say.source)))
+	{
+		CONS_Debug(DBG_NETPLAY,"Received SAY cmd from Player %d (%s), but cv_mute is on.\n", say.source+1, player_names[say.source]);
+		return;
+	}
+
+	if ((say.flags & HU_PRIVNOTICE) && !(IsPlayerAdmin(say.source)))
+	{
+		CONS_Debug(DBG_NETPLAY,"Received SAY cmd from Player %d (%s) with an illegal HU_PRIVNOTICE flag.\n", say.source+1, player_names[say.source]);
+		SendKick(say.source, KICK_MSG_CON_FAIL);
+		return;
+	}
+
+	{
+		size_t i;
+		const size_t j = strlen(say.message);
+		for (i = 0; i < j; i++)
+		{
+			if (say.message[i] & 0x80)
+			{
+				CONS_Alert(CONS_WARNING, M_GetText("Illegal say command received from %s containing invalid characters\n"), player_names[say.source]);
+				SendKick(say.source, KICK_MSG_CON_FAIL);
+				return;
+			}
+		}
+	}
+
+	if (stop_spamming[say.source] != 0 && consoleplayer != say.source && cv_chatspamprotection.value && !(say.flags & (HU_CSAY|HU_SHOUT)))
+	{
+		CONS_Debug(DBG_NETPLAY,"Received SAY cmd too quickly from Player %d (%s), assuming as spam and blocking message.\n", say.source+1, player_names[say.source]);
+		stop_spamming[say.source] = 4;
+		return;
+	}
+
+	stop_spamming[say.source] = 4; 
+
+	serverplayer_t *stats = SV_GetStatsByPlayerIndex(say.source);
+	int remainingGames =  cv_gamestochat.value - stats->finishedrounds;
+
+	if (remainingGames > 0 && !(IsPlayerAdmin(say.source)))
+	{
+		CONS_Debug(DBG_NETPLAY,"Received SAY cmd from Player %d (%s), but they aren't permitted to chat yet.\n", say.source+1, player_names[say.source]);
+
+		char rejectmsg[256];
+		strlcpy(rejectmsg, va("Please play %d more games to use chat.", remainingGames), 256);
+		SendServerNotice(say.source, rejectmsg);
+
+		return;
+	}
+
+	DoSayCommand(say.message, say.target, say.flags, say.source);
+}
+
 static char NodeToSplitPlayer(int node, int split)
 {
 	if (split == 0)
@@ -5246,65 +5309,7 @@ static void HandlePacketFromPlayer(SINT8 node)
 			}
 			break;
 		case PT_SAY:
-			if (client)
-				break; // Only sent to servers, why are we receiving this?
-
-			say_pak say = netbuffer->u.say;
-
-			if (playernode[say.source] != node)
-				break; // Spoofed source!
-
-			if ((cv_mute.value || say.flags & (HU_CSAY|HU_SHOUT)) && say.source != serverplayer && !(IsPlayerAdmin(say.source)))
-			{
-				CONS_Debug(DBG_NETPLAY,"Received SAY cmd from Player %d (%s), but cv_mute is on.\n", say.source+1, player_names[say.source]);
-				break;
-			}
-
-			if ((say.flags & HU_PRIVNOTICE) && !(IsPlayerAdmin(say.source)))
-			{
-				CONS_Debug(DBG_NETPLAY,"Received SAY cmd from Player %d (%s) with an illegal HU_PRIVNOTICE flag.\n", say.source+1, player_names[say.source]);
-				SendKick(say.source, KICK_MSG_CON_FAIL);
-				return;
-			}
-
-			{
-				size_t i;
-				const size_t j = strlen(say.message);
-				for (i = 0; i < j; i++)
-				{
-					if (say.message[i] & 0x80)
-					{
-						CONS_Alert(CONS_WARNING, M_GetText("Illegal say command received from %s containing invalid characters\n"), player_names[say.source]);
-						SendKick(say.source, KICK_MSG_CON_FAIL);
-						return;
-					}
-				}
-			}
-
-			if (stop_spamming[say.source] != 0 && consoleplayer != say.source && cv_chatspamprotection.value && !(say.flags & (HU_CSAY|HU_SHOUT)))
-			{
-				CONS_Debug(DBG_NETPLAY,"Received SAY cmd too quickly from Player %d (%s), assuming as spam and blocking message.\n", say.source+1, player_names[say.source]);
-				stop_spamming[say.source] = 4;
-				break;
-			}
-
-			stop_spamming[say.source] = 4; 
-
-			serverplayer_t *stats = SV_GetStatsByPlayerIndex(say.source);
-			int remainingGames =  cv_gamestochat.value - stats->finishedrounds;
-
-			if (remainingGames > 0 && !(IsPlayerAdmin(say.source)))
-			{
-				CONS_Debug(DBG_NETPLAY,"Received SAY cmd from Player %d (%s), but they aren't permitted to chat yet.\n", say.source+1, player_names[say.source]);
-
-				char rejectmsg[256];
-				strlcpy(rejectmsg, va("Please play %d more games to use chat.", remainingGames), 256);
-				SendServerNotice(say.source, rejectmsg);
-
-				break;
-			}
-
-			DoSayCommand(say.message, say.target, say.flags, say.source);
+			PT_Say(node);
 			break;
 		case PT_LOGIN:
 			if (client)
