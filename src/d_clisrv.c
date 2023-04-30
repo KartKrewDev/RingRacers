@@ -6840,7 +6840,7 @@ void NetUpdate(void)
 
 	if (server)
 	{
-		for(; (i<MAXPLAYERS); i++)
+		for(i = 0; i < MAXPLAYERS; i++)
 		{
 			if (stop_spamming[i] > 0)
 				stop_spamming[i]--;
