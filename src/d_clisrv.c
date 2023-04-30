@@ -4998,7 +4998,7 @@ static void PT_Say(int node)
 		CONS_Debug(DBG_NETPLAY,"Received SAY cmd from Player %d (%s), but they aren't permitted to chat yet.\n", say.source+1, player_names[say.source]);
 
 		char rejectmsg[256];
-		strlcpy(rejectmsg, va("Please play %d more games to use chat.", remainingGames), 256);
+		strlcpy(rejectmsg, va("Please finish in %d more games to use chat.", remainingGames), 256);
 		SendServerNotice(say.source, rejectmsg);
 
 		return;
