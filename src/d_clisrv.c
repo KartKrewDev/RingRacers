@@ -4999,6 +4999,8 @@ static void PT_Say(int node)
 
 		char rejectmsg[256];
 		strlcpy(rejectmsg, va("Please finish in %d more games to use chat.", remainingGames), 256);
+		if (IsPlayerGuest(say.source))
+			strlcpy(rejectmsg, va("GUESTs can't chat on this server. Rejoin with a profile to track your playtime."), 256);
 		SendServerNotice(say.source, rejectmsg);
 
 		return;
