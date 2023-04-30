@@ -105,6 +105,12 @@ struct playersort_t
 #define CHAT_MUTE (cv_mute.value && !(server || IsPlayerAdmin(consoleplayer))) // this still allows to open the chat but not to type. That's used for scrolling and whatnot.
 #define OLD_MUTE (OLDCHAT && cv_mute.value && !(server || IsPlayerAdmin(consoleplayer))) // this is used to prevent oldchat from opening when muted.
 
+typedef enum
+{
+	HU_SHOUT		= 1,		// Shout message
+	HU_CSAY			= 1<<1,		// Middle-of-screen server message
+} sayflags_t;
+
 // some functions
 void HU_AddChatText(const char *text, boolean playsound);
 

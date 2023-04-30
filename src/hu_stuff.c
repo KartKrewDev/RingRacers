@@ -66,12 +66,6 @@
 #define HU_INPUTX 0
 #define HU_INPUTY 0
 
-typedef enum
-{
-	HU_SHOUT		= 1,		// Shout message
-	HU_CSAY			= 1<<1,		// Middle-of-screen server message
-} sayflags_t;
-
 //-------------------------------------------
 //              heads up font
 //-------------------------------------------
@@ -622,8 +616,6 @@ static void Command_Shout(void)
 	DoSayPacketFromCommand(0, 1, HU_SHOUT);
 }
 
-static tic_t stop_spamming[MAXPLAYERS];
-
 /** Receives a message, processing an ::XD_SAY command.
   * \sa DoSayPacket
   * \author Graue <graue@oceanbase.org>
@@ -929,13 +921,6 @@ void HU_Ticker(void)
 	if (netgame)
 	{
 		size_t i = 0;
-
-		// handle spam while we're at it:
-		for(; (i<MAXPLAYERS); i++)
-		{
-			if (stop_spamming[i] > 0)
-				stop_spamming[i]--;
-		}
 
 		// handle chat timers
 		for (i=0; (i<chat_nummsg_min); i++)

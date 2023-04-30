@@ -222,6 +222,8 @@ consvar_t cv_httpsource = CVAR_INIT ("http_source", "", CV_SAVE, NULL, NULL);
 
 consvar_t cv_kicktime = CVAR_INIT ("kicktime", "10", CV_SAVE, CV_Unsigned, NULL);
 
+static tic_t stop_spamming[MAXPLAYERS];
+
 // Generate a message for an authenticating client to sign, with some guarantees about who we are.
 void GenerateChallenge(uint8_t *buf)
 {
@@ -5250,6 +5252,36 @@ static void HandlePacketFromPlayer(SINT8 node)
 			if (playernode[say.source] != node)
 				break; // Spoofed source!
 
+			if ((cv_mute.value || say.flags & (HU_CSAY|HU_SHOUT)) && say.source != serverplayer && !(IsPlayerAdmin(say.source)))
+			{
+				CONS_Debug(DBG_NETPLAY,"Received SAY cmd from Player %d (%s), but cv_mute is on.\n", say.source+1, player_names[say.source]);
+				break;
+			}
+
+			{
+				size_t i;
+				const size_t j = strlen(say.message);
+				for (i = 0; i < j; i++)
+				{
+					if (say.message[i] & 0x80)
+					{
+						CONS_Alert(CONS_WARNING, M_GetText("Illegal say command received from %s containing invalid characters\n"), player_names[say.source]);
+						if (server)
+							SendKick(say.source, KICK_MSG_CON_FAIL);
+						return;
+					}
+				}
+			}
+
+			if (stop_spamming[say.source] != 0 && consoleplayer != say.source && cv_chatspamprotection.value && !(say.flags & (HU_CSAY|HU_SHOUT)))
+			{
+				CONS_Debug(DBG_NETPLAY,"Received SAY cmd too quickly from Player %d (%s), assuming as spam and blocking message.\n", say.source+1, player_names[say.source]);
+				stop_spamming[say.source] = 4;
+				break;
+			}
+
+			stop_spamming[say.source] = 4; 
+
 			DoSayCommand(say.message, say.target, say.flags, say.source);
 			break;
 		case PT_LOGIN:
@@ -6803,6 +6835,15 @@ void NetUpdate(void)
 			SV_SendTics();
 
 			neededtic = maketic; // The server is a client too
+		}
+	}
+
+	if (server)
+	{
+		for(; (i<MAXPLAYERS); i++)
+		{
+			if (stop_spamming[i] > 0)
+				stop_spamming[i]--;
 		}
 	}
 
