@@ -628,7 +628,6 @@ static void Got_Saycmd(UINT8 **p, INT32 playernum)
 	char *msg;
 	boolean action = false;
 	char *ptr;
-	INT32 spam_eatmsg = 0;
 
 	CONS_Debug(DBG_NETPLAY,"Received SAY cmd from Player %d (%s)\n", playernum+1, player_names[playernum]);
 
@@ -657,9 +656,6 @@ static void Got_Saycmd(UINT8 **p, INT32 playernum)
 			}
 		}
 	}
-
-	if (spam_eatmsg)
-		return;
 
 	// If it's a CSAY, just CECHO and be done with it.
 	if (flags & HU_CSAY)

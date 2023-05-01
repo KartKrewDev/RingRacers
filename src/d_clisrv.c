@@ -4991,14 +4991,13 @@ static void PT_Say(int node)
 	stop_spamming[say.source] = 4; 
 
 	serverplayer_t *stats = SV_GetStatsByPlayerIndex(say.source);
-	int remainingGames =  cv_gamestochat.value - stats->finishedrounds;
 
-	if (remainingGames > 0 && !(IsPlayerAdmin(say.source)))
+	if (stats->finishedrounds < (uint32_t)cv_gamestochat.value && !(IsPlayerAdmin(say.source)))
 	{
 		CONS_Debug(DBG_NETPLAY,"Received SAY cmd from Player %d (%s), but they aren't permitted to chat yet.\n", say.source+1, player_names[say.source]);
 
 		char rejectmsg[256];
-		strlcpy(rejectmsg, va("Please finish in %d more games to use chat.", remainingGames), 256);
+		strlcpy(rejectmsg, va("Please finish in %d more games to use chat.", cv_gamestochat.value - stats->finishedrounds), 256);
 		if (IsPlayerGuest(say.source))
 			strlcpy(rejectmsg, va("GUESTs can't chat on this server. Rejoin with a profile to track your playtime."), 256);
 		SendServerNotice(say.source, rejectmsg);
