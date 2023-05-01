@@ -7273,18 +7273,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 		break;
 	}
 	case MT_EGGMANITEM:
-		{
-			player_t *player = K_GetItemBoxPlayer(mobj);
-			UINT8 color = SKINCOLOR_BLACK;
-
-			if (player != NULL)
-			{
-				color = player->skincolor;
-			}
-
-			mobj->color = color;
-			mobj->colorized = false;
-		}
+		Obj_RandomItemVisuals(mobj);
 		/* FALLTHRU */
 	case MT_BANANA:
 		mobj->friction = ORIG_FRICTION/4;
@@ -7309,6 +7298,12 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 				S_StartSound(mobj, mobj->info->activesound);
 				mobj->momx = mobj->momy = 0;
 				mobj->health = 1;
+
+				if (mobj->type == MT_EGGMANITEM)
+				{
+					// Grow to match the actual items
+					mobj->destscale = Obj_RandomItemScale(mobj->destscale);
+				}
 			}
 		}
 		else
@@ -9440,73 +9435,13 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 		}
 		break;
 	case MT_RANDOMITEM:
-		if ((leveltime == starttime) && !(gametyperules & GTR_CIRCUIT) && (mobj->flags2 & MF2_BOSSNOTRAP)) // here on map start?
+		if (Obj_RandomItemSpawnIn(mobj) == false)
 		{
-			if (gametyperules & GTR_PAPERITEMS)
-			{
-				if (battleprisons == true)
-				{
-					;
-				}
-				else
-				{
-					mobj_t *paperspawner = P_SpawnMobj(mobj->x, mobj->y, mobj->z, MT_PAPERITEMSPOT);
-					paperspawner->spawnpoint = mobj->spawnpoint;
-					mobj->spawnpoint->mobj = paperspawner;
-					P_RemoveMobj(mobj);
-					return false;
-				}
-			}
-			// poof into existance
-			P_UnsetThingPosition(mobj);
-			mobj->flags &= ~(MF_NOCLIPTHING|MF_NOBLOCKMAP);
-			mobj->renderflags &= ~RF_DONTDRAW;
-			P_SetThingPosition(mobj);
-			P_SpawnMobj(mobj->x, mobj->y, mobj->z, MT_EXPLODE);
-			nummapboxes++;
+			return false;
 		}
-		// FALLTHRU
+		/* FALLTHRU */
 	case MT_SPHEREBOX:
-		if (mobj->threshold == 70)
-		{
-			mobj->color = K_RainbowColor(leveltime);
-			mobj->colorized = true;
-
-			if ((gametyperules & GTR_OVERTIME) && battleovertime.enabled)
-			{
-				angle_t ang = FixedAngle((leveltime % 360) << FRACBITS);
-				fixed_t z = battleovertime.z;
-				fixed_t dist;
-				mobj_t *ghost;
-
-				/*if (z < mobj->subsector->sector->floorheight)
-					z = mobj->subsector->sector->floorheight;*/
-
-				if (mobj->extravalue1 < 512)
-					mobj->extravalue1++;
-				dist = mobj->extravalue1 * mapobjectscale;
-
-				P_MoveOrigin(mobj, battleovertime.x + P_ReturnThrustX(NULL, ang, dist),
-					battleovertime.y + P_ReturnThrustY(NULL, ang, dist), z);
-
-				ghost = P_SpawnGhostMobj(mobj);
-				ghost->fuse = 4;
-				ghost->frame |= FF_FULLBRIGHT;
-			}
-		}
-		else
-		{
-			player_t *player = K_GetItemBoxPlayer(mobj);
-			UINT8 color = SKINCOLOR_BLACK;
-
-			if (player != NULL)
-			{
-				color = player->skincolor;
-			}
-
-			mobj->color = color;
-			mobj->colorized = false;
-		}
+		Obj_RandomItemVisuals(mobj);
 		break;
 	case MT_MONITOR_PART:
 		Obj_MonitorPartThink(mobj);
@@ -9772,8 +9707,6 @@ static boolean P_FuseThink(mobj_t *mobj)
 
 			// Transfer flags2 (strongbox, objectflip, bossnotrap)
 			newmobj->flags2 = mobj->flags2;
-			if (mobj->threshold == 70)
-				newmobj->threshold = 70;
 		}
 
 		P_RemoveMobj(mobj); // make sure they disappear
@@ -10345,9 +10278,6 @@ static void P_DefaultMobjShadowScale(mobj_t *thing)
 			thing->whiteshadow = false;
 			break;
 		case MT_EGGMANITEM:
-			thing->shadowscale = FRACUNIT;
-			thing->whiteshadow = false;
-			break;
 		case MT_EGGMANITEM_SHIELD:
 			thing->shadowscale = 3*FRACUNIT/2;
 			thing->whiteshadow = false;
@@ -10916,6 +10846,10 @@ mobj_t *P_SpawnMobj(fixed_t x, fixed_t y, fixed_t z, mobjtype_t type)
 		case MT_BOSS3WAYPOINT:
 			// Remove before release
 			CONS_Alert(CONS_WARNING, "Boss waypoints are deprecated. Did you forget to remove the old checkpoints, too?\n");
+			break;
+		case MT_RANDOMITEM:
+		case MT_SPHEREBOX:
+			Obj_RandomItemSpawn(mobj);
 			break;
 		default:
 			break;
@@ -12194,8 +12128,6 @@ static boolean P_SpawnNonMobjMapThing(mapthing_t *mthing)
 
 static boolean P_AllowMobjSpawn(mapthing_t* mthing, mobjtype_t i)
 {
-	(void)mthing;
-
 	switch (i)
 	{
 		case MT_ITEMCAPSULE:
@@ -13207,7 +13139,7 @@ static boolean P_SetupSpawnedMapThing(mapthing_t *mthing, mobj_t *mobj, boolean 
 		// Ambush = double size (grounded) / half size (aerial)
 		if (!(mthing->args[2] & TMICF_INVERTSIZE) == !P_IsObjectOnGround(mobj))
 		{
-			mobj->extravalue1 = min(mobj->extravalue1 << 1, FixedDiv(64*FRACUNIT, mobj->info->radius)); // don't make them larger than the blockmap can handle
+			mobj->extravalue1 = min(mobj->extravalue1 << 1, FixedDiv(MAPBLOCKSIZE, mobj->info->radius)); // don't make them larger than the blockmap can handle
 			mobj->scalespeed <<= 1;
 		}
 		break;

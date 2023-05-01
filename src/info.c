@@ -22354,12 +22354,12 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		sfx_kc2e,         // deathsound
 		60*FRACUNIT,      // speed
 		48*FRACUNIT,      // radius
-		48*FRACUNIT,      // height
+		64*FRACUNIT,      // height
 		0,                // display offset
 		100,              // mass
 		MT_RANDOMITEMPOP, // damage
 		sfx_None,         // activesound
-		MF_SLIDEME|MF_SPECIAL|MF_NOGRAVITY|MF_NOCLIPHEIGHT|MF_DONTENCOREMAP, // flags
+		MF_NOSQUISH|MF_PICKUPFROMBELOW|MF_SLIDEME|MF_SPECIAL|MF_NOGRAVITY|MF_NOCLIPHEIGHT|MF_DONTENCOREMAP, // flags
 		S_RANDOMITEM1     // raisestate
 	},
 
@@ -22381,12 +22381,12 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		sfx_kc2e,         // deathsound
 		60*FRACUNIT,      // speed
 		48*FRACUNIT,      // radius
-		48*FRACUNIT,      // height
+		64*FRACUNIT,      // height
 		0,                // display offset
 		100,              // mass
 		MT_RANDOMITEMPOP, // damage
 		sfx_None,         // activesound
-		MF_SLIDEME|MF_SPECIAL|MF_NOGRAVITY|MF_NOCLIPHEIGHT|MF_DONTENCOREMAP, // flags
+		MF_NOSQUISH|MF_PICKUPFROMBELOW|MF_SLIDEME|MF_SPECIAL|MF_NOGRAVITY|MF_NOCLIPHEIGHT|MF_DONTENCOREMAP, // flags
 		S_NULL            // raisestate
 	},
 
@@ -23271,13 +23271,13 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		S_NULL,         // xdeathstate
 		sfx_kc2e,       // deathsound
 		0,              // speed
-		24*FRACUNIT,    // radius
+		16*FRACUNIT,    // radius
 		32*FRACUNIT,    // height
 		0,              // display offset
 		100,            // mass
 		1,              // damage
 		sfx_cdfm28,     // activesound
-		MF_SHOOTABLE|MF_DONTENCOREMAP|MF_APPLYTERRAIN, // flags
+		MF_NOSQUISH|MF_PICKUPFROMBELOW|MF_SHOOTABLE|MF_DONTENCOREMAP|MF_APPLYTERRAIN, // flags
 		S_NULL          // raisestate
 	},
 
@@ -23304,7 +23304,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		100,            // mass
 		1,              // damage
 		sfx_None,       // activesound
-		MF_SHOOTABLE|MF_NOGRAVITY|MF_SCENERY|MF_DONTENCOREMAP|MF_APPLYTERRAIN, // flags
+		MF_NOSQUISH|MF_PICKUPFROMBELOW|MF_SHOOTABLE|MF_NOGRAVITY|MF_SCENERY|MF_DONTENCOREMAP|MF_APPLYTERRAIN, // flags
 		S_NULL          // raisestate
 	},
 
