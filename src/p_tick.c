@@ -805,7 +805,7 @@ void P_Ticker(boolean run)
 
 			if ((netgame) // Antigrief is supposed to apply?
 				&& !(K_Cooperative() || timelimitintics > 0 || g_pointlimit > 0) // There are rules that will punish a griefing player
-				&& (gametyperules & GTR_CIRCUIT) && (leveltime > starttime)) // The following only detects race griefing
+				&& (gametyperules & GTR_CIRCUIT) && (leveltime > starttime) && K_GetNumWaypoints()) // The following only detects race griefing
 			{
 				for (i = 0; i < MAXPLAYERS; i++)
 				{
