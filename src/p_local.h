@@ -210,6 +210,7 @@ void P_PlayerThink(player_t *player);
 void P_PlayerAfterThink(player_t *player);
 void P_DoPlayerExit(player_t *player);
 void P_DoTimeOver(player_t *player);
+void P_CheckRaceGriefing(player_t *player, boolean dopunishment);
 
 void P_ResetPlayerCheats(void);
 

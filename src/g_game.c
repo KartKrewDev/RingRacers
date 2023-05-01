@@ -2476,6 +2476,11 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 
 	tic_t jointime;
 
+	tic_t spectatorReentry;
+
+	UINT32 griefValue;
+	UINT8 griefStrikes;
+
 	UINT8 splitscreenindex;
 	boolean spectator;
 	boolean bot;
@@ -2654,6 +2659,11 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 		saveroundconditions = true;
 	}
 
+	spectatorReentry = (betweenmaps ? 0 : players[player].spectatorReentry);
+
+	griefValue = players[player].griefValue;
+	griefStrikes = players[player].griefStrikes;
+
 	if (!betweenmaps)
 	{
 		follower = players[player].follower;
@@ -2733,6 +2743,10 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 
 	p->botvars.rubberband = FRACUNIT;
 	p->botvars.controller = UINT16_MAX;
+
+	p->spectatorReentry = spectatorReentry;
+	p->griefValue = griefValue;
+	p->griefStrikes = griefStrikes;
 
 	memcpy(&p->itemRoulette, &itemRoulette, sizeof (p->itemRoulette));
 	memcpy(&p->respawn, &respawn, sizeof (p->respawn));

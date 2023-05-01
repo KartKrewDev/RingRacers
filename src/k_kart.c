@@ -8578,6 +8578,9 @@ void K_UpdateDistanceFromFinishLine(player_t *const player)
 			player->nextwaypoint = nextwaypoint;
 		}
 
+		// Update prev value (used for grief prevention code)
+		player->distancetofinishprev = player->distancetofinish;
+
 		// nextwaypoint is now the waypoint that is in front of us
 		if ((player->exiting && !(player->pflags & PF_NOCONTEST)) || player->spectator)
 		{
@@ -11384,15 +11387,43 @@ void K_CheckSpectateStatus(void)
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
 		if (!playeringame[i])
+		{
 			continue;
-		if (players[i].spectator && (players[i].pflags & PF_WANTSTOJOIN))
-			players[i].spectatewait++;
-		else
+		}
+
+		if (!players[i].spectator)
+		{
+			numingame++;
 			players[i].spectatewait = 0;
+			players[i].spectatorReentry = 0;
+			continue;
+		}
+
+		if ((players[i].pflags & PF_WANTSTOJOIN))
+		{
+			players[i].spectatewait++;
+		}
+		else
+		{
+			players[i].spectatewait = 0;
+		}
+
+		if (gamestate != GS_LEVEL)
+		{
+			players[i].spectatorReentry = 0;
+		}
+		else if (players[i].spectatorReentry > 0)
+		{
+			players[i].spectatorReentry--;
+		}
 	}
 
 	// No one's allowed to join
 	if (!cv_allowteamchange.value)
+		return;
+
+	// DON'T allow if you've hit the in-game player cap
+	if (cv_maxplayers.value && numingame >= cv_maxplayers.value)
 		return;
 
 	// Get the number of players in game, and the players to be de-spectated.
@@ -11403,33 +11434,56 @@ void K_CheckSpectateStatus(void)
 
 		if (!players[i].spectator)
 		{
-			numingame++;
-			if (cv_maxplayers.value && numingame >= cv_maxplayers.value) // DON'T allow if you've hit the in-game player cap
-				return;
-			if (gamestate != GS_LEVEL) // Allow if you're not in a level
+			// Allow if you're not in a level
+			if (gamestate != GS_LEVEL)
 				continue;
-			if (players[i].exiting) // DON'T allow if anyone's exiting
+
+			// DON'T allow if anyone's exiting
+			if (players[i].exiting)
 				return;
-			if (numingame < 2 || leveltime < starttime || mapreset) // Allow if the match hasn't started yet
+
+			// Allow if the match hasn't started yet
+			if (numingame < 2 || leveltime < starttime || mapreset)
 				continue;
-			if (leveltime > (starttime + 20*TICRATE)) // DON'T allow if the match is 20 seconds in
+
+			// DON'T allow if the match is 20 seconds in
+			if (leveltime > (starttime + 20*TICRATE))
 				return;
-			if ((gametyperules & GTR_CIRCUIT) && players[i].laps >= 2) // DON'T allow if the race is at 2 laps
+
+			// DON'T allow if the race is at 2 laps
+			if ((gametyperules & GTR_CIRCUIT) && players[i].laps >= 2)
 				return;
+
 			continue;
 		}
-		else if (players[i].bot || !(players[i].pflags & PF_WANTSTOJOIN))
+
+		if (players[i].bot)
+		{
+			// Spectating bots are controlled by other mechanisms.
 			continue;
+		}
+
+		if (!(players[i].pflags & PF_WANTSTOJOIN))
+		{
+			// This spectator does not want to join.
+			continue;
+		}
+
+		if (netgame && numingame > 0 && players[i].spectatorReentry > 0)
+		{
+			// This person has their reentry cooldown active.
+			continue;
+		}
 
 		respawnlist[numjoiners++] = i;
 	}
 
-	// literally zero point in going any further if nobody is joining
+	// Literally zero point in going any further if nobody is joining.
 	if (!numjoiners)
 		return;
 
-	// Organize by spectate wait timer
-	if (cv_maxplayers.value)
+	// Organize by spectate wait timer (if there's more than one to sort)
+	if (cv_maxplayers.value && numjoiners > 1)
 	{
 		UINT8 oldrespawnlist[MAXPLAYERS];
 		memcpy(oldrespawnlist, respawnlist, numjoiners);
@@ -11456,15 +11510,18 @@ void K_CheckSpectateStatus(void)
 	// Finally, we can de-spectate everyone!
 	for (i = 0; i < numjoiners; i++)
 	{
-		if (cv_maxplayers.value && numingame+i >= cv_maxplayers.value) // Hit the in-game player cap while adding people?
-			break;
 		//CONS_Printf("player %s is joining on tic %d\n", player_names[respawnlist[i]], leveltime);
+
 		P_SpectatorJoinGame(&players[respawnlist[i]]);
+
+		// Hit the in-game player cap while adding people?
+		if (cv_maxplayers.value && numingame+i >= cv_maxplayers.value)
+			break;
 	}
 
 	// Reset the match when 2P joins 1P, DUEL mode
 	// Reset the match when 3P joins 1P and 2P, DUEL mode must be disabled
-	if (!mapreset && gamestate == GS_LEVEL && (numingame < 3 && numingame+i >= 2)) // use previous i value
+	if (i > 0 && !mapreset && gamestate == GS_LEVEL && (numingame < 3 && numingame+i >= 2))
 	{
 		S_ChangeMusicInternal("chalng", false); // COME ON
 		mapreset = 3*TICRATE; // Even though only the server uses this for game logic, set for everyone for HUD

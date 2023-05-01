@@ -617,6 +617,37 @@ static inline void P_DoTeamStuff(void)
 	}
 }
 
+static inline void P_DeviceRumbleTick(void)
+{
+	UINT8 i;
+
+	for (i = 0; i <= splitscreen; i++)
+	{
+		player_t *player = &players[g_localplayers[i]];
+		UINT16 low = 0;
+		UINT16 high = 0;
+
+		if (player->mo == NULL)
+			continue;
+
+		if ((player->mo->eflags & MFE_DAMAGEHITLAG) && player->mo->hitlag)
+		{
+			low = high = 65536 / 2;
+		}
+		else if (player->sneakertimer > (sneakertime-(TICRATE/2)))
+		{
+			low = high = 65536 / (3+player->numsneakers);
+		}
+		else if (((player->boostpower < FRACUNIT) || (player->stairjank > 8))
+			&& P_IsObjectOnGround(player->mo))
+		{
+			low = high = 65536 / 32;
+		}
+
+		G_PlayerDeviceRumble(i, low, high);
+	}
+}
+
 void P_RunChaseCameras(void)
 {
 	UINT8 i;
@@ -750,13 +781,18 @@ void P_Ticker(boolean run)
 		// Run any "after all the other thinkers" stuff
 		{
 			player_t *finishingPlayers[MAXPLAYERS];
-			UINT8 numFinishingPlayers = 0;
+			UINT8 numingame = 0, numFinishingPlayers = 0;
 
 			for (i = 0; i < MAXPLAYERS; i++)
 			{
 				if (playeringame[i] && players[i].mo && !P_MobjWasRemoved(players[i].mo))
 				{
 					P_PlayerAfterThink(&players[i]);
+
+					if (players[i].spectator == true)
+						continue;
+
+					numingame++;
 
 					// Check for the number of ties for first place after every player has thunk run for this tic
 					if (players[i].exiting == 1 && players[i].position == 1 &&
@@ -767,37 +803,32 @@ void P_Ticker(boolean run)
 				}
 			}
 
-			// Apply rumble to player if local to machine and not in demo playback
+			if ((netgame) // Antigrief is supposed to apply?
+				&& !(K_Cooperative() || timelimitintics > 0 || g_pointlimit > 0) // There are rules that will punish a griefing player
+				&& (gametyperules & GTR_CIRCUIT) && (leveltime > starttime) && K_GetNumWaypoints()) // The following only detects race griefing
+			{
+				for (i = 0; i < MAXPLAYERS; i++)
+				{
+					if (playeringame[i] && players[i].mo && !P_MobjWasRemoved(players[i].mo))
+					{
+						if (players[i].spectator == true)
+							continue;
+
+						if (players[i].exiting || (players[i].pflags & PF_NOCONTEST))
+							continue;
+
+						if (players[i].bot == true)
+							continue;
+
+						P_CheckRaceGriefing(&players[i], (numingame > 1));
+					}
+				}
+			}
+
+			// Apply rumble to local players
 			if (!demo.playback)
 			{
-				for (i = 0; i <= splitscreen; i++)
-				{
-					player_t *player = &players[g_localplayers[i]];
-					UINT16 low = 0;
-					UINT16 high = 0;
-
-					if (player->mo == NULL)
-						continue;
-
-					if ((player->mo->eflags & MFE_DAMAGEHITLAG) && player->mo->hitlag)
-					{
-						low = 65536 / 2;
-						high = 65536 / 2;
-					}
-					else if (player->sneakertimer > (sneakertime-(TICRATE/2)))
-					{
-						low = 65536 / (3+player->numsneakers);
-						high = 65536 / (3+player->numsneakers);
-					}
-					else if (((player->boostpower < FRACUNIT) || (player->stairjank > 8))
-						&& P_IsObjectOnGround(player->mo))
-					{
-						low = 65536 / 32;
-						high = 65536 / 32;
-					}
-
-					G_PlayerDeviceRumble(i, low, high);
-				}
+				P_DeviceRumbleTick();
 			}
 
 			if (numFinishingPlayers > 1)

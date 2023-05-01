@@ -3189,16 +3189,6 @@ static void Got_KickCmd(UINT8 **p, INT32 playernum)
 	pnum = READUINT8(*p);
 	msg = READUINT8(*p);
 
-	if (pnum == serverplayer && IsPlayerAdmin(playernum))
-	{
-		CONS_Printf(M_GetText("Server is being shut down remotely. Goodbye!\n"));
-
-		if (server)
-			COM_BufAddText("quit\n");
-
-		return;
-	}
-
 	if (msg == KICK_MSG_CUSTOM_BAN || msg == KICK_MSG_CUSTOM_KICK)
 	{
 		READSTRINGN(*p, reason, MAX_REASONLENGTH+1);
@@ -3262,6 +3252,12 @@ static void Got_KickCmd(UINT8 **p, INT32 playernum)
 			// It should be safe to run the vote callback directly.
 			K_MidVoteSuccess();
 		}
+	}
+
+	if (playernode[pnum] == servernode)
+	{
+		CONS_Printf(M_GetText("Ignoring kick attempt from %s on node %d (it's the server)\n"), player_names[playernum], servernode);
+		return;
 	}
 
 	//CONS_Printf("\x82%s ", player_names[pnum]);
@@ -3373,6 +3369,10 @@ static void Got_KickCmd(UINT8 **p, INT32 playernum)
 				HU_AddChatText(va("\x82*%s left the game", player_names[pnum]), false);
 			kickreason = KR_LEAVE;
 			break;
+		case KICK_MSG_GRIEF:
+			HU_AddChatText(va("\x82*%s has been kicked (Automatic grief detection)", player_names[pnum]), false);
+			kickreason = KR_KICK;
+			break;
 		case KICK_MSG_BANNED:
 			HU_AddChatText(va("\x82*%s has been banned (No reason given)", player_names[pnum]), false);
 			kickreason = KR_BAN;
@@ -3418,8 +3418,12 @@ static void Got_KickCmd(UINT8 **p, INT32 playernum)
 			M_StartMessage(M_GetText("Server closed connection\n(Synch failure)\nPress (B)\n"), NULL, MM_NOTHING);
 		else if (msg == KICK_MSG_PING_HIGH)
 			M_StartMessage(M_GetText("Server closed connection\n(Broke delay limit)\nPress (B)\n"), NULL, MM_NOTHING);
+		else if (msg == KICK_MSG_TIMEOUT) // this one will probably never be seen?
+			M_StartMessage(M_GetText("Connection timed out\n\nPress (B)\n"), NULL, MM_NOTHING);
 		else if (msg == KICK_MSG_BANNED)
 			M_StartMessage(M_GetText("You have been banned by the server\n\nPress (B)\n"), NULL, MM_NOTHING);
+		else if (msg == KICK_MSG_CUSTOM_KICK)
+			M_StartMessage(M_GetText("You have been kicked\n(Automatic grief detection)\nPress (B)\n"), NULL, MM_NOTHING);
 		else if (msg == KICK_MSG_CUSTOM_KICK)
 			M_StartMessage(va(M_GetText("You have been kicked\n(%s)\nPress (B)\n"), reason), NULL, MM_NOTHING);
 		else if (msg == KICK_MSG_CUSTOM_BAN)

@@ -4586,6 +4586,87 @@ void P_PlayerAfterThink(player_t *player)
 		player->mo->pmomz = 0;
 }
 
+void P_CheckRaceGriefing(player_t *player, boolean dopunishment)
+{
+	const UINT32 griefMax = cv_antigrief.value * TICRATE;
+	const UINT8 n = player - players;
+
+	const fixed_t requireDist = (12*player->mo->scale) / FRACUNIT;
+	INT32 progress = player->distancetofinishprev - player->distancetofinish;
+	boolean exceptions = (
+		player->flashing != 0
+		|| player->mo->hitlag != 0
+		|| player->airtime > 3*TICRATE/2
+		|| (player->justbumped > 0 && player->justbumped < bumptime-1)
+	);
+
+	// Don't punish if the cvar is turned off,
+	// otherwise NOBODY would be able to play!
+	if (griefMax == 0)
+	{
+		dopunishment = false;
+	}
+
+	if (!exceptions && (progress < requireDist))
+	{
+		// If antigrief is disabled, we don't want the
+		// player getting into a hole so deep no amount
+		// of good behaviour could ever make up for it.
+		if (player->griefValue < griefMax)
+		{
+			// Making no progress, start counting against you.
+			player->griefValue++;
+			if (progress < -requireDist && player->griefValue < griefMax)
+			{
+				// Making NEGATIVE progress? Start counting even harder.
+				player->griefValue++;
+			}
+		}
+	}
+	else if (player->griefValue > 0)
+	{
+		// Playing normally.
+		player->griefValue--;
+	}
+
+	if (dopunishment && player->griefValue >= griefMax)
+	{
+		if (player->griefStrikes < 3)
+		{
+			player->griefStrikes++;
+		}
+
+		player->griefValue = 0;
+
+		if (server)
+		{
+			if (player->griefStrikes == 3 && playernode[n] != servernode
+#ifndef DEVELOP
+				&& !IsPlayerAdmin(n)
+#endif
+				)
+			{
+				// Send kick
+				SendKick(n, KICK_MSG_GRIEF);
+			}
+			else
+			{
+				// Send spectate
+				changeteam_union NetPacket;
+				UINT16 usvalue;
+
+				NetPacket.value.l = NetPacket.value.b = 0;
+				NetPacket.packet.newteam = 0;
+				NetPacket.packet.playernum = n;
+				NetPacket.packet.verification = true;
+
+				usvalue = SHORT(NetPacket.value.l|NetPacket.value.b);
+				SendNetXCmd(XD_TEAMCHANGE, &usvalue, sizeof(usvalue));
+			}
+		}
+	}
+}
+
 void P_SetPlayerAngle(player_t *player, angle_t angle)
 {
 	P_ForceLocalAngle(player, angle);
