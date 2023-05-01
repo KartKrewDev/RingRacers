@@ -669,7 +669,7 @@ extern const tic_t bulbtime;
 extern UINT8 numbulbs;
 
 extern tic_t raceexittime;
-extern tic_t battleexittime;
+#define MUSICCOUNTDOWNMAX (raceexittime - (TICRATE/2))
 
 extern INT32 hyudorotime;
 extern INT32 stealtime;
@@ -694,7 +694,7 @@ extern UINT8 maxXtraLife; // Max extra lives from rings
 extern mobj_t *hunt1, *hunt2, *hunt3; // Emerald hunt locations
 
 // For racing
-extern tic_t racecountdown, exitcountdown;
+extern tic_t racecountdown, exitcountdown, musiccountdown;
 
 #define DEFAULT_GRAVITY (4*FRACUNIT/5)
 extern fixed_t gravity;

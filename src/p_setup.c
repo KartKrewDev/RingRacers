@@ -7165,7 +7165,7 @@ static void P_InitLevelSettings(void)
 		K_UpdateShrinkCheat(&players[i]);
 	}
 
-	racecountdown = exitcountdown = exitfadestarted = 0;
+	racecountdown = exitcountdown = musiccountdown = exitfadestarted = 0;
 	curlap = bestlap = 0; // SRB2Kart
 
 	// Gamespeed and frantic items

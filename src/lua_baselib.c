@@ -1771,21 +1771,6 @@ static int lib_pPlayVictorySound(lua_State *L)
 	return 0;
 }
 
-static int lib_pPlayLivesJingle(lua_State *L)
-{
-	player_t *player = NULL;
-	//NOHUD
-	//INLEVEL
-	if (!lua_isnone(L, 1) && lua_isuserdata(L, 1))
-	{
-		player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
-		if (!player)
-			return LUA_ErrInvalid(L, "player_t");
-	}
-	P_PlayLivesJingle(player);
-	return 0;
-}
-
 static int lib_pCanPickupItem(lua_State *L)
 {
 	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
@@ -4051,7 +4036,6 @@ static luaL_Reg lib[] = {
 	{"P_PlayRinglossSound",lib_pPlayRinglossSound},
 	{"P_PlayDeathSound",lib_pPlayDeathSound},
 	{"P_PlayVictorySound",lib_pPlayVictorySound},
-	{"P_PlayLivesJingle",lib_pPlayLivesJingle},
 	{"P_CanPickupItem",lib_pCanPickupItem},
 
 	// p_spec

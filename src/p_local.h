@@ -188,7 +188,7 @@ boolean P_PlayerHitFloor(player_t *player, boolean fromAir, angle_t oldPitch, an
 
 void P_SetObjectMomZ(mobj_t *mo, fixed_t value, boolean relative);
 void P_RestoreMusic(player_t *player);
-boolean P_EndingMusic(player_t *player);
+void P_EndingMusic(void);
 mobj_t *P_SpawnGhostMobj(mobj_t *mobj);
 INT32 P_GivePlayerRings(player_t *player, INT32 num_rings);
 INT32 P_GivePlayerSpheres(player_t *player, INT32 num_spheres);
@@ -228,7 +228,6 @@ UINT8 P_FindHighestLap(void);
 
 boolean P_PlayerMoving(INT32 pnum);
 
-void P_PlayLivesJingle(player_t *player);
 void P_PlayRinglossSound(mobj_t *source);
 void P_PlayDeathSound(mobj_t *source);
 void P_PlayVictorySound(mobj_t *source);
@@ -246,20 +245,9 @@ typedef enum
 	JT_NONE,   // Null state
 	JT_OTHER,  // Other state
 	JT_MASTER, // Main level music
-	JT_1UP, // Extra life
-	JT_SHOES,  // Speed shoes
-	JT_INV, // Invincibility
-	JT_MINV, // Mario Invincibility
-	JT_DROWN,  // Drowning
-	JT_SUPER,  // Super Sonic
-	JT_GOVER, // Game Over
-	JT_NIGHTSTIMEOUT, // NiGHTS Time Out (10 seconds)
-	JT_SSTIMEOUT, // NiGHTS Special Stage Time Out (10 seconds)
 
-	// these are not jingles
-	// JT_LCLEAR, // Level Clear
-	// JT_RACENT, // Multiplayer Intermission
-	// JT_CONTSC, // Continue
+	JT_INVINCIBILITY, // Invincibility
+	JT_GROW, // Grow
 
 	NUMJINGLES
 } jingletype_t;
