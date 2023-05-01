@@ -23,7 +23,7 @@ Make sure this matches the actual number of states
 */
 #define KART_NUMINVSPARKLESANIM 12
 
-#define MAXHITLAGTICS 18 //12
+#define MAXHITLAGTICS (20)
 #define HITLAGJITTERS (FRACUNIT / 20)
 
 #define GROW_SCALE (2*FRACUNIT)

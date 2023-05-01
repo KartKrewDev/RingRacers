@@ -3650,6 +3650,56 @@ void K_AddHitLag(mobj_t *mo, INT32 tics, boolean fromDamage)
 	}
 }
 
+static void K_SpawnHitLagEFX(mobj_t *mo1, mobj_t *mo2, INT32 tics)
+{
+	mobj_t *spark = NULL;
+	vector3_t offset = { 0, 0, 0 };
+	INT32 i;
+
+	I_Assert(P_MobjWasRemoved(mo1) == false);
+	P_StartQuakeFromMobj(tics, tics * 2 * mapobjectscale, 512 * mapobjectscale, mo1);
+
+	if (P_MobjWasRemoved(mo2) == false)
+	{
+		offset.x = (mo2->x - mo1->x) / 2;
+		offset.y = (mo2->y - mo1->y) / 2;
+		offset.z = (P_GetMobjHead(mo2) - P_GetMobjHead(mo1)) / 2;
+	}
+	else
+	{
+		offset.z = mo1->height;
+	}
+
+	offset.x = FixedDiv(offset.x, mapobjectscale);
+	offset.y = FixedDiv(offset.y, mapobjectscale);
+	offset.z = FixedDiv(offset.z, mapobjectscale);
+
+	for (i = 0; i < 2; i++)
+	{
+		spark = P_SpawnMobjFromMobj(
+			mo1,
+			offset.x, offset.y, offset.z,
+			MT_HITLAG
+		);
+		P_SetTarget(&spark->target, mo1);
+
+		spark->destscale *= 3;
+		P_SetScale(spark, spark->scale * 3);
+
+		spark->hitlag = 0;
+
+		spark->angle = R_PointToAngle2(
+			mo1->x, mo1->y,
+			spark->x, spark->y
+		);
+
+		if (i & 1)
+		{
+			spark->angle += ANGLE_90;
+		}
+	}
+}
+
 void K_SetHitLagForObjects(mobj_t *mo1, mobj_t *mo2, INT32 tics, boolean fromDamage)
 {
 	INT32 finalTics = tics;
@@ -3690,8 +3740,15 @@ void K_SetHitLagForObjects(mobj_t *mo1, mobj_t *mo2, INT32 tics, boolean fromDam
 		}
 	}
 
+	finalTics = 9;
+
 	K_AddHitLag(mo1, finalTics, fromDamage);
 	K_AddHitLag(mo2, finalTics, false); // mo2 is the inflictor, so don't use the damage property.
+
+	if (P_MobjWasRemoved(mo1) == false && fromDamage == true)
+	{
+		K_SpawnHitLagEFX(mo1, mo2, finalTics);
+	}
 }
 
 void K_AwardPlayerRings(player_t *player, INT32 rings, boolean overload)
@@ -3956,7 +4013,6 @@ void K_TumblePlayer(player_t *player, mobj_t *inflictor, mobj_t *source)
 	player->mo->momz = K_TumbleZ(player->mo, player->tumbleHeight * FRACUNIT);
 
 	P_SetPlayerMobjState(player->mo, S_KART_SPINOUT);
-	P_StartQuakeFromMobj(10, 64 * player->mo->scale, 512 * player->mo->scale, player->mo);
 }
 
 angle_t K_StumbleSlope(angle_t angle, angle_t pitch, angle_t roll)
@@ -3995,7 +4051,6 @@ void K_StumblePlayer(player_t *player)
 	player->mo->momz = K_TumbleZ(player->mo, player->tumbleHeight * FRACUNIT);
 
 	P_SetPlayerMobjState(player->mo, S_KART_SPINOUT);
-	P_StartQuakeFromMobj(10, 64 * player->mo->scale, 512 * player->mo->scale, player->mo);
 
 	// Reset slope.
 	player->mo->pitch = player->mo->roll = 0;
@@ -4470,7 +4525,6 @@ INT32 K_ExplodePlayer(player_t *player, mobj_t *inflictor, mobj_t *source) // A 
 		player->mo->momz = (117 * player->mo->momz) / 200;
 
 	P_SetPlayerMobjState(player->mo, S_KART_SPINOUT);
-	P_StartQuakeFromMobj(5, 64 * player->mo->scale, 512 * player->mo->scale, player->mo);
 
 	return ringburst;
 }
