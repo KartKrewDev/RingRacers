@@ -331,16 +331,22 @@ struct mappoint_t
 	fixed_t x, y, z;
 };
 
-extern struct quake
+struct quake_t
 {
-	// camera offsets and duration
-	fixed_t x,y,z;
-	UINT16 time;
+	tic_t time, startTime;
+	fixed_t intensity;
 
-	// location, radius, and intensity...
+	// optional intensity modulation based on position
+	fixed_t radius;
 	mappoint_t *epicenter;
-	fixed_t radius, intensity;
-} quake;
+	mobj_t *mobj;
+
+	// linked list
+	quake_t *next;
+	quake_t *prev;
+};
+
+extern quake_t *g_quakes;
 
 // Custom Lua values
 struct customoption_t

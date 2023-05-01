@@ -119,6 +119,7 @@ TYPEDEF (cutscene_t);
 TYPEDEF (textpage_t);
 TYPEDEF (textprompt_t);
 TYPEDEF (mappoint_t);
+TYPEDEF (quake_t);
 TYPEDEF (customoption_t);
 TYPEDEF (gametype_t);
 TYPEDEF (staffbrief_t);

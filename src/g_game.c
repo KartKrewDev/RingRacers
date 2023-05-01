@@ -193,7 +193,7 @@ mobj_t *blueflag;
 mapthing_t *rflagpoint;
 mapthing_t *bflagpoint;
 
-struct quake quake;
+quake_t *g_quakes = NULL;
 
 // Map Header Information
 mapheader_t** mapheaderinfo = {NULL};

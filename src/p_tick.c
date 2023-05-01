@@ -666,6 +666,7 @@ void P_RunChaseCameras(void)
 //
 void P_Ticker(boolean run)
 {
+	quake_t *quake = NULL;
 	INT32 i;
 
 	// Increment jointime and quittime even if paused
@@ -962,19 +963,30 @@ void P_Ticker(boolean run)
 		if (bombflashtimer)
 			bombflashtimer--;	// Bomb seizure prevention
 
-		if (quake.time)
+		// Tick quake effects
+		quake = g_quakes;
+		while (quake != NULL)
 		{
-			fixed_t ir = quake.intensity>>1;
-			/// \todo Calculate distance from epicenter if set and modulate the intensity accordingly based on radius.
-			quake.x = M_RandomRange(-ir,ir);
-			quake.y = M_RandomRange(-ir,ir);
-			quake.z = M_RandomRange(-ir,ir);
-			if (cv_windowquake.value)
-				I_CursedWindowMovement(FixedInt(quake.x), FixedInt(quake.y));
-			--quake.time;
+			if (quake->time <= 0)
+			{
+				// Time out, remove this effect
+				quake_t *remove = quake;
+				quake = quake->next;
+				P_FreeQuake(remove);
+				continue;
+			}
+
+			quake->time--;
+
+			if (quake->epicenter != NULL && quake->mobj != NULL && P_MobjWasRemoved(quake->mobj) == false)
+			{
+				quake->epicenter->x = quake->mobj->x;
+				quake->epicenter->y = quake->mobj->y;
+				quake->epicenter->z = quake->mobj->z;
+			}
+
+			quake = quake->next;
 		}
-		else
-			quake.x = quake.y = quake.z = 0;
 
 		if (metalplayback)
 			G_ReadMetalTic(metalplayback);
