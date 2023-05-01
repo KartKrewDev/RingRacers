@@ -3781,9 +3781,7 @@ void K_TumblePlayer(player_t *player, mobj_t *inflictor, mobj_t *source)
 	player->mo->momz = K_TumbleZ(player->mo, player->tumbleHeight * FRACUNIT);
 
 	P_SetPlayerMobjState(player->mo, S_KART_SPINOUT);
-
-	if (P_IsDisplayPlayer(player))
-		P_StartQuake(64<<FRACBITS, 10);
+	P_StartQuakeFromMobj(10, 64 * player->mo->scale, 512 * player->mo->scale, player->mo);
 }
 
 angle_t K_StumbleSlope(angle_t angle, angle_t pitch, angle_t roll)
@@ -3822,9 +3820,7 @@ void K_StumblePlayer(player_t *player)
 	player->mo->momz = K_TumbleZ(player->mo, player->tumbleHeight * FRACUNIT);
 
 	P_SetPlayerMobjState(player->mo, S_KART_SPINOUT);
-
-	if (P_IsDisplayPlayer(player))
-		P_StartQuake(64<<FRACBITS, 10);
+	P_StartQuakeFromMobj(10, 64 * player->mo->scale, 512 * player->mo->scale, player->mo);
 
 	// Reset slope.
 	player->mo->pitch = player->mo->roll = 0;
@@ -4158,8 +4154,11 @@ static void K_HandleTumbleBounce(player_t *player)
 	// This gives a window for DI!!
 	K_AddHitLag(player->mo, 3, true);
 
-	if (P_IsDisplayPlayer(player) && player->tumbleHeight >= 40)
-		P_StartQuake((player->tumbleHeight*3/2)<<FRACBITS, 6);	// funny earthquakes for the FEEL
+	if (player->tumbleHeight >= 40)
+	{
+		// funny earthquakes for the FEEL
+		P_StartQuakeFromMobj(6, (player->tumbleHeight * 3 * player->mo->scale) / 2, 512 * player->mo->scale, player->mo);
+	}
 
 	S_StartSound(player->mo, (player->tumbleHeight < 40) ? sfx_s3k5d : sfx_s3k5f);	// s3k5d is bounce < 50, s3k5f otherwise!
 
@@ -4288,9 +4287,7 @@ INT32 K_ExplodePlayer(player_t *player, mobj_t *inflictor, mobj_t *source) // A 
 		player->mo->momz = (117 * player->mo->momz) / 200;
 
 	P_SetPlayerMobjState(player->mo, S_KART_SPINOUT);
-
-	if (P_IsDisplayPlayer(player))
-		P_StartQuake(64<<FRACBITS, 5);
+	P_StartQuakeFromMobj(5, 64 * player->mo->scale, 512 * player->mo->scale, player->mo);
 
 	return ringburst;
 }
@@ -4388,24 +4385,25 @@ void K_MineFlashScreen(mobj_t *source)
 	player_t *p;
 
 	S_StartSound(source, sfx_s3k4e);
+	P_StartQuakeFromMobj(12, 55 * source->scale, MINEQUAKEDIST * source->scale, source);
 
-	// check for potential display players near the source so we can have a sick earthquake / flashpal.
+	// check for potential display players near the source so we can have a sick flashpal.
 	for (pnum = 0; pnum < MAXPLAYERS; pnum++)
 	{
 		p = &players[pnum];
 
 		if (!playeringame[pnum] || !P_IsDisplayPlayer(p))
-			continue;
-
-		if (R_PointToDist2(p->mo->x, p->mo->y, source->x, source->y) < mapobjectscale*MINEQUAKEDIST)
 		{
-			P_StartQuake(55<<FRACBITS, 12);
+			continue;
+		}
+
+		if (R_PointToDist2(p->mo->x, p->mo->y, source->x, source->y) < source->scale * MINEQUAKEDIST)
+		{
 			if (!bombflashtimer && P_CheckSight(p->mo, source))
 			{
 				bombflashtimer = TICRATE*2;
 				P_FlashPal(p, PAL_WHITE, 1);
 			}
-			break;	// we can break right now because quakes are global to all split players somehow.
 		}
 	}
 }

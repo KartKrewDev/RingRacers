@@ -10992,13 +10992,7 @@ void A_MineExplode(mobj_t *actor)
 	A_Scream(actor);
 	actor->flags = MF_NOGRAVITY|MF_NOCLIP;
 
-	/*
-	quake.epicenter = NULL;
-	quake.radius = 512*FRACUNIT;
-	quake.intensity = 8*FRACUNIT;
-	quake.time = TICRATE/3;
-	*/
-	P_StartQuake(8<<FRACBITS, TICRATE/3);
+	P_StartQuakeFromMobj(TICRATE/3, 8 * actor->scale, 512 * actor->scale, actor);
 
 	P_RadiusAttack(actor, actor->tracer, 192*FRACUNIT, 0, true);
 	P_MobjCheckWater(actor);
@@ -11977,16 +11971,8 @@ void A_Boss5BombExplode(mobj_t *actor)
 
 	P_DustRing(locvar1, 4, actor->x, actor->y, actor->z+actor->height, 2*actor->radius, 0, FRACUNIT, actor->scale);
 	P_DustRing(locvar1, 6, actor->x, actor->y, actor->z+actor->height/2, 3*actor->radius, FRACUNIT, FRACUNIT, actor->scale);
-	//P_StartQuake(9*FRACUNIT, TICRATE/6, {actor->x, actor->y, actor->z}, 20*actor->radius);
-	// the above does not exist, so we set the quake values directly instead
-	quake.intensity = 9*FRACUNIT;
-	quake.time = TICRATE/6;
-	// the following quake values have no effect atm? ah well, may as well set them anyway
-	{
-		mappoint_t q_epicenter = {actor->x, actor->y, actor->z};
-		quake.epicenter = &q_epicenter;
-	}
-	quake.radius = 20*actor->radius;
+
+	P_StartQuakeFromMobj(TICRATE/6, 9 * actor->scale, 20 * actor->radius, actor);
 }
 
 // stuff used by A_TNTExplode
@@ -12064,7 +12050,6 @@ void A_TNTExplode(mobj_t *actor)
 	INT32 locvar1 = var1;
 	INT32 x, y;
 	INT32 xl, xh, yl, yh;
-	static mappoint_t epicenter = {0,0,0};
 
 	if (LUA_CallAction(A_TNTEXPLODE, actor))
 		return;
@@ -12103,14 +12088,8 @@ void A_TNTExplode(mobj_t *actor)
 		for (y = yl; y <= yh; y++)
 			P_BlockThingsIterator(x, y, PIT_TNTExplode);
 
-	// cause a quake -- P_StartQuake does not exist yet
-	epicenter.x = actor->x;
-	epicenter.y = actor->y;
-	epicenter.z = actor->z;
-	quake.intensity = 9*FRACUNIT;
-	quake.time = TICRATE/6;
-	quake.epicenter = &epicenter;
-	quake.radius = 512*FRACUNIT;
+	// cause a quake
+	P_StartQuakeFromMobj(TICRATE/6, 9 * actor->scale, 512 * actor->scale, actor);
 
 	if (locvar1)
 	{

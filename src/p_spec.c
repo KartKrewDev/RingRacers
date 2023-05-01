@@ -3507,17 +3507,23 @@ boolean P_ProcessSpecial(activator_t *activator, INT16 special, INT32 *args, cha
 
 		case 444: // Earthquake camera
 		{
-			quake.intensity = args[1] << FRACBITS;
-			quake.radius = args[2] << FRACBITS;
-			quake.time = args[0];
-
-			quake.epicenter = NULL; /// \todo
+			tic_t q_time = args[0];
+			fixed_t q_intensity = args[1] * mapobjectscale;
+			fixed_t q_radius = args[2] * mapobjectscale;
+			// TODO: epicenter
 
 			// reasonable defaults.
-			if (!quake.intensity)
-				quake.intensity = 8*mapobjectscale;
-			if (!quake.radius)
-				quake.radius = 512*mapobjectscale;
+			if (q_intensity <= 0)
+			{
+				q_intensity = 8 * mapobjectscale;
+			}
+
+			if (q_radius <= 0)
+			{
+				q_radius = 512 * mapobjectscale;
+			}
+
+			P_StartQuake(q_time, q_intensity, q_radius, NULL);
 			break;
 		}
 
@@ -9347,10 +9353,167 @@ static void P_SpawnPushers(void)
 	}
 }
 
-// Rudimentary function to start a earthquake.
-// epicenter and radius are not yet used.
-void P_StartQuake(fixed_t intensity, tic_t time)
+// Add an earthquake effect to the list.
+static quake_t *PushQuake(void)
 {
-	quake.intensity = FixedMul(intensity, mapobjectscale);
-	quake.time = time;
+	quake_t *quake = Z_Calloc(sizeof(quake_t), PU_LEVEL, NULL);
+
+	quake->next = g_quakes;
+	if (g_quakes != NULL)
+	{
+		g_quakes->prev = quake;
+	}
+	g_quakes = quake;
+
+	return quake;
+}
+
+void P_StartQuake(tic_t time, fixed_t intensity, fixed_t radius, mappoint_t *epicenter)
+{
+	quake_t *quake = NULL;
+
+	if (time <= 0 || intensity <= 0)
+	{
+		// Invalid parameters
+		return;
+	}
+
+	quake = Z_Calloc(sizeof(quake_t), PU_LEVEL, NULL);
+
+	quake->next = g_quakes;
+	g_quakes->prev = quake;
+	g_quakes = quake;
+
+	quake->time = quake->startTime = time;
+	quake->intensity = intensity;
+
+	if (radius > 0)
+	{
+		quake->radius = radius;
+
+		if (epicenter != NULL)
+		{
+			quake->epicenter = (mappoint_t *)Z_Malloc(sizeof(mappoint_t), PU_LEVEL, NULL);
+			quake->epicenter->x = epicenter->x;
+			quake->epicenter->y = epicenter->y;
+			quake->epicenter->z = epicenter->z;
+		}
+	}
+}
+
+void P_StartQuakeFromMobj(tic_t time, fixed_t intensity, fixed_t radius, mobj_t *mobj)
+{
+	quake_t *quake = NULL;
+
+	if (time <= 0 || intensity <= 0 || radius <= 0 || P_MobjWasRemoved(mobj) == true)
+	{
+		// Invalid parameters
+		return;
+	}
+
+	quake = PushQuake();
+
+	quake->time = quake->startTime = time;
+	quake->intensity = intensity;
+
+	quake->radius = radius;
+
+	quake->mobj = mobj; // Update epicenter with mobj position every tic
+
+	quake->epicenter = (mappoint_t *)Z_Malloc(sizeof(mappoint_t), PU_LEVEL, NULL);
+	quake->epicenter->x = mobj->x;
+	quake->epicenter->y = mobj->y;
+	quake->epicenter->z = mobj->z;
+}
+
+void P_DoQuakeOffset(UINT8 view, mappoint_t *viewPos, mappoint_t *offset)
+{
+	player_t *viewer = &players[ displayplayers[view] ];
+	quake_t *quake = NULL;
+	fixed_t ir = 0;
+	fixed_t addZ = 0;
+
+	if (cv_reducevfx.value == 1)
+	{
+		return;
+	}
+
+	// Add the main quake effects.
+	quake = g_quakes;
+	while (quake != NULL)
+	{
+		ir = quake->intensity;
+
+		// Modulate with time remaining.
+		ir = FixedMul(ir, 2 * FRACUNIT * (quake->time + 1) / quake->startTime);
+
+		// Modulate with distance from epicenter, if it exists.
+		if (quake->radius > 0 && quake->epicenter != NULL)
+		{
+			fixed_t epidist = P_AproxDistance(
+				viewPos->x - quake->epicenter->x,
+				viewPos->y - quake->epicenter->y
+			);
+
+			ir = FixedMul(ir, FixedDiv(max(0, quake->radius - epidist), quake->radius));
+		}
+
+		addZ += ir;
+		quake = quake->next;
+	}
+
+	// Add level-based effects.
+	if (P_MobjWasRemoved(viewer->mo) == false
+		&& viewer->speed > viewer->mo->scale
+		&& P_IsObjectOnGround(viewer->mo) == true)
+	{
+		// Add offroad effects.
+		if (viewer->boostpower < FRACUNIT)
+		{
+			ir = FixedMul((FRACUNIT - viewer->boostpower) << 2, mapobjectscale);
+			addZ += ir;
+		}
+
+		// Add stair jank effects.
+		if (viewer->stairjank > 0)
+		{
+			ir = FixedMul((viewer->stairjank * FRACUNIT * 5) / 17, mapobjectscale);
+			addZ += ir;
+		}
+	}
+
+	// Reverse every tic.
+	if ((leveltime + view) & 1)
+	{
+		addZ = -addZ;
+	}
+
+	// Finalize the effects.
+	offset->z += addZ;
+}
+
+void P_FreeQuake(quake_t *remove)
+{
+	if (remove->prev != NULL)
+	{
+		remove->prev->next = remove->next;
+	}
+
+	if (remove->next != NULL)
+	{
+		remove->next->prev = remove->prev;
+	}
+
+	if (remove == g_quakes)
+	{
+		g_quakes = remove->next;
+	}
+
+	if (remove->epicenter != NULL)
+	{
+		Z_Free(remove->epicenter);
+		remove->epicenter = NULL;
+	}
+
+	Z_Free(remove);
 }

@@ -7146,7 +7146,7 @@ static void P_InitLevelSettings(void)
 	//memset(&ntemprecords, 0, sizeof(nightsdata_t));
 
 	// earthquake camera
-	memset(&quake,0,sizeof(struct quake));
+	g_quakes = NULL;
 
 	// song credit init
 	Z_Free(cursongcredit.text);

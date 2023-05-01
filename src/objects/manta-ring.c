@@ -149,10 +149,7 @@ static void Obj_MantaCollide(mobj_t *manta, mobj_t *other)
 		S_StartSound(other, sfx_gate01 + snd);
 		other->player->gateBoost += addBoost/2;
 
-		if (P_IsDisplayPlayer(other->player) == true)
-		{
-			P_StartQuake(12 << FRACBITS, 6);
-		}
+		P_StartQuakeFromMobj(6, 12 * other->scale, 512 * other->scale, other);
 	}
 
 	if (touchFlag > 0)
