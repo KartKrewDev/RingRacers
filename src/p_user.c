@@ -733,15 +733,15 @@ void P_EndingMusic(void)
 			continue;
 		}
 
-		if (checkPlayer->pflags & PF_NOCONTEST)
-		{
-			// No Contest, use special value
-			;
-		}
-		else if (checkPlayer->exiting)
+		if (checkPlayer->exiting)
 		{
 			// Standard exit, use their position
 			pos = checkPlayer->position;
+		}
+		else if (checkPlayer->pflags & PF_NOCONTEST)
+		{
+			// No Contest without finishing, use special value
+			;
 		}
 		else
 		{
@@ -778,15 +778,7 @@ void P_EndingMusic(void)
 	}
 	else
 	{
-		if (bestPlayer->position == 1)
-		{
-			jingle = "_first";
-		}
-		else if (K_IsPlayerLosing(bestPlayer) == false)
-		{
-			jingle = "_win";
-		}
-		else
+		if (K_IsPlayerLosing(bestPlayer) == true)
 		{
 			jingle = "_lose";
 
@@ -795,6 +787,14 @@ void P_EndingMusic(void)
 				// A retry will be happening
 				nointer = true;
 			}
+		}
+		else if (bestPlayer->position == 1)
+		{
+			jingle = "_first";
+		}
+		else if (K_IsPlayerLosing(bestPlayer) == false)
+		{
+			jingle = "_win";
 		}
 	}
 
