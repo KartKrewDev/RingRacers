@@ -573,6 +573,9 @@ char sprnames[NUMSPRITES + 1][5] =
 	"DREL", // Drift electricity
 	"DRES", // Drift electric sparks
 	"JANK", // Stair janking sparks
+	"HFX1", // Hitlag stage 1
+	"HFX2", // Hitlag stage 2
+	"HFX3", // Hitlag stage 3
 	"HFX9", // Hitlag stage 9
 
 	// Kart Items
@@ -5237,6 +5240,9 @@ state_t states[NUMSTATES] =
 	{SPR_JANK, 0, 0, {A_SetCustomValue}, -1, 5, S_JANKSPARK4}, // S_JANKSPARK3
 	{SPR_JANK, 0, 0, {A_ChangeAngleRelative}, 180, 180, S_JANKSPARK2}, // S_JANKSPARK4
 
+	{SPR_HFX1, FF_FULLBRIGHT|FF_PAPERSPRITE, 1, {NULL}, 0, 1, S_NULL}, // S_HITLAG_1
+	{SPR_HFX2, FF_FULLBRIGHT|FF_PAPERSPRITE|FF_ANIMATE, 2, {NULL}, 1, 1, S_NULL}, // S_HITLAG_2
+	{SPR_HFX3, FF_FULLBRIGHT|FF_PAPERSPRITE|FF_ANIMATE, 3, {NULL}, 2, 1, S_NULL}, // S_HITLAG_3
 	{SPR_HFX9, FF_FULLBRIGHT|FF_PAPERSPRITE|FF_ANIMATE, 9, {NULL}, 8, 1, S_NULL}, // S_HITLAG_9
 
 	// Broly Ki Orb

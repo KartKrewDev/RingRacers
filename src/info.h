@@ -1124,7 +1124,10 @@ typedef enum sprite
 	SPR_DREL, // Drift electricity
 	SPR_DRES, // Drift electric sparks
 	SPR_JANK, // Stair janking sparks
-	SPR_HFX9, // Hitlag: stage 9
+	SPR_HFX1, // Hitlag stage 1
+	SPR_HFX2, // Hitlag stage 2
+	SPR_HFX3, // Hitlag stage 3
+	SPR_HFX9, // Hitlag stage 9
 
 	// Kart Items
 	SPR_RSHE, // Rocket sneaker
@@ -5667,6 +5670,9 @@ typedef enum state
 	S_JANKSPARK3,
 	S_JANKSPARK4,
 
+	S_HITLAG_1,
+	S_HITLAG_2,
+	S_HITLAG_3,
 	S_HITLAG_9,
 
 	// Broly Ki Orb
