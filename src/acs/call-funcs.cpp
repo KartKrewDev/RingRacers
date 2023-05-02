@@ -1683,13 +1683,16 @@ enum
 	LINE_PROP__MAX
 };
 
-static INT32 NextLine(mtag_t tag, INT32 lineID, INT32 activatorID)
+static INT32 NextLine(mtag_t tag, size_t *iterate, INT32 activatorID)
 {
+	size_t i = *iterate;
+	*iterate = *iterate + 1;
+
 	if (tag == 0)
 	{
 		// 0 grabs the activator.
 
-		if (lineID != 0)
+		if (i != 0)
 		{
 			// Don't do more than once.
 			return -1;
@@ -1698,7 +1701,7 @@ static INT32 NextLine(mtag_t tag, INT32 lineID, INT32 activatorID)
 		return activatorID;
 	}
 
-	return Tag_Iterate_Lines(tag, lineID);
+	return Tag_Iterate_Lines(tag, i);
 }
 
 bool CallFunc_GetLineProperty(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
@@ -1707,6 +1710,8 @@ bool CallFunc_GetLineProperty(ACSVM::Thread *thread, const ACSVM::Word *argV, AC
 	Environment *env = &ACSEnv;
 
 	mtag_t tag = 0;
+	size_t tagIt = 0;
+
 	INT32 lineID = 0;
 	INT32 activatorID = -1;
 	line_t *line = NULL;
@@ -1721,7 +1726,7 @@ bool CallFunc_GetLineProperty(ACSVM::Thread *thread, const ACSVM::Word *argV, AC
 		activatorID = info->line - lines;
 	}
 
-	if ((lineID = NextLine(tag, lineID, activatorID)) != -1)
+	if ((lineID = NextLine(tag, &tagIt, activatorID)) != -1)
 	{
 		line = &lines[ lineID ];
 	}
@@ -1786,6 +1791,8 @@ bool CallFunc_SetLineProperty(ACSVM::Thread *thread, const ACSVM::Word *argV, AC
 	//Environment *env = &ACSEnv;
 
 	mtag_t tag = 0;
+	size_t tagIt = 0;
+
 	INT32 lineID = 0;
 	INT32 activatorID = -1;
 	line_t *line = NULL;
@@ -1800,7 +1807,7 @@ bool CallFunc_SetLineProperty(ACSVM::Thread *thread, const ACSVM::Word *argV, AC
 		activatorID = info->line - lines;
 	}
 
-	if ((lineID = NextLine(tag, lineID, activatorID)) != -1)
+	if ((lineID = NextLine(tag, &tagIt, activatorID)) != -1)
 	{
 		line = &lines[ lineID ];
 	}
@@ -1869,7 +1876,7 @@ bool CallFunc_SetLineProperty(ACSVM::Thread *thread, const ACSVM::Word *argV, AC
 			}
 		}
 
-		if ((lineID = NextLine(tag, lineID, activatorID)) != -1)
+		if ((lineID = NextLine(tag, &tagIt, activatorID)) != -1)
 		{
 			line = &lines[ lineID ];
 		}
@@ -1916,6 +1923,8 @@ bool CallFunc_GetSideProperty(ACSVM::Thread *thread, const ACSVM::Word *argV, AC
 	Environment *env = &ACSEnv;
 
 	mtag_t tag = 0;
+	size_t tagIt = 0;
+
 	INT32 lineID = 0;
 	INT32 activatorID = -1;
 	line_t *line = NULL;
@@ -1933,7 +1942,7 @@ bool CallFunc_GetSideProperty(ACSVM::Thread *thread, const ACSVM::Word *argV, AC
 		activatorID = info->line - lines;
 	}
 
-	if ((lineID = NextLine(tag, lineID, activatorID)) != -1)
+	if ((lineID = NextLine(tag, &tagIt, activatorID)) != -1)
 	{
 		line = &lines[ lineID ];
 	}
@@ -2017,6 +2026,8 @@ bool CallFunc_SetSideProperty(ACSVM::Thread *thread, const ACSVM::Word *argV, AC
 	//Environment *env = &ACSEnv;
 
 	mtag_t tag = 0;
+	size_t tagIt = 0;
+
 	INT32 lineID = 0;
 	INT32 activatorID = -1;
 	line_t *line = NULL;
@@ -2035,7 +2046,7 @@ bool CallFunc_SetSideProperty(ACSVM::Thread *thread, const ACSVM::Word *argV, AC
 		activatorID = info->line - lines;
 	}
 
-	if ((lineID = NextLine(tag, lineID, activatorID)) != -1)
+	if ((lineID = NextLine(tag, &tagIt, activatorID)) != -1)
 	{
 		line = &lines[ lineID ];
 	}
@@ -2141,7 +2152,7 @@ bool CallFunc_SetSideProperty(ACSVM::Thread *thread, const ACSVM::Word *argV, AC
 			}
 		}
 
-		if ((lineID = NextLine(tag, lineID, activatorID)) != -1)
+		if ((lineID = NextLine(tag, &tagIt, activatorID)) != -1)
 		{
 			line = &lines[ lineID ];
 
@@ -2210,13 +2221,16 @@ enum
 	SECTOR_PROP__MAX
 };
 
-static INT32 NextSector(mtag_t tag, INT32 sectorID, INT32 activatorID)
+static INT32 NextSector(mtag_t tag, size_t *iterate, INT32 activatorID)
 {
+	size_t i = *iterate;
+	*iterate = *iterate + 1;
+
 	if (tag == 0)
 	{
 		// 0 grabs the activator.
 
-		if (sectorID != 0)
+		if (i != 0)
 		{
 			// Don't do more than once.
 			return -1;
@@ -2225,7 +2239,7 @@ static INT32 NextSector(mtag_t tag, INT32 sectorID, INT32 activatorID)
 		return activatorID;
 	}
 
-	return Tag_Iterate_Sectors(tag, sectorID);
+	return Tag_Iterate_Sectors(tag, i);
 }
 
 bool CallFunc_GetSectorProperty(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
@@ -2234,6 +2248,8 @@ bool CallFunc_GetSectorProperty(ACSVM::Thread *thread, const ACSVM::Word *argV, 
 	Environment *env = &ACSEnv;
 
 	mtag_t tag = 0;
+	size_t tagIt = 0;
+
 	INT32 sectorID = 0;
 	INT32 activatorID = -1;
 	sector_t *sector = NULL;
@@ -2248,7 +2264,7 @@ bool CallFunc_GetSectorProperty(ACSVM::Thread *thread, const ACSVM::Word *argV, 
 		activatorID = info->sector - sectors;
 	}
 
-	if ((sectorID = NextSector(tag, sectorID, activatorID)) != -1)
+	if ((sectorID = NextSector(tag, &tagIt, activatorID)) != -1)
 	{
 		sector = &sectors[ sectorID ];
 	}
@@ -2330,6 +2346,8 @@ bool CallFunc_SetSectorProperty(ACSVM::Thread *thread, const ACSVM::Word *argV, 
 	//Environment *env = &ACSEnv;
 
 	mtag_t tag = 0;
+	size_t tagIt = 0;
+
 	INT32 sectorID = 0;
 	INT32 activatorID = -1;
 	sector_t *sector = NULL;
@@ -2344,7 +2362,7 @@ bool CallFunc_SetSectorProperty(ACSVM::Thread *thread, const ACSVM::Word *argV, 
 		activatorID = info->sector - sectors;
 	}
 
-	if ((sectorID = NextSector(tag, sectorID, activatorID)) != -1)
+	if ((sectorID = NextSector(tag, &tagIt, activatorID)) != -1)
 	{
 		sector = &sectors[ sectorID ];
 	}
@@ -2429,7 +2447,7 @@ bool CallFunc_SetSectorProperty(ACSVM::Thread *thread, const ACSVM::Word *argV, 
 			}
 		}
 
-		if ((sectorID = NextSector(tag, sectorID, activatorID)) != -1)
+		if ((sectorID = NextSector(tag, &tagIt, activatorID)) != -1)
 		{
 			sector = &sectors[ sectorID ];
 		}
@@ -3012,6 +3030,8 @@ bool CallFunc_GetLineUserProperty(ACSVM::Thread *thread, const ACSVM::Word *argV
 	Environment *env = &ACSEnv;
 
 	mtag_t tag = 0;
+	size_t tagIt = 0;
+
 	INT32 lineID = 0;
 	INT32 activatorID = -1;
 	line_t *line = NULL;
@@ -3029,7 +3049,7 @@ bool CallFunc_GetLineUserProperty(ACSVM::Thread *thread, const ACSVM::Word *argV
 		activatorID = info->line - lines;
 	}
 
-	if ((lineID = NextLine(tag, lineID, activatorID)) != -1)
+	if ((lineID = NextLine(tag, &tagIt, activatorID)) != -1)
 	{
 		line = &lines[ lineID ];
 	}
@@ -3076,6 +3096,8 @@ bool CallFunc_GetSideUserProperty(ACSVM::Thread *thread, const ACSVM::Word *argV
 	Environment *env = &ACSEnv;
 
 	mtag_t tag = 0;
+	size_t tagIt = 0;
+
 	INT32 lineID = 0;
 	INT32 activatorID = -1;
 	line_t *line = NULL;
@@ -3097,7 +3119,7 @@ bool CallFunc_GetSideUserProperty(ACSVM::Thread *thread, const ACSVM::Word *argV
 		activatorID = info->line - lines;
 	}
 
-	if ((lineID = NextLine(tag, lineID, activatorID)) != -1)
+	if ((lineID = NextLine(tag, &tagIt, activatorID)) != -1)
 	{
 		line = &lines[ lineID ];
 	}
@@ -3154,6 +3176,8 @@ bool CallFunc_GetSectorUserProperty(ACSVM::Thread *thread, const ACSVM::Word *ar
 	Environment *env = &ACSEnv;
 
 	mtag_t tag = 0;
+	size_t tagIt = 0;
+
 	INT32 sectorID = 0;
 	INT32 activatorID = -1;
 	sector_t *sector = NULL;
@@ -3171,7 +3195,7 @@ bool CallFunc_GetSectorUserProperty(ACSVM::Thread *thread, const ACSVM::Word *ar
 		activatorID = info->sector - sectors;
 	}
 
-	if ((sectorID = NextSector(tag, sectorID, activatorID)) != -1)
+	if ((sectorID = NextSector(tag, &tagIt, activatorID)) != -1)
 	{
 		sector = &sectors[ sectorID ];
 	}
