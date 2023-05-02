@@ -3652,19 +3652,18 @@ void K_AddHitLag(mobj_t *mo, INT32 tics, boolean fromDamage)
 
 #define NUM_HITLAG_STATES (4)
 
-static void K_SpawnSingleHitLagSpark(mobj_t *mo1, mobj_t *mo2, vector3_t *offset, UINT8 tics)
+static void K_SpawnSingleHitLagSpark(mobj_t *mo1, mobj_t *mo2, vector3_t *offset, fixed_t newScale, UINT8 tics)
 {
-	fixed_t newScale = 3 * mo1->destscale;
 	INT32 i;
+
+	if (tics == 0)
+	{
+		return;
+	}
 
 	if (tics > NUM_HITLAG_STATES)
 	{
 		tics = NUM_HITLAG_STATES;
-	}
-
-	if (P_MobjWasRemoved(mo2) == false)
-	{
-		newScale = (3 * (mo1->destscale + mo2->destscale) / 2);
 	}
 
 	for (i = 0; i < 2; i++)
@@ -3703,6 +3702,7 @@ static void K_SpawnSingleHitLagSpark(mobj_t *mo1, mobj_t *mo2, vector3_t *offset
 static void K_SpawnHitLagEFX(mobj_t *mo1, mobj_t *mo2, UINT8 tics)
 {
 	vector3_t offset = { 0, 0, 0 };
+	fixed_t newScale = FRACUNIT;
 
 	I_Assert(P_MobjWasRemoved(mo1) == false);
 
@@ -3713,14 +3713,17 @@ static void K_SpawnHitLagEFX(mobj_t *mo1, mobj_t *mo2, UINT8 tics)
 		offset.x = (mo2->x - mo1->x) / 2;
 		offset.y = (mo2->y - mo1->y) / 2;
 		offset.z = (P_GetMobjHead(mo2) - P_GetMobjHead(mo1)) / 2;
+
+		newScale = (3 * (mo1->destscale + mo2->destscale) / 2);
 	}
 	else
 	{
 		offset.z = mo1->height;
+		newScale = 3 * mo1->destscale;
 	}
 
 	// temp
-	K_SpawnSingleHitLagSpark(mo1, mo2, &offset, tics);
+	K_SpawnSingleHitLagSpark(mo1, mo2, &offset, newScale, tics);
 }
 
 void K_SetHitLagForObjects(mobj_t *mo1, mobj_t *mo2, INT32 tics, boolean fromDamage)
