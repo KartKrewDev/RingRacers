@@ -1376,6 +1376,7 @@ void P_DoAllPlayersExit(pflags_t flags, boolean trygivelife)
 {
 	UINT8 i;
 	boolean givenlife = false;
+	const boolean dofinishsound = (musiccountdown == 0);
 
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
@@ -1397,6 +1398,22 @@ void P_DoAllPlayersExit(pflags_t flags, boolean trygivelife)
 
 		P_GivePlayerLives(&players[i], 1);
 		givenlife = true;
+	}
+
+	if (!dofinishsound)
+	{
+		// You've already finished, don't play again
+		;
+	}
+	else if (musiccountdown == 0)
+	{
+		// Other people finish
+		S_StartSound(NULL, sfx_s253);
+	}
+	else if (musiccountdown > 1)
+	{
+		// Everyone finish sound
+		S_StartSound(NULL, sfx_s3k6a);
 	}
 
 	if (givenlife)
