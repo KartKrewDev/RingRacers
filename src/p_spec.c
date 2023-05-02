@@ -2047,16 +2047,17 @@ static void K_HandleLapIncrement(player_t *player)
 			// finished race exit setup
 			if (player->laps > numlaps)
 			{
+				pflags_t applyflags = 0;
 				if (specialstageinfo.valid == true)
 				{
 					// Don't permit a win just by sneaking ahead of the UFO/emerald.
 					if (!(specialstageinfo.ufo == NULL || P_MobjWasRemoved(specialstageinfo.ufo)))
 					{
-						player->pflags |= PF_NOCONTEST;
+						applyflags |= PF_NOCONTEST;
 					}
 				}
 
-				P_DoPlayerExit(player);
+				P_DoPlayerExit(player, applyflags);
 			}
 			else
 			{
@@ -4220,13 +4221,7 @@ boolean P_ProcessSpecial(activator_t *activator, INT16 special, INT32 *args, cha
 			CONS_Debug(DBG_GAMELOGIC, "Clock stopped!\n");
 			if (modeattacking)
 			{
-				UINT8 i;
-				for (i = 0; i < MAXPLAYERS; i++)
-				{
-					if (!playeringame[i])
-						continue;
-					P_DoPlayerExit(&players[i]);
-				}
+				P_DoAllPlayersExit(0, false);
 			}
 			break;
 
@@ -4271,15 +4266,7 @@ boolean P_ProcessSpecial(activator_t *activator, INT16 special, INT32 *args, cha
 
 				if (!(args[1]))
 				{
-					INT32 i;
-
-					// Mark all players with the time to exit thingy!
-					for (i = 0; i < MAXPLAYERS; i++)
-					{
-						if (!playeringame[i])
-							continue;
-						P_DoPlayerExit(&players[i]);
-					}
+					P_DoAllPlayersExit(0, false);
 				}
 			}
 			break;
@@ -5145,7 +5132,6 @@ static void P_ProcessEggCapsule(player_t *player, sector_t *sector)
 {
 	thinker_t *th;
 	mobj_t *mo2;
-	INT32 i;
 
 	if (sector->ceilingdata || sector->floordata)
 		return;
@@ -5173,13 +5159,7 @@ static void P_ProcessEggCapsule(player_t *player, sector_t *sector)
 	// Open the bottom FOF
 	EV_DoCeiling(LE_CAPSULE2, NULL, lowerToLowestFast);
 
-	// Mark all players with the time to exit thingy!
-	for (i = 0; i < MAXPLAYERS; i++)
-	{
-		if (!playeringame[i])
-			continue;
-		P_DoPlayerExit(&players[i]);
-	}
+	P_DoAllPlayersExit(0, false);
 }
 
 static void P_ProcessExitSector(player_t *player, mtag_t sectag)
@@ -5192,7 +5172,7 @@ static void P_ProcessExitSector(player_t *player, mtag_t sectag)
 #endif
 
 	// Exit (for FOF exits; others are handled in P_PlayerThink in p_user.c)
-	P_DoPlayerExit(player);
+	P_DoPlayerExit(player, 0);
 
 	P_SetupSignExit(player, false);
 

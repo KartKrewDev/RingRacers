@@ -1257,15 +1257,17 @@ mobj_t *P_SpawnGhostMobj(mobj_t *mobj)
 // P_DoPlayerExit
 //
 // Player exits the map via sector trigger
-void P_DoPlayerExit(player_t *player)
+void P_DoPlayerExit(player_t *player, pflags_t flags)
 {
-	const boolean losing = K_IsPlayerLosing(player);
-	const boolean specialout = (specialstageinfo.valid == true && losing == true);
-
 	if (player->exiting || mapreset)
 	{
 		return;
 	}
+
+	player->pflags |= flags;
+
+	const boolean losing = K_IsPlayerLosing(player);
+	const boolean specialout = (specialstageinfo.valid == true && losing == true);
 
 	if (P_IsLocalPlayer(player) && (!player->spectator && !demo.playback))
 	{
@@ -1364,6 +1366,44 @@ void P_DoPlayerExit(player_t *player)
 
 	if (player == &players[consoleplayer])
 		demo.savebutton = leveltime;
+}
+
+//
+// P_DoAllPlayersExit
+//
+// All players exit the map via event
+void P_DoAllPlayersExit(pflags_t flags, boolean trygivelife)
+{
+	UINT8 i;
+	boolean givenlife = false;
+
+	for (i = 0; i < MAXPLAYERS; i++)
+	{
+		if (!playeringame[i] || players[i].spectator)
+		{
+			continue;
+		}
+		if (players[i].exiting)
+		{
+			continue;
+		}
+
+		P_DoPlayerExit(&players[i], flags);
+
+		if (trygivelife == false)
+		{
+			continue;
+		}
+
+		P_GivePlayerLives(&players[i], 1);
+		givenlife = true;
+	}
+
+	if (givenlife)
+	{
+		// Life sound
+		S_StartSound(NULL, sfx_cdfm73);
+	}
 }
 
 //
