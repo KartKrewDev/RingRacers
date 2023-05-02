@@ -3650,13 +3650,62 @@ void K_AddHitLag(mobj_t *mo, INT32 tics, boolean fromDamage)
 	}
 }
 
-static void K_SpawnHitLagEFX(mobj_t *mo1, mobj_t *mo2, INT32 tics)
+#define NUM_HITLAG_STATES (4)
+
+static void K_SpawnSingleHitLagSpark(mobj_t *mo1, mobj_t *mo2, vector3_t *offset, UINT8 tics)
 {
-	mobj_t *spark = NULL;
-	vector3_t offset = { 0, 0, 0 };
+	fixed_t newScale = 3 * mo1->destscale;
 	INT32 i;
 
+	if (tics > NUM_HITLAG_STATES)
+	{
+		tics = NUM_HITLAG_STATES;
+	}
+
+	if (P_MobjWasRemoved(mo2) == false)
+	{
+		newScale = (3 * (mo1->destscale + mo2->destscale) / 2);
+	}
+
+	for (i = 0; i < 2; i++)
+	{
+		mobj_t *spark = P_SpawnMobj(
+			mo1->x + offset->x,
+			mo1->y + offset->y,
+			mo1->z + offset->z,
+			MT_HITLAG
+		);
+		P_SetMobjState(spark, spark->info->spawnstate + (tics - 1));
+		P_SetTarget(&spark->target, mo1);
+
+		spark->destscale = newScale;
+		P_SetScale(spark, newScale);
+
+		if (mo1->eflags & MFE_VERTICALFLIP)
+		{
+			spark->eflags |= MFE_VERTICALFLIP;
+			spark->flags2 |= MF2_OBJECTFLIP;
+			spark->z = mo1->z + mo1->height - offset->z;
+		}
+
+		spark->angle = R_PointToAngle2(
+			mo1->x, mo1->y,
+			spark->x, spark->y
+		);
+
+		if (i & 1)
+		{
+			spark->angle += ANGLE_90;
+		}
+	}
+}
+
+static void K_SpawnHitLagEFX(mobj_t *mo1, mobj_t *mo2, UINT8 tics)
+{
+	vector3_t offset = { 0, 0, 0 };
+
 	I_Assert(P_MobjWasRemoved(mo1) == false);
+
 	P_StartQuakeFromMobj(tics, tics * 2 * mapobjectscale, 512 * mapobjectscale, mo1);
 
 	if (P_MobjWasRemoved(mo2) == false)
@@ -3670,34 +3719,8 @@ static void K_SpawnHitLagEFX(mobj_t *mo1, mobj_t *mo2, INT32 tics)
 		offset.z = mo1->height;
 	}
 
-	offset.x = FixedDiv(offset.x, mapobjectscale);
-	offset.y = FixedDiv(offset.y, mapobjectscale);
-	offset.z = FixedDiv(offset.z, mapobjectscale);
-
-	for (i = 0; i < 2; i++)
-	{
-		spark = P_SpawnMobjFromMobj(
-			mo1,
-			offset.x, offset.y, offset.z,
-			MT_HITLAG
-		);
-		P_SetTarget(&spark->target, mo1);
-
-		spark->destscale *= 3;
-		P_SetScale(spark, spark->scale * 3);
-
-		spark->hitlag = 0;
-
-		spark->angle = R_PointToAngle2(
-			mo1->x, mo1->y,
-			spark->x, spark->y
-		);
-
-		if (i & 1)
-		{
-			spark->angle += ANGLE_90;
-		}
-	}
+	// temp
+	K_SpawnSingleHitLagSpark(mo1, mo2, &offset, tics);
 }
 
 void K_SetHitLagForObjects(mobj_t *mo1, mobj_t *mo2, INT32 tics, boolean fromDamage)
@@ -3739,8 +3762,6 @@ void K_SetHitLagForObjects(mobj_t *mo1, mobj_t *mo2, INT32 tics, boolean fromDam
 			finalTics = tics;
 		}
 	}
-
-	finalTics = 9;
 
 	K_AddHitLag(mo1, finalTics, fromDamage);
 	K_AddHitLag(mo2, finalTics, false); // mo2 is the inflictor, so don't use the damage property.

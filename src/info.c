@@ -23489,7 +23489,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 
 	{           // MT_HITLAG
 		-1,             // doomednum
-		S_HITLAG_9,     // spawnstate
+		S_HITLAG_1,     // spawnstate
 		1000,           // spawnhealth
 		S_NULL,         // seestate
 		sfx_None,       // seesound
