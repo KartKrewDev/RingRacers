@@ -44,7 +44,7 @@
 #include "hw_md2.h"
 
 // SRB2Kart
-#include "../k_kart.h" // HITLAGJITTERS
+#include "../k_hitlag.h" // HITLAGJITTERS
 #include "../r_fps.h"
 #include "../r_plane.h" // R_FlatDimensionsFromLumpSize
 

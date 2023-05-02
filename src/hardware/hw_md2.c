@@ -46,7 +46,7 @@
 
 // SRB2Kart
 #include "../k_color.h"
-#include "../k_kart.h" // HITLAGJITTERS
+#include "../k_hitlag.h" // HITLAGJITTERS
 #include "../r_fps.h"
 
 #ifdef HAVE_PNG

@@ -46,6 +46,7 @@
 #include "k_roulette.h"
 #include "k_podium.h"
 #include "k_powerup.h"
+#include "k_hitlag.h"
 
 // SOME IMPORTANT VARIABLES DEFINED IN DOOMDEF.H:
 // gamespeed is cc (0 for easy, 1 for normal, 2 for hard)
@@ -3625,156 +3626,6 @@ angle_t K_MomentumAngleReal(const mobj_t *mo)
 	}
 }
 
-void K_AddHitLag(mobj_t *mo, INT32 tics, boolean fromDamage)
-{
-	if (mo == NULL || P_MobjWasRemoved(mo) || (mo->flags & MF_NOHITLAGFORME && mo->type != MT_PLAYER))
-	{
-		return;
-	}
-
-	mo->hitlag += tics;
-	mo->hitlag = min(mo->hitlag, MAXHITLAGTICS);
-
-	if (mo->player != NULL)
-	{
-		// Reset each time. We want to explicitly set this for bananas afterwards,
-		// so make sure an old value doesn't possibly linger.
-		mo->player->flipDI = false;
-	}
-
-	if (fromDamage == true)
-	{
-		// Dunno if this should flat-out &~ the flag out too.
-		// Decided it probably just just keep it since it's "adding" hitlag.
-		mo->eflags |= MFE_DAMAGEHITLAG;
-	}
-}
-
-#define NUM_HITLAG_STATES (4)
-
-static void K_SpawnSingleHitLagSpark(mobj_t *mo1, mobj_t *mo2, vector3_t *offset, fixed_t newScale, UINT8 tics)
-{
-	INT32 i;
-
-	if (tics == 0)
-	{
-		return;
-	}
-
-	if (tics > NUM_HITLAG_STATES)
-	{
-		tics = NUM_HITLAG_STATES;
-	}
-
-	for (i = 0; i < 2; i++)
-	{
-		mobj_t *spark = P_SpawnMobj(
-			mo1->x + offset->x,
-			mo1->y + offset->y,
-			mo1->z + offset->z,
-			MT_HITLAG
-		);
-		P_SetMobjState(spark, spark->info->spawnstate + (tics - 1));
-		P_SetTarget(&spark->target, mo1);
-
-		spark->destscale = newScale;
-		P_SetScale(spark, newScale);
-
-		if (mo1->eflags & MFE_VERTICALFLIP)
-		{
-			spark->eflags |= MFE_VERTICALFLIP;
-			spark->flags2 |= MF2_OBJECTFLIP;
-			spark->z = mo1->z + mo1->height - offset->z;
-		}
-
-		spark->angle = R_PointToAngle2(
-			mo1->x, mo1->y,
-			spark->x, spark->y
-		);
-
-		if (i & 1)
-		{
-			spark->angle += ANGLE_90;
-		}
-	}
-}
-
-static void K_SpawnHitLagEFX(mobj_t *mo1, mobj_t *mo2, UINT8 tics)
-{
-	vector3_t offset = { 0, 0, 0 };
-	fixed_t newScale = FRACUNIT;
-
-	I_Assert(P_MobjWasRemoved(mo1) == false);
-
-	P_StartQuakeFromMobj(tics, tics * 2 * mapobjectscale, 512 * mapobjectscale, mo1);
-
-	if (P_MobjWasRemoved(mo2) == false)
-	{
-		offset.x = (mo2->x - mo1->x) / 2;
-		offset.y = (mo2->y - mo1->y) / 2;
-		offset.z = (P_GetMobjHead(mo2) - P_GetMobjHead(mo1)) / 2;
-
-		newScale = (3 * (mo1->destscale + mo2->destscale) / 2);
-	}
-	else
-	{
-		offset.z = mo1->height;
-		newScale = 3 * mo1->destscale;
-	}
-
-	// temp
-	K_SpawnSingleHitLagSpark(mo1, mo2, &offset, newScale, tics);
-}
-
-void K_SetHitLagForObjects(mobj_t *mo1, mobj_t *mo2, INT32 tics, boolean fromDamage)
-{
-	INT32 finalTics = tics;
-
-	if (tics <= 0)
-	{
-		return;
-	}
-
-	if ((mo1 && !P_MobjWasRemoved(mo1)) == true && (mo2 && !P_MobjWasRemoved(mo2)) == true)
-	{
-		const fixed_t speedTicFactor = (mapobjectscale * 8);
-		const INT32 angleTicFactor = ANGLE_22h;
-
-		const fixed_t mo1speed = FixedHypot(FixedHypot(mo1->momx, mo1->momy), mo1->momz);
-		const fixed_t mo2speed = FixedHypot(FixedHypot(mo2->momx, mo2->momy), mo2->momz);
-		const fixed_t speedDiff = abs(mo2speed - mo1speed);
-
-		const fixed_t scaleDiff = abs(mo2->scale - mo1->scale);
-
-		angle_t mo1angle = K_MomentumAngleReal(mo1);
-		angle_t mo2angle = K_MomentumAngleReal(mo2);
-		INT32 angleDiff = 0;
-
-		if (mo1speed > 0 && mo2speed > 0)
-		{
-			// If either object is completely not moving, their speed doesn't matter.
-			angleDiff = AngleDelta(mo1angle, mo2angle);
-		}
-
-		// Add extra "damage" based on what was happening to the objects on impact.
-		finalTics += (FixedMul(speedDiff, FRACUNIT + scaleDiff) / speedTicFactor) + (angleDiff / angleTicFactor);
-
-		// This shouldn't happen anymore, but just in case something funky happens.
-		if (finalTics < tics)
-		{
-			finalTics = tics;
-		}
-	}
-
-	K_AddHitLag(mo1, finalTics, fromDamage);
-	K_AddHitLag(mo2, finalTics, false); // mo2 is the inflictor, so don't use the damage property.
-
-	if (P_MobjWasRemoved(mo1) == false && fromDamage == true)
-	{
-		K_SpawnHitLagEFX(mo1, mo2, finalTics);
-	}
-}
-
 void K_AwardPlayerRings(player_t *player, INT32 rings, boolean overload)
 {
 	UINT16 superring;
@@ -6023,7 +5874,7 @@ void K_PuntMine(mobj_t *origMine, mobj_t *punter)
 	mine->momy = punter->momy + FixedMul(FINESINE(fa >> ANGLETOFINESHIFT), spd);
 	P_SetObjectMomZ(mine, z, false);
 
-	//K_SetHitLagForObjects(punter, mine, 5);
+	//K_SetHitLagForObjects(punter, mine, mine->target, 5);
 
 	mine->flags &= ~(MF_NOCLIP|MF_NOCLIPTHING);
 }

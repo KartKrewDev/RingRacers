@@ -24,6 +24,7 @@
 #include "../k_waypoint.h"
 #include "../k_specialstage.h"
 #include "../r_skins.h"
+#include "../k_hitlag.h"
 #include "../acs/interface.h"
 
 #define UFO_BASE_SPEED (42 * FRACUNIT) // UFO's slowest speed.
@@ -744,8 +745,6 @@ boolean Obj_SpecialUFODamage(mobj_t *ufo, mobj_t *inflictor, mobj_t *source, UIN
 	const fixed_t addSpeed = FixedMul(UFO_DAMAGED_SPEED, K_GetKartGameSpeedScalar(gamespeed));
 	UINT8 damage = 1;
 
-	(void)source;
-
 	if (UFOEmeraldChase(ufo) == true)
 	{
 		// Damaged fully already, no need for any more.
@@ -768,13 +767,12 @@ boolean Obj_SpecialUFODamage(mobj_t *ufo, mobj_t *inflictor, mobj_t *source, UIN
 			SetRandomFakePlayerSkin(source->player, true);
 	}
 
-
 	// Speed up on damage!
 	ufo_speed(ufo) += addSpeed;
 
 	ufo->health = max(1, ufo->health - damage);
 
-	K_SetHitLagForObjects(ufo, inflictor, (damage / 3) + 2, true);
+	K_SetHitLagForObjects(ufo, inflictor, source, (damage / 3) + 2, true);
 	UFOCopyHitlagToPieces(ufo);
 
 	if (ufo->health == 1)

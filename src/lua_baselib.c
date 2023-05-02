@@ -37,6 +37,7 @@
 #include "i_system.h" // I_GetPreciseTime, I_GetPrecisePrecision
 #include "hu_stuff.h" // for the cecho
 #include "k_powerup.h"
+#include "k_hitlag.h"
 
 #include "lua_script.h"
 #include "lua_libs.h"
