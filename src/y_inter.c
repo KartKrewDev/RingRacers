@@ -849,6 +849,11 @@ void Y_StartIntermission(void)
 		K_CashInPowerLevels();
 	}
 
+	if (roundqueue.size > 0 && roundqueue.position == roundqueue.size)
+	{
+		Automate_Run(AEV_QUEUEEND);
+	}
+
 	Automate_Run(AEV_INTERMISSIONSTART);
 	bgpatch = W_CachePatchName("MENUBG", PU_STATIC);
 	widebgpatch = W_CachePatchName("WEIRDRES", PU_STATIC);

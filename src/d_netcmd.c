@@ -592,7 +592,9 @@ const char *automate_names[AEV__MAX] =
 {
 	"RoundStart", // AEV_ROUNDSTART
 	"IntermissionStart", // AEV_INTERMISSIONSTART
-	"VoteStart" // AEV_VOTESTART
+	"VoteStart", // AEV_VOTESTART
+	"QueueStart", // AEV_QUEUESTART
+	"QueueEnd", // AEV_QUEUEEND
 };
 
 UINT32 livestudioaudience_timer = 90;
