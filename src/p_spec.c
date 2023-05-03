@@ -5732,6 +5732,7 @@ static void P_CheckMobj3DFloorAction(mobj_t *mo, sector_t *sec, boolean continuo
 	{
 		fixed_t top = INT32_MIN;
 		fixed_t bottom = INT32_MAX;
+		fixed_t mid = 0;
 
 		roversec = rover->master->frontsector;
 
@@ -5749,9 +5750,11 @@ static void P_CheckMobj3DFloorAction(mobj_t *mo, sector_t *sec, boolean continuo
 
 		top = P_GetSpecialTopZ(mo, roversec, roversec);
 		bottom = P_GetSpecialBottomZ(mo, roversec, roversec);
+		mid = bottom + ((top - bottom) / 2);
 
 		if (mo->z > top || mo->z + mo->height < bottom)
 		{
+			// Out of bounds.
 			continue;
 		}
 
@@ -5762,12 +5765,12 @@ static void P_CheckMobj3DFloorAction(mobj_t *mo, sector_t *sec, boolean continuo
 
 			if (P_AllowSpecialFloor(roversec, mo) == true)
 			{
-				floor = (P_GetMobjFeet(mo) == top);
+				floor = (P_GetMobjFeet(mo) >= mid);
 			}
 
 			if (P_AllowSpecialCeiling(roversec, mo) == true)
 			{
-				ceiling = (P_GetMobjHead(mo) == bottom);
+				ceiling = (P_GetMobjHead(mo) <= mid);
 			}
 
 			if (floor == false && ceiling == false)
