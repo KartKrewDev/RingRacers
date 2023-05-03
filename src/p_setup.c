@@ -103,6 +103,7 @@
 #include "doomstat.h" // MAXMUSNAMES
 #include "k_podium.h"
 #include "k_rank.h"
+#include "k_mapuser.h"
 
 // Replay names have time
 #if !defined (UNDER_CE)
@@ -1388,6 +1389,82 @@ static boolean TextmapCount(size_t size)
 	return true;
 }
 
+enum
+{
+	PROP_NUM_TYPE_NA,
+	PROP_NUM_TYPE_INT,
+	PROP_NUM_TYPE_FLOAT
+};
+
+static void ParseUserProperty(mapUserProperties_t *user, const char *param, const char *val)
+{
+	if (fastncmp(param, "user_", 5) && strlen(param) > 5)
+	{
+		const boolean valIsString = M_TokenizerJustReadString();
+		const char *key = param + 5;
+		const size_t valLen = strlen(val);
+		UINT8 numberType = PROP_NUM_TYPE_INT;
+		size_t i = 0;
+
+		if (valIsString == true)
+		{
+			// Value is a string. Upload directly!
+			K_UserPropertyPush(user, key, USER_PROP_STR, &val);
+			return;
+		}
+
+		for (i = 0; i < valLen; i++)
+		{
+			if (val[i] == '.')
+			{
+				numberType = PROP_NUM_TYPE_FLOAT;
+			}
+			else if (val[i] < '0' || val[i] > '9')
+			{
+				numberType = PROP_NUM_TYPE_NA;
+				break;
+			}
+		}
+
+		switch (numberType)
+		{
+			case PROP_NUM_TYPE_INT:
+			{
+				// Value is an integer.
+				INT32 vInt = atol(val);
+				K_UserPropertyPush(user, key, USER_PROP_INT, &vInt);
+				break;
+			}
+			case PROP_NUM_TYPE_FLOAT:
+			{
+				// Value is a float. Convert to fixed.
+				fixed_t vFixed = FLOAT_TO_FIXED(atof(val));
+				K_UserPropertyPush(user, key, USER_PROP_FIXED, &vFixed);
+				break;
+			}
+			case PROP_NUM_TYPE_NA:
+			default:
+			{
+				// Value is some other kind of type.
+				// Currently we just support bool.
+
+				boolean vBool = fastcmp("true", val);
+				if (vBool == true || fastcmp("false", val))
+				{
+					// Value is a boolean.
+					K_UserPropertyPush(user, key, USER_PROP_BOOL, &vBool);
+				}
+				else
+				{
+					// Value is invalid.
+					CONS_Alert(CONS_WARNING, "Could not interpret user property \"%s\" value (%s)\n", param, val);
+				}
+				break;
+			}
+		}
+	}
+}
+
 static void ParseTextmapVertexParameter(UINT32 i, const char *param, const char *val)
 {
 	if (fastcmp(param, "x"))
@@ -1657,6 +1734,8 @@ static void ParseTextmapSectorParameter(UINT32 i, const char *param, const char 
 		sectors[i].activation |= SECSPAC_FLOORMISSILE;
 	else if (fastcmp(param, "missileceiling") && fastcmp("true", val))
 		sectors[i].activation |= SECSPAC_CEILINGMISSILE;
+	else
+		ParseUserProperty(&sectors[i].user, param, val);
 }
 
 static void ParseTextmapSidedefParameter(UINT32 i, const char *param, const char *val)
@@ -1675,6 +1754,8 @@ static void ParseTextmapSidedefParameter(UINT32 i, const char *param, const char
 		P_SetSidedefSector(i, atol(val));
 	else if (fastcmp(param, "repeatcnt"))
 		sides[i].repeatcnt = atol(val);
+	else
+		ParseUserProperty(&sides[i].user, param, val);
 }
 
 static void ParseTextmapLinedefParameter(UINT32 i, const char *param, const char *val)
@@ -1782,6 +1863,8 @@ static void ParseTextmapLinedefParameter(UINT32 i, const char *param, const char
 		lines[i].activation |= SPAC_PUSHMONSTER;
 	else if (fastcmp(param, "impact") && fastcmp("true", val))
 		lines[i].activation |= SPAC_IMPACT;
+	else
+		ParseUserProperty(&lines[i].user, param, val);
 }
 
 static void ParseTextmapThingParameter(UINT32 i, const char *param, const char *val)
@@ -1839,6 +1922,8 @@ static void ParseTextmapThingParameter(UINT32 i, const char *param, const char *
 			return;
 		mapthings[i].args[argnum] = atol(val);
 	}
+	else
+		ParseUserProperty(&mapthings[i].user, param, val);
 }
 
 /** From a given position table, run a specified parser function through a {}-encapsuled text.
@@ -1977,12 +2062,34 @@ static void P_WriteTextmap(void)
 	memcpy(wsides, sides, numsides * sizeof(*sides));
 
 	for (i = 0; i < nummapthings; i++)
+	{
 		if (mapthings[i].tags.count)
 			wmapthings[i].tags.tags = memcpy(Z_Malloc(mapthings[i].tags.count * sizeof(mtag_t), PU_LEVEL, NULL), mapthings[i].tags.tags, mapthings[i].tags.count * sizeof(mtag_t));
 
+		if (mapthings[i].user.length)
+		{
+			wmapthings[i].user.properties = memcpy(
+				Z_Malloc(mapthings[i].user.length * sizeof(mapUserProperty_t), PU_LEVEL, NULL),
+				mapthings[i].user.properties,
+				mapthings[i].user.length * sizeof(mapUserProperty_t)
+			);
+		}
+	}
+
 	for (i = 0; i < numsectors; i++)
+	{
 		if (sectors[i].tags.count)
 			wsectors[i].tags.tags = memcpy(Z_Malloc(sectors[i].tags.count*sizeof(mtag_t), PU_LEVEL, NULL), sectors[i].tags.tags, sectors[i].tags.count*sizeof(mtag_t));
+
+		if (sectors[i].user.length)
+		{
+			wsectors[i].user.properties = memcpy(
+				Z_Malloc(sectors[i].user.length * sizeof(mapUserProperty_t), PU_LEVEL, NULL),
+				sectors[i].user.properties,
+				sectors[i].user.length * sizeof(mapUserProperty_t)
+			);
+		}
+	}
 
 	for (i = 0; i < numlines; i++)
 	{
@@ -1991,11 +2098,32 @@ static void P_WriteTextmap(void)
 		if (lines[i].tags.count)
 			wlines[i].tags.tags = memcpy(Z_Malloc(lines[i].tags.count * sizeof(mtag_t), PU_LEVEL, NULL), lines[i].tags.tags, lines[i].tags.count * sizeof(mtag_t));
 
+		if (lines[i].user.length)
+		{
+			wlines[i].user.properties = memcpy(
+				Z_Malloc(lines[i].user.length * sizeof(mapUserProperty_t), PU_LEVEL, NULL),
+				lines[i].user.properties,
+				lines[i].user.length * sizeof(mapUserProperty_t)
+			);
+		}
+
 		v = lines[i].v1 - vertexes;
 		wusedvertexes[v] = true;
 
 		v = lines[i].v2 - vertexes;
 		wusedvertexes[v] = true;
+	}
+
+	for (i = 0; i < numsides; i++)
+	{
+		if (sides[i].user.length)
+		{
+			wsides[i].user.properties = memcpy(
+				Z_Malloc(sides[i].user.length * sizeof(mapUserProperty_t), PU_LEVEL, NULL),
+				sides[i].user.properties,
+				sides[i].user.length * sizeof(mapUserProperty_t)
+			);
+		}
 	}
 
 	freetag = Tag_NextUnused(0);
@@ -2279,6 +2407,28 @@ static void P_WriteTextmap(void)
 		for (j = 0; j < NUMMAPTHINGSTRINGARGS; j++)
 			if (mapthings[i].stringargs[j])
 				fprintf(f, "stringarg%s = \"%s\";\n", sizeu1(j), mapthings[i].stringargs[j]);
+		if (wmapthings[i].user.length > 0)
+		{
+			for (j = 0; j < wmapthings[i].user.length; j++)
+			{
+				mapUserProperty_t *const prop = &wmapthings[i].user.properties[j];
+				switch (prop->type)
+				{
+					case USER_PROP_BOOL:
+						fprintf(f, "user_%s = %s;\n", prop->key, (prop->valueBool == true) ? "true" : "false");
+						break;
+					case USER_PROP_INT:
+						fprintf(f, "user_%s = %d;\n", prop->key, prop->valueInt);
+						break;
+					case USER_PROP_FIXED:
+						fprintf(f, "user_%s = %f;\n", prop->key, FIXED_TO_FLOAT(prop->valueFixed));
+						break;
+					case USER_PROP_STR:
+						fprintf(f, "user_%s = \"%s\";\n", prop->key, prop->valueStr);
+						break;
+				}
+			}
+		}
 		fprintf(f, "}\n");
 		fprintf(f, "\n");
 	}
@@ -2405,6 +2555,28 @@ static void P_WriteTextmap(void)
 			fprintf(f, "monsterpush = true;\n");
 		if (wlines[i].activation & SPAC_IMPACT)
 			fprintf(f, "impact = true;\n");
+		if (wlines[i].user.length > 0)
+		{
+			for (j = 0; j < wlines[i].user.length; j++)
+			{
+				mapUserProperty_t *const prop = &wlines[i].user.properties[j];
+				switch (prop->type)
+				{
+					case USER_PROP_BOOL:
+						fprintf(f, "user_%s = %s;\n", prop->key, (prop->valueBool == true) ? "true" : "false");
+						break;
+					case USER_PROP_INT:
+						fprintf(f, "user_%s = %d;\n", prop->key, prop->valueInt);
+						break;
+					case USER_PROP_FIXED:
+						fprintf(f, "user_%s = %f;\n", prop->key, FIXED_TO_FLOAT(prop->valueFixed));
+						break;
+					case USER_PROP_STR:
+						fprintf(f, "user_%s = \"%s\";\n", prop->key, prop->valueStr);
+						break;
+				}
+			}
+		}
 		fprintf(f, "}\n");
 		fprintf(f, "\n");
 	}
@@ -2426,6 +2598,28 @@ static void P_WriteTextmap(void)
 			fprintf(f, "texturemiddle = \"%.*s\";\n", 8, textures[wsides[i].midtexture]->name);
 		if (wsides[i].repeatcnt != 0)
 			fprintf(f, "repeatcnt = %d;\n", wsides[i].repeatcnt);
+		if (wsides[i].user.length > 0)
+		{
+			for (j = 0; j < wsides[i].user.length; j++)
+			{
+				mapUserProperty_t *const prop = &wsides[i].user.properties[j];
+				switch (prop->type)
+				{
+					case USER_PROP_BOOL:
+						fprintf(f, "user_%s = %s;\n", prop->key, (prop->valueBool == true) ? "true" : "false");
+						break;
+					case USER_PROP_INT:
+						fprintf(f, "user_%s = %d;\n", prop->key, prop->valueInt);
+						break;
+					case USER_PROP_FIXED:
+						fprintf(f, "user_%s = %f;\n", prop->key, FIXED_TO_FLOAT(prop->valueFixed));
+						break;
+					case USER_PROP_STR:
+						fprintf(f, "user_%s = \"%s\";\n", prop->key, prop->valueStr);
+						break;
+				}
+			}
+		}
 		fprintf(f, "}\n");
 		fprintf(f, "\n");
 	}
@@ -2609,6 +2803,28 @@ static void P_WriteTextmap(void)
 			fprintf(f, "missilefloor = true;\n");
 		if (wsectors[i].activation & SECSPAC_CEILINGMISSILE)
 			fprintf(f, "missileceiling = true;\n");
+		if (wsectors[i].user.length > 0)
+		{
+			for (j = 0; j < wsectors[i].user.length; j++)
+			{
+				mapUserProperty_t *const prop = &wsectors[i].user.properties[j];
+				switch (prop->type)
+				{
+					case USER_PROP_BOOL:
+						fprintf(f, "user_%s = %s;\n", prop->key, (prop->valueBool == true) ? "true" : "false");
+						break;
+					case USER_PROP_INT:
+						fprintf(f, "user_%s = %d;\n", prop->key, prop->valueInt);
+						break;
+					case USER_PROP_FIXED:
+						fprintf(f, "user_%s = %f;\n", prop->key, FIXED_TO_FLOAT(prop->valueFixed));
+						break;
+					case USER_PROP_STR:
+						fprintf(f, "user_%s = \"%s\";\n", prop->key, prop->valueStr);
+						break;
+				}
+			}
+		}
 		fprintf(f, "}\n");
 		fprintf(f, "\n");
 	}
@@ -2616,16 +2832,37 @@ static void P_WriteTextmap(void)
 	fclose(f);
 
 	for (i = 0; i < nummapthings; i++)
+	{
 		if (wmapthings[i].tags.count)
 			Z_Free(wmapthings[i].tags.tags);
 
+		if (wmapthings[i].user.length)
+			Z_Free(wmapthings[i].user.properties);
+	}
+
 	for (i = 0; i < numsectors; i++)
+	{
 		if (wsectors[i].tags.count)
 			Z_Free(wsectors[i].tags.tags);
 
+		if (wsectors[i].user.length)
+			Z_Free(wsectors[i].user.properties);
+	}
+
 	for (i = 0; i < numlines; i++)
+	{
 		if (wlines[i].tags.count)
 			Z_Free(wlines[i].tags.tags);
+
+		if (wlines[i].user.length)
+			Z_Free(wlines[i].user.properties);
+	}
+
+	for (i = 0; i < numsides; i++)
+	{
+		if (wsides[i].user.length)
+			Z_Free(wsides[i].user.properties);
+	}
 
 	Z_Free(wmapthings);
 	Z_Free(wvertexes);
@@ -2709,6 +2946,8 @@ static void P_LoadTextmap(void)
 		memset(sc->stringargs, 0x00, NUMSECTORSTRINGARGS*sizeof(*sc->stringargs));
 		sc->activation = 0;
 
+		K_UserPropertiesClear(&sc->user);
+
 		textmap_colormap.used = false;
 		textmap_colormap.lightcolor = 0;
 		textmap_colormap.lightalpha = 25;
@@ -2762,6 +3001,7 @@ static void P_LoadTextmap(void)
 		ld->sidenum[1] = 0xffff;
 
 		ld->activation = 0;
+		K_UserPropertiesClear(&ld->user);
 
 		TextmapParse(linesPos[i], i, ParseTextmapLinedefParameter);
 
@@ -2785,6 +3025,8 @@ static void P_LoadTextmap(void)
 		sd->bottomtexture = R_TextureNumForName("-");
 		sd->sector = NULL;
 		sd->repeatcnt = 0;
+
+		K_UserPropertiesClear(&sd->user);
 
 		TextmapParse(sidesPos[i], i, ParseTextmapSidedefParameter);
 
@@ -2810,6 +3052,8 @@ static void P_LoadTextmap(void)
 		mt->special = 0;
 		mt->layer = 0;
 		mt->mobj = NULL;
+
+		K_UserPropertiesClear(&mt->user);
 
 		TextmapParse(mapthingsPos[i], i, ParseTextmapThingParameter);
 	}

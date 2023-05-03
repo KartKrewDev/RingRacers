@@ -217,6 +217,10 @@ TYPEDEF (gpRank_t);
 TYPEDEF (midVote_t);
 TYPEDEF (midVoteGUI_t);
 
+// k_mapuser.h
+TYPEDEF (mapUserProperty_t);
+TYPEDEF (mapUserProperties_t);
+
 // lua_hudlib_drawlist.h
 typedef struct huddrawlist_s *huddrawlist_h;
 
