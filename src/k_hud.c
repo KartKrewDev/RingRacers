@@ -4919,8 +4919,18 @@ void K_drawKartFreePlay(void)
 	if (((leveltime-lt_endtime) % TICRATE) < TICRATE/2)
 		return;
 
+	const fixed_t x = ((BASEVIDWIDTH - (LAPS_X+6)) * FRACUNIT) - \
+	V_StringScaledWidth(
+		FRACUNIT,
+		FRACUNIT,
+		FRACUNIT,
+		V_HUDTRANS|V_SLIDEIN|V_SNAPTOBOTTOM|V_SNAPTORIGHT|V_SPLITSCREEN,
+		KART_FONT,
+		"FREE PLAY"
+	);
+
 	V_DrawStringScaled(
-		((BASEVIDWIDTH - (LAPS_X+1)) - 72) * FRACUNIT, // mirror the laps thingy
+		x,
 		(LAPS_Y+3) * FRACUNIT,
 		FRACUNIT,
 		FRACUNIT,
