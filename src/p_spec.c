@@ -5920,10 +5920,27 @@ void P_CheckMobjTouchingSectorActions(mobj_t *mobj, boolean continuous)
 {
 	sector_t *originalsector;
 
-	if (!mobj->subsector)
+	if (mobj->subsector == NULL)
+	{
 		return;
+	}
 
 	originalsector = mobj->subsector->sector;
+
+	if (mobj->player != NULL)
+	{
+		if (mobj->player->spectator == true)
+		{
+			// Ignore spectators.
+			return;
+		}
+
+		if (mobj->player->pflags & PF_NOCONTEST)
+		{
+			// Ignore NO CONTEST.
+			return;
+		}
+	}
 
 	P_CheckMobj3DFloorAction(mobj, originalsector, continuous);
 	if TELEPORTED(mobj)	return;
