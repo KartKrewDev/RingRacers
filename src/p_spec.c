@@ -5730,6 +5730,10 @@ static void P_CheckMobj3DFloorAction(mobj_t *mo, sector_t *sec, boolean continuo
 
 	for (rover = sec->ffloors; rover; rover = rover->next)
 	{
+		fixed_t top = INT32_MIN;
+		fixed_t bottom = INT32_MAX;
+		fixed_t mid = 0;
+
 		roversec = rover->master->frontsector;
 
 		if (P_SectorActionIsContinuous(roversec) != continuous)
@@ -5744,6 +5748,16 @@ static void P_CheckMobj3DFloorAction(mobj_t *mo, sector_t *sec, boolean continuo
 			continue;
 		}
 
+		top = P_GetSpecialTopZ(mo, roversec, roversec);
+		bottom = P_GetSpecialBottomZ(mo, roversec, roversec);
+		mid = bottom + ((top - bottom) / 2);
+
+		if (mo->z > top || mo->z + mo->height < bottom)
+		{
+			// Out of bounds.
+			continue;
+		}
+
 		if (P_AllowSpecialEnter(roversec, mo) == false)
 		{
 			boolean floor = false;
@@ -5751,12 +5765,12 @@ static void P_CheckMobj3DFloorAction(mobj_t *mo, sector_t *sec, boolean continuo
 
 			if (P_AllowSpecialFloor(roversec, mo) == true)
 			{
-				floor = (P_GetMobjFeet(mo) == P_GetSpecialTopZ(mo, roversec, roversec));
+				floor = (P_GetMobjFeet(mo) >= mid);
 			}
 
 			if (P_AllowSpecialCeiling(roversec, mo) == true)
 			{
-				ceiling = (P_GetMobjHead(mo) == P_GetSpecialBottomZ(mo, roversec, roversec));
+				ceiling = (P_GetMobjHead(mo) <= mid);
 			}
 
 			if (floor == false && ceiling == false)
