@@ -9395,11 +9395,7 @@ void P_StartQuake(tic_t time, fixed_t intensity, fixed_t radius, mappoint_t *epi
 		return;
 	}
 
-	quake = Z_Calloc(sizeof(quake_t), PU_LEVEL, NULL);
-
-	quake->next = g_quakes;
-	g_quakes->prev = quake;
-	g_quakes = quake;
+	quake = PushQuake();
 
 	quake->time = quake->startTime = time;
 	quake->intensity = intensity;
