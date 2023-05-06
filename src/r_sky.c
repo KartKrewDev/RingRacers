@@ -64,6 +64,10 @@ void R_SetupSkyDraw(void)
 	// the horizon line in a 256x128 sky texture
 	skytexturemid = (textures[skytexture]->height/2)<<FRACBITS;
 
+	// Sal: Add arbritrary offset that makes it
+	// line up with the horizon line special
+	skytexturemid += (16 << FRACBITS);
+
 	R_SetSkyScale();
 }
 
