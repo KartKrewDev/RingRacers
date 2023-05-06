@@ -676,6 +676,18 @@ skiptallydrawer:
 
 	chkscroll = (chkscroll + renderdeltatics) % chkloop;
 
+	if (sorttic != -1 && intertic > sorttic)
+	{
+		INT32 count = (intertic - sorttic);
+
+		if (count < 8)
+			xoffset = -((count * vid.width) / (8 * vid.dupx));
+		else if (count == 8)
+			goto skiptallydrawer;
+		else if (count < 16)
+			xoffset = (((16 - count) * vid.width) / (8 * vid.dupx));
+	}
+
 	// Draw the header bar
 	V_DrawMappedPatch(20, 24, 0, rtpbr, NULL);
 
@@ -690,19 +702,165 @@ skiptallydrawer:
 		patch_t *roundpatch = W_CachePatchName(buf, PU_PATCH);
 		V_DrawMappedPatch(240, 39, 0, roundpatch, 0);
 	}
-	
-	
-	// TODO: Clean this bullshit up
-	// Draw resbars
-	V_DrawMappedPatch(41, 84, 0, resbar, 0);
-	V_DrawMappedPatch(41, 98, 0, resbar, 0);
-	V_DrawMappedPatch(41, 112, 0, resbar, 0);
-	V_DrawMappedPatch(41, 126, 0, resbar, 0);
-	
-	V_DrawMappedPatch(169, 84, 0, resbar, 0);
-	V_DrawMappedPatch(169, 98, 0, resbar, 0);
-	V_DrawMappedPatch(169, 112, 0, resbar, 0);
-	V_DrawMappedPatch(169, 126, 0, resbar, 0);
+
+	{
+		SINT8 yspacing = 14;
+		fixed_t heightcount = (data.numplayers - 1);
+		fixed_t returny;
+
+		boolean verticalresults = (data.numplayers < 4);
+
+		if (verticalresults)
+		{
+			x = (BASEVIDWIDTH/2) - 61;
+		}
+		else
+		{
+			x = 29 + xoffset;
+			heightcount /= 2;
+		}
+
+		if (data.numplayers > 10)
+		{
+			yspacing--;
+		}
+		else if (data.numplayers <= 6)
+		{
+			yspacing++;
+			if (verticalresults)
+			{
+				yspacing++;
+			}
+		}
+
+		y = returny = 106 - (heightcount * yspacing)/2;
+
+		for (i = 0; i < data.numplayers; i++)
+		{
+			boolean dojitter = data.jitter[data.num[i]] > 0;
+			data.jitter[data.num[i]] = 0;
+
+			if (data.num[i] == MAXPLAYERS)
+				;
+			else if (!playeringame[data.num[i]] || players[data.num[i]].spectator == true)
+				data.num[i] = MAXPLAYERS; // this should be the only field setting in this function
+			else
+			{
+				char strtime[MAXPLAYERNAME+1];
+
+				if (dojitter)
+					y--;
+
+				V_DrawMappedPatch(x, y, 0, resbar, NULL);
+
+				V_DrawRightAlignedThinString(x+13, y-2, 0, va("%d", data.pos[i]));
+
+				if (data.color[i])
+				{
+					UINT8 *charcolormap;
+					if (data.rankingsmode == 0 && (players[data.num[i]].pflags & PF_NOCONTEST) && players[data.num[i]].bot)
+					{
+						// RETIRED !!
+						charcolormap = R_GetTranslationColormap(TC_DEFAULT, *data.color[i], GTC_CACHE);
+						V_DrawMappedPatch(x+14, y-5, 0, W_CachePatchName("MINIDEAD", PU_CACHE), charcolormap);
+					}
+					else
+					{
+						charcolormap = R_GetTranslationColormap(*data.character[i], *data.color[i], GTC_CACHE);
+						V_DrawMappedPatch(x+14, y-5, 0, faceprefix[*data.character[i]][FACE_MINIMAP], charcolormap);
+					}
+				}
+
+				STRBUFCPY(strtime, data.name[i]);
+
+/*				y2 = y;
+
+				if ((netgame || (demo.playback && demo.netgame)) && playerconsole[data.num[i]] == 0 && server_lagless && !players[data.num[i]].bot)
+				{
+					static UINT8 alagles_timer = 0;
+					patch_t *alagles;
+
+					y2 = ( y - 4 );
+
+					V_DrawScaledPatch(x + 36, y2, 0, W_CachePatchName(va("BLAGLES%d", (intertic / 3) % 6), PU_CACHE));
+					// every 70 tics
+					if (( leveltime % 70 ) == 0)
+					{
+						alagles_timer = 9;
+					}
+					if (alagles_timer > 0)
+					{
+						alagles = W_CachePatchName(va("ALAGLES%d", alagles_timer), PU_CACHE);
+						V_DrawScaledPatch(x + 36, y2, 0, alagles);
+						if (( leveltime % 2 ) == 0)
+							alagles_timer--;
+					}
+					else
+					{
+						alagles = W_CachePatchName("ALAGLES0", PU_CACHE);
+						V_DrawScaledPatch(x + 36, y2, 0, alagles);
+					}
+
+					y2 += SHORT (alagles->height) + 1;
+				}*/
+
+				V_DrawThinString(x+27, y-2, ((data.num[i] == whiteplayer) ? hilicol : 0)|V_ALLOWLOWERCASE|V_6WIDTHSPACE, strtime);
+
+				strtime[0] = '\0';
+
+				if (data.rankingsmode)
+				{
+					if (powertype != PWRLV_DISABLED && !clientpowerlevels[data.num[i]][powertype])
+					{
+						// No power level (guests)
+						STRBUFCPY(strtime, "----");
+					}
+					else
+					{
+						/*if (data.increase[data.num[i]] != INT16_MIN)
+						{
+							snprintf(strtime, sizeof strtime, " (%d)", data.increase[data.num[i]]);
+
+							V_DrawThinString(x+118, y-2, V_6WIDTHSPACE, strtime);
+						}*/
+
+						snprintf(strtime, sizeof strtime, "%d", data.val[i]);
+					}
+				}
+				else
+				{
+					if (data.val[i] == (UINT32_MAX-1))
+						STRBUFCPY(strtime, "RETIRED.");
+					else
+					{
+						if (intertype == int_time)
+						{
+							snprintf(strtime, sizeof strtime, "%i'%02i\"%02i", G_TicsToMinutes(data.val[i], true),
+							G_TicsToSeconds(data.val[i]), G_TicsToCentiseconds(data.val[i]));
+							strtime[sizeof strtime - 1] = '\0';
+						}
+						else
+						{
+							snprintf(strtime, sizeof strtime, "%d", data.val[i]);
+						}
+					}
+				}
+
+				V_DrawRightAlignedThinString(x+118, y-2, V_6WIDTHSPACE, strtime);
+
+				if (dojitter)
+					y++;
+			}
+
+			y += yspacing;
+
+			if (verticalresults == false && i == (data.numplayers-1)/2)
+			{
+				x = 169 + xoffset;
+				y = returny;
+			}
+		}
+	}
 
 	// Draw bottom (and top) pieces
 skiptallydrawer:
