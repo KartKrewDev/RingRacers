@@ -8871,7 +8871,7 @@ static fixed_t K_GetUnderwaterStrafeMul(player_t *player)
 	const fixed_t minSpeed = 11 * player->mo->scale;
 	fixed_t baseline = INT32_MAX;
 
-	baseline = 2 * K_GetKartSpeed(player, false, true) / 3;
+	baseline = 2 * K_GetKartSpeed(player, true, true) / 3;
 
 	return max(0, FixedDiv(player->speed - minSpeed, baseline - minSpeed));
 }
