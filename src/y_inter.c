@@ -628,7 +628,7 @@ skiptallydrawer:
 	patch_t *rrmln3 = W_CachePatchName("R_RRMLN3", PU_PATCH);
 	patch_t *rrmln4 = W_CachePatchName("R_RRMLN4", PU_PATCH);
 	patch_t *rrmln5 = W_CachePatchName("R_RRMLN5", PU_PATCH);
-	patch_t *rrmln6 = W_CachePatchName("R_RRMLN6", PU_PATCH);
+	//patch_t *rrmln6 = W_CachePatchName("R_RRMLN6", PU_PATCH);
 	
 	// Shadows for progression lines
 	patch_t *rrmls1 = W_CachePatchName("R_RRMLS1", PU_PATCH);
@@ -709,10 +709,10 @@ skiptallydrawer:
 	V_DrawMappedPatch(50, 42, 0, gthro, 0);
 	
 	// Draw round numbers (in GP)
-	if (grandprixinfo.roundnum > 0)
+	if (roundqueue.roundnum > 0)
 	{
 		char buf[9];
-		sprintf(buf, "TT_RND%d", grandprixinfo.roundnum);
+		sprintf(buf, "TT_RND%d", roundqueue.roundnum);
 		patch_t *roundpatch = W_CachePatchName(buf, PU_PATCH);
 		V_DrawMappedPatch(240, 39, 0, roundpatch, 0);
 	}
@@ -731,7 +731,7 @@ skiptallydrawer:
 	V_DrawMappedPatch(169, 126, 0, resbar, 0);
 	
 	// Draw bottom pieces
-	if (grandprixinfo.gp)
+	if (roundqueue.size > 0)
 	{
 		V_DrawMappedPatch(0, 167, 0, rmbg1, greymap);
 		V_DrawMappedPatch(24, 167, 0, rmbg2, greymap);
@@ -770,16 +770,16 @@ skiptallydrawer:
 				UINT8 *oppositemap = R_GetTranslationColormap(*data.character[i], skincolors[*data.color[i]].invcolor, GTC_CACHE);
 				INT32 roundx[6] = {0, 14, 38, 86, 110, 158};
 				INT32 roundy[6] = {0, 165, 157, 157, 165, 165};
-				INT32 rankx = roundx[grandprixinfo.roundnum];
-				INT32 ranky = roundy[grandprixinfo.roundnum];
+				INT32 rankx = roundx[roundqueue.roundnum];
+				INT32 ranky = roundy[roundqueue.roundnum];
 				
 				// now draw the actual lines 
-				V_DrawMappedPatch(23, 179, 0, grandprixinfo.roundnum > 1 ? rrmln3 : rrmln1, grandprixinfo.roundnum > 1 ? colormap : 0);
-				V_DrawMappedPatch(47, 179, 0, grandprixinfo.roundnum > 2 ? rrmln4 : rrmln2, grandprixinfo.roundnum > 2 ? colormap : 0);
-				V_DrawMappedPatch(71, 179, 0, grandprixinfo.roundnum > 2 ? rrmln3 : rrmln1, grandprixinfo.roundnum > 2 ? colormap : 0);
-				V_DrawMappedPatch(95, 179, 0, grandprixinfo.roundnum > 3 ? rrmln4 : rrmln2, grandprixinfo.roundnum > 3 ? colormap : 0);
-				V_DrawMappedPatch(119, 179, 0, grandprixinfo.roundnum > 4 ? rrmln3 : rrmln1, grandprixinfo.roundnum > 4 ? colormap : 0);
-				V_DrawMappedPatch(143, 179, 0, grandprixinfo.roundnum > 4 ? rrmln4 : rrmln2, grandprixinfo.roundnum > 4 ? colormap : 0);
+				V_DrawMappedPatch(23, 179, 0, roundqueue.roundnum > 1 ? rrmln3 : rrmln1, roundqueue.roundnum > 1 ? colormap : NULL);
+				V_DrawMappedPatch(47, 179, 0, roundqueue.roundnum > 2 ? rrmln4 : rrmln2, roundqueue.roundnum > 2 ? colormap : NULL);
+				V_DrawMappedPatch(71, 179, 0, roundqueue.roundnum > 2 ? rrmln3 : rrmln1, roundqueue.roundnum > 2 ? colormap : NULL);
+				V_DrawMappedPatch(95, 179, 0, roundqueue.roundnum > 3 ? rrmln4 : rrmln2, roundqueue.roundnum > 3 ? colormap : NULL);
+				V_DrawMappedPatch(119, 179, 0, roundqueue.roundnum > 4 ? rrmln3 : rrmln1, roundqueue.roundnum > 4 ? colormap : NULL);
+				V_DrawMappedPatch(143, 179, 0, roundqueue.roundnum > 4 ? rrmln4 : rrmln2, roundqueue.roundnum > 4 ? colormap : NULL);
 				
 				// haha funny 54-part progress bar
 				// i am a dumbass and there is probably a better way to do this
@@ -791,16 +791,16 @@ skiptallydrawer:
 				}
 				
 				// Draw the progress markers
-				V_DrawMappedPatch(16, 179, 0, grandprixinfo.roundnum > 0 ? rrmrk1 : rrmrk2, grandprixinfo.roundnum == 1 ? oppositemap : colormap);
-				V_DrawMappedPatch(40, 171, 0, grandprixinfo.roundnum > 1 ? rrmrk1 : rrmrk2, grandprixinfo.roundnum == 2 ? oppositemap : colormap);
-				V_DrawMappedPatch(64, 179, 0, grandprixinfo.roundnum > 2 ? rrmrk5 : rrmrk3, colormap); // CAPSULE
+				V_DrawMappedPatch(16, 179, 0, roundqueue.roundnum > 0 ? rrmrk1 : rrmrk2, roundqueue.roundnum == 1 ? oppositemap : colormap);
+				V_DrawMappedPatch(40, 171, 0, roundqueue.roundnum > 1 ? rrmrk1 : rrmrk2, roundqueue.roundnum == 2 ? oppositemap : colormap);
+				V_DrawMappedPatch(64, 179, 0, roundqueue.roundnum > 2 ? rrmrk5 : rrmrk3, colormap); // CAPSULE
 				
-				V_DrawMappedPatch(88, 171, 0, grandprixinfo.roundnum > 2 ? rrmrk1 : rrmrk2, grandprixinfo.roundnum == 3 ? oppositemap : colormap);
-				V_DrawMappedPatch(112, 179, 0, grandprixinfo.roundnum > 3 ? rrmrk1 : rrmrk2, grandprixinfo.roundnum == 4 ? oppositemap : colormap);
-				V_DrawMappedPatch(136, 171, 0, grandprixinfo.roundnum > 4 ? rrmrk5 : rrmrk3, colormap); // CAPSULE
-				V_DrawMappedPatch(160, 179, 0, grandprixinfo.roundnum > 4 ? rrmrk1 : rrmrk2, grandprixinfo.roundnum == 5 ? oppositemap : colormap);
+				V_DrawMappedPatch(88, 171, 0, roundqueue.roundnum > 2 ? rrmrk1 : rrmrk2, roundqueue.roundnum == 3 ? oppositemap : colormap);
+				V_DrawMappedPatch(112, 179, 0, roundqueue.roundnum > 3 ? rrmrk1 : rrmrk2, roundqueue.roundnum == 4 ? oppositemap : colormap);
+				V_DrawMappedPatch(136, 171, 0, roundqueue.roundnum > 4 ? rrmrk5 : rrmrk3, colormap); // CAPSULE
+				V_DrawMappedPatch(160, 179, 0, roundqueue.roundnum > 4 ? rrmrk1 : rrmrk2, roundqueue.roundnum == 5 ? oppositemap : colormap);
 				
-				V_DrawMappedPatch(282, 179, 0, grandprixinfo.roundnum > 5 ? rrmrk6 : rrmrk4, colormap); // EMERALD
+				V_DrawMappedPatch(282, 179, 0, roundqueue.roundnum > 5 ? rrmrk6 : rrmrk4, colormap); // EMERALD
 				
 				// Draw outline for rank icon
 				V_DrawMappedPatch(rankx, ranky, 0, rpmark, 0);
