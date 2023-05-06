@@ -561,34 +561,6 @@ skiptallydrawer:
 					va(M_GetText("Next race will be %s Speed!"), kartspeed_cons_t[1+speedscramble].strvalue));
 			}
 		}
-
-		if ((modeattacking == ATTACKING_NONE) && (demo.recording || demo.savemode == DSM_SAVED) && !demo.playback)
-		{
-			switch (demo.savemode)
-			{
-				case DSM_NOTSAVING: 
-				{
-					INT32 buttonx = BASEVIDWIDTH;
-					INT32 buttony = 2;
-					
-					K_drawButtonAnim(buttonx - 76, buttony, V_SNAPTOTOP|V_SNAPTORIGHT, kp_button_b[1], replayprompttic);
-					V_DrawRightAlignedThinString(buttonx - 55, buttony, V_SNAPTOTOP|V_SNAPTORIGHT|V_ALLOWLOWERCASE|V_6WIDTHSPACE|hilicol, "or");
-					K_drawButtonAnim(buttonx - 55, buttony, V_SNAPTOTOP|V_SNAPTORIGHT, kp_button_x[1], replayprompttic);
-					V_DrawRightAlignedThinString(buttonx - 2, buttony, V_SNAPTOTOP|V_SNAPTORIGHT|V_ALLOWLOWERCASE|V_6WIDTHSPACE|hilicol, "Save replay");
-					break;	
-				}
-				case DSM_SAVED:
-					V_DrawRightAlignedThinString(BASEVIDWIDTH - 2, 2, V_SNAPTOTOP|V_SNAPTORIGHT|V_ALLOWLOWERCASE|V_6WIDTHSPACE|hilicol, "Replay saved!");
-					break;
-
-				case DSM_TITLEENTRY:
-					ST_DrawDemoTitleEntry();
-					break;
-
-				default: // Don't render any text here
-					break;
-			}
-		}
 	}
 
 	M_DrawMenuForeground();
@@ -598,12 +570,28 @@ skiptallydrawer:
 	// Numbers are V_DrawRightAlignedThinString WITH v_6widthspace as flags
 	// resbar 1 (48,82)  5 (176, 82)
 	// 2 (48, 96)
-	
+
 	//player icon 1 (55,79) 2 (55,93) 5 (183,79)
 
+	// If we early return, skip drawing the 3D scene (software buffer) so it doesn't clobber the frame for the wipe
+	g_wipeskiprender = true;
+
+	if (intertype == int_none || rendermode == render_none)
+		return;
+
+	g_wipeskiprender = false;
+
+	UINT8 i = 0;
+	fixed_t x, y, xoffset = 0;
+
+	INT32 hilicol = highlightflags;
+	INT32 whiteplayer = MAXPLAYERS;
+
+	if (!r_splitscreen)
+		whiteplayer = demo.playback ? displayplayers[0] : consoleplayer;
+
 	// Patches
-	
-	
+
 	patch_t *gthro = W_CachePatchName("R_GTHRO", PU_PATCH); // GOT THROUGH ROUND
 	patch_t *resbar = W_CachePatchName("R_RESBAR", PU_PATCH); // Results bars for players
 	
@@ -637,27 +625,23 @@ skiptallydrawer:
 	
 	// Header bar
 	patch_t *rtpbr = W_CachePatchName("R_RTPBR", PU_PATCH);
-	
+
 	// Checker scroll
 	patch_t *rbgchk = W_CachePatchName("R_RBGCHK", PU_PATCH);
-	
+
 	// Scrolling marquee
 	patch_t *rrmq = W_CachePatchName("R_RRMQ", PU_PATCH);
-	
+
 	// Blending mask for the background
 	patch_t *mask = W_CachePatchName("R_MASK", PU_PATCH);
-	
+
 	fixed_t mqloop = SHORT(rrmq->width)*FRACUNIT;
 	fixed_t chkloop = SHORT(rbgchk->width)*FRACUNIT;
-	
+
 	UINT8 *color = R_GetTranslationColormap(TC_DEFAULT, SKINCOLOR_YELLOW, GTC_CACHE); // I don't even know how necessary this is anymore but I don't want the game yelling at me
-	UINT8 *greymap = R_GetTranslationColormap(TC_DEFAULT, SKINCOLOR_GREY, GTC_CACHE);
-	
+
 	K_RainbowColormap(color, SKINCOLOR_INTERMISSION);
-	
-	if (intertype == int_none || rendermode == render_none)
-		return;
-		
+
 	if (renderisnewtic)
 	{
 		LUA_HUD_ClearDrawList(luahuddrawlist_intermission);
@@ -665,50 +649,40 @@ skiptallydrawer:
 	}
 	LUA_HUD_DrawList(luahuddrawlist_intermission);
 
-	//if (!LUA_HudEnabled(hud_intermissiontally))
-		//goto skiptallydrawer;
+	if (!LUA_HudEnabled(hud_intermissiontally))
+		goto skiptallydrawer;
 		
 	// Draw the background
 	K_DrawMapThumbnail(0, 0, BASEVIDWIDTH<<FRACBITS, 0, prevmap, color);
 	
 	// Draw a mask over the BG to get the correct colorization
-	V_DrawMappedPatch(0, 0, V_ADD|V_TRANSLUCENT, mask, 0);
+	V_DrawMappedPatch(0, 0, V_ADD|V_TRANSLUCENT, mask, NULL);
 	
 	// Draw the marquee (scroll pending)
-	//V_DrawMappedPatch(0, 154, V_SUBTRACT, rrmq, 0);
+	//V_DrawMappedPatch(0, 154, V_SUBTRACT, rrmq, NULL);
 	
 	// Draw the checker pattern (scroll pending)
-	//V_DrawMappedPatch(0, 0, V_SUBTRACT, rbgchk, 0);
+	//V_DrawMappedPatch(0, 0, V_SUBTRACT, rbgchk, NULL);
 	
+	for (x = -mqscroll; x < (BASEVIDWIDTH * FRACUNIT); x += mqloop)
 	{
-		fixed_t x;
-
-		for (x = -mqscroll; x < (BASEVIDWIDTH * FRACUNIT); x += mqloop)
-		{
-			V_DrawFixedPatch(x, 154<<FRACBITS, FRACUNIT, V_SUBTRACT, rrmq, NULL);
-		}
+		V_DrawFixedPatch(x, 154<<FRACBITS, FRACUNIT, V_SUBTRACT, rrmq, NULL);
 	}
 
-	mqscroll += (1*renderdeltatics);
-
-	while (mqscroll > mqloop)
-		mqscroll -= mqloop;
+	mqscroll = (mqscroll + renderdeltatics) % mqloop;
 
 	V_DrawFixedPatch(chkscroll, 0, FRACUNIT, V_SUBTRACT, rbgchk, NULL);
 	V_DrawFixedPatch(chkscroll - chkloop, 0, FRACUNIT, V_SUBTRACT, rbgchk, NULL);
 
-	chkscroll += (1*renderdeltatics);
+	chkscroll = (chkscroll + renderdeltatics) % chkloop;
 
-	while (chkscroll > chkloop)
-		chkscroll -= chkloop;
-	
 	// Draw the header bar
-	V_DrawMappedPatch(20, 24, 0, rtpbr, 0);
-	
+	V_DrawMappedPatch(20, 24, 0, rtpbr, NULL);
+
 	// Draw "GOT THROUGH ROUND"
-	V_DrawMappedPatch(50, 42, 0, gthro, 0);
-	
-	// Draw round numbers (in GP)
+	V_DrawMappedPatch(50, 42, 0, gthro, NULL);
+
+	// Draw round numbers
 	if (roundqueue.roundnum > 0)
 	{
 		char buf[9];
@@ -729,8 +703,42 @@ skiptallydrawer:
 	V_DrawMappedPatch(169, 98, 0, resbar, 0);
 	V_DrawMappedPatch(169, 112, 0, resbar, 0);
 	V_DrawMappedPatch(169, 126, 0, resbar, 0);
-	
-	// Draw bottom pieces
+
+	// Draw bottom (and top) pieces
+skiptallydrawer:
+	{
+		if ((modeattacking == ATTACKING_NONE) && (demo.recording || demo.savemode == DSM_SAVED) && !demo.playback)
+		{
+			switch (demo.savemode)
+			{
+				case DSM_NOTSAVING: 
+				{
+					INT32 buttonx = BASEVIDWIDTH;
+					INT32 buttony = 2;
+					
+					K_drawButtonAnim(buttonx - 76, buttony, V_SNAPTOTOP|V_SNAPTORIGHT, kp_button_b[1], replayprompttic);
+					V_DrawRightAlignedThinString(buttonx - 55, buttony, V_SNAPTOTOP|V_SNAPTORIGHT|V_ALLOWLOWERCASE|V_6WIDTHSPACE|hilicol, "or");
+					K_drawButtonAnim(buttonx - 55, buttony, V_SNAPTOTOP|V_SNAPTORIGHT, kp_button_x[1], replayprompttic);
+					V_DrawRightAlignedThinString(buttonx - 2, buttony, V_SNAPTOTOP|V_SNAPTORIGHT|V_ALLOWLOWERCASE|V_6WIDTHSPACE|hilicol, "Save replay");
+					break;	
+				}
+				case DSM_SAVED:
+					V_DrawRightAlignedThinString(BASEVIDWIDTH - 2, 2, V_SNAPTOTOP|V_SNAPTORIGHT|V_ALLOWLOWERCASE|V_6WIDTHSPACE|hilicol, "Replay saved!");
+					break;
+
+				case DSM_TITLEENTRY:
+					ST_DrawDemoTitleEntry();
+					break;
+
+				default: // Don't render any text here
+					break;
+			}
+		}
+	}
+
+	if (!LUA_HudEnabled(hud_intermissionmessages))
+		return;
+
 	if (roundqueue.size > 0)
 	{
 		V_DrawMappedPatch(0, 167, 0, rmbg1, greymap);
