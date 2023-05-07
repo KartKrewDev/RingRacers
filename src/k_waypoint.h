@@ -188,7 +188,7 @@ waypoint_t *K_GetClosestWaypointToMobj(mobj_t *const mobj);
 
 
 /*--------------------------------------------------
-	waypoint_t *K_GetBestWaypointForMobj(mobj_t *const mobj)
+	waypoint_t *K_GetBestWaypointForMobj(mobj_t *const mobj, waypoint_t *const hint);
 
 		Similar to K_GetClosestWaypointToMobj, but prioritizes horizontal distance over vertical distance, and
 		sight checks to ensure that the waypoint and mobj are the in same area. Can potentially return NULL if
