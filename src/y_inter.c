@@ -69,7 +69,7 @@ typedef struct
 
 	UINT8 numplayers; // Number of players being displayed
 
-	char levelstring[64]; // holds levelnames up to 64 characters
+	char headerstring[64]; // holds levelnames up to 64 characters
 
 	// SRB2kart
 	INT16 increase[MAXPLAYERS]; // how much did the score increase by?
@@ -79,6 +79,7 @@ typedef struct
 	UINT8 pos[MAXPLAYERS]; // player positions. used for ties
 
 	boolean rankingsmode; // rankings mode
+	boolean gotthrough; // show "got through"
 	boolean encore; // encore mode
 } y_data;
 
@@ -164,48 +165,65 @@ static void Y_CalculateMatchData(UINT8 rankingsmode, void (*comparison)(INT32))
 		;
 	else if ((data.rankingsmode = (boolean)rankingsmode))
 	{
-		sprintf(data.levelstring, "* Total Rankings *");
-		data.encore = false;
+		sprintf(data.headerstring, "Total Rankings");
+		data.gotthrough = false;
 	}
 	else
 	{
-		// set up the levelstring
-		if (bossinfo.valid == true && bossinfo.enemyname)
+		UINT8 whiteplayer = demo.playback ? displayplayers[0] : consoleplayer;
+
+		data.headerstring[0] = '\0';
+		data.gotthrough = false;
+
+		if (whiteplayer < MAXPLAYERS
+			&& playeringame[whiteplayer]
+			&& players[whiteplayer].spectator == false
+		)
 		{
-			snprintf(data.levelstring,
-				sizeof data.levelstring,
-				"* %s *",
-				bossinfo.enemyname);
-		}
-		else if (mapheaderinfo[prevmap]->levelflags & LF_NOZONE)
-		{
-			if (mapheaderinfo[prevmap]->actnum > 0)
-				snprintf(data.levelstring,
-					sizeof data.levelstring,
-					"* %s %d *",
-					mapheaderinfo[prevmap]->lvlttl, mapheaderinfo[prevmap]->actnum);
+			if (!(players[whiteplayer].pflags & PF_NOCONTEST))
+			{
+				data.gotthrough = true;
+
+				if (players[whiteplayer].skin < numskins)
+				{
+					snprintf(data.headerstring,
+						sizeof data.headerstring,
+						"%s",
+						skins[players[whiteplayer].skin].realname);
+				}
+			}
 			else
-				snprintf(data.levelstring,
-					sizeof data.levelstring,
-					"* %s *",
-					mapheaderinfo[prevmap]->lvlttl);
+			{
+				snprintf(data.headerstring,
+					sizeof data.headerstring,
+					"NO CONTEST...");
+			}
 		}
 		else
 		{
-			const char *zonttl = (mapheaderinfo[prevmap]->zonttl[0] ? mapheaderinfo[prevmap]->zonttl : "ZONE");
-			if (mapheaderinfo[prevmap]->actnum > 0)
-				snprintf(data.levelstring,
-					sizeof data.levelstring,
-					"* %s %s %d *",
-					mapheaderinfo[prevmap]->lvlttl, zonttl, mapheaderinfo[prevmap]->actnum);
+			if (bossinfo.valid == true && bossinfo.enemyname)
+			{
+				snprintf(data.headerstring,
+					sizeof data.headerstring,
+					"%s",
+					bossinfo.enemyname);
+			}
+			else if (battleprisons == true)
+			{
+				snprintf(data.headerstring,
+					sizeof data.headerstring,
+					"PRISON BREAK");
+			}
 			else
-				snprintf(data.levelstring,
-					sizeof data.levelstring,
-					"* %s %s *",
-					mapheaderinfo[prevmap]->lvlttl, zonttl);
+			{
+				snprintf(data.headerstring,
+					sizeof data.headerstring,
+					"%s STAGE",
+					gametypes[gametype]->name);
+			}
 		}
 
-		data.levelstring[sizeof data.levelstring - 1] = '\0';
+		data.headerstring[sizeof data.headerstring - 1] = '\0';
 
 		data.encore = encoremode;
 
@@ -676,20 +694,32 @@ skiptallydrawer:
 	}
 
 	// Draw the header bar
-	V_DrawMappedPatch(20, 24, 0, rtpbr, NULL);
-
-	// Draw "GOT THROUGH ROUND"
-	V_DrawMappedPatch(50, 42, 0, gthro, NULL);
-
-	// Draw round numbers
-	if (roundqueue.roundnum > 0)
 	{
-		patch_t *roundpatch =
-			W_CachePatchName(
-				va("TT_RND%d", roundqueue.roundnum),
-				PU_PATCH
-			);
-		V_DrawMappedPatch(240, 39, 0, roundpatch, NULL);
+		V_DrawMappedPatch(20 + xoffset, 24, 0, rtpbr, NULL);
+
+		if (data.gotthrough)
+		{
+			// Draw "GOT THROUGH ROUND"
+			V_DrawMappedPatch(50 + xoffset, 42, 0, gthro, NULL);
+
+			// Draw round numbers
+			if (roundqueue.roundnum > 0 && !(grandprixinfo.gp == true && grandprixinfo.eventmode != GPEVENT_NONE))
+			{
+				patch_t *roundpatch =
+					W_CachePatchName(
+						va("TT_RND%d", roundqueue.roundnum),
+						PU_PATCH
+					);
+				V_DrawMappedPatch(240 + xoffset, 39, 0, roundpatch, NULL);
+			}
+
+			// Draw the player's name
+			V_DrawTitleCardString(51 + xoffset, 7, data.headerstring, V_6WIDTHSPACE, false, 0, 0);
+		}
+		else
+		{
+			V_DrawTitleCardString(51 + xoffset, 17, data.headerstring, V_6WIDTHSPACE, false, 0, 0);
+		}
 	}
 
 	{
@@ -1004,9 +1034,6 @@ skiptallydrawer:
 
 				// Draw the player's rank icon
 				V_DrawMappedPatch(rankx + 1, ranky + 1, 0, faceprefix[*data.character[i]][FACE_RANK], colormap);
-
-				// Draw the player's name
-				V_DrawTitleCardString(51, 7, skins[*data.character[i]].realname, V_6WIDTHSPACE, false, 0, 0);
 			}
 		}
 	}
