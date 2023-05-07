@@ -592,7 +592,9 @@ const char *automate_names[AEV__MAX] =
 {
 	"RoundStart", // AEV_ROUNDSTART
 	"IntermissionStart", // AEV_INTERMISSIONSTART
-	"VoteStart" // AEV_VOTESTART
+	"VoteStart", // AEV_VOTESTART
+	"QueueStart", // AEV_QUEUESTART
+	"QueueEnd", // AEV_QUEUEEND
 };
 
 UINT32 livestudioaudience_timer = 90;
@@ -2918,6 +2920,8 @@ static void Command_Map_f(void)
 	if (ischeating && !usingcheats)
 	{
 		CONS_Printf(M_GetText("Cheats must be enabled.\n"));
+		Z_Free(realmapname);
+		Z_Free(mapname);
 		return;
 	}
 
@@ -3295,6 +3299,7 @@ static void Handle_MapQueueSend(UINT16 newmapnum, UINT16 newgametype, boolean ne
 	static char *buf_p = buf;
 
 	UINT8 flags = 0;
+	boolean doclear = (newgametype == ROUNDQUEUE_CLEAR);
 
 	CONS_Debug(DBG_GAMELOGIC, "Map queue: mapnum=%d newgametype=%d newencoremode=%d\n",
 	           newmapnum, newgametype, newencoremode);
@@ -3315,9 +3320,17 @@ static void Handle_MapQueueSend(UINT16 newmapnum, UINT16 newgametype, boolean ne
 	}
 
 	WRITEUINT8(buf_p, roundqueue.size);
-	SendNetXCmd(XD_MAPQUEUE, buf, buf_p - buf);
 
-	G_MapIntoRoundQueue(newmapnum, newgametype, newencoremode, false);
+	if (doclear == true)
+	{
+		memset(&roundqueue, 0, sizeof(struct roundqueue));
+	}
+	else
+	{
+		G_MapIntoRoundQueue(newmapnum, newgametype, newencoremode, false);
+	}
+
+	SendNetXCmd(XD_MAPQUEUE, buf, buf_p - buf);
 }
 
 static void Command_QueueMap_f(void)
@@ -3326,6 +3339,7 @@ static void Command_QueueMap_f(void)
 	size_t option_force;
 	size_t option_gametype;
 	size_t option_encore;
+	size_t option_clear;
 
 	boolean usingcheats;
 	boolean ischeating;
@@ -3350,6 +3364,29 @@ static void Command_QueueMap_f(void)
 		return;
 	}
 
+	usingcheats = CV_CheatsEnabled();
+	ischeating = (!(netgame || multiplayer) || !K_CanChangeRules(false));
+
+	option_clear = COM_CheckParm("-clear");
+
+	if (option_clear)
+	{
+		if (ischeating && !usingcheats)
+		{
+			CONS_Printf(M_GetText("Cheats must be enabled.\n"));
+			return;
+		}
+
+		if (roundqueue.size == 0)
+		{
+			CONS_Printf(M_GetText("Round queue is already empty!\n"));
+			return;
+		}
+
+		Handle_MapQueueSend(0, ROUNDQUEUE_CLEAR, false);
+		return;
+	}
+
 	if (roundqueue.size >= ROUNDQUEUE_MAX)
 	{
 		CONS_Printf(M_GetText("Round queue is currently full.\n"));
@@ -3360,16 +3397,13 @@ static void Command_QueueMap_f(void)
 	option_gametype =   COM_CheckPartialParm("-g");
 	option_encore   =   COM_CheckPartialParm("-e");
 
-	usingcheats = CV_CheatsEnabled();
-	ischeating = (!(netgame || multiplayer));
-
 	if (!( first_option = COM_FirstOption() ))
 		first_option = COM_Argc();
 
 	if (first_option < 2)
 	{
 		/* I'm going over the fucking lines and I DON'T CAREEEEE */
-		CONS_Printf("queuemap <name / number> [-gametype <type>] [-force]:\n");
+		CONS_Printf("queuemap <name / number> [-gametype <type>] [-force] / [-clear]:\n");
 		CONS_Printf(M_GetText(
 					"Queue up a map by its name, or by its number (though why would you).\n"
 					"All parameters are case-insensitive and may be abbreviated.\n"));
@@ -3387,7 +3421,7 @@ static void Command_QueueMap_f(void)
 		return;
 	}
 
-	if (!K_CanChangeRules(false) || (/*newmapnum != 1 &&*/ M_MapLocked(newmapnum)))
+	if ((/*newmapnum != 1 &&*/ M_MapLocked(newmapnum)))
 	{
 		ischeating = true;
 	}
@@ -3395,6 +3429,8 @@ static void Command_QueueMap_f(void)
 	if (ischeating && !usingcheats)
 	{
 		CONS_Printf(M_GetText("Cheats must be enabled.\n"));
+		Z_Free(realmapname);
+		Z_Free(mapname);
 		return;
 	}
 
@@ -3456,6 +3492,7 @@ static void Got_RequestMapQueuecmd(UINT8 **cp, INT32 playernum)
 	UINT8 flags;
 	boolean setencore;
 	UINT16 mapnumber, setgametype;
+	boolean doclear = false;
 
 	flags = READUINT8(*cp);
 
@@ -3473,7 +3510,17 @@ static void Got_RequestMapQueuecmd(UINT8 **cp, INT32 playernum)
 		return;
 	}
 
-	if (roundqueue.size >= ROUNDQUEUE_MAX)
+	doclear = (setgametype == ROUNDQUEUE_CLEAR);
+
+	if (doclear == true)
+	{
+		if (roundqueue.size == 0)
+		{
+			CONS_Alert(CONS_ERROR, "queuemap: Queue is already empty!\n");
+			return;
+		}
+	}
+	else if (roundqueue.size >= ROUNDQUEUE_MAX)
 	{
 		CONS_Alert(CONS_ERROR, "queuemap: Unable to add map beyond %u\n", roundqueue.size);
 		return;
@@ -3490,6 +3537,7 @@ static void Got_MapQueuecmd(UINT8 **cp, INT32 playernum)
 	UINT8 flags, queueposition, i;
 	boolean setencore;
 	UINT16 setgametype;
+	boolean doclear = false;
 
 	flags = READUINT8(*cp);
 
@@ -3507,7 +3555,9 @@ static void Got_MapQueuecmd(UINT8 **cp, INT32 playernum)
 		return;
 	}
 
-	if (queueposition >= ROUNDQUEUE_MAX)
+	doclear = (setgametype == ROUNDQUEUE_CLEAR);
+
+	if (doclear == false && queueposition >= ROUNDQUEUE_MAX)
 	{
 		CONS_Alert(CONS_ERROR, "queuemap: Unable to add map beyond %u\n", roundqueue.size);
 		return;
@@ -3515,13 +3565,20 @@ static void Got_MapQueuecmd(UINT8 **cp, INT32 playernum)
 
 	if (!server)
 	{
-		while (roundqueue.size <= queueposition)
+		if (doclear == true)
 		{
-			memset(&roundqueue.entries[roundqueue.size], 0, sizeof(roundentry_t));
-			roundqueue.size++;
+			memset(&roundqueue, 0, sizeof(struct roundqueue));
 		}
+		else
+		{
+			while (roundqueue.size <= queueposition)
+			{
+				memset(&roundqueue.entries[roundqueue.size], 0, sizeof(roundentry_t));
+				roundqueue.size++;
+			}
 
-		G_MapSlipIntoRoundQueue(queueposition, 0, setgametype, setencore, false);
+			G_MapSlipIntoRoundQueue(queueposition, 0, setgametype, setencore, false);
+		}
 
 		for (i = 0; i <= splitscreen; i++)
 		{
@@ -3534,7 +3591,10 @@ static void Got_MapQueuecmd(UINT8 **cp, INT32 playernum)
 			return;
 	}
 
-	CONS_Printf("queuemap: A map was added to the round queue (pos. %u)\n", queueposition+1);
+	if (doclear)
+		CONS_Printf("queuemap: The round queue was cleared.\n");
+	else
+		CONS_Printf("queuemap: A map was added to the round queue (pos. %u)\n", queueposition+1);
 }
 
 static void Command_Pause(void)

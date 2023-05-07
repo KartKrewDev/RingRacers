@@ -1598,6 +1598,11 @@ void G_DoLoadLevelEx(boolean resetplayer, gamestate_t newstate)
 
 	if (doAutomate == true)
 	{
+		if (roundqueue.size > 0 && roundqueue.position == 1)
+		{
+			Automate_Run(AEV_QUEUESTART);
+		}
+
 		Automate_Run(AEV_ROUNDSTART);
 	}
 
