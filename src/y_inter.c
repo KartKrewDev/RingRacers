@@ -619,22 +619,10 @@ skiptallydrawer:
 	fixed_t mqloop = SHORT(rrmq->width)*FRACUNIT;
 	fixed_t chkloop = SHORT(rbgchk->width)*FRACUNIT;
 
-	UINT8 *color = R_GetTranslationColormap(TC_DEFAULT, SKINCOLOR_YELLOW, GTC_CACHE); // I don't even know how necessary this is anymore but I don't want the game yelling at me
+	UINT8 *bgcolor = R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_INTERMISSION, GTC_CACHE);
 
-	K_RainbowColormap(color, SKINCOLOR_INTERMISSION);
-
-	if (renderisnewtic)
-	{
-		LUA_HUD_ClearDrawList(luahuddrawlist_intermission);
-		LUA_HookHUD(luahuddrawlist_intermission, HUD_HOOK(intermission));
-	}
-	LUA_HUD_DrawList(luahuddrawlist_intermission);
-
-	if (!LUA_HudEnabled(hud_intermissiontally))
-		goto skiptallydrawer;
-		
 	// Draw the background
-	K_DrawMapThumbnail(0, 0, BASEVIDWIDTH<<FRACBITS, 0, prevmap, color);
+	K_DrawMapThumbnail(0, 0, BASEVIDWIDTH<<FRACBITS, (data.encore ? V_FLIP : 0), prevmap, bgcolor);
 	
 	// Draw a mask over the BG to get the correct colorization
 	V_DrawMappedPatch(0, 0, V_ADD|V_TRANSLUCENT, mask, NULL);
@@ -650,12 +638,30 @@ skiptallydrawer:
 		V_DrawFixedPatch(x, 154<<FRACBITS, FRACUNIT, V_SUBTRACT, rrmq, NULL);
 	}
 
-	mqscroll = (mqscroll + renderdeltatics) % mqloop;
-
 	V_DrawFixedPatch(chkscroll, 0, FRACUNIT, V_SUBTRACT, rbgchk, NULL);
 	V_DrawFixedPatch(chkscroll - chkloop, 0, FRACUNIT, V_SUBTRACT, rbgchk, NULL);
 
-	chkscroll = (chkscroll + renderdeltatics) % chkloop;
+	// Animate scrolling elements if relevant
+	if (!paused && !P_AutoPause())
+	{
+		mqscroll += renderdeltatics;
+		if (mqscroll > mqloop)
+			mqscroll %= mqloop;
+
+		chkscroll += renderdeltatics;
+		if (chkscroll > chkloop)
+			chkscroll %= chkloop;
+	}
+
+	if (renderisnewtic)
+	{
+		LUA_HUD_ClearDrawList(luahuddrawlist_intermission);
+		LUA_HookHUD(luahuddrawlist_intermission, HUD_HOOK(intermission));
+	}
+	LUA_HUD_DrawList(luahuddrawlist_intermission);
+
+	if (!LUA_HudEnabled(hud_intermissiontally))
+		goto skiptallydrawer;
 
 	if (sorttic != -1 && intertic > sorttic)
 	{
