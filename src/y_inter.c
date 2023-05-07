@@ -1118,6 +1118,20 @@ skiptallydrawer:
 		}
 */
 	}
+
+	{
+		const INT32 tickDown = (timer + 1)/TICRATE;
+
+		// See also k_vote.c
+		V__DrawOneScaleString(
+			2*FRACUNIT,
+			(BASEVIDHEIGHT - (2+8))*FRACUNIT,
+			FRACUNIT,
+			0, NULL,
+			OPPRF_FONT,
+			va("%d", tickDown)
+		);
+	}
 }
 
 //
