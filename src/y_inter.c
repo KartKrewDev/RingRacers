@@ -924,27 +924,25 @@ skiptallydrawer:
 		patch_t *queuebg_flat = W_CachePatchName("R_RMBG1", PU_PATCH);
 		patch_t *queuebg_upwa = W_CachePatchName("R_RMBG2", PU_PATCH);
 		patch_t *queuebg_down = W_CachePatchName("R_RMBG3", PU_PATCH);
-		patch_t *queuebg_prize = W_CachePatchName("R_RMBG4", PU_PATCH);
+		//patch_t *queuebg_prize = W_CachePatchName("R_RMBG4", PU_PATCH);
 
-		V_DrawMappedPatch(0, 167, 0, queuebg_flat, greymap);
-		V_DrawMappedPatch(24, 167, 0, queuebg_upwa, greymap);
-		V_DrawMappedPatch(48, 167, 0, queuebg_down, greymap);
+		// Progression lines
+		patch_t *line_upwa[BPP_MAX];
+		patch_t *line_down[BPP_MAX];
+//		patch_t *line_flat[BPP_MAX];
 
-		V_DrawMappedPatch(72, 167, 0, queuebg_upwa, greymap);
-		V_DrawMappedPatch(96, 167, 0, queuebg_down, greymap);
+		line_upwa[BPP_AHEAD] = W_CachePatchName("R_RRMLN1", PU_PATCH);
+		line_upwa[BPP_DONE] = W_CachePatchName("R_RRMLN3", PU_PATCH);
+		line_upwa[BPP_SHADOW] = W_CachePatchName("R_RRMLS1", PU_PATCH);
 
-		V_DrawMappedPatch(120, 167, 0, queuebg_upwa, greymap);
-		V_DrawMappedPatch(144, 167, 0, queuebg_down, greymap);
-
-		V_DrawMappedPatch(168, 167, 0, queuebg_flat, greymap);
-		V_DrawMappedPatch(192, 167, 0, queuebg_flat, greymap);
-		V_DrawMappedPatch(216, 167, 0, queuebg_flat, greymap);
-		V_DrawMappedPatch(240, 167, 0, queuebg_flat, greymap);
-
-		V_DrawMappedPatch(253, 167, 0, queuebg_flat, greymap);
-		V_DrawMappedPatch(277, 167, 0, queuebg_prize, greymap);
-		V_DrawMappedPatch(301, 167, 0, queuebg_flat, greymap);
-
+		line_down[BPP_AHEAD] = W_CachePatchName("R_RRMLN2", PU_PATCH);
+		line_down[BPP_DONE] = W_CachePatchName("R_RRMLN4", PU_PATCH);
+		line_down[BPP_SHADOW] = W_CachePatchName("R_RRMLS2", PU_PATCH);
+/*
+		line_flat[BPP_AHEAD] = W_CachePatchName("R_RRMLN5", PU_PATCH);
+		line_flat[BPP_DONE] = W_CachePatchName("R_RRMLN6", PU_PATCH);
+		line_flat[BPP_SHADOW] = W_CachePatchName("R_RRMLS3", PU_PATCH);
+*/
 		// Progress markers
 		patch_t *rpmark = W_CachePatchName("R_RPMARK", PU_PATCH);
 		patch_t *level_dot[BPP_MAIN];
@@ -960,82 +958,165 @@ skiptallydrawer:
 		prize_dot[BPP_AHEAD] = W_CachePatchName("R_RRMRK4", PU_PATCH);
 		prize_dot[BPP_DONE] = W_CachePatchName("R_RRMRK6", PU_PATCH);
 
-		// Progression lines
-		patch_t *line_upwa[BPP_MAX];
-		patch_t *line_down[BPP_MAX];
-		patch_t *line_flat[BPP_MAX];
-		line_upwa[BPP_AHEAD] = W_CachePatchName("R_RRMLN1", PU_PATCH);
-		line_upwa[BPP_DONE] = W_CachePatchName("R_RRMLN3", PU_PATCH);
-		line_upwa[BPP_SHADOW] = W_CachePatchName("R_RRMLS1", PU_PATCH);
+		UINT8 *colormap = NULL, *oppositemap = NULL;
+		UINT8 pskin = MAXSKINS;
+		UINT16 pcolor = SKINCOLOR_NONE;
 
-		line_down[BPP_AHEAD] = W_CachePatchName("R_RRMLN2", PU_PATCH);
-		line_down[BPP_DONE] = W_CachePatchName("R_RRMLN4", PU_PATCH);
-		line_down[BPP_SHADOW] = W_CachePatchName("R_RRMLS2", PU_PATCH);
-
-		line_flat[BPP_AHEAD] = W_CachePatchName("R_RRMLN5", PU_PATCH);
-		line_flat[BPP_DONE] = W_CachePatchName("R_RRMLN6", PU_PATCH);
-		line_flat[BPP_SHADOW] = W_CachePatchName("R_RRMLS3", PU_PATCH);
-
-		// Draw the lines
-
-		for (i = 0; i < data.numplayers; i++)
+		if (whiteplayer < MAXPLAYERS
+			&& playeringame[whiteplayer]
+			&& players[whiteplayer].spectator == false
+			&& players[whiteplayer].skin < numskins
+			&& players[whiteplayer].skincolor < numskincolors
+		)
 		{
-			if (data.num[i] != MAXPLAYERS && playeringame[data.num[i]] && !players[data.num[i]].spectator && data.num[i] == consoleplayer)
-			{
-				UINT8 *colormap = R_GetTranslationColormap(*data.character[i], *data.color[i], GTC_CACHE);
-				UINT8 *oppositemap = R_GetTranslationColormap(*data.character[i], skincolors[*data.color[i]].invcolor, GTC_CACHE);
-				INT32 roundx[6] = {0, 14, 38, 86, 110, 158};
-				INT32 roundy[6] = {0, 165, 157, 157, 165, 165};
-				INT32 rankx = roundx[roundqueue.roundnum];
-				INT32 ranky = roundy[roundqueue.roundnum];
-
-				// now draw the actual lines
-				V_DrawMappedPatch(23, 178, 0, line_upwa[BPP_SHADOW], NULL);
-				V_DrawMappedPatch(23, 179, 0, line_upwa[roundqueue.roundnum > 1 ? BPP_DONE : BPP_AHEAD], roundqueue.roundnum > 1 ? colormap : NULL);
-
-				V_DrawMappedPatch(47, 178, 0, line_down[BPP_SHADOW], NULL);
-				V_DrawMappedPatch(47, 179, 0, line_down[roundqueue.roundnum > 2 ? BPP_DONE : BPP_AHEAD], roundqueue.roundnum > 2 ? colormap : NULL);
-
-				V_DrawMappedPatch(71, 178, 0, line_upwa[BPP_SHADOW], NULL);
-				V_DrawMappedPatch(71, 179, 0, line_upwa[roundqueue.roundnum > 2 ? BPP_DONE : BPP_AHEAD], roundqueue.roundnum > 2 ? colormap : NULL);
-
-				V_DrawMappedPatch(95, 178, 0, line_down[BPP_SHADOW], NULL);
-				V_DrawMappedPatch(95, 179, 0, line_down[roundqueue.roundnum > 3 ? BPP_DONE : BPP_AHEAD], roundqueue.roundnum > 3 ? colormap : NULL);
-
-				V_DrawMappedPatch(119, 178, 0, line_upwa[BPP_SHADOW], NULL);
-				V_DrawMappedPatch(119, 179, 0, line_upwa[roundqueue.roundnum > 4 ? BPP_DONE : BPP_AHEAD], roundqueue.roundnum > 4 ? colormap : NULL);
-
-				V_DrawMappedPatch(143, 178, 0, line_down[BPP_SHADOW], NULL);
-				V_DrawMappedPatch(143, 179, 0, line_down[roundqueue.roundnum > 4 ? BPP_DONE : BPP_AHEAD], roundqueue.roundnum > 4 ? colormap : NULL);
-
-				// haha funny 54-part progress bar
-				// i am a dumbass and there is probably a better way to do this
-				for (UINT16 x2 = 172; x2 < 284; x2 += 2)
-				{
-					// does not account for colormap since at the moment that will never be seen
-					V_DrawMappedPatch(x2, 177, 0, line_flat[BPP_SHADOW], NULL);
-					V_DrawMappedPatch(x2, 179, 0, line_flat[BPP_AHEAD], NULL);
-				}
-
-				// Draw the progress markers
-				V_DrawMappedPatch(16, 179, 0, level_dot[roundqueue.roundnum > 0 ? BPP_DONE : BPP_AHEAD], roundqueue.roundnum == 1 ? oppositemap : colormap);
-				V_DrawMappedPatch(40, 171, 0, level_dot[roundqueue.roundnum > 1 ? BPP_DONE : BPP_AHEAD], roundqueue.roundnum == 2 ? oppositemap : colormap);
-				V_DrawMappedPatch(64, 179, 0, capsu_dot[roundqueue.roundnum > 2 ? BPP_DONE : BPP_AHEAD], colormap); // CAPSULE
-
-				V_DrawMappedPatch(88, 171, 0, level_dot[roundqueue.roundnum > 2 ? BPP_DONE : BPP_AHEAD], roundqueue.roundnum == 3 ? oppositemap : colormap);
-				V_DrawMappedPatch(112, 179, 0, level_dot[roundqueue.roundnum > 3 ? BPP_DONE : BPP_AHEAD], roundqueue.roundnum == 4 ? oppositemap : colormap);
-				V_DrawMappedPatch(136, 171, 0, capsu_dot[roundqueue.roundnum > 4 ? BPP_DONE : BPP_AHEAD], colormap); // CAPSULE
-				V_DrawMappedPatch(160, 179, 0, level_dot[roundqueue.roundnum > 4 ? BPP_DONE : BPP_AHEAD], roundqueue.roundnum == 5 ? oppositemap : colormap);
-
-				V_DrawMappedPatch(282, 179, 0, prize_dot[roundqueue.roundnum > 5 ? BPP_DONE : BPP_AHEAD], colormap); // EMERALD
-
-				// Draw outline for rank icon
-				V_DrawMappedPatch(rankx, ranky, 0, rpmark, NULL);
-
-				// Draw the player's rank icon
-				V_DrawMappedPatch(rankx + 1, ranky + 1, 0, faceprefix[*data.character[i]][FACE_RANK], colormap);
-			}
+			pskin = players[whiteplayer].skin;
+			pcolor = players[whiteplayer].skincolor;
 		}
+
+		if (pcolor != SKINCOLOR_NONE)
+		{
+			colormap = R_GetTranslationColormap(TC_DEFAULT, pcolor, GTC_CACHE);
+			oppositemap = R_GetTranslationColormap(TC_DEFAULT, skincolors[pcolor].invcolor, GTC_CACHE);
+		}
+
+		//x = 24;
+		x = (BASEVIDWIDTH - 24*(roundqueue.size - 1)) / 2;
+
+		// Fill in background to left edge of screen
+		fixed_t xiter = x;
+		while (xiter > 0)
+		{
+			xiter -= 24;
+			V_DrawMappedPatch(xiter, 167, 0, queuebg_flat, greymap);
+		}
+
+		for (i = 0; i < roundqueue.size; i++)
+		{
+			// Draw the background, and grab the appropriate line, to the right of the dot
+			patch_t **choose_line = NULL;
+
+			if (i & 1)
+			{
+				y = 171;
+
+				V_DrawMappedPatch(x, 167, 0, queuebg_down, greymap);
+
+				if (i+1 != roundqueue.size) // no more line?
+				{
+					choose_line = line_down;
+				}
+			}
+			else
+			{
+				y = 179;
+
+				if (i+1 != roundqueue.size) // no more line?
+				{
+					V_DrawMappedPatch(x, 167, 0, queuebg_upwa, greymap);
+
+					choose_line = line_upwa;
+				}
+				else
+				{
+					V_DrawMappedPatch(x, 167, 0, queuebg_flat, greymap);
+				}
+			}
+
+			// Draw the line to the right of the dot (if valid)
+			if (choose_line != NULL)
+			{
+				V_DrawMappedPatch(
+					x - 1, 178,
+					0,
+					choose_line[BPP_SHADOW],
+					NULL
+				);
+
+				V_DrawMappedPatch(
+					x - 1, 179,
+					0,
+					choose_line[roundqueue.position > i+1 ? BPP_DONE : BPP_AHEAD],
+					roundqueue.position > i+1 ? colormap : NULL
+				);
+			}
+
+			// Now draw the dot
+			patch_t **chose_dot = NULL;
+
+			if (roundqueue.entries[i].rankrestricted == true)
+			{
+				chose_dot = prize_dot;
+			}
+			else if (grandprixinfo.gp == true
+				&& roundqueue.entries[i].gametype != roundqueue.entries[0].gametype
+			)
+			{
+				chose_dot = capsu_dot;
+			}
+			else
+			{
+				chose_dot = level_dot;
+			}
+
+			if (chose_dot)
+			{
+				V_DrawMappedPatch(
+					x - 8, y,
+					0,
+					chose_dot[roundqueue.position >= i+1 ? BPP_DONE : BPP_AHEAD],
+					roundqueue.position == i+1 ? oppositemap : colormap
+				);
+			}
+
+			// Draw the player position through the round queue!
+			if (roundqueue.position == i+1)
+			{
+				// Draw outline for rank icon
+				V_DrawMappedPatch(
+					x - 10, y - 14,
+					0, rpmark,
+					NULL
+				);
+
+				if (pskin < numskins
+					&& pcolor != SKINCOLOR_NONE
+				)
+				{
+					// Draw the player's rank icon
+					V_DrawMappedPatch(
+						x - 9, y - 13,
+						0,
+						faceprefix[pskin][FACE_RANK],
+						R_GetTranslationColormap(pskin, pcolor, GTC_CACHE)
+					);
+				}
+			}
+
+			x += 24;
+		}
+
+		// Fill in background to right edge of screen
+		xiter = x;
+		while (xiter < BASEVIDWIDTH)
+		{
+			V_DrawMappedPatch(xiter, 167, 0, queuebg_flat, greymap);
+			xiter += 24;
+		}
+
+/*
+		V_DrawMappedPatch(253, 167, 0, queuebg_flat, greymap);
+		V_DrawMappedPatch(277, 167, 0, queuebg_prize, greymap);
+		V_DrawMappedPatch(301, 167, 0, queuebg_flat, greymap);
+
+		// haha funny 54-part progress bar
+		// i am a dumbass and there is probably a better way to do this
+		for (UINT16 x2 = 172; x2 < 284; x2 += 2)
+		{
+			// does not account for colormap since at the moment that will never be seen
+			V_DrawMappedPatch(x2, 177, 0, line_flat[BPP_SHADOW], NULL);
+			V_DrawMappedPatch(x2, 179, 0, line_flat[BPP_AHEAD], NULL);
+		}
+*/
 	}
 }
 
