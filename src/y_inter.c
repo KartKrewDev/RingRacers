@@ -1119,6 +1119,15 @@ skiptallydrawer:
 */
 	}
 
+	if (netgame)
+	{
+		if (speedscramble != -1 && speedscramble != gamespeed)
+		{
+			V_DrawCenteredThinString(BASEVIDWIDTH/2, 154, hilicol|V_ALLOWLOWERCASE|V_SNAPTOBOTTOM,
+				va(M_GetText("Next race will be %s Speed!"), kartspeed_cons_t[1+speedscramble].strvalue));
+		}
+	}
+
 	{
 		const INT32 tickDown = (timer + 1)/TICRATE;
 
