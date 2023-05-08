@@ -82,6 +82,8 @@ typedef struct
 	boolean gotthrough; // show "got through"
 	boolean showrank; // show rank-restricted queue entry at the end, if it exists
 	boolean encore; // encore mode
+
+	tic_t linemeter; // For GP only
 } y_data;
 
 static y_data data;
@@ -234,15 +236,24 @@ static void Y_CalculateMatchData(UINT8 rankingsmode, void (*comparison)(INT32))
 				&& roundqueue.entries[roundqueue.size - 1].rankrestricted == true
 			)
 			{
+				if (roundqueue.position == roundqueue.size-1)
+				{
+					// On A rank pace? Then you get a chance for S rank!
+					gp_rank_e rankforline = K_CalculateGPGrade(&grandprixinfo.rank);
+
+					data.showrank = (rankforline >= GRADE_A);
+
+					data.linemeter =
+						(min(rankforline, GRADE_A)
+							* (2 * TICRATE)
+						) / GRADE_A;
+				}
+
 				if (gamedata->everseenspecial == true
 					|| roundqueue.position == roundqueue.size)
 				{
+					// Additional cases in which it should always be shown.
 					data.showrank = true;
-				}
-				else if (roundqueue.position == roundqueue.size-1)
-				{
-					// On A rank pace? Then you get a chance for S rank!
-					data.showrank = (K_CalculateGPGrade(&grandprixinfo.rank) >= GRADE_A);
 				}
 			}
 		}
@@ -434,7 +445,7 @@ void Y_IntermissionDrawer(void)
 
 	if (sorttic != -1 && intertic > sorttic)
 	{
-		INT32 count = (intertic - sorttic);
+		const INT32 count = (intertic - sorttic);
 
 		if (count < 8)
 			xoffset = -((count * vid.width) / (8 * vid.dupx));
@@ -842,6 +853,24 @@ skiptallydrawer:
 						playerx = x2;
 						playery = y;
 					}
+					else if (roundqueue.position == roundqueue.size-1
+						&& timer <= 2*TICRATE)
+					{
+						const fixed_t percent = FixedDiv(
+							min(
+								data.linemeter,
+								((2*TICRATE) - (timer - 1))
+								) * FRACUNIT,
+								(2*TICRATE) * FRACUNIT
+							);
+
+						playerx = x +
+							FixedMul(
+								(x2 - x) * FRACUNIT,
+								percent
+							) / FRACUNIT;
+						playery = y;
+					}
 
 					// Special background bump
 					V_DrawMappedPatch(x2 - 13, 167, 0, queuebg_prize, greymap);
@@ -860,8 +889,8 @@ skiptallydrawer:
 						V_DrawMappedPatch(
 							xiter - 1, 179,
 							0,
-							line_flat[roundqueue.position == roundqueue.size ? BPP_DONE : BPP_AHEAD],
-							roundqueue.position == roundqueue.size ? colormap : NULL
+							line_flat[(xiter < playerx) ? BPP_DONE : BPP_AHEAD],
+							(xiter < playerx) ? colormap : NULL
 						);
 
 						xiter += 2;
@@ -906,7 +935,7 @@ skiptallydrawer:
 				);
 			}
 
-			if (roundqueue.position == i+1)
+			if (roundqueue.position == i+1 && playery == 0)
 			{
 				playerx = x;
 				playery = y;
