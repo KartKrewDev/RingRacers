@@ -80,6 +80,7 @@ typedef struct
 
 	boolean rankingsmode; // rankings mode
 	boolean gotthrough; // show "got through"
+	boolean showrank; // show rank-restricted queue entry at the end, if it exists
 	boolean encore; // encore mode
 } y_data;
 
@@ -223,6 +224,32 @@ static void Y_CalculateMatchData(UINT8 rankingsmode, void (*comparison)(INT32))
 		}
 
 		data.headerstring[sizeof data.headerstring - 1] = '\0';
+
+		if (gamedata->everseenspecial == true)
+		{
+			data.showrank = true;
+		}
+		else
+		{
+			// See also G_GetNextMap
+			data.showrank = false;
+			if (grandprixinfo.gp == true
+				&& grandprixinfo.gamespeed >= KARTSPEED_NORMAL
+				&& roundqueue.size > 1
+				&& roundqueue.entries[roundqueue.size - 1].rankrestricted == true
+			)
+			{
+				if (roundqueue.position == roundqueue.size)
+				{
+					data.showrank = true;
+				}
+				else if (roundqueue.position == roundqueue.size-1)
+				{
+					// On A rank pace? Then you get a chance for S rank!
+					data.showrank = (K_CalculateGPGrade(&grandprixinfo.rank) >= GRADE_A);
+				}
+			}
+		}
 
 		data.encore = encoremode;
 
@@ -652,12 +679,12 @@ skiptallydrawer:
 		patch_t *queuebg_flat = W_CachePatchName("R_RMBG1", PU_PATCH);
 		patch_t *queuebg_upwa = W_CachePatchName("R_RMBG2", PU_PATCH);
 		patch_t *queuebg_down = W_CachePatchName("R_RMBG3", PU_PATCH);
-		//patch_t *queuebg_prize = W_CachePatchName("R_RMBG4", PU_PATCH);
+		patch_t *queuebg_prize = W_CachePatchName("R_RMBG4", PU_PATCH);
 
 		// Progression lines
 		patch_t *line_upwa[BPP_MAX];
 		patch_t *line_down[BPP_MAX];
-//		patch_t *line_flat[BPP_MAX];
+		patch_t *line_flat[BPP_MAX];
 
 		line_upwa[BPP_AHEAD] = W_CachePatchName("R_RRMLN1", PU_PATCH);
 		line_upwa[BPP_DONE] = W_CachePatchName("R_RRMLN3", PU_PATCH);
@@ -666,11 +693,11 @@ skiptallydrawer:
 		line_down[BPP_AHEAD] = W_CachePatchName("R_RRMLN2", PU_PATCH);
 		line_down[BPP_DONE] = W_CachePatchName("R_RRMLN4", PU_PATCH);
 		line_down[BPP_SHADOW] = W_CachePatchName("R_RRMLS2", PU_PATCH);
-/*
+
 		line_flat[BPP_AHEAD] = W_CachePatchName("R_RRMLN5", PU_PATCH);
 		line_flat[BPP_DONE] = W_CachePatchName("R_RRMLN6", PU_PATCH);
 		line_flat[BPP_SHADOW] = W_CachePatchName("R_RRMLS3", PU_PATCH);
-*/
+
 		// Progress markers
 		patch_t *rpmark = W_CachePatchName("R_RPMARK", PU_PATCH);
 		patch_t *level_dot[BPP_MAIN];
@@ -687,6 +714,7 @@ skiptallydrawer:
 		prize_dot[BPP_DONE] = W_CachePatchName("R_RRMRK6", PU_PATCH);
 
 		UINT8 *colormap = NULL, *oppositemap = NULL;
+		fixed_t playerx = 0, playery = 0;
 		UINT8 pskin = MAXSKINS;
 		UINT16 pcolor = SKINCOLOR_NONE;
 
@@ -707,8 +735,29 @@ skiptallydrawer:
 			oppositemap = R_GetTranslationColormap(TC_DEFAULT, skincolors[pcolor].invcolor, GTC_CACHE);
 		}
 
-		//x = 24;
-		x = (BASEVIDWIDTH - 24*(roundqueue.size - 1)) / 2;
+		UINT8 workingqueuesize = roundqueue.size;
+		boolean upwa = false;
+
+		if (roundqueue.size > 1
+			&& roundqueue.entries[roundqueue.size - 1].rankrestricted == true
+		)
+		{
+			if (roundqueue.size & 1)
+			{
+				upwa = true;
+			}
+
+			workingqueuesize--;
+		}
+
+		if (data.showrank == true)
+		{
+			x = 24;
+		}
+		else
+		{
+			x = (BASEVIDWIDTH - 24*(workingqueuesize - 1)) / 2;
+		}
 
 		// Fill in background to left edge of screen
 		fixed_t xiter = x;
@@ -718,18 +767,19 @@ skiptallydrawer:
 			V_DrawMappedPatch(xiter, 167, 0, queuebg_flat, greymap);
 		}
 
-		for (i = 0; i < roundqueue.size; i++)
+		for (i = 0; i < workingqueuesize; i++)
 		{
 			// Draw the background, and grab the appropriate line, to the right of the dot
 			patch_t **choose_line = NULL;
 
-			if (i & 1)
+			upwa ^= true;
+			if (upwa == false)
 			{
 				y = 171;
 
 				V_DrawMappedPatch(x, 167, 0, queuebg_down, greymap);
 
-				if (i+1 != roundqueue.size) // no more line?
+				if (i+1 != workingqueuesize) // no more line?
 				{
 					choose_line = line_down;
 				}
@@ -738,7 +788,7 @@ skiptallydrawer:
 			{
 				y = 179;
 
-				if (i+1 != roundqueue.size) // no more line?
+				if (i+1 != workingqueuesize) // no more line?
 				{
 					V_DrawMappedPatch(x, 167, 0, queuebg_upwa, greymap);
 
@@ -750,9 +800,10 @@ skiptallydrawer:
 				}
 			}
 
-			// Draw the line to the right of the dot (if valid)
 			if (choose_line != NULL)
 			{
+				// Draw the line to the right of the dot
+
 				V_DrawMappedPatch(
 					x - 1, 178,
 					0,
@@ -767,12 +818,68 @@ skiptallydrawer:
 					roundqueue.position > i+1 ? colormap : NULL
 				);
 			}
+			else
+			{
+				// No more line! Fill in background to right edge of screen
+				xiter = x;
+				while (xiter < BASEVIDWIDTH)
+				{
+					xiter += 24;
+					V_DrawMappedPatch(xiter, 167, 0, queuebg_flat, greymap);
+				}
+
+				// Handle special entry on the end
+				// (has to be drawn before the semifinal dot due to overlap)
+				if (data.showrank == true)
+				{
+					const fixed_t x2 = 290;
+
+					if (roundqueue.position == roundqueue.size)
+					{
+						playerx = x2;
+						playery = y;
+					}
+
+					// Special background bump
+					V_DrawMappedPatch(x2 - 13, 167, 0, queuebg_prize, greymap);
+
+					// Draw the final line
+					xiter = x + 6;
+					while (xiter < x2 - 6)
+					{
+						V_DrawMappedPatch(
+							xiter - 1, 177,
+							0,
+							line_flat[BPP_SHADOW],
+							NULL
+						);
+
+						V_DrawMappedPatch(
+							xiter - 1, 179,
+							0,
+							line_flat[roundqueue.position == roundqueue.size ? BPP_DONE : BPP_AHEAD],
+							roundqueue.position == roundqueue.size ? colormap : NULL
+						);
+
+						xiter += 2;
+					}
+
+					// Draw the final dot
+					V_DrawMappedPatch(
+						x2 - 8, y,
+						0,
+						prize_dot[roundqueue.position == roundqueue.size ? BPP_DONE : BPP_AHEAD],
+						roundqueue.position == roundqueue.size ? oppositemap : colormap
+					);
+				}
+			}
 
 			// Now draw the dot
 			patch_t **chose_dot = NULL;
 
 			if (roundqueue.entries[i].rankrestricted == true)
 			{
+				// This shouldn't show up in regular play, but don't hide it entirely.
 				chose_dot = prize_dot;
 			}
 			else if (grandprixinfo.gp == true
@@ -796,55 +903,42 @@ skiptallydrawer:
 				);
 			}
 
-			// Draw the player position through the round queue!
 			if (roundqueue.position == i+1)
 			{
-				// Draw outline for rank icon
-				V_DrawMappedPatch(
-					x - 10, y - 14,
-					0, rpmark,
-					NULL
-				);
-
-				if (pskin < numskins
-					&& pcolor != SKINCOLOR_NONE
-				)
-				{
-					// Draw the player's rank icon
-					V_DrawMappedPatch(
-						x - 9, y - 13,
-						0,
-						faceprefix[pskin][FACE_RANK],
-						R_GetTranslationColormap(pskin, pcolor, GTC_CACHE)
-					);
-				}
+				playerx = x;
+				playery = y;
 			}
 
 			x += 24;
 		}
 
-		// Fill in background to right edge of screen
-		xiter = x;
-		while (xiter < BASEVIDWIDTH)
+		// Draw the player position through the round queue!
+		if (playery != 0)
 		{
-			V_DrawMappedPatch(xiter, 167, 0, queuebg_flat, greymap);
-			xiter += 24;
-		}
+			// Change alignment
+			playerx -= 10;
+			playery -= 14;
 
-/*
-		V_DrawMappedPatch(253, 167, 0, queuebg_flat, greymap);
-		V_DrawMappedPatch(277, 167, 0, queuebg_prize, greymap);
-		V_DrawMappedPatch(301, 167, 0, queuebg_flat, greymap);
+			// Draw outline for rank icon
+			V_DrawMappedPatch(
+				playerx, playery,
+				0, rpmark,
+				NULL
+			);
 
-		// haha funny 54-part progress bar
-		// i am a dumbass and there is probably a better way to do this
-		for (UINT16 x2 = 172; x2 < 284; x2 += 2)
-		{
-			// does not account for colormap since at the moment that will never be seen
-			V_DrawMappedPatch(x2, 177, 0, line_flat[BPP_SHADOW], NULL);
-			V_DrawMappedPatch(x2, 179, 0, line_flat[BPP_AHEAD], NULL);
+			if (pskin < numskins
+				&& pcolor != SKINCOLOR_NONE
+			)
+			{
+				// Draw the player's rank icon
+				V_DrawMappedPatch(
+					playerx + 1, playery + 1,
+					0,
+					faceprefix[pskin][FACE_RANK],
+					R_GetTranslationColormap(pskin, pcolor, GTC_CACHE)
+				);
+			}
 		}
-*/
 	}
 
 	if (netgame)

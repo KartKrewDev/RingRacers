@@ -4165,6 +4165,7 @@ static void G_GetNextMap(void)
 	}
 	else if (roundqueue.size > 0)
 	{
+		// See also Y_CalculateMatchData
 		boolean permitrank = false;
 		if (grandprixinfo.gp == true
 			&& grandprixinfo.gamespeed >= KARTSPEED_NORMAL)
