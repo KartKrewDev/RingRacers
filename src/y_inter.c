@@ -732,7 +732,7 @@ skiptallydrawer:
 		}
 
 		UINT8 workingqueuesize = roundqueue.size;
-		boolean upwa = false;
+		boolean upwa = (roundqueue.size == 1); // Make the one round queued case more visually interesting
 
 		if (roundqueue.size > 1
 			&& roundqueue.entries[roundqueue.size - 1].rankrestricted == true
