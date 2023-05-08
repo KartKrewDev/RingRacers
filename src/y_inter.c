@@ -225,11 +225,6 @@ static void Y_CalculateMatchData(UINT8 rankingsmode, void (*comparison)(INT32))
 
 		data.headerstring[sizeof data.headerstring - 1] = '\0';
 
-		if (gamedata->everseenspecial == true)
-		{
-			data.showrank = true;
-		}
-		else
 		{
 			// See also G_GetNextMap
 			data.showrank = false;
@@ -239,7 +234,8 @@ static void Y_CalculateMatchData(UINT8 rankingsmode, void (*comparison)(INT32))
 				&& roundqueue.entries[roundqueue.size - 1].rankrestricted == true
 			)
 			{
-				if (roundqueue.position == roundqueue.size)
+				if (gamedata->everseenspecial == true
+					|| roundqueue.position == roundqueue.size)
 				{
 					data.showrank = true;
 				}
