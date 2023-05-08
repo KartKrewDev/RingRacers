@@ -757,6 +757,13 @@ skiptallydrawer:
 
 		// Fill in background to left edge of screen
 		fixed_t xiter = x;
+
+		if (upwa == true)
+		{
+			xiter -= 24;
+			V_DrawMappedPatch(xiter, 167, 0, queuebg_upwa, greymap);
+		}
+
 		while (xiter > 0)
 		{
 			xiter -= 24;
