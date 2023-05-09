@@ -2131,17 +2131,24 @@ static void HU_DrawDemoInfo(void)
 //
 void HU_DrawSongCredits(void)
 {
-	fixed_t x;
-	fixed_t y = (r_splitscreen ? (BASEVIDHEIGHT/2)-4 : 32) * FRACUNIT;
-	INT32 bgt;
-
 	if (!cursongcredit.def || cursongcredit.trans >= NUMTRANSMAPS) // No def
 	{
 		return;
 	}
 
-	bgt = (NUMTRANSMAPS/2) + (cursongcredit.trans / 2);
-	x = R_InterpolateFixed(cursongcredit.old_x, cursongcredit.x);
+	fixed_t x = R_InterpolateFixed(cursongcredit.old_x, cursongcredit.x);
+	fixed_t y;
+
+	if (gamestate == GS_INTERMISSION)
+	{
+		y = (BASEVIDHEIGHT - 13) * FRACUNIT;
+	}
+	else
+	{
+		y = (r_splitscreen ? (BASEVIDHEIGHT/2)-4 : 32) * FRACUNIT;
+	}
+
+	INT32 bgt = (NUMTRANSMAPS/2) + (cursongcredit.trans / 2);
 
 	if (bgt < NUMTRANSMAPS)
 	{
