@@ -83,7 +83,7 @@ typedef struct
 	boolean showrank; // show rank-restricted queue entry at the end, if it exists
 	boolean encore; // encore mode
 
-	tic_t linemeter; // For GP only
+	INT32 linemeter; // For GP only
 } y_data;
 
 static y_data data;
@@ -814,6 +814,12 @@ skiptallydrawer:
 				}
 			}
 
+			if (roundqueue.position == i+1)
+			{
+				playerx = x;
+				playery = y;
+			}
+
 			if (choose_line != NULL)
 			{
 				// Draw the line to the right of the dot
@@ -856,20 +862,30 @@ skiptallydrawer:
 					else if (roundqueue.position == roundqueue.size-1
 						&& timer <= 2*TICRATE)
 					{
+						const INT32 through = ((2*TICRATE) - (timer - 1));
 						const fixed_t percent = FixedDiv(
-							min(
-								data.linemeter,
-								((2*TICRATE) - (timer - 1))
-								) * FRACUNIT,
+								min( data.linemeter, through ) * FRACUNIT,
 								(2*TICRATE) * FRACUNIT
 							);
 
-						playerx = x +
+						playerx +=
 							FixedMul(
 								(x2 - x) * FRACUNIT,
 								percent
 							) / FRACUNIT;
-						playery = y;
+
+						if (timer > 2)
+						{
+							// Small judder
+							if (through == (data.linemeter + 1))
+							{
+								playerx++;
+							}
+							else if (through == (data.linemeter + 2))
+							{
+								playerx--;
+							}
+						}
 					}
 
 					// Special background bump
@@ -933,12 +949,6 @@ skiptallydrawer:
 					chose_dot[roundqueue.position >= i+1 ? BPP_DONE : BPP_AHEAD],
 					roundqueue.position == i+1 ? oppositemap : colormap
 				);
-			}
-
-			if (roundqueue.position == i+1 && playery == 0)
-			{
-				playerx = x;
-				playery = y;
 			}
 
 			x += 24;
