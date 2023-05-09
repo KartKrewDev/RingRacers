@@ -818,6 +818,40 @@ skiptallydrawer:
 			{
 				playerx = x;
 				playery = y;
+
+				// If there's standard progression ahead of us, visibly move along it.
+				if (choose_line != NULL && timer <= 2*TICRATE)
+				{
+					// 8 tics is chosen because it plays nice
+					// with both the x and y distance to cover.
+					INT32 through = min((2*TICRATE) - (timer - 1), 8);
+
+					// 24 pixels when all is said and done
+					playerx += through * 3;
+
+					if (upwa == false)
+					{
+						playery += through;
+					}
+					else
+					{
+						playery -= through;
+					}
+
+					if ((2*TICRATE) - (timer - 1) == 8)
+					{
+						// Impactful landing.
+						playery++;
+					}
+					else if (through > 0 && through < 8)
+					{
+						// Hoparabola and a skip.
+						const INT32 jumpfactor = (through - 4);
+						// jumpfactor squared goes through 36 -> 0 -> 36.
+						// 12 pixels is an arbitrary jump height, but we match it to invert the parabola.
+						playery -= (12 - ((jumpfactor * jumpfactor) / 3));
+					}
+				}
 			}
 
 			if (choose_line != NULL)
@@ -831,12 +865,69 @@ skiptallydrawer:
 					NULL
 				);
 
+				boolean lineisfull = false, recttoclear = false;
+
+				if (roundqueue.position > i+1)
+				{
+					lineisfull = true;
+				}
+				else if (roundqueue.position == i+1 && timer <= 2*TICRATE)
+				{
+					// 8 tics is chosen because it plays nice
+					// with both the x and y distance to cover.
+					const INT32 through = (2*TICRATE) - (timer - 1);
+
+					if (through == 0)
+					{
+						; // no change...
+					}
+					else if (through >= 8)
+					{
+						lineisfull = true;
+					}
+					else
+					{
+						const fixed_t lineborder = (playerx + 1) << FRACBITS;
+						V_SetClipRect(
+							0,
+							0,
+							lineborder,
+							BASEVIDHEIGHT << FRACBITS,
+							0
+						);
+
+						V_DrawMappedPatch(
+							x - 1, 179,
+							0,
+							choose_line[BPP_DONE],
+							colormap
+						);
+
+						V_ClearClipRect();
+
+						V_SetClipRect(
+							lineborder,
+							0,
+							BASEVIDWIDTH << FRACBITS,
+							BASEVIDHEIGHT << FRACBITS,
+							0
+						);
+
+						recttoclear = true;
+					}
+				}
+
 				V_DrawMappedPatch(
 					x - 1, 179,
 					0,
-					choose_line[roundqueue.position > i+1 ? BPP_DONE : BPP_AHEAD],
-					roundqueue.position > i+1 ? colormap : NULL
+					choose_line[lineisfull ? BPP_DONE : BPP_AHEAD],
+					lineisfull ? colormap : NULL
 				);
+
+				if (recttoclear == true)
+				{
+					V_ClearClipRect();
+				}
 			}
 			else
 			{
