@@ -5,6 +5,7 @@ target_sources(SRB2SDL2 PRIVATE
 	gametype.c
 	manual.c
 	sound-test.c
+	discord-requests.c
 	message-box.c
 	pause-game.c
 	pause-replay.c
