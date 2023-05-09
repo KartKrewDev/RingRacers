@@ -538,6 +538,8 @@ void M_LevelSelected(INT16 add)
 
 			paused = false;
 
+			S_StopMusicCredit();
+
 			// Early fadeout to let the sound finish playing
 			F_WipeStartScreen();
 			V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 31);
