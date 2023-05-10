@@ -956,15 +956,6 @@ skiptallydrawer:
 					}
 					else
 					{
-						const fixed_t lineborder = playerx + FRACUNIT;
-						V_SetClipRect(
-							0,
-							0,
-							lineborder,
-							BASEVIDHEIGHT << FRACBITS,
-							0
-						);
-
 						V_DrawMappedPatch(
 							x - 1, 179,
 							0,
@@ -972,10 +963,8 @@ skiptallydrawer:
 							colormap
 						);
 
-						V_ClearClipRect();
-
 						V_SetClipRect(
-							lineborder,
+							playerx + FRACUNIT,
 							0,
 							BASEVIDWIDTH << FRACBITS,
 							BASEVIDHEIGHT << FRACBITS,
@@ -1067,25 +1056,83 @@ skiptallydrawer:
 					V_DrawMappedPatch(x2 - 13, 167, 0, queuebg_prize, greymap);
 
 					// Draw the final line
-					xiter = x + 6;
-					const fixed_t fillend = (playerx / FRACUNIT);
-					while (xiter < x2 - 6)
+					const fixed_t barstart = x + 6;
+					const fixed_t barend = x2 - 6;
+
+					if (barend - 2 >= barstart)
 					{
-						V_DrawMappedPatch(
-							xiter - 1, 177,
-							0,
-							line_flat[BPP_SHADOW],
-							NULL
-						);
+						boolean lineisfull = false, recttoclear = false;
 
-						V_DrawMappedPatch(
-							xiter - 1, 179,
-							0,
-							line_flat[(xiter < fillend) ? BPP_DONE : BPP_AHEAD],
-							(xiter < fillend) ? colormap : NULL
-						);
+						xiter = barstart;
 
-						xiter += 2;
+						if (playerx >= (barend + 1) * FRACUNIT)
+						{
+							lineisfull = true;
+						}
+						else if (playerx <= (barstart - 1) * FRACUNIT)
+						{
+							;
+						}
+						else
+						{
+							const fixed_t fillend = min((playerx / FRACUNIT) + 2, barend);
+
+							while (xiter < fillend)
+							{
+								V_DrawMappedPatch(
+									xiter - 1, 177,
+									0,
+									line_flat[BPP_SHADOW],
+									NULL
+								);
+
+								V_DrawMappedPatch(
+									xiter - 1, 179,
+									0,
+									line_flat[BPP_DONE],
+									colormap
+								);
+
+								xiter += 2;
+							}
+
+							// Undo the last step so we can draw the unfilled area of the patch.
+							xiter -= 2;
+
+							V_SetClipRect(
+								playerx,
+								0,
+								BASEVIDWIDTH << FRACBITS,
+								BASEVIDHEIGHT << FRACBITS,
+								0
+							);
+
+							recttoclear = true;
+						}
+
+						while (xiter < barend)
+						{
+							V_DrawMappedPatch(
+								xiter - 1, 177,
+								0,
+								line_flat[BPP_SHADOW],
+								NULL
+							);
+
+							V_DrawMappedPatch(
+								xiter - 1, 179,
+								0,
+								line_flat[lineisfull ? BPP_DONE : BPP_AHEAD],
+								lineisfull ? colormap : NULL
+							);
+
+							xiter += 2;
+						}
+
+						if (recttoclear == true)
+						{
+							V_ClearClipRect();
+						}
 					}
 
 					// Draw the final dot
