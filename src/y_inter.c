@@ -882,7 +882,7 @@ skiptallydrawer:
 						playery -= through;
 					}
 
-					if ((2*TICRATE) - (timer - 1) == 8)
+					if ((2*TICRATE) - (timer - 1) == 9)
 					{
 						// Impactful landing.
 						playery++;
