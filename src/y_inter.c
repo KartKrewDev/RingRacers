@@ -68,10 +68,10 @@ typedef struct
 	char *name[MAXPLAYERS]; // Player's name
 
 	UINT8 numplayers; // Number of players being displayed
+	UINT8 mainplayer; // Most successful local player
 
 	char headerstring[64]; // holds levelnames up to 64 characters
 
-	// SRB2kart
 	INT16 increase[MAXPLAYERS]; // how much did the score increase by?
 	UINT8 jitter[MAXPLAYERS]; // wiggle
 
@@ -161,6 +161,7 @@ static void Y_CalculateMatchData(UINT8 rankingsmode, void (*comparison)(INT32))
 	INT32 i, j;
 	boolean completed[MAXPLAYERS];
 	INT32 numplayersingame = 0;
+	boolean getmainplayer = false;
 
 	// Initialize variables
 	if (rankingsmode > 1)
@@ -172,60 +173,7 @@ static void Y_CalculateMatchData(UINT8 rankingsmode, void (*comparison)(INT32))
 	}
 	else
 	{
-		UINT8 whiteplayer = demo.playback ? displayplayers[0] : consoleplayer;
-
-		data.headerstring[0] = '\0';
-		data.gotthrough = false;
-
-		if (whiteplayer < MAXPLAYERS
-			&& playeringame[whiteplayer]
-			&& players[whiteplayer].spectator == false
-		)
-		{
-			if (!(players[whiteplayer].pflags & PF_NOCONTEST))
-			{
-				data.gotthrough = true;
-
-				if (players[whiteplayer].skin < numskins)
-				{
-					snprintf(data.headerstring,
-						sizeof data.headerstring,
-						"%s",
-						skins[players[whiteplayer].skin].realname);
-				}
-			}
-			else
-			{
-				snprintf(data.headerstring,
-					sizeof data.headerstring,
-					"NO CONTEST...");
-			}
-		}
-		else
-		{
-			if (bossinfo.valid == true && bossinfo.enemyname)
-			{
-				snprintf(data.headerstring,
-					sizeof data.headerstring,
-					"%s",
-					bossinfo.enemyname);
-			}
-			else if (battleprisons == true)
-			{
-				snprintf(data.headerstring,
-					sizeof data.headerstring,
-					"PRISON BREAK");
-			}
-			else
-			{
-				snprintf(data.headerstring,
-					sizeof data.headerstring,
-					"%s STAGE",
-					gametypes[gametype]->name);
-			}
-		}
-
-		data.headerstring[sizeof data.headerstring - 1] = '\0';
+		getmainplayer = true;
 
 		{
 			// See also G_GetNextMap
@@ -335,6 +283,93 @@ static void Y_CalculateMatchData(UINT8 rankingsmode, void (*comparison)(INT32))
 		}
 
 		data.numplayers++;
+	}
+
+	if (getmainplayer == true)
+	{
+		i = MAXPLAYERS;
+
+		for (j = 0; j < data.numplayers; j++)
+		{
+			i = data.num[j];
+
+			if (i >= MAXPLAYERS
+				|| playeringame[i] == false
+				|| players[i].spectator == true)
+			{
+				continue;
+			}
+
+			if (demo.playback)
+			{
+				if (!P_IsDisplayPlayer(&players[i]))
+				{
+					continue;
+				}
+
+				break;
+			}
+
+			if (!P_IsLocalPlayer(&players[i]))
+			{
+				continue;
+			}
+
+			break;
+		}
+
+		data.headerstring[0] = '\0';
+		data.gotthrough = false;
+		data.mainplayer = MAXPLAYERS;
+
+		if (j < data.numplayers)
+		{
+			data.mainplayer = i;
+
+			if (!(players[i].pflags & PF_NOCONTEST))
+			{
+				data.gotthrough = true;
+
+				if (players[i].skin < numskins)
+				{
+					snprintf(data.headerstring,
+						sizeof data.headerstring,
+						"%s",
+						skins[players[i].skin].realname);
+				}
+			}
+			else
+			{
+				snprintf(data.headerstring,
+					sizeof data.headerstring,
+					"NO CONTEST...");
+			}
+		}
+		else
+		{
+			if (bossinfo.valid == true && bossinfo.enemyname)
+			{
+				snprintf(data.headerstring,
+					sizeof data.headerstring,
+					"%s",
+					bossinfo.enemyname);
+			}
+			else if (battleprisons == true)
+			{
+				snprintf(data.headerstring,
+					sizeof data.headerstring,
+					"PRISON BREAK");
+			}
+			else
+			{
+				snprintf(data.headerstring,
+					sizeof data.headerstring,
+					"%s STAGE",
+					gametypes[gametype]->name);
+			}
+		}
+
+		data.headerstring[sizeof data.headerstring - 1] = '\0';
 	}
 }
 
@@ -706,10 +741,13 @@ skiptallydrawer:
 		line_flat[BPP_SHADOW] = W_CachePatchName("R_RRMLS3", PU_PATCH);
 
 		// Progress markers
-		patch_t *rpmark = W_CachePatchName("R_RPMARK", PU_PATCH);
+		patch_t *rpmark[2];
 		patch_t *level_dot[BPP_MAIN];
 		patch_t *capsu_dot[BPP_MAIN];
 		patch_t *prize_dot[BPP_MAIN];
+
+		rpmark[0] = W_CachePatchName("R_RPMARK", PU_PATCH);
+		rpmark[1] = W_CachePatchName("R_R2MARK", PU_PATCH);
 
 		level_dot[BPP_AHEAD] = W_CachePatchName("R_RRMRK2", PU_PATCH);
 		level_dot[BPP_DONE] = W_CachePatchName("R_RRMRK1", PU_PATCH);
@@ -723,24 +761,28 @@ skiptallydrawer:
 		UINT8 *colormap = NULL, *oppositemap = NULL;
 		fixed_t playerx = 0, playery = 0;
 		UINT8 pskin = MAXSKINS;
-		UINT16 pcolor = SKINCOLOR_NONE;
+		UINT16 pcolor = SKINCOLOR_WHITE;
 
-		if (whiteplayer < MAXPLAYERS
-			&& playeringame[whiteplayer]
-			&& players[whiteplayer].spectator == false
-			&& players[whiteplayer].skin < numskins
-			&& players[whiteplayer].skincolor < numskincolors
+		if (data.mainplayer == MAXPLAYERS)
+		{
+			;
+		}
+		else if (playeringame[data.mainplayer] == false)
+		{
+			data.mainplayer = MAXPLAYERS;
+		}
+		else if (players[data.mainplayer].spectator == false
+			&& players[data.mainplayer].skin < numskins
+			&& players[data.mainplayer].skincolor != SKINCOLOR_NONE
+			&& players[data.mainplayer].skincolor < numskincolors
 		)
 		{
-			pskin = players[whiteplayer].skin;
-			pcolor = players[whiteplayer].skincolor;
+			pskin = players[data.mainplayer].skin;
+			pcolor = players[data.mainplayer].skincolor;
 		}
 
-		if (pcolor != SKINCOLOR_NONE)
-		{
-			colormap = R_GetTranslationColormap(TC_DEFAULT, pcolor, GTC_CACHE);
-			oppositemap = R_GetTranslationColormap(TC_DEFAULT, skincolors[pcolor].invcolor, GTC_CACHE);
-		}
+		colormap = R_GetTranslationColormap(TC_DEFAULT, pcolor, GTC_CACHE);
+		oppositemap = R_GetTranslationColormap(TC_DEFAULT, skincolors[pcolor].invcolor, GTC_CACHE);
 
 		UINT8 workingqueuesize = roundqueue.size;
 		boolean upwa = (roundqueue.size == 1); // Make the one round queued case more visually interesting
@@ -1052,17 +1094,15 @@ skiptallydrawer:
 			playerx -= 10;
 			playery -= 14;
 
-			// Draw outline for rank icon
-			V_DrawMappedPatch(
-				playerx, playery,
-				0, rpmark,
-				NULL
-			);
-
-			if (pskin < numskins
-				&& pcolor != SKINCOLOR_NONE
-			)
+			if (pskin < numskins)
 			{
+				// Draw outline for rank icon
+				V_DrawMappedPatch(
+					playerx, playery,
+					0, rpmark[0],
+					NULL
+				);
+
 				// Draw the player's rank icon
 				V_DrawMappedPatch(
 					playerx + 1, playery + 1,
@@ -1070,6 +1110,16 @@ skiptallydrawer:
 					faceprefix[pskin][FACE_RANK],
 					R_GetTranslationColormap(pskin, pcolor, GTC_CACHE)
 				);
+			}
+			else
+			{
+				// Draw mini arrow
+				V_DrawMappedPatch(
+					playerx, playery,
+					0, rpmark[1],
+					NULL
+				);
+
 			}
 		}
 	}
