@@ -49,6 +49,7 @@
 #include "k_pwrlv.h"
 #include "k_grandprix.h"
 #include "k_color.h"
+#include "m_easing.h"
 
 #ifdef HWRENDER
 #include "hardware/hw_main.h"
@@ -180,6 +181,7 @@ static void Y_CalculateMatchData(UINT8 rankingsmode, void (*comparison)(INT32))
 			// See also G_GetNextMap
 			data.showrank = false;
 			if (grandprixinfo.gp == true
+				&& netgame == false // TODO netgame Special Mode support
 				&& grandprixinfo.gamespeed >= KARTSPEED_NORMAL
 				&& roundqueue.size > 1
 				&& roundqueue.entries[roundqueue.size - 1].rankrestricted == true
@@ -196,6 +198,9 @@ static void Y_CalculateMatchData(UINT8 rankingsmode, void (*comparison)(INT32))
 						(min(rankforline, GRADE_A)
 							* (2 * TICRATE)
 						) / GRADE_A;
+
+					// A little extra time to take it all in
+					timer += TICRATE;
 				}
 
 				if (gamedata->everseenspecial == true
@@ -811,13 +816,64 @@ skiptallydrawer:
 			workingqueuesize--;
 		}
 
+		INT32 widthofroundqueue = 24*(workingqueuesize - 1);
+
+		x = (BASEVIDWIDTH - widthofroundqueue) / 2;
+
+		const INT32 desiredx2 = 290;
+		const INT32 spacetospecial = max(desiredx2 - widthofroundqueue - 24, 16);
+
+		// The following block handles horizontal easing of the
+		// progression bar on the last non-rankrestricted round.
 		if (data.showrank == true)
 		{
-			x = 24;
-		}
-		else
-		{
-			x = (BASEVIDWIDTH - 24*(workingqueuesize - 1)) / 2;
+			fixed_t percentslide = 0;
+			SINT8 deferxoffs = 0;
+
+			if (roundqueue.position == roundqueue.size)
+			{
+				percentslide = FRACUNIT;
+			}
+			else if (roundqueue.position == roundqueue.size-1
+				&& timer - interpoffs <= 3*TICRATE)
+			{
+				const INT32 through = (3*TICRATE) - (timer - interpoffs - 1);
+				const INT32 slidetime = (TICRATE/2);
+
+				if (through >= slidetime)
+				{
+					percentslide = FRACUNIT;
+				}
+				else
+				{
+					percentslide = R_InterpolateFixed(
+							(through - 1) * FRACUNIT,
+							(through * FRACUNIT)
+						) / slidetime;
+				}
+			}
+
+			if (percentslide == 0)
+			{
+				;
+			}
+			else
+			{
+				const INT32 differencetocover = (x + widthofroundqueue + spacetospecial - desiredx2);
+
+				if (percentslide == FRACUNIT)
+				{
+					x -= (differencetocover + deferxoffs);
+				}
+				else
+				{
+					x -= Easing_OutCubic(
+						percentslide,
+						0,
+						differencetocover * FRACUNIT
+					) / FRACUNIT;
+				}
+			}
 		}
 
 		// Fill in background to left edge of screen
@@ -1001,7 +1057,7 @@ skiptallydrawer:
 				// (has to be drawn before the semifinal dot due to overlap)
 				if (data.showrank == true)
 				{
-					const fixed_t x2 = 290;
+					const fixed_t x2 = x + spacetospecial;
 
 					if (roundqueue.position == roundqueue.size)
 					{
