@@ -787,7 +787,7 @@ skiptallydrawer:
 		oppositemap = R_GetTranslationColormap(TC_DEFAULT, skincolors[pcolor].invcolor, GTC_CACHE);
 
 		UINT8 workingqueuesize = roundqueue.size;
-		boolean upwa = (roundqueue.size == 1); // Make the one round queued case more visually interesting
+		boolean upwa = false;
 
 		if (roundqueue.size > 1
 			&& roundqueue.entries[roundqueue.size - 1].rankrestricted == true
