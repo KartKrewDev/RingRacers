@@ -32,6 +32,7 @@
 #include "p_setup.h"
 
 #include "r_local.h"
+#include "r_fps.h"
 #include "p_local.h"
 
 #include "m_cond.h" // condition sets
@@ -475,6 +476,15 @@ void Y_IntermissionDrawer(void)
 	}
 	LUA_HUD_DrawList(luahuddrawlist_intermission);
 
+	// The following is functionally a hack.
+	// Due to how interpolation works, it's functionally one frame behind.
+	// So we offset certain interpolated timers by this to make our lives easier!
+	// This permits cues handled in the ticker and visuals to match up,
+	// like the player pin reaching the Sealed Star the frame of the fade.
+	// We also do this rather than doing extrapoleration because that would
+	// still put 35fps in the future. ~toast 100523
+	SINT8 interpoffs = (R_UsingFrameInterpolation() ? 1 : 0);
+
 	if (!LUA_HudEnabled(hud_intermissiontally))
 		goto skiptallydrawer;
 
@@ -860,15 +870,33 @@ skiptallydrawer:
 
 			if (roundqueue.position == i+1)
 			{
-				playerx = x;
-				playery = y;
+				playerx = (x * FRACUNIT);
+				playery = (y * FRACUNIT);
 
 				// If there's standard progression ahead of us, visibly move along it.
-				if (choose_line != NULL && timer <= 2*TICRATE)
+				if (choose_line != NULL && timer - interpoffs <= 2*TICRATE)
 				{
 					// 8 tics is chosen because it plays nice
 					// with both the x and y distance to cover.
-					INT32 through = min((2*TICRATE) - (timer - 1), 8);
+					fixed_t through = (2*TICRATE) - (timer - interpoffs - 1);;
+
+					if (through > 8)
+					{
+						if (through == 9 + interpoffs)
+						{
+							// Impactful landing
+							playery += FRACUNIT;
+						}
+
+						through = 8 * FRACUNIT;
+					}
+					else
+					{
+						through = R_InterpolateFixed(
+							(through - 1) * FRACUNIT,
+							(through * FRACUNIT)
+						);
+					}
 
 					// 24 pixels when all is said and done
 					playerx += through * 3;
@@ -882,18 +910,15 @@ skiptallydrawer:
 						playery -= through;
 					}
 
-					if ((2*TICRATE) - (timer - 1) == 9)
-					{
-						// Impactful landing.
-						playery++;
-					}
-					else if (through > 0 && through < 8)
+					if (through > 0 && through < 8 * FRACUNIT)
 					{
 						// Hoparabola and a skip.
-						const INT32 jumpfactor = (through - 4);
+						const fixed_t jumpfactor = through - (4 * FRACUNIT);
 						// jumpfactor squared goes through 36 -> 0 -> 36.
 						// 12 pixels is an arbitrary jump height, but we match it to invert the parabola.
-						playery -= (12 - ((jumpfactor * jumpfactor) / 3));
+						playery -= ((12 * FRACUNIT)
+								- (FixedMul(jumpfactor, jumpfactor) / 3)
+							);
 					}
 				}
 			}
@@ -915,23 +940,23 @@ skiptallydrawer:
 				{
 					lineisfull = true;
 				}
-				else if (roundqueue.position == i+1 && timer <= 2*TICRATE)
+				else if (roundqueue.position == i+1 && timer - interpoffs <= 2*TICRATE)
 				{
 					// 8 tics is chosen because it plays nice
 					// with both the x and y distance to cover.
-					const INT32 through = (2*TICRATE) - (timer - 1);
+					const INT32 through = (2*TICRATE) - (timer - interpoffs - 1);
 
 					if (through == 0)
 					{
 						; // no change...
 					}
-					else if (through >= 8)
+					else if (through > 8)
 					{
 						lineisfull = true;
 					}
 					else
 					{
-						const fixed_t lineborder = (playerx + 1) << FRACBITS;
+						const fixed_t lineborder = playerx + FRACUNIT;
 						V_SetClipRect(
 							0,
 							0,
@@ -991,15 +1016,43 @@ skiptallydrawer:
 
 					if (roundqueue.position == roundqueue.size)
 					{
-						playerx = x2;
-						playery = y;
+						playerx = (x2 * FRACUNIT);
+						playery = (y * FRACUNIT);
 					}
 					else if (roundqueue.position == roundqueue.size-1
-						&& timer <= 2*TICRATE)
+						&& timer - interpoffs <= 2*TICRATE)
 					{
-						const INT32 through = ((2*TICRATE) - (timer - 1));
+						const INT32 through = ((2*TICRATE) - (timer - interpoffs - 1));
+						fixed_t linefill;
+
+						if (through > data.linemeter)
+						{
+							linefill = data.linemeter * FRACUNIT;
+
+							// Small judder if there's enough time for it
+							if (timer <= 2)
+							{
+								;
+							}
+							else if (through == (data.linemeter + 1 + interpoffs))
+							{
+								playerx += FRACUNIT;
+							}
+							else if (through == (data.linemeter + 2 + interpoffs))
+							{
+								playerx -= FRACUNIT;
+							}
+						}
+						else
+						{
+							linefill = R_InterpolateFixed(
+								(through - 1) * FRACUNIT,
+								(through * FRACUNIT)
+							);
+						}
+
 						const fixed_t percent = FixedDiv(
-								min( data.linemeter, through ) * FRACUNIT,
+								linefill,
 								(2*TICRATE) * FRACUNIT
 							);
 
@@ -1007,20 +1060,7 @@ skiptallydrawer:
 							FixedMul(
 								(x2 - x) * FRACUNIT,
 								percent
-							) / FRACUNIT;
-
-						if (timer > 2)
-						{
-							// Small judder
-							if (through == (data.linemeter + 1))
-							{
-								playerx++;
-							}
-							else if (through == (data.linemeter + 2))
-							{
-								playerx--;
-							}
-						}
+							);
 					}
 
 					// Special background bump
@@ -1028,6 +1068,7 @@ skiptallydrawer:
 
 					// Draw the final line
 					xiter = x + 6;
+					const fixed_t fillend = (playerx / FRACUNIT);
 					while (xiter < x2 - 6)
 					{
 						V_DrawMappedPatch(
@@ -1040,8 +1081,8 @@ skiptallydrawer:
 						V_DrawMappedPatch(
 							xiter - 1, 179,
 							0,
-							line_flat[(xiter < playerx) ? BPP_DONE : BPP_AHEAD],
-							(xiter < playerx) ? colormap : NULL
+							line_flat[(xiter < fillend) ? BPP_DONE : BPP_AHEAD],
+							(xiter < fillend) ? colormap : NULL
 						);
 
 						xiter += 2;
@@ -1093,22 +1134,23 @@ skiptallydrawer:
 		if (playery != 0)
 		{
 			// Change alignment
-			playerx -= 10;
-			playery -= 14;
+			playerx -= (10 * FRACUNIT);
+			playery -= (14 * FRACUNIT);
 
 			if (pskin < numskins)
 			{
 				// Draw outline for rank icon
-				V_DrawMappedPatch(
+				V_DrawFixedPatch(
 					playerx, playery,
-					0, rpmark[0],
+					FRACUNIT, 0,
+					rpmark[0],
 					NULL
 				);
 
 				// Draw the player's rank icon
-				V_DrawMappedPatch(
-					playerx + 1, playery + 1,
-					0,
+				V_DrawFixedPatch(
+					playerx + FRACUNIT, playery + FRACUNIT,
+					FRACUNIT, 0,
 					faceprefix[pskin][FACE_RANK],
 					R_GetTranslationColormap(pskin, pcolor, GTC_CACHE)
 				);
@@ -1116,12 +1158,12 @@ skiptallydrawer:
 			else
 			{
 				// Draw mini arrow
-				V_DrawMappedPatch(
+				V_DrawFixedPatch(
 					playerx, playery,
-					0, rpmark[1],
+					FRACUNIT, 0,
+					rpmark[1],
 					NULL
 				);
-
 			}
 		}
 	}
