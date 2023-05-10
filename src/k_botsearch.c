@@ -142,16 +142,33 @@ UINT8 K_EggboxStealth(fixed_t x, fixed_t y)
 	Return:-
 		true if avoiding this sector special, false otherwise.
 --------------------------------------------------*/
-static boolean K_BotHatesThisSectorsSpecial(player_t *player, sector_t *sec)
+static boolean K_BotHatesThisSectorsSpecial(player_t *player, sector_t *sec, const boolean flip)
 {
-	if (sec->damagetype != SD_NONE)
-	{
-		return true;
-	}
+	terrain_t *terrain = K_GetTerrainForFlatNum(flip ? sec->ceilingpic : sec->floorpic);
 
-	if (sec->offroad > 0)
+	if (terrain != NULL)
 	{
-		return !K_BotCanTakeCut(player);
+		if (terrain->damageType != SD_NONE)
+		{
+			return true;
+		}
+
+		if (terrain->offroad > 0)
+		{
+			return !K_BotCanTakeCut(player);
+		}
+	}
+	else
+	{
+		if (sec->damagetype != SD_NONE)
+		{
+			return true;
+		}
+
+		if (sec->offroad > 0)
+		{
+			return !K_BotCanTakeCut(player);
+		}
 	}
 
 	return false;
@@ -200,7 +217,7 @@ boolean K_BotHatesThisSector(player_t *player, sector_t *sec, fixed_t x, fixed_t
 		if (!(rover->fofflags & FOF_BLOCKPLAYER))
 		{
 			if ((top >= player->mo->z) && (bottom <= player->mo->z + player->mo->height)
-				&& K_BotHatesThisSectorsSpecial(player, rover->master->frontsector))
+				&& K_BotHatesThisSectorsSpecial(player, rover->master->frontsector, flip))
 			{
 				// Bad intangible sector at our height, so we DEFINITELY want to avoid
 				return true;
@@ -236,7 +253,7 @@ boolean K_BotHatesThisSector(player_t *player, sector_t *sec, fixed_t x, fixed_t
 		return false;
 	}
 
-	return K_BotHatesThisSectorsSpecial(player, bestsector);
+	return K_BotHatesThisSectorsSpecial(player, bestsector, flip);
 }
 
 /*--------------------------------------------------
