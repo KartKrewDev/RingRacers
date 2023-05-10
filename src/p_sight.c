@@ -360,7 +360,10 @@ static boolean P_CanTraceBlockingLine(seg_t *seg, divline_t *divl, register los_
 
 static boolean P_CanBotTraverse(seg_t *seg, divline_t *divl, register los_t *los)
 {
+	const boolean flip = ((los->t1->eflags & MFE_VERTICALFLIP) == MFE_VERTICALFLIP);
 	line_t *line = seg->linedef;
+	fixed_t frac = 0;
+	boolean canStepUp, canDropOff;
 	fixed_t maxstep = 0;
 
 	if (P_CanTraceBlockingLine(seg, divl, los) == false)
@@ -369,45 +372,57 @@ static boolean P_CanBotTraverse(seg_t *seg, divline_t *divl, register los_t *los
 		return false;
 	}
 
+	// calculate fractional intercept (how far along we are divided by how far we are from t2)
+	frac = P_InterceptVector2(&los->strace, divl);
+
+	// calculate position at intercept
+	tm.x = los->strace.x + FixedMul(los->strace.dx, frac);
+	tm.y = los->strace.y + FixedMul(los->strace.dy, frac);
+
 	// set openrange, opentop, openbottom
-	tm.x = los->t1->x;
-	tm.y = los->t1->y;
 	P_LineOpening(line, los->t1);
 	maxstep = P_GetThingStepUp(los->t1, tm.x, tm.y);
 
-	if ((openrange < los->t1->height) // doesn't fit
-		|| (opentop - los->t1->z < los->t1->height) // mobj is too high
-		|| (openbottom - los->t1->z > maxstep)) // too big a step up
+	if (openrange < los->t1->height)
 	{
-		// This line situationally blocks us
+		// Can't fit
 		return false;
 	}
 
-	if (los->t1->player != NULL && los->alreadyHates == false)
+	canStepUp = ((flip ? (highceiling - opentop) : (openbottom - lowfloor)) <= maxstep);
+	canDropOff = (flip ? (los->t1->z + los->t1->height <= opentop) : (los->t1->z >= openbottom));
+
+	if (canStepUp || canDropOff)
 	{
-		// Treat damage sectors like walls, if you're not already in a bad sector.
-		sector_t *front, *back;
-		vertex_t pos;
-
-		P_ClosestPointOnLine(tm.x, tm.y, line, &pos);
-
-		front = seg->frontsector;
-		back  = seg->backsector;
-
-		if (K_BotHatesThisSector(los->t1->player, front, pos.x, pos.y)
-			|| K_BotHatesThisSector(los->t1->player, back, pos.x, pos.y))
+		if (los->t1->player != NULL && los->alreadyHates == false)
 		{
-			// This line does not block us, but we don't want to be in it.
-			return false;
+			// Treat damage sectors like walls, if you're not already in a bad sector.
+			sector_t *front, *back;
+
+			front = seg->frontsector;
+			back  = seg->backsector;
+
+			if (K_BotHatesThisSector(los->t1->player, front, tm.x, tm.y)
+				|| K_BotHatesThisSector(los->t1->player, back, tm.x, tm.y))
+			{
+				// This line does not block us, but we don't want to be in it.
+				return false;
+			}
 		}
+
+		return true;
 	}
 
-	return true;
+	return false;
 }
 
 static boolean P_CanWaypointTraverse(seg_t *seg, divline_t *divl, register los_t *los)
 {
+	const boolean flip = ((los->t1->eflags & MFE_VERTICALFLIP) == MFE_VERTICALFLIP);
 	line_t *line = seg->linedef;
+	fixed_t frac = 0;
+	boolean canStepUp, canDropOff;
+	fixed_t maxstep = 0;
 
 	if (P_CanTraceBlockingLine(seg, divl, los) == false)
 	{
@@ -422,7 +437,29 @@ static boolean P_CanWaypointTraverse(seg_t *seg, divline_t *divl, register los_t
 		return false;
 	}
 
-	return true;
+	// calculate fractional intercept (how far along we are divided by how far we are from t2)
+	frac = P_InterceptVector2(&los->strace, divl);
+
+	// calculate position at intercept
+	tm.x = los->strace.x + FixedMul(los->strace.dx, frac);
+	tm.y = los->strace.y + FixedMul(los->strace.dy, frac);
+
+	P_LineOpening(line, los->t1);
+	maxstep = P_GetThingStepUp(los->t1, tm.x, tm.y);
+
+	if (openrange < los->t1->height)
+	{
+		// Can't fit
+		return false;
+	}
+
+	// If we can step up...
+	canStepUp = ((flip ? (highceiling - opentop) : (openbottom - lowfloor)) <= maxstep);
+
+	// Or if we're on the higher side...
+	canDropOff = (flip ? (los->t1->z + los->t1->height <= opentop) : (los->t1->z >= openbottom));
+
+	return (canStepUp || canDropOff);
 }
 
 //
