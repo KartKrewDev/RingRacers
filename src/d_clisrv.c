@@ -4992,7 +4992,7 @@ static void PT_Say(int node)
 
 	serverplayer_t *stats = SV_GetStatsByPlayerIndex(say.source);
 
-	if (stats->finishedrounds < (uint32_t)cv_gamestochat.value && !(IsPlayerAdmin(say.source)))
+	if (stats->finishedrounds < (uint32_t)cv_gamestochat.value && !(consoleplayer == say.source || IsPlayerAdmin(say.source)))
 	{
 		CONS_Debug(DBG_NETPLAY,"Received SAY cmd from Player %d (%s), but they aren't permitted to chat yet.\n", say.source+1, player_names[say.source]);
 
