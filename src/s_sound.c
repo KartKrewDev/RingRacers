@@ -1363,7 +1363,14 @@ static void S_AttemptToRestoreMusic(void)
 	switch (gamestate)
 	{
 		case GS_LEVEL:
-			P_RestoreMusic(&players[consoleplayer]);
+			if (musiccountdown != 1)
+			{
+				P_RestoreMusic(&players[consoleplayer]);
+				break;
+			}
+			// FALLTHRU
+		case GS_INTERMISSION:
+			S_ChangeMusicInternal("racent", true);
 			break;
 		case GS_TITLESCREEN:
 			S_ChangeMusicInternal("_title", looptitle);

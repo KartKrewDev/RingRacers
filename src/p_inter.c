@@ -656,22 +656,7 @@ static void P_AddBrokenPrison(mobj_t *target, mobj_t *source)
 
 	if (++numtargets >= maptargets)
 	{
-		UINT8 i;
-		boolean givelife = false;
-
-		for (i = 0; i < MAXPLAYERS; i++)
-		{
-			if (!playeringame[i] || players[i].spectator)
-				continue;
-			P_DoPlayerExit(&players[i]);
-			if (!G_GametypeUsesLives())
-				continue;
-			P_GivePlayerLives(&players[i], 1);
-			givelife = true;
-		}
-
-		if (givelife)
-			S_StartSound(NULL, sfx_cdfm73);
+		P_DoAllPlayersExit(0, (grandprixinfo.gp == true));
 	}
 	else
 	{
@@ -692,8 +677,6 @@ static void P_AddBrokenPrison(mobj_t *target, mobj_t *source)
   */
 void P_CheckTimeLimit(void)
 {
-	INT32 i;
-
 	if (exitcountdown)
 		return;
 
@@ -751,6 +734,7 @@ void P_CheckTimeLimit(void)
 	if ((grandprixinfo.gp == false) && (cv_overtime.value) && (gametyperules & GTR_OVERTIME))
 	{
 #ifndef TESTOVERTIMEINFREEPLAY
+		UINT8 i;
 		boolean foundone = false; // Overtime is used for closing off down to a specific item.
 		for (i = 0; i < MAXPLAYERS; i++)
 		{
@@ -812,14 +796,7 @@ void P_CheckTimeLimit(void)
 #endif
 	}
 
-	for (i = 0; i < MAXPLAYERS; i++)
-	{
-		if (!playeringame[i] || players[i].spectator)
-			continue;
-		if (players[i].exiting)
-			return;
-		P_DoPlayerExit(&players[i]);
-	}
+	P_DoAllPlayersExit(0, false);
 }
 
 /** Checks if a player's score is over the pointlimit and the round should end.
@@ -864,14 +841,7 @@ void P_CheckPointLimit(void)
 
 			if (g_pointlimit <= players[i].roundscore)
 			{
-				for (i = 0; i < MAXPLAYERS; i++) // AAAAA nested loop using the same iteration variable ;;
-				{
-					if (!playeringame[i] || players[i].spectator)
-						continue;
-					if (players[i].exiting)
-						return;
-					P_DoPlayerExit(&players[i]);
-				}
+				P_DoAllPlayersExit(0, false);
 
 				/*if (server)
 					SendNetXCmd(XD_EXITLEVEL, NULL, 0);*/
@@ -1917,8 +1887,7 @@ static boolean P_KillPlayer(player_t *player, mobj_t *inflictor, mobj_t *source,
 
 	if (!player->exiting && (specialstageinfo.valid == true || modeattacking & ATTACKING_SPB))
 	{
-		player->pflags |= PF_NOCONTEST;
-		P_DoPlayerExit(player);
+		P_DoPlayerExit(player, PF_NOCONTEST);
 	}
 
 	if (player->exiting)

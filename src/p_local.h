@@ -206,7 +206,8 @@ void P_TickAltView(altview_t *view);
 void P_MovePlayer(player_t *player);
 void P_PlayerThink(player_t *player);
 void P_PlayerAfterThink(player_t *player);
-void P_DoPlayerExit(player_t *player);
+void P_DoPlayerExit(player_t *player, pflags_t flags);
+void P_DoAllPlayersExit(pflags_t flags, boolean givelife);
 void P_DoTimeOver(player_t *player);
 void P_CheckRaceGriefing(player_t *player, boolean dopunishment);
 

@@ -7334,7 +7334,7 @@ void K_KartPlayerHUDUpdate(player_t *player)
 	{
 		if (player->exiting)
 		{
-			if (exitcountdown < 6*TICRATE)
+			if (exitcountdown < (11*TICRATE)/2)
 				player->karthud[khud_cardanimation] += ((164-player->karthud[khud_cardanimation])/8)+1;
 		}
 		else

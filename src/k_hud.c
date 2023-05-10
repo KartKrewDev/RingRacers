@@ -4457,7 +4457,7 @@ static void K_drawBattleFullscreen(void)
 	{
 		if (stplyr == &players[displayplayers[0]])
 			V_DrawFadeScreen(0xFF00, 16);
-		if (exitcountdown <= 6*TICRATE && !stplyr->spectator)
+		if (exitcountdown <= (11*TICRATE)/2 && !stplyr->spectator)
 		{
 			patch_t *p = kp_battlecool;
 

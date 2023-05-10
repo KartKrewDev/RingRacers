@@ -428,23 +428,12 @@ static void UFOMove(mobj_t *ufo)
 
 	if (reachedEnd == true)
 	{
-		UINT8 i;
-
 		// Invalidate UFO/emerald
 		ufo_waypoint(ufo) = -1;
 		ufo->flags &= ~(MF_SPECIAL|MF_PICKUPFROMBELOW);
 
 		// Disable player
-		for (i = 0; i < MAXPLAYERS; i++)
-		{
-			if (!playeringame[i])
-				continue;
-			if (players[i].spectator)
-				continue;
-
-			players[i].pflags |= PF_NOCONTEST;
-			P_DoPlayerExit(&players[i]);
-		}
+		P_DoAllPlayersExit(PF_NOCONTEST, false);
 	}
 
 	if (pathfindsuccess == true)

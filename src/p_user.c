@@ -733,15 +733,15 @@ void P_EndingMusic(void)
 			continue;
 		}
 
-		if (checkPlayer->pflags & PF_NOCONTEST)
-		{
-			// No Contest, use special value
-			;
-		}
-		else if (checkPlayer->exiting)
+		if (checkPlayer->exiting)
 		{
 			// Standard exit, use their position
 			pos = checkPlayer->position;
+		}
+		else if (checkPlayer->pflags & PF_NOCONTEST)
+		{
+			// No Contest without finishing, use special value
+			;
 		}
 		else
 		{
@@ -778,15 +778,7 @@ void P_EndingMusic(void)
 	}
 	else
 	{
-		if (bestPlayer->position == 1)
-		{
-			jingle = "_first";
-		}
-		else if (K_IsPlayerLosing(bestPlayer) == false)
-		{
-			jingle = "_win";
-		}
-		else
+		if (K_IsPlayerLosing(bestPlayer) == true)
 		{
 			jingle = "_lose";
 
@@ -795,6 +787,14 @@ void P_EndingMusic(void)
 				// A retry will be happening
 				nointer = true;
 			}
+		}
+		else if (bestPlayer->position == 1)
+		{
+			jingle = "_first";
+		}
+		else if (K_IsPlayerLosing(bestPlayer) == false)
+		{
+			jingle = "_win";
 		}
 	}
 
@@ -1257,15 +1257,17 @@ mobj_t *P_SpawnGhostMobj(mobj_t *mobj)
 // P_DoPlayerExit
 //
 // Player exits the map via sector trigger
-void P_DoPlayerExit(player_t *player)
+void P_DoPlayerExit(player_t *player, pflags_t flags)
 {
-	const boolean losing = K_IsPlayerLosing(player);
-	const boolean specialout = (specialstageinfo.valid == true && losing == true);
-
 	if (player->exiting || mapreset)
 	{
 		return;
 	}
+
+	player->pflags |= flags;
+
+	const boolean losing = K_IsPlayerLosing(player);
+	const boolean specialout = (specialstageinfo.valid == true && losing == true);
 
 	if (P_IsLocalPlayer(player) && (!player->spectator && !demo.playback))
 	{
@@ -1364,6 +1366,61 @@ void P_DoPlayerExit(player_t *player)
 
 	if (player == &players[consoleplayer])
 		demo.savebutton = leveltime;
+}
+
+//
+// P_DoAllPlayersExit
+//
+// All players exit the map via event
+void P_DoAllPlayersExit(pflags_t flags, boolean trygivelife)
+{
+	UINT8 i;
+	boolean givenlife = false;
+	const boolean dofinishsound = (musiccountdown == 0);
+
+	for (i = 0; i < MAXPLAYERS; i++)
+	{
+		if (!playeringame[i] || players[i].spectator)
+		{
+			continue;
+		}
+		if (players[i].exiting)
+		{
+			continue;
+		}
+
+		P_DoPlayerExit(&players[i], flags);
+
+		if (trygivelife == false)
+		{
+			continue;
+		}
+
+		P_GivePlayerLives(&players[i], 1);
+		givenlife = true;
+	}
+
+	if (!dofinishsound)
+	{
+		// You've already finished, don't play again
+		;
+	}
+	else if (musiccountdown == 0)
+	{
+		// Other people finish
+		S_StartSound(NULL, sfx_s253);
+	}
+	else if (musiccountdown > 1)
+	{
+		// Everyone finish sound
+		S_StartSound(NULL, sfx_s3k6a);
+	}
+
+	if (givenlife)
+	{
+		// Life sound
+		S_StartSound(NULL, sfx_cdfm73);
+	}
 }
 
 //
