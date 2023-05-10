@@ -526,13 +526,15 @@ void Y_IntermissionDrawer(void)
 
 		boolean verticalresults = (data.numplayers < 4);
 
+		x = xoffset;
+
 		if (verticalresults)
 		{
-			x = (BASEVIDWIDTH/2) - 61;
+			x += (BASEVIDWIDTH/2) - 61;
 		}
 		else
 		{
-			x = 29 + xoffset;
+			x += 29;
 			heightcount /= 2;
 		}
 
