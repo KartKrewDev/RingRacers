@@ -4077,30 +4077,33 @@ void M_DrawPause(void)
 			V_DrawCenteredLSTitleLowString(220 + offset*2, 103, 0, word2);
 	}
 
-	y_data_t standings;
-	memset(&standings, 0, sizeof (standings));
-
-	standings.mainplayer = (demo.playback ? displayplayers[0] : consoleplayer); 
-
-	// See also G_GetNextMap, Y_CalculateMatchData
-	if (
-		grandprixinfo.gp == true
-		&& netgame == false // TODO netgame Special Mode support
-		&& grandprixinfo.gamespeed >= KARTSPEED_NORMAL
-		&& roundqueue.size > 1
-		&& roundqueue.entries[roundqueue.size - 1].rankrestricted == true
-		&& (
-			gamedata->everseenspecial == true
-			|| roundqueue.position == roundqueue.size
-		)
-	)
+	if (gamestate != GS_INTERMISSION)
 	{
-		// Additional cases in which it should always be shown.
-		standings.showrank = true;
-	}
+		y_data_t standings;
+		memset(&standings, 0, sizeof (standings));
 
-	// Returns early if there's no roundqueue entries to draw
-	Y_RoundQueueDrawer(&standings, false, false);
+		standings.mainplayer = (demo.playback ? displayplayers[0] : consoleplayer); 
+
+		// See also G_GetNextMap, Y_CalculateMatchData
+		if (
+			grandprixinfo.gp == true
+			&& netgame == false // TODO netgame Special Mode support
+			&& grandprixinfo.gamespeed >= KARTSPEED_NORMAL
+			&& roundqueue.size > 1
+			&& roundqueue.entries[roundqueue.size - 1].rankrestricted == true
+			&& (
+				gamedata->everseenspecial == true
+				|| roundqueue.position == roundqueue.size
+			)
+		)
+		{
+			// Additional cases in which it should always be shown.
+			standings.showrank = true;
+		}
+
+		// Returns early if there's no roundqueue entries to draw
+		Y_RoundQueueDrawer(&standings, false, false);
+	}
 }
 
 void M_DrawPlaybackMenu(void)
