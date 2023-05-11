@@ -60,6 +60,7 @@
 #include "k_color.h"
 #include "k_hud.h"
 #include "r_fps.h"
+#include "y_inter.h" // Y_PlayerStandingsDrawer
 
 // coords are scaled
 #define HU_INPUTX 0
@@ -2520,10 +2521,7 @@ static inline void HU_DrawSpectatorTicker(void)
 //
 static void HU_DrawRankings(void)
 {
-	playersort_t tab[MAXPLAYERS];
-	INT32 i, j, scorelines, numplayersingame = 0, hilicol = highlightflags;
-	boolean completed[MAXPLAYERS];
-	UINT32 whiteplayer = MAXPLAYERS;
+	INT32 i, j, hilicol = highlightflags;
 	boolean timedone = false, pointsdone = false;
 
 	if (!automapactive)
@@ -2632,23 +2630,21 @@ static void HU_DrawRankings(void)
 		V_DrawCenteredString(256, 16, hilicol, kartspeed_cons_t[1+gamespeed].strvalue);
 	}
 
-	// When you play, you quickly see your score because your name is displayed in white.
-	// When playing back a demo, you quickly see who's the view.
-	if (!r_splitscreen)
-		whiteplayer = demo.playback ? displayplayers[0] : consoleplayer;
+	boolean completed[MAXPLAYERS];
+	y_data_t standings;
 
-	scorelines = 0;
 	memset(completed, 0, sizeof (completed));
-	memset(tab, 0, sizeof (playersort_t)*MAXPLAYERS);
+	memset(&standings, 0, sizeof (standings));
+
+	UINT8 numplayersingame = 0;
 
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
-		tab[i].num = -1;
-		tab[i].name = NULL;
-		tab[i].count = INT32_MAX;
-
 		if (!playeringame[i] || players[i].spectator || !players[i].mo)
+		{
+			completed[i] = true;
 			continue;
+		}
 
 		numplayersingame++;
 	}
@@ -2658,40 +2654,97 @@ static void HU_DrawRankings(void)
 		UINT8 lowestposition = MAXPLAYERS+1;
 		for (i = 0; i < MAXPLAYERS; i++)
 		{
-			if (completed[i] || !playeringame[i] || players[i].spectator || !players[i].mo)
+			if (completed[i])
 				continue;
 
 			if (players[i].position >= lowestposition)
 				continue;
 
-			tab[scorelines].num = i;
+			standings.num[standings.numplayers] = i;
 			lowestposition = players[i].position;
 		}
 
-		i = tab[scorelines].num;
+		i = standings.num[standings.numplayers];
 
 		completed[i] = true;
 
-		tab[scorelines].name = player_names[i];
+		standings.character[standings.numplayers] = players[i].skin;
+		standings.color[standings.numplayers] = players[i].skincolor;
+		standings.pos[standings.numplayers] = players[i].position;
 
-		if ((gametyperules & GTR_CIRCUIT))
+#define strtime standings.strval[standings.numplayers]
+
+		if (players[i].pflags & PF_NOCONTEST)
 		{
-			tab[scorelines].count = players[i].laps;
+			standings.val[standings.numplayers] = (UINT32_MAX-1);
+			STRBUFCPY(strtime, "RETIRED.");
+		}
+		else if ((gametyperules & GTR_CIRCUIT))
+		{			
+			standings.val[standings.numplayers] = players[i].laps;
+
+			if (players[i].exiting)
+			{
+				snprintf(strtime, sizeof strtime, "%i'%02i\"%02i", G_TicsToMinutes(standings.val[standings.numplayers], true),
+				G_TicsToSeconds(standings.val[standings.numplayers]), G_TicsToCentiseconds(standings.val[standings.numplayers]));
+			}
+			else
+			{
+				snprintf(strtime, sizeof strtime, "Lap %d", standings.val[standings.numplayers]);
+			}
 		}
 		else
 		{
-			tab[scorelines].count = players[i].roundscore;
+			standings.val[standings.numplayers] = players[i].roundscore;
+			snprintf(strtime, sizeof strtime, "%d", standings.val[standings.numplayers]);
 		}
 
-		scorelines++;
+#undef strtime
 
-#if MAXPLAYERS > 16
-	if (scorelines > 16)
-		break; //dont draw past bottom of screen, show the best only
-#endif
+		standings.numplayers++;
 	}
 
-	K_DrawTabRankings(((scorelines > 8) ? 32 : 40), 33, tab, scorelines, whiteplayer, hilicol);
+	// Returns early if there's no players to draw
+	Y_PlayerStandingsDrawer(&standings, 0);
+
+	/*i = MAXPLAYERS;
+
+	for (j = 0; j < standings.numplayers; j++)
+	{
+		i = standings.num[j];
+
+		if (i >= MAXPLAYERS
+			|| playeringame[i] == false
+			|| players[i].spectator == true)
+		{
+			continue;
+		}
+
+		if (demo.playback)
+		{
+			if (!P_IsDisplayPlayer(&players[i]))
+			{
+				continue;
+			}
+
+			break;
+		}
+
+		if (!P_IsLocalPlayer(&players[i]))
+		{
+			continue;
+		}
+
+		break;
+	}
+
+	if (i != MAXPLAYERS)
+	{
+		standings.mainplayer = i;
+	}
+
+	// Returns early if there's no roundqueue entries to draw
+	Y_RoundQueueDrawer();*/
 
 	// draw spectators in a ticker across the bottom
 	if (netgame && G_GametypeHasSpectators())

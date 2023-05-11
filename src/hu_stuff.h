@@ -96,17 +96,6 @@ extern char *shiftxform; // english translation shift table
 extern char english_shiftxform[];
 
 //------------------------------------
-//        sorted player lines
-//------------------------------------
-
-struct playersort_t
-{
-	UINT32 count;
-	INT32 num;
-	const char *name;
-};
-
-//------------------------------------
 //           chat stuff
 //------------------------------------
 #define HU_MAXMSGLEN 223
@@ -159,8 +148,6 @@ void HU_Erase(void);
 void HU_clearChatChars(void);
 void HU_drawPing(fixed_t x, fixed_t y, UINT32 ping, INT32 flags, boolean offline); // Lat': Ping drawer for scoreboard.
 void HU_drawMiniPing(INT32 x, INT32 y, UINT32 ping, INT32 flags);
-
-INT32 HU_CreateTeamScoresTbl(playersort_t *tab, UINT32 dmtotals[]);
 
 // CECHO interface.
 void HU_ClearCEcho(void);

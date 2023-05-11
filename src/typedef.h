@@ -139,9 +139,6 @@ TYPEDEF (demoghost);
 TYPEDEF (roundentry_t);
 TYPEDEF (mapsearchfreq_t);
 
-// hu_stuff.h
-TYPEDEF (playersort_t);
-
 // i_joy.h
 TYPEDEF (JoyType_t);
 
