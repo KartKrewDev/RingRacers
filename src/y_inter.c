@@ -389,6 +389,568 @@ typedef enum
 } bottomprogressionpatch_t;
 
 //
+// Y_RoundQueueDrawer
+//
+// Handles drawing the bottom-of-screen progression.
+// Currently requires intermission y_data to be active, but abstraction is feasible.
+//
+void Y_RoundQueueDrawer(void)
+{
+	if (roundqueue.size == 0)
+	{
+		return;
+	}
+
+	// The following is functionally a hack.
+	// Due to how interpolation works, it's functionally one frame behind.
+	// So we offset certain interpolated timers by this to make our lives easier!
+	// This permits cues handled in the ticker and visuals to match up,
+	// like the player pin reaching the Sealed Star the frame of the fade.
+	// We also do this rather than doing extrapoleration because that would
+	// still put 35fps in the future. ~toast 100523
+	SINT8 interpoffs = (R_UsingFrameInterpolation() ? 1 : 0);
+
+	UINT8 i;
+
+	UINT8 *greymap = R_GetTranslationColormap(TC_DEFAULT, SKINCOLOR_GREY, GTC_CACHE);
+
+	// Background pieces
+	patch_t *queuebg_flat = W_CachePatchName("R_RMBG1", PU_PATCH);
+	patch_t *queuebg_upwa = W_CachePatchName("R_RMBG2", PU_PATCH);
+	patch_t *queuebg_down = W_CachePatchName("R_RMBG3", PU_PATCH);
+	patch_t *queuebg_prize = W_CachePatchName("R_RMBG4", PU_PATCH);
+
+	// Progression lines
+	patch_t *line_upwa[BPP_MAX];
+	patch_t *line_down[BPP_MAX];
+	patch_t *line_flat[BPP_MAX];
+
+	line_upwa[BPP_AHEAD] = W_CachePatchName("R_RRMLN1", PU_PATCH);
+	line_upwa[BPP_DONE] = W_CachePatchName("R_RRMLN3", PU_PATCH);
+	line_upwa[BPP_SHADOW] = W_CachePatchName("R_RRMLS1", PU_PATCH);
+
+	line_down[BPP_AHEAD] = W_CachePatchName("R_RRMLN2", PU_PATCH);
+	line_down[BPP_DONE] = W_CachePatchName("R_RRMLN4", PU_PATCH);
+	line_down[BPP_SHADOW] = W_CachePatchName("R_RRMLS2", PU_PATCH);
+
+	line_flat[BPP_AHEAD] = W_CachePatchName("R_RRMLN5", PU_PATCH);
+	line_flat[BPP_DONE] = W_CachePatchName("R_RRMLN6", PU_PATCH);
+	line_flat[BPP_SHADOW] = W_CachePatchName("R_RRMLS3", PU_PATCH);
+
+	// Progress markers
+	patch_t *level_dot[BPP_MAIN];
+	patch_t *capsu_dot[BPP_MAIN];
+	patch_t *prize_dot[BPP_MAIN];
+
+	level_dot[BPP_AHEAD] = W_CachePatchName("R_RRMRK2", PU_PATCH);
+	level_dot[BPP_DONE] = W_CachePatchName("R_RRMRK1", PU_PATCH);
+
+	capsu_dot[BPP_AHEAD] = W_CachePatchName("R_RRMRK3", PU_PATCH);
+	capsu_dot[BPP_DONE] = W_CachePatchName("R_RRMRK5", PU_PATCH);
+
+	prize_dot[BPP_AHEAD] = W_CachePatchName("R_RRMRK4", PU_PATCH);
+	prize_dot[BPP_DONE] = W_CachePatchName("R_RRMRK6", PU_PATCH);
+
+	UINT8 *colormap = NULL, *oppositemap = NULL;
+	fixed_t playerx = 0, playery = 0;
+	UINT8 pskin = MAXSKINS;
+	UINT16 pcolor = SKINCOLOR_WHITE;
+
+	if (data.mainplayer == MAXPLAYERS)
+	{
+		;
+	}
+	else if (playeringame[data.mainplayer] == false)
+	{
+		data.mainplayer = MAXPLAYERS;
+	}
+	else if (players[data.mainplayer].spectator == false
+		&& players[data.mainplayer].skin < numskins
+		&& players[data.mainplayer].skincolor != SKINCOLOR_NONE
+		&& players[data.mainplayer].skincolor < numskincolors
+	)
+	{
+		pskin = players[data.mainplayer].skin;
+		pcolor = players[data.mainplayer].skincolor;
+	}
+
+	colormap = R_GetTranslationColormap(TC_DEFAULT, pcolor, GTC_CACHE);
+	oppositemap = R_GetTranslationColormap(TC_DEFAULT, skincolors[pcolor].invcolor, GTC_CACHE);
+
+	UINT8 workingqueuesize = roundqueue.size;
+	boolean upwa = false;
+
+	if (roundqueue.size > 1
+		&& roundqueue.entries[roundqueue.size - 1].rankrestricted == true
+	)
+	{
+		if (roundqueue.size & 1)
+		{
+			upwa = true;
+		}
+
+		workingqueuesize--;
+	}
+
+	INT32 widthofroundqueue = 24*(workingqueuesize - 1);
+
+	INT32 x = (BASEVIDWIDTH - widthofroundqueue) / 2;
+	INT32 y;
+
+	INT32 spacetospecial = 0;
+
+	// The following block handles horizontal easing of the
+	// progression bar on the last non-rankrestricted round.
+	if (data.showrank == true)
+	{
+		fixed_t percentslide = 0;
+		SINT8 deferxoffs = 0;
+
+		const INT32 desiredx2 = 290;
+		spacetospecial = max(desiredx2 - widthofroundqueue - 24, 16);
+
+		if (roundqueue.position == roundqueue.size)
+		{
+			percentslide = FRACUNIT;
+		}
+		else if (roundqueue.position == roundqueue.size-1
+			&& timer - interpoffs <= 3*TICRATE)
+		{
+			const INT32 through = (3*TICRATE) - (timer - interpoffs - 1);
+			const INT32 slidetime = (TICRATE/2);
+
+			if (through >= slidetime)
+			{
+				percentslide = FRACUNIT;
+			}
+			else
+			{
+					percentslide = R_InterpolateFixed(
+						(through - 1) * FRACUNIT,
+						(through * FRACUNIT)
+					) / slidetime;
+			}
+		}
+
+		if (percentslide != 0)
+		{
+			const INT32 differencetocover = (x + widthofroundqueue + spacetospecial - desiredx2);
+
+			if (percentslide == FRACUNIT)
+			{
+				x -= (differencetocover + deferxoffs);
+			}
+			else
+			{
+				x -= Easing_OutCubic(
+					percentslide,
+					0,
+					differencetocover * FRACUNIT
+				) / FRACUNIT;
+			}
+		}
+	}
+
+	// Fill in background to left edge of screen
+	fixed_t xiter = x;
+
+	if (upwa == true)
+	{
+		xiter -= 24;
+		V_DrawMappedPatch(xiter, 167, 0, queuebg_upwa, greymap);
+	}
+
+	while (xiter > 0)
+	{
+		xiter -= 24;
+		V_DrawMappedPatch(xiter, 167, 0, queuebg_flat, greymap);
+	}
+
+	for (i = 0; i < workingqueuesize; i++)
+	{
+		// Draw the background, and grab the appropriate line, to the right of the dot
+		patch_t **choose_line = NULL;
+
+		upwa ^= true;
+		if (upwa == false)
+		{
+			y = 171;
+
+			V_DrawMappedPatch(x, 167, 0, queuebg_down, greymap);
+
+			if (i+1 != workingqueuesize) // no more line?
+			{
+				choose_line = line_down;
+			}
+		}
+		else
+		{
+			y = 179;
+
+			if (i+1 != workingqueuesize) // no more line?
+			{
+				V_DrawMappedPatch(x, 167, 0, queuebg_upwa, greymap);
+
+				choose_line = line_upwa;
+			}
+			else
+			{
+				V_DrawMappedPatch(x, 167, 0, queuebg_flat, greymap);
+			}
+		}
+
+		if (roundqueue.position == i+1)
+		{
+			playerx = (x * FRACUNIT);
+			playery = (y * FRACUNIT);
+
+			// If there's standard progression ahead of us, visibly move along it.
+			if (choose_line != NULL && timer - interpoffs <= 2*TICRATE)
+			{
+				// 8 tics is chosen because it plays nice
+				// with both the x and y distance to cover.
+				fixed_t through = (2*TICRATE) - (timer - interpoffs - 1);;
+
+				if (through > 8)
+				{
+					if (through == 9 + interpoffs)
+					{
+						// Impactful landing
+						playery += FRACUNIT;
+					}
+
+					through = 8 * FRACUNIT;
+				}
+				else
+				{
+					through = R_InterpolateFixed(
+						(through - 1) * FRACUNIT,
+						(through * FRACUNIT)
+					);
+				}
+
+				// 24 pixels when all is said and done
+				playerx += through * 3;
+
+				if (upwa == false)
+				{
+					playery += through;
+				}
+				else
+				{
+					playery -= through;
+				}
+
+				if (through > 0 && through < 8 * FRACUNIT)
+				{
+					// Hoparabola and a skip.
+					const fixed_t jumpfactor = through - (4 * FRACUNIT);
+					// jumpfactor squared goes through 36 -> 0 -> 36.
+					// 12 pixels is an arbitrary jump height, but we match it to invert the parabola.
+					playery -= ((12 * FRACUNIT)
+							- (FixedMul(jumpfactor, jumpfactor) / 3)
+					);
+				}
+			}
+		}
+
+		if (choose_line != NULL)
+		{
+			// Draw the line to the right of the dot
+
+			V_DrawMappedPatch(
+				x - 1, 178,
+				0,
+				choose_line[BPP_SHADOW],
+				NULL
+			);
+
+			boolean lineisfull = false, recttoclear = false;
+
+			if (roundqueue.position > i+1)
+			{
+				lineisfull = true;
+			}
+			else if (roundqueue.position == i+1 && timer - interpoffs <= 2*TICRATE)
+			{
+				// 8 tics is chosen because it plays nice
+				// with both the x and y distance to cover.
+				const INT32 through = (2*TICRATE) - (timer - interpoffs - 1);
+
+				if (through == 0)
+				{
+					; // no change...
+				}
+				else if (through > 8)
+				{
+					lineisfull = true;
+				}
+				else
+				{
+					V_DrawMappedPatch(
+						x - 1, 179,
+						0,
+						choose_line[BPP_DONE],
+						colormap
+					);
+
+					V_SetClipRect(
+						playerx + FRACUNIT,
+						0,
+						BASEVIDWIDTH << FRACBITS,
+						BASEVIDHEIGHT << FRACBITS,
+						0
+					);
+
+					recttoclear = true;
+				}
+			}
+
+			V_DrawMappedPatch(
+				x - 1, 179,
+				0,
+				choose_line[lineisfull ? BPP_DONE : BPP_AHEAD],
+				lineisfull ? colormap : NULL
+			);
+
+			if (recttoclear == true)
+			{
+				V_ClearClipRect();
+			}
+		}
+		else
+		{
+			// No more line! Fill in background to right edge of screen
+			xiter = x;
+			while (xiter < BASEVIDWIDTH)
+			{
+				xiter += 24;
+				V_DrawMappedPatch(xiter, 167, 0, queuebg_flat, greymap);
+			}
+
+			// Handle special entry on the end
+			// (has to be drawn before the semifinal dot due to overlap)
+			if (data.showrank == true)
+			{
+				const fixed_t x2 = x + spacetospecial;
+
+				if (roundqueue.position == roundqueue.size)
+				{
+					playerx = (x2 * FRACUNIT);
+					playery = (y * FRACUNIT);
+				}
+				else if (roundqueue.position == roundqueue.size-1
+					&& timer - interpoffs <= 2*TICRATE)
+				{
+					const INT32 through = ((2*TICRATE) - (timer - interpoffs - 1));
+					fixed_t linefill;
+
+					if (through > data.linemeter)
+					{
+						linefill = data.linemeter * FRACUNIT;
+
+						// Small judder if there's enough time for it
+						if (timer <= 2)
+						{
+							;
+						}
+						else if (through == (data.linemeter + 1 + interpoffs))
+						{
+							playerx += FRACUNIT;
+						}
+						else if (through == (data.linemeter + 2 + interpoffs))
+						{
+							playerx -= FRACUNIT;
+						}
+					}
+					else
+					{
+						linefill = R_InterpolateFixed(
+							(through - 1) * FRACUNIT,
+							(through * FRACUNIT)
+						);
+					}
+
+					const fixed_t percent = FixedDiv(
+							linefill,
+							(2*TICRATE) * FRACUNIT
+						);
+
+					playerx +=
+						FixedMul(
+							(x2 - x) * FRACUNIT,
+							percent
+						);
+				}
+
+				// Special background bump
+				V_DrawMappedPatch(x2 - 13, 167, 0, queuebg_prize, greymap);
+
+				// Draw the final line
+				const fixed_t barstart = x + 6;
+				const fixed_t barend = x2 - 6;
+
+				if (barend - 2 >= barstart)
+				{
+					boolean lineisfull = false, recttoclear = false;
+
+					xiter = barstart;
+
+					if (playerx >= (barend + 1) * FRACUNIT)
+					{
+						lineisfull = true;
+					}
+					else if (playerx <= (barstart - 1) * FRACUNIT)
+					{
+						;
+					}
+					else
+					{
+						const fixed_t fillend = min((playerx / FRACUNIT) + 2, barend);
+
+						while (xiter < fillend)
+						{
+							V_DrawMappedPatch(
+								xiter - 1, 177,
+								0,
+								line_flat[BPP_SHADOW],
+								NULL
+							);
+
+							V_DrawMappedPatch(
+								xiter - 1, 179,
+								0,
+								line_flat[BPP_DONE],
+								colormap
+							);
+
+							xiter += 2;
+						}
+
+						// Undo the last step so we can draw the unfilled area of the patch.
+						xiter -= 2;
+
+						V_SetClipRect(
+							playerx,
+							0,
+							BASEVIDWIDTH << FRACBITS,
+							BASEVIDHEIGHT << FRACBITS,
+							0
+						);
+
+						recttoclear = true;
+					}
+
+					while (xiter < barend)
+					{
+						V_DrawMappedPatch(
+							xiter - 1, 177,
+							0,
+							line_flat[BPP_SHADOW],
+							NULL
+						);
+
+						V_DrawMappedPatch(
+							xiter - 1, 179,
+							0,
+							line_flat[lineisfull ? BPP_DONE : BPP_AHEAD],
+							lineisfull ? colormap : NULL
+						);
+
+						xiter += 2;
+					}
+
+					if (recttoclear == true)
+					{
+						V_ClearClipRect();
+					}
+				}
+
+				// Draw the final dot
+				V_DrawMappedPatch(
+					x2 - 8, y,
+					0,
+					prize_dot[roundqueue.position == roundqueue.size ? BPP_DONE : BPP_AHEAD],
+					roundqueue.position == roundqueue.size ? oppositemap : colormap
+				);
+			}
+		}
+
+		// Now draw the dot
+		patch_t **chose_dot = NULL;
+
+		if (roundqueue.entries[i].rankrestricted == true)
+		{
+			// This shouldn't show up in regular play, but don't hide it entirely.
+			chose_dot = prize_dot;
+		}
+		else if (grandprixinfo.gp == true
+			&& roundqueue.entries[i].gametype != roundqueue.entries[0].gametype
+		)
+		{
+			chose_dot = capsu_dot;
+		}
+		else
+		{
+			chose_dot = level_dot;
+		}
+
+		if (chose_dot)
+		{
+			V_DrawMappedPatch(
+				x - 8, y,
+				0,
+				chose_dot[roundqueue.position >= i+1 ? BPP_DONE : BPP_AHEAD],
+				roundqueue.position == i+1 ? oppositemap : colormap
+			);
+		}
+
+		x += 24;
+	}
+
+	// Draw the player position through the round queue!
+	if (playery != 0)
+	{
+		patch_t *rpmark[2];
+		rpmark[0] = W_CachePatchName("R_RPMARK", PU_PATCH);
+		rpmark[1] = W_CachePatchName("R_R2MARK", PU_PATCH);
+
+		// Change alignment
+		playerx -= (10 * FRACUNIT);
+		playery -= (14 * FRACUNIT);
+
+		if (pskin < numskins)
+		{
+			// Draw outline for rank icon
+			V_DrawFixedPatch(
+				playerx, playery,
+				FRACUNIT, 0,
+				rpmark[0],
+				NULL
+			);
+
+			// Draw the player's rank icon
+			V_DrawFixedPatch(
+				playerx + FRACUNIT, playery + FRACUNIT,
+				FRACUNIT, 0,
+				faceprefix[pskin][FACE_RANK],
+				R_GetTranslationColormap(pskin, pcolor, GTC_CACHE)
+			);
+		}
+		else
+		{
+			// Draw mini arrow
+			V_DrawFixedPatch(
+				playerx, playery,
+				FRACUNIT, 0,
+				rpmark[1],
+				NULL
+			);
+		}
+	}
+}
+
+//
 // Y_IntermissionDrawer
 //
 // Called by D_Display. Nothing is modified here; all it does is draw. (SRB2Kart: er, about that...)
@@ -480,15 +1042,6 @@ void Y_IntermissionDrawer(void)
 		LUA_HookHUD(luahuddrawlist_intermission, HUD_HOOK(intermission));
 	}
 	LUA_HUD_DrawList(luahuddrawlist_intermission);
-
-	// The following is functionally a hack.
-	// Due to how interpolation works, it's functionally one frame behind.
-	// So we offset certain interpolated timers by this to make our lives easier!
-	// This permits cues handled in the ticker and visuals to match up,
-	// like the player pin reaching the Sealed Star the frame of the fade.
-	// We also do this rather than doing extrapoleration because that would
-	// still put 35fps in the future. ~toast 100523
-	SINT8 interpoffs = (R_UsingFrameInterpolation() ? 1 : 0);
 
 	if (!LUA_HudEnabled(hud_intermissiontally))
 		goto skiptallydrawer;
@@ -730,546 +1283,8 @@ skiptallydrawer:
 	if (!LUA_HudEnabled(hud_intermissionmessages))
 		return;
 
-	if (roundqueue.size > 0)
-	{
-		UINT8 *greymap = R_GetTranslationColormap(TC_DEFAULT, SKINCOLOR_GREY, GTC_CACHE);
-
-		// Background pieces
-		patch_t *queuebg_flat = W_CachePatchName("R_RMBG1", PU_PATCH);
-		patch_t *queuebg_upwa = W_CachePatchName("R_RMBG2", PU_PATCH);
-		patch_t *queuebg_down = W_CachePatchName("R_RMBG3", PU_PATCH);
-		patch_t *queuebg_prize = W_CachePatchName("R_RMBG4", PU_PATCH);
-
-		// Progression lines
-		patch_t *line_upwa[BPP_MAX];
-		patch_t *line_down[BPP_MAX];
-		patch_t *line_flat[BPP_MAX];
-
-		line_upwa[BPP_AHEAD] = W_CachePatchName("R_RRMLN1", PU_PATCH);
-		line_upwa[BPP_DONE] = W_CachePatchName("R_RRMLN3", PU_PATCH);
-		line_upwa[BPP_SHADOW] = W_CachePatchName("R_RRMLS1", PU_PATCH);
-
-		line_down[BPP_AHEAD] = W_CachePatchName("R_RRMLN2", PU_PATCH);
-		line_down[BPP_DONE] = W_CachePatchName("R_RRMLN4", PU_PATCH);
-		line_down[BPP_SHADOW] = W_CachePatchName("R_RRMLS2", PU_PATCH);
-
-		line_flat[BPP_AHEAD] = W_CachePatchName("R_RRMLN5", PU_PATCH);
-		line_flat[BPP_DONE] = W_CachePatchName("R_RRMLN6", PU_PATCH);
-		line_flat[BPP_SHADOW] = W_CachePatchName("R_RRMLS3", PU_PATCH);
-
-		// Progress markers
-		patch_t *rpmark[2];
-		patch_t *level_dot[BPP_MAIN];
-		patch_t *capsu_dot[BPP_MAIN];
-		patch_t *prize_dot[BPP_MAIN];
-
-		rpmark[0] = W_CachePatchName("R_RPMARK", PU_PATCH);
-		rpmark[1] = W_CachePatchName("R_R2MARK", PU_PATCH);
-
-		level_dot[BPP_AHEAD] = W_CachePatchName("R_RRMRK2", PU_PATCH);
-		level_dot[BPP_DONE] = W_CachePatchName("R_RRMRK1", PU_PATCH);
-
-		capsu_dot[BPP_AHEAD] = W_CachePatchName("R_RRMRK3", PU_PATCH);
-		capsu_dot[BPP_DONE] = W_CachePatchName("R_RRMRK5", PU_PATCH);
-
-		prize_dot[BPP_AHEAD] = W_CachePatchName("R_RRMRK4", PU_PATCH);
-		prize_dot[BPP_DONE] = W_CachePatchName("R_RRMRK6", PU_PATCH);
-
-		UINT8 *colormap = NULL, *oppositemap = NULL;
-		fixed_t playerx = 0, playery = 0;
-		UINT8 pskin = MAXSKINS;
-		UINT16 pcolor = SKINCOLOR_WHITE;
-
-		if (data.mainplayer == MAXPLAYERS)
-		{
-			;
-		}
-		else if (playeringame[data.mainplayer] == false)
-		{
-			data.mainplayer = MAXPLAYERS;
-		}
-		else if (players[data.mainplayer].spectator == false
-			&& players[data.mainplayer].skin < numskins
-			&& players[data.mainplayer].skincolor != SKINCOLOR_NONE
-			&& players[data.mainplayer].skincolor < numskincolors
-		)
-		{
-			pskin = players[data.mainplayer].skin;
-			pcolor = players[data.mainplayer].skincolor;
-		}
-
-		colormap = R_GetTranslationColormap(TC_DEFAULT, pcolor, GTC_CACHE);
-		oppositemap = R_GetTranslationColormap(TC_DEFAULT, skincolors[pcolor].invcolor, GTC_CACHE);
-
-		UINT8 workingqueuesize = roundqueue.size;
-		boolean upwa = false;
-
-		if (roundqueue.size > 1
-			&& roundqueue.entries[roundqueue.size - 1].rankrestricted == true
-		)
-		{
-			if (roundqueue.size & 1)
-			{
-				upwa = true;
-			}
-
-			workingqueuesize--;
-		}
-
-		INT32 widthofroundqueue = 24*(workingqueuesize - 1);
-
-		x = (BASEVIDWIDTH - widthofroundqueue) / 2;
-
-		const INT32 desiredx2 = 290;
-		const INT32 spacetospecial = max(desiredx2 - widthofroundqueue - 24, 16);
-
-		// The following block handles horizontal easing of the
-		// progression bar on the last non-rankrestricted round.
-		if (data.showrank == true)
-		{
-			fixed_t percentslide = 0;
-			SINT8 deferxoffs = 0;
-
-			if (roundqueue.position == roundqueue.size)
-			{
-				percentslide = FRACUNIT;
-			}
-			else if (roundqueue.position == roundqueue.size-1
-				&& timer - interpoffs <= 3*TICRATE)
-			{
-				const INT32 through = (3*TICRATE) - (timer - interpoffs - 1);
-				const INT32 slidetime = (TICRATE/2);
-
-				if (through >= slidetime)
-				{
-					percentslide = FRACUNIT;
-				}
-				else
-				{
-					percentslide = R_InterpolateFixed(
-							(through - 1) * FRACUNIT,
-							(through * FRACUNIT)
-						) / slidetime;
-				}
-			}
-
-			if (percentslide == 0)
-			{
-				;
-			}
-			else
-			{
-				const INT32 differencetocover = (x + widthofroundqueue + spacetospecial - desiredx2);
-
-				if (percentslide == FRACUNIT)
-				{
-					x -= (differencetocover + deferxoffs);
-				}
-				else
-				{
-					x -= Easing_OutCubic(
-						percentslide,
-						0,
-						differencetocover * FRACUNIT
-					) / FRACUNIT;
-				}
-			}
-		}
-
-		// Fill in background to left edge of screen
-		fixed_t xiter = x;
-
-		if (upwa == true)
-		{
-			xiter -= 24;
-			V_DrawMappedPatch(xiter, 167, 0, queuebg_upwa, greymap);
-		}
-
-		while (xiter > 0)
-		{
-			xiter -= 24;
-			V_DrawMappedPatch(xiter, 167, 0, queuebg_flat, greymap);
-		}
-
-		for (i = 0; i < workingqueuesize; i++)
-		{
-			// Draw the background, and grab the appropriate line, to the right of the dot
-			patch_t **choose_line = NULL;
-
-			upwa ^= true;
-			if (upwa == false)
-			{
-				y = 171;
-
-				V_DrawMappedPatch(x, 167, 0, queuebg_down, greymap);
-
-				if (i+1 != workingqueuesize) // no more line?
-				{
-					choose_line = line_down;
-				}
-			}
-			else
-			{
-				y = 179;
-
-				if (i+1 != workingqueuesize) // no more line?
-				{
-					V_DrawMappedPatch(x, 167, 0, queuebg_upwa, greymap);
-
-					choose_line = line_upwa;
-				}
-				else
-				{
-					V_DrawMappedPatch(x, 167, 0, queuebg_flat, greymap);
-				}
-			}
-
-			if (roundqueue.position == i+1)
-			{
-				playerx = (x * FRACUNIT);
-				playery = (y * FRACUNIT);
-
-				// If there's standard progression ahead of us, visibly move along it.
-				if (choose_line != NULL && timer - interpoffs <= 2*TICRATE)
-				{
-					// 8 tics is chosen because it plays nice
-					// with both the x and y distance to cover.
-					fixed_t through = (2*TICRATE) - (timer - interpoffs - 1);;
-
-					if (through > 8)
-					{
-						if (through == 9 + interpoffs)
-						{
-							// Impactful landing
-							playery += FRACUNIT;
-						}
-
-						through = 8 * FRACUNIT;
-					}
-					else
-					{
-						through = R_InterpolateFixed(
-							(through - 1) * FRACUNIT,
-							(through * FRACUNIT)
-						);
-					}
-
-					// 24 pixels when all is said and done
-					playerx += through * 3;
-
-					if (upwa == false)
-					{
-						playery += through;
-					}
-					else
-					{
-						playery -= through;
-					}
-
-					if (through > 0 && through < 8 * FRACUNIT)
-					{
-						// Hoparabola and a skip.
-						const fixed_t jumpfactor = through - (4 * FRACUNIT);
-						// jumpfactor squared goes through 36 -> 0 -> 36.
-						// 12 pixels is an arbitrary jump height, but we match it to invert the parabola.
-						playery -= ((12 * FRACUNIT)
-								- (FixedMul(jumpfactor, jumpfactor) / 3)
-							);
-					}
-				}
-			}
-
-			if (choose_line != NULL)
-			{
-				// Draw the line to the right of the dot
-
-				V_DrawMappedPatch(
-					x - 1, 178,
-					0,
-					choose_line[BPP_SHADOW],
-					NULL
-				);
-
-				boolean lineisfull = false, recttoclear = false;
-
-				if (roundqueue.position > i+1)
-				{
-					lineisfull = true;
-				}
-				else if (roundqueue.position == i+1 && timer - interpoffs <= 2*TICRATE)
-				{
-					// 8 tics is chosen because it plays nice
-					// with both the x and y distance to cover.
-					const INT32 through = (2*TICRATE) - (timer - interpoffs - 1);
-
-					if (through == 0)
-					{
-						; // no change...
-					}
-					else if (through > 8)
-					{
-						lineisfull = true;
-					}
-					else
-					{
-						V_DrawMappedPatch(
-							x - 1, 179,
-							0,
-							choose_line[BPP_DONE],
-							colormap
-						);
-
-						V_SetClipRect(
-							playerx + FRACUNIT,
-							0,
-							BASEVIDWIDTH << FRACBITS,
-							BASEVIDHEIGHT << FRACBITS,
-							0
-						);
-
-						recttoclear = true;
-					}
-				}
-
-				V_DrawMappedPatch(
-					x - 1, 179,
-					0,
-					choose_line[lineisfull ? BPP_DONE : BPP_AHEAD],
-					lineisfull ? colormap : NULL
-				);
-
-				if (recttoclear == true)
-				{
-					V_ClearClipRect();
-				}
-			}
-			else
-			{
-				// No more line! Fill in background to right edge of screen
-				xiter = x;
-				while (xiter < BASEVIDWIDTH)
-				{
-					xiter += 24;
-					V_DrawMappedPatch(xiter, 167, 0, queuebg_flat, greymap);
-				}
-
-				// Handle special entry on the end
-				// (has to be drawn before the semifinal dot due to overlap)
-				if (data.showrank == true)
-				{
-					const fixed_t x2 = x + spacetospecial;
-
-					if (roundqueue.position == roundqueue.size)
-					{
-						playerx = (x2 * FRACUNIT);
-						playery = (y * FRACUNIT);
-					}
-					else if (roundqueue.position == roundqueue.size-1
-						&& timer - interpoffs <= 2*TICRATE)
-					{
-						const INT32 through = ((2*TICRATE) - (timer - interpoffs - 1));
-						fixed_t linefill;
-
-						if (through > data.linemeter)
-						{
-							linefill = data.linemeter * FRACUNIT;
-
-							// Small judder if there's enough time for it
-							if (timer <= 2)
-							{
-								;
-							}
-							else if (through == (data.linemeter + 1 + interpoffs))
-							{
-								playerx += FRACUNIT;
-							}
-							else if (through == (data.linemeter + 2 + interpoffs))
-							{
-								playerx -= FRACUNIT;
-							}
-						}
-						else
-						{
-							linefill = R_InterpolateFixed(
-								(through - 1) * FRACUNIT,
-								(through * FRACUNIT)
-							);
-						}
-
-						const fixed_t percent = FixedDiv(
-								linefill,
-								(2*TICRATE) * FRACUNIT
-							);
-
-						playerx +=
-							FixedMul(
-								(x2 - x) * FRACUNIT,
-								percent
-							);
-					}
-
-					// Special background bump
-					V_DrawMappedPatch(x2 - 13, 167, 0, queuebg_prize, greymap);
-
-					// Draw the final line
-					const fixed_t barstart = x + 6;
-					const fixed_t barend = x2 - 6;
-
-					if (barend - 2 >= barstart)
-					{
-						boolean lineisfull = false, recttoclear = false;
-
-						xiter = barstart;
-
-						if (playerx >= (barend + 1) * FRACUNIT)
-						{
-							lineisfull = true;
-						}
-						else if (playerx <= (barstart - 1) * FRACUNIT)
-						{
-							;
-						}
-						else
-						{
-							const fixed_t fillend = min((playerx / FRACUNIT) + 2, barend);
-
-							while (xiter < fillend)
-							{
-								V_DrawMappedPatch(
-									xiter - 1, 177,
-									0,
-									line_flat[BPP_SHADOW],
-									NULL
-								);
-
-								V_DrawMappedPatch(
-									xiter - 1, 179,
-									0,
-									line_flat[BPP_DONE],
-									colormap
-								);
-
-								xiter += 2;
-							}
-
-							// Undo the last step so we can draw the unfilled area of the patch.
-							xiter -= 2;
-
-							V_SetClipRect(
-								playerx,
-								0,
-								BASEVIDWIDTH << FRACBITS,
-								BASEVIDHEIGHT << FRACBITS,
-								0
-							);
-
-							recttoclear = true;
-						}
-
-						while (xiter < barend)
-						{
-							V_DrawMappedPatch(
-								xiter - 1, 177,
-								0,
-								line_flat[BPP_SHADOW],
-								NULL
-							);
-
-							V_DrawMappedPatch(
-								xiter - 1, 179,
-								0,
-								line_flat[lineisfull ? BPP_DONE : BPP_AHEAD],
-								lineisfull ? colormap : NULL
-							);
-
-							xiter += 2;
-						}
-
-						if (recttoclear == true)
-						{
-							V_ClearClipRect();
-						}
-					}
-
-					// Draw the final dot
-					V_DrawMappedPatch(
-						x2 - 8, y,
-						0,
-						prize_dot[roundqueue.position == roundqueue.size ? BPP_DONE : BPP_AHEAD],
-						roundqueue.position == roundqueue.size ? oppositemap : colormap
-					);
-				}
-			}
-
-			// Now draw the dot
-			patch_t **chose_dot = NULL;
-
-			if (roundqueue.entries[i].rankrestricted == true)
-			{
-				// This shouldn't show up in regular play, but don't hide it entirely.
-				chose_dot = prize_dot;
-			}
-			else if (grandprixinfo.gp == true
-				&& roundqueue.entries[i].gametype != roundqueue.entries[0].gametype
-			)
-			{
-				chose_dot = capsu_dot;
-			}
-			else
-			{
-				chose_dot = level_dot;
-			}
-
-			if (chose_dot)
-			{
-				V_DrawMappedPatch(
-					x - 8, y,
-					0,
-					chose_dot[roundqueue.position >= i+1 ? BPP_DONE : BPP_AHEAD],
-					roundqueue.position == i+1 ? oppositemap : colormap
-				);
-			}
-
-			x += 24;
-		}
-
-		// Draw the player position through the round queue!
-		if (playery != 0)
-		{
-			// Change alignment
-			playerx -= (10 * FRACUNIT);
-			playery -= (14 * FRACUNIT);
-
-			if (pskin < numskins)
-			{
-				// Draw outline for rank icon
-				V_DrawFixedPatch(
-					playerx, playery,
-					FRACUNIT, 0,
-					rpmark[0],
-					NULL
-				);
-
-				// Draw the player's rank icon
-				V_DrawFixedPatch(
-					playerx + FRACUNIT, playery + FRACUNIT,
-					FRACUNIT, 0,
-					faceprefix[pskin][FACE_RANK],
-					R_GetTranslationColormap(pskin, pcolor, GTC_CACHE)
-				);
-			}
-			else
-			{
-				// Draw mini arrow
-				V_DrawFixedPatch(
-					playerx, playery,
-					FRACUNIT, 0,
-					rpmark[1],
-					NULL
-				);
-			}
-		}
-	}
+	// Returns early if there's no roundqueue entries to draw
+	Y_RoundQueueDrawer();
 
 	if (netgame)
 	{

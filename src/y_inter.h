@@ -19,6 +19,9 @@ extern "C" {
 void Y_IntermissionDrawer(void);
 void Y_Ticker(void);
 
+// Specific sub-drawers
+void Y_RoundQueueDrawer(void);
+
 void Y_StartIntermission(void);
 void Y_EndIntermission(void);
 
