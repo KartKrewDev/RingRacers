@@ -411,10 +411,6 @@ void Y_PlayerStandingsDrawer(INT32 xoffset)
 	boolean verticalresults = (data.numplayers < 4);
 
 	INT32 hilicol = highlightflags;
-	INT32 whiteplayer = MAXPLAYERS;
-
-	if (!r_splitscreen)
-		whiteplayer = demo.playback ? displayplayers[0] : consoleplayer;
 
 	patch_t *resbar = W_CachePatchName("R_RESBAR", PU_PATCH); // Results bars for players
 
@@ -444,6 +440,12 @@ void Y_PlayerStandingsDrawer(INT32 xoffset)
 	}
 
 	y = returny = 106 - (heightcount * yspacing)/2;
+
+	boolean (*_isHighlightedPlayer)(player_t *) =
+		(demo.playback
+			? P_IsDisplayPlayer
+			: P_IsLocalPlayer
+		);
 
 	for (i = 0; i < data.numplayers; i++)
 	{
@@ -514,7 +516,15 @@ void Y_PlayerStandingsDrawer(INT32 xoffset)
 				y2 += SHORT (alagles->height) + 1;
 			}*/
 
-			V_DrawThinString(x+27, y-2, ((data.num[i] == whiteplayer) ? hilicol : 0)|V_ALLOWLOWERCASE|V_6WIDTHSPACE, strtime);
+			V_DrawThinString(
+				x+27, y-2,
+				(
+					_isHighlightedPlayer(&players[data.num[i]])
+						? hilicol
+						: 0
+				)|V_ALLOWLOWERCASE|V_6WIDTHSPACE,
+				strtime
+			);
 
 			strtime[0] = '\0';
 
