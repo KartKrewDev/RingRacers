@@ -389,6 +389,190 @@ typedef enum
 } bottomprogressionpatch_t;
 
 //
+// Y_PlayerStandingsDrawer
+//
+// Handles drawing the center-of-screen player standings.
+// Currently requires intermission y_data to be active, but abstraction is feasible.
+//
+void Y_PlayerStandingsDrawer(INT32 xoffset)
+{
+	if (data.numplayers == 0)
+	{
+		return;
+	}
+
+	UINT8 i;
+
+	SINT8 yspacing = 14;
+	INT32 heightcount = (data.numplayers - 1);
+
+	INT32 x, y, returny;
+
+	boolean verticalresults = (data.numplayers < 4);
+
+	INT32 hilicol = highlightflags;
+	INT32 whiteplayer = MAXPLAYERS;
+
+	if (!r_splitscreen)
+		whiteplayer = demo.playback ? displayplayers[0] : consoleplayer;
+
+	patch_t *resbar = W_CachePatchName("R_RESBAR", PU_PATCH); // Results bars for players
+
+	if (verticalresults)
+	{
+		x = (BASEVIDWIDTH/2) - 61;
+	}
+	else
+	{
+		x = 29;
+		heightcount /= 2;
+	}
+
+	x += xoffset;
+
+	if (data.numplayers > 10)
+	{
+		yspacing--;
+	}
+	else if (data.numplayers <= 6)
+	{
+		yspacing++;
+		if (verticalresults)
+		{
+			yspacing++;
+		}
+	}
+
+	y = returny = 106 - (heightcount * yspacing)/2;
+
+	for (i = 0; i < data.numplayers; i++)
+	{
+		boolean dojitter = data.jitter[data.num[i]] > 0;
+		data.jitter[data.num[i]] = 0;
+
+		if (data.num[i] == MAXPLAYERS)
+			;
+		else if (!playeringame[data.num[i]] || players[data.num[i]].spectator == true)
+			data.num[i] = MAXPLAYERS; // this should be the only field setting in this function
+		else
+		{
+			char strtime[MAXPLAYERNAME+1];
+
+			if (dojitter)
+				y--;
+
+			V_DrawMappedPatch(x, y, 0, resbar, NULL);
+
+			V_DrawRightAlignedThinString(x+13, y-2, 0, va("%d", data.pos[i]));
+
+			if (data.color[i])
+			{
+				UINT8 *charcolormap;
+				if (data.rankingsmode == 0 && (players[data.num[i]].pflags & PF_NOCONTEST) && players[data.num[i]].bot)
+				{
+					// RETIRED !!
+					charcolormap = R_GetTranslationColormap(TC_DEFAULT, *data.color[i], GTC_CACHE);
+					V_DrawMappedPatch(x+14, y-5, 0, W_CachePatchName("MINIDEAD", PU_CACHE), charcolormap);
+				}
+				else
+				{
+					charcolormap = R_GetTranslationColormap(*data.character[i], *data.color[i], GTC_CACHE);
+					V_DrawMappedPatch(x+14, y-5, 0, faceprefix[*data.character[i]][FACE_MINIMAP], charcolormap);
+				}
+			}
+
+			STRBUFCPY(strtime, data.name[i]);
+
+/*			y2 = y;
+
+			if ((netgame || (demo.playback && demo.netgame)) && playerconsole[data.num[i]] == 0 && server_lagless && !players[data.num[i]].bot)
+			{
+				static UINT8 alagles_timer = 0;
+				patch_t *alagles;
+
+				y2 = ( y - 4 );
+
+				V_DrawScaledPatch(x + 36, y2, 0, W_CachePatchName(va("BLAGLES%d", (intertic / 3) % 6), PU_CACHE));
+				// every 70 tics
+				if (( leveltime % 70 ) == 0)
+				{
+					alagles_timer = 9;
+				}
+				if (alagles_timer > 0)
+				{
+					alagles = W_CachePatchName(va("ALAGLES%d", alagles_timer), PU_CACHE);
+					V_DrawScaledPatch(x + 36, y2, 0, alagles);
+					if (( leveltime % 2 ) == 0)
+						alagles_timer--;
+				}
+				else
+				{
+					alagles = W_CachePatchName("ALAGLES0", PU_CACHE);
+					V_DrawScaledPatch(x + 36, y2, 0, alagles);
+				}
+
+				y2 += SHORT (alagles->height) + 1;
+			}*/
+
+			V_DrawThinString(x+27, y-2, ((data.num[i] == whiteplayer) ? hilicol : 0)|V_ALLOWLOWERCASE|V_6WIDTHSPACE, strtime);
+
+			strtime[0] = '\0';
+
+			if (data.rankingsmode)
+			{
+				if (powertype != PWRLV_DISABLED && !clientpowerlevels[data.num[i]][powertype])
+				{
+					// No power level (guests)
+					STRBUFCPY(strtime, "----");
+				}
+				else
+				{
+					/*if (data.increase[data.num[i]] != INT16_MIN)
+					{
+						snprintf(strtime, sizeof strtime, " (%d)", data.increase[data.num[i]]);
+
+						V_DrawThinString(x+118, y-2, V_6WIDTHSPACE, strtime);
+					}*/
+
+					snprintf(strtime, sizeof strtime, "%d", data.val[i]);
+				}
+			}
+			else
+			{
+				if (data.val[i] == (UINT32_MAX-1))
+					STRBUFCPY(strtime, "RETIRED.");
+				else
+				{
+					if (intertype == int_time)
+					{
+						snprintf(strtime, sizeof strtime, "%i'%02i\"%02i", G_TicsToMinutes(data.val[i], true),
+						G_TicsToSeconds(data.val[i]), G_TicsToCentiseconds(data.val[i]));
+						strtime[sizeof strtime - 1] = '\0';
+					}
+					else
+					{
+						snprintf(strtime, sizeof strtime, "%d", data.val[i]);
+					}
+				}
+			}
+
+			V_DrawRightAlignedThinString(x+118, y-2, V_6WIDTHSPACE, strtime);
+
+			if (dojitter)
+				y++;
+		}
+
+		y += yspacing;
+
+		if (verticalresults == false && i == (data.numplayers-1)/2)
+		{
+			x = 169 + xoffset;
+			y = returny;
+		}
+	}
+}
+
+//
 // Y_RoundQueueDrawer
 //
 // Handles drawing the bottom-of-screen progression.
@@ -973,19 +1157,10 @@ void Y_IntermissionDrawer(void)
 
 	g_wipeskiprender = false;
 
-	UINT8 i = 0;
-	fixed_t x, y, xoffset = 0;
+	fixed_t x;
 
-	INT32 hilicol = highlightflags;
-	INT32 whiteplayer = MAXPLAYERS;
-
-	if (!r_splitscreen)
-		whiteplayer = demo.playback ? displayplayers[0] : consoleplayer;
-
-	// Patches
-
-	patch_t *gthro = W_CachePatchName("R_GTHRO", PU_PATCH); // GOT THROUGH ROUND
-	patch_t *resbar = W_CachePatchName("R_RESBAR", PU_PATCH); // Results bars for players
+	// GOT THROUGH ROUND
+	patch_t *gthro = W_CachePatchName("R_GTHRO", PU_PATCH);
 
 	// Header bar
 	patch_t *rtpbr = W_CachePatchName("R_RTPBR", PU_PATCH);
@@ -1046,26 +1221,27 @@ void Y_IntermissionDrawer(void)
 	if (!LUA_HudEnabled(hud_intermissiontally))
 		goto skiptallydrawer;
 
+	x = 0;
 	if (sorttic != -1 && intertic > sorttic)
 	{
 		const INT32 count = (intertic - sorttic);
 
 		if (count < 8)
-			xoffset = -((count * vid.width) / (8 * vid.dupx));
+			x = -((count * vid.width) / (8 * vid.dupx));
 		else if (count == 8)
 			goto skiptallydrawer;
 		else if (count < 16)
-			xoffset = (((16 - count) * vid.width) / (8 * vid.dupx));
+			x = (((16 - count) * vid.width) / (8 * vid.dupx));
 	}
 
 	// Draw the header bar
 	{
-		V_DrawMappedPatch(20 + xoffset, 24, 0, rtpbr, NULL);
+		V_DrawMappedPatch(20 + x, 24, 0, rtpbr, NULL);
 
 		if (data.gotthrough)
 		{
 			// Draw "GOT THROUGH ROUND"
-			V_DrawMappedPatch(50 + xoffset, 42, 0, gthro, NULL);
+			V_DrawMappedPatch(50 + x, 42, 0, gthro, NULL);
 
 			// Draw round numbers
 			if (roundqueue.roundnum > 0 && !(grandprixinfo.gp == true && grandprixinfo.eventmode != GPEVENT_NONE))
@@ -1075,178 +1251,20 @@ void Y_IntermissionDrawer(void)
 						va("TT_RND%d", roundqueue.roundnum),
 						PU_PATCH
 					);
-				V_DrawMappedPatch(240 + xoffset, 39, 0, roundpatch, NULL);
+				V_DrawMappedPatch(240 + x, 39, 0, roundpatch, NULL);
 			}
 
 			// Draw the player's name
-			V_DrawTitleCardString(51 + xoffset, 7, data.headerstring, V_6WIDTHSPACE, false, 0, 0);
+			V_DrawTitleCardString(51 + x, 7, data.headerstring, V_6WIDTHSPACE, false, 0, 0);
 		}
 		else
 		{
-			V_DrawTitleCardString(51 + xoffset, 17, data.headerstring, V_6WIDTHSPACE, false, 0, 0);
+			V_DrawTitleCardString(51 + x, 17, data.headerstring, V_6WIDTHSPACE, false, 0, 0);
 		}
 	}
 
-	{
-		SINT8 yspacing = 14;
-		fixed_t heightcount = (data.numplayers - 1);
-		fixed_t returny;
-
-		boolean verticalresults = (data.numplayers < 4);
-
-		x = xoffset;
-
-		if (verticalresults)
-		{
-			x += (BASEVIDWIDTH/2) - 61;
-		}
-		else
-		{
-			x += 29;
-			heightcount /= 2;
-		}
-
-		if (data.numplayers > 10)
-		{
-			yspacing--;
-		}
-		else if (data.numplayers <= 6)
-		{
-			yspacing++;
-			if (verticalresults)
-			{
-				yspacing++;
-			}
-		}
-
-		y = returny = 106 - (heightcount * yspacing)/2;
-
-		for (i = 0; i < data.numplayers; i++)
-		{
-			boolean dojitter = data.jitter[data.num[i]] > 0;
-			data.jitter[data.num[i]] = 0;
-
-			if (data.num[i] == MAXPLAYERS)
-				;
-			else if (!playeringame[data.num[i]] || players[data.num[i]].spectator == true)
-				data.num[i] = MAXPLAYERS; // this should be the only field setting in this function
-			else
-			{
-				char strtime[MAXPLAYERNAME+1];
-
-				if (dojitter)
-					y--;
-
-				V_DrawMappedPatch(x, y, 0, resbar, NULL);
-
-				V_DrawRightAlignedThinString(x+13, y-2, 0, va("%d", data.pos[i]));
-
-				if (data.color[i])
-				{
-					UINT8 *charcolormap;
-					if (data.rankingsmode == 0 && (players[data.num[i]].pflags & PF_NOCONTEST) && players[data.num[i]].bot)
-					{
-						// RETIRED !!
-						charcolormap = R_GetTranslationColormap(TC_DEFAULT, *data.color[i], GTC_CACHE);
-						V_DrawMappedPatch(x+14, y-5, 0, W_CachePatchName("MINIDEAD", PU_CACHE), charcolormap);
-					}
-					else
-					{
-						charcolormap = R_GetTranslationColormap(*data.character[i], *data.color[i], GTC_CACHE);
-						V_DrawMappedPatch(x+14, y-5, 0, faceprefix[*data.character[i]][FACE_MINIMAP], charcolormap);
-					}
-				}
-
-				STRBUFCPY(strtime, data.name[i]);
-
-/*				y2 = y;
-
-				if ((netgame || (demo.playback && demo.netgame)) && playerconsole[data.num[i]] == 0 && server_lagless && !players[data.num[i]].bot)
-				{
-					static UINT8 alagles_timer = 0;
-					patch_t *alagles;
-
-					y2 = ( y - 4 );
-
-					V_DrawScaledPatch(x + 36, y2, 0, W_CachePatchName(va("BLAGLES%d", (intertic / 3) % 6), PU_CACHE));
-					// every 70 tics
-					if (( leveltime % 70 ) == 0)
-					{
-						alagles_timer = 9;
-					}
-					if (alagles_timer > 0)
-					{
-						alagles = W_CachePatchName(va("ALAGLES%d", alagles_timer), PU_CACHE);
-						V_DrawScaledPatch(x + 36, y2, 0, alagles);
-						if (( leveltime % 2 ) == 0)
-							alagles_timer--;
-					}
-					else
-					{
-						alagles = W_CachePatchName("ALAGLES0", PU_CACHE);
-						V_DrawScaledPatch(x + 36, y2, 0, alagles);
-					}
-
-					y2 += SHORT (alagles->height) + 1;
-				}*/
-
-				V_DrawThinString(x+27, y-2, ((data.num[i] == whiteplayer) ? hilicol : 0)|V_ALLOWLOWERCASE|V_6WIDTHSPACE, strtime);
-
-				strtime[0] = '\0';
-
-				if (data.rankingsmode)
-				{
-					if (powertype != PWRLV_DISABLED && !clientpowerlevels[data.num[i]][powertype])
-					{
-						// No power level (guests)
-						STRBUFCPY(strtime, "----");
-					}
-					else
-					{
-						/*if (data.increase[data.num[i]] != INT16_MIN)
-						{
-							snprintf(strtime, sizeof strtime, " (%d)", data.increase[data.num[i]]);
-
-							V_DrawThinString(x+118, y-2, V_6WIDTHSPACE, strtime);
-						}*/
-
-						snprintf(strtime, sizeof strtime, "%d", data.val[i]);
-					}
-				}
-				else
-				{
-					if (data.val[i] == (UINT32_MAX-1))
-						STRBUFCPY(strtime, "RETIRED.");
-					else
-					{
-						if (intertype == int_time)
-						{
-							snprintf(strtime, sizeof strtime, "%i'%02i\"%02i", G_TicsToMinutes(data.val[i], true),
-							G_TicsToSeconds(data.val[i]), G_TicsToCentiseconds(data.val[i]));
-							strtime[sizeof strtime - 1] = '\0';
-						}
-						else
-						{
-							snprintf(strtime, sizeof strtime, "%d", data.val[i]);
-						}
-					}
-				}
-
-				V_DrawRightAlignedThinString(x+118, y-2, V_6WIDTHSPACE, strtime);
-
-				if (dojitter)
-					y++;
-			}
-
-			y += yspacing;
-
-			if (verticalresults == false && i == (data.numplayers-1)/2)
-			{
-				x = 169 + xoffset;
-				y = returny;
-			}
-		}
-	}
+	// Returns early if there's no players to draw
+	Y_PlayerStandingsDrawer(x);
 
 	// Draw bottom (and top) pieces
 skiptallydrawer:
@@ -1261,13 +1279,13 @@ skiptallydrawer:
 					INT32 buttony = 2;
 					
 					K_drawButtonAnim(buttonx - 76, buttony, V_SNAPTOTOP|V_SNAPTORIGHT, kp_button_b[1], replayprompttic);
-					V_DrawRightAlignedThinString(buttonx - 55, buttony, V_SNAPTOTOP|V_SNAPTORIGHT|V_ALLOWLOWERCASE|V_6WIDTHSPACE|hilicol, "or");
+					V_DrawRightAlignedThinString(buttonx - 55, buttony, V_SNAPTOTOP|V_SNAPTORIGHT|V_ALLOWLOWERCASE|V_6WIDTHSPACE|highlightflags, "or");
 					K_drawButtonAnim(buttonx - 55, buttony, V_SNAPTOTOP|V_SNAPTORIGHT, kp_button_x[1], replayprompttic);
-					V_DrawRightAlignedThinString(buttonx - 2, buttony, V_SNAPTOTOP|V_SNAPTORIGHT|V_ALLOWLOWERCASE|V_6WIDTHSPACE|hilicol, "Save replay");
+					V_DrawRightAlignedThinString(buttonx - 2, buttony, V_SNAPTOTOP|V_SNAPTORIGHT|V_ALLOWLOWERCASE|V_6WIDTHSPACE|highlightflags, "Save replay");
 					break;	
 				}
 				case DSM_SAVED:
-					V_DrawRightAlignedThinString(BASEVIDWIDTH - 2, 2, V_SNAPTOTOP|V_SNAPTORIGHT|V_ALLOWLOWERCASE|V_6WIDTHSPACE|hilicol, "Replay saved!");
+					V_DrawRightAlignedThinString(BASEVIDWIDTH - 2, 2, V_SNAPTOTOP|V_SNAPTORIGHT|V_ALLOWLOWERCASE|V_6WIDTHSPACE|highlightflags, "Replay saved!");
 					break;
 
 				case DSM_TITLEENTRY:
@@ -1290,7 +1308,7 @@ skiptallydrawer:
 	{
 		if (speedscramble != -1 && speedscramble != gamespeed)
 		{
-			V_DrawCenteredThinString(BASEVIDWIDTH/2, 154, hilicol|V_ALLOWLOWERCASE|V_SNAPTOBOTTOM,
+			V_DrawCenteredThinString(BASEVIDWIDTH/2, 154, highlightflags|V_ALLOWLOWERCASE|V_SNAPTOBOTTOM,
 				va(M_GetText("Next race will be %s Speed!"), kartspeed_cons_t[1+speedscramble].strvalue));
 		}
 	}

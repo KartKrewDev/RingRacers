@@ -20,6 +20,7 @@ void Y_IntermissionDrawer(void);
 void Y_Ticker(void);
 
 // Specific sub-drawers
+void Y_PlayerStandingsDrawer(INT32 xoffset);
 void Y_RoundQueueDrawer(void);
 
 void Y_StartIntermission(void);
