@@ -10224,22 +10224,23 @@ static void K_AirFailsafe(player_t *player)
 //
 fixed_t K_PlayerBaseFriction(player_t *player, fixed_t original)
 {
+	const fixed_t factor = FixedDiv(FRACUNIT - original, FRACUNIT - ORIG_FRICTION);
 	fixed_t frict = original;
 
 	if (K_PodiumSequence() == true)
 	{
-		frict -= FRACUNIT >> 4;
+		frict -= FixedMul(FRACUNIT >> 4, factor);
 	}
 	else if (K_PlayerUsesBotMovement(player) == true)
 	{
 		// A bit extra friction to help them without drifting.
 		// Remove this line once they can drift.
-		frict -= FRACUNIT >> 5;
+		frict -= FixedMul(FRACUNIT >> 5, factor);
 
 		// Bots gain more traction as they rubberband.
 		if (player->botvars.rubberband > FRACUNIT)
 		{
-			static const fixed_t extraFriction = FRACUNIT >> 5;
+			const fixed_t extraFriction = FixedMul(FRACUNIT >> 5, factor);
 			const fixed_t mul = player->botvars.rubberband - FRACUNIT;
 			frict -= FixedMul(extraFriction, mul);
 		}
