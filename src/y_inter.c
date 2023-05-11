@@ -836,6 +836,7 @@ void Y_RoundQueueDrawer(void)
 					);
 				}
 			}
+			// End of the moving along
 		}
 
 		if (choose_line != NULL)
@@ -1058,6 +1059,7 @@ void Y_RoundQueueDrawer(void)
 					roundqueue.position == roundqueue.size ? oppositemap : colormap
 				);
 			}
+			// End of the special entry handling
 		}
 
 		// Now draw the dot
@@ -1159,12 +1161,6 @@ void Y_IntermissionDrawer(void)
 
 	fixed_t x;
 
-	// GOT THROUGH ROUND
-	patch_t *gthro = W_CachePatchName("R_GTHRO", PU_PATCH);
-
-	// Header bar
-	patch_t *rtpbr = W_CachePatchName("R_RTPBR", PU_PATCH);
-
 	// Checker scroll
 	patch_t *rbgchk = W_CachePatchName("R_RBGCHK", PU_PATCH);
 
@@ -1236,11 +1232,14 @@ void Y_IntermissionDrawer(void)
 
 	// Draw the header bar
 	{
+		// Header bar
+		patch_t *rtpbr = W_CachePatchName("R_RTPBR", PU_PATCH);
 		V_DrawMappedPatch(20 + x, 24, 0, rtpbr, NULL);
 
 		if (data.gotthrough)
 		{
-			// Draw "GOT THROUGH ROUND"
+			// GOT THROUGH ROUND
+			patch_t *gthro = W_CachePatchName("R_GTHRO", PU_PATCH);
 			V_DrawMappedPatch(50 + x, 42, 0, gthro, NULL);
 
 			// Draw round numbers
@@ -1268,6 +1267,22 @@ void Y_IntermissionDrawer(void)
 
 	// Draw bottom (and top) pieces
 skiptallydrawer:
+	if (!LUA_HudEnabled(hud_intermissionmessages))
+		goto finalcounter;
+
+	// Returns early if there's no roundqueue entries to draw
+	Y_RoundQueueDrawer();
+
+	if (netgame)
+	{
+		if (speedscramble != -1 && speedscramble != gamespeed)
+		{
+			V_DrawCenteredThinString(BASEVIDWIDTH/2, 154, highlightflags|V_ALLOWLOWERCASE|V_SNAPTOBOTTOM,
+				va(M_GetText("Next race will be %s Speed!"), kartspeed_cons_t[1+speedscramble].strvalue));
+		}
+	}
+
+finalcounter:
 	{
 		if ((modeattacking == ATTACKING_NONE) && (demo.recording || demo.savemode == DSM_SAVED) && !demo.playback)
 		{
@@ -1295,21 +1310,6 @@ skiptallydrawer:
 				default: // Don't render any text here
 					break;
 			}
-		}
-	}
-
-	if (!LUA_HudEnabled(hud_intermissionmessages))
-		return;
-
-	// Returns early if there's no roundqueue entries to draw
-	Y_RoundQueueDrawer();
-
-	if (netgame)
-	{
-		if (speedscramble != -1 && speedscramble != gamespeed)
-		{
-			V_DrawCenteredThinString(BASEVIDWIDTH/2, 154, highlightflags|V_ALLOWLOWERCASE|V_SNAPTOBOTTOM,
-				va(M_GetText("Next race will be %s Speed!"), kartspeed_cons_t[1+speedscramble].strvalue));
 		}
 	}
 
