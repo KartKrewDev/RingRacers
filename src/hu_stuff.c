@@ -2343,12 +2343,13 @@ Ping_gfx_color (int lag)
 //
 // HU_drawPing
 //
-void HU_drawPing(fixed_t x, fixed_t y, UINT32 lag, INT32 flags, boolean offline)
+void HU_drawPing(fixed_t x, fixed_t y, UINT32 lag, INT32 flags, boolean offline, SINT8 toside)
 {
 	UINT8 *colormap = NULL;
 	INT32 measureid = cv_pingmeasurement.value ? 1 : 0;
 	INT32 gfxnum; // gfx to draw
 	boolean drawlocal = (offline && cv_mindelay.value && lag <= (tic_t)cv_mindelay.value);
+	fixed_t x2, y2;
 
 	if (!server && lag <= (tic_t)cv_mindelay.value)
 	{
@@ -2356,13 +2357,35 @@ void HU_drawPing(fixed_t x, fixed_t y, UINT32 lag, INT32 flags, boolean offline)
 		drawlocal = true;
 	}
 
+	x2 = x;
+	y2 = y + FRACUNIT;
+
+	if (toside == 0)
+	{
+		if (measureid == 1)
+		{
+			x2 += ((11 - pingmeasure[measureid]->width) * FRACUNIT);
+		}
+		else
+		{
+			x2 += (10 * FRACUNIT);
+		}
+
+		y2 += (8 * FRACUNIT);
+	}
+	else if (toside > 0)
+	{
+		x2 += (20 * FRACUNIT);
+	}
+	//else if (toside < 0)
+
 	gfxnum = Ping_gfx_num(lag);
 
 	if (measureid == 1)
 	{
 		V_DrawFixedPatch(
-			x + ((11 - pingmeasure[measureid]->width) * FRACUNIT),
-			y + (9 * FRACUNIT),
+			x2,
+			y2,
 			FRACUNIT, flags,
 			pingmeasure[measureid],
 			NULL
@@ -2403,9 +2426,9 @@ void HU_drawPing(fixed_t x, fixed_t y, UINT32 lag, INT32 flags, boolean offline)
 		lag = (INT32)(lag * (1000.00f / TICRATE));
 	}
 
-	x = V_DrawPingNum(
-		x + (((measureid == 1) ? 11 - pingmeasure[measureid]->width : 10) * FRACUNIT),
-		y + (9 * FRACUNIT),
+	x2 = V_DrawPingNum(
+		x2,
+		y2,
 		flags, lag,
 		colormap
 	);
@@ -2413,8 +2436,8 @@ void HU_drawPing(fixed_t x, fixed_t y, UINT32 lag, INT32 flags, boolean offline)
 	if (measureid == 0)
 	{
 		V_DrawFixedPatch(
-			x + ((1 - pingmeasure[measureid]->width) * FRACUNIT),
-			y + (9 * FRACUNIT),
+			x2 + ((1 - pingmeasure[measureid]->width) * FRACUNIT),
+			y2,
 			FRACUNIT, flags,
 			pingmeasure[measureid],
 			NULL

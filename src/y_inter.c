@@ -413,9 +413,12 @@ void Y_PlayerStandingsDrawer(y_data_t *standings, INT32 xoffset)
 	SINT8 yspacing = 14;
 	INT32 heightcount = (standings->numplayers - 1);
 
-	INT32 x, y, returny;
+	INT32 x, y;
+	INT32 x2, returny;
 
 	boolean verticalresults = (standings->numplayers < 4);
+	boolean datarightofcolumn = false;
+	boolean drawping = (netgame && gamestate == GS_LEVEL);
 
 	INT32 hilicol = highlightflags;
 
@@ -424,6 +427,11 @@ void Y_PlayerStandingsDrawer(y_data_t *standings, INT32 xoffset)
 	if (verticalresults)
 	{
 		x = (BASEVIDWIDTH/2) - 61;
+
+		if (drawping)
+		{
+			x += 9;
+		}
 	}
 	else
 	{
@@ -432,6 +440,7 @@ void Y_PlayerStandingsDrawer(y_data_t *standings, INT32 xoffset)
 	}
 
 	x += xoffset;
+	x2 = x - 9;
 
 	if (standings->numplayers > 10)
 	{
@@ -535,6 +544,28 @@ void Y_PlayerStandingsDrawer(y_data_t *standings, INT32 xoffset)
 				standings->strval[i]
 			);
 
+			if (drawping)
+			{
+				if (players[pnum].bot)
+				{
+					/*V_DrawScaledPatch(
+						x2, y-1,
+						0,
+						kp_cpu
+					);*/
+				}
+				else if (pnum != serverplayer || !server_lagless)
+				{
+					HU_drawPing(
+						(x2 - 2) * FRACUNIT, (y-2) * FRACUNIT,
+						playerpingtable[pnum],
+						0,
+						false,
+						(datarightofcolumn ? 1 : -1)
+					);
+				}
+			}
+
 			// Reverse the jitter offset
 			if (standings->jitter[pnum] > 0)
 				y++;
@@ -546,6 +577,9 @@ void Y_PlayerStandingsDrawer(y_data_t *standings, INT32 xoffset)
 		{
 			x = 169 + xoffset;
 			y = returny;
+
+			datarightofcolumn = true;
+			x2 = x + 118 + 5;
 		}
 	}
 }
