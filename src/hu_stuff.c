@@ -2708,8 +2708,8 @@ static void HU_DrawRankings(void)
 
 			if (players[i].exiting)
 			{
-				snprintf(strtime, sizeof strtime, "%i'%02i\"%02i", G_TicsToMinutes(standings.val[standings.numplayers], true),
-				G_TicsToSeconds(standings.val[standings.numplayers]), G_TicsToCentiseconds(standings.val[standings.numplayers]));
+				snprintf(strtime, sizeof strtime, "%i'%02i\"%02i", G_TicsToMinutes(players[i].realtime, true),
+				G_TicsToSeconds(players[i].realtime), G_TicsToCentiseconds(players[i].realtime));
 			}
 			else
 			{
