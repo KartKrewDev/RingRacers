@@ -271,6 +271,8 @@ boolean K_BotHatesThisSector(player_t *player, sector_t *sec, fixed_t x, fixed_t
 --------------------------------------------------*/
 static void K_AddAttackObject(mobj_t *thing, UINT8 side, UINT8 weight)
 {
+	fixed_t x, y;
+	angle_t a, dir;
 	UINT8 i;
 
 	I_Assert(side <= 1);
@@ -280,10 +282,21 @@ static void K_AddAttackObject(mobj_t *thing, UINT8 side, UINT8 weight)
 		return;
 	}
 
+	x = thing->x;
+	y = thing->y;
+	a = R_PointToAngle2(globalsmuggle.botmo->x, globalsmuggle.botmo->y, x, y);
+
+	dir = a + (side ? -ANGLE_90 : ANGLE_90);
+	x += FixedMul(thing->radius, FINECOSINE(dir >> ANGLETOFINESHIFT));
+	y += FixedMul(thing->radius, FINESINE(dir >> ANGLETOFINESHIFT));
+
+	x /= mapobjectscale;
+	y /= mapobjectscale;
+
 	for (i = 0; i < weight; i++)
 	{
-		globalsmuggle.gotoAvgX[side] += thing->x / mapobjectscale;
-		globalsmuggle.gotoAvgY[side] += thing->y / mapobjectscale;
+		globalsmuggle.gotoAvgX[side] += x;
+		globalsmuggle.gotoAvgY[side] += y;
 		globalsmuggle.gotoObjs[side]++;
 	}
 }
@@ -303,6 +316,8 @@ static void K_AddAttackObject(mobj_t *thing, UINT8 side, UINT8 weight)
 --------------------------------------------------*/
 static void K_AddDodgeObject(mobj_t *thing, UINT8 side, UINT8 weight)
 {
+	fixed_t x, y;
+	angle_t a, dir;
 	UINT8 i;
 
 	I_Assert(side <= 1);
@@ -312,11 +327,22 @@ static void K_AddDodgeObject(mobj_t *thing, UINT8 side, UINT8 weight)
 		return;
 	}
 
+	x = thing->x;
+	y = thing->y;
+	a = R_PointToAngle2(globalsmuggle.botmo->x, globalsmuggle.botmo->y, x, y);
+
+	dir = a + (side ? -ANGLE_90 : ANGLE_90);
+	x += FixedMul(thing->radius, FINECOSINE(dir >> ANGLETOFINESHIFT));
+	y += FixedMul(thing->radius, FINESINE(dir >> ANGLETOFINESHIFT));
+
+	x /= mapobjectscale;
+	y /= mapobjectscale;
+
 	for (i = 0; i < weight; i++)
 	{
-		globalsmuggle.gotoAvgX[side] += thing->x / mapobjectscale;
-		globalsmuggle.gotoAvgY[side] += thing->y / mapobjectscale;
-		globalsmuggle.gotoObjs[side]++;
+		globalsmuggle.avoidAvgX[side] += x;
+		globalsmuggle.avoidAvgY[side] += y;
+		globalsmuggle.avoidObjs[side]++;
 	}
 }
 
@@ -366,7 +392,7 @@ static boolean K_PlayerAttackSteer(mobj_t *thing, UINT8 side, UINT8 weight, bool
 --------------------------------------------------*/
 static BlockItReturn_t K_FindObjectsForNudging(mobj_t *thing)
 {
-	INT16 anglediff;
+	INT16 angledelta, anglediff;
 	fixed_t fulldist;
 	angle_t destangle, angle, predictangle;
 	UINT8 side = 0;
@@ -404,15 +430,15 @@ static BlockItReturn_t K_FindObjectsForNudging(mobj_t *thing)
 
 	if (angle < ANGLE_180)
 	{
-		anglediff = AngleFixed(angle)>>FRACBITS;
+		angledelta = AngleFixed(angle)>>FRACBITS;
 	}
 	else 
 	{
-		anglediff = 360-(AngleFixed(angle)>>FRACBITS);
+		angledelta = 360-(AngleFixed(angle)>>FRACBITS);
 		side = 1;
 	}
 
-	anglediff = abs(anglediff);
+	anglediff = abs(angledelta);
 
 	switch (thing->type)
 	{
@@ -638,23 +664,40 @@ void K_NudgePredictionTowardsObjects(botprediction_t *predict, player_t *player)
 
 	INT32 xl, xh, yl, yh, bx, by;
 
-	fixed_t distToPredict = R_PointToDist2(player->mo->x, player->mo->y, predict->x, predict->y);
+	fixed_t distToPredict = 0;
+	angle_t angleToPredict = 0;
 
 	fixed_t avgX = 0, avgY = 0;
 	fixed_t avgDist = 0;
 
-	const fixed_t baseNudge = predict->radius;
-	fixed_t maxNudge = distToPredict;
+	fixed_t baseNudge = 0;
+	fixed_t maxNudge = 0;
 	fixed_t nudgeDist = 0;
 	angle_t nudgeDir = 0;
 
 	SINT8 gotoSide = -1;
 	UINT8 i;
 
+	if (predict == NULL)
+	{
+		ps_bots[player - players].nudge += I_GetPreciseTime() - time;
+		return;
+	}
+
+	distToPredict = R_PointToDist2(player->mo->x, player->mo->y, predict->x, predict->y);
+	angleToPredict = R_PointToAngle2(player->mo->x, player->mo->y, predict->x, predict->y);
+
+	globalsmuggle.distancetocheck = distToPredict >> 1;
+
+	baseNudge = predict->radius * 2;
+	maxNudge = distToPredict;
+
 	globalsmuggle.botmo = player->mo;
 	globalsmuggle.predict = predict;
 
-	globalsmuggle.distancetocheck = distToPredict;
+	// silly variable reuse
+	avgX = globalsmuggle.botmo->x + FixedMul(globalsmuggle.distancetocheck, FINECOSINE(angleToPredict >> ANGLETOFINESHIFT));
+	avgY = globalsmuggle.botmo->y + FixedMul(globalsmuggle.distancetocheck, FINESINE(angleToPredict >> ANGLETOFINESHIFT));
 
 	for (i = 0; i < 2; i++)
 	{
@@ -665,10 +708,10 @@ void K_NudgePredictionTowardsObjects(botprediction_t *predict, player_t *player)
 		globalsmuggle.avoidObjs[i] = 0;
 	}
 
-	xl = (unsigned)(globalsmuggle.botmo->x - globalsmuggle.distancetocheck - bmaporgx)>>MAPBLOCKSHIFT;
-	xh = (unsigned)(globalsmuggle.botmo->x + globalsmuggle.distancetocheck - bmaporgx)>>MAPBLOCKSHIFT;
-	yl = (unsigned)(globalsmuggle.botmo->y - globalsmuggle.distancetocheck - bmaporgy)>>MAPBLOCKSHIFT;
-	yh = (unsigned)(globalsmuggle.botmo->y + globalsmuggle.distancetocheck - bmaporgy)>>MAPBLOCKSHIFT;
+	xl = (unsigned)(avgX - (globalsmuggle.distancetocheck + MAXRADIUS) - bmaporgx)>>MAPBLOCKSHIFT;
+	xh = (unsigned)(avgX + (globalsmuggle.distancetocheck + MAXRADIUS) - bmaporgx)>>MAPBLOCKSHIFT;
+	yl = (unsigned)(avgY - (globalsmuggle.distancetocheck + MAXRADIUS) - bmaporgy)>>MAPBLOCKSHIFT;
+	yh = (unsigned)(avgY + (globalsmuggle.distancetocheck + MAXRADIUS) - bmaporgy)>>MAPBLOCKSHIFT;
 
 	BMBOUNDFIX(xl, xh, yl, yh);
 
