@@ -455,7 +455,15 @@ void Y_PlayerStandingsDrawer(y_data_t *standings, INT32 xoffset)
 		}
 	}
 
-	y = returny = 106 - (heightcount * yspacing)/2;
+	y = 106 - (heightcount * yspacing)/2;
+
+	if (y < 70)
+	{
+		// One sanity check.
+		y = 70;
+	}
+
+	returny = y;
 
 	boolean (*_isHighlightedPlayer)(player_t *) =
 		(demo.playback
