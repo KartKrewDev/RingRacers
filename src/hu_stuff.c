@@ -2730,45 +2730,6 @@ static void HU_DrawRankings(void)
 	// Returns early if there's no players to draw
 	Y_PlayerStandingsDrawer(&standings, 0);
 
-	/*i = MAXPLAYERS;
-
-	for (j = 0; j < standings.numplayers; j++)
-	{
-		i = standings.num[j];
-
-		if (i >= MAXPLAYERS
-			|| playeringame[i] == false
-			|| players[i].spectator == true)
-		{
-			continue;
-		}
-
-		if (demo.playback)
-		{
-			if (!P_IsDisplayPlayer(&players[i]))
-			{
-				continue;
-			}
-
-			break;
-		}
-
-		if (!P_IsLocalPlayer(&players[i]))
-		{
-			continue;
-		}
-
-		break;
-	}
-
-	if (i != MAXPLAYERS)
-	{
-		standings.mainplayer = i;
-	}
-
-	// Returns early if there's no roundqueue entries to draw
-	Y_RoundQueueDrawer();*/
-
 	// draw spectators in a ticker across the bottom
 	if (netgame && G_GametypeHasSpectators())
 		HU_DrawSpectatorTicker();

@@ -152,7 +152,7 @@ static void Y_CalculateMatchData(UINT8 rankingsmode, void (*comparison)(INT32))
 		getmainplayer = true;
 
 		{
-			// See also G_GetNextMap
+			// See also G_GetNextMap, M_DrawPause
 			data.showrank = false;
 			if (grandprixinfo.gp == true
 				&& netgame == false // TODO netgame Special Mode support
@@ -590,7 +590,7 @@ void Y_PlayerStandingsDrawer(y_data_t *standings, INT32 xoffset)
 // Handles drawing the bottom-of-screen progression.
 // Currently requires intermission y_data to be active, but abstraction is feasible.
 //
-void Y_RoundQueueDrawer(void)
+void Y_RoundQueueDrawer(y_data_t *standings, boolean doanimations, boolean widescreen)
 {
 	if (roundqueue.size == 0)
 	{
@@ -609,6 +609,9 @@ void Y_RoundQueueDrawer(void)
 	UINT8 i;
 
 	UINT8 *greymap = R_GetTranslationColormap(TC_DEFAULT, SKINCOLOR_GREY, GTC_CACHE);
+
+	INT32 baseflags = (widescreen ? V_SNAPTOBOTTOM : 0);
+	INT32 bufferspace = ((vid.width/vid.dupx) - BASEVIDWIDTH) / 2;
 
 	// Background pieces
 	patch_t *queuebg_flat = W_CachePatchName("R_RMBG1", PU_PATCH);
@@ -652,22 +655,22 @@ void Y_RoundQueueDrawer(void)
 	UINT8 pskin = MAXSKINS;
 	UINT16 pcolor = SKINCOLOR_WHITE;
 
-	if (data.mainplayer == MAXPLAYERS)
+	if (standings->mainplayer == MAXPLAYERS)
 	{
 		;
 	}
-	else if (playeringame[data.mainplayer] == false)
+	else if (playeringame[standings->mainplayer] == false)
 	{
-		data.mainplayer = MAXPLAYERS;
+		standings->mainplayer = MAXPLAYERS;
 	}
-	else if (players[data.mainplayer].spectator == false
-		&& players[data.mainplayer].skin < numskins
-		&& players[data.mainplayer].skincolor != SKINCOLOR_NONE
-		&& players[data.mainplayer].skincolor < numskincolors
+	else if (players[standings->mainplayer].spectator == false
+		&& players[standings->mainplayer].skin < numskins
+		&& players[standings->mainplayer].skincolor != SKINCOLOR_NONE
+		&& players[standings->mainplayer].skincolor < numskincolors
 	)
 	{
-		pskin = players[data.mainplayer].skin;
-		pcolor = players[data.mainplayer].skincolor;
+		pskin = players[standings->mainplayer].skin;
+		pcolor = players[standings->mainplayer].skincolor;
 	}
 
 	colormap = R_GetTranslationColormap(TC_DEFAULT, pcolor, GTC_CACHE);
@@ -697,19 +700,20 @@ void Y_RoundQueueDrawer(void)
 
 	// The following block handles horizontal easing of the
 	// progression bar on the last non-rankrestricted round.
-	if (data.showrank == true)
+	if (standings->showrank == true)
 	{
 		fixed_t percentslide = 0;
 		SINT8 deferxoffs = 0;
 
-		const INT32 desiredx2 = 290;
-		spacetospecial = max(desiredx2 - widthofroundqueue - 24, 16);
+		const INT32 desiredx2 = (290 + bufferspace);
+		spacetospecial = max(desiredx2 - widthofroundqueue - (24 - bufferspace), 16);
 
 		if (roundqueue.position == roundqueue.size)
 		{
 			percentslide = FRACUNIT;
 		}
-		else if (roundqueue.position == roundqueue.size-1
+		else if (doanimations
+			&& roundqueue.position == roundqueue.size-1
 			&& timer - interpoffs <= 3*TICRATE)
 		{
 			const INT32 through = (3*TICRATE) - (timer - interpoffs - 1);
@@ -753,13 +757,13 @@ void Y_RoundQueueDrawer(void)
 	if (upwa == true)
 	{
 		xiter -= 24;
-		V_DrawMappedPatch(xiter, 167, 0, queuebg_upwa, greymap);
+		V_DrawMappedPatch(xiter, 167, baseflags, queuebg_upwa, greymap);
 	}
 
-	while (xiter > 0)
+	while (xiter > -bufferspace)
 	{
 		xiter -= 24;
-		V_DrawMappedPatch(xiter, 167, 0, queuebg_flat, greymap);
+		V_DrawMappedPatch(xiter, 167, baseflags, queuebg_flat, greymap);
 	}
 
 	for (i = 0; i < workingqueuesize; i++)
@@ -772,7 +776,7 @@ void Y_RoundQueueDrawer(void)
 		{
 			y = 171;
 
-			V_DrawMappedPatch(x, 167, 0, queuebg_down, greymap);
+			V_DrawMappedPatch(x, 167, baseflags, queuebg_down, greymap);
 
 			if (i+1 != workingqueuesize) // no more line?
 			{
@@ -785,13 +789,13 @@ void Y_RoundQueueDrawer(void)
 
 			if (i+1 != workingqueuesize) // no more line?
 			{
-				V_DrawMappedPatch(x, 167, 0, queuebg_upwa, greymap);
+				V_DrawMappedPatch(x, 167, baseflags, queuebg_upwa, greymap);
 
 				choose_line = line_upwa;
 			}
 			else
 			{
-				V_DrawMappedPatch(x, 167, 0, queuebg_flat, greymap);
+				V_DrawMappedPatch(x, 167, baseflags, queuebg_flat, greymap);
 			}
 		}
 
@@ -801,7 +805,11 @@ void Y_RoundQueueDrawer(void)
 			playery = (y * FRACUNIT);
 
 			// If there's standard progression ahead of us, visibly move along it.
-			if (choose_line != NULL && timer - interpoffs <= 2*TICRATE)
+			if (
+				doanimations
+				&& choose_line != NULL
+				&& timer - interpoffs <= 2*TICRATE
+			)
 			{
 				// 8 tics is chosen because it plays nice
 				// with both the x and y distance to cover.
@@ -857,7 +865,7 @@ void Y_RoundQueueDrawer(void)
 
 			V_DrawMappedPatch(
 				x - 1, 178,
-				0,
+				baseflags,
 				choose_line[BPP_SHADOW],
 				NULL
 			);
@@ -868,7 +876,11 @@ void Y_RoundQueueDrawer(void)
 			{
 				lineisfull = true;
 			}
-			else if (roundqueue.position == i+1 && timer - interpoffs <= 2*TICRATE)
+			else if (
+				doanimations == true
+				&& roundqueue.position == i+1
+				&& timer - interpoffs <= 2*TICRATE
+			)
 			{
 				// 8 tics is chosen because it plays nice
 				// with both the x and y distance to cover.
@@ -886,7 +898,7 @@ void Y_RoundQueueDrawer(void)
 				{
 					V_DrawMappedPatch(
 						x - 1, 179,
-						0,
+						baseflags,
 						choose_line[BPP_DONE],
 						colormap
 					);
@@ -894,9 +906,9 @@ void Y_RoundQueueDrawer(void)
 					V_SetClipRect(
 						playerx + FRACUNIT,
 						0,
-						BASEVIDWIDTH << FRACBITS,
+						(BASEVIDWIDTH + bufferspace) << FRACBITS,
 						BASEVIDHEIGHT << FRACBITS,
-						0
+						baseflags
 					);
 
 					recttoclear = true;
@@ -905,7 +917,7 @@ void Y_RoundQueueDrawer(void)
 
 			V_DrawMappedPatch(
 				x - 1, 179,
-				0,
+				baseflags,
 				choose_line[lineisfull ? BPP_DONE : BPP_AHEAD],
 				lineisfull ? colormap : NULL
 			);
@@ -919,15 +931,15 @@ void Y_RoundQueueDrawer(void)
 		{
 			// No more line! Fill in background to right edge of screen
 			xiter = x;
-			while (xiter < BASEVIDWIDTH)
+			while (xiter < BASEVIDWIDTH + bufferspace)
 			{
 				xiter += 24;
-				V_DrawMappedPatch(xiter, 167, 0, queuebg_flat, greymap);
+				V_DrawMappedPatch(xiter, 167, baseflags, queuebg_flat, greymap);
 			}
 
 			// Handle special entry on the end
 			// (has to be drawn before the semifinal dot due to overlap)
-			if (data.showrank == true)
+			if (standings->showrank == true)
 			{
 				const fixed_t x2 = x + spacetospecial;
 
@@ -936,26 +948,29 @@ void Y_RoundQueueDrawer(void)
 					playerx = (x2 * FRACUNIT);
 					playery = (y * FRACUNIT);
 				}
-				else if (roundqueue.position == roundqueue.size-1
-					&& timer - interpoffs <= 2*TICRATE)
+				else if (
+					doanimations == true
+					&& roundqueue.position == roundqueue.size-1
+					&& timer - interpoffs <= 2*TICRATE
+				)
 				{
 					const INT32 through = ((2*TICRATE) - (timer - interpoffs - 1));
 					fixed_t linefill;
 
-					if (through > data.linemeter)
+					if (through > standings->linemeter)
 					{
-						linefill = data.linemeter * FRACUNIT;
+						linefill = standings->linemeter * FRACUNIT;
 
 						// Small judder if there's enough time for it
 						if (timer <= 2)
 						{
 							;
 						}
-						else if (through == (data.linemeter + 1 + interpoffs))
+						else if (through == (standings->linemeter + 1 + interpoffs))
 						{
 							playerx += FRACUNIT;
 						}
-						else if (through == (data.linemeter + 2 + interpoffs))
+						else if (through == (standings->linemeter + 2 + interpoffs))
 						{
 							playerx -= FRACUNIT;
 						}
@@ -981,7 +996,7 @@ void Y_RoundQueueDrawer(void)
 				}
 
 				// Special background bump
-				V_DrawMappedPatch(x2 - 13, 167, 0, queuebg_prize, greymap);
+				V_DrawMappedPatch(x2 - 13, 167, baseflags, queuebg_prize, greymap);
 
 				// Draw the final line
 				const fixed_t barstart = x + 6;
@@ -1009,14 +1024,14 @@ void Y_RoundQueueDrawer(void)
 						{
 							V_DrawMappedPatch(
 								xiter - 1, 177,
-								0,
+								baseflags,
 								line_flat[BPP_SHADOW],
 								NULL
 							);
 
 							V_DrawMappedPatch(
 								xiter - 1, 179,
-								0,
+								baseflags,
 								line_flat[BPP_DONE],
 								colormap
 							);
@@ -1030,9 +1045,9 @@ void Y_RoundQueueDrawer(void)
 						V_SetClipRect(
 							playerx,
 							0,
-							BASEVIDWIDTH << FRACBITS,
+							(BASEVIDWIDTH + bufferspace) << FRACBITS,
 							BASEVIDHEIGHT << FRACBITS,
-							0
+							baseflags
 						);
 
 						recttoclear = true;
@@ -1042,14 +1057,14 @@ void Y_RoundQueueDrawer(void)
 					{
 						V_DrawMappedPatch(
 							xiter - 1, 177,
-							0,
+							baseflags,
 							line_flat[BPP_SHADOW],
 							NULL
 						);
 
 						V_DrawMappedPatch(
 							xiter - 1, 179,
-							0,
+							baseflags,
 							line_flat[lineisfull ? BPP_DONE : BPP_AHEAD],
 							lineisfull ? colormap : NULL
 						);
@@ -1066,7 +1081,7 @@ void Y_RoundQueueDrawer(void)
 				// Draw the final dot
 				V_DrawMappedPatch(
 					x2 - 8, y,
-					0,
+					baseflags,
 					prize_dot[roundqueue.position == roundqueue.size ? BPP_DONE : BPP_AHEAD],
 					roundqueue.position == roundqueue.size ? oppositemap : colormap
 				);
@@ -1097,7 +1112,7 @@ void Y_RoundQueueDrawer(void)
 		{
 			V_DrawMappedPatch(
 				x - 8, y,
-				0,
+				baseflags,
 				chose_dot[roundqueue.position >= i+1 ? BPP_DONE : BPP_AHEAD],
 				roundqueue.position == i+1 ? oppositemap : colormap
 			);
@@ -1122,7 +1137,8 @@ void Y_RoundQueueDrawer(void)
 			// Draw outline for rank icon
 			V_DrawFixedPatch(
 				playerx, playery,
-				FRACUNIT, 0,
+				FRACUNIT,
+				baseflags,
 				rpmark[0],
 				NULL
 			);
@@ -1130,7 +1146,8 @@ void Y_RoundQueueDrawer(void)
 			// Draw the player's rank icon
 			V_DrawFixedPatch(
 				playerx + FRACUNIT, playery + FRACUNIT,
-				FRACUNIT, 0,
+				FRACUNIT,
+				baseflags,
 				faceprefix[pskin][FACE_RANK],
 				R_GetTranslationColormap(pskin, pcolor, GTC_CACHE)
 			);
@@ -1140,7 +1157,8 @@ void Y_RoundQueueDrawer(void)
 			// Draw mini arrow
 			V_DrawFixedPatch(
 				playerx, playery,
-				FRACUNIT, 0,
+				FRACUNIT,
+				baseflags,
 				rpmark[1],
 				NULL
 			);
@@ -1283,7 +1301,7 @@ skiptallydrawer:
 		goto finalcounter;
 
 	// Returns early if there's no roundqueue entries to draw
-	Y_RoundQueueDrawer();
+	Y_RoundQueueDrawer(&data, true, false);
 
 	if (netgame)
 	{

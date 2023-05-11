@@ -48,7 +48,7 @@ void Y_Ticker(void);
 
 // Specific sub-drawers
 void Y_PlayerStandingsDrawer(y_data_t *standings, INT32 xoffset);
-void Y_RoundQueueDrawer(void);
+void Y_RoundQueueDrawer(y_data_t *standings, boolean doanimations, boolean widescreen);
 
 void Y_StartIntermission(void);
 void Y_EndIntermission(void);
