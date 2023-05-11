@@ -1261,11 +1261,11 @@ void Y_IntermissionDrawer(void)
 		const INT32 count = (intertic - sorttic);
 
 		if (count < 8)
-			x = -((count * vid.width) / (8 * vid.dupx));
+			x = -((count * BASEVIDWIDTH) / 8);
 		else if (count == 8)
 			goto skiptallydrawer;
 		else if (count < 16)
-			x = (((16 - count) * vid.width) / (8 * vid.dupx));
+			x = (((16 - count) * BASEVIDWIDTH) / 8);
 	}
 
 	// Draw the header bar
