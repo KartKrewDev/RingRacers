@@ -62,34 +62,7 @@ typedef struct
 	UINT8 display;
 } y_bonus_t;
 
-typedef struct
-{
-	boolean rankingsmode; // rankings mode
-	boolean gotthrough; // show "got through"
-	boolean showrank; // show rank-restricted queue entry at the end, if it exists
-	boolean encore; // encore mode
-
-	char headerstring[64]; // holds levelnames up to 64 characters
-
-	UINT8 numplayers; // Number of players being displayed
-	UINT8 mainplayer; // Most successful local player
-
-	SINT8 num[MAXPLAYERS]; // Player #
-	UINT8 pos[MAXPLAYERS]; // player positions. used for ties
-
-	UINT8 character[MAXPLAYERS]; // Character #
-	UINT16 color[MAXPLAYERS]; // Color #
-
-	UINT32 val[MAXPLAYERS]; // Gametype-specific value
-	char strval[MAXPLAYERS][MAXPLAYERNAME+1];
-
-	INT16 increase[MAXPLAYERS]; // how much did the score increase by?
-	UINT8 jitter[MAXPLAYERS]; // wiggle
-
-	INT32 linemeter; // For GP only
-} y_data;
-
-static y_data data;
+static y_data_t data;
 
 // graphics
 static patch_t *bgpatch = NULL;     // INTERSCR
@@ -267,7 +240,7 @@ static void Y_CalculateMatchData(UINT8 rankingsmode, void (*comparison)(INT32))
 
 #define strtime data.strval[data.numplayers]
 
-		data.strval[data.numplayers][0] = '\0';
+		strtime[0] = '\0';
 
 		if (!rankingsmode)
 		{
@@ -427,11 +400,10 @@ typedef enum
 // Y_PlayerStandingsDrawer
 //
 // Handles drawing the center-of-screen player standings.
-// Currently requires intermission y_data to be active, but abstraction is feasible.
 //
-void Y_PlayerStandingsDrawer(INT32 xoffset)
+void Y_PlayerStandingsDrawer(y_data_t *standings, INT32 xoffset)
 {
-	if (data.numplayers == 0)
+	if (standings->numplayers == 0)
 	{
 		return;
 	}
@@ -439,11 +411,11 @@ void Y_PlayerStandingsDrawer(INT32 xoffset)
 	UINT8 i;
 
 	SINT8 yspacing = 14;
-	INT32 heightcount = (data.numplayers - 1);
+	INT32 heightcount = (standings->numplayers - 1);
 
 	INT32 x, y, returny;
 
-	boolean verticalresults = (data.numplayers < 4);
+	boolean verticalresults = (standings->numplayers < 4);
 
 	INT32 hilicol = highlightflags;
 
@@ -461,11 +433,11 @@ void Y_PlayerStandingsDrawer(INT32 xoffset)
 
 	x += xoffset;
 
-	if (data.numplayers > 10)
+	if (standings->numplayers > 10)
 	{
 		yspacing--;
 	}
-	else if (data.numplayers <= 6)
+	else if (standings->numplayers <= 6)
 	{
 		yspacing++;
 		if (verticalresults)
@@ -482,39 +454,37 @@ void Y_PlayerStandingsDrawer(INT32 xoffset)
 			: P_IsLocalPlayer
 		);
 
-	for (i = 0; i < data.numplayers; i++)
+	for (i = 0; i < standings->numplayers; i++)
 	{
-		const UINT8 pnum = data.num[i];
-
-		boolean dojitter = data.jitter[pnum] > 0;
-		data.jitter[pnum] = 0;
+		const UINT8 pnum = standings->num[i];
 
 		if (pnum == MAXPLAYERS)
 			;
 		else if (!playeringame[pnum] || players[pnum].spectator == true)
-			data.num[i] = MAXPLAYERS; // this should be the only field setting in this function
+			standings->num[i] = MAXPLAYERS; // this should be the only field setting in this function
 		else
 		{
-			if (dojitter)
+			// Apply the jitter offset (later reversed)
+			if (standings->jitter[pnum] > 0)
 				y--;
 
 			V_DrawMappedPatch(x, y, 0, resbar, NULL);
 
-			V_DrawRightAlignedThinString(x+13, y-2, 0, va("%d", data.pos[i]));
+			V_DrawRightAlignedThinString(x+13, y-2, 0, va("%d", standings->pos[i]));
 
-			if (data.color[i])
+			if (standings->color[i] != SKINCOLOR_NONE)
 			{
 				UINT8 *charcolormap;
-				if (data.rankingsmode == 0 && (players[pnum].pflags & PF_NOCONTEST) && players[pnum].bot)
+				if ((players[pnum].pflags & PF_NOCONTEST) && players[pnum].bot)
 				{
 					// RETIRED !!
-					charcolormap = R_GetTranslationColormap(TC_DEFAULT, data.color[i], GTC_CACHE);
+					charcolormap = R_GetTranslationColormap(TC_DEFAULT, standings->color[i], GTC_CACHE);
 					V_DrawMappedPatch(x+14, y-5, 0, W_CachePatchName("MINIDEAD", PU_CACHE), charcolormap);
 				}
 				else
 				{
-					charcolormap = R_GetTranslationColormap(data.character[i], data.color[i], GTC_CACHE);
-					V_DrawMappedPatch(x+14, y-5, 0, faceprefix[data.character[i]][FACE_MINIMAP], charcolormap);
+					charcolormap = R_GetTranslationColormap(standings->character[i], standings->color[i], GTC_CACHE);
+					V_DrawMappedPatch(x+14, y-5, 0, faceprefix[standings->character[i]][FACE_MINIMAP], charcolormap);
 				}
 			}
 
@@ -561,17 +531,18 @@ void Y_PlayerStandingsDrawer(INT32 xoffset)
 
 			V_DrawRightAlignedThinString(
 				x+118, y-2,
-				V_6WIDTHSPACE,
-				data.strval[i]
+				V_ALLOWLOWERCASE|V_6WIDTHSPACE,
+				standings->strval[i]
 			);
 
-			if (dojitter)
+			// Reverse the jitter offset
+			if (standings->jitter[pnum] > 0)
 				y++;
 		}
 
 		y += yspacing;
 
-		if (verticalresults == false && i == (data.numplayers-1)/2)
+		if (verticalresults == false && i == (standings->numplayers-1)/2)
 		{
 			x = 169 + xoffset;
 			y = returny;
@@ -1270,7 +1241,7 @@ void Y_IntermissionDrawer(void)
 	}
 
 	// Returns early if there's no players to draw
-	Y_PlayerStandingsDrawer(x);
+	Y_PlayerStandingsDrawer(&data, x);
 
 	// Draw bottom (and top) pieces
 skiptallydrawer:
@@ -1383,8 +1354,16 @@ void Y_Ticker(void)
 		return;
 	}
 
-	if (intertic < TICRATE || intertic & 1 || endtic != -1)
+	if (intertic < TICRATE || endtic != -1)
+	{
 		return;
+	}
+
+	if (data.rankingsmode && intertic & 1)
+	{
+		memset(data.jitter, 0, sizeof (data.jitter));
+		return;
+	}
 
 	if (intertype == int_time || intertype == int_score)
 	{
