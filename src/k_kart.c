@@ -6276,7 +6276,14 @@ void K_DropHnextList(player_t *player)
 				dropwork->flags &= ~(MF_NOCLIP|MF_NOCLIPTHING);
 			}
 
-			dropwork->flags2 |= MF2_AMBUSH;
+			if (type == MT_ORBINAUT)
+			{
+				Obj_OrbinautDrop(dropwork);
+			}
+			else
+			{
+				dropwork->flags2 |= MF2_AMBUSH;
+			}
 
 			dropwork->z += flip;
 
@@ -6290,7 +6297,11 @@ void K_DropHnextList(player_t *player)
 			P_Thrust(dropwork, work->angle - ANGLE_90, 6*mapobjectscale);
 
 			dropwork->movecount = 2;
-			dropwork->movedir = work->angle - ANGLE_90;
+
+			// TODO: movedir doesn't seem to be used by
+			// anything. It conflicts with orbinaut_flags so
+			// is commented out.
+			//dropwork->movedir = work->angle - ANGLE_90;
 
 			P_SetMobjState(dropwork, dropwork->info->deathstate);
 
