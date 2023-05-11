@@ -484,12 +484,14 @@ void Y_PlayerStandingsDrawer(INT32 xoffset)
 
 	for (i = 0; i < data.numplayers; i++)
 	{
-		boolean dojitter = data.jitter[data.num[i]] > 0;
-		data.jitter[data.num[i]] = 0;
+		const UINT8 pnum = data.num[i];
 
-		if (data.num[i] == MAXPLAYERS)
+		boolean dojitter = data.jitter[pnum] > 0;
+		data.jitter[pnum] = 0;
+
+		if (pnum == MAXPLAYERS)
 			;
-		else if (!playeringame[data.num[i]] || players[data.num[i]].spectator == true)
+		else if (!playeringame[pnum] || players[pnum].spectator == true)
 			data.num[i] = MAXPLAYERS; // this should be the only field setting in this function
 		else
 		{
@@ -503,7 +505,7 @@ void Y_PlayerStandingsDrawer(INT32 xoffset)
 			if (data.color[i])
 			{
 				UINT8 *charcolormap;
-				if (data.rankingsmode == 0 && (players[data.num[i]].pflags & PF_NOCONTEST) && players[data.num[i]].bot)
+				if (data.rankingsmode == 0 && (players[pnum].pflags & PF_NOCONTEST) && players[pnum].bot)
 				{
 					// RETIRED !!
 					charcolormap = R_GetTranslationColormap(TC_DEFAULT, data.color[i], GTC_CACHE);
@@ -518,7 +520,7 @@ void Y_PlayerStandingsDrawer(INT32 xoffset)
 
 /*			y2 = y;
 
-			if ((netgame || (demo.playback && demo.netgame)) && playerconsole[data.num[i]] == 0 && server_lagless && !players[data.num[i]].bot)
+			if ((netgame || (demo.playback && demo.netgame)) && playerconsole[pnum] == 0 && server_lagless && !players[pnum].bot)
 			{
 				static UINT8 alagles_timer = 0;
 				patch_t *alagles;
@@ -550,11 +552,11 @@ void Y_PlayerStandingsDrawer(INT32 xoffset)
 			V_DrawThinString(
 				x+27, y-2,
 				(
-					_isHighlightedPlayer(&players[data.num[i]])
+					_isHighlightedPlayer(&players[pnum])
 						? hilicol
 						: 0
 				)|V_ALLOWLOWERCASE|V_6WIDTHSPACE,
-				player_names[data.num[i]]
+				player_names[pnum]
 			);
 
 			V_DrawRightAlignedThinString(
