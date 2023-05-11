@@ -439,7 +439,7 @@ static line_t *K_FindBotController(mobj_t *mo)
 --------------------------------------------------*/
 static UINT32 K_BotRubberbandDistance(player_t *player)
 {
-	const UINT32 spacing = FixedDiv(640 * FRACUNIT, K_GetKartGameSpeedScalar(gamespeed)) / FRACUNIT;
+	const UINT32 spacing = FixedDiv(640 * mapobjectscale, K_GetKartGameSpeedScalar(gamespeed)) / FRACUNIT;
 	const UINT8 portpriority = player - players;
 	UINT8 pos = 0;
 	UINT8 i;
