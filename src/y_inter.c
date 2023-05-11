@@ -64,10 +64,9 @@ typedef struct
 
 typedef struct
 {
-	INT32 *character[MAXPLAYERS]; // Character #
-	UINT16 *color[MAXPLAYERS]; // Color #
+	UINT8 character[MAXPLAYERS]; // Character #
+	UINT16 color[MAXPLAYERS]; // Color #
 	SINT8 num[MAXPLAYERS]; // Player #
-	char *name[MAXPLAYERS]; // Player's name
 
 	UINT8 numplayers; // Number of players being displayed
 	UINT8 mainplayer; // Most successful local player
@@ -252,9 +251,8 @@ static void Y_CalculateMatchData(UINT8 rankingsmode, void (*comparison)(INT32))
 
 		completed[i] = true;
 
-		data.color[data.numplayers] = &players[i].skincolor;
-		data.character[data.numplayers] = &players[i].skin;
-		data.name[data.numplayers] = player_names[i];
+		data.color[data.numplayers] = players[i].skincolor;
+		data.character[data.numplayers] = players[i].skin;
 
 		if (data.numplayers && (data.val[data.numplayers] == data.val[data.numplayers-1]))
 		{
@@ -280,9 +278,9 @@ static void Y_CalculateMatchData(UINT8 rankingsmode, void (*comparison)(INT32))
 			{
 				G_WriteStanding(
 					data.pos[data.numplayers],
-					data.name[data.numplayers],
-					*data.character[data.numplayers],
-					*data.color[data.numplayers],
+					player_names[i],
+					data.character[data.numplayers],
+					data.color[data.numplayers],
 					data.val[data.numplayers]
 				);
 			}
@@ -473,17 +471,15 @@ void Y_PlayerStandingsDrawer(INT32 xoffset)
 				if (data.rankingsmode == 0 && (players[data.num[i]].pflags & PF_NOCONTEST) && players[data.num[i]].bot)
 				{
 					// RETIRED !!
-					charcolormap = R_GetTranslationColormap(TC_DEFAULT, *data.color[i], GTC_CACHE);
+					charcolormap = R_GetTranslationColormap(TC_DEFAULT, data.color[i], GTC_CACHE);
 					V_DrawMappedPatch(x+14, y-5, 0, W_CachePatchName("MINIDEAD", PU_CACHE), charcolormap);
 				}
 				else
 				{
-					charcolormap = R_GetTranslationColormap(*data.character[i], *data.color[i], GTC_CACHE);
-					V_DrawMappedPatch(x+14, y-5, 0, faceprefix[*data.character[i]][FACE_MINIMAP], charcolormap);
+					charcolormap = R_GetTranslationColormap(data.character[i], data.color[i], GTC_CACHE);
+					V_DrawMappedPatch(x+14, y-5, 0, faceprefix[data.character[i]][FACE_MINIMAP], charcolormap);
 				}
 			}
-
-			STRBUFCPY(strtime, data.name[i]);
 
 /*			y2 = y;
 
@@ -523,7 +519,7 @@ void Y_PlayerStandingsDrawer(INT32 xoffset)
 						? hilicol
 						: 0
 				)|V_ALLOWLOWERCASE|V_6WIDTHSPACE,
-				strtime
+				player_names[data.num[i]]
 			);
 
 			strtime[0] = '\0';
