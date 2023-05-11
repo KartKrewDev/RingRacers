@@ -64,25 +64,27 @@ typedef struct
 
 typedef struct
 {
-	UINT8 character[MAXPLAYERS]; // Character #
-	UINT16 color[MAXPLAYERS]; // Color #
-	SINT8 num[MAXPLAYERS]; // Player #
-
-	UINT8 numplayers; // Number of players being displayed
-	UINT8 mainplayer; // Most successful local player
-
-	char headerstring[64]; // holds levelnames up to 64 characters
-
-	INT16 increase[MAXPLAYERS]; // how much did the score increase by?
-	UINT8 jitter[MAXPLAYERS]; // wiggle
-
-	UINT32 val[MAXPLAYERS]; // Gametype-specific value
-	UINT8 pos[MAXPLAYERS]; // player positions. used for ties
-
 	boolean rankingsmode; // rankings mode
 	boolean gotthrough; // show "got through"
 	boolean showrank; // show rank-restricted queue entry at the end, if it exists
 	boolean encore; // encore mode
+
+	char headerstring[64]; // holds levelnames up to 64 characters
+
+	UINT8 numplayers; // Number of players being displayed
+	UINT8 mainplayer; // Most successful local player
+
+	SINT8 num[MAXPLAYERS]; // Player #
+	UINT8 pos[MAXPLAYERS]; // player positions. used for ties
+
+	UINT8 character[MAXPLAYERS]; // Character #
+	UINT16 color[MAXPLAYERS]; // Color #
+
+	UINT32 val[MAXPLAYERS]; // Gametype-specific value
+	char strval[MAXPLAYERS][MAXPLAYERNAME+1];
+
+	INT16 increase[MAXPLAYERS]; // how much did the score increase by?
+	UINT8 jitter[MAXPLAYERS]; // wiggle
 
 	INT32 linemeter; // For GP only
 } y_data;
@@ -263,6 +265,10 @@ static void Y_CalculateMatchData(UINT8 rankingsmode, void (*comparison)(INT32))
 			data.pos[data.numplayers] = data.numplayers+1;
 		}
 
+#define strtime data.strval[data.numplayers]
+
+		data.strval[data.numplayers][0] = '\0';
+
 		if (!rankingsmode)
 		{
 			if ((powertype == PWRLV_DISABLED)
@@ -284,7 +290,38 @@ static void Y_CalculateMatchData(UINT8 rankingsmode, void (*comparison)(INT32))
 					data.val[data.numplayers]
 				);
 			}
+
+			if (data.val[data.numplayers] == (UINT32_MAX-1))
+				STRBUFCPY(strtime, "RETIRED.");
+			else
+			{
+				if (intertype == int_time)
+				{
+					snprintf(strtime, sizeof strtime, "%i'%02i\"%02i", G_TicsToMinutes(data.val[data.numplayers], true),
+					G_TicsToSeconds(data.val[data.numplayers]), G_TicsToCentiseconds(data.val[data.numplayers]));
+				}
+				else
+				{
+					snprintf(strtime, sizeof strtime, "%d", data.val[data.numplayers]);
+				}
+			}
 		}
+		else
+		{
+			if (powertype != PWRLV_DISABLED && !clientpowerlevels[i][powertype])
+			{
+				// No power level (guests)
+				STRBUFCPY(strtime, "----");
+			}
+			else
+			{
+				snprintf(strtime, sizeof strtime, "%d", data.val[data.numplayers]);
+			}
+		}
+
+		strtime[sizeof strtime - 1] = '\0';
+
+#undef strtime
 
 		data.numplayers++;
 	}
@@ -456,8 +493,6 @@ void Y_PlayerStandingsDrawer(INT32 xoffset)
 			data.num[i] = MAXPLAYERS; // this should be the only field setting in this function
 		else
 		{
-			char strtime[MAXPLAYERNAME+1];
-
 			if (dojitter)
 				y--;
 
@@ -522,47 +557,11 @@ void Y_PlayerStandingsDrawer(INT32 xoffset)
 				player_names[data.num[i]]
 			);
 
-			strtime[0] = '\0';
-
-			if (data.rankingsmode)
-			{
-				if (powertype != PWRLV_DISABLED && !clientpowerlevels[data.num[i]][powertype])
-				{
-					// No power level (guests)
-					STRBUFCPY(strtime, "----");
-				}
-				else
-				{
-					/*if (data.increase[data.num[i]] != INT16_MIN)
-					{
-						snprintf(strtime, sizeof strtime, " (%d)", data.increase[data.num[i]]);
-
-						V_DrawThinString(x+118, y-2, V_6WIDTHSPACE, strtime);
-					}*/
-
-					snprintf(strtime, sizeof strtime, "%d", data.val[i]);
-				}
-			}
-			else
-			{
-				if (data.val[i] == (UINT32_MAX-1))
-					STRBUFCPY(strtime, "RETIRED.");
-				else
-				{
-					if (intertype == int_time)
-					{
-						snprintf(strtime, sizeof strtime, "%i'%02i\"%02i", G_TicsToMinutes(data.val[i], true),
-						G_TicsToSeconds(data.val[i]), G_TicsToCentiseconds(data.val[i]));
-						strtime[sizeof strtime - 1] = '\0';
-					}
-					else
-					{
-						snprintf(strtime, sizeof strtime, "%d", data.val[i]);
-					}
-				}
-			}
-
-			V_DrawRightAlignedThinString(x+118, y-2, V_6WIDTHSPACE, strtime);
+			V_DrawRightAlignedThinString(
+				x+118, y-2,
+				V_6WIDTHSPACE,
+				data.strval[i]
+			);
 
 			if (dojitter)
 				y++;
