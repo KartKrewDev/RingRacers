@@ -441,3 +441,8 @@ boolean Obj_GachaBomWasTossed(mobj_t *th)
 {
 	return (orbinaut_flags(th) & ORBI_TOSSED) == ORBI_TOSSED;
 }
+
+void Obj_OrbinautDrop(mobj_t *th)
+{
+	orbinaut_flags(th) |= ORBI_DROPPED;
+}
