@@ -4572,6 +4572,8 @@ static mobj_t *K_SpawnKartMissile(mobj_t *source, mobjtype_t type, angle_t an, I
 
 	if (dir == -1)
 	{
+		fixed_t nerf = FRACUNIT;
+
 		// Backwards nerfs
 		switch (type)
 		{
@@ -4579,15 +4581,21 @@ static mobj_t *K_SpawnKartMissile(mobj_t *source, mobjtype_t type, angle_t an, I
 			case MT_GACHABOM:
 				// These items orbit in place.
 				// Look for a tight radius...
-				finalspeed /= 4;
+				nerf = FRACUNIT/4;
 				break;
 
 			case MT_BALLHOG:
-				finalspeed /= 8;
+				nerf = FRACUNIT/8;
 				break;
 
 			default:
 				break;
+		}
+
+		if (finalspeed != FRACUNIT)
+		{
+			// Scale to gamespeed for consistency
+			finalspeed = FixedMul(finalspeed, FixedDiv(nerf, K_GetKartGameSpeedScalar(gamespeed)));
 		}
 	}
 
