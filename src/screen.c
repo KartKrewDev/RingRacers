@@ -637,7 +637,7 @@ void SCR_DisplayTicRate(void)
 		}
 
 		// draw total frame:
-		V_DrawPingNum(x, 190, V_SNAPTOBOTTOM|V_SNAPTORIGHT, cap, ticcntcolor);
+		V_DrawPingNum(x<<FRACBITS, 190<<FRACBITS, V_SNAPTOBOTTOM|V_SNAPTORIGHT, cap, ticcntcolor);
 		x -= digits * 4;
 
 		// draw "/"
@@ -645,7 +645,7 @@ void SCR_DisplayTicRate(void)
 	}
 
 	// draw our actual framerate
-	V_DrawPingNum(x, 190, V_SNAPTOBOTTOM|V_SNAPTORIGHT, fps, ticcntcolor);
+	V_DrawPingNum(x<<FRACBITS, 190<<FRACBITS, V_SNAPTOBOTTOM|V_SNAPTORIGHT, fps, ticcntcolor);
 }
 
 // SCR_DisplayLocalPing
@@ -660,7 +660,7 @@ void SCR_DisplayLocalPing(void)
 	{
 		INT32 dispy = cv_ticrate.value ? 160 : 181;
 		offline = (consoleplayer == serverplayer);
-		HU_drawPing(307, dispy, ping, V_SNAPTORIGHT | V_SNAPTOBOTTOM | V_HUDTRANS, offline);
+		HU_drawPing(307 * FRACUNIT, dispy * FRACUNIT, ping, V_SNAPTORIGHT | V_SNAPTOBOTTOM | V_HUDTRANS, offline, 0);
 	}
 }
 

@@ -34,7 +34,7 @@ typedef struct
 	fixed_t topslope, bottomslope;		// slopes to top and bottom of target
 	fixed_t bbox[4];
 
-	mobj_t *compareThing;				// Original thing
+	mobj_t *t1, *t2;
 	boolean alreadyHates;				// For bot traversal, for if the bot is already in a sector it doesn't want to be
 } los_t;
 
@@ -340,15 +340,15 @@ static boolean P_CanTraceBlockingLine(seg_t *seg, divline_t *divl, register los_
 		return false;
 	}
 
-	if (P_IsLineBlocking(line, los->compareThing) == true)
+	if (P_IsLineBlocking(line, los->t1) == true)
 	{
 		// This line will always block us
 		return false;
 	}
 
-	if (los->compareThing->player != NULL)
+	if (los->t1->player != NULL)
 	{
-		if (P_IsLineTripWire(line) == true && K_TripwirePass(los->compareThing->player) == false)
+		if (P_IsLineTripWire(line) == true && K_TripwirePass(los->t1->player) == false)
 		{
 			// Can't go through trip wire.
 			return false;
@@ -370,32 +370,32 @@ static boolean P_CanBotTraverse(seg_t *seg, divline_t *divl, register los_t *los
 	}
 
 	// set openrange, opentop, openbottom
-	tm.x = los->compareThing->x;
-	tm.y = los->compareThing->y;
-	P_LineOpening(line, los->compareThing);
-	maxstep = P_GetThingStepUp(los->compareThing, tm.x, tm.y);
+	tm.x = los->t1->x;
+	tm.y = los->t1->y;
+	P_LineOpening(line, los->t1);
+	maxstep = P_GetThingStepUp(los->t1, tm.x, tm.y);
 
-	if ((openrange < los->compareThing->height) // doesn't fit
-		|| (opentop - los->compareThing->z < los->compareThing->height) // mobj is too high
-		|| (openbottom - los->compareThing->z > maxstep)) // too big a step up
+	if ((openrange < los->t1->height) // doesn't fit
+		|| (opentop - los->t1->z < los->t1->height) // mobj is too high
+		|| (openbottom - los->t1->z > maxstep)) // too big a step up
 	{
 		// This line situationally blocks us
 		return false;
 	}
 
-	if (los->compareThing->player != NULL && los->alreadyHates == false)
+	if (los->t1->player != NULL && los->alreadyHates == false)
 	{
 		// Treat damage sectors like walls, if you're not already in a bad sector.
 		sector_t *front, *back;
 		vertex_t pos;
 
-		P_ClosestPointOnLine(los->compareThing->x, los->compareThing->y, line, &pos);
+		P_ClosestPointOnLine(tm.x, tm.y, line, &pos);
 
 		front = seg->frontsector;
 		back  = seg->backsector;
 
-		if (K_BotHatesThisSector(los->compareThing->player, front, pos.x, pos.y)
-			|| K_BotHatesThisSector(los->compareThing->player, back, pos.x, pos.y))
+		if (K_BotHatesThisSector(los->t1->player, front, pos.x, pos.y)
+			|| K_BotHatesThisSector(los->t1->player, back, pos.x, pos.y))
 		{
 			// This line does not block us, but we don't want to be in it.
 			return false;
@@ -674,7 +674,8 @@ static boolean P_CompareMobjsAcrossLines(mobj_t *t1, mobj_t *t2, register los_fu
 
 	validcount++;
 
-	los.compareThing = t1;
+	los.t1 = t1;
+	los.t2 = t2;
 	los.alreadyHates = false;
 
 	los.topslope =

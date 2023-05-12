@@ -41,8 +41,6 @@ struct flickytypes_s {
 	const mobjtype_t type;
 };
 
-#define MAXFLICKIES 64
-
 /** Action pointer for reading actions from Dehacked lumps.
   */
 struct actionpointer_t

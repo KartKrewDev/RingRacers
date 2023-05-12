@@ -656,22 +656,7 @@ static void P_AddBrokenPrison(mobj_t *target, mobj_t *source)
 
 	if (++numtargets >= maptargets)
 	{
-		UINT8 i;
-		boolean givelife = false;
-
-		for (i = 0; i < MAXPLAYERS; i++)
-		{
-			if (!playeringame[i] || players[i].spectator)
-				continue;
-			P_DoPlayerExit(&players[i]);
-			if (!G_GametypeUsesLives())
-				continue;
-			P_GivePlayerLives(&players[i], 1);
-			givelife = true;
-		}
-
-		if (givelife)
-			S_StartSound(NULL, sfx_cdfm73);
+		P_DoAllPlayersExit(0, (grandprixinfo.gp == true));
 	}
 	else
 	{
@@ -692,8 +677,6 @@ static void P_AddBrokenPrison(mobj_t *target, mobj_t *source)
   */
 void P_CheckTimeLimit(void)
 {
-	INT32 i;
-
 	if (exitcountdown)
 		return;
 
@@ -751,6 +734,7 @@ void P_CheckTimeLimit(void)
 	if ((grandprixinfo.gp == false) && (cv_overtime.value) && (gametyperules & GTR_OVERTIME))
 	{
 #ifndef TESTOVERTIMEINFREEPLAY
+		UINT8 i;
 		boolean foundone = false; // Overtime is used for closing off down to a specific item.
 		for (i = 0; i < MAXPLAYERS; i++)
 		{
@@ -812,14 +796,7 @@ void P_CheckTimeLimit(void)
 #endif
 	}
 
-	for (i = 0; i < MAXPLAYERS; i++)
-	{
-		if (!playeringame[i] || players[i].spectator)
-			continue;
-		if (players[i].exiting)
-			return;
-		P_DoPlayerExit(&players[i]);
-	}
+	P_DoAllPlayersExit(0, false);
 }
 
 /** Checks if a player's score is over the pointlimit and the round should end.
@@ -864,14 +841,7 @@ void P_CheckPointLimit(void)
 
 			if (g_pointlimit <= players[i].roundscore)
 			{
-				for (i = 0; i < MAXPLAYERS; i++) // AAAAA nested loop using the same iteration variable ;;
-				{
-					if (!playeringame[i] || players[i].spectator)
-						continue;
-					if (players[i].exiting)
-						return;
-					P_DoPlayerExit(&players[i]);
-				}
+				P_DoAllPlayersExit(0, false);
 
 				/*if (server)
 					SendNetXCmd(XD_EXITLEVEL, NULL, 0);*/
@@ -1144,28 +1114,9 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 			{
 				target->fuse = 2;
 			}
-			else if (inDuel == false)
+			else
 			{
-				UINT8 i;
-
-				for (i = 0; i < MAXPLAYERS; i++)
-				{
-					if (&players[i] == source->player)
-					{
-						continue;
-					}
-
-					if (playeringame[i] && !players[i].spectator && players[i].lives != 0)
-					{
-						break;
-					}
-				}
-
-				if (i < MAXPLAYERS)
-				{
-					// Respawn items in multiplayer, don't respawn them when alone
-					target->fuse = 2*TICRATE + 2;
-				}
+				target->fuse = 2*TICRATE + 2;
 			}
 		}
 	}
@@ -1936,8 +1887,7 @@ static boolean P_KillPlayer(player_t *player, mobj_t *inflictor, mobj_t *source,
 
 	if (!player->exiting && (specialstageinfo.valid == true || modeattacking & ATTACKING_SPB))
 	{
-		player->pflags |= PF_NOCONTEST;
-		P_DoPlayerExit(player);
+		P_DoPlayerExit(player, PF_NOCONTEST);
 	}
 
 	if (player->exiting)
@@ -2451,8 +2401,7 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 					ringburst = K_ExplodePlayer(player, inflictor, source);
 					break;
 				case DMG_WIPEOUT:
-					if (P_IsDisplayPlayer(player))
-						P_StartQuake(32<<FRACBITS, 5);
+					P_StartQuakeFromMobj(5, 32 * player->mo->scale, 512 * player->mo->scale, player->mo);
 					K_SpinPlayer(player, inflictor, source, KSPIN_WIPEOUT);
 					K_KartPainEnergyFling(player);
 					break;

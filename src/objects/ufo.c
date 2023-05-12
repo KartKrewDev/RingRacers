@@ -428,23 +428,12 @@ static void UFOMove(mobj_t *ufo)
 
 	if (reachedEnd == true)
 	{
-		UINT8 i;
-
 		// Invalidate UFO/emerald
 		ufo_waypoint(ufo) = -1;
 		ufo->flags &= ~(MF_SPECIAL|MF_PICKUPFROMBELOW);
 
 		// Disable player
-		for (i = 0; i < MAXPLAYERS; i++)
-		{
-			if (!playeringame[i])
-				continue;
-			if (players[i].spectator)
-				continue;
-
-			players[i].pflags |= PF_NOCONTEST;
-			P_DoPlayerExit(&players[i]);
-		}
+		P_DoAllPlayersExit(PF_NOCONTEST, false);
 	}
 
 	if (pathfindsuccess == true)
@@ -798,7 +787,7 @@ boolean Obj_SpecialUFODamage(mobj_t *ufo, mobj_t *inflictor, mobj_t *source, UIN
 
 		S_StopSound(ufo);
 		S_StartSound(ufo, sfx_clawk2);
-		P_StartQuake(64<<FRACBITS, 20);
+		P_StartQuake(20, 64 * ufo->scale, 0, NULL);
 
 		ufo_speed(ufo) += addSpeed; // Even more speed!
 		return true;
@@ -806,7 +795,7 @@ boolean Obj_SpecialUFODamage(mobj_t *ufo, mobj_t *inflictor, mobj_t *source, UIN
 
 	S_StartSound(ufo, sfx_clawht);
 	S_StopSoundByID(ufo, sfx_clawzm);
-	P_StartQuake(64<<FRACBITS, 10);
+	P_StartQuake(10, 64 * ufo->scale, 0, NULL);
 
 	return true;
 }

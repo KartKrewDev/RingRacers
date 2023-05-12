@@ -61,6 +61,7 @@
 #include "k_hud.h"
 #include "r_fps.h"
 #include "d_clisrv.h"
+#include "y_inter.h" // Y_PlayerStandingsDrawer
 
 // coords are scaled
 #define HU_INPUTX 0
@@ -300,6 +301,10 @@ void HU_Init(void)
 		PR   ("MKFNT");
 		REG;
 
+		ADIM (TIMER);
+		PR   ("TMFNT");
+		REG;
+
 		ADIM (LT);
 		PR   ("GAMEM");
 		REG;
@@ -309,6 +314,14 @@ void HU_Init(void)
 		REG;
 
 		PR   ("TLWFN");
+		REG;
+
+		ADIM (NUM);
+		PR   ("OPPRF");
+		REG;
+
+		ADIM (NUM);
+		PR   ("PINGF");
 		REG;
 
 #undef  REG
@@ -2008,17 +2021,24 @@ static void HU_DrawDemoInfo(void)
 //
 void HU_DrawSongCredits(void)
 {
-	fixed_t x;
-	fixed_t y = (r_splitscreen ? (BASEVIDHEIGHT/2)-4 : 32) * FRACUNIT;
-	INT32 bgt;
-
 	if (!cursongcredit.def || cursongcredit.trans >= NUMTRANSMAPS) // No def
 	{
 		return;
 	}
 
-	bgt = (NUMTRANSMAPS/2) + (cursongcredit.trans / 2);
-	x = R_InterpolateFixed(cursongcredit.old_x, cursongcredit.x);
+	fixed_t x = R_InterpolateFixed(cursongcredit.old_x, cursongcredit.x);
+	fixed_t y;
+
+	if (gamestate == GS_INTERMISSION)
+	{
+		y = (BASEVIDHEIGHT - 13) * FRACUNIT;
+	}
+	else
+	{
+		y = (r_splitscreen ? (BASEVIDHEIGHT/2)-4 : 32) * FRACUNIT;
+	}
+
+	INT32 bgt = (NUMTRANSMAPS/2) + (cursongcredit.trans / 2);
 
 	if (bgt < NUMTRANSMAPS)
 	{
@@ -2212,12 +2232,13 @@ Ping_gfx_color (int lag)
 //
 // HU_drawPing
 //
-void HU_drawPing(INT32 x, INT32 y, UINT32 lag, INT32 flags, boolean offline)
+void HU_drawPing(fixed_t x, fixed_t y, UINT32 lag, INT32 flags, boolean offline, SINT8 toside)
 {
 	UINT8 *colormap = NULL;
 	INT32 measureid = cv_pingmeasurement.value ? 1 : 0;
 	INT32 gfxnum; // gfx to draw
 	boolean drawlocal = (offline && cv_mindelay.value && lag <= (tic_t)cv_mindelay.value);
+	fixed_t x2, y2;
 
 	if (!server && lag <= (tic_t)cv_mindelay.value)
 	{
@@ -2225,15 +2246,61 @@ void HU_drawPing(INT32 x, INT32 y, UINT32 lag, INT32 flags, boolean offline)
 		drawlocal = true;
 	}
 
+	x2 = x;
+	y2 = y + FRACUNIT;
+
+	if (toside == 0)
+	{
+		if (measureid == 1)
+		{
+			x2 += ((11 - pingmeasure[measureid]->width) * FRACUNIT);
+		}
+		else
+		{
+			x2 += (10 * FRACUNIT);
+		}
+
+		y2 += (8 * FRACUNIT);
+	}
+	else if (toside > 0)
+	{
+		x2 += (20 * FRACUNIT);
+	}
+	//else if (toside < 0)
+
 	gfxnum = Ping_gfx_num(lag);
 
 	if (measureid == 1)
-		V_DrawScaledPatch(x+11 - pingmeasure[measureid]->width, y+9, flags, pingmeasure[measureid]);
+	{
+		V_DrawFixedPatch(
+			x2,
+			y2,
+			FRACUNIT, flags,
+			pingmeasure[measureid],
+			NULL
+		);
+	}
 
 	if (drawlocal)
-		V_DrawScaledPatch(x+2, y, flags, pinglocal[0]);
+	{
+		V_DrawFixedPatch(
+			x + (2 * FRACUNIT),
+			y,
+			FRACUNIT, flags,
+			pinglocal[0],
+			NULL
+		);
+	}
 	else
-		V_DrawScaledPatch(x+2, y, flags, pinggfx[gfxnum]);
+	{
+		V_DrawFixedPatch(
+			x + (2 * FRACUNIT),
+			y,
+			FRACUNIT, flags,
+			pinggfx[gfxnum],
+			NULL
+		);
+	}
 
 	colormap = R_GetTranslationColormap(TC_RAINBOW, Ping_gfx_color(lag), GTC_CACHE);
 
@@ -2248,10 +2315,23 @@ void HU_drawPing(INT32 x, INT32 y, UINT32 lag, INT32 flags, boolean offline)
 		lag = (INT32)(lag * (1000.00f / TICRATE));
 	}
 
-	x = V_DrawPingNum(x + (measureid == 1 ? 11 - pingmeasure[measureid]->width : 10), y+9, flags, lag, colormap);
+	x2 = V_DrawPingNum(
+		x2,
+		y2,
+		flags, lag,
+		colormap
+	);
 
 	if (measureid == 0)
-		V_DrawScaledPatch(x+1 - pingmeasure[measureid]->width, y+9, flags, pingmeasure[measureid]);
+	{
+		V_DrawFixedPatch(
+			x2 + ((1 - pingmeasure[measureid]->width) * FRACUNIT),
+			y2,
+			FRACUNIT, flags,
+			pingmeasure[measureid],
+			NULL
+		);
+	}
 }
 
 void
@@ -2353,10 +2433,7 @@ static inline void HU_DrawSpectatorTicker(void)
 //
 static void HU_DrawRankings(void)
 {
-	playersort_t tab[MAXPLAYERS];
-	INT32 i, j, scorelines, numplayersingame = 0, hilicol = highlightflags;
-	boolean completed[MAXPLAYERS];
-	UINT32 whiteplayer = MAXPLAYERS;
+	INT32 i, j, hilicol = highlightflags;
 	boolean timedone = false, pointsdone = false;
 
 	if (!automapactive)
@@ -2465,23 +2542,21 @@ static void HU_DrawRankings(void)
 		V_DrawCenteredString(256, 16, hilicol, kartspeed_cons_t[1+gamespeed].strvalue);
 	}
 
-	// When you play, you quickly see your score because your name is displayed in white.
-	// When playing back a demo, you quickly see who's the view.
-	if (!r_splitscreen)
-		whiteplayer = demo.playback ? displayplayers[0] : consoleplayer;
+	boolean completed[MAXPLAYERS];
+	y_data_t standings;
 
-	scorelines = 0;
 	memset(completed, 0, sizeof (completed));
-	memset(tab, 0, sizeof (playersort_t)*MAXPLAYERS);
+	memset(&standings, 0, sizeof (standings));
+
+	UINT8 numplayersingame = 0;
 
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
-		tab[i].num = -1;
-		tab[i].name = NULL;
-		tab[i].count = INT32_MAX;
-
 		if (!playeringame[i] || players[i].spectator || !players[i].mo)
+		{
+			completed[i] = true;
 			continue;
+		}
 
 		numplayersingame++;
 	}
@@ -2491,40 +2566,58 @@ static void HU_DrawRankings(void)
 		UINT8 lowestposition = MAXPLAYERS+1;
 		for (i = 0; i < MAXPLAYERS; i++)
 		{
-			if (completed[i] || !playeringame[i] || players[i].spectator || !players[i].mo)
+			if (completed[i])
 				continue;
 
 			if (players[i].position >= lowestposition)
 				continue;
 
-			tab[scorelines].num = i;
+			standings.num[standings.numplayers] = i;
 			lowestposition = players[i].position;
 		}
 
-		i = tab[scorelines].num;
+		i = standings.num[standings.numplayers];
 
 		completed[i] = true;
 
-		tab[scorelines].name = player_names[i];
+		standings.character[standings.numplayers] = players[i].skin;
+		standings.color[standings.numplayers] = players[i].skincolor;
+		standings.pos[standings.numplayers] = players[i].position;
 
-		if ((gametyperules & GTR_CIRCUIT))
+#define strtime standings.strval[standings.numplayers]
+
+		if (players[i].pflags & PF_NOCONTEST)
 		{
-			tab[scorelines].count = players[i].laps;
+			standings.val[standings.numplayers] = (UINT32_MAX-1);
+			STRBUFCPY(strtime, "RETIRED.");
+		}
+		else if ((gametyperules & GTR_CIRCUIT))
+		{			
+			standings.val[standings.numplayers] = players[i].laps;
+
+			if (players[i].exiting)
+			{
+				snprintf(strtime, sizeof strtime, "%i'%02i\"%02i", G_TicsToMinutes(players[i].realtime, true),
+				G_TicsToSeconds(players[i].realtime), G_TicsToCentiseconds(players[i].realtime));
+			}
+			else
+			{
+				snprintf(strtime, sizeof strtime, "Lap %d", standings.val[standings.numplayers]);
+			}
 		}
 		else
 		{
-			tab[scorelines].count = players[i].roundscore;
+			standings.val[standings.numplayers] = players[i].roundscore;
+			snprintf(strtime, sizeof strtime, "%d", standings.val[standings.numplayers]);
 		}
 
-		scorelines++;
+#undef strtime
 
-#if MAXPLAYERS > 16
-	if (scorelines > 16)
-		break; //dont draw past bottom of screen, show the best only
-#endif
+		standings.numplayers++;
 	}
 
-	K_DrawTabRankings(((scorelines > 8) ? 32 : 40), 33, tab, scorelines, whiteplayer, hilicol);
+	// Returns early if there's no players to draw
+	Y_PlayerStandingsDrawer(&standings, 0);
 
 	// draw spectators in a ticker across the bottom
 	if (netgame && G_GametypeHasSpectators())

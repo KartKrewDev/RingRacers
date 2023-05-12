@@ -50,9 +50,7 @@ extern "C" {
 #define BMBOUNDFIX(xl, xh, yl, yh) {if (xl > xh) xl = 0; if (yl > yh) yl = 0;}
 
 // MAXRADIUS is for precalculated sector block boxes
-// the spider demon is larger,
-// but we do not have any moving sectors nearby
-#define MAXRADIUS (32*FRACUNIT)
+#define MAXRADIUS (MAPBLOCKSIZE >> 1)
 
 // max Z move up or down without jumping
 // above this, a height difference is considered as a 'dropoff'
@@ -121,6 +119,7 @@ struct camera_t
 
 	// Momentums, used to update position.
 	fixed_t momx, momy, momz;
+	fixed_t pmomz;
 
 	// SRB2Kart: camera pans while drifting
 	fixed_t pan;
@@ -151,8 +150,6 @@ extern consvar_t cv_cam_dist[MAXSPLITSCREENPLAYERS], cv_cam_still[MAXSPLITSCREEN
 extern consvar_t cv_cam_speed[MAXSPLITSCREENPLAYERS], cv_cam_rotate[MAXSPLITSCREENPLAYERS];
 
 extern consvar_t cv_tilting;
-extern consvar_t cv_actionmovie;
-extern consvar_t cv_windowquake;
 
 extern fixed_t t_cam_dist[MAXSPLITSCREENPLAYERS], t_cam_height[MAXSPLITSCREENPLAYERS], t_cam_rotate[MAXSPLITSCREENPLAYERS];
 
@@ -187,7 +184,7 @@ boolean P_PlayerHitFloor(player_t *player, boolean fromAir, angle_t oldPitch, an
 
 void P_SetObjectMomZ(mobj_t *mo, fixed_t value, boolean relative);
 void P_RestoreMusic(player_t *player);
-boolean P_EndingMusic(player_t *player);
+void P_EndingMusic(void);
 mobj_t *P_SpawnGhostMobj(mobj_t *mobj);
 INT32 P_GivePlayerRings(player_t *player, INT32 num_rings);
 INT32 P_GivePlayerSpheres(player_t *player, INT32 num_spheres);
@@ -209,8 +206,10 @@ void P_TickAltView(altview_t *view);
 void P_MovePlayer(player_t *player);
 void P_PlayerThink(player_t *player);
 void P_PlayerAfterThink(player_t *player);
-void P_DoPlayerExit(player_t *player);
+void P_DoPlayerExit(player_t *player, pflags_t flags);
+void P_DoAllPlayersExit(pflags_t flags, boolean givelife);
 void P_DoTimeOver(player_t *player);
+void P_CheckRaceGriefing(player_t *player, boolean dopunishment);
 
 void P_ResetPlayerCheats(void);
 
@@ -227,7 +226,6 @@ UINT8 P_FindHighestLap(void);
 
 boolean P_PlayerMoving(INT32 pnum);
 
-void P_PlayLivesJingle(player_t *player);
 void P_PlayRinglossSound(mobj_t *source);
 void P_PlayDeathSound(mobj_t *source);
 void P_PlayVictorySound(mobj_t *source);
@@ -245,20 +243,9 @@ typedef enum
 	JT_NONE,   // Null state
 	JT_OTHER,  // Other state
 	JT_MASTER, // Main level music
-	JT_1UP, // Extra life
-	JT_SHOES,  // Speed shoes
-	JT_INV, // Invincibility
-	JT_MINV, // Mario Invincibility
-	JT_DROWN,  // Drowning
-	JT_SUPER,  // Super Sonic
-	JT_GOVER, // Game Over
-	JT_NIGHTSTIMEOUT, // NiGHTS Time Out (10 seconds)
-	JT_SSTIMEOUT, // NiGHTS Special Stage Time Out (10 seconds)
 
-	// these are not jingles
-	// JT_LCLEAR, // Level Clear
-	// JT_RACENT, // Multiplayer Intermission
-	// JT_CONTSC, // Continue
+	JT_INVINCIBILITY, // Invincibility
+	JT_GROW, // Grow
 
 	NUMJINGLES
 } jingletype_t;

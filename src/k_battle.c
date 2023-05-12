@@ -122,22 +122,17 @@ void K_CheckBumpers(void)
 		}
 	}
 
-	if (K_Cooperative()
-			? nobumpers > 0 && nobumpers >= numingame
-			: eliminated >= numingame - 1)
+	if (K_Cooperative())
 	{
-		for (i = 0; i < MAXPLAYERS; i++)
+		if (nobumpers > 0 && nobumpers >= numingame)
 		{
-			if (!playeringame[i])
-				continue;
-			if (players[i].spectator)
-				continue;
-
-			if (K_Cooperative())
-				players[i].pflags |= PF_NOCONTEST;
-
-			P_DoPlayerExit(&players[i]);
+			P_DoAllPlayersExit(PF_NOCONTEST, false);
+			return;
 		}
+	}
+	else if (eliminated >= numingame - 1)
+	{
+		P_DoAllPlayersExit(0, false);
 		return;
 	}
 
@@ -156,8 +151,6 @@ void K_CheckBumpers(void)
 
 void K_CheckEmeralds(player_t *player)
 {
-	UINT8 i;
-
 	if (!(gametyperules & GTR_POWERSTONES))
 	{
 		return;
@@ -170,15 +163,7 @@ void K_CheckEmeralds(player_t *player)
 
 	player->roundscore = 100; // lmao
 
-	for (i = 0; i < MAXPLAYERS; i++)
-	{
-		if (!playeringame[i] || players[i].spectator)
-		{
-			continue;
-		}
-
-		P_DoPlayerExit(&players[i]);
-	}
+	P_DoAllPlayersExit(0, false);
 }
 
 UINT16 K_GetChaosEmeraldColor(UINT32 emeraldType)

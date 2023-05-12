@@ -331,16 +331,22 @@ struct mappoint_t
 	fixed_t x, y, z;
 };
 
-extern struct quake
+struct quake_t
 {
-	// camera offsets and duration
-	fixed_t x,y,z;
-	UINT16 time;
+	tic_t time, startTime;
+	fixed_t intensity;
 
-	// location, radius, and intensity...
+	// optional intensity modulation based on position
+	fixed_t radius;
 	mappoint_t *epicenter;
-	fixed_t radius, intensity;
-} quake;
+	mobj_t *mobj;
+
+	// linked list
+	quake_t *next;
+	quake_t *prev;
+};
+
+extern quake_t *g_quakes;
 
 // Custom Lua values
 struct customoption_t
@@ -386,6 +392,7 @@ struct staffbrief_t
 };
 
 #define MAXMUSNAMES 3 // maximum definable music tracks per level
+#define MAXHEADERFOLLOWERS 32
 
 /** Map header information.
   */
@@ -458,9 +465,9 @@ struct mapheader_t
 	boolean use_light_angle;			///< When false, wall lighting is evenly distributed. When true, wall lighting is directional.
 	angle_t light_angle;				///< Angle of directional wall lighting.
 
-	// Freed animal information
-	UINT8 numFlickies;					///< Internal. For freed flicky support.
-	mobjtype_t *flickies;				///< List of freeable flickies in this level. Allocated dynamically for space reasons. Be careful.
+	// Audience information
+	UINT8 numFollowers;					///< Internal. For audience support.
+	INT16 *followers;					///< List of audience followers in this level. Allocated dynamically for space reasons. Be careful.
 
 	// Script information
 	char runsoc[33];					///< SOC to execute at start of level (32 character limit instead of 63)
@@ -581,8 +588,8 @@ enum TypeOfLevel
 	// Gametypes
 	TOL_RACE	 = 0x0001, ///< Race
 	TOL_BATTLE	 = 0x0002, ///< Battle
-	TOL_BOSS	 = 0x0004, ///< Boss (variant of battle, but forbidden)
-	TOL_SPECIAL	 = 0x0008, ///< Special Stage (variant of race, but forbidden)
+	TOL_SPECIAL	 = 0x0004, ///< Special Stage (variant of race, but forbidden)
+	TOL_VERSUS	 = 0x0008, ///< Versus (variant of battle, but forbidden)
 	TOL_TUTORIAL = 0x0010, ///< Tutorial (variant of race, but forbidden)
 
 	// Modifiers
@@ -668,7 +675,7 @@ extern const tic_t bulbtime;
 extern UINT8 numbulbs;
 
 extern tic_t raceexittime;
-extern tic_t battleexittime;
+#define MUSICCOUNTDOWNMAX (raceexittime - (TICRATE/2))
 
 extern INT32 hyudorotime;
 extern INT32 stealtime;
@@ -693,7 +700,7 @@ extern UINT8 maxXtraLife; // Max extra lives from rings
 extern mobj_t *hunt1, *hunt2, *hunt3; // Emerald hunt locations
 
 // For racing
-extern tic_t racecountdown, exitcountdown;
+extern tic_t racecountdown, exitcountdown, musiccountdown;
 
 #define DEFAULT_GRAVITY (4*FRACUNIT/5)
 extern fixed_t gravity;

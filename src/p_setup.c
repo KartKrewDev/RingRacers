@@ -103,6 +103,7 @@
 #include "doomstat.h" // MAXMUSNAMES
 #include "k_podium.h"
 #include "k_rank.h"
+#include "k_mapuser.h"
 
 // Replay names have time
 #if !defined (UNDER_CE)
@@ -347,31 +348,51 @@ FUNCNORETURN static ATTRNORETURN void CorruptMapError(const char *msg)
 	I_Error("Invalid or corrupt map.\nLook in log file or text console for technical details.");
 }
 
-/** Sets a header's flickies to be equivalent to the original Freed Animals
+/** Sets a header's followers to the default list
   *
-  * \param i The header to set flickies for
+  * \param i The header to set followers for
   */
-void P_SetDemoFlickies(INT16 i)
+void P_SetDefaultHeaderFollowers(UINT16 i)
 {
-	mapheaderinfo[i]->numFlickies = 5;
-	mapheaderinfo[i]->flickies = Z_Realloc(mapheaderinfo[i]->flickies, 5*sizeof(mobjtype_t), PU_STATIC, NULL);
-	mapheaderinfo[i]->flickies[0] = MT_FLICKY_02/*MT_BUNNY*/;
-	mapheaderinfo[i]->flickies[1] = MT_FLICKY_01/*MT_BIRD*/;
-	mapheaderinfo[i]->flickies[2] = MT_FLICKY_12/*MT_MOUSE*/;
-	mapheaderinfo[i]->flickies[3] = MT_FLICKY_11/*MT_COW*/;
-	mapheaderinfo[i]->flickies[4] = MT_FLICKY_03/*MT_CHICKEN*/;
+	static INT16 defaultfollowers[MAXHEADERFOLLOWERS];
+	static UINT8 validdefaultfollowers = 0;
+
+	if (validdefaultfollowers == 0)
+	{
+		const char *defaultfollowernames[] =
+		{
+			"Flicky",
+			"Chao",
+			"Motobuddy",
+			NULL
+		};
+
+		for (validdefaultfollowers = 0; defaultfollowernames[validdefaultfollowers]; validdefaultfollowers++)
+		{
+			defaultfollowers[validdefaultfollowers] = K_FollowerAvailable(defaultfollowernames[validdefaultfollowers]);
+		}
+
+		I_Assert(validdefaultfollowers != 0);
+	}
+
+	mapheaderinfo[i]->followers = Z_Realloc(mapheaderinfo[i]->followers, sizeof(INT16) * validdefaultfollowers, PU_STATIC, NULL);
+
+	for (mapheaderinfo[i]->numFollowers = 0; mapheaderinfo[i]->numFollowers < validdefaultfollowers; mapheaderinfo[i]->numFollowers++)
+	{
+		mapheaderinfo[i]->followers[mapheaderinfo[i]->numFollowers] = defaultfollowers[mapheaderinfo[i]->numFollowers];
+	}
 }
 
-/** Clears a header's flickies
+/** Clears a header's followers
   *
-  * \param i The header to clear flickies for
+  * \param i The header to clear followers for
   */
-void P_DeleteFlickies(INT16 i)
+void P_DeleteHeaderFollowers(UINT16 i)
 {
-	if (mapheaderinfo[i]->flickies)
-		Z_Free(mapheaderinfo[i]->flickies);
-	mapheaderinfo[i]->flickies = NULL;
-	mapheaderinfo[i]->numFlickies = 0;
+	if (mapheaderinfo[i]->followers)
+		Z_Free(mapheaderinfo[i]->followers);
+	mapheaderinfo[i]->followers = NULL;
+	mapheaderinfo[i]->numFollowers = 0;
 }
 
 #define NUMLAPS_DEFAULT 3
@@ -419,10 +440,10 @@ static void P_ClearSingleMapHeaderInfo(INT16 num)
 	mapheaderinfo[num]->light_contrast = 16;
 	mapheaderinfo[num]->use_light_angle = false;
 	mapheaderinfo[num]->light_angle = 0;
-#if 1 // equivalent to "FlickyList = DEMO"
-	P_SetDemoFlickies(num);
-#else // equivalent to "FlickyList = NONE"
-	P_DeleteFlickies(num);
+#if 1 // equivalent to "Followers = DEFAULT"
+	P_SetDefaultHeaderFollowers(num);
+#else
+	P_DeleteHeaderFollowers(num);
 #endif
 
 	mapheaderinfo[num]->mapvisited = 0;
@@ -486,7 +507,7 @@ void P_AllocMapHeader(INT16 i)
 		mapheaderinfo[i]->ghostCount = 0;
 		mapheaderinfo[i]->cup = NULL;
 		mapheaderinfo[i]->mainrecord = NULL;
-		mapheaderinfo[i]->flickies = NULL;
+		mapheaderinfo[i]->followers = NULL;
 		nummapheaders++;
 	}
 	P_ClearSingleMapHeaderInfo(i);
@@ -1368,6 +1389,82 @@ static boolean TextmapCount(size_t size)
 	return true;
 }
 
+enum
+{
+	PROP_NUM_TYPE_NA,
+	PROP_NUM_TYPE_INT,
+	PROP_NUM_TYPE_FLOAT
+};
+
+static void ParseUserProperty(mapUserProperties_t *user, const char *param, const char *val)
+{
+	if (fastncmp(param, "user_", 5) && strlen(param) > 5)
+	{
+		const boolean valIsString = M_TokenizerJustReadString();
+		const char *key = param + 5;
+		const size_t valLen = strlen(val);
+		UINT8 numberType = PROP_NUM_TYPE_INT;
+		size_t i = 0;
+
+		if (valIsString == true)
+		{
+			// Value is a string. Upload directly!
+			K_UserPropertyPush(user, key, USER_PROP_STR, &val);
+			return;
+		}
+
+		for (i = 0; i < valLen; i++)
+		{
+			if (val[i] == '.')
+			{
+				numberType = PROP_NUM_TYPE_FLOAT;
+			}
+			else if (val[i] < '0' || val[i] > '9')
+			{
+				numberType = PROP_NUM_TYPE_NA;
+				break;
+			}
+		}
+
+		switch (numberType)
+		{
+			case PROP_NUM_TYPE_INT:
+			{
+				// Value is an integer.
+				INT32 vInt = atol(val);
+				K_UserPropertyPush(user, key, USER_PROP_INT, &vInt);
+				break;
+			}
+			case PROP_NUM_TYPE_FLOAT:
+			{
+				// Value is a float. Convert to fixed.
+				fixed_t vFixed = FLOAT_TO_FIXED(atof(val));
+				K_UserPropertyPush(user, key, USER_PROP_FIXED, &vFixed);
+				break;
+			}
+			case PROP_NUM_TYPE_NA:
+			default:
+			{
+				// Value is some other kind of type.
+				// Currently we just support bool.
+
+				boolean vBool = fastcmp("true", val);
+				if (vBool == true || fastcmp("false", val))
+				{
+					// Value is a boolean.
+					K_UserPropertyPush(user, key, USER_PROP_BOOL, &vBool);
+				}
+				else
+				{
+					// Value is invalid.
+					CONS_Alert(CONS_WARNING, "Could not interpret user property \"%s\" value (%s)\n", param, val);
+				}
+				break;
+			}
+		}
+	}
+}
+
 static void ParseTextmapVertexParameter(UINT32 i, const char *param, const char *val)
 {
 	if (fastcmp(param, "x"))
@@ -1637,6 +1734,8 @@ static void ParseTextmapSectorParameter(UINT32 i, const char *param, const char 
 		sectors[i].activation |= SECSPAC_FLOORMISSILE;
 	else if (fastcmp(param, "missileceiling") && fastcmp("true", val))
 		sectors[i].activation |= SECSPAC_CEILINGMISSILE;
+	else
+		ParseUserProperty(&sectors[i].user, param, val);
 }
 
 static void ParseTextmapSidedefParameter(UINT32 i, const char *param, const char *val)
@@ -1655,6 +1754,8 @@ static void ParseTextmapSidedefParameter(UINT32 i, const char *param, const char
 		P_SetSidedefSector(i, atol(val));
 	else if (fastcmp(param, "repeatcnt"))
 		sides[i].repeatcnt = atol(val);
+	else
+		ParseUserProperty(&sides[i].user, param, val);
 }
 
 static void ParseTextmapLinedefParameter(UINT32 i, const char *param, const char *val)
@@ -1762,6 +1863,8 @@ static void ParseTextmapLinedefParameter(UINT32 i, const char *param, const char
 		lines[i].activation |= SPAC_PUSHMONSTER;
 	else if (fastcmp(param, "impact") && fastcmp("true", val))
 		lines[i].activation |= SPAC_IMPACT;
+	else
+		ParseUserProperty(&lines[i].user, param, val);
 }
 
 static void ParseTextmapThingParameter(UINT32 i, const char *param, const char *val)
@@ -1807,8 +1910,10 @@ static void ParseTextmapThingParameter(UINT32 i, const char *param, const char *
 		size_t argnum = atol(param + 9);
 		if (argnum >= NUMMAPTHINGSTRINGARGS)
 			return;
-		mapthings[i].stringargs[argnum] = Z_Malloc(strlen(val) + 1, PU_LEVEL, NULL);
-		M_Memcpy(mapthings[i].stringargs[argnum], val, strlen(val) + 1);
+		size_t len = strlen(val);
+		mapthings[i].stringargs[argnum] = Z_Malloc(len + 1, PU_LEVEL, NULL);
+		M_Memcpy(mapthings[i].stringargs[argnum], val, len);
+		mapthings[i].stringargs[argnum][len] = '\0';
 	}
 	else if (fastncmp(param, "arg", 3) && strlen(param) > 3)
 	{
@@ -1817,6 +1922,8 @@ static void ParseTextmapThingParameter(UINT32 i, const char *param, const char *
 			return;
 		mapthings[i].args[argnum] = atol(val);
 	}
+	else
+		ParseUserProperty(&mapthings[i].user, param, val);
 }
 
 /** From a given position table, run a specified parser function through a {}-encapsuled text.
@@ -1955,12 +2062,34 @@ static void P_WriteTextmap(void)
 	memcpy(wsides, sides, numsides * sizeof(*sides));
 
 	for (i = 0; i < nummapthings; i++)
+	{
 		if (mapthings[i].tags.count)
 			wmapthings[i].tags.tags = memcpy(Z_Malloc(mapthings[i].tags.count * sizeof(mtag_t), PU_LEVEL, NULL), mapthings[i].tags.tags, mapthings[i].tags.count * sizeof(mtag_t));
 
+		if (mapthings[i].user.length)
+		{
+			wmapthings[i].user.properties = memcpy(
+				Z_Malloc(mapthings[i].user.length * sizeof(mapUserProperty_t), PU_LEVEL, NULL),
+				mapthings[i].user.properties,
+				mapthings[i].user.length * sizeof(mapUserProperty_t)
+			);
+		}
+	}
+
 	for (i = 0; i < numsectors; i++)
+	{
 		if (sectors[i].tags.count)
 			wsectors[i].tags.tags = memcpy(Z_Malloc(sectors[i].tags.count*sizeof(mtag_t), PU_LEVEL, NULL), sectors[i].tags.tags, sectors[i].tags.count*sizeof(mtag_t));
+
+		if (sectors[i].user.length)
+		{
+			wsectors[i].user.properties = memcpy(
+				Z_Malloc(sectors[i].user.length * sizeof(mapUserProperty_t), PU_LEVEL, NULL),
+				sectors[i].user.properties,
+				sectors[i].user.length * sizeof(mapUserProperty_t)
+			);
+		}
+	}
 
 	for (i = 0; i < numlines; i++)
 	{
@@ -1969,11 +2098,32 @@ static void P_WriteTextmap(void)
 		if (lines[i].tags.count)
 			wlines[i].tags.tags = memcpy(Z_Malloc(lines[i].tags.count * sizeof(mtag_t), PU_LEVEL, NULL), lines[i].tags.tags, lines[i].tags.count * sizeof(mtag_t));
 
+		if (lines[i].user.length)
+		{
+			wlines[i].user.properties = memcpy(
+				Z_Malloc(lines[i].user.length * sizeof(mapUserProperty_t), PU_LEVEL, NULL),
+				lines[i].user.properties,
+				lines[i].user.length * sizeof(mapUserProperty_t)
+			);
+		}
+
 		v = lines[i].v1 - vertexes;
 		wusedvertexes[v] = true;
 
 		v = lines[i].v2 - vertexes;
 		wusedvertexes[v] = true;
+	}
+
+	for (i = 0; i < numsides; i++)
+	{
+		if (sides[i].user.length)
+		{
+			wsides[i].user.properties = memcpy(
+				Z_Malloc(sides[i].user.length * sizeof(mapUserProperty_t), PU_LEVEL, NULL),
+				sides[i].user.properties,
+				sides[i].user.length * sizeof(mapUserProperty_t)
+			);
+		}
 	}
 
 	freetag = Tag_NextUnused(0);
@@ -2257,6 +2407,28 @@ static void P_WriteTextmap(void)
 		for (j = 0; j < NUMMAPTHINGSTRINGARGS; j++)
 			if (mapthings[i].stringargs[j])
 				fprintf(f, "stringarg%s = \"%s\";\n", sizeu1(j), mapthings[i].stringargs[j]);
+		if (wmapthings[i].user.length > 0)
+		{
+			for (j = 0; j < wmapthings[i].user.length; j++)
+			{
+				mapUserProperty_t *const prop = &wmapthings[i].user.properties[j];
+				switch (prop->type)
+				{
+					case USER_PROP_BOOL:
+						fprintf(f, "user_%s = %s;\n", prop->key, (prop->valueBool == true) ? "true" : "false");
+						break;
+					case USER_PROP_INT:
+						fprintf(f, "user_%s = %d;\n", prop->key, prop->valueInt);
+						break;
+					case USER_PROP_FIXED:
+						fprintf(f, "user_%s = %f;\n", prop->key, FIXED_TO_FLOAT(prop->valueFixed));
+						break;
+					case USER_PROP_STR:
+						fprintf(f, "user_%s = \"%s\";\n", prop->key, prop->valueStr);
+						break;
+				}
+			}
+		}
 		fprintf(f, "}\n");
 		fprintf(f, "\n");
 	}
@@ -2383,6 +2555,28 @@ static void P_WriteTextmap(void)
 			fprintf(f, "monsterpush = true;\n");
 		if (wlines[i].activation & SPAC_IMPACT)
 			fprintf(f, "impact = true;\n");
+		if (wlines[i].user.length > 0)
+		{
+			for (j = 0; j < wlines[i].user.length; j++)
+			{
+				mapUserProperty_t *const prop = &wlines[i].user.properties[j];
+				switch (prop->type)
+				{
+					case USER_PROP_BOOL:
+						fprintf(f, "user_%s = %s;\n", prop->key, (prop->valueBool == true) ? "true" : "false");
+						break;
+					case USER_PROP_INT:
+						fprintf(f, "user_%s = %d;\n", prop->key, prop->valueInt);
+						break;
+					case USER_PROP_FIXED:
+						fprintf(f, "user_%s = %f;\n", prop->key, FIXED_TO_FLOAT(prop->valueFixed));
+						break;
+					case USER_PROP_STR:
+						fprintf(f, "user_%s = \"%s\";\n", prop->key, prop->valueStr);
+						break;
+				}
+			}
+		}
 		fprintf(f, "}\n");
 		fprintf(f, "\n");
 	}
@@ -2404,6 +2598,28 @@ static void P_WriteTextmap(void)
 			fprintf(f, "texturemiddle = \"%.*s\";\n", 8, textures[wsides[i].midtexture]->name);
 		if (wsides[i].repeatcnt != 0)
 			fprintf(f, "repeatcnt = %d;\n", wsides[i].repeatcnt);
+		if (wsides[i].user.length > 0)
+		{
+			for (j = 0; j < wsides[i].user.length; j++)
+			{
+				mapUserProperty_t *const prop = &wsides[i].user.properties[j];
+				switch (prop->type)
+				{
+					case USER_PROP_BOOL:
+						fprintf(f, "user_%s = %s;\n", prop->key, (prop->valueBool == true) ? "true" : "false");
+						break;
+					case USER_PROP_INT:
+						fprintf(f, "user_%s = %d;\n", prop->key, prop->valueInt);
+						break;
+					case USER_PROP_FIXED:
+						fprintf(f, "user_%s = %f;\n", prop->key, FIXED_TO_FLOAT(prop->valueFixed));
+						break;
+					case USER_PROP_STR:
+						fprintf(f, "user_%s = \"%s\";\n", prop->key, prop->valueStr);
+						break;
+				}
+			}
+		}
 		fprintf(f, "}\n");
 		fprintf(f, "\n");
 	}
@@ -2587,6 +2803,28 @@ static void P_WriteTextmap(void)
 			fprintf(f, "missilefloor = true;\n");
 		if (wsectors[i].activation & SECSPAC_CEILINGMISSILE)
 			fprintf(f, "missileceiling = true;\n");
+		if (wsectors[i].user.length > 0)
+		{
+			for (j = 0; j < wsectors[i].user.length; j++)
+			{
+				mapUserProperty_t *const prop = &wsectors[i].user.properties[j];
+				switch (prop->type)
+				{
+					case USER_PROP_BOOL:
+						fprintf(f, "user_%s = %s;\n", prop->key, (prop->valueBool == true) ? "true" : "false");
+						break;
+					case USER_PROP_INT:
+						fprintf(f, "user_%s = %d;\n", prop->key, prop->valueInt);
+						break;
+					case USER_PROP_FIXED:
+						fprintf(f, "user_%s = %f;\n", prop->key, FIXED_TO_FLOAT(prop->valueFixed));
+						break;
+					case USER_PROP_STR:
+						fprintf(f, "user_%s = \"%s\";\n", prop->key, prop->valueStr);
+						break;
+				}
+			}
+		}
 		fprintf(f, "}\n");
 		fprintf(f, "\n");
 	}
@@ -2594,16 +2832,37 @@ static void P_WriteTextmap(void)
 	fclose(f);
 
 	for (i = 0; i < nummapthings; i++)
+	{
 		if (wmapthings[i].tags.count)
 			Z_Free(wmapthings[i].tags.tags);
 
+		if (wmapthings[i].user.length)
+			Z_Free(wmapthings[i].user.properties);
+	}
+
 	for (i = 0; i < numsectors; i++)
+	{
 		if (wsectors[i].tags.count)
 			Z_Free(wsectors[i].tags.tags);
 
+		if (wsectors[i].user.length)
+			Z_Free(wsectors[i].user.properties);
+	}
+
 	for (i = 0; i < numlines; i++)
+	{
 		if (wlines[i].tags.count)
 			Z_Free(wlines[i].tags.tags);
+
+		if (wlines[i].user.length)
+			Z_Free(wlines[i].user.properties);
+	}
+
+	for (i = 0; i < numsides; i++)
+	{
+		if (wsides[i].user.length)
+			Z_Free(wsides[i].user.properties);
+	}
 
 	Z_Free(wmapthings);
 	Z_Free(wvertexes);
@@ -2687,6 +2946,8 @@ static void P_LoadTextmap(void)
 		memset(sc->stringargs, 0x00, NUMSECTORSTRINGARGS*sizeof(*sc->stringargs));
 		sc->activation = 0;
 
+		K_UserPropertiesClear(&sc->user);
+
 		textmap_colormap.used = false;
 		textmap_colormap.lightcolor = 0;
 		textmap_colormap.lightalpha = 25;
@@ -2740,6 +3001,7 @@ static void P_LoadTextmap(void)
 		ld->sidenum[1] = 0xffff;
 
 		ld->activation = 0;
+		K_UserPropertiesClear(&ld->user);
 
 		TextmapParse(linesPos[i], i, ParseTextmapLinedefParameter);
 
@@ -2763,6 +3025,8 @@ static void P_LoadTextmap(void)
 		sd->bottomtexture = R_TextureNumForName("-");
 		sd->sector = NULL;
 		sd->repeatcnt = 0;
+
+		K_UserPropertiesClear(&sd->user);
 
 		TextmapParse(sidesPos[i], i, ParseTextmapSidedefParameter);
 
@@ -2788,6 +3052,8 @@ static void P_LoadTextmap(void)
 		mt->special = 0;
 		mt->layer = 0;
 		mt->mobj = NULL;
+
+		K_UserPropertiesClear(&mt->user);
 
 		TextmapParse(mapthingsPos[i], i, ParseTextmapThingParameter);
 	}
@@ -6718,6 +6984,10 @@ static void P_ConvertBinaryThingTypes(void)
 		case 1305: //Rollout Rock
 			mapthings[i].args[0] = !!(mapthings[i].options & MTF_AMBUSH);
 			break;
+		case 1488: // Follower Audience (unfortunately numbered)
+			mapthings[i].args[2] = !!(mapthings[i].options & MTF_OBJECTSPECIAL);
+			mapthings[i].args[3] = !!(mapthings[i].options & MTF_AMBUSH);
+			break;
 		case 1500: //Glaregoyle
 		case 1501: //Glaregoyle (Up)
 		case 1502: //Glaregoyle (Down)
@@ -7120,7 +7390,7 @@ static void P_InitLevelSettings(void)
 	//memset(&ntemprecords, 0, sizeof(nightsdata_t));
 
 	// earthquake camera
-	memset(&quake,0,sizeof(struct quake));
+	g_quakes = NULL;
 
 	// song credit init
 	Z_Free(cursongcredit.text);
@@ -7139,7 +7409,7 @@ static void P_InitLevelSettings(void)
 		K_UpdateShrinkCheat(&players[i]);
 	}
 
-	racecountdown = exitcountdown = exitfadestarted = 0;
+	racecountdown = exitcountdown = musiccountdown = exitfadestarted = 0;
 	curlap = bestlap = 0; // SRB2Kart
 
 	// Gamespeed and frantic items
@@ -7275,13 +7545,14 @@ static void P_ResetSpawnpoints(void)
 
 static void P_TryAddExternalGhost(char *defdemoname)
 {
-	UINT8 *buffer = NULL;
-
 	if (FIL_FileExists(defdemoname))
 	{
-		if (FIL_ReadFileTag(defdemoname, &buffer, PU_LEVEL))
+		savebuffer_t buf = {0};
+
+		if (P_SaveBufferFromFile(&buf, defdemoname))
 		{
-			G_AddGhost(buffer, defdemoname);
+			Z_ChangeTag(buf.buffer, PU_LEVEL);
+			G_AddGhost(&buf, defdemoname);
 		}
 		else
 		{
@@ -7349,10 +7620,11 @@ static void P_LoadRecordGhosts(void)
 	{
 		char *defdemoname;
 		virtlump_t *vLump;
-		UINT8 *buffer = NULL;
 
 		for (i = mapheaderinfo[gamemap-1]->ghostCount; i > 0; i--)
 		{
+			savebuffer_t buf = {0};
+
 			defdemoname = va("GHOST_%u", i);
 			vLump = vres_Find(curmapvirt, defdemoname);
 			if (vLump == NULL)
@@ -7360,9 +7632,10 @@ static void P_LoadRecordGhosts(void)
 				CONS_Alert(CONS_ERROR, M_GetText("Failed to read virtlump '%s'.\n"), defdemoname);
 				continue;
 			}
-			buffer = Z_Malloc(vLump->size, PU_LEVEL, NULL);
-			memcpy(buffer, vLump->data, vLump->size);
-			G_AddGhost(buffer, defdemoname);
+
+			P_SaveBufferZAlloc(&buf, vLump->size, PU_LEVEL, NULL);
+			memcpy(buf.buffer, vLump->data, vLump->size);
+			G_AddGhost(&buf, defdemoname);
 		}
 	}
 
@@ -8093,7 +8366,6 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 
 	if (rendermode != render_none && reloadinggamestate == false)
 	{
-		R_ResetViewInterpolation(0);
 		R_ResetViewInterpolation(0);
 		R_UpdateMobjInterpolators();
 

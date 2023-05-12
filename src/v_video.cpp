@@ -891,7 +891,7 @@ void V_DrawStretchyFixedPatch(fixed_t x, fixed_t y, fixed_t pscale, fixed_t vsca
 	float fx = x;
 	float fy = y;
 	float fx2 = fx + pwidth;
-	float fy2 = fy + static_cast<float>(patch->height) * fdupy;
+	float fy2 = fy + std::round(static_cast<float>(patch->height) * fdupy);
 	float falpha = 1.f;
 	float umin = 0.f;
 	float umax = 1.f;
@@ -2264,7 +2264,7 @@ void V_DrawStringScaled(
 			spacew = 16;
 			break;
 		case KART_FONT:
-			spacew = 12;
+			spacew = 3;
 			switch (spacing)
 			{
 				case V_MONOSPACE:
@@ -2286,6 +2286,12 @@ void V_DrawStringScaled(
 		case LSHI_FONT:
 		case LSLOW_FONT:
 			spacew = 16;
+			break;
+		case OPPRF_FONT:
+			spacew = 5;
+			break;
+		case PINGF_FONT:
+			spacew = 3;
 			break;
 	}
 
@@ -2310,6 +2316,10 @@ void V_DrawStringScaled(
 			break;
 		case LSLOW_FONT:
 			lfh    = 38;
+			break;
+		case OPPRF_FONT:
+		case PINGF_FONT:
+			lfh = 10;
 			break;
 	}
 
@@ -2363,6 +2373,12 @@ void V_DrawStringScaled(
 			else
 				dim_fn = VariableCharacterDim;
 			break;
+		case KART_FONT:
+			if (chw)
+				dim_fn = FixedCharacterDim;
+			else
+				dim_fn = BunchedCharacterDim;
+			break;
 		case TINY_FONT:
 			if (chw)
 				dim_fn = FixedCharacterDim;
@@ -2393,6 +2409,13 @@ void V_DrawStringScaled(
 				dim_fn = FixedCharacterDim;
 			else
 				dim_fn = LSTitleCharacterDim;
+			break;
+		case OPPRF_FONT:
+		case PINGF_FONT:
+			if (chw)
+				dim_fn = FixedCharacterDim;
+			else
+				dim_fn = VariableCharacterDim;
 			break;
 	}
 
@@ -2474,6 +2497,7 @@ fixed_t V_StringScaledWidth(
 	boolean uppercase;
 
 	fixed_t cx, cy;
+	fixed_t right;
 
 	fixed_t cw;
 
@@ -2535,7 +2559,7 @@ fixed_t V_StringScaledWidth(
 			spacew = 16;
 			break;
 		case KART_FONT:
-			spacew = 12;
+			spacew = 3;
 			switch (spacing)
 			{
 				case V_MONOSPACE:
@@ -2555,6 +2579,12 @@ fixed_t V_StringScaledWidth(
 		case LSHI_FONT:
 		case LSLOW_FONT:
 			spacew = 16;
+			break;
+		case OPPRF_FONT:
+			spacew = 5;
+			break;
+		case PINGF_FONT:
+			spacew = 3;
 			break;
 	}
 
@@ -2579,6 +2609,10 @@ fixed_t V_StringScaledWidth(
 			break;
 		case LSLOW_FONT:
 			lfh    = 38;
+			break;
+		case OPPRF_FONT:
+		case PINGF_FONT:
+			lfh = 10;
 			break;
 	}
 
@@ -2619,6 +2653,12 @@ fixed_t V_StringScaledWidth(
 			else
 				dim_fn = VariableCharacterDim;
 			break;
+		case KART_FONT:
+			if (chw)
+				dim_fn = FixedCharacterDim;
+			else
+				dim_fn = BunchedCharacterDim;
+			break;
 		case TINY_FONT:
 			if (chw)
 				dim_fn = FixedCharacterDim;
@@ -2650,9 +2690,17 @@ fixed_t V_StringScaledWidth(
 			else
 				dim_fn = LSTitleCharacterDim;
 			break;
+		case OPPRF_FONT:
+		case PINGF_FONT:
+			if (chw)
+				dim_fn = FixedCharacterDim;
+			else
+				dim_fn = VariableCharacterDim;
+			break;
 	}
 
 	cx = cy = 0;
+	right = 0;
 
 	for (; ( c = *s ); ++s)
 	{
@@ -2670,6 +2718,12 @@ fixed_t V_StringScaledWidth(
 				if (c >= 0 && c < font->size && font->font[c])
 				{
 					cw = SHORT (font->font[c]->width) * dupx;
+
+					// How bunched dims work is by incrementing cx slightly less than a full character width.
+					// This causes the next character to be drawn overlapping the previous.
+					// We need to count the full width to get the rightmost edge of the string though.
+					right = cx + (cw * scale);
+
 					(*dim_fn)(scale, chw, hchw, dupx, &cw);
 					cx += cw;
 				}
@@ -2677,7 +2731,7 @@ fixed_t V_StringScaledWidth(
 					cx += spacew;
 		}
 
-		fullwidth = std::max(cx, fullwidth);
+		fullwidth = std::max(right, std::max(cx, fullwidth));
 	}
 
 	return fullwidth;
@@ -2734,37 +2788,36 @@ void V_DrawRightAlignedThinStringAtFixed(fixed_t x, fixed_t y, INT32 option, con
 // Draws a number using the PING font thingy.
 // TODO: Merge number drawing functions into one with "font name" selection.
 
-INT32 V_DrawPingNum(INT32 x, INT32 y, INT32 flags, INT32 num, const UINT8 *colormap)
+fixed_t V_DrawPingNum(fixed_t x, fixed_t y, INT32 flags, INT32 num, const UINT8 *colormap)
 {
-	INT32 w = SHORT(fontv[PINGNUM_FONT].font[0]->width);	// this SHOULD always be 5 but I guess custom graphics exist.
-
-	if (flags & V_NOSCALESTART)
-		w *= vid.dupx;
+	// this SHOULD always be 5 but I guess custom graphics exist.
+	const fixed_t w = (fontv[PINGNUM_FONT].font[0]->width) * FRACUNIT;
 
 	if (num < 0)
-		num = -num;
-
-	// draw the number
-	do
 	{
-		x -= (w-1);	// Oni wanted their outline to intersect.
-		V_DrawFixedPatch(x<<FRACBITS, y<<FRACBITS, FRACUNIT, flags, fontv[PINGNUM_FONT].font[num%10], colormap);
+		num = -num;
+	}
+
+	do // draw the number
+	{
+		x -= (w - FRACUNIT); // Oni wanted their outline to intersect.
+		V_DrawFixedPatch(x, y, FRACUNIT, flags, fontv[PINGNUM_FONT].font[num % 10], colormap);
 		num /= 10;
-	} while (num);
+	} while (num > 0);
 
 	return x;
 }
 
-void V_DrawCenteredKartString(INT32 x, INT32 y, INT32 option, const char *string)
+void V_DrawCenteredTimerString(INT32 x, INT32 y, INT32 option, const char *string)
 {
-	x -= V_KartStringWidth(string, option)/2;
-	V_DrawKartString(x, y, option, string);
+	x -= V_TimerStringWidth(string, option)/2;
+	V_DrawTimerString(x, y, option, string);
 }
 
-void V_DrawRightAlignedKartString(INT32 x, INT32 y, INT32 option, const char *string)
+void V_DrawRightAlignedTimerString(INT32 x, INT32 y, INT32 option, const char *string)
 {
-	x -= V_KartStringWidth(string, option);
-	V_DrawKartString(x, y, option, string);
+	x -= V_TimerStringWidth(string, option);
+	V_DrawTimerString(x, y, option, string);
 }
 
 void V_DrawCenteredGamemodeString(INT32 x, INT32 y, INT32 option, const UINT8 *colormap, const char *string)

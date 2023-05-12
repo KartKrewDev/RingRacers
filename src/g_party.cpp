@@ -150,7 +150,6 @@ public:
 			// all into its new position -- just snap
 			// instantly into place.
 			R_ResetViewInterpolation(1 + i);
-			R_ResetViewInterpolation(1 + i); // (Why does it need to be called twice?)
 		}
 
 		r_splitscreen = size() - 1;

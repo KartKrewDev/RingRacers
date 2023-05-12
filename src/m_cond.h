@@ -132,6 +132,7 @@ struct conditionset_t
 // Global emblem flags
 #define GE_NOTMEDAL		1	// Doesn't count towards number of medals
 #define GE_TIMED		2	// Disappears after var time
+#define GE_FOLLOWER		4	// Takes on the appearance of a Follower in (string)var2
 
 // Map emblem flags
 #define ME_ENCORE		1	// Achieve in Encore
@@ -147,7 +148,9 @@ struct emblem_t
 	UINT16 color;		///< skincolor to use
 	INT32 flags;		///< GE or ME constants
 	INT32 var;			///< If needed, specifies extra information
+	INT32 var2;			///< Ditto
 	char *stringVar;	///< String version
+	char *stringVar2;	///< Ditto
 };
 
 // Unlockable information

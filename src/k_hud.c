@@ -1150,7 +1150,7 @@ static void K_initKartHUD(void)
 	}
 }
 
-void K_DrawMapThumbnail(INT32 x, INT32 y, INT32 width, UINT32 flags, UINT16 map, UINT8 *colormap)
+void K_DrawMapThumbnail(fixed_t x, fixed_t y, fixed_t width, UINT32 flags, UINT16 map, const UINT8 *colormap)
 {
 	patch_t *PictureOfLevel = NULL;
 
@@ -1170,7 +1170,7 @@ void K_DrawMapThumbnail(INT32 x, INT32 y, INT32 width, UINT32 flags, UINT16 map,
 	K_DrawLikeMapThumbnail(x, y, width, flags, PictureOfLevel, colormap);
 }
 
-void K_DrawLikeMapThumbnail(INT32 x, INT32 y, INT32 width, UINT32 flags, patch_t *patch, UINT8 *colormap)
+void K_DrawLikeMapThumbnail(fixed_t x, fixed_t y, fixed_t width, UINT32 flags, patch_t *patch, const UINT8 *colormap)
 {
 	if (flags & V_FLIP)
 		x += width;
@@ -1448,7 +1448,7 @@ static void K_drawKartItem(void)
 			else
 			{
 				V_DrawScaledPatch(fy+28, fy+41, V_HUDTRANS|V_SLIDEIN|fflags, kp_itemx);
-				V_DrawKartString(fx+38, fy+36, V_HUDTRANS|V_SLIDEIN|fflags, va("%d", stplyr->itemamount));
+				V_DrawTimerString(fx+38, fy+36, V_HUDTRANS|V_SLIDEIN|fflags, va("%d", stplyr->itemamount));
 			}
 		}
 		else
@@ -1587,30 +1587,30 @@ void K_drawKartTimestamp(tic_t drawtime, INT32 TX, INT32 TY, INT32 splitflags, U
 	}
 
 	if (mode && !drawtime)
-		V_DrawKartString(TX, TY+3, splitflags, va("--'--\"--"));
+		V_DrawTimerString(TX, TY+3, splitflags, va("--'--\"--"));
 	else
 	{
 		// minutes time      00 __ __
-		V_DrawKartString(TX,    TY+3+jitter, splitflags, va("%d", worktime/10));
-		V_DrawKartString(TX+12, TY+3-jitter, splitflags, va("%d", worktime%10));
+		V_DrawTimerString(TX,    TY+3+jitter, splitflags, va("%d", worktime/10));
+		V_DrawTimerString(TX+12, TY+3-jitter, splitflags, va("%d", worktime%10));
 
 		// apostrophe location     _'__ __
-		V_DrawKartString(TX+24, TY+3, splitflags, va("'"));
+		V_DrawTimerString(TX+24, TY+3, splitflags, va("'"));
 
 		worktime = (drawtime/TICRATE % 60);
 
 		// seconds time       _ 00 __
-		V_DrawKartString(TX+36, TY+3+jitter, splitflags, va("%d", worktime/10));
-		V_DrawKartString(TX+48, TY+3-jitter, splitflags, va("%d", worktime%10));
+		V_DrawTimerString(TX+36, TY+3+jitter, splitflags, va("%d", worktime/10));
+		V_DrawTimerString(TX+48, TY+3-jitter, splitflags, va("%d", worktime%10));
 
 		// quotation mark location    _ __"__
-		V_DrawKartString(TX+60, TY+3, splitflags, va("\""));
+		V_DrawTimerString(TX+60, TY+3, splitflags, va("\""));
 
 		worktime = G_TicsToCentiseconds(drawtime);
 
 		// tics               _ __ 00
-		V_DrawKartString(TX+72, TY+3+jitter, splitflags, va("%d", worktime/10));
-		V_DrawKartString(TX+84, TY+3-jitter, splitflags, va("%d", worktime%10));
+		V_DrawTimerString(TX+72, TY+3+jitter, splitflags, va("%d", worktime/10));
+		V_DrawTimerString(TX+84, TY+3-jitter, splitflags, va("%d", worktime%10));
 	}
 
 	// Medal data!
@@ -2277,156 +2277,6 @@ static void K_drawKartEmeralds(void)
 	}
 }
 
-//
-// HU_DrawTabRankings -- moved here to take advantage of kart stuff!
-//
-void K_DrawTabRankings(INT32 x, INT32 y, playersort_t *tab, INT32 scorelines, INT32 whiteplayer, INT32 hilicol)
-{
-	static tic_t alagles_timer = 9;
-	INT32 i, rightoffset = 240;
-	const UINT8 *colormap;
-	INT32 dupadjust = (vid.width/vid.dupx), duptweak = (dupadjust - BASEVIDWIDTH)/2;
-	int basey = y, basex = x, y2;
-
-	//this function is designed for 9 or less score lines only
-	//I_Assert(scorelines <= 9); -- not today bitch, kart fixed it up
-
-	V_DrawFill(1-duptweak, 26, dupadjust-2, 1, 0); // Draw a horizontal line because it looks nice!
-
-	scorelines--;
-	if (scorelines >= 8)
-	{
-		V_DrawFill(160, 26, 1, 147, 0); // Draw a vertical line to separate the two sides.
-		V_DrawFill(1-duptweak, 173, dupadjust-2, 1, 0); // And a horizontal line near the bottom.
-		rightoffset = (BASEVIDWIDTH/2) - 4 - x;
-		x = (BASEVIDWIDTH/2) + 4;
-		y += 18*(scorelines-8);
-	}
-	else
-	{
-		y += 18*scorelines;
-	}
-
-	for (i = scorelines; i >= 0; i--)
-	{
-		char strtime[MAXPLAYERNAME+1];
-
-		if (players[tab[i].num].spectator || !players[tab[i].num].mo)
-			continue; //ignore them.
-
-		if (netgame) // don't draw ping offline
-		{
-			if (players[tab[i].num].bot)
-			{
-				V_DrawScaledPatch(x + ((i < 8) ? -25 : rightoffset + 3), y-2, 0, kp_cpu);
-			}
-			else if (tab[i].num != serverplayer || !server_lagless)
-			{
-				HU_drawPing(x + ((i < 8) ? -17 : rightoffset + 11), y-4, playerpingtable[tab[i].num], 0, false);
-			}
-		}
-
-		STRBUFCPY(strtime, tab[i].name);
-
-		y2 = y;
-
-		if (netgame && playerconsole[tab[i].num] == 0 && server_lagless && !players[tab[i].num].bot)
-		{
-			y2 = ( y - 4 );
-
-			V_DrawScaledPatch(x + 20, y2, 0, kp_blagles[(leveltime / 3) % 6]);
-			// every 70 tics
-			if (( leveltime % 70 ) == 0)
-			{
-				alagles_timer = 9;
-			}
-			if (alagles_timer > 0)
-			{
-				V_DrawScaledPatch(x + 20, y2, 0, kp_alagles[alagles_timer]);
-				if (( leveltime % 2 ) == 0)
-					alagles_timer--;
-			}
-			else
-				V_DrawScaledPatch(x + 20, y2, 0, kp_alagles[0]);
-
-			y2 += SHORT (kp_alagles[0]->height) + 1;
-		}
-
-		if (scorelines >= 8)
-			V_DrawThinString(x + 20, y2, ((tab[i].num == whiteplayer) ? hilicol : 0)|V_ALLOWLOWERCASE|V_6WIDTHSPACE, strtime);
-		else
-			V_DrawString(x + 20, y2, ((tab[i].num == whiteplayer) ? hilicol : 0)|V_ALLOWLOWERCASE, strtime);
-
-		if (players[tab[i].num].mo->color)
-		{
-			colormap = R_GetTranslationColormap(players[tab[i].num].skin, players[tab[i].num].mo->color, GTC_CACHE);
-			if (players[tab[i].num].mo->colorized)
-				colormap = R_GetTranslationColormap(TC_RAINBOW, players[tab[i].num].mo->color, GTC_CACHE);
-			else
-				colormap = R_GetTranslationColormap(players[tab[i].num].skin, players[tab[i].num].mo->color, GTC_CACHE);
-
-			V_DrawMappedPatch(x, y-4, 0, faceprefix[players[tab[i].num].skin][FACE_RANK], colormap);
-			/*if ((gametyperules & GTR_BUMPERS) && players[tab[i].num].bumpers > 0) -- not enough space for this
-			{
-				INT32 bumperx = x+19;
-				V_DrawMappedPatch(bumperx-2, y-4, 0, kp_tinybumper[0], colormap);
-				for (j = 1; j < players[tab[i].num].bumpers; j++)
-				{
-					bumperx += 5;
-					V_DrawMappedPatch(bumperx, y-4, 0, kp_tinybumper[1], colormap);
-				}
-			}*/
-		}
-
-		if (tab[i].num == whiteplayer)
-			V_DrawScaledPatch(x, y-4, 0, kp_facehighlight[(leveltime / 4) % 8]);
-
-		if ((gametyperules & GTR_BUMPERS) && (players[tab[i].num].pflags & PF_ELIMINATED))
-			V_DrawScaledPatch(x-4, y-7, 0, kp_ranknobumpers);
-		else
-		{
-			INT32 pos = players[tab[i].num].position;
-			if (pos < 0 || pos > MAXPLAYERS)
-				pos = 0;
-			// Draws the little number over the face
-			V_DrawScaledPatch(x-5, y+6, 0, kp_facenum[pos]);
-		}
-
-		if ((gametyperules & GTR_CIRCUIT))
-		{
-#define timestring(time) va("%i'%02i\"%02i", G_TicsToMinutes(time, true), G_TicsToSeconds(time), G_TicsToCentiseconds(time))
-			if (scorelines >= 8)
-			{
-				if (players[tab[i].num].exiting)
-					V_DrawRightAlignedThinString(x+rightoffset, y-1, hilicol|V_6WIDTHSPACE, timestring(players[tab[i].num].realtime));
-				else if (players[tab[i].num].pflags & PF_NOCONTEST)
-					V_DrawRightAlignedThinString(x+rightoffset, y-1, V_6WIDTHSPACE, "NO CONTEST.");
-				else
-					V_DrawRightAlignedThinString(x+rightoffset, y-1, V_6WIDTHSPACE, va("Lap %d", tab[i].count));
-			}
-			else
-			{
-				if (players[tab[i].num].exiting)
-					V_DrawRightAlignedString(x+rightoffset, y, hilicol, timestring(players[tab[i].num].realtime));
-				else if (players[tab[i].num].pflags & PF_NOCONTEST)
-					V_DrawRightAlignedThinString(x+rightoffset, y-1, 0, "NO CONTEST.");
-				else
-					V_DrawRightAlignedString(x+rightoffset, y, 0, va("Lap %d", tab[i].count));
-			}
-#undef timestring
-		}
-		else
-			V_DrawRightAlignedString(x+rightoffset, y, 0, va("%u", tab[i].count));
-
-		y -= 18;
-		if (i == 8)
-		{
-			y = basey + 7*18;
-			x = basex;
-		}
-	}
-}
-
 static void K_drawKartLaps(void)
 {
 	INT32 splitflags = V_SNAPTOBOTTOM|V_SNAPTOLEFT|V_SPLITSCREEN;
@@ -2490,7 +2340,7 @@ static void K_drawKartLaps(void)
 	{
 		// Laps
 		V_DrawScaledPatch(LAPS_X, LAPS_Y, V_HUDTRANS|V_SLIDEIN|splitflags, kp_lapsticker);
-		V_DrawKartString(LAPS_X+33, LAPS_Y+3, V_HUDTRANS|V_SLIDEIN|splitflags, va("%d/%d", min(stplyr->laps, numlaps), numlaps));
+		V_DrawTimerString(LAPS_X+33, LAPS_Y+3, V_HUDTRANS|V_SLIDEIN|splitflags, va("%d/%d", min(stplyr->laps, numlaps), numlaps));
 	}
 }
 
@@ -2986,7 +2836,7 @@ static void K_drawKartBumpersOrKarma(void)
 				V_DrawMappedPatch(LAPS_X, LAPS_Y, V_HUDTRANS|V_SLIDEIN|splitflags, kp_capsulestickerwide, NULL);
 			else
 				V_DrawMappedPatch(LAPS_X, LAPS_Y, V_HUDTRANS|V_SLIDEIN|splitflags, kp_capsulesticker, NULL);
-			V_DrawKartString(LAPS_X+47, LAPS_Y+3, V_HUDTRANS|V_SLIDEIN|splitflags, va("%d/%d", numtargets, maptargets));
+			V_DrawTimerString(LAPS_X+47, LAPS_Y+3, V_HUDTRANS|V_SLIDEIN|splitflags, va("%d/%d", numtargets, maptargets));
 		}
 		else
 		{
@@ -2998,7 +2848,7 @@ static void K_drawKartBumpersOrKarma(void)
 			else
 				V_DrawMappedPatch(LAPS_X, LAPS_Y, V_HUDTRANS|V_SLIDEIN|splitflags, kp_bumpersticker, colormap);
 
-			V_DrawKartString(LAPS_X+47, LAPS_Y+3, V_HUDTRANS|V_SLIDEIN|splitflags, va("%d/%d", bumpers, maxbumper));
+			V_DrawTimerString(LAPS_X+47, LAPS_Y+3, V_HUDTRANS|V_SLIDEIN|splitflags, va("%d/%d", bumpers, maxbumper));
 		}
 	}
 }
@@ -4457,7 +4307,7 @@ static void K_drawBattleFullscreen(void)
 	{
 		if (stplyr == &players[displayplayers[0]])
 			V_DrawFadeScreen(0xFF00, 16);
-		if (exitcountdown <= 6*TICRATE && !stplyr->spectator)
+		if (exitcountdown <= (11*TICRATE)/2 && !stplyr->spectator)
 		{
 			patch_t *p = kp_battlecool;
 
@@ -4507,7 +4357,7 @@ static void K_drawBattleFullscreen(void)
 		else
 		{
 			V_DrawFixedPatch(x<<FRACBITS, ty<<FRACBITS, scale, 0, kp_timeoutsticker, NULL);
-			V_DrawKartString(x-txoff, ty, 0, va("%d", stplyr->karmadelay/TICRATE));
+			V_DrawTimerString(x-txoff, ty, 0, va("%d", stplyr->karmadelay/TICRATE));
 		}
 	}
 
@@ -4919,8 +4769,27 @@ void K_drawKartFreePlay(void)
 	if (((leveltime-lt_endtime) % TICRATE) < TICRATE/2)
 		return;
 
-	V_DrawKartString((BASEVIDWIDTH - (LAPS_X+1)) - 72, // mirror the laps thingy
-		LAPS_Y+3, V_HUDTRANS|V_SLIDEIN|V_SNAPTOBOTTOM|V_SNAPTORIGHT|V_SPLITSCREEN, "FREE PLAY");
+	const fixed_t x = ((BASEVIDWIDTH - (LAPS_X+6)) * FRACUNIT) - \
+	V_StringScaledWidth(
+		FRACUNIT,
+		FRACUNIT,
+		FRACUNIT,
+		V_HUDTRANS|V_SLIDEIN|V_SNAPTOBOTTOM|V_SNAPTORIGHT|V_SPLITSCREEN,
+		KART_FONT,
+		"FREE PLAY"
+	);
+
+	V_DrawStringScaled(
+		x,
+		(LAPS_Y+3) * FRACUNIT,
+		FRACUNIT,
+		FRACUNIT,
+		FRACUNIT,
+		V_HUDTRANS|V_SLIDEIN|V_SNAPTOBOTTOM|V_SNAPTORIGHT|V_SPLITSCREEN,
+		NULL,
+		KART_FONT,
+		"FREE PLAY"
+	);
 }
 
 static void
@@ -4955,11 +4824,16 @@ K_drawMiniPing (void)
 	}
 }
 
+void K_drawButton(fixed_t x, fixed_t y, INT32 flags, patch_t *button[2], boolean pressed)
+{
+	V_DrawFixedPatch(x, y, FRACUNIT, flags, button[pressed], NULL);
+}
+
 void K_drawButtonAnim(INT32 x, INT32 y, INT32 flags, patch_t *button[2], tic_t animtic)
 {
 	const UINT8 anim_duration = 16;
-	const UINT8 anim = (animtic % (anim_duration * 2)) < anim_duration;
-	V_DrawScaledPatch(x, y, flags, button[anim]);
+	const boolean anim = ((animtic % (anim_duration * 2)) < anim_duration);
+	K_drawButton(x << FRACBITS, y << FRACBITS, flags, button, anim);
 }
 
 static void K_DrawDirectorButton(INT32 idx, const char *label, patch_t *kp[2], INT32 textflags)
@@ -5101,6 +4975,11 @@ static void K_DrawWaypointDebugger(void)
 
 	if (stplyr != &players[displayplayers[0]]) // only for p1
 		return;
+
+	if (netgame)
+	{
+		V_DrawString(8, 146, 0, va("Online griefing: [%u, %u]", stplyr->griefValue/TICRATE, stplyr->griefStrikes));
+	}
 
 	V_DrawString(8, 156, 0, va("Current Waypoint ID: %d", K_GetWaypointID(stplyr->currentwaypoint)));
 	V_DrawString(8, 166, 0, va("Next Waypoint ID: %d", K_GetWaypointID(stplyr->nextwaypoint)));
@@ -5366,7 +5245,7 @@ void K_drawKartHUD(void)
 		else
 		{
 			INT32 karlen = strlen(countstr)*6; // half of 12
-			V_DrawKartString((BASEVIDWIDTH/2)-karlen, LAPS_Y+3, V_SPLITSCREEN, countstr);
+			V_DrawTimerString((BASEVIDWIDTH/2)-karlen, LAPS_Y+3, V_SPLITSCREEN, countstr);
 		}
 	}
 

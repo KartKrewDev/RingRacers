@@ -44,6 +44,7 @@
 #include "acs/interface.h"
 #include "g_party.h"
 #include "k_vote.h"
+#include "k_zvote.h"
 
 savedata_t savedata;
 
@@ -53,6 +54,7 @@ savedata_t savedata;
 #define ARCHIVEBLOCK_PLAYERS		0x7F448008
 #define ARCHIVEBLOCK_PARTIES		0x7F87AF0C
 #define ARCHIVEBLOCK_ROUNDQUEUE		0x7F721331
+#define ARCHIVEBLOCK_ZVOTE			0x7F54FF0D
 #define ARCHIVEBLOCK_WORLD			0x7F8C08C0
 #define ARCHIVEBLOCK_POBJS			0x7F928546
 #define ARCHIVEBLOCK_THINKERS		0x7F37037C
@@ -193,6 +195,10 @@ static void P_NetArchivePlayers(savebuffer_t *save)
 
 		WRITEUINT32(save->p, players[i].jointime);
 
+		WRITEUINT32(save->p, players[i].spectatorReentry);
+		WRITEUINT32(save->p, players[i].griefValue);
+		WRITEUINT8(save->p, players[i].griefStrikes);
+
 		WRITEUINT8(save->p, players[i].splitscreenindex);
 
 		if (players[i].awayview.mobj)
@@ -270,6 +276,7 @@ static void P_NetArchivePlayers(savebuffer_t *save)
 		WRITEUINT8(save->p, players[i].oldposition);
 		WRITEUINT8(save->p, players[i].positiondelay);
 		WRITEUINT32(save->p, players[i].distancetofinish);
+		WRITEUINT32(save->p, players[i].distancetofinishprev);
 		WRITEUINT32(save->p, K_GetWaypointHeapIndex(players[i].currentwaypoint));
 		WRITEUINT32(save->p, K_GetWaypointHeapIndex(players[i].nextwaypoint));
 		WRITEUINT32(save->p, players[i].airtime);
@@ -596,6 +603,10 @@ static void P_NetUnArchivePlayers(savebuffer_t *save)
 
 		players[i].jointime = READUINT32(save->p);
 
+		players[i].spectatorReentry = READUINT32(save->p);
+		players[i].griefValue = READUINT32(save->p);
+		players[i].griefStrikes = READUINT8(save->p);
+
 		players[i].splitscreenindex = READUINT8(save->p);
 
 		flags = READUINT16(save->p);
@@ -647,6 +658,7 @@ static void P_NetUnArchivePlayers(savebuffer_t *save)
 		players[i].oldposition = READUINT8(save->p);
 		players[i].positiondelay = READUINT8(save->p);
 		players[i].distancetofinish = READUINT32(save->p);
+		players[i].distancetofinishprev = READUINT32(save->p);
 		players[i].currentwaypoint = (waypoint_t *)(size_t)READUINT32(save->p);
 		players[i].nextwaypoint = (waypoint_t *)(size_t)READUINT32(save->p);
 		players[i].airtime = READUINT32(save->p);
@@ -983,6 +995,87 @@ static void P_NetUnArchiveRoundQueue(savebuffer_t *save)
 		roundqueue.entries[i].encore = (boolean)READUINT8(save->p);
 		roundqueue.entries[i].rankrestricted = (boolean)READUINT8(save->p);
 	}
+}
+
+static void P_NetArchiveZVote(savebuffer_t *save)
+{
+	INT32 i;
+
+	WRITEUINT32(save->p, ARCHIVEBLOCK_ZVOTE);
+	WRITEUINT8(save->p, g_midVote.active);
+
+	if (g_midVote.active == true)
+	{
+		WRITEUINT8(
+			save->p,
+			(g_midVote.caller != NULL) ? (g_midVote.caller - players) : UINT8_MAX
+		);
+
+		WRITEUINT8(
+			save->p,
+			(g_midVote.victim != NULL) ? (g_midVote.victim - players) : UINT8_MAX
+		);
+
+		for (i = 0; i < MAXPLAYERS; i++)
+		{
+			WRITEUINT8(save->p, g_midVote.votes[i]);
+		}
+
+		WRITEUINT8(save->p, g_midVote.type);
+		WRITEINT32(save->p, g_midVote.variable);
+
+		WRITEUINT32(save->p, g_midVote.time);
+
+		WRITEUINT32(save->p, g_midVote.end);
+		WRITEUINT8(save->p, g_midVote.endVotes);
+		WRITEUINT8(save->p, g_midVote.endRequired);
+	}
+
+	WRITEUINT32(save->p, g_midVote.delay);
+}
+
+static void P_NetUnArchiveZVote(savebuffer_t *save)
+{
+	INT32 i;
+
+	if (READUINT32(save->p) != ARCHIVEBLOCK_ZVOTE)
+	{
+		I_Error("Bad $$$.sav at archive block Z-Vote");
+	}
+
+	K_ResetMidVote();
+	g_midVote.active = (boolean)READUINT8(save->p);
+
+	if (g_midVote.active == true)
+	{
+		UINT8 callerID = READUINT8(save->p);
+		UINT8 victimID = READUINT8(save->p);
+
+		if (callerID < MAXPLAYERS)
+		{
+			g_midVote.caller = &players[callerID];
+		}
+
+		if (victimID < MAXPLAYERS)
+		{
+			g_midVote.victim = &players[victimID];
+		}
+
+		for (i = 0; i < MAXPLAYERS; i++)
+		{
+			g_midVote.votes[i] = (boolean)READUINT8(save->p);
+		}
+
+		g_midVote.type = READUINT8(save->p);
+		g_midVote.variable = READINT32(save->p);
+
+		g_midVote.time = (tic_t)READUINT32(save->p);
+		g_midVote.end = (tic_t)READUINT32(save->p);
+		g_midVote.endVotes = READUINT8(save->p);
+		g_midVote.endRequired = READUINT8(save->p);
+	}
+
+	g_midVote.delay = (tic_t)READUINT32(save->p);
 }
 
 ///
@@ -5463,6 +5556,7 @@ void P_SaveNetGame(savebuffer_t *save, boolean resending)
 	P_NetArchivePlayers(save);
 	P_NetArchiveParties(save);
 	P_NetArchiveRoundQueue(save);
+	P_NetArchiveZVote(save);
 
 	if (gamestate == GS_LEVEL)
 	{
@@ -5514,6 +5608,7 @@ boolean P_LoadNetGame(savebuffer_t *save, boolean reloading)
 	P_NetUnArchivePlayers(save);
 	P_NetUnArchiveParties(save);
 	P_NetUnArchiveRoundQueue(save);
+	P_NetUnArchiveZVote(save);
 
 	if (gamestate == GS_LEVEL)
 	{
@@ -5628,4 +5723,16 @@ void P_SaveBufferFree(savebuffer_t *save)
 {
 	Z_Free(save->buffer);
 	P_SaveBufferInvalidate(save);
+}
+
+size_t P_SaveBufferRemaining(const savebuffer_t *save)
+{
+	if (save->p < save->end)
+	{
+		return save->end - save->p;
+	}
+	else
+	{
+		return 0;
+	}
 }

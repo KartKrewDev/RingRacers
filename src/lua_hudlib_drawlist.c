@@ -468,7 +468,7 @@ void LUA_HUD_DrawList(huddrawlist_h list)
 				V_DrawTitleCardString(item->x, item->y, itemstr, item->flags, item->bossmode, item->timer, item->threshold);
 				break;
 			case DI_DrawKartString:
-				V_DrawKartString(item->x, item->y, item->flags, itemstr);
+				V_DrawTimerString(item->x, item->y, item->flags, itemstr);
 				break;
 			default:
 				I_Error("can't draw draw list item: invalid draw list item type");

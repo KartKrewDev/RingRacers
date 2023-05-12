@@ -31,15 +31,9 @@
 #include "m_misc.h" // moviemode
 #include "m_anigif.h" // cv_gif_downscale
 #include "p_setup.h" // NiGHTS grading
-#include "k_grandprix.h"	// we need to know grandprix status for titlecards
-#include "k_boss.h"
 #include "r_fps.h"
-
-//random index
-#include "m_random.h"
-
-// item finder
-#include "m_cond.h"
+#include "m_random.h" // random index
+#include "m_cond.h" // item finder
 
 #ifdef HWRENDER
 #include "hardware/hw_main.h"
@@ -53,8 +47,9 @@
 #include "k_hud.h" // SRB2kart
 #include "v_video.h"
 #include "r_skins.h" // NUMFACES
-
-#include "r_fps.h"
+#include "k_grandprix.h" // we need to know grandprix status for titlecards
+#include "k_boss.h"
+#include "k_zvote.h"
 
 UINT16 objectsdrawn = 0;
 
@@ -164,6 +159,7 @@ void ST_LoadGraphics(void)
 	//                   first anyway
 	// cache the status bar overlay icons (fullscreen mode)
 	K_LoadKartHUDGraphics();
+	K_UpdateMidVotePatches();
 
 	// Midnight Channel:
 	HU_UpdatePatch(&hud_tv1, "HUD_TV1");
@@ -1242,6 +1238,8 @@ static void ST_overlayDrawer(void)
 			}
 		}
 	}
+
+	K_DrawMidVote();
 }
 
 void ST_DrawDemoTitleEntry(void)

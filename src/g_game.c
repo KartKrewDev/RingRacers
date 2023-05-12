@@ -68,6 +68,7 @@
 #include "g_party.h"
 #include "k_vote.h"
 #include "k_serverstats.h"
+#include "k_zvote.h"
 
 #ifdef HAVE_DISCORDRPC
 #include "discord.h"
@@ -192,7 +193,7 @@ mobj_t *blueflag;
 mapthing_t *rflagpoint;
 mapthing_t *bflagpoint;
 
-struct quake quake;
+quake_t *g_quakes = NULL;
 
 // Map Header Information
 mapheader_t** mapheaderinfo = {NULL};
@@ -248,8 +249,7 @@ tic_t starttime = 3;
 const tic_t bulbtime = TICRATE/2;
 UINT8 numbulbs = 1;
 
-tic_t raceexittime = 5*TICRATE + (2*TICRATE/3);
-tic_t battleexittime = 8*TICRATE;
+tic_t raceexittime = 7*TICRATE + (TICRATE/2);
 
 INT32 hyudorotime = 7*TICRATE;
 INT32 stealtime = TICRATE/2;
@@ -276,7 +276,7 @@ mobj_t *hunt1;
 mobj_t *hunt2;
 mobj_t *hunt3;
 
-tic_t racecountdown, exitcountdown; // for racing
+tic_t racecountdown, exitcountdown, musiccountdown; // for racing
 
 fixed_t gravity;
 fixed_t mapobjectscale;
@@ -1598,6 +1598,11 @@ void G_DoLoadLevelEx(boolean resetplayer, gamestate_t newstate)
 
 	if (doAutomate == true)
 	{
+		if (roundqueue.size > 0 && roundqueue.position == 1)
+		{
+			Automate_Run(AEV_QUEUESTART);
+		}
+
 		Automate_Run(AEV_ROUNDSTART);
 	}
 
@@ -2090,8 +2095,6 @@ void G_ResetView(UINT8 viewnum, INT32 playernum, boolean onlyactive)
 		camerap = &camera[viewnum-1];
 		P_ResetCamera(&players[(*displayplayerp)], camerap);
 
-		// Why does it need to be done twice?
-		R_ResetViewInterpolation(viewnum);
 		R_ResetViewInterpolation(viewnum);
 	}
 
@@ -2390,6 +2393,24 @@ void G_Ticker(boolean run)
 		{
 			memset(player_name_changes, 0, sizeof player_name_changes);
 		}
+
+		if (Playing() == true)
+		{
+			if (musiccountdown > 1)
+			{
+				musiccountdown--;
+				if (musiccountdown == 1)
+				{
+					S_ChangeMusicInternal("racent", true);
+				}
+				else if (musiccountdown == (MUSICCOUNTDOWNMAX - (3*TICRATE)/2))
+				{
+					P_EndingMusic();
+				}
+			}
+
+			K_TickMidVote();
+		}
 	}
 }
 
@@ -2459,6 +2480,11 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	UINT8 lastfakeskin;
 
 	tic_t jointime;
+
+	tic_t spectatorReentry;
+
+	UINT32 griefValue;
+	UINT8 griefStrikes;
 
 	UINT8 splitscreenindex;
 	boolean spectator;
@@ -2638,6 +2664,11 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 		saveroundconditions = true;
 	}
 
+	spectatorReentry = (betweenmaps ? 0 : players[player].spectatorReentry);
+
+	griefValue = players[player].griefValue;
+	griefStrikes = players[player].griefStrikes;
+
 	if (!betweenmaps)
 	{
 		follower = players[player].follower;
@@ -2717,6 +2748,10 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 
 	p->botvars.rubberband = FRACUNIT;
 	p->botvars.controller = UINT16_MAX;
+
+	p->spectatorReentry = spectatorReentry;
+	p->griefValue = griefValue;
+	p->griefStrikes = griefStrikes;
 
 	memcpy(&p->itemRoulette, &itemRoulette, sizeof (p->itemRoulette));
 	memcpy(&p->respawn, &respawn, sizeof (p->respawn));
@@ -3388,7 +3423,7 @@ static gametype_t defaultgametypes[] =
 		"Versus",
 		"GT_VERSUS",
 		GTR_BOSS|GTR_SPHERES|GTR_BUMPERS|GTR_POINTLIMIT|GTR_CLOSERPLAYERS|GTR_NOCUPSELECT|GTR_ENCORE,
-		TOL_BOSS,
+		TOL_VERSUS,
 		int_scoreortimeattack,
 		0,
 		0,
@@ -3546,8 +3581,8 @@ char *G_PrepareGametypeConstant(const char *newgtconst)
 tolinfo_t TYPEOFLEVEL[NUMTOLNAMES] = {
 	{"RACE",TOL_RACE},
 	{"BATTLE",TOL_BATTLE},
-	{"BOSS",TOL_BOSS},
 	{"SPECIAL",TOL_SPECIAL},
+	{"VERSUS",TOL_VERSUS},
 	{"TUTORIAL",TOL_TUTORIAL},
 	{"TV",TOL_TV},
 	{NULL, 0}
@@ -4031,7 +4066,7 @@ void G_MapIntoRoundQueue(UINT16 map, UINT8 setgametype, boolean setencore, boole
 void G_GPCupIntoRoundQueue(cupheader_t *cup, UINT8 setgametype, boolean setencore)
 {
 	UINT8 i, levelindex = 0, bonusindex = 0;
-	UINT8 bonusmodulo = (cup->numlevels+1)/(cup->numbonus+1);
+	UINT8 bonusmodulo = max(1, (cup->numlevels+1)/(cup->numbonus+1));
 	UINT16 cupLevelNum;
 
 	// Levels are added to the queue in the following pattern.
@@ -4130,6 +4165,7 @@ static void G_GetNextMap(void)
 	}
 	else if (roundqueue.size > 0)
 	{
+		// See also Y_CalculateMatchData, M_DrawPause
 		boolean permitrank = false;
 		if (grandprixinfo.gp == true
 			&& grandprixinfo.gamespeed >= KARTSPEED_NORMAL)
@@ -4442,11 +4478,6 @@ static void G_DoCompleted(void)
 			}
 		}
 	}
-
-	// See Y_StartIntermission timer handling
-	if ((gametyperules & GTR_CIRCUIT) && ((multiplayer && demo.playback) || j == r_splitscreen+1) && (!K_CanChangeRules(false) || cv_inttime.value > 0))
-	// play some generic music if there's no win/cool/lose music going on (for exitlevel commands)
-		S_ChangeMusicInternal("racent", true);
 
 	if (automapactive)
 		AM_Stop();
@@ -5538,7 +5569,7 @@ void G_InitNew(UINT8 pencoremode, INT32 map, boolean resetplayer, boolean skippr
 
 	// Clear a bunch of variables
 	redscore = bluescore = lastmap = 0;
-	racecountdown = exitcountdown = mapreset = exitfadestarted = 0;
+	racecountdown = exitcountdown = musiccountdown = mapreset = exitfadestarted = 0;
 
 	for (i = 0; i < MAXPLAYERS; i++)
 	{

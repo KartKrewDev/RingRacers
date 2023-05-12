@@ -1338,11 +1338,12 @@ static int lib_pMovePlayer(lua_State *L)
 static int lib_pDoPlayerExit(lua_State *L)
 {
 	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
+	pflags_t flags = luaL_checkinteger(L, 2);
 	NOHUD
 	INLEVEL
 	if (!player)
 		return LUA_ErrInvalid(L, "player_t");
-	P_DoPlayerExit(player);
+	P_DoPlayerExit(player, flags);
 	return 0;
 }
 
@@ -1771,21 +1772,6 @@ static int lib_pPlayVictorySound(lua_State *L)
 	return 0;
 }
 
-static int lib_pPlayLivesJingle(lua_State *L)
-{
-	player_t *player = NULL;
-	//NOHUD
-	//INLEVEL
-	if (!lua_isnone(L, 1) && lua_isuserdata(L, 1))
-	{
-		player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
-		if (!player)
-			return LUA_ErrInvalid(L, "player_t");
-	}
-	P_PlayLivesJingle(player);
-	return 0;
-}
-
 static int lib_pCanPickupItem(lua_State *L)
 {
 	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
@@ -2099,64 +2085,72 @@ static int lib_pSetSkyboxMobj(lua_State *L)
 // Shhh, neither does P_StartQuake.
 static int lib_pStartQuake(lua_State *L)
 {
-	fixed_t q_intensity = luaL_checkinteger(L, 1);
-	UINT16  q_time = (UINT16)luaL_checkinteger(L, 2);
+	tic_t q_time = (tic_t)luaL_checkinteger(L, 1);
+	fixed_t q_intensity = luaL_checkfixed(L, 2);
+	fixed_t q_radius = luaL_optinteger(L, 3, 512*FRACUNIT);
+
 	static mappoint_t q_epicenter = {0,0,0};
+	boolean q_epicenter_set = false;
 
 	NOHUD
 	INLEVEL
 
-	// While technically we don't support epicenter and radius,
-	// we get their values anyway if they exist.
-	// This way when support is added we won't have to change anything.
-	if (!lua_isnoneornil(L, 3))
+	if (!lua_isnoneornil(L, 4))
 	{
-		luaL_checktype(L, 3, LUA_TTABLE);
+		mobj_t *mobj = *((mobj_t **)luaL_checkudata(L, 4, META_MOBJ));
 
-		lua_getfield(L, 3, "x");
-		if (lua_isnil(L, -1))
+		if (mobj != NULL)
 		{
-			lua_pop(L, 1);
-			lua_rawgeti(L, 3, 1);
+			q_epicenter.x = mobj->x;
+			q_epicenter.y = mobj->y;
+			q_epicenter.z = mobj->z;
+			q_epicenter_set = true;
 		}
-		if (!lua_isnil(L, -1))
-			q_epicenter.x = luaL_checkinteger(L, -1);
 		else
-			q_epicenter.x = 0;
-		lua_pop(L, 1);
-
-		lua_getfield(L, 3, "y");
-		if (lua_isnil(L, -1))
 		{
-			lua_pop(L, 1);
-			lua_rawgeti(L, 3, 2);
-		}
-		if (!lua_isnil(L, -1))
-			q_epicenter.y = luaL_checkinteger(L, -1);
-		else
-			q_epicenter.y = 0;
-		lua_pop(L, 1);
+			luaL_checktype(L, 4, LUA_TTABLE);
 
-		lua_getfield(L, 3, "z");
-		if (lua_isnil(L, -1))
-		{
+			lua_getfield(L, 4, "x");
+			if (lua_isnil(L, -1))
+			{
+				lua_pop(L, 1);
+				lua_rawgeti(L, 4, 1);
+			}
+			if (!lua_isnil(L, -1))
+				q_epicenter.x = luaL_checkinteger(L, -1);
+			else
+				q_epicenter.x = 0;
 			lua_pop(L, 1);
-			lua_rawgeti(L, 3, 3);
-		}
-		if (!lua_isnil(L, -1))
-			q_epicenter.z = luaL_checkinteger(L, -1);
-		else
-			q_epicenter.z = 0;
-		lua_pop(L, 1);
 
-		quake.epicenter = &q_epicenter;
+			lua_getfield(L, 4, "y");
+			if (lua_isnil(L, -1))
+			{
+				lua_pop(L, 1);
+				lua_rawgeti(L, 4, 2);
+			}
+			if (!lua_isnil(L, -1))
+				q_epicenter.y = luaL_checkinteger(L, -1);
+			else
+				q_epicenter.y = 0;
+			lua_pop(L, 1);
+
+			lua_getfield(L, 4, "z");
+			if (lua_isnil(L, -1))
+			{
+				lua_pop(L, 1);
+				lua_rawgeti(L, 4, 3);
+			}
+			if (!lua_isnil(L, -1))
+				q_epicenter.z = luaL_checkinteger(L, -1);
+			else
+				q_epicenter.z = 0;
+			lua_pop(L, 1);
+
+			q_epicenter_set = true;
+		}
 	}
-	else
-		quake.epicenter = NULL;
-	quake.radius = luaL_optinteger(L, 4, 512*FRACUNIT);
 
-	// These things are actually used in 2.1.
-	P_StartQuake(q_intensity, q_time);
+	P_StartQuake(q_time, q_intensity, q_radius, q_epicenter_set ? &q_epicenter : NULL);
 	return 0;
 }
 
@@ -4051,7 +4045,6 @@ static luaL_Reg lib[] = {
 	{"P_PlayRinglossSound",lib_pPlayRinglossSound},
 	{"P_PlayDeathSound",lib_pPlayDeathSound},
 	{"P_PlayVictorySound",lib_pPlayVictorySound},
-	{"P_PlayLivesJingle",lib_pPlayLivesJingle},
 	{"P_CanPickupItem",lib_pCanPickupItem},
 
 	// p_spec

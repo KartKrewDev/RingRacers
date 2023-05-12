@@ -75,6 +75,7 @@ extern consvar_t cv_mute;
 extern consvar_t cv_pause;
 
 extern consvar_t cv_restrictskinchange, cv_allowteamchange, cv_maxplayers, cv_respawntime;
+extern consvar_t cv_spectatorreentry, cv_duelspectatorreentry, cv_antigrief;
 
 // SRB2kart items
 extern consvar_t cv_items[NUMKARTRESULTS-1];
@@ -163,7 +164,7 @@ typedef enum
 	XD_LUAVAR,      // 20
 	XD_LUAFILE,     // 21
 
-	// SRB2Kart
+	// Ring Racers
 	XD_SETUPVOTE,   // 22
 	XD_MODIFYVOTE,  // 23
 	XD_PICKVOTE,    // 24
@@ -181,6 +182,8 @@ typedef enum
 	XD_AUTOMATE,    // 36
 	XD_REQMAPQUEUE, // 37
 	XD_MAPQUEUE,	// 38
+	XD_CALLZVOTE,   // 39
+	XD_SETZVOTE,    // 40
 
 	MAXNETXCMD
 } netxcmd_t;
@@ -273,6 +276,8 @@ typedef enum
 	AEV_ROUNDSTART,
 	AEV_INTERMISSIONSTART,
 	AEV_VOTESTART,
+	AEV_QUEUESTART,
+	AEV_QUEUEEND,
 	AEV__MAX
 } automateEvents_t;
 

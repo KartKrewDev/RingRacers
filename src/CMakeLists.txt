@@ -85,6 +85,7 @@ add_executable(SRB2SDL2 MACOSX_BUNDLE WIN32
 	r_portal.c
 	screen.c
 	taglist.c
+	v_draw.cpp
 	v_video.cpp
 	s_sound.c
 	sounds.c
@@ -142,6 +143,8 @@ add_executable(SRB2SDL2 MACOSX_BUNDLE WIN32
 	k_rank.c
 	k_vote.c
 	k_serverstats.c
+	k_zvote.c
+	k_mapuser.c
 )
 
 if(SRB2_CONFIG_ENABLE_WEBM_MOVIES)
@@ -251,6 +254,8 @@ if(SRB2_CONFIG_ENABLE_WEBM_MOVIES)
 	target_link_libraries(SRB2SDL2 PRIVATE Vorbis::vorbis Vorbis::vorbisenc)
 	target_compile_definitions(SRB2SDL2 PRIVATE -DSRB2_CONFIG_ENABLE_WEBM_MOVIES)
 endif()
+
+target_link_libraries(SRB2SDL2 PRIVATE nlohmann_json::nlohmann_json)
 
 set(SRB2_HAVE_THREADS ON)
 target_compile_definitions(SRB2SDL2 PRIVATE -DHAVE_THREADS)
@@ -552,6 +557,10 @@ endif()
 if(SRB2_CONFIG_PROFILEMODE AND "${CMAKE_C_COMPILER_ID}" STREQUAL "GNU")
 	target_compile_options(SRB2SDL2 PRIVATE -pg)
 	target_link_options(SRB2SDL2 PRIVATE -pg)
+endif()
+if(SRB2_CONFIG_ASAN)
+	target_compile_options(SRB2SDL2 PRIVATE -fsanitize=address)
+	target_link_options(SRB2SDL2 PRIVATE -fsanitize=address)
 endif()
 
 add_subdirectory(audio)

@@ -529,8 +529,21 @@ void K_CeremonyDrawer(void)
 				}
 				case 7:
 				{
+					const char *emeraldstr = "???";
+					if (gamedata->everseenspecial == true)
+					{
+						emeraldstr =
+							(grandprixinfo.gp == true
+							&& grandprixinfo.cup != NULL
+							&& grandprixinfo.cup->emeraldnum > 0)
+								? "EMERALD"
+								: "PRIZE";
+					}
+
 					V_DrawString(x, y, V_ALLOWLOWERCASE,
-						va("EMERALD: %s", (podiumData.rank.specialWon == true) ? "YES" : "NO")
+						va("%s: %s",
+							emeraldstr,
+							(podiumData.rank.specialWon == true) ? "YES" : "NO")
 					);
 					break;
 				}

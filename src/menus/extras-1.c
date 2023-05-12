@@ -24,7 +24,7 @@ menuitem_t EXTRAS_Main[] =
 		NULL, {.routine = M_Statistics}, 0, 0},
 
 	{IT_STRING | IT_CALL, NULL, NULL,
-		NULL, {.routine = M_ReplayHut}, 0, 0},
+		NULL, {.routine = M_EggTV}, 0, 0},
 
 	{IT_STRING | IT_CALL, NULL, NULL,
 		NULL, {.routine = M_SoundTest}, 0, 0},

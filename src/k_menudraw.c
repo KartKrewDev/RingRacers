@@ -52,6 +52,8 @@
 #include "doomstat.h" // MAXSPLITSCREENPLAYERS
 #include "k_grandprix.h" // K_CanChangeRules
 
+#include "y_inter.h" // Y_RoundQueueDrawer
+
 #include "i_joy.h" // for joystick menu controls
 
 // Condition Sets
@@ -1701,7 +1703,7 @@ static void M_DrawProfileCard(INT32 x, INT32 y, boolean greyedout, profile_t *p)
 	if (p != NULL)
 	{
 		V_DrawFixedPatch((x+30)*FRACUNIT, (y+84)*FRACUNIT, FRACUNIT, 0, pwrlv, colormap);
-		V_DrawCenteredKartString(x+30, y+87, 0, va("%d", p->wins));
+		V_DrawCenteredTimerString(x+30, y+87, 0, va("%d", p->wins));
 	}
 
 
@@ -3839,7 +3841,7 @@ void M_DrawItemToggles(void)
 				V_DrawScaledPatch(onx-1, ony-2, 0, W_CachePatchName("K_ITMUL", PU_CACHE));
 				V_DrawScaledPatch(onx-1, ony-2, translucent, W_CachePatchName(K_GetItemPatch(currentMenu->menuitems[itemOn].mvar1, false), PU_CACHE));
 				V_DrawScaledPatch(onx+27, ony+39, translucent, W_CachePatchName("K_ITX", PU_CACHE));
-				V_DrawKartString(onx+37, ony+34, translucent, va("%d", drawnum));
+				V_DrawTimerString(onx+37, ony+34, translucent, va("%d", drawnum));
 			}
 			else
 				V_DrawScaledPatch(onx-1, ony-2, translucent, W_CachePatchName(K_GetItemPatch(currentMenu->menuitems[itemOn].mvar1, false), PU_CACHE));
@@ -4074,6 +4076,34 @@ void M_DrawPause(void)
 		if (word2len)
 			V_DrawCenteredLSTitleLowString(220 + offset*2, 103, 0, word2);
 	}
+
+	if (gamestate != GS_INTERMISSION)
+	{
+		y_data_t standings;
+		memset(&standings, 0, sizeof (standings));
+
+		standings.mainplayer = (demo.playback ? displayplayers[0] : consoleplayer); 
+
+		// See also G_GetNextMap, Y_CalculateMatchData
+		if (
+			grandprixinfo.gp == true
+			&& netgame == false // TODO netgame Special Mode support
+			&& grandprixinfo.gamespeed >= KARTSPEED_NORMAL
+			&& roundqueue.size > 1
+			&& roundqueue.entries[roundqueue.size - 1].rankrestricted == true
+			&& (
+				gamedata->everseenspecial == true
+				|| roundqueue.position == roundqueue.size
+			)
+		)
+		{
+			// Additional cases in which it should always be shown.
+			standings.showrank = true;
+		}
+
+		// Returns early if there's no roundqueue entries to draw
+		Y_RoundQueueDrawer(&standings, false, false);
+	}
 }
 
 void M_DrawPlaybackMenu(void)
@@ -4159,408 +4189,6 @@ void M_DrawPlaybackMenu(void)
 	}
 }
 
-
-// replay hut...
-// ...dear lord this is messy, but Ima be real I ain't fixing this.
-
-#define SCALEDVIEWWIDTH (vid.width/vid.dupx)
-#define SCALEDVIEWHEIGHT (vid.height/vid.dupy)
-static void M_DrawReplayHutReplayInfo(menudemo_t *demoref)
-{
-	patch_t *patch = NULL;
-	UINT8 *colormap;
-	INT32 x, y;
-
-	switch (demoref->type)
-	{
-	case MD_NOTLOADED:
-		V_DrawCenteredString(160, 40, 0, "Loading replay information...");
-		break;
-
-	case MD_INVALID:
-		V_DrawCenteredString(160, 40, warningflags, "This replay cannot be played.");
-		break;
-
-	case MD_SUBDIR:
-		break; // Can't think of anything to draw here right now
-
-	case MD_OUTDATED:
-		V_DrawThinString(17, 64, V_ALLOWLOWERCASE|V_TRANSLUCENT|highlightflags, "Recorded on an outdated version.");
-		/* FALLTHRU */
-	default:
-		// Draw level stuff
-		x = 15; y = 15;
-
-		K_DrawMapThumbnail(
-			x<<FRACBITS, y<<FRACBITS,
-			80<<FRACBITS,
-			((demoref->kartspeed & DF_ENCORE) ? V_FLIP : 0),
-			demoref->map,
-			NULL);
-
-		if (demoref->kartspeed & DF_ENCORE)
-		{
-			static angle_t rubyfloattime = 0;
-			const fixed_t rubyheight = FINESINE(rubyfloattime>>ANGLETOFINESHIFT);
-			V_DrawFixedPatch((x+40)<<FRACBITS, ((y+25)<<FRACBITS) - (rubyheight<<1), FRACUNIT, 0, W_CachePatchName("RUBYICON", PU_CACHE), NULL);
-			rubyfloattime += FixedMul(ANGLE_MAX/NEWTICRATE, renderdeltatics);
-		}
-
-		x += 85;
-
-		if (demoref->map < nummapheaders && mapheaderinfo[demoref->map])
-		{
-			char *title = G_BuildMapTitle(demoref->map+1);
-			V_DrawString(x, y, 0, title);
-			Z_Free(title);
-		}
-		else
-			V_DrawString(x, y, V_ALLOWLOWERCASE|V_TRANSLUCENT, "Level is not loaded.");
-
-		if (demoref->numlaps)
-			V_DrawThinString(x, y+9, V_ALLOWLOWERCASE, va("(%d laps)", demoref->numlaps));
-
-		{
-			const char *gtstring;
-			if (demoref->gametype < 0)
-			{
-				gtstring = "Custom (not loaded)";
-			}
-			else
-			{
-				gtstring = gametypes[demoref->gametype]->name;
-
-				if ((gametypes[demoref->gametype]->rules & GTR_CIRCUIT))
-					gtstring = va("%s (%s)", gtstring, kartspeed_cons_t[(demoref->kartspeed & ~DF_ENCORE) + 1].strvalue);
-			}
-
-			V_DrawString(x, y+20, V_ALLOWLOWERCASE, gtstring);
-		}
-
-		if (!demoref->standings[0].ranking)
-		{
-			// No standings were loaded!
-			V_DrawString(x, y+39, V_ALLOWLOWERCASE|V_TRANSLUCENT, "No standings available.");
-
-			break;
-		}
-
-		V_DrawThinString(x, y+29, highlightflags, "WINNER");
-		V_DrawString(x+38, y+30, V_ALLOWLOWERCASE, demoref->standings[0].name);
-
-		if (demoref->gametype >= 0)
-		{
-			if (gametypes[demoref->gametype]->rules & GTR_POINTLIMIT)
-			{
-				V_DrawThinString(x, y+39, highlightflags, "SCORE");
-			}
-			else
-			{
-				V_DrawThinString(x, y+39, highlightflags, "TIME");
-			}
-
-			if (demoref->standings[0].timeorscore == (UINT32_MAX-1))
-			{
-				V_DrawThinString(x+32, y+39, 0, "NO CONTEST");
-			}
-			else if (gametypes[demoref->gametype]->rules & GTR_POINTLIMIT)
-			{
-				V_DrawString(x+32, y+40, 0, va("%d", demoref->standings[0].timeorscore));
-			}
-			else
-			{
-				V_DrawRightAlignedString(x+84, y+40, 0, va("%d'%02d\"%02d",
-												G_TicsToMinutes(demoref->standings[0].timeorscore, true),
-												G_TicsToSeconds(demoref->standings[0].timeorscore),
-												G_TicsToCentiseconds(demoref->standings[0].timeorscore)
-				));
-			}
-		}
-
-		// Character face!
-
-		// Lat: 08/06/2020: For some reason missing skins have their value set to 255 (don't even ask me why I didn't write this)
-		// and for an even STRANGER reason this passes the first check below, so we're going to make sure that the skin here ISN'T 255 before we do anything stupid.
-
-		if (demoref->standings[0].skin < numskins)
-		{
-			patch = faceprefix[demoref->standings[0].skin][FACE_WANTED];
-			colormap = R_GetTranslationColormap(
-				demoref->standings[0].skin,
-				demoref->standings[0].color,
-				GTC_MENUCACHE);
-		}
-		else
-		{
-			patch = W_CachePatchName("M_NOWANT", PU_CACHE);
-			colormap = R_GetTranslationColormap(
-				TC_RAINBOW,
-				demoref->standings[0].color,
-				GTC_MENUCACHE);
-		}
-
-		V_DrawMappedPatch(BASEVIDWIDTH-15 - SHORT(patch->width), y+20, 0, patch, colormap);
-
-		break;
-	}
-}
-
-void M_DrawReplayHut(void)
-{
-	INT32 x, y, cursory = 0;
-	INT16 i;
-	INT16 replaylistitem = currentMenu->numitems-2;
-	boolean processed_one_this_frame = false;
-
-	static UINT16 replayhutmenuy = 0;
-
-	M_DrawEggaChannel();
-
-	// Draw menu choices
-	x = currentMenu->x;
-	y = currentMenu->y;
-
-	if (itemOn > replaylistitem)
-	{
-		itemOn = replaylistitem;
-		dir_on[menudepthleft] = sizedirmenu-1;
-		extrasmenu.replayScrollTitle = 0; extrasmenu.replayScrollDelay = TICRATE; extrasmenu.replayScrollDir = 1;
-	}
-	else if (itemOn < replaylistitem)
-	{
-		dir_on[menudepthleft] = 0;
-		extrasmenu.replayScrollTitle = 0; extrasmenu.replayScrollDelay = TICRATE; extrasmenu.replayScrollDir = 1;
-	}
-
-	if (itemOn == replaylistitem)
-	{
-		INT32 maxy;
-		// Scroll menu items if needed
-		cursory = y + currentMenu->menuitems[replaylistitem].mvar1 + dir_on[menudepthleft]*10;
-		maxy = y + currentMenu->menuitems[replaylistitem].mvar1 + sizedirmenu*10;
-
-		if (cursory > maxy - 20)
-			cursory = maxy - 20;
-
-		if (cursory - replayhutmenuy > SCALEDVIEWHEIGHT-50)
-			replayhutmenuy += (cursory-SCALEDVIEWHEIGHT-replayhutmenuy + 51)/2;
-		else if (cursory - replayhutmenuy < 110)
-			replayhutmenuy += (max(0, cursory-110)-replayhutmenuy - 1)/2;
-	}
-	else
-		replayhutmenuy /= 2;
-
-	y -= replayhutmenuy;
-
-	// Draw static menu items
-	for (i = 0; i < replaylistitem; i++)
-	{
-		INT32 localy = y + currentMenu->menuitems[i].mvar1;
-
-		if (localy < 65)
-			continue;
-
-		if (i == itemOn)
-			cursory = localy;
-
-		if ((currentMenu->menuitems[i].status & IT_DISPLAY)==IT_STRING)
-			V_DrawString(x, localy, 0, currentMenu->menuitems[i].text);
-		else
-			V_DrawString(x, localy, highlightflags, currentMenu->menuitems[i].text);
-	}
-
-	y += currentMenu->menuitems[replaylistitem].mvar1;
-
-	for (i = 0; i < (INT16)sizedirmenu; i++)
-	{
-		INT32 localy = y+i*10;
-		INT32 localx = x;
-
-		if (localy < 65)
-			continue;
-		if (localy >= SCALEDVIEWHEIGHT)
-			break;
-
-		if (extrasmenu.demolist[i].type == MD_NOTLOADED && !processed_one_this_frame)
-		{
-			processed_one_this_frame = true;
-			G_LoadDemoInfo(&extrasmenu.demolist[i]);
-		}
-
-		if (extrasmenu.demolist[i].type == MD_SUBDIR)
-		{
-			localx += 8;
-			V_DrawScaledPatch(x - 4, localy, 0, W_CachePatchName(dirmenu[i][DIR_TYPE] == EXT_UP ? "M_RBACK" : "M_RFLDR", PU_CACHE));
-		}
-
-		if (itemOn == replaylistitem && i == (INT16)dir_on[menudepthleft])
-		{
-			cursory = localy;
-
-			if (extrasmenu.replayScrollDelay)
-				extrasmenu.replayScrollDelay--;
-			else if (extrasmenu.replayScrollDir > 0)
-			{
-				if (extrasmenu.replayScrollTitle < (V_StringWidth(extrasmenu.demolist[i].title, 0) - (SCALEDVIEWWIDTH - (x<<1)))<<1)
-					extrasmenu.replayScrollTitle++;
-				else
-				{
-					extrasmenu.replayScrollDelay = TICRATE;
-					extrasmenu.replayScrollDir = -1;
-				}
-			}
-			else
-			{
-				if (extrasmenu.replayScrollTitle > 0)
-					extrasmenu.replayScrollTitle--;
-				else
-				{
-					extrasmenu.replayScrollDelay = TICRATE;
-					extrasmenu.replayScrollDir = 1;
-				}
-			}
-
-			V_DrawString(localx - (extrasmenu.replayScrollTitle>>1), localy, highlightflags|V_ALLOWLOWERCASE, extrasmenu.demolist[i].title);
-		}
-		else
-			V_DrawString(localx, localy, V_ALLOWLOWERCASE, extrasmenu.demolist[i].title);
-	}
-
-	// Draw scrollbar
-	y = sizedirmenu*10 + currentMenu->menuitems[replaylistitem].mvar1 + 30;
-	if (y > SCALEDVIEWHEIGHT-80)
-	{
-		V_DrawFill(BASEVIDWIDTH-4, 75, 4, SCALEDVIEWHEIGHT-80, 159);
-		V_DrawFill(BASEVIDWIDTH-3, 76 + (SCALEDVIEWHEIGHT-80) * replayhutmenuy / y, 2, (((SCALEDVIEWHEIGHT-80) * (SCALEDVIEWHEIGHT-80))-1) / y - 1, 149);
-	}
-
-	// Draw the cursor
-	V_DrawScaledPatch(currentMenu->x - 24, cursory, 0,
-		W_CachePatchName("M_CURSOR", PU_CACHE));
-	V_DrawString(currentMenu->x, cursory, highlightflags, currentMenu->menuitems[itemOn].text);
-
-	// Now draw some replay info!
-	V_DrawFill(10, 10, 300, 60, 159);
-
-	if (itemOn == replaylistitem)
-	{
-		M_DrawReplayHutReplayInfo(&extrasmenu.demolist[dir_on[menudepthleft]]);
-	}
-}
-
-void M_DrawReplayStartMenu(void)
-{
-	const char *warning;
-	UINT8 i;
-	menudemo_t *demoref = &extrasmenu.demolist[dir_on[menudepthleft]];
-
-	M_DrawEggaChannel();
-	M_DrawGenericMenu();
-
-#define STARTY 62-(extrasmenu.replayScrollTitle>>1)
-	// Draw rankings beyond first
-	for (i = 1; i < MAXPLAYERS && demoref->standings[i].ranking; i++)
-	{
-		patch_t *patch;
-		UINT8 *colormap;
-
-		V_DrawRightAlignedString(BASEVIDWIDTH-100, STARTY + i*20,highlightflags, va("%2d", demoref->standings[i].ranking));
-		V_DrawThinString(BASEVIDWIDTH-96, STARTY + i*20, V_ALLOWLOWERCASE, demoref->standings[i].name);
-
-		if (demoref->standings[i].timeorscore == UINT32_MAX-1)
-			V_DrawThinString(BASEVIDWIDTH-92, STARTY + i*20 + 9, 0, "NO CONTEST");
-		else if (demoref->gametype < 0)
-			;
-		else if (gametypes[demoref->gametype]->rules & GTR_POINTLIMIT)
-			V_DrawString(BASEVIDWIDTH-92, STARTY + i*20 + 9, 0, va("%d", demoref->standings[i].timeorscore));
-		else
-			V_DrawRightAlignedString(BASEVIDWIDTH-40, STARTY + i*20 + 9, 0, va("%d'%02d\"%02d",
-											G_TicsToMinutes(demoref->standings[i].timeorscore, true),
-											G_TicsToSeconds(demoref->standings[i].timeorscore),
-											G_TicsToCentiseconds(demoref->standings[i].timeorscore)
-			));
-
-		// Character face!
-
-		// Lat: 08/06/2020: For some reason missing skins have their value set to 255 (don't even ask me why I didn't write this)
-		// and for an even STRANGER reason this passes the first check below, so we're going to make sure that the skin here ISN'T 255 before we do anything stupid.
-
-		if (demoref->standings[i].skin < numskins)
-		{
-			patch = faceprefix[demoref->standings[i].skin][FACE_RANK];
-			colormap = R_GetTranslationColormap(
-				demoref->standings[i].skin,
-				demoref->standings[i].color,
-				GTC_MENUCACHE);
-		}
-		else
-		{
-			patch = W_CachePatchName("M_NORANK", PU_CACHE);
-			colormap = R_GetTranslationColormap(
-				TC_RAINBOW,
-				demoref->standings[i].color,
-				GTC_MENUCACHE);
-		}
-
-		V_DrawMappedPatch(BASEVIDWIDTH-5 - SHORT(patch->width), STARTY + i*20, 0, patch, colormap);
-	}
-#undef STARTY
-
-	// Handle scrolling rankings
-	if (extrasmenu.replayScrollDelay)
-		extrasmenu.replayScrollDelay--;
-	else if (extrasmenu.replayScrollDir > 0)
-	{
-		if (extrasmenu.replayScrollTitle < (i*20 - SCALEDVIEWHEIGHT + 100)<<1)
-			extrasmenu.replayScrollTitle++;
-		else
-		{
-			extrasmenu.replayScrollDelay = TICRATE;
-			extrasmenu.replayScrollDir = -1;
-		}
-	}
-	else
-	{
-		if (extrasmenu.replayScrollTitle > 0)
-			extrasmenu.replayScrollTitle--;
-		else
-		{
-			extrasmenu.replayScrollDelay = TICRATE;
-			extrasmenu.replayScrollDir = 1;
-		}
-	}
-
-	V_DrawFill(10, 10, 300, 60, 159);
-	M_DrawReplayHutReplayInfo(demoref);
-
-	V_DrawString(10, 72, highlightflags|V_ALLOWLOWERCASE, demoref->title);
-
-	// Draw a warning prompt if needed
-	switch (demoref->addonstatus)
-	{
-	case DFILE_ERROR_CANNOTLOAD:
-		warning = "Some addons in this replay cannot be loaded.\nYou can watch anyway, but desyncs may occur.";
-		break;
-
-	case DFILE_ERROR_NOTLOADED:
-	case DFILE_ERROR_INCOMPLETEOUTOFORDER:
-		warning = "Loading addons will mark your game as modified, and Record Attack may be unavailable.\nYou can watch without loading addons, but desyncs may occur.";
-		break;
-
-	case DFILE_ERROR_EXTRAFILES:
-		warning = "You have addons loaded that were not present in this replay.\nYou can watch anyway, but desyncs may occur.";
-		break;
-
-	case DFILE_ERROR_OUTOFORDER:
-		warning = "You have this replay's addons loaded, but they are out of order.\nYou can watch anyway, but desyncs may occur.";
-		break;
-
-	default:
-		return;
-	}
-
-	V_DrawSmallString(4, BASEVIDHEIGHT-14, V_ALLOWLOWERCASE, warning);
-}
 
 // Draw misc menus:
 
@@ -5559,7 +5187,7 @@ challengedesc:
 		}
 
 		V_DrawFixedPatch((8+offs)*FRACUNIT, 5*FRACUNIT, FRACUNIT, 0, key, NULL);
-		V_DrawKartString((27+offs), 9-challengesmenu.unlockcount[CC_CHAOANIM], 0, va("%u", gamedata->chaokeys));
+		V_DrawTimerString((27+offs), 9-challengesmenu.unlockcount[CC_CHAOANIM], 0, va("%u", gamedata->chaokeys));
 
 		offs = challengekeybarwidth;
 		if (gamedata->chaokeys < GDMAX_CHAOKEYS)
@@ -5577,7 +5205,7 @@ challengedesc:
 			challengesmenu.unlockcount[CC_UNLOCKED] + challengesmenu.unlockcount[CC_TALLY],
 			challengesmenu.unlockcount[CC_TOTAL]
 			);
-		V_DrawRightAlignedKartString(BASEVIDWIDTH-7, 9-challengesmenu.unlockcount[CC_ANIM], 0, str);
+		V_DrawRightAlignedTimerString(BASEVIDWIDTH-7, 9-challengesmenu.unlockcount[CC_ANIM], 0, str);
 	}
 
 	// Name bar

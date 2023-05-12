@@ -52,6 +52,7 @@ void Obj_OrbinautThrown(mobj_t *th, fixed_t finalSpeed, SINT8 dir);
 void Obj_GachaBomThrown(mobj_t *th, fixed_t finalSpeed, SINT8 dir);
 void Obj_OrbinautJawzMoveHeld(player_t *player);
 boolean Obj_GachaBomWasTossed(mobj_t *th);
+void Obj_OrbinautDrop(mobj_t *th);
 
 /* Jawz */
 void Obj_JawzThink(mobj_t *th);
@@ -113,6 +114,16 @@ void Obj_RingShooterInput(player_t *player);
 void Obj_PlayerUsedRingShooter(mobj_t *base, player_t *player);
 void Obj_RingShooterDelete(mobj_t *mo);
 void Obj_UpdateRingShooterFace(mobj_t *part);
+
+/* Follower Audience */
+void Obj_AudienceInit(mobj_t * mobj, mapthing_t *mthing, INT32 followerpick);
+void Obj_AudienceThink(mobj_t * mobj, boolean focusonplayer);
+
+/* Random Item Boxes */
+void Obj_RandomItemVisuals(mobj_t *mobj);
+boolean Obj_RandomItemSpawnIn(mobj_t *mobj);
+fixed_t Obj_RandomItemScale(fixed_t oldScale);
+void Obj_RandomItemSpawn(mobj_t *mobj);
 
 #ifdef __cplusplus
 } // extern "C"

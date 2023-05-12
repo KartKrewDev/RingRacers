@@ -40,7 +40,6 @@
 #include <tchar.h>
 
 #define SUFFIX	"*"
-#define	SLASH	"\\"
 #define	S_ISDIR(m)	(((m) & S_IFMT) == S_IFDIR)
 
 #ifndef INVALID_FILE_ATTRIBUTES
@@ -138,7 +137,7 @@ opendir (const CHAR *szPath)
   /* Allocate enough space to store DIR structure and the complete
    * directory path given. */
   nd = (DIR *) malloc (sizeof (DIR) + (strlen(szFullPath) + strlen (SLASH) +
-			 strlen(SUFFIX) + 1) * sizeof (CHAR));
+			 strlen(PATHSEP) + 1) * sizeof (CHAR));
 
   if (!nd)
     {
@@ -152,10 +151,9 @@ opendir (const CHAR *szPath)
 
   /* Add on a slash if the path does not end with one. */
   if (nd->dd_name[0] != '\0' &&
-      nd->dd_name[strlen (nd->dd_name) - 1] != '/' &&
-      nd->dd_name[strlen (nd->dd_name) - 1] != '\\')
+      nd->dd_name[strlen (nd->dd_name) - 1] != PATHSEP[0])
     {
-      strcat (nd->dd_name, SLASH);
+      strcat (nd->dd_name, PATHSEP);
     }
 
   /* Add on the search pattern */
@@ -464,9 +462,9 @@ filestatus_t filesearch(char *filename, const char *startpath, const UINT8 *want
 		return FS_NOTFOUND;
 	}
 
-	if (searchpath[searchpathindex[depthleft]-2] != '/')
+	if (searchpath[searchpathindex[depthleft]-2] != PATHSEP[0])
 	{
-		searchpath[searchpathindex[depthleft]-1] = '/';
+		searchpath[searchpathindex[depthleft]-1] = PATHSEP[0];
 		searchpath[searchpathindex[depthleft]] = 0;
 	}
 	else
@@ -508,8 +506,8 @@ filestatus_t filesearch(char *filename, const char *startpath, const UINT8 *want
 					depthleft++;
 			}
 
-			searchpath[searchpathindex[depthleft]-1]='/';
-			searchpath[searchpathindex[depthleft]]=0;
+			searchpath[searchpathindex[depthleft]-1] = PATHSEP[0];
+			searchpath[searchpathindex[depthleft]] = 0;
 		}
 		else if (!strcasecmp(searchname, dent->d_name))
 		{

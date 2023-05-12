@@ -4039,7 +4039,7 @@ state_t states[NUMSTATES] =
 
 	{SPR_DBNC, FF_FULLBRIGHT|FF_ANIMATE, 14, {NULL}, 6, 1, S_NULL}, // S_DRIFTCLIPSPARK
 
-	{SPR_BOST, FF_FULLBRIGHT|FF_ANIMATE, TICRATE, {NULL}, 6, 1, S_BOOSTSMOKESPAWNER}, // S_BOOSTFLAME
+	{SPR_BOST, FF_FULLBRIGHT|FF_ADD|FF_ANIMATE, TICRATE, {NULL}, 7, 1, S_BOOSTSMOKESPAWNER}, // S_BOOSTFLAME
 	{SPR_NULL, 0,                      TICRATE/2, {NULL}, 0, 0, S_NULL}, // S_BOOSTSMOKESPAWNER
 
 	{SPR_BOSM, FF_TRANS50, 3, {NULL}, 0, 0, S_BOOSTSMOKE2}, // S_BOOSTSMOKE1
@@ -4107,11 +4107,17 @@ state_t states[NUMSTATES] =
 	{SPR_INVI, FF_FULLBRIGHT|FF_PAPERSPRITE|10,  1, {NULL}, 0, 0, S_KARTINVLINES15},      // S_KARTINVLINES14
 	{SPR_INVI, FF_FULLBRIGHT|FF_PAPERSPRITE|11,  1, {NULL}, 0, 0, S_NULL},      // S_KARTINVLINES15
 
-	{SPR_WIPD, 0, 3, {NULL}, 0, 0, S_WIPEOUTTRAIL2}, // S_WIPEOUTTRAIL1
-	{SPR_WIPD, 1, 3, {NULL}, 0, 0, S_WIPEOUTTRAIL3}, // S_WIPEOUTTRAIL2
-	{SPR_WIPD, 2, 3, {NULL}, 0, 0, S_WIPEOUTTRAIL4}, // S_WIPEOUTTRAIL3
-	{SPR_WIPD, 3, 3, {NULL}, 0, 0, S_WIPEOUTTRAIL5}, // S_WIPEOUTTRAIL4
-	{SPR_WIPD, 4, 3, {NULL}, 0, 0, S_NULL}, // S_WIPEOUTTRAIL5
+	{SPR_WIPD, 0, 1, {NULL}, 0, 0, S_WIPEOUTTRAIL2}, // S_WIPEOUTTRAIL1
+	{SPR_WIPD, 1, 1, {NULL}, 0, 0, S_WIPEOUTTRAIL3}, // S_WIPEOUTTRAIL2
+	{SPR_WIPD, 2, 1, {NULL}, 0, 0, S_WIPEOUTTRAIL4}, // S_WIPEOUTTRAIL3
+	{SPR_WIPD, 3, 1, {NULL}, 0, 0, S_WIPEOUTTRAIL5}, // S_WIPEOUTTRAIL4
+	{SPR_WIPD, 4, 1, {NULL}, 0, 0, S_WIPEOUTTRAIL6}, // S_WIPEOUTTRAIL5
+	{SPR_WIPD, 5, 1, {NULL}, 0, 0, S_WIPEOUTTRAIL7}, // S_WIPEOUTTRAIL6
+	{SPR_WIPD, 6, 1, {NULL}, 0, 0, S_WIPEOUTTRAIL8}, // S_WIPEOUTTRAIL7
+	{SPR_WIPD, 7, 1, {NULL}, 0, 0, S_WIPEOUTTRAIL9}, // S_WIPEOUTTRAIL8
+	{SPR_WIPD, 8, 1, {NULL}, 0, 0, S_WIPEOUTTRAIL10}, // S_WIPEOUTTRAIL9
+	{SPR_WIPD, 9, 1, {NULL}, 0, 0, S_WIPEOUTTRAIL11}, // S_WIPEOUTTRAIL10
+	{SPR_WIPD, 10, 1, {NULL}, 0, 0, S_NULL}, 		// S_WIPEOUTTRAIL11
 
 	{SPR_RSHE, 0, -1, {NULL}, 0, 0, S_NULL}, // S_ROCKETSNEAKER_L
 	{SPR_RSHE, 1, -1, {NULL}, 0, 0, S_NULL}, // S_ROCKETSNEAKER_R
@@ -4482,16 +4488,6 @@ state_t states[NUMSTATES] =
 	{SPR_DEZL, FF_FULLBRIGHT|FF_PAPERSPRITE|3, 4, {NULL}, 0, 0, S_DEZLASER_TRAIL4}, // S_DEZLASER_TRAIL3
 	{SPR_DEZL, FF_FULLBRIGHT|2, 2, {NULL}, 0, 0, S_DEZLASER_TRAIL5}, // S_DEZLASER_TRAIL4
 	{SPR_DEZL, FF_FULLBRIGHT|1, 2, {NULL}, 0, 0, S_NULL}, // S_DEZLASER_TRAIL5
-
-	{SPR_NULL, 0,  1, {A_RandomStateRange}, S_AUDIENCE_CHAO_CHEER1, S_AUDIENCE_CHAO_CHEER2, S_RANDOMAUDIENCE}, // S_RANDOMAUDIENCE
-
-	{SPR_AUDI, 0,  5, {NULL},       0, 0, S_AUDIENCE_CHAO_CHEER2}, // S_AUDIENCE_CHAO_CHEER1
-	{SPR_AUDI, 1, 20, {A_BunnyHop}, 7, 0, S_AUDIENCE_CHAO_CHEER1}, // S_AUDIENCE_CHAO_CHEER2
-
-	{SPR_AUDI, 2,  5, {NULL},       0, 0, S_AUDIENCE_CHAO_WIN2}, // S_AUDIENCE_CHAO_WIN1
-	{SPR_AUDI, 3, 25, {A_BunnyHop}, 10, 0, S_AUDIENCE_CHAO_WIN1}, // S_AUDIENCE_CHAO_WIN2
-
-	{SPR_AUDI, 4|FF_ANIMATE,  -1, {NULL},       1, 17, S_NULL}, // S_AUDIENCE_CHAO_LOSE
 
 	{SPR_FLAM,  FF_FULLBRIGHT|FF_ADD|0,  3, {NULL}, 0, 0, S_FLAYM2}, // S_FLAYM1,
 	{SPR_FLAM,  FF_FULLBRIGHT|FF_ADD|1,  3, {NULL}, 0, 0, S_FLAYM3}, // S_FLAYM2,
@@ -22358,12 +22354,12 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		sfx_kc2e,         // deathsound
 		60*FRACUNIT,      // speed
 		48*FRACUNIT,      // radius
-		48*FRACUNIT,      // height
+		64*FRACUNIT,      // height
 		0,                // display offset
 		100,              // mass
 		MT_RANDOMITEMPOP, // damage
 		sfx_None,         // activesound
-		MF_SLIDEME|MF_SPECIAL|MF_NOGRAVITY|MF_NOCLIPHEIGHT|MF_DONTENCOREMAP, // flags
+		MF_NOSQUISH|MF_PICKUPFROMBELOW|MF_SLIDEME|MF_SPECIAL|MF_NOGRAVITY|MF_NOCLIPHEIGHT|MF_DONTENCOREMAP, // flags
 		S_RANDOMITEM1     // raisestate
 	},
 
@@ -22385,12 +22381,12 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		sfx_kc2e,         // deathsound
 		60*FRACUNIT,      // speed
 		48*FRACUNIT,      // radius
-		48*FRACUNIT,      // height
+		64*FRACUNIT,      // height
 		0,                // display offset
 		100,              // mass
 		MT_RANDOMITEMPOP, // damage
 		sfx_None,         // activesound
-		MF_SLIDEME|MF_SPECIAL|MF_NOGRAVITY|MF_NOCLIPHEIGHT|MF_DONTENCOREMAP, // flags
+		MF_NOSQUISH|MF_PICKUPFROMBELOW|MF_SLIDEME|MF_SPECIAL|MF_NOGRAVITY|MF_NOCLIPHEIGHT|MF_DONTENCOREMAP, // flags
 		S_NULL            // raisestate
 	},
 
@@ -23275,13 +23271,13 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		S_NULL,         // xdeathstate
 		sfx_kc2e,       // deathsound
 		0,              // speed
-		24*FRACUNIT,    // radius
+		16*FRACUNIT,    // radius
 		32*FRACUNIT,    // height
 		0,              // display offset
 		100,            // mass
 		1,              // damage
 		sfx_cdfm28,     // activesound
-		MF_SHOOTABLE|MF_DONTENCOREMAP|MF_APPLYTERRAIN, // flags
+		MF_NOSQUISH|MF_PICKUPFROMBELOW|MF_SHOOTABLE|MF_DONTENCOREMAP|MF_APPLYTERRAIN, // flags
 		S_NULL          // raisestate
 	},
 
@@ -23308,7 +23304,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		100,            // mass
 		1,              // damage
 		sfx_None,       // activesound
-		MF_SHOOTABLE|MF_NOGRAVITY|MF_SCENERY|MF_DONTENCOREMAP|MF_APPLYTERRAIN, // flags
+		MF_NOSQUISH|MF_PICKUPFROMBELOW|MF_SHOOTABLE|MF_NOGRAVITY|MF_SCENERY|MF_DONTENCOREMAP|MF_APPLYTERRAIN, // flags
 		S_NULL          // raisestate
 	},
 
@@ -24489,7 +24485,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		S_NULL,         // deathstate
 		S_NULL,         // xdeathstate
 		sfx_None,       // deathsound
-		64*FRACUNIT,    // speed
+		32*FRACUNIT,    // speed
 		24*FRACUNIT,    // radius
 		48*FRACUNIT,    // height
 		0,              // display offset
@@ -24880,7 +24876,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 
 	{           // MT_RANDOMAUDIENCE
 		1488,           // doomednum
-		S_RANDOMAUDIENCE, // spawnstate
+		S_UNKNOWN,      // spawnstate
 		1000,           // spawnhealth
 		S_NULL,         // seestate
 		sfx_None,       // seesound
@@ -29736,7 +29732,9 @@ skincolor_t skincolors[MAXSKINCOLORS] = {
 	{"Position Best 3", {112, 112, 113, 114, 115, 115, 116, 116, 117, 117, 118, 118, 119, 110, 111,  30}, SKINCOLOR_NONE, 0, 0, false}, // SKINCOLOR_POSNUM_BEST3
 	{"Position Best 4", {255, 255, 122, 122, 123, 123, 141, 141, 142, 142, 143, 143, 138, 139, 254,  30}, SKINCOLOR_NONE, 0, 0, false}, // SKINCOLOR_POSNUM_BEST4
 	{"Position Best 5", {152, 152, 153, 153, 154, 154, 155, 155, 156, 156, 157, 158, 159, 253, 254,  30}, SKINCOLOR_NONE, 0, 0, false}, // SKINCOLOR_POSNUM_BEST5
-	{"Position Best 6", {181, 181, 182, 182, 183, 183, 184, 184, 185, 185, 186, 186, 187, 187,  29,  30}, SKINCOLOR_NONE, 0, 0, false}  // SKINCOLOR_POSNUM_BEST6
+	{"Position Best 6", {181, 181, 182, 182, 183, 183, 184, 184, 185, 185, 186, 186, 187, 187,  29,  30}, SKINCOLOR_NONE, 0, 0, false}, // SKINCOLOR_POSNUM_BEST6
+	
+	{"Intermission", {0,80,80,81,81,81,84,85,86,87,246,248,251,26,28,31}, SKINCOLOR_NONE, 0, 0, false} // SKINCOLOR_INTERMISSION
 };
 
 /** Patches the mobjinfo, state, and skincolor tables.

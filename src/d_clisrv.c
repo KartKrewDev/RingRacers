@@ -62,6 +62,7 @@
 #include "g_party.h"
 #include "k_vote.h"
 #include "k_serverstats.h"
+#include "k_zvote.h"
 
 // cl loading screen
 #include "v_video.h"
@@ -220,7 +221,7 @@ consvar_t cv_playbackspeed = CVAR_INIT ("playbackspeed", "1", 0, playbackspeed_c
 
 consvar_t cv_httpsource = CVAR_INIT ("http_source", "", CV_SAVE, NULL, NULL);
 
-consvar_t cv_kicktime = CVAR_INIT ("kicktime", "10", CV_SAVE, CV_Unsigned, NULL);
+consvar_t cv_kicktime = CVAR_INIT ("kicktime", "20", CV_SAVE, CV_Unsigned, NULL);
 
 consvar_t cv_gamestochat = CVAR_INIT ("gamestochat", "0", CV_SAVE, CV_Unsigned, NULL);
 
@@ -2312,6 +2313,7 @@ static void CL_ConnectToServer(void)
 	Schedule_Clear();
 	Automate_Clear();
 	K_ClearClientPowerLevels();
+	K_ResetMidVote();
 
 	pnumnodes = 1;
 	oldtic = 0;
@@ -3157,7 +3159,7 @@ static void Command_Kick(void)
 
 		if (COM_Argc() == 2)
 		{
-			WRITEUINT8(p, KICK_MSG_GO_AWAY);
+			WRITEUINT8(p, KICK_MSG_KICKED);
 			SendNetXCmd(XD_KICK, &buf, 2);
 		}
 		else
@@ -3193,14 +3195,9 @@ static void Got_KickCmd(UINT8 **p, INT32 playernum)
 	pnum = READUINT8(*p);
 	msg = READUINT8(*p);
 
-	if (pnum == serverplayer && IsPlayerAdmin(playernum))
+	if (msg == KICK_MSG_CUSTOM_BAN || msg == KICK_MSG_CUSTOM_KICK)
 	{
-		CONS_Printf(M_GetText("Server is being shut down remotely. Goodbye!\n"));
-
-		if (server)
-			COM_BufAddText("quit\n");
-
-		return;
+		READSTRINGN(*p, reason, MAX_REASONLENGTH+1);
 	}
 
 	// Is playernum authorized to make this kick?
@@ -3247,9 +3244,26 @@ static void Got_KickCmd(UINT8 **p, INT32 playernum)
 		msg = KICK_MSG_CON_FAIL;
 	}
 
-	if (msg == KICK_MSG_CUSTOM_BAN || msg == KICK_MSG_CUSTOM_KICK)
+	if (g_midVote.active == true && g_midVote.victim == &players[pnum])
 	{
-		READSTRINGN(*p, reason, MAX_REASONLENGTH+1);
+		if (g_midVote.type == MVT_KICK)
+		{
+			// Running the callback here would mean a very dumb infinite loop.
+			// We'll manually handle this here by changing the msg type.
+			msg = KICK_MSG_VOTE_KICK;
+			K_MidVoteFinalize(FRACUNIT); // Vote succeeded, so the delay is normal.
+		}
+		else
+		{
+			// It should be safe to run the vote callback directly.
+			K_MidVoteSuccess();
+		}
+	}
+
+	if (playernode[pnum] == servernode)
+	{
+		CONS_Printf(M_GetText("Ignoring kick attempt from %s on node %d (it's the server)\n"), player_names[playernum], servernode);
+		return;
 	}
 
 	//CONS_Printf("\x82%s ", player_names[pnum]);
@@ -3259,7 +3273,7 @@ static void Got_KickCmd(UINT8 **p, INT32 playernum)
 	// to keep it all in one place.
 	if (server)
 	{
-		if (msg == KICK_MSG_GO_AWAY || msg == KICK_MSG_CUSTOM_KICK)
+		if (msg == KICK_MSG_KICKED || msg == KICK_MSG_VOTE_KICK || msg == KICK_MSG_CUSTOM_KICK)
 		{
 			// Kick as a temporary ban.
 			banMinutes = cv_kicktime.value;
@@ -3299,8 +3313,12 @@ static void Got_KickCmd(UINT8 **p, INT32 playernum)
 
 	switch (msg)
 	{
-		case KICK_MSG_GO_AWAY:
+		case KICK_MSG_KICKED:
 			HU_AddChatText(va("\x82*%s has been kicked (No reason given)", player_names[pnum]), false);
+			kickreason = KR_KICK;
+			break;
+		case KICK_MSG_VOTE_KICK:
+			HU_AddChatText(va("\x82*%s has been kicked (Popular demand)", player_names[pnum]), false);
 			kickreason = KR_KICK;
 			break;
 		case KICK_MSG_PING_HIGH:
@@ -3357,6 +3375,10 @@ static void Got_KickCmd(UINT8 **p, INT32 playernum)
 				HU_AddChatText(va("\x82*%s left the game", player_names[pnum]), false);
 			kickreason = KR_LEAVE;
 			break;
+		case KICK_MSG_GRIEF:
+			HU_AddChatText(va("\x82*%s has been kicked (Automatic grief detection)", player_names[pnum]), false);
+			kickreason = KR_KICK;
+			break;
 		case KICK_MSG_BANNED:
 			HU_AddChatText(va("\x82*%s has been banned (No reason given)", player_names[pnum]), false);
 			kickreason = KR_BAN;
@@ -3402,14 +3424,20 @@ static void Got_KickCmd(UINT8 **p, INT32 playernum)
 			M_StartMessage(M_GetText("Server closed connection\n(Synch failure)\nPress (B)\n"), NULL, MM_NOTHING);
 		else if (msg == KICK_MSG_PING_HIGH)
 			M_StartMessage(M_GetText("Server closed connection\n(Broke delay limit)\nPress (B)\n"), NULL, MM_NOTHING);
+		else if (msg == KICK_MSG_TIMEOUT) // this one will probably never be seen?
+			M_StartMessage(M_GetText("Connection timed out\n\nPress (B)\n"), NULL, MM_NOTHING);
 		else if (msg == KICK_MSG_BANNED)
 			M_StartMessage(M_GetText("You have been banned by the server\n\nPress (B)\n"), NULL, MM_NOTHING);
+		else if (msg == KICK_MSG_CUSTOM_KICK)
+			M_StartMessage(M_GetText("You have been kicked\n(Automatic grief detection)\nPress (B)\n"), NULL, MM_NOTHING);
 		else if (msg == KICK_MSG_CUSTOM_KICK)
 			M_StartMessage(va(M_GetText("You have been kicked\n(%s)\nPress (B)\n"), reason), NULL, MM_NOTHING);
 		else if (msg == KICK_MSG_CUSTOM_BAN)
 			M_StartMessage(va(M_GetText("You have been banned\n(%s)\nPress (B)\n"), reason), NULL, MM_NOTHING);
 		else if (msg == KICK_MSG_SIGFAIL)
 			M_StartMessage(M_GetText("Server closed connection\n(Invalid signature)\nPress (B)\n"), NULL, MM_NOTHING);
+		else if (msg == KICK_MSG_VOTE_KICK)
+			M_StartMessage(M_GetText("You have been kicked by popular demand\n\nPress (B)\n"), NULL, MM_NOTHING);
 		else
 			M_StartMessage(M_GetText("You have been kicked by the server\n\nPress (B)\n"), NULL, MM_NOTHING);
 	}
@@ -3698,6 +3726,7 @@ void SV_ResetServer(void)
 	Automate_Clear();
 	K_ClearClientPowerLevels();
 	G_ObliterateParties();
+	K_ResetMidVote();
 
 	memset(splitscreen_invitations, -1, sizeof splitscreen_invitations);
 	memset(player_name_changes, 0, sizeof player_name_changes);
@@ -3794,6 +3823,7 @@ void D_QuitNetGame(void)
 	Automate_Clear();
 	K_ClearClientPowerLevels();
 	G_ObliterateParties();
+	K_ResetMidVote();
 
 	DEBFILE("===========================================================================\n"
 	        "                         Log finish\n"

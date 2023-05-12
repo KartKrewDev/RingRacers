@@ -257,10 +257,10 @@ void M_PlaybackQuit(INT32 choice)
 	(void)choice;
 	G_StopDemo();
 
-	if (demo.inreplayhut)
-		M_StartControlPanel();
-	else if (modeattacking)
+	if (modeattacking)
 		M_EndModeAttackRun();
+	else if (restoreMenu)
+		M_StartControlPanel();
 	else
 		D_StartTitle();
 }

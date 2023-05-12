@@ -295,6 +295,27 @@ UINT8 *R_GenerateTexture(size_t texnum)
 		wadnum = patch->wad;
 		lumpnum = patch->lump;
 		lumplength = W_LumpLengthPwad(wadnum, lumpnum);
+
+		// The header does not exist
+		if (lumplength < offsetof(softwarepatch_t, columnofs))
+		{
+			CONS_Alert(
+				CONS_ERROR,
+				"%.8s: texture lump data is too small. Expected %s bytes, got %s. (%s)\n",
+				texture->name,
+				sizeu1(offsetof(softwarepatch_t, columnofs)),
+				sizeu2(lumplength),
+				wadfiles[wadnum]->lumpinfo[lumpnum].fullname
+			);
+
+			// Allocate dummy data. Keep 4-bytes aligned.
+			// Column offsets will be initialized to 0, which points to the 0xff byte (empty column flag).
+			block = Z_Calloc(4 + (texture->width * 4), PU_CACHE, &texturecache[texnum]);
+			block[0] = 0xff;
+			texturecolumnofs[texnum] = (UINT32*)&block[4];
+			return block;
+		}
+
 		pdata = W_CacheLumpNumPwad(wadnum, lumpnum, PU_CACHE);
 		realpatch = (softwarepatch_t *)pdata;
 

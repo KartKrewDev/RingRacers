@@ -1750,11 +1750,11 @@ boolean P_IsLineBlocking(const line_t *ld, const mobj_t *thing)
 
 		if (thing->player)
 		{
-			return (ld->flags & ML_BLOCKPLAYERS);
+			return ((ld->flags & ML_BLOCKPLAYERS) == ML_BLOCKPLAYERS);
 		}
 		else if (thing->flags & (MF_ENEMY|MF_BOSS))
 		{
-			return (ld->flags & ML_BLOCKMONSTERS);
+			return ((ld->flags & ML_BLOCKMONSTERS) == ML_BLOCKMONSTERS);
 		}
 	}
 
