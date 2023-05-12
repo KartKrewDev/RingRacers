@@ -108,6 +108,10 @@ void M_CupSelectHandler(INT32 choice)
 
 			S_StartSound(NULL, sfx_s3k63);
 
+			paused = false;
+
+			S_StopMusicCredit();
+
 			// Early fadeout to let the sound finish playing
 			F_WipeStartScreen();
 			V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 31);

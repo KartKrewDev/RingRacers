@@ -4066,7 +4066,7 @@ void G_MapIntoRoundQueue(UINT16 map, UINT8 setgametype, boolean setencore, boole
 void G_GPCupIntoRoundQueue(cupheader_t *cup, UINT8 setgametype, boolean setencore)
 {
 	UINT8 i, levelindex = 0, bonusindex = 0;
-	UINT8 bonusmodulo = (cup->numlevels+1)/(cup->numbonus+1);
+	UINT8 bonusmodulo = max(1, (cup->numlevels+1)/(cup->numbonus+1));
 	UINT16 cupLevelNum;
 
 	// Levels are added to the queue in the following pattern.
@@ -4165,6 +4165,7 @@ static void G_GetNextMap(void)
 	}
 	else if (roundqueue.size > 0)
 	{
+		// See also Y_CalculateMatchData, M_DrawPause
 		boolean permitrank = false;
 		if (grandprixinfo.gp == true
 			&& grandprixinfo.gamespeed >= KARTSPEED_NORMAL)

@@ -16,8 +16,39 @@
 extern "C" {
 #endif
 
+typedef struct
+{
+	boolean rankingsmode; // rankings mode
+	boolean gotthrough; // show "got through"
+	boolean showrank; // show rank-restricted queue entry at the end, if it exists
+	boolean encore; // encore mode
+
+	char headerstring[64]; // holds levelnames up to 64 characters
+
+	UINT8 numplayers; // Number of players being displayed
+
+	SINT8 num[MAXPLAYERS]; // Player #
+	UINT8 pos[MAXPLAYERS]; // player positions. used for ties
+
+	UINT8 character[MAXPLAYERS]; // Character #
+	UINT16 color[MAXPLAYERS]; // Color #
+
+	UINT32 val[MAXPLAYERS]; // Gametype-specific value
+	char strval[MAXPLAYERS][MAXPLAYERNAME+1];
+
+	INT16 increase[MAXPLAYERS]; // how much did the score increase by?
+	UINT8 jitter[MAXPLAYERS]; // wiggle
+
+	UINT8 mainplayer; // Most successful local player
+	INT32 linemeter; // For GP only
+} y_data_t;
+
 void Y_IntermissionDrawer(void);
 void Y_Ticker(void);
+
+// Specific sub-drawers
+void Y_PlayerStandingsDrawer(y_data_t *standings, INT32 xoffset);
+void Y_RoundQueueDrawer(y_data_t *standings, boolean doanimations, boolean widescreen);
 
 void Y_StartIntermission(void);
 void Y_EndIntermission(void);

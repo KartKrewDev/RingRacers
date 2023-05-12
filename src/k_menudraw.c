@@ -52,6 +52,8 @@
 #include "doomstat.h" // MAXSPLITSCREENPLAYERS
 #include "k_grandprix.h" // K_CanChangeRules
 
+#include "y_inter.h" // Y_RoundQueueDrawer
+
 #include "i_joy.h" // for joystick menu controls
 
 // Condition Sets
@@ -4073,6 +4075,34 @@ void M_DrawPause(void)
 
 		if (word2len)
 			V_DrawCenteredLSTitleLowString(220 + offset*2, 103, 0, word2);
+	}
+
+	if (gamestate != GS_INTERMISSION)
+	{
+		y_data_t standings;
+		memset(&standings, 0, sizeof (standings));
+
+		standings.mainplayer = (demo.playback ? displayplayers[0] : consoleplayer); 
+
+		// See also G_GetNextMap, Y_CalculateMatchData
+		if (
+			grandprixinfo.gp == true
+			&& netgame == false // TODO netgame Special Mode support
+			&& grandprixinfo.gamespeed >= KARTSPEED_NORMAL
+			&& roundqueue.size > 1
+			&& roundqueue.entries[roundqueue.size - 1].rankrestricted == true
+			&& (
+				gamedata->everseenspecial == true
+				|| roundqueue.position == roundqueue.size
+			)
+		)
+		{
+			// Additional cases in which it should always be shown.
+			standings.showrank = true;
+		}
+
+		// Returns early if there's no roundqueue entries to draw
+		Y_RoundQueueDrawer(&standings, false, false);
 	}
 }
 
