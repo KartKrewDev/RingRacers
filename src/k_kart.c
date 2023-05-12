@@ -4570,10 +4570,33 @@ static mobj_t *K_SpawnKartMissile(mobj_t *source, mobjtype_t type, angle_t an, I
 		finalscale = source->scale;
 	}
 
-	if (dir == -1 && (type == MT_ORBINAUT || type == MT_GACHABOM || type == MT_BALLHOG))
+	if (dir == -1)
 	{
+		fixed_t nerf = FRACUNIT;
+
 		// Backwards nerfs
-		finalspeed /= 8;
+		switch (type)
+		{
+			case MT_ORBINAUT:
+			case MT_GACHABOM:
+				// These items orbit in place.
+				// Look for a tight radius...
+				nerf = FRACUNIT/4;
+				break;
+
+			case MT_BALLHOG:
+				nerf = FRACUNIT/8;
+				break;
+
+			default:
+				break;
+		}
+
+		if (finalspeed != FRACUNIT)
+		{
+			// Scale to gamespeed for consistency
+			finalspeed = FixedMul(finalspeed, FixedDiv(nerf, K_GetKartGameSpeedScalar(gamespeed)));
+		}
 	}
 
 	x = source->x + source->momx + FixedMul(finalspeed, FINECOSINE(an>>ANGLETOFINESHIFT));
@@ -5424,22 +5447,6 @@ mobj_t *K_ThrowKartItem(player_t *player, boolean missile, mobjtype_t mapthing, 
 	if (!player)
 		return NULL;
 
-	// Figure out projectile speed by game speed
-	if (missile)
-	{
-		// Use info->speed for missiles
-		PROJSPEED = FixedMul(mobjinfo[mapthing].speed, K_GetKartGameSpeedScalar(gamespeed));
-	}
-	else
-	{
-		// Use pre-determined speed for tossing
-		PROJSPEED = FixedMul(82 * FRACUNIT, K_GetKartGameSpeedScalar(gamespeed));
-	}
-
-	// Scale to map scale
-	// Intentionally NOT player scale, that doesn't work.
-	PROJSPEED = FixedMul(PROJSPEED, mapobjectscale);
-
 	if (altthrow)
 	{
 		if (altthrow == 2) // Kitchen sink throwing
@@ -5481,6 +5488,22 @@ mobj_t *K_ThrowKartItem(player_t *player, boolean missile, mobjtype_t mapthing, 
 		// This item is both a missile and not!
 		missile = false;
 	}
+
+	// Figure out projectile speed by game speed
+	if (missile)
+	{
+		// Use info->speed for missiles
+		PROJSPEED = FixedMul(mobjinfo[mapthing].speed, K_GetKartGameSpeedScalar(gamespeed));
+	}
+	else
+	{
+		// Use pre-determined speed for tossing
+		PROJSPEED = FixedMul(82 * FRACUNIT, K_GetKartGameSpeedScalar(gamespeed));
+	}
+
+	// Scale to map scale
+	// Intentionally NOT player scale, that doesn't work.
+	PROJSPEED = FixedMul(PROJSPEED, mapobjectscale);
 
 	if (missile) // Shootables
 	{
