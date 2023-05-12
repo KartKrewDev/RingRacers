@@ -4570,10 +4570,25 @@ static mobj_t *K_SpawnKartMissile(mobj_t *source, mobjtype_t type, angle_t an, I
 		finalscale = source->scale;
 	}
 
-	if (dir == -1 && (type == MT_ORBINAUT || type == MT_GACHABOM || type == MT_BALLHOG))
+	if (dir == -1)
 	{
 		// Backwards nerfs
-		finalspeed /= 8;
+		switch (type)
+		{
+			case MT_ORBINAUT:
+			case MT_GACHABOM:
+				// These items orbit in place.
+				// Look for a tight radius...
+				finalspeed /= 4;
+				break;
+
+			case MT_BALLHOG:
+				finalspeed /= 8;
+				break;
+
+			default:
+				break;
+		}
 	}
 
 	x = source->x + source->momx + FixedMul(finalspeed, FINECOSINE(an>>ANGLETOFINESHIFT));
