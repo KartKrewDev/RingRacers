@@ -70,7 +70,12 @@ struct opening_t
 	fixed_t ceilingstep, ceilingdrop;
 	fixed_t floorstep, floordrop;
 	INT32 ceilingpic, floorpic;
+	UINT8 fofType; // LO_FOF_ types for forcing FOF collide
 };
+
+#define LO_FOF_ANY		(0)
+#define LO_FOF_FLOORS	(1)
+#define LO_FOF_CEILINGS	(2)
 
 void P_LineOpening(line_t *plinedef, mobj_t *mobj, opening_t *open);
 

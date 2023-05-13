@@ -384,6 +384,7 @@ static boolean P_CanBotTraverse(seg_t *seg, divline_t *divl, register los_t *los
 	tm.y = los->strace.y + FixedMul(los->strace.dy, frac);
 
 	// set openrange, opentop, openbottom
+	open.fofType = (flip ? LO_FOF_CEILINGS : LO_FOF_FLOORS);
 	P_LineOpening(line, los->t1, &open);
 	maxstep = P_GetThingStepUp(los->t1, tm.x, tm.y);
 
@@ -451,10 +452,11 @@ static boolean P_CanWaypointTraverse(seg_t *seg, divline_t *divl, register los_t
 	tm.y = los->strace.y + FixedMul(los->strace.dy, frac);
 
 	// set openrange, opentop, openbottom
+	open.fofType = (flip ? LO_FOF_CEILINGS : LO_FOF_FLOORS);
 	P_LineOpening(line, los->t1, &open);
 	maxstep = P_GetThingStepUp(los->t1, tm.x, tm.y);
 
-#if 1
+#if 0
 	if (los->t2->type == MT_WAYPOINT)
 	{
 		waypoint_t *wp = K_SearchWaypointHeapForMobj(los->t2);
