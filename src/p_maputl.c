@@ -607,10 +607,20 @@ void P_LineOpening(line_t *linedef, mobj_t *mobj)
 	int hi = 0;
 	int lo = 0;
 
+	// set these defaults so that polyobjects don't interfere with collision above or below them
+	opentop = highceiling = INT32_MAX;
+	openbottom = lowfloor = INT32_MIN;
+	openrange = 0;
+	opentopslope = openbottomslope = NULL;
+	opentoppic = openbottompic = -1;
+	openceilingstep = 0;
+	openceilingdrop = 0;
+	openfloorstep = 0;
+	openfloordrop = 0;
+
 	if (linedef->sidenum[1] == 0xffff)
 	{
 		// single sided line
-		openrange = 0;
 		return;
 	}
 
@@ -637,22 +647,9 @@ void P_LineOpening(line_t *linedef, mobj_t *mobj)
 	}
 
 	openfloorrover = openceilingrover = NULL;
-	if (linedef->polyobj)
+	if (!linedef->polyobj)
 	{
-		// set these defaults so that polyobjects don't interfere with collision above or below them
-		opentop = INT32_MAX;
-		openbottom = INT32_MIN;
-		highceiling = INT32_MIN;
-		lowfloor = INT32_MAX;
-		opentopslope = openbottomslope = NULL;
-		opentoppic = openbottompic = -1;
-		openceilingstep = 0;
-		openceilingdrop = 0;
-		openfloorstep = 0;
-		openfloordrop = 0;
-	}
-	else
-	{ // Set open and high/low values here
+		// Set open and high/low values here
 		fixed_t          height[2];
 		const sector_t * sector[2] = { front, back };
 
@@ -774,8 +771,7 @@ void P_LineOpening(line_t *linedef, mobj_t *mobj)
 						highceiling = polybottom;
 					}
 				}
-
-				if (delta1 <= delta2)
+				else
 				{
 					if (polytop > openbottom)
 					{
@@ -842,8 +838,7 @@ void P_LineOpening(line_t *linedef, mobj_t *mobj)
 							}
 						}
 					}
-
-					if (delta1 <= delta2)
+					else
 					{
 						// thing is above FOF
 						if ((rover->fofflags & FOF_INTANGIBLEFLATS) != FOF_REVERSEPLATFORM)
@@ -890,8 +885,7 @@ void P_LineOpening(line_t *linedef, mobj_t *mobj)
 							}
 						}
 					}
-
-					if (delta1 <= delta2)
+					else
 					{
 						// thing is above FOF
 						if ((rover->fofflags & FOF_INTANGIBLEFLATS) != FOF_REVERSEPLATFORM)
@@ -953,14 +947,14 @@ void P_LineOpening(line_t *linedef, mobj_t *mobj)
 					openfloorstep = ( botedge[hi] - mobj->z );
 					openfloordrop = ( botedge[hi] - botedge[lo] );
 
-					if (open[lo].top > lowfloor)
+					if (open[lo].bottom > lowfloor)
 					{
-						lowfloor = open[lo].top;
+						lowfloor = open[lo].bottom;
 					}
 				}
-				else if (open[hi].top > lowfloor)
+				else if (open[hi].bottom > lowfloor)
 				{
-					lowfloor = open[hi].top;
+					lowfloor = open[hi].bottom;
 				}
 			}
 		}

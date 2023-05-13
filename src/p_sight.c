@@ -444,8 +444,37 @@ static boolean P_CanWaypointTraverse(seg_t *seg, divline_t *divl, register los_t
 	tm.x = los->strace.x + FixedMul(los->strace.dx, frac);
 	tm.y = los->strace.y + FixedMul(los->strace.dy, frac);
 
+	// set openrange, opentop, openbottom
 	P_LineOpening(line, los->t1);
 	maxstep = P_GetThingStepUp(los->t1, tm.x, tm.y);
+
+#if 0
+	if (los->t2->type == MT_WAYPOINT)
+	{
+		waypoint_t *wp = K_SearchWaypointHeapForMobj(los->t2);
+
+		if (wp != NULL)
+		{
+			CONS_Printf(
+				"========\nID: %d\nopenrange: %.2f >= %.2f\n",
+				K_GetWaypointID(wp),
+				FIXED_TO_FLOAT(openrange),
+				FIXED_TO_FLOAT(los->t1->height)
+			);
+
+			if (openrange >= los->t1->height)
+			{
+				CONS_Printf(
+					"openbottom: %.2f\nlowfloor: %.2f\nstep: %.2f <= %.2f\n",
+					FIXED_TO_FLOAT(openbottom),
+					FIXED_TO_FLOAT(lowfloor),
+					FIXED_TO_FLOAT(openbottom - lowfloor),
+					FIXED_TO_FLOAT(maxstep)
+				);
+			}
+		}
+	}
+#endif
 
 	if (openrange < los->t1->height)
 	{
@@ -459,7 +488,12 @@ static boolean P_CanWaypointTraverse(seg_t *seg, divline_t *divl, register los_t
 	// Or if we're on the higher side...
 	canDropOff = (flip ? (los->t1->z + los->t1->height <= opentop) : (los->t1->z >= openbottom));
 
-	return (canStepUp || canDropOff);
+	if (canStepUp || canDropOff)
+	{
+		return true;
+	}
+
+	return false;
 }
 
 //
