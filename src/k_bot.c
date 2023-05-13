@@ -625,7 +625,7 @@ fixed_t K_DistanceOfLineFromPoint(fixed_t v1x, fixed_t v1y, fixed_t v2x, fixed_t
 }
 
 /*--------------------------------------------------
-	static fixed_t K_GetBotWaypointRadius(waypoint_t *waypoint)
+	static void K_GetBotWaypointRadius(waypoint_t *waypoint, fixed_t *smallestRadius, fixed_t *smallestScaled)
 
 		Calculates a new waypoint radius size to use, making it
 		thinner depending on how harsh the turn is.
@@ -634,9 +634,9 @@ fixed_t K_DistanceOfLineFromPoint(fixed_t v1x, fixed_t v1y, fixed_t v2x, fixed_t
 		waypoint - Waypoint to retrieve the radius of.
 
 	Return:-
-		New radius value.
+		N/A
 --------------------------------------------------*/
-static fixed_t K_GetBotWaypointRadius(waypoint_t *const waypoint)
+static void K_GetBotWaypointRadius(waypoint_t *const waypoint, fixed_t *smallestRadius, fixed_t *smallestScaled)
 {
 	static const fixed_t maxReduce = FRACUNIT/32;
 	static const angle_t maxDelta = ANGLE_22h;
@@ -675,7 +675,8 @@ static fixed_t K_GetBotWaypointRadius(waypoint_t *const waypoint)
 	reduce = FixedDiv(delta, maxDelta);
 	reduce = FRACUNIT + FixedMul(reduce, maxReduce - FRACUNIT);
 
-	return FixedMul(radius, reduce);
+	*smallestRadius = min(*smallestRadius, radius);
+	*smallestScaled = min(*smallestScaled, FixedMul(radius, reduce));
 }
 
 static fixed_t K_ScaleWPDistWithSlope(fixed_t disttonext, angle_t angletonext, const pslope_t *slope, SINT8 flip)
@@ -735,10 +736,12 @@ static botprediction_t *K_CreateBotPrediction(player_t *player)
 	const INT32 distance = min(((speed / FRACUNIT) * (INT32)futuresight) + startDist, maxDist);
 
 	// Halves radius when encountering a wall on your way to your destination.
-	fixed_t radreduce = FRACUNIT;
+	fixed_t radReduce = FRACUNIT;
+
+	fixed_t radius = INT32_MAX;
+	fixed_t radiusScaled = INT32_MAX;
 
 	INT32 distanceleft = distance;
-	fixed_t smallestradius = INT32_MAX;
 	angle_t angletonext = ANGLE_MAX;
 	INT32 disttonext = INT32_MAX;
 	INT32 distscaled = INT32_MAX;
@@ -780,8 +783,6 @@ static botprediction_t *K_CreateBotPrediction(player_t *player)
 	{
 		for (i = 0; i < pathtofinish.numnodes; i++)
 		{
-			fixed_t radius = 0;
-
 			wp = (waypoint_t *)pathtofinish.array[i].nodedata;
 
 			if (i == 0)
@@ -802,15 +803,10 @@ static botprediction_t *K_CreateBotPrediction(player_t *player)
 			{
 				// If we can't get a direct path to this waypoint, reduce our prediction drastically.
 				distscaled *= 4;
-				radreduce = FRACUNIT >> 1;
+				radReduce = FRACUNIT >> 1;
 			}
 
-			radius = K_GetBotWaypointRadius(wp);
-			if (radius < smallestradius)
-			{
-				smallestradius = radius;
-			}
-
+			K_GetBotWaypointRadius(wp, &radius, &radiusScaled);
 			distanceleft -= distscaled;
 
 			if (distanceleft <= 0)
@@ -827,7 +823,9 @@ static botprediction_t *K_CreateBotPrediction(player_t *player)
 	// and use the smallest radius of all of the waypoints in the chain!
 	predict->x = wp->mobj->x;
 	predict->y = wp->mobj->y;
-	predict->radius = FixedMul(smallestradius, radreduce);
+
+	predict->baseRadius = radius;
+	predict->radius = FixedMul(radiusScaled, radReduce);
 
 	// Set the prediction coordinates between the 2 waypoints if there's still distance left.
 	if (distanceleft > 0)

@@ -691,8 +691,8 @@ void K_NudgePredictionTowardsObjects(botprediction_t *predict, player_t *player)
 
 	globalsmuggle.distancetocheck = distToPredict;
 
-	baseNudge = predict->radius * 2;
-	maxNudge = distToPredict;
+	baseNudge = predict->baseRadius >> 3;
+	maxNudge = predict->baseRadius - baseNudge;
 
 	globalsmuggle.botmo = player->mo;
 	globalsmuggle.predict = predict;
@@ -747,8 +747,6 @@ void K_NudgePredictionTowardsObjects(botprediction_t *predict, player_t *player)
 
 		// High handling characters dodge better
 		nudgeDist = ((9 - globalsmuggle.botmo->player->kartweight) + 1) * baseNudge;
-
-		maxNudge = max(distToPredict - predict->radius, predict->radius);
 		if (nudgeDist > maxNudge)
 		{
 			nudgeDist = maxNudge;
@@ -762,6 +760,7 @@ void K_NudgePredictionTowardsObjects(botprediction_t *predict, player_t *player)
 
 		predict->x += FixedMul(nudgeDist, FINECOSINE(nudgeDir >> ANGLETOFINESHIFT));
 		predict->y += FixedMul(nudgeDist, FINESINE(nudgeDir >> ANGLETOFINESHIFT));
+		predict->radius = max(predict->radius - nudgeDist, baseNudge);
 
 		distToPredict = R_PointToDist2(player->mo->x, player->mo->y, predict->x, predict->y);
 
@@ -811,8 +810,6 @@ void K_NudgePredictionTowardsObjects(botprediction_t *predict, player_t *player)
 
 		// Acceleration characters are more aggressive
 		nudgeDist = ((9 - globalsmuggle.botmo->player->kartspeed) + 1) * baseNudge;
-
-		maxNudge = max(distToPredict - predict->radius, predict->radius);
 		if (nudgeDist > maxNudge)
 		{
 			nudgeDist = maxNudge;
@@ -822,6 +819,7 @@ void K_NudgePredictionTowardsObjects(botprediction_t *predict, player_t *player)
 		{
 			predict->x = avgX;
 			predict->y = avgY;
+			predict->radius = baseNudge;
 		}
 		else
 		{
@@ -833,6 +831,7 @@ void K_NudgePredictionTowardsObjects(botprediction_t *predict, player_t *player)
 
 			predict->x += FixedMul(nudgeDist, FINECOSINE(nudgeDir >> ANGLETOFINESHIFT));
 			predict->y += FixedMul(nudgeDist, FINESINE(nudgeDir >> ANGLETOFINESHIFT));
+			predict->radius = max(predict->radius - nudgeDist, baseNudge);
 
 			//distToPredict = R_PointToDist2(player->mo->x, player->mo->y, predict->x, predict->y);
 		}
