@@ -665,6 +665,7 @@ void K_NudgePredictionTowardsObjects(botprediction_t *predict, player_t *player)
 	INT32 xl, xh, yl, yh, bx, by;
 
 	fixed_t distToPredict = 0;
+	fixed_t radToPredict = 0;
 	angle_t angleToPredict = 0;
 
 	fixed_t avgX = 0, avgY = 0;
@@ -685,9 +686,10 @@ void K_NudgePredictionTowardsObjects(botprediction_t *predict, player_t *player)
 	}
 
 	distToPredict = R_PointToDist2(player->mo->x, player->mo->y, predict->x, predict->y);
+	radToPredict = distToPredict >> 1;
 	angleToPredict = R_PointToAngle2(player->mo->x, player->mo->y, predict->x, predict->y);
 
-	globalsmuggle.distancetocheck = distToPredict >> 1;
+	globalsmuggle.distancetocheck = distToPredict;
 
 	baseNudge = predict->radius * 2;
 	maxNudge = distToPredict;
@@ -696,8 +698,8 @@ void K_NudgePredictionTowardsObjects(botprediction_t *predict, player_t *player)
 	globalsmuggle.predict = predict;
 
 	// silly variable reuse
-	avgX = globalsmuggle.botmo->x + FixedMul(globalsmuggle.distancetocheck, FINECOSINE(angleToPredict >> ANGLETOFINESHIFT));
-	avgY = globalsmuggle.botmo->y + FixedMul(globalsmuggle.distancetocheck, FINESINE(angleToPredict >> ANGLETOFINESHIFT));
+	avgX = globalsmuggle.botmo->x + FixedMul(radToPredict, FINECOSINE(angleToPredict >> ANGLETOFINESHIFT));
+	avgY = globalsmuggle.botmo->y + FixedMul(radToPredict, FINESINE(angleToPredict >> ANGLETOFINESHIFT));
 
 	for (i = 0; i < 2; i++)
 	{
@@ -708,10 +710,10 @@ void K_NudgePredictionTowardsObjects(botprediction_t *predict, player_t *player)
 		globalsmuggle.avoidObjs[i] = 0;
 	}
 
-	xl = (unsigned)(avgX - (globalsmuggle.distancetocheck + MAXRADIUS) - bmaporgx)>>MAPBLOCKSHIFT;
-	xh = (unsigned)(avgX + (globalsmuggle.distancetocheck + MAXRADIUS) - bmaporgx)>>MAPBLOCKSHIFT;
-	yl = (unsigned)(avgY - (globalsmuggle.distancetocheck + MAXRADIUS) - bmaporgy)>>MAPBLOCKSHIFT;
-	yh = (unsigned)(avgY + (globalsmuggle.distancetocheck + MAXRADIUS) - bmaporgy)>>MAPBLOCKSHIFT;
+	xl = (unsigned)(avgX - (distToPredict + MAXRADIUS) - bmaporgx)>>MAPBLOCKSHIFT;
+	xh = (unsigned)(avgX + (distToPredict + MAXRADIUS) - bmaporgx)>>MAPBLOCKSHIFT;
+	yl = (unsigned)(avgY - (distToPredict + MAXRADIUS) - bmaporgy)>>MAPBLOCKSHIFT;
+	yh = (unsigned)(avgY + (distToPredict + MAXRADIUS) - bmaporgy)>>MAPBLOCKSHIFT;
 
 	BMBOUNDFIX(xl, xh, yl, yh);
 
