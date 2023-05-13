@@ -262,6 +262,7 @@ TYPEDEF (BasicFF_t);
 // p_maputl.h
 TYPEDEF (divline_t);
 TYPEDEF (intercept_t);
+TYPEDEF (opening_t);
 
 // p_mobj.h
 TYPEDEF (mobj_t);

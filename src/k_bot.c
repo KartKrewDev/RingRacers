@@ -439,7 +439,7 @@ static line_t *K_FindBotController(mobj_t *mo)
 --------------------------------------------------*/
 static UINT32 K_BotRubberbandDistance(player_t *player)
 {
-	const UINT32 spacing = FixedDiv(640 * FRACUNIT, K_GetKartGameSpeedScalar(gamespeed)) / FRACUNIT;
+	const UINT32 spacing = FixedDiv(640 * mapobjectscale, K_GetKartGameSpeedScalar(gamespeed)) / FRACUNIT;
 	const UINT8 portpriority = player - players;
 	UINT8 pos = 0;
 	UINT8 i;
@@ -625,7 +625,7 @@ fixed_t K_DistanceOfLineFromPoint(fixed_t v1x, fixed_t v1y, fixed_t v2x, fixed_t
 }
 
 /*--------------------------------------------------
-	static fixed_t K_GetBotWaypointRadius(waypoint_t *waypoint)
+	static void K_GetBotWaypointRadius(waypoint_t *waypoint, fixed_t *smallestRadius, fixed_t *smallestScaled)
 
 		Calculates a new waypoint radius size to use, making it
 		thinner depending on how harsh the turn is.
@@ -634,12 +634,12 @@ fixed_t K_DistanceOfLineFromPoint(fixed_t v1x, fixed_t v1y, fixed_t v2x, fixed_t
 		waypoint - Waypoint to retrieve the radius of.
 
 	Return:-
-		New radius value.
+		N/A
 --------------------------------------------------*/
-static fixed_t K_GetBotWaypointRadius(waypoint_t *const waypoint)
+static void K_GetBotWaypointRadius(waypoint_t *const waypoint, fixed_t *smallestRadius, fixed_t *smallestScaled)
 {
 	static const fixed_t maxReduce = FRACUNIT/32;
-	static const angle_t maxDelta = ANGLE_45;
+	static const angle_t maxDelta = ANGLE_22h;
 
 	fixed_t radius = waypoint->mobj->radius;
 	fixed_t reduce = FRACUNIT;
@@ -675,7 +675,37 @@ static fixed_t K_GetBotWaypointRadius(waypoint_t *const waypoint)
 	reduce = FixedDiv(delta, maxDelta);
 	reduce = FRACUNIT + FixedMul(reduce, maxReduce - FRACUNIT);
 
-	return FixedMul(radius, reduce);
+	*smallestRadius = min(*smallestRadius, radius);
+	*smallestScaled = min(*smallestScaled, FixedMul(radius, reduce));
+}
+
+static fixed_t K_ScaleWPDistWithSlope(fixed_t disttonext, angle_t angletonext, const pslope_t *slope, SINT8 flip)
+{
+	if (slope == NULL)
+	{
+		return disttonext;
+	}
+
+	if ((slope->flags & SL_NOPHYSICS) == 0 && abs(slope->zdelta) >= FRACUNIT/21)
+	{
+		// Displace the prediction to go with the slope physics.
+		fixed_t slopeMul = FRACUNIT;
+		angle_t angle = angletonext - slope->xydirection;
+
+		if (flip * slope->zdelta < 0)
+		{
+			angle ^= ANGLE_180;
+		}
+
+		// Going uphill: 0
+		// Going downhill: FRACUNIT*2
+		slopeMul = FRACUNIT + FINECOSINE(angle >> ANGLETOFINESHIFT);
+
+		// Range: 0.25 to 1.75
+		return FixedMul(disttonext, (FRACUNIT >> 2) + ((slopeMul * 3) >> 2));
+	}
+
+	return disttonext;
 }
 
 /*--------------------------------------------------
@@ -701,17 +731,21 @@ static botprediction_t *K_CreateBotPrediction(player_t *player)
 	const tic_t futuresight = (TICRATE * KART_FULLTURN) / max(1, handling); // How far ahead into the future to try and predict
 	const fixed_t speed = K_BotSpeedScaled(player, P_AproxDistance(player->mo->momx, player->mo->momy));
 
-	const INT32 startDist = (DEFAULT_WAYPOINT_RADIUS * 2 * mapobjectscale) / FRACUNIT;
-	const INT32 maxDist = startDist * 4; // This function gets very laggy when it goes far distances, and going too far isn't very helpful anyway.
+	const INT32 startDist = 0; //(DEFAULT_WAYPOINT_RADIUS * mapobjectscale) / FRACUNIT;
+	const INT32 maxDist = (DEFAULT_WAYPOINT_RADIUS * 3 * mapobjectscale) / FRACUNIT; // This function gets very laggy when it goes far distances, and going too far isn't very helpful anyway.
 	const INT32 distance = min(((speed / FRACUNIT) * (INT32)futuresight) + startDist, maxDist);
 
 	// Halves radius when encountering a wall on your way to your destination.
-	fixed_t radreduce = FRACUNIT;
+	fixed_t radReduce = FRACUNIT;
+
+	fixed_t radius = INT32_MAX;
+	fixed_t radiusScaled = INT32_MAX;
 
 	INT32 distanceleft = distance;
-	fixed_t smallestradius = INT32_MAX;
 	angle_t angletonext = ANGLE_MAX;
 	INT32 disttonext = INT32_MAX;
+	INT32 distscaled = INT32_MAX;
+	pslope_t *nextslope = player->mo->standingslope;
 
 	waypoint_t *wp = player->nextwaypoint;
 	mobj_t *prevwpmobj = player->mo;
@@ -721,15 +755,25 @@ static botprediction_t *K_CreateBotPrediction(player_t *player)
 	boolean pathfindsuccess = false;
 	path_t pathtofinish = {0};
 
-	botprediction_t *predict = Z_Calloc(sizeof(botprediction_t), PU_STATIC, NULL);
+	botprediction_t *predict = NULL;
 	size_t i;
+
+	if (wp == NULL || P_MobjWasRemoved(wp->mobj) == true)
+	{
+		// Can't do any of this if we don't have a waypoint.
+		return NULL;
+	}
+
+	predict = Z_Calloc(sizeof(botprediction_t), PU_STATIC, NULL);
 
 	// Init defaults in case of pathfind failure
 	angletonext = R_PointToAngle2(prevwpmobj->x, prevwpmobj->y, wp->mobj->x, wp->mobj->y);
-	disttonext = P_AproxDistance(prevwpmobj->x - wp->mobj->x, prevwpmobj->y - wp->mobj->y) / FRACUNIT;
+	disttonext = P_AproxDistance(prevwpmobj->x - wp->mobj->x, prevwpmobj->y - wp->mobj->y);
+	nextslope = wp->mobj->standingslope;
+	distscaled = K_ScaleWPDistWithSlope(disttonext, angletonext, nextslope, P_MobjFlip(wp->mobj)) / FRACUNIT;
 
 	pathfindsuccess = K_PathfindThruCircuit(
-		player->nextwaypoint, (unsigned)distanceleft,
+		wp, (unsigned)distanceleft,
 		&pathtofinish,
 		useshortcuts, huntbackwards
 	);
@@ -739,8 +783,6 @@ static botprediction_t *K_CreateBotPrediction(player_t *player)
 	{
 		for (i = 0; i < pathtofinish.numnodes; i++)
 		{
-			fixed_t radius = 0;
-
 			wp = (waypoint_t *)pathtofinish.array[i].nodedata;
 
 			if (i == 0)
@@ -753,22 +795,19 @@ static botprediction_t *K_CreateBotPrediction(player_t *player)
 			}
 
 			angletonext = R_PointToAngle2(prevwpmobj->x, prevwpmobj->y, wp->mobj->x, wp->mobj->y);
-			disttonext = P_AproxDistance(prevwpmobj->x - wp->mobj->x, prevwpmobj->y - wp->mobj->y) / FRACUNIT;
+			disttonext = P_AproxDistance(prevwpmobj->x - wp->mobj->x, prevwpmobj->y - wp->mobj->y);
+			nextslope = wp->mobj->standingslope;
+			distscaled = K_ScaleWPDistWithSlope(disttonext, angletonext, nextslope, P_MobjFlip(wp->mobj)) / FRACUNIT;
 
 			if (P_TraceBotTraversal(player->mo, wp->mobj) == false)
 			{
-				// If we can't get a direct path to this waypoint, predict less.
-				distanceleft /= 2;
-				radreduce = FRACUNIT >> 1;
+				// If we can't get a direct path to this waypoint, reduce our prediction drastically.
+				distscaled *= 4;
+				radReduce = FRACUNIT >> 1;
 			}
 
-			radius = K_GetBotWaypointRadius(wp);
-			if (radius < smallestradius)
-			{
-				smallestradius = radius;
-			}
-
-			distanceleft -= disttonext;
+			K_GetBotWaypointRadius(wp, &radius, &radiusScaled);
+			distanceleft -= distscaled;
 
 			if (distanceleft <= 0)
 			{
@@ -784,7 +823,9 @@ static botprediction_t *K_CreateBotPrediction(player_t *player)
 	// and use the smallest radius of all of the waypoints in the chain!
 	predict->x = wp->mobj->x;
 	predict->y = wp->mobj->y;
-	predict->radius = FixedMul(smallestradius, radreduce);
+
+	predict->baseRadius = radius;
+	predict->radius = FixedMul(radiusScaled, radReduce);
 
 	// Set the prediction coordinates between the 2 waypoints if there's still distance left.
 	if (distanceleft > 0)
@@ -792,25 +833,6 @@ static botprediction_t *K_CreateBotPrediction(player_t *player)
 		// Scaled with the leftover anglemul!
 		predict->x += P_ReturnThrustX(NULL, angletonext, min(disttonext, distanceleft) * FRACUNIT);
 		predict->y += P_ReturnThrustY(NULL, angletonext, min(disttonext, distanceleft) * FRACUNIT);
-	}
-
-	if (player->mo->standingslope != NULL)
-	{
-		const pslope_t *slope = player->mo->standingslope;
-
-		if (!(slope->flags & SL_NOPHYSICS) && abs(slope->zdelta) >= FRACUNIT/21)
-		{
-			// Displace the prediction to go against the slope physics.
-			angle_t angle = slope->xydirection;
-
-			if (P_MobjFlip(player->mo) * slope->zdelta < 0)
-			{
-				angle ^= ANGLE_180;
-			}
-
-			predict->x -= P_ReturnThrustX(NULL, angle, startDist * abs(slope->zdelta));
-			predict->y -= P_ReturnThrustY(NULL, angle, startDist * abs(slope->zdelta));
-		}
 	}
 
 	ps_bots[player - players].prediction += I_GetPreciseTime() - time;
@@ -1109,7 +1131,7 @@ static INT32 K_HandleBotTrack(player_t *player, ticcmd_t *cmd, botprediction_t *
 	anglediff = abs(anglediff);
 	turnamt = KART_FULLTURN * turnsign;
 
-	if (anglediff > ANGLE_90)
+	if (anglediff > ANGLE_67h)
 	{
 		// Wrong way!
 		cmd->forwardmove = -MAXPLMOVE;
@@ -1502,18 +1524,13 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 				if (predict == NULL)
 				{
 					// Create a prediction.
-					if (player->nextwaypoint != NULL
-						&& player->nextwaypoint->mobj != NULL
-						&& !P_MobjWasRemoved(player->nextwaypoint->mobj))
-					{
-						predict = K_CreateBotPrediction(player);
-						K_NudgePredictionTowardsObjects(predict, player);
-						destangle = R_PointToAngle2(player->mo->x, player->mo->y, predict->x, predict->y);
-					}
+					predict = K_CreateBotPrediction(player);
 				}
 
 				if (predict != NULL)
 				{
+					K_NudgePredictionTowardsObjects(predict, player);
+					destangle = R_PointToAngle2(player->mo->x, player->mo->y, predict->x, predict->y);
 					turnamt = K_HandleBotTrack(player, cmd, predict, destangle);
 				}
 				cmd->buttons &= ~(BT_ACCELERATE|BT_BRAKE);
@@ -1539,18 +1556,13 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 			if (predict == NULL)
 			{
 				// Create a prediction.
-				if (player->nextwaypoint != NULL
-					&& player->nextwaypoint->mobj != NULL
-					&& !P_MobjWasRemoved(player->nextwaypoint->mobj))
-				{
-					predict = K_CreateBotPrediction(player);
-					K_NudgePredictionTowardsObjects(predict, player);
-					destangle = R_PointToAngle2(player->mo->x, player->mo->y, predict->x, predict->y);
-				}
+				predict = K_CreateBotPrediction(player);
 			}
 
 			if (predict != NULL)
 			{
+				K_NudgePredictionTowardsObjects(predict, player);
+				destangle = R_PointToAngle2(player->mo->x, player->mo->y, predict->x, predict->y);
 				turnamt = K_HandleBotTrack(player, cmd, predict, destangle);
 			}
 		}
@@ -1561,18 +1573,13 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 		if (predict == NULL)
 		{
 			// Create a prediction.
-			if (player->nextwaypoint != NULL
-				&& player->nextwaypoint->mobj != NULL
-				&& !P_MobjWasRemoved(player->nextwaypoint->mobj))
-			{
-				predict = K_CreateBotPrediction(player);
-				K_NudgePredictionTowardsObjects(predict, player);
-				destangle = R_PointToAngle2(player->mo->x, player->mo->y, predict->x, predict->y);
-			}
+			predict = K_CreateBotPrediction(player);
 		}
 
 		if (predict != NULL)
 		{
+			K_NudgePredictionTowardsObjects(predict, player);
+			destangle = R_PointToAngle2(player->mo->x, player->mo->y, predict->x, predict->y);
 			turnamt = K_HandleBotTrack(player, cmd, predict, destangle);
 		}
 	}

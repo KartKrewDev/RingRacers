@@ -37,7 +37,7 @@ extern "C" {
 // Point for bots to aim for
 struct botprediction_t {
 	fixed_t x, y;
-	fixed_t radius;
+	fixed_t radius, baseRadius;
 };
 
 
