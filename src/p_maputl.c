@@ -748,36 +748,67 @@ void P_LineOpening(line_t *linedef, mobj_t *mobj, opening_t *open)
 					polybottom = INT32_MIN;
 				}
 
-				polymid = polybottom + (polytop - polybottom) / 2;
-				delta1 = abs(mobj->z - polymid);
-				delta2 = abs(thingtop - polymid);
-
-				if (delta1 > delta2)
+				switch (open->fofType)
 				{
-					if (open->fofType != LO_FOF_FLOORS)
+					case LO_FOF_FLOORS:
 					{
-						if (polybottom < open->ceiling)
+						if (mobj->z >= polytop)
 						{
-							open->ceiling = polybottom;
+							if (polytop > open->floor)
+							{
+								open->floor = polytop;
+							}
+							else if (polytop > open->lowfloor)
+							{
+								open->lowfloor = polytop;
+							}
 						}
-						else if (polybottom < open->highceiling)
-						{
-							open->highceiling = polybottom;
-						}
+						break;
 					}
-				}
-				else
-				{
-					if (open->fofType != LO_FOF_CEILINGS)
+					case LO_FOF_CEILINGS:
 					{
-						if (polytop > open->floor)
+						if (thingtop <= polybottom)
 						{
-							open->floor = polytop;
+							if (polybottom < open->ceiling)
+							{
+								open->ceiling = polybottom;
+							}
+							else if (polybottom < open->highceiling)
+							{
+								open->highceiling = polybottom;
+							}
 						}
-						else if (polytop > open->lowfloor)
+						break;
+					}
+					default:
+					{
+						polymid = polybottom + (polytop - polybottom) / 2;
+						delta1 = abs(mobj->z - polymid);
+						delta2 = abs(thingtop - polymid);
+
+						if (delta1 > delta2)
 						{
-							open->lowfloor = polytop;
+							if (polybottom < open->ceiling)
+							{
+								open->ceiling = polybottom;
+							}
+							else if (polybottom < open->highceiling)
+							{
+								open->highceiling = polybottom;
+							}
 						}
+						else
+						{
+							if (polytop > open->floor)
+							{
+								open->floor = polytop;
+							}
+							else if (polytop > open->lowfloor)
+							{
+								open->lowfloor = polytop;
+							}
+						}
+						break;
 					}
 				}
 			}
@@ -828,42 +859,69 @@ void P_LineOpening(line_t *linedef, mobj_t *mobj, opening_t *open)
 						bottomheight = P_GetFOFBottomZ(mobj, front, rover, tm.x, tm.y, linedef);
 					}
 
-					midheight = bottomheight + (topheight - bottomheight) / 2;
-					delta1 = abs(mobj->z - midheight);
-					delta2 = abs(thingtop - midheight);
-
-					if (delta1 > delta2)
+					switch (open->fofType)
 					{
-						if (open->fofType == LO_FOF_FLOORS)
+						case LO_FOF_FLOORS:
 						{
-							continue;
-						}
-
-						// thing is below FOF
-						if ((rover->fofflags & FOF_INTANGIBLEFLATS) != FOF_PLATFORM)
-						{
-							if (bottomheight < fofopen[FRONT].ceiling)
+							if (mobj->z >= topheight)
 							{
-								fofopen[FRONT].ceiling = bottomheight;
-								fofopen[FRONT].ceilingrover = rover;
+								if ((rover->fofflags & FOF_INTANGIBLEFLATS) != FOF_REVERSEPLATFORM)
+								{
+									if (topheight > fofopen[FRONT].floor)
+									{
+										fofopen[FRONT].floor = topheight;
+										fofopen[FRONT].floorrover = rover;
+									}
+								}
 							}
+							break;
 						}
-					}
-					else
-					{
-						if (open->fofType == LO_FOF_CEILINGS)
+						case LO_FOF_CEILINGS:
 						{
-							continue;
-						}
-
-						// thing is above FOF
-						if ((rover->fofflags & FOF_INTANGIBLEFLATS) != FOF_REVERSEPLATFORM)
-						{
-							if (topheight > fofopen[FRONT].floor)
+							if (thingtop <= bottomheight)
 							{
-								fofopen[FRONT].floor = topheight;
-								fofopen[FRONT].floorrover = rover;
+								if ((rover->fofflags & FOF_INTANGIBLEFLATS) != FOF_PLATFORM)
+								{
+									if (bottomheight < fofopen[FRONT].ceiling)
+									{
+										fofopen[FRONT].ceiling = bottomheight;
+										fofopen[FRONT].ceilingrover = rover;
+									}
+								}
 							}
+							break;
+						}
+						default:
+						{
+							midheight = bottomheight + (topheight - bottomheight) / 2;
+							delta1 = abs(mobj->z - midheight);
+							delta2 = abs(thingtop - midheight);
+
+							if (delta1 > delta2)
+							{
+								// thing is below FOF
+								if ((rover->fofflags & FOF_INTANGIBLEFLATS) != FOF_PLATFORM)
+								{
+									if (bottomheight < fofopen[FRONT].ceiling)
+									{
+										fofopen[FRONT].ceiling = bottomheight;
+										fofopen[FRONT].ceilingrover = rover;
+									}
+								}
+							}
+							else
+							{
+								// thing is above FOF
+								if ((rover->fofflags & FOF_INTANGIBLEFLATS) != FOF_REVERSEPLATFORM)
+								{
+									if (topheight > fofopen[FRONT].floor)
+									{
+										fofopen[FRONT].floor = topheight;
+										fofopen[FRONT].floorrover = rover;
+									}
+								}
+							}
+							break;
 						}
 					}
 				}
@@ -893,42 +951,69 @@ void P_LineOpening(line_t *linedef, mobj_t *mobj, opening_t *open)
 						bottomheight = P_GetFOFBottomZ(mobj, back, rover, tm.x, tm.y, linedef);
 					}
 
-					midheight = bottomheight + (topheight - bottomheight) / 2;
-					delta1 = abs(mobj->z - midheight);
-					delta2 = abs(thingtop - midheight);
-
-					if (delta1 > delta2)
+					switch (open->fofType)
 					{
-						if (open->fofType == LO_FOF_FLOORS)
+						case LO_FOF_FLOORS:
 						{
-							continue;
-						}
-
-						// thing is below FOF
-						if ((rover->fofflags & FOF_INTANGIBLEFLATS) != FOF_PLATFORM)
-						{
-							if (bottomheight < fofopen[BACK].ceiling)
+							if (mobj->z >= topheight)
 							{
-								fofopen[BACK].ceiling = bottomheight;
-								fofopen[BACK].ceilingrover = rover;
+								if ((rover->fofflags & FOF_INTANGIBLEFLATS) != FOF_REVERSEPLATFORM)
+								{
+									if (topheight > fofopen[BACK].floor)
+									{
+										fofopen[BACK].floor = topheight;
+										fofopen[BACK].floorrover = rover;
+									}
+								}
 							}
+							break;
 						}
-					}
-					else
-					{
-						if (open->fofType == LO_FOF_CEILINGS)
+						case LO_FOF_CEILINGS:
 						{
-							continue;
-						}
-
-						// thing is above FOF
-						if ((rover->fofflags & FOF_INTANGIBLEFLATS) != FOF_REVERSEPLATFORM)
-						{
-							if (topheight > fofopen[BACK].floor)
+							if (thingtop <= bottomheight)
 							{
-								fofopen[BACK].floor = topheight;
-								fofopen[BACK].floorrover = rover;
+								if ((rover->fofflags & FOF_INTANGIBLEFLATS) != FOF_PLATFORM)
+								{
+									if (bottomheight < fofopen[BACK].ceiling)
+									{
+										fofopen[BACK].ceiling = bottomheight;
+										fofopen[BACK].ceilingrover = rover;
+									}
+								}
 							}
+							break;
+						}
+						default:
+						{
+							midheight = bottomheight + (topheight - bottomheight) / 2;
+							delta1 = abs(mobj->z - midheight);
+							delta2 = abs(thingtop - midheight);
+
+							if (delta1 > delta2)
+							{
+								// thing is below FOF
+								if ((rover->fofflags & FOF_INTANGIBLEFLATS) != FOF_PLATFORM)
+								{
+									if (bottomheight < fofopen[BACK].ceiling)
+									{
+										fofopen[BACK].ceiling = bottomheight;
+										fofopen[BACK].ceilingrover = rover;
+									}
+								}
+							}
+							else
+							{
+								// thing is above FOF
+								if ((rover->fofflags & FOF_INTANGIBLEFLATS) != FOF_REVERSEPLATFORM)
+								{
+									if (topheight > fofopen[BACK].floor)
+									{
+										fofopen[BACK].floor = topheight;
+										fofopen[BACK].floorrover = rover;
+									}
+								}
+							}
+							break;
 						}
 					}
 				}
