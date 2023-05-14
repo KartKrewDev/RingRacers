@@ -4640,11 +4640,8 @@ void P_PlayerAfterThink(player_t *player)
 		player->mo->pmomz = 0;
 }
 
-void P_CheckRaceGriefing(player_t *player, boolean dopunishment)
+void P_IncrementGriefValue(player_t *player, UINT32 *grief, const UINT32 griefMax)
 {
-	const UINT32 griefMax = cv_antigrief.value * TICRATE;
-	const UINT8 n = player - players;
-
 	const fixed_t requireDist = (12*player->mo->scale) / FRACUNIT;
 	INT32 progress = player->distancetofinishprev - player->distancetofinish;
 	boolean exceptions = (
@@ -4654,6 +4651,34 @@ void P_CheckRaceGriefing(player_t *player, boolean dopunishment)
 		|| (player->justbumped > 0 && player->justbumped < bumptime-1)
 	);
 
+	if (!exceptions && (progress < requireDist))
+	{
+		// If antigrief is disabled, we don't want the
+		// player getting into a hole so deep no amount
+		// of good behaviour could ever make up for it.
+		if (*grief < griefMax)
+		{
+			// Making no progress, start counting against you.
+			*grief = *grief + 1;
+			if (progress < -requireDist && *grief < griefMax)
+			{
+				// Making NEGATIVE progress? Start counting even harder.
+				*grief = *grief + 1;
+			}
+		}
+	}
+	else if (*grief > 0)
+	{
+		// Playing normally.
+		*grief = *grief - 1;
+	}
+}
+
+void P_CheckRaceGriefing(player_t *player, boolean dopunishment)
+{
+	const UINT32 griefMax = cv_antigrief.value * TICRATE;
+	const UINT8 n = player - players;
+
 	// Don't punish if the cvar is turned off,
 	// otherwise NOBODY would be able to play!
 	if (griefMax == 0)
@@ -4661,27 +4686,7 @@ void P_CheckRaceGriefing(player_t *player, boolean dopunishment)
 		dopunishment = false;
 	}
 
-	if (!exceptions && (progress < requireDist))
-	{
-		// If antigrief is disabled, we don't want the
-		// player getting into a hole so deep no amount
-		// of good behaviour could ever make up for it.
-		if (player->griefValue < griefMax)
-		{
-			// Making no progress, start counting against you.
-			player->griefValue++;
-			if (progress < -requireDist && player->griefValue < griefMax)
-			{
-				// Making NEGATIVE progress? Start counting even harder.
-				player->griefValue++;
-			}
-		}
-	}
-	else if (player->griefValue > 0)
-	{
-		// Playing normally.
-		player->griefValue--;
-	}
+	P_IncrementGriefValue(player, &player->griefValue, griefMax);
 
 	if (dopunishment && player->griefValue >= griefMax)
 	{

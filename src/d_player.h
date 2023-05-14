@@ -332,6 +332,7 @@ struct botvars_t
 	SINT8 turnconfirm; // Confirm turn direction
 
 	tic_t spindashconfirm; // When high enough, they will try spindashing
+	UINT32 respawnconfirm; // When high enough, they will use Ring Shooter
 };
 
 // player_t struct for round-specific condition tracking

@@ -29,6 +29,7 @@
 #include "k_race.h" // finishBeamLine
 #include "m_perfstats.h"
 #include "k_podium.h"
+#include "k_respawn.h"
 
 /*--------------------------------------------------
 	boolean K_AddBot(UINT8 skin, UINT8 difficulty, UINT8 *p)
@@ -972,6 +973,38 @@ static UINT8 K_TrySpindash(player_t *player)
 }
 
 /*--------------------------------------------------
+	static boolean K_TryRingShooter(player_t *player)
+
+		Determines conditions where the bot should attempt to respawn.
+
+	Input Arguments:-
+		player - Bot player to check.
+
+	Return:-
+		true if we want to hold the respawn button, otherwise false.
+--------------------------------------------------*/
+static boolean K_TryRingShooter(player_t *player)
+{
+	if (player->respawn.state != RESPAWNST_NONE)
+	{
+		// We're already respawning!
+		return false;
+	}
+
+	if ((gametyperules & GTR_CIRCUIT) == 0 || (leveltime <= starttime))
+	{
+		// Only do this during a Race that has started.
+		return false;
+	}
+
+	// Our anti-grief system is already a perfect system
+	// for determining if we're not making progress, so
+	// lets reuse it for bot respawning!
+	P_IncrementGriefValue(player, &player->botvars.respawnconfirm, BOTRESPAWNCONFIRM);
+	return (player->botvars.respawnconfirm >= BOTRESPAWNCONFIRM);
+}
+
+/*--------------------------------------------------
 	static void K_DrawPredictionDebug(botprediction_t *predict, player_t *player)
 
 		Draws objects to show where the viewpoint bot is trying to go.
@@ -1481,6 +1514,13 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 	if (player->exiting && player->nextwaypoint == K_GetFinishLineWaypoint() && ((mapheaderinfo[gamemap - 1]->levelflags & LF_SECTIONRACE) == LF_SECTIONRACE))
 	{
 		// Sprint map finish, don't give Sal's children migraines trying to pathfind out
+		return;
+	}
+
+	if (K_TryRingShooter(player) == true)
+	{
+		// We want to respawn. Simply hold Y and stop here!
+		cmd->buttons |= (BT_RESPAWN | BT_EBRAKEMASK);
 		return;
 	}
 

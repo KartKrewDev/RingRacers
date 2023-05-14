@@ -31,8 +31,11 @@ extern "C" {
 // Made it as small as possible without making it look like the bots are twitching constantly.
 #define BOTTURNCONFIRM 4
 
-// How many tics without being able to accelerate before we'll let you spindash.
+// How many tics with only one spindash-viable condition before we'll let you spindash.
 #define BOTSPINDASHCONFIRM (3*TICRATE)
+
+// How many tics without being able to make progress before we'll let you respawn.
+#define BOTRESPAWNCONFIRM (5*TICRATE)
 
 // Point for bots to aim for
 struct botprediction_t {
