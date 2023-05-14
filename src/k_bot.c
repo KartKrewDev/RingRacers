@@ -859,10 +859,10 @@ static UINT8 K_TrySpindash(player_t *player)
 	const fixed_t baseAccel = K_GetNewSpeed(player) - oldSpeed;
 	const fixed_t speedDiff = player->speed - player->lastspeed;
 
-	const INT32 angleDiff = AngleDelta(player->mo->angle, K_MomentumAngle(player->mo));
+	const INT32 angleDiff = AngleDelta(player->mo->angle, K_MomentumAngleReal(player->mo));
 
 	if (player->spindashboost || player->tiregrease // You just released a spindash, you don't need to try again yet, jeez.
-		|| P_PlayerInPain(player) || !P_IsObjectOnGround(player->mo)) // Not in a state where we want 'em to spindash.
+		|| P_IsObjectOnGround(player->mo) == false) // Not in a state where we want 'em to spindash.
 	{
 		player->botvars.spindashconfirm = 0;
 		return 0;
@@ -913,15 +913,52 @@ static UINT8 K_TrySpindash(player_t *player)
 	else
 	{
 		// Logic for normal racing.
-		if (speedDiff < (baseAccel / 8) // Moving too slowly
-			|| angleDiff > ANG60) // Being pushed backwards
+		boolean anyCondition = false;
+		boolean uphill = false;
+
+#define AddForCondition(x) \
+	if (x) \
+	{ \
+		anyCondition = true;\
+		if (player->botvars.spindashconfirm < BOTSPINDASHCONFIRM) \
+		{ \
+			player->botvars.spindashconfirm++; \
+		} \
+	}
+
+		if (player->mo->standingslope != NULL)
 		{
-			if (player->botvars.spindashconfirm < BOTSPINDASHCONFIRM)
+			const pslope_t *slope = player->mo->standingslope;
+
+			if (!(slope->flags & SL_NOPHYSICS) && abs(slope->zdelta) >= FRACUNIT/21)
 			{
-				player->botvars.spindashconfirm++;
+				fixed_t slopeDot = 0;
+				angle_t angle = K_MomentumAngle(player->mo) - slope->xydirection;
+
+				if (P_MobjFlip(player->mo) * slope->zdelta < 0)
+				{
+					angle ^= ANGLE_180;
+				}
+
+				slopeDot = FINECOSINE(angle >> ANGLETOFINESHIFT);
+				uphill = (slopeDot < -FRACUNIT/2);
 			}
 		}
-		else if (player->botvars.spindashconfirm >= BOTSPINDASHCONFIRM)
+
+		AddForCondition(player->offroad > 0); // In offroad
+		AddForCondition(speedDiff < (baseAccel >> 4)); // Moving too slowly
+		AddForCondition(angleDiff > ANG60); // Being pushed backwards
+		AddForCondition(uphill == true); // Going up a steep slope
+
+		if (player->cmomx || player->cmomy)
+		{
+			angle_t cAngle = R_PointToDist2(0, 0, player->cmomx, player->cmomy);
+			angle_t cDelta = AngleDelta(player->mo->angle, cAngle);
+
+			AddForCondition(cDelta > ANGLE_90); // Conveyor going against you
+		}
+
+		if (anyCondition == false)
 		{
 			if (player->botvars.spindashconfirm > 0)
 			{

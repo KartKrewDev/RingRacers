@@ -32,7 +32,7 @@ extern "C" {
 #define BOTTURNCONFIRM 4
 
 // How many tics without being able to accelerate before we'll let you spindash.
-#define BOTSPINDASHCONFIRM (2*TICRATE)
+#define BOTSPINDASHCONFIRM (3*TICRATE)
 
 // Point for bots to aim for
 struct botprediction_t {
