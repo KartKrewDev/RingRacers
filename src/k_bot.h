@@ -32,7 +32,7 @@ extern "C" {
 #define BOTTURNCONFIRM 4
 
 // How many tics with only one spindash-viable condition before we'll let you spindash.
-#define BOTSPINDASHCONFIRM (3*TICRATE)
+#define BOTSPINDASHCONFIRM (4*TICRATE)
 
 // How many tics without being able to make progress before we'll let you respawn.
 #define BOTRESPAWNCONFIRM (5*TICRATE)
