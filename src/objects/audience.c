@@ -189,6 +189,17 @@ Obj_AudienceThink
 
 	if (focusonplayer == true)
 	{
+		if (audience_focusplayer(mobj) < MAXPLAYERS && audience_focusplayer(mobj) >= 0)
+		{
+			if (playeringame[audience_focusplayer(mobj)] == false
+			|| players[audience_focusplayer(mobj)].spectator == true
+			|| P_MobjWasRemoved(players[audience_focusplayer(mobj)].mo))
+			{
+				// Reset the timer, search for a player again
+				audience_focusdelay(mobj) = 0;
+			}
+		}
+
 		if (audience_focusdelay(mobj) == 0)
 		{
 			fixed_t bestdist = INT32_MAX, dist;
@@ -228,7 +239,7 @@ Obj_AudienceThink
 			}
 
 			// Try to add some spacing out so the object isn't constantly looking for players
-			audience_focusdelay(mobj) = TICRATE + min((bestdist/FRACUNIT), (2*TICRATE)) + (bestdist % TICRATE);
+			audience_focusdelay(mobj) = TICRATE + min((bestdist/FRACUNIT), TICRATE) + (bestdist % TICRATE);
 		}
 		else
 		{
