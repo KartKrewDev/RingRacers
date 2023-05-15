@@ -22,6 +22,7 @@ typedef struct
 	boolean gotthrough; // show "got through"
 	boolean showrank; // show rank-restricted queue entry at the end, if it exists
 	boolean encore; // encore mode
+	UINT8 roundnum; // round number
 
 	char headerstring[64]; // holds levelnames up to 64 characters
 
