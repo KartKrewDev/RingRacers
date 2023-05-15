@@ -211,6 +211,7 @@ static void Y_CalculateMatchData(UINT8 rankingsmode, void (*comparison)(INT32))
 	memset(data.character, 0, sizeof (data.character));
 	memset(completed, 0, sizeof (completed));
 	data.numplayers = 0;
+	data.roundnum = 0;
 
 	for (j = 0; j < numplayersingame; j++)
 	{
@@ -351,6 +352,15 @@ static void Y_CalculateMatchData(UINT8 rankingsmode, void (*comparison)(INT32))
 						"%s",
 						skins[players[i].skin].realname);
 				}
+
+				if (roundqueue.size > 0
+					&& roundqueue.roundnum > 0
+					&& (grandprixinfo.gp == false
+						|| grandprixinfo.eventmode == GPEVENT_NONE)
+					)
+				{
+					data.roundnum = roundqueue.roundnum;
+				}
 			}
 			else
 			{
@@ -361,7 +371,19 @@ static void Y_CalculateMatchData(UINT8 rankingsmode, void (*comparison)(INT32))
 		}
 		else
 		{
-			if (bossinfo.valid == true && bossinfo.enemyname)
+			if (roundqueue.size > 0
+				&& roundqueue.roundnum > 0
+				&& (grandprixinfo.gp == false
+					|| grandprixinfo.eventmode == GPEVENT_NONE)
+				)
+			{
+				snprintf(data.headerstring,
+					sizeof data.headerstring,
+					"ROUND");
+
+				data.roundnum = roundqueue.roundnum;
+			}
+			else if (bossinfo.valid == true && bossinfo.enemyname)
 			{
 				snprintf(data.headerstring,
 					sizeof data.headerstring,
@@ -1274,30 +1296,48 @@ void Y_IntermissionDrawer(void)
 		patch_t *rtpbr = W_CachePatchName("R_RTPBR", PU_PATCH);
 		V_DrawMappedPatch(20 + x, 24, 0, rtpbr, NULL);
 
+		INT32 headerx, headery, headerwidth = 0;
+
 		if (data.gotthrough)
 		{
 			// GOT THROUGH ROUND
 			patch_t *gthro = W_CachePatchName("R_GTHRO", PU_PATCH);
 			V_DrawMappedPatch(50 + x, 42, 0, gthro, NULL);
 
-			// Draw round numbers
-			if (roundqueue.roundnum > 0 && !(grandprixinfo.gp == true && grandprixinfo.eventmode != GPEVENT_NONE))
-			{
-				patch_t *roundpatch =
-					W_CachePatchName(
-						va("TT_RND%d", roundqueue.roundnum),
-						PU_PATCH
-					);
-				V_DrawMappedPatch(240 + x, 39, 0, roundpatch, NULL);
-			}
-
-			// Draw the player's name
-			V_DrawTitleCardString(51 + x, 7, data.headerstring, V_6WIDTHSPACE, false, 0, 0);
+			headerx = 51;
+			headery = 7;
 		}
 		else
 		{
-			V_DrawTitleCardString(51 + x, 17, data.headerstring, V_6WIDTHSPACE, false, 0, 0);
+			headerwidth = V_TitleCardStringWidth(data.headerstring);
+
+			headerx = (BASEVIDWIDTH - headerwidth)/2;
+			headery = 17;
 		}
+
+		// Draw round numbers
+		if (data.roundnum > 0 && data.roundnum <= 10)
+		{
+			patch_t *roundpatch =
+				W_CachePatchName(
+					va("TT_RND%d", data.roundnum),
+					PU_PATCH
+				);
+
+			INT32 roundx = 240;
+
+			if (headerwidth != 0)
+			{
+				const INT32 roundoffset = 8 + SHORT(roundpatch->width);
+
+				roundx = headerx + roundoffset;
+				headerx -= roundoffset/2;
+			}
+
+			V_DrawMappedPatch(x + roundx, 39, 0, roundpatch, NULL);
+		}
+
+		V_DrawTitleCardString(x + headerx, headery, data.headerstring, 0, false, 0, 0);
 	}
 
 	// Returns early if there's no players to draw
@@ -1331,14 +1371,14 @@ finalcounter:
 					INT32 buttonx = BASEVIDWIDTH;
 					INT32 buttony = 2;
 					
-					K_drawButtonAnim(buttonx - 76, buttony, V_SNAPTOTOP|V_SNAPTORIGHT, kp_button_b[1], replayprompttic);
-					V_DrawRightAlignedThinString(buttonx - 55, buttony, V_SNAPTOTOP|V_SNAPTORIGHT|V_ALLOWLOWERCASE|V_6WIDTHSPACE|highlightflags, "or");
-					K_drawButtonAnim(buttonx - 55, buttony, V_SNAPTOTOP|V_SNAPTORIGHT, kp_button_x[1], replayprompttic);
-					V_DrawRightAlignedThinString(buttonx - 2, buttony, V_SNAPTOTOP|V_SNAPTORIGHT|V_ALLOWLOWERCASE|V_6WIDTHSPACE|highlightflags, "Save replay");
+					K_drawButtonAnim(buttonx - 76, buttony, 0, kp_button_b[1], replayprompttic);
+					V_DrawRightAlignedThinString(buttonx - 55, buttony, V_ALLOWLOWERCASE|V_6WIDTHSPACE|highlightflags, "or");
+					K_drawButtonAnim(buttonx - 55, buttony, 0, kp_button_x[1], replayprompttic);
+					V_DrawRightAlignedThinString(buttonx - 2, buttony, V_ALLOWLOWERCASE|V_6WIDTHSPACE|highlightflags, "Save replay");
 					break;	
 				}
 				case DSM_SAVED:
-					V_DrawRightAlignedThinString(BASEVIDWIDTH - 2, 2, V_SNAPTOTOP|V_SNAPTORIGHT|V_ALLOWLOWERCASE|V_6WIDTHSPACE|highlightflags, "Replay saved!");
+					V_DrawRightAlignedThinString(BASEVIDWIDTH - 2, 2, V_ALLOWLOWERCASE|V_6WIDTHSPACE|highlightflags, "Replay saved!");
 					break;
 
 				case DSM_TITLEENTRY:
@@ -1364,6 +1404,8 @@ finalcounter:
 			va("%d", tickDown)
 		);
 	}
+
+	M_DrawMenuForeground();
 }
 
 //

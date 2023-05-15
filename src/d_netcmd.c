@@ -3121,7 +3121,12 @@ static void Got_Mapcmd(UINT8 **cp, INT32 playernum)
 		}
 		
 		roundqueue.position = position;
-		while (roundqueue.size < size)
+		if (size < roundqueue.size)
+		{
+			// Bafooliganism afoot - set to zero if the size is zero! ~toast 150523
+			roundqueue.size = size;
+		}
+		else while (roundqueue.size < size)
 		{
 			// We wipe rather than provide full data to prevent bloating the packet,
 			// and because only this data is necessary for sync. ~toast 100423
