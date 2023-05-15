@@ -642,6 +642,16 @@ static BlockItReturn_t K_FindObjectsForNudging(mobj_t *thing)
 				}
 			}
 			break;
+		case MT_RINGSHOOTER:
+			if (anglediff >= 45)
+			{
+				break;
+			}
+			else
+			{
+				K_AddAttackObject(thing, side, 50);
+			}
+			break;
 		default:
 			if (thing->flags & (MF_SOLID|MF_ENEMY|MF_BOSS|MF_PAIN|MF_MISSILE))
 			{
