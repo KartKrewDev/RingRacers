@@ -307,6 +307,7 @@ botItemPriority_e K_GetBotItemPriority(kartitems_t result)
 		case KITEM_DROPTARGET:
 		case KITEM_EGGMAN:
 		case KITEM_GACHABOM:
+		case KITEM_KITCHENSINK:
 		{
 			// Used when in 1st place and relatively far from players.
 			// Typically attack items that don't give you protection.

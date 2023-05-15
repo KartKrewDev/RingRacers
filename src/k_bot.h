@@ -285,7 +285,7 @@ void K_BotItemUsage(player_t *player, ticcmd_t *cmd, INT16 turnamt);
 	void K_BotPickItemPriority(player_t *player)
 
 		Sets a bot's desired item classification
-		based on what they're ,
+		based on what is happening around them,
 		and delays based on their difficulty
 		intended to be run when starting a roulette.
 
