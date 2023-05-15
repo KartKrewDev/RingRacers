@@ -1331,14 +1331,14 @@ finalcounter:
 					INT32 buttonx = BASEVIDWIDTH;
 					INT32 buttony = 2;
 					
-					K_drawButtonAnim(buttonx - 76, buttony, V_SNAPTOTOP|V_SNAPTORIGHT, kp_button_b[1], replayprompttic);
-					V_DrawRightAlignedThinString(buttonx - 55, buttony, V_SNAPTOTOP|V_SNAPTORIGHT|V_ALLOWLOWERCASE|V_6WIDTHSPACE|highlightflags, "or");
-					K_drawButtonAnim(buttonx - 55, buttony, V_SNAPTOTOP|V_SNAPTORIGHT, kp_button_x[1], replayprompttic);
-					V_DrawRightAlignedThinString(buttonx - 2, buttony, V_SNAPTOTOP|V_SNAPTORIGHT|V_ALLOWLOWERCASE|V_6WIDTHSPACE|highlightflags, "Save replay");
+					K_drawButtonAnim(buttonx - 76, buttony, 0, kp_button_b[1], replayprompttic);
+					V_DrawRightAlignedThinString(buttonx - 55, buttony, V_ALLOWLOWERCASE|V_6WIDTHSPACE|highlightflags, "or");
+					K_drawButtonAnim(buttonx - 55, buttony, 0, kp_button_x[1], replayprompttic);
+					V_DrawRightAlignedThinString(buttonx - 2, buttony, V_ALLOWLOWERCASE|V_6WIDTHSPACE|highlightflags, "Save replay");
 					break;	
 				}
 				case DSM_SAVED:
-					V_DrawRightAlignedThinString(BASEVIDWIDTH - 2, 2, V_SNAPTOTOP|V_SNAPTORIGHT|V_ALLOWLOWERCASE|V_6WIDTHSPACE|highlightflags, "Replay saved!");
+					V_DrawRightAlignedThinString(BASEVIDWIDTH - 2, 2, V_ALLOWLOWERCASE|V_6WIDTHSPACE|highlightflags, "Replay saved!");
 					break;
 
 				case DSM_TITLEENTRY:
@@ -1364,6 +1364,8 @@ finalcounter:
 			va("%d", tickDown)
 		);
 	}
+
+	M_DrawMenuForeground();
 }
 
 //
