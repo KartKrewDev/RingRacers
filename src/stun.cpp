@@ -6,7 +6,7 @@
 // terms of the GNU General Public License, version 2.
 // See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
-/// \file  stun.c
+/// \file  stun.cpp
 /// \brief RFC 5389 client implementation to fetch external IP address.
 
 /* https://tools.ietf.org/html/rfc5389 */
