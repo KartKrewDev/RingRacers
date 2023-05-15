@@ -927,12 +927,13 @@ static UINT8 K_TrySpindash(player_t *player)
 		} \
 	}
 
-		if (player->mo->standingslope != NULL)
+		if (K_SlopeResistance(player) == false && player->mo->standingslope != NULL)
 		{
 			const pslope_t *slope = player->mo->standingslope;
 
-			if (!(slope->flags & SL_NOPHYSICS) && abs(slope->zdelta) >= FRACUNIT/21)
+			if ((slope->flags & SL_NOPHYSICS) == 0 && abs(slope->zdelta) >= FRACUNIT/21)
 			{
+				const fixed_t speedPercent = FixedDiv(player->speed, 20 * player->mo->scale);
 				fixed_t slopeDot = 0;
 				angle_t angle = K_MomentumAngle(player->mo) - slope->xydirection;
 
@@ -942,14 +943,14 @@ static UINT8 K_TrySpindash(player_t *player)
 				}
 
 				slopeDot = FINECOSINE(angle >> ANGLETOFINESHIFT);
-				uphill = (slopeDot < -FRACUNIT/2);
+				uphill = ((slopeDot + (speedPercent / 2)) < -FRACUNIT/2);
 			}
 		}
 
-		AddForCondition(player->offroad > 0); // In offroad
-		AddForCondition(speedDiff < (baseAccel >> 4)); // Moving too slowly
+		AddForCondition(K_ApplyOffroad(player) == true && player->offroad > 0); // Slowed by offroad
+		AddForCondition(speedDiff < (baseAccel >> 3)); // Accelerating slower than expected
 		AddForCondition(angleDiff > ANG60); // Being pushed backwards
-		AddForCondition(uphill == true); // Going up a steep slope
+		AddForCondition(uphill == true); // Going up a steep slope without speed
 
 		if (player->cmomx || player->cmomy)
 		{
