@@ -970,6 +970,7 @@ void D_RegisterClientCommands(void)
 	CV_RegisterVar(&cv_mindelay);
 
 	CV_RegisterVar(&cv_allowguests);
+	CV_RegisterVar(&cv_gamestochat);
 
 	#ifdef DEVELOP
 		CV_RegisterVar(&cv_badjoin);

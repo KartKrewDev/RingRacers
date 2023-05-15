@@ -41,6 +41,8 @@ applications may follow different packet versions.
 //  one that defines the actual packets to
 //  be transmitted.
 
+#define HU_MAXMSGLEN 223
+
 // Networking and tick handling related.
 #define BACKUPTICS 512 // more than enough for most timeouts....
 #define CLIENTBACKUPTICS 32
@@ -126,6 +128,8 @@ typedef enum
 	PT_CHALLENGEALL,	// Prove to the other clients you are who you say you are, sign this random bullshit!
 	PT_RESPONSEALL,		// OK, here is my signature on that random bullshit
 	PT_RESULTSALL,		// Here's what everyone responded to PT_CHALLENGEALL with, if this is wrong or you don't receive it disconnect
+
+	PT_SAY,				// "Hey server, please send this chat message to everyone via XD_SAY"
 
 	NUMPACKETTYPE
 } packettype_t;
@@ -385,6 +389,14 @@ struct resultsall_pak
 	uint8_t signature[MAXPLAYERS][SIGNATURELENGTH];
 } ATTRPACK;
 
+struct say_pak
+{
+	char message[HU_MAXMSGLEN + 1];
+	UINT8 target;
+	UINT8 flags;
+	UINT8 source;
+} ATTRPACK;
+
 //
 // Network packet data
 //
@@ -427,6 +439,7 @@ struct doomdata_t
 		challengeall_pak challengeall;			// 256 bytes
 		responseall_pak responseall;			// 256 bytes
 		resultsall_pak resultsall;				// 1024 bytes. Also, you really shouldn't trust anything here.
+		say_pak say;							// I don't care anymore.
 	} u; // This is needed to pack diff packet types data together
 } ATTRPACK;
 
@@ -534,6 +547,8 @@ extern consvar_t cv_discordinvites;
 
 extern consvar_t cv_allowguests;
 
+extern consvar_t cv_gamestochat;
+
 #ifdef DEVELOP
 	extern consvar_t cv_badjoin;
 	extern consvar_t cv_badtraffic;
@@ -634,6 +649,10 @@ rewind_t *CL_SaveRewindPoint(size_t demopos);
 rewind_t *CL_RewindToTime(tic_t time);
 
 void HandleSigfail(const char *string);
+
+void DoSayPacket(SINT8 target, UINT8 flags, UINT8 source, char *message);
+void DoSayPacketFromCommand(SINT8 target, size_t usedargs, UINT8 flags);
+void SendServerNotice(SINT8 target, char *message);
 
 #ifdef __cplusplus
 } // extern "C"

@@ -223,6 +223,10 @@ consvar_t cv_httpsource = CVAR_INIT ("http_source", "", CV_SAVE, NULL, NULL);
 
 consvar_t cv_kicktime = CVAR_INIT ("kicktime", "20", CV_SAVE, CV_Unsigned, NULL);
 
+consvar_t cv_gamestochat = CVAR_INIT ("gamestochat", "0", CV_SAVE, CV_Unsigned, NULL);
+
+static tic_t stop_spamming[MAXPLAYERS];
+
 // Generate a message for an authenticating client to sign, with some guarantees about who we are.
 void GenerateChallenge(uint8_t *buf)
 {
@@ -2986,6 +2990,8 @@ static void Command_Nodes(void)
 				CONS_Printf(" [%.4d PWR]", clientpowerlevels[i][K_UsingPowerLevels()]);
 			}
 
+			CONS_Printf(" [%d games]", SV_GetStatsByPlayerIndex(i)->finishedrounds);
+
 
 			CONS_Printf(" [RRID-%s]", GetPrettyRRID(players[i].public_key, true));
 
@@ -4225,10 +4231,10 @@ boolean SV_SpawnServer(void)
 		SINT8 node = 0;
 		for (; node < MAXNETNODES; node++)
 			result |= SV_AddWaitingPlayers(node, availabilitiesbuffer,
-				cv_playername[0].zstring, PR_GetLocalPlayerProfile(0)->public_key, SV_RetrieveStats(PR_GetLocalPlayerProfile(0)->public_key)->powerlevels,
-				cv_playername[1].zstring, PR_GetLocalPlayerProfile(1)->public_key, SV_RetrieveStats(PR_GetLocalPlayerProfile(1)->public_key)->powerlevels,
-				cv_playername[2].zstring, PR_GetLocalPlayerProfile(2)->public_key, SV_RetrieveStats(PR_GetLocalPlayerProfile(2)->public_key)->powerlevels,
-				cv_playername[3].zstring, PR_GetLocalPlayerProfile(3)->public_key, SV_RetrieveStats(PR_GetLocalPlayerProfile(3)->public_key)->powerlevels);
+				cv_playername[0].zstring, PR_GetLocalPlayerProfile(0)->public_key, SV_GetStatsByKey(PR_GetLocalPlayerProfile(0)->public_key)->powerlevels,
+				cv_playername[1].zstring, PR_GetLocalPlayerProfile(1)->public_key, SV_GetStatsByKey(PR_GetLocalPlayerProfile(1)->public_key)->powerlevels,
+				cv_playername[2].zstring, PR_GetLocalPlayerProfile(2)->public_key, SV_GetStatsByKey(PR_GetLocalPlayerProfile(2)->public_key)->powerlevels,
+				cv_playername[3].zstring, PR_GetLocalPlayerProfile(3)->public_key, SV_GetStatsByKey(PR_GetLocalPlayerProfile(3)->public_key)->powerlevels);
 	}
 	return result;
 #endif
@@ -4547,10 +4553,10 @@ static void HandleConnect(SINT8 node)
 			}
 
 			SV_AddWaitingPlayers(node, availabilitiesbuffer,
-				names[0], lastReceivedKey[node][0], SV_RetrieveStats(lastReceivedKey[node][0])->powerlevels,
-				names[1], lastReceivedKey[node][1], SV_RetrieveStats(lastReceivedKey[node][1])->powerlevels,
-				names[2], lastReceivedKey[node][2], SV_RetrieveStats(lastReceivedKey[node][2])->powerlevels,
-				names[3], lastReceivedKey[node][3], SV_RetrieveStats(lastReceivedKey[node][3])->powerlevels);
+				names[0], lastReceivedKey[node][0], SV_GetStatsByKey(lastReceivedKey[node][0])->powerlevels,
+				names[1], lastReceivedKey[node][1], SV_GetStatsByKey(lastReceivedKey[node][1])->powerlevels,
+				names[2], lastReceivedKey[node][2], SV_GetStatsByKey(lastReceivedKey[node][2])->powerlevels,
+				names[3], lastReceivedKey[node][3], SV_GetStatsByKey(lastReceivedKey[node][3])->powerlevels);
 			joindelay += cv_joindelay.value * TICRATE;
 			player_joining = true;
 		}
@@ -4968,6 +4974,70 @@ static boolean CheckForSpeedHacks(UINT8 p)
 	return false;
 }
 
+static void PT_Say(int node)
+{
+	if (client)
+		return; // Only sent to servers, why are we receiving this?
+
+	say_pak say = netbuffer->u.say;
+
+	if (playernode[say.source] != node)
+		return; // Spoofed source!
+
+	if ((cv_mute.value || say.flags & (HU_CSAY|HU_SHOUT)) && say.source != serverplayer && !(IsPlayerAdmin(say.source)))
+	{
+		CONS_Debug(DBG_NETPLAY,"Received SAY cmd from Player %d (%s), but cv_mute is on.\n", say.source+1, player_names[say.source]);
+		return;
+	}
+
+	if ((say.flags & HU_PRIVNOTICE) && !(IsPlayerAdmin(say.source)))
+	{
+		CONS_Debug(DBG_NETPLAY,"Received SAY cmd from Player %d (%s) with an illegal HU_PRIVNOTICE flag.\n", say.source+1, player_names[say.source]);
+		SendKick(say.source, KICK_MSG_CON_FAIL);
+		return;
+	}
+
+	{
+		size_t i;
+		const size_t j = strlen(say.message);
+		for (i = 0; i < j; i++)
+		{
+			if (say.message[i] & 0x80)
+			{
+				CONS_Alert(CONS_WARNING, M_GetText("Illegal say command received from %s containing invalid characters\n"), player_names[say.source]);
+				SendKick(say.source, KICK_MSG_CON_FAIL);
+				return;
+			}
+		}
+	}
+
+	if (stop_spamming[say.source] != 0 && consoleplayer != say.source && cv_chatspamprotection.value && !(say.flags & (HU_CSAY|HU_SHOUT)))
+	{
+		CONS_Debug(DBG_NETPLAY,"Received SAY cmd too quickly from Player %d (%s), assuming as spam and blocking message.\n", say.source+1, player_names[say.source]);
+		stop_spamming[say.source] = 4;
+		return;
+	}
+
+	stop_spamming[say.source] = 4; 
+
+	serverplayer_t *stats = SV_GetStatsByPlayerIndex(say.source);
+
+	if (stats->finishedrounds < (uint32_t)cv_gamestochat.value && !(consoleplayer == say.source || IsPlayerAdmin(say.source)))
+	{
+		CONS_Debug(DBG_NETPLAY,"Received SAY cmd from Player %d (%s), but they aren't permitted to chat yet.\n", say.source+1, player_names[say.source]);
+
+		char rejectmsg[256];
+		strlcpy(rejectmsg, va("Please finish in %d more games to use chat.", cv_gamestochat.value - stats->finishedrounds), 256);
+		if (IsPlayerGuest(say.source))
+			strlcpy(rejectmsg, va("GUESTs can't chat on this server. Rejoin with a profile to track your playtime."), 256);
+		SendServerNotice(say.source, rejectmsg);
+
+		return;
+	}
+
+	DoSayCommand(say.message, say.target, say.flags, say.source);
+}
+
 static char NodeToSplitPlayer(int node, int split)
 {
 	if (split == 0)
@@ -5269,10 +5339,12 @@ static void HandlePacketFromPlayer(SINT8 node)
 				textcmd[0] += (UINT8)netbuffer->u.textcmd[0];
 			}
 			break;
+		case PT_SAY:
+			PT_Say(node);
+			break;
 		case PT_LOGIN:
 			if (client)
 				break;
-
 #ifndef NOMD5
 			if (doomcom->datalength < 16)/* ignore partial sends */
 				break;
@@ -6824,6 +6896,15 @@ void NetUpdate(void)
 		}
 	}
 
+	if (server)
+	{
+		for(i = 0; i < MAXPLAYERS; i++)
+		{
+			if (stop_spamming[i] > 0)
+				stop_spamming[i]--;
+		}
+	}
+
 	Net_AckTicker();
 	HandleNodeTimeouts();
 
@@ -6971,4 +7052,50 @@ void D_MD5PasswordPass(const UINT8 *buffer, size_t len, const char *salt, void *
 	// Yes, we intentionally md5 the ENTIRE buffer regardless of size...
 	md5_buffer(tmpbuf, 256, dest);
 #endif
+}
+
+// Want to say something? XD_SAY is server only, gotta request that they send one on our behalf
+void DoSayPacket(SINT8 target, UINT8 flags, UINT8 source, char *message)
+{
+	say_pak *packet = (void*)&netbuffer->u.say;
+	netbuffer->packettype = PT_SAY;
+
+	memset(packet->message, 0, sizeof(packet->message));
+	strcpy(packet->message, message);
+
+	packet->source = source;
+	packet->flags = flags;
+	packet->target = target;
+
+	HSendPacket(servernode, false, 0, sizeof(say_pak));
+}
+
+void DoSayPacketFromCommand(SINT8 target, size_t usedargs, UINT8 flags)
+{
+	char buf[2 + HU_MAXMSGLEN + 1];
+	size_t numwords, ix;
+	char *msg = &buf[3];
+	const size_t msgspace = sizeof buf - 2;
+
+	numwords = COM_Argc() - usedargs;
+	I_Assert(numwords > 0);
+
+	msg[0] = '\0';
+
+	for (ix = 0; ix < numwords; ix++)
+	{
+		if (ix > 0)
+			strlcat(msg, " ", msgspace);
+		strlcat(msg, COM_Argv(ix + usedargs), msgspace);
+	}
+
+	DoSayPacket(target, flags, consoleplayer, msg);
+}
+
+// This is meant to be targeted at player indices, not whatever the hell XD_SAY is doing with 1-indexed players.
+void SendServerNotice(SINT8 target, char *message)
+{
+	if (client)
+		return;
+	DoSayCommand(message, target + 1, HU_PRIVNOTICE, servernode); 
 }

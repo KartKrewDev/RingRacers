@@ -430,8 +430,6 @@ void K_CashInPowerLevels(void)
 
 			//CONS_Printf("%s: %d -> %d (%d)\n", player_names[i], clientpowerlevels[i][powerType] - inc, clientpowerlevels[i][powerType], inc);
 		}
-
-		clientPowerAdd[i] = 0;
 	}
 
 	SV_UpdateStats();

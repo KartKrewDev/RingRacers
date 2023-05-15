@@ -48,7 +48,7 @@
 #include "k_boss.h"
 #include "k_pwrlv.h"
 #include "k_grandprix.h"
-#include "k_color.h"
+#include "k_serverstats.h" // SV_BumpMatchStats
 #include "m_easing.h"
 
 #ifdef HWRENDER
@@ -1635,6 +1635,7 @@ void Y_StartIntermission(void)
 		}
 
 		K_CashInPowerLevels();
+		SV_BumpMatchStats();
 	}
 
 	if (roundqueue.size > 0 && roundqueue.position == roundqueue.size)
