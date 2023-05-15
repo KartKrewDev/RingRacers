@@ -38,7 +38,7 @@ extern "C" {
 #define BOTRESPAWNCONFIRM (5*TICRATE)
 
 // How long it takes for a Lv.1 bot to decide to pick an item.
-#define BOT_ITEM_DECISION_TIME (3*TICRATE)
+#define BOT_ITEM_DECISION_TIME (2*TICRATE)
 
 // Point for bots to aim for
 struct botprediction_t {
