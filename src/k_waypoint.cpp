@@ -327,6 +327,13 @@ static void K_CompareOverlappingWaypoint
 	boolean pathfindsuccess = false;
 	path_t pathtofinish = {0};
 
+	if (K_GetWaypointIsShortcut(*bestwaypoint) == false
+		&& K_GetWaypointIsShortcut(checkwaypoint) == true)
+	{
+		// If it's a shortcut, don't use it.
+		return;
+	}
+
 	pathfindsuccess =
 		K_PathfindToWaypoint(checkwaypoint, finishline, &pathtofinish, useshortcuts, huntbackwards);
 
