@@ -11,6 +11,8 @@
 
 /* https://tools.ietf.org/html/rfc5389 */
 
+#include <vector>
+
 #if defined (__linux__)
 #include <sys/random.h>
 #elif defined (_WIN32)
@@ -33,7 +35,7 @@ consvar_t cv_stunserver = CVAR_INIT (
 	"stunserver", "stun.l.google.com:19302", CV_SAVE, NULL, NULL
 );
 
-static stun_callback_t stun_callback;
+static std::vector<stun_callback_t> stun_callbacks;
 
 /* 18.4 STUN UDP and TCP Port Numbers */
 
@@ -125,7 +127,7 @@ STUN_bind (stun_callback_t callback)
 	memcpy(&doomcom->data[4], &MAGIC_COOKIE,   4U);
 	memcpy(&doomcom->data[8], transaction_id, 12U);
 
-	stun_callback = callback;
+	stun_callbacks.push_back(callback);
 
 	I_NetSend();
 	Net_CloseConnection(node);/* will handle response at I_NetGet */
@@ -137,7 +139,10 @@ STUN_xor_mapped_address (const char * const value)
 	const UINT32 xaddr = *(const UINT32 *)&value[4];
 	const UINT32  addr = xaddr ^ MAGIC_COOKIE;
 
-	(*stun_callback)(addr);
+	for (auto &callback : stun_callbacks)
+	{
+		callback(addr);
+	}
 
 	return 0U;
 }
@@ -190,7 +195,7 @@ STUN_got_response
 	This totals 10 bytes for the attribute.
 	*/
 
-	if (size < 30U || stun_callback == NULL)
+	if (size < 30U || stun_callbacks.empty())
 	{
 		return false;
 	}
@@ -225,7 +230,7 @@ STUN_got_response
 				while (p < end) ;
 			}
 
-			stun_callback = NULL;
+			stun_callbacks = {};
 
 			return true;
 		}
