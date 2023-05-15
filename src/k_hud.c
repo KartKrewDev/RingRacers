@@ -3695,7 +3695,7 @@ static void K_drawKartMinimap(void)
 		localplayers[i] = -1;
 
 	// Player's tiny icons on the Automap. (drawn opposite direction so player 1 is drawn last in splitscreen)
-	if (ghosts && doprogressionbar == true) // future work: show ghosts on progression bar
+	if (ghosts && doprogressionbar == false) // future work: show ghosts on progression bar
 	{
 		demoghost *g = ghosts;
 		while (g)
