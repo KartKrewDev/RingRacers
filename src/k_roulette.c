@@ -263,13 +263,15 @@ boolean K_ItemSingularity(kartitems_t item)
 }
 
 /*--------------------------------------------------
-	botItemPriority_e K_GetBotItemPriority(kartitems_t type)
+	botItemPriority_e K_GetBotItemPriority(kartitems_t result)
 
 		See header file for description.
 --------------------------------------------------*/
-botItemPriority_e K_GetBotItemPriority(kartitems_t type)
+botItemPriority_e K_GetBotItemPriority(kartitems_t result)
 {
-	switch (type)
+	result = K_ItemResultToType(result);
+
+	switch (result)
 	{
 		case KITEM_SPB:
 		{

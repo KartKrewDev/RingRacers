@@ -1638,6 +1638,15 @@ void K_BotPickItemPriority(player_t *player)
 			continue;
 		}
 
+		if (priority == BOT_ITEM_PR_RINGDEBT)
+		{
+			if (player->rings > 0)
+			{
+				// Only consider this priority when in ring debt.
+				continue;
+			}
+		}
+
 		player->botvars.roulettePriority = max( player->botvars.roulettePriority, priority );
 	}
 
