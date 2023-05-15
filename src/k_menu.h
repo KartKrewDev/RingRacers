@@ -427,6 +427,10 @@ extern menu_t MISC_StatisticsDef;
 extern menuitem_t MISC_SoundTest[];
 extern menu_t MISC_SoundTestDef;
 
+#ifdef HAVE_DISCORDRPC
+extern menu_t MISC_DiscordRequestsDef;
+#endif
+
 // We'll need this since we're gonna have to dynamically enable and disable options depending on which state we're in.
 typedef enum
 {
@@ -1231,6 +1235,20 @@ typedef enum
 void M_SoundTest(INT32 choice);
 void M_DrawSoundTest(void);
 consvar_t *M_GetSoundTestVolumeCvar(void);
+
+#ifdef HAVE_DISCORDRPC
+extern struct discordrequestmenu_s {
+	tic_t ticker;
+	tic_t confirmDelay;
+	tic_t confirmLength;
+	boolean confirmAccept;
+	boolean removeRequest;
+} discordrequestmenu;
+
+void M_DrawDiscordRequests(void);
+void M_DiscordRequests(INT32 choice);
+const char *M_GetDiscordName(discordRequest_t *r);
+#endif
 
 // These defines make it a little easier to make menus
 #define DEFAULTMENUSTYLE(source, prev, x, y)\

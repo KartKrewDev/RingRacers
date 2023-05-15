@@ -6,6 +6,10 @@
 #include "../../m_cond.h"
 #include "../../s_sound.h"
 
+#ifdef HAVE_DISCORDRPC
+#include "../../discord.h"
+#endif
+
 // ESC pause menu
 // Since there's no descriptions to each item, we'll use the descriptions as the names of the patches we want to draw for each option :)
 
@@ -32,7 +36,7 @@ menuitem_t PAUSE_Main[] =
 
 #ifdef HAVE_DISCORDRPC
 	{IT_STRING | IT_CALL, "DISCORD REQUESTS", "M_ICODIS",
-		NULL, {NULL}, 0, 0},
+		NULL, {.routine = M_DiscordRequests}, 0, 0},
 #endif
 
 	{IT_STRING | IT_CALL, "RESUME GAME", "M_ICOUNP",
@@ -214,6 +218,14 @@ void M_PauseTick(void)
 	}
 	else
 		pausemenu.openoffset /= 2;
+
+#ifdef HAVE_DISCORDRPC
+	// Show discord requests menu option if any requests are pending
+	if (discordRequestList)
+	{
+		PAUSE_Main[mpause_discordrequests].status = IT_STRING | IT_CALL;
+	}
+#endif
 }
 
 boolean M_PauseInputs(INT32 ch)

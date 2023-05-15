@@ -68,6 +68,10 @@ int	snprintf(char *str, size_t n, const char *fmt, ...);
 //int	vsnprintf(char *str, size_t n, const char *fmt, va_list ap);
 #endif
 
+#ifdef HAVE_DISCORDRPC
+#include "discord.h"
+#endif
+
 #define SKULLXOFF -32
 #define LINEHEIGHT 16
 #define STRINGHEIGHT 8
@@ -4082,7 +4086,7 @@ void M_DrawPause(void)
 		y_data_t standings;
 		memset(&standings, 0, sizeof (standings));
 
-		standings.mainplayer = (demo.playback ? displayplayers[0] : consoleplayer); 
+		standings.mainplayer = (demo.playback ? displayplayers[0] : consoleplayer);
 
 		// See also G_GetNextMap, Y_CalculateMatchData
 		if (
@@ -4900,7 +4904,7 @@ static void M_DrawChallengePreview(INT32 x, INT32 y)
 			}
 
 			V_DrawThinString(1, BASEVIDHEIGHT-(9+3), V_ALLOWLOWERCASE|V_6WIDTHSPACE, gtname);
-			
+
 			break;
 		}
 		case SECRET_ENCORE:
@@ -5856,3 +5860,94 @@ void M_DrawSoundTest(void)
 	V_DrawCharacter(cursorx - 4, currentMenu->y - 8 - (skullAnimCounter/5),
 		'\x1B' | V_SNAPTOTOP|highlightflags, false); // up arrow
 }
+
+#ifdef HAVE_DISCORDRPC
+void M_DrawDiscordRequests(void)
+{
+	discordRequest_t *curRequest = discordRequestList;
+	UINT8 *colormap;
+	patch_t *hand = NULL;
+
+	const char *wantText = "...would like to join!";
+	const char *acceptText = "Accept" ;
+	const char *declineText = "Decline";
+
+	INT32 x = 100;
+	INT32 y = 133;
+
+	INT32 slide = 0;
+	INT32 maxYSlide = 18;
+
+	if (discordrequestmenu.confirmDelay > 0)
+	{
+		if (discordrequestmenu.confirmAccept == true)
+		{
+			colormap = R_GetTranslationColormap(TC_DEFAULT, SKINCOLOR_GREEN, GTC_MENUCACHE);
+			hand = W_CachePatchName("K_LAPH02", PU_CACHE);
+		}
+		else
+		{
+			colormap = R_GetTranslationColormap(TC_DEFAULT, SKINCOLOR_RED, GTC_MENUCACHE);
+			hand = W_CachePatchName("K_LAPH03", PU_CACHE);
+		}
+
+		slide = discordrequestmenu.confirmLength - discordrequestmenu.confirmDelay;
+	}
+	else
+	{
+		colormap = R_GetTranslationColormap(TC_DEFAULT, SKINCOLOR_GREY, GTC_MENUCACHE);
+	}
+
+	V_DrawFixedPatch(56*FRACUNIT, 150*FRACUNIT, FRACUNIT, 0, W_CachePatchName("K_LAPE01", PU_CACHE), colormap);
+
+	if (hand != NULL)
+	{
+		fixed_t handoffset = (4 - abs((signed)(skullAnimCounter - 4))) * FRACUNIT;
+		V_DrawFixedPatch(56*FRACUNIT, 150*FRACUNIT + handoffset, FRACUNIT, 0, hand, NULL);
+	}
+
+	K_DrawSticker(x + (slide * 32), y - 2, V_ThinStringWidth(M_GetDiscordName(curRequest), V_ALLOWLOWERCASE|V_6WIDTHSPACE), 0, false);
+	V_DrawThinString(x + (slide * 32), y - 1, V_ALLOWLOWERCASE|V_6WIDTHSPACE|V_YELLOWMAP, M_GetDiscordName(curRequest));
+
+	K_DrawSticker(x, y + 12, V_ThinStringWidth(wantText, V_ALLOWLOWERCASE|V_6WIDTHSPACE), 0, true);
+	V_DrawThinString(x, y + 10, V_ALLOWLOWERCASE|V_6WIDTHSPACE, wantText);
+
+	INT32 confirmButtonWidth = SHORT(kp_button_a[1][0]->width);
+	INT32 declineButtonWidth = SHORT(kp_button_b[1][0]->width);
+	INT32 altDeclineButtonWidth = SHORT(kp_button_x[1][0]->width);
+	INT32 acceptTextWidth =  V_ThinStringWidth(acceptText, V_ALLOWLOWERCASE|V_6WIDTHSPACE);
+	INT32 declineTextWidth = V_ThinStringWidth(declineText, V_ALLOWLOWERCASE|V_6WIDTHSPACE);
+	INT32 stickerWidth = (confirmButtonWidth + declineButtonWidth + altDeclineButtonWidth + acceptTextWidth + declineTextWidth);
+
+	K_DrawSticker(x, y + 26, stickerWidth, 0, true);
+	K_drawButtonAnim(x, y + 22, V_SNAPTORIGHT, kp_button_a[1], discordrequestmenu.ticker);
+
+	INT32 xoffs = confirmButtonWidth;
+
+	V_DrawThinString((x + xoffs), y + 24, V_ALLOWLOWERCASE|V_6WIDTHSPACE, acceptText);
+	xoffs += acceptTextWidth;
+
+	K_drawButtonAnim((x + xoffs), y + 22, V_SNAPTORIGHT, kp_button_b[1], discordrequestmenu.ticker);
+	xoffs += declineButtonWidth;
+
+	K_drawButtonAnim((x + xoffs), y + 22, V_SNAPTORIGHT, kp_button_x[1], discordrequestmenu.ticker);
+	xoffs += altDeclineButtonWidth;
+
+	V_DrawThinString((x + xoffs), y + 24, V_ALLOWLOWERCASE|V_6WIDTHSPACE, declineText);
+
+	y -= 18;
+
+	while (curRequest->next != NULL)
+	{
+		INT32 ySlide = min(slide * 4, maxYSlide);
+
+		curRequest = curRequest->next;
+
+		K_DrawSticker(x, y - 1 + ySlide, V_ThinStringWidth(M_GetDiscordName(curRequest), V_ALLOWLOWERCASE|V_6WIDTHSPACE), 0, false);
+		V_DrawThinString(x, y + ySlide, V_ALLOWLOWERCASE|V_6WIDTHSPACE, M_GetDiscordName(curRequest));
+
+		y -= 12;
+		maxYSlide = 12;
+	}
+}
+#endif

@@ -1876,7 +1876,7 @@ static void K_DrawKartPositionNum(INT32 num)
 	while (num)
 	{
 		/*
-		
+
 		*/
 
 		fx = K_DrawKartPositionNumPatch(
@@ -1995,7 +1995,7 @@ static boolean K_drawKartPositionFaces(void)
 		{
 			flipflag = V_FLIP|V_VFLIP; // blonic flip
 			xoff = yoff = 16;
-		} else 
+		} else
 		{
 			flipflag = 0;
 			xoff = yoff = 0;
@@ -5323,4 +5323,25 @@ void K_drawKartHUD(void)
 	K_DrawWaypointDebugger();
 	K_DrawDirectorDebugger();
 	K_DrawGPRankDebugger();
+}
+
+void K_DrawSticker(INT32 x, INT32 y, INT32 width, INT32 flags, boolean isSmall)
+{
+	patch_t *stickerEnd;
+	INT32 height;
+
+	if (isSmall == true)
+	{
+		stickerEnd = W_CachePatchName("K_STIKE2", PU_CACHE);
+		height = 6;
+	}
+	else
+	{
+		stickerEnd = W_CachePatchName("K_STIKEN", PU_CACHE);
+		height = 11;
+	}
+
+	V_DrawFixedPatch(x*FRACUNIT, y*FRACUNIT, FRACUNIT, flags, stickerEnd, NULL);
+	V_DrawFill(x, y, width, height, 24|flags);
+	V_DrawFixedPatch((x + width)*FRACUNIT, y*FRACUNIT, FRACUNIT, flags|V_FLIP, stickerEnd, NULL);
 }

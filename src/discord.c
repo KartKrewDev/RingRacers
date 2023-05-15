@@ -356,7 +356,7 @@ static void DRPC_GotServerIP(UINT32 address)
 --------------------------------------------------*/
 static const char *DRPC_GetServerIP(void)
 {
-	const char *address; 
+	const char *address;
 
 	// If you're connected
 	if (I_GetNodeAddress && (address = I_GetNodeAddress(servernode)) != NULL)
@@ -403,15 +403,16 @@ static void DRPC_EmptyRequests(void)
 --------------------------------------------------*/
 void DRPC_UpdatePresence(void)
 {
-	char detailstr[48+1];
-
 #ifdef USEMAPIMG
 	char mapimg[8+1];
 #endif
+#ifndef DEVELOP
+	char detailstr[48+1];
 	char mapname[5+21+21+2+1];
 
 	char charimg[4+SKINNAMESIZE+1];
 	char charname[11+SKINNAMESIZE+1];
+#endif
 
 	boolean joinSecretSet = false;
 
@@ -437,10 +438,6 @@ void DRPC_UpdatePresence(void)
 	discordPresence.largeImageKey = "miscdevelop";
 	discordPresence.largeImageText = "No peeking!";
 	discordPresence.state = "Development EXE";
-
-	DRPC_EmptyRequests();
-	Discord_UpdatePresence(&discordPresence);
-	return;
 #endif // DEVELOP
 
 	// Server info
@@ -462,6 +459,7 @@ void DRPC_UpdatePresence(void)
 			}
 		}
 
+#ifndef DEVELOP
 		if (cv_advertise.value)
 		{
 			discordPresence.state = "Public";
@@ -470,6 +468,7 @@ void DRPC_UpdatePresence(void)
 		{
 			discordPresence.state = "Private";
 		}
+#endif // DEVELOP
 
 		discordPresence.partyId = server_context; // Thanks, whoever gave us Mumble support, for implementing the EXACT thing Discord wanted for this field!
 		discordPresence.partySize = D_NumPlayers(); // Players in server
@@ -482,6 +481,7 @@ void DRPC_UpdatePresence(void)
 		// so that you don't ever end up using bad information from another server.
 		memset(&discordInfo, 0, sizeof(discordInfo));
 
+#ifndef DEVELOP
 		// Offline info
 		if (Playing())
 			discordPresence.state = "Offline";
@@ -489,8 +489,10 @@ void DRPC_UpdatePresence(void)
 			discordPresence.state = "Watching Replay";
 		else
 			discordPresence.state = "Menu";
+#endif // DEVELOP
 	}
 
+#ifndef DEVELOP
 	// Gametype info
 	if ((gamestate == GS_LEVEL || gamestate == GS_INTERMISSION || gamestate == GS_VOTING) && Playing())
 	{
@@ -642,6 +644,7 @@ void DRPC_UpdatePresence(void)
 		snprintf(charname, 28, "Character: %s", skins[players[consoleplayer].skin].realname);
 		discordPresence.smallImageText = charname; // Character name
 	}
+#endif // DEVELOP
 
 	if (joinSecretSet == false)
 	{
