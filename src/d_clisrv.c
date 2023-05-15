@@ -4981,8 +4981,18 @@ static void PT_Say(int node)
 
 	say_pak say = netbuffer->u.say;
 
-	if (playernode[say.source] != node)
-		return; // Spoofed source!
+	// Check for a spoofed source.
+	if (say.source == serverplayer)
+	{
+		// Servers aren't guaranteed to have a playernode, dedis exist.
+		if (node != servernode)
+			return;
+	}
+	else
+	{
+		if (playernode[say.source] != node)
+			return;
+	}
 
 	if ((cv_mute.value || say.flags & (HU_CSAY|HU_SHOUT)) && say.source != serverplayer && !(IsPlayerAdmin(say.source)))
 	{
