@@ -193,13 +193,6 @@ void M_OpenPauseMenu(void)
 		}
 	}
 
-#ifdef HAVE_DISCORDRPC
-	if (discordRequestList)
-	{
-		PAUSE_Main[mpause_discordrequests].status = IT_STRING | IT_CALL;
-	}
-#endif
-
 	G_ResetAllDeviceRumbles();
 }
 
@@ -225,6 +218,14 @@ void M_PauseTick(void)
 	}
 	else
 		pausemenu.openoffset /= 2;
+
+#ifdef HAVE_DISCORDRPC
+	// Show discord requests menu option if any requests are pending
+	if (discordRequestList)
+	{
+		PAUSE_Main[mpause_discordrequests].status = IT_STRING | IT_CALL;
+	}
+#endif
 }
 
 boolean M_PauseInputs(INT32 ch)

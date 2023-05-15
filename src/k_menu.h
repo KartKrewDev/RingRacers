@@ -1238,13 +1238,16 @@ consvar_t *M_GetSoundTestVolumeCvar(void);
 
 #ifdef HAVE_DISCORDRPC
 extern struct discordrequestmenu_s {
+	tic_t ticker;
 	tic_t confirmDelay;
+	tic_t confirmLength;
 	boolean confirmAccept;
 	boolean removeRequest;
 } discordrequestmenu;
 
+void M_DrawDiscordRequests(void);
 void M_DiscordRequests(INT32 choice);
-void M_DiscordRequestHandler(INT32 choice);
+const char *M_GetDiscordName(discordRequest_t *r);
 #endif
 
 // These defines make it a little easier to make menus
