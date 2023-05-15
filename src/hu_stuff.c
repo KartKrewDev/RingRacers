@@ -511,7 +511,7 @@ void DoSayCommand(char *message, SINT8 target, UINT8 flags, UINT8 source)
 	char *msg = &buf[3];
 
 	// Enforce shout for the dedicated server.
-	if (dedicated && !(flags & HU_CSAY))
+	if (dedicated && source == serverplayer && !(flags & HU_CSAY))
 	{
 		flags |= HU_SHOUT;
 	}
