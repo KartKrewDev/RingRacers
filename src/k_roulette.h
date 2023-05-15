@@ -58,6 +58,23 @@ boolean K_ItemSingularity(kartitems_t item);
 
 
 /*--------------------------------------------------
+	botItemPriority_e K_GetBotItemPriority(kartitems_t type)
+
+		Returns an item's priority value, which
+		bots use to determine what kind of item they
+		want when the roulette is started.
+
+	Input Arguments:-
+		item - The item to check.
+
+	Return:-
+		The item's priority type.
+--------------------------------------------------*/
+
+botItemPriority_e K_GetBotItemPriority(kartitems_t type);
+
+
+/*--------------------------------------------------
 	INT32 K_KartGetItemOdds(const player_t *player, itemroulette_t *const roulette, UINT8 pos, kartitems_t item);
 
 		Gets the frequency an item should show up in

@@ -333,6 +333,9 @@ struct botvars_t
 
 	tic_t spindashconfirm; // When high enough, they will try spindashing
 	UINT32 respawnconfirm; // When high enough, they will use Ring Shooter
+
+	UINT8 roulettePriority; // What items to go for on the roulette
+	tic_t rouletteTimeout; // If it takes too long to decide, try lowering priority until we find something valid.
 };
 
 // player_t struct for round-specific condition tracking
@@ -398,6 +401,23 @@ struct itemroulette_t
 
 	boolean eggman;
 };
+
+// enum for bot item priorities
+typedef enum
+{
+	BOT_ITEM_PR__FALLBACK, // Priority decrement fallback -- end the bot's roulette asap
+	BOT_ITEM_PR_NEUTRAL, // Default priority
+	BOT_ITEM_PR_FRONTRUNNER,
+	BOT_ITEM_PR_SPEED,
+	// Priorities beyond this point are explicitly
+	// used when any item from their priority group
+	// exists in the roulette at all.
+	BOT_ITEM_PR__OVERRIDES,
+	BOT_ITEM_PR_RINGDEBT = BOT_ITEM_PR__OVERRIDES,
+	BOT_ITEM_PR_POWER,
+	BOT_ITEM_PR_SPB,
+	BOT_ITEM_PR__MAX
+} botItemPriority_e;
 
 // player_t struct for loop state
 typedef struct {

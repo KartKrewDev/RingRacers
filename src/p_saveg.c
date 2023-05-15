@@ -444,6 +444,8 @@ static void P_NetArchivePlayers(savebuffer_t *save)
 		WRITESINT8(save->p, players[i].botvars.turnconfirm);
 		WRITEUINT32(save->p, players[i].botvars.spindashconfirm);
 		WRITEUINT32(save->p, players[i].botvars.respawnconfirm);
+		WRITEUINT8(save->p, players[i].botvars.roulettePriority);
+		WRITEUINT32(save->p, players[i].botvars.rouletteTimeout);
 
 		// itemroulette_t
 		WRITEUINT8(save->p, players[i].itemRoulette.active);
@@ -827,6 +829,8 @@ static void P_NetUnArchivePlayers(savebuffer_t *save)
 		players[i].botvars.turnconfirm = READSINT8(save->p);
 		players[i].botvars.spindashconfirm = READUINT32(save->p);
 		players[i].botvars.respawnconfirm = READUINT32(save->p);
+		players[i].botvars.roulettePriority = READUINT8(save->p);
+		players[i].botvars.rouletteTimeout = READUINT32(save->p);
 
 		// itemroulette_t
 		players[i].itemRoulette.active = (boolean)READUINT8(save->p);
