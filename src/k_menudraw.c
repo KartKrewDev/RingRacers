@@ -4081,7 +4081,7 @@ void M_DrawPause(void)
 			V_DrawCenteredLSTitleLowString(220 + offset*2, 103, 0, word2);
 	}
 
-	if (gamestate != GS_INTERMISSION)
+	if (gamestate != GS_INTERMISSION && roundqueue.size > 0)
 	{
 		y_data_t standings;
 		memset(&standings, 0, sizeof (standings));
@@ -4105,7 +4105,57 @@ void M_DrawPause(void)
 			standings.showrank = true;
 		}
 
-		// Returns early if there's no roundqueue entries to draw
+		patch_t *smallroundpatch = NULL;
+
+		if (grandprixinfo.gp == true && grandprixinfo.eventmode != GPEVENT_NONE)
+		{
+			const char *append = NULL;
+
+			switch (grandprixinfo.eventmode)
+			{
+				case GPEVENT_SPECIAL:
+				{
+					append = "SS";
+					break;
+				}
+
+				case GPEVENT_BONUS:
+				{
+					append = "B";
+					break;
+				}
+
+				default:
+					break;
+			}
+
+			if (append)
+			{
+				smallroundpatch =
+					W_CachePatchName(
+						va("TT_RNS%s", append),
+						PU_PATCH
+					);
+			}
+		}
+		else if (roundqueue.roundnum > 0 && roundqueue.roundnum <= 10)
+		{
+			smallroundpatch =
+				W_CachePatchName(
+					va("TT_RNS%d", roundqueue.roundnum),
+					PU_PATCH
+				);
+		}
+
+		if (smallroundpatch != NULL)
+		{
+			V_DrawMappedPatch(
+				24, 152,
+				0,
+				smallroundpatch,
+				NULL);
+		}
+
 		Y_RoundQueueDrawer(&standings, false, false);
 	}
 }
