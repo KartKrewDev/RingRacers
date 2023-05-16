@@ -21,7 +21,7 @@ menu_t MISC_ChallengesDef = {
 	BASEVIDWIDTH/2, 30,
 	0, 0,
 	0,
-	"EXTRAS",
+	"UNLOCK",
 	98, 0,
 	M_DrawChallenges,
 	M_ChallengesTick,
