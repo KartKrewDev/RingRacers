@@ -30,6 +30,7 @@
 #include "m_perfstats.h"
 #include "k_podium.h"
 #include "k_respawn.h"
+#include "m_easing.h"
 
 /*--------------------------------------------------
 	boolean K_AddBot(UINT8 skin, UINT8 difficulty, UINT8 *p)
@@ -486,8 +487,9 @@ static UINT32 K_BotRubberbandDistance(player_t *player)
 --------------------------------------------------*/
 fixed_t K_BotRubberband(player_t *player)
 {
-	fixed_t rubberband = FRACUNIT;
-	fixed_t rubbermax, rubbermin;
+	fixed_t rubberband = FRACUNIT >> 1;
+	fixed_t rubbermin = FRACUNIT;
+	fixed_t rubbermax = FRACUNIT;
 	player_t *firstplace = NULL;
 	UINT8 i;
 
@@ -510,6 +512,18 @@ fixed_t K_BotRubberband(player_t *player)
 			}
 		}
 	}
+
+	// Lv.   1: x0.5 min
+	// Lv.   5: x0.75 min
+	// Lv.   9: x1.0 min
+	// Lv. MAX: x1.25 min
+	rubbermin = FRACUNIT - (((FRACUNIT/2) * (DIFFICULTBOT - player->botvars.difficulty)) / (DIFFICULTBOT - 1));
+
+	// Lv.   1: x0.8 max
+	// Lv.   5: x1.2 max
+	// Lv.   9: x1.4 max
+	// Lv. MAX: x2.0 max
+	rubbermax = FRACUNIT + ((FRACUNIT * (player->botvars.difficulty - 3)) / 10);
 
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
@@ -534,43 +548,23 @@ fixed_t K_BotRubberband(player_t *player)
 
 	if (firstplace != NULL)
 	{
+		const UINT32 spacing = FixedDiv(1280 * mapobjectscale, K_GetKartGameSpeedScalar(gamespeed)) / FRACUNIT;
 		const UINT32 wanteddist = firstplace->distancetofinish + K_BotRubberbandDistance(player);
 		const INT32 distdiff = player->distancetofinish - wanteddist;
 
-		if (wanteddist > player->distancetofinish)
-		{
-			// Whoa, you're too far ahead! Slow back down a little.
-			rubberband += (DIFFICULTBOT - min(DIFFICULTBOT, player->botvars.difficulty)) * (distdiff / 3);
-		}
-		else
-		{
-			// Catch up to your position!
-			rubberband += player->botvars.difficulty * distdiff;
-		}
+		rubberband += (distdiff * (FRACUNIT >> 1)) / spacing;
 	}
 
-	// Lv.   1: x1.0 max
-	// Lv.   5: x1.4 max
-	// Lv.   9: x1.8 max
-	// Lv. MAX: x2.2 max
-	rubbermax = FRACUNIT + ((FRACUNIT * (player->botvars.difficulty - 1)) / 10);
-
-	// Lv.   1: x0.75 min
-	// Lv.   5: x0.875 min
-	// Lv.   9: x1.0 min
-	// Lv. MAX: x1.125 min
-	rubbermin = FRACUNIT - (((FRACUNIT/4) * (DIFFICULTBOT - player->botvars.difficulty)) / (DIFFICULTBOT - 1));
-
-	if (rubberband > rubbermax)
+	if (rubberband > FRACUNIT)
 	{
-		rubberband = rubbermax;
+		rubberband = FRACUNIT;
 	}
-	else if (rubberband < rubbermin)
+	else if (rubberband < 0)
 	{
-		rubberband = rubbermin;
+		rubberband = 0;
 	}
 
-	return rubberband;
+	return Easing_Linear(rubberband, rubbermin, rubbermax);
 }
 
 /*--------------------------------------------------
