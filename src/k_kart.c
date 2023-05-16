@@ -10270,7 +10270,10 @@ static void K_AirFailsafe(player_t *player)
 //
 fixed_t K_PlayerBaseFriction(player_t *player, fixed_t original)
 {
-	const fixed_t factor = FixedDiv(FRACUNIT - original, FRACUNIT - ORIG_FRICTION);
+	const fixed_t factor = FixedMul(
+		FixedDiv(FRACUNIT - original, FRACUNIT - ORIG_FRICTION),
+		K_GetKartGameSpeedScalar(gamespeed)
+	);
 	fixed_t frict = original;
 
 	if (K_PodiumSequence() == true)
