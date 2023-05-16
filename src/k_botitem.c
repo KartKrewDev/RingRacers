@@ -1394,15 +1394,54 @@ static void K_BotItemRings(player_t *player, ticcmd_t *cmd)
 --------------------------------------------------*/
 static void K_BotItemRouletteMash(player_t *player, ticcmd_t *cmd)
 {
+	// 12 tics late for Lv.1, frame-perfect for Lv.MAX
+	const tic_t confirmTime = (MAXBOTDIFFICULTY - player->botvars.difficulty);
+
 	if (K_ItemButtonWasDown(player) == true)
 	{
 		return;
 	}
 
-	// TODO: Would be nice to implement smarter behavior
-	// for selecting items.
+	if (player->botvars.roulettePriority == BOT_ITEM_PR__FALLBACK)
+	{
+		// No items were part of our list, so set immediately.
+		player->botvars.itemconfirm = confirmTime + 1;
+	}
+	else if (player->botvars.itemconfirm > 0)
+	{
+		// Delaying our reaction time a bit...
+		player->botvars.itemconfirm++;
+	}
+	else
+	{
+		botItemPriority_e currentPriority = K_GetBotItemPriority(
+			player->itemRoulette.itemList[ player->itemRoulette.index ]
+		);
 
-	cmd->buttons |= BT_ATTACK;
+		if (player->botvars.roulettePriority == currentPriority) 
+		{
+			// This is the item we want! Start timing!
+			player->botvars.itemconfirm++;
+		}
+		else
+		{
+			// Not the time we want... if we take too long,
+			// reduce priority until we get to a valid one.
+			player->botvars.rouletteTimeout++;
+
+			if (player->botvars.rouletteTimeout > player->itemRoulette.itemListLen * player->itemRoulette.speed)
+			{
+				player->botvars.roulettePriority--;
+				player->botvars.rouletteTimeout = 0;
+			}
+		}
+	}
+
+	if (player->botvars.itemconfirm > confirmTime)
+	{
+		// We've waited out our reaction time -- press the button now!
+		cmd->buttons |= BT_ATTACK;
+	}
 }
 
 /*--------------------------------------------------
@@ -1566,5 +1605,103 @@ void K_BotItemUsage(player_t *player, ticcmd_t *cmd, INT16 turnamt)
 				}
 			}
 		}
+	}
+}
+
+/*--------------------------------------------------
+	void K_BotPickItemPriority(player_t *player)
+
+		See header file for description.
+--------------------------------------------------*/
+void K_BotPickItemPriority(player_t *player)
+{
+	const fixed_t closeDistance = FixedMul(1280 * mapobjectscale, K_GetKartGameSpeedScalar(gamespeed));
+	size_t i;
+
+	// Roulette reaction time. This is how long to wait before considering items.
+	// Takes 3 seconds for Lv.1, is instant for Lv.MAX
+	player->botvars.itemdelay = ((MAXBOTDIFFICULTY - player->botvars.difficulty) * BOT_ITEM_DECISION_TIME) / (MAXBOTDIFFICULTY - 1);
+	player->botvars.itemconfirm = 0;
+
+	// Set neutral items by default.
+	player->botvars.roulettePriority = BOT_ITEM_PR_NEUTRAL;
+	player->botvars.rouletteTimeout = 0;
+
+	// Check for items that are extremely high priority.
+	for (i = 0; i < player->itemRoulette.itemListLen; i++)
+	{
+		botItemPriority_e priority = K_GetBotItemPriority( player->itemRoulette.itemList[i] );
+
+		if (priority < BOT_ITEM_PR__OVERRIDES)
+		{
+			// Not high enough to override.
+			continue;
+		}
+
+		if (priority == BOT_ITEM_PR_RINGDEBT)
+		{
+			if (player->rings > 0)
+			{
+				// Only consider this priority when in ring debt.
+				continue;
+			}
+		}
+
+		player->botvars.roulettePriority = max( player->botvars.roulettePriority, priority );
+	}
+
+	if (player->botvars.roulettePriority >= BOT_ITEM_PR__OVERRIDES)
+	{
+		// Selected a priority in the loop above.
+		return;
+	}
+
+	for (i = 0; i < MAXPLAYERS; i++)
+	{
+		player_t *other = NULL;
+		fixed_t distance = INT32_MAX;
+
+		if (playeringame[i] == false)
+		{
+			continue;
+		}
+
+		other = &players[i];
+		if (other->spectator == true || P_MobjWasRemoved(other->mo) == true)
+		{
+			continue;
+		}
+
+		distance = P_AproxDistance(
+			P_AproxDistance(
+				other->mo->x - player->mo->x,
+				other->mo->y - player->mo->y
+			),
+			other->mo->z - player->mo->z
+		);
+
+		if (distance < closeDistance)
+		{
+			// A player is relatively close.
+			break;
+		}
+	}
+
+	if (i == MAXPLAYERS)
+	{
+		// Players are nearby, stay as neutral priority.
+		return;
+	}
+
+	// Players are far away enough to give you breathing room.
+	if (player->position == 1)
+	{
+		// Frontrunning, so pick frontrunner items!
+		player->botvars.roulettePriority = BOT_ITEM_PR_FRONTRUNNER;
+	}
+	else
+	{
+		// Behind, so pick speed items!
+		player->botvars.roulettePriority = BOT_ITEM_PR_SPEED;
 	}
 }

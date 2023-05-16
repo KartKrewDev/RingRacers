@@ -29,6 +29,7 @@
 #include "k_race.h" // finishBeamLine
 #include "m_perfstats.h"
 #include "k_podium.h"
+#include "k_respawn.h"
 
 /*--------------------------------------------------
 	boolean K_AddBot(UINT8 skin, UINT8 difficulty, UINT8 *p)
@@ -859,10 +860,10 @@ static UINT8 K_TrySpindash(player_t *player)
 	const fixed_t baseAccel = K_GetNewSpeed(player) - oldSpeed;
 	const fixed_t speedDiff = player->speed - player->lastspeed;
 
-	const INT32 angleDiff = AngleDelta(player->mo->angle, K_MomentumAngle(player->mo));
+	const INT32 angleDiff = AngleDelta(player->mo->angle, K_MomentumAngleReal(player->mo));
 
 	if (player->spindashboost || player->tiregrease // You just released a spindash, you don't need to try again yet, jeez.
-		|| P_PlayerInPain(player) || !P_IsObjectOnGround(player->mo)) // Not in a state where we want 'em to spindash.
+		|| P_IsObjectOnGround(player->mo) == false) // Not in a state where we want 'em to spindash.
 	{
 		player->botvars.spindashconfirm = 0;
 		return 0;
@@ -913,15 +914,53 @@ static UINT8 K_TrySpindash(player_t *player)
 	else
 	{
 		// Logic for normal racing.
-		if (speedDiff < (baseAccel / 8) // Moving too slowly
-			|| angleDiff > ANG60) // Being pushed backwards
+		boolean anyCondition = false;
+		boolean uphill = false;
+
+#define AddForCondition(x) \
+	if (x) \
+	{ \
+		anyCondition = true;\
+		if (player->botvars.spindashconfirm < BOTSPINDASHCONFIRM) \
+		{ \
+			player->botvars.spindashconfirm++; \
+		} \
+	}
+
+		if (K_SlopeResistance(player) == false && player->mo->standingslope != NULL)
 		{
-			if (player->botvars.spindashconfirm < BOTSPINDASHCONFIRM)
+			const pslope_t *slope = player->mo->standingslope;
+
+			if ((slope->flags & SL_NOPHYSICS) == 0 && abs(slope->zdelta) >= FRACUNIT/21)
 			{
-				player->botvars.spindashconfirm++;
+				const fixed_t speedPercent = FixedDiv(player->speed, 20 * player->mo->scale);
+				fixed_t slopeDot = 0;
+				angle_t angle = K_MomentumAngle(player->mo) - slope->xydirection;
+
+				if (P_MobjFlip(player->mo) * slope->zdelta < 0)
+				{
+					angle ^= ANGLE_180;
+				}
+
+				slopeDot = FINECOSINE(angle >> ANGLETOFINESHIFT);
+				uphill = ((slopeDot + (speedPercent / 2)) < -FRACUNIT/2);
 			}
 		}
-		else if (player->botvars.spindashconfirm >= BOTSPINDASHCONFIRM)
+
+		AddForCondition(K_ApplyOffroad(player) == true && player->offroad > 0); // Slowed by offroad
+		AddForCondition(speedDiff < (baseAccel >> 3)); // Accelerating slower than expected
+		AddForCondition(angleDiff > ANG60); // Being pushed backwards
+		AddForCondition(uphill == true); // Going up a steep slope without speed
+
+		if (player->cmomx || player->cmomy)
+		{
+			angle_t cAngle = R_PointToDist2(0, 0, player->cmomx, player->cmomy);
+			angle_t cDelta = AngleDelta(player->mo->angle, cAngle);
+
+			AddForCondition(cDelta > ANGLE_90); // Conveyor going against you
+		}
+
+		if (anyCondition == false)
 		{
 			if (player->botvars.spindashconfirm > 0)
 			{
@@ -932,6 +971,38 @@ static UINT8 K_TrySpindash(player_t *player)
 
 	// We're doing just fine, we don't need to spindash, thanks.
 	return 0;
+}
+
+/*--------------------------------------------------
+	static boolean K_TryRingShooter(player_t *player)
+
+		Determines conditions where the bot should attempt to respawn.
+
+	Input Arguments:-
+		player - Bot player to check.
+
+	Return:-
+		true if we want to hold the respawn button, otherwise false.
+--------------------------------------------------*/
+static boolean K_TryRingShooter(player_t *player)
+{
+	if (player->respawn.state != RESPAWNST_NONE)
+	{
+		// We're already respawning!
+		return false;
+	}
+
+	if ((gametyperules & GTR_CIRCUIT) == 0 || (leveltime <= starttime))
+	{
+		// Only do this during a Race that has started.
+		return false;
+	}
+
+	// Our anti-grief system is already a perfect system
+	// for determining if we're not making progress, so
+	// lets reuse it for bot respawning!
+	P_IncrementGriefValue(player, &player->botvars.respawnconfirm, BOTRESPAWNCONFIRM);
+	return (player->botvars.respawnconfirm >= BOTRESPAWNCONFIRM);
 }
 
 /*--------------------------------------------------
@@ -1444,6 +1515,13 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 	if (player->exiting && player->nextwaypoint == K_GetFinishLineWaypoint() && ((mapheaderinfo[gamemap - 1]->levelflags & LF_SECTIONRACE) == LF_SECTIONRACE))
 	{
 		// Sprint map finish, don't give Sal's children migraines trying to pathfind out
+		return;
+	}
+
+	if (K_TryRingShooter(player) == true)
+	{
+		// We want to respawn. Simply hold Y and stop here!
+		cmd->buttons |= (BT_RESPAWN | BT_EBRAKEMASK);
 		return;
 	}
 

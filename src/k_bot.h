@@ -31,8 +31,14 @@ extern "C" {
 // Made it as small as possible without making it look like the bots are twitching constantly.
 #define BOTTURNCONFIRM 4
 
-// How many tics without being able to accelerate before we'll let you spindash.
-#define BOTSPINDASHCONFIRM (2*TICRATE)
+// How many tics with only one spindash-viable condition before we'll let you spindash.
+#define BOTSPINDASHCONFIRM (4*TICRATE)
+
+// How many tics without being able to make progress before we'll let you respawn.
+#define BOTRESPAWNCONFIRM (5*TICRATE)
+
+// How long it takes for a Lv.1 bot to decide to pick an item.
+#define BOT_ITEM_DECISION_TIME (2*TICRATE)
 
 // Point for bots to aim for
 struct botprediction_t {
@@ -273,6 +279,25 @@ void K_UpdateBotGameplayVars(player_t *player);
 --------------------------------------------------*/
 
 void K_BotItemUsage(player_t *player, ticcmd_t *cmd, INT16 turnamt);
+
+
+/*--------------------------------------------------
+	void K_BotPickItemPriority(player_t *player)
+
+		Sets a bot's desired item classification
+		based on what is happening around them,
+		and delays based on their difficulty
+		intended to be run when starting a roulette.
+
+	Input Arguments:-
+		player - Bot to set the item classification for.
+
+	Return:-
+		N/A
+--------------------------------------------------*/
+
+void K_BotPickItemPriority(player_t *player);
+
 
 #ifdef __cplusplus
 } // extern "C"

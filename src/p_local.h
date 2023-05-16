@@ -209,6 +209,7 @@ void P_PlayerAfterThink(player_t *player);
 void P_DoPlayerExit(player_t *player, pflags_t flags);
 void P_DoAllPlayersExit(pflags_t flags, boolean givelife);
 void P_DoTimeOver(player_t *player);
+void P_IncrementGriefValue(player_t *player, UINT32 *grief, const UINT32 griefMax);
 void P_CheckRaceGriefing(player_t *player, boolean dopunishment);
 
 void P_ResetPlayerCheats(void);

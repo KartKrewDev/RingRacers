@@ -263,6 +263,74 @@ boolean K_ItemSingularity(kartitems_t item)
 }
 
 /*--------------------------------------------------
+	botItemPriority_e K_GetBotItemPriority(kartitems_t result)
+
+		See header file for description.
+--------------------------------------------------*/
+botItemPriority_e K_GetBotItemPriority(kartitems_t result)
+{
+	result = K_ItemResultToType(result);
+
+	switch (result)
+	{
+		case KITEM_SPB:
+		{
+			// Items that are intended to improve the game balance for everyone.
+			return BOT_ITEM_PR_SPB;
+		}
+		case KITEM_INVINCIBILITY:
+		case KITEM_GROW:
+		case KITEM_SHRINK:
+		case KITEM_LIGHTNINGSHIELD:
+		case KITEM_BUBBLESHIELD:
+		case KITEM_FLAMESHIELD:
+		{
+			// Items that drastically improve your own defense and/or speed.
+			return BOT_ITEM_PR_POWER;
+		}
+		case KITEM_SUPERRING:
+		{
+			// Items that get you out of ring debt.
+			return BOT_ITEM_PR_RINGDEBT;
+		}
+		case KITEM_SNEAKER:
+		case KITEM_ROCKETSNEAKER:
+		case KITEM_GARDENTOP:
+		case KITEM_POGOSPRING:
+		{
+			// Used when not in 1st place and relatively far from players.
+			// Items that give you speed with no protection.
+			return BOT_ITEM_PR_SPEED;
+		}
+		case KITEM_HYUDORO:
+		case KITEM_LANDMINE:
+		case KITEM_DROPTARGET:
+		case KITEM_EGGMAN:
+		case KITEM_GACHABOM:
+		case KITEM_KITCHENSINK:
+		{
+			// Used when in 1st place and relatively far from players.
+			// Typically attack items that don't give you protection.
+			return BOT_ITEM_PR_FRONTRUNNER;
+		}
+		case KITEM_ORBINAUT:
+		case KITEM_BALLHOG:
+		case KITEM_JAWZ:
+		case KITEM_BANANA:
+		case KITEM_MINE:
+		{
+			// Used in all other instances (close to other players, no priority override)
+			// Typically attack items that give you protection.
+			return BOT_ITEM_PR_NEUTRAL;
+		}
+		default:
+		{
+			return BOT_ITEM_PR__FALLBACK;
+		}
+	}
+}
+
+/*--------------------------------------------------
 	static fixed_t K_ItemOddsScale(UINT8 playerCount)
 
 		A multiplier for odds and distances to scale
@@ -1351,9 +1419,10 @@ void K_StartItemRoulette(player_t *const player)
 
 	K_FillItemRouletteData(player, roulette);
 
-	// Make the bots select their item after a little while.
-	// One of the few instances of bot RNG, would be nice to remove it.
-	player->botvars.itemdelay = P_RandomRange(PR_UNDEFINED, TICRATE, TICRATE*3);
+	if (K_PlayerUsesBotMovement(player) == true)
+	{
+		K_BotPickItemPriority(player);
+	}
 
 	// Prevent further duplicates of items that
 	// are intended to only have one out at a time.

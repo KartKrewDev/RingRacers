@@ -2622,7 +2622,7 @@ static void K_HandleDelayedHitByEm(player_t *player)
 
 void K_MomentumToFacing(player_t *player)
 {
-	angle_t dangle = player->mo->angle - K_MomentumAngle(player->mo);
+	angle_t dangle = player->mo->angle - K_MomentumAngleReal(player->mo);
 
 	if (dangle > ANGLE_180)
 		dangle = InvAngle(dangle);
@@ -3468,14 +3468,21 @@ fixed_t K_3dKartMovement(player_t *player)
 	return finalspeed;
 }
 
-fixed_t K_MomentumThreshold(const mobj_t *mo)
+angle_t K_MomentumAngleEx(const mobj_t *mo, const fixed_t threshold)
 {
-	return 6 * mo->scale;
+	if (FixedHypot(mo->momx, mo->momy) > threshold)
+	{
+		return R_PointToAngle2(0, 0, mo->momx, mo->momy);
+	}
+	else
+	{
+		return mo->angle; // default to facing angle, rather than 0
+	}
 }
 
-angle_t K_MomentumAngle(mobj_t *mo)
+angle_t K_MomentumAngleReal(const mobj_t *mo)
 {
-	if (FixedHypot(mo->momx, mo->momy) > K_MomentumThreshold(mo))
+	if (mo->momx || mo->momy)
 	{
 		return R_PointToAngle2(0, 0, mo->momx, mo->momy);
 	}
@@ -3530,8 +3537,8 @@ void K_SetHitLagForObjects(mobj_t *mo1, mobj_t *mo2, INT32 tics, boolean fromDam
 
 		const fixed_t scaleDiff = abs(mo2->scale - mo1->scale);
 
-		angle_t mo1angle = K_MomentumAngle(mo1);
-		angle_t mo2angle = K_MomentumAngle(mo2);
+		angle_t mo1angle = K_MomentumAngleReal(mo1);
+		angle_t mo2angle = K_MomentumAngleReal(mo2);
 		INT32 angleDiff = 0;
 
 		if (mo1speed > 0 && mo2speed > 0)
@@ -10229,7 +10236,7 @@ boolean K_FastFallBounce(player_t *player)
 
 static void K_AirFailsafe(player_t *player)
 {
-	const fixed_t maxSpeed = K_MomentumThreshold(player->mo);
+	const fixed_t maxSpeed = 6*player->mo->scale;
 	const fixed_t thrustSpeed = 6*player->mo->scale; // 10*player->mo->scale
 
 	if (player->speed > maxSpeed // Above the max speed that you're allowed to use this technique.
