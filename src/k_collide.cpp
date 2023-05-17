@@ -787,6 +787,35 @@ boolean K_BubbleShieldCollide(mobj_t *t1, mobj_t *t2)
 	return true;
 }
 
+boolean K_InstaWhipCollide(mobj_t *t1, mobj_t *t2)
+{
+	if (t2->player)
+	{
+		if (t2 != t1->target && !P_PlayerInPain(t2->player) && t2->player->flashing == 0)
+		{
+			P_DamageMobj(t2, t1, t1, 1, DMG_NORMAL);
+			K_AddHitLag(t2, 10, true);
+			K_AddHitLag(t1->target, 2, false);
+			t1->hitlag = t1->target->hitlag;
+			return true;
+		}
+		return false;
+	}
+	else
+	{
+		if (t2->type == MT_ORBINAUT || t2->type == MT_JAWZ || t2->type == MT_GACHABOM
+		|| t2->type == MT_BANANA || t2->type == MT_EGGMANITEM || t2->type == MT_BALLHOG
+		|| t2->type == MT_SSMINE || t2->type == MT_LANDMINE || t2->type == MT_SINK
+		|| t2->type == MT_GARDENTOP || t2->type == MT_DROPTARGET)
+		{
+			P_RemoveMobj(t2);
+			K_AddHitLag(t1->target, 2, false);
+			t1->hitlag = t1->target->hitlag;
+		}
+		return false;
+	}
+}
+
 boolean K_KitchenSinkCollide(mobj_t *t1, mobj_t *t2)
 {
 	if (((t1->target == t2) || (!(t2->flags & (MF_ENEMY|MF_BOSS)) && (t1->target == t2->target))) && (t1->threshold > 0 || (t2->type != MT_PLAYER && t2->threshold > 0)))

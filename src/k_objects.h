@@ -107,6 +107,9 @@ void Obj_LoopEndpointCollide(mobj_t *special, mobj_t *toucher);
 void Obj_BeginDropTargetMorph(mobj_t *target, skincolornum_t color);
 boolean Obj_DropTargetMorphThink(mobj_t *morph);
 
+/* Instawhip */
+void Obj_InstaWhipThink(mobj_t *whip);
+
 /* Ring Shooter */
 boolean Obj_RingShooterThinker(mobj_t *mo);
 boolean Obj_PlayerRingShooterFreeze(player_t *const player);

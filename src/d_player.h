@@ -742,6 +742,8 @@ struct player_t
 	mobj_t *stumbleIndicator;
 	mobj_t *sliptideZipIndicator;
 
+	UINT8 instaShieldCooldown;
+
 	uint8_t public_key[PUBKEYLENGTH];
 
 #ifdef HWRENDER

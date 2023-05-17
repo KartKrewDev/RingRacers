@@ -319,6 +319,8 @@ static int player_get(lua_State *L)
 		lua_pushinteger(L, plr->sliptideZipDelay);
 	else if (fastcmp(field,"sliptideZipBoost"))
 		lua_pushinteger(L, plr->sliptideZipBoost);
+	else if (fastcmp(field,"instaShieldCooldown"))
+		lua_pushinteger(L, plr->instaShieldCooldown);
 	/*
 	else if (fastcmp(field,"itemroulette"))
 		lua_pushinteger(L, plr->itemroulette);
@@ -713,6 +715,8 @@ static int player_set(lua_State *L)
 		plr->sliptideZipDelay = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"sliptideZipBoost"))
 		plr->sliptideZipBoost = luaL_checkinteger(L, 3);
+	else if (fastcmp(field,"instaShieldCooldown"))
+		plr->instaShieldCooldown = luaL_checkinteger(L, 3);		
 	/*
 	else if (fastcmp(field,"itemroulette"))
 		plr->itemroulette = luaL_checkinteger(L, 3);

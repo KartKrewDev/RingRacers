@@ -741,7 +741,13 @@ static BlockItReturn_t PIT_CheckThing(mobj_t *thing)
 		return BMIT_ABORT; // stop moving
 	}
 
-	// SRB2kart 011617 - Colission[sic] code for kart items //{
+	// SRB2kart 011617 - Colission[sic] code for kart items //
+
+	if (tm.thing->type == MT_INSTAWHIP)
+	{
+		K_InstaWhipCollide(tm.thing, thing);
+		return BMIT_CONTINUE;
+	}
 
 	if (thing->type == MT_SPB)
 	{

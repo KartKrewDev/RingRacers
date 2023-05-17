@@ -7877,6 +7877,9 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 	if (player->gateBoost)
 		player->gateBoost--;
 
+	if (player->instaShieldCooldown)
+		player->instaShieldCooldown--;
+
 	if (player->startboost > 0 && onground == true)
 	{
 		player->startboost--;
@@ -10530,6 +10533,18 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 			// Ring boosting
 			if (player->pflags & PF_USERINGS)
 			{
+				if (ATTACK_IS_DOWN && player->rings <= 0 && players->instaShieldCooldown == 0)
+				{
+					player->instaShieldCooldown = 2*TICRATE/3;
+					S_StartSound(player->mo, sfx_join);
+					mobj_t *whip = P_SpawnMobj(player->mo->x, player->mo->y, player->mo->z, MT_INSTAWHIP);
+					P_SetScale(whip, player->mo->scale);
+					P_SetTarget(&whip->target, player->mo);
+					K_MatchGenericExtraFlags(whip, player->mo);
+					whip->fuse = 10;
+					player->flashing = max(player->flashing, 10);
+				}
+
 				if ((cmd->buttons & BT_ATTACK) && !player->ringdelay && player->rings > 0)
 				{
 					mobj_t *ring = P_SpawnMobj(player->mo->x, player->mo->y, player->mo->z, MT_RING);
