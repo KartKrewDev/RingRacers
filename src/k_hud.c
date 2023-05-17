@@ -3695,7 +3695,7 @@ static void K_drawKartMinimap(void)
 		localplayers[i] = -1;
 
 	// Player's tiny icons on the Automap. (drawn opposite direction so player 1 is drawn last in splitscreen)
-	if (ghosts && doprogressionbar == true) // future work: show ghosts on progression bar
+	if (ghosts && doprogressionbar == false) // future work: show ghosts on progression bar
 	{
 		demoghost *g = ghosts;
 		while (g)
@@ -3754,11 +3754,20 @@ static void K_drawKartMinimap(void)
 
 			if (mobj->health <= 0 && (players[i].pflags & PF_NOCONTEST))
 			{
+				if (P_MobjWasRemoved(mobj->tracer))
+				{
+					continue;
+				}
+
+				if (mobj->tracer->renderflags & RF_DONTDRAW)
+				{
+					continue;
+				}
+
 				workingPic = kp_nocontestminimap;
 				colormap = R_GetTranslationColormap(TC_DEFAULT, mobj->color, GTC_CACHE);
 
-				if (mobj->tracer && !P_MobjWasRemoved(mobj->tracer))
-					mobj = mobj->tracer;
+				mobj = mobj->tracer;
 			}
 			else
 			{
@@ -3923,11 +3932,20 @@ static void K_drawKartMinimap(void)
 
 		if (mobj->health <= 0 && (players[localplayers[i]].pflags & PF_NOCONTEST))
 		{
+			if (P_MobjWasRemoved(mobj->tracer))
+			{
+				continue;
+			}
+
+			if (mobj->tracer->renderflags & RF_DONTDRAW)
+			{
+				continue;
+			}
+
 			workingPic = kp_nocontestminimap;
 			colormap = R_GetTranslationColormap(TC_DEFAULT, mobj->color, GTC_CACHE);
 
-			if (mobj->tracer && !P_MobjWasRemoved(mobj->tracer))
-				mobj = mobj->tracer;
+			mobj = mobj->tracer;
 		}
 		else
 		{
