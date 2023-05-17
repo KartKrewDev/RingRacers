@@ -789,6 +789,9 @@ boolean K_BubbleShieldCollide(mobj_t *t1, mobj_t *t2)
 
 boolean K_InstaWhipCollide(mobj_t *t1, mobj_t *t2)
 {
+	const int defenderHitlag = 10;
+	const int attackerHitlag = 4;
+
 	if (t2->player)
 	{
 		if (t2 != t1->target && !P_PlayerInPain(t2->player) && t2->player->flashing == 0)
@@ -796,8 +799,8 @@ boolean K_InstaWhipCollide(mobj_t *t1, mobj_t *t2)
 			P_PlayRinglossSound(t2);
 			P_PlayerRingBurst(t2->player, 5);
 			P_DamageMobj(t2, t1, t1, 1, DMG_STUMBLE);
-			K_AddHitLag(t2, 10, true);
-			K_AddHitLag(t1->target, 2, false);
+			K_AddHitLag(t2, defenderHitlag, true);
+			K_AddHitLag(t1->target, attackerHitlag, false);
 			t1->hitlag = t1->target->hitlag;
 			return true;
 		}
@@ -812,7 +815,7 @@ boolean K_InstaWhipCollide(mobj_t *t1, mobj_t *t2)
 		|| t2->type == MT_MONITOR)
 		{
 			P_DamageMobj(t2, t1, t1, 1, DMG_NORMAL);
-			K_AddHitLag(t1->target, 2, false);
+			K_AddHitLag(t1->target, attackerHitlag, false);
 			t1->hitlag = t1->target->hitlag;
 		}
 		return false;
