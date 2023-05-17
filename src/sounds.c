@@ -1184,6 +1184,8 @@ sfxinfo_t S_sfx[NUMSFX] =
   {"monch", false,  255, 0, -1, NULL, 0,         -1,  -1, LUMPERROR, ""},
   {"etexpl", false,  255, 0, -1, NULL, 0,        -1,  -1, LUMPERROR, "Game crash"},
 
+  {"iwhp", false, 255,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""}, // Grow alarm
+
   // SRB2Kart - Engine sounds
   // Engine class A
   {"krta00", false,  48, 65, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},

@@ -615,7 +615,10 @@ Obj_MonitorGetDamage
 	}
 	else
 	{
-		damage = FRACUNIT; // kill instantly
+		if (inflictor->type == MT_INSTAWHIP)
+			damage = FRACUNIT/3;
+		else
+			damage = FRACUNIT; // kill instantly
 	}
 
 	return damage;

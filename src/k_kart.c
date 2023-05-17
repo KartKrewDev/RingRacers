@@ -7878,7 +7878,12 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		player->gateBoost--;
 
 	if (player->instaShieldCooldown)
+	{
 		player->instaShieldCooldown--;
+		if (!P_IsObjectOnGround(player->mo))
+			player->instaShieldCooldown = max(player->instaShieldCooldown, 1);
+	}
+		
 
 	if (player->startboost > 0 && onground == true)
 	{
@@ -10533,16 +10538,24 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 			// Ring boosting
 			if (player->pflags & PF_USERINGS)
 			{
-				if (ATTACK_IS_DOWN && player->rings <= 0 && players->instaShieldCooldown == 0)
+				if (ATTACK_IS_DOWN && player->rings <= 0)
 				{
-					player->instaShieldCooldown = 2*TICRATE/3;
-					S_StartSound(player->mo, sfx_join);
-					mobj_t *whip = P_SpawnMobj(player->mo->x, player->mo->y, player->mo->z, MT_INSTAWHIP);
-					P_SetScale(whip, player->mo->scale);
-					P_SetTarget(&whip->target, player->mo);
-					K_MatchGenericExtraFlags(whip, player->mo);
-					whip->fuse = 10;
-					player->flashing = max(player->flashing, 10);
+					if (players->instaShieldCooldown)
+					{
+						S_StartSound(player->mo, sfx_s1a9);
+					}
+					else
+					{
+						player->instaShieldCooldown = 50;
+						S_StartSound(player->mo, sfx_iwhp);
+						mobj_t *whip = P_SpawnMobj(player->mo->x, player->mo->y, player->mo->z, MT_INSTAWHIP);
+						P_SetScale(whip, player->mo->scale);
+						P_SetTarget(&whip->target, player->mo);
+						K_MatchGenericExtraFlags(whip, player->mo);
+						whip->fuse = 12; // Changing instawhip animation duration? Look here
+						player->flashing = max(player->flashing, 12);
+						player->mo->momz += FRACUNIT;
+					}
 				}
 
 				if ((cmd->buttons & BT_ATTACK) && !player->ringdelay && player->rings > 0)

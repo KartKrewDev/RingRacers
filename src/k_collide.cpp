@@ -793,7 +793,9 @@ boolean K_InstaWhipCollide(mobj_t *t1, mobj_t *t2)
 	{
 		if (t2 != t1->target && !P_PlayerInPain(t2->player) && t2->player->flashing == 0)
 		{
-			P_DamageMobj(t2, t1, t1, 1, DMG_NORMAL);
+			P_PlayRinglossSound(t2);
+			P_PlayerRingBurst(t2->player, 5);
+			P_DamageMobj(t2, t1, t1, 1, DMG_STUMBLE);
 			K_AddHitLag(t2, 10, true);
 			K_AddHitLag(t1->target, 2, false);
 			t1->hitlag = t1->target->hitlag;
@@ -806,9 +808,10 @@ boolean K_InstaWhipCollide(mobj_t *t1, mobj_t *t2)
 		if (t2->type == MT_ORBINAUT || t2->type == MT_JAWZ || t2->type == MT_GACHABOM
 		|| t2->type == MT_BANANA || t2->type == MT_EGGMANITEM || t2->type == MT_BALLHOG
 		|| t2->type == MT_SSMINE || t2->type == MT_LANDMINE || t2->type == MT_SINK
-		|| t2->type == MT_GARDENTOP || t2->type == MT_DROPTARGET)
+		|| t2->type == MT_GARDENTOP || t2->type == MT_DROPTARGET || t2->type == MT_BATTLECAPSULE
+		|| t2->type == MT_MONITOR)
 		{
-			P_RemoveMobj(t2);
+			P_DamageMobj(t2, t1, t1, 1, DMG_NORMAL);
 			K_AddHitLag(t1->target, 2, false);
 			t1->hitlag = t1->target->hitlag;
 		}
