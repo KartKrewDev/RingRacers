@@ -10540,9 +10540,9 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 			{
 				if (ATTACK_IS_DOWN && player->rings <= 0)
 				{
-					if (players->instaShieldCooldown)
+					if (player->instaShieldCooldown)
 					{
-						S_StartSound(player->mo, sfx_s1a9);
+						S_StartSound(player->mo, sfx_kc50);
 					}
 					else
 					{
