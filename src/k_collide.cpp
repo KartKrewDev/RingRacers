@@ -814,6 +814,15 @@ boolean K_InstaWhipCollide(mobj_t *t1, mobj_t *t2)
 		|| t2->type == MT_GARDENTOP || t2->type == MT_DROPTARGET || t2->type == MT_BATTLECAPSULE
 		|| t2->type == MT_MONITOR)
 		{
+			// Monitor hack. We can hit monitors once per instawhip, no multihit shredding!
+			// Damage values in Obj_MonitorGetDamage.
+			if (t2->type == MT_MONITOR)
+			{
+				if (t1->extravalue1 != 1)
+					return false;
+				t1->extravalue1 = 1;
+			}
+
 			P_DamageMobj(t2, t1, t1, 1, DMG_NORMAL);
 			K_AddHitLag(t1->target, attackerHitlag, false);
 			t1->hitlag = t1->target->hitlag;
