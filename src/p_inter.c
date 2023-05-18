@@ -2306,7 +2306,9 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 				damage = 0;
 			}
 
-			if (type == DMG_STING || type == DMG_STUMBLE)
+			// Instawhip breaks the rules and does "damaging stumble",
+			// but sting and stumble shouldn't be rewarding Battle hits otherwise.
+			if ((type == DMG_STING || type == DMG_STUMBLE) && inflictor->type != MT_INSTAWHIP )
 			{
 				damage = 0;
 			}

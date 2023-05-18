@@ -796,9 +796,12 @@ boolean K_InstaWhipCollide(mobj_t *t1, mobj_t *t2)
 	{
 		if (t2 != t1->target && !P_PlayerInPain(t2->player) && t2->player->flashing == 0)
 		{
+			// Damage is a bit hacky, we want only a small loss-of-control
+			// while still behaving as if it's a "real" hit.
 			P_PlayRinglossSound(t2);
 			P_PlayerRingBurst(t2->player, 5);
-			P_DamageMobj(t2, t1, t1, 1, DMG_STUMBLE);
+			P_DamageMobj(t2, t1, t1->target, 1, DMG_STUMBLE);
+
 			K_AddHitLag(t2, defenderHitlag, true);
 			K_AddHitLag(t1->target, attackerHitlag, false);
 			t1->hitlag = t1->target->hitlag;
@@ -818,12 +821,12 @@ boolean K_InstaWhipCollide(mobj_t *t1, mobj_t *t2)
 			// Damage values in Obj_MonitorGetDamage.
 			if (t2->type == MT_MONITOR)
 			{
-				if (t1->extravalue1 != 1)
+				if (t1->extravalue1 == 1)
 					return false;
 				t1->extravalue1 = 1;
 			}
 
-			P_DamageMobj(t2, t1, t1, 1, DMG_NORMAL);
+			P_DamageMobj(t2, t1, t1->target, 1, DMG_NORMAL);
 			K_AddHitLag(t1->target, attackerHitlag, false);
 			t1->hitlag = t1->target->hitlag;
 		}
