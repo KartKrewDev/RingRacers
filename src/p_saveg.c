@@ -944,6 +944,7 @@ static void P_NetUnArchiveParties(savebuffer_t *save)
 		if (!playeringame[i])
 			continue;
 
+		G_DestroyParty(i);
 		G_BuildLocalSplitscreenParty(i);
 	}
 

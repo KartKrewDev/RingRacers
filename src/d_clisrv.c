@@ -2794,7 +2794,6 @@ void CL_ClearPlayer(INT32 playernum)
 	splitscreen_invitations[playernum] = -1;
 
 	playerconsole[playernum] = playernum;
-	G_DestroyParty(playernum);
 
 	// Wipe the struct.
 	memset(&players[playernum], 0, sizeof (player_t));
@@ -3876,6 +3875,7 @@ static void Got_AddPlayer(UINT8 **p, INT32 playernum)
 	{
 		// Clear player before joining, lest some things get set incorrectly
 		CL_ClearPlayer(newplayernum);
+		G_DestroyParty(newplayernum);
 
 		playeringame[newplayernum] = true;
 		G_AddPlayer(newplayernum);
@@ -4018,6 +4018,7 @@ static void Got_AddBot(UINT8 **p, INT32 playernum)
 
 	// Clear player before joining, lest some things get set incorrectly
 	CL_ClearPlayer(newplayernum);
+	G_DestroyParty(newplayernum);
 
 	playeringame[newplayernum] = true;
 	G_AddPlayer(newplayernum);
@@ -4037,6 +4038,9 @@ static void Got_AddBot(UINT8 **p, INT32 playernum)
 	players[newplayernum].skincolor = skins[skinnum].prefcolor;
 	sprintf(player_names[newplayernum], "%s", skins[skinnum].realname);
 	SetPlayerSkinByNum(newplayernum, skinnum);
+
+	playerconsole[newplayernum] = newplayernum;
+	G_BuildLocalSplitscreenParty(newplayernum);
 
 	if (netgame)
 	{
