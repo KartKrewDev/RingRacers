@@ -886,7 +886,6 @@ void GlCoreRhi::destroy_renderbuffer(rhi::Handle<rhi::Renderbuffer> handle)
 
 rhi::Handle<rhi::Pipeline> GlCoreRhi::create_pipeline(const PipelineDesc& desc)
 {
-	SRB2_ASSERT(graphics_context_active_ == false);
 	SRB2_ASSERT(platform_ != nullptr);
 	// TODO assert compatibility of pipeline description with program using ProgramRequirements
 
