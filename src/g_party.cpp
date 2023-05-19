@@ -186,6 +186,11 @@ public:
 	// consoleplayer.
 	Party& operator [](Party::Console console) { return pool_[console]; }
 
+	// Clears a single player's local party. This method
+	// accesses the playernum directly, instead of the
+	// consoleplayer.
+	void reset(playernum_t player) { pool_[player] = {}; }
+
 protected:
 	std::array<Party, MAXPLAYERS> pool_;
 }
@@ -271,7 +276,7 @@ void G_ObliterateParties(void)
 
 void G_DestroyParty(UINT8 player)
 {
-	local_party[player] = {};
+	local_party.reset(player);
 	final_party[player] = {};
 }
 
