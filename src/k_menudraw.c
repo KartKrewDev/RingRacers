@@ -425,7 +425,7 @@ static void M_DrawMenuTyping(void)
 
 			V_DrawString(x, y, V_ALLOWLOWERCASE|tflag|mflag, buf);
 
-			x += V_StringWidth(buf, 0)+8;
+			x += (buf[1] ? V_StringWidth(buf, 0) : 8) + 8;
 		}
 		x = 60;
 		y += 12;
