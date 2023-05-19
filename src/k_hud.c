@@ -4994,6 +4994,73 @@ static void K_DrawWaypointDebugger(void)
 	}
 }
 
+static void K_DrawBotDebugger(void)
+{
+	player_t *bot = NULL;
+
+	if (cv_kartdebugbots.value == 0)
+	{
+		return;
+	}
+
+	if (stplyr != &players[displayplayers[0]]) // only for p1
+	{
+		return;
+	}
+
+	if (stplyr->bot == true)
+	{
+		// we ARE the bot
+		bot = stplyr;
+	}
+	else
+	{
+		// get winning bot
+		size_t i;
+		for (i = 0; i < MAXPLAYERS; i++)
+		{
+			player_t *p = NULL;
+
+			if (playeringame[i] == false)
+			{
+				continue;
+			}
+
+			p = &players[i];
+			if (p->spectator == true || p->bot == false)
+			{
+				continue;
+			}
+
+			if (bot == NULL || p->distancetofinish < bot->distancetofinish)
+			{
+				bot = p;
+			}
+		}
+	}
+
+	if (bot == NULL)
+	{
+		// no bot exists?
+		return;
+	}
+
+	V_DrawSmallString(8, 8, 0, va("Difficulty: %d / %d", bot->botvars.difficulty, MAXBOTDIFFICULTY));
+	V_DrawSmallString(8, 12, 0, va("Difficulty increase: %d", bot->botvars.diffincrease));
+	V_DrawSmallString(8, 16, 0, va("Rival: %d", (UINT8)(bot->botvars.rival == true)));
+	V_DrawSmallString(8, 20, 0, va("Rubberbanding: %.02f", FIXED_TO_FLOAT(bot->botvars.rubberband) * 100.0f));
+
+	V_DrawSmallString(8, 26, 0, va("Item delay: %d", bot->botvars.itemdelay));
+	V_DrawSmallString(8, 30, 0, va("Item confirm: %d", bot->botvars.itemconfirm));
+
+	V_DrawSmallString(8, 36, 0, va("Turn: %d / %d / %d", -BOTTURNCONFIRM, bot->botvars.turnconfirm, BOTTURNCONFIRM));
+	V_DrawSmallString(8, 40, 0, va("Spindash: %d / %d", bot->botvars.spindashconfirm, BOTSPINDASHCONFIRM));
+	V_DrawSmallString(8, 44, 0, va("Respawn: %d / %d", bot->botvars.respawnconfirm, BOTRESPAWNCONFIRM));
+
+	V_DrawSmallString(8, 50, 0, va("Item priority: %d", bot->botvars.roulettePriority));
+	V_DrawSmallString(8, 54, 0, va("Item timeout: %d", bot->botvars.rouletteTimeout));
+}
+
 static void K_DrawGPRankDebugger(void)
 {
 	gp_rank_e grade = GRADE_E;
@@ -5321,6 +5388,7 @@ void K_drawKartHUD(void)
 	}
 
 	K_DrawWaypointDebugger();
+	K_DrawBotDebugger();
 	K_DrawDirectorDebugger();
 	K_DrawGPRankDebugger();
 }
