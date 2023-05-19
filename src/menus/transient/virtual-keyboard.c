@@ -3,7 +3,7 @@
 
 #include "../../k_menu.h"
 #include "../../s_sound.h"
-#include "../../hu_stuff.h" // shiftxform
+#include "../../console.h" // CON_ShiftChar
 #include "../../i_system.h" // I_Clipboard funcs
 
 // Typing "sub"-menu
@@ -82,11 +82,6 @@ boolean M_ChangeStringCvar(INT32 choice)
 				// shift+delete, cutting
 				copypastemode = CVCPM_CUT;
 			}
-			else if (choice >= 32 && choice <= 127)
-			{
-				// shift+printable, generally uppercase
-				choice = shiftxform[choice];
-			}
 		}
 
 		if (copypastemode != CVCPM_NONE)
@@ -127,6 +122,9 @@ boolean M_ChangeStringCvar(INT32 choice)
 
 			return true;
 		}
+
+		// Okay, now we can auto-modify the character.
+		choice = CON_ShiftChar(choice);
 	}
 
 	switch (choice)
