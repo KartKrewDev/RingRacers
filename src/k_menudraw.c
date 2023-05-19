@@ -680,12 +680,20 @@ void M_DrawGenericMenu(void)
 								break;
 #endif
 							case IT_CV_STRING:
-								M_DrawTextBox(x, y + 4, MAXSTRINGLENGTH, 1);
-								V_DrawString(x + 8, y + 12, V_ALLOWLOWERCASE, cv->string);
-								if (skullAnimCounter < 4 && i == itemOn)
-									V_DrawCharacter(x + 8 + V_StringWidth(cv->string, 0), y + 12,
-										'_' | 0x80, false);
-								y += 16;
+								{
+									M_DrawTextBox(x, y + 4, MAXSTRINGLENGTH, 1);
+
+									INT32 xoffs = 0;
+									if (itemOn == i)
+									{
+										xoffs += 8;
+										V_DrawString(x + (skullAnimCounter/5) + 6, y + 12, highlightflags, "\x1D");
+									}
+
+									V_DrawString(x + xoffs + 8, y + 12, V_ALLOWLOWERCASE, cv->string);
+
+									y += 16;
+								}
 								break;
 							default:
 								w = V_StringWidth(cv->string, 0);
@@ -2727,9 +2735,16 @@ void M_DrawMPHost(void)
 							switch (currentMenu->menuitems[i].status & IT_CVARTYPE)
 							{
 								case IT_CV_STRING:
-									V_DrawThinString(xp + 96, yp, V_ALLOWLOWERCASE|V_6WIDTHSPACE, cv->string);
-									if (skullAnimCounter < 4 && i == itemOn)
-										V_DrawString(xp + 96 + V_ThinStringWidth(cv->string, V_ALLOWLOWERCASE|V_6WIDTHSPACE), yp+1, 0, "_");
+									{
+										INT32 xoffs = 0;
+										if (itemOn == i)
+										{
+											xoffs += 8;
+											V_DrawString(xp + (skullAnimCounter/5) + 94, yp+1, highlightflags, "\x1D");
+										}
+
+										V_DrawThinString(xp + xoffs + 96, yp, V_ALLOWLOWERCASE|V_6WIDTHSPACE, cv->string);
+									}
 
 									break;
 
@@ -2837,9 +2852,17 @@ void M_DrawMPJoinIP(void)
 								colormapc = R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_PLAGUE, GTC_CACHE);
 
 								V_DrawFixedPatch((xp + 12)<<FRACBITS, (yp-2)<<FRACBITS, FRACUNIT, 0, typebar, colormapc);	// Always consider that this is selected otherwise it clashes.
-								V_DrawThinString(xp + 18, yp, V_ALLOWLOWERCASE|V_6WIDTHSPACE, cv->string);
-								if (skullAnimCounter < 4 && i == itemOn)
-									V_DrawString(xp + 18 + V_ThinStringWidth(cv->string, V_ALLOWLOWERCASE|V_6WIDTHSPACE), yp+1, 0, "_");
+
+								{
+									INT32 xoffs = 0;
+									if (itemOn == i)
+									{
+										xoffs += 8;
+										V_DrawString(xp + (skullAnimCounter/5) + 17, yp+1, highlightflags, "\x1D");
+									}
+
+									V_DrawThinString(xp + xoffs + 18, yp, V_ALLOWLOWERCASE|V_6WIDTHSPACE, cv->string);
+								}
 
 								/*// On this specific menu the only time we'll ever see this is for the connect by IP typefield.
 								// Draw the small GO button here (and the text which is a separate graphic)
@@ -3167,12 +3190,20 @@ void M_DrawGenericOptions(void)
 							case IT_CV_INVISSLIDER: // monitor toggles use this
 								break;
 							case IT_CV_STRING:
-								M_DrawTextBox(x, y + 4, MAXSTRINGLENGTH, 1);
-								V_DrawString(x + 8, y + 12, V_ALLOWLOWERCASE, cv->string);
-								if (skullAnimCounter < 4 && i == itemOn)
-									V_DrawCharacter(x + 8 + V_StringWidth(cv->string, 0), y + 12,
-										'_' | 0x80, false);
-								y += 16;
+								{
+									M_DrawTextBox(x, y + 4, MAXSTRINGLENGTH, 1);
+
+									INT32 xoffs = 0;
+									if (itemOn == i)
+									{
+										xoffs += 8;
+										V_DrawString(x + (skullAnimCounter/5) + 6, y + 12, highlightflags, "\x1D");
+									}
+
+									V_DrawString(x + xoffs + 8, y + 12, V_ALLOWLOWERCASE, cv->string);
+
+									y += 16;
+								}
 								break;
 							default:
 								w = V_StringWidth(cv->string, 0);
