@@ -46,11 +46,11 @@ struct std::hash<srb2::rhi::GlCoreFramebufferKey>
 {
 	std::size_t operator()(const srb2::rhi::GlCoreFramebufferKey& key) const
 	{
-		std::size_t color_hash = std::hash<const srb2::rhi::Handle<srb2::rhi::Texture>>()(key.color);
+		std::size_t color_hash = std::hash<srb2::rhi::Handle<srb2::rhi::Texture>>()(key.color);
 		std::size_t depth_stencil_hash = 0;
 		if (key.depth_stencil)
 		{
-			depth_stencil_hash = std::hash<const srb2::rhi::Handle<srb2::rhi::Renderbuffer>>()(*key.depth_stencil);
+			depth_stencil_hash = std::hash<srb2::rhi::Handle<srb2::rhi::Renderbuffer>>()(*key.depth_stencil);
 		}
 		return color_hash ^ (depth_stencil_hash << 1);
 	}
