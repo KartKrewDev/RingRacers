@@ -4038,6 +4038,9 @@ static void Got_AddBot(UINT8 **p, INT32 playernum)
 	sprintf(player_names[newplayernum], "%s", skins[skinnum].realname);
 	SetPlayerSkinByNum(newplayernum, skinnum);
 
+	playerconsole[newplayernum] = newplayernum;
+	G_BuildLocalSplitscreenParty(newplayernum);
+
 	if (netgame)
 	{
 		HU_AddChatText(va("\x82*Bot %d has been added to the game", newplayernum+1), false);
