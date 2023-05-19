@@ -5045,20 +5045,22 @@ static void K_DrawBotDebugger(void)
 		return;
 	}
 
-	V_DrawSmallString(8, 8, 0, va("Difficulty: %d / %d", bot->botvars.difficulty, MAXBOTDIFFICULTY));
-	V_DrawSmallString(8, 12, 0, va("Difficulty increase: %d", bot->botvars.diffincrease));
-	V_DrawSmallString(8, 16, 0, va("Rival: %d", (UINT8)(bot->botvars.rival == true)));
-	V_DrawSmallString(8, 20, 0, va("Rubberbanding: %.02f", FIXED_TO_FLOAT(bot->botvars.rubberband) * 100.0f));
+	V_DrawSmallString(16, 8, V_YELLOWMAP, va("Bot: %s", player_names[bot - players]));
 
-	V_DrawSmallString(8, 26, 0, va("Item delay: %d", bot->botvars.itemdelay));
-	V_DrawSmallString(8, 30, 0, va("Item confirm: %d", bot->botvars.itemconfirm));
+	V_DrawSmallString(8, 14, 0, va("Difficulty: %d / %d", bot->botvars.difficulty, MAXBOTDIFFICULTY));
+	V_DrawSmallString(8, 18, 0, va("Difficulty increase: %d", bot->botvars.diffincrease));
+	V_DrawSmallString(8, 22, 0, va("Rival: %d", (UINT8)(bot->botvars.rival == true)));
+	V_DrawSmallString(8, 26, 0, va("Rubberbanding: %.02f", FIXED_TO_FLOAT(bot->botvars.rubberband) * 100.0f));
 
-	V_DrawSmallString(8, 36, 0, va("Turn: %d / %d / %d", -BOTTURNCONFIRM, bot->botvars.turnconfirm, BOTTURNCONFIRM));
-	V_DrawSmallString(8, 40, 0, va("Spindash: %d / %d", bot->botvars.spindashconfirm, BOTSPINDASHCONFIRM));
-	V_DrawSmallString(8, 44, 0, va("Respawn: %d / %d", bot->botvars.respawnconfirm, BOTRESPAWNCONFIRM));
+	V_DrawSmallString(8, 32, 0, va("Item delay: %d", bot->botvars.itemdelay));
+	V_DrawSmallString(8, 36, 0, va("Item confirm: %d", bot->botvars.itemconfirm));
 
-	V_DrawSmallString(8, 50, 0, va("Item priority: %d", bot->botvars.roulettePriority));
-	V_DrawSmallString(8, 54, 0, va("Item timeout: %d", bot->botvars.rouletteTimeout));
+	V_DrawSmallString(8, 42, 0, va("Turn: %d / %d / %d", -BOTTURNCONFIRM, bot->botvars.turnconfirm, BOTTURNCONFIRM));
+	V_DrawSmallString(8, 46, 0, va("Spindash: %d / %d", bot->botvars.spindashconfirm, BOTSPINDASHCONFIRM));
+	V_DrawSmallString(8, 50, 0, va("Respawn: %d / %d", bot->botvars.respawnconfirm, BOTRESPAWNCONFIRM));
+
+	V_DrawSmallString(8, 56, 0, va("Item priority: %d", bot->botvars.roulettePriority));
+	V_DrawSmallString(8, 60, 0, va("Item timeout: %d", bot->botvars.rouletteTimeout));
 }
 
 static void K_DrawGPRankDebugger(void)
