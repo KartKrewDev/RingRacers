@@ -110,6 +110,10 @@ boolean Obj_DropTargetMorphThink(mobj_t *morph);
 /* Instawhip */
 void Obj_InstaWhipThink(mobj_t *whip);
 
+/* Block VFX */
+void Obj_BlockRingThink(mobj_t *ring);
+void Obj_BlockBodyThink(mobj_t *body);
+
 /* Ring Shooter */
 boolean Obj_RingShooterThinker(mobj_t *mo);
 boolean Obj_PlayerRingShooterFreeze(player_t *const player);

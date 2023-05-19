@@ -7777,7 +7777,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 	// where's the < 0 check? see below the following block!
 
 	{
-		tic_t spheredigestion = TICRATE; // Base rate of 1 every second when playing.
+		tic_t spheredigestion = TICRATE*2; // Base rate of 1 every second when playing.
 		tic_t digestionpower = ((10 - player->kartspeed) + (10 - player->kartweight))-1; // 1 to 17
 
 		// currently 0-34
@@ -7789,7 +7789,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		}
 		else
 		{
-			spheredigestion -= digestionpower;
+			spheredigestion -= digestionpower/2;
 		}
 
 		if ((player->spheres > 0) && (player->spheredigestion > 0))
@@ -7807,6 +7807,9 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 				player->spheres--;
 				player->spheredigestion = spheredigestion;
 			}
+
+			if (K_PlayerEBrake(player) && (player->ebrakefor%6 == 0))
+				player->spheres--;
 		}
 		else
 		{
@@ -9832,6 +9835,23 @@ void K_KartEbrakeVisuals(player_t *p)
 		// sound
 		if (!S_SoundPlaying(p->mo, sfx_s3kd9s))
 			S_ReducedVFXSound(p->mo, sfx_s3kd9s, p);
+
+		// Block visuals
+		// (These objects track whether a player is block-eligible on their own, no worries)
+		if (!p->ebrakefor)
+		{
+			mobj_t *ring = P_SpawnMobj(p->mo->x, p->mo->y, p->mo->z, MT_BLOCKRING);
+			P_SetTarget(&ring->target, p->mo);
+			P_SetScale(ring, p->mo->scale);
+			K_MatchGenericExtraFlags(ring, p->mo);
+			ring->renderflags &= ~RF_DONTDRAW;
+
+			mobj_t *body = P_SpawnMobj(p->mo->x, p->mo->y, p->mo->z, MT_BLOCKBODY);
+			P_SetTarget(&body->target, p->mo);
+			P_SetScale(body, p->mo->scale);
+			K_MatchGenericExtraFlags(body, p->mo);
+			body->renderflags |= RF_DONTDRAW;
+		}
 
 		// HOLD! bubble.
 		if (!p->ebrakefor)

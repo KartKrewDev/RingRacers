@@ -1109,6 +1109,8 @@ typedef enum sprite
 	SPR_SLPT, // Sliptide zip indicator
 
 	SPR_IWHP, // Instawhip
+	SPR_GRNG, // Guard ring
+	SPR_GBDY, // Guard body
 
 	SPR_WIPD, // Wipeout dust trail
 	SPR_DRIF, // Drift Sparks
@@ -4360,6 +4362,8 @@ typedef enum state
 	S_SLIPTIDEZIP,
 
 	S_INSTAWHIP,
+	S_BLOCKRING,
+	S_BLOCKBODY,
 
 	// Signpost sparkles
 	S_SIGNSPARK1,
@@ -6428,6 +6432,8 @@ typedef enum mobj_type
 	MT_SLIPTIDEZIP,
 
 	MT_INSTAWHIP,
+	MT_BLOCKRING,
+	MT_BLOCKBODY,
 
 	MT_SIGNSPARKLE,
 

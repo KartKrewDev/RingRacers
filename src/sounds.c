@@ -901,7 +901,7 @@ sfxinfo_t S_sfx[NUMSFX] =
   {"mbv8f",  false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
   {"mbv90",  false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
   {"mbv91",  false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
-  {"mbv92",  false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
+  {"mbv92",  false,  64,  16, -1, NULL, 0,        -1,  -1, LUMPERROR, ""}, // Changed falloff for use in instashield parry.
   {"mbv93",  false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
   {"mbv94",  false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
   {"mbv95",  false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},

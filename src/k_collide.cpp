@@ -787,48 +787,96 @@ boolean K_BubbleShieldCollide(mobj_t *t1, mobj_t *t2)
 	return true;
 }
 
-boolean K_InstaWhipCollide(mobj_t *t1, mobj_t *t2)
+boolean K_InstaWhipCollide(mobj_t *shield, mobj_t *victim)
 {
-	const int defenderHitlag = 10;
+	const int victimHitlag = 10;
 	const int attackerHitlag = 4;
 
-	if (t2->player)
+	// EV1 is used to indicate that we should no longer hit monitors.
+	// EV2 indicates we should no longer hit anything.
+	if (shield->extravalue2)
+		return false;
+
+	mobj_t *attacker = shield->target;
+
+	if (!attacker || P_MobjWasRemoved(attacker) || !attacker->player)
+		return false; // How did we even get here?
+
+	player_t *attackerPlayer = attacker->player;
+
+	if (victim->player)
 	{
-		if (t2 != t1->target && !P_PlayerInPain(t2->player) && t2->player->flashing == 0)
+		player_t *victimPlayer = victim->player;
+
+		if (victim != attacker && !P_PlayerInPain(victimPlayer) && victimPlayer->flashing == 0)
 		{
+			if (K_PlayerEBrake(victimPlayer) && victimPlayer->spheres > 0)
+			{
+				if (P_PlayerInPain(attackerPlayer))
+					return false; // never punish shield more than once
+
+				angle_t thrangle = R_PointToAngle2(victim->x, victim->y, shield->x, shield->y);
+				attacker->momx = attacker->momy = 0;
+				P_Thrust(attacker, thrangle, FRACUNIT*7);
+
+				victimPlayer->spheres = std::min(victimPlayer->spheres + 10, 40);
+
+				shield->renderflags &= ~RF_DONTDRAW;
+				shield->flags |= MF_NOCLIPTHING;
+
+				attacker->renderflags &= ~RF_DONTDRAW;
+				attackerPlayer->instaShieldCooldown = TICRATE*2;
+				attackerPlayer->flashing = 0;
+
+				P_DamageMobj(attacker, victim, victim, 1, DMG_STING);
+
+				S_StartSound(victim, sfx_mbv92);
+				K_AddHitLag(attacker, 2*victimHitlag, true);
+				K_AddHitLag(victim, attackerHitlag, false);
+				attacker->hitlag = std::min(attacker->hitlag, 2*victimHitlag);
+				shield->hitlag = attacker->hitlag;
+
+				shield->extravalue2 = 1;
+
+				return true;
+			}
+
 			// Damage is a bit hacky, we want only a small loss-of-control
 			// while still behaving as if it's a "real" hit.
-			P_PlayRinglossSound(t2);
-			P_PlayerRingBurst(t2->player, 5);
-			P_DamageMobj(t2, t1, t1->target, 1, DMG_STUMBLE);
+			P_PlayRinglossSound(victim);
+			P_PlayerRingBurst(victimPlayer, 5);
+			P_DamageMobj(victim, shield, attacker, 1, DMG_STUMBLE); // There's a pecial exception in P_DamageMobj for type==MT_INSTAWHIP
 
-			K_AddHitLag(t2, defenderHitlag, true);
-			K_AddHitLag(t1->target, attackerHitlag, false);
-			t1->hitlag = t1->target->hitlag;
+			angle_t thrangle = ANGLE_180 + R_PointToAngle2(victim->x, victim->y, shield->x, shield->y);
+			P_Thrust(victim, thrangle, FRACUNIT*10);
+
+			K_AddHitLag(victim, victimHitlag, true);
+			K_AddHitLag(attacker, attackerHitlag, false);
+			shield->hitlag = attacker->hitlag;
 			return true;
 		}
 		return false;
 	}
 	else
 	{
-		if (t2->type == MT_ORBINAUT || t2->type == MT_JAWZ || t2->type == MT_GACHABOM
-		|| t2->type == MT_BANANA || t2->type == MT_EGGMANITEM || t2->type == MT_BALLHOG
-		|| t2->type == MT_SSMINE || t2->type == MT_LANDMINE || t2->type == MT_SINK
-		|| t2->type == MT_GARDENTOP || t2->type == MT_DROPTARGET || t2->type == MT_BATTLECAPSULE
-		|| t2->type == MT_MONITOR)
+		if (victim->type == MT_ORBINAUT || victim->type == MT_JAWZ || victim->type == MT_GACHABOM
+		|| victim->type == MT_BANANA || victim->type == MT_EGGMANITEM || victim->type == MT_BALLHOG
+		|| victim->type == MT_SSMINE || victim->type == MT_LANDMINE || victim->type == MT_SINK
+		|| victim->type == MT_GARDENTOP || victim->type == MT_DROPTARGET || victim->type == MT_BATTLECAPSULE
+		|| victim->type == MT_MONITOR)
 		{
 			// Monitor hack. We can hit monitors once per instawhip, no multihit shredding!
 			// Damage values in Obj_MonitorGetDamage.
-			if (t2->type == MT_MONITOR)
+			if (victim->type == MT_MONITOR)
 			{
-				if (t1->extravalue1 == 1)
+				if (shield->extravalue1 == 1)
 					return false;
-				t1->extravalue1 = 1;
+				shield->extravalue1 = 1;
 			}
 
-			P_DamageMobj(t2, t1, t1->target, 1, DMG_NORMAL);
-			K_AddHitLag(t1->target, attackerHitlag, false);
-			t1->hitlag = t1->target->hitlag;
+			P_DamageMobj(victim, shield, attacker, 1, DMG_NORMAL);
+			K_AddHitLag(attacker, attackerHitlag, false);
+			shield = attacker;
 		}
 		return false;
 	}
@@ -1022,7 +1070,7 @@ boolean K_PvPTouchDamage(mobj_t *t1, mobj_t *t2)
 
 		bool stung = false;
 
-		if (t2->player->rings <= 0)
+		if (t2->player->rings <= 0 && t2->player->spheres <= 0)
 		{
 			P_DamageMobj(t2, t1, t1, 1, DMG_STING|DMG_WOMBO);
 			stung = true;

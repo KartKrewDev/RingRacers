@@ -18,4 +18,5 @@ target_sources(SRB2SDL2 PRIVATE
 	audience.c
 	random-item.c
 	instawhip.c
+	block.c
 )

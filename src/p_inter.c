@@ -2208,6 +2208,11 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 				{
 					sfx = sfx_grownd;
 				}
+				else if (player->spheres > 0 && K_PlayerEBrake(player))
+				{
+					sfx = sfx_s3k3a;
+					player->spheres = max(player->spheres - 10, 0);
+				}
 				else if (player->hyudorotimer > 0)
 					;
 				else
@@ -2308,7 +2313,7 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 
 			// Instawhip breaks the rules and does "damaging stumble",
 			// but sting and stumble shouldn't be rewarding Battle hits otherwise.
-			if ((type == DMG_STING || type == DMG_STUMBLE) && inflictor->type != MT_INSTAWHIP )
+			if ((type == DMG_STING || type == DMG_STUMBLE) && (inflictor && inflictor->type != MT_INSTAWHIP))
 			{
 				damage = 0;
 			}
