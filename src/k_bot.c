@@ -1557,8 +1557,8 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 	if (leveltime <= starttime && finishBeamLine != NULL)
 	{
 		// Handle POSITION!!
-		const fixed_t distBase = 384*mapobjectscale;
-		const fixed_t distAdjust = 64*mapobjectscale;
+		const fixed_t distBase = 480*mapobjectscale;
+		const fixed_t distAdjust = 128*mapobjectscale;
 
 		const fixed_t closeDist = distBase + (distAdjust * (9 - player->kartweight));
 		const fixed_t farDist = closeDist + (distAdjust * 2);

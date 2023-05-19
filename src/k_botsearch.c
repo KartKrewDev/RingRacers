@@ -989,7 +989,7 @@ INT32 K_PositionBully(player_t *player)
 		anglediff = 360-(AngleFixed(angle)>>FRACBITS);
 	}
 
-	if (anglediff < 30)
+	if (abs(anglediff) < 30)
 		return 0;
 
 	if (anglediff < 0)
