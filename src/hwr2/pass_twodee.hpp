@@ -34,7 +34,7 @@ struct TwodeePassData;
 /// @brief Hash map key for caching pipelines
 struct TwodeePipelineKey
 {
-	Draw2dBlend blend;
+	BlendMode blend;
 	bool lines;
 
 	bool operator==(const TwodeePipelineKey& r) const noexcept { return !(blend != r.blend || lines != r.lines); }

@@ -31,6 +31,7 @@
 #include "m_misc.h"
 #include "m_random.h"
 #include "doomstat.h"
+#include "hwr2/blendmode.hpp"
 
 #ifdef HWRENDER
 #include "hardware/hw_glob.h"
@@ -914,27 +915,27 @@ void V_DrawStretchyFixedPatch(fixed_t x, fixed_t y, fixed_t pscale, fixed_t vsca
 	{
 		falpha = (10 - alphalevel) / 10.f;
 	}
-	hwr2::Draw2dBlend blend = hwr2::Draw2dBlend::kAlphaTransparent;
+	hwr2::BlendMode blend = hwr2::BlendMode::kAlphaTransparent;
 	switch (blendmode)
 	{
 	case AST_MODULATE:
-		blend = hwr2::Draw2dBlend::kModulate;
+		blend = hwr2::BlendMode::kModulate;
 		break;
 	case AST_ADD:
-		blend = hwr2::Draw2dBlend::kAdditive;
+		blend = hwr2::BlendMode::kAdditive;
 		break;
 
 	// Note: SRB2 has these blend modes flipped compared to GL and Vulkan.
 	// SRB2's Subtract is Dst - Src. OpenGL is Src - Dst. And vice versa for reverse.
 	// Twodee will use the GL definitions.
 	case AST_SUBTRACT:
-		blend = hwr2::Draw2dBlend::kReverseSubtractive;
+		blend = hwr2::BlendMode::kReverseSubtractive;
 		break;
 	case AST_REVERSESUBTRACT:
-		blend = hwr2::Draw2dBlend::kSubtractive;
+		blend = hwr2::BlendMode::kSubtractive;
 		break;
 	default:
-		blend = hwr2::Draw2dBlend::kAlphaTransparent;
+		blend = hwr2::BlendMode::kAlphaTransparent;
 		break;
 	}
 
@@ -1187,7 +1188,7 @@ void V_DrawFillConsoleMap(INT32 x, INT32 y, INT32 w, INT32 h, INT32 c)
 	float a = 0.5f; // alphalevel is unused in GL??
 	g_2d.begin_quad()
 		.rect(x, y, w, h)
-		.blend(hwr2::Draw2dBlend::kAlphaTransparent)
+		.blend(hwr2::BlendMode::kAlphaTransparent)
 		.color(r, g, b, a)
 		.done();
 }
@@ -1332,7 +1333,7 @@ void V_DrawFadeFill(INT32 x, INT32 y, INT32 w, INT32 h, INT32 c, UINT16 color, U
 	float g;
 	float b;
 	float a;
-	hwr2::Draw2dBlend blendmode;
+	hwr2::BlendMode blendmode;
 
 	if (color & 0xFF00)
 	{
@@ -1345,7 +1346,7 @@ void V_DrawFadeFill(INT32 x, INT32 y, INT32 w, INT32 h, INT32 c, UINT16 color, U
 		b = std::clamp((fstrength - (2.f / 3.f)) * 3.f, 0.f, 1.f);
 		a = 1;
 
-		blendmode = hwr2::Draw2dBlend::kReverseSubtractive;
+		blendmode = hwr2::BlendMode::kReverseSubtractive;
 	}
 	else
 	{
@@ -1356,7 +1357,7 @@ void V_DrawFadeFill(INT32 x, INT32 y, INT32 w, INT32 h, INT32 c, UINT16 color, U
 		g = bc.green / 255.f;
 		b = bc.blue / 255.f;
 		a = softwaretranstohwr[std::clamp(static_cast<int>(strength), 0, 10)] / 255.f;
-		blendmode = hwr2::Draw2dBlend::kAlphaTransparent;
+		blendmode = hwr2::BlendMode::kAlphaTransparent;
 	}
 
 	g_2d.begin_quad()
@@ -1529,7 +1530,7 @@ void V_DrawFadeScreen(UINT16 color, UINT8 strength)
 	float g;
 	float b;
 	float a;
-	hwr2::Draw2dBlend blendmode;
+	hwr2::BlendMode blendmode;
 
 	if (color & 0xFF00)
 	{
@@ -1542,7 +1543,7 @@ void V_DrawFadeScreen(UINT16 color, UINT8 strength)
 		b = std::clamp((fstrength - (2.f / 3.f)) * 3.f, 0.f, 1.f);
 		a = 1;
 
-		blendmode = hwr2::Draw2dBlend::kReverseSubtractive;
+		blendmode = hwr2::BlendMode::kReverseSubtractive;
 	}
 	else
 	{
@@ -1553,7 +1554,7 @@ void V_DrawFadeScreen(UINT16 color, UINT8 strength)
 		g = bc.green / 255.f;
 		b = bc.blue / 255.f;
 		a = softwaretranstohwr[std::clamp(static_cast<int>(strength), 0, 10)] / 255.f;
-		blendmode = hwr2::Draw2dBlend::kAlphaTransparent;
+		blendmode = hwr2::BlendMode::kAlphaTransparent;
 	}
 
 	g_2d.begin_quad()
@@ -1629,7 +1630,7 @@ void V_DrawFadeConsBack(INT32 plines)
 	float a = 0.5f;
 	g_2d.begin_quad()
 		.rect(0, 0, vid.width, plines)
-		.blend(hwr2::Draw2dBlend::kAlphaTransparent)
+		.blend(hwr2::BlendMode::kAlphaTransparent)
 		.color(r, g, b, a)
 		.done();
 }
@@ -1649,7 +1650,7 @@ void V_EncoreInvertScreen(void)
 #endif
 
 	g_2d.begin_quad()
-		.blend(hwr2::Draw2dBlend::kInvertDest)
+		.blend(hwr2::BlendMode::kInvertDest)
 		.color(1, 1, 1, 1)
 		.rect(0, 0, vid.width, vid.height)
 		.done();

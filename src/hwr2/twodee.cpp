@@ -89,7 +89,7 @@ void Draw2dVerticesBuilder::done()
 	list.cmds.push_back(tris_);
 }
 
-Draw2dBlend srb2::hwr2::get_blend_mode(const Draw2dCmd& cmd) noexcept
+BlendMode srb2::hwr2::get_blend_mode(const Draw2dCmd& cmd) noexcept
 {
 	auto visitor = srb2::Overload {
 		[&](const Draw2dPatchQuad& cmd) { return cmd.blend; },

@@ -1,4 +1,5 @@
 target_sources(SRB2SDL2 PRIVATE
+	blendmode.hpp
 	pass_blit_postimg_screens.cpp
 	pass_blit_postimg_screens.hpp
 	pass_blit_rect.cpp

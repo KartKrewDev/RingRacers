@@ -19,6 +19,7 @@
 
 #include <tcb/span.hpp>
 
+#include "blendmode.hpp"
 #include "../cxxutil.hpp"
 #include "../doomtype.h"
 
@@ -38,16 +39,6 @@ struct TwodeeVertex
 	float a;
 };
 
-enum class Draw2dBlend
-{
-	kAlphaTransparent,
-	kModulate,
-	kAdditive,
-	kSubtractive,
-	kReverseSubtractive,
-	kInvertDest
-};
-
 struct Draw2dPatchQuad
 {
 	std::size_t begin_index = 0;
@@ -56,7 +47,7 @@ struct Draw2dPatchQuad
 	// A null patch ptr means no patch is drawn
 	const patch_t* patch = nullptr;
 	const uint8_t* colormap = nullptr;
-	Draw2dBlend blend;
+	BlendMode blend;
 	float r = 0.f;
 	float g = 0.f;
 	float b = 0.f;
@@ -81,14 +72,14 @@ struct Draw2dVertices
 	std::size_t begin_index = 0;
 	std::size_t begin_element = 0;
 	std::size_t elements = 0;
-	Draw2dBlend blend = Draw2dBlend::kAlphaTransparent;
+	BlendMode blend = BlendMode::kAlphaTransparent;
 	lumpnum_t flat_lump = UINT32_MAX; // LUMPERROR but not loading w_wad.h from this header
 	bool lines = false;
 };
 
 using Draw2dCmd = std::variant<Draw2dPatchQuad, Draw2dVertices>;
 
-Draw2dBlend get_blend_mode(const Draw2dCmd& cmd) noexcept;
+BlendMode get_blend_mode(const Draw2dCmd& cmd) noexcept;
 bool is_draw_lines(const Draw2dCmd& cmd) noexcept;
 std::size_t elements(const Draw2dCmd& cmd) noexcept;
 
@@ -194,7 +185,7 @@ public:
 		return *this;
 	}
 
-	Draw2dQuadBuilder& blend(Draw2dBlend blend)
+	Draw2dQuadBuilder& blend(BlendMode blend)
 	{
 		quad_.blend = blend;
 		return *this;
@@ -245,7 +236,7 @@ public:
 		return *this;
 	}
 
-	Draw2dVerticesBuilder& blend(Draw2dBlend blend)
+	Draw2dVerticesBuilder& blend(BlendMode blend)
 	{
 		tris_.blend = blend;
 		return *this;
