@@ -164,6 +164,13 @@ class GlCoreRhi final : public Rhi
 	uint32_t index_buffer_offset_ = 0;
 	uint32_t transfer_context_generation_ = 0;
 
+	uint8_t stencil_front_reference_ = 0;
+	uint8_t stencil_front_compare_mask_ = 0xFF;
+	uint8_t stencil_front_write_mask_ = 0xFF;
+	uint8_t stencil_back_reference_ = 0;
+	uint8_t stencil_back_compare_mask_ = 0xFF;
+	uint8_t stencil_back_write_mask_ = 0xFF;
+
 	std::vector<std::function<void()>> disposal_;
 
 public:
@@ -225,6 +232,9 @@ public:
 	virtual void draw_indexed(Handle<GraphicsContext> ctx, uint32_t index_count, uint32_t first_index) override;
 	virtual void
 	read_pixels(Handle<GraphicsContext> ctx, const Rect& rect, PixelFormat format, tcb::span<std::byte> out) override;
+	virtual void set_stencil_reference(Handle<GraphicsContext> ctx, CullMode face, uint8_t reference) override;
+	virtual void set_stencil_compare_mask(Handle<GraphicsContext> ctx, CullMode face, uint8_t mask) override;
+	virtual void set_stencil_write_mask(Handle<GraphicsContext> ctx, CullMode face, uint8_t mask) override;
 
 	virtual void present() override;
 
