@@ -363,7 +363,7 @@ static void M_DrawMenuTyping(void)
 
 	INT32 i, j;
 
-	INT32 x = 60;
+	INT32 x;
 	INT32 y = 100 + (9-menutyping.menutypingfade)*8;
 	INT32 tflag = (9 - menutyping.menutypingfade)<<V_ALPHASHIFT;
 
@@ -374,9 +374,9 @@ static void M_DrawMenuTyping(void)
 	V_DrawFadeScreen(31, menutyping.menutypingfade);
 
 	// Draw the string we're editing at the top.
-	V_DrawString(x, y-48 + 12, V_ALLOWLOWERCASE|tflag, cv->string);
+	V_DrawString(60, y-48 + 12, V_ALLOWLOWERCASE|tflag, cv->string);
 	if (skullAnimCounter < 4)
-		V_DrawCharacter(x + V_StringWidth(cv->string, 0), y - 35, '_' | 0x80, false);
+		V_DrawCharacter(60 + V_StringWidth(cv->string, 0), y - 35, '_' | 0x80, false);
 
 	// Some contextual stuff
 	if (menutyping.keyboardtyping)
@@ -384,52 +384,133 @@ static void M_DrawMenuTyping(void)
 	else
 		V_DrawThinString(10, 175, V_ALLOWLOWERCASE|V_6WIDTHSPACE|tflag|V_GRAYMAP, "Type using the Virtual Keyboard. Use the \'OK\' button to confirm & exit.\nPress any keyboard key not bound to a control to use it.");
 
+#define BUTTONWIDTH (14)
+#define BUTTONHEIGHT (11)
 
 	// Now the keyboard itself
+	INT32 returnx = (BASEVIDWIDTH - (((BUTTONWIDTH + 1)*NUMVIRTUALKEYSINROW)-1))/2;
+	INT32 tempkeyboardx = menutyping.keyboardx;
+
+	while (virtualKeyboard[menutyping.keyboardy][tempkeyboardx] == 1
+	&& tempkeyboardx > 0)
+		tempkeyboardx--;
+
+	x = returnx;
+
 	for (i=0; i < 5; i++)
 	{
-		for (j=0; j < 13; j++)
+		j = 0;
+		while (j < NUMVIRTUALKEYSINROW)
 		{
-			INT32 mflag = 0;
+			INT32 mflag = V_ALLOWLOWERCASE|V_6WIDTHSPACE;
 			INT16 c = virtualKeyboard[i][j];
+
+			INT32 buttonspacing = 1;
+
+			UINT8 col = 27;
+
+			INT32 arrowoffset = 0;
+
+			while (j + buttonspacing < NUMVIRTUALKEYSINROW
+			&& virtualKeyboard[i][j + buttonspacing] == 1)
+			{
+				buttonspacing++;
+			}
+
 			if (menutyping.keyboardshift ^ menutyping.keyboardcapslock)
 				c = shift_virtualKeyboard[i][j];
 
+			if (i < 4 && j < NUMVIRTUALKEYSINROW-2)
+			{
+				col = 25;
+			}
 
 			if (c == KEY_BACKSPACE)
-				strcpy(buf, "DEL");
-
+			{
+				arrowoffset = 1;
+				buf[0] = '\x1C'; // left arrow
+				buf[1] = '\0';
+			}
 			else if (c == KEY_RSHIFT)
-				strcpy(buf, "SHIFT");
+			{
+				arrowoffset = 2;
+				buf[0] = '\x1A'; // up arrow
+				buf[1] = '\0';
 
-			else if (c == KEY_CAPSLOCK)
-				strcpy(buf, "CAPS");
-
+				if (menutyping.keyboardcapslock || menutyping.keyboardshift)
+				{
+					col = 22;
+				}
+			}
 			else if (c == KEY_ENTER)
+			{
 				strcpy(buf, "OK");
-
+			}
 			else if (c == KEY_SPACE)
-				strcpy(buf, "SPACE");
-
+			{
+				strcpy(buf, "Space");
+			}
 			else
 			{
 				buf[0] = c;
 				buf[1] = '\0';
 			}
 
+			INT32 width = ((BUTTONWIDTH + 1) * buttonspacing) - 1;
+
 			// highlight:
-			if (menutyping.keyboardx == j && menutyping.keyboardy == i && !menutyping.keyboardtyping)
-				mflag |= highlightflags;
-			else if (menutyping.keyboardtyping)
+			if (menutyping.keyboardtyping)
+			{
 				mflag |= V_TRANSLUCENT;	// grey it out if we can't use it.
+			}
+			else
+			{
+				if (tempkeyboardx == j && menutyping.keyboardy == i)
+				{
+					V_DrawFill(x + 1, y + 1, width - 2, BUTTONHEIGHT - 2, col - 3);
 
-			V_DrawString(x, y, V_ALLOWLOWERCASE|tflag|mflag, buf);
+					V_DrawFill(x, y,                    width, 1, 121);
+					V_DrawFill(x, y + BUTTONHEIGHT - 1, width, 1, 121);
 
-			x += (buf[1] ? V_StringWidth(buf, 0) : 8) + 8;
+					V_DrawFill(x,             y + 1, 1, BUTTONHEIGHT - 2, 121);
+					V_DrawFill(x + width - 1, y + 1, 1, BUTTONHEIGHT - 2, 121);
+
+					mflag |= highlightflags;
+				}
+				else
+				{
+					V_DrawFill(x, y, width, BUTTONHEIGHT, col);
+				}
+			}
+
+			if (arrowoffset != 0)
+			{
+				if (c == KEY_RSHIFT)
+				{
+					V_DrawFill(x + width - 5, y + 1, 4, 4, 31);
+
+					if (menutyping.keyboardcapslock)
+					{
+						V_DrawFill(x + width - 4, y + 2, 2, 2, 121);
+					}
+				}
+
+				V_DrawCenteredString(x + (width/2), y + 1 + arrowoffset, tflag|mflag, buf);
+			}
+			else
+			{
+				V_DrawCenteredThinString(x + (width/2), y + 1, tflag|mflag, buf);
+			}
+
+			x += width + 1;
+			j += buttonspacing;
 		}
-		x = 60;
-		y += 12;
+		x = returnx;
+		y += BUTTONHEIGHT + 1;
 	}
+
+#undef BUTTONWIDTH
+
 }
 
 // Draw the message popup submenu
