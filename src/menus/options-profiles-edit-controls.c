@@ -109,7 +109,7 @@ menu_t OPTIONS_ProfileControlsDef = {
 	32, 80,
 	SKINCOLOR_ULTRAMARINE, 0,
 	0,
-	NULL,
+	"FILE",
 	3, 5,
 	M_DrawProfileControls,
 	M_HandleProfileControls,

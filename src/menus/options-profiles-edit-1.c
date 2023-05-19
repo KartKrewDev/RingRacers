@@ -30,7 +30,7 @@ menu_t OPTIONS_EditProfileDef = {
 	32, 80,
 	SKINCOLOR_ULTRAMARINE, 0,
 	0,
-	NULL,
+	"FILE",
 	2, 5,
 	M_DrawEditProfile,
 	M_HandleProfileEdit,

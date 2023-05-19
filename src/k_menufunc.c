@@ -564,6 +564,9 @@ void M_StartControlPanel(void)
 			currentMenu->lastOn = 0;
 
 			CV_StealthSetValue(&cv_currprofile, -1); // Make sure to reset that as it is set by PR_ApplyProfile which we kind of hack together to force it.
+
+			// Ambient ocean sounds
+			S_ChangeMusicInternal("_OCEAN", true);
 		}
 		else
 		{
@@ -571,9 +574,9 @@ void M_StartControlPanel(void)
 				restoreMenu = &MainDef;
 			currentMenu = M_SpecificMenuRestore(M_InterruptMenuWithChallenges(restoreMenu));
 			restoreMenu = NULL;
-		}
 
-		M_PlayMenuJam();
+			M_PlayMenuJam();
+		}
 	}
 	else
 	{
