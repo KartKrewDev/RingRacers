@@ -16,10 +16,13 @@ void Obj_BlockRingThink (mobj_t *ring)
 
         // Follow player
         ring->flags &= ~(MF_NOCLIPTHING);
-        P_SetScale(ring, mo->scale);
 		P_MoveOrigin(ring, mo->x, mo->y, mo->z + mo->height/2);
 		ring->flags |= MF_NOCLIPTHING;
         ring->color = mo->color;
+
+        fixed_t baseScale = mo->scale / 2;
+        baseScale += (mo->scale / 30) * player->spheres;
+        P_SetScale(ring, baseScale);
 
         // Twirl
         ring->angle = ring->target->angle + (ANG15 * leveltime);
@@ -49,7 +52,11 @@ void Obj_BlockBodyThink (mobj_t *body)
 
         // Follow player
         body->flags &= ~(MF_NOCLIPTHING);
-        P_SetScale(body, mo->scale);
+
+        fixed_t baseScale = mo->scale / 2;
+        baseScale += (mo->scale / 30) * player->spheres;
+        P_SetScale(body, baseScale);
+
 		P_MoveOrigin(body, mo->x, mo->y, mo->z + mo->height/2);
 		body->flags |= MF_NOCLIPTHING;
         body->color = mo->color;
