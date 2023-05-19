@@ -578,6 +578,16 @@ void M_DrawMenuMessage(void)
 	}
 }
 
+// PAUSE
+static void M_DrawPausedText(INT32 x)
+{
+	patch_t *pausebg = W_CachePatchName("M_STRIPU", PU_CACHE);
+	patch_t *pausetext = W_CachePatchName("M_PAUSET", PU_CACHE);
+
+	V_DrawFixedPatch(x, 0, FRACUNIT, V_SNAPTOLEFT|V_SNAPTOTOP|V_ADD, pausebg,   NULL);
+	V_DrawFixedPatch(x, 0, FRACUNIT, V_SNAPTOLEFT|V_SNAPTOTOP,       pausetext, NULL);
+}
+
 //
 // M_Drawer
 // Called after the view has been rendered,
@@ -637,14 +647,17 @@ void M_Drawer(void)
 		menuwipe = false;
 	}
 
+	// draw pause pic
+	if (paused && !demo.playback && (menuactive || cv_showhud.value))
+	{
+		M_DrawPausedText(0);
+	}
+
 	// focus lost notification goes on top of everything, even the former everything
 	if (window_notinfocus && cv_showfocuslost.value)
 	{
 		M_DrawTextBox((BASEVIDWIDTH/2) - (60), (BASEVIDHEIGHT/2) - (16), 13, 2);
-		if (gamestate == GS_LEVEL && (P_AutoPause() || paused))
-			V_DrawCenteredString(BASEVIDWIDTH/2, (BASEVIDHEIGHT/2) - (4), highlightflags, "Game Paused");
-		else
-			V_DrawCenteredString(BASEVIDWIDTH/2, (BASEVIDHEIGHT/2) - (4), highlightflags, "Focus Lost");
+		V_DrawCenteredString(BASEVIDWIDTH/2, (BASEVIDHEIGHT/2) - (4), highlightflags, "Focus Lost");
 	}
 }
 
@@ -4024,8 +4037,6 @@ void M_DrawExtras(void)
 // INGAME / PAUSE MENUS
 //
 
-// PAUSE
-
 // PAUSE MAIN MENU
 void M_DrawPause(void)
 {
@@ -4046,18 +4057,17 @@ void M_DrawPause(void)
 	INT16 word2len = 0;
 	boolean sok = false;
 
-	patch_t *pausebg = W_CachePatchName("M_STRIPU", PU_CACHE);
 	patch_t *vertbg = W_CachePatchName("M_STRIPV", PU_CACHE);
-	patch_t *pausetext = W_CachePatchName("M_PAUSET", PU_CACHE);
-
 	patch_t *arrstart = W_CachePatchName("M_PTIP", PU_CACHE);
 	patch_t *arrfill = W_CachePatchName("M_PFILL", PU_CACHE);
 
 	//V_DrawFadeScreen(0xFF00, 16);
 
 	// "PAUSED"
-	V_DrawFixedPatch(-offset*FRACUNIT, 0, FRACUNIT, V_ADD, pausebg, NULL);
-	V_DrawFixedPatch(-offset*FRACUNIT, 0, FRACUNIT, 0, pausetext, NULL);
+	if (!paused && !demo.playback && !modeattacking && !netgame) // as close to possible as P_AutoPause, but not dependent on menuactive
+	{
+		M_DrawPausedText(-offset*FRACUNIT);
+	}
 
 	// Vertical Strip:
 	V_DrawFixedPatch((230 + offset)<<FRACBITS, 0, FRACUNIT, V_ADD, vertbg, NULL);
