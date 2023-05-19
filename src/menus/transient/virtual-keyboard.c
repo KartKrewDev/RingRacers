@@ -4,6 +4,7 @@
 #include "../../k_menu.h"
 #include "../../s_sound.h"
 #include "../../hu_stuff.h" // shiftxform
+#include "../../i_system.h" // I_Clipboard funcs
 
 // Typing "sub"-menu
 struct menutyping_s menutyping;
@@ -27,32 +28,128 @@ INT16 shift_virtualKeyboard[5][13] = {
 	{KEY_SPACE, KEY_RSHIFT, KEY_BACKSPACE, KEY_CAPSLOCK, KEY_ENTER, 0, 0, 0, 0, 0, 0, 0, 0}
 };
 
+typedef enum
+{
+	CVCPM_NONE,
+	CVCPM_COPY,
+	CVCPM_CUT,
+	CVCPM_PASTE
+} cvarcopypastemode_t;
+
 boolean M_ChangeStringCvar(INT32 choice)
 {
 	consvar_t *cv = currentMenu->menuitems[itemOn].itemaction.cvar;
 	char buf[MAXSTRINGLENGTH];
 	size_t len;
+	cvarcopypastemode_t copypastemode = CVCPM_NONE;
 
-	if (shiftdown && choice >= 32 && choice <= 127)
-		choice = shiftxform[choice];
+	if (menutyping.keyboardtyping == true)
+	{
+		// We can only use global modifiers in key mode.
+
+		if (ctrldown)
+		{
+			if (choice == 'c' || choice == 'C' || choice == KEY_INS)
+			{
+				// ctrl+c, ctrl+insert, copying
+				copypastemode = CVCPM_COPY;
+			}
+			else if (choice == 'x' || choice == 'X')
+			{
+				// ctrl+x, cutting
+				copypastemode = CVCPM_CUT;
+			}
+			else if (choice == 'v' || choice == 'V')
+			{
+				// ctrl+v, pasting
+				copypastemode = CVCPM_PASTE;
+			}
+			else
+			{
+				// not a known ctrl code
+				return false;
+			}
+		}
+		else if (shiftdown)
+		{
+			if (choice == KEY_INS)
+			{
+				// shift+insert, pasting
+				copypastemode = CVCPM_PASTE;
+			}
+			else if (choice == KEY_DEL)
+			{
+				// shift+delete, cutting
+				copypastemode = CVCPM_CUT;
+			}
+			else if (choice >= 32 && choice <= 127)
+			{
+				// shift+printable, generally uppercase
+				choice = shiftxform[choice];
+			}
+		}
+
+		if (copypastemode != CVCPM_NONE)
+		{
+			len = strlen(cv->string);
+
+			if (copypastemode == CVCPM_PASTE)
+			{
+				const char *paste = I_ClipboardPaste();
+				if (paste == NULL || paste[0] == '\0')
+					;
+				else if (len < MAXSTRINGLENGTH - 1)
+				{
+					M_Memcpy(buf, cv->string, len);
+					buf[len] = 0;
+
+					strncat(buf, paste, (MAXSTRINGLENGTH - 1) - len);
+
+					CV_Set(cv, buf);
+
+					S_StartSound(NULL, sfx_s3k5b); // Tails
+				}
+			}
+			else if (len > 0 /*&& (copypastemode == CVCPM_COPY
+				|| copypastemode == CVCPM_CUT)*/
+				)
+			{
+				I_ClipboardCopy(cv->string, len);
+
+				if (copypastemode == CVCPM_CUT)
+				{
+					// A cut should wipe.
+					CV_Set(cv, "");
+				}
+
+				S_StartSound(NULL, sfx_s3k5b); // Tails
+			}
+
+			return true;
+		}
+	}
 
 	switch (choice)
 	{
 		case KEY_BACKSPACE:
-			len = strlen(cv->string);
-			if (len > 0)
+			if (cv->string[0])
 			{
-				S_StartSound(NULL, sfx_s3k5b); // Tails
+				len = strlen(cv->string);
+
 				M_Memcpy(buf, cv->string, len);
 				buf[len-1] = 0;
+
 				CV_Set(cv, buf);
+
+				S_StartSound(NULL, sfx_s3k5b); // Tails
 			}
 			return true;
 		case KEY_DEL:
 			if (cv->string[0])
 			{
-				S_StartSound(NULL, sfx_s3k5b); // Tails
 				CV_Set(cv, "");
+
+				S_StartSound(NULL, sfx_s3k5b); // Tails
 			}
 			return true;
 		default:
@@ -61,11 +158,14 @@ boolean M_ChangeStringCvar(INT32 choice)
 				len = strlen(cv->string);
 				if (len < MAXSTRINGLENGTH - 1)
 				{
-					S_StartSound(NULL, sfx_s3k5b); // Tails
 					M_Memcpy(buf, cv->string, len);
+
 					buf[len++] = (char)choice;
 					buf[len] = 0;
+
 					CV_Set(cv, buf);
+
+					S_StartSound(NULL, sfx_s3k5b); // Tails
 				}
 				return true;
 			}
@@ -85,8 +185,10 @@ static void M_UpdateKeyboardX(void)
 
 static boolean M_IsTypingKey(INT32 key)
 {
-	return key == KEY_BACKSPACE || key == KEY_ENTER ||
-		key == KEY_ESCAPE || key == KEY_DEL || isprint(key);
+	return key == KEY_BACKSPACE || key == KEY_ENTER
+		|| key == KEY_ESCAPE || key == KEY_DEL
+		|| key == KEY_LCTRL || key == KEY_RCTRL
+		|| isprint(key);
 }
 
 void M_MenuTypingInput(INT32 key)
