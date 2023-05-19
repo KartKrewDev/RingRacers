@@ -1394,8 +1394,8 @@ static void K_BotItemRings(player_t *player, ticcmd_t *cmd)
 --------------------------------------------------*/
 static void K_BotItemRouletteMash(player_t *player, ticcmd_t *cmd)
 {
-	// 12 tics late for Lv.1, frame-perfect for Lv.MAX
-	const tic_t confirmTime = (MAXBOTDIFFICULTY - player->botvars.difficulty);
+	// 24 tics late for Lv.1, frame-perfect for Lv.MAX
+	const tic_t confirmTime = (MAXBOTDIFFICULTY - player->botvars.difficulty) * 2;
 
 	if (K_ItemButtonWasDown(player) == true)
 	{
