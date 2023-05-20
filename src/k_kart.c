@@ -7817,7 +7817,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 				player->spheredigestion = spheredigestion;
 			}
 
-			if (K_PlayerEBrake(player) && (player->ebrakefor%6 == 0))
+			if (K_PlayerGuard(player) && (player->ebrakefor%6 == 0))
 				player->spheres--;
 		}
 		else
@@ -10588,7 +10588,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 						K_MatchGenericExtraFlags(whip, player->mo);
 						whip->fuse = 12; // Changing instawhip animation duration? Look here
 						player->flashing = max(player->flashing, 12);
-						player->mo->momz += FRACUNIT;
+						player->mo->momz += 4*mapobjectscale;
 					}
 				}
 
