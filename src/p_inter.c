@@ -2443,6 +2443,9 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 				K_PlayPainSound(target, source);
 			}
 
+			if (gametyperules & GTR_BUMPERS)
+				player->spheres = min(player->spheres + 5, 40);
+
 			if ((hardhit == true) || cv_kartdebughuddrop.value)
 			{
 				K_DropItems(player);

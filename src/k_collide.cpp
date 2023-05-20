@@ -811,10 +811,10 @@ boolean K_InstaWhipCollide(mobj_t *shield, mobj_t *victim)
 		if (victim != attacker && !P_PlayerInPain(victimPlayer) && victimPlayer->flashing == 0)
 		{
 			// BLOW THAT SHIT THE FUCK UP with guard
-			if (K_PlayerGuard(victimPlayer))
-			//if (true)
+			//if (K_PlayerGuard(victimPlayer))
+			if (true)
 			{
-				victimHitlag = 2*victimHitlag;
+				victimHitlag = 3*victimHitlag;
 
 				if (P_PlayerInPain(attackerPlayer))
 					return false; // never punish shield more than once
@@ -845,9 +845,11 @@ boolean K_InstaWhipCollide(mobj_t *shield, mobj_t *victim)
 				S_StartSound(victim, sfx_mbv92);
 				K_AddHitLag(attacker, victimHitlag, true);
 				K_AddHitLag(victim, attackerHitlag, false);
-				shield->hitlag = attacker->hitlag;
 
 				K_DoPowerClash(shield, victim);
+
+				attacker->hitlag = victimHitlag; // No, seriously, we do not care about K_AddHitLag's idea of a normal maximum
+				shield->hitlag = attacker->hitlag;
 
 				shield->extravalue2 = 1;
 
