@@ -887,7 +887,7 @@ static void M_HandleMenuInput(void)
 			// If we're hovering over a IT_CV_STRING option, pressing A/X opens the typing submenu
 			if (M_MenuConfirmPressed(pid))
 			{
-				menutyping.keyboardtyping = menuKey != 0 ? true : false;	// If we entered this menu by pressing a menu Key, default to keyboard typing, otherwise use controller.
+				menutyping.keyboardtyping = menuKey != -1 ? true : false;	// If we entered this menu by pressing a menu Key, default to keyboard typing, otherwise use controller.
 				menutyping.active = true;
 				menutyping.menutypingclose = false;
 				return;
