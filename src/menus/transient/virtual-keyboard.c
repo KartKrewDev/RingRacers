@@ -173,6 +173,22 @@ boolean M_ChangeStringCvar(INT32 choice)
 	return false;
 }
 
+static void M_ToggleVirtualShift(void)
+{
+	if (menutyping.keyboardcapslock == true)
+	{
+		menutyping.keyboardcapslock = false;
+	}
+	else
+	{
+		menutyping.keyboardshift ^= true;
+		if (menutyping.keyboardshift == false)
+		{
+			menutyping.keyboardcapslock = true;
+		}
+	}
+}
+
 static boolean M_IsTypingKey(INT32 key)
 {
 	return key == KEY_BACKSPACE || key == KEY_ENTER
@@ -183,7 +199,6 @@ static boolean M_IsTypingKey(INT32 key)
 
 void M_MenuTypingInput(INT32 key)
 {
-
 	const UINT8 pid = 0;
 
 	// Fade-in
@@ -228,7 +243,8 @@ void M_MenuTypingInput(INT32 key)
 			&& !(menucmd[pid].buttons & MBT_C)
 			&& !(menucmd[pid].buttons & MBT_X)
 			&& !(menucmd[pid].buttons & MBT_Y)
-			&& !(menucmd[pid].buttons & MBT_Z))
+			&& !(menucmd[pid].buttons & MBT_Z)
+			&& !(menucmd[pid].buttons & MBT_START))
 		{
 			menutyping.keyboardtyping = true;
 		}
@@ -243,6 +259,7 @@ void M_MenuTypingInput(INT32 key)
 			|| M_MenuButtonPressed(pid, MBT_X)
 			|| M_MenuButtonPressed(pid, MBT_Y)
 			|| M_MenuButtonPressed(pid, MBT_Z)
+			|| M_MenuButtonPressed(pid, MBT_START)
 			|| (menucmd[pid].dpad_lr != 0 && menucmd[pid].prev_dpad_lr == 0)
 			|| (menucmd[pid].dpad_ud != 0 && menucmd[pid].prev_dpad_ud != 0)
 		))
@@ -270,9 +287,12 @@ void M_MenuTypingInput(INT32 key)
 		if (key == KEY_ENTER || key == KEY_ESCAPE)
 		{
 			menutyping.menutypingclose = true;	// close menu.
+
+			M_SetMenuDelay(pid);
+			S_StartSound(NULL, sfx_s3k5b);
+
 			return;
 		}
-
 	}
 
 	if (menucmd[pid].delay == 0 && !menutyping.keyboardtyping)	// We must check for this here because we bypass the normal delay check to allow for normal keyboard inputs
@@ -332,6 +352,30 @@ void M_MenuTypingInput(INT32 key)
 			M_SetMenuDelay(pid);
 			S_StartSound(NULL, sfx_s3k5b);
 		}
+		else if (M_MenuButtonPressed(pid, MBT_START))
+		{
+			// Shortcut for close menu.
+			menutyping.menutypingclose = true;
+
+			M_SetMenuDelay(pid);
+			S_StartSound(NULL, sfx_s3k5b);
+		}
+		else if (M_MenuBackPressed(pid))
+		{
+			// Shortcut for backspace.
+			M_ChangeStringCvar(KEY_BACKSPACE);
+
+			M_SetMenuDelay(pid);
+			S_StartSound(NULL, sfx_s3k5b);
+		}
+		else if (M_MenuExtraPressed(pid))
+		{
+			// Shortcut for shift/caps lock.
+			M_ToggleVirtualShift();
+
+			M_SetMenuDelay(pid);
+			S_StartSound(NULL, sfx_s3k5b);
+		}
 		else if (M_MenuConfirmPressed(pid))
 		{
 			// Add the character. First though, check what we're pressing....
@@ -348,27 +392,11 @@ void M_MenuTypingInput(INT32 key)
 
 				if (c == KEY_RSHIFT)
 				{
-					if (menutyping.keyboardcapslock == true)
-					{
-						menutyping.keyboardcapslock = false;
-					}
-					else
-					{
-						menutyping.keyboardshift ^= true;
-						if (menutyping.keyboardshift == false)
-						{
-							menutyping.keyboardcapslock = true;
-						}
-					}
+					M_ToggleVirtualShift();
 				}
-				/*
-				else if (c == KEY_CAPSLOCK)
-					menutyping.keyboardcapslock = !menutyping.keyboardcapslock;
-				*/
 				else if (c == KEY_ENTER)
 				{
 					menutyping.menutypingclose = true;	// close menu.
-					return;
 				}
 				else
 				{
