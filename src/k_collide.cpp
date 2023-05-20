@@ -808,7 +808,8 @@ boolean K_InstaWhipCollide(mobj_t *shield, mobj_t *victim)
 	{
 		player_t *victimPlayer = victim->player;
 
-		if (victim != attacker && !P_PlayerInPain(victimPlayer) && victimPlayer->flashing == 0)
+		//if (victim != attacker && !P_PlayerInPain(victimPlayer) && victimPlayer->flashing == 0)
+		if (victim != attacker && victim->hitlag == 0)
 		{
 			// BLOW THAT SHIT THE FUCK UP with guard
 			if (K_PlayerGuard(victimPlayer))
