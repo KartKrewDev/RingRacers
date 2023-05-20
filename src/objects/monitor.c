@@ -442,13 +442,13 @@ adjust_monitor_drop
 {
 	if (drop->type == MT_EMERALD)
 	{
-		drop->momz = 0;
-		drop->angle = 0;
+		drop->momx = drop->momy = drop->momz = 0;
 	}
-
-	P_InstaThrust(drop, drop->angle, 8*mapobjectscale);
-
-	drop->momz *= 8;
+	else
+	{
+		P_InstaThrust(drop, drop->angle, 8*mapobjectscale);
+		drop->momz *= 8;
+	}
 
 	K_FlipFromObject(drop, monitor);
 
