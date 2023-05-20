@@ -197,9 +197,9 @@ mobj_t *K_SpawnChaosEmerald(fixed_t x, fixed_t y, fixed_t z, angle_t angle, SINT
 
 	P_Thrust(emerald,
 		FixedAngle(P_RandomFixed(PR_ITEM_ROULETTE) * 180) + angle,
-		24 * mapobjectscale);
+		36 * mapobjectscale);
 
-	emerald->momz = flip * 24 * mapobjectscale;
+	emerald->momz = flip * 36 * mapobjectscale;
 	if (emerald->eflags & MFE_UNDERWATER)
 		emerald->momz = (117 * emerald->momz) / 200;
 
@@ -275,6 +275,7 @@ void K_DropEmeraldsFromPlayer(player_t *player, UINT32 emeraldType)
 			P_SetTarget(&emerald->target, player->mo);
 
 			player->emeralds &= ~emeraldFlag;
+			break; // Drop only one emerald. Emerald wins are hard enough!
 		}
 	}
 }

@@ -11923,7 +11923,7 @@ UINT32 K_PointLimitForGametype(void)
 		{
 			if (D_IsPlayerHumanAndGaming(i))
 			{
-				ptsCap += 3;
+				ptsCap += 5;
 			}
 		}
 	}

@@ -440,7 +440,13 @@ adjust_monitor_drop
 (		mobj_t * monitor,
 		mobj_t * drop)
 {
-	P_InstaThrust(drop, drop->angle, 4*mapobjectscale);
+	if (drop->type == MT_EMERALD)
+	{
+		drop->momz = 0;
+		drop->angle = 0;
+	}
+
+	P_InstaThrust(drop, drop->angle, 8*mapobjectscale);
 
 	drop->momz *= 8;
 
@@ -616,9 +622,15 @@ Obj_MonitorGetDamage
 	else
 	{
 		if (inflictor->type == MT_INSTAWHIP)
+		{
 			damage = FRACUNIT/3;
+			if (K_IsPlayerWanted(inflictor->target->player))
+				damage = FRACUNIT; // Emerald hunting time!
+		}
 		else
+		{
 			damage = FRACUNIT; // kill instantly
+		}
 	}
 
 	return damage;

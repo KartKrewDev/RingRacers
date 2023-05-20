@@ -2258,7 +2258,10 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 					if (clash)
 					{
 						player->spheres = max(player->spheres - 10, 0);
-						K_DoPowerClash(target, inflictor);
+						if (inflictor)
+							K_DoPowerClash(target, inflictor);
+						else if (source)
+							K_DoPowerClash(target, source);
 					}
 
 					// Full invulnerability
