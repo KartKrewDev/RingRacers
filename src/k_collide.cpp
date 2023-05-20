@@ -915,7 +915,7 @@ boolean K_InstaWhipCollide(mobj_t *shield, mobj_t *victim)
 
 			P_DamageMobj(victim, shield, attacker, 1, DMG_NORMAL);
 			K_AddHitLag(attacker, attackerHitlag, false);
-			shield = attacker;
+			shield->hitlag = attacker->hitlag;
 		}
 		return false;
 	}
