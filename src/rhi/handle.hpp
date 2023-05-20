@@ -314,7 +314,7 @@ namespace std
 {
 
 template <typename T>
-struct hash<const srb2::rhi::Handle<T>>
+struct hash<srb2::rhi::Handle<T>>
 {
 	std::size_t operator()(const srb2::rhi::Handle<T>& e) const
 	{

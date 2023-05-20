@@ -886,7 +886,6 @@ void GlCoreRhi::destroy_renderbuffer(rhi::Handle<rhi::Renderbuffer> handle)
 
 rhi::Handle<rhi::Pipeline> GlCoreRhi::create_pipeline(const PipelineDesc& desc)
 {
-	SRB2_ASSERT(graphics_context_active_ == false);
 	SRB2_ASSERT(platform_ != nullptr);
 	// TODO assert compatibility of pipeline description with program using ProgramRequirements
 
@@ -1414,26 +1413,32 @@ void GlCoreRhi::bind_pipeline(Handle<GraphicsContext> ctx, Handle<Pipeline> pipe
 		if (desc.depth_stencil_state->stencil_test)
 		{
 			gl_->Enable(GL_STENCIL_TEST);
+			stencil_front_reference_ = 0;
+			stencil_back_reference_ = 0;
+			stencil_front_compare_mask_ = 0xFF;
+			stencil_back_compare_mask_ = 0xFF;
+			stencil_front_write_mask_ = 0xFF;
+			stencil_back_write_mask_ = 0xFF;
 			GL_ASSERT;
 
 			gl_->StencilFuncSeparate(
 				GL_FRONT,
 				map_compare_func(desc.depth_stencil_state->front.stencil_compare),
-				desc.depth_stencil_state->front.reference,
-				desc.depth_stencil_state->front.compare_mask
+				stencil_front_reference_,
+				stencil_front_compare_mask_
 			);
 			GL_ASSERT;
 			gl_->StencilFuncSeparate(
 				GL_BACK,
 				map_compare_func(desc.depth_stencil_state->back.stencil_compare),
-				desc.depth_stencil_state->back.reference,
-				desc.depth_stencil_state->back.compare_mask
+				stencil_back_reference_,
+				stencil_back_compare_mask_
 			);
 			GL_ASSERT;
 
-			gl_->StencilMaskSeparate(GL_FRONT, desc.depth_stencil_state->front.write_mask);
+			gl_->StencilMaskSeparate(GL_FRONT, stencil_front_write_mask_);
 			GL_ASSERT;
-			gl_->StencilMaskSeparate(GL_BACK, desc.depth_stencil_state->back.write_mask);
+			gl_->StencilMaskSeparate(GL_BACK, stencil_back_write_mask_);
 			GL_ASSERT;
 		}
 		else
@@ -1730,6 +1735,87 @@ void GlCoreRhi::read_pixels(Handle<GraphicsContext> ctx, const Rect& rect, Pixel
 	SRB2_ASSERT(out.size_bytes() == rect.w * rect.h * size);
 
 	gl_->ReadPixels(rect.x, rect.y, rect.w, rect.h, layout, type, out.data());
+}
+
+void GlCoreRhi::set_stencil_reference(Handle<GraphicsContext> ctx, CullMode face, uint8_t reference)
+{
+	SRB2_ASSERT(face != CullMode::kNone);
+	SRB2_ASSERT(graphics_context_active_ == true && graphics_context_generation_ == ctx.generation());
+	SRB2_ASSERT(current_render_pass_.has_value());
+	SRB2_ASSERT(current_pipeline_.has_value());
+
+	auto& pl = pipeline_slab_[*current_pipeline_];
+
+	if (face == CullMode::kFront)
+	{
+		stencil_front_reference_ = reference;
+		gl_->StencilFuncSeparate(
+			GL_FRONT,
+			map_compare_func(pl.desc.depth_stencil_state->front.stencil_compare),
+			stencil_front_reference_,
+			stencil_front_compare_mask_
+		);
+	}
+	else if (face == CullMode::kBack)
+	{
+		stencil_back_reference_ = reference;
+		gl_->StencilFuncSeparate(
+			GL_BACK,
+			map_compare_func(pl.desc.depth_stencil_state->back.stencil_compare),
+			stencil_back_reference_,
+			stencil_back_compare_mask_
+		);
+	}
+}
+
+void GlCoreRhi::set_stencil_compare_mask(Handle<GraphicsContext> ctx, CullMode face, uint8_t compare_mask)
+{
+	SRB2_ASSERT(face != CullMode::kNone);
+	SRB2_ASSERT(graphics_context_active_ == true && graphics_context_generation_ == ctx.generation());
+	SRB2_ASSERT(current_render_pass_.has_value());
+	SRB2_ASSERT(current_pipeline_.has_value());
+
+	auto& pl = pipeline_slab_[*current_pipeline_];
+
+	if (face == CullMode::kFront)
+	{
+		stencil_front_compare_mask_ = compare_mask;
+		gl_->StencilFuncSeparate(
+			GL_FRONT,
+			map_compare_func(pl.desc.depth_stencil_state->front.stencil_compare),
+			stencil_front_reference_,
+			stencil_front_compare_mask_
+		);
+	}
+	else if (face == CullMode::kBack)
+	{
+		stencil_back_compare_mask_ = compare_mask;
+		gl_->StencilFuncSeparate(
+			GL_BACK,
+			map_compare_func(pl.desc.depth_stencil_state->back.stencil_compare),
+			stencil_back_reference_,
+			stencil_back_compare_mask_
+		);
+	}
+}
+
+void GlCoreRhi::set_stencil_write_mask(Handle<GraphicsContext> ctx, CullMode face, uint8_t write_mask)
+{
+	SRB2_ASSERT(face != CullMode::kNone);
+	SRB2_ASSERT(graphics_context_active_ == true && graphics_context_generation_ == ctx.generation());
+	SRB2_ASSERT(current_render_pass_.has_value());
+	SRB2_ASSERT(current_pipeline_.has_value());
+
+	if (face == CullMode::kFront)
+	{
+		stencil_front_write_mask_ = write_mask;
+		gl_->StencilMaskSeparate(GL_FRONT, stencil_front_write_mask_);
+	}
+	else if (face == CullMode::kBack)
+	{
+		stencil_back_write_mask_ = write_mask;
+		gl_->StencilMaskSeparate(GL_BACK, stencil_back_write_mask_);
+	}
 }
 
 TextureDetails GlCoreRhi::get_texture_details(Handle<Texture> texture)
