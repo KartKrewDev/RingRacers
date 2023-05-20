@@ -811,8 +811,8 @@ boolean K_InstaWhipCollide(mobj_t *shield, mobj_t *victim)
 		if (victim != attacker && !P_PlayerInPain(victimPlayer) && victimPlayer->flashing == 0)
 		{
 			// BLOW THAT SHIT THE FUCK UP with guard
-			//if (K_PlayerGuard(victimPlayer))
-			if (true)
+			if (K_PlayerGuard(victimPlayer))
+			//if (true)
 			{
 				victimHitlag = 3*victimHitlag;
 
