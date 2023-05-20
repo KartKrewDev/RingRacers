@@ -188,21 +188,34 @@ void M_MenuTypingInput(INT32 key)
 
 	// Fade-in
 
-	if (menutyping.menutypingclose)	// closing
+	if (menutyping.menutypingclose)
 	{
+		// Closing
 		menutyping.menutypingfade--;
 		if (!menutyping.menutypingfade)
 			menutyping.active = false;
 
 		return;	// prevent inputs while closing the menu.
 	}
-	else					// opening
+	else
 	{
-		menutyping.menutypingfade++;
-		if (menutyping.menutypingfade > 9)	// Don't fade all the way, but have it VERY strong to be readable
-			menutyping.menutypingfade = 9;
-		else if (menutyping.menutypingfade < 9)
-			return;	// Don't allow typing until it's fully opened.
+		// Opening
+		const UINT8 destination = (menutyping.keyboardtyping ? 9 : 18);
+
+		if (menutyping.menutypingfade > destination)
+		{
+			menutyping.menutypingfade--;
+		}
+		else if (menutyping.menutypingfade < destination)
+		{
+			menutyping.menutypingfade++;
+		}
+
+		if (menutyping.menutypingfade != destination)
+		{
+			// Don't allow typing until it's fully opened.
+			return;
+		}
 	}
 
 	// Determine when to check for keyboard inputs or controller inputs using menuKey, which is the key passed here as argument.

@@ -357,159 +357,204 @@ void M_DrawMenuForeground(void)
 	}
 }
 
+//
+// M_DrawMenuTooltips
+//
+// Draw a banner across the top of the screen, with a description of the current option displayed
+//
+static void M_DrawMenuTooltips(void)
+{
+	if (currentMenu->menuitems[itemOn].tooltip != NULL)
+	{
+		V_DrawFixedPatch(0, 0, FRACUNIT, 0, W_CachePatchName("MENUHINT", PU_CACHE), NULL);
+		V_DrawCenteredThinString(BASEVIDWIDTH/2, 12, V_ALLOWLOWERCASE|V_6WIDTHSPACE, currentMenu->menuitems[itemOn].tooltip);
+	}
+}
+
 // Draws the typing submenu
 static void M_DrawMenuTyping(void)
 {
-
 	INT32 i, j;
 
-	INT32 x;
-	INT32 y = 100 + (9-menutyping.menutypingfade)*8;
-	INT32 tflag = (9 - menutyping.menutypingfade)<<V_ALPHASHIFT;
+	INT32 x, y;
 
 	consvar_t *cv = currentMenu->menuitems[itemOn].itemaction.cvar;
 
 	char buf[8];	// We write there to use drawstring for convenience.
 
-	V_DrawFadeScreen(31, menutyping.menutypingfade);
+	V_DrawFadeScreen(31, (menutyping.menutypingfade+1)/2);
 
 	// Draw the string we're editing at the top.
-	V_DrawString(60, y-48 + 12, V_ALLOWLOWERCASE|tflag, cv->string);
-	if (skullAnimCounter < 4)
-		V_DrawCharacter(60 + V_StringWidth(cv->string, 0), y - 35, '_' | 0x80, false);
 
-	// Some contextual stuff
-	if (menutyping.keyboardtyping)
-		V_DrawThinString(10, 175, V_ALLOWLOWERCASE|V_6WIDTHSPACE|tflag|V_GRAYMAP, "Type using your keyboard. Press Enter to confirm & exit.\nUse your controller or any directional input to use the Virtual Keyboard.\n");
+	const INT32 boxwidth = (8*(MAXSTRINGLENGTH + 1)) + 7;
+	x = (BASEVIDWIDTH - boxwidth)/2;
+	y = 80;
+	if (menutyping.menutypingfade < 9)
+		y += (9-menutyping.menutypingfade)*10;
 	else
-		V_DrawThinString(10, 175, V_ALLOWLOWERCASE|V_6WIDTHSPACE|tflag|V_GRAYMAP, "Type using the Virtual Keyboard. Use the \'OK\' button to confirm & exit.\nPress any keyboard key not bound to a control to use it.");
+		y += (9-menutyping.menutypingfade);
 
-#define BUTTONWIDTH (14)
+	if (currentMenu->menuitems[itemOn].text)
+	{
+		V_DrawThinString(x + 5, y - 2, highlightflags|V_ALLOWLOWERCASE, currentMenu->menuitems[itemOn].text);
+	}
+
+	M_DrawMenuTooltips();
+
+	//M_DrawTextBox(x, y + 4, MAXSTRINGLENGTH, 1);
+	V_DrawFill(x + 5, y + 4 + 5, boxwidth - 8, 8+6, 159);
+
+	V_DrawFill(x + 4, y + 4 + 4, boxwidth - 6, 1, 121);
+	V_DrawFill(x + 4, y + 4 + 5 + 8 + 6, boxwidth - 6, 1, 121);
+
+	V_DrawFill(x + 4, y + 4 + 5, 1, 8+6, 121);
+	V_DrawFill(x + 5 + boxwidth - 8, y + 4 + 5, 1, 8+6, 121);
+
+	V_DrawString(x + 8, y + 12, V_ALLOWLOWERCASE, cv->string);
+	if (skullAnimCounter < 4)
+		V_DrawCharacter(x + 8 + V_StringWidth(cv->string, 0), y + 12 + 1, '_' | 0x80, false);
+
+	const INT32 buttonwidth = ((boxwidth + 1)/NUMVIRTUALKEYSINROW);
 #define BUTTONHEIGHT (11)
 
 	// Now the keyboard itself
-	INT32 returnx = (BASEVIDWIDTH - (((BUTTONWIDTH + 1)*NUMVIRTUALKEYSINROW)-1))/2;
-	INT32 tempkeyboardx = menutyping.keyboardx;
+	x += 5;
+	INT32 returnx = x;
 
-	while (virtualKeyboard[menutyping.keyboardy][tempkeyboardx] == 1
-	&& tempkeyboardx > 0)
-		tempkeyboardx--;
-
-	x = returnx;
-
-	for (i=0; i < 5; i++)
+	if (menutyping.menutypingfade > 9)
 	{
-		j = 0;
-		while (j < NUMVIRTUALKEYSINROW)
+		y += 36 + 80 + (9-menutyping.menutypingfade)*10; // double yoffs for animation
+
+		INT32 tempkeyboardx = menutyping.keyboardx;
+
+		while (virtualKeyboard[menutyping.keyboardy][tempkeyboardx] == 1
+		&& tempkeyboardx > 0)
+			tempkeyboardx--;
+
+		for (i = 0; i < 5; i++)
 		{
-			INT32 mflag = V_ALLOWLOWERCASE|V_6WIDTHSPACE;
-			INT16 c = virtualKeyboard[i][j];
-
-			INT32 buttonspacing = 1;
-
-			UINT8 col = 27;
-
-			INT32 arrowoffset = 0;
-
-			while (j + buttonspacing < NUMVIRTUALKEYSINROW
-			&& virtualKeyboard[i][j + buttonspacing] == 1)
+			j = 0;
+			while (j < NUMVIRTUALKEYSINROW)
 			{
-				buttonspacing++;
-			}
+				INT32 mflag = V_ALLOWLOWERCASE|V_6WIDTHSPACE;
+				INT16 c = virtualKeyboard[i][j];
 
-			if (menutyping.keyboardshift ^ menutyping.keyboardcapslock)
-				c = shift_virtualKeyboard[i][j];
+				INT32 buttonspacing = 1;
 
-			if (i < 4 && j < NUMVIRTUALKEYSINROW-2)
-			{
-				col = 25;
-			}
+				UINT8 col = 27;
 
-			if (c == KEY_BACKSPACE)
-			{
-				arrowoffset = 1;
-				buf[0] = '\x1C'; // left arrow
-				buf[1] = '\0';
-			}
-			else if (c == KEY_RSHIFT)
-			{
-				arrowoffset = 2;
-				buf[0] = '\x1A'; // up arrow
-				buf[1] = '\0';
+				INT32 arrowoffset = 0;
 
-				if (menutyping.keyboardcapslock || menutyping.keyboardshift)
+				while (j + buttonspacing < NUMVIRTUALKEYSINROW
+				&& virtualKeyboard[i][j + buttonspacing] == 1)
 				{
-					col = 22;
+					buttonspacing++;
 				}
-			}
-			else if (c == KEY_ENTER)
-			{
-				strcpy(buf, "OK");
-			}
-			else if (c == KEY_SPACE)
-			{
-				strcpy(buf, "Space");
-			}
-			else
-			{
-				buf[0] = c;
-				buf[1] = '\0';
-			}
 
-			INT32 width = ((BUTTONWIDTH + 1) * buttonspacing) - 1;
+				if (menutyping.keyboardshift ^ menutyping.keyboardcapslock)
+					c = shift_virtualKeyboard[i][j];
 
-			// highlight:
-			if (menutyping.keyboardtyping)
-			{
-				mflag |= V_TRANSLUCENT;	// grey it out if we can't use it.
-			}
-			else
-			{
-				if (tempkeyboardx == j && menutyping.keyboardy == i)
+				if (i < 4 && j < NUMVIRTUALKEYSINROW-2)
 				{
-					V_DrawFill(x + 1, y + 1, width - 2, BUTTONHEIGHT - 2, col - 3);
+					col = 25;
+				}
 
-					V_DrawFill(x, y,                    width, 1, 121);
-					V_DrawFill(x, y + BUTTONHEIGHT - 1, width, 1, 121);
+				if (c == KEY_BACKSPACE)
+				{
+					arrowoffset = 1;
+					buf[0] = '\x1C'; // left arrow
+					buf[1] = '\0';
+				}
+				else if (c == KEY_RSHIFT)
+				{
+					arrowoffset = 2;
+					buf[0] = '\x1A'; // up arrow
+					buf[1] = '\0';
 
-					V_DrawFill(x,             y + 1, 1, BUTTONHEIGHT - 2, 121);
-					V_DrawFill(x + width - 1, y + 1, 1, BUTTONHEIGHT - 2, 121);
-
-					mflag |= highlightflags;
+					if (menutyping.keyboardcapslock || menutyping.keyboardshift)
+					{
+						col = 22;
+					}
+				}
+				else if (c == KEY_ENTER)
+				{
+					strcpy(buf, "OK");
+				}
+				else if (c == KEY_SPACE)
+				{
+					strcpy(buf, "Space");
 				}
 				else
 				{
-					V_DrawFill(x, y, width, BUTTONHEIGHT, col);
+					buf[0] = c;
+					buf[1] = '\0';
 				}
-			}
 
-			if (arrowoffset != 0)
-			{
-				if (c == KEY_RSHIFT)
+				INT32 width = (buttonwidth * buttonspacing) - 1;
+
+				// highlight:
+				/*if (menutyping.keyboardtyping)
 				{
-					V_DrawFill(x + width - 5, y + 1, 4, 4, 31);
-
-					if (menutyping.keyboardcapslock)
+					mflag |= V_TRANSLUCENT;	// grey it out if we can't use it.
+				}
+				else*/
+				{
+					if (tempkeyboardx == j && menutyping.keyboardy == i)
 					{
-						V_DrawFill(x + width - 4, y + 2, 2, 2, 121);
+						V_DrawFill(x + 1, y + 1, width - 2, BUTTONHEIGHT - 2, col - 3);
+
+						V_DrawFill(x, y,                    width, 1, 121);
+						V_DrawFill(x, y + BUTTONHEIGHT - 1, width, 1, 121);
+
+						V_DrawFill(x,             y + 1, 1, BUTTONHEIGHT - 2, 121);
+						V_DrawFill(x + width - 1, y + 1, 1, BUTTONHEIGHT - 2, 121);
+
+						mflag |= highlightflags;
+					}
+					else
+					{
+						V_DrawFill(x, y, width, BUTTONHEIGHT, col);
 					}
 				}
 
-				V_DrawCenteredString(x + (width/2), y + 1 + arrowoffset, tflag|mflag, buf);
-			}
-			else
-			{
-				V_DrawCenteredThinString(x + (width/2), y + 1, tflag|mflag, buf);
-			}
+				if (arrowoffset != 0)
+				{
+					if (c == KEY_RSHIFT)
+					{
+						V_DrawFill(x + width - 5, y + 1, 4, 4, 31);
 
-			x += width + 1;
-			j += buttonspacing;
+						if (menutyping.keyboardcapslock)
+						{
+							V_DrawFill(x + width - 4, y + 2, 2, 2, 121);
+						}
+					}
+
+					V_DrawCenteredString(x + (width/2), y + 1 + arrowoffset, mflag, buf);
+				}
+				else
+				{
+					V_DrawCenteredThinString(x + (width/2), y + 1, mflag, buf);
+				}
+
+				x += width + 1;
+				j += buttonspacing;
+			}
+			x = returnx;
+			y += BUTTONHEIGHT + 1;
 		}
-		x = returnx;
-		y += BUTTONHEIGHT + 1;
 	}
 
-#undef BUTTONWIDTH
+#undef BUTTONHEIGHT
+
+	// Some contextual stuff
+	if (menutyping.keyboardtyping)
+	{
+		V_DrawThinString(returnx, 175, V_ALLOWLOWERCASE|V_6WIDTHSPACE|V_GRAYMAP, "Type using your keyboard. Press Enter to confirm & exit.\nUse your controller or any directional input to use the Virtual Keyboard.\n");
+	}
+	else
+	{
+		V_DrawThinString(x, 175, V_ALLOWLOWERCASE|V_6WIDTHSPACE|V_GRAYMAP, "Type using the Virtual Keyboard. Use the \'OK\' button to confirm & exit.\nPress any keyboard key not bound to a control to use it.");
+	}
 
 }
 
@@ -664,20 +709,6 @@ void M_Drawer(void)
 // ==========================================================================
 // GENERIC MENUS
 // ==========================================================================
-
-//
-// M_DrawMenuTooltips
-//
-// Draw a banner across the top of the screen, with a description of the current option displayed
-//
-static void M_DrawMenuTooltips(void)
-{
-	if (currentMenu->menuitems[itemOn].tooltip != NULL)
-	{
-		V_DrawFixedPatch(0, 0, FRACUNIT, 0, W_CachePatchName("MENUHINT", PU_CACHE), NULL);
-		V_DrawCenteredThinString(BASEVIDWIDTH/2, 12, V_ALLOWLOWERCASE|V_6WIDTHSPACE, currentMenu->menuitems[itemOn].tooltip);
-	}
-}
 
 // Converts a string into question marks.
 // Used for the secrets menu, to hide yet-to-be-unlocked stuff.
