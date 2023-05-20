@@ -374,6 +374,8 @@ static void M_DrawMenuTooltips(void)
 // Draws the typing submenu
 static void M_DrawMenuTyping(void)
 {
+	const UINT8 pid = 0;
+
 	INT32 i, j;
 
 	INT32 x, y;
@@ -459,11 +461,19 @@ static void M_DrawMenuTyping(void)
 					col = 25;
 				}
 
+				boolean canmodifycol = (menutyping.menutypingfade == 18);
+
 				if (c == KEY_BACKSPACE)
 				{
 					arrowoffset = 1;
 					buf[0] = '\x1C'; // left arrow
 					buf[1] = '\0';
+
+					if (canmodifycol && M_MenuBackHeld(pid))
+					{
+						col -= 4;
+						canmodifycol = false;
+					}
 				}
 				else if (c == KEY_RSHIFT)
 				{
@@ -475,10 +485,22 @@ static void M_DrawMenuTyping(void)
 					{
 						col = 22;
 					}
+
+					if (canmodifycol && M_MenuExtraHeld(pid))
+					{
+						col -= 4;
+						canmodifycol = false;
+					}
 				}
 				else if (c == KEY_ENTER)
 				{
 					strcpy(buf, "OK");
+
+					if (menutyping.menutypingclose)
+					{
+						col -= 4;
+						canmodifycol = false;
+					}
 				}
 				else if (c == KEY_SPACE)
 				{
@@ -501,6 +523,12 @@ static void M_DrawMenuTyping(void)
 				{
 					if (tempkeyboardx == j && menutyping.keyboardy == i)
 					{
+						if (canmodifycol && M_MenuConfirmHeld(pid))
+						{
+							col -= 4;
+							canmodifycol = false;
+						}
+
 						V_DrawFill(x + 1, y + 1, width - 2, BUTTONHEIGHT - 2, col - 3);
 
 						V_DrawFill(x, y,                    width, 1, 121);
