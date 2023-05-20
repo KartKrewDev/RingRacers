@@ -718,7 +718,7 @@ static void K_SpawnBumpForObjs(mobj_t *mobj1, mobj_t *mobj2)
 	}
 }
 
-static void K_PlayerJustBumped(player_t *player, boolean guardbreak)
+static void K_PlayerJustBumped(player_t *player)
 {
 	mobj_t *playerMobj = NULL;
 
@@ -740,13 +740,6 @@ static void K_PlayerJustBumped(player_t *player, boolean guardbreak)
 		// so that friction doesn't immediately decide to stop the player if they're at a standstill
 		player->rmomx = playerMobj->momx - player->cmomx;
 		player->rmomy = playerMobj->momy - player->cmomy;
-	}
-
-	if (guardbreak && K_PlayerGuard(player))
-	{
-		S_StartSound(player->mo, sfx_gbrk);
-		K_AddHitLag(player->mo, TICRATE, true);
-		player->instaShieldCooldown = 2*TICRATE;
 	}
 
 	player->justbumped = bumptime;
@@ -940,8 +933,16 @@ boolean K_KartBouncing(mobj_t *mobj1, mobj_t *mobj2)
 
 	K_SpawnBumpForObjs(mobj1, mobj2);
 
-	K_PlayerJustBumped(mobj1->player, true);
-	K_PlayerJustBumped(mobj2->player, true);
+	if (mobj1->type == MT_PLAYER && mobj2->type == MT_PLAYER)
+	{
+		if (K_PlayerGuard(mobj1->player))
+			K_DoGuardBreak(mobj1, mobj2);
+		if (K_PlayerGuard(mobj2->player))
+			K_DoGuardBreak(mobj2, mobj1);
+	}
+
+	K_PlayerJustBumped(mobj1->player);
+	K_PlayerJustBumped(mobj2->player);
 
 	return true;
 }
@@ -1010,7 +1011,7 @@ boolean K_KartSolidBounce(mobj_t *bounceMobj, mobj_t *solidMobj)
 	bounceMobj->momz = -bounceMobj->momz;
 
 	K_SpawnBumpForObjs(bounceMobj, solidMobj);
-	K_PlayerJustBumped(bounceMobj->player, false);
+	K_PlayerJustBumped(bounceMobj->player);
 
 	return true;
 }
@@ -1986,6 +1987,7 @@ void K_SpawnMagicianParticles(mobj_t *mo, int spread)
 		dust->frame |= FF_SUBTRACT|FF_TRANS90;
 		dust->color = color;
 		dust->colorized = true;
+		dust->hitlag = 0;
 	}
 }
 
@@ -3635,6 +3637,29 @@ void K_DoPowerClash(mobj_t *t1, mobj_t *t2) {
 	// Shrink over time (accidental behavior that looked good)
 	clash->destscale = (t1->scale) + (t2->scale);
 	P_SetScale(clash, 3*clash->destscale/2);
+}
+
+void K_DoGuardBreak(mobj_t *t1, mobj_t *t2) {
+	mobj_t *clash;
+
+	if (!(t1->player && t2->player))
+		return;
+
+	// short-circuit instashield for vfx visibility
+	t1->player->instaShieldCooldown = 2*TICRATE;
+
+	S_StartSound(t1, sfx_gbrk);
+	K_AddHitLag(t1, 24, true);
+	P_DamageMobj(t1, t2, t2, 1, DMG_STING);
+
+	clash = P_SpawnMobj((t1->x/2) + (t2->x/2), (t1->y/2) + (t2->y/2), (t1->z/2) + (t2->z/2), MT_GUARDBREAK);
+
+	// needs to handle mixed scale collisions
+	clash->z = clash->z + (t1->height/4) + (t2->height/4);
+	clash->angle = R_PointToAngle2(clash->x, clash->y, t1->x, t1->y) + ANGLE_90;
+	clash->color = t1->color;
+
+	clash->destscale = 3*((t1->scale) + (t2->scale))/2;
 }
 
 void K_BattleAwardHit(player_t *player, player_t *victim, mobj_t *inflictor, UINT8 damage)

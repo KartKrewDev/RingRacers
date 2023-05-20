@@ -74,3 +74,11 @@ void Obj_BlockBodyThink (mobj_t *body)
             body->renderflags |= RF_DONTDRAW;
     }
 }
+
+void Obj_GuardBreakThink (mobj_t *fx)
+{
+    if (leveltime%2)
+        fx->renderflags &= ~RF_DONTDRAW;
+    else
+        fx->renderflags |= RF_DONTDRAW;
+}

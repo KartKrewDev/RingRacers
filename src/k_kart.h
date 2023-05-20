@@ -91,6 +91,7 @@ void K_SetHitLagForObjects(mobj_t *mo1, mobj_t *mo2, INT32 tics, boolean fromDam
 void K_AwardPlayerRings(player_t *player, INT32 rings, boolean overload);
 void K_DoInstashield(player_t *player);
 void K_DoPowerClash(mobj_t *t1, mobj_t *t2);
+void K_DoGuardBreak(mobj_t *t1, mobj_t *t2);
 void K_BattleAwardHit(player_t *player, player_t *victim, mobj_t *inflictor, UINT8 bumpersRemoved);
 void K_RemoveGrowShrink(player_t *player);
 boolean K_IsBigger(mobj_t *compare, mobj_t *other);

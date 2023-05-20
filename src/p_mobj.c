@@ -8371,6 +8371,11 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 		Obj_BlockBodyThink(mobj);
 		break;
 	}
+	case MT_GUARDBREAK:
+	{
+		Obj_GuardBreakThink(mobj);
+		break;
+	}
 	case MT_GARDENTOPSPARK:
 	{
 		Obj_GardenTopSparkThink(mobj);

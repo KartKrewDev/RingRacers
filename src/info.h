@@ -1191,6 +1191,7 @@ typedef enum sprite
 	SPR_ISTB, // instashield layer B
 
 	SPR_PWCL, // Invinc/grow clash VFX
+	SPR_GBRK, // Guard break
 
 	SPR_ARRO, // player arrows
 	SPR_ITEM,
@@ -5088,6 +5089,7 @@ typedef enum state
 	S_INSTASHIELDB7,
 
 	S_POWERCLASH, // Grow/Invinc clash VFX
+	S_GUARDBREAK,
 
 	S_PLAYERARROW, // Above player arrow
 	S_PLAYERARROW_BOX,
@@ -6604,6 +6606,7 @@ typedef enum mobj_type
 	MT_INSTASHIELDB,
 
 	MT_POWERCLASH, // Grow/Invinc clash VFX
+	MT_GUARDBREAK,
 
 	MT_PLAYERARROW,
 	MT_PLAYERWANTED,
