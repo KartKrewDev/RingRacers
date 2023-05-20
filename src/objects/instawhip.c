@@ -35,5 +35,8 @@ void Obj_InstaWhipThink (mobj_t *whip)
             whip->renderflags &= ~RF_DONTDRAW;
         else
             whip->renderflags |= RF_DONTDRAW;
+
+        if (whip->extravalue2) // Whip has no hitbox but removing it is a pain in the ass
+            whip->renderflags |= RF_DONTDRAW;
     }
 }
