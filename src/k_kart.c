@@ -7925,6 +7925,8 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 	if (player->guardCooldown)
 		player->guardCooldown--;
 		
+	if (player->whip && P_MobjWasRemoved(player->whip))
+		player->whip = NULL;
 
 	if (player->startboost > 0 && onground == true)
 	{
@@ -10619,6 +10621,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 						player->guardCooldown = 50;
 						S_StartSound(player->mo, sfx_iwhp);
 						mobj_t *whip = P_SpawnMobj(player->mo->x, player->mo->y, player->mo->z, MT_INSTAWHIP);
+						player->whip = whip;
 						P_SetScale(whip, player->mo->scale);
 						P_SetTarget(&whip->target, player->mo);
 						K_MatchGenericExtraFlags(whip, player->mo);

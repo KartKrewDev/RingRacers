@@ -2675,6 +2675,7 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 		P_SetTarget(&players[player].follower, NULL);
 		P_SetTarget(&players[player].awayview.mobj, NULL);
 		P_SetTarget(&players[player].stumbleIndicator, NULL);
+		P_SetTarget(&players[player].whip, NULL);
 		P_SetTarget(&players[player].ringShooter, NULL);
 		P_SetTarget(&players[player].followmobj, NULL);
 

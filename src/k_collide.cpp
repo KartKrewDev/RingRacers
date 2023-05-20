@@ -811,7 +811,26 @@ boolean K_InstaWhipCollide(mobj_t *shield, mobj_t *victim)
 		//if (victim != attacker && !P_PlayerInPain(victimPlayer) && victimPlayer->flashing == 0)
 		if (victim != attacker && victim->hitlag == 0)
 		{
-			// BLOW THAT SHIT THE FUCK UP with guard
+			// If both players have a whip, hits are order-of-execution dependent and that sucks.
+			// Player expectation is a clash here.
+			if (victimPlayer->whip && !P_MobjWasRemoved(victimPlayer->whip))
+			{
+				victimPlayer->whip->extravalue2 = 1;
+				shield->extravalue2 = 1;
+
+				K_DoPowerClash(victim, attacker);
+
+				victim->renderflags &= ~RF_DONTDRAW;
+				attacker->renderflags &= ~RF_DONTDRAW;
+
+				angle_t thrangle = R_PointToAngle2(attacker->x, attacker->y, victim->x, victim->y);
+				P_Thrust(victim, thrangle, FRACUNIT*7);
+				P_Thrust(attacker, ANGLE_180 + thrangle, FRACUNIT*7);
+
+				return false;
+			}
+
+			// Instawhip _always_ loses to guard.
 			if (K_PlayerGuard(victimPlayer))
 			//if (true)
 			{
@@ -824,11 +843,13 @@ boolean K_InstaWhipCollide(mobj_t *shield, mobj_t *victim)
 				attacker->momx = attacker->momy = 0;
 				P_Thrust(attacker, thrangle, FRACUNIT*7);
 
+				// A little extra juice, so successful reads are usually positive or zero on spheres.
 				victimPlayer->spheres = std::min(victimPlayer->spheres + 10, 40);
 
 				shield->renderflags &= ~RF_DONTDRAW;
 				shield->flags |= MF_NOCLIPTHING;
 
+				// Attacker should be free to all reasonable followups.
 				attacker->renderflags &= ~RF_DONTDRAW;
 				attackerPlayer->spindashboost = 0;
 				attackerPlayer->sneakertimer = 0;
@@ -836,6 +857,7 @@ boolean K_InstaWhipCollide(mobj_t *shield, mobj_t *victim)
 				attackerPlayer->guardCooldown = TICRATE*2;
 				attackerPlayer->flashing = 0;
 
+				// Localized broly for a local event.
 				mobj_t *broly = Obj_SpawnBrolyKi(victim, victimHitlag);
 				broly->extravalue2 = 16*mapobjectscale;
 
@@ -847,7 +869,7 @@ boolean K_InstaWhipCollide(mobj_t *shield, mobj_t *victim)
 				K_AddHitLag(attacker, victimHitlag, true);
 				K_AddHitLag(victim, attackerHitlag, false);
 
-				K_DoPowerClash(shield, victim);
+				K_DoPowerClash(shield, victim); // REJECTED
 
 				attacker->hitlag = victimHitlag; // No, seriously, we do not care about K_AddHitLag's idea of a normal maximum
 				shield->hitlag = attacker->hitlag;
@@ -862,7 +884,7 @@ boolean K_InstaWhipCollide(mobj_t *shield, mobj_t *victim)
 			// while still behaving as if it's a "real" hit.
 			P_PlayRinglossSound(victim);
 			P_PlayerRingBurst(victimPlayer, 5);
-			P_DamageMobj(victim, shield, attacker, 1, DMG_STUMBLE); // There's a pecial exception in P_DamageMobj for type==MT_INSTAWHIP
+			P_DamageMobj(victim, shield, attacker, 1, DMG_STUMBLE); // There's a special exception in P_DamageMobj for type==MT_INSTAWHIP
 
 			angle_t thrangle = ANGLE_180 + R_PointToAngle2(victim->x, victim->y, shield->x, shield->y);
 			P_Thrust(victim, thrangle, FRACUNIT*10);

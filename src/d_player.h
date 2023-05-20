@@ -741,6 +741,7 @@ struct player_t
 
 	mobj_t *stumbleIndicator;
 	mobj_t *sliptideZipIndicator;
+	mobj_t *whip;
 
 	UINT8 instaShieldCooldown;
 	UINT8 guardCooldown;
