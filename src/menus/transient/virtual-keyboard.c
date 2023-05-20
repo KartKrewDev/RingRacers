@@ -243,10 +243,25 @@ void M_MenuTypingInput(INT32 key)
 			|| M_MenuButtonPressed(pid, MBT_X)
 			|| M_MenuButtonPressed(pid, MBT_Y)
 			|| M_MenuButtonPressed(pid, MBT_Z)
-			|| menucmd[pid].dpad_lr != 0
-			|| menucmd[pid].dpad_ud != 0
+			|| (menucmd[pid].dpad_lr != 0 && menucmd[pid].prev_dpad_lr == 0)
+			|| (menucmd[pid].dpad_ud != 0 && menucmd[pid].prev_dpad_ud != 0)
 		))
 		{
+			/*CONS_Printf("key is %d, \
+				%c%c%c-%c%c%c-%c-%c%c%c%c\n",
+				key,
+				M_MenuButtonPressed(pid, MBT_A) ? 'A' : ' ',
+				M_MenuButtonPressed(pid, MBT_B) ? 'B' : ' ',
+				M_MenuButtonPressed(pid, MBT_C) ? 'C' : ' ',
+				M_MenuButtonPressed(pid, MBT_X) ? 'X' : ' ',
+				M_MenuButtonPressed(pid, MBT_Y) ? 'Y' : ' ',
+				M_MenuButtonPressed(pid, MBT_Z) ? 'Z' : ' ',
+				M_MenuButtonPressed(pid, MBT_START) ? '+' : ' ',
+				menucmd[pid].dpad_lr < 0 ? '<' : ' ',
+				menucmd[pid].dpad_ud > 0 ? '^' : ' ',
+				menucmd[pid].dpad_ud < 0 ? 'v' : ' ',
+				menucmd[pid].dpad_lr > 0 ? '>' : ' '
+				);*/
 			menutyping.keyboardtyping = false;
 			return;
 		}

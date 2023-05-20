@@ -552,10 +552,16 @@ typedef enum
 
 struct menucmd_t
 {
+	// Current frame's data
 	SINT8 dpad_ud; // up / down dpad
 	SINT8 dpad_lr; // left / right
 	UINT32 buttons; // buttons
-	UINT32 buttonsHeld; // prev frame's buttons
+
+	// Previous frame's data
+	SINT8 prev_dpad_ud;
+	SINT8 prev_dpad_lr;
+	UINT32 buttonsHeld;
+
 	UINT16 delay; // menu wait
 	UINT32 delayCount; // num times ya did menu wait (to make the wait shorter each time)
 };
