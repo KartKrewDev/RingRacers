@@ -832,6 +832,7 @@ boolean K_InstaWhipCollide(mobj_t *shield, mobj_t *victim)
 				attackerPlayer->spindashboost = 0;
 				attackerPlayer->sneakertimer = 0;
 				attackerPlayer->instaShieldCooldown = TICRATE*2;
+				attackerPlayer->guardCooldown = TICRATE*2;
 				attackerPlayer->flashing = 0;
 
 				mobj_t *broly = Obj_SpawnBrolyKi(victim, victimHitlag);

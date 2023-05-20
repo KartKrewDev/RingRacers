@@ -420,6 +420,7 @@ static void P_NetArchivePlayers(savebuffer_t *save)
 		WRITEMEM(save->p, players[i].public_key, PUBKEYLENGTH);
 
 		WRITEUINT8(save->p, players[i].instaShieldCooldown);
+		WRITEUINT8(save->p, players[i].guardCooldown);
 
 		// respawnvars_t
 		WRITEUINT8(save->p, players[i].respawn.state);
@@ -807,6 +808,7 @@ static void P_NetUnArchivePlayers(savebuffer_t *save)
 		READMEM(save->p, players[i].public_key, PUBKEYLENGTH);
 
 		players[i].instaShieldCooldown = READUINT8(save->p);
+		players[i].guardCooldown = READUINT8(save->p);
 
 		// respawnvars_t
 		players[i].respawn.state = READUINT8(save->p);

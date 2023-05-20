@@ -3647,6 +3647,7 @@ void K_DoGuardBreak(mobj_t *t1, mobj_t *t2) {
 
 	// short-circuit instashield for vfx visibility
 	t1->player->instaShieldCooldown = 2*TICRATE;
+	t1->player->guardCooldown = 2*TICRATE;
 
 	S_StartSound(t1, sfx_gbrk);
 	K_AddHitLag(t1, 24, true);
@@ -7920,6 +7921,9 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		if (!P_IsObjectOnGround(player->mo))
 			player->instaShieldCooldown = max(player->instaShieldCooldown, 1);
 	}
+
+	if (player->guardCooldown)
+		player->guardCooldown--;
 		
 
 	if (player->startboost > 0 && onground == true)
@@ -8141,6 +8145,9 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 	{
 		player->pflags &= ~PF_DRIFTINPUT;
 	}
+
+	if (K_PlayerGuard(player))
+		player->instaShieldCooldown = max(player->instaShieldCooldown, 12);
 
 	// Roulette Code
 	K_KartItemRoulette(player, cmd);
@@ -9831,7 +9838,7 @@ boolean K_PlayerEBrake(player_t *player)
 
 boolean K_PlayerGuard(player_t *player)
 {
-	return (K_PlayerEBrake(player) && player->spheres > 0 && player->instaShieldCooldown == 0);
+	return (K_PlayerEBrake(player) && player->spheres > 0 && player->guardCooldown == 0);
 }
 
 SINT8 K_Sliptiding(player_t *player)
@@ -10609,6 +10616,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 					else
 					{
 						player->instaShieldCooldown = 50;
+						player->guardCooldown = 50;
 						S_StartSound(player->mo, sfx_iwhp);
 						mobj_t *whip = P_SpawnMobj(player->mo->x, player->mo->y, player->mo->z, MT_INSTAWHIP);
 						P_SetScale(whip, player->mo->scale);

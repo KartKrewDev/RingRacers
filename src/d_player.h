@@ -743,6 +743,7 @@ struct player_t
 	mobj_t *sliptideZipIndicator;
 
 	UINT8 instaShieldCooldown;
+	UINT8 guardCooldown;
 
 	uint8_t public_key[PUBKEYLENGTH];
 
