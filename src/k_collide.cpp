@@ -789,8 +789,8 @@ boolean K_BubbleShieldCollide(mobj_t *t1, mobj_t *t2)
 
 boolean K_InstaWhipCollide(mobj_t *shield, mobj_t *victim)
 {
-	const int victimHitlag = 10;
-	const int attackerHitlag = 4;
+	int victimHitlag = 10;
+	int attackerHitlag = 4;
 
 	// EV1 is used to indicate that we should no longer hit monitors.
 	// EV2 indicates we should no longer hit anything.
@@ -810,8 +810,12 @@ boolean K_InstaWhipCollide(mobj_t *shield, mobj_t *victim)
 
 		if (victim != attacker && !P_PlayerInPain(victimPlayer) && victimPlayer->flashing == 0)
 		{
+			// BLOW THAT SHIT THE FUCK UP with guard
 			if (K_PlayerEBrake(victimPlayer) && victimPlayer->spheres > 0)
+			//if (true)
 			{
+				victimHitlag = 2*victimHitlag;
+
 				if (P_PlayerInPain(attackerPlayer))
 					return false; // never punish shield more than once
 
@@ -825,22 +829,31 @@ boolean K_InstaWhipCollide(mobj_t *shield, mobj_t *victim)
 				shield->flags |= MF_NOCLIPTHING;
 
 				attacker->renderflags &= ~RF_DONTDRAW;
+				attackerPlayer->spindashboost = 0;
+				attackerPlayer->sneakertimer = 0;
 				attackerPlayer->instaShieldCooldown = TICRATE*2;
 				attackerPlayer->flashing = 0;
+
+				mobj_t *broly = Obj_SpawnBrolyKi(victim, victimHitlag);
+				broly->extravalue2 = 16*mapobjectscale;
+
+				P_PlayVictorySound(victim);
 
 				P_DamageMobj(attacker, victim, victim, 1, DMG_STING);
 
 				S_StartSound(victim, sfx_mbv92);
-				K_AddHitLag(attacker, 2*victimHitlag, true);
+				K_AddHitLag(attacker, victimHitlag, true);
 				K_AddHitLag(victim, attackerHitlag, false);
-				attacker->hitlag = std::min(attacker->hitlag, 2*victimHitlag);
 				shield->hitlag = attacker->hitlag;
+
+				K_DoPowerClash(shield, victim);
 
 				shield->extravalue2 = 1;
 
 				return true;
 			}
 
+			// if you're here, you're getting hit
 			// Damage is a bit hacky, we want only a small loss-of-control
 			// while still behaving as if it's a "real" hit.
 			P_PlayRinglossSound(victim);
@@ -967,12 +980,13 @@ boolean K_PvPTouchDamage(mobj_t *t1, mobj_t *t2)
 			|| (t1->player->invincibilitytimer > 0)
 			|| (t1->player->flamedash > 0 && t1->player->itemtype == KITEM_FLAMESHIELD)
 			|| (t1->player->curshield == KSHIELD_TOP && !K_IsHoldingDownTop(t1->player))
-			|| (t1->player->bubbleblowup > 0);
+			|| (t1->player->bubbleblowup > 0)
+			|| (t1->player->spheres > 0 && K_PlayerEBrake(t1->player));
 	};
 
 	if (canClash(t1, t2) && canClash(t2, t1))
 	{
-		K_DoPowerClash(t1->player, t2->player);
+		K_DoPowerClash(t1, t2);
 		return false;
 	}
 

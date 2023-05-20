@@ -2188,6 +2188,7 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 			if (!force)
 			{
 				boolean invincible = true;
+				boolean clash = false;
 				sfxenum_t sfx = sfx_None;
 
 				if (!(gametyperules & GTR_BUMPERS))
@@ -2211,7 +2212,7 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 				else if (player->spheres > 0 && K_PlayerEBrake(player))
 				{
 					sfx = sfx_s3k3a;
-					player->spheres = max(player->spheres - 10, 0);
+					clash = true;
 				}
 				else if (player->hyudorotimer > 0)
 					;
@@ -2252,6 +2253,12 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 					if (player->timeshit > player->timeshitprev)
 					{
 						S_StartSound(target, sfx);
+					}
+
+					if (clash)
+					{
+						player->spheres = max(player->spheres - 10, 0);
+						K_DoPowerClash(target, inflictor);
 					}
 
 					// Full invulnerability
