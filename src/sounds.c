@@ -1184,7 +1184,8 @@ sfxinfo_t S_sfx[NUMSFX] =
   {"monch", false,  255, 0, -1, NULL, 0,         -1,  -1, LUMPERROR, ""},
   {"etexpl", false,  255, 0, -1, NULL, 0,        -1,  -1, LUMPERROR, "Game crash"},
 
-  {"iwhp", false, 255,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""}, // Grow alarm
+  {"iwhp", false, 255,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""}, // Instawhip attack
+  {"gbrk", false, 255,  8, -1, NULL, 0,        -1,  -1, LUMPERROR, ""}, // Guard break!
 
   // SRB2Kart - Engine sounds
   // Engine class A

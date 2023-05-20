@@ -744,7 +744,7 @@ static void K_PlayerJustBumped(player_t *player, boolean guardbreak)
 
 	if (guardbreak && K_PlayerGuard(player))
 	{
-		S_StartSound(player->mo, sfx_s3k9e);
+		S_StartSound(player->mo, sfx_gbrk);
 		K_AddHitLag(player->mo, TICRATE, true);
 		player->instaShieldCooldown = 2*TICRATE;
 	}
@@ -9865,6 +9865,9 @@ void K_KartEbrakeVisuals(player_t *p)
 			P_SetScale(body, p->mo->scale);
 			K_MatchGenericExtraFlags(body, p->mo);
 			body->renderflags |= RF_DONTDRAW;
+
+			if (K_PlayerGuard(p))
+				S_StartSound(body, sfx_s1af);
 		}
 
 		// HOLD! bubble.
