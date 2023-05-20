@@ -718,7 +718,7 @@ static void K_SpawnBumpForObjs(mobj_t *mobj1, mobj_t *mobj2)
 	}
 }
 
-static void K_PlayerJustBumped(player_t *player)
+static void K_PlayerJustBumped(player_t *player, boolean guardbreak)
 {
 	mobj_t *playerMobj = NULL;
 
@@ -740,6 +740,13 @@ static void K_PlayerJustBumped(player_t *player)
 		// so that friction doesn't immediately decide to stop the player if they're at a standstill
 		player->rmomx = playerMobj->momx - player->cmomx;
 		player->rmomy = playerMobj->momy - player->cmomy;
+	}
+
+	if (guardbreak && K_PlayerGuard(player))
+	{
+		S_StartSound(player->mo, sfx_s3k9e);
+		K_AddHitLag(player->mo, TICRATE, true);
+		player->instaShieldCooldown = 2*TICRATE;
 	}
 
 	player->justbumped = bumptime;
@@ -933,8 +940,8 @@ boolean K_KartBouncing(mobj_t *mobj1, mobj_t *mobj2)
 
 	K_SpawnBumpForObjs(mobj1, mobj2);
 
-	K_PlayerJustBumped(mobj1->player);
-	K_PlayerJustBumped(mobj2->player);
+	K_PlayerJustBumped(mobj1->player, true);
+	K_PlayerJustBumped(mobj2->player, true);
 
 	return true;
 }
@@ -1003,7 +1010,7 @@ boolean K_KartSolidBounce(mobj_t *bounceMobj, mobj_t *solidMobj)
 	bounceMobj->momz = -bounceMobj->momz;
 
 	K_SpawnBumpForObjs(bounceMobj, solidMobj);
-	K_PlayerJustBumped(bounceMobj->player);
+	K_PlayerJustBumped(bounceMobj->player, false);
 
 	return true;
 }
@@ -9795,6 +9802,11 @@ boolean K_PlayerEBrake(player_t *player)
 	}
 
 	return false;
+}
+
+boolean K_PlayerGuard(player_t *player)
+{
+	return (K_PlayerEBrake(player) && player->spheres > 0 && player->instaShieldCooldown == 0);
 }
 
 SINT8 K_Sliptiding(player_t *player)

@@ -178,6 +178,7 @@ SINT8 K_GetForwardMove(player_t *player);
 fixed_t K_GetNewSpeed(player_t *player);
 fixed_t K_3dKartMovement(player_t *player);
 boolean K_PlayerEBrake(player_t *player);
+boolean K_PlayerGuard(player_t *player);
 SINT8 K_Sliptiding(player_t *player);
 boolean K_FastFallBounce(player_t *player);
 fixed_t K_PlayerBaseFriction(player_t *player, fixed_t original);

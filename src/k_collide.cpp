@@ -811,7 +811,7 @@ boolean K_InstaWhipCollide(mobj_t *shield, mobj_t *victim)
 		if (victim != attacker && !P_PlayerInPain(victimPlayer) && victimPlayer->flashing == 0)
 		{
 			// BLOW THAT SHIT THE FUCK UP with guard
-			if (K_PlayerEBrake(victimPlayer) && victimPlayer->spheres > 0)
+			if (K_PlayerGuard(victimPlayer))
 			//if (true)
 			{
 				victimHitlag = 2*victimHitlag;
@@ -876,7 +876,7 @@ boolean K_InstaWhipCollide(mobj_t *shield, mobj_t *victim)
 		|| victim->type == MT_BANANA || victim->type == MT_EGGMANITEM || victim->type == MT_BALLHOG
 		|| victim->type == MT_SSMINE || victim->type == MT_LANDMINE || victim->type == MT_SINK
 		|| victim->type == MT_GARDENTOP || victim->type == MT_DROPTARGET || victim->type == MT_BATTLECAPSULE
-		|| victim->type == MT_MONITOR)
+		|| victim->type == MT_MONITOR || victim->type == MT_SPECIAL_UFO)
 		{
 			// Monitor hack. We can hit monitors once per instawhip, no multihit shredding!
 			// Damage values in Obj_MonitorGetDamage.

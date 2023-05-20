@@ -2209,7 +2209,7 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 				{
 					sfx = sfx_grownd;
 				}
-				else if (player->spheres > 0 && K_PlayerEBrake(player))
+				else if (K_PlayerGuard(player))
 				{
 					sfx = sfx_s3k3a;
 					clash = true;

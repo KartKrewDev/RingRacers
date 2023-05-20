@@ -2,6 +2,7 @@
 #include "../info.h"
 #include "../k_objects.h"
 #include "../p_local.h"
+#include "../k_kart.h"
 
 void Obj_BlockRingThink (mobj_t *ring)
 {
@@ -34,7 +35,7 @@ void Obj_BlockRingThink (mobj_t *ring)
         else
             ring->renderflags |= RF_DONTDRAW;
 
-        if (player->spheres == 0)
+        if (!K_PlayerGuard(player))
             ring->renderflags |= RF_DONTDRAW;
     }
 }
@@ -69,7 +70,7 @@ void Obj_BlockBodyThink (mobj_t *body)
         else
             body->renderflags |= RF_DONTDRAW;
 
-        if (player->spheres == 0)
+        if (!K_PlayerGuard(player))
             body->renderflags |= RF_DONTDRAW;
     }
 }
