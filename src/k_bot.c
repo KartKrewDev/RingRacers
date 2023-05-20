@@ -30,6 +30,7 @@
 #include "m_perfstats.h"
 #include "k_podium.h"
 #include "k_respawn.h"
+#include "m_easing.h"
 
 /*--------------------------------------------------
 	boolean K_AddBot(UINT8 skin, UINT8 difficulty, UINT8 *p)
@@ -486,10 +487,19 @@ static UINT32 K_BotRubberbandDistance(player_t *player)
 --------------------------------------------------*/
 fixed_t K_BotRubberband(player_t *player)
 {
-	fixed_t rubberband = FRACUNIT;
-	fixed_t rubbermax, rubbermin;
+	const fixed_t difficultyEase = ((player->botvars.difficulty - 1) * FRACUNIT) / (DIFFICULTBOT - 1);
+
+	// Lv.   1: x0.35 min
+	// Lv.   9: x1.35 min
+	const fixed_t rubbermin = Easing_Linear(difficultyEase, FRACUNIT * 35 / 100, FRACUNIT * 135 / 100);
+
+	// Lv.   1: x1.0 max
+	// Lv.   9: x1.65 max
+	const fixed_t rubbermax = Easing_Linear(difficultyEase, FRACUNIT, FRACUNIT * 165 / 100);
+
+	fixed_t rubberband = FRACUNIT >> 1;
 	player_t *firstplace = NULL;
-	UINT8 i;
+	size_t i = SIZE_MAX;
 
 	if (player->exiting)
 	{
@@ -534,43 +544,31 @@ fixed_t K_BotRubberband(player_t *player)
 
 	if (firstplace != NULL)
 	{
+		// Lv.   1: 5120 units
+		// Lv.   9: 320 units
+		const fixed_t spacing = FixedDiv(
+			max(
+				80 * mapobjectscale,
+				Easing_Linear(difficultyEase, 5120 * mapobjectscale, 320 * mapobjectscale)
+			),
+			K_GetKartGameSpeedScalar(gamespeed)
+		) / FRACUNIT;
 		const UINT32 wanteddist = firstplace->distancetofinish + K_BotRubberbandDistance(player);
 		const INT32 distdiff = player->distancetofinish - wanteddist;
 
-		if (wanteddist > player->distancetofinish)
+		rubberband = FixedDiv(distdiff + spacing, spacing * 2);
+
+		if (rubberband > FRACUNIT)
 		{
-			// Whoa, you're too far ahead! Slow back down a little.
-			rubberband += (DIFFICULTBOT - min(DIFFICULTBOT, player->botvars.difficulty)) * (distdiff / 3);
+			rubberband = FRACUNIT;
 		}
-		else
+		else if (rubberband < 0)
 		{
-			// Catch up to your position!
-			rubberband += player->botvars.difficulty * distdiff;
+			rubberband = 0;
 		}
 	}
 
-	// Lv.   1: x1.0 max
-	// Lv.   5: x1.4 max
-	// Lv.   9: x1.8 max
-	// Lv. MAX: x2.2 max
-	rubbermax = FRACUNIT + ((FRACUNIT * (player->botvars.difficulty - 1)) / 10);
-
-	// Lv.   1: x0.75 min
-	// Lv.   5: x0.875 min
-	// Lv.   9: x1.0 min
-	// Lv. MAX: x1.125 min
-	rubbermin = FRACUNIT - (((FRACUNIT/4) * (DIFFICULTBOT - player->botvars.difficulty)) / (DIFFICULTBOT - 1));
-
-	if (rubberband > rubbermax)
-	{
-		rubberband = rubbermax;
-	}
-	else if (rubberband < rubbermin)
-	{
-		rubberband = rubbermin;
-	}
-
-	return rubberband;
+	return Easing_Linear(rubberband, rubbermin, rubbermax);
 }
 
 /*--------------------------------------------------
@@ -584,7 +582,7 @@ fixed_t K_UpdateRubberband(player_t *player)
 	fixed_t ret = player->botvars.rubberband;
 
 	// Ease into the new value.
-	ret += (dest - player->botvars.rubberband) >> 3;
+	ret += (dest - player->botvars.rubberband) / 8;
 
 	return ret;
 }
@@ -1559,8 +1557,8 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 	if (leveltime <= starttime && finishBeamLine != NULL)
 	{
 		// Handle POSITION!!
-		const fixed_t distBase = 384*mapobjectscale;
-		const fixed_t distAdjust = 64*mapobjectscale;
+		const fixed_t distBase = 480*mapobjectscale;
+		const fixed_t distAdjust = 128*mapobjectscale;
 
 		const fixed_t closeDist = distBase + (distAdjust * (9 - player->kartweight));
 		const fixed_t farDist = closeDist + (distAdjust * 2);
@@ -1738,7 +1736,7 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 	// Free the prediction we made earlier
 	if (predict != NULL)
 	{
-		if (cv_kartdebugbotpredict.value != 0 && player - players == displayplayers[0])
+		if (cv_kartdebugbots.value != 0 && player - players == displayplayers[0])
 		{
 			K_DrawPredictionDebug(predict, player);
 		}

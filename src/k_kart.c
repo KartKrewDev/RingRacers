@@ -311,7 +311,7 @@ void K_RegisterKartStuff(void)
 	CV_RegisterVar(&cv_kartdebugdistribution);
 	CV_RegisterVar(&cv_kartdebughuddrop);
 	CV_RegisterVar(&cv_kartdebugwaypoints);
-	CV_RegisterVar(&cv_kartdebugbotpredict);
+	CV_RegisterVar(&cv_kartdebugbots);
 
 	CV_RegisterVar(&cv_kartdebugnodes);
 	CV_RegisterVar(&cv_kartdebugcolorize);
@@ -9004,7 +9004,7 @@ INT16 K_GetKartTurnValue(player_t *player, INT16 turnvalue)
 
 	if (K_PlayerUsesBotMovement(player))
 	{
-		turnfixed = FixedMul(turnfixed, 5*FRACUNIT/4); // Base increase to turning
+		turnfixed = FixedMul(turnfixed, 2*FRACUNIT); // Base increase to turning
 	}
 
 	if (player->drift != 0 && P_IsObjectOnGround(player->mo))
@@ -10270,7 +10270,10 @@ static void K_AirFailsafe(player_t *player)
 //
 fixed_t K_PlayerBaseFriction(player_t *player, fixed_t original)
 {
-	const fixed_t factor = FixedDiv(FRACUNIT - original, FRACUNIT - ORIG_FRICTION);
+	const fixed_t factor = FixedMul(
+		FixedDiv(FRACUNIT - original, FRACUNIT - ORIG_FRICTION),
+		K_GetKartGameSpeedScalar(gamespeed)
+	);
 	fixed_t frict = original;
 
 	if (K_PodiumSequence() == true)
