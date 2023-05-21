@@ -187,7 +187,7 @@ void MainPaletteManager::upload_lighttables(Rhi& rhi, Handle<TransferContext> ct
 	if (encoremap != nullptr)
 	{
 		tcb::span<const std::byte> encoremap_bytes = tcb::as_bytes(tcb::span(encoremap, kPaletteSize * kLighttableRows));
-		rhi.update_texture(ctx, lighttable_, {0, 0, kPaletteSize, kLighttableRows}, PixelFormat::kR8, encoremap_bytes);
+		rhi.update_texture(ctx, encore_lighttable_, {0, 0, kPaletteSize, kLighttableRows}, PixelFormat::kR8, encoremap_bytes);
 	}
 
 	if (!lighttables_to_upload_.empty())
