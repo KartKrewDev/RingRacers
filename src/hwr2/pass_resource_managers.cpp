@@ -297,6 +297,12 @@ void MainPaletteManager::postpass(Rhi& rhi)
 		rhi.destroy_texture(cm.second);
 	}
 	colormaps_.clear();
+
+	for (auto& lt : lighttables_)
+	{
+		rhi.destroy_texture(lt.second);
+	}
+	lighttables_.clear();
 }
 
 CommonResourcesManager::CommonResourcesManager() = default;
