@@ -2586,13 +2586,16 @@ static void HU_DrawRankings(void)
 
 #define strtime standings.strval[standings.numplayers]
 
+		standings.val[standings.numplayers] = 0;
+		strtime[0] = '\0';
+
 		if (players[i].pflags & PF_NOCONTEST)
 		{
 			standings.val[standings.numplayers] = (UINT32_MAX-1);
 			STRBUFCPY(strtime, "RETIRED.");
 		}
 		else if ((gametyperules & GTR_CIRCUIT))
-		{			
+		{
 			standings.val[standings.numplayers] = players[i].laps;
 
 			if (players[i].exiting)
@@ -2600,12 +2603,12 @@ static void HU_DrawRankings(void)
 				snprintf(strtime, sizeof strtime, "%i'%02i\"%02i", G_TicsToMinutes(players[i].realtime, true),
 				G_TicsToSeconds(players[i].realtime), G_TicsToCentiseconds(players[i].realtime));
 			}
-			else
+			else if (numlaps > 1)
 			{
-				snprintf(strtime, sizeof strtime, "Lap %d", standings.val[standings.numplayers]);
+				snprintf(strtime, sizeof strtime, "Lap %d", players[i].laps);
 			}
 		}
-		else
+		else if ((gametyperules & GTR_POINTLIMIT))
 		{
 			standings.val[standings.numplayers] = players[i].roundscore;
 			snprintf(strtime, sizeof strtime, "%d", standings.val[standings.numplayers]);
