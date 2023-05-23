@@ -2064,9 +2064,10 @@ cupheader_t *M_UnlockableCup(unlockable_t *unlock)
 		if (unlock->stringVarCache == -1)
 		{
 			// Get the cup from the string.
+			UINT32 hash = quickncasehash(unlock->stringVar, MAXCUPNAME);
 			while (cup)
 			{
-				if (!strcmp(cup->name, unlock->stringVar))
+				if (hash == cup->namehash && !strcmp(cup->name, unlock->stringVar))
 					break;
 				cup = cup->next;
 			}

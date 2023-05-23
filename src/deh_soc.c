@@ -953,6 +953,7 @@ void readlevelheader(MYFILE *f, char * name)
 	if (mapheaderinfo[num]->lumpname == NULL)
 	{
 		mapheaderinfo[num]->lumpname = Z_StrDup(name);
+		mapheaderinfo[num]->lumpnamehash = quickncasehash(mapheaderinfo[num]->lumpname, MAXMAPLUMPNAME);
 	}
 
 	do
@@ -2638,9 +2639,10 @@ static void readcondition(UINT8 set, UINT32 id, char *word2)
 		ty = UCRP_PODIUMCUP;
 		{
 			cupheader_t *cup = kartcupheaders;
+			UINT32 hash = quickncasehash(params[1], MAXCUPNAME);
 			while (cup)
 			{
-				if (!strcmp(cup->name, params[1]))
+				if (hash == cup->namehash && !strcmp(cup->name, params[1]))
 					break;
 				cup = cup->next;
 			}

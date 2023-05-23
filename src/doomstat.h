@@ -363,11 +363,16 @@ struct customoption_t
 #define CUPCACHE_SPECIAL (CUPCACHE_BONUS+MAXBONUSLIST)
 #define CUPCACHE_MAX (CUPCACHE_SPECIAL+1)
 
+#define MAXCUPNAME 16 // includes \0, for cleaner savedata
+
 struct cupheader_t
 {
 	UINT16 id;								///< Cup ID
 	UINT8 monitor;							///< Monitor graphic 1-9 or A-Z
-	char name[15];							///< Cup title (14 chars)
+
+	char name[MAXCUPNAME];					///< Cup title
+	UINT32 namehash;						///< Cup title hash
+
 	char icon[9];							///< Name of the icon patch
 	char *levellist[CUPCACHE_MAX];			///< List of levels that belong to this cup
 	INT16 cachedlevels[CUPCACHE_MAX];		///< IDs in levellist, bonusgame, and specialstage
@@ -400,6 +405,7 @@ struct mapheader_t
 {
 	// Core game information, not user-modifiable directly
 	char *lumpname;						///< Lump name can be really long
+	UINT32 lumpnamehash;				///< quickncasehash(->lumpname, MAXMAPLUMPNAME)
 	lumpnum_t lumpnum;       			///< Lump number for the map, used by vres_GetMap
 
 	void *thumbnailPic;					///< Lump data for the level select thumbnail.

@@ -807,9 +807,13 @@ INT32 G_MapNumber(const char * name)
 #endif
 	{
 		INT32 map;
+		UINT32 hash = quickncasehash(name, MAXMAPLUMPNAME);
 
 		for (map = 0; map < nummapheaders; ++map)
 		{
+			if (hash != mapheaderinfo[map]->lumpnamehash)
+				continue;
+
 			if (strcasecmp(mapheaderinfo[map]->lumpname, name) != 0)
 				continue;
 
@@ -4980,15 +4984,20 @@ void G_LoadGameData(void)
 
 		for (i = 0; i < numgamedatacups; i++)
 		{
-			char cupname[16];
+			char cupname[MAXCUPNAME];
 			cupheader_t *cup;
 
 			// Find the relevant cup.
 			READSTRINGN(save.p, cupname, sizeof(cupname));
+			UINT32 hash = quickncasehash(cupname, MAXCUPNAME);
 			for (cup = kartcupheaders; cup; cup = cup->next)
 			{
+				if (cup->namehash != hash)
+					continue;
+
 				if (strcmp(cup->name, cupname))
 					continue;
+
 				break;
 			}
 
