@@ -539,7 +539,7 @@ void M_ClearSecrets(void)
 
 	for (i = 0; i < nummapheaders; ++i)
 	{
-		mapheaderinfo[i]->mapvisited = 0;
+		mapheaderinfo[i]->records.mapvisited = 0;
 	}
 
 	for (i = 0; i < MAXEMBLEMS; ++i)
@@ -702,7 +702,7 @@ boolean M_CheckCondition(condition_t *cn, player_t *player)
 
 			return ((cn->requirement < nummapheaders)
 				&& (mapheaderinfo[cn->requirement])
-				&& ((mapheaderinfo[cn->requirement]->mapvisited & mvtype) == mvtype));
+				&& ((mapheaderinfo[cn->requirement]->records.mapvisited & mvtype) == mvtype));
 		}
 		case UC_MAPTIME: // Requires time on map <= x
 			return (G_GetBestTime(cn->extrainfo1) <= (unsigned)cn->requirement);
@@ -932,7 +932,7 @@ static char *M_BuildConditionTitle(UINT16 map)
 
 	if (((mapheaderinfo[map]->menuflags & LF2_FINISHNEEDED)
 	// the following is intentionally not MV_BEATEN, just in case the title is for "Finish a round on X"
-	&& !(mapheaderinfo[map]->mapvisited & MV_VISITED))
+	&& !(mapheaderinfo[map]->records.mapvisited & MV_VISITED))
 	|| M_MapLocked(map+1))
 		return Z_StrDup("???");
 
@@ -1770,7 +1770,7 @@ UINT8 M_CompletionEmblems(void) // Bah! Duplication sucks, but it's for a separa
 		if (embtype & ME_SPBATTACK)
 			flags |= MV_SPBATTACK;
 
-		res = ((mapheaderinfo[levelnum]->mapvisited & flags) == flags);
+		res = ((mapheaderinfo[levelnum]->records.mapvisited & flags) == flags);
 
 		gamedata->collected[i] = res;
 		if (res)
@@ -1955,9 +1955,9 @@ UINT8 M_GotLowEnoughTime(INT32 tictime)
 		if (!mapheaderinfo[i] || (mapheaderinfo[i]->menuflags & LF2_NOTIMEATTACK))
 			continue;
 
-		if (!mapheaderinfo[i]->mainrecord || !mapheaderinfo[i]->mainrecord->time)
+		if (!mapheaderinfo[i]->records.time)
 			return false;
-		else if ((curtics += mapheaderinfo[i]->mainrecord->time) > tictime)
+		if ((curtics += mapheaderinfo[i]->records.time) > tictime)
 			return false;
 	}
 	return true;

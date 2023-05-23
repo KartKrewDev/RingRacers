@@ -2640,11 +2640,8 @@ void M_DrawTimeAttack(void)
 		if ((minimap = mapheaderinfo[map]->minimapPic))
 			V_DrawScaledPatch(24-t, 82, 0, minimap);
 
-		if (mapheaderinfo[map]->mainrecord)
-		{
-			timerec = mapheaderinfo[map]->mainrecord->time;
-			laprec = mapheaderinfo[map]->mainrecord->lap;
-		}
+		timerec = mapheaderinfo[map]->records.time;
+		laprec = mapheaderinfo[map]->records.lap;
 
 		if ((gametypes[levellist.newgametype]->rules & GTR_CIRCUIT)
 			&& (mapheaderinfo[map]->numlaps != 1))
@@ -5779,13 +5776,13 @@ void M_DrawStatistics(void)
 		if (!mapheaderinfo[i] || (mapheaderinfo[i]->menuflags & (LF2_NOTIMEATTACK|LF2_HIDEINSTATS|LF2_HIDEINMENU)))
 			continue;
 
-		if (!mapheaderinfo[i]->mainrecord || mapheaderinfo[i]->mainrecord->time <= 0)
+		if (mapheaderinfo[i]->records.time <= 0)
 		{
 			mapsunfinished++;
 			continue;
 		}
 
-		besttime += mapheaderinfo[i]->mainrecord->time;
+		besttime += mapheaderinfo[i]->records.time;
 	}
 
 	V_DrawThinString(20, 60, V_6WIDTHSPACE|V_ALLOWLOWERCASE, "Combined time records:");

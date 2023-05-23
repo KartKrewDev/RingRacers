@@ -1534,7 +1534,7 @@ static boolean S_SoundTestDefLocked(musicdef_t *def)
 
 	// Is the level tied to SP progression?
 	if ((mapheaderinfo[def->sequence.map]->menuflags & LF2_FINISHNEEDED)
-	&& !(mapheaderinfo[def->sequence.map]->mapvisited & MV_BEATEN))
+	&& !(mapheaderinfo[def->sequence.map]->records.mapvisited & MV_BEATEN))
 		return true;
 
 	// Finally, do a full-fat map check.

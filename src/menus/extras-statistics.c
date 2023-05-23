@@ -26,7 +26,7 @@ static boolean M_StatisticsAddMap(UINT16 map, cupheader_t *cup, boolean *headere
 
 	// Check for completion
 	if ((mapheaderinfo[map]->menuflags & LF2_FINISHNEEDED)
-	&& !(mapheaderinfo[map]->mapvisited & MV_BEATEN))
+	&& !(mapheaderinfo[map]->records.mapvisited & MV_BEATEN))
 		return false;
 
 	// Check for unlock

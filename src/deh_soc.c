@@ -192,8 +192,6 @@ void clear_levels(void)
 
 		P_DeleteHeaderFollowers(nummapheaders);
 
-		Z_Free(mapheaderinfo[nummapheaders]->mainrecord);
-
 		Patch_Free(mapheaderinfo[nummapheaders]->thumbnailPic);
 		Patch_Free(mapheaderinfo[nummapheaders]->minimapPic);
 

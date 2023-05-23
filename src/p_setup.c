@@ -446,9 +446,7 @@ static void P_ClearSingleMapHeaderInfo(INT16 num)
 	P_DeleteHeaderFollowers(num);
 #endif
 
-	mapheaderinfo[num]->mapvisited = 0;
-	Z_Free(mapheaderinfo[num]->mainrecord);
-	mapheaderinfo[num]->mainrecord = NULL;
+	memset(&mapheaderinfo[num]->records, 0, sizeof(recorddata_t));
 
 	mapheaderinfo[num]->justPlayed = 0;
 	mapheaderinfo[num]->anger = 0;
@@ -506,7 +504,6 @@ void P_AllocMapHeader(INT16 i)
 		mapheaderinfo[i]->minimapPic = NULL;
 		mapheaderinfo[i]->ghostCount = 0;
 		mapheaderinfo[i]->cup = NULL;
-		mapheaderinfo[i]->mainrecord = NULL;
 		mapheaderinfo[i]->followers = NULL;
 		nummapheaders++;
 	}
@@ -8312,7 +8309,7 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 
 	if (!demo.playback)
 	{
-		mapheaderinfo[gamemap-1]->mapvisited |= MV_VISITED;
+		mapheaderinfo[gamemap-1]->records.mapvisited |= MV_VISITED;
 
 		M_UpdateUnlockablesAndExtraEmblems(true, true);
 		G_SaveGameData();

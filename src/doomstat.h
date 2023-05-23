@@ -112,12 +112,19 @@ extern preciptype_t curWeather;
 
 /** Time attack information, currently a very small structure.
   */
+
+// mapvisited is now a set of flags that says what we've done in the map.
+#define MV_VISITED      (1)
+#define MV_BEATEN       (1<<1)
+#define MV_ENCORE       (1<<2)
+#define MV_SPBATTACK    (1<<3)
+#define MV_MAX          (MV_VISITED|MV_BEATEN|MV_ENCORE|MV_SPBATTACK)
+
 struct recorddata_t
 {
+	UINT8 mapvisited;
 	tic_t time; ///< Time in which the level was finished.
 	tic_t lap;  ///< Best lap time for this level.
-	//UINT32 score; ///< Score when the level was finished.
-	//UINT16 rings; ///< Rings when the level was finished.
 };
 
 #define KARTSPEED_AUTO -1
@@ -143,14 +150,6 @@ struct cupwindata_t
 	gp_rank_e best_grade;
 	boolean got_emerald;
 };
-
-// mapvisited is now a set of flags that says what we've done in the map.
-#define MV_VISITED      (1)
-#define MV_BEATEN       (1<<1)
-#define MV_ENCORE       (1<<2)
-#define MV_SPBATTACK    (1<<3)
-#define MV_MAX          (MV_VISITED|MV_BEATEN|MV_ENCORE|MV_SPBATTACK)
-#define MV_MP           ((MV_MAX+1)<<1)
 
 // Set if homebrew PWAD stuff has been added.
 extern boolean modifiedgame;
@@ -417,8 +416,7 @@ struct mapheader_t
 	UINT8 ghostCount;					///< Count of valid staff ghosts
 	staffbrief_t *ghostBrief[MAXSTAFF];	///< Mallocated array of names for each staff ghost
 
-	UINT8 mapvisited;					///< A set of flags that says what we've done in the map.
-	recorddata_t *mainrecord;			///< Stores best time attack data
+	recorddata_t records;				///< Stores completion/record attack data
 
 	cupheader_t *cup;					///< Cached cup
 
