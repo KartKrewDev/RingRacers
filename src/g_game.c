@@ -5141,7 +5141,12 @@ void G_SaveGameData(void)
 			continue;
 		}
 
-		numgamedatamapheaders++;
+		// It's far off on the horizon, beyond many memory limits, but prevent a potential misery moment of losing ALL your data.
+		if (++numgamedatamapheaders == UINT32_MAX)
+		{
+			CONS_Alert(CONS_WARNING, "Some unloaded map record data has been dropped due to datatype limitations.\n");
+			break;
+		}
 	}
 
 	length += 4 + (numgamedatamapheaders * (MAXMAPLUMPNAME+1+4+4));
