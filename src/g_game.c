@@ -452,8 +452,7 @@ void G_ClearRecords(void)
 
 	for (i = 0; i < nummapheaders; ++i)
 	{
-		mapheaderinfo[i]->records.time = 0;
-		mapheaderinfo[i]->records.lap = 0;
+		memset(&mapheaderinfo[i]->records, 0, sizeof(recorddata_t));
 	}
 
 	for (cup = kartcupheaders; cup; cup = cup->next)

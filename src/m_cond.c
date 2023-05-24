@@ -537,11 +537,6 @@ void M_ClearSecrets(void)
 {
 	INT32 i;
 
-	for (i = 0; i < nummapheaders; ++i)
-	{
-		mapheaderinfo[i]->records.mapvisited = 0;
-	}
-
 	for (i = 0; i < MAXEMBLEMS; ++i)
 		gamedata->collected[i] = false;
 	for (i = 0; i < MAXUNLOCKABLES; ++i)
