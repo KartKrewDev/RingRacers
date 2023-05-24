@@ -448,32 +448,34 @@ public:
 		return head_;
 	}
 
-	friend void read_exact(SpanStream& stream, tcb::span<std::byte> buffer)
-	{
-		const std::size_t remaining = stream.span_.size() - stream.head_;
-		const std::size_t buffer_size = buffer.size();
-		if (buffer_size > remaining)
-		{
-			// The span's size will never change, so the generic impl of read_exact will enter an inifinite loop. We can
-			// throw out early.
-			throw UnexpectedEof("read buffer size > remaining bytes in span");
-		}
-		if (buffer_size == 0)
-		{
-			return;
-		}
-
-		auto copy_begin = std::next(stream.span_.begin(), stream.head_);
-		auto copy_end = std::next(stream.span_.begin(), stream.head_ + buffer_size);
-		stream.head_ += buffer_size;
-
-		std::copy(copy_begin, copy_end, buffer.begin());
-	}
+	friend void read_exact(SpanStream& stream, tcb::span<std::byte> buffer);
 
 private:
 	tcb::span<std::byte> span_;
 	std::size_t head_ {0};
 };
+
+inline void read_exact(SpanStream& stream, tcb::span<std::byte> buffer)
+{
+	const std::size_t remaining = stream.span_.size() - stream.head_;
+	const std::size_t buffer_size = buffer.size();
+	if (buffer_size > remaining)
+	{
+		// The span's size will never change, so the generic impl of read_exact will enter an inifinite loop. We can
+		// throw out early.
+		throw UnexpectedEof("read buffer size > remaining bytes in span");
+	}
+	if (buffer_size == 0)
+	{
+		return;
+	}
+
+	auto copy_begin = std::next(stream.span_.begin(), stream.head_);
+	auto copy_end = std::next(stream.span_.begin(), stream.head_ + buffer_size);
+	stream.head_ += buffer_size;
+
+	std::copy(copy_begin, copy_end, buffer.begin());
+}
 
 class VecStream {
 	std::vector<std::byte> vec_;
@@ -543,28 +545,30 @@ public:
 
 	std::vector<std::byte>& vector() { return vec_; }
 
-	friend void read_exact(VecStream& stream, tcb::span<std::byte> buffer)
-	{
-		const std::size_t remaining = stream.vec_.size() - stream.head_;
-		const std::size_t buffer_size = buffer.size();
-		if (buffer_size > remaining)
-		{
-			// VecStream is not thread safe, so the generic impl of read_exact would enter an infinite loop under
-			// correct usage. We know when we've reached the end and can throw out early.
-			throw UnexpectedEof("read buffer size > remaining bytes in vector");
-		}
-		if (buffer_size == 0)
-		{
-			return;
-		}
-
-		auto copy_begin = std::next(stream.vec_.begin(), stream.head_);
-		auto copy_end = std::next(stream.vec_.begin(), stream.head_ + buffer_size);
-		stream.head_ += buffer_size;
-
-		std::copy(copy_begin, copy_end, buffer.begin());
-	}
+	friend void read_exact(VecStream& stream, tcb::span<std::byte> buffer);
 };
+
+inline void read_exact(VecStream& stream, tcb::span<std::byte> buffer)
+{
+	const std::size_t remaining = stream.vec_.size() - stream.head_;
+	const std::size_t buffer_size = buffer.size();
+	if (buffer_size > remaining)
+	{
+		// VecStream is not thread safe, so the generic impl of read_exact would enter an infinite loop under
+		// correct usage. We know when we've reached the end and can throw out early.
+		throw UnexpectedEof("read buffer size > remaining bytes in vector");
+	}
+	if (buffer_size == 0)
+	{
+		return;
+	}
+
+	auto copy_begin = std::next(stream.vec_.begin(), stream.head_);
+	auto copy_end = std::next(stream.vec_.begin(), stream.head_ + buffer_size);
+	stream.head_ += buffer_size;
+
+	std::copy(copy_begin, copy_end, buffer.begin());
+}
 
 class ZlibException : public std::exception {
 	int err_ {0};
