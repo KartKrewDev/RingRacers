@@ -950,8 +950,45 @@ void readlevelheader(MYFILE *f, char * name)
 
 	if (mapheaderinfo[num]->lumpname == NULL)
 	{
-		mapheaderinfo[num]->lumpname = Z_StrDup(name);
-		mapheaderinfo[num]->lumpnamehash = quickncasehash(mapheaderinfo[num]->lumpname, MAXMAPLUMPNAME);
+		mapheaderinfo[num]->lumpnamehash = quickncasehash(name, MAXMAPLUMPNAME);
+
+		// Check to see if we have any custom map record data that we could substitute in.
+		unloaded_mapheader_t *unloadedmap, *prev = NULL;
+		for (unloadedmap = unloadedmapheaders; unloadedmap; prev = unloadedmap, unloadedmap = unloadedmap->next)
+		{
+			if (unloadedmap->lumpnamehash != mapheaderinfo[num]->lumpnamehash)
+				continue;
+
+			if (strcasecmp(name, unloadedmap->lumpname) != 0)
+				continue;
+
+			// Copy in mapvisited, time, lap, etc.
+			M_Memcpy(&mapheaderinfo[num]->records, &unloadedmap->records, sizeof(recorddata_t));
+
+			// Reuse the zone-allocated lumpname string.
+			mapheaderinfo[num]->lumpname = unloadedmap->lumpname;
+
+			// Remove this entry from the chain.
+			if (prev)
+			{
+				prev->next = unloadedmap->next;
+			}
+			else
+			{
+				unloadedmapheaders = unloadedmap->next;
+			}
+
+			// Finally, free.
+			Z_Free(unloadedmap);
+
+			break;
+		}
+
+		if (mapheaderinfo[num]->lumpname == NULL)
+		{
+			// If there was no string to reuse, dup our own.
+			mapheaderinfo[num]->lumpname = Z_StrDup(name);
+		}
 	}
 
 	do

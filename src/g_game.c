@@ -200,6 +200,8 @@ mapheader_t** mapheaderinfo = {NULL};
 INT32 nummapheaders = 0;
 INT32 mapallocsize = 0;
 
+unloaded_mapheader_t *unloadedmapheaders = NULL;
+
 // Kart cup definitions
 cupheader_t *kartcupheaders = NULL;
 UINT16 numkartcupheaders = 0;
@@ -448,13 +450,22 @@ INT32 player_name_changes[MAXPLAYERS];
 void G_ClearRecords(void)
 {
 	INT16 i;
-	cupheader_t *cup;
 
 	for (i = 0; i < nummapheaders; ++i)
 	{
 		memset(&mapheaderinfo[i]->records, 0, sizeof(recorddata_t));
 	}
 
+	unloaded_mapheader_t *unloadedmap, *next = NULL;
+	for (unloadedmap = unloadedmapheaders; unloadedmap; unloadedmap = next)
+	{
+		next = unloadedmap->next;
+		Z_Free(unloadedmap->lumpname);
+		Z_Free(unloadedmap);
+	}
+	unloadedmapheaders = NULL;
+
+	cupheader_t *cup;
 	for (cup = kartcupheaders; cup; cup = cup->next)
 	{
 		memset(&cup->windata, 0, sizeof(cup->windata));
@@ -4920,43 +4931,54 @@ void G_LoadGameData(void)
 
 	// Main records
 	numgamedatamapheaders = READUINT32(save.p);
-	if (numgamedatamapheaders >= NEXTMAP_SPECIAL)
-		goto datacorrupt;
 
 	for (i = 0; i < numgamedatamapheaders; i++)
 	{
 		char mapname[MAXMAPLUMPNAME];
 		INT16 mapnum;
-		tic_t rectime;
-		tic_t reclap;
 
 		READSTRINGN(save.p, mapname, sizeof(mapname));
 		mapnum = G_MapNumber(mapname);
 
+		recorddata_t dummyrecord, *record = &dummyrecord;
+
 		rtemp = READUINT8(save.p);
-		rectime = (tic_t)READUINT32(save.p);
-		reclap  = (tic_t)READUINT32(save.p);
+
+		if (rtemp & ~MV_MAX)
+			goto datacorrupt;
 
 		if (mapnum < nummapheaders && mapheaderinfo[mapnum])
 		{
 			// Valid mapheader, time to populate with record data.
 
-			if ((mapheaderinfo[mapnum]->records.mapvisited = rtemp) & ~MV_MAX)
-				goto datacorrupt;
-
-			if (rectime || reclap)
-			{
-				mapheaderinfo[i]->records.time = rectime;
-				mapheaderinfo[i]->records.lap = reclap;
-				//CONS_Printf("ID %d, Time = %d, Lap = %d\n", i, rectime/35, reclap/35);
-			}
+			record = &mapheaderinfo[mapnum]->records;
 		}
-		else
+		else if (rtemp) // Mapvisited will never be 0 for a map with a record.
 		{
-			// Since it's not worth declaring the entire gamedata
-			// corrupt over extra maps, we report and move on.
-			CONS_Alert(CONS_WARNING, "Map with lumpname %s does not exist, time record data will be discarded\n", mapname);
+			// Invalid, but we don't want to lose all the juicy statistics.
+			// Instead, update a FILO linked list of "unloaded mapheaders".
+
+			unloaded_mapheader_t *unloadedmap =
+				Z_Malloc(
+					sizeof(unloaded_mapheader_t),
+					PU_STATIC, NULL
+				);
+
+			// Establish properties, for later retrieval on file add.
+			unloadedmap->lumpname = Z_StrDup(mapname);
+			unloadedmap->lumpnamehash = quickncasehash(mapname, MAXMAPLUMPNAME);
+
+			// Insert at the head, just because it's convenient.
+			unloadedmap->next = unloadedmapheaders;
+			unloadedmapheaders = unloadedmap;
+
+			// Finally, set the pointer to write into.
+			record = &unloadedmap->records;
 		}
+
+		record->mapvisited = rtemp;
+		record->time = (tic_t)READUINT32(save.p);
+		record->lap  = (tic_t)READUINT32(save.p);
 	}
 
 	if (versionMinor > 1)
@@ -5095,7 +5117,34 @@ void G_SaveGameData(void)
 	{
 		length += gamedata->challengegridwidth * CHALLENGEGRIDHEIGHT;
 	}
-	length += 4 + (nummapheaders * (MAXMAPLUMPNAME+1+4+4));
+
+	UINT32 numgamedatamapheaders = 0;
+	unloaded_mapheader_t *unloadedmap;
+
+	for (i = 0; i < nummapheaders; i++)
+	{
+		// It's safe to assume a level with no mapvisited will have no other data worth keeping, since you get MV_VISITED just for opening it.
+		if (!(mapheaderinfo[i]->records.mapvisited & MV_MAX))
+		{
+			continue;
+		}
+
+		numgamedatamapheaders++;
+	}
+
+	for (unloadedmap = unloadedmapheaders; unloadedmap; unloadedmap = unloadedmap->next)
+	{
+		// Ditto, with the exception that we should warn about it.
+		if (!(unloadedmap->records.mapvisited & MV_MAX))
+		{
+			CONS_Alert(CONS_WARNING, "Unloaded map \"%s\" has no mapvisited!\n", unloadedmap->lumpname);
+			continue;
+		}
+
+		numgamedatamapheaders++;
+	}
+
+	length += 4 + (numgamedatamapheaders * (MAXMAPLUMPNAME+1+4+4));
 
 	numcups = 0;
 	for (cup = kartcupheaders; cup; cup = cup->next)
@@ -5193,17 +5242,47 @@ void G_SaveGameData(void)
 	WRITEUINT32(save.p, gamedata->timesBeaten); // 4
 
 	// Main records
-	WRITEUINT32(save.p, nummapheaders); // 4
+	WRITEUINT32(save.p, numgamedatamapheaders); // 4
 
-	for (i = 0; i < nummapheaders; i++) // nummapheaders * (255+1+4+4)
 	{
-		// For figuring out which header to assign it to on load
-		WRITESTRINGN(save.p, mapheaderinfo[i]->lumpname, MAXMAPLUMPNAME);
+		// numgamedatamapheaders * (MAXMAPLUMPNAME+1+4+4)
 
-		WRITEUINT8(save.p, (mapheaderinfo[i]->records.mapvisited & MV_MAX));
+		UINT32 writtengamedatamapheaders = 0;
 
-		WRITEUINT32(save.p, mapheaderinfo[i]->records.time);
-		WRITEUINT32(save.p, mapheaderinfo[i]->records.lap);
+		for (i = 0; i < nummapheaders; i++)
+		{
+			if (!(mapheaderinfo[i]->records.mapvisited & MV_MAX))
+				continue;
+
+			WRITESTRINGN(save.p, mapheaderinfo[i]->lumpname, MAXMAPLUMPNAME);
+
+			WRITEUINT8(save.p, (mapheaderinfo[i]->records.mapvisited & MV_MAX));
+
+			WRITEUINT32(save.p, mapheaderinfo[i]->records.time);
+			WRITEUINT32(save.p, mapheaderinfo[i]->records.lap);
+
+			if (++writtengamedatamapheaders >= numgamedatamapheaders)
+				break;
+		}
+
+		if (writtengamedatamapheaders < numgamedatamapheaders)
+		{
+			for (unloadedmap = unloadedmapheaders; unloadedmap; unloadedmap = unloadedmap->next)
+			{
+				if (!(unloadedmap->records.mapvisited & MV_MAX))
+					continue;
+
+				WRITESTRINGN(save.p, unloadedmap->lumpname, MAXMAPLUMPNAME);
+
+				WRITEUINT8(save.p, (unloadedmap->records.mapvisited & MV_MAX));
+
+				WRITEUINT32(save.p, unloadedmap->records.time);
+				WRITEUINT32(save.p, unloadedmap->records.lap);
+
+				if (++writtengamedatamapheaders >= numgamedatamapheaders)
+					break;
+			}
+		}
 	}
 
 	WRITEUINT32(save.p, numcups); // 4

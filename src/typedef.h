@@ -125,6 +125,7 @@ TYPEDEF (customoption_t);
 TYPEDEF (gametype_t);
 TYPEDEF (staffbrief_t);
 TYPEDEF (mapheader_t);
+TYPEDEF (unloaded_mapheader_t);
 TYPEDEF (tolinfo_t);
 TYPEDEF (cupheader_t);
 

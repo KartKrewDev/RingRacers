@@ -500,6 +500,18 @@ struct mapheader_t
 extern mapheader_t** mapheaderinfo;
 extern INT32 nummapheaders, mapallocsize;
 
+struct unloaded_mapheader_t
+{
+	char *lumpname;
+	UINT32 lumpnamehash;
+
+	recorddata_t records;
+
+	unloaded_mapheader_t *next;
+};
+
+extern unloaded_mapheader_t *unloadedmapheaders;
+
 // Gametypes
 #define NUMGAMETYPEFREESLOTS (128)
 #define MAXGAMETYPELENGTH (32)
