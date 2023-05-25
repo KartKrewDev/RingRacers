@@ -4940,20 +4940,25 @@ void G_LoadGameData(void)
 		READSTRINGN(save.p, mapname, sizeof(mapname));
 		mapnum = G_MapNumber(mapname);
 
-		recorddata_t dummyrecord, *record = &dummyrecord;
+		recorddata_t dummyrecord;
 
-		rtemp = READUINT8(save.p);
-
-		if (rtemp & ~MV_MAX)
-			goto datacorrupt;
+		dummyrecord.mapvisited = READUINT8(save.p);
+		dummyrecord.time = (tic_t)READUINT32(save.p);
+		dummyrecord.lap  = (tic_t)READUINT32(save.p);
 
 		if (mapnum < nummapheaders && mapheaderinfo[mapnum])
 		{
 			// Valid mapheader, time to populate with record data.
 
-			record = &mapheaderinfo[mapnum]->records;
+			dummyrecord.mapvisited &= MV_MAX;
+			M_Memcpy(&mapheaderinfo[mapnum]->records, &dummyrecord, sizeof(recorddata_t));
 		}
-		else if (rtemp) // Mapvisited will never be 0 for a map with a record.
+		else if (
+			((dummyrecord.mapvisited & MV_PERSISTUNLOADED) != 0
+				&& (dummyrecord.mapvisited & MV_BEATEN) != 0)
+			|| dummyrecord.time != 0
+			|| dummyrecord.lap != 0
+		)
 		{
 			// Invalid, but we don't want to lose all the juicy statistics.
 			// Instead, update a FILO linked list of "unloaded mapheaders".
@@ -4972,13 +4977,9 @@ void G_LoadGameData(void)
 			unloadedmap->next = unloadedmapheaders;
 			unloadedmapheaders = unloadedmap;
 
-			// Finally, set the pointer to write into.
-			record = &unloadedmap->records;
+			// Finally, copy into.
+			M_Memcpy(&unloadedmap->records, &dummyrecord, sizeof(recorddata_t));
 		}
-
-		record->mapvisited = rtemp;
-		record->time = (tic_t)READUINT32(save.p);
-		record->lap  = (tic_t)READUINT32(save.p);
 	}
 
 	if (versionMinor > 1)
@@ -5261,7 +5262,14 @@ void G_SaveGameData(void)
 
 			WRITESTRINGN(save.p, mapheaderinfo[i]->lumpname, MAXMAPLUMPNAME);
 
-			WRITEUINT8(save.p, (mapheaderinfo[i]->records.mapvisited & MV_MAX));
+			UINT8 mapvisitedtemp = (mapheaderinfo[i]->records.mapvisited & MV_MAX);
+
+			if ((mapheaderinfo[i]->menuflags & LF2_FINISHNEEDED))
+			{
+				mapvisitedtemp |= MV_FINISHNEEDED;
+			}
+
+			WRITEUINT8(save.p, mapvisitedtemp);
 
 			WRITEUINT32(save.p, mapheaderinfo[i]->records.time);
 			WRITEUINT32(save.p, mapheaderinfo[i]->records.lap);
@@ -5279,7 +5287,7 @@ void G_SaveGameData(void)
 
 				WRITESTRINGN(save.p, unloadedmap->lumpname, MAXMAPLUMPNAME);
 
-				WRITEUINT8(save.p, (unloadedmap->records.mapvisited & MV_MAX));
+				WRITEUINT8(save.p, unloadedmap->records.mapvisited);
 
 				WRITEUINT32(save.p, unloadedmap->records.time);
 				WRITEUINT32(save.p, unloadedmap->records.lap);

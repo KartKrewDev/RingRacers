@@ -114,11 +114,13 @@ extern preciptype_t curWeather;
   */
 
 // mapvisited is now a set of flags that says what we've done in the map.
-#define MV_VISITED      (1)
-#define MV_BEATEN       (1<<1)
-#define MV_ENCORE       (1<<2)
-#define MV_SPBATTACK    (1<<3)
-#define MV_MAX          (MV_VISITED|MV_BEATEN|MV_ENCORE|MV_SPBATTACK)
+#define MV_VISITED      	(1)
+#define MV_BEATEN       	(1<<1)
+#define MV_ENCORE       	(1<<2)
+#define MV_SPBATTACK    	(1<<3)
+#define MV_MAX          	(MV_VISITED|MV_BEATEN|MV_ENCORE|MV_SPBATTACK)
+#define MV_FINISHNEEDED		(1<<7)
+#define MV_PERSISTUNLOADED	(MV_SPBATTACK|MV_FINISHNEEDED)
 
 struct recorddata_t
 {

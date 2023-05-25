@@ -963,6 +963,7 @@ void readlevelheader(MYFILE *f, char * name)
 				continue;
 
 			// Copy in mapvisited, time, lap, etc.
+			unloadedmap->records.mapvisited &= MV_MAX;
 			M_Memcpy(&mapheaderinfo[num]->records, &unloadedmap->records, sizeof(recorddata_t));
 
 			// Reuse the zone-allocated lumpname string.
