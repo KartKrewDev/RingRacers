@@ -206,6 +206,8 @@ unloaded_mapheader_t *unloadedmapheaders = NULL;
 cupheader_t *kartcupheaders = NULL;
 UINT16 numkartcupheaders = 0;
 
+unloaded_cupheader_t *unloadedcupheaders = NULL;
+
 static boolean exitgame = false;
 static boolean retrying = false;
 static boolean retryingmodeattack = false;
@@ -456,20 +458,28 @@ void G_ClearRecords(void)
 		memset(&mapheaderinfo[i]->records, 0, sizeof(recorddata_t));
 	}
 
-	unloaded_mapheader_t *unloadedmap, *next = NULL;
-	for (unloadedmap = unloadedmapheaders; unloadedmap; unloadedmap = next)
-	{
-		next = unloadedmap->next;
-		Z_Free(unloadedmap->lumpname);
-		Z_Free(unloadedmap);
-	}
-	unloadedmapheaders = NULL;
-
 	cupheader_t *cup;
 	for (cup = kartcupheaders; cup; cup = cup->next)
 	{
 		memset(&cup->windata, 0, sizeof(cup->windata));
 	}
+
+	unloaded_mapheader_t *unloadedmap, *nextunloadedmap = NULL;
+	for (unloadedmap = unloadedmapheaders; unloadedmap; unloadedmap = nextunloadedmap)
+	{
+		nextunloadedmap = unloadedmap->next;
+		Z_Free(unloadedmap->lumpname);
+		Z_Free(unloadedmap);
+	}
+	unloadedmapheaders = NULL;
+
+	unloaded_cupheader_t *unloadedcup, *nextunloadedcup = NULL;
+	for (unloadedcup = unloadedcupheaders; unloadedcup; unloadedcup = nextunloadedcup)
+	{
+		nextunloadedcup = unloadedcup->next;
+		Z_Free(unloadedcup);
+	}
+	unloadedcupheaders = NULL;
 }
 
 // For easy retrieval of records
@@ -4743,7 +4753,7 @@ void G_LoadGameSettings(void)
 }
 
 #define GD_VERSIONCHECK 0xBA5ED123 // Change every major version, as usual
-#define GD_VERSIONMINOR 2 // Change every format update
+#define GD_VERSIONMINOR 3 // Change every format update
 
 static const char *G_GameDataFolder(void)
 {
@@ -4991,6 +5001,8 @@ void G_LoadGameData(void)
 			char cupname[MAXCUPNAME];
 			cupheader_t *cup;
 
+			cupwindata_t dummywindata[4];
+
 			// Find the relevant cup.
 			READSTRINGN(save.p, cupname, sizeof(cupname));
 			UINT32 hash = quickncasehash(cupname, MAXCUPNAME);
@@ -5010,19 +5022,45 @@ void G_LoadGameData(void)
 			{
 				rtemp = READUINT8(save.p);
 
-				// ...but only record it if we actually found the associated cup.
-				if (cup)
-				{
-					cup->windata[j].best_placement = (rtemp & 0x0F);
-					cup->windata[j].best_grade = (rtemp & 0x70)>>4;
-					if (rtemp & 0x80)
-					{
-						if (j == 0)
-							goto datacorrupt;
+				dummywindata[j].best_placement = (rtemp & 0x0F);
+				dummywindata[j].best_grade = (rtemp & 0x70)>>4;
+				if (rtemp & 0x80)
+					dummywindata[j].got_emerald = true;
+			}
 
-						cup->windata[j].got_emerald = true;
-					}
-				}
+			if (versionMinor < 3 && dummywindata[0].best_placement == 0)
+			{
+				// We now require backfilling of placement information.
+				M_Memcpy(&dummywindata[0], &dummywindata[1], sizeof(dummywindata[0]));
+			}
+
+			if (cup)
+			{
+				// We found a cup, so assign the windata.
+
+				M_Memcpy(&cup->windata, &dummywindata, sizeof(cup->windata));
+			}
+			else if (dummywindata[0].best_placement != 0)
+			{
+				// Invalid, but we don't want to lose all the juicy statistics.
+				// Instead, update a FILO linked list of "unloaded cupheaders".
+
+				unloaded_cupheader_t *unloadedcup =
+					Z_Malloc(
+						sizeof(unloaded_cupheader_t),
+						PU_STATIC, NULL
+					);
+
+				// Establish properties, for later retrieval on file add.
+				strlcpy(unloadedcup->name, cupname, sizeof(unloadedcup->name));
+				unloadedcup->namehash = quickncasehash(cupname, MAXCUPNAME);
+
+				// Insert at the head, just because it's convenient.
+				unloadedcup->next = unloadedcupheaders;
+				unloadedcupheaders = unloadedcup;
+
+				// Finally, copy into.
+				M_Memcpy(&unloadedcup->windata, &dummywindata, sizeof(unloadedcup->windata));
 			}
 		}
 	}
@@ -5087,7 +5125,7 @@ void G_DirtyGameData(void)
 void G_SaveGameData(void)
 {
 	size_t length;
-	INT32 i, j, numcups;
+	INT32 i, j;
 	cupheader_t *cup;
 	UINT8 btemp;
 	savebuffer_t save = {0};
@@ -5152,12 +5190,37 @@ void G_SaveGameData(void)
 
 	length += 4 + (numgamedatamapheaders * (MAXMAPLUMPNAME+1+4+4));
 
-	numcups = 0;
+	UINT32 numgamedatacups = 0;
+	unloaded_cupheader_t *unloadedcup;
+
 	for (cup = kartcupheaders; cup; cup = cup->next)
 	{
-		numcups++;
+		// Results are populated downwards, so no Easy win
+		// means there's no important player data to save.
+		if (cup->windata[0].best_placement == 0)
+			continue;
+
+		numgamedatacups++;
 	}
-	length += 4 + (numcups * (4+16));
+
+	for (unloadedcup = unloadedcupheaders; unloadedcup; unloadedcup = unloadedcup->next)
+	{
+		// Ditto, with the exception that we should warn about it.
+		if (unloadedcup->windata[0].best_placement == 0)
+		{
+			CONS_Alert(CONS_WARNING, "Unloaded cup \"%s\" has no windata!\n", unloadedcup->name);
+			continue;
+		}
+
+		// It's far off on the horizon, beyond many memory limits, but prevent a potential misery moment of losing ALL your data.
+		if (++numgamedatacups == UINT32_MAX)
+		{
+			CONS_Alert(CONS_WARNING, "Some unloaded cup standings data has been dropped due to datatype limitations.\n");
+			break;
+		}
+	}
+
+	length += 4 + (numgamedatacups * (4+16));
 
 	if (P_SaveBufferAlloc(&save, length) == false)
 	{
@@ -5298,22 +5361,55 @@ void G_SaveGameData(void)
 		}
 	}
 
-	WRITEUINT32(save.p, numcups); // 4
 
-	for (cup = kartcupheaders; cup; cup = cup->next)
+	WRITEUINT32(save.p, numgamedatacups); // 4
+
 	{
-		// For figuring out which header to assign it to on load
-		WRITESTRINGN(save.p, cup->name, 16);
+		// (numgamedatacups * (4+16))
 
-		for (i = 0; i < KARTGP_MAX; i++)
-		{
-			btemp = min(cup->windata[i].best_placement, 0x0F);
-			btemp |= (cup->windata[i].best_grade<<4);
-			if (i != 0 && cup->windata[i].got_emerald == true)
-				btemp |= 0x80;
+		UINT32 writtengamedatacups = 0;
 
-			WRITEUINT8(save.p, btemp); // 4 * numcups
+#define WRITECUPWINDATA(maybeunloadedcup) \
+		for (i = 0; i < KARTGP_MAX; i++) \
+		{ \
+			btemp = min(maybeunloadedcup->windata[i].best_placement, 0x0F); \
+			btemp |= (maybeunloadedcup->windata[i].best_grade<<4); \
+			if (maybeunloadedcup->windata[i].got_emerald == true) \
+				btemp |= 0x80; \
+			\
+			WRITEUINT8(save.p, btemp); \
 		}
+
+		for (cup = kartcupheaders; cup; cup = cup->next)
+		{
+			if (cup->windata[0].best_placement == 0)
+				continue;
+
+			WRITESTRINGN(save.p, cup->name, MAXCUPNAME);
+
+			WRITECUPWINDATA(cup);
+
+			if (++writtengamedatacups >= numgamedatacups)
+				break;
+		}
+
+		if (writtengamedatacups < numgamedatacups)
+		{
+			for (unloadedcup = unloadedcupheaders; unloadedcup; unloadedcup = unloadedcup->next)
+			{
+				if (unloadedcup->windata[0].best_placement == 0)
+					continue;
+
+				WRITESTRINGN(save.p, unloadedcup->name, MAXCUPNAME);
+
+				WRITECUPWINDATA(unloadedcup);
+
+				if (++writtengamedatacups >= numgamedatacups)
+					break;
+			}
+		}
+
+#undef WRITECUPWINDATA
 	}
 
 	length = save.p - save.buffer;

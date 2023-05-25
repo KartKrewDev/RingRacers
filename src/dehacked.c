@@ -494,6 +494,36 @@ static void DEH_LoadDehackedFile(MYFILE *f, boolean mainfile)
 							deh_strlcpy(cup->name, word2,
 								sizeof(cup->name), va("Cup header %s: name", word2));
 							cup->namehash = hash;
+
+							// Check to see if we have any custom cup record data that we could substitute in.
+							unloaded_cupheader_t *unloadedcup, *unloadedprev = NULL;
+							for (unloadedcup = unloadedcupheaders; unloadedcup; unloadedprev = unloadedcup, unloadedcup = unloadedcup->next)
+							{
+								if (unloadedcup->namehash != hash)
+									continue;
+
+								if (strcasecmp(word2, unloadedcup->name) != 0)
+									continue;
+
+								// Copy in standings, etc.
+								M_Memcpy(&cup->windata, &unloadedcup->windata, sizeof(cup->windata));
+
+								// Remove this entry from the chain.
+								if (unloadedprev)
+								{
+									unloadedprev->next = unloadedcup->next;
+								}
+								else
+								{
+									unloadedcupheaders = unloadedcup->next;
+								}
+
+								// Finally, free.
+								Z_Free(unloadedcup);
+
+								break;
+							}
+
 							if (prev != NULL)
 								prev->next = cup;
 							if (kartcupheaders == NULL)

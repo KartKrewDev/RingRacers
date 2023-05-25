@@ -387,6 +387,18 @@ struct cupheader_t
 extern cupheader_t *kartcupheaders; // Start of cup linked list
 extern UINT16 numkartcupheaders;
 
+struct unloaded_cupheader_t
+{
+	char name[MAXCUPNAME];
+	UINT32 namehash;
+
+	cupwindata_t windata[4];
+
+	unloaded_cupheader_t *next;
+};
+
+extern unloaded_cupheader_t *unloadedcupheaders;
+
 #define MAXMAPLUMPNAME 64 // includes \0, for cleaner savedata
 #define MAXSTAFF 3
 
