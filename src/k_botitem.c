@@ -1362,6 +1362,18 @@ static void K_BotItemRings(player_t *player, ticcmd_t *cmd)
 {
 	INT32 saferingsval = 16 - K_GetKartRingPower(player, false);
 
+	if (leveltime < starttime)
+	{
+		// Don't use rings during POSITION!!
+		return;
+	}
+
+	if ((cmd->buttons & BT_ACCELERATE) == 0)
+	{
+		// Don't use rings if you're not trying to accelerate.
+		return;
+	}
+
 	if (P_IsObjectOnGround(player->mo) == false)
 	{
 		// Don't use while mid-air.
@@ -1377,6 +1389,70 @@ static void K_BotItemRings(player_t *player, ticcmd_t *cmd)
 	if (player->rings > saferingsval)
 	{
 		cmd->buttons |= BT_ATTACK;
+	}
+}
+
+/*--------------------------------------------------
+	static void K_BotItemInstashield(player_t *player, ticcmd_t *cmd)
+
+		Item usage for instashield.
+
+	Input Arguments:-
+		player - Bot to do this for.
+		cmd - Bot's ticcmd to edit.
+
+	Return:-
+		None
+--------------------------------------------------*/
+static void K_BotItemInstashield(player_t *player, ticcmd_t *cmd)
+{
+	const fixed_t radius = FixedMul(mobjinfo[MT_INSTAWHIP].radius, player->mo->scale);
+	size_t i = SIZE_MAX;
+
+	if (K_ItemButtonWasDown(player) == true)
+	{
+		// Release the button, dude.
+		return;
+	}
+
+	if (player->instaShieldCooldown || leveltime < starttime || player->spindash)
+	{
+		// Instashield is on cooldown.
+		return;
+	}
+
+	// Find players within the instashield's range.
+	for (i = 0; i < MAXPLAYERS; i++)
+	{
+		player_t *target = NULL;
+		fixed_t dist = INT32_MAX;
+
+		if (!playeringame[i])
+		{
+			continue;
+		}
+
+		target = &players[i];
+		if (P_MobjWasRemoved(target->mo) == true
+			|| player == target
+			|| target->spectator == true
+			|| target->flashing != 0)
+		{
+			continue;
+		}
+
+		dist = P_AproxDistance(P_AproxDistance(
+			player->mo->x - target->mo->x,
+			player->mo->y - target->mo->y),
+			(player->mo->z - target->mo->z) / 4
+		);
+
+		if (dist <= radius)
+		{
+			// Use it!!
+			cmd->buttons |= BT_ATTACK;
+			break;
+		}
 	}
 }
 
@@ -1453,11 +1529,15 @@ void K_BotItemUsage(player_t *player, ticcmd_t *cmd, INT16 turnamt)
 {
 	if (player->pflags & PF_USERINGS)
 	{
-		// Use rings!
-
-		if (leveltime > starttime)
+		if (player->rings > 0)
 		{
+			// Use rings!
 			K_BotItemRings(player, cmd);
+		}
+		else
+		{
+			// Use the instashield!
+			K_BotItemInstashield(player, cmd);
 		}
 	}
 	else
