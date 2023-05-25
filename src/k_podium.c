@@ -305,7 +305,7 @@ void K_FinishCeremony(void)
 --------------------------------------------------*/
 void K_ResetCeremony(void)
 {
-	UINT8 i;
+	SINT8 i;
 
 	memset(&podiumData, 0, sizeof(struct podiumData_s));
 
@@ -326,21 +326,26 @@ void K_ResetCeremony(void)
 	// Write grade, position, and emerald-having-ness for later sessions!
 	i = (grandprixinfo.masterbots) ? KARTGP_MASTER : grandprixinfo.gamespeed;
 
-	if ((grandprixinfo.cup->windata[i].best_placement == 0) // First run
-		|| (podiumData.rank.position < grandprixinfo.cup->windata[i].best_placement)) // Later, better run
+	// All results populate downwards in difficulty. This prevents someone
+	// who's just won on Normal from feeling obligated to complete Easy too.
+	for (; i >= 0; i--)
 	{
-		grandprixinfo.cup->windata[i].best_placement = podiumData.rank.position;
+		if ((grandprixinfo.cup->windata[i].best_placement == 0) // First run
+			|| (podiumData.rank.position < grandprixinfo.cup->windata[i].best_placement)) // Later, better run
+		{
+			grandprixinfo.cup->windata[i].best_placement = podiumData.rank.position;
 
-		// The following will not occour in unmodified builds, but pre-emptively sanitise gamedata if someone just changes MAXPLAYERS and calls it a day
-		if (grandprixinfo.cup->windata[i].best_placement > 0x0F)
-			grandprixinfo.cup->windata[i].best_placement = 0x0F;
+			// The following will not occur in unmodified builds, but pre-emptively sanitise gamedata if someone just changes MAXPLAYERS and calls it a day
+			if (grandprixinfo.cup->windata[i].best_placement > 0x0F)
+				grandprixinfo.cup->windata[i].best_placement = 0x0F;
+		}
+
+		if (podiumData.grade > grandprixinfo.cup->windata[i].best_grade)
+			grandprixinfo.cup->windata[i].best_grade = podiumData.grade;
+
+		if (podiumData.rank.specialWon == true)
+			grandprixinfo.cup->windata[i].got_emerald = true;
 	}
-
-	if (podiumData.grade > grandprixinfo.cup->windata[i].best_grade)
-		grandprixinfo.cup->windata[i].best_grade = podiumData.grade;
-
-	if (i != KARTSPEED_EASY && podiumData.rank.specialWon == true)
-		grandprixinfo.cup->windata[i].got_emerald = true;
 
 	// Save before playing the noise
 	G_SaveGameData();
