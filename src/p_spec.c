@@ -2338,20 +2338,12 @@ void P_PushSpecialLine(line_t *line, mobj_t *thing)
 //
 void P_ActivateThingSpecial(mobj_t *mo, mobj_t *source)
 {
-	mapthing_t *mt = NULL;
 	player_t *player = NULL;
 	activator_t *activator = NULL;
 
 	if (mo == NULL || P_MobjWasRemoved(mo) == true)
 	{
 		// Invalid mobj.
-		return;
-	}
-
-	mt = mo->spawnpoint;
-	if (mt == NULL)
-	{
-		// No mapthing to activate the special of.
 		return;
 	}
 
@@ -2374,7 +2366,7 @@ void P_ActivateThingSpecial(mobj_t *mo, mobj_t *source)
 		}
 	}
 
-	if (P_CanActivateSpecial(mt->special) == false)
+	if (P_CanActivateSpecial(mo->special) == false)
 	{
 		// No special to even activate.
 		return;
@@ -2389,7 +2381,7 @@ void P_ActivateThingSpecial(mobj_t *mo, mobj_t *source)
 		activator->sector = source->subsector->sector;
 	}
 
-	P_ProcessSpecial(activator, mt->special, mt->args, mt->stringargs);
+	P_ProcessSpecial(activator, mo->special, mo->args, mo->stringargs);
 
 	P_SetTarget(&activator->mo, NULL);
 	Z_Free(activator);
@@ -3041,7 +3033,7 @@ boolean P_ProcessSpecial(activator_t *activator, INT16 special, INT32 *args, cha
 				}
 
 				newViewMobj = P_FindObjectTypeFromTag(MT_ALTVIEWMAN, args[0]);
-				if (newViewMobj == NULL || newViewMobj->spawnpoint == NULL)
+				if (newViewMobj == NULL)
 				{
 					return false;
 				}
@@ -6308,7 +6300,7 @@ P_RaiseTaggedThingsToFakeFloor (
 
 			if (
 					(type == 0 || mthing->type == type) &&
-					(tag == 0 || udmf ? Tag_Find(&mthing->tags, tag) : mthing->angle == tag)
+					(tag == 0 || (udmf ? mthing->tid : mthing->angle) == tag)
 			){
 				if (( mo->flags2 & MF2_OBJECTFLIP ))
 				{

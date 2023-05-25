@@ -425,6 +425,10 @@ struct mobj_t
 
 	INT32 dispoffset;
 
+	INT16 special;
+	INT32 args[NUMMAPTHINGARGS];
+	char *stringargs[NUMMAPTHINGSTRINGARGS];
+
 	// WARNING: New fields must be added separately to savegame and Lua.
 };
 

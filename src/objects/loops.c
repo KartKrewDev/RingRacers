@@ -178,10 +178,8 @@ Obj_InitLoopEndpoint
 void
 Obj_InitLoopCenter (mobj_t *center)
 {
-	const mapthing_t *mt = center->spawnpoint;
-
-	center_max_revolution(center) = mt->args[1] * FRACUNIT / 360;
-	center_set_flip(center, mt->args[0]);
+	center_max_revolution(center) = center->args[1] * FRACUNIT / 360;
+	center_set_flip(center, center->args[0]);
 }
 
 void

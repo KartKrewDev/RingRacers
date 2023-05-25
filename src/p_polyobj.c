@@ -558,7 +558,7 @@ static void Polyobj_moveToSpawnSpot(mapthing_t *anchor)
 	polyobj_t *po;
 	vertex_t  dist, sspot;
 	size_t i;
-	mtag_t tag = Tag_FGet(&anchor->tags);
+	mtag_t tag = anchor->tid;
 
 	if (!(po = Polyobj_GetForNum(tag)))
 	{
@@ -1351,7 +1351,7 @@ void Polyobj_InitLevel(void)
 		{
 			qitem = (mobjqitem_t *)M_QueueIterator(&spawnqueue);
 
-			Polyobj_spawnPolyObj(i, qitem->mo, Tag_FGet(&qitem->mo->spawnpoint->tags));
+			Polyobj_spawnPolyObj(i, qitem->mo, qitem->mo->spawnpoint->tid);
 		}
 
 		// move polyobjects to spawn points

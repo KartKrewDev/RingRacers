@@ -2135,6 +2135,31 @@ static void P_NetUnArchiveWorld(savebuffer_t *save)
 // Thinkers
 //
 
+static boolean P_ThingArgsEqual(const mobj_t *mobj, const mapthing_t *mapthing)
+{
+	UINT8 i;
+	for (i = 0; i < NUMMAPTHINGARGS; i++)
+		if (mobj->args[i] != mapthing->args[i])
+			return false;
+
+	return true;
+}
+
+static boolean P_ThingStringArgsEqual(const mobj_t *mobj, const mapthing_t *mapthing)
+{
+	UINT8 i;
+	for (i = 0; i < NUMMAPTHINGSTRINGARGS; i++)
+	{
+		if (!mobj->stringargs[i])
+			return !mapthing->stringargs[i];
+
+		if (strcmp(mobj->stringargs[i], mapthing->stringargs[i]))
+			return false;
+	}
+
+	return true;
+}
+
 typedef enum
 {
 	MD_SPAWNPOINT  = 1,
@@ -2166,8 +2191,8 @@ typedef enum
 	MD_WATERBOTTOM = 1<<26,
 	MD_SCALE       = 1<<27,
 	MD_DSCALE      = 1<<28,
-	MD_BLUEFLAG    = 1<<29,
-	MD_REDFLAG     = 1<<30,
+	MD_ARGS        = 1<<29,
+	MD_STRINGARGS  = 1<<30,
 	MD_MORE        = (INT32)(1U<<31)
 } mobj_diff_t;
 
@@ -2191,10 +2216,10 @@ typedef enum
 	MD2_SHADOWSCALE  = 1<<15,
 	MD2_RENDERFLAGS  = 1<<16,
 	MD2_TID          = 1<<17,
-	MD2_SPRITEXSCALE = 1<<18,
-	MD2_SPRITEYSCALE = 1<<19,
-	MD2_SPRITEXOFFSET = 1<<20,
-	MD2_SPRITEYOFFSET = 1<<21,
+	MD2_SPRITESCALE  = 1<<18,
+	MD2_SPRITEOFFSET = 1<<19,
+	MD2_WORLDOFFSET  = 1<<20,
+	MD2_SPECIAL      = 1<<21,
 	MD2_FLOORSPRITESLOPE = 1<<22,
 	MD2_DISPOFFSET   = 1<<23,
 	MD2_HITLAG       = 1<<24,
@@ -2287,6 +2312,7 @@ static void SaveMobjThinker(savebuffer_t *save, const thinker_t *th, const UINT8
 	const mobj_t *mobj = (const mobj_t *)th;
 	UINT32 diff;
 	UINT32 diff2;
+	size_t j;
 
 	// Ignore stationary hoops - these will be respawned from mapthings.
 	if (mobj->type == MT_HOOP)
@@ -2318,9 +2344,44 @@ static void SaveMobjThinker(savebuffer_t *save, const thinker_t *th, const UINT8
 
 		if (mobj->info->doomednum != mobj->spawnpoint->type)
 			diff |= MD_TYPE;
+
+		if (!P_ThingArgsEqual(mobj, mobj->spawnpoint))
+			diff |= MD_ARGS;
+
+		if (!P_ThingStringArgsEqual(mobj, mobj->spawnpoint))
+			diff |= MD_STRINGARGS;
+
+		if (mobj->special != mobj->spawnpoint->type)
+			diff2 |= MD2_SPECIAL;
 	}
 	else
-		diff = MD_POS | MD_TYPE; // not a map spawned thing so make it from scratch
+	{
+		// not a map spawned thing, so make it from scratch
+		diff = MD_POS | MD_TYPE;
+
+		for (j = 0; j < NUMMAPTHINGARGS; j++)
+		{
+			if (mobj->args[j] != 0)
+			{
+				diff |= MD_ARGS;
+				break;
+			}
+		}
+
+		for (j = 0; j < NUMMAPTHINGSTRINGARGS; j++)
+		{
+			if (mobj->stringargs[j] != NULL)
+			{
+				diff |= MD_STRINGARGS;
+				break;
+			}
+		}
+
+		if (mobj->special != 0)
+		{
+			diff2 |= MD2_SPECIAL;
+		}
+	}
 
 	diff2 = 0;
 
@@ -2355,7 +2416,6 @@ static void SaveMobjThinker(savebuffer_t *save, const thinker_t *th, const UINT8
 		diff |= MD_EFLAGS;
 	if (mobj->player)
 		diff |= MD_PLAYER;
-
 	if (mobj->movedir)
 		diff |= MD_MOVEDIR;
 	if (mobj->movecount)
@@ -2384,12 +2444,6 @@ static void SaveMobjThinker(savebuffer_t *save, const thinker_t *th, const UINT8
 		diff |= MD_DSCALE;
 	if (mobj->scalespeed != mapobjectscale/12)
 		diff2 |= MD2_SCALESPEED;
-
-	if (mobj == redflag)
-		diff |= MD_REDFLAG;
-	if (mobj == blueflag)
-		diff |= MD_BLUEFLAG;
-
 	if (mobj->cusval)
 		diff2 |= MD2_CUSVAL;
 	if (mobj->cvmem)
@@ -2424,14 +2478,12 @@ static void SaveMobjThinker(savebuffer_t *save, const thinker_t *th, const UINT8
 		diff2 |= MD2_RENDERFLAGS;
 	if (mobj->tid != 0)
 		diff2 |= MD2_TID;
-	if (mobj->spritexscale != FRACUNIT)
-		diff2 |= MD2_SPRITEXSCALE;
-	if (mobj->spriteyscale != FRACUNIT)
-		diff2 |= MD2_SPRITEYSCALE;
-	if (mobj->spritexoffset)
-		diff2 |= MD2_SPRITEXOFFSET;
-	if (mobj->spriteyoffset)
-		diff2 |= MD2_SPRITEYOFFSET;
+	if (mobj->spritexscale != FRACUNIT || mobj->spriteyscale != FRACUNIT)
+		diff2 |= MD2_SPRITESCALE;
+	if (mobj->spritexoffset || mobj->spriteyoffset)
+		diff2 |= MD2_SPRITEOFFSET;
+	if (mobj->sprxoff || mobj->spryoff || mobj->sprzoff)
+		diff2 |= MD2_WORLDOFFSET;
 	if (mobj->floorspriteslope)
 	{
 		pslope_t *slope = mobj->floorspriteslope;
@@ -2577,6 +2629,29 @@ static void SaveMobjThinker(savebuffer_t *save, const thinker_t *th, const UINT8
 		WRITEFIXED(save->p, mobj->destscale);
 	if (diff2 & MD2_SCALESPEED)
 		WRITEFIXED(save->p, mobj->scalespeed);
+	if (diff & MD_ARGS)
+	{
+		for (j = 0; j < NUMMAPTHINGARGS; j++)
+			WRITEINT32(save->p, mobj->args[j]);
+	}
+	if (diff & MD_STRINGARGS)
+	{
+		for (j = 0; j < NUMMAPTHINGSTRINGARGS; j++)
+		{
+			size_t len, k;
+
+			if (!mobj->stringargs[j])
+			{
+				WRITEINT32(save->p, 0);
+				continue;
+			}
+
+			len = strlen(mobj->stringargs[j]);
+			WRITEINT32(save->p, len);
+			for (k = 0; k < len; k++)
+				WRITECHAR(save->p, mobj->stringargs[j][k]);
+		}
+	}
 	if (diff2 & MD2_CUSVAL)
 		WRITEINT32(save->p, mobj->cusval);
 	if (diff2 & MD2_CVMEM)
@@ -2624,14 +2699,24 @@ static void SaveMobjThinker(savebuffer_t *save, const thinker_t *th, const UINT8
 	}
 	if (diff2 & MD2_TID)
 		WRITEINT16(save->p, mobj->tid);
-	if (diff2 & MD2_SPRITEXSCALE)
+	if (diff2 & MD2_SPRITESCALE)
+	{
 		WRITEFIXED(save->p, mobj->spritexscale);
-	if (diff2 & MD2_SPRITEYSCALE)
 		WRITEFIXED(save->p, mobj->spriteyscale);
-	if (diff2 & MD2_SPRITEXOFFSET)
+	}
+	if (diff2 & MD2_SPRITEOFFSET)
+	{
 		WRITEFIXED(save->p, mobj->spritexoffset);
-	if (diff2 & MD2_SPRITEYOFFSET)
 		WRITEFIXED(save->p, mobj->spriteyoffset);
+	}
+	if (diff2 & MD2_WORLDOFFSET)
+	{
+		WRITEFIXED(save->p, mobj->sprxoff);
+		WRITEFIXED(save->p, mobj->spryoff);
+		WRITEFIXED(save->p, mobj->sprzoff);
+	}
+	if (diff2 & MD2_SPECIAL)
+		WRITEINT16(save->p, mobj->special);
 	if (diff2 & MD2_FLOORSPRITESLOPE)
 	{
 		pslope_t *slope = mobj->floorspriteslope;
@@ -3549,6 +3634,7 @@ static thinker_t* LoadMobjThinker(savebuffer_t *save, actionf_p1 thinker)
 	INT32 i;
 	fixed_t z, floorz, ceilingz;
 	ffloor_t *floorrover = NULL, *ceilingrover = NULL;
+	size_t j;
 
 	diff = READUINT32(save->p);
 	if (diff & MD_MORE)
@@ -3742,6 +3828,31 @@ static thinker_t* LoadMobjThinker(savebuffer_t *save, actionf_p1 thinker)
 		mobj->scalespeed = READFIXED(save->p);
 	else
 		mobj->scalespeed = mapobjectscale/12;
+	if (diff & MD_ARGS)
+	{
+		for (j = 0; j < NUMMAPTHINGARGS; j++)
+			mobj->args[j] = READINT32(save->p);
+	}
+	if (diff & MD_STRINGARGS)
+	{
+		for (j = 0; j < NUMMAPTHINGSTRINGARGS; j++)
+		{
+			size_t len = READINT32(save->p);
+			size_t k;
+
+			if (!len)
+			{
+				Z_Free(mobj->stringargs[j]);
+				mobj->stringargs[j] = NULL;
+				continue;
+			}
+
+			mobj->stringargs[j] = Z_Realloc(mobj->stringargs[j], len + 1, PU_LEVEL, NULL);
+			for (k = 0; k < len; k++)
+				mobj->stringargs[j][k] = READCHAR(save->p);
+			mobj->stringargs[j][len] = '\0';
+		}
+	}
 	if (diff2 & MD2_CUSVAL)
 		mobj->cusval = READINT32(save->p);
 	if (diff2 & MD2_CVMEM)
@@ -3777,18 +3888,38 @@ static thinker_t* LoadMobjThinker(savebuffer_t *save, actionf_p1 thinker)
 		mobj->renderflags = READUINT32(save->p);
 	if (diff2 & MD2_TID)
 		P_SetThingTID(mobj, READINT16(save->p));
-	if (diff2 & MD2_SPRITEXSCALE)
+	if (diff2 & MD2_SPRITESCALE)
+	{
 		mobj->spritexscale = READFIXED(save->p);
-	else
-		mobj->spritexscale = FRACUNIT;
-	if (diff2 & MD2_SPRITEYSCALE)
 		mobj->spriteyscale = READFIXED(save->p);
+	}
 	else
-		mobj->spriteyscale = FRACUNIT;
-	if (diff2 & MD2_SPRITEXOFFSET)
+	{
+		mobj->spritexscale = mobj->spriteyscale = FRACUNIT;
+	}
+	if (diff2 & MD2_SPRITEOFFSET)
+	{
 		mobj->spritexoffset = READFIXED(save->p);
-	if (diff2 & MD2_SPRITEYOFFSET)
 		mobj->spriteyoffset = READFIXED(save->p);
+	}
+	else
+	{
+		mobj->spritexoffset = mobj->spriteyoffset = 0;
+	}
+	if (diff2 & MD2_WORLDOFFSET)
+	{
+		mobj->sprxoff = READFIXED(save->p);
+		mobj->spryoff = READFIXED(save->p);
+		mobj->sprzoff = READFIXED(save->p);
+	}
+	else
+	{
+		mobj->sprxoff = mobj->spryoff = mobj->sprzoff = 0;
+	}
+	if (diff2 & MD2_SPECIAL)
+	{
+		mobj->special = READINT16(save->p);
+	}
 	if (diff2 & MD2_FLOORSPRITESLOPE)
 	{
 		pslope_t *slope = (pslope_t *)P_CreateFloorSpriteSlope(mobj);
@@ -3834,17 +3965,6 @@ static thinker_t* LoadMobjThinker(savebuffer_t *save, actionf_p1 thinker)
 	else
 	{
 		mobj->terrain = NULL;
-	}
-
-	if (diff & MD_REDFLAG)
-	{
-		redflag = mobj;
-		rflagpoint = mobj->spawnpoint;
-	}
-	if (diff & MD_BLUEFLAG)
-	{
-		blueflag = mobj;
-		bflagpoint = mobj->spawnpoint;
 	}
 
 	// set sprev, snext, bprev, bnext, subsector

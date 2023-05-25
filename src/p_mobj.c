@@ -4420,7 +4420,7 @@ static void P_RefreshItemCapsuleParts(mobj_t *mobj)
 		color = SKINCOLOR_GOLD;
 		newRenderFlags |= RF_SEMIBRIGHT;
 	}
-	else if (mobj->spawnpoint && (mobj->spawnpoint->args[2] & TMICF_INVERTTIMEATTACK))
+	else if (mobj->args[2] & TMICF_INVERTTIMEATTACK)
 		color = SKINCOLOR_SAPPHIRE;
 	else if (itemType == KITEM_SPB)
 		color = SKINCOLOR_JET;
@@ -6511,7 +6511,7 @@ static void P_MobjSceneryThink(mobj_t *mobj)
 		if (!(leveltime % 10))
 		{
 			mobj_t *smok = P_SpawnMobj(mobj->x, mobj->y, mobj->z, MT_PETSMOKE);
-			if (mobj->spawnpoint && mobj->spawnpoint->args[0])
+			if (mobj->args[0])
 				P_SetMobjStateNF(smok, smok->info->painstate); // same function, diff sprite
 		}
 		break;
@@ -9638,7 +9638,7 @@ static boolean P_FuseThink(mobj_t *mobj)
 	case MT_SPIKE:
 	case MT_WALLSPIKE:
 		P_SetMobjState(mobj, mobj->state->nextstate);
-		mobj->fuse = mobj->spawnpoint ? mobj->spawnpoint->args[0] : mobj->info->speed;
+		mobj->fuse = mobj->args[0];
 		break;
 	case MT_LAVAFALL:
 		if (mobj->state - states == S_LAVAFALL_DORMANT)
@@ -9764,7 +9764,7 @@ void P_MobjThinker(mobj_t *mobj)
 	if (mobj->flags & MF_NOTHINK)
 		return;
 
-	if ((mobj->flags & MF_BOSS) && mobj->spawnpoint && (bossdisabled & (1<<mobj->spawnpoint->args[0])))
+	if ((mobj->flags & MF_BOSS) && (bossdisabled & (1 << mobj->args[0])))
 		return;
 
 	mobj->flags2 &= ~(MF2_ALREADYHIT);
@@ -11123,6 +11123,7 @@ void P_RemoveMobj(mobj_t *mobj)
 	P_SetTarget(&mobj->itnext, NULL);
 
 	P_RemoveThingTID(mobj);
+	P_DeleteMobjStringArgs(mobj);
 	R_RemoveMobjInterpolator(mobj);
 
 	// free block
@@ -11209,6 +11210,8 @@ void P_RemoveSavegameMobj(mobj_t *mobj)
 
 	// stop any playing sound
 	S_StopSound(mobj);
+
+	P_DeleteMobjStringArgs(mobj);
 	R_RemoveMobjInterpolator(mobj);
 
 	// free block
@@ -12175,7 +12178,7 @@ static boolean P_SetupEmblem(mapthing_t *mthing, mobj_t *mobj)
 	INT32 j;
 	emblem_t* emblem = M_GetLevelEmblems(gamemap);
 	skincolornum_t emcolor;
-	INT16 tagnum = Tag_FGet(&mthing->tags);
+	INT16 tagnum = mthing->tid;
 
 	while (emblem)
 	{
@@ -12653,7 +12656,7 @@ static mobj_t *P_MakeSoftwareCorona(mobj_t *mo, INT32 height)
 
 void P_InitSkyboxPoint(mobj_t *mobj, mapthing_t *mthing)
 {
-	mtag_t tag = Tag_FGet(&mthing->tags);
+	mtag_t tag = mthing->tid;
 	if (tag < 0 || tag > 15)
 	{
 		CONS_Debug(DBG_GAMELOGIC, "P_InitSkyboxPoint: Skybox ID %d of mapthing %s is not between 0 and 15!\n", tag, sizeu1((size_t)(mthing - mapthings)));
@@ -12806,10 +12809,6 @@ static boolean P_SetupSpawnedMapThing(mapthing_t *mthing, mobj_t *mobj, boolean 
 	case MT_PARTICLEGEN:
 		if (!P_SetupParticleGen(mthing, mobj))
 			return false;
-		break;
-	case MT_ROCKSPAWNER:
-		mobj->threshold = mthing->angle;
-		mobj->movecount = mthing->extrainfo;
 		break;
 	case MT_TUBEWAYPOINT:
 	{
@@ -12969,20 +12968,12 @@ static boolean P_SetupSpawnedMapThing(mapthing_t *mthing, mobj_t *mobj, boolean 
 			mobj->flags2 |= MF2_AMBUSH;
 		}
 		break;
-	case MT_REDFLAG:
-		redflag = mobj;
-		rflagpoint = mobj->spawnpoint;
-		break;
-	case MT_BLUEFLAG:
-		blueflag = mobj;
-		bflagpoint = mobj->spawnpoint;
-		break;
 	// SRB2Kart
 	case MT_WAYPOINT:
 	{
 		const fixed_t mobjscale =
 			mapheaderinfo[gamemap-1]->default_waypoint_radius;
-		mtag_t tag = Tag_FGet(&mthing->tags);
+		mtag_t tag = mthing->tid;
 
 		if (mthing->args[1] > 0)
 			mobj->radius = (mthing->args[1]) * FRACUNIT;
@@ -13145,8 +13136,8 @@ static boolean P_SetupSpawnedMapThing(mapthing_t *mthing, mobj_t *mobj, boolean 
 	{
 		fixed_t top = mobj->z;
 		UINT8 i;
-		UINT8 locnumsegs = (mthing->extrainfo)+2;
-		UINT8 numleaves = max(3, (abs(mthing->angle+1) % 6) + 3);
+		UINT8 locnumsegs = abs(mthing->args[0])+2;
+		UINT8 numleaves = max(3, (abs(mthing->args[1])+1 % 6) + 3);
 		mobj_t *coconut;
 
 		// Spawn tree segments
@@ -13360,6 +13351,7 @@ static mobj_t *P_SpawnMobjFromMapThing(mapthing_t *mthing, fixed_t x, fixed_t y,
 {
 	mobj_t *mobj = NULL;
 	boolean doangle = true;
+	size_t arg = SIZE_MAX;
 
 	mobj = P_SpawnMobj(x, y, z, i);
 	mobj->spawnpoint = mthing;
@@ -13393,7 +13385,34 @@ static mobj_t *P_SpawnMobjFromMapThing(mapthing_t *mthing, fixed_t x, fixed_t y,
 	mobj->pitch = FixedAngle(mthing->pitch << FRACBITS);
 	mobj->roll = FixedAngle(mthing->roll << FRACBITS);
 
-	P_SetThingTID(mobj, Tag_FGet(&mthing->tags));
+	P_SetThingTID(mobj, mthing->tid);
+
+	mobj->special = mthing->special;
+
+	for (arg = 0; arg < NUMMAPTHINGARGS; arg++)
+	{
+		mobj->args[arg] = mthing->args[arg];
+	}
+
+	for (arg = 0; arg < NUMMAPTHINGSTRINGARGS; arg++)
+	{
+		size_t len = 0;
+
+		if (mthing->stringargs[arg])
+		{
+			len = strlen(mthing->stringargs[arg]);
+		}
+
+		if (len == 0)
+		{
+			Z_Free(mobj->stringargs[arg]);
+			mobj->stringargs[arg] = NULL;
+			continue;
+		}
+
+		mobj->stringargs[arg] = Z_Realloc(mobj->stringargs[arg], len + 1, PU_LEVEL, NULL);
+		M_Memcpy(mobj->stringargs[arg], mthing->stringargs[arg], len + 1);
+	}
 
 	mthing->mobj = mobj;
 
@@ -13593,7 +13612,7 @@ static void P_SpawnItemRow(mapthing_t *mthing, mobjtype_t *itemtypes, UINT8 numi
 	{
 		const fixed_t length = (numitems - 1) * horizontalspacing / 2;
 
-		mobj_t *loopcenter = Obj_FindLoopCenter(Tag_FGet(&mthing->tags));
+		mobj_t *loopcenter = Obj_FindLoopCenter(mthing->tid);
 
 		// Spawn the anchor at the middle point of the line
 		loopanchor = P_SpawnMobjFromMapThing(&dummything,
@@ -14424,4 +14443,15 @@ mobj_t *P_FindMobjFromTID(mtag_t tid, mobj_t *i, mobj_t *activator)
 	}
 
 	return i;
+}
+
+void P_DeleteMobjStringArgs(mobj_t *mobj)
+{
+	size_t i = SIZE_MAX;
+
+	for (i = 0; i < NUMMAPTHINGSTRINGARGS; i++)
+	{
+		Z_Free(mobj->stringargs[i]);
+		mobj->stringargs[i] = NULL;
+	}
 }

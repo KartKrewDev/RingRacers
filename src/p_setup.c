@@ -714,7 +714,7 @@ static int cmp_loopends(const void *a, const void *b)
 
 	// weighted sorting; tag takes precedence over type
 	return
-		intsign(Tag_FGet(&mt1->tags) - Tag_FGet(&mt2->tags)) * 2 +
+		intsign(mt1->tid - mt2->tid) * 2 +
 		intsign(mt1->args[0] - mt2->args[0]);
 }
 
@@ -793,7 +793,7 @@ static void P_SpawnMapThings(boolean spawnemblems)
 			*mt1 = loopends[i - 1],
 			*mt2 = loopends[i];
 
-		if (Tag_FGet(&mt1->tags) == Tag_FGet(&mt2->tags) &&
+		if (mt1->tid == mt2->tid &&
 				mt1->args[0] == mt2->args[0])
 		{
 			P_SpawnItemLine(mt1, mt2);
@@ -1305,7 +1305,7 @@ static void P_LoadThings(UINT8 *data)
 		mt->type = READUINT16(data);
 		mt->options = READUINT16(data);
 		mt->extrainfo = (UINT8)(mt->type >> 12);
-		Tag_FSet(&mt->tags, 0);
+		mt->tid = 0;
 		mt->scale = FRACUNIT;
 		memset(mt->args, 0, NUMMAPTHINGARGS*sizeof(*mt->args));
 		memset(mt->stringargs, 0x00, NUMMAPTHINGSTRINGARGS*sizeof(*mt->stringargs));
@@ -1870,17 +1870,7 @@ static void ParseTextmapLinedefParameter(UINT32 i, const char *param, const char
 static void ParseTextmapThingParameter(UINT32 i, const char *param, const char *val)
 {
 	if (fastcmp(param, "id"))
-		Tag_FSet(&mapthings[i].tags, atol(val));
-	else if (fastcmp(param, "moreids"))
-	{
-		const char* id = val;
-		while (id)
-		{
-			Tag_Add(&mapthings[i].tags, atol(id));
-			if ((id = strchr(id, ' ')))
-				id++;
-		}
-	}
+		mapthings[i].tid = atol(val);
 	else if (fastcmp(param, "x"))
 		mapthings[i].x = atol(val);
 	else if (fastcmp(param, "y"))
@@ -2063,9 +2053,6 @@ static void P_WriteTextmap(void)
 
 	for (i = 0; i < nummapthings; i++)
 	{
-		if (mapthings[i].tags.count)
-			wmapthings[i].tags.tags = memcpy(Z_Malloc(mapthings[i].tags.count * sizeof(mtag_t), PU_LEVEL, NULL), mapthings[i].tags.tags, mapthings[i].tags.count * sizeof(mtag_t));
-
 		if (mapthings[i].user.length)
 		{
 			wmapthings[i].user.properties = memcpy(
@@ -2232,7 +2219,7 @@ static void P_WriteTextmap(void)
 					CONS_Alert(CONS_WARNING, M_GetText("No unused tag found. Linedef %s with type 412 cannot be converted.\n"), sizeu1(i));
 					break;
 				}
-				Tag_Add(&specialthings[s].teleport->tags, freetag);
+				specialthings[s].teleport->tid = freetag;
 				wlines[i].args[0] = freetag;
 				freetag = Tag_NextUnused(freetag);
 				break;
@@ -2246,7 +2233,7 @@ static void P_WriteTextmap(void)
 					CONS_Alert(CONS_WARNING, M_GetText("No unused tag found. Linedef %s with type 422 cannot be converted.\n"), sizeu1(i));
 					break;
 				}
-				Tag_Add(&specialthings[s].altview->tags, freetag);
+				specialthings[s].altview->tid = freetag;
 				wlines[i].args[0] = freetag;
 				specialthings[s].altview->pitch = wlines[i].args[2];
 				freetag = Tag_NextUnused(freetag);
@@ -2271,7 +2258,7 @@ static void P_WriteTextmap(void)
 					CONS_Alert(CONS_WARNING, M_GetText("No unused tag found. Linedef %s with type 457 cannot be converted.\n"), sizeu1(i));
 					break;
 				}
-				Tag_Add(&specialthings[s].angleanchor->tags, freetag);
+				specialthings[s].angleanchor->tid = freetag;
 				wlines[i].args[0] = freetag;
 				freetag = Tag_NextUnused(freetag);
 				break;
@@ -2370,20 +2357,8 @@ static void P_WriteTextmap(void)
 	{
 		fprintf(f, "thing // %s\n", sizeu1(i));
 		fprintf(f, "{\n");
-		firsttag = Tag_FGet(&wmapthings[i].tags);
-		if (firsttag != 0)
-			fprintf(f, "id = %d;\n", firsttag);
-		if (wmapthings[i].tags.count > 1)
-		{
-			fprintf(f, "moreids = \"");
-			for (j = 1; j < wmapthings[i].tags.count; j++)
-			{
-				if (j > 1)
-					fprintf(f, " ");
-				fprintf(f, "%d", wmapthings[i].tags.tags[j]);
-			}
-			fprintf(f, "\";\n");
-		}
+		if (wmapthings[i].tid != 0)
+			fprintf(f, "id = %d;\n", wmapthings[i].tid);
 		fprintf(f, "x = %d;\n", wmapthings[i].x);
 		fprintf(f, "y = %d;\n", wmapthings[i].y);
 		if (wmapthings[i].z != 0)
@@ -2833,9 +2808,6 @@ static void P_WriteTextmap(void)
 
 	for (i = 0; i < nummapthings; i++)
 	{
-		if (wmapthings[i].tags.count)
-			Z_Free(wmapthings[i].tags.tags);
-
 		if (wmapthings[i].user.length)
 			Z_Free(wmapthings[i].user.properties);
 	}
@@ -3045,7 +3017,7 @@ static void P_LoadTextmap(void)
 		mt->options = 0;
 		mt->z = 0;
 		mt->extrainfo = 0;
-		Tag_FSet(&mt->tags, 0);
+		mt->tid = 0;
 		mt->scale = FRACUNIT;
 		memset(mt->args, 0, NUMMAPTHINGARGS*sizeof(*mt->args));
 		memset(mt->stringargs, 0x00, NUMMAPTHINGSTRINGARGS*sizeof(*mt->stringargs));
@@ -4304,7 +4276,7 @@ static void P_AddBinaryMapTags(void)
 		case 760:
 		case 761:
 		case 762:
-			Tag_FSet(&mapthings[i].tags, mapthings[i].angle);
+			mapthings[i].tid = mapthings[i].angle;
 			break;
 		case 290:
 		case 292:
@@ -4312,7 +4284,7 @@ static void P_AddBinaryMapTags(void)
 		case 780:
 		case 2020: // MT_LOOPENDPOINT
 		case 2021: // MT_LOOPCENTERPOINT
-			Tag_FSet(&mapthings[i].tags, mapthings[i].extrainfo);
+			mapthings[i].tid = mapthings[i].extrainfo;
 			break;
 		default:
 			break;
@@ -6837,9 +6809,8 @@ static void P_ConvertBinaryThingTypes(void)
 		{
 			INT32 check = -1;
 			INT32 firstline = -1;
-			mtag_t tag = Tag_FGet(&mapthings[i].tags);
 
-			TAG_ITER_LINES(tag, check)
+			TAG_ITER_LINES(mapthings[i].tid, check)
 			{
 				if (lines[check].special == 20)
 				{
@@ -7058,7 +7029,7 @@ static void P_ConvertBinaryThingTypes(void)
 		{
 			INT32 firstline = Tag_FindLineSpecial(2000, (INT16)mapthings[i].angle);
 
-			Tag_FSet(&mapthings[i].tags, mapthings[i].angle);
+			mapthings[i].tid = mapthings[i].angle;
 
 			mapthings[i].args[0] = mapthings[i].z;
 			mapthings[i].z = 0;
@@ -7135,6 +7106,10 @@ static void P_ConvertBinaryThingTypes(void)
 		case 2050: // MT_DUELBOMB
 			mapthings[i].args[1] = !!(mapthings[i].options & MTF_AMBUSH);
 			break;
+		case 1950: // MT_AAZTREE_HELPER
+			mapthings[i].args[0] = mapthings[i].extrainfo;
+			mapthings[i].args[1] = mapthings[i].angle;
+			break;
 		case 2333: // MT_BATTLECAPSULE
 			mapthings[i].args[0] = mapthings[i].extrainfo;
 			mapthings[i].args[1] = mapthings[i].angle;
@@ -7160,7 +7135,7 @@ static void P_ConvertBinaryThingTypes(void)
 			break;
 		case FLOOR_SLOPE_THING:
 		case CEILING_SLOPE_THING:
-			Tag_FSet(&mapthings[i].tags, mapthings[i].extrainfo);
+			mapthings[i].tid = mapthings[i].extrainfo;
 			break;
 		default:
 			break;
@@ -7375,10 +7350,6 @@ static void P_InitLevelSettings(void)
 
 	// emerald hunt
 	hunt1 = hunt2 = hunt3 = NULL;
-
-	// clear ctf pointers
-	redflag = blueflag = NULL;
-	rflagpoint = bflagpoint = NULL;
 
 	// circuit, race and competition stuff
 	numstarposts = 0;
