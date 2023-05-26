@@ -357,79 +357,233 @@ void M_DrawMenuForeground(void)
 	}
 }
 
+//
+// M_DrawMenuTooltips
+//
+// Draw a banner across the top of the screen, with a description of the current option displayed
+//
+static void M_DrawMenuTooltips(void)
+{
+	if (currentMenu->menuitems[itemOn].tooltip != NULL)
+	{
+		V_DrawFixedPatch(0, 0, FRACUNIT, 0, W_CachePatchName("MENUHINT", PU_CACHE), NULL);
+		V_DrawCenteredThinString(BASEVIDWIDTH/2, 12, V_ALLOWLOWERCASE|V_6WIDTHSPACE, currentMenu->menuitems[itemOn].tooltip);
+	}
+}
+
 // Draws the typing submenu
 static void M_DrawMenuTyping(void)
 {
+	const UINT8 pid = 0;
 
 	INT32 i, j;
 
-	INT32 x = 60;
-	INT32 y = 100 + (9-menutyping.menutypingfade)*8;
-	INT32 tflag = (9 - menutyping.menutypingfade)<<V_ALPHASHIFT;
+	INT32 x, y;
 
 	consvar_t *cv = currentMenu->menuitems[itemOn].itemaction.cvar;
 
 	char buf[8];	// We write there to use drawstring for convenience.
 
-	V_DrawFadeScreen(31, menutyping.menutypingfade);
+	V_DrawFadeScreen(31, (menutyping.menutypingfade+1)/2);
 
 	// Draw the string we're editing at the top.
-	V_DrawString(x, y-48 + 12, V_ALLOWLOWERCASE|tflag, cv->string);
+
+	const INT32 boxwidth = (8*(MAXSTRINGLENGTH + 1)) + 7;
+	x = (BASEVIDWIDTH - boxwidth)/2;
+	y = 80;
+	if (menutyping.menutypingfade < 9)
+		y += (9-menutyping.menutypingfade)*10;
+	else
+		y += (9-menutyping.menutypingfade);
+
+	if (currentMenu->menuitems[itemOn].text)
+	{
+		V_DrawThinString(x + 5, y - 2, highlightflags|V_ALLOWLOWERCASE, currentMenu->menuitems[itemOn].text);
+	}
+
+	M_DrawMenuTooltips();
+
+	//M_DrawTextBox(x, y + 4, MAXSTRINGLENGTH, 1);
+	V_DrawFill(x + 5, y + 4 + 5, boxwidth - 8, 8+6, 159);
+
+	V_DrawFill(x + 4, y + 4 + 4, boxwidth - 6, 1, 121);
+	V_DrawFill(x + 4, y + 4 + 5 + 8 + 6, boxwidth - 6, 1, 121);
+
+	V_DrawFill(x + 4, y + 4 + 5, 1, 8+6, 121);
+	V_DrawFill(x + 5 + boxwidth - 8, y + 4 + 5, 1, 8+6, 121);
+
+	V_DrawString(x + 8, y + 12, V_ALLOWLOWERCASE, cv->string);
 	if (skullAnimCounter < 4)
-		V_DrawCharacter(x + V_StringWidth(cv->string, 0), y - 35, '_' | 0x80, false);
+		V_DrawCharacter(x + 8 + V_StringWidth(cv->string, 0), y + 12 + 1, '_' | 0x80, false);
+
+	const INT32 buttonwidth = ((boxwidth + 1)/NUMVIRTUALKEYSINROW);
+#define BUTTONHEIGHT (11)
+
+	// Now the keyboard itself
+	x += 5;
+	INT32 returnx = x;
+
+	if (menutyping.menutypingfade > 9)
+	{
+		y += 36 + 80 + (9-menutyping.menutypingfade)*10; // double yoffs for animation
+
+		INT32 tempkeyboardx = menutyping.keyboardx;
+
+		while (virtualKeyboard[menutyping.keyboardy][tempkeyboardx] == 1
+		&& tempkeyboardx > 0)
+			tempkeyboardx--;
+
+		for (i = 0; i < 5; i++)
+		{
+			j = 0;
+			while (j < NUMVIRTUALKEYSINROW)
+			{
+				INT32 mflag = V_ALLOWLOWERCASE|V_6WIDTHSPACE;
+				INT16 c = virtualKeyboard[i][j];
+
+				INT32 buttonspacing = 1;
+
+				UINT8 col = 27;
+
+				INT32 arrowoffset = 0;
+
+				while (j + buttonspacing < NUMVIRTUALKEYSINROW
+				&& virtualKeyboard[i][j + buttonspacing] == 1)
+				{
+					buttonspacing++;
+				}
+
+				if (menutyping.keyboardshift ^ menutyping.keyboardcapslock)
+					c = shift_virtualKeyboard[i][j];
+
+				if (i < 4 && j < NUMVIRTUALKEYSINROW-2)
+				{
+					col = 25;
+				}
+
+				boolean canmodifycol = (menutyping.menutypingfade == 18);
+
+				if (c == KEY_BACKSPACE)
+				{
+					arrowoffset = 1;
+					buf[0] = '\x1C'; // left arrow
+					buf[1] = '\0';
+
+					if (canmodifycol && M_MenuBackHeld(pid))
+					{
+						col -= 4;
+						canmodifycol = false;
+					}
+				}
+				else if (c == KEY_RSHIFT)
+				{
+					arrowoffset = 2;
+					buf[0] = '\x1A'; // up arrow
+					buf[1] = '\0';
+
+					if (menutyping.keyboardcapslock || menutyping.keyboardshift)
+					{
+						col = 22;
+					}
+
+					if (canmodifycol && M_MenuExtraHeld(pid))
+					{
+						col -= 4;
+						canmodifycol = false;
+					}
+				}
+				else if (c == KEY_ENTER)
+				{
+					strcpy(buf, "OK");
+
+					if (menutyping.menutypingclose)
+					{
+						col -= 4;
+						canmodifycol = false;
+					}
+				}
+				else if (c == KEY_SPACE)
+				{
+					strcpy(buf, "Space");
+				}
+				else
+				{
+					buf[0] = c;
+					buf[1] = '\0';
+				}
+
+				INT32 width = (buttonwidth * buttonspacing) - 1;
+
+				// highlight:
+				/*if (menutyping.keyboardtyping)
+				{
+					mflag |= V_TRANSLUCENT;	// grey it out if we can't use it.
+				}
+				else*/
+				{
+					if (tempkeyboardx == j && menutyping.keyboardy == i)
+					{
+						if (canmodifycol && M_MenuConfirmHeld(pid))
+						{
+							col -= 4;
+							canmodifycol = false;
+						}
+
+						V_DrawFill(x + 1, y + 1, width - 2, BUTTONHEIGHT - 2, col - 3);
+
+						V_DrawFill(x, y,                    width, 1, 121);
+						V_DrawFill(x, y + BUTTONHEIGHT - 1, width, 1, 121);
+
+						V_DrawFill(x,             y + 1, 1, BUTTONHEIGHT - 2, 121);
+						V_DrawFill(x + width - 1, y + 1, 1, BUTTONHEIGHT - 2, 121);
+
+						mflag |= highlightflags;
+					}
+					else
+					{
+						V_DrawFill(x, y, width, BUTTONHEIGHT, col);
+					}
+				}
+
+				if (arrowoffset != 0)
+				{
+					if (c == KEY_RSHIFT)
+					{
+						V_DrawFill(x + width - 5, y + 1, 4, 4, 31);
+
+						if (menutyping.keyboardcapslock)
+						{
+							V_DrawFill(x + width - 4, y + 2, 2, 2, 121);
+						}
+					}
+
+					V_DrawCenteredString(x + (width/2), y + 1 + arrowoffset, mflag, buf);
+				}
+				else
+				{
+					V_DrawCenteredThinString(x + (width/2), y + 1, mflag, buf);
+				}
+
+				x += width + 1;
+				j += buttonspacing;
+			}
+			x = returnx;
+			y += BUTTONHEIGHT + 1;
+		}
+	}
+
+#undef BUTTONHEIGHT
 
 	// Some contextual stuff
 	if (menutyping.keyboardtyping)
-		V_DrawThinString(10, 175, V_ALLOWLOWERCASE|tflag|V_GRAYMAP, "Type using your keyboard. Press Enter to confirm & exit.\nUse your controller or any directional input to use the Virtual Keyboard.\n");
-	else
-		V_DrawThinString(10, 175, V_ALLOWLOWERCASE|tflag|V_GRAYMAP, "Type using the Virtual Keyboard. Use the \'OK\' button to confirm & exit.\nPress any keyboard key not bound to a control to use it.");
-
-
-	// Now the keyboard itself
-	for (i=0; i < 5; i++)
 	{
-		for (j=0; j < 13; j++)
-		{
-			INT32 mflag = 0;
-			INT16 c = virtualKeyboard[i][j];
-			if (menutyping.keyboardshift ^ menutyping.keyboardcapslock)
-				c = shift_virtualKeyboard[i][j];
-
-
-			if (c == KEY_BACKSPACE)
-				strcpy(buf, "DEL");
-
-			else if (c == KEY_RSHIFT)
-				strcpy(buf, "SHIFT");
-
-			else if (c == KEY_CAPSLOCK)
-				strcpy(buf, "CAPS");
-
-			else if (c == KEY_ENTER)
-				strcpy(buf, "OK");
-
-			else if (c == KEY_SPACE)
-				strcpy(buf, "SPACE");
-
-			else
-			{
-				buf[0] = c;
-				buf[1] = '\0';
-			}
-
-			// highlight:
-			if (menutyping.keyboardx == j && menutyping.keyboardy == i && !menutyping.keyboardtyping)
-				mflag |= highlightflags;
-			else if (menutyping.keyboardtyping)
-				mflag |= V_TRANSLUCENT;	// grey it out if we can't use it.
-
-			V_DrawString(x, y, V_ALLOWLOWERCASE|tflag|mflag, buf);
-
-			x += V_StringWidth(buf, 0)+8;
-		}
-		x = 60;
-		y += 12;
+		V_DrawThinString(returnx, 175, V_ALLOWLOWERCASE|V_6WIDTHSPACE|V_GRAYMAP, "Type using your keyboard. Press Enter to confirm & exit.\nUse your controller or any directional input to use the Virtual Keyboard.\n");
 	}
+	else
+	{
+		V_DrawThinString(x, 175, V_ALLOWLOWERCASE|V_6WIDTHSPACE|V_GRAYMAP, "Type using the Virtual Keyboard. Use the \'OK\' button to confirm & exit.\nPress any keyboard key not bound to a control to use it.");
+	}
+
 }
 
 // Draw the message popup submenu
@@ -497,6 +651,16 @@ void M_DrawMenuMessage(void)
 	}
 }
 
+// PAUSE
+static void M_DrawPausedText(INT32 x)
+{
+	patch_t *pausebg = W_CachePatchName("M_STRIPU", PU_CACHE);
+	patch_t *pausetext = W_CachePatchName("M_PAUSET", PU_CACHE);
+
+	V_DrawFixedPatch(x, 0, FRACUNIT, V_SNAPTOLEFT|V_SNAPTOTOP|V_ADD, pausebg,   NULL);
+	V_DrawFixedPatch(x, 0, FRACUNIT, V_SNAPTOLEFT|V_SNAPTOTOP,       pausetext, NULL);
+}
+
 //
 // M_Drawer
 // Called after the view has been rendered,
@@ -556,34 +720,23 @@ void M_Drawer(void)
 		menuwipe = false;
 	}
 
+	// draw pause pic
+	if (paused && !demo.playback && (menuactive || cv_showhud.value))
+	{
+		M_DrawPausedText(0);
+	}
+
 	// focus lost notification goes on top of everything, even the former everything
 	if (window_notinfocus && cv_showfocuslost.value)
 	{
 		M_DrawTextBox((BASEVIDWIDTH/2) - (60), (BASEVIDHEIGHT/2) - (16), 13, 2);
-		if (gamestate == GS_LEVEL && (P_AutoPause() || paused))
-			V_DrawCenteredString(BASEVIDWIDTH/2, (BASEVIDHEIGHT/2) - (4), highlightflags, "Game Paused");
-		else
-			V_DrawCenteredString(BASEVIDWIDTH/2, (BASEVIDHEIGHT/2) - (4), highlightflags, "Focus Lost");
+		V_DrawCenteredString(BASEVIDWIDTH/2, (BASEVIDHEIGHT/2) - (4), highlightflags, "Focus Lost");
 	}
 }
 
 // ==========================================================================
 // GENERIC MENUS
 // ==========================================================================
-
-//
-// M_DrawMenuTooltips
-//
-// Draw a banner across the top of the screen, with a description of the current option displayed
-//
-static void M_DrawMenuTooltips(void)
-{
-	if (currentMenu->menuitems[itemOn].tooltip != NULL)
-	{
-		V_DrawFixedPatch(0, 0, FRACUNIT, 0, W_CachePatchName("MENUHINT", PU_CACHE), NULL);
-		V_DrawCenteredThinString(BASEVIDWIDTH/2, 12, V_ALLOWLOWERCASE|V_6WIDTHSPACE, currentMenu->menuitems[itemOn].tooltip);
-	}
-}
 
 // Converts a string into question marks.
 // Used for the secrets menu, to hide yet-to-be-unlocked stuff.
@@ -680,12 +833,20 @@ void M_DrawGenericMenu(void)
 								break;
 #endif
 							case IT_CV_STRING:
-								M_DrawTextBox(x, y + 4, MAXSTRINGLENGTH, 1);
-								V_DrawString(x + 8, y + 12, V_ALLOWLOWERCASE, cv->string);
-								if (skullAnimCounter < 4 && i == itemOn)
-									V_DrawCharacter(x + 8 + V_StringWidth(cv->string, 0), y + 12,
-										'_' | 0x80, false);
-								y += 16;
+								{
+									M_DrawTextBox(x, y + 4, MAXSTRINGLENGTH, 1);
+
+									INT32 xoffs = 0;
+									if (itemOn == i)
+									{
+										xoffs += 8;
+										V_DrawString(x + (skullAnimCounter/5) + 6, y + 12, highlightflags, "\x1D");
+									}
+
+									V_DrawString(x + xoffs + 8, y + 12, V_ALLOWLOWERCASE, cv->string);
+
+									y += 16;
+								}
 								break;
 							default:
 								w = V_StringWidth(cv->string, 0);
@@ -2727,9 +2888,16 @@ void M_DrawMPHost(void)
 							switch (currentMenu->menuitems[i].status & IT_CVARTYPE)
 							{
 								case IT_CV_STRING:
-									V_DrawThinString(xp + 96, yp, V_ALLOWLOWERCASE|V_6WIDTHSPACE, cv->string);
-									if (skullAnimCounter < 4 && i == itemOn)
-										V_DrawString(xp + 96 + V_ThinStringWidth(cv->string, V_ALLOWLOWERCASE|V_6WIDTHSPACE), yp+1, 0, "_");
+									{
+										INT32 xoffs = 0;
+										if (itemOn == i)
+										{
+											xoffs += 8;
+											V_DrawString(xp + (skullAnimCounter/5) + 94, yp+1, highlightflags, "\x1D");
+										}
+
+										V_DrawThinString(xp + xoffs + 96, yp, V_ALLOWLOWERCASE|V_6WIDTHSPACE, cv->string);
+									}
 
 									break;
 
@@ -2837,9 +3005,17 @@ void M_DrawMPJoinIP(void)
 								colormapc = R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_PLAGUE, GTC_CACHE);
 
 								V_DrawFixedPatch((xp + 12)<<FRACBITS, (yp-2)<<FRACBITS, FRACUNIT, 0, typebar, colormapc);	// Always consider that this is selected otherwise it clashes.
-								V_DrawThinString(xp + 18, yp, V_ALLOWLOWERCASE|V_6WIDTHSPACE, cv->string);
-								if (skullAnimCounter < 4 && i == itemOn)
-									V_DrawString(xp + 18 + V_ThinStringWidth(cv->string, V_ALLOWLOWERCASE|V_6WIDTHSPACE), yp+1, 0, "_");
+
+								{
+									INT32 xoffs = 0;
+									if (itemOn == i)
+									{
+										xoffs += 8;
+										V_DrawString(xp + (skullAnimCounter/5) + 17, yp+1, highlightflags, "\x1D");
+									}
+
+									V_DrawThinString(xp + xoffs + 18, yp, V_ALLOWLOWERCASE|V_6WIDTHSPACE, cv->string);
+								}
 
 								/*// On this specific menu the only time we'll ever see this is for the connect by IP typefield.
 								// Draw the small GO button here (and the text which is a separate graphic)
@@ -3167,12 +3343,20 @@ void M_DrawGenericOptions(void)
 							case IT_CV_INVISSLIDER: // monitor toggles use this
 								break;
 							case IT_CV_STRING:
-								M_DrawTextBox(x, y + 4, MAXSTRINGLENGTH, 1);
-								V_DrawString(x + 8, y + 12, V_ALLOWLOWERCASE, cv->string);
-								if (skullAnimCounter < 4 && i == itemOn)
-									V_DrawCharacter(x + 8 + V_StringWidth(cv->string, 0), y + 12,
-										'_' | 0x80, false);
-								y += 16;
+								{
+									M_DrawTextBox(x, y + 4, MAXSTRINGLENGTH, 1);
+
+									INT32 xoffs = 0;
+									if (itemOn == i)
+									{
+										xoffs += 8;
+										V_DrawString(x + (skullAnimCounter/5) + 6, y + 12, highlightflags, "\x1D");
+									}
+
+									V_DrawString(x + xoffs + 8, y + 12, V_ALLOWLOWERCASE, cv->string);
+
+									y += 16;
+								}
 								break;
 							default:
 								w = V_StringWidth(cv->string, 0);
@@ -3912,8 +4096,6 @@ void M_DrawExtras(void)
 // INGAME / PAUSE MENUS
 //
 
-// PAUSE
-
 // PAUSE MAIN MENU
 void M_DrawPause(void)
 {
@@ -3934,18 +4116,17 @@ void M_DrawPause(void)
 	INT16 word2len = 0;
 	boolean sok = false;
 
-	patch_t *pausebg = W_CachePatchName("M_STRIPU", PU_CACHE);
 	patch_t *vertbg = W_CachePatchName("M_STRIPV", PU_CACHE);
-	patch_t *pausetext = W_CachePatchName("M_PAUSET", PU_CACHE);
-
 	patch_t *arrstart = W_CachePatchName("M_PTIP", PU_CACHE);
 	patch_t *arrfill = W_CachePatchName("M_PFILL", PU_CACHE);
 
 	//V_DrawFadeScreen(0xFF00, 16);
 
 	// "PAUSED"
-	V_DrawFixedPatch(-offset*FRACUNIT, 0, FRACUNIT, V_ADD, pausebg, NULL);
-	V_DrawFixedPatch(-offset*FRACUNIT, 0, FRACUNIT, 0, pausetext, NULL);
+	if (!paused && !demo.playback && !modeattacking && !netgame) // as close to possible as P_AutoPause, but not dependent on menuactive
+	{
+		M_DrawPausedText(-offset*FRACUNIT);
+	}
 
 	// Vertical Strip:
 	V_DrawFixedPatch((230 + offset)<<FRACBITS, 0, FRACUNIT, V_ADD, vertbg, NULL);
@@ -4081,7 +4262,7 @@ void M_DrawPause(void)
 			V_DrawCenteredLSTitleLowString(220 + offset*2, 103, 0, word2);
 	}
 
-	if (gamestate != GS_INTERMISSION)
+	if (gamestate != GS_INTERMISSION && roundqueue.size > 0)
 	{
 		y_data_t standings;
 		memset(&standings, 0, sizeof (standings));
@@ -4105,7 +4286,57 @@ void M_DrawPause(void)
 			standings.showrank = true;
 		}
 
-		// Returns early if there's no roundqueue entries to draw
+		patch_t *smallroundpatch = NULL;
+
+		if (grandprixinfo.gp == true && grandprixinfo.eventmode != GPEVENT_NONE)
+		{
+			const char *append = NULL;
+
+			switch (grandprixinfo.eventmode)
+			{
+				case GPEVENT_SPECIAL:
+				{
+					append = "SS";
+					break;
+				}
+
+				case GPEVENT_BONUS:
+				{
+					append = "B";
+					break;
+				}
+
+				default:
+					break;
+			}
+
+			if (append)
+			{
+				smallroundpatch =
+					W_CachePatchName(
+						va("TT_RNS%s", append),
+						PU_PATCH
+					);
+			}
+		}
+		else if (roundqueue.roundnum > 0 && roundqueue.roundnum <= 10)
+		{
+			smallroundpatch =
+				W_CachePatchName(
+					va("TT_RNS%d", roundqueue.roundnum),
+					PU_PATCH
+				);
+		}
+
+		if (smallroundpatch != NULL)
+		{
+			V_DrawMappedPatch(
+				24, 152,
+				0,
+				smallroundpatch,
+				NULL);
+		}
+
 		Y_RoundQueueDrawer(&standings, false, false);
 	}
 }

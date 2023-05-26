@@ -223,7 +223,7 @@ static boolean M_GamestateCanOpenMenu(void)
 //
 boolean M_Responder(event_t *ev)
 {
-	menuKey = -1;
+	boolean menuKeyJustChanged = false;
 
 	if (dedicated
 		|| (demo.playback && demo.title)
@@ -255,10 +255,11 @@ boolean M_Responder(event_t *ev)
 		D_StartTitle();
 	}
 
-	if (ev->type == ev_keydown && ev->data1 < NUMKEYS)
+	if (ev->type == ev_keydown && ev->data1 > 0 && ev->data1 < NUMKEYS)
 	{
 		// Record keyboard presses
 		menuKey = ev->data1;
+		menuKeyJustChanged = true;
 	}
 
 	// Profiles: Control mapping.
@@ -354,7 +355,7 @@ boolean M_Responder(event_t *ev)
 	}
 
 	// Typing for CV_IT_STRING
-	if (menutyping.active && !menutyping.menutypingclose && menutyping.keyboardtyping)
+	if (menuKeyJustChanged && menutyping.active && !menutyping.menutypingclose && menutyping.keyboardtyping)
 	{
 		M_ChangeStringCvar(menuKey);
 	}
@@ -564,6 +565,9 @@ void M_StartControlPanel(void)
 			currentMenu->lastOn = 0;
 
 			CV_StealthSetValue(&cv_currprofile, -1); // Make sure to reset that as it is set by PR_ApplyProfile which we kind of hack together to force it.
+
+			// Ambient ocean sounds
+			S_ChangeMusicInternal("_OCEAN", true);
 		}
 		else
 		{
@@ -571,9 +575,9 @@ void M_StartControlPanel(void)
 				restoreMenu = &MainDef;
 			currentMenu = M_SpecificMenuRestore(M_InterruptMenuWithChallenges(restoreMenu));
 			restoreMenu = NULL;
-		}
 
-		M_PlayMenuJam();
+			M_PlayMenuJam();
+		}
 	}
 	else
 	{
@@ -737,6 +741,9 @@ void M_UpdateMenuCMD(UINT8 i)
 {
 	UINT8 mp = max(1, setup_numplayers);
 
+	menucmd[i].prev_dpad_ud = menucmd[i].dpad_ud;
+	menucmd[i].prev_dpad_lr = menucmd[i].dpad_lr;
+
 	menucmd[i].dpad_ud = 0;
 	menucmd[i].dpad_lr = 0;
 
@@ -830,6 +837,9 @@ static void M_HandleMenuInput(void)
 	void (*routine)(INT32 choice); // for some casting problem
 	UINT8 pid = 0; // todo: Add ability for any splitscreen player to bring up the menu.
 	SINT8 lr = 0, ud = 0;
+	INT32 thisMenuKey = menuKey;
+
+	menuKey = -1;
 
 	if (menuactive == false)
 	{
@@ -846,7 +856,7 @@ static void M_HandleMenuInput(void)
 	// Typing for CV_IT_STRING
 	if (menutyping.active)
 	{
-		M_MenuTypingInput(menuKey);
+		M_MenuTypingInput(thisMenuKey);
 		return;
 	}
 
@@ -858,7 +868,7 @@ static void M_HandleMenuInput(void)
 	// Handle menu-specific input handling. If this returns true, we skip regular input handling.
 	if (currentMenu->inputroutine)
 	{
-		if (currentMenu->inputroutine(menuKey))
+		if (currentMenu->inputroutine(thisMenuKey))
 		{
 			return;
 		}
@@ -884,7 +894,7 @@ static void M_HandleMenuInput(void)
 			// If we're hovering over a IT_CV_STRING option, pressing A/X opens the typing submenu
 			if (M_MenuConfirmPressed(pid))
 			{
-				menutyping.keyboardtyping = menuKey != 0 ? true : false;	// If we entered this menu by pressing a menu Key, default to keyboard typing, otherwise use controller.
+				menutyping.keyboardtyping = thisMenuKey != -1 ? true : false;	// If we entered this menu by pressing a menu Key, default to keyboard typing, otherwise use controller.
 				menutyping.active = true;
 				menutyping.menutypingclose = false;
 				return;

@@ -648,11 +648,31 @@ INT32 CON_ShiftChar(INT32 ch)
 {
 	if ((ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z'))
 	{
+		// Standard Latin-script uppercase translation
 		if (shiftdown ^ capslock)
 			ch = shiftxform[ch];
 	}
-	else	// if we're holding shift we should still shift non letter symbols
+	else if (ch >= KEY_KEYPAD7 && ch <= KEY_KPADDEL)
 	{
+		// Numpad keycodes mapped to printable equivalent
+		const char keypad_translation[] =
+		{
+			'7','8','9','-',
+			'4','5','6','+',
+			'1','2','3',
+			'0','.'
+		};
+
+		ch = keypad_translation[ch - KEY_KEYPAD7];
+	}
+	else if (ch == KEY_KPADSLASH)
+	{
+		// Ditto, but non-contiguous keycode
+		ch = '/';
+	}
+	else
+	{
+		// QWERTY keycode translation
 		if (shiftdown)
 			ch = shiftxform[ch];
 	}
@@ -1296,30 +1316,7 @@ boolean CON_Responder(event_t *ev)
 		return true;
 	}
 
-	// allow people to use keypad in console (good for typing IP addresses) - Calum
-	if (key >= KEY_KEYPAD7 && key <= KEY_KPADDEL)
-	{
-		char keypad_translation[] = {'7','8','9','-',
-		                             '4','5','6','+',
-		                             '1','2','3',
-		                             '0','.'};
-
-		key = keypad_translation[key - KEY_KEYPAD7];
-	}
-	else if (key == KEY_KPADSLASH)
-		key = '/';
-
-	// same capslock code as hu_stuff.c's HU_responder. Check there for details.
-	if ((key >= 'a' && key <= 'z') || (key >= 'A' && key <= 'Z'))
-	{
-		if (shiftdown ^ capslock)
-			key = shiftxform[key];
-	}
-	else
-	{
-		if (shiftdown)
-			key = shiftxform[key];
-	}
+	key = CON_ShiftChar(key);
 
 	// enter a char into the command prompt
 	if (key < 32 || key > 127)

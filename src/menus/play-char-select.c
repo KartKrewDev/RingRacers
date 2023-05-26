@@ -497,6 +497,7 @@ void M_CharacterSelectInit(void)
 void M_CharacterSelect(INT32 choice)
 {
 	(void)choice;
+	PLAY_CharSelectDef.music = currentMenu->music;
 	PLAY_CharSelectDef.prevMenu = currentMenu;
 	M_SetupNextMenu(&PLAY_CharSelectDef, false);
 }

@@ -487,8 +487,9 @@ extern INT16 skullAnimCounter; // skull animation counter
 
 extern INT32 menuKey; // keyboard key pressed for menu
 
-extern INT16 virtualKeyboard[5][13];
-extern INT16 shift_virtualKeyboard[5][13];
+#define NUMVIRTUALKEYSINROW (10+2) // 1-9, 0, and a right-side gutter of two keys' width
+extern INT16 virtualKeyboard[5][NUMVIRTUALKEYSINROW];
+extern INT16 shift_virtualKeyboard[5][NUMVIRTUALKEYSINROW];
 
 extern struct menutyping_s
 {
@@ -551,10 +552,16 @@ typedef enum
 
 struct menucmd_t
 {
+	// Current frame's data
 	SINT8 dpad_ud; // up / down dpad
 	SINT8 dpad_lr; // left / right
 	UINT32 buttons; // buttons
-	UINT32 buttonsHeld; // prev frame's buttons
+
+	// Previous frame's data
+	SINT8 prev_dpad_ud;
+	SINT8 prev_dpad_lr;
+	UINT32 buttonsHeld;
+
 	UINT16 delay; // menu wait
 	UINT32 delayCount; // num times ya did menu wait (to make the wait shorter each time)
 };

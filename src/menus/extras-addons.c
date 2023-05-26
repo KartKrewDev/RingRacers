@@ -10,7 +10,7 @@
 
 menuitem_t MISC_AddonsMenu[] =
 {
-	{IT_STRING | IT_CVAR | IT_CV_STRING, NULL, NULL,
+	{IT_STRING | IT_CVAR | IT_CV_STRING, "Search for add-ons", "Provide a full or partial name to filter available files by.",
 		NULL, {.cvar = &cv_dummyaddonsearch}, 0, 0},
 	{IT_KEYHANDLER | IT_NOTHING, NULL, NULL,
 		NULL, {.routine = M_HandleAddons}, 0, 0},     // dummy menuitem for the control func

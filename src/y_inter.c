@@ -436,7 +436,7 @@ void Y_PlayerStandingsDrawer(y_data_t *standings, INT32 xoffset)
 	INT32 heightcount = (standings->numplayers - 1);
 
 	INT32 x, y;
-	INT32 x2, returny;
+	INT32 x2, returny, inwardshim = 0;
 
 	boolean verticalresults = (standings->numplayers < 4);
 	boolean datarightofcolumn = false;
@@ -446,23 +446,29 @@ void Y_PlayerStandingsDrawer(y_data_t *standings, INT32 xoffset)
 
 	patch_t *resbar = W_CachePatchName("R_RESBAR", PU_PATCH); // Results bars for players
 
+	if (drawping || data.rankingsmode != 0)
+	{
+		inwardshim = 8;
+	}
+
 	if (verticalresults)
 	{
 		x = (BASEVIDWIDTH/2) - 61;
-
-		if (drawping)
-		{
-			x += 9;
-		}
 	}
 	else
 	{
 		x = 29;
+		inwardshim /= 2;
 		heightcount /= 2;
 	}
 
-	x += xoffset;
-	x2 = x - 9;
+	x += xoffset + inwardshim;
+	x2 = x;
+
+	if (drawping)
+	{
+		x2 -= 9;
+	}
 
 	if (standings->numplayers > 10)
 	{
@@ -595,6 +601,39 @@ void Y_PlayerStandingsDrawer(y_data_t *standings, INT32 xoffset)
 					);
 				}
 			}
+			else if (data.rankingsmode != 0)
+			{
+				char *increasenum = NULL;
+
+				if (data.increase[pnum] != INT16_MIN)
+				{
+					increasenum = va(
+						"(%d)",
+						data.increase[pnum]
+					);
+				}
+
+				if (increasenum)
+				{
+					if (datarightofcolumn)
+					{
+						V_DrawThinString(
+							x2, y-2,
+							V_ALLOWLOWERCASE|V_6WIDTHSPACE,
+							increasenum
+						);
+					}
+					else
+					{
+						V_DrawRightAlignedThinString(
+							x2, y-2,
+							V_ALLOWLOWERCASE|V_6WIDTHSPACE,
+							increasenum
+						);
+					}
+				}
+
+			}
 
 			// Reverse the jitter offset
 			if (standings->jitter[pnum] > 0)
@@ -605,7 +644,7 @@ void Y_PlayerStandingsDrawer(y_data_t *standings, INT32 xoffset)
 
 		if (verticalresults == false && i == (standings->numplayers-1)/2)
 		{
-			x = 169 + xoffset;
+			x = 169 + xoffset - inwardshim;
 			y = returny;
 
 			datarightofcolumn = true;
