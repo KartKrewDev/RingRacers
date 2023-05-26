@@ -10095,6 +10095,7 @@ static void K_KartSpindash(player_t *player)
 	if (K_PlayerEBrake(player) == false)
 	{
 		player->spindash = 0;
+		player->pflags &= ~PF_FASTFALLBOUNCED;
 		return;
 	}
 
@@ -10106,6 +10107,8 @@ static void K_KartSpindash(player_t *player)
 	}
 	else if (onGround == false)
 	{
+		if (player->pflags & PF_FASTFALLBOUNCED)
+			return;
 		// Update fastfall.
 		player->fastfall = player->mo->momz;
 		player->spindash = 0;
@@ -10228,6 +10231,7 @@ boolean K_FastFallBounce(player_t *player)
 
 		player->fastfall = 0;
 		player->fastfallBase = 0;
+		player->pflags |= PF_FASTFALLBOUNCED;
 		return true;
 	}
 
