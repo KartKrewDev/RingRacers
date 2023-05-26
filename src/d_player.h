@@ -746,6 +746,8 @@ struct player_t
 	UINT8 instaShieldCooldown;
 	UINT8 guardCooldown;
 
+	UINT16 incontrol;
+
 	uint8_t public_key[PUBKEYLENGTH];
 
 #ifdef HWRENDER

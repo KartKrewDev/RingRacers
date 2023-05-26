@@ -8031,6 +8031,11 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 	if (player->tiregrease)
 		player->tiregrease--;
 
+	if (player->spinouttimer || player->tumbleBounces)
+		player->incontrol = 0;
+	else
+		player->incontrol++;
+
 	if (player->tumbleBounces > 0)
 	{
 		K_HandleTumbleSound(player);

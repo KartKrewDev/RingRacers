@@ -265,6 +265,9 @@ void K_DropEmeraldsFromPlayer(player_t *player, UINT32 emeraldType)
 	UINT8 i;
 	SINT8 flip = P_MobjFlip(player->mo);
 
+	if (player->incontrol < TICRATE)
+		return;
+
 	for (i = 0; i < 14; i++)
 	{
 		UINT32 emeraldFlag = (1 << i);
