@@ -731,39 +731,46 @@ static UINT32 NetbufferChecksum(void)
 
 #ifdef DEBUGFILE
 
-static void fprintfstring(char *s, size_t len)
+static void fprintfline(char *s, size_t len)
 {
-	INT32 mode = 0;
 	size_t i;
 
-	for (i = 0; i < len; i++)
-		if (s[i] < 32)
+	for (i = 0; i < 16; ++i)
+	{
+		if (i < len)
 		{
-			if (!mode)
-			{
-				fprintf(debugfile, "[%d", (UINT8)s[i]);
-				mode = 1;
-			}
-			else
-				fprintf(debugfile, ",%d", (UINT8)s[i]);
+			fprintf(debugfile, "%02x%s",
+					((unsigned char*)s)[i],
+					i % 4 == 3 ? "  " : " ");
 		}
 		else
 		{
-			if (mode)
-			{
-				fprintf(debugfile, "]");
-				mode = 0;
-			}
-			fprintf(debugfile, "%c", s[i]);
+			fprintf(debugfile, "%*s", i % 4 == 3 ? 4 : 3, "");
 		}
-	if (mode)
-		fprintf(debugfile, "]");
+	}
+
+	for (i = 0; i < len; ++i)
+	{
+		fprintf(debugfile, "%c", isprint(s[i]) ? s[i] : '.');
+	}
+
+	fprintf(debugfile, "\n");
+}
+
+static void fprintfstring(char *s, size_t len)
+{
+	size_t i;
+
+	for (i = 0; i < len; i += 16)
+	{
+		fprintf(debugfile, "%10s:  ", sizeu1(i));
+		fprintfline(&s[i], min(len - i, 16));
+	}
 }
 
 static void fprintfstringnewline(char *s, size_t len)
 {
 	fprintfstring(s, len);
-	fprintf(debugfile, "\n");
 }
 
 /// \warning Keep this up-to-date if you add/remove/rename packet types
@@ -847,7 +854,7 @@ static void DebugPrintpacket(const char *header)
 			UINT8 *cmd = (UINT8 *)(&serverpak->cmds[serverpak->numslots * serverpak->numtics]);
 			size_t ntxtcmd = &((UINT8 *)netbuffer)[doomcom->datalength] - cmd;
 
-			fprintf(debugfile, "    firsttic %u ply %d tics %d ntxtcmd %s\n    ",
+			fprintf(debugfile, "    firsttic %u ply %d tics %d ntxtcmd %s\n",
 				(UINT32)serverpak->starttic, serverpak->numslots, serverpak->numtics, sizeu1(ntxtcmd));
 			/// \todo Display more readable information about net commands
 			fprintfstringnewline((char *)cmd, ntxtcmd);
@@ -881,7 +888,7 @@ static void DebugPrintpacket(const char *header)
 		case PT_TEXTCMD2:
 		case PT_TEXTCMD3:
 		case PT_TEXTCMD4:
-			fprintf(debugfile, "    length %d\n    ", netbuffer->u.textcmd[0]);
+			fprintf(debugfile, "    length %d\n", netbuffer->u.textcmd[0]);
 			fprintf(debugfile, "[%s]", netxcmdnames[netbuffer->u.textcmd[1] - 1]);
 			fprintfstringnewline((char *)netbuffer->u.textcmd + 2, netbuffer->u.textcmd[0] - 1);
 			break;
