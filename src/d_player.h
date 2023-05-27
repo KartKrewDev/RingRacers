@@ -108,9 +108,7 @@ typedef enum
 	PF_SHRINKACTIVE		= 1<<29, // "Shrink me" cheat is in effect. (Can't be disabled mid-race)
 
 	PF_VOID				= 1<<30, // Removed from reality! When leaving hitlag, reenable visibility+collision and kill speed.
-	PF_NOFASTFALL		= 1<<31, // Has already done ebrake/fastfall behavior for this input. Fastfalling needs a new input to prevent unwanted bounces on unexpected airtime.
-
-	// up to 1<<31 is free
+	PF_NOFASTFALL		= (INT32)(1U<<31), // Has already done ebrake/fastfall behavior for this input. Fastfalling needs a new input to prevent unwanted bounces on unexpected airtime.
 } pflags_t;
 
 typedef enum
