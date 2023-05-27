@@ -314,12 +314,17 @@ UINT32 R_GetLocalRandomSkin(void)
 INT32 R_SkinAvailable(const char *name)
 {
 	INT32 i;
+	UINT32 hash = quickncasehash(name, SKINNAMESIZE);
 
 	for (i = 0; i < numskins; i++)
 	{
-		// search in the skin list
-		if (stricmp(skins[i].name,name)==0)
-			return i;
+		if (skins[i].namehash != hash)
+			continue;
+
+		if (stricmp(skins[i].name,name)!=0)
+			continue;
+
+		return i;
 	}
 	return -1;
 }
@@ -953,6 +958,8 @@ void R_AddSkins(UINT16 wadnum, boolean mainfile)
 						STRBUFCPY(skin->name, value2);
 					Z_Free(value2);
 				}
+
+				skin->namehash = quickncasehash(skin->name, SKINNAMESIZE);
 
 				// copy to hudname and fullname as a default.
 				if (!realname)

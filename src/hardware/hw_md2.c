@@ -570,17 +570,15 @@ void HWR_InitModels(void)
 
 addskinmodel:
 		// add player model
-		for (s = 0; s < MAXSKINS; s++)
+		s = R_SkinAvailable(skinname);
+		if (s != -1)
 		{
-			if (stricmp(skinname, skins[s].name) == 0)
-			{
-				md2_playermodels[s].skin = s;
-				md2_playermodels[s].scale = scale;
-				md2_playermodels[s].offset = offset;
-				md2_playermodels[s].notfound = false;
-				strcpy(md2_playermodels[s].filename, filename);
-				goto modelfound;
-			}
+			md2_playermodels[s].skin = s;
+			md2_playermodels[s].scale = scale;
+			md2_playermodels[s].offset = offset;
+			md2_playermodels[s].notfound = false;
+			strcpy(md2_playermodels[s].filename, filename);
+			goto modelfound;
 		}
 
 		// no sprite/player skin name found?!?D

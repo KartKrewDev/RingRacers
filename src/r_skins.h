@@ -37,7 +37,8 @@ extern "C" {
 /// The skin_t struct
 struct skin_t
 {
-	char name[SKINNAMESIZE+1]; // INT16 descriptive name of the skin
+	char name[SKINNAMESIZE+1]; // descriptive name of the skin
+	UINT32 namehash; // quickncasehash(->name, SKINNAMESIZE)
 	UINT16 wadnum;
 	skinflags_t flags;
 

@@ -196,12 +196,12 @@ static int lib_getSkin(lua_State *L)
 	}
 
 	// find skin by name
-	for (i = 0; i < numskins; i++)
-		if (fastcmp(skins[i].name, field))
-		{
-			LUA_PushUserdata(L, &skins[i], META_SKIN);
-			return 1;
-		}
+	i = R_SkinAvailable(field);
+	if (i != -1)
+	{
+		LUA_PushUserdata(L, &skins[i], META_SKIN);
+		return 1;
+	}
 
 	return 0;
 }
