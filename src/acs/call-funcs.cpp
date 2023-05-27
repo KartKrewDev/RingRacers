@@ -293,7 +293,7 @@ static bool ACS_GetColorFromString(const char *word, skincolornum_t *type)
 {
 	for (int i = 0; i < numskincolors; i++)
 	{
-		if (fastcmp(word, skins[i].name))
+		if (fastcmp(word, skincolors[i].name))
 		{
 			*type = static_cast<skincolornum_t>(i);
 			return true;
