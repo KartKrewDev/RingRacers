@@ -7812,7 +7812,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 	// where's the < 0 check? see below the following block!
 
 	{
-		tic_t spheredigestion = TICRATE*2; // Base rate of 1 every second when playing.
+		tic_t spheredigestion = TICRATE*2; // Base rate of 1 every 2 seconds when playing.
 		tic_t digestionpower = ((10 - player->kartspeed) + (10 - player->kartweight))-1; // 1 to 17
 
 		// currently 0-34
@@ -7926,7 +7926,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		player->guardCooldown--;
 		
 	if (player->whip && P_MobjWasRemoved(player->whip))
-		player->whip = NULL;
+		player->whip = P_SetTarget(&player->whip, NULL);
 
 	if (player->startboost > 0 && onground == true)
 	{
@@ -8032,9 +8032,20 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		player->tiregrease--;
 
 	if (player->spinouttimer || player->tumbleBounces)
-		player->incontrol = 0;
+	{
+		if (player->incontrol > 0)
+			player->incontrol = 0;
+		player->incontrol--;
+	}
 	else
+	{
+		if (player->incontrol < 0)
+			player->incontrol = 0;
 		player->incontrol++;
+	}
+
+	player->incontrol = min(player->incontrol, 5*TICRATE);
+	player->incontrol = max(player->incontrol, -5*TICRATE);
 
 	if (player->tumbleBounces > 0)
 	{
@@ -10626,7 +10637,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 						player->guardCooldown = 50;
 						S_StartSound(player->mo, sfx_iwhp);
 						mobj_t *whip = P_SpawnMobj(player->mo->x, player->mo->y, player->mo->z, MT_INSTAWHIP);
-						player->whip = whip;
+						player->whip = P_SetTarget(&player->whip, whip);
 						P_SetScale(whip, player->mo->scale);
 						P_SetTarget(&whip->target, player->mo);
 						K_MatchGenericExtraFlags(whip, player->mo);
