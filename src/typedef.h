@@ -385,7 +385,9 @@ TYPEDEF (visffloor_t);
 TYPEDEF (portal_t);
 
 // r_skins.h
+TYPEDEF (skinrecord_t);
 TYPEDEF (skin_t);
+TYPEDEF (unloaded_skin_t);
 
 // r_splats.h
 TYPEDEF (floorsplat_t);

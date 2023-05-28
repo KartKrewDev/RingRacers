@@ -453,6 +453,11 @@ void G_ClearRecords(void)
 {
 	UINT16 i;
 
+	for (i = 0; i < numskins; i++)
+	{
+		memset(&skins[i].records, 0, sizeof(skins[i].records));
+	}
+
 	for (i = 0; i < nummapheaders; i++)
 	{
 		memset(&mapheaderinfo[i]->records, 0, sizeof(recorddata_t));
@@ -463,6 +468,14 @@ void G_ClearRecords(void)
 	{
 		memset(&cup->windata, 0, sizeof(cup->windata));
 	}
+
+	unloaded_skin_t *unloadedskin, *nextunloadedskin = NULL;
+	for (unloadedskin = unloadedskins; unloadedskin; unloadedskin = nextunloadedskin)
+	{
+		nextunloadedskin = unloadedskin->next;
+		Z_Free(unloadedskin);
+	}
+	unloadedskins = NULL;
 
 	unloaded_mapheader_t *unloadedmap, *nextunloadedmap = NULL;
 	for (unloadedmap = unloadedmapheaders; unloadedmap; unloadedmap = nextunloadedmap)
@@ -4775,6 +4788,7 @@ void G_LoadGameData(void)
 	savebuffer_t save = {0};
 
 	//For records
+	UINT32 numgamedataskins;
 	UINT32 numgamedatamapheaders;
 	UINT32 numgamedatacups;
 
@@ -4940,6 +4954,58 @@ void G_LoadGameData(void)
 	gamedata->timesBeaten = READUINT32(save.p);
 
 	// Main records
+
+	if (versionMinor < 3)
+		gamedata->importprofilewins = true;
+	else
+	{
+		numgamedataskins = READUINT32(save.p);
+
+		for (i = 0; i < numgamedataskins; i++)
+		{
+			char skinname[SKINNAMESIZE+1];
+			INT32 skin;
+
+			READSTRINGN(save.p, skinname, SKINNAMESIZE);
+			skin = R_SkinAvailable(skinname);
+
+			skinrecord_t dummyrecord;
+
+			dummyrecord.wins = READUINT32(save.p);
+
+			CONS_Printf(" (TEMPORARY DISPLAY) skinname is \"%s\", has %u wins\n", skinname, dummyrecord.wins);
+
+			if (skin != -1)
+			{
+				// We found a skin, so assign the win.
+
+				M_Memcpy(&skins[skin].records, &dummyrecord, sizeof(skinrecord_t));
+			}
+			else if (dummyrecord.wins)
+			{
+				// Invalid, but we don't want to lose all the juicy statistics.
+				// Instead, update a FILO linked list of "unloaded skins".
+
+				unloaded_skin_t *unloadedskin =
+					Z_Malloc(
+						sizeof(unloaded_skin_t),
+						PU_STATIC, NULL
+					);
+
+				// Establish properties, for later retrieval on file add.
+				strlcpy(unloadedskin->name, skinname, sizeof(unloadedskin->name));
+				unloadedskin->namehash = quickncasehash(unloadedskin->name, SKINNAMESIZE);
+
+				// Insert at the head, just because it's convenient.
+				unloadedskin->next = unloadedskins;
+				unloadedskins = unloadedskin;
+
+				// Finally, copy into.
+				M_Memcpy(&unloadedskin->records, &dummyrecord, sizeof(skinrecord_t));
+			}
+		}
+	}
+
 	numgamedatamapheaders = READUINT32(save.p);
 
 	for (i = 0; i < numgamedatamapheaders; i++)
@@ -5157,6 +5223,36 @@ void G_SaveGameData(void)
 		length += gamedata->challengegridwidth * CHALLENGEGRIDHEIGHT;
 	}
 
+
+	UINT32 numgamedataskins = 0;
+	unloaded_skin_t *unloadedskin;
+
+	for (i = 0; i < numskins; i++)
+	{
+		// It's safe to assume a skin with no wins will have no other data worth keeping
+		if (skins[i].records.wins == 0)
+		{
+			continue;
+		}
+
+		numgamedataskins++;
+	}
+
+	for (unloadedskin = unloadedskins; unloadedskin; unloadedskin = unloadedskin->next)
+	{
+		// Ditto, with the exception that we should warn about it.
+		if (unloadedskin->records.wins == 0)
+		{
+			CONS_Alert(CONS_WARNING, "Unloaded skin \"%s\" has no wins!\n", unloadedskin->name);
+			continue;
+		}
+
+		numgamedataskins++;
+	}
+
+	length += 4 + (numgamedataskins * (SKINNAMESIZE+4));
+
+
 	UINT32 numgamedatamapheaders = 0;
 	unloaded_mapheader_t *unloadedmap;
 
@@ -5313,6 +5409,42 @@ void G_SaveGameData(void)
 	WRITEUINT32(save.p, gamedata->timesBeaten); // 4
 
 	// Main records
+
+	WRITEUINT32(save.p, numgamedataskins); // 4
+
+	{
+		// numgamedataskins * (SKINNAMESIZE+4)
+
+		for (i = 0; i < numskins; i++)
+		{
+			if (skins[i].records.wins == 0)
+				continue;
+
+			WRITESTRINGN(save.p, skins[i].name, SKINNAMESIZE);
+
+			WRITEUINT32(save.p, skins[i].records.wins);
+
+			if (--numgamedataskins == 0)
+				break;
+		}
+
+		if (numgamedataskins)
+		{
+			for (unloadedskin = unloadedskins; unloadedskin; unloadedskin = unloadedskin->next)
+			{
+				if (unloadedskin->records.wins == 0)
+					continue;
+
+				WRITESTRINGN(save.p, unloadedskin->name, SKINNAMESIZE);
+
+				WRITEUINT32(save.p, unloadedskin->records.wins);
+
+				if (--numgamedataskins == 0)
+					break;
+			}
+		}
+	}
+
 	WRITEUINT32(save.p, numgamedatamapheaders); // 4
 
 	if (numgamedatamapheaders)

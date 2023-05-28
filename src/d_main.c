@@ -1851,6 +1851,21 @@ void D_SRB2Main(void)
 	{
 		PR_ApplyProfile(cv_ttlprofilen.value, 0);
 
+		if (gamedata->importprofilewins == true)
+		{
+			profile_t *pr = PR_GetProfile(cv_ttlprofilen.value);
+			if (pr != NULL)
+			{
+				INT32 importskin = R_SkinAvailable(pr->skinname);
+				if (importskin != -1)
+				{
+					CONS_Printf(" Wins for profile \"%s\" imported onto character \"%s\"\n", pr->profilename, skins[importskin].name);
+					skins[importskin].records.wins = pr->wins;
+				}
+			}
+			gamedata->importprofilewins = false;
+		}
+
 		for (i = 1; i < cv_splitplayers.value; i++)
 		{
 			PR_ApplyProfile(cv_lastprofile[i].value, i);

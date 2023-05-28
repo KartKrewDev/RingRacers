@@ -34,6 +34,11 @@ extern "C" {
 #define DEFAULTSKIN3 "sonic" // third player
 #define DEFAULTSKIN4 "knuckles" // fourth player
 
+struct skinrecord_t
+{
+	UINT32 wins;
+};
+
 /// The skin_t struct
 struct skin_t
 {
@@ -59,6 +64,8 @@ struct skin_t
 
 	fixed_t highresscale; // scale of highres, default is 0.5
 
+	skinrecord_t records;
+
 	char rivals[SKINRIVALS][SKINNAMESIZE+1]; // Your top 3 rivals for GP mode. Uses names so that you can reference skins that aren't added
 
 	// specific sounds per skin
@@ -68,6 +75,18 @@ struct skin_t
 	spritedef_t sprites[NUMPLAYERSPRITES*2];
 	spriteinfo_t sprinfo[NUMPLAYERSPRITES*2];
 };
+
+struct unloaded_skin_t
+{
+	char name[SKINNAMESIZE+1];
+	UINT32 namehash;
+
+	skinrecord_t records;
+
+	unloaded_skin_t *next;
+};
+
+extern unloaded_skin_t *unloadedskins;
 
 enum facepatches {
 	FACE_RANK = 0,

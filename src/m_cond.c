@@ -531,6 +531,8 @@ void M_ClearStats(void)
 	gamedata->everseenspecial = false;
 	gamedata->evercrashed = false;
 	gamedata->musicflags = 0;
+
+	gamedata->importprofilewins = false;
 }
 
 void M_ClearSecrets(void)

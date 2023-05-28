@@ -282,6 +282,9 @@ struct gamedata_t
 	boolean everseenspecial;
 	boolean evercrashed;
 	UINT8 musicflags;
+
+	// BACKWARDS COMPAT ASSIST
+	boolean importprofilewins;
 };
 
 extern gamedata_t *gamedata;

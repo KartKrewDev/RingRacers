@@ -41,6 +41,8 @@
 INT32 numskins = 0;
 skin_t skins[MAXSKINS];
 
+unloaded_skin_t *unloadedskins = NULL;
+
 // FIXTHIS: don't work because it must be inistilised before the config load
 //#define SKINVALUES
 #ifdef SKINVALUES
@@ -124,6 +126,8 @@ static void Sk_SetDefaultValue(skin_t *skin)
 	skin->followitem = 0;
 
 	skin->highresscale = FRACUNIT;
+
+	// no specific memset for skinrecord_t as it's already nuked by the full skin_t wipe
 
 	for (i = 0; i < sfx_skinsoundslot0; i++)
 		if (S_sfx[i].skinsound != -1)
@@ -1005,6 +1009,38 @@ next_token:
 
 		// Finally, conclude by setting up final properties.
 		skin->namehash = quickncasehash(skin->name, SKINNAMESIZE);
+
+		{
+			// Check to see if we have any custom skin wins data that we could substitute in.
+			unloaded_skin_t *unloadedskin, *unloadedprev = NULL;
+			for (unloadedskin = unloadedskins; unloadedskin; unloadedprev = unloadedskin, unloadedskin = unloadedskin->next)
+			{
+				if (unloadedskin->namehash != skin->namehash)
+					continue;
+
+				if (strcasecmp(skin->name, unloadedskin->name) != 0)
+					continue;
+
+				// Copy in wins, etc.
+				M_Memcpy(&skin->records, &unloadedskin->records, sizeof(skin->records));
+
+				// Remove this entry from the chain.
+				if (unloadedprev)
+				{
+					unloadedprev->next = unloadedskin->next;
+				}
+				else
+				{
+					unloadedskins = unloadedskin->next;
+				}
+
+				// Finally, free.
+				Z_Free(unloadedskin);
+
+				break;
+			
+			}
+		}
 
 		numskins++;
 	}

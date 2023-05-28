@@ -1355,11 +1355,19 @@ void P_DoPlayerExit(player_t *player, pflags_t flags)
 		G_UpdateRecords();
 	}
 
-	profile_t *pr = PR_GetPlayerProfile(player);
-	if (pr != NULL && !losing)
+	if (!losing)
 	{
-		pr->wins++;
-		PR_SaveProfiles();
+		profile_t *pr = PR_GetPlayerProfile(player);
+		if (pr != NULL)
+		{
+			pr->wins++;
+			PR_SaveProfiles();
+		}
+
+		if (P_IsLocalPlayer(player) && player->skin < numskins)
+		{
+			skins[player->skin].records.wins++;
+		}
 	}
 
 	player->karthud[khud_cardanimation] = 0; // srb2kart: reset battle animation
