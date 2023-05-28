@@ -1564,7 +1564,7 @@ void K_SpawnDashDustRelease(player_t *player)
 	if (!P_IsObjectOnGround(player->mo))
 		return;
 
-	if (!player->speed && !player->startboost && !player->spindash)
+	if (!player->speed && !player->startboost && !player->spindash && !player->dropdashboost)
 		return;
 
 	travelangle = player->mo->angle;
@@ -3105,6 +3105,11 @@ static void K_GetKartBoostPower(player_t *player)
 	if (player->startboost) // Startup Boost
 	{
 		ADDBOOST(FRACUNIT, 4*FRACUNIT, SLIPTIDEHANDLING); // + 100% top speed, + 400% acceleration, +50% handling
+	}
+
+	if (player->dropdashboost) // Drop dash
+	{
+		ADDBOOST(FRACUNIT/3, 4*FRACUNIT, SLIPTIDEHANDLING); // + 33% top speed, + 400% acceleration, +50% handling
 	}
 
 	if (player->driftboost) // Drift Boost
@@ -7881,6 +7886,8 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 	{
 		player->startboost--;
 	}
+	if (player->dropdashboost)
+		player->dropdashboost--;
 
 	if (player->sliptideZipBoost > 0 && onground == true)
 	{
