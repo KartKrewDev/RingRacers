@@ -5220,7 +5220,7 @@ void G_SaveGameData(void)
 		}
 	}
 
-	length += 4 + (numgamedatacups * (4+16));
+	length += 4 + (numgamedatacups * (MAXCUPNAME+4));
 
 	if (P_SaveBufferAlloc(&save, length) == false)
 	{
@@ -5313,10 +5313,9 @@ void G_SaveGameData(void)
 	// Main records
 	WRITEUINT32(save.p, numgamedatamapheaders); // 4
 
+	if (numgamedatamapheaders)
 	{
 		// numgamedatamapheaders * (MAXMAPLUMPNAME+1+4+4)
-
-		UINT32 writtengamedatamapheaders = 0;
 
 		for (i = 0; i < nummapheaders; i++)
 		{
@@ -5337,11 +5336,11 @@ void G_SaveGameData(void)
 			WRITEUINT32(save.p, mapheaderinfo[i]->records.time);
 			WRITEUINT32(save.p, mapheaderinfo[i]->records.lap);
 
-			if (++writtengamedatamapheaders >= numgamedatamapheaders)
+			if (--numgamedatamapheaders == 0)
 				break;
 		}
 
-		if (writtengamedatamapheaders < numgamedatamapheaders)
+		if (numgamedatamapheaders)
 		{
 			for (unloadedmap = unloadedmapheaders; unloadedmap; unloadedmap = unloadedmap->next)
 			{
@@ -5355,7 +5354,7 @@ void G_SaveGameData(void)
 				WRITEUINT32(save.p, unloadedmap->records.time);
 				WRITEUINT32(save.p, unloadedmap->records.lap);
 
-				if (++writtengamedatamapheaders >= numgamedatamapheaders)
+				if (--numgamedatamapheaders == 0)
 					break;
 			}
 		}
@@ -5364,10 +5363,9 @@ void G_SaveGameData(void)
 
 	WRITEUINT32(save.p, numgamedatacups); // 4
 
+	if (numgamedatacups)
 	{
-		// (numgamedatacups * (4+16))
-
-		UINT32 writtengamedatacups = 0;
+		// numgamedatacups * (MAXCUPNAME+4)
 
 #define WRITECUPWINDATA(maybeunloadedcup) \
 		for (i = 0; i < KARTGP_MAX; i++) \
@@ -5389,11 +5387,11 @@ void G_SaveGameData(void)
 
 			WRITECUPWINDATA(cup);
 
-			if (++writtengamedatacups >= numgamedatacups)
+			if (--numgamedatacups == 0)
 				break;
 		}
 
-		if (writtengamedatacups < numgamedatacups)
+		if (numgamedatacups)
 		{
 			for (unloadedcup = unloadedcupheaders; unloadedcup; unloadedcup = unloadedcup->next)
 			{
@@ -5404,7 +5402,7 @@ void G_SaveGameData(void)
 
 				WRITECUPWINDATA(unloadedcup);
 
-				if (++writtengamedatacups >= numgamedatacups)
+				if (--numgamedatacups == 0)
 					break;
 			}
 		}
