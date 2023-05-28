@@ -451,9 +451,9 @@ INT32 player_name_changes[MAXPLAYERS];
 // MAKE SURE YOU SAVE DATA BEFORE CALLING THIS
 void G_ClearRecords(void)
 {
-	INT16 i;
+	UINT16 i;
 
-	for (i = 0; i < nummapheaders; ++i)
+	for (i = 0; i < nummapheaders; i++)
 	{
 		memset(&mapheaderinfo[i]->records, 0, sizeof(recorddata_t));
 	}
@@ -4947,7 +4947,7 @@ void G_LoadGameData(void)
 		char mapname[MAXMAPLUMPNAME];
 		INT16 mapnum;
 
-		READSTRINGN(save.p, mapname, sizeof(mapname));
+		READSTRINGL(save.p, mapname, MAXMAPLUMPNAME);
 		mapnum = G_MapNumber(mapname);
 
 		recorddata_t dummyrecord;
@@ -4981,7 +4981,7 @@ void G_LoadGameData(void)
 
 			// Establish properties, for later retrieval on file add.
 			unloadedmap->lumpname = Z_StrDup(mapname);
-			unloadedmap->lumpnamehash = quickncasehash(mapname, MAXMAPLUMPNAME);
+			unloadedmap->lumpnamehash = quickncasehash(unloadedmap->lumpname, MAXMAPLUMPNAME);
 
 			// Insert at the head, just because it's convenient.
 			unloadedmap->next = unloadedmapheaders;
@@ -5004,7 +5004,7 @@ void G_LoadGameData(void)
 			cupwindata_t dummywindata[4];
 
 			// Find the relevant cup.
-			READSTRINGN(save.p, cupname, sizeof(cupname));
+			READSTRINGL(save.p, cupname, sizeof(cupname));
 			UINT32 hash = quickncasehash(cupname, MAXCUPNAME);
 			for (cup = kartcupheaders; cup; cup = cup->next)
 			{
@@ -5053,7 +5053,7 @@ void G_LoadGameData(void)
 
 				// Establish properties, for later retrieval on file add.
 				strlcpy(unloadedcup->name, cupname, sizeof(unloadedcup->name));
-				unloadedcup->namehash = quickncasehash(cupname, MAXCUPNAME);
+				unloadedcup->namehash = quickncasehash(unloadedcup->name, MAXCUPNAME);
 
 				// Insert at the head, just because it's convenient.
 				unloadedcup->next = unloadedcupheaders;
@@ -5190,6 +5190,7 @@ void G_SaveGameData(void)
 
 	length += 4 + (numgamedatamapheaders * (MAXMAPLUMPNAME+1+4+4));
 
+
 	UINT32 numgamedatacups = 0;
 	unloaded_cupheader_t *unloadedcup;
 
@@ -5221,6 +5222,7 @@ void G_SaveGameData(void)
 	}
 
 	length += 4 + (numgamedatacups * (MAXCUPNAME+4));
+
 
 	if (P_SaveBufferAlloc(&save, length) == false)
 	{
@@ -5322,7 +5324,7 @@ void G_SaveGameData(void)
 			if (!(mapheaderinfo[i]->records.mapvisited & MV_MAX))
 				continue;
 
-			WRITESTRINGN(save.p, mapheaderinfo[i]->lumpname, MAXMAPLUMPNAME);
+			WRITESTRINGL(save.p, mapheaderinfo[i]->lumpname, MAXMAPLUMPNAME);
 
 			UINT8 mapvisitedtemp = (mapheaderinfo[i]->records.mapvisited & MV_MAX);
 
@@ -5347,7 +5349,7 @@ void G_SaveGameData(void)
 				if (!(unloadedmap->records.mapvisited & MV_MAX))
 					continue;
 
-				WRITESTRINGN(save.p, unloadedmap->lumpname, MAXMAPLUMPNAME);
+				WRITESTRINGL(save.p, unloadedmap->lumpname, MAXMAPLUMPNAME);
 
 				WRITEUINT8(save.p, unloadedmap->records.mapvisited);
 
@@ -5383,7 +5385,7 @@ void G_SaveGameData(void)
 			if (cup->windata[0].best_placement == 0)
 				continue;
 
-			WRITESTRINGN(save.p, cup->name, MAXCUPNAME);
+			WRITESTRINGL(save.p, cup->name, MAXCUPNAME);
 
 			WRITECUPWINDATA(cup);
 
@@ -5398,7 +5400,7 @@ void G_SaveGameData(void)
 				if (unloadedcup->windata[0].best_placement == 0)
 					continue;
 
-				WRITESTRINGN(save.p, unloadedcup->name, MAXCUPNAME);
+				WRITESTRINGL(save.p, unloadedcup->name, MAXCUPNAME);
 
 				WRITECUPWINDATA(unloadedcup);
 
