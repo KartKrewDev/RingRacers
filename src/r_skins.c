@@ -959,8 +959,6 @@ void R_AddSkins(UINT16 wadnum, boolean mainfile)
 					Z_Free(value2);
 				}
 
-				skin->namehash = quickncasehash(skin->name, SKINNAMESIZE);
-
 				// copy to hudname and fullname as a default.
 				if (!realname)
 				{
@@ -1004,6 +1002,9 @@ next_token:
 		if (rendermode == render_opengl)
 			HWR_AddPlayerModel(numskins);
 #endif
+
+		// Finally, conclude by setting up final properties.
+		skin->namehash = quickncasehash(skin->name, SKINNAMESIZE);
 
 		numskins++;
 	}
