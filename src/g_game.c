@@ -5127,12 +5127,6 @@ void G_LoadGameData(void)
 					UINT32 _saveid = READUINT32(save.p);
 					if (_saveid < numgamedataskins)
 					{
-						const char *charstr = NULL;
-						if (tempskinreferences[_saveid].unloaded)
-							charstr = tempskinreferences[_saveid].unloaded->name;
-						else
-							charstr = skins[tempskinreferences[_saveid].id].name;
-						CONS_Printf(" (TEMPORARY DISPLAY) Cup \"%s\" difficulty %u was completed by skin \"%s\"\n", cupname, j, charstr); 
 						M_Memcpy(&dummywindata[j].best_skin, &tempskinreferences[_saveid], sizeof(dummywindata[j].best_skin));
 					}
 				}

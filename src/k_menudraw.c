@@ -2298,7 +2298,6 @@ void M_DrawCupSelect(void)
 			INT16 icony = 7;
 			char status =  'A';
 			char monitor;
-			INT32 rankx = 0;
 
 			if (!cupgrid.builtgrid[id])
 				break;
@@ -2353,7 +2352,6 @@ void M_DrawCupSelect(void)
 					if (monitor == '2')
 					{
 						icony = 5;
-						rankx = 2;
 					}
 				}
 				else
@@ -2385,25 +2383,68 @@ void M_DrawCupSelect(void)
 					;
 				else if (windata->best_placement != 0)
 				{
-					char gradeChar = '?';
+					const INT32 rankw = 14 + 12 + 12 + 2;
+					INT32 rankx = (x + 19) - (rankw / 2);
+					const INT32 ranky = 8 + (j*100) - (30*menutransition.tics);
+
+					patch_t *gradePat = NULL;
 
 					switch (windata->best_grade)
 					{
-						case GRADE_E: { gradeChar = 'E'; break; }
-						case GRADE_D: { gradeChar = 'D'; break; }
-						case GRADE_C: { gradeChar = 'C'; break; }
-						case GRADE_B: { gradeChar = 'B'; break; }
-						case GRADE_A: { gradeChar = 'A'; break; }
-						case GRADE_S: { gradeChar = 'S'; break; }
-						default: { break; }
+						case GRADE_E:
+							gradePat = W_CachePatchName("R_CUPRNE", PU_CACHE);
+							break;
+						case GRADE_D:
+							gradePat = W_CachePatchName("R_CUPRND", PU_CACHE);
+							break;
+						case GRADE_C:
+							gradePat = W_CachePatchName("R_CUPRNC", PU_CACHE);
+							break;
+						case GRADE_B:
+							gradePat = W_CachePatchName("R_CUPRNB", PU_CACHE);
+							break;
+						case GRADE_A:
+							gradePat = W_CachePatchName("R_CUPRNA", PU_CACHE);
+							break;
+						case GRADE_S:
+							gradePat = W_CachePatchName("R_CUPRNS", PU_CACHE);
+							break;
+						default:
+							break;
 					}
 
-					V_DrawCharacter(x + 5 + rankx, y + icony + 14, gradeChar, false); // rank
+					if (gradePat)
+						V_DrawFixedPatch((rankx)*FRACUNIT, (ranky)*FRACUNIT, FRACUNIT, 0, gradePat, NULL);
+
+					rankx += 14 + 1;
+
+					patch_t *charPat = NULL;
+
+					if ((windata->best_skin.unloaded != NULL)
+						|| (windata->best_skin.id > numskins))
+					{
+						colormap = NULL;
+
+						charPat = W_CachePatchName("HUHMAP", PU_CACHE);
+					}
+					else
+					{
+						UINT8 skin = windata->best_skin.id;
+
+						colormap = R_GetTranslationColormap(skin, skins[skin].prefcolor, GTC_MENUCACHE);
+
+						charPat = faceprefix[skin][FACE_MINIMAP];
+					}
+
+					if (charPat)
+						V_DrawFixedPatch((rankx)*FRACUNIT, (ranky)*FRACUNIT, FRACUNIT, 0, charPat, colormap);
 
 					if (windata->got_emerald == true)
 					{
+						rankx += 12 + 1;
+
 						if (templevelsearch.cup->emeraldnum == 0)
-							V_DrawCharacter(x + 26 - rankx, y + icony + 14, '*', false); // rank
+							V_DrawCharacter(rankx+2, ranky+2, '+', false);
 						else
 						{
 							UINT16 col = SKINCOLOR_CHAOSEMERALD1 + (templevelsearch.cup->emeraldnum-1) % 7;
@@ -2413,15 +2454,14 @@ void M_DrawCupSelect(void)
 
 							if (templevelsearch.cup->emeraldnum > 7)
 							{
-								em = W_CachePatchName("K_SUPER1", PU_CACHE);
-								rankx += 2;
+								em = W_CachePatchName("SUPMAP", PU_CACHE);
 							}
 							else
 							{
-								em = W_CachePatchName("K_EMERC", PU_CACHE);
+								em = W_CachePatchName("EMEMAP", PU_CACHE);
 							}
 
-							V_DrawFixedPatch((x + 26 - rankx)*FRACUNIT, (y + icony + 13)*FRACUNIT, FRACUNIT, 0, em, colormap);
+							V_DrawFixedPatch((rankx)*FRACUNIT, (ranky)*FRACUNIT, FRACUNIT, 0, em, colormap);
 						}
 					}
 				}
