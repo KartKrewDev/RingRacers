@@ -116,6 +116,9 @@ extern preciptype_t curWeather;
 struct skinrecord_t
 {
 	UINT32 wins;
+
+	// Purely assistive in gamedata save processes
+	UINT32 _saveid;
 };
 
 struct unloaded_skin_t
@@ -129,6 +132,12 @@ struct unloaded_skin_t
 };
 
 extern unloaded_skin_t *unloadedskins;
+
+struct skinreference_t
+{
+	unloaded_skin_t *unloaded;
+	UINT8 id;
+};
 
 // mapvisited is now a set of flags that says what we've done in the map.
 #define MV_VISITED      	(1)
@@ -168,6 +177,7 @@ struct cupwindata_t
 	UINT8 best_placement;
 	gp_rank_e best_grade;
 	boolean got_emerald;
+	skinreference_t best_skin;
 };
 
 // Set if homebrew PWAD stuff has been added.

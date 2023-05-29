@@ -4466,6 +4466,7 @@ static void G_DoCompleted(void)
 
 	grandprixinfo.rank.prisons += numtargets;
 	grandprixinfo.rank.position = MAXPLAYERS;
+	grandprixinfo.rank.skin = MAXSKINS;
 
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
@@ -4495,7 +4496,12 @@ static void G_DoCompleted(void)
 
 			if (players[i].bot == false)
 			{
-				grandprixinfo.rank.position = min(grandprixinfo.rank.position, K_GetPodiumPosition(&players[i]));
+				UINT8 podiumposition = K_GetPodiumPosition(&players[i]);
+				if (podiumposition <= grandprixinfo.rank.position)
+				{
+					grandprixinfo.rank.position = podiumposition;
+					grandprixinfo.rank.skin = players[i].skin;
+				}
 			}
 		}
 	}
@@ -4955,6 +4961,8 @@ void G_LoadGameData(void)
 
 	// Main records
 
+	skinreference_t *tempskinreferences = NULL;
+
 	if (versionMinor < 3)
 	{
 		gamedata->importprofilewins = true;
@@ -4966,6 +4974,11 @@ void G_LoadGameData(void)
 
 		if (numgamedataskins)
 		{
+			tempskinreferences = Z_Malloc(
+				numgamedataskins * sizeof (skinreference_t),
+				PU_STATIC,
+				NULL
+			);
 
 			for (i = 0; i < numgamedataskins; i++)
 			{
@@ -4978,8 +4991,11 @@ void G_LoadGameData(void)
 				skinrecord_t dummyrecord;
 
 				dummyrecord.wins = READUINT32(save.p);
+				dummyrecord._saveid = i;
 
 				CONS_Printf(" (TEMPORARY DISPLAY) skinname is \"%s\", has %u wins\n", skinname, dummyrecord.wins);
+
+				tempskinreferences[i].id = MAXSKINS;
 
 				if (skin != -1)
 				{
@@ -4987,6 +5003,8 @@ void G_LoadGameData(void)
 
 					M_Memcpy(&skins[skin].records, &dummyrecord, sizeof(skinrecord_t));
 
+					tempskinreferences[i].id = skin;
+					tempskinreferences[i].unloaded = NULL;
 				}
 				else if (dummyrecord.wins)
 				{
@@ -5009,6 +5027,8 @@ void G_LoadGameData(void)
 
 					// Finally, copy into.
 					M_Memcpy(&unloadedskin->records, &dummyrecord, sizeof(skinrecord_t));
+
+					tempskinreferences[i].unloaded = unloadedskin;
 				}
 			}
 		}
@@ -5100,6 +5120,23 @@ void G_LoadGameData(void)
 				dummywindata[j].best_grade = (rtemp & 0x70)>>4;
 				if (rtemp & 0x80)
 					dummywindata[j].got_emerald = true;
+
+				dummywindata[j].best_skin.id = MAXSKINS;
+				dummywindata[j].best_skin.unloaded = NULL;
+				if (versionMinor >= 3)
+				{
+					UINT32 _saveid = READUINT32(save.p);
+					if (_saveid < numgamedataskins)
+					{
+						const char *charstr = NULL;
+						if (tempskinreferences[_saveid].unloaded)
+							charstr = tempskinreferences[_saveid].unloaded->name;
+						else
+							charstr = skins[tempskinreferences[_saveid].id].name;
+						CONS_Printf(" (TEMPORARY DISPLAY) Cup \"%s\" difficulty %u was completed by skin \"%s\"\n", cupname, j, charstr); 
+						M_Memcpy(&dummywindata[j].best_skin, &tempskinreferences[_saveid], sizeof(dummywindata[j].best_skin));
+					}
+				}
 			}
 
 			if (versionMinor < 3 && dummywindata[0].best_placement == 0)
@@ -5138,6 +5175,9 @@ void G_LoadGameData(void)
 			}
 		}
 	}
+
+	if (tempskinreferences)
+		Z_Free(tempskinreferences);
 
 	// done
 	P_SaveBufferFree(&save);
@@ -5325,7 +5365,7 @@ void G_SaveGameData(void)
 		}
 	}
 
-	length += 4 + (numgamedatacups * (MAXCUPNAME+4));
+	length += 4 + (numgamedatacups * (MAXCUPNAME + 4*(1+4)));
 
 
 	if (P_SaveBufferAlloc(&save, length) == false)
@@ -5423,6 +5463,8 @@ void G_SaveGameData(void)
 	{
 		// numgamedataskins * (SKINNAMESIZE+4)
 
+		UINT32 maxid = 0;
+
 		for (i = 0; i < numskins; i++)
 		{
 			if (skins[i].records.wins == 0)
@@ -5432,11 +5474,12 @@ void G_SaveGameData(void)
 
 			WRITEUINT32(save.p, skins[i].records.wins);
 
-			if (--numgamedataskins == 0)
+			skins[i].records._saveid = maxid;
+			if (++maxid == numgamedataskins)
 				break;
 		}
 
-		if (numgamedataskins)
+		if (maxid < numgamedataskins)
 		{
 			for (unloadedskin = unloadedskins; unloadedskin; unloadedskin = unloadedskin->next)
 			{
@@ -5447,10 +5490,21 @@ void G_SaveGameData(void)
 
 				WRITEUINT32(save.p, unloadedskin->records.wins);
 
-				if (--numgamedataskins == 0)
+				unloadedskin->records._saveid = maxid;
+				if (++maxid == numgamedataskins)
 					break;
 			}
 		}
+	}
+
+#define GETSKINREFSAVEID(ref, var) \
+	{ \
+		if (ref.unloaded != NULL) \
+			var = ref.unloaded->records._saveid;\
+		else if (ref.id < numskins)\
+			var = skins[ref.id].records._saveid; \
+		else \
+			var = UINT32_MAX; \
 	}
 
 	WRITEUINT32(save.p, numgamedatamapheaders); // 4
@@ -5507,7 +5561,7 @@ void G_SaveGameData(void)
 
 	if (numgamedatacups)
 	{
-		// numgamedatacups * (MAXCUPNAME+4)
+		// numgamedatacups * (MAXCUPNAME + 4*(1+4))
 
 #define WRITECUPWINDATA(maybeunloadedcup) \
 		for (i = 0; i < KARTGP_MAX; i++) \
@@ -5518,6 +5572,10 @@ void G_SaveGameData(void)
 				btemp |= 0x80; \
 			\
 			WRITEUINT8(save.p, btemp); \
+			\
+			GETSKINREFSAVEID(maybeunloadedcup->windata[i].best_skin, j); \
+			\
+			WRITEUINT32(save.p, j); \
 		}
 
 		for (cup = kartcupheaders; cup; cup = cup->next)
@@ -5551,6 +5609,8 @@ void G_SaveGameData(void)
 
 #undef WRITECUPWINDATA
 	}
+
+#undef GETSKINREFSAVEID
 
 	length = save.p - save.buffer;
 

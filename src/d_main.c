@@ -1859,10 +1859,36 @@ void D_SRB2Main(void)
 				INT32 importskin = R_SkinAvailable(pr->skinname);
 				if (importskin != -1)
 				{
-					CONS_Printf(" Wins for profile \"%s\" imported onto character \"%s\"\n", pr->profilename, skins[importskin].name);
 					skins[importskin].records.wins = pr->wins;
+
+					cupheader_t *cup;
+					for (cup = kartcupheaders; cup; cup = cup->next)
+					{
+						for (i = 0; i < KARTGP_MAX; i++)
+						{
+							if (cup->windata[i].best_placement == 0)
+								continue;
+							cup->windata[i].best_skin.id = importskin;
+							cup->windata[i].best_skin.unloaded = NULL;
+						}
+					}
+
+					unloaded_cupheader_t *unloadedcup;
+					for (unloadedcup = unloadedcupheaders; unloadedcup; unloadedcup = unloadedcup->next)
+					{
+						for (i = 0; i < KARTGP_MAX; i++)
+						{
+							if (unloadedcup->windata[i].best_placement == 0)
+								continue;
+							unloadedcup->windata[i].best_skin.id = importskin;
+							unloadedcup->windata[i].best_skin.unloaded = NULL;
+						}
+					}
+
+					CONS_Printf(" Wins for profile \"%s\" imported onto character \"%s\"\n", pr->profilename, skins[importskin].name);
 				}
 			}
+
 			gamedata->importprofilewins = false;
 		}
 

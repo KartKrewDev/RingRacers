@@ -26,6 +26,7 @@ struct gpRank_t
 	UINT8 totalPlayers;
 
 	UINT8 position;
+	UINT8 skin;
 
 	UINT32 winPoints;
 	UINT32 totalPoints;

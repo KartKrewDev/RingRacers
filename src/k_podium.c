@@ -330,21 +330,37 @@ void K_ResetCeremony(void)
 	// who's just won on Normal from feeling obligated to complete Easy too.
 	for (; i >= 0; i--)
 	{
+		boolean anymerit = false;
+
 		if ((grandprixinfo.cup->windata[i].best_placement == 0) // First run
-			|| (podiumData.rank.position < grandprixinfo.cup->windata[i].best_placement)) // Later, better run
+			|| (podiumData.rank.position <= grandprixinfo.cup->windata[i].best_placement)) // Later, better run
 		{
 			grandprixinfo.cup->windata[i].best_placement = podiumData.rank.position;
 
 			// The following will not occur in unmodified builds, but pre-emptively sanitise gamedata if someone just changes MAXPLAYERS and calls it a day
 			if (grandprixinfo.cup->windata[i].best_placement > 0x0F)
 				grandprixinfo.cup->windata[i].best_placement = 0x0F;
+
+			anymerit = true;
 		}
 
-		if (podiumData.grade > grandprixinfo.cup->windata[i].best_grade)
+		if (podiumData.grade >= grandprixinfo.cup->windata[i].best_grade)
+		{
 			grandprixinfo.cup->windata[i].best_grade = podiumData.grade;
+			anymerit = true;
+		}
 
 		if (podiumData.rank.specialWon == true)
+		{
 			grandprixinfo.cup->windata[i].got_emerald = true;
+			anymerit = true;
+		}
+
+		if (anymerit == true)
+		{
+			grandprixinfo.cup->windata[i].best_skin.id = podiumData.rank.skin;
+			grandprixinfo.cup->windata[i].best_skin.unloaded = NULL;
+		}
 	}
 
 	// Save before playing the noise

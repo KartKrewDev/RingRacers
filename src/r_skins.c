@@ -1034,6 +1034,33 @@ next_token:
 					unloadedskins = unloadedskin->next;
 				}
 
+				// Now... we assign everything which used this pointer the new skin id.
+				UINT8 i;
+
+				cupheader_t *cup;
+				for (cup = kartcupheaders; cup; cup = cup->next)
+				{
+					for (i = 0; i < KARTGP_MAX; i++)
+					{
+						if (cup->windata[i].best_skin.unloaded != unloadedskin)
+							continue;
+						cup->windata[i].best_skin.id = numskins;
+						cup->windata[i].best_skin.unloaded = NULL;
+					}
+				}
+
+				unloaded_cupheader_t *unloadedcup;
+				for (unloadedcup = unloadedcupheaders; unloadedcup; unloadedcup = unloadedcup->next)
+				{
+					for (i = 0; i < KARTGP_MAX; i++)
+					{
+						if (unloadedcup->windata[i].best_skin.unloaded != unloadedskin)
+							continue;
+						unloadedcup->windata[i].best_skin.id = numskins;
+						unloadedcup->windata[i].best_skin.unloaded = NULL;
+					}
+				}
+
 				// Finally, free.
 				Z_Free(unloadedskin);
 

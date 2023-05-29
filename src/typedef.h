@@ -115,6 +115,7 @@ TYPEDEF (skincolor_t);
 TYPEDEF (precipprops_t);
 TYPEDEF (skinrecord_t);
 TYPEDEF (unloaded_skin_t);
+TYPEDEF (skinreference_t);
 TYPEDEF (recorddata_t);
 TYPEDEF (cupwindata_t);
 TYPEDEF (scene_t);
