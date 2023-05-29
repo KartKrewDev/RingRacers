@@ -11645,8 +11645,11 @@ void P_SpawnPlayer(INT32 playernum)
 	}
 	else if (p->bot)
 	{
-		if (K_PodiumSequence() == false
-			&& (!(gametyperules & GTR_BOTS) || (grandprixinfo.gp == true && grandprixinfo.eventmode != GPEVENT_NONE)))
+		if (K_PodiumSequence() == true)
+			; // This is too late to correct spectator status. Whatever state we're in at this point, our (dog) bed is made.
+		else if (!(gametyperules & GTR_BOTS)
+		|| (grandprixinfo.gp == true
+			&& grandprixinfo.eventmode != GPEVENT_NONE))
 		{
 			// Bots aren't supposed to be here.
 			p->spectator = true;

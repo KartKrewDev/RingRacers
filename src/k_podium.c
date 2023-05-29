@@ -258,9 +258,13 @@ boolean K_StartCeremony(void)
 		// and be present for the podium
 		for (i = 0; i < MAXPLAYERS; i++)
 		{
-			if (playeringame[i] && !players[i].spectator && !players[i].bot)
+			if (playeringame[i])
 			{
-				players[i].lives = max(1, players[i].lives);
+				if (players[i].lives < 1)
+					players[i].lives = 1;
+
+				if (players[i].bot)
+					players[i].spectator = false;
 			}
 		}
 
