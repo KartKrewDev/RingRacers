@@ -4956,52 +4956,60 @@ void G_LoadGameData(void)
 	// Main records
 
 	if (versionMinor < 3)
+	{
 		gamedata->importprofilewins = true;
+		numgamedataskins = 0;
+	}
 	else
 	{
 		numgamedataskins = READUINT32(save.p);
 
-		for (i = 0; i < numgamedataskins; i++)
+		if (numgamedataskins)
 		{
-			char skinname[SKINNAMESIZE+1];
-			INT32 skin;
 
-			READSTRINGN(save.p, skinname, SKINNAMESIZE);
-			skin = R_SkinAvailable(skinname);
-
-			skinrecord_t dummyrecord;
-
-			dummyrecord.wins = READUINT32(save.p);
-
-			CONS_Printf(" (TEMPORARY DISPLAY) skinname is \"%s\", has %u wins\n", skinname, dummyrecord.wins);
-
-			if (skin != -1)
+			for (i = 0; i < numgamedataskins; i++)
 			{
-				// We found a skin, so assign the win.
+				char skinname[SKINNAMESIZE+1];
+				INT32 skin;
 
-				M_Memcpy(&skins[skin].records, &dummyrecord, sizeof(skinrecord_t));
-			}
-			else if (dummyrecord.wins)
-			{
-				// Invalid, but we don't want to lose all the juicy statistics.
-				// Instead, update a FILO linked list of "unloaded skins".
+				READSTRINGN(save.p, skinname, SKINNAMESIZE);
+				skin = R_SkinAvailable(skinname);
 
-				unloaded_skin_t *unloadedskin =
-					Z_Malloc(
-						sizeof(unloaded_skin_t),
-						PU_STATIC, NULL
-					);
+				skinrecord_t dummyrecord;
 
-				// Establish properties, for later retrieval on file add.
-				strlcpy(unloadedskin->name, skinname, sizeof(unloadedskin->name));
-				unloadedskin->namehash = quickncasehash(unloadedskin->name, SKINNAMESIZE);
+				dummyrecord.wins = READUINT32(save.p);
 
-				// Insert at the head, just because it's convenient.
-				unloadedskin->next = unloadedskins;
-				unloadedskins = unloadedskin;
+				CONS_Printf(" (TEMPORARY DISPLAY) skinname is \"%s\", has %u wins\n", skinname, dummyrecord.wins);
 
-				// Finally, copy into.
-				M_Memcpy(&unloadedskin->records, &dummyrecord, sizeof(skinrecord_t));
+				if (skin != -1)
+				{
+					// We found a skin, so assign the win.
+
+					M_Memcpy(&skins[skin].records, &dummyrecord, sizeof(skinrecord_t));
+
+				}
+				else if (dummyrecord.wins)
+				{
+					// Invalid, but we don't want to lose all the juicy statistics.
+					// Instead, update a FILO linked list of "unloaded skins".
+
+					unloaded_skin_t *unloadedskin =
+						Z_Malloc(
+							sizeof(unloaded_skin_t),
+							PU_STATIC, NULL
+						);
+
+					// Establish properties, for later retrieval on file add.
+					strlcpy(unloadedskin->name, skinname, sizeof(unloadedskin->name));
+					unloadedskin->namehash = quickncasehash(unloadedskin->name, SKINNAMESIZE);
+
+					// Insert at the head, just because it's convenient.
+					unloadedskin->next = unloadedskins;
+					unloadedskins = unloadedskin;
+
+					// Finally, copy into.
+					M_Memcpy(&unloadedskin->records, &dummyrecord, sizeof(skinrecord_t));
+				}
 			}
 		}
 	}
