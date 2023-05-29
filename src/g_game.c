@@ -5118,8 +5118,7 @@ void G_LoadGameData(void)
 
 				dummywindata[j].best_placement = (rtemp & 0x0F);
 				dummywindata[j].best_grade = (rtemp & 0x70)>>4;
-				if (rtemp & 0x80)
-					dummywindata[j].got_emerald = true;
+				dummywindata[j].got_emerald = !!(rtemp & 0x80);
 
 				dummywindata[j].best_skin.id = MAXSKINS;
 				dummywindata[j].best_skin.unloaded = NULL;
