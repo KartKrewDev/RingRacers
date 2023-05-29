@@ -113,6 +113,23 @@ extern preciptype_t curWeather;
 /** Time attack information, currently a very small structure.
   */
 
+struct skinrecord_t
+{
+	UINT32 wins;
+};
+
+struct unloaded_skin_t
+{
+	char name[SKINNAMESIZE+1];
+	UINT32 namehash;
+
+	skinrecord_t records;
+
+	unloaded_skin_t *next;
+};
+
+extern unloaded_skin_t *unloadedskins;
+
 // mapvisited is now a set of flags that says what we've done in the map.
 #define MV_VISITED      	(1)
 #define MV_BEATEN       	(1<<1)

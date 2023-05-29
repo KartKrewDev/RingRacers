@@ -113,6 +113,8 @@ TYPEDEF (skincolor_t);
 
 // doomstat.h
 TYPEDEF (precipprops_t);
+TYPEDEF (skinrecord_t);
+TYPEDEF (unloaded_skin_t);
 TYPEDEF (recorddata_t);
 TYPEDEF (cupwindata_t);
 TYPEDEF (scene_t);
@@ -385,9 +387,7 @@ TYPEDEF (visffloor_t);
 TYPEDEF (portal_t);
 
 // r_skins.h
-TYPEDEF (skinrecord_t);
 TYPEDEF (skin_t);
-TYPEDEF (unloaded_skin_t);
 
 // r_splats.h
 TYPEDEF (floorsplat_t);

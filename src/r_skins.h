@@ -34,11 +34,6 @@ extern "C" {
 #define DEFAULTSKIN3 "sonic" // third player
 #define DEFAULTSKIN4 "knuckles" // fourth player
 
-struct skinrecord_t
-{
-	UINT32 wins;
-};
-
 /// The skin_t struct
 struct skin_t
 {
@@ -75,18 +70,6 @@ struct skin_t
 	spritedef_t sprites[NUMPLAYERSPRITES*2];
 	spriteinfo_t sprinfo[NUMPLAYERSPRITES*2];
 };
-
-struct unloaded_skin_t
-{
-	char name[SKINNAMESIZE+1];
-	UINT32 namehash;
-
-	skinrecord_t records;
-
-	unloaded_skin_t *next;
-};
-
-extern unloaded_skin_t *unloadedskins;
 
 enum facepatches {
 	FACE_RANK = 0,
