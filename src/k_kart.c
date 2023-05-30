@@ -4076,7 +4076,7 @@ void K_UpdateStumbleIndicator(player_t *player)
 	}
 }
 
-#define MIN_WAVEDASH_CHARGE (7*TICRATE/16)
+#define MIN_WAVEDASH_CHARGE ((7*TICRATE/16)*9)
 
 static boolean K_IsLosingSliptideZip(player_t *player)
 {
@@ -4130,7 +4130,7 @@ void K_UpdateSliptideZipIndicator(player_t *player)
 
 	mobj->renderflags &= ~RF_DONTDRAW;
 
-	UINT32 chargeFrame = 7 - min(7, player->sliptideZip / 10);
+	UINT32 chargeFrame = 7 - min(7, player->sliptideZip / 100);
 	UINT32 decayFrame = min(7, player->sliptideZipDelay / 2);
 	if (max(chargeFrame, decayFrame) > mobj->frame)
 		mobj->frame++;
@@ -9469,9 +9469,22 @@ static void K_KartDrift(player_t *player, boolean onground)
 		K_SpawnAIZDust(player);
 
 		if (!keepsliptide)
-			player->sliptideZip++;
-		if (player->sliptideZip == MIN_WAVEDASH_CHARGE)
-			S_StartSound(player->mo, sfx_waved5);
+		{
+			// Give charge proportional to your angle. Sharp turns are rewarding, slow analog slides are not—remember, this is giving back the speed you gave up.
+			int addCharge = FixedInt(
+				FixedMul(10*FRACUNIT, 
+					FixedDiv(abs(player->steering)*FRACUNIT, (9*KART_FULLTURN/10)*FRACUNIT)
+				));
+			addCharge = min(10, max(addCharge, 1));
+			// "Why 9*KART_FULLTURN/10?" For bullshit turn solver reasons, it's extremely common to steer at like 99% of FULLTURN even when at the edge of your analog range.
+			// This makes wavedash charge noticeably slower on even modest delay, despite the magnitude of the turn seeming the same.
+			// So we only require 90% of a turn to get full charge strength.
+
+			player->sliptideZip += addCharge;
+
+			if (player->sliptideZip >= MIN_WAVEDASH_CHARGE && (player->sliptideZip - addCharge) < MIN_WAVEDASH_CHARGE)
+				S_StartSound(player->mo, sfx_waved5);
+		}	
 
 		if (abs(player->aizdrifttilt) < ANGLE_22h)
 		{
@@ -9517,7 +9530,7 @@ static void K_KartDrift(player_t *player, boolean onground)
 
 					fixed_t yourPowerReduction = FixedDiv(yourPenalty * FRACUNIT, penaltySpread * FRACUNIT);
 					fixed_t yourPower = maxZipPower - FixedMul(yourPowerReduction, powerSpread);
-					int yourBoost = FixedInt(FixedMul(yourPower, player->sliptideZip * FRACUNIT));
+					int yourBoost = FixedInt(FixedMul(yourPower, player->sliptideZip/10 * FRACUNIT));
 
 					/*
 					CONS_Printf("SZ %d MZ %d mZ %d pwS %d mP %d MP %d peS %d yPe %d yPR %d yPw %d yB %d\n",
