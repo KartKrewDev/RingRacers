@@ -4878,7 +4878,16 @@ void G_LoadGameData(void)
 
 		gamedata->pendingkeyrounds = READUINT32(save.p);
 		gamedata->pendingkeyroundoffset = READUINT8(save.p);
-		gamedata->keyspending = READUINT8(save.p);
+
+		if (versionMinor < 3)
+		{
+			gamedata->keyspending = READUINT8(save.p);
+		}
+		else
+		{
+			gamedata->keyspending = READUINT16(save.p);
+		}
+
 		gamedata->chaokeys = READUINT16(save.p);
 
 		gamedata->everloadedaddon = (boolean)READUINT8(save.p);
@@ -5277,7 +5286,7 @@ void G_SaveGameData(void)
 	length = (4+1+1+
 		4+4+
 		(4*GDGT_MAX)+
-		4+1+1+2+
+		4+1+2+2+
 		1+1+1+
 		4+
 		(MAXEMBLEMS+(MAXUNLOCKABLES*2)+MAXCONDITIONSETS)+
@@ -5412,7 +5421,7 @@ void G_SaveGameData(void)
 
 	WRITEUINT32(save.p, gamedata->pendingkeyrounds); // 4
 	WRITEUINT8(save.p, gamedata->pendingkeyroundoffset); // 1
-	WRITEUINT8(save.p, gamedata->keyspending); // 1
+	WRITEUINT16(save.p, gamedata->keyspending); // 2
 	WRITEUINT16(save.p, gamedata->chaokeys); // 2
 
 	WRITEUINT8(save.p, gamedata->everloadedaddon); // 1

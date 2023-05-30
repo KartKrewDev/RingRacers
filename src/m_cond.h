@@ -273,7 +273,7 @@ struct gamedata_t
 	// Chao Key condition bypass
 	UINT32 pendingkeyrounds;
 	UINT8 pendingkeyroundoffset;
-	UINT8 keyspending;
+	UINT16 keyspending;
 	UINT16 chaokeys;
 
 	// SPECIFIC SPECIAL EVENTS
