@@ -815,10 +815,13 @@ void K_PlayerFinishGrandPrix(player_t *player)
 	grandprixinfo.wonround = true;
 
 	// Increase your total rings
-	if (RINGTOTAL(player) > 0)
+	INT32 ringtotal = RINGTOTAL(player);
+	if (ringtotal > 0)
 	{
-		player->totalring += RINGTOTAL(player);
-		grandprixinfo.rank.rings += RINGTOTAL(player);
+		if (ringtotal > 20)
+			ringtotal = 20;
+		player->totalring += ringtotal;
+		grandprixinfo.rank.rings += ringtotal;
 	}
 
 	if (grandprixinfo.eventmode == GPEVENT_NONE)
