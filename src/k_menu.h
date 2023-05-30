@@ -1189,13 +1189,13 @@ extern struct challengesmenu_s {
 	tic_t ticker;		// How long the menu's been open for
 	INT16 offset;		// To make the icons move smoothly when we transition!
 
-	UINT8 currentunlock;
+	UINT16 currentunlock;
 	char *unlockcondition;
 
 	tic_t unlockanim;
 
-	SINT8 row, hilix, focusx;
-	UINT8 col, hiliy;
+	INT16 row, hilix, focusx;
+	UINT16 col, hiliy;
 
 	challengegridextradata_t *extradata;
 
@@ -1205,7 +1205,7 @@ extern struct challengesmenu_s {
 
 	boolean requestflip;
 
-	UINT8 unlockcount[CC_MAX];
+	UINT16 unlockcount[CC_MAX];
 
 	UINT8 fade;
 } challengesmenu;

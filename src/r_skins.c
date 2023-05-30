@@ -187,7 +187,8 @@ void R_InitSkins(void)
 
 UINT8 *R_GetSkinAvailabilities(boolean demolock, boolean forbots)
 {
-	UINT8 i, shif, byte;
+	UINT16 i;
+	UINT8 shif, byte;
 	INT32 skinid;
 	static UINT8 responsebuffer[MAXAVAILABILITY];
 	UINT8 defaultbotskin = R_BotDefaultSkin();
@@ -225,7 +226,7 @@ boolean R_SkinUsable(INT32 playernum, INT32 skinnum, boolean demoskins)
 {
 	boolean needsunlocked = false;
 	boolean useplayerstruct = (Playing() && playernum != -1);
-	UINT8 i;
+	UINT16 i;
 	INT32 skinid;
 
 	if (skinnum == -1)

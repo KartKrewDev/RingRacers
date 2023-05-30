@@ -4793,6 +4793,11 @@ void G_LoadGameData(void)
 	boolean gridunusable = false;
 	savebuffer_t save = {0};
 
+	UINT16 emblemreadcount = MAXEMBLEMS;
+	UINT16 unlockreadcount = MAXUNLOCKABLES;
+	UINT16 conditionreadcount = MAXCONDITIONSETS;
+	size_t unlockreadsize = sizeof(UINT16);
+
 	//For records
 	UINT32 numgamedataskins;
 	UINT32 numgamedatamapheaders;
@@ -4897,32 +4902,39 @@ void G_LoadGameData(void)
 		}
 	}
 
+	if (versionMinor < 3)
+	{
+		emblemreadcount = 512;
+		unlockreadcount = conditionreadcount = UINT8_MAX;
+		unlockreadsize = sizeof(UINT8);
+	}
+
 	// To save space, use one bit per collected/achieved/unlocked flag
-	for (i = 0; i < MAXEMBLEMS;)
+	for (i = 0; i < emblemreadcount;)
 	{
 		rtemp = READUINT8(save.p);
-		for (j = 0; j < 8 && j+i < MAXEMBLEMS; ++j)
+		for (j = 0; j < 8 && j+i < emblemreadcount; ++j)
 			gamedata->collected[j+i] = ((rtemp >> j) & 1);
 		i += j;
 	}
-	for (i = 0; i < MAXUNLOCKABLES;)
+	for (i = 0; i < unlockreadcount;)
 	{
 		rtemp = READUINT8(save.p);
-		for (j = 0; j < 8 && j+i < MAXUNLOCKABLES; ++j)
+		for (j = 0; j < 8 && j+i < unlockreadcount; ++j)
 			gamedata->unlocked[j+i] = ((rtemp >> j) & 1);
 		i += j;
 	}
-	for (i = 0; i < MAXUNLOCKABLES;)
+	for (i = 0; i < unlockreadcount;)
 	{
 		rtemp = READUINT8(save.p);
-		for (j = 0; j < 8 && j+i < MAXUNLOCKABLES; ++j)
+		for (j = 0; j < 8 && j+i < unlockreadcount; ++j)
 			gamedata->unlockpending[j+i] = ((rtemp >> j) & 1);
 		i += j;
 	}
-	for (i = 0; i < MAXCONDITIONSETS;)
+	for (i = 0; i < conditionreadcount;)
 	{
 		rtemp = READUINT8(save.p);
-		for (j = 0; j < 8 && j+i < MAXCONDITIONSETS; ++j)
+		for (j = 0; j < 8 && j+i < conditionreadcount; ++j)
 			gamedata->achieved[j+i] = ((rtemp >> j) & 1);
 		i += j;
 	}
@@ -4931,7 +4943,7 @@ void G_LoadGameData(void)
 	{
 		UINT16 burn = READUINT16(save.p); // Previous challengegridwidth
 		UINT8 height = (versionMinor > 0) ? CHALLENGEGRIDHEIGHT : 5;
-		save.p += (burn * height * sizeof(UINT8)); // Step over previous grid data
+		save.p += (burn * height * unlockreadsize); // Step over previous grid data
 
 		gamedata->challengegridwidth = 0;
 		Z_Free(gamedata->challengegrid);
@@ -4944,11 +4956,23 @@ void G_LoadGameData(void)
 		if (gamedata->challengegridwidth)
 		{
 			gamedata->challengegrid = Z_Malloc(
-				(gamedata->challengegridwidth * CHALLENGEGRIDHEIGHT * sizeof(UINT8)),
+				(gamedata->challengegridwidth * CHALLENGEGRIDHEIGHT * sizeof(UINT16)),
 				PU_STATIC, NULL);
-			for (i = 0; i < (gamedata->challengegridwidth * CHALLENGEGRIDHEIGHT); i++)
+			if (unlockreadsize == sizeof(UINT8))
 			{
-				gamedata->challengegrid[i] = READUINT8(save.p);
+				for (i = 0; i < (gamedata->challengegridwidth * CHALLENGEGRIDHEIGHT); i++)
+				{
+					gamedata->challengegrid[i] = READUINT8(save.p);
+					if (gamedata->challengegrid[i] == unlockreadcount)
+						gamedata->challengegrid[i] = MAXUNLOCKABLES;
+				}
+			}
+			else
+			{
+				for (i = 0; i < (gamedata->challengegridwidth * CHALLENGEGRIDHEIGHT); i++)
+				{
+					gamedata->challengegrid[i] = READUINT16(save.p);
+				}
 			}
 		}
 		else
@@ -5261,7 +5285,7 @@ void G_SaveGameData(void)
 
 	if (gamedata->challengegrid)
 	{
-		length += gamedata->challengegridwidth * CHALLENGEGRIDHEIGHT;
+		length += (gamedata->challengegridwidth * CHALLENGEGRIDHEIGHT) * 2;
 	}
 
 
@@ -5434,12 +5458,12 @@ void G_SaveGameData(void)
 		i += j;
 	}
 
-	if (gamedata->challengegrid) // 2 + gamedata->challengegridwidth * CHALLENGEGRIDHEIGHT
+	if (gamedata->challengegrid) // 2 + (gamedata->challengegridwidth * CHALLENGEGRIDHEIGHT) * 2
 	{
 		WRITEUINT16(save.p, gamedata->challengegridwidth);
 		for (i = 0; i < (gamedata->challengegridwidth * CHALLENGEGRIDHEIGHT); i++)
 		{
-			WRITEUINT8(save.p, gamedata->challengegrid[i]);
+			WRITEUINT16(save.p, gamedata->challengegrid[i]);
 		}
 	}
 	else // 2

@@ -53,8 +53,8 @@ struct challengesmenu_s challengesmenu;
 
 static void M_ChallengesAutoFocus(UINT16 unlockid, boolean fresh)
 {
-	UINT8 i;
-	SINT8 work;
+	UINT16 i;
+	INT16 work;
 
 	if (unlockid >= MAXUNLOCKABLES && gamedata->pendingkeyrounds > 0
 		&& (gamedata->chaokeys < GDMAX_CHAOKEYS))
@@ -62,8 +62,8 @@ static void M_ChallengesAutoFocus(UINT16 unlockid, boolean fresh)
 
 	if (fresh && unlockid >= MAXUNLOCKABLES)
 	{
-		UINT8 selection[MAXUNLOCKABLES];
-		UINT8 numunlocks = 0;
+		UINT16 selection[MAXUNLOCKABLES];
+		UINT16 numunlocks = 0;
 
 		// Get a random available unlockable.
 		for (i = 0; i < MAXUNLOCKABLES; i++)
@@ -512,7 +512,7 @@ void M_ChallengesTick(void)
 boolean M_ChallengesInputs(INT32 ch)
 {
 	const UINT8 pid = 0;
-	UINT8 i;
+	UINT16 i;
 	const boolean start = M_MenuButtonPressed(pid, MBT_START);
 	const boolean move = (menucmd[pid].dpad_ud != 0 || menucmd[pid].dpad_lr != 0);
 	(void) ch;

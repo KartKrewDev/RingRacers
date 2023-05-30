@@ -4650,7 +4650,7 @@ static void M_DrawChallengeTile(INT16 i, INT16 j, INT32 x, INT32 y, boolean hili
 	patch_t *pat = missingpat;
 	UINT8 *colormap = NULL, *bgmap = NULL;
 	fixed_t siz, accordion;
-	UINT8 id, num;
+	UINT16 id, num;
 	boolean unlockedyet;
 	boolean categoryside;
 

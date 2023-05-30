@@ -170,7 +170,7 @@ void clear_unlockables(void)
 
 void clear_conditionsets(void)
 {
-	UINT8 i;
+	UINT16 i;
 	for (i = 0; i < MAXCONDITIONSETS; ++i)
 		M_ClearConditionSet(i);
 }
@@ -2317,9 +2317,9 @@ void readunlockable(MYFILE *f, INT32 num)
 				strupr(word2);
 
 				if (fastcmp(word, "CONDITIONSET"))
-					unlockables[num].conditionset = (UINT8)i;
+					unlockables[num].conditionset = (UINT16)i;
 				else if (fastcmp(word, "MAJORUNLOCK"))
-					unlockables[num].majorunlock = (UINT8)(i || word2[0] == 'T' || word2[0] == 'Y');
+					unlockables[num].majorunlock = (UINT8)(i != 0 || word2[0] == 'T' || word2[0] == 'Y');
 				else if (fastcmp(word, "TYPE"))
 				{
 					if (fastcmp(word2, "NONE"))

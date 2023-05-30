@@ -60,7 +60,7 @@ void M_PopulateChallengeGrid(void)
 {
 	UINT16 i, j;
 	UINT16 numunlocks = 0, nummajorunlocks = 0, numempty = 0;
-	UINT8 selection[2][MAXUNLOCKABLES + (CHALLENGEGRIDHEIGHT-1)];
+	UINT16 selection[2][MAXUNLOCKABLES + (CHALLENGEGRIDHEIGHT-1)];
 	UINT16 majorcompact = 2;
 
 	if (gamedata->challengegrid != NULL)
@@ -98,7 +98,7 @@ void M_PopulateChallengeGrid(void)
 	if (nummajorunlocks)
 	{
 		// Getting the number of 2-highs you can fit into two adjacent columns.
-		UINT8 majorpad = (CHALLENGEGRIDHEIGHT/2);
+		UINT16 majorpad = (CHALLENGEGRIDHEIGHT/2);
 		numempty = nummajorunlocks%majorpad;
 		majorpad = (nummajorunlocks+(majorpad-1))/majorpad;
 
@@ -128,7 +128,7 @@ void M_PopulateChallengeGrid(void)
 	}
 
 	gamedata->challengegrid = Z_Malloc(
-		(gamedata->challengegridwidth * CHALLENGEGRIDHEIGHT * sizeof(UINT8)),
+		(gamedata->challengegridwidth * CHALLENGEGRIDHEIGHT * sizeof(UINT16)),
 		PU_STATIC, NULL);
 
 	if (!gamedata->challengegrid)
@@ -136,9 +136,10 @@ void M_PopulateChallengeGrid(void)
 		I_Error("M_PopulateChallengeGrid: was not able to allocate grid");
 	}
 
-	memset(gamedata->challengegrid,
-		MAXUNLOCKABLES,
-		(gamedata->challengegridwidth * CHALLENGEGRIDHEIGHT * sizeof(UINT8)));
+	for (i = 0; i < MAXUNLOCKABLES; ++i)
+	{
+		gamedata->challengegrid[i] = MAXUNLOCKABLES;
+	}
 
 	// Attempt to place all large tiles first.
 	if (nummajorunlocks)
@@ -212,7 +213,7 @@ quickcheckagain:
 #if (CHALLENGEGRIDHEIGHT == 4)
 		while (nummajorunlocks > 0)
 		{
-			UINT8 unlocktomoveup = MAXUNLOCKABLES;
+			UINT16 unlocktomoveup = MAXUNLOCKABLES;
 
 			j = gamedata->challengegridwidth-1;
 
@@ -313,7 +314,7 @@ quickcheckagain:
 
 void M_UpdateChallengeGridExtraData(challengegridextradata_t *extradata)
 {
-	UINT8 i, j, num, id, tempid, work;
+	UINT16 i, j, num, id, tempid, work;
 	boolean idchange;
 
 	if (gamedata->challengegrid == NULL)
@@ -478,7 +479,7 @@ void M_UpdateChallengeGridExtraData(challengegridextradata_t *extradata)
 	}
 }
 
-void M_AddRawCondition(UINT8 set, UINT8 id, conditiontype_t c, INT32 r, INT16 x1, INT16 x2, char *stringvar)
+void M_AddRawCondition(UINT16 set, UINT8 id, conditiontype_t c, INT32 r, INT16 x1, INT16 x2, char *stringvar)
 {
 	condition_t *cond;
 	UINT32 num, wnum;
@@ -500,7 +501,7 @@ void M_AddRawCondition(UINT8 set, UINT8 id, conditiontype_t c, INT32 r, INT16 x1
 	cond[wnum].stringvar = stringvar;
 }
 
-void M_ClearConditionSet(UINT8 set)
+void M_ClearConditionSet(UINT16 set)
 {
 	if (conditionSets[set].numconditions)
 	{
@@ -1395,7 +1396,7 @@ static const char *M_GetConditionString(condition_t *cn)
 #undef BUILDCONDITIONTITLE
 }
 
-char *M_BuildConditionSetString(UINT8 unlockid)
+char *M_BuildConditionSetString(UINT16 unlockid)
 {
 	conditionset_t *c = NULL;
 	UINT32 lastID = 0;
@@ -1651,7 +1652,7 @@ boolean M_UpdateUnlockablesAndExtraEmblems(boolean loud, boolean doall)
 
 UINT16 M_GetNextAchievedUnlock(void)
 {
-	UINT8 i;
+	UINT16 i;
 
 	// Go through unlockables
 	for (i = 0; i < MAXUNLOCKABLES; ++i)
@@ -1683,14 +1684,14 @@ UINT16 M_GetNextAchievedUnlock(void)
 }
 
 // Emblem unlocking shit
-UINT8 M_CheckLevelEmblems(void)
+UINT16 M_CheckLevelEmblems(void)
 {
 	INT32 i;
 	INT32 valToReach;
 	INT16 tag;
 	INT16 levelnum;
-	UINT8 res;
-	UINT8 somethingUnlocked = 0;
+	boolean res;
+	UINT16 somethingUnlocked = 0;
 
 	// Update Score, Time, Rings emblems
 	for (i = 0; i < numemblems; ++i)
@@ -1736,13 +1737,13 @@ UINT8 M_CheckLevelEmblems(void)
 	return somethingUnlocked;
 }
 
-UINT8 M_CompletionEmblems(void) // Bah! Duplication sucks, but it's for a separate print when awarding emblems and it's sorta different enough.
+UINT16 M_CompletionEmblems(void) // Bah! Duplication sucks, but it's for a separate print when awarding emblems and it's sorta different enough.
 {
 	INT32 i;
 	INT32 embtype;
 	INT16 levelnum;
-	UINT8 res;
-	UINT8 somethingUnlocked = 0;
+	boolean res;
+	UINT16 somethingUnlocked = 0;
 	UINT8 flags;
 
 	for (i = 0; i < numemblems; ++i)
@@ -1781,7 +1782,7 @@ UINT8 M_CompletionEmblems(void) // Bah! Duplication sucks, but it's for a separa
 // Quick unlock checks
 // -------------------
 
-boolean M_CheckNetUnlockByID(UINT8 unlockid)
+boolean M_CheckNetUnlockByID(UINT16 unlockid)
 {
 	if (unlockid >= MAXUNLOCKABLES
 		|| !unlockables[unlockid].conditionset)
@@ -1824,7 +1825,7 @@ boolean M_SecretUnlocked(INT32 type, boolean local)
 
 boolean M_CupLocked(cupheader_t *cup)
 {
-	UINT8 i;
+	UINT16 i;
 
 	// Don't lock maps in dedicated servers.
 	// That just makes hosts' lives hell.
@@ -1852,7 +1853,7 @@ boolean M_CupLocked(cupheader_t *cup)
 
 boolean M_MapLocked(UINT16 mapnum)
 {
-	UINT8 i;
+	UINT16 i;
 
 	// Don't lock maps in dedicated servers.
 	// That just makes hosts' lives hell.
@@ -1918,7 +1919,7 @@ INT32 M_CountMedals(boolean all, boolean extraonly)
 
 // Theoretically faster than using M_CountMedals()
 // Stops when it reaches the target number of medals.
-UINT8 M_GotEnoughMedals(INT32 number)
+boolean M_GotEnoughMedals(INT32 number)
 {
 	INT32 i, gottenmedals = 0;
 	for (i = 0; i < numemblems; ++i)
@@ -1942,7 +1943,7 @@ UINT8 M_GotEnoughMedals(INT32 number)
 	return false;
 }
 
-UINT8 M_GotLowEnoughTime(INT32 tictime)
+boolean M_GotLowEnoughTime(INT32 tictime)
 {
 	INT32 curtics = 0;
 	INT32 i;

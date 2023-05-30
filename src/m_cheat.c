@@ -62,7 +62,7 @@ typedef struct
 // Cheat responders
 static UINT8 cheatf_warp(void)
 {
-	UINT8 i;
+	UINT16 i;
 	boolean success = false;
 
 	/*if (modifiedgame)
@@ -98,7 +98,7 @@ static UINT8 cheatf_warp(void)
 #ifdef DEVELOP
 static UINT8 cheatf_devmode(void)
 {
-	UINT8 i;
+	UINT16 i;
 
 	if (modifiedgame)
 		return 0;

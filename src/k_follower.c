@@ -48,7 +48,7 @@ boolean K_FollowerUsable(INT32 skinnum)
 {
 	// Unlike R_SkinUsable, not netsynced.
 	// Solely used to prevent an invalid value being sent over the wire.
-	UINT8 i;
+	UINT16 i;
 	INT32 fid;
 
 	if (skinnum == -1 || demo.playback)

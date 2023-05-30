@@ -159,7 +159,7 @@ struct unlockable_t
 	char name[64];
 	char *icon;
 	UINT16 color;
-	UINT8 conditionset;
+	UINT16 conditionset;
 	INT16 type;
 	INT16 variable;
 	char *stringVar;
@@ -206,8 +206,8 @@ typedef enum
 
 // If you have more secrets than these variables allow in your game,
 // you seriously need to get a life.
-#define MAXCONDITIONSETS UINT8_MAX
-#define MAXEMBLEMS       512
+#define MAXCONDITIONSETS 1024
+#define MAXEMBLEMS       (MAXCONDITIONSETS*2)
 #define MAXUNLOCKABLES   MAXCONDITIONSETS
 
 #define CHALLENGEGRIDHEIGHT 4
@@ -260,7 +260,7 @@ struct gamedata_t
 
 	// CHALLENGE GRID
 	UINT16 challengegridwidth;
-	UINT8 *challengegrid;
+	UINT16 *challengegrid;
 
 	// # OF TIMES THE GAME HAS BEEN BEATEN
 	UINT32 timesBeaten;
@@ -317,15 +317,15 @@ void M_UpdateChallengeGridExtraData(challengegridextradata_t *extradata);
 #define CHE_CONNECTEDUP   (1<<2)
 #define CHE_DONTDRAW (CHE_CONNECTEDLEFT|CHE_CONNECTEDUP)
 
-char *M_BuildConditionSetString(UINT8 unlockid);
+char *M_BuildConditionSetString(UINT16 unlockid);
 #define DESCRIPTIONWIDTH 170
 
 // Condition set setup
-void M_AddRawCondition(UINT8 set, UINT8 id, conditiontype_t c, INT32 r, INT16 x1, INT16 x2, char *stringvar);
+void M_AddRawCondition(UINT16 set, UINT8 id, conditiontype_t c, INT32 r, INT16 x1, INT16 x2, char *stringvar);
 void M_UpdateConditionSetsPending(void);
 
 // Clearing secrets
-void M_ClearConditionSet(UINT8 set);
+void M_ClearConditionSet(UINT16 set);
 void M_ClearSecrets(void);
 void M_ClearStats(void);
 
@@ -338,11 +338,11 @@ boolean M_UpdateUnlockablesAndExtraEmblems(boolean loud, boolean doall);
 #define PENDING_CHAOKEYS (UINT16_MAX-1)
 UINT16 M_GetNextAchievedUnlock(void);
 
-UINT8 M_CheckLevelEmblems(void);
-UINT8 M_CompletionEmblems(void);
+UINT16 M_CheckLevelEmblems(void);
+UINT16 M_CompletionEmblems(void);
 
 // Checking unlockable status
-boolean M_CheckNetUnlockByID(UINT8 unlockid);
+boolean M_CheckNetUnlockByID(UINT16 unlockid);
 boolean M_SecretUnlocked(INT32 type, boolean local);
 boolean M_CupLocked(cupheader_t *cup);
 boolean M_MapLocked(UINT16 mapnum);
@@ -356,8 +356,8 @@ const char *M_GetEmblemPatch(emblem_t *em, boolean big);
 // If you're looking to compare stats for unlocks or what not, use these
 // They stop checking upon reaching the target number so they
 // should be (theoretically?) slightly faster.
-UINT8 M_GotEnoughMedals(INT32 number);
-UINT8 M_GotLowEnoughTime(INT32 tictime);
+boolean M_GotEnoughMedals(INT32 number);
+boolean M_GotLowEnoughTime(INT32 tictime);
 
 INT32 M_UnlockableSkinNum(unlockable_t *unlock);
 INT32 M_UnlockableFollowerNum(unlockable_t *unlock);
