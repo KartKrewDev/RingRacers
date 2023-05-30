@@ -51,6 +51,7 @@
 #include "d_player.h" // KITEM_ constants
 #include "doomstat.h" // MAXSPLITSCREENPLAYERS
 #include "k_grandprix.h" // K_CanChangeRules
+#include "k_rank.h" // K_GetGradeColor
 
 #include "y_inter.h" // Y_RoundQueueDrawer
 
@@ -2388,8 +2389,15 @@ void M_DrawCupSelect(void)
 					const INT32 ranky = 8 + (j*100) - (30*menutransition.tics);
 
 					patch_t *gradePat = NULL;
+					colormap = NULL;
 
-					switch (windata->best_grade)
+					const gp_rank_e grade = windata->best_grade; // (cupgrid.previewanim/TICRATE) % (GRADE_S + 1); -- testing
+					UINT16 gradecolor = K_GetGradeColor(grade);
+
+					if (gradecolor != SKINCOLOR_NONE)
+						colormap = R_GetTranslationColormap(TC_DEFAULT, gradecolor, GTC_MENUCACHE);
+
+					switch (grade)
 					{
 						case GRADE_E:
 							gradePat = W_CachePatchName("R_CUPRNE", PU_CACHE);
@@ -2414,7 +2422,7 @@ void M_DrawCupSelect(void)
 					}
 
 					if (gradePat)
-						V_DrawFixedPatch((rankx)*FRACUNIT, (ranky)*FRACUNIT, FRACUNIT, 0, gradePat, NULL);
+						V_DrawFixedPatch((rankx)*FRACUNIT, (ranky)*FRACUNIT, FRACUNIT, 0, gradePat, colormap);
 
 					rankx += 14 + 1;
 
