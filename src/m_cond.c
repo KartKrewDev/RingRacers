@@ -136,7 +136,7 @@ void M_PopulateChallengeGrid(void)
 		I_Error("M_PopulateChallengeGrid: was not able to allocate grid");
 	}
 
-	for (i = 0; i < MAXUNLOCKABLES; ++i)
+	for (i = 0; i < (gamedata->challengegridwidth * CHALLENGEGRIDHEIGHT); ++i)
 	{
 		gamedata->challengegrid[i] = MAXUNLOCKABLES;
 	}
