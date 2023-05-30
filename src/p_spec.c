@@ -3135,6 +3135,28 @@ boolean P_ProcessSpecial(activator_t *activator, INT16 special, INT32 *args, cha
 							break;
 						}
 					}
+
+					// If target is valid, then we'll focus on it.
+					// See also MT_ALTVIEWMAN mobjthinker
+					if (newViewMobj->target != NULL && P_MobjWasRemoved(newViewMobj->target) == false)
+					{
+						newViewMobj->angle = R_PointToAngle2(
+							newViewMobj->x,
+							newViewMobj->y,
+							newViewMobj->target->x,
+							newViewMobj->target->y
+						);
+
+						newViewMobj->pitch = R_PointToAngle2(
+							0,
+							newViewMobj->z,
+							R_PointToDist2(
+								newViewMobj->x, newViewMobj->y,
+								newViewMobj->target->x, newViewMobj->target->y
+							),
+							newViewMobj->target->z + (newViewMobj->target->height >> 1)
+						);
+					}
 				}
 				else
 				{

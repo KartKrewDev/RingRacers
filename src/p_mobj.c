@@ -9463,6 +9463,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 			}
 
 			// If target is valid, then we'll focus on it.
+			// See also linedef type 422
 			if (mobj->target != NULL && P_MobjWasRemoved(mobj->target) == false)
 			{
 				mobj->angle = R_PointToAngle2(
