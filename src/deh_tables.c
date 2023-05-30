@@ -3287,6 +3287,10 @@ const char *const STATE_LIST[] = { // array length left dynamic for sanity testi
 
 	"S_SLIPTIDEZIP",
 
+	"S_INSTAWHIP",
+	"S_BLOCKRING",
+	"S_BLOCKBODY",
+
 	// Signpost sparkles
 	"S_SIGNSPARK1",
 	"S_SIGNSPARK2",
@@ -4011,6 +4015,7 @@ const char *const STATE_LIST[] = { // array length left dynamic for sanity testi
 	"S_INSTASHIELDB7",
 
 	"S_POWERCLASH", // Invinc/Grow no damage collide VFX
+	"S_GUARDBREAK", // Guard break
 
 	"S_PLAYERARROW", // Above player arrow
 	"S_PLAYERARROW_BOX",
@@ -5318,6 +5323,10 @@ const char *const MOBJTYPE_LIST[] = {  // array length left dynamic for sanity t
 	
 	"MT_SLIPTIDEZIP",
 
+	"MT_INSTAWHIP",
+	"MT_BLOCKRING",
+	"MT_BLOCKBODY",
+
 	"MT_SIGNSPARKLE",
 
 	"MT_FASTLINE",
@@ -5487,7 +5496,8 @@ const char *const MOBJTYPE_LIST[] = {  // array length left dynamic for sanity t
 	"MT_INSTASHIELDB",
 
 	"MT_POWERCLASH", // Invinc/Grow no damage clash VFX
-
+	"MT_GUARDBREAK", // Guard break
+	
 	"MT_PLAYERARROW",
 	"MT_PLAYERWANTED",
 

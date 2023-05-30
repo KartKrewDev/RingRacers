@@ -670,6 +670,7 @@ static UINT8 GetUFODamage(mobj_t *inflictor, UINT8 damageType)
 		{
 			case MT_JAWZ_SHIELD:
 			case MT_ORBINAUT_SHIELD:
+			case MT_INSTAWHIP:
 			{
 				// Shields deal chip damage.
 				return 10;

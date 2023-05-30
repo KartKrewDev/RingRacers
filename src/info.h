@@ -1108,6 +1108,10 @@ typedef enum sprite
 
 	SPR_SLPT, // Sliptide zip indicator
 
+	SPR_IWHP, // Instawhip
+	SPR_GRNG, // Guard ring
+	SPR_GBDY, // Guard body
+
 	SPR_WIPD, // Wipeout dust trail
 	SPR_DRIF, // Drift Sparks
 	SPR_BDRF, // Brake drift sparks
@@ -1187,6 +1191,7 @@ typedef enum sprite
 	SPR_ISTB, // instashield layer B
 
 	SPR_PWCL, // Invinc/grow clash VFX
+	SPR_GBRK, // Guard break
 
 	SPR_ARRO, // player arrows
 	SPR_ITEM,
@@ -4357,6 +4362,10 @@ typedef enum state
 
 	S_SLIPTIDEZIP,
 
+	S_INSTAWHIP,
+	S_BLOCKRING,
+	S_BLOCKBODY,
+
 	// Signpost sparkles
 	S_SIGNSPARK1,
 	S_SIGNSPARK2,
@@ -5080,6 +5089,7 @@ typedef enum state
 	S_INSTASHIELDB7,
 
 	S_POWERCLASH, // Grow/Invinc clash VFX
+	S_GUARDBREAK,
 
 	S_PLAYERARROW, // Above player arrow
 	S_PLAYERARROW_BOX,
@@ -6423,6 +6433,10 @@ typedef enum mobj_type
 	MT_MAGICIANBOX,
 	MT_SLIPTIDEZIP,
 
+	MT_INSTAWHIP,
+	MT_BLOCKRING,
+	MT_BLOCKBODY,
+
 	MT_SIGNSPARKLE,
 
 	MT_FASTLINE,
@@ -6592,6 +6606,7 @@ typedef enum mobj_type
 	MT_INSTASHIELDB,
 
 	MT_POWERCLASH, // Grow/Invinc clash VFX
+	MT_GUARDBREAK,
 
 	MT_PLAYERARROW,
 	MT_PLAYERWANTED,

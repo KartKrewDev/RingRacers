@@ -1253,6 +1253,9 @@ typedef enum
 	sfx_monch,
 	sfx_etexpl,
 
+	sfx_iwhp,
+	sfx_gbrk,
+
 	// Next up: UNIQUE ENGINE SOUNDS! Hoooooo boy...
 	// Engine class A - Low Speed, Low Weight
 	sfx_krta00,

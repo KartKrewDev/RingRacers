@@ -933,6 +933,14 @@ boolean K_KartBouncing(mobj_t *mobj1, mobj_t *mobj2)
 
 	K_SpawnBumpForObjs(mobj1, mobj2);
 
+	if (mobj1->type == MT_PLAYER && mobj2->type == MT_PLAYER)
+	{
+		if (K_PlayerGuard(mobj1->player))
+			K_DoGuardBreak(mobj1, mobj2);
+		if (K_PlayerGuard(mobj2->player))
+			K_DoGuardBreak(mobj2, mobj1);
+	}
+
 	K_PlayerJustBumped(mobj1->player);
 	K_PlayerJustBumped(mobj2->player);
 
@@ -1979,6 +1987,7 @@ void K_SpawnMagicianParticles(mobj_t *mo, int spread)
 		dust->frame |= FF_SUBTRACT|FF_TRANS90;
 		dust->color = color;
 		dust->colorized = true;
+		dust->hitlag = 0;
 	}
 }
 
@@ -3606,26 +3615,52 @@ void K_DoInstashield(player_t *player)
 	P_SetTarget(&layerb->target, player->mo);
 }
 
-void K_DoPowerClash(player_t *t1, player_t *t2) {
+void K_DoPowerClash(mobj_t *t1, mobj_t *t2) {
 	mobj_t *clash;
 
 	// short-circuit instashield for vfx visibility
-	t1->instashield = 1;
-	t2->instashield = 1;
+	if (t1->player)
+		t1->player->instashield = 1;
+	if (t2->player)
+		t2->player->instashield = 1;
 
-	S_StartSound(t1->mo, sfx_parry);
-	K_AddHitLag(t1->mo, 6, false);
-	K_AddHitLag(t2->mo, 6, false);
+	S_StartSound(t1, sfx_parry);
+	K_AddHitLag(t1, 6, false);
+	K_AddHitLag(t2, 6, false);
 
-	clash = P_SpawnMobj((t1->mo->x/2) + (t2->mo->x/2), (t1->mo->y/2) + (t2->mo->y/2), (t1->mo->z/2) + (t2->mo->z/2), MT_POWERCLASH);
+	clash = P_SpawnMobj((t1->x/2) + (t2->x/2), (t1->y/2) + (t2->y/2), (t1->z/2) + (t2->z/2), MT_POWERCLASH);
 
 	// needs to handle mixed scale collisions (t1 grow t2 invinc)...
-	clash->z = clash->z + (t1->mo->height/4) + (t2->mo->height/4);
-	clash->angle = R_PointToAngle2(clash->x, clash->y, t1->mo->x, t1->mo->y) + ANGLE_90;
+	clash->z = clash->z + (t1->height/4) + (t2->height/4);
+	clash->angle = R_PointToAngle2(clash->x, clash->y, t1->x, t1->y) + ANGLE_90;
 
 	// Shrink over time (accidental behavior that looked good)
-	clash->destscale = (t1->mo->scale/2) + (t2->mo->scale/2);
+	clash->destscale = (t1->scale) + (t2->scale);
 	P_SetScale(clash, 3*clash->destscale/2);
+}
+
+void K_DoGuardBreak(mobj_t *t1, mobj_t *t2) {
+	mobj_t *clash;
+
+	if (!(t1->player && t2->player))
+		return;
+
+	// short-circuit instashield for vfx visibility
+	t1->player->instaShieldCooldown = 2*TICRATE;
+	t1->player->guardCooldown = 2*TICRATE;
+
+	S_StartSound(t1, sfx_gbrk);
+	K_AddHitLag(t1, 24, true);
+	P_DamageMobj(t1, t2, t2, 1, DMG_STING);
+
+	clash = P_SpawnMobj((t1->x/2) + (t2->x/2), (t1->y/2) + (t2->y/2), (t1->z/2) + (t2->z/2), MT_GUARDBREAK);
+
+	// needs to handle mixed scale collisions
+	clash->z = clash->z + (t1->height/4) + (t2->height/4);
+	clash->angle = R_PointToAngle2(clash->x, clash->y, t1->x, t1->y) + ANGLE_90;
+	clash->color = t1->color;
+
+	clash->destscale = 3*((t1->scale) + (t2->scale))/2;
 }
 
 void K_BattleAwardHit(player_t *player, player_t *victim, mobj_t *inflictor, UINT8 damage)
@@ -7777,7 +7812,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 	// where's the < 0 check? see below the following block!
 
 	{
-		tic_t spheredigestion = TICRATE; // Base rate of 1 every second when playing.
+		tic_t spheredigestion = TICRATE*2; // Base rate of 1 every 2 seconds when playing.
 		tic_t digestionpower = ((10 - player->kartspeed) + (10 - player->kartweight))-1; // 1 to 17
 
 		// currently 0-34
@@ -7789,7 +7824,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		}
 		else
 		{
-			spheredigestion -= digestionpower;
+			spheredigestion -= digestionpower/2;
 		}
 
 		if ((player->spheres > 0) && (player->spheredigestion > 0))
@@ -7807,6 +7842,9 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 				player->spheres--;
 				player->spheredigestion = spheredigestion;
 			}
+
+			if (K_PlayerGuard(player) && (player->ebrakefor%6 == 0))
+				player->spheres--;
 		}
 		else
 		{
@@ -7876,6 +7914,19 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 
 	if (player->gateBoost)
 		player->gateBoost--;
+
+	if (player->instaShieldCooldown)
+	{
+		player->instaShieldCooldown--;
+		if (!P_IsObjectOnGround(player->mo))
+			player->instaShieldCooldown = max(player->instaShieldCooldown, 1);
+	}
+
+	if (player->guardCooldown)
+		player->guardCooldown--;
+		
+	if (player->whip && P_MobjWasRemoved(player->whip))
+		P_SetTarget(&player->whip, NULL);
 
 	if (player->startboost > 0 && onground == true)
 	{
@@ -7979,6 +8030,22 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 
 	if (player->tiregrease)
 		player->tiregrease--;
+
+	if (player->spinouttimer || player->tumbleBounces)
+	{
+		if (player->incontrol > 0)
+			player->incontrol = 0;
+		player->incontrol--;
+	}
+	else
+	{
+		if (player->incontrol < 0)
+			player->incontrol = 0;
+		player->incontrol++;
+	}
+
+	player->incontrol = min(player->incontrol, 5*TICRATE);
+	player->incontrol = max(player->incontrol, -5*TICRATE);
 
 	if (player->tumbleBounces > 0)
 	{
@@ -8096,6 +8163,9 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 	{
 		player->pflags &= ~PF_DRIFTINPUT;
 	}
+
+	if (K_PlayerGuard(player))
+		player->instaShieldCooldown = max(player->instaShieldCooldown, 12);
 
 	// Roulette Code
 	K_KartItemRoulette(player, cmd);
@@ -9784,6 +9854,11 @@ boolean K_PlayerEBrake(player_t *player)
 	return false;
 }
 
+boolean K_PlayerGuard(player_t *player)
+{
+	return (K_PlayerEBrake(player) && player->spheres > 0 && player->guardCooldown == 0);
+}
+
 SINT8 K_Sliptiding(player_t *player)
 {
 	if (player->mo->eflags & MFE_UNDERWATER)
@@ -9824,6 +9899,26 @@ void K_KartEbrakeVisuals(player_t *p)
 		// sound
 		if (!S_SoundPlaying(p->mo, sfx_s3kd9s))
 			S_ReducedVFXSound(p->mo, sfx_s3kd9s, p);
+
+		// Block visuals
+		// (These objects track whether a player is block-eligible on their own, no worries)
+		if (!p->ebrakefor)
+		{
+			mobj_t *ring = P_SpawnMobj(p->mo->x, p->mo->y, p->mo->z, MT_BLOCKRING);
+			P_SetTarget(&ring->target, p->mo);
+			P_SetScale(ring, p->mo->scale);
+			K_MatchGenericExtraFlags(ring, p->mo);
+			ring->renderflags &= ~RF_DONTDRAW;
+
+			mobj_t *body = P_SpawnMobj(p->mo->x, p->mo->y, p->mo->z, MT_BLOCKBODY);
+			P_SetTarget(&body->target, p->mo);
+			P_SetScale(body, p->mo->scale);
+			K_MatchGenericExtraFlags(body, p->mo);
+			body->renderflags |= RF_DONTDRAW;
+
+			if (K_PlayerGuard(p))
+				S_StartSound(body, sfx_s1af);
+		}
 
 		// HOLD! bubble.
 		if (!p->ebrakefor)
@@ -10538,6 +10633,28 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 			// Ring boosting
 			if (player->pflags & PF_USERINGS)
 			{
+				if (ATTACK_IS_DOWN && player->rings <= 0)
+				{
+					if (player->instaShieldCooldown || leveltime < starttime || player->spindash)
+					{
+						S_StartSound(player->mo, sfx_kc50);
+					}
+					else
+					{
+						player->instaShieldCooldown = 50;
+						player->guardCooldown = 50;
+						S_StartSound(player->mo, sfx_iwhp);
+						mobj_t *whip = P_SpawnMobj(player->mo->x, player->mo->y, player->mo->z, MT_INSTAWHIP);
+						P_SetTarget(&player->whip, whip);
+						P_SetScale(whip, player->mo->scale);
+						P_SetTarget(&whip->target, player->mo);
+						K_MatchGenericExtraFlags(whip, player->mo);
+						whip->fuse = 12; // Changing instawhip animation duration? Look here
+						player->flashing = max(player->flashing, 12);
+						player->mo->momz += 4*mapobjectscale;
+					}
+				}
+
 				if ((cmd->buttons & BT_ATTACK) && !player->ringdelay && player->rings > 0)
 				{
 					mobj_t *ring = P_SpawnMobj(player->mo->x, player->mo->y, player->mo->z, MT_RING);
@@ -11841,7 +11958,7 @@ UINT32 K_PointLimitForGametype(void)
 		{
 			if (D_IsPlayerHumanAndGaming(i))
 			{
-				ptsCap += 3;
+				ptsCap += 5;
 			}
 		}
 	}

@@ -2188,6 +2188,7 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 			if (!force)
 			{
 				boolean invincible = true;
+				boolean clash = false;
 				sfxenum_t sfx = sfx_None;
 
 				if (!(gametyperules & GTR_BUMPERS))
@@ -2207,6 +2208,11 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 				else if (K_IsBigger(target, inflictor) == true)
 				{
 					sfx = sfx_grownd;
+				}
+				else if (K_PlayerGuard(player))
+				{
+					sfx = sfx_s3k3a;
+					clash = true;
 				}
 				else if (player->hyudorotimer > 0)
 					;
@@ -2247,6 +2253,15 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 					if (player->timeshit > player->timeshitprev)
 					{
 						S_StartSound(target, sfx);
+					}
+
+					if (clash)
+					{
+						player->spheres = max(player->spheres - 10, 0);
+						if (inflictor)
+							K_DoPowerClash(target, inflictor);
+						else if (source)
+							K_DoPowerClash(target, source);
 					}
 
 					// Full invulnerability
@@ -2306,7 +2321,9 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 				damage = 0;
 			}
 
-			if (type == DMG_STING || type == DMG_STUMBLE)
+			// Instawhip breaks the rules and does "damaging stumble",
+			// but sting and stumble shouldn't be rewarding Battle hits otherwise.
+			if ((type == DMG_STING || type == DMG_STUMBLE) && (inflictor && inflictor->type != MT_INSTAWHIP))
 			{
 				damage = 0;
 			}
@@ -2425,6 +2442,9 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 
 				K_PlayPainSound(target, source);
 			}
+
+			if (gametyperules & GTR_BUMPERS)
+				player->spheres = min(player->spheres + 5, 40);
 
 			if ((hardhit == true) || cv_kartdebughuddrop.value)
 			{

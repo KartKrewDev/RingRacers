@@ -74,7 +74,8 @@ typedef enum
 	HOVERHYUDORO = 0x0020,
 	STUMBLE = 0x0040,
 	SLIPTIDEZIP = 0x0080,
-	RINGSHOOTER = 0x0100
+	RINGSHOOTER = 0x0100,
+	WHIP = 0x0200,
 } player_saveflags;
 
 static inline void P_ArchivePlayer(savebuffer_t *save)
@@ -225,6 +226,9 @@ static void P_NetArchivePlayers(savebuffer_t *save)
 		if (players[i].sliptideZipIndicator)
 			flags |= SLIPTIDEZIP;
 
+		if (players[i].whip)
+			flags |= WHIP;
+
 		if (players[i].ringShooter)
 			flags |= RINGSHOOTER;
 
@@ -250,6 +254,9 @@ static void P_NetArchivePlayers(savebuffer_t *save)
 
 		if (flags & SLIPTIDEZIP)
 			WRITEUINT32(save->p, players[i].sliptideZipIndicator->mobjnum);
+
+		if (flags & WHIP)
+			WRITEUINT32(save->p, players[i].whip->mobjnum);
 
 		if (flags & RINGSHOOTER)
 			WRITEUINT32(save->p, players[i].ringShooter->mobjnum);
@@ -418,6 +425,10 @@ static void P_NetArchivePlayers(savebuffer_t *save)
 		WRITEUINT16(save->p, players[i].sliptideZipBoost);
 
 		WRITEMEM(save->p, players[i].public_key, PUBKEYLENGTH);
+
+		WRITEUINT8(save->p, players[i].instaShieldCooldown);
+		WRITEUINT8(save->p, players[i].guardCooldown);
+		WRITEINT16(save->p, players[i].incontrol);
 
 		// respawnvars_t
 		WRITEUINT8(save->p, players[i].respawn.state);
@@ -635,6 +646,9 @@ static void P_NetUnArchivePlayers(savebuffer_t *save)
 		if (flags & SLIPTIDEZIP)
 			players[i].sliptideZipIndicator = (mobj_t *)(size_t)READUINT32(save->p);
 
+		if (flags & WHIP)
+			players[i].whip = (mobj_t *)(size_t)READUINT32(save->p);
+
 		if (flags & RINGSHOOTER)
 			players[i].ringShooter = (mobj_t *)(size_t)READUINT32(save->p);
 
@@ -803,6 +817,10 @@ static void P_NetUnArchivePlayers(savebuffer_t *save)
 		players[i].sliptideZipBoost = READUINT16(save->p);
 
 		READMEM(save->p, players[i].public_key, PUBKEYLENGTH);
+
+		players[i].instaShieldCooldown = READUINT8(save->p);
+		players[i].guardCooldown = READUINT8(save->p);
+		players[i].incontrol = READINT16(save->p);
 
 		// respawnvars_t
 		players[i].respawn.state = READUINT8(save->p);
@@ -4981,6 +4999,13 @@ static void P_RelinkPointers(void)
 			players[i].sliptideZipIndicator = NULL;
 			if (!P_SetTarget(&players[i].sliptideZipIndicator, P_FindNewPosition(temp)))
 				CONS_Debug(DBG_GAMELOGIC, "sliptideZipIndicator not found on player %d\n", i);
+		}
+		if (players[i].whip)
+		{
+			temp = (UINT32)(size_t)players[i].whip;
+			players[i].whip = NULL;
+			if (!P_SetTarget(&players[i].whip, P_FindNewPosition(temp)))
+				CONS_Debug(DBG_GAMELOGIC, "whip not found on player %d\n", i);
 		}
 		if (players[i].ringShooter)
 		{

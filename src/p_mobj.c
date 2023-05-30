@@ -8356,6 +8356,26 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 		Obj_GardenTopThink(mobj);
 		break;
 	}
+	case MT_INSTAWHIP:
+	{
+		Obj_InstaWhipThink(mobj);
+		break;
+	}
+	case MT_BLOCKRING:
+	{
+		Obj_BlockRingThink(mobj);
+		break;
+	}
+	case MT_BLOCKBODY:
+	{
+		Obj_BlockBodyThink(mobj);
+		break;
+	}
+	case MT_GUARDBREAK:
+	{
+		Obj_GuardBreakThink(mobj);
+		break;
+	}
 	case MT_GARDENTOPSPARK:
 	{
 		Obj_GardenTopSparkThink(mobj);
