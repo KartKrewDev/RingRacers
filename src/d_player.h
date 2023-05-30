@@ -747,6 +747,8 @@ struct player_t
 
 	INT16 incontrol; // -1 to -175 when spinning out or tumbling, 1 to 175 when not. Use to check for combo hits or emergency inputs.
 
+	boolean markedfordeath;
+
 	uint8_t public_key[PUBKEYLENGTH];
 
 #ifdef HWRENDER

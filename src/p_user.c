@@ -4364,6 +4364,8 @@ void P_PlayerThink(player_t *player)
 		K_RespawnChecker(player);
 		player->rmomx = player->rmomy = 0;
 
+		player->markedfordeath = false; // In case we got here via a death sector or something.
+
 		if (player->respawn.state == RESPAWNST_DROP)
 		{
 			// Allows some turning

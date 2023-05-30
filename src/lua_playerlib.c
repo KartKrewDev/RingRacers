@@ -249,6 +249,8 @@ static int player_get(lua_State *L)
 		lua_pushinteger(L, plr->justDI);
 	else if (fastcmp(field,"flipDI"))
 		lua_pushboolean(L, plr->flipDI);
+	else if (fastcmp(field,"markedfordeath"))
+		lua_pushboolean(L, plr->markedfordeath);
 	else if (fastcmp(field,"drift"))
 		lua_pushinteger(L, plr->drift);
 	else if (fastcmp(field,"driftcharge"))
@@ -647,6 +649,8 @@ static int player_set(lua_State *L)
 		plr->justDI = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"flipDI"))
 		plr->flipDI = luaL_checkboolean(L, 3);
+	else if (fastcmp(field,"markedfordeath"))
+		plr->markedfordeath = luaL_checkboolean(L, 3);
 	else if (fastcmp(field,"drift"))
 		plr->drift = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"driftcharge"))
