@@ -2447,21 +2447,22 @@ void M_DrawCupSelect(void)
 							V_DrawCharacter(rankx+2, ranky+2, '+', false);
 						else
 						{
-							UINT16 col = SKINCOLOR_CHAOSEMERALD1 + (templevelsearch.cup->emeraldnum-1) % 7;
-							patch_t *em;
+							colormap = NULL;
 
-							colormap = R_GetTranslationColormap(TC_DEFAULT, col, GTC_MENUCACHE);
+							if (!(cupgrid.previewanim & 1))
+							{
+								UINT16 col = SKINCOLOR_CHAOSEMERALD1 + (templevelsearch.cup->emeraldnum-1) % 7;
 
-							if (templevelsearch.cup->emeraldnum > 7)
-							{
-								em = W_CachePatchName("SUPMAP", PU_CACHE);
-							}
-							else
-							{
-								em = W_CachePatchName("EMEMAP", PU_CACHE);
+								colormap = R_GetTranslationColormap(TC_DEFAULT, col, GTC_MENUCACHE);
 							}
 
-							V_DrawFixedPatch((rankx)*FRACUNIT, (ranky)*FRACUNIT, FRACUNIT, 0, em, colormap);
+							const char *emname = va(
+								"%sMAP%c",
+								(templevelsearch.cup->emeraldnum > 7) ? "SUP" : "EME",
+								colormap ? '\0' : 'B'
+							);
+
+							V_DrawFixedPatch((rankx)*FRACUNIT, (ranky)*FRACUNIT, FRACUNIT, 0, W_CachePatchName(emname, PU_CACHE), colormap);
 						}
 					}
 				}
