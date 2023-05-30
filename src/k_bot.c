@@ -33,7 +33,7 @@
 #include "m_easing.h"
 
 #ifdef DEVELOP
-	consvar_t cv_botcontrol = CVAR_INIT ("botcontrol", "On", 0, CV_OnOff, NULL);
+	consvar_t cv_botcontrol = CVAR_INIT ("botcontrol", "On", CV_NETVAR|CV_CHEAT, CV_OnOff, NULL);
 #endif
 
 /*--------------------------------------------------
