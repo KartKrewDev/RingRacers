@@ -3026,6 +3026,7 @@ boolean P_ProcessSpecial(activator_t *activator, INT16 special, INT32 *args, cha
 			{
 				altview_t *modifyView = NULL;
 				mobj_t *newViewMobj = NULL;
+				INT32 i;
 
 				if (gamestate != GS_LEVEL)
 				{
@@ -3052,10 +3053,20 @@ boolean P_ProcessSpecial(activator_t *activator, INT16 special, INT32 *args, cha
 				{
 					// If titlemap, awayview.tics is ignored
 					modifyView->tics = -1;
+
+					R_ResetViewInterpolation(0);
 				}
 				else
 				{
 					modifyView->tics = args[1];
+
+					for (i = 0; i <= r_splitscreen; i++)
+					{
+						if (displayplayers[i] == (mo->player - players))
+						{
+							R_ResetViewInterpolation(i + 1);
+						}
+					}
 				}
 
 				if (args[2] != 0)
@@ -3067,7 +3078,6 @@ boolean P_ProcessSpecial(activator_t *activator, INT16 special, INT32 *args, cha
 						case TMCAM_THIRD:
 						{
 							mobj_t *firstPlace = NULL;
-							INT32 i;
 
 							for (i = 0; i < MAXPLAYERS; i++)
 							{
