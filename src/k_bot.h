@@ -21,6 +21,10 @@
 extern "C" {
 #endif
 
+#ifdef DEVELOP
+	extern consvar_t cv_botcontrol;
+#endif
+
 // Maximum value of botvars.difficulty
 #define MAXBOTDIFFICULTY 13
 
