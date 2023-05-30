@@ -9471,7 +9471,7 @@ static void K_KartDrift(player_t *player, boolean onground)
 		if (!keepsliptide)
 		{
 			// Give charge proportional to your angle. Sharp turns are rewarding, slow analog slides are not—remember, this is giving back the speed you gave up.
-			int addCharge = FixedInt(
+			UINT16 addCharge = FixedInt(
 				FixedMul(10*FRACUNIT, 
 					FixedDiv(abs(player->steering)*FRACUNIT, (9*KART_FULLTURN/10)*FRACUNIT)
 				));
