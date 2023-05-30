@@ -824,7 +824,7 @@ static void P_NetUnArchivePlayers(savebuffer_t *save)
 		players[i].guardCooldown = READUINT8(save->p);
 		players[i].incontrol = READINT16(save->p);
 
-		players[i].markedfordeath = READINT16(save->p);
+		players[i].markedfordeath = READUINT8(save->p);
 
 		// respawnvars_t
 		players[i].respawn.state = READUINT8(save->p);
