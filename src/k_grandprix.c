@@ -17,6 +17,7 @@
 #include "g_game.h"
 #include "k_bot.h"
 #include "k_kart.h"
+#include "k_podium.h"
 #include "m_random.h"
 #include "p_local.h"
 #include "r_things.h"
@@ -325,6 +326,9 @@ void K_UpdateGrandPrixBots(void)
 	player_t *newrival = NULL;
 	UINT16 newrivalscore = 0;
 	UINT8 i;
+
+	if (K_PodiumSequence())
+		return;
 
 	for (i = 0; i < MAXPLAYERS; i++)
 	{

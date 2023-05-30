@@ -360,8 +360,8 @@ gp_rank_e K_CalculateGPGrade(gpRank_t *rankData)
 
 	const INT32 positionWeight = 150;
 	const INT32 pointsWeight = 100;
-	const INT32 lapsWeight = 100;
-	const INT32 prisonsWeight = 100;
+	const INT32 lapsWeight = (rankData->totalLaps > 0) ? 100 : 0;
+	const INT32 prisonsWeight = (rankData->totalPrisons > 0) ? 100 : 0;
 	const INT32 ringsWeight = 50;
 	const INT32 total = positionWeight + pointsWeight + lapsWeight + prisonsWeight + ringsWeight;
 	const INT32 continuesPenalty = 20;
