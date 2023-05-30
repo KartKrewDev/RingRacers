@@ -2398,6 +2398,12 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 				}
 			}
 
+			if (player->rings <= -20)
+			{
+				damagetype |= DMG_INSTAKILL;
+				P_KillPlayer(player, inflictor, source, damagetype);
+			}
+
 			switch (type)
 			{
 				case DMG_STING:
