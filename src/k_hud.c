@@ -81,7 +81,7 @@ static patch_t *kp_nocontestminimap;
 static patch_t *kp_spbminimap;
 static patch_t *kp_wouldyoustillcatchmeifiwereaworm;
 static patch_t *kp_catcherminimap;
-static patch_t *kp_emeraldminimap;
+static patch_t *kp_emeraldminimap[2];
 static patch_t *kp_capsuleminimap[3];
 
 static patch_t *kp_ringsticker[2];
@@ -358,7 +358,8 @@ void K_LoadKartHUDGraphics(void)
 
 	HU_UpdatePatch(&kp_wouldyoustillcatchmeifiwereaworm, "MINIPROG");
 	HU_UpdatePatch(&kp_catcherminimap, "UFOMAP");
-	HU_UpdatePatch(&kp_emeraldminimap, "EMEMAP");
+	HU_UpdatePatch(&kp_emeraldminimap[0], "EMEMAP");
+	HU_UpdatePatch(&kp_emeraldminimap[1], "SUPMAP");
 
 	HU_UpdatePatch(&kp_capsuleminimap[0], "MINICAP1");
 	HU_UpdatePatch(&kp_capsuleminimap[1], "MINICAP2");
@@ -3880,7 +3881,11 @@ static void K_drawKartMinimap(void)
 				}
 				else
 				{
-					workingPic = kp_emeraldminimap;
+					UINT8 emid = 0;
+					if (specialstageinfo.ufo->cvmem > 7)
+						emid = 1;
+					workingPic = kp_emeraldminimap[emid];
+
 					if (specialstageinfo.ufo->color)
 					{
 						colormap = R_GetTranslationColormap(TC_DEFAULT, specialstageinfo.ufo->color, GTC_CACHE);

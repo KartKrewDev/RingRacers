@@ -38,6 +38,7 @@
 #define UFO_NUMARMS (3)
 #define UFO_ARMDELTA (ANGLE_MAX / UFO_NUMARMS)
 
+#define ufo_emeraldnum(o) ((o)->cvmem)
 #define ufo_waypoint(o) ((o)->extravalue1)
 #define ufo_distancetofinish(o) ((o)->extravalue2)
 #define ufo_speed(o) ((o)->watertop)
@@ -1005,7 +1006,7 @@ static mobj_t *InitSpecialUFO(waypoint_t *start)
 		overlay = P_SpawnMobjFromMobj(ufo, 0, 0, 0, MT_OVERLAY);
 
 		ufo->color = SKINCOLOR_CHAOSEMERALD1;
-		i = P_GetNextEmerald();
+		i = ufo_emeraldnum(ufo) = P_GetNextEmerald();
 		if (i > 0)
 		{
 			ufo->color += (i - 1) % 7;
