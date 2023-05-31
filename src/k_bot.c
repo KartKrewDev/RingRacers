@@ -32,6 +32,10 @@
 #include "k_respawn.h"
 #include "m_easing.h"
 
+#ifdef DEVELOP
+	consvar_t cv_botcontrol = CVAR_INIT ("botcontrol", "On", CV_NETVAR|CV_CHEAT, CV_OnOff, NULL);
+#endif
+
 /*--------------------------------------------------
 	boolean K_AddBot(UINT8 skin, UINT8 difficulty, UINT8 *p)
 
@@ -1515,6 +1519,13 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 		// Sprint map finish, don't give Sal's children migraines trying to pathfind out
 		return;
 	}
+
+	// Defanging bots for testing.
+	#ifdef DEVELOP
+		if (!cv_botcontrol.value)
+			return;
+	#endif
+	// Actual gameplay behaviors below this block!
 
 	if (K_TryRingShooter(player) == true)
 	{

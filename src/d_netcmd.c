@@ -66,6 +66,7 @@
 #include "g_party.h"
 #include "k_vote.h"
 #include "k_zvote.h"
+#include "k_bot.h"
 
 #ifdef SRB2_CONFIG_ENABLE_WEBM_MOVIES
 #include "m_avrecorder.h"
@@ -982,6 +983,7 @@ void D_RegisterClientCommands(void)
 		CV_RegisterVar(&cv_noresults);
 		CV_RegisterVar(&cv_badtime);
 		CV_RegisterVar(&cv_badip);
+		CV_RegisterVar(&cv_botcontrol);
 	#endif
 
 	// HUD
