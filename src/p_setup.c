@@ -8291,9 +8291,6 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 		K_InitDirector();
 	}
 
-	// clear special respawning que
-	iquehead = iquetail = 0;
-
 	// Initialize ACS scripts
 	if (!fromnetsave)
 	{

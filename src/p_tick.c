@@ -213,10 +213,23 @@ void Command_CountMobjs_f(void)
 void P_InitThinkers(void)
 {
 	UINT8 i;
+
+	for (i = 0; i < NUM_THINKERLISTS; i++)
+	{
+		thlist[i].prev = thlist[i].next = &thlist[i];
+	}
+
+	iquehead = iquetail = 0;
+
 	waypointcap = NULL;
 	trackercap = NULL;
-	for (i = 0; i < NUM_THINKERLISTS; i++)
-		thlist[i].prev = thlist[i].next = &thlist[i];
+
+	titlemapcam.mobj = NULL;
+
+	for (i = 0; i <= 15; i++)
+	{
+		skyboxcenterpnts[i] = skyboxviewpnts[i] = NULL;
+	}
 }
 
 // Adds a new thinker at the end of the list.

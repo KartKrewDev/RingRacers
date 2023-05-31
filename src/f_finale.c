@@ -1848,7 +1848,6 @@ void F_StartTitleScreen(void)
 
 		gamestate_t prevwipegamestate = wipegamestate;
 		titlemapinaction = true;
-		P_SetTarget(&titlemapcam.mobj, NULL);
 		gamemap = titleMapNum+1;
 
 		maptol = mapheaderinfo[titleMapNum]->typeoflevel;

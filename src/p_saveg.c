@@ -4526,15 +4526,7 @@ static void P_NetUnArchiveThinkers(savebuffer_t *save)
 	}
 
 	// we don't want the removed mobjs to come back
-	iquetail = iquehead = 0;
 	P_InitThinkers();
-
-	// Oh my god don't blast random memory with our reference counts.
-	waypointcap = trackercap = NULL;
-	for (i = 0; i <= 15; i++)
-	{
-		skyboxcenterpnts[i] = skyboxviewpnts[i] = NULL;
-	}
 
 	// clear sector thinker pointers so they don't point to non-existant thinkers for all of eternity
 	for (i = 0; i < numsectors; i++)
