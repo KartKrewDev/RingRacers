@@ -5171,10 +5171,40 @@ void G_LoadGameData(void)
 				}
 			}
 
-			if (versionMinor < 3 && dummywindata[0].best_placement == 0)
+			if (versionMinor < 3)
 			{
-				// We now require backfilling of placement information.
-				M_Memcpy(&dummywindata[0], &dummywindata[1], sizeof(dummywindata[0]));
+				// We now require backfilling of placement information.	
+
+				cupwindata_t bestwindata;
+				bestwindata.best_placement = 0;
+
+				j = KARTGP_MAX;
+				while (j > 0)
+				{
+					j--;
+
+					if (bestwindata.best_placement == 0)
+					{
+						if (dummywindata[j].best_placement != 0)
+						{
+							M_Memcpy(&bestwindata, &dummywindata[j], sizeof(bestwindata));
+						}
+						continue;
+					}
+
+					if (dummywindata[j].best_placement != 0)
+					{
+						if (dummywindata[j].best_placement < bestwindata.best_placement)
+							bestwindata.best_placement = dummywindata[j].best_placement;
+
+						if (dummywindata[j].best_grade > bestwindata.best_grade)
+							bestwindata.best_grade = dummywindata[j].best_grade;
+
+						bestwindata.got_emerald |= dummywindata[j].got_emerald;
+					}
+
+					M_Memcpy(&dummywindata[j], &bestwindata, sizeof(dummywindata[j]));
+				}
 			}
 
 			if (cup)
