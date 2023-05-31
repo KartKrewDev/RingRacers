@@ -329,6 +329,11 @@ void PR_LoadProfiles(void)
 		P_SaveBufferFree(&save);
 		I_Error("Existing %s is from the future! (expected %d, got %d)", PROFILESFILE, PROFILEVER, version);
 	}
+	else if (version < PROFILEVER)
+	{
+		// We're converting - let'd create a backup.
+		FIL_WriteFile(va("%s" PATHSEP "%s.bak", srb2home, PROFILESFILE), save.buffer, save.size);
+	}
 
 	numprofiles = READUINT8(save.p);
 	if (numprofiles > MAXPROFILES)

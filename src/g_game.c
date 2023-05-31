@@ -4851,6 +4851,12 @@ void G_LoadGameData(void)
 		P_SaveBufferFree(&save);
 		I_Error("Game data is from the future! (expected %d, got %d)\nRename or delete %s (maybe in %s) and try again.", GD_VERSIONMINOR, versionMinor, gamedatafilename, gdfolder);
 	}
+	else if (versionMinor < GD_VERSIONMINOR)
+	{
+		// We're converting - let'd create a backup.
+		FIL_WriteFile(va("%s" PATHSEP "%s.bak", srb2home, gamedatafilename), save.buffer, save.size);
+	}
+
 	if ((versionMinor == 0 || versionMinor == 1)
 #ifdef DEVELOP
 		|| M_CheckParm("-resetchallengegrid")
