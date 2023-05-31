@@ -2447,7 +2447,8 @@ void M_DrawCupSelect(void)
 					if (charPat)
 						V_DrawFixedPatch((rankx)*FRACUNIT, (ranky)*FRACUNIT, FRACUNIT, 0, charPat, colormap);
 
-					if (windata->got_emerald == true)
+					if (cv_dummygpdifficulty.value > 0
+						&& windata->got_emerald == true)
 					{
 						rankx += 12 + 1;
 
