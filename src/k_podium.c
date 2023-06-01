@@ -247,8 +247,6 @@ boolean K_StartCeremony(void)
 		&& mapheaderinfo[podiumMapNum]
 		&& mapheaderinfo[podiumMapNum]->lumpnum != LUMPERROR)
 	{
-		P_SetTarget(&titlemapcam.mobj, NULL);
-
 		gamemap = podiumMapNum+1;
 
 		maptol = mapheaderinfo[gamemap-1]->typeoflevel;
