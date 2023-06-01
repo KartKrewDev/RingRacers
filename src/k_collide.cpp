@@ -1,6 +1,8 @@
 /// \file  k_collide.cpp
 /// \brief SRB2Kart item collision hooks
 
+#include <algorithm>
+
 #include "k_collide.h"
 #include "doomtype.h"
 #include "p_mobj.h"
