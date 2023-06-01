@@ -12,6 +12,7 @@
 #include <algorithm>
 #include <cmath>
 
+#include "../r_state.h"
 #include "../v_video.h"
 #include "../z_zone.h"
 
@@ -139,28 +140,151 @@ void FramebufferManager::postpass(Rhi& rhi)
 {
 }
 
-MainPaletteManager::MainPaletteManager() : Pass()
-{
-}
-
+MainPaletteManager::MainPaletteManager() = default;
 MainPaletteManager::~MainPaletteManager() = default;
+
+constexpr std::size_t kPaletteSize = 256;
+constexpr std::size_t kLighttableRows = LIGHTLEVELS;
 
 void MainPaletteManager::prepass(Rhi& rhi)
 {
 	if (!palette_)
 	{
-		palette_ = rhi.create_texture({TextureFormat::kRGBA, 256, 1, TextureWrapMode::kClamp, TextureWrapMode::kClamp});
+		palette_ = rhi.create_texture({TextureFormat::kRGBA, kPaletteSize, 1, TextureWrapMode::kClamp, TextureWrapMode::kClamp});
 	}
+
+	if (!lighttable_)
+	{
+		lighttable_ = rhi.create_texture({TextureFormat::kLuminance, kPaletteSize, kLighttableRows, TextureWrapMode::kClamp, TextureWrapMode::kClamp});
+	}
+
+	if (!encore_lighttable_)
+	{
+		encore_lighttable_ = rhi.create_texture({TextureFormat::kLuminance, kPaletteSize, kLighttableRows, TextureWrapMode::kClamp, TextureWrapMode::kClamp});
+	}
+
+	if (!default_colormap_)
+	{
+		default_colormap_ = rhi.create_texture({TextureFormat::kLuminance, kPaletteSize, 1, TextureWrapMode::kClamp, TextureWrapMode::kClamp});
+	}
+}
+
+void MainPaletteManager::upload_palette(Rhi& rhi, Handle<TransferContext> ctx)
+{
+	std::array<byteColor_t, kPaletteSize> palette_32;
+	for (std::size_t i = 0; i < kPaletteSize; i++)
+	{
+		palette_32[i] = V_GetColor(i).s;
+	}
+	rhi.update_texture(ctx, palette_, {0, 0, kPaletteSize, 1}, PixelFormat::kRGBA8, tcb::as_bytes(tcb::span(palette_32)));
+}
+
+void MainPaletteManager::upload_lighttables(Rhi& rhi, Handle<TransferContext> ctx)
+{
+	if (colormaps != nullptr)
+	{
+		tcb::span<const std::byte> colormap_bytes = tcb::as_bytes(tcb::span(colormaps, kPaletteSize * kLighttableRows));
+		rhi.update_texture(ctx, lighttable_, {0, 0, kPaletteSize, kLighttableRows}, PixelFormat::kR8, colormap_bytes);
+	}
+
+	if (encoremap != nullptr)
+	{
+		tcb::span<const std::byte> encoremap_bytes = tcb::as_bytes(tcb::span(encoremap, kPaletteSize * kLighttableRows));
+		rhi.update_texture(ctx, encore_lighttable_, {0, 0, kPaletteSize, kLighttableRows}, PixelFormat::kR8, encoremap_bytes);
+	}
+
+	if (!lighttables_to_upload_.empty())
+	{
+		for (auto lighttable : lighttables_to_upload_)
+		{
+			Handle<Texture> lighttable_tex = find_extra_lighttable(lighttable);
+			SRB2_ASSERT(lighttable_tex != kNullHandle);
+			tcb::span<const std::byte> lighttable_bytes = tcb::as_bytes(tcb::span(lighttable, kPaletteSize * kLighttableRows));
+			rhi.update_texture(ctx, lighttable_tex, {0, 0, kPaletteSize, kLighttableRows}, PixelFormat::kR8, lighttable_bytes);
+		}
+		lighttables_to_upload_.clear();
+	}
+}
+
+void MainPaletteManager::upload_default_colormap(Rhi& rhi, Handle<TransferContext> ctx)
+{
+	std::array<uint8_t, kPaletteSize> data;
+	for (std::size_t i = 0; i < kPaletteSize; i++)
+	{
+		data[i] = i;
+	}
+	rhi.update_texture(ctx, default_colormap_, {0, 0, kPaletteSize, 1}, PixelFormat::kR8, tcb::as_bytes(tcb::span(data)));
+}
+
+void MainPaletteManager::upload_colormaps(Rhi& rhi, Handle<TransferContext> ctx)
+{
+	for (auto to_upload : colormaps_to_upload_)
+	{
+		SRB2_ASSERT(to_upload != nullptr);
+		SRB2_ASSERT(colormaps_.find(to_upload) != colormaps_.end());
+
+		rhi::Handle<rhi::Texture> map_texture = colormaps_.at(to_upload);
+
+		tcb::span<const std::byte> map_bytes = tcb::as_bytes(tcb::span(to_upload, kPaletteSize));
+		rhi.update_texture(ctx, map_texture, {0, 0, kPaletteSize, 1}, PixelFormat::kR8, map_bytes);
+	}
+	colormaps_to_upload_.clear();
+}
+
+rhi::Handle<rhi::Texture> MainPaletteManager::find_or_create_colormap(rhi::Rhi& rhi, srb2::NotNull<const uint8_t*> colormap)
+{
+	if (colormaps_.find(colormap) != colormaps_.end())
+	{
+		return colormaps_[colormap];
+	}
+
+	Handle<Texture> texture = rhi.create_texture({TextureFormat::kLuminance, kPaletteSize, 1, TextureWrapMode::kClamp, TextureWrapMode::kClamp});
+
+	colormaps_.insert_or_assign(colormap, texture);
+	colormaps_to_upload_.push_back(colormap);
+	return texture;
+}
+
+rhi::Handle<rhi::Texture> MainPaletteManager::find_colormap(srb2::NotNull<const uint8_t*> colormap) const
+{
+	if (colormaps_.find(colormap) == colormaps_.end())
+	{
+		return kNullHandle;
+	}
+
+	return colormaps_.at(colormap);
+}
+
+rhi::Handle<rhi::Texture> MainPaletteManager::find_or_create_extra_lighttable(Rhi& rhi, srb2::NotNull<const uint8_t*> lighttable)
+{
+	if (lighttables_.find(lighttable) != lighttables_.end())
+	{
+		return lighttables_[lighttable];
+	}
+
+	Handle<Texture> texture = rhi.create_texture({TextureFormat::kLuminance, kPaletteSize, kLighttableRows, TextureWrapMode::kClamp, TextureWrapMode::kClamp});
+
+	lighttables_.insert_or_assign(lighttable, texture);
+	lighttables_to_upload_.push_back(lighttable);
+	return texture;
+}
+
+rhi::Handle<rhi::Texture> MainPaletteManager::find_extra_lighttable(srb2::NotNull<const uint8_t*> lighttable) const
+{
+	if (lighttables_.find(lighttable) == lighttables_.end())
+	{
+		return kNullHandle;
+	}
+
+	return lighttables_.at(lighttable);
 }
 
 void MainPaletteManager::transfer(Rhi& rhi, Handle<TransferContext> ctx)
 {
-	std::array<byteColor_t, 256> palette_32;
-	for (std::size_t i = 0; i < 256; i++)
-	{
-		palette_32[i] = V_GetColor(i).s;
-	}
-	rhi.update_texture(ctx, palette_, {0, 0, 256, 1}, PixelFormat::kRGBA8, tcb::as_bytes(tcb::span(palette_32)));
+	upload_palette(rhi, ctx);
+	upload_lighttables(rhi, ctx);
+	upload_default_colormap(rhi, ctx);
+	upload_colormaps(rhi, ctx);
 }
 
 void MainPaletteManager::graphics(Rhi& rhi, Handle<GraphicsContext> ctx)
@@ -169,6 +293,19 @@ void MainPaletteManager::graphics(Rhi& rhi, Handle<GraphicsContext> ctx)
 
 void MainPaletteManager::postpass(Rhi& rhi)
 {
+	// Delete all colormap textures so they'll be recreated next frame
+	// Unfortunately the 256x1 translation colormaps are sometimes freed at runtime
+	for (auto& cm : colormaps_)
+	{
+		rhi.destroy_texture(cm.second);
+	}
+	colormaps_.clear();
+
+	for (auto& lt : lighttables_)
+	{
+		rhi.destroy_texture(lt.second);
+	}
+	lighttables_.clear();
 }
 
 CommonResourcesManager::CommonResourcesManager() = default;

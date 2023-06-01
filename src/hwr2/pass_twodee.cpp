@@ -26,9 +26,6 @@ using namespace srb2::rhi;
 struct srb2::hwr2::TwodeePassData
 {
 	Handle<Texture> default_tex;
-	Handle<Texture> default_colormap_tex;
-	std::unordered_map<const uint8_t*, Handle<Texture>> colormaps;
-	std::vector<const uint8_t*> colormaps_to_upload;
 	std::unordered_map<TwodeePipelineKey, Handle<Pipeline>> pipelines;
 	bool upload_default_tex = false;
 };
@@ -286,17 +283,6 @@ void TwodeePass::prepass(Rhi& rhi)
 		});
 		data_->upload_default_tex = true;
 	}
-	if (!data_->default_colormap_tex)
-	{
-		data_->default_colormap_tex = rhi.create_texture({
-			TextureFormat::kLuminance,
-			256,
-			1,
-			TextureWrapMode::kClamp,
-			TextureWrapMode::kClamp
-		});
-		data_->upload_default_tex = true;
-	}
 	if (!render_pass_)
 	{
 		render_pass_ = rhi.create_render_pass(
@@ -314,7 +300,6 @@ void TwodeePass::prepass(Rhi& rhi)
 
 	// Stage 1 - command list patch detection
 	std::unordered_set<const patch_t*> found_patches;
-	std::unordered_set<const uint8_t*> found_colormaps;
 	for (const auto& list : *ctx_)
 	{
 		for (const auto& cmd : list.cmds)
@@ -328,7 +313,7 @@ void TwodeePass::prepass(Rhi& rhi)
 					}
 					if (cmd.colormap != nullptr)
 					{
-						found_colormaps.insert(cmd.colormap);
+						palette_manager_->find_or_create_colormap(rhi, cmd.colormap);
 					}
 				},
 				[&](const Draw2dVertices& cmd) {}};
@@ -341,17 +326,6 @@ void TwodeePass::prepass(Rhi& rhi)
 		patch_atlas_cache_->queue_patch(patch);
 	}
 	patch_atlas_cache_->pack(rhi);
-
-	for (auto colormap : found_colormaps)
-	{
-		if (data_->colormaps.find(colormap) == data_->colormaps.end())
-		{
-			Handle<Texture> colormap_tex = rhi.create_texture({TextureFormat::kLuminance, 256, 1});
-			data_->colormaps.insert({colormap, colormap_tex});
-		}
-
-		data_->colormaps_to_upload.push_back(colormap);
-	}
 
 	size_t list_index = 0;
 	for (auto& list : *ctx_)
@@ -536,33 +510,8 @@ void TwodeePass::transfer(Rhi& rhi, Handle<TransferContext> ctx)
 		std::array<uint8_t, 4> data = {0, 255, 0, 255};
 		rhi.update_texture(ctx, data_->default_tex, {0, 0, 2, 1}, PixelFormat::kRG8, tcb::as_bytes(tcb::span(data)));
 
-		std::array<uint8_t, 256> colormap_data;
-		for (size_t i = 0; i < 256; i++)
-		{
-			colormap_data[i] = i;
-		}
-		rhi.update_texture(
-			ctx,
-			data_->default_colormap_tex,
-			{0, 0, 256, 1},
-			PixelFormat::kR8,
-			tcb::as_bytes(tcb::span(colormap_data))
-		);
-
 		data_->upload_default_tex = false;
 	}
-
-	for (auto colormap : data_->colormaps_to_upload)
-	{
-		rhi.update_texture(
-			ctx,
-			data_->colormaps[colormap],
-			{0, 0, 256, 1},
-			rhi::PixelFormat::kR8,
-			tcb::as_bytes(tcb::span(colormap, 256))
-		);
-	}
-	data_->colormaps_to_upload.clear();
 
 	Handle<Texture> palette_tex = palette_manager_->palette();
 
@@ -607,11 +556,11 @@ void TwodeePass::transfer(Rhi& rhi, Handle<TransferContext> ctx)
 			}
 
 			const uint8_t* colormap = mcmd.colormap;
-			Handle<Texture> colormap_h = data_->default_colormap_tex;
+			Handle<Texture> colormap_h = palette_manager_->default_colormap();
 			if (colormap)
 			{
-				SRB2_ASSERT(data_->colormaps.find(colormap) != data_->colormaps.end());
-				colormap_h = data_->colormaps[colormap];
+				colormap_h = palette_manager_->find_colormap(colormap);
+				SRB2_ASSERT(colormap_h != kNullHandle);
 			}
 			tx[2] = {SamplerName::kSampler2, colormap_h};
 			mcmd.binding_set =
