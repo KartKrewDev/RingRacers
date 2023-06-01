@@ -181,8 +181,11 @@ void MainPaletteManager::upload_palette(Rhi& rhi, Handle<TransferContext> ctx)
 
 void MainPaletteManager::upload_lighttables(Rhi& rhi, Handle<TransferContext> ctx)
 {
-	tcb::span<const std::byte> colormap_bytes = tcb::as_bytes(tcb::span(colormaps, kPaletteSize * kLighttableRows));
-	rhi.update_texture(ctx, lighttable_, {0, 0, kPaletteSize, kLighttableRows}, PixelFormat::kR8, colormap_bytes);
+	if (colormaps != nullptr)
+	{
+		tcb::span<const std::byte> colormap_bytes = tcb::as_bytes(tcb::span(colormaps, kPaletteSize * kLighttableRows));
+		rhi.update_texture(ctx, lighttable_, {0, 0, kPaletteSize, kLighttableRows}, PixelFormat::kR8, colormap_bytes);
+	}
 
 	if (encoremap != nullptr)
 	{
