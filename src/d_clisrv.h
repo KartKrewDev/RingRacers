@@ -46,7 +46,7 @@ applications may follow different packet versions.
 // Networking and tick handling related.
 #define BACKUPTICS 512 // more than enough for most timeouts....
 #define CLIENTBACKUPTICS 32
-#define MAXTEXTCMD 256
+#define MAXTEXTCMD 512
 
 // No. of tics your controls can be delayed by.
 
