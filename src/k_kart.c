@@ -4170,6 +4170,14 @@ static void K_HandleTumbleBounce(player_t *player)
 	player->tumbleHeight = (player->tumbleHeight * ((player->tumbleHeight > 100) ? 3 : 4)) / 5;
 	player->pflags &= ~PF_TUMBLESOUND;
 
+	if (player->markedfordeath)
+	{
+		player->markedfordeath = false;
+		P_StartQuakeFromMobj(5, 32 * player->mo->scale, 512 * player->mo->scale, player->mo);
+		P_KillMobj(player->mo, NULL, NULL, DMG_INSTAKILL);
+		return;
+	}
+
 	if (player->tumbleHeight < 10)
 	{
 		// 10 minimum bounce height

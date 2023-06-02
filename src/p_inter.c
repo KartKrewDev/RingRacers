@@ -2179,7 +2179,7 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 		}
 		else
 		{
-			const UINT8 type = (damagetype & DMG_TYPEMASK);
+			UINT8 type = (damagetype & DMG_TYPEMASK);
 			const boolean hardhit = (type == DMG_EXPLODE || type == DMG_KARMA || type == DMG_TUMBLE); // This damage type can do evil stuff like ALWAYS combo
 			INT16 ringburst = 5;
 
@@ -2396,6 +2396,15 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 					player->charflags = skinflags;
 					K_SpawnMagicianParticles(player->mo, 5);
 				}
+			}
+
+			if (player->rings <= -20)
+			{
+				player->markedfordeath = true;
+				damagetype = DMG_TUMBLE;
+				type = DMG_TUMBLE;
+				P_StartQuakeFromMobj(5, 32 * player->mo->scale, 512 * player->mo->scale, player->mo);
+				//P_KillPlayer(player, inflictor, source, damagetype);
 			}
 
 			switch (type)

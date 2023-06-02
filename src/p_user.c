@@ -4372,10 +4372,15 @@ void P_PlayerThink(player_t *player)
 		K_RespawnChecker(player);
 		player->rmomx = player->rmomy = 0;
 
+		player->markedfordeath = false; // In case we got here via a death sector or something.
+
 		if (player->respawn.state == RESPAWNST_DROP)
 		{
 			// Allows some turning
 			P_MovePlayer(player);
+
+			if (player->rings <= -20) // We got here from death, so give the player a fresh start.
+				player->rings = 5;
 		}
 	}
 	else if (player->mo->reactiontime)
