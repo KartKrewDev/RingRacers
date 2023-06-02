@@ -354,27 +354,27 @@ void RegisterNetXCmd(netxcmd_t id, void (*cmd_f)(UINT8 **p, INT32 playernum))
 
 void SendNetXCmdForPlayer(UINT8 playerid, netxcmd_t id, const void *param, size_t nparam)
 {
-	if (localtextcmd[playerid][0]+2+nparam > MAXTEXTCMD)
+	if (((UINT16*)localtextcmd[playerid])[0]+3+nparam > MAXTEXTCMD)
 	{
 		// for future reference: if (cht_debug) != debug disabled.
-		CONS_Alert(CONS_ERROR, M_GetText("NetXCmd buffer full, cannot add netcmd %d! (size: %d, needed: %s)\n"), id, localtextcmd[playerid][0], sizeu1(nparam));
+		CONS_Alert(CONS_ERROR, M_GetText("NetXCmd buffer full, cannot add netcmd %d! (size: %d, needed: %s)\n"), id, ((UINT16*)localtextcmd[playerid])[0], sizeu1(nparam));
 		return;
 	}
 
-	localtextcmd[playerid][0]++;
-	localtextcmd[playerid][localtextcmd[playerid][0]] = (UINT8)id;
+	((UINT16*)localtextcmd[playerid])[0]++;
+	localtextcmd[playerid][((UINT16*)localtextcmd[playerid])[0] + 1] = (UINT8)id;
 
 	if (param && nparam)
 	{
-		M_Memcpy(&localtextcmd[playerid][localtextcmd[playerid][0] + 1], param, nparam);
-		localtextcmd[playerid][0] = (UINT8)(localtextcmd[playerid][0] + (UINT8)nparam);
+		M_Memcpy(&localtextcmd[playerid][((UINT16*)localtextcmd[playerid])[0] + 2], param, nparam);
+		((UINT16*)localtextcmd[playerid])[0] = ((UINT16*)localtextcmd[playerid])[0] + (UINT8)nparam;
 	}
 }
 
 UINT8 GetFreeXCmdSize(UINT8 playerid)
 {
-	// -1 for the size and another -1 for the ID.
-	return (UINT8)(localtextcmd[playerid][0] - 2);
+	// -2 for the size and another -1 for the ID.
+	return (UINT8)(localtextcmd[playerid][0] - 3);
 }
 
 // Frees all textcmd memory for the specified tic
@@ -487,9 +487,9 @@ static boolean ExtraDataTicker(void)
 			if (bufferstart)
 			{
 				UINT8 *curpos = bufferstart;
-				UINT8 *bufferend = &curpos[curpos[0]+1];
+				UINT8 *bufferend = &curpos[((UINT16*)curpos)[0]+2];
 
-				curpos++;
+				curpos += 2;
 				while (curpos < bufferend)
 				{
 					if (*curpos < MAXNETXCMD && listnetxcmd[*curpos])
@@ -4255,7 +4255,7 @@ void SV_StopServer(void)
 	gamestate = wipegamestate = GS_NULL;
 
 	for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
-		localtextcmd[i][0] = 0;
+		((UINT16*)localtextcmd[i])[0] = 0;
 
 	for (i = firstticstosend; i < firstticstosend + BACKUPTICS; i++)
 		D_Clearticcmd(i);
@@ -4306,7 +4306,7 @@ static size_t TotalTextCmdPerTic(tic_t tic)
 	{
 		UINT8 *textcmd = D_GetExistingTextcmd(tic, i);
 		if ((!i || playeringame[i]) && textcmd)
-			total += 2 + textcmd[0]; // "+2" for size and playernum
+			total += 3 + ((UINT16*)textcmd)[0]; // "+2" for size and playernum
 	}
 
 	return total;
@@ -5301,9 +5301,17 @@ static void HandlePacketFromPlayer(SINT8 node)
 				tic_t tic = maketic;
 				UINT8 *textcmd;
 
+				UINT16 incoming_size;
+
+				{
+					UINT8 *incoming = netbuffer->u.textcmd;
+
+					incoming_size = READUINT16(incoming);
+				}
+
 				// ignore if the textcmd has a reported size of zero
 				// this shouldn't be sent at all
-				if (!netbuffer->u.textcmd[0])
+				if (!incoming_size)
 				{
 					DEBFILE(va("GetPacket: Textcmd with size 0 detected! (node %u, player %d)\n",
 						node, netconsole));
@@ -5312,11 +5320,11 @@ static void HandlePacketFromPlayer(SINT8 node)
 				}
 
 				// ignore if the textcmd size var is actually larger than it should be
-				// BASEPACKETSIZE + 1 (for size) + textcmd[0] should == datalength
-				if (netbuffer->u.textcmd[0] > (size_t)doomcom->datalength-BASEPACKETSIZE-1)
+				// BASEPACKETSIZE + 2 (for size) + textcmd[0] should == datalength
+				if (incoming_size > (size_t)doomcom->datalength-BASEPACKETSIZE-2)
 				{
 					DEBFILE(va("GetPacket: Bad Textcmd packet size! (expected %d, actual %s, node %u, player %d)\n",
-					netbuffer->u.textcmd[0], sizeu1((size_t)doomcom->datalength-BASEPACKETSIZE-1),
+					incoming_size, sizeu1((size_t)doomcom->datalength-BASEPACKETSIZE-2),
 						node, netconsole));
 					Net_UnAcknowledgePacket(node);
 					break;
@@ -5325,12 +5333,12 @@ static void HandlePacketFromPlayer(SINT8 node)
 				// check if tic that we are making isn't too large else we cannot send it :(
 				// doomcom->numslots+1 "+1" since doomcom->numslots can change within this time and sent time
 				j = software_MAXPACKETLENGTH
-					- (netbuffer->u.textcmd[0]+2+BASESERVERTICSSIZE
+					- (incoming_size + 3 + BASESERVERTICSSIZE
 					+ (doomcom->numslots+1)*sizeof(ticcmd_t));
 
 				// search a tic that have enougth space in the ticcmd
 				while ((textcmd = D_GetExistingTextcmd(tic, netconsole)),
-					(TotalTextCmdPerTic(tic) > j || netbuffer->u.textcmd[0] + (textcmd ? textcmd[0] : 0) > MAXTEXTCMD)
+					(TotalTextCmdPerTic(tic) > j || incoming_size + (textcmd ? ((UINT16*)textcmd)[0] : 0) > MAXTEXTCMD)
 					&& tic < firstticstosend + BACKUPTICS)
 					tic++;
 
@@ -5347,10 +5355,10 @@ static void HandlePacketFromPlayer(SINT8 node)
 				if (!textcmd) textcmd = D_GetTextcmd(tic, netconsole);
 
 				DEBFILE(va("textcmd put in tic %u at position %d (player %d) ftts %u mk %u\n",
-					tic, textcmd[0]+1, netconsole, firstticstosend, maketic));
+					tic, ((UINT16*)textcmd)[0]+2, netconsole, firstticstosend, maketic));
 
-				M_Memcpy(&textcmd[textcmd[0]+1], netbuffer->u.textcmd+1, netbuffer->u.textcmd[0]);
-				textcmd[0] += (UINT8)netbuffer->u.textcmd[0];
+				M_Memcpy(&textcmd[((UINT16*)textcmd)[0]+2], netbuffer->u.textcmd+2, incoming_size);
+				((UINT16*)textcmd)[0] += incoming_size;
 			}
 			break;
 		case PT_SAY:
@@ -5486,7 +5494,7 @@ static void HandlePacketFromPlayer(SINT8 node)
 					for (j = 0; j < numtxtpak; j++)
 					{
 						INT32 k = *txtpak++; // playernum
-						const size_t txtsize = txtpak[0]+1;
+						const size_t txtsize = ((UINT16*)txtpak)[0]+2;
 
 						if (i >= gametic) // Don't copy old net commands
 							M_Memcpy(D_GetTextcmd(i, k), txtpak, txtsize);
@@ -6012,7 +6020,7 @@ static void CL_SendClientCmd(void)
 		// Send extra data if needed
 		for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
 		{
-			if (localtextcmd[i][0])
+			if (((UINT16*)localtextcmd[i])[0])
 			{
 				switch (i)
 				{
@@ -6030,10 +6038,10 @@ static void CL_SendClientCmd(void)
 						break;
 				}
 
-				M_Memcpy(netbuffer->u.textcmd, localtextcmd[i], localtextcmd[i][0]+1);
+				M_Memcpy(netbuffer->u.textcmd, localtextcmd[i], ((UINT16*)localtextcmd[i])[0]+2);
 				// All extra data have been sent
-				if (HSendPacket(servernode, true, 0, localtextcmd[i][0]+1)) // Send can fail...
-					localtextcmd[i][0] = 0;
+				if (HSendPacket(servernode, true, 0, ((UINT16*)localtextcmd[i])[0]+2)) // Send can fail...
+					((UINT16*)localtextcmd[i])[0] = 0;
 			}
 		}
 	}
@@ -6133,14 +6141,14 @@ static void SV_SendTics(void)
 				for (j = 0; j < MAXPLAYERS; j++)
 				{
 					UINT8 *textcmd = D_GetExistingTextcmd(i, j);
-					INT32 size = textcmd ? textcmd[0] : 0;
+					INT32 size = textcmd ? ((UINT16*)textcmd)[0] : 0;
 
 					if ((!j || playeringame[j]) && size)
 					{
 						(*ntextcmd)++;
 						WRITEUINT8(bufpos, j);
-						M_Memcpy(bufpos, textcmd, size + 1);
-						bufpos += size + 1;
+						WRITEUINT16(bufpos, ((UINT16*)textcmd)[0]);
+						WRITEMEM(bufpos, &textcmd[2], size);
 					}
 				}
 			}
