@@ -8095,7 +8095,7 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 			levelfadecol = 0;
 			wipetype = wipe_encore_towhite;
 		}
-		else if (encoremode)
+		else if (encoremode || (skipstats == 1))
 		{
 			levelfadecol = 0;
 			wipetype = wipe_encore_towhite;
