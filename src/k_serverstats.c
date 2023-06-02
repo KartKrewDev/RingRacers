@@ -98,7 +98,16 @@ void SV_LoadStats(void)
 
 	save.p += headerlen;
 	UINT8 version = READUINT8(save.p);
-	(void)version; // for now
+	if (version > SERVERSTATSVER)
+	{
+		P_SaveBufferFree(&save);
+		I_Error("Existing %s is from the future! (expected %d, got %d)", SERVERSTATSFILE, SERVERSTATSVER, version);
+	}
+	else if (version < SERVERSTATSVER)
+	{
+		// We're converting - let'd create a backup.
+		FIL_WriteFile(va("%s" PATHSEP "%s.bak", srb2home, SERVERSTATSFILE), save.buffer, save.size);
+	}
 
 	numtracked = READUINT32(save.p);
 

@@ -417,3 +417,31 @@ gp_rank_e K_CalculateGPGrade(gpRank_t *rankData)
 
 	return retGrade;
 }
+
+/*--------------------------------------------------
+	UINT16 K_GetGradeColor(gp_rank_e grade)
+
+		See header file for description.
+--------------------------------------------------*/
+UINT16 K_GetGradeColor(gp_rank_e grade)
+{
+	switch (grade)
+	{
+		case GRADE_E:
+			return SKINCOLOR_BLUE;
+		case GRADE_D:
+			return SKINCOLOR_TURTLE;
+		case GRADE_C:
+			return SKINCOLOR_ORANGE;
+		case GRADE_B:
+			return SKINCOLOR_RED;
+		case GRADE_A:
+			return SKINCOLOR_MAGENTA;
+		case GRADE_S:
+			return SKINCOLOR_PIGEON;
+		default:
+			break;
+	}
+
+	return SKINCOLOR_NONE;
+}

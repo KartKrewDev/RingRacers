@@ -662,17 +662,16 @@ static int mobj_set(lua_State *L)
 		break;
 	case mobj_skin: // set skin by name
 	{
-		INT32 i;
-		char skin[SKINNAMESIZE+1]; // all skin names are limited to this length
-		strlcpy(skin, luaL_checkstring(L, 3), sizeof skin);
-		strlwr(skin); // all skin names are lowercase
-		for (i = 0; i < numskins; i++)
-			if (fastcmp(skins[i].name, skin))
-			{
-				if (!mo->player || R_SkinUsable(mo->player-players, i, false))
-					mo->skin = &skins[i];
-				return 0;
-			}
+		const char *name = luaL_checkstring(L, 3);
+		INT32 skin = R_SkinAvailable(name);
+
+		if (skin != -1)
+		{
+			if (!mo->player || R_SkinUsable(mo->player-players, skin, false))
+				mo->skin = &skins[skin];
+
+			return 0;
+		}
 		return luaL_error(L, "mobj.skin '%s' not found!", skin);
 	}
 	case mobj_color:

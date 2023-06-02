@@ -404,6 +404,8 @@ void M_CharacterSelectInit(void)
 	memset(setup_explosions, 0, sizeof(setup_explosions));
 	setup_animcounter = 0;
 
+	UINT32 localskinhash[MAXSPLITSCREENPLAYERS];
+
 	for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
 	{
 		// Default to no follower / match colour.
@@ -414,6 +416,9 @@ void M_CharacterSelectInit(void)
 		// Set default selected profile to the last used profile for each player:
 		// (Make sure we don't overshoot it somehow if we deleted profiles or whatnot)
 		setup_player[i].profilen = min(cv_lastprofile[i].value, PR_GetNumProfiles());
+
+		// Assistant for comparisons.
+		localskinhash[i] = quickncasehash(cv_skin[i].string, SKINNAMESIZE);
 	}
 
 	for (i = 0; i < numskins; i++)
@@ -436,7 +441,14 @@ void M_CharacterSelectInit(void)
 
 		for (j = 0; j < MAXSPLITSCREENPLAYERS; j++)
 		{
-			if (!strcmp(cv_skin[j].string, skins[i].name))
+			// See also R_SkinAvailable
+
+			if (localskinhash[j] != skins[i].namehash)
+				continue;
+
+			if (!stricmp(cv_skin[j].string, skins[i].name))
+				continue;
+
 			{
 				setup_player[j].gridx = x;
 				setup_player[j].gridy = y;

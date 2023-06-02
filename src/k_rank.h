@@ -26,6 +26,7 @@ struct gpRank_t
 	UINT8 totalPlayers;
 
 	UINT8 position;
+	UINT8 skin;
 
 	UINT32 winPoints;
 	UINT32 totalPoints;
@@ -79,6 +80,20 @@ void K_InitGrandPrixRank(gpRank_t *rankData);
 --------------------------------------------------*/
 
 gp_rank_e K_CalculateGPGrade(gpRank_t *rankData);
+
+
+/*--------------------------------------------------
+	UINT16 K_GetGradeColor(gp_rank_e grade)
+
+		Maps grades to skincolors for HUD purposes.
+
+	Input Arguments:-
+		grade - gp_rank_e representing an achieved ranking.
+
+	Return:-
+		skincolor ID representing the achieved grade.
+--------------------------------------------------*/
+UINT16 K_GetGradeColor(gp_rank_e grade);
 
 
 #ifdef __cplusplus

@@ -19,7 +19,7 @@ menuitem_t OPTIONS_DataErase[] =
 	{IT_STRING | IT_CALL, "Erase Statistics Data", "Be careful! What's deleted is gone forever!",
 		NULL, {.routine = M_EraseData}, EC_STATISTICS, 0},
 
-	{IT_STRING | IT_CALL, "Erase GP & Time Attack Data", "Be careful! What's deleted is gone forever!",
+	{IT_STRING | IT_CALL, "Erase GP & Record Data", "Be careful! What's deleted is gone forever!",
 		NULL, {.routine = M_EraseData}, EC_TIMEATTACK, 0},
 
 	{IT_STRING | IT_CALL, "\x85\x45rase all Game Data", "Be careful! What's deleted is gone forever!",
@@ -89,7 +89,7 @@ void M_EraseData(INT32 choice)
 	else if (optionsmenu.erasecontext == EC_STATISTICS)
 		eschoice = M_GetText("Statistics data");
 	else if (optionsmenu.erasecontext == EC_TIMEATTACK)
-		eschoice = M_GetText("GP & Time Attack data");
+		eschoice = M_GetText("GP & Record data");
 	else if (optionsmenu.erasecontext == EC_ALLGAME)
 		eschoice = M_GetText("ALL game data");
 	else

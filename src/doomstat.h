@@ -112,12 +112,47 @@ extern preciptype_t curWeather;
 
 /** Time attack information, currently a very small structure.
   */
+
+struct skinrecord_t
+{
+	UINT32 wins;
+
+	// Purely assistive in gamedata save processes
+	UINT32 _saveid;
+};
+
+struct unloaded_skin_t
+{
+	char name[SKINNAMESIZE+1];
+	UINT32 namehash;
+
+	skinrecord_t records;
+
+	unloaded_skin_t *next;
+};
+
+extern unloaded_skin_t *unloadedskins;
+
+struct skinreference_t
+{
+	unloaded_skin_t *unloaded;
+	UINT8 id;
+};
+
+// mapvisited is now a set of flags that says what we've done in the map.
+#define MV_VISITED      	(1)
+#define MV_BEATEN       	(1<<1)
+#define MV_ENCORE       	(1<<2)
+#define MV_SPBATTACK    	(1<<3)
+#define MV_MAX          	(MV_VISITED|MV_BEATEN|MV_ENCORE|MV_SPBATTACK)
+#define MV_FINISHNEEDED		(1<<7)
+#define MV_PERSISTUNLOADED	(MV_SPBATTACK|MV_FINISHNEEDED)
+
 struct recorddata_t
 {
+	UINT8 mapvisited;
 	tic_t time; ///< Time in which the level was finished.
 	tic_t lap;  ///< Best lap time for this level.
-	//UINT32 score; ///< Score when the level was finished.
-	//UINT16 rings; ///< Rings when the level was finished.
 };
 
 #define KARTSPEED_AUTO -1
@@ -142,15 +177,8 @@ struct cupwindata_t
 	UINT8 best_placement;
 	gp_rank_e best_grade;
 	boolean got_emerald;
+	skinreference_t best_skin;
 };
-
-// mapvisited is now a set of flags that says what we've done in the map.
-#define MV_VISITED      (1)
-#define MV_BEATEN       (1<<1)
-#define MV_ENCORE       (1<<2)
-#define MV_SPBATTACK    (1<<3)
-#define MV_MAX          (MV_VISITED|MV_BEATEN|MV_ENCORE|MV_SPBATTACK)
-#define MV_MP           ((MV_MAX+1)<<1)
 
 // Set if homebrew PWAD stuff has been added.
 extern boolean modifiedgame;
@@ -363,11 +391,16 @@ struct customoption_t
 #define CUPCACHE_SPECIAL (CUPCACHE_BONUS+MAXBONUSLIST)
 #define CUPCACHE_MAX (CUPCACHE_SPECIAL+1)
 
+#define MAXCUPNAME 16 // includes \0, for cleaner savedata
+
 struct cupheader_t
 {
 	UINT16 id;								///< Cup ID
 	UINT8 monitor;							///< Monitor graphic 1-9 or A-Z
-	char name[15];							///< Cup title (14 chars)
+
+	char name[MAXCUPNAME];					///< Cup title
+	UINT32 namehash;						///< Cup title hash
+
 	char icon[9];							///< Name of the icon patch
 	char *levellist[CUPCACHE_MAX];			///< List of levels that belong to this cup
 	INT16 cachedlevels[CUPCACHE_MAX];		///< IDs in levellist, bonusgame, and specialstage
@@ -380,6 +413,18 @@ struct cupheader_t
 
 extern cupheader_t *kartcupheaders; // Start of cup linked list
 extern UINT16 numkartcupheaders;
+
+struct unloaded_cupheader_t
+{
+	char name[MAXCUPNAME];
+	UINT32 namehash;
+
+	cupwindata_t windata[4];
+
+	unloaded_cupheader_t *next;
+};
+
+extern unloaded_cupheader_t *unloadedcupheaders;
 
 #define MAXMAPLUMPNAME 64 // includes \0, for cleaner savedata
 #define MAXSTAFF 3
@@ -400,6 +445,7 @@ struct mapheader_t
 {
 	// Core game information, not user-modifiable directly
 	char *lumpname;						///< Lump name can be really long
+	UINT32 lumpnamehash;				///< quickncasehash(->lumpname, MAXMAPLUMPNAME)
 	lumpnum_t lumpnum;       			///< Lump number for the map, used by vres_GetMap
 
 	void *thumbnailPic;					///< Lump data for the level select thumbnail.
@@ -411,8 +457,7 @@ struct mapheader_t
 	UINT8 ghostCount;					///< Count of valid staff ghosts
 	staffbrief_t *ghostBrief[MAXSTAFF];	///< Mallocated array of names for each staff ghost
 
-	UINT8 mapvisited;					///< A set of flags that says what we've done in the map.
-	recorddata_t *mainrecord;			///< Stores best time attack data
+	recorddata_t records;				///< Stores completion/record attack data
 
 	cupheader_t *cup;					///< Cached cup
 
@@ -495,6 +540,18 @@ struct mapheader_t
 
 extern mapheader_t** mapheaderinfo;
 extern INT32 nummapheaders, mapallocsize;
+
+struct unloaded_mapheader_t
+{
+	char *lumpname;
+	UINT32 lumpnamehash;
+
+	recorddata_t records;
+
+	unloaded_mapheader_t *next;
+};
+
+extern unloaded_mapheader_t *unloadedmapheaders;
 
 // Gametypes
 #define NUMGAMETYPEFREESLOTS (128)

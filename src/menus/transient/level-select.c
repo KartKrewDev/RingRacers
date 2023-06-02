@@ -88,7 +88,7 @@ boolean M_CanShowLevelInList(INT16 mapnum, levelsearch_t *levelsearch)
 	{
 		// Check for completion
 		if ((mapheaderinfo[mapnum]->menuflags & LF2_FINISHNEEDED)
-		&& !(mapheaderinfo[mapnum]->mapvisited & MV_BEATEN))
+		&& !(mapheaderinfo[mapnum]->records.mapvisited & MV_BEATEN))
 			return false;
 
 		// Check for unlock

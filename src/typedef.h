@@ -113,6 +113,9 @@ TYPEDEF (skincolor_t);
 
 // doomstat.h
 TYPEDEF (precipprops_t);
+TYPEDEF (skinrecord_t);
+TYPEDEF (unloaded_skin_t);
+TYPEDEF (skinreference_t);
 TYPEDEF (recorddata_t);
 TYPEDEF (cupwindata_t);
 TYPEDEF (scene_t);
@@ -125,8 +128,10 @@ TYPEDEF (customoption_t);
 TYPEDEF (gametype_t);
 TYPEDEF (staffbrief_t);
 TYPEDEF (mapheader_t);
+TYPEDEF (unloaded_mapheader_t);
 TYPEDEF (tolinfo_t);
 TYPEDEF (cupheader_t);
+TYPEDEF (unloaded_cupheader_t);
 
 // font.h
 TYPEDEF (font_t);

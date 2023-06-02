@@ -1851,6 +1851,47 @@ void D_SRB2Main(void)
 	{
 		PR_ApplyProfile(cv_ttlprofilen.value, 0);
 
+		if (gamedata->importprofilewins == true)
+		{
+			profile_t *pr = PR_GetProfile(cv_ttlprofilen.value);
+			if (pr != NULL)
+			{
+				INT32 importskin = R_SkinAvailable(pr->skinname);
+				if (importskin != -1)
+				{
+					skins[importskin].records.wins = pr->wins;
+
+					cupheader_t *cup;
+					for (cup = kartcupheaders; cup; cup = cup->next)
+					{
+						for (i = 0; i < KARTGP_MAX; i++)
+						{
+							if (cup->windata[i].best_placement == 0)
+								continue;
+							cup->windata[i].best_skin.id = importskin;
+							cup->windata[i].best_skin.unloaded = NULL;
+						}
+					}
+
+					unloaded_cupheader_t *unloadedcup;
+					for (unloadedcup = unloadedcupheaders; unloadedcup; unloadedcup = unloadedcup->next)
+					{
+						for (i = 0; i < KARTGP_MAX; i++)
+						{
+							if (unloadedcup->windata[i].best_placement == 0)
+								continue;
+							unloadedcup->windata[i].best_skin.id = importskin;
+							unloadedcup->windata[i].best_skin.unloaded = NULL;
+						}
+					}
+
+					CONS_Printf(" Wins for profile \"%s\" imported onto character \"%s\"\n", pr->profilename, skins[importskin].name);
+				}
+			}
+
+			gamedata->importprofilewins = false;
+		}
+
 		for (i = 1; i < cv_splitplayers.value; i++)
 		{
 			PR_ApplyProfile(cv_lastprofile[i].value, i);

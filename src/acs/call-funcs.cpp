@@ -264,16 +264,12 @@ static bool ACS_GetStateFromString(const char *word, statenum_t *type)
 --------------------------------------------------*/
 static bool ACS_GetSkinFromString(const char *word, INT32 *type)
 {
-	for (int i = 0; i < numskins; i++)
-	{
-		if (fastcmp(word, skins[i].name))
-		{
-			*type = i;
-			return true;
-		}
-	}
+	INT32 skin = R_SkinAvailable(word);
+	if (skin == -1)
+		return false;
 
-	return false;
+	*type = skin;
+	return true;
 }
 
 /*--------------------------------------------------
@@ -293,7 +289,7 @@ static bool ACS_GetColorFromString(const char *word, skincolornum_t *type)
 {
 	for (int i = 0; i < numskincolors; i++)
 	{
-		if (fastcmp(word, skins[i].name))
+		if (fastcmp(word, skincolors[i].name))
 		{
 			*type = static_cast<skincolornum_t>(i);
 			return true;

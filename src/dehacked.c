@@ -465,39 +465,81 @@ static void DEH_LoadDehackedFile(MYFILE *f, boolean mainfile)
 				//
 				else if (fastcmp(word, "CUP"))
 				{
-					cupheader_t *cup = kartcupheaders;
-					cupheader_t *prev = NULL;
-
-					while (cup)
+					size_t len = strlen(word2);
+					if (len <= MAXCUPNAME-1)
 					{
-						if (fastcmp(cup->name, word2))
+						cupheader_t *cup = kartcupheaders;
+						cupheader_t *prev = NULL;
+						UINT32 hash = quickncasehash(word2, MAXCUPNAME);
+
+						while (cup)
 						{
-							// Only a major mod if editing stuff that isn't your own!
-							G_SetGameModified(multiplayer, true);
-							break;
+							if (hash == cup->namehash && fastcmp(cup->name, word2))
+							{
+								// Only a major mod if editing stuff that isn't your own!
+								G_SetGameModified(multiplayer, true);
+								break;
+							}
+
+							prev = cup;
+							cup = cup->next;
 						}
 
-						prev = cup;
-						cup = cup->next;
-					}
+						// Nothing found, add to the end.
+						if (!cup)
+						{
+							cup = Z_Calloc(sizeof (cupheader_t), PU_STATIC, NULL);
+							cup->id = numkartcupheaders;
+							cup->monitor = 1;
+							deh_strlcpy(cup->name, word2,
+								sizeof(cup->name), va("Cup header %s: name", word2));
+							cup->namehash = hash;
 
-					// Nothing found, add to the end.
-					if (!cup)
+							// Check to see if we have any custom cup record data that we could substitute in.
+							unloaded_cupheader_t *unloadedcup, *unloadedprev = NULL;
+							for (unloadedcup = unloadedcupheaders; unloadedcup; unloadedprev = unloadedcup, unloadedcup = unloadedcup->next)
+							{
+								if (unloadedcup->namehash != hash)
+									continue;
+
+								if (strcasecmp(word2, unloadedcup->name) != 0)
+									continue;
+
+								// Copy in standings, etc.
+								M_Memcpy(&cup->windata, &unloadedcup->windata, sizeof(cup->windata));
+
+								// Remove this entry from the chain.
+								if (unloadedprev)
+								{
+									unloadedprev->next = unloadedcup->next;
+								}
+								else
+								{
+									unloadedcupheaders = unloadedcup->next;
+								}
+
+								// Finally, free.
+								Z_Free(unloadedcup);
+
+								break;
+							}
+
+							if (prev != NULL)
+								prev->next = cup;
+							if (kartcupheaders == NULL)
+								kartcupheaders = cup;
+							numkartcupheaders++;
+							CONS_Printf("Added cup %d ('%s')\n", cup->id, cup->name);
+						}
+
+						readcupheader(f, cup);
+
+					}
+					else
 					{
-						cup = Z_Calloc(sizeof (cupheader_t), PU_STATIC, NULL);
-						cup->id = numkartcupheaders;
-						cup->monitor = 1;
-						deh_strlcpy(cup->name, word2,
-							sizeof(cup->name), va("Cup header %s: name", word2));
-						if (prev != NULL)
-							prev->next = cup;
-						if (kartcupheaders == NULL)
-							kartcupheaders = cup;
-						numkartcupheaders++;
-						CONS_Printf("Added cup %d ('%s')\n", cup->id, cup->name);
+						deh_warning("Cup header's name %s is too long (%s characters VS %d max)", word2, sizeu1(len), (MAXCUPNAME-1));
+						ignorelines(f);
 					}
-
-					readcupheader(f, cup);
 				}
 				else if (fastcmp(word, "WEATHER") || fastcmp(word, "PRECIP") || fastcmp(word, "PRECIPITATION"))
 				{

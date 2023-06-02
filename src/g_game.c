@@ -200,9 +200,13 @@ mapheader_t** mapheaderinfo = {NULL};
 INT32 nummapheaders = 0;
 INT32 mapallocsize = 0;
 
+unloaded_mapheader_t *unloadedmapheaders = NULL;
+
 // Kart cup definitions
 cupheader_t *kartcupheaders = NULL;
 UINT16 numkartcupheaders = 0;
+
+unloaded_cupheader_t *unloadedcupheaders = NULL;
 
 static boolean exitgame = false;
 static boolean retrying = false;
@@ -444,44 +448,60 @@ consvar_t cv_rumble[MAXSPLITSCREENPLAYERS] = {
 char player_names[MAXPLAYERS][MAXPLAYERNAME+1];
 INT32 player_name_changes[MAXPLAYERS];
 
-// Allocation for time and nights data
-void G_AllocMainRecordData(INT16 i)
-{
-	if (i > nummapheaders || !mapheaderinfo[i])
-		I_Error("G_AllocMainRecordData: Internal map ID %d not found (nummapheaders = %d)\n", i, nummapheaders);
-	if (!mapheaderinfo[i]->mainrecord)
-		mapheaderinfo[i]->mainrecord = Z_Malloc(sizeof(recorddata_t), PU_STATIC, NULL);
-	memset(mapheaderinfo[i]->mainrecord, 0, sizeof(recorddata_t));
-}
-
 // MAKE SURE YOU SAVE DATA BEFORE CALLING THIS
 void G_ClearRecords(void)
 {
-	INT16 i;
-	cupheader_t *cup;
+	UINT16 i;
 
-	for (i = 0; i < nummapheaders; ++i)
+	for (i = 0; i < numskins; i++)
 	{
-		if (mapheaderinfo[i]->mainrecord)
-		{
-			Z_Free(mapheaderinfo[i]->mainrecord);
-			mapheaderinfo[i]->mainrecord = NULL;
-		}
+		memset(&skins[i].records, 0, sizeof(skins[i].records));
 	}
 
+	for (i = 0; i < nummapheaders; i++)
+	{
+		memset(&mapheaderinfo[i]->records, 0, sizeof(recorddata_t));
+	}
+
+	cupheader_t *cup;
 	for (cup = kartcupheaders; cup; cup = cup->next)
 	{
 		memset(&cup->windata, 0, sizeof(cup->windata));
 	}
+
+	unloaded_skin_t *unloadedskin, *nextunloadedskin = NULL;
+	for (unloadedskin = unloadedskins; unloadedskin; unloadedskin = nextunloadedskin)
+	{
+		nextunloadedskin = unloadedskin->next;
+		Z_Free(unloadedskin);
+	}
+	unloadedskins = NULL;
+
+	unloaded_mapheader_t *unloadedmap, *nextunloadedmap = NULL;
+	for (unloadedmap = unloadedmapheaders; unloadedmap; unloadedmap = nextunloadedmap)
+	{
+		nextunloadedmap = unloadedmap->next;
+		Z_Free(unloadedmap->lumpname);
+		Z_Free(unloadedmap);
+	}
+	unloadedmapheaders = NULL;
+
+	unloaded_cupheader_t *unloadedcup, *nextunloadedcup = NULL;
+	for (unloadedcup = unloadedcupheaders; unloadedcup; unloadedcup = nextunloadedcup)
+	{
+		nextunloadedcup = unloadedcup->next;
+		Z_Free(unloadedcup);
+	}
+	unloadedcupheaders = NULL;
 }
 
 // For easy retrieval of records
 tic_t G_GetBestTime(INT16 map)
 {
-	if (!mapheaderinfo[map] || !mapheaderinfo[map]->mainrecord || mapheaderinfo[map]->mainrecord->time <= 0)
+	if (!mapheaderinfo[map] || mapheaderinfo[map]->records.time <= 0)
 		return (tic_t)UINT32_MAX;
 
-	return mapheaderinfo[map]->mainrecord->time;
+	return mapheaderinfo[map]->records.time;
 }
 
 // BE RIGHT BACK
@@ -490,10 +510,10 @@ tic_t G_GetBestTime(INT16 map)
 /*
 tic_t G_GetBestLap(INT16 map)
 {
-	if (!mapheaderinfo[map] || !mapheaderinfo[map]->mainrecord || mapheaderinfo[map]->mainrecord->lap <= 0)
+	if (!mapheaderinfo[map] || mapheaderinfo[map]->records.lap <= 0)
 		return (tic_t)UINT32_MAX;
 
-	return mapheaderinfo[map]->mainrecord->lap;
+	return mapheaderinfo[map]->records.lap;
 }
 */
 
@@ -621,32 +641,28 @@ void G_UpdateRecords(void)
 {
 	UINT8 earnedEmblems;
 
-	// Record new best time
-	if (!mapheaderinfo[gamemap-1]->mainrecord)
-		G_AllocMainRecordData(gamemap-1);
-
 	if (modeattacking & ATTACKING_TIME)
 	{
 		tic_t time = players[consoleplayer].realtime;
 		if (players[consoleplayer].pflags & PF_NOCONTEST)
 			time = UINT32_MAX;
-		if (((mapheaderinfo[gamemap-1]->mainrecord->time == 0) || (time < mapheaderinfo[gamemap-1]->mainrecord->time))
+		if (((mapheaderinfo[gamemap-1]->records.time == 0) || (time < mapheaderinfo[gamemap-1]->records.time))
 		&& (time < UINT32_MAX)) // DNF
-			mapheaderinfo[gamemap-1]->mainrecord->time = time;
+			mapheaderinfo[gamemap-1]->records.time = time;
 	}
 	else
 	{
-		mapheaderinfo[gamemap-1]->mainrecord->time = 0;
+		mapheaderinfo[gamemap-1]->records.time = 0;
 	}
 
 	if (modeattacking & ATTACKING_LAP)
 	{
-		if ((mapheaderinfo[gamemap-1]->mainrecord->lap == 0) || (bestlap < mapheaderinfo[gamemap-1]->mainrecord->lap))
-			mapheaderinfo[gamemap-1]->mainrecord->lap = bestlap;
+		if ((mapheaderinfo[gamemap-1]->records.lap == 0) || (bestlap < mapheaderinfo[gamemap-1]->records.lap))
+			mapheaderinfo[gamemap-1]->records.lap = bestlap;
 	}
 	else
 	{
-		mapheaderinfo[gamemap-1]->mainrecord->lap = 0;
+		mapheaderinfo[gamemap-1]->records.lap = 0;
 	}
 
 	// Check emblems when level data is updated
@@ -807,9 +823,13 @@ INT32 G_MapNumber(const char * name)
 #endif
 	{
 		INT32 map;
+		UINT32 hash = quickncasehash(name, MAXMAPLUMPNAME);
 
 		for (map = 0; map < nummapheaders; ++map)
 		{
+			if (hash != mapheaderinfo[map]->lumpnamehash)
+				continue;
+
 			if (strcasecmp(mapheaderinfo[map]->lumpname, name) != 0)
 				continue;
 
@@ -3982,16 +4002,16 @@ static void G_UpdateVisited(void)
 		return;
 
 	// Update visitation flags
-	mapheaderinfo[prevmap]->mapvisited |= MV_BEATEN;
+	mapheaderinfo[prevmap]->records.mapvisited |= MV_BEATEN;
 
 	if (encoremode == true)
 	{
-		mapheaderinfo[prevmap]->mapvisited |= MV_ENCORE;
+		mapheaderinfo[prevmap]->records.mapvisited |= MV_ENCORE;
 	}
 
 	if (modeattacking & ATTACKING_SPB)
 	{
-		mapheaderinfo[prevmap]->mapvisited |= MV_SPBATTACK;
+		mapheaderinfo[prevmap]->records.mapvisited |= MV_SPBATTACK;
 	}
 
 	if (modeattacking)
@@ -4446,6 +4466,7 @@ static void G_DoCompleted(void)
 
 	grandprixinfo.rank.prisons += numtargets;
 	grandprixinfo.rank.position = MAXPLAYERS;
+	grandprixinfo.rank.skin = MAXSKINS;
 
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
@@ -4475,7 +4496,12 @@ static void G_DoCompleted(void)
 
 			if (players[i].bot == false)
 			{
-				grandprixinfo.rank.position = min(grandprixinfo.rank.position, K_GetPodiumPosition(&players[i]));
+				UINT8 podiumposition = K_GetPodiumPosition(&players[i]);
+				if (podiumposition <= grandprixinfo.rank.position)
+				{
+					grandprixinfo.rank.position = podiumposition;
+					grandprixinfo.rank.skin = players[i].skin;
+				}
 			}
 		}
 	}
@@ -4746,7 +4772,7 @@ void G_LoadGameSettings(void)
 }
 
 #define GD_VERSIONCHECK 0xBA5ED123 // Change every major version, as usual
-#define GD_VERSIONMINOR 2 // Change every format update
+#define GD_VERSIONMINOR 3 // Change every format update
 
 static const char *G_GameDataFolder(void)
 {
@@ -4767,7 +4793,13 @@ void G_LoadGameData(void)
 	boolean gridunusable = false;
 	savebuffer_t save = {0};
 
+	UINT16 emblemreadcount = MAXEMBLEMS;
+	UINT16 unlockreadcount = MAXUNLOCKABLES;
+	UINT16 conditionreadcount = MAXCONDITIONSETS;
+	size_t unlockreadsize = sizeof(UINT16);
+
 	//For records
+	UINT32 numgamedataskins;
 	UINT32 numgamedatamapheaders;
 	UINT32 numgamedatacups;
 
@@ -4819,6 +4851,12 @@ void G_LoadGameData(void)
 		P_SaveBufferFree(&save);
 		I_Error("Game data is from the future! (expected %d, got %d)\nRename or delete %s (maybe in %s) and try again.", GD_VERSIONMINOR, versionMinor, gamedatafilename, gdfolder);
 	}
+	else if (versionMinor < GD_VERSIONMINOR)
+	{
+		// We're converting - let'd create a backup.
+		FIL_WriteFile(va("%s" PATHSEP "%s.bak", srb2home, gamedatafilename), save.buffer, save.size);
+	}
+
 	if ((versionMinor == 0 || versionMinor == 1)
 #ifdef DEVELOP
 		|| M_CheckParm("-resetchallengegrid")
@@ -4846,7 +4884,16 @@ void G_LoadGameData(void)
 
 		gamedata->pendingkeyrounds = READUINT32(save.p);
 		gamedata->pendingkeyroundoffset = READUINT8(save.p);
-		gamedata->keyspending = READUINT8(save.p);
+
+		if (versionMinor < 3)
+		{
+			gamedata->keyspending = READUINT8(save.p);
+		}
+		else
+		{
+			gamedata->keyspending = READUINT16(save.p);
+		}
+
 		gamedata->chaokeys = READUINT16(save.p);
 
 		gamedata->everloadedaddon = (boolean)READUINT8(save.p);
@@ -4870,32 +4917,39 @@ void G_LoadGameData(void)
 		}
 	}
 
+	if (versionMinor < 3)
+	{
+		emblemreadcount = 512;
+		unlockreadcount = conditionreadcount = UINT8_MAX;
+		unlockreadsize = sizeof(UINT8);
+	}
+
 	// To save space, use one bit per collected/achieved/unlocked flag
-	for (i = 0; i < MAXEMBLEMS;)
+	for (i = 0; i < emblemreadcount;)
 	{
 		rtemp = READUINT8(save.p);
-		for (j = 0; j < 8 && j+i < MAXEMBLEMS; ++j)
+		for (j = 0; j < 8 && j+i < emblemreadcount; ++j)
 			gamedata->collected[j+i] = ((rtemp >> j) & 1);
 		i += j;
 	}
-	for (i = 0; i < MAXUNLOCKABLES;)
+	for (i = 0; i < unlockreadcount;)
 	{
 		rtemp = READUINT8(save.p);
-		for (j = 0; j < 8 && j+i < MAXUNLOCKABLES; ++j)
+		for (j = 0; j < 8 && j+i < unlockreadcount; ++j)
 			gamedata->unlocked[j+i] = ((rtemp >> j) & 1);
 		i += j;
 	}
-	for (i = 0; i < MAXUNLOCKABLES;)
+	for (i = 0; i < unlockreadcount;)
 	{
 		rtemp = READUINT8(save.p);
-		for (j = 0; j < 8 && j+i < MAXUNLOCKABLES; ++j)
+		for (j = 0; j < 8 && j+i < unlockreadcount; ++j)
 			gamedata->unlockpending[j+i] = ((rtemp >> j) & 1);
 		i += j;
 	}
-	for (i = 0; i < MAXCONDITIONSETS;)
+	for (i = 0; i < conditionreadcount;)
 	{
 		rtemp = READUINT8(save.p);
-		for (j = 0; j < 8 && j+i < MAXCONDITIONSETS; ++j)
+		for (j = 0; j < 8 && j+i < conditionreadcount; ++j)
 			gamedata->achieved[j+i] = ((rtemp >> j) & 1);
 		i += j;
 	}
@@ -4904,7 +4958,7 @@ void G_LoadGameData(void)
 	{
 		UINT16 burn = READUINT16(save.p); // Previous challengegridwidth
 		UINT8 height = (versionMinor > 0) ? CHALLENGEGRIDHEIGHT : 5;
-		save.p += (burn * height * sizeof(UINT8)); // Step over previous grid data
+		save.p += (burn * height * unlockreadsize); // Step over previous grid data
 
 		gamedata->challengegridwidth = 0;
 		Z_Free(gamedata->challengegrid);
@@ -4917,11 +4971,23 @@ void G_LoadGameData(void)
 		if (gamedata->challengegridwidth)
 		{
 			gamedata->challengegrid = Z_Malloc(
-				(gamedata->challengegridwidth * CHALLENGEGRIDHEIGHT * sizeof(UINT8)),
+				(gamedata->challengegridwidth * CHALLENGEGRIDHEIGHT * sizeof(UINT16)),
 				PU_STATIC, NULL);
-			for (i = 0; i < (gamedata->challengegridwidth * CHALLENGEGRIDHEIGHT); i++)
+			if (unlockreadsize == sizeof(UINT8))
 			{
-				gamedata->challengegrid[i] = READUINT8(save.p);
+				for (i = 0; i < (gamedata->challengegridwidth * CHALLENGEGRIDHEIGHT); i++)
+				{
+					gamedata->challengegrid[i] = READUINT8(save.p);
+					if (gamedata->challengegrid[i] == unlockreadcount)
+						gamedata->challengegrid[i] = MAXUNLOCKABLES;
+				}
+			}
+			else
+			{
+				for (i = 0; i < (gamedata->challengegridwidth * CHALLENGEGRIDHEIGHT); i++)
+				{
+					gamedata->challengegrid[i] = READUINT16(save.p);
+				}
 			}
 		}
 		else
@@ -4933,44 +4999,129 @@ void G_LoadGameData(void)
 	gamedata->timesBeaten = READUINT32(save.p);
 
 	// Main records
+
+	skinreference_t *tempskinreferences = NULL;
+
+	if (versionMinor < 3)
+	{
+		gamedata->importprofilewins = true;
+		numgamedataskins = 0;
+	}
+	else
+	{
+		numgamedataskins = READUINT32(save.p);
+
+		if (numgamedataskins)
+		{
+			tempskinreferences = Z_Malloc(
+				numgamedataskins * sizeof (skinreference_t),
+				PU_STATIC,
+				NULL
+			);
+
+			for (i = 0; i < numgamedataskins; i++)
+			{
+				char skinname[SKINNAMESIZE+1];
+				INT32 skin;
+
+				READSTRINGN(save.p, skinname, SKINNAMESIZE);
+				skin = R_SkinAvailable(skinname);
+
+				skinrecord_t dummyrecord;
+
+				dummyrecord.wins = READUINT32(save.p);
+				dummyrecord._saveid = i;
+
+				CONS_Printf(" (TEMPORARY DISPLAY) skinname is \"%s\", has %u wins\n", skinname, dummyrecord.wins);
+
+				tempskinreferences[i].id = MAXSKINS;
+
+				if (skin != -1)
+				{
+					// We found a skin, so assign the win.
+
+					M_Memcpy(&skins[skin].records, &dummyrecord, sizeof(skinrecord_t));
+
+					tempskinreferences[i].id = skin;
+					tempskinreferences[i].unloaded = NULL;
+				}
+				else if (dummyrecord.wins)
+				{
+					// Invalid, but we don't want to lose all the juicy statistics.
+					// Instead, update a FILO linked list of "unloaded skins".
+
+					unloaded_skin_t *unloadedskin =
+						Z_Malloc(
+							sizeof(unloaded_skin_t),
+							PU_STATIC, NULL
+						);
+
+					// Establish properties, for later retrieval on file add.
+					strlcpy(unloadedskin->name, skinname, sizeof(unloadedskin->name));
+					unloadedskin->namehash = quickncasehash(unloadedskin->name, SKINNAMESIZE);
+
+					// Insert at the head, just because it's convenient.
+					unloadedskin->next = unloadedskins;
+					unloadedskins = unloadedskin;
+
+					// Finally, copy into.
+					M_Memcpy(&unloadedskin->records, &dummyrecord, sizeof(skinrecord_t));
+
+					tempskinreferences[i].unloaded = unloadedskin;
+				}
+			}
+		}
+	}
+
 	numgamedatamapheaders = READUINT32(save.p);
-	if (numgamedatamapheaders >= NEXTMAP_SPECIAL)
-		goto datacorrupt;
 
 	for (i = 0; i < numgamedatamapheaders; i++)
 	{
 		char mapname[MAXMAPLUMPNAME];
 		INT16 mapnum;
-		tic_t rectime;
-		tic_t reclap;
 
-		READSTRINGN(save.p, mapname, sizeof(mapname));
+		READSTRINGL(save.p, mapname, MAXMAPLUMPNAME);
 		mapnum = G_MapNumber(mapname);
 
-		rtemp = READUINT8(save.p);
-		rectime = (tic_t)READUINT32(save.p);
-		reclap  = (tic_t)READUINT32(save.p);
+		recorddata_t dummyrecord;
+
+		dummyrecord.mapvisited = READUINT8(save.p);
+		dummyrecord.time = (tic_t)READUINT32(save.p);
+		dummyrecord.lap  = (tic_t)READUINT32(save.p);
 
 		if (mapnum < nummapheaders && mapheaderinfo[mapnum])
 		{
 			// Valid mapheader, time to populate with record data.
 
-			if ((mapheaderinfo[mapnum]->mapvisited = rtemp) & ~MV_MAX)
-				goto datacorrupt;
-
-			if (rectime || reclap)
-			{
-				G_AllocMainRecordData((INT16)i);
-				mapheaderinfo[i]->mainrecord->time = rectime;
-				mapheaderinfo[i]->mainrecord->lap = reclap;
-				//CONS_Printf("ID %d, Time = %d, Lap = %d\n", i, rectime/35, reclap/35);
-			}
+			dummyrecord.mapvisited &= MV_MAX;
+			M_Memcpy(&mapheaderinfo[mapnum]->records, &dummyrecord, sizeof(recorddata_t));
 		}
-		else
+		else if (
+			((dummyrecord.mapvisited & MV_PERSISTUNLOADED) != 0
+				&& (dummyrecord.mapvisited & MV_BEATEN) != 0)
+			|| dummyrecord.time != 0
+			|| dummyrecord.lap != 0
+		)
 		{
-			// Since it's not worth declaring the entire gamedata
-			// corrupt over extra maps, we report and move on.
-			CONS_Alert(CONS_WARNING, "Map with lumpname %s does not exist, time record data will be discarded\n", mapname);
+			// Invalid, but we don't want to lose all the juicy statistics.
+			// Instead, update a FILO linked list of "unloaded mapheaders".
+
+			unloaded_mapheader_t *unloadedmap =
+				Z_Malloc(
+					sizeof(unloaded_mapheader_t),
+					PU_STATIC, NULL
+				);
+
+			// Establish properties, for later retrieval on file add.
+			unloadedmap->lumpname = Z_StrDup(mapname);
+			unloadedmap->lumpnamehash = quickncasehash(unloadedmap->lumpname, MAXMAPLUMPNAME);
+
+			// Insert at the head, just because it's convenient.
+			unloadedmap->next = unloadedmapheaders;
+			unloadedmapheaders = unloadedmap;
+
+			// Finally, copy into.
+			M_Memcpy(&unloadedmap->records, &dummyrecord, sizeof(recorddata_t));
 		}
 	}
 
@@ -4980,15 +5131,22 @@ void G_LoadGameData(void)
 
 		for (i = 0; i < numgamedatacups; i++)
 		{
-			char cupname[16];
+			char cupname[MAXCUPNAME];
 			cupheader_t *cup;
 
+			cupwindata_t dummywindata[4];
+
 			// Find the relevant cup.
-			READSTRINGN(save.p, cupname, sizeof(cupname));
+			READSTRINGL(save.p, cupname, sizeof(cupname));
+			UINT32 hash = quickncasehash(cupname, MAXCUPNAME);
 			for (cup = kartcupheaders; cup; cup = cup->next)
 			{
+				if (cup->namehash != hash)
+					continue;
+
 				if (strcmp(cup->name, cupname))
 					continue;
+
 				break;
 			}
 
@@ -4997,22 +5155,91 @@ void G_LoadGameData(void)
 			{
 				rtemp = READUINT8(save.p);
 
-				// ...but only record it if we actually found the associated cup.
-				if (cup)
-				{
-					cup->windata[j].best_placement = (rtemp & 0x0F);
-					cup->windata[j].best_grade = (rtemp & 0x70)>>4;
-					if (rtemp & 0x80)
-					{
-						if (j == 0)
-							goto datacorrupt;
+				dummywindata[j].best_placement = (rtemp & 0x0F);
+				dummywindata[j].best_grade = (rtemp & 0x70)>>4;
+				dummywindata[j].got_emerald = !!(rtemp & 0x80);
 
-						cup->windata[j].got_emerald = true;
+				dummywindata[j].best_skin.id = MAXSKINS;
+				dummywindata[j].best_skin.unloaded = NULL;
+				if (versionMinor >= 3)
+				{
+					UINT32 _saveid = READUINT32(save.p);
+					if (_saveid < numgamedataskins)
+					{
+						M_Memcpy(&dummywindata[j].best_skin, &tempskinreferences[_saveid], sizeof(dummywindata[j].best_skin));
 					}
 				}
 			}
+
+			if (versionMinor < 3)
+			{
+				// We now require backfilling of placement information.	
+
+				cupwindata_t bestwindata;
+				bestwindata.best_placement = 0;
+
+				j = KARTGP_MAX;
+				while (j > 0)
+				{
+					j--;
+
+					if (bestwindata.best_placement == 0)
+					{
+						if (dummywindata[j].best_placement != 0)
+						{
+							M_Memcpy(&bestwindata, &dummywindata[j], sizeof(bestwindata));
+						}
+						continue;
+					}
+
+					if (dummywindata[j].best_placement != 0)
+					{
+						if (dummywindata[j].best_placement < bestwindata.best_placement)
+							bestwindata.best_placement = dummywindata[j].best_placement;
+
+						if (dummywindata[j].best_grade > bestwindata.best_grade)
+							bestwindata.best_grade = dummywindata[j].best_grade;
+
+						bestwindata.got_emerald |= dummywindata[j].got_emerald;
+					}
+
+					M_Memcpy(&dummywindata[j], &bestwindata, sizeof(dummywindata[j]));
+				}
+			}
+
+			if (cup)
+			{
+				// We found a cup, so assign the windata.
+
+				M_Memcpy(&cup->windata, &dummywindata, sizeof(cup->windata));
+			}
+			else if (dummywindata[0].best_placement != 0)
+			{
+				// Invalid, but we don't want to lose all the juicy statistics.
+				// Instead, update a FILO linked list of "unloaded cupheaders".
+
+				unloaded_cupheader_t *unloadedcup =
+					Z_Malloc(
+						sizeof(unloaded_cupheader_t),
+						PU_STATIC, NULL
+					);
+
+				// Establish properties, for later retrieval on file add.
+				strlcpy(unloadedcup->name, cupname, sizeof(unloadedcup->name));
+				unloadedcup->namehash = quickncasehash(unloadedcup->name, MAXCUPNAME);
+
+				// Insert at the head, just because it's convenient.
+				unloadedcup->next = unloadedcupheaders;
+				unloadedcupheaders = unloadedcup;
+
+				// Finally, copy into.
+				M_Memcpy(&unloadedcup->windata, &dummywindata, sizeof(unloadedcup->windata));
+			}
 		}
 	}
+
+	if (tempskinreferences)
+		Z_Free(tempskinreferences);
 
 	// done
 	P_SaveBufferFree(&save);
@@ -5074,7 +5301,7 @@ void G_DirtyGameData(void)
 void G_SaveGameData(void)
 {
 	size_t length;
-	INT32 i, j, numcups;
+	INT32 i, j;
 	cupheader_t *cup;
 	UINT8 btemp;
 	savebuffer_t save = {0};
@@ -5095,7 +5322,7 @@ void G_SaveGameData(void)
 	length = (4+1+1+
 		4+4+
 		(4*GDGT_MAX)+
-		4+1+1+2+
+		4+1+2+2+
 		1+1+1+
 		4+
 		(MAXEMBLEMS+(MAXUNLOCKABLES*2)+MAXCONDITIONSETS)+
@@ -5103,16 +5330,105 @@ void G_SaveGameData(void)
 
 	if (gamedata->challengegrid)
 	{
-		length += gamedata->challengegridwidth * CHALLENGEGRIDHEIGHT;
+		length += (gamedata->challengegridwidth * CHALLENGEGRIDHEIGHT) * 2;
 	}
-	length += 4 + (nummapheaders * (MAXMAPLUMPNAME+1+4+4));
 
-	numcups = 0;
+
+	UINT32 numgamedataskins = 0;
+	unloaded_skin_t *unloadedskin;
+
+	for (i = 0; i < numskins; i++)
+	{
+		// It's safe to assume a skin with no wins will have no other data worth keeping
+		if (skins[i].records.wins == 0)
+		{
+			continue;
+		}
+
+		numgamedataskins++;
+	}
+
+	for (unloadedskin = unloadedskins; unloadedskin; unloadedskin = unloadedskin->next)
+	{
+		// Ditto, with the exception that we should warn about it.
+		if (unloadedskin->records.wins == 0)
+		{
+			CONS_Alert(CONS_WARNING, "Unloaded skin \"%s\" has no wins!\n", unloadedskin->name);
+			continue;
+		}
+
+		numgamedataskins++;
+	}
+
+	length += 4 + (numgamedataskins * (SKINNAMESIZE+4));
+
+
+	UINT32 numgamedatamapheaders = 0;
+	unloaded_mapheader_t *unloadedmap;
+
+	for (i = 0; i < nummapheaders; i++)
+	{
+		// It's safe to assume a level with no mapvisited will have no other data worth keeping, since you get MV_VISITED just for opening it.
+		if (!(mapheaderinfo[i]->records.mapvisited & MV_MAX))
+		{
+			continue;
+		}
+
+		numgamedatamapheaders++;
+	}
+
+	for (unloadedmap = unloadedmapheaders; unloadedmap; unloadedmap = unloadedmap->next)
+	{
+		// Ditto, with the exception that we should warn about it.
+		if (!(unloadedmap->records.mapvisited & MV_MAX))
+		{
+			CONS_Alert(CONS_WARNING, "Unloaded map \"%s\" has no mapvisited!\n", unloadedmap->lumpname);
+			continue;
+		}
+
+		// It's far off on the horizon, beyond many memory limits, but prevent a potential misery moment of losing ALL your data.
+		if (++numgamedatamapheaders == UINT32_MAX)
+		{
+			CONS_Alert(CONS_WARNING, "Some unloaded map record data has been dropped due to datatype limitations.\n");
+			break;
+		}
+	}
+
+	length += 4 + (numgamedatamapheaders * (MAXMAPLUMPNAME+1+4+4));
+
+
+	UINT32 numgamedatacups = 0;
+	unloaded_cupheader_t *unloadedcup;
+
 	for (cup = kartcupheaders; cup; cup = cup->next)
 	{
-		numcups++;
+		// Results are populated downwards, so no Easy win
+		// means there's no important player data to save.
+		if (cup->windata[0].best_placement == 0)
+			continue;
+
+		numgamedatacups++;
 	}
-	length += 4 + (numcups * (4+16));
+
+	for (unloadedcup = unloadedcupheaders; unloadedcup; unloadedcup = unloadedcup->next)
+	{
+		// Ditto, with the exception that we should warn about it.
+		if (unloadedcup->windata[0].best_placement == 0)
+		{
+			CONS_Alert(CONS_WARNING, "Unloaded cup \"%s\" has no windata!\n", unloadedcup->name);
+			continue;
+		}
+
+		// It's far off on the horizon, beyond many memory limits, but prevent a potential misery moment of losing ALL your data.
+		if (++numgamedatacups == UINT32_MAX)
+		{
+			CONS_Alert(CONS_WARNING, "Some unloaded cup standings data has been dropped due to datatype limitations.\n");
+			break;
+		}
+	}
+
+	length += 4 + (numgamedatacups * (MAXCUPNAME + 4*(1+4)));
+
 
 	if (P_SaveBufferAlloc(&save, length) == false)
 	{
@@ -5141,7 +5457,7 @@ void G_SaveGameData(void)
 
 	WRITEUINT32(save.p, gamedata->pendingkeyrounds); // 4
 	WRITEUINT8(save.p, gamedata->pendingkeyroundoffset); // 1
-	WRITEUINT8(save.p, gamedata->keyspending); // 1
+	WRITEUINT16(save.p, gamedata->keyspending); // 2
 	WRITEUINT16(save.p, gamedata->chaokeys); // 2
 
 	WRITEUINT8(save.p, gamedata->everloadedaddon); // 1
@@ -5187,12 +5503,12 @@ void G_SaveGameData(void)
 		i += j;
 	}
 
-	if (gamedata->challengegrid) // 2 + gamedata->challengegridwidth * CHALLENGEGRIDHEIGHT
+	if (gamedata->challengegrid) // 2 + (gamedata->challengegridwidth * CHALLENGEGRIDHEIGHT) * 2
 	{
 		WRITEUINT16(save.p, gamedata->challengegridwidth);
 		for (i = 0; i < (gamedata->challengegridwidth * CHALLENGEGRIDHEIGHT); i++)
 		{
-			WRITEUINT8(save.p, gamedata->challengegrid[i]);
+			WRITEUINT16(save.p, gamedata->challengegrid[i]);
 		}
 	}
 	else // 2
@@ -5203,44 +5519,160 @@ void G_SaveGameData(void)
 	WRITEUINT32(save.p, gamedata->timesBeaten); // 4
 
 	// Main records
-	WRITEUINT32(save.p, nummapheaders); // 4
 
-	for (i = 0; i < nummapheaders; i++) // nummapheaders * (255+1+4+4)
+	WRITEUINT32(save.p, numgamedataskins); // 4
+
 	{
-		// For figuring out which header to assign it to on load
-		WRITESTRINGN(save.p, mapheaderinfo[i]->lumpname, MAXMAPLUMPNAME);
+		// numgamedataskins * (SKINNAMESIZE+4)
 
-		WRITEUINT8(save.p, (mapheaderinfo[i]->mapvisited & MV_MAX));
+		UINT32 maxid = 0;
 
-		if (mapheaderinfo[i]->mainrecord)
+		for (i = 0; i < numskins; i++)
 		{
-			WRITEUINT32(save.p, mapheaderinfo[i]->mainrecord->time);
-			WRITEUINT32(save.p, mapheaderinfo[i]->mainrecord->lap);
+			if (skins[i].records.wins == 0)
+				continue;
+
+			WRITESTRINGN(save.p, skins[i].name, SKINNAMESIZE);
+
+			WRITEUINT32(save.p, skins[i].records.wins);
+
+			skins[i].records._saveid = maxid;
+			if (++maxid == numgamedataskins)
+				break;
 		}
-		else
+
+		if (maxid < numgamedataskins)
 		{
-			WRITEUINT32(save.p, 0);
-			WRITEUINT32(save.p, 0);
+			for (unloadedskin = unloadedskins; unloadedskin; unloadedskin = unloadedskin->next)
+			{
+				if (unloadedskin->records.wins == 0)
+					continue;
+
+				WRITESTRINGN(save.p, unloadedskin->name, SKINNAMESIZE);
+
+				WRITEUINT32(save.p, unloadedskin->records.wins);
+
+				unloadedskin->records._saveid = maxid;
+				if (++maxid == numgamedataskins)
+					break;
+			}
 		}
 	}
 
-	WRITEUINT32(save.p, numcups); // 4
+#define GETSKINREFSAVEID(ref, var) \
+	{ \
+		if (ref.unloaded != NULL) \
+			var = ref.unloaded->records._saveid;\
+		else if (ref.id < numskins)\
+			var = skins[ref.id].records._saveid; \
+		else \
+			var = UINT32_MAX; \
+	}
 
-	for (cup = kartcupheaders; cup; cup = cup->next)
+	WRITEUINT32(save.p, numgamedatamapheaders); // 4
+
+	if (numgamedatamapheaders)
 	{
-		// For figuring out which header to assign it to on load
-		WRITESTRINGN(save.p, cup->name, 16);
+		// numgamedatamapheaders * (MAXMAPLUMPNAME+1+4+4)
 
-		for (i = 0; i < KARTGP_MAX; i++)
+		for (i = 0; i < nummapheaders; i++)
 		{
-			btemp = min(cup->windata[i].best_placement, 0x0F);
-			btemp |= (cup->windata[i].best_grade<<4);
-			if (i != 0 && cup->windata[i].got_emerald == true)
-				btemp |= 0x80;
+			if (!(mapheaderinfo[i]->records.mapvisited & MV_MAX))
+				continue;
 
-			WRITEUINT8(save.p, btemp); // 4 * numcups
+			WRITESTRINGL(save.p, mapheaderinfo[i]->lumpname, MAXMAPLUMPNAME);
+
+			UINT8 mapvisitedtemp = (mapheaderinfo[i]->records.mapvisited & MV_MAX);
+
+			if ((mapheaderinfo[i]->menuflags & LF2_FINISHNEEDED))
+			{
+				mapvisitedtemp |= MV_FINISHNEEDED;
+			}
+
+			WRITEUINT8(save.p, mapvisitedtemp);
+
+			WRITEUINT32(save.p, mapheaderinfo[i]->records.time);
+			WRITEUINT32(save.p, mapheaderinfo[i]->records.lap);
+
+			if (--numgamedatamapheaders == 0)
+				break;
+		}
+
+		if (numgamedatamapheaders)
+		{
+			for (unloadedmap = unloadedmapheaders; unloadedmap; unloadedmap = unloadedmap->next)
+			{
+				if (!(unloadedmap->records.mapvisited & MV_MAX))
+					continue;
+
+				WRITESTRINGL(save.p, unloadedmap->lumpname, MAXMAPLUMPNAME);
+
+				WRITEUINT8(save.p, unloadedmap->records.mapvisited);
+
+				WRITEUINT32(save.p, unloadedmap->records.time);
+				WRITEUINT32(save.p, unloadedmap->records.lap);
+
+				if (--numgamedatamapheaders == 0)
+					break;
+			}
 		}
 	}
+
+
+	WRITEUINT32(save.p, numgamedatacups); // 4
+
+	if (numgamedatacups)
+	{
+		// numgamedatacups * (MAXCUPNAME + 4*(1+4))
+
+#define WRITECUPWINDATA(maybeunloadedcup) \
+		for (i = 0; i < KARTGP_MAX; i++) \
+		{ \
+			btemp = min(maybeunloadedcup->windata[i].best_placement, 0x0F); \
+			btemp |= (maybeunloadedcup->windata[i].best_grade<<4); \
+			if (maybeunloadedcup->windata[i].got_emerald == true) \
+				btemp |= 0x80; \
+			\
+			WRITEUINT8(save.p, btemp); \
+			\
+			GETSKINREFSAVEID(maybeunloadedcup->windata[i].best_skin, j); \
+			\
+			WRITEUINT32(save.p, j); \
+		}
+
+		for (cup = kartcupheaders; cup; cup = cup->next)
+		{
+			if (cup->windata[0].best_placement == 0)
+				continue;
+
+			WRITESTRINGL(save.p, cup->name, MAXCUPNAME);
+
+			WRITECUPWINDATA(cup);
+
+			if (--numgamedatacups == 0)
+				break;
+		}
+
+		if (numgamedatacups)
+		{
+			for (unloadedcup = unloadedcupheaders; unloadedcup; unloadedcup = unloadedcup->next)
+			{
+				if (unloadedcup->windata[0].best_placement == 0)
+					continue;
+
+				WRITESTRINGL(save.p, unloadedcup->name, MAXCUPNAME);
+
+				WRITECUPWINDATA(unloadedcup);
+
+				if (--numgamedatacups == 0)
+					break;
+			}
+		}
+
+#undef WRITECUPWINDATA
+	}
+
+#undef GETSKINREFSAVEID
 
 	length = save.p - save.buffer;
 
