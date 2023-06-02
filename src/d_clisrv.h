@@ -46,7 +46,7 @@ applications may follow different packet versions.
 // Networking and tick handling related.
 #define BACKUPTICS 512 // more than enough for most timeouts....
 #define CLIENTBACKUPTICS 32
-#define MAXTEXTCMD 256
+#define MAXTEXTCMD 512
 
 // No. of tics your controls can be delayed by.
 
@@ -419,7 +419,7 @@ struct doomdata_t
 		client4cmd_pak client4pak;          //         324 bytes(?)
 		servertics_pak serverpak;           //      132495 bytes (more around 360, no?)
 		serverconfig_pak servercfg;         //         773 bytes
-		UINT8 textcmd[MAXTEXTCMD+1];        //       66049 bytes (wut??? 64k??? More like 257 bytes...)
+		UINT8 textcmd[MAXTEXTCMD+2];        //       66049 bytes (wut??? 64k??? More like 258 bytes...)
 		char filetxpak[sizeof (filetx_pak)];//         139 bytes
 		char fileack[sizeof (fileack_pak)];
 		UINT8 filereceived;
