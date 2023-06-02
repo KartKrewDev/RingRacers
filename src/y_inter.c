@@ -1589,7 +1589,11 @@ void Y_Ticker(void)
 void Y_DetermineIntermissionType(void)
 {
 	// no intermission for GP events
-	if (grandprixinfo.gp == true && grandprixinfo.eventmode != GPEVENT_NONE)
+	if ((grandprixinfo.gp == true && grandprixinfo.eventmode != GPEVENT_NONE)
+	// or for failing in time attack mode
+	|| (modeattacking && (players[consoleplayer].pflags & PF_NOCONTEST))
+	// or for explicit requested skip (outside of modeattacking)
+	|| (modeattacking == ATTACKING_NONE && skipstats != 0))
 	{
 		intertype = int_none;
 		return;

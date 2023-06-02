@@ -4520,9 +4520,7 @@ static void G_DoCompleted(void)
 	// If the current gametype has no intermission screen set, then don't start it.
 	Y_DetermineIntermissionType();
 
-	if ((skipstats && !modeattacking)
-		|| (modeattacking && (players[consoleplayer].pflags & PF_NOCONTEST))
-		|| (intertype == int_none))
+	if (intertype == int_none)
 	{
 		G_UpdateVisited();
 		G_AfterIntermission();
