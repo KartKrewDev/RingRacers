@@ -4060,7 +4060,7 @@ const char *name3, uint8_t *key3, UINT16 *pwr3,
 const char *name4, uint8_t *key4, UINT16 *pwr4)
 {
 	INT32 n, newplayernum, i;
-	UINT8 buf[4 + MAXPLAYERNAME + PUBKEYLENGTH + MAXAVAILABILITY];
+	UINT8 buf[4 + MAXPLAYERNAME + PUBKEYLENGTH + MAXAVAILABILITY + sizeof(((serverplayer_t *)0)->powerlevels)];
 	UINT8 *buf_p = buf;
 	boolean newplayer = false;
 
