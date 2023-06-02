@@ -1989,7 +1989,7 @@ static void R_ProjectSprite(mobj_t *thing)
 			tz2 = FixedMul(MINZ, this_scale);
 		}
 
-		if (tx2 < -(FixedMul(tz2, fovtan[viewssnum])<<2) || tx > FixedMul(tz, fovtan[viewssnum])<<2) // too far off the side?
+		if ((tx2 / 4) < -(FixedMul(tz2, fovtan[viewssnum])) || (tx / 4) > FixedMul(tz, fovtan[viewssnum])) // too far off the side?
 			return;
 
 		yscale = FixedDiv(projectiony[viewssnum], tz);
