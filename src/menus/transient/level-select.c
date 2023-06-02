@@ -131,7 +131,7 @@ UINT16 M_CountLevelsToShowInList(levelsearch_t *levelsearch)
 
 UINT16 M_GetFirstLevelInList(UINT8 *i, levelsearch_t *levelsearch)
 {
-	INT16 mapnum = NEXTMAP_INVALID;
+	UINT16 mapnum = NEXTMAP_INVALID;
 
 	if (!levelsearch)
 		return NEXTMAP_INVALID;

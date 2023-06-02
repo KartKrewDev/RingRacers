@@ -183,7 +183,7 @@ boolean exitfadestarted = false;
 cutscene_t *cutscenes[128];
 textprompt_t *textprompts[MAX_PROMPTS];
 
-INT16 nextmapoverride;
+UINT16 nextmapoverride;
 UINT8 skipstats;
 
 // Pointers to each CTF flag
@@ -332,7 +332,7 @@ typedef struct joystickvector2_s
 
 boolean precache = true; // if true, load all graphics at start
 
-INT16 prevmap, nextmap;
+UINT16 prevmap, nextmap;
 
 static void weaponPrefChange(void);
 static void weaponPrefChange2(void);
@@ -3717,10 +3717,10 @@ UINT32 G_TOLFlag(INT32 pgametype)
 	return 0;
 }
 
-INT16 G_GetFirstMapOfGametype(UINT8 pgametype)
+UINT16 G_GetFirstMapOfGametype(UINT8 pgametype)
 {
 	UINT8 i = 0;
-	INT16 mapnum = NEXTMAP_INVALID;
+	UINT16 mapnum = NEXTMAP_INVALID;
 	levelsearch_t templevelsearch;
 
 	templevelsearch.cup = NULL;
@@ -4181,7 +4181,7 @@ static void G_GetNextMap(void)
 	// nextmap is 0-based, unlike gamemap
 	if (nextmapoverride != 0)
 	{
-		nextmap = (INT16)(nextmapoverride-1);
+		nextmap = (nextmapoverride-1);
 		setalready = true;
 	}
 	else if (roundqueue.size > 0)
