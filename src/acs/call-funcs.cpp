@@ -1653,6 +1653,64 @@ bool CallFunc_SetLineRenderStyle(ACSVM::Thread *thread, const ACSVM::Word *argV,
 }
 
 /*--------------------------------------------------
+	bool CallFunc_MapWarp(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
+
+		Immediately warps to another level.
+--------------------------------------------------*/
+
+bool CallFunc_MapWarp(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
+{
+	ACSVM::MapScope *map = NULL;
+
+	ACSVM::String *str = nullptr;
+
+	const char *levelName = NULL;
+	size_t levelLen = 0;
+
+	UINT16 nextmap = NEXTMAP_INVALID;
+
+	(void)argC;
+
+	if (exitcountdown == 1)
+	{
+		// An exit is already in progress.
+		return false;
+	}
+
+	map = thread->scopeMap;
+
+	str = map->getString(argV[0]);
+
+	levelName = str->str;
+	levelLen = str->len;
+
+	if (!levelLen || !levelName)
+	{
+		CONS_Alert(CONS_WARNING, "MapWarp level name was not provided.\n");
+	}
+
+	nextmap = G_MapNumber(levelName);
+
+	if (nextmap == NEXTMAP_INVALID)
+	{
+		CONS_Alert(CONS_WARNING, "MapWarp level %s is not valid or loaded.\n", levelName);
+		return false;
+	}
+
+	nextmapoverride = (nextmap + 1);
+
+	if (argV[1] == 0)
+		skipstats = 1;
+
+	exitcountdown = 1;
+
+	if (server)
+		SendNetXCmd(XD_EXITLEVEL, NULL, 0);
+
+	return false;
+}
+
+/*--------------------------------------------------
 	bool CallFunc_Get/SetLineProperty(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
 
 		Generic line property management.
