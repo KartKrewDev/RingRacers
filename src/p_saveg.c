@@ -5303,7 +5303,7 @@ static void P_NetArchiveMisc(savebuffer_t *save, boolean resending)
 	WRITEUINT32(save->p, cht_debug);
 }
 
-static inline boolean P_NetUnArchiveMisc(savebuffer_t *save, boolean reloading)
+static boolean P_NetUnArchiveMisc(savebuffer_t *save, boolean reloading)
 {
 	size_t i, j;
 	size_t numTasks;
