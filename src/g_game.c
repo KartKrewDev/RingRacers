@@ -3303,7 +3303,7 @@ void G_ExitLevel(void)
 			}
 		}
 
-		if (!G_GametypeUsesLives())
+		if (!G_GametypeUsesLives() || nextmapoverride != 0)
 			; // never force a retry
 		else if (specialstageinfo.valid == true || (gametyperules & GTR_BOSS))
 		{
