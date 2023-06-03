@@ -318,15 +318,16 @@ void K_ResetCeremony(void)
 
 	// Set up music for podium.
 	{
-		if (podiumData.rank.position == 1)
+		if (podiumData.rank.position <= 1)
 			mapmusrng = 2;
-		else if (podiumData.rank.position <= 3)
+		else if (podiumData.rank.position == 2
+			|| podiumData.rank.position == 3)
 			mapmusrng = 1;
 		else
 			mapmusrng = 0;
 
-		if (mapmusrng >= mapheaderinfo[gamemap-1]->musname_size)
-			mapmusrng = 0;
+		while (mapmusrng >= max(1, mapheaderinfo[gamemap-1]->musname_size))
+			mapmusrng--;
 
 		mapmusflags |= MUSIC_RELOADRESET;
 	}
