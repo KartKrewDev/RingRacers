@@ -112,7 +112,7 @@ UINT8 K_GetPodiumPosition(player_t *player)
 		}
 
 		other = &players[i];
-		if (other->spectator == true)
+		if (other->bot == false && other->spectator == true)
 		{
 			continue;
 		}
