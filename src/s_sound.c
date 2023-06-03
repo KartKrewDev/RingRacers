@@ -1665,7 +1665,14 @@ void S_SoundTestPlay(void)
 		{
 			// I'd personally like songs in sequence to last between 3 and 6 minutes.
 			const UINT32 loopduration = (soundtest.sequencemaxtime - S_GetMusicLoopPoint());
-			soundtest.sequencemaxtime += loopduration;
+
+			if (!loopduration)
+				;
+			else do
+			{
+				soundtest.sequencemaxtime += loopduration;
+			} while (soundtest.sequencemaxtime < 4*1000);
+			// If the track is EXTREMELY short, keep adding until about 4s!
 		}
 
 		// Only fade out if we're the last track for this song.
