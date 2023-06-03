@@ -146,6 +146,10 @@ void K_TimerInit(void)
 			P_InstaThrust(player->mo, player->mo->angle, K_GetKartSpeed(player, false, false));
 		}
 	}
+	else if (skipstats != 0)
+	{
+		S_StartSound(NULL, sfx_endwrp);
+	}
 
 	if ((gametyperules & (GTR_CATCHER|GTR_CIRCUIT)) == (GTR_CATCHER|GTR_CIRCUIT))
 	{

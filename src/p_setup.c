@@ -8308,9 +8308,6 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 	if (precache || dedicated)
 		R_PrecacheLevel();
 
-	nextmapoverride = 0;
-	skipstats = 0;
-
 	if (!demo.playback)
 	{
 		mapheaderinfo[gamemap-1]->records.mapvisited |= MV_VISITED;
@@ -8386,6 +8383,9 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 void P_PostLoadLevel(void)
 {
 	K_TimerInit();
+
+	nextmapoverride = 0;
+	skipstats = 0;
 
 	P_RunCachedActions();
 
