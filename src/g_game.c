@@ -3972,7 +3972,7 @@ void G_AddMapToBuffer(UINT16 map)
 //
 // G_UpdateVisited
 //
-static void G_UpdateVisited(void)
+void G_UpdateVisited(void)
 {
 	UINT8 i;
 	UINT8 earnedEmblems;
@@ -5574,7 +5574,7 @@ void G_SaveGameData(void)
 
 			UINT8 mapvisitedtemp = (mapheaderinfo[i]->records.mapvisited & MV_MAX);
 
-			if ((mapheaderinfo[i]->menuflags & LF2_FINISHNEEDED))
+			if ((mapheaderinfo[i]->menuflags & (LF2_FINISHNEEDED|LF2_HIDEINMENU)))
 			{
 				mapvisitedtemp |= MV_FINISHNEEDED;
 			}

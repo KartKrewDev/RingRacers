@@ -291,9 +291,9 @@ void K_FinishCeremony(void)
 
 	podiumData.ranking = true;
 
-	// Play the noise now
-	M_UpdateUnlockablesAndExtraEmblems(true, true);
-	G_SaveGameData();
+	// Play the noise now (via G_UpdateVisited's concluding gamedata save)
+	prevmap = gamemap-1;
+	G_UpdateVisited();
 }
 
 /*--------------------------------------------------
