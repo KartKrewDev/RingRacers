@@ -5530,7 +5530,10 @@ void G_SaveGameData(void)
 		for (i = 0; i < numskins; i++)
 		{
 			if (skins[i].records.wins == 0)
+			{
+				skins[i].records._saveid = UINT32_MAX;
 				continue;
+			}
 
 			WRITESTRINGN(save.p, skins[i].name, SKINNAMESIZE);
 
