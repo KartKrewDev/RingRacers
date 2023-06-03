@@ -4464,15 +4464,11 @@ static void G_DoCompleted(void)
 	G_SetGamestate(GS_NULL);
 	wipegamestate = GS_NULL;
 
-	grandprixinfo.rank.prisons += numtargets;
-	grandprixinfo.rank.position = MAXPLAYERS;
-	grandprixinfo.rank.skin = MAXSKINS;
-
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
 		if (playeringame[i])
 		{
-			// SRB2Kart: exitlevel shouldn't get you the points
+			// Exitlevel shouldn't get you the points
 			if (!players[i].exiting && !(players[i].pflags & PF_NOCONTEST))
 			{
 				clientPowerAdd[i] = 0;
@@ -4493,16 +4489,6 @@ static void G_DoCompleted(void)
 			}
 
 			G_PlayerFinishLevel(i); // take away cards and stuff
-
-			if (players[i].bot == false)
-			{
-				UINT8 podiumposition = K_GetPodiumPosition(&players[i]);
-				if (podiumposition <= grandprixinfo.rank.position)
-				{
-					grandprixinfo.rank.position = podiumposition;
-					grandprixinfo.rank.skin = players[i].skin;
-				}
-			}
 		}
 	}
 
@@ -4525,6 +4511,7 @@ static void G_DoCompleted(void)
 		|| (intertype == int_none))
 	{
 		G_UpdateVisited();
+		K_UpdateGPRank();
 		G_AfterIntermission();
 	}
 	else

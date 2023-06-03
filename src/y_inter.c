@@ -151,41 +151,6 @@ static void Y_CalculateMatchData(UINT8 rankingsmode, void (*comparison)(INT32))
 	{
 		getmainplayer = true;
 
-		{
-			// See also G_GetNextMap, M_DrawPause
-			data.showrank = false;
-			if (grandprixinfo.gp == true
-				&& netgame == false // TODO netgame Special Mode support
-				&& grandprixinfo.gamespeed >= KARTSPEED_NORMAL
-				&& roundqueue.size > 1
-				&& roundqueue.entries[roundqueue.size - 1].rankrestricted == true
-			)
-			{
-				if (roundqueue.position == roundqueue.size-1)
-				{
-					// On A rank pace? Then you get a chance for S rank!
-					gp_rank_e rankforline = K_CalculateGPGrade(&grandprixinfo.rank);
-
-					data.showrank = (rankforline >= GRADE_A);
-
-					data.linemeter =
-						(min(rankforline, GRADE_A)
-							* (2 * TICRATE)
-						) / GRADE_A;
-
-					// A little extra time to take it all in
-					timer += TICRATE;
-				}
-
-				if (gamedata->everseenspecial == true
-					|| roundqueue.position == roundqueue.size)
-				{
-					// Additional cases in which it should always be shown.
-					data.showrank = true;
-				}
-			}
-		}
-
 		data.encore = encoremode;
 
 		memset(data.jitter, 0, sizeof (data.jitter));
@@ -302,6 +267,44 @@ static void Y_CalculateMatchData(UINT8 rankingsmode, void (*comparison)(INT32))
 
 	if (getmainplayer == true)
 	{
+		// Okay, player scores have been set now - we can calculate GP-relevant material.
+		{
+			K_UpdateGPRank();
+
+			// See also G_GetNextMap, M_DrawPause
+			data.showrank = false;
+			if (grandprixinfo.gp == true
+				&& netgame == false // TODO netgame Special Mode support
+				&& grandprixinfo.gamespeed >= KARTSPEED_NORMAL
+				&& roundqueue.size > 1
+				&& roundqueue.entries[roundqueue.size - 1].rankrestricted == true
+			)
+			{
+				if (roundqueue.position == roundqueue.size-1)
+				{
+					// On A rank pace? Then you get a chance for S rank!
+					gp_rank_e rankforline = K_CalculateGPGrade(&grandprixinfo.rank);
+
+					data.showrank = (rankforline >= GRADE_A);
+
+					data.linemeter =
+						(min(rankforline, GRADE_A)
+							* (2 * TICRATE)
+						) / GRADE_A;
+
+					// A little extra time to take it all in
+					timer += TICRATE;
+				}
+
+				if (gamedata->everseenspecial == true
+					|| roundqueue.position == roundqueue.size)
+				{
+					// Additional cases in which it should always be shown.
+					data.showrank = true;
+				}
+			}
+		}
+
 		i = MAXPLAYERS;
 
 		for (j = 0; j < data.numplayers; j++)
