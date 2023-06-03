@@ -8075,7 +8075,14 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 			S_FadeMusic(0, FixedMul(
 				FixedDiv((F_GetWipeLength(wipedefs[wipe_level_toblack])-2)*NEWTICRATERATIO, NEWTICRATE), MUSICRATE));
 
-		if (!(reloadinggamestate || gamestate != GS_LEVEL))
+		if (reloadinggamestate)
+			;
+		else if (K_PodiumSequence())
+		{
+			// mapmusrng is set by local player position in K_ResetCeremony
+			S_InitLevelMusic(true);
+		}
+		else if (gamestate == GS_LEVEL)
 		{
 			if (ranspecialwipe == 2)
 			{

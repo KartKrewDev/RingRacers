@@ -316,6 +316,21 @@ void K_ResetCeremony(void)
 	podiumData.rank = grandprixinfo.rank;
 	podiumData.grade = K_CalculateGPGrade(&podiumData.rank);
 
+	// Set up music for podium.
+	{
+		if (podiumData.rank.position == 1)
+			mapmusrng = 2;
+		else if (podiumData.rank.position <= 3)
+			mapmusrng = 1;
+		else
+			mapmusrng = 0;
+
+		if (mapmusrng >= mapheaderinfo[gamemap-1]->musname_size)
+			mapmusrng = 0;
+
+		mapmusflags |= MUSIC_RELOADRESET;
+	}
+
 	if (!grandprixinfo.cup)
 	{
 		return;
