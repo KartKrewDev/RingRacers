@@ -8095,7 +8095,14 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 			levelfadecol = 0;
 			wipetype = wipe_encore_towhite;
 		}
-		else if (encoremode || (skipstats == 1))
+		else if (skipstats == 1)
+		{
+			if (ranspecialwipe != 2)
+				S_StartSound(NULL, sfx_s3k73);
+			levelfadecol = 0;
+			wipetype = wipe_encore_towhite;
+		}
+		else if (encoremode)
 		{
 			levelfadecol = 0;
 			wipetype = wipe_encore_towhite;
