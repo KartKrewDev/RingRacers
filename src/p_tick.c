@@ -873,43 +873,47 @@ void P_Ticker(boolean run)
 		}
 		else if (leveltime < starttime + TICRATE)
 		{
-			// Start countdown/music handling
-			if (leveltime == starttime-(3*TICRATE))
-			{
-				S_StartSound(NULL, sfx_s3ka7); // 3,
-				S_FadeMusic(0, 3500); //S_FadeOutStopMusic(3500); -- TODO the S_StopMusic callback can halt successor music instead
-			}
-			else if ((leveltime == starttime-(2*TICRATE)) || (leveltime == starttime-TICRATE))
-			{
-				S_StartSound(NULL, sfx_s3ka7); // 2, 1,
-			}
-			else if (leveltime == starttime)
-			{
-				S_StartSound(NULL, sfx_s3kad); // GO!
-			}
-			else if (leveltime == (starttime + (TICRATE/2)))
+			if (leveltime == (starttime + (TICRATE/2)))
 			{
 				// Plays the music after the starting countdown.
 				S_ChangeMusic(mapmusname, mapmusflags, true);
 				S_ShowMusicCredit();
 			}
+			else if (starttime != introtime)
+			{
+				// Start countdown/music handling
+				if (leveltime == starttime-(3*TICRATE))
+				{
+					S_StartSound(NULL, sfx_s3ka7); // 3,
+					S_FadeMusic(0, 3500); //S_FadeOutStopMusic(3500); -- TODO the S_StopMusic callback can halt successor music instead
+				}
+				else if ((leveltime == starttime-(2*TICRATE))
+					|| (leveltime == starttime-TICRATE))
+				{
+					S_StartSound(NULL, sfx_s3ka7); // 2, 1,
+				}
+				else if (leveltime == starttime)
+				{
+					S_StartSound(NULL, sfx_s3kad); // GO!
+				}
 
-			// POSITION!! music
-			if (encoremode)
-			{
-				// Encore humming starts immediately.
-				if (leveltime == 1)
-					S_ChangeMusicInternal("encore", true);
-			}
-			else
-			{
-				// Plays the POSITION music after the camera spin
-				if (leveltime == introtime)
-					S_ChangeMusicInternal(
-						(mapheaderinfo[gamemap-1]->positionmus[0]
-							? mapheaderinfo[gamemap-1]->positionmus
-							: "postn"
-						), true);
+				// POSITION!! music
+				if (encoremode)
+				{
+					// Encore humming starts immediately.
+					if (leveltime == 1)
+						S_ChangeMusicInternal("encore", true);
+				}
+				else
+				{
+					// Plays the POSITION music after the camera spin
+					if (leveltime == introtime)
+						S_ChangeMusicInternal(
+							(mapheaderinfo[gamemap-1]->positionmus[0]
+								? mapheaderinfo[gamemap-1]->positionmus
+								: "postn"
+							), true);
+				}
 			}
 		}
 
