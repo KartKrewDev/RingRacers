@@ -660,9 +660,9 @@ void Y_PlayerStandingsDrawer(y_data_t *standings, INT32 xoffset)
 // Y_RoundQueueDrawer
 //
 // Handles drawing the bottom-of-screen progression.
-// Currently requires intermission y_data to be active, but abstraction is feasible.
+// Currently requires intermission y_data for animation only.
 //
-void Y_RoundQueueDrawer(y_data_t *standings, boolean doanimations, boolean widescreen)
+void Y_RoundQueueDrawer(y_data_t *standings, INT32 offset, boolean doanimations, boolean widescreen)
 {
 	if (roundqueue.size == 0)
 	{
@@ -766,7 +766,7 @@ void Y_RoundQueueDrawer(y_data_t *standings, boolean doanimations, boolean wides
 	INT32 widthofroundqueue = 24*(workingqueuesize - 1);
 
 	INT32 x = (BASEVIDWIDTH - widthofroundqueue) / 2;
-	INT32 y;
+	INT32 y, basey = 167 + offset;
 
 	INT32 spacetospecial = 0;
 
@@ -829,13 +829,13 @@ void Y_RoundQueueDrawer(y_data_t *standings, boolean doanimations, boolean wides
 	if (upwa == true)
 	{
 		xiter -= 24;
-		V_DrawMappedPatch(xiter, 167, baseflags, queuebg_upwa, greymap);
+		V_DrawMappedPatch(xiter, basey, baseflags, queuebg_upwa, greymap);
 	}
 
 	while (xiter > -bufferspace)
 	{
 		xiter -= 24;
-		V_DrawMappedPatch(xiter, 167, baseflags, queuebg_flat, greymap);
+		V_DrawMappedPatch(xiter, basey, baseflags, queuebg_flat, greymap);
 	}
 
 	for (i = 0; i < workingqueuesize; i++)
@@ -846,9 +846,9 @@ void Y_RoundQueueDrawer(y_data_t *standings, boolean doanimations, boolean wides
 		upwa ^= true;
 		if (upwa == false)
 		{
-			y = 171;
+			y = basey + 4;
 
-			V_DrawMappedPatch(x, 167, baseflags, queuebg_down, greymap);
+			V_DrawMappedPatch(x, basey, baseflags, queuebg_down, greymap);
 
 			if (i+1 != workingqueuesize) // no more line?
 			{
@@ -857,17 +857,17 @@ void Y_RoundQueueDrawer(y_data_t *standings, boolean doanimations, boolean wides
 		}
 		else
 		{
-			y = 179;
+			y = basey + 12;
 
 			if (i+1 != workingqueuesize) // no more line?
 			{
-				V_DrawMappedPatch(x, 167, baseflags, queuebg_upwa, greymap);
+				V_DrawMappedPatch(x, basey, baseflags, queuebg_upwa, greymap);
 
 				choose_line = line_upwa;
 			}
 			else
 			{
-				V_DrawMappedPatch(x, 167, baseflags, queuebg_flat, greymap);
+				V_DrawMappedPatch(x, basey, baseflags, queuebg_flat, greymap);
 			}
 		}
 
@@ -936,7 +936,7 @@ void Y_RoundQueueDrawer(y_data_t *standings, boolean doanimations, boolean wides
 			// Draw the line to the right of the dot
 
 			V_DrawMappedPatch(
-				x - 1, 178,
+				x - 1, basey + 11,
 				baseflags,
 				choose_line[BPP_SHADOW],
 				NULL
@@ -969,7 +969,7 @@ void Y_RoundQueueDrawer(y_data_t *standings, boolean doanimations, boolean wides
 				else
 				{
 					V_DrawMappedPatch(
-						x - 1, 179,
+						x - 1, basey + 12,
 						baseflags,
 						choose_line[BPP_DONE],
 						colormap
@@ -988,7 +988,7 @@ void Y_RoundQueueDrawer(y_data_t *standings, boolean doanimations, boolean wides
 			}
 
 			V_DrawMappedPatch(
-				x - 1, 179,
+				x - 1, basey + 12,
 				baseflags,
 				choose_line[lineisfull ? BPP_DONE : BPP_AHEAD],
 				lineisfull ? colormap : NULL
@@ -1006,7 +1006,7 @@ void Y_RoundQueueDrawer(y_data_t *standings, boolean doanimations, boolean wides
 			while (xiter < BASEVIDWIDTH + bufferspace)
 			{
 				xiter += 24;
-				V_DrawMappedPatch(xiter, 167, baseflags, queuebg_flat, greymap);
+				V_DrawMappedPatch(xiter, basey, baseflags, queuebg_flat, greymap);
 			}
 
 			// Handle special entry on the end
@@ -1068,7 +1068,7 @@ void Y_RoundQueueDrawer(y_data_t *standings, boolean doanimations, boolean wides
 				}
 
 				// Special background bump
-				V_DrawMappedPatch(x2 - 13, 167, baseflags, queuebg_prize, greymap);
+				V_DrawMappedPatch(x2 - 13, basey, baseflags, queuebg_prize, greymap);
 
 				// Draw the final line
 				const fixed_t barstart = x + 6;
@@ -1095,14 +1095,14 @@ void Y_RoundQueueDrawer(y_data_t *standings, boolean doanimations, boolean wides
 						while (xiter < fillend)
 						{
 							V_DrawMappedPatch(
-								xiter - 1, 177,
+								xiter - 1, basey + 10,
 								baseflags,
 								line_flat[BPP_SHADOW],
 								NULL
 							);
 
 							V_DrawMappedPatch(
-								xiter - 1, 179,
+								xiter - 1, basey + 12,
 								baseflags,
 								line_flat[BPP_DONE],
 								colormap
@@ -1128,14 +1128,14 @@ void Y_RoundQueueDrawer(y_data_t *standings, boolean doanimations, boolean wides
 					while (xiter < barend)
 					{
 						V_DrawMappedPatch(
-							xiter - 1, 177,
+							xiter - 1, basey + 10,
 							baseflags,
 							line_flat[BPP_SHADOW],
 							NULL
 						);
 
 						V_DrawMappedPatch(
-							xiter - 1, 179,
+							xiter - 1, basey + 12,
 							baseflags,
 							line_flat[lineisfull ? BPP_DONE : BPP_AHEAD],
 							lineisfull ? colormap : NULL
@@ -1391,7 +1391,7 @@ skiptallydrawer:
 		goto finalcounter;
 
 	// Returns early if there's no roundqueue entries to draw
-	Y_RoundQueueDrawer(&data, true, false);
+	Y_RoundQueueDrawer(&data, 0, true, false);
 
 	if (netgame)
 	{

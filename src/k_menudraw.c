@@ -4378,13 +4378,13 @@ void M_DrawPause(void)
 		if (smallroundpatch != NULL)
 		{
 			V_DrawMappedPatch(
-				24, 152,
+				24, 152 + offset/2,
 				0,
 				smallroundpatch,
 				NULL);
 		}
 
-		Y_RoundQueueDrawer(&standings, false, false);
+		Y_RoundQueueDrawer(&standings, offset/2, false, false);
 	}
 }
 
