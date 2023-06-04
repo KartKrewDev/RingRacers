@@ -1102,6 +1102,7 @@ sfxinfo_t S_sfx[NUMSFX] =
   {"typri2", false,  64, 16, -1, NULL, 0,        -1,  -1, LUMPERROR, ""}, // SA2 final boss-type typewriting
   {"eggspr", false,  64, 16, -1, NULL, 0,        -1,  -1, LUMPERROR, ""}, // Sonic Unleashed Trap Spring
   {"achiev", false, 204,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, "Achievement"},
+  {"endwrp", false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""}, // End of a "Tutorial Teleport"
 
   // SRB2Kart - Drop target sounds
   {"kdtrg1", false,  64, 16, -1, NULL, 0,        -1,  -1, LUMPERROR, ""}, // Low energy, SF_X8AWAYSOUND
