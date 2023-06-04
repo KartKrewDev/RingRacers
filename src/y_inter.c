@@ -449,7 +449,7 @@ void Y_PlayerStandingsDrawer(y_data_t *standings, INT32 xoffset)
 
 	patch_t *resbar = W_CachePatchName("R_RESBAR", PU_PATCH); // Results bars for players
 
-	if (drawping || data.rankingsmode != 0)
+	if (drawping || standings->rankingsmode != 0)
 	{
 		inwardshim = 8;
 	}
@@ -604,15 +604,15 @@ void Y_PlayerStandingsDrawer(y_data_t *standings, INT32 xoffset)
 					);
 				}
 			}
-			else if (data.rankingsmode != 0)
+			else if (standings->rankingsmode != 0)
 			{
 				char *increasenum = NULL;
 
-				if (data.increase[pnum] != INT16_MIN)
+				if (standings->increase[pnum] != INT16_MIN)
 				{
 					increasenum = va(
 						"(%d)",
-						data.increase[pnum]
+						standings->increase[pnum]
 					);
 				}
 
