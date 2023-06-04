@@ -226,6 +226,7 @@ menu_t *M_InterruptMenuWithChallenges(menu_t *desiredmenu)
 		challengesmenu.requestflip = false;
 		challengesmenu.requestnew = false;
 		challengesmenu.chaokeyadd = false;
+		challengesmenu.chaokeyhold = 0;
 		challengesmenu.currentunlock = MAXUNLOCKABLES;
 		challengesmenu.unlockcondition = NULL;
 
@@ -284,6 +285,39 @@ void M_Challenges(INT32 choice)
 	M_SetupNextMenu(&MISC_ChallengesDef, false);
 }
 
+static boolean M_CanKeyHiliTile(void)
+{
+	// No keys to do it with?
+	if (gamedata->chaokeys == 0)
+		return false;
+
+	// No tile data?
+	if (challengesmenu.extradata == NULL)
+		return false;
+
+	// No selected tile?
+	if (challengesmenu.currentunlock >= MAXUNLOCKABLES)
+		return false;
+
+	// Already unlocked?
+	if (gamedata->unlocked[challengesmenu.currentunlock] == true)
+		return false;
+
+	// Marked as unskippable?
+	if (unlockables[challengesmenu.currentunlock].majorunlock == true)
+		return false;
+
+	UINT16 i = (challengesmenu.hilix * CHALLENGEGRIDHEIGHT) + challengesmenu.hiliy;
+
+	// Not a hinted tile OR a fresh board.
+	if (!(challengesmenu.extradata[i].flags & CHE_HINT)
+	&& (challengesmenu.unlockcount[CC_UNLOCKED] + challengesmenu.unlockcount[CC_TALLY] > 0))
+		return false;
+
+	// All good!
+	return true;
+}
+
 void M_ChallengesTick(void)
 {
 	const UINT8 pid = 0;
@@ -328,7 +362,38 @@ void M_ChallengesTick(void)
 		}
 	}
 
-	if (challengesmenu.pending && challengesmenu.fade < 5)
+	if (challengesmenu.chaokeyhold)
+	{
+		if (M_MenuExtraHeld(pid) && M_CanKeyHiliTile())
+		{
+			// Not pressed just this frame?
+			if (!M_MenuExtraPressed(pid))
+			{
+				challengesmenu.chaokeyhold++;
+
+				if (challengesmenu.chaokeyhold > CHAOHOLD_MAX)
+				{
+					gamedata->chaokeys--;
+					challengesmenu.chaokeyhold = 0;
+					challengesmenu.unlockcount[CC_CHAOANIM]++;
+
+					S_StartSound(NULL, sfx_chchng);
+
+					challengesmenu.pending = true;
+					//M_ChallengesAutoFocus(challengesmenu.currentunlock, false);
+					challengesmenu.unlockanim = UNLOCKTIME-1;
+				}
+			}
+		}
+		else
+		{
+			challengesmenu.chaokeyhold = 0;
+			challengesmenu.unlockcount[CC_CHAONOPE] = 6;
+			S_StartSound(NULL, sfx_s3k7b); //sfx_s3kb2
+		}
+	}
+
+	if ((challengesmenu.pending || challengesmenu.chaokeyhold) && challengesmenu.fade < 5)
 	{
 		// Fade increase.
 		challengesmenu.fade++;
@@ -486,7 +551,7 @@ void M_ChallengesTick(void)
 			}
 		}
 	}
-	else
+	else if (!challengesmenu.chaokeyhold)
 	{
 
 		// Tick down the tally. (currently not visible)
@@ -517,29 +582,15 @@ boolean M_ChallengesInputs(INT32 ch)
 	const boolean move = (menucmd[pid].dpad_ud != 0 || menucmd[pid].dpad_lr != 0);
 	(void) ch;
 
-	if (challengesmenu.fade || challengesmenu.chaokeyadd)
+	if (challengesmenu.fade || challengesmenu.chaokeyadd || challengesmenu.chaokeyhold)
 	{
 		;
 	}
-	else if (M_MenuExtraPressed(pid)
-		&& challengesmenu.extradata)
+	else if (M_MenuExtraPressed(pid))
 	{
-		i = (challengesmenu.hilix * CHALLENGEGRIDHEIGHT) + challengesmenu.hiliy;
-
-		if (challengesmenu.currentunlock < MAXUNLOCKABLES
-			&& !gamedata->unlocked[challengesmenu.currentunlock]
-			&& !unlockables[challengesmenu.currentunlock].majorunlock
-			&& ((challengesmenu.extradata[i].flags & CHE_HINT)
-				|| (challengesmenu.unlockcount[CC_UNLOCKED] + challengesmenu.unlockcount[CC_TALLY] == 0))
-			&& gamedata->chaokeys > 0)
+		if (M_CanKeyHiliTile())
 		{
-			gamedata->chaokeys--;
-			challengesmenu.unlockcount[CC_CHAOANIM]++;
-
-			S_StartSound(NULL, sfx_chchng);
-
-			challengesmenu.pending = true;
-			M_ChallengesAutoFocus(challengesmenu.currentunlock, false);
+			challengesmenu.chaokeyhold = 1;
 		}
 		else
 		{

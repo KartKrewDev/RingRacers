@@ -5333,7 +5333,7 @@ static void M_DrawChallengePreview(INT32 x, INT32 y)
 
 void M_DrawChallenges(void)
 {
-	INT32 x = currentMenu->x, explodex, selectx;
+	INT32 x = currentMenu->x, explodex, selectx = 0, selecty = 0;
 	INT32 y;
 	INT16 i, j;
 	const char *str;
@@ -5410,6 +5410,7 @@ void M_DrawChallenges(void)
 	}
 
 	selectx = explodex + (challengesmenu.hilix*challengesgridstep);
+	selecty = currentMenu->y + (challengesmenu.hiliy*challengesgridstep);
 
 	while (i >= 0 && x >= -(challengesgridstep*2))
 	{
@@ -5447,48 +5448,11 @@ void M_DrawChallenges(void)
 		challengesmenu.hilix,
 		challengesmenu.hiliy,
 		selectx,
-		currentMenu->y + (challengesmenu.hiliy*challengesgridstep),
+		selecty,
 		true);
 	M_DrawCharSelectExplosions(false, explodex, currentMenu->y);
 
 challengedesc:
-
-	// Chao Keys
-	{
-		patch_t *key = W_CachePatchName("UN_CHA00", PU_CACHE);
-		INT32 offs = challengesmenu.unlockcount[CC_CHAONOPE];
-		if (offs & 1)
-			offs = -offs;
-		offs /= 2;
-
-		if (gamedata->chaokeys > 9)
-		{
-			offs -= 6;
-			if (gamedata->chaokeys > 99)
-				offs -= 2; // as far as we can go
-		}
-
-		V_DrawFixedPatch((8+offs)*FRACUNIT, 5*FRACUNIT, FRACUNIT, 0, key, NULL);
-		V_DrawTimerString((27+offs), 9-challengesmenu.unlockcount[CC_CHAOANIM], 0, va("%u", gamedata->chaokeys));
-
-		offs = challengekeybarwidth;
-		if (gamedata->chaokeys < GDMAX_CHAOKEYS)
-			offs = ((gamedata->pendingkeyroundoffset * challengekeybarwidth)/GDCONVERT_ROUNDSTOKEY);
-
-		if (offs > 0)
-			V_DrawFill(1, 25, offs, 2, 0);
-		if (offs < challengekeybarwidth)
-			V_DrawFadeFill(1+offs, 25, challengekeybarwidth-offs, 2, 0, 31, challengetransparentstrength);
-	}
-
-	// Tally
-	{
-		str = va("%d/%d",
-			challengesmenu.unlockcount[CC_UNLOCKED] + challengesmenu.unlockcount[CC_TALLY],
-			challengesmenu.unlockcount[CC_TOTAL]
-			);
-		V_DrawRightAlignedTimerString(BASEVIDWIDTH-7, 9-challengesmenu.unlockcount[CC_ANIM], 0, str);
-	}
 
 	// Name bar
 	{
@@ -5509,6 +5473,88 @@ challengedesc:
 
 		offset = V_LSTitleLowStringWidth(str, 0) / 2;
 		V_DrawLSTitleLowString(BASEVIDWIDTH/2 - offset, y+6, 0, str);
+	}
+
+	// Tally
+	{
+		str = va("%d/%d",
+			challengesmenu.unlockcount[CC_UNLOCKED] + challengesmenu.unlockcount[CC_TALLY],
+			challengesmenu.unlockcount[CC_TOTAL]
+			);
+		V_DrawRightAlignedTimerString(BASEVIDWIDTH-7, 9-challengesmenu.unlockcount[CC_ANIM], 0, str);
+	}
+
+	// Chao Keys
+	{
+		patch_t *key = W_CachePatchName("UN_CHA00", PU_CACHE);
+		INT32 offs = challengesmenu.unlockcount[CC_CHAONOPE];
+		if (offs & 1)
+			offs = -offs;
+		offs /= 2;
+
+		if (gamedata->chaokeys > 9)
+		{
+			offs -= 6;
+			if (gamedata->chaokeys > 99)
+				offs -= 2; // as far as we can go
+		}
+
+		fixed_t keyx = (8+offs)*FRACUNIT, keyy = 5*FRACUNIT;
+
+		if (!challengesmenu.chaokeyhold)
+			V_DrawFixedPatch(keyx, keyy, FRACUNIT, 0, key, NULL);
+
+		V_DrawTimerString((27+offs), 9-challengesmenu.unlockcount[CC_CHAOANIM], 0, va("%u", gamedata->chaokeys));
+
+		offs = challengekeybarwidth;
+		if (gamedata->chaokeys < GDMAX_CHAOKEYS)
+			offs = ((gamedata->pendingkeyroundoffset * challengekeybarwidth)/GDCONVERT_ROUNDSTOKEY);
+
+		if (offs > 0)
+			V_DrawFill(1, 25, offs, 2, 0);
+		if (offs < challengekeybarwidth)
+			V_DrawFadeFill(1+offs, 25, challengekeybarwidth-offs, 2, 0, 31, challengetransparentstrength);
+
+		if (challengesmenu.chaokeyhold)
+		{
+			fixed_t keyholdrotation = 0, radius = challengesgridstep;
+
+			if (challengesmenu.chaokeyhold < CHAOHOLD_BEGIN)
+			{
+				radius = (challengesmenu.chaokeyhold*radius)*(FRACUNIT/CHAOHOLD_BEGIN);
+				keyx += challengesmenu.chaokeyhold*((selectx*FRACUNIT) - keyx)/CHAOHOLD_BEGIN;
+				keyy += challengesmenu.chaokeyhold*((selecty*FRACUNIT) - keyy)/CHAOHOLD_BEGIN;
+			}
+			else
+			{
+				if (challengesmenu.chaokeyhold < CHAOHOLD_MAX - CHAOHOLD_END)
+				{
+					radius <<= FRACBITS;
+
+					keyholdrotation = 360 * ((challengesmenu.chaokeyhold - CHAOHOLD_BEGIN))
+						* (FRACUNIT/(CHAOHOLD_MAX - (CHAOHOLD_BEGIN + CHAOHOLD_END)));
+				}
+				else
+				{
+					radius = ((CHAOHOLD_MAX - challengesmenu.chaokeyhold)*radius)*(FRACUNIT/CHAOHOLD_END);
+				}
+
+				keyx = selectx*FRACUNIT;
+				keyy = selecty*FRACUNIT;
+			}
+
+			if (radius)
+			{
+				angle_t ang = (FixedAngle(
+					keyholdrotation
+					) >> ANGLETOFINESHIFT) & FINEMASK;
+
+				keyx += FixedMul(radius, FINESINE(ang));
+				keyy -= FixedMul(radius, FINECOSINE(ang));
+			}
+		}
+
+		V_DrawFixedPatch(keyx, keyy, FRACUNIT, 0, key, NULL);
 	}
 
 	// Derived from M_DrawCharSelectPreview

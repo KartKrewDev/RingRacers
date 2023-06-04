@@ -1176,6 +1176,10 @@ void M_DrawAddons(void);
 
 #define TILEFLIP_MAX 16
 
+#define CHAOHOLD_MAX (3*TICRATE/2)
+#define CHAOHOLD_BEGIN 7
+#define CHAOHOLD_END 3
+
 extern struct timeattackmenu_s {
 
 	tic_t ticker;		// How long the menu's been open for
@@ -1201,7 +1205,9 @@ extern struct challengesmenu_s {
 
 	boolean pending;
 	boolean requestnew;
+
 	boolean chaokeyadd;
+	UINT8 chaokeyhold;
 
 	boolean requestflip;
 
