@@ -1035,6 +1035,7 @@ typedef enum
 	extras_statistics,
 	extras_eggtv,
 	extras_stereo,
+	extras_password,
 } extras_e;
 
 void M_InitExtras(INT32 choice); // init for the struct
@@ -1098,6 +1099,7 @@ void M_AddonsRefresh(void);
 void M_HandleAddons(INT32 choice);
 char *M_AddonsHeaderPath(void);
 extern consvar_t cv_dummyaddonsearch;
+extern consvar_t cv_dummyextraspassword;
 
 void M_Manual(INT32 choice);
 void M_HandleImageDef(INT32 choice);

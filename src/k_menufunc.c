@@ -1190,5 +1190,7 @@ void M_Init(void)
 
 	CV_RegisterVar(&cv_dummyaddonsearch);
 
+	CV_RegisterVar(&cv_dummyextraspassword);
+
 	M_UpdateMenuBGImage(true);
 }

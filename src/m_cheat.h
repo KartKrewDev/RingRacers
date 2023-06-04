@@ -46,7 +46,7 @@ typedef enum {
 //
 // Cheat sequences
 //
-boolean cht_Responder(event_t *ev);
+boolean cht_Interpret(const char *password);
 void cht_Init(void);
 
 //
