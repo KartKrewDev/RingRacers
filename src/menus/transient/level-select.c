@@ -347,7 +347,7 @@ boolean M_LevelListFromGametype(INT16 gt)
 			templevelsearch.cup = &dummy_lostandfound;
 			templevelsearch.checklocked = true;
 
-			if (M_GetFirstLevelInList(&temp, &levellist.levelsearch) != NEXTMAP_INVALID)
+			if (M_GetFirstLevelInList(&temp, &templevelsearch) != NEXTMAP_INVALID)
 			{
 				foundany = true;
 				GRID_INSERTCUP;
