@@ -545,24 +545,16 @@ boolean M_ChallengesInputs(INT32 ch)
 		{
 			challengesmenu.unlockcount[CC_CHAONOPE] = 6;
 			S_StartSound(NULL, sfx_s3k7b); //sfx_s3kb2
-#if 0 // debugging
-			if (challengesmenu.currentunlock < MAXUNLOCKABLES)
-			{
-				if (gamedata->unlocked[challengesmenu.currentunlock] && challengesmenu.unlockanim >= UNLOCKTIME)
-				{
-					if (challengesmenu.unlockcount[CC_TALLY] > 0)
-						challengesmenu.unlockcount[CC_TALLY]--;
-					else
-						challengesmenu.unlockcount[CC_UNLOCKED]--;
-				}
 
-				Z_Free(gamedata->challengegrid);
-				gamedata->challengegrid = NULL;
-				gamedata->challengegridwidth = 0;
-				M_PopulateChallengeGrid();
-				M_UpdateChallengeGridExtraData(challengesmenu.extradata);
-				challengesmenu.pending = true;
-				M_ChallengesAutoFocus(challengesmenu.currentunlock, true);
+#if 0 // debugging
+			if (challengesmenu.currentunlock < MAXUNLOCKABLES && challengesmenu.unlockanim >= UNLOCKTIME && gamedata->unlocked[challengesmenu.currentunlock] == true)
+			{
+				gamedata->unlocked[challengesmenu.currentunlock] = gamedata->unlockpending[challengesmenu.currentunlock] = false;
+
+				if (challengesmenu.unlockcount[CC_TALLY] > 0)
+					challengesmenu.unlockcount[CC_TALLY]--;
+				else
+					challengesmenu.unlockcount[CC_UNLOCKED]--;
 			}
 #endif
 		}
