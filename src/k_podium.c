@@ -112,7 +112,7 @@ UINT8 K_GetPodiumPosition(player_t *player)
 		}
 
 		other = &players[i];
-		if (other->spectator == true)
+		if (other->bot == false && other->spectator == true)
 		{
 			continue;
 		}
@@ -291,9 +291,9 @@ void K_FinishCeremony(void)
 
 	podiumData.ranking = true;
 
-	// Play the noise now
-	M_UpdateUnlockablesAndExtraEmblems(true, true);
-	G_SaveGameData();
+	// Play the noise now (via G_UpdateVisited's concluding gamedata save)
+	prevmap = gamemap-1;
+	G_UpdateVisited();
 }
 
 /*--------------------------------------------------
@@ -315,6 +315,22 @@ void K_ResetCeremony(void)
 	// Establish rank and grade for this play session.
 	podiumData.rank = grandprixinfo.rank;
 	podiumData.grade = K_CalculateGPGrade(&podiumData.rank);
+
+	// Set up music for podium.
+	{
+		if (podiumData.rank.position <= 1)
+			mapmusrng = 2;
+		else if (podiumData.rank.position == 2
+			|| podiumData.rank.position == 3)
+			mapmusrng = 1;
+		else
+			mapmusrng = 0;
+
+		while (mapmusrng >= max(1, mapheaderinfo[gamemap-1]->musname_size))
+			mapmusrng--;
+
+		mapmusflags |= MUSIC_RELOADRESET;
+	}
 
 	if (!grandprixinfo.cup)
 	{

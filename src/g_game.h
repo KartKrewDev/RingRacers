@@ -281,6 +281,8 @@ UINT16 G_GetFirstMapOfGametype(UINT8 pgametype);
 UINT16 G_RandMap(UINT32 tolflags, UINT16 pprevmap, boolean ignoreBuffers, boolean callAgainSoon, UINT16 *extBuffer);
 void G_AddMapToBuffer(UINT16 map);
 
+void G_UpdateVisited(void);
+
 #ifdef __cplusplus
 } // extern "C"
 #endif

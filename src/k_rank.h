@@ -67,6 +67,21 @@ void K_InitGrandPrixRank(gpRank_t *rankData);
 
 
 /*--------------------------------------------------
+	void K_UpdateGPRank(void)
+
+		Updates the best ranking across all human
+		players.
+
+	Input Arguments:-
+		N/A
+
+	Return:-
+		N/A
+--------------------------------------------------*/
+void K_UpdateGPRank(void);
+
+
+/*--------------------------------------------------
 	gp_rank_e K_CalculateGPGrade(gpRank_t *rankData);
 
 		Calculates the player's grade using the

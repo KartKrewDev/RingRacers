@@ -18,6 +18,8 @@
 #include "g_game.h"
 #include "k_bot.h"
 #include "k_kart.h"
+#include "k_battle.h"
+#include "k_podium.h"
 #include "m_random.h"
 #include "r_things.h"
 #include "fastcmp.h"
@@ -339,6 +341,38 @@ void K_InitGrandPrixRank(gpRank_t *rankData)
 			rankData->totalPrisons += RankCapsules_CountFromMap(virt);
 			vres_Free(virt);
 		}
+	}
+}
+
+/*--------------------------------------------------
+	void K_UpdateGPRank(void)
+
+		See header file for description.
+--------------------------------------------------*/
+void K_UpdateGPRank(void)
+{
+	if (grandprixinfo.gp != true)
+		return;
+
+	UINT8 i;
+
+	grandprixinfo.rank.prisons += numtargets;
+	grandprixinfo.rank.position = MAXPLAYERS;
+	grandprixinfo.rank.skin = MAXSKINS;
+
+	for (i = 0; i < MAXPLAYERS; i++)
+	{
+		if (!playeringame[i]
+		|| players[i].spectator == true
+		|| players[i].bot == true)
+			continue;
+
+		UINT8 podiumposition = K_GetPodiumPosition(&players[i]);
+		if (podiumposition >= grandprixinfo.rank.position) // port priority
+			continue;
+
+		grandprixinfo.rank.position = podiumposition;
+		grandprixinfo.rank.skin = players[i].skin;
 	}
 }
 

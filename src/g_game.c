@@ -3972,7 +3972,7 @@ void G_AddMapToBuffer(UINT16 map)
 //
 // G_UpdateVisited
 //
-static void G_UpdateVisited(void)
+void G_UpdateVisited(void)
 {
 	UINT8 i;
 	UINT8 earnedEmblems;
@@ -4464,15 +4464,11 @@ static void G_DoCompleted(void)
 	G_SetGamestate(GS_NULL);
 	wipegamestate = GS_NULL;
 
-	grandprixinfo.rank.prisons += numtargets;
-	grandprixinfo.rank.position = MAXPLAYERS;
-	grandprixinfo.rank.skin = MAXSKINS;
-
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
 		if (playeringame[i])
 		{
-			// SRB2Kart: exitlevel shouldn't get you the points
+			// Exitlevel shouldn't get you the points
 			if (!players[i].exiting && !(players[i].pflags & PF_NOCONTEST))
 			{
 				clientPowerAdd[i] = 0;
@@ -4493,16 +4489,6 @@ static void G_DoCompleted(void)
 			}
 
 			G_PlayerFinishLevel(i); // take away cards and stuff
-
-			if (players[i].bot == false)
-			{
-				UINT8 podiumposition = K_GetPodiumPosition(&players[i]);
-				if (podiumposition <= grandprixinfo.rank.position)
-				{
-					grandprixinfo.rank.position = podiumposition;
-					grandprixinfo.rank.skin = players[i].skin;
-				}
-			}
 		}
 	}
 
@@ -4523,6 +4509,7 @@ static void G_DoCompleted(void)
 	if (intertype == int_none)
 	{
 		G_UpdateVisited();
+		K_UpdateGPRank();
 		G_AfterIntermission();
 	}
 	else
@@ -5528,7 +5515,10 @@ void G_SaveGameData(void)
 		for (i = 0; i < numskins; i++)
 		{
 			if (skins[i].records.wins == 0)
+			{
+				skins[i].records._saveid = UINT32_MAX;
 				continue;
+			}
 
 			WRITESTRINGN(save.p, skins[i].name, SKINNAMESIZE);
 
@@ -5582,7 +5572,7 @@ void G_SaveGameData(void)
 
 			UINT8 mapvisitedtemp = (mapheaderinfo[i]->records.mapvisited & MV_MAX);
 
-			if ((mapheaderinfo[i]->menuflags & LF2_FINISHNEEDED))
+			if ((mapheaderinfo[i]->menuflags & (LF2_FINISHNEEDED|LF2_HIDEINMENU)))
 			{
 				mapvisitedtemp |= MV_FINISHNEEDED;
 			}
