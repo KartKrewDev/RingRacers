@@ -961,6 +961,8 @@ typedef enum
 	RF_SHADOWEFFECTS    = 0x00008000,  // Scales and becomes transparent like a shadow.
 	RF_DROPSHADOW       = (RF_SHADOWDRAW | RF_SHADOWEFFECTS | RF_FULLDARK),
 
+	RF_ABSOLUTELIGHTLEVEL = 0x00010000, //  mobj_t.lightlevel is absolute instead of relative
+
 	RF_DONTDRAW         = 0x00F00000,   // --Don't generate a vissprite
 	RF_DONTDRAWP1       = 0x00100000,   // No P1
 	RF_DONTDRAWP2       = 0x00200000,   // No P2

@@ -312,6 +312,7 @@ struct mobj_t
 	fixed_t old_spritexscale, old_spriteyscale;
 	fixed_t old_spritexoffset, old_spriteyoffset;
 	pslope_t *floorspriteslope; // The slope that the floorsprite is rotated by
+	INT16 lightlevel; // Add to sector lightlevel, -255 - 255
 
 	msecnode_t *touching_sectorlist; // a linked list of sectors where this object appears
 
@@ -469,6 +470,7 @@ struct precipmobj_t
 	fixed_t old_spritexscale, old_spriteyscale;
 	fixed_t old_spritexoffset, old_spriteyoffset;
 	pslope_t *floorspriteslope; // The slope that the floorsprite is rotated by
+	INT16 lightlevel; // Add to sector lightlevel, -255 - 255
 
 	mprecipsecnode_t *touching_sectorlist; // a linked list of sectors where this object appears
 

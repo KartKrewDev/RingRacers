@@ -1690,6 +1690,7 @@ static void R_ProjectSprite(mobj_t *thing)
 	fixed_t gz = 0, gzt = 0;
 	INT32 heightsec, phs;
 	INT32 light = 0;
+	lighttable_t **lights_array = spritelights;
 	fixed_t this_scale;
 	fixed_t spritexscale, spriteyscale;
 
@@ -2239,29 +2240,46 @@ static void R_ProjectSprite(mobj_t *thing)
 			return;
 	}
 
-	if (thing->subsector->sector->numlights)
+	if (thing->renderflags & RF_ABSOLUTELIGHTLEVEL)
+	{
+		const UINT8 n = R_ThingLightLevel(thing);
+
+		// n = uint8 aka 0 - 255, so the shift will always be 0 - LIGHTLEVELS - 1
+		lights_array = scalelight[n >> LIGHTSEGSHIFT];
+	}
+	else
 	{
 		INT32 lightnum;
-		fixed_t top = (splat) ? gz : gzt;
-		light = thing->subsector->sector->numlights - 1;
 
-		// R_GetPlaneLight won't work on sloped lights!
-		for (lightnum = 1; lightnum < thing->subsector->sector->numlights; lightnum++) {
-			fixed_t h = P_GetLightZAt(&thing->subsector->sector->lightlist[lightnum], interp.x, interp.y);
-			if (h <= top) {
-				light = lightnum - 1;
-				break;
+		if (thing->subsector->sector->numlights)
+		{
+			fixed_t top = (splat) ? gz : gzt;
+			light = thing->subsector->sector->numlights - 1;
+
+			// R_GetPlaneLight won't work on sloped lights!
+			for (lightnum = 1; lightnum < thing->subsector->sector->numlights; lightnum++) {
+				fixed_t h = P_GetLightZAt(&thing->subsector->sector->lightlist[lightnum], interp.x, interp.y);
+				if (h <= top) {
+					light = lightnum - 1;
+					break;
+				}
 			}
+			//light = R_GetPlaneLight(thing->subsector->sector, gzt, false);
+			lightnum = *thing->subsector->sector->lightlist[light].lightlevel;
 		}
-		//light = R_GetPlaneLight(thing->subsector->sector, gzt, false);
-		lightnum = (*thing->subsector->sector->lightlist[light].lightlevel >> LIGHTSEGSHIFT);
+		else
+		{
+			lightnum = thing->subsector->sector->lightlevel;
+		}
+
+		lightnum = (lightnum + R_ThingLightLevel(thing)) >> LIGHTSEGSHIFT;
 
 		if (lightnum < 0)
-			spritelights = scalelight[0];
+			lights_array = scalelight[0];
 		else if (lightnum >= LIGHTLEVELS)
-			spritelights = scalelight[LIGHTLEVELS-1];
+			lights_array = scalelight[LIGHTLEVELS-1];
 		else
-			spritelights = scalelight[lightnum];
+			lights_array = scalelight[lightnum];
 	}
 
 	heightsec = thing->subsector->sector->heightsec;
@@ -2414,7 +2432,7 @@ static void R_ProjectSprite(mobj_t *thing)
 		if (vis->cut & SC_SEMIBRIGHT)
 			lindex = (MAXLIGHTSCALE/2) + (lindex >> 1);
 
-		vis->colormap = spritelights[lindex];
+		vis->colormap = lights_array[lindex];
 	}
 
 	if (vflip)
@@ -2425,7 +2443,7 @@ static void R_ProjectSprite(mobj_t *thing)
 	vis->patch = patch;
 	vis->bright = R_CacheSpriteBrightMap(sprinfo, frame);
 
-	if (thing->subsector->sector->numlights && !(shadowdraw || splat))
+	if (thing->subsector->sector->numlights && !(shadowdraw || splat) && !(thing->renderflags & RF_ABSOLUTELIGHTLEVEL))
 		R_SplitSprite(vis);
 
 	if (oldthing->shadowscale && cv_shadow.value)
