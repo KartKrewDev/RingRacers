@@ -1081,7 +1081,7 @@ static const char *M_GetConditionString(condition_t *cn)
 		case UC_ALLSUPER:
 		case UC_ALLEMERALDS:
 		{
-			const char *chaostext, *speedtext = "", *orbetter = "";
+			const char *chaostext, *speedtext = "";
 
 			if (!gamedata->everseenspecial)
 				return NULL;
@@ -1093,17 +1093,14 @@ static const char *M_GetConditionString(condition_t *cn)
 			else
 				chaostext = "14";
 
-			if (cn->requirement == KARTSPEED_NORMAL)
+			/*if (cn->requirement == KARTSPEED_NORMAL) -- Emeralds can not be collected on Easy
 			{
 				speedtext = " on Normal difficulty";
-				//if (M_SecretUnlocked(SECRET_HARDSPEED, true))
-					orbetter = " or better";
 			}
-			else if (cn->requirement == KARTSPEED_HARD)
+			else*/
+			if (cn->requirement == KARTSPEED_HARD)
 			{
 				speedtext = " on Hard difficulty";
-				if (M_SecretUnlocked(SECRET_MASTERMODE, true))
-					orbetter = " or better";
 			}
 			else if (cn->requirement == KARTGP_MASTER)
 			{
@@ -1113,7 +1110,7 @@ static const char *M_GetConditionString(condition_t *cn)
 					speedtext = " on ???";
 			}
 
-			return va("collect all %s Emeralds%s%s", chaostext, speedtext, orbetter);
+			return va("collect all %s Emeralds%s", chaostext, speedtext);
 		}
 
 		case UC_TOTALMEDALS: // Requires number of emblems >= x
@@ -1265,7 +1262,7 @@ static const char *M_GetConditionString(condition_t *cn)
 
 			if (cn->requirement == KARTSPEED_NORMAL)
 			{
-				speedtext = "on Normal difficulty or better";
+				speedtext = "on Normal difficulty";
 			}
 			else if (cn->requirement == KARTSPEED_HARD)
 			{
