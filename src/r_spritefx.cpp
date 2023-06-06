@@ -8,11 +8,24 @@
 //-----------------------------------------------------------------------------
 /// \brief Special effects for sprite rendering
 
+#include "d_player.h"
+#include "p_tick.h"
 #include "r_things.h"
 
 INT32 R_ThingLightLevel(mobj_t* thing)
 {
 	INT32 lightlevel = thing->lightlevel;
+
+	player_t* player = thing->player;
+
+	if (player)
+	{
+		if (player->instaShieldCooldown && leveltime & 1)
+		{
+			// Darken on every other frame of instawhip cooldown
+			lightlevel -= 128;
+		}
+	}
 
 	return lightlevel;
 }
