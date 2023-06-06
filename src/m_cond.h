@@ -302,6 +302,7 @@ void M_NewGameDataStruct(void);
 
 // Challenges menu stuff
 void M_PopulateChallengeGrid(void);
+void M_SanitiseChallengeGrid(void);
 
 struct challengegridextradata_t
 {

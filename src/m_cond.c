@@ -312,6 +312,88 @@ quickcheckagain:
 	}
 }
 
+void M_SanitiseChallengeGrid(void)
+{
+	UINT8 seen[MAXUNLOCKABLES];
+	UINT16 empty[MAXUNLOCKABLES + (CHALLENGEGRIDHEIGHT-1)];
+	UINT16 i, j, numempty = 0;
+
+	if (gamedata->challengegrid == NULL)
+		return;
+
+	memset(seen, 0, sizeof(seen));
+
+	// Go through all spots to identify duplicates and absences.
+	for (j = 0; j < gamedata->challengegridwidth * CHALLENGEGRIDHEIGHT; j++)
+	{
+		i = gamedata->challengegrid[j];
+
+		if (i >= MAXUNLOCKABLES || !unlockables[i].conditionset)
+		{
+			empty[numempty++] = j;
+			continue;
+		}
+
+		if (seen[i] != 5) // Arbitrary cap greater than 4
+		{
+			seen[i]++;
+
+			if (seen[i] == 1 || unlockables[i].majorunlock)
+			{
+				continue;
+			}
+		}
+
+		empty[numempty++] = j;
+	}
+
+	// Go through unlockables to identify if any haven't been seen.
+	for (i = 0; i < MAXUNLOCKABLES; ++i)
+	{
+		if (!unlockables[i].conditionset)
+		{
+			continue;
+		}
+
+		if (unlockables[i].majorunlock && seen[i] != 4)
+		{
+			// Probably not enough spots to retrofit.
+			goto badgrid;
+		}
+
+		if (seen[i] != 0)
+		{
+			// Present on the challenge grid.
+			continue;
+		}
+
+		if (numempty != 0)
+		{
+			// Small ones can be slotted in easy.
+			j = empty[--numempty];
+			gamedata->challengegrid[j] = i;
+		}
+
+		// Nothing we can do to recover.
+		goto badgrid;
+	}
+
+	// Fill the remaining spots with empties.
+	while (numempty != 0)
+	{
+		j = empty[--numempty];
+		gamedata->challengegrid[j] = MAXUNLOCKABLES;
+	}
+
+	return;
+
+badgrid:
+	// Just remove everything and let it get regenerated.
+	Z_Free(gamedata->challengegrid);
+	gamedata->challengegrid = NULL;
+	gamedata->challengegridwidth = 0;
+}
+
 void M_UpdateChallengeGridExtraData(challengegridextradata_t *extradata)
 {
 	UINT16 i, j, num, id, tempid, work;

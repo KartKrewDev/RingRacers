@@ -4974,6 +4974,8 @@ void G_LoadGameData(void)
 					gamedata->challengegrid[i] = READUINT16(save.p);
 				}
 			}
+
+			M_SanitiseChallengeGrid();
 		}
 		else
 		{
