@@ -7,6 +7,8 @@
 #include "../k_grandprix.h" // K_CanChangeRules
 #include "../m_cond.h" // Condition Sets
 
+//#define CHARSELECT_DEVICEDEBUG
+
 menuitem_t PLAY_CharSelect[] =
 {
 	{IT_NOTHING, NULL, NULL, NULL, {NULL}, 0, 0},
@@ -427,7 +429,9 @@ void M_CharacterSelectInit(void)
 			{
 				// Un-set devices
 				G_SetDeviceForPlayer(i, -1);
+#ifdef CHARSELECT_DEVICEDEBUG
 				CONS_Printf("M_CharacterSelectInit: Device for %d set to %d\n", i, -1);
+#endif
 			}
 		}
 	}
@@ -603,13 +607,17 @@ static boolean M_HandlePressStart(setup_player_t *p, UINT8 num)
 			}
 
 			G_SetDeviceForPlayer(num, device);
+#ifdef CHARSELECT_DEVICEDEBUG
 			CONS_Printf("M_HandlePressStart: Device for %d set to %d\n", num, device);
+#endif
 
 			for (j = num + 1; j < MAXSPLITSCREENPLAYERS; j++)
 			{
 				// Un-set devices for other players.
 				G_SetDeviceForPlayer(j, -1);
+#ifdef CHARSELECT_DEVICEDEBUG
 				CONS_Printf("M_HandlePressStart: Device for %d set to %d\n", j, -1);
+#endif
 			}
 
 			//setup_numplayers++;
@@ -677,7 +685,9 @@ static boolean M_HandleCSelectProfile(setup_player_t *p, UINT8 num)
 			}
 
 			G_SetDeviceForPlayer(num, -1);
+#ifdef CHARSELECT_DEVICEDEBUG
 			CONS_Printf("M_HandleCSelectProfile: Device for %d set to %d\n", num, -1);
+#endif
 
 			return true;
 		}
