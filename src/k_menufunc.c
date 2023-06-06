@@ -487,6 +487,11 @@ menu_t *M_SpecificMenuRestore(menu_t *torestore)
 		// Ticker init
 		M_MPOptSelectInit(-1);
 	}
+	else if (torestore == &EXTRAS_MainDef)
+	{
+		// Disable or enable certain options
+		M_InitExtras(-1);
+	}
 
 	// One last catch.
 	M_SetupPlayMenu(-1);
