@@ -1110,7 +1110,7 @@ static const char *M_GetConditionString(condition_t *cn)
 					speedtext = " on ???";
 			}
 
-			return va("collect all %s Emeralds%s", chaostext, speedtext);
+			return va("GRAND PRIX: collect all %s Emeralds%s", chaostext, speedtext);
 		}
 
 		case UC_TOTALMEDALS: // Requires number of emblems >= x
