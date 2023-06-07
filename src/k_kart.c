@@ -1394,6 +1394,10 @@ static void K_UpdateDraft(player_t *player)
 		leniency *= 4;
 	}
 
+	// Opportunity cost for berserk attacking. Get your slingshot speed first!
+	if (player->instaShieldCooldown)
+		return;
+
 	// Not enough speed to draft.
 	if (player->speed >= 20 * player->mo->scale)
 	{
@@ -3655,8 +3659,8 @@ void K_DoGuardBreak(mobj_t *t1, mobj_t *t2) {
 		return;
 
 	// short-circuit instashield for vfx visibility
-	t1->player->instaShieldCooldown = 2*TICRATE;
-	t1->player->guardCooldown = 2*TICRATE;
+	t1->player->instaShieldCooldown = GUARDBREAK_COOLDOWN;
+	t1->player->guardCooldown = GUARDBREAK_COOLDOWN;
 
 	S_StartSound(t1, sfx_gbrk);
 	K_AddHitLag(t1, 24, true);
@@ -7932,11 +7936,18 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 	if (player->gateBoost)
 		player->gateBoost--;
 
-	if (player->instaShieldCooldown)
+	if (player->rings > 0)
 	{
-		player->instaShieldCooldown--;
-		if (!P_IsObjectOnGround(player->mo))
-			player->instaShieldCooldown = max(player->instaShieldCooldown, 1);
+		player->instaShieldCooldown = INSTAWHIP_COOLDOWN;
+	}
+	else
+	{
+		if (player->instaShieldCooldown)
+		{
+			player->instaShieldCooldown--;
+			if (!P_IsObjectOnGround(player->mo))
+				player->instaShieldCooldown = max(player->instaShieldCooldown, 1);
+		}
 	}
 
 	if (player->guardCooldown)
@@ -8184,7 +8195,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 	}
 
 	if (K_PlayerGuard(player))
-		player->instaShieldCooldown = max(player->instaShieldCooldown, 12);
+		player->instaShieldCooldown = max(player->instaShieldCooldown, INSTAWHIP_DROPGUARD);
 
 	// Roulette Code
 	K_KartItemRoulette(player, cmd);
@@ -10673,8 +10684,8 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 					}
 					else
 					{
-						player->instaShieldCooldown = 50;
-						player->guardCooldown = 50;
+						player->instaShieldCooldown = INSTAWHIP_COOLDOWN;
+						player->guardCooldown = INSTAWHIP_COOLDOWN;
 						S_StartSound(player->mo, sfx_iwhp);
 						mobj_t *whip = P_SpawnMobj(player->mo->x, player->mo->y, player->mo->z, MT_INSTAWHIP);
 						P_SetTarget(&player->whip, whip);
