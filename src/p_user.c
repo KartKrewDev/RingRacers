@@ -4026,7 +4026,7 @@ Quaketilt (player_t *player)
 	}
 	lowb = FixedMul(lowb, player->mo->scale);
 	moma = FixedMul(FixedDiv(delta, ANGLE_90), tilt);
-	speed = abs( player->mo->momx + player->mo->momy );
+	speed = player->speed;
 	if (speed < lowb)
 	{
 		// ease out tilt as we slow...
