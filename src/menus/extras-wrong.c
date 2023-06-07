@@ -2,6 +2,7 @@
 /// \brief Wrongwarp
 
 #include "../k_menu.h"
+#include "../s_sound.h"
 
 struct wrongwarp_s wrongwarp;
 
@@ -18,11 +19,17 @@ void M_WrongWarp(INT32 choice)
 
 	MISC_WrongWarpDef.prevMenu = currentMenu;
 	M_SetupNextMenu(&MISC_WrongWarpDef, false);
+
+	// Done here to avoid immediate music credit
+	S_ChangeMusicInternal("YEAWAY", true);
 }
 
 static void M_WrongWarpTick(void)
 {
 	wrongwarp.ticker++;
+
+	if (wrongwarp.ticker == 2*TICRATE)
+		S_ShowMusicCredit();
 }
 
 static boolean M_WrongWarpInputs(INT32 ch)
@@ -43,7 +50,7 @@ menu_t MISC_WrongWarpDef = {
 	0, 0,
 	0, 0,
 	MBF_SOUNDLESS,
-	"YEAWAY",
+	".",
 	98, 0,
 	M_DrawWrongWarp,
 	M_WrongWarpTick,
