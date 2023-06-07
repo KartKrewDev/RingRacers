@@ -1395,7 +1395,7 @@ static void K_UpdateDraft(player_t *player)
 	}
 
 	// Opportunity cost for berserk attacking. Get your slingshot speed first!
-	if (player->instaShieldCooldown)
+	if (player->instaShieldCooldown && player->rings <= 0)
 		return;
 
 	// Not enough speed to draft.
