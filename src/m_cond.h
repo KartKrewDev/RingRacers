@@ -220,7 +220,14 @@ typedef enum
 #endif
 #define challengegridloops (gamedata->challengegridwidth >= CHALLENGEGRIDLOOPWIDTH)
 
-#define GDMUSIC_LOSERCLUB	0x01
+// See also M_PlayMenuJam
+typedef enum {
+	GDMUSIC_NONE = 0,
+	GDMUSIC_KEYG,
+	GDMUSIC_KEEPONMENU, // Minimum to keep after leaving the Challenge Grid
+	GDMUSIC_LOSERCLUB = GDMUSIC_KEEPONMENU,
+	GDMUSIC_MAX
+} gdmusic_t;
 
 // This is the largest number of 9s that will fit in UINT32 and UINT16 respectively.
 #define GDMAX_RINGS 999999999
@@ -283,7 +290,7 @@ struct gamedata_t
 	boolean eversavedreplay;
 	boolean everseenspecial;
 	boolean evercrashed;
-	UINT8 musicflags;
+	gdmusic_t musicstate;
 
 	// BACKWARDS COMPAT ASSIST
 	boolean importprofilewins;

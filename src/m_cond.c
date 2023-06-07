@@ -613,7 +613,7 @@ void M_ClearStats(void)
 	gamedata->eversavedreplay = false;
 	gamedata->everseenspecial = false;
 	gamedata->evercrashed = false;
-	gamedata->musicflags = 0;
+	gamedata->musicstate = GDMUSIC_NONE;
 
 	gamedata->importprofilewins = false;
 }
@@ -840,7 +840,8 @@ boolean M_CheckCondition(condition_t *cn, player_t *player)
 		case UC_CRASH:
 			if (gamedata->evercrashed)
 			{
-				gamedata->musicflags |= GDMUSIC_LOSERCLUB;
+				if (gamedata->musicstate < GDMUSIC_LOSERCLUB)
+					gamedata->musicstate = GDMUSIC_LOSERCLUB;
 				return true;
 			}
 			return false;
@@ -1710,7 +1711,13 @@ boolean M_UpdateUnlockablesAndExtraEmblems(boolean loud, boolean doall)
 		{
 			gamedata->keyspending++;
 			newkeys++;
+		}
+
+		if (newkeys != 0)
+		{
 			response |= true;
+			if (gamedata->musicstate < GDMUSIC_KEYG)
+				gamedata->musicstate = GDMUSIC_KEYG;
 		}
 	}
 

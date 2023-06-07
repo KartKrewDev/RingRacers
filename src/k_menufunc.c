@@ -372,17 +372,18 @@ boolean M_Responder(event_t *ev)
 void M_PlayMenuJam(void)
 {
 	menu_t *refMenu = (menuactive ? currentMenu : restoreMenu);
-	static boolean loserclubpermitted = false;
-	boolean loserclub = (loserclubpermitted && (gamedata->musicflags & GDMUSIC_LOSERCLUB));
+	static boolean musicstatepermitted = false;
 
 	if (challengesmenu.pending)
 	{
 		S_StopMusic();
 		S_StopMusicCredit();
 
-		loserclubpermitted = true;
+		musicstatepermitted = true;
 		return;
 	}
+
+	gdmusic_t override = musicstatepermitted ? gamedata->musicstate : 0;
 
 	if (Playing() || soundtest.playing)
 		return;
@@ -395,7 +396,7 @@ void M_PlayMenuJam(void)
 			S_StopMusicCredit();
 			return;
 		}
-		else if (!loserclub)
+		else if (override == 0)
 		{
 			if (NotCurrentlyPlaying(refMenu->music))
 			{
@@ -406,12 +407,21 @@ void M_PlayMenuJam(void)
 		}
 	}
 
-	if (loserclub)
+	if (override != 0)
 	{
-		if (refMenu != NULL && NotCurrentlyPlaying("LOSERC"))
+		// See also gdmusic_t
+		const char* overridetotrack[GDMUSIC_MAX-1] = {
+			"KEYGEN",
+			"LOSERC",
+		};
+		
+		if (refMenu != NULL && NotCurrentlyPlaying(overridetotrack[override - 1]))
 		{
-			S_ChangeMusicInternal("LOSERC", true);
+			S_ChangeMusicInternal(overridetotrack[override - 1], true);
 			S_ShowMusicCredit();
+
+			if (override < GDMUSIC_KEEPONMENU)
+				gamedata->musicstate = GDMUSIC_NONE;
 		}
 
 		return;
