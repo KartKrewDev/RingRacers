@@ -4,6 +4,7 @@ target_sources(SRB2SDL2 PRIVATE
 	extras-challenges.c
 	extras-egg-tv.cpp
 	extras-statistics.c
+	extras-wrong.c
 	main-1.c
 	main-profile-select.c
 	options-1.c

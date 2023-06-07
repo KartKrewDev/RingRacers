@@ -91,6 +91,14 @@ static UINT8 cheatf_warp(void)
 	return 1;
 }
 
+static UINT8 cheatf_wrongwarp(void)
+{
+	// Tee hee.
+	M_WrongWarp(0);
+
+	return 1;
+}
+
 #ifdef DEVELOP
 static UINT8 cheatf_devmode(void)
 {
@@ -119,7 +127,11 @@ static UINT8 cheatf_devmode(void)
 
 static cheatseq_t cheat_warp = {
 	NULL, cheatf_warp,
-	//{ SCRAMBLE('r'), SCRAMBLE('e'), SCRAMBLE('d'), SCRAMBLE('x'), SCRAMBLE('v'), SCRAMBLE('i'), 0xff }
+	(UINT8[]){ SCRAMBLE('p'), SCRAMBLE('l'), SCRAMBLE('a'), SCRAMBLE('c'), SCRAMBLE('e'), SCRAMBLE('h'), SCRAMBLE('o'), SCRAMBLE('l'), SCRAMBLE('d'), SCRAMBLE('e'), SCRAMBLE('r'), 0xff }
+};
+
+static cheatseq_t cheat_wrongwarp = {
+	NULL, cheatf_wrongwarp,
 	(UINT8[]){ SCRAMBLE('b'), SCRAMBLE('a'), SCRAMBLE('n'), SCRAMBLE('a'), SCRAMBLE('n'), SCRAMBLE('a'), 0xff }
 };
 
@@ -133,6 +145,7 @@ static cheatseq_t cheat_devmode = {
 cheatseq_t *cheatseqlist[] =
 {
 	&cheat_warp,
+	&cheat_wrongwarp,
 #ifdef DEVELOP
 	&cheat_devmode,
 #endif

@@ -425,6 +425,8 @@ extern menuitem_t MISC_ChallengesStatsDummyMenu[];
 extern menu_t MISC_ChallengesDef;
 extern menu_t MISC_StatisticsDef;
 
+extern menu_t MISC_WrongWarpDef;
+
 extern menuitem_t MISC_SoundTest[];
 extern menu_t MISC_SoundTestDef;
 
@@ -1236,6 +1238,13 @@ extern struct statisticsmenu_s {
 void M_Statistics(INT32 choice);
 void M_DrawStatistics(void);
 boolean M_StatisticsInputs(INT32 ch);
+
+extern struct wrongwarp_s {
+	INT32 ticker;
+} wrongwarp;
+
+void M_WrongWarp(INT32 choice);
+void M_DrawWrongWarp(void);
 
 typedef enum
 {
