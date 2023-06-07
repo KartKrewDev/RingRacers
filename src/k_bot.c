@@ -994,6 +994,12 @@ static boolean K_TryRingShooter(player_t *player)
 		return false;
 	}
 
+	if (player->exiting)
+	{
+		// Where are you trying to go?
+		return false;
+	}
+
 	if ((gametyperules & GTR_CIRCUIT) == 0 || (leveltime <= starttime))
 	{
 		// Only do this during a Race that has started.
