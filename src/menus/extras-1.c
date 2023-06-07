@@ -173,8 +173,17 @@ void M_ExtrasTick(void)
 
 	if (menutyping.active == false && cv_dummyextraspassword.string[0] != '\0')
 	{
-		if (cht_Interpret(cv_dummyextraspassword.string) == true)
+		if (M_ConditionInterpret(cv_dummyextraspassword.string) == true)
+		{
+			if (M_UpdateUnlockablesAndExtraEmblems(true, true))
+			{
+				M_Challenges(0);
+			}
+		}
+		else if (cht_Interpret(cv_dummyextraspassword.string) == true)
+		{
 			M_InitExtras(-1);
+		}
 
 		CV_StealthSet(&cv_dummyextraspassword, "");
 	}

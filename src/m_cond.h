@@ -55,6 +55,8 @@ typedef enum
 	UC_REPLAY,			// Save a replay
 	UC_CRASH,			// Hee ho !
 
+	UC_PASSWORD,		// Type in something funny
+
 	 // Just for string building
 	UC_AND,
 	UC_COMMA,
@@ -333,6 +335,7 @@ void M_ClearStats(void);
 boolean M_NotFreePlay(player_t *player);
 
 // Updating conditions and unlockables
+boolean M_ConditionInterpret(const char *password);
 boolean M_CheckCondition(condition_t *cn, player_t *player);
 boolean M_UpdateUnlockablesAndExtraEmblems(boolean loud, boolean doall);
 

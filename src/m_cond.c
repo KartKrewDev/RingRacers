@@ -844,6 +844,8 @@ boolean M_CheckCondition(condition_t *cn, player_t *player)
 				return true;
 			}
 			return false;
+		case UC_PASSWORD:
+			return (cn->stringvar == NULL);
 
 		// Just for string building
 		case UC_AND:
@@ -1292,6 +1294,8 @@ static const char *M_GetConditionString(condition_t *cn)
 			if (gamedata->evercrashed)
 				return "launch \"Dr. Robotnik's Ring Racers\" again after a game crash";
 			return NULL;
+		case UC_PASSWORD:
+			return "enter a secret password";
 
 		case UC_AND:
 			return "&";
@@ -1610,7 +1614,7 @@ char *M_BuildConditionSetString(UINT16 unlockid)
 
 static boolean M_CheckUnlockConditions(player_t *player)
 {
-	INT32 i;
+	UINT32 i;
 	conditionset_t *c;
 	boolean ret;
 
@@ -1627,6 +1631,43 @@ static boolean M_CheckUnlockConditions(player_t *player)
 	}
 
 	return ret;
+}
+
+boolean M_ConditionInterpret(const char *password)
+{
+	UINT32 i, j;
+	conditionset_t *c;
+	condition_t *cn;
+
+	for (i = 0; i < MAXCONDITIONSETS; ++i)
+	{
+		c = &conditionSets[i];
+
+		if (!c->numconditions || gamedata->achieved[i])
+			continue;
+
+		for (j = 0; j < c->numconditions; ++j)
+		{
+			cn = &c->condition[j];
+
+			if (cn->type != UC_PASSWORD)
+				continue;
+
+			if (cn->stringvar == NULL)
+				continue;
+
+			if (stricmp(cn->stringvar, password))
+				continue;
+
+			// Remove the password for this session.
+			Z_Free(cn->stringvar);
+			cn->stringvar = NULL;
+
+			return true;
+		}
+	}
+
+	return false;
 }
 
 boolean M_UpdateUnlockablesAndExtraEmblems(boolean loud, boolean doall)
