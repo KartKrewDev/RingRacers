@@ -20,7 +20,7 @@ INT32 R_ThingLightLevel(mobj_t* thing)
 
 	if (player)
 	{
-		if (player->instaShieldCooldown && leveltime & 1)
+		if (player->instaShieldCooldown && (player->rings <= 0) && (leveltime & 1))
 		{
 			// Darken on every other frame of instawhip cooldown
 			lightlevel -= 128;
