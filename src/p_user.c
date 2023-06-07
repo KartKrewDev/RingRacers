@@ -4011,19 +4011,20 @@ Quaketilt (player_t *player)
 		if (sliptiding)
 		{
 			tilt = ANGLE_45;
-			lowb = 5*FRACUNIT;
+			lowb = 20*FRACUNIT;
 		}
 		else
 		{
 			tilt = ANGLE_11hh/2;
-			lowb = 15*FRACUNIT;
+			lowb = 60*FRACUNIT;
 		}
 	}
 	else
 	{
 		tilt = ANGLE_22h;
-		lowb = 10*FRACUNIT;
+		lowb = 40*FRACUNIT;
 	}
+	lowb = FixedMul(lowb, player->mo->scale);
 	moma = FixedMul(FixedDiv(delta, ANGLE_90), tilt);
 	speed = abs( player->mo->momx + player->mo->momy );
 	if (speed < lowb)
