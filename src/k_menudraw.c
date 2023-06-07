@@ -5920,6 +5920,26 @@ static INT32 M_WrongWarpFallingHelper(INT32 y, INT32 falltime)
 	return y;
 }
 
+static void M_DrawWrongPlayer(UINT8 i)
+{
+#define wrongpl wrongwarp.wrongplayers[i]
+	if (wrongpl.skin >= numskins)
+		return;
+
+	UINT8 *colormap = R_GetTranslationColormap(wrongpl.skin, skins[wrongpl.skin].prefcolor, GTC_MENUCACHE);
+
+	M_DrawCharacterSprite(
+		wrongpl.across,
+		160 - ((i & 1) ? 0 : 32),
+		wrongpl.skin,
+		wrongpl.spinout ? SPR2_SPIN : SPR2_SLWN,
+		wrongpl.spinout ? ((wrongpl.across/8) & 7) : 6,
+		(wrongwarp.ticker+i),
+		0, colormap
+	);
+#undef wrongpl
+}
+
 void M_DrawWrongWarp(void)
 {
 	INT32 titleoffset = 0, titlewidth, x, y;
@@ -5983,6 +6003,17 @@ void M_DrawWrongWarp(void)
 		return;
 
 	V_DrawFadeScreen(31, min((wrongwarp.ticker - 2*TICRATE/3), 5));
+
+	// SMK title screen recreation!?
+
+	if (wrongwarp.ticker >= 2*TICRATE)
+	{
+		// Done as four calls and not a loop for the sake of render order
+		M_DrawWrongPlayer(0);
+		M_DrawWrongPlayer(2);
+		M_DrawWrongPlayer(1);
+		M_DrawWrongPlayer(3);
+	}
 
 	y = 20;
 

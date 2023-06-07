@@ -3,6 +3,8 @@
 
 #include "../k_menu.h"
 #include "../s_sound.h"
+#include "../m_random.h"
+#include "../r_skins.h"
 
 struct wrongwarp_s wrongwarp;
 
@@ -26,10 +28,95 @@ void M_WrongWarp(INT32 choice)
 
 static void M_WrongWarpTick(void)
 {
+	static boolean firsteggman = true;
+
+	UINT8 i, j;
+
 	wrongwarp.ticker++;
+	if (wrongwarp.ticker < 2*TICRATE)
+		return;
 
 	if (wrongwarp.ticker == 2*TICRATE)
+	{
 		S_ShowMusicCredit();
+
+		for (i = 0; i < MAXWRONGPLAYER; i++)
+			wrongwarp.wrongplayers[i].skin = MAXSKINS;
+
+		firsteggman = true;
+	}
+
+	// SMK title screen recreation!?
+
+	for (i = 0; i < MAXWRONGPLAYER; i++)
+	{
+		if (wrongwarp.wrongplayers[i].skin == MAXSKINS)
+			continue;
+
+		wrongwarp.wrongplayers[i].across += 5;
+		if (wrongwarp.wrongplayers[i].across < BASEVIDWIDTH + WRONGPLAYEROFFSCREEN)
+			continue;
+
+		wrongwarp.wrongplayers[i].skin = MAXSKINS;
+	}
+
+	if (wrongwarp.delaytowrongplayer)
+	{
+		wrongwarp.delaytowrongplayer--;
+		return;
+	}
+
+	wrongwarp.delaytowrongplayer = M_RandomRange(TICRATE/3, 2*TICRATE/3);
+
+	if (wrongwarp.ticker == 2*TICRATE)
+		return;
+
+	UINT32 rskin = 0;
+
+	if (firsteggman == true)
+	{
+		// Eggman always leads the pack. It's not Sonic's game anymore...
+		firsteggman = false;
+
+		i = 0;
+		wrongwarp.wrongplayers[i].spinout = false;
+	}
+	else
+	{
+		rskin = R_GetLocalRandomSkin();
+
+		for (i = 0; i < MAXWRONGPLAYER; i++)
+		{
+			// Already in use.
+			if (wrongwarp.wrongplayers[i].skin == rskin)
+				return;
+
+			// Slot isn't free.
+			if (wrongwarp.wrongplayers[i].skin != MAXSKINS)
+				continue;
+
+			break;
+		}
+
+		// No free slots.
+		if (i == MAXWRONGPLAYER)
+			return;
+
+		// Check to see if any later entry uses the skin too
+		for (j = i+1; j < MAXWRONGPLAYER; j++)
+		{
+			if (wrongwarp.wrongplayers[j].skin != rskin)
+				continue;
+
+			return;
+		}
+
+		wrongwarp.wrongplayers[i].spinout = M_RandomChance(FRACUNIT/10);
+	}
+
+	// Add the new character!
+	wrongwarp.wrongplayers[i].skin = rskin;
+	wrongwarp.wrongplayers[i].across = -WRONGPLAYEROFFSCREEN;
 }
 
 static boolean M_WrongWarpInputs(INT32 ch)

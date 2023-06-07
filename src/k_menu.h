@@ -1239,8 +1239,18 @@ void M_Statistics(INT32 choice);
 void M_DrawStatistics(void);
 boolean M_StatisticsInputs(INT32 ch);
 
+#define MAXWRONGPLAYER MAXSPLITSCREENPLAYERS
+#define WRONGPLAYEROFFSCREEN 48
+
 extern struct wrongwarp_s {
 	INT32 ticker;
+	tic_t delaytowrongplayer;
+	struct wrongplayer_s
+	{
+		UINT8 skin;
+		INT16 across;
+		boolean spinout;
+	} wrongplayers[MAXWRONGPLAYER];
 } wrongwarp;
 
 void M_WrongWarp(INT32 choice);
