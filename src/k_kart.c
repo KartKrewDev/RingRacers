@@ -7936,9 +7936,16 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 	if (player->gateBoost)
 		player->gateBoost--;
 
-	if (player->rings > 0)
+	if (leveltime < starttime)
 	{
-		player->instaShieldCooldown = INSTAWHIP_COOLDOWN;
+		player->instaShieldCooldown = INSTAWHIP_STARTOFRACE;
+	}
+	else if (player->rings > 0)
+	{
+		if (player->instaShieldCooldown > INSTAWHIP_COOLDOWN)
+			player->instaShieldCooldown--;
+		else
+			player->instaShieldCooldown = INSTAWHIP_COOLDOWN;
 	}
 	else
 	{
