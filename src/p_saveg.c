@@ -2228,6 +2228,7 @@ typedef enum
 	MD2_LASTMOMZ     = 1<<28,
 	MD2_TERRAIN      = 1<<29,
 	MD2_WATERSKIP    = 1<<30,
+	MD2_LIGHTLEVEL   = (INT32)(1U<<31),
 } mobj_diff2_t;
 
 typedef enum
@@ -2466,6 +2467,8 @@ static void SaveMobjThinker(savebuffer_t *save, const thinker_t *th, const UINT8
 		|| (slope->normal.z != FRACUNIT))
 			diff2 |= MD2_FLOORSPRITESLOPE;
 	}
+	if (mobj->lightlevel)
+		diff2 |= MD2_LIGHTLEVEL;
 	if (mobj->hitlag)
 		diff2 |= MD2_HITLAG;
 	if (mobj->waterskip)
@@ -2674,6 +2677,10 @@ static void SaveMobjThinker(savebuffer_t *save, const thinker_t *th, const UINT8
 		WRITEFIXED(save->p, slope->normal.x);
 		WRITEFIXED(save->p, slope->normal.y);
 		WRITEFIXED(save->p, slope->normal.z);
+	}
+	if (diff2 & MD2_LIGHTLEVEL)
+	{
+		WRITEINT16(save->p, mobj->lightlevel);
 	}
 	if (diff2 & MD2_HITLAG)
 	{
@@ -3833,6 +3840,10 @@ static thinker_t* LoadMobjThinker(savebuffer_t *save, actionf_p1 thinker)
 		slope->normal.z = READFIXED(save->p);
 
 		P_UpdateSlopeLightOffset(slope);
+	}
+	if (diff2 & MD2_LIGHTLEVEL)
+	{
+		mobj->lightlevel = READINT16(save->p);
 	}
 	if (diff2 & MD2_HITLAG)
 	{

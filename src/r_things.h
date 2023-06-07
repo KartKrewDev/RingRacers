@@ -93,6 +93,8 @@ boolean R_ThingIsFullDark (mobj_t *thing);
 
 boolean R_ThingIsFlashing(mobj_t *thing);
 
+INT32 R_ThingLightLevel(mobj_t *thing);
+
 // --------------
 // MASKED DRAWING
 // --------------
