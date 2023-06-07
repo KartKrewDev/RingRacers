@@ -83,10 +83,31 @@ static UINT8 cheatf_warp(void)
 	if (success)
 	{
 		G_SetUsedCheats();
+		M_ClearMenus(true);
 		S_StartSound(0, sfx_kc42);
-	}
 
-	M_StartMessage(M_GetText("TOURNAMENT MODE ENGAGED!!\n\nIs what I would be saying if I actually\nimplemented anything special here.\n\nPress (B)\n"), NULL, MM_NOTHING);
+		M_StartMessage(M_GetText(
+			"TOURNAMENT MODE\n\
+			\nAll challenges temporarily unlocked.\n\
+			Saving is disabled - the game will\n\
+			return to normal on next launch.\n\
+			\n\
+			Press (B)\n"
+		), NULL, MM_NOTHING);
+	}
+	else
+	{
+		S_StartSound(0, sfx_s3k7b);
+
+		M_StartMessage(M_GetText(
+			"TOURNAMENT MODE\n\
+			\nThis is the correct password, but.\n\
+			you already have every challenge\n\
+			unlocked, so saving is still allowed!\n\
+			\n\
+			Press (B)\n"
+		), NULL, MM_NOTHING);
+	}
 
 	return 1;
 }

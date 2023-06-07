@@ -180,7 +180,7 @@ void M_ExtrasTick(void)
 				M_Challenges(0);
 			}
 		}
-		else if (cht_Interpret(cv_dummyextraspassword.string) == true)
+		else if (cht_Interpret(cv_dummyextraspassword.string) == true && menuactive == true)
 		{
 			M_InitExtras(-1);
 		}
