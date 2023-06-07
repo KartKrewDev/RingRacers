@@ -23,7 +23,7 @@ menu_t MISC_AddonsDef = {
 	MISC_AddonsMenu,
 	50, 28,
 	0, 0,
-	0,
+	MBF_NOLOOPENTRIES,
 	"EXTRAS",
 	0, 0,
 	M_DrawAddons,

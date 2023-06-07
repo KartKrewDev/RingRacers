@@ -131,8 +131,9 @@ void M_HandlePauseMenuGametype(INT32 choice);
 
 typedef enum
 {
-	MBF_UD_LR_FLIPPED		= 1, // flip up-down and left-right axes
-	MBF_SOUNDLESS		 	= 2, // do not play base menu sounds
+	MBF_UD_LR_FLIPPED		= 1,    // flip up-down and left-right axes
+	MBF_SOUNDLESS		 	= 1<<1, // do not play base menu sounds
+	MBF_NOLOOPENTRIES		= 1<<2, // do not loop M_NextOpt/M_PrevOpt
 } menubehaviourflags_t;
 
 struct menuitem_t

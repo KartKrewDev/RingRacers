@@ -159,10 +159,11 @@ boolean M_NextOpt(void)
 		if (itemOn + 1 > currentMenu->numitems - 1)
 		{
 			// Prevent looparound here
-			// If you're going to add any extra exceptions, DON'T.
-			// Add a "don't loop" flag to the menu_t struct instead.
-			if (currentMenu == &MISC_AddonsDef)
+			if (currentMenu->behaviourflags & MBF_NOLOOPENTRIES)
+			{
+				itemOn = oldItemOn;
 				return false;
+			}
 			itemOn = 0;
 		}
 		else
@@ -186,10 +187,11 @@ boolean M_PrevOpt(void)
 		if (!itemOn)
 		{
 			// Prevent looparound here
-			// If you're going to add any extra exceptions, DON'T.
-			// Add a "don't loop" flag to the menu_t struct instead.
-			if (currentMenu == &MISC_AddonsDef)
+			if (currentMenu->behaviourflags & MBF_NOLOOPENTRIES)
+			{
+				itemOn = oldItemOn;
 				return false;
+			}
 			itemOn = currentMenu->numitems - 1;
 		}
 		else
