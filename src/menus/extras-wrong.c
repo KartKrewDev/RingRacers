@@ -29,6 +29,7 @@ void M_WrongWarp(INT32 choice)
 static void M_WrongWarpTick(void)
 {
 	static boolean firsteggman = true;
+	static boolean antitailgate = false;
 
 	UINT8 i, j;
 
@@ -91,6 +92,10 @@ static void M_WrongWarpTick(void)
 			if (wrongwarp.wrongplayers[i].skin == rskin)
 				return;
 
+			// Prevent tailgating.
+			if (antitailgate == !!(i & 1))
+				continue;
+
 			// Slot isn't free.
 			if (wrongwarp.wrongplayers[i].skin != MAXSKINS)
 				continue;
@@ -111,12 +116,14 @@ static void M_WrongWarpTick(void)
 			return;
 		}
 
-		wrongwarp.wrongplayers[i].spinout = M_RandomChance(FRACUNIT/10);
+		wrongwarp.wrongplayers[i].spinout = M_RandomChance(FRACUNIT/11);
 	}
 
 	// Add the new character!
 	wrongwarp.wrongplayers[i].skin = rskin;
 	wrongwarp.wrongplayers[i].across = -WRONGPLAYEROFFSCREEN;
+
+	antitailgate = !!(i & 1);
 }
 
 static boolean M_WrongWarpInputs(INT32 ch)
