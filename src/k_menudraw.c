@@ -393,7 +393,7 @@ static void M_DrawMenuTyping(void)
 	x = (BASEVIDWIDTH - boxwidth)/2;
 	y = 80;
 	if (menutyping.menutypingfade < 9)
-		y += (9-menutyping.menutypingfade)*10;
+		y += floor(pow(2, (double)(9 - menutyping.menutypingfade)));
 	else
 		y += (9-menutyping.menutypingfade);
 
@@ -414,8 +414,12 @@ static void M_DrawMenuTyping(void)
 	V_DrawFill(x + 5 + boxwidth - 8, y + 4 + 5, 1, 8+6, 121);
 
 	V_DrawString(x + 8, y + 12, V_ALLOWLOWERCASE, cv->string);
-	if (skullAnimCounter < 4)
+	if (skullAnimCounter < 4
+		&& menutyping.menutypingclose == false
+		&& menutyping.menutypingfade == (menutyping.keyboardtyping ? 9 : 18))
+	{
 		V_DrawCharacter(x + 8 + V_StringWidth(cv->string, 0), y + 12 + 1, '_' | 0x80, false);
+	}
 
 	const INT32 buttonwidth = ((boxwidth + 1)/NUMVIRTUALKEYSINROW);
 #define BUTTONHEIGHT (11)
@@ -426,7 +430,12 @@ static void M_DrawMenuTyping(void)
 
 	if (menutyping.menutypingfade > 9)
 	{
-		y += 36 + 80 + (9-menutyping.menutypingfade)*10; // double yoffs for animation
+		y += 26;
+
+		if (menutyping.menutypingfade < 18)
+		{
+			y += floor(pow(2, (double)(18 - menutyping.menutypingfade))); // double yoffs for animation
+		}
 
 		INT32 tempkeyboardx = menutyping.keyboardx;
 
@@ -575,14 +584,21 @@ static void M_DrawMenuTyping(void)
 
 #undef BUTTONHEIGHT
 
+	y = 175;
+
+	if (menutyping.menutypingfade < 9)
+	{
+		y += 3 * (9 - menutyping.menutypingfade);
+	}
+
 	// Some contextual stuff
 	if (menutyping.keyboardtyping)
 	{
-		V_DrawThinString(returnx, 175, V_ALLOWLOWERCASE|V_6WIDTHSPACE|V_GRAYMAP, "Type using your keyboard. Press Enter to confirm & exit.\nUse your controller or any directional input to use the Virtual Keyboard.\n");
+		V_DrawThinString(returnx, y, V_ALLOWLOWERCASE|V_6WIDTHSPACE|V_GRAYMAP, "Type using your keyboard. Press Enter to confirm & exit.\nUse your controller or any directional input to use the Virtual Keyboard.\n");
 	}
 	else
 	{
-		V_DrawThinString(x, 175, V_ALLOWLOWERCASE|V_6WIDTHSPACE|V_GRAYMAP, "Type using the Virtual Keyboard. Use the \'OK\' button to confirm & exit.\nPress any keyboard key not bound to a control to use it.");
+		V_DrawThinString(returnx, y, V_ALLOWLOWERCASE|V_6WIDTHSPACE|V_GRAYMAP, "Type using the Virtual Keyboard. Use the \'OK\' button to confirm & exit.\nPress any keyboard key not bound to a control to use it.");
 	}
 
 }
