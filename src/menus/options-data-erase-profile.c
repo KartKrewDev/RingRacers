@@ -36,7 +36,7 @@ void M_CheckProfileData(INT32 choice)
 	if (np < 2)
 	{
 		S_StartSound(NULL, sfx_s3k7b);
-		M_StartMessage("There are no custom profiles.\n\nPress (B)", NULL, MM_NOTHING);
+		M_StartMessage("Profile Erase", "There are no custom profiles.\n", NULL, MM_NOTHING, NULL, NULL);
 		return;
 	}
 
@@ -100,9 +100,9 @@ void M_HandleProfileErase(INT32 choice)
 	else if (M_MenuConfirmPressed(pid))
 	{
 		if (optionsmenu.eraseprofilen == cv_currprofile.value)
-			M_StartMessage("Your ""\x85""current profile""\x80"" will be erased.\nAre you sure you want to proceed?\nDeleting this profile will also\nreturn you to the title screen.\n\nPress (A) to confirm or (B) to cancel", FUNCPTRCAST(M_EraseProfileResponse), MM_YESNO);
+			M_StartMessage("Profile Erase", "Your ""\x85""current profile""\x80"" will be erased.\nAre you sure you want to proceed?\nDeleting this profile will also\nreturn you to the title screen.\n", &M_EraseProfileResponse, MM_YESNO, NULL, NULL);
 		else
-			M_StartMessage("This profile will be erased.\nAre you sure you want to proceed?\n\nPress (A) to confirm or (B) to cancel", FUNCPTRCAST(M_EraseProfileResponse), MM_YESNO);
+			M_StartMessage("Profile Erase", "This profile will be erased.\nAre you sure you want to proceed?\n", &M_EraseProfileResponse, MM_YESNO, NULL, NULL);
 
 		M_SetMenuDelay(pid);
 	}

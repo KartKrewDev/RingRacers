@@ -4696,12 +4696,12 @@ static void Got_RunSOCcmd(UINT8 **cp, INT32 playernum)
 			if (ncs == FS_NOTFOUND)
 			{
 				CONS_Printf(M_GetText("The server tried to add %s,\nbut you don't have this file.\nYou need to find it in order\nto play on this server.\n"), filename);
-				M_StartMessage(va("The server added a file\n(%s)\nthat you do not have.\n\nPress ESC\n",filename), NULL, MM_NOTHING);
+				M_StartMessage("Server Connection Failure", va("The server added a file\n(%s)\nthat you do not have.\n",filename), NULL, MM_NOTHING, NULL, "Return to Menu");
 			}
 			else
 			{
 				CONS_Printf(M_GetText("Unknown error finding soc file (%s) the server added.\n"), filename);
-				M_StartMessage(va("Unknown error trying to load a file\nthat the server added\n(%s).\n\nPress ESC\n",filename), NULL, MM_NOTHING);
+				M_StartMessage("Server Connection Failure", va("Unknown error trying to load a file\nthat the server added\n(%s).\n",filename), NULL, MM_NOTHING, NULL, "Return to Menu");
 			}
 			return;
 		}
@@ -4940,22 +4940,22 @@ static void Got_Addfilecmd(UINT8 **cp, INT32 playernum)
 		if (ncs == FS_FOUND)
 		{
 			CONS_Printf(M_GetText("The server tried to add %s,\nbut you have too many files added.\nRestart the game to clear loaded files\nand play on this server."), filename);
-			M_StartMessage(va("The server added a file \n(%s)\nbut you have too many files added.\nRestart the game to clear loaded files.\n\nPress ESC\n",filename), NULL, MM_NOTHING);
+			M_StartMessage("Server Connection Failure", va("The server added a file \n(%s)\nbut you have too many files added.\nRestart the game to clear loaded files.\n",filename), NULL, MM_NOTHING, NULL, "Return to Menu");
 		}
 		else if (ncs == FS_NOTFOUND)
 		{
 			CONS_Printf(M_GetText("The server tried to add %s,\nbut you don't have this file.\nYou need to find it in order\nto play on this server."), filename);
-			M_StartMessage(va("The server added a file \n(%s)\nthat you do not have.\n\nPress ESC\n",filename), NULL, MM_NOTHING);
+			M_StartMessage("Server Connection Failure", va("The server added a file \n(%s)\nthat you do not have.\n",filename), NULL, MM_NOTHING, NULL, "Return to Menu");
 		}
 		else if (ncs == FS_MD5SUMBAD)
 		{
 			CONS_Printf(M_GetText("Checksum mismatch while loading %s.\nMake sure you have the copy of\nthis file that the server has.\n"), filename);
-			M_StartMessage(va("Checksum mismatch while loading \n%s.\nThe server seems to have a\ndifferent version of this file.\n\nPress ESC\n",filename), NULL, MM_NOTHING);
+			M_StartMessage("Server Connection Failure", va("Checksum mismatch while loading \n%s.\nThe server seems to have a\ndifferent version of this file.\n",filename), NULL, MM_NOTHING, NULL, "Return to Menu");
 		}
 		else
 		{
 			CONS_Printf(M_GetText("Unknown error finding wad file (%s) the server added.\n"), filename);
-			M_StartMessage(va("Unknown error trying to load a file\nthat the server added \n(%s).\n\nPress ESC\n",filename), NULL, MM_NOTHING);
+			M_StartMessage("Server Connection Failure", va("Unknown error trying to load a file\nthat the server added \n(%s).\n",filename), NULL, MM_NOTHING, NULL, "Return to Menu");
 		}
 		return;
 	}

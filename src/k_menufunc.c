@@ -273,12 +273,12 @@ boolean M_Responder(event_t *ev)
 	}
 
 	// event handler for MM_EVENTHANDLER
-	if (menumessage.active && menumessage.flags == MM_EVENTHANDLER && menumessage.routine)
+	/*if (menumessage.active && menumessage.flags == MM_EVENTHANDLER && menumessage.routine)
 	{
 		CONS_Printf("MM_EVENTHANDLER...\n");
 		menumessage.eroutine(ev); // What a terrible hack...
 		return true;
-	}
+	}*/
 
 	// Handle menu handling in-game.
 	if (menuactive == false)
@@ -994,7 +994,7 @@ static void M_HandleMenuInput(void)
 			{
 				if (((currentMenu->menuitems[itemOn].status & IT_CALLTYPE) & IT_CALL_NOTMODIFIED) && majormods)
 				{
-					M_StartMessage(M_GetText("This cannot be done with complex addons\nor in a cheated game.\n\nPress (B)"), NULL, MM_NOTHING);
+					M_StartMessage("Modified Game", M_GetText("This cannot be done with complex addons\nor in a cheated game."), NULL, MM_NOTHING, NULL, NULL);
 					return;
 				}
 			}

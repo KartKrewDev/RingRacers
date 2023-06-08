@@ -404,7 +404,7 @@ static void M_WriteGuestReplay(INT32 ch)
 		len = FIL_ReadFile(va("%s-%s-%s.lmp", gpath, cv_skin[0].string, TA_GuestReplay_Str), &buf);
 		if (!len)
 		{
-			M_StartMessage("Replay to copy no longer exists!", NULL, MM_NOTHING);
+			M_StartMessage("Guest Replay", "Replay to copy no longer exists!", NULL, MM_NOTHING, NULL, NULL);
 			Z_Free(gpath);
 			return;
 		}
@@ -430,7 +430,7 @@ static void M_WriteGuestReplay(INT32 ch)
 	M_SetupNextMenu(&PLAY_TimeAttackDef, false);
 
 	// TODO the following isn't showing up and I'm not sure why
-	//M_StartMessage(va("Guest replay data %s.", (len ? "saved" : "erased")), NULL, MM_NOTHING);
+	//M_StartMessage("Guest Replay", va("Guest replay data %s.", (len ? "saved" : "erased")), NULL, MM_NOTHING, NULL, NULL);
 }
 
 
@@ -456,7 +456,7 @@ void M_SetGuestReplay(INT32 choice)
 
 	if (FIL_FileExists(va("%s"PATHSEP"media"PATHSEP"replay"PATHSEP"%s"PATHSEP"%s-guest.lmp", srb2home, timeattackfolder, G_BuildMapName(levellist.choosemap+1))))
 	{
-		M_StartMessage(va("Are you sure you want to\n%s the guest replay data?\n\nPress (A) to confirm or (B) to cancel", (TA_GuestReplay_Str != NULL ? "overwrite" : "delete")), FUNCPTRCAST(M_WriteGuestReplay), MM_YESNO);
+		M_StartMessage("Guest Replay", va("Are you sure you want to\n%s the guest replay data?\n", (TA_GuestReplay_Str != NULL ? "overwrite" : "delete")), &M_WriteGuestReplay, MM_YESNO, NULL, NULL);
 	}
 	else if (TA_GuestReplay_Str != NULL)
 	{

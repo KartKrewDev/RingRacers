@@ -59,15 +59,14 @@ void M_DeleteReplayChoice(INT32 choice)
 void M_DeleteReplay(INT32 c)
 {
 	(void)c;
-	M_StartMessage(
+	M_StartMessage("Egg TV",
 		"Are you sure you want to\n"
 		"delete this replay?\n"
 		"\n"
-		"\x85" "This cannot be undone.\n" "\x80"
-		"\n"
-		"Press (A) to confirm or (B) to cancel",
-		FUNCPTRCAST(M_DeleteReplayChoice),
-		MM_YESNO
+		"\x85" "This cannot be undone.\n",
+		&M_DeleteReplayChoice,
+		MM_YESNO,
+		nullptr, nullptr
 	);
 	S_StartSound(nullptr, sfx_s3k36); // lel skid
 }

@@ -110,6 +110,6 @@ void M_MPSetupNetgameMapSelect(INT32 choice)
 	if (!M_LevelListFromGametype(menugametype))
 	{
 		S_StartSound(NULL, sfx_s3kb2);
-		M_StartMessage(va("No levels available for\n%s Mode!\n\nPress (B)\n", gametypes[menugametype]->name), NULL, MM_NOTHING);
+		M_StartMessage("Online Play", va("No levels available for\n%s Mode!\n", gametypes[menugametype]->name), NULL, MM_NOTHING, NULL, NULL);
 	}
 }

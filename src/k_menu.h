@@ -178,7 +178,7 @@ typedef enum
 {
 	MM_NOTHING = 0, // is just displayed until the user do someting
 	MM_YESNO,       // routine is called with only 'y' or 'n' in param
-	MM_EVENTHANDLER // the same of above but without 'y' or 'n' restriction
+	//MM_EVENTHANDLER // the same of above but without 'y' or 'n' restriction
 	                // and routine is void routine(event_t *) (ex: set control)
 } menumessagetype_t;
 
@@ -520,16 +520,22 @@ typedef enum
 extern struct menumessage_s
 {
 	boolean active;
+	boolean closing;
+
 	INT32 flags;		// MM_
+	const char *header;
 	char message[MAXMENUMESSAGE];	// message to display
 
 	SINT8 fadetimer;	// opening
 	INT32 x;
 	INT32 y;
-	INT32 m;
+	INT16 timer;
 
 	void (*routine)(INT32 choice);	// Normal routine
-	void (*eroutine)(event_t *ev);	// Event routine	(MM_EVENTHANDLER)
+	//void (*eroutine)(event_t *ev);	// Event routine	(MM_EVENTHANDLER)
+
+	const char *defaultstr;
+	const char *confirmstr;
 } menumessage;
 
 void M_HandleMenuMessage(void);
@@ -619,7 +625,7 @@ void M_PlayMenuJam(void);
 
 void M_MenuTypingInput(INT32 key);
 
-void M_StartMessage(const char *string, void *routine, menumessagetype_t itemtype);
+void M_StartMessage(const char *header, const char *string, void (*routine)(INT32), menumessagetype_t itemtype, const char *confirmstr, const char *defaultstr);
 void M_StopMessage(INT32 choice);
 void M_DrawMenuMessage(void);
 

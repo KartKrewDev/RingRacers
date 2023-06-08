@@ -5709,12 +5709,12 @@ void G_LoadGame(UINT32 slot, INT16 mapoverride)
 	if (strcmp((const char *)save.p, (const char *)vcheck))
 	{
 #ifdef SAVEGAME_OTHERVERSIONS
-		M_StartMessage(M_GetText("Save game from different version.\nYou can load this savegame, but\nsaving afterwards will be disabled.\n\nDo you want to continue anyway?\n\n(Press 'Y' to confirm)\n"),
-		               M_ForceLoadGameResponse, MM_YESNO);
+		M_StartMessage("Savegame Load", M_GetText("Save game from different version.\nYou can load this savegame, but\nsaving afterwards will be disabled.\n\nDo you want to continue anyway?\n"),
+		               M_ForceLoadGameResponse, MM_YESNO, NULL, NULL);
 		//Freeing done by the callback function of the above message
 #else
 		M_ClearMenus(true); // so ESC backs out to title
-		M_StartMessage(M_GetText("Save game from different version\n\nPress ESC\n"), NULL, MM_NOTHING);
+		M_StartMessage("Savegame Load", M_GetText("Save game from different version\n\n"), NULL, MM_NOTHING, NULL, "Return to Menu");
 		Command_ExitGame_f();
 		P_SaveBufferFree(&save);
 
@@ -5735,7 +5735,7 @@ void G_LoadGame(UINT32 slot, INT16 mapoverride)
 	if (!P_LoadGame(&save, mapoverride))
 	{
 		M_ClearMenus(true); // so ESC backs out to title
-		M_StartMessage(M_GetText("Savegame file corrupted\n\nPress ESC\n"), NULL, MM_NOTHING);
+		M_StartMessage("Savegame Load", M_GetText("Savegame file corrupted\n"), NULL, MM_NOTHING, NULL, "Return to Menu");
 		Command_ExitGame_f();
 		Z_Free(save.buffer);
 		save.p = save.buffer = NULL;

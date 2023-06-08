@@ -24,7 +24,7 @@ static inline size_t M_StringHeight(const char *string)
 }
 
 // default message handler
-void M_StartMessage(const char *string, void *routine, menumessagetype_t itemtype)
+void M_StartMessage(const char *header, const char *string, void (*routine)(INT32), menumessagetype_t itemtype, const char *confirmstr, const char *defaultstr)
 {
 	const UINT8 pid = 0;
 	size_t max = 0, maxatstart = 0, start = 0, strlines, i;
@@ -65,9 +65,12 @@ void M_StartMessage(const char *string, void *routine, menumessagetype_t itemtyp
 	}
 
 	strncpy(menumessage.message, string, MAXMENUMESSAGE);
+	menumessage.header = header;
 	menumessage.flags = itemtype;
-	*(void**)&menumessage.routine = routine;
+	menumessage.routine = routine;
 	menumessage.fadetimer = (gamestate == GS_WAITINGPLAYERS) ? 9 : 1;
+	menumessage.timer = 0;
+	menumessage.closing = false;
 	menumessage.active = true;
 
 	start = 0;
@@ -79,18 +82,29 @@ void M_StartMessage(const char *string, void *routine, menumessagetype_t itemtyp
 		menumessage.routine = M_StopMessage;
 	}
 
+	if (menumessage.flags == MM_YESNO && !defaultstr)
+	{
+		menumessage.defaultstr = "No";
+		menumessage.confirmstr = "Yes";
+	}
+	else
+	{
+		menumessage.defaultstr = defaultstr ? defaultstr : "OK";
+		menumessage.confirmstr = confirmstr;
+	}
+
 	// event routine
-	if (menumessage.flags == MM_EVENTHANDLER)
+	/*if (menumessage.flags == MM_EVENTHANDLER)
 	{
 		*(void**)&menumessage.eroutine = routine;
 		menumessage.routine = NULL;
-	}
+	}*/
 
 	//added : 06-02-98: now draw a textbox around the message
 	// compute lenght max and the numbers of lines
 	for (strlines = 0; *(message+start); strlines++)
 	{
-		for (i = 0;i < strlen(message+start);i++)
+		for (i = 0; i < strlen(message+start);i++)
 		{
 			if (*(message+start+i) == '\n')
 			{
@@ -111,10 +125,8 @@ void M_StartMessage(const char *string, void *routine, menumessagetype_t itemtyp
 		}
 	}
 
-	menumessage.x = (INT16)((BASEVIDWIDTH  - 8*max-16)/2);
-	menumessage.y = (INT16)((BASEVIDHEIGHT - M_StringHeight(message))/2);
-
-	menumessage.m = (INT16)((strlines<<8)+max);
+	menumessage.x = (8 * MAXSTRINGLENGTH) - 1;
+	menumessage.y = M_StringHeight(message);
 
 	M_SetMenuDelay(pid);	// Set menu delay to avoid setting off any of the handlers.
 }
@@ -124,7 +136,8 @@ void M_StopMessage(INT32 choice)
 	const char pid = 0;
 	(void) choice;
 
-	menumessage.active = false;
+	menumessage.closing = true;
+	menumessage.timer = 0;
 	M_SetMenuDelay(pid);
 }
 
@@ -135,15 +148,31 @@ void M_HandleMenuMessage(void)
 	boolean btok = M_MenuConfirmPressed(pid);
 	boolean btnok = M_MenuBackPressed(pid);
 
-	if (menumessage.fadetimer < 9)
+	if (menumessage.closing)
+	{
+		if (menumessage.fadetimer > 0)
+		{
+			menumessage.fadetimer--;
+		}
+
+		if (menumessage.fadetimer == 0)
+		{
+			menumessage.active = false;
+		}
+
+		return;
+	}
+	else if (menumessage.fadetimer < 9)
 	{
 		menumessage.fadetimer++;
 		return;
 	}
 
+	menumessage.timer++;
+
 	switch (menumessage.flags)
 	{
-		// Send 1 to the routine if we're pressing A/B/X/Y
+		// Send 1 to the routine if we're pressing A/B/X
 		case MM_NOTHING:
 		{
 			// send 1 if any button is pressed, 0 otherwise.
@@ -152,7 +181,7 @@ void M_HandleMenuMessage(void)
 
 			break;
 		}
-		// Send 1 to the routine if we're pressing A/X, 2 if B/Y, 0 otherwise.
+		// Send 1 to the routine if we're pressing A, 2 if B/X, 0 otherwise.
 		case MM_YESNO:
 		{
 			INT32 answer = MA_NONE;
