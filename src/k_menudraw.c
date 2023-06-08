@@ -399,7 +399,7 @@ static void M_DrawMenuTyping(void)
 
 	if (currentMenu->menuitems[itemOn].text)
 	{
-		V_DrawThinString(x + 5, y - 2, highlightflags|V_ALLOWLOWERCASE, currentMenu->menuitems[itemOn].text);
+		V_DrawThinString(x + 5, y - 2, highlightflags|V_6WIDTHSPACE|V_ALLOWLOWERCASE, currentMenu->menuitems[itemOn].text);
 	}
 
 	M_DrawMenuTooltips();
