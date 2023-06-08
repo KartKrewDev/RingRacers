@@ -2725,16 +2725,10 @@ void M_DrawTimeAttack(void)
 		// SPB Attack control hint + menu overlay
 		if (levellist.newgametype == GT_RACE && levellist.levelsearch.timeattack == true && M_SecretUnlocked(SECRET_SPBATTACK, true))
 		{
-			const UINT8 anim_duration = 16;
-			const UINT8 anim = (timeattackmenu.ticker % (anim_duration * 2)) < anim_duration;
-
 			INT32 buttonx = 162 + t;
 			INT32 buttony = timeheight;
 
-			if (anim)
-				V_DrawScaledPatch(buttonx + 35, buttony - 3, V_SNAPTOLEFT, W_CachePatchName("TLB_I", PU_CACHE));
-			else
-				V_DrawScaledPatch(buttonx + 35, buttony - 3, V_SNAPTOLEFT, W_CachePatchName("TLB_IB", PU_CACHE));
+			K_drawButtonAnim(buttonx + 35, buttony - 3, V_SNAPTOLEFT, kp_button_r, timeattackmenu.ticker);
 
 			if ((timeattackmenu.spbflicker == 0 || timeattackmenu.ticker % 2) == (cv_dummyspbattack.value == 1))
 			{
