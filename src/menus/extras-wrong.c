@@ -19,7 +19,6 @@ void M_WrongWarp(INT32 choice)
 
 	wrongwarp.ticker = 0;
 
-	MISC_WrongWarpDef.prevMenu = currentMenu;
 	M_SetupNextMenu(&MISC_WrongWarpDef, false);
 
 	// Done here to avoid immediate music credit
@@ -138,7 +137,7 @@ static boolean M_WrongWarpInputs(INT32 ch)
 
 menu_t MISC_WrongWarpDef = {
 	sizeof (MISC_WrongWarpMenu)/sizeof (menuitem_t),
-	&MainDef,
+	NULL,
 	0,
 	MISC_WrongWarpMenu,
 	0, 0,

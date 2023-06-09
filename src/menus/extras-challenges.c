@@ -373,7 +373,7 @@ void M_ChallengesTick(void)
 
 				if (challengesmenu.chaokeyhold > CHAOHOLD_MAX)
 				{
-					gamedata->chaokeys--;
+					//gamedata->chaokeys--;
 					challengesmenu.chaokeyhold = 0;
 					challengesmenu.unlockcount[CC_CHAOANIM]++;
 
@@ -600,7 +600,7 @@ boolean M_ChallengesInputs(INT32 ch)
 			challengesmenu.unlockcount[CC_CHAONOPE] = 6;
 			S_StartSound(NULL, sfx_s3k7b); //sfx_s3kb2
 
-#if 0 // debugging
+#if 1 // debugging
 			if (challengesmenu.currentunlock < MAXUNLOCKABLES && challengesmenu.unlockanim >= UNLOCKTIME && gamedata->unlocked[challengesmenu.currentunlock] == true)
 			{
 				gamedata->unlocked[challengesmenu.currentunlock] = gamedata->unlockpending[challengesmenu.currentunlock] = false;
