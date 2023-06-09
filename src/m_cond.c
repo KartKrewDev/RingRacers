@@ -1806,10 +1806,20 @@ UINT16 M_GetNextAchievedUnlock(boolean canskipchaokeys)
 	if (canskipchaokeys == true)
 	{
 		// Okay, we're skipping chao keys - let's just insta-digest them.
-		gamedata->chaokeys += gamedata->keyspending;
-		gamedata->pendingkeyroundoffset =
-			(gamedata->pendingkeyroundoffset + gamedata->pendingkeyrounds)
-			% GDCONVERT_ROUNDSTOKEY;
+
+		if (gamedata->chaokeys + gamedata->keyspending < GDMAX_CHAOKEYS)
+		{
+			gamedata->chaokeys += gamedata->keyspending;
+			gamedata->pendingkeyroundoffset =
+				(gamedata->pendingkeyroundoffset + gamedata->pendingkeyrounds)
+				% GDCONVERT_ROUNDSTOKEY;
+
+		}
+		else
+		{
+			gamedata->chaokeys = GDMAX_CHAOKEYS;
+			gamedata->pendingkeyroundoffset = 0;
+		}
 
 		gamedata->keyspending = 0;
 		gamedata->pendingkeyrounds = 0;
