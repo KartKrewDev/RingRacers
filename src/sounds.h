@@ -1169,6 +1169,7 @@ typedef enum
 	sfx_typri2,
 	sfx_eggspr,
 	sfx_achiev,
+	sfx_gpmetr,
 	sfx_endwrp,
 
 	// SRB2Kart - Drop target sounds

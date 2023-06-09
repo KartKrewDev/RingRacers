@@ -1498,6 +1498,35 @@ void Y_Ticker(void)
 		return;
 	}
 
+	// Animation sounds for roundqueue, see Y_RoundQueueDrawer
+	if (roundqueue.size != 0
+		&& roundqueue.position != 0
+		&& (timer - 1) <= 2*TICRATE)
+	{
+		const INT32 through = ((2*TICRATE) - (timer - 1));
+
+		if (data.showrank == true
+			&& roundqueue.position == roundqueue.size-1)
+		{
+			// Handle special entry on the end
+			if (through == data.linemeter && timer > 2)
+			{
+				S_StopSoundByID(NULL, sfx_gpmetr);
+				S_StartSound(NULL, sfx_kc50);
+			}
+			else if (through == 0)
+			{
+				S_StartSound(NULL, sfx_gpmetr);
+			}
+		}
+		else if (through == 9
+			&& roundqueue.position < roundqueue.size)
+		{
+			// Impactful landing
+			S_StartSound(NULL, sfx_kc50);
+		}
+	}
+
 	if (intertic < TICRATE || endtic != -1)
 	{
 		return;
