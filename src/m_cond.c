@@ -1711,13 +1711,7 @@ boolean M_UpdateUnlockablesAndExtraEmblems(boolean loud, boolean doall)
 		{
 			gamedata->keyspending++;
 			newkeys++;
-		}
-
-		if (newkeys != 0)
-		{
 			response |= true;
-			if (gamedata->musicstate < GDMUSIC_KEYG)
-				gamedata->musicstate = GDMUSIC_KEYG;
 		}
 	}
 

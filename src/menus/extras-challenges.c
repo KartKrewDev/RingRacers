@@ -449,6 +449,9 @@ void M_ChallengesTick(void)
 					gamedata->keyspending--;
 					gamedata->chaokeys++;
 					challengesmenu.unlockcount[CC_CHAOANIM]++;
+
+					if (gamedata->musicstate < GDMUSIC_KEYG)
+						gamedata->musicstate = GDMUSIC_KEYG;
 				}
 			}
 		}
