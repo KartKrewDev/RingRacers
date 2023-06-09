@@ -807,12 +807,12 @@ boolean M_MenuButtonPressed(UINT8 pid, UINT32 bt)
 		return false;
 	}
 
-	return (menucmd[pid].buttons & bt);
+	return !!(menucmd[pid].buttons & bt);
 }
 
 boolean M_MenuButtonHeld(UINT8 pid, UINT32 bt)
 {
-	return (menucmd[pid].buttons & bt);
+	return !!(menucmd[pid].buttons & bt);
 }
 
 // Returns true if we press the confirmation button
