@@ -5275,8 +5275,13 @@ static void M_DrawChallengePreview(INT32 x, INT32 y)
 		{
 			x = 8;
 			y = BASEVIDHEIGHT-16;
-			V_DrawGamemodeString(x, y - 32, V_ALLOWLOWERCASE, R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_PLAGUE, GTC_MENUCACHE), cv_alttitle.string);
-			V_DrawThinString(x, y, V_6WIDTHSPACE|V_ALLOWLOWERCASE|highlightflags, "Press (A)");
+			V_DrawGamemodeString(x, y - 33, V_ALLOWLOWERCASE, R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_PLAGUE, GTC_MENUCACHE), cv_alttitle.string);
+
+			K_drawButtonAnim(x, y, 0, kp_button_a[1], challengesmenu.ticker);
+			x += SHORT(kp_button_a[1][0]->width);
+			V_DrawThinString(x, y + 1, V_6WIDTHSPACE|V_ALLOWLOWERCASE|highlightflags, "Toggle");
+			
+
 			break;
 		}
 		default:
@@ -5341,6 +5346,8 @@ static void M_DrawChallengePreview(INT32 x, INT32 y)
 
 void M_DrawChallenges(void)
 {
+	const UINT8 pid = 0;
+
 	INT32 x = currentMenu->x, explodex, selectx = 0, selecty = 0;
 	INT32 y;
 	INT16 i, j;
@@ -5509,10 +5516,16 @@ challengedesc:
 
 		fixed_t keyx = (8+offs)*FRACUNIT, keyy = 5*FRACUNIT;
 
-		if (!challengesmenu.chaokeyhold)
-			V_DrawFixedPatch(keyx, keyy, FRACUNIT, 0, key, NULL);
+		const char *timerstr = va("%u", gamedata->chaokeys);
 
-		V_DrawTimerString((27+offs), 9-challengesmenu.unlockcount[CC_CHAOANIM], 0, va("%u", gamedata->chaokeys));
+		V_DrawTimerString((27+offs), 9-challengesmenu.unlockcount[CC_CHAOANIM], 0, timerstr);
+
+		K_drawButton(
+			(27 + offs + V_TimerStringWidth(timerstr, 0) + 2) << FRACBITS,
+			11 << FRACBITS,
+			0, kp_button_c[1],
+			M_MenuExtraHeld(pid)
+		);
 
 		offs = challengekeybarwidth;
 		if (gamedata->chaokeys < GDMAX_CHAOKEYS)
@@ -6051,7 +6064,7 @@ void M_DrawWrongWarp(void)
 
 void M_DrawSoundTest(void)
 {
-	UINT8 pid = 0; // todo: Add ability for any splitscreen player to bring up the menu.
+	const UINT8 pid = 0;
 
 	INT32 x, y, i, cursorx = 0;
 	INT32 titleoffset = 0, titlewidth;
