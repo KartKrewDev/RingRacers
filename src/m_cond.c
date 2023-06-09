@@ -1780,32 +1780,47 @@ boolean M_UpdateUnlockablesAndExtraEmblems(boolean loud, boolean doall)
 	return false;
 }
 
-UINT16 M_GetNextAchievedUnlock(void)
+UINT16 M_GetNextAchievedUnlock(boolean canskipchaokeys)
 {
 	UINT16 i;
 
 	// Go through unlockables
 	for (i = 0; i < MAXUNLOCKABLES; ++i)
 	{
-		if (gamedata->unlocked[i] || !unlockables[i].conditionset)
+		if (!unlockables[i].conditionset)
 		{
+			// Not worthy of consideration
 			continue;
 		}
 
 		if (gamedata->unlocked[i] == true)
 		{
+			// Already unlocked, no need to engage
 			continue;
 		}
 
 		if (gamedata->unlockpending[i] == false)
 		{
+			// Not unlocked AND not pending, which means chao keys can be used on something
+			canskipchaokeys = false;
 			continue;
 		}
 
 		return i;
 	}
 
-	if (gamedata->keyspending != 0)
+	if (canskipchaokeys == true)
+	{
+		// Okay, we're skipping chao keys - let's just insta-digest them.
+		gamedata->chaokeys += gamedata->keyspending;
+		gamedata->pendingkeyroundoffset =
+			(gamedata->pendingkeyroundoffset + gamedata->pendingkeyrounds)
+			% GDCONVERT_ROUNDSTOKEY;
+
+		gamedata->keyspending = 0;
+		gamedata->pendingkeyrounds = 0;
+	}
+	else if (gamedata->keyspending != 0)
 	{
 		return PENDING_CHAOKEYS;
 	}

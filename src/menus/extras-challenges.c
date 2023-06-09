@@ -212,7 +212,7 @@ menu_t *M_InterruptMenuWithChallenges(menu_t *desiredmenu)
 
 	M_UpdateUnlockablesAndExtraEmblems(false, true);
 
-	newunlock = M_GetNextAchievedUnlock();
+	newunlock = M_GetNextAchievedUnlock(true);
 
 	if ((challengesmenu.pending = (newunlock != MAXUNLOCKABLES)))
 	{
@@ -457,7 +457,7 @@ void M_ChallengesTick(void)
 	{
 		// The menu apparatus is requesting a new unlock.
 		challengesmenu.requestnew = false;
-		if ((newunlock = M_GetNextAchievedUnlock()) != MAXUNLOCKABLES)
+		if ((newunlock = M_GetNextAchievedUnlock(false)) != MAXUNLOCKABLES)
 		{
 			// We got one!
 			M_ChallengesAutoFocus(newunlock, false);

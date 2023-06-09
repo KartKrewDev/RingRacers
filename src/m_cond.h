@@ -347,7 +347,7 @@ boolean M_CheckCondition(condition_t *cn, player_t *player);
 boolean M_UpdateUnlockablesAndExtraEmblems(boolean loud, boolean doall);
 
 #define PENDING_CHAOKEYS (UINT16_MAX-1)
-UINT16 M_GetNextAchievedUnlock(void);
+UINT16 M_GetNextAchievedUnlock(boolean canskipchaokeys);
 
 UINT16 M_CheckLevelEmblems(void);
 UINT16 M_CompletionEmblems(void);
