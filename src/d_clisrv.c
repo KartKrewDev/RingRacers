@@ -653,6 +653,7 @@ typedef enum
 static void GetPackets(void);
 
 static cl_mode_t cl_mode = CL_SEARCHING;
+static cl_mode_t cl_requestmode = CL_ABORTED;
 
 #ifdef HAVE_CURL
 char http_source[MAX_MIRROR_LENGTH];
@@ -1670,8 +1671,14 @@ void CL_UpdateServerList (void)
 		SendAskInfo(BROADCASTADDR);
 }
 
-static void M_ConfirmConnect(void)
+static boolean M_ConfirmConnect(void)
 {
+	if (G_PlayerInputDown(0, gc_b, 1) || G_PlayerInputDown(0, gc_x, 1) || G_GetDeviceGameKeyDownArray(0)[KEY_ESCAPE])
+	{
+		cl_requestmode = CL_ABORTED;
+		return true;
+	}
+
 	if (G_PlayerInputDown(0, gc_a, 1) || G_GetDeviceGameKeyDownArray(0)[KEY_ENTER])
 	{
 		if (totalfilesrequestednum > 0)
@@ -1682,28 +1689,25 @@ static void M_ConfirmConnect(void)
 			{
 				if (CL_SendFileRequest())
 				{
-					cl_mode = CL_DOWNLOADFILES;
+					cl_requestmode = CL_DOWNLOADFILES;
 				}
 				else
 				{
-					cl_mode = CL_DOWNLOADFAILED;
+					cl_requestmode = CL_DOWNLOADFAILED;
 				}
 			}
 #ifdef HAVE_CURL
 			else
-				cl_mode = CL_PREPAREHTTPFILES;
+				cl_requestmode = CL_PREPAREHTTPFILES;
 #endif
 		}
 		else
-			cl_mode = CL_LOADFILES;
+			cl_requestmode = CL_LOADFILES;
 
-		M_StopMessage(0);
+		return true;
 	}
-	else if (G_PlayerInputDown(0, gc_b, 1) || G_PlayerInputDown(0, gc_x, 1) || G_GetDeviceGameKeyDownArray(0)[KEY_ESCAPE])
-	{
-		cl_mode = CL_ABORTED;
-		M_StopMessage(0);
-	}
+
+	return false;
 }
 
 static boolean CL_FinishedFileList(void)
@@ -2166,7 +2170,16 @@ static boolean CL_ServerConnectionTicker(const char *tmpsave, tic_t *oldtic, tic
 
 			if (cl_mode == CL_CONFIRMCONNECT)
 			{
-				M_ConfirmConnect();
+#ifdef HAVE_THREADS
+				I_lock_mutex(&k_menu_mutex);
+#endif
+				if (M_MenuMessageTick() && M_ConfirmConnect())
+					M_StopMessage(0);
+				else if (menumessage.active == false)
+					cl_mode = cl_requestmode;
+#ifdef HAVE_THREADS
+				I_unlock_mutex(k_menu_mutex);
+#endif
 			}
 			else
 			{
@@ -2252,6 +2265,7 @@ static void CL_ConnectToServer(void)
 	lastfilenum = -1;
 
 	cl_mode = CL_SEARCHING;
+	cl_requestmode = CL_ABORTED; // sane default
 
 	// Don't get a corrupt savegame error because tmpsave already exists
 	if (FIL_FileExists(tmpsave) && unlink(tmpsave) == -1)

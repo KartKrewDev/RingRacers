@@ -538,7 +538,11 @@ extern struct menumessage_s
 	const char *confirmstr;
 } menumessage;
 
+void M_StartMessage(const char *header, const char *string, void (*routine)(INT32), menumessagetype_t itemtype, const char *confirmstr, const char *defaultstr);
+boolean M_MenuMessageTick(void);
 void M_HandleMenuMessage(void);
+void M_StopMessage(INT32 choice);
+void M_DrawMenuMessage(void);
 
 #define MENUDELAYTIME 7
 #define MENUMINDELAY 2
@@ -624,10 +628,6 @@ void M_Init(void);
 void M_PlayMenuJam(void);
 
 void M_MenuTypingInput(INT32 key);
-
-void M_StartMessage(const char *header, const char *string, void (*routine)(INT32), menumessagetype_t itemtype, const char *confirmstr, const char *defaultstr);
-void M_StopMessage(INT32 choice);
-void M_DrawMenuMessage(void);
 
 void M_QuitResponse(INT32 ch);
 void M_QuitSRB2(INT32 choice);

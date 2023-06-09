@@ -68,7 +68,7 @@ void M_StartMessage(const char *header, const char *string, void (*routine)(INT3
 	menumessage.header = header;
 	menumessage.flags = itemtype;
 	menumessage.routine = routine;
-	menumessage.fadetimer = (gamestate == GS_WAITINGPLAYERS) ? 9 : 1;
+	menumessage.fadetimer = 1;
 	menumessage.timer = 0;
 	menumessage.closing = false;
 	menumessage.active = true;
@@ -141,13 +141,8 @@ void M_StopMessage(INT32 choice)
 	M_SetMenuDelay(pid);
 }
 
-// regular handler for MM_NOTHING and MM_YESNO
-void M_HandleMenuMessage(void)
+boolean M_MenuMessageTick(void)
 {
-	const UINT8 pid = 0;
-	boolean btok = M_MenuConfirmPressed(pid);
-	boolean btnok = M_MenuBackPressed(pid);
-
 	if (menumessage.closing)
 	{
 		if (menumessage.fadetimer > 0)
@@ -160,22 +155,34 @@ void M_HandleMenuMessage(void)
 			menumessage.active = false;
 		}
 
-		return;
+		return false;
 	}
 	else if (menumessage.fadetimer < 9)
 	{
 		menumessage.fadetimer++;
-		return;
+		return false;
 	}
 
 	menumessage.timer++;
+
+	return true;
+}
+
+// regular handler for MM_NOTHING and MM_YESNO
+void M_HandleMenuMessage(void)
+{
+	if (!M_MenuMessageTick())
+		return;
+
+	const UINT8 pid = 0;
+	boolean btok = M_MenuConfirmPressed(pid);
+	boolean btnok = M_MenuBackPressed(pid);
 
 	switch (menumessage.flags)
 	{
 		// Send 1 to the routine if we're pressing A/B/X
 		case MM_NOTHING:
 		{
-			// send 1 if any button is pressed, 0 otherwise.
 			if (btok || btnok)
 				menumessage.routine(0);
 
