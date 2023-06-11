@@ -143,9 +143,16 @@ typedef enum
 
 typedef enum
 {
-	TMICF_INVERTTIMEATTACK = 1,
+	//TMICF_UNUSED = 1,
 	TMICF_INVERTSIZE       = 1<<1,
 } textmapitemcapsuleflags_t;
+
+typedef enum
+{
+	TMICM_DEFAULT = 0, // Time Attack only has rings, multiplayer has everything
+	TMICM_MULTIPLAYER = 1,
+	TMICM_TIMEATTACK = 1<<1,
+} textmapitemcapsulemodes_t;
 
 typedef enum
 {

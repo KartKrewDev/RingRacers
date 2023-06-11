@@ -104,6 +104,60 @@ void K_TimerReset(void)
 	g_pointlimit = 0;
 }
 
+static void K_SpawnItemCapsules(void)
+{
+	mapthing_t *mt = mapthings;
+	size_t i = SIZE_MAX;
+
+	for (i = 0; i < nummapthings; i++, mt++)
+	{
+		boolean isRingCapsule = false;
+		INT32 modeFlags = 0;
+
+		if (mt->type != mobjinfo[MT_ITEMCAPSULE].doomednum)
+		{
+			continue;
+		}
+
+		isRingCapsule = (mt->args[0] < 1 || mt->args[0] == KITEM_SUPERRING || mt->args[0] >= NUMKARTITEMS);
+		if (isRingCapsule == true && ((gametyperules & GTR_SPHERES) || (modeattacking & ATTACKING_SPB)))
+		{
+			// don't spawn ring capsules in ringless gametypes
+			continue;
+		}
+
+		modeFlags = mt->args[3];
+		if (modeFlags == TMICM_DEFAULT)
+		{
+			if (isRingCapsule == true)
+			{
+				modeFlags = TMICM_MULTIPLAYER|TMICM_TIMEATTACK;
+			}
+			else
+			{
+				modeFlags = TMICM_MULTIPLAYER;
+			}
+		}
+
+		if (K_CapsuleTimeAttackRules() == true)
+		{
+			if ((modeFlags & TMICM_TIMEATTACK) == 0)
+			{
+				continue;
+			}
+		}
+		else
+		{
+			if ((modeFlags & TMICM_MULTIPLAYER) == 0)
+			{
+				continue;
+			}
+		}
+
+		P_SpawnMapThing(mt);
+	}
+}
+
 void K_TimerInit(void)
 {
 	UINT8 i;
@@ -199,6 +253,7 @@ void K_TimerInit(void)
 		}
 	}
 
+	K_SpawnItemCapsules();
 	K_BattleInit(domodeattack);
 
 	timelimitintics = K_TimeLimitForGametype();

@@ -4426,7 +4426,7 @@ static void P_RefreshItemCapsuleParts(mobj_t *mobj)
 		color = SKINCOLOR_GOLD;
 		newRenderFlags |= RF_SEMIBRIGHT;
 	}
-	else if (mobj->args[2] & TMICF_INVERTTIMEATTACK)
+	else if (mobj->args[3] & TMICM_TIMEATTACK)
 		color = SKINCOLOR_SAPPHIRE;
 	else if (itemType == KITEM_SPB)
 		color = SKINCOLOR_JET;
@@ -12180,21 +12180,6 @@ static boolean P_AllowMobjSpawn(mapthing_t* mthing, mobjtype_t i)
 {
 	switch (i)
 	{
-		case MT_ITEMCAPSULE:
-			{
-				boolean isRingCapsule = (mthing->args[0] < 1 || mthing->args[0] == KITEM_SUPERRING || mthing->args[0] >= NUMKARTITEMS);
-
-				// don't spawn ring capsules in GTR_SPHERES gametypes
-				if (isRingCapsule && ((gametyperules & GTR_SPHERES) || (modeattacking & ATTACKING_SPB)))
-					return false;
-
-				// in record attack, only spawn ring capsules
-				// (behavior can be inverted with the Extra flag, i.e. item capsule spawns and ring capsule does not)
-				if (K_CapsuleTimeAttackRules() == true
-				&& (!(mthing->args[2] & TMICF_INVERTTIMEATTACK) == !isRingCapsule))
-					return false;
-			}
-			break;
 		case MT_RING:
 			if (modeattacking & ATTACKING_SPB)
 				return false;
