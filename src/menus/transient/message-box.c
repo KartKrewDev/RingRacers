@@ -76,7 +76,7 @@ void M_StartMessage(const char *header, const char *string, void (*routine)(INT3
 	start = 0;
 	max = 0;
 
-	if (!routine || menumessage.flags == MM_NOTHING)
+	if (!routine)
 	{
 		menumessage.flags = MM_NOTHING;
 		menumessage.routine = M_StopMessage;

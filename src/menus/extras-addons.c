@@ -154,7 +154,7 @@ void M_AddonsRefresh(void)
 
 		if (message)
 		{
-			M_StartMessage("Add-ons Menu", message, &M_AddonsClearName,MM_YESNO, NULL, NULL);
+			M_StartMessage("Add-ons Menu", message, &M_AddonsClearName,MM_NOTHING, NULL, NULL);
 			return;// true;
 		}
 
