@@ -38,22 +38,5 @@ void Obj_InstaWhipThink (mobj_t *whip)
 
         if (whip->extravalue2) // Whip has no hitbox but removing it is a pain in the ass
             whip->renderflags |= RF_DONTDRAW;
-
-        // UGLY!
-        fixed_t dropOffset = 15*FRACUNIT;
-        whip->z -= dropOffset;
-
-        mobj_t *dropshadow = P_SpawnGhostMobj(whip);
-        dropshadow->fuse = 2; 
-        dropshadow->flags2 = MF2_LINKDRAW;
-        P_SetTarget(&dropshadow->tracer, whip);
-        dropshadow->renderflags = whip->renderflags;
-        dropshadow->lightlevel = 0;
-        dropshadow->extravalue1 = 1; // Suppress fade-out behavior!
-        dropshadow->renderflags &= ~(RF_TRANSMASK|RF_FULLBRIGHT);
-        dropshadow->renderflags |= RF_ABSOLUTELIGHTLEVEL;
-
-        // FUCK!
-        whip->z += dropOffset;
     }
 }
