@@ -4556,6 +4556,15 @@ const char *const STATE_LIST[] = { // array length left dynamic for sanity testi
 	"S_SPECIAL_UFO_STEM",
 
 	"S_GACHABOM",
+	"S_GACHABOM_DEAD",
+
+	"S_GACHABOM_EXPLOSION_1",
+	"S_GACHABOM_EXPLOSION_2",
+	"S_GACHABOM_EXPLOSION_3A",
+	"S_GACHABOM_EXPLOSION_3B",
+	"S_GACHABOM_EXPLOSION_4",
+	"S_GACHABOM_WAITING",
+	"S_GACHABOM_RETURNING",
 };
 
 // RegEx to generate this from info.h: ^\tMT_([^,]+), --> \t"MT_\1",
@@ -5415,6 +5424,7 @@ const char *const MOBJTYPE_LIST[] = {  // array length left dynamic for sanity t
 	"MT_SINKTRAIL",
 
 	"MT_GACHABOM",
+	"MT_GACHABOM_REBOUND",
 
 	"MT_DUELBOMB", // Duel mode bombs
 
