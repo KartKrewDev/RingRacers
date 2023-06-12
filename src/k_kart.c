@@ -10269,6 +10269,7 @@ static void K_KartSpindash(player_t *player)
 	else if (player->fastfall != 0)
 	{
 		// Still handling fast-fall bounce.
+		player->pflags |= PF_NOFASTFALL;
 		return;
 	}
 
