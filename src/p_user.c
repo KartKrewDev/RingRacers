@@ -1322,11 +1322,11 @@ mobj_t *P_SpawnFakeShadow(mobj_t *mobj, UINT8 offset)
 	ghost->old_roll = mobj->old_roll2;
 
 	ghost->renderflags &= ~(RF_TRANSMASK|RF_FULLBRIGHT);
-    ghost->renderflags |= RF_ABSOLUTELIGHTLEVEL;
+	ghost->renderflags |= RF_ABSOLUTELIGHTLEVEL;
 	ghost->lightlevel = 0;
 
 	ghost->flags2 |= MF2_LINKDRAW;
-    P_SetTarget(&ghost->tracer, mobj);
+	P_SetTarget(&ghost->tracer, mobj);
 
 	return ghost;
 }
