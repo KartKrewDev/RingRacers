@@ -9850,6 +9850,11 @@ void P_MobjThinker(mobj_t *mobj)
 
 	if (mobj->type == MT_GHOST && mobj->fuse > 0) // Not guaranteed to be MF_SCENERY or not MF_SCENERY!
 	{
+		if (mobj->frame & SPR_IWHP)
+		{
+			if (P_MobjWasRemoved(mobj->tracer))
+				mobj->renderflags |= RF_DONTDRAW;
+		}
 		if (mobj->extravalue1 > 0) // Sonic Advance 2 mode
 		{
 			if (mobj->extravalue2 >= 2)
