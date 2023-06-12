@@ -1298,6 +1298,18 @@ static int lib_pSpawnGhostMobj(lua_State *L)
 	return 1;
 }
 
+static int lib_pSpawnFakeShadow(lua_State *L)
+{
+	mobj_t *mobj = *((mobj_t **)luaL_checkudata(L, 1, META_MOBJ));
+	UINT8 offset = (UINT8)luaL_checkinteger(L, 2);
+	NOHUD
+	INLEVEL
+	if (!mobj)
+		return LUA_ErrInvalid(L, "mobj_t");
+	LUA_PushUserdata(L, P_SpawnFakeShadow(mobj, offset), META_MOBJ);
+	return 1;
+}
+
 static int lib_pGivePlayerRings(lua_State *L)
 {
 	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
@@ -4008,6 +4020,7 @@ static luaL_Reg lib[] = {
 	{"P_PlayJingleMusic",lib_pPlayJingleMusic},
 	{"P_RestoreMusic",lib_pRestoreMusic},
 	{"P_SpawnGhostMobj",lib_pSpawnGhostMobj},
+	{"P_SpawnFakeShadow",lib_pSpawnFakeShadow},
 	{"P_GivePlayerRings",lib_pGivePlayerRings},
 	{"P_GivePlayerLives",lib_pGivePlayerLives},
 	{"P_MovePlayer",lib_pMovePlayer},
