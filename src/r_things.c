@@ -2240,9 +2240,9 @@ static void R_ProjectSprite(mobj_t *thing)
 			return;
 	}
 
-	if (thing->renderflags & RF_ABSOLUTELIGHTLEVEL)
+	if (oldthing->renderflags & RF_ABSOLUTELIGHTLEVEL)
 	{
-		const UINT8 n = R_ThingLightLevel(thing);
+		const UINT8 n = R_ThingLightLevel(oldthing);
 
 		// n = uint8 aka 0 - 255, so the shift will always be 0 - LIGHTLEVELS - 1
 		lights_array = scalelight[n >> LIGHTSEGSHIFT];
@@ -2272,7 +2272,7 @@ static void R_ProjectSprite(mobj_t *thing)
 			lightnum = thing->subsector->sector->lightlevel;
 		}
 
-		lightnum = (lightnum + R_ThingLightLevel(thing)) >> LIGHTSEGSHIFT;
+		lightnum = (lightnum + R_ThingLightLevel(oldthing)) >> LIGHTSEGSHIFT;
 
 		if (lightnum < 0)
 			lights_array = scalelight[0];
@@ -2843,8 +2843,6 @@ static void R_SortVisSprites(vissprite_t* vsprsortedhead, UINT32 start, UINT32 e
 
 		if (dsfirst != &unsorted)
 		{
-			if (!(ds->cut & SC_FULLBRIGHT))
-				ds->colormap = dsfirst->colormap;
 			ds->extra_colormap = dsfirst->extra_colormap;
 
 			// reusing dsnext...
