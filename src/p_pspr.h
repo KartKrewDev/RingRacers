@@ -100,6 +100,8 @@ extern "C" {
 #define FF_GLOBALANIM 0x20000000
 /// \brief Frame flags - Animate: Start at a random place in the animation (mutually exclusive with above)
 #define FF_RANDOMANIM 0x40000000
+/// \brief Frame flags - Animate: Animate in reverse
+#define FF_REVERSEANIM 0x80000000
 
 /**	\brief translucency tables
 
