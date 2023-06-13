@@ -131,8 +131,9 @@ void M_HandlePauseMenuGametype(INT32 choice);
 
 typedef enum
 {
-	MBF_UD_LR_FLIPPED		= 1, // flip up-down and left-right axes
-	MBF_SOUNDLESS		 	= 2, // do not play base menu sounds
+	MBF_UD_LR_FLIPPED		= 1,    // flip up-down and left-right axes
+	MBF_SOUNDLESS		 	= 1<<1, // do not play base menu sounds
+	MBF_NOLOOPENTRIES		= 1<<2, // do not loop M_NextOpt/M_PrevOpt
 } menubehaviourflags_t;
 
 struct menuitem_t
@@ -423,6 +424,8 @@ extern menu_t MISC_AddonsDef;
 extern menuitem_t MISC_ChallengesStatsDummyMenu[];
 extern menu_t MISC_ChallengesDef;
 extern menu_t MISC_StatisticsDef;
+
+extern menu_t MISC_WrongWarpDef;
 
 extern menuitem_t MISC_SoundTest[];
 extern menu_t MISC_SoundTestDef;
@@ -1035,6 +1038,7 @@ typedef enum
 	extras_statistics,
 	extras_eggtv,
 	extras_stereo,
+	extras_password,
 } extras_e;
 
 void M_InitExtras(INT32 choice); // init for the struct
@@ -1098,6 +1102,7 @@ void M_AddonsRefresh(void);
 void M_HandleAddons(INT32 choice);
 char *M_AddonsHeaderPath(void);
 extern consvar_t cv_dummyaddonsearch;
+extern consvar_t cv_dummyextraspassword;
 
 void M_Manual(INT32 choice);
 void M_HandleImageDef(INT32 choice);
@@ -1176,6 +1181,10 @@ void M_DrawAddons(void);
 
 #define TILEFLIP_MAX 16
 
+#define CHAOHOLD_MAX (3*TICRATE/2)
+#define CHAOHOLD_BEGIN 7
+#define CHAOHOLD_END 3
+
 extern struct timeattackmenu_s {
 
 	tic_t ticker;		// How long the menu's been open for
@@ -1201,7 +1210,9 @@ extern struct challengesmenu_s {
 
 	boolean pending;
 	boolean requestnew;
+
 	boolean chaokeyadd;
+	UINT8 chaokeyhold;
 
 	boolean requestflip;
 
@@ -1227,6 +1238,23 @@ extern struct statisticsmenu_s {
 void M_Statistics(INT32 choice);
 void M_DrawStatistics(void);
 boolean M_StatisticsInputs(INT32 ch);
+
+#define MAXWRONGPLAYER MAXSPLITSCREENPLAYERS
+#define WRONGPLAYEROFFSCREEN 48
+
+extern struct wrongwarp_s {
+	INT32 ticker;
+	tic_t delaytowrongplayer;
+	struct wrongplayer_s
+	{
+		UINT8 skin;
+		INT16 across;
+		boolean spinout;
+	} wrongplayers[MAXWRONGPLAYER];
+} wrongwarp;
+
+void M_WrongWarp(INT32 choice);
+void M_DrawWrongWarp(void);
 
 typedef enum
 {

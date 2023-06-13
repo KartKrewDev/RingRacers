@@ -3,6 +3,7 @@
 
 #include "../k_menu.h"
 #include "../m_cond.h"
+#include "../m_cheat.h"
 #include "../s_sound.h"
 
 menuitem_t EXTRAS_Main[] =
@@ -14,7 +15,7 @@ menuitem_t EXTRAS_Main[] =
 	{IT_STRING | IT_CALL, NULL, NULL,
 		NULL, {.routine = M_Addons}, 0, 0},
 
-	{IT_STRING | IT_CALL, "Tutorial", "Help Dr. Eggman and Tails test out their new Ring Racers.",
+	{IT_STRING | IT_CALL, "Tutorial", "Help Dr. Robotnik and Tails test out their new Ring Racers.",
 		NULL, {.routine = M_LevelSelectInit}, 0, GT_TUTORIAL},
 
 	{IT_STRING | IT_CALL, "Challenges", "View the requirements for some of the secret content you can unlock!",
@@ -28,6 +29,9 @@ menuitem_t EXTRAS_Main[] =
 
 	{IT_STRING | IT_CALL, NULL, NULL,
 		NULL, {.routine = M_SoundTest}, 0, 0},
+
+	{IT_STRING | IT_CVAR | IT_CV_STRING, "Password", "If you don't know any passwords, come back later!",
+		NULL, {.cvar = &cv_dummyextraspassword}, 0, 0},
 };
 
 // the extras menu essentially reuses the options menu stuff
@@ -53,18 +57,10 @@ menu_t EXTRAS_MainDef = {
 
 struct extrasmenu_s extrasmenu;
 
+consvar_t cv_dummyextraspassword = CVAR_INIT ("dummyextraspassword", "", CV_HIDDEN, NULL, NULL);
+
 void M_InitExtras(INT32 choice)
 {
-	(void)choice;
-
-	extrasmenu.ticker = 0;
-	extrasmenu.offset = 0;
-
-	extrasmenu.extx = 0;
-	extrasmenu.exty = 0;
-	extrasmenu.textx = 0;
-	extrasmenu.texty = 0;
-
 	// Addons
 	if (M_SecretUnlocked(SECRET_ADDONS, true))
 	{
@@ -127,6 +123,17 @@ void M_InitExtras(INT32 choice)
 		EXTRAS_Main[extras_stereo].text = EXTRAS_Main[extras_stereo].tooltip = "???";
 	}
 
+	if (choice == -1)
+		return;
+
+	extrasmenu.ticker = 0;
+	extrasmenu.offset = 0;
+
+	extrasmenu.extx = 0;
+	extrasmenu.exty = 0;
+	extrasmenu.textx = 0;
+	extrasmenu.texty = 0;
+
 	M_SetupNextMenu(&EXTRAS_MainDef, false);
 }
 
@@ -162,6 +169,23 @@ void M_ExtrasTick(void)
 	{
 		extrasmenu.textx = 160;
 		extrasmenu.texty = 50;
+	}
+
+	if (menutyping.active == false && cv_dummyextraspassword.string[0] != '\0')
+	{
+		if (M_ConditionInterpret(cv_dummyextraspassword.string) == true)
+		{
+			if (M_UpdateUnlockablesAndExtraEmblems(true, true))
+			{
+				M_Challenges(0);
+			}
+		}
+		else if (cht_Interpret(cv_dummyextraspassword.string) == true && menuactive == true)
+		{
+			M_InitExtras(-1);
+		}
+
+		CV_StealthSet(&cv_dummyextraspassword, "");
 	}
 }
 

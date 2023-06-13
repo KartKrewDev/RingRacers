@@ -4849,7 +4849,7 @@ K_drawMiniPing (void)
 
 void K_drawButton(fixed_t x, fixed_t y, INT32 flags, patch_t *button[2], boolean pressed)
 {
-	V_DrawFixedPatch(x, y, FRACUNIT, flags, button[pressed], NULL);
+	V_DrawFixedPatch(x, y, FRACUNIT, flags, button[(pressed == true) ? 1 : 0], NULL);
 }
 
 void K_drawButtonAnim(INT32 x, INT32 y, INT32 flags, patch_t *button[2], tic_t animtic)

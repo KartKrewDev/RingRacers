@@ -159,10 +159,11 @@ boolean M_NextOpt(void)
 		if (itemOn + 1 > currentMenu->numitems - 1)
 		{
 			// Prevent looparound here
-			// If you're going to add any extra exceptions, DON'T.
-			// Add a "don't loop" flag to the menu_t struct instead.
-			if (currentMenu == &MISC_AddonsDef)
+			if (currentMenu->behaviourflags & MBF_NOLOOPENTRIES)
+			{
+				itemOn = oldItemOn;
 				return false;
+			}
 			itemOn = 0;
 		}
 		else
@@ -186,10 +187,11 @@ boolean M_PrevOpt(void)
 		if (!itemOn)
 		{
 			// Prevent looparound here
-			// If you're going to add any extra exceptions, DON'T.
-			// Add a "don't loop" flag to the menu_t struct instead.
-			if (currentMenu == &MISC_AddonsDef)
+			if (currentMenu->behaviourflags & MBF_NOLOOPENTRIES)
+			{
+				itemOn = oldItemOn;
 				return false;
+			}
 			itemOn = currentMenu->numitems - 1;
 		}
 		else
@@ -370,17 +372,18 @@ boolean M_Responder(event_t *ev)
 void M_PlayMenuJam(void)
 {
 	menu_t *refMenu = (menuactive ? currentMenu : restoreMenu);
-	static boolean loserclubpermitted = false;
-	boolean loserclub = (loserclubpermitted && (gamedata->musicflags & GDMUSIC_LOSERCLUB));
+	static boolean musicstatepermitted = false;
 
 	if (challengesmenu.pending)
 	{
 		S_StopMusic();
 		S_StopMusicCredit();
 
-		loserclubpermitted = true;
+		musicstatepermitted = true;
 		return;
 	}
+
+	gdmusic_t override = musicstatepermitted ? gamedata->musicstate : 0;
 
 	if (Playing() || soundtest.playing)
 		return;
@@ -393,7 +396,7 @@ void M_PlayMenuJam(void)
 			S_StopMusicCredit();
 			return;
 		}
-		else if (!loserclub)
+		else if (override == 0)
 		{
 			if (NotCurrentlyPlaying(refMenu->music))
 			{
@@ -404,12 +407,21 @@ void M_PlayMenuJam(void)
 		}
 	}
 
-	if (loserclub)
+	if (override != 0)
 	{
-		if (refMenu != NULL && NotCurrentlyPlaying("LOSERC"))
+		// See also gdmusic_t
+		const char* overridetotrack[GDMUSIC_MAX-1] = {
+			"KEYGEN",
+			"LOSERC",
+		};
+		
+		if (refMenu != NULL && NotCurrentlyPlaying(overridetotrack[override - 1]))
 		{
-			S_ChangeMusicInternal("LOSERC", true);
+			S_ChangeMusicInternal(overridetotrack[override - 1], true);
 			S_ShowMusicCredit();
+
+			if (override < GDMUSIC_KEEPONMENU)
+				gamedata->musicstate = GDMUSIC_NONE;
 		}
 
 		return;
@@ -486,6 +498,11 @@ menu_t *M_SpecificMenuRestore(menu_t *torestore)
 	{
 		// Ticker init
 		M_MPOptSelectInit(-1);
+	}
+	else if (torestore == &EXTRAS_MainDef)
+	{
+		// Disable or enable certain options
+		M_InitExtras(-1);
 	}
 
 	// One last catch.
@@ -790,12 +807,12 @@ boolean M_MenuButtonPressed(UINT8 pid, UINT32 bt)
 		return false;
 	}
 
-	return (menucmd[pid].buttons & bt);
+	return !!(menucmd[pid].buttons & bt);
 }
 
 boolean M_MenuButtonHeld(UINT8 pid, UINT32 bt)
 {
-	return (menucmd[pid].buttons & bt);
+	return !!(menucmd[pid].buttons & bt);
 }
 
 // Returns true if we press the confirmation button
@@ -1189,6 +1206,8 @@ void M_Init(void)
 	CV_RegisterVar(&cv_dummyspbattack);
 
 	CV_RegisterVar(&cv_dummyaddonsearch);
+
+	CV_RegisterVar(&cv_dummyextraspassword);
 
 	M_UpdateMenuBGImage(true);
 }

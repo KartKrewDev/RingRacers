@@ -249,12 +249,6 @@ void D_ProcessEvents(void)
 
 		HandleGamepadDeviceEvents(ev);
 
-		if (gameaction == ga_nothing && gamestate == GS_TITLESCREEN)
-		{
-			if (cht_Responder(ev))
-				continue;
-		}
-
 		if (demo.savemode == DSM_TITLEENTRY)
 		{
 			if (G_DemoTitleResponder(ev))
@@ -294,14 +288,6 @@ void D_ProcessEvents(void)
 
 		if (eaten)
 			continue; // menu ate the event
-
-		// Demo input:
-		/*
-		if (demo.playback)
-			if (M_DemoResponder(ev))
-				continue;	// demo ate the event
-		*/
-
 
 		G_Responder(ev);
 	}

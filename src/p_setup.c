@@ -7813,7 +7813,7 @@ static void P_InitGametype(void)
 
 	// Started a game? Move on to the next jam when you go back to the title screen
 	CV_SetValue(&cv_menujam_update, 1);
-	gamedata->musicflags = 0;
+	gamedata->musicstate = GDMUSIC_NONE;
 }
 
 struct minimapinfo minimapinfo;

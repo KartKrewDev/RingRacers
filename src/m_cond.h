@@ -55,6 +55,8 @@ typedef enum
 	UC_REPLAY,			// Save a replay
 	UC_CRASH,			// Hee ho !
 
+	UC_PASSWORD,		// Type in something funny
+
 	 // Just for string building
 	UC_AND,
 	UC_COMMA,
@@ -218,7 +220,14 @@ typedef enum
 #endif
 #define challengegridloops (gamedata->challengegridwidth >= CHALLENGEGRIDLOOPWIDTH)
 
-#define GDMUSIC_LOSERCLUB	0x01
+// See also M_PlayMenuJam
+typedef enum {
+	GDMUSIC_NONE = 0,
+	GDMUSIC_KEYG,
+	GDMUSIC_KEEPONMENU, // Minimum to keep after leaving the Challenge Grid
+	GDMUSIC_LOSERCLUB = GDMUSIC_KEEPONMENU,
+	GDMUSIC_MAX
+} gdmusic_t;
 
 // This is the largest number of 9s that will fit in UINT32 and UINT16 respectively.
 #define GDMAX_RINGS 999999999
@@ -281,7 +290,7 @@ struct gamedata_t
 	boolean eversavedreplay;
 	boolean everseenspecial;
 	boolean evercrashed;
-	UINT8 musicflags;
+	gdmusic_t musicstate;
 
 	// BACKWARDS COMPAT ASSIST
 	boolean importprofilewins;
@@ -302,6 +311,7 @@ void M_NewGameDataStruct(void);
 
 // Challenges menu stuff
 void M_PopulateChallengeGrid(void);
+void M_SanitiseChallengeGrid(void);
 
 struct challengegridextradata_t
 {
@@ -332,11 +342,12 @@ void M_ClearStats(void);
 boolean M_NotFreePlay(player_t *player);
 
 // Updating conditions and unlockables
+boolean M_ConditionInterpret(const char *password);
 boolean M_CheckCondition(condition_t *cn, player_t *player);
 boolean M_UpdateUnlockablesAndExtraEmblems(boolean loud, boolean doall);
 
 #define PENDING_CHAOKEYS (UINT16_MAX-1)
-UINT16 M_GetNextAchievedUnlock(void);
+UINT16 M_GetNextAchievedUnlock(boolean canskipchaokeys);
 
 UINT16 M_CheckLevelEmblems(void);
 UINT16 M_CompletionEmblems(void);

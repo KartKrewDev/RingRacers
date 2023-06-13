@@ -2585,6 +2585,13 @@ static void readcondition(UINT8 set, UINT32 id, char *word2)
 		//PARAMCHECK(1);
 		ty = UC_ADDON + offset;
 	}
+	else if (fastcmp(params[0], "PASSWORD"))
+	{
+		PARAMCHECK(1);
+		ty = UC_PASSWORD;
+		stringvar = Z_StrDup(params[1]);
+		re = -1;
+	}
 	else if ((offset=0) || fastcmp(params[0], "AND")
 	||        (++offset && fastcmp(params[0], "COMMA")))
 	{

@@ -393,13 +393,13 @@ static void M_DrawMenuTyping(void)
 	x = (BASEVIDWIDTH - boxwidth)/2;
 	y = 80;
 	if (menutyping.menutypingfade < 9)
-		y += (9-menutyping.menutypingfade)*10;
+		y += floor(pow(2, (double)(9 - menutyping.menutypingfade)));
 	else
 		y += (9-menutyping.menutypingfade);
 
 	if (currentMenu->menuitems[itemOn].text)
 	{
-		V_DrawThinString(x + 5, y - 2, highlightflags|V_ALLOWLOWERCASE, currentMenu->menuitems[itemOn].text);
+		V_DrawThinString(x + 5, y - 2, highlightflags|V_6WIDTHSPACE|V_ALLOWLOWERCASE, currentMenu->menuitems[itemOn].text);
 	}
 
 	M_DrawMenuTooltips();
@@ -414,8 +414,12 @@ static void M_DrawMenuTyping(void)
 	V_DrawFill(x + 5 + boxwidth - 8, y + 4 + 5, 1, 8+6, 121);
 
 	V_DrawString(x + 8, y + 12, V_ALLOWLOWERCASE, cv->string);
-	if (skullAnimCounter < 4)
+	if (skullAnimCounter < 4
+		&& menutyping.menutypingclose == false
+		&& menutyping.menutypingfade == (menutyping.keyboardtyping ? 9 : 18))
+	{
 		V_DrawCharacter(x + 8 + V_StringWidth(cv->string, 0), y + 12 + 1, '_' | 0x80, false);
+	}
 
 	const INT32 buttonwidth = ((boxwidth + 1)/NUMVIRTUALKEYSINROW);
 #define BUTTONHEIGHT (11)
@@ -426,7 +430,12 @@ static void M_DrawMenuTyping(void)
 
 	if (menutyping.menutypingfade > 9)
 	{
-		y += 36 + 80 + (9-menutyping.menutypingfade)*10; // double yoffs for animation
+		y += 26;
+
+		if (menutyping.menutypingfade < 18)
+		{
+			y += floor(pow(2, (double)(18 - menutyping.menutypingfade))); // double yoffs for animation
+		}
 
 		INT32 tempkeyboardx = menutyping.keyboardx;
 
@@ -575,14 +584,21 @@ static void M_DrawMenuTyping(void)
 
 #undef BUTTONHEIGHT
 
+	y = 175;
+
+	if (menutyping.menutypingfade < 9)
+	{
+		y += 3 * (9 - menutyping.menutypingfade);
+	}
+
 	// Some contextual stuff
 	if (menutyping.keyboardtyping)
 	{
-		V_DrawThinString(returnx, 175, V_ALLOWLOWERCASE|V_6WIDTHSPACE|V_GRAYMAP, "Type using your keyboard. Press Enter to confirm & exit.\nUse your controller or any directional input to use the Virtual Keyboard.\n");
+		V_DrawThinString(returnx, y, V_ALLOWLOWERCASE|V_6WIDTHSPACE|V_GRAYMAP, "Type using your keyboard. Press Enter to confirm & exit.\nUse your controller or any directional input to use the Virtual Keyboard.\n");
 	}
 	else
 	{
-		V_DrawThinString(x, 175, V_ALLOWLOWERCASE|V_6WIDTHSPACE|V_GRAYMAP, "Type using the Virtual Keyboard. Use the \'OK\' button to confirm & exit.\nPress any keyboard key not bound to a control to use it.");
+		V_DrawThinString(returnx, y, V_ALLOWLOWERCASE|V_6WIDTHSPACE|V_GRAYMAP, "Type using the Virtual Keyboard. Use the \'OK\' button to confirm & exit.\nPress any keyboard key not bound to a control to use it.");
 	}
 
 }
@@ -1390,16 +1406,14 @@ static void M_DrawCharSelectCircle(setup_player_t *p, INT16 x, INT16 y)
 }
 
 // returns false if the character couldn't be rendered
-static boolean M_DrawCharacterSprite(INT16 x, INT16 y, INT16 skin, boolean charflip, boolean animate, INT32 addflags, UINT8 *colormap)
+static boolean M_DrawCharacterSprite(INT16 x, INT16 y, INT16 skin, UINT8 spr2, UINT8 rotation, UINT32 frame, INT32 addflags, UINT8 *colormap)
 {
 	UINT8 spr;
 	spritedef_t *sprdef;
 	spriteframe_t *sprframe;
 	patch_t *sprpatch;
-	UINT8 rotation = (charflip ? 1 : 7);
-	UINT32 frame = animate ? setup_animcounter : 0;
 
-	spr = P_GetSkinSprite2(&skins[skin], SPR2_STIN, NULL);
+	spr = P_GetSkinSprite2(&skins[skin], spr2, NULL);
 	sprdef = &skins[skin].sprites[spr];
 
 	if (!sprdef->numframes) // No frames ??
@@ -1511,7 +1525,7 @@ static void M_DrawCharSelectSprite(UINT8 num, INT16 x, INT16 y, boolean charflip
 		color = p->color;
 	colormap = R_GetTranslationColormap(p->skin, color, GTC_MENUCACHE);
 
-	M_DrawCharacterSprite(x, y, p->skin, charflip, (p->mdepth == CSSTEP_READY), 0, colormap);
+	M_DrawCharacterSprite(x, y, p->skin, SPR2_STIN, (charflip ? 1 : 7), ((p->mdepth == CSSTEP_READY) ? setup_animcounter : 0), 0, colormap);
 }
 
 static void M_DrawCharSelectPreview(UINT8 num)
@@ -1880,7 +1894,7 @@ static void M_DrawProfileCard(INT32 x, INT32 y, boolean greyedout, profile_t *p)
 
 		if (skinnum >= 0)
 		{
-			if (M_DrawCharacterSprite(x-22, y+119, skinnum, false, false, 0, colormap))
+			if (M_DrawCharacterSprite(x-22, y+119, skinnum, SPR2_STIN, 7, 0, 0, colormap))
 				V_DrawMappedPatch(x+14, y+66, 0, faceprefix[skinnum][FACE_RANK], colormap);
 		}
 
@@ -1912,7 +1926,7 @@ static void M_DrawProfileCard(INT32 x, INT32 y, boolean greyedout, profile_t *p)
 			(K_FollowerUsable(fln) ? TC_DEFAULT : TC_BLINK),
 				col, GTC_MENUCACHE);
 
-		if (M_DrawCharacterSprite(x-22, y+119, skinnum, false, false, 0, ccolormap))
+		if (M_DrawCharacterSprite(x-22, y+119, skinnum, SPR2_STIN, 7, 0, 0, ccolormap))
 		{
 			V_DrawMappedPatch(x+14, y+66, 0, faceprefix[skinnum][FACE_RANK], ccolormap);
 		}
@@ -2711,16 +2725,10 @@ void M_DrawTimeAttack(void)
 		// SPB Attack control hint + menu overlay
 		if (levellist.newgametype == GT_RACE && levellist.levelsearch.timeattack == true && M_SecretUnlocked(SECRET_SPBATTACK, true))
 		{
-			const UINT8 anim_duration = 16;
-			const UINT8 anim = (timeattackmenu.ticker % (anim_duration * 2)) < anim_duration;
-
 			INT32 buttonx = 162 + t;
 			INT32 buttony = timeheight;
 
-			if (anim)
-				V_DrawScaledPatch(buttonx + 35, buttony - 3, V_SNAPTOLEFT, W_CachePatchName("TLB_I", PU_CACHE));
-			else
-				V_DrawScaledPatch(buttonx + 35, buttony - 3, V_SNAPTOLEFT, W_CachePatchName("TLB_IB", PU_CACHE));
+			K_drawButtonAnim(buttonx + 35, buttony - 3, V_SNAPTOLEFT, kp_button_r, timeattackmenu.ticker);
 
 			if ((timeattackmenu.spbflicker == 0 || timeattackmenu.ticker % 2) == (cv_dummyspbattack.value == 1))
 			{
@@ -4378,13 +4386,13 @@ void M_DrawPause(void)
 		if (smallroundpatch != NULL)
 		{
 			V_DrawMappedPatch(
-				24, 152,
+				24, 152 + offset/2,
 				0,
 				smallroundpatch,
 				NULL);
 		}
 
-		Y_RoundQueueDrawer(&standings, false, false);
+		Y_RoundQueueDrawer(&standings, offset/2, false, false);
 	}
 }
 
@@ -5007,7 +5015,7 @@ static void M_DrawChallengePreview(INT32 x, INT32 y)
 			if (skin != -1)
 			{
 				colormap = R_GetTranslationColormap(skin, skins[skin].prefcolor, GTC_MENUCACHE);
-				M_DrawCharacterSprite(x, y, skin, false, false, 0, colormap);
+				M_DrawCharacterSprite(x, y, skin, SPR2_STIN, 7, 0, 0, colormap);
 
 				for (i = 0; i < skin; i++)
 				{
@@ -5065,7 +5073,7 @@ static void M_DrawChallengePreview(INT32 x, INT32 y)
 			if (skin == -1)
 				skin = 0;
 			colormap = R_GetTranslationColormap(TC_BLINK, SKINCOLOR_BLACK, GTC_MENUCACHE);
-			M_DrawCharacterSprite(x, y, skin, false, false, 0, colormap);
+			M_DrawCharacterSprite(x, y, skin, SPR2_STIN, 7, 0, 0, colormap);
 
 			// Draw follower next to them
 			if (fskin != -1)
@@ -5267,8 +5275,13 @@ static void M_DrawChallengePreview(INT32 x, INT32 y)
 		{
 			x = 8;
 			y = BASEVIDHEIGHT-16;
-			V_DrawGamemodeString(x, y - 32, V_ALLOWLOWERCASE, R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_PLAGUE, GTC_MENUCACHE), cv_alttitle.string);
-			V_DrawThinString(x, y, V_6WIDTHSPACE|V_ALLOWLOWERCASE|highlightflags, "Press (A)");
+			V_DrawGamemodeString(x, y - 33, V_ALLOWLOWERCASE, R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_PLAGUE, GTC_MENUCACHE), cv_alttitle.string);
+
+			K_drawButtonAnim(x, y, 0, kp_button_a[1], challengesmenu.ticker);
+			x += SHORT(kp_button_a[1][0]->width);
+			V_DrawThinString(x, y + 1, V_6WIDTHSPACE|V_ALLOWLOWERCASE|highlightflags, "Toggle");
+			
+
 			break;
 		}
 		default:
@@ -5333,7 +5346,9 @@ static void M_DrawChallengePreview(INT32 x, INT32 y)
 
 void M_DrawChallenges(void)
 {
-	INT32 x = currentMenu->x, explodex, selectx;
+	const UINT8 pid = 0;
+
+	INT32 x = currentMenu->x, explodex, selectx = 0, selecty = 0;
 	INT32 y;
 	INT16 i, j;
 	const char *str;
@@ -5410,6 +5425,7 @@ void M_DrawChallenges(void)
 	}
 
 	selectx = explodex + (challengesmenu.hilix*challengesgridstep);
+	selecty = currentMenu->y + (challengesmenu.hiliy*challengesgridstep);
 
 	while (i >= 0 && x >= -(challengesgridstep*2))
 	{
@@ -5447,48 +5463,11 @@ void M_DrawChallenges(void)
 		challengesmenu.hilix,
 		challengesmenu.hiliy,
 		selectx,
-		currentMenu->y + (challengesmenu.hiliy*challengesgridstep),
+		selecty,
 		true);
 	M_DrawCharSelectExplosions(false, explodex, currentMenu->y);
 
 challengedesc:
-
-	// Chao Keys
-	{
-		patch_t *key = W_CachePatchName("UN_CHA00", PU_CACHE);
-		INT32 offs = challengesmenu.unlockcount[CC_CHAONOPE];
-		if (offs & 1)
-			offs = -offs;
-		offs /= 2;
-
-		if (gamedata->chaokeys > 9)
-		{
-			offs -= 6;
-			if (gamedata->chaokeys > 99)
-				offs -= 2; // as far as we can go
-		}
-
-		V_DrawFixedPatch((8+offs)*FRACUNIT, 5*FRACUNIT, FRACUNIT, 0, key, NULL);
-		V_DrawTimerString((27+offs), 9-challengesmenu.unlockcount[CC_CHAOANIM], 0, va("%u", gamedata->chaokeys));
-
-		offs = challengekeybarwidth;
-		if (gamedata->chaokeys < GDMAX_CHAOKEYS)
-			offs = ((gamedata->pendingkeyroundoffset * challengekeybarwidth)/GDCONVERT_ROUNDSTOKEY);
-
-		if (offs > 0)
-			V_DrawFill(1, 25, offs, 2, 0);
-		if (offs < challengekeybarwidth)
-			V_DrawFadeFill(1+offs, 25, challengekeybarwidth-offs, 2, 0, 31, challengetransparentstrength);
-	}
-
-	// Tally
-	{
-		str = va("%d/%d",
-			challengesmenu.unlockcount[CC_UNLOCKED] + challengesmenu.unlockcount[CC_TALLY],
-			challengesmenu.unlockcount[CC_TOTAL]
-			);
-		V_DrawRightAlignedTimerString(BASEVIDWIDTH-7, 9-challengesmenu.unlockcount[CC_ANIM], 0, str);
-	}
 
 	// Name bar
 	{
@@ -5509,6 +5488,94 @@ challengedesc:
 
 		offset = V_LSTitleLowStringWidth(str, 0) / 2;
 		V_DrawLSTitleLowString(BASEVIDWIDTH/2 - offset, y+6, 0, str);
+	}
+
+	// Tally
+	{
+		str = va("%d/%d",
+			challengesmenu.unlockcount[CC_UNLOCKED] + challengesmenu.unlockcount[CC_TALLY],
+			challengesmenu.unlockcount[CC_TOTAL]
+			);
+		V_DrawRightAlignedTimerString(BASEVIDWIDTH-7, 9-challengesmenu.unlockcount[CC_ANIM], 0, str);
+	}
+
+	// Chao Keys
+	{
+		patch_t *key = W_CachePatchName("UN_CHA00", PU_CACHE);
+		INT32 offs = challengesmenu.unlockcount[CC_CHAONOPE];
+		if (offs & 1)
+			offs = -offs;
+		offs /= 2;
+
+		if (gamedata->chaokeys > 9)
+		{
+			offs -= 6;
+			if (gamedata->chaokeys > 99)
+				offs -= 2; // as far as we can go
+		}
+
+		fixed_t keyx = (8+offs)*FRACUNIT, keyy = 5*FRACUNIT;
+
+		const char *timerstr = va("%u", gamedata->chaokeys);
+
+		V_DrawTimerString((27+offs), 9-challengesmenu.unlockcount[CC_CHAOANIM], 0, timerstr);
+
+		K_drawButton(
+			(27 + offs + V_TimerStringWidth(timerstr, 0) + 2) << FRACBITS,
+			11 << FRACBITS,
+			0, kp_button_c[1],
+			M_MenuExtraHeld(pid)
+		);
+
+		offs = challengekeybarwidth;
+		if (gamedata->chaokeys < GDMAX_CHAOKEYS)
+			offs = ((gamedata->pendingkeyroundoffset * challengekeybarwidth)/GDCONVERT_ROUNDSTOKEY);
+
+		if (offs > 0)
+			V_DrawFill(1, 25, offs, 2, 0);
+		if (offs < challengekeybarwidth)
+			V_DrawFadeFill(1+offs, 25, challengekeybarwidth-offs, 2, 0, 31, challengetransparentstrength);
+
+		if (challengesmenu.chaokeyhold)
+		{
+			fixed_t keyholdrotation = 0, radius = challengesgridstep;
+
+			if (challengesmenu.chaokeyhold < CHAOHOLD_BEGIN)
+			{
+				radius = (challengesmenu.chaokeyhold*radius)*(FRACUNIT/CHAOHOLD_BEGIN);
+				keyx += challengesmenu.chaokeyhold*((selectx*FRACUNIT) - keyx)/CHAOHOLD_BEGIN;
+				keyy += challengesmenu.chaokeyhold*((selecty*FRACUNIT) - keyy)/CHAOHOLD_BEGIN;
+			}
+			else
+			{
+				if (challengesmenu.chaokeyhold < CHAOHOLD_MAX - CHAOHOLD_END)
+				{
+					radius <<= FRACBITS;
+
+					keyholdrotation = 360 * ((challengesmenu.chaokeyhold - CHAOHOLD_BEGIN))
+						* (FRACUNIT/(CHAOHOLD_MAX - (CHAOHOLD_BEGIN + CHAOHOLD_END)));
+				}
+				else
+				{
+					radius = ((CHAOHOLD_MAX - challengesmenu.chaokeyhold)*radius)*(FRACUNIT/CHAOHOLD_END);
+				}
+
+				keyx = selectx*FRACUNIT;
+				keyy = selecty*FRACUNIT;
+			}
+
+			if (radius)
+			{
+				angle_t ang = (FixedAngle(
+					keyholdrotation
+					) >> ANGLETOFINESHIFT) & FINEMASK;
+
+				keyx += FixedMul(radius, FINESINE(ang));
+				keyy -= FixedMul(radius, FINECOSINE(ang));
+			}
+		}
+
+		V_DrawFixedPatch(keyx, keyy, FRACUNIT, 0, key, NULL);
 	}
 
 	// Derived from M_DrawCharSelectPreview
@@ -5854,9 +5921,150 @@ void M_DrawStatistics(void)
 
 #undef STATSSTEP
 
+static INT32 M_WrongWarpFallingHelper(INT32 y, INT32 falltime)
+{
+	if (wrongwarp.ticker < falltime)
+	{
+		return y;
+	}
+
+	if (wrongwarp.ticker > falltime + 2*TICRATE)
+	{
+		return INT32_MAX;
+	}
+
+	if (wrongwarp.ticker < falltime + TICRATE)
+	{
+		y += + ((wrongwarp.ticker - falltime) & 1 ? 1 : -1);
+		return y;
+	}
+
+	y += floor(pow(1.5, (double)(wrongwarp.ticker - (falltime + TICRATE))));
+	return y;
+}
+
+static void M_DrawWrongPlayer(UINT8 i)
+{
+#define wrongpl wrongwarp.wrongplayers[i]
+	if (wrongpl.skin >= numskins)
+		return;
+
+	UINT8 *colormap = R_GetTranslationColormap(wrongpl.skin, skins[wrongpl.skin].prefcolor, GTC_MENUCACHE);
+
+	M_DrawCharacterSprite(
+		wrongpl.across,
+		160 - ((i & 1) ? 0 : 32),
+		wrongpl.skin,
+		wrongpl.spinout ? SPR2_SPIN : SPR2_SLWN,
+		wrongpl.spinout ? ((wrongpl.across/8) & 7) : 6,
+		(wrongwarp.ticker+i),
+		0, colormap
+	);
+#undef wrongpl
+}
+
+void M_DrawWrongWarp(void)
+{
+	INT32 titleoffset = 0, titlewidth, x, y;
+	const char *titletext = "WRONG GAME? WRONG GAME! ";
+
+	if (gamestate == GS_MENU)
+	{
+		patch_t *pat, *pat2;
+		INT32 animtimer, anim2 = 0;
+
+		pat = W_CachePatchName("TITLEBG1", PU_CACHE);
+		pat2 = W_CachePatchName("TITLEBG2", PU_CACHE);
+
+		animtimer = ((wrongwarp.ticker*5)/16) % SHORT(pat->width);
+		anim2 = SHORT(pat2->width) - (((wrongwarp.ticker*5)/16) % SHORT(pat2->width));
+
+		// SRB2Kart: F_DrawPatchCol is over-engineered; recoded to be less shitty and error-prone
+		V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 0);
+
+		x = -((INT32)animtimer);
+		y = 0;
+		while (x < BASEVIDWIDTH)
+		{
+			V_DrawFixedPatch(x*FRACUNIT, y*FRACUNIT, FRACUNIT, 0, pat, NULL);
+			x += SHORT(pat->width);
+		}
+
+		x = -anim2;
+		y = BASEVIDHEIGHT - SHORT(pat2->height);
+		while (x < BASEVIDWIDTH)
+		{
+			V_DrawFixedPatch(x*FRACUNIT, y*FRACUNIT, FRACUNIT, 0, pat2, NULL);
+			x += SHORT(pat2->width);
+		}
+	}
+
+	{
+		patch_t *ttcheckers = W_CachePatchName("TTCHECK", PU_CACHE);
+
+		y = FixedMul(40<<FRACBITS, FixedDiv(wrongwarp.ticker%70, 70));
+
+		V_DrawSciencePatch(0, -y, 0, ttcheckers, FRACUNIT);
+		V_DrawSciencePatch(280<<FRACBITS, -(40<<FRACBITS) + y, 0, ttcheckers, FRACUNIT);
+
+		y = M_WrongWarpFallingHelper(36, 7*TICRATE/4);
+		if (y != INT32_MAX)
+		{
+			patch_t *ttbanner = W_CachePatchName("TTKBANNR", PU_CACHE);
+			V_DrawSmallScaledPatch(84, y, 0, ttbanner);
+		}
+
+		y = M_WrongWarpFallingHelper(87, 4*TICRATE/3);
+		if (y != INT32_MAX)
+		{
+			patch_t *ttkart = W_CachePatchName("TTKART", PU_CACHE);
+			V_DrawSmallScaledPatch(84, y, 0, ttkart);
+		}
+	}
+
+	if (wrongwarp.ticker < 2*TICRATE/3)
+		return;
+
+	V_DrawFadeScreen(31, min((wrongwarp.ticker - 2*TICRATE/3), 5));
+
+	// SMK title screen recreation!?
+
+	if (wrongwarp.ticker >= 2*TICRATE)
+	{
+		// Done as four calls and not a loop for the sake of render order
+		M_DrawWrongPlayer(0);
+		M_DrawWrongPlayer(2);
+		M_DrawWrongPlayer(1);
+		M_DrawWrongPlayer(3);
+	}
+
+	y = 20;
+
+	x = BASEVIDWIDTH - 8;
+
+	if (wrongwarp.ticker < TICRATE)
+	{
+		INT32 adjust = floor(pow(2, (double)(TICRATE - wrongwarp.ticker)));
+		x += adjust/2;
+		y += adjust;
+	}
+
+	titlewidth = V_LSTitleHighStringWidth(titletext, 0);
+	titleoffset = (-wrongwarp.ticker) % titlewidth;
+
+	while (titleoffset < BASEVIDWIDTH)
+	{
+		V_DrawLSTitleHighString(titleoffset, y, 0, titletext);
+		titleoffset += titlewidth;
+	}
+
+	patch_t *bumper = W_CachePatchName((cv_alttitle.value ? "MTSJUMPR1" : "MTSBUMPR1"), PU_CACHE);
+	V_DrawScaledPatch(x-(SHORT(bumper->width)), (BASEVIDHEIGHT-8)-(SHORT(bumper->height)), 0, bumper);
+}
+
 void M_DrawSoundTest(void)
 {
-	UINT8 pid = 0; // todo: Add ability for any splitscreen player to bring up the menu.
+	const UINT8 pid = 0;
 
 	INT32 x, y, i, cursorx = 0;
 	INT32 titleoffset = 0, titlewidth;

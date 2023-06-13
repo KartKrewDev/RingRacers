@@ -312,6 +312,88 @@ quickcheckagain:
 	}
 }
 
+void M_SanitiseChallengeGrid(void)
+{
+	UINT8 seen[MAXUNLOCKABLES];
+	UINT16 empty[MAXUNLOCKABLES + (CHALLENGEGRIDHEIGHT-1)];
+	UINT16 i, j, numempty = 0;
+
+	if (gamedata->challengegrid == NULL)
+		return;
+
+	memset(seen, 0, sizeof(seen));
+
+	// Go through all spots to identify duplicates and absences.
+	for (j = 0; j < gamedata->challengegridwidth * CHALLENGEGRIDHEIGHT; j++)
+	{
+		i = gamedata->challengegrid[j];
+
+		if (i >= MAXUNLOCKABLES || !unlockables[i].conditionset)
+		{
+			empty[numempty++] = j;
+			continue;
+		}
+
+		if (seen[i] != 5) // Arbitrary cap greater than 4
+		{
+			seen[i]++;
+
+			if (seen[i] == 1 || unlockables[i].majorunlock)
+			{
+				continue;
+			}
+		}
+
+		empty[numempty++] = j;
+	}
+
+	// Go through unlockables to identify if any haven't been seen.
+	for (i = 0; i < MAXUNLOCKABLES; ++i)
+	{
+		if (!unlockables[i].conditionset)
+		{
+			continue;
+		}
+
+		if (unlockables[i].majorunlock && seen[i] != 4)
+		{
+			// Probably not enough spots to retrofit.
+			goto badgrid;
+		}
+
+		if (seen[i] != 0)
+		{
+			// Present on the challenge grid.
+			continue;
+		}
+
+		if (numempty != 0)
+		{
+			// Small ones can be slotted in easy.
+			j = empty[--numempty];
+			gamedata->challengegrid[j] = i;
+		}
+
+		// Nothing we can do to recover.
+		goto badgrid;
+	}
+
+	// Fill the remaining spots with empties.
+	while (numempty != 0)
+	{
+		j = empty[--numempty];
+		gamedata->challengegrid[j] = MAXUNLOCKABLES;
+	}
+
+	return;
+
+badgrid:
+	// Just remove everything and let it get regenerated.
+	Z_Free(gamedata->challengegrid);
+	gamedata->challengegrid = NULL;
+	gamedata->challengegridwidth = 0;
+}
+
 void M_UpdateChallengeGridExtraData(challengegridextradata_t *extradata)
 {
 	UINT16 i, j, num, id, tempid, work;
@@ -531,7 +613,7 @@ void M_ClearStats(void)
 	gamedata->eversavedreplay = false;
 	gamedata->everseenspecial = false;
 	gamedata->evercrashed = false;
-	gamedata->musicflags = 0;
+	gamedata->musicstate = GDMUSIC_NONE;
 
 	gamedata->importprofilewins = false;
 }
@@ -758,10 +840,13 @@ boolean M_CheckCondition(condition_t *cn, player_t *player)
 		case UC_CRASH:
 			if (gamedata->evercrashed)
 			{
-				gamedata->musicflags |= GDMUSIC_LOSERCLUB;
+				if (gamedata->musicstate < GDMUSIC_LOSERCLUB)
+					gamedata->musicstate = GDMUSIC_LOSERCLUB;
 				return true;
 			}
 			return false;
+		case UC_PASSWORD:
+			return (cn->stringvar == NULL);
 
 		// Just for string building
 		case UC_AND:
@@ -1081,7 +1166,7 @@ static const char *M_GetConditionString(condition_t *cn)
 		case UC_ALLSUPER:
 		case UC_ALLEMERALDS:
 		{
-			const char *chaostext, *speedtext = "", *orbetter = "";
+			const char *chaostext, *speedtext = "";
 
 			if (!gamedata->everseenspecial)
 				return NULL;
@@ -1093,17 +1178,14 @@ static const char *M_GetConditionString(condition_t *cn)
 			else
 				chaostext = "14";
 
-			if (cn->requirement == KARTSPEED_NORMAL)
+			/*if (cn->requirement == KARTSPEED_NORMAL) -- Emeralds can not be collected on Easy
 			{
 				speedtext = " on Normal difficulty";
-				//if (M_SecretUnlocked(SECRET_HARDSPEED, true))
-					orbetter = " or better";
 			}
-			else if (cn->requirement == KARTSPEED_HARD)
+			else*/
+			if (cn->requirement == KARTSPEED_HARD)
 			{
 				speedtext = " on Hard difficulty";
-				if (M_SecretUnlocked(SECRET_MASTERMODE, true))
-					orbetter = " or better";
 			}
 			else if (cn->requirement == KARTGP_MASTER)
 			{
@@ -1113,7 +1195,7 @@ static const char *M_GetConditionString(condition_t *cn)
 					speedtext = " on ???";
 			}
 
-			return va("collect all %s Emeralds%s%s", chaostext, speedtext, orbetter);
+			return va("GRAND PRIX: collect all %s Emeralds%s", chaostext, speedtext);
 		}
 
 		case UC_TOTALMEDALS: // Requires number of emblems >= x
@@ -1213,6 +1295,8 @@ static const char *M_GetConditionString(condition_t *cn)
 			if (gamedata->evercrashed)
 				return "launch \"Dr. Robotnik's Ring Racers\" again after a game crash";
 			return NULL;
+		case UC_PASSWORD:
+			return "enter a secret password";
 
 		case UC_AND:
 			return "&";
@@ -1265,7 +1349,7 @@ static const char *M_GetConditionString(condition_t *cn)
 
 			if (cn->requirement == KARTSPEED_NORMAL)
 			{
-				speedtext = "on Normal difficulty or better";
+				speedtext = "on Normal difficulty";
 			}
 			else if (cn->requirement == KARTSPEED_HARD)
 			{
@@ -1322,7 +1406,10 @@ static const char *M_GetConditionString(condition_t *cn)
 			{
 				if (cup->id != cn->requirement)
 					continue;
-				return va("%s%s %s CUP", completetype, orbetter, cup->name);
+				return va("%s%s %s CUP",
+					completetype, orbetter,
+					(M_CupLocked(cup) ? "???" : cup->name)
+				);
 			}
 			return va("INVALID CUP CONDITION \"%d:%d\"", cn->type, cn->requirement);
 		}
@@ -1528,7 +1615,7 @@ char *M_BuildConditionSetString(UINT16 unlockid)
 
 static boolean M_CheckUnlockConditions(player_t *player)
 {
-	INT32 i;
+	UINT32 i;
 	conditionset_t *c;
 	boolean ret;
 
@@ -1545,6 +1632,43 @@ static boolean M_CheckUnlockConditions(player_t *player)
 	}
 
 	return ret;
+}
+
+boolean M_ConditionInterpret(const char *password)
+{
+	UINT32 i, j;
+	conditionset_t *c;
+	condition_t *cn;
+
+	for (i = 0; i < MAXCONDITIONSETS; ++i)
+	{
+		c = &conditionSets[i];
+
+		if (!c->numconditions || gamedata->achieved[i])
+			continue;
+
+		for (j = 0; j < c->numconditions; ++j)
+		{
+			cn = &c->condition[j];
+
+			if (cn->type != UC_PASSWORD)
+				continue;
+
+			if (cn->stringvar == NULL)
+				continue;
+
+			if (stricmp(cn->stringvar, password))
+				continue;
+
+			// Remove the password for this session.
+			Z_Free(cn->stringvar);
+			cn->stringvar = NULL;
+
+			return true;
+		}
+	}
+
+	return false;
 }
 
 boolean M_UpdateUnlockablesAndExtraEmblems(boolean loud, boolean doall)
@@ -1650,32 +1774,57 @@ boolean M_UpdateUnlockablesAndExtraEmblems(boolean loud, boolean doall)
 	return false;
 }
 
-UINT16 M_GetNextAchievedUnlock(void)
+UINT16 M_GetNextAchievedUnlock(boolean canskipchaokeys)
 {
 	UINT16 i;
 
 	// Go through unlockables
 	for (i = 0; i < MAXUNLOCKABLES; ++i)
 	{
-		if (gamedata->unlocked[i] || !unlockables[i].conditionset)
+		if (!unlockables[i].conditionset)
 		{
+			// Not worthy of consideration
 			continue;
 		}
 
 		if (gamedata->unlocked[i] == true)
 		{
+			// Already unlocked, no need to engage
 			continue;
 		}
 
 		if (gamedata->unlockpending[i] == false)
 		{
+			// Not unlocked AND not pending, which means chao keys can be used on something
+			canskipchaokeys = false;
 			continue;
 		}
 
 		return i;
 	}
 
-	if (gamedata->keyspending != 0)
+	if (canskipchaokeys == true)
+	{
+		// Okay, we're skipping chao keys - let's just insta-digest them.
+
+		if (gamedata->chaokeys + gamedata->keyspending < GDMAX_CHAOKEYS)
+		{
+			gamedata->chaokeys += gamedata->keyspending;
+			gamedata->pendingkeyroundoffset =
+				(gamedata->pendingkeyroundoffset + gamedata->pendingkeyrounds)
+				% GDCONVERT_ROUNDSTOKEY;
+
+		}
+		else
+		{
+			gamedata->chaokeys = GDMAX_CHAOKEYS;
+			gamedata->pendingkeyroundoffset = 0;
+		}
+
+		gamedata->keyspending = 0;
+		gamedata->pendingkeyrounds = 0;
+	}
+	else if (gamedata->keyspending != 0)
 	{
 		return PENDING_CHAOKEYS;
 	}

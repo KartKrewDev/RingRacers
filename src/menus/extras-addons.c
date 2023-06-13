@@ -23,7 +23,7 @@ menu_t MISC_AddonsDef = {
 	MISC_AddonsMenu,
 	50, 28,
 	0, 0,
-	0,
+	MBF_NOLOOPENTRIES,
 	"EXTRAS",
 	0, 0,
 	M_DrawAddons,
@@ -340,6 +340,9 @@ void M_HandleAddons(INT32 choice)
 
 		// Secret menu!
 		//MainMenu[secrets].status = (M_AnySecretUnlocked()) ? (IT_STRING | IT_CALL) : (IT_DISABLED);
+
+		// I could guard it, but let's just always do this.
+		M_InitExtras(-1);
 
 		if (currentMenu->prevMenu)
 			M_SetupNextMenu(M_InterruptMenuWithChallenges(currentMenu->prevMenu), false);

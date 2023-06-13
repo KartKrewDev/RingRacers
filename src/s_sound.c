@@ -363,8 +363,12 @@ void S_StopSoundByID(void *origin, sfxenum_t sfx_id)
 
 	// Sounds without origin can have multiple sources, they shouldn't
 	// be stopped by new sounds.
+	// (The above comment predates this codebase using git and cannot be BLAME'd)
+	// ...yeah, but if it's being stopped by ID, it's clearly an intentful effect. ~toast 090623
+#if 0
 	if (!origin)
 		return;
+#endif
 #ifdef HW3SOUND
 	if (hws_mode != HWS_DEFAULT_MODE)
 	{
