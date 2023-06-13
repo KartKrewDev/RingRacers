@@ -59,6 +59,8 @@ extern "C" {
 #define FF_REVERSESUBTRACT	((AST_REVERSESUBTRACT-1)<<FF_BLENDSHIFT)
 #define FF_MODULATE			((AST_MODULATE-1)<<FF_BLENDSHIFT)
 #define FF_OVERLAY			((AST_OVERLAY-1)<<FF_BLENDSHIFT)
+/// \brief Frame flags: B/W inverted colors (hitlag flashing)
+#define FF_INVERT 0x8000
 
 /// \brief Frame flags: 0 = no trans(opaque), 1-15 = transl. table
 #define FF_TRANSMASK 0xf0000

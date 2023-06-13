@@ -815,6 +815,7 @@ static boolean baddie_is_flashing(mobj_t *thing)
 boolean R_ThingIsFlashing(mobj_t *thing)
 {
 	return
+		(thing->frame & FF_INVERT) ||
 		hitlag_is_flashing(thing) ||
 		baddie_is_flashing(thing);
 }
