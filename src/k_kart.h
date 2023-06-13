@@ -34,6 +34,7 @@ Make sure this matches the actual number of states
 
 #define INSTAWHIP_COOLDOWN (TICRATE*2)
 #define INSTAWHIP_STARTOFRACE (255)
+#define INSTAWHIP_STARTOFBATTLE (1)
 #define INSTAWHIP_DROPGUARD (12)
 #define GUARDBREAK_COOLDOWN (TICRATE*4)
 

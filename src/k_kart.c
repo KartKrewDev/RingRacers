@@ -7938,7 +7938,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 
 	if (leveltime < starttime)
 	{
-		player->instaShieldCooldown = INSTAWHIP_STARTOFRACE;
+		player->instaShieldCooldown = (gametyperules & GTR_SPHERES) ? INSTAWHIP_STARTOFBATTLE : INSTAWHIP_STARTOFRACE;
 	}
 	else if (player->rings > 0)
 	{
@@ -10700,6 +10700,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 						P_SetScale(whip, player->mo->scale);
 						P_SetTarget(&whip->target, player->mo);
 						K_MatchGenericExtraFlags(whip, player->mo);
+						P_SpawnFakeShadow(whip, 20);
 						whip->fuse = 12; // Changing instawhip animation duration? Look here
 						player->flashing = max(player->flashing, 12);
 						player->mo->momz += 4*mapobjectscale;

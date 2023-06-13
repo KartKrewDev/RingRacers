@@ -1254,6 +1254,85 @@ mobj_t *P_SpawnGhostMobj(mobj_t *mobj)
 }
 
 //
+// P_SpawnFakeShadow
+//
+// Spawns a silhouette that copies its tracer and copies RF_DONTDRAW
+//
+mobj_t *P_SpawnFakeShadow(mobj_t *mobj, UINT8 offset)
+{
+	mobj_t *ghost = P_SpawnMobj(mobj->x, mobj->y, mobj->z - offset*mapobjectscale, MT_FAKESHADOW);
+	ghost->threshold = offset;
+
+	P_SetTarget(&ghost->target, mobj);
+
+	P_SetScale(ghost, mobj->scale);
+	ghost->destscale = mobj->scale;
+
+	if (mobj->eflags & MFE_VERTICALFLIP)
+	{
+		ghost->eflags |= MFE_VERTICALFLIP;
+		ghost->z += mobj->height - ghost->height;
+	}
+
+	ghost->color = mobj->color;
+	ghost->colorized = mobj->colorized; // Kart: they should also be colorized if their origin is
+
+	ghost->angle = (mobj->player ? mobj->player->drawangle : mobj->angle);
+	ghost->roll = mobj->roll;
+	ghost->pitch = mobj->pitch;
+	ghost->sprite = mobj->sprite;
+	ghost->sprite2 = mobj->sprite2;
+	ghost->frame = mobj->frame;
+	ghost->tics = -1;
+	ghost->renderflags = mobj->renderflags;
+	ghost->fuse = -1;
+	ghost->skin = mobj->skin;
+	ghost->standingslope = mobj->standingslope;
+
+	ghost->sprxoff = mobj->sprxoff;
+	ghost->spryoff = mobj->spryoff;
+	ghost->sprzoff = mobj->sprzoff;
+	ghost->rollangle = mobj->rollangle;
+
+	ghost->spritexscale = mobj->spritexscale;
+	ghost->spriteyscale = mobj->spriteyscale;
+	ghost->spritexoffset = mobj->spritexoffset;
+	ghost->spriteyoffset = mobj->spriteyoffset;
+
+	if (mobj->flags2 & MF2_OBJECTFLIP)
+		ghost->flags |= MF2_OBJECTFLIP;
+
+	if (!(mobj->flags & MF_DONTENCOREMAP))
+		ghost->flags &= ~MF_DONTENCOREMAP;
+
+	if (mobj->player && mobj->player->followmobj)
+	{
+		mobj_t *ghost2 = P_SpawnGhostMobj(mobj->player->followmobj);
+		P_SetTarget(&ghost2->tracer, ghost);
+		P_SetTarget(&ghost->tracer, ghost2);
+		ghost2->flags2 |= (mobj->player->followmobj->flags2 & MF2_LINKDRAW);
+	}
+
+	// Copy interpolation data :)
+	ghost->old_x = mobj->old_x2;
+	ghost->old_y = mobj->old_y2;
+	ghost->old_z = mobj->old_z2;
+	ghost->old_angle = (mobj->player ? mobj->player->old_drawangle2 : mobj->old_angle2);
+	ghost->old_pitch = mobj->old_pitch2;
+	ghost->old_roll = mobj->old_roll2;
+
+	ghost->renderflags &= ~(RF_TRANSMASK|RF_FULLBRIGHT);
+	ghost->renderflags |= RF_ABSOLUTELIGHTLEVEL;
+	ghost->lightlevel = 0;
+
+	ghost->flags2 |= MF2_LINKDRAW;
+	P_SetTarget(&ghost->tracer, mobj);
+
+	return ghost;
+}
+
+
+//
 // P_DoPlayerExit
 //
 // Player exits the map via sector trigger
