@@ -4954,6 +4954,17 @@ void P_SetScale(mobj_t *mobj, fixed_t newscale)
 	}
 }
 
+//
+// P_InstaScale
+//
+// Set the object's current scale and destscale together
+//
+void P_InstaScale(mobj_t *thing, fixed_t scale)
+{
+	P_SetScale(thing, scale);
+	thing->destscale = scale;
+}
+
 void P_Attract(mobj_t *source, mobj_t *dest, boolean nightsgrab) // Home in on your target
 {
 	fixed_t dist, ndist, speedmul;

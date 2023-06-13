@@ -6,13 +6,6 @@
 #include "../p_local.h"
 #include "../s_sound.h"
 
-// TODO: generic function
-static void P_InstaScale(mobj_t *thing, fixed_t scale)
-{
-	P_SetScale(thing, scale);
-	thing->destscale = scale;
-}
-
 /* An object may not be visible on the same tic:
    1) that it spawned
    2) that it cycles to the next state */
