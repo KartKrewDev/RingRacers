@@ -2142,6 +2142,8 @@ void S_ShowMusicCredit(void)
 
 	if (!def->title)
 	{
+		// Like showing a blank credit.
+		S_StopMusicCredit();
 		return;
 	}
 
