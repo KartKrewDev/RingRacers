@@ -609,6 +609,8 @@ void P_SetThingTID(mobj_t *mo, mtag_t tid);
 void P_RemoveThingTID(mobj_t *mo);
 mobj_t *P_FindMobjFromTID(mtag_t tid, mobj_t *i, mobj_t *activator);
 
+void P_DeleteMobjStringArgs(mobj_t *mobj);
+
 #ifdef __cplusplus
 } // extern "C"
 #endif

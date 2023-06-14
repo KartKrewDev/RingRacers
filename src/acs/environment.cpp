@@ -272,7 +272,7 @@ bool Environment::checkTag(ACSVM::Word type, ACSVM::Word tag)
 		case ACS_TAGTYPE_CAMERA:
 		{
 			const mobj_t *camera = P_FindObjectTypeFromTag(MT_ALTVIEWMAN, tag);
-			if (camera == nullptr || camera->spawnpoint == nullptr)
+			if (camera == nullptr)
 			{
 				return true;
 			}
