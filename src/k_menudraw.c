@@ -6142,6 +6142,8 @@ void M_DrawSoundTest(void)
 		}
 
 		titletext = soundtest.current->title;
+		if (!titletext)
+			titletext = "Untitled"; // Har har.
 
 		V_DrawThinString(x+1, y, V_ALLOWLOWERCASE|V_6WIDTHSPACE, titletext);
 		if (soundtest.current->numtracks > 1)

@@ -1492,7 +1492,16 @@ void S_PopulateSoundTestSequence(void)
 		S_InsertMapIntoSoundTestSequence(i, &tail);
 	}
 
-	// Finally, we insert all important musicdefs at the  head,
+	// Okay, guarantee the list ends on NULL! This stops
+	// that pointing to either invalid memory in general,
+	// or valid memory that is already somewhere else in
+	// the sound test sequence (way more likely).
+	// (We do this here so that inserting unimportant,
+	// mapless musicdefs does not get overwritten, like it
+	// would be if this were done after the below block.)
+	*tail = NULL;
+
+	// Finally, we insert all important musicdefs at the head,
 	// and all others at the tail.
 	// It's being added to the sequence in reverse order...
 	// but because musicdefstart is ALSO populated in reverse,
@@ -2133,6 +2142,8 @@ void S_ShowMusicCredit(void)
 
 	if (!def->title)
 	{
+		// Like showing a blank credit.
+		S_StopMusicCredit();
 		return;
 	}
 
