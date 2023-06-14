@@ -606,22 +606,52 @@ static void M_DrawMenuTyping(void)
 // Draw the message popup submenu
 void M_DrawMenuMessage(void)
 {
-
-	INT32 y = menumessage.y + (9-menumessage.fadetimer)*20;
+	INT32 x = (BASEVIDWIDTH - menumessage.x)/2;
+	INT32 y = (BASEVIDHEIGHT - menumessage.y)/2 + floor(pow(2, (double)(9 - menumessage.fadetimer)));
 	size_t i, start = 0;
-	INT16 max;
 	char string[MAXMENUMESSAGE];
-	INT32 mlines;
 	const char *msg = menumessage.message;
 
 	if (!menumessage.active)
 		return;
 
-	mlines = menumessage.m>>8;
-	max = (INT16)((UINT8)(menumessage.m & 0xFF)*8);
-
 	V_DrawFadeScreen(31, menumessage.fadetimer);
-	M_DrawTextBox(menumessage.x, y - 8, (max+7)>>3, mlines);
+
+	V_DrawFill(0, y, BASEVIDWIDTH, menumessage.y, 159);
+
+	if (menumessage.header != NULL)
+	{
+		V_DrawThinString(x, y - 10, highlightflags|V_6WIDTHSPACE|V_ALLOWLOWERCASE, menumessage.header);
+	}
+
+	if (menumessage.defaultstr)
+	{
+		INT32 workx = x + menumessage.x;
+		INT32 worky = y + menumessage.y;
+
+		workx -= V_ThinStringWidth(menumessage.defaultstr, V_6WIDTHSPACE|V_ALLOWLOWERCASE);
+		V_DrawThinString(workx, worky + 1, V_6WIDTHSPACE|V_ALLOWLOWERCASE, menumessage.defaultstr);
+
+		workx -= SHORT(kp_button_x[1][0]->width);
+		K_drawButtonAnim(workx, worky, 0, kp_button_x[1], menumessage.timer);
+
+		workx -= SHORT(kp_button_b[1][0]->width);
+		K_drawButtonAnim(workx, worky, 0, kp_button_b[1], menumessage.timer);
+
+		if (menumessage.confirmstr)
+		{
+			workx -= 12;
+
+			workx -= V_ThinStringWidth(menumessage.confirmstr, V_6WIDTHSPACE|V_ALLOWLOWERCASE);
+			V_DrawThinString(workx, worky + 1, V_6WIDTHSPACE|V_ALLOWLOWERCASE, menumessage.confirmstr);
+		}
+
+		workx -= SHORT(kp_button_a[1][0]->width);
+		K_drawButtonAnim(workx, worky, 0, kp_button_a[1], menumessage.timer);
+	}
+
+	x -= 4;
+	y += 4;
 
 	while (*(msg+start))
 	{

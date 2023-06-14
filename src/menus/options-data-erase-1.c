@@ -79,7 +79,7 @@ static void M_EraseDataResponse(INT32 ch)
 
 void M_EraseData(INT32 choice)
 {
-	const char *eschoice, *esstr = M_GetText("Are you sure you want to erase\n%s?\n\nPress (A) to confirm or (B) to cancel\n");
+	const char *eschoice, *esstr = M_GetText("Are you sure you want\nto erase %s?\n");
 	(void)choice;
 
 	optionsmenu.erasecontext = (UINT8)currentMenu->menuitems[itemOn].mvar1;
@@ -96,5 +96,5 @@ void M_EraseData(INT32 choice)
 		eschoice = "[misconfigured erasecontext]";
 	
 
-	M_StartMessage(va(esstr, eschoice), FUNCPTRCAST(M_EraseDataResponse), MM_YESNO);
+	M_StartMessage("Data Erase", va(esstr, eschoice), &M_EraseDataResponse, MM_YESNO, NULL, NULL);
 }

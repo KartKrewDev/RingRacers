@@ -349,7 +349,7 @@ void M_ConfirmEnterGame(INT32 choice)
 	(void)choice;
 	if (!cv_allowteamchange.value)
 	{
-		M_StartMessage(M_GetText("The server is not allowing\nteam changes at this time.\n\nPress (B)\n"), NULL, MM_NOTHING);
+		M_StartMessage("Team Change", M_GetText("The server is not allowing\nteam changes at this time.\n"), NULL, MM_NOTHING, NULL, NULL);
 		return;
 	}
 	M_QuitPauseMenu(-1);
@@ -381,5 +381,5 @@ void M_EndGame(INT32 choice)
 	if (!Playing())
 		return;
 
-	M_StartMessage(M_GetText("Are you sure you want to\nreturn to the menu?\nPress (A) to confirm or (B) to cancel\n"), FUNCPTRCAST(M_ExitGameResponse), MM_YESNO);
+	M_StartMessage("Return to Menu", M_GetText("Are you sure you want to\nreturn to the menu?\n"), &M_ExitGameResponse, MM_YESNO, NULL, NULL);
 }

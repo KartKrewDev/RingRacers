@@ -2115,7 +2115,7 @@ static void G_LoadDemoExtraFiles(UINT8 **pp)
 			{
 				CONS_Alert(CONS_WARNING, M_GetText("Too many files loaded to add anymore for demo playback\n"));
 				if (!CON_Ready())
-					M_StartMessage(M_GetText("There are too many files loaded to add this demo's addons.\n\nDemo playback may desync.\n\nPress ESC\n"), NULL, MM_NOTHING);
+					M_StartMessage("Demo Playback", M_GetText("There are too many files loaded to add this demo's addons.\n\nDemo playback may desync.\n"), NULL, MM_NOTHING, NULL, NULL);
 			}
 			else if (ncs != FS_FOUND)
 			{
@@ -2127,7 +2127,7 @@ static void G_LoadDemoExtraFiles(UINT8 **pp)
 					CONS_Alert(CONS_NOTICE, M_GetText("Unknown error finding file %s\n"), filename);
 
 				if (!CON_Ready())
-					M_StartMessage(M_GetText("There were errors trying to add this demo's addons. Check the console for more information.\n\nDemo playback may desync.\n\nPress ESC\n"), NULL, MM_NOTHING);
+					M_StartMessage("Demo Playback", M_GetText("There were errors trying to add this demo's addons. Check the console for more information.\n\nDemo playback may desync.\n"), NULL, MM_NOTHING, NULL, NULL);
 			}
 			else
 			{
@@ -3080,7 +3080,7 @@ void G_DoPlayDemo(const char *defdemoname)
 				CONS_Alert(CONS_ERROR, "%s", msg);
 				Z_Free(pdemoname);
 				gameaction = ga_nothing;
-				M_StartMessage(msg, NULL, MM_NOTHING);
+				M_StartMessage("Demo Playback", msg, NULL, MM_NOTHING, NULL, "Return to Menu");
 				return;
 			}
 		}
@@ -3096,7 +3096,7 @@ void G_DoPlayDemo(const char *defdemoname)
 					CONS_Alert(CONS_ERROR, "%s", msg);
 					Z_Free(pdemoname);
 					gameaction = ga_nothing;
-					M_StartMessage(msg, NULL, MM_NOTHING);
+					M_StartMessage("Demo Playback", msg, NULL, MM_NOTHING, NULL, "Return to Menu");
 					return;
 				}
 
@@ -3125,7 +3125,7 @@ void G_DoPlayDemo(const char *defdemoname)
 					CONS_Alert(CONS_ERROR, "%s", msg);
 					Z_Free(pdemoname);
 					gameaction = ga_nothing;
-					M_StartMessage(msg, NULL, MM_NOTHING);
+					M_StartMessage("Demo Playback", msg, NULL, MM_NOTHING, NULL, "Return to Menu");
 					return;
 				}
 
@@ -3138,7 +3138,7 @@ void G_DoPlayDemo(const char *defdemoname)
 					CONS_Alert(CONS_ERROR, "%s", msg);
 					Z_Free(pdemoname);
 					gameaction = ga_nothing;
-					M_StartMessage(msg, NULL, MM_NOTHING);
+					M_StartMessage("Demo Playback", msg, NULL, MM_NOTHING, NULL, "Return to Menu");
 					return;
 				}
 
@@ -3163,7 +3163,7 @@ void G_DoPlayDemo(const char *defdemoname)
 	{
 		snprintf(msg, 1024, M_GetText("%s is not a Ring Racers replay file.\n"), pdemoname);
 		CONS_Alert(CONS_ERROR, "%s", msg);
-		M_StartMessage(msg, NULL, MM_NOTHING);
+		M_StartMessage("Demo Playback", msg, NULL, MM_NOTHING, NULL, "Return to Menu");
 		Z_Free(pdemoname);
 		Z_Free(demobuf.buffer);
 		demo.playback = false;
@@ -3182,7 +3182,7 @@ void G_DoPlayDemo(const char *defdemoname)
 	default:
 		snprintf(msg, 1024, M_GetText("%s is an incompatible replay format and cannot be played.\n"), pdemoname);
 		CONS_Alert(CONS_ERROR, "%s", msg);
-		M_StartMessage(msg, NULL, MM_NOTHING);
+		M_StartMessage("Demo Playback", msg, NULL, MM_NOTHING, NULL, "Return to Menu");
 		Z_Free(pdemoname);
 		Z_Free(demobuf.buffer);
 		demo.playback = false;
@@ -3199,7 +3199,7 @@ void G_DoPlayDemo(const char *defdemoname)
 	{
 		snprintf(msg, 1024, M_GetText("%s is the wrong type of recording and cannot be played.\n"), pdemoname);
 		CONS_Alert(CONS_ERROR, "%s", msg);
-		M_StartMessage(msg, NULL, MM_NOTHING);
+		M_StartMessage("Demo Playback", msg, NULL, MM_NOTHING, NULL, "Return to Menu");
 		Z_Free(pdemoname);
 		Z_Free(demobuf.buffer);
 		demo.playback = false;
@@ -3262,7 +3262,7 @@ void G_DoPlayDemo(const char *defdemoname)
 
 			CONS_Alert(CONS_ERROR, "%s", msg);
 			if (!CON_Ready()) // In the console they'll just see the notice there! No point pulling them out.
-				M_StartMessage(msg, NULL, MM_NOTHING);
+				M_StartMessage("Demo Playback", msg, NULL, MM_NOTHING, NULL, "Return to Menu");
 			Z_Free(pdemoname);
 			Z_Free(demobuf.buffer);
 			demo.playback = false;
@@ -3277,7 +3277,7 @@ void G_DoPlayDemo(const char *defdemoname)
 	{
 		snprintf(msg, 1024, M_GetText("%s is in a gametype that is not currently loaded and cannot be played.\n"), pdemoname);
 		CONS_Alert(CONS_ERROR, "%s", msg);
-		M_StartMessage(msg, NULL, MM_NOTHING);
+		M_StartMessage("Demo Playback", msg, NULL, MM_NOTHING, NULL, "Return to Menu");
 		Z_Free(pdemoname);
 		Z_Free(demobuf.buffer);
 		demo.playback = false;
@@ -3291,7 +3291,7 @@ void G_DoPlayDemo(const char *defdemoname)
 	{
 		snprintf(msg, 1024, M_GetText("%s has an invalid skin list and cannot be played.\n"), pdemoname);
 		CONS_Alert(CONS_ERROR, "%s", msg);
-		M_StartMessage(msg, NULL, MM_NOTHING);
+		M_StartMessage("Demo Playback", msg, NULL, MM_NOTHING, NULL, "Return to Menu");
 		Z_Free(pdemoname);
 		Z_Free(demobuf.buffer);
 		demo.playback = false;
@@ -3324,7 +3324,7 @@ void G_DoPlayDemo(const char *defdemoname)
 	{
 		snprintf(msg, 1024, M_GetText("%s features a course that is not currently loaded.\n"), pdemoname);
 		CONS_Alert(CONS_ERROR, "%s", msg);
-		M_StartMessage(msg, NULL, MM_NOTHING);
+		M_StartMessage("Demo Playback", msg, NULL, MM_NOTHING, NULL, "Return to Menu");
 		Z_Free(demo.skinlist);
 		demo.skinlist = NULL;
 		Z_Free(pdemoname);
@@ -3341,7 +3341,7 @@ void G_DoPlayDemo(const char *defdemoname)
 	{
 		snprintf(msg, 1024, M_GetText("%s contains no data to be played.\n"), pdemoname);
 		CONS_Alert(CONS_ERROR, "%s", msg);
-		M_StartMessage(msg, NULL, MM_NOTHING);
+		M_StartMessage("Demo Playback", msg, NULL, MM_NOTHING, NULL, "Return to Menu");
 		Z_Free(demo.skinlist);
 		demo.skinlist = NULL;
 		Z_Free(pdemoname);
@@ -3395,7 +3395,7 @@ void G_DoPlayDemo(const char *defdemoname)
 			{
 				snprintf(msg, 1024, M_GetText("%s is a Record Attack replay with %s, and is thus invalid.\n"), pdemoname, (bot ? "bots" : "spectators"));
 				CONS_Alert(CONS_ERROR, "%s", msg);
-				M_StartMessage(msg, NULL, MM_NOTHING);
+				M_StartMessage("Demo Playback", msg, NULL, MM_NOTHING, NULL, "Return to Menu");
 				Z_Free(demo.skinlist);
 				demo.skinlist = NULL;
 				Z_Free(pdemoname);
@@ -3412,7 +3412,7 @@ void G_DoPlayDemo(const char *defdemoname)
 		{
 			snprintf(msg, 1024, M_GetText("%s is a Record Attack replay with multiple players, and is thus invalid.\n"), pdemoname);
 			CONS_Alert(CONS_ERROR, "%s", msg);
-			M_StartMessage(msg, NULL, MM_NOTHING);
+			M_StartMessage("Demo Playback", msg, NULL, MM_NOTHING, NULL, "Return to Menu");
 			Z_Free(demo.skinlist);
 			demo.skinlist = NULL;
 			Z_Free(pdemoname);

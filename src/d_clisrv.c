@@ -653,6 +653,7 @@ typedef enum
 static void GetPackets(void);
 
 static cl_mode_t cl_mode = CL_SEARCHING;
+static cl_mode_t cl_requestmode = CL_ABORTED;
 
 #ifdef HAVE_CURL
 char http_source[MAX_MIRROR_LENGTH];
@@ -1670,8 +1671,14 @@ void CL_UpdateServerList (void)
 		SendAskInfo(BROADCASTADDR);
 }
 
-static void M_ConfirmConnect(void)
+static boolean M_ConfirmConnect(void)
 {
+	if (G_PlayerInputDown(0, gc_b, 1) || G_PlayerInputDown(0, gc_x, 1) || G_GetDeviceGameKeyDownArray(0)[KEY_ESCAPE])
+	{
+		cl_requestmode = CL_ABORTED;
+		return true;
+	}
+
 	if (G_PlayerInputDown(0, gc_a, 1) || G_GetDeviceGameKeyDownArray(0)[KEY_ENTER])
 	{
 		if (totalfilesrequestednum > 0)
@@ -1682,28 +1689,25 @@ static void M_ConfirmConnect(void)
 			{
 				if (CL_SendFileRequest())
 				{
-					cl_mode = CL_DOWNLOADFILES;
+					cl_requestmode = CL_DOWNLOADFILES;
 				}
 				else
 				{
-					cl_mode = CL_DOWNLOADFAILED;
+					cl_requestmode = CL_DOWNLOADFAILED;
 				}
 			}
 #ifdef HAVE_CURL
 			else
-				cl_mode = CL_PREPAREHTTPFILES;
+				cl_requestmode = CL_PREPAREHTTPFILES;
 #endif
 		}
 		else
-			cl_mode = CL_LOADFILES;
+			cl_requestmode = CL_LOADFILES;
 
-		M_StopMessage(0);
+		return true;
 	}
-	else if (G_PlayerInputDown(0, gc_b, 1) || G_PlayerInputDown(0, gc_x, 1) || G_GetDeviceGameKeyDownArray(0)[KEY_ESCAPE])
-	{
-		cl_mode = CL_ABORTED;
-		M_StopMessage(0);
-	}
+
+	return false;
 }
 
 static boolean CL_FinishedFileList(void)
@@ -1722,12 +1726,12 @@ static boolean CL_FinishedFileList(void)
 		CL_Reset();
 		D_ClearState();
 		M_StartControlPanel();
-		M_StartMessage(M_GetText(
+		M_StartMessage("Server Connection Failure",
+			M_GetText(
 			"You have too many WAD files loaded\n"
 			"to add ones the server is using.\n"
-			"Please restart Ring Racers before connecting.\n\n"
-			"Press (B)\n"
-		), NULL, MM_NOTHING);
+			"Please restart Ring Racers before connecting.\n"
+		), NULL, MM_NOTHING, NULL, "Back to Menu");
 		return false;
 	}
 	else if (i == 2) // cannot join for some reason
@@ -1736,27 +1740,26 @@ static boolean CL_FinishedFileList(void)
 		CL_Reset();
 		D_ClearState();
 		M_StartControlPanel();
-		M_StartMessage(M_GetText(
+		M_StartMessage("Server Connection Failure",
+			M_GetText(
 			"You have the wrong addons loaded.\n\n"
 			"To play on this server, restart\n"
 			"the game and don't load any addons.\n"
 			"Ring Racers will automatically add\n"
-			"everything you need when you join.\n\n"
-			"Press (B)\n"
-		), NULL, MM_NOTHING);
+			"everything you need when you join.\n"
+		), NULL, MM_NOTHING, NULL, "Back to Menu");
 		return false;
 	}
 	else if (i == 1)
 	{
 		if (serverisfull)
 		{
-			M_StartMessage(M_GetText(
+			M_StartMessage("Server Connection Failure",
+				M_GetText(
 				"This server is full!\n"
 				"\n"
 				"You may load server addons (if any), and wait for a slot.\n"
-				"\n"
-				"Press (A) to continue or (B) to cancel\n"
-			), NULL, MM_NOTHING);
+			), NULL, MM_NOTHING, "Continue", "Back to Menu");
 			cl_mode = CL_CONFIRMCONNECT;
 		}
 		else
@@ -1776,15 +1779,15 @@ static boolean CL_FinishedFileList(void)
 				CL_Reset();
 				D_ClearState();
 				M_StartControlPanel();
-				M_StartMessage(M_GetText(
+				M_StartMessage("Server Connection Failure",
+					M_GetText(
 					"An error occured when trying to\n"
 					"download missing addons.\n"
 					"(This is almost always a problem\n"
 					"with the server, not your game.)\n\n"
 					"See the console or log file\n"
-					"for additional details.\n\n"
-					"Press (B)\n"
-				), NULL, MM_NOTHING);
+					"for additional details.\n"
+				), NULL, MM_NOTHING, NULL, "Back to Menu");
 				return false;
 			}
 		}
@@ -1811,23 +1814,21 @@ static boolean CL_FinishedFileList(void)
 				downloadsize = Z_StrDup(va("%uK",totalfilesrequestedsize>>10));
 
 			if (serverisfull)
-				M_StartMessage(va(M_GetText(
+				M_StartMessage("Server Connection",
+					va(M_GetText(
 					"This server is full!\n"
 					"Download of %s additional content\n"
 					"is required to join.\n"
 					"\n"
 					"You may download, load server addons,\n"
 					"and wait for a slot.\n"
-					"\n"
-					"Press (A) to continue or (B) to cancel\n"
-				), downloadsize), NULL, MM_NOTHING);
+				), downloadsize), NULL, MM_NOTHING, "Continue", "Back to Menu");
 			else
-				M_StartMessage(va(M_GetText(
+				M_StartMessage("Server Connection",
+					va(M_GetText(
 					"Download of %s additional content\n"
 					"is required to join.\n"
-					"\n"
-					"Press (A) to continue or (B) to cancel\n"
-				), downloadsize), NULL, MM_NOTHING);
+				), downloadsize), NULL, MM_NOTHING, "Continue", "Back to Menu");
 
 			Z_Free(downloadsize);
 			cl_mode = CL_CONFIRMCONNECT;
@@ -1906,12 +1907,12 @@ static boolean CL_ServerConnectionSearchTicker(tic_t *asksent)
 				D_ClearState();
 				M_StartControlPanel();
 
-				M_StartMessage(va(
+				M_StartMessage("Server Connection Failure",
+							va(
 							"Your EXE differs from the server.\n"
 							"  Yours: %.*s\n"
-							"Theirs: %s\n\n"
-							"Press ESC\n",
-							GIT_SHA_ABBREV * 2, comprevision, theirs), NULL, MM_NOTHING);
+							"Theirs: %s\n\n",
+							GIT_SHA_ABBREV * 2, comprevision, theirs), NULL, MM_NOTHING, NULL, "Back to Menu");
 				return false;
 			}
 #endif
@@ -2057,12 +2058,11 @@ static boolean CL_ServerConnectionTicker(const char *tmpsave, tic_t *oldtic, tic
 				CL_Reset();
 				D_ClearState();
 				M_StartControlPanel();
-				M_StartMessage(M_GetText(
+				M_StartMessage("Server Connection Failure",
+					M_GetText(
 					"The direct download encountered an error.\n"
 					"See the logfile for more info.\n"
-					"\n"
-					"Press (B)\n"
-				), NULL, MM_NOTHING);
+				), NULL, MM_NOTHING, NULL, "Back to Menu");
 				return false;
 			}
 		case CL_LOADFILES:
@@ -2087,12 +2087,11 @@ static boolean CL_ServerConnectionTicker(const char *tmpsave, tic_t *oldtic, tic
 				CL_Reset();
 				D_ClearState();
 				M_StartControlPanel();
-				M_StartMessage(M_GetText(
+				M_StartMessage("Server Connection Failure",
+					M_GetText(
 					"5 minute wait time exceeded.\n"
 					"You may retry connection.\n"
-					"\n"
-					"Press (B)\n"
-				), NULL, MM_NOTHING);
+				), NULL, MM_NOTHING, NULL, "Return to Menu");
 				return false;
 			}
 			// prepare structures to save the file
@@ -2171,7 +2170,16 @@ static boolean CL_ServerConnectionTicker(const char *tmpsave, tic_t *oldtic, tic
 
 			if (cl_mode == CL_CONFIRMCONNECT)
 			{
-				M_ConfirmConnect();
+#ifdef HAVE_THREADS
+				I_lock_mutex(&k_menu_mutex);
+#endif
+				if (M_MenuMessageTick() && M_ConfirmConnect())
+					M_StopMessage(0);
+				else if (menumessage.active == false)
+					cl_mode = cl_requestmode;
+#ifdef HAVE_THREADS
+				I_unlock_mutex(k_menu_mutex);
+#endif
 			}
 			else
 			{
@@ -2185,7 +2193,7 @@ static boolean CL_ServerConnectionTicker(const char *tmpsave, tic_t *oldtic, tic
 		if (cl_mode == CL_ABORTED)
 		{
 			CONS_Printf(M_GetText("Network game synchronization aborted.\n"));
-//				M_StartMessage(M_GetText("Network game synchronization aborted.\n\nPress (B)\n"), NULL, MM_NOTHING);
+//				M_StartMessage("Server Connection", M_GetText("Network game synchronization aborted.\n"), NULL, MM_NOTHING, NULL, "Back to Menu");
 
 			D_QuitNetGame();
 			CL_Reset();
@@ -2257,6 +2265,7 @@ static void CL_ConnectToServer(void)
 	lastfilenum = -1;
 
 	cl_mode = CL_SEARCHING;
+	cl_requestmode = CL_ABORTED; // sane default
 
 	// Don't get a corrupt savegame error because tmpsave already exists
 	if (FIL_FileExists(tmpsave) && unlink(tmpsave) == -1)
@@ -3423,25 +3432,25 @@ static void Got_KickCmd(UINT8 **p, INT32 playernum)
 		M_StartControlPanel();
 
 		if (msg == KICK_MSG_CON_FAIL)
-			M_StartMessage(M_GetText("Server closed connection\n(Synch failure)\nPress (B)\n"), NULL, MM_NOTHING);
+			M_StartMessage("Server Disconnected", M_GetText("Server closed connection\n(Synch failure)\n"), NULL, MM_NOTHING, NULL, "Back to Menu");
 		else if (msg == KICK_MSG_PING_HIGH)
-			M_StartMessage(M_GetText("Server closed connection\n(Broke delay limit)\nPress (B)\n"), NULL, MM_NOTHING);
+			M_StartMessage("Server Disconnected", M_GetText("Server closed connection\n(Broke delay limit)\n"), NULL, MM_NOTHING, NULL, "Back to Menu");
 		else if (msg == KICK_MSG_TIMEOUT) // this one will probably never be seen?
-			M_StartMessage(M_GetText("Connection timed out\n\nPress (B)\n"), NULL, MM_NOTHING);
+			M_StartMessage("Server Disconnected", M_GetText("Connection timed out\n"), NULL, MM_NOTHING, NULL, "Back to Menu");
 		else if (msg == KICK_MSG_BANNED)
-			M_StartMessage(M_GetText("You have been banned by the server\n\nPress (B)\n"), NULL, MM_NOTHING);
+			M_StartMessage("Server Disconnected", M_GetText("You have been banned by the server\n"), NULL, MM_NOTHING, NULL, "Back to Menu");
 		else if (msg == KICK_MSG_CUSTOM_KICK)
-			M_StartMessage(M_GetText("You have been kicked\n(Automatic grief detection)\nPress (B)\n"), NULL, MM_NOTHING);
+			M_StartMessage("Server Disconnected", M_GetText("You have been kicked\n(Automatic grief detection)\n"), NULL, MM_NOTHING, NULL, "Back to Menu");
 		else if (msg == KICK_MSG_CUSTOM_KICK)
-			M_StartMessage(va(M_GetText("You have been kicked\n(%s)\nPress (B)\n"), reason), NULL, MM_NOTHING);
+			M_StartMessage("Server Disconnected", va(M_GetText("You have been kicked\n(%s)\n"), reason), NULL, MM_NOTHING, NULL, "Back to Menu");
 		else if (msg == KICK_MSG_CUSTOM_BAN)
-			M_StartMessage(va(M_GetText("You have been banned\n(%s)\nPress (B)\n"), reason), NULL, MM_NOTHING);
+			M_StartMessage("Server Disconnected", va(M_GetText("You have been banned\n(%s)\n"), reason), NULL, MM_NOTHING, NULL, "Back to Menu");
 		else if (msg == KICK_MSG_SIGFAIL)
-			M_StartMessage(M_GetText("Server closed connection\n(Invalid signature)\nPress (B)\n"), NULL, MM_NOTHING);
+			M_StartMessage("Server Disconnected", M_GetText("Server closed connection\n(Invalid signature)\n"), NULL, MM_NOTHING, NULL, "Back to Menu");
 		else if (msg == KICK_MSG_VOTE_KICK)
-			M_StartMessage(M_GetText("You have been kicked by popular demand\n\nPress (B)\n"), NULL, MM_NOTHING);
+			M_StartMessage("Server Disconnected", M_GetText("You have been kicked by popular demand\n"), NULL, MM_NOTHING, NULL, "Back to Menu");
 		else
-			M_StartMessage(M_GetText("You have been kicked by the server\n\nPress (B)\n"), NULL, MM_NOTHING);
+			M_StartMessage("Server Disconnected", M_GetText("You have been kicked by the server\n"), NULL, MM_NOTHING, NULL, "Back to Menu");
 	}
 	else if (server)
 	{
@@ -4583,7 +4592,7 @@ static void HandleShutdown(SINT8 node)
 	CL_Reset();
 	D_ClearState();
 	M_StartControlPanel();
-	M_StartMessage(M_GetText("Server has shutdown\n\nPress (B)\n"), NULL, MM_NOTHING);
+	M_StartMessage("Server Disconnected", M_GetText("Server has shutdown\n"), NULL, MM_NOTHING, NULL, "Back to Menu");
 }
 
 /** Called when a PT_NODETIMEOUT packet is received
@@ -4599,7 +4608,7 @@ static void HandleTimeout(SINT8 node)
 	CL_Reset();
 	D_ClearState();
 	M_StartControlPanel();
-	M_StartMessage(M_GetText("Server Timeout\n\nPress (B)\n"), NULL, MM_NOTHING);
+	M_StartMessage("Server Disconnected", M_GetText("Server Timeout\n"), NULL, MM_NOTHING, NULL, "Back to Menu");
 }
 
 // Called when a signature check fails and we suspect the server is playing games.
@@ -4616,7 +4625,7 @@ void HandleSigfail(const char *string)
 	CL_Reset();
 	D_ClearState();
 	M_StartControlPanel();
-	M_StartMessage(va(M_GetText("Signature check failed.\n(%s)\nPress (B)\n"), string), NULL, MM_NOTHING);
+	M_StartMessage("Server Disconnected", va(M_GetText("Signature check failed.\n(%s)\n"), string), NULL, MM_NOTHING, NULL, "Back to Menu");
 }
 
 /** Called when a PT_SERVERINFO packet is received
@@ -4814,14 +4823,16 @@ static void HandlePacketFromAwayNode(SINT8 node)
 
 				if (reason[1] == '|')
 				{
-					M_StartMessage(va("You have been %sfrom the server\n\nReason:\n%s",
+					M_StartMessage("Server Connection Failure",
+						va("You have been %sfrom the server\n\nReason:\n%s",
 						(reason[0] == 'B') ? "banned\n" : "temporarily\nkicked ",
-						reason+2), NULL, MM_NOTHING);
+						reason+2), NULL, MM_NOTHING, NULL, "Back to Menu");
 				}
 				else
 				{
-					M_StartMessage(va(M_GetText("Server refuses connection\n\nReason:\n%s"),
-						reason), NULL, MM_NOTHING);
+					M_StartMessage("Server Connection Failure",
+						va(M_GetText("Server refuses connection\n\nReason:\n%s"),
+						reason), NULL, MM_NOTHING, NULL, "Back to Menu");
 				}
 
 				free(reason);

@@ -59,7 +59,7 @@ void M_Addons(INT32 choice)
 
 	if (!preparefilemenu(false, false))
 	{
-		M_StartMessage(va("No files/folders found.\n\n%s\n\nPress (B)\n", LOCATIONSTRING1),NULL,MM_NOTHING);
+		M_StartMessage("Add-ons Menu", va("No files/folders found.\n\n%s\n", LOCATIONSTRING1),NULL,MM_NOTHING, NULL, NULL);
 		return;
 	}
 	else
@@ -92,7 +92,7 @@ char *M_AddonsHeaderPath(void)
 
 #define UNEXIST S_StartSound(NULL, sfx_s26d);\
 		M_SetupNextMenu(MISC_AddonsDef.prevMenu, false);\
-		M_StartMessage(va("\x82%s\x80\nThis folder no longer exists!\nAborting to main menu.\n\nPress (B)\n", M_AddonsHeaderPath()),NULL,MM_NOTHING)
+		M_StartMessage("Add-ons Menu", va("\x82%s\x80\nThis folder no longer exists!\nAborting to main menu.\n", M_AddonsHeaderPath()),NULL,MM_NOTHING, NULL, NULL)
 
 #define CLEARNAME Z_Free(refreshdirname);\
 					refreshdirname = NULL
@@ -136,25 +136,25 @@ void M_AddonsRefresh(void)
 		{
 			S_StartSound(NULL, sfx_s26d);
 			if (refreshdirmenu & REFRESHDIR_MAX)
-				message = va("%c%s\x80\nMaximum number of addons reached.\nA file could not be loaded.\nIf you wish to play with this addon, restart the game to clear existing ones.\n\nPress (B)\n", ('\x80' + (highlightflags>>V_CHARCOLORSHIFT)), refreshdirname);
+				message = va("%c%s\x80\nMaximum number of addons reached.\nA file could not be loaded.\nIf you wish to play with this addon, restart the game to clear existing ones.\n", ('\x80' + (highlightflags>>V_CHARCOLORSHIFT)), refreshdirname);
 			else
-				message = va("%c%s\x80\nA file was not loaded.\nCheck the console log for more info.\n\nPress (B)\n", ('\x80' + (highlightflags>>V_CHARCOLORSHIFT)), refreshdirname);
+				message = va("%c%s\x80\nA file was not loaded.\nCheck the console log for more info.\n", ('\x80' + (highlightflags>>V_CHARCOLORSHIFT)), refreshdirname);
 		}
 		else if (refreshdirmenu & (REFRESHDIR_WARNING|REFRESHDIR_ERROR))
 		{
 			S_StartSound(NULL, sfx_s224);
-			message = va("%c%s\x80\nA file was loaded with %s.\nCheck the console log for more info.\n\nPress (B)\n", ('\x80' + (highlightflags>>V_CHARCOLORSHIFT)), refreshdirname, ((refreshdirmenu & REFRESHDIR_ERROR) ? "errors" : "warnings"));
+			message = va("%c%s\x80\nA file was loaded with %s.\nCheck the console log for more info.\n", ('\x80' + (highlightflags>>V_CHARCOLORSHIFT)), refreshdirname, ((refreshdirmenu & REFRESHDIR_ERROR) ? "errors" : "warnings"));
 		}
 		else if (majormods && !prevmajormods)
 		{
 			S_StartSound(NULL, sfx_s221);
-			message = va("%c%s\x80\nYou've loaded a gameplay-modifying addon.\n\nRecord Attack has been disabled, but you\ncan still play alone in local Multiplayer.\n\nIf you wish to play Record Attack mode, restart the game to disable loaded addons.\n\nPress (B)\n", ('\x80' + (highlightflags>>V_CHARCOLORSHIFT)), refreshdirname);
+			message = va("%c%s\x80\nYou've loaded a gameplay-modifying addon.\n\nRecord Attack has been disabled, but you\ncan still play alone in local Multiplayer.\n\nIf you wish to play Record Attack mode, restart the game to disable loaded addons.\n", ('\x80' + (highlightflags>>V_CHARCOLORSHIFT)), refreshdirname);
 			prevmajormods = majormods;
 		}
 
 		if (message)
 		{
-			M_StartMessage(message,FUNCPTRCAST(M_AddonsClearName),MM_YESNO);
+			M_StartMessage("Add-ons Menu", message, &M_AddonsClearName,MM_NOTHING, NULL, NULL);
 			return;// true;
 		}
 
@@ -267,7 +267,7 @@ void M_HandleAddons(INT32 choice)
 						if (!preparefilemenu(false, false))
 						{
 							S_StartSound(NULL, sfx_s224);
-							M_StartMessage(va("%c%s\x80\nThis folder is empty.\n\nPress (B)\n", ('\x80' + (highlightflags>>V_CHARCOLORSHIFT)), M_AddonsHeaderPath()),NULL,MM_NOTHING);
+							M_StartMessage("Add-ons Menu", va("%c%s\x80\nThis folder is empty.\n", ('\x80' + (highlightflags>>V_CHARCOLORSHIFT)), M_AddonsHeaderPath()),NULL,MM_NOTHING, NULL, NULL);
 							menupath[menupathindex[++menudepthleft]] = 0;
 
 							if (!preparefilemenu(true, false))
@@ -286,7 +286,7 @@ void M_HandleAddons(INT32 choice)
 					else
 					{
 						S_StartSound(NULL, sfx_s26d);
-						M_StartMessage(va("%c%s\x80\nThis folder is too deep to navigate to!\n\nPress (B)\n", ('\x80' + (highlightflags>>V_CHARCOLORSHIFT)), M_AddonsHeaderPath()),NULL,MM_NOTHING);
+						M_StartMessage("Add-ons Menu", va("%c%s\x80\nThis folder is too deep to navigate to!\n", ('\x80' + (highlightflags>>V_CHARCOLORSHIFT)), M_AddonsHeaderPath()),NULL,MM_NOTHING, NULL, NULL);
 						menupath[menupathindex[menudepthleft]] = 0;
 					}
 					break;
@@ -302,11 +302,11 @@ void M_HandleAddons(INT32 choice)
 					break;
 
 				case EXT_TXT:
-					M_StartMessage(va("%c%s\x80\nThis file may not be a console script.\nAttempt to run anyways? \n\nPress (A) to confirm or (B) to cancel\n\n", ('\x80' + (highlightflags>>V_CHARCOLORSHIFT)), dirmenu[dir_on[menudepthleft]]+DIR_STRING),FUNCPTRCAST(M_AddonExec),MM_YESNO);
+					M_StartMessage("Add-ons Menu", va("%c%s\x80\nThis file may not be a console script.\nAttempt to run anyways?\n", ('\x80' + (highlightflags>>V_CHARCOLORSHIFT)), dirmenu[dir_on[menudepthleft]]+DIR_STRING),&M_AddonExec,MM_YESNO, NULL, NULL);
 					break;
 
 				case EXT_CFG:
-					M_StartMessage(va("%c%s\x80\nThis file may modify your settings.\nAttempt to run anyways? \n\nPress (A) to confirm or (B) to cancel\n", ('\x80' + (highlightflags>>V_CHARCOLORSHIFT)), dirmenu[dir_on[menudepthleft]]+DIR_STRING),FUNCPTRCAST(M_AddonExec),MM_YESNO);
+					M_StartMessage("Add-ons Menu", va("%c%s\x80\nThis file may modify your settings.\nAttempt to run anyways?\n", ('\x80' + (highlightflags>>V_CHARCOLORSHIFT)), dirmenu[dir_on[menudepthleft]]+DIR_STRING),&M_AddonExec,MM_YESNO, NULL, NULL);
 					break;
 
 				case EXT_LUA:

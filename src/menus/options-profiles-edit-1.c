@@ -48,7 +48,7 @@ static boolean M_ProfileEditEnd(const UINT8 pid)
 	if (optionsmenu.profilen == 0)
 	{
 		S_StartSound(NULL, sfx_s3k7b);
-		M_StartMessage(M_GetText("Guest profile cannot be edited.\nCreate a new profile instead."), NULL, MM_NOTHING);
+		M_StartMessage("Profiles", M_GetText("Guest profile cannot be edited.\nCreate a new profile instead."), NULL, MM_NOTHING, NULL, NULL);
 		M_SetMenuDelay(pid);
 		return false;
 	}
@@ -64,7 +64,7 @@ static boolean M_ProfileEditEnd(const UINT8 pid)
 			if (!(strcmp(optionsmenu.profile->profilename, check->profilename)))
 			{
 				S_StartSound(NULL, sfx_s3k7b);
-				M_StartMessage(M_GetText("Another profile uses the same name.\nThis must be changed to be able to save."), NULL, MM_NOTHING);
+				M_StartMessage("Profiles", M_GetText("Another profile uses the same name.\nThis must be changed to be able to save."), NULL, MM_NOTHING, NULL, NULL);
 				M_SetMenuDelay(pid);
 				return false;
 			}
@@ -155,7 +155,7 @@ void M_ConfirmProfile(INT32 choice)
 		}
 		else
 		{
-			M_StartMessage(M_GetText("Are you sure you wish to\nselect this profile?\n\nPress (A) to confirm or (B) to cancel"), FUNCPTRCAST(M_FirstPickProfile), MM_YESNO);
+			M_StartMessage("Profiles", M_GetText("Are you sure you wish to\nselect this profile?\n"), &M_FirstPickProfile, MM_YESNO, NULL, NULL);
 			M_SetMenuDelay(pid);
 		}
 	}

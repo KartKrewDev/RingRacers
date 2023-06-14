@@ -464,7 +464,7 @@ void M_LevelSelectInit(INT32 choice)
 	if (!M_LevelListFromGametype(gt))
 	{
 		S_StartSound(NULL, sfx_s3kb2);
-		M_StartMessage(va("No levels available for\n%s Mode!\n\nPress (B)\n", gametypes[gt]->name), NULL, MM_NOTHING);
+		M_StartMessage("Offline Play", va("No levels available for\n%s Mode!\n", gametypes[gt]->name), NULL, MM_NOTHING, NULL, NULL);
 	}
 }
 
