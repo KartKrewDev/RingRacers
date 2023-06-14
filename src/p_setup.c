@@ -758,8 +758,11 @@ static void P_SpawnMapThings(boolean spawnemblems)
 				continue; // These were already spawned
 		}
 
-		if (mt->type == mobjinfo[MT_BATTLECAPSULE].doomednum)
-			continue; // This will spawn later
+		if (mt->type == mobjinfo[MT_BATTLECAPSULE].doomednum
+			|| mt->type == mobjinfo[MT_ITEMCAPSULE].doomednum)
+		{
+			continue; // These will spawn later
+		}
 
 		if (!spawnemblems && mt->type == mobjinfo[MT_EMBLEM].doomednum)
 			continue;
@@ -7081,7 +7084,12 @@ static void P_ConvertBinaryThingTypes(void)
 
 			if (mapthings[i].options & MTF_EXTRA)
 			{
-				mapthings[i].args[2] |= TMICF_INVERTTIMEATTACK;
+				// was advertised as an "invert time attack" flag, actually was an "all gamemodes" flag
+				mapthings[i].args[3] = TMICM_MULTIPLAYER|TMICM_TIMEATTACK;
+			}
+			else
+			{
+				mapthings[i].args[3] = TMICM_DEFAULT;
 			}
 
 			if (mapthings[i].options & MTF_AMBUSH)
