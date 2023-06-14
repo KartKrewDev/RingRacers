@@ -9522,6 +9522,14 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 			}
 		}
 		break;
+	case MT_GACHABOM_REBOUND:
+		Obj_GachaBomReboundThink(mobj);
+
+		if (P_MobjWasRemoved(mobj))
+		{
+			return false;
+		}
+		break;
 	default:
 		// check mobj against possible water content, before movement code
 		P_MobjCheckWater(mobj);

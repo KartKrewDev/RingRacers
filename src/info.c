@@ -810,6 +810,7 @@ char sprnames[NUMSPRITES + 1][5] =
 	"UQMK",
 
 	"GBOM",
+	"GCHX",
 
 	// First person view sprites; this is a sprite so that it can be replaced by a specialized MD2 draw later
 	"VIEW",
@@ -5216,6 +5217,15 @@ state_t states[NUMSTATES] =
 	{SPR_UFOS, 0, -1, {NULL}, 0, 0, S_NULL}, // S_SPECIAL_UFO_STEM
 
 	{SPR_GBOM, FF_ANIMATE, -1, {NULL}, 3, 1, S_NULL}, // S_GACHABOM
+	{SPR_GBOM, FF_INVERT, 2, {NULL}, 0, 0, S_NULL}, // S_GACHABOM_DEAD
+
+	{SPR_NULL, 0, 1, {NULL}, 0, 0, S_GACHABOM_EXPLOSION_2},
+	{SPR_GCHX, 0|FF_PAPERSPRITE|FF_ANIMATE, 14, {NULL}, 6, 2, S_GACHABOM_EXPLOSION_3A}, // S_GACHABOM_EXPLOSION_2
+	{SPR_GCHX, 6|FF_PAPERSPRITE|FF_ANIMATE, 4, {NULL}, 1, 2, S_GACHABOM_EXPLOSION_3B}, // S_GACHABOM_EXPLOSION_3A
+	{SPR_NULL, 0|FF_PAPERSPRITE, 0, {A_Repeat}, 8, S_GACHABOM_EXPLOSION_3A, S_GACHABOM_EXPLOSION_4}, // S_GACHABOM_EXPLOSION_3B
+	{SPR_GCHX, 6|FF_PAPERSPRITE|FF_ANIMATE|FF_REVERSEANIM, 14, {NULL}, 6, 2, S_GACHABOM_WAITING}, // S_GACHABOM_EXPLOSION_4
+	{SPR_GBOM, FF_INVERT, 8, {A_SetScale}, FRACUNIT, 0, S_GACHABOM_RETURNING}, // S_GACHABOM_WAITING
+	{SPR_GBOM, FF_INVERT, -1, {A_SetScale}, FRACUNIT/2, 1, S_NULL}, // S_GACHABOM_RETURNING
 };
 
 mobjinfo_t mobjinfo[NUMMOBJTYPES] =
@@ -24573,7 +24583,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		sfx_None,       // painsound
 		S_NULL,         // meleestate
 		S_NULL,         // missilestate
-		S_GACHABOM,     // deathstate
+		S_GACHABOM_DEAD, // deathstate
 		S_NULL,         // xdeathstate
 		sfx_s3k5d,      // deathsound
 		28*FRACUNIT,    // speed
@@ -24584,6 +24594,33 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		1,              // damage
 		sfx_s3k96,      // activesound
 		MF_SHOOTABLE|MF_DONTENCOREMAP|MF_APPLYTERRAIN|MF_SLOPE, // flags
+		S_NULL          // raisestate
+	},
+
+	{           // MT_GACHABOM_REBOUND
+		-1,             // doomednum
+		S_GACHABOM_EXPLOSION_1, // spawnstate
+		1,              // spawnhealth
+		S_NULL,         // seestate
+		sfx_None,       // seesound
+		8,              // reactiontime
+		sfx_None,       // attacksound
+		S_NULL,         // painstate
+		0,              // painchance
+		sfx_None,       // painsound
+		S_NULL,         // meleestate
+		S_NULL,         // missilestate
+		S_GACHABOM_DEAD, // deathstate
+		S_NULL,         // xdeathstate
+		sfx_None,       // deathsound
+		0,              // speed
+		16*FRACUNIT,    // radius
+		32*FRACUNIT,    // height
+		0,              // display offset
+		100,            // mass
+		0,              // damage
+		sfx_None,       // activesound
+		MF_NOBLOCKMAP|MF_NOGRAVITY|MF_NOCLIP|MF_NOCLIPHEIGHT|MF_NOCLIPTHING|MF_DONTENCOREMAP|MF_NOSQUISH, // flags
 		S_NULL          // raisestate
 	},
 

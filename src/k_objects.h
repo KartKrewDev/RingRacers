@@ -133,6 +133,10 @@ boolean Obj_RandomItemSpawnIn(mobj_t *mobj);
 fixed_t Obj_RandomItemScale(fixed_t oldScale);
 void Obj_RandomItemSpawn(mobj_t *mobj);
 
+/* Gachabom Rebound */
+void Obj_GachaBomReboundThink(mobj_t *mobj);
+void Obj_SpawnGachaBomRebound(mobj_t *source, mobj_t *target);
+
 #ifdef __cplusplus
 } // extern "C"
 #endif

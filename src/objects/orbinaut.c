@@ -277,9 +277,20 @@ boolean Obj_OrbinautJawzCollide(mobj_t *t1, mobj_t *t2)
 		S_StartSound(t1, t1->info->deathsound);
 		P_KillMobj(t1, t2, t2, DMG_NORMAL);
 
-		P_SetObjectMomZ(t1, 24*FRACUNIT, false);
+		if (t1->type == MT_GACHABOM)
+		{
+			// Instead of flying out at an angle when
+			// destroyed, spawn an explosion and eventually
+			// return to sender. The original Gachabom will be
+			// removed next tic (see deathstate).
+			Obj_SpawnGachaBomRebound(t1, orbinaut_owner(t1));
+		}
+		else
+		{
+			P_SetObjectMomZ(t1, 24*FRACUNIT, false);
 
-		P_InstaThrust(t1, bounceangle, 16*FRACUNIT);
+			P_InstaThrust(t1, bounceangle, 16*FRACUNIT);
+		}
 	}
 
 	if (sprung)
