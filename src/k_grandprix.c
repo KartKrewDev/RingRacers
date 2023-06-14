@@ -256,7 +256,7 @@ void K_InitGrandPrixBots(void)
 
 	for (i = 0; i < wantedbots; i++)
 	{
-		if (!K_AddBot(botskinlist[i], difficultylevels[i], &newplayernum))
+		if (!K_AddBot(botskinlist[i], difficultylevels[i], BOT_STYLE_NORMAL, &newplayernum))
 		{
 			break;
 		}
