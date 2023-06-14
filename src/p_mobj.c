@@ -154,11 +154,17 @@ FUNCINLINE static ATTRINLINE void P_CycleStateAnimation(mobj_t *mobj)
 
 	if (mobj->sprite != SPR_PLAY)
 	{
+		const UINT8 start = mobj->state->frame & FF_FRAMEMASK;
+
+		UINT8 frame = mobj->frame & FF_FRAMEMASK;
+
 		// compare the current sprite frame to the one we started from
 		// if more than var1 away from it, swap back to the original
 		// else just advance by one
-		if (((++mobj->frame) & FF_FRAMEMASK) - (mobj->state->frame & FF_FRAMEMASK) > (UINT32)mobj->state->var1)
-			mobj->frame = (mobj->state->frame & FF_FRAMEMASK) | (mobj->frame & ~FF_FRAMEMASK);
+		if ((mobj->frame & FF_REVERSEANIM ? (start - (--frame)) : ((++frame) - start)) > mobj->state->var1)
+			frame = start;
+
+		mobj->frame = frame | (mobj->frame & ~FF_FRAMEMASK);
 
 		return;
 	}
@@ -4946,6 +4952,17 @@ void P_SetScale(mobj_t *mobj, fixed_t newscale)
 		G_GhostAddScale((INT32) (player - players), newscale);
 		player->viewheight = FixedMul(FixedDiv(player->viewheight, oldscale), newscale); // Nonono don't calculate viewheight elsewhere, this is the best place for it!
 	}
+}
+
+//
+// P_InstaScale
+//
+// Set the object's current scale and destscale together
+//
+void P_InstaScale(mobj_t *thing, fixed_t scale)
+{
+	P_SetScale(thing, scale);
+	thing->destscale = scale;
 }
 
 void P_Attract(mobj_t *source, mobj_t *dest, boolean nightsgrab) // Home in on your target
