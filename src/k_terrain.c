@@ -456,7 +456,7 @@ void K_ProcessTerrainEffect(mobj_t *mo)
 	}
 
 	// Milky Way road effect
-	player->outrun = terrain->outrun + (48*FRACUNIT);
+	player->outrun = terrain->outrun;
 
 	// Damage effects
 	if (terrain->damageType > 0)
