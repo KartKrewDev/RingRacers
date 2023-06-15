@@ -12305,7 +12305,7 @@ static boolean P_SetupEmblem(mapthing_t *mthing, mobj_t *mobj)
 	return true;
 }
 
-static boolean P_SetupMace(mapthing_t *mthing, mobj_t *mobj, boolean *doangle)
+static boolean P_SetupMace(mapthing_t *mthing, mobj_t *mobj)
 {
 	fixed_t mlength, mmaxlength, mlengthset, mspeed, mphase, myaw, mpitch, mminlength, mnumspokes, mpinch, mroll, mnumnospokes, mwidth, mwidthset, mmin, msound, radiusfactor, widthfactor;
 	angle_t mspokeangle;
@@ -12350,7 +12350,6 @@ static boolean P_SetupMace(mapthing_t *mthing, mobj_t *mobj, boolean *doangle)
 	mobj->lastlook = mspeed;
 	mobj->movecount = mobj->lastlook;
 	mobj->angle = FixedAngle(myaw << FRACBITS);
-	*doangle = false;
 	mobj->threshold = (FixedAngle(mpitch << FRACBITS) >> ANGLETOFINESHIFT);
 	mobj->movefactor = mpinch;
 	mobj->movedir = 0;
@@ -12745,7 +12744,7 @@ static boolean P_MapAlreadyHasStarPost(mobj_t *mobj)
 	return false;
 }
 
-static boolean P_SetupSpawnedMapThing(mapthing_t *mthing, mobj_t *mobj, boolean *doangle)
+static boolean P_SetupSpawnedMapThing(mapthing_t *mthing, mobj_t *mobj)
 {
 	boolean override = LUA_HookMapThingSpawn(mobj, mthing);
 
@@ -12857,7 +12856,7 @@ static boolean P_SetupSpawnedMapThing(mapthing_t *mthing, mobj_t *mobj, boolean 
 	case MT_CHAINPOINT:
 	case MT_FIREBARPOINT:
 	case MT_CUSTOMMACEPOINT:
-		if (!P_SetupMace(mthing, mobj, doangle))
+		if (!P_SetupMace(mthing, mobj))
 			return false;
 		break;
 	case MT_PARTICLEGEN:
@@ -13350,23 +13349,18 @@ static boolean P_SetupSpawnedMapThing(mapthing_t *mthing, mobj_t *mobj, boolean 
 	}
 	case MT_DUELBOMB:
 	{
-		// Duel Bomb needs init to match real map thing's angle
-		mobj->angle = FixedAngle(mthing->angle << FRACBITS);
 		Obj_DuelBombInit(mobj);
 
 		if (mthing->args[1])
 		{
 			Obj_DuelBombReverse(mobj);
 		}
-
-		*doangle = false;
 		break;
 	}
 	case MT_BANANA:
 	{
 		// Give Duel bananas a random angle
 		mobj->angle = FixedMul(P_RandomFixed(PR_DECORATION), ANGLE_MAX);
-		*doangle = false;
 		break;
 	}
 	case MT_HYUDORO_CENTER:
@@ -13398,37 +13392,9 @@ static boolean P_SetupSpawnedMapThing(mapthing_t *mthing, mobj_t *mobj, boolean 
 			mobj->flags2 |= MF2_BOSSNOTRAP;
 	}
 
-	return true;
-}
-
-static mobj_t *P_SpawnMobjFromMapThing(mapthing_t *mthing, fixed_t x, fixed_t y, fixed_t z, mobjtype_t i)
-{
-	mobj_t *mobj = NULL;
-	boolean doangle = true;
-	size_t arg = SIZE_MAX;
-
-	mobj = P_SpawnMobj(x, y, z, i);
-	mobj->spawnpoint = mthing;
-
-	P_SetScale(mobj, FixedMul(mobj->scale, mthing->scale));
-	mobj->destscale = FixedMul(mobj->destscale, mthing->scale);
-
-	if (!P_SetupSpawnedMapThing(mthing, mobj, &doangle))
-	{
-		if (P_MobjWasRemoved(mobj))
-			return NULL;
-
-		return mobj;
-	}
-
-	if (doangle)
-	{
-		mobj->angle = FixedAngle(mthing->angle << FRACBITS);
-	}
-
 	if ((mobj->flags & MF_SPRING)
-	&& mobj->info->damage != 0
-	&& mobj->info->mass == 0)
+		&& mobj->info->damage != 0
+		&& mobj->info->mass == 0)
 	{
 		// Offset sprite of horizontal springs
 		angle_t a = mobj->angle + ANGLE_180;
@@ -13436,8 +13402,23 @@ static mobj_t *P_SpawnMobjFromMapThing(mapthing_t *mthing, fixed_t x, fixed_t y,
 		mobj->spryoff = FixedMul(mobj->radius, FINESINE(a >> ANGLETOFINESHIFT));
 	}
 
+	return true;
+}
+
+static mobj_t *P_SpawnMobjFromMapThing(mapthing_t *mthing, fixed_t x, fixed_t y, fixed_t z, mobjtype_t i)
+{
+	mobj_t *mobj = NULL;
+	size_t arg = SIZE_MAX;
+
+	mobj = P_SpawnMobj(x, y, z, i);
+	mobj->spawnpoint = mthing;
+
+	mobj->angle = FixedAngle(mthing->angle << FRACBITS);
 	mobj->pitch = FixedAngle(mthing->pitch << FRACBITS);
 	mobj->roll = FixedAngle(mthing->roll << FRACBITS);
+
+	P_SetScale(mobj, FixedMul(mobj->scale, mthing->scale));
+	mobj->destscale = FixedMul(mobj->destscale, mthing->scale);
 
 	P_SetThingTID(mobj, mthing->tid);
 
@@ -13466,6 +13447,14 @@ static mobj_t *P_SpawnMobjFromMapThing(mapthing_t *mthing, fixed_t x, fixed_t y,
 
 		mobj->stringargs[arg] = Z_Realloc(mobj->stringargs[arg], len + 1, PU_LEVEL, NULL);
 		M_Memcpy(mobj->stringargs[arg], mthing->stringargs[arg], len + 1);
+	}
+
+	if (!P_SetupSpawnedMapThing(mthing, mobj))
+	{
+		if (P_MobjWasRemoved(mobj))
+			return NULL;
+
+		return mobj;
 	}
 
 	mthing->mobj = mobj;
