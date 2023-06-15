@@ -446,6 +446,9 @@ hyudoro_patrol_hit_player
 	if (!player->itemamount)
 		return false;
 
+	if (K_IsRingBoxItem(player->itemtype))
+		return false;
+
 	K_AddHitLag(toucher, TICRATE/2, false);
 
 	hyudoro_mode(hyu) = HYU_RETURN;

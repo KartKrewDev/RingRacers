@@ -6595,7 +6595,7 @@ void K_DropItems(player_t *player)
 {
 	K_DropHnextList(player);
 
-	if (player->mo && !P_MobjWasRemoved(player->mo) && player->itemamount > 0)
+	if (player->mo && !P_MobjWasRemoved(player->mo) && player->itemamount > 0 && !K_IsRingBoxItem(player->itemtype))
 	{
 		mobj_t *drop = K_CreatePaperItem(
 			player->mo->x, player->mo->y, player->mo->z + player->mo->height/2,
@@ -12133,6 +12133,22 @@ boolean K_Cooperative(void)
 	}
 
 	return false;
+}
+
+boolean K_IsRingBoxItem(SINT8 itemtype)
+{
+	switch (itemtype)
+	{
+		case KITEM_BAR:
+		case KITEM_DOUBLEBAR:
+		case KITEM_TRIPLEBAR:
+		case KITEM_SLOTRING:
+		case KITEM_SEVEN:
+		case KITEM_JACKPOT:
+			return true;
+		default:
+			return true;
+	}
 }
 
 //}

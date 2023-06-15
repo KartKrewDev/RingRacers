@@ -220,6 +220,7 @@ tic_t K_TimeLimitForGametype(void);
 UINT32 K_PointLimitForGametype(void);
 
 boolean K_Cooperative(void);
+boolean K_IsRingBoxItem(SINT8 itemtype);
 
 #ifdef __cplusplus
 } // extern "C"
