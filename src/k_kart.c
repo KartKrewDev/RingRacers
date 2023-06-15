@@ -3301,6 +3301,7 @@ fixed_t K_GetKartSpeedFromStat(UINT8 kartspeed)
 fixed_t K_GetKartSpeed(player_t *player, boolean doboostpower, boolean dorubberband)
 {
 	const boolean mobjValid = (player->mo != NULL && P_MobjWasRemoved(player->mo) == false);
+	const fixed_t physicsScale = mobjValid ? K_GrowShrinkSpeedMul(player) : FRACUNIT;
 	fixed_t finalspeed = 0;
 
 	if (K_PodiumSequence() == true)
@@ -3344,19 +3345,17 @@ fixed_t K_GetKartSpeed(player_t *player, boolean doboostpower, boolean dorubberb
 
 	if (doboostpower == true)
 	{
-		if (mobjValid == true)
-		{
-			// Scale with the player.
-			finalspeed = FixedMul(finalspeed, K_GrowShrinkSpeedMul(player));
-		}
+		// Scale with the player.
+		finalspeed = FixedMul(finalspeed, physicsScale);
 
+		// Add speed boosts.
 		finalspeed = FixedMul(finalspeed, player->boostpower + player->speedboost);
+	}
 
-		if (mobjValid == true && player->outrun != 0)
-		{
-			// Milky Way's roads
-			finalspeed += FixedMul(player->outrun, K_GrowShrinkSpeedMul(player));
-		}
+	if (player->outrun != 0)
+	{
+		// Milky Way's roads
+		finalspeed += FixedMul(player->outrun, physicsScale);
 	}
 
 	return finalspeed;
