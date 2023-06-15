@@ -744,9 +744,13 @@ struct player_t
 	mobj_t *stumbleIndicator;
 	mobj_t *sliptideZipIndicator;
 	mobj_t *whip;
+	mobj_t *hand;
 
 	UINT8 instaShieldCooldown;
 	UINT8 guardCooldown;
+
+	UINT8 handtimer;
+	angle_t besthanddirection;
 
 	INT16 incontrol; // -1 to -175 when spinning out or tumbling, 1 to 175 when not. Use to check for combo hits or emergency inputs.
 

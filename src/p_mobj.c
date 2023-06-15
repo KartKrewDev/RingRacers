@@ -9776,6 +9776,22 @@ static boolean P_FuseThink(mobj_t *mobj)
 		Obj_SPBExplode(mobj);
 		break;
 	}
+	case MT_SERVANTHAND:
+	{
+		if (!mobj->target
+			|| P_MobjWasRemoved(mobj->target)
+			|| !mobj->target->player
+			|| mobj->target->player->handtimer == 0)
+		{
+			P_RemoveMobj(mobj);
+			return false;
+		}
+
+		mobj->spritexscale = FRACUNIT;
+		mobj->spriteyscale = FRACUNIT;
+
+		break;
+	}
 	case MT_PLAYER:
 		break; // don't remove
 	default:

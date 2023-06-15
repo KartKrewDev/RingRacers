@@ -8275,9 +8275,14 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		player->tripwireState = TRIPSTATE_NONE;
 	}
 
+	if (player->hand && P_MobjWasRemoved(player->hand))
+		P_SetTarget(&player->hand, NULL);
+
 	if (player->spectator == false)
 	{
 		K_KartEbrakeVisuals(player);
+
+		K_KartServantHandVisuals(player);
 	}
 
 	if (K_GetKartButtons(player) & BT_BRAKE &&
@@ -8596,6 +8601,7 @@ static waypoint_t *K_GetPlayerNextWaypoint(player_t *player)
 			{
 				angle_t nextbestdelta = ANGLE_90;
 				angle_t nextbestmomdelta = ANGLE_90;
+				angle_t nextbestanydelta = ANGLE_MAX;
 				size_t i = 0U;
 
 				if ((waypoint->nextwaypoints != NULL) && (waypoint->numnextwaypoints > 0U))
@@ -8637,8 +8643,14 @@ static waypoint_t *K_GetPlayerNextWaypoint(player_t *player)
 							momdelta = InvAngle(momdelta);
 						}
 
-						if (angledelta < nextbestdelta || momdelta < nextbestmomdelta)
+						if (angledelta < nextbestanydelta || momdelta < nextbestanydelta)
 						{
+							nextbestanydelta = min(angledelta, momdelta);
+							player->besthanddirection = angletowaypoint;
+
+							if (nextbestanydelta >= ANGLE_90)
+								continue;
+
 							// Wanted to use a next waypoint, so remove WRONG WAY flag.
 							// Done here instead of when set, because of finish line
 							// hacks meaning we might not actually use this one, but
@@ -10155,6 +10167,102 @@ void K_KartEbrakeVisuals(player_t *p)
 		}
 
 		p->ebrakefor = 0;
+	}
+}
+
+void K_KartServantHandVisuals(player_t *player)
+{
+	if (player->pflags & PF_WRONGWAY)
+	{
+		if (player->handtimer < TICRATE)
+		{
+			player->handtimer++;
+			if (player->hand == NULL && player->handtimer == TICRATE)
+			{
+				mobj_t *hand = P_SpawnMobj(
+					player->mo->x,
+					player->mo->y,
+					player->mo->z + player->mo->height + 30*mapobjectscale,
+					MT_SERVANTHAND
+				);
+
+				if (hand)
+				{
+					K_FlipFromObject(hand, player->mo);
+					hand->old_z = hand->z;
+
+					P_SetTarget(&hand->target, player->mo);
+					P_SetTarget(&player->hand, hand);
+
+					hand->fuse = 8;
+				}
+			}
+		}
+
+		if (player->hand)
+		{
+			player->hand->destscale = mapobjectscale;
+		}
+	}
+	else if (player->handtimer != 0)
+	{
+		player->handtimer--;
+	}
+
+	if (player->hand)
+	{
+		const fixed_t handpokespeed = 4;
+		const fixed_t looping = handpokespeed - abs((player->hand->threshold % (handpokespeed*2)) - handpokespeed);
+		fixed_t xoffs = 0, yoffs = 0;
+
+		player->hand->color = player->skincolor;
+		player->hand->angle = player->besthanddirection;
+
+		if (player->hand->fuse != 0)
+		{
+			;
+		}
+		else if (looping != 0)
+		{
+			xoffs = FixedMul(2 * looping * mapobjectscale, FINECOSINE(player->hand->angle >> ANGLETOFINESHIFT)),
+			yoffs = FixedMul(2 * looping * mapobjectscale, FINESINE(player->hand->angle >> ANGLETOFINESHIFT)),
+
+			player->hand->threshold++;
+		}
+		else if (player->handtimer == 0)
+		{
+			player->hand->fuse = 8;
+		}
+		else
+		{
+			player->hand->threshold++;
+		}
+
+		if (player->hand->fuse != 0)
+		{
+			if ((player->hand->fuse > 4) ^ (player->handtimer < TICRATE/2))
+			{
+				player->hand->spritexscale = FRACUNIT/3;
+				player->hand->spriteyscale = 3*FRACUNIT;
+			}
+			else
+			{
+				player->hand->spritexscale = 2*FRACUNIT;
+				player->hand->spriteyscale = FRACUNIT/2;
+			}
+		}
+
+		P_MoveOrigin(player->hand,
+			player->mo->x + xoffs,
+			player->mo->y + yoffs,
+			player->mo->z + player->mo->height + 30*mapobjectscale
+		);
+		K_FlipFromObject(player->hand, player->mo);
+
+		player->hand->sprzoff = player->mo->sprzoff;
+
+		player->hand->renderflags &= ~RF_DONTDRAW;
+		player->hand->renderflags |= (RF_DONTDRAW & ~K_GetPlayerDontDrawFlag(player));
 	}
 }
 

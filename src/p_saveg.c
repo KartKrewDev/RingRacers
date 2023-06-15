@@ -76,6 +76,7 @@ typedef enum
 	SLIPTIDEZIP = 0x0080,
 	RINGSHOOTER = 0x0100,
 	WHIP = 0x0200,
+	HAND = 0x0400,
 } player_saveflags;
 
 static inline void P_ArchivePlayer(savebuffer_t *save)
@@ -229,6 +230,9 @@ static void P_NetArchivePlayers(savebuffer_t *save)
 		if (players[i].whip)
 			flags |= WHIP;
 
+		if (players[i].hand)
+			flags |= HAND;
+
 		if (players[i].ringShooter)
 			flags |= RINGSHOOTER;
 
@@ -257,6 +261,9 @@ static void P_NetArchivePlayers(savebuffer_t *save)
 
 		if (flags & WHIP)
 			WRITEUINT32(save->p, players[i].whip->mobjnum);
+
+		if (flags & HAND)
+			WRITEUINT32(save->p, players[i].hand->mobjnum);
 
 		if (flags & RINGSHOOTER)
 			WRITEUINT32(save->p, players[i].ringShooter->mobjnum);
@@ -429,6 +436,10 @@ static void P_NetArchivePlayers(savebuffer_t *save)
 
 		WRITEUINT8(save->p, players[i].instaShieldCooldown);
 		WRITEUINT8(save->p, players[i].guardCooldown);
+
+		WRITEUINT8(save->p, players[i].handtimer);
+		WRITEANGLE(save->p, players[i].besthanddirection);
+
 		WRITEINT16(save->p, players[i].incontrol);
 
 		WRITEUINT8(save->p, players[i].markedfordeath);
@@ -652,6 +663,9 @@ static void P_NetUnArchivePlayers(savebuffer_t *save)
 		if (flags & WHIP)
 			players[i].whip = (mobj_t *)(size_t)READUINT32(save->p);
 
+		if (flags & HAND)
+			players[i].hand = (mobj_t *)(size_t)READUINT32(save->p);
+
 		if (flags & RINGSHOOTER)
 			players[i].ringShooter = (mobj_t *)(size_t)READUINT32(save->p);
 
@@ -824,6 +838,10 @@ static void P_NetUnArchivePlayers(savebuffer_t *save)
 
 		players[i].instaShieldCooldown = READUINT8(save->p);
 		players[i].guardCooldown = READUINT8(save->p);
+
+		players[i].handtimer = READUINT8(save->p);
+		players[i].besthanddirection = READANGLE(save->p);
+
 		players[i].incontrol = READINT16(save->p);
 
 		players[i].markedfordeath = READUINT8(save->p);
@@ -5135,6 +5153,13 @@ static void P_RelinkPointers(void)
 			players[i].whip = NULL;
 			if (!P_SetTarget(&players[i].whip, P_FindNewPosition(temp)))
 				CONS_Debug(DBG_GAMELOGIC, "whip not found on player %d\n", i);
+		}
+		if (players[i].hand)
+		{
+			temp = (UINT32)(size_t)players[i].hand;
+			players[i].hand = NULL;
+			if (!P_SetTarget(&players[i].hand, P_FindNewPosition(temp)))
+				CONS_Debug(DBG_GAMELOGIC, "hand not found on player %d\n", i);
 		}
 		if (players[i].ringShooter)
 		{

@@ -1112,6 +1112,8 @@ typedef enum sprite
 	SPR_GRNG, // Guard ring
 	SPR_GBDY, // Guard body
 
+	SPR_DHND, // Servant Hand
+
 	SPR_WIPD, // Wipeout dust trail
 	SPR_DRIF, // Drift Sparks
 	SPR_BDRF, // Brake drift sparks
@@ -4367,6 +4369,8 @@ typedef enum state
 	S_BLOCKRING,
 	S_BLOCKBODY,
 
+	S_SERVANTHAND,
+
 	// Signpost sparkles
 	S_SIGNSPARK1,
 	S_SIGNSPARK2,
@@ -6447,6 +6451,8 @@ typedef enum mobj_type
 	MT_INSTAWHIP,
 	MT_BLOCKRING,
 	MT_BLOCKBODY,
+
+	MT_SERVANTHAND,
 
 	MT_SIGNSPARKLE,
 
