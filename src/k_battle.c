@@ -503,7 +503,7 @@ void K_RunPaperItemSpawners(void)
 				spotMap[i] = i;
 			}
 
-			if ((gametyperules & GTR_SPHERES) && IsOnInterval(2 * interval))
+			if ((gametyperules & GTR_SPHERES) && IsOnInterval(16 * interval))
 			{
 				spotBackup = spotCount;
 				for (i = 0; i < pcount; i++)
