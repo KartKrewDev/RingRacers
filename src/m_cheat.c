@@ -560,6 +560,14 @@ void Command_Setrings_f(void)
 	D_Cheat(consoleplayer, CHEAT_RINGS, atoi(COM_Argv(1)));
 }
 
+void Command_Setspheres_f(void)
+{
+	REQUIRE_CHEATS;
+	REQUIRE_INLEVEL;
+
+	D_Cheat(consoleplayer, CHEAT_SPHERES, atoi(COM_Argv(1)));
+}
+
 void Command_Setlives_f(void)
 {
 	REQUIRE_CHEATS;
