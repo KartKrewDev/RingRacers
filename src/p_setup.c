@@ -6282,6 +6282,8 @@ static void P_ConvertBinaryLinedefTypes(void)
 			if (lines[i].flags & ML_BLOCKMONSTERS)
 				lines[i].args[1] |= TMSAF_MIRROR;
 
+			lines[i].args[2] = tag;
+
 			lines[i].special = LT_SLOPE_ANCHORS;
 			break;
 		}
@@ -7141,7 +7143,7 @@ static void P_ConvertBinaryThingTypes(void)
 			break;
 		case FLOOR_SLOPE_THING:
 		case CEILING_SLOPE_THING:
-			mapthings[i].tid = mapthings[i].extrainfo;
+			mapthings[i].args[0] = mapthings[i].extrainfo;
 			break;
 		default:
 			break;
