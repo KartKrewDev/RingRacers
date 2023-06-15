@@ -752,6 +752,8 @@ struct player_t
 
 	boolean markedfordeath;
 
+	fixed_t outrun; // Milky Way road effect
+
 	uint8_t public_key[PUBKEYLENGTH];
 
 #ifdef HWRENDER

@@ -4609,6 +4609,11 @@ void P_PlayerAfterThink(player_t *player)
 	}
 #endif
 
+	if (P_IsObjectOnGround(player->mo) == true)
+	{
+		player->outrun = 0;
+	}
+
 #ifdef SECTORSPECIALSAFTERTHINK
 	if (player->onconveyor != 1 || !P_IsObjectOnGround(player->mo))
 		player->onconveyor = 0;

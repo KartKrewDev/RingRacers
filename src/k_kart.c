@@ -3301,6 +3301,7 @@ fixed_t K_GetKartSpeedFromStat(UINT8 kartspeed)
 fixed_t K_GetKartSpeed(player_t *player, boolean doboostpower, boolean dorubberband)
 {
 	const boolean mobjValid = (player->mo != NULL && P_MobjWasRemoved(player->mo) == false);
+	const fixed_t physicsScale = mobjValid ? K_GrowShrinkSpeedMul(player) : FRACUNIT;
 	fixed_t finalspeed = 0;
 
 	if (K_PodiumSequence() == true)
@@ -3337,20 +3338,24 @@ fixed_t K_GetKartSpeed(player_t *player, boolean doboostpower, boolean dorubberb
 
 	finalspeed = FixedMul(finalspeed, mapobjectscale);
 
-	if (doboostpower == true)
-	{
-		if (mobjValid == true)
-		{
-			// Scale with the player.
-			finalspeed = FixedMul(finalspeed, K_GrowShrinkSpeedMul(player));
-		}
-
-		finalspeed = FixedMul(finalspeed, player->boostpower + player->speedboost);
-	}
-
 	if (dorubberband == true && K_PlayerUsesBotMovement(player) == true)
 	{
 		finalspeed = FixedMul(finalspeed, player->botvars.rubberband);
+	}
+
+	if (doboostpower == true)
+	{
+		// Scale with the player.
+		finalspeed = FixedMul(finalspeed, physicsScale);
+
+		// Add speed boosts.
+		finalspeed = FixedMul(finalspeed, player->boostpower + player->speedboost);
+	}
+
+	if (player->outrun != 0)
+	{
+		// Milky Way's roads
+		finalspeed += FixedMul(player->outrun, physicsScale);
 	}
 
 	return finalspeed;
@@ -3369,18 +3374,22 @@ fixed_t K_GetKartAccel(player_t *player)
 
 	k_accel += 17 * stat; // 121 - 257
 
-	if (K_PodiumSequence() == true)
-	{
-		return FixedMul(k_accel, FRACUNIT / 4);
-	}
-
 	// Marble Garden Top gets 1200% accel
 	if (player->curshield == KSHIELD_TOP)
 	{
 		k_accel *= 12;
 	}
 
-	return FixedMul(k_accel, (FRACUNIT + player->accelboost) / 4);
+	if (K_PodiumSequence() == true)
+	{
+		k_accel = FixedMul(k_accel, FRACUNIT / 4);
+	}
+	else
+	{
+		k_accel = FixedMul(k_accel, (FRACUNIT + player->accelboost) / 4);
+	}
+
+	return k_accel;
 }
 
 UINT16 K_GetKartFlashing(player_t *player)
