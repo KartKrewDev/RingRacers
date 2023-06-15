@@ -114,6 +114,7 @@ static patch_t *kp_wantedsplit;
 static patch_t *kp_wantedreticle;
 
 static patch_t *kp_itembg[4];
+static patch_t *kp_ringbg[4];
 static patch_t *kp_itemtimer[2];
 static patch_t *kp_itemmulsticker[2];
 static patch_t *kp_itemx;
@@ -142,6 +143,12 @@ static patch_t *kp_kitchensink[2];
 static patch_t *kp_droptarget[2];
 static patch_t *kp_gardentop[2];
 static patch_t *kp_gachabom[2];
+static patch_t *kp_bar[2];
+static patch_t *kp_doublebar[2];
+static patch_t *kp_triplebar[2];
+static patch_t *kp_slotring[2];
+static patch_t *kp_seven[2];
+static patch_t *kp_jackpot[2];
 
 static patch_t *kp_check[6];
 
@@ -443,6 +450,9 @@ void K_LoadKartHUDGraphics(void)
 	HU_UpdatePatch(&kp_itemmulsticker[0], "K_ITMUL");
 	HU_UpdatePatch(&kp_itemx, "K_ITX");
 
+	HU_UpdatePatch(&kp_ringbg[0], "K_RBBG");
+	HU_UpdatePatch(&kp_ringbg[1], "K_SBBG");
+
 	HU_UpdatePatch(&kp_sadface[0], "K_ITSAD");
 	HU_UpdatePatch(&kp_sneaker[0], "K_ITSHOE");
 	HU_UpdatePatch(&kp_rocketsneaker[0], "K_ITRSHE");
@@ -478,6 +488,12 @@ void K_LoadKartHUDGraphics(void)
 	HU_UpdatePatch(&kp_droptarget[0], "K_ITDTRG");
 	HU_UpdatePatch(&kp_gardentop[0], "K_ITGTOP");
 	HU_UpdatePatch(&kp_gachabom[0], "K_ITGBOM");
+	HU_UpdatePatch(&kp_bar[0], "K_RBBAR");
+	HU_UpdatePatch(&kp_doublebar[0], "K_RBBAR2");
+	HU_UpdatePatch(&kp_triplebar[0], "K_RBBAR3");
+	HU_UpdatePatch(&kp_slotring[0], "K_RBRING");
+	HU_UpdatePatch(&kp_seven[0], "K_RBSEV");
+	HU_UpdatePatch(&kp_jackpot[0], "K_RBJACK");
 
 	sprintf(buffer, "FSMFGxxx");
 	for (i = 0; i < 104; i++)
@@ -531,6 +547,12 @@ void K_LoadKartHUDGraphics(void)
 	HU_UpdatePatch(&kp_droptarget[1], "K_ISDTRG");
 	HU_UpdatePatch(&kp_gardentop[1], "K_ISGTOP");
 	HU_UpdatePatch(&kp_gachabom[1], "K_ISGBOM");
+	HU_UpdatePatch(&kp_bar[1], "K_SBBAR");
+	HU_UpdatePatch(&kp_doublebar[1], "K_SBBAR2");
+	HU_UpdatePatch(&kp_triplebar[1], "K_SBBAR3");
+	HU_UpdatePatch(&kp_slotring[1], "K_SBRING");
+	HU_UpdatePatch(&kp_seven[1], "K_SBSEV");
+	HU_UpdatePatch(&kp_jackpot[1], "K_SBJACK");
 
 	sprintf(buffer, "FSMFSxxx");
 	for (i = 0; i < 104; i++)
@@ -844,6 +866,12 @@ static patch_t *K_GetCachedItemPatch(INT32 item, UINT8 offset)
 		kp_droptarget,
 		kp_gardentop,
 		kp_gachabom,
+		kp_bar,
+		kp_doublebar,
+		kp_triplebar,
+		kp_slotring,
+		kp_seven,
+		kp_jackpot,
 	};
 
 	if (item == KITEM_SAD || (item > KITEM_NONE && item < NUMKARTITEMS))
@@ -1210,6 +1238,12 @@ static void K_drawKartItem(void)
 	fixed_t rouletteSpace = ROULETTE_SPACING;
 	vector2_t rouletteCrop = {7, 7};
 	INT32 i;
+
+	if (stplyr->itemRoulette.ringbox)
+	{
+		// Todo: owl
+		localbg = offset ? kp_ringbg[1] : kp_ringbg[0];
+	}
 
 	if (stplyr->itemRoulette.itemListLen > 0)
 	{
@@ -4943,7 +4977,7 @@ static void K_drawDistributionDebugger(void)
 		return;
 	}
 
-	K_FillItemRouletteData(stplyr, &rouletteData);
+	K_FillItemRouletteData(stplyr, &rouletteData, false);
 
 	for (i = 0; i < rouletteData.itemListLen; i++)
 	{

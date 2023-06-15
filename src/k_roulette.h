@@ -98,7 +98,7 @@ INT32 K_KartGetItemOdds(const player_t *player, itemroulette_t *const roulette, 
 
 
 /*--------------------------------------------------
-	void K_FillItemRouletteData(const player_t *player, itemroulette_t *const roulette);
+	void K_FillItemRouletteData(const player_t *player, itemroulette_t *const roulette, boolean ringbox);
 
 		Fills out the item roulette struct when it is
 		initially created. This function needs to be
@@ -109,16 +109,17 @@ INT32 K_KartGetItemOdds(const player_t *player, itemroulette_t *const roulette, 
 		player - The player this roulette data is for.
 			Can be NULL for generic use.
 		roulette - The roulette data struct to fill out.
+		ringbox - Is this roulette fill triggered by a just-respawned Ring Box?
 
 	Return:-
 		N/A
 --------------------------------------------------*/
 
-void K_FillItemRouletteData(const player_t *player, itemroulette_t *const roulette);
+void K_FillItemRouletteData(const player_t *player, itemroulette_t *const roulette, boolean ringbox);
 
 
 /*--------------------------------------------------
-	void K_StartItemRoulette(player_t *const player);
+	void K_StartItemRoulette(player_t *const player, boolean ringbox);
 
 		Starts the item roulette sequence for a player.
 		This stage can only be used by gameplay, thus
@@ -126,12 +127,13 @@ void K_FillItemRouletteData(const player_t *player, itemroulette_t *const roulet
 
 	Input Arguments:-
 		player - The player to start the item roulette for.
+		ringbox - Is this roulette being started from a just-respawned Ring Box?
 
 	Return:-
 		N/A
 --------------------------------------------------*/
 
-void K_StartItemRoulette(player_t *const player);
+void K_StartItemRoulette(player_t *const player, boolean ringbox);
 
 
 /*--------------------------------------------------

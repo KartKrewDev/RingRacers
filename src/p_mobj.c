@@ -9731,6 +9731,7 @@ static boolean P_FuseThink(mobj_t *mobj)
 
 			// Transfer flags2 (strongbox, objectflip, bossnotrap)
 			newmobj->flags2 = mobj->flags2;
+			newmobj->extravalue1 = 0;
 		}
 
 		P_RemoveMobj(mobj); // make sure they disappear

@@ -102,6 +102,8 @@ void Obj_RandomItemVisuals(mobj_t *mobj)
 	ItemBoxBob(mobj);
 	ItemBoxScaling(mobj);
 	item_vfxtimer(mobj)++;
+	if (mobj->fuse == 0)
+		mobj->extravalue1++;
 }
 
 boolean Obj_RandomItemSpawnIn(mobj_t *mobj)
@@ -116,6 +118,7 @@ boolean Obj_RandomItemSpawnIn(mobj_t *mobj)
 			}
 			else
 			{
+				// Spawn a battle monitor in your place and Fucking Die
 				mobj_t *paperspawner = P_SpawnMobj(mobj->x, mobj->y, mobj->z, MT_PAPERITEMSPOT);
 				paperspawner->spawnpoint = mobj->spawnpoint;
 				mobj->spawnpoint->mobj = paperspawner;

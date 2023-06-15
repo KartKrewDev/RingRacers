@@ -398,7 +398,13 @@ consvar_t cv_items[NUMKARTRESULTS-1] = {
 	CVAR_INIT ("tripleorbinaut", 	"On", CV_NETVAR, CV_OnOff, NULL),
 	CVAR_INIT ("quadorbinaut", 		"On", CV_NETVAR, CV_OnOff, NULL),
 	CVAR_INIT ("dualjawz", 			"On", CV_NETVAR, CV_OnOff, NULL),
-	CVAR_INIT ("triplegachabom", 	"On", CV_NETVAR, CV_OnOff, NULL)
+	CVAR_INIT ("triplegachabom", 	"On", CV_NETVAR, CV_OnOff, NULL),
+	CVAR_INIT ("bar",				"On", CV_NETVAR, CV_OnOff, NULL),
+	CVAR_INIT ("doublebar",			"On", CV_NETVAR, CV_OnOff, NULL),
+	CVAR_INIT ("triplebar",			"On", CV_NETVAR, CV_OnOff, NULL),
+	CVAR_INIT ("slotring",			"On", CV_NETVAR, CV_OnOff, NULL),
+	CVAR_INIT ("seven",				"On", CV_NETVAR, CV_OnOff, NULL),
+	CVAR_INIT ("jackpot",			"On", CV_NETVAR, CV_OnOff, NULL)
 };
 
 consvar_t cv_kartspeed = CVAR_INIT ("gamespeed", "Auto", CV_NETVAR|CV_CALL|CV_NOINIT, kartspeed_cons_t, KartSpeed_OnChange);

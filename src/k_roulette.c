@@ -100,6 +100,12 @@ static UINT8 K_KartItemOddsRace[NUMKARTRESULTS-1][8] =
 	{ 3, 0, 0, 0, 0, 0, 0, 0 }, // Drop Target
 	{ 0, 0, 0, 1, 2, 2, 0, 0 }, // Garden Top
 	{ 0, 0, 0, 0, 0, 0, 0, 0 }, // Gachabom
+	{ 0, 0, 0, 0, 0, 0, 0, 0 }, // Bar
+	{ 0, 0, 0, 0, 0, 0, 0, 0 }, // Double Bar
+	{ 0, 0, 0, 0, 0, 0, 0, 0 }, // Triple Bar
+	{ 0, 0, 0, 0, 0, 0, 0, 0 }, // Slot Ring
+	{ 0, 0, 0, 0, 0, 0, 0, 0 }, // Seven
+	{ 0, 0, 0, 0, 0, 0, 0, 0 }, // Jackpot
 	{ 0, 0, 2, 3, 3, 1, 0, 0 }, // Sneaker x2
 	{ 0, 0, 0, 0, 4, 4, 4, 0 }, // Sneaker x3
 	{ 0, 1, 1, 0, 0, 0, 0, 0 }, // Banana x3
@@ -134,6 +140,12 @@ static UINT8 K_KartItemOddsBattle[NUMKARTRESULTS-1][2] =
 	{ 2, 0 }, // Drop Target
 	{ 4, 0 }, // Garden Top
 	{ 0, 0 }, // Gachabom
+	{ 0, 0 }, // Bar
+	{ 0, 0 }, // Double Bar
+	{ 0, 0 }, // Triple Bar
+	{ 0, 0 }, // Slot Ring
+	{ 0, 0 }, // Seven
+	{ 0, 0 }, // Jackpot
 	{ 0, 0 }, // Sneaker x2
 	{ 0, 1 }, // Sneaker x3
 	{ 0, 0 }, // Banana x3
@@ -168,6 +180,12 @@ static UINT8 K_KartItemOddsSpecial[NUMKARTRESULTS-1][4] =
 	{ 0, 0, 0, 0 }, // Drop Target
 	{ 0, 0, 0, 0 }, // Garden Top
 	{ 0, 0, 0, 0 }, // Gachabom
+	{ 0, 0, 0, 0 }, // Bar
+	{ 0, 0, 0, 0 }, // Double Bar
+	{ 0, 0, 0, 0 }, // Triple Bar
+	{ 0, 0, 0, 0 }, // Slot Ring
+	{ 0, 0, 0, 0 }, // Seven
+	{ 0, 0, 0, 0 }, // Jackpot
 	{ 0, 1, 1, 0 }, // Sneaker x2
 	{ 0, 0, 1, 1 }, // Sneaker x3
 	{ 0, 0, 0, 0 }, // Banana x3
@@ -215,6 +233,17 @@ static kartitems_t K_KartItemReelBoss[] =
 	KITEM_ORBINAUT,
 	KITEM_ORBINAUT,
 	KITEM_ORBINAUT,
+	KITEM_NONE
+};
+
+static kartitems_t K_KartItemReelRingBox[] =
+{
+	KITEM_BAR,
+	KITEM_DOUBLEBAR,
+	KITEM_TRIPLEBAR,
+	KITEM_SLOTRING,
+	KITEM_SEVEN,
+	KITEM_JACKPOT,
 	KITEM_NONE
 };
 
@@ -1052,6 +1081,7 @@ static void K_InitRoulette(itemroulette_t *const roulette)
 
 	roulette->active = true;
 	roulette->eggman = false;
+	roulette->ringbox = false;
 
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
@@ -1257,7 +1287,7 @@ static void K_CalculateRouletteSpeed(itemroulette_t *const roulette)
 
 		See header file for description.
 --------------------------------------------------*/
-void K_FillItemRouletteData(const player_t *player, itemroulette_t *const roulette)
+void K_FillItemRouletteData(const player_t *player, itemroulette_t *const roulette, boolean ringbox)
 {
 	UINT32 spawnChance[NUMKARTRESULTS] = {0};
 	UINT32 totalSpawnChance = 0;
@@ -1281,6 +1311,22 @@ void K_FillItemRouletteData(const player_t *player, itemroulette_t *const roulet
 	if (cv_kartdebugitem.value != KITEM_NONE)
 	{
 		K_PushToRouletteItemList(roulette, cv_kartdebugitem.value);
+		return;
+	}
+
+	// SPECIAL CASE No. 1.5:
+	// If this is being invoked by a Ring Box, it should literally never produce items.
+	if (ringbox)
+	{
+		kartitems_t *presetlist = K_KartItemReelRingBox;
+		
+		roulette->ringbox = true;
+
+		for (i = 0; presetlist[i] != KITEM_NONE; i++)
+		{
+			K_PushToRouletteItemList(roulette, presetlist[i]);
+		}
+
 		return;
 	}
 
@@ -1412,12 +1458,12 @@ void K_FillItemRouletteData(const player_t *player, itemroulette_t *const roulet
 
 		See header file for description.
 --------------------------------------------------*/
-void K_StartItemRoulette(player_t *const player)
+void K_StartItemRoulette(player_t *const player, boolean ringbox)
 {
 	itemroulette_t *const roulette = &player->itemRoulette;
 	size_t i;
 
-	K_FillItemRouletteData(player, roulette);
+	K_FillItemRouletteData(player, roulette, ringbox);
 
 	if (K_PlayerUsesBotMovement(player) == true)
 	{
@@ -1444,7 +1490,7 @@ void K_StartItemRoulette(player_t *const player)
 void K_StartEggmanRoulette(player_t *const player)
 {
 	itemroulette_t *const roulette = &player->itemRoulette;
-	K_StartItemRoulette(player);
+	K_StartItemRoulette(player, false);
 	roulette->eggman = true;
 }
 
@@ -1603,7 +1649,10 @@ void K_KartItemRoulette(player_t *const player, ticcmd_t *const cmd)
 
 		if (P_IsDisplayPlayer(player) && !demo.freecam)
 		{
-			S_StartSound(NULL, sfx_itrol1 + roulette->sound);
+			if (roulette->ringbox)
+				S_StartSound(NULL, sfx_s240);
+			else
+				S_StartSound(NULL, sfx_itrol1 + roulette->sound);
 		}
 	}
 	else

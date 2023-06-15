@@ -13006,8 +13006,13 @@ void A_ItemPop(mobj_t *actor)
 	}
 	else if (locvar1 == 0)
 	{
-		K_StartItemRoulette(actor->target->player);
+		if (actor->extravalue1 >= TICRATE)
+			K_StartItemRoulette(actor->target->player, false);
+		else
+			K_StartItemRoulette(actor->target->player, true);
 	}
+
+	actor->extravalue1 = 0;
 
 	// Here at mapload in battle?
 	if (!(gametyperules & GTR_CIRCUIT) && (actor->flags2 & MF2_BOSSNOTRAP))

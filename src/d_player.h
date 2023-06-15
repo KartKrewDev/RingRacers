@@ -160,7 +160,13 @@ Run this macro, then #undef FOREACH afterward
 	FOREACH (KITCHENSINK,   20),\
 	FOREACH (DROPTARGET,    21),\
 	FOREACH (GARDENTOP,     22),\
-	FOREACH (GACHABOM,      23)
+	FOREACH (GACHABOM,      23),\
+	FOREACH (BAR,           24),\
+	FOREACH (DOUBLEBAR,     25),\
+	FOREACH (TRIPLEBAR,     26),\
+	FOREACH (SLOTRING,      27),\
+	FOREACH (SEVEN,         28),\
+	FOREACH (JACKPOT,       29)
 
 typedef enum
 {
@@ -399,6 +405,7 @@ struct itemroulette_t
 	tic_t elapsed;
 
 	boolean eggman;
+	boolean ringbox;
 };
 
 // enum for bot item priorities
