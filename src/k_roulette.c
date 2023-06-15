@@ -1628,7 +1628,10 @@ void K_KartItemRoulette(player_t *const player, ticcmd_t *const cmd)
 
 			if (P_IsDisplayPlayer(player) && !demo.freecam)
 			{
-				S_StartSound(NULL, sfx_itrolf);
+				if (roulette->ringbox)
+					S_StartSound(NULL, sfx_s245);
+				else
+					S_StartSound(NULL, sfx_itrolf);
 			}
 		}
 

@@ -11431,42 +11431,42 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 							}
 							break;
 						case KITEM_BAR:
-							if (ATTACK_IS_DOWN && !HOLDING_ITEM && NO_HYUDORO)
+							if (player->karthud[khud_itemblink] < 1)
 							{
 								K_AwardPlayerRings(player, 10, true);
 								player->itemamount--;
 							}
 							break;
 						case KITEM_DOUBLEBAR:
-							if (ATTACK_IS_DOWN && !HOLDING_ITEM && NO_HYUDORO)
+							if (player->karthud[khud_itemblink] < 1)
 							{
 								K_AwardPlayerRings(player, 20, true);
 								player->itemamount--;
 							}
 							break;
 						case KITEM_TRIPLEBAR:
-							if (ATTACK_IS_DOWN && !HOLDING_ITEM && NO_HYUDORO)
+							if (player->karthud[khud_itemblink] < 1)
 							{
 								K_AwardPlayerRings(player, 30, true);
 								player->itemamount--;
 							}
 							break;
 						case KITEM_SLOTRING:
-							if (ATTACK_IS_DOWN && !HOLDING_ITEM && NO_HYUDORO)
+							if (player->karthud[khud_itemblink] < 1)
 							{
 								K_AwardPlayerRings(player, 50, true);
 								player->itemamount--;
 							}
 							break;
 						case KITEM_SEVEN:
-							if (ATTACK_IS_DOWN && !HOLDING_ITEM && NO_HYUDORO)
+							if (player->karthud[khud_itemblink] < 1)
 							{
 								K_AwardPlayerRings(player, 77, true);
 								player->itemamount--;
 							}
 							break;
 						case KITEM_JACKPOT:
-							if (ATTACK_IS_DOWN && !HOLDING_ITEM && NO_HYUDORO)
+							if (player->karthud[khud_itemblink] < 1)
 							{
 								K_AwardPlayerRings(player, 150, true);
 								player->itemamount--;
