@@ -8284,9 +8284,14 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		player->tripwireState = TRIPSTATE_NONE;
 	}
 
+	if (player->hand && P_MobjWasRemoved(player->hand))
+		P_SetTarget(&player->hand, NULL);
+
 	if (player->spectator == false)
 	{
 		K_KartEbrakeVisuals(player);
+
+		Obj_ServantHandHandling(player);
 	}
 
 	if (K_GetKartButtons(player) & BT_BRAKE &&
@@ -8605,6 +8610,7 @@ static waypoint_t *K_GetPlayerNextWaypoint(player_t *player)
 			{
 				angle_t nextbestdelta = ANGLE_90;
 				angle_t nextbestmomdelta = ANGLE_90;
+				angle_t nextbestanydelta = ANGLE_MAX;
 				size_t i = 0U;
 
 				if ((waypoint->nextwaypoints != NULL) && (waypoint->numnextwaypoints > 0U))
@@ -8646,8 +8652,14 @@ static waypoint_t *K_GetPlayerNextWaypoint(player_t *player)
 							momdelta = InvAngle(momdelta);
 						}
 
-						if (angledelta < nextbestdelta || momdelta < nextbestmomdelta)
+						if (angledelta < nextbestanydelta || momdelta < nextbestanydelta)
 						{
+							nextbestanydelta = min(angledelta, momdelta);
+							player->besthanddirection = angletowaypoint;
+
+							if (nextbestanydelta >= ANGLE_90)
+								continue;
+
 							// Wanted to use a next waypoint, so remove WRONG WAY flag.
 							// Done here instead of when set, because of finish line
 							// hacks meaning we might not actually use this one, but

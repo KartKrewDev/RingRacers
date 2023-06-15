@@ -5005,7 +5005,7 @@ static void K_DrawWaypointDebugger(void)
 	}
 
 	V_DrawString(8, 156, 0, va("Current Waypoint ID: %d", K_GetWaypointID(stplyr->currentwaypoint)));
-	V_DrawString(8, 166, 0, va("Next Waypoint ID: %d", K_GetWaypointID(stplyr->nextwaypoint)));
+	V_DrawString(8, 166, 0, va("Next Waypoint ID: %d%s", K_GetWaypointID(stplyr->nextwaypoint), ((stplyr->pflags & PF_WRONGWAY) ? " (WRONG WAY)" : "")));
 	V_DrawString(8, 176, 0, va("Finishline Distance: %d", stplyr->distancetofinish));
 
 	if (numstarposts > 0)
@@ -5364,11 +5364,6 @@ void K_drawKartHUD(void)
 
 	// Draw FREE PLAY.
 	K_drawKartFreePlay();
-
-	if (r_splitscreen == 0 && (stplyr->pflags & PF_WRONGWAY) && ((leveltime / 8) & 1))
-	{
-		V_DrawCenteredString(BASEVIDWIDTH>>1, 176, V_REDMAP|V_SNAPTOBOTTOM, "WRONG WAY");
-	}
 
 	if ((netgame || cv_mindelay.value) && r_splitscreen && Playing())
 	{

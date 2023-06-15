@@ -137,6 +137,9 @@ void Obj_RandomItemSpawn(mobj_t *mobj);
 void Obj_GachaBomReboundThink(mobj_t *mobj);
 void Obj_SpawnGachaBomRebound(mobj_t *source, mobj_t *target);
 
+/* Servant Hand */
+void Obj_ServantHandHandling(player_t *player);
+
 #ifdef __cplusplus
 } // extern "C"
 #endif
