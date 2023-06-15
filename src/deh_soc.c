@@ -1278,6 +1278,10 @@ void readlevelheader(MYFILE *f, char * name)
 			{
 				mapheaderinfo[num]->light_contrast = (UINT8)i;
 			}
+			else if (fastcmp(word, "SPRITEBACKLIGHT"))
+			{
+				mapheaderinfo[num]->sprite_backlight = (SINT8)i;
+			}
 			else if (fastcmp(word, "LIGHTANGLE"))
 			{
 				if (fastcmp(word2, "EVEN"))

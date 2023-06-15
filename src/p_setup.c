@@ -438,6 +438,7 @@ static void P_ClearSingleMapHeaderInfo(INT16 num)
 	mapheaderinfo[num]->mobj_scale = FRACUNIT;
 	mapheaderinfo[num]->default_waypoint_radius = 0;
 	mapheaderinfo[num]->light_contrast = 16;
+	mapheaderinfo[num]->sprite_backlight = 0;
 	mapheaderinfo[num]->use_light_angle = false;
 	mapheaderinfo[num]->light_angle = 0;
 #if 1 // equivalent to "Followers = DEFAULT"

@@ -6732,6 +6732,7 @@ void P_InitSpecials(void)
 
 	// Set map lighting settings.
 	maplighting.contrast = mapheaderinfo[gamemap-1]->light_contrast;
+	maplighting.backlight = mapheaderinfo[gamemap-1]->sprite_backlight;
 	maplighting.directional = mapheaderinfo[gamemap-1]->use_light_angle;
 	maplighting.angle = mapheaderinfo[gamemap-1]->light_angle;
 
