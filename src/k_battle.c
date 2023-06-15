@@ -435,6 +435,7 @@ void K_RunPaperItemSpawners(void)
 			mobj_t *spotList[MAXITEM];
 			UINT8 spotMap[MAXITEM];
 			UINT8 spotCount = 0, spotBackup = 0, spotAvailable = 0;
+			UINT8 monitorsSpawned = 0;
 
 			for (th = thlist[THINK_MOBJ].next; th != &thlist[THINK_MOBJ]; th = th->next)
 			{
@@ -457,6 +458,10 @@ void K_RunPaperItemSpawners(void)
 					// where a monitor doesn't exist
 					spotMap[spotAvailable] = spotCount;
 					spotAvailable++;
+				}
+				else
+				{
+					monitorsSpawned++;
 				}
 
 				spotList[spotCount] = mo;
@@ -484,7 +489,7 @@ void K_RunPaperItemSpawners(void)
 
 			//CONS_Printf("leveltime = %d ", leveltime);
 
-			if (spotAvailable > 0)
+			if (spotAvailable > 0 && monitorsSpawned < BATTLE_MONITOR_SPAWN_LIMIT)
 			{
 				const UINT8 r = spotMap[P_RandomKey(PR_ITEM_ROULETTE, spotAvailable)];
 
