@@ -31,10 +31,60 @@
 #include "k_podium.h"
 #include "k_respawn.h"
 #include "m_easing.h"
+#include "d_clisrv.h"
+#include "g_party.h"
+#include "k_grandprix.h" // K_CanChangeRules
+#include "hu_stuff.h" // HU_AddChatText
+#include "discord.h" // DRPC_UpdatePresence
+#include "i_net.h" // doomcom
 
 #ifdef DEVELOP
 	consvar_t cv_botcontrol = CVAR_INIT ("botcontrol", "On", CV_NETVAR|CV_CHEAT, CV_OnOff, NULL);
 #endif
+
+/*--------------------------------------------------
+	void K_SetBot(UINT8 playerNum, UINT8 skinnum, UINT8 difficulty, botStyle_e style)
+
+		See header file for description.
+--------------------------------------------------*/
+void K_SetBot(UINT8 newplayernum, UINT8 skinnum, UINT8 difficulty, botStyle_e style)
+{
+	CONS_Debug(DBG_NETPLAY, "addbot: %d\n", newplayernum);
+
+	// Clear player before joining, lest some things get set incorrectly
+	CL_ClearPlayer(newplayernum);
+	G_DestroyParty(newplayernum);
+
+	playeringame[newplayernum] = true;
+	G_AddPlayer(newplayernum);
+	if (newplayernum+1 > doomcom->numslots)
+		doomcom->numslots = (INT16)(newplayernum+1);
+
+	playernode[newplayernum] = servernode;
+
+	// this will permit unlocks
+	memcpy(&players[newplayernum].availabilities, R_GetSkinAvailabilities(false, true), MAXAVAILABILITY*sizeof(UINT8));
+
+	players[newplayernum].splitscreenindex = 0;
+	players[newplayernum].bot = true;
+	players[newplayernum].botvars.difficulty = difficulty;
+	players[newplayernum].botvars.style = style;
+	players[newplayernum].lives = 9;
+
+	players[newplayernum].skincolor = skins[skinnum].prefcolor;
+	sprintf(player_names[newplayernum], "%s", skins[skinnum].realname);
+	SetPlayerSkinByNum(newplayernum, skinnum);
+
+	playerconsole[newplayernum] = newplayernum;
+	G_BuildLocalSplitscreenParty(newplayernum);
+
+	if (netgame)
+	{
+		HU_AddChatText(va("\x82*Bot %d has been added to the game", newplayernum+1), false);
+	}
+
+	LUA_HookInt(newplayernum, HOOK(PlayerJoin));
+}
 
 /*--------------------------------------------------
 	boolean K_AddBot(UINT8 skin, UINT8 difficulty, botStyle_e style, UINT8 *p)
@@ -43,8 +93,40 @@
 --------------------------------------------------*/
 boolean K_AddBot(UINT8 skin, UINT8 difficulty, botStyle_e style, UINT8 *p)
 {
-	UINT8 buf[3];
-	UINT8 *buf_p = buf;
+	UINT8 newplayernum = *p;
+
+	for (; newplayernum < MAXPLAYERS; newplayernum++)
+	{
+		if (playeringame[newplayernum] == false)
+		{
+			// free player slot
+			break;
+		}
+	}
+
+	if (newplayernum >= MAXPLAYERS)
+	{
+		// nothing is free
+		*p = MAXPLAYERS;
+		return false;
+	}
+
+	K_SetBot(newplayernum, skin, difficulty, style);
+	DEBFILE(va("Everyone added bot %d\n", newplayernum));
+
+	// use the next free slot
+	*p = newplayernum+1;
+
+	return true;
+}
+
+/*--------------------------------------------------
+	boolean K_AddBotFromServer(UINT8 skin, UINT8 difficulty, botStyle_e style, UINT8 *p)
+
+		See header file for description.
+--------------------------------------------------*/
+boolean K_AddBotFromServer(UINT8 skin, UINT8 difficulty, botStyle_e style, UINT8 *p)
+{
 	UINT8 newplayernum = *p;
 
 	// search for a free playernum
@@ -54,57 +136,66 @@ boolean K_AddBot(UINT8 skin, UINT8 difficulty, botStyle_e style, UINT8 *p)
 		UINT8 n;
 
 		for (n = 0; n < MAXNETNODES; n++)
+		{
 			if (nodetoplayer[n] == newplayernum
 			|| nodetoplayer2[n] == newplayernum
 			|| nodetoplayer3[n] == newplayernum
 			|| nodetoplayer4[n] == newplayernum)
 				break;
+		}
 
 		if (n == MAXNETNODES)
 			break;
 	}
 
-	while (playeringame[newplayernum]
-		&& players[newplayernum].bot
-		&& newplayernum < MAXPLAYERS)
+	for (; newplayernum < MAXPLAYERS; newplayernum++)
 	{
-		newplayernum++;
+		if (playeringame[newplayernum] == false)
+		{
+			// free player slot
+			break;
+		}
 	}
 
 	if (newplayernum >= MAXPLAYERS)
 	{
-		*p = newplayernum;
+		// nothing is free
+		*p = MAXPLAYERS;
 		return false;
 	}
 
-	WRITEUINT8(buf_p, newplayernum);
-
-	if (skin > numskins)
+	if (server)
 	{
-		skin = numskins;
+		UINT8 buf[4];
+		UINT8 *buf_p = buf;
+
+		WRITEUINT8(buf_p, newplayernum);
+
+		if (skin > numskins)
+		{
+			skin = numskins;
+		}
+
+		WRITEUINT8(buf_p, skin);
+
+		if (difficulty < 1)
+		{
+			difficulty = 1;
+		}
+		else if (difficulty > MAXBOTDIFFICULTY)
+		{
+			difficulty = MAXBOTDIFFICULTY;
+		}
+
+		WRITEUINT8(buf_p, difficulty);
+		WRITEUINT8(buf_p, style);
+
+		SendNetXCmd(XD_ADDBOT, buf, buf_p - buf);
+		DEBFILE(va("Server added bot %d\n", newplayernum));
 	}
 
-	WRITEUINT8(buf_p, skin);
-
-	if (difficulty < 1)
-	{
-		difficulty = 1;
-	}
-	else if (difficulty > MAXBOTDIFFICULTY)
-	{
-		difficulty = MAXBOTDIFFICULTY;
-	}
-
-	WRITEUINT8(buf_p, difficulty);
-	WRITEUINT8(buf_p, style);
-
-	SendNetXCmd(XD_ADDBOT, buf, buf_p - buf);
-
-	DEBFILE(va("Server added bot %d\n", newplayernum));
 	// use the next free slot (we can't put playeringame[newplayernum] = true here)
-	newplayernum++;
-
-	*p = newplayernum;
+	*p = newplayernum+1;
 	return true;
 }
 
@@ -125,11 +216,6 @@ void K_UpdateMatchRaceBots(void)
 	UINT8 usableskins = 0;
 	UINT8 grabskins[MAXSKINS+1];
 	UINT8 i;
-
-	if (!server)
-	{
-		return;
-	}
 
 	// Init usable bot skins list
 	for (i = 0; i < numskins; i++)
@@ -173,12 +259,16 @@ void K_UpdateMatchRaceBots(void)
 		}
 	}
 
-	if (difficulty == 0 || (gametyperules & GTR_BOTS) == 0)
+	if (K_CanChangeRules(true) == false
+		|| (gametyperules & GTR_BOTS) == 0
+		|| difficulty == 0)
 	{
+		// Remove bots if there are any.
 		wantedbots = 0;
 	}
 	else
 	{
+		// Add bots to fill up MAXPLAYERS
 		wantedbots = pmax - numplayers - numwaiting;
 
 		if (wantedbots < 0)
@@ -201,11 +291,15 @@ void K_UpdateMatchRaceBots(void)
 		for (i = 0; i < usableskins; i++)
 		{
 			if (!(grabskins[i] == MAXSKINS || !R_SkinUsable(-1, grabskins[i], true)))
+			{
 				continue;
+			}
+
 			while (usableskins > i && (grabskins[usableskins] == MAXSKINS || !R_SkinUsable(-1, grabskins[usableskins], true)))
 			{
 				usableskins--;
 			}
+
 			grabskins[i] = grabskins[usableskins];
 			grabskins[usableskins] = MAXSKINS;
 		}
@@ -216,7 +310,7 @@ void K_UpdateMatchRaceBots(void)
 
 			if (usableskins > 0)
 			{
-				UINT8 index = M_RandomKey(usableskins);
+				UINT8 index = P_RandomKey(PR_BOTS, usableskins);
 				skinnum = grabskins[index];
 				grabskins[index] = grabskins[--usableskins];
 			}
@@ -232,8 +326,6 @@ void K_UpdateMatchRaceBots(void)
 	}
 	else if (numbots > wantedbots)
 	{
-		UINT8 buf[2];
-
 		i = MAXPLAYERS;
 		while (numbots > wantedbots && i > 0)
 		{
@@ -241,16 +333,18 @@ void K_UpdateMatchRaceBots(void)
 
 			if (playeringame[i] && players[i].bot)
 			{
-				buf[0] = i;
-				buf[1] = KR_LEAVE;
-				SendNetXCmd(XD_REMOVEPLAYER, &buf, 2);
-
+				CL_RemovePlayer(i, KR_LEAVE);
 				numbots--;
 			}
 		}
 	}
 
 	// We should have enough bots now :)
+
+#ifdef HAVE_DISCORDRPC
+	// Player count change was possible, so update presence
+	DRPC_UpdatePresence();
+#endif
 }
 
 /*--------------------------------------------------
@@ -1749,14 +1843,6 @@ static void K_BuildBotTiccmdNormal(player_t *player, ticcmd_t *cmd)
 --------------------------------------------------*/
 void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 {
-	precise_t t = 0;
-	botprediction_t *predict = NULL;
-	boolean trySpindash = true;
-	angle_t destangle = 0;
-	UINT8 spindash = 0;
-	INT32 turnamt = 0;
-	const line_t *botController = player->botvars.controller != UINT16_MAX ? &lines[player->botvars.controller] : NULL;
-
 	// Remove any existing controls
 	memset(cmd, 0, sizeof(ticcmd_t));
 
@@ -1768,7 +1854,10 @@ void K_BuildBotTiccmd(player_t *player, ticcmd_t *cmd)
 		return;
 	}
 
-	// Complete override of all ticcmd functionality
+	// Complete override of all ticcmd functionality.
+	// May add more hooks to individual pieces of bot ticcmd,
+	// but this should always be here so anyone can roll
+	// their own :)
 	if (LUA_HookTiccmd(player, cmd, HOOK(BotTiccmd)) == true)
 	{
 		return;

@@ -7739,7 +7739,7 @@ static void P_InitGametype(void)
 			grandprixinfo.wonround = false;
 		}
 	}
-	else if (!modeattacking)
+	else
 	{
 		// We're in a Match Race, use simplistic randomized bots.
 		K_UpdateMatchRaceBots();

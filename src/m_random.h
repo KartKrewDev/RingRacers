@@ -40,6 +40,8 @@ typedef enum
 	// However each instance of RNG being used for
 	// gameplay should be split up as much as possible.
 
+	// Place new ones at the end for demo compatibility.
+
 	PR_EXECUTOR, // Linedef executor
 	PR_ACS, // ACS scripts
 
@@ -71,6 +73,8 @@ typedef enum
 	PR_SPARKLE, // Endsign and/or Emerald
 
 	PR_MOVINGTARGET, // Randomised moving targets
+
+	PR_BOTS, // Bot spawning
 
 	PRNUMCLASS
 } pr_class_t;

@@ -186,6 +186,13 @@ void K_InitGrandPrixBots(void)
 	{
 		if (playeringame[i])
 		{
+			if (players[i].bot == true)
+			{
+				// Remove existing bots.
+				CL_RemovePlayer(i, KR_LEAVE);
+				continue;
+			}
+
 			if (numplayers < MAXSPLITSCREENPLAYERS && !players[i].spectator)
 			{
 				competitors[numplayers] = i;
@@ -227,11 +234,15 @@ void K_InitGrandPrixBots(void)
 	for (i = 0; i < usableskins; i++)
 	{
 		if (!(grabskins[i] == MAXSKINS || !R_SkinUsable(-1, grabskins[i], true)))
+		{
 			continue;
+		}
+
 		while (usableskins > i && (grabskins[usableskins] == MAXSKINS || !R_SkinUsable(-1, grabskins[usableskins], true)))
 		{
 			usableskins--;
 		}
+
 		grabskins[i] = grabskins[usableskins];
 		grabskins[usableskins] = MAXSKINS;
 	}
@@ -245,7 +256,7 @@ void K_InitGrandPrixBots(void)
 
 			if (usableskins > 0)
 			{
-				UINT8 index = M_RandomKey(usableskins);
+				UINT8 index = P_RandomKey(PR_BOTS, usableskins);
 				skinnum = grabskins[index];
 				grabskins[index] = grabskins[--usableskins];
 			}
@@ -327,8 +338,10 @@ void K_UpdateGrandPrixBots(void)
 	UINT16 newrivalscore = 0;
 	UINT8 i;
 
-	if (K_PodiumSequence())
+	if (K_PodiumSequence() == true)
+	{
 		return;
+	}
 
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
