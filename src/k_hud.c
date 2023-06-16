@@ -866,12 +866,6 @@ static patch_t *K_GetCachedItemPatch(INT32 item, UINT8 offset)
 		kp_droptarget,
 		kp_gardentop,
 		kp_gachabom,
-		kp_bar,
-		kp_doublebar,
-		kp_triplebar,
-		kp_slotring,
-		kp_seven,
-		kp_jackpot,
 	};
 
 	if (item == KITEM_SAD || (item > KITEM_NONE && item < NUMKARTITEMS))
@@ -901,6 +895,23 @@ static patch_t *K_GetSmallStaticCachedItemPatch(kartitems_t item)
 	}
 
 	return K_GetCachedItemPatch(item, offset);
+}
+
+static patch_t *K_GetCachedSlotMachinePatch(INT32 item, UINT8 offset)
+{
+	patch_t **kp[KSM__MAX] = {
+		kp_bar,
+		kp_doublebar,
+		kp_triplebar,
+		kp_slotring,
+		kp_seven,
+		kp_jackpot,
+	};
+
+	if (item >= 0 && item < KSM__MAX)
+		return kp[item][offset];
+	else
+		return NULL;
 }
 
 //}
@@ -1565,6 +1576,99 @@ static void K_drawKartItem(void)
 			}
 		}
 	}
+}
+
+static void K_drawKartSlotMachine(void)
+{
+	// ITEM_X = BASEVIDWIDTH-50;	// 270
+	// ITEM_Y = 24;					//  24
+
+	// Why write V_DrawScaledPatch calls over and over when they're all the same?
+	// Set to 'no item' just in case.
+	const UINT8 offset = ((r_splitscreen > 1) ? 1 : 0);
+
+	patch_t *localpatch[3] = { kp_nodraw, kp_nodraw, kp_nodraw };
+	patch_t *localbg = offset ? kp_ringbg[1] : kp_ringbg[0];
+
+	INT32 fx = 0, fy = 0, fflags = 0;	// final coords for hud and flags...
+	UINT16 localcolor[3] = { stplyr->skincolor };
+	SINT8 colormode[3] = { TC_RAINBOW };
+
+	fixed_t rouletteOffset = 0;
+	fixed_t rouletteSpace = ROULETTE_SPACING;
+	vector2_t rouletteCrop = {7, 7};
+	INT32 i;
+
+	if (stplyr->itemRoulette.itemListLen > 0)
+	{
+		// Init with item roulette stuff.
+		for (i = 0; i < 3; i++)
+		{
+			const SINT8 indexOfs = i-1;
+			const size_t index = (stplyr->itemRoulette.index + indexOfs) % stplyr->itemRoulette.itemListLen;
+
+			const SINT8 result = stplyr->itemRoulette.itemList[index];
+
+			localpatch[i] = K_GetCachedSlotMachinePatch(result, offset);
+		}
+	}
+
+	if (stplyr->itemRoulette.active == true)
+	{
+		rouletteOffset = K_GetRouletteOffset(&stplyr->itemRoulette, rendertimefrac);
+	}
+
+	// pain and suffering defined below
+	if (offset)
+	{
+		if (stplyr == &players[displayplayers[0]] || stplyr == &players[displayplayers[2]]) // If we are P1 or P3...
+		{
+			fx = ITEM_X;
+			fy = ITEM_Y;
+			fflags = V_SNAPTOLEFT|V_SNAPTOTOP|V_SPLITSCREEN;
+		}
+		else // else, that means we're P2 or P4.
+		{
+			fx = ITEM2_X;
+			fy = ITEM2_Y;
+			fflags = V_SNAPTORIGHT|V_SNAPTOTOP|V_SPLITSCREEN;
+		}
+
+		rouletteSpace = ROULETTE_SPACING_SPLITSCREEN;
+		rouletteOffset = FixedMul(rouletteOffset, FixedDiv(ROULETTE_SPACING_SPLITSCREEN, ROULETTE_SPACING));
+		rouletteCrop.x = 16;
+		rouletteCrop.y = 15;
+	}
+	else
+	{
+		fx = ITEM_X;
+		fy = ITEM_Y;
+		fflags = V_SNAPTOTOP|V_SNAPTOLEFT|V_SPLITSCREEN;
+	}
+
+	V_DrawScaledPatch(fx, fy, V_HUDTRANS|V_SLIDEIN|fflags, localbg);
+
+	V_SetClipRect(
+		(fx + rouletteCrop.x) << FRACBITS, (fy + rouletteCrop.y) << FRACBITS,
+		rouletteSpace, rouletteSpace,
+		V_SLIDEIN|fflags
+	);
+
+	// item box has special layering, transparency, different sized patches, other fucked up shit
+	// ring box is evenly spaced and easy
+	rouletteOffset += rouletteSpace;
+	for (i = 0; i < 3; i++)
+	{
+		V_DrawFixedPatch(
+			fx<<FRACBITS, (fy<<FRACBITS) + rouletteOffset,
+			FRACUNIT, V_HUDTRANS|V_SLIDEIN|fflags,
+			localpatch[i], (localcolor[i] ? R_GetTranslationColormap(colormode[i], localcolor[i], GTC_CACHE) : NULL)
+		);
+
+		rouletteOffset -= rouletteSpace;
+	}
+
+	V_ClearClipRect();
 }
 
 void K_drawKartTimestamp(tic_t drawtime, INT32 TX, INT32 TY, INT32 splitflags, UINT8 mode)
@@ -5234,7 +5338,16 @@ void K_drawKartHUD(void)
 
 	// Draw the item window
 	if (LUA_HudEnabled(hud_item) && !freecam)
-		K_drawKartItem();
+	{
+		if (stplyr->itemRoulette.ringbox)
+		{
+			K_drawKartSlotMachine();
+		}
+		else
+		{
+			K_drawKartItem();
+		}
+	}
 
 	if (demo.title)
 		;

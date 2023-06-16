@@ -160,13 +160,7 @@ Run this macro, then #undef FOREACH afterward
 	FOREACH (KITCHENSINK,   20),\
 	FOREACH (DROPTARGET,    21),\
 	FOREACH (GARDENTOP,     22),\
-	FOREACH (GACHABOM,      23),\
-	FOREACH (BAR,           24),\
-	FOREACH (DOUBLEBAR,     25),\
-	FOREACH (TRIPLEBAR,     26),\
-	FOREACH (SLOTRING,      27),\
-	FOREACH (SEVEN,         28),\
-	FOREACH (JACKPOT,       29)
+	FOREACH (GACHABOM,      23)
 
 typedef enum
 {
@@ -197,6 +191,17 @@ typedef enum
 	KSHIELD_TOP = 4,
 	NUMKARTSHIELDS
 } kartshields_t;
+
+typedef enum
+{
+	KSM_BAR,
+	KSM_DOUBLEBAR,
+	KSM_TRIPLEBAR,
+	KSM_RING,
+	KSM_SEVEN,
+	KSM_JACKPOT,
+	KSM__MAX,
+} kartslotmachine_t;
 
 typedef enum
 {

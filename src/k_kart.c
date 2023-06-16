@@ -6595,7 +6595,7 @@ void K_DropItems(player_t *player)
 {
 	K_DropHnextList(player);
 
-	if (player->mo && !P_MobjWasRemoved(player->mo) && player->itemamount > 0 && !K_IsRingBoxItem(player->itemtype))
+	if (player->mo && !P_MobjWasRemoved(player->mo) && player->itemamount > 0)
 	{
 		mobj_t *drop = K_CreatePaperItem(
 			player->mo->x, player->mo->y, player->mo->z + player->mo->height/2,
@@ -11430,48 +11430,6 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 								K_UpdateHnextList(player, false);
 							}
 							break;
-						case KITEM_BAR:
-							if (player->karthud[khud_itemblink] < 1)
-							{
-								K_AwardPlayerRings(player, 10, true);
-								player->itemamount--;
-							}
-							break;
-						case KITEM_DOUBLEBAR:
-							if (player->karthud[khud_itemblink] < 1)
-							{
-								K_AwardPlayerRings(player, 20, true);
-								player->itemamount--;
-							}
-							break;
-						case KITEM_TRIPLEBAR:
-							if (player->karthud[khud_itemblink] < 1)
-							{
-								K_AwardPlayerRings(player, 30, true);
-								player->itemamount--;
-							}
-							break;
-						case KITEM_SLOTRING:
-							if (player->karthud[khud_itemblink] < 1)
-							{
-								K_AwardPlayerRings(player, 50, true);
-								player->itemamount--;
-							}
-							break;
-						case KITEM_SEVEN:
-							if (player->karthud[khud_itemblink] < 1)
-							{
-								K_AwardPlayerRings(player, 77, true);
-								player->itemamount--;
-							}
-							break;
-						case KITEM_JACKPOT:
-							if (player->karthud[khud_itemblink] < 1)
-							{
-								K_AwardPlayerRings(player, 150, true);
-								player->itemamount--;
-							}
-							break;
 						case KITEM_SAD:
 							if (ATTACK_IS_DOWN && !HOLDING_ITEM && NO_HYUDORO
 								&& !player->sadtimer)
@@ -12133,22 +12091,6 @@ boolean K_Cooperative(void)
 	}
 
 	return false;
-}
-
-boolean K_IsRingBoxItem(SINT8 itemtype)
-{
-	switch (itemtype)
-	{
-		case KITEM_BAR:
-		case KITEM_DOUBLEBAR:
-		case KITEM_TRIPLEBAR:
-		case KITEM_SLOTRING:
-		case KITEM_SEVEN:
-		case KITEM_JACKPOT:
-			return true;
-		default:
-			return true;
-	}
 }
 
 //}

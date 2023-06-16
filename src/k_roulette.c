@@ -100,12 +100,6 @@ static UINT8 K_KartItemOddsRace[NUMKARTRESULTS-1][8] =
 	{ 3, 0, 0, 0, 0, 0, 0, 0 }, // Drop Target
 	{ 0, 0, 0, 1, 2, 2, 0, 0 }, // Garden Top
 	{ 0, 0, 0, 0, 0, 0, 0, 0 }, // Gachabom
-	{ 0, 0, 0, 0, 0, 0, 0, 0 }, // Bar
-	{ 0, 0, 0, 0, 0, 0, 0, 0 }, // Double Bar
-	{ 0, 0, 0, 0, 0, 0, 0, 0 }, // Triple Bar
-	{ 0, 0, 0, 0, 0, 0, 0, 0 }, // Slot Ring
-	{ 0, 0, 0, 0, 0, 0, 0, 0 }, // Seven
-	{ 0, 0, 0, 0, 0, 0, 0, 0 }, // Jackpot
 	{ 0, 0, 2, 3, 3, 1, 0, 0 }, // Sneaker x2
 	{ 0, 0, 0, 0, 4, 4, 4, 0 }, // Sneaker x3
 	{ 0, 1, 1, 0, 0, 0, 0, 0 }, // Banana x3
@@ -140,12 +134,6 @@ static UINT8 K_KartItemOddsBattle[NUMKARTRESULTS-1][2] =
 	{ 2, 0 }, // Drop Target
 	{ 4, 0 }, // Garden Top
 	{ 0, 0 }, // Gachabom
-	{ 0, 0 }, // Bar
-	{ 0, 0 }, // Double Bar
-	{ 0, 0 }, // Triple Bar
-	{ 0, 0 }, // Slot Ring
-	{ 0, 0 }, // Seven
-	{ 0, 0 }, // Jackpot
 	{ 0, 0 }, // Sneaker x2
 	{ 0, 1 }, // Sneaker x3
 	{ 0, 0 }, // Banana x3
@@ -180,12 +168,6 @@ static UINT8 K_KartItemOddsSpecial[NUMKARTRESULTS-1][4] =
 	{ 0, 0, 0, 0 }, // Drop Target
 	{ 0, 0, 0, 0 }, // Garden Top
 	{ 0, 0, 0, 0 }, // Gachabom
-	{ 0, 0, 0, 0 }, // Bar
-	{ 0, 0, 0, 0 }, // Double Bar
-	{ 0, 0, 0, 0 }, // Triple Bar
-	{ 0, 0, 0, 0 }, // Slot Ring
-	{ 0, 0, 0, 0 }, // Seven
-	{ 0, 0, 0, 0 }, // Jackpot
 	{ 0, 1, 1, 0 }, // Sneaker x2
 	{ 0, 0, 1, 1 }, // Sneaker x3
 	{ 0, 0, 0, 0 }, // Banana x3
@@ -236,15 +218,15 @@ static kartitems_t K_KartItemReelBoss[] =
 	KITEM_NONE
 };
 
-static kartitems_t K_KartItemReelRingBox[] =
+static kartslotmachine_t K_KartItemReelRingBox[] =
 {
-	KITEM_BAR,
-	KITEM_DOUBLEBAR,
-	KITEM_TRIPLEBAR,
-	KITEM_SLOTRING,
-	KITEM_SEVEN,
-	KITEM_JACKPOT,
-	KITEM_NONE
+	KSM_BAR,
+	KSM_DOUBLEBAR,
+	KSM_TRIPLEBAR,
+	KSM_RING,
+	KSM_SEVEN,
+	KSM_JACKPOT,
+	KSM__MAX
 };
 
 /*--------------------------------------------------
@@ -1134,19 +1116,20 @@ static void K_InitRoulette(itemroulette_t *const roulette)
 }
 
 /*--------------------------------------------------
-	static void K_PushToRouletteItemList(itemroulette_t *const roulette, kartitems_t item)
+	static void K_PushToRouletteItemList(itemroulette_t *const roulette, INT32 item)
 
 		Pushes a new item to the end of the item
-		roulette's item list.
+		roulette's item list. Also accepts slot machine
+		values instead of items.
 
 	Input Arguments:-
 		roulette - The item roulette data to modify.
-		item - The item to push to the list.
+		item - The item / slot machine index to push to the list.
 
 	Return:-
 		N/A
 --------------------------------------------------*/
-static void K_PushToRouletteItemList(itemroulette_t *const roulette, kartitems_t item)
+static void K_PushToRouletteItemList(itemroulette_t *const roulette, INT32 item)
 {
 #ifdef ITEM_LIST_SIZE
 	if (roulette->itemListLen >= ITEM_LIST_SIZE)
@@ -1283,7 +1266,7 @@ static void K_CalculateRouletteSpeed(itemroulette_t *const roulette)
 }
 
 /*--------------------------------------------------
-	void K_FillItemRouletteData(const player_t *player, itemroulette_t *const roulette)
+	void K_FillItemRouletteData(const player_t *player, itemroulette_t *const roulette, boolean ringbox)
 
 		See header file for description.
 --------------------------------------------------*/
@@ -1306,27 +1289,25 @@ void K_FillItemRouletteData(const player_t *player, itemroulette_t *const roulet
 		K_CalculateRouletteSpeed(roulette);
 	}
 
+	if (ringbox == true)
+	{
+		// If this is being invoked by a Ring Box, it should literally never produce items.
+		kartslotmachine_t *presetlist = K_KartItemReelRingBox;
+		roulette->ringbox = true;
+
+		for (i = 0; presetlist[i] != KSM__MAX; i++)
+		{
+			K_PushToRouletteItemList(roulette, presetlist[i]);
+		}
+
+		return;
+	}
+
 	// SPECIAL CASE No. 1:
 	// Give only the debug item if specified
 	if (cv_kartdebugitem.value != KITEM_NONE)
 	{
 		K_PushToRouletteItemList(roulette, cv_kartdebugitem.value);
-		return;
-	}
-
-	// SPECIAL CASE No. 1.5:
-	// If this is being invoked by a Ring Box, it should literally never produce items.
-	if (ringbox)
-	{
-		kartitems_t *presetlist = K_KartItemReelRingBox;
-		
-		roulette->ringbox = true;
-
-		for (i = 0; presetlist[i] != KITEM_NONE; i++)
-		{
-			K_PushToRouletteItemList(roulette, presetlist[i]);
-		}
-
 		return;
 	}
 
@@ -1618,9 +1599,18 @@ void K_KartItemRoulette(player_t *const player, ticcmd_t *const cmd)
 			// And one more nudge for the remaining delay.
 			roulette->tics = (roulette->tics + fudgedDelay) % roulette->speed;
 
-			kartitems_t finalItem = roulette->itemList[ roulette->index ];
+			INT32 finalItem = roulette->itemList[ roulette->index ];
 
-			K_KartGetItemResult(player, finalItem);
+			if (roulette->ringbox == true)
+			{
+				// TODO: add logic to make it give you the rings
+				//player->slotMachineType = finalItem;
+				//player->slotMachineDelay = TICRATE;
+			}
+			else
+			{
+				K_KartGetItemResult(player, finalItem);
+			}
 
 			player->karthud[khud_itemblink] = TICRATE;
 			player->karthud[khud_itemblinkmode] = 0;
