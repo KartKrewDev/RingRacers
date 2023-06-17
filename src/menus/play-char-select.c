@@ -569,8 +569,8 @@ void M_CharacterSelect(INT32 choice)
 			"Do you want to resurrect the last session?\n",
 			M_GPBackup,
 			MM_YESNO,
-			"Resume the last run",
-			"Delete, play another way");
+			"Yes, let's try again",
+			"No, play another way");
 		return;
 	}
 
