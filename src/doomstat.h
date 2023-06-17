@@ -51,8 +51,8 @@ extern UINT8 mapmusrng;
 extern UINT32 maptol;
 
 extern INT32 cursaveslot;
-//extern INT16 lastmapsaved;
-extern INT16 lastmaploaded;
+extern UINT8 lastqueuesaved;
+extern boolean makelivebackup;
 extern UINT8 gamecomplete;
 
 // Extra abilities/settings for skins (combinable stuff)

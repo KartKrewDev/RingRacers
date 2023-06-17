@@ -982,7 +982,7 @@ void D_ClearState(void)
 	cht_debug = 0;
 	emeralds = 0;
 	memset(&luabanks, 0, sizeof(luabanks));
-	lastmaploaded = 0;
+	lastqueuesaved = 0;
 
 	// In case someone exits out at the same time they start a time attack run,
 	// reset modeattacking

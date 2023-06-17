@@ -6,6 +6,8 @@
 #include "../s_sound.h"
 #include "../k_grandprix.h" // K_CanChangeRules
 #include "../m_cond.h" // Condition Sets
+#include "../r_local.h" // SplitScreen_OnChange
+#include "../m_misc.h" // FIL_FileExists
 
 //#define CHARSELECT_DEVICEDEBUG
 
@@ -484,9 +486,96 @@ void M_CharacterSelectInit(void)
 	setup_page = 0;
 }
 
+
+static void M_MarathonLiveEventBackup(INT32 choice)
+{
+	if (choice == MA_YES)
+	{
+		makelivebackup = true;
+		G_LoadGame();
+
+		if (savedata.lives != 0)
+		{
+			// Only do this after confirming savegame is ok
+			const UINT8 ssplayers = 0;
+
+			{
+				CV_StealthSetValue(&cv_playercolor[0], savedata.skincolor);
+
+				// follower
+				if (savedata.followerskin < 0 || savedata.followerskin > numfollowers)
+					CV_StealthSet(&cv_follower[0], "None");
+				else
+					CV_StealthSet(&cv_follower[0], followers[savedata.followerskin].name);
+
+				// finally, call the skin[x] console command.
+				// This will call SendNameAndColor which will synch everything we sent here and apply the changes!
+
+				CV_StealthSet(&cv_skin[0], skins[savedata.skin].name);
+
+				// ...actually, let's do this last - Skin_OnChange has some return-early occasions
+				// follower color
+				CV_SetValue(&cv_followercolor[0], savedata.followercolor);
+			}
+
+			paused = false;
+
+			S_StopMusicCredit();
+
+			if (cv_maxconnections.value < ssplayers+1)
+				CV_SetValue(&cv_maxconnections, ssplayers+1);
+
+			if (splitscreen != ssplayers)
+			{
+				splitscreen = ssplayers;
+				SplitScreen_OnChange();
+			}
+
+			const UINT8 entry = lastqueuesaved-1;
+
+			SV_StartSinglePlayerServer(roundqueue.entries[entry].gametype, false);
+
+			D_MapChange(
+				roundqueue.entries[entry].mapnum + 1,
+				roundqueue.entries[entry].gametype,
+				roundqueue.entries[entry].encore,
+				true,
+				1,
+				false,
+				roundqueue.entries[lastqueuesaved-1].rankrestricted
+			);
+
+			M_ClearMenus(true);
+		}
+	}
+	else if (choice == MA_NO)
+	{
+		if (FIL_FileExists(liveeventbackup)) // just in case someone deleted it while we weren't looking.
+			remove(liveeventbackup);
+
+		M_CharacterSelect(0);
+	}
+}
+
 void M_CharacterSelect(INT32 choice)
 {
 	(void)choice;
+
+	if (currentMenu == &MainDef
+		&& FIL_FileExists(liveeventbackup))
+	{
+		M_StartMessage(
+			"Live Event Backup",
+			"A Live Event Backup was found.\n"
+			"Do you want to resurrect the last run?\n"
+			"(Fs in chat if we crashed on stream.)\n",
+			M_MarathonLiveEventBackup,
+			MM_YESNO,
+			"Resume the last run",
+			"Delete, play another way");
+		return;
+	}
+
 	PLAY_CharSelectDef.music = currentMenu->music;
 	PLAY_CharSelectDef.prevMenu = currentMenu;
 	M_SetupNextMenu(&PLAY_CharSelectDef, false);

@@ -38,6 +38,7 @@
 #include "m_cond.h" // netUnlocked
 
 // SRB2Kart
+#include "k_grandprix.h"
 #include "k_battle.h"
 #include "k_pwrlv.h"
 #include "k_terrain.h"
@@ -82,25 +83,66 @@ typedef enum
 static inline void P_ArchivePlayer(savebuffer_t *save)
 {
 	const player_t *player = &players[consoleplayer];
-	INT16 skininfo = player->skin;
-	SINT8 pllives = player->lives;
-	if (pllives < startinglivesbalance[numgameovers]) // Bump up to 3 lives if the player
-		pllives = startinglivesbalance[numgameovers]; // has less than that.
 
-	WRITEUINT16(save->p, skininfo);
-	WRITEUINT8(save->p, numgameovers);
-	WRITESINT8(save->p, pllives);
+	WRITESINT8(save->p, player->lives);
 	WRITEUINT32(save->p, player->score);
+	WRITEUINT16(save->p, player->totalring);
+
+	WRITEUINT8(save->p, player->skin);
+	WRITEUINT16(save->p, player->skincolor);
+	WRITEINT32(save->p, player->followerskin);
+	WRITEUINT16(save->p, player->followercolor);
+
+	UINT8 i;
+
+	for (i = 0; i < MAXPLAYERS; i++)
+	{
+		if (playeringame[i] == false)
+			continue;
+		if (players[i].bot == false)
+			continue;
+
+		WRITEUINT8(save->p, i);
+
+		WRITEUINT8(save->p, players[i].skin);
+
+		WRITEUINT8(save->p, players[i].botvars.difficulty);
+		WRITEUINT8(save->p, (UINT8)players[i].botvars.rival);
+
+		WRITEUINT32(save->p, players[i].score);
+	}
+
+	WRITEUINT8(save->p, 0xFE);
 }
 
-static inline void P_UnArchivePlayer(savebuffer_t *save)
+static boolean P_UnArchivePlayer(savebuffer_t *save)
 {
-	INT16 skininfo = READUINT16(save->p);
-	savedata.skin = skininfo;
-
-	savedata.numgameovers = READUINT8(save->p);
 	savedata.lives = READSINT8(save->p);
 	savedata.score = READUINT32(save->p);
+	savedata.totalring = READUINT16(save->p);
+
+	savedata.skin = READUINT8(save->p);
+	savedata.skincolor = READUINT16(save->p);
+	savedata.followerskin = READINT32(save->p);
+	savedata.followercolor = READUINT16(save->p);
+
+	if (savedata.skin >= numskins)
+		return false;
+
+	memset(&savedata.bots, 0, sizeof(savedata.bots));
+
+	UINT8 pid;
+
+	while ((pid = READUINT8(save->p)) < MAXPLAYERS)
+	{
+		savedata.bots[pid].valid = true;
+		savedata.bots[pid].skin = READUINT8(save->p);
+		savedata.bots[pid].difficulty = READUINT8(save->p);
+		savedata.bots[pid].rival = (boolean)READUINT8(save->p);
+		savedata.bots[pid].score = READUINT32(save->p);
+	}
+
+	return (pid == 0xFE);	
 }
 
 static void P_NetArchivePlayers(savebuffer_t *save)
@@ -1039,6 +1081,9 @@ static void P_NetUnArchiveRoundQueue(savebuffer_t *save)
 
 	roundqueue.position = READUINT8(save->p);
 	roundqueue.size = READUINT8(save->p);
+	if (roundqueue.size > ROUNDQUEUE_MAX)
+		I_Error("Bad $$$.sav at illegitimate roundqueue size");
+
 	roundqueue.roundnum = READUINT8(save->p);
 
 	for (i = 0; i < roundqueue.size; i++)
@@ -5257,55 +5302,148 @@ static void P_NetUnArchiveSpecials(savebuffer_t *save)
 // =======================================================================
 //          Misc
 // =======================================================================
-static inline void P_ArchiveMisc(savebuffer_t *save, INT16 mapnum)
+static inline void P_ArchiveMisc(savebuffer_t *save)
 {
-	//lastmapsaved = mapnum;
-	lastmaploaded = mapnum;
+	UINT8 i;
 
-	if (gamecomplete)
-		mapnum |= 8192;
-
-	WRITEINT16(save->p, mapnum);
-	WRITEUINT16(save->p, emeralds+357);
 	WRITESTRINGN(save->p, timeattackfolder, sizeof(timeattackfolder));
+
+	WRITEUINT8(save->p, grandprixinfo.gamespeed);
+	WRITEUINT8(save->p, (UINT8)grandprixinfo.encore);
+	WRITEUINT8(save->p, (UINT8)grandprixinfo.masterbots);
+
+	WRITEUINT16(save->p, grandprixinfo.cup->id);
+
+	{
+		WRITEUINT8(save->p, grandprixinfo.rank.players);
+		WRITEUINT8(save->p, grandprixinfo.rank.totalPlayers);
+
+		WRITEUINT8(save->p, grandprixinfo.rank.position);
+		WRITEUINT8(save->p, grandprixinfo.rank.skin);
+
+		WRITEUINT32(save->p, grandprixinfo.rank.winPoints);
+		WRITEUINT32(save->p, grandprixinfo.rank.totalPoints);
+
+		WRITEUINT32(save->p, grandprixinfo.rank.laps);
+		WRITEUINT32(save->p, grandprixinfo.rank.totalLaps);
+
+		WRITEUINT32(save->p, grandprixinfo.rank.continuesUsed);
+
+		WRITEUINT32(save->p, grandprixinfo.rank.prisons);
+		WRITEUINT32(save->p, grandprixinfo.rank.totalPrisons);
+
+		WRITEUINT32(save->p, grandprixinfo.rank.rings);
+		WRITEUINT32(save->p, grandprixinfo.rank.totalRings);
+
+		WRITEUINT8(save->p, (UINT8)grandprixinfo.rank.specialWon);
+	}
+
+	WRITEUINT8(save->p, roundqueue.position);
+	WRITEUINT8(save->p, roundqueue.size);
+	WRITEUINT8(save->p, roundqueue.roundnum);
+
+	for (i = 0; i < roundqueue.size; i++)
+	{
+		WRITEUINT16(save->p, roundqueue.entries[i].mapnum);
+		WRITEUINT8(save->p, roundqueue.entries[i].gametype);
+		WRITEUINT8(save->p, (UINT8)roundqueue.entries[i].encore);
+		WRITEUINT8(save->p, (UINT8)roundqueue.entries[i].rankrestricted);
+	}
+
+	WRITEUINT8(save->p, (marathonmode & ~MA_INIT));
+
+	UINT32 writetime = marathontime;
+	if (!(marathonmode & MA_INGAME))
+		writetime += TICRATE*5; // live event backup penalty because we don't know how long it takes to get to the next map
+	WRITEUINT32(save->p, writetime);
 }
 
-static inline void P_UnArchiveSPGame(savebuffer_t *save, INT16 mapoverride)
+static boolean P_UnArchiveSPGame(savebuffer_t *save)
 {
+	UINT8 i;
 	char testname[sizeof(timeattackfolder)];
-
-	gamemap = READINT16(save->p);
-
-	if (mapoverride != 0)
-	{
-		gamemap = mapoverride;
-		gamecomplete = 1;
-	}
-	else
-		gamecomplete = 0;
-
-	// gamemap changed; we assume that its map header is always valid,
-	// so make it so
-	if (!gamemap || gamemap > nummapheaders || !mapheaderinfo[gamemap-1])
-		I_Error("P_UnArchiveSPGame: Internal map ID %d not found (nummapheaders = %d)", gamemap-1, nummapheaders);
-
-	//lastmapsaved = gamemap;
-	lastmaploaded = gamemap;
-
-	savedata.emeralds = READUINT16(save->p)-357;
 
 	READSTRINGN(save->p, testname, sizeof(testname));
 
 	if (strcmp(testname, timeattackfolder))
 	{
-		if (modifiedgame)
-			I_Error("Save game not for this modification.");
-		else
-			I_Error("This save file is for a particular mod, it cannot be used with the regular game.");
+		return false;
 	}
 
-	memset(playeringame, 0, sizeof(*playeringame));
-	playeringame[consoleplayer] = true;
+	// TODO do not work off grandprixinfo/roundqueue directly
+	// This is only strictly necessary if we ever re-add a save
+	// select screen or something, for live event backup only
+	// it's *fine* and, more importantly, shippable
+
+	memset(&grandprixinfo, 0, sizeof(grandprixinfo));
+
+	grandprixinfo.gp = true;
+
+	grandprixinfo.gamespeed = READUINT8(save->p);
+	grandprixinfo.encore = (boolean)READUINT8(save->p);
+	grandprixinfo.masterbots = (boolean)READUINT8(save->p);
+
+	UINT16 cupid = READUINT16(save->p);
+	grandprixinfo.cup = kartcupheaders;
+	while (grandprixinfo.cup)
+	{
+		if (grandprixinfo.cup->id == cupid)
+			break;
+		grandprixinfo.cup = grandprixinfo.cup->next;
+	}
+
+	if (!grandprixinfo.cup)
+		return false;
+
+	{
+		grandprixinfo.rank.players = READUINT8(save->p);
+		grandprixinfo.rank.totalPlayers = READUINT8(save->p);
+
+		grandprixinfo.rank.position = READUINT8(save->p);
+		grandprixinfo.rank.skin = READUINT8(save->p);
+
+		grandprixinfo.rank.winPoints = READUINT32(save->p);
+		grandprixinfo.rank.totalPoints = READUINT32(save->p);
+
+		grandprixinfo.rank.laps = READUINT32(save->p);
+		grandprixinfo.rank.totalLaps = READUINT32(save->p);
+
+		grandprixinfo.rank.continuesUsed = READUINT32(save->p);
+
+		grandprixinfo.rank.prisons = READUINT32(save->p);
+		grandprixinfo.rank.totalPrisons = READUINT32(save->p);
+
+		grandprixinfo.rank.rings = READUINT32(save->p);
+		grandprixinfo.rank.totalRings = READUINT32(save->p);
+
+		grandprixinfo.rank.specialWon = (boolean)READUINT8(save->p);
+	}
+
+	memset(&roundqueue, 0, sizeof(roundqueue));
+
+	roundqueue.position = READUINT8(save->p);
+	roundqueue.size = READUINT8(save->p);
+	if (roundqueue.size > ROUNDQUEUE_MAX
+	|| roundqueue.position > roundqueue.size)
+		return false;
+
+	roundqueue.roundnum = READUINT8(save->p);
+
+	for (i = 0; i < roundqueue.size; i++)
+	{
+		roundqueue.entries[i].mapnum = READUINT16(save->p);
+		if (roundqueue.entries[i].mapnum >= nummapheaders)
+			return false;
+
+		roundqueue.entries[i].gametype = READUINT8(save->p);
+		roundqueue.entries[i].encore = (boolean)READUINT8(save->p);
+		roundqueue.entries[i].rankrestricted = (boolean)READUINT8(save->p);
+	}
+
+	marathonmode = READUINT8(save->p);
+	marathontime = READUINT32(save->p);
+
+	return true;
 }
 
 static void P_NetArchiveMisc(savebuffer_t *save, boolean resending)
@@ -5718,9 +5856,9 @@ static inline void P_NetUnArchiveRNG(savebuffer_t *save)
 	}
 }
 
-void P_SaveGame(savebuffer_t *save, INT16 mapnum)
+void P_SaveGame(savebuffer_t *save)
 {
-	P_ArchiveMisc(save, mapnum);
+	P_ArchiveMisc(save);
 	P_ArchivePlayer(save);
 	P_ArchiveLuabanksAndConsistency(save);
 }
@@ -5775,7 +5913,7 @@ void P_SaveNetGame(savebuffer_t *save, boolean resending)
 	P_ArchiveLuabanksAndConsistency(save);
 }
 
-boolean P_LoadGame(savebuffer_t *save, INT16 mapoverride)
+boolean P_LoadGame(savebuffer_t *save)
 {
 	if (gamestate == GS_INTERMISSION)
 		Y_EndIntermission();
@@ -5783,17 +5921,26 @@ boolean P_LoadGame(savebuffer_t *save, INT16 mapoverride)
 		Y_EndVote();
 	G_SetGamestate(GS_NULL); // should be changed in P_UnArchiveMisc
 
-	P_UnArchiveSPGame(save, mapoverride);
-	P_UnArchivePlayer(save);
+	if (!P_UnArchiveSPGame(save))
+		goto badloadgame;
+	if (!P_UnArchivePlayer(save))
+		goto badloadgame;
 
 	if (!P_UnArchiveLuabanksAndConsistency(save))
-		return false;
+		goto badloadgame;
 
-	// Only do this after confirming savegame is ok
-	G_DeferedInitNew(false, gamemap, savedata.skin, 0, true);
-	COM_BufAddText("dummyconsvar 1\n"); // G_DeferedInitNew doesn't do this
+	lastqueuesaved = roundqueue.position;
 
 	return true;
+
+badloadgame:
+	// these are the side effects of P_UnarchiveSPGame
+	savedata.lives = 0;
+	roundqueue.size = 0;
+	grandprixinfo.gp = false;
+	marathonmode = 0;
+
+	return false;
 }
 
 boolean P_LoadNetGame(savebuffer_t *save, boolean reloading)

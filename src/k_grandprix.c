@@ -275,6 +275,44 @@ void K_InitGrandPrixBots(void)
 }
 
 /*--------------------------------------------------
+	void K_LoadGrandPrixSaveGame(void)
+
+		See header file for description.
+---------------------------------------------------*/
+
+void K_LoadGrandPrixSaveGame(void)
+{
+	if (splitscreen)
+	{
+		// You're not doing splitscreen runs at GDQ.
+		// We are literally 14 days from code freeze
+		// and I am not accomodating weird setup this
+		// second in my last minute QoL feature.
+		// I will *actually* fight you
+		return;
+	}
+
+	players[consoleplayer].lives = savedata.lives;
+	players[consoleplayer].score = savedata.score;
+	players[consoleplayer].totalring = savedata.totalring;
+
+	UINT8 i;
+
+	for (i = 0; i < MAXPLAYERS; i++)
+	{
+		if (savedata.bots[i].valid == false)
+			continue;
+
+		K_SetBot(i, savedata.bots[i].skin, savedata.bots[i].difficulty, BOT_STYLE_NORMAL);
+
+		players[i].botvars.rival = savedata.bots[i].rival;
+		players[i].score = savedata.bots[i].score;
+
+		players[i].spectator = !(gametyperules & GTR_BOTS) || (grandprixinfo.eventmode != GPEVENT_NONE);
+	}
+}
+
+/*--------------------------------------------------
 	static INT16 K_RivalScore(player_t *bot)
 
 		Creates a "rival score" for a bot, used to determine which bot is the

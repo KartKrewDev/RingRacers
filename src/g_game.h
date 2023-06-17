@@ -187,15 +187,12 @@ void G_StartTitleCard(void);
 void G_PreLevelTitleCard(void);
 boolean G_IsTitleCardAvailable(void);
 
-// Can be called by the startup code or M_Responder, calls P_SetupLevel.
-void G_LoadGame(UINT32 slot, INT16 mapoverride);
+void G_HandleSaveLevel(void);
+void G_SaveGame(void);
+void G_LoadGame(void);
 
 void G_SaveGameData(void);
 void G_DirtyGameData(void);
-
-void G_SaveGame(UINT32 slot, INT16 mapnum);
-
-void G_SaveGameOver(UINT32 slot, boolean modifylives);
 
 void G_SetGametype(INT16 gametype);
 char *G_PrepareGametypeConstant(const char *newgtconst);

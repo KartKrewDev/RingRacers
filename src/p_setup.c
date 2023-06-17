@@ -7734,7 +7734,12 @@ static void P_InitGametype(void)
 
 	if (grandprixinfo.gp == true)
 	{
-		if (grandprixinfo.initalize == true)
+		if (savedata.lives > 0)
+		{
+			K_LoadGrandPrixSaveGame();
+			savedata.lives = 0;
+		}
+		else if (grandprixinfo.initalize == true)
 		{
 			K_InitGrandPrixRank(&grandprixinfo.rank);
 			K_InitGrandPrixBots();
@@ -8152,15 +8157,6 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 	R_InitMobjInterpolators();
 	P_InitCachedActions();
 
-	if (!fromnetsave && savedata.lives > 0)
-	{
-		numgameovers = savedata.numgameovers;
-		players[consoleplayer].lives = savedata.lives;
-		players[consoleplayer].score = savedata.score;
-		emeralds = savedata.emeralds;
-		savedata.lives = 0;
-	}
-
 	// internal game map
 	maplumpname = mapheaderinfo[gamemap-1]->lumpname;
 	lastloadedmaplumpnum = mapheaderinfo[gamemap-1]->lumpnum;
@@ -8311,22 +8307,6 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 
 	P_MapEnd(); // tm.thing is no longer needed from this point onwards
 
-	// Took me 3 hours to figure out why my progression kept on getting overwritten with the titlemap...
-	if (gamestate == GS_LEVEL)
-	{
-		if (!lastmaploaded) // Start a new game?
-		{
-			// I'd love to do this in the menu code instead of here, but everything's a mess and I can't guarantee saving proper player struct info before the first act's started. You could probably refactor it, but it'd be a lot of effort. Easier to just work off known good code. ~toast 22/06/2020
-			if (!(ultimatemode || netgame || multiplayer || demo.playback || demo.recording || metalrecording || modeattacking || marathonmode)
-				&& !usedCheats && cursaveslot > 0)
-			{
-				G_SaveGame((UINT32)cursaveslot, gamemap);
-			}
-			// If you're looking for saving sp file progression (distinct from G_SaveGameOver), check G_DoCompleted.
-		}
-		lastmaploaded = gamemap; // HAS to be set after saving!!
-	}
-
 	if (!fromnetsave)
 	{
 		INT32 buf = gametic % BACKUPTICS;
@@ -8381,6 +8361,8 @@ void P_PostLoadLevel(void)
 	skipstats = 0;
 
 	P_RunCachedActions();
+
+	G_HandleSaveLevel();
 
 	if (marathonmode & MA_INGAME)
 	{

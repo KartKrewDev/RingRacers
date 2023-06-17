@@ -116,6 +116,26 @@ static UINT8 cheatf_wrongwarp(void)
 	return 1;
 }
 
+static UINT8 cheatf_backup(void)
+{
+	/*if (modifiedgame)
+		return 0;*/
+
+	makelivebackup = true;
+
+	M_ClearMenus(true);
+	S_StartSound(0, sfx_kc42);
+
+	M_StartMessage("Live Event Mode",
+		M_GetText(
+		"Your progression in GP cups will be.\n"
+		"backed up whenever you complete a\n"
+		"round, in case of game crashes.\n"
+	), NULL, MM_NOTHING, NULL, NULL);
+
+	return 1;
+}
+
 #ifdef DEVELOP
 static UINT8 cheatf_devmode(void)
 {
@@ -152,6 +172,16 @@ static cheatseq_t cheat_wrongwarp = {
 	(UINT8[]){ SCRAMBLE('b'), SCRAMBLE('a'), SCRAMBLE('n'), SCRAMBLE('a'), SCRAMBLE('n'), SCRAMBLE('a'), 0xff }
 };
 
+static cheatseq_t cheat_backup1 = {
+	NULL, cheatf_backup,
+	(UINT8[]){ SCRAMBLE('s'), SCRAMBLE('a'), SCRAMBLE('v'), SCRAMBLE('e'), SCRAMBLE('t'), SCRAMBLE('h'), SCRAMBLE('e'), SCRAMBLE('f'), SCRAMBLE('r'), SCRAMBLE('a'), SCRAMBLE('m'), SCRAMBLE('e'), SCRAMBLE('s'), 0xff }
+};
+
+static cheatseq_t cheat_backup2 = {
+	NULL, cheatf_backup,
+	(UINT8[]){ SCRAMBLE('s'), SCRAMBLE('a'), SCRAMBLE('v'), SCRAMBLE('e'), SCRAMBLE('t'), SCRAMBLE('h'), SCRAMBLE('e'), SCRAMBLE('a'), SCRAMBLE('n'), SCRAMBLE('i'), SCRAMBLE('m'), SCRAMBLE('a'), SCRAMBLE('l'), SCRAMBLE('s'), 0xff }
+};
+
 #ifdef DEVELOP
 static cheatseq_t cheat_devmode = {
 	NULL, cheatf_devmode,
@@ -163,6 +193,8 @@ cheatseq_t *cheatseqlist[] =
 {
 	&cheat_warp,
 	&cheat_wrongwarp,
+	&cheat_backup1,
+	&cheat_backup2,
 #ifdef DEVELOP
 	&cheat_devmode,
 #endif

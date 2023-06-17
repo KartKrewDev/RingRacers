@@ -20,6 +20,7 @@
 extern "C" {
 #endif
 
+// Please also see P_ArchiveMisc
 struct gpRank_t
 {
 	UINT8 players;
