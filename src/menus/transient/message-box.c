@@ -14,11 +14,11 @@ struct menumessage_s menumessage;
 //
 static inline size_t M_StringHeight(const char *string)
 {
-	size_t h = 8, i, len = strlen(string);
+	size_t h = 16, i, len = strlen(string);
 
-	for (i = 0; i < len; i++)
+	for (i = 0; i < len-1; i++)
 	{
-		if (string[i] != '\n' && i != len-1)
+		if (string[i] != '\n')
 			continue;
 		h += 8;
 	}
