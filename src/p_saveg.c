@@ -88,9 +88,18 @@ static inline void P_ArchivePlayer(savebuffer_t *save)
 	WRITEUINT32(save->p, player->score);
 	WRITEUINT16(save->p, player->totalring);
 
-	WRITEUINT8(save->p, player->skin);
+	INT32 skin = player->skin;
+	if (skin > numskins)
+		skin = 0;
+
+	WRITESTRINGN(save->p, skins[skin].name, SKINNAMESIZE);
+
+	if (player->followerskin < 0 || player->followerskin >= numfollowers)
+		WRITESTRINGN(save->p, "None", SKINNAMESIZE);
+	else
+		WRITESTRINGN(save->p, followers[player->followerskin].name, SKINNAMESIZE);
+
 	WRITEUINT16(save->p, player->skincolor);
-	WRITEINT32(save->p, player->followerskin);
 	WRITEUINT16(save->p, player->followercolor);
 
 	UINT8 i;
@@ -104,7 +113,11 @@ static inline void P_ArchivePlayer(savebuffer_t *save)
 
 		WRITEUINT8(save->p, i);
 
-		WRITEUINT8(save->p, players[i].skin);
+		skin = players[i].skin;
+		if (skin > numskins)
+			skin = 0;
+
+		WRITESTRINGN(save->p, skins[skin].name, SKINNAMESIZE);
 
 		WRITEUINT8(save->p, players[i].botvars.difficulty);
 		WRITEUINT8(save->p, (UINT8)players[i].botvars.rival);
@@ -121,22 +134,48 @@ static boolean P_UnArchivePlayer(savebuffer_t *save)
 	savedata.score = READUINT32(save->p);
 	savedata.totalring = READUINT16(save->p);
 
-	savedata.skin = READUINT8(save->p);
-	savedata.skincolor = READUINT16(save->p);
-	savedata.followerskin = READINT32(save->p);
-	savedata.followercolor = READUINT16(save->p);
+	char skinname[SKINNAMESIZE+1];
+	INT32 skin;
 
-	if (savedata.skin >= numskins)
+	READSTRINGN(save->p, skinname, SKINNAMESIZE);
+	skin = R_SkinAvailable(skinname);
+
+	if (skin == -1)
+	{
+		CONS_Alert(CONS_ERROR, "P_UnArchivePlayer: Character \"%s\" is not currently loaded.\n", skinname);
 		return false;
+	}
+
+	savedata.skin = skin;
+
+	READSTRINGN(save->p, skinname, SKINNAMESIZE);
+	savedata.followerskin = K_FollowerAvailable(skinname);
+
+	savedata.skincolor = READUINT16(save->p);
+	savedata.followercolor = READUINT16(save->p);
 
 	memset(&savedata.bots, 0, sizeof(savedata.bots));
 
 	UINT8 pid;
+	const UINT8 defaultbotskin = R_BotDefaultSkin();
 
 	while ((pid = READUINT8(save->p)) < MAXPLAYERS)
 	{
 		savedata.bots[pid].valid = true;
-		savedata.bots[pid].skin = READUINT8(save->p);
+
+		READSTRINGN(save->p, skinname, SKINNAMESIZE);
+		skin = R_SkinAvailable(skinname);
+
+		if (skin == -1)
+		{
+			// It is not worth destroying an otherwise good savedata over extra added skins.
+			// Let's just say they didn't show up to the rematch, so some Eggrobos subbed in.
+			CONS_Alert(CONS_WARNING, "P_UnArchivePlayer: Bot's character \"%s\" was not loaded, replacing with default \"%s\".\n", skinname, skins[defaultbotskin].name);
+			skin = defaultbotskin;
+		}
+
+		savedata.bots[pid].skin = skin;
+
 		savedata.bots[pid].difficulty = READUINT8(save->p);
 		savedata.bots[pid].rival = (boolean)READUINT8(save->p);
 		savedata.bots[pid].score = READUINT32(save->p);
@@ -5304,15 +5343,11 @@ static void P_NetUnArchiveSpecials(savebuffer_t *save)
 // =======================================================================
 static inline void P_ArchiveMisc(savebuffer_t *save)
 {
-	UINT8 i;
-
 	WRITESTRINGN(save->p, timeattackfolder, sizeof(timeattackfolder));
 
 	WRITEUINT8(save->p, grandprixinfo.gamespeed);
 	WRITEUINT8(save->p, (UINT8)grandprixinfo.encore);
 	WRITEUINT8(save->p, (UINT8)grandprixinfo.masterbots);
-
-	WRITEUINT16(save->p, grandprixinfo.cup->id);
 
 	{
 		WRITEUINT8(save->p, grandprixinfo.rank.players);
@@ -5338,17 +5373,11 @@ static inline void P_ArchiveMisc(savebuffer_t *save)
 		WRITEUINT8(save->p, (UINT8)grandprixinfo.rank.specialWon);
 	}
 
+	WRITESTRINGL(save->p, grandprixinfo.cup->name, MAXCUPNAME);
+
 	WRITEUINT8(save->p, roundqueue.position);
 	WRITEUINT8(save->p, roundqueue.size);
 	WRITEUINT8(save->p, roundqueue.roundnum);
-
-	for (i = 0; i < roundqueue.size; i++)
-	{
-		WRITEUINT16(save->p, roundqueue.entries[i].mapnum);
-		WRITEUINT8(save->p, roundqueue.entries[i].gametype);
-		WRITEUINT8(save->p, (UINT8)roundqueue.entries[i].encore);
-		WRITEUINT8(save->p, (UINT8)roundqueue.entries[i].rankrestricted);
-	}
 
 	WRITEUINT8(save->p, (marathonmode & ~MA_INIT));
 
@@ -5360,13 +5389,13 @@ static inline void P_ArchiveMisc(savebuffer_t *save)
 
 static boolean P_UnArchiveSPGame(savebuffer_t *save)
 {
-	UINT8 i;
 	char testname[sizeof(timeattackfolder)];
 
 	READSTRINGN(save->p, testname, sizeof(testname));
 
 	if (strcmp(testname, timeattackfolder))
 	{
+		CONS_Alert(CONS_ERROR, "P_UnArchiveSPGame: Corrupt mod ID.\n");
 		return false;
 	}
 
@@ -5382,18 +5411,6 @@ static boolean P_UnArchiveSPGame(savebuffer_t *save)
 	grandprixinfo.gamespeed = READUINT8(save->p);
 	grandprixinfo.encore = (boolean)READUINT8(save->p);
 	grandprixinfo.masterbots = (boolean)READUINT8(save->p);
-
-	UINT16 cupid = READUINT16(save->p);
-	grandprixinfo.cup = kartcupheaders;
-	while (grandprixinfo.cup)
-	{
-		if (grandprixinfo.cup->id == cupid)
-			break;
-		grandprixinfo.cup = grandprixinfo.cup->next;
-	}
-
-	if (!grandprixinfo.cup)
-		return false;
 
 	{
 		grandprixinfo.rank.players = READUINT8(save->p);
@@ -5419,25 +5436,47 @@ static boolean P_UnArchiveSPGame(savebuffer_t *save)
 		grandprixinfo.rank.specialWon = (boolean)READUINT8(save->p);
 	}
 
+	char cupname[MAXCUPNAME];
+
+	// Find the relevant cup.
+	READSTRINGL(save->p, cupname, sizeof(cupname));
+	UINT32 hash = quickncasehash(cupname, MAXCUPNAME);
+
+	for (grandprixinfo.cup = kartcupheaders; grandprixinfo.cup; grandprixinfo.cup = grandprixinfo.cup->next)
+	{
+		if (grandprixinfo.cup->namehash != hash)
+			continue;
+
+		if (strcmp(grandprixinfo.cup->name, cupname))
+			continue;
+
+		break;
+	}
+
+	if (!grandprixinfo.cup)
+	{
+		CONS_Alert(CONS_ERROR, "P_UnArchiveSPGame: Cup \"%s\" is not currently loaded.\n", cupname);
+		return false;
+	}
+
 	memset(&roundqueue, 0, sizeof(roundqueue));
 
-	roundqueue.position = READUINT8(save->p);
-	roundqueue.size = READUINT8(save->p);
-	if (roundqueue.size > ROUNDQUEUE_MAX
-	|| roundqueue.position > roundqueue.size)
-		return false;
+	G_GPCupIntoRoundQueue(grandprixinfo.cup, GT_RACE, grandprixinfo.encore);
 
+	roundqueue.position = READUINT8(save->p);
+	UINT8 size = READUINT8(save->p);
 	roundqueue.roundnum = READUINT8(save->p);
 
-	for (i = 0; i < roundqueue.size; i++)
+	if (roundqueue.size != size)
 	{
-		roundqueue.entries[i].mapnum = READUINT16(save->p);
-		if (roundqueue.entries[i].mapnum >= nummapheaders)
-			return false;
+		CONS_Alert(CONS_ERROR, "P_UnArchiveSPGame: Cup \"%s\"'s level composition has changed between game launches.\n", cupname);
+		return false;
+	}
 
-		roundqueue.entries[i].gametype = READUINT8(save->p);
-		roundqueue.entries[i].encore = (boolean)READUINT8(save->p);
-		roundqueue.entries[i].rankrestricted = (boolean)READUINT8(save->p);
+	if (roundqueue.position == 0 || roundqueue.position > size)
+	{
+		CONS_Alert(CONS_ERROR, "P_UnArchiveSPGame: Position in the round queue is invalid.\n");
+		return false;
 	}
 
 	marathonmode = READUINT8(save->p);

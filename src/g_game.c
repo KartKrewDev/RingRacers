@@ -5654,10 +5654,14 @@ void G_SaveGameData(void)
 // G_InitFromSavegame
 // Can be called by the startup code or the menu task.
 //
+
+#define SAV_VERSIONMINOR 1
+
 void G_LoadGame(void)
 {
-	char vcheck[VERSIONSIZE];
+	char vcheck[VERSIONSIZE+1];
 	char savename[255];
+	UINT8 versionMinor;
 	savebuffer_t save = {0};
 
 	// memset savedata to all 0, fixes calling perfectly valid saves corrupt because of bots
@@ -5674,11 +5678,15 @@ void G_LoadGame(void)
 		return;
 	}
 
+	versionMinor = READUINT8(save.p);
+
 	memset(vcheck, 0, sizeof (vcheck));
 	sprintf(vcheck, "version %d", VERSION);
-	if (strcmp((const char *)save.p, (const char *)vcheck))
+
+	if (versionMinor != SAV_VERSIONMINOR
+	|| memcmp(save.p, vcheck, VERSIONSIZE))
 	{
-		M_StartMessage("Savegame Load", va(M_GetText("Save game %s from different version"), savename), NULL, MM_NOTHING, NULL, "Return to Menu");
+		M_StartMessage("Savegame Load", va(M_GetText("Savegame %s is from\na different version."), savename), NULL, MM_NOTHING, NULL, NULL);
 		P_SaveBufferFree(&save);
 		return; // bad version
 	}
@@ -5693,7 +5701,8 @@ void G_LoadGame(void)
 	// dearchive all the modifications
 	if (!P_LoadGame(&save))
 	{
-		M_StartMessage("Savegame Load", va(M_GetText("Savegame %s corrupted\n"), savename), NULL, MM_NOTHING, NULL, "Return to Menu");
+		M_StartMessage("Savegame Load", va(M_GetText("Savegame %s could not be loaded.\n"
+		"Check the console log for more info.\n"), savename), NULL, MM_NOTHING, NULL, NULL);
 		Z_Free(save.buffer);
 		save.p = save.buffer = NULL;
 
@@ -5723,7 +5732,7 @@ void G_SaveGame(void)
 
 	gameaction = ga_nothing;
 	{
-		char name[VERSIONSIZE];
+		char name[VERSIONSIZE+1];
 		size_t length;
 
 		if (P_SaveBufferAlloc(&save, SAVEGAMESIZE) == false)
@@ -5731,6 +5740,8 @@ void G_SaveGame(void)
 			CONS_Alert(CONS_ERROR, M_GetText("No more free memory for saving game data\n"));
 			return;
 		}
+
+		WRITEUINT8(save.p, SAV_VERSIONMINOR);
 
 		memset(name, 0, sizeof (name));
 		sprintf(name, "version %d", VERSION);
