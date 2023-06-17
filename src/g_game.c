@@ -4527,7 +4527,6 @@ void G_AfterIntermission(void)
 	if (gamestate != GS_VOTING)
 	{
 		G_GetNextMap();
-		G_HandleSaveLevel();
 	}
 
 	if ((grandprixinfo.gp == true) && mapheaderinfo[prevmap]->cutscenenum && !modeattacking && skipstats <= 1 && (gamecomplete || !(marathonmode & MA_NOCUTSCENES))) // Start a custom cutscene.
