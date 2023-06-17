@@ -502,7 +502,7 @@ static void M_GPBackup(INT32 choice)
 				CV_StealthSetValue(&cv_playercolor[0], savedata.skincolor);
 
 				// follower
-				if (savedata.followerskin < 0 || savedata.followerskin > numfollowers)
+				if (savedata.followerskin < 0 || savedata.followerskin >= numfollowers)
 					CV_StealthSet(&cv_follower[0], "None");
 				else
 					CV_StealthSet(&cv_follower[0], followers[savedata.followerskin].name);
