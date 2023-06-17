@@ -6241,6 +6241,11 @@ void Command_ExitGame_f(void)
 {
 	INT32 i;
 
+#ifndef DEVELOP
+	// Wipes gp backup if appropriate
+	G_HandleSaveLevel(true);
+#endif
+
 	LUA_HookBool(false, HOOK(GameQuit));
 
 	D_QuitNetGame();

@@ -519,7 +519,7 @@ void CONS_Debug(UINT32 debugflags, const char *fmt, ...) FUNCDEBUG;
 // Things that used to be in dstrings.h
 #define SAVEGAMENAME "ringsav"
 extern char savegamename[256];
-extern char liveeventbackup[256];
+extern char gpbackup[256];
 
 // m_misc.h
 #ifdef GETTEXT

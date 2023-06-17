@@ -2997,8 +2997,8 @@ void readmaincfg(MYFILE *f, boolean mainfile)
 				// can't use sprintf since there is %u in savegamename
 				strcatbf(savegamename, srb2home, PATHSEP);
 
-				strcpy(liveeventbackup, va("live%s.bkp", timeattackfolder));
-				strcatbf(liveeventbackup, srb2home, PATHSEP);
+				strcpy(gpbackup, va("gp%s.bkp", timeattackfolder));
+				strcatbf(gpbackup, srb2home, PATHSEP);
 
 				refreshdirmenu |= REFRESHDIR_GAMEDATA;
 				gamedataadded = true;

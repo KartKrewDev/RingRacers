@@ -8362,7 +8362,7 @@ void P_PostLoadLevel(void)
 
 	P_RunCachedActions();
 
-	G_HandleSaveLevel();
+	G_HandleSaveLevel(gamestate == GS_CEREMONY);
 
 	if (marathonmode & MA_INGAME)
 	{

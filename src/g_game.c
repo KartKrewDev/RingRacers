@@ -124,7 +124,6 @@ preciptype_t precip_freeslot = PRECIP_FIRSTFREESLOT;
 
 INT32 cursaveslot = 0; // Auto-save 1p savegame slot
 UINT8 lastqueuesaved = 0;
-boolean makelivebackup = false;
 UINT8 gamecomplete = 0;
 
 marathonmode_t marathonmode = 0;
@@ -4018,17 +4017,16 @@ void G_UpdateVisited(void)
 	G_SaveGameData();
 }
 
-void G_HandleSaveLevel(void)
+void G_HandleSaveLevel(boolean removecondition)
 {
 	if (!grandprixinfo.gp || !grandprixinfo.cup
-	|| splitscreen || netgame
-	|| !(makelivebackup || cursaveslot > 0))
+	|| splitscreen || netgame)
 		return;
 
-	if (gamestate == GS_CEREMONY && makelivebackup)
+	if (removecondition)
 	{
-		if (FIL_FileExists(liveeventbackup))
-			remove(liveeventbackup);
+		if (FIL_FileExists(gpbackup))
+			remove(gpbackup);
 		return;
 	}
 
@@ -5665,10 +5663,10 @@ void G_LoadGame(void)
 	// memset savedata to all 0, fixes calling perfectly valid saves corrupt because of bots
 	memset(&savedata, 0, sizeof(savedata));
 
-	if (makelivebackup)
-		strcpy(savename, liveeventbackup);
-	else
-		sprintf(savename, savegamename, cursaveslot);
+	//if (makelivebackup)
+		strcpy(savename, gpbackup);
+	//else
+		//sprintf(savename, savegamename, cursaveslot);
 
 	if (P_SaveBufferFromFile(&save, savename) == false)
 	{
@@ -5677,7 +5675,7 @@ void G_LoadGame(void)
 	}
 
 	memset(vcheck, 0, sizeof (vcheck));
-	sprintf(vcheck, (makelivebackup ? "back-up %d" : "version %d"), VERSION);
+	sprintf(vcheck, "version %d", VERSION);
 	if (strcmp((const char *)save.p, (const char *)vcheck))
 	{
 		M_StartMessage("Savegame Load", va(M_GetText("Save game %s from different version"), savename), NULL, MM_NOTHING, NULL, "Return to Menu");
@@ -5718,10 +5716,10 @@ void G_SaveGame(void)
 	char savename[256] = "";
 	savebuffer_t save = {0};
 
-	if (makelivebackup)
-		strcpy(savename, liveeventbackup);
-	else
-		sprintf(savename, savegamename, cursaveslot);
+	//if (makelivebackup)
+		strcpy(savename, gpbackup);
+	//else
+		//sprintf(savename, savegamename, cursaveslot);
 
 	gameaction = ga_nothing;
 	{
@@ -5735,7 +5733,7 @@ void G_SaveGame(void)
 		}
 
 		memset(name, 0, sizeof (name));
-		sprintf(name, (makelivebackup ? "back-up %d" : "version %d"), VERSION);
+		sprintf(name, "version %d", VERSION);
 		WRITEMEM(save.p, name, VERSIONSIZE);
 
 		P_SaveGame(&save);

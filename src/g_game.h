@@ -187,7 +187,7 @@ void G_StartTitleCard(void);
 void G_PreLevelTitleCard(void);
 boolean G_IsTitleCardAvailable(void);
 
-void G_HandleSaveLevel(void);
+void G_HandleSaveLevel(boolean removecondition);
 void G_SaveGame(void);
 void G_LoadGame(void);
 

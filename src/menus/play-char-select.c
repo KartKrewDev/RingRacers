@@ -487,11 +487,10 @@ void M_CharacterSelectInit(void)
 }
 
 
-static void M_MarathonLiveEventBackup(INT32 choice)
+static void M_GPBackup(INT32 choice)
 {
 	if (choice == MA_YES)
 	{
-		makelivebackup = true;
 		G_LoadGame();
 
 		if (savedata.lives != 0)
@@ -550,8 +549,8 @@ static void M_MarathonLiveEventBackup(INT32 choice)
 	}
 	else if (choice == MA_NO)
 	{
-		if (FIL_FileExists(liveeventbackup)) // just in case someone deleted it while we weren't looking.
-			remove(liveeventbackup);
+		if (FIL_FileExists(gpbackup)) // just in case someone deleted it while we weren't looking.
+			remove(gpbackup);
 
 		M_CharacterSelect(0);
 	}
@@ -562,14 +561,13 @@ void M_CharacterSelect(INT32 choice)
 	(void)choice;
 
 	if (currentMenu == &MainDef
-		&& FIL_FileExists(liveeventbackup))
+		&& FIL_FileExists(gpbackup))
 	{
 		M_StartMessage(
-			"Live Event Backup",
-			"A Live Event Backup was found.\n"
-			"Do you want to resurrect the last run?\n"
-			"(Fs in chat if we crashed on stream.)\n",
-			M_MarathonLiveEventBackup,
+			"Grand Prix Backup",
+			"A Grand Prix Backup was found.\n"
+			"Do you want to resurrect the last session?\n",
+			M_GPBackup,
 			MM_YESNO,
 			"Resume the last run",
 			"Delete, play another way");
