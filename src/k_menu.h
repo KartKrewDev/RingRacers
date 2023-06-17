@@ -533,6 +533,7 @@ extern struct menumessage_s
 
 	void (*routine)(INT32 choice);	// Normal routine
 	//void (*eroutine)(event_t *ev);	// Event routine	(MM_EVENTHANDLER)
+	INT32 answer;
 
 	const char *defaultstr;
 	const char *confirmstr;

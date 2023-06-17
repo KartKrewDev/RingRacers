@@ -414,7 +414,6 @@ static void M_WriteGuestReplay(INT32 ch)
 
 	if (FIL_FileExists(rguest))
 	{
-		//M_StopMessage(0);
 		remove(rguest);
 	}
 

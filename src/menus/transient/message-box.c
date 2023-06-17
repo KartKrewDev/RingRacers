@@ -71,6 +71,7 @@ void M_StartMessage(const char *header, const char *string, void (*routine)(INT3
 	menumessage.header = header;
 	menumessage.flags = itemtype;
 	menumessage.routine = routine;
+	menumessage.answer = MA_NONE;
 	menumessage.fadetimer = 1;
 	menumessage.timer = 0;
 	menumessage.closing = false;
@@ -82,7 +83,6 @@ void M_StartMessage(const char *header, const char *string, void (*routine)(INT3
 	if (!routine)
 	{
 		menumessage.flags = MM_NOTHING;
-		menumessage.routine = M_StopMessage;
 	}
 
 	if (menumessage.flags == MM_YESNO && !defaultstr)
@@ -156,6 +156,11 @@ boolean M_MenuMessageTick(void)
 		if (menumessage.fadetimer == 0)
 		{
 			menumessage.active = false;
+
+			if (menumessage.routine)
+			{
+				menumessage.routine(menumessage.answer);
+			}
 		}
 
 		return false;
@@ -183,38 +188,24 @@ void M_HandleMenuMessage(void)
 
 	switch (menumessage.flags)
 	{
-		// Send 1 to the routine if we're pressing A/B/X
-		case MM_NOTHING:
-		{
-			if (btok || btnok)
-				menumessage.routine(0);
-
-			break;
-		}
 		// Send 1 to the routine if we're pressing A, 2 if B/X, 0 otherwise.
 		case MM_YESNO:
 		{
-			INT32 answer = MA_NONE;
 			if (btok)
-				answer = MA_YES;
+				menumessage.answer = MA_YES;
 			else if (btnok)
-				answer = MA_NO;
-
-			// send 1 if btok is pressed, 2 if nok is pressed, 0 otherwise.
-			if (answer)
-			{
-				menumessage.routine(answer);
-				M_StopMessage(0);
-			}
+				menumessage.answer = MA_NO;
 
 			break;
 		}
-		// MM_EVENTHANDLER: In M_Responder to allow full event compat.
 		default:
 			break;
 	}
 
 	// if we detect any keypress, don't forget to set the menu delay regardless.
 	if (btok || btnok)
+	{
+		M_StopMessage(0);
 		M_SetMenuDelay(pid);
+	}
 }
