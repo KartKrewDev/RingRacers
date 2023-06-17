@@ -545,6 +545,9 @@ static void M_GPBackup(INT32 choice)
 			);
 
 			M_ClearMenus(true);
+
+			// We can't put it deeper in the menuflow due to lack of guaranteed setup
+			restoreMenu = &MainDef;
 		}
 	}
 	else if (choice == MA_NO)
@@ -565,8 +568,9 @@ void M_CharacterSelect(INT32 choice)
 	{
 		M_StartMessage(
 			"Grand Prix Backup",
-			"A Grand Prix Backup was found.\n"
-			"Do you want to resurrect the last session?\n",
+			"A progress backup was found.\n"
+			"Do you want to resurrect your\n"
+			"last Grand Prix session?\n",
 			M_GPBackup,
 			MM_YESNO,
 			"Yes, let's try again",
