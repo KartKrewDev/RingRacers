@@ -539,6 +539,21 @@ void M_StartControlPanel(void)
 		// (We can change this timer later when extra animation is added.)
 		if (finalecount < 1)
 			return;
+
+		if (menumessage.active)
+		{
+			if (!menumessage.closing && menumessage.fadetimer == 9)
+			{
+				// The following doesn't work with MM_YESNO.
+				// However, because there's no guarantee a profile
+				// is selected or controls set up to our liking,
+				// we can't call M_HandleMenuMessage.
+
+				M_StopMessage(MA_NONE);
+			}
+
+			return;
+		}
 	}
 
 	menuactive = true;
@@ -549,8 +564,6 @@ void M_StartControlPanel(void)
 	}
 	else if (!Playing())
 	{
-		M_StopMessage(0); // Doesn't work with MM_YESNO or MM_EVENTHANDLER... but good enough to get the game as it is currently functional again
-
 		if (gamestate != GS_MENU)
 		{
 			G_SetGamestate(GS_MENU);

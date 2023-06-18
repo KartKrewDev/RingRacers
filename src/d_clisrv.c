@@ -1676,6 +1676,8 @@ static boolean M_ConfirmConnect(void)
 	if (G_PlayerInputDown(0, gc_b, 1) || G_PlayerInputDown(0, gc_x, 1) || G_GetDeviceGameKeyDownArray(0)[KEY_ESCAPE])
 	{
 		cl_requestmode = CL_ABORTED;
+
+		M_StopMessage(MA_NO);
 		return true;
 	}
 
@@ -1704,6 +1706,7 @@ static boolean M_ConfirmConnect(void)
 		else
 			cl_requestmode = CL_LOADFILES;
 
+		M_StopMessage(MA_YES);
 		return true;
 	}
 
@@ -2174,7 +2177,7 @@ static boolean CL_ServerConnectionTicker(const char *tmpsave, tic_t *oldtic, tic
 				I_lock_mutex(&k_menu_mutex);
 #endif
 				if (M_MenuMessageTick() && M_ConfirmConnect())
-					M_StopMessage(0);
+					;
 				else if (menumessage.active == false)
 					cl_mode = cl_requestmode;
 #ifdef HAVE_THREADS

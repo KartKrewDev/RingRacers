@@ -136,11 +136,14 @@ void M_StartMessage(const char *header, const char *string, void (*routine)(INT3
 
 void M_StopMessage(INT32 choice)
 {
+	if (!menumessage.active || menumessage.closing)
+		return;
+
 	const char pid = 0;
-	(void) choice;
 
 	menumessage.closing = true;
 	menumessage.timer = 0;
+	menumessage.answer = choice;
 	M_SetMenuDelay(pid);
 }
 
@@ -192,20 +195,18 @@ void M_HandleMenuMessage(void)
 		case MM_YESNO:
 		{
 			if (btok)
-				menumessage.answer = MA_YES;
+				M_StopMessage(MA_YES);
 			else if (btnok)
-				menumessage.answer = MA_NO;
+				M_StopMessage(MA_NO);
 
 			break;
 		}
 		default:
-			break;
-	}
+		{
+			if (btok || btnok)
+				M_StopMessage(MA_NONE);
 
-	// if we detect any keypress, don't forget to set the menu delay regardless.
-	if (btok || btnok)
-	{
-		M_StopMessage(0);
-		M_SetMenuDelay(pid);
+			break;
+		}
 	}
 }
