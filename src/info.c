@@ -556,6 +556,7 @@ char sprnames[NUMSPRITES + 1][5] =
 	"SLPT", // Sliptide zip indicator
 
 	"IWHP", // Instawhip
+	"WPRE", // Instawhip Recharge
 	"GRNG", // Guard ring
 	"GBDY", // Guard body
 
@@ -3955,6 +3956,10 @@ state_t states[NUMSTATES] =
 	{SPR_SLPT,                 FF_PAPERSPRITE|0, -1, {NULL}, 0, 0, S_NULL}, // S_SLIPTIDEZIP
 
 	{SPR_IWHP,                 FF_FLOORSPRITE|FF_ANIMATE|0, -1, {NULL}, 6, 2, S_NULL}, // S_INSTAWHIP
+	{SPR_NULL,                 0, 1, {NULL}, 0, 0, S_INSTAWHIP_RECHARGE2}, // S_INSTAWHIP_RECHARGE1
+	{SPR_NULL,                 0, 0, {A_PlaySound}, sfx_s3ka0, 2, S_INSTAWHIP_RECHARGE3}, // S_INSTAWHIP_RECHARGE2
+	{SPR_WPRE,                 FF_FULLBRIGHT|FF_FLOORSPRITE|FF_ANIMATE|0, 36, {NULL}, 17, 2, S_INSTAWHIP_RECHARGE4}, // S_INSTAWHIP_RECHARGE3
+	{SPR_NULL,                 0, 0, {A_PlaySound}, sfx_s3k7c, 2, S_NULL}, // S_INSTAWHIP_RECHARGE4
 	{SPR_GRNG,                 FF_FULLBRIGHT|FF_PAPERSPRITE|0, -1, {NULL}, 0, 0, S_NULL}, // S_BLOCKRING
 	{SPR_GBDY,                 FF_FULLBRIGHT|FF_ANIMATE|0, -1, {NULL}, 4, 2, S_NULL}, // S_BLOCKBODY
 
@@ -22709,6 +22714,33 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		sfx_None,       // activesound
 		MF_NOGRAVITY|MF_NOCLIPHEIGHT|MF_DONTENCOREMAP, // flags
 		S_NULL          // raisestate
+	},
+
+	{           // MT_INSTAWHIP_RECHARGE
+		-1,             // doomednum
+		S_INSTAWHIP_RECHARGE1, // spawnstate
+		1000,           // spawnhealth
+		S_NULL,         // seestate
+		sfx_None,       // seesound
+		0,              // reactiontime
+		sfx_None,       // attacksound
+		S_NULL,         // painstate
+		0,              // painchance
+		sfx_None,       // painsound
+		S_NULL,         // meleestate
+		S_NULL,         // missilestate
+		S_NULL,         // deathstate
+		S_NULL,         // xdeathstate
+		sfx_None,       // deathsound
+		0,              // speed
+		90*FRACUNIT,    // radius
+		90*FRACUNIT,    // height
+		0,              // display offset
+		100,            // mass
+		0,              // damage
+		sfx_None,       // activesound
+		MF_NOBLOCKMAP|MF_NOGRAVITY|MF_NOCLIP|MF_NOCLIPHEIGHT|MF_SCENERY|MF_NOCLIPTHING|MF_DONTENCOREMAP|MF_NOSQUISH, // flags
+		S_INSTAWHIP_RECHARGE3 // raisestate
 	},
 
 	{           // MT_BLOCKRING
