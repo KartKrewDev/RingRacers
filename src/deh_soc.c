@@ -3438,6 +3438,15 @@ static void invalidateacrosscups(UINT16 map)
 	mapheaderinfo[map]->cup = NULL;
 }
 
+static char *MapNameOrRemoval(char *name)
+{
+	if (name[0] == '\0'
+	|| (name[0] == '/' && name[1] == '\0'))
+		return NULL;
+
+	return Z_StrDup(name);
+}
+
 void readcupheader(MYFILE *f, cupheader_t *cup)
 {
 	char *s = Z_Malloc(MAXLINELEN, PU_STATIC, NULL);
@@ -3539,8 +3548,12 @@ void readcupheader(MYFILE *f, cupheader_t *cup)
 						break;
 					}
 
-					cup->levellist[CUPCACHE_BONUS + cup->numbonus] = Z_StrDup(tmp);
+					cup->levellist[CUPCACHE_BONUS + cup->numbonus] = MapNameOrRemoval(tmp);
 					cup->cachedlevels[CUPCACHE_BONUS + cup->numbonus] = NEXTMAP_INVALID;
+
+					if (cup->levellist[CUPCACHE_BONUS + cup->numbonus] == NULL)
+						break;
+
 					cup->numbonus++;
 				} while((tmp = strtok(NULL,",")) != NULL);
 			}
@@ -3548,7 +3561,7 @@ void readcupheader(MYFILE *f, cupheader_t *cup)
 			{
 				invalidateacrosscups(cup->cachedlevels[CUPCACHE_SPECIAL]);
 				Z_Free(cup->levellist[CUPCACHE_SPECIAL]);
-				cup->levellist[CUPCACHE_SPECIAL] = Z_StrDup(word2);
+				cup->levellist[CUPCACHE_SPECIAL] = MapNameOrRemoval(word2);
 				cup->cachedlevels[CUPCACHE_SPECIAL] = NEXTMAP_INVALID;
 			}
 			else if (fastcmp(word, "EMERALDNUM"))
