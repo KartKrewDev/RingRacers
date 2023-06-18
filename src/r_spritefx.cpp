@@ -9,6 +9,7 @@
 /// \brief Special effects for sprite rendering
 
 #include "d_player.h"
+#include "info.h"
 #include "p_tick.h"
 #include "r_splats.h"
 #include "r_things.h"
@@ -42,5 +43,19 @@ INT32 R_ThingLightLevel(mobj_t* thing)
 // mobj_t.standingslope must also be NULL.)
 boolean R_SplatSlope(mobj_t* mobj, vector3_t position, pslope_t* slope)
 {
+	switch (mobj->type)
+	{
+	case MT_INSTAWHIP_RECHARGE: {
+		// Create an acute angle
+		slope->o = position;
+		FV2_Load(&slope->d, FCOS(mobj->angle) / 2, FSIN(mobj->angle) / 2);
+		slope->zdelta = FRACUNIT;
+		return true;
+	}
+
+	default:
+		break;
+	}
+
 	return false;
 }

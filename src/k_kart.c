@@ -10780,6 +10780,11 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 						whip->fuse = 12; // Changing instawhip animation duration? Look here
 						player->flashing = max(player->flashing, 12);
 						player->mo->momz += 4*mapobjectscale;
+
+						// Spawn in triangle formation
+						Obj_SpawnInstaWhipRecharge(player, 0);
+						Obj_SpawnInstaWhipRecharge(player, ANGLE_120);
+						Obj_SpawnInstaWhipRecharge(player, ANGLE_240);
 					}
 				}
 
