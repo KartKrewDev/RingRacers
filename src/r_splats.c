@@ -141,6 +141,7 @@ static void rasterize_segment_tex(INT32 x1, INT32 y1, INT32 x2, INT32 y2, INT32 
 void R_DrawFloorSplat(vissprite_t *spr)
 {
 	floorsplat_t splat;
+	pslope_t localslope;
 	mobj_t *mobj = spr->mobj;
 	fixed_t tr_x, tr_y, rot_x, rot_y, rot_z;
 
@@ -258,6 +259,9 @@ void R_DrawFloorSplat(vissprite_t *spr)
 
 		if (standingslope && (renderflags & RF_OBJECTSLOPESPLAT))
 			splat.slope = standingslope;
+
+		if (!splat.slope && R_SplatSlope(mobj, (vector3_t){splat.x, splat.y, splat.z}, &localslope))
+			splat.slope = &localslope;
 	}
 
 	// Translate

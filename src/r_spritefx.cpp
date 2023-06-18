@@ -10,6 +10,7 @@
 
 #include "d_player.h"
 #include "p_tick.h"
+#include "r_splats.h"
 #include "r_things.h"
 
 INT32 R_ThingLightLevel(mobj_t* thing)
@@ -28,4 +29,18 @@ INT32 R_ThingLightLevel(mobj_t* thing)
 	}
 
 	return lightlevel;
+}
+
+// Use this function to set the slope of a splat sprite.
+//
+// slope->o, slope->d and slope->zdelta must be set, none of
+// the other fields on pslope_t are used.
+//
+// Return true if you want the slope to be used. The object
+// must have RF_SLOPESPLAT and mobj_t.floorspriteslope must be
+// NULL. (If RF_OBJECTSLOPESPLAT is set, then
+// mobj_t.standingslope must also be NULL.)
+boolean R_SplatSlope(mobj_t* mobj, vector3_t position, pslope_t* slope)
+{
+	return false;
 }
