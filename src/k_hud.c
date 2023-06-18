@@ -5280,7 +5280,7 @@ void K_drawKartHUD(void)
 			{
 				if (gametyperules & GTR_CIRCUIT)
 				{
-					if (numlaps > 1)
+					if (numlaps != 1)
 					{
 						K_drawKartLaps();
 						gametypeinfoshown = true;
