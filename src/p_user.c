@@ -714,11 +714,49 @@ void P_PlayVictorySound(mobj_t *source)
 void P_EndingMusic(void)
 {
 	const char *jingle = NULL;
-	boolean nointer = false;
 	UINT8 bestPos = UINT8_MAX;
 	player_t *bestPlayer = NULL;
 
 	SINT8 i;
+
+	// See G_DoCompleted and Y_DetermineIntermissionType
+	boolean nointer = ((modeattacking && (players[consoleplayer].pflags & PF_NOCONTEST))
+		|| (grandprixinfo.gp == true && grandprixinfo.eventmode != GPEVENT_NONE));
+
+	for (i = 0; i < MAXPLAYERS; i++)
+	{
+		if (!playeringame[i]
+		|| players[i].spectator)
+			continue;
+
+		// Battle powerstone win
+		if ((gametyperules & GTR_POWERSTONES)
+		&& ALLCHAOSEMERALDS(players[i].emeralds))
+			break;
+
+		// Special round?
+		if (((gametyperules & GTR_SPECIALSTART)
+		|| (grandprixinfo.gp == true
+			&& grandprixinfo.eventmode == GPEVENT_SPECIAL)
+		) == false)
+			continue;
+
+		// Any player has completed well?
+		if (!players[i].exiting
+		|| players[i].bot
+		|| K_IsPlayerLosing(&players[i]))
+			continue;
+
+		// Special win
+		break;
+	}
+
+	// Event - Emerald Finish
+	if (i != MAXPLAYERS)
+	{
+		jingle = "EMRLD";
+		goto skippingposition;
+	}
 
 	// Event - Level Finish
 	// Check for if this is valid or not
@@ -755,10 +793,6 @@ void P_EndingMusic(void)
 			bestPos = pos;
 		}
 	}
-
-	// See G_DoCompleted and Y_DetermineIntermissionType
-	nointer = ((modeattacking && (players[consoleplayer].pflags & PF_NOCONTEST))
-		|| (grandprixinfo.gp == true && grandprixinfo.eventmode != GPEVENT_NONE));
 
 	if (bestPlayer == NULL)
 	{
@@ -797,6 +831,8 @@ void P_EndingMusic(void)
 			jingle = "_win";
 		}
 	}
+
+skippingposition:
 
 	if (nointer == true)
 	{
