@@ -7243,7 +7243,7 @@ void A_PlaySound(mobj_t *actor)
 			break;
 
 		case 2:
-			origin = actor->target;
+			origin = actor->target ? actor->target : actor;
 			break;
 	}
 
