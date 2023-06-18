@@ -7221,13 +7221,14 @@ void A_ChangeRollAngleAbsolute(mobj_t *actor)
 //
 // var1 = sound # to play
 // var2:
-//		lower 16 bits = If 1, play sound using calling object as origin. If 0, play sound without an origin
+//		lower 16 bits = If 1, play sound using calling object as origin. If 2, use target. If 0, play sound without an origin
 //		upper 16 bits = If 1, do not play sound during preticker.
 //
 void A_PlaySound(mobj_t *actor)
 {
 	INT32 locvar1 = var1;
 	INT32 locvar2 = var2;
+	mobj_t *origin = NULL;
 
 	if (LUA_CallAction(A_PLAYSOUND, actor))
 		return;
@@ -7235,7 +7236,18 @@ void A_PlaySound(mobj_t *actor)
 	if (leveltime < 2 && (locvar2 >> 16))
 		return;
 
-	S_StartSound((locvar2 & 65535) ? actor : NULL, locvar1);
+	switch (locvar2 & 65535)
+	{
+		case 1:
+			origin = actor;
+			break;
+
+		case 2:
+			origin = actor->target ? actor->target : actor;
+			break;
+	}
+
+	S_StartSound(origin, locvar1);
 }
 
 // Function: A_FindTarget

@@ -2,6 +2,7 @@
 #ifndef k_objects_H
 #define k_objects_H
 
+#include "tables.h" // angle_t
 #include "taglist.h"
 
 #ifdef __cplusplus
@@ -109,6 +110,8 @@ boolean Obj_DropTargetMorphThink(mobj_t *morph);
 
 /* Instawhip */
 void Obj_InstaWhipThink(mobj_t *whip);
+void Obj_SpawnInstaWhipRecharge(player_t *player, angle_t angleOffset);
+void Obj_InstaWhipRechargeThink(mobj_t *mobj);
 
 /* Block VFX */
 void Obj_BlockRingThink(mobj_t *ring);

@@ -1109,6 +1109,7 @@ typedef enum sprite
 	SPR_SLPT, // Sliptide zip indicator
 
 	SPR_IWHP, // Instawhip
+	SPR_WPRE, // Instawhip Recharge
 	SPR_GRNG, // Guard ring
 	SPR_GBDY, // Guard body
 
@@ -4366,6 +4367,10 @@ typedef enum state
 	S_SLIPTIDEZIP,
 
 	S_INSTAWHIP,
+	S_INSTAWHIP_RECHARGE1,
+	S_INSTAWHIP_RECHARGE2,
+	S_INSTAWHIP_RECHARGE3,
+	S_INSTAWHIP_RECHARGE4,
 	S_BLOCKRING,
 	S_BLOCKBODY,
 
@@ -6449,6 +6454,7 @@ typedef enum mobj_type
 	MT_SLIPTIDEZIP,
 
 	MT_INSTAWHIP,
+	MT_INSTAWHIP_RECHARGE,
 	MT_BLOCKRING,
 	MT_BLOCKBODY,
 
