@@ -653,7 +653,6 @@ typedef enum
 static void GetPackets(void);
 
 static cl_mode_t cl_mode = CL_SEARCHING;
-static cl_mode_t cl_requestmode = CL_ABORTED;
 
 #ifdef HAVE_CURL
 char http_source[MAX_MIRROR_LENGTH];
@@ -1671,46 +1670,37 @@ void CL_UpdateServerList (void)
 		SendAskInfo(BROADCASTADDR);
 }
 
-static boolean M_ConfirmConnect(void)
+static void M_ConfirmConnect(INT32 choice)
 {
-	if (G_PlayerInputDown(0, gc_b, 1) || G_PlayerInputDown(0, gc_x, 1) || G_GetDeviceGameKeyDownArray(0)[KEY_ESCAPE])
-	{
-		cl_requestmode = CL_ABORTED;
-
-		M_StopMessage(MA_NO);
-		return true;
-	}
-
-	if (G_PlayerInputDown(0, gc_a, 1) || G_GetDeviceGameKeyDownArray(0)[KEY_ENTER])
+	if (choice == MA_YES)
 	{
 		if (totalfilesrequestednum > 0)
 		{
-#ifdef HAVE_CURL
+	#ifdef HAVE_CURL
 			if (http_source[0] == '\0' || curl_failedwebdownload)
-#endif
+	#endif
 			{
 				if (CL_SendFileRequest())
 				{
-					cl_requestmode = CL_DOWNLOADFILES;
+					cl_mode = CL_DOWNLOADFILES;
 				}
 				else
 				{
-					cl_requestmode = CL_DOWNLOADFAILED;
+					cl_mode = CL_DOWNLOADFAILED;
 				}
 			}
-#ifdef HAVE_CURL
+	#ifdef HAVE_CURL
 			else
-				cl_requestmode = CL_PREPAREHTTPFILES;
-#endif
+				cl_mode = CL_PREPAREHTTPFILES;
+	#endif
 		}
 		else
-			cl_requestmode = CL_LOADFILES;
+			cl_mode = CL_LOADFILES;
 
-		M_StopMessage(MA_YES);
-		return true;
+		return;
 	}
 
-	return false;
+	cl_mode = CL_ABORTED;
 }
 
 static boolean CL_FinishedFileList(void)
@@ -1762,7 +1752,7 @@ static boolean CL_FinishedFileList(void)
 				"This server is full!\n"
 				"\n"
 				"You may load server addons (if any), and wait for a slot.\n"
-			), NULL, MM_NOTHING, "Continue", "Back to Menu");
+			), &M_ConfirmConnect, MM_YESNO, "Continue", "Back to Menu");
 			cl_mode = CL_CONFIRMCONNECT;
 		}
 		else
@@ -1825,13 +1815,13 @@ static boolean CL_FinishedFileList(void)
 					"\n"
 					"You may download, load server addons,\n"
 					"and wait for a slot.\n"
-				), downloadsize), NULL, MM_NOTHING, "Continue", "Back to Menu");
+				), downloadsize), &M_ConfirmConnect, MM_YESNO, "Continue", "Back to Menu");
 			else
 				M_StartMessage("Server Connection",
 					va(M_GetText(
 					"Download of %s additional content\n"
 					"is required to join.\n"
-				), downloadsize), NULL, MM_NOTHING, "Continue", "Back to Menu");
+				), downloadsize), &M_ConfirmConnect, MM_YESNO, "Continue", "Back to Menu");
 
 			Z_Free(downloadsize);
 			cl_mode = CL_CONFIRMCONNECT;
@@ -1972,6 +1962,7 @@ static boolean CL_ServerConnectionTicker(const char *tmpsave, tic_t *oldtic, tic
 {
 	boolean waitmore;
 	INT32 i;
+	const UINT8 pid = 0;
 
 	switch (cl_mode)
 	{
@@ -2171,26 +2162,27 @@ static boolean CL_ServerConnectionTicker(const char *tmpsave, tic_t *oldtic, tic
 				G_MapEventsToControls(&events[eventtail]);
 			}
 
+#ifdef HAVE_THREADS
+			I_lock_mutex(&k_menu_mutex);
+#endif
+			M_UpdateMenuCMD(0, true);
+
 			if (cl_mode == CL_CONFIRMCONNECT)
 			{
-#ifdef HAVE_THREADS
-				I_lock_mutex(&k_menu_mutex);
-#endif
-				if (M_MenuMessageTick() && M_ConfirmConnect())
-					;
-				else if (menumessage.active == false)
-					cl_mode = cl_requestmode;
-#ifdef HAVE_THREADS
-				I_unlock_mutex(k_menu_mutex);
-#endif
+				if (menumessage.active)
+					M_HandleMenuMessage();
 			}
 			else
 			{
-				if (G_PlayerInputDown(0, gc_b, 1)
-					|| G_PlayerInputDown(0, gc_x, 1)
-					|| G_GetDeviceGameKeyDownArray(0)[KEY_ESCAPE])
+				if (M_MenuBackPressed(pid))
 					cl_mode = CL_ABORTED;
 			}
+
+			M_ScreenshotTicker();
+
+#ifdef HAVE_THREADS
+			I_unlock_mutex(k_menu_mutex);
+#endif
 		}
 
 		if (cl_mode == CL_ABORTED)
@@ -2268,7 +2260,6 @@ static void CL_ConnectToServer(void)
 	lastfilenum = -1;
 
 	cl_mode = CL_SEARCHING;
-	cl_requestmode = CL_ABORTED; // sane default
 
 	// Don't get a corrupt savegame error because tmpsave already exists
 	if (FIL_FileExists(tmpsave) && unlink(tmpsave) == -1)

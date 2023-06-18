@@ -295,7 +295,7 @@ void D_ProcessEvents(void)
 	// Update menu CMD
 	for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
 	{
-		M_UpdateMenuCMD(i);
+		M_UpdateMenuCMD(i, false);
 	}
 }
 

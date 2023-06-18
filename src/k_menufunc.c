@@ -767,7 +767,7 @@ void M_SetMenuDelay(UINT8 i)
 	}
 }
 
-void M_UpdateMenuCMD(UINT8 i)
+void M_UpdateMenuCMD(UINT8 i, boolean bailrequired)
 {
 	UINT8 mp = max(1, setup_numplayers);
 
@@ -804,6 +804,11 @@ void M_UpdateMenuCMD(UINT8 i)
 	if (G_PlayerInputDown(i, gc_r, mp)) { menucmd[i].buttons |= MBT_R; }
 
 	if (G_PlayerInputDown(i, gc_start, mp)) { menucmd[i].buttons |= MBT_START; }
+
+	if (bailrequired && i == 0)
+	{
+		if (G_GetDeviceGameKeyDownArray(0)[KEY_ESCAPE]) { menucmd[i].buttons |= MBT_B; }
+	}
 
 	if (menucmd[i].dpad_ud == 0 && menucmd[i].dpad_lr == 0 && menucmd[i].buttons == 0)
 	{
