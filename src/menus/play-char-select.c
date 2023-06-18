@@ -530,7 +530,7 @@ static void M_GPBackup(INT32 choice)
 				SplitScreen_OnChange();
 			}
 
-			const UINT8 entry = lastqueuesaved-1;
+			const UINT8 entry = roundqueue.position-1;
 
 			SV_StartSinglePlayerServer(roundqueue.entries[entry].gametype, false);
 
@@ -541,7 +541,7 @@ static void M_GPBackup(INT32 choice)
 				true,
 				1,
 				false,
-				roundqueue.entries[lastqueuesaved-1].rankrestricted
+				roundqueue.entries[entry].rankrestricted
 			);
 
 			M_ClearMenus(true);
@@ -549,21 +549,17 @@ static void M_GPBackup(INT32 choice)
 			// We can't put it deeper in the menuflow due to lack of guaranteed setup
 			restoreMenu = &MainDef;
 		}
-	}
-	else if (choice == MA_NO)
-	{
-		if (FIL_FileExists(gpbackup)) // just in case someone deleted it while we weren't looking.
-			remove(gpbackup);
 
-		M_CharacterSelect(0);
+		return;
 	}
+
+	M_CharacterSelect(-1);
 }
 
 void M_CharacterSelect(INT32 choice)
 {
-	(void)choice;
-
 	if (currentMenu == &MainDef
+		&& choice != -1
 		&& FIL_FileExists(gpbackup))
 	{
 		M_StartMessage(

@@ -123,7 +123,6 @@ precipprops_t precipprops[MAXPRECIP] =
 preciptype_t precip_freeslot = PRECIP_FIRSTFREESLOT;
 
 INT32 cursaveslot = 0; // Auto-save 1p savegame slot
-UINT8 lastqueuesaved = 0;
 UINT8 gamecomplete = 0;
 
 marathonmode_t marathonmode = 0;
@@ -3350,6 +3349,7 @@ void G_ExitLevel(void)
 				else
 				{
 					// Back to the menu with you.
+					G_HandleSaveLevel(true);
 					D_QuitNetGame();
 					CL_Reset();
 					D_ClearState();
@@ -4024,18 +4024,21 @@ void G_HandleSaveLevel(boolean removecondition)
 		return;
 
 	if (removecondition)
-	{
-		if (FIL_FileExists(gpbackup))
-			remove(gpbackup);
-		return;
-	}
+		goto doremove;
 
 	if (gamestate != GS_LEVEL
-	|| roundqueue.size == 0
-	|| lastqueuesaved == roundqueue.position)
+	|| roundqueue.size == 0)
 		return;
 
+	if (roundqueue.position == 1)
+		goto doremove;
+
 	G_SaveGame();
+	return;
+
+doremove:
+	if (FIL_FileExists(gpbackup))
+		remove(gpbackup);
 }
 
 // Next map apparatus

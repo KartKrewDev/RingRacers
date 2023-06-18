@@ -5968,8 +5968,6 @@ boolean P_LoadGame(savebuffer_t *save)
 	if (!P_UnArchiveLuabanksAndConsistency(save))
 		goto badloadgame;
 
-	lastqueuesaved = roundqueue.position;
-
 	return true;
 
 badloadgame:
