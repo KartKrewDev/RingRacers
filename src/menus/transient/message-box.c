@@ -85,15 +85,19 @@ void M_StartMessage(const char *header, const char *string, void (*routine)(INT3
 		menumessage.flags = MM_NOTHING;
 	}
 
-	if (menumessage.flags == MM_YESNO && !defaultstr)
+	// Set action strings
+	switch (menumessage.flags)
 	{
-		menumessage.defaultstr = "No";
-		menumessage.confirmstr = "Yes";
-	}
-	else
-	{
-		menumessage.defaultstr = defaultstr ? defaultstr : "OK";
-		menumessage.confirmstr = confirmstr;
+		// Send 1 to the routine if we're pressing A, 2 if B/X, 0 otherwise.
+		case MM_YESNO:
+			menumessage.defaultstr = defaultstr ? defaultstr : "No";
+			menumessage.confirmstr = confirmstr ? confirmstr : "Yes";
+			break;
+
+		default:
+			menumessage.defaultstr = defaultstr ? defaultstr : "OK";
+			menumessage.confirmstr = NULL;
+			break;
 	}
 
 	// event routine
