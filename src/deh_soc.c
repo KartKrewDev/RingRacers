@@ -3564,6 +3564,13 @@ void readcupheader(MYFILE *f, cupheader_t *cup)
 				cup->levellist[CUPCACHE_SPECIAL] = MapNameOrRemoval(word2);
 				cup->cachedlevels[CUPCACHE_SPECIAL] = NEXTMAP_INVALID;
 			}
+			else if (fastcmp(word, "ALTPODIUM"))
+			{
+				invalidateacrosscups(cup->cachedlevels[CUPCACHE_PODIUM]);
+				Z_Free(cup->levellist[CUPCACHE_PODIUM]);
+				cup->levellist[CUPCACHE_PODIUM] = MapNameOrRemoval(word2);
+				cup->cachedlevels[CUPCACHE_PODIUM] = NEXTMAP_INVALID;
+			}
 			else if (fastcmp(word, "EMERALDNUM"))
 			{
 				if (i >= 0 && i <= 14)
