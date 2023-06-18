@@ -3126,7 +3126,7 @@ void readmaincfg(MYFILE *f, boolean mainfile)
 			}
 			else if (fastcmp(word, "LOOPTITLE"))
 			{
-				looptitle = (value || word2[0] == 'T' || word2[0] == 'Y');
+				looptitle = (value != 0 || word2[0] == 'T' || word2[0] == 'Y');
 				titlechanged = true;
 			}
 			else if (fastcmp(word, "TITLEMAP"))
@@ -3137,7 +3137,7 @@ void readmaincfg(MYFILE *f, boolean mainfile)
 			}
 			else if (fastcmp(word, "HIDETITLEPICS") || fastcmp(word, "TITLEPICSHIDE"))
 			{
-				hidetitlepics = (boolean)(value || word2[0] == 'T' || word2[0] == 'Y');
+				hidetitlepics = (boolean)(value != 0 || word2[0] == 'T' || word2[0] == 'Y');
 				titlechanged = true;
 			}
 			else if (fastcmp(word, "TITLEPICSMODE"))
@@ -3577,6 +3577,10 @@ void readcupheader(MYFILE *f, cupheader_t *cup)
 					cup->emeraldnum = (UINT8)i;
 				else
 					deh_warning("%s Cup: invalid emerald number %d", cup->name, i);
+			}
+			else if (fastcmp(word, "PLAYCREDITS"))
+			{
+				cup->playcredits = (i != 0 || word2[0] == 'T' || word2[0] == 'Y');
 			}
 			else
 				deh_warning("%s Cup: unknown word '%s'", cup->name, word);

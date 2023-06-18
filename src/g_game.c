@@ -1813,7 +1813,17 @@ boolean G_Responder(event_t *ev)
 
 		if (K_CeremonyResponder(ev))
 		{
-			nextmap = NEXTMAP_TITLE;
+			if (grandprixinfo.gp == true
+				&& grandprixinfo.cup != NULL
+				&& grandprixinfo.cup->playcredits == true)
+			{
+				nextmap = NEXTMAP_CREDITS;
+			}
+			else
+			{
+				nextmap = NEXTMAP_TITLE;
+			}
+
 			G_EndGame();
 			return true;
 		}
