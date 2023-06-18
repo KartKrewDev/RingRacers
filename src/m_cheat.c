@@ -80,30 +80,44 @@ static UINT8 cheatf_warp(void)
 		}
 	}
 
+	M_ClearMenus(true);
+
+	const char *text;
+
 	if (success)
 	{
 		G_SetUsedCheats();
-		M_ClearMenus(true);
 		S_StartSound(0, sfx_kc42);
 
-		M_StartMessage("Tournament Mode",
-			M_GetText(
+		text = M_GetText(
 			"All challenges temporarily unlocked.\n"
 			"Saving is disabled - the game will\n"
 			"return to normal on next launch.\n"
-		), NULL, MM_NOTHING, NULL, NULL);
+		);
 	}
 	else
 	{
 		S_StartSound(0, sfx_s3k7b);
 
-		M_StartMessage("Tournament Mode",
-			M_GetText(
-			"This is the correct password, but\n"
-			"you already have every challenge\n"
-			"unlocked, so saving is still allowed!\n"
-		), NULL, MM_NOTHING, NULL, NULL);
+		if (usedCheats)
+		{
+			text = M_GetText(
+				"This is the correct password, but\n"
+				"you already have every challenge\n"
+				"unlocked, so nothing has changed.\n"
+			);
+		}
+		else
+		{
+			text = M_GetText(
+				"This is the correct password, but\n"
+				"you already have every challenge\n"
+				"unlocked, so saving is still allowed!\n"
+			);
+		}
 	}
+
+	M_StartMessage("Tournament Mode", text, NULL, MM_NOTHING, NULL, NULL);
 
 	return 1;
 }
