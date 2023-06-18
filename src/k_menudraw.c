@@ -606,14 +606,14 @@ static void M_DrawMenuTyping(void)
 // Draw the message popup submenu
 void M_DrawMenuMessage(void)
 {
+	if (!menumessage.active)
+		return;
+
 	INT32 x = (BASEVIDWIDTH - menumessage.x)/2;
 	INT32 y = (BASEVIDHEIGHT - menumessage.y)/2 + floor(pow(2, (double)(9 - menumessage.fadetimer)));
 	size_t i, start = 0;
 	char string[MAXMENUMESSAGE];
 	const char *msg = menumessage.message;
-
-	if (!menumessage.active)
-		return;
 
 	V_DrawFadeScreen(31, menumessage.fadetimer);
 
@@ -629,25 +629,64 @@ void M_DrawMenuMessage(void)
 		INT32 workx = x + menumessage.x;
 		INT32 worky = y + menumessage.y;
 
+		boolean push;
+
+		if (menumessage.closing)
+			push = (menumessage.answer != MA_YES);
+		else
+		{
+			const UINT8 anim_duration = 16;
+			push = ((menumessage.timer % (anim_duration * 2)) < anim_duration);
+		}
+
 		workx -= V_ThinStringWidth(menumessage.defaultstr, V_6WIDTHSPACE|V_ALLOWLOWERCASE);
-		V_DrawThinString(workx, worky + 1, V_6WIDTHSPACE|V_ALLOWLOWERCASE, menumessage.defaultstr);
+		V_DrawThinString(
+			workx, worky + 1,
+			V_6WIDTHSPACE|V_ALLOWLOWERCASE
+				| ((push && (menumessage.closing & MENUMESSAGECLOSE)) ? highlightflags : 0),
+			menumessage.defaultstr
+		);
+
+		workx -= 2;
 
 		workx -= SHORT(kp_button_x[1][0]->width);
-		K_drawButtonAnim(workx, worky, 0, kp_button_x[1], menumessage.timer);
+		K_drawButton(
+			workx * FRACUNIT, worky * FRACUNIT,
+			0, kp_button_x[1],
+			push
+		);
 
 		workx -= SHORT(kp_button_b[1][0]->width);
-		K_drawButtonAnim(workx, worky, 0, kp_button_b[1], menumessage.timer);
+		K_drawButton(
+			workx * FRACUNIT, worky * FRACUNIT,
+			0, kp_button_b[1],
+			push
+		);
 
 		if (menumessage.confirmstr)
 		{
 			workx -= 12;
 
+			if (menumessage.closing)
+				push = !push;
+
 			workx -= V_ThinStringWidth(menumessage.confirmstr, V_6WIDTHSPACE|V_ALLOWLOWERCASE);
-			V_DrawThinString(workx, worky + 1, V_6WIDTHSPACE|V_ALLOWLOWERCASE, menumessage.confirmstr);
+			V_DrawThinString(
+				workx, worky + 1,
+				V_6WIDTHSPACE|V_ALLOWLOWERCASE
+					| ((push && (menumessage.closing & MENUMESSAGECLOSE)) ? highlightflags : 0),
+				menumessage.confirmstr
+			);
+
+			workx -= 2;
 		}
 
 		workx -= SHORT(kp_button_a[1][0]->width);
-		K_drawButtonAnim(workx, worky, 0, kp_button_a[1], menumessage.timer);
+		K_drawButton(
+			workx * FRACUNIT, worky * FRACUNIT,
+			0, kp_button_a[1],
+			push
+		);
 	}
 
 	x -= 4;

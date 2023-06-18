@@ -517,10 +517,11 @@ typedef enum
 } manswer_e;
 
 #define MAXMENUMESSAGE 256
+#define MENUMESSAGECLOSE 2
 extern struct menumessage_s
 {
 	boolean active;
-	boolean closing;
+	UINT8 closing;
 
 	INT32 flags;		// MM_
 	const char *header;

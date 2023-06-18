@@ -74,7 +74,7 @@ void M_StartMessage(const char *header, const char *string, void (*routine)(INT3
 	menumessage.answer = MA_NONE;
 	menumessage.fadetimer = 1;
 	menumessage.timer = 0;
-	menumessage.closing = false;
+	menumessage.closing = 0;
 	menumessage.active = true;
 
 	start = 0;
@@ -141,9 +141,15 @@ void M_StopMessage(INT32 choice)
 
 	const char pid = 0;
 
-	menumessage.closing = true;
-	menumessage.timer = 0;
+	// Set the answer.
 	menumessage.answer = choice;
+
+	// Intended length of time.
+	menumessage.closing = (TICRATE/2);
+
+	// This weird operation is necessary so the text flash is consistently timed.
+	menumessage.closing |= ((2*MENUMESSAGECLOSE) - 1);
+
 	M_SetMenuDelay(pid);
 }
 
@@ -151,18 +157,25 @@ boolean M_MenuMessageTick(void)
 {
 	if (menumessage.closing)
 	{
-		if (menumessage.fadetimer > 0)
+		if (menumessage.closing > MENUMESSAGECLOSE)
 		{
-			menumessage.fadetimer--;
+			menumessage.closing--;
 		}
-
-		if (menumessage.fadetimer == 0)
+		else
 		{
-			menumessage.active = false;
-
-			if (menumessage.routine)
+			if (menumessage.fadetimer > 0)
 			{
-				menumessage.routine(menumessage.answer);
+				menumessage.fadetimer--;
+			}
+
+			if (menumessage.fadetimer == 0)
+			{
+				menumessage.active = false;
+
+				if (menumessage.routine)
+				{
+					menumessage.routine(menumessage.answer);
+				}
 			}
 		}
 
