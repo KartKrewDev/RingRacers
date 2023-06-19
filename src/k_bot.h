@@ -138,25 +138,67 @@ fixed_t K_UpdateRubberband(player_t *player);
 fixed_t K_DistanceOfLineFromPoint(fixed_t v1x, fixed_t v1y, fixed_t v2x, fixed_t v2y, fixed_t cx, fixed_t cy);
 
 
-// NOT AVAILABLE FOR LUA
-
-
 /*--------------------------------------------------
-	boolean K_AddBot(UINT8 skin, UINT8 difficulty, UINT8 *newplayernum);
+	boolean K_AddBot(UINT8 skin, UINT8 difficulty, botStyle_e style, UINT8 *p);
 
-		Returns the waypoint actually being used as the finish line.
+		Adds a new bot, using code intended to run on all clients.
 
 	Input Arguments:-
 		skin - Skin number that the bot will use.
 		difficulty - Difficulty level this bot will use.
+		style - Bot style to spawn this bot with, see botStyle_e.
 		newplayernum - Pointer to the last valid player slot number.
 			Is a pointer so that this function can be called multiple times to add more than one bot.
 
 	Return:-
-		true if a bot packet can be sent, otherwise false.
+		true if a bot was added, otherwise false.
 --------------------------------------------------*/
 
-boolean K_AddBot(UINT8 skin, UINT8 difficulty, UINT8 *newplayernum);
+boolean K_AddBot(UINT8 skin, UINT8 difficulty, botStyle_e style, UINT8 *p);
+
+
+// NOT AVAILABLE FOR LUA
+
+
+/*--------------------------------------------------
+	void K_SetBot(UINT8 newplayernum, UINT8 skinnum, UINT8 difficulty, botStyle_e style);
+
+		Sets a player ID to be a new bot directly. Invoked directly
+		by K_AddBot, and indirectly by K_AddBotFromServer by sending
+		a packet.
+
+	Input Arguments:-
+		newplayernum - Player slot number to set as a bot.
+		skin - Skin number that the bot will use.
+		difficulty - Difficulty level this bot will use.
+		style - Bot style to spawn this bot with, see botStyle_e.
+
+	Return:-
+		None
+--------------------------------------------------*/
+
+void K_SetBot(UINT8 newplayernum, UINT8 skinnum, UINT8 difficulty, botStyle_e style);
+
+
+/*--------------------------------------------------
+	boolean K_AddBotFromServer(UINT8 skin, UINT8 difficulty, botStyle_e style, UINT8 *newplayernum);
+
+		Adds a new bot, using a server-sided packet sent to all clients.
+		Using regular K_AddBot wherever possible is better, but this is kept
+		as a back-up measure if this is the only option.
+
+	Input Arguments:-
+		skin - Skin number that the bot will use.
+		difficulty - Difficulty level this bot will use.
+		style - Bot style to spawn this bot with, see botStyle_e.
+		newplayernum - Pointer to the last valid player slot number.
+			Is a pointer so that this function can be called multiple times to add more than one bot.
+
+	Return:-
+		true if a bot can be added via a packet later, otherwise false.
+--------------------------------------------------*/
+
+boolean K_AddBotFromServer(UINT8 skin, UINT8 difficulty, botStyle_e style, UINT8 *p);
 
 
 /*--------------------------------------------------

@@ -313,9 +313,20 @@ struct respawnvars_t
 	boolean init;
 };
 
+typedef enum
+{
+	BOT_STYLE_NORMAL,
+	BOT_STYLE_STAY,
+	//BOT_STYLE_CHASE,
+	//BOT_STYLE_ESCAPE,
+	BOT_STYLE__MAX
+} botStyle_e;
+
 // player_t struct for all bot variables
 struct botvars_t
 {
+	botStyle_e style; // Training mode-style CPU mode
+
 	UINT8 difficulty; // Bot's difficulty setting
 	UINT8 diffincrease; // In GP: bot difficulty will increase this much next round
 	boolean rival; // If true, they're the GP rival

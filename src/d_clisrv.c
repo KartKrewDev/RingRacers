@@ -4010,6 +4010,7 @@ static void Got_AddBot(UINT8 **p, INT32 playernum)
 	INT16 newplayernum;
 	UINT8 skinnum = 0;
 	UINT8 difficulty = DIFFICULTBOT;
+	botStyle_e style = BOT_STYLE_NORMAL;
 
 	if (playernum != serverplayer && !IsPlayerAdmin(playernum))
 	{
@@ -4025,41 +4026,9 @@ static void Got_AddBot(UINT8 **p, INT32 playernum)
 	newplayernum = READUINT8(*p);
 	skinnum = READUINT8(*p);
 	difficulty = READUINT8(*p);
+	style = READUINT8(*p);
 
-	CONS_Debug(DBG_NETPLAY, "addbot: %d\n", newplayernum);
-
-	// Clear player before joining, lest some things get set incorrectly
-	CL_ClearPlayer(newplayernum);
-	G_DestroyParty(newplayernum);
-
-	playeringame[newplayernum] = true;
-	G_AddPlayer(newplayernum);
-	if (newplayernum+1 > doomcom->numslots)
-		doomcom->numslots = (INT16)(newplayernum+1);
-
-	playernode[newplayernum] = servernode;
-
-	// this will permit unlocks
-	memcpy(&players[newplayernum].availabilities, R_GetSkinAvailabilities(false, true), MAXAVAILABILITY*sizeof(UINT8));
-
-	players[newplayernum].splitscreenindex = 0;
-	players[newplayernum].bot = true;
-	players[newplayernum].botvars.difficulty = difficulty;
-	players[newplayernum].lives = 9;
-
-	players[newplayernum].skincolor = skins[skinnum].prefcolor;
-	sprintf(player_names[newplayernum], "%s", skins[skinnum].realname);
-	SetPlayerSkinByNum(newplayernum, skinnum);
-
-	playerconsole[newplayernum] = newplayernum;
-	G_BuildLocalSplitscreenParty(newplayernum);
-
-	if (netgame)
-	{
-		HU_AddChatText(va("\x82*Bot %d has been added to the game", newplayernum+1), false);
-	}
-
-	LUA_HookInt(newplayernum, HOOK(PlayerJoin));
+	K_SetBot(newplayernum, skinnum, difficulty, style);
 }
 
 static boolean SV_AddWaitingPlayers(SINT8 node, UINT8 *availabilities, 
