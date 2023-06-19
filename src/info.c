@@ -632,6 +632,40 @@ char sprnames[NUMSPRITES + 1][5] =
 	"CRAB", // Crystal Abyss mobs
 	"BRNG", // Chaotix Big Ring
 
+	// Lost Colony symbol signs
+	"SYM0",
+	"SYM1",
+	"SYM2",
+	"SYM3",
+	"SYM4",
+	"SYM5",
+	"SYM6",
+	"SYM7",
+	"SYM8",
+	"SYM9",
+	"SYMA",
+	"SYMB",
+	"SYMC",
+	"SYMD",
+	"SYME",
+	"SYMF",
+	"SYMG",
+	"SYMH",
+	"SYMI",
+	"SYMJ",
+	"SYMK",
+	"SYML",
+	"SYMM",
+	"SYMN",
+	"SYMO",
+	"SYMP",
+	"SYMQ",
+	"SYMR",
+	"SYMS",
+	"SYMT",
+	"SYMU",
+	"SYMV",
+
 	"BUMP", // Player/shell bump
 	"FLEN", // Shell hit graphics stuff
 	"CLAS", // items clash
@@ -4603,6 +4637,40 @@ state_t states[NUMSTATES] =
 	{SPR_CRAB,  9,  2, {NULL}, 0, 0, S_FLYINGGARG1}, // S_FLYINGGARG8
 	{SPR_CRAB, 10, -1, {NULL}, 0, 0, S_NULL},        // S_LAMPPOST
 	{SPR_CRAB, 11, -1, {NULL}, 0, 0, S_NULL},        // S_MOSSYTREE
+
+	// Lost Colony symbol signs
+	{SPR_SYM0, FF_ANIMATE|FF_PAPERSPRITE, -1, {NULL}, 15, 2, S_NULL}, // S_SYMBOL_0
+	{SPR_SYM1, FF_ANIMATE|FF_PAPERSPRITE, -1, {NULL}, 15, 2, S_NULL}, // S_SYMBOL_1
+	{SPR_SYM2, FF_ANIMATE|FF_PAPERSPRITE, -1, {NULL}, 15, 2, S_NULL}, // S_SYMBOL_2
+	{SPR_SYM3, FF_ANIMATE|FF_PAPERSPRITE, -1, {NULL}, 15, 2, S_NULL}, // S_SYMBOL_3
+	{SPR_SYM4, FF_ANIMATE|FF_PAPERSPRITE, -1, {NULL}, 15, 2, S_NULL}, // S_SYMBOL_4
+	{SPR_SYM5, FF_ANIMATE|FF_PAPERSPRITE, -1, {NULL}, 15, 2, S_NULL}, // S_SYMBOL_5
+	{SPR_SYM6, FF_ANIMATE|FF_PAPERSPRITE, -1, {NULL}, 15, 2, S_NULL}, // S_SYMBOL_6
+	{SPR_SYM7, FF_ANIMATE|FF_PAPERSPRITE, -1, {NULL}, 15, 2, S_NULL}, // S_SYMBOL_7
+	{SPR_SYM8, FF_ANIMATE|FF_PAPERSPRITE, -1, {NULL}, 15, 2, S_NULL}, // S_SYMBOL_8
+	{SPR_SYM9, FF_ANIMATE|FF_PAPERSPRITE, -1, {NULL}, 15, 2, S_NULL}, // S_SYMBOL_9
+	{SPR_SYMA, FF_ANIMATE|FF_PAPERSPRITE, -1, {NULL}, 15, 2, S_NULL}, // S_SYMBOL_A
+	{SPR_SYMB, FF_ANIMATE|FF_PAPERSPRITE, -1, {NULL}, 15, 2, S_NULL}, // S_SYMBOL_B
+	{SPR_SYMC, FF_ANIMATE|FF_PAPERSPRITE, -1, {NULL}, 15, 2, S_NULL}, // S_SYMBOL_C
+	{SPR_SYMD, FF_ANIMATE|FF_PAPERSPRITE, -1, {NULL}, 15, 2, S_NULL}, // S_SYMBOL_D
+	{SPR_SYME, FF_ANIMATE|FF_PAPERSPRITE, -1, {NULL}, 15, 2, S_NULL}, // S_SYMBOL_E
+	{SPR_SYMF, FF_ANIMATE|FF_PAPERSPRITE, -1, {NULL}, 15, 2, S_NULL}, // S_SYMBOL_F
+	{SPR_SYMG, FF_ANIMATE|FF_PAPERSPRITE, -1, {NULL}, 15, 2, S_NULL}, // S_SYMBOL_G
+	{SPR_SYMH, FF_ANIMATE|FF_PAPERSPRITE, -1, {NULL}, 15, 2, S_NULL}, // S_SYMBOL_H
+	{SPR_SYMI, FF_ANIMATE|FF_PAPERSPRITE, -1, {NULL}, 15, 2, S_NULL}, // S_SYMBOL_I
+	{SPR_SYMJ, FF_ANIMATE|FF_PAPERSPRITE, -1, {NULL}, 15, 2, S_NULL}, // S_SYMBOL_J
+	{SPR_SYMK, FF_ANIMATE|FF_PAPERSPRITE, -1, {NULL}, 15, 2, S_NULL}, // S_SYMBOL_K
+	{SPR_SYML, FF_ANIMATE|FF_PAPERSPRITE, -1, {NULL}, 15, 2, S_NULL}, // S_SYMBOL_L
+	{SPR_SYMM, FF_ANIMATE|FF_PAPERSPRITE, -1, {NULL}, 15, 2, S_NULL}, // S_SYMBOL_M
+	{SPR_SYMN, FF_ANIMATE|FF_PAPERSPRITE, -1, {NULL}, 15, 2, S_NULL}, // S_SYMBOL_N
+	{SPR_SYMO, FF_ANIMATE|FF_PAPERSPRITE, -1, {NULL}, 15, 2, S_NULL}, // S_SYMBOL_O
+	{SPR_SYMP, FF_ANIMATE|FF_PAPERSPRITE, -1, {NULL}, 15, 2, S_NULL}, // S_SYMBOL_P
+	{SPR_SYMQ, FF_ANIMATE|FF_PAPERSPRITE, -1, {NULL}, 15, 2, S_NULL}, // S_SYMBOL_Q
+	{SPR_SYMR, FF_ANIMATE|FF_PAPERSPRITE, -1, {NULL}, 15, 2, S_NULL}, // S_SYMBOL_R
+	{SPR_SYMS, FF_ANIMATE|FF_PAPERSPRITE, -1, {NULL}, 15, 2, S_NULL}, // S_SYMBOL_S
+	{SPR_SYMT, FF_ANIMATE|FF_PAPERSPRITE, -1, {NULL}, 15, 2, S_NULL}, // S_SYMBOL_T
+	{SPR_SYMU, FF_ANIMATE|FF_PAPERSPRITE, -1, {NULL}, 15, 2, S_NULL}, // S_SYMBOL_U
+	{SPR_SYMV, FF_ANIMATE|FF_PAPERSPRITE, -1, {NULL}, 15, 2, S_NULL}, // S_SYMBOL_V
 
 	{SPR_BUMP, FF_FULLBRIGHT, 3, {NULL}, 0, 0, S_BUMP2}, // S_BUMP1
 	{SPR_BUMP, FF_FULLBRIGHT|1, 3, {NULL}, 0, 0, S_BUMP3}, // S_BUMP2
@@ -22791,7 +22859,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		MF_NOGRAVITY|MF_NOCLIPHEIGHT|MF_DONTENCOREMAP, // flags
 		S_NULL          // raisestate
 	},
-	
+
 	{           // MT_SIGNSPARKLE
 		-1,              // doomednum
 		S_SIGNSPARK1,    // spawnstate
@@ -26083,6 +26151,33 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		0,              // damage
 		sfx_None,       // activesound
 		33558528,       // flags
+		S_NULL          // raisestate
+	},
+
+	{           // MT_SYMBOL
+		-1,             // doomednum
+		S_SYMBOL_0,     // spawnstate
+		1000,           // spawnhealth
+		S_NULL,         // seestate
+		sfx_None,       // seesound
+		8,              // reactiontime
+		sfx_None,       // attacksound
+		S_NULL,         // painstate
+		0,              // painchance
+		sfx_None,       // painsound
+		S_NULL,         // meleestate
+		S_NULL,         // missilestate
+		S_NULL,         // deathstate
+		S_NULL,         // xdeathstate
+		sfx_None,       // deathsound
+		0,              // speed
+		43*FRACUNIT,    // radius
+		100*FRACUNIT,   // height
+		0,              // display offset
+		100,            // mass
+		0,              // damage
+		sfx_None,       // activesound
+		MF_NOGRAVITY|MF_SCENERY|MF_NOCLIP|MF_NOCLIPTHING|MF_NOCLIPHEIGHT|MF_DONTENCOREMAP, // flags
 		S_NULL          // raisestate
 	},
 
@@ -29946,7 +30041,7 @@ skincolor_t skincolors[MAXSKINCOLORS] = {
 	{"Position Best 4", {255, 255, 122, 122, 123, 123, 141, 141, 142, 142, 143, 143, 138, 139, 254,  30}, SKINCOLOR_NONE, 0, 0, false}, // SKINCOLOR_POSNUM_BEST4
 	{"Position Best 5", {152, 152, 153, 153, 154, 154, 155, 155, 156, 156, 157, 158, 159, 253, 254,  30}, SKINCOLOR_NONE, 0, 0, false}, // SKINCOLOR_POSNUM_BEST5
 	{"Position Best 6", {181, 181, 182, 182, 183, 183, 184, 184, 185, 185, 186, 186, 187, 187,  29,  30}, SKINCOLOR_NONE, 0, 0, false}, // SKINCOLOR_POSNUM_BEST6
-	
+
 	{"Intermission", {0,80,80,81,81,81,84,85,86,87,246,248,251,26,28,31}, SKINCOLOR_NONE, 0, 0, false} // SKINCOLOR_INTERMISSION
 };
 

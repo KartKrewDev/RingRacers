@@ -6681,6 +6681,9 @@ static void P_MobjSceneryThink(mobj_t *mobj)
 			return;
 		}
 		break;
+	case MT_SYMBOL:
+		Obj_SymbolThink(mobj);
+		break;
 	case MT_VWREF:
 	case MT_VWREB:
 	{
@@ -8056,7 +8059,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 		// cusval: responsible for disappear FX (should only happen once)
 
 		// S_MAGICANBOX: sides, starting angle is set in the spawner (SetRandomFakePlayerSkin)
-		// S_MAGICIANBOX_TOP, S_MAGICIANBOX_BOTTOM: splats with their own offset sprite sets  
+		// S_MAGICIANBOX_TOP, S_MAGICIANBOX_BOTTOM: splats with their own offset sprite sets
 
 		mobj->extravalue2--;
 
@@ -10911,6 +10914,9 @@ mobj_t *P_SpawnMobj(fixed_t x, fixed_t y, fixed_t z, mobjtype_t type)
 		case MT_SPHEREBOX:
 			Obj_RandomItemSpawn(mobj);
 			break;
+		case MT_SYMBOL:
+			Obj_SymbolSpawn(mobj);
+			break;
 		default:
 			break;
 	}
@@ -12239,7 +12245,7 @@ static mobjtype_t P_GetMobjtypeSubstitute(mapthing_t *mthing, mobjtype_t i)
 
 	if ((i == MT_RANDOMITEM) && (gametyperules & (GTR_PAPERITEMS|GTR_CIRCUIT)) == (GTR_PAPERITEMS|GTR_CIRCUIT))
 		return MT_PAPERITEMSPOT;
-	
+
 	return i;
 }
 
@@ -13393,6 +13399,11 @@ static boolean P_SetupSpawnedMapThing(mapthing_t *mthing, mobj_t *mobj)
 	case MT_LOOPCENTERPOINT:
 	{
 		Obj_InitLoopCenter(mobj);
+		break;
+	}
+	case MT_SYMBOL:
+	{
+		Obj_SymbolSetup(mobj, mthing);
 		break;
 	}
 	default:

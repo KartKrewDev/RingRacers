@@ -140,6 +140,11 @@ void Obj_SpawnGachaBomRebound(mobj_t *source, mobj_t *target);
 /* Servant Hand */
 void Obj_ServantHandHandling(player_t *player);
 
+/* Lost Colony symbol signs */
+void Obj_SymbolSpawn(mobj_t *mobj);
+void Obj_SymbolSetup(mobj_t *mobj, mapthing_t *mthing);
+void Obj_SymbolThink(mobj_t *mobj);
+
 #ifdef __cplusplus
 } // extern "C"
 #endif
