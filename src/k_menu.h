@@ -1048,6 +1048,7 @@ typedef enum
 	extras_eggtv,
 	extras_stereo,
 	extras_password,
+	extras_credits,
 } extras_e;
 
 void M_InitExtras(INT32 choice); // init for the struct

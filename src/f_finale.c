@@ -902,9 +902,9 @@ boolean F_CreditResponder(event_t *event)
 void F_StartGameEvaluation(void)
 {
 	// Credits option in extras menu
-	if (cursaveslot == -1)
+	if (grandprixinfo.gp == false)
 	{
-		S_FadeOutStopMusic(MUSICRATE/2);
+		S_FadeMusic(0, MUSICRATE/4);
 		F_StartGameEnd();
 		return;
 	}
