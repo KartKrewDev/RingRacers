@@ -904,7 +904,7 @@ void F_StartGameEvaluation(void)
 	// Credits option in extras menu
 	if (cursaveslot == -1)
 	{
-		S_FadeOutStopMusic(2*MUSICRATE);
+		S_FadeOutStopMusic(MUSICRATE/2);
 		F_StartGameEnd();
 		return;
 	}
@@ -1625,43 +1625,15 @@ void F_EndingDrawer(void)
 // ==========
 void F_StartGameEnd(void)
 {
-	G_SetGamestate(GS_GAMEEND);
+	// Early fadeout to let the sound finish playing
+	F_WipeStartScreen();
+	V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 31);
+	F_WipeEndScreen();
+	F_RunWipe(wipe_level_toblack, wipedefs[wipe_level_toblack], false, "FADEMAP0", false, false);
 
-	gameaction = ga_nothing;
-	paused = false;
-	CON_ToggleOff();
-	S_StopSounds();
-
-	// In case menus are still up?!!
-	M_ClearMenus(true);
-
-	timetonext = TICRATE;
+	nextmap = NEXTMAP_TITLE;
+	G_EndGame();
 }
-
-//
-// F_GameEndDrawer
-//
-void F_GameEndDrawer(void)
-{
-	// this function does nothing
-}
-
-//
-// F_GameEndTicker
-//
-void F_GameEndTicker(void)
-{
-	if (timetonext > 0)
-	{
-		timetonext--;
-	}
-	else
-	{
-		nextmap = NEXTMAP_TITLE;
-		G_EndGame();
-	}
-}
-
 
 // ==============
 //  TITLE SCREEN
