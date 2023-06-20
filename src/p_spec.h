@@ -137,6 +137,12 @@ typedef enum
 
 typedef enum
 {
+	TMAUDIM_FLOAT = 1,
+	TMAUDIM_BORED = 1<<1,
+} textmapaudiencemovementflags_t;
+
+typedef enum
+{
 	TMBCF_BACKANDFORTH = 1,
 	TMBCF_REVERSE      = 1<<1,
 } textmapbattlecapsuleflags_t;
