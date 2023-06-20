@@ -118,6 +118,9 @@ Obj_AudienceInit
 			}
 		}
 
+		audience_bobspeed(mobj) = followers[followerpick].bobspeed;
+		audience_focusplayer(mobj) = MAXPLAYERS;
+
 		audience_mainstate(mobj) =
 			audience_bobamp(mobj) != 0
 				? followers[followerpick].followstate
