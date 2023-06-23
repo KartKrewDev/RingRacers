@@ -7351,10 +7351,6 @@ static void P_InitLevelSettings(void)
 
 	K_TimerReset();
 
-	// special stage tokens, emeralds, and ring total
-	runemeraldmanager = false;
-	emeraldspawndelay = 60*TICRATE;
-
 	nummaprings = 0;
 	nummapboxes = numgotboxes = 0;
 	maptargets = numtargets = 0;

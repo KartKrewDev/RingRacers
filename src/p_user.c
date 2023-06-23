@@ -342,7 +342,6 @@ void P_GiveEmerald(boolean spawnObj)
 	UINT8 em = P_GetNextEmerald();
 
 	S_StartSound(NULL, sfx_cgot); // Got the emerald!
-	emeralds |= (1 << em);
 	stagefailed = false;
 
 	if (spawnObj)

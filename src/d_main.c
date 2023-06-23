@@ -970,7 +970,6 @@ void D_ClearState(void)
 	SplitScreen_OnChange();
 
 	cht_debug = 0;
-	emeralds = 0;
 	memset(&luabanks, 0, sizeof(luabanks));
 
 	// In case someone exits out at the same time they start a time attack run,

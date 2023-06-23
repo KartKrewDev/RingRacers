@@ -140,8 +140,6 @@ boolean usedCheats = false; // Set when a "cheats on" is ever used.
 UINT8 paused;
 UINT8 modeattacking = ATTACKING_NONE;
 boolean imcontinuing = false;
-boolean runemeraldmanager = false;
-UINT16 emeraldspawndelay = 60*TICRATE;
 
 // menu demo things
 UINT8  numDemos      = 0;
@@ -205,7 +203,6 @@ static boolean retryingmodeattack = false;
 
 UINT8 stagefailed; // Used for GEMS BONUS? Also to see if you beat the stage.
 
-UINT16 emeralds;
 INT32 luabanks[NUM_LUABANKS];
 
 // Temporary holding place for nights data for the current map
