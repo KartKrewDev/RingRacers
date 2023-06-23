@@ -340,6 +340,7 @@ void M_ClearSecrets(void);
 void M_ClearStats(void);
 
 boolean M_NotFreePlay(player_t *player);
+UINT16 M_CheckCupEmeralds(UINT8 difficulty);
 
 // Updating conditions and unlockables
 boolean M_ConditionInterpret(const char *password);

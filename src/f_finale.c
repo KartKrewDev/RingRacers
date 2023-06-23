@@ -129,10 +129,6 @@ static UINT8 *waitcolormap; // colormap for the spinning character
 static patch_t *ttuser[TTMAX_USER];
 static INT32 ttuser_count = 0;
 
-static boolean goodending;
-static INT32 sparkloffs[3][2]; // eggrock explosions/blackrock sparkles
-static INT32 sparklloop;
-
 //
 // PROMPT STATE
 //
@@ -889,7 +885,25 @@ boolean F_CreditResponder(event_t *event)
 //  EVALUATION
 // ============
 
+#if 0
+
+static INT32 sparkloffs[3][2]; // eggrock explosions/blackrock sparkles
+static INT32 sparklloop;
+
 #define SPARKLLOOPTIME 7 // must be odd
+
+#endif
+
+typedef enum
+{
+	EVAL_NOTHING,
+	EVAL_CHAOS,
+	EVAL_SUPER,
+	EVAL_PERFECT
+} evaluationtype_t;
+
+static evaluationtype_t evaluationtype;
+UINT16 finaleemeralds = 0;
 
 void F_StartGameEvaluation(void)
 {
@@ -902,20 +916,39 @@ void F_StartGameEvaluation(void)
 	}
 
 	S_FadeOutStopMusic(5*MUSICRATE);
+	S_StopMusicCredit();
 
 	G_SetGamestate(GS_EVALUATION);
 
 	// Just in case they're open ... somehow
 	M_ClearMenus(true);
 
-	goodending = (ALLCHAOSEMERALDS(emeralds));
+	UINT8 difficulty = KARTSPEED_NORMAL;
+	if (grandprixinfo.gp == true)
+	{
+		if (grandprixinfo.masterbots == true)
+			difficulty = KARTGP_MASTER;
+		else
+			difficulty = grandprixinfo.gamespeed;
+	}
+
+	finaleemeralds = M_CheckCupEmeralds(difficulty);
+
+	if (difficulty == KARTSPEED_EASY)
+		evaluationtype = EVAL_NOTHING;
+	else if (!ALLCHAOSEMERALDS(finaleemeralds))
+		evaluationtype = EVAL_CHAOS;
+	else if (!ALLSUPEREMERALDS(finaleemeralds))
+		evaluationtype = EVAL_SUPER;
+	else
+		evaluationtype = EVAL_PERFECT;
 
 	gameaction = ga_nothing;
 	paused = false;
 	CON_ToggleOff();
 
 	finalecount = -1;
-	sparklloop = 0;
+	//sparklloop = 0;
 }
 
 void F_GameEvaluationDrawer(void)
@@ -923,68 +956,155 @@ void F_GameEvaluationDrawer(void)
 	INT32 x, y, i;
 	angle_t fa;
 	INT32 eemeralds_cur;
-	char patchname[7] = "CEMGx0";
-	const char* endingtext;
+	const char *endingtext = NULL, *rankharder = NULL;
 
 	if (marathonmode)
+	{
 		endingtext = "THANKS FOR THE RUN!";
-	else if (goodending)
-		endingtext = "CONGRATULATIONS!";
-	else
+	}
+	else switch (evaluationtype)
+	{
+		case EVAL_PERFECT:
+			endingtext = "CONGRATULATIONS!";
+			break;
+		case EVAL_SUPER:
+			rankharder = "Further challenge awaits!";
+			break;
+		default:
+			rankharder = "...push your rank harder";
+			break;
+		case EVAL_NOTHING:
+			rankharder = "Brave a higher difficulty";
+			break;
+	}
+
+	if (endingtext == NULL)
 		endingtext = "TRY AGAIN...";
+
+	if (usedCheats)
+		rankharder = "Cheated games can't unlock extras!";
 
 	V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 31);
 
+	const INT32 gainaxtime = ((3*TICRATE)/2) - finalecount;
+	const INT32 sealtime = finalecount - (4*TICRATE);
+	INT32 crossfade = 0;
+
 	// Draw all the good crap here.
 
-	if (finalecount > 0 && useBlackRock)
+	x = BASEVIDWIDTH<<(FRACBITS-1);
+	y = (BASEVIDHEIGHT + 16)<<(FRACBITS-1);
+
+	if (useSeal && evaluationtype != EVAL_PERFECT)
 	{
-		INT32 scale = FRACUNIT;
-		patch_t *rockpat;
-		UINT8 *colormap[2] = {NULL, NULL};
-		patch_t *glow;
-		INT32 trans = 0;
+		patch_t *sealpat;
 
-		x = (((BASEVIDWIDTH-82)/2)+11)<<FRACBITS;
-		y = (((BASEVIDHEIGHT-82)/2)+12)<<FRACBITS;
-
-		if (finalecount < 5)
+		if (gainaxtime > 0)
 		{
-			scale = (finalecount<<(FRACBITS-2));
-			x += (30*(FRACUNIT-scale));
-			y += (30*(FRACUNIT-scale));
+			// Stage 1  - blank
+			sealpat = W_CachePatchName(
+				"K_FINB01",
+				PU_PATCH_LOWPRIORITY
+			);
 		}
-
-		if (goodending)
+		else if (sealtime < 0)
 		{
-			rockpat = W_CachePatchName(va("ROID00%.2d", 34 - (finalecount % 35)), PU_PATCH_LOWPRIORITY);
-			glow = W_CachePatchName(va("ENDGLOW%.1d", 2+(finalecount & 1)), PU_PATCH_LOWPRIORITY);
-			x -= FRACUNIT;
+			// Stage 2 - Catcher Glow
+			sealpat = W_CachePatchName(
+				va("K_FINB0%u", 2+(finalecount & 1)),
+				PU_PATCH_LOWPRIORITY
+			);
+
+			crossfade = 10 + sealtime/3;
 		}
 		else
 		{
-			rockpat = W_CachePatchName("ROID0000", PU_PATCH_LOWPRIORITY);
-			glow = W_CachePatchName(va("ENDGLOW%.1d", (finalecount & 1)), PU_PATCH_LOWPRIORITY);
+			// Stage 3 - Star Within The Seal
+			sealpat = W_CachePatchName(
+				"K_FINB05",
+				PU_PATCH_LOWPRIORITY
+			);
+
+#define SEAL_PULSELEN (TICRATE)
+			crossfade = (sealtime % (2*SEAL_PULSELEN)) - SEAL_PULSELEN;
+			if (crossfade < 0)
+				crossfade = -crossfade;
+			crossfade = (crossfade * 10)/SEAL_PULSELEN;
+#undef SEAL_PULSELEN
 		}
 
-		if (finalecount >= 5)
-			trans = (finalecount-5)>>1;
-		if (trans < 10)
-			V_DrawFixedPatch(x, y, scale, trans<<V_ALPHASHIFT, glow, NULL);
-
-		trans = (15-finalecount);
-		if (trans < 0)
-			trans = -trans;
-
-		if (finalecount < 15)
-			colormap[0] = R_GetTranslationColormap(TC_ALLWHITE, 0, GTC_CACHE);
-		V_DrawFixedPatch(x, y, scale, 0, rockpat, colormap[0]);
-		if (trans < 10)
+		if (crossfade != 10)
 		{
-			colormap[1] = R_GetTranslationColormap(TC_BLINK, SKINCOLOR_AQUAMARINE, GTC_CACHE);
-			V_DrawFixedPatch(x, y, scale, trans<<V_ALPHASHIFT, rockpat, colormap[1]);
+			V_DrawFixedPatch(
+				x, y,
+				FRACUNIT,
+				0,
+				sealpat,
+				NULL
+			);
 		}
-		if (goodending)
+
+		if (crossfade > 0)
+		{
+			sealpat = W_CachePatchName(
+				"K_FINB04",
+				PU_PATCH_LOWPRIORITY
+			);
+
+			V_DrawFixedPatch(
+				x, y,
+				FRACUNIT,
+				(10-crossfade)<<V_ALPHASHIFT,
+				sealpat,
+				NULL
+			);
+		}
+		else
+			crossfade = 0;
+
+		// Lens flare
+		if (sealtime < 0 && crossfade < 10)
+		{
+			spritedef_t *sprdef = &sprites[SPR_LENS];
+			INT32 refframes = (sprdef->numframes - 2);
+
+			if (refframes < 0)
+				; // Not enough sprites
+			else if (gainaxtime <= refframes)
+			{
+				// Animation in progress!
+
+				INT32 gainaxframe;
+				if (gainaxtime <= 0)
+				{
+					// Flicker
+					gainaxframe = refframes + (finalecount & 1);
+				}
+				else
+				{
+					// Shwing in
+					gainaxframe = (sprdef->numframes - 2) - gainaxtime;
+				}
+
+				spriteframe_t *sprframe = &sprdef->spriteframes[gainaxframe];
+
+				if (sprframe->lumppat[0] != LUMPERROR)
+				{
+					V_DrawFixedPatch(
+						x, (y - (20*FRACUNIT)),
+						FRACUNIT/2,
+						V_ADD
+							|(crossfade<<V_ALPHASHIFT)
+							|((sprframe->flip & 1) ? V_FLIP : 0),
+						W_CachePatchNum(sprframe->lumppat[0], PU_CACHE),
+						NULL
+					);
+				}
+			}
+		}
+
+#if 0
+		if (evaluationtype == EVAL_PERFECT)
 		{
 			INT32 j = (sparklloop & 1) ? 2 : 3;
 			if (j > (finalecount/SPARKLLOOPTIME))
@@ -1003,32 +1123,93 @@ void F_GameEvaluationDrawer(void)
 				j--;
 			}
 		}
+#endif
+	}
+
+	if ((evaluationtype == EVAL_CHAOS || evaluationtype == EVAL_SUPER)
+		&& finalecount > 0)
+	{
+		INT32 gemtrans;
+
+		if (useSeal && sealtime > 0)
+		{
+			// Stage 3 - aggressive overexposure
+			gemtrans = 3 +  ((10 - crossfade)/3);
+		}
+		else if (useSeal && crossfade > 0)
+		{
+			// Stage 2 - some overexposure
+			gemtrans = (crossfade/3);
+		}
 		else
 		{
-			patch_t *eggrock = W_CachePatchName("ENDEGRK5", PU_PATCH_LOWPRIORITY);
-			V_DrawFixedPatch(x, y, scale, 0, eggrock, colormap[0]);
-			if (trans < 10)
-				V_DrawFixedPatch(x, y, scale, trans<<V_ALPHASHIFT, eggrock, colormap[1]);
-			else if (sparklloop)
-				V_DrawFixedPatch(x, y, scale, (10-sparklloop)<<V_ALPHASHIFT,
-					W_CachePatchName("ENDEGRK0", PU_PATCH_LOWPRIORITY), colormap[1]);
+			// Stage 1 - initial fade in
+			gemtrans = max(10-finalecount, 0);
+		}
+
+		gemtrans <<= V_ALPHASHIFT;
+
+		eemeralds_cur = (finalecount % 360)<<FRACBITS;
+
+		patch_t *empat = W_CachePatchName(
+			(evaluationtype == EVAL_CHAOS) ? "EMEMAP" : "SUPMAP",
+			PU_PATCH_LOWPRIORITY
+		);
+		x -= 6*FRACUNIT;
+		y -= 6*FRACUNIT;
+
+		UINT8 basegem = (evaluationtype == EVAL_SUPER)
+			? 7 : 0;
+
+		for (i = basegem; i < (basegem+7); ++i, eemeralds_cur += (360<<FRACBITS)/7)
+		{
+			if (finaleemeralds & (1<<i))
+				continue;
+
+			fa = (FixedAngle(eemeralds_cur)>>ANGLETOFINESHIFT) & FINEMASK;
+
+			V_DrawFixedPatch(
+				x + (75*FINECOSINE(fa)), y + (75*FINESINE(fa)),
+				FRACUNIT,
+				gemtrans,
+				empat,
+				R_GetTranslationColormap(TC_DEFAULT, SKINCOLOR_CHAOSEMERALD1+(i-basegem), GTC_CACHE)
+			);
 		}
 	}
 
-	eemeralds_cur = (finalecount % 360)<<FRACBITS;
+	V_DrawCenteredGamemodeString(
+		BASEVIDWIDTH/2,
+		15,
+		0,
+		NULL,
+		endingtext
+	);
 
-	for (i = 0; i < 7; ++i)
+	if (rankharder != NULL)
 	{
-		fa = (FixedAngle(eemeralds_cur)>>ANGLETOFINESHIFT) & FINEMASK;
-		x = (BASEVIDWIDTH<<(FRACBITS-1)) + (60*FINECOSINE(fa));
-		y = ((BASEVIDHEIGHT+16)<<(FRACBITS-1)) + (60*FINESINE(fa));
-		eemeralds_cur += (360<<FRACBITS)/7;
+		x = (BASEVIDWIDTH<<(FRACBITS-1)) - \
+		V_StringScaledWidth(
+			FRACUNIT,
+			FRACUNIT,
+			FRACUNIT,
+			0,
+			KART_FONT,
+			rankharder
+		)/2;
 
-		patchname[4] = 'A'+(char)i;
-		V_DrawFixedPatch(x, y, FRACUNIT, ((emeralds & (1<<i)) ? 0 : V_80TRANS), W_CachePatchName(patchname, PU_PATCH_LOWPRIORITY), NULL);
+		V_DrawStringScaled(
+			x,
+			(BASEVIDHEIGHT - 15 - 14) * FRACUNIT,
+			FRACUNIT,
+			FRACUNIT,
+			FRACUNIT,
+			0,
+			NULL,
+			KART_FONT,
+			rankharder
+		);
 	}
-
-	V_DrawCreditString((BASEVIDWIDTH - V_CreditStringWidth(endingtext))<<(FRACBITS-1), (BASEVIDHEIGHT-100)<<(FRACBITS-1), 0, endingtext);
 
 	if (marathonmode)
 	{
@@ -1048,20 +1229,12 @@ void F_GameEvaluationTicker(void)
 		return;
 	}
 
-	if (!useBlackRock)
+#if 0
+	if (!useSeal)
 		;
-	else if (!goodending)
+	else if (evaluationtype != EVAL_PERFECT)
 	{
-		if (sparklloop)
-			sparklloop--;
-
-		if (finalecount == (5*TICRATE)/2
-			|| finalecount == (7*TICRATE)/2
-			|| finalecount == ((7*TICRATE)/2)+5)
-		{
-			S_StartSound(NULL, sfx_s3k5c);
-			sparklloop = 10;
-		}
+		;
 	}
 	else if (++sparklloop == SPARKLLOOPTIME) // time to roll the randomisation again
 	{
@@ -1077,6 +1250,7 @@ void F_GameEvaluationTicker(void)
 		sparkloffs[0][1] = (30<<FRACBITS) + workingradius*FINESINE(workingangle);
 		sparklloop = 0;
 	}
+#endif
 
 	if (finalecount == 5*TICRATE)
 	{
@@ -1086,13 +1260,6 @@ void F_GameEvaluationTicker(void)
 
 			M_UpdateUnlockablesAndExtraEmblems(true, true);
 			G_SaveGameData();
-		}
-		else
-		{
-			HU_SetCEchoFlags(V_YELLOWMAP);
-			HU_SetCEchoDuration(6);
-			HU_DoCEcho("\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\Cheated games can't unlock extras!");
-			S_StartSound(NULL, sfx_s3k68);
 		}
 	}
 }

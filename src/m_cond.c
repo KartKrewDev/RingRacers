@@ -738,6 +738,31 @@ boolean M_NotFreePlay(player_t *player)
 	return false;
 }
 
+UINT16 M_CheckCupEmeralds(UINT8 difficulty)
+{
+	if (difficulty == 0)
+		return 0;
+
+	if (difficulty >= KARTGP_MAX)
+		difficulty = KARTGP_MASTER;
+
+	cupheader_t *cup;
+	UINT16 ret = 0;
+
+	for (cup = kartcupheaders; cup; cup = cup->next)
+	{
+		if (cup->emeraldnum == 0)
+			continue;
+
+		if (cup->windata[difficulty].got_emerald == false)
+			continue;
+
+		ret |= 1<<(cup->emeraldnum-1);
+	}
+
+	return ret;
+}
+
 // See also M_GetConditionString
 boolean M_CheckCondition(condition_t *cn, player_t *player)
 {
@@ -791,30 +816,12 @@ boolean M_CheckCondition(condition_t *cn, player_t *player)
 		case UC_ALLSUPER:
 		case UC_ALLEMERALDS:
 		{
-			cupheader_t *cup;
 			UINT16 ret = 0;
-			UINT8 i;
 
 			if (gamestate == GS_LEVEL)
 				return false; // this one could be laggy with many cups available
 
-			for (cup = kartcupheaders; cup; cup = cup->next)
-			{
-				if (cup->emeraldnum == 0)
-					continue;
-
-				i = cn->requirement;
-				for (i = cn->requirement; i < KARTGP_MAX; i++)
-				{
-					if (cup->windata[i].got_emerald == true)
-						break;
-				}
-
-				if (i == KARTGP_MAX)
-					continue;
-
-				ret |= 1<<(cup->emeraldnum-1);
-			}
+			ret = M_CheckCupEmeralds(cn->requirement);
 
 			if (cn->type == UC_ALLCHAOS)
 				return ALLCHAOSEMERALDS(ret);

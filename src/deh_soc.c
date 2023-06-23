@@ -3120,9 +3120,9 @@ void readmaincfg(MYFILE *f, boolean mainfile)
 				if (creditscutscene > 128)
 					creditscutscene = 128;
 			}
-			else if (fastcmp(word, "USEBLACKROCK"))
+			else if (fastcmp(word, "USESEAL"))
 			{
-				useBlackRock = (UINT8)(value || word2[0] == 'T' || word2[0] == 'Y');
+				useSeal = (UINT8)(value || word2[0] == 'T' || word2[0] == 'Y');
 			}
 			else if (fastcmp(word, "LOOPTITLE"))
 			{
