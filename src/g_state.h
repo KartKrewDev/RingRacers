@@ -39,7 +39,6 @@ typedef enum
 
 	// Hardcoded fades or other fading methods
 	GS_INTRO,           // introduction
-	GS_ENDING,          // currently shared between bad and good endings
 	GS_CUTSCENE,        // custom cutscene
 
 	// Not fadable

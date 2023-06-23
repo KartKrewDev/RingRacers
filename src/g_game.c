@@ -1785,7 +1785,7 @@ boolean G_Responder(event_t *ev)
 			return true;
 		}
 	}
-	else if (gamestate == GS_CREDITS || gamestate == GS_ENDING) // todo: keep ending here?
+	else if (gamestate == GS_CREDITS)
 	{
 		if (HU_Responder(ev))
 		{
@@ -2325,12 +2325,6 @@ void G_Ticker(boolean run)
 		case GS_INTRO:
 			if (run)
 				F_IntroTicker();
-			break;
-
-		case GS_ENDING:
-			if (run)
-				F_EndingTicker();
-			HU_Ticker();
 			break;
 
 		case GS_CUTSCENE:
@@ -3386,10 +3380,6 @@ void G_ExitLevel(void)
 		HU_ClearTitlecardCEcho();
 
 		// Don't save demos immediately here! Let standings write first
-	}
-	else if (gamestate == GS_ENDING)
-	{
-		F_StartCredits();
 	}
 	else if (gamestate == GS_CREDITS)
 	{

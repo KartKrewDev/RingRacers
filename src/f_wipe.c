@@ -65,7 +65,6 @@ UINT8 wipedefs[NUMWIPEDEFS] = {
 	0,  // wipe_evaluation_toblack
 	0,  // wipe_ceremony_toblack
 	UINT8_MAX, // wipe_intro_toblack (hardcoded)
-	99, // wipe_ending_toblack (hardcoded)
 	99, // wipe_cutscene_toblack (hardcoded)
 
 	72, // wipe_encore_toinvert
@@ -81,7 +80,6 @@ UINT8 wipedefs[NUMWIPEDEFS] = {
 	0,  // wipe_evaluation_final
 	0,  // wipe_ceremony_final
 	99, // wipe_intro_final (hardcoded)
-	99, // wipe_ending_final (hardcoded)
 	99  // wipe_cutscene_final (hardcoded)
 };
 
@@ -98,7 +96,6 @@ static boolean g_wipedef_toblack[NUMWIPEDEFS] = {
 	true, // wipe_evaluation_toblack
 	true, // wipe_ceremony_toblack
 	true, // wipe_intro_toblack (hardcoded)
-	true, // wipe_ending_toblack (hardcoded)
 	true, // wipe_cutscene_toblack (hardcoded)
 
 	false, // wipe_encore_toinvert
@@ -114,7 +111,6 @@ static boolean g_wipedef_toblack[NUMWIPEDEFS] = {
 	true, // wipe_evaluation_final
 	true, // wipe_ceremony_final
 	true, // wipe_intro_final (hardcoded)
-	true, // wipe_ending_final (hardcoded)
 	true  // wipe_cutscene_final (hardcoded)
 };
 
@@ -131,7 +127,6 @@ static boolean g_wipedef_toinvert[NUMWIPEDEFS] = {
 	false, // wipe_evaluation_toblack
 	false, // wipe_ceremony_toblack
 	false, // wipe_intro_toblack (hardcoded)
-	false, // wipe_ending_toblack (hardcoded)
 	false, // wipe_cutscene_toblack (hardcoded)
 
 	true, // wipe_encore_toinvert
@@ -147,7 +142,6 @@ static boolean g_wipedef_toinvert[NUMWIPEDEFS] = {
 	false, // wipe_evaluation_final
 	false, // wipe_ceremony_final
 	false, // wipe_intro_final (hardcoded)
-	false, // wipe_ending_final (hardcoded)
 	false  // wipe_cutscene_final (hardcoded)
 };
 
@@ -164,7 +158,6 @@ static boolean g_wipedef_towhite[NUMWIPEDEFS] = {
 	false, // wipe_evaluation_toblack
 	false, // wipe_ceremony_toblack
 	false, // wipe_intro_toblack (hardcoded)
-	false, // wipe_ending_toblack (hardcoded)
 	false, // wipe_cutscene_toblack (hardcoded)
 
 	false, // wipe_encore_toinvert
@@ -180,7 +173,6 @@ static boolean g_wipedef_towhite[NUMWIPEDEFS] = {
 	false, // wipe_evaluation_final
 	false, // wipe_ceremony_final
 	false, // wipe_intro_final (hardcoded)
-	false, // wipe_ending_final (hardcoded)
 	false  // wipe_cutscene_final (hardcoded)
 };
 
@@ -197,7 +189,6 @@ static boolean g_wipedef_crossfade[NUMWIPEDEFS] = {
 	false, // wipe_evaluation_toblack
 	false, // wipe_ceremony_toblack
 	false, // wipe_intro_toblack (hardcoded)
-	false, // wipe_ending_toblack (hardcoded)
 	false, // wipe_cutscene_toblack (hardcoded)
 
 	false, // wipe_encore_toinvert
@@ -213,7 +204,6 @@ static boolean g_wipedef_crossfade[NUMWIPEDEFS] = {
 	true, // wipe_evaluation_final
 	true, // wipe_ceremony_final
 	true, // wipe_intro_final (hardcoded)
-	true, // wipe_ending_final (hardcoded)
 	true  // wipe_cutscene_final (hardcoded)
 };
 

@@ -52,9 +52,6 @@ void F_GameEvaluationDrawer(void);
 void F_StartGameEvaluation(void);
 void F_GameEvaluationTicker(void);
 
-void F_EndingTicker(void);
-void F_EndingDrawer(void);
-
 void F_CreditTicker(void);
 void F_CreditDrawer(void);
 
@@ -173,7 +170,6 @@ enum
 	wipe_evaluation_toblack,
 	wipe_ceremony_toblack,
 	wipe_intro_toblack,
-	wipe_ending_toblack,
 	wipe_cutscene_toblack,
 
 	// Specialized wipes
@@ -191,7 +187,6 @@ enum
 	wipe_evaluation_final,
 	wipe_ceremony_final,
 	wipe_intro_final,
-	wipe_ending_final,
 	wipe_cutscene_final,
 
 	// custom intermissions
