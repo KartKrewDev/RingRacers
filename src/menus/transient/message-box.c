@@ -148,11 +148,16 @@ void M_StopMessage(INT32 choice)
 	// Set the answer.
 	menumessage.answer = choice;
 
+#if 1
+	// The below was cool, but it felt annoyingly unresponsive.
+	menumessage.closing = MENUMESSAGECLOSE+1;
+#else
 	// Intended length of time.
 	menumessage.closing = (TICRATE/2);
 
 	// This weird operation is necessary so the text flash is consistently timed.
 	menumessage.closing |= ((2*MENUMESSAGECLOSE) - 1);
+#endif
 
 	M_SetMenuDelay(pid);
 }
