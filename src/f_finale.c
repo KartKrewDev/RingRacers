@@ -885,15 +885,6 @@ boolean F_CreditResponder(event_t *event)
 //  EVALUATION
 // ============
 
-#if 0
-
-static INT32 sparkloffs[3][2]; // eggrock explosions/blackrock sparkles
-static INT32 sparklloop;
-
-#define SPARKLLOOPTIME 7 // must be odd
-
-#endif
-
 typedef enum
 {
 	EVAL_NOTHING,
@@ -948,7 +939,6 @@ void F_StartGameEvaluation(void)
 	CON_ToggleOff();
 
 	finalecount = -1;
-	//sparklloop = 0;
 }
 
 void F_GameEvaluationDrawer(void)
@@ -960,12 +950,13 @@ void F_GameEvaluationDrawer(void)
 
 	if (marathonmode)
 	{
-		endingtext = "THANKS FOR THE RUN!";
+		endingtext = "COOL RUN!";
 	}
 	else switch (evaluationtype)
 	{
 		case EVAL_PERFECT:
-			endingtext = "CONGRATULATIONS!";
+			endingtext = "CONGRATULATIONS";
+			rankharder = "You're too cool!";
 			break;
 		case EVAL_SUPER:
 			rankharder = "Further challenge awaits!";
@@ -995,7 +986,38 @@ void F_GameEvaluationDrawer(void)
 	x = BASEVIDWIDTH<<(FRACBITS-1);
 	y = (BASEVIDHEIGHT + 16)<<(FRACBITS-1);
 
-	if (useSeal && evaluationtype != EVAL_PERFECT)
+	if (!useSeal)
+		;
+	else if (evaluationtype == EVAL_PERFECT)
+	{
+		// Symmetrical slow fade in and out.
+		if (finalecount > 5*TICRATE)
+			crossfade = (10*TICRATE) - finalecount;
+		else
+			crossfade = finalecount;
+
+		crossfade = 10 - (crossfade * 10)/TICRATE;
+		if (crossfade < 0)
+			crossfade = 0;
+
+		// Imagery of a shattered pink palanquin resting in the flowers
+		// (abandoned cage for a gemstone far above Earth's station)
+		// ~toast 240623
+		if (crossfade != 10)
+		{
+			V_DrawFixedPatch(
+				x, y,
+				FRACUNIT,
+				crossfade<<V_ALPHASHIFT,
+				W_CachePatchName(
+					"K_FING01",
+					PU_PATCH_LOWPRIORITY
+				),
+				NULL
+			);
+		}
+	}
+	else
 	{
 		patch_t *sealpat;
 
@@ -1102,28 +1124,6 @@ void F_GameEvaluationDrawer(void)
 				}
 			}
 		}
-
-#if 0
-		if (evaluationtype == EVAL_PERFECT)
-		{
-			INT32 j = (sparklloop & 1) ? 2 : 3;
-			if (j > (finalecount/SPARKLLOOPTIME))
-				j = (finalecount/SPARKLLOOPTIME);
-			while (j)
-			{
-				if (j > 1 || sparklloop >= 2)
-				{
-					// if j == 0 - alternate between 0 and 1
-					//         1 -                   1 and 2
-					//         2 -                   2 and not rendered
-					V_DrawFixedPatch(x+sparkloffs[j-1][0], y+sparkloffs[j-1][1], FRACUNIT, 0,
-						W_CachePatchName(va("ENDSPKL%.1d", (j - ((sparklloop & 1) ? 0 : 1))), PU_PATCH),
-						R_GetTranslationColormap(TC_DEFAULT, SKINCOLOR_AQUAMARINE, GTC_CACHE));
-				}
-				j--;
-			}
-		}
-#endif
 	}
 
 	if ((evaluationtype == EVAL_CHAOS || evaluationtype == EVAL_SUPER)
@@ -1228,29 +1228,6 @@ void F_GameEvaluationTicker(void)
 		F_StartGameEnd();
 		return;
 	}
-
-#if 0
-	if (!useSeal)
-		;
-	else if (evaluationtype != EVAL_PERFECT)
-	{
-		;
-	}
-	else if (++sparklloop == SPARKLLOOPTIME) // time to roll the randomisation again
-	{
-		angle_t workingangle = FixedAngle((M_RandomKey(360))<<FRACBITS)>>ANGLETOFINESHIFT;
-		fixed_t workingradius = M_RandomKey(26);
-
-		sparkloffs[2][0] = sparkloffs[1][0];
-		sparkloffs[2][1] = sparkloffs[1][1];
-		sparkloffs[1][0] = sparkloffs[0][0];
-		sparkloffs[1][1] = sparkloffs[0][1];
-
-		sparkloffs[0][0] = (30<<FRACBITS) + workingradius*FINECOSINE(workingangle);
-		sparkloffs[0][1] = (30<<FRACBITS) + workingradius*FINESINE(workingangle);
-		sparklloop = 0;
-	}
-#endif
 
 	if (finalecount == 5*TICRATE)
 	{
