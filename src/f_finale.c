@@ -890,7 +890,8 @@ typedef enum
 	EVAL_NOTHING,
 	EVAL_CHAOS,
 	EVAL_SUPER,
-	EVAL_PERFECT
+	EVAL_PERFECT,
+	EVAL_MAX
 } evaluationtype_t;
 
 static evaluationtype_t evaluationtype;
@@ -899,7 +900,12 @@ UINT16 finaleemeralds = 0;
 void F_StartGameEvaluation(void)
 {
 	// Credits option in extras menu
-	if (grandprixinfo.gp == false)
+	if (
+		grandprixinfo.gp == false
+#ifdef DEVELOP
+		&& cv_soundtest.value == 0
+#endif
+	)
 	{
 		S_FadeMusic(0, MUSICRATE/4);
 		F_StartGameEnd();
@@ -925,6 +931,11 @@ void F_StartGameEvaluation(void)
 
 	finaleemeralds = M_CheckCupEmeralds(difficulty);
 
+#ifdef DEVELOP
+	if (cv_soundtest.value != 0)
+		evaluationtype = (cv_soundtest.value-1) % EVAL_MAX;
+	else
+#endif
 	if (difficulty == KARTSPEED_EASY)
 		evaluationtype = EVAL_NOTHING;
 	else if (!ALLCHAOSEMERALDS(finaleemeralds))
