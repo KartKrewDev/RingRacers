@@ -101,24 +101,34 @@ Obj_AudienceInit
 		mobj->destscale = FixedMul(3*mobj->destscale, followers[followerpick].scale);
 		P_SetScale(mobj, mobj->destscale);
 
-		audience_mainstate(mobj) = followers[followerpick].followstate;
-
-		P_SetMobjState(mobj, audience_mainstate(mobj));
-		if (P_MobjWasRemoved(mobj))
-			return;
-
-		// The following is derived from the default bobamp
-		if (mobj->type != MT_EMBLEM && !(mobj->flags & MF_NOGRAVITY) && followers[followerpick].bobamp < 4*FRACUNIT)
+		if (mobj->flags2 & MF2_BOSSNOTRAP)
 		{
-			audience_bobamp(mobj) = 4*mobj->scale;
+			audience_bobamp(mobj) = 0;
 		}
 		else
 		{
-			audience_bobamp(mobj) = FixedMul(mobj->scale, followers[followerpick].bobamp);
+			// The following is derived from the default bobamp
+			if (mobj->type != MT_EMBLEM && !(mobj->flags & MF_NOGRAVITY) && followers[followerpick].bobamp < 4*FRACUNIT)
+			{
+				audience_bobamp(mobj) = 4*mobj->scale;
+			}
+			else
+			{
+				audience_bobamp(mobj) = FixedMul(mobj->scale, followers[followerpick].bobamp);
+			}
 		}
 
 		audience_bobspeed(mobj) = followers[followerpick].bobspeed;
 		audience_focusplayer(mobj) = MAXPLAYERS;
+
+		audience_mainstate(mobj) =
+			audience_bobamp(mobj) != 0
+				? followers[followerpick].followstate
+				: followers[followerpick].idlestate;
+
+		P_SetMobjState(mobj, audience_mainstate(mobj));
+		if (P_MobjWasRemoved(mobj))
+			return;
 
 		if (P_RandomChance(PR_RANDOMAUDIENCE, FRACUNIT/2))
 		{

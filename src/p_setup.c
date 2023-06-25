@@ -6959,7 +6959,11 @@ static void P_ConvertBinaryThingTypes(void)
 			mapthings[i].args[0] = !!(mapthings[i].options & MTF_AMBUSH);
 			break;
 		case 1488: // Follower Audience (unfortunately numbered)
-			mapthings[i].args[2] = !!(mapthings[i].options & MTF_OBJECTSPECIAL);
+			if (mapthings[i].options & MTF_OBJECTSPECIAL)
+				mapthings[i].args[2] |= TMAUDIM_FLOAT;
+			if (mapthings[i].options & MTF_EXTRA)
+				mapthings[i].args[2] |= TMAUDIM_BORED;
+
 			mapthings[i].args[3] = !!(mapthings[i].options & MTF_AMBUSH);
 			break;
 		case 1500: //Glaregoyle

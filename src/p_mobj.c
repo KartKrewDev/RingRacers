@@ -13192,9 +13192,14 @@ static boolean P_SetupSpawnedMapThing(mapthing_t *mthing, mobj_t *mobj)
 	}
 	case MT_RANDOMAUDIENCE:
 	{
-		if (mthing->args[2] != 0)
+		if (mthing->args[2] & TMAUDIM_FLOAT)
 		{
 			mobj->flags |= MF_NOGRAVITY;
+		}
+
+		if (mthing->args[2] & TMAUDIM_BORED)
+		{
+			mobj->flags2 |= MF2_BOSSNOTRAP;
 		}
 
 		if (mthing->args[3] != 0)
