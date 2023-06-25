@@ -5719,6 +5719,57 @@ void G_LoadGame(void)
 	CON_ToggleOff();
 }
 
+void G_GetBackupCupData(boolean actuallygetdata)
+{
+	if (actuallygetdata == false)
+	{
+		cupsavedata.cup = NULL;
+		return;
+	}
+
+	char vcheck[VERSIONSIZE+1];
+	char savename[255];
+	UINT8 versionMinor;
+	savebuffer_t save = {0};
+
+	//if (makelivebackup)
+		strcpy(savename, gpbackup);
+	//else
+		//sprintf(savename, savegamename, cursaveslot);
+
+	if (P_SaveBufferFromFile(&save, savename) == false)
+	{
+		cupsavedata.cup = NULL;
+		return;
+	}
+
+	versionMinor = READUINT8(save.p);
+
+	memset(vcheck, 0, sizeof (vcheck));
+	sprintf(vcheck, "version %d", VERSION);
+
+	if (versionMinor != SAV_VERSIONMINOR
+	|| memcmp(save.p, vcheck, VERSIONSIZE))
+	{
+		cupsavedata.cup = NULL;
+		P_SaveBufferFree(&save);
+		return; // bad version
+	}
+	save.p += VERSIONSIZE;
+
+	P_GetBackupCupData(&save);
+
+	if (cv_dummygpdifficulty.value != cupsavedata.difficulty
+	|| !!cv_dummygpencore.value != cupsavedata.encore)
+	{
+		// Still not compatible.
+		cupsavedata.cup = NULL;
+	}
+
+	// done
+	P_SaveBufferFree(&save);
+}
+
 //
 // G_SaveGame
 // Saves your game.

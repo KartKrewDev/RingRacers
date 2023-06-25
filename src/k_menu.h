@@ -19,6 +19,7 @@
 #include "command.h"
 #include "doomstat.h" // MAXSPLITSCREENPLAYERS
 #include "g_demo.h"	//menudemo_t
+#include "p_saveg.h" // savedata_cup_t
 #include "k_profiles.h"	// profile data & functions
 #include "g_input.h"	// gc_
 #include "i_threads.h"

@@ -48,6 +48,7 @@
 #include "k_zvote.h"
 
 savedata_t savedata;
+savedata_cup_t cupsavedata;
 
 // Block UINT32s to attempt to ensure that the correct data is
 // being sent and received
@@ -5405,6 +5406,46 @@ static inline void P_ArchiveMisc(savebuffer_t *save)
 	if (!(marathonmode & MA_INGAME))
 		writetime += TICRATE*5; // live event backup penalty because we don't know how long it takes to get to the next map
 	WRITEUINT32(save->p, writetime);
+}
+
+void P_GetBackupCupData(savebuffer_t *save)
+{
+	char testname[sizeof(timeattackfolder)];
+
+	READSTRINGN(save->p, testname, sizeof(testname));
+
+	if (strcmp(testname, timeattackfolder))
+	{
+		cupsavedata.cup = NULL;
+		return;
+	}
+
+	// Grand Prix information
+
+	cupsavedata.difficulty = READUINT8(save->p);
+	cupsavedata.encore = (boolean)READUINT8(save->p);
+	boolean masterbots = (boolean)READUINT8(save->p);
+
+	if (masterbots == true)
+		cupsavedata.difficulty = KARTGP_MASTER;
+
+	// Find the relevant cup.
+	char cupname[MAXCUPNAME];
+	READSTRINGL(save->p, cupname, sizeof(cupname));
+	UINT32 hash = quickncasehash(cupname, MAXCUPNAME);
+
+	for (cupsavedata.cup = kartcupheaders; cupsavedata.cup; cupsavedata.cup = cupsavedata.cup->next)
+	{
+		if (cupsavedata.cup->namehash != hash)
+			continue;
+
+		if (strcmp(cupsavedata.cup->name, cupname))
+			continue;
+
+		break;
+	}
+
+	// Okay, no further! We've got everything we need.
 }
 
 static boolean P_UnArchiveSPGame(savebuffer_t *save)

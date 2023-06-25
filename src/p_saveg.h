@@ -34,6 +34,7 @@ extern "C" {
 // Local Play
 void P_SaveGame(savebuffer_t *save);
 boolean P_LoadGame(savebuffer_t *save);
+void P_GetBackupCupData(savebuffer_t *save);
 
 // Online
 void P_SaveNetGame(savebuffer_t *save, boolean resending);
@@ -65,6 +66,15 @@ struct savedata_t
 };
 
 extern savedata_t savedata;
+
+struct savedata_cup_t
+{
+	cupheader_t *cup;
+	UINT8 difficulty;
+	boolean encore;
+};
+
+extern savedata_cup_t cupsavedata;
 
 struct savebuffer_t
 {

@@ -2368,6 +2368,7 @@ static void M_DrawCupTitle(INT16 y, levelsearch_t *levelsearch)
 void M_DrawCupSelect(void)
 {
 	UINT8 i, j, temp = 0;
+	INT16 x, y;
 	UINT8 *colormap = NULL;
 	cupwindata_t *windata = NULL;
 	levelsearch_t templevelsearch = levellist.levelsearch; // full copy
@@ -2378,7 +2379,6 @@ void M_DrawCupSelect(void)
 		{
 			size_t id = (i + (j * CUPMENU_COLUMNS)) + (cupgrid.pageno * (CUPMENU_COLUMNS * CUPMENU_ROWS));
 			patch_t *patch = NULL;
-			INT16 x, y;
 			INT16 icony = 7;
 			char status =  'A';
 			char monitor;
@@ -2462,6 +2462,13 @@ void M_DrawCupSelect(void)
 			{
 				V_DrawScaledPatch(x + 8, y + icony, 0, W_CachePatchName(templevelsearch.cup->icon, PU_CACHE));
 				V_DrawScaledPatch(x + 8, y + icony, 0, W_CachePatchName("CUPBOX", PU_CACHE));
+
+				if (cupgrid.grandprix == true
+				&& templevelsearch.cup == cupsavedata.cup
+				&& id != CUPMENU_CURSORID)
+				{
+					V_DrawScaledPatch(x + 32, y + 32, 0, W_CachePatchName("CUPBKUP1", PU_CACHE));
+				}
 
 				if (!windata)
 					;
@@ -2562,12 +2569,19 @@ void M_DrawCupSelect(void)
 		}
 	}
 
-	V_DrawScaledPatch(14 + (cupgrid.x*42) - 4,
-		20 + (cupgrid.y*44) - 1 - (24*menutransition.tics),
-		0, W_CachePatchName("CUPCURS", PU_CACHE)
-	);
+	x = 14 + (cupgrid.x*42);
+	y = 20 + (cupgrid.y*44) - (30*menutransition.tics);
+
+	V_DrawScaledPatch(x - 4, y - 1, 0, W_CachePatchName("CUPCURS", PU_CACHE));
 
 	templevelsearch.cup = cupgrid.builtgrid[CUPMENU_CURSORID];
+
+	if (cupgrid.grandprix == true
+	&& templevelsearch.cup != NULL
+	&& templevelsearch.cup == cupsavedata.cup)
+	{
+		V_DrawScaledPatch(x + 32, y + 32, 0, W_CachePatchName("CUPBKUP2", PU_CACHE));
+	}
 
 	V_DrawFill(0, 146 + (24*menutransition.tics), BASEVIDWIDTH, 54, 31);
 	M_DrawCupPreview(146 + (24*menutransition.tics), &templevelsearch);

@@ -5,10 +5,7 @@
 #include "../r_skins.h"
 #include "../s_sound.h"
 #include "../k_grandprix.h" // K_CanChangeRules
-#include "../k_podium.h" // K_StartCeremony
 #include "../m_cond.h" // Condition Sets
-#include "../r_local.h" // SplitScreen_OnChange
-#include "../m_misc.h" // FIL_FileExists
 
 //#define CHARSELECT_DEVICEDEBUG
 
@@ -488,123 +485,9 @@ void M_CharacterSelectInit(void)
 }
 
 
-static void M_GPBackup(INT32 choice)
-{
-	if (choice == MA_YES)
-	{
-		G_LoadGame();
-
-		if (savedata.lives != 0)
-		{
-			// Only do this after confirming savegame is ok
-			const UINT8 ssplayers = 0;
-
-			{
-				CV_StealthSetValue(&cv_playercolor[0], savedata.skincolor);
-
-				// follower
-				if (savedata.followerskin < 0 || savedata.followerskin >= numfollowers)
-					CV_StealthSet(&cv_follower[0], "None");
-				else
-					CV_StealthSet(&cv_follower[0], followers[savedata.followerskin].name);
-
-				// finally, call the skin[x] console command.
-				// This will call SendNameAndColor which will synch everything we sent here and apply the changes!
-
-				CV_StealthSet(&cv_skin[0], skins[savedata.skin].name);
-
-				// ...actually, let's do this last - Skin_OnChange has some return-early occasions
-				// follower color
-				CV_SetValue(&cv_followercolor[0], savedata.followercolor);
-			}
-
-			paused = false;
-
-			S_StopMusicCredit();
-
-			if (cv_maxconnections.value < ssplayers+1)
-				CV_SetValue(&cv_maxconnections, ssplayers+1);
-
-			if (splitscreen != ssplayers)
-			{
-				splitscreen = ssplayers;
-				SplitScreen_OnChange();
-			}
-
-			UINT8 entry = roundqueue.position-1;
-
-			SV_StartSinglePlayerServer(roundqueue.entries[entry].gametype, false);
-
-			// Skip Bonus rounds.
-			if (roundqueue.entries[entry].gametype != roundqueue.entries[0].gametype
-				&& roundqueue.entries[entry].rankrestricted == false)
-			{
-				G_GetNextMap(); // updates position in the roundqueue
-				entry = roundqueue.position-1;
-			}
-
-			if (entry < roundqueue.size)
-			{
-				D_MapChange(
-					roundqueue.entries[entry].mapnum + 1,
-					roundqueue.entries[entry].gametype,
-					roundqueue.entries[entry].encore,
-					true,
-					1,
-					false,
-					roundqueue.entries[entry].rankrestricted
-				);
-			}
-			else
-			{
-				if (K_StartCeremony() == false)
-				{
-					// Accomodate our buffoonery with the artificial fade.
-					wipegamestate = -1;
-
-					M_StartMessage(
-						"Grand Prix Backup",
-						"The session is concluded!\n"
-						"You exited a final Bonus Round,\n"
-						"and the Podium failed to load.\n",
-						NULL, MM_NOTHING, NULL, NULL);
-
-					G_HandleSaveLevel(true);
-
-					return;
-				}
-			}
-
-			M_ClearMenus(true);
-
-			// We can't put it deeper in the menuflow due to lack of guaranteed setup
-			restoreMenu = &MainDef;
-		}
-
-		return;
-	}
-
-	M_CharacterSelect(-1);
-}
-
 void M_CharacterSelect(INT32 choice)
 {
-	if (currentMenu == &MainDef
-		&& choice != -1
-		&& FIL_FileExists(gpbackup))
-	{
-		M_StartMessage(
-			"Grand Prix Backup",
-			"A progress backup was found.\n"
-			"Do you want to resurrect your\n"
-			"last Grand Prix session?\n",
-			M_GPBackup,
-			MM_YESNO,
-			"Yes, let's try again",
-			"No, play another way");
-		return;
-	}
-
+	(void)choice;
 	PLAY_CharSelectDef.music = currentMenu->music;
 	PLAY_CharSelectDef.prevMenu = currentMenu;
 	M_SetupNextMenu(&PLAY_CharSelectDef, false);

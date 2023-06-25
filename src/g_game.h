@@ -190,6 +190,7 @@ boolean G_IsTitleCardAvailable(void);
 void G_HandleSaveLevel(boolean removecondition);
 void G_SaveGame(void);
 void G_LoadGame(void);
+void G_GetBackupCupData(boolean actuallygetdata);
 
 void G_SaveGameData(void);
 void G_DirtyGameData(void);
