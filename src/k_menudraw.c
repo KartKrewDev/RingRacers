@@ -2587,6 +2587,20 @@ void M_DrawCupSelect(void)
 	M_DrawCupPreview(146 + (24*menutransition.tics), &templevelsearch);
 
 	M_DrawCupTitle(120 - (24*menutransition.tics), &templevelsearch);
+
+	if (cupgrid.numpages > 1)
+	{
+		x = 3 - (skullAnimCounter/5);
+		y = 20 + (44 - 1) - (30*menutransition.tics);
+
+		patch_t *cuparrow = W_CachePatchName("CUPARROW", PU_CACHE);
+
+		if (cupgrid.pageno != 0)
+			V_DrawScaledPatch(x, y, 0, cuparrow);
+
+		if (cupgrid.pageno != cupgrid.numpages-1)
+			V_DrawScaledPatch(BASEVIDWIDTH-x, y, V_FLIP, cuparrow);
+	}
 }
 
 static void M_DrawHighLowLevelTitle(INT16 x, INT16 y, INT16 map)
