@@ -5379,6 +5379,17 @@ static inline void P_ArchiveMisc(savebuffer_t *save)
 	WRITEUINT8(save->p, roundqueue.size);
 	WRITEUINT8(save->p, roundqueue.roundnum);
 
+	UINT8 i;
+	for (i = 0; i < roundqueue.size; i++)
+	{
+		UINT16 mapnum = roundqueue.entries[i].mapnum;
+		UINT32 val = 0; // no good default, will all-but-guarantee bad save
+		if (mapnum < nummapheaders && mapheaderinfo[mapnum] != NULL)
+			val = mapheaderinfo[mapnum]->lumpnamehash;
+
+		WRITEUINT32(save->p, val);
+	}
+
 	WRITEUINT8(save->p, (marathonmode & ~MA_INIT));
 
 	UINT32 writetime = marathontime;
@@ -5469,13 +5480,29 @@ static boolean P_UnArchiveSPGame(savebuffer_t *save)
 
 	if (roundqueue.size != size)
 	{
-		CONS_Alert(CONS_ERROR, "P_UnArchiveSPGame: Cup \"%s\"'s level composition has changed between game launches.\n", cupname);
+		CONS_Alert(CONS_ERROR, "P_UnArchiveSPGame: Cup \"%s\"'s level composition has changed between game launches (differs in level count).\n", cupname);
 		return false;
 	}
 
 	if (roundqueue.position == 0 || roundqueue.position > size)
 	{
 		CONS_Alert(CONS_ERROR, "P_UnArchiveSPGame: Position in the round queue is invalid.\n");
+		return false;
+	}
+
+	UINT8 i;
+	for (i = 0; i < roundqueue.size; i++)
+	{
+		UINT32 val = READUINT32(save->p);
+		UINT16 mapnum = roundqueue.entries[i].mapnum;
+
+		if (mapnum < nummapheaders && mapheaderinfo[mapnum] != NULL)
+		{
+			if (mapheaderinfo[mapnum]->lumpnamehash == val)
+				continue;
+		}
+
+		CONS_Alert(CONS_ERROR, "P_UnArchiveSPGame: Cup \"%s\"'s level composition has changed between game launches (differs at level %u).\n", cupname, i);
 		return false;
 	}
 
