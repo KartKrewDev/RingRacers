@@ -84,7 +84,8 @@ static inline void P_ArchivePlayer(savebuffer_t *save)
 {
 	const player_t *player = &players[consoleplayer];
 
-	WRITESINT8(save->p, player->lives);
+	// Prevent an exploit from occuring.
+	WRITESINT8(save->p, (player->lives - 1));
 	WRITEUINT32(save->p, player->score);
 	WRITEUINT16(save->p, player->totalring);
 

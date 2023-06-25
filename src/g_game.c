@@ -4030,7 +4030,8 @@ void G_HandleSaveLevel(boolean removecondition)
 	|| roundqueue.size == 0)
 		return;
 
-	if (roundqueue.position == 1)
+	if (roundqueue.position == 1
+	|| players[consoleplayer].lives <= 1) // because a life is lost on reload
 		goto doremove;
 
 	G_SaveGame();
