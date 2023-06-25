@@ -5,6 +5,7 @@
 #include "../r_skins.h"
 #include "../s_sound.h"
 #include "../k_grandprix.h" // K_CanChangeRules
+#include "../k_podium.h" // K_StartCeremony
 #include "../m_cond.h" // Condition Sets
 #include "../r_local.h" // SplitScreen_OnChange
 #include "../m_misc.h" // FIL_FileExists
@@ -530,19 +531,49 @@ static void M_GPBackup(INT32 choice)
 				SplitScreen_OnChange();
 			}
 
-			const UINT8 entry = roundqueue.position-1;
+			UINT8 entry = roundqueue.position-1;
 
 			SV_StartSinglePlayerServer(roundqueue.entries[entry].gametype, false);
 
-			D_MapChange(
-				roundqueue.entries[entry].mapnum + 1,
-				roundqueue.entries[entry].gametype,
-				roundqueue.entries[entry].encore,
-				true,
-				1,
-				false,
-				roundqueue.entries[entry].rankrestricted
-			);
+			// Skip Bonus rounds.
+			if (roundqueue.entries[entry].gametype != roundqueue.entries[0].gametype
+				&& roundqueue.entries[entry].rankrestricted == false)
+			{
+				G_GetNextMap(); // updates position in the roundqueue
+				entry = roundqueue.position-1;
+			}
+
+			if (entry < roundqueue.size)
+			{
+				D_MapChange(
+					roundqueue.entries[entry].mapnum + 1,
+					roundqueue.entries[entry].gametype,
+					roundqueue.entries[entry].encore,
+					true,
+					1,
+					false,
+					roundqueue.entries[entry].rankrestricted
+				);
+			}
+			else
+			{
+				if (K_StartCeremony() == false)
+				{
+					// Accomodate our buffoonery with the artificial fade.
+					wipegamestate = -1;
+
+					M_StartMessage(
+						"Grand Prix Backup",
+						"The session is concluded!\n"
+						"You exited a final Bonus Round,\n"
+						"and the Podium failed to load.\n",
+						NULL, MM_NOTHING, NULL, NULL);
+
+					G_HandleSaveLevel(true);
+
+					return;
+				}
+			}
 
 			M_ClearMenus(true);
 

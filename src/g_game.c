@@ -4145,7 +4145,7 @@ void G_GPCupIntoRoundQueue(cupheader_t *cup, UINT8 setgametype, boolean setencor
 	}
 }
 
-static void G_GetNextMap(void)
+void G_GetNextMap(void)
 {
 	INT32 i;
 	boolean setalready = false;
