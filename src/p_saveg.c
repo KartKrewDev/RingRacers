@@ -5346,9 +5346,32 @@ static inline void P_ArchiveMisc(savebuffer_t *save)
 {
 	WRITESTRINGN(save->p, timeattackfolder, sizeof(timeattackfolder));
 
+	// Grand Prix information
+
 	WRITEUINT8(save->p, grandprixinfo.gamespeed);
 	WRITEUINT8(save->p, (UINT8)grandprixinfo.encore);
 	WRITEUINT8(save->p, (UINT8)grandprixinfo.masterbots);
+
+	WRITESTRINGL(save->p, grandprixinfo.cup->name, MAXCUPNAME);
+
+	// Round Queue information
+
+	WRITEUINT8(save->p, roundqueue.position);
+	WRITEUINT8(save->p, roundqueue.size);
+	WRITEUINT8(save->p, roundqueue.roundnum);
+
+	UINT8 i;
+	for (i = 0; i < roundqueue.size; i++)
+	{
+		UINT16 mapnum = roundqueue.entries[i].mapnum;
+		UINT32 val = 0; // no good default, will all-but-guarantee bad save
+		if (mapnum < nummapheaders && mapheaderinfo[mapnum] != NULL)
+			val = mapheaderinfo[mapnum]->lumpnamehash;
+
+		WRITEUINT32(save->p, val);
+	}
+
+	// Rank information
 
 	{
 		WRITEUINT8(save->p, grandprixinfo.rank.players);
@@ -5374,22 +5397,7 @@ static inline void P_ArchiveMisc(savebuffer_t *save)
 		WRITEUINT8(save->p, (UINT8)grandprixinfo.rank.specialWon);
 	}
 
-	WRITESTRINGL(save->p, grandprixinfo.cup->name, MAXCUPNAME);
-
-	WRITEUINT8(save->p, roundqueue.position);
-	WRITEUINT8(save->p, roundqueue.size);
-	WRITEUINT8(save->p, roundqueue.roundnum);
-
-	UINT8 i;
-	for (i = 0; i < roundqueue.size; i++)
-	{
-		UINT16 mapnum = roundqueue.entries[i].mapnum;
-		UINT32 val = 0; // no good default, will all-but-guarantee bad save
-		if (mapnum < nummapheaders && mapheaderinfo[mapnum] != NULL)
-			val = mapheaderinfo[mapnum]->lumpnamehash;
-
-		WRITEUINT32(save->p, val);
-	}
+	// Marathon information
 
 	WRITEUINT8(save->p, (marathonmode & ~MA_INIT));
 
@@ -5420,37 +5428,14 @@ static boolean P_UnArchiveSPGame(savebuffer_t *save)
 
 	grandprixinfo.gp = true;
 
+	// Grand Prix information
+
 	grandprixinfo.gamespeed = READUINT8(save->p);
 	grandprixinfo.encore = (boolean)READUINT8(save->p);
 	grandprixinfo.masterbots = (boolean)READUINT8(save->p);
 
-	{
-		grandprixinfo.rank.players = READUINT8(save->p);
-		grandprixinfo.rank.totalPlayers = READUINT8(save->p);
-
-		grandprixinfo.rank.position = READUINT8(save->p);
-		grandprixinfo.rank.skin = READUINT8(save->p);
-
-		grandprixinfo.rank.winPoints = READUINT32(save->p);
-		grandprixinfo.rank.totalPoints = READUINT32(save->p);
-
-		grandprixinfo.rank.laps = READUINT32(save->p);
-		grandprixinfo.rank.totalLaps = READUINT32(save->p);
-
-		grandprixinfo.rank.continuesUsed = READUINT32(save->p);
-
-		grandprixinfo.rank.prisons = READUINT32(save->p);
-		grandprixinfo.rank.totalPrisons = READUINT32(save->p);
-
-		grandprixinfo.rank.rings = READUINT32(save->p);
-		grandprixinfo.rank.totalRings = READUINT32(save->p);
-
-		grandprixinfo.rank.specialWon = (boolean)READUINT8(save->p);
-	}
-
-	char cupname[MAXCUPNAME];
-
 	// Find the relevant cup.
+	char cupname[MAXCUPNAME];
 	READSTRINGL(save->p, cupname, sizeof(cupname));
 	UINT32 hash = quickncasehash(cupname, MAXCUPNAME);
 
@@ -5470,6 +5455,8 @@ static boolean P_UnArchiveSPGame(savebuffer_t *save)
 		CONS_Alert(CONS_ERROR, "P_UnArchiveSPGame: Cup \"%s\" is not currently loaded.\n", cupname);
 		return false;
 	}
+
+	// Round Queue information
 
 	memset(&roundqueue, 0, sizeof(roundqueue));
 
@@ -5506,6 +5493,34 @@ static boolean P_UnArchiveSPGame(savebuffer_t *save)
 		CONS_Alert(CONS_ERROR, "P_UnArchiveSPGame: Cup \"%s\"'s level composition has changed between game launches (differs at level %u).\n", cupname, i);
 		return false;
 	}
+
+	// Rank information
+
+	{
+		grandprixinfo.rank.players = READUINT8(save->p);
+		grandprixinfo.rank.totalPlayers = READUINT8(save->p);
+
+		grandprixinfo.rank.position = READUINT8(save->p);
+		grandprixinfo.rank.skin = READUINT8(save->p);
+
+		grandprixinfo.rank.winPoints = READUINT32(save->p);
+		grandprixinfo.rank.totalPoints = READUINT32(save->p);
+
+		grandprixinfo.rank.laps = READUINT32(save->p);
+		grandprixinfo.rank.totalLaps = READUINT32(save->p);
+
+		grandprixinfo.rank.continuesUsed = READUINT32(save->p);
+
+		grandprixinfo.rank.prisons = READUINT32(save->p);
+		grandprixinfo.rank.totalPrisons = READUINT32(save->p);
+
+		grandprixinfo.rank.rings = READUINT32(save->p);
+		grandprixinfo.rank.totalRings = READUINT32(save->p);
+
+		grandprixinfo.rank.specialWon = (boolean)READUINT8(save->p);
+	}
+
+	// Marathon information
 
 	marathonmode = READUINT8(save->p);
 	marathontime = READUINT32(save->p);
