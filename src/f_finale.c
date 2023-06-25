@@ -894,11 +894,17 @@ typedef enum
 	EVAL_MAX
 } evaluationtype_t;
 
+#define EVALLEN_PERFECT (18*TICRATE)
+#define EVALLEN_NORMAL (14*TICRATE)
+
 static evaluationtype_t evaluationtype;
 UINT16 finaleemeralds = 0;
 
 void F_StartGameEvaluation(void)
 {
+	S_FadeMusic(0, MUSICRATE/4);
+	S_StopMusicCredit();
+
 	// Credits option in extras menu
 	if (
 		grandprixinfo.gp == false
@@ -907,13 +913,9 @@ void F_StartGameEvaluation(void)
 #endif
 	)
 	{
-		S_FadeMusic(0, MUSICRATE/4);
 		F_StartGameEnd();
 		return;
 	}
-
-	S_FadeOutStopMusic(5*MUSICRATE);
-	S_StopMusicCredit();
 
 	G_SetGamestate(GS_EVALUATION);
 
@@ -1002,8 +1004,8 @@ void F_GameEvaluationDrawer(void)
 	else if (evaluationtype == EVAL_PERFECT)
 	{
 		// Symmetrical slow fade in and out.
-		if (finalecount > 5*TICRATE)
-			crossfade = (10*TICRATE) - finalecount;
+		if (finalecount > EVALLEN_PERFECT/2)
+			crossfade = EVALLEN_PERFECT - finalecount;
 		else
 			crossfade = finalecount;
 
@@ -1234,13 +1236,29 @@ void F_GameEvaluationDrawer(void)
 
 void F_GameEvaluationTicker(void)
 {
-	if (++finalecount > 10*TICRATE)
+	INT32 evallen = EVALLEN_NORMAL;
+
+	if (evaluationtype == EVAL_PERFECT)
+	{
+		// tyron made something perfect and i would sooner
+		// smite everyone in this room starting with myself
+		// over the idea of cutting it ~toast 250623
+		evallen = EVALLEN_PERFECT;
+
+		if (finalecount == 1)
+		{
+			// Now start the music
+			S_ChangeMusicInternal("_SHORE", false);
+		}
+	}
+
+	if (++finalecount > evallen)
 	{
 		F_StartGameEnd();
 		return;
 	}
 
-	if (finalecount == 5*TICRATE)
+	if (finalecount == evallen/2)
 	{
 		if (!usedCheats)
 		{
@@ -1252,7 +1270,8 @@ void F_GameEvaluationTicker(void)
 	}
 }
 
-#undef SPARKLLOOPTIME
+#undef EVALLEN_PERFECT
+#undef EVALLEN_NORMAL
 
 // ==========
 //  GAME END
