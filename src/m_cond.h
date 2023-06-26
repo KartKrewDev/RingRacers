@@ -52,6 +52,7 @@ typedef enum
 	UC_CONDITIONSET,	// CONDITIONSET [condition set number]
 
 	UC_ADDON,			// Ever loaded a custom file?
+	UC_CREDITS,			// Finish watching the credits
 	UC_REPLAY,			// Save a replay
 	UC_CRASH,			// Hee ho !
 
@@ -287,6 +288,7 @@ struct gamedata_t
 
 	// SPECIFIC SPECIAL EVENTS
 	boolean everloadedaddon;
+	boolean everfinishedcredits;
 	boolean eversavedreplay;
 	boolean everseenspecial;
 	boolean evercrashed;

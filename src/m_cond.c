@@ -610,6 +610,7 @@ void M_ClearStats(void)
 	gamedata->timesBeaten = 0;
 
 	gamedata->everloadedaddon = false;
+	gamedata->everfinishedcredits = false;
 	gamedata->eversavedreplay = false;
 	gamedata->everseenspecial = false;
 	gamedata->evercrashed = false;
@@ -854,6 +855,8 @@ boolean M_CheckCondition(condition_t *cn, player_t *player)
 		case UC_ADDON:
 			return ((gamedata->everloadedaddon == true)
 				&& M_SecretUnlocked(SECRET_ADDONS, true));
+		case UC_CREDITS:
+			return (gamedata->everfinishedcredits == true);
 		case UC_REPLAY:
 			return (gamedata->eversavedreplay == true);
 		case UC_CRASH:
@@ -1308,6 +1311,8 @@ static const char *M_GetConditionString(condition_t *cn)
 			if (!M_SecretUnlocked(SECRET_ADDONS, true))
 				return NULL;
 			return "load a custom addon into \"Dr. Robotnik's Ring Racers\"";
+		case UC_CREDITS:
+			return "watch the developer credits all the way from start to finish";
 		case UC_REPLAY:
 			return "save a replay after finishing a round";
 		case UC_CRASH:

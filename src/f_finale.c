@@ -808,6 +808,11 @@ void F_CreditTicker(void)
 	{
 		timetonext = 5*TICRATE+1;
 		finalecount = 5*TICRATE;
+
+		// You watched all the credits? What a trooper!
+		gamedata->everfinishedcredits = true;
+		if (M_UpdateUnlockablesAndExtraEmblems(true, true))
+			G_SaveGameData();
 	}
 
 	if (timetonext)

@@ -2583,6 +2583,7 @@ static void readcondition(UINT8 set, UINT32 id, char *word2)
 		}
 	}
 	else if ((offset=0) || fastcmp(params[0], "ADDON")
+	||        (++offset && fastcmp(params[0], "CREDITS"))
 	||        (++offset && fastcmp(params[0], "REPLAY"))
 	||        (++offset && fastcmp(params[0], "CRASH")))
 	{

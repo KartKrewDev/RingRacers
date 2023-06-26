@@ -4725,7 +4725,15 @@ void G_LoadGameSettings(void)
 }
 
 #define GD_VERSIONCHECK 0xBA5ED123 // Change every major version, as usual
-#define GD_VERSIONMINOR 3 // Change every format update
+#define GD_VERSIONMINOR 4 // Change every format update
+
+typedef enum
+{
+	GDEVER_ADDON = 1,
+	GDEVER_CREDITS = 1<<1,
+	GDEVER_REPLAY = 1<<2,
+	GDEVER_SPECIAL = 1<<3,
+} gdeverdone_t;
 
 static const char *G_GameDataFolder(void)
 {
@@ -4849,9 +4857,21 @@ void G_LoadGameData(void)
 
 		gamedata->chaokeys = READUINT16(save.p);
 
-		gamedata->everloadedaddon = (boolean)READUINT8(save.p);
-		gamedata->eversavedreplay = (boolean)READUINT8(save.p);
-		gamedata->everseenspecial = (boolean)READUINT8(save.p);
+		if (versionMinor >= 4)
+		{
+			UINT32 everflags = READUINT32(save.p);
+
+			gamedata->everloadedaddon = !!(everflags & GDEVER_ADDON);
+			gamedata->everfinishedcredits = !!(everflags & GDEVER_CREDITS);
+			gamedata->eversavedreplay = !!(everflags & GDEVER_REPLAY);
+			gamedata->everseenspecial = !!(everflags & GDEVER_SPECIAL);
+		}
+		else
+		{
+			gamedata->everloadedaddon = (boolean)READUINT8(save.p);
+			gamedata->eversavedreplay = (boolean)READUINT8(save.p);
+			gamedata->everseenspecial = (boolean)READUINT8(save.p);
+		}
 	}
 	else
 	{
@@ -5278,7 +5298,7 @@ void G_SaveGameData(void)
 		4+4+
 		(4*GDGT_MAX)+
 		4+1+2+2+
-		1+1+1+
+		4+
 		4+
 		(MAXEMBLEMS+(MAXUNLOCKABLES*2)+MAXCONDITIONSETS)+
 		4+2);
@@ -5415,11 +5435,22 @@ void G_SaveGameData(void)
 	WRITEUINT16(save.p, gamedata->keyspending); // 2
 	WRITEUINT16(save.p, gamedata->chaokeys); // 2
 
-	WRITEUINT8(save.p, gamedata->everloadedaddon); // 1
-	WRITEUINT8(save.p, gamedata->eversavedreplay); // 1
-	WRITEUINT8(save.p, gamedata->everseenspecial); // 1
+	{
+		UINT32 everflags = 0;
 
-	WRITEUINT32(save.p, quickncasehash(timeattackfolder, 64));
+		if (gamedata->everloadedaddon)
+			everflags |= GDEVER_ADDON;
+		if (gamedata->everfinishedcredits)
+			everflags |= GDEVER_CREDITS;
+		if (gamedata->eversavedreplay)
+			everflags |= GDEVER_REPLAY;
+		if (gamedata->everseenspecial)
+			everflags |= GDEVER_SPECIAL;
+
+		WRITEUINT32(save.p, everflags); // 4
+	}
+
+	WRITEUINT32(save.p, quickncasehash(timeattackfolder, 64)); // 4
 
 	// To save space, use one bit per collected/achieved/unlocked flag
 	for (i = 0; i < MAXEMBLEMS;) // MAXEMBLEMS * 1;
