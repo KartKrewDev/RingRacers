@@ -4651,6 +4651,8 @@ void G_EndGame(void)
 	// Only do evaluation and credits in singleplayer contexts
 	if (!netgame && grandprixinfo.gp == true)
 	{
+		G_HandleSaveLevel(true);
+
 		if (nextmap == NEXTMAP_CEREMONY) // end game with ceremony
 		{
 			if (K_StartCeremony() == true)
