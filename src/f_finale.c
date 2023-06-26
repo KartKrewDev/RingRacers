@@ -1247,8 +1247,16 @@ void F_GameEvaluationTicker(void)
 
 		if (finalecount == 1)
 		{
-			// Now start the music
+			// sitting on that distant _shore
 			S_ChangeMusicInternal("_SHORE", false);
+		}
+	}
+	else
+	{
+		if (finalecount == 1)
+		{
+			// _drift across open waters
+			S_ChangeMusicInternal("_DRIFT", false);
 		}
 	}
 
