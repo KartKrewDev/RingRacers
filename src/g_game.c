@@ -123,8 +123,6 @@ precipprops_t precipprops[MAXPRECIP] =
 preciptype_t precip_freeslot = PRECIP_FIRSTFREESLOT;
 
 INT32 cursaveslot = 0; // Auto-save 1p savegame slot
-//INT16 lastmapsaved = 0; // Last map we auto-saved at
-INT16 lastmaploaded = 0; // Last map the game loaded
 UINT8 gamecomplete = 0;
 
 marathonmode_t marathonmode = 0;
@@ -3351,6 +3349,7 @@ void G_ExitLevel(void)
 				else
 				{
 					// Back to the menu with you.
+					G_HandleSaveLevel(true);
 					D_QuitNetGame();
 					CL_Reset();
 					D_ClearState();
@@ -4018,39 +4017,29 @@ void G_UpdateVisited(void)
 	G_SaveGameData();
 }
 
-static boolean CanSaveLevel(INT32 mapnum)
+void G_HandleSaveLevel(boolean removecondition)
 {
-	// SRB2Kart: No save files yet
-	(void)mapnum;
-	return false;
-}
+	if (!grandprixinfo.gp || !grandprixinfo.cup
+	|| splitscreen || netgame)
+		return;
 
-static void G_HandleSaveLevel(void)
-{
-	// do this before running the intermission or custom cutscene, mostly for the sake of marathon mode but it also massively reduces redundant file save events in f_finale.c
-	if (nextmap >= NEXTMAP_SPECIAL)
-	{
-		if (!gamecomplete)
-			gamecomplete = 2; // special temporary mode to prevent using SP level select in pause menu until the intermission is over without restricting it in every intermission
-		if (cursaveslot > 0)
-		{
-			if (marathonmode)
-			{
-				// don't keep a backup around when the run is done!
-				if (FIL_FileExists(liveeventbackup))
-					remove(liveeventbackup);
-				cursaveslot = 0;
-			}
-			else if (!usedCheats && !(netgame || multiplayer || ultimatemode || demo.recording || metalrecording || modeattacking))
-				G_SaveGame((UINT32)cursaveslot, 0); // TODO when we readd a campaign one day
-		}
-	}
-	// and doing THIS here means you don't lose your progress if you close the game mid-intermission
-	else if (!(ultimatemode || demo.playback || demo.recording || metalrecording || modeattacking)
-		&& cursaveslot > 0 && CanSaveLevel(lastmap+1))
-	{
-		G_SaveGame((UINT32)cursaveslot, lastmap+1); // not nextmap+1 to route around special stages
-	}
+	if (removecondition)
+		goto doremove;
+
+	if (gamestate != GS_LEVEL
+	|| roundqueue.size == 0)
+		return;
+
+	if (roundqueue.position == 1
+	|| players[consoleplayer].lives <= 1) // because a life is lost on reload
+		goto doremove;
+
+	G_SaveGame();
+	return;
+
+doremove:
+	if (FIL_FileExists(gpbackup))
+		remove(gpbackup);
 }
 
 // Next map apparatus
@@ -4157,7 +4146,7 @@ void G_GPCupIntoRoundQueue(cupheader_t *cup, UINT8 setgametype, boolean setencor
 	}
 }
 
-static void G_GetNextMap(void)
+void G_GetNextMap(void)
 {
 	INT32 i;
 	boolean setalready = false;
@@ -4540,7 +4529,6 @@ void G_AfterIntermission(void)
 	if (gamestate != GS_VOTING)
 	{
 		G_GetNextMap();
-		G_HandleSaveLevel();
 	}
 
 	if ((grandprixinfo.gp == true) && mapheaderinfo[prevmap]->cutscenenum && !modeattacking && skipstats <= 1 && (gamecomplete || !(marathonmode & MA_NOCUTSCENES))) // Start a custom cutscene.
@@ -4644,9 +4632,6 @@ static void G_DoContinued(void)
 
 	// Reset score
 	pl->score = 0;
-
-	if (!(netgame || multiplayer || demo.playback || demo.recording || metalrecording || modeattacking) && !usedCheats && cursaveslot > 0)
-		G_SaveGameOver((UINT32)cursaveslot, true);
 
 	// Reset # of lives
 	pl->lives = 3;
@@ -5673,24 +5658,23 @@ void G_SaveGameData(void)
 // G_InitFromSavegame
 // Can be called by the startup code or the menu task.
 //
-void G_LoadGame(UINT32 slot, INT16 mapoverride)
+
+#define SAV_VERSIONMINOR 2
+
+void G_LoadGame(void)
 {
-	char vcheck[VERSIONSIZE];
+	char vcheck[VERSIONSIZE+1];
 	char savename[255];
+	UINT8 versionMinor;
 	savebuffer_t save = {0};
 
 	// memset savedata to all 0, fixes calling perfectly valid saves corrupt because of bots
 	memset(&savedata, 0, sizeof(savedata));
 
-#ifdef SAVEGAME_OTHERVERSIONS
-	//Oh christ.  The force load response needs access to mapoverride too...
-	startonmapnum = mapoverride;
-#endif
-
-	if (marathonmode)
-		strcpy(savename, liveeventbackup);
-	else
-		sprintf(savename, savegamename, slot);
+	//if (makelivebackup)
+		strcpy(savename, gpbackup);
+	//else
+		//sprintf(savename, savegamename, cursaveslot);
 
 	if (P_SaveBufferFromFile(&save, savename) == false)
 	{
@@ -5698,23 +5682,16 @@ void G_LoadGame(UINT32 slot, INT16 mapoverride)
 		return;
 	}
 
-	memset(vcheck, 0, sizeof (vcheck));
-	sprintf(vcheck, (marathonmode ? "back-up %d" : "version %d"), VERSION);
-	if (strcmp((const char *)save.p, (const char *)vcheck))
-	{
-#ifdef SAVEGAME_OTHERVERSIONS
-		M_StartMessage("Savegame Load", M_GetText("Save game from different version.\nYou can load this savegame, but\nsaving afterwards will be disabled.\n\nDo you want to continue anyway?\n"),
-		               M_ForceLoadGameResponse, MM_YESNO, NULL, NULL);
-		//Freeing done by the callback function of the above message
-#else
-		M_ClearMenus(true); // so ESC backs out to title
-		M_StartMessage("Savegame Load", M_GetText("Save game from different version\n\n"), NULL, MM_NOTHING, NULL, "Return to Menu");
-		Command_ExitGame_f();
-		P_SaveBufferFree(&save);
+	versionMinor = READUINT8(save.p);
 
-		// no cheating!
-		memset(&savedata, 0, sizeof(savedata));
-#endif
+	memset(vcheck, 0, sizeof (vcheck));
+	sprintf(vcheck, "version %d", VERSION);
+
+	if (versionMinor != SAV_VERSIONMINOR
+	|| memcmp(save.p, vcheck, VERSIONSIZE))
+	{
+		M_StartMessage("Savegame Load", va(M_GetText("Savegame %s is from\na different version."), savename), NULL, MM_NOTHING, NULL, NULL);
+		P_SaveBufferFree(&save);
 		return; // bad version
 	}
 	save.p += VERSIONSIZE;
@@ -5726,62 +5703,91 @@ void G_LoadGame(UINT32 slot, INT16 mapoverride)
 //	automapactive = false;
 
 	// dearchive all the modifications
-	if (!P_LoadGame(&save, mapoverride))
+	if (!P_LoadGame(&save))
 	{
-		M_ClearMenus(true); // so ESC backs out to title
-		M_StartMessage("Savegame Load", M_GetText("Savegame file corrupted\n"), NULL, MM_NOTHING, NULL, "Return to Menu");
-		Command_ExitGame_f();
+		M_StartMessage("Savegame Load", va(M_GetText("Savegame %s could not be loaded.\n"
+		"Check the console log for more info.\n"), savename), NULL, MM_NOTHING, NULL, NULL);
 		Z_Free(save.buffer);
 		save.p = save.buffer = NULL;
 
-		// no cheating!
-		memset(&savedata, 0, sizeof(savedata));
 		return;
-	}
-	if (marathonmode)
-	{
-		marathontime = READUINT32(save.p);
-		marathonmode |= READUINT8(save.p);
 	}
 
 	// done
 	P_SaveBufferFree(&save);
 
-//	gameaction = ga_nothing;
-//	G_SetGamestate(GS_LEVEL);
-	displayplayers[0] = consoleplayer;
-	multiplayer = false;
-	splitscreen = 0;
-	SplitScreen_OnChange(); // not needed?
-
-//	G_DeferedInitNew(sk_medium, G_BuildMapName(1), 0, 0, 1);
-	if (setsizeneeded)
-		R_ExecuteSetViewSize();
-
-	M_ClearMenus(true);
 	CON_ToggleOff();
+}
+
+void G_GetBackupCupData(boolean actuallygetdata)
+{
+	if (actuallygetdata == false)
+	{
+		cupsavedata.cup = NULL;
+		return;
+	}
+
+	char vcheck[VERSIONSIZE+1];
+	char savename[255];
+	UINT8 versionMinor;
+	savebuffer_t save = {0};
+
+	//if (makelivebackup)
+		strcpy(savename, gpbackup);
+	//else
+		//sprintf(savename, savegamename, cursaveslot);
+
+	if (P_SaveBufferFromFile(&save, savename) == false)
+	{
+		cupsavedata.cup = NULL;
+		return;
+	}
+
+	versionMinor = READUINT8(save.p);
+
+	memset(vcheck, 0, sizeof (vcheck));
+	sprintf(vcheck, "version %d", VERSION);
+
+	if (versionMinor != SAV_VERSIONMINOR
+	|| memcmp(save.p, vcheck, VERSIONSIZE))
+	{
+		cupsavedata.cup = NULL;
+		P_SaveBufferFree(&save);
+		return; // bad version
+	}
+	save.p += VERSIONSIZE;
+
+	P_GetBackupCupData(&save);
+
+	if (cv_dummygpdifficulty.value != cupsavedata.difficulty
+	|| !!cv_dummygpencore.value != cupsavedata.encore)
+	{
+		// Still not compatible.
+		cupsavedata.cup = NULL;
+	}
+
+	// done
+	P_SaveBufferFree(&save);
 }
 
 //
 // G_SaveGame
 // Saves your game.
 //
-void G_SaveGame(UINT32 slot, INT16 mapnum)
+void G_SaveGame(void)
 {
 	boolean saved;
 	char savename[256] = "";
-	const char *backup;
 	savebuffer_t save = {0};
 
-	if (marathonmode)
-		strcpy(savename, liveeventbackup);
-	else
-		sprintf(savename, savegamename, slot);
-	backup = va("%s",savename);
+	//if (makelivebackup)
+		strcpy(savename, gpbackup);
+	//else
+		//sprintf(savename, savegamename, cursaveslot);
 
 	gameaction = ga_nothing;
 	{
-		char name[VERSIONSIZE];
+		char name[VERSIONSIZE+1];
 		size_t length;
 
 		if (P_SaveBufferAlloc(&save, SAVEGAMESIZE) == false)
@@ -5790,138 +5796,26 @@ void G_SaveGame(UINT32 slot, INT16 mapnum)
 			return;
 		}
 
+		WRITEUINT8(save.p, SAV_VERSIONMINOR);
+
 		memset(name, 0, sizeof (name));
-		sprintf(name, (marathonmode ? "back-up %d" : "version %d"), VERSION);
+		sprintf(name, "version %d", VERSION);
 		WRITEMEM(save.p, name, VERSIONSIZE);
 
-		P_SaveGame(&save, mapnum);
-		if (marathonmode)
-		{
-			UINT32 writetime = marathontime;
-			if (!(marathonmode & MA_INGAME))
-				writetime += TICRATE*5; // live event backup penalty because we don't know how long it takes to get to the next map
-			WRITEUINT32(save.p, writetime);
-			WRITEUINT8(save.p, (marathonmode & ~MA_INIT));
-		}
+		P_SaveGame(&save);
 
 		length = save.p - save.buffer;
-		saved = FIL_WriteFile(backup, save.buffer, length);
+		saved = FIL_WriteFile(savename, save.buffer, length);
 		P_SaveBufferFree(&save);
 	}
 
 	gameaction = ga_nothing;
 
 	if (cht_debug && saved)
-		CONS_Printf(M_GetText("Game saved.\n"));
+		CONS_Printf(M_GetText("%s saved.\n"), savename);
 	else if (!saved)
-		CONS_Alert(CONS_ERROR, M_GetText("Error while writing to %s for save slot %u, base: %s\n"), backup, slot, (marathonmode ? liveeventbackup : savegamename));
+		CONS_Alert(CONS_ERROR, M_GetText("Error while writing to %s\n"), savename);
 }
-
-#define BADSAVE goto cleanup;
-#define CHECKPOS if (save.p >= save.end) BADSAVE
-void G_SaveGameOver(UINT32 slot, boolean modifylives)
-{
-	boolean saved = false;
-	size_t length;
-	char vcheck[VERSIONSIZE];
-	char savename[255];
-	const char *backup;
-	savebuffer_t save = {0};
-
-	if (marathonmode)
-		strcpy(savename, liveeventbackup);
-	else
-		sprintf(savename, savegamename, slot);
-	backup = va("%s",savename);
-
-	if (P_SaveBufferFromFile(&save, savename) == false)
-	{
-		CONS_Printf(M_GetText("Couldn't read file %s\n"), savename);
-		return;
-	}
-
-	length = save.size;
-
-	{
-		char temp[sizeof(timeattackfolder)];
-		UINT8 *lives_p;
-		SINT8 pllives;
-
-		// Version check
-		memset(vcheck, 0, sizeof (vcheck));
-		sprintf(vcheck, (marathonmode ? "back-up %d" : "version %d"), VERSION);
-		if (strcmp((const char *)save.p, (const char *)vcheck)) BADSAVE
-		save.p += VERSIONSIZE;
-
-		// P_UnArchiveMisc()
-		(void)READINT16(save.p);
-		CHECKPOS
-		(void)READUINT16(save.p); // emeralds
-		CHECKPOS
-		READSTRINGN(save.p, temp, sizeof(temp)); // mod it belongs to
-		if (strcmp(temp, timeattackfolder)) BADSAVE
-
-		// P_UnArchivePlayer()
-		CHECKPOS
-		(void)READUINT16(save.p);
-		CHECKPOS
-
-		WRITEUINT8(save.p, numgameovers);
-		CHECKPOS
-
-		lives_p = save.p;
-		pllives = READSINT8(save.p); // lives
-		CHECKPOS
-		if (modifylives && pllives < startinglivesbalance[numgameovers])
-		{
-			pllives = startinglivesbalance[numgameovers];
-			WRITESINT8(lives_p, pllives);
-		}
-
-		(void)READINT32(save.p); // Score
-		CHECKPOS
-		(void)READINT32(save.p); // continues
-
-		// File end marker check
-		CHECKPOS
-		switch (READUINT8(save.p))
-		{
-			case 0xb7:
-				{
-					UINT8 i, banksinuse;
-					CHECKPOS
-					banksinuse = READUINT8(save.p);
-					CHECKPOS
-					if (banksinuse > NUM_LUABANKS)
-						BADSAVE
-					for (i = 0; i < banksinuse; i++)
-					{
-						(void)READINT32(save.p);
-						CHECKPOS
-					}
-					if (READUINT8(save.p) != 0x1d)
-						BADSAVE
-				}
-			case 0x1d:
-				break;
-			default:
-				BADSAVE
-		}
-
-		// done
-		saved = FIL_WriteFile(backup, save.buffer, length);
-	}
-
-cleanup:
-	if (cht_debug && saved)
-		CONS_Printf(M_GetText("Game saved.\n"));
-	else if (!saved)
-		CONS_Alert(CONS_ERROR, M_GetText("Error while writing to %s for save slot %u, base: %s\n"), backup, slot, (marathonmode ? liveeventbackup : savegamename));
-
-	P_SaveBufferFree(&save);
-}
-#undef CHECKPOS
-#undef BADSAVE
 
 //
 // G_DeferedInitNew

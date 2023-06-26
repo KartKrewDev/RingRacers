@@ -2131,8 +2131,10 @@ void F_TitleScreenTicker(boolean run)
 			// Now start the music
 			S_ChangeMusicInternal("_title", looptitle);
 		}
-		else if (menumessage.fadetimer < 9)
-			menumessage.fadetimer++;
+		else if (menumessage.active)
+		{
+			M_MenuMessageTick();
+		}
 
 		finalecount++;
 	}

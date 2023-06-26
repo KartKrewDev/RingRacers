@@ -19,6 +19,7 @@
 #include "command.h"
 #include "doomstat.h" // MAXSPLITSCREENPLAYERS
 #include "g_demo.h"	//menudemo_t
+#include "p_saveg.h" // savedata_cup_t
 #include "k_profiles.h"	// profile data & functions
 #include "g_input.h"	// gc_
 #include "i_threads.h"
@@ -517,10 +518,11 @@ typedef enum
 } manswer_e;
 
 #define MAXMENUMESSAGE 256
+#define MENUMESSAGECLOSE 2
 extern struct menumessage_s
 {
 	boolean active;
-	boolean closing;
+	UINT8 closing;
 
 	INT32 flags;		// MM_
 	const char *header;
@@ -533,6 +535,7 @@ extern struct menumessage_s
 
 	void (*routine)(INT32 choice);	// Normal routine
 	//void (*eroutine)(event_t *ev);	// Event routine	(MM_EVENTHANDLER)
+	INT32 answer;
 
 	const char *defaultstr;
 	const char *confirmstr;
@@ -599,7 +602,7 @@ void M_SetMenuDelay(UINT8 i);
 
 void M_SortServerList(void);
 
-void M_UpdateMenuCMD(UINT8 i);
+void M_UpdateMenuCMD(UINT8 i, boolean bailrequired);
 boolean M_Responder(event_t *ev);
 boolean M_MenuButtonPressed(UINT8 pid, UINT32 bt);
 boolean M_MenuButtonHeld(UINT8 pid, UINT32 bt);
