@@ -1174,9 +1174,9 @@ void F_GameEvaluationDrawer(void)
 		UINT8 basegem = (evaluationtype == EVAL_SUPER)
 			? 7 : 0;
 
-		for (i = basegem; i < (basegem+7); ++i, eemeralds_cur += (360<<FRACBITS)/7)
+		for (i = 0; i < 7; ++i, eemeralds_cur += (360<<FRACBITS)/7)
 		{
-			if (finaleemeralds & (1<<i))
+			if (finaleemeralds & (1<<(i+basegem)))
 				continue;
 
 			fa = (FixedAngle(eemeralds_cur)>>ANGLETOFINESHIFT) & FINEMASK;
@@ -1186,7 +1186,7 @@ void F_GameEvaluationDrawer(void)
 				FRACUNIT,
 				gemtrans,
 				empat,
-				R_GetTranslationColormap(TC_DEFAULT, SKINCOLOR_CHAOSEMERALD1+(i-basegem), GTC_CACHE)
+				R_GetTranslationColormap(TC_DEFAULT, SKINCOLOR_CHAOSEMERALD1+i, GTC_CACHE)
 			);
 		}
 	}
