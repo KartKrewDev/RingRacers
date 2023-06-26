@@ -312,7 +312,6 @@ void A_ChangeHeight(mobj_t *actor);
 //
 // SRB2Kart
 //
-void A_ItemPop(mobj_t *actor);
 void A_JawzExplode(mobj_t *actor);
 void A_SSMineSearch(mobj_t *actor);
 void A_SSMineExplode(mobj_t *actor);
@@ -12971,59 +12970,6 @@ void A_ChangeHeight(mobj_t *actor)
 //
 // SRB2Kart
 //
-
-void A_ItemPop(mobj_t *actor)
-{
-	INT32 locvar1 = var1;
-
-	if (LUA_CallAction(A_ITEMPOP, actor))
-		return;
-
-	if (!(actor->target && actor->target->player))
-	{
-		if (cht_debug && !(actor->target && actor->target->player))
-			CONS_Printf("ERROR: Powerup has no target!\n");
-		return;
-	}
-
-	// de-solidify
-	P_UnsetThingPosition(actor);
-	actor->flags &= ~MF_SOLID;
-	actor->flags |= MF_NOCLIP;
-	P_SetThingPosition(actor);
-
-	// RF_DONTDRAW will flicker as the object's fuse gets
-	// closer to running out (see P_FuseThink)
-	actor->renderflags |= RF_DONTDRAW|RF_TRANS50;
-	actor->color = SKINCOLOR_GREY;
-	actor->colorized = true;
-
-	Obj_SpawnItemDebrisEffects(actor, actor->target);
-
-	if (locvar1 == 1)
-	{
-		P_GivePlayerSpheres(actor->target->player, actor->extravalue1);
-	}
-	else if (locvar1 == 0)
-	{
-		if (actor->extravalue1 >= TICRATE)
-			K_StartItemRoulette(actor->target->player, false);
-		else
-			K_StartItemRoulette(actor->target->player, true);
-	}
-
-	actor->extravalue1 = 0;
-
-	// Here at mapload in battle?
-	if (!(gametyperules & GTR_CIRCUIT) && (actor->flags2 & MF2_BOSSNOTRAP))
-	{
-		numgotboxes++;
-
-		// do not flicker back in just yet, handled by
-		// P_RespawnBattleBoxes eventually
-		P_SetMobjState(actor, S_INVISIBLE);
-	}
-}
 
 void A_JawzExplode(mobj_t *actor)
 {

@@ -9710,7 +9710,7 @@ static boolean P_FuseThink(mobj_t *mobj)
 	case MT_RANDOMITEM:
 		if (mobj->flags2 & MF2_DONTRESPAWN)
 		{
-			;
+			P_RemoveMobj(mobj);
 		}
 		else if (!(gametyperules & GTR_CIRCUIT) && (mobj->state == &states[S_INVISIBLE]))
 		{
@@ -9718,23 +9718,10 @@ static boolean P_FuseThink(mobj_t *mobj)
 		}
 		else
 		{
-			mobj_t *newmobj;
-
-			// Respawn from mapthing if you have one!
-			if (mobj->spawnpoint)
-			{
-				P_SpawnMapThing(mobj->spawnpoint);
-				newmobj = mobj->spawnpoint->mobj; // this is set to the new mobj in P_SpawnMapThing
-			}
-			else
-				newmobj = P_SpawnMobj(mobj->x, mobj->y, mobj->z, mobj->type);
-
-			// Transfer flags2 (strongbox, objectflip, bossnotrap)
-			newmobj->flags2 = mobj->flags2;
-			newmobj->extravalue1 = 0;
+			mobj->flags &= ~MF_NOCLIPTHING;
+			mobj->renderflags &= ~(RF_DONTDRAW|RF_TRANSMASK);
 		}
 
-		P_RemoveMobj(mobj); // make sure they disappear
 		return false;
 	case MT_ITEMCAPSULE:
 		if (mobj->spawnpoint)
@@ -11569,11 +11556,11 @@ void P_RespawnBattleBoxes(void)
 
 		if (box->type != MT_RANDOMITEM
 			|| (box->flags2 & MF2_DONTRESPAWN)
-			|| box->health > 0
+			|| !(box->flags & MF_NOCLIPTHING)
 			|| box->fuse)
 			continue; // only popped items
 
-		box->fuse = TICRATE; // flicker back in (A_ItemPop preps this effect)
+		box->fuse = TICRATE; // flicker back in
 		P_SetMobjState(box, box->info->raisestate);
 
 		if (numgotboxes > 0)

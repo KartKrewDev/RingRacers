@@ -277,7 +277,6 @@ enum actionnum
 	A_DRAGONWING,
 	A_DRAGONSEGMENT,
 	A_CHANGEHEIGHT,
-	A_ITEMPOP,
 	A_JAWZEXPLODE,
 	A_SSMINESEARCH,
 	A_SSMINEEXPLODE,
@@ -550,7 +549,6 @@ void A_ChangeHeight();
 //
 // SRB2Kart
 //
-void A_ItemPop();
 void A_JawzExplode();
 void A_SSMineSearch();
 void A_SSMineExplode();
@@ -1084,6 +1082,7 @@ typedef enum sprite
 	// SRB2Kart
 	SPR_RNDM, // Random Item Box
 	SPR_SBOX, // Sphere Box (for Battle)
+	SPR_RBOX, // Ring Box
 	SPR_RPOP, // Random Item Box Pop
 	SPR_ITRI, // Item Box Debris
 	SPR_ITPA, // Paper item backdrop
@@ -4299,7 +4298,20 @@ typedef enum state
 	S_RANDOMITEM10,
 	S_RANDOMITEM11,
 	S_RANDOMITEM12,
-	S_DEADRANDOMITEM,
+
+	// Ring Box
+	S_RINGBOX1,
+	S_RINGBOX2,
+	S_RINGBOX3,
+	S_RINGBOX4,
+	S_RINGBOX5,
+	S_RINGBOX6,
+	S_RINGBOX7,
+	S_RINGBOX8,
+	S_RINGBOX9,
+	S_RINGBOX10,
+	S_RINGBOX11,
+	S_RINGBOX12,
 
 	// Sphere Box (for Battle)
 	S_SPHEREBOX1,
@@ -4314,7 +4326,6 @@ typedef enum state
 	S_SPHEREBOX10,
 	S_SPHEREBOX11,
 	S_SPHEREBOX12,
-	S_DEADSPHEREBOX,
 
 	// Random Item Pop
 	S_RANDOMITEMPOP1,

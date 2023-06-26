@@ -10738,7 +10738,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 		if (player->ringboxdelay == 0)
 		{
 			// TODO
-			K_AwardPlayerRings(player, 10 * player->ringboxaward, true);
+			K_AwardPlayerRings(player, 10 * (player->ringboxaward + 1), true);
 			player->ringboxaward = 0;
 		}
 	}

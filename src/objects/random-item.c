@@ -102,8 +102,26 @@ void Obj_RandomItemVisuals(mobj_t *mobj)
 	ItemBoxBob(mobj);
 	ItemBoxScaling(mobj);
 	item_vfxtimer(mobj)++;
-	if (mobj->fuse == 0)
+
+	// Respawn flow, documented by a dumb asshole:
+	// P_TouchSpecialThing -> P_ItemPop sets fuse, NOCLIPTHING and DONTDRAW.
+	// P_FuseThink does visual flicker, and when fuse is 0, unsets NOCLIPTHING/DONTDRAW/etc...
+	// ...unless it's a map-start box from Battle, in which case it does nothing and waits for
+	// P_RespawnBattleBoxes to trigger the effect instead, since Battle boxes don't respawn until
+	// the player's cleared out a good portion of the map.
+	//
+	// Then extraval1 starts ticking up and triggers the transformation from Ringbox to Random Item.
+	if (mobj->fuse == 0 && !(mobj->flags & MF_NOCLIPTHING))
+	{
 		mobj->extravalue1++;
+		if (mobj->extravalue1 == TICRATE)
+		{
+			// Sync the position in RINGBOX and RANDOMITEM animations.
+			statenum_t animDelta = mobj->state - states - S_RINGBOX1;
+			P_SetMobjState(mobj, S_RANDOMITEM1 + (animDelta%12));
+		}
+	}
+
 }
 
 boolean Obj_RandomItemSpawnIn(mobj_t *mobj)
