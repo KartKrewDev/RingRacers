@@ -18,6 +18,8 @@
 #include "g_game.h"
 #include "k_bot.h"
 #include "k_kart.h"
+#include "k_battle.h"
+#include "k_podium.h"
 #include "m_random.h"
 #include "r_things.h"
 #include "fastcmp.h"
@@ -343,6 +345,38 @@ void K_InitGrandPrixRank(gpRank_t *rankData)
 }
 
 /*--------------------------------------------------
+	void K_UpdateGPRank(void)
+
+		See header file for description.
+--------------------------------------------------*/
+void K_UpdateGPRank(void)
+{
+	if (grandprixinfo.gp != true)
+		return;
+
+	UINT8 i;
+
+	grandprixinfo.rank.prisons += numtargets;
+	grandprixinfo.rank.position = MAXPLAYERS;
+	grandprixinfo.rank.skin = MAXSKINS;
+
+	for (i = 0; i < MAXPLAYERS; i++)
+	{
+		if (!playeringame[i]
+		|| players[i].spectator == true
+		|| players[i].bot == true)
+			continue;
+
+		UINT8 podiumposition = K_GetPodiumPosition(&players[i]);
+		if (podiumposition >= grandprixinfo.rank.position) // port priority
+			continue;
+
+		grandprixinfo.rank.position = podiumposition;
+		grandprixinfo.rank.skin = players[i].skin;
+	}
+}
+
+/*--------------------------------------------------
 	gp_rank_e K_CalculateGPGrade(gpRank_t *rankData)
 
 		See header file for description.
@@ -360,8 +394,8 @@ gp_rank_e K_CalculateGPGrade(gpRank_t *rankData)
 
 	const INT32 positionWeight = 150;
 	const INT32 pointsWeight = 100;
-	const INT32 lapsWeight = 100;
-	const INT32 prisonsWeight = 100;
+	const INT32 lapsWeight = (rankData->totalLaps > 0) ? 100 : 0;
+	const INT32 prisonsWeight = (rankData->totalPrisons > 0) ? 100 : 0;
 	const INT32 ringsWeight = 50;
 	const INT32 total = positionWeight + pointsWeight + lapsWeight + prisonsWeight + ringsWeight;
 	const INT32 continuesPenalty = 20;
@@ -416,4 +450,32 @@ gp_rank_e K_CalculateGPGrade(gpRank_t *rankData)
 	}
 
 	return retGrade;
+}
+
+/*--------------------------------------------------
+	UINT16 K_GetGradeColor(gp_rank_e grade)
+
+		See header file for description.
+--------------------------------------------------*/
+UINT16 K_GetGradeColor(gp_rank_e grade)
+{
+	switch (grade)
+	{
+		case GRADE_E:
+			return SKINCOLOR_BLUE;
+		case GRADE_D:
+			return SKINCOLOR_TURTLE;
+		case GRADE_C:
+			return SKINCOLOR_ORANGE;
+		case GRADE_B:
+			return SKINCOLOR_RED;
+		case GRADE_A:
+			return SKINCOLOR_MAGENTA;
+		case GRADE_S:
+			return SKINCOLOR_PIGEON;
+		default:
+			break;
+	}
+
+	return SKINCOLOR_NONE;
 }

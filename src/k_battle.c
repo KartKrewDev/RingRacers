@@ -122,22 +122,17 @@ void K_CheckBumpers(void)
 		}
 	}
 
-	if (K_Cooperative()
-			? nobumpers > 0 && nobumpers >= numingame
-			: eliminated >= numingame - 1)
+	if (K_Cooperative())
 	{
-		for (i = 0; i < MAXPLAYERS; i++)
+		if (nobumpers > 0 && nobumpers >= numingame)
 		{
-			if (!playeringame[i])
-				continue;
-			if (players[i].spectator)
-				continue;
-
-			if (K_Cooperative())
-				players[i].pflags |= PF_NOCONTEST;
-
-			P_DoPlayerExit(&players[i]);
+			P_DoAllPlayersExit(PF_NOCONTEST, false);
+			return;
 		}
+	}
+	else if (eliminated >= numingame - 1)
+	{
+		P_DoAllPlayersExit(0, false);
 		return;
 	}
 
@@ -156,8 +151,6 @@ void K_CheckBumpers(void)
 
 void K_CheckEmeralds(player_t *player)
 {
-	UINT8 i;
-
 	if (!(gametyperules & GTR_POWERSTONES))
 	{
 		return;
@@ -170,15 +163,7 @@ void K_CheckEmeralds(player_t *player)
 
 	player->roundscore = 100; // lmao
 
-	for (i = 0; i < MAXPLAYERS; i++)
-	{
-		if (!playeringame[i] || players[i].spectator)
-		{
-			continue;
-		}
-
-		P_DoPlayerExit(&players[i]);
-	}
+	P_DoAllPlayersExit(0, false);
 }
 
 UINT16 K_GetChaosEmeraldColor(UINT32 emeraldType)
@@ -212,9 +197,9 @@ mobj_t *K_SpawnChaosEmerald(fixed_t x, fixed_t y, fixed_t z, angle_t angle, SINT
 
 	P_Thrust(emerald,
 		FixedAngle(P_RandomFixed(PR_ITEM_ROULETTE) * 180) + angle,
-		24 * mapobjectscale);
+		36 * mapobjectscale);
 
-	emerald->momz = flip * 24 * mapobjectscale;
+	emerald->momz = flip * 36 * mapobjectscale;
 	if (emerald->eflags & MFE_UNDERWATER)
 		emerald->momz = (117 * emerald->momz) / 200;
 
@@ -280,6 +265,9 @@ void K_DropEmeraldsFromPlayer(player_t *player, UINT32 emeraldType)
 	UINT8 i;
 	SINT8 flip = P_MobjFlip(player->mo);
 
+	if (player->incontrol < TICRATE)
+		return;
+
 	for (i = 0; i < 14; i++)
 	{
 		UINT32 emeraldFlag = (1 << i);
@@ -290,6 +278,7 @@ void K_DropEmeraldsFromPlayer(player_t *player, UINT32 emeraldType)
 			P_SetTarget(&emerald->target, player->mo);
 
 			player->emeralds &= ~emeraldFlag;
+			break; // Drop only one emerald. Emerald wins are hard enough!
 		}
 	}
 }

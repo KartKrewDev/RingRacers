@@ -7,6 +7,9 @@
 #include "../../v_video.h"
 #include "../../k_grandprix.h"
 #include "../../r_local.h" // SplitScreen_OnChange
+#include "../../k_podium.h" // K_StartCeremony
+#include "../../m_misc.h" // FIL_FileExists
+#include "../../d_main.h" // D_ClearState
 
 menuitem_t PLAY_CupSelect[] =
 {
@@ -31,6 +34,150 @@ menu_t PLAY_CupSelectDef = {
 };
 
 struct cupgrid_s cupgrid;
+
+static void M_StartCup(UINT8 entry)
+{
+	UINT8 ssplayers = cv_splitplayers.value-1;
+
+	if (ssplayers > 0)
+	{
+		// Splitscreen is not accomodated with this recovery feature.
+		entry = 0;
+	}
+
+	S_StartSound(NULL, sfx_s3k63);
+
+	paused = false;
+
+	S_StopMusicCredit();
+
+	// Early fadeout to let the sound finish playing
+	F_WipeStartScreen();
+	V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 31);
+	F_WipeEndScreen();
+	F_RunWipe(wipe_level_toblack, wipedefs[wipe_level_toblack], false, "FADEMAP0", false, false);
+
+	if (cv_maxconnections.value < ssplayers+1)
+		CV_SetValue(&cv_maxconnections, ssplayers+1);
+
+	if (splitscreen != ssplayers)
+	{
+		splitscreen = ssplayers;
+		SplitScreen_OnChange();
+	}
+
+	if (entry == 0)
+	{
+		memset(&grandprixinfo, 0, sizeof(struct grandprixinfo));
+
+		// read our dummy cvars
+
+		grandprixinfo.gamespeed = min(KARTSPEED_HARD, cv_dummygpdifficulty.value);
+		grandprixinfo.masterbots = (cv_dummygpdifficulty.value == 3);
+
+		grandprixinfo.gp = true;
+		grandprixinfo.initalize = true;
+		grandprixinfo.cup = levellist.levelsearch.cup;
+
+		// Populate the roundqueue
+		memset(&roundqueue, 0, sizeof(struct roundqueue));
+		G_GPCupIntoRoundQueue(levellist.levelsearch.cup, levellist.newgametype, (boolean)cv_dummygpencore.value);
+		roundqueue.position = roundqueue.roundnum = 1;
+		roundqueue.netcommunicate = true; // relevant for future Online GP
+	}
+	else
+	{
+		// Silently change player setup
+		{
+			CV_StealthSetValue(&cv_playercolor[0], savedata.skincolor);
+
+			// follower
+			if (savedata.followerskin < 0 || savedata.followerskin >= numfollowers)
+				CV_StealthSet(&cv_follower[0], "None");
+			else
+				CV_StealthSet(&cv_follower[0], followers[savedata.followerskin].name);
+
+			// finally, call the skin[x] console command.
+			// This will call SendNameAndColor which will synch everything we sent here and apply the changes!
+
+			CV_StealthSet(&cv_skin[0], skins[savedata.skin].name);
+
+			// ...actually, let's do this last - Skin_OnChange has some return-early occasions
+			// follower color
+			CV_SetValue(&cv_followercolor[0], savedata.followercolor);
+		}
+
+		// Skip Bonus rounds.
+		if (roundqueue.entries[entry].gametype != roundqueue.entries[0].gametype
+			&& roundqueue.entries[entry].rankrestricted == false)
+		{
+			G_GetNextMap(); // updates position in the roundqueue
+			entry = roundqueue.position-1;
+		}
+	}
+
+	paused = false;
+
+	SV_StartSinglePlayerServer(levellist.newgametype, levellist.netgame);
+
+	M_ClearMenus(true);
+	restoreMenu = &PLAY_CupSelectDef;
+
+	if (entry < roundqueue.size)
+	{
+		D_MapChange(
+			roundqueue.entries[entry].mapnum + 1,
+			roundqueue.entries[entry].gametype,
+			roundqueue.entries[entry].encore,
+			true,
+			1,
+			false,
+			roundqueue.entries[entry].rankrestricted
+		);
+	}
+	else if (entry == 0)
+	{
+		I_Error("M_StartCup: roundqueue is empty on startup!!");
+	}
+	else
+	{
+		if (K_StartCeremony() == false)
+		{
+			// Accomodate our buffoonery
+			D_ClearState();
+			M_StartControlPanel();
+
+			M_StartMessage(
+				"Grand Prix Backup",
+				"The session is concluded!\n"
+				"You exited a final Bonus Round,\n"
+				"and the Podium failed to load.\n",
+				NULL, MM_NOTHING, NULL, NULL
+			);
+
+			G_HandleSaveLevel(true);
+
+			return;
+		}
+	}
+}
+
+static void M_GPBackup(INT32 choice)
+{
+	if (choice == MA_YES)
+	{
+		G_LoadGame();
+
+		if (savedata.lives != 0)
+		{
+			M_StartCup(roundqueue.position-1);
+		}
+			
+		return;
+	}
+
+	M_StartCup(0);
+}
 
 void M_CupSelectHandler(INT32 choice)
 {
@@ -104,63 +251,24 @@ void M_CupSelectHandler(INT32 choice)
 
 		if (cupgrid.grandprix == true)
 		{
-			UINT8 ssplayers = cv_splitplayers.value-1;
-
-			S_StartSound(NULL, sfx_s3k63);
-
-			// Early fadeout to let the sound finish playing
-			F_WipeStartScreen();
-			V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 31);
-			F_WipeEndScreen();
-			F_RunWipe(wipe_level_toblack, wipedefs[wipe_level_toblack], false, "FADEMAP0", false, false);
-
-			memset(&grandprixinfo, 0, sizeof(struct grandprixinfo));
-
-			if (cv_maxconnections.value < ssplayers+1)
-				CV_SetValue(&cv_maxconnections, ssplayers+1);
-
-			if (splitscreen != ssplayers)
+			if (newcup == cupsavedata.cup
+			&& FIL_FileExists(gpbackup))
 			{
-				splitscreen = ssplayers;
-				SplitScreen_OnChange();
+				M_StartMessage(
+					"Grand Prix Backup",
+					"A progress backup was found.\n"
+					"Do you want to resurrect your\n"
+					"last Grand Prix session?\n",
+					M_GPBackup,
+					MM_YESNO,
+					"Yes, let's try again",
+					"No, start from Round 1"
+				);
+
+				return;
 			}
 
-			// read our dummy cvars
-
-			grandprixinfo.gamespeed = min(KARTSPEED_HARD, cv_dummygpdifficulty.value);
-			grandprixinfo.masterbots = (cv_dummygpdifficulty.value == 3);
-
-			grandprixinfo.gp = true;
-			grandprixinfo.initalize = true;
-			grandprixinfo.cup = newcup;
-
-			// Populate the roundqueue
-			memset(&roundqueue, 0, sizeof(struct roundqueue));
-			G_GPCupIntoRoundQueue(newcup, levellist.newgametype, (boolean)cv_dummygpencore.value);
-			roundqueue.position = roundqueue.roundnum = 1;
-			roundqueue.netcommunicate = true; // relevant for future Online GP
-
-			paused = false;
-
-			// Don't restart the server if we're already in a game lol
-			if (gamestate == GS_MENU)
-			{
-				SV_StartSinglePlayerServer(levellist.newgametype, levellist.netgame);
-			}
-
-			D_MapChange(
-				roundqueue.entries[0].mapnum + 1,
-				roundqueue.entries[0].gametype,
-				roundqueue.entries[0].encore,
-				true,
-				1,
-				false,
-				roundqueue.entries[0].rankrestricted
-			);
-
-			M_ClearMenus(true);
-
-			restoreMenu = &PLAY_CupSelectDef;
+			M_StartCup(0);
 		}
 		else if (count == 1 && levellist.levelsearch.timeattack == true)
 		{

@@ -98,7 +98,16 @@ void SV_LoadStats(void)
 
 	save.p += headerlen;
 	UINT8 version = READUINT8(save.p);
-	(void)version; // for now
+	if (version > SERVERSTATSVER)
+	{
+		P_SaveBufferFree(&save);
+		I_Error("Existing %s is from the future! (expected %d, got %d)", SERVERSTATSFILE, SERVERSTATSVER, version);
+	}
+	else if (version < SERVERSTATSVER)
+	{
+		// We're converting - let'd create a backup.
+		FIL_WriteFile(va("%s" PATHSEP "%s.bak", srb2home, SERVERSTATSFILE), save.buffer, save.size);
+	}
 
 	numtracked = READUINT32(save.p);
 
@@ -112,6 +121,13 @@ void SV_LoadStats(void)
 		{
 			trackedList[i].powerlevels[j] = READUINT16(save.p);
 		}
+
+		// Migration 1 -> 2: Add finishedrounds
+		if (version < 2)
+			trackedList[i].finishedrounds = 0;
+		else
+			trackedList[i].finishedrounds = READUINT32(save.p);
+
 		trackedList[i].hash = quickncasehash((char*)trackedList[i].public_key, PUBKEYLENGTH);
 	}
 }
@@ -149,6 +165,7 @@ void SV_SaveStats(void)
 		{
 			WRITEUINT16(save.p, trackedList[i].powerlevels[j]);
 		}
+		WRITEUINT32(save.p, trackedList[i].finishedrounds);
 	}
 
 	length = save.p - save.buffer;
@@ -162,7 +179,7 @@ void SV_SaveStats(void)
 }
 
 // New player, grab their stats from trackedList or initialize new ones if they're new
-serverplayer_t *SV_RetrieveStats(uint8_t *key)
+serverplayer_t *SV_GetStatsByKey(uint8_t *key)
 {
 	UINT32 j, hash;
 
@@ -183,12 +200,16 @@ serverplayer_t *SV_RetrieveStats(uint8_t *key)
 	SV_ExpandStats(numtracked+1);
 
 	// Default stats
+	// (NB: This will make a GUEST record if someone tries to retrieve GUEST stats, because
+	// at the very least we should try to provide other codepaths the right  _data type_,
+	// but it will not be written back.)
 	trackedList[numtracked].lastseen = time(NULL);
 	memcpy(&trackedList[numtracked].public_key, key, PUBKEYLENGTH);
 	for(j = 0; j < PWRLV_NUMTYPES; j++)
 	{
 		trackedList[numtracked].powerlevels[j] = PR_IsKeyGuest(key) ? 0 : PWRLVRECORD_START;
 	}
+	trackedList[numtracked].finishedrounds = 0;
 	trackedList[numtracked].hash = quickncasehash((char*)key, PUBKEYLENGTH);
 
 	numtracked++;
@@ -196,7 +217,18 @@ serverplayer_t *SV_RetrieveStats(uint8_t *key)
 	return &trackedList[numtracked - 1];
 }
 
-// Write player stats to trackedList, then save to disk
+serverplayer_t *SV_GetStatsByPlayerIndex(UINT8 p)
+{
+	return SV_GetStatsByKey(players[p].public_key);
+}
+
+serverplayer_t *SV_GetStats(player_t *player)
+{
+	return SV_GetStatsByKey(player->public_key);
+}
+
+// Write clientpowerlevels and timestamps back to matching trackedList entries, then save trackedList to disk
+// (NB: Stats changes can be made directly to trackedList through other paths, but will only write to disk here)
 void SV_UpdateStats(void)
 {	
 	UINT32 i, j, hash;
@@ -233,4 +265,24 @@ void SV_UpdateStats(void)
 	}
 
 	SV_SaveStats();
+}
+
+void SV_BumpMatchStats(void)
+{
+	int i;
+
+	for (i = 0; i < MAXPLAYERS; i++)
+	{
+		if (!playeringame[i])
+			continue;
+		if (players[i].spectator)
+			continue;
+		if (PR_IsKeyGuest(players[i].public_key))
+			continue;
+
+		serverplayer_t *stat = SV_GetStatsByPlayerIndex(i);
+
+		if (!(players[i].pflags & PF_NOCONTEST))
+			stat->finishedrounds++;
+	}
 }

@@ -190,7 +190,7 @@ get_anchor
 		mapthing_t               **      anchors,
 		fixed_t                     distances[3],
 		const struct anchor_list  * list,
-		const mtag_t                tag,
+		const INT32                 group,
 		const vertex_t            * v
 ){
 	size_t i;
@@ -199,7 +199,7 @@ get_anchor
 
 	for (i = 0; i < list->count; ++i)
 	{
-		if (list->points[i] == v && Tag_FGet(&list->anchors[i]->tags) == tag)
+		if (list->points[i] == v && list->anchors[i]->args[0] == group)
 		{
 			for (k = 0; k < 3; ++k)
 			{
@@ -240,15 +240,15 @@ get_sector_anchors
 		mapthing_t               **      anchors,
 		fixed_t                     distances[3],
 		const struct anchor_list  * list,
-		const mtag_t                tag,
+		const INT32                 group,
 		const sector_t            * sector
 ){
 	size_t i;
 
 	for (i = 0; i < sector->linecount; ++i)
 	{
-		get_anchor(anchors, distances, list, tag, sector->lines[i]->v1);
-		get_anchor(anchors, distances, list, tag, sector->lines[i]->v2);
+		get_anchor(anchors, distances, list, group, sector->lines[i]->v1);
+		get_anchor(anchors, distances, list, group, sector->lines[i]->v2);
 	}
 }
 
@@ -257,7 +257,7 @@ find_closest_anchors
 (
 		const sector_t           * sector,
 		const struct anchor_list * list,
-		const mtag_t               tag
+		const INT32                group
 ){
 	fixed_t distances[3] = { INT32_MAX, INT32_MAX, INT32_MAX };
 
@@ -279,12 +279,12 @@ find_closest_anchors
 		for (i = 0; i < sector->numattached; ++i)
 		{
 			get_sector_anchors
-				(anchors, distances, list, tag, &sectors[sector->attached[i]]);
+				(anchors, distances, list, group, &sectors[sector->attached[i]]);
 		}
 	}
 	else
 	{
-		get_sector_anchors(anchors, distances, list, tag, sector);
+		get_sector_anchors(anchors, distances, list, group, sector);
 	}
 
 	if (distances[2] < INT32_MAX)
@@ -310,13 +310,13 @@ find_closest_anchors
 
 		I_Error(
 				"(Control Sector #%s)"
-				" Slope requires anchors (with Parameter %d)"
+				" Slope requires anchors (with group ID %d)"
 				" near 3 of its target sectors' vertices (%d found)"
 
 				"\n\nCheck the log to see which sectors were searched.",
 
 				sizeu1 (sector - sectors),
-				tag,
+				group,
 				last
 		);
 	}
@@ -324,11 +324,11 @@ find_closest_anchors
 	{
 		I_Error(
 				"(Sector #%s)"
-				" Slope requires anchors (with Parameter %d)"
+				" Slope requires anchors (with group ID %d)"
 				" near 3 of its vertices (%d found)",
 
 				sizeu1 (sector - sectors),
-				tag,
+				group,
 				last
 		);
 	}
@@ -402,9 +402,9 @@ slope_sector
 		sector_t                 * sector,
 		const INT16                flags,
 		const struct anchor_list * list,
-		const mtag_t               tag
+		const INT32                group
 ){
-	mapthing_t ** anchors = find_closest_anchors(sector, list, tag);
+	mapthing_t ** anchors = find_closest_anchors(sector, list, group);
 
 	if (anchors != NULL)
 	{
@@ -432,7 +432,7 @@ make_anchored_slope
 
 	sector_t   *  s;
 
-	mtag_t tag = Tag_FGet(&line->tags);
+	INT32 group = line->args[2];
 
 	if (side == 0 || (line->flags & ML_TWOSIDED))
 	{
@@ -446,14 +446,41 @@ make_anchored_slope
 		if (plane & TMSA_FLOOR)
 		{
 			slope_sector
-				(&s->f_slope, &s->c_slope, s, flags, &floor_anchors, tag);
+				(&s->f_slope, &s->c_slope, s, flags, &floor_anchors, group);
 		}
 
 		if (plane & TMSA_CEILING)
 		{
 			slope_sector
-				(&s->c_slope, &s->f_slope, s, flags, &ceiling_anchors, tag);
+				(&s->c_slope, &s->f_slope, s, flags, &ceiling_anchors, group);
 		}
+	}
+}
+
+static void
+make_anchored_slope_from_sector
+(
+		sector_t * s,
+		const int      plane
+){
+	INT16 flags = s->args[1];
+	INT32 group = s->args[2];
+
+	if (plane == (TMSA_FLOOR|TMSA_CEILING))
+	{
+		flags &= ~TMSAF_MIRROR;
+	}
+
+	if (plane & TMSA_FLOOR)
+	{
+		slope_sector
+			(&s->f_slope, &s->c_slope, s, flags, &floor_anchors, group);
+	}
+
+	if (plane & TMSA_CEILING)
+	{
+		slope_sector
+			(&s->c_slope, &s->f_slope, s, flags, &ceiling_anchors, group);
 	}
 }
 
@@ -478,6 +505,22 @@ static void P_SetupAnchoredSlopes (void) {
 			}
 
 			make_anchored_slope(&lines[i], plane);
+		}
+	}
+
+	for (i = 0; i < numsectors; ++i)
+	{
+		if (sectors[i].action == LT_SLOPE_ANCHORS)
+		{
+			int plane = (sectors[i].args[0] & (TMSA_FLOOR|TMSA_CEILING));
+
+			if (plane == 0)
+			{
+				CONS_Alert(CONS_WARNING, "Slope anchor sector %s has no planes set.\n", sizeu1(i));
+				continue;
+			}
+
+			make_anchored_slope_from_sector(&sectors[i], plane);
 		}
 	}
 }

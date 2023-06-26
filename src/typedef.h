@@ -76,6 +76,7 @@ TYPEDEF (serverchallenge_pak);
 TYPEDEF (challengeall_pak);
 TYPEDEF (responseall_pak);
 TYPEDEF (resultsall_pak);
+TYPEDEF (say_pak);
 
 // d_event.h
 TYPEDEF (event_t);
@@ -112,6 +113,9 @@ TYPEDEF (skincolor_t);
 
 // doomstat.h
 TYPEDEF (precipprops_t);
+TYPEDEF (skinrecord_t);
+TYPEDEF (unloaded_skin_t);
+TYPEDEF (skinreference_t);
 TYPEDEF (recorddata_t);
 TYPEDEF (cupwindata_t);
 TYPEDEF (scene_t);
@@ -119,12 +123,15 @@ TYPEDEF (cutscene_t);
 TYPEDEF (textpage_t);
 TYPEDEF (textprompt_t);
 TYPEDEF (mappoint_t);
+TYPEDEF (quake_t);
 TYPEDEF (customoption_t);
 TYPEDEF (gametype_t);
 TYPEDEF (staffbrief_t);
 TYPEDEF (mapheader_t);
+TYPEDEF (unloaded_mapheader_t);
 TYPEDEF (tolinfo_t);
 TYPEDEF (cupheader_t);
+TYPEDEF (unloaded_cupheader_t);
 
 // font.h
 TYPEDEF (font_t);
@@ -137,9 +144,6 @@ TYPEDEF (demoghost);
 // g_game.h
 TYPEDEF (roundentry_t);
 TYPEDEF (mapsearchfreq_t);
-
-// hu_stuff.h
-TYPEDEF (playersort_t);
 
 // i_joy.h
 TYPEDEF (JoyType_t);
@@ -217,6 +221,10 @@ TYPEDEF (gpRank_t);
 TYPEDEF (midVote_t);
 TYPEDEF (midVoteGUI_t);
 
+// k_mapuser.h
+TYPEDEF (mapUserProperty_t);
+TYPEDEF (mapUserProperties_t);
+
 // lua_hudlib_drawlist.h
 typedef struct huddrawlist_s *huddrawlist_h;
 
@@ -261,6 +269,7 @@ TYPEDEF (BasicFF_t);
 // p_maputl.h
 TYPEDEF (divline_t);
 TYPEDEF (intercept_t);
+TYPEDEF (opening_t);
 
 // p_mobj.h
 TYPEDEF (mobj_t);
@@ -289,6 +298,7 @@ TYPEDEF (polyfadedata_t);
 
 // p_saveg.h
 TYPEDEF (savedata_t);
+TYPEDEF (savedata_cup_t);
 TYPEDEF (savebuffer_t);
 
 // p_setup.h

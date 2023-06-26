@@ -80,7 +80,7 @@ void M_QuitSRB2(INT32 choice)
 	// We pick index 0 which is language sensitive, or one at random,
 	// between 1 and maximum number.
 	(void)choice;
-	M_StartMessage("Are you sure you want to quit playing?\n\nPress (A) to confirm or (B) to cancel", FUNCPTRCAST(M_QuitResponse), MM_YESNO);
+	M_StartMessage("Quit Game", "Are you sure you want to quit playing?\n", &M_QuitResponse, MM_YESNO, "Leave the game", "No, I want to go back!");
 }
 
 void M_QuitResponse(INT32 ch)

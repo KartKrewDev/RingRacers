@@ -306,7 +306,7 @@ void K_UpdatePowerLevels(player_t *player, UINT8 lap, boolean forfeit)
 
 		if (inc == 0)
 		{
-			CONS_Printf("Total Result: No increment, no change.\n");
+			// CONS_Printf("Total Result: No increment, no change.\n");
 			continue;
 		}
 

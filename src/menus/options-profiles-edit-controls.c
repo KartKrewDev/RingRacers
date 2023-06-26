@@ -109,7 +109,7 @@ menu_t OPTIONS_ProfileControlsDef = {
 	32, 80,
 	SKINCOLOR_ULTRAMARINE, 0,
 	0,
-	NULL,
+	"FILE",
 	3, 5,
 	M_DrawProfileControls,
 	M_HandleProfileControls,
@@ -207,7 +207,7 @@ void M_ProfileControlsConfirm(INT32 choice)
 {
 	(void)choice;
 
-	//M_StartMessage(M_GetText("Exiting will save the control changes\nfor this Profile.\nIs this okay?\n\nPress (A) to confirm or (B) to cancel"), FUNCPTRCAST(M_ProfileControlSaveResponse), MM_YESNO);
+	//M_StartMessage("Profiles", M_GetText("Exiting will save the control changes\nfor this Profile.\nIs this okay?\n"), &M_ProfileControlSaveResponse, MM_YESNO, NULL, NULL);
 	// TODO: Add a graphic for controls saving, instead of obnoxious prompt.
 
 	M_ProfileControlSaveResponse(MA_YES);

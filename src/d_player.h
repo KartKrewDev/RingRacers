@@ -108,8 +108,7 @@ typedef enum
 	PF_SHRINKACTIVE		= 1<<29, // "Shrink me" cheat is in effect. (Can't be disabled mid-race)
 
 	PF_VOID				= 1<<30, // Removed from reality! When leaving hitlag, reenable visibility+collision and kill speed.
-
-	// up to 1<<31 is free
+	PF_NOFASTFALL		= (INT32)(1U<<31), // Has already done ebrake/fastfall behavior for this input. Fastfalling needs a new input to prevent unwanted bounces on unexpected airtime.
 } pflags_t;
 
 typedef enum
@@ -314,9 +313,20 @@ struct respawnvars_t
 	boolean init;
 };
 
+typedef enum
+{
+	BOT_STYLE_NORMAL,
+	BOT_STYLE_STAY,
+	//BOT_STYLE_CHASE,
+	//BOT_STYLE_ESCAPE,
+	BOT_STYLE__MAX
+} botStyle_e;
+
 // player_t struct for all bot variables
 struct botvars_t
 {
+	botStyle_e style; // Training mode-style CPU mode
+
 	UINT8 difficulty; // Bot's difficulty setting
 	UINT8 diffincrease; // In GP: bot difficulty will increase this much next round
 	boolean rival; // If true, they're the GP rival
@@ -332,6 +342,10 @@ struct botvars_t
 	SINT8 turnconfirm; // Confirm turn direction
 
 	tic_t spindashconfirm; // When high enough, they will try spindashing
+	UINT32 respawnconfirm; // When high enough, they will use Ring Shooter
+
+	UINT8 roulettePriority; // What items to go for on the roulette
+	tic_t rouletteTimeout; // If it takes too long to decide, try lowering priority until we find something valid.
 };
 
 // player_t struct for round-specific condition tracking
@@ -398,6 +412,23 @@ struct itemroulette_t
 	boolean eggman;
 };
 
+// enum for bot item priorities
+typedef enum
+{
+	BOT_ITEM_PR__FALLBACK, // Priority decrement fallback -- end the bot's roulette asap
+	BOT_ITEM_PR_NEUTRAL, // Default priority
+	BOT_ITEM_PR_FRONTRUNNER,
+	BOT_ITEM_PR_SPEED,
+	// Priorities beyond this point are explicitly
+	// used when any item from their priority group
+	// exists in the roulette at all.
+	BOT_ITEM_PR__OVERRIDES,
+	BOT_ITEM_PR_RINGDEBT = BOT_ITEM_PR__OVERRIDES,
+	BOT_ITEM_PR_POWER,
+	BOT_ITEM_PR_SPB,
+	BOT_ITEM_PR__MAX
+} botItemPriority_e;
+
 // player_t struct for loop state
 typedef struct {
 	fixed_t radius;
@@ -414,6 +445,8 @@ struct altview_t
 	mobj_t *mobj;
 	INT32 tics;
 };
+
+extern altview_t titlemapcam;
 
 // ========================================================================
 //                          PLAYER STRUCTURE
@@ -504,12 +537,14 @@ struct player_t
 	UINT8 oldposition;		// Used for taunting when you pass someone
 	UINT8 positiondelay;	// Used for position number, so it can grow when passing
 	UINT32 distancetofinish;
+	UINT32 distancetofinishprev;
 	waypoint_t *currentwaypoint;
 	waypoint_t *nextwaypoint;
 	respawnvars_t respawn;	// Respawn info
 	mobj_t *ringShooter;	// DEZ respawner object
 	tic_t airtime; 			// Used to track just air time, but has evolved over time into a general "karted" timer. Rename this variable?
-	UINT8 startboost;		// (0 to 125) - Boost you get from start of race or respawn drop dash
+	UINT8 startboost;		// (0 to 125) - Boost you get from start of race
+	UINT8 dropdashboost;	// Boost you get when holding A while respawning
 
 	UINT16 flashing;
 	UINT16 spinouttimer;	// Spin-out from a banana peel or oil slick (was "pw_bananacam")
@@ -691,6 +726,11 @@ struct player_t
 
 	tic_t jointime; // Timer when player joins game to change skin/color
 
+	tic_t spectatorReentry;
+
+	UINT32 griefValue;
+	UINT8 griefStrikes;
+
 	UINT8 typing_timer; // Counts down while keystrokes are not emitted
 	UINT8 typing_duration; // How long since resumed timer
 
@@ -714,6 +754,20 @@ struct player_t
 
 	mobj_t *stumbleIndicator;
 	mobj_t *sliptideZipIndicator;
+	mobj_t *whip;
+	mobj_t *hand;
+
+	UINT8 instaShieldCooldown;
+	UINT8 guardCooldown;
+
+	UINT8 handtimer;
+	angle_t besthanddirection;
+
+	INT16 incontrol; // -1 to -175 when spinning out or tumbling, 1 to 175 when not. Use to check for combo hits or emergency inputs.
+
+	boolean markedfordeath;
+
+	fixed_t outrun; // Milky Way road effect
 
 	uint8_t public_key[PUBKEYLENGTH];
 

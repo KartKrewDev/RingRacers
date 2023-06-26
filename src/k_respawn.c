@@ -147,7 +147,6 @@ void K_DoIngameRespawn(player_t *player)
 		K_DoFault(player);
 	}
 
-
 	player->ringboost = 0;
 	player->driftboost = player->strongdriftboost = 0;
 	player->gateBoost = 0;
@@ -291,6 +290,8 @@ void K_DoIngameRespawn(player_t *player)
 
 	player->respawn.airtimer = player->airtime;
 	player->respawn.truedeath = !!(player->pflags & PF_FAULT);
+
+	player->botvars.respawnconfirm = 0;
 
 	player->mo->flags |= MF_NOCLIPTHING;
 }
@@ -798,7 +799,7 @@ static void K_HandleDropDash(player_t *player)
 		if ((buttons & BT_ACCELERATE) && (player->respawn.dropdash >= TICRATE/4))
 		{
 			S_StartSound(player->mo, sfx_s23c);
-			player->startboost = 50;
+			player->dropdashboost = 50;
 			K_SpawnDashDustRelease(player);
 		}
 

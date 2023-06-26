@@ -36,6 +36,7 @@
 #include "r_splats.h"
 #include "z_zone.h"
 #include "w_wad.h"
+#include "y_inter.h" // Y_DetermineIntermissionType
 #include "hu_stuff.h"
 // We need to affect the NiGHTS hud
 #include "st_stuff.h"
@@ -86,18 +87,9 @@ jingle_t jingleinfo[NUMJINGLES] = {
 	{""        , false}, // JT_NONE
 	{""        , false}, // JT_OTHER
 	{""        , false}, // JT_MASTER
-	{"_1up"    , false},
-	{"_shoes"  ,  true},
-	{"_inv"    , false},
-	{"_minv"   , false},
-	{"_drown"  , false},
-	{"_super"  ,  true},
-	{"_gover"  , false},
-	{"_ntime"  , false},  // JT_NIGHTSTIMEOUT
-	{"_drown"  , false}   // JT_SSTIMEOUT
-	// {"_clear"  , false},
-	// {"_inter"  ,  true},
-	// {"_conti"  ,  true}
+
+	{"kinvnc"  ,  true}, // JT_INVINCIBILITY
+	{"kgrow"   ,  true}, // JT_GROW
 };
 
 //
@@ -606,24 +598,6 @@ void P_AddPlayerScore(player_t *player, UINT32 amount)
 		player->roundscore = MAXSCORE;
 }
 
-//
-// P_PlayLivesJingle
-//
-void P_PlayLivesJingle(player_t *player)
-{
-	if (player && !P_IsLocalPlayer(player))
-		return;
-
-	if (use1upSound)
-		S_StartSound(NULL, sfx_oneup);
-	else
-	{
-		P_PlayJingle(player, JT_1UP);
-		strlcpy(S_sfx[sfx_None].caption, "One-up", 7);
-		S_StartCaption(sfx_None, -1, extralifetics+1);
-	}
-}
-
 void P_PlayJingle(player_t *player, jingletype_t jingletype)
 {
 	const char *musname = jingleinfo[jingletype].musname;
@@ -651,7 +625,7 @@ void P_PlayJingleMusic(player_t *player, const char *musname, UINT16 musflags, b
 		return;
 
 	S_RetainMusic(musname, musflags, looping, 0, status);
-	S_StopMusic();
+	//S_StopMusic();
 	S_ChangeMusicInternal(musname, looping);
 }
 
@@ -668,48 +642,30 @@ boolean P_EvaluateMusicStatus(UINT16 status, const char *musname)
 
 		switch(status)
 		{
-			case JT_1UP: // Extra life
-				result = false; //(players[i].powers[pw_extralife] > 1);
-				break;
-
-			case JT_SHOES:  // Speed shoes
-				/*if (players[i].powers[pw_sneakers] > 1 && !players[i].powers[pw_super])
+			case JT_INVINCIBILITY: // Invincibility
+				if (players[i].invincibilitytimer > 1)
 				{
-					//strlcpy(S_sfx[sfx_None].caption, "Speed shoes", 12);
-					//S_StartCaption(sfx_None, -1, players[i].powers[pw_sneakers]);
+					strlcpy(S_sfx[sfx_None].caption, "Invincibility", 14);
+					S_StartCaption(sfx_None, -1, players[i].invincibilitytimer);
 					result = true;
 				}
-				else*/
+				else
+				{
 					result = false;
+				}
 				break;
 
-			case JT_INV: // Invincibility
-			case JT_MINV: // Mario Invincibility
-				/*if (players[i].powers[pw_invulnerability] > 1)
+			case JT_GROW: // Grow
+				if (players[i].growshrinktimer > 1)
 				{
-					//strlcpy(S_sfx[sfx_None].caption, "Invincibility", 14);
-					//S_StartCaption(sfx_None, -1, players[i].powers[pw_invulnerability]);
+					strlcpy(S_sfx[sfx_None].caption, "Grow", 14);
+					S_StartCaption(sfx_None, -1, players[i].growshrinktimer);
 					result = true;
 				}
-				else*/
+				else
+				{
 					result = false;
-				break;
-
-			case JT_DROWN:  // Drowning
-				result = false; //(players[i].powers[pw_underwater] && players[i].powers[pw_underwater] <= 11*TICRATE + 1);
-				break;
-
-			case JT_SUPER:  // Super Sonic
-				result = false; //(players[i].powers[pw_super]);
-				break;
-
-			case JT_GOVER: // Game Over
-				result = (players[i].lives <= 0);
-				break;
-
-			case JT_NIGHTSTIMEOUT: // NiGHTS Time Out (10 seconds)
-			case JT_SSTIMEOUT:
-				result = false; //(players[i].nightstime && players[i].nightstime <= 10*TICRATE);
+				}
 				break;
 
 			case JT_OTHER:  // Other state
@@ -755,91 +711,105 @@ void P_PlayVictorySound(mobj_t *source)
 //
 // Consistently sets ending music!
 //
-boolean P_EndingMusic(player_t *player)
+void P_EndingMusic(void)
 {
-	char buffer[9];
-	boolean looping = true;
-	boolean racetracks = !!(gametyperules & GTR_CIRCUIT);
-	INT32 bestlocalpos, test;
-	player_t *bestlocalplayer;
+	const char *jingle = NULL;
+	boolean nointer = false;
+	UINT8 bestPos = UINT8_MAX;
+	player_t *bestPlayer = NULL;
 
-	if (!P_IsLocalPlayer(player)) // Only applies to a local player
-		return false;
-
-	if (multiplayer && demo.playback) // Don't play this in multiplayer replays
-		return false;
+	SINT8 i;
 
 	// Event - Level Finish
 	// Check for if this is valid or not
-#define getplayerpos(p) \
-	(((players[p].position < 1) || (players[p].pflags & PF_NOCONTEST)) \
-		? MAXPLAYERS+1 \
-		: players[p].position);
-
-	if (r_splitscreen)
+	for (i = 0; i <= r_splitscreen; i++)
 	{
-		const UINT8 *localplayertable = G_PartyArray(consoleplayer);
+		UINT8 pos = UINT8_MAX;
+		player_t *checkPlayer = NULL;
 
-		if (!((players[localplayertable[0]].exiting || (players[localplayertable[0]].pflags & PF_NOCONTEST))
-			|| (players[localplayertable[1]].exiting || (players[localplayertable[1]].pflags & PF_NOCONTEST))
-			|| ((r_splitscreen > 1) && (players[localplayertable[2]].exiting || (players[localplayertable[2]].pflags & PF_NOCONTEST)))
-			|| ((r_splitscreen > 2) && (players[localplayertable[3]].exiting || (players[localplayertable[3]].pflags & PF_NOCONTEST)))))
-			return false;
+		checkPlayer = &players[displayplayers[i]];
+		if (!checkPlayer || checkPlayer->spectator == true)
+		{
+			continue;
+		}
 
-		bestlocalplayer = &players[localplayertable[0]];
-		bestlocalpos = getplayerpos(localplayertable[0]);
-#define setbests(p) \
-	test = getplayerpos(p); \
-	if (test < bestlocalpos) \
-	{ \
-		bestlocalplayer = &players[p]; \
-		bestlocalpos = test; \
-	}
-		setbests(localplayertable[1]);
-		if (r_splitscreen > 1)
-			setbests(localplayertable[2]);
-		if (r_splitscreen > 2)
-			setbests(localplayertable[3]);
-#undef setbests
-	}
-	else
-	{
-		if (!(player->exiting || (player->pflags & PF_NOCONTEST)))
-			return false;
-
-		bestlocalplayer = player;
-		bestlocalpos = getplayerpos((player-players));
-	}
-
-#undef getplayerpos
-
-	if (racetracks == true && bestlocalpos == MAXPLAYERS+1)
-		sprintf(buffer, "k*fail"); // F-Zero death results theme
-	else
-	{
-		if (K_IsPlayerLosing(bestlocalplayer))
-			sprintf(buffer, "k*lose");
-		else if (bestlocalpos == 1)
-			sprintf(buffer, "k*win");
+		if (checkPlayer->exiting)
+		{
+			// Standard exit, use their position
+			pos = checkPlayer->position;
+		}
+		else if (checkPlayer->pflags & PF_NOCONTEST)
+		{
+			// No Contest without finishing, use special value
+			;
+		}
 		else
-			sprintf(buffer, "k*ok");
+		{
+			// Not finished, ignore
+			continue;
+		}
+
+		if (pos <= bestPos)
+		{
+			bestPlayer = checkPlayer;
+			bestPos = pos;
+		}
 	}
+
+	// See G_DoCompleted and Y_DetermineIntermissionType
+	nointer = ((modeattacking && (players[consoleplayer].pflags & PF_NOCONTEST))
+		|| (grandprixinfo.gp == true && grandprixinfo.eventmode != GPEVENT_NONE));
+
+	if (bestPlayer == NULL)
+	{
+		// No jingle for you
+		return;
+	}
+
+	if (bestPos == UINT8_MAX)
+	{
+		jingle = "RETIRE";
+
+		if (G_GametypeUsesLives() == true)
+		{
+			// A retry will be happening
+			nointer = true;
+		}
+	}
+	else
+	{
+		if (K_IsPlayerLosing(bestPlayer) == true)
+		{
+			jingle = "_lose";
+
+			if (G_GametypeUsesLives() == true)
+			{
+				// A retry will be happening
+				nointer = true;
+			}
+		}
+		else if (bestPlayer->position == 1)
+		{
+			jingle = "_first";
+		}
+		else if (K_IsPlayerLosing(bestPlayer) == false)
+		{
+			jingle = "_win";
+		}
+	}
+
+	if (nointer == true)
+	{
+		// Do not set "racent" in G_Ticker
+		musiccountdown = 1;
+	}
+
+	if (jingle == NULL)
+		return;
 
 	S_SpeedMusic(1.0f);
 
-	if (racetracks == true)
-	{
-		buffer[1] = 'r';
-	}
-	else
-	{
-		buffer[1] = 'b';
-		looping = false;
-	}
-
-	S_ChangeMusicInternal(buffer, looping);
-
-	return true;
+	S_ChangeMusicInternal(jingle, false);
 }
 
 //
@@ -849,96 +819,100 @@ boolean P_EndingMusic(player_t *player)
 //
 void P_RestoreMusic(player_t *player)
 {
-	UINT32 position;
+	UINT8 overrideLevel = 0;
+	SINT8 i;
 
-	if (!P_IsLocalPlayer(player)) // Only applies to a local player
+	if (P_IsLocalPlayer(player) == false)
+	{
+		// Only applies to local players
 		return;
+	}
 
 	S_SpeedMusic(1.0f);
-
-	// TO-DO: Use jingle system for Kart's stuff
 
 	// Event - HERE COMES A NEW CHALLENGER
 	if (mapreset)
 	{
-		S_ChangeMusicInternal("chalng", false); //S_StopMusic();
+		S_ChangeMusicInternal("chalng", false);
 		return;
 	}
 
 	// Event - Level Ending
-	if (P_EndingMusic(player))
+	if (musiccountdown > 0)
+	{
 		return;
+	}
 
 	// Event - Level Start
 	if ((K_CheckBossIntro() == false)
 		&& (leveltime < (starttime + (TICRATE/2)))) // see also where time overs are handled
-		return;
-
 	{
-		INT32 wantedmus = 0; // 0 is level music, 1 is invincibility, 2 is grow
-
-		if (r_splitscreen)
-		{
-			INT32 bestlocaltimer = 1;
-			const UINT8 *localplayertable = G_PartyArray(consoleplayer);
-
-#define setbests(p) \
-	if (players[p].playerstate == PST_LIVE) \
-	{ \
-		if (players[p].invincibilitytimer > bestlocaltimer) \
-		{ wantedmus = 1; bestlocaltimer = players[p].invincibilitytimer; } \
-		else if (players[p].growshrinktimer > bestlocaltimer) \
-		{ wantedmus = 2; bestlocaltimer = players[p].growshrinktimer; } \
+		return;
 	}
-			setbests(localplayertable[0]);
-			setbests(localplayertable[1]);
-			if (r_splitscreen > 1)
-				setbests(localplayertable[2]);
-			if (r_splitscreen > 2)
-				setbests(localplayertable[3]);
-#undef setbests
-		}
-		else
+
+	for (i = 0; i <= r_splitscreen; i++)
+	{
+		player_t *checkPlayer = &players[displayplayers[i]];
+		if (!checkPlayer)
 		{
-			if (player->playerstate == PST_LIVE)
-			{
-				if (player->invincibilitytimer > 1)
-					wantedmus = 1;
-				else if (player->growshrinktimer > 1)
-					wantedmus = 2;
-			}
+			continue;
 		}
 
-		// Item - Grow
-		if (wantedmus == 2)
+		if (checkPlayer->exiting)
 		{
-			S_ChangeMusicInternal("kgrow", true);
-			S_SetRestoreMusicFadeInCvar(&cv_growmusicfade);
+			return;
 		}
-		// Item - Invincibility
-		else if (wantedmus == 1)
+
+		if (checkPlayer->invincibilitytimer > 1)
 		{
-			S_ChangeMusicInternal("kinvnc", true);
-			S_SetRestoreMusicFadeInCvar(&cv_invincmusicfade);
+			overrideLevel = max(overrideLevel, 2);
 		}
-		else
+		else if (checkPlayer->growshrinktimer > 1)
 		{
+			overrideLevel = max(overrideLevel, 1);
+		}
+	}
+
+	if (overrideLevel != 0)
+	{
+		// Do a jingle override.
+		jingletype_t jt = JT_NONE;
+
+		switch (overrideLevel)
+		{
+			// Lowest priority to highest priority.
+			case 1:
+				jt = JT_GROW;
+				break;
+			case 2:
+				jt = JT_INVINCIBILITY;
+				break;
+			default:
+				break;
+		}
+
+		if (jt != JT_NONE)
+		{
+			//CONS_Printf("JINGLE: %d\n", jt);
+			//if (S_RecallMusic(jt, false) == false)
+			//{
+				P_PlayJingle(player, jt);
+			//}
+			return;
+		}
+	}
+
 #if 0
 			// Event - Final Lap
 			// Still works for GME, but disabled for consistency
 			if ((gametyperules & GTR_CIRCUIT) && player->laps >= numlaps)
 				S_SpeedMusic(1.2f);
 #endif
-			if (mapmusresume && cv_resume.value)
-				position = mapmusresume;
-			else
-				position = mapmusposition;
 
-			S_ChangeMusicEx(mapmusname, mapmusflags, true, position, 0,
-					S_GetRestoreMusicFadeIn());
-			S_ClearRestoreMusicFadeInCvar();
-			mapmusresume = 0;
-		}
+	if (S_RecallMusic(JT_NONE, false) == false) // go down the stack
+	{
+		CONS_Debug(DBG_BASIC, "Cannot find any music in resume stack!\n");
+	 	S_ChangeMusicEx(mapmusname, mapmusflags, true, mapmusposition, 0, 0);
 	}
 }
 
@@ -1280,15 +1254,99 @@ mobj_t *P_SpawnGhostMobj(mobj_t *mobj)
 }
 
 //
+// P_SpawnFakeShadow
+//
+// Spawns a silhouette that copies its tracer and copies RF_DONTDRAW
+//
+mobj_t *P_SpawnFakeShadow(mobj_t *mobj, UINT8 offset)
+{
+	mobj_t *ghost = P_SpawnMobj(mobj->x, mobj->y, mobj->z - offset*mapobjectscale, MT_FAKESHADOW);
+	ghost->threshold = offset;
+
+	P_SetTarget(&ghost->target, mobj);
+
+	P_SetScale(ghost, mobj->scale);
+	ghost->destscale = mobj->scale;
+
+	if (mobj->eflags & MFE_VERTICALFLIP)
+	{
+		ghost->eflags |= MFE_VERTICALFLIP;
+		ghost->z += mobj->height - ghost->height;
+	}
+
+	ghost->color = mobj->color;
+	ghost->colorized = mobj->colorized; // Kart: they should also be colorized if their origin is
+
+	ghost->angle = (mobj->player ? mobj->player->drawangle : mobj->angle);
+	ghost->roll = mobj->roll;
+	ghost->pitch = mobj->pitch;
+	ghost->sprite = mobj->sprite;
+	ghost->sprite2 = mobj->sprite2;
+	ghost->frame = mobj->frame;
+	ghost->tics = -1;
+	ghost->renderflags = mobj->renderflags;
+	ghost->fuse = -1;
+	ghost->skin = mobj->skin;
+	ghost->standingslope = mobj->standingslope;
+
+	ghost->sprxoff = mobj->sprxoff;
+	ghost->spryoff = mobj->spryoff;
+	ghost->sprzoff = mobj->sprzoff;
+	ghost->rollangle = mobj->rollangle;
+
+	ghost->spritexscale = mobj->spritexscale;
+	ghost->spriteyscale = mobj->spriteyscale;
+	ghost->spritexoffset = mobj->spritexoffset;
+	ghost->spriteyoffset = mobj->spriteyoffset;
+
+	if (mobj->flags2 & MF2_OBJECTFLIP)
+		ghost->flags |= MF2_OBJECTFLIP;
+
+	if (!(mobj->flags & MF_DONTENCOREMAP))
+		ghost->flags &= ~MF_DONTENCOREMAP;
+
+	if (mobj->player && mobj->player->followmobj)
+	{
+		mobj_t *ghost2 = P_SpawnGhostMobj(mobj->player->followmobj);
+		P_SetTarget(&ghost2->tracer, ghost);
+		P_SetTarget(&ghost->tracer, ghost2);
+		ghost2->flags2 |= (mobj->player->followmobj->flags2 & MF2_LINKDRAW);
+	}
+
+	// Copy interpolation data :)
+	ghost->old_x = mobj->old_x2;
+	ghost->old_y = mobj->old_y2;
+	ghost->old_z = mobj->old_z2;
+	ghost->old_angle = (mobj->player ? mobj->player->old_drawangle2 : mobj->old_angle2);
+	ghost->old_pitch = mobj->old_pitch2;
+	ghost->old_roll = mobj->old_roll2;
+
+	ghost->renderflags &= ~(RF_TRANSMASK|RF_FULLBRIGHT);
+	ghost->renderflags |= RF_ABSOLUTELIGHTLEVEL;
+	ghost->lightlevel = 0;
+
+	ghost->flags2 |= MF2_LINKDRAW;
+	P_SetTarget(&ghost->tracer, mobj);
+
+	return ghost;
+}
+
+
+//
 // P_DoPlayerExit
 //
 // Player exits the map via sector trigger
-void P_DoPlayerExit(player_t *player)
+void P_DoPlayerExit(player_t *player, pflags_t flags)
 {
-	const boolean losing = K_IsPlayerLosing(player);
-
 	if (player->exiting || mapreset)
+	{
 		return;
+	}
+
+	player->pflags |= flags;
+
+	const boolean losing = K_IsPlayerLosing(player);
+	const boolean specialout = (specialstageinfo.valid == true && losing == true);
 
 	if (P_IsLocalPlayer(player) && (!player->spectator && !demo.playback))
 	{
@@ -1303,13 +1361,19 @@ void P_DoPlayerExit(player_t *player)
 		K_PlayerLoseLife(player);
 	}
 
+	if (P_IsLocalPlayer(player) && !specialout)
+	{
+		S_StopMusic();
+		musiccountdown = MUSICCOUNTDOWNMAX;
+	}
+
 	player->exiting = 1;
 
 	if (!player->spectator)
 	{
 		ClearFakePlayerSkin(player);
 
-		if ((gametyperules & GTR_CIRCUIT)) // If in Race Mode, allow
+		if ((gametyperules & GTR_CIRCUIT)) // Special Race-like handling
 		{
 			K_UpdateAllPlayerPositions();
 
@@ -1333,13 +1397,9 @@ void P_DoPlayerExit(player_t *player)
 				}
 			}
 
-			// See Y_StartIntermission timer handling
-			if (!K_CanChangeRules(false) || cv_inttime.value > 0)
-				P_EndingMusic(player);
-
 			if (P_CheckRacers() && !exitcountdown)
 			{
-				if (specialstageinfo.valid == true && losing == true)
+				if (specialout == true)
 				{
 					exitcountdown = TICRATE;
 				}
@@ -1349,16 +1409,9 @@ void P_DoPlayerExit(player_t *player)
 				}
 			}
 		}
-		else if ((gametyperules & GTR_BUMPERS)) // Battle Mode exiting
+		else if (!exitcountdown) // All other gametypes
 		{
-			if (!exitcountdown)
-				exitcountdown = battleexittime+1;
-			P_EndingMusic(player);
-		}
-		else // Accidental death safeguard???
-		{
-			if (!exitcountdown)
-				exitcountdown = raceexittime+2;
+			exitcountdown = raceexittime+1;
 		}
 
 		if (grandprixinfo.gp == true && player->bot == false && losing == false)
@@ -1377,19 +1430,84 @@ void P_DoPlayerExit(player_t *player)
 	}
 
 	if (modeattacking)
-		G_UpdateRecords();
-
-	profile_t *pr = PR_GetPlayerProfile(player);
-	if (pr != NULL && !losing)
 	{
-		pr->wins++;
-		PR_SaveProfiles();
+		G_UpdateRecords();
+	}
+
+	if (!losing)
+	{
+		profile_t *pr = PR_GetPlayerProfile(player);
+		if (pr != NULL)
+		{
+			pr->wins++;
+			PR_SaveProfiles();
+		}
+
+		if (P_IsLocalPlayer(player) && player->skin < numskins)
+		{
+			skins[player->skin].records.wins++;
+		}
 	}
 
 	player->karthud[khud_cardanimation] = 0; // srb2kart: reset battle animation
 
 	if (player == &players[consoleplayer])
 		demo.savebutton = leveltime;
+}
+
+//
+// P_DoAllPlayersExit
+//
+// All players exit the map via event
+void P_DoAllPlayersExit(pflags_t flags, boolean trygivelife)
+{
+	UINT8 i;
+	boolean givenlife = false;
+	const boolean dofinishsound = (musiccountdown == 0);
+
+	for (i = 0; i < MAXPLAYERS; i++)
+	{
+		if (!playeringame[i] || players[i].spectator)
+		{
+			continue;
+		}
+		if (players[i].exiting)
+		{
+			continue;
+		}
+
+		P_DoPlayerExit(&players[i], flags);
+
+		if (trygivelife == false)
+		{
+			continue;
+		}
+
+		P_GivePlayerLives(&players[i], 1);
+		givenlife = true;
+	}
+
+	if (!dofinishsound)
+	{
+		// You've already finished, don't play again
+		;
+	}
+	else if (musiccountdown == 0)
+	{
+		// Other people finish
+		S_StartSound(NULL, sfx_s253);
+	}
+	else if (musiccountdown > 1)
+	{
+		// Everyone finish sound
+		S_StartSound(NULL, sfx_s3k6a);
+	}
+
+	if (givenlife)
+	{
+		// Life sound
+		S_StartSound(NULL, sfx_cdfm73);
+	}
 }
 
 //
@@ -2896,10 +3014,10 @@ consvar_t cv_cam_dist[MAXSPLITSCREENPLAYERS] = {
 };
 
 consvar_t cv_cam_height[MAXSPLITSCREENPLAYERS] = {
-	CVAR_INIT ("cam_height", "75", CV_FLOAT|CV_SAVE, NULL, NULL),
-	CVAR_INIT ("cam2_height", "75", CV_FLOAT|CV_SAVE, NULL, NULL),
-	CVAR_INIT ("cam3_height", "75", CV_FLOAT|CV_SAVE, NULL, NULL),
-	CVAR_INIT ("cam4_height", "75", CV_FLOAT|CV_SAVE, NULL, NULL)
+	CVAR_INIT ("cam_height", "95", CV_FLOAT|CV_SAVE, NULL, NULL),
+	CVAR_INIT ("cam2_height", "95", CV_FLOAT|CV_SAVE, NULL, NULL),
+	CVAR_INIT ("cam3_height", "95", CV_FLOAT|CV_SAVE, NULL, NULL),
+	CVAR_INIT ("cam4_height", "95", CV_FLOAT|CV_SAVE, NULL, NULL)
 };
 
 consvar_t cv_cam_still[MAXSPLITSCREENPLAYERS] = {
@@ -2924,9 +3042,6 @@ consvar_t cv_cam_rotate[MAXSPLITSCREENPLAYERS] = {
 };
 
 consvar_t cv_tilting = CVAR_INIT ("tilting", "On", CV_SAVE, CV_OnOff, NULL);
-
-consvar_t cv_actionmovie = CVAR_INIT ("actionmovie", "On", CV_SAVE, CV_OnOff, NULL);
-consvar_t cv_windowquake = CVAR_INIT ("windowquake", "Off", CV_SAVE, CV_OnOff, NULL);
 
 fixed_t t_cam_dist[MAXSPLITSCREENPLAYERS] = {-42,-42,-42,-42};
 fixed_t t_cam_height[MAXSPLITSCREENPLAYERS] = {-42,-42,-42,-42};
@@ -3844,10 +3959,16 @@ void P_DoTimeOver(player_t *player)
 		P_DamageMobj(player->mo, NULL, NULL, 1, DMG_TIMEOVER);
 	}
 
-	P_EndingMusic(player);
+	if (P_IsLocalPlayer(player))
+	{
+		S_StopMusic();
+		musiccountdown = MUSICCOUNTDOWNMAX;
+	}
 
 	if (!exitcountdown)
-		exitcountdown = 5*TICRATE;
+	{
+		exitcountdown = raceexittime;
+	}
 }
 
 // SRB2Kart: These are useful functions, but we aren't using them yet.
@@ -3969,21 +4090,22 @@ Quaketilt (player_t *player)
 		if (sliptiding)
 		{
 			tilt = ANGLE_45;
-			lowb = 5*FRACUNIT;
+			lowb = 20*FRACUNIT;
 		}
 		else
 		{
 			tilt = ANGLE_11hh/2;
-			lowb = 15*FRACUNIT;
+			lowb = 60*FRACUNIT;
 		}
 	}
 	else
 	{
 		tilt = ANGLE_22h;
-		lowb = 10*FRACUNIT;
+		lowb = 40*FRACUNIT;
 	}
+	lowb = FixedMul(lowb, player->mo->scale);
 	moma = FixedMul(FixedDiv(delta, ANGLE_90), tilt);
-	speed = abs( player->mo->momx + player->mo->momy );
+	speed = player->speed;
 	if (speed < lowb)
 	{
 		// ease out tilt as we slow...
@@ -4330,10 +4452,15 @@ void P_PlayerThink(player_t *player)
 		K_RespawnChecker(player);
 		player->rmomx = player->rmomy = 0;
 
+		player->markedfordeath = false; // In case we got here via a death sector or something.
+
 		if (player->respawn.state == RESPAWNST_DROP)
 		{
 			// Allows some turning
 			P_MovePlayer(player);
+
+			if (player->rings <= -20) // We got here from death, so give the player a fresh start.
+				player->rings = 5;
 		}
 	}
 	else if (player->mo->reactiontime)
@@ -4482,6 +4609,11 @@ void P_PlayerAfterThink(player_t *player)
 	}
 #endif
 
+	if (P_IsObjectOnGround(player->mo) == true)
+	{
+		player->outrun = 0;
+	}
+
 #ifdef SECTORSPECIALSAFTERTHINK
 	if (player->onconveyor != 1 || !P_IsObjectOnGround(player->mo))
 		player->onconveyor = 0;
@@ -4604,6 +4736,92 @@ void P_PlayerAfterThink(player_t *player)
 
 	if (P_IsObjectOnGround(player->mo))
 		player->mo->pmomz = 0;
+}
+
+void P_IncrementGriefValue(player_t *player, UINT32 *grief, const UINT32 griefMax)
+{
+	const fixed_t requireDist = (12*player->mo->scale) / FRACUNIT;
+	INT32 progress = player->distancetofinishprev - player->distancetofinish;
+	boolean exceptions = (
+		player->flashing != 0
+		|| player->mo->hitlag != 0
+		|| player->airtime > 3*TICRATE/2
+		|| (player->justbumped > 0 && player->justbumped < bumptime-1)
+	);
+
+	if (!exceptions && (progress < requireDist))
+	{
+		// If antigrief is disabled, we don't want the
+		// player getting into a hole so deep no amount
+		// of good behaviour could ever make up for it.
+		if (*grief < griefMax)
+		{
+			// Making no progress, start counting against you.
+			*grief = *grief + 1;
+			if (progress < -requireDist && *grief < griefMax)
+			{
+				// Making NEGATIVE progress? Start counting even harder.
+				*grief = *grief + 1;
+			}
+		}
+	}
+	else if (*grief > 0)
+	{
+		// Playing normally.
+		*grief = *grief - 1;
+	}
+}
+
+void P_CheckRaceGriefing(player_t *player, boolean dopunishment)
+{
+	const UINT32 griefMax = cv_antigrief.value * TICRATE;
+	const UINT8 n = player - players;
+
+	// Don't punish if the cvar is turned off,
+	// otherwise NOBODY would be able to play!
+	if (griefMax == 0)
+	{
+		dopunishment = false;
+	}
+
+	P_IncrementGriefValue(player, &player->griefValue, griefMax);
+
+	if (dopunishment && player->griefValue >= griefMax)
+	{
+		if (player->griefStrikes < 3)
+		{
+			player->griefStrikes++;
+		}
+
+		player->griefValue = 0;
+
+		if (server)
+		{
+			if (player->griefStrikes == 3 && playernode[n] != servernode
+#ifndef DEVELOP
+				&& !IsPlayerAdmin(n)
+#endif
+				)
+			{
+				// Send kick
+				SendKick(n, KICK_MSG_GRIEF);
+			}
+			else
+			{
+				// Send spectate
+				changeteam_union NetPacket;
+				UINT16 usvalue;
+
+				NetPacket.value.l = NetPacket.value.b = 0;
+				NetPacket.packet.newteam = 0;
+				NetPacket.packet.playernum = n;
+				NetPacket.packet.verification = true;
+
+				usvalue = SHORT(NetPacket.value.l|NetPacket.value.b);
+				SendNetXCmd(XD_TEAMCHANGE, &usvalue, sizeof(usvalue));
+			}
+		}
+	}
 }
 
 void P_SetPlayerAngle(player_t *player, angle_t angle)

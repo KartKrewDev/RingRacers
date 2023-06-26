@@ -51,6 +51,9 @@
 #include "d_player.h" // KITEM_ constants
 #include "doomstat.h" // MAXSPLITSCREENPLAYERS
 #include "k_grandprix.h" // K_CanChangeRules
+#include "k_rank.h" // K_GetGradeColor
+
+#include "y_inter.h" // Y_RoundQueueDrawer
 
 #include "i_joy.h" // for joystick menu controls
 
@@ -64,6 +67,10 @@
 #include <stdio.h> // for snprintf
 int	snprintf(char *str, size_t n, const char *fmt, ...);
 //int	vsnprintf(char *str, size_t n, const char *fmt, va_list ap);
+#endif
+
+#ifdef HAVE_DISCORDRPC
+#include "discord.h"
 #endif
 
 #define SKULLXOFF -32
@@ -351,100 +358,339 @@ void M_DrawMenuForeground(void)
 	}
 }
 
+//
+// M_DrawMenuTooltips
+//
+// Draw a banner across the top of the screen, with a description of the current option displayed
+//
+static void M_DrawMenuTooltips(void)
+{
+	if (currentMenu->menuitems[itemOn].tooltip != NULL)
+	{
+		V_DrawFixedPatch(0, 0, FRACUNIT, 0, W_CachePatchName("MENUHINT", PU_CACHE), NULL);
+		V_DrawCenteredThinString(BASEVIDWIDTH/2, 12, V_ALLOWLOWERCASE|V_6WIDTHSPACE, currentMenu->menuitems[itemOn].tooltip);
+	}
+}
+
 // Draws the typing submenu
 static void M_DrawMenuTyping(void)
 {
+	const UINT8 pid = 0;
 
 	INT32 i, j;
 
-	INT32 x = 60;
-	INT32 y = 100 + (9-menutyping.menutypingfade)*8;
-	INT32 tflag = (9 - menutyping.menutypingfade)<<V_ALPHASHIFT;
+	INT32 x, y;
 
 	consvar_t *cv = currentMenu->menuitems[itemOn].itemaction.cvar;
 
 	char buf[8];	// We write there to use drawstring for convenience.
 
-	V_DrawFadeScreen(31, menutyping.menutypingfade);
+	V_DrawFadeScreen(31, (menutyping.menutypingfade+1)/2);
 
 	// Draw the string we're editing at the top.
-	V_DrawString(x, y-48 + 12, V_ALLOWLOWERCASE|tflag, cv->string);
-	if (skullAnimCounter < 4)
-		V_DrawCharacter(x + V_StringWidth(cv->string, 0), y - 35, '_' | 0x80, false);
+
+	const INT32 boxwidth = (8*(MAXSTRINGLENGTH + 1)) + 7;
+	x = (BASEVIDWIDTH - boxwidth)/2;
+	y = 80;
+	if (menutyping.menutypingfade < 9)
+		y += floor(pow(2, (double)(9 - menutyping.menutypingfade)));
+	else
+		y += (9-menutyping.menutypingfade);
+
+	if (currentMenu->menuitems[itemOn].text)
+	{
+		V_DrawThinString(x + 5, y - 2, highlightflags|V_6WIDTHSPACE|V_ALLOWLOWERCASE, currentMenu->menuitems[itemOn].text);
+	}
+
+	M_DrawMenuTooltips();
+
+	//M_DrawTextBox(x, y + 4, MAXSTRINGLENGTH, 1);
+	V_DrawFill(x + 5, y + 4 + 5, boxwidth - 8, 8+6, 159);
+
+	V_DrawFill(x + 4, y + 4 + 4, boxwidth - 6, 1, 121);
+	V_DrawFill(x + 4, y + 4 + 5 + 8 + 6, boxwidth - 6, 1, 121);
+
+	V_DrawFill(x + 4, y + 4 + 5, 1, 8+6, 121);
+	V_DrawFill(x + 5 + boxwidth - 8, y + 4 + 5, 1, 8+6, 121);
+
+	V_DrawString(x + 8, y + 12, V_ALLOWLOWERCASE, cv->string);
+	if (skullAnimCounter < 4
+		&& menutyping.menutypingclose == false
+		&& menutyping.menutypingfade == (menutyping.keyboardtyping ? 9 : 18))
+	{
+		V_DrawCharacter(x + 8 + V_StringWidth(cv->string, 0), y + 12 + 1, '_' | 0x80, false);
+	}
+
+	const INT32 buttonwidth = ((boxwidth + 1)/NUMVIRTUALKEYSINROW);
+#define BUTTONHEIGHT (11)
+
+	// Now the keyboard itself
+	x += 5;
+	INT32 returnx = x;
+
+	if (menutyping.menutypingfade > 9)
+	{
+		y += 26;
+
+		if (menutyping.menutypingfade < 18)
+		{
+			y += floor(pow(2, (double)(18 - menutyping.menutypingfade))); // double yoffs for animation
+		}
+
+		INT32 tempkeyboardx = menutyping.keyboardx;
+
+		while (virtualKeyboard[menutyping.keyboardy][tempkeyboardx] == 1
+		&& tempkeyboardx > 0)
+			tempkeyboardx--;
+
+		for (i = 0; i < 5; i++)
+		{
+			j = 0;
+			while (j < NUMVIRTUALKEYSINROW)
+			{
+				INT32 mflag = V_ALLOWLOWERCASE|V_6WIDTHSPACE;
+				INT16 c = virtualKeyboard[i][j];
+
+				INT32 buttonspacing = 1;
+
+				UINT8 col = 27;
+
+				INT32 arrowoffset = 0;
+
+				while (j + buttonspacing < NUMVIRTUALKEYSINROW
+				&& virtualKeyboard[i][j + buttonspacing] == 1)
+				{
+					buttonspacing++;
+				}
+
+				if (menutyping.keyboardshift ^ menutyping.keyboardcapslock)
+					c = shift_virtualKeyboard[i][j];
+
+				if (i < 4 && j < NUMVIRTUALKEYSINROW-2)
+				{
+					col = 25;
+				}
+
+				boolean canmodifycol = (menutyping.menutypingfade == 18);
+
+				if (c == KEY_BACKSPACE)
+				{
+					arrowoffset = 1;
+					buf[0] = '\x1C'; // left arrow
+					buf[1] = '\0';
+
+					if (canmodifycol && M_MenuBackHeld(pid))
+					{
+						col -= 4;
+						canmodifycol = false;
+					}
+				}
+				else if (c == KEY_RSHIFT)
+				{
+					arrowoffset = 2;
+					buf[0] = '\x1A'; // up arrow
+					buf[1] = '\0';
+
+					if (menutyping.keyboardcapslock || menutyping.keyboardshift)
+					{
+						col = 22;
+					}
+
+					if (canmodifycol && M_MenuExtraHeld(pid))
+					{
+						col -= 4;
+						canmodifycol = false;
+					}
+				}
+				else if (c == KEY_ENTER)
+				{
+					strcpy(buf, "OK");
+
+					if (menutyping.menutypingclose)
+					{
+						col -= 4;
+						canmodifycol = false;
+					}
+				}
+				else if (c == KEY_SPACE)
+				{
+					strcpy(buf, "Space");
+				}
+				else
+				{
+					buf[0] = c;
+					buf[1] = '\0';
+				}
+
+				INT32 width = (buttonwidth * buttonspacing) - 1;
+
+				// highlight:
+				/*if (menutyping.keyboardtyping)
+				{
+					mflag |= V_TRANSLUCENT;	// grey it out if we can't use it.
+				}
+				else*/
+				{
+					if (tempkeyboardx == j && menutyping.keyboardy == i)
+					{
+						if (canmodifycol && M_MenuConfirmHeld(pid))
+						{
+							col -= 4;
+							canmodifycol = false;
+						}
+
+						V_DrawFill(x + 1, y + 1, width - 2, BUTTONHEIGHT - 2, col - 3);
+
+						V_DrawFill(x, y,                    width, 1, 121);
+						V_DrawFill(x, y + BUTTONHEIGHT - 1, width, 1, 121);
+
+						V_DrawFill(x,             y + 1, 1, BUTTONHEIGHT - 2, 121);
+						V_DrawFill(x + width - 1, y + 1, 1, BUTTONHEIGHT - 2, 121);
+
+						mflag |= highlightflags;
+					}
+					else
+					{
+						V_DrawFill(x, y, width, BUTTONHEIGHT, col);
+					}
+				}
+
+				if (arrowoffset != 0)
+				{
+					if (c == KEY_RSHIFT)
+					{
+						V_DrawFill(x + width - 5, y + 1, 4, 4, 31);
+
+						if (menutyping.keyboardcapslock)
+						{
+							V_DrawFill(x + width - 4, y + 2, 2, 2, 121);
+						}
+					}
+
+					V_DrawCenteredString(x + (width/2), y + 1 + arrowoffset, mflag, buf);
+				}
+				else
+				{
+					V_DrawCenteredThinString(x + (width/2), y + 1, mflag, buf);
+				}
+
+				x += width + 1;
+				j += buttonspacing;
+			}
+			x = returnx;
+			y += BUTTONHEIGHT + 1;
+		}
+	}
+
+#undef BUTTONHEIGHT
+
+	y = 175;
+
+	if (menutyping.menutypingfade < 9)
+	{
+		y += 3 * (9 - menutyping.menutypingfade);
+	}
 
 	// Some contextual stuff
 	if (menutyping.keyboardtyping)
-		V_DrawThinString(10, 175, V_ALLOWLOWERCASE|tflag|V_GRAYMAP, "Type using your keyboard. Press Enter to confirm & exit.\nUse your controller or any directional input to use the Virtual Keyboard.\n");
-	else
-		V_DrawThinString(10, 175, V_ALLOWLOWERCASE|tflag|V_GRAYMAP, "Type using the Virtual Keyboard. Use the \'OK\' button to confirm & exit.\nPress any keyboard key not bound to a control to use it.");
-
-
-	// Now the keyboard itself
-	for (i=0; i < 5; i++)
 	{
-		for (j=0; j < 13; j++)
-		{
-			INT32 mflag = 0;
-			INT16 c = virtualKeyboard[i][j];
-			if (menutyping.keyboardshift ^ menutyping.keyboardcapslock)
-				c = shift_virtualKeyboard[i][j];
-
-
-			if (c == KEY_BACKSPACE)
-				strcpy(buf, "DEL");
-
-			else if (c == KEY_RSHIFT)
-				strcpy(buf, "SHIFT");
-
-			else if (c == KEY_CAPSLOCK)
-				strcpy(buf, "CAPS");
-
-			else if (c == KEY_ENTER)
-				strcpy(buf, "OK");
-
-			else if (c == KEY_SPACE)
-				strcpy(buf, "SPACE");
-
-			else
-			{
-				buf[0] = c;
-				buf[1] = '\0';
-			}
-
-			// highlight:
-			if (menutyping.keyboardx == j && menutyping.keyboardy == i && !menutyping.keyboardtyping)
-				mflag |= highlightflags;
-			else if (menutyping.keyboardtyping)
-				mflag |= V_TRANSLUCENT;	// grey it out if we can't use it.
-
-			V_DrawString(x, y, V_ALLOWLOWERCASE|tflag|mflag, buf);
-
-			x += V_StringWidth(buf, 0)+8;
-		}
-		x = 60;
-		y += 12;
+		V_DrawThinString(returnx, y, V_ALLOWLOWERCASE|V_6WIDTHSPACE|V_GRAYMAP, "Type using your keyboard. Press Enter to confirm & exit.\nUse your controller or any directional input to use the Virtual Keyboard.\n");
 	}
+	else
+	{
+		V_DrawThinString(returnx, y, V_ALLOWLOWERCASE|V_6WIDTHSPACE|V_GRAYMAP, "Type using the Virtual Keyboard. Use the \'OK\' button to confirm & exit.\nPress any keyboard key not bound to a control to use it.");
+	}
+
 }
 
 // Draw the message popup submenu
 void M_DrawMenuMessage(void)
 {
-
-	INT32 y = menumessage.y + (9-menumessage.fadetimer)*20;
-	size_t i, start = 0;
-	INT16 max;
-	char string[MAXMENUMESSAGE];
-	INT32 mlines;
-	const char *msg = menumessage.message;
-
 	if (!menumessage.active)
 		return;
 
-	mlines = menumessage.m>>8;
-	max = (INT16)((UINT8)(menumessage.m & 0xFF)*8);
+	INT32 x = (BASEVIDWIDTH - menumessage.x)/2;
+	INT32 y = (BASEVIDHEIGHT - menumessage.y)/2 + floor(pow(2, (double)(9 - menumessage.fadetimer)));
+	size_t i, start = 0;
+	char string[MAXMENUMESSAGE];
+	const char *msg = menumessage.message;
 
 	V_DrawFadeScreen(31, menumessage.fadetimer);
-	M_DrawTextBox(menumessage.x, y - 8, (max+7)>>3, mlines);
+
+	V_DrawFill(0, y, BASEVIDWIDTH, menumessage.y, 159);
+
+	if (menumessage.header != NULL)
+	{
+		V_DrawThinString(x, y - 10, highlightflags|V_6WIDTHSPACE|V_ALLOWLOWERCASE, menumessage.header);
+	}
+
+	if (menumessage.defaultstr)
+	{
+		INT32 workx = x + menumessage.x;
+		INT32 worky = y + menumessage.y;
+
+		boolean push;
+
+		if (menumessage.closing)
+			push = (menumessage.answer != MA_YES);
+		else
+		{
+			const UINT8 anim_duration = 16;
+			push = ((menumessage.timer % (anim_duration * 2)) < anim_duration);
+		}
+
+		workx -= V_ThinStringWidth(menumessage.defaultstr, V_6WIDTHSPACE|V_ALLOWLOWERCASE);
+		V_DrawThinString(
+			workx, worky + 1,
+			V_6WIDTHSPACE|V_ALLOWLOWERCASE
+				| ((push && (menumessage.closing & MENUMESSAGECLOSE)) ? highlightflags : 0),
+			menumessage.defaultstr
+		);
+
+		workx -= 2;
+
+		workx -= SHORT(kp_button_x[1][0]->width);
+		K_drawButton(
+			workx * FRACUNIT, worky * FRACUNIT,
+			0, kp_button_x[1],
+			push
+		);
+
+		workx -= SHORT(kp_button_b[1][0]->width);
+		K_drawButton(
+			workx * FRACUNIT, worky * FRACUNIT,
+			0, kp_button_b[1],
+			push
+		);
+
+		if (menumessage.confirmstr)
+		{
+			workx -= 12;
+
+			if (menumessage.closing)
+				push = !push;
+
+			workx -= V_ThinStringWidth(menumessage.confirmstr, V_6WIDTHSPACE|V_ALLOWLOWERCASE);
+			V_DrawThinString(
+				workx, worky + 1,
+				V_6WIDTHSPACE|V_ALLOWLOWERCASE
+					| ((push && (menumessage.closing & MENUMESSAGECLOSE)) ? highlightflags : 0),
+				menumessage.confirmstr
+			);
+
+			workx -= 2;
+		}
+
+		workx -= SHORT(kp_button_a[1][0]->width);
+		K_drawButton(
+			workx * FRACUNIT, worky * FRACUNIT,
+			0, kp_button_a[1],
+			push
+		);
+	}
+
+	x -= 4;
+	y += 4;
 
 	while (*(msg+start))
 	{
@@ -489,6 +735,16 @@ void M_DrawMenuMessage(void)
 		V_DrawString((BASEVIDWIDTH - V_StringWidth(string, 0))/2, y, V_ALLOWLOWERCASE, string);
 		y += 8;
 	}
+}
+
+// PAUSE
+static void M_DrawPausedText(INT32 x)
+{
+	patch_t *pausebg = W_CachePatchName("M_STRIPU", PU_CACHE);
+	patch_t *pausetext = W_CachePatchName("M_PAUSET", PU_CACHE);
+
+	V_DrawFixedPatch(x, 0, FRACUNIT, V_SNAPTOLEFT|V_SNAPTOTOP|V_ADD, pausebg,   NULL);
+	V_DrawFixedPatch(x, 0, FRACUNIT, V_SNAPTOLEFT|V_SNAPTOTOP,       pausetext, NULL);
 }
 
 //
@@ -550,34 +806,23 @@ void M_Drawer(void)
 		menuwipe = false;
 	}
 
+	// draw pause pic
+	if (paused && !demo.playback && (menuactive || cv_showhud.value))
+	{
+		M_DrawPausedText(0);
+	}
+
 	// focus lost notification goes on top of everything, even the former everything
 	if (window_notinfocus && cv_showfocuslost.value)
 	{
 		M_DrawTextBox((BASEVIDWIDTH/2) - (60), (BASEVIDHEIGHT/2) - (16), 13, 2);
-		if (gamestate == GS_LEVEL && (P_AutoPause() || paused))
-			V_DrawCenteredString(BASEVIDWIDTH/2, (BASEVIDHEIGHT/2) - (4), highlightflags, "Game Paused");
-		else
-			V_DrawCenteredString(BASEVIDWIDTH/2, (BASEVIDHEIGHT/2) - (4), highlightflags, "Focus Lost");
+		V_DrawCenteredString(BASEVIDWIDTH/2, (BASEVIDHEIGHT/2) - (4), highlightflags, "Focus Lost");
 	}
 }
 
 // ==========================================================================
 // GENERIC MENUS
 // ==========================================================================
-
-//
-// M_DrawMenuTooltips
-//
-// Draw a banner across the top of the screen, with a description of the current option displayed
-//
-static void M_DrawMenuTooltips(void)
-{
-	if (currentMenu->menuitems[itemOn].tooltip != NULL)
-	{
-		V_DrawFixedPatch(0, 0, FRACUNIT, 0, W_CachePatchName("MENUHINT", PU_CACHE), NULL);
-		V_DrawCenteredThinString(BASEVIDWIDTH/2, 12, V_ALLOWLOWERCASE|V_6WIDTHSPACE, currentMenu->menuitems[itemOn].tooltip);
-	}
-}
 
 // Converts a string into question marks.
 // Used for the secrets menu, to hide yet-to-be-unlocked stuff.
@@ -674,12 +919,20 @@ void M_DrawGenericMenu(void)
 								break;
 #endif
 							case IT_CV_STRING:
-								M_DrawTextBox(x, y + 4, MAXSTRINGLENGTH, 1);
-								V_DrawString(x + 8, y + 12, V_ALLOWLOWERCASE, cv->string);
-								if (skullAnimCounter < 4 && i == itemOn)
-									V_DrawCharacter(x + 8 + V_StringWidth(cv->string, 0), y + 12,
-										'_' | 0x80, false);
-								y += 16;
+								{
+									M_DrawTextBox(x, y + 4, MAXSTRINGLENGTH, 1);
+
+									INT32 xoffs = 0;
+									if (itemOn == i)
+									{
+										xoffs += 8;
+										V_DrawString(x + (skullAnimCounter/5) + 6, y + 12, highlightflags, "\x1D");
+									}
+
+									V_DrawString(x + xoffs + 8, y + 12, V_ALLOWLOWERCASE, cv->string);
+
+									y += 16;
+								}
 								break;
 							default:
 								w = V_StringWidth(cv->string, 0);
@@ -1220,16 +1473,14 @@ static void M_DrawCharSelectCircle(setup_player_t *p, INT16 x, INT16 y)
 }
 
 // returns false if the character couldn't be rendered
-static boolean M_DrawCharacterSprite(INT16 x, INT16 y, INT16 skin, boolean charflip, boolean animate, INT32 addflags, UINT8 *colormap)
+static boolean M_DrawCharacterSprite(INT16 x, INT16 y, INT16 skin, UINT8 spr2, UINT8 rotation, UINT32 frame, INT32 addflags, UINT8 *colormap)
 {
 	UINT8 spr;
 	spritedef_t *sprdef;
 	spriteframe_t *sprframe;
 	patch_t *sprpatch;
-	UINT8 rotation = (charflip ? 1 : 7);
-	UINT32 frame = animate ? setup_animcounter : 0;
 
-	spr = P_GetSkinSprite2(&skins[skin], SPR2_STIN, NULL);
+	spr = P_GetSkinSprite2(&skins[skin], spr2, NULL);
 	sprdef = &skins[skin].sprites[spr];
 
 	if (!sprdef->numframes) // No frames ??
@@ -1355,7 +1606,7 @@ static void M_DrawCharSelectSprite(UINT8 num, INT16 x, INT16 y, boolean charflip
 
 	colormap = R_GetTranslationColormap(p->skin, color, GTC_MENUCACHE);
 
-	M_DrawCharacterSprite(x, y, p->skin, charflip, (p->mdepth == CSSTEP_READY), 0, colormap);
+	M_DrawCharacterSprite(x, y, p->skin, SPR2_STIN, (charflip ? 1 : 7), ((p->mdepth == CSSTEP_READY) ? setup_animcounter : 0), 0, colormap);
 }
 
 static void M_DrawCharSelectPreview(UINT8 num)
@@ -1750,7 +2001,7 @@ static void M_DrawProfileCard(INT32 x, INT32 y, boolean greyedout, profile_t *p)
 		{
 			UINT8 *ccolormap = R_GetTranslationColormap(skinnum, truecol, GTC_MENUCACHE);
 
-			if (M_DrawCharacterSprite(x-22, y+119, skinnum, false, false, 0, ccolormap))
+			if (M_DrawCharacterSprite(x-22, y+119, skinnum, SPR2_STIN, 7, 0, 0, ccolormap))
 				V_DrawMappedPatch(x+14, y+66, 0, faceprefix[skinnum][FACE_RANK], ccolormap);
 		}
 
@@ -1777,7 +2028,7 @@ static void M_DrawProfileCard(INT32 x, INT32 y, boolean greyedout, profile_t *p)
 		else
 			ccolormap = R_GetTranslationColormap(TC_BLINK, truecol, GTC_MENUCACHE);
 
-		if (M_DrawCharacterSprite(x-22, y+119, skinnum, false, false, 0, ccolormap))
+		if (M_DrawCharacterSprite(x-22, y+119, skinnum, SPR2_STIN, 7, 0, 0, ccolormap))
 		{
 			V_DrawMappedPatch(x+14, y+66, 0, faceprefix[skinnum][FACE_RANK], ccolormap);
 		}
@@ -2163,6 +2414,7 @@ static void M_DrawCupTitle(INT16 y, levelsearch_t *levelsearch)
 void M_DrawCupSelect(void)
 {
 	UINT8 i, j, temp = 0;
+	INT16 x, y;
 	UINT8 *colormap = NULL;
 	cupwindata_t *windata = NULL;
 	levelsearch_t templevelsearch = levellist.levelsearch; // full copy
@@ -2173,11 +2425,9 @@ void M_DrawCupSelect(void)
 		{
 			size_t id = (i + (j * CUPMENU_COLUMNS)) + (cupgrid.pageno * (CUPMENU_COLUMNS * CUPMENU_ROWS));
 			patch_t *patch = NULL;
-			INT16 x, y;
 			INT16 icony = 7;
 			char status =  'A';
 			char monitor;
-			INT32 rankx = 0;
 
 			if (!cupgrid.builtgrid[id])
 				break;
@@ -2232,7 +2482,6 @@ void M_DrawCupSelect(void)
 					if (monitor == '2')
 					{
 						icony = 5;
-						rankx = 2;
 					}
 				}
 				else
@@ -2260,47 +2509,105 @@ void M_DrawCupSelect(void)
 				V_DrawScaledPatch(x + 8, y + icony, 0, W_CachePatchName(templevelsearch.cup->icon, PU_CACHE));
 				V_DrawScaledPatch(x + 8, y + icony, 0, W_CachePatchName("CUPBOX", PU_CACHE));
 
+				if (cupgrid.grandprix == true
+				&& templevelsearch.cup == cupsavedata.cup
+				&& id != CUPMENU_CURSORID)
+				{
+					V_DrawScaledPatch(x + 32, y + 32, 0, W_CachePatchName("CUPBKUP1", PU_CACHE));
+				}
+
 				if (!windata)
 					;
 				else if (windata->best_placement != 0)
 				{
-					char gradeChar = '?';
+					const INT32 rankw = 14 + 12 + 12 + 2;
+					INT32 rankx = (x + 19) - (rankw / 2);
+					const INT32 ranky = 8 + (j*100) - (30*menutransition.tics);
 
-					switch (windata->best_grade)
+					patch_t *gradePat = NULL;
+					colormap = NULL;
+
+					const gp_rank_e grade = windata->best_grade; // (cupgrid.previewanim/TICRATE) % (GRADE_S + 1); -- testing
+					UINT16 gradecolor = K_GetGradeColor(grade);
+
+					if (gradecolor != SKINCOLOR_NONE)
+						colormap = R_GetTranslationColormap(TC_DEFAULT, gradecolor, GTC_MENUCACHE);
+
+					switch (grade)
 					{
-						case GRADE_E: { gradeChar = 'E'; break; }
-						case GRADE_D: { gradeChar = 'D'; break; }
-						case GRADE_C: { gradeChar = 'C'; break; }
-						case GRADE_B: { gradeChar = 'B'; break; }
-						case GRADE_A: { gradeChar = 'A'; break; }
-						case GRADE_S: { gradeChar = 'S'; break; }
-						default: { break; }
+						case GRADE_E:
+							gradePat = W_CachePatchName("R_CUPRNE", PU_CACHE);
+							break;
+						case GRADE_D:
+							gradePat = W_CachePatchName("R_CUPRND", PU_CACHE);
+							break;
+						case GRADE_C:
+							gradePat = W_CachePatchName("R_CUPRNC", PU_CACHE);
+							break;
+						case GRADE_B:
+							gradePat = W_CachePatchName("R_CUPRNB", PU_CACHE);
+							break;
+						case GRADE_A:
+							gradePat = W_CachePatchName("R_CUPRNA", PU_CACHE);
+							break;
+						case GRADE_S:
+							gradePat = W_CachePatchName("R_CUPRNS", PU_CACHE);
+							break;
+						default:
+							break;
 					}
 
-					V_DrawCharacter(x + 5 + rankx, y + icony + 14, gradeChar, false); // rank
+					if (gradePat)
+						V_DrawFixedPatch((rankx)*FRACUNIT, (ranky)*FRACUNIT, FRACUNIT, 0, gradePat, colormap);
 
-					if (windata->got_emerald == true)
+					rankx += 14 + 1;
+
+					patch_t *charPat = NULL;
+
+					if ((windata->best_skin.unloaded != NULL)
+						|| (windata->best_skin.id > numskins))
 					{
+						colormap = NULL;
+
+						charPat = W_CachePatchName("HUHMAP", PU_CACHE);
+					}
+					else
+					{
+						UINT8 skin = windata->best_skin.id;
+
+						colormap = R_GetTranslationColormap(skin, skins[skin].prefcolor, GTC_MENUCACHE);
+
+						charPat = faceprefix[skin][FACE_MINIMAP];
+					}
+
+					if (charPat)
+						V_DrawFixedPatch((rankx)*FRACUNIT, (ranky)*FRACUNIT, FRACUNIT, 0, charPat, colormap);
+
+					if (cv_dummygpdifficulty.value > 0
+						&& windata->got_emerald == true)
+					{
+						rankx += 12 + 1;
+
 						if (templevelsearch.cup->emeraldnum == 0)
-							V_DrawCharacter(x + 26 - rankx, y + icony + 14, '*', false); // rank
+							V_DrawCharacter(rankx+2, ranky+2, '+', false);
 						else
 						{
-							UINT16 col = SKINCOLOR_CHAOSEMERALD1 + (templevelsearch.cup->emeraldnum-1) % 7;
-							patch_t *em;
+							colormap = NULL;
 
-							colormap = R_GetTranslationColormap(TC_DEFAULT, col, GTC_MENUCACHE);
+							if (!(cupgrid.previewanim & 1))
+							{
+								UINT16 col = SKINCOLOR_CHAOSEMERALD1 + (templevelsearch.cup->emeraldnum-1) % 7;
 
-							if (templevelsearch.cup->emeraldnum > 7)
-							{
-								em = W_CachePatchName("K_SUPER1", PU_CACHE);
-								rankx += 2;
-							}
-							else
-							{
-								em = W_CachePatchName("K_EMERC", PU_CACHE);
+								colormap = R_GetTranslationColormap(TC_DEFAULT, col, GTC_MENUCACHE);
 							}
 
-							V_DrawFixedPatch((x + 26 - rankx)*FRACUNIT, (y + icony + 13)*FRACUNIT, FRACUNIT, 0, em, colormap);
+							const char *emname = va(
+								"%sMAP%c",
+								(templevelsearch.cup->emeraldnum > 7) ? "SUP" : "EME",
+								colormap ? '\0' : 'B'
+							);
+
+							V_DrawFixedPatch((rankx)*FRACUNIT, (ranky)*FRACUNIT, FRACUNIT, 0, W_CachePatchName(emname, PU_CACHE), colormap);
 						}
 					}
 				}
@@ -2308,17 +2615,38 @@ void M_DrawCupSelect(void)
 		}
 	}
 
-	V_DrawScaledPatch(14 + (cupgrid.x*42) - 4,
-		20 + (cupgrid.y*44) - 1 - (24*menutransition.tics),
-		0, W_CachePatchName("CUPCURS", PU_CACHE)
-	);
+	x = 14 + (cupgrid.x*42);
+	y = 20 + (cupgrid.y*44) - (30*menutransition.tics);
+
+	V_DrawScaledPatch(x - 4, y - 1, 0, W_CachePatchName("CUPCURS", PU_CACHE));
 
 	templevelsearch.cup = cupgrid.builtgrid[CUPMENU_CURSORID];
+
+	if (cupgrid.grandprix == true
+	&& templevelsearch.cup != NULL
+	&& templevelsearch.cup == cupsavedata.cup)
+	{
+		V_DrawScaledPatch(x + 32, y + 32, 0, W_CachePatchName("CUPBKUP2", PU_CACHE));
+	}
 
 	V_DrawFill(0, 146 + (24*menutransition.tics), BASEVIDWIDTH, 54, 31);
 	M_DrawCupPreview(146 + (24*menutransition.tics), &templevelsearch);
 
 	M_DrawCupTitle(120 - (24*menutransition.tics), &templevelsearch);
+
+	if (cupgrid.numpages > 1)
+	{
+		x = 3 - (skullAnimCounter/5);
+		y = 20 + (44 - 1) - (30*menutransition.tics);
+
+		patch_t *cuparrow = W_CachePatchName("CUPARROW", PU_CACHE);
+
+		if (cupgrid.pageno != 0)
+			V_DrawScaledPatch(x, y, 0, cuparrow);
+
+		if (cupgrid.pageno != cupgrid.numpages-1)
+			V_DrawScaledPatch(BASEVIDWIDTH-x, y, V_FLIP, cuparrow);
+	}
 }
 
 static void M_DrawHighLowLevelTitle(INT16 x, INT16 y, INT16 map)
@@ -2519,11 +2847,8 @@ void M_DrawTimeAttack(void)
 		if ((minimap = mapheaderinfo[map]->minimapPic))
 			V_DrawScaledPatch(24-t, 82, 0, minimap);
 
-		if (mapheaderinfo[map]->mainrecord)
-		{
-			timerec = mapheaderinfo[map]->mainrecord->time;
-			laprec = mapheaderinfo[map]->mainrecord->lap;
-		}
+		timerec = mapheaderinfo[map]->records.time;
+		laprec = mapheaderinfo[map]->records.lap;
 
 		if ((gametypes[levellist.newgametype]->rules & GTR_CIRCUIT)
 			&& (mapheaderinfo[map]->numlaps != 1))
@@ -2543,16 +2868,10 @@ void M_DrawTimeAttack(void)
 		// SPB Attack control hint + menu overlay
 		if (levellist.newgametype == GT_RACE && levellist.levelsearch.timeattack == true && M_SecretUnlocked(SECRET_SPBATTACK, true))
 		{
-			const UINT8 anim_duration = 16;
-			const UINT8 anim = (timeattackmenu.ticker % (anim_duration * 2)) < anim_duration;
-
 			INT32 buttonx = 162 + t;
 			INT32 buttony = timeheight;
 
-			if (anim)
-				V_DrawScaledPatch(buttonx + 35, buttony - 3, V_SNAPTOLEFT, W_CachePatchName("TLB_I", PU_CACHE));
-			else
-				V_DrawScaledPatch(buttonx + 35, buttony - 3, V_SNAPTOLEFT, W_CachePatchName("TLB_IB", PU_CACHE));
+			K_drawButtonAnim(buttonx + 35, buttony - 3, V_SNAPTOLEFT, kp_button_r, timeattackmenu.ticker);
 
 			if ((timeattackmenu.spbflicker == 0 || timeattackmenu.ticker % 2) == (cv_dummyspbattack.value == 1))
 			{
@@ -2767,9 +3086,16 @@ void M_DrawMPHost(void)
 							switch (currentMenu->menuitems[i].status & IT_CVARTYPE)
 							{
 								case IT_CV_STRING:
-									V_DrawThinString(xp + 96, yp, V_ALLOWLOWERCASE|V_6WIDTHSPACE, cv->string);
-									if (skullAnimCounter < 4 && i == itemOn)
-										V_DrawString(xp + 96 + V_ThinStringWidth(cv->string, V_ALLOWLOWERCASE|V_6WIDTHSPACE), yp+1, 0, "_");
+									{
+										INT32 xoffs = 0;
+										if (itemOn == i)
+										{
+											xoffs += 8;
+											V_DrawString(xp + (skullAnimCounter/5) + 94, yp+1, highlightflags, "\x1D");
+										}
+
+										V_DrawThinString(xp + xoffs + 96, yp, V_ALLOWLOWERCASE|V_6WIDTHSPACE, cv->string);
+									}
 
 									break;
 
@@ -2877,9 +3203,17 @@ void M_DrawMPJoinIP(void)
 								colormapc = R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_PLAGUE, GTC_CACHE);
 
 								V_DrawFixedPatch((xp + 12)<<FRACBITS, (yp-2)<<FRACBITS, FRACUNIT, 0, typebar, colormapc);	// Always consider that this is selected otherwise it clashes.
-								V_DrawThinString(xp + 18, yp, V_ALLOWLOWERCASE|V_6WIDTHSPACE, cv->string);
-								if (skullAnimCounter < 4 && i == itemOn)
-									V_DrawString(xp + 18 + V_ThinStringWidth(cv->string, V_ALLOWLOWERCASE|V_6WIDTHSPACE), yp+1, 0, "_");
+
+								{
+									INT32 xoffs = 0;
+									if (itemOn == i)
+									{
+										xoffs += 8;
+										V_DrawString(xp + (skullAnimCounter/5) + 17, yp+1, highlightflags, "\x1D");
+									}
+
+									V_DrawThinString(xp + xoffs + 18, yp, V_ALLOWLOWERCASE|V_6WIDTHSPACE, cv->string);
+								}
 
 								/*// On this specific menu the only time we'll ever see this is for the connect by IP typefield.
 								// Draw the small GO button here (and the text which is a separate graphic)
@@ -3207,12 +3541,20 @@ void M_DrawGenericOptions(void)
 							case IT_CV_INVISSLIDER: // monitor toggles use this
 								break;
 							case IT_CV_STRING:
-								M_DrawTextBox(x, y + 4, MAXSTRINGLENGTH, 1);
-								V_DrawString(x + 8, y + 12, V_ALLOWLOWERCASE, cv->string);
-								if (skullAnimCounter < 4 && i == itemOn)
-									V_DrawCharacter(x + 8 + V_StringWidth(cv->string, 0), y + 12,
-										'_' | 0x80, false);
-								y += 16;
+								{
+									M_DrawTextBox(x, y + 4, MAXSTRINGLENGTH, 1);
+
+									INT32 xoffs = 0;
+									if (itemOn == i)
+									{
+										xoffs += 8;
+										V_DrawString(x + (skullAnimCounter/5) + 6, y + 12, highlightflags, "\x1D");
+									}
+
+									V_DrawString(x + xoffs + 8, y + 12, V_ALLOWLOWERCASE, cv->string);
+
+									y += 16;
+								}
 								break;
 							default:
 								w = V_StringWidth(cv->string, 0);
@@ -3952,8 +4294,6 @@ void M_DrawExtras(void)
 // INGAME / PAUSE MENUS
 //
 
-// PAUSE
-
 // PAUSE MAIN MENU
 void M_DrawPause(void)
 {
@@ -3974,18 +4314,17 @@ void M_DrawPause(void)
 	INT16 word2len = 0;
 	boolean sok = false;
 
-	patch_t *pausebg = W_CachePatchName("M_STRIPU", PU_CACHE);
 	patch_t *vertbg = W_CachePatchName("M_STRIPV", PU_CACHE);
-	patch_t *pausetext = W_CachePatchName("M_PAUSET", PU_CACHE);
-
 	patch_t *arrstart = W_CachePatchName("M_PTIP", PU_CACHE);
 	patch_t *arrfill = W_CachePatchName("M_PFILL", PU_CACHE);
 
 	//V_DrawFadeScreen(0xFF00, 16);
 
 	// "PAUSED"
-	V_DrawFixedPatch(-offset*FRACUNIT, 0, FRACUNIT, V_ADD, pausebg, NULL);
-	V_DrawFixedPatch(-offset*FRACUNIT, 0, FRACUNIT, 0, pausetext, NULL);
+	if (!paused && !demo.playback && !modeattacking && !netgame) // as close to possible as P_AutoPause, but not dependent on menuactive
+	{
+		M_DrawPausedText(-offset*FRACUNIT);
+	}
 
 	// Vertical Strip:
 	V_DrawFixedPatch((230 + offset)<<FRACBITS, 0, FRACUNIT, V_ADD, vertbg, NULL);
@@ -4120,6 +4459,84 @@ void M_DrawPause(void)
 		if (word2len)
 			V_DrawCenteredLSTitleLowString(220 + offset*2, 103, 0, word2);
 	}
+
+	if (gamestate != GS_INTERMISSION && roundqueue.size > 0)
+	{
+		y_data_t standings;
+		memset(&standings, 0, sizeof (standings));
+
+		standings.mainplayer = (demo.playback ? displayplayers[0] : consoleplayer);
+
+		// See also G_GetNextMap, Y_CalculateMatchData
+		if (
+			grandprixinfo.gp == true
+			&& netgame == false // TODO netgame Special Mode support
+			&& grandprixinfo.gamespeed >= KARTSPEED_NORMAL
+			&& roundqueue.size > 1
+			&& roundqueue.entries[roundqueue.size - 1].rankrestricted == true
+			&& (
+				gamedata->everseenspecial == true
+				|| roundqueue.position == roundqueue.size
+			)
+		)
+		{
+			// Additional cases in which it should always be shown.
+			standings.showrank = true;
+		}
+
+		patch_t *smallroundpatch = NULL;
+
+		if (grandprixinfo.gp == true && grandprixinfo.eventmode != GPEVENT_NONE)
+		{
+			const char *append = NULL;
+
+			switch (grandprixinfo.eventmode)
+			{
+				case GPEVENT_SPECIAL:
+				{
+					append = "SS";
+					break;
+				}
+
+				case GPEVENT_BONUS:
+				{
+					append = "B";
+					break;
+				}
+
+				default:
+					break;
+			}
+
+			if (append)
+			{
+				smallroundpatch =
+					W_CachePatchName(
+						va("TT_RNS%s", append),
+						PU_PATCH
+					);
+			}
+		}
+		else if (roundqueue.roundnum > 0 && roundqueue.roundnum <= 10)
+		{
+			smallroundpatch =
+				W_CachePatchName(
+					va("TT_RNS%d", roundqueue.roundnum),
+					PU_PATCH
+				);
+		}
+
+		if (smallroundpatch != NULL)
+		{
+			V_DrawMappedPatch(
+				24, 152 + offset/2,
+				0,
+				smallroundpatch,
+				NULL);
+		}
+
+		Y_RoundQueueDrawer(&standings, offset/2, false, false);
+	}
 }
 
 void M_DrawPlaybackMenu(void)
@@ -4205,408 +4622,6 @@ void M_DrawPlaybackMenu(void)
 	}
 }
 
-
-// replay hut...
-// ...dear lord this is messy, but Ima be real I ain't fixing this.
-
-#define SCALEDVIEWWIDTH (vid.width/vid.dupx)
-#define SCALEDVIEWHEIGHT (vid.height/vid.dupy)
-static void M_DrawReplayHutReplayInfo(menudemo_t *demoref)
-{
-	patch_t *patch = NULL;
-	UINT8 *colormap;
-	INT32 x, y;
-
-	switch (demoref->type)
-	{
-	case MD_NOTLOADED:
-		V_DrawCenteredString(160, 40, 0, "Loading replay information...");
-		break;
-
-	case MD_INVALID:
-		V_DrawCenteredString(160, 40, warningflags, "This replay cannot be played.");
-		break;
-
-	case MD_SUBDIR:
-		break; // Can't think of anything to draw here right now
-
-	case MD_OUTDATED:
-		V_DrawThinString(17, 64, V_ALLOWLOWERCASE|V_TRANSLUCENT|highlightflags, "Recorded on an outdated version.");
-		/* FALLTHRU */
-	default:
-		// Draw level stuff
-		x = 15; y = 15;
-
-		K_DrawMapThumbnail(
-			x<<FRACBITS, y<<FRACBITS,
-			80<<FRACBITS,
-			((demoref->kartspeed & DF_ENCORE) ? V_FLIP : 0),
-			demoref->map,
-			NULL);
-
-		if (demoref->kartspeed & DF_ENCORE)
-		{
-			static angle_t rubyfloattime = 0;
-			const fixed_t rubyheight = FINESINE(rubyfloattime>>ANGLETOFINESHIFT);
-			V_DrawFixedPatch((x+40)<<FRACBITS, ((y+25)<<FRACBITS) - (rubyheight<<1), FRACUNIT, 0, W_CachePatchName("RUBYICON", PU_CACHE), NULL);
-			rubyfloattime += FixedMul(ANGLE_MAX/NEWTICRATE, renderdeltatics);
-		}
-
-		x += 85;
-
-		if (demoref->map < nummapheaders && mapheaderinfo[demoref->map])
-		{
-			char *title = G_BuildMapTitle(demoref->map+1);
-			V_DrawString(x, y, 0, title);
-			Z_Free(title);
-		}
-		else
-			V_DrawString(x, y, V_ALLOWLOWERCASE|V_TRANSLUCENT, "Level is not loaded.");
-
-		if (demoref->numlaps)
-			V_DrawThinString(x, y+9, V_ALLOWLOWERCASE, va("(%d laps)", demoref->numlaps));
-
-		{
-			const char *gtstring;
-			if (demoref->gametype < 0)
-			{
-				gtstring = "Custom (not loaded)";
-			}
-			else
-			{
-				gtstring = gametypes[demoref->gametype]->name;
-
-				if ((gametypes[demoref->gametype]->rules & GTR_CIRCUIT))
-					gtstring = va("%s (%s)", gtstring, kartspeed_cons_t[(demoref->kartspeed & ~DF_ENCORE) + 1].strvalue);
-			}
-
-			V_DrawString(x, y+20, V_ALLOWLOWERCASE, gtstring);
-		}
-
-		if (!demoref->standings[0].ranking)
-		{
-			// No standings were loaded!
-			V_DrawString(x, y+39, V_ALLOWLOWERCASE|V_TRANSLUCENT, "No standings available.");
-
-			break;
-		}
-
-		V_DrawThinString(x, y+29, highlightflags, "WINNER");
-		V_DrawString(x+38, y+30, V_ALLOWLOWERCASE, demoref->standings[0].name);
-
-		if (demoref->gametype >= 0)
-		{
-			if (gametypes[demoref->gametype]->rules & GTR_POINTLIMIT)
-			{
-				V_DrawThinString(x, y+39, highlightflags, "SCORE");
-			}
-			else
-			{
-				V_DrawThinString(x, y+39, highlightflags, "TIME");
-			}
-
-			if (demoref->standings[0].timeorscore == (UINT32_MAX-1))
-			{
-				V_DrawThinString(x+32, y+39, 0, "NO CONTEST");
-			}
-			else if (gametypes[demoref->gametype]->rules & GTR_POINTLIMIT)
-			{
-				V_DrawString(x+32, y+40, 0, va("%d", demoref->standings[0].timeorscore));
-			}
-			else
-			{
-				V_DrawRightAlignedString(x+84, y+40, 0, va("%d'%02d\"%02d",
-												G_TicsToMinutes(demoref->standings[0].timeorscore, true),
-												G_TicsToSeconds(demoref->standings[0].timeorscore),
-												G_TicsToCentiseconds(demoref->standings[0].timeorscore)
-				));
-			}
-		}
-
-		// Character face!
-
-		// Lat: 08/06/2020: For some reason missing skins have their value set to 255 (don't even ask me why I didn't write this)
-		// and for an even STRANGER reason this passes the first check below, so we're going to make sure that the skin here ISN'T 255 before we do anything stupid.
-
-		if (demoref->standings[0].skin < numskins)
-		{
-			patch = faceprefix[demoref->standings[0].skin][FACE_WANTED];
-			colormap = R_GetTranslationColormap(
-				demoref->standings[0].skin,
-				demoref->standings[0].color,
-				GTC_MENUCACHE);
-		}
-		else
-		{
-			patch = W_CachePatchName("M_NOWANT", PU_CACHE);
-			colormap = R_GetTranslationColormap(
-				TC_RAINBOW,
-				demoref->standings[0].color,
-				GTC_MENUCACHE);
-		}
-
-		V_DrawMappedPatch(BASEVIDWIDTH-15 - SHORT(patch->width), y+20, 0, patch, colormap);
-
-		break;
-	}
-}
-
-void M_DrawReplayHut(void)
-{
-	INT32 x, y, cursory = 0;
-	INT16 i;
-	INT16 replaylistitem = currentMenu->numitems-2;
-	boolean processed_one_this_frame = false;
-
-	static UINT16 replayhutmenuy = 0;
-
-	M_DrawEggaChannel();
-
-	// Draw menu choices
-	x = currentMenu->x;
-	y = currentMenu->y;
-
-	if (itemOn > replaylistitem)
-	{
-		itemOn = replaylistitem;
-		dir_on[menudepthleft] = sizedirmenu-1;
-		extrasmenu.replayScrollTitle = 0; extrasmenu.replayScrollDelay = TICRATE; extrasmenu.replayScrollDir = 1;
-	}
-	else if (itemOn < replaylistitem)
-	{
-		dir_on[menudepthleft] = 0;
-		extrasmenu.replayScrollTitle = 0; extrasmenu.replayScrollDelay = TICRATE; extrasmenu.replayScrollDir = 1;
-	}
-
-	if (itemOn == replaylistitem)
-	{
-		INT32 maxy;
-		// Scroll menu items if needed
-		cursory = y + currentMenu->menuitems[replaylistitem].mvar1 + dir_on[menudepthleft]*10;
-		maxy = y + currentMenu->menuitems[replaylistitem].mvar1 + sizedirmenu*10;
-
-		if (cursory > maxy - 20)
-			cursory = maxy - 20;
-
-		if (cursory - replayhutmenuy > SCALEDVIEWHEIGHT-50)
-			replayhutmenuy += (cursory-SCALEDVIEWHEIGHT-replayhutmenuy + 51)/2;
-		else if (cursory - replayhutmenuy < 110)
-			replayhutmenuy += (max(0, cursory-110)-replayhutmenuy - 1)/2;
-	}
-	else
-		replayhutmenuy /= 2;
-
-	y -= replayhutmenuy;
-
-	// Draw static menu items
-	for (i = 0; i < replaylistitem; i++)
-	{
-		INT32 localy = y + currentMenu->menuitems[i].mvar1;
-
-		if (localy < 65)
-			continue;
-
-		if (i == itemOn)
-			cursory = localy;
-
-		if ((currentMenu->menuitems[i].status & IT_DISPLAY)==IT_STRING)
-			V_DrawString(x, localy, 0, currentMenu->menuitems[i].text);
-		else
-			V_DrawString(x, localy, highlightflags, currentMenu->menuitems[i].text);
-	}
-
-	y += currentMenu->menuitems[replaylistitem].mvar1;
-
-	for (i = 0; i < (INT16)sizedirmenu; i++)
-	{
-		INT32 localy = y+i*10;
-		INT32 localx = x;
-
-		if (localy < 65)
-			continue;
-		if (localy >= SCALEDVIEWHEIGHT)
-			break;
-
-		if (extrasmenu.demolist[i].type == MD_NOTLOADED && !processed_one_this_frame)
-		{
-			processed_one_this_frame = true;
-			G_LoadDemoInfo(&extrasmenu.demolist[i]);
-		}
-
-		if (extrasmenu.demolist[i].type == MD_SUBDIR)
-		{
-			localx += 8;
-			V_DrawScaledPatch(x - 4, localy, 0, W_CachePatchName(dirmenu[i][DIR_TYPE] == EXT_UP ? "M_RBACK" : "M_RFLDR", PU_CACHE));
-		}
-
-		if (itemOn == replaylistitem && i == (INT16)dir_on[menudepthleft])
-		{
-			cursory = localy;
-
-			if (extrasmenu.replayScrollDelay)
-				extrasmenu.replayScrollDelay--;
-			else if (extrasmenu.replayScrollDir > 0)
-			{
-				if (extrasmenu.replayScrollTitle < (V_StringWidth(extrasmenu.demolist[i].title, 0) - (SCALEDVIEWWIDTH - (x<<1)))<<1)
-					extrasmenu.replayScrollTitle++;
-				else
-				{
-					extrasmenu.replayScrollDelay = TICRATE;
-					extrasmenu.replayScrollDir = -1;
-				}
-			}
-			else
-			{
-				if (extrasmenu.replayScrollTitle > 0)
-					extrasmenu.replayScrollTitle--;
-				else
-				{
-					extrasmenu.replayScrollDelay = TICRATE;
-					extrasmenu.replayScrollDir = 1;
-				}
-			}
-
-			V_DrawString(localx - (extrasmenu.replayScrollTitle>>1), localy, highlightflags|V_ALLOWLOWERCASE, extrasmenu.demolist[i].title);
-		}
-		else
-			V_DrawString(localx, localy, V_ALLOWLOWERCASE, extrasmenu.demolist[i].title);
-	}
-
-	// Draw scrollbar
-	y = sizedirmenu*10 + currentMenu->menuitems[replaylistitem].mvar1 + 30;
-	if (y > SCALEDVIEWHEIGHT-80)
-	{
-		V_DrawFill(BASEVIDWIDTH-4, 75, 4, SCALEDVIEWHEIGHT-80, 159);
-		V_DrawFill(BASEVIDWIDTH-3, 76 + (SCALEDVIEWHEIGHT-80) * replayhutmenuy / y, 2, (((SCALEDVIEWHEIGHT-80) * (SCALEDVIEWHEIGHT-80))-1) / y - 1, 149);
-	}
-
-	// Draw the cursor
-	V_DrawScaledPatch(currentMenu->x - 24, cursory, 0,
-		W_CachePatchName("M_CURSOR", PU_CACHE));
-	V_DrawString(currentMenu->x, cursory, highlightflags, currentMenu->menuitems[itemOn].text);
-
-	// Now draw some replay info!
-	V_DrawFill(10, 10, 300, 60, 159);
-
-	if (itemOn == replaylistitem)
-	{
-		M_DrawReplayHutReplayInfo(&extrasmenu.demolist[dir_on[menudepthleft]]);
-	}
-}
-
-void M_DrawReplayStartMenu(void)
-{
-	const char *warning;
-	UINT8 i;
-	menudemo_t *demoref = &extrasmenu.demolist[dir_on[menudepthleft]];
-
-	M_DrawEggaChannel();
-	M_DrawGenericMenu();
-
-#define STARTY 62-(extrasmenu.replayScrollTitle>>1)
-	// Draw rankings beyond first
-	for (i = 1; i < MAXPLAYERS && demoref->standings[i].ranking; i++)
-	{
-		patch_t *patch;
-		UINT8 *colormap;
-
-		V_DrawRightAlignedString(BASEVIDWIDTH-100, STARTY + i*20,highlightflags, va("%2d", demoref->standings[i].ranking));
-		V_DrawThinString(BASEVIDWIDTH-96, STARTY + i*20, V_ALLOWLOWERCASE, demoref->standings[i].name);
-
-		if (demoref->standings[i].timeorscore == UINT32_MAX-1)
-			V_DrawThinString(BASEVIDWIDTH-92, STARTY + i*20 + 9, 0, "NO CONTEST");
-		else if (demoref->gametype < 0)
-			;
-		else if (gametypes[demoref->gametype]->rules & GTR_POINTLIMIT)
-			V_DrawString(BASEVIDWIDTH-92, STARTY + i*20 + 9, 0, va("%d", demoref->standings[i].timeorscore));
-		else
-			V_DrawRightAlignedString(BASEVIDWIDTH-40, STARTY + i*20 + 9, 0, va("%d'%02d\"%02d",
-											G_TicsToMinutes(demoref->standings[i].timeorscore, true),
-											G_TicsToSeconds(demoref->standings[i].timeorscore),
-											G_TicsToCentiseconds(demoref->standings[i].timeorscore)
-			));
-
-		// Character face!
-
-		// Lat: 08/06/2020: For some reason missing skins have their value set to 255 (don't even ask me why I didn't write this)
-		// and for an even STRANGER reason this passes the first check below, so we're going to make sure that the skin here ISN'T 255 before we do anything stupid.
-
-		if (demoref->standings[i].skin < numskins)
-		{
-			patch = faceprefix[demoref->standings[i].skin][FACE_RANK];
-			colormap = R_GetTranslationColormap(
-				demoref->standings[i].skin,
-				demoref->standings[i].color,
-				GTC_MENUCACHE);
-		}
-		else
-		{
-			patch = W_CachePatchName("M_NORANK", PU_CACHE);
-			colormap = R_GetTranslationColormap(
-				TC_RAINBOW,
-				demoref->standings[i].color,
-				GTC_MENUCACHE);
-		}
-
-		V_DrawMappedPatch(BASEVIDWIDTH-5 - SHORT(patch->width), STARTY + i*20, 0, patch, colormap);
-	}
-#undef STARTY
-
-	// Handle scrolling rankings
-	if (extrasmenu.replayScrollDelay)
-		extrasmenu.replayScrollDelay--;
-	else if (extrasmenu.replayScrollDir > 0)
-	{
-		if (extrasmenu.replayScrollTitle < (i*20 - SCALEDVIEWHEIGHT + 100)<<1)
-			extrasmenu.replayScrollTitle++;
-		else
-		{
-			extrasmenu.replayScrollDelay = TICRATE;
-			extrasmenu.replayScrollDir = -1;
-		}
-	}
-	else
-	{
-		if (extrasmenu.replayScrollTitle > 0)
-			extrasmenu.replayScrollTitle--;
-		else
-		{
-			extrasmenu.replayScrollDelay = TICRATE;
-			extrasmenu.replayScrollDir = 1;
-		}
-	}
-
-	V_DrawFill(10, 10, 300, 60, 159);
-	M_DrawReplayHutReplayInfo(demoref);
-
-	V_DrawString(10, 72, highlightflags|V_ALLOWLOWERCASE, demoref->title);
-
-	// Draw a warning prompt if needed
-	switch (demoref->addonstatus)
-	{
-	case DFILE_ERROR_CANNOTLOAD:
-		warning = "Some addons in this replay cannot be loaded.\nYou can watch anyway, but desyncs may occur.";
-		break;
-
-	case DFILE_ERROR_NOTLOADED:
-	case DFILE_ERROR_INCOMPLETEOUTOFORDER:
-		warning = "Loading addons will mark your game as modified, and Record Attack may be unavailable.\nYou can watch without loading addons, but desyncs may occur.";
-		break;
-
-	case DFILE_ERROR_EXTRAFILES:
-		warning = "You have addons loaded that were not present in this replay.\nYou can watch anyway, but desyncs may occur.";
-		break;
-
-	case DFILE_ERROR_OUTOFORDER:
-		warning = "You have this replay's addons loaded, but they are out of order.\nYou can watch anyway, but desyncs may occur.";
-		break;
-
-	default:
-		return;
-	}
-
-	V_DrawSmallString(4, BASEVIDHEIGHT-14, V_ALLOWLOWERCASE, warning);
-}
 
 // Draw misc menus:
 
@@ -4796,7 +4811,7 @@ static void M_DrawChallengeTile(INT16 i, INT16 j, INT32 x, INT32 y, boolean hili
 	patch_t *pat = missingpat;
 	UINT8 *colormap = NULL, *bgmap = NULL;
 	fixed_t siz, accordion;
-	UINT8 id, num;
+	UINT16 id, num;
 	boolean unlockedyet;
 	boolean categoryside;
 
@@ -5154,7 +5169,7 @@ static void M_DrawChallengePreview(INT32 x, INT32 y)
 			if (skin != -1)
 			{
 				colormap = R_GetTranslationColormap(skin, skins[skin].prefcolor, GTC_MENUCACHE);
-				M_DrawCharacterSprite(x, y, skin, false, false, 0, colormap);
+				M_DrawCharacterSprite(x, y, skin, SPR2_STIN, 7, 0, 0, colormap);
 
 				for (i = 0; i < skin; i++)
 				{
@@ -5212,7 +5227,7 @@ static void M_DrawChallengePreview(INT32 x, INT32 y)
 			if (skin == -1)
 				skin = 0;
 			colormap = R_GetTranslationColormap(TC_BLINK, SKINCOLOR_BLACK, GTC_MENUCACHE);
-			M_DrawCharacterSprite(x, y, skin, false, false, 0, colormap);
+			M_DrawCharacterSprite(x, y, skin, SPR2_STIN, 7, 0, 0, colormap);
 
 			// Draw follower next to them
 			if (fskin != -1)
@@ -5242,7 +5257,7 @@ static void M_DrawChallengePreview(INT32 x, INT32 y)
 			colormap = R_GetTranslationColormap(skin, colorid, GTC_MENUCACHE);
 
 			// Draw reference for character bathed in coloured slime
-			M_DrawCharacterSprite(x, y, skin, false, false, 0, colormap);
+			M_DrawCharacterSprite(x, y, skin, SPR2_STIN, 7, 0, 0, colormap);
 			break;
 		}
 		case SECRET_CUP:
@@ -5343,7 +5358,7 @@ static void M_DrawChallengePreview(INT32 x, INT32 y)
 			}
 
 			V_DrawThinString(1, BASEVIDHEIGHT-(9+3), V_ALLOWLOWERCASE|V_6WIDTHSPACE, gtname);
-			
+
 			break;
 		}
 		case SECRET_ENCORE:
@@ -5428,8 +5443,13 @@ static void M_DrawChallengePreview(INT32 x, INT32 y)
 		{
 			x = 8;
 			y = BASEVIDHEIGHT-16;
-			V_DrawGamemodeString(x, y - 32, V_ALLOWLOWERCASE, R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_PLAGUE, GTC_MENUCACHE), cv_alttitle.string);
-			V_DrawThinString(x, y, V_6WIDTHSPACE|V_ALLOWLOWERCASE|highlightflags, "Press (A)");
+			V_DrawGamemodeString(x, y - 33, V_ALLOWLOWERCASE, R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_PLAGUE, GTC_MENUCACHE), cv_alttitle.string);
+
+			K_drawButtonAnim(x, y, 0, kp_button_a[1], challengesmenu.ticker);
+			x += SHORT(kp_button_a[1][0]->width);
+			V_DrawThinString(x, y + 1, V_6WIDTHSPACE|V_ALLOWLOWERCASE|highlightflags, "Toggle");
+			
+
 			break;
 		}
 		default:
@@ -5494,7 +5514,9 @@ static void M_DrawChallengePreview(INT32 x, INT32 y)
 
 void M_DrawChallenges(void)
 {
-	INT32 x = currentMenu->x, explodex, selectx;
+	const UINT8 pid = 0;
+
+	INT32 x = currentMenu->x, explodex, selectx = 0, selecty = 0;
 	INT32 y;
 	INT16 i, j;
 	const char *str;
@@ -5571,6 +5593,7 @@ void M_DrawChallenges(void)
 	}
 
 	selectx = explodex + (challengesmenu.hilix*challengesgridstep);
+	selecty = currentMenu->y + (challengesmenu.hiliy*challengesgridstep);
 
 	while (i >= 0 && x >= -(challengesgridstep*2))
 	{
@@ -5608,48 +5631,11 @@ void M_DrawChallenges(void)
 		challengesmenu.hilix,
 		challengesmenu.hiliy,
 		selectx,
-		currentMenu->y + (challengesmenu.hiliy*challengesgridstep),
+		selecty,
 		true);
 	M_DrawCharSelectExplosions(false, explodex, currentMenu->y);
 
 challengedesc:
-
-	// Chao Keys
-	{
-		patch_t *key = W_CachePatchName("UN_CHA00", PU_CACHE);
-		INT32 offs = challengesmenu.unlockcount[CC_CHAONOPE];
-		if (offs & 1)
-			offs = -offs;
-		offs /= 2;
-
-		if (gamedata->chaokeys > 9)
-		{
-			offs -= 6;
-			if (gamedata->chaokeys > 99)
-				offs -= 2; // as far as we can go
-		}
-
-		V_DrawFixedPatch((8+offs)*FRACUNIT, 5*FRACUNIT, FRACUNIT, 0, key, NULL);
-		V_DrawTimerString((27+offs), 9-challengesmenu.unlockcount[CC_CHAOANIM], 0, va("%u", gamedata->chaokeys));
-
-		offs = challengekeybarwidth;
-		if (gamedata->chaokeys < GDMAX_CHAOKEYS)
-			offs = ((gamedata->pendingkeyroundoffset * challengekeybarwidth)/GDCONVERT_ROUNDSTOKEY);
-
-		if (offs > 0)
-			V_DrawFill(1, 25, offs, 2, 0);
-		if (offs < challengekeybarwidth)
-			V_DrawFadeFill(1+offs, 25, challengekeybarwidth-offs, 2, 0, 31, challengetransparentstrength);
-	}
-
-	// Tally
-	{
-		str = va("%d/%d",
-			challengesmenu.unlockcount[CC_UNLOCKED] + challengesmenu.unlockcount[CC_TALLY],
-			challengesmenu.unlockcount[CC_TOTAL]
-			);
-		V_DrawRightAlignedTimerString(BASEVIDWIDTH-7, 9-challengesmenu.unlockcount[CC_ANIM], 0, str);
-	}
 
 	// Name bar
 	{
@@ -5670,6 +5656,94 @@ challengedesc:
 
 		offset = V_LSTitleLowStringWidth(str, 0) / 2;
 		V_DrawLSTitleLowString(BASEVIDWIDTH/2 - offset, y+6, 0, str);
+	}
+
+	// Tally
+	{
+		str = va("%d/%d",
+			challengesmenu.unlockcount[CC_UNLOCKED] + challengesmenu.unlockcount[CC_TALLY],
+			challengesmenu.unlockcount[CC_TOTAL]
+			);
+		V_DrawRightAlignedTimerString(BASEVIDWIDTH-7, 9-challengesmenu.unlockcount[CC_ANIM], 0, str);
+	}
+
+	// Chao Keys
+	{
+		patch_t *key = W_CachePatchName("UN_CHA00", PU_CACHE);
+		INT32 offs = challengesmenu.unlockcount[CC_CHAONOPE];
+		if (offs & 1)
+			offs = -offs;
+		offs /= 2;
+
+		if (gamedata->chaokeys > 9)
+		{
+			offs -= 6;
+			if (gamedata->chaokeys > 99)
+				offs -= 2; // as far as we can go
+		}
+
+		fixed_t keyx = (8+offs)*FRACUNIT, keyy = 5*FRACUNIT;
+
+		const char *timerstr = va("%u", gamedata->chaokeys);
+
+		V_DrawTimerString((27+offs), 9-challengesmenu.unlockcount[CC_CHAOANIM], 0, timerstr);
+
+		K_drawButton(
+			(27 + offs + V_TimerStringWidth(timerstr, 0) + 2) << FRACBITS,
+			11 << FRACBITS,
+			0, kp_button_c[1],
+			M_MenuExtraHeld(pid)
+		);
+
+		offs = challengekeybarwidth;
+		if (gamedata->chaokeys < GDMAX_CHAOKEYS)
+			offs = ((gamedata->pendingkeyroundoffset * challengekeybarwidth)/GDCONVERT_ROUNDSTOKEY);
+
+		if (offs > 0)
+			V_DrawFill(1, 25, offs, 2, 0);
+		if (offs < challengekeybarwidth)
+			V_DrawFadeFill(1+offs, 25, challengekeybarwidth-offs, 2, 0, 31, challengetransparentstrength);
+
+		if (challengesmenu.chaokeyhold)
+		{
+			fixed_t keyholdrotation = 0, radius = challengesgridstep;
+
+			if (challengesmenu.chaokeyhold < CHAOHOLD_BEGIN)
+			{
+				radius = (challengesmenu.chaokeyhold*radius)*(FRACUNIT/CHAOHOLD_BEGIN);
+				keyx += challengesmenu.chaokeyhold*((selectx*FRACUNIT) - keyx)/CHAOHOLD_BEGIN;
+				keyy += challengesmenu.chaokeyhold*((selecty*FRACUNIT) - keyy)/CHAOHOLD_BEGIN;
+			}
+			else
+			{
+				if (challengesmenu.chaokeyhold < CHAOHOLD_MAX - CHAOHOLD_END)
+				{
+					radius <<= FRACBITS;
+
+					keyholdrotation = 360 * ((challengesmenu.chaokeyhold - CHAOHOLD_BEGIN))
+						* (FRACUNIT/(CHAOHOLD_MAX - (CHAOHOLD_BEGIN + CHAOHOLD_END)));
+				}
+				else
+				{
+					radius = ((CHAOHOLD_MAX - challengesmenu.chaokeyhold)*radius)*(FRACUNIT/CHAOHOLD_END);
+				}
+
+				keyx = selectx*FRACUNIT;
+				keyy = selecty*FRACUNIT;
+			}
+
+			if (radius)
+			{
+				angle_t ang = (FixedAngle(
+					keyholdrotation
+					) >> ANGLETOFINESHIFT) & FINEMASK;
+
+				keyx += FixedMul(radius, FINESINE(ang));
+				keyy -= FixedMul(radius, FINECOSINE(ang));
+			}
+		}
+
+		V_DrawFixedPatch(keyx, keyy, FRACUNIT, 0, key, NULL);
 	}
 
 	// Derived from M_DrawCharSelectPreview
@@ -5987,13 +6061,13 @@ void M_DrawStatistics(void)
 		if (!mapheaderinfo[i] || (mapheaderinfo[i]->menuflags & (LF2_NOTIMEATTACK|LF2_HIDEINSTATS|LF2_HIDEINMENU)))
 			continue;
 
-		if (!mapheaderinfo[i]->mainrecord || mapheaderinfo[i]->mainrecord->time <= 0)
+		if (mapheaderinfo[i]->records.time <= 0)
 		{
 			mapsunfinished++;
 			continue;
 		}
 
-		besttime += mapheaderinfo[i]->mainrecord->time;
+		besttime += mapheaderinfo[i]->records.time;
 	}
 
 	V_DrawThinString(20, 60, V_6WIDTHSPACE|V_ALLOWLOWERCASE, "Combined time records:");
@@ -6015,9 +6089,150 @@ void M_DrawStatistics(void)
 
 #undef STATSSTEP
 
+static INT32 M_WrongWarpFallingHelper(INT32 y, INT32 falltime)
+{
+	if (wrongwarp.ticker < falltime)
+	{
+		return y;
+	}
+
+	if (wrongwarp.ticker > falltime + 2*TICRATE)
+	{
+		return INT32_MAX;
+	}
+
+	if (wrongwarp.ticker < falltime + TICRATE)
+	{
+		y += + ((wrongwarp.ticker - falltime) & 1 ? 1 : -1);
+		return y;
+	}
+
+	y += floor(pow(1.5, (double)(wrongwarp.ticker - (falltime + TICRATE))));
+	return y;
+}
+
+static void M_DrawWrongPlayer(UINT8 i)
+{
+#define wrongpl wrongwarp.wrongplayers[i]
+	if (wrongpl.skin >= numskins)
+		return;
+
+	UINT8 *colormap = R_GetTranslationColormap(wrongpl.skin, skins[wrongpl.skin].prefcolor, GTC_MENUCACHE);
+
+	M_DrawCharacterSprite(
+		wrongpl.across,
+		160 - ((i & 1) ? 0 : 32),
+		wrongpl.skin,
+		wrongpl.spinout ? SPR2_SPIN : SPR2_SLWN,
+		wrongpl.spinout ? ((wrongpl.across/8) & 7) : 6,
+		(wrongwarp.ticker+i),
+		0, colormap
+	);
+#undef wrongpl
+}
+
+void M_DrawWrongWarp(void)
+{
+	INT32 titleoffset = 0, titlewidth, x, y;
+	const char *titletext = "WRONG GAME? WRONG GAME! ";
+
+	if (gamestate == GS_MENU)
+	{
+		patch_t *pat, *pat2;
+		INT32 animtimer, anim2 = 0;
+
+		pat = W_CachePatchName("TITLEBG1", PU_CACHE);
+		pat2 = W_CachePatchName("TITLEBG2", PU_CACHE);
+
+		animtimer = ((wrongwarp.ticker*5)/16) % SHORT(pat->width);
+		anim2 = SHORT(pat2->width) - (((wrongwarp.ticker*5)/16) % SHORT(pat2->width));
+
+		// SRB2Kart: F_DrawPatchCol is over-engineered; recoded to be less shitty and error-prone
+		V_DrawFill(0, 0, BASEVIDWIDTH, BASEVIDHEIGHT, 0);
+
+		x = -((INT32)animtimer);
+		y = 0;
+		while (x < BASEVIDWIDTH)
+		{
+			V_DrawFixedPatch(x*FRACUNIT, y*FRACUNIT, FRACUNIT, 0, pat, NULL);
+			x += SHORT(pat->width);
+		}
+
+		x = -anim2;
+		y = BASEVIDHEIGHT - SHORT(pat2->height);
+		while (x < BASEVIDWIDTH)
+		{
+			V_DrawFixedPatch(x*FRACUNIT, y*FRACUNIT, FRACUNIT, 0, pat2, NULL);
+			x += SHORT(pat2->width);
+		}
+	}
+
+	{
+		patch_t *ttcheckers = W_CachePatchName("TTCHECK", PU_CACHE);
+
+		y = FixedMul(40<<FRACBITS, FixedDiv(wrongwarp.ticker%70, 70));
+
+		V_DrawSciencePatch(0, -y, 0, ttcheckers, FRACUNIT);
+		V_DrawSciencePatch(280<<FRACBITS, -(40<<FRACBITS) + y, 0, ttcheckers, FRACUNIT);
+
+		y = M_WrongWarpFallingHelper(36, 7*TICRATE/4);
+		if (y != INT32_MAX)
+		{
+			patch_t *ttbanner = W_CachePatchName("TTKBANNR", PU_CACHE);
+			V_DrawSmallScaledPatch(84, y, 0, ttbanner);
+		}
+
+		y = M_WrongWarpFallingHelper(87, 4*TICRATE/3);
+		if (y != INT32_MAX)
+		{
+			patch_t *ttkart = W_CachePatchName("TTKART", PU_CACHE);
+			V_DrawSmallScaledPatch(84, y, 0, ttkart);
+		}
+	}
+
+	if (wrongwarp.ticker < 2*TICRATE/3)
+		return;
+
+	V_DrawFadeScreen(31, min((wrongwarp.ticker - 2*TICRATE/3), 5));
+
+	// SMK title screen recreation!?
+
+	if (wrongwarp.ticker >= 2*TICRATE)
+	{
+		// Done as four calls and not a loop for the sake of render order
+		M_DrawWrongPlayer(0);
+		M_DrawWrongPlayer(2);
+		M_DrawWrongPlayer(1);
+		M_DrawWrongPlayer(3);
+	}
+
+	y = 20;
+
+	x = BASEVIDWIDTH - 8;
+
+	if (wrongwarp.ticker < TICRATE)
+	{
+		INT32 adjust = floor(pow(2, (double)(TICRATE - wrongwarp.ticker)));
+		x += adjust/2;
+		y += adjust;
+	}
+
+	titlewidth = V_LSTitleHighStringWidth(titletext, 0);
+	titleoffset = (-wrongwarp.ticker) % titlewidth;
+
+	while (titleoffset < BASEVIDWIDTH)
+	{
+		V_DrawLSTitleHighString(titleoffset, y, 0, titletext);
+		titleoffset += titlewidth;
+	}
+
+	patch_t *bumper = W_CachePatchName((cv_alttitle.value ? "MTSJUMPR1" : "MTSBUMPR1"), PU_CACHE);
+	V_DrawScaledPatch(x-(SHORT(bumper->width)), (BASEVIDHEIGHT-8)-(SHORT(bumper->height)), 0, bumper);
+}
+
 void M_DrawSoundTest(void)
 {
-	UINT8 pid = 0; // todo: Add ability for any splitscreen player to bring up the menu.
+	const UINT8 pid = 0;
 
 	INT32 x, y, i, cursorx = 0;
 	INT32 titleoffset = 0, titlewidth;
@@ -6065,6 +6280,8 @@ void M_DrawSoundTest(void)
 		}
 
 		titletext = soundtest.current->title;
+		if (!titletext)
+			titletext = "Untitled"; // Har har.
 
 		V_DrawThinString(x+1, y, V_ALLOWLOWERCASE|V_6WIDTHSPACE, titletext);
 		if (soundtest.current->numtracks > 1)
@@ -6299,3 +6516,94 @@ void M_DrawSoundTest(void)
 	V_DrawCharacter(cursorx - 4, currentMenu->y - 8 - (skullAnimCounter/5),
 		'\x1B' | V_SNAPTOTOP|highlightflags, false); // up arrow
 }
+
+#ifdef HAVE_DISCORDRPC
+void M_DrawDiscordRequests(void)
+{
+	discordRequest_t *curRequest = discordRequestList;
+	UINT8 *colormap;
+	patch_t *hand = NULL;
+
+	const char *wantText = "...would like to join!";
+	const char *acceptText = "Accept" ;
+	const char *declineText = "Decline";
+
+	INT32 x = 100;
+	INT32 y = 133;
+
+	INT32 slide = 0;
+	INT32 maxYSlide = 18;
+
+	if (discordrequestmenu.confirmDelay > 0)
+	{
+		if (discordrequestmenu.confirmAccept == true)
+		{
+			colormap = R_GetTranslationColormap(TC_DEFAULT, SKINCOLOR_GREEN, GTC_MENUCACHE);
+			hand = W_CachePatchName("K_LAPH02", PU_CACHE);
+		}
+		else
+		{
+			colormap = R_GetTranslationColormap(TC_DEFAULT, SKINCOLOR_RED, GTC_MENUCACHE);
+			hand = W_CachePatchName("K_LAPH03", PU_CACHE);
+		}
+
+		slide = discordrequestmenu.confirmLength - discordrequestmenu.confirmDelay;
+	}
+	else
+	{
+		colormap = R_GetTranslationColormap(TC_DEFAULT, SKINCOLOR_GREY, GTC_MENUCACHE);
+	}
+
+	V_DrawFixedPatch(56*FRACUNIT, 150*FRACUNIT, FRACUNIT, 0, W_CachePatchName("K_LAPE01", PU_CACHE), colormap);
+
+	if (hand != NULL)
+	{
+		fixed_t handoffset = (4 - abs((signed)(skullAnimCounter - 4))) * FRACUNIT;
+		V_DrawFixedPatch(56*FRACUNIT, 150*FRACUNIT + handoffset, FRACUNIT, 0, hand, NULL);
+	}
+
+	K_DrawSticker(x + (slide * 32), y - 2, V_ThinStringWidth(M_GetDiscordName(curRequest), V_ALLOWLOWERCASE|V_6WIDTHSPACE), 0, false);
+	V_DrawThinString(x + (slide * 32), y - 1, V_ALLOWLOWERCASE|V_6WIDTHSPACE|V_YELLOWMAP, M_GetDiscordName(curRequest));
+
+	K_DrawSticker(x, y + 12, V_ThinStringWidth(wantText, V_ALLOWLOWERCASE|V_6WIDTHSPACE), 0, true);
+	V_DrawThinString(x, y + 10, V_ALLOWLOWERCASE|V_6WIDTHSPACE, wantText);
+
+	INT32 confirmButtonWidth = SHORT(kp_button_a[1][0]->width);
+	INT32 declineButtonWidth = SHORT(kp_button_b[1][0]->width);
+	INT32 altDeclineButtonWidth = SHORT(kp_button_x[1][0]->width);
+	INT32 acceptTextWidth =  V_ThinStringWidth(acceptText, V_ALLOWLOWERCASE|V_6WIDTHSPACE);
+	INT32 declineTextWidth = V_ThinStringWidth(declineText, V_ALLOWLOWERCASE|V_6WIDTHSPACE);
+	INT32 stickerWidth = (confirmButtonWidth + declineButtonWidth + altDeclineButtonWidth + acceptTextWidth + declineTextWidth);
+
+	K_DrawSticker(x, y + 26, stickerWidth, 0, true);
+	K_drawButtonAnim(x, y + 22, V_SNAPTORIGHT, kp_button_a[1], discordrequestmenu.ticker);
+
+	INT32 xoffs = confirmButtonWidth;
+
+	V_DrawThinString((x + xoffs), y + 24, V_ALLOWLOWERCASE|V_6WIDTHSPACE, acceptText);
+	xoffs += acceptTextWidth;
+
+	K_drawButtonAnim((x + xoffs), y + 22, V_SNAPTORIGHT, kp_button_b[1], discordrequestmenu.ticker);
+	xoffs += declineButtonWidth;
+
+	K_drawButtonAnim((x + xoffs), y + 22, V_SNAPTORIGHT, kp_button_x[1], discordrequestmenu.ticker);
+	xoffs += altDeclineButtonWidth;
+
+	V_DrawThinString((x + xoffs), y + 24, V_ALLOWLOWERCASE|V_6WIDTHSPACE, declineText);
+
+	y -= 18;
+
+	while (curRequest->next != NULL)
+	{
+		INT32 ySlide = min(slide * 4, maxYSlide);
+
+		curRequest = curRequest->next;
+
+		K_DrawSticker(x, y - 1 + ySlide, V_ThinStringWidth(M_GetDiscordName(curRequest), V_ALLOWLOWERCASE|V_6WIDTHSPACE), 0, false);
+		V_DrawThinString(x, y + ySlide, V_ALLOWLOWERCASE|V_6WIDTHSPACE, M_GetDiscordName(curRequest));
+
+		y -= 12;
+		maxYSlide = 12;
+	}
+}
+#endif

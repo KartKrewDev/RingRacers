@@ -75,6 +75,7 @@ add_executable(SRB2SDL2 MACOSX_BUNDLE WIN32
 	r_skins.c
 	r_sky.c
 	r_splats.c
+	r_spritefx.cpp
 	r_things.c
 	r_bbox.c
 	r_textures.c
@@ -85,6 +86,7 @@ add_executable(SRB2SDL2 MACOSX_BUNDLE WIN32
 	r_portal.c
 	screen.c
 	taglist.c
+	v_draw.cpp
 	v_video.cpp
 	s_sound.c
 	sounds.c
@@ -143,6 +145,7 @@ add_executable(SRB2SDL2 MACOSX_BUNDLE WIN32
 	k_vote.c
 	k_serverstats.c
 	k_zvote.c
+	k_mapuser.c
 )
 
 if(SRB2_CONFIG_ENABLE_WEBM_MOVIES)
@@ -236,7 +239,7 @@ target_sources(SRB2SDL2 PRIVATE apng.c)
 
 target_link_libraries(SRB2SDL2 PRIVATE DiscordRPC::DiscordRPC)
 target_compile_definitions(SRB2SDL2 PRIVATE -DHAVE_DISCORDRPC -DUSE_STUN)
-target_sources(SRB2SDL2 PRIVATE discord.c stun.c)
+target_sources(SRB2SDL2 PRIVATE discord.c stun.cpp)
 
 target_link_libraries(SRB2SDL2 PRIVATE tcbrindle::span)
 target_link_libraries(SRB2SDL2 PRIVATE glm)
@@ -252,6 +255,8 @@ if(SRB2_CONFIG_ENABLE_WEBM_MOVIES)
 	target_link_libraries(SRB2SDL2 PRIVATE Vorbis::vorbis Vorbis::vorbisenc)
 	target_compile_definitions(SRB2SDL2 PRIVATE -DSRB2_CONFIG_ENABLE_WEBM_MOVIES)
 endif()
+
+target_link_libraries(SRB2SDL2 PRIVATE nlohmann_json::nlohmann_json)
 
 set(SRB2_HAVE_THREADS ON)
 target_compile_definitions(SRB2SDL2 PRIVATE -DHAVE_THREADS)
@@ -273,7 +278,7 @@ if(${SRB2_CONFIG_HAVE_DISCORDRPC})
 		set(SRB2_HAVE_DISCORDRPC ON)
 		target_compile_definitions(SRB2SDL2 PRIVATE -DHAVE_DISCORDRPC)
 		target_compile_definitions(SRB2SDL2 PRIVATE -DUSE_STUN)
-		target_sources(SRB2SDL2 PRIVATE discord.c stun.c)
+		target_sources(SRB2SDL2 PRIVATE discord.c stun.cpp)
 	else()
 		message(WARNING "You have specified that Discord Rich Presence is available but it was not found.")
 	endif()

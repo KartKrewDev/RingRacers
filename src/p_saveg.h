@@ -31,23 +31,50 @@ extern "C" {
 // Persistent storage/archiving.
 // These are the load / save game routines.
 
-void P_SaveGame(savebuffer_t *save, INT16 mapnum);
+// Local Play
+void P_SaveGame(savebuffer_t *save);
+boolean P_LoadGame(savebuffer_t *save);
+void P_GetBackupCupData(savebuffer_t *save);
+
+// Online
 void P_SaveNetGame(savebuffer_t *save, boolean resending);
-boolean P_LoadGame(savebuffer_t *save, INT16 mapoverride);
 boolean P_LoadNetGame(savebuffer_t *save, boolean reloading);
 
 mobj_t *P_FindNewPosition(UINT32 oldposition);
 
+struct savedata_bot_s
+{
+	boolean valid;
+	UINT8 skin;
+	UINT8 difficulty;
+	boolean rival;
+	UINT32 score;
+};
+
 struct savedata_t
 {
+	UINT32 score;
+	SINT8 lives;
+	UINT16 totalring;
+
 	UINT8 skin;
-	INT32 score;
-	INT32 lives;
-	UINT16 emeralds;
-	UINT8 numgameovers;
+	UINT16 skincolor;
+	INT32 followerskin;
+	UINT16 followercolor;
+
+	struct savedata_bot_s bots[MAXPLAYERS];
 };
 
 extern savedata_t savedata;
+
+struct savedata_cup_t
+{
+	cupheader_t *cup;
+	UINT8 difficulty;
+	boolean encore;
+};
+
+extern savedata_cup_t cupsavedata;
 
 struct savebuffer_t
 {
@@ -63,6 +90,7 @@ boolean P_SaveBufferFromExisting(savebuffer_t *save, UINT8 *existing_buffer, siz
 boolean P_SaveBufferFromLump(savebuffer_t *save, lumpnum_t lump);
 boolean P_SaveBufferFromFile(savebuffer_t *save, char const *name);
 void P_SaveBufferFree(savebuffer_t *save);
+size_t P_SaveBufferRemaining(const savebuffer_t *save);
 
 #ifdef __cplusplus
 } // extern "C"

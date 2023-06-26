@@ -25,7 +25,6 @@ size_t num_tags;
 // in several taggroups at the same time. These are built on level load.
 taggroup_t* tags_sectors[MAXTAGS + 1];
 taggroup_t* tags_lines[MAXTAGS + 1];
-taggroup_t* tags_mapthings[MAXTAGS + 1];
 
 /// Adds a tag to a given element's taglist. It will not add a duplicate.
 /// \warning This does not rebuild the global taggroups, which are used for iteration.
@@ -247,8 +246,7 @@ static size_t total_elements_with_tag (const mtag_t tag)
 	return
 		(
 				Taggroup_Count(tags_sectors[tag]) +
-				Taggroup_Count(tags_lines[tag]) +
-				Taggroup_Count(tags_mapthings[tag])
+				Taggroup_Count(tags_lines[tag])
 		);
 }
 
@@ -309,12 +307,7 @@ static void Taglist_AddToLines (const mtag_t tag, const size_t itemid)
 	Taggroup_Add_Init(tags_lines, tag, itemid);
 }
 
-static void Taglist_AddToMapthings (const mtag_t tag, const size_t itemid)
-{
-	Taggroup_Add_Init(tags_mapthings, tag, itemid);
-}
-
-/// After all taglists have been built for each element (sectors, lines, things),
+/// After all taglists have been built for each element (sectors, lines),
 /// the global taggroups, made for iteration, are built here.
 void Taglist_InitGlobalTables(void)
 {
@@ -327,7 +320,6 @@ void Taglist_InitGlobalTables(void)
 	{
 		tags_sectors[i] = NULL;
 		tags_lines[i] = NULL;
-		tags_mapthings[i] = NULL;
 	}
 	for (i = 0; i < numsectors; i++)
 	{
@@ -338,11 +330,6 @@ void Taglist_InitGlobalTables(void)
 	{
 		for (j = 0; j < lines[i].tags.count; j++)
 			Taglist_AddToLines(lines[i].tags.tags[j], i);
-	}
-	for (i = 0; i < nummapthings; i++)
-	{
-		for (j = 0; j < mapthings[i].tags.count; j++)
-			Taglist_AddToMapthings(mapthings[i].tags.tags[j], i);
 	}
 }
 
@@ -356,11 +343,6 @@ INT32 Tag_Iterate_Sectors (const mtag_t tag, const size_t p)
 INT32 Tag_Iterate_Lines (const mtag_t tag, const size_t p)
 {
 	return Taggroup_Iterate(tags_lines, numlines, tag, p);
-}
-
-INT32 Tag_Iterate_Things (const mtag_t tag, const size_t p)
-{
-	return Taggroup_Iterate(tags_mapthings, nummapthings, tag, p);
 }
 
 INT32 Tag_FindLineSpecial(const INT16 special, const mtag_t tag)
@@ -467,4 +449,31 @@ mtag_t Tag_NextUnused(mtag_t start)
 	}
 
 	return (mtag_t)MAXTAGS;
+}
+
+// This is no longer a tag list to maintain parity with mobjs,
+// but it's convenient to keep it in this file anyway.
+INT32 Tag_Iterate_Things (const mtag_t tag, const size_t p)
+{
+	size_t i = SIZE_MAX;
+
+	if (tag == MTAG_GLOBAL)
+	{
+		if (p < nummapthings)
+		{
+			return p;
+		}
+
+		return -1;
+	}
+
+	for (i = p; i < nummapthings; i++)
+	{
+		if (mapthings[i].tid == tag)
+		{
+			return i;
+		}
+	}
+
+	return -1;
 }

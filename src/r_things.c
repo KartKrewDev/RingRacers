@@ -49,7 +49,7 @@
 #include "k_kart.h" // HITLAGJITTERS
 #include "r_fps.h"
 
-#define MINZ (FRACUNIT*16)
+#define MINZ (FRACUNIT*4)
 #define BASEYCENTER (BASEVIDHEIGHT/2)
 
 typedef struct
@@ -815,6 +815,7 @@ static boolean baddie_is_flashing(mobj_t *thing)
 boolean R_ThingIsFlashing(mobj_t *thing)
 {
 	return
+		(thing->frame & FF_INVERT) ||
 		hitlag_is_flashing(thing) ||
 		baddie_is_flashing(thing);
 }
@@ -1629,6 +1630,26 @@ static void R_ProjectBoundingBox(mobj_t *thing, vissprite_t *vis)
 	box->x2test = 0;
 }
 
+static fixed_t R_GetSpriteDirectionalLighting(angle_t angle)
+{
+	// Copied from P_UpdateSegLightOffset
+	const UINT8 contrast = min(max(0, maplighting.contrast - maplighting.backlight), UINT8_MAX);
+	const fixed_t contrastFixed = ((fixed_t)contrast) * FRACUNIT;
+
+	fixed_t light = FRACUNIT;
+	fixed_t extralight = 0;
+
+	light = FixedMul(FINECOSINE(angle >> ANGLETOFINESHIFT), FINECOSINE(maplighting.angle >> ANGLETOFINESHIFT))
+		+ FixedMul(FINESINE(angle >> ANGLETOFINESHIFT), FINESINE(maplighting.angle >> ANGLETOFINESHIFT));
+	light = (light + FRACUNIT) / 2;
+
+	light = FixedMul(light, FRACUNIT - FSIN(abs(AngleDeltaSigned(angle, maplighting.angle)) / 2));
+
+	extralight = -contrastFixed + FixedMul(light, contrastFixed * 2);
+
+	return extralight;
+}
+
 //
 // R_ProjectSprite
 // Generates a vissprite for a thing
@@ -1690,6 +1711,7 @@ static void R_ProjectSprite(mobj_t *thing)
 	fixed_t gz = 0, gzt = 0;
 	INT32 heightsec, phs;
 	INT32 light = 0;
+	lighttable_t **lights_array = spritelights;
 	fixed_t this_scale;
 	fixed_t spritexscale, spriteyscale;
 
@@ -1989,7 +2011,7 @@ static void R_ProjectSprite(mobj_t *thing)
 			tz2 = FixedMul(MINZ, this_scale);
 		}
 
-		if (tx2 < -(FixedMul(tz2, fovtan[viewssnum])<<2) || tx > FixedMul(tz, fovtan[viewssnum])<<2) // too far off the side?
+		if ((tx2 / 4) < -(FixedMul(tz2, fovtan[viewssnum])) || (tx / 4) > FixedMul(tz, fovtan[viewssnum])) // too far off the side?
 			return;
 
 		yscale = FixedDiv(projectiony[viewssnum], tz);
@@ -2239,29 +2261,78 @@ static void R_ProjectSprite(mobj_t *thing)
 			return;
 	}
 
-	if (thing->subsector->sector->numlights)
+	if (oldthing->renderflags & RF_ABSOLUTELIGHTLEVEL)
+	{
+		const UINT8 n = R_ThingLightLevel(oldthing);
+
+		// n = uint8 aka 0 - 255, so the shift will always be 0 - LIGHTLEVELS - 1
+		lights_array = scalelight[n >> LIGHTSEGSHIFT];
+	}
+	else
 	{
 		INT32 lightnum;
-		fixed_t top = (splat) ? gz : gzt;
-		light = thing->subsector->sector->numlights - 1;
 
-		// R_GetPlaneLight won't work on sloped lights!
-		for (lightnum = 1; lightnum < thing->subsector->sector->numlights; lightnum++) {
-			fixed_t h = P_GetLightZAt(&thing->subsector->sector->lightlist[lightnum], interp.x, interp.y);
-			if (h <= top) {
-				light = lightnum - 1;
-				break;
+		if (thing->subsector->sector->numlights)
+		{
+			fixed_t top = (splat) ? gz : gzt;
+			light = thing->subsector->sector->numlights - 1;
+
+			// R_GetPlaneLight won't work on sloped lights!
+			for (lightnum = 1; lightnum < thing->subsector->sector->numlights; lightnum++) {
+				fixed_t h = P_GetLightZAt(&thing->subsector->sector->lightlist[lightnum], interp.x, interp.y);
+				if (h <= top) {
+					light = lightnum - 1;
+					break;
+				}
+			}
+			//light = R_GetPlaneLight(thing->subsector->sector, gzt, false);
+			lightnum = *thing->subsector->sector->lightlist[light].lightlevel;
+		}
+		else
+		{
+			lightnum = thing->subsector->sector->lightlevel;
+		}
+
+		lightnum = (lightnum + R_ThingLightLevel(oldthing)) >> LIGHTSEGSHIFT;
+
+		if (maplighting.directional == true)
+		{
+			fixed_t extralight = R_GetSpriteDirectionalLighting(papersprite
+					? interp.angle + (ang >= ANGLE_180 ? -ANGLE_90 : ANGLE_90)
+					: R_PointToAngle(interp.x, interp.y));
+
+			// Less change in contrast in dark sectors
+			extralight = FixedMul(extralight, min(max(0, lightnum), LIGHTLEVELS - 1) * FRACUNIT / (LIGHTLEVELS - 1));
+
+			if (papersprite)
+			{
+				// Papersprite contrast should match walls
+				lightnum += FixedFloor((extralight / 8) + (FRACUNIT / 2)) / FRACUNIT;
+			}
+			else
+			{
+				fixed_t n = FixedDiv(FixedMul(xscale, LIGHTRESOLUTIONFIX), ((MAXLIGHTSCALE-1) << LIGHTSCALESHIFT));
+
+				// Less change in contrast at further distances, to counteract DOOM diminished light
+				extralight = FixedMul(extralight, min(n, FRACUNIT));
+
+				// Contrast is stronger for normal sprites, stronger than wall lighting is at the same distance
+				lightnum += FixedFloor((extralight / 4) + (FRACUNIT / 2)) / FRACUNIT;
+			}
+
+			// Semibright objects will be made slightly brighter to compensate contrast
+			if (R_ThingIsSemiBright(oldthing))
+			{
+				lightnum += 2;
 			}
 		}
-		//light = R_GetPlaneLight(thing->subsector->sector, gzt, false);
-		lightnum = (*thing->subsector->sector->lightlist[light].lightlevel >> LIGHTSEGSHIFT);
 
 		if (lightnum < 0)
-			spritelights = scalelight[0];
+			lights_array = scalelight[0];
 		else if (lightnum >= LIGHTLEVELS)
-			spritelights = scalelight[LIGHTLEVELS-1];
+			lights_array = scalelight[LIGHTLEVELS-1];
 		else
-			spritelights = scalelight[lightnum];
+			lights_array = scalelight[lightnum];
 	}
 
 	heightsec = thing->subsector->sector->heightsec;
@@ -2414,7 +2485,7 @@ static void R_ProjectSprite(mobj_t *thing)
 		if (vis->cut & SC_SEMIBRIGHT)
 			lindex = (MAXLIGHTSCALE/2) + (lindex >> 1);
 
-		vis->colormap = spritelights[lindex];
+		vis->colormap = lights_array[lindex];
 	}
 
 	if (vflip)
@@ -2425,7 +2496,7 @@ static void R_ProjectSprite(mobj_t *thing)
 	vis->patch = patch;
 	vis->bright = R_CacheSpriteBrightMap(sprinfo, frame);
 
-	if (thing->subsector->sector->numlights && !(shadowdraw || splat))
+	if (thing->subsector->sector->numlights && !(shadowdraw || splat) && !(thing->renderflags & RF_ABSOLUTELIGHTLEVEL))
 		R_SplitSprite(vis);
 
 	if (oldthing->shadowscale && cv_shadow.value)
@@ -2825,8 +2896,6 @@ static void R_SortVisSprites(vissprite_t* vsprsortedhead, UINT32 start, UINT32 e
 
 		if (dsfirst != &unsorted)
 		{
-			if (!(ds->cut & SC_FULLBRIGHT))
-				ds->colormap = dsfirst->colormap;
 			ds->extra_colormap = dsfirst->extra_colormap;
 
 			// reusing dsnext...
@@ -3659,20 +3728,10 @@ boolean R_ThingWithinDist (mobj_t *thing, fixed_t limit_dist)
 
 	if (limit_dist)
 	{
-		if (thing->flags & MF_DRAWFROMFARAWAY)
+		// MF_DRAWFROMFARAWAY: visible from any distance
+		if (!(thing->flags & MF_DRAWFROMFARAWAY) && dist > limit_dist)
 		{
-			// MF_DRAWFROMFARAWAY: visible from 2x drawdist
-			if (dist > limit_dist * 2)
-			{
-				return false;
-			}
-		}
-		else
-		{
-			if (dist > limit_dist)
-			{
-				return false;
-			}
+			return false;
 		}
 	}
 

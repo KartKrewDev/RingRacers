@@ -238,18 +238,15 @@ static void R_RenderMaskedSegLoop(drawseg_t *ds, INT32 x1, INT32 x2, INT32 texnu
 		{
 			if ((R_CheckColumnFunc(COLDRAWFUNC_FUZZY) == false)
 				|| (frontsector->extra_colormap && (frontsector->extra_colormap->flags & CMF_FOG)))
-			{
 				lightnum = (frontsector->lightlevel >> LIGHTSEGSHIFT);
-			}
 			else
-			{
 				lightnum = LIGHTLEVELS - 1;
 
-				if (P_ApplyLightOffset(lightnum))
-				{
-					lightnum += curline->lightOffset;
-				}
-			}
+			if ((R_CheckColumnFunc(COLDRAWFUNC_FOG) == true)
+				|| (frontsector->extra_colormap && (frontsector->extra_colormap->flags & CMF_FOG)))
+				;
+			else if (P_ApplyLightOffset(lightnum))
+				lightnum += curline->lightOffset;
 
 			lightnum = R_AdjustLightLevel(lightnum);
 		}

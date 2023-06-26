@@ -75,7 +75,7 @@ consvar_t cv_movie_showfps = CVAR_INIT("movie_showfps", "Yes", CV_SAVE, CV_YesNo
 consvar_t cv_movie_sound = CVAR_INIT("movie_sound", "On", CV_SAVE, CV_OnOff, NULL);
 
 consvar_t cv_movie_duration = CVAR_INIT("movie_duration", "Unlimited", CV_SAVE | CV_FLOAT, movie_limit_cons_t, NULL);
-consvar_t cv_movie_size = CVAR_INIT("movie_size", "8.0", CV_SAVE | CV_FLOAT, movie_limit_cons_t, NULL);
+consvar_t cv_movie_size = CVAR_INIT("movie_size", "25.0", CV_SAVE | CV_FLOAT, movie_limit_cons_t, NULL);
 
 std::shared_ptr<AVRecorder> g_av_recorder;
 

@@ -386,10 +386,8 @@ static int libd_getSprite2Patch(lua_State *L)
 	else // find skin by name
 	{
 		const char *name = luaL_checkstring(L, 1);
-		for (i = 0; i < numskins; i++)
-			if (fastcmp(skins[i].name, name))
-				break;
-		if (i >= numskins)
+		i = R_SkinAvailable(name);
+		if (i == -1)
 			return 0;
 	}
 

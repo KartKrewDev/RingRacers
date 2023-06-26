@@ -105,9 +105,6 @@ extern UINT16 tttics;
 extern boolean ttavailable[6];
 
 // Current menu parameters
-
-extern altview_t titlemapcam;
-
 extern char curbgname[9];
 extern SINT8 curfadevalue;
 extern INT32 curbgcolor;

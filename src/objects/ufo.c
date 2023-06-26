@@ -38,6 +38,7 @@
 #define UFO_NUMARMS (3)
 #define UFO_ARMDELTA (ANGLE_MAX / UFO_NUMARMS)
 
+#define ufo_emeraldnum(o) ((o)->cvmem)
 #define ufo_waypoint(o) ((o)->extravalue1)
 #define ufo_distancetofinish(o) ((o)->extravalue2)
 #define ufo_speed(o) ((o)->watertop)
@@ -428,23 +429,12 @@ static void UFOMove(mobj_t *ufo)
 
 	if (reachedEnd == true)
 	{
-		UINT8 i;
-
 		// Invalidate UFO/emerald
 		ufo_waypoint(ufo) = -1;
 		ufo->flags &= ~(MF_SPECIAL|MF_PICKUPFROMBELOW);
 
 		// Disable player
-		for (i = 0; i < MAXPLAYERS; i++)
-		{
-			if (!playeringame[i])
-				continue;
-			if (players[i].spectator)
-				continue;
-
-			players[i].pflags |= PF_NOCONTEST;
-			P_DoPlayerExit(&players[i]);
-		}
+		P_DoAllPlayersExit(PF_NOCONTEST, false);
 	}
 
 	if (pathfindsuccess == true)
@@ -681,6 +671,7 @@ static UINT8 GetUFODamage(mobj_t *inflictor, UINT8 damageType)
 		{
 			case MT_JAWZ_SHIELD:
 			case MT_ORBINAUT_SHIELD:
+			case MT_INSTAWHIP:
 			{
 				// Shields deal chip damage.
 				return 10;
@@ -798,7 +789,7 @@ boolean Obj_SpecialUFODamage(mobj_t *ufo, mobj_t *inflictor, mobj_t *source, UIN
 
 		S_StopSound(ufo);
 		S_StartSound(ufo, sfx_clawk2);
-		P_StartQuake(64<<FRACBITS, 20);
+		P_StartQuake(20, 64 * ufo->scale, 0, NULL);
 
 		ufo_speed(ufo) += addSpeed; // Even more speed!
 		return true;
@@ -806,7 +797,7 @@ boolean Obj_SpecialUFODamage(mobj_t *ufo, mobj_t *inflictor, mobj_t *source, UIN
 
 	S_StartSound(ufo, sfx_clawht);
 	S_StopSoundByID(ufo, sfx_clawzm);
-	P_StartQuake(64<<FRACBITS, 10);
+	P_StartQuake(10, 64 * ufo->scale, 0, NULL);
 
 	return true;
 }
@@ -1015,7 +1006,7 @@ static mobj_t *InitSpecialUFO(waypoint_t *start)
 		overlay = P_SpawnMobjFromMobj(ufo, 0, 0, 0, MT_OVERLAY);
 
 		ufo->color = SKINCOLOR_CHAOSEMERALD1;
-		i = P_GetNextEmerald();
+		i = ufo_emeraldnum(ufo) = P_GetNextEmerald();
 		if (i > 0)
 		{
 			ufo->color += (i - 1) % 7;

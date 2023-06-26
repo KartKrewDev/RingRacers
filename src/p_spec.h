@@ -137,15 +137,28 @@ typedef enum
 
 typedef enum
 {
+	TMAUDIM_FLOAT = 1,
+	TMAUDIM_BORED = 1<<1,
+} textmapaudiencemovementflags_t;
+
+typedef enum
+{
 	TMBCF_BACKANDFORTH = 1,
 	TMBCF_REVERSE      = 1<<1,
 } textmapbattlecapsuleflags_t;
 
 typedef enum
 {
-	TMICF_INVERTTIMEATTACK = 1,
+	//TMICF_UNUSED = 1,
 	TMICF_INVERTSIZE       = 1<<1,
 } textmapitemcapsuleflags_t;
+
+typedef enum
+{
+	TMICM_DEFAULT = 0, // Time Attack only has rings, multiplayer has everything
+	TMICM_MULTIPLAYER = 1,
+	TMICM_TIMEATTACK = 1<<1,
+} textmapitemcapsulemodes_t;
 
 typedef enum
 {
@@ -536,9 +549,11 @@ typedef enum
 // This must be updated whenever we up the max flat size - quicker to assume rather than figuring out the sqrt of the specific flat's filesize.
 #define MAXFLATSIZE (2048<<FRACBITS)
 
-// Something that should've been done long ago???
-// We won't be using epicenter or radius anytime soon so I don't think it's worth it yet.
-void P_StartQuake(fixed_t intensity, tic_t time);
+// create earthquakes
+void P_StartQuake(tic_t time, fixed_t intensity, fixed_t radius, mappoint_t *epicenter);
+void P_StartQuakeFromMobj(tic_t time, fixed_t intensity, fixed_t radius, mobj_t *mobj);
+void P_DoQuakeOffset(UINT8 view, mappoint_t *viewPos, mappoint_t *offset);
+void P_FreeQuake(quake_t *remove);
 
 // at game start
 void P_InitPicAnims(void);

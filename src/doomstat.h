@@ -51,8 +51,6 @@ extern UINT8 mapmusrng;
 extern UINT32 maptol;
 
 extern INT32 cursaveslot;
-//extern INT16 lastmapsaved;
-extern INT16 lastmaploaded;
 extern UINT8 gamecomplete;
 
 // Extra abilities/settings for skins (combinable stuff)
@@ -112,12 +110,47 @@ extern preciptype_t curWeather;
 
 /** Time attack information, currently a very small structure.
   */
+
+struct skinrecord_t
+{
+	UINT32 wins;
+
+	// Purely assistive in gamedata save processes
+	UINT32 _saveid;
+};
+
+struct unloaded_skin_t
+{
+	char name[SKINNAMESIZE+1];
+	UINT32 namehash;
+
+	skinrecord_t records;
+
+	unloaded_skin_t *next;
+};
+
+extern unloaded_skin_t *unloadedskins;
+
+struct skinreference_t
+{
+	unloaded_skin_t *unloaded;
+	UINT8 id;
+};
+
+// mapvisited is now a set of flags that says what we've done in the map.
+#define MV_VISITED      	(1)
+#define MV_BEATEN       	(1<<1)
+#define MV_ENCORE       	(1<<2)
+#define MV_SPBATTACK    	(1<<3)
+#define MV_MAX          	(MV_VISITED|MV_BEATEN|MV_ENCORE|MV_SPBATTACK)
+#define MV_FINISHNEEDED		(1<<7)
+#define MV_PERSISTUNLOADED	(MV_SPBATTACK|MV_FINISHNEEDED)
+
 struct recorddata_t
 {
+	UINT8 mapvisited;
 	tic_t time; ///< Time in which the level was finished.
 	tic_t lap;  ///< Best lap time for this level.
-	//UINT32 score; ///< Score when the level was finished.
-	//UINT16 rings; ///< Rings when the level was finished.
 };
 
 #define KARTSPEED_AUTO -1
@@ -142,15 +175,8 @@ struct cupwindata_t
 	UINT8 best_placement;
 	gp_rank_e best_grade;
 	boolean got_emerald;
+	skinreference_t best_skin;
 };
-
-// mapvisited is now a set of flags that says what we've done in the map.
-#define MV_VISITED      (1)
-#define MV_BEATEN       (1<<1)
-#define MV_ENCORE       (1<<2)
-#define MV_SPBATTACK    (1<<3)
-#define MV_MAX          (MV_VISITED|MV_BEATEN|MV_ENCORE|MV_SPBATTACK)
-#define MV_MP           ((MV_MAX+1)<<1)
 
 // Set if homebrew PWAD stuff has been added.
 extern boolean modifiedgame;
@@ -315,15 +341,11 @@ struct textprompt_t
 extern textprompt_t *textprompts[MAX_PROMPTS];
 
 // For the Custom Exit linedef.
-extern INT16 nextmapoverride;
+extern UINT16 nextmapoverride;
 extern UINT8 skipstats;
 
 // Fun extra stuff
 extern INT16 lastmap; // Last level you were at (returning from special stages).
-extern mobj_t *redflag, *blueflag; // Pointers to physical flags
-extern mapthing_t *rflagpoint, *bflagpoint; // Pointers to the flag spawn locations
-#define GF_REDFLAG 1
-#define GF_BLUEFLAG 2
 
 // A single point in space.
 struct mappoint_t
@@ -331,16 +353,22 @@ struct mappoint_t
 	fixed_t x, y, z;
 };
 
-extern struct quake
+struct quake_t
 {
-	// camera offsets and duration
-	fixed_t x,y,z;
-	UINT16 time;
+	tic_t time, startTime;
+	fixed_t intensity;
 
-	// location, radius, and intensity...
+	// optional intensity modulation based on position
+	fixed_t radius;
 	mappoint_t *epicenter;
-	fixed_t radius, intensity;
-} quake;
+	mobj_t *mobj;
+
+	// linked list
+	quake_t *next;
+	quake_t *prev;
+};
+
+extern quake_t *g_quakes;
 
 // Custom Lua values
 struct customoption_t
@@ -357,11 +385,16 @@ struct customoption_t
 #define CUPCACHE_SPECIAL (CUPCACHE_BONUS+MAXBONUSLIST)
 #define CUPCACHE_MAX (CUPCACHE_SPECIAL+1)
 
+#define MAXCUPNAME 16 // includes \0, for cleaner savedata
+
 struct cupheader_t
 {
 	UINT16 id;								///< Cup ID
 	UINT8 monitor;							///< Monitor graphic 1-9 or A-Z
-	char name[15];							///< Cup title (14 chars)
+
+	char name[MAXCUPNAME];					///< Cup title
+	UINT32 namehash;						///< Cup title hash
+
 	char icon[9];							///< Name of the icon patch
 	char *levellist[CUPCACHE_MAX];			///< List of levels that belong to this cup
 	INT16 cachedlevels[CUPCACHE_MAX];		///< IDs in levellist, bonusgame, and specialstage
@@ -374,6 +407,18 @@ struct cupheader_t
 
 extern cupheader_t *kartcupheaders; // Start of cup linked list
 extern UINT16 numkartcupheaders;
+
+struct unloaded_cupheader_t
+{
+	char name[MAXCUPNAME];
+	UINT32 namehash;
+
+	cupwindata_t windata[4];
+
+	unloaded_cupheader_t *next;
+};
+
+extern unloaded_cupheader_t *unloadedcupheaders;
 
 #define MAXMAPLUMPNAME 64 // includes \0, for cleaner savedata
 #define MAXSTAFF 3
@@ -394,6 +439,7 @@ struct mapheader_t
 {
 	// Core game information, not user-modifiable directly
 	char *lumpname;						///< Lump name can be really long
+	UINT32 lumpnamehash;				///< quickncasehash(->lumpname, MAXMAPLUMPNAME)
 	lumpnum_t lumpnum;       			///< Lump number for the map, used by vres_GetMap
 
 	void *thumbnailPic;					///< Lump data for the level select thumbnail.
@@ -405,8 +451,7 @@ struct mapheader_t
 	UINT8 ghostCount;					///< Count of valid staff ghosts
 	staffbrief_t *ghostBrief[MAXSTAFF];	///< Mallocated array of names for each staff ghost
 
-	UINT8 mapvisited;					///< A set of flags that says what we've done in the map.
-	recorddata_t *mainrecord;			///< Stores best time attack data
+	recorddata_t records;				///< Stores completion/record attack data
 
 	cupheader_t *cup;					///< Cached cup
 
@@ -456,6 +501,7 @@ struct mapheader_t
 	UINT16 palette;						///< PAL lump to use on this map
 	UINT16 encorepal;					///< PAL for encore mode
 	UINT8 light_contrast;				///< Range of wall lighting. 0 is no lighting.
+	SINT8 sprite_backlight;				///< Subtract from wall lighting for sprites only.
 	boolean use_light_angle;			///< When false, wall lighting is evenly distributed. When true, wall lighting is directional.
 	angle_t light_angle;				///< Angle of directional wall lighting.
 
@@ -489,6 +535,18 @@ struct mapheader_t
 
 extern mapheader_t** mapheaderinfo;
 extern INT32 nummapheaders, mapallocsize;
+
+struct unloaded_mapheader_t
+{
+	char *lumpname;
+	UINT32 lumpnamehash;
+
+	recorddata_t records;
+
+	unloaded_mapheader_t *next;
+};
+
+extern unloaded_mapheader_t *unloadedmapheaders;
 
 // Gametypes
 #define NUMGAMETYPEFREESLOTS (128)
@@ -582,8 +640,8 @@ enum TypeOfLevel
 	// Gametypes
 	TOL_RACE	 = 0x0001, ///< Race
 	TOL_BATTLE	 = 0x0002, ///< Battle
-	TOL_BOSS	 = 0x0004, ///< Boss (variant of battle, but forbidden)
-	TOL_SPECIAL	 = 0x0008, ///< Special Stage (variant of race, but forbidden)
+	TOL_SPECIAL	 = 0x0004, ///< Special Stage (variant of race, but forbidden)
+	TOL_VERSUS	 = 0x0008, ///< Versus (variant of battle, but forbidden)
 	TOL_TUTORIAL = 0x0010, ///< Tutorial (variant of race, but forbidden)
 
 	// Modifiers
@@ -669,7 +727,7 @@ extern const tic_t bulbtime;
 extern UINT8 numbulbs;
 
 extern tic_t raceexittime;
-extern tic_t battleexittime;
+#define MUSICCOUNTDOWNMAX (raceexittime - (TICRATE/2))
 
 extern INT32 hyudorotime;
 extern INT32 stealtime;
@@ -694,7 +752,7 @@ extern UINT8 maxXtraLife; // Max extra lives from rings
 extern mobj_t *hunt1, *hunt2, *hunt3; // Emerald hunt locations
 
 // For racing
-extern tic_t racecountdown, exitcountdown;
+extern tic_t racecountdown, exitcountdown, musiccountdown;
 
 #define DEFAULT_GRAVITY (4*FRACUNIT/5)
 extern fixed_t gravity;
@@ -703,6 +761,7 @@ extern fixed_t mapobjectscale;
 extern struct maplighting
 {
 	UINT8 contrast;
+	SINT8 backlight;
 	boolean directional;
 	angle_t angle;
 } maplighting;

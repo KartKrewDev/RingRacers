@@ -1169,6 +1169,8 @@ typedef enum
 	sfx_typri2,
 	sfx_eggspr,
 	sfx_achiev,
+	sfx_gpmetr,
+	sfx_endwrp,
 
 	// SRB2Kart - Drop target sounds
 	sfx_kdtrg1,
@@ -1252,6 +1254,9 @@ typedef enum
 
 	sfx_monch,
 	sfx_etexpl,
+
+	sfx_iwhp,
+	sfx_gbrk,
 
 	// Next up: UNIQUE ENGINE SOUNDS! Hoooooo boy...
 	// Engine class A - Low Speed, Low Weight

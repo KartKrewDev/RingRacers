@@ -34,8 +34,9 @@ typedef struct
 	fixed_t topslope, bottomslope;		// slopes to top and bottom of target
 	fixed_t bbox[4];
 
-	mobj_t *compareThing;				// Original thing
+	mobj_t *t1, *t2;
 	boolean alreadyHates;				// For bot traversal, for if the bot is already in a sector it doesn't want to be
+	UINT8 traversed;
 } los_t;
 
 typedef boolean (*los_init_t)(mobj_t *, mobj_t *, register los_t *);
@@ -50,6 +51,8 @@ typedef struct
 } los_funcs_t;
 
 static INT32 sightcounts[2];
+
+#define TRAVERSE_MAX (2)
 
 //
 // P_DivlineSide
@@ -340,15 +343,15 @@ static boolean P_CanTraceBlockingLine(seg_t *seg, divline_t *divl, register los_
 		return false;
 	}
 
-	if (P_IsLineBlocking(line, los->compareThing) == true)
+	if (P_IsLineBlocking(line, los->t1) == true)
 	{
 		// This line will always block us
 		return false;
 	}
 
-	if (los->compareThing->player != NULL)
+	if (los->t1->player != NULL)
 	{
-		if (P_IsLineTripWire(line) == true && K_TripwirePass(los->compareThing->player) == false)
+		if (P_IsLineTripWire(line) == true && K_TripwirePass(los->t1->player) == false)
 		{
 			// Can't go through trip wire.
 			return false;
@@ -360,8 +363,12 @@ static boolean P_CanTraceBlockingLine(seg_t *seg, divline_t *divl, register los_
 
 static boolean P_CanBotTraverse(seg_t *seg, divline_t *divl, register los_t *los)
 {
+	const boolean flip = ((los->t1->eflags & MFE_VERTICALFLIP) == MFE_VERTICALFLIP);
 	line_t *line = seg->linedef;
+	fixed_t frac = 0;
+	boolean canStepUp, canDropOff;
 	fixed_t maxstep = 0;
+	opening_t open = {0};
 
 	if (P_CanTraceBlockingLine(seg, divl, los) == false)
 	{
@@ -369,45 +376,60 @@ static boolean P_CanBotTraverse(seg_t *seg, divline_t *divl, register los_t *los
 		return false;
 	}
 
-	// set openrange, opentop, openbottom
-	tm.x = los->compareThing->x;
-	tm.y = los->compareThing->y;
-	P_LineOpening(line, los->compareThing);
-	maxstep = P_GetThingStepUp(los->compareThing, tm.x, tm.y);
+	// calculate fractional intercept (how far along we are divided by how far we are from t2)
+	frac = P_InterceptVector2(&los->strace, divl);
 
-	if ((openrange < los->compareThing->height) // doesn't fit
-		|| (opentop - los->compareThing->z < los->compareThing->height) // mobj is too high
-		|| (openbottom - los->compareThing->z > maxstep)) // too big a step up
+	// calculate position at intercept
+	tm.x = los->strace.x + FixedMul(los->strace.dx, frac);
+	tm.y = los->strace.y + FixedMul(los->strace.dy, frac);
+
+	// set openrange, opentop, openbottom
+	open.fofType = (flip ? LO_FOF_CEILINGS : LO_FOF_FLOORS);
+	P_LineOpening(line, los->t1, &open);
+	maxstep = P_GetThingStepUp(los->t1, tm.x, tm.y);
+
+	if (open.range < los->t1->height)
 	{
-		// This line situationally blocks us
+		// Can't fit
 		return false;
 	}
 
-	if (los->compareThing->player != NULL && los->alreadyHates == false)
+	// If we can step up...
+	canStepUp = ((flip ? (open.highceiling - open.ceiling) : (open.floor - open.lowfloor)) <= maxstep);
+
+	// Or if we're on the higher side...
+	canDropOff = (flip ? (los->t1->z + los->t1->height <= open.ceiling) : (los->t1->z >= open.floor));
+
+	if (canStepUp || canDropOff)
 	{
-		// Treat damage sectors like walls, if you're not already in a bad sector.
-		sector_t *front, *back;
-		vertex_t pos;
-
-		P_ClosestPointOnLine(los->compareThing->x, los->compareThing->y, line, &pos);
-
-		front = seg->frontsector;
-		back  = seg->backsector;
-
-		if (K_BotHatesThisSector(los->compareThing->player, front, pos.x, pos.y)
-			|| K_BotHatesThisSector(los->compareThing->player, back, pos.x, pos.y))
+		if (los->t1->player != NULL && los->alreadyHates == false)
 		{
-			// This line does not block us, but we don't want to be in it.
-			return false;
+			// Treat damage / offroad sectors like walls.
+			UINT8 side = P_DivlineSide(los->t2x, los->t2y, divl) & 1;
+			sector_t *sector = (side == 1) ? seg->backsector : seg->frontsector;
+
+			if (K_BotHatesThisSector(los->t1->player, sector, tm.x, tm.y))
+			{
+				// This line does not block us, but we don't want to cross it regardless.
+				return false;
+			}
 		}
+
+		return true;
 	}
 
-	return true;
+	los->traversed++;
+	return (los->traversed < TRAVERSE_MAX);
 }
 
 static boolean P_CanWaypointTraverse(seg_t *seg, divline_t *divl, register los_t *los)
 {
+	const boolean flip = ((los->t1->eflags & MFE_VERTICALFLIP) == MFE_VERTICALFLIP);
 	line_t *line = seg->linedef;
+	fixed_t frac = 0;
+	boolean canStepUp, canDropOff;
+	fixed_t maxstep = 0;
+	opening_t open = {0};
 
 	if (P_CanTraceBlockingLine(seg, divl, los) == false)
 	{
@@ -422,7 +444,65 @@ static boolean P_CanWaypointTraverse(seg_t *seg, divline_t *divl, register los_t
 		return false;
 	}
 
-	return true;
+	// calculate fractional intercept (how far along we are divided by how far we are from t2)
+	frac = P_InterceptVector2(&los->strace, divl);
+
+	// calculate position at intercept
+	tm.x = los->strace.x + FixedMul(los->strace.dx, frac);
+	tm.y = los->strace.y + FixedMul(los->strace.dy, frac);
+
+	// set openrange, opentop, openbottom
+	open.fofType = (flip ? LO_FOF_CEILINGS : LO_FOF_FLOORS);
+	P_LineOpening(line, los->t1, &open);
+	maxstep = P_GetThingStepUp(los->t1, tm.x, tm.y);
+
+#if 0
+	if (los->t2->type == MT_WAYPOINT)
+	{
+		waypoint_t *wp = K_SearchWaypointHeapForMobj(los->t2);
+
+		if (wp != NULL)
+		{
+			CONS_Printf(
+				"========\nID: %d\nrange: %.2f >= %.2f\n",
+				K_GetWaypointID(wp),
+				FIXED_TO_FLOAT(open.range),
+				FIXED_TO_FLOAT(los->t1->height)
+			);
+
+			if (open.range >= los->t1->height)
+			{
+				CONS_Printf(
+					"floor: %.2f\nlowfloor: %.2f\nstep: %.2f <= %.2f\n",
+					FIXED_TO_FLOAT(open.floor),
+					FIXED_TO_FLOAT(open.lowfloor),
+					FIXED_TO_FLOAT(open.floor - open.lowfloor),
+					FIXED_TO_FLOAT(maxstep)
+				);
+			}
+		}
+	}
+#endif
+
+	if (open.range < los->t1->height)
+	{
+		// Can't fit
+		return false;
+	}
+
+	// If we can step up...
+	canStepUp = ((flip ? (open.highceiling - open.ceiling) : (open.floor - open.lowfloor)) <= maxstep);
+
+	// Or if we're on the higher side...
+	canDropOff = (flip ? (los->t1->z + los->t1->height <= open.ceiling) : (los->t1->z >= open.floor));
+
+	if (canStepUp || canDropOff)
+	{
+		return true;
+	}
+
+	los->traversed++;
+	return (los->traversed < TRAVERSE_MAX);
 }
 
 //
@@ -674,8 +754,10 @@ static boolean P_CompareMobjsAcrossLines(mobj_t *t1, mobj_t *t2, register los_fu
 
 	validcount++;
 
-	los.compareThing = t1;
+	los.t1 = t1;
+	los.t2 = t2;
 	los.alreadyHates = false;
+	los.traversed = 0;
 
 	los.topslope =
 		(los.bottomslope = t2->z - (los.sightzstart =

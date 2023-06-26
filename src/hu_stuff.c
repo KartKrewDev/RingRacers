@@ -60,16 +60,12 @@
 #include "k_color.h"
 #include "k_hud.h"
 #include "r_fps.h"
+#include "d_clisrv.h"
+#include "y_inter.h" // Y_PlayerStandingsDrawer
 
 // coords are scaled
 #define HU_INPUTX 0
 #define HU_INPUTY 0
-
-typedef enum
-{
-	HU_SHOUT		= 1,		// Shout message
-	HU_CSAY			= 1<<1,		// Middle-of-screen server message
-} sayflags_t;
 
 //-------------------------------------------
 //              heads up font
@@ -490,7 +486,6 @@ void HU_AddChatText(const char *text, boolean playsound)
 		CON_LogMessage(va("%s\n", text));
 }
 
-
 /** Runs a say command, sending an ::XD_SAY message.
   * A say command consists of a signed 8-bit integer for the target, an
   * unsigned 8-bit flag variable, and then the message itself.
@@ -510,96 +505,29 @@ void HU_AddChatText(const char *text, boolean playsound)
   * \author Graue <graue@oceanbase.org>
   */
 
-static void DoSayCommand(SINT8 target, size_t usedargs, UINT8 flags)
+void DoSayCommand(char *message, SINT8 target, UINT8 flags, UINT8 source)
 {
 	char buf[2 + HU_MAXMSGLEN + 1];
-	size_t numwords, ix;
-	char *msg = &buf[2];
-	const size_t msgspace = sizeof buf - 2;
-
-	numwords = COM_Argc() - usedargs;
-	I_Assert(numwords > 0);
-
-	if (CHAT_MUTE) // TODO: Per Player mute.
-	{
-		HU_AddChatText(va("%s>ERROR: The chat is muted. You can't say anything.", "\x85"), false);
-		return;
-	}
-
-	// Only servers/admins can shout or CSAY.
-	if (!server && !IsPlayerAdmin(consoleplayer))
-	{
-		flags &= ~(HU_SHOUT|HU_CSAY);
-	}
+	char *msg = &buf[3];
 
 	// Enforce shout for the dedicated server.
-	if (dedicated && !(flags & HU_CSAY))
+	if (dedicated && source == serverplayer && !(flags & HU_CSAY))
 	{
 		flags |= HU_SHOUT;
 	}
 
 	buf[0] = target;
 	buf[1] = flags;
+	buf[2] = source;
 	msg[0] = '\0';
 
-	for (ix = 0; ix < numwords; ix++)
-	{
-		if (ix > 0)
-			strlcat(msg, " ", msgspace);
-		strlcat(msg, COM_Argv(ix + usedargs), msgspace);
-	}
-
-	if (strlen(msg) > 4 && strnicmp(msg, "/pm", 3) == 0) // used /pm
-	{
-		// what we're gonna do now is check if the player exists
-		// with that logic, characters 4 and 5 are our numbers:
-		const char *newmsg;
-		char playernum[3];
-		INT32 spc = 1; // used if playernum[1] is a space.
-
-		strncpy(playernum, msg+3, 3);
-
-		// check for undesirable characters in our "number"
-		if (((playernum[0] < '0') || (playernum[0] > '9')) || ((playernum[1] < '0') || (playernum[1] > '9')))
-		{
-			// check if playernum[1] is a space
-			if (playernum[1] == ' ')
-				spc = 0;
-			// let it slide
-			else
-			{
-				HU_AddChatText("\x82NOTICE: \x80Invalid command format. Correct format is \'/pm<playernum> \'.", false);
-				return;
-			}
-		}
-		// I'm very bad at C, I swear I am, additional checks eww!
-		if (spc != 0 && msg[5] != ' ')
-		{
-			HU_AddChatText("\x82NOTICE: \x80Invalid command format. Correct format is \'/pm<playernum> \'.", false);
-			return;
-		}
-
-		target = atoi(playernum); // turn that into a number
-		//CONS_Printf("%d\n", target);
-
-		// check for target player, if it doesn't exist then we can't send the message!
-		if (target < MAXPLAYERS && playeringame[target]) // player exists
-			target++; // even though playernums are from 0 to 31, target is 1 to 32, so up that by 1 to have it work!
-		else
-		{
-			HU_AddChatText(va("\x82NOTICE: \x80Player %d does not exist.", target), false); // same
-			return;
-		}
-		buf[0] = target;
-		newmsg = msg+5+spc;
-		strlcpy(msg, newmsg, HU_MAXMSGLEN + 1);
-	}
+	strcpy(msg, message);
 
 	SendNetXCmd(XD_SAY, buf, strlen(msg) + 1 + msg-buf);
 }
 
 /** Send a message to everyone.
-  * \sa DoSayCommand, Command_Sayteam_f, Command_Sayto_f
+  * \sa DoSayPacket, Command_Sayteam_f, Command_Sayto_f
   * \author Graue <graue@oceanbase.org>
   */
 static void Command_Say_f(void)
@@ -612,11 +540,11 @@ static void Command_Say_f(void)
 
 	// Autoshout is handled by HU_queueChatChar.
 	// If you're using the say command, you can use the shout command, lol.
-	DoSayCommand(0, 1, 0);
+	DoSayPacketFromCommand(0, 1, 0);
 }
 
 /** Send a message to a particular person.
-  * \sa DoSayCommand, Command_Sayteam_f, Command_Say_f
+  * \sa DoSayPacket, Command_Sayteam_f, Command_Say_f
   * \author Graue <graue@oceanbase.org>
   */
 static void Command_Sayto_f(void)
@@ -637,11 +565,11 @@ static void Command_Sayto_f(void)
 	}
 	target++; // Internally we use 0 to 31, but say command uses 1 to 32.
 
-	DoSayCommand((SINT8)target, 2, 0);
+	DoSayPacketFromCommand((SINT8)target, 2, 0);
 }
 
 /** Send a message to members of the player's team.
-  * \sa DoSayCommand, Command_Say_f, Command_Sayto_f
+  * \sa DoSayPacket, Command_Say_f, Command_Sayto_f
   * \author Graue <graue@oceanbase.org>
   */
 static void Command_Sayteam_f(void)
@@ -659,9 +587,9 @@ static void Command_Sayteam_f(void)
 	}
 
 	if (G_GametypeHasTeams())	// revert to normal say if we don't have teams in this gametype.
-		DoSayCommand(-1, 1, 0);
+		DoSayPacketFromCommand(-1, 1, 0);
 	else
-		DoSayCommand(0, 1, 0);
+		DoSayPacketFromCommand(0, 1, 0);
 }
 
 /** Send a message to everyone, to be displayed by CECHO. Only
@@ -681,7 +609,7 @@ static void Command_CSay_f(void)
 		return;
 	}
 
-	DoSayCommand(0, 1, HU_CSAY);
+	DoSayPacketFromCommand(0, 1, HU_CSAY);
 }
 
 static void Command_Shout(void)
@@ -698,13 +626,11 @@ static void Command_Shout(void)
 		return;
 	}
 
-	DoSayCommand(0, 1, HU_SHOUT);
+	DoSayPacketFromCommand(0, 1, HU_SHOUT);
 }
 
-static tic_t stop_spamming[MAXPLAYERS];
-
 /** Receives a message, processing an ::XD_SAY command.
-  * \sa DoSayCommand
+  * \sa DoSayPacket
   * \author Graue <graue@oceanbase.org>
   */
 static void Got_Saycmd(UINT8 **p, INT32 playernum)
@@ -715,24 +641,18 @@ static void Got_Saycmd(UINT8 **p, INT32 playernum)
 	char *msg;
 	boolean action = false;
 	char *ptr;
-	INT32 spam_eatmsg = 0;
 
 	CONS_Debug(DBG_NETPLAY,"Received SAY cmd from Player %d (%s)\n", playernum+1, player_names[playernum]);
 
+	// Only server can ever legitimately send this
+	if (playernum != serverplayer)
+		return;
+
 	target = READSINT8(*p);
 	flags = READUINT8(*p);
+	playernum = READUINT8(*p);
 	msg = (char *)*p;
 	SKIPSTRINGL(*p, HU_MAXMSGLEN + 1);
-
-	if ((cv_mute.value || flags & (HU_CSAY|HU_SHOUT)) && playernum != serverplayer && !(IsPlayerAdmin(playernum)))
-	{
-		CONS_Alert(CONS_WARNING, cv_mute.value ?
-			M_GetText("Illegal say command received from %s while muted\n") : M_GetText("Illegal csay command received from non-admin %s\n"),
-			player_names[playernum]);
-		if (server)
-			SendKick(playernum, KICK_MSG_CON_FAIL);
-		return;
-	}
 
 	//check for invalid characters (0x80 or above)
 	{
@@ -749,26 +669,6 @@ static void Got_Saycmd(UINT8 **p, INT32 playernum)
 			}
 		}
 	}
-
-	// before we do anything, let's verify the guy isn't spamming, get this easier on us.
-
-	//if (stop_spamming[playernum] != 0 && cv_chatspamprotection.value && !(flags & HU_CSAY))
-	if (stop_spamming[playernum] != 0 && consoleplayer != playernum && cv_chatspamprotection.value && !(flags & (HU_CSAY|HU_SHOUT)))
-	{
-		CONS_Debug(DBG_NETPLAY,"Received SAY cmd too quickly from Player %d (%s), assuming as spam and blocking message.\n", playernum+1, player_names[playernum]);
-		stop_spamming[playernum] = 4;
-		spam_eatmsg = 1;
-	}
-	else
-		stop_spamming[playernum] = 4; // you can hold off for 4 tics, can you?
-
-	// run the lua hook even if we were supposed to eat the msg, netgame consistency goes first.
-
-	if (LUA_HookPlayerMsg(playernum, target, flags, msg, spam_eatmsg))
-		return;
-
-	if (spam_eatmsg)
-		return; // don't proceed if we were supposed to eat the message.
 
 	// If it's a CSAY, just CECHO and be done with it.
 	if (flags & HU_CSAY)
@@ -899,6 +799,13 @@ static void Got_Saycmd(UINT8 **p, INT32 playernum)
 			cstart = "\x82";
 			textcolor = "\x82";
 			fmt2 = "%s<%s%s>%s\x80 %s%s";
+
+			if (flags & HU_PRIVNOTICE)
+			{
+				dispname = "SERVER";
+				prefix = "\x82";
+				fmt2 = "%s[%s%s]%s %s%s";
+			}
 		}
 		else if (target > 0) // By you, to another player
 		{
@@ -908,6 +815,12 @@ static void Got_Saycmd(UINT8 **p, INT32 playernum)
 			cstart = "\x82";
 			fmt2 = "%s<%s%s>%s\x80 %s%s";
 
+			if (flags & HU_PRIVNOTICE)
+			{
+				if (tempchar)
+					Z_Free(tempchar);
+				return; // I pretend I do not see it
+			}
 		}
 		else // To everyone or sayteam, it doesn't change anything.
 			fmt2 = "%s<%s%s%s>\x80 %s%s";
@@ -1031,13 +944,6 @@ void HU_Ticker(void)
 	{
 		size_t i = 0;
 
-		// handle spam while we're at it:
-		for(; (i<MAXPLAYERS); i++)
-		{
-			if (stop_spamming[i] > 0)
-				stop_spamming[i]--;
-		}
-
 		// handle chat timers
 		for (i=0; (i<chat_nummsg_min); i++)
 		{
@@ -1106,28 +1012,11 @@ static void HU_sendChatMessage(void)
 	memset(w_chat, '\0', sizeof(w_chat));
 	c_input = 0;
 
-	// last minute mute check
-	if (CHAT_MUTE)
-	{
-		HU_AddChatText(va("%s>ERROR: The chat is muted. You can't say anything.", "\x85"), false);
-		return;
-	}
-
 	if (strlen(msg) > 4 && strnicmp(msg, "/pm", 3) == 0) // used /pm
 	{
 		INT32 spc = 1; // used if playernum[1] is a space.
 		char playernum[3];
 		const char *newmsg;
-
-		// what we're gonna do now is check if the player exists
-		// with that logic, characters 4 and 5 are our numbers:
-
-		// teamtalk can't send PMs, just don't send it, else everyone would be able to see it, and no one wants to see your sex RP sicko.
-		if (teamtalk)
-		{
-			HU_AddChatText(va("%sCannot send sayto in Say-Team.", "\x85"), false);
-			return;
-		}
 
 		strncpy(playernum, msg+3, 3);
 		// check for undesirable characters in our "number"
@@ -1173,7 +1062,8 @@ static void HU_sendChatMessage(void)
 			buf[0] = target;
 
 		buf[1] = ((server || IsPlayerAdmin(consoleplayer)) && cv_autoshout.value) ? HU_SHOUT : 0; // flags
-		SendNetXCmd(XD_SAY, buf, 2 + strlen(&buf[2]) + 1);
+
+		DoSayPacket(target, buf[1], consoleplayer, msg);
 	}
 }
 
@@ -2131,17 +2021,24 @@ static void HU_DrawDemoInfo(void)
 //
 void HU_DrawSongCredits(void)
 {
-	fixed_t x;
-	fixed_t y = (r_splitscreen ? (BASEVIDHEIGHT/2)-4 : 32) * FRACUNIT;
-	INT32 bgt;
-
 	if (!cursongcredit.def || cursongcredit.trans >= NUMTRANSMAPS) // No def
 	{
 		return;
 	}
 
-	bgt = (NUMTRANSMAPS/2) + (cursongcredit.trans / 2);
-	x = R_InterpolateFixed(cursongcredit.old_x, cursongcredit.x);
+	fixed_t x = R_InterpolateFixed(cursongcredit.old_x, cursongcredit.x);
+	fixed_t y;
+
+	if (gamestate == GS_INTERMISSION)
+	{
+		y = (BASEVIDHEIGHT - 13) * FRACUNIT;
+	}
+	else
+	{
+		y = (r_splitscreen ? (BASEVIDHEIGHT/2)-4 : 32) * FRACUNIT;
+	}
+
+	INT32 bgt = (NUMTRANSMAPS/2) + (cursongcredit.trans / 2);
 
 	if (bgt < NUMTRANSMAPS)
 	{
@@ -2335,12 +2232,13 @@ Ping_gfx_color (int lag)
 //
 // HU_drawPing
 //
-void HU_drawPing(fixed_t x, fixed_t y, UINT32 lag, INT32 flags, boolean offline)
+void HU_drawPing(fixed_t x, fixed_t y, UINT32 lag, INT32 flags, boolean offline, SINT8 toside)
 {
 	UINT8 *colormap = NULL;
 	INT32 measureid = cv_pingmeasurement.value ? 1 : 0;
 	INT32 gfxnum; // gfx to draw
 	boolean drawlocal = (offline && cv_mindelay.value && lag <= (tic_t)cv_mindelay.value);
+	fixed_t x2, y2;
 
 	if (!server && lag <= (tic_t)cv_mindelay.value)
 	{
@@ -2348,13 +2246,35 @@ void HU_drawPing(fixed_t x, fixed_t y, UINT32 lag, INT32 flags, boolean offline)
 		drawlocal = true;
 	}
 
+	x2 = x;
+	y2 = y + FRACUNIT;
+
+	if (toside == 0)
+	{
+		if (measureid == 1)
+		{
+			x2 += ((11 - pingmeasure[measureid]->width) * FRACUNIT);
+		}
+		else
+		{
+			x2 += (10 * FRACUNIT);
+		}
+
+		y2 += (8 * FRACUNIT);
+	}
+	else if (toside > 0)
+	{
+		x2 += (20 * FRACUNIT);
+	}
+	//else if (toside < 0)
+
 	gfxnum = Ping_gfx_num(lag);
 
 	if (measureid == 1)
 	{
 		V_DrawFixedPatch(
-			x + ((11 - pingmeasure[measureid]->width) * FRACUNIT),
-			y + (9 * FRACUNIT),
+			x2,
+			y2,
 			FRACUNIT, flags,
 			pingmeasure[measureid],
 			NULL
@@ -2395,9 +2315,9 @@ void HU_drawPing(fixed_t x, fixed_t y, UINT32 lag, INT32 flags, boolean offline)
 		lag = (INT32)(lag * (1000.00f / TICRATE));
 	}
 
-	x = V_DrawPingNum(
-		x + (((measureid == 1) ? 11 - pingmeasure[measureid]->width : 10) * FRACUNIT),
-		y + (9 * FRACUNIT),
+	x2 = V_DrawPingNum(
+		x2,
+		y2,
 		flags, lag,
 		colormap
 	);
@@ -2405,8 +2325,8 @@ void HU_drawPing(fixed_t x, fixed_t y, UINT32 lag, INT32 flags, boolean offline)
 	if (measureid == 0)
 	{
 		V_DrawFixedPatch(
-			x + ((1 - pingmeasure[measureid]->width) * FRACUNIT),
-			y + (9 * FRACUNIT),
+			x2 + ((1 - pingmeasure[measureid]->width) * FRACUNIT),
+			y2,
 			FRACUNIT, flags,
 			pingmeasure[measureid],
 			NULL
@@ -2513,10 +2433,7 @@ static inline void HU_DrawSpectatorTicker(void)
 //
 static void HU_DrawRankings(void)
 {
-	playersort_t tab[MAXPLAYERS];
-	INT32 i, j, scorelines, numplayersingame = 0, hilicol = highlightflags;
-	boolean completed[MAXPLAYERS];
-	UINT32 whiteplayer = MAXPLAYERS;
+	INT32 i, j, hilicol = highlightflags;
 	boolean timedone = false, pointsdone = false;
 
 	if (!automapactive)
@@ -2625,23 +2542,21 @@ static void HU_DrawRankings(void)
 		V_DrawCenteredString(256, 16, hilicol, kartspeed_cons_t[1+gamespeed].strvalue);
 	}
 
-	// When you play, you quickly see your score because your name is displayed in white.
-	// When playing back a demo, you quickly see who's the view.
-	if (!r_splitscreen)
-		whiteplayer = demo.playback ? displayplayers[0] : consoleplayer;
+	boolean completed[MAXPLAYERS];
+	y_data_t standings;
 
-	scorelines = 0;
 	memset(completed, 0, sizeof (completed));
-	memset(tab, 0, sizeof (playersort_t)*MAXPLAYERS);
+	memset(&standings, 0, sizeof (standings));
+
+	UINT8 numplayersingame = 0;
 
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
-		tab[i].num = -1;
-		tab[i].name = NULL;
-		tab[i].count = INT32_MAX;
-
 		if (!playeringame[i] || players[i].spectator || !players[i].mo)
+		{
+			completed[i] = true;
 			continue;
+		}
 
 		numplayersingame++;
 	}
@@ -2651,40 +2566,61 @@ static void HU_DrawRankings(void)
 		UINT8 lowestposition = MAXPLAYERS+1;
 		for (i = 0; i < MAXPLAYERS; i++)
 		{
-			if (completed[i] || !playeringame[i] || players[i].spectator || !players[i].mo)
+			if (completed[i])
 				continue;
 
 			if (players[i].position >= lowestposition)
 				continue;
 
-			tab[scorelines].num = i;
+			standings.num[standings.numplayers] = i;
 			lowestposition = players[i].position;
 		}
 
-		i = tab[scorelines].num;
+		i = standings.num[standings.numplayers];
 
 		completed[i] = true;
 
-		tab[scorelines].name = player_names[i];
+		standings.character[standings.numplayers] = players[i].skin;
+		standings.color[standings.numplayers] = players[i].skincolor;
+		standings.pos[standings.numplayers] = players[i].position;
 
-		if ((gametyperules & GTR_CIRCUIT))
+#define strtime standings.strval[standings.numplayers]
+
+		standings.val[standings.numplayers] = 0;
+		strtime[0] = '\0';
+
+		if (players[i].pflags & PF_NOCONTEST)
 		{
-			tab[scorelines].count = players[i].laps;
+			standings.val[standings.numplayers] = (UINT32_MAX-1);
+			STRBUFCPY(strtime, "RETIRED.");
 		}
-		else
+		else if ((gametyperules & GTR_CIRCUIT))
 		{
-			tab[scorelines].count = players[i].roundscore;
+			standings.val[standings.numplayers] = players[i].laps;
+
+			if (players[i].exiting)
+			{
+				snprintf(strtime, sizeof strtime, "%i'%02i\"%02i", G_TicsToMinutes(players[i].realtime, true),
+				G_TicsToSeconds(players[i].realtime), G_TicsToCentiseconds(players[i].realtime));
+			}
+			else if (numlaps > 1)
+			{
+				snprintf(strtime, sizeof strtime, "Lap %d", players[i].laps);
+			}
+		}
+		else if ((gametyperules & GTR_POINTLIMIT))
+		{
+			standings.val[standings.numplayers] = players[i].roundscore;
+			snprintf(strtime, sizeof strtime, "%d", standings.val[standings.numplayers]);
 		}
 
-		scorelines++;
+#undef strtime
 
-#if MAXPLAYERS > 16
-	if (scorelines > 16)
-		break; //dont draw past bottom of screen, show the best only
-#endif
+		standings.numplayers++;
 	}
 
-	K_DrawTabRankings(((scorelines > 8) ? 32 : 40), 33, tab, scorelines, whiteplayer, hilicol);
+	// Returns early if there's no players to draw
+	Y_PlayerStandingsDrawer(&standings, 0);
 
 	// draw spectators in a ticker across the bottom
 	if (netgame && G_GametypeHasSpectators())

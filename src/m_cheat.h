@@ -38,6 +38,7 @@ typedef enum {
 	CHEAT_GIVEITEM,
 	CHEAT_SCORE,
 	CHEAT_ANGLE,
+	CHEAT_RESPAWNAT,
 
 	NUMBER_OF_CHEATS
 } cheat_t;
@@ -45,7 +46,7 @@ typedef enum {
 //
 // Cheat sequences
 //
-boolean cht_Responder(event_t *ev);
+boolean cht_Interpret(const char *password);
 void cht_Init(void);
 
 //
@@ -86,6 +87,7 @@ void Command_Weather_f(void);
 void Command_Grayscale_f(void);
 void Command_Goto_f(void);
 void Command_Angle_f(void);
+void Command_RespawnAt_f(void);
 #ifdef _DEBUG
 void Command_CauseCfail_f(void);
 #endif

@@ -19,6 +19,7 @@
 #include "command.h"
 #include "doomstat.h" // MAXSPLITSCREENPLAYERS
 #include "g_demo.h"	//menudemo_t
+#include "p_saveg.h" // savedata_cup_t
 #include "k_profiles.h"	// profile data & functions
 #include "g_input.h"	// gc_
 #include "i_threads.h"
@@ -131,8 +132,9 @@ void M_HandlePauseMenuGametype(INT32 choice);
 
 typedef enum
 {
-	MBF_UD_LR_FLIPPED		= 1, // flip up-down and left-right axes
-	MBF_SOUNDLESS		 	= 2, // do not play base menu sounds
+	MBF_UD_LR_FLIPPED		= 1,    // flip up-down and left-right axes
+	MBF_SOUNDLESS		 	= 1<<1, // do not play base menu sounds
+	MBF_NOLOOPENTRIES		= 1<<2, // do not loop M_NextOpt/M_PrevOpt
 } menubehaviourflags_t;
 
 struct menuitem_t
@@ -177,7 +179,7 @@ typedef enum
 {
 	MM_NOTHING = 0, // is just displayed until the user do someting
 	MM_YESNO,       // routine is called with only 'y' or 'n' in param
-	MM_EVENTHANDLER // the same of above but without 'y' or 'n' restriction
+	//MM_EVENTHANDLER // the same of above but without 'y' or 'n' restriction
 	                // and routine is void routine(event_t *) (ex: set control)
 } menumessagetype_t;
 
@@ -405,11 +407,9 @@ extern menu_t OPTIONS_DataProfileEraseDef;
 extern menuitem_t EXTRAS_Main[];
 extern menu_t EXTRAS_MainDef;
 
-extern menuitem_t EXTRAS_ReplayHut[];
-extern menu_t EXTRAS_ReplayHutDef;
 
-extern menuitem_t EXTRAS_ReplayStart[];
-extern menu_t EXTRAS_ReplayStartDef;
+extern menuitem_t EXTRAS_EggTV[];
+extern menu_t EXTRAS_EggTVDef;
 
 // PAUSE
 extern menuitem_t PAUSE_Main[];
@@ -426,8 +426,14 @@ extern menuitem_t MISC_ChallengesStatsDummyMenu[];
 extern menu_t MISC_ChallengesDef;
 extern menu_t MISC_StatisticsDef;
 
+extern menu_t MISC_WrongWarpDef;
+
 extern menuitem_t MISC_SoundTest[];
 extern menu_t MISC_SoundTestDef;
+
+#ifdef HAVE_DISCORDRPC
+extern menu_t MISC_DiscordRequestsDef;
+#endif
 
 // We'll need this since we're gonna have to dynamically enable and disable options depending on which state we're in.
 typedef enum
@@ -485,8 +491,9 @@ extern INT16 skullAnimCounter; // skull animation counter
 
 extern INT32 menuKey; // keyboard key pressed for menu
 
-extern INT16 virtualKeyboard[5][13];
-extern INT16 shift_virtualKeyboard[5][13];
+#define NUMVIRTUALKEYSINROW (10+2) // 1-9, 0, and a right-side gutter of two keys' width
+extern INT16 virtualKeyboard[5][NUMVIRTUALKEYSINROW];
+extern INT16 shift_virtualKeyboard[5][NUMVIRTUALKEYSINROW];
 
 extern struct menutyping_s
 {
@@ -511,22 +518,34 @@ typedef enum
 } manswer_e;
 
 #define MAXMENUMESSAGE 256
+#define MENUMESSAGECLOSE 2
 extern struct menumessage_s
 {
 	boolean active;
+	UINT8 closing;
+
 	INT32 flags;		// MM_
+	const char *header;
 	char message[MAXMENUMESSAGE];	// message to display
 
 	SINT8 fadetimer;	// opening
 	INT32 x;
 	INT32 y;
-	INT32 m;
+	INT16 timer;
 
 	void (*routine)(INT32 choice);	// Normal routine
-	void (*eroutine)(event_t *ev);	// Event routine	(MM_EVENTHANDLER)
+	//void (*eroutine)(event_t *ev);	// Event routine	(MM_EVENTHANDLER)
+	INT32 answer;
+
+	const char *defaultstr;
+	const char *confirmstr;
 } menumessage;
 
+void M_StartMessage(const char *header, const char *string, void (*routine)(INT32), menumessagetype_t itemtype, const char *confirmstr, const char *defaultstr);
+boolean M_MenuMessageTick(void);
 void M_HandleMenuMessage(void);
+void M_StopMessage(INT32 choice);
+void M_DrawMenuMessage(void);
 
 #define MENUDELAYTIME 7
 #define MENUMINDELAY 2
@@ -549,10 +568,16 @@ typedef enum
 
 struct menucmd_t
 {
+	// Current frame's data
 	SINT8 dpad_ud; // up / down dpad
 	SINT8 dpad_lr; // left / right
 	UINT32 buttons; // buttons
-	UINT32 buttonsHeld; // prev frame's buttons
+
+	// Previous frame's data
+	SINT8 prev_dpad_ud;
+	SINT8 prev_dpad_lr;
+	UINT32 buttonsHeld;
+
 	UINT16 delay; // menu wait
 	UINT32 delayCount; // num times ya did menu wait (to make the wait shorter each time)
 };
@@ -577,7 +602,7 @@ void M_SetMenuDelay(UINT8 i);
 
 void M_SortServerList(void);
 
-void M_UpdateMenuCMD(UINT8 i);
+void M_UpdateMenuCMD(UINT8 i, boolean bailrequired);
 boolean M_Responder(event_t *ev);
 boolean M_MenuButtonPressed(UINT8 pid, UINT32 bt);
 boolean M_MenuButtonHeld(UINT8 pid, UINT32 bt);
@@ -606,10 +631,6 @@ void M_Init(void);
 void M_PlayMenuJam(void);
 
 void M_MenuTypingInput(INT32 key);
-
-void M_StartMessage(const char *string, void *routine, menumessagetype_t itemtype);
-void M_StopMessage(INT32 choice);
-void M_DrawMenuMessage(void);
 
 void M_QuitResponse(INT32 ch);
 void M_QuitSRB2(INT32 choice);
@@ -1030,6 +1051,7 @@ typedef enum
 	extras_statistics,
 	extras_eggtv,
 	extras_stereo,
+	extras_password,
 } extras_e;
 
 void M_InitExtras(INT32 choice); // init for the struct
@@ -1037,11 +1059,10 @@ void M_ExtrasTick(void);
 boolean M_ExtrasInputs(INT32 ch);
 boolean M_ExtrasQuit(void);	// resets buttons when you quit
 
-// Extras: Replay Hut
-void M_HandleReplayHutList(INT32 choice);
-boolean M_QuitReplayHut(void);
-void M_HutStartReplay(INT32 choice);
-void M_PrepReplayList(void);
+
+// Extras: Egg TV
+void M_EggTV(INT32 choice);
+void M_EggTV_RefreshButtonLabels(void);
 
 
 // Pause menu:
@@ -1087,8 +1108,6 @@ void M_PlaybackAdjustView(INT32 choice);
 void M_PlaybackToggleFreecam(INT32 choice);
 void M_PlaybackQuit(INT32 choice);
 
-void M_ReplayHut(INT32 choice);
-
 // Misc menus:
 #define numaddonsshown 4
 void M_Addons(INT32 choice);
@@ -1096,6 +1115,7 @@ void M_AddonsRefresh(void);
 void M_HandleAddons(INT32 choice);
 char *M_AddonsHeaderPath(void);
 extern consvar_t cv_dummyaddonsearch;
+extern consvar_t cv_dummyextraspassword;
 
 void M_Manual(INT32 choice);
 void M_HandleImageDef(INT32 choice);
@@ -1153,8 +1173,6 @@ extern tic_t shitsfree;
 // Extras menu:
 void M_DrawExtrasMovingButton(void);
 void M_DrawExtras(void);
-void M_DrawReplayHut(void);
-void M_DrawReplayStartMenu(void);
 
 // Misc menus:
 #define LOCATIONSTRING1 "Visit \x83SRB2.ORG/MODS\x80 to get & make addons!"
@@ -1176,6 +1194,10 @@ void M_DrawAddons(void);
 
 #define TILEFLIP_MAX 16
 
+#define CHAOHOLD_MAX (3*TICRATE/2)
+#define CHAOHOLD_BEGIN 7
+#define CHAOHOLD_END 3
+
 extern struct timeattackmenu_s {
 
 	tic_t ticker;		// How long the menu's been open for
@@ -1189,23 +1211,25 @@ extern struct challengesmenu_s {
 	tic_t ticker;		// How long the menu's been open for
 	INT16 offset;		// To make the icons move smoothly when we transition!
 
-	UINT8 currentunlock;
+	UINT16 currentunlock;
 	char *unlockcondition;
 
 	tic_t unlockanim;
 
-	SINT8 row, hilix, focusx;
-	UINT8 col, hiliy;
+	INT16 row, hilix, focusx;
+	UINT16 col, hiliy;
 
 	challengegridextradata_t *extradata;
 
 	boolean pending;
 	boolean requestnew;
+
 	boolean chaokeyadd;
+	UINT8 chaokeyhold;
 
 	boolean requestflip;
 
-	UINT8 unlockcount[CC_MAX];
+	UINT16 unlockcount[CC_MAX];
 
 	UINT8 fade;
 } challengesmenu;
@@ -1228,6 +1252,23 @@ void M_Statistics(INT32 choice);
 void M_DrawStatistics(void);
 boolean M_StatisticsInputs(INT32 ch);
 
+#define MAXWRONGPLAYER MAXSPLITSCREENPLAYERS
+#define WRONGPLAYEROFFSCREEN 48
+
+extern struct wrongwarp_s {
+	INT32 ticker;
+	tic_t delaytowrongplayer;
+	struct wrongplayer_s
+	{
+		UINT8 skin;
+		INT16 across;
+		boolean spinout;
+	} wrongplayers[MAXWRONGPLAYER];
+} wrongwarp;
+
+void M_WrongWarp(INT32 choice);
+void M_DrawWrongWarp(void);
+
 typedef enum
 {
 	stereospecial_none = 0,
@@ -1242,6 +1283,20 @@ typedef enum
 void M_SoundTest(INT32 choice);
 void M_DrawSoundTest(void);
 consvar_t *M_GetSoundTestVolumeCvar(void);
+
+#ifdef HAVE_DISCORDRPC
+extern struct discordrequestmenu_s {
+	tic_t ticker;
+	tic_t confirmDelay;
+	tic_t confirmLength;
+	boolean confirmAccept;
+	boolean removeRequest;
+} discordrequestmenu;
+
+void M_DrawDiscordRequests(void);
+void M_DiscordRequests(INT32 choice);
+const char *M_GetDiscordName(discordRequest_t *r);
+#endif
 
 // These defines make it a little easier to make menus
 #define DEFAULTMENUSTYLE(source, prev, x, y)\

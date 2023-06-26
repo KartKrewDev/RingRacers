@@ -41,10 +41,12 @@ applications may follow different packet versions.
 //  one that defines the actual packets to
 //  be transmitted.
 
+#define HU_MAXMSGLEN 223
+
 // Networking and tick handling related.
 #define BACKUPTICS 512 // more than enough for most timeouts....
 #define CLIENTBACKUPTICS 32
-#define MAXTEXTCMD 256
+#define MAXTEXTCMD 512
 
 // No. of tics your controls can be delayed by.
 
@@ -126,6 +128,8 @@ typedef enum
 	PT_CHALLENGEALL,	// Prove to the other clients you are who you say you are, sign this random bullshit!
 	PT_RESPONSEALL,		// OK, here is my signature on that random bullshit
 	PT_RESULTSALL,		// Here's what everyone responded to PT_CHALLENGEALL with, if this is wrong or you don't receive it disconnect
+
+	PT_SAY,				// "Hey server, please send this chat message to everyone via XD_SAY"
 
 	NUMPACKETTYPE
 } packettype_t;
@@ -385,6 +389,14 @@ struct resultsall_pak
 	uint8_t signature[MAXPLAYERS][SIGNATURELENGTH];
 } ATTRPACK;
 
+struct say_pak
+{
+	char message[HU_MAXMSGLEN + 1];
+	UINT8 target;
+	UINT8 flags;
+	UINT8 source;
+} ATTRPACK;
+
 //
 // Network packet data
 //
@@ -407,7 +419,7 @@ struct doomdata_t
 		client4cmd_pak client4pak;          //         324 bytes(?)
 		servertics_pak serverpak;           //      132495 bytes (more around 360, no?)
 		serverconfig_pak servercfg;         //         773 bytes
-		UINT8 textcmd[MAXTEXTCMD+1];        //       66049 bytes (wut??? 64k??? More like 257 bytes...)
+		UINT8 textcmd[MAXTEXTCMD+2];        //       66049 bytes (wut??? 64k??? More like 258 bytes...)
 		char filetxpak[sizeof (filetx_pak)];//         139 bytes
 		char fileack[sizeof (fileack_pak)];
 		UINT8 filereceived;
@@ -427,6 +439,7 @@ struct doomdata_t
 		challengeall_pak challengeall;			// 256 bytes
 		responseall_pak responseall;			// 256 bytes
 		resultsall_pak resultsall;				// 1024 bytes. Also, you really shouldn't trust anything here.
+		say_pak say;							// I don't care anymore.
 	} u; // This is needed to pack diff packet types data together
 } ATTRPACK;
 
@@ -468,6 +481,7 @@ typedef enum
 	KICK_MSG_CUSTOM_BAN,		// Ban message w/ custom reason
 	KICK_MSG_TIMEOUT,			// Player's connection timed out
 	KICK_MSG_PING_HIGH,			// Player hit the ping limit
+	KICK_MSG_GRIEF,				// Player was detected by antigrief
 	KICK_MSG_CON_FAIL,			// Player failed to resync game state
 	KICK_MSG_SIGFAIL,			// Player failed signature check
 	KICK_MSG__MAX				// Number of unique messages
@@ -532,6 +546,8 @@ extern consvar_t cv_joinnextround;
 extern consvar_t cv_discordinvites;
 
 extern consvar_t cv_allowguests;
+
+extern consvar_t cv_gamestochat;
 
 #ifdef DEVELOP
 	extern consvar_t cv_badjoin;
@@ -633,6 +649,10 @@ rewind_t *CL_SaveRewindPoint(size_t demopos);
 rewind_t *CL_RewindToTime(tic_t time);
 
 void HandleSigfail(const char *string);
+
+void DoSayPacket(SINT8 target, UINT8 flags, UINT8 source, char *message);
+void DoSayPacketFromCommand(SINT8 target, size_t usedargs, UINT8 flags);
+void SendServerNotice(SINT8 target, char *message);
 
 #ifdef __cplusplus
 } // extern "C"

@@ -3287,6 +3287,16 @@ const char *const STATE_LIST[] = { // array length left dynamic for sanity testi
 
 	"S_SLIPTIDEZIP",
 
+	"S_INSTAWHIP",
+	"S_INSTAWHIP_RECHARGE1",
+	"S_INSTAWHIP_RECHARGE2",
+	"S_INSTAWHIP_RECHARGE3",
+	"S_INSTAWHIP_RECHARGE4",
+	"S_BLOCKRING",
+	"S_BLOCKBODY",
+
+	"S_SERVANTHAND",
+
 	// Signpost sparkles
 	"S_SIGNSPARK1",
 	"S_SIGNSPARK2",
@@ -3466,6 +3476,12 @@ const char *const STATE_LIST[] = { // array length left dynamic for sanity testi
 	"S_WIPEOUTTRAIL3",
 	"S_WIPEOUTTRAIL4",
 	"S_WIPEOUTTRAIL5",
+	"S_WIPEOUTTRAIL6",
+	"S_WIPEOUTTRAIL7",
+	"S_WIPEOUTTRAIL8",
+	"S_WIPEOUTTRAIL9",
+	"S_WIPEOUTTRAIL10",
+	"S_WIPEOUTTRAIL11",
 
 	// Rocket sneaker
 	"S_ROCKETSNEAKER_L",
@@ -4005,6 +4021,7 @@ const char *const STATE_LIST[] = { // array length left dynamic for sanity testi
 	"S_INSTASHIELDB7",
 
 	"S_POWERCLASH", // Invinc/Grow no damage collide VFX
+	"S_GUARDBREAK", // Guard break
 
 	"S_PLAYERARROW", // Above player arrow
 	"S_PLAYERARROW_BOX",
@@ -4545,6 +4562,15 @@ const char *const STATE_LIST[] = { // array length left dynamic for sanity testi
 	"S_SPECIAL_UFO_STEM",
 
 	"S_GACHABOM",
+	"S_GACHABOM_DEAD",
+
+	"S_GACHABOM_EXPLOSION_1",
+	"S_GACHABOM_EXPLOSION_2",
+	"S_GACHABOM_EXPLOSION_3A",
+	"S_GACHABOM_EXPLOSION_3B",
+	"S_GACHABOM_EXPLOSION_4",
+	"S_GACHABOM_WAITING",
+	"S_GACHABOM_RETURNING",
 };
 
 // RegEx to generate this from info.h: ^\tMT_([^,]+), --> \t"MT_\1",
@@ -5257,6 +5283,7 @@ const char *const MOBJTYPE_LIST[] = {  // array length left dynamic for sanity t
 	"MT_TUBEWAYPOINT",
 	"MT_PUSH",
 	"MT_GHOST",
+	"MT_FAKESHADOW",
 	"MT_OVERLAY",
 	"MT_ANGLEMAN",
 	"MT_POLYANCHOR",
@@ -5267,7 +5294,7 @@ const char *const MOBJTYPE_LIST[] = {  // array length left dynamic for sanity t
 	"MT_SKYBOX",
 
 	// Debris
-	"MT_SPARK", //spark
+	"MT_SPARK", //spark, only used for debugging, actually
 	"MT_EXPLODE", // Robot Explosion
 	"MT_UWEXPLODE", // Underwater Explosion
 	"MT_DUST",
@@ -5311,6 +5338,13 @@ const char *const MOBJTYPE_LIST[] = {  // array length left dynamic for sanity t
 	"MT_MAGICIANBOX",
 	
 	"MT_SLIPTIDEZIP",
+
+	"MT_INSTAWHIP",
+	"MT_INSTAWHIP_RECHARGE",
+	"MT_BLOCKRING",
+	"MT_BLOCKBODY",
+
+	"MT_SERVANTHAND",
 
 	"MT_SIGNSPARKLE",
 
@@ -5399,6 +5433,7 @@ const char *const MOBJTYPE_LIST[] = {  // array length left dynamic for sanity t
 	"MT_SINKTRAIL",
 
 	"MT_GACHABOM",
+	"MT_GACHABOM_REBOUND",
 
 	"MT_DUELBOMB", // Duel mode bombs
 
@@ -5481,7 +5516,8 @@ const char *const MOBJTYPE_LIST[] = {  // array length left dynamic for sanity t
 	"MT_INSTASHIELDB",
 
 	"MT_POWERCLASH", // Invinc/Grow no damage clash VFX
-
+	"MT_GUARDBREAK", // Guard break
+	
 	"MT_PLAYERARROW",
 	"MT_PLAYERWANTED",
 
@@ -6104,6 +6140,8 @@ const char *COLOR_ENUMS[] = {
 	"POSNUM_BEST4",
 	"POSNUM_BEST5",
 	"POSNUM_BEST6",
+	
+	"INTERMISSION",
 };
 
 const char *const KARTHUD_LIST[] = {
@@ -6305,6 +6343,7 @@ struct int_const_s const INT_CONST[] = {
 	{"RF_SHADOWDRAW",RF_SHADOWDRAW},
 	{"RF_SHADOWEFFECTS",RF_SHADOWEFFECTS},
 	{"RF_DROPSHADOW",RF_DROPSHADOW},
+	{"RF_ABSOLUTELIGHTLEVEL",RF_ABSOLUTELIGHTLEVEL},
 	{"RF_DONTDRAW",RF_DONTDRAW},
 	{"RF_DONTDRAWP1",RF_DONTDRAWP1},
 	{"RF_DONTDRAWP2",RF_DONTDRAWP2},
@@ -6449,18 +6488,9 @@ struct int_const_s const INT_CONST[] = {
 	{"JT_NONE",JT_NONE},
 	{"JT_OTHER",JT_OTHER},
 	{"JT_MASTER",JT_MASTER},
-	{"JT_1UP",JT_1UP},
-	{"JT_SHOES",JT_SHOES},
-	{"JT_INV",JT_INV},
-	{"JT_MINV",JT_MINV},
-	{"JT_DROWN",JT_DROWN},
-	{"JT_SUPER",JT_SUPER},
-	{"JT_GOVER",JT_GOVER},
-	{"JT_NIGHTSTIMEOUT",JT_NIGHTSTIMEOUT},
-	{"JT_SSTIMEOUT",JT_SSTIMEOUT},
-	// {"JT_LCLEAR",JT_LCLEAR},
-	// {"JT_RACENT",JT_RACENT},
-	// {"JT_CONTSC",JT_CONTSC},
+
+	{"JT_INVINCIBILITY",JT_INVINCIBILITY},
+	{"JT_GROW",JT_GROW},
 
 	// Overlay exception settings
 	{"OV_DONTSCREENOFFSET", OV_DONTSCREENOFFSET},
@@ -6480,11 +6510,6 @@ struct int_const_s const INT_CONST[] = {
 	{"PA_FAST",PA_FAST},
 	{"PA_DRIFT",PA_DRIFT},
 	{"PA_HURT",PA_HURT},
-
-	// Got Flags, for player->gotflag!
-	// Used to be MF_ for some stupid reason, now they're GF_ to stop them looking like mobjflags
-	{"GF_REDFLAG",GF_REDFLAG},
-	{"GF_BLUEFLAG",GF_BLUEFLAG},
 
 	// Customisable sounds for Skins, from sounds.h
 	{"SKSSPIN",SKSSPIN},

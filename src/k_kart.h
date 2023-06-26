@@ -32,12 +32,17 @@ Make sure this matches the actual number of states
 #define GROW_PHYSICS_SCALE (3*FRACUNIT/2)
 #define SHRINK_PHYSICS_SCALE (3*FRACUNIT/4)
 
+#define INSTAWHIP_COOLDOWN (TICRATE*2)
+#define INSTAWHIP_STARTOFRACE (255)
+#define INSTAWHIP_STARTOFBATTLE (1)
+#define INSTAWHIP_DROPGUARD (12)
+#define GUARDBREAK_COOLDOWN (TICRATE*4)
+
 #define RR_PROJECTILE_FUSE (8*TICRATE)
 
 #define STUMBLE_STEEP_VAL ANG60
 #define STUMBLE_STEEP_VAL_AIR (ANG30 + ANG10)
 
-player_t *K_GetItemBoxPlayer(mobj_t *mobj);
 angle_t K_ReflectAngle(angle_t angle, angle_t against, fixed_t maxspeed, fixed_t yourspeed);
 
 void K_RegisterKartStuff(void);
@@ -84,13 +89,15 @@ void K_KartResetPlayerColor(player_t *player);
 boolean K_PressingEBrake(player_t *player);
 void K_KartPlayerThink(player_t *player, ticcmd_t *cmd);
 void K_KartPlayerAfterThink(player_t *player);
-fixed_t K_MomentumThreshold(const mobj_t *mo);
-angle_t K_MomentumAngle(mobj_t *mo);
+angle_t K_MomentumAngleEx(const mobj_t *mo, const fixed_t threshold);
+angle_t K_MomentumAngleReal(const mobj_t *mo);
+#define K_MomentumAngle(mo) K_MomentumAngleEx(mo, 6 * mo->scale)
 void K_AddHitLag(mobj_t *mo, INT32 tics, boolean fromDamage);
 void K_SetHitLagForObjects(mobj_t *mo1, mobj_t *mo2, INT32 tics, boolean fromDamage);
 void K_AwardPlayerRings(player_t *player, INT32 rings, boolean overload);
 void K_DoInstashield(player_t *player);
-void K_DoPowerClash(player_t *t1, player_t *t2);
+void K_DoPowerClash(mobj_t *t1, mobj_t *t2);
+void K_DoGuardBreak(mobj_t *t1, mobj_t *t2);
 void K_BattleAwardHit(player_t *player, player_t *victim, mobj_t *inflictor, UINT8 bumpersRemoved);
 void K_RemoveGrowShrink(player_t *player);
 boolean K_IsBigger(mobj_t *compare, mobj_t *other);
@@ -178,6 +185,7 @@ SINT8 K_GetForwardMove(player_t *player);
 fixed_t K_GetNewSpeed(player_t *player);
 fixed_t K_3dKartMovement(player_t *player);
 boolean K_PlayerEBrake(player_t *player);
+boolean K_PlayerGuard(player_t *player);
 SINT8 K_Sliptiding(player_t *player);
 boolean K_FastFallBounce(player_t *player);
 fixed_t K_PlayerBaseFriction(player_t *player, fixed_t original);

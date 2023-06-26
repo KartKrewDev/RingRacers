@@ -34,6 +34,8 @@ if (SRB2_CONFIG_ENABLE_WEBM_MOVIES)
 	include("cpm-libyuv.cmake")
 endif()
 
+include("cpm-nlohmann-json.cmake")
+
 add_subdirectory(tcbrindle_span)
 add_subdirectory(stb_vorbis)
 add_subdirectory(stb_rect_pack)

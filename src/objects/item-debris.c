@@ -45,8 +45,8 @@ spawn_debris
 		INT32 angle)
 {
 	const fixed_t height_table[NUM_DEBRIS_TYPES] = {
-		50*FRACUNIT,
 		35*FRACUNIT,
+		24*FRACUNIT,
 	};
 
 	mobj_t *debris = P_SpawnMobjFromMobj(

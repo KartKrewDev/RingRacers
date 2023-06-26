@@ -16,7 +16,7 @@ menu_t MAIN_ProfilesDef = {
 	32, 80,
 	SKINCOLOR_ULTRAMARINE, 0,
 	0,
-	NULL,
+	"FILE",
 	2, 5,
 	M_DrawProfileSelect,
 	M_OptionsTick,

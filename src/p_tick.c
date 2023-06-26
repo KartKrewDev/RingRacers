@@ -213,10 +213,23 @@ void Command_CountMobjs_f(void)
 void P_InitThinkers(void)
 {
 	UINT8 i;
+
+	for (i = 0; i < NUM_THINKERLISTS; i++)
+	{
+		thlist[i].prev = thlist[i].next = &thlist[i];
+	}
+
+	iquehead = iquetail = 0;
+
 	waypointcap = NULL;
 	trackercap = NULL;
-	for (i = 0; i < NUM_THINKERLISTS; i++)
-		thlist[i].prev = thlist[i].next = &thlist[i];
+
+	titlemapcam.mobj = NULL;
+
+	for (i = 0; i <= 15; i++)
+	{
+		skyboxcenterpnts[i] = skyboxviewpnts[i] = NULL;
+	}
 }
 
 // Adds a new thinker at the end of the list.
@@ -617,6 +630,37 @@ static inline void P_DoTeamStuff(void)
 	}
 }
 
+static inline void P_DeviceRumbleTick(void)
+{
+	UINT8 i;
+
+	for (i = 0; i <= splitscreen; i++)
+	{
+		player_t *player = &players[g_localplayers[i]];
+		UINT16 low = 0;
+		UINT16 high = 0;
+
+		if (player->mo == NULL)
+			continue;
+
+		if ((player->mo->eflags & MFE_DAMAGEHITLAG) && player->mo->hitlag)
+		{
+			low = high = 65536 / 2;
+		}
+		else if (player->sneakertimer > (sneakertime-(TICRATE/2)))
+		{
+			low = high = 65536 / (3+player->numsneakers);
+		}
+		else if (((player->boostpower < FRACUNIT) || (player->stairjank > 8))
+			&& P_IsObjectOnGround(player->mo))
+		{
+			low = high = 65536 / 32;
+		}
+
+		G_PlayerDeviceRumble(i, low, high);
+	}
+}
+
 void P_RunChaseCameras(void)
 {
 	UINT8 i;
@@ -635,6 +679,7 @@ void P_RunChaseCameras(void)
 //
 void P_Ticker(boolean run)
 {
+	quake_t *quake = NULL;
 	INT32 i;
 
 	// Increment jointime and quittime even if paused
@@ -750,13 +795,18 @@ void P_Ticker(boolean run)
 		// Run any "after all the other thinkers" stuff
 		{
 			player_t *finishingPlayers[MAXPLAYERS];
-			UINT8 numFinishingPlayers = 0;
+			UINT8 numingame = 0, numFinishingPlayers = 0;
 
 			for (i = 0; i < MAXPLAYERS; i++)
 			{
 				if (playeringame[i] && players[i].mo && !P_MobjWasRemoved(players[i].mo))
 				{
 					P_PlayerAfterThink(&players[i]);
+
+					if (players[i].spectator == true)
+						continue;
+
+					numingame++;
 
 					// Check for the number of ties for first place after every player has thunk run for this tic
 					if (players[i].exiting == 1 && players[i].position == 1 &&
@@ -767,37 +817,32 @@ void P_Ticker(boolean run)
 				}
 			}
 
-			// Apply rumble to player if local to machine and not in demo playback
+			if ((netgame) // Antigrief is supposed to apply?
+				&& !(K_Cooperative() || timelimitintics > 0 || g_pointlimit > 0) // There are rules that will punish a griefing player
+				&& (gametyperules & GTR_CIRCUIT) && (leveltime > starttime) && K_GetNumWaypoints()) // The following only detects race griefing
+			{
+				for (i = 0; i < MAXPLAYERS; i++)
+				{
+					if (playeringame[i] && players[i].mo && !P_MobjWasRemoved(players[i].mo))
+					{
+						if (players[i].spectator == true)
+							continue;
+
+						if (players[i].exiting || (players[i].pflags & PF_NOCONTEST))
+							continue;
+
+						if (players[i].bot == true)
+							continue;
+
+						P_CheckRaceGriefing(&players[i], (numingame > 1));
+					}
+				}
+			}
+
+			// Apply rumble to local players
 			if (!demo.playback)
 			{
-				for (i = 0; i <= splitscreen; i++)
-				{
-					player_t *player = &players[g_localplayers[i]];
-					UINT16 low = 0;
-					UINT16 high = 0;
-
-					if (player->mo == NULL)
-						continue;
-
-					if ((player->mo->eflags & MFE_DAMAGEHITLAG) && player->mo->hitlag)
-					{
-						low = 65536 / 2;
-						high = 65536 / 2;
-					}
-					else if (player->sneakertimer > (sneakertime-(TICRATE/2)))
-					{
-						low = 65536 / (3+player->numsneakers);
-						high = 65536 / (3+player->numsneakers);
-					}
-					else if (((player->boostpower < FRACUNIT) || (player->stairjank > 8))
-						&& P_IsObjectOnGround(player->mo))
-					{
-						low = 65536 / 32;
-						high = 65536 / 32;
-					}
-
-					G_PlayerDeviceRumble(i, low, high);
-				}
+				P_DeviceRumbleTick();
 			}
 
 			if (numFinishingPlayers > 1)
@@ -813,10 +858,14 @@ void P_Ticker(boolean run)
 			}
 		}
 
-		if (K_CheckBossIntro() == true)
+		if (musiccountdown > 0)
+		{
+			// Music is controlled by completion sequence
+		}
+		else if (K_CheckBossIntro() == true)
 		{
 			// Bosses have a punchy start, so no position.
-			if (leveltime == 3)
+			if (leveltime == 1)
 			{
 				S_ChangeMusic(mapmusname, mapmusflags, true);
 				S_ShowMusicCredit();
@@ -824,43 +873,47 @@ void P_Ticker(boolean run)
 		}
 		else if (leveltime < starttime + TICRATE)
 		{
-			// Start countdown/music handling
-			if (leveltime == starttime-(3*TICRATE))
-			{
-				S_StartSound(NULL, sfx_s3ka7); // 3,
-				S_FadeMusic(0, 3500); //S_FadeOutStopMusic(3500); -- TODO the S_StopMusic callback can halt successor music instead
-			}
-			else if ((leveltime == starttime-(2*TICRATE)) || (leveltime == starttime-TICRATE))
-			{
-				S_StartSound(NULL, sfx_s3ka7); // 2, 1,
-			}
-			else if (leveltime == starttime)
-			{
-				S_StartSound(NULL, sfx_s3kad); // GO!
-			}
-			else if (leveltime == (starttime + (TICRATE/2)))
+			if (leveltime == (starttime + (TICRATE/2)))
 			{
 				// Plays the music after the starting countdown.
 				S_ChangeMusic(mapmusname, mapmusflags, true);
 				S_ShowMusicCredit();
 			}
+			else if (starttime != introtime)
+			{
+				// Start countdown/music handling
+				if (leveltime == starttime-(3*TICRATE))
+				{
+					S_StartSound(NULL, sfx_s3ka7); // 3,
+					S_FadeMusic(0, 3500); //S_FadeOutStopMusic(3500); -- TODO the S_StopMusic callback can halt successor music instead
+				}
+				else if ((leveltime == starttime-(2*TICRATE))
+					|| (leveltime == starttime-TICRATE))
+				{
+					S_StartSound(NULL, sfx_s3ka7); // 2, 1,
+				}
+				else if (leveltime == starttime)
+				{
+					S_StartSound(NULL, sfx_s3kad); // GO!
+				}
 
-			// POSITION!! music
-			if (encoremode)
-			{
-				// Encore humming starts immediately.
-				if (leveltime == 3)
-					S_ChangeMusicInternal("encore", true);
-			}
-			else
-			{
-				// Plays the POSITION music after the camera spin
-				if (leveltime == introtime)
-					S_ChangeMusicInternal(
-						(mapheaderinfo[gamemap-1]->positionmus[0]
-							? mapheaderinfo[gamemap-1]->positionmus
-							: "postn"
-						), true);
+				// POSITION!! music
+				if (encoremode)
+				{
+					// Encore humming starts immediately.
+					if (leveltime == 1)
+						S_ChangeMusicInternal("encore", true);
+				}
+				else
+				{
+					// Plays the POSITION music after the camera spin
+					if (leveltime == introtime)
+						S_ChangeMusicInternal(
+							(mapheaderinfo[gamemap-1]->positionmus[0]
+								? mapheaderinfo[gamemap-1]->positionmus
+								: "postn"
+							), true);
+				}
 			}
 		}
 
@@ -927,19 +980,30 @@ void P_Ticker(boolean run)
 		if (bombflashtimer)
 			bombflashtimer--;	// Bomb seizure prevention
 
-		if (quake.time)
+		// Tick quake effects
+		quake = g_quakes;
+		while (quake != NULL)
 		{
-			fixed_t ir = quake.intensity>>1;
-			/// \todo Calculate distance from epicenter if set and modulate the intensity accordingly based on radius.
-			quake.x = M_RandomRange(-ir,ir);
-			quake.y = M_RandomRange(-ir,ir);
-			quake.z = M_RandomRange(-ir,ir);
-			if (cv_windowquake.value)
-				I_CursedWindowMovement(FixedInt(quake.x), FixedInt(quake.y));
-			--quake.time;
+			if (quake->time <= 0)
+			{
+				// Time out, remove this effect
+				quake_t *remove = quake;
+				quake = quake->next;
+				P_FreeQuake(remove);
+				continue;
+			}
+
+			quake->time--;
+
+			if (quake->epicenter != NULL && quake->mobj != NULL && P_MobjWasRemoved(quake->mobj) == false)
+			{
+				quake->epicenter->x = quake->mobj->x;
+				quake->epicenter->y = quake->mobj->y;
+				quake->epicenter->z = quake->mobj->z;
+			}
+
+			quake = quake->next;
 		}
-		else
-			quake.x = quake.y = quake.z = 0;
 
 		if (metalplayback)
 			G_ReadMetalTic(metalplayback);

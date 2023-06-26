@@ -41,6 +41,8 @@
 INT32 numskins = 0;
 skin_t skins[MAXSKINS];
 
+unloaded_skin_t *unloadedskins = NULL;
+
 // FIXTHIS: don't work because it must be inistilised before the config load
 //#define SKINVALUES
 #ifdef SKINVALUES
@@ -125,6 +127,8 @@ static void Sk_SetDefaultValue(skin_t *skin)
 
 	skin->highresscale = FRACUNIT;
 
+	// no specific memset for skinrecord_t as it's already nuked by the full skin_t wipe
+
 	for (i = 0; i < sfx_skinsoundslot0; i++)
 		if (S_sfx[i].skinsound != -1)
 			skin->soundsid[S_sfx[i].skinsound] = i;
@@ -183,7 +187,8 @@ void R_InitSkins(void)
 
 UINT8 *R_GetSkinAvailabilities(boolean demolock, boolean forbots)
 {
-	UINT8 i, shif, byte;
+	UINT16 i;
+	UINT8 shif, byte;
 	INT32 skinid;
 	static UINT8 responsebuffer[MAXAVAILABILITY];
 	UINT8 defaultbotskin = R_BotDefaultSkin();
@@ -221,7 +226,7 @@ boolean R_SkinUsable(INT32 playernum, INT32 skinnum, boolean demoskins)
 {
 	boolean needsunlocked = false;
 	boolean useplayerstruct = (Playing() && playernum != -1);
-	UINT8 i;
+	UINT16 i;
 	INT32 skinid;
 
 	if (skinnum == -1)
@@ -314,12 +319,17 @@ UINT32 R_GetLocalRandomSkin(void)
 INT32 R_SkinAvailable(const char *name)
 {
 	INT32 i;
+	UINT32 hash = quickncasehash(name, SKINNAMESIZE);
 
 	for (i = 0; i < numskins; i++)
 	{
-		// search in the skin list
-		if (stricmp(skins[i].name,name)==0)
-			return i;
+		if (skins[i].namehash != hash)
+			continue;
+
+		if (stricmp(skins[i].name,name)!=0)
+			continue;
+
+		return i;
 	}
 	return -1;
 }
@@ -727,9 +737,59 @@ static void R_LoadSkinSprites(UINT16 wadnum, UINT16 *lump, UINT16 *lastlump, ski
 // returns whether found appropriate property
 static boolean R_ProcessPatchableFields(skin_t *skin, char *stoken, char *value)
 {
+	if (!stricmp(stoken, "rivals"))
+	{
+		size_t len = strlen(value);
+		size_t i;
+		char rivalname[SKINNAMESIZE+1] = "";
+		UINT8 pos = 0;
+		UINT8 numrivals = 0;
+
+		// Can't use strtok, because the above function's already using it.
+		// Using it causes it to upset the saved pointer,
+		// corrupting the reading for the rest of the file.
+
+		// So instead we get to crawl through the value, character by character,
+		// and write it down as we go, until we hit a comma or the end of the string.
+		// Yaaay.
+
+		for (i = 0; i <= len; i++)
+		{
+			if (numrivals >= SKINRIVALS)
+			{
+				break;
+			}
+
+			if (value[i] == ',' || i == len)
+			{
+				if (pos == 0)
+					continue;
+
+				STRBUFCPY(skin->rivals[numrivals], rivalname);
+				strlwr(skin->rivals[numrivals]);
+				numrivals++;
+
+				if (i == len)
+					break;
+
+				for (; pos > 0; pos--)
+				{
+					rivalname[pos] = '\0';
+				}
+
+				continue;
+			}
+
+			rivalname[pos] = value[i];
+			pos++;
+		}
+	}
+
 	// custom translation table
-	if (!stricmp(stoken, "startcolor"))
+	else if (!stricmp(stoken, "startcolor"))
+	{
 		skin->starttranscolor = atoi(value);
+	}
 
 #define FULLPROCESS(field) else if (!stricmp(stoken, #field)) skin->field = get_number(value);
 	// character type identification
@@ -917,45 +977,6 @@ void R_AddSkins(UINT16 wadnum, boolean mainfile)
 				STRBUFCPY(skin->realname, value);
 				SYMBOLCONVERT(skin->realname)
 			}
-			else if (!stricmp(stoken, "rivals"))
-			{
-				size_t len = strlen(value);
-				size_t i;
-				char rivalname[SKINNAMESIZE] = "";
-				UINT8 pos = 0;
-				UINT8 numrivals = 0;
-
-				// Can't use strtok, because this function's already using it.
-				// Using it causes it to upset the saved pointer,
-				// corrupting the reading for the rest of the file.
-
-				// So instead we get to crawl through the value, character by character,
-				// and write it down as we go, until we hit a comma or the end of the string.
-				// Yaaay.
-
-				for (i = 0; i <= len; i++)
-				{
-					if (numrivals >= SKINRIVALS)
-					{
-						break;
-					}
-
-					if (value[i] == ',' || i == len)
-					{
-						STRBUFCPY(skin->rivals[numrivals], rivalname);
-						strlwr(skin->rivals[numrivals]);
-						numrivals++;
-
-						memset(rivalname, 0, sizeof (rivalname));
-						pos = 0;
-
-						continue;
-					}
-
-					rivalname[pos] = value[i];
-					pos++;
-				}
-			}
 			else if (!R_ProcessPatchableFields(skin, stoken, value))
 				CONS_Debug(DBG_SETUP, "R_AddSkins: Unknown keyword '%s' in S_SKIN lump #%d (WAD %s)\n", stoken, lump, wadfiles[wadnum]->filename);
 
@@ -986,6 +1007,68 @@ next_token:
 		if (rendermode == render_opengl)
 			HWR_AddPlayerModel(numskins);
 #endif
+
+		// Finally, conclude by setting up final properties.
+		skin->namehash = quickncasehash(skin->name, SKINNAMESIZE);
+
+		{
+			// Check to see if we have any custom skin wins data that we could substitute in.
+			unloaded_skin_t *unloadedskin, *unloadedprev = NULL;
+			for (unloadedskin = unloadedskins; unloadedskin; unloadedprev = unloadedskin, unloadedskin = unloadedskin->next)
+			{
+				if (unloadedskin->namehash != skin->namehash)
+					continue;
+
+				if (strcasecmp(skin->name, unloadedskin->name) != 0)
+					continue;
+
+				// Copy in wins, etc.
+				M_Memcpy(&skin->records, &unloadedskin->records, sizeof(skin->records));
+
+				// Remove this entry from the chain.
+				if (unloadedprev)
+				{
+					unloadedprev->next = unloadedskin->next;
+				}
+				else
+				{
+					unloadedskins = unloadedskin->next;
+				}
+
+				// Now... we assign everything which used this pointer the new skin id.
+				UINT8 i;
+
+				cupheader_t *cup;
+				for (cup = kartcupheaders; cup; cup = cup->next)
+				{
+					for (i = 0; i < KARTGP_MAX; i++)
+					{
+						if (cup->windata[i].best_skin.unloaded != unloadedskin)
+							continue;
+						cup->windata[i].best_skin.id = numskins;
+						cup->windata[i].best_skin.unloaded = NULL;
+					}
+				}
+
+				unloaded_cupheader_t *unloadedcup;
+				for (unloadedcup = unloadedcupheaders; unloadedcup; unloadedcup = unloadedcup->next)
+				{
+					for (i = 0; i < KARTGP_MAX; i++)
+					{
+						if (unloadedcup->windata[i].best_skin.unloaded != unloadedskin)
+							continue;
+						unloadedcup->windata[i].best_skin.id = numskins;
+						unloadedcup->windata[i].best_skin.unloaded = NULL;
+					}
+				}
+
+				// Finally, free.
+				Z_Free(unloadedskin);
+
+				break;
+			
+			}
+		}
 
 		numskins++;
 	}
@@ -1072,45 +1155,6 @@ void R_PatchSkins(UINT16 wadnum, boolean mainfile)
 					realname = true;
 					STRBUFCPY(skin->realname, value);
 					SYMBOLCONVERT(skin->realname)
-				}
-				else if (!stricmp(stoken, "rivals"))
-				{
-					size_t len = strlen(value);
-					size_t i;
-					char rivalname[SKINNAMESIZE] = "";
-					UINT8 pos = 0;
-					UINT8 numrivals = 0;
-
-					// Can't use strtok, because this function's already using it.
-					// Using it causes it to upset the saved pointer,
-					// corrupting the reading for the rest of the file.
-
-					// So instead we get to crawl through the value, character by character,
-					// and write it down as we go, until we hit a comma or the end of the string.
-					// Yaaay.
-
-					for (i = 0; i <= len; i++)
-					{
-						if (numrivals >= SKINRIVALS)
-						{
-							break;
-						}
-
-						if (value[i] == ',' || i == len)
-						{
-							STRBUFCPY(skin->rivals[numrivals], rivalname);
-							strlwr(skin->rivals[numrivals]);
-							numrivals++;
-
-							memset(rivalname, 0, sizeof (rivalname));
-							pos = 0;
-
-							continue;
-						}
-
-						rivalname[pos] = value[i];
-						pos++;
-					}
 				}
 				else if (!R_ProcessPatchableFields(skin, stoken, value))
 					CONS_Debug(DBG_SETUP, "R_PatchSkins: Unknown keyword '%s' in P_SKIN lump #%d (WAD %s)\n", stoken, lump, wadfiles[wadnum]->filename);

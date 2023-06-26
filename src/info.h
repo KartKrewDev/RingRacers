@@ -1108,6 +1108,13 @@ typedef enum sprite
 
 	SPR_SLPT, // Sliptide zip indicator
 
+	SPR_IWHP, // Instawhip
+	SPR_WPRE, // Instawhip Recharge
+	SPR_GRNG, // Guard ring
+	SPR_GBDY, // Guard body
+
+	SPR_DHND, // Servant Hand
+
 	SPR_WIPD, // Wipeout dust trail
 	SPR_DRIF, // Drift Sparks
 	SPR_BDRF, // Brake drift sparks
@@ -1187,6 +1194,7 @@ typedef enum sprite
 	SPR_ISTB, // instashield layer B
 
 	SPR_PWCL, // Invinc/grow clash VFX
+	SPR_GBRK, // Guard break
 
 	SPR_ARRO, // player arrows
 	SPR_ITEM,
@@ -1358,6 +1366,7 @@ typedef enum sprite
 	SPR_UQMK,
 
 	SPR_GBOM,
+	SPR_GCHX,
 
 	// First person view sprites; this is a sprite so that it can be replaced by a specialized MD2 draw later
 	SPR_VIEW,
@@ -4357,6 +4366,16 @@ typedef enum state
 
 	S_SLIPTIDEZIP,
 
+	S_INSTAWHIP,
+	S_INSTAWHIP_RECHARGE1,
+	S_INSTAWHIP_RECHARGE2,
+	S_INSTAWHIP_RECHARGE3,
+	S_INSTAWHIP_RECHARGE4,
+	S_BLOCKRING,
+	S_BLOCKBODY,
+
+	S_SERVANTHAND,
+
 	// Signpost sparkles
 	S_SIGNSPARK1,
 	S_SIGNSPARK2,
@@ -4536,6 +4555,12 @@ typedef enum state
 	S_WIPEOUTTRAIL3,
 	S_WIPEOUTTRAIL4,
 	S_WIPEOUTTRAIL5,
+	S_WIPEOUTTRAIL6,
+	S_WIPEOUTTRAIL7,
+	S_WIPEOUTTRAIL8,
+	S_WIPEOUTTRAIL9,
+	S_WIPEOUTTRAIL10,
+	S_WIPEOUTTRAIL11,
 
 	// Rocket sneaker
 	S_ROCKETSNEAKER_L,
@@ -5074,6 +5099,7 @@ typedef enum state
 	S_INSTASHIELDB7,
 
 	S_POWERCLASH, // Grow/Invinc clash VFX
+	S_GUARDBREAK,
 
 	S_PLAYERARROW, // Above player arrow
 	S_PLAYERARROW_BOX,
@@ -5631,6 +5657,15 @@ typedef enum state
 	S_SPECIAL_UFO_STEM,
 
 	S_GACHABOM,
+	S_GACHABOM_DEAD,
+
+	S_GACHABOM_EXPLOSION_1,
+	S_GACHABOM_EXPLOSION_2,
+	S_GACHABOM_EXPLOSION_3A,
+	S_GACHABOM_EXPLOSION_3B,
+	S_GACHABOM_EXPLOSION_4,
+	S_GACHABOM_WAITING,
+	S_GACHABOM_RETURNING,
 
 	S_FIRSTFREESLOT,
 	S_LASTFREESLOT = S_FIRSTFREESLOT + NUMSTATEFREESLOTS - 1,
@@ -6363,6 +6398,7 @@ typedef enum mobj_type
 	MT_TUBEWAYPOINT,
 	MT_PUSH,
 	MT_GHOST,
+	MT_FAKESHADOW,
 	MT_OVERLAY,
 	MT_ANGLEMAN,
 	MT_POLYANCHOR,
@@ -6373,7 +6409,7 @@ typedef enum mobj_type
 	MT_SKYBOX,
 
 	// Debris
-	MT_SPARK, //spark
+	MT_SPARK, //spark, only used for debugging, actually
 	MT_EXPLODE, // Robot Explosion
 	MT_UWEXPLODE, // Underwater Explosion
 	MT_DUST,
@@ -6416,6 +6452,13 @@ typedef enum mobj_type
 	MT_MONITOR_SHARD,
 	MT_MAGICIANBOX,
 	MT_SLIPTIDEZIP,
+
+	MT_INSTAWHIP,
+	MT_INSTAWHIP_RECHARGE,
+	MT_BLOCKRING,
+	MT_BLOCKBODY,
+
+	MT_SERVANTHAND,
 
 	MT_SIGNSPARKLE,
 
@@ -6504,6 +6547,7 @@ typedef enum mobj_type
 	MT_SINKTRAIL,
 
 	MT_GACHABOM,
+	MT_GACHABOM_REBOUND,
 
 	MT_DUELBOMB, // Duel mode bombs
 
@@ -6586,6 +6630,7 @@ typedef enum mobj_type
 	MT_INSTASHIELDB,
 
 	MT_POWERCLASH, // Grow/Invinc clash VFX
+	MT_GUARDBREAK,
 
 	MT_PLAYERARROW,
 	MT_PLAYERWANTED,

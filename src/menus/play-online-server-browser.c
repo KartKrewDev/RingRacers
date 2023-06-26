@@ -229,7 +229,7 @@ static void M_CheckMODVersion(int id)
 #ifdef HAVE_THREADS
 		I_lock_mutex(&k_menu_mutex);
 #endif
-		M_StartMessage(updatestring, NULL, MM_NOTHING);
+		M_StartMessage("Game Update", updatestring, NULL, MM_NOTHING, NULL, NULL);
 #ifdef HAVE_THREADS
 		I_unlock_mutex(k_menu_mutex);
 #endif

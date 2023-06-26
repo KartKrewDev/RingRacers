@@ -8,6 +8,8 @@
 #include "../../r_local.h" // SplitScreen_OnChange
 #include "../../f_finale.h" // F_WipeStartScreen
 #include "../../v_video.h"
+#include "../../g_game.h" // G_GetBackupCupData
+#include "../../p_saveg.h" // cupsavedata
 
 cupheader_t dummy_lostandfound;
 
@@ -88,7 +90,7 @@ boolean M_CanShowLevelInList(INT16 mapnum, levelsearch_t *levelsearch)
 	{
 		// Check for completion
 		if ((mapheaderinfo[mapnum]->menuflags & LF2_FINISHNEEDED)
-		&& !(mapheaderinfo[mapnum]->mapvisited & MV_BEATEN))
+		&& !(mapheaderinfo[mapnum]->records.mapvisited & MV_BEATEN))
 			return false;
 
 		// Check for unlock
@@ -131,7 +133,7 @@ UINT16 M_CountLevelsToShowInList(levelsearch_t *levelsearch)
 
 UINT16 M_GetFirstLevelInList(UINT8 *i, levelsearch_t *levelsearch)
 {
-	INT16 mapnum = NEXTMAP_INVALID;
+	UINT16 mapnum = NEXTMAP_INVALID;
 
 	if (!levelsearch)
 		return NEXTMAP_INVALID;
@@ -262,6 +264,11 @@ boolean M_LevelListFromGametype(INT16 gt)
 		const size_t pagelen = sizeof(cupheader_t*) * (CUPMENU_COLUMNS * CUPMENU_ROWS);
 		boolean foundany = false, currentvalid = false;
 
+		G_GetBackupCupData(
+			cupgrid.grandprix == true
+			|| cv_splitplayers.value <= 1
+		);
+
 		templevelsearch.cup = kartcupheaders;
 
 #if 0
@@ -331,7 +338,8 @@ boolean M_LevelListFromGametype(INT16 gt)
 
 				if (Playing()
 					? (mapheaderinfo[gamemap-1] && mapheaderinfo[gamemap-1]->cup == templevelsearch.cup)
-					: (gt == -1 && levellist.levelsearch.cup == templevelsearch.cup))
+					: (cupsavedata.cup == templevelsearch.cup
+						|| (gt == -1 && levellist.levelsearch.cup == templevelsearch.cup)))
 				{
 					GRID_FOCUSCUP;
 				}
@@ -347,7 +355,7 @@ boolean M_LevelListFromGametype(INT16 gt)
 			templevelsearch.cup = &dummy_lostandfound;
 			templevelsearch.checklocked = true;
 
-			if (M_GetFirstLevelInList(&temp, &levellist.levelsearch) != NEXTMAP_INVALID)
+			if (M_GetFirstLevelInList(&temp, &templevelsearch) != NEXTMAP_INVALID)
 			{
 				foundany = true;
 				GRID_INSERTCUP;
@@ -464,7 +472,7 @@ void M_LevelSelectInit(INT32 choice)
 	if (!M_LevelListFromGametype(gt))
 	{
 		S_StartSound(NULL, sfx_s3kb2);
-		M_StartMessage(va("No levels available for\n%s Mode!\n\nPress (B)\n", gametypes[gt]->name), NULL, MM_NOTHING);
+		M_StartMessage("Offline Play", va("No levels available for\n%s Mode!\n", gametypes[gt]->name), NULL, MM_NOTHING, NULL, NULL);
 	}
 }
 
@@ -537,6 +545,8 @@ void M_LevelSelected(INT16 add)
 			S_StartSound(NULL, sfx_s3k63);
 
 			paused = false;
+
+			S_StopMusicCredit();
 
 			// Early fadeout to let the sound finish playing
 			F_WipeStartScreen();

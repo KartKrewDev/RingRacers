@@ -363,8 +363,12 @@ void S_StopSoundByID(void *origin, sfxenum_t sfx_id)
 
 	// Sounds without origin can have multiple sources, they shouldn't
 	// be stopped by new sounds.
+	// (The above comment predates this codebase using git and cannot be BLAME'd)
+	// ...yeah, but if it's being stopped by ID, it's clearly an intentful effect. ~toast 090623
+#if 0
 	if (!origin)
 		return;
+#endif
 #ifdef HW3SOUND
 	if (hws_mode != HWS_DEFAULT_MODE)
 	{
@@ -1363,7 +1367,14 @@ static void S_AttemptToRestoreMusic(void)
 	switch (gamestate)
 	{
 		case GS_LEVEL:
-			P_RestoreMusic(&players[consoleplayer]);
+			if (musiccountdown != 1)
+			{
+				P_RestoreMusic(&players[consoleplayer]);
+				break;
+			}
+			// FALLTHRU
+		case GS_INTERMISSION:
+			S_ChangeMusicInternal("racent", true);
 			break;
 		case GS_TITLESCREEN:
 			S_ChangeMusicInternal("_title", looptitle);
@@ -1481,7 +1492,16 @@ void S_PopulateSoundTestSequence(void)
 		S_InsertMapIntoSoundTestSequence(i, &tail);
 	}
 
-	// Finally, we insert all important musicdefs at the  head,
+	// Okay, guarantee the list ends on NULL! This stops
+	// that pointing to either invalid memory in general,
+	// or valid memory that is already somewhere else in
+	// the sound test sequence (way more likely).
+	// (We do this here so that inserting unimportant,
+	// mapless musicdefs does not get overwritten, like it
+	// would be if this were done after the below block.)
+	*tail = NULL;
+
+	// Finally, we insert all important musicdefs at the head,
 	// and all others at the tail.
 	// It's being added to the sequence in reverse order...
 	// but because musicdefstart is ALSO populated in reverse,
@@ -1526,8 +1546,8 @@ static boolean S_SoundTestDefLocked(musicdef_t *def)
 		return false;
 
 	// Is the level tied to SP progression?
-	if ((mapheaderinfo[def->sequence.map]->menuflags & LF2_FINISHNEEDED)
-	&& !(mapheaderinfo[def->sequence.map]->mapvisited & MV_BEATEN))
+	if ((mapheaderinfo[def->sequence.map]->menuflags & (LF2_FINISHNEEDED|LF2_HIDEINMENU))
+	&& !(mapheaderinfo[def->sequence.map]->records.mapvisited & MV_BEATEN))
 		return true;
 
 	// Finally, do a full-fat map check.
@@ -1658,7 +1678,14 @@ void S_SoundTestPlay(void)
 		{
 			// I'd personally like songs in sequence to last between 3 and 6 minutes.
 			const UINT32 loopduration = (soundtest.sequencemaxtime - S_GetMusicLoopPoint());
-			soundtest.sequencemaxtime += loopduration;
+
+			if (!loopduration)
+				;
+			else do
+			{
+				soundtest.sequencemaxtime += loopduration;
+			} while (soundtest.sequencemaxtime < 4*1000);
+			// If the track is EXTREMELY short, keep adding until about 4s!
 		}
 
 		// Only fade out if we're the last track for this song.
@@ -2115,6 +2142,8 @@ void S_ShowMusicCredit(void)
 
 	if (!def->title)
 	{
+		// Like showing a blank credit.
+		S_StopMusicCredit();
 		return;
 	}
 

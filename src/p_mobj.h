@@ -312,6 +312,7 @@ struct mobj_t
 	fixed_t old_spritexscale, old_spriteyscale;
 	fixed_t old_spritexoffset, old_spriteyoffset;
 	pslope_t *floorspriteslope; // The slope that the floorsprite is rotated by
+	INT16 lightlevel; // Add to sector lightlevel, -255 - 255
 
 	msecnode_t *touching_sectorlist; // a linked list of sectors where this object appears
 
@@ -425,6 +426,10 @@ struct mobj_t
 
 	INT32 dispoffset;
 
+	INT16 special;
+	INT32 args[NUMMAPTHINGARGS];
+	char *stringargs[NUMMAPTHINGSTRINGARGS];
+
 	// WARNING: New fields must be added separately to savegame and Lua.
 };
 
@@ -469,6 +474,7 @@ struct precipmobj_t
 	fixed_t old_spritexscale, old_spriteyscale;
 	fixed_t old_spritexoffset, old_spriteyoffset;
 	pslope_t *floorspriteslope; // The slope that the floorsprite is rotated by
+	INT16 lightlevel; // Add to sector lightlevel, -255 - 255
 
 	mprecipsecnode_t *touching_sectorlist; // a linked list of sectors where this object appears
 
@@ -546,6 +552,7 @@ boolean P_PrecipThinker(precipmobj_t *mobj);
 void P_NullPrecipThinker(precipmobj_t *mobj);
 void P_FreePrecipMobj(precipmobj_t *mobj);
 void P_SetScale(mobj_t *mobj, fixed_t newscale);
+void P_InstaScale(mobj_t *mobj, fixed_t newscale);
 void P_XYMovement(mobj_t *mo);
 void P_RingXYMovement(mobj_t *mo);
 void P_SceneryXYMovement(mobj_t *mo);

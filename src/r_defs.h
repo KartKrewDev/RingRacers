@@ -30,6 +30,8 @@
 
 #include "taglist.h"
 
+#include "k_mapuser.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -551,6 +553,9 @@ struct sector_t
 	INT32 args[NUMSECTORARGS];
 	char *stringargs[NUMSECTORSTRINGARGS];
 	sectoractionflags_t activation;
+
+	// UDMF user-defined custom properties.
+	mapUserProperties_t user;
 };
 
 //
@@ -609,6 +614,9 @@ struct line_t
 
 	char *text; // a concatenation of all front and back texture names, for linedef specials that require a string.
 	INT16 callcount; // no. of calls left before triggering, for the "X calls" linedef specials, defaults to 0
+
+	// UDMF user-defined custom properties.
+	mapUserProperties_t user;
 };
 
 struct side_t
@@ -635,6 +643,9 @@ struct side_t
 	char *text; // a concatenation of all top, bottom, and mid texture names, for linedef specials that require a string.
 
 	extracolormap_t *colormap_data; // storage for colormaps; not applied to sectors.
+
+	// UDMF user-defined custom properties.
+	mapUserProperties_t user;
 };
 
 //
@@ -949,6 +960,8 @@ typedef enum
 	RF_SHADOWDRAW       = 0x00004000,  // Stretches and skews the sprite like a shadow.
 	RF_SHADOWEFFECTS    = 0x00008000,  // Scales and becomes transparent like a shadow.
 	RF_DROPSHADOW       = (RF_SHADOWDRAW | RF_SHADOWEFFECTS | RF_FULLDARK),
+
+	RF_ABSOLUTELIGHTLEVEL = 0x00010000, //  mobj_t.lightlevel is absolute instead of relative
 
 	RF_DONTDRAW         = 0x00F00000,   // --Don't generate a vissprite
 	RF_DONTDRAWP1       = 0x00100000,   // No P1

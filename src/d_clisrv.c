@@ -116,6 +116,9 @@ UINT16 pingmeasurecount = 1;
 UINT32 realpingtable[MAXPLAYERS]; //the base table of ping where an average will be sent to everyone.
 UINT32 playerpingtable[MAXPLAYERS]; //table of player latency values.
 
+#define GENTLEMANSMOOTHING (TICRATE)
+static tic_t reference_lag;
+static UINT8 spike_time; 
 static tic_t lowest_lag;
 boolean server_lagless;
 static CV_PossibleValue_t mindelay_cons_t[] = {{0, "MIN"}, {30, "MAX"}, {0, NULL}};
@@ -222,6 +225,10 @@ consvar_t cv_playbackspeed = CVAR_INIT ("playbackspeed", "1", 0, playbackspeed_c
 consvar_t cv_httpsource = CVAR_INIT ("http_source", "", CV_SAVE, NULL, NULL);
 
 consvar_t cv_kicktime = CVAR_INIT ("kicktime", "20", CV_SAVE, CV_Unsigned, NULL);
+
+consvar_t cv_gamestochat = CVAR_INIT ("gamestochat", "0", CV_SAVE, CV_Unsigned, NULL);
+
+static tic_t stop_spamming[MAXPLAYERS];
 
 // Generate a message for an authenticating client to sign, with some guarantees about who we are.
 void GenerateChallenge(uint8_t *buf)
@@ -350,27 +357,27 @@ void RegisterNetXCmd(netxcmd_t id, void (*cmd_f)(UINT8 **p, INT32 playernum))
 
 void SendNetXCmdForPlayer(UINT8 playerid, netxcmd_t id, const void *param, size_t nparam)
 {
-	if (localtextcmd[playerid][0]+2+nparam > MAXTEXTCMD)
+	if (((UINT16*)localtextcmd[playerid])[0]+3+nparam > MAXTEXTCMD)
 	{
 		// for future reference: if (cht_debug) != debug disabled.
-		CONS_Alert(CONS_ERROR, M_GetText("NetXCmd buffer full, cannot add netcmd %d! (size: %d, needed: %s)\n"), id, localtextcmd[playerid][0], sizeu1(nparam));
+		CONS_Alert(CONS_ERROR, M_GetText("NetXCmd buffer full, cannot add netcmd %d! (size: %d, needed: %s)\n"), id, ((UINT16*)localtextcmd[playerid])[0], sizeu1(nparam));
 		return;
 	}
 
-	localtextcmd[playerid][0]++;
-	localtextcmd[playerid][localtextcmd[playerid][0]] = (UINT8)id;
+	((UINT16*)localtextcmd[playerid])[0]++;
+	localtextcmd[playerid][((UINT16*)localtextcmd[playerid])[0] + 1] = (UINT8)id;
 
 	if (param && nparam)
 	{
-		M_Memcpy(&localtextcmd[playerid][localtextcmd[playerid][0] + 1], param, nparam);
-		localtextcmd[playerid][0] = (UINT8)(localtextcmd[playerid][0] + (UINT8)nparam);
+		M_Memcpy(&localtextcmd[playerid][((UINT16*)localtextcmd[playerid])[0] + 2], param, nparam);
+		((UINT16*)localtextcmd[playerid])[0] = ((UINT16*)localtextcmd[playerid])[0] + (UINT8)nparam;
 	}
 }
 
 UINT8 GetFreeXCmdSize(UINT8 playerid)
 {
-	// -1 for the size and another -1 for the ID.
-	return (UINT8)(localtextcmd[playerid][0] - 2);
+	// -2 for the size and another -1 for the ID.
+	return (UINT8)(localtextcmd[playerid][0] - 3);
 }
 
 // Frees all textcmd memory for the specified tic
@@ -483,9 +490,9 @@ static boolean ExtraDataTicker(void)
 			if (bufferstart)
 			{
 				UINT8 *curpos = bufferstart;
-				UINT8 *bufferend = &curpos[curpos[0]+1];
+				UINT8 *bufferend = &curpos[((UINT16*)curpos)[0]+2];
 
-				curpos++;
+				curpos += 2;
 				while (curpos < bufferend)
 				{
 					if (*curpos < MAXNETXCMD && listnetxcmd[*curpos])
@@ -1663,15 +1670,15 @@ void CL_UpdateServerList (void)
 		SendAskInfo(BROADCASTADDR);
 }
 
-static void M_ConfirmConnect(void)
+static void M_ConfirmConnect(INT32 choice)
 {
-	if (G_PlayerInputDown(0, gc_a, 1) || G_GetDeviceGameKeyDownArray(0)[KEY_ENTER])
+	if (choice == MA_YES)
 	{
 		if (totalfilesrequestednum > 0)
 		{
-#ifdef HAVE_CURL
+	#ifdef HAVE_CURL
 			if (http_source[0] == '\0' || curl_failedwebdownload)
-#endif
+	#endif
 			{
 				if (CL_SendFileRequest())
 				{
@@ -1682,21 +1689,18 @@ static void M_ConfirmConnect(void)
 					cl_mode = CL_DOWNLOADFAILED;
 				}
 			}
-#ifdef HAVE_CURL
+	#ifdef HAVE_CURL
 			else
 				cl_mode = CL_PREPAREHTTPFILES;
-#endif
+	#endif
 		}
 		else
 			cl_mode = CL_LOADFILES;
 
-		M_StopMessage(0);
+		return;
 	}
-	else if (G_PlayerInputDown(0, gc_b, 1) || G_PlayerInputDown(0, gc_x, 1) || G_GetDeviceGameKeyDownArray(0)[KEY_ESCAPE])
-	{
-		cl_mode = CL_ABORTED;
-		M_StopMessage(0);
-	}
+
+	cl_mode = CL_ABORTED;
 }
 
 static boolean CL_FinishedFileList(void)
@@ -1715,12 +1719,12 @@ static boolean CL_FinishedFileList(void)
 		CL_Reset();
 		D_ClearState();
 		M_StartControlPanel();
-		M_StartMessage(M_GetText(
+		M_StartMessage("Server Connection Failure",
+			M_GetText(
 			"You have too many WAD files loaded\n"
 			"to add ones the server is using.\n"
-			"Please restart Ring Racers before connecting.\n\n"
-			"Press (B)\n"
-		), NULL, MM_NOTHING);
+			"Please restart Ring Racers before connecting.\n"
+		), NULL, MM_NOTHING, NULL, "Back to Menu");
 		return false;
 	}
 	else if (i == 2) // cannot join for some reason
@@ -1729,27 +1733,26 @@ static boolean CL_FinishedFileList(void)
 		CL_Reset();
 		D_ClearState();
 		M_StartControlPanel();
-		M_StartMessage(M_GetText(
+		M_StartMessage("Server Connection Failure",
+			M_GetText(
 			"You have the wrong addons loaded.\n\n"
 			"To play on this server, restart\n"
 			"the game and don't load any addons.\n"
 			"Ring Racers will automatically add\n"
-			"everything you need when you join.\n\n"
-			"Press (B)\n"
-		), NULL, MM_NOTHING);
+			"everything you need when you join.\n"
+		), NULL, MM_NOTHING, NULL, "Back to Menu");
 		return false;
 	}
 	else if (i == 1)
 	{
 		if (serverisfull)
 		{
-			M_StartMessage(M_GetText(
+			M_StartMessage("Server Connection Failure",
+				M_GetText(
 				"This server is full!\n"
 				"\n"
 				"You may load server addons (if any), and wait for a slot.\n"
-				"\n"
-				"Press (A) to continue or (B) to cancel\n"
-			), NULL, MM_NOTHING);
+			), &M_ConfirmConnect, MM_YESNO, "Continue", "Back to Menu");
 			cl_mode = CL_CONFIRMCONNECT;
 		}
 		else
@@ -1769,15 +1772,15 @@ static boolean CL_FinishedFileList(void)
 				CL_Reset();
 				D_ClearState();
 				M_StartControlPanel();
-				M_StartMessage(M_GetText(
+				M_StartMessage("Server Connection Failure",
+					M_GetText(
 					"An error occured when trying to\n"
 					"download missing addons.\n"
 					"(This is almost always a problem\n"
 					"with the server, not your game.)\n\n"
 					"See the console or log file\n"
-					"for additional details.\n\n"
-					"Press (B)\n"
-				), NULL, MM_NOTHING);
+					"for additional details.\n"
+				), NULL, MM_NOTHING, NULL, "Back to Menu");
 				return false;
 			}
 		}
@@ -1804,23 +1807,21 @@ static boolean CL_FinishedFileList(void)
 				downloadsize = Z_StrDup(va("%uK",totalfilesrequestedsize>>10));
 
 			if (serverisfull)
-				M_StartMessage(va(M_GetText(
+				M_StartMessage("Server Connection",
+					va(M_GetText(
 					"This server is full!\n"
 					"Download of %s additional content\n"
 					"is required to join.\n"
 					"\n"
 					"You may download, load server addons,\n"
 					"and wait for a slot.\n"
-					"\n"
-					"Press (A) to continue or (B) to cancel\n"
-				), downloadsize), NULL, MM_NOTHING);
+				), downloadsize), &M_ConfirmConnect, MM_YESNO, "Continue", "Back to Menu");
 			else
-				M_StartMessage(va(M_GetText(
+				M_StartMessage("Server Connection",
+					va(M_GetText(
 					"Download of %s additional content\n"
 					"is required to join.\n"
-					"\n"
-					"Press (A) to continue or (B) to cancel\n"
-				), downloadsize), NULL, MM_NOTHING);
+				), downloadsize), &M_ConfirmConnect, MM_YESNO, "Continue", "Back to Menu");
 
 			Z_Free(downloadsize);
 			cl_mode = CL_CONFIRMCONNECT;
@@ -1899,12 +1900,12 @@ static boolean CL_ServerConnectionSearchTicker(tic_t *asksent)
 				D_ClearState();
 				M_StartControlPanel();
 
-				M_StartMessage(va(
+				M_StartMessage("Server Connection Failure",
+							va(
 							"Your EXE differs from the server.\n"
 							"  Yours: %.*s\n"
-							"Theirs: %s\n\n"
-							"Press ESC\n",
-							GIT_SHA_ABBREV * 2, comprevision, theirs), NULL, MM_NOTHING);
+							"Theirs: %s\n\n",
+							GIT_SHA_ABBREV * 2, comprevision, theirs), NULL, MM_NOTHING, NULL, "Back to Menu");
 				return false;
 			}
 #endif
@@ -1961,6 +1962,7 @@ static boolean CL_ServerConnectionTicker(const char *tmpsave, tic_t *oldtic, tic
 {
 	boolean waitmore;
 	INT32 i;
+	const UINT8 pid = 0;
 
 	switch (cl_mode)
 	{
@@ -2050,12 +2052,11 @@ static boolean CL_ServerConnectionTicker(const char *tmpsave, tic_t *oldtic, tic
 				CL_Reset();
 				D_ClearState();
 				M_StartControlPanel();
-				M_StartMessage(M_GetText(
+				M_StartMessage("Server Connection Failure",
+					M_GetText(
 					"The direct download encountered an error.\n"
 					"See the logfile for more info.\n"
-					"\n"
-					"Press (B)\n"
-				), NULL, MM_NOTHING);
+				), NULL, MM_NOTHING, NULL, "Back to Menu");
 				return false;
 			}
 		case CL_LOADFILES:
@@ -2080,12 +2081,11 @@ static boolean CL_ServerConnectionTicker(const char *tmpsave, tic_t *oldtic, tic
 				CL_Reset();
 				D_ClearState();
 				M_StartControlPanel();
-				M_StartMessage(M_GetText(
+				M_StartMessage("Server Connection Failure",
+					M_GetText(
 					"5 minute wait time exceeded.\n"
 					"You may retry connection.\n"
-					"\n"
-					"Press (B)\n"
-				), NULL, MM_NOTHING);
+				), NULL, MM_NOTHING, NULL, "Return to Menu");
 				return false;
 			}
 			// prepare structures to save the file
@@ -2162,23 +2162,33 @@ static boolean CL_ServerConnectionTicker(const char *tmpsave, tic_t *oldtic, tic
 				G_MapEventsToControls(&events[eventtail]);
 			}
 
+#ifdef HAVE_THREADS
+			I_lock_mutex(&k_menu_mutex);
+#endif
+			M_UpdateMenuCMD(0, true);
+
 			if (cl_mode == CL_CONFIRMCONNECT)
 			{
-				M_ConfirmConnect();
+				if (menumessage.active)
+					M_HandleMenuMessage();
 			}
 			else
 			{
-				if (G_PlayerInputDown(0, gc_b, 1)
-					|| G_PlayerInputDown(0, gc_x, 1)
-					|| G_GetDeviceGameKeyDownArray(0)[KEY_ESCAPE])
+				if (M_MenuBackPressed(pid))
 					cl_mode = CL_ABORTED;
 			}
+
+			M_ScreenshotTicker();
+
+#ifdef HAVE_THREADS
+			I_unlock_mutex(k_menu_mutex);
+#endif
 		}
 
 		if (cl_mode == CL_ABORTED)
 		{
 			CONS_Printf(M_GetText("Network game synchronization aborted.\n"));
-//				M_StartMessage(M_GetText("Network game synchronization aborted.\n\nPress (B)\n"), NULL, MM_NOTHING);
+//				M_StartMessage("Server Connection", M_GetText("Network game synchronization aborted.\n"), NULL, MM_NOTHING, NULL, "Back to Menu");
 
 			D_QuitNetGame();
 			CL_Reset();
@@ -2790,7 +2800,6 @@ void CL_ClearPlayer(INT32 playernum)
 	splitscreen_invitations[playernum] = -1;
 
 	playerconsole[playernum] = playernum;
-	G_DestroyParty(playernum);
 
 	// Wipe the struct.
 	memset(&players[playernum], 0, sizeof (player_t));
@@ -2985,6 +2994,8 @@ static void Command_Nodes(void)
 			{
 				CONS_Printf(" [%.4d PWR]", clientpowerlevels[i][K_UsingPowerLevels()]);
 			}
+
+			CONS_Printf(" [%d games]", SV_GetStatsByPlayerIndex(i)->finishedrounds);
 
 
 			CONS_Printf(" [RRID-%s]", GetPrettyRRID(players[i].public_key, true));
@@ -3189,16 +3200,6 @@ static void Got_KickCmd(UINT8 **p, INT32 playernum)
 	pnum = READUINT8(*p);
 	msg = READUINT8(*p);
 
-	if (pnum == serverplayer && IsPlayerAdmin(playernum))
-	{
-		CONS_Printf(M_GetText("Server is being shut down remotely. Goodbye!\n"));
-
-		if (server)
-			COM_BufAddText("quit\n");
-
-		return;
-	}
-
 	if (msg == KICK_MSG_CUSTOM_BAN || msg == KICK_MSG_CUSTOM_KICK)
 	{
 		READSTRINGN(*p, reason, MAX_REASONLENGTH+1);
@@ -3262,6 +3263,12 @@ static void Got_KickCmd(UINT8 **p, INT32 playernum)
 			// It should be safe to run the vote callback directly.
 			K_MidVoteSuccess();
 		}
+	}
+
+	if (playernode[pnum] == servernode)
+	{
+		CONS_Printf(M_GetText("Ignoring kick attempt from %s on node %d (it's the server)\n"), player_names[playernum], servernode);
+		return;
 	}
 
 	//CONS_Printf("\x82%s ", player_names[pnum]);
@@ -3373,6 +3380,10 @@ static void Got_KickCmd(UINT8 **p, INT32 playernum)
 				HU_AddChatText(va("\x82*%s left the game", player_names[pnum]), false);
 			kickreason = KR_LEAVE;
 			break;
+		case KICK_MSG_GRIEF:
+			HU_AddChatText(va("\x82*%s has been kicked (Automatic grief detection)", player_names[pnum]), false);
+			kickreason = KR_KICK;
+			break;
 		case KICK_MSG_BANNED:
 			HU_AddChatText(va("\x82*%s has been banned (No reason given)", player_names[pnum]), false);
 			kickreason = KR_BAN;
@@ -3415,21 +3426,25 @@ static void Got_KickCmd(UINT8 **p, INT32 playernum)
 		M_StartControlPanel();
 
 		if (msg == KICK_MSG_CON_FAIL)
-			M_StartMessage(M_GetText("Server closed connection\n(Synch failure)\nPress (B)\n"), NULL, MM_NOTHING);
+			M_StartMessage("Server Disconnected", M_GetText("Server closed connection\n(Synch failure)\n"), NULL, MM_NOTHING, NULL, "Back to Menu");
 		else if (msg == KICK_MSG_PING_HIGH)
-			M_StartMessage(M_GetText("Server closed connection\n(Broke delay limit)\nPress (B)\n"), NULL, MM_NOTHING);
+			M_StartMessage("Server Disconnected", M_GetText("Server closed connection\n(Broke delay limit)\n"), NULL, MM_NOTHING, NULL, "Back to Menu");
+		else if (msg == KICK_MSG_TIMEOUT) // this one will probably never be seen?
+			M_StartMessage("Server Disconnected", M_GetText("Connection timed out\n"), NULL, MM_NOTHING, NULL, "Back to Menu");
 		else if (msg == KICK_MSG_BANNED)
-			M_StartMessage(M_GetText("You have been banned by the server\n\nPress (B)\n"), NULL, MM_NOTHING);
+			M_StartMessage("Server Disconnected", M_GetText("You have been banned by the server\n"), NULL, MM_NOTHING, NULL, "Back to Menu");
 		else if (msg == KICK_MSG_CUSTOM_KICK)
-			M_StartMessage(va(M_GetText("You have been kicked\n(%s)\nPress (B)\n"), reason), NULL, MM_NOTHING);
+			M_StartMessage("Server Disconnected", M_GetText("You have been kicked\n(Automatic grief detection)\n"), NULL, MM_NOTHING, NULL, "Back to Menu");
+		else if (msg == KICK_MSG_CUSTOM_KICK)
+			M_StartMessage("Server Disconnected", va(M_GetText("You have been kicked\n(%s)\n"), reason), NULL, MM_NOTHING, NULL, "Back to Menu");
 		else if (msg == KICK_MSG_CUSTOM_BAN)
-			M_StartMessage(va(M_GetText("You have been banned\n(%s)\nPress (B)\n"), reason), NULL, MM_NOTHING);
+			M_StartMessage("Server Disconnected", va(M_GetText("You have been banned\n(%s)\n"), reason), NULL, MM_NOTHING, NULL, "Back to Menu");
 		else if (msg == KICK_MSG_SIGFAIL)
-			M_StartMessage(M_GetText("Server closed connection\n(Invalid signature)\nPress (B)\n"), NULL, MM_NOTHING);
+			M_StartMessage("Server Disconnected", M_GetText("Server closed connection\n(Invalid signature)\n"), NULL, MM_NOTHING, NULL, "Back to Menu");
 		else if (msg == KICK_MSG_VOTE_KICK)
-			M_StartMessage(M_GetText("You have been kicked by popular demand\n\nPress (B)\n"), NULL, MM_NOTHING);
+			M_StartMessage("Server Disconnected", M_GetText("You have been kicked by popular demand\n"), NULL, MM_NOTHING, NULL, "Back to Menu");
 		else
-			M_StartMessage(M_GetText("You have been kicked by the server\n\nPress (B)\n"), NULL, MM_NOTHING);
+			M_StartMessage("Server Disconnected", M_GetText("You have been kicked by the server\n"), NULL, MM_NOTHING, NULL, "Back to Menu");
 	}
 	else if (server)
 	{
@@ -3866,6 +3881,7 @@ static void Got_AddPlayer(UINT8 **p, INT32 playernum)
 	{
 		// Clear player before joining, lest some things get set incorrectly
 		CL_ClearPlayer(newplayernum);
+		G_DestroyParty(newplayernum);
 
 		playeringame[newplayernum] = true;
 		G_AddPlayer(newplayernum);
@@ -3988,6 +4004,7 @@ static void Got_AddBot(UINT8 **p, INT32 playernum)
 	INT16 newplayernum;
 	UINT8 skinnum = 0;
 	UINT8 difficulty = DIFFICULTBOT;
+	botStyle_e style = BOT_STYLE_NORMAL;
 
 	if (playernum != serverplayer && !IsPlayerAdmin(playernum))
 	{
@@ -4003,37 +4020,9 @@ static void Got_AddBot(UINT8 **p, INT32 playernum)
 	newplayernum = READUINT8(*p);
 	skinnum = READUINT8(*p);
 	difficulty = READUINT8(*p);
+	style = READUINT8(*p);
 
-	CONS_Debug(DBG_NETPLAY, "addbot: %d\n", newplayernum);
-
-	// Clear player before joining, lest some things get set incorrectly
-	CL_ClearPlayer(newplayernum);
-
-	playeringame[newplayernum] = true;
-	G_AddPlayer(newplayernum);
-	if (newplayernum+1 > doomcom->numslots)
-		doomcom->numslots = (INT16)(newplayernum+1);
-
-	playernode[newplayernum] = servernode;
-
-	// this will permit unlocks
-	memcpy(&players[newplayernum].availabilities, R_GetSkinAvailabilities(false, true), MAXAVAILABILITY*sizeof(UINT8));
-
-	players[newplayernum].splitscreenindex = 0;
-	players[newplayernum].bot = true;
-	players[newplayernum].botvars.difficulty = difficulty;
-	players[newplayernum].lives = 9;
-
-	players[newplayernum].skincolor = skins[skinnum].prefcolor;
-	sprintf(player_names[newplayernum], "%s", skins[skinnum].realname);
-	SetPlayerSkinByNum(newplayernum, skinnum);
-
-	if (netgame)
-	{
-		HU_AddChatText(va("\x82*Bot %d has been added to the game", newplayernum+1), false);
-	}
-
-	LUA_HookInt(newplayernum, HOOK(PlayerJoin));
+	K_SetBot(newplayernum, skinnum, difficulty, style);
 }
 
 static boolean SV_AddWaitingPlayers(SINT8 node, UINT8 *availabilities, 
@@ -4043,7 +4032,7 @@ const char *name3, uint8_t *key3, UINT16 *pwr3,
 const char *name4, uint8_t *key4, UINT16 *pwr4)
 {
 	INT32 n, newplayernum, i;
-	UINT8 buf[4 + MAXPLAYERNAME + PUBKEYLENGTH + MAXAVAILABILITY];
+	UINT8 buf[4 + MAXPLAYERNAME + PUBKEYLENGTH + MAXAVAILABILITY + sizeof(((serverplayer_t *)0)->powerlevels)];
 	UINT8 *buf_p = buf;
 	boolean newplayer = false;
 
@@ -4221,10 +4210,10 @@ boolean SV_SpawnServer(void)
 		SINT8 node = 0;
 		for (; node < MAXNETNODES; node++)
 			result |= SV_AddWaitingPlayers(node, availabilitiesbuffer,
-				cv_playername[0].zstring, PR_GetLocalPlayerProfile(0)->public_key, SV_RetrieveStats(PR_GetLocalPlayerProfile(0)->public_key)->powerlevels,
-				cv_playername[1].zstring, PR_GetLocalPlayerProfile(1)->public_key, SV_RetrieveStats(PR_GetLocalPlayerProfile(1)->public_key)->powerlevels,
-				cv_playername[2].zstring, PR_GetLocalPlayerProfile(2)->public_key, SV_RetrieveStats(PR_GetLocalPlayerProfile(2)->public_key)->powerlevels,
-				cv_playername[3].zstring, PR_GetLocalPlayerProfile(3)->public_key, SV_RetrieveStats(PR_GetLocalPlayerProfile(3)->public_key)->powerlevels);
+				cv_playername[0].zstring, PR_GetLocalPlayerProfile(0)->public_key, SV_GetStatsByKey(PR_GetLocalPlayerProfile(0)->public_key)->powerlevels,
+				cv_playername[1].zstring, PR_GetLocalPlayerProfile(1)->public_key, SV_GetStatsByKey(PR_GetLocalPlayerProfile(1)->public_key)->powerlevels,
+				cv_playername[2].zstring, PR_GetLocalPlayerProfile(2)->public_key, SV_GetStatsByKey(PR_GetLocalPlayerProfile(2)->public_key)->powerlevels,
+				cv_playername[3].zstring, PR_GetLocalPlayerProfile(3)->public_key, SV_GetStatsByKey(PR_GetLocalPlayerProfile(3)->public_key)->powerlevels);
 	}
 	return result;
 #endif
@@ -4241,7 +4230,7 @@ void SV_StopServer(void)
 	gamestate = wipegamestate = GS_NULL;
 
 	for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
-		localtextcmd[i][0] = 0;
+		((UINT16*)localtextcmd[i])[0] = 0;
 
 	for (i = firstticstosend; i < firstticstosend + BACKUPTICS; i++)
 		D_Clearticcmd(i);
@@ -4292,7 +4281,7 @@ static size_t TotalTextCmdPerTic(tic_t tic)
 	{
 		UINT8 *textcmd = D_GetExistingTextcmd(tic, i);
 		if ((!i || playeringame[i]) && textcmd)
-			total += 2 + textcmd[0]; // "+2" for size and playernum
+			total += 3 + ((UINT16*)textcmd)[0]; // "+2" for size and playernum
 	}
 
 	return total;
@@ -4543,10 +4532,10 @@ static void HandleConnect(SINT8 node)
 			}
 
 			SV_AddWaitingPlayers(node, availabilitiesbuffer,
-				names[0], lastReceivedKey[node][0], SV_RetrieveStats(lastReceivedKey[node][0])->powerlevels,
-				names[1], lastReceivedKey[node][1], SV_RetrieveStats(lastReceivedKey[node][1])->powerlevels,
-				names[2], lastReceivedKey[node][2], SV_RetrieveStats(lastReceivedKey[node][2])->powerlevels,
-				names[3], lastReceivedKey[node][3], SV_RetrieveStats(lastReceivedKey[node][3])->powerlevels);
+				names[0], lastReceivedKey[node][0], SV_GetStatsByKey(lastReceivedKey[node][0])->powerlevels,
+				names[1], lastReceivedKey[node][1], SV_GetStatsByKey(lastReceivedKey[node][1])->powerlevels,
+				names[2], lastReceivedKey[node][2], SV_GetStatsByKey(lastReceivedKey[node][2])->powerlevels,
+				names[3], lastReceivedKey[node][3], SV_GetStatsByKey(lastReceivedKey[node][3])->powerlevels);
 			joindelay += cv_joindelay.value * TICRATE;
 			player_joining = true;
 		}
@@ -4566,7 +4555,7 @@ static void HandleShutdown(SINT8 node)
 	CL_Reset();
 	D_ClearState();
 	M_StartControlPanel();
-	M_StartMessage(M_GetText("Server has shutdown\n\nPress (B)\n"), NULL, MM_NOTHING);
+	M_StartMessage("Server Disconnected", M_GetText("Server has shutdown\n"), NULL, MM_NOTHING, NULL, "Back to Menu");
 }
 
 /** Called when a PT_NODETIMEOUT packet is received
@@ -4582,7 +4571,7 @@ static void HandleTimeout(SINT8 node)
 	CL_Reset();
 	D_ClearState();
 	M_StartControlPanel();
-	M_StartMessage(M_GetText("Server Timeout\n\nPress (B)\n"), NULL, MM_NOTHING);
+	M_StartMessage("Server Disconnected", M_GetText("Server Timeout\n"), NULL, MM_NOTHING, NULL, "Back to Menu");
 }
 
 // Called when a signature check fails and we suspect the server is playing games.
@@ -4599,7 +4588,7 @@ void HandleSigfail(const char *string)
 	CL_Reset();
 	D_ClearState();
 	M_StartControlPanel();
-	M_StartMessage(va(M_GetText("Signature check failed.\n(%s)\nPress (B)\n"), string), NULL, MM_NOTHING);
+	M_StartMessage("Server Disconnected", va(M_GetText("Signature check failed.\n(%s)\n"), string), NULL, MM_NOTHING, NULL, "Back to Menu");
 }
 
 /** Called when a PT_SERVERINFO packet is received
@@ -4797,14 +4786,16 @@ static void HandlePacketFromAwayNode(SINT8 node)
 
 				if (reason[1] == '|')
 				{
-					M_StartMessage(va("You have been %sfrom the server\n\nReason:\n%s",
+					M_StartMessage("Server Connection Failure",
+						va("You have been %sfrom the server\n\nReason:\n%s",
 						(reason[0] == 'B') ? "banned\n" : "temporarily\nkicked ",
-						reason+2), NULL, MM_NOTHING);
+						reason+2), NULL, MM_NOTHING, NULL, "Back to Menu");
 				}
 				else
 				{
-					M_StartMessage(va(M_GetText("Server refuses connection\n\nReason:\n%s"),
-						reason), NULL, MM_NOTHING);
+					M_StartMessage("Server Connection Failure",
+						va(M_GetText("Server refuses connection\n\nReason:\n%s"),
+						reason), NULL, MM_NOTHING, NULL, "Back to Menu");
 				}
 
 				free(reason);
@@ -4962,6 +4953,80 @@ static boolean CheckForSpeedHacks(UINT8 p)
 	}
 
 	return false;
+}
+
+static void PT_Say(int node)
+{
+	if (client)
+		return; // Only sent to servers, why are we receiving this?
+
+	say_pak say = netbuffer->u.say;
+
+	// Check for a spoofed source.
+	if (say.source == serverplayer)
+	{
+		// Servers aren't guaranteed to have a playernode, dedis exist.
+		if (node != servernode)
+			return;
+	}
+	else
+	{
+		if (playernode[say.source] != node)
+			return;
+	}
+
+	if ((cv_mute.value || say.flags & (HU_CSAY|HU_SHOUT)) && say.source != serverplayer && !(IsPlayerAdmin(say.source)))
+	{
+		CONS_Debug(DBG_NETPLAY,"Received SAY cmd from Player %d (%s), but cv_mute is on.\n", say.source+1, player_names[say.source]);
+		return;
+	}
+
+	if ((say.flags & HU_PRIVNOTICE) && !(IsPlayerAdmin(say.source)))
+	{
+		CONS_Debug(DBG_NETPLAY,"Received SAY cmd from Player %d (%s) with an illegal HU_PRIVNOTICE flag.\n", say.source+1, player_names[say.source]);
+		SendKick(say.source, KICK_MSG_CON_FAIL);
+		return;
+	}
+
+	{
+		size_t i;
+		const size_t j = strlen(say.message);
+		for (i = 0; i < j; i++)
+		{
+			if (say.message[i] & 0x80)
+			{
+				CONS_Alert(CONS_WARNING, M_GetText("Illegal say command received from %s containing invalid characters\n"), player_names[say.source]);
+				SendKick(say.source, KICK_MSG_CON_FAIL);
+				return;
+			}
+		}
+	}
+
+	if (stop_spamming[say.source] != 0 && consoleplayer != say.source && cv_chatspamprotection.value && !(say.flags & (HU_CSAY|HU_SHOUT)))
+	{
+		CONS_Debug(DBG_NETPLAY,"Received SAY cmd too quickly from Player %d (%s), assuming as spam and blocking message.\n", say.source+1, player_names[say.source]);
+		stop_spamming[say.source] = 4;
+		return;
+	}
+
+	stop_spamming[say.source] = 4; 
+
+	serverplayer_t *stats = SV_GetStatsByPlayerIndex(say.source);
+
+	if (stats->finishedrounds < (uint32_t)cv_gamestochat.value && !(consoleplayer == say.source || IsPlayerAdmin(say.source)))
+	{
+		CONS_Debug(DBG_NETPLAY,"Received SAY cmd from Player %d (%s), but they aren't permitted to chat yet.\n", say.source+1, player_names[say.source]);
+
+		char rejectmsg[256];
+		strlcpy(rejectmsg, va("Please finish in %d more games to use chat.", cv_gamestochat.value - stats->finishedrounds), 256);
+		if (IsPlayerGuest(say.source))
+			strlcpy(rejectmsg, va("GUESTs can't chat on this server. Rejoin with a profile to track your playtime."), 256);
+		SendServerNotice(say.source, rejectmsg);
+
+		return;
+	}
+
+	DoSayCommand(say.message, say.target, say.flags, say.source);
 }
 
 static char NodeToSplitPlayer(int node, int split)
@@ -5213,9 +5278,17 @@ static void HandlePacketFromPlayer(SINT8 node)
 				tic_t tic = maketic;
 				UINT8 *textcmd;
 
+				UINT16 incoming_size;
+
+				{
+					UINT8 *incoming = netbuffer->u.textcmd;
+
+					incoming_size = READUINT16(incoming);
+				}
+
 				// ignore if the textcmd has a reported size of zero
 				// this shouldn't be sent at all
-				if (!netbuffer->u.textcmd[0])
+				if (!incoming_size)
 				{
 					DEBFILE(va("GetPacket: Textcmd with size 0 detected! (node %u, player %d)\n",
 						node, netconsole));
@@ -5224,11 +5297,11 @@ static void HandlePacketFromPlayer(SINT8 node)
 				}
 
 				// ignore if the textcmd size var is actually larger than it should be
-				// BASEPACKETSIZE + 1 (for size) + textcmd[0] should == datalength
-				if (netbuffer->u.textcmd[0] > (size_t)doomcom->datalength-BASEPACKETSIZE-1)
+				// BASEPACKETSIZE + 2 (for size) + textcmd[0] should == datalength
+				if (incoming_size > (size_t)doomcom->datalength-BASEPACKETSIZE-2)
 				{
 					DEBFILE(va("GetPacket: Bad Textcmd packet size! (expected %d, actual %s, node %u, player %d)\n",
-					netbuffer->u.textcmd[0], sizeu1((size_t)doomcom->datalength-BASEPACKETSIZE-1),
+					incoming_size, sizeu1((size_t)doomcom->datalength-BASEPACKETSIZE-2),
 						node, netconsole));
 					Net_UnAcknowledgePacket(node);
 					break;
@@ -5237,12 +5310,12 @@ static void HandlePacketFromPlayer(SINT8 node)
 				// check if tic that we are making isn't too large else we cannot send it :(
 				// doomcom->numslots+1 "+1" since doomcom->numslots can change within this time and sent time
 				j = software_MAXPACKETLENGTH
-					- (netbuffer->u.textcmd[0]+2+BASESERVERTICSSIZE
+					- (incoming_size + 3 + BASESERVERTICSSIZE
 					+ (doomcom->numslots+1)*sizeof(ticcmd_t));
 
 				// search a tic that have enougth space in the ticcmd
 				while ((textcmd = D_GetExistingTextcmd(tic, netconsole)),
-					(TotalTextCmdPerTic(tic) > j || netbuffer->u.textcmd[0] + (textcmd ? textcmd[0] : 0) > MAXTEXTCMD)
+					(TotalTextCmdPerTic(tic) > j || incoming_size + (textcmd ? ((UINT16*)textcmd)[0] : 0) > MAXTEXTCMD)
 					&& tic < firstticstosend + BACKUPTICS)
 					tic++;
 
@@ -5259,16 +5332,18 @@ static void HandlePacketFromPlayer(SINT8 node)
 				if (!textcmd) textcmd = D_GetTextcmd(tic, netconsole);
 
 				DEBFILE(va("textcmd put in tic %u at position %d (player %d) ftts %u mk %u\n",
-					tic, textcmd[0]+1, netconsole, firstticstosend, maketic));
+					tic, ((UINT16*)textcmd)[0]+2, netconsole, firstticstosend, maketic));
 
-				M_Memcpy(&textcmd[textcmd[0]+1], netbuffer->u.textcmd+1, netbuffer->u.textcmd[0]);
-				textcmd[0] += (UINT8)netbuffer->u.textcmd[0];
+				M_Memcpy(&textcmd[((UINT16*)textcmd)[0]+2], netbuffer->u.textcmd+2, incoming_size);
+				((UINT16*)textcmd)[0] += incoming_size;
 			}
+			break;
+		case PT_SAY:
+			PT_Say(node);
 			break;
 		case PT_LOGIN:
 			if (client)
 				break;
-
 #ifndef NOMD5
 			if (doomcom->datalength < 16)/* ignore partial sends */
 				break;
@@ -5396,7 +5471,7 @@ static void HandlePacketFromPlayer(SINT8 node)
 					for (j = 0; j < numtxtpak; j++)
 					{
 						INT32 k = *txtpak++; // playernum
-						const size_t txtsize = txtpak[0]+1;
+						const size_t txtsize = ((UINT16*)txtpak)[0]+2;
 
 						if (i >= gametic) // Don't copy old net commands
 							M_Memcpy(D_GetTextcmd(i, k), txtpak, txtsize);
@@ -5884,6 +5959,30 @@ static void CL_SendClientCmd(void)
 		{
 			// Gentlemens' ping.
 			lagDelay = min(lowest_lag, MAXGENTLEMENDELAY);
+
+			// Is our connection worse than our current gentleman point?
+			// Make sure it stays that way for a bit before increasing delay levels.
+			if (lagDelay > reference_lag)
+			{
+				spike_time++;
+				if (spike_time >= GENTLEMANSMOOTHING)
+				{
+					// Okay, this is genuinely the new baseline delay.
+					reference_lag = lagDelay;
+					spike_time = 0;
+				}
+				else
+				{
+					// Just a temporary fluctuation, ignore it.
+					lagDelay = reference_lag;
+				}
+			}
+			else 
+			{
+				reference_lag = lagDelay; // Adjust quickly if the connection improves.
+				spike_time = 0;
+			}
+
 			if (server) // Clients have to wait for the gamestate to make it back. Servers don't!
 				lagDelay *= 2; // Simulate the HELLFUCK NIGHTMARE of a complete round trip.
 		}
@@ -5922,7 +6021,7 @@ static void CL_SendClientCmd(void)
 		// Send extra data if needed
 		for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
 		{
-			if (localtextcmd[i][0])
+			if (((UINT16*)localtextcmd[i])[0])
 			{
 				switch (i)
 				{
@@ -5940,10 +6039,10 @@ static void CL_SendClientCmd(void)
 						break;
 				}
 
-				M_Memcpy(netbuffer->u.textcmd, localtextcmd[i], localtextcmd[i][0]+1);
+				M_Memcpy(netbuffer->u.textcmd, localtextcmd[i], ((UINT16*)localtextcmd[i])[0]+2);
 				// All extra data have been sent
-				if (HSendPacket(servernode, true, 0, localtextcmd[i][0]+1)) // Send can fail...
-					localtextcmd[i][0] = 0;
+				if (HSendPacket(servernode, true, 0, ((UINT16*)localtextcmd[i])[0]+2)) // Send can fail...
+					((UINT16*)localtextcmd[i])[0] = 0;
 			}
 		}
 	}
@@ -6043,14 +6142,14 @@ static void SV_SendTics(void)
 				for (j = 0; j < MAXPLAYERS; j++)
 				{
 					UINT8 *textcmd = D_GetExistingTextcmd(i, j);
-					INT32 size = textcmd ? textcmd[0] : 0;
+					INT32 size = textcmd ? ((UINT16*)textcmd)[0] : 0;
 
 					if ((!j || playeringame[j]) && size)
 					{
 						(*ntextcmd)++;
 						WRITEUINT8(bufpos, j);
-						M_Memcpy(bufpos, textcmd, size + 1);
-						bufpos += size + 1;
+						WRITEUINT16(bufpos, ((UINT16*)textcmd)[0]);
+						WRITEMEM(bufpos, &textcmd[2], size);
 					}
 				}
 			}
@@ -6369,7 +6468,7 @@ static void UpdatePingTable(void)
 
 	if (server)
 	{
-		if (Playing() && !(gametime % 35))	// update once per second.
+		if (Playing() && !(gametime % 8)) // Value chosen based on _my vibes man_
 			PingUpdate();
 
 		fastest = 0;
@@ -6820,6 +6919,15 @@ void NetUpdate(void)
 		}
 	}
 
+	if (server)
+	{
+		for(i = 0; i < MAXPLAYERS; i++)
+		{
+			if (stop_spamming[i] > 0)
+				stop_spamming[i]--;
+		}
+	}
+
 	Net_AckTicker();
 	HandleNodeTimeouts();
 
@@ -6967,4 +7075,50 @@ void D_MD5PasswordPass(const UINT8 *buffer, size_t len, const char *salt, void *
 	// Yes, we intentionally md5 the ENTIRE buffer regardless of size...
 	md5_buffer(tmpbuf, 256, dest);
 #endif
+}
+
+// Want to say something? XD_SAY is server only, gotta request that they send one on our behalf
+void DoSayPacket(SINT8 target, UINT8 flags, UINT8 source, char *message)
+{
+	say_pak *packet = (void*)&netbuffer->u.say;
+	netbuffer->packettype = PT_SAY;
+
+	memset(packet->message, 0, sizeof(packet->message));
+	strcpy(packet->message, message);
+
+	packet->source = source;
+	packet->flags = flags;
+	packet->target = target;
+
+	HSendPacket(servernode, false, 0, sizeof(say_pak));
+}
+
+void DoSayPacketFromCommand(SINT8 target, size_t usedargs, UINT8 flags)
+{
+	char buf[2 + HU_MAXMSGLEN + 1];
+	size_t numwords, ix;
+	char *msg = &buf[3];
+	const size_t msgspace = sizeof buf - 2;
+
+	numwords = COM_Argc() - usedargs;
+	I_Assert(numwords > 0);
+
+	msg[0] = '\0';
+
+	for (ix = 0; ix < numwords; ix++)
+	{
+		if (ix > 0)
+			strlcat(msg, " ", msgspace);
+		strlcat(msg, COM_Argv(ix + usedargs), msgspace);
+	}
+
+	DoSayPacket(target, flags, consoleplayer, msg);
+}
+
+// This is meant to be targeted at player indices, not whatever the hell XD_SAY is doing with 1-indexed players.
+void SendServerNotice(SINT8 target, char *message)
+{
+	if (client)
+		return;
+	DoSayCommand(message, target + 1, HU_PRIVNOTICE, servernode); 
 }

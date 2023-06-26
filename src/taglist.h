@@ -59,7 +59,6 @@ extern size_t num_tags;
 
 extern taggroup_t* tags_sectors[];
 extern taggroup_t* tags_lines[];
-extern taggroup_t* tags_mapthings[];
 
 void Taggroup_Add (taggroup_t *garray[], const mtag_t tag, size_t id);
 void Taggroup_Remove (taggroup_t *garray[], const mtag_t tag, size_t id);

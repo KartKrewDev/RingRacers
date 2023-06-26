@@ -35,6 +35,7 @@
 #include "y_inter.h"
 #include "m_cond.h"
 #include "p_local.h"
+#include "p_saveg.h"
 #include "p_setup.h"
 #include "st_stuff.h" // hud hiding
 #include "fastcmp.h"
@@ -112,7 +113,7 @@ UINT8 K_GetPodiumPosition(player_t *player)
 		}
 
 		other = &players[i];
-		if (other->spectator == true)
+		if (other->bot == false && other->spectator == true)
 		{
 			continue;
 		}
@@ -247,20 +248,28 @@ boolean K_StartCeremony(void)
 		&& mapheaderinfo[podiumMapNum]
 		&& mapheaderinfo[podiumMapNum]->lumpnum != LUMPERROR)
 	{
-		P_SetTarget(&titlemapcam.mobj, NULL);
-
 		gamemap = podiumMapNum+1;
 
 		maptol = mapheaderinfo[gamemap-1]->typeoflevel;
 		globalweather = mapheaderinfo[gamemap-1]->weather;
 
+		if (savedata.lives > 0)
+		{
+			K_LoadGrandPrixSaveGame();
+			savedata.lives = 0;
+		}
+
 		// Make sure all of the GAME OVER'd players can spawn
 		// and be present for the podium
 		for (i = 0; i < MAXPLAYERS; i++)
 		{
-			if (playeringame[i] && !players[i].spectator && !players[i].bot)
+			if (playeringame[i])
 			{
-				players[i].lives = max(1, players[i].lives);
+				if (players[i].lives < 1)
+					players[i].lives = 1;
+
+				if (players[i].bot)
+					players[i].spectator = false;
 			}
 		}
 
@@ -289,9 +298,9 @@ void K_FinishCeremony(void)
 
 	podiumData.ranking = true;
 
-	// Play the noise now
-	M_UpdateUnlockablesAndExtraEmblems(true, true);
-	G_SaveGameData();
+	// Play the noise now (via G_UpdateVisited's concluding gamedata save)
+	prevmap = gamemap-1;
+	G_UpdateVisited();
 }
 
 /*--------------------------------------------------
@@ -301,7 +310,7 @@ void K_FinishCeremony(void)
 --------------------------------------------------*/
 void K_ResetCeremony(void)
 {
-	UINT8 i;
+	SINT8 i;
 
 	memset(&podiumData, 0, sizeof(struct podiumData_s));
 
@@ -314,6 +323,22 @@ void K_ResetCeremony(void)
 	podiumData.rank = grandprixinfo.rank;
 	podiumData.grade = K_CalculateGPGrade(&podiumData.rank);
 
+	// Set up music for podium.
+	{
+		if (podiumData.rank.position <= 1)
+			mapmusrng = 2;
+		else if (podiumData.rank.position == 2
+			|| podiumData.rank.position == 3)
+			mapmusrng = 1;
+		else
+			mapmusrng = 0;
+
+		while (mapmusrng >= max(1, mapheaderinfo[gamemap-1]->musname_size))
+			mapmusrng--;
+
+		mapmusflags |= MUSIC_RELOADRESET;
+	}
+
 	if (!grandprixinfo.cup)
 	{
 		return;
@@ -322,21 +347,42 @@ void K_ResetCeremony(void)
 	// Write grade, position, and emerald-having-ness for later sessions!
 	i = (grandprixinfo.masterbots) ? KARTGP_MASTER : grandprixinfo.gamespeed;
 
-	if ((grandprixinfo.cup->windata[i].best_placement == 0) // First run
-		|| (podiumData.rank.position < grandprixinfo.cup->windata[i].best_placement)) // Later, better run
+	// All results populate downwards in difficulty. This prevents someone
+	// who's just won on Normal from feeling obligated to complete Easy too.
+	for (; i >= 0; i--)
 	{
-		grandprixinfo.cup->windata[i].best_placement = podiumData.rank.position;
+		boolean anymerit = false;
 
-		// The following will not occour in unmodified builds, but pre-emptively sanitise gamedata if someone just changes MAXPLAYERS and calls it a day
-		if (grandprixinfo.cup->windata[i].best_placement > 0x0F)
-			grandprixinfo.cup->windata[i].best_placement = 0x0F;
+		if ((grandprixinfo.cup->windata[i].best_placement == 0) // First run
+			|| (podiumData.rank.position <= grandprixinfo.cup->windata[i].best_placement)) // Later, better run
+		{
+			grandprixinfo.cup->windata[i].best_placement = podiumData.rank.position;
+
+			// The following will not occur in unmodified builds, but pre-emptively sanitise gamedata if someone just changes MAXPLAYERS and calls it a day
+			if (grandprixinfo.cup->windata[i].best_placement > 0x0F)
+				grandprixinfo.cup->windata[i].best_placement = 0x0F;
+
+			anymerit = true;
+		}
+
+		if (podiumData.grade >= grandprixinfo.cup->windata[i].best_grade)
+		{
+			grandprixinfo.cup->windata[i].best_grade = podiumData.grade;
+			anymerit = true;
+		}
+
+		if (podiumData.rank.specialWon == true)
+		{
+			grandprixinfo.cup->windata[i].got_emerald = true;
+			anymerit = true;
+		}
+
+		if (anymerit == true)
+		{
+			grandprixinfo.cup->windata[i].best_skin.id = podiumData.rank.skin;
+			grandprixinfo.cup->windata[i].best_skin.unloaded = NULL;
+		}
 	}
-
-	if (podiumData.grade > grandprixinfo.cup->windata[i].best_grade)
-		grandprixinfo.cup->windata[i].best_grade = podiumData.grade;
-
-	if (i != KARTSPEED_EASY && podiumData.rank.specialWon == true)
-		grandprixinfo.cup->windata[i].got_emerald = true;
 
 	// Save before playing the noise
 	G_SaveGameData();
@@ -529,8 +575,21 @@ void K_CeremonyDrawer(void)
 				}
 				case 7:
 				{
+					const char *emeraldstr = "???";
+					if (gamedata->everseenspecial == true)
+					{
+						emeraldstr =
+							(grandprixinfo.gp == true
+							&& grandprixinfo.cup != NULL
+							&& grandprixinfo.cup->emeraldnum > 0)
+								? "EMERALD"
+								: "PRIZE";
+					}
+
 					V_DrawString(x, y, V_ALLOWLOWERCASE,
-						va("EMERALD: %s", (podiumData.rank.specialWon == true) ? "YES" : "NO")
+						va("%s: %s",
+							emeraldstr,
+							(podiumData.rank.specialWon == true) ? "YES" : "NO")
 					);
 					break;
 				}

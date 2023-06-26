@@ -225,6 +225,8 @@ static int player_get(lua_State *L)
 		lua_pushinteger(L, plr->positiondelay);
 	else if (fastcmp(field,"distancetofinish"))
 		lua_pushinteger(L, plr->distancetofinish);
+	else if (fastcmp(field,"distancetofinishprev"))
+		lua_pushinteger(L, plr->distancetofinishprev);
 	else if (fastcmp(field,"airtime"))
 		lua_pushinteger(L, plr->airtime);
 	else if (fastcmp(field,"flashing"))
@@ -247,6 +249,8 @@ static int player_get(lua_State *L)
 		lua_pushinteger(L, plr->justDI);
 	else if (fastcmp(field,"flipDI"))
 		lua_pushboolean(L, plr->flipDI);
+	else if (fastcmp(field,"markedfordeath"))
+		lua_pushboolean(L, plr->markedfordeath);
 	else if (fastcmp(field,"drift"))
 		lua_pushinteger(L, plr->drift);
 	else if (fastcmp(field,"driftcharge"))
@@ -317,6 +321,10 @@ static int player_get(lua_State *L)
 		lua_pushinteger(L, plr->sliptideZipDelay);
 	else if (fastcmp(field,"sliptideZipBoost"))
 		lua_pushinteger(L, plr->sliptideZipBoost);
+	else if (fastcmp(field,"instaShieldCooldown"))
+		lua_pushinteger(L, plr->instaShieldCooldown);
+	else if (fastcmp(field,"guardCooldown"))
+		lua_pushinteger(L, plr->guardCooldown);
 	/*
 	else if (fastcmp(field,"itemroulette"))
 		lua_pushinteger(L, plr->itemroulette);
@@ -500,6 +508,12 @@ static int player_get(lua_State *L)
 		lua_pushboolean(L, plr->bot);
 	else if (fastcmp(field,"jointime"))
 		lua_pushinteger(L, plr->jointime);
+	else if (fastcmp(field,"spectatorReentry"))
+		lua_pushinteger(L, plr->spectatorReentry);
+	else if (fastcmp(field,"griefValue"))
+		lua_pushinteger(L, plr->griefValue);
+	else if (fastcmp(field,"griefStrikes"))
+		lua_pushinteger(L, plr->griefStrikes);
 	else if (fastcmp(field,"splitscreenindex"))
 		lua_pushinteger(L, plr->splitscreenindex);
 #ifdef HWRENDER
@@ -611,6 +625,8 @@ static int player_set(lua_State *L)
 		plr->positiondelay = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"distancetofinish"))
 		return NOSET;
+	else if (fastcmp(field,"distancetofinishprev"))
+		return NOSET;
 	else if (fastcmp(field,"airtime"))
 		plr->airtime = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"flashing"))
@@ -633,6 +649,8 @@ static int player_set(lua_State *L)
 		plr->justDI = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"flipDI"))
 		plr->flipDI = luaL_checkboolean(L, 3);
+	else if (fastcmp(field,"markedfordeath"))
+		plr->markedfordeath = luaL_checkboolean(L, 3);
 	else if (fastcmp(field,"drift"))
 		plr->drift = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"driftcharge"))
@@ -703,6 +721,10 @@ static int player_set(lua_State *L)
 		plr->sliptideZipDelay = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"sliptideZipBoost"))
 		plr->sliptideZipBoost = luaL_checkinteger(L, 3);
+	else if (fastcmp(field,"instaShieldCooldown"))
+		plr->instaShieldCooldown = luaL_checkinteger(L, 3);		
+	else if (fastcmp(field,"guardCooldown"))
+		plr->guardCooldown = luaL_checkinteger(L, 3);
 	/*
 	else if (fastcmp(field,"itemroulette"))
 		plr->itemroulette = luaL_checkinteger(L, 3);
@@ -880,6 +902,12 @@ static int player_set(lua_State *L)
 		return NOSET;
 	else if (fastcmp(field,"jointime"))
 		return NOSET;
+	else if (fastcmp(field,"spectatorReentry"))
+		plr->spectatorReentry = (UINT32)luaL_checkinteger(L, 3);
+	else if (fastcmp(field,"griefValue"))
+		plr->griefValue = (UINT32)luaL_checkinteger(L, 3);
+	else if (fastcmp(field,"griefStrikes"))
+		plr->griefStrikes = (UINT8)luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"splitscreenindex"))
 		return NOSET;
 #ifdef HWRENDER

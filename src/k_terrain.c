@@ -455,6 +455,9 @@ void K_ProcessTerrainEffect(mobj_t *mo)
 		return;
 	}
 
+	// Milky Way road effect
+	player->outrun = terrain->outrun;
+
 	// Damage effects
 	if (terrain->damageType > 0)
 	{
@@ -955,6 +958,9 @@ static void K_SpawnFootstepParticle(mobj_t *mo, t_footstep_t *fs, tic_t timer)
 
 		See header file for description.
 --------------------------------------------------*/
+
+#define INVALIDFOOTSTEP (fs == NULL || fs->mobjType == MT_NULL || fs->frequency <= 0)
+
 void K_HandleFootstepParticles(mobj_t *mo)
 {
 	tic_t timer = leveltime;
@@ -966,30 +972,59 @@ void K_HandleFootstepParticles(mobj_t *mo)
 		return;
 	}
 
+	if (mo->player)
+	{
+		// Offset the timer.
+		timer += mo->player - players;
+	}
+
 	if (!(mo->flags & MF_APPLYTERRAIN) || mo->terrain == NULL)
 	{
 		// No TERRAIN effects for this object.
-		return;
+		goto offroadhandle;
 	}
 
 	fs = K_GetFootstepByIndex(mo->terrain->footstepID);
 
-	if (fs == NULL || fs->mobjType == MT_NULL || fs->frequency <= 0)
+	if (INVALIDFOOTSTEP)
 	{
 		// No particles to spawn.
-		return;
-	}
-
-	if (mo->player != NULL)
-	{
-		// Offset timer by player ID.
-		timer += mo->player - players;
+		goto offroadhandle;
 	}
 
 	// Idea for later: if different spawning styles are desired,
 	// we can put a switch case here!
 	K_SpawnFootstepParticle(mo, fs, timer);
+
+	return;
+
+offroadhandle:
+	// ...unless you're
+	// - A player and
+	if (mo->player == NULL)
+	{
+		return;
+	}
+
+	// - Being affected by offroad
+	if (mo->player->boostpower >= FRACUNIT)
+	{
+		return;
+	}
+
+	// in which case make default offroad footstep!
+	fs = K_GetFootstepByIndex(defaultOffroadFootstep);
+
+	if (INVALIDFOOTSTEP)
+	{
+		// No particles to spawn.
+		return;
+	}
+
+	K_SpawnFootstepParticle(mo, fs, timer);
 }
+
+#undef INVALIDFOOTSTEP
 
 /*--------------------------------------------------
 	static void K_CleanupTerrainOverlay(mobj_t *mo)
@@ -1655,6 +1690,10 @@ static void K_ParseTerrainParameter(size_t i, char *param, char *val)
 	else if (stricmp(param, "springStarColor") == 0)
 	{
 		terrain->springStarColor = get_number(val);
+	}
+	else if (stricmp(param, "outrun") == 0 || stricmp(param, "speedIncrease") == 0)
+	{
+		terrain->outrun = FLOAT_TO_FIXED(atof(val));
 	}
 	else if (stricmp(param, "floorClip") == 0)
 	{

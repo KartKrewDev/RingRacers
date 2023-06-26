@@ -528,7 +528,7 @@ static void P_DoFanAndGasJet(mobj_t *spring, mobj_t *object)
 			if (object->eflags & MFE_SPRUNG)
 				break;
 
-			if (spring->spawnpoint && spring->spawnpoint->args[1])
+			if (spring->args[1])
 			{
 				if (object->player)
 				{
@@ -741,7 +741,17 @@ static BlockItReturn_t PIT_CheckThing(mobj_t *thing)
 		return BMIT_ABORT; // stop moving
 	}
 
-	// SRB2kart 011617 - Colission[sic] code for kart items //{
+	// SRB2kart 011617 - Colission[sic] code for kart items //
+
+	if (tm.thing->type == MT_INSTAWHIP)
+	{
+		if (tm.thing->z > thing->z + thing->height)
+			return BMIT_CONTINUE; // overhead
+		if (tm.thing->z + tm.thing->height < thing->z)
+			return BMIT_CONTINUE; // underneath
+		K_InstaWhipCollide(tm.thing, thing);
+		return BMIT_CONTINUE;
+	}
 
 	if (thing->type == MT_SPB)
 	{
@@ -1671,6 +1681,8 @@ static BlockItReturn_t PIT_CheckThing(mobj_t *thing)
 // Adjusts tm.floorz and tm.ceilingz as lines are contacted - FOR CAMERA ONLY
 static BlockItReturn_t PIT_CheckCameraLine(line_t *ld)
 {
+	opening_t open = {0};
+
 	if (ld->polyobj && !(ld->polyobj->flags & POF_SOLID))
 		return BMIT_CONTINUE;
 
@@ -1704,25 +1716,25 @@ static BlockItReturn_t PIT_CheckCameraLine(line_t *ld)
 	}
 
 	// set openrange, opentop, openbottom
-	P_CameraLineOpening(ld);
+	P_CameraLineOpening(ld, &open);
 
 	// adjust floor / ceiling heights
-	if (opentop < tm.ceilingz)
+	if (open.ceiling < tm.ceilingz)
 	{
-		tm.ceilingz = opentop;
+		tm.ceilingz = open.ceiling;
 		tm.ceilingline = ld;
 	}
 
-	if (openbottom > tm.floorz)
+	if (open.floor > tm.floorz)
 	{
-		tm.floorz = openbottom;
+		tm.floorz = open.floor;
 	}
 
-	if (highceiling > tm.drpoffceilz)
-		tm.drpoffceilz = highceiling;
+	if (open.highceiling > tm.drpoffceilz)
+		tm.drpoffceilz = open.highceiling;
 
-	if (lowfloor < tm.dropoffz)
-		tm.dropoffz = lowfloor;
+	if (open.lowfloor < tm.dropoffz)
+		tm.dropoffz = open.lowfloor;
 
 	return BMIT_CONTINUE;
 }
@@ -1750,11 +1762,11 @@ boolean P_IsLineBlocking(const line_t *ld, const mobj_t *thing)
 
 		if (thing->player)
 		{
-			return (ld->flags & ML_BLOCKPLAYERS);
+			return ((ld->flags & ML_BLOCKPLAYERS) == ML_BLOCKPLAYERS);
 		}
 		else if (thing->flags & (MF_ENEMY|MF_BOSS))
 		{
-			return (ld->flags & ML_BLOCKMONSTERS);
+			return ((ld->flags & ML_BLOCKMONSTERS) == ML_BLOCKMONSTERS);
 		}
 	}
 
@@ -1773,6 +1785,7 @@ boolean P_IsLineTripWire(const line_t *ld)
 static BlockItReturn_t PIT_CheckLine(line_t *ld)
 {
 	const fixed_t thingtop = tm.thing->z + tm.thing->height;
+	opening_t open = {0};
 
 	if (ld->polyobj && !(ld->polyobj->flags & POF_SOLID))
 		return BMIT_CONTINUE;
@@ -1845,41 +1858,41 @@ static BlockItReturn_t PIT_CheckLine(line_t *ld)
 		return BMIT_ABORT;
 
 	// set openrange, opentop, openbottom
-	P_LineOpening(ld, tm.thing);
+	P_LineOpening(ld, tm.thing, &open);
 
 	// adjust floor / ceiling heights
-	if (opentop < tm.ceilingz)
+	if (open.ceiling < tm.ceilingz)
 	{
-		tm.ceilingz = opentop;
+		tm.ceilingz = open.ceiling;
 		tm.ceilingline = ld;
-		tm.ceilingrover = openceilingrover;
-		tm.ceilingslope = opentopslope;
-		tm.ceilingpic = opentoppic;
-		tm.ceilingstep = openceilingstep;
+		tm.ceilingrover = open.ceilingrover;
+		tm.ceilingslope = open.ceilingslope;
+		tm.ceilingpic = open.ceilingpic;
+		tm.ceilingstep = open.ceilingstep;
 		if (thingtop == tm.thing->ceilingz)
 		{
-			tm.thing->ceilingdrop = openceilingdrop;
+			tm.thing->ceilingdrop = open.ceilingdrop;
 		}
 	}
 
-	if (openbottom > tm.floorz)
+	if (open.floor > tm.floorz)
 	{
-		tm.floorz = openbottom;
-		tm.floorrover = openfloorrover;
-		tm.floorslope = openbottomslope;
-		tm.floorpic = openbottompic;
-		tm.floorstep = openfloorstep;
+		tm.floorz = open.floor;
+		tm.floorrover = open.floorrover;
+		tm.floorslope = open.floorslope;
+		tm.floorpic = open.floorpic;
+		tm.floorstep = open.floorstep;
 		if (tm.thing->z == tm.thing->floorz)
 		{
-			tm.thing->floordrop = openfloordrop;
+			tm.thing->floordrop = open.floordrop;
 		}
 	}
 
-	if (highceiling > tm.drpoffceilz)
-		tm.drpoffceilz = highceiling;
+	if (open.highceiling > tm.drpoffceilz)
+		tm.drpoffceilz = open.highceiling;
 
-	if (lowfloor < tm.dropoffz)
-		tm.dropoffz = lowfloor;
+	if (open.lowfloor < tm.dropoffz)
+		tm.dropoffz = open.lowfloor;
 
 	// we've crossed the line
 	if (P_SpecialIsLinedefCrossType(ld))
@@ -3462,6 +3475,7 @@ static void P_HitBounceLine(line_t *ld)
 static boolean PTR_SlideCameraTraverse(intercept_t *in)
 {
 	line_t *li;
+	opening_t open = {0};
 
 	I_Assert(in->isaline);
 
@@ -3476,15 +3490,15 @@ static boolean PTR_SlideCameraTraverse(intercept_t *in)
 	}
 
 	// set openrange, opentop, openbottom
-	P_CameraLineOpening(li);
+	P_CameraLineOpening(li, &open);
 
-	if (openrange < mapcampointer->height)
+	if (open.range < mapcampointer->height)
 		goto isblocking; // doesn't fit
 
-	if (opentop - mapcampointer->z < mapcampointer->height)
+	if (open.ceiling - mapcampointer->z < mapcampointer->height)
 		goto isblocking; // mobj is too high
 
-	if (openbottom - mapcampointer->z > 0) // We don't want to make the camera step up.
+	if (open.floor - mapcampointer->z > 0) // We don't want to make the camera step up.
 		goto isblocking; // too big a step up
 
 	// this line doesn't block movement
@@ -3509,6 +3523,8 @@ isblocking:
 /*
 static boolean PTR_LineIsBlocking(line_t *li)
 {
+	opening_t open = {0};
+
 	// one-sided linedefs are always solid to sliding movement.
 	if (!li->backsector)
 		return !P_PointOnLineSide(slidemo->x, slidemo->y, li);
@@ -3517,15 +3533,15 @@ static boolean PTR_LineIsBlocking(line_t *li)
 		return true;
 
 	// set openrange, opentop, openbottom
-	P_LineOpening(li, slidemo);
+	P_LineOpening(li, slidemo, &open);
 
-	if (openrange < slidemo->height)
+	if (open.range < slidemo->height)
 		return true; // doesn't fit
 
-	if (opentop - slidemo->z < slidemo->height)
+	if (open.ceiling - slidemo->z < slidemo->height)
 		return true; // mobj is too high
 
-	if (openbottom - slidemo->z > P_GetThingStepUp(slidemo, slidemo->x, slidemo->y))
+	if (open.floor - slidemo->z > P_GetThingStepUp(slidemo, slidemo->x, slidemo->y))
 		return true; // too big a step up
 
 	return false;

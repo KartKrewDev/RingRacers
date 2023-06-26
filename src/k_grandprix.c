@@ -17,6 +17,7 @@
 #include "g_game.h"
 #include "k_bot.h"
 #include "k_kart.h"
+#include "k_podium.h"
 #include "m_random.h"
 #include "p_local.h"
 #include "r_things.h"
@@ -185,6 +186,13 @@ void K_InitGrandPrixBots(void)
 	{
 		if (playeringame[i])
 		{
+			if (players[i].bot == true)
+			{
+				// Remove existing bots.
+				CL_RemovePlayer(i, KR_LEAVE);
+				continue;
+			}
+
 			if (numplayers < MAXSPLITSCREENPLAYERS && !players[i].spectator)
 			{
 				competitors[numplayers] = i;
@@ -226,11 +234,15 @@ void K_InitGrandPrixBots(void)
 	for (i = 0; i < usableskins; i++)
 	{
 		if (!(grabskins[i] == MAXSKINS || !R_SkinUsable(-1, grabskins[i], true)))
+		{
 			continue;
+		}
+
 		while (usableskins > i && (grabskins[usableskins] == MAXSKINS || !R_SkinUsable(-1, grabskins[usableskins], true)))
 		{
 			usableskins--;
 		}
+
 		grabskins[i] = grabskins[usableskins];
 		grabskins[usableskins] = MAXSKINS;
 	}
@@ -244,7 +256,7 @@ void K_InitGrandPrixBots(void)
 
 			if (usableskins > 0)
 			{
-				UINT8 index = M_RandomKey(usableskins);
+				UINT8 index = P_RandomKey(PR_BOTS, usableskins);
 				skinnum = grabskins[index];
 				grabskins[index] = grabskins[--usableskins];
 			}
@@ -255,10 +267,48 @@ void K_InitGrandPrixBots(void)
 
 	for (i = 0; i < wantedbots; i++)
 	{
-		if (!K_AddBot(botskinlist[i], difficultylevels[i], &newplayernum))
+		if (!K_AddBot(botskinlist[i], difficultylevels[i], BOT_STYLE_NORMAL, &newplayernum))
 		{
 			break;
 		}
+	}
+}
+
+/*--------------------------------------------------
+	void K_LoadGrandPrixSaveGame(void)
+
+		See header file for description.
+---------------------------------------------------*/
+
+void K_LoadGrandPrixSaveGame(void)
+{
+	if (splitscreen)
+	{
+		// You're not doing splitscreen runs at GDQ.
+		// We are literally 14 days from code freeze
+		// and I am not accomodating weird setup this
+		// second in my last minute QoL feature.
+		// I will *actually* fight you
+		return;
+	}
+
+	players[consoleplayer].lives = savedata.lives;
+	players[consoleplayer].score = savedata.score;
+	players[consoleplayer].totalring = savedata.totalring;
+
+	UINT8 i;
+
+	for (i = 0; i < MAXPLAYERS; i++)
+	{
+		if (savedata.bots[i].valid == false)
+			continue;
+
+		K_SetBot(i, savedata.bots[i].skin, savedata.bots[i].difficulty, BOT_STYLE_NORMAL);
+
+		players[i].botvars.rival = savedata.bots[i].rival;
+		players[i].score = savedata.bots[i].score;
+
+		players[i].spectator = !(gametyperules & GTR_BOTS) || (grandprixinfo.eventmode != GPEVENT_NONE);
 	}
 }
 
@@ -325,6 +375,11 @@ void K_UpdateGrandPrixBots(void)
 	player_t *newrival = NULL;
 	UINT16 newrivalscore = 0;
 	UINT8 i;
+
+	if (K_PodiumSequence() == true)
+	{
+		return;
+	}
 
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
@@ -469,8 +524,22 @@ static UINT8 K_BotExpectedStanding(player_t *bot)
 --------------------------------------------------*/
 void K_IncreaseBotDifficulty(player_t *bot)
 {
-	UINT8 expectedstanding;
-	INT16 standingdiff;
+	UINT8 playerCount = 0;
+	UINT8 wonCount = 0;
+
+	UINT8 humanThatBeatUs = 0;
+	INT16 beatenDelta = 0;
+
+	UINT8 winnerHuman = UINT8_MAX;
+	INT16 winnerDelta = 0;
+
+	UINT8 statusQuo = 1;
+	INT16 disruptDelta = 0;
+
+	INT16 increase = 1;
+	size_t i = SIZE_MAX;
+
+	bot->botvars.diffincrease = 0;
 
 	if (bot->botvars.difficulty >= MAXBOTDIFFICULTY)
 	{
@@ -478,33 +547,65 @@ void K_IncreaseBotDifficulty(player_t *bot)
 		return;
 	}
 
-	// Increment bot difficulty based on what position you were meant to come in!
-	expectedstanding = K_BotExpectedStanding(bot);
-	standingdiff = expectedstanding - bot->position;
+	// Increment bot difficulty based on
+	// how much they were beaten by a player!
 
-	if (standingdiff >= -2)
+	// Find the worst-placing player that still beat us.
+	for (i = 0; i < MAXPLAYERS; i++)
 	{
-		UINT8 increase;
+		player_t *other = NULL;
 
-		if (standingdiff > 5)
+		if (playeringame[i] == false)
 		{
-			increase = 3;
-		}
-		else if (standingdiff > 2)
-		{
-			increase = 2;
-		}
-		else
-		{
-			increase = 1;
+			continue;
 		}
 
-		bot->botvars.diffincrease = increase;
+		other = &players[i];
+		if (other->spectator == true)
+		{
+			continue;
+		}
+
+		playerCount++;
+		if (other->bot == true)
+		{
+			continue;
+		}
+
+		if (other->position <= bot->position && other->position > humanThatBeatUs)
+		{
+			humanThatBeatUs = other->position;
+		}
+
+		if (other->position < winnerHuman)
+		{
+			winnerHuman = other->position;
+		}
 	}
-	else
+
+	wonCount = playerCount / 2;
+	if (playerCount & 1)
 	{
-		bot->botvars.diffincrease = 0;
+		// Round up
+		wonCount++;
 	}
+
+	statusQuo = K_BotExpectedStanding(bot);
+
+	// How many levels they gain depends on how hard they beat us,
+	// and how much the status quo was disturbed.
+	beatenDelta = bot->position - humanThatBeatUs;
+	winnerDelta = wonCount - winnerHuman;
+	disruptDelta = abs(statusQuo - bot->position);
+
+	increase = (beatenDelta + winnerDelta + disruptDelta - 2) / 3;
+	if (increase <= 0)
+	{
+		// No increase...
+		return;
+	}
+
+	bot->botvars.diffincrease = increase;
 }
 
 /*--------------------------------------------------
@@ -765,10 +866,13 @@ void K_PlayerFinishGrandPrix(player_t *player)
 	grandprixinfo.wonround = true;
 
 	// Increase your total rings
-	if (RINGTOTAL(player) > 0)
+	INT32 ringtotal = RINGTOTAL(player);
+	if (ringtotal > 0)
 	{
-		player->totalring += RINGTOTAL(player);
-		grandprixinfo.rank.rings += RINGTOTAL(player);
+		if (ringtotal > 20)
+			ringtotal = 20;
+		player->totalring += ringtotal;
+		grandprixinfo.rank.rings += ringtotal;
 	}
 
 	if (grandprixinfo.eventmode == GPEVENT_NONE)

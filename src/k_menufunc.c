@@ -159,10 +159,11 @@ boolean M_NextOpt(void)
 		if (itemOn + 1 > currentMenu->numitems - 1)
 		{
 			// Prevent looparound here
-			// If you're going to add any extra exceptions, DON'T.
-			// Add a "don't loop" flag to the menu_t struct instead.
-			if (currentMenu == &MISC_AddonsDef)
+			if (currentMenu->behaviourflags & MBF_NOLOOPENTRIES)
+			{
+				itemOn = oldItemOn;
 				return false;
+			}
 			itemOn = 0;
 		}
 		else
@@ -186,10 +187,11 @@ boolean M_PrevOpt(void)
 		if (!itemOn)
 		{
 			// Prevent looparound here
-			// If you're going to add any extra exceptions, DON'T.
-			// Add a "don't loop" flag to the menu_t struct instead.
-			if (currentMenu == &MISC_AddonsDef)
+			if (currentMenu->behaviourflags & MBF_NOLOOPENTRIES)
+			{
+				itemOn = oldItemOn;
 				return false;
+			}
 			itemOn = currentMenu->numitems - 1;
 		}
 		else
@@ -223,7 +225,7 @@ static boolean M_GamestateCanOpenMenu(void)
 //
 boolean M_Responder(event_t *ev)
 {
-	menuKey = -1;
+	boolean menuKeyJustChanged = false;
 
 	if (dedicated
 		|| (demo.playback && demo.title)
@@ -255,10 +257,11 @@ boolean M_Responder(event_t *ev)
 		D_StartTitle();
 	}
 
-	if (ev->type == ev_keydown && ev->data1 < NUMKEYS)
+	if (ev->type == ev_keydown && ev->data1 > 0 && ev->data1 < NUMKEYS)
 	{
 		// Record keyboard presses
 		menuKey = ev->data1;
+		menuKeyJustChanged = true;
 	}
 
 	// Profiles: Control mapping.
@@ -270,12 +273,12 @@ boolean M_Responder(event_t *ev)
 	}
 
 	// event handler for MM_EVENTHANDLER
-	if (menumessage.active && menumessage.flags == MM_EVENTHANDLER && menumessage.routine)
+	/*if (menumessage.active && menumessage.flags == MM_EVENTHANDLER && menumessage.routine)
 	{
 		CONS_Printf("MM_EVENTHANDLER...\n");
 		menumessage.eroutine(ev); // What a terrible hack...
 		return true;
-	}
+	}*/
 
 	// Handle menu handling in-game.
 	if (menuactive == false)
@@ -354,7 +357,7 @@ boolean M_Responder(event_t *ev)
 	}
 
 	// Typing for CV_IT_STRING
-	if (menutyping.active && !menutyping.menutypingclose && menutyping.keyboardtyping)
+	if (menuKeyJustChanged && menutyping.active && !menutyping.menutypingclose && menutyping.keyboardtyping)
 	{
 		M_ChangeStringCvar(menuKey);
 	}
@@ -369,17 +372,18 @@ boolean M_Responder(event_t *ev)
 void M_PlayMenuJam(void)
 {
 	menu_t *refMenu = (menuactive ? currentMenu : restoreMenu);
-	static boolean loserclubpermitted = false;
-	boolean loserclub = (loserclubpermitted && (gamedata->musicflags & GDMUSIC_LOSERCLUB));
+	static boolean musicstatepermitted = false;
 
 	if (challengesmenu.pending)
 	{
 		S_StopMusic();
 		S_StopMusicCredit();
 
-		loserclubpermitted = true;
+		musicstatepermitted = true;
 		return;
 	}
+
+	gdmusic_t override = musicstatepermitted ? gamedata->musicstate : 0;
 
 	if (Playing() || soundtest.playing)
 		return;
@@ -392,7 +396,7 @@ void M_PlayMenuJam(void)
 			S_StopMusicCredit();
 			return;
 		}
-		else if (!loserclub)
+		else if (override == 0)
 		{
 			if (NotCurrentlyPlaying(refMenu->music))
 			{
@@ -403,12 +407,21 @@ void M_PlayMenuJam(void)
 		}
 	}
 
-	if (loserclub)
+	if (override != 0)
 	{
-		if (refMenu != NULL && NotCurrentlyPlaying("LOSERC"))
+		// See also gdmusic_t
+		const char* overridetotrack[GDMUSIC_MAX-1] = {
+			"KEYGEN",
+			"LOSERC",
+		};
+		
+		if (refMenu != NULL && NotCurrentlyPlaying(overridetotrack[override - 1]))
 		{
-			S_ChangeMusicInternal("LOSERC", true);
+			S_ChangeMusicInternal(overridetotrack[override - 1], true);
 			S_ShowMusicCredit();
+
+			if (override < GDMUSIC_KEEPONMENU)
+				gamedata->musicstate = GDMUSIC_NONE;
 		}
 
 		return;
@@ -481,20 +494,15 @@ menu_t *M_SpecificMenuRestore(menu_t *torestore)
 		M_SetupRaceMenu(-1);
 		M_SetupDifficultyOptions((cupgrid.grandprix == false));
 	}
-	else if (torestore == &EXTRAS_ReplayHutDef)
-	{
-		// Handle modifications to the folder while playing
-		M_ReplayHut(0);
-
-		if (demo.inreplayhut == false)
-		{
-			torestore = &EXTRAS_MainDef;
-		}
-	}
 	else if (torestore == &PLAY_MP_OptSelectDef)
 	{
 		// Ticker init
 		M_MPOptSelectInit(-1);
+	}
+	else if (torestore == &EXTRAS_MainDef)
+	{
+		// Disable or enable certain options
+		M_InitExtras(-1);
 	}
 
 	// One last catch.
@@ -531,6 +539,21 @@ void M_StartControlPanel(void)
 		// (We can change this timer later when extra animation is added.)
 		if (finalecount < 1)
 			return;
+
+		if (menumessage.active)
+		{
+			if (!menumessage.closing && menumessage.fadetimer == 9)
+			{
+				// The following doesn't work with MM_YESNO.
+				// However, because there's no guarantee a profile
+				// is selected or controls set up to our liking,
+				// we can't call M_HandleMenuMessage.
+
+				M_StopMessage(MA_NONE);
+			}
+
+			return;
+		}
 	}
 
 	menuactive = true;
@@ -541,8 +564,6 @@ void M_StartControlPanel(void)
 	}
 	else if (!Playing())
 	{
-		M_StopMessage(0); // Doesn't work with MM_YESNO or MM_EVENTHANDLER... but good enough to get the game as it is currently functional again
-
 		if (gamestate != GS_MENU)
 		{
 			G_SetGamestate(GS_MENU);
@@ -574,6 +595,9 @@ void M_StartControlPanel(void)
 			currentMenu->lastOn = 0;
 
 			CV_StealthSetValue(&cv_currprofile, -1); // Make sure to reset that as it is set by PR_ApplyProfile which we kind of hack together to force it.
+
+			// Ambient ocean sounds
+			S_ChangeMusicInternal("_OCEAN", true);
 		}
 		else
 		{
@@ -581,9 +605,9 @@ void M_StartControlPanel(void)
 				restoreMenu = &MainDef;
 			currentMenu = M_SpecificMenuRestore(M_InterruptMenuWithChallenges(restoreMenu));
 			restoreMenu = NULL;
-		}
 
-		M_PlayMenuJam();
+			M_PlayMenuJam();
+		}
 	}
 	else
 	{
@@ -743,9 +767,12 @@ void M_SetMenuDelay(UINT8 i)
 	}
 }
 
-void M_UpdateMenuCMD(UINT8 i)
+void M_UpdateMenuCMD(UINT8 i, boolean bailrequired)
 {
 	UINT8 mp = max(1, setup_numplayers);
+
+	menucmd[i].prev_dpad_ud = menucmd[i].dpad_ud;
+	menucmd[i].prev_dpad_lr = menucmd[i].dpad_lr;
 
 	menucmd[i].dpad_ud = 0;
 	menucmd[i].dpad_lr = 0;
@@ -778,6 +805,11 @@ void M_UpdateMenuCMD(UINT8 i)
 
 	if (G_PlayerInputDown(i, gc_start, mp)) { menucmd[i].buttons |= MBT_START; }
 
+	if (bailrequired && i == 0)
+	{
+		if (G_GetDeviceGameKeyDownArray(0)[KEY_ESCAPE]) { menucmd[i].buttons |= MBT_B; }
+	}
+
 	if (menucmd[i].dpad_ud == 0 && menucmd[i].dpad_lr == 0 && menucmd[i].buttons == 0)
 	{
 		// Reset delay count with no buttons.
@@ -793,12 +825,12 @@ boolean M_MenuButtonPressed(UINT8 pid, UINT32 bt)
 		return false;
 	}
 
-	return (menucmd[pid].buttons & bt);
+	return !!(menucmd[pid].buttons & bt);
 }
 
 boolean M_MenuButtonHeld(UINT8 pid, UINT32 bt)
 {
-	return (menucmd[pid].buttons & bt);
+	return !!(menucmd[pid].buttons & bt);
 }
 
 // Returns true if we press the confirmation button
@@ -840,6 +872,9 @@ static void M_HandleMenuInput(void)
 	void (*routine)(INT32 choice); // for some casting problem
 	UINT8 pid = 0; // todo: Add ability for any splitscreen player to bring up the menu.
 	SINT8 lr = 0, ud = 0;
+	INT32 thisMenuKey = menuKey;
+
+	menuKey = -1;
 
 	if (menuactive == false)
 	{
@@ -856,7 +891,7 @@ static void M_HandleMenuInput(void)
 	// Typing for CV_IT_STRING
 	if (menutyping.active)
 	{
-		M_MenuTypingInput(menuKey);
+		M_MenuTypingInput(thisMenuKey);
 		return;
 	}
 
@@ -868,7 +903,7 @@ static void M_HandleMenuInput(void)
 	// Handle menu-specific input handling. If this returns true, we skip regular input handling.
 	if (currentMenu->inputroutine)
 	{
-		if (currentMenu->inputroutine(menuKey))
+		if (currentMenu->inputroutine(thisMenuKey))
 		{
 			return;
 		}
@@ -894,7 +929,7 @@ static void M_HandleMenuInput(void)
 			// If we're hovering over a IT_CV_STRING option, pressing A/X opens the typing submenu
 			if (M_MenuConfirmPressed(pid))
 			{
-				menutyping.keyboardtyping = menuKey != 0 ? true : false;	// If we entered this menu by pressing a menu Key, default to keyboard typing, otherwise use controller.
+				menutyping.keyboardtyping = thisMenuKey != -1 ? true : false;	// If we entered this menu by pressing a menu Key, default to keyboard typing, otherwise use controller.
 				menutyping.active = true;
 				menutyping.menutypingclose = false;
 				return;
@@ -977,7 +1012,7 @@ static void M_HandleMenuInput(void)
 			{
 				if (((currentMenu->menuitems[itemOn].status & IT_CALLTYPE) & IT_CALL_NOTMODIFIED) && majormods)
 				{
-					M_StartMessage(M_GetText("This cannot be done with complex addons\nor in a cheated game.\n\nPress (B)"), NULL, MM_NOTHING);
+					M_StartMessage("Modified Game", M_GetText("This cannot be done with complex addons\nor in a cheated game."), NULL, MM_NOTHING, NULL, NULL);
 					return;
 				}
 			}
@@ -1189,6 +1224,8 @@ void M_Init(void)
 	CV_RegisterVar(&cv_dummyspbattack);
 
 	CV_RegisterVar(&cv_dummyaddonsearch);
+
+	CV_RegisterVar(&cv_dummyextraspassword);
 
 	M_UpdateMenuBGImage(true);
 }

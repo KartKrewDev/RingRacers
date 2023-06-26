@@ -38,6 +38,7 @@
 #include "m_cond.h" // netUnlocked
 
 // SRB2Kart
+#include "k_grandprix.h"
 #include "k_battle.h"
 #include "k_pwrlv.h"
 #include "k_terrain.h"
@@ -47,6 +48,7 @@
 #include "k_zvote.h"
 
 savedata_t savedata;
+savedata_cup_t cupsavedata;
 
 // Block UINT32s to attempt to ensure that the correct data is
 // being sent and received
@@ -74,31 +76,114 @@ typedef enum
 	HOVERHYUDORO = 0x0020,
 	STUMBLE = 0x0040,
 	SLIPTIDEZIP = 0x0080,
-	RINGSHOOTER = 0x0100
+	RINGSHOOTER = 0x0100,
+	WHIP = 0x0200,
+	HAND = 0x0400,
 } player_saveflags;
 
 static inline void P_ArchivePlayer(savebuffer_t *save)
 {
 	const player_t *player = &players[consoleplayer];
-	INT16 skininfo = player->skin;
-	SINT8 pllives = player->lives;
-	if (pllives < startinglivesbalance[numgameovers]) // Bump up to 3 lives if the player
-		pllives = startinglivesbalance[numgameovers]; // has less than that.
 
-	WRITEUINT16(save->p, skininfo);
-	WRITEUINT8(save->p, numgameovers);
-	WRITESINT8(save->p, pllives);
+	// Prevent an exploit from occuring.
+	WRITESINT8(save->p, (player->lives - 1));
 	WRITEUINT32(save->p, player->score);
+	WRITEUINT16(save->p, player->totalring);
+
+	INT32 skin = player->skin;
+	if (skin > numskins)
+		skin = 0;
+
+	WRITESTRINGN(save->p, skins[skin].name, SKINNAMESIZE);
+
+	if (player->followerskin < 0 || player->followerskin >= numfollowers)
+		WRITESTRINGN(save->p, "None", SKINNAMESIZE);
+	else
+		WRITESTRINGN(save->p, followers[player->followerskin].name, SKINNAMESIZE);
+
+	WRITEUINT16(save->p, player->skincolor);
+	WRITEUINT16(save->p, player->followercolor);
+
+	UINT8 i;
+
+	for (i = 0; i < MAXPLAYERS; i++)
+	{
+		if (playeringame[i] == false)
+			continue;
+		if (players[i].bot == false)
+			continue;
+
+		WRITEUINT8(save->p, i);
+
+		skin = players[i].skin;
+		if (skin > numskins)
+			skin = 0;
+
+		WRITESTRINGN(save->p, skins[skin].name, SKINNAMESIZE);
+
+		WRITEUINT8(save->p, players[i].botvars.difficulty);
+		WRITEUINT8(save->p, (UINT8)players[i].botvars.rival);
+
+		WRITEUINT32(save->p, players[i].score);
+	}
+
+	WRITEUINT8(save->p, 0xFE);
 }
 
-static inline void P_UnArchivePlayer(savebuffer_t *save)
+static boolean P_UnArchivePlayer(savebuffer_t *save)
 {
-	INT16 skininfo = READUINT16(save->p);
-	savedata.skin = skininfo;
-
-	savedata.numgameovers = READUINT8(save->p);
 	savedata.lives = READSINT8(save->p);
 	savedata.score = READUINT32(save->p);
+	savedata.totalring = READUINT16(save->p);
+
+	char skinname[SKINNAMESIZE+1];
+	INT32 skin;
+
+	READSTRINGN(save->p, skinname, SKINNAMESIZE);
+	skin = R_SkinAvailable(skinname);
+
+	if (skin == -1)
+	{
+		CONS_Alert(CONS_ERROR, "P_UnArchivePlayer: Character \"%s\" is not currently loaded.\n", skinname);
+		return false;
+	}
+
+	savedata.skin = skin;
+
+	READSTRINGN(save->p, skinname, SKINNAMESIZE);
+	savedata.followerskin = K_FollowerAvailable(skinname);
+
+	savedata.skincolor = READUINT16(save->p);
+	savedata.followercolor = READUINT16(save->p);
+
+	memset(&savedata.bots, 0, sizeof(savedata.bots));
+
+	UINT8 pid;
+	const UINT8 defaultbotskin = R_BotDefaultSkin();
+
+	while ((pid = READUINT8(save->p)) < MAXPLAYERS)
+	{
+		savedata.bots[pid].valid = true;
+
+		READSTRINGN(save->p, skinname, SKINNAMESIZE);
+		skin = R_SkinAvailable(skinname);
+
+		if (skin == -1)
+		{
+			// It is not worth destroying an otherwise good savedata over extra added skins.
+			// Let's just say they didn't show up to the rematch, so some Eggrobos subbed in.
+			CONS_Alert(CONS_WARNING, "P_UnArchivePlayer: Bot's character \"%s\" was not loaded, replacing with default \"%s\".\n", skinname, skins[defaultbotskin].name);
+			skin = defaultbotskin;
+		}
+
+		savedata.bots[pid].skin = skin;
+
+		savedata.bots[pid].difficulty = READUINT8(save->p);
+		savedata.bots[pid].rival = (boolean)READUINT8(save->p);
+		savedata.bots[pid].score = READUINT32(save->p);
+	}
+
+	return (pid == 0xFE);	
 }
 
 static void P_NetArchivePlayers(savebuffer_t *save)
@@ -195,6 +280,10 @@ static void P_NetArchivePlayers(savebuffer_t *save)
 
 		WRITEUINT32(save->p, players[i].jointime);
 
+		WRITEUINT32(save->p, players[i].spectatorReentry);
+		WRITEUINT32(save->p, players[i].griefValue);
+		WRITEUINT8(save->p, players[i].griefStrikes);
+
 		WRITEUINT8(save->p, players[i].splitscreenindex);
 
 		if (players[i].awayview.mobj)
@@ -220,6 +309,12 @@ static void P_NetArchivePlayers(savebuffer_t *save)
 
 		if (players[i].sliptideZipIndicator)
 			flags |= SLIPTIDEZIP;
+
+		if (players[i].whip)
+			flags |= WHIP;
+
+		if (players[i].hand)
+			flags |= HAND;
 
 		if (players[i].ringShooter)
 			flags |= RINGSHOOTER;
@@ -247,6 +342,12 @@ static void P_NetArchivePlayers(savebuffer_t *save)
 		if (flags & SLIPTIDEZIP)
 			WRITEUINT32(save->p, players[i].sliptideZipIndicator->mobjnum);
 
+		if (flags & WHIP)
+			WRITEUINT32(save->p, players[i].whip->mobjnum);
+
+		if (flags & HAND)
+			WRITEUINT32(save->p, players[i].hand->mobjnum);
+
 		if (flags & RINGSHOOTER)
 			WRITEUINT32(save->p, players[i].ringShooter->mobjnum);
 
@@ -272,10 +373,12 @@ static void P_NetArchivePlayers(savebuffer_t *save)
 		WRITEUINT8(save->p, players[i].oldposition);
 		WRITEUINT8(save->p, players[i].positiondelay);
 		WRITEUINT32(save->p, players[i].distancetofinish);
+		WRITEUINT32(save->p, players[i].distancetofinishprev);
 		WRITEUINT32(save->p, K_GetWaypointHeapIndex(players[i].currentwaypoint));
 		WRITEUINT32(save->p, K_GetWaypointHeapIndex(players[i].nextwaypoint));
 		WRITEUINT32(save->p, players[i].airtime);
 		WRITEUINT8(save->p, players[i].startboost);
+		WRITEUINT8(save->p, players[i].dropdashboost);
 
 		WRITEUINT16(save->p, players[i].flashing);
 		WRITEUINT16(save->p, players[i].spinouttimer);
@@ -414,6 +517,18 @@ static void P_NetArchivePlayers(savebuffer_t *save)
 
 		WRITEMEM(save->p, players[i].public_key, PUBKEYLENGTH);
 
+		WRITEUINT8(save->p, players[i].instaShieldCooldown);
+		WRITEUINT8(save->p, players[i].guardCooldown);
+
+		WRITEUINT8(save->p, players[i].handtimer);
+		WRITEANGLE(save->p, players[i].besthanddirection);
+
+		WRITEINT16(save->p, players[i].incontrol);
+
+		WRITEUINT8(save->p, players[i].markedfordeath);
+
+		WRITEFIXED(save->p, players[i].outrun);
+
 		// respawnvars_t
 		WRITEUINT8(save->p, players[i].respawn.state);
 		WRITEUINT32(save->p, K_GetWaypointHeapIndex(players[i].respawn.wp));
@@ -438,6 +553,9 @@ static void P_NetArchivePlayers(savebuffer_t *save)
 		WRITEUINT32(save->p, players[i].botvars.itemconfirm);
 		WRITESINT8(save->p, players[i].botvars.turnconfirm);
 		WRITEUINT32(save->p, players[i].botvars.spindashconfirm);
+		WRITEUINT32(save->p, players[i].botvars.respawnconfirm);
+		WRITEUINT8(save->p, players[i].botvars.roulettePriority);
+		WRITEUINT32(save->p, players[i].botvars.rouletteTimeout);
 
 		// itemroulette_t
 		WRITEUINT8(save->p, players[i].itemRoulette.active);
@@ -598,6 +716,10 @@ static void P_NetUnArchivePlayers(savebuffer_t *save)
 
 		players[i].jointime = READUINT32(save->p);
 
+		players[i].spectatorReentry = READUINT32(save->p);
+		players[i].griefValue = READUINT32(save->p);
+		players[i].griefStrikes = READUINT8(save->p);
+
 		players[i].splitscreenindex = READUINT8(save->p);
 
 		flags = READUINT16(save->p);
@@ -622,6 +744,12 @@ static void P_NetUnArchivePlayers(savebuffer_t *save)
 
 		if (flags & SLIPTIDEZIP)
 			players[i].sliptideZipIndicator = (mobj_t *)(size_t)READUINT32(save->p);
+
+		if (flags & WHIP)
+			players[i].whip = (mobj_t *)(size_t)READUINT32(save->p);
+
+		if (flags & HAND)
+			players[i].hand = (mobj_t *)(size_t)READUINT32(save->p);
 
 		if (flags & RINGSHOOTER)
 			players[i].ringShooter = (mobj_t *)(size_t)READUINT32(save->p);
@@ -649,10 +777,12 @@ static void P_NetUnArchivePlayers(savebuffer_t *save)
 		players[i].oldposition = READUINT8(save->p);
 		players[i].positiondelay = READUINT8(save->p);
 		players[i].distancetofinish = READUINT32(save->p);
+		players[i].distancetofinishprev = READUINT32(save->p);
 		players[i].currentwaypoint = (waypoint_t *)(size_t)READUINT32(save->p);
 		players[i].nextwaypoint = (waypoint_t *)(size_t)READUINT32(save->p);
 		players[i].airtime = READUINT32(save->p);
 		players[i].startboost = READUINT8(save->p);
+		players[i].dropdashboost = READUINT8(save->p);
 
 		players[i].flashing = READUINT16(save->p);
 		players[i].spinouttimer = READUINT16(save->p);
@@ -791,6 +921,18 @@ static void P_NetUnArchivePlayers(savebuffer_t *save)
 
 		READMEM(save->p, players[i].public_key, PUBKEYLENGTH);
 
+		players[i].instaShieldCooldown = READUINT8(save->p);
+		players[i].guardCooldown = READUINT8(save->p);
+
+		players[i].handtimer = READUINT8(save->p);
+		players[i].besthanddirection = READANGLE(save->p);
+
+		players[i].incontrol = READINT16(save->p);
+
+		players[i].markedfordeath = READUINT8(save->p);
+
+		players[i].outrun = READFIXED(save->p);
+
 		// respawnvars_t
 		players[i].respawn.state = READUINT8(save->p);
 		players[i].respawn.wp = (waypoint_t *)(size_t)READUINT32(save->p);
@@ -815,6 +957,9 @@ static void P_NetUnArchivePlayers(savebuffer_t *save)
 		players[i].botvars.itemconfirm = READUINT32(save->p);
 		players[i].botvars.turnconfirm = READSINT8(save->p);
 		players[i].botvars.spindashconfirm = READUINT32(save->p);
+		players[i].botvars.respawnconfirm = READUINT32(save->p);
+		players[i].botvars.roulettePriority = READUINT8(save->p);
+		players[i].botvars.rouletteTimeout = READUINT32(save->p);
 
 		// itemroulette_t
 		players[i].itemRoulette.active = (boolean)READUINT8(save->p);
@@ -928,6 +1073,7 @@ static void P_NetUnArchiveParties(savebuffer_t *save)
 		if (!playeringame[i])
 			continue;
 
+		G_DestroyParty(i);
 		G_BuildLocalSplitscreenParty(i);
 	}
 
@@ -976,6 +1122,9 @@ static void P_NetUnArchiveRoundQueue(savebuffer_t *save)
 
 	roundqueue.position = READUINT8(save->p);
 	roundqueue.size = READUINT8(save->p);
+	if (roundqueue.size > ROUNDQUEUE_MAX)
+		I_Error("Bad $$$.sav at illegitimate roundqueue size");
+
 	roundqueue.roundnum = READUINT8(save->p);
 
 	for (i = 0; i < roundqueue.size; i++)
@@ -2118,6 +2267,31 @@ static void P_NetUnArchiveWorld(savebuffer_t *save)
 // Thinkers
 //
 
+static boolean P_ThingArgsEqual(const mobj_t *mobj, const mapthing_t *mapthing)
+{
+	UINT8 i;
+	for (i = 0; i < NUMMAPTHINGARGS; i++)
+		if (mobj->args[i] != mapthing->args[i])
+			return false;
+
+	return true;
+}
+
+static boolean P_ThingStringArgsEqual(const mobj_t *mobj, const mapthing_t *mapthing)
+{
+	UINT8 i;
+	for (i = 0; i < NUMMAPTHINGSTRINGARGS; i++)
+	{
+		if (!mobj->stringargs[i])
+			return !mapthing->stringargs[i];
+
+		if (strcmp(mobj->stringargs[i], mapthing->stringargs[i]))
+			return false;
+	}
+
+	return true;
+}
+
 typedef enum
 {
 	MD_SPAWNPOINT  = 1,
@@ -2149,8 +2323,8 @@ typedef enum
 	MD_WATERBOTTOM = 1<<26,
 	MD_SCALE       = 1<<27,
 	MD_DSCALE      = 1<<28,
-	MD_BLUEFLAG    = 1<<29,
-	MD_REDFLAG     = 1<<30,
+	MD_ARGS        = 1<<29,
+	MD_STRINGARGS  = 1<<30,
 	MD_MORE        = (INT32)(1U<<31)
 } mobj_diff_t;
 
@@ -2174,10 +2348,10 @@ typedef enum
 	MD2_SHADOWSCALE  = 1<<15,
 	MD2_RENDERFLAGS  = 1<<16,
 	MD2_TID          = 1<<17,
-	MD2_SPRITEXSCALE = 1<<18,
-	MD2_SPRITEYSCALE = 1<<19,
-	MD2_SPRITEXOFFSET = 1<<20,
-	MD2_SPRITEYOFFSET = 1<<21,
+	MD2_SPRITESCALE  = 1<<18,
+	MD2_SPRITEOFFSET = 1<<19,
+	MD2_WORLDOFFSET  = 1<<20,
+	MD2_SPECIAL      = 1<<21,
 	MD2_FLOORSPRITESLOPE = 1<<22,
 	MD2_DISPOFFSET   = 1<<23,
 	MD2_HITLAG       = 1<<24,
@@ -2187,6 +2361,7 @@ typedef enum
 	MD2_LASTMOMZ     = 1<<28,
 	MD2_TERRAIN      = 1<<29,
 	MD2_WATERSKIP    = 1<<30,
+	MD2_LIGHTLEVEL   = (INT32)(1U<<31),
 } mobj_diff2_t;
 
 typedef enum
@@ -2270,6 +2445,7 @@ static void SaveMobjThinker(savebuffer_t *save, const thinker_t *th, const UINT8
 	const mobj_t *mobj = (const mobj_t *)th;
 	UINT32 diff;
 	UINT32 diff2;
+	size_t j;
 
 	// Ignore stationary hoops - these will be respawned from mapthings.
 	if (mobj->type == MT_HOOP)
@@ -2282,6 +2458,12 @@ static void SaveMobjThinker(savebuffer_t *save, const thinker_t *th, const UINT8
 	// This hoop has already been collected.
 	if (mobj->type == MT_HOOPCENTER && mobj->threshold == 4242)
 		return;
+
+	// MT_SPARK: used for debug stuff
+	if (mobj->type == MT_SPARK)
+		return;
+
+	diff2 = 0;
 
 	if (mobj->spawnpoint)
 	{
@@ -2297,11 +2479,44 @@ static void SaveMobjThinker(savebuffer_t *save, const thinker_t *th, const UINT8
 
 		if (mobj->info->doomednum != mobj->spawnpoint->type)
 			diff |= MD_TYPE;
+
+		if (!P_ThingArgsEqual(mobj, mobj->spawnpoint))
+			diff |= MD_ARGS;
+
+		if (!P_ThingStringArgsEqual(mobj, mobj->spawnpoint))
+			diff |= MD_STRINGARGS;
+
+		if (mobj->special != mobj->spawnpoint->type)
+			diff2 |= MD2_SPECIAL;
 	}
 	else
-		diff = MD_POS | MD_TYPE; // not a map spawned thing so make it from scratch
+	{
+		// not a map spawned thing, so make it from scratch
+		diff = MD_POS | MD_TYPE;
 
-	diff2 = 0;
+		for (j = 0; j < NUMMAPTHINGARGS; j++)
+		{
+			if (mobj->args[j] != 0)
+			{
+				diff |= MD_ARGS;
+				break;
+			}
+		}
+
+		for (j = 0; j < NUMMAPTHINGSTRINGARGS; j++)
+		{
+			if (mobj->stringargs[j] != NULL)
+			{
+				diff |= MD_STRINGARGS;
+				break;
+			}
+		}
+
+		if (mobj->special != 0)
+		{
+			diff2 |= MD2_SPECIAL;
+		}
+	}
 
 	// not the default but the most probable
 	if (mobj->momx != 0 || mobj->momy != 0 || mobj->momz != 0 || mobj->pmomz != 0)
@@ -2334,7 +2549,6 @@ static void SaveMobjThinker(savebuffer_t *save, const thinker_t *th, const UINT8
 		diff |= MD_EFLAGS;
 	if (mobj->player)
 		diff |= MD_PLAYER;
-
 	if (mobj->movedir)
 		diff |= MD_MOVEDIR;
 	if (mobj->movecount)
@@ -2363,12 +2577,6 @@ static void SaveMobjThinker(savebuffer_t *save, const thinker_t *th, const UINT8
 		diff |= MD_DSCALE;
 	if (mobj->scalespeed != mapobjectscale/12)
 		diff2 |= MD2_SCALESPEED;
-
-	if (mobj == redflag)
-		diff |= MD_REDFLAG;
-	if (mobj == blueflag)
-		diff |= MD_BLUEFLAG;
-
 	if (mobj->cusval)
 		diff2 |= MD2_CUSVAL;
 	if (mobj->cvmem)
@@ -2403,14 +2611,12 @@ static void SaveMobjThinker(savebuffer_t *save, const thinker_t *th, const UINT8
 		diff2 |= MD2_RENDERFLAGS;
 	if (mobj->tid != 0)
 		diff2 |= MD2_TID;
-	if (mobj->spritexscale != FRACUNIT)
-		diff2 |= MD2_SPRITEXSCALE;
-	if (mobj->spriteyscale != FRACUNIT)
-		diff2 |= MD2_SPRITEYSCALE;
-	if (mobj->spritexoffset)
-		diff2 |= MD2_SPRITEXOFFSET;
-	if (mobj->spriteyoffset)
-		diff2 |= MD2_SPRITEYOFFSET;
+	if (mobj->spritexscale != FRACUNIT || mobj->spriteyscale != FRACUNIT)
+		diff2 |= MD2_SPRITESCALE;
+	if (mobj->spritexoffset || mobj->spriteyoffset)
+		diff2 |= MD2_SPRITEOFFSET;
+	if (mobj->sprxoff || mobj->spryoff || mobj->sprzoff)
+		diff2 |= MD2_WORLDOFFSET;
 	if (mobj->floorspriteslope)
 	{
 		pslope_t *slope = mobj->floorspriteslope;
@@ -2421,6 +2627,8 @@ static void SaveMobjThinker(savebuffer_t *save, const thinker_t *th, const UINT8
 		|| (slope->normal.z != FRACUNIT))
 			diff2 |= MD2_FLOORSPRITESLOPE;
 	}
+	if (mobj->lightlevel)
+		diff2 |= MD2_LIGHTLEVEL;
 	if (mobj->hitlag)
 		diff2 |= MD2_HITLAG;
 	if (mobj->waterskip)
@@ -2556,6 +2764,29 @@ static void SaveMobjThinker(savebuffer_t *save, const thinker_t *th, const UINT8
 		WRITEFIXED(save->p, mobj->destscale);
 	if (diff2 & MD2_SCALESPEED)
 		WRITEFIXED(save->p, mobj->scalespeed);
+	if (diff & MD_ARGS)
+	{
+		for (j = 0; j < NUMMAPTHINGARGS; j++)
+			WRITEINT32(save->p, mobj->args[j]);
+	}
+	if (diff & MD_STRINGARGS)
+	{
+		for (j = 0; j < NUMMAPTHINGSTRINGARGS; j++)
+		{
+			size_t len, k;
+
+			if (!mobj->stringargs[j])
+			{
+				WRITEINT32(save->p, 0);
+				continue;
+			}
+
+			len = strlen(mobj->stringargs[j]);
+			WRITEINT32(save->p, len);
+			for (k = 0; k < len; k++)
+				WRITECHAR(save->p, mobj->stringargs[j][k]);
+		}
+	}
 	if (diff2 & MD2_CUSVAL)
 		WRITEINT32(save->p, mobj->cusval);
 	if (diff2 & MD2_CVMEM)
@@ -2603,14 +2834,24 @@ static void SaveMobjThinker(savebuffer_t *save, const thinker_t *th, const UINT8
 	}
 	if (diff2 & MD2_TID)
 		WRITEINT16(save->p, mobj->tid);
-	if (diff2 & MD2_SPRITEXSCALE)
+	if (diff2 & MD2_SPRITESCALE)
+	{
 		WRITEFIXED(save->p, mobj->spritexscale);
-	if (diff2 & MD2_SPRITEYSCALE)
 		WRITEFIXED(save->p, mobj->spriteyscale);
-	if (diff2 & MD2_SPRITEXOFFSET)
+	}
+	if (diff2 & MD2_SPRITEOFFSET)
+	{
 		WRITEFIXED(save->p, mobj->spritexoffset);
-	if (diff2 & MD2_SPRITEYOFFSET)
 		WRITEFIXED(save->p, mobj->spriteyoffset);
+	}
+	if (diff2 & MD2_WORLDOFFSET)
+	{
+		WRITEFIXED(save->p, mobj->sprxoff);
+		WRITEFIXED(save->p, mobj->spryoff);
+		WRITEFIXED(save->p, mobj->sprzoff);
+	}
+	if (diff2 & MD2_SPECIAL)
+		WRITEINT16(save->p, mobj->special);
 	if (diff2 & MD2_FLOORSPRITESLOPE)
 	{
 		pslope_t *slope = mobj->floorspriteslope;
@@ -2629,6 +2870,10 @@ static void SaveMobjThinker(savebuffer_t *save, const thinker_t *th, const UINT8
 		WRITEFIXED(save->p, slope->normal.x);
 		WRITEFIXED(save->p, slope->normal.y);
 		WRITEFIXED(save->p, slope->normal.z);
+	}
+	if (diff2 & MD2_LIGHTLEVEL)
+	{
+		WRITEINT16(save->p, mobj->lightlevel);
 	}
 	if (diff2 & MD2_HITLAG)
 	{
@@ -3528,6 +3773,7 @@ static thinker_t* LoadMobjThinker(savebuffer_t *save, actionf_p1 thinker)
 	INT32 i;
 	fixed_t z, floorz, ceilingz;
 	ffloor_t *floorrover = NULL, *ceilingrover = NULL;
+	size_t j;
 
 	diff = READUINT32(save->p);
 	if (diff & MD_MORE)
@@ -3721,6 +3967,31 @@ static thinker_t* LoadMobjThinker(savebuffer_t *save, actionf_p1 thinker)
 		mobj->scalespeed = READFIXED(save->p);
 	else
 		mobj->scalespeed = mapobjectscale/12;
+	if (diff & MD_ARGS)
+	{
+		for (j = 0; j < NUMMAPTHINGARGS; j++)
+			mobj->args[j] = READINT32(save->p);
+	}
+	if (diff & MD_STRINGARGS)
+	{
+		for (j = 0; j < NUMMAPTHINGSTRINGARGS; j++)
+		{
+			size_t len = READINT32(save->p);
+			size_t k;
+
+			if (!len)
+			{
+				Z_Free(mobj->stringargs[j]);
+				mobj->stringargs[j] = NULL;
+				continue;
+			}
+
+			mobj->stringargs[j] = Z_Realloc(mobj->stringargs[j], len + 1, PU_LEVEL, NULL);
+			for (k = 0; k < len; k++)
+				mobj->stringargs[j][k] = READCHAR(save->p);
+			mobj->stringargs[j][len] = '\0';
+		}
+	}
 	if (diff2 & MD2_CUSVAL)
 		mobj->cusval = READINT32(save->p);
 	if (diff2 & MD2_CVMEM)
@@ -3756,18 +4027,38 @@ static thinker_t* LoadMobjThinker(savebuffer_t *save, actionf_p1 thinker)
 		mobj->renderflags = READUINT32(save->p);
 	if (diff2 & MD2_TID)
 		P_SetThingTID(mobj, READINT16(save->p));
-	if (diff2 & MD2_SPRITEXSCALE)
+	if (diff2 & MD2_SPRITESCALE)
+	{
 		mobj->spritexscale = READFIXED(save->p);
-	else
-		mobj->spritexscale = FRACUNIT;
-	if (diff2 & MD2_SPRITEYSCALE)
 		mobj->spriteyscale = READFIXED(save->p);
+	}
 	else
-		mobj->spriteyscale = FRACUNIT;
-	if (diff2 & MD2_SPRITEXOFFSET)
+	{
+		mobj->spritexscale = mobj->spriteyscale = FRACUNIT;
+	}
+	if (diff2 & MD2_SPRITEOFFSET)
+	{
 		mobj->spritexoffset = READFIXED(save->p);
-	if (diff2 & MD2_SPRITEYOFFSET)
 		mobj->spriteyoffset = READFIXED(save->p);
+	}
+	else
+	{
+		mobj->spritexoffset = mobj->spriteyoffset = 0;
+	}
+	if (diff2 & MD2_WORLDOFFSET)
+	{
+		mobj->sprxoff = READFIXED(save->p);
+		mobj->spryoff = READFIXED(save->p);
+		mobj->sprzoff = READFIXED(save->p);
+	}
+	else
+	{
+		mobj->sprxoff = mobj->spryoff = mobj->sprzoff = 0;
+	}
+	if (diff2 & MD2_SPECIAL)
+	{
+		mobj->special = READINT16(save->p);
+	}
 	if (diff2 & MD2_FLOORSPRITESLOPE)
 	{
 		pslope_t *slope = (pslope_t *)P_CreateFloorSpriteSlope(mobj);
@@ -3788,6 +4079,10 @@ static thinker_t* LoadMobjThinker(savebuffer_t *save, actionf_p1 thinker)
 		slope->normal.z = READFIXED(save->p);
 
 		P_UpdateSlopeLightOffset(slope);
+	}
+	if (diff2 & MD2_LIGHTLEVEL)
+	{
+		mobj->lightlevel = READINT16(save->p);
 	}
 	if (diff2 & MD2_HITLAG)
 	{
@@ -3813,17 +4108,6 @@ static thinker_t* LoadMobjThinker(savebuffer_t *save, actionf_p1 thinker)
 	else
 	{
 		mobj->terrain = NULL;
-	}
-
-	if (diff & MD_REDFLAG)
-	{
-		redflag = mobj;
-		rflagpoint = mobj->spawnpoint;
-	}
-	if (diff & MD_BLUEFLAG)
-	{
-		blueflag = mobj;
-		bflagpoint = mobj->spawnpoint;
 	}
 
 	// set sprev, snext, bprev, bnext, subsector
@@ -4487,15 +4771,7 @@ static void P_NetUnArchiveThinkers(savebuffer_t *save)
 	}
 
 	// we don't want the removed mobjs to come back
-	iquetail = iquehead = 0;
 	P_InitThinkers();
-
-	// Oh my god don't blast random memory with our reference counts.
-	waypointcap = trackercap = NULL;
-	for (i = 0; i <= 15; i++)
-	{
-		skyboxcenterpnts[i] = skyboxviewpnts[i] = NULL;
-	}
 
 	// clear sector thinker pointers so they don't point to non-existant thinkers for all of eternity
 	for (i = 0; i < numsectors; i++)
@@ -4815,7 +5091,9 @@ static void P_RelinkPointers(void)
 
 		mobj = (mobj_t *)currentthinker;
 
-		if (mobj->type == MT_HOOP || mobj->type == MT_HOOPCOLLIDE || mobj->type == MT_HOOPCENTER)
+		if (mobj->type == MT_HOOP || mobj->type == MT_HOOPCOLLIDE || mobj->type == MT_HOOPCENTER
+			// MT_SPARK: used for debug stuff
+			|| mobj->type == MT_SPARK)
 			continue;
 
 		if (mobj->tracer)
@@ -4959,6 +5237,20 @@ static void P_RelinkPointers(void)
 			if (!P_SetTarget(&players[i].sliptideZipIndicator, P_FindNewPosition(temp)))
 				CONS_Debug(DBG_GAMELOGIC, "sliptideZipIndicator not found on player %d\n", i);
 		}
+		if (players[i].whip)
+		{
+			temp = (UINT32)(size_t)players[i].whip;
+			players[i].whip = NULL;
+			if (!P_SetTarget(&players[i].whip, P_FindNewPosition(temp)))
+				CONS_Debug(DBG_GAMELOGIC, "whip not found on player %d\n", i);
+		}
+		if (players[i].hand)
+		{
+			temp = (UINT32)(size_t)players[i].hand;
+			players[i].hand = NULL;
+			if (!P_SetTarget(&players[i].hand, P_FindNewPosition(temp)))
+				CONS_Debug(DBG_GAMELOGIC, "hand not found on player %d\n", i);
+		}
 		if (players[i].ringShooter)
 		{
 			temp = (UINT32)(size_t)players[i].ringShooter;
@@ -5051,55 +5343,230 @@ static void P_NetUnArchiveSpecials(savebuffer_t *save)
 // =======================================================================
 //          Misc
 // =======================================================================
-static inline void P_ArchiveMisc(savebuffer_t *save, INT16 mapnum)
+static inline void P_ArchiveMisc(savebuffer_t *save)
 {
-	//lastmapsaved = mapnum;
-	lastmaploaded = mapnum;
-
-	if (gamecomplete)
-		mapnum |= 8192;
-
-	WRITEINT16(save->p, mapnum);
-	WRITEUINT16(save->p, emeralds+357);
 	WRITESTRINGN(save->p, timeattackfolder, sizeof(timeattackfolder));
+
+	// Grand Prix information
+
+	WRITEUINT8(save->p, grandprixinfo.gamespeed);
+	WRITEUINT8(save->p, (UINT8)grandprixinfo.encore);
+	WRITEUINT8(save->p, (UINT8)grandprixinfo.masterbots);
+
+	WRITESTRINGL(save->p, grandprixinfo.cup->name, MAXCUPNAME);
+
+	// Round Queue information
+
+	WRITEUINT8(save->p, roundqueue.position);
+	WRITEUINT8(save->p, roundqueue.size);
+	WRITEUINT8(save->p, roundqueue.roundnum);
+
+	UINT8 i;
+	for (i = 0; i < roundqueue.size; i++)
+	{
+		UINT16 mapnum = roundqueue.entries[i].mapnum;
+		UINT32 val = 0; // no good default, will all-but-guarantee bad save
+		if (mapnum < nummapheaders && mapheaderinfo[mapnum] != NULL)
+			val = mapheaderinfo[mapnum]->lumpnamehash;
+
+		WRITEUINT32(save->p, val);
+	}
+
+	// Rank information
+
+	{
+		WRITEUINT8(save->p, grandprixinfo.rank.players);
+		WRITEUINT8(save->p, grandprixinfo.rank.totalPlayers);
+
+		WRITEUINT8(save->p, grandprixinfo.rank.position);
+		WRITEUINT8(save->p, grandprixinfo.rank.skin);
+
+		WRITEUINT32(save->p, grandprixinfo.rank.winPoints);
+		WRITEUINT32(save->p, grandprixinfo.rank.totalPoints);
+
+		WRITEUINT32(save->p, grandprixinfo.rank.laps);
+		WRITEUINT32(save->p, grandprixinfo.rank.totalLaps);
+
+		WRITEUINT32(save->p, grandprixinfo.rank.continuesUsed);
+
+		WRITEUINT32(save->p, grandprixinfo.rank.prisons);
+		WRITEUINT32(save->p, grandprixinfo.rank.totalPrisons);
+
+		WRITEUINT32(save->p, grandprixinfo.rank.rings);
+		WRITEUINT32(save->p, grandprixinfo.rank.totalRings);
+
+		WRITEUINT8(save->p, (UINT8)grandprixinfo.rank.specialWon);
+	}
+
+	// Marathon information
+
+	WRITEUINT8(save->p, (marathonmode & ~MA_INIT));
+
+	UINT32 writetime = marathontime;
+	if (!(marathonmode & MA_INGAME))
+		writetime += TICRATE*5; // live event backup penalty because we don't know how long it takes to get to the next map
+	WRITEUINT32(save->p, writetime);
 }
 
-static inline void P_UnArchiveSPGame(savebuffer_t *save, INT16 mapoverride)
+void P_GetBackupCupData(savebuffer_t *save)
 {
 	char testname[sizeof(timeattackfolder)];
-
-	gamemap = READINT16(save->p);
-
-	if (mapoverride != 0)
-	{
-		gamemap = mapoverride;
-		gamecomplete = 1;
-	}
-	else
-		gamecomplete = 0;
-
-	// gamemap changed; we assume that its map header is always valid,
-	// so make it so
-	if (!gamemap || gamemap > nummapheaders || !mapheaderinfo[gamemap-1])
-		I_Error("P_UnArchiveSPGame: Internal map ID %d not found (nummapheaders = %d)", gamemap-1, nummapheaders);
-
-	//lastmapsaved = gamemap;
-	lastmaploaded = gamemap;
-
-	savedata.emeralds = READUINT16(save->p)-357;
 
 	READSTRINGN(save->p, testname, sizeof(testname));
 
 	if (strcmp(testname, timeattackfolder))
 	{
-		if (modifiedgame)
-			I_Error("Save game not for this modification.");
-		else
-			I_Error("This save file is for a particular mod, it cannot be used with the regular game.");
+		cupsavedata.cup = NULL;
+		return;
 	}
 
-	memset(playeringame, 0, sizeof(*playeringame));
-	playeringame[consoleplayer] = true;
+	// Grand Prix information
+
+	cupsavedata.difficulty = READUINT8(save->p);
+	cupsavedata.encore = (boolean)READUINT8(save->p);
+	boolean masterbots = (boolean)READUINT8(save->p);
+
+	if (masterbots == true)
+		cupsavedata.difficulty = KARTGP_MASTER;
+
+	// Find the relevant cup.
+	char cupname[MAXCUPNAME];
+	READSTRINGL(save->p, cupname, sizeof(cupname));
+	UINT32 hash = quickncasehash(cupname, MAXCUPNAME);
+
+	for (cupsavedata.cup = kartcupheaders; cupsavedata.cup; cupsavedata.cup = cupsavedata.cup->next)
+	{
+		if (cupsavedata.cup->namehash != hash)
+			continue;
+
+		if (strcmp(cupsavedata.cup->name, cupname))
+			continue;
+
+		break;
+	}
+
+	// Okay, no further! We've got everything we need.
+}
+
+static boolean P_UnArchiveSPGame(savebuffer_t *save)
+{
+	char testname[sizeof(timeattackfolder)];
+
+	READSTRINGN(save->p, testname, sizeof(testname));
+
+	if (strcmp(testname, timeattackfolder))
+	{
+		CONS_Alert(CONS_ERROR, "P_UnArchiveSPGame: Corrupt mod ID.\n");
+		return false;
+	}
+
+	// TODO do not work off grandprixinfo/roundqueue directly
+	// This is only strictly necessary if we ever re-add a save
+	// select screen or something, for live event backup only
+	// it's *fine* and, more importantly, shippable
+
+	memset(&grandprixinfo, 0, sizeof(grandprixinfo));
+
+	grandprixinfo.gp = true;
+
+	// Grand Prix information
+
+	grandprixinfo.gamespeed = READUINT8(save->p);
+	grandprixinfo.encore = (boolean)READUINT8(save->p);
+	grandprixinfo.masterbots = (boolean)READUINT8(save->p);
+
+	// Find the relevant cup.
+	char cupname[MAXCUPNAME];
+	READSTRINGL(save->p, cupname, sizeof(cupname));
+	UINT32 hash = quickncasehash(cupname, MAXCUPNAME);
+
+	for (grandprixinfo.cup = kartcupheaders; grandprixinfo.cup; grandprixinfo.cup = grandprixinfo.cup->next)
+	{
+		if (grandprixinfo.cup->namehash != hash)
+			continue;
+
+		if (strcmp(grandprixinfo.cup->name, cupname))
+			continue;
+
+		break;
+	}
+
+	if (!grandprixinfo.cup)
+	{
+		CONS_Alert(CONS_ERROR, "P_UnArchiveSPGame: Cup \"%s\" is not currently loaded.\n", cupname);
+		return false;
+	}
+
+	// Round Queue information
+
+	memset(&roundqueue, 0, sizeof(roundqueue));
+
+	G_GPCupIntoRoundQueue(grandprixinfo.cup, GT_RACE, grandprixinfo.encore);
+
+	roundqueue.position = READUINT8(save->p);
+	UINT8 size = READUINT8(save->p);
+	roundqueue.roundnum = READUINT8(save->p);
+
+	if (roundqueue.size != size)
+	{
+		CONS_Alert(CONS_ERROR, "P_UnArchiveSPGame: Cup \"%s\"'s level composition has changed between game launches (differs in level count).\n", cupname);
+		return false;
+	}
+
+	if (roundqueue.position == 0 || roundqueue.position > size)
+	{
+		CONS_Alert(CONS_ERROR, "P_UnArchiveSPGame: Position in the round queue is invalid.\n");
+		return false;
+	}
+
+	UINT8 i;
+	for (i = 0; i < roundqueue.size; i++)
+	{
+		UINT32 val = READUINT32(save->p);
+		UINT16 mapnum = roundqueue.entries[i].mapnum;
+
+		if (mapnum < nummapheaders && mapheaderinfo[mapnum] != NULL)
+		{
+			if (mapheaderinfo[mapnum]->lumpnamehash == val)
+				continue;
+		}
+
+		CONS_Alert(CONS_ERROR, "P_UnArchiveSPGame: Cup \"%s\"'s level composition has changed between game launches (differs at level %u).\n", cupname, i);
+		return false;
+	}
+
+	// Rank information
+
+	{
+		grandprixinfo.rank.players = READUINT8(save->p);
+		grandprixinfo.rank.totalPlayers = READUINT8(save->p);
+
+		grandprixinfo.rank.position = READUINT8(save->p);
+		grandprixinfo.rank.skin = READUINT8(save->p);
+
+		grandprixinfo.rank.winPoints = READUINT32(save->p);
+		grandprixinfo.rank.totalPoints = READUINT32(save->p);
+
+		grandprixinfo.rank.laps = READUINT32(save->p);
+		grandprixinfo.rank.totalLaps = READUINT32(save->p);
+
+		grandprixinfo.rank.continuesUsed = READUINT32(save->p);
+
+		grandprixinfo.rank.prisons = READUINT32(save->p);
+		grandprixinfo.rank.totalPrisons = READUINT32(save->p);
+
+		grandprixinfo.rank.rings = READUINT32(save->p);
+		grandprixinfo.rank.totalRings = READUINT32(save->p);
+
+		grandprixinfo.rank.specialWon = (boolean)READUINT8(save->p);
+	}
+
+	// Marathon information
+
+	marathonmode = READUINT8(save->p);
+	marathontime = READUINT32(save->p);
+
+	return true;
 }
 
 static void P_NetArchiveMisc(savebuffer_t *save, boolean resending)
@@ -5257,7 +5724,7 @@ static void P_NetArchiveMisc(savebuffer_t *save, boolean resending)
 	WRITEUINT32(save->p, cht_debug);
 }
 
-static inline boolean P_NetUnArchiveMisc(savebuffer_t *save, boolean reloading)
+static boolean P_NetUnArchiveMisc(savebuffer_t *save, boolean reloading)
 {
 	size_t i, j;
 	size_t numTasks;
@@ -5512,9 +5979,9 @@ static inline void P_NetUnArchiveRNG(savebuffer_t *save)
 	}
 }
 
-void P_SaveGame(savebuffer_t *save, INT16 mapnum)
+void P_SaveGame(savebuffer_t *save)
 {
-	P_ArchiveMisc(save, mapnum);
+	P_ArchiveMisc(save);
 	P_ArchivePlayer(save);
 	P_ArchiveLuabanksAndConsistency(save);
 }
@@ -5537,7 +6004,9 @@ void P_SaveNetGame(savebuffer_t *save, boolean resending)
 				continue;
 
 			mobj = (mobj_t *)th;
-			if (mobj->type == MT_HOOP || mobj->type == MT_HOOPCOLLIDE || mobj->type == MT_HOOPCENTER)
+			if (mobj->type == MT_HOOP || mobj->type == MT_HOOPCOLLIDE || mobj->type == MT_HOOPCENTER
+				// MT_SPARK: used for debug stuff
+				|| mobj->type == MT_SPARK)
 				continue;
 			mobj->mobjnum = i++;
 		}
@@ -5567,7 +6036,7 @@ void P_SaveNetGame(savebuffer_t *save, boolean resending)
 	P_ArchiveLuabanksAndConsistency(save);
 }
 
-boolean P_LoadGame(savebuffer_t *save, INT16 mapoverride)
+boolean P_LoadGame(savebuffer_t *save)
 {
 	if (gamestate == GS_INTERMISSION)
 		Y_EndIntermission();
@@ -5575,17 +6044,24 @@ boolean P_LoadGame(savebuffer_t *save, INT16 mapoverride)
 		Y_EndVote();
 	G_SetGamestate(GS_NULL); // should be changed in P_UnArchiveMisc
 
-	P_UnArchiveSPGame(save, mapoverride);
-	P_UnArchivePlayer(save);
+	if (!P_UnArchiveSPGame(save))
+		goto badloadgame;
+	if (!P_UnArchivePlayer(save))
+		goto badloadgame;
 
 	if (!P_UnArchiveLuabanksAndConsistency(save))
-		return false;
-
-	// Only do this after confirming savegame is ok
-	G_DeferedInitNew(false, gamemap, savedata.skin, 0, true);
-	COM_BufAddText("dummyconsvar 1\n"); // G_DeferedInitNew doesn't do this
+		goto badloadgame;
 
 	return true;
+
+badloadgame:
+	// these are the side effects of P_UnarchiveSPGame
+	savedata.lives = 0;
+	roundqueue.size = 0;
+	grandprixinfo.gp = false;
+	marathonmode = 0;
+
+	return false;
 }
 
 boolean P_LoadNetGame(savebuffer_t *save, boolean reloading)
@@ -5713,4 +6189,16 @@ void P_SaveBufferFree(savebuffer_t *save)
 {
 	Z_Free(save->buffer);
 	P_SaveBufferInvalidate(save);
+}
+
+size_t P_SaveBufferRemaining(const savebuffer_t *save)
+{
+	if (save->p < save->end)
+	{
+		return save->end - save->p;
+	}
+	else
+	{
+		return 0;
+	}
 }

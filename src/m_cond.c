@@ -60,7 +60,7 @@ void M_PopulateChallengeGrid(void)
 {
 	UINT16 i, j;
 	UINT16 numunlocks = 0, nummajorunlocks = 0, numempty = 0;
-	UINT8 selection[2][MAXUNLOCKABLES + (CHALLENGEGRIDHEIGHT-1)];
+	UINT16 selection[2][MAXUNLOCKABLES + (CHALLENGEGRIDHEIGHT-1)];
 	UINT16 majorcompact = 2;
 
 	if (gamedata->challengegrid != NULL)
@@ -98,7 +98,7 @@ void M_PopulateChallengeGrid(void)
 	if (nummajorunlocks)
 	{
 		// Getting the number of 2-highs you can fit into two adjacent columns.
-		UINT8 majorpad = (CHALLENGEGRIDHEIGHT/2);
+		UINT16 majorpad = (CHALLENGEGRIDHEIGHT/2);
 		numempty = nummajorunlocks%majorpad;
 		majorpad = (nummajorunlocks+(majorpad-1))/majorpad;
 
@@ -128,7 +128,7 @@ void M_PopulateChallengeGrid(void)
 	}
 
 	gamedata->challengegrid = Z_Malloc(
-		(gamedata->challengegridwidth * CHALLENGEGRIDHEIGHT * sizeof(UINT8)),
+		(gamedata->challengegridwidth * CHALLENGEGRIDHEIGHT * sizeof(UINT16)),
 		PU_STATIC, NULL);
 
 	if (!gamedata->challengegrid)
@@ -136,9 +136,10 @@ void M_PopulateChallengeGrid(void)
 		I_Error("M_PopulateChallengeGrid: was not able to allocate grid");
 	}
 
-	memset(gamedata->challengegrid,
-		MAXUNLOCKABLES,
-		(gamedata->challengegridwidth * CHALLENGEGRIDHEIGHT * sizeof(UINT8)));
+	for (i = 0; i < (gamedata->challengegridwidth * CHALLENGEGRIDHEIGHT); ++i)
+	{
+		gamedata->challengegrid[i] = MAXUNLOCKABLES;
+	}
 
 	// Attempt to place all large tiles first.
 	if (nummajorunlocks)
@@ -212,7 +213,7 @@ quickcheckagain:
 #if (CHALLENGEGRIDHEIGHT == 4)
 		while (nummajorunlocks > 0)
 		{
-			UINT8 unlocktomoveup = MAXUNLOCKABLES;
+			UINT16 unlocktomoveup = MAXUNLOCKABLES;
 
 			j = gamedata->challengegridwidth-1;
 
@@ -311,9 +312,91 @@ quickcheckagain:
 	}
 }
 
+void M_SanitiseChallengeGrid(void)
+{
+	UINT8 seen[MAXUNLOCKABLES];
+	UINT16 empty[MAXUNLOCKABLES + (CHALLENGEGRIDHEIGHT-1)];
+	UINT16 i, j, numempty = 0;
+
+	if (gamedata->challengegrid == NULL)
+		return;
+
+	memset(seen, 0, sizeof(seen));
+
+	// Go through all spots to identify duplicates and absences.
+	for (j = 0; j < gamedata->challengegridwidth * CHALLENGEGRIDHEIGHT; j++)
+	{
+		i = gamedata->challengegrid[j];
+
+		if (i >= MAXUNLOCKABLES || !unlockables[i].conditionset)
+		{
+			empty[numempty++] = j;
+			continue;
+		}
+
+		if (seen[i] != 5) // Arbitrary cap greater than 4
+		{
+			seen[i]++;
+
+			if (seen[i] == 1 || unlockables[i].majorunlock)
+			{
+				continue;
+			}
+		}
+
+		empty[numempty++] = j;
+	}
+
+	// Go through unlockables to identify if any haven't been seen.
+	for (i = 0; i < MAXUNLOCKABLES; ++i)
+	{
+		if (!unlockables[i].conditionset)
+		{
+			continue;
+		}
+
+		if (unlockables[i].majorunlock && seen[i] != 4)
+		{
+			// Probably not enough spots to retrofit.
+			goto badgrid;
+		}
+
+		if (seen[i] != 0)
+		{
+			// Present on the challenge grid.
+			continue;
+		}
+
+		if (numempty != 0)
+		{
+			// Small ones can be slotted in easy.
+			j = empty[--numempty];
+			gamedata->challengegrid[j] = i;
+		}
+
+		// Nothing we can do to recover.
+		goto badgrid;
+	}
+
+	// Fill the remaining spots with empties.
+	while (numempty != 0)
+	{
+		j = empty[--numempty];
+		gamedata->challengegrid[j] = MAXUNLOCKABLES;
+	}
+
+	return;
+
+badgrid:
+	// Just remove everything and let it get regenerated.
+	Z_Free(gamedata->challengegrid);
+	gamedata->challengegrid = NULL;
+	gamedata->challengegridwidth = 0;
+}
+
 void M_UpdateChallengeGridExtraData(challengegridextradata_t *extradata)
 {
-	UINT8 i, j, num, id, tempid, work;
+	UINT16 i, j, num, id, tempid, work;
 	boolean idchange;
 
 	if (gamedata->challengegrid == NULL)
@@ -478,7 +561,7 @@ void M_UpdateChallengeGridExtraData(challengegridextradata_t *extradata)
 	}
 }
 
-void M_AddRawCondition(UINT8 set, UINT8 id, conditiontype_t c, INT32 r, INT16 x1, INT16 x2, char *stringvar)
+void M_AddRawCondition(UINT16 set, UINT8 id, conditiontype_t c, INT32 r, INT16 x1, INT16 x2, char *stringvar)
 {
 	condition_t *cond;
 	UINT32 num, wnum;
@@ -500,7 +583,7 @@ void M_AddRawCondition(UINT8 set, UINT8 id, conditiontype_t c, INT32 r, INT16 x1
 	cond[wnum].stringvar = stringvar;
 }
 
-void M_ClearConditionSet(UINT8 set)
+void M_ClearConditionSet(UINT16 set)
 {
 	if (conditionSets[set].numconditions)
 	{
@@ -530,17 +613,14 @@ void M_ClearStats(void)
 	gamedata->eversavedreplay = false;
 	gamedata->everseenspecial = false;
 	gamedata->evercrashed = false;
-	gamedata->musicflags = 0;
+	gamedata->musicstate = GDMUSIC_NONE;
+
+	gamedata->importprofilewins = false;
 }
 
 void M_ClearSecrets(void)
 {
 	INT32 i;
-
-	for (i = 0; i < nummapheaders; ++i)
-	{
-		mapheaderinfo[i]->mapvisited = 0;
-	}
 
 	for (i = 0; i < MAXEMBLEMS; ++i)
 		gamedata->collected[i] = false;
@@ -702,7 +782,7 @@ boolean M_CheckCondition(condition_t *cn, player_t *player)
 
 			return ((cn->requirement < nummapheaders)
 				&& (mapheaderinfo[cn->requirement])
-				&& ((mapheaderinfo[cn->requirement]->mapvisited & mvtype) == mvtype));
+				&& ((mapheaderinfo[cn->requirement]->records.mapvisited & mvtype) == mvtype));
 		}
 		case UC_MAPTIME: // Requires time on map <= x
 			return (G_GetBestTime(cn->extrainfo1) <= (unsigned)cn->requirement);
@@ -760,10 +840,13 @@ boolean M_CheckCondition(condition_t *cn, player_t *player)
 		case UC_CRASH:
 			if (gamedata->evercrashed)
 			{
-				gamedata->musicflags |= GDMUSIC_LOSERCLUB;
+				if (gamedata->musicstate < GDMUSIC_LOSERCLUB)
+					gamedata->musicstate = GDMUSIC_LOSERCLUB;
 				return true;
 			}
 			return false;
+		case UC_PASSWORD:
+			return (cn->stringvar == NULL);
 
 		// Just for string building
 		case UC_AND:
@@ -932,7 +1015,7 @@ static char *M_BuildConditionTitle(UINT16 map)
 
 	if (((mapheaderinfo[map]->menuflags & LF2_FINISHNEEDED)
 	// the following is intentionally not MV_BEATEN, just in case the title is for "Finish a round on X"
-	&& !(mapheaderinfo[map]->mapvisited & MV_VISITED))
+	&& !(mapheaderinfo[map]->records.mapvisited & MV_VISITED))
 	|| M_MapLocked(map+1))
 		return Z_StrDup("???");
 
@@ -1083,7 +1166,7 @@ static const char *M_GetConditionString(condition_t *cn)
 		case UC_ALLSUPER:
 		case UC_ALLEMERALDS:
 		{
-			const char *chaostext, *speedtext = "", *orbetter = "";
+			const char *chaostext, *speedtext = "";
 
 			if (!gamedata->everseenspecial)
 				return NULL;
@@ -1095,17 +1178,14 @@ static const char *M_GetConditionString(condition_t *cn)
 			else
 				chaostext = "14";
 
-			if (cn->requirement == KARTSPEED_NORMAL)
+			/*if (cn->requirement == KARTSPEED_NORMAL) -- Emeralds can not be collected on Easy
 			{
 				speedtext = " on Normal difficulty";
-				//if (M_SecretUnlocked(SECRET_HARDSPEED, true))
-					orbetter = " or better";
 			}
-			else if (cn->requirement == KARTSPEED_HARD)
+			else*/
+			if (cn->requirement == KARTSPEED_HARD)
 			{
 				speedtext = " on Hard difficulty";
-				if (M_SecretUnlocked(SECRET_MASTERMODE, true))
-					orbetter = " or better";
 			}
 			else if (cn->requirement == KARTGP_MASTER)
 			{
@@ -1115,7 +1195,7 @@ static const char *M_GetConditionString(condition_t *cn)
 					speedtext = " on ???";
 			}
 
-			return va("collect all %s Emeralds%s%s", chaostext, speedtext, orbetter);
+			return va("GRAND PRIX: collect all %s Emeralds%s", chaostext, speedtext);
 		}
 
 		case UC_TOTALMEDALS: // Requires number of emblems >= x
@@ -1215,6 +1295,8 @@ static const char *M_GetConditionString(condition_t *cn)
 			if (gamedata->evercrashed)
 				return "launch \"Dr. Robotnik's Ring Racers\" again after a game crash";
 			return NULL;
+		case UC_PASSWORD:
+			return "enter a secret password";
 
 		case UC_AND:
 			return "&";
@@ -1267,7 +1349,7 @@ static const char *M_GetConditionString(condition_t *cn)
 
 			if (cn->requirement == KARTSPEED_NORMAL)
 			{
-				speedtext = "on Normal difficulty or better";
+				speedtext = "on Normal difficulty";
 			}
 			else if (cn->requirement == KARTSPEED_HARD)
 			{
@@ -1324,7 +1406,10 @@ static const char *M_GetConditionString(condition_t *cn)
 			{
 				if (cup->id != cn->requirement)
 					continue;
-				return va("%s%s %s CUP", completetype, orbetter, cup->name);
+				return va("%s%s %s CUP",
+					completetype, orbetter,
+					(M_CupLocked(cup) ? "???" : cup->name)
+				);
 			}
 			return va("INVALID CUP CONDITION \"%d:%d\"", cn->type, cn->requirement);
 		}
@@ -1398,7 +1483,7 @@ static const char *M_GetConditionString(condition_t *cn)
 #undef BUILDCONDITIONTITLE
 }
 
-char *M_BuildConditionSetString(UINT8 unlockid)
+char *M_BuildConditionSetString(UINT16 unlockid)
 {
 	conditionset_t *c = NULL;
 	UINT32 lastID = 0;
@@ -1530,7 +1615,7 @@ char *M_BuildConditionSetString(UINT8 unlockid)
 
 static boolean M_CheckUnlockConditions(player_t *player)
 {
-	INT32 i;
+	UINT32 i;
 	conditionset_t *c;
 	boolean ret;
 
@@ -1547,6 +1632,43 @@ static boolean M_CheckUnlockConditions(player_t *player)
 	}
 
 	return ret;
+}
+
+boolean M_ConditionInterpret(const char *password)
+{
+	UINT32 i, j;
+	conditionset_t *c;
+	condition_t *cn;
+
+	for (i = 0; i < MAXCONDITIONSETS; ++i)
+	{
+		c = &conditionSets[i];
+
+		if (!c->numconditions || gamedata->achieved[i])
+			continue;
+
+		for (j = 0; j < c->numconditions; ++j)
+		{
+			cn = &c->condition[j];
+
+			if (cn->type != UC_PASSWORD)
+				continue;
+
+			if (cn->stringvar == NULL)
+				continue;
+
+			if (stricmp(cn->stringvar, password))
+				continue;
+
+			// Remove the password for this session.
+			Z_Free(cn->stringvar);
+			cn->stringvar = NULL;
+
+			return true;
+		}
+	}
+
+	return false;
 }
 
 boolean M_UpdateUnlockablesAndExtraEmblems(boolean loud, boolean doall)
@@ -1652,32 +1774,57 @@ boolean M_UpdateUnlockablesAndExtraEmblems(boolean loud, boolean doall)
 	return false;
 }
 
-UINT16 M_GetNextAchievedUnlock(void)
+UINT16 M_GetNextAchievedUnlock(boolean canskipchaokeys)
 {
-	UINT8 i;
+	UINT16 i;
 
 	// Go through unlockables
 	for (i = 0; i < MAXUNLOCKABLES; ++i)
 	{
-		if (gamedata->unlocked[i] || !unlockables[i].conditionset)
+		if (!unlockables[i].conditionset)
 		{
+			// Not worthy of consideration
 			continue;
 		}
 
 		if (gamedata->unlocked[i] == true)
 		{
+			// Already unlocked, no need to engage
 			continue;
 		}
 
 		if (gamedata->unlockpending[i] == false)
 		{
+			// Not unlocked AND not pending, which means chao keys can be used on something
+			canskipchaokeys = false;
 			continue;
 		}
 
 		return i;
 	}
 
-	if (gamedata->keyspending != 0)
+	if (canskipchaokeys == true)
+	{
+		// Okay, we're skipping chao keys - let's just insta-digest them.
+
+		if (gamedata->chaokeys + gamedata->keyspending < GDMAX_CHAOKEYS)
+		{
+			gamedata->chaokeys += gamedata->keyspending;
+			gamedata->pendingkeyroundoffset =
+				(gamedata->pendingkeyroundoffset + gamedata->pendingkeyrounds)
+				% GDCONVERT_ROUNDSTOKEY;
+
+		}
+		else
+		{
+			gamedata->chaokeys = GDMAX_CHAOKEYS;
+			gamedata->pendingkeyroundoffset = 0;
+		}
+
+		gamedata->keyspending = 0;
+		gamedata->pendingkeyrounds = 0;
+	}
+	else if (gamedata->keyspending != 0)
 	{
 		return PENDING_CHAOKEYS;
 	}
@@ -1686,14 +1833,14 @@ UINT16 M_GetNextAchievedUnlock(void)
 }
 
 // Emblem unlocking shit
-UINT8 M_CheckLevelEmblems(void)
+UINT16 M_CheckLevelEmblems(void)
 {
 	INT32 i;
 	INT32 valToReach;
 	INT16 tag;
 	INT16 levelnum;
-	UINT8 res;
-	UINT8 somethingUnlocked = 0;
+	boolean res;
+	UINT16 somethingUnlocked = 0;
 
 	// Update Score, Time, Rings emblems
 	for (i = 0; i < numemblems; ++i)
@@ -1739,13 +1886,13 @@ UINT8 M_CheckLevelEmblems(void)
 	return somethingUnlocked;
 }
 
-UINT8 M_CompletionEmblems(void) // Bah! Duplication sucks, but it's for a separate print when awarding emblems and it's sorta different enough.
+UINT16 M_CompletionEmblems(void) // Bah! Duplication sucks, but it's for a separate print when awarding emblems and it's sorta different enough.
 {
 	INT32 i;
 	INT32 embtype;
 	INT16 levelnum;
-	UINT8 res;
-	UINT8 somethingUnlocked = 0;
+	boolean res;
+	UINT16 somethingUnlocked = 0;
 	UINT8 flags;
 
 	for (i = 0; i < numemblems; ++i)
@@ -1770,7 +1917,7 @@ UINT8 M_CompletionEmblems(void) // Bah! Duplication sucks, but it's for a separa
 		if (embtype & ME_SPBATTACK)
 			flags |= MV_SPBATTACK;
 
-		res = ((mapheaderinfo[levelnum]->mapvisited & flags) == flags);
+		res = ((mapheaderinfo[levelnum]->records.mapvisited & flags) == flags);
 
 		gamedata->collected[i] = res;
 		if (res)
@@ -1784,7 +1931,7 @@ UINT8 M_CompletionEmblems(void) // Bah! Duplication sucks, but it's for a separa
 // Quick unlock checks
 // -------------------
 
-boolean M_CheckNetUnlockByID(UINT8 unlockid)
+boolean M_CheckNetUnlockByID(UINT16 unlockid)
 {
 	if (unlockid >= MAXUNLOCKABLES
 		|| !unlockables[unlockid].conditionset)
@@ -1827,7 +1974,7 @@ boolean M_SecretUnlocked(INT32 type, boolean local)
 
 boolean M_CupLocked(cupheader_t *cup)
 {
-	UINT8 i;
+	UINT16 i;
 
 	// Don't lock maps in dedicated servers.
 	// That just makes hosts' lives hell.
@@ -1855,7 +2002,7 @@ boolean M_CupLocked(cupheader_t *cup)
 
 boolean M_MapLocked(UINT16 mapnum)
 {
-	UINT8 i;
+	UINT16 i;
 
 	// Don't lock maps in dedicated servers.
 	// That just makes hosts' lives hell.
@@ -1921,7 +2068,7 @@ INT32 M_CountMedals(boolean all, boolean extraonly)
 
 // Theoretically faster than using M_CountMedals()
 // Stops when it reaches the target number of medals.
-UINT8 M_GotEnoughMedals(INT32 number)
+boolean M_GotEnoughMedals(INT32 number)
 {
 	INT32 i, gottenmedals = 0;
 	for (i = 0; i < numemblems; ++i)
@@ -1945,7 +2092,7 @@ UINT8 M_GotEnoughMedals(INT32 number)
 	return false;
 }
 
-UINT8 M_GotLowEnoughTime(INT32 tictime)
+boolean M_GotLowEnoughTime(INT32 tictime)
 {
 	INT32 curtics = 0;
 	INT32 i;
@@ -1955,9 +2102,9 @@ UINT8 M_GotLowEnoughTime(INT32 tictime)
 		if (!mapheaderinfo[i] || (mapheaderinfo[i]->menuflags & LF2_NOTIMEATTACK))
 			continue;
 
-		if (!mapheaderinfo[i]->mainrecord || !mapheaderinfo[i]->mainrecord->time)
+		if (!mapheaderinfo[i]->records.time)
 			return false;
-		else if ((curtics += mapheaderinfo[i]->mainrecord->time) > tictime)
+		if ((curtics += mapheaderinfo[i]->records.time) > tictime)
 			return false;
 	}
 	return true;
@@ -2100,9 +2247,10 @@ cupheader_t *M_UnlockableCup(unlockable_t *unlock)
 		if (unlock->stringVarCache == -1)
 		{
 			// Get the cup from the string.
+			UINT32 hash = quickncasehash(unlock->stringVar, MAXCUPNAME);
 			while (cup)
 			{
-				if (!strcmp(cup->name, unlock->stringVar))
+				if (hash == cup->namehash && !strcmp(cup->name, unlock->stringVar))
 					break;
 				cup = cup->next;
 			}

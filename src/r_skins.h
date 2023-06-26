@@ -37,7 +37,8 @@ extern "C" {
 /// The skin_t struct
 struct skin_t
 {
-	char name[SKINNAMESIZE+1]; // INT16 descriptive name of the skin
+	char name[SKINNAMESIZE+1]; // descriptive name of the skin
+	UINT32 namehash; // quickncasehash(->name, SKINNAMESIZE)
 	UINT16 wadnum;
 	skinflags_t flags;
 
@@ -57,6 +58,8 @@ struct skin_t
 	UINT16 prefoppositecolor; // if 0 use tables instead
 
 	fixed_t highresscale; // scale of highres, default is 0.5
+
+	skinrecord_t records;
 
 	char rivals[SKINRIVALS][SKINNAMESIZE+1]; // Your top 3 rivals for GP mode. Uses names so that you can reference skins that aren't added
 

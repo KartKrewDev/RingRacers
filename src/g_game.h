@@ -38,7 +38,7 @@ extern boolean playeringame[MAXPLAYERS];
 extern tic_t levelstarttic;
 
 // for modding?
-extern INT16 prevmap, nextmap;
+extern UINT16 prevmap, nextmap;
 
 // see also G_MapNumber
 typedef enum
@@ -54,6 +54,7 @@ typedef enum
 } nextmapspecial_t;
 
 #define ROUNDQUEUE_MAX 10 // sane max? maybe make dynamically allocated later
+#define ROUNDQUEUE_CLEAR UINT16_MAX // lives in gametype field of packets
 
 struct roundentry_t
 {
@@ -186,15 +187,13 @@ void G_StartTitleCard(void);
 void G_PreLevelTitleCard(void);
 boolean G_IsTitleCardAvailable(void);
 
-// Can be called by the startup code or M_Responder, calls P_SetupLevel.
-void G_LoadGame(UINT32 slot, INT16 mapoverride);
+void G_HandleSaveLevel(boolean removecondition);
+void G_SaveGame(void);
+void G_LoadGame(void);
+void G_GetBackupCupData(boolean actuallygetdata);
 
 void G_SaveGameData(void);
 void G_DirtyGameData(void);
-
-void G_SaveGame(UINT32 slot, INT16 mapnum);
-
-void G_SaveGameOver(UINT32 slot, boolean modifylives);
 
 void G_SetGametype(INT16 gametype);
 char *G_PrepareGametypeConstant(const char *newgtconst);
@@ -208,6 +207,7 @@ boolean G_GametypeHasSpectators(void);
 INT16 G_SometimesGetDifferentEncore(void);
 void G_ExitLevel(void);
 void G_NextLevel(void);
+void G_GetNextMap(void);
 void G_Continue(void);
 void G_UseContinue(void);
 void G_AfterIntermission(void);
@@ -263,7 +263,6 @@ void G_SetGameModified(boolean silent, boolean major);
 void G_SetUsedCheats(void);
 
 // Gamedata record shit
-void G_AllocMainRecordData(INT16 i);
 void G_ClearRecords(void);
 
 tic_t G_GetBestTime(INT16 map);
@@ -276,10 +275,12 @@ FUNCMATH INT32 G_TicsToMilliseconds(tic_t tics);
 
 // Don't split up TOL handling
 UINT32 G_TOLFlag(INT32 pgametype);
-INT16 G_GetFirstMapOfGametype(UINT8 pgametype);
+UINT16 G_GetFirstMapOfGametype(UINT8 pgametype);
 
 UINT16 G_RandMap(UINT32 tolflags, UINT16 pprevmap, boolean ignoreBuffers, boolean callAgainSoon, UINT16 *extBuffer);
 void G_AddMapToBuffer(UINT16 map);
+
+void G_UpdateVisited(void);
 
 #ifdef __cplusplus
 } // extern "C"

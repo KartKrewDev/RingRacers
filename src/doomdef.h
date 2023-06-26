@@ -425,6 +425,8 @@ typedef enum
 	SKINCOLOR_POSNUM_BEST4,
 	SKINCOLOR_POSNUM_BEST5,
 	SKINCOLOR_POSNUM_BEST6,
+	
+	SKINCOLOR_INTERMISSION,
 
 	SKINCOLOR_FIRSTFREESLOT,
 	SKINCOLOR_LASTFREESLOT = SKINCOLOR_FIRSTFREESLOT + NUMCOLORFREESLOTS - 1,
@@ -515,9 +517,9 @@ void CONS_Debug(UINT32 debugflags, const char *fmt, ...) FUNCDEBUG;
 #include "m_swap.h"
 
 // Things that used to be in dstrings.h
-#define SAVEGAMENAME "srb2sav"
+#define SAVEGAMENAME "ringsav"
 extern char savegamename[256];
-extern char liveeventbackup[256];
+extern char gpbackup[256];
 
 // m_misc.h
 #ifdef GETTEXT
@@ -540,6 +542,7 @@ void M_TokenizerClose(void);
 const char *M_TokenizerRead(UINT32 i);
 UINT32 M_TokenizerGetEndPos(void);
 void M_TokenizerSetEndPos(UINT32 newPos);
+boolean M_TokenizerJustReadString(void);
 
 char *sizeu1(size_t num);
 char *sizeu2(size_t num);

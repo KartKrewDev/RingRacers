@@ -74,6 +74,19 @@ public:
 class MainPaletteManager final : public Pass
 {
 	rhi::Handle<rhi::Texture> palette_;
+	rhi::Handle<rhi::Texture> lighttable_;
+	rhi::Handle<rhi::Texture> encore_lighttable_;
+	rhi::Handle<rhi::Texture> default_colormap_;
+
+	std::unordered_map<const uint8_t*, rhi::Handle<rhi::Texture>> colormaps_;
+	std::unordered_map<const uint8_t*, rhi::Handle<rhi::Texture>> lighttables_;
+	std::vector<const uint8_t*> colormaps_to_upload_;
+	std::vector<const uint8_t*> lighttables_to_upload_;
+
+	void upload_palette(rhi::Rhi& rhi, rhi::Handle<rhi::TransferContext> ctx);
+	void upload_lighttables(rhi::Rhi& rhi, rhi::Handle<rhi::TransferContext> ctx);
+	void upload_default_colormap(rhi::Rhi& rhi, rhi::Handle<rhi::TransferContext> ctx);
+	void upload_colormaps(rhi::Rhi& rhi, rhi::Handle<rhi::TransferContext> ctx);
 
 public:
 	MainPaletteManager();
@@ -85,6 +98,14 @@ public:
 	virtual void postpass(rhi::Rhi& rhi) override;
 
 	rhi::Handle<rhi::Texture> palette() const noexcept { return palette_; }
+	rhi::Handle<rhi::Texture> lighttable() const noexcept { return lighttable_; }
+	rhi::Handle<rhi::Texture> encore_lighttable() const noexcept { return encore_lighttable_; }
+	rhi::Handle<rhi::Texture> default_colormap() const noexcept { return default_colormap_; }
+
+	rhi::Handle<rhi::Texture> find_or_create_colormap(rhi::Rhi& rhi, srb2::NotNull<const uint8_t*> colormap);
+	rhi::Handle<rhi::Texture> find_colormap(srb2::NotNull<const uint8_t*> colormap) const;
+	rhi::Handle<rhi::Texture> find_or_create_extra_lighttable(rhi::Rhi& rhi, srb2::NotNull<const uint8_t*> lighttable);
+	rhi::Handle<rhi::Texture> find_extra_lighttable(srb2::NotNull<const uint8_t*> lighttable) const;
 };
 
 class CommonResourcesManager final : public Pass

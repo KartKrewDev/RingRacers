@@ -2063,7 +2063,7 @@ static void CV_SetValueMaybeStealth(consvar_t *var, INT32 value, boolean stealth
 			tmpskin = "None";
 		else
 			tmpskin = skins[value].name;
-		strncpy(val, tmpskin, SKINNAMESIZE);
+		strlcpy(val, tmpskin, SKINNAMESIZE+1);
 	}
 	else
 		sprintf(val, "%d", value);

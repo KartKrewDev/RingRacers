@@ -32,6 +32,7 @@
 #include "p_setup.h"
 
 #include "r_local.h"
+#include "r_fps.h"
 #include "p_local.h"
 
 #include "m_cond.h" // condition sets
@@ -47,6 +48,8 @@
 #include "k_boss.h"
 #include "k_pwrlv.h"
 #include "k_grandprix.h"
+#include "k_serverstats.h" // SV_BumpMatchStats
+#include "m_easing.h"
 
 #ifdef HWRENDER
 #include "hardware/hw_main.h"
@@ -59,29 +62,7 @@ typedef struct
 	UINT8 display;
 } y_bonus_t;
 
-typedef struct
-{
-	INT32 *character[MAXPLAYERS]; // Winner's character #
-	UINT16 *color[MAXPLAYERS]; // Winner's color #
-	SINT8 num[MAXPLAYERS]; // Winner's player #
-	char *name[MAXPLAYERS]; // Winner's name
-
-	UINT8 numplayers; // Number of players being displayed
-
-	char levelstring[64]; // holds levelnames up to 64 characters
-
-	// SRB2kart
-	INT16 increase[MAXPLAYERS]; // how much did the score increase by?
-	UINT8 jitter[MAXPLAYERS]; // wiggle
-
-	UINT32 val[MAXPLAYERS]; // Gametype-specific value
-	UINT8 pos[MAXPLAYERS]; // player positions. used for ties
-
-	boolean rankingsmode; // rankings mode
-	boolean encore; // encore mode
-} y_data;
-
-static y_data data;
+static y_data_t data;
 
 // graphics
 static patch_t *bgpatch = NULL;     // INTERSCR
@@ -96,6 +77,9 @@ static INT32 intertic;
 static INT32 endtic = -1;
 static INT32 sorttic = -1;
 static INT32 replayprompttic;
+
+static fixed_t mqscroll = 0;
+static fixed_t chkscroll = 0;
 
 intertype_t intertype = int_none;
 
@@ -153,54 +137,19 @@ static void Y_CalculateMatchData(UINT8 rankingsmode, void (*comparison)(INT32))
 	INT32 i, j;
 	boolean completed[MAXPLAYERS];
 	INT32 numplayersingame = 0;
+	boolean getmainplayer = false;
 
 	// Initialize variables
 	if (rankingsmode > 1)
 		;
 	else if ((data.rankingsmode = (boolean)rankingsmode))
 	{
-		sprintf(data.levelstring, "* Total Rankings *");
-		data.encore = false;
+		sprintf(data.headerstring, "Total Rankings");
+		data.gotthrough = false;
 	}
 	else
 	{
-		// set up the levelstring
-		if (bossinfo.valid == true && bossinfo.enemyname)
-		{
-			snprintf(data.levelstring,
-				sizeof data.levelstring,
-				"* %s *",
-				bossinfo.enemyname);
-		}
-		else if (mapheaderinfo[prevmap]->levelflags & LF_NOZONE)
-		{
-			if (mapheaderinfo[prevmap]->actnum > 0)
-				snprintf(data.levelstring,
-					sizeof data.levelstring,
-					"* %s %d *",
-					mapheaderinfo[prevmap]->lvlttl, mapheaderinfo[prevmap]->actnum);
-			else
-				snprintf(data.levelstring,
-					sizeof data.levelstring,
-					"* %s *",
-					mapheaderinfo[prevmap]->lvlttl);
-		}
-		else
-		{
-			const char *zonttl = (mapheaderinfo[prevmap]->zonttl[0] ? mapheaderinfo[prevmap]->zonttl : "ZONE");
-			if (mapheaderinfo[prevmap]->actnum > 0)
-				snprintf(data.levelstring,
-					sizeof data.levelstring,
-					"* %s %s %d *",
-					mapheaderinfo[prevmap]->lvlttl, zonttl, mapheaderinfo[prevmap]->actnum);
-			else
-				snprintf(data.levelstring,
-					sizeof data.levelstring,
-					"* %s %s *",
-					mapheaderinfo[prevmap]->lvlttl, zonttl);
-		}
-
-		data.levelstring[sizeof data.levelstring - 1] = '\0';
+		getmainplayer = true;
 
 		data.encore = encoremode;
 
@@ -227,6 +176,7 @@ static void Y_CalculateMatchData(UINT8 rankingsmode, void (*comparison)(INT32))
 	memset(data.character, 0, sizeof (data.character));
 	memset(completed, 0, sizeof (completed));
 	data.numplayers = 0;
+	data.roundnum = 0;
 
 	for (j = 0; j < numplayersingame; j++)
 	{
@@ -242,9 +192,8 @@ static void Y_CalculateMatchData(UINT8 rankingsmode, void (*comparison)(INT32))
 
 		completed[i] = true;
 
-		data.color[data.numplayers] = &players[i].skincolor;
-		data.character[data.numplayers] = &players[i].skin;
-		data.name[data.numplayers] = player_names[i];
+		data.color[data.numplayers] = players[i].skincolor;
+		data.character[data.numplayers] = players[i].skin;
 
 		if (data.numplayers && (data.val[data.numplayers] == data.val[data.numplayers-1]))
 		{
@@ -254,6 +203,10 @@ static void Y_CalculateMatchData(UINT8 rankingsmode, void (*comparison)(INT32))
 		{
 			data.pos[data.numplayers] = data.numplayers+1;
 		}
+
+#define strtime data.strval[data.numplayers]
+
+		strtime[0] = '\0';
 
 		if (!rankingsmode)
 		{
@@ -270,15 +223,1018 @@ static void Y_CalculateMatchData(UINT8 rankingsmode, void (*comparison)(INT32))
 			{
 				G_WriteStanding(
 					data.pos[data.numplayers],
-					data.name[data.numplayers],
-					*data.character[data.numplayers],
-					*data.color[data.numplayers],
+					player_names[i],
+					data.character[data.numplayers],
+					data.color[data.numplayers],
 					data.val[data.numplayers]
 				);
 			}
+
+			if (data.val[data.numplayers] == (UINT32_MAX-1))
+				STRBUFCPY(strtime, "RETIRED.");
+			else
+			{
+				if (intertype == int_time)
+				{
+					snprintf(strtime, sizeof strtime, "%i'%02i\"%02i", G_TicsToMinutes(data.val[data.numplayers], true),
+					G_TicsToSeconds(data.val[data.numplayers]), G_TicsToCentiseconds(data.val[data.numplayers]));
+				}
+				else
+				{
+					snprintf(strtime, sizeof strtime, "%d", data.val[data.numplayers]);
+				}
+			}
+		}
+		else
+		{
+			if (powertype != PWRLV_DISABLED && !clientpowerlevels[i][powertype])
+			{
+				// No power level (guests)
+				STRBUFCPY(strtime, "----");
+			}
+			else
+			{
+				snprintf(strtime, sizeof strtime, "%d", data.val[data.numplayers]);
+			}
 		}
 
+		strtime[sizeof strtime - 1] = '\0';
+
+#undef strtime
+
 		data.numplayers++;
+	}
+
+	if (getmainplayer == true)
+	{
+		// Okay, player scores have been set now - we can calculate GP-relevant material.
+		{
+			K_UpdateGPRank();
+
+			// See also G_GetNextMap, M_DrawPause
+			data.showrank = false;
+			if (grandprixinfo.gp == true
+				&& netgame == false // TODO netgame Special Mode support
+				&& grandprixinfo.gamespeed >= KARTSPEED_NORMAL
+				&& roundqueue.size > 1
+				&& roundqueue.entries[roundqueue.size - 1].rankrestricted == true
+			)
+			{
+				if (roundqueue.position == roundqueue.size-1)
+				{
+					// On A rank pace? Then you get a chance for S rank!
+					gp_rank_e rankforline = K_CalculateGPGrade(&grandprixinfo.rank);
+
+					data.showrank = (rankforline >= GRADE_A);
+
+					data.linemeter =
+						(min(rankforline, GRADE_A)
+							* (2 * TICRATE)
+						) / GRADE_A;
+
+					// A little extra time to take it all in
+					timer += TICRATE;
+				}
+
+				if (gamedata->everseenspecial == true
+					|| roundqueue.position == roundqueue.size)
+				{
+					// Additional cases in which it should always be shown.
+					data.showrank = true;
+				}
+			}
+		}
+
+		i = MAXPLAYERS;
+
+		for (j = 0; j < data.numplayers; j++)
+		{
+			i = data.num[j];
+
+			if (i >= MAXPLAYERS
+				|| playeringame[i] == false
+				|| players[i].spectator == true)
+			{
+				continue;
+			}
+
+			if (demo.playback)
+			{
+				if (!P_IsDisplayPlayer(&players[i]))
+				{
+					continue;
+				}
+
+				break;
+			}
+
+			if (!P_IsLocalPlayer(&players[i]))
+			{
+				continue;
+			}
+
+			break;
+		}
+
+		data.headerstring[0] = '\0';
+		data.gotthrough = false;
+		data.mainplayer = MAXPLAYERS;
+
+		if (j < data.numplayers)
+		{
+			data.mainplayer = i;
+
+			if (!(players[i].pflags & PF_NOCONTEST))
+			{
+				data.gotthrough = true;
+
+				if (players[i].skin < numskins)
+				{
+					snprintf(data.headerstring,
+						sizeof data.headerstring,
+						"%s",
+						skins[players[i].skin].realname);
+				}
+
+				if (roundqueue.size > 0
+					&& roundqueue.roundnum > 0
+					&& (grandprixinfo.gp == false
+						|| grandprixinfo.eventmode == GPEVENT_NONE)
+					)
+				{
+					data.roundnum = roundqueue.roundnum;
+				}
+			}
+			else
+			{
+				snprintf(data.headerstring,
+					sizeof data.headerstring,
+					"NO CONTEST...");
+			}
+		}
+		else
+		{
+			if (roundqueue.size > 0
+				&& roundqueue.roundnum > 0
+				&& (grandprixinfo.gp == false
+					|| grandprixinfo.eventmode == GPEVENT_NONE)
+				)
+			{
+				snprintf(data.headerstring,
+					sizeof data.headerstring,
+					"ROUND");
+
+				data.roundnum = roundqueue.roundnum;
+			}
+			else if (bossinfo.valid == true && bossinfo.enemyname)
+			{
+				snprintf(data.headerstring,
+					sizeof data.headerstring,
+					"%s",
+					bossinfo.enemyname);
+			}
+			else if (battleprisons == true)
+			{
+				snprintf(data.headerstring,
+					sizeof data.headerstring,
+					"PRISON BREAK");
+			}
+			else
+			{
+				snprintf(data.headerstring,
+					sizeof data.headerstring,
+					"%s STAGE",
+					gametypes[gametype]->name);
+			}
+		}
+
+		data.headerstring[sizeof data.headerstring - 1] = '\0';
+	}
+}
+
+typedef enum
+{
+	BPP_AHEAD,
+	BPP_DONE,
+	BPP_MAIN,
+	BPP_SHADOW = BPP_MAIN,
+	BPP_MAX
+} bottomprogressionpatch_t;
+
+//
+// Y_PlayerStandingsDrawer
+//
+// Handles drawing the center-of-screen player standings.
+//
+void Y_PlayerStandingsDrawer(y_data_t *standings, INT32 xoffset)
+{
+	if (standings->numplayers == 0)
+	{
+		return;
+	}
+
+	UINT8 i;
+
+	SINT8 yspacing = 14;
+	INT32 heightcount = (standings->numplayers - 1);
+
+	INT32 x, y;
+	INT32 x2, returny, inwardshim = 0;
+
+	boolean verticalresults = (standings->numplayers < 4);
+	boolean datarightofcolumn = false;
+	boolean drawping = (netgame && gamestate == GS_LEVEL);
+
+	INT32 hilicol = highlightflags;
+
+	patch_t *resbar = W_CachePatchName("R_RESBAR", PU_PATCH); // Results bars for players
+
+	if (drawping || standings->rankingsmode != 0)
+	{
+		inwardshim = 8;
+	}
+
+	if (verticalresults)
+	{
+		x = (BASEVIDWIDTH/2) - 61;
+	}
+	else
+	{
+		x = 29;
+		inwardshim /= 2;
+		heightcount /= 2;
+	}
+
+	x += xoffset + inwardshim;
+	x2 = x;
+
+	if (drawping)
+	{
+		x2 -= 9;
+	}
+
+	if (standings->numplayers > 10)
+	{
+		yspacing--;
+	}
+	else if (standings->numplayers <= 6)
+	{
+		yspacing++;
+		if (verticalresults)
+		{
+			yspacing++;
+		}
+	}
+
+	y = 106 - (heightcount * yspacing)/2;
+
+	if (y < 70)
+	{
+		// One sanity check.
+		y = 70;
+	}
+
+	returny = y;
+
+	boolean (*_isHighlightedPlayer)(player_t *) =
+		(demo.playback
+			? P_IsDisplayPlayer
+			: P_IsLocalPlayer
+		);
+
+	for (i = 0; i < standings->numplayers; i++)
+	{
+		const UINT8 pnum = standings->num[i];
+
+		if (pnum == MAXPLAYERS)
+			;
+		else if (!playeringame[pnum] || players[pnum].spectator == true)
+			standings->num[i] = MAXPLAYERS; // this should be the only field setting in this function
+		else
+		{
+			// Apply the jitter offset (later reversed)
+			if (standings->jitter[pnum] > 0)
+				y--;
+
+			V_DrawMappedPatch(x, y, 0, resbar, NULL);
+
+			V_DrawRightAlignedThinString(x+13, y-2, 0, va("%d", standings->pos[i]));
+
+			if (standings->color[i] != SKINCOLOR_NONE)
+			{
+				UINT8 *charcolormap;
+				if ((players[pnum].pflags & PF_NOCONTEST) && players[pnum].bot)
+				{
+					// RETIRED !!
+					charcolormap = R_GetTranslationColormap(TC_DEFAULT, standings->color[i], GTC_CACHE);
+					V_DrawMappedPatch(x+14, y-5, 0, W_CachePatchName("MINIDEAD", PU_CACHE), charcolormap);
+				}
+				else
+				{
+					charcolormap = R_GetTranslationColormap(standings->character[i], standings->color[i], GTC_CACHE);
+					V_DrawMappedPatch(x+14, y-5, 0, faceprefix[standings->character[i]][FACE_MINIMAP], charcolormap);
+				}
+			}
+
+/*			y2 = y;
+
+			if ((netgame || (demo.playback && demo.netgame)) && playerconsole[pnum] == 0 && server_lagless && !players[pnum].bot)
+			{
+				static UINT8 alagles_timer = 0;
+				patch_t *alagles;
+
+				y2 = ( y - 4 );
+
+				V_DrawScaledPatch(x + 36, y2, 0, W_CachePatchName(va("BLAGLES%d", (intertic / 3) % 6), PU_CACHE));
+				// every 70 tics
+				if (( leveltime % 70 ) == 0)
+				{
+					alagles_timer = 9;
+				}
+				if (alagles_timer > 0)
+				{
+					alagles = W_CachePatchName(va("ALAGLES%d", alagles_timer), PU_CACHE);
+					V_DrawScaledPatch(x + 36, y2, 0, alagles);
+					if (( leveltime % 2 ) == 0)
+						alagles_timer--;
+				}
+				else
+				{
+					alagles = W_CachePatchName("ALAGLES0", PU_CACHE);
+					V_DrawScaledPatch(x + 36, y2, 0, alagles);
+				}
+
+				y2 += SHORT (alagles->height) + 1;
+			}*/
+
+			V_DrawThinString(
+				x+27, y-2,
+				(
+					_isHighlightedPlayer(&players[pnum])
+						? hilicol
+						: 0
+				)|V_ALLOWLOWERCASE|V_6WIDTHSPACE,
+				player_names[pnum]
+			);
+
+			V_DrawRightAlignedThinString(
+				x+118, y-2,
+				V_ALLOWLOWERCASE|V_6WIDTHSPACE,
+				standings->strval[i]
+			);
+
+			if (drawping)
+			{
+				if (players[pnum].bot)
+				{
+					/*V_DrawScaledPatch(
+						x2, y-1,
+						0,
+						kp_cpu
+					);*/
+				}
+				else if (pnum != serverplayer || !server_lagless)
+				{
+					HU_drawPing(
+						(x2 - 2) * FRACUNIT, (y-2) * FRACUNIT,
+						playerpingtable[pnum],
+						0,
+						false,
+						(datarightofcolumn ? 1 : -1)
+					);
+				}
+			}
+			else if (standings->rankingsmode != 0)
+			{
+				char *increasenum = NULL;
+
+				if (standings->increase[pnum] != INT16_MIN)
+				{
+					increasenum = va(
+						"(%d)",
+						standings->increase[pnum]
+					);
+				}
+
+				if (increasenum)
+				{
+					if (datarightofcolumn)
+					{
+						V_DrawThinString(
+							x2, y-2,
+							V_ALLOWLOWERCASE|V_6WIDTHSPACE,
+							increasenum
+						);
+					}
+					else
+					{
+						V_DrawRightAlignedThinString(
+							x2, y-2,
+							V_ALLOWLOWERCASE|V_6WIDTHSPACE,
+							increasenum
+						);
+					}
+				}
+
+			}
+
+			// Reverse the jitter offset
+			if (standings->jitter[pnum] > 0)
+				y++;
+		}
+
+		y += yspacing;
+
+		if (verticalresults == false && i == (standings->numplayers-1)/2)
+		{
+			x = 169 + xoffset - inwardshim;
+			y = returny;
+
+			datarightofcolumn = true;
+			x2 = x + 118 + 5;
+		}
+	}
+}
+
+//
+// Y_RoundQueueDrawer
+//
+// Handles drawing the bottom-of-screen progression.
+// Currently requires intermission y_data for animation only.
+//
+void Y_RoundQueueDrawer(y_data_t *standings, INT32 offset, boolean doanimations, boolean widescreen)
+{
+	if (roundqueue.size == 0)
+	{
+		return;
+	}
+
+	// The following is functionally a hack.
+	// Due to how interpolation works, it's functionally one frame behind.
+	// So we offset certain interpolated timers by this to make our lives easier!
+	// This permits cues handled in the ticker and visuals to match up,
+	// like the player pin reaching the Sealed Star the frame of the fade.
+	// We also do this rather than doing extrapoleration because that would
+	// still put 35fps in the future. ~toast 100523
+	SINT8 interpoffs = (R_UsingFrameInterpolation() ? 1 : 0);
+
+	UINT8 i;
+
+	UINT8 *greymap = R_GetTranslationColormap(TC_DEFAULT, SKINCOLOR_GREY, GTC_CACHE);
+
+	INT32 baseflags = (widescreen ? V_SNAPTOBOTTOM : 0);
+	INT32 bufferspace = ((vid.width/vid.dupx) - BASEVIDWIDTH) / 2;
+
+	// Background pieces
+	patch_t *queuebg_flat = W_CachePatchName("R_RMBG1", PU_PATCH);
+	patch_t *queuebg_upwa = W_CachePatchName("R_RMBG2", PU_PATCH);
+	patch_t *queuebg_down = W_CachePatchName("R_RMBG3", PU_PATCH);
+	patch_t *queuebg_prize = W_CachePatchName("R_RMBG4", PU_PATCH);
+
+	// Progression lines
+	patch_t *line_upwa[BPP_MAX];
+	patch_t *line_down[BPP_MAX];
+	patch_t *line_flat[BPP_MAX];
+
+	line_upwa[BPP_AHEAD] = W_CachePatchName("R_RRMLN1", PU_PATCH);
+	line_upwa[BPP_DONE] = W_CachePatchName("R_RRMLN3", PU_PATCH);
+	line_upwa[BPP_SHADOW] = W_CachePatchName("R_RRMLS1", PU_PATCH);
+
+	line_down[BPP_AHEAD] = W_CachePatchName("R_RRMLN2", PU_PATCH);
+	line_down[BPP_DONE] = W_CachePatchName("R_RRMLN4", PU_PATCH);
+	line_down[BPP_SHADOW] = W_CachePatchName("R_RRMLS2", PU_PATCH);
+
+	line_flat[BPP_AHEAD] = W_CachePatchName("R_RRMLN5", PU_PATCH);
+	line_flat[BPP_DONE] = W_CachePatchName("R_RRMLN6", PU_PATCH);
+	line_flat[BPP_SHADOW] = W_CachePatchName("R_RRMLS3", PU_PATCH);
+
+	// Progress markers
+	patch_t *level_dot[BPP_MAIN];
+	patch_t *capsu_dot[BPP_MAIN];
+	patch_t *prize_dot[BPP_MAIN];
+
+	level_dot[BPP_AHEAD] = W_CachePatchName("R_RRMRK2", PU_PATCH);
+	level_dot[BPP_DONE] = W_CachePatchName("R_RRMRK1", PU_PATCH);
+
+	capsu_dot[BPP_AHEAD] = W_CachePatchName("R_RRMRK3", PU_PATCH);
+	capsu_dot[BPP_DONE] = W_CachePatchName("R_RRMRK5", PU_PATCH);
+
+	prize_dot[BPP_AHEAD] = W_CachePatchName("R_RRMRK4", PU_PATCH);
+	prize_dot[BPP_DONE] = W_CachePatchName("R_RRMRK6", PU_PATCH);
+
+	UINT8 *colormap = NULL, *oppositemap = NULL;
+	fixed_t playerx = 0, playery = 0;
+	UINT8 pskin = MAXSKINS;
+	UINT16 pcolor = SKINCOLOR_WHITE;
+
+	if (standings->mainplayer == MAXPLAYERS)
+	{
+		;
+	}
+	else if (playeringame[standings->mainplayer] == false)
+	{
+		standings->mainplayer = MAXPLAYERS;
+	}
+	else if (players[standings->mainplayer].spectator == false
+		&& players[standings->mainplayer].skin < numskins
+		&& players[standings->mainplayer].skincolor != SKINCOLOR_NONE
+		&& players[standings->mainplayer].skincolor < numskincolors
+	)
+	{
+		pskin = players[standings->mainplayer].skin;
+		pcolor = players[standings->mainplayer].skincolor;
+	}
+
+	colormap = R_GetTranslationColormap(TC_DEFAULT, pcolor, GTC_CACHE);
+	oppositemap = R_GetTranslationColormap(TC_DEFAULT, skincolors[pcolor].invcolor, GTC_CACHE);
+
+	UINT8 workingqueuesize = roundqueue.size;
+	boolean upwa = false;
+
+	if (roundqueue.size > 1
+		&& roundqueue.entries[roundqueue.size - 1].rankrestricted == true
+	)
+	{
+		if (roundqueue.size & 1)
+		{
+			upwa = true;
+		}
+
+		workingqueuesize--;
+	}
+
+	INT32 widthofroundqueue = 24*(workingqueuesize - 1);
+
+	INT32 x = (BASEVIDWIDTH - widthofroundqueue) / 2;
+	INT32 y, basey = 167 + offset;
+
+	INT32 spacetospecial = 0;
+
+	// The following block handles horizontal easing of the
+	// progression bar on the last non-rankrestricted round.
+	if (standings->showrank == true)
+	{
+		fixed_t percentslide = 0;
+		SINT8 deferxoffs = 0;
+
+		const INT32 desiredx2 = (290 + bufferspace);
+		spacetospecial = max(desiredx2 - widthofroundqueue - (24 - bufferspace), 16);
+
+		if (roundqueue.position == roundqueue.size)
+		{
+			percentslide = FRACUNIT;
+		}
+		else if (doanimations
+			&& roundqueue.position == roundqueue.size-1
+			&& timer - interpoffs <= 3*TICRATE)
+		{
+			const INT32 through = (3*TICRATE) - (timer - interpoffs - 1);
+			const INT32 slidetime = (TICRATE/2);
+
+			if (through >= slidetime)
+			{
+				percentslide = FRACUNIT;
+			}
+			else
+			{
+					percentslide = R_InterpolateFixed(
+						(through - 1) * FRACUNIT,
+						(through * FRACUNIT)
+					) / slidetime;
+			}
+		}
+
+		if (percentslide != 0)
+		{
+			const INT32 differencetocover = (x + widthofroundqueue + spacetospecial - desiredx2);
+
+			if (percentslide == FRACUNIT)
+			{
+				x -= (differencetocover + deferxoffs);
+			}
+			else
+			{
+				x -= Easing_OutCubic(
+					percentslide,
+					0,
+					differencetocover * FRACUNIT
+				) / FRACUNIT;
+			}
+		}
+	}
+
+	// Fill in background to left edge of screen
+	fixed_t xiter = x;
+
+	if (upwa == true)
+	{
+		xiter -= 24;
+		V_DrawMappedPatch(xiter, basey, baseflags, queuebg_upwa, greymap);
+	}
+
+	while (xiter > -bufferspace)
+	{
+		xiter -= 24;
+		V_DrawMappedPatch(xiter, basey, baseflags, queuebg_flat, greymap);
+	}
+
+	for (i = 0; i < workingqueuesize; i++)
+	{
+		// Draw the background, and grab the appropriate line, to the right of the dot
+		patch_t **choose_line = NULL;
+
+		upwa ^= true;
+		if (upwa == false)
+		{
+			y = basey + 4;
+
+			V_DrawMappedPatch(x, basey, baseflags, queuebg_down, greymap);
+
+			if (i+1 != workingqueuesize) // no more line?
+			{
+				choose_line = line_down;
+			}
+		}
+		else
+		{
+			y = basey + 12;
+
+			if (i+1 != workingqueuesize) // no more line?
+			{
+				V_DrawMappedPatch(x, basey, baseflags, queuebg_upwa, greymap);
+
+				choose_line = line_upwa;
+			}
+			else
+			{
+				V_DrawMappedPatch(x, basey, baseflags, queuebg_flat, greymap);
+			}
+		}
+
+		if (roundqueue.position == i+1)
+		{
+			playerx = (x * FRACUNIT);
+			playery = (y * FRACUNIT);
+
+			// If there's standard progression ahead of us, visibly move along it.
+			if (
+				doanimations
+				&& choose_line != NULL
+				&& timer - interpoffs <= 2*TICRATE
+			)
+			{
+				// 8 tics is chosen because it plays nice
+				// with both the x and y distance to cover.
+				fixed_t through = (2*TICRATE) - (timer - interpoffs - 1);;
+
+				if (through > 8)
+				{
+					if (through == 9 + interpoffs)
+					{
+						// Impactful landing
+						playery += FRACUNIT;
+					}
+
+					through = 8 * FRACUNIT;
+				}
+				else
+				{
+					through = R_InterpolateFixed(
+						(through - 1) * FRACUNIT,
+						(through * FRACUNIT)
+					);
+				}
+
+				// 24 pixels when all is said and done
+				playerx += through * 3;
+
+				if (upwa == false)
+				{
+					playery += through;
+				}
+				else
+				{
+					playery -= through;
+				}
+
+				if (through > 0 && through < 8 * FRACUNIT)
+				{
+					// Hoparabola and a skip.
+					const fixed_t jumpfactor = through - (4 * FRACUNIT);
+					// jumpfactor squared goes through 36 -> 0 -> 36.
+					// 12 pixels is an arbitrary jump height, but we match it to invert the parabola.
+					playery -= ((12 * FRACUNIT)
+							- (FixedMul(jumpfactor, jumpfactor) / 3)
+					);
+				}
+			}
+			// End of the moving along
+		}
+
+		if (choose_line != NULL)
+		{
+			// Draw the line to the right of the dot
+
+			V_DrawMappedPatch(
+				x - 1, basey + 11,
+				baseflags,
+				choose_line[BPP_SHADOW],
+				NULL
+			);
+
+			boolean lineisfull = false, recttoclear = false;
+
+			if (roundqueue.position > i+1)
+			{
+				lineisfull = true;
+			}
+			else if (
+				doanimations == true
+				&& roundqueue.position == i+1
+				&& timer - interpoffs <= 2*TICRATE
+			)
+			{
+				// 8 tics is chosen because it plays nice
+				// with both the x and y distance to cover.
+				const INT32 through = (2*TICRATE) - (timer - interpoffs - 1);
+
+				if (through == 0)
+				{
+					; // no change...
+				}
+				else if (through > 8)
+				{
+					lineisfull = true;
+				}
+				else
+				{
+					V_DrawMappedPatch(
+						x - 1, basey + 12,
+						baseflags,
+						choose_line[BPP_DONE],
+						colormap
+					);
+
+					V_SetClipRect(
+						playerx + FRACUNIT,
+						0,
+						(BASEVIDWIDTH + bufferspace) << FRACBITS,
+						BASEVIDHEIGHT << FRACBITS,
+						baseflags
+					);
+
+					recttoclear = true;
+				}
+			}
+
+			V_DrawMappedPatch(
+				x - 1, basey + 12,
+				baseflags,
+				choose_line[lineisfull ? BPP_DONE : BPP_AHEAD],
+				lineisfull ? colormap : NULL
+			);
+
+			if (recttoclear == true)
+			{
+				V_ClearClipRect();
+			}
+		}
+		else
+		{
+			// No more line! Fill in background to right edge of screen
+			xiter = x;
+			while (xiter < BASEVIDWIDTH + bufferspace)
+			{
+				xiter += 24;
+				V_DrawMappedPatch(xiter, basey, baseflags, queuebg_flat, greymap);
+			}
+
+			// Handle special entry on the end
+			// (has to be drawn before the semifinal dot due to overlap)
+			if (standings->showrank == true)
+			{
+				const fixed_t x2 = x + spacetospecial;
+
+				if (roundqueue.position == roundqueue.size)
+				{
+					playerx = (x2 * FRACUNIT);
+					playery = (y * FRACUNIT);
+				}
+				else if (
+					doanimations == true
+					&& roundqueue.position == roundqueue.size-1
+					&& timer - interpoffs <= 2*TICRATE
+				)
+				{
+					const INT32 through = ((2*TICRATE) - (timer - interpoffs - 1));
+					fixed_t linefill;
+
+					if (through > standings->linemeter)
+					{
+						linefill = standings->linemeter * FRACUNIT;
+
+						// Small judder if there's enough time for it
+						if (timer <= 2)
+						{
+							;
+						}
+						else if (through == (standings->linemeter + 1 + interpoffs))
+						{
+							playerx += FRACUNIT;
+						}
+						else if (through == (standings->linemeter + 2 + interpoffs))
+						{
+							playerx -= FRACUNIT;
+						}
+					}
+					else
+					{
+						linefill = R_InterpolateFixed(
+							(through - 1) * FRACUNIT,
+							(through * FRACUNIT)
+						);
+					}
+
+					const fixed_t percent = FixedDiv(
+							linefill,
+							(2*TICRATE) * FRACUNIT
+						);
+
+					playerx +=
+						FixedMul(
+							(x2 - x) * FRACUNIT,
+							percent
+						);
+				}
+
+				// Special background bump
+				V_DrawMappedPatch(x2 - 13, basey, baseflags, queuebg_prize, greymap);
+
+				// Draw the final line
+				const fixed_t barstart = x + 6;
+				const fixed_t barend = x2 - 6;
+
+				if (barend - 2 >= barstart)
+				{
+					boolean lineisfull = false, recttoclear = false;
+
+					xiter = barstart;
+
+					if (playerx >= (barend + 1) * FRACUNIT)
+					{
+						lineisfull = true;
+					}
+					else if (playerx <= (barstart - 1) * FRACUNIT)
+					{
+						;
+					}
+					else
+					{
+						const fixed_t fillend = min((playerx / FRACUNIT) + 2, barend);
+
+						while (xiter < fillend)
+						{
+							V_DrawMappedPatch(
+								xiter - 1, basey + 10,
+								baseflags,
+								line_flat[BPP_SHADOW],
+								NULL
+							);
+
+							V_DrawMappedPatch(
+								xiter - 1, basey + 12,
+								baseflags,
+								line_flat[BPP_DONE],
+								colormap
+							);
+
+							xiter += 2;
+						}
+
+						// Undo the last step so we can draw the unfilled area of the patch.
+						xiter -= 2;
+
+						V_SetClipRect(
+							playerx,
+							0,
+							(BASEVIDWIDTH + bufferspace) << FRACBITS,
+							BASEVIDHEIGHT << FRACBITS,
+							baseflags
+						);
+
+						recttoclear = true;
+					}
+
+					while (xiter < barend)
+					{
+						V_DrawMappedPatch(
+							xiter - 1, basey + 10,
+							baseflags,
+							line_flat[BPP_SHADOW],
+							NULL
+						);
+
+						V_DrawMappedPatch(
+							xiter - 1, basey + 12,
+							baseflags,
+							line_flat[lineisfull ? BPP_DONE : BPP_AHEAD],
+							lineisfull ? colormap : NULL
+						);
+
+						xiter += 2;
+					}
+
+					if (recttoclear == true)
+					{
+						V_ClearClipRect();
+					}
+				}
+
+				// Draw the final dot
+				V_DrawMappedPatch(
+					x2 - 8, y,
+					baseflags,
+					prize_dot[roundqueue.position == roundqueue.size ? BPP_DONE : BPP_AHEAD],
+					roundqueue.position == roundqueue.size ? oppositemap : colormap
+				);
+			}
+			// End of the special entry handling
+		}
+
+		// Now draw the dot
+		patch_t **chose_dot = NULL;
+
+		if (roundqueue.entries[i].rankrestricted == true)
+		{
+			// This shouldn't show up in regular play, but don't hide it entirely.
+			chose_dot = prize_dot;
+		}
+		else if (grandprixinfo.gp == true
+			&& roundqueue.entries[i].gametype != roundqueue.entries[0].gametype
+		)
+		{
+			chose_dot = capsu_dot;
+		}
+		else
+		{
+			chose_dot = level_dot;
+		}
+
+		if (chose_dot)
+		{
+			V_DrawMappedPatch(
+				x - 8, y,
+				baseflags,
+				chose_dot[roundqueue.position >= i+1 ? BPP_DONE : BPP_AHEAD],
+				roundqueue.position == i+1 ? oppositemap : colormap
+			);
+		}
+
+		x += 24;
+	}
+
+	// Draw the player position through the round queue!
+	if (playery != 0)
+	{
+		patch_t *rpmark[2];
+		rpmark[0] = W_CachePatchName("R_RPMARK", PU_PATCH);
+		rpmark[1] = W_CachePatchName("R_R2MARK", PU_PATCH);
+
+		// Change alignment
+		playerx -= (10 * FRACUNIT);
+		playery -= (14 * FRACUNIT);
+
+		if (pskin < numskins)
+		{
+			// Draw outline for rank icon
+			V_DrawFixedPatch(
+				playerx, playery,
+				FRACUNIT,
+				baseflags,
+				rpmark[0],
+				NULL
+			);
+
+			// Draw the player's rank icon
+			V_DrawFixedPatch(
+				playerx + FRACUNIT, playery + FRACUNIT,
+				FRACUNIT,
+				baseflags,
+				faceprefix[pskin][FACE_RANK],
+				R_GetTranslationColormap(pskin, pcolor, GTC_CACHE)
+			);
+		}
+		else
+		{
+			// Draw mini arrow
+			V_DrawFixedPatch(
+				playerx, playery,
+				FRACUNIT,
+				baseflags,
+				rpmark[1],
+				NULL
+			);
+		}
 	}
 }
 
@@ -290,7 +1246,12 @@ static void Y_CalculateMatchData(UINT8 rankingsmode, void (*comparison)(INT32))
 //
 void Y_IntermissionDrawer(void)
 {
-	INT32 i, whiteplayer = MAXPLAYERS, x = 4, hilicol = highlightflags;
+	// INFO SEGMENT
+	// Numbers are V_DrawRightAlignedThinString WITH v_6widthspace as flags
+	// resbar 1 (48,82)  5 (176, 82)
+	// 2 (48, 96)
+
+	//player icon 1 (55,79) 2 (55,93) 5 (183,79)
 
 	// If we early return, skip drawing the 3D scene (software buffer) so it doesn't clobber the frame for the wipe
 	g_wipeskiprender = true;
@@ -300,9 +1261,52 @@ void Y_IntermissionDrawer(void)
 
 	g_wipeskiprender = false;
 
-	// the merge was kind of a mess, how does this work -- toast 171021
+	fixed_t x;
+
+	// Checker scroll
+	patch_t *rbgchk = W_CachePatchName("R_RBGCHK", PU_PATCH);
+
+	// Scrolling marquee
+	patch_t *rrmq = W_CachePatchName("R_RRMQ", PU_PATCH);
+
+	// Blending mask for the background
+	patch_t *mask = W_CachePatchName("R_MASK", PU_PATCH);
+
+	fixed_t mqloop = SHORT(rrmq->width)*FRACUNIT;
+	fixed_t chkloop = SHORT(rbgchk->width)*FRACUNIT;
+
+	UINT8 *bgcolor = R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_INTERMISSION, GTC_CACHE);
+
+	// Draw the background
+	K_DrawMapThumbnail(0, 0, BASEVIDWIDTH<<FRACBITS, (data.encore ? V_FLIP : 0), prevmap, bgcolor);
+	
+	// Draw a mask over the BG to get the correct colorization
+	V_DrawMappedPatch(0, 0, V_ADD|V_TRANSLUCENT, mask, NULL);
+	
+	// Draw the marquee (scroll pending)
+	//V_DrawMappedPatch(0, 154, V_SUBTRACT, rrmq, NULL);
+	
+	// Draw the checker pattern (scroll pending)
+	//V_DrawMappedPatch(0, 0, V_SUBTRACT, rbgchk, NULL);
+	
+	for (x = -mqscroll; x < (BASEVIDWIDTH * FRACUNIT); x += mqloop)
 	{
-		M_DrawMenuBackground();
+		V_DrawFixedPatch(x, 154<<FRACBITS, FRACUNIT, V_SUBTRACT, rrmq, NULL);
+	}
+
+	V_DrawFixedPatch(chkscroll, 0, FRACUNIT, V_SUBTRACT, rbgchk, NULL);
+	V_DrawFixedPatch(chkscroll - chkloop, 0, FRACUNIT, V_SUBTRACT, rbgchk, NULL);
+
+	// Animate scrolling elements if relevant
+	if (!paused && !P_AutoPause())
+	{
+		mqscroll += renderdeltatics;
+		if (mqscroll > mqloop)
+			mqscroll %= mqloop;
+
+		chkscroll += renderdeltatics;
+		if (chkscroll > chkloop)
+			chkscroll %= chkloop;
 	}
 
 	if (renderisnewtic)
@@ -315,245 +1319,91 @@ void Y_IntermissionDrawer(void)
 	if (!LUA_HudEnabled(hud_intermissiontally))
 		goto skiptallydrawer;
 
-	if (!r_splitscreen)
-		whiteplayer = demo.playback ? displayplayers[0] : consoleplayer;
-
+	x = 0;
 	if (sorttic != -1 && intertic > sorttic)
 	{
-		INT32 count = (intertic - sorttic);
+		const INT32 count = (intertic - sorttic);
 
 		if (count < 8)
-			x -= ((count * vid.width) / (8 * vid.dupx));
+			x = -((count * BASEVIDWIDTH) / 8);
 		else if (count == 8)
 			goto skiptallydrawer;
 		else if (count < 16)
-			x += (((16 - count) * vid.width) / (8 * vid.dupx));
+			x = (((16 - count) * BASEVIDWIDTH) / 8);
 	}
 
-	if (intertype == int_time || intertype == int_score)
+	// Draw the header bar
 	{
-#define NUMFORNEWCOLUMN 8
-		INT32 y = 41, gutter = ((data.numplayers > NUMFORNEWCOLUMN) ? 0 : (BASEVIDWIDTH/2));
-		INT32 dupadjust = (vid.width/vid.dupx), duptweak = (dupadjust - BASEVIDWIDTH)/2;
-		const char *timeheader;
-		int y2;
+		// Header bar
+		patch_t *rtpbr = W_CachePatchName("R_RTPBR", PU_PATCH);
+		V_DrawMappedPatch(20 + x, 24, 0, rtpbr, NULL);
 
-		if (data.rankingsmode)
+		INT32 headerx, headery, headerwidth = 0;
+
+		if (data.gotthrough)
 		{
-			if (powertype == PWRLV_DISABLED)
-			{
-				timeheader = "RANK";
-			}
-			else
-			{
-				timeheader = "PWR.LV";
-			}
+			// GOT THROUGH ROUND
+			patch_t *gthro = W_CachePatchName("R_GTHRO", PU_PATCH);
+			V_DrawMappedPatch(50 + x, 42, 0, gthro, NULL);
+
+			headerx = 51;
+			headery = 7;
 		}
 		else
 		{
-			switch (intertype)
-			{
-				case int_score:
-					timeheader = "SCORE";
-					break;
-				default:
-					timeheader = "TIME";
-					break;
-			}
+			headerwidth = V_TitleCardStringWidth(data.headerstring);
+
+			headerx = (BASEVIDWIDTH - headerwidth)/2;
+			headery = 17;
 		}
 
-		// draw the level name
-		V_DrawCenteredString(-4 + x + BASEVIDWIDTH/2, 12, 0, data.levelstring);
-		V_DrawFill((x-3) - duptweak, 34, dupadjust-2, 1, 0);
-
-		if (data.encore)
-			V_DrawCenteredString(-4 + x + BASEVIDWIDTH/2, 12-8, hilicol, "ENCORE MODE");
-
-		if (data.numplayers > NUMFORNEWCOLUMN)
+		// Draw round numbers
+		if (data.roundnum > 0 && data.roundnum <= 10)
 		{
-			V_DrawFill(x+156, 24, 1, 158, 0);
-			V_DrawFill((x-3) - duptweak, 182, dupadjust-2, 1, 0);
+			patch_t *roundpatch =
+				W_CachePatchName(
+					va("TT_RND%d", data.roundnum),
+					PU_PATCH
+				);
 
-			V_DrawCenteredString(x+6+(BASEVIDWIDTH/2), 24, hilicol, "#");
-			V_DrawString(x+36+(BASEVIDWIDTH/2), 24, hilicol, "NAME");
+			INT32 roundx = 240;
 
-			V_DrawRightAlignedString(x+152, 24, hilicol, timeheader);
+			if (headerwidth != 0)
+			{
+				const INT32 roundoffset = 8 + SHORT(roundpatch->width);
+
+				roundx = headerx + roundoffset;
+				headerx -= roundoffset/2;
+			}
+
+			V_DrawMappedPatch(x + roundx, 39, 0, roundpatch, NULL);
 		}
 
-		V_DrawCenteredString(x+6, 24, hilicol, "#");
-		V_DrawString(x+36, 24, hilicol, "NAME");
+		V_DrawTitleCardString(x + headerx, headery, data.headerstring, 0, false, 0, 0);
+	}
 
-		V_DrawRightAlignedString(x+(BASEVIDWIDTH/2)+152, 24, hilicol, timeheader);
+	// Returns early if there's no players to draw
+	Y_PlayerStandingsDrawer(&data, x);
 
-		for (i = 0; i < data.numplayers; i++)
+	// Draw bottom (and top) pieces
+skiptallydrawer:
+	if (!LUA_HudEnabled(hud_intermissionmessages))
+		goto finalcounter;
+
+	// Returns early if there's no roundqueue entries to draw
+	Y_RoundQueueDrawer(&data, 0, true, false);
+
+	if (netgame)
+	{
+		if (speedscramble != -1 && speedscramble != gamespeed)
 		{
-			boolean dojitter = data.jitter[data.num[i]];
-			data.jitter[data.num[i]] = 0;
-
-			if (data.num[i] != MAXPLAYERS && playeringame[data.num[i]] && !players[data.num[i]].spectator)
-			{
-				char strtime[MAXPLAYERNAME+1];
-
-				if (dojitter)
-					y--;
-
-				V_DrawCenteredString(x+6, y, 0, va("%d", data.pos[i]));
-
-				if (data.color[i])
-				{
-					UINT8 *colormap = R_GetTranslationColormap(*data.character[i], *data.color[i], GTC_CACHE);
-					V_DrawMappedPatch(x+16, y-4, 0, faceprefix[*data.character[i]][FACE_RANK], colormap);
-				}
-
-				if (data.num[i] == whiteplayer)
-				{
-					UINT8 cursorframe = (intertic / 4) % 8;
-					V_DrawScaledPatch(x+16, y-4, 0, W_CachePatchName(va("K_CHILI%d", cursorframe+1), PU_CACHE));
-				}
-
-				if ((players[data.num[i]].pflags & PF_NOCONTEST) && players[data.num[i]].bot)
-				{
-					// RETIRED!!
-					V_DrawScaledPatch(x+12, y-7, 0, W_CachePatchName("K_NOBLNS", PU_CACHE));
-				}
-
-				STRBUFCPY(strtime, data.name[i]);
-
-				y2 = y;
-
-				if ((netgame || (demo.playback && demo.netgame)) && playerconsole[data.num[i]] == 0 && server_lagless && !players[data.num[i]].bot)
-				{
-					static int alagles_timer = 0;
-					patch_t *alagles;
-
-					y2 = ( y - 4 );
-
-					V_DrawScaledPatch(x + 36, y2, 0, W_CachePatchName(va("BLAGLES%d", (intertic / 3) % 6), PU_CACHE));
-					// every 70 tics
-					if (( leveltime % 70 ) == 0)
-					{
-						alagles_timer = 9;
-					}
-					if (alagles_timer > 0)
-					{
-						alagles = W_CachePatchName(va("ALAGLES%d", alagles_timer), PU_CACHE);
-						V_DrawScaledPatch(x + 36, y2, 0, alagles);
-						if (( leveltime % 2 ) == 0)
-							alagles_timer--;
-					}
-					else
-					{
-						alagles = W_CachePatchName("ALAGLES0", PU_CACHE);
-						V_DrawScaledPatch(x + 36, y2, 0, alagles);
-					}
-
-					y2 += SHORT (alagles->height) + 1;
-				}
-
-				if (data.numplayers > NUMFORNEWCOLUMN)
-					V_DrawThinString(x+36, y2-1, ((data.num[i] == whiteplayer) ? hilicol : 0)|V_ALLOWLOWERCASE|V_6WIDTHSPACE, strtime);
-				else
-					V_DrawString(x+36, y2, ((data.num[i] == whiteplayer) ? hilicol : 0)|V_ALLOWLOWERCASE, strtime);
-
-				if (data.rankingsmode)
-				{
-					if (powertype != PWRLV_DISABLED && !clientpowerlevels[data.num[i]][powertype])
-					{
-						// No power level (guests)
-						STRBUFCPY(strtime, "----");
-					}
-					else
-					{
-						if (data.increase[data.num[i]] != INT16_MIN)
-						{
-							snprintf(strtime, sizeof strtime, "(%d)", data.increase[data.num[i]]);
-
-							if (data.numplayers > NUMFORNEWCOLUMN)
-								V_DrawRightAlignedThinString(x+133+gutter, y-1, V_6WIDTHSPACE, strtime);
-							else
-								V_DrawRightAlignedString(x+118+gutter, y, 0, strtime);
-						}
-
-						snprintf(strtime, sizeof strtime, "%d", data.val[i]);
-					}
-
-					if (data.numplayers > NUMFORNEWCOLUMN)
-						V_DrawRightAlignedThinString(x+152+gutter, y-1, V_6WIDTHSPACE, strtime);
-					else
-						V_DrawRightAlignedString(x+152+gutter, y, 0, strtime);
-				}
-				else
-				{
-					if (data.val[i] == (UINT32_MAX-1))
-						V_DrawRightAlignedThinString(x+152+gutter, y-1, (data.numplayers > NUMFORNEWCOLUMN ? V_6WIDTHSPACE : 0), "NO CONTEST.");
-					else
-					{
-						if (intertype == int_time)
-						{
-							snprintf(strtime, sizeof strtime, "%i'%02i\"%02i", G_TicsToMinutes(data.val[i], true),
-							G_TicsToSeconds(data.val[i]), G_TicsToCentiseconds(data.val[i]));
-							strtime[sizeof strtime - 1] = '\0';
-
-							if (data.numplayers > NUMFORNEWCOLUMN)
-								V_DrawRightAlignedThinString(x+152+gutter, y-1, V_6WIDTHSPACE, strtime);
-							else
-								V_DrawRightAlignedString(x+152+gutter, y, 0, strtime);
-						}
-						else
-						{
-							if (data.numplayers > NUMFORNEWCOLUMN)
-								V_DrawRightAlignedThinString(x+152+gutter, y-1, V_6WIDTHSPACE, va("%i", data.val[i]));
-							else
-								V_DrawRightAlignedString(x+152+gutter, y, 0, va("%i", data.val[i]));
-						}
-					}
-				}
-
-				if (dojitter)
-					y++;
-			}
-			else
-				data.num[i] = MAXPLAYERS; // this should be the only field setting in this function
-
-			y += 18;
-
-			if (i == NUMFORNEWCOLUMN-1)
-			{
-				y = 41;
-				x += BASEVIDWIDTH/2;
-			}
-#undef NUMFORNEWCOLUMN
+			V_DrawCenteredThinString(BASEVIDWIDTH/2, 154, highlightflags|V_ALLOWLOWERCASE|V_SNAPTOBOTTOM,
+				va(M_GetText("Next race will be %s Speed!"), kartspeed_cons_t[1+speedscramble].strvalue));
 		}
 	}
 
-skiptallydrawer:
-	if (!LUA_HudEnabled(hud_intermissionmessages))
-		return;
-
-	if (timer)
+finalcounter:
 	{
-		if (netgame || demo.netgame)
-		{
-			char *string;
-			INT32 tickdown = (timer+1)/TICRATE;
-
-			if (demo.playback)
-				string = va("Replay ends in %d", tickdown);
-			else if ((nextmapoverride != 0)
-			|| (roundqueue.size > 0 && roundqueue.position < roundqueue.size))
-				string = va("Next starts in %d", tickdown);
-			else
-				string = va("%s starts in %d", cv_advancemap.string, tickdown);
-
-			V_DrawCenteredString(BASEVIDWIDTH/2, 188, hilicol, string);
-
-			if (speedscramble != -1 && speedscramble != gamespeed)
-			{
-				V_DrawCenteredString(BASEVIDWIDTH/2, BASEVIDHEIGHT-24, hilicol|V_ALLOWLOWERCASE|V_SNAPTOBOTTOM,
-					va(M_GetText("Next race will be %s Speed!"), kartspeed_cons_t[1+speedscramble].strvalue));
-			}
-		}
-
 		if ((modeattacking == ATTACKING_NONE) && (demo.recording || demo.savemode == DSM_SAVED) && !demo.playback)
 		{
 			switch (demo.savemode)
@@ -563,14 +1413,14 @@ skiptallydrawer:
 					INT32 buttonx = BASEVIDWIDTH;
 					INT32 buttony = 2;
 					
-					K_drawButtonAnim(buttonx - 76, buttony, V_SNAPTOTOP|V_SNAPTORIGHT, kp_button_b[1], replayprompttic);
-					V_DrawRightAlignedThinString(buttonx - 55, buttony, V_SNAPTOTOP|V_SNAPTORIGHT|V_ALLOWLOWERCASE|V_6WIDTHSPACE|hilicol, "or");
-					K_drawButtonAnim(buttonx - 55, buttony, V_SNAPTOTOP|V_SNAPTORIGHT, kp_button_x[1], replayprompttic);
-					V_DrawRightAlignedThinString(buttonx - 2, buttony, V_SNAPTOTOP|V_SNAPTORIGHT|V_ALLOWLOWERCASE|V_6WIDTHSPACE|hilicol, "Save replay");
+					K_drawButtonAnim(buttonx - 76, buttony, 0, kp_button_b[1], replayprompttic);
+					V_DrawRightAlignedThinString(buttonx - 55, buttony, V_ALLOWLOWERCASE|V_6WIDTHSPACE|highlightflags, "or");
+					K_drawButtonAnim(buttonx - 55, buttony, 0, kp_button_x[1], replayprompttic);
+					V_DrawRightAlignedThinString(buttonx - 2, buttony, V_ALLOWLOWERCASE|V_6WIDTHSPACE|highlightflags, "Save replay");
 					break;	
 				}
 				case DSM_SAVED:
-					V_DrawRightAlignedThinString(BASEVIDWIDTH - 2, 2, V_SNAPTOTOP|V_SNAPTORIGHT|V_ALLOWLOWERCASE|V_6WIDTHSPACE|hilicol, "Replay saved!");
+					V_DrawRightAlignedThinString(BASEVIDWIDTH - 2, 2, V_ALLOWLOWERCASE|V_6WIDTHSPACE|highlightflags, "Replay saved!");
 					break;
 
 				case DSM_TITLEENTRY:
@@ -581,6 +1431,20 @@ skiptallydrawer:
 					break;
 			}
 		}
+	}
+
+	{
+		const INT32 tickDown = (timer + 1)/TICRATE;
+
+		// See also k_vote.c
+		V__DrawOneScaleString(
+			2*FRACUNIT,
+			(BASEVIDHEIGHT - (2+8))*FRACUNIT,
+			FRACUNIT,
+			0, NULL,
+			OPPRF_FONT,
+			va("%d", tickDown)
+		);
 	}
 
 	M_DrawMenuForeground();
@@ -634,8 +1498,45 @@ void Y_Ticker(void)
 		return;
 	}
 
-	if (intertic < TICRATE || intertic & 1 || endtic != -1)
+	// Animation sounds for roundqueue, see Y_RoundQueueDrawer
+	if (roundqueue.size != 0
+		&& roundqueue.position != 0
+		&& (timer - 1) <= 2*TICRATE)
+	{
+		const INT32 through = ((2*TICRATE) - (timer - 1));
+
+		if (data.showrank == true
+			&& roundqueue.position == roundqueue.size-1)
+		{
+			// Handle special entry on the end
+			if (through == data.linemeter && timer > 2)
+			{
+				S_StopSoundByID(NULL, sfx_gpmetr);
+				S_StartSound(NULL, sfx_kc50);
+			}
+			else if (through == 0)
+			{
+				S_StartSound(NULL, sfx_gpmetr);
+			}
+		}
+		else if (through == 9
+			&& roundqueue.position < roundqueue.size)
+		{
+			// Impactful landing
+			S_StartSound(NULL, sfx_kc50);
+		}
+	}
+
+	if (intertic < TICRATE || endtic != -1)
+	{
 		return;
+	}
+
+	if (data.rankingsmode && intertic & 1)
+	{
+		memset(data.jitter, 0, sizeof (data.jitter));
+		return;
+	}
 
 	if (intertype == int_time || intertype == int_score)
 	{
@@ -720,7 +1621,11 @@ void Y_Ticker(void)
 void Y_DetermineIntermissionType(void)
 {
 	// no intermission for GP events
-	if (grandprixinfo.gp == true && grandprixinfo.eventmode != GPEVENT_NONE)
+	if ((grandprixinfo.gp == true && grandprixinfo.eventmode != GPEVENT_NONE)
+	// or for failing in time attack mode
+	|| (modeattacking && (players[consoleplayer].pflags & PF_NOCONTEST))
+	// or for explicit requested skip (outside of modeattacking)
+	|| (modeattacking == ATTACKING_NONE && skipstats != 0))
 	{
 		intertype = int_none;
 		return;
@@ -805,7 +1710,7 @@ void Y_StartIntermission(void)
 	if (prevmap >= nummapheaders || !mapheaderinfo[prevmap])
 		I_Error("Y_StartIntermission: Internal map ID %d not found (nummapheaders = %d)", prevmap, nummapheaders);
 
-	if (!(gametyperules & GTR_CIRCUIT) && (timer > 1))
+	if (timer > 1 && musiccountdown == 0)
 		S_ChangeMusicInternal("racent", true); // loop it
 
 	S_ShowMusicCredit(); // Always call
@@ -847,6 +1752,12 @@ void Y_StartIntermission(void)
 		}
 
 		K_CashInPowerLevels();
+		SV_BumpMatchStats();
+	}
+
+	if (roundqueue.size > 0 && roundqueue.position == roundqueue.size)
+	{
+		Automate_Run(AEV_QUEUEEND);
 	}
 
 	Automate_Run(AEV_INTERMISSIONSTART);

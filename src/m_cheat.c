@@ -62,14 +62,11 @@ typedef struct
 // Cheat responders
 static UINT8 cheatf_warp(void)
 {
-	UINT8 i;
+	UINT16 i;
 	boolean success = false;
 
 	/*if (modifiedgame)
 		return 0;*/
-
-	if (menuactive && currentMenu != &MainDef)
-		return 0; // Only on the main menu!
 
 	// Unlock EVERYTHING.
 	for (i = 0; i < MAXUNLOCKABLES; i++)
@@ -83,69 +80,108 @@ static UINT8 cheatf_warp(void)
 		}
 	}
 
+	M_ClearMenus(true);
+
+	const char *text;
+
 	if (success)
 	{
 		G_SetUsedCheats();
 		S_StartSound(0, sfx_kc42);
+
+		text = M_GetText(
+			"All challenges temporarily unlocked.\n"
+			"Saving is disabled - the game will\n"
+			"return to normal on next launch.\n"
+		);
+	}
+	else
+	{
+		S_StartSound(0, sfx_s3k7b);
+
+		if (usedCheats)
+		{
+			text = M_GetText(
+				"This is the correct password, but\n"
+				"you already have every challenge\n"
+				"unlocked, so nothing has changed.\n"
+			);
+		}
+		else
+		{
+			text = M_GetText(
+				"This is the correct password, but\n"
+				"you already have every challenge\n"
+				"unlocked, so saving is still allowed!\n"
+			);
+		}
 	}
 
-	// Refresh secrets menu existing.
-	M_ClearMenus(true);
-	M_StartControlPanel();
+	M_StartMessage("Tournament Mode", text, NULL, MM_NOTHING, NULL, NULL);
+
+	return 1;
+}
+
+static UINT8 cheatf_wrongwarp(void)
+{
+	// Tee hee.
+	M_WrongWarp(0);
+
 	return 1;
 }
 
 #ifdef DEVELOP
 static UINT8 cheatf_devmode(void)
 {
-	UINT8 i;
+	UINT16 i;
 
 	if (modifiedgame)
 		return 0;
 
-	if (menuactive && currentMenu != &MainDef)
-		return 0; // Only on the main menu!
-
-	S_StartSound(0, sfx_itemup);
-
 	// Just unlock all the things and turn on -debug and console devmode.
-	G_SetUsedCheats();
 	for (i = 0; i < MAXUNLOCKABLES; i++)
+	{
+		if (!unlockables[i].conditionset)
+			continue;
 		gamedata->unlocked[i] = true;
+	}
+
+	G_SetUsedCheats();
+	S_StartSound(0, sfx_kc42);
+
 	devparm = true;
 	cht_debug |= 0x8000;
 
-	// Refresh secrets menu existing.
-	M_ClearMenus(true);
-	M_StartControlPanel();
 	return 1;
 }
 #endif
 
 static cheatseq_t cheat_warp = {
-	0, cheatf_warp,
-	//{ SCRAMBLE('r'), SCRAMBLE('e'), SCRAMBLE('d'), SCRAMBLE('x'), SCRAMBLE('v'), SCRAMBLE('i'), 0xff }
-	(UINT8[]){ SCRAMBLE('b'), SCRAMBLE('a'), SCRAMBLE('n'), SCRAMBLE('a'), SCRAMBLE('n'), SCRAMBLE('a'), 0xff }
+	NULL, cheatf_warp,
+	(UINT8[]){ SCRAMBLE('p'), SCRAMBLE('l'), SCRAMBLE('a'), SCRAMBLE('c'), SCRAMBLE('e'), SCRAMBLE('h'), SCRAMBLE('o'), SCRAMBLE('l'), SCRAMBLE('d'), SCRAMBLE('e'), SCRAMBLE('r'), 0xff }
 };
 
-static cheatseq_t cheat_warp_joy = {
-	0, cheatf_warp,
-	/*{ SCRAMBLE(KEY_LEFTARROW), SCRAMBLE(KEY_LEFTARROW), SCRAMBLE(KEY_UPARROW),
-	  SCRAMBLE(KEY_RIGHTARROW), SCRAMBLE(KEY_RIGHTARROW), SCRAMBLE(KEY_UPARROW),
-	  SCRAMBLE(KEY_LEFTARROW), SCRAMBLE(KEY_UPARROW),
-	  SCRAMBLE(KEY_ENTER), 0xff }*/
-	  (UINT8[]){ SCRAMBLE(KEY_LEFTARROW), SCRAMBLE(KEY_UPARROW), SCRAMBLE(KEY_RIGHTARROW),
-	  SCRAMBLE(KEY_RIGHTARROW), SCRAMBLE(KEY_UPARROW), SCRAMBLE(KEY_LEFTARROW),
-	  SCRAMBLE(KEY_DOWNARROW), SCRAMBLE(KEY_RIGHTARROW),
-	  SCRAMBLE(KEY_ENTER), 0xff }
+static cheatseq_t cheat_wrongwarp = {
+	NULL, cheatf_wrongwarp,
+	(UINT8[]){ SCRAMBLE('b'), SCRAMBLE('a'), SCRAMBLE('n'), SCRAMBLE('a'), SCRAMBLE('n'), SCRAMBLE('a'), 0xff }
 };
 
 #ifdef DEVELOP
 static cheatseq_t cheat_devmode = {
-	0, cheatf_devmode,
+	NULL, cheatf_devmode,
 	(UINT8[]){ SCRAMBLE('d'), SCRAMBLE('e'), SCRAMBLE('v'), SCRAMBLE('m'), SCRAMBLE('o'), SCRAMBLE('d'), SCRAMBLE('e'), 0xff }
 };
 #endif
+
+cheatseq_t *cheatseqlist[] =
+{
+	&cheat_warp,
+	&cheat_wrongwarp,
+#ifdef DEVELOP
+	&cheat_devmode,
+#endif
+	NULL
+};
 
 // ==========================================================================
 //                        CHEAT SEQUENCE PACKAGE
@@ -168,73 +204,64 @@ void cht_Init(void)
 // Called in st_stuff module, which handles the input.
 // Returns a 1 if the cheat was successful, 0 if failed.
 //
-static UINT8 cht_CheckCheat(cheatseq_t *cht, char key)
+static UINT8 cht_CheckCheat(cheatseq_t *cht, char key, boolean shouldend)
 {
-	UINT8 rc = 0;
+	UINT8 rc = 0; // end of sequence character
 
-	if (!cht->p)
-		cht->p = cht->sequence; // initialize if first time
+	if (cht->p == NULL || *cht->p == 0xff)
+		return rc;
 
 	if (*cht->p == 0)
 		*(cht->p++) = key;
 	else if (cheat_xlate_table[(UINT8)key] == *cht->p)
 		cht->p++;
 	else
-		cht->p = cht->sequence;
+	{
+		cht->p = NULL;
+		return rc;
+	}
 
 	if (*cht->p == 1)
 		cht->p++;
-	else if (*cht->p == 0xff) // end of sequence character
-	{
-		cht->p = cht->sequence;
+	if (shouldend && *cht->p == 0xff) // end of sequence character
 		rc = cht->func();
-	}
 
 	return rc;
 }
 
-boolean cht_Responder(event_t *ev)
+boolean cht_Interpret(const char *password)
 {
-	UINT8 ret = 0, ch = 0;
-	if (ev->type != ev_keydown)
+	if (!password)
 		return false;
 
-	if (ev->data1 > 0xFF)
-	{
-		// map some fake (joy) inputs into keys
-		// map joy inputs into keys
-		switch (ev->data1)
-		{
-			case KEY_JOY1:
-			case KEY_JOY1 + 2:
-				ch = KEY_ENTER;
-				break;
-			case KEY_HAT1:
-				ch = KEY_UPARROW;
-				break;
-			case KEY_HAT1 + 1:
-				ch = KEY_DOWNARROW;
-				break;
-			case KEY_HAT1 + 2:
-				ch = KEY_LEFTARROW;
-				break;
-			case KEY_HAT1 + 3:
-				ch = KEY_RIGHTARROW;
-				break;
-			default:
-				// no mapping
-				return false;
-		}
-	}
-	else
-		ch = (UINT8)ev->data1;
+	UINT8 ret = 0;
 
-	ret += cht_CheckCheat(&cheat_warp, (char)ch);
-	ret += cht_CheckCheat(&cheat_warp_joy, (char)ch);
-#ifdef DEVELOP
-	ret += cht_CheckCheat(&cheat_devmode, (char)ch);
-#endif
-	return (ret != 0);
+	size_t cheatseqid = 0;
+
+	const char *endofpassword = password;
+	while (*endofpassword && *(endofpassword+1))
+		endofpassword++;
+
+	cheatseqid = 0;
+	while (cheatseqlist[cheatseqid])
+	{
+		cheatseqlist[cheatseqid]->p = cheatseqlist[cheatseqid]->sequence;
+		cheatseqid++;
+	}
+
+	while (*password)
+	{
+		cheatseqid = 0;
+		while (cheatseqlist[cheatseqid])
+		{
+			ret += cht_CheckCheat(cheatseqlist[cheatseqid], *password, (password == endofpassword));
+			cheatseqid++;
+		}
+
+		password++;
+	}
+
+	return (ret > 0);
 }
 
 // Console cheat commands rely on these a lot...
@@ -612,6 +639,20 @@ void Command_Angle_f(void)
 	REQUIRE_INLEVEL;
 
 	D_Cheat(consoleplayer, CHEAT_ANGLE, angle);
+}
+
+void Command_RespawnAt_f(void)
+{
+	REQUIRE_CHEATS;
+	REQUIRE_INLEVEL;
+
+	if (COM_Argc() != 2)
+	{
+		CONS_Printf(M_GetText("respawnat <waypoint id>: lightsnake to a specific waypoint\n"));
+		return;
+	}
+
+	D_Cheat(consoleplayer, CHEAT_RESPAWNAT, atoi(COM_Argv(1)));
 }
 
 //

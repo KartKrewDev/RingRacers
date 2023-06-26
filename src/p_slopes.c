@@ -624,11 +624,11 @@ static pslope_t *MakeViaMapthings(INT16 tag1, INT16 tag2, INT16 tag3, UINT8 flag
 		if (mt->type != 750) // Haha, I'm hijacking the old Chaos Spawn thingtype for something!
 			continue;
 
-		if (!vertices[0] && Tag_Find(&mt->tags, tag1))
+		if (!vertices[0] && mt->tid == tag1)
 			vertices[0] = mt;
-		else if (!vertices[1] && Tag_Find(&mt->tags, tag2))
+		else if (!vertices[1] && mt->tid == tag2)
 			vertices[1] = mt;
-		else if (!vertices[2] && Tag_Find(&mt->tags, tag3))
+		else if (!vertices[2] && mt->tid == tag3)
 			vertices[2] = mt;
 	}
 
@@ -854,6 +854,8 @@ void P_SpawnSlopes(const boolean fromsave) {
 
 	/// Setup anchor based slopes.
 	P_SetupAnchoredSlopes();
+
+	// end of jart
 
 	/// Copies slopes from tagged sectors via line specials.
 	/// \note Doesn't actually copy, but instead they share the same pointers.

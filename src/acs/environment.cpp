@@ -128,14 +128,22 @@ Environment::Environment()
 	// This style is preferred for added functions
 	// that aren't mimicing one from Hexen's or ZDoom's
 	// ACS implementations.
-	//addFuncDataACS0(   1, addCallFunc(CallFunc_GetLineUDMFInt));
-	//addFuncDataACS0(   2, addCallFunc(CallFunc_GetLineUDMFFixed));
-	//addFuncDataACS0(   3, addCallFunc(CallFunc_GetThingUDMFInt));
-	//addFuncDataACS0(   4, addCallFunc(CallFunc_GetThingUDMFFixed));
-	//addFuncDataACS0(   5, addCallFunc(CallFunc_GetSectorUDMFInt));
-	//addFuncDataACS0(   6, addCallFunc(CallFunc_GetSectorUDMFFixed));
-	//addFuncDataACS0(   7, addCallFunc(CallFunc_GetSideUDMFInt));
-	//addFuncDataACS0(   8, addCallFunc(CallFunc_GetSideUDMFFixed));
+	addFuncDataACS0(   1, addCallFunc(CallFunc_GetLineProperty));
+	addFuncDataACS0(   2, addCallFunc(CallFunc_SetLineProperty));
+	addFuncDataACS0(   3, addCallFunc(CallFunc_GetLineUserProperty));
+	addFuncDataACS0(   4, addCallFunc(CallFunc_GetSectorProperty));
+	addFuncDataACS0(   5, addCallFunc(CallFunc_SetSectorProperty));
+	addFuncDataACS0(   6, addCallFunc(CallFunc_GetSectorUserProperty));
+	addFuncDataACS0(   7, addCallFunc(CallFunc_GetSideProperty));
+	addFuncDataACS0(   8, addCallFunc(CallFunc_SetSideProperty));
+	addFuncDataACS0(   9, addCallFunc(CallFunc_GetSideUserProperty));
+	addFuncDataACS0(  10, addCallFunc(CallFunc_GetThingProperty));
+	addFuncDataACS0(  11, addCallFunc(CallFunc_SetThingProperty));
+	addFuncDataACS0(  12, addCallFunc(CallFunc_GetThingUserProperty));
+	//addFuncDataACS0(  13, addCallFunc(CallFunc_GetPlayerProperty));
+	//addFuncDataACS0(  14, addCallFunc(CallFunc_SetPlayerProperty));
+	//addFuncDataACS0(  15, addCallFunc(CallFunc_GetPolyobjProperty));
+	//addFuncDataACS0(  16, addCallFunc(CallFunc_SetPolyobjProperty));
 
 	addFuncDataACS0( 100, addCallFunc(CallFunc_strcmp));
 	addFuncDataACS0( 101, addCallFunc(CallFunc_strcasecmp));
@@ -157,6 +165,8 @@ Environment::Environment()
 	addFuncDataACS0( 501, addCallFunc(CallFunc_PodiumPosition));
 	addFuncDataACS0( 502, addCallFunc(CallFunc_PodiumFinish));
 	addFuncDataACS0( 503, addCallFunc(CallFunc_SetLineRenderStyle));
+	addFuncDataACS0( 504, addCallFunc(CallFunc_MapWarp));
+	addFuncDataACS0( 505, addCallFunc(CallFunc_AddBot));
 }
 
 ACSVM::Thread *Environment::allocThread()
@@ -263,7 +273,7 @@ bool Environment::checkTag(ACSVM::Word type, ACSVM::Word tag)
 		case ACS_TAGTYPE_CAMERA:
 		{
 			const mobj_t *camera = P_FindObjectTypeFromTag(MT_ALTVIEWMAN, tag);
-			if (camera == nullptr || camera->spawnpoint == nullptr)
+			if (camera == nullptr)
 			{
 				return true;
 			}

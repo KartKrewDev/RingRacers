@@ -66,6 +66,7 @@
 #include "g_party.h"
 #include "k_vote.h"
 #include "k_zvote.h"
+#include "k_bot.h"
 
 #ifdef SRB2_CONFIG_ENABLE_WEBM_MOVIES
 #include "m_avrecorder.h"
@@ -262,6 +263,13 @@ consvar_t cv_allowteamchange = CVAR_INIT ("allowteamchange", "Yes", CV_NETVAR, C
 static CV_PossibleValue_t maxplayers_cons_t[] = {{1, "MIN"}, {MAXPLAYERS, "MAX"}, {0, NULL}};
 consvar_t cv_maxplayers = CVAR_INIT ("maxplayers", "8", CV_NETVAR, maxplayers_cons_t, NULL);
 
+static CV_PossibleValue_t spectatorreentry_cons_t[] = {{0, "MIN"}, {10*60, "MAX"}, {0, NULL}};
+consvar_t cv_spectatorreentry = CVAR_INIT ("spectatorreentry", "30", CV_NETVAR, spectatorreentry_cons_t, NULL);
+consvar_t cv_duelspectatorreentry = CVAR_INIT ("duelspectatorreentry", "180", CV_NETVAR, spectatorreentry_cons_t, NULL);
+
+static CV_PossibleValue_t antigrief_cons_t[] = {{10, "MIN"}, {180, "MAX"}, {0, "Off"}, {0, NULL}};
+consvar_t cv_antigrief = CVAR_INIT ("antigrief", "30", CV_NETVAR, antigrief_cons_t, NULL);
+
 consvar_t cv_startinglives = CVAR_INIT ("startinglives", "3", CV_NETVAR|CV_CHEAT|CV_NOSHOWHELP, startingliveslimit_cons_t, NULL);
 
 static CV_PossibleValue_t respawntime_cons_t[] = {{1, "MIN"}, {30, "MAX"}, {0, "Off"}, {0, NULL}};
@@ -365,7 +373,7 @@ consvar_t cv_items[NUMKARTRESULTS-1] = {
 	CVAR_INIT ("rocketsneaker", 	"On", CV_NETVAR, CV_OnOff, NULL),
 	CVAR_INIT ("invincibility", 	"On", CV_NETVAR, CV_OnOff, NULL),
 	CVAR_INIT ("banana", 			"On", CV_NETVAR, CV_OnOff, NULL),
-	CVAR_INIT ("eggmanmonitor", 	"On", CV_NETVAR, CV_OnOff, NULL),
+	CVAR_INIT ("eggmark", 			"On", CV_NETVAR, CV_OnOff, NULL),
 	CVAR_INIT ("orbinaut", 			"On", CV_NETVAR, CV_OnOff, NULL),
 	CVAR_INIT ("jawz", 				"On", CV_NETVAR, CV_OnOff, NULL),
 	CVAR_INIT ("mine", 				"On", CV_NETVAR, CV_OnOff, NULL),
@@ -442,7 +450,7 @@ consvar_t cv_kartdebugdistribution = CVAR_INIT ("debugitemodds", "Off", CV_NETVA
 consvar_t cv_kartdebughuddrop = CVAR_INIT ("debugitemdrop", "Off", CV_NETVAR|CV_CHEAT, CV_OnOff, NULL);
 static CV_PossibleValue_t kartdebugwaypoint_cons_t[] = {{0, "Off"}, {1, "Forwards"}, {2, "Backwards"}, {0, NULL}};
 consvar_t cv_kartdebugwaypoints = CVAR_INIT ("debugwaypoints", "Off", CV_NETVAR|CV_CHEAT, kartdebugwaypoint_cons_t, NULL);
-consvar_t cv_kartdebugbotpredict = CVAR_INIT ("debugbotpredict", "Off", CV_NETVAR|CV_CHEAT, CV_OnOff, NULL);
+consvar_t cv_kartdebugbots = CVAR_INIT ("debugbots", "Off", CV_NETVAR|CV_CHEAT, CV_OnOff, NULL);
 consvar_t cv_kartdebugnodes = CVAR_INIT ("debugnodes", "Off", CV_CHEAT, CV_OnOff, NULL);
 consvar_t cv_kartdebugcolorize = CVAR_INIT ("debugcolorize", "Off", CV_CHEAT, CV_OnOff, NULL);
 consvar_t cv_kartdebugdirector = CVAR_INIT ("debugdirector", "Off", CV_CHEAT, CV_OnOff, NULL);
@@ -585,7 +593,9 @@ const char *automate_names[AEV__MAX] =
 {
 	"RoundStart", // AEV_ROUNDSTART
 	"IntermissionStart", // AEV_INTERMISSIONSTART
-	"VoteStart" // AEV_VOTESTART
+	"VoteStart", // AEV_VOTESTART
+	"QueueStart", // AEV_QUEUESTART
+	"QueueEnd", // AEV_QUEUEEND
 };
 
 UINT32 livestudioaudience_timer = 90;
@@ -788,6 +798,9 @@ void D_RegisterServerCommands(void)
 	CV_RegisterVar(&cv_restrictskinchange);
 	CV_RegisterVar(&cv_allowteamchange);
 	CV_RegisterVar(&cv_maxplayers);
+	CV_RegisterVar(&cv_spectatorreentry);
+	CV_RegisterVar(&cv_duelspectatorreentry);
+	CV_RegisterVar(&cv_antigrief);
 	CV_RegisterVar(&cv_respawntime);
 
 	// d_clisrv
@@ -958,6 +971,7 @@ void D_RegisterClientCommands(void)
 	CV_RegisterVar(&cv_mindelay);
 
 	CV_RegisterVar(&cv_allowguests);
+	CV_RegisterVar(&cv_gamestochat);
 
 	#ifdef DEVELOP
 		CV_RegisterVar(&cv_badjoin);
@@ -969,6 +983,7 @@ void D_RegisterClientCommands(void)
 		CV_RegisterVar(&cv_noresults);
 		CV_RegisterVar(&cv_badtime);
 		CV_RegisterVar(&cv_badip);
+		CV_RegisterVar(&cv_botcontrol);
 	#endif
 
 	// HUD
@@ -1109,6 +1124,7 @@ void D_RegisterClientCommands(void)
 	COM_AddCommand("grayscale", Command_Grayscale_f);
 	COM_AddCommand("goto", Command_Goto_f);
 	COM_AddCommand("angle", Command_Angle_f);
+	COM_AddCommand("respawnat", Command_RespawnAt_f);
 	CV_RegisterVar(&cv_renderhitbox);
 	CV_RegisterVar(&cv_devmode_screen);
 
@@ -1591,6 +1607,35 @@ static void FinalisePlaystateChange(INT32 playernum)
 	// Clear player score and rings if a spectator.
 	if (players[playernum].spectator)
 	{
+		// To attempt to discourage rage-spectators, we delay any rejoining.
+		// If you're engaging in a DUEL and quit early, in addition to the
+		// indignity of losing your PWR, you get a special extra-long delay.
+		if (netgame)
+		{
+			UINT8 pcount = 0;
+
+			if (cv_duelspectatorreentry.value > cv_spectatorreentry.value)
+			{
+				UINT8 i;
+
+				for (i = 0; i < MAXPLAYERS; i++)
+				{
+					if (!playeringame[i] || players[i].spectator)
+						continue;
+					if (++pcount < 2)
+						continue;
+					break;
+				}
+			}
+
+			players[playernum].spectatorReentry =
+				(pcount == 1)
+					? (cv_duelspectatorreentry.value * TICRATE)
+					: (cv_spectatorreentry.value * TICRATE);
+
+			//CONS_Printf("player %u got re-entry of %u\n", playernum, players[playernum].spectatorReentry);
+		}
+
 		if (gametyperules & GTR_POINTLIMIT) // SRB2kart
 		{
 			players[playernum].roundscore = 0;
@@ -2033,6 +2078,10 @@ void D_Cheat(INT32 playernum, INT32 cheat, ...)
 
 		case CHEAT_ANGLE:
 			COPY(WRITEANGLE, angle_t);
+			break;
+
+		case CHEAT_RESPAWNAT:
+			COPY(WRITEINT32, INT32);
 			break;
 	}
 
@@ -2874,6 +2923,8 @@ static void Command_Map_f(void)
 	if (ischeating && !usingcheats)
 	{
 		CONS_Printf(M_GetText("Cheats must be enabled.\n"));
+		Z_Free(realmapname);
+		Z_Free(mapname);
 		return;
 	}
 
@@ -3072,7 +3123,12 @@ static void Got_Mapcmd(UINT8 **cp, INT32 playernum)
 		}
 		
 		roundqueue.position = position;
-		while (roundqueue.size < size)
+		if (size < roundqueue.size)
+		{
+			// Bafooliganism afoot - set to zero if the size is zero! ~toast 150523
+			roundqueue.size = size;
+		}
+		else while (roundqueue.size < size)
 		{
 			// We wipe rather than provide full data to prevent bloating the packet,
 			// and because only this data is necessary for sync. ~toast 100423
@@ -3251,6 +3307,7 @@ static void Handle_MapQueueSend(UINT16 newmapnum, UINT16 newgametype, boolean ne
 	static char *buf_p = buf;
 
 	UINT8 flags = 0;
+	boolean doclear = (newgametype == ROUNDQUEUE_CLEAR);
 
 	CONS_Debug(DBG_GAMELOGIC, "Map queue: mapnum=%d newgametype=%d newencoremode=%d\n",
 	           newmapnum, newgametype, newencoremode);
@@ -3271,9 +3328,17 @@ static void Handle_MapQueueSend(UINT16 newmapnum, UINT16 newgametype, boolean ne
 	}
 
 	WRITEUINT8(buf_p, roundqueue.size);
-	SendNetXCmd(XD_MAPQUEUE, buf, buf_p - buf);
 
-	G_MapIntoRoundQueue(newmapnum, newgametype, newencoremode, false);
+	if (doclear == true)
+	{
+		memset(&roundqueue, 0, sizeof(struct roundqueue));
+	}
+	else
+	{
+		G_MapIntoRoundQueue(newmapnum, newgametype, newencoremode, false);
+	}
+
+	SendNetXCmd(XD_MAPQUEUE, buf, buf_p - buf);
 }
 
 static void Command_QueueMap_f(void)
@@ -3282,6 +3347,7 @@ static void Command_QueueMap_f(void)
 	size_t option_force;
 	size_t option_gametype;
 	size_t option_encore;
+	size_t option_clear;
 
 	boolean usingcheats;
 	boolean ischeating;
@@ -3306,6 +3372,29 @@ static void Command_QueueMap_f(void)
 		return;
 	}
 
+	usingcheats = CV_CheatsEnabled();
+	ischeating = (!(netgame || multiplayer) || !K_CanChangeRules(false));
+
+	option_clear = COM_CheckParm("-clear");
+
+	if (option_clear)
+	{
+		if (ischeating && !usingcheats)
+		{
+			CONS_Printf(M_GetText("Cheats must be enabled.\n"));
+			return;
+		}
+
+		if (roundqueue.size == 0)
+		{
+			CONS_Printf(M_GetText("Round queue is already empty!\n"));
+			return;
+		}
+
+		Handle_MapQueueSend(0, ROUNDQUEUE_CLEAR, false);
+		return;
+	}
+
 	if (roundqueue.size >= ROUNDQUEUE_MAX)
 	{
 		CONS_Printf(M_GetText("Round queue is currently full.\n"));
@@ -3316,16 +3405,13 @@ static void Command_QueueMap_f(void)
 	option_gametype =   COM_CheckPartialParm("-g");
 	option_encore   =   COM_CheckPartialParm("-e");
 
-	usingcheats = CV_CheatsEnabled();
-	ischeating = (!(netgame || multiplayer));
-
 	if (!( first_option = COM_FirstOption() ))
 		first_option = COM_Argc();
 
 	if (first_option < 2)
 	{
 		/* I'm going over the fucking lines and I DON'T CAREEEEE */
-		CONS_Printf("queuemap <name / number> [-gametype <type>] [-force]:\n");
+		CONS_Printf("queuemap <name / number> [-gametype <type>] [-force] / [-clear]:\n");
 		CONS_Printf(M_GetText(
 					"Queue up a map by its name, or by its number (though why would you).\n"
 					"All parameters are case-insensitive and may be abbreviated.\n"));
@@ -3343,7 +3429,7 @@ static void Command_QueueMap_f(void)
 		return;
 	}
 
-	if (!K_CanChangeRules(false) || (/*newmapnum != 1 &&*/ M_MapLocked(newmapnum)))
+	if ((/*newmapnum != 1 &&*/ M_MapLocked(newmapnum)))
 	{
 		ischeating = true;
 	}
@@ -3351,6 +3437,8 @@ static void Command_QueueMap_f(void)
 	if (ischeating && !usingcheats)
 	{
 		CONS_Printf(M_GetText("Cheats must be enabled.\n"));
+		Z_Free(realmapname);
+		Z_Free(mapname);
 		return;
 	}
 
@@ -3412,6 +3500,7 @@ static void Got_RequestMapQueuecmd(UINT8 **cp, INT32 playernum)
 	UINT8 flags;
 	boolean setencore;
 	UINT16 mapnumber, setgametype;
+	boolean doclear = false;
 
 	flags = READUINT8(*cp);
 
@@ -3429,7 +3518,17 @@ static void Got_RequestMapQueuecmd(UINT8 **cp, INT32 playernum)
 		return;
 	}
 
-	if (roundqueue.size >= ROUNDQUEUE_MAX)
+	doclear = (setgametype == ROUNDQUEUE_CLEAR);
+
+	if (doclear == true)
+	{
+		if (roundqueue.size == 0)
+		{
+			CONS_Alert(CONS_ERROR, "queuemap: Queue is already empty!\n");
+			return;
+		}
+	}
+	else if (roundqueue.size >= ROUNDQUEUE_MAX)
 	{
 		CONS_Alert(CONS_ERROR, "queuemap: Unable to add map beyond %u\n", roundqueue.size);
 		return;
@@ -3446,6 +3545,7 @@ static void Got_MapQueuecmd(UINT8 **cp, INT32 playernum)
 	UINT8 flags, queueposition, i;
 	boolean setencore;
 	UINT16 setgametype;
+	boolean doclear = false;
 
 	flags = READUINT8(*cp);
 
@@ -3463,7 +3563,9 @@ static void Got_MapQueuecmd(UINT8 **cp, INT32 playernum)
 		return;
 	}
 
-	if (queueposition >= ROUNDQUEUE_MAX)
+	doclear = (setgametype == ROUNDQUEUE_CLEAR);
+
+	if (doclear == false && queueposition >= ROUNDQUEUE_MAX)
 	{
 		CONS_Alert(CONS_ERROR, "queuemap: Unable to add map beyond %u\n", roundqueue.size);
 		return;
@@ -3471,13 +3573,20 @@ static void Got_MapQueuecmd(UINT8 **cp, INT32 playernum)
 
 	if (!server)
 	{
-		while (roundqueue.size <= queueposition)
+		if (doclear == true)
 		{
-			memset(&roundqueue.entries[roundqueue.size], 0, sizeof(roundentry_t));
-			roundqueue.size++;
+			memset(&roundqueue, 0, sizeof(struct roundqueue));
 		}
+		else
+		{
+			while (roundqueue.size <= queueposition)
+			{
+				memset(&roundqueue.entries[roundqueue.size], 0, sizeof(roundentry_t));
+				roundqueue.size++;
+			}
 
-		G_MapSlipIntoRoundQueue(queueposition, 0, setgametype, setencore, false);
+			G_MapSlipIntoRoundQueue(queueposition, 0, setgametype, setencore, false);
+		}
 
 		for (i = 0; i <= splitscreen; i++)
 		{
@@ -3490,7 +3599,10 @@ static void Got_MapQueuecmd(UINT8 **cp, INT32 playernum)
 			return;
 	}
 
-	CONS_Printf("queuemap: A map was added to the round queue (pos. %u)\n", queueposition+1);
+	if (doclear)
+		CONS_Printf("queuemap: The round queue was cleared.\n");
+	else
+		CONS_Printf("queuemap: A map was added to the round queue (pos. %u)\n", queueposition+1);
 }
 
 static void Command_Pause(void)
@@ -3859,7 +3971,7 @@ static void Command_ServerTeamChange_f(void)
 static void Got_Teamchange(UINT8 **cp, INT32 playernum)
 {
 	changeteam_union NetPacket;
-	boolean error = false;
+	boolean error = false, wasspectator = false;
 	NetPacket.value.l = NetPacket.value.b = READINT16(*cp);
 
 	if (!G_GametypeHasTeams() && !G_GametypeHasSpectators()) //Make sure you're in the right gametype.
@@ -3930,7 +4042,9 @@ static void Got_Teamchange(UINT8 **cp, INT32 playernum)
 
 	//Safety first!
 	// (not respawning spectators here...)
-	if (!players[playernum].spectator && gamestate == GS_LEVEL)
+	wasspectator = (players[playernum].spectator == true);
+		
+	if (!wasspectator && gamestate == GS_LEVEL)
 	{
 		if (players[playernum].mo)
 		{
@@ -3991,7 +4105,7 @@ static void Got_Teamchange(UINT8 **cp, INT32 playernum)
 	{
 		CONS_Printf(M_GetText("%s switched to the %c%s%c.\n"), player_names[playernum], '\x84', M_GetText("Blue Team"), '\x80');
 	}
-	else if (NetPacket.packet.newteam == 0)
+	else if (NetPacket.packet.newteam == 0 && !wasspectator)
 		HU_AddChatText(va("\x82*%s became a spectator.", player_names[playernum]), false); // "entered the game" text was moved to P_SpectatorJoinGame
 
 	/*if (G_GametypeHasTeams())
@@ -4582,12 +4696,12 @@ static void Got_RunSOCcmd(UINT8 **cp, INT32 playernum)
 			if (ncs == FS_NOTFOUND)
 			{
 				CONS_Printf(M_GetText("The server tried to add %s,\nbut you don't have this file.\nYou need to find it in order\nto play on this server.\n"), filename);
-				M_StartMessage(va("The server added a file\n(%s)\nthat you do not have.\n\nPress ESC\n",filename), NULL, MM_NOTHING);
+				M_StartMessage("Server Connection Failure", va("The server added a file\n(%s)\nthat you do not have.\n",filename), NULL, MM_NOTHING, NULL, "Return to Menu");
 			}
 			else
 			{
 				CONS_Printf(M_GetText("Unknown error finding soc file (%s) the server added.\n"), filename);
-				M_StartMessage(va("Unknown error trying to load a file\nthat the server added\n(%s).\n\nPress ESC\n",filename), NULL, MM_NOTHING);
+				M_StartMessage("Server Connection Failure", va("Unknown error trying to load a file\nthat the server added\n(%s).\n",filename), NULL, MM_NOTHING, NULL, "Return to Menu");
 			}
 			return;
 		}
@@ -4826,22 +4940,22 @@ static void Got_Addfilecmd(UINT8 **cp, INT32 playernum)
 		if (ncs == FS_FOUND)
 		{
 			CONS_Printf(M_GetText("The server tried to add %s,\nbut you have too many files added.\nRestart the game to clear loaded files\nand play on this server."), filename);
-			M_StartMessage(va("The server added a file \n(%s)\nbut you have too many files added.\nRestart the game to clear loaded files.\n\nPress ESC\n",filename), NULL, MM_NOTHING);
+			M_StartMessage("Server Connection Failure", va("The server added a file \n(%s)\nbut you have too many files added.\nRestart the game to clear loaded files.\n",filename), NULL, MM_NOTHING, NULL, "Return to Menu");
 		}
 		else if (ncs == FS_NOTFOUND)
 		{
 			CONS_Printf(M_GetText("The server tried to add %s,\nbut you don't have this file.\nYou need to find it in order\nto play on this server."), filename);
-			M_StartMessage(va("The server added a file \n(%s)\nthat you do not have.\n\nPress ESC\n",filename), NULL, MM_NOTHING);
+			M_StartMessage("Server Connection Failure", va("The server added a file \n(%s)\nthat you do not have.\n",filename), NULL, MM_NOTHING, NULL, "Return to Menu");
 		}
 		else if (ncs == FS_MD5SUMBAD)
 		{
 			CONS_Printf(M_GetText("Checksum mismatch while loading %s.\nMake sure you have the copy of\nthis file that the server has.\n"), filename);
-			M_StartMessage(va("Checksum mismatch while loading \n%s.\nThe server seems to have a\ndifferent version of this file.\n\nPress ESC\n",filename), NULL, MM_NOTHING);
+			M_StartMessage("Server Connection Failure", va("Checksum mismatch while loading \n%s.\nThe server seems to have a\ndifferent version of this file.\n",filename), NULL, MM_NOTHING, NULL, "Return to Menu");
 		}
 		else
 		{
 			CONS_Printf(M_GetText("Unknown error finding wad file (%s) the server added.\n"), filename);
-			M_StartMessage(va("Unknown error trying to load a file\nthat the server added \n(%s).\n\nPress ESC\n",filename), NULL, MM_NOTHING);
+			M_StartMessage("Server Connection Failure", va("Unknown error trying to load a file\nthat the server added \n(%s).\n",filename), NULL, MM_NOTHING, NULL, "Return to Menu");
 		}
 		return;
 	}
@@ -6014,6 +6128,73 @@ static void Got_Cheat(UINT8 **cp, INT32 playernum)
 			P_SetPlayerAngle(player, angle);
 
 			CV_CheaterWarning(targetPlayer, va("angle = %d%s", (int)anglef, M_Ftrim(anglef)));
+			break;
+		}
+
+		case CHEAT_RESPAWNAT: {
+			INT32 id = READINT32(*cp);
+			waypoint_t *finish = K_GetFinishLineWaypoint();
+			waypoint_t *waypoint = K_GetWaypointFromID(id);
+			path_t path = {0};
+			boolean retryBackwards = false;
+			const UINT32 baseDist = FixedMul(RESPAWN_DIST, mapobjectscale);
+
+			CV_CheaterWarning(targetPlayer, va("respawnat %d", id));
+
+			if (waypoint == NULL)
+			{
+				CONS_Alert(CONS_WARNING, "respawnat: no waypoint with that ID\n");
+				break;
+			}
+
+			// First, just try to go forward normally
+			if (K_PathfindToWaypoint(player->respawn.wp, waypoint, &path, false, false))
+			{
+				// If the path forward is too short, extend it by moving the origin behind
+				if (path.totaldist < baseDist)
+				{
+					retryBackwards = true;
+				}
+				else
+				{
+					size_t i;
+
+					for (i = 0; i < path.numnodes; ++i)
+					{
+						// If we had to cross the finish line, this waypoint is behind us
+						if (path.array[i].nodedata == finish)
+						{
+							retryBackwards = true;
+							break;
+						}
+					}
+				}
+
+				Z_Free(path.array);
+			}
+			else
+			{
+				retryBackwards = true;
+			}
+
+			if (retryBackwards)
+			{
+				memset(&path, 0, sizeof path);
+				if (!K_PathfindThruCircuit(waypoint, baseDist, &path, false, true))
+				{
+					CONS_Alert(CONS_WARNING, "respawnat: no path to waypoint\n");
+					break;
+				}
+
+				// Update origin since lightsnake must go forwards
+				player->respawn.wp = path.array[path.numnodes - 1].nodedata;
+
+				Z_Free(path.array);
+			}
+
+			player->respawn.state = RESPAWNST_NONE;
+			K_DoIngameRespawn(player);
+			player->respawn.distanceleft = retryBackwards ? baseDist : path.totaldist;
 			break;
 		}
 

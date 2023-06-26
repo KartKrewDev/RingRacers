@@ -2295,6 +2295,7 @@ static UINT32 tokenizerStartPos = 0;
 static UINT32 tokenizerEndPos = 0;
 static UINT32 tokenizerInputLength = 0;
 static UINT8 tokenizerInComment = 0; // 0 = not in comment, 1 = // Single-line, 2 = /* Multi-line */
+static boolean tokenizerIsString = false; // did we strip quotes from this token?
 
 void M_TokenizerOpen(const char *inputString)
 {
@@ -2319,6 +2320,7 @@ void M_TokenizerClose(void)
 	tokenizerStartPos = 0;
 	tokenizerEndPos = 0;
 	tokenizerInComment = 0;
+	tokenizerIsString = false;
 }
 
 static void M_DetectComment(UINT32 *pos)
@@ -2349,8 +2351,10 @@ static void M_ReadTokenString(UINT32 i)
 		// Assign the memory. Don't forget an extra byte for the end of the string!
 		tokenizerToken[i] = (char *)Z_Malloc(tokenCapacity[i] * sizeof(char), PU_STATIC, NULL);
 	}
+
 	// Copy the string.
 	M_Memcpy(tokenizerToken[i], tokenizerInput + tokenizerStartPos, (size_t)tokenLength);
+
 	// Make the final character NUL.
 	tokenizerToken[i][tokenLength] = '\0';
 }
@@ -2361,6 +2365,9 @@ const char *M_TokenizerRead(UINT32 i)
 		return NULL;
 
 	tokenizerStartPos = tokenizerEndPos;
+
+	// Reset string flag
+	tokenizerIsString = false;
 
 	// Try to detect comments now, in case we're pointing right at one
 	M_DetectComment(&tokenizerStartPos);
@@ -2416,6 +2423,10 @@ const char *M_TokenizerRead(UINT32 i)
 
 		M_ReadTokenString(i);
 		tokenizerEndPos++;
+
+		// Tell us the the token was a string.
+		tokenizerIsString = true;
+
 		return tokenizerToken[i];
 	}
 
@@ -2449,6 +2460,11 @@ UINT32 M_TokenizerGetEndPos(void)
 void M_TokenizerSetEndPos(UINT32 newPos)
 {
 	tokenizerEndPos = newPos;
+}
+
+boolean M_TokenizerJustReadString(void)
+{
+	return tokenizerIsString;
 }
 
 /** Count bits in a number.

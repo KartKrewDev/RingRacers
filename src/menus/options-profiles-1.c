@@ -18,7 +18,7 @@ menu_t OPTIONS_ProfilesDef = {
 	32, 80,
 	SKINCOLOR_ULTRAMARINE, 0,
 	0,
-	NULL,
+	"FILE",
 	2, 5,
 	M_DrawProfileSelect,
 	M_OptionsTick,
@@ -178,14 +178,14 @@ void M_HandleProfileSelect(INT32 ch)
 			if (optionsmenu.profilen == 0)	// Guest profile, you can't edit that one!
 			{
 				S_StartSound(NULL, sfx_s3k7b);
-				M_StartMessage(M_GetText("The Guest profile cannot be edited.\nCreate a new profile instead."), NULL, MM_NOTHING);
+				M_StartMessage("Profiles", M_GetText("The Guest profile cannot be edited.\nCreate a new profile instead."), NULL, MM_NOTHING, NULL, NULL);
 				M_SetMenuDelay(pid);
 				return;
 			}
 			else if (creatable && optionsmenu.profilen == maxp && gamestate != GS_MENU)
 			{
 				S_StartSound(NULL, sfx_s3k7b);
-				M_StartMessage(M_GetText("Cannot create a new profile\nmid-game. Return to the\ntitle screen first."), NULL, MM_NOTHING);
+				M_StartMessage("Profiles", M_GetText("Cannot create a new profile\nmid-game. Return to the\ntitle screen first."), NULL, MM_NOTHING, NULL, NULL);
 				M_SetMenuDelay(pid);
 				return;
 			}
@@ -207,7 +207,7 @@ void M_HandleProfileSelect(INT32 ch)
 #if 0
 				if (optionsmenu.profilen == 0)
 				{
-					M_StartMessage(M_GetText("Are you sure you wish\nto use the Guest Profile?\nThis profile cannot be customised.\nIt is recommended to create\na new Profile instead.\n\nPress (A) to confirm or (B) to cancel"), FUNCPTRCAST(M_FirstPickProfile), MM_YESNO);
+					M_StartMessage("Profiles", M_GetText("Are you sure you wish\nto use the Guest Profile?\nThis profile cannot be customised.\nIt is recommended to create\na new Profile instead.\n"), &M_FirstPickProfile, MM_YESNO, NULL, NULL);
 					return;
 				}
 #endif

@@ -1,6 +1,8 @@
 /// \file  k_collide.cpp
 /// \brief SRB2Kart item collision hooks
 
+#include <algorithm>
+
 #include "k_collide.h"
 #include "doomtype.h"
 #include "p_mobj.h"
@@ -787,6 +789,140 @@ boolean K_BubbleShieldCollide(mobj_t *t1, mobj_t *t2)
 	return true;
 }
 
+boolean K_InstaWhipCollide(mobj_t *shield, mobj_t *victim)
+{
+	int victimHitlag = 10;
+	int attackerHitlag = 4;
+
+	// EV1 is used to indicate that we should no longer hit monitors.
+	// EV2 indicates we should no longer hit anything.
+	if (shield->extravalue2)
+		return false;
+
+	mobj_t *attacker = shield->target;
+
+	if (!attacker || P_MobjWasRemoved(attacker) || !attacker->player)
+		return false; // How did we even get here?
+
+	player_t *attackerPlayer = attacker->player;
+
+	if (victim->player)
+	{
+		player_t *victimPlayer = victim->player;
+
+		//if (victim != attacker && !P_PlayerInPain(victimPlayer) && victimPlayer->flashing == 0)
+		if (victim != attacker && victim->hitlag == 0)
+		{
+			// If both players have a whip, hits are order-of-execution dependent and that sucks.
+			// Player expectation is a clash here.
+			if (victimPlayer->whip && !P_MobjWasRemoved(victimPlayer->whip))
+			{
+				victimPlayer->whip->extravalue2 = 1;
+				shield->extravalue2 = 1;
+
+				K_DoPowerClash(victim, attacker);
+
+				victim->renderflags &= ~RF_DONTDRAW;
+				attacker->renderflags &= ~RF_DONTDRAW;
+
+				angle_t thrangle = R_PointToAngle2(attacker->x, attacker->y, victim->x, victim->y);
+				P_Thrust(victim, thrangle, FRACUNIT*7);
+				P_Thrust(attacker, ANGLE_180 + thrangle, FRACUNIT*7);
+
+				return false;
+			}
+
+			// Instawhip _always_ loses to guard.
+			if (K_PlayerGuard(victimPlayer))
+			//if (true)
+			{
+				victimHitlag = 3*victimHitlag;
+
+				if (P_PlayerInPain(attackerPlayer))
+					return false; // never punish shield more than once
+
+				angle_t thrangle = R_PointToAngle2(victim->x, victim->y, shield->x, shield->y);
+				attacker->momx = attacker->momy = 0;
+				P_Thrust(attacker, thrangle, FRACUNIT*7);
+
+				// A little extra juice, so successful reads are usually positive or zero on spheres.
+				victimPlayer->spheres = std::min(victimPlayer->spheres + 10, 40);
+
+				shield->renderflags &= ~RF_DONTDRAW;
+				shield->flags |= MF_NOCLIPTHING;
+
+				// Attacker should be free to all reasonable followups.
+				attacker->renderflags &= ~RF_DONTDRAW;
+				attackerPlayer->spindashboost = 0;
+				attackerPlayer->sneakertimer = 0;
+				attackerPlayer->instaShieldCooldown = GUARDBREAK_COOLDOWN;
+				attackerPlayer->guardCooldown = GUARDBREAK_COOLDOWN;
+				attackerPlayer->flashing = 0;
+
+				// Localized broly for a local event.
+				mobj_t *broly = Obj_SpawnBrolyKi(victim, victimHitlag);
+				broly->extravalue2 = 16*mapobjectscale;
+
+				P_PlayVictorySound(victim);
+
+				P_DamageMobj(attacker, victim, victim, 1, DMG_STING);
+
+				S_StartSound(victim, sfx_mbv92);
+				K_AddHitLag(attacker, victimHitlag, true);
+				K_AddHitLag(victim, attackerHitlag, false);
+
+				K_DoPowerClash(shield, victim); // REJECTED
+
+				attacker->hitlag = victimHitlag; // No, seriously, we do not care about K_AddHitLag's idea of a normal maximum
+				shield->hitlag = attacker->hitlag;
+
+				shield->extravalue2 = 1;
+
+				return true;
+			}
+
+			// if you're here, you're getting hit
+			// Damage is a bit hacky, we want only a small loss-of-control
+			// while still behaving as if it's a "real" hit.
+			P_PlayRinglossSound(victim);
+			P_PlayerRingBurst(victimPlayer, 5);
+			P_DamageMobj(victim, shield, attacker, 1, DMG_STUMBLE); // There's a special exception in P_DamageMobj for type==MT_INSTAWHIP
+
+			angle_t thrangle = ANGLE_180 + R_PointToAngle2(victim->x, victim->y, shield->x, shield->y);
+			P_Thrust(victim, thrangle, FRACUNIT*10);
+
+			K_AddHitLag(victim, victimHitlag, true);
+			K_AddHitLag(attacker, attackerHitlag, false);
+			shield->hitlag = attacker->hitlag;
+			return true;
+		}
+		return false;
+	}
+	else
+	{
+		if (victim->type == MT_ORBINAUT || victim->type == MT_JAWZ || victim->type == MT_GACHABOM
+		|| victim->type == MT_BANANA || victim->type == MT_EGGMANITEM || victim->type == MT_BALLHOG
+		|| victim->type == MT_SSMINE || victim->type == MT_LANDMINE || victim->type == MT_SINK
+		|| victim->type == MT_GARDENTOP || victim->type == MT_DROPTARGET || victim->type == MT_BATTLECAPSULE
+		|| victim->type == MT_MONITOR || victim->type == MT_SPECIAL_UFO)
+		{
+			// Monitor hack. We can hit monitors once per instawhip, no multihit shredding!
+			// Damage values in Obj_MonitorGetDamage.
+			if (victim->type == MT_MONITOR)
+			{
+				if (shield->extravalue1 == 1)
+					return false;
+				shield->extravalue1 = 1;
+			}
+
+			P_DamageMobj(victim, shield, attacker, 1, DMG_NORMAL);
+			K_AddHitLag(attacker, attackerHitlag, false);
+			shield->hitlag = attacker->hitlag;
+		}
+		return false;
+	}
+}
+
 boolean K_KitchenSinkCollide(mobj_t *t1, mobj_t *t2)
 {
 	if (((t1->target == t2) || (!(t2->flags & (MF_ENEMY|MF_BOSS)) && (t1->target == t2->target))) && (t1->threshold > 0 || (t2->type != MT_PLAYER && t2->threshold > 0)))
@@ -872,12 +1008,13 @@ boolean K_PvPTouchDamage(mobj_t *t1, mobj_t *t2)
 			|| (t1->player->invincibilitytimer > 0)
 			|| (t1->player->flamedash > 0 && t1->player->itemtype == KITEM_FLAMESHIELD)
 			|| (t1->player->curshield == KSHIELD_TOP && !K_IsHoldingDownTop(t1->player))
-			|| (t1->player->bubbleblowup > 0);
+			|| (t1->player->bubbleblowup > 0)
+			|| (t1->player->spheres > 0 && K_PlayerEBrake(t1->player));
 	};
 
 	if (canClash(t1, t2) && canClash(t2, t1))
 	{
-		K_DoPowerClash(t1->player, t2->player);
+		K_DoPowerClash(t1, t2);
 		return false;
 	}
 
@@ -975,7 +1112,7 @@ boolean K_PvPTouchDamage(mobj_t *t1, mobj_t *t2)
 
 		bool stung = false;
 
-		if (t2->player->rings <= 0)
+		if (t2->player->rings <= 0 && t2->player->spheres <= 0)
 		{
 			P_DamageMobj(t2, t1, t1, 1, DMG_STING|DMG_WOMBO);
 			stung = true;

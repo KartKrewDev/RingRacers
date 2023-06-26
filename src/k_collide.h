@@ -24,6 +24,8 @@ boolean K_DropTargetCollide(mobj_t *t1, mobj_t *t2);
 void K_LightningShieldAttack(mobj_t *actor, fixed_t size);
 boolean K_BubbleShieldCollide(mobj_t *t1, mobj_t *t2);
 
+boolean K_InstaWhipCollide(mobj_t *shield, mobj_t *victim);
+
 boolean K_KitchenSinkCollide(mobj_t *t1, mobj_t *t2);
 
 boolean K_FallingRockCollide(mobj_t *t1, mobj_t *t2);

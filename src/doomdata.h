@@ -233,6 +233,21 @@ struct mapnode_t
 #pragma pack()
 #endif
 
+typedef enum
+{
+	USER_PROP_BOOL,
+	USER_PROP_INT,
+	USER_PROP_FIXED,
+	USER_PROP_STR
+} mapUserPropertyType_e;
+
+struct mapUserProperties_t
+{
+	mapUserProperty_t *properties;
+	size_t length;
+	size_t capacity;
+};
+
 #define NUMMAPTHINGARGS 10
 #define NUMMAPTHINGSTRINGARGS 2
 
@@ -246,12 +261,13 @@ struct mapthing_t
 	UINT16 options;
 	INT16 z;
 	UINT8 extrainfo;
-	taglist_t tags;
+	mtag_t tid;
 	fixed_t scale;
 	INT16 special;
 	INT32 args[NUMMAPTHINGARGS];
 	char *stringargs[NUMMAPTHINGSTRINGARGS];
 	UINT8 layer; // FOF layer to spawn on, see P_GetMobjSpawnHeight
+	mapUserProperties_t user; // UDMF user-defined custom properties.
 	mobj_t *mobj;
 };
 

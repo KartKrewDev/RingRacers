@@ -846,10 +846,14 @@ void Y_VoteDrawer(void)
 	{
 		const INT32 tickDown = (vote.timer + 1) / TICRATE;
 
-		V_DrawCenteredString(
-			BASEVIDWIDTH/2, 188,
-			V_YELLOWMAP,
-			va("Vote ends in %d", tickDown)
+		// See also y_inter.c
+		V__DrawOneScaleString(
+			2*FRACUNIT,
+			(BASEVIDHEIGHT - (2+8))*FRACUNIT,
+			FRACUNIT,
+			0, NULL,
+			OPPRF_FONT,
+			va("%d", tickDown)
 		);
 	}
 

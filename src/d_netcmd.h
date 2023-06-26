@@ -75,6 +75,7 @@ extern consvar_t cv_mute;
 extern consvar_t cv_pause;
 
 extern consvar_t cv_restrictskinchange, cv_allowteamchange, cv_maxplayers, cv_respawntime;
+extern consvar_t cv_spectatorreentry, cv_duelspectatorreentry, cv_antigrief;
 
 // SRB2kart items
 extern consvar_t cv_items[NUMKARTRESULTS-1];
@@ -95,7 +96,7 @@ extern consvar_t cv_botscanvote;
 extern consvar_t cv_kartdebugitem, cv_kartdebugamount, cv_kartdebugdistribution, cv_kartdebughuddrop;
 extern consvar_t cv_kartdebugnodes, cv_kartdebugcolorize, cv_kartdebugdirector;
 extern consvar_t cv_spbtest, cv_reducevfx;
-extern consvar_t cv_kartdebugwaypoints, cv_kartdebugbotpredict;
+extern consvar_t cv_kartdebugwaypoints, cv_kartdebugbots;
 extern consvar_t cv_debugrank;
 extern consvar_t cv_battletest;
 
@@ -275,6 +276,8 @@ typedef enum
 	AEV_ROUNDSTART,
 	AEV_INTERMISSIONSTART,
 	AEV_VOTESTART,
+	AEV_QUEUESTART,
+	AEV_QUEUEEND,
 	AEV__MAX
 } automateEvents_t;
 

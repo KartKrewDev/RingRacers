@@ -81,7 +81,7 @@ static patch_t *kp_nocontestminimap;
 static patch_t *kp_spbminimap;
 static patch_t *kp_wouldyoustillcatchmeifiwereaworm;
 static patch_t *kp_catcherminimap;
-static patch_t *kp_emeraldminimap;
+static patch_t *kp_emeraldminimap[2];
 static patch_t *kp_capsuleminimap[3];
 
 static patch_t *kp_ringsticker[2];
@@ -358,7 +358,8 @@ void K_LoadKartHUDGraphics(void)
 
 	HU_UpdatePatch(&kp_wouldyoustillcatchmeifiwereaworm, "MINIPROG");
 	HU_UpdatePatch(&kp_catcherminimap, "UFOMAP");
-	HU_UpdatePatch(&kp_emeraldminimap, "EMEMAP");
+	HU_UpdatePatch(&kp_emeraldminimap[0], "EMEMAP");
+	HU_UpdatePatch(&kp_emeraldminimap[1], "SUPMAP");
 
 	HU_UpdatePatch(&kp_capsuleminimap[0], "MINICAP1");
 	HU_UpdatePatch(&kp_capsuleminimap[1], "MINICAP2");
@@ -1150,7 +1151,7 @@ static void K_initKartHUD(void)
 	}
 }
 
-void K_DrawMapThumbnail(INT32 x, INT32 y, INT32 width, UINT32 flags, UINT16 map, UINT8 *colormap)
+void K_DrawMapThumbnail(fixed_t x, fixed_t y, fixed_t width, UINT32 flags, UINT16 map, const UINT8 *colormap)
 {
 	patch_t *PictureOfLevel = NULL;
 
@@ -1170,7 +1171,7 @@ void K_DrawMapThumbnail(INT32 x, INT32 y, INT32 width, UINT32 flags, UINT16 map,
 	K_DrawLikeMapThumbnail(x, y, width, flags, PictureOfLevel, colormap);
 }
 
-void K_DrawLikeMapThumbnail(INT32 x, INT32 y, INT32 width, UINT32 flags, patch_t *patch, UINT8 *colormap)
+void K_DrawLikeMapThumbnail(fixed_t x, fixed_t y, fixed_t width, UINT32 flags, patch_t *patch, const UINT8 *colormap)
 {
 	if (flags & V_FLIP)
 		x += width;
@@ -1876,7 +1877,7 @@ static void K_DrawKartPositionNum(INT32 num)
 	while (num)
 	{
 		/*
-		
+
 		*/
 
 		fx = K_DrawKartPositionNumPatch(
@@ -1995,7 +1996,7 @@ static boolean K_drawKartPositionFaces(void)
 		{
 			flipflag = V_FLIP|V_VFLIP; // blonic flip
 			xoff = yoff = 16;
-		} else 
+		} else
 		{
 			flipflag = 0;
 			xoff = yoff = 0;
@@ -2273,156 +2274,6 @@ static void K_drawKartEmeralds(void)
 					kp_rankemeraldflash
 				);
 			}
-		}
-	}
-}
-
-//
-// HU_DrawTabRankings -- moved here to take advantage of kart stuff!
-//
-void K_DrawTabRankings(INT32 x, INT32 y, playersort_t *tab, INT32 scorelines, INT32 whiteplayer, INT32 hilicol)
-{
-	static tic_t alagles_timer = 9;
-	INT32 i, rightoffset = 240;
-	const UINT8 *colormap;
-	INT32 dupadjust = (vid.width/vid.dupx), duptweak = (dupadjust - BASEVIDWIDTH)/2;
-	int basey = y, basex = x, y2;
-
-	//this function is designed for 9 or less score lines only
-	//I_Assert(scorelines <= 9); -- not today bitch, kart fixed it up
-
-	V_DrawFill(1-duptweak, 26, dupadjust-2, 1, 0); // Draw a horizontal line because it looks nice!
-
-	scorelines--;
-	if (scorelines >= 8)
-	{
-		V_DrawFill(160, 26, 1, 147, 0); // Draw a vertical line to separate the two sides.
-		V_DrawFill(1-duptweak, 173, dupadjust-2, 1, 0); // And a horizontal line near the bottom.
-		rightoffset = (BASEVIDWIDTH/2) - 4 - x;
-		x = (BASEVIDWIDTH/2) + 4;
-		y += 18*(scorelines-8);
-	}
-	else
-	{
-		y += 18*scorelines;
-	}
-
-	for (i = scorelines; i >= 0; i--)
-	{
-		char strtime[MAXPLAYERNAME+1];
-
-		if (players[tab[i].num].spectator || !players[tab[i].num].mo)
-			continue; //ignore them.
-
-		if (netgame) // don't draw ping offline
-		{
-			if (players[tab[i].num].bot)
-			{
-				V_DrawScaledPatch(x + ((i < 8) ? -25 : rightoffset + 3), y-2, 0, kp_cpu);
-			}
-			else if (tab[i].num != serverplayer || !server_lagless)
-			{
-				HU_drawPing((x + ((i < 8) ? -17 : rightoffset + 11)) * FRACUNIT, (y-4) * FRACUNIT, playerpingtable[tab[i].num], 0, false);
-			}
-		}
-
-		STRBUFCPY(strtime, tab[i].name);
-
-		y2 = y;
-
-		if (netgame && playerconsole[tab[i].num] == 0 && server_lagless && !players[tab[i].num].bot)
-		{
-			y2 = ( y - 4 );
-
-			V_DrawScaledPatch(x + 20, y2, 0, kp_blagles[(leveltime / 3) % 6]);
-			// every 70 tics
-			if (( leveltime % 70 ) == 0)
-			{
-				alagles_timer = 9;
-			}
-			if (alagles_timer > 0)
-			{
-				V_DrawScaledPatch(x + 20, y2, 0, kp_alagles[alagles_timer]);
-				if (( leveltime % 2 ) == 0)
-					alagles_timer--;
-			}
-			else
-				V_DrawScaledPatch(x + 20, y2, 0, kp_alagles[0]);
-
-			y2 += SHORT (kp_alagles[0]->height) + 1;
-		}
-
-		if (scorelines >= 8)
-			V_DrawThinString(x + 20, y2, ((tab[i].num == whiteplayer) ? hilicol : 0)|V_ALLOWLOWERCASE|V_6WIDTHSPACE, strtime);
-		else
-			V_DrawString(x + 20, y2, ((tab[i].num == whiteplayer) ? hilicol : 0)|V_ALLOWLOWERCASE, strtime);
-
-		if (players[tab[i].num].mo->color)
-		{
-			colormap = R_GetTranslationColormap(players[tab[i].num].skin, players[tab[i].num].mo->color, GTC_CACHE);
-			if (players[tab[i].num].mo->colorized)
-				colormap = R_GetTranslationColormap(TC_RAINBOW, players[tab[i].num].mo->color, GTC_CACHE);
-			else
-				colormap = R_GetTranslationColormap(players[tab[i].num].skin, players[tab[i].num].mo->color, GTC_CACHE);
-
-			V_DrawMappedPatch(x, y-4, 0, faceprefix[players[tab[i].num].skin][FACE_RANK], colormap);
-			/*if ((gametyperules & GTR_BUMPERS) && players[tab[i].num].bumpers > 0) -- not enough space for this
-			{
-				INT32 bumperx = x+19;
-				V_DrawMappedPatch(bumperx-2, y-4, 0, kp_tinybumper[0], colormap);
-				for (j = 1; j < players[tab[i].num].bumpers; j++)
-				{
-					bumperx += 5;
-					V_DrawMappedPatch(bumperx, y-4, 0, kp_tinybumper[1], colormap);
-				}
-			}*/
-		}
-
-		if (tab[i].num == whiteplayer)
-			V_DrawScaledPatch(x, y-4, 0, kp_facehighlight[(leveltime / 4) % 8]);
-
-		if ((gametyperules & GTR_BUMPERS) && (players[tab[i].num].pflags & PF_ELIMINATED))
-			V_DrawScaledPatch(x-4, y-7, 0, kp_ranknobumpers);
-		else
-		{
-			INT32 pos = players[tab[i].num].position;
-			if (pos < 0 || pos > MAXPLAYERS)
-				pos = 0;
-			// Draws the little number over the face
-			V_DrawScaledPatch(x-5, y+6, 0, kp_facenum[pos]);
-		}
-
-		if ((gametyperules & GTR_CIRCUIT))
-		{
-#define timestring(time) va("%i'%02i\"%02i", G_TicsToMinutes(time, true), G_TicsToSeconds(time), G_TicsToCentiseconds(time))
-			if (scorelines >= 8)
-			{
-				if (players[tab[i].num].exiting)
-					V_DrawRightAlignedThinString(x+rightoffset, y-1, hilicol|V_6WIDTHSPACE, timestring(players[tab[i].num].realtime));
-				else if (players[tab[i].num].pflags & PF_NOCONTEST)
-					V_DrawRightAlignedThinString(x+rightoffset, y-1, V_6WIDTHSPACE, "NO CONTEST.");
-				else
-					V_DrawRightAlignedThinString(x+rightoffset, y-1, V_6WIDTHSPACE, va("Lap %d", tab[i].count));
-			}
-			else
-			{
-				if (players[tab[i].num].exiting)
-					V_DrawRightAlignedString(x+rightoffset, y, hilicol, timestring(players[tab[i].num].realtime));
-				else if (players[tab[i].num].pflags & PF_NOCONTEST)
-					V_DrawRightAlignedThinString(x+rightoffset, y-1, 0, "NO CONTEST.");
-				else
-					V_DrawRightAlignedString(x+rightoffset, y, 0, va("Lap %d", tab[i].count));
-			}
-#undef timestring
-		}
-		else
-			V_DrawRightAlignedString(x+rightoffset, y, 0, va("%u", tab[i].count));
-
-		y -= 18;
-		if (i == 8)
-		{
-			y = basey + 7*18;
-			x = basex;
 		}
 	}
 }
@@ -3845,7 +3696,7 @@ static void K_drawKartMinimap(void)
 		localplayers[i] = -1;
 
 	// Player's tiny icons on the Automap. (drawn opposite direction so player 1 is drawn last in splitscreen)
-	if (ghosts && doprogressionbar == true) // future work: show ghosts on progression bar
+	if (ghosts && doprogressionbar == false) // future work: show ghosts on progression bar
 	{
 		demoghost *g = ghosts;
 		while (g)
@@ -3904,11 +3755,20 @@ static void K_drawKartMinimap(void)
 
 			if (mobj->health <= 0 && (players[i].pflags & PF_NOCONTEST))
 			{
+				if (P_MobjWasRemoved(mobj->tracer))
+				{
+					continue;
+				}
+
+				if (mobj->tracer->renderflags & RF_DONTDRAW)
+				{
+					continue;
+				}
+
 				workingPic = kp_nocontestminimap;
 				colormap = R_GetTranslationColormap(TC_DEFAULT, mobj->color, GTC_CACHE);
 
-				if (mobj->tracer && !P_MobjWasRemoved(mobj->tracer))
-					mobj = mobj->tracer;
+				mobj = mobj->tracer;
 			}
 			else
 			{
@@ -4021,7 +3881,11 @@ static void K_drawKartMinimap(void)
 				}
 				else
 				{
-					workingPic = kp_emeraldminimap;
+					UINT8 emid = 0;
+					if (specialstageinfo.ufo->cvmem > 7)
+						emid = 1;
+					workingPic = kp_emeraldminimap[emid];
+
 					if (specialstageinfo.ufo->color)
 					{
 						colormap = R_GetTranslationColormap(TC_DEFAULT, specialstageinfo.ufo->color, GTC_CACHE);
@@ -4073,11 +3937,20 @@ static void K_drawKartMinimap(void)
 
 		if (mobj->health <= 0 && (players[localplayers[i]].pflags & PF_NOCONTEST))
 		{
+			if (P_MobjWasRemoved(mobj->tracer))
+			{
+				continue;
+			}
+
+			if (mobj->tracer->renderflags & RF_DONTDRAW)
+			{
+				continue;
+			}
+
 			workingPic = kp_nocontestminimap;
 			colormap = R_GetTranslationColormap(TC_DEFAULT, mobj->color, GTC_CACHE);
 
-			if (mobj->tracer && !P_MobjWasRemoved(mobj->tracer))
-				mobj = mobj->tracer;
+			mobj = mobj->tracer;
 		}
 		else
 		{
@@ -4457,7 +4330,7 @@ static void K_drawBattleFullscreen(void)
 	{
 		if (stplyr == &players[displayplayers[0]])
 			V_DrawFadeScreen(0xFF00, 16);
-		if (exitcountdown <= 6*TICRATE && !stplyr->spectator)
+		if (exitcountdown <= (11*TICRATE)/2 && !stplyr->spectator)
 		{
 			patch_t *p = kp_battlecool;
 
@@ -4919,8 +4792,18 @@ void K_drawKartFreePlay(void)
 	if (((leveltime-lt_endtime) % TICRATE) < TICRATE/2)
 		return;
 
+	const fixed_t x = ((BASEVIDWIDTH - (LAPS_X+6)) * FRACUNIT) - \
+	V_StringScaledWidth(
+		FRACUNIT,
+		FRACUNIT,
+		FRACUNIT,
+		V_HUDTRANS|V_SLIDEIN|V_SNAPTOBOTTOM|V_SNAPTORIGHT|V_SPLITSCREEN,
+		KART_FONT,
+		"FREE PLAY"
+	);
+
 	V_DrawStringScaled(
-		((BASEVIDWIDTH - (LAPS_X+1)) - 72) * FRACUNIT, // mirror the laps thingy
+		x,
 		(LAPS_Y+3) * FRACUNIT,
 		FRACUNIT,
 		FRACUNIT,
@@ -4966,7 +4849,7 @@ K_drawMiniPing (void)
 
 void K_drawButton(fixed_t x, fixed_t y, INT32 flags, patch_t *button[2], boolean pressed)
 {
-	V_DrawFixedPatch(x, y, FRACUNIT, flags, button[pressed], NULL);
+	V_DrawFixedPatch(x, y, FRACUNIT, flags, button[(pressed == true) ? 1 : 0], NULL);
 }
 
 void K_drawButtonAnim(INT32 x, INT32 y, INT32 flags, patch_t *button[2], tic_t animtic)
@@ -5116,8 +4999,13 @@ static void K_DrawWaypointDebugger(void)
 	if (stplyr != &players[displayplayers[0]]) // only for p1
 		return;
 
+	if (netgame)
+	{
+		V_DrawString(8, 146, 0, va("Online griefing: [%u, %u]", stplyr->griefValue/TICRATE, stplyr->griefStrikes));
+	}
+
 	V_DrawString(8, 156, 0, va("Current Waypoint ID: %d", K_GetWaypointID(stplyr->currentwaypoint)));
-	V_DrawString(8, 166, 0, va("Next Waypoint ID: %d", K_GetWaypointID(stplyr->nextwaypoint)));
+	V_DrawString(8, 166, 0, va("Next Waypoint ID: %d%s", K_GetWaypointID(stplyr->nextwaypoint), ((stplyr->pflags & PF_WRONGWAY) ? " (WRONG WAY)" : "")));
 	V_DrawString(8, 176, 0, va("Finishline Distance: %d", stplyr->distancetofinish));
 
 	if (numstarposts > 0)
@@ -5127,6 +5015,75 @@ static void K_DrawWaypointDebugger(void)
 		else
 			V_DrawString(8, 186, 0, va("Checkpoint: %d / %d", stplyr->starpostnum, numstarposts));
 	}
+}
+
+static void K_DrawBotDebugger(void)
+{
+	player_t *bot = NULL;
+
+	if (cv_kartdebugbots.value == 0)
+	{
+		return;
+	}
+
+	if (stplyr != &players[displayplayers[0]]) // only for p1
+	{
+		return;
+	}
+
+	if (stplyr->bot == true)
+	{
+		// we ARE the bot
+		bot = stplyr;
+	}
+	else
+	{
+		// get winning bot
+		size_t i;
+		for (i = 0; i < MAXPLAYERS; i++)
+		{
+			player_t *p = NULL;
+
+			if (playeringame[i] == false)
+			{
+				continue;
+			}
+
+			p = &players[i];
+			if (p->spectator == true || p->bot == false)
+			{
+				continue;
+			}
+
+			if (bot == NULL || p->distancetofinish < bot->distancetofinish)
+			{
+				bot = p;
+			}
+		}
+	}
+
+	if (bot == NULL)
+	{
+		// no bot exists?
+		return;
+	}
+
+	V_DrawSmallString(16, 8, V_YELLOWMAP, va("Bot: %s", player_names[bot - players]));
+
+	V_DrawSmallString(8, 14, 0, va("Difficulty: %d / %d", bot->botvars.difficulty, MAXBOTDIFFICULTY));
+	V_DrawSmallString(8, 18, 0, va("Difficulty increase: %d", bot->botvars.diffincrease));
+	V_DrawSmallString(8, 22, 0, va("Rival: %d", (UINT8)(bot->botvars.rival == true)));
+	V_DrawSmallString(8, 26, 0, va("Rubberbanding: %.02f", FIXED_TO_FLOAT(bot->botvars.rubberband) * 100.0f));
+
+	V_DrawSmallString(8, 32, 0, va("Item delay: %d", bot->botvars.itemdelay));
+	V_DrawSmallString(8, 36, 0, va("Item confirm: %d", bot->botvars.itemconfirm));
+
+	V_DrawSmallString(8, 42, 0, va("Turn: %d / %d / %d", -BOTTURNCONFIRM, bot->botvars.turnconfirm, BOTTURNCONFIRM));
+	V_DrawSmallString(8, 46, 0, va("Spindash: %d / %d", bot->botvars.spindashconfirm, BOTSPINDASHCONFIRM));
+	V_DrawSmallString(8, 50, 0, va("Respawn: %d / %d", bot->botvars.respawnconfirm, BOTRESPAWNCONFIRM));
+
+	V_DrawSmallString(8, 56, 0, va("Item priority: %d", bot->botvars.roulettePriority));
+	V_DrawSmallString(8, 60, 0, va("Item timeout: %d", bot->botvars.rouletteTimeout));
 }
 
 static void K_DrawGPRankDebugger(void)
@@ -5408,11 +5365,6 @@ void K_drawKartHUD(void)
 	// Draw FREE PLAY.
 	K_drawKartFreePlay();
 
-	if (r_splitscreen == 0 && (stplyr->pflags & PF_WRONGWAY) && ((leveltime / 8) & 1))
-	{
-		V_DrawCenteredString(BASEVIDWIDTH>>1, 176, V_REDMAP|V_SNAPTOBOTTOM, "WRONG WAY");
-	}
-
 	if ((netgame || cv_mindelay.value) && r_splitscreen && Playing())
 	{
 		K_drawMiniPing();
@@ -5456,6 +5408,28 @@ void K_drawKartHUD(void)
 	}
 
 	K_DrawWaypointDebugger();
+	K_DrawBotDebugger();
 	K_DrawDirectorDebugger();
 	K_DrawGPRankDebugger();
+}
+
+void K_DrawSticker(INT32 x, INT32 y, INT32 width, INT32 flags, boolean isSmall)
+{
+	patch_t *stickerEnd;
+	INT32 height;
+
+	if (isSmall == true)
+	{
+		stickerEnd = W_CachePatchName("K_STIKE2", PU_CACHE);
+		height = 6;
+	}
+	else
+	{
+		stickerEnd = W_CachePatchName("K_STIKEN", PU_CACHE);
+		height = 11;
+	}
+
+	V_DrawFixedPatch(x*FRACUNIT, y*FRACUNIT, FRACUNIT, flags, stickerEnd, NULL);
+	V_DrawFill(x, y, width, height, 24|flags);
+	V_DrawFixedPatch((x + width)*FRACUNIT, y*FRACUNIT, FRACUNIT, flags|V_FLIP, stickerEnd, NULL);
 }

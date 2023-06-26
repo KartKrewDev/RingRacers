@@ -1848,7 +1848,6 @@ void F_StartTitleScreen(void)
 
 		gamestate_t prevwipegamestate = wipegamestate;
 		titlemapinaction = true;
-		P_SetTarget(&titlemapcam.mobj, NULL);
 		gamemap = titleMapNum+1;
 
 		maptol = mapheaderinfo[titleMapNum]->typeoflevel;
@@ -2132,8 +2131,10 @@ void F_TitleScreenTicker(boolean run)
 			// Now start the music
 			S_ChangeMusicInternal("_title", looptitle);
 		}
-		else if (menumessage.fadetimer < 9)
-			menumessage.fadetimer++;
+		else if (menumessage.active)
+		{
+			M_MenuMessageTick();
+		}
 
 		finalecount++;
 	}

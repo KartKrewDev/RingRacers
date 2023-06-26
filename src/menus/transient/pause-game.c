@@ -6,6 +6,10 @@
 #include "../../m_cond.h"
 #include "../../s_sound.h"
 
+#ifdef HAVE_DISCORDRPC
+#include "../../discord.h"
+#endif
+
 // ESC pause menu
 // Since there's no descriptions to each item, we'll use the descriptions as the names of the patches we want to draw for each option :)
 
@@ -32,7 +36,7 @@ menuitem_t PAUSE_Main[] =
 
 #ifdef HAVE_DISCORDRPC
 	{IT_STRING | IT_CALL, "DISCORD REQUESTS", "M_ICODIS",
-		NULL, {NULL}, 0, 0},
+		NULL, {.routine = M_DiscordRequests}, 0, 0},
 #endif
 
 	{IT_STRING | IT_CALL, "RESUME GAME", "M_ICOUNP",
@@ -214,6 +218,14 @@ void M_PauseTick(void)
 	}
 	else
 		pausemenu.openoffset /= 2;
+
+#ifdef HAVE_DISCORDRPC
+	// Show discord requests menu option if any requests are pending
+	if (discordRequestList)
+	{
+		PAUSE_Main[mpause_discordrequests].status = IT_STRING | IT_CALL;
+	}
+#endif
 }
 
 boolean M_PauseInputs(INT32 ch)
@@ -337,7 +349,7 @@ void M_ConfirmEnterGame(INT32 choice)
 	(void)choice;
 	if (!cv_allowteamchange.value)
 	{
-		M_StartMessage(M_GetText("The server is not allowing\nteam changes at this time.\n\nPress (B)\n"), NULL, MM_NOTHING);
+		M_StartMessage("Team Change", M_GetText("The server is not allowing\nteam changes at this time.\n"), NULL, MM_NOTHING, NULL, NULL);
 		return;
 	}
 	M_QuitPauseMenu(-1);
@@ -346,6 +358,8 @@ void M_ConfirmEnterGame(INT32 choice)
 
 static void M_ExitGameResponse(INT32 ch)
 {
+	const UINT8 pid = 0;
+
 	if (ch != MA_YES)
 		return;
 
@@ -356,7 +370,7 @@ static void M_ExitGameResponse(INT32 ch)
 	else
 	{
 		G_SetExitGameFlag();
-		M_ClearMenus(true);
+		M_SetMenuDelay(pid); // prevent another input
 	}
 }
 
@@ -369,5 +383,5 @@ void M_EndGame(INT32 choice)
 	if (!Playing())
 		return;
 
-	M_StartMessage(M_GetText("Are you sure you want to\nreturn to the menu?\nPress (A) to confirm or (B) to cancel\n"), FUNCPTRCAST(M_ExitGameResponse), MM_YESNO);
+	M_StartMessage("Return to Menu", M_GetText("Are you sure you want to\nreturn to the menu?\n"), &M_ExitGameResponse, MM_YESNO, NULL, NULL);
 }

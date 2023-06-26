@@ -46,11 +46,11 @@ struct std::hash<srb2::rhi::GlCoreFramebufferKey>
 {
 	std::size_t operator()(const srb2::rhi::GlCoreFramebufferKey& key) const
 	{
-		std::size_t color_hash = std::hash<const srb2::rhi::Handle<srb2::rhi::Texture>>()(key.color);
+		std::size_t color_hash = std::hash<srb2::rhi::Handle<srb2::rhi::Texture>>()(key.color);
 		std::size_t depth_stencil_hash = 0;
 		if (key.depth_stencil)
 		{
-			depth_stencil_hash = std::hash<const srb2::rhi::Handle<srb2::rhi::Renderbuffer>>()(*key.depth_stencil);
+			depth_stencil_hash = std::hash<srb2::rhi::Handle<srb2::rhi::Renderbuffer>>()(*key.depth_stencil);
 		}
 		return color_hash ^ (depth_stencil_hash << 1);
 	}
@@ -164,6 +164,13 @@ class GlCoreRhi final : public Rhi
 	uint32_t index_buffer_offset_ = 0;
 	uint32_t transfer_context_generation_ = 0;
 
+	uint8_t stencil_front_reference_ = 0;
+	uint8_t stencil_front_compare_mask_ = 0xFF;
+	uint8_t stencil_front_write_mask_ = 0xFF;
+	uint8_t stencil_back_reference_ = 0;
+	uint8_t stencil_back_compare_mask_ = 0xFF;
+	uint8_t stencil_back_write_mask_ = 0xFF;
+
 	std::vector<std::function<void()>> disposal_;
 
 public:
@@ -225,6 +232,9 @@ public:
 	virtual void draw_indexed(Handle<GraphicsContext> ctx, uint32_t index_count, uint32_t first_index) override;
 	virtual void
 	read_pixels(Handle<GraphicsContext> ctx, const Rect& rect, PixelFormat format, tcb::span<std::byte> out) override;
+	virtual void set_stencil_reference(Handle<GraphicsContext> ctx, CullMode face, uint8_t reference) override;
+	virtual void set_stencil_compare_mask(Handle<GraphicsContext> ctx, CullMode face, uint8_t mask) override;
+	virtual void set_stencil_write_mask(Handle<GraphicsContext> ctx, CullMode face, uint8_t mask) override;
 
 	virtual void present() override;
 

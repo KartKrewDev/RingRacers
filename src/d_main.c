@@ -140,7 +140,7 @@ UINT16 numskincolors = SKINCOLOR_FIRSTFREESLOT;
 menucolor_t *menucolorhead, *menucolortail;
 
 char savegamename[256];
-char liveeventbackup[256];
+char gpbackup[256];
 
 char srb2home[256] = ".";
 char srb2path[256] = ".";
@@ -249,12 +249,6 @@ void D_ProcessEvents(void)
 
 		HandleGamepadDeviceEvents(ev);
 
-		if (gameaction == ga_nothing && gamestate == GS_TITLESCREEN)
-		{
-			if (cht_Responder(ev))
-				continue;
-		}
-
 		if (demo.savemode == DSM_TITLEENTRY)
 		{
 			if (G_DemoTitleResponder(ev))
@@ -295,21 +289,13 @@ void D_ProcessEvents(void)
 		if (eaten)
 			continue; // menu ate the event
 
-		// Demo input:
-		/*
-		if (demo.playback)
-			if (M_DemoResponder(ev))
-				continue;	// demo ate the event
-		*/
-
-
 		G_Responder(ev);
 	}
 
 	// Update menu CMD
 	for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
 	{
-		M_UpdateMenuCMD(i);
+		M_UpdateMenuCMD(i, false);
 	}
 }
 
@@ -659,25 +645,6 @@ static void D_Display(void)
 	if (forcerefresh && G_GamestateUsesLevel() == false)
 		V_SetPalette(0);
 
-	// draw pause pic
-	if (paused && cv_showhud.value && !demo.playback)
-	{
-#if 0
-		INT32 py;
-		patch_t *patch;
-		if (automapactive)
-			py = 4;
-		else
-			py = viewwindowy + 4;
-		patch = W_CachePatchName("M_PAUSE", PU_PATCH);
-		V_DrawScaledPatch(viewwindowx + (BASEVIDWIDTH - patch->width)/2, py, 0, patch);
-#else
-		INT32 y = ((automapactive) ? (32) : (BASEVIDHEIGHT/2));
-		M_DrawTextBox((BASEVIDWIDTH/2) - (60), y - (16), 13, 2);
-		V_DrawCenteredString(BASEVIDWIDTH/2, y - (4), V_YELLOWMAP, "Game Paused");
-#endif
-	}
-
 	if (demo.rewinding)
 		V_DrawFadeScreen(TC_RAINBOW, (leveltime & 0x20) ? SKINCOLOR_PASTEL : SKINCOLOR_MOONSET);
 
@@ -1015,7 +982,6 @@ void D_ClearState(void)
 	cht_debug = 0;
 	emeralds = 0;
 	memset(&luabanks, 0, sizeof(luabanks));
-	lastmaploaded = 0;
 
 	// In case someone exits out at the same time they start a time attack run,
 	// reset modeattacking
@@ -1360,7 +1326,7 @@ void D_SRB2Main(void)
 
 	// default savegame
 	strcpy(savegamename, SAVEGAMENAME"%u.ssg");
-	strcpy(liveeventbackup, "live"SAVEGAMENAME".bkp"); // intentionally not ending with .ssg
+	strcpy(gpbackup, "gp"SAVEGAMENAME".bkp"); // intentionally not ending with .ssg
 
 	// Init the joined IP table for quick rejoining of past games.
 	M_InitJoinedIPArray();
@@ -1391,7 +1357,7 @@ void D_SRB2Main(void)
 
 			// can't use sprintf since there is %u in savegamename
 			strcatbf(savegamename, srb2home, PATHSEP);
-			strcatbf(liveeventbackup, srb2home, PATHSEP);
+			strcatbf(gpbackup, srb2home, PATHSEP);
 
 			snprintf(luafiledir, sizeof luafiledir, "%s" PATHSEP "luafiles", srb2home);
 #else // DEFAULTDIR
@@ -1403,7 +1369,7 @@ void D_SRB2Main(void)
 
 			// can't use sprintf since there is %u in savegamename
 			strcatbf(savegamename, userhome, PATHSEP);
-			strcatbf(liveeventbackup, userhome, PATHSEP);
+			strcatbf(gpbackup, userhome, PATHSEP);
 
 			snprintf(luafiledir, sizeof luafiledir, "%s" PATHSEP "luafiles", userhome);
 #endif // DEFAULTDIR
@@ -1865,6 +1831,47 @@ void D_SRB2Main(void)
 	if (!dedicated)
 	{
 		PR_ApplyProfile(cv_ttlprofilen.value, 0);
+
+		if (gamedata->importprofilewins == true)
+		{
+			profile_t *pr = PR_GetProfile(cv_ttlprofilen.value);
+			if (pr != NULL)
+			{
+				INT32 importskin = R_SkinAvailable(pr->skinname);
+				if (importskin != -1)
+				{
+					skins[importskin].records.wins = pr->wins;
+
+					cupheader_t *cup;
+					for (cup = kartcupheaders; cup; cup = cup->next)
+					{
+						for (i = 0; i < KARTGP_MAX; i++)
+						{
+							if (cup->windata[i].best_placement == 0)
+								continue;
+							cup->windata[i].best_skin.id = importskin;
+							cup->windata[i].best_skin.unloaded = NULL;
+						}
+					}
+
+					unloaded_cupheader_t *unloadedcup;
+					for (unloadedcup = unloadedcupheaders; unloadedcup; unloadedcup = unloadedcup->next)
+					{
+						for (i = 0; i < KARTGP_MAX; i++)
+						{
+							if (unloadedcup->windata[i].best_placement == 0)
+								continue;
+							unloadedcup->windata[i].best_skin.id = importskin;
+							unloadedcup->windata[i].best_skin.unloaded = NULL;
+						}
+					}
+
+					CONS_Printf(" Wins for profile \"%s\" imported onto character \"%s\"\n", pr->profilename, skins[importskin].name);
+				}
+			}
+
+			gamedata->importprofilewins = false;
+		}
 
 		for (i = 1; i < cv_splitplayers.value; i++)
 		{

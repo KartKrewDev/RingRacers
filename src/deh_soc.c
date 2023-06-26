@@ -170,7 +170,7 @@ void clear_unlockables(void)
 
 void clear_conditionsets(void)
 {
-	UINT8 i;
+	UINT16 i;
 	for (i = 0; i < MAXCONDITIONSETS; ++i)
 		M_ClearConditionSet(i);
 }
@@ -191,8 +191,6 @@ void clear_levels(void)
 		Z_Free(mapheaderinfo[nummapheaders]->customopts);
 
 		P_DeleteHeaderFollowers(nummapheaders);
-
-		Z_Free(mapheaderinfo[nummapheaders]->mainrecord);
 
 		Patch_Free(mapheaderinfo[nummapheaders]->thumbnailPic);
 		Patch_Free(mapheaderinfo[nummapheaders]->minimapPic);
@@ -952,7 +950,46 @@ void readlevelheader(MYFILE *f, char * name)
 
 	if (mapheaderinfo[num]->lumpname == NULL)
 	{
-		mapheaderinfo[num]->lumpname = Z_StrDup(name);
+		mapheaderinfo[num]->lumpnamehash = quickncasehash(name, MAXMAPLUMPNAME);
+
+		// Check to see if we have any custom map record data that we could substitute in.
+		unloaded_mapheader_t *unloadedmap, *prev = NULL;
+		for (unloadedmap = unloadedmapheaders; unloadedmap; prev = unloadedmap, unloadedmap = unloadedmap->next)
+		{
+			if (unloadedmap->lumpnamehash != mapheaderinfo[num]->lumpnamehash)
+				continue;
+
+			if (strcasecmp(name, unloadedmap->lumpname) != 0)
+				continue;
+
+			// Copy in mapvisited, time, lap, etc.
+			unloadedmap->records.mapvisited &= MV_MAX;
+			M_Memcpy(&mapheaderinfo[num]->records, &unloadedmap->records, sizeof(recorddata_t));
+
+			// Reuse the zone-allocated lumpname string.
+			mapheaderinfo[num]->lumpname = unloadedmap->lumpname;
+
+			// Remove this entry from the chain.
+			if (prev)
+			{
+				prev->next = unloadedmap->next;
+			}
+			else
+			{
+				unloadedmapheaders = unloadedmap->next;
+			}
+
+			// Finally, free.
+			Z_Free(unloadedmap);
+
+			break;
+		}
+
+		if (mapheaderinfo[num]->lumpname == NULL)
+		{
+			// If there was no string to reuse, dup our own.
+			mapheaderinfo[num]->lumpname = Z_StrDup(name);
+		}
 	}
 
 	do
@@ -1240,6 +1277,10 @@ void readlevelheader(MYFILE *f, char * name)
 			else if (fastcmp(word, "LIGHTCONTRAST"))
 			{
 				mapheaderinfo[num]->light_contrast = (UINT8)i;
+			}
+			else if (fastcmp(word, "SPRITEBACKLIGHT"))
+			{
+				mapheaderinfo[num]->sprite_backlight = (SINT8)i;
 			}
 			else if (fastcmp(word, "LIGHTANGLE"))
 			{
@@ -2280,9 +2321,9 @@ void readunlockable(MYFILE *f, INT32 num)
 				strupr(word2);
 
 				if (fastcmp(word, "CONDITIONSET"))
-					unlockables[num].conditionset = (UINT8)i;
+					unlockables[num].conditionset = (UINT16)i;
 				else if (fastcmp(word, "MAJORUNLOCK"))
-					unlockables[num].majorunlock = (UINT8)(i || word2[0] == 'T' || word2[0] == 'Y');
+					unlockables[num].majorunlock = (UINT8)(i != 0 || word2[0] == 'T' || word2[0] == 'Y');
 				else if (fastcmp(word, "TYPE"))
 				{
 					if (fastcmp(word2, "NONE"))
@@ -2550,6 +2591,13 @@ static void readcondition(UINT8 set, UINT32 id, char *word2)
 		//PARAMCHECK(1);
 		ty = UC_ADDON + offset;
 	}
+	else if (fastcmp(params[0], "PASSWORD"))
+	{
+		PARAMCHECK(1);
+		ty = UC_PASSWORD;
+		stringvar = Z_StrDup(params[1]);
+		re = -1;
+	}
 	else if ((offset=0) || fastcmp(params[0], "AND")
 	||        (++offset && fastcmp(params[0], "COMMA")))
 	{
@@ -2640,9 +2688,10 @@ static void readcondition(UINT8 set, UINT32 id, char *word2)
 		ty = UCRP_PODIUMCUP;
 		{
 			cupheader_t *cup = kartcupheaders;
+			UINT32 hash = quickncasehash(params[1], MAXCUPNAME);
 			while (cup)
 			{
-				if (!strcmp(cup->name, params[1]))
+				if (hash == cup->namehash && !strcmp(cup->name, params[1]))
 					break;
 				cup = cup->next;
 			}
@@ -2950,8 +2999,8 @@ void readmaincfg(MYFILE *f, boolean mainfile)
 				// can't use sprintf since there is %u in savegamename
 				strcatbf(savegamename, srb2home, PATHSEP);
 
-				strcpy(liveeventbackup, va("live%s.bkp", timeattackfolder));
-				strcatbf(liveeventbackup, srb2home, PATHSEP);
+				strcpy(gpbackup, va("gp%s.bkp", timeattackfolder));
+				strcatbf(gpbackup, srb2home, PATHSEP);
 
 				refreshdirmenu |= REFRESHDIR_GAMEDATA;
 				gamedataadded = true;

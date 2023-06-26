@@ -982,14 +982,6 @@ angle_t R_ViewRollAngle(const player_t *player)
 		{
 			roll += player->tilt;
 		}
-
-		if (cv_actionmovie.value)
-		{
-			int xs = intsign(quake.x),
-				 ys = intsign(quake.y),
-				 zs = intsign(quake.z);
-			roll += (xs ^ ys ^ zs) * ANG1;
-		}
 	}
 
 	return roll;
@@ -1217,11 +1209,16 @@ R_SetupCommonFrame
 (		player_t * player,
 		subsector_t * subsector)
 {
+	const UINT8 viewnum = R_GetViewNumber();
+	mappoint_t viewPos = { newview->x, newview->y, newview->z };
+	mappoint_t offset = { 0, 0, 0 };
+
 	newview->player = player;
 
-	newview->x += quake.x;
-	newview->y += quake.y;
-	newview->z += quake.z;
+	P_DoQuakeOffset(viewnum, &viewPos, &offset);
+	newview->x += offset.x;
+	newview->y += offset.y;
+	newview->z += offset.z;
 
 	newview->roll = R_ViewRollAngle(player);
 
@@ -1349,7 +1346,7 @@ void R_SkyboxFrame(int s)
 	if (mapheaderinfo[gamemap-1])
 	{
 		mapheader_t *mh = mapheaderinfo[gamemap-1];
-		vector3_t campos = {0,0,0}; // Position of player's actual view point
+		mappoint_t campos = { 0, 0, 0 }; // Position of player's actual view point
 		mobj_t *center = player->skybox.centerpoint;
 
 		if (player->awayview.tics) {
@@ -1368,9 +1365,7 @@ void R_SkyboxFrame(int s)
 
 		// Earthquake effects should be scaled in the skybox
 		// (if an axis isn't used, the skybox won't shake in that direction)
-		campos.x += quake.x;
-		campos.y += quake.y;
-		campos.z += quake.z;
+		P_DoQuakeOffset(s, &campos, &campos);
 
 		if (center) // Is there a viewpoint?
 		{
@@ -1417,7 +1412,6 @@ void R_SkyboxFrame(int s)
 		else if (mh->skybox_scalez < 0)
 			newview->z += campos.z * -mh->skybox_scalez;
 	}
-
 
 	R_SetupCommonFrame(player, r_viewmobj->subsector);
 }
@@ -1726,8 +1720,6 @@ void R_RegisterEngineStuff(void)
 	}
 
 	CV_RegisterVar(&cv_tilting);
-	CV_RegisterVar(&cv_actionmovie);
-	CV_RegisterVar(&cv_windowquake);
 
 	CV_RegisterVar(&cv_showhud);
 	CV_RegisterVar(&cv_translucenthud);

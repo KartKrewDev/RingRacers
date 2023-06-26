@@ -2047,16 +2047,17 @@ static void K_HandleLapIncrement(player_t *player)
 			// finished race exit setup
 			if (player->laps > numlaps)
 			{
+				pflags_t applyflags = 0;
 				if (specialstageinfo.valid == true)
 				{
 					// Don't permit a win just by sneaking ahead of the UFO/emerald.
 					if (!(specialstageinfo.ufo == NULL || P_MobjWasRemoved(specialstageinfo.ufo)))
 					{
-						player->pflags |= PF_NOCONTEST;
+						applyflags |= PF_NOCONTEST;
 					}
 				}
 
-				P_DoPlayerExit(player);
+				P_DoPlayerExit(player, applyflags);
 			}
 			else
 			{
@@ -2337,20 +2338,12 @@ void P_PushSpecialLine(line_t *line, mobj_t *thing)
 //
 void P_ActivateThingSpecial(mobj_t *mo, mobj_t *source)
 {
-	mapthing_t *mt = NULL;
 	player_t *player = NULL;
 	activator_t *activator = NULL;
 
 	if (mo == NULL || P_MobjWasRemoved(mo) == true)
 	{
 		// Invalid mobj.
-		return;
-	}
-
-	mt = mo->spawnpoint;
-	if (mt == NULL)
-	{
-		// No mapthing to activate the special of.
 		return;
 	}
 
@@ -2373,7 +2366,7 @@ void P_ActivateThingSpecial(mobj_t *mo, mobj_t *source)
 		}
 	}
 
-	if (P_CanActivateSpecial(mt->special) == false)
+	if (P_CanActivateSpecial(mo->special) == false)
 	{
 		// No special to even activate.
 		return;
@@ -2388,7 +2381,7 @@ void P_ActivateThingSpecial(mobj_t *mo, mobj_t *source)
 		activator->sector = source->subsector->sector;
 	}
 
-	P_ProcessSpecial(activator, mt->special, mt->args, mt->stringargs);
+	P_ProcessSpecial(activator, mo->special, mo->args, mo->stringargs);
 
 	P_SetTarget(&activator->mo, NULL);
 	Z_Free(activator);
@@ -3025,6 +3018,7 @@ boolean P_ProcessSpecial(activator_t *activator, INT16 special, INT32 *args, cha
 			{
 				altview_t *modifyView = NULL;
 				mobj_t *newViewMobj = NULL;
+				INT32 i;
 
 				if (gamestate != GS_LEVEL)
 				{
@@ -3040,7 +3034,7 @@ boolean P_ProcessSpecial(activator_t *activator, INT16 special, INT32 *args, cha
 				}
 
 				newViewMobj = P_FindObjectTypeFromTag(MT_ALTVIEWMAN, args[0]);
-				if (newViewMobj == NULL || newViewMobj->spawnpoint == NULL)
+				if (newViewMobj == NULL)
 				{
 					return false;
 				}
@@ -3051,10 +3045,20 @@ boolean P_ProcessSpecial(activator_t *activator, INT16 special, INT32 *args, cha
 				{
 					// If titlemap, awayview.tics is ignored
 					modifyView->tics = -1;
+
+					R_ResetViewInterpolation(0);
 				}
 				else
 				{
 					modifyView->tics = args[1];
+
+					for (i = 0; i <= r_splitscreen; i++)
+					{
+						if (displayplayers[i] == (mo->player - players))
+						{
+							R_ResetViewInterpolation(i + 1);
+						}
+					}
 				}
 
 				if (args[2] != 0)
@@ -3066,7 +3070,6 @@ boolean P_ProcessSpecial(activator_t *activator, INT16 special, INT32 *args, cha
 						case TMCAM_THIRD:
 						{
 							mobj_t *firstPlace = NULL;
-							INT32 i;
 
 							for (i = 0; i < MAXPLAYERS; i++)
 							{
@@ -3123,6 +3126,28 @@ boolean P_ProcessSpecial(activator_t *activator, INT16 special, INT32 *args, cha
 							);
 							break;
 						}
+					}
+
+					// If target is valid, then we'll focus on it.
+					// See also MT_ALTVIEWMAN mobjthinker
+					if (newViewMobj->target != NULL && P_MobjWasRemoved(newViewMobj->target) == false)
+					{
+						newViewMobj->angle = R_PointToAngle2(
+							newViewMobj->x,
+							newViewMobj->y,
+							newViewMobj->target->x,
+							newViewMobj->target->y
+						);
+
+						newViewMobj->pitch = R_PointToAngle2(
+							0,
+							newViewMobj->z,
+							R_PointToDist2(
+								newViewMobj->x, newViewMobj->y,
+								newViewMobj->target->x, newViewMobj->target->y
+							),
+							newViewMobj->target->z + (newViewMobj->target->height >> 1)
+						);
 					}
 				}
 				else
@@ -3507,17 +3532,23 @@ boolean P_ProcessSpecial(activator_t *activator, INT16 special, INT32 *args, cha
 
 		case 444: // Earthquake camera
 		{
-			quake.intensity = args[1] << FRACBITS;
-			quake.radius = args[2] << FRACBITS;
-			quake.time = args[0];
-
-			quake.epicenter = NULL; /// \todo
+			tic_t q_time = args[0];
+			fixed_t q_intensity = args[1] * mapobjectscale;
+			fixed_t q_radius = args[2] * mapobjectscale;
+			// TODO: epicenter
 
 			// reasonable defaults.
-			if (!quake.intensity)
-				quake.intensity = 8*mapobjectscale;
-			if (!quake.radius)
-				quake.radius = 512*mapobjectscale;
+			if (q_intensity <= 0)
+			{
+				q_intensity = 8 * mapobjectscale;
+			}
+
+			if (q_radius <= 0)
+			{
+				q_radius = 512 * mapobjectscale;
+			}
+
+			P_StartQuake(q_time, q_intensity, q_radius, NULL);
 			break;
 		}
 
@@ -4214,13 +4245,7 @@ boolean P_ProcessSpecial(activator_t *activator, INT16 special, INT32 *args, cha
 			CONS_Debug(DBG_GAMELOGIC, "Clock stopped!\n");
 			if (modeattacking)
 			{
-				UINT8 i;
-				for (i = 0; i < MAXPLAYERS; i++)
-				{
-					if (!playeringame[i])
-						continue;
-					P_DoPlayerExit(&players[i]);
-				}
+				P_DoAllPlayersExit(0, false);
 			}
 			break;
 
@@ -4265,15 +4290,7 @@ boolean P_ProcessSpecial(activator_t *activator, INT16 special, INT32 *args, cha
 
 				if (!(args[1]))
 				{
-					INT32 i;
-
-					// Mark all players with the time to exit thingy!
-					for (i = 0; i < MAXPLAYERS; i++)
-					{
-						if (!playeringame[i])
-							continue;
-						P_DoPlayerExit(&players[i]);
-					}
+					P_DoAllPlayersExit(0, false);
 				}
 			}
 			break;
@@ -5139,7 +5156,6 @@ static void P_ProcessEggCapsule(player_t *player, sector_t *sector)
 {
 	thinker_t *th;
 	mobj_t *mo2;
-	INT32 i;
 
 	if (sector->ceilingdata || sector->floordata)
 		return;
@@ -5167,13 +5183,7 @@ static void P_ProcessEggCapsule(player_t *player, sector_t *sector)
 	// Open the bottom FOF
 	EV_DoCeiling(LE_CAPSULE2, NULL, lowerToLowestFast);
 
-	// Mark all players with the time to exit thingy!
-	for (i = 0; i < MAXPLAYERS; i++)
-	{
-		if (!playeringame[i])
-			continue;
-		P_DoPlayerExit(&players[i]);
-	}
+	P_DoAllPlayersExit(0, false);
 }
 
 static void P_ProcessExitSector(player_t *player, mtag_t sectag)
@@ -5186,7 +5196,7 @@ static void P_ProcessExitSector(player_t *player, mtag_t sectag)
 #endif
 
 	// Exit (for FOF exits; others are handled in P_PlayerThink in p_user.c)
-	P_DoPlayerExit(player);
+	P_DoPlayerExit(player, 0);
 
 	P_SetupSignExit(player, false);
 
@@ -5724,6 +5734,10 @@ static void P_CheckMobj3DFloorAction(mobj_t *mo, sector_t *sec, boolean continuo
 
 	for (rover = sec->ffloors; rover; rover = rover->next)
 	{
+		fixed_t top = INT32_MIN;
+		fixed_t bottom = INT32_MAX;
+		fixed_t mid = 0;
+
 		roversec = rover->master->frontsector;
 
 		if (P_SectorActionIsContinuous(roversec) != continuous)
@@ -5738,6 +5752,16 @@ static void P_CheckMobj3DFloorAction(mobj_t *mo, sector_t *sec, boolean continuo
 			continue;
 		}
 
+		top = P_GetSpecialTopZ(mo, roversec, roversec);
+		bottom = P_GetSpecialBottomZ(mo, roversec, roversec);
+		mid = bottom + ((top - bottom) / 2);
+
+		if (mo->z > top || mo->z + mo->height < bottom)
+		{
+			// Out of bounds.
+			continue;
+		}
+
 		if (P_AllowSpecialEnter(roversec, mo) == false)
 		{
 			boolean floor = false;
@@ -5745,12 +5769,12 @@ static void P_CheckMobj3DFloorAction(mobj_t *mo, sector_t *sec, boolean continuo
 
 			if (P_AllowSpecialFloor(roversec, mo) == true)
 			{
-				floor = (P_GetMobjFeet(mo) == P_GetSpecialTopZ(mo, roversec, roversec));
+				floor = (P_GetMobjFeet(mo) >= mid);
 			}
 
 			if (P_AllowSpecialCeiling(roversec, mo) == true)
 			{
-				ceiling = (P_GetMobjHead(mo) == P_GetSpecialBottomZ(mo, roversec, roversec));
+				ceiling = (P_GetMobjHead(mo) <= mid);
 			}
 
 			if (floor == false && ceiling == false)
@@ -5914,10 +5938,27 @@ void P_CheckMobjTouchingSectorActions(mobj_t *mobj, boolean continuous)
 {
 	sector_t *originalsector;
 
-	if (!mobj->subsector)
+	if (mobj->subsector == NULL)
+	{
 		return;
+	}
 
 	originalsector = mobj->subsector->sector;
+
+	if (mobj->player != NULL)
+	{
+		if (mobj->player->spectator == true)
+		{
+			// Ignore spectators.
+			return;
+		}
+
+		if (mobj->player->pflags & PF_NOCONTEST)
+		{
+			// Ignore NO CONTEST.
+			return;
+		}
+	}
 
 	P_CheckMobj3DFloorAction(mobj, originalsector, continuous);
 	if TELEPORTED(mobj)	return;
@@ -6291,7 +6332,7 @@ P_RaiseTaggedThingsToFakeFloor (
 
 			if (
 					(type == 0 || mthing->type == type) &&
-					(tag == 0 || udmf ? Tag_Find(&mthing->tags, tag) : mthing->angle == tag)
+					(tag == 0 || (udmf ? mthing->tid : mthing->angle) == tag)
 			){
 				if (( mo->flags2 & MF2_OBJECTFLIP ))
 				{
@@ -6691,6 +6732,7 @@ void P_InitSpecials(void)
 
 	// Set map lighting settings.
 	maplighting.contrast = mapheaderinfo[gamemap-1]->light_contrast;
+	maplighting.backlight = mapheaderinfo[gamemap-1]->sprite_backlight;
 	maplighting.directional = mapheaderinfo[gamemap-1]->use_light_angle;
 	maplighting.angle = mapheaderinfo[gamemap-1]->light_angle;
 
@@ -9347,10 +9389,163 @@ static void P_SpawnPushers(void)
 	}
 }
 
-// Rudimentary function to start a earthquake.
-// epicenter and radius are not yet used.
-void P_StartQuake(fixed_t intensity, tic_t time)
+// Add an earthquake effect to the list.
+static quake_t *PushQuake(void)
 {
-	quake.intensity = FixedMul(intensity, mapobjectscale);
-	quake.time = time;
+	quake_t *quake = Z_Calloc(sizeof(quake_t), PU_LEVEL, NULL);
+
+	quake->next = g_quakes;
+	if (g_quakes != NULL)
+	{
+		g_quakes->prev = quake;
+	}
+	g_quakes = quake;
+
+	return quake;
+}
+
+void P_StartQuake(tic_t time, fixed_t intensity, fixed_t radius, mappoint_t *epicenter)
+{
+	quake_t *quake = NULL;
+
+	if (time <= 0 || intensity <= 0)
+	{
+		// Invalid parameters
+		return;
+	}
+
+	quake = PushQuake();
+
+	quake->time = quake->startTime = time;
+	quake->intensity = intensity;
+
+	if (radius > 0)
+	{
+		quake->radius = radius;
+
+		if (epicenter != NULL)
+		{
+			quake->epicenter = (mappoint_t *)Z_Malloc(sizeof(mappoint_t), PU_LEVEL, NULL);
+			quake->epicenter->x = epicenter->x;
+			quake->epicenter->y = epicenter->y;
+			quake->epicenter->z = epicenter->z;
+		}
+	}
+}
+
+void P_StartQuakeFromMobj(tic_t time, fixed_t intensity, fixed_t radius, mobj_t *mobj)
+{
+	quake_t *quake = NULL;
+
+	if (time <= 0 || intensity <= 0 || radius <= 0 || P_MobjWasRemoved(mobj) == true)
+	{
+		// Invalid parameters
+		return;
+	}
+
+	quake = PushQuake();
+
+	quake->time = quake->startTime = time;
+	quake->intensity = intensity;
+
+	quake->radius = radius;
+
+	quake->mobj = mobj; // Update epicenter with mobj position every tic
+
+	quake->epicenter = (mappoint_t *)Z_Malloc(sizeof(mappoint_t), PU_LEVEL, NULL);
+	quake->epicenter->x = mobj->x;
+	quake->epicenter->y = mobj->y;
+	quake->epicenter->z = mobj->z;
+}
+
+void P_DoQuakeOffset(UINT8 view, mappoint_t *viewPos, mappoint_t *offset)
+{
+	player_t *viewer = &players[ displayplayers[view] ];
+	quake_t *quake = NULL;
+	fixed_t ir = 0;
+	fixed_t addZ = 0;
+
+	if (cv_reducevfx.value == 1)
+	{
+		return;
+	}
+
+	// Add the main quake effects.
+	quake = g_quakes;
+	while (quake != NULL)
+	{
+		ir = quake->intensity;
+
+		// Modulate with time remaining.
+		ir = FixedMul(ir, 2 * FRACUNIT * (quake->time + 1) / quake->startTime);
+
+		// Modulate with distance from epicenter, if it exists.
+		if (quake->radius > 0 && quake->epicenter != NULL)
+		{
+			fixed_t epidist = P_AproxDistance(
+				viewPos->x - quake->epicenter->x,
+				viewPos->y - quake->epicenter->y
+			);
+
+			ir = FixedMul(ir, FixedDiv(max(0, quake->radius - epidist), quake->radius));
+		}
+
+		addZ += ir;
+		quake = quake->next;
+	}
+
+	// Add level-based effects.
+	if (P_MobjWasRemoved(viewer->mo) == false
+		&& viewer->speed > viewer->mo->scale
+		&& P_IsObjectOnGround(viewer->mo) == true)
+	{
+		// Add offroad effects.
+		if (viewer->boostpower < FRACUNIT)
+		{
+			ir = FixedMul((FRACUNIT - viewer->boostpower) << 2, mapobjectscale);
+			addZ += ir;
+		}
+
+		// Add stair jank effects.
+		if (viewer->stairjank > 0)
+		{
+			ir = FixedMul((viewer->stairjank * FRACUNIT * 5) / 17, mapobjectscale);
+			addZ += ir;
+		}
+	}
+
+	// Reverse every tic.
+	if ((leveltime + view) & 1)
+	{
+		addZ = -addZ;
+	}
+
+	// Finalize the effects.
+	offset->z += addZ;
+}
+
+void P_FreeQuake(quake_t *remove)
+{
+	if (remove->prev != NULL)
+	{
+		remove->prev->next = remove->next;
+	}
+
+	if (remove->next != NULL)
+	{
+		remove->next->prev = remove->prev;
+	}
+
+	if (remove == g_quakes)
+	{
+		g_quakes = remove->next;
+	}
+
+	if (remove->epicenter != NULL)
+	{
+		Z_Free(remove->epicenter);
+		remove->epicenter = NULL;
+	}
+
+	Z_Free(remove);
 }

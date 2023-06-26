@@ -9,6 +9,8 @@
 #include "../k_color.h"
 #include "../z_zone.h"
 
+//#define CHARSELECT_DEVICEDEBUG
+
 menuitem_t PLAY_CharSelect[] =
 {
 	{IT_NOTHING, NULL, NULL, NULL, {NULL}, 0, 0},
@@ -172,6 +174,9 @@ static void M_SetupProfileGridPos(setup_player_t *p)
 	INT32 i = R_SkinAvailable(pr->skinname);
 	INT32 alt = 0;	// Hey it's my character's name!
 
+	if (i == -1)
+		i = 0;
+
 	// While we're here, read follower values.
 	p->followern = K_FollowerAvailable(pr->follower);
 
@@ -204,6 +209,9 @@ static void M_SetupMidGameGridPos(setup_player_t *p, UINT8 num)
 	INT32 i = R_SkinAvailable(cv_skin[num].zstring);
 	INT32 alt = 0;	// Hey it's my character's name!
 
+	if (i == -1)
+		i = 0;
+
 	// While we're here, read follower values.
 	p->followern = cv_follower[num].value;
 	p->followercolor = cv_followercolor[num].value;
@@ -232,20 +240,6 @@ void M_CharacterSelectInit(void)
 	UINT8 i, j;
 	setup_maxpage = 0;
 
-	// While we're editing profiles, don't unset the devices for p1
-	if (gamestate == GS_MENU)
-	{
-		for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
-		{
-			// Un-set devices for all players if not editing profile
-			if (!optionsmenu.profile)
-			{
-				G_SetDeviceForPlayer(i, -1);
-				CONS_Printf("M_CharacterSelectInit: Device for %d set to %d\n", i, -1);
-			}
-		}
-	}
-
 	memset(setup_chargrid, -1, sizeof(setup_chargrid));
 	for (i = 0; i < 9; i++)
 	{
@@ -266,9 +260,35 @@ void M_CharacterSelectInit(void)
 		setup_player[i].followercategory = -1;
 		setup_player[i].followercolor = SKINCOLOR_NONE;
 
-		// Set default selected profile to the last used profile for each player:
-		// (Make sure we don't overshoot it somehow if we deleted profiles or whatnot)
-		setup_player[i].profilen = min(cv_lastprofile[i].value, PR_GetNumProfiles());
+		// If we're on prpfile select, skip straight to CSSTEP_CHARS
+		// do the same if we're midgame, but make sure to consider splitscreen properly.
+		if (optionsmenu.profile && i == 0)
+		{
+			setup_player[i].profilen = optionsmenu.profilen;
+			//PR_ApplyProfileLight(setup_player[i].profilen, 0);
+			M_SetupProfileGridPos(&setup_player[i]);
+			setup_player[i].mdepth = CSSTEP_CHARS;
+		}
+		else
+		{
+			// Set default selected profile to the last used profile for each player:
+			// (Make sure we don't overshoot it somehow if we deleted profiles or whatnot)
+			setup_player[i].profilen = min(cv_lastprofile[i].value, PR_GetNumProfiles());
+
+			if (gamestate != GS_MENU && i <= splitscreen)
+			{
+				M_SetupMidGameGridPos(&setup_player[i], i);
+				setup_player[i].mdepth = CSSTEP_CHARS;
+			}
+			else
+			{
+				// Un-set devices
+				G_SetDeviceForPlayer(i, -1);
+#ifdef CHARSELECT_DEVICEDEBUG
+				CONS_Printf("M_CharacterSelectInit: Device for %d set to %d\n", i, -1);
+#endif
+			}
+		}
 	}
 
 	for (i = 0; i < numskins; i++)
@@ -287,36 +307,6 @@ void M_CharacterSelectInit(void)
 			setup_chargrid[x][y].numskins++;
 
 			setup_maxpage = max(setup_maxpage, setup_chargrid[x][y].numskins-1);
-		}
-
-		for (j = 0; j < MAXSPLITSCREENPLAYERS; j++)
-		{
-			if (!strcmp(cv_skin[j].string, skins[i].name))
-			{
-				setup_player[j].gridx = x;
-				setup_player[j].gridy = y;
-				setup_player[j].color = skins[i].prefcolor;
-
-				// If we're on prpfile select, skip straight to CSSTEP_CHARS
-				// do the same if we're midgame, but make sure to consider splitscreen properly.
-				if ((optionsmenu.profile && j == 0) || (gamestate != GS_MENU && j <= splitscreen))
-				{
-					if (optionsmenu.profile)	// In menu, setting up profile character/follower
-					{
-						setup_player[j].profilen = optionsmenu.profilen;
-						PR_ApplyProfileLight(setup_player[j].profilen, 0);
-						M_SetupProfileGridPos(&setup_player[j]);
-					}
-					else	// gamestate != GS_MENU, in that case, assume this is whatever profile we chose to play with.
-					{
-						setup_player[j].profilen = cv_lastprofile[j].value;
-						M_SetupMidGameGridPos(&setup_player[j], j);
-					}
-
-					// Don't reapply the profile here, it was already applied.
-					setup_player[j].mdepth = CSSTEP_CHARS;
-				}
-			}
 		}
 	}
 
@@ -349,9 +339,11 @@ void M_CharacterSelectInit(void)
 	setup_page = 0;
 }
 
+
 void M_CharacterSelect(INT32 choice)
 {
 	(void)choice;
+	PLAY_CharSelectDef.music = currentMenu->music;
 	PLAY_CharSelectDef.prevMenu = currentMenu;
 	M_SetupNextMenu(&PLAY_CharSelectDef, false);
 }
@@ -471,13 +463,17 @@ static boolean M_HandlePressStart(setup_player_t *p, UINT8 num)
 			}
 
 			G_SetDeviceForPlayer(num, device);
+#ifdef CHARSELECT_DEVICEDEBUG
 			CONS_Printf("M_HandlePressStart: Device for %d set to %d\n", num, device);
+#endif
 
 			for (j = num + 1; j < MAXSPLITSCREENPLAYERS; j++)
 			{
 				// Un-set devices for other players.
 				G_SetDeviceForPlayer(j, -1);
+#ifdef CHARSELECT_DEVICEDEBUG
 				CONS_Printf("M_HandlePressStart: Device for %d set to %d\n", j, -1);
+#endif
 			}
 
 			//setup_numplayers++;
@@ -545,7 +541,9 @@ static boolean M_HandleCSelectProfile(setup_player_t *p, UINT8 num)
 			}
 
 			G_SetDeviceForPlayer(num, -1);
+#ifdef CHARSELECT_DEVICEDEBUG
 			CONS_Printf("M_HandleCSelectProfile: Device for %d set to %d\n", num, -1);
+#endif
 
 			return true;
 		}

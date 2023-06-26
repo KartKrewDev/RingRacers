@@ -2,6 +2,7 @@
 #ifndef k_objects_H
 #define k_objects_H
 
+#include "tables.h" // angle_t
 #include "taglist.h"
 
 #ifdef __cplusplus
@@ -52,6 +53,7 @@ void Obj_OrbinautThrown(mobj_t *th, fixed_t finalSpeed, SINT8 dir);
 void Obj_GachaBomThrown(mobj_t *th, fixed_t finalSpeed, SINT8 dir);
 void Obj_OrbinautJawzMoveHeld(player_t *player);
 boolean Obj_GachaBomWasTossed(mobj_t *th);
+void Obj_OrbinautDrop(mobj_t *th);
 
 /* Jawz */
 void Obj_JawzThink(mobj_t *th);
@@ -106,6 +108,16 @@ void Obj_LoopEndpointCollide(mobj_t *special, mobj_t *toucher);
 void Obj_BeginDropTargetMorph(mobj_t *target, skincolornum_t color);
 boolean Obj_DropTargetMorphThink(mobj_t *morph);
 
+/* Instawhip */
+void Obj_InstaWhipThink(mobj_t *whip);
+void Obj_SpawnInstaWhipRecharge(player_t *player, angle_t angleOffset);
+void Obj_InstaWhipRechargeThink(mobj_t *mobj);
+
+/* Block VFX */
+void Obj_BlockRingThink(mobj_t *ring);
+void Obj_BlockBodyThink(mobj_t *body);
+void Obj_GuardBreakThink(mobj_t *fx);
+
 /* Ring Shooter */
 boolean Obj_RingShooterThinker(mobj_t *mo);
 boolean Obj_PlayerRingShooterFreeze(player_t *const player);
@@ -117,6 +129,19 @@ void Obj_UpdateRingShooterFace(mobj_t *part);
 /* Follower Audience */
 void Obj_AudienceInit(mobj_t * mobj, mapthing_t *mthing, INT32 followerpick);
 void Obj_AudienceThink(mobj_t * mobj, boolean focusonplayer);
+
+/* Random Item Boxes */
+void Obj_RandomItemVisuals(mobj_t *mobj);
+boolean Obj_RandomItemSpawnIn(mobj_t *mobj);
+fixed_t Obj_RandomItemScale(fixed_t oldScale);
+void Obj_RandomItemSpawn(mobj_t *mobj);
+
+/* Gachabom Rebound */
+void Obj_GachaBomReboundThink(mobj_t *mobj);
+void Obj_SpawnGachaBomRebound(mobj_t *source, mobj_t *target);
+
+/* Servant Hand */
+void Obj_ServantHandHandling(player_t *player);
 
 #ifdef __cplusplus
 } // extern "C"
