@@ -1472,12 +1472,6 @@ static void SendNameAndColor(const UINT8 n)
 	const INT32 playernum = g_localplayers[n];
 	player_t *player = NULL;
 
-	char buf[MAXPLAYERNAME+12];
-	char *p;
-
-	UINT16 sendColor = cv_playercolor[n].value;
-	UINT16 sendFollowerColor = cv_followercolor[n].value;
-
 	if (splitscreen < n)
 	{
 		return; // can happen if skin4/color4/name4 changed
@@ -1490,7 +1484,8 @@ static void SendNameAndColor(const UINT8 n)
 
 	player = &players[playernum];
 
-	p = buf;
+	UINT16 sendColor = cv_playercolor[n].value;
+	UINT16 sendFollowerColor = cv_followercolor[n].value;
 
 	// don't allow inaccessible colors
 	if (sendColor != SKINCOLOR_NONE && K_ColorUsable(sendColor, false) == false)
@@ -1516,38 +1511,10 @@ static void SendNameAndColor(const UINT8 n)
 		sendFollowerColor = cv_followercolor[n].value;
 	}
 
-	// Don't send if everything was identical.
-	if (!strcmp(cv_playername[n].string, player_names[playernum])
-		&& sendColor == player->skincolor
-		&& !stricmp(cv_skin[n].string, skins[player->skin].name)
-		&& !stricmp(cv_follower[n].string,
-			(player->followerskin < 0 ? "None" : followers[player->followerskin].name))
-		&& sendFollowerColor == player->followercolor)
-	{
-		return;
-	}
-
 	// We'll handle it later if we're not playing.
 	if (!Playing())
 	{
 		return;
-	}
-
-	snacpending[n]++;
-
-	// Don't change name if muted
-	if (player_name_changes[playernum] >= MAXNAMECHANGES)
-	{
-		CV_StealthSet(&cv_playername[n], player_names[playernum]);
-		HU_AddChatText("\x85* You must wait to change your name again.", false);
-	}
-	else if (cv_mute.value && !(server || IsPlayerAdmin(playernum)))
-	{
-		CV_StealthSet(&cv_playername[n], player_names[playernum]);
-	}
-	else // Cleanup name if changing it
-	{
-		CleanupPlayerName(playernum, cv_playername[n].zstring);
 	}
 
 	// Don't change skin if the server doesn't want you to.
@@ -1589,13 +1556,44 @@ static void SendNameAndColor(const UINT8 n)
 		}
 	}
 
+	// Don't send if everything was identical.
+	if (!strcmp(cv_playername[n].string, player_names[playernum])
+		&& sendColor == player->skincolor
+		&& !stricmp(cv_skin[n].string, skins[player->skin].name)
+		&& !stricmp(cv_follower[n].string,
+			(player->followerskin < 0 ? "None" : followers[player->followerskin].name))
+		&& sendFollowerColor == player->followercolor)
+	{
+		return;
+	}
+
+	snacpending[n]++;
+
+	// Don't change name if muted
+	if (player_name_changes[playernum] >= MAXNAMECHANGES)
+	{
+		CV_StealthSet(&cv_playername[n], player_names[playernum]);
+		HU_AddChatText("\x85* You must wait to change your name again.", false);
+	}
+	else if (cv_mute.value && !(server || IsPlayerAdmin(playernum)))
+	{
+		CV_StealthSet(&cv_playername[n], player_names[playernum]);
+	}
+	else // Cleanup name if changing it
+	{
+		CleanupPlayerName(playernum, cv_playername[n].zstring);
+	}
+
+	char buf[MAXPLAYERNAME+12];
+	char *p = buf;
+
 	// Finally write out the complete packet and send it off.
 	WRITESTRINGN(p, cv_playername[n].zstring, MAXPLAYERNAME);
-	WRITEUINT16(p, (UINT16)cv_playercolor[n].value);
+	WRITEUINT16(p, sendColor);
 	WRITEUINT8(p, (UINT8)cv_skin[n].value);
 	WRITEINT16(p, (INT16)cv_follower[n].value);
 	//CONS_Printf("Sending follower id %d\n", (INT16)cv_follower[n].value);
-	WRITEUINT16(p, (UINT16)cv_followercolor[n].value);
+	WRITEUINT16(p, sendFollowerColor);
 
 	SendNetXCmdForPlayer(n, XD_NAMEANDCOLOR, buf, p - buf);
 }
@@ -6756,38 +6754,31 @@ static void Skin4_OnChange(void)
   */
 static void Color_OnChange(const UINT8 p)
 {
-	UINT16 color = SKINCOLOR_NONE;
-
 	I_Assert(p < MAXSPLITSCREENPLAYERS);
 
-	color = cv_playercolor[p].value;
+	UINT16 color = cv_playercolor[p].value;
+	boolean colorisgood = (color == SKINCOLOR_NONE || K_ColorUsable(color, false) == true);
 
-	if (!Playing() || splitscreen < p)
+	if (Playing() && splitscreen < p)
 	{
-		if (color != SKINCOLOR_NONE && K_ColorUsable(color, false) == false)
+		if (P_PlayerMoving(g_localplayers[p]) == true)
 		{
-			CV_StealthSetValue(&cv_playercolor[p], lastgoodcolor[p]);
-			color = cv_playercolor[p].value;
+			colorisgood = false;
 		}
-	}
-	else
-	{
-		player_t *const player = &players[ g_localplayers[p] ];
-
-		if (P_PlayerMoving(g_localplayers[p]) == false && K_ColorUsable(color, false) == true)
+		else if (colorisgood == true)
 		{
 			// Color change menu scrolling fix is no longer necessary
 			SendNameAndColor(p);
 		}
-		else
-		{
-			CV_StealthSetValue(&cv_playercolor[p], player->skincolor);
-			color = cv_playercolor[p].value;
-		}
+	}
+
+	if (colorisgood == false)
+	{
+		CV_StealthSetValue(&cv_playercolor[p], lastgoodcolor[p]);
+		return;
 	}
 
 	lastgoodcolor[p] = color;
-
 	G_SetPlayerGamepadIndicatorToPlayerColor(p);
 }
   
