@@ -1436,7 +1436,7 @@ void P_DoPlayerExit(player_t *player, pflags_t flags)
 			{
 				if (specialout == true)
 				{
-					exitcountdown = TICRATE;
+					exitcountdown = 2;
 				}
 				else
 				{
@@ -1498,7 +1498,8 @@ void P_DoAllPlayersExit(pflags_t flags, boolean trygivelife)
 {
 	UINT8 i;
 	boolean givenlife = false;
-	const boolean dofinishsound = (musiccountdown == 0);
+	boolean dofinishsound = (musiccountdown == 0);
+	boolean specialout = specialstageinfo.valid;
 
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
@@ -1513,6 +1514,11 @@ void P_DoAllPlayersExit(pflags_t flags, boolean trygivelife)
 
 		P_DoPlayerExit(&players[i], flags);
 
+		if (specialout && K_IsPlayerLosing(&players[i]) == false)
+		{
+			specialout = false;
+		}
+
 		if (trygivelife == false)
 		{
 			continue;
@@ -1522,7 +1528,7 @@ void P_DoAllPlayersExit(pflags_t flags, boolean trygivelife)
 		givenlife = true;
 	}
 
-	if (!dofinishsound)
+	if (!dofinishsound || specialout)
 	{
 		// You've already finished, don't play again
 		;
