@@ -764,6 +764,9 @@ struct player_t
 
 	boolean markedfordeath;
 
+	UINT8 ringboxdelay; // Delay until Ring Box auto-activates
+	UINT8 ringboxaward; // Where did we stop?
+
 	uint8_t public_key[PUBKEYLENGTH];
 
 #ifdef HWRENDER

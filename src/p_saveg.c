@@ -433,6 +433,9 @@ static void P_NetArchivePlayers(savebuffer_t *save)
 
 		WRITEUINT8(save->p, players[i].markedfordeath);
 
+		WRITEUINT8(save->p, players[i].ringboxdelay);
+		WRITEUINT8(save->p, players[i].ringboxaward);
+
 		// respawnvars_t
 		WRITEUINT8(save->p, players[i].respawn.state);
 		WRITEUINT32(save->p, K_GetWaypointHeapIndex(players[i].respawn.wp));
@@ -827,6 +830,9 @@ static void P_NetUnArchivePlayers(savebuffer_t *save)
 		players[i].incontrol = READINT16(save->p);
 
 		players[i].markedfordeath = READUINT8(save->p);
+
+		players[i].ringboxdelay = READUINT8(save->p);
+		players[i].ringboxaward = READUINT8(save->p);
 
 		// respawnvars_t
 		players[i].respawn.state = READUINT8(save->p);

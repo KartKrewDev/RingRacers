@@ -1603,9 +1603,8 @@ void K_KartItemRoulette(player_t *const player, ticcmd_t *const cmd)
 
 			if (roulette->ringbox == true)
 			{
-				// TODO: add logic to make it give you the rings
-				//player->slotMachineType = finalItem;
-				//player->slotMachineDelay = TICRATE;
+				player->ringboxdelay = TICRATE;
+				player->ringboxaward = finalItem;
 			}
 			else
 			{

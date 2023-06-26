@@ -1250,12 +1250,6 @@ static void K_drawKartItem(void)
 	vector2_t rouletteCrop = {7, 7};
 	INT32 i;
 
-	if (stplyr->itemRoulette.ringbox)
-	{
-		// Todo: owl
-		localbg = offset ? kp_ringbg[1] : kp_ringbg[0];
-	}
-
 	if (stplyr->itemRoulette.itemListLen > 0)
 	{
 		// Init with item roulette stuff.
@@ -1616,6 +1610,11 @@ static void K_drawKartSlotMachine(void)
 	if (stplyr->itemRoulette.active == true)
 	{
 		rouletteOffset = K_GetRouletteOffset(&stplyr->itemRoulette, rendertimefrac);
+	}
+	else
+	{
+		if (!stplyr->ringboxdelay)
+			return;
 	}
 
 	// pain and suffering defined below
