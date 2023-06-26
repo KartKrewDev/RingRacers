@@ -747,17 +747,29 @@ UINT16 M_CheckCupEmeralds(UINT8 difficulty)
 		difficulty = KARTGP_MASTER;
 
 	cupheader_t *cup;
-	UINT16 ret = 0;
+	UINT16 ret = 0, seen = 0;
 
 	for (cup = kartcupheaders; cup; cup = cup->next)
 	{
-		if (cup->emeraldnum == 0)
+		// Does it not *have* an emerald?
+		if (cup->emeraldnum == 0 || cup->emeraldnum > 14)
 			continue;
 
+		UINT16 emerald = 1<<(cup->emeraldnum-1);
+
+		// Only count the first reference.
+		if (seen & emerald)
+			continue;
+
+		// We've seen it, prevent future repetitions.
+		seen |= emerald;
+
+		// Did you actually get it?
 		if (cup->windata[difficulty].got_emerald == false)
 			continue;
 
-		ret |= 1<<(cup->emeraldnum-1);
+		// Wa hoo !
+		ret |= emerald;
 	}
 
 	return ret;
