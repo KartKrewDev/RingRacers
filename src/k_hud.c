@@ -1592,6 +1592,7 @@ static void K_drawKartSlotMachine(void)
 	INT32 boxoffx = 0;
 	INT32 boxoffy = -6;
 	INT32 vstretch = 0;
+	INT32 hstretch = 3;
 	INT32 splitbsx, splitbsy = 0;
 	UINT16 localcolor[3] = { stplyr->skincolor };
 	SINT8 colormode[3] = { TC_RAINBOW };
@@ -1649,6 +1650,7 @@ static void K_drawKartSlotMachine(void)
 		splitbsx = -6;
 		splitbsy = -6;
 		boxoffy += 2;
+		hstretch = 0;
 	}
 	else
 	{
@@ -1661,7 +1663,7 @@ static void K_drawKartSlotMachine(void)
 
 	V_SetClipRect(
 		((fx + rouletteCrop.x + boxoffx + splitbsx) << FRACBITS), ((fy + rouletteCrop.y + boxoffy - vstretch + splitbsy) << FRACBITS),
-		rouletteSpace, rouletteSpace + (vstretch<<FRACBITS),
+		rouletteSpace + (hstretch<<FRACBITS), rouletteSpace + (vstretch<<FRACBITS),
 		V_SLIDEIN|fflags
 	);
 
