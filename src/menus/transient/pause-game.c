@@ -175,7 +175,11 @@ void M_OpenPauseMenu(void)
 	else if (!netgame && !demo.playback)
 	{
 		boolean retryallowed = (modeattacking != ATTACKING_NONE);
-		if (G_GametypeUsesLives())
+		if (
+			retryallowed == false
+			&& gamestate == GS_LEVEL
+			&& G_GametypeUsesLives()
+		)
 		{
 			for (i = 0; i <= splitscreen; i++)
 			{
