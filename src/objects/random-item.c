@@ -172,6 +172,14 @@ void Obj_RandomItemSpawn(mobj_t *mobj)
 {
 	item_vfxtimer(mobj) = P_RandomRange(PR_DECORATION, 0, SCALE_TIME - 1);
 
+	// Respawns are handled by P_RespawnBattleBoxes,
+	// but we do need to start MT_RANDOMITEMs in the right state...
+	if (mobj->type == MT_RANDOMITEM && (gametyperules & GTR_BUMPERS))
+	{
+		mobj->extravalue1 = RINGBOX_TIME;
+		P_SetMobjState(mobj, S_RANDOMITEM1);
+	}
+
 	mobj->destscale = Obj_RandomItemScale(mobj->destscale);
 	P_SetScale(mobj, mobj->destscale);
 }
