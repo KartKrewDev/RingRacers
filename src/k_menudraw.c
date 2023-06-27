@@ -4262,11 +4262,6 @@ void M_DrawPause(void)
 	INT16 arrxpos = 150 + 2*offset;	// To draw the background arrow.
 
 	INT16 j = 0;
-	char word1[MAXSTRINGLENGTH];
-	INT16 word1len = 0;
-	char word2[MAXSTRINGLENGTH];
-	INT16 word2len = 0;
-	boolean sok = false;
 
 	patch_t *vertbg = W_CachePatchName("M_STRIPV", PU_CACHE);
 	patch_t *arrstart = W_CachePatchName("M_PTIP", PU_CACHE);
@@ -4364,48 +4359,64 @@ void M_DrawPause(void)
 	}
 
 	// Draw the string!
-	// ...but first get what we need to get.
-	while (currentMenu->menuitems[itemOn].text[j] && j < MAXSTRINGLENGTH)
-	{
-		char c = currentMenu->menuitems[itemOn].text[j];
 
-		if (c == ' ' && !sok)
-		{
-			sok = true;
-			j++;
-			continue;	// We don't care about this :moyai:
-		}
-
-		if (sok)
-		{
-			word2[word2len] = c;
-			word2len++;
-		}
-		else
-		{
-			word1[word1len] = c;
-			word1len++;
-		}
-
-		j++;
-	}
-
-	word1[word1len] = '\0';
-	word2[word2len] = '\0';
-
+	const char *selectabletext = NULL;
 	if (itemOn == mpause_changegametype)
 	{
-		INT32 w = V_LSTitleLowStringWidth(gametypes[menugametype]->name, 0)/2;
+		selectabletext = gametypes[menugametype]->name;
+	}
 
-		if (word1len)
-			V_DrawCenteredLSTitleHighString(220 + offset*2, 75, 0, word1);
+	if (selectabletext != NULL)
+	{
+		// We have a selection. Let's show the full menu text on top, and the choice below.
 
-		V_DrawLSTitleLowString(220-w + offset*2, 103, V_YELLOWMAP, gametypes[menugametype]->name);
+		INT32 w = V_LSTitleLowStringWidth(selectabletext, 0)/2;
+
+		if (currentMenu->menuitems[itemOn].text)
+			V_DrawCenteredLSTitleHighString(220 + offset*2, 75, 0, currentMenu->menuitems[itemOn].text);
+
+		V_DrawLSTitleLowString(220-w + offset*2, 103, V_YELLOWMAP, selectabletext);
 		V_DrawCharacter(220-w + offset*2 - 8 - (skullAnimCounter/5), 103+6, '\x1C' | V_YELLOWMAP, false); // left arrow
 		V_DrawCharacter(220+w + offset*2 + 4 + (skullAnimCounter/5), 103+6, '\x1D' | V_YELLOWMAP, false); // right arrow
 	}
 	else
 	{
+		// This is a regular menu option. Try to break it onto two lines.
+
+		char word1[MAXSTRINGLENGTH];
+		INT16 word1len = 0;
+		char word2[MAXSTRINGLENGTH];
+		INT16 word2len = 0;
+		boolean sok = false;
+
+		while (currentMenu->menuitems[itemOn].text[j] && j < MAXSTRINGLENGTH)
+		{
+			const char c = currentMenu->menuitems[itemOn].text[j];
+
+			if (c == ' ' && !sok)
+			{
+				sok = true;
+				j++;
+				continue;	// We don't care about this :moyai:
+			}
+
+			if (sok)
+			{
+				word2[word2len] = c;
+				word2len++;
+			}
+			else
+			{
+				word1[word1len] = c;
+				word1len++;
+			}
+
+			j++;
+		}
+
+		word1[word1len] = '\0';
+		word2[word2len] = '\0';
+
 		// If there's no 2nd word, take this opportunity to center this line of text.
 		if (word1len)
 			V_DrawCenteredLSTitleHighString(220 + offset*2, 75 + (!word2len ? 10 : 0), 0, word1);
