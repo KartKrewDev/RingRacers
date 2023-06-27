@@ -41,6 +41,7 @@
 #include "k_roulette.h"
 #include "k_boss.h"
 #include "acs/interface.h"
+#include "k_powerup.h"
 
 // CTF player names
 #define CTFTEAMCODE(pl) pl->ctfteam ? (pl->ctfteam == 1 ? "\x85" : "\x84") : ""
@@ -276,14 +277,21 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 			P_InstaThrust(player->mo, player->mo->angle, 20<<FRACBITS);
 			return;
 		case MT_FLOATINGITEM: // SRB2Kart
-			if (!P_CanPickupItem(player, 3) || (player->itemamount && player->itemtype != special->threshold))
-				return;
-
-			player->itemtype = special->threshold;
-			if ((UINT16)(player->itemamount) + special->movecount > 255)
-				player->itemamount = 255;
+			if (special->threshold >= FIRSTPOWERUP)
+			{
+				K_GivePowerUp(player, special->threshold, special->movecount);
+			}
 			else
-				player->itemamount += special->movecount;
+			{
+				if (!P_CanPickupItem(player, 3) || (player->itemamount && player->itemtype != special->threshold))
+					return;
+
+				player->itemtype = special->threshold;
+				if ((UINT16)(player->itemamount) + special->movecount > 255)
+					player->itemamount = 255;
+				else
+					player->itemamount += special->movecount;
+			}
 
 			S_StartSound(special, special->info->deathsound);
 

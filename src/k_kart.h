@@ -150,7 +150,7 @@ void K_SpawnDriftElectricSparks(player_t *player, int color, boolean shockwave);
 void K_KartUpdatePosition(player_t *player);
 void K_UpdateAllPlayerPositions(void);
 SINT8 K_GetTotallyRandomResult(UINT8 useodds);
-mobj_t *K_CreatePaperItem(fixed_t x, fixed_t y, fixed_t z, angle_t angle, SINT8 flip, UINT8 type, UINT8 amount);
+mobj_t *K_CreatePaperItem(fixed_t x, fixed_t y, fixed_t z, angle_t angle, SINT8 flip, UINT8 type, UINT16 amount);
 void K_DropPaperItem(player_t *player, UINT8 itemtype, UINT16 itemamount);
 void K_PopPlayerShield(player_t *player);
 void K_DropItems(player_t *player);

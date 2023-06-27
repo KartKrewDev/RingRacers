@@ -1201,6 +1201,7 @@ typedef enum sprite
 	SPR_ITMO,
 	SPR_ITMI,
 	SPR_ITMN,
+	SPR_PWRB,
 	SPR_WANT,
 
 	SPR_PBOM, // player bomb

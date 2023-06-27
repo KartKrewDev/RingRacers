@@ -648,6 +648,7 @@ char sprnames[NUMSPRITES + 1][5] =
 	"ITMO",
 	"ITMI",
 	"ITMN",
+	"PWRB",
 	"WANT",
 
 	"PBOM", // player bomb
