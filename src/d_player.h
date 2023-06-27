@@ -179,7 +179,16 @@ typedef enum
 	KRITEM_DUALJAWZ,
 	KRITEM_TRIPLEGACHABOM,
 
-	NUMKARTRESULTS
+	NUMKARTRESULTS,
+
+	// Power-ups exist in the same enum as items so it's easy
+	// for paper items to be reused for them.
+	FIRSTPOWERUP,
+	POWERUP_SMONITOR = FIRSTPOWERUP,
+	POWERUP_BARRIER,
+	POWERUP_BUMPER,
+	POWERUP_BADGE,
+	POWERUP_SUPERFLICKY,
 } kartitems_t;
 
 typedef enum
