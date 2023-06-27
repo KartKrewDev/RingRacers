@@ -527,6 +527,8 @@ static void P_NetArchivePlayers(savebuffer_t *save)
 
 		WRITEUINT8(save->p, players[i].markedfordeath);
 
+		WRITEUINT8(save->p, players[i].ringboxdelay);
+		WRITEUINT8(save->p, players[i].ringboxaward);
 		WRITEFIXED(save->p, players[i].outrun);
 
 		// respawnvars_t
@@ -600,6 +602,7 @@ static void P_NetArchivePlayers(savebuffer_t *save)
 		WRITEUINT32(save->p, players[i].itemRoulette.tics);
 		WRITEUINT32(save->p, players[i].itemRoulette.elapsed);
 		WRITEUINT8(save->p, players[i].itemRoulette.eggman);
+		WRITEUINT8(save->p, players[i].itemRoulette.ringbox);
 
 		// sonicloopsvars_t
 		WRITEFIXED(save->p, players[i].loop.radius);
@@ -931,6 +934,8 @@ static void P_NetUnArchivePlayers(savebuffer_t *save)
 
 		players[i].markedfordeath = READUINT8(save->p);
 
+		players[i].ringboxdelay = READUINT8(save->p);
+		players[i].ringboxaward = READUINT8(save->p);
 		players[i].outrun = READFIXED(save->p);
 
 		// respawnvars_t
@@ -1015,6 +1020,7 @@ static void P_NetUnArchivePlayers(savebuffer_t *save)
 		players[i].itemRoulette.tics = (tic_t)READUINT32(save->p);
 		players[i].itemRoulette.elapsed = (tic_t)READUINT32(save->p);
 		players[i].itemRoulette.eggman = (boolean)READUINT8(save->p);
+		players[i].itemRoulette.ringbox = (boolean)READUINT8(save->p);
 
 		// sonicloopsvars_t
 		players[i].loop.radius = READFIXED(save->p);

@@ -283,7 +283,6 @@ actionpointer_t actionpointers[] =
 	{{A_ChangeHeight},           "A_CHANGEHEIGHT"},
 
 	// SRB2Kart
-	{{A_ItemPop},                "A_ITEMPOP"},
 	{{A_JawzExplode},            "A_JAWZEXPLODE"},
 	{{A_SSMineSearch},           "A_SSMINESEARCH"},
 	{{A_SSMineExplode},          "A_SSMINEEXPLODE"},
@@ -3223,7 +3222,20 @@ const char *const STATE_LIST[] = { // array length left dynamic for sanity testi
 	"S_RANDOMITEM10",
 	"S_RANDOMITEM11",
 	"S_RANDOMITEM12",
-	"S_DEADRANDOMITEM",
+
+	// Ring Box
+	"S_RINGBOX1",
+	"S_RINGBOX2",
+	"S_RINGBOX3",
+	"S_RINGBOX4",
+	"S_RINGBOX5",
+	"S_RINGBOX6",
+	"S_RINGBOX7",
+	"S_RINGBOX8",
+	"S_RINGBOX9",
+	"S_RINGBOX10",
+	"S_RINGBOX11",
+	"S_RINGBOX12",
 
 	// Sphere Box (for Battle)
 	"S_SPHEREBOX1",
@@ -3238,7 +3250,6 @@ const char *const STATE_LIST[] = { // array length left dynamic for sanity testi
 	"S_SPHEREBOX10",
 	"S_SPHEREBOX11",
 	"S_SPHEREBOX12",
-	"S_DEADSPHEREBOX",
 
 	// Random Item Pop
 	"S_RANDOMITEMPOP1",

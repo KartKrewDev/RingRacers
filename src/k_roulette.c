@@ -218,6 +218,17 @@ static kartitems_t K_KartItemReelBoss[] =
 	KITEM_NONE
 };
 
+static kartslotmachine_t K_KartItemReelRingBox[] =
+{
+	KSM_BAR,
+	KSM_DOUBLEBAR,
+	KSM_TRIPLEBAR,
+	KSM_RING,
+	KSM_SEVEN,
+	KSM_JACKPOT,
+	KSM__MAX
+};
+
 /*--------------------------------------------------
 	boolean K_ItemEnabled(kartitems_t item)
 
@@ -438,7 +449,7 @@ static UINT32 K_ScaleItemDistance(UINT32 distance, UINT8 numPlayers)
 	Return:-
 		The player's finalized item distance.
 --------------------------------------------------*/
-static UINT32 K_GetItemRouletteDistance(const player_t *player, UINT8 numPlayers)
+UINT32 K_GetItemRouletteDistance(const player_t *player, UINT8 numPlayers)
 {
 	UINT32 pdis = 0;
 
@@ -1052,6 +1063,7 @@ static void K_InitRoulette(itemroulette_t *const roulette)
 
 	roulette->active = true;
 	roulette->eggman = false;
+	roulette->ringbox = false;
 
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
@@ -1104,19 +1116,20 @@ static void K_InitRoulette(itemroulette_t *const roulette)
 }
 
 /*--------------------------------------------------
-	static void K_PushToRouletteItemList(itemroulette_t *const roulette, kartitems_t item)
+	static void K_PushToRouletteItemList(itemroulette_t *const roulette, INT32 item)
 
 		Pushes a new item to the end of the item
-		roulette's item list.
+		roulette's item list. Also accepts slot machine
+		values instead of items.
 
 	Input Arguments:-
 		roulette - The item roulette data to modify.
-		item - The item to push to the list.
+		item - The item / slot machine index to push to the list.
 
 	Return:-
 		N/A
 --------------------------------------------------*/
-static void K_PushToRouletteItemList(itemroulette_t *const roulette, kartitems_t item)
+static void K_PushToRouletteItemList(itemroulette_t *const roulette, INT32 item)
 {
 #ifdef ITEM_LIST_SIZE
 	if (roulette->itemListLen >= ITEM_LIST_SIZE)
@@ -1253,11 +1266,11 @@ static void K_CalculateRouletteSpeed(itemroulette_t *const roulette)
 }
 
 /*--------------------------------------------------
-	void K_FillItemRouletteData(const player_t *player, itemroulette_t *const roulette)
+	void K_FillItemRouletteData(const player_t *player, itemroulette_t *const roulette, boolean ringbox)
 
 		See header file for description.
 --------------------------------------------------*/
-void K_FillItemRouletteData(const player_t *player, itemroulette_t *const roulette)
+void K_FillItemRouletteData(const player_t *player, itemroulette_t *const roulette, boolean ringbox)
 {
 	UINT32 spawnChance[NUMKARTRESULTS] = {0};
 	UINT32 totalSpawnChance = 0;
@@ -1274,6 +1287,20 @@ void K_FillItemRouletteData(const player_t *player, itemroulette_t *const roulet
 	{
 		roulette->baseDist = K_UndoMapScaling(player->distancetofinish);
 		K_CalculateRouletteSpeed(roulette);
+	}
+
+	if (ringbox == true)
+	{
+		// If this is being invoked by a Ring Box, it should literally never produce items.
+		kartslotmachine_t *presetlist = K_KartItemReelRingBox;
+		roulette->ringbox = true;
+
+		for (i = 0; presetlist[i] != KSM__MAX; i++)
+		{
+			K_PushToRouletteItemList(roulette, presetlist[i]);
+		}
+
+		return;
 	}
 
 	// SPECIAL CASE No. 1:
@@ -1412,12 +1439,12 @@ void K_FillItemRouletteData(const player_t *player, itemroulette_t *const roulet
 
 		See header file for description.
 --------------------------------------------------*/
-void K_StartItemRoulette(player_t *const player)
+void K_StartItemRoulette(player_t *const player, boolean ringbox)
 {
 	itemroulette_t *const roulette = &player->itemRoulette;
 	size_t i;
 
-	K_FillItemRouletteData(player, roulette);
+	K_FillItemRouletteData(player, roulette, ringbox);
 
 	if (K_PlayerUsesBotMovement(player) == true)
 	{
@@ -1444,7 +1471,7 @@ void K_StartItemRoulette(player_t *const player)
 void K_StartEggmanRoulette(player_t *const player)
 {
 	itemroulette_t *const roulette = &player->itemRoulette;
-	K_StartItemRoulette(player);
+	K_StartItemRoulette(player, false);
 	roulette->eggman = true;
 }
 
@@ -1459,6 +1486,19 @@ fixed_t K_GetRouletteOffset(itemroulette_t *const roulette, fixed_t renderDelta)
 	const fixed_t midTic = roulette->speed * (FRACUNIT >> 1);
 
 	return FixedMul(FixedDiv(midTic - curTic, ((roulette->speed + 1) << FRACBITS)), ROULETTE_SPACING);
+}
+
+/*--------------------------------------------------
+	fixed_t K_GetSlotOffset(itemroulette_t *const roulette, fixed_t renderDelta)
+
+		See header file for description.
+--------------------------------------------------*/
+fixed_t K_GetSlotOffset(itemroulette_t *const roulette, fixed_t renderDelta)
+{
+	const fixed_t curTic = (roulette->tics << FRACBITS) - renderDelta;
+	const fixed_t midTic = roulette->speed * (FRACUNIT >> 1);
+
+	return FixedMul(FixedDiv(midTic - curTic, ((roulette->speed + 1) << FRACBITS)), SLOT_SPACING);
 }
 
 /*--------------------------------------------------
@@ -1572,9 +1612,17 @@ void K_KartItemRoulette(player_t *const player, ticcmd_t *const cmd)
 			// And one more nudge for the remaining delay.
 			roulette->tics = (roulette->tics + fudgedDelay) % roulette->speed;
 
-			kartitems_t finalItem = roulette->itemList[ roulette->index ];
+			INT32 finalItem = roulette->itemList[ roulette->index ];
 
-			K_KartGetItemResult(player, finalItem);
+			if (roulette->ringbox == true)
+			{
+				player->ringboxdelay = TICRATE;
+				player->ringboxaward = finalItem;
+			}
+			else
+			{
+				K_KartGetItemResult(player, finalItem);
+			}
 
 			player->karthud[khud_itemblink] = TICRATE;
 			player->karthud[khud_itemblinkmode] = 0;
@@ -1582,7 +1630,10 @@ void K_KartItemRoulette(player_t *const player, ticcmd_t *const cmd)
 
 			if (P_IsDisplayPlayer(player) && !demo.freecam)
 			{
-				S_StartSound(NULL, sfx_itrolf);
+				if (roulette->ringbox)
+					S_StartSound(NULL, sfx_s245);
+				else
+					S_StartSound(NULL, sfx_itrolf);
 			}
 		}
 
@@ -1603,7 +1654,10 @@ void K_KartItemRoulette(player_t *const player, ticcmd_t *const cmd)
 
 		if (P_IsDisplayPlayer(player) && !demo.freecam)
 		{
-			S_StartSound(NULL, sfx_itrol1 + roulette->sound);
+			if (roulette->ringbox)
+				S_StartSound(NULL, sfx_s240);
+			else
+				S_StartSound(NULL, sfx_itrol1 + roulette->sound);
 		}
 	}
 	else

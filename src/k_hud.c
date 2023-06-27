@@ -114,6 +114,7 @@ static patch_t *kp_wantedsplit;
 static patch_t *kp_wantedreticle;
 
 static patch_t *kp_itembg[4];
+static patch_t *kp_ringbg[4];
 static patch_t *kp_itemtimer[2];
 static patch_t *kp_itemmulsticker[2];
 static patch_t *kp_itemx;
@@ -142,6 +143,12 @@ static patch_t *kp_kitchensink[2];
 static patch_t *kp_droptarget[2];
 static patch_t *kp_gardentop[2];
 static patch_t *kp_gachabom[2];
+static patch_t *kp_bar[2];
+static patch_t *kp_doublebar[2];
+static patch_t *kp_triplebar[2];
+static patch_t *kp_slotring[2];
+static patch_t *kp_seven[2];
+static patch_t *kp_jackpot[2];
 
 static patch_t *kp_check[6];
 
@@ -443,6 +450,9 @@ void K_LoadKartHUDGraphics(void)
 	HU_UpdatePatch(&kp_itemmulsticker[0], "K_ITMUL");
 	HU_UpdatePatch(&kp_itemx, "K_ITX");
 
+	HU_UpdatePatch(&kp_ringbg[0], "K_RBBG");
+	HU_UpdatePatch(&kp_ringbg[1], "K_SBBG");
+
 	HU_UpdatePatch(&kp_sadface[0], "K_ITSAD");
 	HU_UpdatePatch(&kp_sneaker[0], "K_ITSHOE");
 	HU_UpdatePatch(&kp_rocketsneaker[0], "K_ITRSHE");
@@ -478,6 +488,12 @@ void K_LoadKartHUDGraphics(void)
 	HU_UpdatePatch(&kp_droptarget[0], "K_ITDTRG");
 	HU_UpdatePatch(&kp_gardentop[0], "K_ITGTOP");
 	HU_UpdatePatch(&kp_gachabom[0], "K_ITGBOM");
+	HU_UpdatePatch(&kp_bar[0], "K_RBBAR");
+	HU_UpdatePatch(&kp_doublebar[0], "K_RBBAR2");
+	HU_UpdatePatch(&kp_triplebar[0], "K_RBBAR3");
+	HU_UpdatePatch(&kp_slotring[0], "K_RBRING");
+	HU_UpdatePatch(&kp_seven[0], "K_RBSEV");
+	HU_UpdatePatch(&kp_jackpot[0], "K_RBJACK");
 
 	sprintf(buffer, "FSMFGxxx");
 	for (i = 0; i < 104; i++)
@@ -531,6 +547,12 @@ void K_LoadKartHUDGraphics(void)
 	HU_UpdatePatch(&kp_droptarget[1], "K_ISDTRG");
 	HU_UpdatePatch(&kp_gardentop[1], "K_ISGTOP");
 	HU_UpdatePatch(&kp_gachabom[1], "K_ISGBOM");
+	HU_UpdatePatch(&kp_bar[1], "K_SBBAR");
+	HU_UpdatePatch(&kp_doublebar[1], "K_SBBAR2");
+	HU_UpdatePatch(&kp_triplebar[1], "K_SBBAR3");
+	HU_UpdatePatch(&kp_slotring[1], "K_SBRING");
+	HU_UpdatePatch(&kp_seven[1], "K_SBSEV");
+	HU_UpdatePatch(&kp_jackpot[1], "K_SBJACK");
 
 	sprintf(buffer, "FSMFSxxx");
 	for (i = 0; i < 104; i++)
@@ -875,6 +897,23 @@ static patch_t *K_GetSmallStaticCachedItemPatch(kartitems_t item)
 	return K_GetCachedItemPatch(item, offset);
 }
 
+static patch_t *K_GetCachedSlotMachinePatch(INT32 item, UINT8 offset)
+{
+	patch_t **kp[KSM__MAX] = {
+		kp_bar,
+		kp_doublebar,
+		kp_triplebar,
+		kp_slotring,
+		kp_seven,
+		kp_jackpot,
+	};
+
+	if (item >= 0 && item < KSM__MAX)
+		return kp[item][offset];
+	else
+		return NULL;
+}
+
 //}
 
 INT32 ITEM_X, ITEM_Y;	// Item Window
@@ -1217,7 +1256,7 @@ static void K_drawKartItem(void)
 		for (i = 0; i < 3; i++)
 		{
 			const SINT8 indexOfs = i-1;
-			const size_t index = (stplyr->itemRoulette.index + indexOfs) % stplyr->itemRoulette.itemListLen;
+			const size_t index = (stplyr->itemRoulette.itemListLen + (stplyr->itemRoulette.index + indexOfs)) % stplyr->itemRoulette.itemListLen;
 
 			const SINT8 result = stplyr->itemRoulette.itemList[index];
 			const SINT8 item = K_ItemResultToType(result);
@@ -1531,6 +1570,118 @@ static void K_drawKartItem(void)
 			}
 		}
 	}
+}
+
+static void K_drawKartSlotMachine(void)
+{
+	// ITEM_X = BASEVIDWIDTH-50;	// 270
+	// ITEM_Y = 24;					//  24
+
+	// Why write V_DrawScaledPatch calls over and over when they're all the same?
+	// Set to 'no item' just in case.
+	const UINT8 offset = ((r_splitscreen > 1) ? 1 : 0);
+
+	patch_t *localpatch[3] = { kp_nodraw, kp_nodraw, kp_nodraw };
+	patch_t *localbg = offset ? kp_ringbg[1] : kp_ringbg[0];
+
+	// == SHITGARBAGE UNLIMITED 2: RISE OF MY ASS ==
+	// FIVE LAYERS OF BULLSHIT PER-PIXEL SHOVING BECAUSE THE PATCHES HAVE DIFFERENT OFFSETS
+	// IF YOU ARE HERE TO ADJUST THE RINGBOX HUD TURN OFF YOUR COMPUTER AND GO TO YOUR LOCAL PARK
+
+	INT32 fx = 0, fy = 0, fflags = 0;	// final coords for hud and flags...
+	INT32 boxoffx = 0;
+	INT32 boxoffy = -6;
+	INT32 vstretch = 0;
+	INT32 hstretch = 3;
+	INT32 splitbsx, splitbsy = 0;
+	UINT16 localcolor[3] = { stplyr->skincolor };
+	SINT8 colormode[3] = { TC_RAINBOW };
+
+	fixed_t rouletteOffset = 0;
+	fixed_t rouletteSpace = SLOT_SPACING;
+	vector2_t rouletteCrop = {10, 10};
+	INT32 i;
+
+	if (stplyr->itemRoulette.itemListLen > 0)
+	{
+		// Init with item roulette stuff.
+		for (i = 0; i < 3; i++)
+		{
+			const SINT8 indexOfs = i-1;
+			const size_t index = (stplyr->itemRoulette.itemListLen + (stplyr->itemRoulette.index + indexOfs)) % stplyr->itemRoulette.itemListLen;
+
+			const SINT8 result = stplyr->itemRoulette.itemList[index];
+
+			localpatch[i] = K_GetCachedSlotMachinePatch(result, offset);
+		}
+	}
+
+	if (stplyr->itemRoulette.active == true)
+	{
+		rouletteOffset = K_GetSlotOffset(&stplyr->itemRoulette, rendertimefrac);
+	}
+	else
+	{
+		if (!stplyr->ringboxdelay)
+			return;
+	}
+
+	// pain and suffering defined below
+	if (offset)
+	{
+		boxoffx -= 4;
+		if (stplyr == &players[displayplayers[0]] || stplyr == &players[displayplayers[2]]) // If we are P1 or P3...
+		{
+			fx = ITEM_X + 10;
+			fy = ITEM_Y + 10;
+			fflags = V_SNAPTOLEFT|V_SNAPTOTOP|V_SPLITSCREEN;
+		}
+		else // else, that means we're P2 or P4.
+		{
+			fx = ITEM2_X + 7;
+			fy = ITEM2_Y + 10;
+			fflags = V_SNAPTORIGHT|V_SNAPTOTOP|V_SPLITSCREEN;
+		}
+
+		rouletteSpace = SLOT_SPACING_SPLITSCREEN;
+		rouletteOffset = FixedMul(rouletteOffset, FixedDiv(SLOT_SPACING_SPLITSCREEN, SLOT_SPACING));
+		rouletteCrop.x = 16;
+		rouletteCrop.y = 13;
+		splitbsx = -6;
+		splitbsy = -6;
+		boxoffy += 2;
+		hstretch = 0;
+	}
+	else
+	{
+		fx = ITEM_X;
+		fy = ITEM_Y;
+		fflags = V_SNAPTOTOP|V_SNAPTOLEFT|V_SPLITSCREEN;
+	}
+
+	V_DrawScaledPatch(fx, fy, V_HUDTRANS|V_SLIDEIN|fflags, localbg);
+
+	V_SetClipRect(
+		((fx + rouletteCrop.x + boxoffx + splitbsx) << FRACBITS), ((fy + rouletteCrop.y + boxoffy - vstretch + splitbsy) << FRACBITS),
+		rouletteSpace + (hstretch<<FRACBITS), rouletteSpace + (vstretch<<FRACBITS),
+		V_SLIDEIN|fflags
+	);
+
+	// item box has special layering, transparency, different sized patches, other fucked up shit
+	// ring box is evenly spaced and easy
+	rouletteOffset += rouletteSpace;
+	for (i = 0; i < 3; i++)
+	{
+		V_DrawFixedPatch(
+			((fx)<<FRACBITS), ((fy)<<FRACBITS) + rouletteOffset,
+			FRACUNIT, V_HUDTRANS|V_SLIDEIN|fflags,
+			localpatch[i], (localcolor[i] ? R_GetTranslationColormap(colormode[i], localcolor[i], GTC_CACHE) : NULL)
+		);
+
+		rouletteOffset -= rouletteSpace;
+	}
+
+	V_ClearClipRect();
 }
 
 void K_drawKartTimestamp(tic_t drawtime, INT32 TX, INT32 TY, INT32 splitflags, UINT8 mode)
@@ -4943,7 +5094,7 @@ static void K_drawDistributionDebugger(void)
 		return;
 	}
 
-	K_FillItemRouletteData(stplyr, &rouletteData);
+	K_FillItemRouletteData(stplyr, &rouletteData, false);
 
 	for (i = 0; i < rouletteData.itemListLen; i++)
 	{
@@ -5200,7 +5351,16 @@ void K_drawKartHUD(void)
 
 	// Draw the item window
 	if (LUA_HudEnabled(hud_item) && !freecam)
-		K_drawKartItem();
+	{
+		if (stplyr->itemRoulette.ringbox && stplyr->itemamount == 0 && stplyr->itemtype == 0)
+		{
+			K_drawKartSlotMachine();
+		}
+		else
+		{
+			K_drawKartItem();
+		}
+	}
 
 	if (demo.title)
 		;

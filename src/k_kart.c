@@ -361,6 +361,7 @@ void K_RegisterKartStuff(void)
 	CV_RegisterVar(&cv_kartvoices);
 	CV_RegisterVar(&cv_kartbot);
 	CV_RegisterVar(&cv_karteliminatelast);
+	CV_RegisterVar(&cv_thunderdome);
 	CV_RegisterVar(&cv_kartusepwrlv);
 	CV_RegisterVar(&cv_votetime);
 	CV_RegisterVar(&cv_botscanvote);
@@ -10751,6 +10752,26 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 			player->pflags |= PF_USERINGS;
 		else
 			player->pflags &= ~PF_USERINGS;
+	}
+
+	if (player->ringboxdelay)
+	{
+		player->ringboxdelay--;
+		if (player->ringboxdelay == 0)
+		{
+			// TODO
+			UINT32 behind = K_GetItemRouletteDistance(player, player->itemRoulette.playing);
+			UINT32 behindMulti = behind / 1000;
+			behindMulti = min(behindMulti, 20);
+
+			UINT32 award = 5*player->ringboxaward + 10;
+			if (player->ringboxaward > 2) // not a BAR
+				award = 3 * award / 2;
+			award = award * (behindMulti + 10) / 10;
+
+			K_AwardPlayerRings(player, award, true);
+			player->ringboxaward = 0;
+		}
 	}
 
 	if (player && player->mo && player->mo->health > 0 && !player->spectator && !P_PlayerInPain(player) && !mapreset && leveltime > introtime)

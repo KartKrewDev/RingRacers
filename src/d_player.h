@@ -194,6 +194,17 @@ typedef enum
 
 typedef enum
 {
+	KSM_BAR,
+	KSM_DOUBLEBAR,
+	KSM_TRIPLEBAR,
+	KSM_RING,
+	KSM_SEVEN,
+	KSM_JACKPOT,
+	KSM__MAX,
+} kartslotmachine_t;
+
+typedef enum
+{
 	KSPIN_THRUST    = (1<<0),
 	KSPIN_IFRAMES   = (1<<1),
 	KSPIN_AIRTIMER  = (1<<2),
@@ -410,6 +421,7 @@ struct itemroulette_t
 	tic_t elapsed;
 
 	boolean eggman;
+	boolean ringbox;
 };
 
 // enum for bot item priorities
@@ -767,6 +779,9 @@ struct player_t
 
 	boolean markedfordeath;
 
+	UINT8 ringboxdelay; // Delay until Ring Box auto-activates
+	UINT8 ringboxaward; // Where did we stop?
+	
 	fixed_t outrun; // Milky Way road effect
 
 	uint8_t public_key[PUBKEYLENGTH];
