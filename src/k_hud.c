@@ -5352,7 +5352,7 @@ void K_drawKartHUD(void)
 	// Draw the item window
 	if (LUA_HudEnabled(hud_item) && !freecam)
 	{
-		if (stplyr->itemRoulette.ringbox)
+		if (stplyr->itemRoulette.ringbox && stplyr->itemamount == 0 && stplyr->itemtype == 0)
 		{
 			K_drawKartSlotMachine();
 		}

@@ -103,6 +103,9 @@ void Obj_RandomItemVisuals(mobj_t *mobj)
 	ItemBoxScaling(mobj);
 	item_vfxtimer(mobj)++;
 
+	if (mobj->type != MT_RANDOMITEM)
+		return;
+
 	// Respawn flow, documented by a dumb asshole:
 	// P_TouchSpecialThing -> P_ItemPop sets fuse, NOCLIPTHING and DONTDRAW.
 	// P_FuseThink does visual flicker, and when fuse is 0, unsets NOCLIPTHING/DONTDRAW/etc...

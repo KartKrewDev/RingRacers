@@ -10746,7 +10746,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 			UINT32 award = 5*player->ringboxaward + 10;
 			if (player->ringboxaward > 2) // not a BAR
 				award = 3 * award / 2;
-			award = award * (behind / 1000 + 10) / 10;
+			award = award * (behindMulti + 10) / 10;
 
 			K_AwardPlayerRings(player, award, true);
 			player->ringboxaward = 0;

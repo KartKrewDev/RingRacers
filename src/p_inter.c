@@ -140,6 +140,7 @@ boolean P_CanPickupItem(player_t *player, UINT8 weapon)
 
 			// Item slot already taken up
 			if (player->itemRoulette.active == true
+				|| player->ringboxdelay > 0
 				|| (weapon != 3 && player->itemamount)
 				|| (player->pflags & PF_ITEMOUT))
 				return false;
