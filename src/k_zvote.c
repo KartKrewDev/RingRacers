@@ -57,10 +57,7 @@ static void K_MidVoteKick(void)
 		return;
 	}
 
-	if (server)
-	{
-		SendKick(g_midVote.victim - players, KICK_MSG_VOTE_KICK);
-	}
+	SendKick(g_midVote.victim - players, KICK_MSG_VOTE_KICK);
 }
 
 /*--------------------------------------------------
@@ -70,7 +67,13 @@ static void K_MidVoteKick(void)
 --------------------------------------------------*/
 static void K_MidVoteRockTheVote(void)
 {
-	G_ExitLevel();
+	if (G_GamestateUsesExitLevel() == false)
+	{
+		return;
+	}
+
+	SendNetXCmd(XD_EXITLEVEL, NULL, 0);
+}
 }
 
 static midVoteTypeDef_t g_midVoteTypeDefs[MVT__MAX] =
@@ -630,7 +633,11 @@ void K_MidVoteFinalize(fixed_t delayMul)
 --------------------------------------------------*/
 void K_MidVoteSuccess(void)
 {
-	if (g_midVoteTypeDefs[ g_midVote.type ].callback != NULL)
+	if (
+		server == true
+		&& demo.playback == false
+		&& g_midVoteTypeDefs[ g_midVote.type ].callback != NULL
+	)
 	{
 		g_midVoteTypeDefs[ g_midVote.type ].callback();
 	}
