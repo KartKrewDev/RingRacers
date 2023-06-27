@@ -1368,6 +1368,8 @@ typedef enum sprite
 	SPR_GBOM,
 	SPR_GCHX,
 
+	SPR_3DFR,
+
 	// First person view sprites; this is a sprite so that it can be replaced by a specialized MD2 draw later
 	SPR_VIEW,
 
@@ -5667,6 +5669,8 @@ typedef enum state
 	S_GACHABOM_WAITING,
 	S_GACHABOM_RETURNING,
 
+	S_SUPER_FLICKY,
+
 	S_FIRSTFREESLOT,
 	S_LASTFREESLOT = S_FIRSTFREESLOT + NUMSTATEFREESLOTS - 1,
 	NUMSTATES
@@ -6811,6 +6815,9 @@ typedef enum mobj_type
 
 	MT_LOOPENDPOINT,
 	MT_LOOPCENTERPOINT,
+
+	MT_SUPER_FLICKY,
+	MT_SUPER_FLICKY_CONTROLLER,
 
 	MT_FIRSTFREESLOT,
 	MT_LASTFREESLOT = MT_FIRSTFREESLOT + NUMMOBJFREESLOTS - 1,
