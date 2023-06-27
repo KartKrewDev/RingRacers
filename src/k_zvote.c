@@ -151,9 +151,6 @@ static boolean K_MidVoteTypeUsesVictim(midVoteType_e voteType)
 --------------------------------------------------*/
 static void Command_CallVote(void)
 {
-	UINT8 buf[MAXTEXTCMD];
-	UINT8 *buf_p = buf;
-
 	size_t numArgs = 0;
 
 	const char *voteTypeStr = NULL;
@@ -161,8 +158,6 @@ static void Command_CallVote(void)
 
 	const char *voteVariableStr = NULL;
 	INT32 voteVariable = 0;
-
-	player_t *victim = NULL;
 
 	INT32 i = INT32_MAX;
 
@@ -210,11 +205,26 @@ static void Command_CallVote(void)
 					break;
 				}
 			}
+		}
+	}
 
-			if (voteVariable >= 0 && voteVariable < MAXPLAYERS)
-			{
-				victim = &players[voteVariable];
-			}
+	K_SendCallMidVote(voteType, voteVariable);
+}
+
+/*--------------------------------------------------
+	void K_SendCallMidVote(midVoteType_e voteType, INT32 voteVariable)
+
+		See header file for description.
+--------------------------------------------------*/
+void K_SendCallMidVote(midVoteType_e voteType, INT32 voteVariable)
+{
+	player_t *victim = NULL;
+
+	if (K_MidVoteTypeUsesVictim(voteType) == true)
+	{
+		if (voteVariable >= 0 && voteVariable < MAXPLAYERS)
+		{
+			victim = &players[voteVariable];
 		}
 	}
 
@@ -223,6 +233,9 @@ static void Command_CallVote(void)
 		// Invalid vote inputs.
 		return;
 	}
+
+	UINT8 buf[MAXTEXTCMD];
+	UINT8 *buf_p = buf;
 
 	WRITEUINT8(buf_p, voteType);
 	WRITEINT32(buf_p, voteVariable);
