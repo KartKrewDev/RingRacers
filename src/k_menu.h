@@ -418,6 +418,8 @@ extern menu_t EXTRAS_EggTVDef;
 extern menuitem_t PAUSE_Main[];
 extern menu_t PAUSE_MainDef;
 
+extern menu_t PAUSE_KickHandlerDef;
+
 // EXTRAS
 extern menuitem_t MISC_Manual[];
 extern menu_t MISC_ManualDef;
@@ -1082,6 +1084,14 @@ void M_QuitPauseMenu(INT32 choice);
 boolean M_PauseInputs(INT32 ch);
 void M_PauseTick(void);
 
+extern struct playerkickmenu_s {
+	tic_t ticker;
+	UINT8 player;
+	UINT8 poke;
+} playerkickmenu;
+
+void M_KickHandler(INT32 choice);
+
 extern consvar_t cv_dummymenuplayer;
 extern consvar_t cv_dummyspectator;
 
@@ -1154,6 +1164,7 @@ void M_DrawMPServerBrowser(void);
 
 // Pause menu:
 void M_DrawPause(void);
+void M_DrawKickHandler(void);
 
 // Replay Playback
 void M_DrawPlaybackMenu(void);

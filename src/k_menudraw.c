@@ -4538,6 +4538,104 @@ void M_DrawPause(void)
 	}
 }
 
+void M_DrawKickHandler(void)
+{
+	// fake round queue drawer simply to make release
+	INT32 x = 29 + 4, y = 70, returny = y;
+	INT32 pokeamount = (playerkickmenu.poke & 1) ? -playerkickmenu.poke/2 : playerkickmenu.poke/2;
+	INT32 x2 = x + pokeamount - 9 - 8;
+
+	boolean datarightofcolumn = false;
+
+	patch_t *resbar = W_CachePatchName("R_RESBAR", PU_CACHE); // Results bars for players
+
+	UINT8 i;
+
+	for (i = 0; i < MAXPLAYERS; i++)
+	{
+		V_DrawMappedPatch(
+			x, y,
+			(playeringame[i] == true)
+				? ((players[i].spectator == true) ? V_TRANSLUCENT : 0)
+				: V_MODULATE,
+			resbar, NULL
+		);
+
+		V_DrawRightAlignedThinString(
+			x+13, y-2,
+				((i == playerkickmenu.player)
+					? highlightflags
+					: 0
+				),
+			va("%u", i)
+		);
+
+		if (playeringame[i] == true)
+		{
+			if (players[i].skincolor != SKINCOLOR_NONE)
+			{
+				UINT8 *charcolormap;
+				if ((players[i].pflags & PF_NOCONTEST) && players[i].bot)
+				{
+					// RETIRED !!
+					charcolormap = R_GetTranslationColormap(TC_DEFAULT, players[i].skincolor, GTC_CACHE);
+					V_DrawMappedPatch(x+14, y-5, 0, W_CachePatchName("MINIDEAD", PU_CACHE), charcolormap);
+				}
+				else
+				{
+					charcolormap = R_GetTranslationColormap(players[i].skin, players[i].skincolor, GTC_CACHE);
+					V_DrawMappedPatch(x+14, y-5, 0, faceprefix[players[i].skin][FACE_MINIMAP], charcolormap);
+				}
+			}
+
+			V_DrawThinString(
+				x+27, y-2,
+				(
+					P_IsMachineLocalPlayer(&players[i])
+						? highlightflags
+						: 0
+				)|V_ALLOWLOWERCASE|V_6WIDTHSPACE,
+				player_names[i]
+			);
+
+			V_DrawRightAlignedThinString(
+				x+118, y-2,
+				V_ALLOWLOWERCASE|V_6WIDTHSPACE,
+				(players[i].spectator) ? "SPECTATOR" : "PLAYING"
+			);
+		}
+
+		if (i == playerkickmenu.player)
+		{
+			V_DrawScaledPatch(
+				x2, y-1,
+				(datarightofcolumn ? V_FLIP : 0),
+				W_CachePatchName("M_CURSOR", PU_CACHE)
+			);
+		}
+
+		y += 13;
+
+		if (i == (MAXPLAYERS-1)/2)
+		{
+			x = 169 - 4;
+			y = returny;
+
+			datarightofcolumn = true;
+			x2 = x + 118 + 9 + 8 + 4 - pokeamount;
+		}
+	}
+
+	//V_DrawFill(32 + (playerkickmenu.player & 8), 32 + (playerkickmenu.player & 7)*8, 8, 8, playeringame[playerkickmenu.player] ? 0 : 16);
+
+	V_DrawFixedPatch(0, 0, FRACUNIT, 0, W_CachePatchName("MENUHINT", PU_CACHE), NULL);
+	V_DrawCenteredThinString(
+		BASEVIDWIDTH/2, 12,
+		V_ALLOWLOWERCASE|V_6WIDTHSPACE,
+		K_GetMidVoteLabel(menucallvote)
+	);
+}
+
 void M_DrawPlaybackMenu(void)
 {
 	INT16 i;

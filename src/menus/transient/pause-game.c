@@ -333,8 +333,8 @@ void M_HandlePauseMenuCallVote(INT32 choice)
 		}
 		else if (K_MidVoteTypeUsesVictim(menucallvote) == true)
 		{
-			// Not yet implemented.
-			S_StartSound(NULL, sfx_s3k7b);
+			S_StartSound(NULL, sfx_s3k5b);
+			M_KickHandler(-1);
 		}
 		else
 		{
