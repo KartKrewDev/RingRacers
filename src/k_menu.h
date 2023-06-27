@@ -453,6 +453,7 @@ typedef enum
 	mpause_discordrequests,
 #endif
 	mpause_callvote,
+	mpause_admin,
 
 	mpause_continue,
 	mpause_spectate,
@@ -1088,6 +1089,7 @@ extern struct playerkickmenu_s {
 	tic_t ticker;
 	UINT8 player;
 	UINT8 poke;
+	boolean adminpowered;
 } playerkickmenu;
 
 void M_KickHandler(INT32 choice);

@@ -4636,7 +4636,9 @@ void M_DrawKickHandler(void)
 	V_DrawCenteredThinString(
 		BASEVIDWIDTH/2, 12,
 		V_ALLOWLOWERCASE|V_6WIDTHSPACE,
-		K_GetMidVoteLabel(menucallvote)
+		(playerkickmenu.adminpowered)
+			? "You are using ""\x85""Admin Tools""\x80"", ""\x83""(A)""\x80"" to kick and ""\x84""(C)""\x80"" to ban"
+			: K_GetMidVoteLabel(menucallvote)
 	);
 }
 

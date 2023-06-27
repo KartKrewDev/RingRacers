@@ -12,6 +12,8 @@ static void M_PlayerKickHandler(INT32 choice)
 {
 	const UINT8 pid = 0;
 
+	UINT8 kicktype = UINT8_MAX;
+
 	(void)choice;
 
 	if (menucmd[pid].dpad_lr != 0) // symmetrical in this case
@@ -47,7 +49,17 @@ static void M_PlayerKickHandler(INT32 choice)
 		M_SetMenuDelay(pid);
 	}
 
+	else if (M_MenuExtraPressed(pid) && playerkickmenu.adminpowered)
+	{
+		kicktype = KICK_MSG_BANNED;
+	}
+
 	else if (M_MenuConfirmPressed(pid))
+	{
+		kicktype = KICK_MSG_KICKED;
+	}
+
+	if (kicktype != UINT8_MAX)
 	{
 		M_SetMenuDelay(pid);
 
@@ -57,7 +69,16 @@ static void M_PlayerKickHandler(INT32 choice)
 			&& playerkickmenu.player != serverplayer
 		)
 		{
-			if (
+			if (playerkickmenu.adminpowered)
+			{
+				if (consoleplayer == serverplayer || IsPlayerAdmin(consoleplayer))
+				{
+					playerkickmenu.poke = (kicktype == KICK_MSG_BANNED) ? 16 : 12;
+					SendKick(playerkickmenu.player, kicktype);
+					return;
+				}
+			}
+			else if (
 				K_MinimalCheckNewMidVote(menucallvote) == true
 #ifndef DEVELOP
 				&& IsPlayerAdmin(playerkickmenu.player) == false
@@ -107,6 +128,8 @@ menu_t PAUSE_KickHandlerDef = {
 
 void M_KickHandler(INT32 choice)
 {
+	playerkickmenu.adminpowered = (choice >= 0);
+
 	PAUSE_KickHandlerDef.prevMenu = currentMenu;
 	M_SetupNextMenu(&PAUSE_KickHandlerDef, true);
 }

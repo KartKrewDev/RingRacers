@@ -43,6 +43,9 @@ menuitem_t PAUSE_Main[] =
 	{IT_STRING | IT_ARROWS, "CALL VOTE", "M_ICOVOT",
 		NULL, {.routine = M_HandlePauseMenuCallVote}, 0, 0},
 
+	{IT_STRING | IT_ARROWS, "ADMIN TOOLS", "M_ICOADM",
+		NULL, {.routine = M_KickHandler}, 0, 0},
+
 	{IT_STRING | IT_CALL, "RESUME GAME", "M_ICOUNP",
 		NULL, {.routine = M_QuitPauseMenu}, 0, 0},
 
@@ -128,6 +131,7 @@ void M_OpenPauseMenu(void)
 	PAUSE_Main[mpause_restartmap].status = IT_DISABLED;
 	PAUSE_Main[mpause_tryagain].status = IT_DISABLED;
 	PAUSE_Main[mpause_callvote].status = IT_DISABLED;
+	PAUSE_Main[mpause_admin].status = IT_DISABLED;
 #ifdef HAVE_DISCORDRPC
 	PAUSE_Main[mpause_discordrequests].status = IT_DISABLED;
 #endif
@@ -161,6 +165,11 @@ void M_OpenPauseMenu(void)
 			{
 				PAUSE_Main[mpause_addons].status = IT_STRING | IT_CALL;
 			}
+
+			if (netgame)
+			{
+				PAUSE_Main[mpause_admin].status = IT_STRING | IT_CALL;
+			}
 		}
 	}
 	else if (!netgame && !demo.playback)
@@ -183,7 +192,7 @@ void M_OpenPauseMenu(void)
 		}
 	}
 
-	if (netgame)
+	if (netgame && (PAUSE_Main[mpause_admin].status == IT_DISABLED))
 	{
 		menucallvote = K_GetNextAllowedMidVote(menucallvote, true);
 
