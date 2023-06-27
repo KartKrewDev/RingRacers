@@ -47,6 +47,7 @@ TYPEDEF (botvars_t);
 TYPEDEF (roundconditions_t);
 TYPEDEF (skybox_t);
 TYPEDEF (itemroulette_t);
+TYPEDEF (powerupvars_t);
 TYPEDEF (altview_t);
 TYPEDEF (player_t);
 

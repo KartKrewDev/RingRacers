@@ -439,6 +439,11 @@ typedef struct {
 	boolean flip;
 } sonicloopvars_t;
 
+// player_t struct for power-ups
+struct powerupvars_t {
+	mobj_t *flickyController;
+};
+
 // player_t struct for all alternative viewpoint variables
 struct altview_t
 {
@@ -756,6 +761,7 @@ struct player_t
 	mobj_t *sliptideZipIndicator;
 	mobj_t *whip;
 	mobj_t *hand;
+	mobj_t *flickyAttacker;
 
 	UINT8 instaShieldCooldown;
 	UINT8 guardCooldown;
@@ -777,6 +783,7 @@ struct player_t
 
 	sonicloopvars_t loop;
 	roundconditions_t roundconditions;
+	powerupvars_t powerup;
 };
 
 // WARNING FOR ANYONE ABOUT TO ADD SOMETHING TO THE PLAYER STRUCT, G_PlayerReborn WANTS YOU TO SUFFER
