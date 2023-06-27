@@ -1189,6 +1189,13 @@ sfxinfo_t S_sfx[NUMSFX] =
   {"iwhp", false, 255,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""}, // Instawhip attack
   {"gbrk", false, 255,  8, -1, NULL, 0,        -1,  -1, LUMPERROR, ""}, // Guard break!
 
+  // Super Flicky Power-Up
+  {"supflk", false, 255, 32, -1, NULL, 0,        -1,  -1, LUMPERROR, ""}, // Woodpecking - SF_NOINTERRUPT
+  {"fbost1", false, 255,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""}, // Slowing down
+  {"fbird",  false, 255,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""}, // Speeding up
+  {"fhurt1", false, 255,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""}, // Whipped
+  {"fhurt2", false, 255,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""}, // Hunting
+
   // SRB2Kart - Engine sounds
   // Engine class A
   {"krta00", false,  48, 65, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},
