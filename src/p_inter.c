@@ -584,6 +584,10 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 			Obj_PlayerUsedRingShooter(special, player);
 			return;
 
+		case MT_SUPER_FLICKY:
+			Obj_SuperFlickyPlayerCollide(special, toucher);
+			return;
+
 		default: // SOC or script pickup
 			P_SetTarget(&special->target, toucher);
 			break;
@@ -2258,8 +2262,16 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 					if (clash)
 					{
 						player->spheres = max(player->spheres - 10, 0);
+
 						if (inflictor)
+						{
 							K_DoPowerClash(target, inflictor);
+
+							if (inflictor->type == MT_SUPER_FLICKY)
+							{
+								Obj_BlockSuperFlicky(inflictor);
+							}
+						}
 						else if (source)
 							K_DoPowerClash(target, source);
 					}

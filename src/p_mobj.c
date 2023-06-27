@@ -2464,6 +2464,12 @@ boolean P_ZMovement(mobj_t *mo)
 				return false;
 			}
 		}
+		else if (mo->type == MT_SUPER_FLICKY)
+		{
+			mom.z = -mom.z;
+
+			Obj_SuperFlickyLanding(mo);
+		}
 		else if (mo->type == MT_DRIFTCLIP)
 		{
 			mom.z = -mom.z/2;
@@ -6689,6 +6695,14 @@ static void P_MobjSceneryThink(mobj_t *mobj)
 			return;
 		}
 		break;
+	case MT_SUPER_FLICKY_CONTROLLER:
+		Obj_SuperFlickyControllerThink(mobj);
+
+		if (P_MobjWasRemoved(mobj))
+		{
+			return;
+		}
+		break;
 	case MT_VWREF:
 	case MT_VWREB:
 	{
@@ -9532,6 +9546,14 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 		break;
 	case MT_GACHABOM_REBOUND:
 		Obj_GachaBomReboundThink(mobj);
+
+		if (P_MobjWasRemoved(mobj))
+		{
+			return false;
+		}
+		break;
+	case MT_SUPER_FLICKY:
+		Obj_SuperFlickyThink(mobj);
 
 		if (P_MobjWasRemoved(mobj))
 		{
