@@ -5,6 +5,7 @@
 #include "../../k_grandprix.h" // K_CanChangeRules
 #include "../../m_cond.h"
 #include "../../s_sound.h"
+#include "../../k_zvote.h"
 
 #ifdef HAVE_DISCORDRPC
 #include "../../discord.h"
@@ -38,6 +39,9 @@ menuitem_t PAUSE_Main[] =
 	{IT_STRING | IT_CALL, "DISCORD REQUESTS", "M_ICODIS",
 		NULL, {.routine = M_DiscordRequests}, 0, 0},
 #endif
+
+	{IT_STRING | IT_ARROWS, "CALL VOTE", "M_ICOVOT",
+		NULL, {.routine = M_HandlePauseMenuCallVote}, 0, 0},
 
 	{IT_STRING | IT_CALL, "RESUME GAME", "M_ICOUNP",
 		NULL, {.routine = M_QuitPauseMenu}, 0, 0},
@@ -123,6 +127,7 @@ void M_OpenPauseMenu(void)
 	PAUSE_Main[mpause_switchmap].status = IT_DISABLED;
 	PAUSE_Main[mpause_restartmap].status = IT_DISABLED;
 	PAUSE_Main[mpause_tryagain].status = IT_DISABLED;
+	PAUSE_Main[mpause_callvote].status = IT_DISABLED;
 #ifdef HAVE_DISCORDRPC
 	PAUSE_Main[mpause_discordrequests].status = IT_DISABLED;
 #endif
@@ -175,6 +180,18 @@ void M_OpenPauseMenu(void)
 		if (retryallowed)
 		{
 			PAUSE_Main[mpause_tryagain].status = IT_STRING | IT_CALL;
+		}
+	}
+
+	if (netgame)
+	{
+		menucallvote = K_GetNextAllowedMidVote(menucallvote, true);
+
+		if (menucallvote != MVT__MAX)
+		{
+			menucallvote = K_GetNextAllowedMidVote(menucallvote, false);
+
+			PAUSE_Main[mpause_callvote].status = IT_STRING | IT_ARROWS;
 		}
 	}
 
@@ -300,6 +317,38 @@ void M_HandlePauseMenuGametype(INT32 choice)
 		M_NextMenuGametype(forbidden);
 		S_StartSound(NULL, sfx_s3k5b);
 	}
+}
+
+// Call vote
+UINT32 menucallvote = MVT__MAX;
+
+void M_HandlePauseMenuCallVote(INT32 choice)
+{
+	if (choice == 2)
+	{
+		if (K_MinimalCheckNewMidVote(menucallvote) == false)
+		{
+			// Invalid.
+			S_StartSound(NULL, sfx_s3k7b);
+		}
+		else if (K_MidVoteTypeUsesVictim(menucallvote) == true)
+		{
+			// Not yet implemented.
+			S_StartSound(NULL, sfx_s3k7b);
+		}
+		else
+		{
+			// Bog standard and victimless, let's send it on its way!
+			M_ClearMenus(true);
+			K_SendCallMidVote(menucallvote, 0);
+			return;
+		}
+
+		return;
+	}
+
+	menucallvote = K_GetNextAllowedMidVote(menucallvote, (choice == 0));
+	S_StartSound(NULL, sfx_s3k5b);
 }
 
 // Restart map

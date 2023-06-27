@@ -126,6 +126,9 @@ void M_PrevMenuGametype(UINT32 forbidden);
 void M_HandleHostMenuGametype(INT32 choice);
 void M_HandlePauseMenuGametype(INT32 choice);
 
+extern UINT32 menucallvote; // not midVoteType_e to prevent #include k_zvote
+void M_HandlePauseMenuCallVote(INT32 choice);
+
 //
 // MENU TYPEDEFS
 //
@@ -447,6 +450,7 @@ typedef enum
 #ifdef HAVE_DISCORDRPC
 	mpause_discordrequests,
 #endif
+	mpause_callvote,
 
 	mpause_continue,
 	mpause_spectate,

@@ -52,6 +52,7 @@
 #include "doomstat.h" // MAXSPLITSCREENPLAYERS
 #include "k_grandprix.h" // K_CanChangeRules
 #include "k_rank.h" // K_GetGradeColor
+#include "k_zvote.h" // K_GetMidVoteLabel
 
 #include "y_inter.h" // Y_RoundQueueDrawer
 
@@ -4360,26 +4361,61 @@ void M_DrawPause(void)
 
 	// Draw the string!
 
+	const char *maintext = NULL;
 	const char *selectabletext = NULL;
+	INT32 mainflags = V_YELLOWMAP, selectableflags = 0;
+
 	if (itemOn == mpause_changegametype)
 	{
 		selectabletext = gametypes[menugametype]->name;
+	}
+	else if (itemOn == mpause_callvote)
+	{
+		selectabletext = K_GetMidVoteLabel(menucallvote);
+
+		if (K_MinimalCheckNewMidVote(menucallvote) == false)
+		{
+			if (g_midVote.active == true)
+			{
+				maintext = "ACTIVE...";
+			}
+			else if (g_midVote.delay > 0)
+			{
+				if (g_midVote.delay != 1)
+					maintext = va("%u", ((g_midVote.delay - 1) / TICRATE) + 1);
+			}
+			else
+			{
+				maintext = "INVALID!?";
+			}
+
+			if (maintext != NULL)
+				selectableflags |= V_MODULATE;
+		}
+	}
+	else
+	{
+		maintext = currentMenu->menuitems[itemOn].text;
+		mainflags = 0;
 	}
 
 	if (selectabletext != NULL)
 	{
 		// We have a selection. Let's show the full menu text on top, and the choice below.
 
-		INT32 w = V_LSTitleLowStringWidth(selectabletext, 0)/2;
-
 		if (currentMenu->menuitems[itemOn].text)
-			V_DrawCenteredLSTitleHighString(220 + offset*2, 75, 0, currentMenu->menuitems[itemOn].text);
+			V_DrawCenteredLSTitleHighString(220 + offset*2, 75, selectableflags, currentMenu->menuitems[itemOn].text);
 
-		V_DrawLSTitleLowString(220-w + offset*2, 103, V_YELLOWMAP, selectabletext);
-		V_DrawCharacter(220-w + offset*2 - 8 - (skullAnimCounter/5), 103+6, '\x1C' | V_YELLOWMAP, false); // left arrow
-		V_DrawCharacter(220+w + offset*2 + 4 + (skullAnimCounter/5), 103+6, '\x1D' | V_YELLOWMAP, false); // right arrow
+		selectableflags |= V_YELLOWMAP;
+
+		INT32 w = V_LSTitleLowStringWidth(selectabletext, selectableflags)/2;
+		V_DrawLSTitleLowString(220-w + offset*2, 103, selectableflags, selectabletext);
+
+		V_DrawCharacter(220-w + offset*2 - 8 - (skullAnimCounter/5), 103+6, '\x1C' | selectableflags, false); // left arrow
+		V_DrawCharacter(220+w + offset*2 + (skullAnimCounter/5), 103+6, '\x1D' | selectableflags, false); // right arrow
 	}
-	else
+
+	if (maintext != NULL)
 	{
 		// This is a regular menu option. Try to break it onto two lines.
 
@@ -4389,11 +4425,9 @@ void M_DrawPause(void)
 		INT16 word2len = 0;
 		boolean sok = false;
 
-		while (currentMenu->menuitems[itemOn].text[j] && j < MAXSTRINGLENGTH)
+		while (maintext[j] && j < MAXSTRINGLENGTH)
 		{
-			const char c = currentMenu->menuitems[itemOn].text[j];
-
-			if (c == ' ' && !sok)
+			if (maintext[j] == ' ' && !sok)
 			{
 				sok = true;
 				j++;
@@ -4402,12 +4436,12 @@ void M_DrawPause(void)
 
 			if (sok)
 			{
-				word2[word2len] = c;
+				word2[word2len] = maintext[j];
 				word2len++;
 			}
 			else
 			{
-				word1[word1len] = c;
+				word1[word1len] = maintext[j];
 				word1len++;
 			}
 
@@ -4419,10 +4453,10 @@ void M_DrawPause(void)
 
 		// If there's no 2nd word, take this opportunity to center this line of text.
 		if (word1len)
-			V_DrawCenteredLSTitleHighString(220 + offset*2, 75 + (!word2len ? 10 : 0), 0, word1);
+			V_DrawCenteredLSTitleHighString(220 + offset*2, 75 + (!word2len ? 10 : 0), mainflags, word1);
 
 		if (word2len)
-			V_DrawCenteredLSTitleLowString(220 + offset*2, 103, 0, word2);
+			V_DrawCenteredLSTitleLowString(220 + offset*2, 103, mainflags, word2);
 	}
 
 	if (gamestate != GS_INTERMISSION && roundqueue.size > 0)
