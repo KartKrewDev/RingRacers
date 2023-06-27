@@ -7211,29 +7211,12 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 			}
 		}
 
-		switch (mobj->threshold)
+		if (mobj->threshold == KITEM_SPB || mobj->threshold == KITEM_SHRINK)
 		{
-			case KITEM_ORBINAUT:
-				mobj->sprite = SPR_ITMO;
-				mobj->frame = FF_FULLBRIGHT|FF_PAPERSPRITE|K_GetOrbinautItemFrame(mobj->movecount);
-				break;
-			case KITEM_INVINCIBILITY:
-				mobj->sprite = SPR_ITMI;
-				mobj->frame = FF_FULLBRIGHT|FF_PAPERSPRITE|K_GetInvincibilityItemFrame();
-				break;
-			case KITEM_SAD:
-				mobj->sprite = SPR_ITEM;
-				mobj->frame = FF_FULLBRIGHT|FF_PAPERSPRITE;
-				break;
-			case KITEM_SPB:
-			case KITEM_SHRINK:
-				K_SetItemCooldown(mobj->threshold, 20*TICRATE);
-				/* FALLTHRU */
-			default:
-				mobj->sprite = SPR_ITEM;
-				mobj->frame = FF_FULLBRIGHT|FF_PAPERSPRITE|(mobj->threshold);
-				break;
+			K_SetItemCooldown(mobj->threshold, 20*TICRATE);
 		}
+
+		K_UpdateMobjItemOverlay(mobj, mobj->threshold, mobj->movecount);
 		break;
 	}
 	case MT_ITEMCAPSULE:
