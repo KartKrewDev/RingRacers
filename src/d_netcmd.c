@@ -433,6 +433,8 @@ consvar_t cv_kartbot = CVAR_INIT ("bots", "0", CV_NETVAR, kartbot_cons_t, NULL);
 
 consvar_t cv_karteliminatelast = CVAR_INIT ("eliminatelast", "Yes", CV_NETVAR|CV_CALL, CV_YesNo, KartEliminateLast_OnChange);
 
+consvar_t cv_thunderdome = CVAR_INIT ("thunderdome", "Off", CV_NETVAR, CV_OnOff, NULL);
+
 consvar_t cv_kartusepwrlv = CVAR_INIT ("usepwrlv", "Yes", CV_NETVAR, CV_YesNo, NULL);
 
 static CV_PossibleValue_t kartdebugitem_cons_t[] =

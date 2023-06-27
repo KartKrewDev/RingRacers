@@ -1256,7 +1256,7 @@ static void K_drawKartItem(void)
 		for (i = 0; i < 3; i++)
 		{
 			const SINT8 indexOfs = i-1;
-			const size_t index = (stplyr->itemRoulette.index + indexOfs) % stplyr->itemRoulette.itemListLen;
+			const size_t index = (stplyr->itemRoulette.itemListLen + (stplyr->itemRoulette.index + indexOfs)) % stplyr->itemRoulette.itemListLen;
 
 			const SINT8 result = stplyr->itemRoulette.itemList[index];
 			const SINT8 item = K_ItemResultToType(result);
@@ -1584,13 +1584,21 @@ static void K_drawKartSlotMachine(void)
 	patch_t *localpatch[3] = { kp_nodraw, kp_nodraw, kp_nodraw };
 	patch_t *localbg = offset ? kp_ringbg[1] : kp_ringbg[0];
 
+	// == SHITGARBAGE UNLIMITED 2: RISE OF MY ASS ==
+	// FIVE LAYERS OF BULLSHIT PER-PIXEL SHOVING BECAUSE THE PATCHES HAVE DIFFERENT OFFSETS
+	// IF YOU ARE HERE TO ADJUST THE RINGBOX HUD TURN OFF YOUR COMPUTER AND GO TO YOUR LOCAL PARK
+
 	INT32 fx = 0, fy = 0, fflags = 0;	// final coords for hud and flags...
+	INT32 boxoffx = 0;
+	INT32 boxoffy = -6;
+	INT32 vstretch = 0;
+	INT32 splitbsx, splitbsy = 0;
 	UINT16 localcolor[3] = { stplyr->skincolor };
 	SINT8 colormode[3] = { TC_RAINBOW };
 
 	fixed_t rouletteOffset = 0;
-	fixed_t rouletteSpace = ROULETTE_SPACING;
-	vector2_t rouletteCrop = {7, 7};
+	fixed_t rouletteSpace = SLOT_SPACING;
+	vector2_t rouletteCrop = {10, 10};
 	INT32 i;
 
 	if (stplyr->itemRoulette.itemListLen > 0)
@@ -1599,7 +1607,7 @@ static void K_drawKartSlotMachine(void)
 		for (i = 0; i < 3; i++)
 		{
 			const SINT8 indexOfs = i-1;
-			const size_t index = (stplyr->itemRoulette.index + indexOfs) % stplyr->itemRoulette.itemListLen;
+			const size_t index = (stplyr->itemRoulette.itemListLen + (stplyr->itemRoulette.index + indexOfs)) % stplyr->itemRoulette.itemListLen;
 
 			const SINT8 result = stplyr->itemRoulette.itemList[index];
 
@@ -1609,7 +1617,7 @@ static void K_drawKartSlotMachine(void)
 
 	if (stplyr->itemRoulette.active == true)
 	{
-		rouletteOffset = K_GetRouletteOffset(&stplyr->itemRoulette, rendertimefrac);
+		rouletteOffset = K_GetSlotOffset(&stplyr->itemRoulette, rendertimefrac);
 	}
 	else
 	{
@@ -1620,23 +1628,27 @@ static void K_drawKartSlotMachine(void)
 	// pain and suffering defined below
 	if (offset)
 	{
+		boxoffx -= 4;
 		if (stplyr == &players[displayplayers[0]] || stplyr == &players[displayplayers[2]]) // If we are P1 or P3...
 		{
-			fx = ITEM_X;
-			fy = ITEM_Y;
+			fx = ITEM_X + 10;
+			fy = ITEM_Y + 10;
 			fflags = V_SNAPTOLEFT|V_SNAPTOTOP|V_SPLITSCREEN;
 		}
 		else // else, that means we're P2 or P4.
 		{
-			fx = ITEM2_X;
-			fy = ITEM2_Y;
+			fx = ITEM2_X + 7;
+			fy = ITEM2_Y + 10;
 			fflags = V_SNAPTORIGHT|V_SNAPTOTOP|V_SPLITSCREEN;
 		}
 
-		rouletteSpace = ROULETTE_SPACING_SPLITSCREEN;
-		rouletteOffset = FixedMul(rouletteOffset, FixedDiv(ROULETTE_SPACING_SPLITSCREEN, ROULETTE_SPACING));
+		rouletteSpace = SLOT_SPACING_SPLITSCREEN;
+		rouletteOffset = FixedMul(rouletteOffset, FixedDiv(SLOT_SPACING_SPLITSCREEN, SLOT_SPACING));
 		rouletteCrop.x = 16;
-		rouletteCrop.y = 15;
+		rouletteCrop.y = 13;
+		splitbsx = -6;
+		splitbsy = -6;
+		boxoffy += 2;
 	}
 	else
 	{
@@ -1648,8 +1660,8 @@ static void K_drawKartSlotMachine(void)
 	V_DrawScaledPatch(fx, fy, V_HUDTRANS|V_SLIDEIN|fflags, localbg);
 
 	V_SetClipRect(
-		(fx + rouletteCrop.x) << FRACBITS, (fy + rouletteCrop.y) << FRACBITS,
-		rouletteSpace, rouletteSpace,
+		((fx + rouletteCrop.x + boxoffx + splitbsx) << FRACBITS), ((fy + rouletteCrop.y + boxoffy - vstretch + splitbsy) << FRACBITS),
+		rouletteSpace, rouletteSpace + (vstretch<<FRACBITS),
 		V_SLIDEIN|fflags
 	);
 
@@ -1659,7 +1671,7 @@ static void K_drawKartSlotMachine(void)
 	for (i = 0; i < 3; i++)
 	{
 		V_DrawFixedPatch(
-			fx<<FRACBITS, (fy<<FRACBITS) + rouletteOffset,
+			((fx)<<FRACBITS), ((fy)<<FRACBITS) + rouletteOffset,
 			FRACUNIT, V_HUDTRANS|V_SLIDEIN|fflags,
 			localpatch[i], (localcolor[i] ? R_GetTranslationColormap(colormode[i], localcolor[i], GTC_CACHE) : NULL)
 		);

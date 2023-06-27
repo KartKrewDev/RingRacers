@@ -361,6 +361,7 @@ void K_RegisterKartStuff(void)
 	CV_RegisterVar(&cv_kartvoices);
 	CV_RegisterVar(&cv_kartbot);
 	CV_RegisterVar(&cv_karteliminatelast);
+	CV_RegisterVar(&cv_thunderdome);
 	CV_RegisterVar(&cv_kartusepwrlv);
 	CV_RegisterVar(&cv_votetime);
 	CV_RegisterVar(&cv_botscanvote);
@@ -10738,7 +10739,16 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 		if (player->ringboxdelay == 0)
 		{
 			// TODO
-			K_AwardPlayerRings(player, 10 * (player->ringboxaward + 1), true);
+			UINT32 behind = K_GetItemRouletteDistance(player, player->itemRoulette.playing);
+			UINT32 behindMulti = behind / 1000;
+			behindMulti = min(behindMulti, 20);
+
+			UINT32 award = 5*player->ringboxaward + 10;
+			if (player->ringboxaward > 2) // not a BAR
+				award = 3 * award / 2;
+			award = award * (behind / 1000 + 10) / 10;
+
+			K_AwardPlayerRings(player, award, true);
 			player->ringboxaward = 0;
 		}
 	}

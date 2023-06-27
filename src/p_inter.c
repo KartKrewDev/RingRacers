@@ -356,7 +356,7 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 			special->momx = special->momy = special->momz = 0;
 			P_SetTarget(&special->target, toucher);
 			// P_KillMobj(special, toucher, toucher, DMG_NORMAL);
-			if (special->extravalue1 >= TICRATE)
+			if (special->extravalue1 >= RINGBOX_TIME)
 				K_StartItemRoulette(player, false);
 			else
 				K_StartItemRoulette(player, true);

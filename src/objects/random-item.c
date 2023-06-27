@@ -111,10 +111,10 @@ void Obj_RandomItemVisuals(mobj_t *mobj)
 	// the player's cleared out a good portion of the map.
 	//
 	// Then extraval1 starts ticking up and triggers the transformation from Ringbox to Random Item.
-	if (mobj->fuse == 0 && !(mobj->flags & MF_NOCLIPTHING))
+	if (mobj->fuse == 0 && !(mobj->flags & MF_NOCLIPTHING) && !cv_thunderdome.value)
 	{
 		mobj->extravalue1++;
-		if (mobj->extravalue1 == TICRATE)
+		if (mobj->extravalue1 == RINGBOX_TIME)
 		{
 			// Sync the position in RINGBOX and RANDOMITEM animations.
 			statenum_t animDelta = mobj->state - states - S_RINGBOX1;

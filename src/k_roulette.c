@@ -449,7 +449,7 @@ static UINT32 K_ScaleItemDistance(UINT32 distance, UINT8 numPlayers)
 	Return:-
 		The player's finalized item distance.
 --------------------------------------------------*/
-static UINT32 K_GetItemRouletteDistance(const player_t *player, UINT8 numPlayers)
+UINT32 K_GetItemRouletteDistance(const player_t *player, UINT8 numPlayers)
 {
 	UINT32 pdis = 0;
 
@@ -1486,6 +1486,19 @@ fixed_t K_GetRouletteOffset(itemroulette_t *const roulette, fixed_t renderDelta)
 	const fixed_t midTic = roulette->speed * (FRACUNIT >> 1);
 
 	return FixedMul(FixedDiv(midTic - curTic, ((roulette->speed + 1) << FRACBITS)), ROULETTE_SPACING);
+}
+
+/*--------------------------------------------------
+	fixed_t K_GetSlotOffset(itemroulette_t *const roulette, fixed_t renderDelta)
+
+		See header file for description.
+--------------------------------------------------*/
+fixed_t K_GetSlotOffset(itemroulette_t *const roulette, fixed_t renderDelta)
+{
+	const fixed_t curTic = (roulette->tics << FRACBITS) - renderDelta;
+	const fixed_t midTic = roulette->speed * (FRACUNIT >> 1);
+
+	return FixedMul(FixedDiv(midTic - curTic, ((roulette->speed + 1) << FRACBITS)), SLOT_SPACING);
 }
 
 /*--------------------------------------------------

@@ -132,6 +132,7 @@ void Obj_RandomItemVisuals(mobj_t *mobj);
 boolean Obj_RandomItemSpawnIn(mobj_t *mobj);
 fixed_t Obj_RandomItemScale(fixed_t oldScale);
 void Obj_RandomItemSpawn(mobj_t *mobj);
+#define RINGBOX_TIME (70)
 
 /* Gachabom Rebound */
 void Obj_GachaBomReboundThink(mobj_t *mobj);

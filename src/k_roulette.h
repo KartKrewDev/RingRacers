@@ -23,6 +23,9 @@ extern "C" {
 #define ROULETTE_SPACING (36 << FRACBITS)
 #define ROULETTE_SPACING_SPLITSCREEN (16 << FRACBITS)
 
+#define SLOT_SPACING (40 << FRACBITS)
+#define SLOT_SPACING_SPLITSCREEN (22 << FRACBITS)
+
 /*--------------------------------------------------
 	boolean K_ItemEnabled(kartitems_t item);
 
@@ -171,6 +174,23 @@ void K_StartEggmanRoulette(player_t *const player);
 
 fixed_t K_GetRouletteOffset(itemroulette_t *const roulette, fixed_t renderDelta);
 
+/*--------------------------------------------------
+	fixed_t K_GetSlotOffset(itemroulette_t *const roulette, fixed_t renderDelta);
+
+		Gets the Y offset, for use in the slot HUD.
+		A separate function since it is used both by the
+		HUD itself, as well as when confirming an item.
+
+	Input Arguments:-
+		roulette - The roulette we are drawing for.
+		renderDelta - Fractional tic delta, when used for HUD.
+
+	Return:-
+		The Y offset when drawing the item.
+--------------------------------------------------*/
+
+fixed_t K_GetSlotOffset(itemroulette_t *const roulette, fixed_t renderDelta);
+
 
 /*--------------------------------------------------
 	void K_KartItemRoulette(player_t *const player, ticcmd_t *cmd);
@@ -187,6 +207,8 @@ fixed_t K_GetRouletteOffset(itemroulette_t *const roulette, fixed_t renderDelta)
 --------------------------------------------------*/
 
 void K_KartItemRoulette(player_t *const player, ticcmd_t *cmd);
+
+UINT32 K_GetItemRouletteDistance(const player_t *player, UINT8 numPlayers);
 
 #ifdef __cplusplus
 } // extern "C"
