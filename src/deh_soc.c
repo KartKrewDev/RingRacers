@@ -2859,7 +2859,7 @@ static void readcondition(UINT8 set, UINT32 id, char *word2)
 	M_AddRawCondition(set, (UINT8)id, ty, re, x1, x2, stringvar);
 }
 
-void readconditionset(MYFILE *f, UINT8 setnum)
+void readconditionset(MYFILE *f, UINT16 setnum)
 {
 	char *s = Z_Malloc(MAXLINELEN, PU_STATIC, NULL);
 	char *word = s;
