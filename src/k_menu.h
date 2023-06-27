@@ -452,8 +452,8 @@ typedef enum
 #ifdef HAVE_DISCORDRPC
 	mpause_discordrequests,
 #endif
-	mpause_callvote,
 	mpause_admin,
+	mpause_callvote,
 
 	mpause_continue,
 	mpause_spectate,

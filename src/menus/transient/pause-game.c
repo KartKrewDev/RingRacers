@@ -40,11 +40,11 @@ menuitem_t PAUSE_Main[] =
 		NULL, {.routine = M_DiscordRequests}, 0, 0},
 #endif
 
-	{IT_STRING | IT_ARROWS, "CALL VOTE", "M_ICOVOT",
-		NULL, {.routine = M_HandlePauseMenuCallVote}, 0, 0},
-
 	{IT_STRING | IT_ARROWS, "ADMIN TOOLS", "M_ICOADM",
 		NULL, {.routine = M_KickHandler}, 0, 0},
+
+	{IT_STRING | IT_ARROWS, "CALL VOTE", "M_ICOVOT",
+		NULL, {.routine = M_HandlePauseMenuCallVote}, 0, 0},
 
 	{IT_STRING | IT_CALL, "RESUME GAME", "M_ICOUNP",
 		NULL, {.routine = M_QuitPauseMenu}, 0, 0},
@@ -196,7 +196,7 @@ void M_OpenPauseMenu(void)
 		}
 	}
 
-	if (netgame && (PAUSE_Main[mpause_admin].status == IT_DISABLED))
+	if (netgame) // && (PAUSE_Main[mpause_admin].status == IT_DISABLED))
 	{
 		menucallvote = K_GetNextAllowedMidVote(menucallvote, true);
 
