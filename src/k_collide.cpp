@@ -898,6 +898,19 @@ boolean K_InstaWhipCollide(mobj_t *shield, mobj_t *victim)
 		}
 		return false;
 	}
+	else if (victim->type == MT_SUPER_FLICKY)
+	{
+		if (Obj_IsSuperFlickyWhippable(victim))
+		{
+			K_AddHitLag(victim, victimHitlag, true);
+			K_AddHitLag(attacker, attackerHitlag, false);
+			shield->hitlag = attacker->hitlag;
+
+			Obj_WhipSuperFlicky(victim);
+			return true;
+		}
+		return false;
+	}
 	else
 	{
 		if (victim->type == MT_ORBINAUT || victim->type == MT_JAWZ || victim->type == MT_GACHABOM
