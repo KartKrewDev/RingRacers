@@ -74,6 +74,22 @@ static void K_MidVoteRockTheVote(void)
 
 	SendNetXCmd(XD_EXITLEVEL, NULL, 0);
 }
+
+/*--------------------------------------------------
+	static void K_MidVoteRunItBack(void)
+
+		MVT_RUNITBACK's success function.
+--------------------------------------------------*/
+static void K_MidVoteRunItBack(void)
+{
+	boolean newencore = false;
+
+	if (cv_kartencore.value != 0)
+	{
+		newencore = (cv_kartencore.value == 1) || encoremode;
+	}
+
+	D_MapChange(gamemap, gametype, newencore, false, 0, false, false);
 }
 
 static midVoteTypeDef_t g_midVoteTypeDefs[MVT__MAX] =
@@ -90,6 +106,13 @@ static midVoteTypeDef_t g_midVoteTypeDefs[MVT__MAX] =
 		"Skip Level?",
 		CVAR_INIT ("zvote_rtv_allowed", "No", CV_SAVE|CV_NETVAR, CV_YesNo, NULL),
 		K_MidVoteRockTheVote
+	},
+
+	{ // MVT_RUNITBACK
+		"RUNITBACK",
+		"Redo Level?",
+		CVAR_INIT ("zvote_runitback_allowed", "No", CV_SAVE|CV_NETVAR, CV_YesNo, NULL),
+		K_MidVoteRunItBack
 	},
 };
 

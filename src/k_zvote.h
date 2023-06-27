@@ -28,6 +28,7 @@ typedef enum
 {
 	MVT_KICK,		// Kick another player in the server
 	MVT_RTV,		// Exit level early
+	MVT_RUNITBACK,	// Restart level fresh
 	MVT__MAX,		// Total number of vote types
 } midVoteType_e;
 
