@@ -6599,20 +6599,30 @@ mobj_t *K_CreatePaperItem(fixed_t x, fixed_t y, fixed_t z, angle_t angle, SINT8 
 	return drop;
 }
 
+void K_DropPaperItem(player_t *player, UINT8 itemtype, UINT16 itemamount)
+{
+	if (!player->mo || P_MobjWasRemoved(player->mo))
+	{
+		return;
+	}
+
+	mobj_t *drop = K_CreatePaperItem(
+		player->mo->x, player->mo->y, player->mo->z + player->mo->height/2,
+		player->mo->angle + ANGLE_90, P_MobjFlip(player->mo),
+		itemtype, itemamount
+	);
+
+	K_FlipFromObject(drop, player->mo);
+}
+
 // For getting EXTRA hit!
 void K_DropItems(player_t *player)
 {
 	K_DropHnextList(player);
 
-	if (player->mo && !P_MobjWasRemoved(player->mo) && player->itemamount > 0)
+	if (player->itemamount > 0)
 	{
-		mobj_t *drop = K_CreatePaperItem(
-			player->mo->x, player->mo->y, player->mo->z + player->mo->height/2,
-			player->mo->angle + ANGLE_90, P_MobjFlip(player->mo),
-			player->itemtype, player->itemamount
-		);
-
-		K_FlipFromObject(drop, player->mo);
+		K_DropPaperItem(player, player->itemtype, player->itemamount);
 	}
 
 	K_StripItems(player);
