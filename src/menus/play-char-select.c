@@ -484,6 +484,7 @@ void M_CharacterSelectInit(void)
 	setup_page = 0;
 }
 
+
 void M_CharacterSelect(INT32 choice)
 {
 	(void)choice;

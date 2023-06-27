@@ -373,7 +373,7 @@ consvar_t cv_items[NUMKARTRESULTS-1] = {
 	CVAR_INIT ("rocketsneaker", 	"On", CV_NETVAR, CV_OnOff, NULL),
 	CVAR_INIT ("invincibility", 	"On", CV_NETVAR, CV_OnOff, NULL),
 	CVAR_INIT ("banana", 			"On", CV_NETVAR, CV_OnOff, NULL),
-	CVAR_INIT ("eggmanmonitor", 	"On", CV_NETVAR, CV_OnOff, NULL),
+	CVAR_INIT ("eggmark", 			"On", CV_NETVAR, CV_OnOff, NULL),
 	CVAR_INIT ("orbinaut", 			"On", CV_NETVAR, CV_OnOff, NULL),
 	CVAR_INIT ("jawz", 				"On", CV_NETVAR, CV_OnOff, NULL),
 	CVAR_INIT ("mine", 				"On", CV_NETVAR, CV_OnOff, NULL),

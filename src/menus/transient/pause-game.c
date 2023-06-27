@@ -358,6 +358,8 @@ void M_ConfirmEnterGame(INT32 choice)
 
 static void M_ExitGameResponse(INT32 ch)
 {
+	const UINT8 pid = 0;
+
 	if (ch != MA_YES)
 		return;
 
@@ -368,7 +370,7 @@ static void M_ExitGameResponse(INT32 ch)
 	else
 	{
 		G_SetExitGameFlag();
-		M_ClearMenus(true);
+		M_SetMenuDelay(pid); // prevent another input
 	}
 }
 

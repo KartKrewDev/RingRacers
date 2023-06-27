@@ -20,4 +20,5 @@ target_sources(SRB2SDL2 PRIVATE
 	instawhip.c
 	block.c
 	gachabom-rebound.cpp
+	servant-hand.c
 )

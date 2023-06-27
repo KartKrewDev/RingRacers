@@ -3302,6 +3302,7 @@ fixed_t K_GetKartSpeedFromStat(UINT8 kartspeed)
 fixed_t K_GetKartSpeed(player_t *player, boolean doboostpower, boolean dorubberband)
 {
 	const boolean mobjValid = (player->mo != NULL && P_MobjWasRemoved(player->mo) == false);
+	const fixed_t physicsScale = mobjValid ? K_GrowShrinkSpeedMul(player) : FRACUNIT;
 	fixed_t finalspeed = 0;
 
 	if (K_PodiumSequence() == true)
@@ -3338,20 +3339,24 @@ fixed_t K_GetKartSpeed(player_t *player, boolean doboostpower, boolean dorubberb
 
 	finalspeed = FixedMul(finalspeed, mapobjectscale);
 
-	if (doboostpower == true)
-	{
-		if (mobjValid == true)
-		{
-			// Scale with the player.
-			finalspeed = FixedMul(finalspeed, K_GrowShrinkSpeedMul(player));
-		}
-
-		finalspeed = FixedMul(finalspeed, player->boostpower + player->speedboost);
-	}
-
 	if (dorubberband == true && K_PlayerUsesBotMovement(player) == true)
 	{
 		finalspeed = FixedMul(finalspeed, player->botvars.rubberband);
+	}
+
+	if (doboostpower == true)
+	{
+		// Scale with the player.
+		finalspeed = FixedMul(finalspeed, physicsScale);
+
+		// Add speed boosts.
+		finalspeed = FixedMul(finalspeed, player->boostpower + player->speedboost);
+	}
+
+	if (player->outrun != 0)
+	{
+		// Milky Way's roads
+		finalspeed += FixedMul(player->outrun, physicsScale);
 	}
 
 	return finalspeed;
@@ -3370,18 +3375,22 @@ fixed_t K_GetKartAccel(player_t *player)
 
 	k_accel += 17 * stat; // 121 - 257
 
-	if (K_PodiumSequence() == true)
-	{
-		return FixedMul(k_accel, FRACUNIT / 4);
-	}
-
 	// Marble Garden Top gets 1200% accel
 	if (player->curshield == KSHIELD_TOP)
 	{
 		k_accel *= 12;
 	}
 
-	return FixedMul(k_accel, (FRACUNIT + player->accelboost) / 4);
+	if (K_PodiumSequence() == true)
+	{
+		k_accel = FixedMul(k_accel, FRACUNIT / 4);
+	}
+	else
+	{
+		k_accel = FixedMul(k_accel, (FRACUNIT + player->accelboost) / 4);
+	}
+
+	return k_accel;
 }
 
 UINT16 K_GetKartFlashing(player_t *player)
@@ -8276,9 +8285,14 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		player->tripwireState = TRIPSTATE_NONE;
 	}
 
+	if (player->hand && P_MobjWasRemoved(player->hand))
+		P_SetTarget(&player->hand, NULL);
+
 	if (player->spectator == false)
 	{
 		K_KartEbrakeVisuals(player);
+
+		Obj_ServantHandHandling(player);
 	}
 
 	if (K_GetKartButtons(player) & BT_BRAKE &&
@@ -8597,6 +8611,7 @@ static waypoint_t *K_GetPlayerNextWaypoint(player_t *player)
 			{
 				angle_t nextbestdelta = ANGLE_90;
 				angle_t nextbestmomdelta = ANGLE_90;
+				angle_t nextbestanydelta = ANGLE_MAX;
 				size_t i = 0U;
 
 				if ((waypoint->nextwaypoints != NULL) && (waypoint->numnextwaypoints > 0U))
@@ -8638,8 +8653,14 @@ static waypoint_t *K_GetPlayerNextWaypoint(player_t *player)
 							momdelta = InvAngle(momdelta);
 						}
 
-						if (angledelta < nextbestdelta || momdelta < nextbestmomdelta)
+						if (angledelta < nextbestanydelta || momdelta < nextbestanydelta)
 						{
+							nextbestanydelta = min(angledelta, momdelta);
+							player->besthanddirection = angletowaypoint;
+
+							if (nextbestanydelta >= ANGLE_90)
+								continue;
+
 							// Wanted to use a next waypoint, so remove WRONG WAY flag.
 							// Done here instead of when set, because of finish line
 							// hacks meaning we might not actually use this one, but
@@ -10780,6 +10801,11 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 						whip->fuse = 12; // Changing instawhip animation duration? Look here
 						player->flashing = max(player->flashing, 12);
 						player->mo->momz += 4*mapobjectscale;
+
+						// Spawn in triangle formation
+						Obj_SpawnInstaWhipRecharge(player, 0);
+						Obj_SpawnInstaWhipRecharge(player, ANGLE_120);
+						Obj_SpawnInstaWhipRecharge(player, ANGLE_240);
 					}
 				}
 

@@ -35,6 +35,7 @@
 #include "y_inter.h"
 #include "m_cond.h"
 #include "p_local.h"
+#include "p_saveg.h"
 #include "p_setup.h"
 #include "st_stuff.h" // hud hiding
 #include "fastcmp.h"
@@ -251,6 +252,12 @@ boolean K_StartCeremony(void)
 
 		maptol = mapheaderinfo[gamemap-1]->typeoflevel;
 		globalweather = mapheaderinfo[gamemap-1]->weather;
+
+		if (savedata.lives > 0)
+		{
+			K_LoadGrandPrixSaveGame();
+			savedata.lives = 0;
+		}
 
 		// Make sure all of the GAME OVER'd players can spawn
 		// and be present for the podium

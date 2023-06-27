@@ -101,11 +101,12 @@ static boolean prevmajormods = false;
 
 static void M_AddonsClearName(INT32 choice)
 {
+	(void)choice;
+
 	if (!majormods || prevmajormods)
 	{
 		CLEARNAME;
 	}
-	M_StopMessage(choice);
 }
 
 // Handles messages for addon errors.

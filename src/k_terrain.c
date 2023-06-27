@@ -455,6 +455,9 @@ void K_ProcessTerrainEffect(mobj_t *mo)
 		return;
 	}
 
+	// Milky Way road effect
+	player->outrun = terrain->outrun;
+
 	// Damage effects
 	if (terrain->damageType > 0)
 	{
@@ -1687,6 +1690,10 @@ static void K_ParseTerrainParameter(size_t i, char *param, char *val)
 	else if (stricmp(param, "springStarColor") == 0)
 	{
 		terrain->springStarColor = get_number(val);
+	}
+	else if (stricmp(param, "outrun") == 0 || stricmp(param, "speedIncrease") == 0)
+	{
+		terrain->outrun = FLOAT_TO_FIXED(atof(val));
 	}
 	else if (stricmp(param, "floorClip") == 0)
 	{

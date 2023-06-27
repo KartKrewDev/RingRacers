@@ -122,6 +122,7 @@ struct terrain_t
 	angle_t speedPadAngle;	// Speed pad angle
 	fixed_t springStrength;	// Spring strength
 	UINT16 springStarColor;	// Spring star color
+	fixed_t outrun;			// Raise top speed by this amount, for super fast road.
 	fixed_t floorClip;		// Offset for sprites on this ground
 	UINT32 flags;			// Flag values (see: terrain_flags_t)
 };

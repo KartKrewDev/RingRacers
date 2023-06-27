@@ -51,8 +51,6 @@ extern UINT8 mapmusrng;
 extern UINT32 maptol;
 
 extern INT32 cursaveslot;
-//extern INT16 lastmapsaved;
-extern INT16 lastmaploaded;
 extern UINT8 gamecomplete;
 
 // Extra abilities/settings for skins (combinable stuff)
@@ -503,6 +501,7 @@ struct mapheader_t
 	UINT16 palette;						///< PAL lump to use on this map
 	UINT16 encorepal;					///< PAL for encore mode
 	UINT8 light_contrast;				///< Range of wall lighting. 0 is no lighting.
+	SINT8 sprite_backlight;				///< Subtract from wall lighting for sprites only.
 	boolean use_light_angle;			///< When false, wall lighting is evenly distributed. When true, wall lighting is directional.
 	angle_t light_angle;				///< Angle of directional wall lighting.
 
@@ -762,6 +761,7 @@ extern fixed_t mapobjectscale;
 extern struct maplighting
 {
 	UINT8 contrast;
+	SINT8 backlight;
 	boolean directional;
 	angle_t angle;
 } maplighting;

@@ -28,6 +28,7 @@ typedef enum
 	GPEVENT_SPECIAL,
 } gpEvent_e;
 
+// Please also see P_ArchiveMisc
 extern struct grandprixinfo
 {
 	boolean gp;				///< If true, then we are in a Grand Prix.
@@ -98,6 +99,15 @@ UINT8 K_GetGPPlayerCount(UINT8 humans);
 --------------------------------------------------*/
 
 void K_InitGrandPrixBots(void);
+
+
+/*--------------------------------------------------
+	void K_LoadGrandPrixSaveGame(void)
+
+		Handles loading savedata_t info for Grand Prix context.
+---------------------------------------------------*/
+
+void K_LoadGrandPrixSaveGame(void);
 
 
 /*--------------------------------------------------

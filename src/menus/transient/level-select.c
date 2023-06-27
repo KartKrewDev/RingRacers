@@ -8,6 +8,8 @@
 #include "../../r_local.h" // SplitScreen_OnChange
 #include "../../f_finale.h" // F_WipeStartScreen
 #include "../../v_video.h"
+#include "../../g_game.h" // G_GetBackupCupData
+#include "../../p_saveg.h" // cupsavedata
 
 cupheader_t dummy_lostandfound;
 
@@ -262,6 +264,11 @@ boolean M_LevelListFromGametype(INT16 gt)
 		const size_t pagelen = sizeof(cupheader_t*) * (CUPMENU_COLUMNS * CUPMENU_ROWS);
 		boolean foundany = false, currentvalid = false;
 
+		G_GetBackupCupData(
+			cupgrid.grandprix == true
+			|| cv_splitplayers.value <= 1
+		);
+
 		templevelsearch.cup = kartcupheaders;
 
 #if 0
@@ -331,7 +338,8 @@ boolean M_LevelListFromGametype(INT16 gt)
 
 				if (Playing()
 					? (mapheaderinfo[gamemap-1] && mapheaderinfo[gamemap-1]->cup == templevelsearch.cup)
-					: (gt == -1 && levellist.levelsearch.cup == templevelsearch.cup))
+					: (cupsavedata.cup == templevelsearch.cup
+						|| (gt == -1 && levellist.levelsearch.cup == templevelsearch.cup)))
 				{
 					GRID_FOCUSCUP;
 				}

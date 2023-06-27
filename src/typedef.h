@@ -297,6 +297,7 @@ TYPEDEF (polyfadedata_t);
 
 // p_saveg.h
 TYPEDEF (savedata_t);
+TYPEDEF (savedata_cup_t);
 TYPEDEF (savebuffer_t);
 
 // p_setup.h

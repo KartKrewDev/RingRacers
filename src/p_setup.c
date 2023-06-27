@@ -438,6 +438,7 @@ static void P_ClearSingleMapHeaderInfo(INT16 num)
 	mapheaderinfo[num]->mobj_scale = FRACUNIT;
 	mapheaderinfo[num]->default_waypoint_radius = 0;
 	mapheaderinfo[num]->light_contrast = 16;
+	mapheaderinfo[num]->sprite_backlight = 0;
 	mapheaderinfo[num]->use_light_angle = false;
 	mapheaderinfo[num]->light_angle = 0;
 #if 1 // equivalent to "Followers = DEFAULT"
@@ -6281,6 +6282,8 @@ static void P_ConvertBinaryLinedefTypes(void)
 			if (lines[i].flags & ML_BLOCKMONSTERS)
 				lines[i].args[1] |= TMSAF_MIRROR;
 
+			lines[i].args[2] = tag;
+
 			lines[i].special = LT_SLOPE_ANCHORS;
 			break;
 		}
@@ -6956,7 +6959,11 @@ static void P_ConvertBinaryThingTypes(void)
 			mapthings[i].args[0] = !!(mapthings[i].options & MTF_AMBUSH);
 			break;
 		case 1488: // Follower Audience (unfortunately numbered)
-			mapthings[i].args[2] = !!(mapthings[i].options & MTF_OBJECTSPECIAL);
+			if (mapthings[i].options & MTF_OBJECTSPECIAL)
+				mapthings[i].args[2] |= TMAUDIM_FLOAT;
+			if (mapthings[i].options & MTF_EXTRA)
+				mapthings[i].args[2] |= TMAUDIM_BORED;
+
 			mapthings[i].args[3] = !!(mapthings[i].options & MTF_AMBUSH);
 			break;
 		case 1500: //Glaregoyle
@@ -7140,7 +7147,7 @@ static void P_ConvertBinaryThingTypes(void)
 			break;
 		case FLOOR_SLOPE_THING:
 		case CEILING_SLOPE_THING:
-			mapthings[i].tid = mapthings[i].extrainfo;
+			mapthings[i].args[0] = mapthings[i].extrainfo;
 			break;
 		default:
 			break;
@@ -7727,7 +7734,12 @@ static void P_InitGametype(void)
 
 	if (grandprixinfo.gp == true)
 	{
-		if (grandprixinfo.initalize == true)
+		if (savedata.lives > 0)
+		{
+			K_LoadGrandPrixSaveGame();
+			savedata.lives = 0;
+		}
+		else if (grandprixinfo.initalize == true)
 		{
 			K_InitGrandPrixRank(&grandprixinfo.rank);
 			K_InitGrandPrixBots();
@@ -7739,7 +7751,7 @@ static void P_InitGametype(void)
 			grandprixinfo.wonround = false;
 		}
 	}
-	else if (!modeattacking)
+	else
 	{
 		// We're in a Match Race, use simplistic randomized bots.
 		K_UpdateMatchRaceBots();
@@ -8145,15 +8157,6 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 	R_InitMobjInterpolators();
 	P_InitCachedActions();
 
-	if (!fromnetsave && savedata.lives > 0)
-	{
-		numgameovers = savedata.numgameovers;
-		players[consoleplayer].lives = savedata.lives;
-		players[consoleplayer].score = savedata.score;
-		emeralds = savedata.emeralds;
-		savedata.lives = 0;
-	}
-
 	// internal game map
 	maplumpname = mapheaderinfo[gamemap-1]->lumpname;
 	lastloadedmaplumpnum = mapheaderinfo[gamemap-1]->lumpnum;
@@ -8304,22 +8307,6 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 
 	P_MapEnd(); // tm.thing is no longer needed from this point onwards
 
-	// Took me 3 hours to figure out why my progression kept on getting overwritten with the titlemap...
-	if (gamestate == GS_LEVEL)
-	{
-		if (!lastmaploaded) // Start a new game?
-		{
-			// I'd love to do this in the menu code instead of here, but everything's a mess and I can't guarantee saving proper player struct info before the first act's started. You could probably refactor it, but it'd be a lot of effort. Easier to just work off known good code. ~toast 22/06/2020
-			if (!(ultimatemode || netgame || multiplayer || demo.playback || demo.recording || metalrecording || modeattacking || marathonmode)
-				&& !usedCheats && cursaveslot > 0)
-			{
-				G_SaveGame((UINT32)cursaveslot, gamemap);
-			}
-			// If you're looking for saving sp file progression (distinct from G_SaveGameOver), check G_DoCompleted.
-		}
-		lastmaploaded = gamemap; // HAS to be set after saving!!
-	}
-
 	if (!fromnetsave)
 	{
 		INT32 buf = gametic % BACKUPTICS;
@@ -8374,6 +8361,8 @@ void P_PostLoadLevel(void)
 	skipstats = 0;
 
 	P_RunCachedActions();
+
+	G_HandleSaveLevel(gamestate == GS_CEREMONY);
 
 	if (marathonmode & MA_INGAME)
 	{

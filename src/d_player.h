@@ -324,9 +324,20 @@ struct respawnvars_t
 	boolean init;
 };
 
+typedef enum
+{
+	BOT_STYLE_NORMAL,
+	BOT_STYLE_STAY,
+	//BOT_STYLE_CHASE,
+	//BOT_STYLE_ESCAPE,
+	BOT_STYLE__MAX
+} botStyle_e;
+
 // player_t struct for all bot variables
 struct botvars_t
 {
+	botStyle_e style; // Training mode-style CPU mode
+
 	UINT8 difficulty; // Bot's difficulty setting
 	UINT8 diffincrease; // In GP: bot difficulty will increase this much next round
 	boolean rival; // If true, they're the GP rival
@@ -756,9 +767,13 @@ struct player_t
 	mobj_t *stumbleIndicator;
 	mobj_t *sliptideZipIndicator;
 	mobj_t *whip;
+	mobj_t *hand;
 
 	UINT8 instaShieldCooldown;
 	UINT8 guardCooldown;
+
+	UINT8 handtimer;
+	angle_t besthanddirection;
 
 	INT16 incontrol; // -1 to -175 when spinning out or tumbling, 1 to 175 when not. Use to check for combo hits or emergency inputs.
 
@@ -766,6 +781,8 @@ struct player_t
 
 	UINT8 ringboxdelay; // Delay until Ring Box auto-activates
 	UINT8 ringboxaward; // Where did we stop?
+	
+	fixed_t outrun; // Milky Way road effect
 
 	uint8_t public_key[PUBKEYLENGTH];
 

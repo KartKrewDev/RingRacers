@@ -1278,6 +1278,10 @@ void readlevelheader(MYFILE *f, char * name)
 			{
 				mapheaderinfo[num]->light_contrast = (UINT8)i;
 			}
+			else if (fastcmp(word, "SPRITEBACKLIGHT"))
+			{
+				mapheaderinfo[num]->sprite_backlight = (SINT8)i;
+			}
 			else if (fastcmp(word, "LIGHTANGLE"))
 			{
 				if (fastcmp(word2, "EVEN"))
@@ -2993,8 +2997,8 @@ void readmaincfg(MYFILE *f, boolean mainfile)
 				// can't use sprintf since there is %u in savegamename
 				strcatbf(savegamename, srb2home, PATHSEP);
 
-				strcpy(liveeventbackup, va("live%s.bkp", timeattackfolder));
-				strcatbf(liveeventbackup, srb2home, PATHSEP);
+				strcpy(gpbackup, va("gp%s.bkp", timeattackfolder));
+				strcatbf(gpbackup, srb2home, PATHSEP);
 
 				refreshdirmenu |= REFRESHDIR_GAMEDATA;
 				gamedataadded = true;

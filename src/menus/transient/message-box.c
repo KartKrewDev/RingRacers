@@ -14,11 +14,14 @@ struct menumessage_s menumessage;
 //
 static inline size_t M_StringHeight(const char *string)
 {
-	size_t h = 8, i;
+	size_t h = 16, i, len = strlen(string);
 
-	for (i = 0; i < strlen(string); i++)
-		if (string[i] == '\n')
-			h += 8;
+	for (i = 0; i < len-1; i++)
+	{
+		if (string[i] != '\n')
+			continue;
+		h += 8;
+	}
 
 	return h;
 }
@@ -68,9 +71,10 @@ void M_StartMessage(const char *header, const char *string, void (*routine)(INT3
 	menumessage.header = header;
 	menumessage.flags = itemtype;
 	menumessage.routine = routine;
+	menumessage.answer = MA_NONE;
 	menumessage.fadetimer = 1;
 	menumessage.timer = 0;
-	menumessage.closing = false;
+	menumessage.closing = 0;
 	menumessage.active = true;
 
 	start = 0;
@@ -79,18 +83,21 @@ void M_StartMessage(const char *header, const char *string, void (*routine)(INT3
 	if (!routine)
 	{
 		menumessage.flags = MM_NOTHING;
-		menumessage.routine = M_StopMessage;
 	}
 
-	if (menumessage.flags == MM_YESNO && !defaultstr)
+	// Set action strings
+	switch (menumessage.flags)
 	{
-		menumessage.defaultstr = "No";
-		menumessage.confirmstr = "Yes";
-	}
-	else
-	{
-		menumessage.defaultstr = defaultstr ? defaultstr : "OK";
-		menumessage.confirmstr = confirmstr;
+		// Send 1 to the routine if we're pressing A, 2 if B/X, 0 otherwise.
+		case MM_YESNO:
+			menumessage.defaultstr = defaultstr ? defaultstr : "No";
+			menumessage.confirmstr = confirmstr ? confirmstr : "Yes";
+			break;
+
+		default:
+			menumessage.defaultstr = defaultstr ? defaultstr : "OK";
+			menumessage.confirmstr = NULL;
+			break;
 	}
 
 	// event routine
@@ -133,11 +140,25 @@ void M_StartMessage(const char *header, const char *string, void (*routine)(INT3
 
 void M_StopMessage(INT32 choice)
 {
-	const char pid = 0;
-	(void) choice;
+	if (!menumessage.active || menumessage.closing)
+		return;
 
-	menumessage.closing = true;
-	menumessage.timer = 0;
+	const char pid = 0;
+
+	// Set the answer.
+	menumessage.answer = choice;
+
+#if 1
+	// The below was cool, but it felt annoyingly unresponsive.
+	menumessage.closing = MENUMESSAGECLOSE+1;
+#else
+	// Intended length of time.
+	menumessage.closing = (TICRATE/2);
+
+	// This weird operation is necessary so the text flash is consistently timed.
+	menumessage.closing |= ((2*MENUMESSAGECLOSE) - 1);
+#endif
+
 	M_SetMenuDelay(pid);
 }
 
@@ -145,14 +166,26 @@ boolean M_MenuMessageTick(void)
 {
 	if (menumessage.closing)
 	{
-		if (menumessage.fadetimer > 0)
+		if (menumessage.closing > MENUMESSAGECLOSE)
 		{
-			menumessage.fadetimer--;
+			menumessage.closing--;
 		}
-
-		if (menumessage.fadetimer == 0)
+		else
 		{
-			menumessage.active = false;
+			if (menumessage.fadetimer > 0)
+			{
+				menumessage.fadetimer--;
+			}
+
+			if (menumessage.fadetimer == 0)
+			{
+				menumessage.active = false;
+
+				if (menumessage.routine)
+				{
+					menumessage.routine(menumessage.answer);
+				}
+			}
 		}
 
 		return false;
@@ -180,38 +213,22 @@ void M_HandleMenuMessage(void)
 
 	switch (menumessage.flags)
 	{
-		// Send 1 to the routine if we're pressing A/B/X
-		case MM_NOTHING:
-		{
-			if (btok || btnok)
-				menumessage.routine(0);
-
-			break;
-		}
 		// Send 1 to the routine if we're pressing A, 2 if B/X, 0 otherwise.
 		case MM_YESNO:
 		{
-			INT32 answer = MA_NONE;
 			if (btok)
-				answer = MA_YES;
+				M_StopMessage(MA_YES);
 			else if (btnok)
-				answer = MA_NO;
-
-			// send 1 if btok is pressed, 2 if nok is pressed, 0 otherwise.
-			if (answer)
-			{
-				menumessage.routine(answer);
-				M_StopMessage(0);
-			}
+				M_StopMessage(MA_NO);
 
 			break;
 		}
-		// MM_EVENTHANDLER: In M_Responder to allow full event compat.
 		default:
-			break;
-	}
+		{
+			if (btok || btnok)
+				M_StopMessage(MA_NONE);
 
-	// if we detect any keypress, don't forget to set the menu delay regardless.
-	if (btok || btnok)
-		M_SetMenuDelay(pid);
+			break;
+		}
+	}
 }

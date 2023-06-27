@@ -678,6 +678,12 @@ static void SPBChase(mobj_t *spb, mobj_t *bestMobj)
 		UINT8 spark = ((10 - chasePlayer->kartspeed) + chasePlayer->kartweight) / 2;
 		fixed_t easiness = ((chasePlayer->kartspeed + (10 - spark)) << FRACBITS) / 2;
 
+		fixed_t scaleAdjust = FRACUNIT;
+		if (chase->scale > mapobjectscale)
+			scaleAdjust = GROW_PHYSICS_SCALE;
+		if (chase->scale < mapobjectscale)
+			scaleAdjust = SHRINK_PHYSICS_SCALE;
+
 		spb_lastplayer(spb) = chasePlayer - players; // Save the player num for death scumming...
 		spbplace = chasePlayer->position;
 
@@ -693,7 +699,7 @@ static void SPBChase(mobj_t *spb, mobj_t *bestMobj)
 			// 7/8ths max speed for Knuckles, 3/4ths max speed for min accel, exactly max speed for max accel
 			baseSpeed = FixedMul(
 				((fracmax+1) << FRACBITS) - easiness,
-				K_GetKartSpeed(chasePlayer, false, false)
+				FixedMul(K_GetKartSpeed(chasePlayer, false, false), scaleAdjust)
 			) / fracmax;
 		}
 
