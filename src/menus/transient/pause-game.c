@@ -22,7 +22,7 @@ menuitem_t PAUSE_Main[] =
 	{IT_STRING | IT_CALL, "STEREO MODE", "M_ICOSTM",
 		NULL, {.routine = M_SoundTest}, 0, 0},
 
-	{IT_STRING | IT_KEYHANDLER, "GAMETYPE", "M_ICOGAM",
+	{IT_STRING | IT_ARROWS, "GAMETYPE", "M_ICOGAM",
 		NULL, {.routine = M_HandlePauseMenuGametype}, 0, 0},
 
 	{IT_STRING | IT_CALL, "CHANGE MAP", "M_ICOMAP",
@@ -71,7 +71,7 @@ menu_t PAUSE_MainDef = {
 	PAUSE_Main,
 	0, 0,
 	0, 0,
-	0,
+	MBF_SOUNDLESS,
 	NULL,
 	1, 10,	// For transition with some menus!
 	M_DrawPause,
@@ -146,7 +146,7 @@ void M_OpenPauseMenu(void)
 
 		if (server || IsPlayerAdmin(consoleplayer))
 		{
-			PAUSE_Main[mpause_changegametype].status = IT_STRING | IT_KEYHANDLER;
+			PAUSE_Main[mpause_changegametype].status = IT_STRING | IT_ARROWS;
 			menugametype = gametype;
 
 			PAUSE_Main[mpause_switchmap].status = IT_STRING | IT_CALL;
@@ -267,12 +267,9 @@ boolean M_PauseInputs(INT32 ch)
 // Change gametype
 void M_HandlePauseMenuGametype(INT32 choice)
 {
-	const UINT8 pid = 0;
 	const UINT32 forbidden = GTR_FORBIDMP;
 
-	(void)choice;
-
-	if (M_MenuConfirmPressed(pid))
+	if (choice == 2)
 	{
 		if (menugametype != gametype)
 		{
@@ -281,26 +278,27 @@ void M_HandlePauseMenuGametype(INT32 choice)
 			return;
 		}
 
-		M_SetMenuDelay(pid);
 		S_StartSound(NULL, sfx_s3k7b);
+
+		return;
 	}
-	else if (M_MenuExtraPressed(pid))
+
+	if (choice == -1)
 	{
 		menugametype = gametype;
-		M_SetMenuDelay(pid);
 		S_StartSound(NULL, sfx_s3k7b);
+		return;
 	}
-	else if (menucmd[pid].dpad_lr > 0)
-	{
-		M_NextMenuGametype(forbidden);
-		S_StartSound(NULL, sfx_s3k5b);
-		M_SetMenuDelay(pid);
-	}
-	else if (menucmd[pid].dpad_lr < 0)
+
+	if (choice == 0)
 	{
 		M_PrevMenuGametype(forbidden);
 		S_StartSound(NULL, sfx_s3k5b);
-		M_SetMenuDelay(pid);
+	}
+	else
+	{
+		M_NextMenuGametype(forbidden);
+		S_StartSound(NULL, sfx_s3k5b);
 	}
 }
 

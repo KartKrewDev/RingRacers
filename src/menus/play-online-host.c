@@ -18,7 +18,7 @@ menuitem_t PLAY_MP_Host[] =
 	{IT_STRING | IT_CVAR, "Max. Players", "Set how many players can play at once. Others will spectate.",
 		NULL, {.cvar = &cv_maxplayers}, 0, 0},
 
-	{IT_STRING | IT_KEYHANDLER, "Gamemode", "Choose the type of play on your server.",
+	{IT_STRING | IT_ARROWS, "Gamemode", "Choose the type of play on your server.",
 	NULL, {.routine = M_HandleHostMenuGametype}, 0, 0},
 
 	{IT_STRING | IT_CALL, "GO", "Select a map with the currently selected gamemode",
@@ -54,41 +54,21 @@ void M_MPHostInit(INT32 choice)
 
 void M_HandleHostMenuGametype(INT32 choice)
 {
-	const UINT8 pid = 0;
 	const UINT32 forbidden = GTR_FORBIDMP;
 
-	(void)choice;
-
-	if (M_MenuBackPressed(pid))
-	{
-		M_GoBack(0);
-		M_SetMenuDelay(pid);
-		return;
-	}
-	else if (menucmd[pid].dpad_lr > 0 || M_MenuConfirmPressed(pid))
+	if (choice > 0)
 	{
 		M_NextMenuGametype(forbidden);
-		S_StartSound(NULL, sfx_s3k5b);
-		M_SetMenuDelay(pid);
 	}
-	else if (menucmd[pid].dpad_lr < 0)
+	else if (choice == -1)
+	{
+		menugametype = GT_RACE;
+		M_PrevMenuGametype(forbidden);
+		M_NextMenuGametype(forbidden);
+	}
+	else
 	{
 		M_PrevMenuGametype(forbidden);
-		S_StartSound(NULL, sfx_s3k5b);
-		M_SetMenuDelay(pid);
-	}
-
-	if (menucmd[pid].dpad_ud > 0)
-	{
-		M_NextOpt();
-		S_StartSound(NULL, sfx_s3k5b);
-		M_SetMenuDelay(pid);
-	}
-	else if (menucmd[pid].dpad_ud < 0)
-	{
-		M_PrevOpt();
-		S_StartSound(NULL, sfx_s3k5b);
-		M_SetMenuDelay(pid);
 	}
 }
 

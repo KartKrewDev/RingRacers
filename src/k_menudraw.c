@@ -3065,7 +3065,7 @@ void M_DrawMPHost(void)
 							}
 							break;
 						}
-						case IT_KEYHANDLER:
+						case IT_ARROWS:
 						{
 							if (currentMenu->menuitems[i].itemaction.routine != M_HandleHostMenuGametype)
 								break;
