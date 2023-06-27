@@ -575,6 +575,12 @@ boolean K_MinimalCheckNewMidVote(midVoteType_e type)
 		return false;
 	}
 
+	if (K_PlayerIDAllowedInMidVote(consoleplayer) == false)
+	{
+		// Invalid calling player.
+		return false;
+	}
+
 	return true;
 }
 

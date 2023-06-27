@@ -4384,6 +4384,10 @@ void M_DrawPause(void)
 				if (g_midVote.delay != 1)
 					maintext = va("%u", ((g_midVote.delay - 1) / TICRATE) + 1);
 			}
+			else if (K_PlayerIDAllowedInMidVote(consoleplayer) == false)
+			{
+				maintext = "SPECTATING";
+			}
 			else
 			{
 				maintext = "INVALID!?";
