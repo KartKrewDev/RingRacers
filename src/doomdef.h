@@ -236,7 +236,7 @@ struct skincolor_t
 
 #define FOLLOWERCOLOR_MATCH UINT16_MAX
 #define FOLLOWERCOLOR_OPPOSITE (UINT16_MAX-1)
-UINT16 K_GetEffectiveFollowerColor(UINT16 followercolor, UINT16 playercolor);
+UINT16 K_GetEffectiveFollowerColor(UINT16 followercolor, follower_t *follower, UINT16 playercolor, skin_t *playerskin);
 
 typedef enum
 {

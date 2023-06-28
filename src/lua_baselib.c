@@ -338,49 +338,11 @@ static int lib_reserveLuabanks(lua_State *L)
 // M_MENU
 //////////////
 
-static int lib_pMoveColorBefore(lua_State *L)
-{
-	UINT16 color = (UINT16)luaL_checkinteger(L, 1);
-	UINT16 targ = (UINT16)luaL_checkinteger(L, 2);
-
-	NOHUD
-	M_MoveColorBefore(color, targ);
-	return 0;
-}
-
-static int lib_pMoveColorAfter(lua_State *L)
-{
-	UINT16 color = (UINT16)luaL_checkinteger(L, 1);
-	UINT16 targ = (UINT16)luaL_checkinteger(L, 2);
-
-	NOHUD
-	M_MoveColorAfter(color, targ);
-	return 0;
-}
-
-static int lib_pGetColorBefore(lua_State *L)
-{
-	UINT16 color = (UINT16)luaL_checkinteger(L, 1);
-	UINT16 amount = (UINT16)luaL_checkinteger(L, 2);
-	boolean follower = lua_optboolean(L, 3);
-	lua_pushinteger(L, M_GetColorBefore(color, amount, follower));
-	return 1;
-}
-
-static int lib_pGetColorAfter(lua_State *L)
-{
-	UINT16 color = (UINT16)luaL_checkinteger(L, 1);
-	UINT16 amount = (UINT16)luaL_checkinteger(L, 2);
-	boolean follower = lua_optboolean(L, 3);
-	lua_pushinteger(L, M_GetColorAfter(color, amount, follower));
-	return 1;
-}
-
 static int lib_pGetEffectiveFollowerColor(lua_State *L)
 {
 	UINT16 followercolor = (UINT16)luaL_checkinteger(L, 1);
 	UINT16 playercolor = (UINT16)luaL_checkinteger(L, 2);
-	lua_pushinteger(L, K_GetEffectiveFollowerColor(followercolor, playercolor));
+	lua_pushinteger(L, K_GetEffectiveFollowerColor(followercolor, NULL, playercolor, NULL)); // FIXME: follower / skin
 	return 1;
 }
 
@@ -3975,12 +3937,6 @@ static luaL_Reg lib[] = {
 	{"userdataMetatable", lib_userdataMetatable},
 	{"IsPlayerAdmin", lib_isPlayerAdmin},
 	{"reserveLuabanks", lib_reserveLuabanks},
-
-	// m_menu
-	{"M_MoveColorAfter",lib_pMoveColorAfter},
-	{"M_MoveColorBefore",lib_pMoveColorBefore},
-	{"M_GetColorAfter",lib_pGetColorAfter},
-	{"M_GetColorBefore",lib_pGetColorBefore},
 
 	// m_random
 	{"P_RandomFixed",lib_pRandomFixed},

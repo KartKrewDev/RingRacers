@@ -184,6 +184,7 @@ typedef enum
 	// Player restrictions
 	SECRET_SKIN,				// Permit this character
 	SECRET_FOLLOWER,			// Permit this follower
+	SECRET_COLOR,				// Permit this color
 
 	// Difficulty restrictions
 	SECRET_HARDSPEED,			// Permit Hard gamespeed
@@ -202,6 +203,7 @@ typedef enum
 	SECRET_EGGTV,				// Permit replay playback menu
 	SECRET_SOUNDTEST,			// Permit Sound Test
 	SECRET_ALTTITLE,			// Permit alternate titlescreen
+	SECRET_MEMETAUNTS,			// Permit "Meme" for kartvoices_cons_t
 
 	// Assist restrictions
 	SECRET_ITEMFINDER,			// Permit locating in-level secrets
@@ -375,6 +377,7 @@ boolean M_GotLowEnoughTime(INT32 tictime);
 
 INT32 M_UnlockableSkinNum(unlockable_t *unlock);
 INT32 M_UnlockableFollowerNum(unlockable_t *unlock);
+INT32 M_UnlockableColorNum(unlockable_t *unlock);
 cupheader_t *M_UnlockableCup(unlockable_t *unlock);
 UINT16 M_UnlockableMapNum(unlockable_t *unlock);
 

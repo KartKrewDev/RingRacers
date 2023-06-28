@@ -2466,6 +2466,31 @@ static UINT32 SaveSlope(const pslope_t *slope)
 	return 0xFFFFFFFF;
 }
 
+static boolean TypeIsNetSynced(mobjtype_t type)
+{
+	// Ignore stationary hoops - these will be respawned from mapthings.
+	if (type == MT_HOOP)
+		return false;
+
+	// These are NEVER saved.
+	if (type == MT_HOOPCOLLIDE)
+		return false;
+
+	// This hoop has already been collected.
+	if (type == MT_HOOPCENTER)// && mobj->threshold == 4242)
+		return false;
+
+	// MT_SPARK: used for debug stuff
+	if (type == MT_SPARK)
+		return false;
+
+	// MT_HORNCODE: So it turns out hornmod is fundamentally incompatible with netsync
+	if (type == MT_HORNCODE)
+		return false;
+
+	return true;
+}
+
 static void SaveMobjThinker(savebuffer_t *save, const thinker_t *th, const UINT8 type)
 {
 	const mobj_t *mobj = (const mobj_t *)th;
@@ -2473,20 +2498,7 @@ static void SaveMobjThinker(savebuffer_t *save, const thinker_t *th, const UINT8
 	UINT32 diff2;
 	size_t j;
 
-	// Ignore stationary hoops - these will be respawned from mapthings.
-	if (mobj->type == MT_HOOP)
-		return;
-
-	// These are NEVER saved.
-	if (mobj->type == MT_HOOPCOLLIDE)
-		return;
-
-	// This hoop has already been collected.
-	if (mobj->type == MT_HOOPCENTER && mobj->threshold == 4242)
-		return;
-
-	// MT_SPARK: used for debug stuff
-	if (mobj->type == MT_SPARK)
+	if (TypeIsNetSynced(mobj->type) == false)
 		return;
 
 	diff2 = 0;
@@ -5117,9 +5129,7 @@ static void P_RelinkPointers(void)
 
 		mobj = (mobj_t *)currentthinker;
 
-		if (mobj->type == MT_HOOP || mobj->type == MT_HOOPCOLLIDE || mobj->type == MT_HOOPCENTER
-			// MT_SPARK: used for debug stuff
-			|| mobj->type == MT_SPARK)
+		if (TypeIsNetSynced(mobj->type) == false)
 			continue;
 
 		if (mobj->tracer)
@@ -6042,9 +6052,7 @@ void P_SaveNetGame(savebuffer_t *save, boolean resending)
 				continue;
 
 			mobj = (mobj_t *)th;
-			if (mobj->type == MT_HOOP || mobj->type == MT_HOOPCOLLIDE || mobj->type == MT_HOOPCENTER
-				// MT_SPARK: used for debug stuff
-				|| mobj->type == MT_SPARK)
+			if (TypeIsNetSynced(mobj->type) == false)
 				continue;
 			mobj->mobjnum = i++;
 		}

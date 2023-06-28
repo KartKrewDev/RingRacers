@@ -86,6 +86,7 @@ extern consvar_t cv_kartfrantic;
 extern consvar_t cv_kartencore;
 extern consvar_t cv_kartspeedometer;
 extern consvar_t cv_kartvoices;
+extern consvar_t cv_karthorns;
 extern consvar_t cv_kartbot;
 extern consvar_t cv_karteliminatelast;
 extern consvar_t cv_thunderdome;

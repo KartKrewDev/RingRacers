@@ -642,17 +642,12 @@ void M_MenuTypingInput(INT32 key);
 void M_QuitResponse(INT32 ch);
 void M_QuitSRB2(INT32 choice);
 
-extern UINT16 nummenucolors;
-void M_AddMenuColor(UINT16 color);
-void M_MoveColorBefore(UINT16 color, UINT16 targ);
-void M_MoveColorAfter(UINT16 color, UINT16 targ);
-UINT16 M_GetColorBefore(UINT16 color, UINT16 amount, boolean follower);
-UINT16 M_GetColorAfter(UINT16 color, UINT16 amount, boolean follower);
-void M_InitPlayerSetupColors(void);
-void M_FreePlayerSetupColors(void);
+UINT16 M_GetColorAfter(setup_player_colors_t *colors, UINT16 value, INT32 amount);
+#define M_GetColorBefore(a, b, c) M_GetColorAfter(a, b, -c)
 
 // If you want to waste a bunch of memory for a limit no one will hit, feel free to boost this to MAXSKINS :P
 // I figure this will be enough clone characters to fit onto one grid space.
+// TODO: Dynamically allocate instead, you KNOW this limit will get hit by someone eventually
 #define MAXCLONES MAXSKINS/8
 
 extern struct setup_chargrid_s {
@@ -676,6 +671,13 @@ typedef enum
 	CSSTEP_FOLLOWERCOLORS,
 	CSSTEP_READY
 } setup_mdepth_t;
+
+struct setup_player_colors_t
+{
+	UINT16 *list;
+	size_t listLen;
+	size_t listCap;
+};
 
 struct setup_player_t
 {
@@ -704,6 +706,8 @@ struct setup_player_t
 	tic_t follower_timer;
 	UINT8 follower_frame;
 	state_t *follower_state;
+
+	setup_player_colors_t colors;
 };
 
 extern setup_player_t setup_player[MAXSPLITSCREENPLAYERS];

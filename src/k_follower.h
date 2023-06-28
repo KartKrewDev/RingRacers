@@ -20,6 +20,13 @@
 extern "C" {
 #endif
 
+// The important collorary to "Hornmod is universally hated in dev" is
+// the simple phrase "this is why" -- 1024 is obscene yet will fill up.
+// By the way, this comment will grow stronger and stronger every time
+// somebody comes here to double it, so I encourage you to leave a new
+// (dated) comment every time you do so. ~toast 280623
+#define MAXFOLLOWERS 1024
+
 #define FOLLOWERCOLOR_MATCH UINT16_MAX
 #define FOLLOWERCOLOR_OPPOSITE (UINT16_MAX-1)
 
@@ -85,12 +92,14 @@ struct follower_t
 	statenum_t losestate;		// state when the player has lost
 	statenum_t hitconfirmstate;	// state for hit confirm
 	tic_t hitconfirmtime;		// time to keep the above playing for
+
+	sfxenum_t hornsound;		// Press (B) to announce you are pressing (B)
 };
 
 extern INT32 numfollowers;
-extern follower_t followers[MAXSKINS];
+extern follower_t followers[MAXFOLLOWERS];
 
-#define MAXFOLLOWERCATEGORIES 32
+#define MAXFOLLOWERCATEGORIES 64
 
 struct followercategory_t
 {
@@ -170,20 +179,22 @@ void K_SetFollowerByNum(INT32 playernum, INT32 skinnum);
 
 
 /*--------------------------------------------------
-	UINT16 K_GetEffectiveFollowerColor(UINT16 followercolor, UINT16 playercolor)
+	UINT16 K_GetEffectiveFollowerColor(UINT16 followercolor, follower_t *follower, UINT16 playercolor, skin_t *playerskin)
 
 		Updates a player's follower pointer, and does
 		its positioning and animations.
 
 	Input Arguments:-
 		followercolor - The raw color setting for the follower
+		follower - Follower struct to retrieve default color from. Can be NULL
 		playercolor - The player's associated colour, for reference
+		playerskin - Skin struct to retrieve default color from. Can be NULL
 
 	Return:-
 		The resultant skincolor enum for the follower
 --------------------------------------------------*/
 
-UINT16 K_GetEffectiveFollowerColor(UINT16 followercolor, UINT16 playercolor);
+UINT16 K_GetEffectiveFollowerColor(UINT16 followercolor, follower_t *follower, UINT16 playercolor, skin_t *playerskin);
 
 
 /*--------------------------------------------------
@@ -214,6 +225,21 @@ void K_HandleFollower(player_t *player);
 --------------------------------------------------*/
 
 void K_RemoveFollower(player_t *player);
+
+/*--------------------------------------------------
+	void K_FollowerHornTaunt(player_t *taunter, player_t *victim)
+
+		Plays horn and spawns object (MOSTLY non-netsynced)
+
+	Input Arguments:-
+		taunter - Source player with a follower
+		victim - Player that hears and sees the honk
+
+	Return:-
+		None
+--------------------------------------------------*/
+
+void K_FollowerHornTaunt(player_t *taunter, player_t *victim);
 
 #ifdef __cplusplus
 } // extern "C"

@@ -6,6 +6,8 @@
 #include "../s_sound.h"
 #include "../k_grandprix.h" // K_CanChangeRules
 #include "../m_cond.h" // Condition Sets
+#include "../k_color.h"
+#include "../z_zone.h"
 
 //#define CHARSELECT_DEVICEDEBUG
 
@@ -38,8 +40,6 @@ static void Splitplayers_OnChange(void);
 CV_PossibleValue_t splitplayers_cons_t[] = {{1, "One"}, {2, "Two"}, {3, "Three"}, {4, "Four"}, {0, NULL}};
 consvar_t cv_splitplayers = CVAR_INIT ("splitplayers", "One", CV_CALL, splitplayers_cons_t, Splitplayers_OnChange);
 
-UINT16 nummenucolors = 0;
-
 // Character Select!
 // @TODO: Splitscreen handling when profiles are added into the game. ...I probably won't be the one to handle this however. -Lat'
 
@@ -55,261 +55,116 @@ tic_t setup_animcounter = 0;
 UINT8 setup_page = 0;
 UINT8 setup_maxpage = 0;	// For charsel page to identify alts easier...
 
-void M_AddMenuColor(UINT16 color) {
-	menucolor_t *c;
-
-	if (color >= numskincolors) {
-		CONS_Printf("M_AddMenuColor: color %d does not exist.",color);
-		return;
-	}
-
-	// SRB2Kart: I do not understand vanilla doesn't need this but WE do???!?!??!
-	if (!skincolors[color].accessible) {
-		return;
-	}
-
-	c = (menucolor_t *)malloc(sizeof(menucolor_t));
-	c->color = color;
-	if (menucolorhead == NULL) {
-		c->next = c;
-		c->prev = c;
-		menucolorhead = c;
-		menucolortail = c;
-	} else {
-		c->next = menucolorhead;
-		c->prev = menucolortail;
-		menucolortail->next = c;
-		menucolorhead->prev = c;
-		menucolortail = c;
-	}
-
-	nummenucolors++;
-}
-
-void M_MoveColorBefore(UINT16 color, UINT16 targ) {
-	menucolor_t *look, *c = NULL, *t = NULL;
-
-	if (color == targ)
-		return;
-	if (color >= numskincolors) {
-		CONS_Printf("M_MoveColorBefore: color %d does not exist.",color);
-		return;
-	}
-	if (targ >= numskincolors) {
-		CONS_Printf("M_MoveColorBefore: target color %d does not exist.",targ);
-		return;
-	}
-
-	for (look=menucolorhead;;look=look->next) {
-		if (look->color == color)
-			c = look;
-		else if (look->color == targ)
-			t = look;
-		if (c != NULL && t != NULL)
-			break;
-		if (look==menucolortail)
-			return;
-	}
-
-	if (c == t->prev)
-		return;
-
-	if (t==menucolorhead)
-		menucolorhead = c;
-	if (c==menucolortail)
-		menucolortail = c->prev;
-
-	c->prev->next = c->next;
-	c->next->prev = c->prev;
-
-	c->prev = t->prev;
-	c->next = t;
-	t->prev->next = c;
-	t->prev = c;
-}
-
-void M_MoveColorAfter(UINT16 color, UINT16 targ) {
-	menucolor_t *look, *c = NULL, *t = NULL;
-
-	if (color == targ)
-		return;
-	if (color >= numskincolors) {
-		CONS_Printf("M_MoveColorAfter: color %d does not exist.\n",color);
-		return;
-	}
-	if (targ >= numskincolors) {
-		CONS_Printf("M_MoveColorAfter: target color %d does not exist.\n",targ);
-		return;
-	}
-
-	for (look=menucolorhead;;look=look->next) {
-		if (look->color == color)
-			c = look;
-		else if (look->color == targ)
-			t = look;
-		if (c != NULL && t != NULL)
-			break;
-		if (look==menucolortail)
-			return;
-	}
-
-	if (t == c->prev)
-		return;
-
-	if (t==menucolortail)
-		menucolortail = c;
-	else if (c==menucolortail)
-		menucolortail = c->prev;
-
-	c->prev->next = c->next;
-	c->next->prev = c->prev;
-
-	c->next = t->next;
-	c->prev = t;
-	t->next->prev = c;
-	t->next = c;
-}
-
-UINT16 M_GetColorBefore(UINT16 color, UINT16 amount, boolean follower)
+static void M_PushMenuColor(setup_player_colors_t *colors, UINT16 newColor)
 {
-	menucolor_t *look = NULL;
-
-	for (; amount > 0; amount--)
+	if (colors->listLen >= colors->listCap)
 	{
-		if (follower == true)
+		if (colors->listCap == 0)
 		{
-			if (color == FOLLOWERCOLOR_OPPOSITE)
-			{
-				look = menucolortail;
-				color = menucolortail->color;
-				continue;
-			}
-
-			if (color == FOLLOWERCOLOR_MATCH)
-			{
-				look = NULL;
-				color = FOLLOWERCOLOR_OPPOSITE;
-				continue;
-			}
-
-			if (color == menucolorhead->color)
-			{
-				look = NULL;
-				color = FOLLOWERCOLOR_MATCH;
-				continue;
-			}
+			colors->listCap = 64;
+		}
+		else
+		{
+			colors->listCap *= 2;
 		}
 
-		if (color == 0 || color >= numskincolors)
-		{
-			CONS_Printf("M_GetColorBefore: color %d does not exist.\n",color);
-			return 0;
-		}
-
-		if (look == NULL)
-		{
-			for (look = menucolorhead;; look = look->next)
-			{
-				if (look->color == color)
-				{
-					break;
-				}
-				if (look == menucolortail)
-				{
-					return 0;
-				}
-			}
-		}
-
-		look = look->prev;
-		color = look->color;
+		colors->list = Z_ReallocAlign(
+			colors->list,
+			sizeof(UINT16) * colors->listCap,
+			PU_STATIC,
+			NULL,
+			sizeof(UINT16) * 8
+		);
 	}
-	return color;
+
+	colors->list[colors->listLen] = newColor;
+	colors->listLen++;
 }
 
-UINT16 M_GetColorAfter(UINT16 color, UINT16 amount, boolean follower)
+static void M_ClearMenuColors(setup_player_colors_t *colors)
 {
-	menucolor_t *look = NULL;
-
-	for (; amount > 0; amount--)
+	if (colors->list != NULL)
 	{
-		if (follower == true)
-		{
-			if (color == menucolortail->color)
-			{
-				look = NULL;
-				color = FOLLOWERCOLOR_OPPOSITE;
-				continue;
-			}
-
-			if (color == FOLLOWERCOLOR_OPPOSITE)
-			{
-				look = NULL;
-				color = FOLLOWERCOLOR_MATCH;
-				continue;
-			}
-
-			if (color == FOLLOWERCOLOR_MATCH)
-			{
-				look = menucolorhead;
-				color = menucolorhead->color;
-				continue;
-			}
-		}
-
-		if (color == 0 || color >= numskincolors)
-		{
-			CONS_Printf("M_GetColorAfter: color %d does not exist.\n",color);
-			return 0;
-		}
-
-		if (look == NULL)
-		{
-			for (look = menucolorhead;; look = look->next)
-			{
-				if (look->color == color)
-				{
-					break;
-				}
-				if (look == menucolortail)
-				{
-					return 0;
-				}
-			}
-		}
-
-		look = look->next;
-		color = look->color;
+		Z_Free(colors->list);
+		colors->list = NULL;
 	}
-	return color;
+
+	colors->listLen = colors->listCap = 0;
 }
 
-void M_InitPlayerSetupColors(void) {
-	UINT8 i;
-	numskincolors = SKINCOLOR_FIRSTFREESLOT;
-	menucolorhead = menucolortail = NULL;
-	for (i=0; i<numskincolors; i++)
-		M_AddMenuColor(i);
-}
+UINT16 M_GetColorAfter(setup_player_colors_t *colors, UINT16 value, INT32 amount)
+{
+	const INT32 sign = (amount < 0) ? -1 : 1;
+	INT32 index = -1;
+	size_t i = SIZE_MAX;
 
-void M_FreePlayerSetupColors(void) {
-	menucolor_t *look = menucolorhead, *tmp;
+	if (amount == 0 || colors->listLen == 0)
+	{
+		return value;
+	}
 
-	if (menucolorhead==NULL)
-		return;
-
-	while (true) {
-		if (look != menucolortail) {
-			tmp = look;
-			look = look->next;
-			free(tmp);
-		} else {
-			free(look);
-			return;
+	for (i = 0; i < colors->listLen; i++)
+	{
+		if (colors->list[i] == value)
+		{
+			index = i;
+			break;
 		}
 	}
 
-	menucolorhead = menucolortail = NULL;
+	if (index == -1)
+	{
+		// Not in list, so no real correct behavior here.
+		// Just try to get back to the list.
+		return colors->list[0];
+	}
+
+	amount = abs(amount);
+
+	while (amount > 0)
+	{
+		index += sign;
+
+		if (index < 0)
+		{
+			index = colors->listLen - 1;
+		}
+		else if (index >= (INT32)colors->listLen)
+		{
+			index = 0;
+		}
+
+		amount--;
+	}
+
+	return colors->list[index];
+}
+
+static void M_NewPlayerColors(setup_player_t *p)
+{
+	const boolean follower = (p->mdepth >= CSSTEP_FOLLOWER);
+	INT32 i = INT32_MAX;
+
+	M_ClearMenuColors(&p->colors);
+
+	// Add all unlocked colors
+	for (i = SKINCOLOR_NONE+1; i < numskincolors; i++)
+	{
+		if (K_ColorUsable(i, follower) == true)
+		{
+			M_PushMenuColor(&p->colors, i);
+		}
+	}
+
+	// Add special colors
+	M_PushMenuColor(&p->colors, SKINCOLOR_NONE);
+
+	if (follower == true)
+	{
+		// Add special follower colors
+		M_PushMenuColor(&p->colors, FOLLOWERCOLOR_MATCH);
+		M_PushMenuColor(&p->colors, FOLLOWERCOLOR_OPPOSITE);
+	}
 }
 
 // sets up the grid pos for the skin used by the profile.
@@ -346,7 +201,7 @@ static void M_SetupProfileGridPos(setup_player_t *p)
 		alt++;
 
 	p->clonenum = alt;
-	p->color = PR_GetProfileColor(pr);
+	p->color = pr->color;
 }
 
 static void M_SetupMidGameGridPos(setup_player_t *p, UINT8 num)
@@ -403,7 +258,7 @@ void M_CharacterSelectInit(void)
 		// Default to no follower / match colour.
 		setup_player[i].followern = -1;
 		setup_player[i].followercategory = -1;
-		setup_player[i].followercolor = FOLLOWERCOLOR_MATCH;
+		setup_player[i].followercolor = SKINCOLOR_NONE;
 
 		// If we're on prpfile select, skip straight to CSSTEP_CHARS
 		// do the same if we're midgame, but make sure to consider splitscreen properly.
@@ -876,6 +731,7 @@ static boolean M_HandleCharacterGrid(setup_player_t *p, UINT8 num)
 			else
 			{
 				p->mdepth = CSSTEP_COLORS;
+				M_NewPlayerColors(p);
 				S_StartSound(NULL, sfx_s3k63);
 			}
 		}
@@ -889,9 +745,14 @@ static boolean M_HandleCharacterGrid(setup_player_t *p, UINT8 num)
 			else
 			{
 				if (setup_page+1 == setup_chargrid[p->gridx][p->gridy].numskins)
+				{
 					p->mdepth = CSSTEP_COLORS; // Skip clones menu if there are none on this page.
+					M_NewPlayerColors(p);
+				}
 				else
+				{
 					p->mdepth = CSSTEP_ALTS;
+				}
 
 				S_StartSound(NULL, sfx_s3k63);
 			}
@@ -964,8 +825,30 @@ static void M_HandleCharRotate(setup_player_t *p, UINT8 num)
 	 if (M_MenuConfirmPressed(num) /*|| M_MenuButtonPressed(num, MBT_START)*/)
 	{
 		p->mdepth = CSSTEP_COLORS;
-		S_StartSound(NULL, sfx_s3k63);
-		M_SetMenuDelay(num);
+		M_NewPlayerColors(p);
+		if (p->colors.listLen == 1)
+		{
+			p->color = p->colors.list[0];
+			if (setup_numfollowercategories == 0)
+			{
+				p->followern = -1;
+				p->mdepth = CSSTEP_READY;
+				p->delay = TICRATE;
+				M_SetupReadyExplosions(true, p->gridx, p->gridy, p->color);
+				S_StartSound(NULL, sfx_s3k4e);
+			}
+			else
+			{
+				p->mdepth = CSSTEP_FOLLOWERCATEGORY;
+				S_StartSound(NULL, sfx_s3k63);
+				M_SetMenuDelay(num);
+			}
+		}
+		else
+		{
+			S_StartSound(NULL, sfx_s3k63);
+			M_SetMenuDelay(num);
+		}
 	}
 	else if (M_MenuBackPressed(num))
 	{
@@ -992,14 +875,14 @@ static void M_HandleColorRotate(setup_player_t *p, UINT8 num)
 
 	if (menucmd[num].dpad_lr > 0)
 	{
-		p->color = M_GetColorAfter(p->color, 1, false);
+		p->color = M_GetColorAfter(&p->colors, p->color, 1);
 		p->rotate = CSROTATETICS;
 		M_SetMenuDelay(num); //CSROTATETICS
 		S_StartSound(NULL, sfx_s3k5b); //sfx_s3kc3s
 	}
 	else if (menucmd[num].dpad_lr < 0)
 	{
-		p->color = M_GetColorBefore(p->color, 1, false);
+		p->color = M_GetColorBefore(&p->colors, p->color, 1);
 		p->rotate = -CSROTATETICS;
 		M_SetMenuDelay(num); //CSROTATETICS
 		S_StartSound(NULL, sfx_s3k5b); //sfx_s3kc3s
@@ -1007,9 +890,20 @@ static void M_HandleColorRotate(setup_player_t *p, UINT8 num)
 
 	 if (M_MenuConfirmPressed(num) /*|| M_MenuButtonPressed(num, MBT_START)*/)
 	{
-		p->mdepth = CSSTEP_FOLLOWERCATEGORY;
-		S_StartSound(NULL, sfx_s3k63);
-		M_SetMenuDelay(num);
+		if (setup_numfollowercategories == 0)
+		{
+			p->followern = -1;
+			p->mdepth = CSSTEP_READY;
+			p->delay = TICRATE;
+			M_SetupReadyExplosions(true, p->gridx, p->gridy, p->color);
+			S_StartSound(NULL, sfx_s3k4e);
+		}
+		else
+		{
+			p->mdepth = CSSTEP_FOLLOWERCATEGORY;
+			S_StartSound(NULL, sfx_s3k63);
+			M_SetMenuDelay(num);
+		}
 	}
 	else if (M_MenuBackPressed(num))
 	{
@@ -1029,7 +923,7 @@ static void M_HandleColorRotate(setup_player_t *p, UINT8 num)
 	{
 		if (p->skin >= 0)
 		{
-			p->color = skins[p->skin].prefcolor;
+			p->color = SKINCOLOR_NONE;
 			p->rotate = CSROTATETICS;
 			p->hitlag = true;
 			S_StartSound(NULL, sfx_s3k7b); //sfx_s3kc3s
@@ -1131,6 +1025,7 @@ static void M_HandleFollowerCategoryRotate(setup_player_t *p, UINT8 num)
 	else if (M_MenuBackPressed(num))
 	{
 		p->mdepth = CSSTEP_COLORS;
+		M_NewPlayerColors(p);
 		S_StartSound(NULL, sfx_s3k5b);
 		M_SetMenuDelay(num);
 	}
@@ -1196,6 +1091,7 @@ static void M_HandleFollowerRotate(setup_player_t *p, UINT8 num)
 		if (p->followern > -1)
 		{
 			p->mdepth = CSSTEP_FOLLOWERCOLORS;
+			M_NewPlayerColors(p);
 			S_StartSound(NULL, sfx_s3k63);
 		}
 		else
@@ -1234,14 +1130,14 @@ static void M_HandleFollowerColorRotate(setup_player_t *p, UINT8 num)
 
 	if (menucmd[num].dpad_lr > 0)
 	{
-		p->followercolor = M_GetColorAfter(p->followercolor, 1, true);
+		p->followercolor = M_GetColorAfter(&p->colors, p->followercolor, 1);
 		p->rotate = CSROTATETICS;
 		M_SetMenuDelay(num); //CSROTATETICS
 		S_StartSound(NULL, sfx_s3k5b); //sfx_s3kc3s
 	}
 	else if (menucmd[num].dpad_lr < 0)
 	{
-		p->followercolor = M_GetColorBefore(p->followercolor, 1, true);
+		p->followercolor = M_GetColorBefore(&p->colors, p->followercolor, 1);
 		p->rotate = -CSROTATETICS;
 		M_SetMenuDelay(num); //CSROTATETICS
 		S_StartSound(NULL, sfx_s3k5b); //sfx_s3kc3s
@@ -1266,10 +1162,10 @@ static void M_HandleFollowerColorRotate(setup_player_t *p, UINT8 num)
 	{
 		if (p->followercolor == FOLLOWERCOLOR_MATCH)
 			p->followercolor = FOLLOWERCOLOR_OPPOSITE;
-		else if (p->followercolor == followers[p->followern].defaultcolor)
+		else if (p->followercolor == SKINCOLOR_NONE)
 			p->followercolor = FOLLOWERCOLOR_MATCH;
 		else
-			p->followercolor = followers[p->followern].defaultcolor;
+			p->followercolor = SKINCOLOR_NONE;
 		p->rotate = CSROTATETICS;
 		p->hitlag = true;
 		S_StartSound(NULL, sfx_s3k7b); //sfx_s3kc3s
@@ -1343,6 +1239,7 @@ boolean M_CharacterSelectHandler(INT32 choice)
 					if (M_MenuBackPressed(i))
 					{
 						p->mdepth = CSSTEP_COLORS;
+						M_NewPlayerColors(p);
 						S_StartSound(NULL, sfx_s3k5b);
 						M_SetMenuDelay(i);
 					}

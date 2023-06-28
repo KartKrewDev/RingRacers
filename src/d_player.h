@@ -277,6 +277,7 @@ typedef enum
 	khud_enginesnd,		// Engine sound offset this player is using.
 	khud_voices,		// Used to stop the player saying more voices than it should
 	khud_tauntvoices,	// Used to specifically stop taunt voice spam
+	khud_taunthorns,	// Used to specifically stop taunt horn spam
 
 	// Battle
 	khud_cardanimation,	// Used to determine the position of some full-screen Battle Mode graphics

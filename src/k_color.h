@@ -112,7 +112,26 @@ void K_HitlagColormap(UINT8 *dest_colormap);
 	Return:-
 		None
 --------------------------------------------------*/
+
 void K_GenerateKartColormap(UINT8 *dest_colormap, INT32 skinnum, UINT8 color);
+
+
+/*--------------------------------------------------
+	boolean K_ColorUsable(skincolornum_t color, skin_t *skin, follower_t *follower);
+
+		Determines whenever or not we meet the unlockable conditions
+		to use a certain color.
+
+	Input Arguments:-
+		color - Color we want to use.
+		follower - Set to include the special follower-only color options.
+
+	Return:-
+		true if we can use it, otherwise false.
+--------------------------------------------------*/
+
+boolean K_ColorUsable(skincolornum_t color, boolean follower);
+
 
 #ifdef __cplusplus
 } // extern "C"

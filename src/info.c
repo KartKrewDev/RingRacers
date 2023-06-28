@@ -563,6 +563,8 @@ char sprnames[NUMSPRITES + 1][5] =
 
 	"DHND", // Servant Hand
 
+	"HORN", // Horncode
+
 	"WIPD", // Wipeout dust trail
 	"DRIF", // Drift Sparks
 	"BDRF", // Brake drift sparks
@@ -3979,6 +3981,8 @@ state_t states[NUMSTATES] =
 	{SPR_GBDY,                 FF_FULLBRIGHT|FF_ANIMATE|0, -1, {NULL}, 4, 2, S_NULL}, // S_BLOCKBODY
 
 	{SPR_DHND, 0, -1, {NULL}, 0, 0, S_NULL}, // S_SERVANTHAND
+
+	{SPR_HORN, 0, -1, {NULL}, 0, 0, S_NULL}, // S_HORNCODE
 
 	{SPR_SGNS, FF_ADD|FF_FULLBRIGHT, 1, {NULL}, 0, 0, S_SIGNSPARK2}, // S_SIGNSPARK1
 	{SPR_SGNS, FF_ADD|FF_FULLBRIGHT|1, 1, {NULL}, 0, 0, S_SIGNSPARK3}, // S_SIGNSPARK2
@@ -22840,6 +22844,33 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		MF_NOGRAVITY|MF_NOCLIPHEIGHT|MF_DONTENCOREMAP, // flags
 		S_NULL          // raisestate
 	},
+
+	{           // MT_HORNCODE
+		-1,             // doomednum
+		S_HORNCODE,     // spawnstate
+		1000,           // spawnhealth
+		S_NULL,         // seestate
+		sfx_None,       // seesound
+		0,              // reactiontime
+		sfx_None,       // attacksound
+		S_NULL,         // painstate
+		0,              // painchance
+		sfx_None,       // painsound
+		S_NULL,         // meleestate
+		S_NULL,         // missilestate
+		S_NULL,         // deathstate
+		S_NULL,         // xdeathstate
+		sfx_None,       // deathsound
+		0,              // speed
+		36*FRACUNIT,    // radius
+		36*FRACUNIT,    // height
+		0,              // display offset
+		100,            // mass
+		0,              // damage
+		sfx_None,       // activesound
+		MF_NOGRAVITY|MF_NOCLIPHEIGHT|MF_DONTENCOREMAP, // flags
+		S_NULL          // raisestate
+	},
 	
 	{           // MT_SIGNSPARKLE
 		-1,              // doomednum
@@ -29868,7 +29899,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 };
 
 skincolor_t skincolors[MAXSKINCOLORS] = {
-	{"None",           {  0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0}, SKINCOLOR_NONE,             0, 0,             false}, // SKINCOLOR_NONE
+	{"Default",        {  0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0}, SKINCOLOR_NONE,             0, 0,             false}, // SKINCOLOR_NONE
 
 	{"White",          {  0,   0,   0,   0,   1,   2,   5,   8,   9,  11,  14,  17,  20,  22,  25,  28}, SKINCOLOR_BLACK,            8, 0,              true}, // SKINCOLOR_WHITE
 	{"Silver",         {  0,   1,   2,   3,   5,   7,   9,  12,  13,  15,  18,  20,  23,  25,  27,  30}, SKINCOLOR_NICKEL,           8, 0,              true}, // SKINCOLOR_SILVER

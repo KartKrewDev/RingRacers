@@ -1675,7 +1675,6 @@ void I_Quit(void)
 
 	D_QuitNetGame();
 	CL_AbortDownloadResume();
-	M_FreePlayerSetupColors();
 	I_ShutdownMusic();
 	I_ShutdownSound();
 	// use this for 1.28 19990220 by Kin
@@ -1801,7 +1800,6 @@ void I_Error(const char *error, ...)
 
 	D_QuitNetGame();
 	CL_AbortDownloadResume();
-	M_FreePlayerSetupColors();
 
 	I_ShutdownMusic();
 	I_ShutdownGraphics();

@@ -11,10 +11,11 @@
 #include "r_skins.h"
 #include "p_local.h"
 #include "p_mobj.h"
+#include "s_sound.h"
 #include "m_cond.h"
 
 INT32 numfollowers = 0;
-follower_t followers[MAXSKINS];
+follower_t followers[MAXFOLLOWERS];
 
 INT32 numfollowercategories;
 followercategory_t followercategories[MAXFOLLOWERCATEGORIES];
@@ -142,6 +143,11 @@ void K_RemoveFollower(player_t *player)
 			bub = tmp;
 		}
 
+		// And the honk.
+		bub = player->follower->hprev;
+		if (!P_MobjWasRemoved(bub))
+			P_RemoveMobj(bub);
+
 		P_RemoveMobj(player->follower);
 		P_SetTarget(&player->follower, NULL);
 	}
@@ -234,19 +240,39 @@ static void K_SetFollowerState(mobj_t *f, statenum_t state)
 }
 
 /*--------------------------------------------------
-	UINT16 K_GetEffectiveFollowerColor(UINT16 followercolor, UINT16 playercolor)
+	UINT16 K_GetEffectiveFollowerColor(UINT16 followercolor, follower_t *follower, UINT16 playercolor, skin_t *playerskin)
 
 		See header file for description.
 --------------------------------------------------*/
-UINT16 K_GetEffectiveFollowerColor(UINT16 followercolor, UINT16 playercolor)
+UINT16 K_GetEffectiveFollowerColor(UINT16 followercolor, follower_t *follower, UINT16 playercolor, skin_t *playerskin)
 {
-	if (followercolor < numskincolors) // bog standard
+	if (followercolor == SKINCOLOR_NONE && follower != NULL) // "Default"
+	{
+		followercolor = follower->defaultcolor;
+	}
+
+	if (followercolor > SKINCOLOR_NONE && followercolor < numskincolors) // bog standard
+	{
 		return followercolor;
+	}
+
+	if (playercolor == SKINCOLOR_NONE) // get default color
+	{
+		if (playerskin == NULL)
+		{
+			// Nothing from this line down is valid if playerskin is invalid, just guess Eggman?
+			playerskin = &skins[0];
+		}
+
+		playercolor = playerskin->prefcolor;
+	}
 
 	if (followercolor == FOLLOWERCOLOR_OPPOSITE) // "Opposite"
+	{
 		return skincolors[playercolor].invcolor;
+	}
 
-	//if (followercolor == FOLLOWERCOLOR_MATCH) -- "Match"
+	// "Match"
 	return playercolor;
 }
 
@@ -286,7 +312,7 @@ static void K_UpdateFollowerState(mobj_t *f, statenum_t state, followerstate_t t
 --------------------------------------------------*/
 void K_HandleFollower(player_t *player)
 {
-	follower_t fl;
+	follower_t *fl;
 	angle_t an;
 	fixed_t zoffs;
 	fixed_t ourheight;
@@ -326,22 +352,22 @@ void K_HandleFollower(player_t *player)
 	}
 
 	// Before we do anything, let's be sure of where we're supposed to be
-	fl = followers[player->followerskin];
+	fl = &followers[player->followerskin];
 
-	an = player->mo->angle + fl.atangle;
-	zoffs = fl.zoffs;
-	bubble = fl.bubblescale; // 0 if no bubble to spawn.
+	an = player->mo->angle + fl->atangle;
+	zoffs = fl->zoffs;
+	bubble = fl->bubblescale; // 0 if no bubble to spawn.
 
 	// do you like angle maths? I certainly don't...
-	sx = player->mo->x + player->mo->momx + FixedMul(FixedMul(player->mo->scale, fl.dist), FINECOSINE((an) >> ANGLETOFINESHIFT));
-	sy = player->mo->y + player->mo->momy + FixedMul(FixedMul(player->mo->scale, fl.dist), FINESINE((an) >> ANGLETOFINESHIFT));
+	sx = player->mo->x + player->mo->momx + FixedMul(FixedMul(player->mo->scale, fl->dist), FINECOSINE((an) >> ANGLETOFINESHIFT));
+	sy = player->mo->y + player->mo->momy + FixedMul(FixedMul(player->mo->scale, fl->dist), FINESINE((an) >> ANGLETOFINESHIFT));
 
 	// interp info helps with stretchy fix
 	deltaz = (player->mo->z - player->mo->old_z);
 
 	// for the z coordinate, don't be a doof like Steel and forget that MFE_VERTICALFLIP exists :P
 	sz = player->mo->z + player->mo->momz + FixedMul(player->mo->scale, zoffs * P_MobjFlip(player->mo));
-	ourheight = FixedMul(fl.height, player->mo->scale);
+	ourheight = FixedMul(fl->height, player->mo->scale);
 	if (player->mo->eflags & MFE_VERTICALFLIP)
 	{
 		sz += ourheight;
@@ -350,7 +376,7 @@ void K_HandleFollower(player_t *player)
 	fh = player->mo->floorz;
 	ch = player->mo->ceilingz - ourheight;
 
-	switch (fl.mode)
+	switch (fl->mode)
 	{
 		case FOLLOWERMODE_GROUND:
 		{
@@ -369,9 +395,9 @@ void K_HandleFollower(player_t *player)
 		{
 			// finally, add a cool floating effect to the z height.
 			// not stolen from k_kart I swear!!
-			fixed_t sine = FixedMul(fl.bobamp,
+			fixed_t sine = FixedMul(fl->bobamp,
 				FINESINE(((
-					FixedMul(4 * M_TAU_FIXED, fl.bobspeed) * leveltime
+					FixedMul(4 * M_TAU_FIXED, fl->bobspeed) * leveltime
 				) >> ANGLETOFINESHIFT) & FINEMASK));
 			sz += FixedMul(player->mo->scale, sine) * P_MobjFlip(player->mo);
 			break;
@@ -379,7 +405,7 @@ void K_HandleFollower(player_t *player)
 	}
 
 	// Set follower colour
-	color = K_GetEffectiveFollowerColor(player->followercolor, player->skincolor);
+	color = K_GetEffectiveFollowerColor(player->followercolor, fl, player->skincolor, &skins[player->skin]);
 
 	if (player->follower == NULL || P_MobjWasRemoved(player->follower)) // follower doesn't exist / isn't valid
 	{
@@ -390,7 +416,7 @@ void K_HandleFollower(player_t *player)
 		if (player->follower == NULL)
 			return;
 
-		K_UpdateFollowerState(player->follower, fl.idlestate, FOLLOWERSTATE_IDLE);
+		K_UpdateFollowerState(player->follower, fl->idlestate, FOLLOWERSTATE_IDLE);
 
 		P_SetTarget(&player->follower->target, player->mo); // we need that to know when we need to disappear
 		player->follower->angle = player->follower->old_angle = player->mo->angle;
@@ -422,12 +448,12 @@ void K_HandleFollower(player_t *player)
 		}
 
 		// move the follower next to us (yes, this is really basic maths but it looks pretty damn clean in practice)!
-		player->follower->momx = FixedDiv(sx - player->follower->x, fl.horzlag);
-		player->follower->momy = FixedDiv(sy - player->follower->y, fl.horzlag);
+		player->follower->momx = FixedDiv(sx - player->follower->x, fl->horzlag);
+		player->follower->momy = FixedDiv(sy - player->follower->y, fl->horzlag);
 
-		player->follower->z += FixedDiv(deltaz, fl.vertlag);
+		player->follower->z += FixedDiv(deltaz, fl->vertlag);
 
-		if (fl.mode == FOLLOWERMODE_GROUND)
+		if (fl->mode == FOLLOWERMODE_GROUND)
 		{
 			sector_t *sec = R_PointInSubsector(sx, sy)->sector;
 
@@ -448,12 +474,12 @@ void K_HandleFollower(player_t *player)
 
 				// Player is on the ground ... try to get the follower
 				// back to the ground also if it is above it.
-				player->follower->momz += FixedDiv(fg * 6, fl.vertlag); // Scaled against the default value of vertlag
+				player->follower->momz += FixedDiv(fg * 6, fl->vertlag); // Scaled against the default value of vertlag
 			}
 		}
 		else
 		{
-			player->follower->momz = FixedDiv(sz - player->follower->z, fl.vertlag);
+			player->follower->momz = FixedDiv(sz - player->follower->z, fl->vertlag);
 		}
 
 		if (player->mo->colorized)
@@ -467,7 +493,7 @@ void K_HandleFollower(player_t *player)
 
 		player->follower->colorized = player->mo->colorized;
 
-		P_SetScale(player->follower, FixedMul(fl.scale, player->mo->scale));
+		P_SetScale(player->follower, FixedMul(fl->scale, player->mo->scale));
 		K_GenericExtraFlagsNoZAdjust(player->follower, player->mo); // Not K_MatchGenericExtraFlag because the Z adjust it has only works properly if master & mo have the same Z height.
 
 		// Match how the player is being drawn
@@ -501,20 +527,20 @@ void K_HandleFollower(player_t *player)
 
 		if (angleDiff != 0)
 		{
-			player->follower->angle += FixedDiv(angleDiff, fl.anglelag);
+			player->follower->angle += FixedDiv(angleDiff, fl->anglelag);
 		}
 
 		// Ground follower slope rotation
-		if (fl.mode == FOLLOWERMODE_GROUND)
+		if (fl->mode == FOLLOWERMODE_GROUND)
 		{
 			if (player->follower->z <= fh)
 			{
 				player->follower->z = fh;
 
-				if (!(player->mo->eflags & MFE_VERTICALFLIP) && player->follower->momz <= 0 && fl.bobamp != 0)
+				if (!(player->mo->eflags & MFE_VERTICALFLIP) && player->follower->momz <= 0 && fl->bobamp != 0)
 				{
 					// Ground bounce
-					player->follower->momz = P_GetMobjZMovement(player->mo) + FixedMul(fl.bobamp, player->follower->scale);
+					player->follower->momz = P_GetMobjZMovement(player->mo) + FixedMul(fl->bobamp, player->follower->scale);
 					player->follower->extravalue1 = FOLLOWERSTATE_RESET;
 				}
 				else if (player->follower->momz < 0)
@@ -527,10 +553,10 @@ void K_HandleFollower(player_t *player)
 			{
 				player->follower->z = ch;
 
-				if ((player->mo->eflags & MFE_VERTICALFLIP) && player->follower->momz >= 0 && fl.bobamp != 0)
+				if ((player->mo->eflags & MFE_VERTICALFLIP) && player->follower->momz >= 0 && fl->bobamp != 0)
 				{
 					// Ground bounce
-					player->follower->momz = P_GetMobjZMovement(player->mo) - FixedMul(fl.bobamp, player->follower->scale);
+					player->follower->momz = P_GetMobjZMovement(player->mo) - FixedMul(fl->bobamp, player->follower->scale);
 					player->follower->extravalue1 = FOLLOWERSTATE_RESET;
 				}
 				else if (player->follower->momz > 0)
@@ -559,7 +585,7 @@ void K_HandleFollower(player_t *player)
 			// match follower's momentums and (e)flags(2).
 			bmobj->momx = player->follower->momx;
 			bmobj->momy = player->follower->momy;
-			bmobj->z += FixedDiv(deltaz, fl.vertlag);
+			bmobj->z += FixedDiv(deltaz, fl->vertlag);
 			bmobj->momz = player->follower->momz;
 
 			P_SetScale(bmobj, FixedMul(bubble, player->mo->scale));
@@ -594,7 +620,7 @@ void K_HandleFollower(player_t *player)
 			// spin out
 			player->follower->angle = player->drawangle;
 
-			K_UpdateFollowerState(player->follower, fl.hurtstate, FOLLOWERSTATE_HURT);
+			K_UpdateFollowerState(player->follower, fl->hurtstate, FOLLOWERSTATE_HURT);
 
 			if (player->mo->health <= 0)
 			{
@@ -608,26 +634,70 @@ void K_HandleFollower(player_t *player)
 			if (K_IsPlayerLosing(player))
 			{
 				// L
-				K_UpdateFollowerState(player->follower, fl.losestate, FOLLOWERSTATE_LOSE);
+				K_UpdateFollowerState(player->follower, fl->losestate, FOLLOWERSTATE_LOSE);
 			}
 			else
 			{
 				// W
-				K_UpdateFollowerState(player->follower, fl.winstate, FOLLOWERSTATE_WIN);
+				K_UpdateFollowerState(player->follower, fl->winstate, FOLLOWERSTATE_WIN);
 			}
 		}
 		else if (player->follower->movecount)
 		{
-			K_UpdateFollowerState(player->follower, fl.hitconfirmstate, FOLLOWERSTATE_HITCONFIRM);
+			K_UpdateFollowerState(player->follower, fl->hitconfirmstate, FOLLOWERSTATE_HITCONFIRM);
 			player->follower->movecount--;
 		}
 		else if (player->speed > 10*player->mo->scale) // animation for moving fast enough
 		{
-			K_UpdateFollowerState(player->follower, fl.followstate, FOLLOWERSTATE_FOLLOW);
+			K_UpdateFollowerState(player->follower, fl->followstate, FOLLOWERSTATE_FOLLOW);
 		}
 		else
 		{
-			K_UpdateFollowerState(player->follower, fl.idlestate, FOLLOWERSTATE_IDLE);
+			K_UpdateFollowerState(player->follower, fl->idlestate, FOLLOWERSTATE_IDLE);
+		}
+
+		// Horncode
+		if (P_MobjWasRemoved(player->follower->hprev) == false)
+		{
+			mobj_t *honk = player->follower->hprev;
+
+			honk->flags2 &= ~MF2_AMBUSH;
+
+			honk->color = player->skincolor;
+
+			P_MoveOrigin(
+				honk,
+				player->follower->x,
+				player->follower->y,
+				player->follower->z + player->follower->height
+			);
+
+			K_FlipFromObject(honk, player->follower);
+
+			honk->angle = R_PointToAngle2(
+				player->mo->x,
+				player->mo->y,
+				player->follower->x,
+				player->follower->y
+			);
+
+			honk->destscale = (2*player->mo->scale)/3;
+
+			fixed_t offsetamount = 0;
+			if (honk->fuse > 1)
+			{
+				offsetamount = (honk->fuse-1)*honk->destscale/2;
+				if (leveltime & 1)
+					offsetamount = -offsetamount;
+			}
+			else if (S_SoundPlaying(honk, fl->hornsound))
+			{
+				honk->fuse++;
+			}
+
+			honk->sprxoff = P_ReturnThrustX(honk, honk->angle, offsetamount);
+			honk->spryoff = P_ReturnThrustY(honk, honk->angle, offsetamount);
+			honk->sprzoff = -honk->sprxoff;
 		}
 	}
 
@@ -636,5 +706,78 @@ void K_HandleFollower(player_t *player)
 		player->follower->hitlag = player->mo->hitlag;
 		player->follower->eflags |= (player->mo->eflags & MFE_DAMAGEHITLAG);
 		return;
+	}
+}
+
+/*--------------------------------------------------
+	void K_FollowerHornTaunt(player_t *taunter, player_t *victim)
+
+		See header file for description.
+--------------------------------------------------*/
+void K_FollowerHornTaunt(player_t *taunter, player_t *victim)
+{
+	if (
+		(cv_karthorns.value == 0)
+		|| taunter == NULL
+		|| victim == NULL
+		|| taunter->followerskin < 0
+		|| taunter->followerskin >= numfollowers
+		|| (P_IsLocalPlayer(victim) == false && cv_karthorns.value != 2)
+		|| P_MobjWasRemoved(taunter->mo) == true
+		|| P_MobjWasRemoved(taunter->follower) == true
+	)
+		return;
+
+	const follower_t *fl = &followers[taunter->followerskin];
+
+	const boolean tasteful = (taunter->karthud[khud_taunthorns] == 0);
+
+	if (tasteful || cv_karthorns.value == 2)
+	{
+		mobj_t *honk = taunter->follower->hprev;
+		const fixed_t desiredscale = (2*taunter->mo->scale)/3;
+
+		if (P_MobjWasRemoved(honk) == true)
+		{
+			honk = P_SpawnMobj(
+				taunter->follower->x,
+				taunter->follower->y,
+				taunter->follower->z + taunter->follower->height,
+				MT_HORNCODE
+			);
+
+			if (P_MobjWasRemoved(honk) == true)
+				return; // Permit lua override of horn production
+
+			P_SetTarget(&taunter->follower->hprev, honk);
+			P_SetTarget(&honk->target, taunter->follower);
+
+			K_FlipFromObject(honk, taunter->follower);
+
+			honk->color = taunter->skincolor;
+
+			honk->angle = honk->old_angle = R_PointToAngle2(
+				taunter->mo->x,
+				taunter->mo->y,
+				taunter->follower->x,
+				taunter->follower->y
+			);
+		}
+
+		// Only do for the first activation this tic.
+		if (!(honk->flags2 & MF2_AMBUSH))
+		{
+			honk->destscale = desiredscale;
+
+			P_SetScale(honk, (11*desiredscale)/10);
+			honk->fuse = TICRATE/2;
+			honk->renderflags |= RF_DONTDRAW;
+
+			S_StartSound(taunter->follower, fl->hornsound);
+
+			honk->flags2 |= MF2_AMBUSH;
+		}
+
+		honk->renderflags &= ~K_GetPlayerDontDrawFlag(victim);
 	}
 }

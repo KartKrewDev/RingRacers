@@ -2219,6 +2219,42 @@ INT32 M_UnlockableFollowerNum(unlockable_t *unlock)
 	return -1;
 }
 
+INT32 M_UnlockableColorNum(unlockable_t *unlock)
+{
+	if (unlock->type != SECRET_COLOR)
+	{
+		// This isn't a color unlockable...
+		return -1;
+	}
+
+	if (unlock->stringVar && unlock->stringVar[0])
+	{
+		skincolornum_t colornum = SKINCOLOR_NONE;
+
+		if (unlock->stringVarCache != -1)
+		{
+			return unlock->stringVarCache;
+		}
+
+		// Get the skin from the string.
+		colornum = R_GetColorByName(unlock->stringVar);
+		if (colornum != SKINCOLOR_NONE)
+		{
+			unlock->stringVarCache = colornum;
+			return colornum;
+		}
+	}
+
+	if (unlock->variable > SKINCOLOR_NONE && unlock->variable < numskincolors)
+	{
+		// Use the number directly.
+		return unlock->variable;
+	}
+
+	// Invalid color unlockable.
+	return -1;
+}
+
 cupheader_t *M_UnlockableCup(unlockable_t *unlock)
 {
 	cupheader_t *cup = kartcupheaders;
