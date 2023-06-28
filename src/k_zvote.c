@@ -104,14 +104,14 @@ static midVoteTypeDef_t g_midVoteTypeDefs[MVT__MAX] =
 	{ // MVT_RTV
 		"RTV",
 		"Skip Level?",
-		CVAR_INIT ("zvote_rtv_allowed", "No", CV_SAVE|CV_NETVAR, CV_YesNo, NULL),
+		CVAR_INIT ("zvote_rtv_allowed", "Yes", CV_SAVE|CV_NETVAR, CV_YesNo, NULL),
 		K_MidVoteRockTheVote
 	},
 
 	{ // MVT_RUNITBACK
 		"RUNITBACK",
 		"Redo Level?",
-		CVAR_INIT ("zvote_runitback_allowed", "No", CV_SAVE|CV_NETVAR, CV_YesNo, NULL),
+		CVAR_INIT ("zvote_runitback_allowed", "Yes", CV_SAVE|CV_NETVAR, CV_YesNo, NULL),
 		K_MidVoteRunItBack
 	},
 };
