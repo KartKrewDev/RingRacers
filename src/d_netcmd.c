@@ -412,6 +412,7 @@ static CV_PossibleValue_t kartspeedometer_cons_t[] = {{0, "Off"}, {1, "Percentag
 consvar_t cv_kartspeedometer = CVAR_INIT ("speedometer", "Percentage", CV_SAVE, kartspeedometer_cons_t, NULL); // use tics in display
 static CV_PossibleValue_t kartvoices_cons_t[] = {{0, "Never"}, {1, "Tasteful"}, {2, "Meme"}, {0, NULL}};
 consvar_t cv_kartvoices = CVAR_INIT ("tauntvoices", "Tasteful", CV_SAVE, kartvoices_cons_t, NULL);
+consvar_t cv_karthorns = CVAR_INIT ("taunthorns", "Tasteful", CV_SAVE, kartvoices_cons_t, NULL);
 
 static CV_PossibleValue_t kartbot_cons_t[] = {
 	{0, "Off"},

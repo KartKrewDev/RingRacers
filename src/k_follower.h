@@ -226,6 +226,21 @@ void K_HandleFollower(player_t *player);
 
 void K_RemoveFollower(player_t *player);
 
+/*--------------------------------------------------
+	void K_FollowerHornTaunt(player_t *taunter, player_t *victim)
+
+		Plays horn and spawns object (MOSTLY non-netsynced)
+
+	Input Arguments:-
+		taunter - Source player with a follower
+		victim - Player that hears and sees the honk
+
+	Return:-
+		None
+--------------------------------------------------*/
+
+void K_FollowerHornTaunt(player_t *taunter, player_t *victim);
+
 #ifdef __cplusplus
 } // extern "C"
 #endif

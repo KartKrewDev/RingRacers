@@ -11,6 +11,7 @@
 #include "r_skins.h"
 #include "p_local.h"
 #include "p_mobj.h"
+#include "s_sound.h"
 #include "m_cond.h"
 
 INT32 numfollowers = 0;
@@ -141,6 +142,11 @@ void K_RemoveFollower(player_t *player)
 			P_RemoveMobj(bub);
 			bub = tmp;
 		}
+
+		// And the honk.
+		bub = player->follower->hprev;
+		if (!P_MobjWasRemoved(bub))
+			P_RemoveMobj(bub);
 
 		P_RemoveMobj(player->follower);
 		P_SetTarget(&player->follower, NULL);
@@ -649,6 +655,50 @@ void K_HandleFollower(player_t *player)
 		{
 			K_UpdateFollowerState(player->follower, fl->idlestate, FOLLOWERSTATE_IDLE);
 		}
+
+		// Horncode
+		if (P_MobjWasRemoved(player->follower->hprev) == false)
+		{
+			mobj_t *honk = player->follower->hprev;
+
+			honk->flags2 &= ~MF2_AMBUSH;
+
+			honk->color = player->skincolor;
+
+			P_MoveOrigin(
+				honk,
+				player->follower->x,
+				player->follower->y,
+				player->follower->z + player->follower->height
+			);
+
+			K_FlipFromObject(honk, player->follower);
+
+			honk->angle = R_PointToAngle2(
+				player->mo->x,
+				player->mo->y,
+				player->follower->x,
+				player->follower->y
+			);
+
+			honk->destscale = (2*player->mo->scale)/3;
+
+			fixed_t offsetamount = 0;
+			if (honk->fuse > 1)
+			{
+				offsetamount = (honk->fuse-1)*honk->destscale/2;
+				if (leveltime & 1)
+					offsetamount = -offsetamount;
+			}
+			else if (S_SoundPlaying(honk, fl->hornsound))
+			{
+				honk->fuse++;
+			}
+
+			honk->sprxoff = P_ReturnThrustX(honk, honk->angle, offsetamount);
+			honk->spryoff = P_ReturnThrustY(honk, honk->angle, offsetamount);
+			honk->sprzoff = -honk->sprxoff;
+		}
 	}
 
 	if (player->mo->hitlag)
@@ -656,5 +706,78 @@ void K_HandleFollower(player_t *player)
 		player->follower->hitlag = player->mo->hitlag;
 		player->follower->eflags |= (player->mo->eflags & MFE_DAMAGEHITLAG);
 		return;
+	}
+}
+
+/*--------------------------------------------------
+	void K_FollowerHornTaunt(player_t *taunter, player_t *victim)
+
+		See header file for description.
+--------------------------------------------------*/
+void K_FollowerHornTaunt(player_t *taunter, player_t *victim)
+{
+	if (
+		(cv_karthorns.value == 0)
+		|| taunter == NULL
+		|| victim == NULL
+		|| taunter->followerskin < 0
+		|| taunter->followerskin >= numfollowers
+		|| (P_IsLocalPlayer(victim) == false && cv_karthorns.value != 2)
+		|| P_MobjWasRemoved(taunter->mo) == true
+		|| P_MobjWasRemoved(taunter->follower) == true
+	)
+		return;
+
+	const follower_t *fl = &followers[taunter->followerskin];
+
+	const boolean tasteful = (taunter->karthud[khud_taunthorns] == 0);
+
+	if (tasteful || cv_karthorns.value == 2)
+	{
+		mobj_t *honk = taunter->follower->hprev;
+		const fixed_t desiredscale = (2*taunter->mo->scale)/3;
+
+		if (P_MobjWasRemoved(honk) == true)
+		{
+			honk = P_SpawnMobj(
+				taunter->follower->x,
+				taunter->follower->y,
+				taunter->follower->z + taunter->follower->height,
+				MT_HORNCODE
+			);
+
+			if (P_MobjWasRemoved(honk) == true)
+				return; // Permit lua override of horn production
+
+			P_SetTarget(&taunter->follower->hprev, honk);
+			P_SetTarget(&honk->target, taunter->follower);
+
+			K_FlipFromObject(honk, taunter->follower);
+
+			honk->color = taunter->skincolor;
+
+			honk->angle = honk->old_angle = R_PointToAngle2(
+				taunter->mo->x,
+				taunter->mo->y,
+				taunter->follower->x,
+				taunter->follower->y
+			);
+		}
+
+		// Only do for the first activation this tic.
+		if (!(honk->flags2 & MF2_AMBUSH))
+		{
+			honk->destscale = desiredscale;
+
+			P_SetScale(honk, (11*desiredscale)/10);
+			honk->fuse = TICRATE/2;
+			honk->renderflags |= RF_DONTDRAW;
+
+			S_StartSound(taunter->follower, fl->hornsound);
+
+			honk->flags2 |= MF2_AMBUSH;
+		}
+
+		honk->renderflags &= ~K_GetPlayerDontDrawFlag(victim);
 	}
 }

@@ -3625,6 +3625,7 @@ void readfollower(MYFILE *f)
 	followers[numfollowers].hitconfirmtime = TICRATE;
 	followers[numfollowers].defaultcolor = FOLLOWERCOLOR_MATCH;
 	followers[numfollowers].category = UINT8_MAX;
+	followers[numfollowers].hornsound = sfx_horn00;
 	strcpy(followers[numfollowers].icon, "MISSING");
 
 	do
@@ -3709,6 +3710,10 @@ void readfollower(MYFILE *f)
 				{
 					deh_warning("Follower %d: unknown follower color '%s'", numfollowers, word2);
 				}
+			}
+			else if (fastcmp(word, "HORNSOUND"))
+			{
+				followers[numfollowers].hornsound = get_number(word2);
 			}
 			else if (fastcmp(word, "SCALE"))
 			{

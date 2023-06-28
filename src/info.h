@@ -1114,6 +1114,8 @@ typedef enum sprite
 
 	SPR_DHND, // Servant Hand
 
+	SPR_HORN, // Horncode
+
 	SPR_WIPD, // Wipeout dust trail
 	SPR_DRIF, // Drift Sparks
 	SPR_BDRF, // Brake drift sparks
@@ -4390,6 +4392,8 @@ typedef enum state
 
 	S_SERVANTHAND,
 
+	S_HORNCODE,
+
 	// Signpost sparkles
 	S_SIGNSPARK1,
 	S_SIGNSPARK2,
@@ -6475,6 +6479,8 @@ typedef enum mobj_type
 	MT_BLOCKBODY,
 
 	MT_SERVANTHAND,
+
+	MT_HORNCODE,
 
 	MT_SIGNSPARKLE,
 

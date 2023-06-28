@@ -563,6 +563,8 @@ char sprnames[NUMSPRITES + 1][5] =
 
 	"DHND", // Servant Hand
 
+	"HORN", // Horncode
+
 	"WIPD", // Wipeout dust trail
 	"DRIF", // Drift Sparks
 	"BDRF", // Brake drift sparks
@@ -3979,6 +3981,8 @@ state_t states[NUMSTATES] =
 	{SPR_GBDY,                 FF_FULLBRIGHT|FF_ANIMATE|0, -1, {NULL}, 4, 2, S_NULL}, // S_BLOCKBODY
 
 	{SPR_DHND, 0, -1, {NULL}, 0, 0, S_NULL}, // S_SERVANTHAND
+
+	{SPR_HORN, 0, -1, {NULL}, 0, 0, S_NULL}, // S_HORNCODE
 
 	{SPR_SGNS, FF_ADD|FF_FULLBRIGHT, 1, {NULL}, 0, 0, S_SIGNSPARK2}, // S_SIGNSPARK1
 	{SPR_SGNS, FF_ADD|FF_FULLBRIGHT|1, 1, {NULL}, 0, 0, S_SIGNSPARK3}, // S_SIGNSPARK2
@@ -22833,6 +22837,33 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		0,              // speed
 		40*FRACUNIT,    // radius
 		40*FRACUNIT,    // height
+		0,              // display offset
+		100,            // mass
+		0,              // damage
+		sfx_None,       // activesound
+		MF_NOGRAVITY|MF_NOCLIPHEIGHT|MF_DONTENCOREMAP, // flags
+		S_NULL          // raisestate
+	},
+
+	{           // MT_HORNCODE
+		-1,             // doomednum
+		S_HORNCODE,     // spawnstate
+		1000,           // spawnhealth
+		S_NULL,         // seestate
+		sfx_None,       // seesound
+		0,              // reactiontime
+		sfx_None,       // attacksound
+		S_NULL,         // painstate
+		0,              // painchance
+		sfx_None,       // painsound
+		S_NULL,         // meleestate
+		S_NULL,         // missilestate
+		S_NULL,         // deathstate
+		S_NULL,         // xdeathstate
+		sfx_None,       // deathsound
+		0,              // speed
+		36*FRACUNIT,    // radius
+		36*FRACUNIT,    // height
 		0,              // display offset
 		100,            // mass
 		0,              // damage

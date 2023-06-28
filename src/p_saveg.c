@@ -2484,6 +2484,10 @@ static boolean TypeIsNetSynced(mobjtype_t type)
 	if (type == MT_SPARK)
 		return false;
 
+	// MT_HORNCODE: So it turns out hornmod is fundamentally incompatible with netsync
+	if (type == MT_HORNCODE)
+		return false;
+
 	return true;
 }
 
