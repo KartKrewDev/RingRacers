@@ -161,6 +161,12 @@ void Obj_SuperFlickyPlayerCollide(mobj_t *flicky, mobj_t *player);
 void Obj_SuperFlickyLanding(mobj_t *flicky);
 boolean Obj_IsSuperFlickyWhippable(const mobj_t *flicky);
 
+/* Battle/Power-UP UFO */
+void Obj_BattleUFOLegThink(mobj_t *leg);
+void Obj_BattleUFOThink(mobj_t *ufo);
+void Obj_SpawnBattleUFOLegs(mobj_t *ufo);
+void Obj_BattleUFODeath(mobj_t *ufo);
+
 /* Power-Up Aura */
 void Obj_SpawnPowerUpAura(player_t* player);
 void Obj_PowerUpAuraThink(mobj_t* mobj);
