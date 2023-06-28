@@ -822,6 +822,8 @@ char sprnames[NUMSPRITES + 1][5] =
 
 	"3DFR",
 
+	"BUFO", // Battle/Power-UP UFO
+
 	// First person view sprites; this is a sprite so that it can be replaced by a specialized MD2 draw later
 	"VIEW",
 };
@@ -5257,6 +5259,11 @@ state_t states[NUMSTATES] =
 	{SPR_GBOM, FF_INVERT, -1, {A_SetScale}, FRACUNIT/2, 1, S_NULL}, // S_GACHABOM_RETURNING
 
 	{SPR_3DFR, 1|FF_ANIMATE, -1, {NULL}, 2, 5, S_NULL}, // S_SUPER_FLICKY
+
+	// Battle/Power-UP UFO
+	{SPR_BUFO, 0, -1, {A_SetScale}, 3*FRACUNIT/2 , 0, S_NULL}, // S_BATTLEUFO
+	{SPR_BUFO, 1, -1, {A_SetScale}, 2*FRACUNIT/2, 0, S_NULL}, // S_BATTLEUFO_LEG
+	{SPR_BUFO, 0, 4, {A_BossScream}, 0, MT_EXPLODE, S_BATTLEUFO_DIE}, // S_BATTLEUFO_DIE
 
 	{SPR_RBOW, FF_PAPERSPRITE|FF_ADD|FF_FULLBRIGHT|FF_ANIMATE, -1, {NULL}, 14, 2, S_NULL}, // S_POWERUP_AURA
 };
@@ -29900,6 +29907,87 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		S_NULL          // raisestate
 	},
 
+	{           // MT_BATTLEUFO_SPAWNER
+		-1,           // doomednum
+		S_INVISIBLE,        // spawnstate
+		1000,              // spawnhealth
+		S_NULL,         // seestate
+		sfx_None,       // seesound
+		8,              // reactiontime
+		sfx_None,       // attacksound
+		S_NULL,         // painstate
+		0,              // painchance
+		sfx_None,       // painsound
+		S_NULL,         // meleestate
+		S_NULL,         // missilestate
+		S_NULL,    // deathstate
+		S_NULL,         // xdeathstate
+		sfx_None,     // deathsound
+		0,              // speed
+		55*FRACUNIT,    // radius
+		95*FRACUNIT,    // height
+		0,              // display offset
+		0,              // mass
+		0,              // damage
+		sfx_None,       // activesound
+		MF_NOGRAVITY|MF_NOCLIPHEIGHT|MF_SCENERY, // flags
+		S_NULL          // raisestate
+	},
+
+	{           // MT_BATTLEUFO
+		-1,           // doomednum
+		S_BATTLEUFO,        // spawnstate
+		1,              // spawnhealth
+		S_NULL,         // seestate
+		sfx_None,       // seesound
+		8,              // reactiontime
+		sfx_None,       // attacksound
+		S_NULL,         // painstate
+		0,              // painchance
+		sfx_None,       // painsound
+		S_NULL,         // meleestate
+		S_NULL,         // missilestate
+		S_BATTLEUFO_DIE,    // deathstate
+		S_NULL,         // xdeathstate
+		sfx_cdfm19,     // deathsound
+		0,              // speed
+		55*FRACUNIT,    // radius
+		96*FRACUNIT,    // height
+		0,              // display offset
+		0,              // mass
+		0,              // damage
+		sfx_None,       // activesound
+		MF_NOGRAVITY|MF_NOCLIPHEIGHT|MF_SPECIAL|MF_SHOOTABLE|MF_DONTENCOREMAP|MF_RUNSPAWNFUNC, // flags
+		S_NULL          // raisestate
+	},
+
+	{           // MT_BATTLEUFO_LEG
+		-1,           // doomednum
+		S_BATTLEUFO_LEG,        // spawnstate
+		1000,              // spawnhealth
+		S_NULL,         // seestate
+		sfx_None,       // seesound
+		8,              // reactiontime
+		sfx_None,       // attacksound
+		S_NULL,         // painstate
+		0,              // painchance
+		sfx_None,       // painsound
+		S_NULL,         // meleestate
+		S_NULL,         // missilestate
+		S_NULL,    // deathstate
+		S_NULL,         // xdeathstate
+		sfx_None,     // deathsound
+		-4*FRACUNIT,              // speed
+		64*FRACUNIT,    // radius
+		55*FRACUNIT,    // height
+		0,              // display offset
+		0,              // mass
+		0,              // damage
+		sfx_None,       // activesound
+		MF_NOGRAVITY|MF_NOCLIPHEIGHT|MF_DONTENCOREMAP|MF_RUNSPAWNFUNC, // flags
+		S_NULL          // raisestate
+	},
+
 	{           // MT_POWERUP_AURA
 		-1,             // doomednum
 		S_POWERUP_AURA, // spawnstate
@@ -30110,7 +30198,7 @@ skincolor_t skincolors[MAXSKINCOLORS] = {
 	{"Position Best 4", {255, 255, 122, 122, 123, 123, 141, 141, 142, 142, 143, 143, 138, 139, 254,  30}, SKINCOLOR_NONE, 0, 0, false}, // SKINCOLOR_POSNUM_BEST4
 	{"Position Best 5", {152, 152, 153, 153, 154, 154, 155, 155, 156, 156, 157, 158, 159, 253, 254,  30}, SKINCOLOR_NONE, 0, 0, false}, // SKINCOLOR_POSNUM_BEST5
 	{"Position Best 6", {181, 181, 182, 182, 183, 183, 184, 184, 185, 185, 186, 186, 187, 187,  29,  30}, SKINCOLOR_NONE, 0, 0, false}, // SKINCOLOR_POSNUM_BEST6
-	
+
 	{"Intermission", {0,80,80,81,81,81,84,85,86,87,246,248,251,26,28,31}, SKINCOLOR_NONE, 0, 0, false} // SKINCOLOR_INTERMISSION
 };
 
