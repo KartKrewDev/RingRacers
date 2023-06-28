@@ -41,6 +41,7 @@
 #include "k_roulette.h"
 #include "k_boss.h"
 #include "acs/interface.h"
+#include "k_powerup.h"
 
 // CTF player names
 #define CTFTEAMCODE(pl) pl->ctfteam ? (pl->ctfteam == 1 ? "\x85" : "\x84") : ""
@@ -332,14 +333,21 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 			P_InstaThrust(player->mo, player->mo->angle, 20<<FRACBITS);
 			return;
 		case MT_FLOATINGITEM: // SRB2Kart
-			if (!P_CanPickupItem(player, 3) || (player->itemamount && player->itemtype != special->threshold))
-				return;
-
-			player->itemtype = special->threshold;
-			if ((UINT16)(player->itemamount) + special->movecount > 255)
-				player->itemamount = 255;
+			if (special->threshold >= FIRSTPOWERUP)
+			{
+				K_GivePowerUp(player, special->threshold, special->movecount);
+			}
 			else
-				player->itemamount += special->movecount;
+			{
+				if (!P_CanPickupItem(player, 3) || (player->itemamount && player->itemtype != special->threshold))
+					return;
+
+				player->itemtype = special->threshold;
+				if ((UINT16)(player->itemamount) + special->movecount > 255)
+					player->itemamount = 255;
+				else
+					player->itemamount += special->movecount;
+			}
 
 			S_StartSound(special, special->info->deathsound);
 
@@ -646,6 +654,10 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 
 		case MT_RINGSHOOTER:
 			Obj_PlayerUsedRingShooter(special, player);
+			return;
+
+		case MT_SUPER_FLICKY:
+			Obj_SuperFlickyPlayerCollide(special, toucher);
 			return;
 
 		default: // SOC or script pickup
@@ -2322,8 +2334,16 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 					if (clash)
 					{
 						player->spheres = max(player->spheres - 10, 0);
+
 						if (inflictor)
+						{
 							K_DoPowerClash(target, inflictor);
+
+							if (inflictor->type == MT_SUPER_FLICKY)
+							{
+								Obj_BlockSuperFlicky(inflictor);
+							}
+						}
 						else if (source)
 							K_DoPowerClash(target, source);
 					}

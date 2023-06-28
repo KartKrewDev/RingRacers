@@ -16,6 +16,7 @@
 #include "k_objects.h"
 #include "k_roulette.h"
 #include "k_podium.h"
+#include "k_powerup.h"
 
 angle_t K_GetCollideAngle(mobj_t *t1, mobj_t *t2)
 {
@@ -888,12 +889,27 @@ boolean K_InstaWhipCollide(mobj_t *shield, mobj_t *victim)
 			P_PlayerRingBurst(victimPlayer, 5);
 			P_DamageMobj(victim, shield, attacker, 1, DMG_STUMBLE); // There's a special exception in P_DamageMobj for type==MT_INSTAWHIP
 
+			K_DropPowerUps(victimPlayer);
+
 			angle_t thrangle = ANGLE_180 + R_PointToAngle2(victim->x, victim->y, shield->x, shield->y);
 			P_Thrust(victim, thrangle, FRACUNIT*10);
 
 			K_AddHitLag(victim, victimHitlag, true);
 			K_AddHitLag(attacker, attackerHitlag, false);
 			shield->hitlag = attacker->hitlag;
+			return true;
+		}
+		return false;
+	}
+	else if (victim->type == MT_SUPER_FLICKY)
+	{
+		if (Obj_IsSuperFlickyWhippable(victim))
+		{
+			K_AddHitLag(victim, victimHitlag, true);
+			K_AddHitLag(attacker, attackerHitlag, false);
+			shield->hitlag = attacker->hitlag;
+
+			Obj_WhipSuperFlicky(victim);
 			return true;
 		}
 		return false;

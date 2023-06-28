@@ -6533,13 +6533,26 @@ SINT8 K_GetTotallyRandomResult(UINT8 useodds)
 	return i;
 }
 
-mobj_t *K_CreatePaperItem(fixed_t x, fixed_t y, fixed_t z, angle_t angle, SINT8 flip, UINT8 type, UINT8 amount)
+mobj_t *K_CreatePaperItem(fixed_t x, fixed_t y, fixed_t z, angle_t angle, SINT8 flip, UINT8 type, UINT16 amount)
 {
 	mobj_t *drop = P_SpawnMobj(x, y, z, MT_FLOATINGITEM);
-	mobj_t *backdrop = P_SpawnMobjFromMobj(drop, 0, 0, 0, MT_OVERLAY);
 
-	P_SetTarget(&backdrop->target, drop);
-	P_SetMobjState(backdrop, S_ITEMBACKDROP);
+	// FIXME: due to linkdraw sucking major ass, I was unable
+	// to make a backdrop render behind dropped power-ups
+	// (which use a smaller sprite than normal items). So
+	// dropped power-ups have the backdrop baked into the
+	// sprite for now.
+	if (type < FIRSTPOWERUP)
+	{
+		mobj_t *backdrop = P_SpawnMobjFromMobj(drop, 0, 0, 0, MT_OVERLAY);
+
+		P_SetTarget(&backdrop->target, drop);
+		P_SetMobjState(backdrop, S_ITEMBACKDROP);
+
+		backdrop->dispoffset = 1;
+		P_SetTarget(&backdrop->tracer, drop);
+		backdrop->flags2 |= MF2_LINKDRAW;
+	}
 
 	P_SetScale(drop, drop->scale>>4);
 	drop->destscale = (3*drop->destscale)/2;
@@ -6588,9 +6601,6 @@ mobj_t *K_CreatePaperItem(fixed_t x, fixed_t y, fixed_t z, angle_t angle, SINT8 
 	}
 
 	drop->flags |= MF_NOCLIPTHING;
-	backdrop->dispoffset = 1;
-	P_SetTarget(&backdrop->tracer, drop);
-	backdrop->flags2 |= MF2_LINKDRAW;
 
 	if (gametyperules & GTR_CLOSERPLAYERS)
 	{
@@ -6600,20 +6610,30 @@ mobj_t *K_CreatePaperItem(fixed_t x, fixed_t y, fixed_t z, angle_t angle, SINT8 
 	return drop;
 }
 
+void K_DropPaperItem(player_t *player, UINT8 itemtype, UINT16 itemamount)
+{
+	if (!player->mo || P_MobjWasRemoved(player->mo))
+	{
+		return;
+	}
+
+	mobj_t *drop = K_CreatePaperItem(
+		player->mo->x, player->mo->y, player->mo->z + player->mo->height/2,
+		player->mo->angle + ANGLE_90, P_MobjFlip(player->mo),
+		itemtype, itemamount
+	);
+
+	K_FlipFromObject(drop, player->mo);
+}
+
 // For getting EXTRA hit!
 void K_DropItems(player_t *player)
 {
 	K_DropHnextList(player);
 
-	if (player->mo && !P_MobjWasRemoved(player->mo) && player->itemamount > 0)
+	if (player->itemamount > 0)
 	{
-		mobj_t *drop = K_CreatePaperItem(
-			player->mo->x, player->mo->y, player->mo->z + player->mo->height/2,
-			player->mo->angle + ANGLE_90, P_MobjFlip(player->mo),
-			player->itemtype, player->itemamount
-		);
-
-		K_FlipFromObject(drop, player->mo);
+		K_DropPaperItem(player, player->itemtype, player->itemamount);
 	}
 
 	K_StripItems(player);
@@ -8287,6 +8307,12 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 
 	if (player->hand && P_MobjWasRemoved(player->hand))
 		P_SetTarget(&player->hand, NULL);
+
+	if (player->flickyAttacker && P_MobjWasRemoved(player->flickyAttacker))
+		P_SetTarget(&player->flickyAttacker, NULL);
+
+	if (player->powerup.flickyController && P_MobjWasRemoved(player->powerup.flickyController))
+		P_SetTarget(&player->powerup.flickyController, NULL);
 
 	if (player->spectator == false)
 	{
@@ -12009,8 +12035,17 @@ void K_UpdateMobjItemOverlay(mobj_t *part, SINT8 itemType, UINT8 itemCount)
 			part->frame = FF_FULLBRIGHT|FF_PAPERSPRITE;
 			break;
 		default:
-			part->sprite = SPR_ITEM;
-			part->frame = FF_FULLBRIGHT|FF_PAPERSPRITE|(itemType);
+			if (itemType >= FIRSTPOWERUP)
+			{
+				part->sprite = SPR_PWRB;
+				// Not a papersprite. See K_CreatePaperItem for why.
+				part->frame = FF_FULLBRIGHT|(itemType - FIRSTPOWERUP);
+			}
+			else
+			{
+				part->sprite = SPR_ITEM;
+				part->frame = FF_FULLBRIGHT|FF_PAPERSPRITE|(itemType);
+			}
 			break;
 	}
 }

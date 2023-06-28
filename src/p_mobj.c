@@ -2464,6 +2464,12 @@ boolean P_ZMovement(mobj_t *mo)
 				return false;
 			}
 		}
+		else if (mo->type == MT_SUPER_FLICKY)
+		{
+			mom.z = -mom.z;
+
+			Obj_SuperFlickyLanding(mo);
+		}
 		else if (mo->type == MT_DRIFTCLIP)
 		{
 			mom.z = -mom.z/2;
@@ -6689,6 +6695,14 @@ static void P_MobjSceneryThink(mobj_t *mobj)
 			return;
 		}
 		break;
+	case MT_SUPER_FLICKY_CONTROLLER:
+		Obj_SuperFlickyControllerThink(mobj);
+
+		if (P_MobjWasRemoved(mobj))
+		{
+			return;
+		}
+		break;
 	case MT_VWREF:
 	case MT_VWREB:
 	{
@@ -7197,29 +7211,12 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 			}
 		}
 
-		switch (mobj->threshold)
+		if (mobj->threshold == KITEM_SPB || mobj->threshold == KITEM_SHRINK)
 		{
-			case KITEM_ORBINAUT:
-				mobj->sprite = SPR_ITMO;
-				mobj->frame = FF_FULLBRIGHT|FF_PAPERSPRITE|K_GetOrbinautItemFrame(mobj->movecount);
-				break;
-			case KITEM_INVINCIBILITY:
-				mobj->sprite = SPR_ITMI;
-				mobj->frame = FF_FULLBRIGHT|FF_PAPERSPRITE|K_GetInvincibilityItemFrame();
-				break;
-			case KITEM_SAD:
-				mobj->sprite = SPR_ITEM;
-				mobj->frame = FF_FULLBRIGHT|FF_PAPERSPRITE;
-				break;
-			case KITEM_SPB:
-			case KITEM_SHRINK:
-				K_SetItemCooldown(mobj->threshold, 20*TICRATE);
-				/* FALLTHRU */
-			default:
-				mobj->sprite = SPR_ITEM;
-				mobj->frame = FF_FULLBRIGHT|FF_PAPERSPRITE|(mobj->threshold);
-				break;
+			K_SetItemCooldown(mobj->threshold, 20*TICRATE);
 		}
+
+		K_UpdateMobjItemOverlay(mobj, mobj->threshold, mobj->movecount);
 		break;
 	}
 	case MT_ITEMCAPSULE:
@@ -9532,6 +9529,14 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 		break;
 	case MT_GACHABOM_REBOUND:
 		Obj_GachaBomReboundThink(mobj);
+
+		if (P_MobjWasRemoved(mobj))
+		{
+			return false;
+		}
+		break;
+	case MT_SUPER_FLICKY:
+		Obj_SuperFlickyThink(mobj);
 
 		if (P_MobjWasRemoved(mobj))
 		{

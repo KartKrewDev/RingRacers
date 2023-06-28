@@ -2,6 +2,8 @@
 #ifndef k_objects_H
 #define k_objects_H
 
+#include "doomdef.h"
+#include "m_fixed.h"
 #include "tables.h" // angle_t
 #include "taglist.h"
 
@@ -143,6 +145,21 @@ void Obj_SpawnGachaBomRebound(mobj_t *source, mobj_t *target);
 
 /* Servant Hand */
 void Obj_ServantHandHandling(player_t *player);
+
+/* Super Flicky Controller */
+void Obj_SpawnSuperFlickySwarm(player_t *owner, tic_t time);
+void Obj_SuperFlickyControllerThink(mobj_t *controller);
+void Obj_EndSuperFlickySwarm(mobj_t *controller);
+void Obj_ExtendSuperFlickySwarm(mobj_t *controller, tic_t time);
+tic_t Obj_SuperFlickySwarmTime(const mobj_t *controller);
+
+/* Super Flicky */
+void Obj_SuperFlickyThink(mobj_t *flicky);
+void Obj_WhipSuperFlicky(mobj_t *flicky);
+void Obj_BlockSuperFlicky(mobj_t *flicky);
+void Obj_SuperFlickyPlayerCollide(mobj_t *flicky, mobj_t *player);
+void Obj_SuperFlickyLanding(mobj_t *flicky);
+boolean Obj_IsSuperFlickyWhippable(const mobj_t *flicky);
 
 #ifdef __cplusplus
 } // extern "C"
