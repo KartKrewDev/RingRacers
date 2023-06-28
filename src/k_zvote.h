@@ -28,6 +28,7 @@ typedef enum
 {
 	MVT_KICK,		// Kick another player in the server
 	MVT_RTV,		// Exit level early
+	MVT_RUNITBACK,	// Restart level fresh
 	MVT__MAX,		// Total number of vote types
 } midVoteType_e;
 
@@ -64,6 +65,39 @@ struct midVote_t
 extern midVote_t g_midVote;
 
 /*--------------------------------------------------
+	boolean K_MidVoteTypeUsesVictim(midVoteType_e voteType)
+
+		Specifies whenever or not a vote type is intended
+		to specify a "victim", or a player that would be
+		negatively affected by the vote.
+
+	Input Arguments:-
+		voteType - The vote type to check.
+
+	Return:-
+		true if it uses a victim, otherwise false.
+--------------------------------------------------*/
+
+boolean K_MidVoteTypeUsesVictim(midVoteType_e voteType);
+
+
+/*--------------------------------------------------
+	void K_SendCallMidVote(midVoteType_e voteType, INT32 voteVariable)
+
+		Prepares and sends net packet for calling a midvote.
+
+	Input Arguments:-
+		voteType - The type of vote a local player is trying to call.
+		variable - Extra arguments for the vote type.
+
+	Return:-
+		N/A
+--------------------------------------------------*/
+
+void K_SendCallMidVote(midVoteType_e voteType, INT32 voteVariable);
+
+
+/*--------------------------------------------------
 	void K_RegisterMidVoteCVars(void);
 
 		Registers the console variables related to
@@ -97,6 +131,22 @@ void K_ResetMidVote(void);
 --------------------------------------------------*/
 
 boolean K_AnyMidVotesAllowed(void);
+
+
+/*--------------------------------------------------
+	midVoteType_e K_GetNextCallableMidVote(midVoteType_e seed, boolean backwards)
+
+		Gets the next enabled Z-vote type in the list.
+
+	Input Arguments:-
+		seed - position in the list to start with
+		backwards - if true, traverses list in reverse order
+
+	Return:-
+		next Z-vote id if any vote types are enabled, otherwise MVT__MAX.
+--------------------------------------------------*/
+
+midVoteType_e K_GetNextAllowedMidVote(midVoteType_e seed, boolean backwards);
 
 
 /*--------------------------------------------------
@@ -169,6 +219,18 @@ boolean K_PlayerIDMidVoted(const UINT8 id);
 
 UINT8 K_CountMidVotes(void);
 
+
+/*--------------------------------------------------
+	boolean K_MinimalCheckNewMidVote(midVoteType_e type)
+
+		Returns if the variables given are a valid state for
+		pause menu Z-vote flow.
+
+	Input Arguments:-
+		type - The type of vote they're trying to call.
+--------------------------------------------------*/
+
+boolean K_MinimalCheckNewMidVote(midVoteType_e type);
 
 /*--------------------------------------------------
 	boolean K_AllowNewMidVote(player_t *caller, midVoteType_e type, INT32 variable, player_t *victim);
@@ -261,6 +323,19 @@ void K_TickMidVote(void);
 --------------------------------------------------*/
 
 void K_UpdateMidVotePatches(void);
+
+
+/*--------------------------------------------------
+	const char *K_GetMidVoteLabel(midVoteType_e i)
+
+	Input Arguments:-
+		i - id in the list to retrieve label for
+
+	Return:-
+		label associated with that id, or a sensible default (not NULL)
+--------------------------------------------------*/
+
+const char *K_GetMidVoteLabel(midVoteType_e i);
 
 
 /*--------------------------------------------------

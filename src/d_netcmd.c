@@ -5648,6 +5648,22 @@ static void Command_Mapmd5_f(void)
 		CONS_Printf(M_GetText("You must be in a level to use this.\n"));
 }
 
+boolean G_GamestateUsesExitLevel(void)
+{
+	if (demo.playback)
+		return false;
+
+	switch (gamestate)
+	{
+		case GS_LEVEL:
+		case GS_CREDITS:
+			return true;
+
+		default:
+			return false;
+	}
+}
+
 static void Command_ExitLevel_f(void)
 {
 	if (!(server || (IsPlayerAdmin(consoleplayer))))
@@ -5658,7 +5674,7 @@ static void Command_ExitLevel_f(void)
 	{
 		CONS_Printf(M_GetText("This cannot be used without cheats enabled.\n"));
 	}
-	else if (( gamestate != GS_LEVEL && gamestate != GS_CREDITS ) || demo.playback)
+	else if (G_GamestateUsesExitLevel() == false)
 	{
 		CONS_Printf(M_GetText("You must be in a level to use this.\n"));
 	}
@@ -5683,6 +5699,9 @@ static void Got_ExitLevelcmd(UINT8 **cp, INT32 playernum)
 			SendKick(playernum, KICK_MSG_CON_FAIL);
 		return;
 	}
+
+	if (G_GamestateUsesExitLevel() == false)
+		return;
 
 	G_ExitLevel();
 }

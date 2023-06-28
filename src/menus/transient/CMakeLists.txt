@@ -8,6 +8,7 @@ target_sources(SRB2SDL2 PRIVATE
 	discord-requests.c
 	message-box.c
 	pause-game.c
+	pause-kick.c
 	pause-replay.c
 	virtual-keyboard.c
 )

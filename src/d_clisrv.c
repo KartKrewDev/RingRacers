@@ -3255,7 +3255,11 @@ static void Got_KickCmd(UINT8 **p, INT32 playernum)
 		{
 			// Running the callback here would mean a very dumb infinite loop.
 			// We'll manually handle this here by changing the msg type.
-			msg = KICK_MSG_VOTE_KICK;
+			if (msg != KICK_MSG_BANNED && msg != KICK_MSG_CUSTOM_BAN)
+			{
+				// of course, don't take the teeth out of a ban
+				msg = KICK_MSG_VOTE_KICK;
+			}
 			K_MidVoteFinalize(FRACUNIT); // Vote succeeded, so the delay is normal.
 		}
 		else

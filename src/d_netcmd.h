@@ -242,6 +242,7 @@ void WeaponPref_Parse(UINT8 **cp, INT32 playernum);
 void D_SendPlayerConfig(UINT8 n);
 void Command_ExitGame_f(void);
 void Command_Retry_f(void);
+boolean G_GamestateUsesExitLevel(void);
 void D_GameTypeChanged(INT32 lastgametype); // not a real _OnChange function anymore
 void D_MapChange(UINT16 pmapnum, INT32 pgametype, boolean pencoremode, boolean presetplayers, INT32 pdelay, boolean pskipprecutscene, boolean pforcespecialstage);
 void D_SetupVote(void);
