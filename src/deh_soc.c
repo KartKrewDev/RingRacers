@@ -2393,7 +2393,7 @@ void readunlockable(MYFILE *f, INT32 num)
 	Z_Free(s);
 }
 
-static void readcondition(UINT8 set, UINT32 id, char *word2)
+static void readcondition(UINT16 set, UINT32 id, char *word2)
 {
 	INT32 i;
 	char *params[5]; // condition, requirement, extra info, extra info, stringvar
