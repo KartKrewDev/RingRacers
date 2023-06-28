@@ -20,6 +20,13 @@
 extern "C" {
 #endif
 
+// The important collorary to "Hornmod is universally hated in dev" is
+// the simple phrase "this is why" -- 1024 is obscene yet will fill up.
+// By the way, this comment will grow stronger and stronger every time
+// somebody comes here to double it, so I encourage you to leave a new
+// (dated) comment every time you do so. ~toast 280623
+#define MAXFOLLOWERS 1024
+
 #define FOLLOWERCOLOR_MATCH UINT16_MAX
 #define FOLLOWERCOLOR_OPPOSITE (UINT16_MAX-1)
 
@@ -85,12 +92,14 @@ struct follower_t
 	statenum_t losestate;		// state when the player has lost
 	statenum_t hitconfirmstate;	// state for hit confirm
 	tic_t hitconfirmtime;		// time to keep the above playing for
+
+	sfxenum_t hornsound;		// Press (B) to announce you are pressing (B)
 };
 
 extern INT32 numfollowers;
-extern follower_t followers[MAXSKINS];
+extern follower_t followers[MAXFOLLOWERS];
 
-#define MAXFOLLOWERCATEGORIES 32
+#define MAXFOLLOWERCATEGORIES 64
 
 struct followercategory_t
 {

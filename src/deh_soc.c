@@ -3602,7 +3602,7 @@ void readfollower(MYFILE *f)
 	INT32 res;
 	INT32 i;
 
-	if (numfollowers >= MAXSKINS)
+	if (numfollowers >= MAXFOLLOWERS)
 	{
 		I_Error("Out of Followers\nLoad less addons to fix this.");
 	}

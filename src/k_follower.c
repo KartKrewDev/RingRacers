@@ -14,7 +14,7 @@
 #include "m_cond.h"
 
 INT32 numfollowers = 0;
-follower_t followers[MAXSKINS];
+follower_t followers[MAXFOLLOWERS];
 
 INT32 numfollowercategories;
 followercategory_t followercategories[MAXFOLLOWERCATEGORIES];
