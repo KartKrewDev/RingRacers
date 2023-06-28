@@ -2393,7 +2393,7 @@ void readunlockable(MYFILE *f, INT32 num)
 	Z_Free(s);
 }
 
-static void readcondition(UINT8 set, UINT32 id, char *word2)
+static void readcondition(UINT16 set, UINT32 id, char *word2)
 {
 	INT32 i;
 	char *params[5]; // condition, requirement, extra info, extra info, stringvar
@@ -2860,13 +2860,13 @@ static void readcondition(UINT8 set, UINT32 id, char *word2)
 	M_AddRawCondition(set, (UINT8)id, ty, re, x1, x2, stringvar);
 }
 
-void readconditionset(MYFILE *f, UINT8 setnum)
+void readconditionset(MYFILE *f, UINT16 setnum)
 {
 	char *s = Z_Malloc(MAXLINELEN, PU_STATIC, NULL);
 	char *word = s;
 	char *word2;
 	char *tmp;
-	UINT8 id;
+	UINT16 id;
 	UINT8 previd = 0;
 
 	M_ClearConditionSet(setnum);
@@ -2903,21 +2903,26 @@ void readconditionset(MYFILE *f, UINT8 setnum)
 
 			if (fastncmp(word, "CONDITION", 9))
 			{
-				id = (UINT8)atoi(word + 9);
+				id = atoi(word + 9);
 				if (id == 0)
 				{
 					deh_warning("Condition set %d: unknown word '%s'", setnum+1, word);
 					continue;
 				}
-				else if (previd > id)
+				if (previd > id)
 				{
 					// out of order conditions can cause problems, so enforce proper order
 					deh_warning("Condition set %d: conditions are out of order, ignoring this line", setnum+1);
 					continue;
 				}
-				previd = id;
+				if (id > UINT8_MAX)
+				{
+					deh_warning("Condition set %d: too many Condition# types, ignoring this line", setnum+1);
+					continue;
+				}
+				previd = (UINT8)id;
 
-				readcondition(setnum, id, word2);
+				readcondition(setnum, (UINT8)id, word2);
 			}
 			else
 				deh_warning("Condition set %d: unknown word '%s'", setnum, word);

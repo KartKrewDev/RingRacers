@@ -62,7 +62,7 @@ skincolornum_t get_skincolor(const char *word);
 
 void readwipes(MYFILE *f);
 void readmaincfg(MYFILE *f, boolean mainfile);
-void readconditionset(MYFILE *f, UINT8 setnum);
+void readconditionset(MYFILE *f, UINT16 setnum);
 void readunlockable(MYFILE *f, INT32 num);
 void reademblemdata(MYFILE *f, INT32 num);
 void readsound(MYFILE *f, INT32 num);
