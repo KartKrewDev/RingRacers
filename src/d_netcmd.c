@@ -6300,7 +6300,6 @@ void Command_ExitGame_f(void)
 	SplitScreen_OnChange();
 
 	cht_debug = 0;
-	emeralds = 0;
 	memset(&luabanks, 0, sizeof(luabanks));
 
 	if (dirmenu)

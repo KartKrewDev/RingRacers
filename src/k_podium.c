@@ -235,16 +235,25 @@ void K_UpdatePodiumWaypoints(player_t *const player)
 --------------------------------------------------*/
 boolean K_StartCeremony(void)
 {
-	INT32 podiumMapNum = nummapheaders;
-	INT32 i;
-
 	if (grandprixinfo.gp == false)
 	{
 		return false;
 	}
 
-	if (podiummap
-		&& ((podiumMapNum = G_MapNumber(podiummap)) < nummapheaders)
+	INT32 i;
+	INT32 podiumMapNum = NEXTMAP_INVALID;
+
+	if (grandprixinfo.cup != NULL
+	&& grandprixinfo.cup->cachedlevels[CUPCACHE_PODIUM] != NEXTMAP_INVALID)
+	{
+		podiumMapNum = grandprixinfo.cup->cachedlevels[CUPCACHE_PODIUM];
+	}
+	else if (podiummap)
+	{
+		podiumMapNum = G_MapNumber(podiummap);
+	}
+
+	if (podiumMapNum < nummapheaders
 		&& mapheaderinfo[podiumMapNum]
 		&& mapheaderinfo[podiumMapNum]->lumpnum != LUMPERROR)
 	{

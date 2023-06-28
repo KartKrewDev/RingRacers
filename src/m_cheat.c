@@ -469,29 +469,6 @@ void Command_Savecheckpoint_f(void)
 	}
 }
 
-// Like M_GetAllEmeralds() but for console devmode junkies.
-/*
-void Command_Getallemeralds_f(void)
-{
-	REQUIRE_CHEATS;
-	REQUIRE_SINGLEPLAYER;
-
-	emeralds = EMERALD_ALL;
-
-	CONS_Printf(M_GetText("You now have all 7 emeralds.\n"));
-}
-
-void Command_Resetemeralds_f(void)
-{
-	REQUIRE_CHEATS;
-	REQUIRE_SINGLEPLAYER;
-
-	emeralds = 0;
-
-	CONS_Printf(M_GetText("Emeralds reset to zero.\n"));
-}
-*/
-
 //
 // Devmode
 //

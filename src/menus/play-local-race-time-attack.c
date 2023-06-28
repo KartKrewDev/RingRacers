@@ -485,7 +485,6 @@ void M_StartTimeAttack(INT32 choice)
 
 	// Still need to reset devmode
 	cht_debug = 0;
-	emeralds = 0;
 
 	if (demo.playback)
 		G_StopDemo();

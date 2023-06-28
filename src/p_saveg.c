@@ -5662,7 +5662,6 @@ static void P_NetArchiveMisc(savebuffer_t *save, boolean resending)
 
 	WRITESINT8(save->p, g_pickedVote);
 
-	WRITEUINT16(save->p, emeralds);
 	{
 		UINT8 globools = 0;
 		if (stagefailed)
@@ -5836,7 +5835,6 @@ static boolean P_NetUnArchiveMisc(savebuffer_t *save, boolean reloading)
 
 	g_pickedVote = READSINT8(save->p);
 
-	emeralds = READUINT16(save->p);
 	{
 		UINT8 globools = READUINT8(save->p);
 		stagefailed = !!(globools & 1);

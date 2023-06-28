@@ -140,8 +140,6 @@ boolean usedCheats = false; // Set when a "cheats on" is ever used.
 UINT8 paused;
 UINT8 modeattacking = ATTACKING_NONE;
 boolean imcontinuing = false;
-boolean runemeraldmanager = false;
-UINT16 emeraldspawndelay = 60*TICRATE;
 
 // menu demo things
 UINT8  numDemos      = 0;
@@ -205,7 +203,6 @@ static boolean retryingmodeattack = false;
 
 UINT8 stagefailed; // Used for GEMS BONUS? Also to see if you beat the stage.
 
-UINT16 emeralds;
 INT32 luabanks[NUM_LUABANKS];
 
 // Temporary holding place for nights data for the current map
@@ -264,7 +261,7 @@ UINT8 maxXtraLife = 2; // Max extra lives from rings
 
 UINT8 introtoplay;
 UINT8 creditscutscene;
-UINT8 useBlackRock = 1;
+UINT8 useSeal = 1;
 
 // Emerald locations
 mobj_t *hunt1;
@@ -1785,7 +1782,7 @@ boolean G_Responder(event_t *ev)
 			return true;
 		}
 	}
-	else if (gamestate == GS_CREDITS || gamestate == GS_ENDING) // todo: keep ending here?
+	else if (gamestate == GS_CREDITS)
 	{
 		if (HU_Responder(ev))
 		{
@@ -1813,17 +1810,22 @@ boolean G_Responder(event_t *ev)
 
 		if (K_CeremonyResponder(ev))
 		{
-			nextmap = NEXTMAP_TITLE;
+			if (grandprixinfo.gp == true
+				&& grandprixinfo.cup != NULL
+				&& grandprixinfo.cup->playcredits == true)
+			{
+				nextmap = NEXTMAP_CREDITS;
+			}
+			else
+			{
+				nextmap = NEXTMAP_TITLE;
+			}
+
 			G_EndGame();
 			return true;
 		}
 	}
 	else if (gamestate == GS_CONTINUING)
-	{
-		return true;
-	}
-	// Demo End
-	else if (gamestate == GS_GAMEEND)
 	{
 		return true;
 	}
@@ -2322,21 +2324,10 @@ void G_Ticker(boolean run)
 				F_IntroTicker();
 			break;
 
-		case GS_ENDING:
-			if (run)
-				F_EndingTicker();
-			HU_Ticker();
-			break;
-
 		case GS_CUTSCENE:
 			if (run)
 				F_CutsceneTicker();
 			HU_Ticker();
-			break;
-
-		case GS_GAMEEND:
-			if (run)
-				F_GameEndTicker();
 			break;
 
 		case GS_EVALUATION:
@@ -3386,10 +3377,6 @@ void G_ExitLevel(void)
 		HU_ClearTitlecardCEcho();
 
 		// Don't save demos immediately here! Let standings write first
-	}
-	else if (gamestate == GS_ENDING)
-	{
-		F_StartCredits();
 	}
 	else if (gamestate == GS_CREDITS)
 	{
@@ -4664,6 +4651,8 @@ void G_EndGame(void)
 	// Only do evaluation and credits in singleplayer contexts
 	if (!netgame && grandprixinfo.gp == true)
 	{
+		G_HandleSaveLevel(true);
+
 		if (nextmap == NEXTMAP_CEREMONY) // end game with ceremony
 		{
 			if (K_StartCeremony() == true)
@@ -4736,7 +4725,15 @@ void G_LoadGameSettings(void)
 }
 
 #define GD_VERSIONCHECK 0xBA5ED123 // Change every major version, as usual
-#define GD_VERSIONMINOR 3 // Change every format update
+#define GD_VERSIONMINOR 4 // Change every format update
+
+typedef enum
+{
+	GDEVER_ADDON = 1,
+	GDEVER_CREDITS = 1<<1,
+	GDEVER_REPLAY = 1<<2,
+	GDEVER_SPECIAL = 1<<3,
+} gdeverdone_t;
 
 static const char *G_GameDataFolder(void)
 {
@@ -4860,9 +4857,21 @@ void G_LoadGameData(void)
 
 		gamedata->chaokeys = READUINT16(save.p);
 
-		gamedata->everloadedaddon = (boolean)READUINT8(save.p);
-		gamedata->eversavedreplay = (boolean)READUINT8(save.p);
-		gamedata->everseenspecial = (boolean)READUINT8(save.p);
+		if (versionMinor >= 4)
+		{
+			UINT32 everflags = READUINT32(save.p);
+
+			gamedata->everloadedaddon = !!(everflags & GDEVER_ADDON);
+			gamedata->everfinishedcredits = !!(everflags & GDEVER_CREDITS);
+			gamedata->eversavedreplay = !!(everflags & GDEVER_REPLAY);
+			gamedata->everseenspecial = !!(everflags & GDEVER_SPECIAL);
+		}
+		else
+		{
+			gamedata->everloadedaddon = (boolean)READUINT8(save.p);
+			gamedata->eversavedreplay = (boolean)READUINT8(save.p);
+			gamedata->everseenspecial = (boolean)READUINT8(save.p);
+		}
 	}
 	else
 	{
@@ -5289,7 +5298,7 @@ void G_SaveGameData(void)
 		4+4+
 		(4*GDGT_MAX)+
 		4+1+2+2+
-		1+1+1+
+		4+
 		4+
 		(MAXEMBLEMS+(MAXUNLOCKABLES*2)+MAXCONDITIONSETS)+
 		4+2);
@@ -5426,11 +5435,22 @@ void G_SaveGameData(void)
 	WRITEUINT16(save.p, gamedata->keyspending); // 2
 	WRITEUINT16(save.p, gamedata->chaokeys); // 2
 
-	WRITEUINT8(save.p, gamedata->everloadedaddon); // 1
-	WRITEUINT8(save.p, gamedata->eversavedreplay); // 1
-	WRITEUINT8(save.p, gamedata->everseenspecial); // 1
+	{
+		UINT32 everflags = 0;
 
-	WRITEUINT32(save.p, quickncasehash(timeattackfolder, 64));
+		if (gamedata->everloadedaddon)
+			everflags |= GDEVER_ADDON;
+		if (gamedata->everfinishedcredits)
+			everflags |= GDEVER_CREDITS;
+		if (gamedata->eversavedreplay)
+			everflags |= GDEVER_REPLAY;
+		if (gamedata->everseenspecial)
+			everflags |= GDEVER_SPECIAL;
+
+		WRITEUINT32(save.p, everflags); // 4
+	}
+
+	WRITEUINT32(save.p, quickncasehash(timeattackfolder, 64)); // 4
 
 	// To save space, use one bit per collected/achieved/unlocked flag
 	for (i = 0; i < MAXEMBLEMS;) // MAXEMBLEMS * 1;

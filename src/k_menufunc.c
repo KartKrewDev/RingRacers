@@ -209,7 +209,6 @@ static boolean M_GamestateCanOpenMenu(void)
 	{
 		case GS_INTRO:
 		case GS_CUTSCENE:
-		case GS_GAMEEND:
 		case GS_CREDITS:
 		case GS_EVALUATION:
 		case GS_CEREMONY:

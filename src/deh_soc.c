@@ -2583,6 +2583,7 @@ static void readcondition(UINT8 set, UINT32 id, char *word2)
 		}
 	}
 	else if ((offset=0) || fastcmp(params[0], "ADDON")
+	||        (++offset && fastcmp(params[0], "CREDITS"))
 	||        (++offset && fastcmp(params[0], "REPLAY"))
 	||        (++offset && fastcmp(params[0], "CRASH")))
 	{
@@ -3120,13 +3121,13 @@ void readmaincfg(MYFILE *f, boolean mainfile)
 				if (creditscutscene > 128)
 					creditscutscene = 128;
 			}
-			else if (fastcmp(word, "USEBLACKROCK"))
+			else if (fastcmp(word, "USESEAL"))
 			{
-				useBlackRock = (UINT8)(value || word2[0] == 'T' || word2[0] == 'Y');
+				useSeal = (UINT8)(value || word2[0] == 'T' || word2[0] == 'Y');
 			}
 			else if (fastcmp(word, "LOOPTITLE"))
 			{
-				looptitle = (value || word2[0] == 'T' || word2[0] == 'Y');
+				looptitle = (value != 0 || word2[0] == 'T' || word2[0] == 'Y');
 				titlechanged = true;
 			}
 			else if (fastcmp(word, "TITLEMAP"))
@@ -3137,7 +3138,7 @@ void readmaincfg(MYFILE *f, boolean mainfile)
 			}
 			else if (fastcmp(word, "HIDETITLEPICS") || fastcmp(word, "TITLEPICSHIDE"))
 			{
-				hidetitlepics = (boolean)(value || word2[0] == 'T' || word2[0] == 'Y');
+				hidetitlepics = (boolean)(value != 0 || word2[0] == 'T' || word2[0] == 'Y');
 				titlechanged = true;
 			}
 			else if (fastcmp(word, "TITLEPICSMODE"))
@@ -3365,14 +3366,6 @@ void readwipes(MYFILE *f)
 				else if (fastcmp(pword, "FINAL"))
 					wipeoffset = wipe_evaluation_final;
 			}
-			else if (fastncmp(word, "GAMEEND_", 8))
-			{
-				pword = word + 8;
-				if (fastcmp(pword, "TOBLACK"))
-					wipeoffset = wipe_gameend_toblack;
-				else if (fastcmp(pword, "FINAL"))
-					wipeoffset = wipe_gameend_final;
-			}
 			else if (fastncmp(word, "CEREMONY_", 9))
 			{
 				pword = word + 9;
@@ -3436,6 +3429,15 @@ static void invalidateacrosscups(UINT16 map)
 	}
 
 	mapheaderinfo[map]->cup = NULL;
+}
+
+static char *MapNameOrRemoval(char *name)
+{
+	if (name[0] == '\0'
+	|| (name[0] == '/' && name[1] == '\0'))
+		return NULL;
+
+	return Z_StrDup(name);
 }
 
 void readcupheader(MYFILE *f, cupheader_t *cup)
@@ -3539,8 +3541,12 @@ void readcupheader(MYFILE *f, cupheader_t *cup)
 						break;
 					}
 
-					cup->levellist[CUPCACHE_BONUS + cup->numbonus] = Z_StrDup(tmp);
+					cup->levellist[CUPCACHE_BONUS + cup->numbonus] = MapNameOrRemoval(tmp);
 					cup->cachedlevels[CUPCACHE_BONUS + cup->numbonus] = NEXTMAP_INVALID;
+
+					if (cup->levellist[CUPCACHE_BONUS + cup->numbonus] == NULL)
+						break;
+
 					cup->numbonus++;
 				} while((tmp = strtok(NULL,",")) != NULL);
 			}
@@ -3548,8 +3554,15 @@ void readcupheader(MYFILE *f, cupheader_t *cup)
 			{
 				invalidateacrosscups(cup->cachedlevels[CUPCACHE_SPECIAL]);
 				Z_Free(cup->levellist[CUPCACHE_SPECIAL]);
-				cup->levellist[CUPCACHE_SPECIAL] = Z_StrDup(word2);
+				cup->levellist[CUPCACHE_SPECIAL] = MapNameOrRemoval(word2);
 				cup->cachedlevels[CUPCACHE_SPECIAL] = NEXTMAP_INVALID;
+			}
+			else if (fastcmp(word, "ALTPODIUM"))
+			{
+				invalidateacrosscups(cup->cachedlevels[CUPCACHE_PODIUM]);
+				Z_Free(cup->levellist[CUPCACHE_PODIUM]);
+				cup->levellist[CUPCACHE_PODIUM] = MapNameOrRemoval(word2);
+				cup->cachedlevels[CUPCACHE_PODIUM] = NEXTMAP_INVALID;
 			}
 			else if (fastcmp(word, "EMERALDNUM"))
 			{
@@ -3557,6 +3570,10 @@ void readcupheader(MYFILE *f, cupheader_t *cup)
 					cup->emeraldnum = (UINT8)i;
 				else
 					deh_warning("%s Cup: invalid emerald number %d", cup->name, i);
+			}
+			else if (fastcmp(word, "PLAYCREDITS"))
+			{
+				cup->playcredits = (i != 0 || word2[0] == 'T' || word2[0] == 'Y');
 			}
 			else
 				deh_warning("%s Cup: unknown word '%s'", cup->name, word);

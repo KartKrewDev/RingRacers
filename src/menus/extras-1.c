@@ -5,6 +5,15 @@
 #include "../m_cond.h"
 #include "../m_cheat.h"
 #include "../s_sound.h"
+#include "../f_finale.h"
+
+static void M_Credits(INT32 choice)
+{
+	(void)choice;
+	restoreMenu = currentMenu;
+	M_ClearMenus(true);
+	F_StartCredits();
+}
 
 menuitem_t EXTRAS_Main[] =
 {
@@ -32,6 +41,9 @@ menuitem_t EXTRAS_Main[] =
 
 	{IT_STRING | IT_CVAR | IT_CV_STRING, "Password", "If you don't know any passwords, come back later!",
 		NULL, {.cvar = &cv_dummyextraspassword}, 0, 0},
+
+	{IT_STRING | IT_CALL, "Credits", "It's important to know who makes the video games you play.",
+		NULL, {.routine = M_Credits}, 0, 0},
 };
 
 // the extras menu essentially reuses the options menu stuff

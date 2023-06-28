@@ -266,7 +266,7 @@ boolean M_LevelListFromGametype(INT16 gt)
 
 		G_GetBackupCupData(
 			cupgrid.grandprix == true
-			|| cv_splitplayers.value <= 1
+			&& cv_splitplayers.value <= 1
 		);
 
 		templevelsearch.cup = kartcupheaders;
