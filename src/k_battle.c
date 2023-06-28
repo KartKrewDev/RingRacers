@@ -24,6 +24,7 @@
 
 // Battle overtime info
 struct battleovertime battleovertime;
+struct battleufo g_battleufo;
 
 // Capsules mode enabled for this map?
 boolean battleprisons = false;

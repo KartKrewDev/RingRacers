@@ -5738,6 +5738,10 @@ static void P_NetArchiveMisc(savebuffer_t *save, boolean resending)
 	WRITEFIXED(save->p, battleovertime.y);
 	WRITEFIXED(save->p, battleovertime.z);
 
+	// battleufo_t
+	WRITEINT32(save->p, g_battleufo.previousId);
+	WRITEUINT32(save->p, g_battleufo.due);
+
 	WRITEUINT32(save->p, wantedcalcdelay);
 	for (i = 0; i < NUMKARTITEMS-1; i++)
 		WRITEUINT32(save->p, itemCooldowns[i]);
@@ -5907,6 +5911,10 @@ static boolean P_NetUnArchiveMisc(savebuffer_t *save, boolean reloading)
 	battleovertime.x = READFIXED(save->p);
 	battleovertime.y = READFIXED(save->p);
 	battleovertime.z = READFIXED(save->p);
+
+	// battleufo_t
+	g_battleufo.previousId = READINT32(save->p);
+	g_battleufo.due = READUINT32(save->p);
 
 	wantedcalcdelay = READUINT32(save->p);
 	for (i = 0; i < NUMKARTITEMS-1; i++)
