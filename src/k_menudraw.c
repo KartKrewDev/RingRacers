@@ -5081,8 +5081,9 @@ static void M_DrawChallengeTile(INT16 i, INT16 j, INT32 x, INT32 y, boolean hili
 			case SECRET_ONLINE:
 			case SECRET_ADDONS:
 			case SECRET_EGGTV:
-			case SECRET_ALTTITLE:
 			case SECRET_SOUNDTEST:
+			case SECRET_ALTTITLE:
+			case SECRET_MEMETAUNTS:
 				categoryid = '6';
 				break;
 			case SECRET_TIMEATTACK:
@@ -5169,11 +5170,14 @@ static void M_DrawChallengeTile(INT16 i, INT16 j, INT32 x, INT32 y, boolean hili
 			case SECRET_EGGTV:
 				iconid = 11;
 				break;
+			case SECRET_SOUNDTEST:
+				iconid = 1;
+				break;
 			case SECRET_ALTTITLE:
 				iconid = 6;
 				break;
-			case SECRET_SOUNDTEST:
-				iconid = 1;
+			case SECRET_MEMETAUNTS:
+				iconid = 13;
 				break;
 
 			case SECRET_TIMEATTACK:
