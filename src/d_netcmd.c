@@ -67,6 +67,7 @@
 #include "k_vote.h"
 #include "k_zvote.h"
 #include "k_bot.h"
+#include "k_powerup.h"
 
 #ifdef SRB2_CONFIG_ENABLE_WEBM_MOVIES
 #include "m_avrecorder.h"
@@ -433,6 +434,8 @@ consvar_t cv_kartbot = CVAR_INIT ("bots", "0", CV_NETVAR, kartbot_cons_t, NULL);
 
 consvar_t cv_karteliminatelast = CVAR_INIT ("eliminatelast", "Yes", CV_NETVAR|CV_CALL, CV_YesNo, KartEliminateLast_OnChange);
 
+consvar_t cv_thunderdome = CVAR_INIT ("thunderdome", "Off", CV_NETVAR, CV_OnOff, NULL);
+
 consvar_t cv_kartusepwrlv = CVAR_INIT ("usepwrlv", "Yes", CV_NETVAR, CV_YesNo, NULL);
 
 static CV_PossibleValue_t kartdebugitem_cons_t[] =
@@ -440,6 +443,11 @@ static CV_PossibleValue_t kartdebugitem_cons_t[] =
 #define FOREACH( name, n ) { n, #name }
 	KART_ITEM_ITERATOR,
 #undef  FOREACH
+	{POWERUP_SMONITOR, "SMonitor"},
+	{POWERUP_BARRIER, "Barrier"},
+	{POWERUP_BUMPER, "Bumper"},
+	{POWERUP_BADGE, "Badge"},
+	{POWERUP_SUPERFLICKY, "SuperFlicky"},
 	{0}
 };
 consvar_t cv_kartdebugitem = CVAR_INIT ("debugitem", "None", CV_NETVAR|CV_CHEAT, kartdebugitem_cons_t, NULL);
@@ -2068,6 +2076,11 @@ void D_Cheat(INT32 playernum, INT32 cheat, ...)
 		case CHEAT_GIVEITEM:
 			COPY(WRITESINT8, int);
 			COPY(WRITEUINT8, unsigned int);
+			break;
+
+		case CHEAT_GIVEPOWERUP:
+			COPY(WRITEUINT8, unsigned int);
+			COPY(WRITEUINT16, unsigned int);
 			break;
 
 		case CHEAT_SCORE:
@@ -5644,6 +5657,22 @@ static void Command_Mapmd5_f(void)
 		CONS_Printf(M_GetText("You must be in a level to use this.\n"));
 }
 
+boolean G_GamestateUsesExitLevel(void)
+{
+	if (demo.playback)
+		return false;
+
+	switch (gamestate)
+	{
+		case GS_LEVEL:
+		case GS_CREDITS:
+			return true;
+
+		default:
+			return false;
+	}
+}
+
 static void Command_ExitLevel_f(void)
 {
 	if (!(server || (IsPlayerAdmin(consoleplayer))))
@@ -5654,7 +5683,7 @@ static void Command_ExitLevel_f(void)
 	{
 		CONS_Printf(M_GetText("This cannot be used without cheats enabled.\n"));
 	}
-	else if (( gamestate != GS_LEVEL && gamestate != GS_CREDITS ) || demo.playback)
+	else if (G_GamestateUsesExitLevel() == false)
 	{
 		CONS_Printf(M_GetText("You must be in a level to use this.\n"));
 	}
@@ -5679,6 +5708,9 @@ static void Got_ExitLevelcmd(UINT8 **cp, INT32 playernum)
 			SendKick(playernum, KICK_MSG_CON_FAIL);
 		return;
 	}
+
+	if (G_GamestateUsesExitLevel() == false)
+		return;
 
 	G_ExitLevel();
 }
@@ -6110,6 +6142,20 @@ static void Got_Cheat(UINT8 **cp, INT32 playernum)
 			break;
 		}
 
+		case CHEAT_GIVEPOWERUP: {
+			UINT8 powerup = READUINT8(*cp);
+			UINT16 time = READUINT16(*cp);
+
+			// FIXME: we should have actual KITEM_ name array
+			const char *powerupname = cv_kartdebugitem.PossibleValue[
+				1 + NUMKARTITEMS + (powerup - FIRSTPOWERUP)].strvalue;
+
+			K_GivePowerUp(player, powerup, time);
+
+			CV_CheaterWarning(playernum, va("give powerup %s %d tics", powerupname, time));
+			break;
+		}
+
 		case CHEAT_SCORE: {
 			UINT32 score = READUINT32(*cp);
 
@@ -6252,7 +6298,6 @@ void Command_ExitGame_f(void)
 	SplitScreen_OnChange();
 
 	cht_debug = 0;
-	emeralds = 0;
 	memset(&luabanks, 0, sizeof(luabanks));
 
 	if (dirmenu)
@@ -6417,7 +6462,18 @@ static void Command_KartGiveItem_f(void)
 				}
 			}
 
-			if (item < NUMKARTITEMS)
+			if (item >= FIRSTPOWERUP)
+			{
+				INT32 amt;
+
+				if (ac > 2)
+					amt = atoi(COM_Argv(2));
+				else
+					amt = BATTLE_POWERUP_TIME;
+
+				D_Cheat(consoleplayer, CHEAT_GIVEPOWERUP, item, amt);
+			}
+			else if (item < NUMKARTITEMS)
 			{
 				INT32 amt;
 

@@ -41,6 +41,7 @@
 #include "k_roulette.h"
 #include "k_boss.h"
 #include "acs/interface.h"
+#include "k_powerup.h"
 
 // CTF player names
 #define CTFTEAMCODE(pl) pl->ctfteam ? (pl->ctfteam == 1 ? "\x85" : "\x84") : ""
@@ -140,6 +141,7 @@ boolean P_CanPickupItem(player_t *player, UINT8 weapon)
 
 			// Item slot already taken up
 			if (player->itemRoulette.active == true
+				|| player->ringboxdelay > 0
 				|| (weapon != 3 && player->itemamount)
 				|| (player->pflags & PF_ITEMOUT))
 				return false;
@@ -184,6 +186,61 @@ boolean P_EmblemWasCollected(INT32 emblemID)
 	}
 
 	return gamedata->collected[emblemID];
+}
+
+static void P_ItemPop(mobj_t *actor)
+{
+	/*
+	INT32 locvar1 = var1;
+
+	if (LUA_CallAction(A_ITEMPOP, actor))
+		return;
+
+	if (!(actor->target && actor->target->player))
+	{
+		if (cht_debug && !(actor->target && actor->target->player))
+			CONS_Printf("ERROR: Powerup has no target!\n");
+		return;
+	}
+	*/
+
+	P_SetMobjState(actor, S_RINGBOX1);
+	actor->extravalue1 = 0;
+
+	// de-solidify
+	actor->flags |= MF_NOCLIPTHING;
+
+	// RF_DONTDRAW will flicker as the object's fuse gets
+	// closer to running out (see P_FuseThink)
+	actor->renderflags |= RF_DONTDRAW|RF_TRANS50;
+	actor->color = SKINCOLOR_GREY;
+	actor->colorized = true;
+
+	Obj_SpawnItemDebrisEffects(actor, actor->target);
+
+	/*
+	if (locvar1 == 1)
+	{
+		P_GivePlayerSpheres(actor->target->player, actor->extravalue1);
+	}
+	else if (locvar1 == 0)
+	{
+		if (actor->extravalue1 >= TICRATE)
+			K_StartItemRoulette(actor->target->player, false);
+		else
+			K_StartItemRoulette(actor->target->player, true);
+	}
+	*/
+
+	// Here at mapload in battle?
+	if (!(gametyperules & GTR_CIRCUIT) && (actor->flags2 & MF2_BOSSNOTRAP))
+	{
+		numgotboxes++;
+
+		// do not flicker back in just yet, handled by
+		// P_RespawnBattleBoxes eventually
+		P_SetMobjState(actor, S_INVISIBLE);
+	}
 }
 
 /** Takes action based on a ::MF_SPECIAL thing touched by a player.
@@ -276,14 +333,21 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 			P_InstaThrust(player->mo, player->mo->angle, 20<<FRACBITS);
 			return;
 		case MT_FLOATINGITEM: // SRB2Kart
-			if (!P_CanPickupItem(player, 3) || (player->itemamount && player->itemtype != special->threshold))
-				return;
-
-			player->itemtype = special->threshold;
-			if ((UINT16)(player->itemamount) + special->movecount > 255)
-				player->itemamount = 255;
+			if (special->threshold >= FIRSTPOWERUP)
+			{
+				K_GivePowerUp(player, special->threshold, special->movecount);
+			}
 			else
-				player->itemamount += special->movecount;
+			{
+				if (!P_CanPickupItem(player, 3) || (player->itemamount && player->itemtype != special->threshold))
+					return;
+
+				player->itemtype = special->threshold;
+				if ((UINT16)(player->itemamount) + special->movecount > 255)
+					player->itemamount = 255;
+				else
+					player->itemamount += special->movecount;
+			}
 
 			S_StartSound(special, special->info->deathsound);
 
@@ -300,7 +364,13 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 
 			special->momx = special->momy = special->momz = 0;
 			P_SetTarget(&special->target, toucher);
-			P_KillMobj(special, toucher, toucher, DMG_NORMAL);
+			// P_KillMobj(special, toucher, toucher, DMG_NORMAL);
+			if (special->extravalue1 >= RINGBOX_TIME)
+				K_StartItemRoulette(player, false);
+			else
+				K_StartItemRoulette(player, true);
+			P_ItemPop(special);
+			special->fuse = TICRATE;
 			return;
 		case MT_SPHEREBOX:
 			if (!P_CanPickupItem(player, 0))
@@ -308,7 +378,9 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 
 			special->momx = special->momy = special->momz = 0;
 			P_SetTarget(&special->target, toucher);
-			P_KillMobj(special, toucher, toucher, DMG_NORMAL);
+			// P_KillMobj(special, toucher, toucher, DMG_NORMAL);
+			P_ItemPop(special);
+			P_GivePlayerSpheres(player, special->extravalue1);
 			return;
 		case MT_ITEMCAPSULE:
 			if (special->scale < special->extravalue1) // don't break it while it's respawning
@@ -434,7 +506,7 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 			if (special->fuse || !P_CanPickupItem(player, 1))
 				return;
 
-			K_StartItemRoulette(player);
+			K_StartItemRoulette(player, false);
 
 			// Karma fireworks
 			/*for (i = 0; i < 5; i++)
@@ -582,6 +654,10 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 
 		case MT_RINGSHOOTER:
 			Obj_PlayerUsedRingShooter(special, player);
+			return;
+
+		case MT_SUPER_FLICKY:
+			Obj_SuperFlickyPlayerCollide(special, toucher);
 			return;
 
 		default: // SOC or script pickup
@@ -2258,8 +2334,16 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 					if (clash)
 					{
 						player->spheres = max(player->spheres - 10, 0);
+
 						if (inflictor)
+						{
 							K_DoPowerClash(target, inflictor);
+
+							if (inflictor->type == MT_SUPER_FLICKY)
+							{
+								Obj_BlockSuperFlicky(inflictor);
+							}
+						}
 						else if (source)
 							K_DoPowerClash(target, source);
 					}

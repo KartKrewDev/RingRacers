@@ -155,7 +155,8 @@ static void M_StartCup(UINT8 entry)
 				NULL, MM_NOTHING, NULL, NULL
 			);
 
-			G_HandleSaveLevel(true);
+			if (FIL_FileExists(gpbackup))
+				remove(gpbackup);
 
 			return;
 		}

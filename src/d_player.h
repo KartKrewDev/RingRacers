@@ -179,7 +179,16 @@ typedef enum
 	KRITEM_DUALJAWZ,
 	KRITEM_TRIPLEGACHABOM,
 
-	NUMKARTRESULTS
+	NUMKARTRESULTS,
+
+	// Power-ups exist in the same enum as items so it's easy
+	// for paper items to be reused for them.
+	FIRSTPOWERUP,
+	POWERUP_SMONITOR = FIRSTPOWERUP,
+	POWERUP_BARRIER,
+	POWERUP_BUMPER,
+	POWERUP_BADGE,
+	POWERUP_SUPERFLICKY,
 } kartitems_t;
 
 typedef enum
@@ -191,6 +200,17 @@ typedef enum
 	KSHIELD_TOP = 4,
 	NUMKARTSHIELDS
 } kartshields_t;
+
+typedef enum
+{
+	KSM_BAR,
+	KSM_DOUBLEBAR,
+	KSM_TRIPLEBAR,
+	KSM_RING,
+	KSM_SEVEN,
+	KSM_JACKPOT,
+	KSM__MAX,
+} kartslotmachine_t;
 
 typedef enum
 {
@@ -410,6 +430,7 @@ struct itemroulette_t
 	tic_t elapsed;
 
 	boolean eggman;
+	boolean ringbox;
 };
 
 // enum for bot item priorities
@@ -438,6 +459,11 @@ typedef struct {
 	vector2_t shift;
 	boolean flip;
 } sonicloopvars_t;
+
+// player_t struct for power-ups
+struct powerupvars_t {
+	mobj_t *flickyController;
+};
 
 // player_t struct for all alternative viewpoint variables
 struct altview_t
@@ -756,6 +782,7 @@ struct player_t
 	mobj_t *sliptideZipIndicator;
 	mobj_t *whip;
 	mobj_t *hand;
+	mobj_t *flickyAttacker;
 
 	UINT8 instaShieldCooldown;
 	UINT8 guardCooldown;
@@ -767,6 +794,9 @@ struct player_t
 
 	boolean markedfordeath;
 
+	UINT8 ringboxdelay; // Delay until Ring Box auto-activates
+	UINT8 ringboxaward; // Where did we stop?
+	
 	fixed_t outrun; // Milky Way road effect
 
 	uint8_t public_key[PUBKEYLENGTH];
@@ -777,6 +807,7 @@ struct player_t
 
 	sonicloopvars_t loop;
 	roundconditions_t roundconditions;
+	powerupvars_t powerup;
 };
 
 // WARNING FOR ANYONE ABOUT TO ADD SOMETHING TO THE PLAYER STRUCT, G_PlayerReborn WANTS YOU TO SUFFER

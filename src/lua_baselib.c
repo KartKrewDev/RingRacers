@@ -36,6 +36,7 @@
 #include "p_spec.h" // P_StartQuake
 #include "i_system.h" // I_GetPreciseTime, I_GetPrecisePrecision
 #include "hu_stuff.h" // for the cecho
+#include "k_powerup.h"
 
 #include "lua_script.h"
 #include "lua_libs.h"
@@ -3845,6 +3846,40 @@ static int lib_kAddHitLag(lua_State *L)
 }
 
 
+static int lib_kPowerUpRemaining(lua_State *L)
+{
+	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
+	kartitems_t powerup = luaL_checkinteger(L, 2);
+	//HUDSAFE
+	if (!player)
+		return LUA_ErrInvalid(L, "player_t");
+	lua_pushinteger(L, K_PowerUpRemaining(player, powerup));
+	return 1;
+}
+
+static int lib_kGivePowerUp(lua_State *L)
+{
+	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
+	kartitems_t powerup = luaL_checkinteger(L, 2);
+	tic_t time = (tic_t)luaL_checkinteger(L, 3);
+	NOHUD
+	if (!player)
+		return LUA_ErrInvalid(L, "player_t");
+	K_GivePowerUp(player, powerup, time);
+	return 0;
+}
+
+static int lib_kDropPowerUps(lua_State *L)
+{
+	player_t *player = *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
+	NOHUD
+	if (!player)
+		return LUA_ErrInvalid(L, "player_t");
+	K_DropPowerUps(player);
+	return 0;
+}
+
+
 static int lib_kInitBossHealthBar(lua_State *L)
 {
 	const char *enemyname = luaL_checkstring(L, 1);
@@ -4166,6 +4201,11 @@ static luaL_Reg lib[] = {
 
 	{"K_GetCollideAngle",lib_kGetCollideAngle},
 	{"K_AddHitLag",lib_kAddHitLag},
+
+	// k_powerup
+	{"K_PowerUpRemaining",lib_kPowerUpRemaining},
+	{"K_GivePowerUp",lib_kGivePowerUp},
+	{"K_DropPowerUps",lib_kDropPowerUps},
 
 	// k_boss
 	{"K_InitBossHealthBar", lib_kInitBossHealthBar},

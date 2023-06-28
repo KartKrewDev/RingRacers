@@ -283,7 +283,6 @@ actionpointer_t actionpointers[] =
 	{{A_ChangeHeight},           "A_CHANGEHEIGHT"},
 
 	// SRB2Kart
-	{{A_ItemPop},                "A_ITEMPOP"},
 	{{A_JawzExplode},            "A_JAWZEXPLODE"},
 	{{A_SSMineSearch},           "A_SSMINESEARCH"},
 	{{A_SSMineExplode},          "A_SSMINEEXPLODE"},
@@ -3223,7 +3222,20 @@ const char *const STATE_LIST[] = { // array length left dynamic for sanity testi
 	"S_RANDOMITEM10",
 	"S_RANDOMITEM11",
 	"S_RANDOMITEM12",
-	"S_DEADRANDOMITEM",
+
+	// Ring Box
+	"S_RINGBOX1",
+	"S_RINGBOX2",
+	"S_RINGBOX3",
+	"S_RINGBOX4",
+	"S_RINGBOX5",
+	"S_RINGBOX6",
+	"S_RINGBOX7",
+	"S_RINGBOX8",
+	"S_RINGBOX9",
+	"S_RINGBOX10",
+	"S_RINGBOX11",
+	"S_RINGBOX12",
 
 	// Sphere Box (for Battle)
 	"S_SPHEREBOX1",
@@ -3238,7 +3250,6 @@ const char *const STATE_LIST[] = { // array length left dynamic for sanity testi
 	"S_SPHEREBOX10",
 	"S_SPHEREBOX11",
 	"S_SPHEREBOX12",
-	"S_DEADSPHEREBOX",
 
 	// Random Item Pop
 	"S_RANDOMITEMPOP1",
@@ -4571,6 +4582,8 @@ const char *const STATE_LIST[] = { // array length left dynamic for sanity testi
 	"S_GACHABOM_EXPLOSION_4",
 	"S_GACHABOM_WAITING",
 	"S_GACHABOM_RETURNING",
+
+	"S_SUPER_FLICKY",
 };
 
 // RegEx to generate this from info.h: ^\tMT_([^,]+), --> \t"MT_\1",
@@ -5697,6 +5710,9 @@ const char *const MOBJTYPE_LIST[] = {  // array length left dynamic for sanity t
 
 	"MT_LOOPENDPOINT",
 	"MT_LOOPCENTERPOINT",
+
+	"MT_SUPER_FLICKY",
+	"MT_SUPER_FLICKY_CONTROLLER",
 };
 
 const char *const MOBJFLAG_LIST[] = {
@@ -6835,9 +6851,7 @@ struct int_const_s const INT_CONST[] = {
 	{"GS_MENU",GS_MENU},
 	{"GS_CREDITS",GS_CREDITS},
 	{"GS_EVALUATION",GS_EVALUATION},
-	{"GS_GAMEEND",GS_GAMEEND},
 	{"GS_INTRO",GS_INTRO},
-	{"GS_ENDING",GS_ENDING},
 	{"GS_CUTSCENE",GS_CUTSCENE},
 	{"GS_DEDICATEDSERVER",GS_DEDICATEDSERVER},
 	{"GS_WAITINGPLAYERS",GS_WAITINGPLAYERS},
@@ -6856,6 +6870,12 @@ struct int_const_s const INT_CONST[] = {
 	{"KRITEM_DUALJAWZ",KRITEM_DUALJAWZ},
 	{"KRITEM_TRIPLEGACHABOM",KRITEM_TRIPLEGACHABOM},
 	{"NUMKARTRESULTS",NUMKARTRESULTS},
+	{"FIRSTPOWERUP",FIRSTPOWERUP},
+	{"POWERUP_SMONITOR",POWERUP_SMONITOR},
+	{"POWERUP_BARRIER",POWERUP_BARRIER},
+	{"POWERUP_BUMPER",POWERUP_BUMPER},
+	{"POWERUP_BADGE",POWERUP_BADGE},
+	{"POWERUP_SUPERFLICKY",POWERUP_SUPERFLICKY},
 
 	// kartshields_t
 	{"KSHIELD_NONE",KSHIELD_NONE},

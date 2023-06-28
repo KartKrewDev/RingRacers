@@ -52,6 +52,7 @@ typedef enum
 	UC_CONDITIONSET,	// CONDITIONSET [condition set number]
 
 	UC_ADDON,			// Ever loaded a custom file?
+	UC_CREDITS,			// Finish watching the credits
 	UC_REPLAY,			// Save a replay
 	UC_CRASH,			// Hee ho !
 
@@ -288,6 +289,7 @@ struct gamedata_t
 
 	// SPECIFIC SPECIAL EVENTS
 	boolean everloadedaddon;
+	boolean everfinishedcredits;
 	boolean eversavedreplay;
 	boolean everseenspecial;
 	boolean evercrashed;
@@ -341,6 +343,7 @@ void M_ClearSecrets(void);
 void M_ClearStats(void);
 
 boolean M_NotFreePlay(player_t *player);
+UINT16 M_CheckCupEmeralds(UINT8 difficulty);
 
 // Updating conditions and unlockables
 boolean M_ConditionInterpret(const char *password);

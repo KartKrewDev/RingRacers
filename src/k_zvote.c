@@ -57,10 +57,7 @@ static void K_MidVoteKick(void)
 		return;
 	}
 
-	if (server)
-	{
-		SendKick(g_midVote.victim - players, KICK_MSG_VOTE_KICK);
-	}
+	SendKick(g_midVote.victim - players, KICK_MSG_VOTE_KICK);
 }
 
 /*--------------------------------------------------
@@ -70,7 +67,29 @@ static void K_MidVoteKick(void)
 --------------------------------------------------*/
 static void K_MidVoteRockTheVote(void)
 {
-	G_ExitLevel();
+	if (G_GamestateUsesExitLevel() == false)
+	{
+		return;
+	}
+
+	SendNetXCmd(XD_EXITLEVEL, NULL, 0);
+}
+
+/*--------------------------------------------------
+	static void K_MidVoteRunItBack(void)
+
+		MVT_RUNITBACK's success function.
+--------------------------------------------------*/
+static void K_MidVoteRunItBack(void)
+{
+	boolean newencore = false;
+
+	if (cv_kartencore.value != 0)
+	{
+		newencore = (cv_kartencore.value == 1) || encoremode;
+	}
+
+	D_MapChange(gamemap, gametype, newencore, false, 0, false, false);
 }
 
 static midVoteTypeDef_t g_midVoteTypeDefs[MVT__MAX] =
@@ -85,25 +104,24 @@ static midVoteTypeDef_t g_midVoteTypeDefs[MVT__MAX] =
 	{ // MVT_RTV
 		"RTV",
 		"Skip Level?",
-		CVAR_INIT ("zvote_rtv_allowed", "No", CV_SAVE|CV_NETVAR, CV_YesNo, NULL),
+		CVAR_INIT ("zvote_rtv_allowed", "Yes", CV_SAVE|CV_NETVAR, CV_YesNo, NULL),
 		K_MidVoteRockTheVote
+	},
+
+	{ // MVT_RUNITBACK
+		"RUNITBACK",
+		"Redo Level?",
+		CVAR_INIT ("zvote_runitback_allowed", "Yes", CV_SAVE|CV_NETVAR, CV_YesNo, NULL),
+		K_MidVoteRunItBack
 	},
 };
 
 /*--------------------------------------------------
-	static boolean K_MidVoteTypeUsesVictim(midVoteType_e voteType)
+	boolean K_MidVoteTypeUsesVictim(midVoteType_e voteType)
 
-		Specifies whenever or not a vote type is intended
-		to specify a "victim", or a player that would be
-		negatively affected by the vote.
-
-	Input Arguments:-
-		voteType - The vote type to check.
-
-	Return:-
-		true if it uses a victim, otherwise false.
+		See header file for description.
 --------------------------------------------------*/
-static boolean K_MidVoteTypeUsesVictim(midVoteType_e voteType)
+boolean K_MidVoteTypeUsesVictim(midVoteType_e voteType)
 {
 	switch (voteType)
 	{
@@ -125,9 +143,6 @@ static boolean K_MidVoteTypeUsesVictim(midVoteType_e voteType)
 --------------------------------------------------*/
 static void Command_CallVote(void)
 {
-	UINT8 buf[MAXTEXTCMD];
-	UINT8 *buf_p = buf;
-
 	size_t numArgs = 0;
 
 	const char *voteTypeStr = NULL;
@@ -135,8 +150,6 @@ static void Command_CallVote(void)
 
 	const char *voteVariableStr = NULL;
 	INT32 voteVariable = 0;
-
-	player_t *victim = NULL;
 
 	INT32 i = INT32_MAX;
 
@@ -184,11 +197,26 @@ static void Command_CallVote(void)
 					break;
 				}
 			}
+		}
+	}
 
-			if (voteVariable >= 0 && voteVariable < MAXPLAYERS)
-			{
-				victim = &players[voteVariable];
-			}
+	K_SendCallMidVote(voteType, voteVariable);
+}
+
+/*--------------------------------------------------
+	void K_SendCallMidVote(midVoteType_e voteType, INT32 voteVariable)
+
+		See header file for description.
+--------------------------------------------------*/
+void K_SendCallMidVote(midVoteType_e voteType, INT32 voteVariable)
+{
+	player_t *victim = NULL;
+
+	if (K_MidVoteTypeUsesVictim(voteType) == true)
+	{
+		if (voteVariable >= 0 && voteVariable < MAXPLAYERS)
+		{
+			victim = &players[voteVariable];
 		}
 	}
 
@@ -197,6 +225,9 @@ static void Command_CallVote(void)
 		// Invalid vote inputs.
 		return;
 	}
+
+	UINT8 buf[MAXTEXTCMD];
+	UINT8 *buf_p = buf;
 
 	WRITEUINT8(buf_p, voteType);
 	WRITEINT32(buf_p, voteVariable);
@@ -342,6 +373,51 @@ boolean K_AnyMidVotesAllowed(void)
 }
 
 /*--------------------------------------------------
+	midVoteType_e K_GetNextCallableMidVote(INT32 seed, boolean backwards)
+
+		See header file for description.
+--------------------------------------------------*/
+
+midVoteType_e K_GetNextAllowedMidVote(midVoteType_e seed, boolean backwards)
+{
+	if (seed >= MVT__MAX)
+		seed = 0;
+
+	midVoteType_e i = seed;
+
+	if (backwards)
+	{
+		do
+		{
+			if (i <= 0)
+				i = MVT__MAX;
+			i--;
+
+			if (g_midVoteTypeDefs[i].cv_allowed.value != 0)
+				return i;
+
+		}
+		while (i != seed);
+	}
+	else
+	{
+		do
+		{
+			i++;
+			if (i >= MVT__MAX)
+				i = 0;
+
+			if (g_midVoteTypeDefs[i].cv_allowed.value != 0)
+				return i;
+
+		}
+		while (i != seed);
+	}
+
+	return MVT__MAX;
+}
+
+/*--------------------------------------------------
 	boolean K_PlayerIDAllowedInMidVote(const UINT8 id)
 
 		See header file for description.
@@ -466,6 +542,46 @@ UINT8 K_CountMidVotes(void)
 	}
 
 	return voteCount;
+}
+
+/*--------------------------------------------------
+	boolean K_MinimalCheckNewMidVote(midVoteType_e type)
+
+		See header file for description.
+--------------------------------------------------*/
+boolean K_MinimalCheckNewMidVote(midVoteType_e type)
+{
+	if (g_midVote.active == true)
+	{
+		// Don't allow another vote if one is already running.
+		return false;
+	}
+
+	if (g_midVote.delay > 0)
+	{
+		// Don't allow another vote if one has recently just ran.
+		return false;
+	}
+
+	if (type < 0 || type >= MVT__MAX)
+	{
+		// Invalid range.
+		return false;
+	}
+
+	if (g_midVoteTypeDefs[type].cv_allowed.value == 0)
+	{
+		// These types of votes aren't allowed on this server.
+		return false;
+	}
+
+	if (K_PlayerIDAllowedInMidVote(consoleplayer) == false)
+	{
+		// Invalid calling player.
+		return false;
+	}
+
+	return true;
 }
 
 /*--------------------------------------------------
@@ -630,7 +746,11 @@ void K_MidVoteFinalize(fixed_t delayMul)
 --------------------------------------------------*/
 void K_MidVoteSuccess(void)
 {
-	if (g_midVoteTypeDefs[ g_midVote.type ].callback != NULL)
+	if (
+		server == true
+		&& demo.playback == false
+		&& g_midVoteTypeDefs[ g_midVote.type ].callback != NULL
+	)
 	{
 		g_midVoteTypeDefs[ g_midVote.type ].callback();
 	}
@@ -824,6 +944,25 @@ void K_UpdateMidVotePatches(void)
 }
 
 /*--------------------------------------------------
+	const char *K_GetMidVoteLabel(midVoteType_e i)
+
+		See header file for description.
+--------------------------------------------------*/
+
+const char *K_GetMidVoteLabel(midVoteType_e i)
+{
+	if (
+		i < 0
+		|| i >= MVT__MAX
+		|| g_midVoteTypeDefs[i].label == NULL)
+	{
+		return "N/A";
+	}
+
+	return g_midVoteTypeDefs[i].label;
+}
+
+/*--------------------------------------------------
 	static void K_DrawMidVoteBar(fixed_t x, fixed_t y, INT32 flags, fixed_t fill, skincolornum_t color, boolean flipped)
 
 		Draws a bar
@@ -1006,11 +1145,13 @@ void K_DrawMidVote(void)
 			(id & 1)
 		);
 
+		const char *label = K_GetMidVoteLabel(g_midVote.type);
+
 		// Vote main label
 		strWidth = V__OneScaleStringWidth(
 			FRACUNIT,
 			V_SNAPTOBOTTOM|V_SNAPTORIGHT|V_SPLITSCREEN,
-			KART_FONT, g_midVoteTypeDefs[g_midVote.type].label
+			KART_FONT, label
 		);
 
 		V__DrawOneScaleString(
@@ -1018,7 +1159,7 @@ void K_DrawMidVote(void)
 			y - (18 * FRACUNIT),
 			FRACUNIT,
 			V_SNAPTOBOTTOM|V_SNAPTORIGHT|V_SPLITSCREEN, NULL,
-			KART_FONT, g_midVoteTypeDefs[g_midVote.type].label
+			KART_FONT, label
 		);
 
 		// Vote extra text

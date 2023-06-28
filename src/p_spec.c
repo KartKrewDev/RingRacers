@@ -4647,10 +4647,11 @@ void P_SetupSignExit(player_t *player, boolean tie)
 	thinker_t *think;
 	INT32 numfound = 0;
 
-	angle_t bestAngle = K_MomentumAngle(player->mo) + ANGLE_180;
-
-	if (player->position != 1)
+	if (player->position != 1
+	|| (gametyperules & GTR_SPECIALSTART))
 		return;
+
+	angle_t bestAngle = K_MomentumAngle(player->mo) + ANGLE_180;
 
 	for (; node; node = node->m_thinglist_next)
 	{

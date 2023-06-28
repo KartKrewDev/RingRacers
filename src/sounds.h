@@ -1258,6 +1258,12 @@ typedef enum
 	sfx_iwhp,
 	sfx_gbrk,
 
+	sfx_supflk,
+	sfx_fbost1,
+	sfx_fbird,
+	sfx_fhurt1,
+	sfx_fhurt2,
+
 	// Next up: UNIQUE ENGINE SOUNDS! Hoooooo boy...
 	// Engine class A - Low Speed, Low Weight
 	sfx_krta00,

@@ -52,6 +52,7 @@
 #include "doomstat.h" // MAXSPLITSCREENPLAYERS
 #include "k_grandprix.h" // K_CanChangeRules
 #include "k_rank.h" // K_GetGradeColor
+#include "k_zvote.h" // K_GetMidVoteLabel
 
 #include "y_inter.h" // Y_RoundQueueDrawer
 
@@ -3111,7 +3112,7 @@ void M_DrawMPHost(void)
 							}
 							break;
 						}
-						case IT_KEYHANDLER:
+						case IT_ARROWS:
 						{
 							if (currentMenu->menuitems[i].itemaction.routine != M_HandleHostMenuGametype)
 								break;
@@ -4308,11 +4309,6 @@ void M_DrawPause(void)
 	INT16 arrxpos = 150 + 2*offset;	// To draw the background arrow.
 
 	INT16 j = 0;
-	char word1[MAXSTRINGLENGTH];
-	INT16 word1len = 0;
-	char word2[MAXSTRINGLENGTH];
-	INT16 word2len = 0;
-	boolean sok = false;
 
 	patch_t *vertbg = W_CachePatchName("M_STRIPV", PU_CACHE);
 	patch_t *arrstart = W_CachePatchName("M_PTIP", PU_CACHE);
@@ -4410,54 +4406,107 @@ void M_DrawPause(void)
 	}
 
 	// Draw the string!
-	// ...but first get what we need to get.
-	while (currentMenu->menuitems[itemOn].text[j] && j < MAXSTRINGLENGTH)
-	{
-		char c = currentMenu->menuitems[itemOn].text[j];
 
-		if (c == ' ' && !sok)
-		{
-			sok = true;
-			j++;
-			continue;	// We don't care about this :moyai:
-		}
-
-		if (sok)
-		{
-			word2[word2len] = c;
-			word2len++;
-		}
-		else
-		{
-			word1[word1len] = c;
-			word1len++;
-		}
-
-		j++;
-	}
-
-	word1[word1len] = '\0';
-	word2[word2len] = '\0';
+	const char *maintext = NULL;
+	const char *selectabletext = NULL;
+	INT32 mainflags = V_YELLOWMAP, selectableflags = 0;
 
 	if (itemOn == mpause_changegametype)
 	{
-		INT32 w = V_LSTitleLowStringWidth(gametypes[menugametype]->name, 0)/2;
+		selectabletext = gametypes[menugametype]->name;
+	}
+	else if (itemOn == mpause_callvote)
+	{
+		selectabletext = K_GetMidVoteLabel(menucallvote);
 
-		if (word1len)
-			V_DrawCenteredLSTitleHighString(220 + offset*2, 75, 0, word1);
+		if (K_MinimalCheckNewMidVote(menucallvote) == false)
+		{
+			if (g_midVote.active == true)
+			{
+				maintext = "ACTIVE...";
+			}
+			else if (g_midVote.delay > 0)
+			{
+				if (g_midVote.delay != 1)
+					maintext = va("%u", ((g_midVote.delay - 1) / TICRATE) + 1);
+			}
+			else if (K_PlayerIDAllowedInMidVote(consoleplayer) == false)
+			{
+				maintext = "SPECTATING";
+			}
+			else
+			{
+				maintext = "INVALID!?";
+			}
 
-		V_DrawLSTitleLowString(220-w + offset*2, 103, V_YELLOWMAP, gametypes[menugametype]->name);
-		V_DrawCharacter(220-w + offset*2 - 8 - (skullAnimCounter/5), 103+6, '\x1C' | V_YELLOWMAP, false); // left arrow
-		V_DrawCharacter(220+w + offset*2 + 4 + (skullAnimCounter/5), 103+6, '\x1D' | V_YELLOWMAP, false); // right arrow
+			if (maintext != NULL)
+				selectableflags |= V_MODULATE;
+		}
 	}
 	else
 	{
+		maintext = currentMenu->menuitems[itemOn].text;
+		mainflags = 0;
+	}
+
+	if (selectabletext != NULL)
+	{
+		// We have a selection. Let's show the full menu text on top, and the choice below.
+
+		if (currentMenu->menuitems[itemOn].text)
+			V_DrawCenteredLSTitleHighString(220 + offset*2, 75, selectableflags, currentMenu->menuitems[itemOn].text);
+
+		selectableflags |= V_YELLOWMAP;
+
+		INT32 w = V_LSTitleLowStringWidth(selectabletext, selectableflags)/2;
+		V_DrawLSTitleLowString(220-w + offset*2, 103, selectableflags, selectabletext);
+
+		V_DrawCharacter(220-w + offset*2 - 8 - (skullAnimCounter/5), 103+6, '\x1C' | selectableflags, false); // left arrow
+		V_DrawCharacter(220+w + offset*2 + (skullAnimCounter/5), 103+6, '\x1D' | selectableflags, false); // right arrow
+	}
+
+	if (maintext != NULL)
+	{
+		// This is a regular menu option. Try to break it onto two lines.
+
+		char word1[MAXSTRINGLENGTH];
+		INT16 word1len = 0;
+		char word2[MAXSTRINGLENGTH];
+		INT16 word2len = 0;
+		boolean sok = false;
+
+		while (maintext[j] && j < MAXSTRINGLENGTH)
+		{
+			if (maintext[j] == ' ' && !sok)
+			{
+				sok = true;
+				j++;
+				continue;	// We don't care about this :moyai:
+			}
+
+			if (sok)
+			{
+				word2[word2len] = maintext[j];
+				word2len++;
+			}
+			else
+			{
+				word1[word1len] = maintext[j];
+				word1len++;
+			}
+
+			j++;
+		}
+
+		word1[word1len] = '\0';
+		word2[word2len] = '\0';
+
 		// If there's no 2nd word, take this opportunity to center this line of text.
 		if (word1len)
-			V_DrawCenteredLSTitleHighString(220 + offset*2, 75 + (!word2len ? 10 : 0), 0, word1);
+			V_DrawCenteredLSTitleHighString(220 + offset*2, 75 + (!word2len ? 10 : 0), mainflags, word1);
 
 		if (word2len)
-			V_DrawCenteredLSTitleLowString(220 + offset*2, 103, 0, word2);
+			V_DrawCenteredLSTitleLowString(220 + offset*2, 103, mainflags, word2);
 	}
 
 	if (gamestate != GS_INTERMISSION && roundqueue.size > 0)
@@ -4537,6 +4586,106 @@ void M_DrawPause(void)
 
 		Y_RoundQueueDrawer(&standings, offset/2, false, false);
 	}
+}
+
+void M_DrawKickHandler(void)
+{
+	// fake round queue drawer simply to make release
+	INT32 x = 29 + 4, y = 70, returny = y;
+	INT32 pokeamount = (playerkickmenu.poke & 1) ? -playerkickmenu.poke/2 : playerkickmenu.poke/2;
+	INT32 x2 = x + pokeamount - 9 - 8;
+
+	boolean datarightofcolumn = false;
+
+	patch_t *resbar = W_CachePatchName("R_RESBAR", PU_CACHE); // Results bars for players
+
+	UINT8 i;
+
+	for (i = 0; i < MAXPLAYERS; i++)
+	{
+		V_DrawMappedPatch(
+			x, y,
+			(playeringame[i] == true)
+				? ((players[i].spectator == true) ? V_TRANSLUCENT : 0)
+				: V_MODULATE,
+			resbar, NULL
+		);
+
+		V_DrawRightAlignedThinString(
+			x+13, y-2,
+				((i == playerkickmenu.player)
+					? highlightflags
+					: 0
+				),
+			va("%u", i)
+		);
+
+		if (playeringame[i] == true)
+		{
+			if (players[i].skincolor != SKINCOLOR_NONE)
+			{
+				UINT8 *charcolormap;
+				if ((players[i].pflags & PF_NOCONTEST) && players[i].bot)
+				{
+					// RETIRED !!
+					charcolormap = R_GetTranslationColormap(TC_DEFAULT, players[i].skincolor, GTC_CACHE);
+					V_DrawMappedPatch(x+14, y-5, 0, W_CachePatchName("MINIDEAD", PU_CACHE), charcolormap);
+				}
+				else
+				{
+					charcolormap = R_GetTranslationColormap(players[i].skin, players[i].skincolor, GTC_CACHE);
+					V_DrawMappedPatch(x+14, y-5, 0, faceprefix[players[i].skin][FACE_MINIMAP], charcolormap);
+				}
+			}
+
+			V_DrawThinString(
+				x+27, y-2,
+				(
+					P_IsMachineLocalPlayer(&players[i])
+						? highlightflags
+						: 0
+				)|V_ALLOWLOWERCASE|V_6WIDTHSPACE,
+				player_names[i]
+			);
+
+			V_DrawRightAlignedThinString(
+				x+118, y-2,
+				V_ALLOWLOWERCASE|V_6WIDTHSPACE,
+				(players[i].spectator) ? "SPECTATOR" : "PLAYING"
+			);
+		}
+
+		if (i == playerkickmenu.player)
+		{
+			V_DrawScaledPatch(
+				x2, y-1,
+				(datarightofcolumn ? V_FLIP : 0),
+				W_CachePatchName("M_CURSOR", PU_CACHE)
+			);
+		}
+
+		y += 13;
+
+		if (i == (MAXPLAYERS-1)/2)
+		{
+			x = 169 - 4;
+			y = returny;
+
+			datarightofcolumn = true;
+			x2 = x + 118 + 9 + 8 + 4 - pokeamount;
+		}
+	}
+
+	//V_DrawFill(32 + (playerkickmenu.player & 8), 32 + (playerkickmenu.player & 7)*8, 8, 8, playeringame[playerkickmenu.player] ? 0 : 16);
+
+	V_DrawFixedPatch(0, 0, FRACUNIT, 0, W_CachePatchName("MENUHINT", PU_CACHE), NULL);
+	V_DrawCenteredThinString(
+		BASEVIDWIDTH/2, 12,
+		V_ALLOWLOWERCASE|V_6WIDTHSPACE,
+		(playerkickmenu.adminpowered)
+			? "You are using ""\x85""Admin Tools""\x80"", ""\x83""(A)""\x80"" to kick and ""\x84""(C)""\x80"" to ban"
+			: K_GetMidVoteLabel(menucallvote)
+	);
 }
 
 void M_DrawPlaybackMenu(void)

@@ -126,6 +126,9 @@ void M_PrevMenuGametype(UINT32 forbidden);
 void M_HandleHostMenuGametype(INT32 choice);
 void M_HandlePauseMenuGametype(INT32 choice);
 
+extern UINT32 menucallvote; // not midVoteType_e to prevent #include k_zvote
+void M_HandlePauseMenuCallVote(INT32 choice);
+
 //
 // MENU TYPEDEFS
 //
@@ -415,6 +418,8 @@ extern menu_t EXTRAS_EggTVDef;
 extern menuitem_t PAUSE_Main[];
 extern menu_t PAUSE_MainDef;
 
+extern menu_t PAUSE_KickHandlerDef;
+
 // EXTRAS
 extern menuitem_t MISC_Manual[];
 extern menu_t MISC_ManualDef;
@@ -447,6 +452,8 @@ typedef enum
 #ifdef HAVE_DISCORDRPC
 	mpause_discordrequests,
 #endif
+	mpause_admin,
+	mpause_callvote,
 
 	mpause_continue,
 	mpause_spectate,
@@ -1052,6 +1059,7 @@ typedef enum
 	extras_eggtv,
 	extras_stereo,
 	extras_password,
+	extras_credits,
 } extras_e;
 
 void M_InitExtras(INT32 choice); // init for the struct
@@ -1081,6 +1089,15 @@ void M_OpenPauseMenu(void);
 void M_QuitPauseMenu(INT32 choice);
 boolean M_PauseInputs(INT32 ch);
 void M_PauseTick(void);
+
+extern struct playerkickmenu_s {
+	tic_t ticker;
+	UINT8 player;
+	UINT8 poke;
+	boolean adminpowered;
+} playerkickmenu;
+
+void M_KickHandler(INT32 choice);
 
 extern consvar_t cv_dummymenuplayer;
 extern consvar_t cv_dummyspectator;
@@ -1154,6 +1171,7 @@ void M_DrawMPServerBrowser(void);
 
 // Pause menu:
 void M_DrawPause(void);
+void M_DrawKickHandler(void);
 
 // Replay Playback
 void M_DrawPlaybackMenu(void);

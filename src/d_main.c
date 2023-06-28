@@ -464,20 +464,10 @@ static void D_Display(void)
 			}
 			break;
 
-		case GS_ENDING:
-			F_EndingDrawer();
-			HU_Erase();
-			HU_Drawer();
-			break;
-
 		case GS_CUTSCENE:
 			F_CutsceneDrawer();
 			HU_Erase();
 			HU_Drawer();
-			break;
-
-		case GS_GAMEEND:
-			F_GameEndDrawer();
 			break;
 
 		case GS_EVALUATION:
@@ -980,7 +970,6 @@ void D_ClearState(void)
 	SplitScreen_OnChange();
 
 	cht_debug = 0;
-	emeralds = 0;
 	memset(&luabanks, 0, sizeof(luabanks));
 
 	// In case someone exits out at the same time they start a time attack run,

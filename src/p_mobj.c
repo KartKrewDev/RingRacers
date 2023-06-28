@@ -2464,6 +2464,12 @@ boolean P_ZMovement(mobj_t *mo)
 				return false;
 			}
 		}
+		else if (mo->type == MT_SUPER_FLICKY)
+		{
+			mom.z = -mom.z;
+
+			Obj_SuperFlickyLanding(mo);
+		}
 		else if (mo->type == MT_DRIFTCLIP)
 		{
 			mom.z = -mom.z/2;
@@ -6689,6 +6695,14 @@ static void P_MobjSceneryThink(mobj_t *mobj)
 			return;
 		}
 		break;
+	case MT_SUPER_FLICKY_CONTROLLER:
+		Obj_SuperFlickyControllerThink(mobj);
+
+		if (P_MobjWasRemoved(mobj))
+		{
+			return;
+		}
+		break;
 	case MT_VWREF:
 	case MT_VWREB:
 	{
@@ -7197,29 +7211,12 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 			}
 		}
 
-		switch (mobj->threshold)
+		if (mobj->threshold == KITEM_SPB || mobj->threshold == KITEM_SHRINK)
 		{
-			case KITEM_ORBINAUT:
-				mobj->sprite = SPR_ITMO;
-				mobj->frame = FF_FULLBRIGHT|FF_PAPERSPRITE|K_GetOrbinautItemFrame(mobj->movecount);
-				break;
-			case KITEM_INVINCIBILITY:
-				mobj->sprite = SPR_ITMI;
-				mobj->frame = FF_FULLBRIGHT|FF_PAPERSPRITE|K_GetInvincibilityItemFrame();
-				break;
-			case KITEM_SAD:
-				mobj->sprite = SPR_ITEM;
-				mobj->frame = FF_FULLBRIGHT|FF_PAPERSPRITE;
-				break;
-			case KITEM_SPB:
-			case KITEM_SHRINK:
-				K_SetItemCooldown(mobj->threshold, 20*TICRATE);
-				/* FALLTHRU */
-			default:
-				mobj->sprite = SPR_ITEM;
-				mobj->frame = FF_FULLBRIGHT|FF_PAPERSPRITE|(mobj->threshold);
-				break;
+			K_SetItemCooldown(mobj->threshold, 20*TICRATE);
 		}
+
+		K_UpdateMobjItemOverlay(mobj, mobj->threshold, mobj->movecount);
 		break;
 	}
 	case MT_ITEMCAPSULE:
@@ -9538,6 +9535,14 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 			return false;
 		}
 		break;
+	case MT_SUPER_FLICKY:
+		Obj_SuperFlickyThink(mobj);
+
+		if (P_MobjWasRemoved(mobj))
+		{
+			return false;
+		}
+		break;
 	default:
 		// check mobj against possible water content, before movement code
 		P_MobjCheckWater(mobj);
@@ -9718,7 +9723,7 @@ static boolean P_FuseThink(mobj_t *mobj)
 	case MT_RANDOMITEM:
 		if (mobj->flags2 & MF2_DONTRESPAWN)
 		{
-			;
+			P_RemoveMobj(mobj);
 		}
 		else if (!(gametyperules & GTR_CIRCUIT) && (mobj->state == &states[S_INVISIBLE]))
 		{
@@ -9726,22 +9731,10 @@ static boolean P_FuseThink(mobj_t *mobj)
 		}
 		else
 		{
-			mobj_t *newmobj;
-
-			// Respawn from mapthing if you have one!
-			if (mobj->spawnpoint)
-			{
-				P_SpawnMapThing(mobj->spawnpoint);
-				newmobj = mobj->spawnpoint->mobj; // this is set to the new mobj in P_SpawnMapThing
-			}
-			else
-				newmobj = P_SpawnMobj(mobj->x, mobj->y, mobj->z, mobj->type);
-
-			// Transfer flags2 (strongbox, objectflip, bossnotrap)
-			newmobj->flags2 = mobj->flags2;
+			mobj->flags &= ~MF_NOCLIPTHING;
+			mobj->renderflags &= ~(RF_DONTDRAW|RF_TRANSMASK);
 		}
 
-		P_RemoveMobj(mobj); // make sure they disappear
 		return false;
 	case MT_ITEMCAPSULE:
 		if (mobj->spawnpoint)
@@ -11592,11 +11585,11 @@ void P_RespawnBattleBoxes(void)
 
 		if (box->type != MT_RANDOMITEM
 			|| (box->flags2 & MF2_DONTRESPAWN)
-			|| box->health > 0
+			|| !(box->flags & MF_NOCLIPTHING)
 			|| box->fuse)
 			continue; // only popped items
 
-		box->fuse = TICRATE; // flicker back in (A_ItemPop preps this effect)
+		box->fuse = TICRATE; // flicker back in
 		P_SetMobjState(box, box->info->raisestate);
 
 		if (numgotboxes > 0)

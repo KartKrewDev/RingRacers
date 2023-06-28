@@ -35,12 +35,10 @@ typedef enum
 
 	GS_CREDITS,         // credit sequence
 	GS_EVALUATION,      // Evaluation at the end of a game.
-	GS_GAMEEND,         // game end sequence - "did you get all those chaos emeralds?"
 	GS_CEREMONY,        // RR: Podium sequence
 
 	// Hardcoded fades or other fading methods
 	GS_INTRO,           // introduction
-	GS_ENDING,          // currently shared between bad and good endings
 	GS_CUTSCENE,        // custom cutscene
 
 	// Not fadable

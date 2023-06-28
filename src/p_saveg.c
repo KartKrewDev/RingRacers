@@ -79,6 +79,8 @@ typedef enum
 	RINGSHOOTER = 0x0100,
 	WHIP = 0x0200,
 	HAND = 0x0400,
+	FLICKYATTACKER = 0x0800,
+	FLICKYCONTROLLER = 0x1000,
 } player_saveflags;
 
 static inline void P_ArchivePlayer(savebuffer_t *save)
@@ -319,6 +321,12 @@ static void P_NetArchivePlayers(savebuffer_t *save)
 		if (players[i].ringShooter)
 			flags |= RINGSHOOTER;
 
+		if (players[i].flickyAttacker)
+			flags |= FLICKYATTACKER;
+
+		if (players[i].powerup.flickyController)
+			flags |= FLICKYCONTROLLER;
+
 		WRITEUINT16(save->p, flags);
 
 		if (flags & SKYBOXVIEW)
@@ -350,6 +358,12 @@ static void P_NetArchivePlayers(savebuffer_t *save)
 
 		if (flags & RINGSHOOTER)
 			WRITEUINT32(save->p, players[i].ringShooter->mobjnum);
+
+		if (flags & FLICKYATTACKER)
+			WRITEUINT32(save->p, players[i].flickyAttacker->mobjnum);
+
+		if (flags & FLICKYCONTROLLER)
+			WRITEUINT32(save->p, players[i].powerup.flickyController->mobjnum);
 
 		WRITEUINT32(save->p, (UINT32)players[i].followitem);
 
@@ -527,6 +541,8 @@ static void P_NetArchivePlayers(savebuffer_t *save)
 
 		WRITEUINT8(save->p, players[i].markedfordeath);
 
+		WRITEUINT8(save->p, players[i].ringboxdelay);
+		WRITEUINT8(save->p, players[i].ringboxaward);
 		WRITEFIXED(save->p, players[i].outrun);
 
 		// respawnvars_t
@@ -600,6 +616,7 @@ static void P_NetArchivePlayers(savebuffer_t *save)
 		WRITEUINT32(save->p, players[i].itemRoulette.tics);
 		WRITEUINT32(save->p, players[i].itemRoulette.elapsed);
 		WRITEUINT8(save->p, players[i].itemRoulette.eggman);
+		WRITEUINT8(save->p, players[i].itemRoulette.ringbox);
 
 		// sonicloopsvars_t
 		WRITEFIXED(save->p, players[i].loop.radius);
@@ -753,6 +770,12 @@ static void P_NetUnArchivePlayers(savebuffer_t *save)
 
 		if (flags & RINGSHOOTER)
 			players[i].ringShooter = (mobj_t *)(size_t)READUINT32(save->p);
+
+		if (flags & FLICKYATTACKER)
+			players[i].flickyAttacker = (mobj_t *)(size_t)READUINT32(save->p);
+
+		if (flags & FLICKYCONTROLLER)
+			players[i].powerup.flickyController = (mobj_t *)(size_t)READUINT32(save->p);
 
 		players[i].followitem = (mobjtype_t)READUINT32(save->p);
 
@@ -931,6 +954,8 @@ static void P_NetUnArchivePlayers(savebuffer_t *save)
 
 		players[i].markedfordeath = READUINT8(save->p);
 
+		players[i].ringboxdelay = READUINT8(save->p);
+		players[i].ringboxaward = READUINT8(save->p);
 		players[i].outrun = READFIXED(save->p);
 
 		// respawnvars_t
@@ -1015,6 +1040,7 @@ static void P_NetUnArchivePlayers(savebuffer_t *save)
 		players[i].itemRoulette.tics = (tic_t)READUINT32(save->p);
 		players[i].itemRoulette.elapsed = (tic_t)READUINT32(save->p);
 		players[i].itemRoulette.eggman = (boolean)READUINT8(save->p);
+		players[i].itemRoulette.ringbox = (boolean)READUINT8(save->p);
 
 		// sonicloopsvars_t
 		players[i].loop.radius = READFIXED(save->p);
@@ -5258,6 +5284,20 @@ static void P_RelinkPointers(void)
 			if (!P_SetTarget(&players[i].ringShooter, P_FindNewPosition(temp)))
 				CONS_Debug(DBG_GAMELOGIC, "ringShooter not found on player %d\n", i);
 		}
+		if (players[i].flickyAttacker)
+		{
+			temp = (UINT32)(size_t)players[i].flickyAttacker;
+			players[i].flickyAttacker = NULL;
+			if (!P_SetTarget(&players[i].flickyAttacker, P_FindNewPosition(temp)))
+				CONS_Debug(DBG_GAMELOGIC, "flickyAttacker not found on player %d\n", i);
+		}
+		if (players[i].powerup.flickyController)
+		{
+			temp = (UINT32)(size_t)players[i].powerup.flickyController;
+			players[i].powerup.flickyController = NULL;
+			if (!P_SetTarget(&players[i].powerup.flickyController, P_FindNewPosition(temp)))
+				CONS_Debug(DBG_GAMELOGIC, "powerup.flickyController not found on player %d\n", i);
+		}
 	}
 }
 
@@ -5622,7 +5662,6 @@ static void P_NetArchiveMisc(savebuffer_t *save, boolean resending)
 
 	WRITESINT8(save->p, g_pickedVote);
 
-	WRITEUINT16(save->p, emeralds);
 	{
 		UINT8 globools = 0;
 		if (stagefailed)
@@ -5796,7 +5835,6 @@ static boolean P_NetUnArchiveMisc(savebuffer_t *save, boolean reloading)
 
 	g_pickedVote = READSINT8(save->p);
 
-	emeralds = READUINT16(save->p);
 	{
 		UINT8 globools = READUINT8(save->p);
 		stagefailed = !!(globools & 1);

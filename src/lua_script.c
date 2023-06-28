@@ -394,8 +394,6 @@ int LUA_WriteGlobals(lua_State *L, const char *word)
 		skincolor_redring = (UINT16)luaL_checkinteger(L, 2);
 	else if (fastcmp(word, "skincolor_bluering"))
 		skincolor_bluering = (UINT16)luaL_checkinteger(L, 2);
-	else if (fastcmp(word, "emeralds"))
-		emeralds = (UINT16)luaL_checkinteger(L, 2);
 	else if (fastcmp(word, "gravity"))
 		gravity = (fixed_t)luaL_checkinteger(L, 2);
 	else if (fastcmp(word, "stoppedclock"))
