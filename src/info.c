@@ -29908,7 +29908,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 	},
 
 	{           // MT_BATTLEUFO_SPAWNER
-		-1,           // doomednum
+		3786,           // doomednum
 		S_INVISIBLE,        // spawnstate
 		1000,              // spawnhealth
 		S_NULL,         // seestate
