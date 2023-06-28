@@ -41,6 +41,7 @@
 #include "k_director.h"
 #include "k_specialstage.h"
 #include "acs/interface.h"
+#include "k_objects.h"
 
 #ifdef PARANOIA
 #include "deh_tables.h" // MOBJTYPE_LIST
@@ -230,6 +231,8 @@ void P_InitThinkers(void)
 	{
 		skyboxcenterpnts[i] = skyboxviewpnts[i] = NULL;
 	}
+
+	Obj_ResetUFOSpawners();
 }
 
 // Adds a new thinker at the end of the list.

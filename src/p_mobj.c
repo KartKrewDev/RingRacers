@@ -11175,6 +11175,11 @@ void P_RemoveMobj(mobj_t *mobj)
 			Obj_RingShooterDelete(mobj);
 			break;
 		}
+		case MT_BATTLEUFO_SPAWNER:
+		{
+			Obj_UnlinkBattleUFOSpawner(mobj);
+			break;
+		}
 		default:
 		{
 			break;
@@ -13440,6 +13445,11 @@ static boolean P_SetupSpawnedMapThing(mapthing_t *mthing, mobj_t *mobj)
 	case MT_LOOPCENTERPOINT:
 	{
 		Obj_InitLoopCenter(mobj);
+		break;
+	}
+	case MT_BATTLEUFO_SPAWNER:
+	{
+		Obj_LinkBattleUFOSpawner(mobj);
 		break;
 	}
 	default:

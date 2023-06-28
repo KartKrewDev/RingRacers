@@ -166,6 +166,11 @@ void Obj_BattleUFOLegThink(mobj_t *leg);
 void Obj_BattleUFOThink(mobj_t *ufo);
 void Obj_SpawnBattleUFOLegs(mobj_t *ufo);
 void Obj_BattleUFODeath(mobj_t *ufo);
+void Obj_LinkBattleUFOSpawner(mobj_t *spawner);
+void Obj_UnlinkBattleUFOSpawner(mobj_t *spawner);
+void Obj_SpawnBattleUFOFromSpawner(void);
+INT32 Obj_GetFirstBattleUFOSpawnerID(void);
+void Obj_ResetUFOSpawners(void);
 
 /* Power-Up Aura */
 void Obj_SpawnPowerUpAura(player_t* player);

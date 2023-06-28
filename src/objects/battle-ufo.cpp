@@ -1,11 +1,113 @@
+#include <algorithm>
+#include <iterator>
+#include <set>
+
 #include "../doomdef.h"
+#include "../m_random.h"
 #include "../p_local.h"
+#include "../k_battle.h"
 #include "../k_objects.h"
 
 #define BATTLEUFO_LEG_ZOFFS (3*FRACUNIT) // Spawn height offset from the body
 #define BATTLEUFO_LEGS (3) // Number of UFO legs to spawn
 #define BATTLEUFO_BOB_AMP (4) // UFO bob strength
 #define BATTLEUFO_BOB_SPEED (TICRATE*2) // UFO bob speed
+
+#define spawner_id(o) ((o)->args[0])
+
+#define ufo_spawner(o) ((o)->target)
+
+namespace
+{
+
+struct Spawner : mobj_t
+{
+	INT32 id() const { return spawner_id(this); }
+};
+
+struct UFO : mobj_t
+{
+	Spawner* spawner() const { return static_cast<Spawner*>(ufo_spawner(this)); }
+	void spawner(Spawner* n) { P_SetTarget(&ufo_spawner(this), n); }
+};
+
+struct SpawnerCompare
+{
+	bool operator()(const Spawner* a, const Spawner* b) const
+	{
+		return a->id() < b->id();
+	}
+};
+
+class SpawnerList
+{
+private:
+	std::set<Spawner*, SpawnerCompare> set_;
+
+public:
+	void insert(Spawner* spawner)
+	{
+		auto [it, inserted] = set_.insert(spawner);
+
+		if (inserted)
+		{
+			mobj_t* dummy = nullptr;
+			P_SetTarget(&dummy, spawner);
+		}
+	}
+
+	void erase(Spawner* spawner)
+	{
+		if (set_.erase(spawner))
+		{
+			mobj_t* dummy = spawner;
+			P_SetTarget(&dummy, nullptr);
+		}
+	}
+
+	Spawner* next(INT32 order) const
+	{
+		auto it = std::upper_bound(
+			set_.begin(),
+			set_.end(),
+			order,
+			[](INT32 a, const Spawner* b) { return a < b->id(); }
+		);
+
+		return it != set_.end() ? *it : *set_.begin();
+	}
+
+	INT32 random_id() const
+	{
+		if (set_.empty())
+		{
+			return 0;
+		}
+
+		auto it = set_.begin();
+
+		std::advance(it, P_RandomKey(PR_BATTLEUFO, set_.size()));
+
+		return (*std::prev(it == set_.begin() ? set_.end() : it))->id();
+	}
+
+	void spawn_ufo() const
+	{
+		if (set_.empty())
+		{
+			return;
+		}
+
+		Spawner* spawner = next(g_battleufo.previousId);
+		UFO* ufo = static_cast<UFO*>(P_SpawnMobjFromMobj(spawner, 0, 0, 200*FRACUNIT, MT_BATTLEUFO));
+
+		ufo->spawner(spawner);
+	}
+};
+
+SpawnerList g_spawners;
+
+}; // namespace
 
 void Obj_BattleUFOThink(mobj_t *ufo)
 {
@@ -15,10 +117,18 @@ void Obj_BattleUFOThink(mobj_t *ufo)
 	ufo->momz = targz;
 }
 
-void Obj_BattleUFODeath(mobj_t *ufo)
+void Obj_BattleUFODeath(mobj_t *mobj)
 {
+	UFO* ufo = static_cast<UFO*>(mobj);
+
 	ufo->momz = -(8*mapobjectscale)/2;
 	ufo->fuse = TICRATE;
+
+	if (ufo->spawner())
+	{
+		g_battleufo.previousId = ufo->spawner()->id();
+		g_battleufo.due = leveltime + BATTLE_UFO_TIME;
+	}
 }
 
 void Obj_SpawnBattleUFOLegs(mobj_t *ufo)
@@ -65,4 +175,29 @@ void Obj_BattleUFOLegThink(mobj_t *leg)
 		leg->hitlag = leg->target->hitlag;
 		leg->eflags |= (leg->target->eflags & MFE_DAMAGEHITLAG);
 	}
+}
+
+void Obj_LinkBattleUFOSpawner(mobj_t *spawner)
+{
+	g_spawners.insert(static_cast<Spawner*>(spawner));
+}
+
+void Obj_UnlinkBattleUFOSpawner(mobj_t *spawner)
+{
+	g_spawners.erase(static_cast<Spawner*>(spawner));
+}
+
+void Obj_SpawnBattleUFOFromSpawner(void)
+{
+	g_spawners.spawn_ufo();
+}
+
+INT32 Obj_GetFirstBattleUFOSpawnerID(void)
+{
+	return g_spawners.random_id();
+}
+
+void Obj_ResetUFOSpawners(void)
+{
+	g_spawners = {};
 }

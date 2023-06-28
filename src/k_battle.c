@@ -350,6 +350,11 @@ void K_RunPaperItemSpawners(void)
 		return;
 	}
 
+	if (leveltime == g_battleufo.due)
+	{
+		Obj_SpawnBattleUFOFromSpawner();
+	}
+
 	if (!IsOnInterval(interval))
 	{
 		return;
@@ -797,6 +802,9 @@ void K_BattleInit(boolean singleplayercontext)
 			K_SpawnPlayerBattleBumpers(players+i);
 		}
 	}
+
+	g_battleufo.due = starttime;
+	g_battleufo.previousId = Obj_GetFirstBattleUFOSpawnerID();
 }
 
 UINT8 K_Bumpers(player_t *player)
