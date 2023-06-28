@@ -753,6 +753,19 @@ static BlockItReturn_t PIT_CheckThing(mobj_t *thing)
 		return BMIT_CONTINUE;
 	}
 
+	if (thing->type == MT_BATTLEUFO)
+	{
+		if (tm.thing->type != MT_PLAYER)
+		{
+			return BMIT_CONTINUE;
+		}
+
+		if (tm.thing->z > thing->z + thing->height)
+			return BMIT_CONTINUE; // overhead
+		P_SetObjectMomZ(tm.thing, FRACUNIT, true);
+		return BMIT_CONTINUE;
+	}
+
 	if (thing->type == MT_SPB)
 	{
 		if (tm.thing->type != MT_PLAYER
