@@ -5073,6 +5073,9 @@ static void M_DrawChallengeTile(INT16 i, INT16 j, INT32 x, INT32 y, boolean hili
 			case SECRET_CUP:
 				categoryid = '4';
 				break;
+			case SECRET_MAP:
+				categoryid = '8';
+				break;
 			case SECRET_HARDSPEED:
 			case SECRET_MASTERMODE:
 			case SECRET_ENCORE:
@@ -5081,8 +5084,9 @@ static void M_DrawChallengeTile(INT16 i, INT16 j, INT32 x, INT32 y, boolean hili
 			case SECRET_ONLINE:
 			case SECRET_ADDONS:
 			case SECRET_EGGTV:
-			case SECRET_ALTTITLE:
 			case SECRET_SOUNDTEST:
+			case SECRET_ALTTITLE:
+			case SECRET_MEMETAUNTS:
 				categoryid = '6';
 				break;
 			case SECRET_TIMEATTACK:
@@ -5146,9 +5150,13 @@ static void M_DrawChallengeTile(INT16 i, INT16 j, INT32 x, INT32 y, boolean hili
 				{
 					colormap = R_GetTranslationColormap(TC_DEFAULT, colorid, GTC_MENUCACHE);
 				}
-				iconid = 0;
+				iconid = 2;
 				break;
 			}
+
+			case SECRET_MAP:
+				iconid = 14;
+				break;
 
 			case SECRET_HARDSPEED:
 				iconid = 3;
@@ -5169,11 +5177,14 @@ static void M_DrawChallengeTile(INT16 i, INT16 j, INT32 x, INT32 y, boolean hili
 			case SECRET_EGGTV:
 				iconid = 11;
 				break;
+			case SECRET_SOUNDTEST:
+				iconid = 1;
+				break;
 			case SECRET_ALTTITLE:
 				iconid = 6;
 				break;
-			case SECRET_SOUNDTEST:
-				iconid = 1;
+			case SECRET_MEMETAUNTS:
+				iconid = 13;
 				break;
 
 			case SECRET_TIMEATTACK:
@@ -5186,7 +5197,7 @@ static void M_DrawChallengeTile(INT16 i, INT16 j, INT32 x, INT32 y, boolean hili
 				iconid = 9;
 				break;
 			case SECRET_SPBATTACK:
-				iconid = 0; // TEMPORARY
+				iconid = 15;
 				break;
 
 			default:

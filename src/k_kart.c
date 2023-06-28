@@ -359,6 +359,7 @@ void K_RegisterKartStuff(void)
 	CV_RegisterVar(&cv_kartencore);
 	CV_RegisterVar(&cv_kartspeedometer);
 	CV_RegisterVar(&cv_kartvoices);
+	CV_RegisterVar(&cv_karthorns);
 	CV_RegisterVar(&cv_kartbot);
 	CV_RegisterVar(&cv_karteliminatelast);
 	CV_RegisterVar(&cv_thunderdome);
@@ -2055,13 +2056,29 @@ void K_SpawnMagicianParticles(mobj_t *mo, int spread)
 	}
 }
 
-static SINT8 K_GlanceAtPlayers(player_t *glancePlayer)
+static SINT8 K_GlanceAtPlayers(player_t *glancePlayer, boolean horn)
 {
 	const fixed_t maxdistance = FixedMul(1280 * mapobjectscale, K_GetKartGameSpeedScalar(gamespeed));
 	const angle_t blindSpotSize = ANG10; // ANG5
 	UINT8 i;
 	SINT8 glanceDir = 0;
 	SINT8 lastValidGlance = 0;
+	boolean podiumspecial = (K_PodiumSequence() == true && glancePlayer->nextwaypoint == NULL && glancePlayer->speed == 0);
+
+	if (podiumspecial)
+	{
+		if (glancePlayer->position > 3)
+		{
+			// Loser valley, focused on the mountain.
+			return 0;
+		}
+
+		if (glancePlayer->position == 1)
+		{
+			// Sitting on the stand, I ammm thebest!
+			return 0;
+		}
+	}
 
 	// See if there's any players coming up behind us.
 	// If so, your character will glance at 'em.
@@ -2099,9 +2116,17 @@ static SINT8 K_GlanceAtPlayers(player_t *glancePlayer)
 			continue;
 		}
 
-		distance = R_PointToDist2(glancePlayer->mo->x, glancePlayer->mo->y, p->mo->x, p->mo->y);
+		if (!podiumspecial)
+		{
+			distance = R_PointToDist2(glancePlayer->mo->x, glancePlayer->mo->y, p->mo->x, p->mo->y);
 
-		if (distance > maxdistance)
+			if (distance > maxdistance)
+			{
+				// Too far away
+				continue;
+			}
+		}
+		else if (p->position >= glancePlayer->position)
 		{
 			continue;
 		}
@@ -2115,7 +2140,7 @@ static SINT8 K_GlanceAtPlayers(player_t *glancePlayer)
 			dir = -dir;
 		}
 
-		if (diff > ANGLE_90)
+		if (diff > (podiumspecial ? (ANGLE_180 - blindSpotSize) : ANGLE_90))
 		{
 			// Not behind the player
 			continue;
@@ -2127,16 +2152,33 @@ static SINT8 K_GlanceAtPlayers(player_t *glancePlayer)
 			continue;
 		}
 
-		if (P_CheckSight(glancePlayer->mo, p->mo) == true)
+		if (!podiumspecial && P_CheckSight(glancePlayer->mo, p->mo) == false)
 		{
-			// Not blocked by a wall, we can glance at 'em!
-			// Adds, so that if there's more targets on one of your sides, it'll glance on that side.
-			glanceDir += dir;
-
-			// That poses a limitation if there's an equal number of targets on both sides...
-			// In that case, we'll pick the last chosen glance direction.
-			lastValidGlance = dir;
+			// Blocked by a wall, we can't glance at 'em!
+			continue;
 		}
+
+		// Adds, so that if there's more targets on one of your sides, it'll glance on that side.
+		glanceDir += dir;
+
+		// That poses a limitation if there's an equal number of targets on both sides...
+		// In that case, we'll pick the last chosen glance direction.
+		lastValidGlance = dir;
+
+		if (horn == true)
+		{
+			K_FollowerHornTaunt(glancePlayer, p);
+		}
+	}
+
+	if (horn == true && lastValidGlance != 0)
+	{
+		const boolean tasteful = (glancePlayer->karthud[khud_taunthorns] == 0);
+
+		K_FollowerHornTaunt(glancePlayer, glancePlayer);
+
+		if (tasteful && glancePlayer->karthud[khud_taunthorns] < 2*TICRATE)
+			glancePlayer->karthud[khud_taunthorns] = 2*TICRATE;
 	}
 
 	if (glanceDir > 0)
@@ -2215,7 +2257,8 @@ void K_KartMoveAnimation(player_t *player)
 	{
 		// Only try glancing if you're driving straight.
 		// This avoids all-players loops when we don't need it.
-		destGlanceDir = K_GlanceAtPlayers(player);
+		const boolean horn = lookback && !(player->pflags & PF_GAINAX);
+		destGlanceDir = K_GlanceAtPlayers(player, horn);
 
 		if (lookback == true)
 		{
@@ -2649,7 +2692,9 @@ void K_TryHurtSoundExchange(mobj_t *victim, mobj_t *attacker)
 	attacker->player->confirmVictim = (victim->player - players);
 	attacker->player->confirmVictimDelay = TICRATE/2;
 
-	if (attacker->player->follower != NULL)
+	if (attacker->player->follower != NULL
+		&& attacker->player->followerskin >= 0
+		&& attacker->player->followerskin < numfollowers)
 	{
 		const follower_t *fl = &followers[attacker->player->followerskin];
 		attacker->player->follower->movecount = fl->hitconfirmtime; // movecount is used to play the hitconfirm animation for followers.
@@ -7414,6 +7459,9 @@ void K_KartPlayerHUDUpdate(player_t *player)
 
 	if (player->karthud[khud_tauntvoices])
 		player->karthud[khud_tauntvoices]--;
+
+	if (player->karthud[khud_taunthorns])
+		player->karthud[khud_taunthorns]--;
 
 	if (player->karthud[khud_trickcool])
 		player->karthud[khud_trickcool]--;

@@ -2364,6 +2364,8 @@ void readunlockable(MYFILE *f, INT32 num)
 						unlockables[num].type = SECRET_SOUNDTEST;
 					else if (fastcmp(word2, "ALTTITLE"))
 						unlockables[num].type = SECRET_ALTTITLE;
+					else if (fastcmp(word2, "MEMETAUNTS"))
+						unlockables[num].type = SECRET_MEMETAUNTS;
 					else if (fastcmp(word2, "ITEMFINDER"))
 						unlockables[num].type = SECRET_ITEMFINDER;
 					else
@@ -3602,7 +3604,7 @@ void readfollower(MYFILE *f)
 	INT32 res;
 	INT32 i;
 
-	if (numfollowers >= MAXSKINS)
+	if (numfollowers >= MAXFOLLOWERS)
 	{
 		I_Error("Out of Followers\nLoad less addons to fix this.");
 	}
@@ -3625,6 +3627,7 @@ void readfollower(MYFILE *f)
 	followers[numfollowers].hitconfirmtime = TICRATE;
 	followers[numfollowers].defaultcolor = FOLLOWERCOLOR_MATCH;
 	followers[numfollowers].category = UINT8_MAX;
+	followers[numfollowers].hornsound = sfx_horn00;
 	strcpy(followers[numfollowers].icon, "MISSING");
 
 	do
@@ -3709,6 +3712,10 @@ void readfollower(MYFILE *f)
 				{
 					deh_warning("Follower %d: unknown follower color '%s'", numfollowers, word2);
 				}
+			}
+			else if (fastcmp(word, "HORNSOUND"))
+			{
+				followers[numfollowers].hornsound = get_number(word2);
 			}
 			else if (fastcmp(word, "SCALE"))
 			{
