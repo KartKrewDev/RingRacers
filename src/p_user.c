@@ -1464,30 +1464,33 @@ void P_DoPlayerExit(player_t *player, pflags_t flags)
 		}
 	}
 
-	if (modeattacking)
+	if (demo.playback == false)
 	{
-		G_UpdateRecords();
-	}
-
-	if (!losing)
-	{
-		profile_t *pr = PR_GetPlayerProfile(player);
-		if (pr != NULL)
+		if (modeattacking == true)
 		{
-			pr->wins++;
-			PR_SaveProfiles();
+			G_UpdateRecords();
 		}
 
-		if (P_IsLocalPlayer(player) && player->skin < numskins)
+		if (!losing)
 		{
-			skins[player->skin].records.wins++;
+			profile_t *pr = PR_GetPlayerProfile(player);
+			if (pr != NULL)
+			{
+				pr->wins++;
+				PR_SaveProfiles();
+			}
+
+			if (P_IsLocalPlayer(player) && player->skin < numskins)
+			{
+				skins[player->skin].records.wins++;
+			}
 		}
+
+		if (player == &players[consoleplayer])
+			demo.savebutton = leveltime;
 	}
 
 	player->karthud[khud_cardanimation] = 0; // srb2kart: reset battle animation
-
-	if (player == &players[consoleplayer])
-		demo.savebutton = leveltime;
 }
 
 //
