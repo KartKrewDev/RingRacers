@@ -6951,6 +6951,14 @@ static boolean P_MobjDeadThink(mobj_t *mobj)
 		Obj_UFOPieceDead(mobj);
 		break;
 	}
+	case MT_BATTLEUFO:
+	{
+		if (P_IsObjectOnGround(mobj) && mobj->fuse == 0)
+		{
+			mobj->fuse = TICRATE;
+		}
+		break;
+	}
 	default:
 		break;
 	}
@@ -9672,6 +9680,8 @@ static boolean P_CanFlickerFuse(mobj_t *mobj)
 		case MT_SNAPPER_LEG:
 		case MT_MINECARTSEG:
 		case MT_MONITOR_PART:
+		case MT_BATTLEUFO:
+		case MT_BATTLEUFO_LEG:
 			return true;
 
 		case MT_RANDOMITEM:

@@ -138,7 +138,6 @@ void Obj_BattleUFODeath(mobj_t *mobj)
 	UFO* ufo = static_cast<UFO*>(mobj);
 
 	ufo->momz = -(8*mapobjectscale)/2;
-	ufo->fuse = TICRATE;
 
 	if (ufo->spawner())
 	{
@@ -185,6 +184,7 @@ void Obj_BattleUFOLegThink(mobj_t *leg)
 	}
 
 	leg->momz = leg->target->momz;
+	leg->fuse = leg->target->fuse;
 
 	if (leg->target->hitlag)
 	{
