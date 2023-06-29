@@ -171,6 +171,7 @@ void Obj_UnlinkBattleUFOSpawner(mobj_t *spawner);
 void Obj_SpawnBattleUFOFromSpawner(void);
 INT32 Obj_GetFirstBattleUFOSpawnerID(void);
 void Obj_ResetUFOSpawners(void);
+void Obj_BattleUFOBeamThink(mobj_t *beam);
 
 /* Power-Up Aura */
 void Obj_SpawnPowerUpAura(player_t* player);

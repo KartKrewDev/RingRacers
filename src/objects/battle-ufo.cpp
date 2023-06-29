@@ -29,6 +29,15 @@ struct UFO : mobj_t
 {
 	Spawner* spawner() const { return static_cast<Spawner*>(ufo_spawner(this)); }
 	void spawner(Spawner* n) { P_SetTarget(&ufo_spawner(this), n); }
+	void spawn_beam()
+	{
+		mobj_t *x;
+
+		x = P_SpawnMobjFromMobj(this, 0, 0, this->z - this->height, MT_BATTLEUFO_BEAM);
+		x->renderflags |= RF_FLOORSPRITE|RF_NOSPLATBILLBOARD|RF_SLOPESPLAT|RF_NOSPLATROLLANGLE;
+		x->colorized = true;
+		x->color = SKINCOLOR_SAPPHIRE;
+	}
 };
 
 struct SpawnerCompare
@@ -109,12 +118,19 @@ SpawnerList g_spawners;
 
 }; // namespace
 
-void Obj_BattleUFOThink(mobj_t *ufo)
+void Obj_BattleUFOThink(mobj_t *mobj)
 {
+	UFO* ufo = static_cast<UFO*>(mobj);
+
 	// Copied and slightly modified from k_kart.c
 	fixed_t sine = FixedMul(ufo->scale, BATTLEUFO_BOB_AMP * FINESINE((((M_TAU_FIXED * BATTLEUFO_BOB_SPEED) * leveltime) >> ANGLETOFINESHIFT) & FINEMASK));
 	fixed_t targz = FixedMul(ufo->scale, sine) * P_MobjFlip(ufo);
 	ufo->momz = targz;
+
+	if ((leveltime/2) & 1)
+	{
+		ufo->spawn_beam();
+	}
 }
 
 void Obj_BattleUFODeath(mobj_t *mobj)
@@ -200,4 +216,14 @@ INT32 Obj_GetFirstBattleUFOSpawnerID(void)
 void Obj_ResetUFOSpawners(void)
 {
 	g_spawners = {};
+}
+
+void Obj_BattleUFOBeamThink(mobj_t *beam)
+{
+	P_SetObjectMomZ(beam, beam->info->speed, true);
+
+	if (P_IsObjectOnGround(beam))
+	{
+		P_RemoveMobj(beam);
+	}
 }

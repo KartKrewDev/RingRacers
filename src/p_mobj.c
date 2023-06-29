@@ -8446,6 +8446,11 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 		Obj_BattleUFOLegThink(mobj);
 		break;
 	}
+	case MT_BATTLEUFO_BEAM:
+	{
+		Obj_BattleUFOBeamThink(mobj);
+		break;
+	}
 	case MT_ROCKETSNEAKER:
 		if (!mobj->target || !mobj->target->health)
 		{

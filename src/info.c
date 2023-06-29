@@ -5264,6 +5264,8 @@ state_t states[NUMSTATES] =
 	{SPR_BUFO, 0, -1, {A_SetScale}, 3*FRACUNIT/2 , 0, S_NULL}, // S_BATTLEUFO
 	{SPR_BUFO, 1, -1, {A_SetScale}, 2*FRACUNIT/2, 0, S_NULL}, // S_BATTLEUFO_LEG
 	{SPR_BUFO, 0, 4, {A_BossScream}, 0, MT_EXPLODE, S_BATTLEUFO_DIE}, // S_BATTLEUFO_DIE
+	{SPR_DEZL, 1|FF_ANIMATE, 15, {NULL}, 2, 5, S_BATTLEUFO_BEAM2}, // S_BATTLEUFO_BEAM1
+	{SPR_DEZL, 3, -1, {NULL}, 0, 0, S_NULL}, // S_BATTLEUFO_BEAM2
 
 	{SPR_RBOW, FF_PAPERSPRITE|FF_ADD|FF_FULLBRIGHT|FF_ANIMATE, -1, {NULL}, 14, 2, S_NULL}, // S_POWERUP_AURA
 };
@@ -22881,7 +22883,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		MF_NOGRAVITY|MF_NOCLIPHEIGHT|MF_DONTENCOREMAP, // flags
 		S_NULL          // raisestate
 	},
-	
+
 	{           // MT_SIGNSPARKLE
 		-1,              // doomednum
 		S_SIGNSPARK1,    // spawnstate
@@ -29985,6 +29987,33 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		0,              // damage
 		sfx_None,       // activesound
 		MF_NOGRAVITY|MF_NOCLIPHEIGHT|MF_DONTENCOREMAP|MF_RUNSPAWNFUNC, // flags
+		S_NULL          // raisestate
+	},
+
+		{           // MT_BATTLEUFO_BEAM
+		-1,           // doomednum
+		S_BATTLEUFO_BEAM1,        // spawnstate
+		1000,              // spawnhealth
+		S_NULL,         // seestate
+		sfx_None,       // seesound
+		8,              // reactiontime
+		sfx_None,       // attacksound
+		S_NULL,         // painstate
+		0,              // painchance
+		sfx_None,       // painsound
+		S_NULL,         // meleestate
+		S_NULL,         // missilestate
+		S_NULL,    // deathstate
+		S_NULL,         // xdeathstate
+		sfx_None,     // deathsound
+		-(FRACUNIT/2),              // speed
+		64*FRACUNIT,    // radius
+		55*FRACUNIT,    // height
+		0,              // display offset
+		0,              // mass
+		0,              // damage
+		sfx_None,       // activesound
+		MF_NOGRAVITY|MF_NOCLIP|MF_DONTENCOREMAP, // flags
 		S_NULL          // raisestate
 	},
 

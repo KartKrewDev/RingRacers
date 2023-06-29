@@ -4590,6 +4590,8 @@ const char *const STATE_LIST[] = { // array length left dynamic for sanity testi
 	"S_BATTLEUFO",
 	"S_BATTLEUFO_LEG",
 	"S_BATTLEUFO_DIE",
+	"S_BATTLEUFO_BEAM1",
+	"S_BATTLEUFO_BEAM2",
 
 	"S_POWERUP_AURA",
 };
@@ -5727,6 +5729,7 @@ const char *const MOBJTYPE_LIST[] = {  // array length left dynamic for sanity t
 	"MT_BATTLEUFO_SPAWNER",
 	"MT_BATTLEUFO",
 	"MT_BATTLEUFO_LEG",
+	"MT_BATTLEUFO_BEAM",
 
 	"MT_POWERUP_AURA",
 };
