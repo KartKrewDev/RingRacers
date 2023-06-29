@@ -108,7 +108,7 @@ public:
 		}
 
 		Spawner* spawner = next(g_battleufo.previousId);
-		UFO* ufo = static_cast<UFO*>(P_SpawnMobjFromMobj(spawner, 0, 0, 200*FRACUNIT, MT_BATTLEUFO));
+		UFO* ufo = static_cast<UFO*>(P_SpawnMobjFromMobj(spawner, 0, 0, 250*FRACUNIT, MT_BATTLEUFO));
 
 		ufo->spawner(spawner);
 	}
