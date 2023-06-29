@@ -7,13 +7,13 @@
 menuitem_t PLAY_RaceGamemodesMenu[] =
 {
 	{IT_STRING | IT_CALL, "Grand Prix", "Compete for the best rank over five rounds!",
-		NULL, {.routine = M_SetupDifficultySelect}, 0, 0},
+		"MENUI004", {.routine = M_SetupDifficultySelect}, 0, 0},
 
 	{IT_STRING | IT_CALL, "Match Race", "Play by your own rules in a specialized, single race!",
-		"MENIMG01", {.routine = M_SetupDifficultySelect}, 1, 0},
+		"MENUI005", {.routine = M_SetupDifficultySelect}, 1, 0},
 
 	{IT_STRING | IT_CALL, "Time Attack", "Record your best time on any track!",
-		NULL, {.routine = M_LevelSelectInit}, 1, GT_RACE},
+		"MENUI006", {.routine = M_LevelSelectInit}, 1, GT_RACE},
 
 	{IT_STRING | IT_CALL, "Back", NULL, NULL, {.routine = M_GoBack}, 0, 0},
 };

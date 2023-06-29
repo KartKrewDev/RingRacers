@@ -7,10 +7,10 @@
 menuitem_t PLAY_MainMenu[] =
 {
 	{IT_STRING | IT_CALL, "Local Play", "Play only on this computer.",
-		NULL, {.routine = M_SetupGametypeMenu}, 0, 0},
+		"MENUI002", {.routine = M_SetupGametypeMenu}, 0, 0},
 
 	{IT_STRING | IT_CALL, "Online", NULL,
-		NULL, {.routine = M_MPOptSelectInit}, /*M_MPRoomSelectInit,*/ 0, 0},
+		"MENUI009", {.routine = M_MPOptSelectInit}, /*M_MPRoomSelectInit,*/ 0, 0},
 
 	{IT_STRING | IT_CALL, "Back", NULL, NULL, {.routine = M_GoBack}, 0, 0},
 };
