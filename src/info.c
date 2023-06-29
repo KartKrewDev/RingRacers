@@ -29954,7 +29954,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		sfx_cdfm19,     // deathsound
 		0,              // speed
 		60*FRACUNIT,    // radius
-		96*FRACUNIT,    // height
+		104*FRACUNIT,    // height
 		0,              // display offset
 		0,              // mass
 		0,              // damage
