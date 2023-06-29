@@ -33,7 +33,7 @@ struct UFO : mobj_t
 	{
 		mobj_t *x;
 
-		x = P_SpawnMobjFromMobj(this, 0, 0, this->z - this->height, MT_BATTLEUFO_BEAM);
+		x = P_SpawnMobjFromMobj(this, 0, 0, FixedDiv(this->height / 4, this->scale), MT_BATTLEUFO_BEAM);
 		x->renderflags |= RF_FLOORSPRITE|RF_NOSPLATBILLBOARD|RF_SLOPESPLAT|RF_NOSPLATROLLANGLE;
 		x->colorized = true;
 		x->color = SKINCOLOR_SAPPHIRE;
