@@ -757,11 +757,19 @@ static BlockItReturn_t PIT_CheckThing(mobj_t *thing)
 	{
 		if (tm.thing->type != MT_PLAYER)
 		{
-			return BMIT_CONTINUE;
+			return BMIT_CONTINUE; // not a player
+		}
+
+		if (thing->health <= 0)
+		{
+			return BMIT_CONTINUE; // dead
 		}
 
 		if (tm.thing->z > thing->z + thing->height)
+		{
 			return BMIT_CONTINUE; // overhead
+		}
+
 		P_SetObjectMomZ(tm.thing, FRACUNIT, true);
 		return BMIT_CONTINUE;
 	}
