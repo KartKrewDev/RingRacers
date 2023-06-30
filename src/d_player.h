@@ -463,6 +463,7 @@ typedef struct {
 
 // player_t struct for power-ups
 struct powerupvars_t {
+	UINT16 superTimer;
 	mobj_t *flickyController;
 };
 

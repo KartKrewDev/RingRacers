@@ -8090,6 +8090,11 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		}
 	}
 
+	if (player->powerup.superTimer > 0)
+	{
+		player->powerup.superTimer--;
+	}
+
 	if (player->guardCooldown)
 		player->guardCooldown--;
 		
