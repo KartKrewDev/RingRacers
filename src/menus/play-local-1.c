@@ -7,16 +7,16 @@
 menuitem_t PLAY_GamemodesMenu[] =
 {
 	{IT_STRING | IT_CALL, "Race", "A contest to see who's the fastest of them all!",
-		NULL, {.routine = M_SetupRaceMenu}, 0, 0},
+		"MENUI003", {.routine = M_SetupRaceMenu}, 0, 0},
 
 	{IT_STRING | IT_CALL, "Battle", "It's last kart standing in this free-for-all!",
 		"MENIMG00", {.routine = M_LevelSelectInit}, 0, GT_BATTLE},
 
 	{IT_STRING | IT_CALL, "Prisons", "Bust up all of the Prison Eggs in record time!",
-		NULL, {.routine = M_LevelSelectInit}, 1, GT_BATTLE},
+		"MENUI007", {.routine = M_LevelSelectInit}, 1, GT_BATTLE},
 
 	{IT_STRING | IT_CALL, "Special", "Strike your target and secure the prize!",
-		NULL, {.routine = M_LevelSelectInit}, 1, GT_SPECIAL},
+		"MENUI008", {.routine = M_LevelSelectInit}, 1, GT_SPECIAL},
 
 	{IT_STRING | IT_CALL, "Back", NULL, NULL, {.routine = M_GoBack}, 0, 0},
 };

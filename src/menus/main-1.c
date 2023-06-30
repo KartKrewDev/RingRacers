@@ -29,8 +29,8 @@ menuitem_t MainMenu[] =
 		"Check out some bonus features.", "MENUI001",
 		{.routine = M_InitExtras}, 0, 0},
 
-	{IT_STRING, "Options",
-		"Configure your controls, settings, and preferences.", NULL,
+	{IT_STRING | IT_CALL, "Options",
+		"Configure your controls, settings, and preferences.", "MENUI010",
 		{.routine = M_InitOptions}, 0, 0},
 
 	{IT_STRING | IT_CALL, "Quit",
