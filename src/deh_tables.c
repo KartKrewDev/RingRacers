@@ -4586,6 +4586,8 @@ const char *const STATE_LIST[] = { // array length left dynamic for sanity testi
 	"S_GACHABOM_RETURNING",
 
 	"S_SUPER_FLICKY",
+
+	"S_POWERUP_AURA",
 };
 
 // RegEx to generate this from info.h: ^\tMT_([^,]+), --> \t"MT_\1",
@@ -5717,6 +5719,8 @@ const char *const MOBJTYPE_LIST[] = {  // array length left dynamic for sanity t
 
 	"MT_SUPER_FLICKY",
 	"MT_SUPER_FLICKY_CONTROLLER",
+
+	"MT_POWERUP_AURA",
 };
 
 const char *const MOBJFLAG_LIST[] = {
@@ -6880,6 +6884,8 @@ struct int_const_s const INT_CONST[] = {
 	{"POWERUP_BUMPER",POWERUP_BUMPER},
 	{"POWERUP_BADGE",POWERUP_BADGE},
 	{"POWERUP_SUPERFLICKY",POWERUP_SUPERFLICKY},
+	{"ENDOFPOWERUPS",ENDOFPOWERUPS},
+	{"NUMPOWERUPS",NUMPOWERUPS},
 
 	// kartshields_t
 	{"KSHIELD_NONE",KSHIELD_NONE},

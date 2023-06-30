@@ -652,6 +652,7 @@ char sprnames[NUMSPRITES + 1][5] =
 	"ITMI",
 	"ITMN",
 	"PWRB",
+	"RBOW", // power-up aura
 	"WANT",
 
 	"PBOM", // player bomb
@@ -5256,6 +5257,8 @@ state_t states[NUMSTATES] =
 	{SPR_GBOM, FF_INVERT, -1, {A_SetScale}, FRACUNIT/2, 1, S_NULL}, // S_GACHABOM_RETURNING
 
 	{SPR_3DFR, 1|FF_ANIMATE, -1, {NULL}, 2, 5, S_NULL}, // S_SUPER_FLICKY
+
+	{SPR_RBOW, FF_PAPERSPRITE|FF_ADD|FF_FULLBRIGHT|FF_ANIMATE, -1, {NULL}, 14, 2, S_NULL}, // S_POWERUP_AURA
 };
 
 mobjinfo_t mobjinfo[NUMMOBJTYPES] =
@@ -29894,6 +29897,33 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		0,              // damage
 		sfx_None,       // activesound
 		MF_NOSECTOR|MF_NOBLOCKMAP|MF_NOGRAVITY|MF_NOCLIPHEIGHT|MF_SCENERY, // flags
+		S_NULL          // raisestate
+	},
+
+	{           // MT_POWERUP_AURA
+		-1,             // doomednum
+		S_POWERUP_AURA, // spawnstate
+		1000,           // spawnhealth
+		S_NULL,         // seestate
+		sfx_None,       // seesound
+		0,              // reactiontime
+		sfx_None,       // attacksound
+		S_NULL,         // painstate
+		0,              // painchance
+		sfx_None,       // painsound
+		S_NULL,         // meleestate
+		S_NULL,         // missilestate
+		S_NULL,         // deathstate
+		S_NULL,         // xdeathstate
+		sfx_None,       // deathsound
+		0,              // speed
+		16*FRACUNIT,    // radius
+		106*FRACUNIT,   // height
+		0,              // display offset
+		0,              // mass
+		0,              // damage
+		sfx_None,       // activesound
+		MF_NOBLOCKMAP|MF_NOGRAVITY|MF_NOCLIPHEIGHT|MF_SCENERY, // flags
 		S_NULL          // raisestate
 	},
 };

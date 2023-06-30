@@ -2418,7 +2418,8 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 				if (source && source != player->mo && source->player)
 				{
 					// Extend the invincibility if the hit was a direct hit.
-					if (inflictor == source && source->player->invincibilitytimer)
+					if (inflictor == source && source->player->invincibilitytimer &&
+							!K_PowerUpRemaining(player, POWERUP_SMONITOR))
 					{
 						tic_t kinvextend;
 

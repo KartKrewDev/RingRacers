@@ -3,10 +3,16 @@
 #include "../k_objects.h"
 #include "../p_local.h"
 #include "../k_kart.h"
+#include "../k_powerup.h"
+
+static INT16 guard_upscale (player_t *player)
+{
+	return K_PowerUpRemaining(player, POWERUP_BARRIER) ? 40 : player->spheres;
+}
 
 void Obj_BlockRingThink (mobj_t *ring)
 {
-    if (P_MobjWasRemoved(ring->target) || !ring->target->player || !ring->target->player->ebrakefor)
+    if (P_MobjWasRemoved(ring->target) || !ring->target->player)
     {
         P_RemoveMobj(ring);
     }
@@ -22,7 +28,7 @@ void Obj_BlockRingThink (mobj_t *ring)
         ring->color = mo->color;
 
         fixed_t baseScale = mo->scale / 2;
-        baseScale += (mo->scale / 30) * player->spheres;
+        baseScale += (mo->scale / 30) * guard_upscale(player);
         P_SetScale(ring, baseScale);
 
         // Twirl
@@ -42,7 +48,7 @@ void Obj_BlockRingThink (mobj_t *ring)
 
 void Obj_BlockBodyThink (mobj_t *body)
 {
-    if (P_MobjWasRemoved(body->target) || !body->target->player || !body->target->player->ebrakefor)
+    if (P_MobjWasRemoved(body->target) || !body->target->player)
     {
         P_RemoveMobj(body);
     }
@@ -55,7 +61,7 @@ void Obj_BlockBodyThink (mobj_t *body)
         body->flags &= ~(MF_NOCLIPTHING);
 
         fixed_t baseScale = mo->scale / 2;
-        baseScale += (mo->scale / 30) * player->spheres;
+        baseScale += (mo->scale / 30) * guard_upscale(player);
         P_SetScale(body, baseScale);
 
 		P_MoveOrigin(body, mo->x, mo->y, mo->z + mo->height/2);

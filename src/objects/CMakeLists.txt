@@ -22,4 +22,5 @@ target_sources(SRB2SDL2 PRIVATE
 	gachabom-rebound.cpp
 	servant-hand.c
 	super-flicky.cpp
+	powerup-aura.cpp
 )

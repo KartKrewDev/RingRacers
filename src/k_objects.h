@@ -161,6 +161,10 @@ void Obj_SuperFlickyPlayerCollide(mobj_t *flicky, mobj_t *player);
 void Obj_SuperFlickyLanding(mobj_t *flicky);
 boolean Obj_IsSuperFlickyWhippable(const mobj_t *flicky);
 
+/* Power-Up Aura */
+void Obj_SpawnPowerUpAura(player_t* player);
+void Obj_PowerUpAuraThink(mobj_t* mobj);
+
 #ifdef __cplusplus
 } // extern "C"
 #endif
