@@ -1373,6 +1373,8 @@ typedef enum sprite
 
 	SPR_3DFR,
 
+	SPR_BUFO, // Battle/Power-UP UFO
+
 	// First person view sprites; this is a sprite so that it can be replaced by a specialized MD2 draw later
 	SPR_VIEW,
 
@@ -5688,6 +5690,12 @@ typedef enum state
 
 	S_SUPER_FLICKY,
 
+	S_BATTLEUFO,
+	S_BATTLEUFO_LEG,
+	S_BATTLEUFO_DIE,
+	S_BATTLEUFO_BEAM1,
+	S_BATTLEUFO_BEAM2,
+
 	S_POWERUP_AURA,
 
 	S_FIRSTFREESLOT,
@@ -6839,6 +6847,11 @@ typedef enum mobj_type
 
 	MT_SUPER_FLICKY,
 	MT_SUPER_FLICKY_CONTROLLER,
+
+	MT_BATTLEUFO_SPAWNER,
+	MT_BATTLEUFO,
+	MT_BATTLEUFO_LEG,
+	MT_BATTLEUFO_BEAM,
 
 	MT_POWERUP_AURA,
 

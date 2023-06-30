@@ -799,7 +799,7 @@ void P_CheckTimeLimit(void)
 			{
 				if (((timelimitintics + starttime - leveltime) % TICRATE) == 0)
 					S_StartSound(NULL, sfx_s3ka7);
-			}			
+			}
 		}
 		return;
 	}
@@ -1725,7 +1725,9 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 		case MT_MONITOR:
 			Obj_MonitorOnDeath(target);
 			break;
-
+		case MT_BATTLEUFO:
+			Obj_BattleUFODeath(target);
+			break;
 		default:
 			break;
 	}

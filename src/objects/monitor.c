@@ -668,13 +668,13 @@ Obj_MonitorOnDeath (mobj_t *monitor)
 		const UINT32 localseed = restore_item_rng(sharedseed);
 
 		adjust_monitor_drop(monitor,
-				K_CreatePaperItem(
+				K_FlingPaperItem(
 					monitor->x, monitor->y, monitor->z + (128 * mapobjectscale * flip),
 					i * ang, flip,
 					K_ItemResultToType(result),
 					K_ItemResultToAmount(result)));
 
-		// K_CreatePaperItem may advance RNG, so update our
+		// K_FlingPaperItem may advance RNG, so update our
 		// copy of the seed afterward
 		sharedseed = restore_item_rng(localseed);
 	}

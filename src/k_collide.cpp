@@ -920,11 +920,12 @@ boolean K_InstaWhipCollide(mobj_t *shield, mobj_t *victim)
 		|| victim->type == MT_BANANA || victim->type == MT_EGGMANITEM || victim->type == MT_BALLHOG
 		|| victim->type == MT_SSMINE || victim->type == MT_LANDMINE || victim->type == MT_SINK
 		|| victim->type == MT_GARDENTOP || victim->type == MT_DROPTARGET || victim->type == MT_BATTLECAPSULE
-		|| victim->type == MT_MONITOR || victim->type == MT_SPECIAL_UFO)
+		|| victim->type == MT_MONITOR || victim->type == MT_SPECIAL_UFO || victim->type == MT_BATTLEUFO)
 		{
 			// Monitor hack. We can hit monitors once per instawhip, no multihit shredding!
 			// Damage values in Obj_MonitorGetDamage.
-			if (victim->type == MT_MONITOR)
+			// Apply to UFO also -- steelt 29062023
+			if (victim->type == MT_MONITOR || victim->type == MT_BATTLEUFO)
 			{
 				if (shield->extravalue1 == 1)
 					return false;

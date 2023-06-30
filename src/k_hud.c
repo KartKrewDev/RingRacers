@@ -83,6 +83,7 @@ static patch_t *kp_wouldyoustillcatchmeifiwereaworm;
 static patch_t *kp_catcherminimap;
 static patch_t *kp_emeraldminimap[2];
 static patch_t *kp_capsuleminimap[3];
+static patch_t *kp_battleufominimap;
 
 static patch_t *kp_ringsticker[2];
 static patch_t *kp_ringstickersplit[4];
@@ -371,6 +372,8 @@ void K_LoadKartHUDGraphics(void)
 	HU_UpdatePatch(&kp_capsuleminimap[0], "MINICAP1");
 	HU_UpdatePatch(&kp_capsuleminimap[1], "MINICAP2");
 	HU_UpdatePatch(&kp_capsuleminimap[2], "MINICAP3");
+
+	HU_UpdatePatch(&kp_battleufominimap, "MINIBUFO");
 
 	// Rings & Lives
 	HU_UpdatePatch(&kp_ringsticker[0], "RNGBACKA");
@@ -4011,6 +4014,9 @@ static void K_drawKartMinimap(void)
 			case MT_CDUFO:
 				if (battleprisons)
 					workingPic = kp_capsuleminimap[2];
+				break;
+			case MT_BATTLEUFO:
+				workingPic = kp_battleufominimap;
 				break;
 			default:
 				break;

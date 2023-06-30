@@ -6613,13 +6613,6 @@ mobj_t *K_CreatePaperItem(fixed_t x, fixed_t y, fixed_t z, angle_t angle, SINT8 
 	drop->destscale = (3*drop->destscale)/2;
 
 	drop->angle = angle;
-	P_Thrust(drop,
-		FixedAngle(P_RandomFixed(PR_ITEM_ROULETTE) * 180) + angle,
-		16*mapobjectscale);
-
-	drop->momz = flip * 3 * mapobjectscale;
-	if (drop->eflags & MFE_UNDERWATER)
-		drop->momz = (117 * drop->momz) / 200;
 
 	if (type == 0)
 	{
@@ -6665,6 +6658,21 @@ mobj_t *K_CreatePaperItem(fixed_t x, fixed_t y, fixed_t z, angle_t angle, SINT8 
 	return drop;
 }
 
+mobj_t *K_FlingPaperItem(fixed_t x, fixed_t y, fixed_t z, angle_t angle, SINT8 flip, UINT8 type, UINT16 amount)
+{
+	mobj_t *drop = K_CreatePaperItem(x, y, z, angle, flip, type, amount);
+
+	P_Thrust(drop,
+		FixedAngle(P_RandomFixed(PR_ITEM_ROULETTE) * 180) + angle,
+		16*mapobjectscale);
+
+	drop->momz = flip * 3 * mapobjectscale;
+	if (drop->eflags & MFE_UNDERWATER)
+		drop->momz = (117 * drop->momz) / 200;
+
+	return drop;
+}
+
 void K_DropPaperItem(player_t *player, UINT8 itemtype, UINT16 itemamount)
 {
 	if (!player->mo || P_MobjWasRemoved(player->mo))
@@ -6672,7 +6680,7 @@ void K_DropPaperItem(player_t *player, UINT8 itemtype, UINT16 itemamount)
 		return;
 	}
 
-	mobj_t *drop = K_CreatePaperItem(
+	mobj_t *drop = K_FlingPaperItem(
 		player->mo->x, player->mo->y, player->mo->z + player->mo->height/2,
 		player->mo->angle + ANGLE_90, P_MobjFlip(player->mo),
 		itemtype, itemamount
