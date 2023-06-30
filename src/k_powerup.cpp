@@ -35,6 +35,10 @@ void K_GivePowerUp(player_t* player, kartitems_t powerup, tic_t time)
 		player->powerup.barrierTimer += time;
 		break;
 
+	case POWERUP_BUMPER:
+		K_GiveBumpersToPlayer(player, nullptr, 5);
+		break;
+
 	case POWERUP_SUPERFLICKY:
 		if (K_PowerUpRemaining(player, POWERUP_SUPERFLICKY))
 		{
