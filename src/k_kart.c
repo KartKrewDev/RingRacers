@@ -4483,18 +4483,11 @@ void K_DebtStingPlayer(player_t *player, mobj_t *source)
 	P_SetPlayerMobjState(player->mo, S_KART_SPINOUT);
 }
 
-void K_TakeBumpersFromPlayer(player_t *player, player_t *victim, UINT8 amount)
+void K_GiveBumpersToPlayer(player_t *player, player_t *victim, UINT8 amount)
 {
 	const UINT8 oldPlayerBumpers = K_Bumpers(player);
 
 	UINT8 tookBumpers = 0;
-
-	amount = min(amount, K_Bumpers(victim));
-
-	if (amount == 0)
-	{
-		return;
-	}
 
 	while (tookBumpers < amount)
 	{
@@ -4521,11 +4514,15 @@ void K_TakeBumpersFromPlayer(player_t *player, player_t *victim, UINT8 amount)
 		newmo = P_SpawnMobj(newx, newy, player->mo->z, MT_BATTLEBUMPER);
 		newmo->threshold = newbumper;
 
-		P_SetTarget(&newmo->tracer, victim->mo);
+		if (victim)
+		{
+			P_SetTarget(&newmo->tracer, victim->mo);
+		}
+
 		P_SetTarget(&newmo->target, player->mo);
 
 		newmo->angle = (diff * (newbumper-1));
-		newmo->color = victim->skincolor;
+		newmo->color = (victim ? victim : player)->skincolor;
 
 		if (newbumper+1 < 2)
 		{
@@ -4545,6 +4542,18 @@ void K_TakeBumpersFromPlayer(player_t *player, player_t *victim, UINT8 amount)
 
 	// :jartcookiedance:
 	player->mo->health += tookBumpers;
+}
+
+void K_TakeBumpersFromPlayer(player_t *player, player_t *victim, UINT8 amount)
+{
+	amount = min(amount, K_Bumpers(victim));
+
+	if (amount == 0)
+	{
+		return;
+	}
+
+	K_GiveBumpersToPlayer(player, victim, amount);
 
 	// Play steal sound
 	S_StartSound(player->mo, sfx_3db06);
