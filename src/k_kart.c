@@ -3791,6 +3791,7 @@ void K_BattleAwardHit(player_t *player, player_t *victim, mobj_t *inflictor, UIN
 {
 	UINT8 points = 1;
 	boolean trapItem = false;
+	boolean finishOff = (victim->mo->health > 0) && (victim->mo->health <= damage);
 
 	if (!(gametyperules & GTR_POINTLIMIT))
 	{
@@ -3825,7 +3826,7 @@ void K_BattleAwardHit(player_t *player, player_t *victim, mobj_t *inflictor, UIN
 		}
 		else if (gametyperules & GTR_BUMPERS)
 		{
-			if ((victim->mo->health > 0) && (victim->mo->health <= damage))
+			if (finishOff)
 			{
 				// +2 points for finishing off a player
 				points = 2;
@@ -3835,6 +3836,11 @@ void K_BattleAwardHit(player_t *player, player_t *victim, mobj_t *inflictor, UIN
 
 	P_AddPlayerScore(player, points);
 	K_SpawnBattlePoints(player, victim, points);
+
+	if ((gametyperules & GTR_BUMPERS) && finishOff && g_pointlimit <= player->roundscore)
+	{
+		P_DoAllPlayersExit(0, false);
+	}
 }
 
 void K_SpinPlayer(player_t *player, mobj_t *inflictor, mobj_t *source, INT32 type)
