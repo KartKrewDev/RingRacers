@@ -45,6 +45,7 @@
 #include "k_specialstage.h"
 #include "k_roulette.h"
 #include "k_podium.h"
+#include "k_powerup.h"
 
 // SOME IMPORTANT VARIABLES DEFINED IN DOOMDEF.H:
 // gamespeed is cc (0 for easy, 1 for normal, 2 for hard)
@@ -7997,7 +7998,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 				player->spheredigestion = spheredigestion;
 			}
 
-			if (K_PlayerGuard(player) && (player->ebrakefor%6 == 0))
+			if (K_PlayerGuard(player) && !K_PowerUpRemaining(player, POWERUP_BARRIER) && (player->ebrakefor%6 == 0))
 				player->spheres--;
 		}
 		else
@@ -8088,6 +8089,11 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 			if (!P_IsObjectOnGround(player->mo))
 				player->instaShieldCooldown = max(player->instaShieldCooldown, 1);
 		}
+	}
+
+	if (player->powerup.barrierTimer > 0)
+	{
+		player->powerup.barrierTimer--;
 	}
 
 	if (player->powerup.superTimer > 0)
@@ -8339,7 +8345,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		player->pflags &= ~PF_DRIFTINPUT;
 	}
 
-	if (K_PlayerGuard(player))
+	if (K_PlayerGuard(player) && !K_PowerUpRemaining(player, POWERUP_BARRIER))
 		player->instaShieldCooldown = max(player->instaShieldCooldown, INSTAWHIP_DROPGUARD);
 
 	// Roulette Code
@@ -10062,7 +10068,17 @@ boolean K_PlayerEBrake(player_t *player)
 
 boolean K_PlayerGuard(player_t *player)
 {
-	return (K_PlayerEBrake(player) && player->spheres > 0 && player->guardCooldown == 0);
+	if (player->guardCooldown != 0)
+	{
+		return false;
+	}
+
+	if (K_PowerUpRemaining(player, POWERUP_BARRIER))
+	{
+		return true;
+	}
+
+	return (K_PlayerEBrake(player) && player->spheres > 0);
 }
 
 SINT8 K_Sliptiding(player_t *player)
@@ -10849,7 +10865,12 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 					else
 					{
 						player->instaShieldCooldown = INSTAWHIP_COOLDOWN;
-						player->guardCooldown = INSTAWHIP_COOLDOWN;
+
+						if (!K_PowerUpRemaining(player, POWERUP_BARRIER))
+						{
+							player->guardCooldown = INSTAWHIP_COOLDOWN;
+						}
+
 						S_StartSound(player->mo, sfx_iwhp);
 						mobj_t *whip = P_SpawnMobj(player->mo->x, player->mo->y, player->mo->z, MT_INSTAWHIP);
 						P_SetTarget(&player->whip, whip);

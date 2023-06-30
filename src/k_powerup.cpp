@@ -11,6 +11,9 @@ tic_t K_PowerUpRemaining(const player_t* player, kartitems_t powerup)
 	case POWERUP_SMONITOR:
 		return player->powerup.superTimer;
 
+	case POWERUP_BARRIER:
+		return player->powerup.barrierTimer;
+
 	case POWERUP_SUPERFLICKY:
 		return Obj_SuperFlickySwarmTime(player->powerup.flickyController);
 
@@ -26,6 +29,10 @@ void K_GivePowerUp(player_t* player, kartitems_t powerup, tic_t time)
 	case POWERUP_SMONITOR:
 		K_DoInvincibility(player, time);
 		player->powerup.superTimer += time;
+		break;
+
+	case POWERUP_BARRIER:
+		player->powerup.barrierTimer += time;
 		break;
 
 	case POWERUP_SUPERFLICKY:
@@ -58,6 +65,7 @@ void K_DropPowerUps(player_t* player)
 	};
 
 	simple_drop(POWERUP_SMONITOR, player->powerup.superTimer);
+	simple_drop(POWERUP_BARRIER, player->powerup.barrierTimer);
 
 	if (K_PowerUpRemaining(player, POWERUP_SUPERFLICKY))
 	{
