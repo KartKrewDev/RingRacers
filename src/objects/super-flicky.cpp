@@ -141,7 +141,7 @@ struct Controller : mobj_t
 		x->source(player->mo);
 		x->mode(Mode::kDescend);
 		x->zofs(0);
-		x->expiry(leveltime + time);
+		x->expiry(leveltime + time + kRiseTime);
 
 		P_SetTarget(&player->powerup.flickyController, x);
 
