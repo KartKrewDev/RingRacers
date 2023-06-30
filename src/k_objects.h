@@ -145,6 +145,7 @@ void Obj_SpawnGachaBomRebound(mobj_t *source, mobj_t *target);
 
 /* Servant Hand */
 void Obj_ServantHandHandling(player_t *player);
+void Obj_PointPlayersToXY(fixed_t x, fixed_t y);
 
 /* Super Flicky Controller */
 void Obj_SpawnSuperFlickySwarm(player_t *owner, tic_t time);

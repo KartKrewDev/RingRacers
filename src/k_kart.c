@@ -8424,6 +8424,8 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 	}
 
 	K_HandleDelayedHitByEm(player);
+
+	player->pflags &= ~PF_POINTME;
 }
 
 void K_KartResetPlayerColor(player_t *player)
