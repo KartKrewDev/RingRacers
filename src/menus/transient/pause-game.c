@@ -29,12 +29,6 @@ menuitem_t PAUSE_Main[] =
 	{IT_STRING | IT_CALL, "CHANGE MAP", "M_ICOMAP",
 		NULL, {.routine = M_LevelSelectInit}, 0, -1},
 
-	{IT_STRING | IT_CALL, "RESTART MAP", "M_ICORE",
-		NULL, {.routine = M_RestartMap}, 0, 0},
-
-	{IT_STRING | IT_CALL, "TRY AGAIN", "M_ICORE",
-		NULL, {.routine = M_TryAgain}, 0, 0},
-
 #ifdef HAVE_DISCORDRPC
 	{IT_STRING | IT_CALL, "DISCORD REQUESTS", "M_ICODIS",
 		NULL, {.routine = M_DiscordRequests}, 0, 0},
@@ -45,6 +39,12 @@ menuitem_t PAUSE_Main[] =
 
 	{IT_STRING | IT_ARROWS, "CALL VOTE", "M_ICOVOT",
 		NULL, {.routine = M_HandlePauseMenuCallVote}, 0, 0},
+
+	{IT_STRING | IT_CALL, "RESTART MAP", "M_ICORE",
+		NULL, {.routine = M_RestartMap}, 0, 0},
+
+	{IT_STRING | IT_CALL, "TRY AGAIN", "M_ICORE",
+		NULL, {.routine = M_TryAgain}, 0, 0},
 
 	{IT_STRING | IT_CALL, "RESUME GAME", "M_ICOUNP",
 		NULL, {.routine = M_QuitPauseMenu}, 0, 0},
@@ -128,13 +128,13 @@ void M_OpenPauseMenu(void)
 	PAUSE_Main[mpause_stereo].status = IT_DISABLED;
 	PAUSE_Main[mpause_changegametype].status = IT_DISABLED;
 	PAUSE_Main[mpause_switchmap].status = IT_DISABLED;
-	PAUSE_Main[mpause_restartmap].status = IT_DISABLED;
-	PAUSE_Main[mpause_tryagain].status = IT_DISABLED;
 	PAUSE_Main[mpause_callvote].status = IT_DISABLED;
 	PAUSE_Main[mpause_admin].status = IT_DISABLED;
 #ifdef HAVE_DISCORDRPC
 	PAUSE_Main[mpause_discordrequests].status = IT_DISABLED;
 #endif
+	PAUSE_Main[mpause_restartmap].status = IT_DISABLED;
+	PAUSE_Main[mpause_tryagain].status = IT_DISABLED;
 
 	PAUSE_Main[mpause_spectate].status = IT_DISABLED;
 	PAUSE_Main[mpause_entergame].status = IT_DISABLED;
