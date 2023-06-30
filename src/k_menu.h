@@ -447,13 +447,13 @@ typedef enum
 	mpause_stereo,
 	mpause_changegametype,
 	mpause_switchmap,
-	mpause_restartmap,
-	mpause_tryagain,
 #ifdef HAVE_DISCORDRPC
 	mpause_discordrequests,
 #endif
 	mpause_admin,
 	mpause_callvote,
+	mpause_restartmap,
+	mpause_tryagain,
 
 	mpause_continue,
 	mpause_spectate,
