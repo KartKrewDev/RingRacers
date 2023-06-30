@@ -335,7 +335,7 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 		case MT_FLOATINGITEM: // SRB2Kart
 			if (special->threshold >= FIRSTPOWERUP)
 			{
-				if (player->flashing || player->tumbleBounces > 0)
+				if (P_PlayerInPain(player))
 					return;
 
 				K_GivePowerUp(player, special->threshold, special->movecount);
@@ -2428,7 +2428,7 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 				{
 					// Extend the invincibility if the hit was a direct hit.
 					if (inflictor == source && source->player->invincibilitytimer &&
-							!K_PowerUpRemaining(player, POWERUP_SMONITOR))
+							!K_PowerUpRemaining(source->player, POWERUP_SMONITOR))
 					{
 						tic_t kinvextend;
 
