@@ -3405,7 +3405,7 @@ static gametype_t defaultgametypes[] =
 		TOL_BATTLE,
 		int_scoreortimeattack,
 		0,
-		2,
+		3,
 	},
 
 	// GT_SPECIAL
