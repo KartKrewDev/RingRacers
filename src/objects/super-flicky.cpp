@@ -754,11 +754,11 @@ void Obj_ExtendSuperFlickySwarm(mobj_t* mobj, tic_t time)
 	x->expiry(x->expiry() + time);
 }
 
-tic_t Obj_SuperFlickySwarmTime(const mobj_t* mobj)
+tic_t Obj_SuperFlickySwarmTime(mobj_t* mobj)
 {
-	const Controller* x = static_cast<const Controller*>(mobj);
+	Controller* x = static_cast<Controller*>(mobj);
 
-	return x ? x->powerup_remaining() : 0u;
+	return !P_MobjWasRemoved(x) ? x->powerup_remaining() : 0u;
 }
 
 boolean Obj_IsSuperFlickyWhippable(const mobj_t* mobj)
