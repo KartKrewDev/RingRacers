@@ -1118,6 +1118,7 @@ void D_RegisterClientCommands(void)
 	COM_AddCommand("noclip", Command_CheatNoClip_f);
 	COM_AddCommand("god", Command_CheatGod_f);
 	COM_AddCommand("setrings", Command_Setrings_f);
+	COM_AddCommand("setspheres", Command_Setspheres_f);
 	COM_AddCommand("setlives", Command_Setlives_f);
 	COM_AddCommand("setscore", Command_Setscore_f);
 	COM_AddCommand("devmode", Command_Devmode_f);
@@ -2093,6 +2094,10 @@ void D_Cheat(INT32 playernum, INT32 cheat, ...)
 
 		case CHEAT_RESPAWNAT:
 			COPY(WRITEINT32, INT32);
+			break;
+
+		case CHEAT_SPHERES:
+			COPY(WRITEINT16, int);
 			break;
 	}
 
@@ -6239,6 +6244,17 @@ static void Got_Cheat(UINT8 **cp, INT32 playernum)
 			player->respawn.state = RESPAWNST_NONE;
 			K_DoIngameRespawn(player);
 			player->respawn.distanceleft = retryBackwards ? baseDist : path.totaldist;
+			break;
+		}
+
+		case CHEAT_SPHERES: {
+			INT16 spheres = READINT16(*cp);
+
+			// P_GivePlayerSpheres does value clamping
+			player->spheres = 0;
+			P_GivePlayerSpheres(player, spheres);
+
+			CV_CheaterWarning(targetPlayer, va("spheres = %d", spheres));
 			break;
 		}
 

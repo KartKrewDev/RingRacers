@@ -40,6 +40,7 @@ typedef enum {
 	CHEAT_ANGLE,
 	CHEAT_RESPAWNAT,
 	CHEAT_GIVEPOWERUP,
+	CHEAT_SPHERES,
 
 	NUMBER_OF_CHEATS
 } cheat_t;
@@ -75,6 +76,7 @@ void Command_CheatNoClip_f(void);
 void Command_CheatGod_f(void);
 void Command_Savecheckpoint_f(void);
 void Command_Setrings_f(void);
+void Command_Setspheres_f(void);
 void Command_Setlives_f(void);
 void Command_Setscore_f(void);
 void Command_Devmode_f(void);
