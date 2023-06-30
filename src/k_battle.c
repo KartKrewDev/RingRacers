@@ -417,7 +417,7 @@ void K_RunPaperItemSpawners(void)
 		}
 		else
 		{
-			K_CreatePaperItem(
+			K_FlingPaperItem(
 				battleovertime.x, battleovertime.y, battleovertime.z + (128 * mapobjectscale * flip),
 				FixedAngle(P_RandomRange(PR_ITEM_ROULETTE, 0, 359) * FRACUNIT), flip,
 				0, 0
