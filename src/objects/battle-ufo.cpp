@@ -7,6 +7,7 @@
 #include "../p_local.h"
 #include "../k_battle.h"
 #include "../k_objects.h"
+#include "../k_kart.h"
 
 #define BATTLEUFO_LEG_ZOFFS (3*FRACUNIT) // Spawn height offset from the body
 #define BATTLEUFO_LEGS (3) // Number of UFO legs to spawn
@@ -136,8 +137,19 @@ void Obj_BattleUFOThink(mobj_t *mobj)
 void Obj_BattleUFODeath(mobj_t *mobj)
 {
 	UFO* ufo = static_cast<UFO*>(mobj);
+	const SINT8 flip = P_MobjFlip(ufo);
 
 	ufo->momz = -(8*mapobjectscale)/2;
+
+	K_CreatePaperItem(
+		ufo->x,
+		ufo->y,
+		ufo->z + (flip),
+		0,
+		flip,
+		P_RandomRange(PR_BATTLEUFO, FIRSTPOWERUP, LASTPOWERUP),
+		BATTLE_POWERUP_TIME
+	);
 
 	if (ufo->spawner())
 	{
