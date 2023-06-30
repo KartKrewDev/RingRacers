@@ -638,6 +638,7 @@ static void P_NetArchivePlayers(savebuffer_t *save)
 		// powerupvars_t
 		WRITEUINT16(save->p, players[i].powerup.superTimer);
 		WRITEUINT16(save->p, players[i].powerup.barrierTimer);
+		WRITEUINT16(save->p, players[i].powerup.rhythmBadgeTimer);
 	}
 }
 
@@ -1066,6 +1067,7 @@ static void P_NetUnArchivePlayers(savebuffer_t *save)
 		// powerupvars_t
 		players[i].powerup.superTimer = READUINT16(save->p);
 		players[i].powerup.barrierTimer = READUINT16(save->p);
+		players[i].powerup.rhythmBadgeTimer = READUINT16(save->p);
 
 		//players[i].viewheight = P_GetPlayerViewHeight(players[i]); // scale cannot be factored in at this point
 	}

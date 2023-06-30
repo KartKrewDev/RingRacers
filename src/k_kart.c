@@ -8100,6 +8100,12 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		}
 	}
 
+	if (player->powerup.rhythmBadgeTimer > 0)
+	{
+		player->instaShieldCooldown = min(player->instaShieldCooldown, 1);
+		player->powerup.rhythmBadgeTimer--;
+	}
+
 	if (player->powerup.barrierTimer > 0)
 	{
 		player->powerup.barrierTimer--;
@@ -10891,10 +10897,13 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 						player->flashing = max(player->flashing, 12);
 						player->mo->momz += 4*mapobjectscale;
 
-						// Spawn in triangle formation
-						Obj_SpawnInstaWhipRecharge(player, 0);
-						Obj_SpawnInstaWhipRecharge(player, ANGLE_120);
-						Obj_SpawnInstaWhipRecharge(player, ANGLE_240);
+						if (!K_PowerUpRemaining(player, POWERUP_BADGE))
+						{
+							// Spawn in triangle formation
+							Obj_SpawnInstaWhipRecharge(player, 0);
+							Obj_SpawnInstaWhipRecharge(player, ANGLE_120);
+							Obj_SpawnInstaWhipRecharge(player, ANGLE_240);
+						}
 					}
 				}
 
