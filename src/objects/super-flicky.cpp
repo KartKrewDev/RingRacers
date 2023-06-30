@@ -141,7 +141,7 @@ struct Controller : mobj_t
 		x->source(player->mo);
 		x->mode(Mode::kDescend);
 		x->zofs(0);
-		x->expiry(leveltime + time);
+		x->expiry(leveltime + time + kRiseTime);
 
 		P_SetTarget(&player->powerup.flickyController, x);
 
@@ -754,16 +754,16 @@ void Obj_ExtendSuperFlickySwarm(mobj_t* mobj, tic_t time)
 	x->expiry(x->expiry() + time);
 }
 
-tic_t Obj_SuperFlickySwarmTime(const mobj_t* mobj)
+tic_t Obj_SuperFlickySwarmTime(mobj_t* mobj)
 {
-	const Controller* x = static_cast<const Controller*>(mobj);
+	Controller* x = static_cast<Controller*>(mobj);
 
-	return x ? x->powerup_remaining() : 0u;
+	return !P_MobjWasRemoved(x) ? x->powerup_remaining() : 0u;
 }
 
 boolean Obj_IsSuperFlickyWhippable(const mobj_t* mobj)
 {
 	const Flicky* x = static_cast<const Flicky*>(mobj);
 
-	return !x->stunned();
+	return mobj == x->chasing() && !x->stunned();
 }

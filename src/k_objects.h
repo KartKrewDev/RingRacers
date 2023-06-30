@@ -151,7 +151,7 @@ void Obj_SpawnSuperFlickySwarm(player_t *owner, tic_t time);
 void Obj_SuperFlickyControllerThink(mobj_t *controller);
 void Obj_EndSuperFlickySwarm(mobj_t *controller);
 void Obj_ExtendSuperFlickySwarm(mobj_t *controller, tic_t time);
-tic_t Obj_SuperFlickySwarmTime(const mobj_t *controller);
+tic_t Obj_SuperFlickySwarmTime(mobj_t *controller);
 
 /* Super Flicky */
 void Obj_SuperFlickyThink(mobj_t *flicky);
@@ -160,6 +160,22 @@ void Obj_BlockSuperFlicky(mobj_t *flicky);
 void Obj_SuperFlickyPlayerCollide(mobj_t *flicky, mobj_t *player);
 void Obj_SuperFlickyLanding(mobj_t *flicky);
 boolean Obj_IsSuperFlickyWhippable(const mobj_t *flicky);
+
+/* Battle/Power-UP UFO */
+void Obj_BattleUFOLegThink(mobj_t *leg);
+void Obj_BattleUFOThink(mobj_t *ufo);
+void Obj_SpawnBattleUFOLegs(mobj_t *ufo);
+void Obj_BattleUFODeath(mobj_t *ufo);
+void Obj_LinkBattleUFOSpawner(mobj_t *spawner);
+void Obj_UnlinkBattleUFOSpawner(mobj_t *spawner);
+void Obj_SpawnBattleUFOFromSpawner(void);
+INT32 Obj_GetFirstBattleUFOSpawnerID(void);
+void Obj_ResetUFOSpawners(void);
+void Obj_BattleUFOBeamThink(mobj_t *beam);
+
+/* Power-Up Aura */
+void Obj_SpawnPowerUpAura(player_t* player);
+void Obj_PowerUpAuraThink(mobj_t* mobj);
 
 #ifdef __cplusplus
 } // extern "C"

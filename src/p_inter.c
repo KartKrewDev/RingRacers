@@ -799,7 +799,7 @@ void P_CheckTimeLimit(void)
 			{
 				if (((timelimitintics + starttime - leveltime) % TICRATE) == 0)
 					S_StartSound(NULL, sfx_s3ka7);
-			}			
+			}
 		}
 		return;
 	}
@@ -1725,7 +1725,9 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 		case MT_MONITOR:
 			Obj_MonitorOnDeath(target);
 			break;
-
+		case MT_BATTLEUFO:
+			Obj_BattleUFODeath(target);
+			break;
 		default:
 			break;
 	}
@@ -2418,7 +2420,8 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 				if (source && source != player->mo && source->player)
 				{
 					// Extend the invincibility if the hit was a direct hit.
-					if (inflictor == source && source->player->invincibilitytimer)
+					if (inflictor == source && source->player->invincibilitytimer &&
+							!K_PowerUpRemaining(player, POWERUP_SMONITOR))
 					{
 						tic_t kinvextend;
 

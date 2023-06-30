@@ -24,6 +24,7 @@
 
 // Battle overtime info
 struct battleovertime battleovertime;
+struct battleufo g_battleufo;
 
 // Capsules mode enabled for this map?
 boolean battleprisons = false;
@@ -349,6 +350,11 @@ void K_RunPaperItemSpawners(void)
 		return;
 	}
 
+	if (leveltime == g_battleufo.due)
+	{
+		Obj_SpawnBattleUFOFromSpawner();
+	}
+
 	if (!IsOnInterval(interval))
 	{
 		return;
@@ -411,7 +417,7 @@ void K_RunPaperItemSpawners(void)
 		}
 		else
 		{
-			K_CreatePaperItem(
+			K_FlingPaperItem(
 				battleovertime.x, battleovertime.y, battleovertime.z + (128 * mapobjectscale * flip),
 				FixedAngle(P_RandomRange(PR_ITEM_ROULETTE, 0, 359) * FRACUNIT), flip,
 				0, 0
@@ -801,6 +807,9 @@ void K_BattleInit(boolean singleplayercontext)
 			K_SpawnPlayerBattleBumpers(players+i);
 		}
 	}
+
+	g_battleufo.due = starttime;
+	g_battleufo.previousId = Obj_GetFirstBattleUFOSpawnerID();
 }
 
 UINT8 K_Bumpers(player_t *player)

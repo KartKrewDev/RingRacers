@@ -115,6 +115,12 @@ int Draw::font_to_fontno(Font font)
 
 	case Font::kFreeplay:
 		return KART_FONT;
+
+	case Font::kZVote:
+		return OPPRF_FONT;
+
+	case Font::kPing:
+		return PINGF_FONT;
 	}
 
 	return TINY_FONT;

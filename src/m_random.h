@@ -74,6 +74,8 @@ typedef enum
 
 	PR_MOVINGTARGET, // Randomised moving targets
 
+	PR_BATTLEUFO, // Battle UFO spawning
+
 	PR_BOTS, // Bot spawning
 
 	PRNUMCLASS

@@ -83,6 +83,7 @@ static patch_t *kp_wouldyoustillcatchmeifiwereaworm;
 static patch_t *kp_catcherminimap;
 static patch_t *kp_emeraldminimap[2];
 static patch_t *kp_capsuleminimap[3];
+static patch_t *kp_battleufominimap;
 
 static patch_t *kp_ringsticker[2];
 static patch_t *kp_ringstickersplit[4];
@@ -371,6 +372,8 @@ void K_LoadKartHUDGraphics(void)
 	HU_UpdatePatch(&kp_capsuleminimap[0], "MINICAP1");
 	HU_UpdatePatch(&kp_capsuleminimap[1], "MINICAP2");
 	HU_UpdatePatch(&kp_capsuleminimap[2], "MINICAP3");
+
+	HU_UpdatePatch(&kp_battleufominimap, "MINIBUFO");
 
 	// Rings & Lives
 	HU_UpdatePatch(&kp_ringsticker[0], "RNGBACKA");
@@ -1684,12 +1687,8 @@ static void K_drawKartSlotMachine(void)
 	V_ClearClipRect();
 }
 
-void K_drawKartTimestamp(tic_t drawtime, INT32 TX, INT32 TY, INT32 splitflags, UINT8 mode)
+tic_t K_TranslateTimer(tic_t drawtime, UINT8 mode, INT32 *return_jitter)
 {
-	// TIME_X = BASEVIDWIDTH-124;	// 196
-	// TIME_Y = 6;					//   6
-
-	tic_t worktime;
 	INT32 jitter = 0;
 
 	if (!mode)
@@ -1724,6 +1723,24 @@ void K_drawKartTimestamp(tic_t drawtime, INT32 TX, INT32 TY, INT32 splitflags, U
 			}
 		}
 	}
+
+	if (return_jitter)
+	{
+		*return_jitter = jitter;
+	}
+
+	return drawtime;
+}
+
+void K_drawKartTimestamp(tic_t drawtime, INT32 TX, INT32 TY, INT32 splitflags, UINT8 mode)
+{
+	// TIME_X = BASEVIDWIDTH-124;	// 196
+	// TIME_Y = 6;					//   6
+
+	tic_t worktime;
+	INT32 jitter = 0;
+
+	drawtime = K_TranslateTimer(drawtime, mode, &jitter);
 
 	V_DrawScaledPatch(TX, TY, splitflags, ((mode == 2) ? kp_lapstickerwide : kp_timestickerwide));
 
@@ -3998,6 +4015,9 @@ static void K_drawKartMinimap(void)
 				if (battleprisons)
 					workingPic = kp_capsuleminimap[2];
 				break;
+			case MT_BATTLEUFO:
+				workingPic = kp_battleufominimap;
+				break;
 			default:
 				break;
 		}
@@ -5294,7 +5314,6 @@ void K_drawKartHUD(void)
 	boolean islonesome = false;
 	boolean battlefullscreen = false;
 	boolean freecam = demo.freecam;	//disable some hud elements w/ freecam
-	UINT8 i;
 	UINT8 viewnum = R_GetViewNumber();
 
 	// Define the X and Y for each drawn object
@@ -5376,27 +5395,19 @@ void K_drawKartHUD(void)
 
 		islonesome = K_drawKartPositionFaces();
 	}
-	else if (viewnum == r_splitscreen
-		&& (gametyperules & GTR_TIMELIMIT)
-		&& timelimitintics > 0)
+	else if (r_splitscreen == 1)
 	{
-		tic_t highestrealtime = players[displayplayers[1]].realtime;
-
-		// Uses the highest time across all players (handles paused timer on exiting)
-		for (i = 1; i <= r_splitscreen; i++)
-		{
-			if (players[displayplayers[i]].realtime <= highestrealtime)
-				continue;
-			highestrealtime = players[displayplayers[i]].realtime;
-		}
-
-		// Draw the timestamp (mostly) CENTERED
 		if (LUA_HudEnabled(hud_time))
-			K_drawKartTimestamp(highestrealtime,
-				(r_splitscreen == 1 ? TIME_X : ((BASEVIDWIDTH/2) - 69)),
-				TIME_Y,
-				V_HUDTRANS|V_SLIDEIN|V_SNAPTOTOP|(r_splitscreen == 1 ? V_SNAPTORIGHT : 0),
-				0);
+		{
+			K_drawKart2PTimestamp();
+		}
+	}
+	else if (viewnum == r_splitscreen)
+	{
+		if (LUA_HudEnabled(hud_time))
+		{
+			K_drawKart4PTimestamp();
+		}
 	}
 
 	if (!stplyr->spectator && !demo.freecam) // Bottom of the screen elements, don't need in spectate mode
@@ -5529,6 +5540,8 @@ void K_drawKartHUD(void)
 	{
 		K_drawMiniPing();
 	}
+
+	K_drawKartPowerUps();
 
 	if (G_IsPartyLocal(displayplayers[viewnum]) == false && !demo.playback)
 	{

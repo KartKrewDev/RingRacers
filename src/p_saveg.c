@@ -634,6 +634,11 @@ static void P_NetArchivePlayers(savebuffer_t *save)
 		// ACS has read access to this, so it has to be net-communicated.
 		// It is the ONLY roundcondition that is sent over the wire and I'd like it to stay that way.
 		WRITEUINT32(save->p, players[i].roundconditions.unlocktriggers);
+
+		// powerupvars_t
+		WRITEUINT16(save->p, players[i].powerup.superTimer);
+		WRITEUINT16(save->p, players[i].powerup.barrierTimer);
+		WRITEUINT16(save->p, players[i].powerup.rhythmBadgeTimer);
 	}
 }
 
@@ -1058,6 +1063,11 @@ static void P_NetUnArchivePlayers(savebuffer_t *save)
 		// ACS has read access to this, so it has to be net-communicated.
 		// It is the ONLY roundcondition that is sent over the wire and I'd like it to stay that way.
 		players[i].roundconditions.unlocktriggers = READUINT32(save->p);
+
+		// powerupvars_t
+		players[i].powerup.superTimer = READUINT16(save->p);
+		players[i].powerup.barrierTimer = READUINT16(save->p);
+		players[i].powerup.rhythmBadgeTimer = READUINT16(save->p);
 
 		//players[i].viewheight = P_GetPlayerViewHeight(players[i]); // scale cannot be factored in at this point
 	}
@@ -5728,6 +5738,10 @@ static void P_NetArchiveMisc(savebuffer_t *save, boolean resending)
 	WRITEFIXED(save->p, battleovertime.y);
 	WRITEFIXED(save->p, battleovertime.z);
 
+	// battleufo_t
+	WRITEINT32(save->p, g_battleufo.previousId);
+	WRITEUINT32(save->p, g_battleufo.due);
+
 	WRITEUINT32(save->p, wantedcalcdelay);
 	for (i = 0; i < NUMKARTITEMS-1; i++)
 		WRITEUINT32(save->p, itemCooldowns[i]);
@@ -5897,6 +5911,10 @@ static boolean P_NetUnArchiveMisc(savebuffer_t *save, boolean reloading)
 	battleovertime.x = READFIXED(save->p);
 	battleovertime.y = READFIXED(save->p);
 	battleovertime.z = READFIXED(save->p);
+
+	// battleufo_t
+	g_battleufo.previousId = READINT32(save->p);
+	g_battleufo.due = READUINT32(save->p);
 
 	wantedcalcdelay = READUINT32(save->p);
 	for (i = 0; i < NUMKARTITEMS-1; i++)

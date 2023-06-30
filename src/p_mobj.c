@@ -5331,6 +5331,7 @@ static boolean P_IsTrackerType(INT32 type)
 		case MT_OVERTIME_CENTER:
 		case MT_MONITOR:
 		case MT_EMERALD:
+		case MT_BATTLEUFO:
 			return true;
 
 		default:
@@ -6703,6 +6704,14 @@ static void P_MobjSceneryThink(mobj_t *mobj)
 			return;
 		}
 		break;
+	case MT_POWERUP_AURA:
+		Obj_PowerUpAuraThink(mobj);
+
+		if (P_MobjWasRemoved(mobj))
+		{
+			return;
+		}
+		break;
 	case MT_VWREF:
 	case MT_VWREB:
 	{
@@ -6941,6 +6950,14 @@ static boolean P_MobjDeadThink(mobj_t *mobj)
 	case MT_SPECIAL_UFO_PIECE:
 	{
 		Obj_UFOPieceDead(mobj);
+		break;
+	}
+	case MT_BATTLEUFO:
+	{
+		if (P_IsObjectOnGround(mobj) && mobj->fuse == 0)
+		{
+			mobj->fuse = TICRATE;
+		}
 		break;
 	}
 	default:
@@ -8061,7 +8078,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 		// cusval: responsible for disappear FX (should only happen once)
 
 		// S_MAGICANBOX: sides, starting angle is set in the spawner (SetRandomFakePlayerSkin)
-		// S_MAGICIANBOX_TOP, S_MAGICIANBOX_BOTTOM: splats with their own offset sprite sets  
+		// S_MAGICIANBOX_TOP, S_MAGICIANBOX_BOTTOM: splats with their own offset sprite sets
 
 		mobj->extravalue2--;
 
@@ -8426,6 +8443,21 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 	case MT_ITEM_DEBRIS:
 	{
 		Obj_ItemDebrisThink(mobj);
+		break;
+	}
+	case MT_BATTLEUFO:
+	{
+		Obj_BattleUFOThink(mobj);
+		break;
+	}
+	case MT_BATTLEUFO_LEG:
+	{
+		Obj_BattleUFOLegThink(mobj);
+		break;
+	}
+	case MT_BATTLEUFO_BEAM:
+	{
+		Obj_BattleUFOBeamThink(mobj);
 		break;
 	}
 	case MT_ROCKETSNEAKER:
@@ -9649,6 +9681,8 @@ static boolean P_CanFlickerFuse(mobj_t *mobj)
 		case MT_SNAPPER_LEG:
 		case MT_MINECARTSEG:
 		case MT_MONITOR_PART:
+		case MT_BATTLEUFO:
+		case MT_BATTLEUFO_LEG:
 			return true;
 
 		case MT_RANDOMITEM:
@@ -10303,6 +10337,8 @@ static void P_DefaultMobjShadowScale(mobj_t *thing)
 		case MT_KART_LEFTOVER:
 		case MT_BATTLECAPSULE:
 		case MT_SPECIAL_UFO:
+		case MT_CDUFO:
+		case MT_BATTLEUFO:
 			thing->shadowscale = FRACUNIT;
 			break;
 		case MT_SMALLMACE:
@@ -10912,6 +10948,9 @@ mobj_t *P_SpawnMobj(fixed_t x, fixed_t y, fixed_t z, mobjtype_t type)
 		case MT_SPHEREBOX:
 			Obj_RandomItemSpawn(mobj);
 			break;
+		case MT_BATTLEUFO:
+			Obj_SpawnBattleUFOLegs(mobj);
+			break;
 		default:
 			break;
 	}
@@ -11152,6 +11191,11 @@ void P_RemoveMobj(mobj_t *mobj)
 		case MT_RINGSHOOTER:
 		{
 			Obj_RingShooterDelete(mobj);
+			break;
+		}
+		case MT_BATTLEUFO_SPAWNER:
+		{
+			Obj_UnlinkBattleUFOSpawner(mobj);
 			break;
 		}
 		default:
@@ -11866,6 +11910,26 @@ void P_SpawnPlayer(INT32 playernum)
 		}
 	}
 
+	// Block visuals
+	// (These objects track whether a player is block-eligible on their own, no worries)
+	if (!p->spectator)
+	{
+		mobj_t *ring = P_SpawnMobj(p->mo->x, p->mo->y, p->mo->z, MT_BLOCKRING);
+		P_SetTarget(&ring->target, p->mo);
+		P_SetScale(ring, p->mo->scale);
+		K_MatchGenericExtraFlags(ring, p->mo);
+		ring->renderflags &= ~RF_DONTDRAW;
+
+		mobj_t *body = P_SpawnMobj(p->mo->x, p->mo->y, p->mo->z, MT_BLOCKBODY);
+		P_SetTarget(&body->target, p->mo);
+		P_SetScale(body, p->mo->scale);
+		K_MatchGenericExtraFlags(body, p->mo);
+		body->renderflags |= RF_DONTDRAW;
+
+		if (K_PlayerGuard(p))
+			S_StartSound(body, sfx_s1af);
+	}
+
 	// I'm not refactoring the loop at the top of this file.
 	pcount = 0;
 
@@ -12240,7 +12304,7 @@ static mobjtype_t P_GetMobjtypeSubstitute(mapthing_t *mthing, mobjtype_t i)
 
 	if ((i == MT_RANDOMITEM) && (gametyperules & (GTR_PAPERITEMS|GTR_CIRCUIT)) == (GTR_PAPERITEMS|GTR_CIRCUIT))
 		return MT_PAPERITEMSPOT;
-	
+
 	return i;
 }
 
@@ -13399,6 +13463,11 @@ static boolean P_SetupSpawnedMapThing(mapthing_t *mthing, mobj_t *mobj)
 	case MT_LOOPCENTERPOINT:
 	{
 		Obj_InitLoopCenter(mobj);
+		break;
+	}
+	case MT_BATTLEUFO_SPAWNER:
+	{
+		Obj_LinkBattleUFOSpawner(mobj);
 		break;
 	}
 	default:

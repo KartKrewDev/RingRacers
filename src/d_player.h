@@ -189,6 +189,9 @@ typedef enum
 	POWERUP_BUMPER,
 	POWERUP_BADGE,
 	POWERUP_SUPERFLICKY,
+	ENDOFPOWERUPS,
+	LASTPOWERUP = ENDOFPOWERUPS - 1,
+	NUMPOWERUPS = ENDOFPOWERUPS - FIRSTPOWERUP,
 } kartitems_t;
 
 typedef enum
@@ -463,6 +466,9 @@ typedef struct {
 
 // player_t struct for power-ups
 struct powerupvars_t {
+	UINT16 superTimer;
+	UINT16 barrierTimer;
+	UINT16 rhythmBadgeTimer;
 	mobj_t *flickyController;
 };
 
