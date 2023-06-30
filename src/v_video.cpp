@@ -2416,7 +2416,7 @@ void V_DrawStringScaled(
 			if (chw)
 				dim_fn = FixedCharacterDim;
 			else
-				dim_fn = VariableCharacterDim;
+				dim_fn = BunchedCharacterDim;
 			break;
 	}
 
@@ -2696,7 +2696,7 @@ fixed_t V_StringScaledWidth(
 			if (chw)
 				dim_fn = FixedCharacterDim;
 			else
-				dim_fn = VariableCharacterDim;
+				dim_fn = BunchedCharacterDim;
 			break;
 	}
 
