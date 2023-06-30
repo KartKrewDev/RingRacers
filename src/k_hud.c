@@ -5294,7 +5294,6 @@ void K_drawKartHUD(void)
 	boolean islonesome = false;
 	boolean battlefullscreen = false;
 	boolean freecam = demo.freecam;	//disable some hud elements w/ freecam
-	UINT8 i;
 	UINT8 viewnum = R_GetViewNumber();
 
 	// Define the X and Y for each drawn object
@@ -5376,27 +5375,19 @@ void K_drawKartHUD(void)
 
 		islonesome = K_drawKartPositionFaces();
 	}
-	else if (viewnum == r_splitscreen
-		&& (gametyperules & GTR_TIMELIMIT)
-		&& timelimitintics > 0)
+	else if (r_splitscreen == 1)
 	{
-		tic_t highestrealtime = players[displayplayers[1]].realtime;
-
-		// Uses the highest time across all players (handles paused timer on exiting)
-		for (i = 1; i <= r_splitscreen; i++)
-		{
-			if (players[displayplayers[i]].realtime <= highestrealtime)
-				continue;
-			highestrealtime = players[displayplayers[i]].realtime;
-		}
-
-		// Draw the timestamp (mostly) CENTERED
 		if (LUA_HudEnabled(hud_time))
-			K_drawKartTimestamp(highestrealtime,
-				(r_splitscreen == 1 ? TIME_X : ((BASEVIDWIDTH/2) - 69)),
-				TIME_Y,
-				V_HUDTRANS|V_SLIDEIN|V_SNAPTOTOP|(r_splitscreen == 1 ? V_SNAPTORIGHT : 0),
-				0);
+		{
+			K_drawKart2PTimestamp();
+		}
+	}
+	else if (viewnum == r_splitscreen)
+	{
+		if (LUA_HudEnabled(hud_time))
+		{
+			K_drawKart4PTimestamp();
+		}
 	}
 
 	if (!stplyr->spectator && !demo.freecam) // Bottom of the screen elements, don't need in spectate mode
