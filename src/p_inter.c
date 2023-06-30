@@ -901,6 +901,10 @@ void P_CheckPointLimit(void)
 	if (battleprisons)
 		return;
 
+	// This will be handled by P_KillPlayer
+	if (gametyperules & GTR_BUMPERS)
+		return;
+
 	// pointlimit is nonzero, check if it's been reached by this player
 	if (G_GametypeHasTeams())
 	{
