@@ -335,6 +335,9 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 		case MT_FLOATINGITEM: // SRB2Kart
 			if (special->threshold >= FIRSTPOWERUP)
 			{
+				if (player->flashing || player->tumbleBounces > 0)
+					return;
+
 				K_GivePowerUp(player, special->threshold, special->movecount);
 			}
 			else
