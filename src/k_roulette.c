@@ -7,7 +7,7 @@
 // terms of the GNU General Public License, version 2.
 // See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
-/// \file  k_roulette.c
+/// \file  0
 /// \brief Item roulette code.
 
 #include "k_roulette.h"
@@ -111,36 +111,36 @@ static UINT8 K_KartItemOddsRace[NUMKARTRESULTS-1][8] =
 
 static UINT8 K_KartItemOddsBattle[NUMKARTRESULTS-1][2] =
 {
-	{ 2, 1 }, // Sneaker
+	{ 0, 1 }, // Sneaker
 	{ 0, 0 }, // Rocket Sneaker
-	{ 4, 1 }, // Invincibility
+	{ 0, 1 }, // Invincibility
 	{ 0, 0 }, // Banana
-	{ 1, 0 }, // Eggman Monitor
-	{ 8, 0 }, // Orbinaut
-	{ 8, 1 }, // Jawz
-	{ 6, 1 }, // Mine
-	{ 2, 0 }, // Land Mine
+	{ 0, 0 }, // Eggman Monitor
+	{ 2, 0 }, // Orbinaut
+	{ 3, 1 }, // Jawz
+	{ 2, 1 }, // Mine
+	{ 0, 0 }, // Land Mine
 	{ 2, 1 }, // Ballhog
 	{ 0, 0 }, // Self-Propelled Bomb
-	{ 2, 1 }, // Grow
+	{ 1, 1 }, // Grow
 	{ 0, 0 }, // Shrink
-	{ 4, 0 }, // Lightning Shield
+	{ 0, 0 }, // Lightning Shield
 	{ 1, 0 }, // Bubble Shield
-	{ 1, 0 }, // Flame Shield
-	{ 2, 0 }, // Hyudoro
-	{ 3, 0 }, // Pogo Spring
+	{ 0, 0 }, // Flame Shield
+	{ 0, 0 }, // Hyudoro
+	{ 0, 0 }, // Pogo Spring
 	{ 0, 0 }, // Super Ring
 	{ 0, 0 }, // Kitchen Sink
-	{ 2, 0 }, // Drop Target
-	{ 4, 0 }, // Garden Top
-	{ 0, 0 }, // Gachabom
+	{ 0, 0 }, // Drop Target
+	{ 0, 0 }, // Garden Top
+	{ 5, 0 }, // Gachabom
 	{ 0, 0 }, // Sneaker x2
 	{ 0, 1 }, // Sneaker x3
 	{ 0, 0 }, // Banana x3
 	{ 2, 0 }, // Orbinaut x3
-	{ 1, 1 }, // Orbinaut x4
-	{ 5, 1 }, // Jawz x2
-	{ 0, 0 }  // Gachabom x3
+	{ 2, 1 }, // Orbinaut x4
+	{ 2, 1 }, // Jawz x2
+	{ 2, 0 }  // Gachabom x3
 };
 
 static UINT8 K_KartItemOddsSpecial[NUMKARTRESULTS-1][4] =
