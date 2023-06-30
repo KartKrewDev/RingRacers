@@ -2447,7 +2447,10 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 						K_BattleAwardHit(source->player, player, inflictor, damage);
 					}
 
-					K_TakeBumpersFromPlayer(source->player, player, damage);
+					if (K_Bumpers(source->player) < K_StartingBumperCount() || (damagetype & DMG_STEAL))
+					{
+						K_TakeBumpersFromPlayer(source->player, player, damage);
+					}
 
 					if (damagetype & DMG_STEAL)
 					{
