@@ -25,8 +25,26 @@ tic_t K_PowerUpRemaining(const player_t* player, kartitems_t powerup)
 	}
 }
 
+boolean K_AnyPowerUpRemaining(const player_t* player)
+{
+	for (int k = FIRSTPOWERUP; k < ENDOFPOWERUPS; ++k)
+	{
+		if (K_PowerUpRemaining(player, static_cast<kartitems_t>(k)))
+		{
+			return true;
+		}
+	}
+
+	return false;
+}
+
 void K_GivePowerUp(player_t* player, kartitems_t powerup, tic_t time)
 {
+	if (!K_AnyPowerUpRemaining(player))
+	{
+		Obj_SpawnPowerUpAura(player);
+	}
+
 	switch (powerup)
 	{
 	case POWERUP_SMONITOR:

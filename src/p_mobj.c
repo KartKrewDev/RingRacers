@@ -6703,6 +6703,14 @@ static void P_MobjSceneryThink(mobj_t *mobj)
 			return;
 		}
 		break;
+	case MT_POWERUP_AURA:
+		Obj_PowerUpAuraThink(mobj);
+
+		if (P_MobjWasRemoved(mobj))
+		{
+			return;
+		}
+		break;
 	case MT_VWREF:
 	case MT_VWREB:
 	{
