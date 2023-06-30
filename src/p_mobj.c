@@ -7533,6 +7533,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 				{
 					// Delete emeralds to let them reappear
 					P_KillMobj(mobj, NULL, NULL, DMG_NORMAL);
+					return false;
 				}
 			}
 
