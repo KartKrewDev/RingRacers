@@ -1684,12 +1684,8 @@ static void K_drawKartSlotMachine(void)
 	V_ClearClipRect();
 }
 
-void K_drawKartTimestamp(tic_t drawtime, INT32 TX, INT32 TY, INT32 splitflags, UINT8 mode)
+tic_t K_TranslateTimer(tic_t drawtime, UINT8 mode, INT32 *return_jitter)
 {
-	// TIME_X = BASEVIDWIDTH-124;	// 196
-	// TIME_Y = 6;					//   6
-
-	tic_t worktime;
 	INT32 jitter = 0;
 
 	if (!mode)
@@ -1724,6 +1720,24 @@ void K_drawKartTimestamp(tic_t drawtime, INT32 TX, INT32 TY, INT32 splitflags, U
 			}
 		}
 	}
+
+	if (return_jitter)
+	{
+		*return_jitter = jitter;
+	}
+
+	return drawtime;
+}
+
+void K_drawKartTimestamp(tic_t drawtime, INT32 TX, INT32 TY, INT32 splitflags, UINT8 mode)
+{
+	// TIME_X = BASEVIDWIDTH-124;	// 196
+	// TIME_Y = 6;					//   6
+
+	tic_t worktime;
+	INT32 jitter = 0;
+
+	drawtime = K_TranslateTimer(drawtime, mode, &jitter);
 
 	V_DrawScaledPatch(TX, TY, splitflags, ((mode == 2) ? kp_lapstickerwide : kp_timestickerwide));
 

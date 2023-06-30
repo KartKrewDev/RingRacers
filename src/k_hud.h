@@ -36,6 +36,8 @@ struct trackingResult_t
 
 void K_ObjectTracking(trackingResult_t *result, const vector3_t *point, boolean reverse);
 
+tic_t K_TranslateTimer(tic_t drawtime, UINT8 mode, INT32 *return_jitter);
+
 const char *K_GetItemPatch(UINT8 item, boolean tiny);
 void K_LoadKartHUDGraphics(void);
 void K_drawKartHUD(void);

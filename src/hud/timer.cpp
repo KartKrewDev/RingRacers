@@ -13,6 +13,11 @@ namespace
 
 constexpr INT32 kHudFlags = V_HUDTRANS | V_SLIDEIN;
 
+tic_t player_timer(const player_t* player)
+{
+	return K_TranslateTimer(player->realtime, 0, nullptr);
+}
+
 }; // namespace
 
 void K_drawKart2PTimestamp(void)
@@ -32,7 +37,7 @@ void K_drawKart2PTimestamp(void)
 	Draw row = get_row().flags(kHudFlags | V_SNAPTORIGHT).font(Draw::Font::kZVote);
 
 	row.patch("K_STTIMS");
-	row.xy(12, 2).text("{:03}", stplyr->realtime / TICRATE);
+	row.xy(12, 2).text("{:03}", player_timer(stplyr) / TICRATE);
 }
 
 void K_drawKart4PTimestamp(void)
@@ -45,7 +50,7 @@ void K_drawKart4PTimestamp(void)
 		row.xy(5, 12).text("{:03}", time / TICRATE);
 	};
 
-	auto time_of = [](int k) -> tic_t { return k <= r_splitscreen ? players[displayplayers[k]].realtime : 0u; };
+	auto time_of = [](int k) -> tic_t { return k <= r_splitscreen ? player_timer(&players[displayplayers[k]]) : 0u; };
 
 	draw(row.y(1).flags(V_SNAPTOTOP), std::max(time_of(0), time_of(1)));
 	draw(row.y(178).flags(V_SNAPTOBOTTOM), std::max(time_of(2), time_of(3)));
