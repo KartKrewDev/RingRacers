@@ -34,6 +34,8 @@ public:
 		kGamemode,
 		kConsole,
 		kFreeplay,
+		kZVote,
+		kPing,
 	};
 
 	enum class Align
