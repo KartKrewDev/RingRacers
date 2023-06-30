@@ -6,7 +6,7 @@
 
 void Obj_BlockRingThink (mobj_t *ring)
 {
-    if (P_MobjWasRemoved(ring->target) || !ring->target->player || !ring->target->player->ebrakefor)
+    if (P_MobjWasRemoved(ring->target) || !ring->target->player)
     {
         P_RemoveMobj(ring);
     }
@@ -42,7 +42,7 @@ void Obj_BlockRingThink (mobj_t *ring)
 
 void Obj_BlockBodyThink (mobj_t *body)
 {
-    if (P_MobjWasRemoved(body->target) || !body->target->player || !body->target->player->ebrakefor)
+    if (P_MobjWasRemoved(body->target) || !body->target->player)
     {
         P_RemoveMobj(body);
     }

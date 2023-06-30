@@ -10106,26 +10106,6 @@ void K_KartEbrakeVisuals(player_t *p)
 		if (!S_SoundPlaying(p->mo, sfx_s3kd9s))
 			S_ReducedVFXSound(p->mo, sfx_s3kd9s, p);
 
-		// Block visuals
-		// (These objects track whether a player is block-eligible on their own, no worries)
-		if (!p->ebrakefor)
-		{
-			mobj_t *ring = P_SpawnMobj(p->mo->x, p->mo->y, p->mo->z, MT_BLOCKRING);
-			P_SetTarget(&ring->target, p->mo);
-			P_SetScale(ring, p->mo->scale);
-			K_MatchGenericExtraFlags(ring, p->mo);
-			ring->renderflags &= ~RF_DONTDRAW;
-
-			mobj_t *body = P_SpawnMobj(p->mo->x, p->mo->y, p->mo->z, MT_BLOCKBODY);
-			P_SetTarget(&body->target, p->mo);
-			P_SetScale(body, p->mo->scale);
-			K_MatchGenericExtraFlags(body, p->mo);
-			body->renderflags |= RF_DONTDRAW;
-
-			if (K_PlayerGuard(p))
-				S_StartSound(body, sfx_s1af);
-		}
-
 		// HOLD! bubble.
 		if (!p->ebrakefor)
 		{
