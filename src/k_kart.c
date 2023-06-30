@@ -7564,7 +7564,7 @@ static inline BlockItReturn_t PIT_AttractingRings(mobj_t *thing)
 		return BMIT_CONTINUE; // invalid
 	}
 
-	if (!(thing->type == MT_RING || thing->type == MT_FLINGRING))
+	if (!(thing->type == MT_RING || thing->type == MT_FLINGRING || thing->type == MT_EMERALD))
 	{
 		return BMIT_CONTINUE; // not a ring
 	}
@@ -7574,7 +7574,7 @@ static inline BlockItReturn_t PIT_AttractingRings(mobj_t *thing)
 		return BMIT_CONTINUE; // dead
 	}
 
-	if (thing->extravalue1)
+	if (thing->extravalue1 && thing->type != MT_EMERALD)
 	{
 		return BMIT_CONTINUE; // in special ring animation
 	}
@@ -8577,7 +8577,7 @@ void K_KartPlayerAfterThink(player_t *player)
 		player->jawztargetdelay = 0;
 	}
 
-	if (player->itemtype == KITEM_LIGHTNINGSHIELD)
+	if (player->itemtype == KITEM_LIGHTNINGSHIELD || ((gametyperules & GTR_POWERSTONES) && K_IsPlayerWanted(player)))
 	{
 		K_LookForRings(player->mo);
 	}

@@ -7538,6 +7538,8 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 		{
 			if (mobj->threshold > 0)
 				mobj->threshold--;
+
+			A_AttractChase(mobj);
 		}
 		/*FALLTHRU*/
 	case MT_MONITOR:
