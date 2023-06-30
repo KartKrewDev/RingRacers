@@ -335,6 +335,9 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 		case MT_FLOATINGITEM: // SRB2Kart
 			if (special->threshold >= FIRSTPOWERUP)
 			{
+				if (player->flashing || player->tumbleBounces > 0)
+					return;
+
 				K_GivePowerUp(player, special->threshold, special->movecount);
 			}
 			else
@@ -2409,7 +2412,7 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 
 			// Instawhip breaks the rules and does "damaging stumble",
 			// but sting and stumble shouldn't be rewarding Battle hits otherwise.
-			if ((type == DMG_STING || type == DMG_STUMBLE) && (inflictor && inflictor->type != MT_INSTAWHIP))
+			if ((type == DMG_STING || type == DMG_STUMBLE) && !(inflictor && inflictor->type == MT_INSTAWHIP))
 			{
 				damage = 0;
 			}
