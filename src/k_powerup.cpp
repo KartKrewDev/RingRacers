@@ -1,5 +1,7 @@
 /// \brief Battle mode power-up code
 
+#include <algorithm>
+
 #include "k_kart.h"
 #include "k_objects.h"
 #include "k_powerup.h"
@@ -95,7 +97,15 @@ void K_DropPowerUps(player_t* player)
 
 	auto& powerup = player->powerup;
 
-	drop(POWERUP_SMONITOR, [&] { powerup.superTimer = 0; });
+	drop(
+		POWERUP_SMONITOR, [&]
+		{
+			// P_CheckInvincibilityTimer needs 1 tic to end the music
+			player->invincibilitytimer -= std::min(+powerup.superTimer, player->invincibilitytimer - 1);
+			powerup.superTimer = 0;
+		}
+	);
+
 	drop(POWERUP_BARRIER, [&] { powerup.barrierTimer = 0; });
 	drop(POWERUP_BADGE, [&] { powerup.rhythmBadgeTimer = 0; });
 	drop(POWERUP_SUPERFLICKY, [&] { Obj_EndSuperFlickySwarm(powerup.flickyController); });
