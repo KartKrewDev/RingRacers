@@ -765,5 +765,5 @@ boolean Obj_IsSuperFlickyWhippable(const mobj_t* mobj)
 {
 	const Flicky* x = static_cast<const Flicky*>(mobj);
 
-	return !x->stunned();
+	return mobj == x->chasing() && !x->stunned();
 }
