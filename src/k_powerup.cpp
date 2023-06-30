@@ -82,28 +82,21 @@ void K_GivePowerUp(player_t* player, kartitems_t powerup, tic_t time)
 
 void K_DropPowerUps(player_t* player)
 {
-	auto simple_drop = [player](kartitems_t powerup, auto& timer)
+	auto drop = [player](kartitems_t powerup, auto callback)
 	{
 		tic_t remaining = K_PowerUpRemaining(player, powerup);
 
 		if (remaining)
 		{
 			K_DropPaperItem(player, powerup, remaining);
-			timer = 0;
+			callback();
 		}
 	};
 
-	simple_drop(POWERUP_SMONITOR, player->powerup.superTimer);
-	simple_drop(POWERUP_BARRIER, player->powerup.barrierTimer);
-	simple_drop(POWERUP_BADGE, player->powerup.rhythmBadgeTimer);
+	auto& powerup = player->powerup;
 
-	if (K_PowerUpRemaining(player, POWERUP_SUPERFLICKY))
-	{
-		mobj_t* swarm = player->powerup.flickyController;
-
-		// Be sure to measure the remaining time before ending the power-up
-		K_DropPaperItem(player, POWERUP_SUPERFLICKY, Obj_SuperFlickySwarmTime(swarm));
-
-		Obj_EndSuperFlickySwarm(swarm);
-	}
+	drop(POWERUP_SMONITOR, [&] { powerup.superTimer = 0; });
+	drop(POWERUP_BARRIER, [&] { powerup.barrierTimer = 0; });
+	drop(POWERUP_BADGE, [&] { powerup.rhythmBadgeTimer = 0; });
+	drop(POWERUP_SUPERFLICKY, [&] { Obj_EndSuperFlickySwarm(powerup.flickyController); });
 }
