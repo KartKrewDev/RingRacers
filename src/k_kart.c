@@ -3769,6 +3769,9 @@ void K_DoGuardBreak(mobj_t *t1, mobj_t *t2) {
 	if (!(t1->player && t2->player))
 		return;
 
+	if (P_PlayerInPain(t2->player))
+		return;
+
 	// short-circuit instashield for vfx visibility
 	t1->player->instaShieldCooldown = GUARDBREAK_COOLDOWN;
 	t1->player->guardCooldown = GUARDBREAK_COOLDOWN;
