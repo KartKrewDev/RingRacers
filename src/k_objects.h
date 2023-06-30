@@ -151,7 +151,7 @@ void Obj_SpawnSuperFlickySwarm(player_t *owner, tic_t time);
 void Obj_SuperFlickyControllerThink(mobj_t *controller);
 void Obj_EndSuperFlickySwarm(mobj_t *controller);
 void Obj_ExtendSuperFlickySwarm(mobj_t *controller, tic_t time);
-tic_t Obj_SuperFlickySwarmTime(const mobj_t *controller);
+tic_t Obj_SuperFlickySwarmTime(mobj_t *controller);
 
 /* Super Flicky */
 void Obj_SuperFlickyThink(mobj_t *flicky);
