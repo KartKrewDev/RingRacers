@@ -124,7 +124,9 @@ void K_drawKartPowerUps(void)
 
 	for (const Icon& ico : get_powerup_list(i.dir == -1))
 	{
-		i.row.xy(i.spr_x, i.spr_y).patch(fmt::format("{0}{1:c}L{1:c}R", i.sprite, ico.letter()).c_str());
+		i.row.xy(i.spr_x, i.spr_y)
+			.colormap(static_cast<skincolornum_t>(stplyr->skincolor))
+			.patch(fmt::format("{0}{1:c}L{1:c}R", i.sprite, ico.letter()).c_str());
 		i.row.text("{}", (ico.time + (TICRATE / 2)) / TICRATE);
 		i.row = i.row.x(i.shift_x);
 	}
