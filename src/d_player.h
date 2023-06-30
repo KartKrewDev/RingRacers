@@ -71,7 +71,8 @@ typedef enum
 	PF_GAINAX			= 1<<3,
 
 	PF_KICKSTARTACCEL	= 1<<4, // Accessibility feature: Is accelerate in kickstart mode?
-	// 1<<5 free
+
+	PF_POINTME			= 1<<5, // An object is calling for my attention (via Obj_PointPlayersToMobj). Unset every frame!
 	// 1<<6 free
 
 	PF_WANTSTOJOIN		= 1<<7, // Spectator that wants to join
