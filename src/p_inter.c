@@ -453,7 +453,7 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 				return;
 			}
 		case MT_EMERALD:
-			if (!P_CanPickupItem(player, 0))
+			if (!P_CanPickupItem(player, 0) || P_PlayerInPain(player))
 				return;
 
 			if (special->threshold > 0)
@@ -829,6 +829,8 @@ void P_CheckTimeLimit(void)
 					thinker_t *th;
 					mobj_t *center = NULL;
 
+					fixed_t rx, ry;
+
 					for (th = thlist[THINK_MOBJ].next; th != &thlist[THINK_MOBJ]; th = th->next)
 					{
 						mobj_t *thismo;
@@ -860,7 +862,26 @@ void P_CheckTimeLimit(void)
 						battleovertime.z = center->z;
 					}
 
-					battleovertime.radius = 4096 * mapobjectscale;
+					// Get largest radius from center point to minimap edges
+
+					rx = max(
+							abs(battleovertime.x - (minimapinfo.min_x * FRACUNIT)),
+							abs(battleovertime.x - (minimapinfo.max_x * FRACUNIT))
+					);
+
+					ry = max(
+							abs(battleovertime.y - (minimapinfo.min_y * FRACUNIT)),
+							abs(battleovertime.y - (minimapinfo.max_y * FRACUNIT))
+					);
+
+					battleovertime.initial_radius = min(
+							max(max(rx, ry), 4096 * mapobjectscale),
+							// Prevent overflow in K_RunBattleOvertime
+							FixedDiv(INT32_MAX, M_PI_FIXED) / 2
+					);
+
+					battleovertime.radius = battleovertime.initial_radius;
+
 					battleovertime.enabled = 1;
 
 					S_StartSound(NULL, sfx_kc47);
@@ -2447,7 +2468,10 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 						K_BattleAwardHit(source->player, player, inflictor, damage);
 					}
 
-					K_TakeBumpersFromPlayer(source->player, player, damage);
+					if (K_Bumpers(source->player) < K_StartingBumperCount() || (damagetype & DMG_STEAL))
+					{
+						K_TakeBumpersFromPlayer(source->player, player, damage);
+					}
 
 					if (damagetype & DMG_STEAL)
 					{

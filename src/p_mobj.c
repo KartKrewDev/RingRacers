@@ -7538,6 +7538,8 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 		{
 			if (mobj->threshold > 0)
 				mobj->threshold--;
+
+			A_AttractChase(mobj);
 		}
 		/*FALLTHRU*/
 	case MT_MONITOR:
@@ -8448,6 +8450,18 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 	}
 	case MT_BATTLEUFO:
 	{
+		if (battleovertime.enabled >= 10*TICRATE)
+		{
+			fixed_t distance = R_PointToDist2(mobj->x, mobj->y, battleovertime.x, battleovertime.y);
+
+			if (distance > battleovertime.radius)
+			{
+				// Delete emeralds to let them reappear
+				P_KillMobj(mobj, NULL, NULL, DMG_NORMAL);
+				return false;
+			}
+		}
+
 		Obj_BattleUFOThink(mobj);
 		break;
 	}

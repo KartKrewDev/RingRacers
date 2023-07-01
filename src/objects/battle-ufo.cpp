@@ -132,6 +132,11 @@ void Obj_BattleUFOThink(mobj_t *mobj)
 	{
 		ufo->spawn_beam();
 	}
+
+	if (!battleovertime.enabled)
+	{
+		Obj_PointPlayersToXY(mobj->x, mobj->y);
+	}
 }
 
 void Obj_BattleUFODeath(mobj_t *mobj)

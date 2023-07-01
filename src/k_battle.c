@@ -500,7 +500,7 @@ void K_RunPaperItemSpawners(void)
 				const UINT8 r = spotMap[P_RandomKey(PR_ITEM_ROULETTE, spotAvailable)];
 
 				Obj_ItemSpotAssignMonitor(spotList[r], Obj_SpawnMonitor(
-							spotList[r], 1 + pcount, firstUnspawnedEmerald));
+							spotList[r], 3, firstUnspawnedEmerald));
 			}
 
 			for (i = 0; i < spotCount; ++i)
@@ -570,6 +570,8 @@ void K_RunPaperItemSpawners(void)
 
 static void K_SpawnOvertimeLaser(fixed_t x, fixed_t y, fixed_t scale)
 {
+	const fixed_t heightPadding = 346 * scale;
+
 	UINT8 i, j;
 
 	for (i = 0; i <= r_splitscreen; i++)
@@ -586,10 +588,12 @@ static void K_SpawnOvertimeLaser(fixed_t x, fixed_t y, fixed_t scale)
 		if (player->mo->eflags & MFE_VERTICALFLIP)
 		{
 			zpos = player->mo->z + player->mo->height;
+			zpos = min(zpos + heightPadding, player->mo->ceilingz);
 		}
 		else
 		{
 			zpos = player->mo->z;
+			zpos = max(zpos - heightPadding, player->mo->floorz);
 		}
 
 		flip = P_MobjFlip(player->mo);
@@ -665,9 +669,17 @@ void K_RunBattleOvertime(void)
 		const fixed_t minradius = 768 * mapobjectscale;
 
 		if (battleovertime.radius > minradius)
-			battleovertime.radius -= 2*mapobjectscale;
-		else
+			battleovertime.radius -= (battleovertime.initial_radius / (30*TICRATE));
+
+		if (battleovertime.radius < minradius)
 			battleovertime.radius = minradius;
+
+		// Subtract the 10 second grace period of the barrier
+		if (battleovertime.enabled < 25*TICRATE)
+		{
+			battleovertime.enabled++;
+			Obj_PointPlayersToXY(battleovertime.x, battleovertime.y);
+		}
 	}
 
 	if (battleovertime.radius > 0)

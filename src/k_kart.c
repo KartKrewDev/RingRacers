@@ -3837,13 +3837,14 @@ void K_BattleAwardHit(player_t *player, player_t *victim, mobj_t *inflictor, UIN
 		}
 	}
 
-	P_AddPlayerScore(player, points);
-	K_SpawnBattlePoints(player, victim, points);
-
+	// Check this before adding to player score
 	if ((gametyperules & GTR_BUMPERS) && finishOff && g_pointlimit <= player->roundscore)
 	{
 		P_DoAllPlayersExit(0, false);
 	}
+
+	P_AddPlayerScore(player, points);
+	K_SpawnBattlePoints(player, victim, points);
 }
 
 void K_SpinPlayer(player_t *player, mobj_t *inflictor, mobj_t *source, INT32 type)
@@ -7635,7 +7636,7 @@ static inline BlockItReturn_t PIT_AttractingRings(mobj_t *thing)
 		return BMIT_CONTINUE; // invalid
 	}
 
-	if (!(thing->type == MT_RING || thing->type == MT_FLINGRING))
+	if (!(thing->type == MT_RING || thing->type == MT_FLINGRING || thing->type == MT_EMERALD))
 	{
 		return BMIT_CONTINUE; // not a ring
 	}
@@ -7645,7 +7646,7 @@ static inline BlockItReturn_t PIT_AttractingRings(mobj_t *thing)
 		return BMIT_CONTINUE; // dead
 	}
 
-	if (thing->extravalue1)
+	if (thing->extravalue1 && thing->type != MT_EMERALD)
 	{
 		return BMIT_CONTINUE; // in special ring animation
 	}
@@ -8424,6 +8425,8 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 	}
 
 	K_HandleDelayedHitByEm(player);
+
+	player->pflags &= ~PF_POINTME;
 }
 
 void K_KartResetPlayerColor(player_t *player)
@@ -8648,7 +8651,7 @@ void K_KartPlayerAfterThink(player_t *player)
 		player->jawztargetdelay = 0;
 	}
 
-	if (player->itemtype == KITEM_LIGHTNINGSHIELD)
+	if (player->itemtype == KITEM_LIGHTNINGSHIELD || ((gametyperules & GTR_POWERSTONES) && K_IsPlayerWanted(player)))
 	{
 		K_LookForRings(player->mo);
 	}
