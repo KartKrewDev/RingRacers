@@ -3837,13 +3837,14 @@ void K_BattleAwardHit(player_t *player, player_t *victim, mobj_t *inflictor, UIN
 		}
 	}
 
-	P_AddPlayerScore(player, points);
-	K_SpawnBattlePoints(player, victim, points);
-
+	// Check this before adding to player score
 	if ((gametyperules & GTR_BUMPERS) && finishOff && g_pointlimit <= player->roundscore)
 	{
 		P_DoAllPlayersExit(0, false);
 	}
+
+	P_AddPlayerScore(player, points);
+	K_SpawnBattlePoints(player, victim, points);
 }
 
 void K_SpinPlayer(player_t *player, mobj_t *inflictor, mobj_t *source, INT32 type)
