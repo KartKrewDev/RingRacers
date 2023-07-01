@@ -673,6 +673,13 @@ void K_RunBattleOvertime(void)
 
 		if (battleovertime.radius < minradius)
 			battleovertime.radius = minradius;
+
+		// Subtract the 10 second grace period of the barrier
+		if (battleovertime.enabled < 25*TICRATE)
+		{
+			battleovertime.enabled++;
+			Obj_PointPlayersToXY(battleovertime.x, battleovertime.y);
+		}
 	}
 
 	if (battleovertime.radius > 0)
