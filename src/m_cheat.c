@@ -153,6 +153,8 @@ static UINT8 cheatf_devmode(void)
 	devparm = true;
 	cht_debug |= 0x8000;
 
+	G_SaveGameData();
+
 	return 1;
 }
 #endif
