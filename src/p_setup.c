@@ -7148,6 +7148,10 @@ static void P_ConvertBinaryThingTypes(void)
 		case 3786: // MT_BATTLEUFO_SPAWNER
 			mapthings[i].args[0] = mapthings[i].angle;
 			break;
+		case 3441: // MT_DASHRING (TODO: not yet hardcoded)
+			mapthings[i].args[0] = mapthings[i].options & 13;
+			mapthings[i].args[1] = mapthings[i].extrainfo;
+			break;
 		case FLOOR_SLOPE_THING:
 		case CEILING_SLOPE_THING:
 			mapthings[i].args[0] = mapthings[i].extrainfo;
