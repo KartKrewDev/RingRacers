@@ -860,7 +860,9 @@ void P_CheckTimeLimit(void)
 						battleovertime.z = center->z;
 					}
 
-					battleovertime.radius = 4096 * mapobjectscale;
+					battleovertime.initial_radius = 4096 * mapobjectscale;
+					battleovertime.radius = battleovertime.initial_radius;
+
 					battleovertime.enabled = 1;
 
 					S_StartSound(NULL, sfx_kc47);
