@@ -2189,13 +2189,6 @@ static void P_WriteTextmap(void)
 		subsector_t *ss;
 		INT32 s;
 
-		if (wmapthings[i].type == mobjinfo[MT_WAYPOINT].doomednum
-			|| wmapthings[i].type == mobjinfo[MT_WAYPOINT_ANCHOR].doomednum
-			|| wmapthings[i].type == mobjinfo[MT_WAYPOINT_RISER].doomednum)
-		{
-			CONS_Alert(CONS_WARNING, M_GetText("Thing %s is a waypoint or waypoint parameter, which cannot be converted fully.\n"), sizeu1(i));
-		}
-
 		if (wmapthings[i].type != 751 && wmapthings[i].type != 752 && wmapthings[i].type != 758)
 			continue;
 
@@ -2424,6 +2417,14 @@ static void P_WriteTextmap(void)
 	fprintf(f, "namespace = \"srb2\";\n");
 	for (i = k = 0; i < nummapthings; i++)
 	{
+		if (wmapthings[i].type == mobjinfo[MT_WAYPOINT].doomednum
+			|| wmapthings[i].type == mobjinfo[MT_WAYPOINT_ANCHOR].doomednum
+			|| wmapthings[i].type == mobjinfo[MT_WAYPOINT_RISER].doomednum)
+		{
+			// Skip waypoints. Because the multi-thing setup was merged into a
+			// single thing type in UDMF, these must be converted later.
+			continue;
+		}
 
 		P_WriteTextmapThing(f, wmapthings, i, k);
 
@@ -2865,6 +2866,29 @@ static void P_WriteTextmap(void)
 	Z_Free(wsides);
 	Z_Free(specialthings);
 	Z_Free(wusedvertexes);
+}
+
+static void P_WriteTextmapWaypoints(void)
+{
+	FILE *f;
+	mobj_t *waypointmobj;
+
+	// Append to output from P_WriteTextmap prior
+	f = P_OpenTextmap("a", "Couldn't save map file (waypoints)");
+	if (!f)
+	{
+		return;
+	}
+
+	for (
+			waypointmobj = waypointcap;
+			waypointmobj;
+			waypointmobj = waypointmobj->tracer
+	){
+		P_WriteTextmapThing(f, waypointmobj->spawnpoint, 0, waypointmobj->spawnpoint - mapthings);
+	}
+
+	fclose(f);
 }
 
 /** Loads the textmap data, after obtaining the elements count and allocating their respective space.
@@ -8255,6 +8279,9 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 	{
 		// Backwards compatibility for non-UDMF maps
 		K_AdjustWaypointsParameters();
+
+		if (M_CheckParm("-writetextmap"))
+			P_WriteTextmapWaypoints();
 	}
 
 	if (!fromnetsave) //  ugly hack for P_NetUnArchiveMisc (and P_LoadNetGame)
