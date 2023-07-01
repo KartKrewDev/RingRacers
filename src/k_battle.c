@@ -500,7 +500,7 @@ void K_RunPaperItemSpawners(void)
 				const UINT8 r = spotMap[P_RandomKey(PR_ITEM_ROULETTE, spotAvailable)];
 
 				Obj_ItemSpotAssignMonitor(spotList[r], Obj_SpawnMonitor(
-							spotList[r], 1 + pcount, firstUnspawnedEmerald));
+							spotList[r], 3, firstUnspawnedEmerald));
 			}
 
 			for (i = 0; i < spotCount; ++i)
