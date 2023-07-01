@@ -570,6 +570,8 @@ void K_RunPaperItemSpawners(void)
 
 static void K_SpawnOvertimeLaser(fixed_t x, fixed_t y, fixed_t scale)
 {
+	const fixed_t heightPadding = 346 * scale;
+
 	UINT8 i, j;
 
 	for (i = 0; i <= r_splitscreen; i++)
@@ -586,10 +588,12 @@ static void K_SpawnOvertimeLaser(fixed_t x, fixed_t y, fixed_t scale)
 		if (player->mo->eflags & MFE_VERTICALFLIP)
 		{
 			zpos = player->mo->z + player->mo->height;
+			zpos = min(zpos + heightPadding, player->mo->ceilingz);
 		}
 		else
 		{
 			zpos = player->mo->z;
+			zpos = max(zpos - heightPadding, player->mo->floorz);
 		}
 
 		flip = P_MobjFlip(player->mo);
