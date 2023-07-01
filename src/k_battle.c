@@ -256,7 +256,7 @@ mobj_t *K_SpawnSphereBox(fixed_t x, fixed_t y, fixed_t z, angle_t angle, SINT8 f
 
 	drop->flags &= ~(MF_NOGRAVITY|MF_NOCLIPHEIGHT);
 
-	drop->extravalue1 = amount;
+	drop->extravalue2 = amount;
 
 	return drop;
 }

@@ -383,7 +383,7 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 			P_SetTarget(&special->target, toucher);
 			// P_KillMobj(special, toucher, toucher, DMG_NORMAL);
 			P_ItemPop(special);
-			P_GivePlayerSpheres(player, special->extravalue1);
+			P_GivePlayerSpheres(player, special->extravalue2);
 			return;
 		case MT_ITEMCAPSULE:
 			if (special->scale < special->extravalue1) // don't break it while it's respawning
