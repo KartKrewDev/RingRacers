@@ -2016,11 +2016,80 @@ typedef struct
 	mapthing_t *angleanchor;
 } sectorspecialthings_t;
 
-static void P_WriteTextmap(void)
+static FILE *P_OpenTextmap(const char *mode, const char *error)
 {
-	size_t i, j;
 	FILE *f;
 	char *filepath = va(pandf, srb2home, "TEXTMAP");
+
+	f = fopen(filepath, mode);
+	if (!f)
+	{
+		CONS_Alert(CONS_ERROR, M_GetText("%s %s\n"), error, filepath);
+	}
+
+	return f;
+}
+
+static void P_WriteTextmapThing(FILE *f, mapthing_t *wmapthings, size_t i, size_t k)
+{
+	size_t j;
+	fprintf(f, "thing // %s\n", sizeu1(k));
+	fprintf(f, "{\n");
+	if (wmapthings[i].tid != 0)
+		fprintf(f, "id = %d;\n", wmapthings[i].tid);
+	fprintf(f, "x = %d;\n", wmapthings[i].x);
+	fprintf(f, "y = %d;\n", wmapthings[i].y);
+	if (wmapthings[i].z != 0)
+		fprintf(f, "height = %d;\n", wmapthings[i].z);
+	fprintf(f, "angle = %d;\n", wmapthings[i].angle);
+	if (wmapthings[i].pitch != 0)
+		fprintf(f, "pitch = %d;\n", wmapthings[i].pitch);
+	if (wmapthings[i].roll != 0)
+		fprintf(f, "roll = %d;\n", wmapthings[i].roll);
+	if (wmapthings[i].type != 0)
+		fprintf(f, "type = %d;\n", wmapthings[i].type);
+	if (wmapthings[i].scale != FRACUNIT)
+		fprintf(f, "scale = %f;\n", FIXED_TO_FLOAT(wmapthings[i].scale));
+	if (wmapthings[i].options & MTF_OBJECTFLIP)
+		fprintf(f, "flip = true;\n");
+	if (wmapthings[i].special != 0)
+		fprintf(f, "special = %d;\n", wmapthings[i].special);
+	for (j = 0; j < NUMMAPTHINGARGS; j++)
+		if (wmapthings[i].args[j] != 0)
+			fprintf(f, "arg%s = %d;\n", sizeu1(j), wmapthings[i].args[j]);
+	for (j = 0; j < NUMMAPTHINGSTRINGARGS; j++)
+		if (mapthings[i].stringargs[j])
+			fprintf(f, "stringarg%s = \"%s\";\n", sizeu1(j), mapthings[i].stringargs[j]);
+	if (wmapthings[i].user.length > 0)
+	{
+		for (j = 0; j < wmapthings[i].user.length; j++)
+		{
+			mapUserProperty_t *const prop = &wmapthings[i].user.properties[j];
+			switch (prop->type)
+			{
+				case USER_PROP_BOOL:
+					fprintf(f, "user_%s = %s;\n", prop->key, (prop->valueBool == true) ? "true" : "false");
+					break;
+				case USER_PROP_INT:
+					fprintf(f, "user_%s = %d;\n", prop->key, prop->valueInt);
+					break;
+				case USER_PROP_FIXED:
+					fprintf(f, "user_%s = %f;\n", prop->key, FIXED_TO_FLOAT(prop->valueFixed));
+					break;
+				case USER_PROP_STR:
+					fprintf(f, "user_%s = \"%s\";\n", prop->key, prop->valueStr);
+					break;
+			}
+		}
+	}
+	fprintf(f, "}\n");
+	fprintf(f, "\n");
+}
+
+static void P_WriteTextmap(void)
+{
+	size_t i, j, k;
+	FILE *f;
 	mtag_t firsttag;
 	mapthing_t *wmapthings;
 	vertex_t *wvertexes;
@@ -2031,10 +2100,9 @@ static void P_WriteTextmap(void)
 	sectorspecialthings_t *specialthings;
 	boolean *wusedvertexes;
 
-	f = fopen(filepath, "w");
+	f = P_OpenTextmap("w", "Couldn't save map file");
 	if (!f)
 	{
-		CONS_Alert(CONS_ERROR, M_GetText("Couldn't save map file %s\n"), filepath);
 		return;
 	}
 
@@ -2120,13 +2188,6 @@ static void P_WriteTextmap(void)
 	{
 		subsector_t *ss;
 		INT32 s;
-
-		if (wmapthings[i].type == mobjinfo[MT_WAYPOINT].doomednum
-			|| wmapthings[i].type == mobjinfo[MT_WAYPOINT_ANCHOR].doomednum
-			|| wmapthings[i].type == mobjinfo[MT_WAYPOINT_RISER].doomednum)
-		{
-			CONS_Alert(CONS_WARNING, M_GetText("Thing %s is a waypoint or waypoint parameter, which cannot be converted fully.\n"), sizeu1(i));
-		}
 
 		if (wmapthings[i].type != 751 && wmapthings[i].type != 752 && wmapthings[i].type != 758)
 			continue;
@@ -2354,59 +2415,20 @@ static void P_WriteTextmap(void)
 	}
 
 	fprintf(f, "namespace = \"srb2\";\n");
-	for (i = 0; i < nummapthings; i++)
+	for (i = k = 0; i < nummapthings; i++)
 	{
-		fprintf(f, "thing // %s\n", sizeu1(i));
-		fprintf(f, "{\n");
-		if (wmapthings[i].tid != 0)
-			fprintf(f, "id = %d;\n", wmapthings[i].tid);
-		fprintf(f, "x = %d;\n", wmapthings[i].x);
-		fprintf(f, "y = %d;\n", wmapthings[i].y);
-		if (wmapthings[i].z != 0)
-			fprintf(f, "height = %d;\n", wmapthings[i].z);
-		fprintf(f, "angle = %d;\n", wmapthings[i].angle);
-		if (wmapthings[i].pitch != 0)
-			fprintf(f, "pitch = %d;\n", wmapthings[i].pitch);
-		if (wmapthings[i].roll != 0)
-			fprintf(f, "roll = %d;\n", wmapthings[i].roll);
-		if (wmapthings[i].type != 0)
-			fprintf(f, "type = %d;\n", wmapthings[i].type);
-		if (wmapthings[i].scale != FRACUNIT)
-			fprintf(f, "scale = %f;\n", FIXED_TO_FLOAT(wmapthings[i].scale));
-		if (wmapthings[i].options & MTF_OBJECTFLIP)
-			fprintf(f, "flip = true;\n");
-		if (wmapthings[i].special != 0)
-			fprintf(f, "special = %d;\n", wmapthings[i].special);
-		for (j = 0; j < NUMMAPTHINGARGS; j++)
-			if (wmapthings[i].args[j] != 0)
-				fprintf(f, "arg%s = %d;\n", sizeu1(j), wmapthings[i].args[j]);
-		for (j = 0; j < NUMMAPTHINGSTRINGARGS; j++)
-			if (mapthings[i].stringargs[j])
-				fprintf(f, "stringarg%s = \"%s\";\n", sizeu1(j), mapthings[i].stringargs[j]);
-		if (wmapthings[i].user.length > 0)
+		if (wmapthings[i].type == mobjinfo[MT_WAYPOINT].doomednum
+			|| wmapthings[i].type == mobjinfo[MT_WAYPOINT_ANCHOR].doomednum
+			|| wmapthings[i].type == mobjinfo[MT_WAYPOINT_RISER].doomednum)
 		{
-			for (j = 0; j < wmapthings[i].user.length; j++)
-			{
-				mapUserProperty_t *const prop = &wmapthings[i].user.properties[j];
-				switch (prop->type)
-				{
-					case USER_PROP_BOOL:
-						fprintf(f, "user_%s = %s;\n", prop->key, (prop->valueBool == true) ? "true" : "false");
-						break;
-					case USER_PROP_INT:
-						fprintf(f, "user_%s = %d;\n", prop->key, prop->valueInt);
-						break;
-					case USER_PROP_FIXED:
-						fprintf(f, "user_%s = %f;\n", prop->key, FIXED_TO_FLOAT(prop->valueFixed));
-						break;
-					case USER_PROP_STR:
-						fprintf(f, "user_%s = \"%s\";\n", prop->key, prop->valueStr);
-						break;
-				}
-			}
+			// Skip waypoints. Because the multi-thing setup was merged into a
+			// single thing type in UDMF, these must be converted later.
+			continue;
 		}
-		fprintf(f, "}\n");
-		fprintf(f, "\n");
+
+		P_WriteTextmapThing(f, wmapthings, i, k);
+
+		k++;
 	}
 
 	j = 0;
@@ -2844,6 +2866,29 @@ static void P_WriteTextmap(void)
 	Z_Free(wsides);
 	Z_Free(specialthings);
 	Z_Free(wusedvertexes);
+}
+
+static void P_WriteTextmapWaypoints(void)
+{
+	FILE *f;
+	mobj_t *waypointmobj;
+
+	// Append to output from P_WriteTextmap prior
+	f = P_OpenTextmap("a", "Couldn't save map file (waypoints)");
+	if (!f)
+	{
+		return;
+	}
+
+	for (
+			waypointmobj = waypointcap;
+			waypointmobj;
+			waypointmobj = waypointmobj->tracer
+	){
+		P_WriteTextmapThing(f, waypointmobj->spawnpoint, 0, waypointmobj->spawnpoint - mapthings);
+	}
+
+	fclose(f);
 }
 
 /** Loads the textmap data, after obtaining the elements count and allocating their respective space.
@@ -7148,6 +7193,10 @@ static void P_ConvertBinaryThingTypes(void)
 		case 3786: // MT_BATTLEUFO_SPAWNER
 			mapthings[i].args[0] = mapthings[i].angle;
 			break;
+		case 3441: // MT_DASHRING (TODO: not yet hardcoded)
+			mapthings[i].args[0] = mapthings[i].options & 13;
+			mapthings[i].args[1] = mapthings[i].extrainfo;
+			break;
 		case FLOOR_SLOPE_THING:
 		case CEILING_SLOPE_THING:
 			mapthings[i].args[0] = mapthings[i].extrainfo;
@@ -8230,6 +8279,9 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 	{
 		// Backwards compatibility for non-UDMF maps
 		K_AdjustWaypointsParameters();
+
+		if (M_CheckParm("-writetextmap"))
+			P_WriteTextmapWaypoints();
 	}
 
 	if (!fromnetsave) //  ugly hack for P_NetUnArchiveMisc (and P_LoadNetGame)
