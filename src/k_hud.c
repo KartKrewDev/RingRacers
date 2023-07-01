@@ -114,6 +114,7 @@ static patch_t *kp_battleinfo;
 static patch_t *kp_wanted;
 static patch_t *kp_wantedsplit;
 static patch_t *kp_wantedreticle;
+static patch_t *kp_minimapdot;
 
 static patch_t *kp_itembg[4];
 static patch_t *kp_ringbg[4];
@@ -446,6 +447,7 @@ void K_LoadKartHUDGraphics(void)
 	HU_UpdatePatch(&kp_wanted, "K_WANTED");
 	HU_UpdatePatch(&kp_wantedsplit, "4PWANTED");
 	HU_UpdatePatch(&kp_wantedreticle, "MMAPWANT");
+	HU_UpdatePatch(&kp_minimapdot, "MMAPDOT");
 
 	// Kart Item Windows
 	HU_UpdatePatch(&kp_itembg[0], "K_ITBG");
@@ -3713,6 +3715,8 @@ static void K_drawKartMinimapWaypoint(waypoint_t *wp, INT32 hudx, INT32 hudy, IN
 	K_drawKartMinimapDot(wp->mobj->x, wp->mobj->y, hudx, hudy, flags | V_NOSCALESTART, pal, size);
 }
 
+#define ICON_DOT_RADIUS (10)
+
 static void K_drawKartMinimap(void)
 {
 	patch_t *workingPic;
@@ -3895,6 +3899,8 @@ static void K_drawKartMinimap(void)
 	{
 		for (i = MAXPLAYERS-1; i >= 0; i--)
 		{
+			boolean nocontest = false;
+
 			if (!playeringame[i])
 				continue;
 			if (!players[i].mo || players[i].spectator || !players[i].mo->skin
@@ -3938,6 +3944,8 @@ static void K_drawKartMinimap(void)
 				colormap = R_GetTranslationColormap(TC_DEFAULT, mobj->color, GTC_CACHE);
 
 				mobj = mobj->tracer;
+
+				nocontest = true;
 			}
 			else
 			{
@@ -3958,6 +3966,8 @@ static void K_drawKartMinimap(void)
 
 			if (doprogressionbar == false)
 			{
+				angle_t ang = R_InterpolateAngle(mobj->old_angle, mobj->angle);
+
 				interpx = R_InterpolateFixed(mobj->old_x, mobj->x);
 				interpy = R_InterpolateFixed(mobj->old_y, mobj->y);
 
@@ -3968,6 +3978,19 @@ static void K_drawKartMinimap(void)
 					|| ((gametyperules & (GTR_BOSS|GTR_POINTLIMIT)) == GTR_POINTLIMIT && K_IsPlayerWanted(&players[i])))
 				{
 					K_drawKartMinimapIcon(interpx, interpy, x, y, splitflags, kp_wantedreticle, NULL);
+				}
+
+				if (!nocontest)
+				{
+					K_drawKartMinimapIcon(
+							interpx,
+							interpy,
+							x + FixedMul(FCOS(ang), ICON_DOT_RADIUS),
+							y - FixedMul(FSIN(ang), ICON_DOT_RADIUS),
+							splitflags,
+							kp_minimapdot,
+							colormap
+					);
 				}
 			}
 			else
@@ -4099,6 +4122,8 @@ static void K_drawKartMinimap(void)
 
 	for (i = 0; i < numlocalplayers; i++)
 	{
+		boolean nocontest = false;
+
 		if (localplayers[i] == -1)
 			continue; // this doesn't interest us
 
@@ -4123,6 +4148,8 @@ static void K_drawKartMinimap(void)
 			colormap = R_GetTranslationColormap(TC_DEFAULT, mobj->color, GTC_CACHE);
 
 			mobj = mobj->tracer;
+
+			nocontest = true;
 		}
 		else
 		{
@@ -4143,6 +4170,8 @@ static void K_drawKartMinimap(void)
 
 		if (doprogressionbar == false)
 		{
+			angle_t ang = R_InterpolateAngle(mobj->old_angle, mobj->angle);
+
 			interpx = R_InterpolateFixed(mobj->old_x, mobj->x);
 			interpy = R_InterpolateFixed(mobj->old_y, mobj->y);
 
@@ -4153,6 +4182,19 @@ static void K_drawKartMinimap(void)
 				|| ((gametyperules & (GTR_BOSS|GTR_POINTLIMIT)) == GTR_POINTLIMIT && K_IsPlayerWanted(&players[localplayers[i]])))
 			{
 				K_drawKartMinimapIcon(interpx, interpy, x, y, splitflags, kp_wantedreticle, NULL);
+			}
+
+			if (!nocontest)
+			{
+				K_drawKartMinimapIcon(
+						interpx,
+						interpy,
+						x + FixedMul(FCOS(ang), ICON_DOT_RADIUS),
+						y - FixedMul(FSIN(ang), ICON_DOT_RADIUS),
+						splitflags,
+						kp_minimapdot,
+						colormap
+				);
 			}
 		}
 		else
