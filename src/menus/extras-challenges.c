@@ -366,7 +366,11 @@ void M_ChallengesTick(void)
 
 	if (challengesmenu.chaokeyhold)
 	{
-		if (M_MenuExtraHeld(pid) && M_CanKeyHiliTile())
+		boolean devskip = false;
+#ifdef DEVELOP
+		devskip = M_MenuButtonHeld(pid, MBT_Z);
+#endif
+		if (devskip || (M_MenuExtraHeld(pid) && M_CanKeyHiliTile()))
 		{
 			// Not pressed just this frame?
 			if (!M_MenuExtraPressed(pid))
@@ -628,6 +632,13 @@ boolean M_ChallengesInputs(INT32 ch)
 		}
 		return true;
 	}
+#ifdef DEVELOP
+	else if (M_MenuButtonPressed(pid, MBT_Z))
+	{
+		challengesmenu.chaokeyhold = 1;
+		return true;
+	}
+#endif
 	else
 	{
 		if (M_MenuBackPressed(pid) || start)
