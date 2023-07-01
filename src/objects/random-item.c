@@ -114,7 +114,8 @@ void Obj_RandomItemVisuals(mobj_t *mobj)
 	// the player's cleared out a good portion of the map.
 	//
 	// Then extraval1 starts ticking up and triggers the transformation from Ringbox to Random Item.
-	if (mobj->fuse == 0 && !(mobj->flags & MF_NOCLIPTHING) && !cv_thunderdome.value)
+	if (mobj->fuse == 0 && !(mobj->flags & MF_NOCLIPTHING)
+		&& !cv_thunderdome.value && !(modeattacking & ATTACKING_SPB))
 	{
 		mobj->extravalue1++;
 		if (mobj->extravalue1 == RINGBOX_TIME)
