@@ -454,7 +454,7 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 				return;
 			}
 		case MT_EMERALD:
-			if (!P_CanPickupItem(player, 0))
+			if (!P_CanPickupItem(player, 0) || P_PlayerInPain(player))
 				return;
 
 			if (special->threshold > 0)
