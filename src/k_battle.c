@@ -669,8 +669,9 @@ void K_RunBattleOvertime(void)
 		const fixed_t minradius = 768 * mapobjectscale;
 
 		if (battleovertime.radius > minradius)
-			battleovertime.radius -= 2*mapobjectscale;
-		else
+			battleovertime.radius -= (battleovertime.initial_radius / (30*TICRATE));
+
+		if (battleovertime.radius < minradius)
 			battleovertime.radius = minradius;
 	}
 
