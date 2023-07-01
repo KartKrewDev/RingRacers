@@ -2222,13 +2222,41 @@ static boolean K_drawKartPositionFaces(void)
 
 		if ((gametyperules & GTR_BUMPERS) && (players[rankplayer[i]].pflags & PF_ELIMINATED))
 			V_DrawScaledPatch(FACE_X-4, Y-3, V_HUDTRANS|V_SLIDEIN|V_SNAPTOLEFT, kp_ranknobumpers);
-		else
+		else if (gametyperules & GTR_CIRCUIT)
 		{
 			INT32 pos = players[rankplayer[i]].position;
 			if (pos < 0 || pos > MAXPLAYERS)
 				pos = 0;
 			// Draws the little number over the face
 			V_DrawScaledPatch(FACE_X-5, Y+10, V_HUDTRANS|V_SLIDEIN|V_SNAPTOLEFT, kp_facenum[pos]);
+		}
+		else
+		{
+			INT32 flags = V_HUDTRANS | V_SLIDEIN | V_SNAPTOLEFT;
+
+			colormap = NULL;
+
+			if (g_pointlimit <= players[rankplayer[i]].roundscore)
+			{
+				if (leveltime % 8 < 4)
+				{
+					colormap = R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_TANGERINE, GTC_CACHE);
+				}
+
+				flags |= V_STRINGDANCE;
+			}
+
+			V_DrawStringScaled(
+					(FACE_X - 5) * FRACUNIT,
+					(Y + 10) * FRACUNIT,
+					FRACUNIT,
+					FRACUNIT,
+					FRACUNIT,
+					flags,
+					colormap,
+					PINGF_FONT,
+					va("%d", players[rankplayer[i]].roundscore)
+			);
 		}
 
 		Y -= 18;
