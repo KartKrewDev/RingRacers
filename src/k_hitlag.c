@@ -167,19 +167,30 @@ static void K_SpawnHitLagEFX(mobj_t *victim, mobj_t *inflictor, mobj_t *source, 
 		color = (source->player != NULL) ? source->player->skincolor : source->color;
 	}
 
+	// CONS_Printf("== HITLAG VFX START: endTics %d tics %d ==\n", endTics, tics);
+
 	while (endTics < tics)
 	{
 		UINT8 particle = max(1, FixedMul((tics * FRACUNIT) + (FRACUNIT/2), FRACUNIT*2/3) / FRACUNIT);
+
+		// CONS_Printf("trying particle %d\n", particle);
+
 		if (particle > NUM_HITLAG_STATES)
 		{
 			particle = NUM_HITLAG_STATES;
+			// CONS_Printf("* corrected to %d (states - %d)\n", particle, NUM_HITLAG_STATES);
 		}
 
-		UINT8 ticsLeft = endTics - tics;
+		UINT8 ticsLeft = tics - endTics;
+		// CONS_Printf("? ticsleft %d\n", ticsLeft);
+
 		if (particle > ticsLeft)
 		{
 			particle = ticsLeft;
+			// CONS_Printf("* corrected to %d (ticsleft - %d)\n", particle, ticsLeft);
 		}
+
+		// CONS_Printf("spawning, startTics %d\n", startTics);
 
 		K_SpawnSingleHitLagSpark(victim, &offset, newScale, particle, startTics, color);
 
@@ -191,6 +202,8 @@ static void K_SpawnHitLagEFX(mobj_t *victim, mobj_t *inflictor, mobj_t *source, 
 		offset.z += P_RandomRange(PR_DECORATION, -45, 45) * newScale;
 
 		newScale = (newScale * 2) / 3;
+
+		// CONS_Printf("next: startTics %d, endTics %d, tics %d, newScale %d\n", startTics, endTics, tics, newScale);
 	}
 }
 
