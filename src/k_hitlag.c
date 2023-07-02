@@ -113,7 +113,11 @@ static void K_SpawnSingleHitLagSpark(
 			spark->angle += ANGLE_90;
 		}
 
-		spark->hitlag = pause;
+		if (pause > 0)
+		{
+			spark->hitlag = pause+1; // A little dumb, but hitlag is decremented on the same tic we spawn, so naively setting is off-by-one.
+			// spark->renderflags |= RF_DONTDRAW; // "Re-visible" behavior in P_MobjThinker, under a type check. (Currently unused.)
+		}
 
 		if (color != SKINCOLOR_NONE)
 		{
