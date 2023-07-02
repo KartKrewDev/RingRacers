@@ -661,6 +661,7 @@ static void SPBChase(mobj_t *spb, mobj_t *bestMobj)
 
 	baseSpeed = SPB_DEFAULTSPEED;
 	range = (160 * chase->scale);
+	range = max(range, FixedMul(range, K_GetKartGameSpeedScalar(gamespeed)));
 
 	// Play the intimidating gurgle
 	if (S_SoundPlaying(spb, spb->info->activesound) == false)
