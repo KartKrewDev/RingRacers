@@ -186,9 +186,9 @@ static void K_SpawnHitLagEFX(mobj_t *victim, mobj_t *inflictor, mobj_t *source, 
 		startTics += max(1, FixedMul((particle * FRACUNIT) + (FRACUNIT/2), FRACUNIT/3) / FRACUNIT);
 		endTics += particle;
 
-		offset.x += P_RandomRange(PR_DECORATION, -75, 75) * newScale;
-		offset.y += P_RandomRange(PR_DECORATION, -75, 75) * newScale;
-		offset.z += P_RandomRange(PR_DECORATION, -75, 75) * newScale;
+		offset.x += P_RandomRange(PR_DECORATION, -45, 45) * newScale;
+		offset.y += P_RandomRange(PR_DECORATION, -45, 45) * newScale;
+		offset.z += P_RandomRange(PR_DECORATION, -45, 45) * newScale;
 
 		newScale = (newScale * 2) / 3;
 	}

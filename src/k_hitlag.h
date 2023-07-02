@@ -20,9 +20,9 @@
 extern "C" {
 #endif
 
-#define MAXHITLAGTICS (20)
+#define MAXHITLAGTICS (30)
 #define HITLAGJITTERS (FRACUNIT / 20)
-#define NUM_HITLAG_STATES (4)
+#define NUM_HITLAG_STATES (7)
 
 /*--------------------------------------------------
 	void K_AddHitLag(mobj_t *mo, INT32 tics, boolean fromDamage);
