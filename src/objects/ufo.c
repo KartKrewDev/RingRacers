@@ -172,11 +172,12 @@ static void UFOUpdateDistanceToFinish(mobj_t *ufo)
 
 static void UFOUpdateSpeed(mobj_t *ufo)
 {
+	const fixed_t mapspeedscale = FixedMul(mapobjectscale, K_GetKartGameSpeedScalar(gamespeed));
 	const fixed_t baseSpeed = FixedMul(UFO_BASE_SPEED, K_GetKartGameSpeedScalar(gamespeed));
-	const UINT32 deadzone = FixedMul(FixedMul(UFO_DEADZONE, mapobjectscale), K_GetKartGameSpeedScalar(gamespeed)) >> FRACBITS;
+	const UINT32 deadzone = FixedMul(UFO_DEADZONE, mapspeedscale) >> FRACBITS;
 
-	UINT32 spacing = FixedMul(FixedMul(UFO_SPACING, mapobjectscale), K_GetKartGameSpeedScalar(gamespeed)) >> FRACBITS;
-	UINT32 distanceNerf = FixedMul(FixedMul(UFO_PITY_BRAKES, mapobjectscale), K_GetKartGameSpeedScalar(gamespeed)) >> FRACBITS;
+	UINT32 spacing = FixedMul(UFO_SPACING, mapspeedscale) >> FRACBITS;
+	UINT32 distanceNerf = FixedMul(UFO_PITY_BRAKES, mapspeedscale) >> FRACBITS;
 
 	// Best values of all of the players.
 	UINT32 bestDist = UINT32_MAX;
