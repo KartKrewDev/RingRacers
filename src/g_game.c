@@ -2595,6 +2595,10 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 		{
 			rings = 20;
 		}
+		else if (gametyperules & GTR_CATCHER)
+		{
+			rings = 20;
+		}
 		else
 		{
 			rings = 5;
