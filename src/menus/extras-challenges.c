@@ -287,10 +287,10 @@ void M_Challenges(INT32 choice)
 	M_SetupNextMenu(&MISC_ChallengesDef, false);
 }
 
-static boolean M_CanKeyHiliTile(void)
+static boolean M_CanKeyHiliTile(boolean devskip)
 {
 	// No keys to do it with?
-	if (gamedata->chaokeys == 0)
+	if (gamedata->chaokeys == 0 && !devskip)
 		return false;
 
 	// No tile data?
@@ -306,14 +306,15 @@ static boolean M_CanKeyHiliTile(void)
 		return false;
 
 	// Marked as unskippable?
-	if (unlockables[challengesmenu.currentunlock].majorunlock == true)
+	if (unlockables[challengesmenu.currentunlock].majorunlock == true && !devskip)
 		return false;
 
 	UINT16 i = (challengesmenu.hilix * CHALLENGEGRIDHEIGHT) + challengesmenu.hiliy;
 
 	// Not a hinted tile OR a fresh board.
 	if (!(challengesmenu.extradata[i].flags & CHE_HINT)
-	&& (challengesmenu.unlockcount[CC_UNLOCKED] + challengesmenu.unlockcount[CC_TALLY] > 0))
+	&& (challengesmenu.unlockcount[CC_UNLOCKED] + challengesmenu.unlockcount[CC_TALLY] > 0)
+	&& !devskip)
 		return false;
 
 	// All good!
@@ -366,7 +367,12 @@ void M_ChallengesTick(void)
 
 	if (challengesmenu.chaokeyhold)
 	{
-		if (M_MenuExtraHeld(pid) && M_CanKeyHiliTile())
+		boolean devskip = false;
+#ifdef DEVELOP
+		devskip = M_MenuButtonHeld(pid, MBT_Z);
+#endif
+		// A little messy, but don't freak out, this is just so devs don't crash the game on non-tiles
+		if ((devskip || M_MenuExtraHeld(pid)) && M_CanKeyHiliTile(devskip))
 		{
 			// Not pressed just this frame?
 			if (!M_MenuExtraPressed(pid))
@@ -605,7 +611,7 @@ boolean M_ChallengesInputs(INT32 ch)
 	}
 	else if (M_MenuExtraPressed(pid))
 	{
-		if (M_CanKeyHiliTile())
+		if (M_CanKeyHiliTile(false))
 		{
 			challengesmenu.chaokeyhold = 1;
 		}
@@ -628,6 +634,13 @@ boolean M_ChallengesInputs(INT32 ch)
 		}
 		return true;
 	}
+#ifdef DEVELOP
+	else if (M_MenuButtonPressed(pid, MBT_Z))
+	{
+		challengesmenu.chaokeyhold = 1;
+		return true;
+	}
+#endif
 	else
 	{
 		if (M_MenuBackPressed(pid) || start)
