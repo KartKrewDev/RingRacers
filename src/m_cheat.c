@@ -146,11 +146,14 @@ static UINT8 cheatf_devmode(void)
 		gamedata->unlocked[i] = true;
 	}
 
-	G_SetUsedCheats();
+	// This is a developer feature, you know how to delete ringdata
+	// G_SetUsedCheats();
 	S_StartSound(0, sfx_kc42);
 
 	devparm = true;
 	cht_debug |= 0x8000;
+
+	G_SaveGameData();
 
 	return 1;
 }
