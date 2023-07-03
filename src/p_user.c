@@ -2380,7 +2380,20 @@ static void P_UpdatePlayerAngle(player_t *player)
 	INT16 targetsteering = K_UpdateSteeringValue(player->steering, player->cmd.turning);
 	angleChange = K_GetKartTurnValue(player, targetsteering) << TICCMD_REDUCE;
 
-	if (!K_PlayerUsesBotMovement(player))
+	if (K_PlayerUsesBotMovement(player))
+	{
+		// You're a bot. Go where you're supposed to go
+		player->steering = targetsteering;
+	}
+	else if (!(player->cmd.flags & TICCMD_RECEIVED))
+	{
+		// This player missed a tic! This ticcmd is copied from our last received one,
+		// which means it will include the same angle. If we steer them towards this,
+		// it's very likely we will input the wrong direction and screw with easing state.
+		// Instead, assume the player keeps steering in the direction they were steering.
+		player->steering = targetsteering;
+	}
+	else
 	{
 		// With a full slam on the analog stick, how far could we steer in either direction?
 		INT16 steeringRight =  K_UpdateSteeringValue(player->steering, KART_FULLTURN);
@@ -2430,11 +2443,6 @@ static void P_UpdatePlayerAngle(player_t *player)
 			if (min(targetDelta - angleChange, angleChange - targetDelta) <= leniency)
 				angleChange = targetDelta;
 		}
-	}
-	else
-	{
-		// You're a bot. Go where you're supposed to go
-		player->steering = targetsteering;
 	}
 
 	if (p == UINT8_MAX)
