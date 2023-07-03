@@ -1130,6 +1130,7 @@ typedef enum sprite
 	SPR_HFX4, // Hitlag stage 4
 	SPR_HFX5, // Hitlag stage 5
 	SPR_HFX6, // Hitlag stage 6
+	SPR_HFX8, // Hitlag stage 8
 	SPR_HFX9, // Hitlag stage 9
 
 	// Kart Items
@@ -5679,6 +5680,7 @@ typedef enum state
 	S_HITLAG_4,
 	S_HITLAG_5,
 	S_HITLAG_6,
+	S_HITLAG_8,
 	S_HITLAG_9,
 
 	// Broly Ki Orb

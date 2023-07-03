@@ -22,7 +22,7 @@ extern "C" {
 
 #define MAXHITLAGTICS (30)
 #define HITLAGJITTERS (FRACUNIT / 20)
-#define NUM_HITLAG_STATES (7)
+#define NUM_HITLAG_STATES (8)
 
 /*--------------------------------------------------
 	void K_AddHitLag(mobj_t *mo, INT32 tics, boolean fromDamage);
