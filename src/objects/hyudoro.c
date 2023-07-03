@@ -21,6 +21,7 @@
 #include "../r_main.h"
 #include "../s_sound.h"
 #include "../g_game.h"
+#include "../k_hitlag.h"
 
 enum {
 	HYU_PATROL,

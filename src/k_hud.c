@@ -42,6 +42,7 @@
 #include "k_bot.h"
 #include "k_rank.h"
 #include "g_party.h"
+#include "k_hitlag.h"
 
 //{ 	Patch Definitions
 static patch_t *kp_nodraw;

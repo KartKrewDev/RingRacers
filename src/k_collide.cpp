@@ -17,6 +17,7 @@
 #include "k_roulette.h"
 #include "k_podium.h"
 #include "k_powerup.h"
+#include "k_hitlag.h"
 
 angle_t K_GetCollideAngle(mobj_t *t1, mobj_t *t2)
 {
@@ -423,7 +424,7 @@ boolean K_LandMineCollide(mobj_t *t1, mobj_t *t2)
 		{
 			// Melt item
 			S_StartSound(t2, sfx_s3k43);
-			K_SetHitLagForObjects(t2, t1, 3, false);
+			K_SetHitLagForObjects(t2, t1, t1->target, 3, false);
 		}
 		else
 		{

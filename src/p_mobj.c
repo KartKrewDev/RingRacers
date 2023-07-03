@@ -9909,6 +9909,14 @@ void P_MobjThinker(mobj_t *mobj)
 			K_HandleDirectionalInfluence(mobj->player);
 		}
 
+		// Hitlag VFX "stagger" behavior.
+		// Oni likes the look better if all sparks visibly hold on their 1st frame,
+		// but if we ever reverse course, this is here.
+		/*
+		if (mobj->type == MT_HITLAG && mobj->hitlag == 0)
+			mobj->renderflags &= ~RF_DONTDRAW;
+		*/
+
 		return;
 	}
 

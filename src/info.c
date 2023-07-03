@@ -573,6 +573,14 @@ char sprnames[NUMSPRITES + 1][5] =
 	"DREL", // Drift electricity
 	"DRES", // Drift electric sparks
 	"JANK", // Stair janking sparks
+	"HFX1", // Hitlag stage 1
+	"HFX2", // Hitlag stage 2
+	"HFX3", // Hitlag stage 3
+	"HFX4", // Hitlag stage 4
+	"HFX5", // Hitlag stage 5
+	"HFX6", // Hitlag stage 6
+	"HFX8", // Hitlag stage 8
+	"HFX9", // Hitlag stage 9
 
 	// Kart Items
 	"RSHE", // Rocket sneaker
@@ -5235,6 +5243,15 @@ state_t states[NUMSTATES] =
 	{SPR_JANK, FF_PAPERSPRITE|FF_FULLBRIGHT|FF_ANIMATE, 4, {NULL}, 3, 1, S_JANKSPARK3}, // S_JANKSPARK2
 	{SPR_JANK, 0, 0, {A_SetCustomValue}, -1, 5, S_JANKSPARK4}, // S_JANKSPARK3
 	{SPR_JANK, 0, 0, {A_ChangeAngleRelative}, 180, 180, S_JANKSPARK2}, // S_JANKSPARK4
+
+	{SPR_HFX1, FF_FULLBRIGHT|FF_PAPERSPRITE, 1, {NULL}, 0, 1, S_NULL}, // S_HITLAG_1
+	{SPR_HFX2, FF_FULLBRIGHT|FF_PAPERSPRITE|FF_ANIMATE, 2, {NULL}, 1, 1, S_NULL}, // S_HITLAG_2
+	{SPR_HFX3, FF_FULLBRIGHT|FF_PAPERSPRITE|FF_ANIMATE, 3, {NULL}, 2, 1, S_NULL}, // S_HITLAG_3
+	{SPR_HFX4, FF_FULLBRIGHT|FF_PAPERSPRITE|FF_ANIMATE, 4, {NULL}, 3, 1, S_NULL}, // S_HITLAG_4
+	{SPR_HFX5, FF_FULLBRIGHT|FF_PAPERSPRITE|FF_ANIMATE, 5, {NULL}, 4, 1, S_NULL}, // S_HITLAG_5
+	{SPR_HFX6, FF_FULLBRIGHT|FF_PAPERSPRITE|FF_ANIMATE, 6, {NULL}, 5, 1, S_NULL}, // S_HITLAG_6
+	{SPR_HFX8, FF_FULLBRIGHT|FF_PAPERSPRITE|FF_ANIMATE, 8, {NULL}, 7, 1, S_NULL}, // S_HITLAG_8
+	{SPR_HFX9, FF_FULLBRIGHT|FF_PAPERSPRITE|FF_ANIMATE, 9, {NULL}, 8, 1, S_NULL}, // S_HITLAG_9
 
 	// Broly Ki Orb
 	{SPR_LSSJ, FF_REVERSESUBTRACT|FF_FULLBRIGHT, -1, {NULL}, 0, 0, S_BROLY2}, // S_BROLY1
@@ -23475,6 +23492,33 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		0,              // damage
 		sfx_None,       // activesound
 		MF_NOBLOCKMAP|MF_NOCLIPHEIGHT|MF_NOGRAVITY|MF_FLOAT|MF_DONTENCOREMAP, // flags
+		S_NULL          // raisestate
+	},
+
+	{           // MT_HITLAG
+		-1,             // doomednum
+		S_HITLAG_1,     // spawnstate
+		1000,           // spawnhealth
+		S_NULL,         // seestate
+		sfx_None,       // seesound
+		8,              // reactiontime
+		sfx_None,       // attacksound
+		S_NULL,         // painstate
+		0,              // painchance
+		sfx_None,       // painsound
+		S_NULL,         // meleestate
+		S_NULL,         // missilestate
+		S_NULL,         // deathstate
+		S_NULL,         // xdeathstate
+		sfx_None,       // deathsound
+		8,              // speed
+		8*FRACUNIT,     // radius
+		16*FRACUNIT,    // height
+		1,              // display offset
+		100,            // mass
+		0,              // damage
+		sfx_None,       // activesound
+		MF_NOBLOCKMAP|MF_NOCLIP|MF_NOCLIPTHING|MF_NOCLIPHEIGHT|MF_NOGRAVITY|MF_DONTENCOREMAP, // flags
 		S_NULL          // raisestate
 	},
 
