@@ -124,6 +124,8 @@ static void K_SpawnSingleHitLagSpark(
 			spark->color = color;
 			spark->colorized = true;
 		}
+
+		K_ReduceVFX(spark, NULL);
 	}
 }
 
