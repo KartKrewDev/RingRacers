@@ -2385,13 +2385,17 @@ static void P_UpdatePlayerAngle(player_t *player)
 		// You're a bot. Go where you're supposed to go
 		player->steering = targetsteering;
 	}
-	else if (!(player->cmd.flags & TICCMD_RECEIVED))
+	else if ((!(player->cmd.flags & TICCMD_RECEIVED)) && (!!(player->oldcmd.flags && TICCMD_RECEIVED)))
 	{
-		// This player missed a tic! This ticcmd is copied from our last received one,
-		// which means it will include the same angle. If we steer them towards this,
-		// it's very likely we will input the wrong direction and screw with easing state.
-		// Instead, assume the player keeps steering in the direction they were steering.
+		// Missed a single tic. This ticcmd is copied from their previous one
+		// (less the TICCMD_RECEIVED flag), so it will include an old angle, and
+		// steering towards that will turn unambitiously. A better guess is to
+		// assume their inputs are the same, and turn based on those for 1 tic.
 		player->steering = targetsteering;
+		// "Why not use this for multiple consecutive dropped tics?" Oversimplification:
+		// Clients have default netticbuffer 1, so missing more than 1 tic will freeze
+		// your client, and with it, your local camera. Our goal then becomes not to
+		// steer PAST the angle you can see, so the default turn solver behavior is best.
 	}
 	else
 	{
