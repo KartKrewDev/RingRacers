@@ -7194,6 +7194,7 @@ static void P_ConvertBinaryThingTypes(void)
 			mapthings[i].args[0] = mapthings[i].angle;
 			break;
 		case 3441: // MT_DASHRING (TODO: not yet hardcoded)
+		case 3442: // MT_RAINBOWDASHRING (TODO: not yet hardcoded)
 			mapthings[i].args[0] = mapthings[i].options & 13;
 			mapthings[i].args[1] = mapthings[i].extrainfo;
 			break;
