@@ -128,7 +128,7 @@ void FramebufferManager::prepass(Rhi& rhi)
 	}
 }
 
-void FramebufferManager::transfer(Rhi& rhi, Handle<TransferContext> ctx)
+void FramebufferManager::transfer(Rhi& rhi, Handle<GraphicsContext> ctx)
 {
 }
 
@@ -169,7 +169,7 @@ void MainPaletteManager::prepass(Rhi& rhi)
 	}
 }
 
-void MainPaletteManager::upload_palette(Rhi& rhi, Handle<TransferContext> ctx)
+void MainPaletteManager::upload_palette(Rhi& rhi, Handle<GraphicsContext> ctx)
 {
 	std::array<byteColor_t, kPaletteSize> palette_32;
 	for (std::size_t i = 0; i < kPaletteSize; i++)
@@ -179,7 +179,7 @@ void MainPaletteManager::upload_palette(Rhi& rhi, Handle<TransferContext> ctx)
 	rhi.update_texture(ctx, palette_, {0, 0, kPaletteSize, 1}, PixelFormat::kRGBA8, tcb::as_bytes(tcb::span(palette_32)));
 }
 
-void MainPaletteManager::upload_lighttables(Rhi& rhi, Handle<TransferContext> ctx)
+void MainPaletteManager::upload_lighttables(Rhi& rhi, Handle<GraphicsContext> ctx)
 {
 	if (colormaps != nullptr)
 	{
@@ -206,7 +206,7 @@ void MainPaletteManager::upload_lighttables(Rhi& rhi, Handle<TransferContext> ct
 	}
 }
 
-void MainPaletteManager::upload_default_colormap(Rhi& rhi, Handle<TransferContext> ctx)
+void MainPaletteManager::upload_default_colormap(Rhi& rhi, Handle<GraphicsContext> ctx)
 {
 	std::array<uint8_t, kPaletteSize> data;
 	for (std::size_t i = 0; i < kPaletteSize; i++)
@@ -216,7 +216,7 @@ void MainPaletteManager::upload_default_colormap(Rhi& rhi, Handle<TransferContex
 	rhi.update_texture(ctx, default_colormap_, {0, 0, kPaletteSize, 1}, PixelFormat::kR8, tcb::as_bytes(tcb::span(data)));
 }
 
-void MainPaletteManager::upload_colormaps(Rhi& rhi, Handle<TransferContext> ctx)
+void MainPaletteManager::upload_colormaps(Rhi& rhi, Handle<GraphicsContext> ctx)
 {
 	for (auto to_upload : colormaps_to_upload_)
 	{
@@ -279,7 +279,7 @@ rhi::Handle<rhi::Texture> MainPaletteManager::find_extra_lighttable(srb2::NotNul
 	return lighttables_.at(lighttable);
 }
 
-void MainPaletteManager::transfer(Rhi& rhi, Handle<TransferContext> ctx)
+void MainPaletteManager::transfer(Rhi& rhi, Handle<GraphicsContext> ctx)
 {
 	upload_palette(rhi, ctx);
 	upload_lighttables(rhi, ctx);
@@ -327,7 +327,7 @@ void CommonResourcesManager::prepass(Rhi& rhi)
 	}
 }
 
-void CommonResourcesManager::transfer(Rhi& rhi, Handle<TransferContext> ctx)
+void CommonResourcesManager::transfer(Rhi& rhi, Handle<GraphicsContext> ctx)
 {
 	if (!init_)
 	{
@@ -382,7 +382,7 @@ void FlatTextureManager::prepass(Rhi& rhi)
 {
 }
 
-void FlatTextureManager::transfer(Rhi& rhi, Handle<TransferContext> ctx)
+void FlatTextureManager::transfer(Rhi& rhi, Handle<GraphicsContext> ctx)
 {
 	std::vector<std::array<uint8_t, 2>> flat_data;
 	for (auto flat_lump : to_upload_)

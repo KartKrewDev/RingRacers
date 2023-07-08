@@ -40,7 +40,7 @@ void ScreenshotPass::prepass(Rhi& rhi)
 	doing_screenshot_ = takescreenshot || moviemode != MM_OFF;
 }
 
-void ScreenshotPass::transfer(Rhi& rhi, Handle<TransferContext> ctx)
+void ScreenshotPass::transfer(Rhi& rhi, Handle<GraphicsContext> ctx)
 {
 }
 

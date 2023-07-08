@@ -77,7 +77,7 @@ void SoftwarePass::prepass(Rhi& rhi)
 	}
 }
 
-void SoftwarePass::transfer(Rhi& rhi, Handle<TransferContext> ctx)
+void SoftwarePass::transfer(Rhi& rhi, Handle<GraphicsContext> ctx)
 {
 	// Upload screen
 	tcb::span<const std::byte> screen_span;
