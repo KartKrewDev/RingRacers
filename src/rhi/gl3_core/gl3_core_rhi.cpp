@@ -568,8 +568,6 @@ GlCoreRhi::~GlCoreRhi() = default;
 
 rhi::Handle<rhi::RenderPass> GlCoreRhi::create_render_pass(const rhi::RenderPassDesc& desc)
 {
-	SRB2_ASSERT(graphics_context_active_ == false);
-
 	// GL has no formal render pass object
 	GlCoreRenderPass pass;
 	pass.desc = desc;
@@ -578,15 +576,11 @@ rhi::Handle<rhi::RenderPass> GlCoreRhi::create_render_pass(const rhi::RenderPass
 
 void GlCoreRhi::destroy_render_pass(rhi::Handle<rhi::RenderPass> handle)
 {
-	SRB2_ASSERT(graphics_context_active_ == false);
-
 	render_pass_slab_.remove(handle);
 }
 
 rhi::Handle<rhi::Texture> GlCoreRhi::create_texture(const rhi::TextureDesc& desc)
 {
-	SRB2_ASSERT(graphics_context_active_ == false);
-
 	GLenum internal_format = map_internal_texture_format(desc.format);
 	SRB2_ASSERT(internal_format != GL_ZERO);
 	GLenum format = GL_RGBA;
@@ -615,8 +609,6 @@ rhi::Handle<rhi::Texture> GlCoreRhi::create_texture(const rhi::TextureDesc& desc
 
 void GlCoreRhi::destroy_texture(rhi::Handle<rhi::Texture> handle)
 {
-	SRB2_ASSERT(graphics_context_active_ == false);
-
 	SRB2_ASSERT(texture_slab_.is_valid(handle) == true);
 	GlCoreTexture casted = texture_slab_.remove(handle);
 	GLuint name = casted.texture;
@@ -676,8 +668,6 @@ void GlCoreRhi::update_texture(
 
 rhi::Handle<rhi::Buffer> GlCoreRhi::create_buffer(const rhi::BufferDesc& desc)
 {
-	SRB2_ASSERT(graphics_context_active_ == false);
-
 	GLenum target = map_buffer_type(desc.type);
 	SRB2_ASSERT(target != GL_ZERO);
 
@@ -702,10 +692,7 @@ rhi::Handle<rhi::Buffer> GlCoreRhi::create_buffer(const rhi::BufferDesc& desc)
 
 void GlCoreRhi::destroy_buffer(rhi::Handle<rhi::Buffer> handle)
 {
-	SRB2_ASSERT(graphics_context_active_ == false);
-
 	SRB2_ASSERT(buffer_slab_.is_valid(handle) == true);
-	SRB2_ASSERT(graphics_context_active_ == false);
 	GlCoreBuffer casted = buffer_slab_.remove(handle);
 	GLuint name = casted.buffer;
 
@@ -837,8 +824,6 @@ rhi::Handle<rhi::BindingSet> GlCoreRhi::create_binding_set(
 
 rhi::Handle<rhi::Renderbuffer> GlCoreRhi::create_renderbuffer(const rhi::RenderbufferDesc& desc)
 {
-	SRB2_ASSERT(graphics_context_active_ == false);
-
 	GLuint name = 0;
 	gl_->GenRenderbuffers(1, &name);
 
@@ -871,8 +856,6 @@ rhi::Handle<rhi::Renderbuffer> GlCoreRhi::create_renderbuffer(const rhi::Renderb
 
 void GlCoreRhi::destroy_renderbuffer(rhi::Handle<rhi::Renderbuffer> handle)
 {
-	SRB2_ASSERT(graphics_context_active_ == false);
-
 	SRB2_ASSERT(renderbuffer_slab_.is_valid(handle) == true);
 	GlCoreRenderbuffer casted = renderbuffer_slab_.remove(handle);
 	GLuint name = casted.renderbuffer;
@@ -1187,8 +1170,6 @@ rhi::Handle<rhi::Pipeline> GlCoreRhi::create_pipeline(const PipelineDesc& desc)
 
 void GlCoreRhi::destroy_pipeline(rhi::Handle<rhi::Pipeline> handle)
 {
-	SRB2_ASSERT(graphics_context_active_ == false);
-
 	SRB2_ASSERT(pipeline_slab_.is_valid(handle) == true);
 	GlCorePipeline casted = pipeline_slab_.remove(handle);
 	GLuint vertex_shader = casted.vertex_shader;
