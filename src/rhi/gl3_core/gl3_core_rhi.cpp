@@ -1226,7 +1226,7 @@ void GlCoreRhi::begin_default_render_pass(Handle<GraphicsContext> ctx, bool clea
 		gl_->ClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 		gl_->ClearDepth(1.0f);
 		gl_->ClearStencil(0);
-		gl_->Clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		gl_->Clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 		GL_ASSERT;
 	}
 
