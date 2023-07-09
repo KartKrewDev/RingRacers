@@ -2291,6 +2291,7 @@ void V_DrawStringScaled(
 	{
 		default:
 		case HU_FONT:
+		case MENU_FONT:
 			spacew = 4;
 			switch (spacing)
 			{
@@ -2361,6 +2362,7 @@ void V_DrawStringScaled(
 	{
 		default:
 		case HU_FONT:
+		case MENU_FONT:
 		case TINY_FONT:
 		case KART_FONT:
 			lfh = 12;
@@ -2603,6 +2605,7 @@ fixed_t V_StringScaledWidth(
 	{
 		default:
 		case HU_FONT:
+		case MENU_FONT:
 			spacew = 4;
 			switch (spacing)
 			{
@@ -2671,6 +2674,7 @@ fixed_t V_StringScaledWidth(
 	{
 		default:
 		case HU_FONT:
+		case MENU_FONT:
 		case TINY_FONT:
 		case KART_FONT:
 			lfh = 12;
@@ -2911,6 +2915,18 @@ void V_DrawRightAlignedTimerString(INT32 x, INT32 y, INT32 option, const char *s
 {
 	x -= V_TimerStringWidth(string, option);
 	V_DrawTimerString(x, y, option, string);
+}
+
+void V_DrawCenteredMenuString(INT32 x, INT32 y, INT32 option, const char *string)
+{
+	x -= V_MenuStringWidth(string, option)/2;
+	V_DrawMenuString(x, y, option, string);
+}
+
+void V_DrawRightAlignedMenuString(INT32 x, INT32 y, INT32 option, const char *string)
+{
+	x -= V_MenuStringWidth(string, option);
+	V_DrawMenuString(x, y, option, string);
 }
 
 void V_DrawCenteredGamemodeString(INT32 x, INT32 y, INT32 option, const UINT8 *colormap, const char *string)

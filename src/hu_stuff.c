@@ -255,6 +255,10 @@ void HU_Init(void)
 		PR   ("STCFN");
 		REG;
 
+
+		PR   ("MNUFN");
+		REG;
+
 		PR   ("TNYFN");
 		REG;
 

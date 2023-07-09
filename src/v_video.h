@@ -374,6 +374,15 @@ void V_DrawProfileNum(INT32 x, INT32 y, INT32 flags, UINT8 num);
 void V_DrawCenteredTimerString(INT32 x, INT32 y, INT32 option, const char *string);
 void V_DrawRightAlignedTimerString(INT32 x, INT32 y, INT32 option, const char *string);
 
+#define V_DrawMenuString( x,y,option,string ) \
+	V__DrawDupxString (x,y,FRACUNIT,option,NULL,MENU_FONT,string)
+
+#define V_MenuStringWidth( string,option ) \
+	V__IntegerStringWidth ( FRACUNIT,option,MENU_FONT,string )
+
+void V_DrawCenteredMenuString(INT32 x, INT32 y, INT32 option, const char *string);
+void V_DrawRightAlignedMenuString(INT32 x, INT32 y, INT32 option, const char *string);
+
 #define V_DrawGamemodeString( x,y,option,cm,string ) \
 	V__DrawDupxString (x,y,FRACUNIT,option,cm,GM_FONT,string)
 
