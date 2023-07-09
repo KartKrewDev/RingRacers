@@ -257,8 +257,9 @@ void V_DrawPromptBack(INT32 boxheight, INT32 color);
 INT32 V_DanceYOffset(INT32 counter);
 
 // draw a single character
-void V_DrawCharacter(INT32 x, INT32 y, INT32 c, boolean lowercaseallowed);
-// draw a single character, but for the chat
+void V_DrawCharacterScaled(fixed_t x, fixed_t y, fixed_t scale, INT32 flags, int font, int c, UINT8 *colormap);
+void V_DrawCharacter(INT32 x, INT32 y, INT32 option, boolean lowercase);
+
 void V_DrawChatCharacter(INT32 x, INT32 y, INT32 c, boolean lowercaseallowed, UINT8 *colormap);
 
 UINT8 *V_GetStringColormap(INT32 colorflags);

@@ -1776,54 +1776,113 @@ INT32 V_DanceYOffset(INT32 counter)
 	return abs(step - (duration / 2)) - (duration / 4);
 }
 
-// Writes a single character (draw WHITE if bit 7 set)
-//
-void V_DrawCharacter(INT32 x, INT32 y, INT32 c, boolean lowercaseallowed)
+static boolean V_CharacterValid(font_t *font, int c)
 {
-	INT32 w, flags;
-	const UINT8 *colormap = V_GetStringColormap(c);
-
-	flags = c & ~(V_CHARCOLORMASK | V_PARAMMASK);
-	c &= 0x7f;
-	if (lowercaseallowed)
-		c -= HU_FONTSTART;
-	else
-		c = toupper(c) - HU_FONTSTART;
-	if (c < 0 || c >= HU_FONTSIZE || !fontv[HU_FONT].font[c])
-		return;
-
-	w = fontv[HU_FONT].font[c]->width;
-	if (x + w > vid.width)
-		return;
-
-	if (colormap != NULL)
-		V_DrawMappedPatch(x, y, flags, fontv[HU_FONT].font[c], colormap);
-	else
-		V_DrawScaledPatch(x, y, flags, fontv[HU_FONT].font[c]);
+	return (c >= 0 && c < font->size && font->font[c] != NULL);
 }
 
-// Writes a single character for the chat (half scaled). (draw WHITE if bit 7 set)
-// 16/02/19: Scratch the scaling thing, chat doesn't work anymore under 2x res -Lat'
+// Writes a single character (draw WHITE if bit 7 set)
 //
-void V_DrawChatCharacter(INT32 x, INT32 y, INT32 c, boolean lowercaseallowed, UINT8 *colormap)
+void V_DrawCharacterScaled(
+	fixed_t x,
+	fixed_t y,
+	fixed_t scale,
+	INT32 flags,
+	int fontno,
+	int c,
+	UINT8 *colormap)
 {
-	INT32 w, flags;
-	//const UINT8 *colormap = V_GetStringColormap(c);
+	font_t *font = &fontv[fontno];
+	boolean notColored = false;
 
-	flags = c & ~(V_CHARCOLORMASK | V_PARAMMASK);
-	c &= 0x7f;
-	if (lowercaseallowed)
-		c -= HU_FONTSTART;
-	else
-		c = toupper(c) - HU_FONTSTART;
-	if (c < 0 || c >= HU_FONTSIZE || !fontv[HU_FONT].font[c])
+	const boolean uppercase = !(flags & V_ALLOWLOWERCASE);
+	flags &= ~(V_FLIP); /* These two (V_ALLOWLOWERCASE) share a bit. */
+
+	if (colormap == NULL)
+	{
+		colormap = V_GetStringColormap(( flags & V_CHARCOLORMASK ));
+	}
+
+	notColored = (colormap == NULL);
+
+	flags &= ~(V_CHARCOLORMASK | V_PARAMMASK);
+
+	if (uppercase)
+	{
+		c = toupper(c);
+	}
+	else if (V_CharacterValid(font, c - font->start) == false)
+	{
+		// Try the other case if it doesn't exist
+		if (c >= 'A' && c <= 'Z')
+		{
+			c = tolower(c);
+		}
+		else if (c >= 'a' && c <= 'z')
+		{
+			c = toupper(c);
+		}
+	}
+
+	c -= font->start;
+	if (V_CharacterValid(font, c) == false)
+	{
 		return;
+	}
 
-	w = fontv[HU_FONT].font[c]->width / 2;
-	if (x + w > vid.width)
-		return;
+	if (notColored == true)
+	{
+		if (( c & 0x80 ))
+		{
+			colormap = V_GetStringColormap(
+				( ( c & 0x7f ) << V_CHARCOLORSHIFT ) & V_CHARCOLORMASK
+			);
+		}
+	}
 
-	V_DrawFixedPatch(x*FRACUNIT, y*FRACUNIT, FRACUNIT/2, flags, fontv[HU_FONT].font[c], colormap);
+	V_DrawFixedPatch(
+		x, y,
+		scale,
+		flags,
+		font->font[c],
+		colormap
+	);
+}
+
+void V_DrawCharacter(INT32 x, INT32 y, INT32 c, boolean lowercase)
+{
+	if (lowercase)
+	{
+		c |= V_ALLOWLOWERCASE;
+	}
+
+	V_DrawCharacterScaled(
+		x << FRACBITS,
+		y << FRACBITS,
+		FRACUNIT,
+		(c & ~V_PARAMMASK),
+		HU_FONT,
+		(c & V_PARAMMASK),
+		NULL
+	);
+}
+
+void V_DrawChatCharacter(INT32 x, INT32 y, INT32 c, boolean lowercase, UINT8 *colormap)
+{
+	if (lowercase)
+	{
+		c |= V_ALLOWLOWERCASE;
+	}
+
+	V_DrawCharacterScaled(
+		x << FRACBITS,
+		y << FRACBITS,
+		FRACUNIT >> 1,
+		(c & ~V_PARAMMASK),
+		HU_FONT,
+		(c & V_PARAMMASK),
+		colormap
+	);
 }
 
 // V_TitleCardStringWidth
@@ -2455,13 +2514,30 @@ void V_DrawStringScaled(
 				else if (cx < right)
 				{
 					if (uppercase)
+					{
 						c = toupper(c);
+					}
+					else if (V_CharacterValid(font, c - font->start) == false)
+					{
+						// Try the other case if it doesn't exist
+						if (c >= 'A' && c <= 'Z')
+						{
+							c = tolower(c);
+						}
+						else if (c >= 'a' && c <= 'z')
+						{
+							c = toupper(c);
+						}
+					}
+
 
 					if (dance)
+					{
 						cyoff = V_DanceYOffset(dancecounter) * FRACUNIT;
+					}
 
 					c -= font->start;
-					if (c >= 0 && c < font->size && font->font[c])
+					if (V_CharacterValid(font, c) == true)
 					{
 						cw = SHORT (font->font[c]->width) * dupx;
 						cxoff = (*dim_fn)(scale, chw, hchw, dupx, &cw);
@@ -2713,10 +2789,24 @@ fixed_t V_StringScaledWidth(
 				break;
 			default:
 				if (uppercase)
+				{
 					c = toupper(c);
+				}
+				else if (V_CharacterValid(font, c - font->start) == false)
+				{
+					// Try the other case if it doesn't exist
+					if (c >= 'A' && c <= 'Z')
+					{
+						c = tolower(c);
+					}
+					else if (c >= 'a' && c <= 'z')
+					{
+						c = toupper(c);
+					}
+				}
 
 				c -= font->start;
-				if (c >= 0 && c < font->size && font->font[c])
+				if (V_CharacterValid(font, c) == true)
 				{
 					cw = SHORT (font->font[c]->width) * dupx;
 
