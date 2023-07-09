@@ -16,6 +16,50 @@ namespace srb2
 {
 
 template <typename T, size_t Limit>
+class StaticVec;
+
+// Silly hack to avoid GCC standard library algorithms bogus compile warnings
+template <typename T, size_t Limit>
+class StaticVecIter
+{
+	T* p_;
+
+	StaticVecIter(T* p) noexcept : p_(p) {}
+
+	friend class StaticVec<T, Limit>;
+	friend class StaticVec<typename std::remove_const<T>::type, Limit>;
+
+public:
+	using difference_type = ptrdiff_t;
+	using value_type = T;
+	using pointer = T*;
+	using reference = T&;
+	using iterator_category = std::random_access_iterator_tag;
+
+	T& operator*() const noexcept { return *p_; }
+	T* operator->() const noexcept { return p_; }
+	StaticVecIter& operator++() noexcept { p_++; return *this; }
+	StaticVecIter operator++(int) noexcept { StaticVecIter copy = *this; ++(*this); return copy; }
+	StaticVecIter& operator--() noexcept { p_--; return *this; }
+	StaticVecIter operator--(int) noexcept { StaticVecIter copy = *this; --(*this); return copy; }
+	StaticVecIter& operator+=(ptrdiff_t ofs) noexcept { p_ += ofs; return *this; }
+	StaticVecIter& operator-=(ptrdiff_t ofs) noexcept { p_ -= ofs; return *this; }
+	T& operator[](ptrdiff_t ofs) noexcept { return *(p_ + ofs); }
+
+	friend ptrdiff_t operator+(const StaticVecIter& lhs, const StaticVecIter& rhs) noexcept { return lhs.p_ + rhs.p_; }
+	friend ptrdiff_t operator-(const StaticVecIter& lhs, const StaticVecIter& rhs) noexcept { return lhs.p_ - rhs.p_; }
+	friend StaticVecIter operator+(const StaticVecIter& lhs, ptrdiff_t rhs) noexcept { return lhs.p_ + rhs; }
+	friend StaticVecIter operator-(const StaticVecIter& lhs, ptrdiff_t rhs) noexcept { return lhs.p_ - rhs; }
+
+	friend bool operator==(const StaticVecIter& lhs, const StaticVecIter& rhs) noexcept { return lhs.p_ == rhs.p_; }
+	friend bool operator!=(const StaticVecIter& lhs, const StaticVecIter& rhs) noexcept { return !(lhs.p_ == rhs.p_); }
+	friend bool operator>(const StaticVecIter& lhs, const StaticVecIter& rhs) noexcept { return lhs.p_ > rhs.p_; }
+	friend bool operator<=(const StaticVecIter& lhs, const StaticVecIter& rhs) noexcept { return !(lhs.p_ > rhs.p_); }
+	friend bool operator<(const StaticVecIter& lhs, const StaticVecIter& rhs) noexcept { return lhs.p_ < rhs.p_; }
+	friend bool operator>=(const StaticVecIter& lhs, const StaticVecIter& rhs) noexcept { return !(lhs.p_ < rhs.p_); }
+};
+
+template <typename T, size_t Limit>
 class StaticVec
 {
 	std::array<T, Limit> arr_ {{}};
@@ -138,25 +182,25 @@ public:
 		size_ = 0;
 	}
 
-	constexpr T* begin() noexcept { return &arr_[0]; }
+	constexpr StaticVecIter<T, Limit> begin() noexcept { return &arr_[0]; }
 
-	constexpr const T* begin() const noexcept { return cbegin(); }
+	constexpr StaticVecIter<const T, Limit> begin() const noexcept { return cbegin(); }
 
-	constexpr const T* cbegin() const noexcept { return &arr_[0]; }
+	constexpr StaticVecIter<const T, Limit> cbegin() const noexcept { return &arr_[0]; }
 
-	constexpr T* end() noexcept { return &arr_[size_]; }
+	constexpr StaticVecIter<T, Limit> end() noexcept { return &arr_[size_]; }
 
-	constexpr const T* end() const noexcept { return cend(); }
+	constexpr StaticVecIter<const T, Limit> end() const noexcept { return cend(); }
 
-	constexpr const T* cend() const noexcept { return &arr_[size_]; }
+	constexpr StaticVecIter<const T, Limit> cend() const noexcept { return &arr_[size_]; }
 
-	constexpr std::reverse_iterator<T*> rbegin() noexcept { return &arr_[size_]; }
+	constexpr std::reverse_iterator<StaticVecIter<T, Limit>> rbegin() noexcept { return &arr_[size_]; }
 
-	constexpr std::reverse_iterator<const T*> crbegin() const noexcept { return &arr_[size_]; }
+	constexpr std::reverse_iterator<StaticVecIter<const T, Limit>> crbegin() const noexcept { return &arr_[size_]; }
 
-	constexpr std::reverse_iterator<T*> rend() noexcept { return &arr_[0]; }
+	constexpr std::reverse_iterator<StaticVecIter<T, Limit>> rend() noexcept { return &arr_[0]; }
 
-	constexpr std::reverse_iterator<const T*> crend() const noexcept { return &arr_[0]; }
+	constexpr std::reverse_iterator<StaticVecIter<const T, Limit>> crend() const noexcept { return &arr_[0]; }
 
 	constexpr bool empty() const noexcept { return size_ == 0; }
 
