@@ -2165,7 +2165,7 @@ void S_ShowMusicCredit(void)
 			}
 		}
 
-		widthused -= V_ThinStringWidth(credittext, V_ALLOWLOWERCASE|V_6WIDTHSPACE);
+		widthused -= V_ThinStringWidth(credittext, V_6WIDTHSPACE);
 
 #define MUSICCREDITAPPEND(field)\
 		if (field)\
@@ -2174,7 +2174,7 @@ void S_ShowMusicCredit(void)
 			worklen = strlen(work);\
 			if (worklen <= len)\
 			{\
-				workwidth = V_ThinStringWidth(work, V_ALLOWLOWERCASE|V_6WIDTHSPACE);\
+				workwidth = V_ThinStringWidth(work, V_6WIDTHSPACE);\
 				if (widthused >= workwidth)\
 				{\
 					strncat(credittext, work, len);\

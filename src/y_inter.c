@@ -573,13 +573,13 @@ void Y_PlayerStandingsDrawer(y_data_t *standings, INT32 xoffset)
 					_isHighlightedPlayer(&players[pnum])
 						? hilicol
 						: 0
-				)|V_ALLOWLOWERCASE|V_6WIDTHSPACE,
+				)|V_6WIDTHSPACE,
 				player_names[pnum]
 			);
 
 			V_DrawRightAlignedThinString(
 				x+118, y-2,
-				V_ALLOWLOWERCASE|V_6WIDTHSPACE,
+				V_6WIDTHSPACE,
 				standings->strval[i]
 			);
 
@@ -622,7 +622,7 @@ void Y_PlayerStandingsDrawer(y_data_t *standings, INT32 xoffset)
 					{
 						V_DrawThinString(
 							x2, y-2,
-							V_ALLOWLOWERCASE|V_6WIDTHSPACE,
+							V_6WIDTHSPACE,
 							increasenum
 						);
 					}
@@ -630,7 +630,7 @@ void Y_PlayerStandingsDrawer(y_data_t *standings, INT32 xoffset)
 					{
 						V_DrawRightAlignedThinString(
 							x2, y-2,
-							V_ALLOWLOWERCASE|V_6WIDTHSPACE,
+							V_6WIDTHSPACE,
 							increasenum
 						);
 					}
@@ -1397,7 +1397,7 @@ skiptallydrawer:
 	{
 		if (speedscramble != -1 && speedscramble != gamespeed)
 		{
-			V_DrawCenteredThinString(BASEVIDWIDTH/2, 154, highlightflags|V_ALLOWLOWERCASE|V_SNAPTOBOTTOM,
+			V_DrawCenteredThinString(BASEVIDWIDTH/2, 154, highlightflags|V_SNAPTOBOTTOM,
 				va(M_GetText("Next race will be %s Speed!"), kartspeed_cons_t[1+speedscramble].strvalue));
 		}
 	}
@@ -1414,13 +1414,13 @@ finalcounter:
 					INT32 buttony = 2;
 					
 					K_drawButtonAnim(buttonx - 76, buttony, 0, kp_button_b[1], replayprompttic);
-					V_DrawRightAlignedThinString(buttonx - 55, buttony, V_ALLOWLOWERCASE|V_6WIDTHSPACE|highlightflags, "or");
+					V_DrawRightAlignedThinString(buttonx - 55, buttony, V_6WIDTHSPACE|highlightflags, "or");
 					K_drawButtonAnim(buttonx - 55, buttony, 0, kp_button_x[1], replayprompttic);
-					V_DrawRightAlignedThinString(buttonx - 2, buttony, V_ALLOWLOWERCASE|V_6WIDTHSPACE|highlightflags, "Save replay");
+					V_DrawRightAlignedThinString(buttonx - 2, buttony, V_6WIDTHSPACE|highlightflags, "Save replay");
 					break;	
 				}
 				case DSM_SAVED:
-					V_DrawRightAlignedThinString(BASEVIDWIDTH - 2, 2, V_ALLOWLOWERCASE|V_6WIDTHSPACE|highlightflags, "Replay saved!");
+					V_DrawRightAlignedThinString(BASEVIDWIDTH - 2, 2, V_6WIDTHSPACE|highlightflags, "Replay saved!");
 					break;
 
 				case DSM_TITLEENTRY:

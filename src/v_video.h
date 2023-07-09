@@ -175,7 +175,7 @@ void V_CubeApply(RGBA_t *input);
 #define V_SNAPTOLEFT         0x04000000 // for centering
 #define V_SNAPTORIGHT        0x08000000 // for centering
 
-#define V_ALLOWLOWERCASE     0x10000000 // (strings only) allow fonts that have lowercase letters to use them
+#define V_FORCEUPPERCASE     0x10000000 // (strings only) prevents fonts that have lowercase letters from using them
 #define V_FLIP               0x10000000 // (patches only) Horizontal flip
 #define V_SLIDEIN            0x20000000 // Slide in from the sides on level load, depending on snap flags
 
@@ -341,7 +341,7 @@ void V_DrawRightAlignedThinStringAtFixed(fixed_t x, fixed_t y, INT32 option, con
 // Draws a titlecard font string.
 // timer: when the letters start appearing (leave to 0 to disable)
 // threshold: when the letters start disappearing (leave to 0 to disable) (both are INT32 in case you supply negative values...)
-// NOTE: This function ignores most conventional string flags (V_RETURN8, V_ALLOWLOWERCASE ...)
+// NOTE: This function ignores most conventional string flags (V_RETURN8, V_FORCEUPPERCASE ...)
 // NOTE: This font only works with uppercase letters.
 void V_DrawTitleCardString(INT32 x, INT32 y, const char *str, INT32 flags, boolean bossmode, INT32 timer, INT32 threshold);
 

@@ -1487,9 +1487,9 @@ static void K_drawKartItem(void)
 			if (offset)
 			{
 				if (flipamount) // reminder that this is for 3/4p's right end of the screen.
-					V_DrawString(fx+2, fy+31, V_ALLOWLOWERCASE|V_HUDTRANS|V_SLIDEIN|fflags, va("x%d", stplyr->itemamount));
+					V_DrawString(fx+2, fy+31, V_HUDTRANS|V_SLIDEIN|fflags, va("x%d", stplyr->itemamount));
 				else
-					V_DrawString(fx+24, fy+31, V_ALLOWLOWERCASE|V_HUDTRANS|V_SLIDEIN|fflags, va("x%d", stplyr->itemamount));
+					V_DrawString(fx+24, fy+31, V_HUDTRANS|V_SLIDEIN|fflags, va("x%d", stplyr->itemamount));
 			}
 			else
 			{
@@ -3288,7 +3288,7 @@ static void K_DrawTypingNotifier(fixed_t x, fixed_t y, player_t *p)
 static void K_DrawNameTagForPlayer(fixed_t x, fixed_t y, player_t *p)
 {
 	const INT32 clr = skincolors[p->skincolor].chatcolor;
-	const INT32 namelen = V_ThinStringWidth(player_names[p - players], V_6WIDTHSPACE|V_ALLOWLOWERCASE);
+	const INT32 namelen = V_ThinStringWidth(player_names[p - players], V_6WIDTHSPACE);
 
 	UINT8 *colormap = V_GetStringColormap(clr);
 	INT32 barx = 0, bary = 0, barw = 0;
@@ -3336,7 +3336,7 @@ static void K_DrawNameTagForPlayer(fixed_t x, fixed_t y, player_t *p)
 	V_DrawFixedPatch(x, y, FRACUNIT, 0, kp_nametagstem, colormap);
 
 	// Draw the name itself
-	V_DrawThinStringAtFixed(x + (5*FRACUNIT), y - (26*FRACUNIT), V_6WIDTHSPACE|V_ALLOWLOWERCASE|clr, player_names[p - players]);
+	V_DrawThinStringAtFixed(x + (5*FRACUNIT), y - (26*FRACUNIT), V_6WIDTHSPACE|clr, player_names[p - players]);
 }
 
 typedef struct weakspotdraw_t
@@ -5116,7 +5116,7 @@ static void K_DrawDirectorButton(INT32 idx, const char *label, patch_t *kp[2], I
 		}
 	}
 
-	textflags |= (flags | V_6WIDTHSPACE | V_ALLOWLOWERCASE);
+	textflags |= (flags | V_6WIDTHSPACE);
 
 	K_drawButtonAnim(x, y - 4, flags, kp, leveltime);
 	V_DrawRightAlignedThinString(x - 2, y, textflags, label);
@@ -5209,7 +5209,7 @@ static void K_drawDistributionDebugger(void)
 				x + (18 * scale),
 				y + (23 * scale),
 				scale, FRACUNIT, FRACUNIT,
-				V_ALLOWLOWERCASE|V_SNAPTOTOP,
+				V_SNAPTOTOP,
 				NULL, HU_FONT,
 				va("x%d", amount)
 			);
@@ -5218,15 +5218,15 @@ static void K_drawDistributionDebugger(void)
 		y += space;
 	}
 
-	V_DrawString((x >> FRACBITS) + 20, 2, V_ALLOWLOWERCASE|V_SNAPTOTOP, va("useOdds[%u]", rouletteData.useOdds));
-	V_DrawString((x >> FRACBITS) + 20, 10, V_ALLOWLOWERCASE|V_SNAPTOTOP, va("speed = %u", rouletteData.speed));
+	V_DrawString((x >> FRACBITS) + 20, 2, V_SNAPTOTOP, va("useOdds[%u]", rouletteData.useOdds));
+	V_DrawString((x >> FRACBITS) + 20, 10, V_SNAPTOTOP, va("speed = %u", rouletteData.speed));
 
-	V_DrawString((x >> FRACBITS) + 20, 22, V_ALLOWLOWERCASE|V_SNAPTOTOP, va("baseDist = %u", rouletteData.baseDist));
-	V_DrawString((x >> FRACBITS) + 20, 30, V_ALLOWLOWERCASE|V_SNAPTOTOP, va("dist = %u", rouletteData.dist));
+	V_DrawString((x >> FRACBITS) + 20, 22, V_SNAPTOTOP, va("baseDist = %u", rouletteData.baseDist));
+	V_DrawString((x >> FRACBITS) + 20, 30, V_SNAPTOTOP, va("dist = %u", rouletteData.dist));
 
-	V_DrawString((x >> FRACBITS) + 20, 42, V_ALLOWLOWERCASE|V_SNAPTOTOP, va("firstDist = %u", rouletteData.firstDist));
-	V_DrawString((x >> FRACBITS) + 20, 50, V_ALLOWLOWERCASE|V_SNAPTOTOP, va("secondDist = %u", rouletteData.secondDist));
-	V_DrawString((x >> FRACBITS) + 20, 58, V_ALLOWLOWERCASE|V_SNAPTOTOP, va("secondToFirst = %u", rouletteData.secondToFirst));
+	V_DrawString((x >> FRACBITS) + 20, 42, V_SNAPTOTOP, va("firstDist = %u", rouletteData.firstDist));
+	V_DrawString((x >> FRACBITS) + 20, 50, V_SNAPTOTOP, va("secondDist = %u", rouletteData.secondDist));
+	V_DrawString((x >> FRACBITS) + 20, 58, V_SNAPTOTOP, va("secondToFirst = %u", rouletteData.secondToFirst));
 
 #ifndef ITEM_LIST_SIZE
 	Z_Free(rouletteData.itemList);
@@ -5350,19 +5350,19 @@ static void K_DrawGPRankDebugger(void)
 
 	grade = K_CalculateGPGrade(&grandprixinfo.rank);
 
-	V_DrawThinString(0, 0, V_SNAPTOTOP|V_SNAPTOLEFT|V_6WIDTHSPACE|V_ALLOWLOWERCASE,
+	V_DrawThinString(0, 0, V_SNAPTOTOP|V_SNAPTOLEFT|V_6WIDTHSPACE,
 		va("POS: %d / %d", grandprixinfo.rank.position, RANK_NEUTRAL_POSITION));
-	V_DrawThinString(0, 10, V_SNAPTOTOP|V_SNAPTOLEFT|V_6WIDTHSPACE|V_ALLOWLOWERCASE,
+	V_DrawThinString(0, 10, V_SNAPTOTOP|V_SNAPTOLEFT|V_6WIDTHSPACE,
 		va("PTS: %d / %d", grandprixinfo.rank.winPoints, grandprixinfo.rank.totalPoints));
-	V_DrawThinString(0, 20, V_SNAPTOTOP|V_SNAPTOLEFT|V_6WIDTHSPACE|V_ALLOWLOWERCASE,
+	V_DrawThinString(0, 20, V_SNAPTOTOP|V_SNAPTOLEFT|V_6WIDTHSPACE,
 		va("LAPS: %d / %d", grandprixinfo.rank.laps, grandprixinfo.rank.totalLaps));
-	V_DrawThinString(0, 30, V_SNAPTOTOP|V_SNAPTOLEFT|V_6WIDTHSPACE|V_ALLOWLOWERCASE,
+	V_DrawThinString(0, 30, V_SNAPTOTOP|V_SNAPTOLEFT|V_6WIDTHSPACE,
 		va("CONTINUES: %d", grandprixinfo.rank.continuesUsed));
-	V_DrawThinString(0, 40, V_SNAPTOTOP|V_SNAPTOLEFT|V_6WIDTHSPACE|V_ALLOWLOWERCASE,
+	V_DrawThinString(0, 40, V_SNAPTOTOP|V_SNAPTOLEFT|V_6WIDTHSPACE,
 		va("PRISONS: %d / %d", grandprixinfo.rank.prisons, grandprixinfo.rank.totalPrisons));
-	V_DrawThinString(0, 50, V_SNAPTOTOP|V_SNAPTOLEFT|V_6WIDTHSPACE|V_ALLOWLOWERCASE,
+	V_DrawThinString(0, 50, V_SNAPTOTOP|V_SNAPTOLEFT|V_6WIDTHSPACE,
 		va("RINGS: %d / %d", grandprixinfo.rank.rings, grandprixinfo.rank.totalRings));
-	V_DrawThinString(0, 60, V_SNAPTOTOP|V_SNAPTOLEFT|V_6WIDTHSPACE|V_ALLOWLOWERCASE,
+	V_DrawThinString(0, 60, V_SNAPTOTOP|V_SNAPTOLEFT|V_6WIDTHSPACE,
 		va("EMERALD: %s", (grandprixinfo.rank.specialWon == true) ? "YES" : "NO"));
 
 	switch (grade)
@@ -5376,7 +5376,7 @@ static void K_DrawGPRankDebugger(void)
 		default: { break; }
 	}
 
-	V_DrawThinString(0, 90, V_SNAPTOTOP|V_SNAPTOLEFT|V_6WIDTHSPACE|V_ALLOWLOWERCASE|V_YELLOWMAP,
+	V_DrawThinString(0, 90, V_SNAPTOTOP|V_SNAPTOLEFT|V_6WIDTHSPACE|V_YELLOWMAP,
 		va(" ** FINAL GRADE: %c", gradeChar));
 }
 

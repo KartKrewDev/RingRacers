@@ -542,42 +542,42 @@ void K_CeremonyDrawer(void)
 			{
 				case 1:
 				{
-					V_DrawString(x, y, V_ALLOWLOWERCASE,
+					V_DrawString(x, y, 0,
 						va("POS: %d / %d", podiumData.rank.position, RANK_NEUTRAL_POSITION)
 					);
 					break;
 				}
 				case 2:
 				{
-					V_DrawString(x, y, V_ALLOWLOWERCASE,
+					V_DrawString(x, y, 0,
 						va("PTS: %d / %d", podiumData.rank.winPoints, podiumData.rank.totalPoints)
 					);
 					break;
 				}
 				case 3:
 				{
-					V_DrawString(x, y, V_ALLOWLOWERCASE,
+					V_DrawString(x, y, 0,
 						va("LAPS: %d / %d", podiumData.rank.laps, podiumData.rank.totalLaps)
 					);
 					break;
 				}
 				case 4:
 				{
-					V_DrawString(x, y, V_ALLOWLOWERCASE,
+					V_DrawString(x, y, 0,
 						va("CONTINUES: %d", podiumData.rank.continuesUsed)
 					);
 					break;
 				}
 				case 5:
 				{
-					V_DrawString(x, y, V_ALLOWLOWERCASE,
+					V_DrawString(x, y, 0,
 						va("PRISONS: %d / %d", podiumData.rank.prisons, podiumData.rank.totalPrisons)
 					);
 					break;
 				}
 				case 6:
 				{
-					V_DrawString(x, y, V_ALLOWLOWERCASE,
+					V_DrawString(x, y, 0,
 						va("RINGS: %d / %d", podiumData.rank.rings, podiumData.rank.totalRings)
 					);
 					break;
@@ -595,7 +595,7 @@ void K_CeremonyDrawer(void)
 								: "PRIZE";
 					}
 
-					V_DrawString(x, y, V_ALLOWLOWERCASE,
+					V_DrawString(x, y, 0,
 						va("%s: %s",
 							emeraldstr,
 							(podiumData.rank.specialWon == true) ? "YES" : "NO")
@@ -604,14 +604,14 @@ void K_CeremonyDrawer(void)
 				}
 				case 8:
 				{
-					V_DrawString(x, y + 10, V_YELLOWMAP|V_ALLOWLOWERCASE,
+					V_DrawString(x, y + 10, V_YELLOWMAP,
 						va(" ** FINAL GRADE: %c", gradeChar)
 					);
 					break;
 				}
 				case 9:
 				{
-					V_DrawThinString(2, BASEVIDHEIGHT - 10, V_SNAPTOBOTTOM|V_SNAPTOLEFT|V_6WIDTHSPACE|V_ALLOWLOWERCASE,
+					V_DrawThinString(2, BASEVIDHEIGHT - 10, V_SNAPTOBOTTOM|V_SNAPTOLEFT|V_6WIDTHSPACE,
 						"Press some button type deal to continue"
 					);
 					break;

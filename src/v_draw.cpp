@@ -128,7 +128,7 @@ int Draw::font_to_fontno(Font font)
 
 INT32 Draw::default_font_flags(Font font)
 {
-	INT32 flags = V_ALLOWLOWERCASE;
+	INT32 flags = 0;
 
 	if (font == Font::kThin)
 	{

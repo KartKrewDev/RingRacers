@@ -104,7 +104,7 @@ void AVRecorder::draw_statistics() const
 		V_DrawThinString(
 			x,
 			190,
-			(V_6WIDTHSPACE | V_ALLOWLOWERCASE | V_SNAPTOBOTTOM | V_SNAPTORIGHT) | flags,
+			(V_6WIDTHSPACE | V_SNAPTOBOTTOM | V_SNAPTORIGHT) | flags,
 			text.c_str()
 		);
 	};

@@ -1795,8 +1795,8 @@ void V_DrawCharacterScaled(
 	font_t *font = &fontv[fontno];
 	boolean notColored = false;
 
-	const boolean uppercase = !(flags & V_ALLOWLOWERCASE);
-	flags &= ~(V_FLIP); /* These two (V_ALLOWLOWERCASE) share a bit. */
+	const boolean uppercase = ((flags & V_FORCEUPPERCASE) == V_FORCEUPPERCASE);
+	flags &= ~(V_FLIP); /* These two (V_FORCEUPPERCASE) share a bit. */
 
 	if (colormap == NULL)
 	{
@@ -1851,9 +1851,10 @@ void V_DrawCharacterScaled(
 
 void V_DrawCharacter(INT32 x, INT32 y, INT32 c, boolean lowercase)
 {
-	if (lowercase)
+	// Backwards compatibility
+	if (lowercase == false)
 	{
-		c |= V_ALLOWLOWERCASE;
+		c |= V_FORCEUPPERCASE;
 	}
 
 	V_DrawCharacterScaled(
@@ -1869,9 +1870,10 @@ void V_DrawCharacter(INT32 x, INT32 y, INT32 c, boolean lowercase)
 
 void V_DrawChatCharacter(INT32 x, INT32 y, INT32 c, boolean lowercase, UINT8 *colormap)
 {
-	if (lowercase)
+	// Backwards compatibility
+	if (lowercase == false)
 	{
-		c |= V_ALLOWLOWERCASE;
+		c |= V_FORCEUPPERCASE;
 	}
 
 	V_DrawCharacterScaled(
@@ -2086,7 +2088,7 @@ char *V_WordWrap(INT32 x, INT32 w, INT32 option, const char *string)
 			continue;
 		}
 
-		if (!(option & V_ALLOWLOWERCASE))
+		if (!!(option & V_FORCEUPPERCASE))
 			c = toupper(c);
 		c -= HU_FONTSTART;
 
@@ -2257,8 +2259,8 @@ void V_DrawStringScaled(
 
 	int c;
 
-	uppercase  = !( flags & V_ALLOWLOWERCASE );
-	flags	&= ~(V_FLIP);/* These two (V_ALLOWLOWERCASE) share a bit. */
+	uppercase  = ((flags & V_FORCEUPPERCASE) == V_FORCEUPPERCASE);
+	flags	&= ~(V_FLIP);/* These two (V_FORCEUPPERCASE) share a bit. */
 
 	dance           = (flags & V_STRINGDANCE) != 0;
 	nodanceoverride = !dance;
@@ -2584,8 +2586,8 @@ fixed_t V_StringScaledWidth(
 
 	fixed_t fullwidth = 0;
 
-	uppercase  = !( flags & V_ALLOWLOWERCASE );
-	flags	&= ~(V_FLIP);/* These two (V_ALLOWLOWERCASE) share a bit. */
+	uppercase  = ((flags & V_FORCEUPPERCASE) == V_FORCEUPPERCASE);
+	flags	&= ~(V_FLIP);/* These two (V_FORCEUPPERCASE) share a bit. */
 
 	font       = &fontv[fontno];
 

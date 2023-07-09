@@ -123,7 +123,7 @@ static void M_DrawPerfString(perfstatcol_t *col, int type)
 	int value;
 
 	if (hires)
-		draw_flags |= V_ALLOWLOWERCASE;
+		draw_flags |= 0;
 
 	for (row = col->rows; row->lores_label; ++row)
 	{
@@ -476,7 +476,7 @@ static void M_DrawTickStats(void)
 
 	if (M_HighResolution())
 	{
-		V_DrawSmallString(212, 10, V_MONOSPACE | V_ALLOWLOWERCASE | V_PURPLEMAP, "Calls:");
+		V_DrawSmallString(212, 10, V_MONOSPACE | V_PURPLEMAP, "Calls:");
 
 		draw_row = 15;
 	}
@@ -507,7 +507,7 @@ void M_DrawPerfStats(void)
 		if (vid.width < 640 || vid.height < 400) // low resolution
 		{
 			// it's not gonna fit very well..
-			V_DrawThinString(30, 30, V_MONOSPACE | V_ALLOWLOWERCASE | V_YELLOWMAP, "Not available for resolutions below 640x400");
+			V_DrawThinString(30, 30, V_MONOSPACE | V_YELLOWMAP, "Not available for resolutions below 640x400");
 		}
 		else // high resolution
 		{
@@ -526,10 +526,10 @@ void M_DrawPerfStats(void)
 				}
 
 				snprintf(s, sizeof s - 1, "Bot %d (%s):", i + 1, player_names[i]);
-				V_DrawSmallString(x, y, V_MONOSPACE | V_ALLOWLOWERCASE | V_GRAYMAP, s);
+				V_DrawSmallString(x, y, V_MONOSPACE | V_GRAYMAP, s);
 
 				snprintf(s, sizeof s - 1, "%ld", (long)((ps_bots[i].total) / (I_GetPrecisePrecision() / 1000000)));
-				V_DrawRightAlignedSmallString(x + 98, y, V_MONOSPACE | V_ALLOWLOWERCASE | V_GRAYMAP, s);
+				V_DrawRightAlignedSmallString(x + 98, y, V_MONOSPACE | V_GRAYMAP, s);
 
 				y += 4; // repeated code!
 				if (y > 192)
@@ -541,10 +541,10 @@ void M_DrawPerfStats(void)
 				}
 
 				snprintf(s, sizeof s - 1, "Prediction:");
-				V_DrawSmallString(x, y, V_MONOSPACE | V_ALLOWLOWERCASE | V_YELLOWMAP, s);
+				V_DrawSmallString(x, y, V_MONOSPACE | V_YELLOWMAP, s);
 
 				snprintf(s, sizeof s - 1, "%ld", (long)((ps_bots[i].prediction) / (I_GetPrecisePrecision() / 1000000)));
-				V_DrawRightAlignedSmallString(x + 98, y, V_MONOSPACE | V_ALLOWLOWERCASE, s);
+				V_DrawRightAlignedSmallString(x + 98, y, V_MONOSPACE, s);
 
 				y += 4; // repeated code!
 				if (y > 192)
@@ -556,10 +556,10 @@ void M_DrawPerfStats(void)
 				}
 
 				snprintf(s, sizeof s - 1, "Nudge:");
-				V_DrawSmallString(x, y, V_MONOSPACE | V_ALLOWLOWERCASE | V_YELLOWMAP, s);
+				V_DrawSmallString(x, y, V_MONOSPACE | V_YELLOWMAP, s);
 
 				snprintf(s, sizeof s - 1, "%ld", (long)((ps_bots[i].nudge) / (I_GetPrecisePrecision() / 1000000)));
-				V_DrawRightAlignedSmallString(x + 98, y, V_MONOSPACE | V_ALLOWLOWERCASE, s);
+				V_DrawRightAlignedSmallString(x + 98, y, V_MONOSPACE, s);
 
 				y += 4; // repeated code!
 				if (y > 192)
@@ -571,10 +571,10 @@ void M_DrawPerfStats(void)
 				}
 
 				snprintf(s, sizeof s - 1, "Item:");
-				V_DrawSmallString(x, y, V_MONOSPACE | V_ALLOWLOWERCASE | V_YELLOWMAP, s);
+				V_DrawSmallString(x, y, V_MONOSPACE | V_YELLOWMAP, s);
 
 				snprintf(s, sizeof s - 1, "%ld", (long)((ps_bots[i].item) / (I_GetPrecisePrecision() / 1000000)));
-				V_DrawRightAlignedSmallString(x + 98, y, V_MONOSPACE | V_ALLOWLOWERCASE, s);
+				V_DrawRightAlignedSmallString(x + 98, y, V_MONOSPACE, s);
 
 				y += 4; // repeated code!
 				if (y > 192)
@@ -586,11 +586,11 @@ void M_DrawPerfStats(void)
 				}
 
 				snprintf(s, sizeof s - 1, "Other:");
-				V_DrawSmallString(x, y, V_MONOSPACE | V_ALLOWLOWERCASE | V_YELLOWMAP, s);
+				V_DrawSmallString(x, y, V_MONOSPACE | V_YELLOWMAP, s);
 
 				otherTime = ps_bots[i].total - ps_bots[i].prediction - ps_bots[i].nudge - ps_bots[i].item;
 				snprintf(s, sizeof s - 1, "%ld", (long)(otherTime / (I_GetPrecisePrecision() / 1000000)));
-				V_DrawRightAlignedSmallString(x + 98, y, V_MONOSPACE | V_ALLOWLOWERCASE, s);
+				V_DrawRightAlignedSmallString(x + 98, y, V_MONOSPACE, s);
 
 				y += 4; // repeated code!
 				if (y > 192)
@@ -621,7 +621,7 @@ void M_DrawPerfStats(void)
 		if (vid.width < 640 || vid.height < 400) // low resolution
 		{
 			// it's not gonna fit very well..
-			V_DrawThinString(30, 30, V_MONOSPACE | V_ALLOWLOWERCASE | V_YELLOWMAP, "Not available for resolutions below 640x400");
+			V_DrawThinString(30, 30, V_MONOSPACE | V_YELLOWMAP, "Not available for resolutions below 640x400");
 		}
 		else // high resolution
 		{
@@ -664,7 +664,7 @@ void M_DrawPerfStats(void)
 						if (len > 25)
 							tempstr += len - 25;
 						snprintf(s, sizeof s - 1, "%s", tempstr);
-						V_DrawSmallString(x, y, V_MONOSPACE | V_ALLOWLOWERCASE | V_GRAYMAP, s);
+						V_DrawSmallString(x, y, V_MONOSPACE | V_GRAYMAP, s);
 						y += 4; // repeated code!
 						if (y > 192)
 						{
@@ -689,7 +689,7 @@ void M_DrawPerfStats(void)
 				if (len > 20)
 					str += len - 20;
 				snprintf(s, sizeof s - 1, "%20s: %ld", str, (long)((thinkframe_hooks[i].time_taken) / (I_GetPrecisePrecision() / 1000000)));
-				V_DrawSmallString(x, y, V_MONOSPACE | V_ALLOWLOWERCASE | text_color, s);
+				V_DrawSmallString(x, y, V_MONOSPACE | text_color, s);
 				y += 4; // repeated code!
 				if (y > 192)
 				{
