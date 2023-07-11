@@ -2276,6 +2276,12 @@ static void V_GetFontSpecification(int fontno, INT32 flags, fontspec_t *result)
 			else
 				result->dim_fn = VariableCharacterDim;
 			break;
+		case HU_FONT:
+			if (result->chw)
+				result->dim_fn = CenteredCharacterDim;
+			else
+				result->dim_fn = BunchedCharacterDim;
+			break;
 		case KART_FONT:
 			if (result->chw)
 				result->dim_fn = FixedCharacterDim;
