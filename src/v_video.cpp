@@ -2680,6 +2680,8 @@ void V_ScaledWordWrap(
 
 	for (; ( c = newstring[i] ); ++i)
 	{
+		right = 0;
+
 		switch (c)
 		{
 			case '\n':
