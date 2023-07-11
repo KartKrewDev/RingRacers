@@ -2217,6 +2217,181 @@ static inline fixed_t LSTitleCharacterDim(
 	return 0;
 }
 
+typedef struct
+{
+	fixed_t    chw;
+	fixed_t spacew;
+	fixed_t    lfh;
+	fixed_t (*dim_fn)(fixed_t,fixed_t,INT32,INT32,fixed_t *);
+} fontspec_t;
+
+static void V_GetFontSpecification(int fontno, INT32 flags, fontspec_t *result)
+{
+	/*
+	Hardcoded until a better system can be implemented
+	for determining how fonts space.
+	*/
+
+	// All other properties are guaranteed to be set
+	result->chw = 0;
+
+	const INT32 spacing = ( flags & V_SPACINGMASK );
+
+	switch (fontno)
+	{
+		default:
+		case HU_FONT:
+		case MENU_FONT:
+			result->spacew = 4;
+			switch (spacing)
+			{
+				case V_MONOSPACE:
+					result->spacew = 8;
+					/* FALLTHRU */
+				case V_OLDSPACING:
+					result->chw    = 8;
+					break;
+				case V_6WIDTHSPACE:
+					result->spacew = 6;
+			}
+			break;
+		case TINY_FONT:
+			result->spacew = 2;
+			switch (spacing)
+			{
+				case V_MONOSPACE:
+					result->spacew = 5;
+					/* FALLTHRU */
+				case V_OLDSPACING:
+					result->chw    = 5;
+					break;
+				// Out of video flags, so we're reusing this for alternate charwidth instead
+				/*case V_6WIDTHSPACE:
+				  result->spacewidth = 3;*/
+			}
+			break;
+		case LT_FONT:
+			result->spacew = 12;
+			break;
+		case CRED_FONT:
+			result->spacew = 16;
+			break;
+		case KART_FONT:
+			result->spacew = 3;
+			switch (spacing)
+			{
+				case V_MONOSPACE:
+					result->spacew = 12;
+					/* FALLTHRU */
+				case V_OLDSPACING:
+					result->chw    = 12;
+					break;
+				case V_6WIDTHSPACE:
+					result->spacew = 6;
+			}
+			break;
+		case GM_FONT:
+			result->spacew = 6;
+			break;
+		case FILE_FONT:
+			result->spacew = 0;
+			break;
+		case LSHI_FONT:
+		case LSLOW_FONT:
+			result->spacew = 10;
+			break;
+		case OPPRF_FONT:
+			result->spacew = 5;
+			break;
+		case PINGF_FONT:
+			result->spacew = 3;
+			break;
+	}
+
+	switch (fontno)
+	{
+		default:
+		case HU_FONT:
+		case MENU_FONT:
+		case TINY_FONT:
+		case KART_FONT:
+			result->lfh = 12;
+			break;
+		case LT_FONT:
+		case CRED_FONT:
+		case FILE_FONT:
+			result->lfh    = 12;
+			break;
+		case GM_FONT:
+			result->lfh    = 32;
+			break;
+		case LSHI_FONT:
+			result->lfh    = 56;
+			break;
+		case LSLOW_FONT:
+			result->lfh    = 38;
+			break;
+		case OPPRF_FONT:
+		case PINGF_FONT:
+			result->lfh = 10;
+			break;
+	}
+
+	switch (fontno)
+	{
+		default:
+			if (result->chw)
+				result->dim_fn = CenteredCharacterDim;
+			else
+				result->dim_fn = VariableCharacterDim;
+			break;
+		case KART_FONT:
+			if (result->chw)
+				result->dim_fn = FixedCharacterDim;
+			else
+				result->dim_fn = BunchedCharacterDim;
+			break;
+		case TINY_FONT:
+			if (result->chw)
+				result->dim_fn = FixedCharacterDim;
+			else
+			{
+				/* Reuse this flag for the alternate bunched-up spacing. */
+				if (( flags & V_6WIDTHSPACE ))
+					result->dim_fn = BunchedCharacterDim;
+				else
+					result->dim_fn = VariableCharacterDim;
+			}
+			break;
+		case GM_FONT:
+			if (result->chw)
+				result->dim_fn = FixedCharacterDim;
+			else
+				result->dim_fn = GamemodeCharacterDim;
+			break;
+		case FILE_FONT:
+			if (result->chw)
+				result->dim_fn = FixedCharacterDim;
+			else
+				result->dim_fn = FileCharacterDim;
+			break;
+		case LSHI_FONT:
+		case LSLOW_FONT:
+			if (result->chw)
+				result->dim_fn = FixedCharacterDim;
+			else
+				result->dim_fn = LSTitleCharacterDim;
+			break;
+		case OPPRF_FONT:
+		case PINGF_FONT:
+			if (result->chw)
+				result->dim_fn = FixedCharacterDim;
+			else
+				result->dim_fn = BunchedCharacterDim;
+			break;
+	}
+}
+
 void V_DrawStringScaled(
 		fixed_t    x,
 		fixed_t    y,
@@ -2228,17 +2403,12 @@ void V_DrawStringScaled(
 		int        fontno,
 		const char *s)
 {
-	fixed_t    chw;
 	INT32     hchw;/* half-width for centering */
-	fixed_t spacew;
-	fixed_t    lfh;
 
 	INT32     dupx;
 
 	fixed_t  right;
 	fixed_t    bot;
-
-	fixed_t (*dim_fn)(fixed_t,fixed_t,INT32,INT32,fixed_t *);
 
 	font_t   *font;
 
@@ -2254,7 +2424,6 @@ void V_DrawStringScaled(
 	fixed_t cxoff, cyoff;
 	fixed_t cw;
 
-	INT32     spacing;
 	fixed_t   left;
 
 	int c;
@@ -2279,127 +2448,23 @@ void V_DrawStringScaled(
 
 	font       = &fontv[fontno];
 
-	chw        = 0;
+	fontspec_t fontspec;
 
-	spacing = ( flags & V_SPACINGMASK );
+	V_GetFontSpecification(fontno, flags, &fontspec);
 
-	/*
-	Hardcoded until a better system can be implemented
-	for determining how fonts space.
-	*/
-	switch (fontno)
-	{
-		default:
-		case HU_FONT:
-		case MENU_FONT:
-			spacew = 4;
-			switch (spacing)
-			{
-				case V_MONOSPACE:
-					spacew = 8;
-					/* FALLTHRU */
-				case V_OLDSPACING:
-					chw    = 8;
-					break;
-				case V_6WIDTHSPACE:
-					spacew = 6;
-			}
-			break;
-		case TINY_FONT:
-			spacew = 2;
-			switch (spacing)
-			{
-				case V_MONOSPACE:
-					spacew = 5;
-					/* FALLTHRU */
-				case V_OLDSPACING:
-					chw    = 5;
-					break;
-				// Out of video flags, so we're reusing this for alternate charwidth instead
-				/*case V_6WIDTHSPACE:
-				  spacewidth = 3;*/
-			}
-			break;
-		case LT_FONT:
-			spacew = 12;
-			break;
-		case CRED_FONT:
-			spacew = 16;
-			break;
-		case KART_FONT:
-			spacew = 3;
-			switch (spacing)
-			{
-				case V_MONOSPACE:
-					spacew = 12;
-					/* FALLTHRU */
-				case V_OLDSPACING:
-					chw    = 12;
-					break;
-				case V_6WIDTHSPACE:
-					spacew = 6;
-			}
-			break;
-		case GM_FONT:
-			spacew = 6;
-			break;
-		case FILE_FONT:
-			spacew = 0;
-			break;
-		case LSHI_FONT:
-		case LSLOW_FONT:
-			spacew = 10;
-			break;
-		case OPPRF_FONT:
-			spacew = 5;
-			break;
-		case PINGF_FONT:
-			spacew = 3;
-			break;
-	}
+	hchw     = fontspec.chw >> 1;
 
-	switch (fontno)
-	{
-		default:
-		case HU_FONT:
-		case MENU_FONT:
-		case TINY_FONT:
-		case KART_FONT:
-			lfh = 12;
-			break;
-		case LT_FONT:
-		case CRED_FONT:
-		case FILE_FONT:
-			lfh    = 12;
-			break;
-		case GM_FONT:
-			lfh    = 32;
-			break;
-		case LSHI_FONT:
-			lfh    = 56;
-			break;
-		case LSLOW_FONT:
-			lfh    = 38;
-			break;
-		case OPPRF_FONT:
-		case PINGF_FONT:
-			lfh = 10;
-			break;
-	}
-
-	hchw     = chw >> 1;
-
-	chw    <<= FRACBITS;
-	spacew <<= FRACBITS;
-	lfh    <<= FRACBITS;
+	fontspec.chw    <<= FRACBITS;
+	fontspec.spacew <<= FRACBITS;
+	fontspec.lfh    <<= FRACBITS;
 
 #define Mul( id, scale ) ( id = FixedMul (scale, id) )
-	Mul    (chw,      scale);
-	Mul (spacew,      scale);
-	Mul    (lfh,      scale);
+	Mul    (fontspec.chw,      scale);
+	Mul (fontspec.spacew,      scale);
+	Mul    (fontspec.lfh,      scale);
 
-	Mul (spacew, spacescale);
-	Mul    (lfh,    lfscale);
+	Mul (fontspec.spacew, spacescale);
+	Mul    (fontspec.lfh,    lfscale);
 #undef  Mul
 
 	if (( flags & V_NOSCALESTART ))
@@ -2408,9 +2473,9 @@ void V_DrawStringScaled(
 
 		hchw     *=     dupx;
 
-		chw      *=     dupx;
-		spacew   *=     dupx;
-		lfh      *= vid.dupy;
+		fontspec.chw      *=     dupx;
+		fontspec.spacew   *=     dupx;
+		fontspec.lfh      *= vid.dupy;
 
 		right     = vid.width;
 	}
@@ -2429,60 +2494,6 @@ void V_DrawStringScaled(
 	right      <<=               FRACBITS;
 	bot          = vid.height << FRACBITS;
 
-	switch (fontno)
-	{
-		default:
-			if (chw)
-				dim_fn = CenteredCharacterDim;
-			else
-				dim_fn = VariableCharacterDim;
-			break;
-		case KART_FONT:
-			if (chw)
-				dim_fn = FixedCharacterDim;
-			else
-				dim_fn = BunchedCharacterDim;
-			break;
-		case TINY_FONT:
-			if (chw)
-				dim_fn = FixedCharacterDim;
-			else
-			{
-				/* Reuse this flag for the alternate bunched-up spacing. */
-				if (( flags & V_6WIDTHSPACE ))
-					dim_fn = BunchedCharacterDim;
-				else
-					dim_fn = VariableCharacterDim;
-			}
-			break;
-		case GM_FONT:
-			if (chw)
-				dim_fn = FixedCharacterDim;
-			else
-				dim_fn = GamemodeCharacterDim;
-			break;
-		case FILE_FONT:
-			if (chw)
-				dim_fn = FixedCharacterDim;
-			else
-				dim_fn = FileCharacterDim;
-			break;
-		case LSHI_FONT:
-		case LSLOW_FONT:
-			if (chw)
-				dim_fn = FixedCharacterDim;
-			else
-				dim_fn = LSTitleCharacterDim;
-			break;
-		case OPPRF_FONT:
-		case PINGF_FONT:
-			if (chw)
-				dim_fn = FixedCharacterDim;
-			else
-				dim_fn = BunchedCharacterDim;
-			break;
-	}
-
 	cx = x;
 	cy = y;
 	cyoff = 0;
@@ -2492,7 +2503,7 @@ void V_DrawStringScaled(
 		switch (c)
 		{
 			case '\n':
-				cy += lfh;
+				cy += fontspec.lfh;
 				if (cy >= bot)
 					return;
 				cx  =   x;
@@ -2544,13 +2555,13 @@ void V_DrawStringScaled(
 					if (V_CharacterValid(font, c) == true)
 					{
 						cw = SHORT (font->font[c]->width) * dupx;
-						cxoff = (*dim_fn)(scale, chw, hchw, dupx, &cw);
+						cxoff = (*fontspec.dim_fn)(scale, fontspec.chw, hchw, dupx, &cw);
 						V_DrawFixedPatch(cx + cxoff, cy + cyoff, scale,
 								flags, font->font[c], colormap);
 						cx += cw;
 					}
 					else
-						cx += spacew;
+						cx += fontspec.spacew;
 				}
 		}
 	}
@@ -2564,14 +2575,9 @@ fixed_t V_StringScaledWidth(
 		int        fontno,
 		const char *s)
 {
-	fixed_t    chw;
 	INT32     hchw;/* half-width for centering */
-	fixed_t spacew;
-	fixed_t    lfh;
 
 	INT32     dupx;
-
-	fixed_t (*dim_fn)(fixed_t,fixed_t,INT32,INT32,fixed_t *);
 
 	font_t   *font;
 
@@ -2582,8 +2588,6 @@ fixed_t V_StringScaledWidth(
 
 	fixed_t cw;
 
-	INT32     spacing;
-
 	int c;
 
 	fixed_t fullwidth = 0;
@@ -2593,124 +2597,22 @@ fixed_t V_StringScaledWidth(
 
 	font       = &fontv[fontno];
 
-	chw        = 0;
+	fontspec_t fontspec;
 
-	spacing = ( flags & V_SPACINGMASK );
+	V_GetFontSpecification(fontno, flags, &fontspec);
 
-	/*
-	Hardcoded until a better system can be implemented
-	for determining how fonts space.
-	*/
-	switch (fontno)
-	{
-		default:
-		case HU_FONT:
-		case MENU_FONT:
-			spacew = 4;
-			switch (spacing)
-			{
-				case V_MONOSPACE:
-					spacew = 8;
-					/* FALLTHRU */
-				case V_OLDSPACING:
-					chw    = 8;
-					break;
-				case V_6WIDTHSPACE:
-					spacew = 6;
-			}
-			break;
-		case TINY_FONT:
-			spacew = 2;
-			switch (spacing)
-			{
-				case V_MONOSPACE:
-					spacew = 5;
-					/* FALLTHRU */
-				case V_OLDSPACING:
-					chw    = 5;
-					break;
-				// Out of video flags, so we're reusing this for alternate charwidth instead
-				/*case V_6WIDTHSPACE:
-				  spacewidth = 3;*/
-			}
-			break;
-		case LT_FONT:
-			spacew = 12;
-			break;
-		case CRED_FONT:
-			spacew = 16;
-			break;
-		case KART_FONT:
-			spacew = 3;
-			switch (spacing)
-			{
-				case V_MONOSPACE:
-					spacew = 12;
-					/* FALLTHRU */
-				case V_OLDSPACING:
-					chw    = 12;
-					break;
-				case V_6WIDTHSPACE:
-					spacew = 6;
-			}
-			break;
-		case GM_FONT:
-		case FILE_FONT:
-			spacew = 0;
-			break;
-		case LSHI_FONT:
-		case LSLOW_FONT:
-			spacew = 10;
-			break;
-		case OPPRF_FONT:
-			spacew = 5;
-			break;
-		case PINGF_FONT:
-			spacew = 3;
-			break;
-	}
+	hchw     = fontspec.chw >> 1;
 
-	switch (fontno)
-	{
-		default:
-		case HU_FONT:
-		case MENU_FONT:
-		case TINY_FONT:
-		case KART_FONT:
-			lfh = 12;
-			break;
-		case LT_FONT:
-		case CRED_FONT:
-		case FILE_FONT:
-			lfh    = 12;
-			break;
-		case GM_FONT:
-			lfh    = 32;
-			break;
-		case LSHI_FONT:
-			lfh    = 56;
-			break;
-		case LSLOW_FONT:
-			lfh    = 38;
-			break;
-		case OPPRF_FONT:
-		case PINGF_FONT:
-			lfh = 10;
-			break;
-	}
-
-	hchw     = chw >> 1;
-
-	chw    <<= FRACBITS;
-	spacew <<= FRACBITS;
+	fontspec.chw    <<= FRACBITS;
+	fontspec.spacew <<= FRACBITS;
 
 #define Mul( id, scale ) ( id = FixedMul (scale, id) )
-	Mul    (chw,      scale);
-	Mul (spacew,      scale);
-	Mul    (lfh,      scale);
+	Mul    (fontspec.chw,      scale);
+	Mul (fontspec.spacew,      scale);
+	Mul    (fontspec.lfh,      scale);
 
-	Mul (spacew, spacescale);
-	Mul    (lfh,    lfscale);
+	Mul (fontspec.spacew, spacescale);
+	Mul    (fontspec.lfh,    lfscale);
 #undef  Mul
 
 	if (( flags & V_NOSCALESTART ))
@@ -2719,67 +2621,13 @@ fixed_t V_StringScaledWidth(
 
 		hchw     *=     dupx;
 
-		chw      *=     dupx;
-		spacew   *=     dupx;
-		lfh      *= vid.dupy;
+		fontspec.chw      *=     dupx;
+		fontspec.spacew   *=     dupx;
+		fontspec.lfh      *= vid.dupy;
 	}
 	else
 	{
 		dupx      = 1;
-	}
-
-	switch (fontno)
-	{
-		default:
-			if (chw)
-				dim_fn = CenteredCharacterDim;
-			else
-				dim_fn = VariableCharacterDim;
-			break;
-		case KART_FONT:
-			if (chw)
-				dim_fn = FixedCharacterDim;
-			else
-				dim_fn = BunchedCharacterDim;
-			break;
-		case TINY_FONT:
-			if (chw)
-				dim_fn = FixedCharacterDim;
-			else
-			{
-				/* Reuse this flag for the alternate bunched-up spacing. */
-				if (( flags & V_6WIDTHSPACE ))
-					dim_fn = BunchedCharacterDim;
-				else
-					dim_fn = VariableCharacterDim;
-			}
-			break;
-		case GM_FONT:
-			if (chw)
-				dim_fn = FixedCharacterDim;
-			else
-				dim_fn = GamemodeCharacterDim;
-			break;
-		case FILE_FONT:
-			if (chw)
-				dim_fn = FixedCharacterDim;
-			else
-				dim_fn = FileCharacterDim;
-			break;
-		case LSHI_FONT:
-		case LSLOW_FONT:
-			if (chw)
-				dim_fn = FixedCharacterDim;
-			else
-				dim_fn = LSTitleCharacterDim;
-			break;
-		case OPPRF_FONT:
-		case PINGF_FONT:
-			if (chw)
-				dim_fn = FixedCharacterDim;
-			else
-				dim_fn = BunchedCharacterDim;
-			break;
 	}
 
 	cx = cy = 0;
@@ -2790,7 +2638,7 @@ fixed_t V_StringScaledWidth(
 		switch (c)
 		{
 			case '\n':
-				cy += lfh;
+				cy += fontspec.lfh;
 				cx  =   0;
 				break;
 			default:
@@ -2821,11 +2669,11 @@ fixed_t V_StringScaledWidth(
 					// We need to count the full width to get the rightmost edge of the string though.
 					right = cx + (cw * scale);
 
-					(*dim_fn)(scale, chw, hchw, dupx, &cw);
+					(*fontspec.dim_fn)(scale, fontspec.chw, hchw, dupx, &cw);
 					cx += cw;
 				}
 				else
-					cx += spacew;
+					cx += fontspec.spacew;
 		}
 
 		fullwidth = std::max(right, std::max(cx, fullwidth));
