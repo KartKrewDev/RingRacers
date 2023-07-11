@@ -2987,7 +2987,7 @@ INT32 V_LevelNameHeight(const char *string)
 	INT32 c, w = 0;
 	size_t i;
 
-	for (i = 0; i < strlen(string); i++)
+	for (i = 0; string[i]; i++)
 	{
 		c = string[i] - LT_FONTSTART;
 		if (c < 0 || c >= LT_FONTSIZE || !fontv[LT_FONT].font[c])
