@@ -983,7 +983,7 @@ void ST_drawTitleCard(void)
 						by += 5;
 					}
 
-					V_DrawRightAlignedThinString((BASEVIDWIDTH+bx)/2, by, V_6WIDTHSPACE, bossinfo.subtitle);
+					V_DrawRightAlignedThinString((BASEVIDWIDTH+bx)/2, by, 0, bossinfo.subtitle);
 				}
 
 				// Now draw the under-bar itself.
@@ -1384,20 +1384,20 @@ void ST_Drawer(void)
 			INT32 buttony = 2;
 
 			K_drawButtonAnim(buttonx - 76, buttony, V_HUDTRANS|V_SNAPTOTOP|V_SNAPTORIGHT, kp_button_b[1], leveltime);
-			V_DrawRightAlignedThinString(buttonx - 55, buttony, V_HUDTRANS|V_SNAPTOTOP|V_SNAPTORIGHT|V_6WIDTHSPACE|V_YELLOWMAP, "or");
+			V_DrawRightAlignedThinString(buttonx - 55, buttony, V_HUDTRANS|V_SNAPTOTOP|V_SNAPTORIGHT|V_YELLOWMAP, "or");
 			K_drawButtonAnim(buttonx - 55, buttony, V_HUDTRANS|V_SNAPTOTOP|V_SNAPTORIGHT, kp_button_x[1], leveltime);
-			V_DrawRightAlignedThinString(buttonx - 2, buttony, V_HUDTRANS|V_SNAPTOTOP|V_SNAPTORIGHT|V_6WIDTHSPACE|V_YELLOWMAP, "Save replay");
+			V_DrawRightAlignedThinString(buttonx - 2, buttony, V_HUDTRANS|V_SNAPTOTOP|V_SNAPTORIGHT|V_YELLOWMAP, "Save replay");
 			break;
 		}
 		case DSM_WILLAUTOSAVE:
 		{
-			V_DrawRightAlignedThinString(BASEVIDWIDTH - 55, 2, V_HUDTRANS|V_SNAPTOTOP|V_SNAPTORIGHT|V_6WIDTHSPACE|V_YELLOWMAP, "Replay will be saved.");
+			V_DrawRightAlignedThinString(BASEVIDWIDTH - 55, 2, V_HUDTRANS|V_SNAPTOTOP|V_SNAPTORIGHT|V_YELLOWMAP, "Replay will be saved.");
 			K_drawButtonAnim(BASEVIDWIDTH - 56, 0, V_HUDTRANS|V_SNAPTOTOP|V_SNAPTORIGHT, kp_button_b[1], leveltime);
-			V_DrawRightAlignedThinString(BASEVIDWIDTH - 2, 2, V_HUDTRANS|V_SNAPTOTOP|V_SNAPTORIGHT|V_6WIDTHSPACE|V_YELLOWMAP, "Change title");
+			V_DrawRightAlignedThinString(BASEVIDWIDTH - 2, 2, V_HUDTRANS|V_SNAPTOTOP|V_SNAPTORIGHT|V_YELLOWMAP, "Change title");
 			break;
 		}
 		case DSM_WILLSAVE:
-			V_DrawRightAlignedThinString(BASEVIDWIDTH - 2, 2, V_HUDTRANS|V_SNAPTOTOP|V_SNAPTORIGHT|V_6WIDTHSPACE|V_YELLOWMAP, "Replay will be saved.");
+			V_DrawRightAlignedThinString(BASEVIDWIDTH - 2, 2, V_HUDTRANS|V_SNAPTOTOP|V_SNAPTORIGHT|V_YELLOWMAP, "Replay will be saved.");
 			break;
 
 		case DSM_TITLEENTRY:

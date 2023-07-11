@@ -130,10 +130,7 @@ INT32 Draw::default_font_flags(Font font)
 {
 	INT32 flags = 0;
 
-	if (font == Font::kThin)
-	{
-		flags |= V_6WIDTHSPACE;
-	}
+	(void)font;
 
 	return flags;
 };

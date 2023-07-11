@@ -573,13 +573,13 @@ void Y_PlayerStandingsDrawer(y_data_t *standings, INT32 xoffset)
 					_isHighlightedPlayer(&players[pnum])
 						? hilicol
 						: 0
-				)|V_6WIDTHSPACE,
+				),
 				player_names[pnum]
 			);
 
 			V_DrawRightAlignedThinString(
 				x+118, y-2,
-				V_6WIDTHSPACE,
+				0,
 				standings->strval[i]
 			);
 
@@ -622,7 +622,7 @@ void Y_PlayerStandingsDrawer(y_data_t *standings, INT32 xoffset)
 					{
 						V_DrawThinString(
 							x2, y-2,
-							V_6WIDTHSPACE,
+							0,
 							increasenum
 						);
 					}
@@ -630,7 +630,7 @@ void Y_PlayerStandingsDrawer(y_data_t *standings, INT32 xoffset)
 					{
 						V_DrawRightAlignedThinString(
 							x2, y-2,
-							V_6WIDTHSPACE,
+							0,
 							increasenum
 						);
 					}
@@ -1247,7 +1247,7 @@ void Y_RoundQueueDrawer(y_data_t *standings, INT32 offset, boolean doanimations,
 void Y_IntermissionDrawer(void)
 {
 	// INFO SEGMENT
-	// Numbers are V_DrawRightAlignedThinString WITH v_6widthspace as flags
+	// Numbers are V_DrawRightAlignedThinString as flags
 	// resbar 1 (48,82)  5 (176, 82)
 	// 2 (48, 96)
 
@@ -1414,13 +1414,13 @@ finalcounter:
 					INT32 buttony = 2;
 					
 					K_drawButtonAnim(buttonx - 76, buttony, 0, kp_button_b[1], replayprompttic);
-					V_DrawRightAlignedThinString(buttonx - 55, buttony, V_6WIDTHSPACE|highlightflags, "or");
+					V_DrawRightAlignedThinString(buttonx - 55, buttony, highlightflags, "or");
 					K_drawButtonAnim(buttonx - 55, buttony, 0, kp_button_x[1], replayprompttic);
-					V_DrawRightAlignedThinString(buttonx - 2, buttony, V_6WIDTHSPACE|highlightflags, "Save replay");
+					V_DrawRightAlignedThinString(buttonx - 2, buttony, highlightflags, "Save replay");
 					break;	
 				}
 				case DSM_SAVED:
-					V_DrawRightAlignedThinString(BASEVIDWIDTH - 2, 2, V_6WIDTHSPACE|highlightflags, "Replay saved!");
+					V_DrawRightAlignedThinString(BASEVIDWIDTH - 2, 2, highlightflags, "Replay saved!");
 					break;
 
 				case DSM_TITLEENTRY:

@@ -1811,8 +1811,8 @@ void K_drawKartTimestamp(tic_t drawtime, INT32 TX, INT32 TY, INT32 splitflags, U
 				}
 			}
 
-			workx -= V_ThinStringWidth(stickermedalinfo.targettext, splitflags|V_6WIDTHSPACE);
-			V_DrawThinString(workx, worky, splitflags|V_6WIDTHSPACE, stickermedalinfo.targettext);
+			workx -= V_ThinStringWidth(stickermedalinfo.targettext, splitflags);
+			V_DrawThinString(workx, worky, splitflags, stickermedalinfo.targettext);
 		}
 
 		workx -= (6 + (i*5));
@@ -2302,7 +2302,7 @@ static void K_drawBossHealthBar(void)
 		{
 			rolrand = 10;
 		}
-		V_DrawRightAlignedThinString(startx, starty-rolrand, V_HUDTRANS|V_SLIDEIN|V_SNAPTOBOTTOM|V_SNAPTORIGHT|V_6WIDTHSPACE, bossinfo.enemyname);
+		V_DrawRightAlignedThinString(startx, starty-rolrand, V_HUDTRANS|V_SLIDEIN|V_SNAPTOBOTTOM|V_SNAPTORIGHT, bossinfo.enemyname);
 		rolrand = 0;
 	}
 
@@ -3288,7 +3288,7 @@ static void K_DrawTypingNotifier(fixed_t x, fixed_t y, player_t *p)
 static void K_DrawNameTagForPlayer(fixed_t x, fixed_t y, player_t *p)
 {
 	const INT32 clr = skincolors[p->skincolor].chatcolor;
-	const INT32 namelen = V_ThinStringWidth(player_names[p - players], V_6WIDTHSPACE);
+	const INT32 namelen = V_ThinStringWidth(player_names[p - players], 0);
 
 	UINT8 *colormap = V_GetStringColormap(clr);
 	INT32 barx = 0, bary = 0, barw = 0;
@@ -3336,7 +3336,7 @@ static void K_DrawNameTagForPlayer(fixed_t x, fixed_t y, player_t *p)
 	V_DrawFixedPatch(x, y, FRACUNIT, 0, kp_nametagstem, colormap);
 
 	// Draw the name itself
-	V_DrawThinStringAtFixed(x + (5*FRACUNIT), y - (26*FRACUNIT), V_6WIDTHSPACE|clr, player_names[p - players]);
+	V_DrawThinStringAtFixed(x + (5*FRACUNIT), y - (26*FRACUNIT), clr, player_names[p - players]);
 }
 
 typedef struct weakspotdraw_t
@@ -5116,7 +5116,7 @@ static void K_DrawDirectorButton(INT32 idx, const char *label, patch_t *kp[2], I
 		}
 	}
 
-	textflags |= (flags | V_6WIDTHSPACE);
+	textflags |= flags;
 
 	K_drawButtonAnim(x, y - 4, flags, kp, leveltime);
 	V_DrawRightAlignedThinString(x - 2, y, textflags, label);
@@ -5350,19 +5350,19 @@ static void K_DrawGPRankDebugger(void)
 
 	grade = K_CalculateGPGrade(&grandprixinfo.rank);
 
-	V_DrawThinString(0, 0, V_SNAPTOTOP|V_SNAPTOLEFT|V_6WIDTHSPACE,
+	V_DrawThinString(0, 0, V_SNAPTOTOP|V_SNAPTOLEFT,
 		va("POS: %d / %d", grandprixinfo.rank.position, RANK_NEUTRAL_POSITION));
-	V_DrawThinString(0, 10, V_SNAPTOTOP|V_SNAPTOLEFT|V_6WIDTHSPACE,
+	V_DrawThinString(0, 10, V_SNAPTOTOP|V_SNAPTOLEFT,
 		va("PTS: %d / %d", grandprixinfo.rank.winPoints, grandprixinfo.rank.totalPoints));
-	V_DrawThinString(0, 20, V_SNAPTOTOP|V_SNAPTOLEFT|V_6WIDTHSPACE,
+	V_DrawThinString(0, 20, V_SNAPTOTOP|V_SNAPTOLEFT,
 		va("LAPS: %d / %d", grandprixinfo.rank.laps, grandprixinfo.rank.totalLaps));
-	V_DrawThinString(0, 30, V_SNAPTOTOP|V_SNAPTOLEFT|V_6WIDTHSPACE,
+	V_DrawThinString(0, 30, V_SNAPTOTOP|V_SNAPTOLEFT,
 		va("CONTINUES: %d", grandprixinfo.rank.continuesUsed));
-	V_DrawThinString(0, 40, V_SNAPTOTOP|V_SNAPTOLEFT|V_6WIDTHSPACE,
+	V_DrawThinString(0, 40, V_SNAPTOTOP|V_SNAPTOLEFT,
 		va("PRISONS: %d / %d", grandprixinfo.rank.prisons, grandprixinfo.rank.totalPrisons));
-	V_DrawThinString(0, 50, V_SNAPTOTOP|V_SNAPTOLEFT|V_6WIDTHSPACE,
+	V_DrawThinString(0, 50, V_SNAPTOTOP|V_SNAPTOLEFT,
 		va("RINGS: %d / %d", grandprixinfo.rank.rings, grandprixinfo.rank.totalRings));
-	V_DrawThinString(0, 60, V_SNAPTOTOP|V_SNAPTOLEFT|V_6WIDTHSPACE,
+	V_DrawThinString(0, 60, V_SNAPTOTOP|V_SNAPTOLEFT,
 		va("EMERALD: %s", (grandprixinfo.rank.specialWon == true) ? "YES" : "NO"));
 
 	switch (grade)
@@ -5376,7 +5376,7 @@ static void K_DrawGPRankDebugger(void)
 		default: { break; }
 	}
 
-	V_DrawThinString(0, 90, V_SNAPTOTOP|V_SNAPTOLEFT|V_6WIDTHSPACE|V_YELLOWMAP,
+	V_DrawThinString(0, 90, V_SNAPTOTOP|V_SNAPTOLEFT|V_YELLOWMAP,
 		va(" ** FINAL GRADE: %c", gradeChar));
 }
 

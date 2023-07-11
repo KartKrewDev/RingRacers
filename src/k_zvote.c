@@ -1172,7 +1172,7 @@ void K_DrawMidVote(void)
 				{
 					strWidth = V__OneScaleStringWidth(
 						FRACUNIT,
-						V_SNAPTOBOTTOM|V_SNAPTORIGHT|V_SPLITSCREEN|V_6WIDTHSPACE,
+						V_SNAPTOBOTTOM|V_SNAPTORIGHT|V_SPLITSCREEN,
 						TINY_FONT, player_names[g_midVote.victim - players]
 					);
 
@@ -1180,7 +1180,7 @@ void K_DrawMidVote(void)
 						x - (strWidth >> 1),
 						y + (18 * FRACUNIT),
 						FRACUNIT,
-						V_SNAPTOBOTTOM|V_SNAPTORIGHT|V_SPLITSCREEN|V_6WIDTHSPACE, NULL,
+						V_SNAPTOBOTTOM|V_SNAPTORIGHT|V_SPLITSCREEN, NULL,
 						TINY_FONT, player_names[g_midVote.victim - players]
 					);
 				}

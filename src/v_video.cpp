@@ -2183,6 +2183,7 @@ static void V_GetFontSpecification(int fontno, INT32 flags, fontspec_t *result)
 					break;
 				case V_6WIDTHSPACE:
 					result->spacew = 6;
+					break;
 			}
 			break;
 		case TINY_FONT:
@@ -2195,9 +2196,9 @@ static void V_GetFontSpecification(int fontno, INT32 flags, fontspec_t *result)
 				case V_OLDSPACING:
 					result->chw    = 5;
 					break;
-				// Out of video flags, so we're reusing this for alternate charwidth instead
-				/*case V_6WIDTHSPACE:
-				  result->spacewidth = 3;*/
+				case V_6WIDTHSPACE:
+					result->spacew = 3;
+					break;
 			}
 			break;
 		case LT_FONT:
@@ -2285,13 +2286,7 @@ static void V_GetFontSpecification(int fontno, INT32 flags, fontspec_t *result)
 			if (result->chw)
 				result->dim_fn = FixedCharacterDim;
 			else
-			{
-				/* Reuse this flag for the alternate bunched-up spacing. */
-				if (( flags & V_6WIDTHSPACE ))
-					result->dim_fn = BunchedCharacterDim;
-				else
-					result->dim_fn = VariableCharacterDim;
-			}
+				result->dim_fn = BunchedCharacterDim;
 			break;
 		case GM_FONT:
 			if (result->chw)

@@ -872,7 +872,7 @@ void HU_TickSongCredits(void)
 
 	if (cursongcredit.anim > 0)
 	{
-		INT32 len = V_ThinStringWidth(cursongcredit.text, V_6WIDTHSPACE);
+		INT32 len = V_ThinStringWidth(cursongcredit.text, 0);
 		fixed_t destx = (len+7) * FRACUNIT;
 
 		if (cursongcredit.trans > 0)
@@ -2017,7 +2017,7 @@ void HU_DrawSongCredits(void)
 	}
 
 	V_DrawRightAlignedThinStringAtFixed(x, y,
-		V_6WIDTHSPACE|V_SNAPTOLEFT|(cursongcredit.trans<<V_ALPHASHIFT),
+		V_SNAPTOLEFT|(cursongcredit.trans<<V_ALPHASHIFT),
 		cursongcredit.text);
 }
 

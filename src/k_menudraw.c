@@ -369,7 +369,7 @@ static void M_DrawMenuTooltips(void)
 	if (currentMenu->menuitems[itemOn].tooltip != NULL)
 	{
 		V_DrawFixedPatch(0, 0, FRACUNIT, 0, W_CachePatchName("MENUHINT", PU_CACHE), NULL);
-		V_DrawCenteredThinString(BASEVIDWIDTH/2, 12, V_6WIDTHSPACE, currentMenu->menuitems[itemOn].tooltip);
+		V_DrawCenteredThinString(BASEVIDWIDTH/2, 12, 0, currentMenu->menuitems[itemOn].tooltip);
 	}
 }
 
@@ -400,7 +400,7 @@ static void M_DrawMenuTyping(void)
 
 	if (currentMenu->menuitems[itemOn].text)
 	{
-		V_DrawThinString(x + 5, y - 2, highlightflags|V_6WIDTHSPACE, currentMenu->menuitems[itemOn].text);
+		V_DrawThinString(x + 5, y - 2, highlightflags, currentMenu->menuitems[itemOn].text);
 	}
 
 	M_DrawMenuTooltips();
@@ -449,7 +449,7 @@ static void M_DrawMenuTyping(void)
 			j = 0;
 			while (j < NUMVIRTUALKEYSINROW)
 			{
-				INT32 mflag = V_6WIDTHSPACE;
+				INT32 mflag = 0;
 				INT16 c = virtualKeyboard[i][j];
 
 				INT32 buttonspacing = 1;
@@ -595,11 +595,11 @@ static void M_DrawMenuTyping(void)
 	// Some contextual stuff
 	if (menutyping.keyboardtyping)
 	{
-		V_DrawThinString(returnx, y, V_6WIDTHSPACE|V_GRAYMAP, "Type using your keyboard. Press Enter to confirm & exit.\nUse your controller or any directional input to use the Virtual Keyboard.\n");
+		V_DrawThinString(returnx, y, V_GRAYMAP, "Type using your keyboard. Press Enter to confirm & exit.\nUse your controller or any directional input to use the Virtual Keyboard.\n");
 	}
 	else
 	{
-		V_DrawThinString(returnx, y, V_6WIDTHSPACE|V_GRAYMAP, "Type using the Virtual Keyboard. Use the \'OK\' button to confirm & exit.\nPress any keyboard key not bound to a control to use it.");
+		V_DrawThinString(returnx, y, V_GRAYMAP, "Type using the Virtual Keyboard. Use the \'OK\' button to confirm & exit.\nPress any keyboard key not bound to a control to use it.");
 	}
 
 }
@@ -622,7 +622,7 @@ void M_DrawMenuMessage(void)
 
 	if (menumessage.header != NULL)
 	{
-		V_DrawThinString(x, y - 10, highlightflags|V_6WIDTHSPACE, menumessage.header);
+		V_DrawThinString(x, y - 10, highlightflags, menumessage.header);
 	}
 
 	if (menumessage.defaultstr)
@@ -640,11 +640,11 @@ void M_DrawMenuMessage(void)
 			push = ((menumessage.timer % (anim_duration * 2)) < anim_duration);
 		}
 
-		workx -= V_ThinStringWidth(menumessage.defaultstr, V_6WIDTHSPACE);
+		workx -= V_ThinStringWidth(menumessage.defaultstr, 0);
 		V_DrawThinString(
 			workx, worky + 1,
-			V_6WIDTHSPACE
-				| ((push && (menumessage.closing & MENUMESSAGECLOSE)) ? highlightflags : 0),
+			((push && (menumessage.closing & MENUMESSAGECLOSE))
+				? highlightflags : 0),
 			menumessage.defaultstr
 		);
 
@@ -671,11 +671,11 @@ void M_DrawMenuMessage(void)
 			if (menumessage.closing)
 				push = !push;
 
-			workx -= V_ThinStringWidth(menumessage.confirmstr, V_6WIDTHSPACE);
+			workx -= V_ThinStringWidth(menumessage.confirmstr, 0);
 			V_DrawThinString(
 				workx, worky + 1,
-				V_6WIDTHSPACE
-					| ((push && (menumessage.closing & MENUMESSAGECLOSE)) ? highlightflags : 0),
+				((push && (menumessage.closing & MENUMESSAGECLOSE))
+					? highlightflags : 0),
 				menumessage.confirmstr
 			);
 
@@ -1739,7 +1739,7 @@ static void M_DrawCharSelectPreview(UINT8 num)
 			if (p->changeselect == i)
 				V_DrawScaledPatch(xpos, cy, 0, W_CachePatchName("M_CURSOR", PU_CACHE));
 
-			V_DrawThinString(xpos+16, cy, (p->changeselect == i ? highlightflags : 0)|V_6WIDTHSPACE, choices[i]);
+			V_DrawThinString(xpos+16, cy, (p->changeselect == i ? highlightflags : 0), choices[i]);
 		}
 	}
 
@@ -1753,17 +1753,17 @@ static void M_DrawCharSelectPreview(UINT8 num)
 				if (p->clonenum < setup_chargrid[p->gridx][p->gridy].numskins
 					&& setup_chargrid[p->gridx][p->gridy].skinlist[p->clonenum] < numskins)
 				{
-					V_DrawThinString(x-3, y+12, V_6WIDTHSPACE,
+					V_DrawThinString(x-3, y+12, 0,
 						skins[setup_chargrid[p->gridx][p->gridy].skinlist[p->clonenum]].name);
 					randomskin = (skins[setup_chargrid[p->gridx][p->gridy].skinlist[p->clonenum]].flags & SF_IRONMAN);
 				}
 				else
 				{
-					V_DrawThinString(x-3, y+12, V_6WIDTHSPACE, va("BAD CLONENUM %u", p->clonenum));
+					V_DrawThinString(x-3, y+12, 0, va("BAD CLONENUM %u", p->clonenum));
 				}
 				/* FALLTHRU */
 			case CSSTEP_CHARS: // Character Select grid
-				V_DrawThinString(x-3, y+2, V_6WIDTHSPACE, va("Class %c (s %c - w %c)",
+				V_DrawThinString(x-3, y+2, 0, va("Class %c (s %c - w %c)",
 					('A' + R_GetEngineClass(p->gridx+1, p->gridy+1, randomskin)),
 					(randomskin
 						? '?' : ('1'+p->gridx)),
@@ -1774,55 +1774,55 @@ static void M_DrawCharSelectPreview(UINT8 num)
 			case CSSTEP_COLORS: // Select color
 				if (p->color < numskincolors)
 				{
-					V_DrawThinString(x-3, y+2, V_6WIDTHSPACE, skincolors[p->color].name);
+					V_DrawThinString(x-3, y+2, 0, skincolors[p->color].name);
 				}
 				else
 				{
-					V_DrawThinString(x-3, y+2, V_6WIDTHSPACE, va("BAD COLOR %u", p->color));
+					V_DrawThinString(x-3, y+2, 0, va("BAD COLOR %u", p->color));
 				}
 				break;
 			case CSSTEP_FOLLOWERCATEGORY:
 				if (p->followercategory == -1)
 				{
-					V_DrawThinString(x-3, y+2, V_6WIDTHSPACE, "None");
+					V_DrawThinString(x-3, y+2, 0, "None");
 				}
 				else
 				{
-					V_DrawThinString(x-3, y+2, V_6WIDTHSPACE,
+					V_DrawThinString(x-3, y+2, 0,
 						followercategories[setup_followercategories[p->followercategory][1]].name);
 				}
 				break;
 			case CSSTEP_FOLLOWER:
 				if (p->followern == -1)
 				{
-					V_DrawThinString(x-3, y+2, V_6WIDTHSPACE, "None");
+					V_DrawThinString(x-3, y+2, 0, "None");
 				}
 				else
 				{
-					V_DrawThinString(x-3, y+2, V_6WIDTHSPACE,
+					V_DrawThinString(x-3, y+2, 0,
 						followers[p->followern].name);
 				}
 				break;
 			case CSSTEP_FOLLOWERCOLORS:
 				if (p->followercolor == FOLLOWERCOLOR_MATCH)
 				{
-					V_DrawThinString(x-3, y+2, V_6WIDTHSPACE, "Match");
+					V_DrawThinString(x-3, y+2, 0, "Match");
 				}
 				else if (p->followercolor == FOLLOWERCOLOR_OPPOSITE)
 				{
-					V_DrawThinString(x-3, y+2, V_6WIDTHSPACE, "Opposite");
+					V_DrawThinString(x-3, y+2, 0, "Opposite");
 				}
 				else if (p->followercolor < numskincolors)
 				{
-					V_DrawThinString(x-3, y+2, V_6WIDTHSPACE, skincolors[p->followercolor].name);
+					V_DrawThinString(x-3, y+2, 0, skincolors[p->followercolor].name);
 				}
 				else
 				{
-					V_DrawThinString(x-3, y+2, V_6WIDTHSPACE, va("BAD FOLLOWERCOLOR %u", p->followercolor));
+					V_DrawThinString(x-3, y+2, 0, va("BAD FOLLOWERCOLOR %u", p->followercolor));
 				}
 				break;
 			default:
-				V_DrawThinString(x-3, y+2, V_6WIDTHSPACE, "[extrainfo mode]");
+				V_DrawThinString(x-3, y+2, 0, "[extrainfo mode]");
 				break;
 		}
 	}
@@ -2064,8 +2064,8 @@ static void M_DrawProfileCard(INT32 x, INT32 y, boolean greyedout, profile_t *p)
 	if (p != NULL)
 	{
 		V_DrawProfileNum(x + 37 + 10, y + 131, 0, PR_GetProfileNum(p));
-		V_DrawCenteredThinString(x, y + 141, V_GRAYMAP|V_6WIDTHSPACE, p->playername);
-		V_DrawCenteredThinString(x, y + 151, V_GRAYMAP|V_6WIDTHSPACE, GetPrettyRRID(p->public_key, true));
+		V_DrawCenteredThinString(x, y + 141, V_GRAYMAP, p->playername);
+		V_DrawCenteredThinString(x, y + 151, V_GRAYMAP, GetPrettyRRID(p->public_key, true));
 	}
 }
 
@@ -3068,14 +3068,14 @@ void M_DrawMPHost(void)
 			{
 				case IT_TRANSTEXT2:
 				{
-					V_DrawThinString(xp, yp, V_6WIDTHSPACE|V_TRANSLUCENT, currentMenu->menuitems[i].text);
+					V_DrawThinString(xp, yp, V_TRANSLUCENT, currentMenu->menuitems[i].text);
 					xp += 5;
 					yp += 11;
 					break;
 				}
 				case IT_STRING:
 				{
-					V_DrawThinString(xp, yp, V_6WIDTHSPACE | (i == itemOn ? highlightflags : 0), currentMenu->menuitems[i].text);
+					V_DrawThinString(xp, yp, (i == itemOn ? highlightflags : 0), currentMenu->menuitems[i].text);
 
 					// Cvar specific handling
 					switch (currentMenu->menuitems[i].status & IT_TYPE)
@@ -3094,14 +3094,14 @@ void M_DrawMPHost(void)
 											V_DrawString(xp + (skullAnimCounter/5) + 94, yp+1, highlightflags, "\x1D");
 										}
 
-										V_DrawThinString(xp + xoffs + 96, yp, V_6WIDTHSPACE, cv->string);
+										V_DrawThinString(xp + xoffs + 96, yp, 0, cv->string);
 									}
 
 									break;
 
 								default:
-									w = V_ThinStringWidth(cv->string, V_6WIDTHSPACE);
-									V_DrawThinString(xp + 138 - w, yp, ((cv->flags & CV_CHEAT) && !CV_IsSetToDefault(cv) ? warningflags : highlightflags)|V_6WIDTHSPACE, cv->string);
+									w = V_ThinStringWidth(cv->string, 0);
+									V_DrawThinString(xp + 138 - w, yp, ((cv->flags & CV_CHEAT) && !CV_IsSetToDefault(cv) ? warningflags : highlightflags), cv->string);
 									if (i == itemOn)
 									{
 										V_DrawCharacter(xp + 138 - 10 - w - (skullAnimCounter/5), yp, '\x1C' | highlightflags, false); // left arrow
@@ -3116,8 +3116,8 @@ void M_DrawMPHost(void)
 							if (currentMenu->menuitems[i].itemaction.routine != M_HandleHostMenuGametype)
 								break;
 
-							w = V_ThinStringWidth(gametypes[menugametype]->name, V_6WIDTHSPACE);
-							V_DrawThinString(xp + 138 - w, yp, highlightflags|V_6WIDTHSPACE, gametypes[menugametype]->name);
+							w = V_ThinStringWidth(gametypes[menugametype]->name, 0);
+							V_DrawThinString(xp + 138 - w, yp, highlightflags, gametypes[menugametype]->name);
 							if (i == itemOn)
 							{
 								V_DrawCharacter(xp + 138 - 10 - w - (skullAnimCounter/5), yp, '\x1C' | highlightflags, false); // left arrow
@@ -3187,7 +3187,7 @@ void M_DrawMPJoinIP(void)
 						strcpy(str, "---");		// If that fails too then there's nothing!
 				}
 
-				V_DrawThinString(xp, yp, ((i == itemOn || currentMenu->menuitems[i].status & IT_SPACE) ? highlightflags : 0)|V_6WIDTHSPACE, str);
+				V_DrawThinString(xp, yp, ((i == itemOn || currentMenu->menuitems[i].status & IT_SPACE) ? highlightflags : 0), str);
 
 				// Cvar specific handling
 				switch (currentMenu->menuitems[i].status & IT_TYPE)
@@ -3212,7 +3212,7 @@ void M_DrawMPJoinIP(void)
 										V_DrawString(xp + (skullAnimCounter/5) + 17, yp+1, highlightflags, "\x1D");
 									}
 
-									V_DrawThinString(xp + xoffs + 18, yp, V_6WIDTHSPACE, cv->string);
+									V_DrawThinString(xp + xoffs + 18, yp, 0, cv->string);
 								}
 
 								/*// On this specific menu the only time we'll ever see this is for the connect by IP typefield.
@@ -3363,13 +3363,13 @@ void M_DrawMPServerBrowser(void)
 			V_DrawString(startx+11, starty + ypos + 6, transflag, serverlist[i].info.servername);
 
 			// Ping:
-			V_DrawThinString(startx + 191, starty + ypos + 7, V_6WIDTHSPACE|transflag, va("%03d", serverlist[i].info.time));
+			V_DrawThinString(startx + 191, starty + ypos + 7, transflag, va("%03d", serverlist[i].info.time));
 
 			// Playercount
-			V_DrawThinString(startx + 214, starty + ypos + 7, V_6WIDTHSPACE|transflag, va("%02d/%02d", serverlist[i].info.numberofplayer, serverlist[i].info.maxplayer));
+			V_DrawThinString(startx + 214, starty + ypos + 7, transflag, va("%02d/%02d", serverlist[i].info.numberofplayer, serverlist[i].info.maxplayer));
 
 			// Power Level
-			V_DrawThinString(startx + 248, starty + ypos, V_6WIDTHSPACE|transflag, va("%04d PLv", serverlist[i].info.avgpwrlv));
+			V_DrawThinString(startx + 248, starty + ypos, transflag, va("%04d PLv", serverlist[i].info.avgpwrlv));
 
 			// game speed if applicable:
 			if (racegt)
@@ -3704,7 +3704,7 @@ void M_DrawEditProfile(void)
 	V_DrawFixedPatch(0, 0, FRACUNIT, 0, W_CachePatchName("MENUHINT", PU_CACHE), NULL);
 	if (currentMenu->menuitems[itemOn].tooltip != NULL)
 	{
-		V_DrawCenteredThinString(224, 12, V_6WIDTHSPACE, currentMenu->menuitems[itemOn].tooltip);
+		V_DrawCenteredThinString(224, 12, 0, currentMenu->menuitems[itemOn].tooltip);
 	}
 
 	// Draw the menu options...
@@ -3832,7 +3832,7 @@ void M_DrawProfileControls(void)
 	V_DrawFixedPatch(0, 0, FRACUNIT, 0, W_CachePatchName("MENUHINT", PU_CACHE), NULL);
 	if (currentMenu->menuitems[itemOn].tooltip != NULL)
 	{
-		V_DrawCenteredThinString(229, 12, V_6WIDTHSPACE, currentMenu->menuitems[itemOn].tooltip);
+		V_DrawCenteredThinString(229, 12, 0, currentMenu->menuitems[itemOn].tooltip);
 	}
 
 	V_DrawFill(0, 0, 138, 200, 31);	// Black border
@@ -3890,7 +3890,7 @@ void M_DrawProfileControls(void)
 				}
 				else if (currentMenu->menuitems[i].status & IT_CONTROL)
 				{
-					UINT32 vflags = V_6WIDTHSPACE|V_FORCEUPPERCASE;
+					UINT32 vflags = V_FORCEUPPERCASE;
 					INT32 gc = currentMenu->menuitems[i].mvar1;
 
 					UINT8 available = 0, set = 0;
@@ -3947,7 +3947,7 @@ void M_DrawProfileControls(void)
 							if (!set)
 							{
 								if (!G_KeyBindIsNecessary(gc))
-									vflags = V_REDMAP|V_6WIDTHSPACE;
+									vflags = V_REDMAP;
 							}
 							else
 #endif
@@ -4643,13 +4643,13 @@ void M_DrawKickHandler(void)
 					P_IsMachineLocalPlayer(&players[i])
 						? highlightflags
 						: 0
-				)|V_6WIDTHSPACE,
+				),
 				player_names[i]
 			);
 
 			V_DrawRightAlignedThinString(
 				x+118, y-2,
-				V_6WIDTHSPACE,
+				0,
 				(players[i].spectator) ? "SPECTATOR" : "PLAYING"
 			);
 		}
@@ -4680,7 +4680,7 @@ void M_DrawKickHandler(void)
 	V_DrawFixedPatch(0, 0, FRACUNIT, 0, W_CachePatchName("MENUHINT", PU_CACHE), NULL);
 	V_DrawCenteredThinString(
 		BASEVIDWIDTH/2, 12,
-		V_6WIDTHSPACE,
+		0,
 		(playerkickmenu.adminpowered)
 			? "You are using ""\x85""Admin Tools""\x80"", ""\x83""(A)""\x80"" to kick and ""\x84""(C)""\x80"" to ban"
 			: K_GetMidVoteLabel(menucallvote)
@@ -5516,7 +5516,7 @@ static void M_DrawChallengePreview(INT32 x, INT32 y)
 				}
 			}
 
-			V_DrawThinString(1, BASEVIDHEIGHT-(9+3), V_6WIDTHSPACE, gtname);
+			V_DrawThinString(1, BASEVIDHEIGHT-(9+3), 0, gtname);
 
 			break;
 		}
@@ -5606,7 +5606,7 @@ static void M_DrawChallengePreview(INT32 x, INT32 y)
 
 			K_drawButtonAnim(x, y, 0, kp_button_a[1], challengesmenu.ticker);
 			x += SHORT(kp_button_a[1][0]->width);
-			V_DrawThinString(x, y + 1, V_6WIDTHSPACE|highlightflags, "Toggle");
+			V_DrawThinString(x, y + 1, highlightflags, "Toggle");
 			
 
 			break;
@@ -6026,12 +6026,12 @@ static void M_DrawStatsMaps(void)
 				else
 					str = "LOST AND FOUND";
 
-				V_DrawThinString(20,  y, V_6WIDTHSPACE|highlightflags, str);
+				V_DrawThinString(20,  y, highlightflags, str);
 			}
 
 			if (dotopname)
 			{
-				V_DrawRightAlignedThinString(BASEVIDWIDTH-20, y, V_6WIDTHSPACE|highlightflags, "MEDALS");
+				V_DrawRightAlignedThinString(BASEVIDWIDTH-20, y, highlightflags, "MEDALS");
 				dotopname = false;
 			}
 
@@ -6046,7 +6046,7 @@ static void M_DrawStatsMaps(void)
 
 		{
 			char *title = G_BuildMapTitle(mnum+1);
-			V_DrawThinString(24, y, V_6WIDTHSPACE|V_FORCEUPPERCASE, title);
+			V_DrawThinString(24, y, V_FORCEUPPERCASE, title);
 			Z_Free(title);
 		}
 
@@ -6066,7 +6066,7 @@ static void M_DrawStatsMaps(void)
 	{
 		if (i == 1)
 		{
-			V_DrawThinString(20, y, V_6WIDTHSPACE|highlightflags, "EXTRA MEDALS");
+			V_DrawThinString(20, y, highlightflags, "EXTRA MEDALS");
 			if (location)
 			{
 				y += STATSSTEP;
@@ -6105,15 +6105,15 @@ static void M_DrawStatsMaps(void)
 				UINT16 color = min(unlockables[i].color, numskincolors-1);
 				if (!color)
 					color = SKINCOLOR_GOLD;
-				V_DrawSmallMappedPatch(291, y+1, V_6WIDTHSPACE, W_CachePatchName("GOTITA", PU_CACHE),
+				V_DrawSmallMappedPatch(291, y+1, 0, W_CachePatchName("GOTITA", PU_CACHE),
 				                       R_GetTranslationColormap(TC_DEFAULT, color, GTC_MENUCACHE));
 			}
 			else
 			{
-				V_DrawSmallScaledPatch(291, y+1, V_6WIDTHSPACE, W_CachePatchName("NEEDIT", PU_CACHE));
+				V_DrawSmallScaledPatch(291, y+1, 0, W_CachePatchName("NEEDIT", PU_CACHE));
 			}
 
-			V_DrawThinString(24, y, V_6WIDTHSPACE, va("%s", unlockables[i].name));
+			V_DrawThinString(24, y, 0, va("%s", unlockables[i].name));
 		}
 
 		y += STATSSTEP;
@@ -6142,7 +6142,7 @@ void M_DrawStatistics(void)
 	}
 
 	beststr[0] = 0;
-	V_DrawThinString(20, 22, V_6WIDTHSPACE|highlightflags, "Total Play Time:");
+	V_DrawThinString(20, 22, highlightflags, "Total Play Time:");
 	besttime = G_TicsToHours(gamedata->totalplaytime);
 	if (besttime)
 	{
@@ -6161,10 +6161,10 @@ void M_DrawStatistics(void)
 	}
 	besttime = G_TicsToSeconds(gamedata->totalplaytime);
 	strcat(beststr, va("%i second%s", besttime, (besttime == 1 ? "" : "s")));
-	V_DrawRightAlignedThinString(BASEVIDWIDTH-20, 22, V_6WIDTHSPACE, beststr);
+	V_DrawRightAlignedThinString(BASEVIDWIDTH-20, 22, 0, beststr);
 	beststr[0] = 0;
 
-	V_DrawThinString(20, 32, V_6WIDTHSPACE|highlightflags, "Total Rings:");
+	V_DrawThinString(20, 32, highlightflags, "Total Rings:");
 	if (gamedata->totalrings > GDMAX_RINGS)
 	{
 		sprintf(beststr, "%c999,999,999+", '\x82');
@@ -6181,10 +6181,10 @@ void M_DrawStatistics(void)
 	{
 		sprintf(beststr, "%u", gamedata->totalrings);
 	}
-	V_DrawRightAlignedThinString(BASEVIDWIDTH-20, 32, V_6WIDTHSPACE, va("%s collected", beststr));
+	V_DrawRightAlignedThinString(BASEVIDWIDTH-20, 32, 0, va("%s collected", beststr));
 
 	beststr[0] = 0;
-	V_DrawThinString(20, 42, V_6WIDTHSPACE|highlightflags, "Total Rounds:");
+	V_DrawThinString(20, 42, highlightflags, "Total Rounds:");
 
 	strcat(beststr, va("%u Race", gamedata->roundsplayed[GDGT_RACE]));
 
@@ -6205,11 +6205,11 @@ void M_DrawStatistics(void)
 		strcat(beststr, va(", %u Custom", gamedata->roundsplayed[GDGT_CUSTOM]));
 	}
 
-	V_DrawRightAlignedThinString(BASEVIDWIDTH-20, 42, V_6WIDTHSPACE, beststr);
+	V_DrawRightAlignedThinString(BASEVIDWIDTH-20, 42, 0, beststr);
 
 	if (!statisticsmenu.maplist)
 	{
-		V_DrawCenteredThinString(BASEVIDWIDTH/2, 62, V_6WIDTHSPACE, "No maps!?");
+		V_DrawCenteredThinString(BASEVIDWIDTH/2, 62, 0, "No maps!?");
 		return;
 	}
 
@@ -6229,17 +6229,17 @@ void M_DrawStatistics(void)
 		besttime += mapheaderinfo[i]->records.time;
 	}
 
-	V_DrawThinString(20, 60, V_6WIDTHSPACE, "Combined time records:");
+	V_DrawThinString(20, 60, 0, "Combined time records:");
 
 	sprintf(beststr, "%i:%02i:%02i.%02i", G_TicsToHours(besttime), G_TicsToMinutes(besttime, false), G_TicsToSeconds(besttime), G_TicsToCentiseconds(besttime));
-	V_DrawRightAlignedThinString(BASEVIDWIDTH-20, 60, V_6WIDTHSPACE|(mapsunfinished ? V_REDMAP : 0), beststr);
+	V_DrawRightAlignedThinString(BASEVIDWIDTH-20, 60, (mapsunfinished ? V_REDMAP : 0), beststr);
 
 	if (mapsunfinished)
-		V_DrawRightAlignedThinString(BASEVIDWIDTH-20, 70, V_6WIDTHSPACE|V_REDMAP, va("(%d unfinished)", mapsunfinished));
+		V_DrawRightAlignedThinString(BASEVIDWIDTH-20, 70, V_REDMAP, va("(%d unfinished)", mapsunfinished));
 	else
-		V_DrawRightAlignedThinString(BASEVIDWIDTH-20, 70, V_6WIDTHSPACE, "(complete)");
+		V_DrawRightAlignedThinString(BASEVIDWIDTH-20, 70, 0, "(complete)");
 
-	V_DrawThinString(32, 70, V_6WIDTHSPACE, va("x %d/%d", M_CountMedals(false, false), M_CountMedals(true, false)));
+	V_DrawThinString(32, 70, 0, va("x %d/%d", M_CountMedals(false, false), M_CountMedals(true, false)));
 	V_DrawSmallMappedPatch(20, 70, 0, W_CachePatchName("GOTITA", PU_CACHE),
 				                       R_GetTranslationColormap(TC_DEFAULT, SKINCOLOR_GOLD, GTC_MENUCACHE));
 
@@ -6442,15 +6442,15 @@ void M_DrawSoundTest(void)
 		if (!titletext)
 			titletext = "Untitled"; // Har har.
 
-		V_DrawThinString(x+1, y, V_6WIDTHSPACE, titletext);
+		V_DrawThinString(x+1, y, 0, titletext);
 		if (soundtest.current->numtracks > 1)
-			V_DrawThinString(x+1, (y += 10), V_6WIDTHSPACE, va("Track %c", 'A'+soundtest.currenttrack));
+			V_DrawThinString(x+1, (y += 10), 0, va("Track %c", 'A'+soundtest.currenttrack));
 		if (soundtest.current->author)
-			V_DrawThinString(x+1, (y += 10), V_6WIDTHSPACE, soundtest.current->author);
+			V_DrawThinString(x+1, (y += 10), 0, soundtest.current->author);
 		if (soundtest.current->source)
-			V_DrawThinString(x+1, (y += 10), V_6WIDTHSPACE, soundtest.current->source);
+			V_DrawThinString(x+1, (y += 10), 0, soundtest.current->source);
 		if (soundtest.current->composers)
-			V_DrawThinString(x+1, (y += 10), V_6WIDTHSPACE, soundtest.current->composers);
+			V_DrawThinString(x+1, (y += 10), 0, soundtest.current->composers);
 	}
 	else
 	{
@@ -6458,11 +6458,11 @@ void M_DrawSoundTest(void)
 
 		titletext = "Sound Test";
 
-		V_DrawThinString(x+1, y, V_6WIDTHSPACE, "Track ");
+		V_DrawThinString(x+1, y, 0, "Track ");
 		V_DrawThinString(
-			x+1 + V_ThinStringWidth("Track ", V_6WIDTHSPACE),
+			x+1 + V_ThinStringWidth("Track ", 0),
 			y,
-			V_6WIDTHSPACE,
+			0,
 			va("%04X - %s", cv_soundtest.value, sfxstr)
 		);
 	}
@@ -6577,7 +6577,7 @@ void M_DrawSoundTest(void)
 			);
 
 			// Text
-			V_DrawCenteredThinString(x + 13, y + 1, V_6WIDTHSPACE, currentMenu->menuitems[i].text);
+			V_DrawCenteredThinString(x + 13, y + 1, 0, currentMenu->menuitems[i].text);
 
 			V_ClearClipRect();
 
@@ -6666,7 +6666,7 @@ void M_DrawSoundTest(void)
 		}
 		else
 		{
-			V_DrawCenteredThinString(x + 13, y + 1, V_6WIDTHSPACE, currentMenu->menuitems[i].text);
+			V_DrawCenteredThinString(x + 13, y + 1, 0, currentMenu->menuitems[i].text);
 		}
 
 		x += 27;
@@ -6721,17 +6721,17 @@ void M_DrawDiscordRequests(void)
 		V_DrawFixedPatch(56*FRACUNIT, 150*FRACUNIT + handoffset, FRACUNIT, 0, hand, NULL);
 	}
 
-	K_DrawSticker(x + (slide * 32), y - 2, V_ThinStringWidth(M_GetDiscordName(curRequest), V_6WIDTHSPACE), 0, false);
-	V_DrawThinString(x + (slide * 32), y - 1, V_6WIDTHSPACE|V_YELLOWMAP, M_GetDiscordName(curRequest));
+	K_DrawSticker(x + (slide * 32), y - 2, V_ThinStringWidth(M_GetDiscordName(curRequest), 0), 0, false);
+	V_DrawThinString(x + (slide * 32), y - 1, V_YELLOWMAP, M_GetDiscordName(curRequest));
 
-	K_DrawSticker(x, y + 12, V_ThinStringWidth(wantText, V_6WIDTHSPACE), 0, true);
-	V_DrawThinString(x, y + 10, V_6WIDTHSPACE, wantText);
+	K_DrawSticker(x, y + 12, V_ThinStringWidth(wantText, 0), 0, true);
+	V_DrawThinString(x, y + 10, 0, wantText);
 
 	INT32 confirmButtonWidth = SHORT(kp_button_a[1][0]->width);
 	INT32 declineButtonWidth = SHORT(kp_button_b[1][0]->width);
 	INT32 altDeclineButtonWidth = SHORT(kp_button_x[1][0]->width);
-	INT32 acceptTextWidth =  V_ThinStringWidth(acceptText, V_6WIDTHSPACE);
-	INT32 declineTextWidth = V_ThinStringWidth(declineText, V_6WIDTHSPACE);
+	INT32 acceptTextWidth =  V_ThinStringWidth(acceptText, 0);
+	INT32 declineTextWidth = V_ThinStringWidth(declineText, 0);
 	INT32 stickerWidth = (confirmButtonWidth + declineButtonWidth + altDeclineButtonWidth + acceptTextWidth + declineTextWidth);
 
 	K_DrawSticker(x, y + 26, stickerWidth, 0, true);
@@ -6739,7 +6739,7 @@ void M_DrawDiscordRequests(void)
 
 	INT32 xoffs = confirmButtonWidth;
 
-	V_DrawThinString((x + xoffs), y + 24, V_6WIDTHSPACE, acceptText);
+	V_DrawThinString((x + xoffs), y + 24, 0, acceptText);
 	xoffs += acceptTextWidth;
 
 	K_drawButtonAnim((x + xoffs), y + 22, V_SNAPTORIGHT, kp_button_b[1], discordrequestmenu.ticker);
@@ -6748,7 +6748,7 @@ void M_DrawDiscordRequests(void)
 	K_drawButtonAnim((x + xoffs), y + 22, V_SNAPTORIGHT, kp_button_x[1], discordrequestmenu.ticker);
 	xoffs += altDeclineButtonWidth;
 
-	V_DrawThinString((x + xoffs), y + 24, V_6WIDTHSPACE, declineText);
+	V_DrawThinString((x + xoffs), y + 24, 0, declineText);
 
 	y -= 18;
 
@@ -6758,8 +6758,10 @@ void M_DrawDiscordRequests(void)
 
 		curRequest = curRequest->next;
 
-		K_DrawSticker(x, y - 1 + ySlide, V_ThinStringWidth(M_GetDiscordName(curRequest), V_6WIDTHSPACE), 0, false);
-		V_DrawThinString(x, y + ySlide, V_6WIDTHSPACE, M_GetDiscordName(curRequest));
+		const char *discordname = M_GetDiscordName(curRequest);
+
+		K_DrawSticker(x, y - 1 + ySlide, V_ThinStringWidth(discordname, 0), 0, false);
+		V_DrawThinString(x, y + ySlide, 0, discordname);
 
 		y -= 12;
 		maxYSlide = 12;
