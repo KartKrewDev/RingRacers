@@ -26291,7 +26291,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 	},
 
 	{           // MT_SYMBOL
-		4095,           // doomednum
+		4094,           // doomednum
 		S_SYMBOL_0,     // spawnstate
 		1000,           // spawnhealth
 		S_NULL,         // seestate

@@ -7202,7 +7202,7 @@ static void P_ConvertBinaryThingTypes(void)
 		case CEILING_SLOPE_THING:
 			mapthings[i].args[0] = mapthings[i].extrainfo;
 			break;
-		case 4095: // MT_SYMBOL
+		case 4094: // MT_SYMBOL
 			mapthings[i].args[0] = mapthings[i].extrainfo;
 			if (mapthings[i].options & MTF_OBJECTSPECIAL)
 			{
