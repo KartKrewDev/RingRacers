@@ -33,15 +33,14 @@ void M_StartMessage(const char *header, const char *string, void (*routine)(INT3
 	const UINT8 pid = 0;
 	static char *message = NULL;
 	Z_Free(message);
-	message = Z_StrDup(string);
-	DEBFILE(message);
+	DEBFILE(string);
 
-	V_ScaledWordWrap(
+	message = V_ScaledWordWrap(
 		BASEVIDWIDTH << FRACBITS,
 		FRACUNIT, FRACUNIT, FRACUNIT,
 		0,
 		HU_FONT,
-		message
+		string
 	);
 
 	strncpy(menumessage.message, string, MAXMENUMESSAGE);

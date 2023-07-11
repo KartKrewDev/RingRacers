@@ -2610,14 +2610,14 @@ fixed_t V_StringScaledWidth(
 }
 
 // Modify a string to wordwrap at any given width.
-void V_ScaledWordWrap(
+char * V_ScaledWordWrap(
 		fixed_t          w,
 		fixed_t      scale,
 		fixed_t spacescale,
 		fixed_t    lfscale,
 		INT32      flags,
 		int        fontno,
-		char *newstring)
+		const char *s)
 {
 	INT32     hchw;/* half-width for centering */
 
@@ -2675,11 +2675,19 @@ void V_ScaledWordWrap(
 	cx = 0;
 	right = 0;
 
-	size_t i = 0, start = 0;
+	size_t reader = 0, writer = 0, startwriter = 0;
 	fixed_t cxatstart = 0;
 
-	for (; ( c = newstring[i] ); ++i)
+	size_t len = strlen(s) + 1;
+	size_t potentialnewlines = 8;
+	size_t sparenewlines = potentialnewlines;
+
+	char *newstring = static_cast<char *>(Z_Malloc(len + sparenewlines, PU_STATIC, NULL));
+
+	for (; ( c = s[reader] ); ++reader, ++writer)
 	{
+		newstring[writer] = s[reader];
+
 		right = 0;
 
 		switch (c)
@@ -2687,58 +2695,83 @@ void V_ScaledWordWrap(
 			case '\n':
 				cx  =   0;
 				cxatstart = 0;
-				start = 0;
+				startwriter = 0;
 				break;
 			default:
 				if (( c & 0x80 ))
-					continue;
-
-				if (uppercase)
+					;
+				else
 				{
-					c = toupper(c);
-				}
-				else if (V_CharacterValid(font, c - font->start) == false)
-				{
-					// Try the other case if it doesn't exist
-					if (c >= 'A' && c <= 'Z')
-					{
-						c = tolower(c);
-					}
-					else if (c >= 'a' && c <= 'z')
+					if (uppercase)
 					{
 						c = toupper(c);
 					}
-				}
+					else if (V_CharacterValid(font, c - font->start) == false)
+					{
+						// Try the other case if it doesn't exist
+						if (c >= 'A' && c <= 'Z')
+						{
+							c = tolower(c);
+						}
+						else if (c >= 'a' && c <= 'z')
+						{
+							c = toupper(c);
+						}
+					}
 
-				c -= font->start;
-				if (V_CharacterValid(font, c) == true)
-				{
-					cw = SHORT (font->font[c]->width) * dupx;
+					c -= font->start;
+					if (V_CharacterValid(font, c) == true)
+					{
+						cw = SHORT (font->font[c]->width) * dupx;
 
-					// How bunched dims work is by incrementing cx slightly less than a full character width.
-					// This causes the next character to be drawn overlapping the previous.
-					// We need to count the full width to get the rightmost edge of the string though.
-					right = cx + (cw * scale);
+						// How bunched dims work is by incrementing cx slightly less than a full character width.
+						// This causes the next character to be drawn overlapping the previous.
+						// We need to count the full width to get the rightmost edge of the string though.
+						right = cx + (cw * scale);
 
-					(*fontspec.dim_fn)(scale, fontspec.chw, hchw, dupx, &cw);
-					cx += cw;
-				}
-				else
-				{
-					cx += fontspec.spacew;
-					cxatstart = cx;
-					start = i;
+						(*fontspec.dim_fn)(scale, fontspec.chw, hchw, dupx, &cw);
+						cx += cw;
+					}
+					else
+					{
+						cx += fontspec.spacew;
+						cxatstart = cx;
+						startwriter = writer;
+					}
 				}
 		}
 
 		// Start trying to wrap if presumed length exceeds the space we have on-screen.
-		if (start != 0 && right > w)
+		if (right && right > w)
 		{
-			newstring[start] = '\n';
-			cx -= cxatstart;
-			start = 0;
+			if (startwriter != 0)
+			{
+				newstring[startwriter] = '\n';
+				cx -= cxatstart;
+				cxatstart = 0;
+				startwriter = 0;
+			}
+			else
+			{
+				if (sparenewlines == 0)
+				{
+					sparenewlines = (potentialnewlines *= 2);
+					newstring = static_cast<char *>(Z_Realloc(newstring, len + sparenewlines, PU_STATIC, NULL));
+				}
+
+				sparenewlines--;
+				len++;
+
+				newstring[writer++] = '\n'; // Over-write previous
+				cx = cw; // Valid value in the only case right is currently set
+				newstring[writer] = s[reader]; // Re-add
+			}
 		}
 	}
+
+	newstring[writer] = '\0';
+
+	return newstring;
 }
 
 void V_DrawCenteredString(INT32 x, INT32 y, INT32 option, const char *string)

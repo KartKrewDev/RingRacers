@@ -2283,12 +2283,11 @@ static void F_PreparePageText(char *pagetext)
 		Z_Free(promptpagetext);
 	if (pagetext && pagetext[0])
 	{
-		promptpagetext = Z_StrDup(pagetext);
-		V_ScaledWordWrap(
+		promptpagetext = V_ScaledWordWrap(
 			(textx - textr)<<FRACBITS,
 			FRACUNIT, FRACUNIT, FRACUNIT,
 			0, HU_FONT,
-			promptpagetext
+			pagetext
 		);
 	}
 	else

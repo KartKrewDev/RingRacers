@@ -1273,19 +1273,15 @@ boolean HU_Responder(event_t *ev)
 // Now a wrapper for the chat drawer.
 static char *CHAT_WordWrap(INT32 x, INT32 w, INT32 option, const char *string)
 {
-	char *newstring = Z_StrDup(string);
-
 	fixed_t scale = (vid.width < 640) ? FRACUNIT : FRACUNIT/2;
 
-	V_ScaledWordWrap(
+	return V_ScaledWordWrap(
 		(w - x) << FRACBITS,
 		scale, scale, scale,
 		option,
 		HU_FONT,
-		newstring
+		string
 	);
-
-	return newstring;
 }
 
 

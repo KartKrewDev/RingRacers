@@ -293,14 +293,14 @@ fixed_t V_StringScaledWidth(
 		int        fontno,
 		const char *s);
 
-void V_ScaledWordWrap(
+char * V_ScaledWordWrap(
 		fixed_t          w,
 		fixed_t      scale,
 		fixed_t spacescale,
 		fixed_t    lfscale,
 		INT32      flags,
 		int        fontno,
-		char *newstring);
+		const char *s);
 
 // draw a string using the hu_font
 #define V_DrawString( x,y,option,string ) \

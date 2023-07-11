@@ -1577,6 +1577,11 @@ char *M_BuildConditionSetString(UINT16 unlockid)
 		}
 	}
 
+	if (message[0] == '\0')
+	{
+		return NULL;
+	}
+
 	// Valid sentence capitalisation handling.
 	{
 		// Finds the first : character, indicating the end of the prefix.
@@ -1604,15 +1609,13 @@ char *M_BuildConditionSetString(UINT16 unlockid)
 	}
 
 	// Finally, do a clean wordwrap!
-	V_ScaledWordWrap(
+	return V_ScaledWordWrap(
 		DESCRIPTIONWIDTH << FRACBITS,
 		FRACUNIT, FRACUNIT, FRACUNIT,
 		0,
 		HU_FONT,
 		message
 	);
-
-	return message;
 }
 
 static boolean M_CheckUnlockConditions(player_t *player)

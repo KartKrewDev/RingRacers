@@ -104,6 +104,8 @@ static void M_ChallengesAutoFocus(UINT16 unlockid, boolean fresh)
 		return;
 
 	challengesmenu.currentunlock = unlockid;
+	if (challengesmenu.unlockcondition)
+		Z_Free(challengesmenu.unlockcondition);
 	challengesmenu.unlockcondition = M_BuildConditionSetString(challengesmenu.currentunlock);
 	challengesmenu.unlockanim = (challengesmenu.pending && !challengesmenu.chaokeyadd ? 0 : MAXUNLOCKTIME);
 
@@ -505,6 +507,8 @@ void M_ChallengesTick(void)
 			M_UpdateUnlockablesAndExtraEmblems(true, true);
 
 			// Update shown description just in case..?
+			if (challengesmenu.unlockcondition)
+				Z_Free(challengesmenu.unlockcondition);
 			challengesmenu.unlockcondition = M_BuildConditionSetString(challengesmenu.currentunlock);
 
 			challengesmenu.unlockcount[CC_TALLY]++;
@@ -787,6 +791,8 @@ boolean M_ChallengesInputs(INT32 ch)
 			// After movement has been determined, figure out the current selection.
 			i = (challengesmenu.col * CHALLENGEGRIDHEIGHT) + challengesmenu.row;
 			challengesmenu.currentunlock = (gamedata->challengegrid[i]);
+			if (challengesmenu.unlockcondition)
+				Z_Free(challengesmenu.unlockcondition);
 			challengesmenu.unlockcondition = M_BuildConditionSetString(challengesmenu.currentunlock);
 
 			challengesmenu.hilix = challengesmenu.col;
