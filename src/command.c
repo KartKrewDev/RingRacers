@@ -38,6 +38,7 @@
 #include "r_skins.h"
 #include "m_random.h"
 #include "p_local.h" // P_ResetPlayerCheats
+#include "k_color.h"
 
 //========
 // protos.
@@ -108,6 +109,8 @@ CV_PossibleValue_t gpdifficulty_cons_t[] = {
 	{KARTGP_MASTER, "Master"},
 	{0, NULL}
 };
+
+CV_PossibleValue_t kartvoices_cons_t[] = {{0, "Never"}, {1, "Tasteful"}, {2, "Meme"}, {0, NULL}};
 
 // Filter consvars by EXECVERSION
 // First implementation is 2 (1.0.2), so earlier configs default at 1 (1.0.0)
@@ -909,16 +912,27 @@ static void COM_Help_f(void)
 					CONS_Printf("  Yes or No (On or Off, 1 or 0)\n");
 				else if (cvar->PossibleValue == CV_OnOff)
 					CONS_Printf("  On or Off (Yes or No, 1 or 0)\n");
-				else if (cvar->PossibleValue == Color_cons_t)
+				else if (cvar->PossibleValue == Color_cons_t || cvar->PossibleValue == Followercolor_cons_t)
 				{
-					for (i = 1; i < numskincolors; ++i)
+					boolean follower = (cvar->PossibleValue == Followercolor_cons_t);
+					for (i = SKINCOLOR_NONE; i < numskincolors; ++i)
 					{
-						if (skincolors[i].accessible)
+						if (K_ColorUsable(i, follower) == true)
 						{
-							CONS_Printf("  %-2d : %s\n", i, skincolors[i].name);
+							CONS_Printf("  %-3d : %s\n", i, skincolors[i].name);
 							if (i == cvar->value)
 								cvalue = skincolors[i].name;
 						}
+					}
+
+					if (follower)
+					{
+						CONS_Printf("  %-3d : %s\n", FOLLOWERCOLOR_MATCH, "Match");
+						if (FOLLOWERCOLOR_MATCH == cvar->value)
+							cvalue = "Match";
+						CONS_Printf("  %-3d : %s\n", FOLLOWERCOLOR_MATCH, "Opposite");
+						if (FOLLOWERCOLOR_OPPOSITE == cvar->value)
+							cvalue = "Opposite";
 					}
 				}
 				else
@@ -2247,6 +2261,11 @@ void CV_AddValue(consvar_t *var, INT32 increment)
 				{
 					max = KARTSPEED_HARD+1;
 				}
+			}
+			else if (var->PossibleValue == kartvoices_cons_t
+				&& !M_SecretUnlocked(SECRET_MEMETAUNTS, true))
+			{
+				max--;
 			}
 #ifdef PARANOIA
 			if (currentindice == -1)

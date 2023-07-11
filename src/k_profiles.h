@@ -131,10 +131,6 @@ void PR_SaveProfiles(void);
 // This also loads
 void PR_LoadProfiles(void);
 
-// PR_GetProfileColor(profile_t *p)
-// Returns the profile's color, or the skin's prefcolor if set to none.
-skincolornum_t PR_GetProfileColor(profile_t *p);
-
 // PR_ApplyProfile(UINT8 profilenum, UINT8 playernum)
 // Applies the given profile's settings to the given player.
 void PR_ApplyProfile(UINT8 profilenum, UINT8 playernum);

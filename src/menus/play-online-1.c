@@ -80,8 +80,8 @@ void M_MPOptSelectInit(INT32 choice)
 	memcpy(&mpmenu.modewinextend, &arrcpy, sizeof(mpmenu.modewinextend));
 
 	// Guarantee menugametype is good
-	M_NextMenuGametype(forbidden);
 	M_PrevMenuGametype(forbidden);
+	M_NextMenuGametype(forbidden);
 
 	if (choice != -1)
 	{

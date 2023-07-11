@@ -35,6 +35,7 @@
 #include "y_inter.h"
 #include "m_cond.h"
 #include "p_local.h"
+#include "p_saveg.h"
 #include "p_setup.h"
 #include "st_stuff.h" // hud hiding
 #include "fastcmp.h"
@@ -234,16 +235,25 @@ void K_UpdatePodiumWaypoints(player_t *const player)
 --------------------------------------------------*/
 boolean K_StartCeremony(void)
 {
-	INT32 podiumMapNum = nummapheaders;
-	INT32 i;
-
 	if (grandprixinfo.gp == false)
 	{
 		return false;
 	}
 
-	if (podiummap
-		&& ((podiumMapNum = G_MapNumber(podiummap)) < nummapheaders)
+	INT32 i;
+	INT32 podiumMapNum = NEXTMAP_INVALID;
+
+	if (grandprixinfo.cup != NULL
+	&& grandprixinfo.cup->cachedlevels[CUPCACHE_PODIUM] != NEXTMAP_INVALID)
+	{
+		podiumMapNum = grandprixinfo.cup->cachedlevels[CUPCACHE_PODIUM];
+	}
+	else if (podiummap)
+	{
+		podiumMapNum = G_MapNumber(podiummap);
+	}
+
+	if (podiumMapNum < nummapheaders
 		&& mapheaderinfo[podiumMapNum]
 		&& mapheaderinfo[podiumMapNum]->lumpnum != LUMPERROR)
 	{
@@ -251,6 +261,12 @@ boolean K_StartCeremony(void)
 
 		maptol = mapheaderinfo[gamemap-1]->typeoflevel;
 		globalweather = mapheaderinfo[gamemap-1]->weather;
+
+		if (savedata.lives > 0)
+		{
+			K_LoadGrandPrixSaveGame();
+			savedata.lives = 0;
+		}
 
 		// Make sure all of the GAME OVER'd players can spawn
 		// and be present for the podium

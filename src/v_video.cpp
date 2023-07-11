@@ -2286,7 +2286,7 @@ void V_DrawStringScaled(
 			break;
 		case LSHI_FONT:
 		case LSLOW_FONT:
-			spacew = 16;
+			spacew = 10;
 			break;
 		case OPPRF_FONT:
 			spacew = 5;
@@ -2416,7 +2416,7 @@ void V_DrawStringScaled(
 			if (chw)
 				dim_fn = FixedCharacterDim;
 			else
-				dim_fn = VariableCharacterDim;
+				dim_fn = BunchedCharacterDim;
 			break;
 	}
 
@@ -2579,7 +2579,7 @@ fixed_t V_StringScaledWidth(
 			break;
 		case LSHI_FONT:
 		case LSLOW_FONT:
-			spacew = 16;
+			spacew = 10;
 			break;
 		case OPPRF_FONT:
 			spacew = 5;
@@ -2696,7 +2696,7 @@ fixed_t V_StringScaledWidth(
 			if (chw)
 				dim_fn = FixedCharacterDim;
 			else
-				dim_fn = VariableCharacterDim;
+				dim_fn = BunchedCharacterDim;
 			break;
 	}
 

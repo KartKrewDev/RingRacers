@@ -23,6 +23,9 @@ extern "C" {
 #define ROULETTE_SPACING (36 << FRACBITS)
 #define ROULETTE_SPACING_SPLITSCREEN (16 << FRACBITS)
 
+#define SLOT_SPACING (40 << FRACBITS)
+#define SLOT_SPACING_SPLITSCREEN (22 << FRACBITS)
+
 /*--------------------------------------------------
 	boolean K_ItemEnabled(kartitems_t item);
 
@@ -98,7 +101,7 @@ INT32 K_KartGetItemOdds(const player_t *player, itemroulette_t *const roulette, 
 
 
 /*--------------------------------------------------
-	void K_FillItemRouletteData(const player_t *player, itemroulette_t *const roulette);
+	void K_FillItemRouletteData(const player_t *player, itemroulette_t *const roulette, boolean ringbox);
 
 		Fills out the item roulette struct when it is
 		initially created. This function needs to be
@@ -109,16 +112,17 @@ INT32 K_KartGetItemOdds(const player_t *player, itemroulette_t *const roulette, 
 		player - The player this roulette data is for.
 			Can be NULL for generic use.
 		roulette - The roulette data struct to fill out.
+		ringbox - Is this roulette fill triggered by a just-respawned Ring Box?
 
 	Return:-
 		N/A
 --------------------------------------------------*/
 
-void K_FillItemRouletteData(const player_t *player, itemroulette_t *const roulette);
+void K_FillItemRouletteData(const player_t *player, itemroulette_t *const roulette, boolean ringbox);
 
 
 /*--------------------------------------------------
-	void K_StartItemRoulette(player_t *const player);
+	void K_StartItemRoulette(player_t *const player, boolean ringbox);
 
 		Starts the item roulette sequence for a player.
 		This stage can only be used by gameplay, thus
@@ -126,12 +130,13 @@ void K_FillItemRouletteData(const player_t *player, itemroulette_t *const roulet
 
 	Input Arguments:-
 		player - The player to start the item roulette for.
+		ringbox - Is this roulette being started from a just-respawned Ring Box?
 
 	Return:-
 		N/A
 --------------------------------------------------*/
 
-void K_StartItemRoulette(player_t *const player);
+void K_StartItemRoulette(player_t *const player, boolean ringbox);
 
 
 /*--------------------------------------------------
@@ -169,6 +174,23 @@ void K_StartEggmanRoulette(player_t *const player);
 
 fixed_t K_GetRouletteOffset(itemroulette_t *const roulette, fixed_t renderDelta);
 
+/*--------------------------------------------------
+	fixed_t K_GetSlotOffset(itemroulette_t *const roulette, fixed_t renderDelta);
+
+		Gets the Y offset, for use in the slot HUD.
+		A separate function since it is used both by the
+		HUD itself, as well as when confirming an item.
+
+	Input Arguments:-
+		roulette - The roulette we are drawing for.
+		renderDelta - Fractional tic delta, when used for HUD.
+
+	Return:-
+		The Y offset when drawing the item.
+--------------------------------------------------*/
+
+fixed_t K_GetSlotOffset(itemroulette_t *const roulette, fixed_t renderDelta);
+
 
 /*--------------------------------------------------
 	void K_KartItemRoulette(player_t *const player, ticcmd_t *cmd);
@@ -185,6 +207,8 @@ fixed_t K_GetRouletteOffset(itemroulette_t *const roulette, fixed_t renderDelta)
 --------------------------------------------------*/
 
 void K_KartItemRoulette(player_t *const player, ticcmd_t *cmd);
+
+UINT32 K_GetItemRouletteDistance(const player_t *player, UINT8 numPlayers);
 
 #ifdef __cplusplus
 } // extern "C"

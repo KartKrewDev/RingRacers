@@ -45,6 +45,8 @@
 #include "k_specialstage.h"
 #include "k_roulette.h"
 #include "k_podium.h"
+#include "k_powerup.h"
+#include "k_hitlag.h"
 
 // SOME IMPORTANT VARIABLES DEFINED IN DOOMDEF.H:
 // gamespeed is cc (0 for easy, 1 for normal, 2 for hard)
@@ -359,8 +361,10 @@ void K_RegisterKartStuff(void)
 	CV_RegisterVar(&cv_kartencore);
 	CV_RegisterVar(&cv_kartspeedometer);
 	CV_RegisterVar(&cv_kartvoices);
+	CV_RegisterVar(&cv_karthorns);
 	CV_RegisterVar(&cv_kartbot);
 	CV_RegisterVar(&cv_karteliminatelast);
+	CV_RegisterVar(&cv_thunderdome);
 	CV_RegisterVar(&cv_kartusepwrlv);
 	CV_RegisterVar(&cv_votetime);
 	CV_RegisterVar(&cv_botscanvote);
@@ -2054,13 +2058,29 @@ void K_SpawnMagicianParticles(mobj_t *mo, int spread)
 	}
 }
 
-static SINT8 K_GlanceAtPlayers(player_t *glancePlayer)
+static SINT8 K_GlanceAtPlayers(player_t *glancePlayer, boolean horn)
 {
 	const fixed_t maxdistance = FixedMul(1280 * mapobjectscale, K_GetKartGameSpeedScalar(gamespeed));
 	const angle_t blindSpotSize = ANG10; // ANG5
 	UINT8 i;
 	SINT8 glanceDir = 0;
 	SINT8 lastValidGlance = 0;
+	boolean podiumspecial = (K_PodiumSequence() == true && glancePlayer->nextwaypoint == NULL && glancePlayer->speed == 0);
+
+	if (podiumspecial)
+	{
+		if (glancePlayer->position > 3)
+		{
+			// Loser valley, focused on the mountain.
+			return 0;
+		}
+
+		if (glancePlayer->position == 1)
+		{
+			// Sitting on the stand, I ammm thebest!
+			return 0;
+		}
+	}
 
 	// See if there's any players coming up behind us.
 	// If so, your character will glance at 'em.
@@ -2098,9 +2118,17 @@ static SINT8 K_GlanceAtPlayers(player_t *glancePlayer)
 			continue;
 		}
 
-		distance = R_PointToDist2(glancePlayer->mo->x, glancePlayer->mo->y, p->mo->x, p->mo->y);
+		if (!podiumspecial)
+		{
+			distance = R_PointToDist2(glancePlayer->mo->x, glancePlayer->mo->y, p->mo->x, p->mo->y);
 
-		if (distance > maxdistance)
+			if (distance > maxdistance)
+			{
+				// Too far away
+				continue;
+			}
+		}
+		else if (p->position >= glancePlayer->position)
 		{
 			continue;
 		}
@@ -2114,7 +2142,7 @@ static SINT8 K_GlanceAtPlayers(player_t *glancePlayer)
 			dir = -dir;
 		}
 
-		if (diff > ANGLE_90)
+		if (diff > (podiumspecial ? (ANGLE_180 - blindSpotSize) : ANGLE_90))
 		{
 			// Not behind the player
 			continue;
@@ -2126,16 +2154,33 @@ static SINT8 K_GlanceAtPlayers(player_t *glancePlayer)
 			continue;
 		}
 
-		if (P_CheckSight(glancePlayer->mo, p->mo) == true)
+		if (!podiumspecial && P_CheckSight(glancePlayer->mo, p->mo) == false)
 		{
-			// Not blocked by a wall, we can glance at 'em!
-			// Adds, so that if there's more targets on one of your sides, it'll glance on that side.
-			glanceDir += dir;
-
-			// That poses a limitation if there's an equal number of targets on both sides...
-			// In that case, we'll pick the last chosen glance direction.
-			lastValidGlance = dir;
+			// Blocked by a wall, we can't glance at 'em!
+			continue;
 		}
+
+		// Adds, so that if there's more targets on one of your sides, it'll glance on that side.
+		glanceDir += dir;
+
+		// That poses a limitation if there's an equal number of targets on both sides...
+		// In that case, we'll pick the last chosen glance direction.
+		lastValidGlance = dir;
+
+		if (horn == true)
+		{
+			K_FollowerHornTaunt(glancePlayer, p);
+		}
+	}
+
+	if (horn == true && lastValidGlance != 0)
+	{
+		const boolean tasteful = (glancePlayer->karthud[khud_taunthorns] == 0);
+
+		K_FollowerHornTaunt(glancePlayer, glancePlayer);
+
+		if (tasteful && glancePlayer->karthud[khud_taunthorns] < 2*TICRATE)
+			glancePlayer->karthud[khud_taunthorns] = 2*TICRATE;
 	}
 
 	if (glanceDir > 0)
@@ -2214,7 +2259,8 @@ void K_KartMoveAnimation(player_t *player)
 	{
 		// Only try glancing if you're driving straight.
 		// This avoids all-players loops when we don't need it.
-		destGlanceDir = K_GlanceAtPlayers(player);
+		const boolean horn = lookback && !(player->pflags & PF_GAINAX);
+		destGlanceDir = K_GlanceAtPlayers(player, horn);
 
 		if (lookback == true)
 		{
@@ -2648,7 +2694,9 @@ void K_TryHurtSoundExchange(mobj_t *victim, mobj_t *attacker)
 	attacker->player->confirmVictim = (victim->player - players);
 	attacker->player->confirmVictimDelay = TICRATE/2;
 
-	if (attacker->player->follower != NULL)
+	if (attacker->player->follower != NULL
+		&& attacker->player->followerskin >= 0
+		&& attacker->player->followerskin < numfollowers)
 	{
 		const follower_t *fl = &followers[attacker->player->followerskin];
 		attacker->player->follower->movecount = fl->hitconfirmtime; // movecount is used to play the hitconfirm animation for followers.
@@ -3578,75 +3626,6 @@ angle_t K_MomentumAngleReal(const mobj_t *mo)
 	}
 }
 
-void K_AddHitLag(mobj_t *mo, INT32 tics, boolean fromDamage)
-{
-	if (mo == NULL || P_MobjWasRemoved(mo) || (mo->flags & MF_NOHITLAGFORME && mo->type != MT_PLAYER))
-	{
-		return;
-	}
-
-	mo->hitlag += tics;
-	mo->hitlag = min(mo->hitlag, MAXHITLAGTICS);
-
-	if (mo->player != NULL)
-	{
-		// Reset each time. We want to explicitly set this for bananas afterwards,
-		// so make sure an old value doesn't possibly linger.
-		mo->player->flipDI = false;
-	}
-
-	if (fromDamage == true)
-	{
-		// Dunno if this should flat-out &~ the flag out too.
-		// Decided it probably just just keep it since it's "adding" hitlag.
-		mo->eflags |= MFE_DAMAGEHITLAG;
-	}
-}
-
-void K_SetHitLagForObjects(mobj_t *mo1, mobj_t *mo2, INT32 tics, boolean fromDamage)
-{
-	INT32 finalTics = tics;
-
-	if (tics <= 0)
-	{
-		return;
-	}
-
-	if ((mo1 && !P_MobjWasRemoved(mo1)) == true && (mo2 && !P_MobjWasRemoved(mo2)) == true)
-	{
-		const fixed_t speedTicFactor = (mapobjectscale * 8);
-		const INT32 angleTicFactor = ANGLE_22h;
-
-		const fixed_t mo1speed = FixedHypot(FixedHypot(mo1->momx, mo1->momy), mo1->momz);
-		const fixed_t mo2speed = FixedHypot(FixedHypot(mo2->momx, mo2->momy), mo2->momz);
-		const fixed_t speedDiff = abs(mo2speed - mo1speed);
-
-		const fixed_t scaleDiff = abs(mo2->scale - mo1->scale);
-
-		angle_t mo1angle = K_MomentumAngleReal(mo1);
-		angle_t mo2angle = K_MomentumAngleReal(mo2);
-		INT32 angleDiff = 0;
-
-		if (mo1speed > 0 && mo2speed > 0)
-		{
-			// If either object is completely not moving, their speed doesn't matter.
-			angleDiff = AngleDelta(mo1angle, mo2angle);
-		}
-
-		// Add extra "damage" based on what was happening to the objects on impact.
-		finalTics += (FixedMul(speedDiff, FRACUNIT + scaleDiff) / speedTicFactor) + (angleDiff / angleTicFactor);
-
-		// This shouldn't happen anymore, but just in case something funky happens.
-		if (finalTics < tics)
-		{
-			finalTics = tics;
-		}
-	}
-
-	K_AddHitLag(mo1, finalTics, fromDamage);
-	K_AddHitLag(mo2, finalTics, false); // mo2 is the inflictor, so don't use the damage property.
-}
-
 void K_AwardPlayerRings(player_t *player, INT32 rings, boolean overload)
 {
 	UINT16 superring;
@@ -3722,6 +3701,9 @@ void K_DoGuardBreak(mobj_t *t1, mobj_t *t2) {
 	if (!(t1->player && t2->player))
 		return;
 
+	if (P_PlayerInPain(t2->player))
+		return;
+
 	// short-circuit instashield for vfx visibility
 	t1->player->instaShieldCooldown = GUARDBREAK_COOLDOWN;
 	t1->player->guardCooldown = GUARDBREAK_COOLDOWN;
@@ -3744,6 +3726,7 @@ void K_BattleAwardHit(player_t *player, player_t *victim, mobj_t *inflictor, UIN
 {
 	UINT8 points = 1;
 	boolean trapItem = false;
+	boolean finishOff = (victim->mo->health > 0) && (victim->mo->health <= damage);
 
 	if (!(gametyperules & GTR_POINTLIMIT))
 	{
@@ -3778,12 +3761,18 @@ void K_BattleAwardHit(player_t *player, player_t *victim, mobj_t *inflictor, UIN
 		}
 		else if (gametyperules & GTR_BUMPERS)
 		{
-			if ((victim->mo->health > 0) && (victim->mo->health <= damage))
+			if (finishOff)
 			{
 				// +2 points for finishing off a player
 				points = 2;
 			}
 		}
+	}
+
+	// Check this before adding to player score
+	if ((gametyperules & GTR_BUMPERS) && finishOff && g_pointlimit <= player->roundscore)
+	{
+		P_DoAllPlayersExit(0, false);
 	}
 
 	P_AddPlayerScore(player, points);
@@ -3900,7 +3889,6 @@ void K_TumblePlayer(player_t *player, mobj_t *inflictor, mobj_t *source)
 	player->mo->momz = K_TumbleZ(player->mo, player->tumbleHeight * FRACUNIT);
 
 	P_SetPlayerMobjState(player->mo, S_KART_SPINOUT);
-	P_StartQuakeFromMobj(10, 64 * player->mo->scale, 512 * player->mo->scale, player->mo);
 }
 
 angle_t K_StumbleSlope(angle_t angle, angle_t pitch, angle_t roll)
@@ -3939,7 +3927,6 @@ void K_StumblePlayer(player_t *player)
 	player->mo->momz = K_TumbleZ(player->mo, player->tumbleHeight * FRACUNIT);
 
 	P_SetPlayerMobjState(player->mo, S_KART_SPINOUT);
-	P_StartQuakeFromMobj(10, 64 * player->mo->scale, 512 * player->mo->scale, player->mo);
 
 	// Reset slope.
 	player->mo->pitch = player->mo->roll = 0;
@@ -4414,7 +4401,6 @@ INT32 K_ExplodePlayer(player_t *player, mobj_t *inflictor, mobj_t *source) // A 
 		player->mo->momz = (117 * player->mo->momz) / 200;
 
 	P_SetPlayerMobjState(player->mo, S_KART_SPINOUT);
-	P_StartQuakeFromMobj(5, 64 * player->mo->scale, 512 * player->mo->scale, player->mo);
 
 	return ringburst;
 }
@@ -4436,18 +4422,11 @@ void K_DebtStingPlayer(player_t *player, mobj_t *source)
 	P_SetPlayerMobjState(player->mo, S_KART_SPINOUT);
 }
 
-void K_TakeBumpersFromPlayer(player_t *player, player_t *victim, UINT8 amount)
+void K_GiveBumpersToPlayer(player_t *player, player_t *victim, UINT8 amount)
 {
 	const UINT8 oldPlayerBumpers = K_Bumpers(player);
 
 	UINT8 tookBumpers = 0;
-
-	amount = min(amount, K_Bumpers(victim));
-
-	if (amount == 0)
-	{
-		return;
-	}
 
 	while (tookBumpers < amount)
 	{
@@ -4474,11 +4453,15 @@ void K_TakeBumpersFromPlayer(player_t *player, player_t *victim, UINT8 amount)
 		newmo = P_SpawnMobj(newx, newy, player->mo->z, MT_BATTLEBUMPER);
 		newmo->threshold = newbumper;
 
-		P_SetTarget(&newmo->tracer, victim->mo);
+		if (victim)
+		{
+			P_SetTarget(&newmo->tracer, victim->mo);
+		}
+
 		P_SetTarget(&newmo->target, player->mo);
 
 		newmo->angle = (diff * (newbumper-1));
-		newmo->color = victim->skincolor;
+		newmo->color = (victim ? victim : player)->skincolor;
 
 		if (newbumper+1 < 2)
 		{
@@ -4498,6 +4481,18 @@ void K_TakeBumpersFromPlayer(player_t *player, player_t *victim, UINT8 amount)
 
 	// :jartcookiedance:
 	player->mo->health += tookBumpers;
+}
+
+void K_TakeBumpersFromPlayer(player_t *player, player_t *victim, UINT8 amount)
+{
+	amount = min(amount, K_Bumpers(victim));
+
+	if (amount == 0)
+	{
+		return;
+	}
+
+	K_GiveBumpersToPlayer(player, victim, amount);
 
 	// Play steal sound
 	S_StartSound(player->mo, sfx_3db06);
@@ -5880,7 +5875,7 @@ void K_PuntMine(mobj_t *origMine, mobj_t *punter)
 	mine->momy = punter->momy + FixedMul(FINESINE(fa >> ANGLETOFINESHIFT), spd);
 	P_SetObjectMomZ(mine, z, false);
 
-	//K_SetHitLagForObjects(punter, mine, 5);
+	//K_SetHitLagForObjects(punter, mine, mine->target, 5);
 
 	mine->flags &= ~(MF_NOCLIP|MF_NOCLIPTHING);
 }
@@ -6532,25 +6527,31 @@ SINT8 K_GetTotallyRandomResult(UINT8 useodds)
 	return i;
 }
 
-mobj_t *K_CreatePaperItem(fixed_t x, fixed_t y, fixed_t z, angle_t angle, SINT8 flip, UINT8 type, UINT8 amount)
+mobj_t *K_CreatePaperItem(fixed_t x, fixed_t y, fixed_t z, angle_t angle, SINT8 flip, UINT8 type, UINT16 amount)
 {
 	mobj_t *drop = P_SpawnMobj(x, y, z, MT_FLOATINGITEM);
-	mobj_t *backdrop = P_SpawnMobjFromMobj(drop, 0, 0, 0, MT_OVERLAY);
 
-	P_SetTarget(&backdrop->target, drop);
-	P_SetMobjState(backdrop, S_ITEMBACKDROP);
+	// FIXME: due to linkdraw sucking major ass, I was unable
+	// to make a backdrop render behind dropped power-ups
+	// (which use a smaller sprite than normal items). So
+	// dropped power-ups have the backdrop baked into the
+	// sprite for now.
+	if (type < FIRSTPOWERUP)
+	{
+		mobj_t *backdrop = P_SpawnMobjFromMobj(drop, 0, 0, 0, MT_OVERLAY);
+
+		P_SetTarget(&backdrop->target, drop);
+		P_SetMobjState(backdrop, S_ITEMBACKDROP);
+
+		backdrop->dispoffset = 1;
+		P_SetTarget(&backdrop->tracer, drop);
+		backdrop->flags2 |= MF2_LINKDRAW;
+	}
 
 	P_SetScale(drop, drop->scale>>4);
 	drop->destscale = (3*drop->destscale)/2;
 
 	drop->angle = angle;
-	P_Thrust(drop,
-		FixedAngle(P_RandomFixed(PR_ITEM_ROULETTE) * 180) + angle,
-		16*mapobjectscale);
-
-	drop->momz = flip * 3 * mapobjectscale;
-	if (drop->eflags & MFE_UNDERWATER)
-		drop->momz = (117 * drop->momz) / 200;
 
 	if (type == 0)
 	{
@@ -6587,9 +6588,6 @@ mobj_t *K_CreatePaperItem(fixed_t x, fixed_t y, fixed_t z, angle_t angle, SINT8 
 	}
 
 	drop->flags |= MF_NOCLIPTHING;
-	backdrop->dispoffset = 1;
-	P_SetTarget(&backdrop->tracer, drop);
-	backdrop->flags2 |= MF2_LINKDRAW;
 
 	if (gametyperules & GTR_CLOSERPLAYERS)
 	{
@@ -6599,20 +6597,45 @@ mobj_t *K_CreatePaperItem(fixed_t x, fixed_t y, fixed_t z, angle_t angle, SINT8 
 	return drop;
 }
 
+mobj_t *K_FlingPaperItem(fixed_t x, fixed_t y, fixed_t z, angle_t angle, SINT8 flip, UINT8 type, UINT16 amount)
+{
+	mobj_t *drop = K_CreatePaperItem(x, y, z, angle, flip, type, amount);
+
+	P_Thrust(drop,
+		FixedAngle(P_RandomFixed(PR_ITEM_ROULETTE) * 180) + angle,
+		16*mapobjectscale);
+
+	drop->momz = flip * 3 * mapobjectscale;
+	if (drop->eflags & MFE_UNDERWATER)
+		drop->momz = (117 * drop->momz) / 200;
+
+	return drop;
+}
+
+void K_DropPaperItem(player_t *player, UINT8 itemtype, UINT16 itemamount)
+{
+	if (!player->mo || P_MobjWasRemoved(player->mo))
+	{
+		return;
+	}
+
+	mobj_t *drop = K_FlingPaperItem(
+		player->mo->x, player->mo->y, player->mo->z + player->mo->height/2,
+		player->mo->angle + ANGLE_90, P_MobjFlip(player->mo),
+		itemtype, itemamount
+	);
+
+	K_FlipFromObject(drop, player->mo);
+}
+
 // For getting EXTRA hit!
 void K_DropItems(player_t *player)
 {
 	K_DropHnextList(player);
 
-	if (player->mo && !P_MobjWasRemoved(player->mo) && player->itemamount > 0)
+	if (player->itemamount > 0)
 	{
-		mobj_t *drop = K_CreatePaperItem(
-			player->mo->x, player->mo->y, player->mo->z + player->mo->height/2,
-			player->mo->angle + ANGLE_90, P_MobjFlip(player->mo),
-			player->itemtype, player->itemamount
-		);
-
-		K_FlipFromObject(drop, player->mo);
+		K_DropPaperItem(player, player->itemtype, player->itemamount);
 	}
 
 	K_StripItems(player);
@@ -7394,6 +7417,9 @@ void K_KartPlayerHUDUpdate(player_t *player)
 	if (player->karthud[khud_tauntvoices])
 		player->karthud[khud_tauntvoices]--;
 
+	if (player->karthud[khud_taunthorns])
+		player->karthud[khud_taunthorns]--;
+
 	if (player->karthud[khud_trickcool])
 		player->karthud[khud_trickcool]--;
 
@@ -7539,7 +7565,7 @@ static inline BlockItReturn_t PIT_AttractingRings(mobj_t *thing)
 		return BMIT_CONTINUE; // invalid
 	}
 
-	if (!(thing->type == MT_RING || thing->type == MT_FLINGRING))
+	if (!(thing->type == MT_RING || thing->type == MT_FLINGRING || thing->type == MT_EMERALD))
 	{
 		return BMIT_CONTINUE; // not a ring
 	}
@@ -7549,7 +7575,7 @@ static inline BlockItReturn_t PIT_AttractingRings(mobj_t *thing)
 		return BMIT_CONTINUE; // dead
 	}
 
-	if (thing->extravalue1)
+	if (thing->extravalue1 && thing->type != MT_EMERALD)
 	{
 		return BMIT_CONTINUE; // in special ring animation
 	}
@@ -7928,7 +7954,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 				player->spheredigestion = spheredigestion;
 			}
 
-			if (K_PlayerGuard(player) && (player->ebrakefor%6 == 0))
+			if (K_PlayerGuard(player) && !K_PowerUpRemaining(player, POWERUP_BARRIER) && (player->ebrakefor%6 == 0))
 				player->spheres--;
 		}
 		else
@@ -8019,6 +8045,22 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 			if (!P_IsObjectOnGround(player->mo))
 				player->instaShieldCooldown = max(player->instaShieldCooldown, 1);
 		}
+	}
+
+	if (player->powerup.rhythmBadgeTimer > 0)
+	{
+		player->instaShieldCooldown = min(player->instaShieldCooldown, 1);
+		player->powerup.rhythmBadgeTimer--;
+	}
+
+	if (player->powerup.barrierTimer > 0)
+	{
+		player->powerup.barrierTimer--;
+	}
+
+	if (player->powerup.superTimer > 0)
+	{
+		player->powerup.superTimer--;
 	}
 
 	if (player->guardCooldown)
@@ -8265,7 +8307,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		player->pflags &= ~PF_DRIFTINPUT;
 	}
 
-	if (K_PlayerGuard(player))
+	if (K_PlayerGuard(player) && !K_PowerUpRemaining(player, POWERUP_BARRIER))
 		player->instaShieldCooldown = max(player->instaShieldCooldown, INSTAWHIP_DROPGUARD);
 
 	// Roulette Code
@@ -8287,6 +8329,12 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 	if (player->hand && P_MobjWasRemoved(player->hand))
 		P_SetTarget(&player->hand, NULL);
 
+	if (player->flickyAttacker && P_MobjWasRemoved(player->flickyAttacker))
+		P_SetTarget(&player->flickyAttacker, NULL);
+
+	if (player->powerup.flickyController && P_MobjWasRemoved(player->powerup.flickyController))
+		P_SetTarget(&player->powerup.flickyController, NULL);
+
 	if (player->spectator == false)
 	{
 		K_KartEbrakeVisuals(player);
@@ -8306,6 +8354,8 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 	}
 
 	K_HandleDelayedHitByEm(player);
+
+	player->pflags &= ~PF_POINTME;
 }
 
 void K_KartResetPlayerColor(player_t *player)
@@ -8530,7 +8580,7 @@ void K_KartPlayerAfterThink(player_t *player)
 		player->jawztargetdelay = 0;
 	}
 
-	if (player->itemtype == KITEM_LIGHTNINGSHIELD)
+	if (player->itemtype == KITEM_LIGHTNINGSHIELD || ((gametyperules & GTR_POWERSTONES) && K_IsPlayerWanted(player)))
 	{
 		K_LookForRings(player->mo);
 	}
@@ -9982,7 +10032,17 @@ boolean K_PlayerEBrake(player_t *player)
 
 boolean K_PlayerGuard(player_t *player)
 {
-	return (K_PlayerEBrake(player) && player->spheres > 0 && player->guardCooldown == 0);
+	if (player->guardCooldown != 0)
+	{
+		return false;
+	}
+
+	if (K_PowerUpRemaining(player, POWERUP_BARRIER))
+	{
+		return true;
+	}
+
+	return (K_PlayerEBrake(player) && player->spheres > 0);
 }
 
 SINT8 K_Sliptiding(player_t *player)
@@ -10025,26 +10085,6 @@ void K_KartEbrakeVisuals(player_t *p)
 		// sound
 		if (!S_SoundPlaying(p->mo, sfx_s3kd9s))
 			S_ReducedVFXSound(p->mo, sfx_s3kd9s, p);
-
-		// Block visuals
-		// (These objects track whether a player is block-eligible on their own, no worries)
-		if (!p->ebrakefor)
-		{
-			mobj_t *ring = P_SpawnMobj(p->mo->x, p->mo->y, p->mo->z, MT_BLOCKRING);
-			P_SetTarget(&ring->target, p->mo);
-			P_SetScale(ring, p->mo->scale);
-			K_MatchGenericExtraFlags(ring, p->mo);
-			ring->renderflags &= ~RF_DONTDRAW;
-
-			mobj_t *body = P_SpawnMobj(p->mo->x, p->mo->y, p->mo->z, MT_BLOCKBODY);
-			P_SetTarget(&body->target, p->mo);
-			P_SetScale(body, p->mo->scale);
-			K_MatchGenericExtraFlags(body, p->mo);
-			body->renderflags |= RF_DONTDRAW;
-
-			if (K_PlayerGuard(p))
-				S_StartSound(body, sfx_s1af);
-		}
 
 		// HOLD! bubble.
 		if (!p->ebrakefor)
@@ -10753,6 +10793,29 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 			player->pflags &= ~PF_USERINGS;
 	}
 
+	if (player->ringboxdelay)
+	{
+		player->ringboxdelay--;
+		if (player->ringboxdelay == 0)
+		{
+			UINT32 behind = K_GetItemRouletteDistance(player, player->itemRoulette.playing);
+			UINT32 behindMulti = behind / 1000;
+			behindMulti = min(behindMulti, 20);
+
+			UINT32 award = 5*player->ringboxaward + 10;
+			if (player->ringboxaward > 2) // not a BAR
+				award = 3 * award / 2;
+			award = award * (behindMulti + 10) / 10;
+
+			// SPB Attack is hard, but we're okay with that.
+			if (modeattacking & ATTACKING_SPB)
+				award = award / 2;
+
+			K_AwardPlayerRings(player, award, true);
+			player->ringboxaward = 0;
+		}
+	}
+
 	if (player && player->mo && player->mo->health > 0 && !player->spectator && !P_PlayerInPain(player) && !mapreset && leveltime > introtime)
 	{
 		// First, the really specific, finicky items that function without the item being directly in your item slot.
@@ -10769,7 +10832,12 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 					else
 					{
 						player->instaShieldCooldown = INSTAWHIP_COOLDOWN;
-						player->guardCooldown = INSTAWHIP_COOLDOWN;
+
+						if (!K_PowerUpRemaining(player, POWERUP_BARRIER))
+						{
+							player->guardCooldown = INSTAWHIP_COOLDOWN;
+						}
+
 						S_StartSound(player->mo, sfx_iwhp);
 						mobj_t *whip = P_SpawnMobj(player->mo->x, player->mo->y, player->mo->z, MT_INSTAWHIP);
 						P_SetTarget(&player->whip, whip);
@@ -10780,6 +10848,14 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 						whip->fuse = 12; // Changing instawhip animation duration? Look here
 						player->flashing = max(player->flashing, 12);
 						player->mo->momz += 4*mapobjectscale;
+
+						if (!K_PowerUpRemaining(player, POWERUP_BADGE))
+						{
+							// Spawn in triangle formation
+							Obj_SpawnInstaWhipRecharge(player, 0);
+							Obj_SpawnInstaWhipRecharge(player, ANGLE_120);
+							Obj_SpawnInstaWhipRecharge(player, ANGLE_240);
+						}
 					}
 				}
 
@@ -11983,8 +12059,17 @@ void K_UpdateMobjItemOverlay(mobj_t *part, SINT8 itemType, UINT8 itemCount)
 			part->frame = FF_FULLBRIGHT|FF_PAPERSPRITE;
 			break;
 		default:
-			part->sprite = SPR_ITEM;
-			part->frame = FF_FULLBRIGHT|FF_PAPERSPRITE|(itemType);
+			if (itemType >= FIRSTPOWERUP)
+			{
+				part->sprite = SPR_PWRB;
+				// Not a papersprite. See K_CreatePaperItem for why.
+				part->frame = FF_FULLBRIGHT|(itemType - FIRSTPOWERUP);
+			}
+			else
+			{
+				part->sprite = SPR_ITEM;
+				part->frame = FF_FULLBRIGHT|FF_PAPERSPRITE|(itemType);
+			}
 			break;
 	}
 }
@@ -12086,7 +12171,7 @@ UINT32 K_PointLimitForGametype(void)
 		{
 			if (D_IsPlayerHumanAndGaming(i))
 			{
-				ptsCap += 5;
+				ptsCap += 4;
 			}
 		}
 	}

@@ -414,7 +414,6 @@ static void M_WriteGuestReplay(INT32 ch)
 
 	if (FIL_FileExists(rguest))
 	{
-		//M_StopMessage(0);
 		remove(rguest);
 	}
 
@@ -486,7 +485,6 @@ void M_StartTimeAttack(INT32 choice)
 
 	// Still need to reset devmode
 	cht_debug = 0;
-	emeralds = 0;
 
 	if (demo.playback)
 		G_StopDemo();

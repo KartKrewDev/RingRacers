@@ -52,6 +52,7 @@ typedef enum
 	UC_CONDITIONSET,	// CONDITIONSET [condition set number]
 
 	UC_ADDON,			// Ever loaded a custom file?
+	UC_CREDITS,			// Finish watching the credits
 	UC_REPLAY,			// Save a replay
 	UC_CRASH,			// Hee ho !
 
@@ -183,6 +184,7 @@ typedef enum
 	// Player restrictions
 	SECRET_SKIN,				// Permit this character
 	SECRET_FOLLOWER,			// Permit this follower
+	SECRET_COLOR,				// Permit this color
 
 	// Difficulty restrictions
 	SECRET_HARDSPEED,			// Permit Hard gamespeed
@@ -201,6 +203,7 @@ typedef enum
 	SECRET_EGGTV,				// Permit replay playback menu
 	SECRET_SOUNDTEST,			// Permit Sound Test
 	SECRET_ALTTITLE,			// Permit alternate titlescreen
+	SECRET_MEMETAUNTS,			// Permit "Meme" for kartvoices_cons_t
 
 	// Assist restrictions
 	SECRET_ITEMFINDER,			// Permit locating in-level secrets
@@ -287,6 +290,7 @@ struct gamedata_t
 
 	// SPECIFIC SPECIAL EVENTS
 	boolean everloadedaddon;
+	boolean everfinishedcredits;
 	boolean eversavedreplay;
 	boolean everseenspecial;
 	boolean evercrashed;
@@ -340,6 +344,7 @@ void M_ClearSecrets(void);
 void M_ClearStats(void);
 
 boolean M_NotFreePlay(player_t *player);
+UINT16 M_CheckCupEmeralds(UINT8 difficulty);
 
 // Updating conditions and unlockables
 boolean M_ConditionInterpret(const char *password);
@@ -372,6 +377,7 @@ boolean M_GotLowEnoughTime(INT32 tictime);
 
 INT32 M_UnlockableSkinNum(unlockable_t *unlock);
 INT32 M_UnlockableFollowerNum(unlockable_t *unlock);
+INT32 M_UnlockableColorNum(unlockable_t *unlock);
 cupheader_t *M_UnlockableCup(unlockable_t *unlock);
 UINT16 M_UnlockableMapNum(unlockable_t *unlock);
 

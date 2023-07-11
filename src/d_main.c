@@ -136,11 +136,11 @@ boolean digital_disabled = false;
 INT32 debugload = 0;
 #endif
 
-UINT16 numskincolors;
+UINT16 numskincolors = SKINCOLOR_FIRSTFREESLOT;
 menucolor_t *menucolorhead, *menucolortail;
 
 char savegamename[256];
-char liveeventbackup[256];
+char gpbackup[256];
 
 char srb2home[256] = ".";
 char srb2path[256] = ".";
@@ -295,7 +295,7 @@ void D_ProcessEvents(void)
 	// Update menu CMD
 	for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
 	{
-		M_UpdateMenuCMD(i);
+		M_UpdateMenuCMD(i, false);
 	}
 }
 
@@ -464,20 +464,10 @@ static void D_Display(void)
 			}
 			break;
 
-		case GS_ENDING:
-			F_EndingDrawer();
-			HU_Erase();
-			HU_Drawer();
-			break;
-
 		case GS_CUTSCENE:
 			F_CutsceneDrawer();
 			HU_Erase();
 			HU_Drawer();
-			break;
-
-		case GS_GAMEEND:
-			F_GameEndDrawer();
 			break;
 
 		case GS_EVALUATION:
@@ -980,9 +970,7 @@ void D_ClearState(void)
 	SplitScreen_OnChange();
 
 	cht_debug = 0;
-	emeralds = 0;
 	memset(&luabanks, 0, sizeof(luabanks));
-	lastmaploaded = 0;
 
 	// In case someone exits out at the same time they start a time attack run,
 	// reset modeattacking
@@ -1327,7 +1315,7 @@ void D_SRB2Main(void)
 
 	// default savegame
 	strcpy(savegamename, SAVEGAMENAME"%u.ssg");
-	strcpy(liveeventbackup, "live"SAVEGAMENAME".bkp"); // intentionally not ending with .ssg
+	strcpy(gpbackup, "gp"SAVEGAMENAME".bkp"); // intentionally not ending with .ssg
 
 	// Init the joined IP table for quick rejoining of past games.
 	M_InitJoinedIPArray();
@@ -1358,7 +1346,7 @@ void D_SRB2Main(void)
 
 			// can't use sprintf since there is %u in savegamename
 			strcatbf(savegamename, srb2home, PATHSEP);
-			strcatbf(liveeventbackup, srb2home, PATHSEP);
+			strcatbf(gpbackup, srb2home, PATHSEP);
 
 			snprintf(luafiledir, sizeof luafiledir, "%s" PATHSEP "luafiles", srb2home);
 #else // DEFAULTDIR
@@ -1370,7 +1358,7 @@ void D_SRB2Main(void)
 
 			// can't use sprintf since there is %u in savegamename
 			strcatbf(savegamename, userhome, PATHSEP);
-			strcatbf(liveeventbackup, userhome, PATHSEP);
+			strcatbf(gpbackup, userhome, PATHSEP);
 
 			snprintf(luafiledir, sizeof luafiledir, "%s" PATHSEP "luafiles", userhome);
 #endif // DEFAULTDIR
@@ -1422,10 +1410,6 @@ void D_SRB2Main(void)
 
 	if (M_CheckParm("-password") && M_IsNextParm())
 		D_SetPassword(M_GetNextParm());
-
-	// player setup menu colors must be initialized before
-	// any wad file is added, as they may contain colors themselves
-	M_InitPlayerSetupColors();
 
 	CONS_Printf("Z_Init(): Init zone memory allocation daemon. \n");
 	Z_Init();

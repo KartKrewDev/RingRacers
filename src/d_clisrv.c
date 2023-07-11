@@ -653,7 +653,6 @@ typedef enum
 static void GetPackets(void);
 
 static cl_mode_t cl_mode = CL_SEARCHING;
-static cl_mode_t cl_requestmode = CL_ABORTED;
 
 #ifdef HAVE_CURL
 char http_source[MAX_MIRROR_LENGTH];
@@ -1671,43 +1670,37 @@ void CL_UpdateServerList (void)
 		SendAskInfo(BROADCASTADDR);
 }
 
-static boolean M_ConfirmConnect(void)
+static void M_ConfirmConnect(INT32 choice)
 {
-	if (G_PlayerInputDown(0, gc_b, 1) || G_PlayerInputDown(0, gc_x, 1) || G_GetDeviceGameKeyDownArray(0)[KEY_ESCAPE])
-	{
-		cl_requestmode = CL_ABORTED;
-		return true;
-	}
-
-	if (G_PlayerInputDown(0, gc_a, 1) || G_GetDeviceGameKeyDownArray(0)[KEY_ENTER])
+	if (choice == MA_YES)
 	{
 		if (totalfilesrequestednum > 0)
 		{
-#ifdef HAVE_CURL
+	#ifdef HAVE_CURL
 			if (http_source[0] == '\0' || curl_failedwebdownload)
-#endif
+	#endif
 			{
 				if (CL_SendFileRequest())
 				{
-					cl_requestmode = CL_DOWNLOADFILES;
+					cl_mode = CL_DOWNLOADFILES;
 				}
 				else
 				{
-					cl_requestmode = CL_DOWNLOADFAILED;
+					cl_mode = CL_DOWNLOADFAILED;
 				}
 			}
-#ifdef HAVE_CURL
+	#ifdef HAVE_CURL
 			else
-				cl_requestmode = CL_PREPAREHTTPFILES;
-#endif
+				cl_mode = CL_PREPAREHTTPFILES;
+	#endif
 		}
 		else
-			cl_requestmode = CL_LOADFILES;
+			cl_mode = CL_LOADFILES;
 
-		return true;
+		return;
 	}
 
-	return false;
+	cl_mode = CL_ABORTED;
 }
 
 static boolean CL_FinishedFileList(void)
@@ -1759,7 +1752,7 @@ static boolean CL_FinishedFileList(void)
 				"This server is full!\n"
 				"\n"
 				"You may load server addons (if any), and wait for a slot.\n"
-			), NULL, MM_NOTHING, "Continue", "Back to Menu");
+			), &M_ConfirmConnect, MM_YESNO, "Continue", "Back to Menu");
 			cl_mode = CL_CONFIRMCONNECT;
 		}
 		else
@@ -1822,13 +1815,13 @@ static boolean CL_FinishedFileList(void)
 					"\n"
 					"You may download, load server addons,\n"
 					"and wait for a slot.\n"
-				), downloadsize), NULL, MM_NOTHING, "Continue", "Back to Menu");
+				), downloadsize), &M_ConfirmConnect, MM_YESNO, "Continue", "Back to Menu");
 			else
 				M_StartMessage("Server Connection",
 					va(M_GetText(
 					"Download of %s additional content\n"
 					"is required to join.\n"
-				), downloadsize), NULL, MM_NOTHING, "Continue", "Back to Menu");
+				), downloadsize), &M_ConfirmConnect, MM_YESNO, "Continue", "Back to Menu");
 
 			Z_Free(downloadsize);
 			cl_mode = CL_CONFIRMCONNECT;
@@ -1969,6 +1962,7 @@ static boolean CL_ServerConnectionTicker(const char *tmpsave, tic_t *oldtic, tic
 {
 	boolean waitmore;
 	INT32 i;
+	const UINT8 pid = 0;
 
 	switch (cl_mode)
 	{
@@ -2168,26 +2162,27 @@ static boolean CL_ServerConnectionTicker(const char *tmpsave, tic_t *oldtic, tic
 				G_MapEventsToControls(&events[eventtail]);
 			}
 
+#ifdef HAVE_THREADS
+			I_lock_mutex(&k_menu_mutex);
+#endif
+			M_UpdateMenuCMD(0, true);
+
 			if (cl_mode == CL_CONFIRMCONNECT)
 			{
-#ifdef HAVE_THREADS
-				I_lock_mutex(&k_menu_mutex);
-#endif
-				if (M_MenuMessageTick() && M_ConfirmConnect())
-					M_StopMessage(0);
-				else if (menumessage.active == false)
-					cl_mode = cl_requestmode;
-#ifdef HAVE_THREADS
-				I_unlock_mutex(k_menu_mutex);
-#endif
+				if (menumessage.active)
+					M_HandleMenuMessage();
 			}
 			else
 			{
-				if (G_PlayerInputDown(0, gc_b, 1)
-					|| G_PlayerInputDown(0, gc_x, 1)
-					|| G_GetDeviceGameKeyDownArray(0)[KEY_ESCAPE])
+				if (M_MenuBackPressed(pid))
 					cl_mode = CL_ABORTED;
 			}
+
+			M_ScreenshotTicker();
+
+#ifdef HAVE_THREADS
+			I_unlock_mutex(k_menu_mutex);
+#endif
 		}
 
 		if (cl_mode == CL_ABORTED)
@@ -2265,7 +2260,6 @@ static void CL_ConnectToServer(void)
 	lastfilenum = -1;
 
 	cl_mode = CL_SEARCHING;
-	cl_requestmode = CL_ABORTED; // sane default
 
 	// Don't get a corrupt savegame error because tmpsave already exists
 	if (FIL_FileExists(tmpsave) && unlink(tmpsave) == -1)
@@ -3261,7 +3255,11 @@ static void Got_KickCmd(UINT8 **p, INT32 playernum)
 		{
 			// Running the callback here would mean a very dumb infinite loop.
 			// We'll manually handle this here by changing the msg type.
-			msg = KICK_MSG_VOTE_KICK;
+			if (msg != KICK_MSG_BANNED && msg != KICK_MSG_CUSTOM_BAN)
+			{
+				// of course, don't take the teeth out of a ban
+				msg = KICK_MSG_VOTE_KICK;
+			}
 			K_MidVoteFinalize(FRACUNIT); // Vote succeeded, so the delay is normal.
 		}
 		else
@@ -4010,6 +4008,7 @@ static void Got_AddBot(UINT8 **p, INT32 playernum)
 	INT16 newplayernum;
 	UINT8 skinnum = 0;
 	UINT8 difficulty = DIFFICULTBOT;
+	botStyle_e style = BOT_STYLE_NORMAL;
 
 	if (playernum != serverplayer && !IsPlayerAdmin(playernum))
 	{
@@ -4025,41 +4024,9 @@ static void Got_AddBot(UINT8 **p, INT32 playernum)
 	newplayernum = READUINT8(*p);
 	skinnum = READUINT8(*p);
 	difficulty = READUINT8(*p);
+	style = READUINT8(*p);
 
-	CONS_Debug(DBG_NETPLAY, "addbot: %d\n", newplayernum);
-
-	// Clear player before joining, lest some things get set incorrectly
-	CL_ClearPlayer(newplayernum);
-	G_DestroyParty(newplayernum);
-
-	playeringame[newplayernum] = true;
-	G_AddPlayer(newplayernum);
-	if (newplayernum+1 > doomcom->numslots)
-		doomcom->numslots = (INT16)(newplayernum+1);
-
-	playernode[newplayernum] = servernode;
-
-	// this will permit unlocks
-	memcpy(&players[newplayernum].availabilities, R_GetSkinAvailabilities(false, true), MAXAVAILABILITY*sizeof(UINT8));
-
-	players[newplayernum].splitscreenindex = 0;
-	players[newplayernum].bot = true;
-	players[newplayernum].botvars.difficulty = difficulty;
-	players[newplayernum].lives = 9;
-
-	players[newplayernum].skincolor = skins[skinnum].prefcolor;
-	sprintf(player_names[newplayernum], "%s", skins[skinnum].realname);
-	SetPlayerSkinByNum(newplayernum, skinnum);
-
-	playerconsole[newplayernum] = newplayernum;
-	G_BuildLocalSplitscreenParty(newplayernum);
-
-	if (netgame)
-	{
-		HU_AddChatText(va("\x82*Bot %d has been added to the game", newplayernum+1), false);
-	}
-
-	LUA_HookInt(newplayernum, HOOK(PlayerJoin));
+	K_SetBot(newplayernum, skinnum, difficulty, style);
 }
 
 static boolean SV_AddWaitingPlayers(SINT8 node, UINT8 *availabilities, 
@@ -5203,8 +5170,14 @@ static void HandlePacketFromPlayer(SINT8 node)
 				|| netbuffer->packettype == PT_NODEKEEPALIVEMIS)
 				break;
 
+			// If we already received a ticcmd for this tic, just submit it for the next one.
+			tic_t faketic = maketic;
+
+			if (!!(netcmds[maketic % BACKUPTICS][netconsole].flags & TICCMD_RECEIVED))
+				faketic++;
+
 			// Copy ticcmd
-			G_MoveTiccmd(&netcmds[maketic%BACKUPTICS][netconsole], &netbuffer->u.clientpak.cmd, 1);
+			G_MoveTiccmd(&netcmds[faketic%BACKUPTICS][netconsole], &netbuffer->u.clientpak.cmd, 1);
 
 			// Check ticcmd for "speed hacks"
 			if (CheckForSpeedHacks((UINT8)netconsole))
@@ -5216,7 +5189,7 @@ static void HandlePacketFromPlayer(SINT8 node)
 				|| (netbuffer->packettype == PT_CLIENT4CMD || netbuffer->packettype == PT_CLIENT4MIS))
 				&& (nodetoplayer2[node] >= 0))
 			{
-				G_MoveTiccmd(&netcmds[maketic%BACKUPTICS][(UINT8)nodetoplayer2[node]],
+				G_MoveTiccmd(&netcmds[faketic%BACKUPTICS][(UINT8)nodetoplayer2[node]],
 					&netbuffer->u.client2pak.cmd2, 1);
 
 				if (CheckForSpeedHacks((UINT8)nodetoplayer2[node]))
@@ -5227,7 +5200,7 @@ static void HandlePacketFromPlayer(SINT8 node)
 				|| (netbuffer->packettype == PT_CLIENT4CMD || netbuffer->packettype == PT_CLIENT4MIS))
 				&& (nodetoplayer3[node] >= 0))
 			{
-				G_MoveTiccmd(&netcmds[maketic%BACKUPTICS][(UINT8)nodetoplayer3[node]],
+				G_MoveTiccmd(&netcmds[faketic%BACKUPTICS][(UINT8)nodetoplayer3[node]],
 					&netbuffer->u.client3pak.cmd3, 1);
 
 				if (CheckForSpeedHacks((UINT8)nodetoplayer3[node]))
@@ -5237,7 +5210,7 @@ static void HandlePacketFromPlayer(SINT8 node)
 			if ((netbuffer->packettype == PT_CLIENT4CMD || netbuffer->packettype == PT_CLIENT4MIS)
 				&& (nodetoplayer4[node] >= 0))
 			{
-				G_MoveTiccmd(&netcmds[maketic%BACKUPTICS][(UINT8)nodetoplayer4[node]],
+				G_MoveTiccmd(&netcmds[faketic%BACKUPTICS][(UINT8)nodetoplayer4[node]],
 					&netbuffer->u.client4pak.cmd4, 1);
 
 				if (CheckForSpeedHacks((UINT8)nodetoplayer4[node]))

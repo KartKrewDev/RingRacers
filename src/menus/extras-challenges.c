@@ -287,10 +287,10 @@ void M_Challenges(INT32 choice)
 	M_SetupNextMenu(&MISC_ChallengesDef, false);
 }
 
-static boolean M_CanKeyHiliTile(void)
+static boolean M_CanKeyHiliTile(boolean devskip)
 {
 	// No keys to do it with?
-	if (gamedata->chaokeys == 0)
+	if (gamedata->chaokeys == 0 && !devskip)
 		return false;
 
 	// No tile data?
@@ -306,14 +306,15 @@ static boolean M_CanKeyHiliTile(void)
 		return false;
 
 	// Marked as unskippable?
-	if (unlockables[challengesmenu.currentunlock].majorunlock == true)
+	if (unlockables[challengesmenu.currentunlock].majorunlock == true && !devskip)
 		return false;
 
 	UINT16 i = (challengesmenu.hilix * CHALLENGEGRIDHEIGHT) + challengesmenu.hiliy;
 
 	// Not a hinted tile OR a fresh board.
 	if (!(challengesmenu.extradata[i].flags & CHE_HINT)
-	&& (challengesmenu.unlockcount[CC_UNLOCKED] + challengesmenu.unlockcount[CC_TALLY] > 0))
+	&& (challengesmenu.unlockcount[CC_UNLOCKED] + challengesmenu.unlockcount[CC_TALLY] > 0)
+	&& !devskip)
 		return false;
 
 	// All good!
@@ -366,7 +367,12 @@ void M_ChallengesTick(void)
 
 	if (challengesmenu.chaokeyhold)
 	{
-		if (M_MenuExtraHeld(pid) && M_CanKeyHiliTile())
+		boolean devskip = false;
+#ifdef DEVELOP
+		devskip = M_MenuButtonHeld(pid, MBT_Z);
+#endif
+		// A little messy, but don't freak out, this is just so devs don't crash the game on non-tiles
+		if ((devskip || M_MenuExtraHeld(pid)) && M_CanKeyHiliTile(devskip))
 		{
 			// Not pressed just this frame?
 			if (!M_MenuExtraPressed(pid))
@@ -531,10 +537,13 @@ void M_ChallengesTick(void)
 					}
 					case SECRET_FOLLOWER:
 					{
-						INT32 skin = M_UnlockableFollowerNum(ref);
-						if (skin != -1)
+						INT32 fskin = M_UnlockableFollowerNum(ref);
+						if (fskin != -1)
 						{
-							bombcolor = K_GetEffectiveFollowerColor(followers[skin].defaultcolor, cv_playercolor[0].value);
+							INT32 psk = R_SkinAvailable(cv_skin[0].string);
+							if (psk == -1)
+								psk = 0;
+							bombcolor = K_GetEffectiveFollowerColor(followers[fskin].defaultcolor, &followers[fskin], cv_playercolor[0].value, &skins[psk]);
 						}
 						break;
 					}
@@ -545,6 +554,13 @@ void M_ChallengesTick(void)
 				if (bombcolor == SKINCOLOR_NONE)
 				{
 					bombcolor = cv_playercolor[0].value;
+					if (bombcolor == SKINCOLOR_NONE)
+					{
+						INT32 psk = R_SkinAvailable(cv_skin[0].string);
+						if (psk == -1)
+							psk = 0;
+						bombcolor = skins[psk].prefcolor;
+					}
 				}
 
 				i = (ref->majorunlock && M_RandomChance(FRACUNIT/2)) ? 1 : 0;
@@ -595,7 +611,7 @@ boolean M_ChallengesInputs(INT32 ch)
 	}
 	else if (M_MenuExtraPressed(pid))
 	{
-		if (M_CanKeyHiliTile())
+		if (M_CanKeyHiliTile(false))
 		{
 			challengesmenu.chaokeyhold = 1;
 		}
@@ -618,6 +634,13 @@ boolean M_ChallengesInputs(INT32 ch)
 		}
 		return true;
 	}
+#ifdef DEVELOP
+	else if (M_MenuButtonPressed(pid, MBT_Z))
+	{
+		challengesmenu.chaokeyhold = 1;
+		return true;
+	}
+#endif
 	else
 	{
 		if (M_MenuBackPressed(pid) || start)

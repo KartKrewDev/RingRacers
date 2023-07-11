@@ -38,6 +38,7 @@
 #include "m_cond.h" // netUnlocked
 
 // SRB2Kart
+#include "k_grandprix.h"
 #include "k_battle.h"
 #include "k_pwrlv.h"
 #include "k_terrain.h"
@@ -47,6 +48,7 @@
 #include "k_zvote.h"
 
 savedata_t savedata;
+savedata_cup_t cupsavedata;
 
 // Block UINT32s to attempt to ensure that the correct data is
 // being sent and received
@@ -77,30 +79,113 @@ typedef enum
 	RINGSHOOTER = 0x0100,
 	WHIP = 0x0200,
 	HAND = 0x0400,
+	FLICKYATTACKER = 0x0800,
+	FLICKYCONTROLLER = 0x1000,
 } player_saveflags;
 
 static inline void P_ArchivePlayer(savebuffer_t *save)
 {
 	const player_t *player = &players[consoleplayer];
-	INT16 skininfo = player->skin;
-	SINT8 pllives = player->lives;
-	if (pllives < startinglivesbalance[numgameovers]) // Bump up to 3 lives if the player
-		pllives = startinglivesbalance[numgameovers]; // has less than that.
 
-	WRITEUINT16(save->p, skininfo);
-	WRITEUINT8(save->p, numgameovers);
-	WRITESINT8(save->p, pllives);
+	// Prevent an exploit from occuring.
+	WRITESINT8(save->p, (player->lives - 1));
 	WRITEUINT32(save->p, player->score);
+	WRITEUINT16(save->p, player->totalring);
+
+	INT32 skin = player->skin;
+	if (skin > numskins)
+		skin = 0;
+
+	WRITESTRINGN(save->p, skins[skin].name, SKINNAMESIZE);
+
+	if (player->followerskin < 0 || player->followerskin >= numfollowers)
+		WRITESTRINGN(save->p, "None", SKINNAMESIZE);
+	else
+		WRITESTRINGN(save->p, followers[player->followerskin].name, SKINNAMESIZE);
+
+	WRITEUINT16(save->p, player->skincolor);
+	WRITEUINT16(save->p, player->followercolor);
+
+	UINT8 i;
+
+	for (i = 0; i < MAXPLAYERS; i++)
+	{
+		if (playeringame[i] == false)
+			continue;
+		if (players[i].bot == false)
+			continue;
+
+		WRITEUINT8(save->p, i);
+
+		skin = players[i].skin;
+		if (skin > numskins)
+			skin = 0;
+
+		WRITESTRINGN(save->p, skins[skin].name, SKINNAMESIZE);
+
+		WRITEUINT8(save->p, players[i].botvars.difficulty);
+		WRITEUINT8(save->p, (UINT8)players[i].botvars.rival);
+
+		WRITEUINT32(save->p, players[i].score);
+	}
+
+	WRITEUINT8(save->p, 0xFE);
 }
 
-static inline void P_UnArchivePlayer(savebuffer_t *save)
+static boolean P_UnArchivePlayer(savebuffer_t *save)
 {
-	INT16 skininfo = READUINT16(save->p);
-	savedata.skin = skininfo;
-
-	savedata.numgameovers = READUINT8(save->p);
 	savedata.lives = READSINT8(save->p);
 	savedata.score = READUINT32(save->p);
+	savedata.totalring = READUINT16(save->p);
+
+	char skinname[SKINNAMESIZE+1];
+	INT32 skin;
+
+	READSTRINGN(save->p, skinname, SKINNAMESIZE);
+	skin = R_SkinAvailable(skinname);
+
+	if (skin == -1)
+	{
+		CONS_Alert(CONS_ERROR, "P_UnArchivePlayer: Character \"%s\" is not currently loaded.\n", skinname);
+		return false;
+	}
+
+	savedata.skin = skin;
+
+	READSTRINGN(save->p, skinname, SKINNAMESIZE);
+	savedata.followerskin = K_FollowerAvailable(skinname);
+
+	savedata.skincolor = READUINT16(save->p);
+	savedata.followercolor = READUINT16(save->p);
+
+	memset(&savedata.bots, 0, sizeof(savedata.bots));
+
+	UINT8 pid;
+	const UINT8 defaultbotskin = R_BotDefaultSkin();
+
+	while ((pid = READUINT8(save->p)) < MAXPLAYERS)
+	{
+		savedata.bots[pid].valid = true;
+
+		READSTRINGN(save->p, skinname, SKINNAMESIZE);
+		skin = R_SkinAvailable(skinname);
+
+		if (skin == -1)
+		{
+			// It is not worth destroying an otherwise good savedata over extra added skins.
+			// Let's just say they didn't show up to the rematch, so some Eggrobos subbed in.
+			CONS_Alert(CONS_WARNING, "P_UnArchivePlayer: Bot's character \"%s\" was not loaded, replacing with default \"%s\".\n", skinname, skins[defaultbotskin].name);
+			skin = defaultbotskin;
+		}
+
+		savedata.bots[pid].skin = skin;
+
+		savedata.bots[pid].difficulty = READUINT8(save->p);
+		savedata.bots[pid].rival = (boolean)READUINT8(save->p);
+		savedata.bots[pid].score = READUINT32(save->p);
+	}
+
+	return (pid == 0xFE);	
 }
 
 static void P_NetArchivePlayers(savebuffer_t *save)
@@ -236,6 +321,12 @@ static void P_NetArchivePlayers(savebuffer_t *save)
 		if (players[i].ringShooter)
 			flags |= RINGSHOOTER;
 
+		if (players[i].flickyAttacker)
+			flags |= FLICKYATTACKER;
+
+		if (players[i].powerup.flickyController)
+			flags |= FLICKYCONTROLLER;
+
 		WRITEUINT16(save->p, flags);
 
 		if (flags & SKYBOXVIEW)
@@ -267,6 +358,12 @@ static void P_NetArchivePlayers(savebuffer_t *save)
 
 		if (flags & RINGSHOOTER)
 			WRITEUINT32(save->p, players[i].ringShooter->mobjnum);
+
+		if (flags & FLICKYATTACKER)
+			WRITEUINT32(save->p, players[i].flickyAttacker->mobjnum);
+
+		if (flags & FLICKYCONTROLLER)
+			WRITEUINT32(save->p, players[i].powerup.flickyController->mobjnum);
 
 		WRITEUINT32(save->p, (UINT32)players[i].followitem);
 
@@ -444,6 +541,8 @@ static void P_NetArchivePlayers(savebuffer_t *save)
 
 		WRITEUINT8(save->p, players[i].markedfordeath);
 
+		WRITEUINT8(save->p, players[i].ringboxdelay);
+		WRITEUINT8(save->p, players[i].ringboxaward);
 		WRITEFIXED(save->p, players[i].outrun);
 
 		// respawnvars_t
@@ -517,6 +616,7 @@ static void P_NetArchivePlayers(savebuffer_t *save)
 		WRITEUINT32(save->p, players[i].itemRoulette.tics);
 		WRITEUINT32(save->p, players[i].itemRoulette.elapsed);
 		WRITEUINT8(save->p, players[i].itemRoulette.eggman);
+		WRITEUINT8(save->p, players[i].itemRoulette.ringbox);
 
 		// sonicloopsvars_t
 		WRITEFIXED(save->p, players[i].loop.radius);
@@ -534,6 +634,11 @@ static void P_NetArchivePlayers(savebuffer_t *save)
 		// ACS has read access to this, so it has to be net-communicated.
 		// It is the ONLY roundcondition that is sent over the wire and I'd like it to stay that way.
 		WRITEUINT32(save->p, players[i].roundconditions.unlocktriggers);
+
+		// powerupvars_t
+		WRITEUINT16(save->p, players[i].powerup.superTimer);
+		WRITEUINT16(save->p, players[i].powerup.barrierTimer);
+		WRITEUINT16(save->p, players[i].powerup.rhythmBadgeTimer);
 	}
 }
 
@@ -670,6 +775,12 @@ static void P_NetUnArchivePlayers(savebuffer_t *save)
 
 		if (flags & RINGSHOOTER)
 			players[i].ringShooter = (mobj_t *)(size_t)READUINT32(save->p);
+
+		if (flags & FLICKYATTACKER)
+			players[i].flickyAttacker = (mobj_t *)(size_t)READUINT32(save->p);
+
+		if (flags & FLICKYCONTROLLER)
+			players[i].powerup.flickyController = (mobj_t *)(size_t)READUINT32(save->p);
 
 		players[i].followitem = (mobjtype_t)READUINT32(save->p);
 
@@ -848,6 +959,8 @@ static void P_NetUnArchivePlayers(savebuffer_t *save)
 
 		players[i].markedfordeath = READUINT8(save->p);
 
+		players[i].ringboxdelay = READUINT8(save->p);
+		players[i].ringboxaward = READUINT8(save->p);
 		players[i].outrun = READFIXED(save->p);
 
 		// respawnvars_t
@@ -932,6 +1045,7 @@ static void P_NetUnArchivePlayers(savebuffer_t *save)
 		players[i].itemRoulette.tics = (tic_t)READUINT32(save->p);
 		players[i].itemRoulette.elapsed = (tic_t)READUINT32(save->p);
 		players[i].itemRoulette.eggman = (boolean)READUINT8(save->p);
+		players[i].itemRoulette.ringbox = (boolean)READUINT8(save->p);
 
 		// sonicloopsvars_t
 		players[i].loop.radius = READFIXED(save->p);
@@ -949,6 +1063,11 @@ static void P_NetUnArchivePlayers(savebuffer_t *save)
 		// ACS has read access to this, so it has to be net-communicated.
 		// It is the ONLY roundcondition that is sent over the wire and I'd like it to stay that way.
 		players[i].roundconditions.unlocktriggers = READUINT32(save->p);
+
+		// powerupvars_t
+		players[i].powerup.superTimer = READUINT16(save->p);
+		players[i].powerup.barrierTimer = READUINT16(save->p);
+		players[i].powerup.rhythmBadgeTimer = READUINT16(save->p);
 
 		//players[i].viewheight = P_GetPlayerViewHeight(players[i]); // scale cannot be factored in at this point
 	}
@@ -1039,6 +1158,9 @@ static void P_NetUnArchiveRoundQueue(savebuffer_t *save)
 
 	roundqueue.position = READUINT8(save->p);
 	roundqueue.size = READUINT8(save->p);
+	if (roundqueue.size > ROUNDQUEUE_MAX)
+		I_Error("Bad $$$.sav at illegitimate roundqueue size");
+
 	roundqueue.roundnum = READUINT8(save->p);
 
 	for (i = 0; i < roundqueue.size; i++)
@@ -2354,6 +2476,31 @@ static UINT32 SaveSlope(const pslope_t *slope)
 	return 0xFFFFFFFF;
 }
 
+static boolean TypeIsNetSynced(mobjtype_t type)
+{
+	// Ignore stationary hoops - these will be respawned from mapthings.
+	if (type == MT_HOOP)
+		return false;
+
+	// These are NEVER saved.
+	if (type == MT_HOOPCOLLIDE)
+		return false;
+
+	// This hoop has already been collected.
+	if (type == MT_HOOPCENTER)// && mobj->threshold == 4242)
+		return false;
+
+	// MT_SPARK: used for debug stuff
+	if (type == MT_SPARK)
+		return false;
+
+	// MT_HORNCODE: So it turns out hornmod is fundamentally incompatible with netsync
+	if (type == MT_HORNCODE)
+		return false;
+
+	return true;
+}
+
 static void SaveMobjThinker(savebuffer_t *save, const thinker_t *th, const UINT8 type)
 {
 	const mobj_t *mobj = (const mobj_t *)th;
@@ -2361,20 +2508,7 @@ static void SaveMobjThinker(savebuffer_t *save, const thinker_t *th, const UINT8
 	UINT32 diff2;
 	size_t j;
 
-	// Ignore stationary hoops - these will be respawned from mapthings.
-	if (mobj->type == MT_HOOP)
-		return;
-
-	// These are NEVER saved.
-	if (mobj->type == MT_HOOPCOLLIDE)
-		return;
-
-	// This hoop has already been collected.
-	if (mobj->type == MT_HOOPCENTER && mobj->threshold == 4242)
-		return;
-
-	// MT_SPARK: used for debug stuff
-	if (mobj->type == MT_SPARK)
+	if (TypeIsNetSynced(mobj->type) == false)
 		return;
 
 	diff2 = 0;
@@ -5005,9 +5139,7 @@ static void P_RelinkPointers(void)
 
 		mobj = (mobj_t *)currentthinker;
 
-		if (mobj->type == MT_HOOP || mobj->type == MT_HOOPCOLLIDE || mobj->type == MT_HOOPCENTER
-			// MT_SPARK: used for debug stuff
-			|| mobj->type == MT_SPARK)
+		if (TypeIsNetSynced(mobj->type) == false)
 			continue;
 
 		if (mobj->tracer)
@@ -5172,6 +5304,20 @@ static void P_RelinkPointers(void)
 			if (!P_SetTarget(&players[i].ringShooter, P_FindNewPosition(temp)))
 				CONS_Debug(DBG_GAMELOGIC, "ringShooter not found on player %d\n", i);
 		}
+		if (players[i].flickyAttacker)
+		{
+			temp = (UINT32)(size_t)players[i].flickyAttacker;
+			players[i].flickyAttacker = NULL;
+			if (!P_SetTarget(&players[i].flickyAttacker, P_FindNewPosition(temp)))
+				CONS_Debug(DBG_GAMELOGIC, "flickyAttacker not found on player %d\n", i);
+		}
+		if (players[i].powerup.flickyController)
+		{
+			temp = (UINT32)(size_t)players[i].powerup.flickyController;
+			players[i].powerup.flickyController = NULL;
+			if (!P_SetTarget(&players[i].powerup.flickyController, P_FindNewPosition(temp)))
+				CONS_Debug(DBG_GAMELOGIC, "powerup.flickyController not found on player %d\n", i);
+		}
 	}
 }
 
@@ -5257,55 +5403,230 @@ static void P_NetUnArchiveSpecials(savebuffer_t *save)
 // =======================================================================
 //          Misc
 // =======================================================================
-static inline void P_ArchiveMisc(savebuffer_t *save, INT16 mapnum)
+static inline void P_ArchiveMisc(savebuffer_t *save)
 {
-	//lastmapsaved = mapnum;
-	lastmaploaded = mapnum;
-
-	if (gamecomplete)
-		mapnum |= 8192;
-
-	WRITEINT16(save->p, mapnum);
-	WRITEUINT16(save->p, emeralds+357);
 	WRITESTRINGN(save->p, timeattackfolder, sizeof(timeattackfolder));
+
+	// Grand Prix information
+
+	WRITEUINT8(save->p, grandprixinfo.gamespeed);
+	WRITEUINT8(save->p, (UINT8)grandprixinfo.encore);
+	WRITEUINT8(save->p, (UINT8)grandprixinfo.masterbots);
+
+	WRITESTRINGL(save->p, grandprixinfo.cup->name, MAXCUPNAME);
+
+	// Round Queue information
+
+	WRITEUINT8(save->p, roundqueue.position);
+	WRITEUINT8(save->p, roundqueue.size);
+	WRITEUINT8(save->p, roundqueue.roundnum);
+
+	UINT8 i;
+	for (i = 0; i < roundqueue.size; i++)
+	{
+		UINT16 mapnum = roundqueue.entries[i].mapnum;
+		UINT32 val = 0; // no good default, will all-but-guarantee bad save
+		if (mapnum < nummapheaders && mapheaderinfo[mapnum] != NULL)
+			val = mapheaderinfo[mapnum]->lumpnamehash;
+
+		WRITEUINT32(save->p, val);
+	}
+
+	// Rank information
+
+	{
+		WRITEUINT8(save->p, grandprixinfo.rank.players);
+		WRITEUINT8(save->p, grandprixinfo.rank.totalPlayers);
+
+		WRITEUINT8(save->p, grandprixinfo.rank.position);
+		WRITEUINT8(save->p, grandprixinfo.rank.skin);
+
+		WRITEUINT32(save->p, grandprixinfo.rank.winPoints);
+		WRITEUINT32(save->p, grandprixinfo.rank.totalPoints);
+
+		WRITEUINT32(save->p, grandprixinfo.rank.laps);
+		WRITEUINT32(save->p, grandprixinfo.rank.totalLaps);
+
+		WRITEUINT32(save->p, grandprixinfo.rank.continuesUsed);
+
+		WRITEUINT32(save->p, grandprixinfo.rank.prisons);
+		WRITEUINT32(save->p, grandprixinfo.rank.totalPrisons);
+
+		WRITEUINT32(save->p, grandprixinfo.rank.rings);
+		WRITEUINT32(save->p, grandprixinfo.rank.totalRings);
+
+		WRITEUINT8(save->p, (UINT8)grandprixinfo.rank.specialWon);
+	}
+
+	// Marathon information
+
+	WRITEUINT8(save->p, (marathonmode & ~MA_INIT));
+
+	UINT32 writetime = marathontime;
+	if (!(marathonmode & MA_INGAME))
+		writetime += TICRATE*5; // live event backup penalty because we don't know how long it takes to get to the next map
+	WRITEUINT32(save->p, writetime);
 }
 
-static inline void P_UnArchiveSPGame(savebuffer_t *save, INT16 mapoverride)
+void P_GetBackupCupData(savebuffer_t *save)
 {
 	char testname[sizeof(timeattackfolder)];
-
-	gamemap = READINT16(save->p);
-
-	if (mapoverride != 0)
-	{
-		gamemap = mapoverride;
-		gamecomplete = 1;
-	}
-	else
-		gamecomplete = 0;
-
-	// gamemap changed; we assume that its map header is always valid,
-	// so make it so
-	if (!gamemap || gamemap > nummapheaders || !mapheaderinfo[gamemap-1])
-		I_Error("P_UnArchiveSPGame: Internal map ID %d not found (nummapheaders = %d)", gamemap-1, nummapheaders);
-
-	//lastmapsaved = gamemap;
-	lastmaploaded = gamemap;
-
-	savedata.emeralds = READUINT16(save->p)-357;
 
 	READSTRINGN(save->p, testname, sizeof(testname));
 
 	if (strcmp(testname, timeattackfolder))
 	{
-		if (modifiedgame)
-			I_Error("Save game not for this modification.");
-		else
-			I_Error("This save file is for a particular mod, it cannot be used with the regular game.");
+		cupsavedata.cup = NULL;
+		return;
 	}
 
-	memset(playeringame, 0, sizeof(*playeringame));
-	playeringame[consoleplayer] = true;
+	// Grand Prix information
+
+	cupsavedata.difficulty = READUINT8(save->p);
+	cupsavedata.encore = (boolean)READUINT8(save->p);
+	boolean masterbots = (boolean)READUINT8(save->p);
+
+	if (masterbots == true)
+		cupsavedata.difficulty = KARTGP_MASTER;
+
+	// Find the relevant cup.
+	char cupname[MAXCUPNAME];
+	READSTRINGL(save->p, cupname, sizeof(cupname));
+	UINT32 hash = quickncasehash(cupname, MAXCUPNAME);
+
+	for (cupsavedata.cup = kartcupheaders; cupsavedata.cup; cupsavedata.cup = cupsavedata.cup->next)
+	{
+		if (cupsavedata.cup->namehash != hash)
+			continue;
+
+		if (strcmp(cupsavedata.cup->name, cupname))
+			continue;
+
+		break;
+	}
+
+	// Okay, no further! We've got everything we need.
+}
+
+static boolean P_UnArchiveSPGame(savebuffer_t *save)
+{
+	char testname[sizeof(timeattackfolder)];
+
+	READSTRINGN(save->p, testname, sizeof(testname));
+
+	if (strcmp(testname, timeattackfolder))
+	{
+		CONS_Alert(CONS_ERROR, "P_UnArchiveSPGame: Corrupt mod ID.\n");
+		return false;
+	}
+
+	// TODO do not work off grandprixinfo/roundqueue directly
+	// This is only strictly necessary if we ever re-add a save
+	// select screen or something, for live event backup only
+	// it's *fine* and, more importantly, shippable
+
+	memset(&grandprixinfo, 0, sizeof(grandprixinfo));
+
+	grandprixinfo.gp = true;
+
+	// Grand Prix information
+
+	grandprixinfo.gamespeed = READUINT8(save->p);
+	grandprixinfo.encore = (boolean)READUINT8(save->p);
+	grandprixinfo.masterbots = (boolean)READUINT8(save->p);
+
+	// Find the relevant cup.
+	char cupname[MAXCUPNAME];
+	READSTRINGL(save->p, cupname, sizeof(cupname));
+	UINT32 hash = quickncasehash(cupname, MAXCUPNAME);
+
+	for (grandprixinfo.cup = kartcupheaders; grandprixinfo.cup; grandprixinfo.cup = grandprixinfo.cup->next)
+	{
+		if (grandprixinfo.cup->namehash != hash)
+			continue;
+
+		if (strcmp(grandprixinfo.cup->name, cupname))
+			continue;
+
+		break;
+	}
+
+	if (!grandprixinfo.cup)
+	{
+		CONS_Alert(CONS_ERROR, "P_UnArchiveSPGame: Cup \"%s\" is not currently loaded.\n", cupname);
+		return false;
+	}
+
+	// Round Queue information
+
+	memset(&roundqueue, 0, sizeof(roundqueue));
+
+	G_GPCupIntoRoundQueue(grandprixinfo.cup, GT_RACE, grandprixinfo.encore);
+
+	roundqueue.position = READUINT8(save->p);
+	UINT8 size = READUINT8(save->p);
+	roundqueue.roundnum = READUINT8(save->p);
+
+	if (roundqueue.size != size)
+	{
+		CONS_Alert(CONS_ERROR, "P_UnArchiveSPGame: Cup \"%s\"'s level composition has changed between game launches (differs in level count).\n", cupname);
+		return false;
+	}
+
+	if (roundqueue.position == 0 || roundqueue.position > size)
+	{
+		CONS_Alert(CONS_ERROR, "P_UnArchiveSPGame: Position in the round queue is invalid.\n");
+		return false;
+	}
+
+	UINT8 i;
+	for (i = 0; i < roundqueue.size; i++)
+	{
+		UINT32 val = READUINT32(save->p);
+		UINT16 mapnum = roundqueue.entries[i].mapnum;
+
+		if (mapnum < nummapheaders && mapheaderinfo[mapnum] != NULL)
+		{
+			if (mapheaderinfo[mapnum]->lumpnamehash == val)
+				continue;
+		}
+
+		CONS_Alert(CONS_ERROR, "P_UnArchiveSPGame: Cup \"%s\"'s level composition has changed between game launches (differs at level %u).\n", cupname, i);
+		return false;
+	}
+
+	// Rank information
+
+	{
+		grandprixinfo.rank.players = READUINT8(save->p);
+		grandprixinfo.rank.totalPlayers = READUINT8(save->p);
+
+		grandprixinfo.rank.position = READUINT8(save->p);
+		grandprixinfo.rank.skin = READUINT8(save->p);
+
+		grandprixinfo.rank.winPoints = READUINT32(save->p);
+		grandprixinfo.rank.totalPoints = READUINT32(save->p);
+
+		grandprixinfo.rank.laps = READUINT32(save->p);
+		grandprixinfo.rank.totalLaps = READUINT32(save->p);
+
+		grandprixinfo.rank.continuesUsed = READUINT32(save->p);
+
+		grandprixinfo.rank.prisons = READUINT32(save->p);
+		grandprixinfo.rank.totalPrisons = READUINT32(save->p);
+
+		grandprixinfo.rank.rings = READUINT32(save->p);
+		grandprixinfo.rank.totalRings = READUINT32(save->p);
+
+		grandprixinfo.rank.specialWon = (boolean)READUINT8(save->p);
+	}
+
+	// Marathon information
+
+	marathonmode = READUINT8(save->p);
+	marathontime = READUINT32(save->p);
+
+	return true;
 }
 
 static void P_NetArchiveMisc(savebuffer_t *save, boolean resending)
@@ -5361,7 +5682,6 @@ static void P_NetArchiveMisc(savebuffer_t *save, boolean resending)
 
 	WRITESINT8(save->p, g_pickedVote);
 
-	WRITEUINT16(save->p, emeralds);
 	{
 		UINT8 globools = 0;
 		if (stagefailed)
@@ -5414,9 +5734,14 @@ static void P_NetArchiveMisc(savebuffer_t *save, boolean resending)
 	// battleovertime_t
 	WRITEUINT16(save->p, battleovertime.enabled);
 	WRITEFIXED(save->p, battleovertime.radius);
+	WRITEFIXED(save->p, battleovertime.initial_radius);
 	WRITEFIXED(save->p, battleovertime.x);
 	WRITEFIXED(save->p, battleovertime.y);
 	WRITEFIXED(save->p, battleovertime.z);
+
+	// battleufo_t
+	WRITEINT32(save->p, g_battleufo.previousId);
+	WRITEUINT32(save->p, g_battleufo.due);
 
 	WRITEUINT32(save->p, wantedcalcdelay);
 	for (i = 0; i < NUMKARTITEMS-1; i++)
@@ -5535,7 +5860,6 @@ static boolean P_NetUnArchiveMisc(savebuffer_t *save, boolean reloading)
 
 	g_pickedVote = READSINT8(save->p);
 
-	emeralds = READUINT16(save->p);
 	{
 		UINT8 globools = READUINT8(save->p);
 		stagefailed = !!(globools & 1);
@@ -5585,9 +5909,14 @@ static boolean P_NetUnArchiveMisc(savebuffer_t *save, boolean reloading)
 	// battleovertime_t
 	battleovertime.enabled = READUINT16(save->p);
 	battleovertime.radius = READFIXED(save->p);
+	battleovertime.initial_radius = READFIXED(save->p);
 	battleovertime.x = READFIXED(save->p);
 	battleovertime.y = READFIXED(save->p);
 	battleovertime.z = READFIXED(save->p);
+
+	// battleufo_t
+	g_battleufo.previousId = READINT32(save->p);
+	g_battleufo.due = READUINT32(save->p);
 
 	wantedcalcdelay = READUINT32(save->p);
 	for (i = 0; i < NUMKARTITEMS-1; i++)
@@ -5718,9 +6047,9 @@ static inline void P_NetUnArchiveRNG(savebuffer_t *save)
 	}
 }
 
-void P_SaveGame(savebuffer_t *save, INT16 mapnum)
+void P_SaveGame(savebuffer_t *save)
 {
-	P_ArchiveMisc(save, mapnum);
+	P_ArchiveMisc(save);
 	P_ArchivePlayer(save);
 	P_ArchiveLuabanksAndConsistency(save);
 }
@@ -5743,9 +6072,7 @@ void P_SaveNetGame(savebuffer_t *save, boolean resending)
 				continue;
 
 			mobj = (mobj_t *)th;
-			if (mobj->type == MT_HOOP || mobj->type == MT_HOOPCOLLIDE || mobj->type == MT_HOOPCENTER
-				// MT_SPARK: used for debug stuff
-				|| mobj->type == MT_SPARK)
+			if (TypeIsNetSynced(mobj->type) == false)
 				continue;
 			mobj->mobjnum = i++;
 		}
@@ -5775,7 +6102,7 @@ void P_SaveNetGame(savebuffer_t *save, boolean resending)
 	P_ArchiveLuabanksAndConsistency(save);
 }
 
-boolean P_LoadGame(savebuffer_t *save, INT16 mapoverride)
+boolean P_LoadGame(savebuffer_t *save)
 {
 	if (gamestate == GS_INTERMISSION)
 		Y_EndIntermission();
@@ -5783,17 +6110,24 @@ boolean P_LoadGame(savebuffer_t *save, INT16 mapoverride)
 		Y_EndVote();
 	G_SetGamestate(GS_NULL); // should be changed in P_UnArchiveMisc
 
-	P_UnArchiveSPGame(save, mapoverride);
-	P_UnArchivePlayer(save);
+	if (!P_UnArchiveSPGame(save))
+		goto badloadgame;
+	if (!P_UnArchivePlayer(save))
+		goto badloadgame;
 
 	if (!P_UnArchiveLuabanksAndConsistency(save))
-		return false;
-
-	// Only do this after confirming savegame is ok
-	G_DeferedInitNew(false, gamemap, savedata.skin, 0, true);
-	COM_BufAddText("dummyconsvar 1\n"); // G_DeferedInitNew doesn't do this
+		goto badloadgame;
 
 	return true;
+
+badloadgame:
+	// these are the side effects of P_UnarchiveSPGame
+	savedata.lives = 0;
+	roundqueue.size = 0;
+	grandprixinfo.gp = false;
+	marathonmode = 0;
+
+	return false;
 }
 
 boolean P_LoadNetGame(savebuffer_t *save, boolean reloading)

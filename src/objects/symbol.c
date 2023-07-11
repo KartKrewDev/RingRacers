@@ -1,4 +1,3 @@
-#include "../p_mobj.h"
 #include "../p_local.h"
 #include "../k_objects.h"
 

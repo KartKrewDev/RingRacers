@@ -51,8 +51,6 @@ extern UINT8 mapmusrng;
 extern UINT32 maptol;
 
 extern INT32 cursaveslot;
-//extern INT16 lastmapsaved;
-extern INT16 lastmaploaded;
 extern UINT8 gamecomplete;
 
 // Extra abilities/settings for skins (combinable stuff)
@@ -385,7 +383,8 @@ struct customoption_t
 #define CUPCACHE_BONUS MAXLEVELLIST
 #define MAXBONUSLIST 2
 #define CUPCACHE_SPECIAL (CUPCACHE_BONUS+MAXBONUSLIST)
-#define CUPCACHE_MAX (CUPCACHE_SPECIAL+1)
+#define CUPCACHE_PODIUM (CUPCACHE_SPECIAL+1)
+#define CUPCACHE_MAX (CUPCACHE_PODIUM+1)
 
 #define MAXCUPNAME 16 // includes \0, for cleaner savedata
 
@@ -403,6 +402,9 @@ struct cupheader_t
 	UINT8 numlevels;						///< Number of levels defined in levellist
 	UINT8 numbonus;							///< Number of bonus stages defined
 	UINT8 emeraldnum;						///< ID of Emerald to use for special stage (1-7 for Chaos Emeralds, 8-14 for Super Emeralds, 0 for no emerald)
+
+	boolean playcredits;					///< Play the credits?
+
 	cupwindata_t windata[4];				///< Data for cup visitation
 	cupheader_t *next;						///< Next cup in linked list
 };
@@ -689,8 +691,6 @@ typedef enum
 	EMERALD_ALL = EMERALD_ALLCHAOS|EMERALD_ALLSUPER
 } emeraldflags_t;
 
-extern UINT16 emeralds;
-
 #define ALLCHAOSEMERALDS(v) ((v & EMERALD_ALLCHAOS) == EMERALD_ALLCHAOS)
 #define ALLSUPEREMERALDS(v) ((v & EMERALD_ALLSUPER) == EMERALD_ALLSUPER)
 #define ALLEMERALDS(v) ((v & EMERALD_ALL) == EMERALD_ALL)
@@ -746,7 +746,7 @@ extern INT32 flameseg;
 
 extern UINT8 introtoplay;
 extern UINT8 creditscutscene;
-extern UINT8 useBlackRock;
+extern UINT8 useSeal;
 
 extern UINT8 use1upSound;
 extern UINT8 maxXtraLife; // Max extra lives from rings

@@ -16,6 +16,9 @@
 #include "r_draw.h"
 #include "r_things.h"
 #include "v_video.h"
+#include "m_cond.h"
+#include "g_demo.h"
+#include "k_follower.h"
 
 /*--------------------------------------------------
 	UINT8 K_ColorRelativeLuminance(UINT8 r, UINT8 g, UINT8 b)
@@ -211,6 +214,65 @@ void K_GenerateKartColormap(UINT8 *dest_colormap, INT32 skinnum, UINT8 color)
 		// Sryder 2017-10-26: What was here before was most definitely not particularly readable, check above for new color translation table
 		dest_colormap[starttranscolor + i] = skincolors[color].ramp[i];
 	}
+}
+
+/*--------------------------------------------------
+	boolean K_ColorUsable(skincolornum_t color, boolean follower)
+
+		See header file for description.
+--------------------------------------------------*/
+boolean K_ColorUsable(skincolornum_t color, boolean follower)
+{
+	INT32 i = MAXUNLOCKABLES;
+
+	if (color == FOLLOWERCOLOR_MATCH || color == FOLLOWERCOLOR_OPPOSITE)
+	{
+		// Special follower colors, always allow if follower.
+		return follower;
+	}
+
+	if (skincolors[color].accessible == false)
+	{
+		// Never intended to be used.
+		return false;
+	}
+
+	if (demo.playback)
+	{
+		// Simplifies things elsewhere...
+		return true;
+	}
+
+	// Determine if this follower is supposed to be unlockable or not
+	for (i = 0; i < MAXUNLOCKABLES; i++)
+	{
+		skincolornum_t cid = SKINCOLOR_NONE;
+
+		if (unlockables[i].type != SECRET_COLOR)
+		{
+			continue;
+		}
+
+		cid = M_UnlockableColorNum(&unlockables[i]);
+
+		if (cid != color)
+		{
+			continue;
+		}
+
+		// i is now the unlockable index, we can use this later
+		break;
+	}
+
+	if (i == MAXUNLOCKABLES)
+	{
+		// Didn't trip anything, so we can use this color.
+		return true;
+	}
+
+	// Use the unlockables table directly
+	// DEFINITELY not M_CheckNetUnlockByID
+	return (boolean)(gamedata->unlocked[i]);
 }
 
 //}

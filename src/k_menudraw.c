@@ -52,6 +52,7 @@
 #include "doomstat.h" // MAXSPLITSCREENPLAYERS
 #include "k_grandprix.h" // K_CanChangeRules
 #include "k_rank.h" // K_GetGradeColor
+#include "k_zvote.h" // K_GetMidVoteLabel
 
 #include "y_inter.h" // Y_RoundQueueDrawer
 
@@ -606,14 +607,14 @@ static void M_DrawMenuTyping(void)
 // Draw the message popup submenu
 void M_DrawMenuMessage(void)
 {
+	if (!menumessage.active)
+		return;
+
 	INT32 x = (BASEVIDWIDTH - menumessage.x)/2;
 	INT32 y = (BASEVIDHEIGHT - menumessage.y)/2 + floor(pow(2, (double)(9 - menumessage.fadetimer)));
 	size_t i, start = 0;
 	char string[MAXMENUMESSAGE];
 	const char *msg = menumessage.message;
-
-	if (!menumessage.active)
-		return;
 
 	V_DrawFadeScreen(31, menumessage.fadetimer);
 
@@ -629,25 +630,64 @@ void M_DrawMenuMessage(void)
 		INT32 workx = x + menumessage.x;
 		INT32 worky = y + menumessage.y;
 
+		boolean push;
+
+		if (menumessage.closing)
+			push = (menumessage.answer != MA_YES);
+		else
+		{
+			const UINT8 anim_duration = 16;
+			push = ((menumessage.timer % (anim_duration * 2)) < anim_duration);
+		}
+
 		workx -= V_ThinStringWidth(menumessage.defaultstr, V_6WIDTHSPACE|V_ALLOWLOWERCASE);
-		V_DrawThinString(workx, worky + 1, V_6WIDTHSPACE|V_ALLOWLOWERCASE, menumessage.defaultstr);
+		V_DrawThinString(
+			workx, worky + 1,
+			V_6WIDTHSPACE|V_ALLOWLOWERCASE
+				| ((push && (menumessage.closing & MENUMESSAGECLOSE)) ? highlightflags : 0),
+			menumessage.defaultstr
+		);
+
+		workx -= 2;
 
 		workx -= SHORT(kp_button_x[1][0]->width);
-		K_drawButtonAnim(workx, worky, 0, kp_button_x[1], menumessage.timer);
+		K_drawButton(
+			workx * FRACUNIT, worky * FRACUNIT,
+			0, kp_button_x[1],
+			push
+		);
 
 		workx -= SHORT(kp_button_b[1][0]->width);
-		K_drawButtonAnim(workx, worky, 0, kp_button_b[1], menumessage.timer);
+		K_drawButton(
+			workx * FRACUNIT, worky * FRACUNIT,
+			0, kp_button_b[1],
+			push
+		);
 
 		if (menumessage.confirmstr)
 		{
 			workx -= 12;
 
+			if (menumessage.closing)
+				push = !push;
+
 			workx -= V_ThinStringWidth(menumessage.confirmstr, V_6WIDTHSPACE|V_ALLOWLOWERCASE);
-			V_DrawThinString(workx, worky + 1, V_6WIDTHSPACE|V_ALLOWLOWERCASE, menumessage.confirmstr);
+			V_DrawThinString(
+				workx, worky + 1,
+				V_6WIDTHSPACE|V_ALLOWLOWERCASE
+					| ((push && (menumessage.closing & MENUMESSAGECLOSE)) ? highlightflags : 0),
+				menumessage.confirmstr
+			);
+
+			workx -= 2;
 		}
 
 		workx -= SHORT(kp_button_a[1][0]->width);
-		K_drawButtonAnim(workx, worky, 0, kp_button_a[1], menumessage.timer);
+		K_drawButton(
+			workx * FRACUNIT, worky * FRACUNIT,
+			0, kp_button_a[1],
+			push
+		);
 	}
 
 	x -= 4;
@@ -1186,16 +1226,14 @@ static void M_DrawCharSelectCircle(setup_player_t *p, INT16 x, INT16 y)
 			numoptions = setup_chargrid[p->gridx][p->gridy].numskins;
 			break;
 		case CSSTEP_COLORS:
-			numoptions = nummenucolors;
+		case CSSTEP_FOLLOWERCOLORS:
+			numoptions = p->colors.listLen;
 			break;
 		case CSSTEP_FOLLOWERCATEGORY:
 			numoptions = setup_numfollowercategories+1;
 			break;
 		case CSSTEP_FOLLOWER:
 			numoptions = setup_followercategories[p->followercategory][0];
-			break;
-		case CSSTEP_FOLLOWERCOLORS:
-			numoptions = nummenucolors+2;
 			break;
 		default:
 			return;
@@ -1249,20 +1287,20 @@ static void M_DrawCharSelectCircle(setup_player_t *p, INT16 x, INT16 y)
 
 				if (i == 0)
 				{
-					n = l = r = M_GetColorBefore(p->color, numoptions/2, false);
+					n = l = r = M_GetColorBefore(&p->colors, p->color, (numoptions/2) - 1);
 				}
 				else if (subtract)
 				{
-					n = l = M_GetColorBefore(l, 1, false);
+					n = l = M_GetColorBefore(&p->colors, l, 1);
 				}
 				else
 				{
-					n = r = M_GetColorAfter(r, 1, false);
+					n = r = M_GetColorAfter(&p->colors, r, 1);
 				}
 
-				colormap = R_GetTranslationColormap(TC_DEFAULT, n, GTC_MENUCACHE);
+				colormap = R_GetTranslationColormap(TC_DEFAULT, (n == SKINCOLOR_NONE) ? skins[p->skin].prefcolor : n, GTC_MENUCACHE);
 
-				diff = (numoptions - i)/2;  // only 0 when i == numoptions-1
+				diff = (numoptions - i) / 2;  // only 0 when i == numoptions-1
 
 				if (diff == 0)
 					patch = W_CachePatchName("COLORSP2", PU_CACHE);
@@ -1359,7 +1397,7 @@ static void M_DrawCharSelectCircle(setup_player_t *p, INT16 x, INT16 y)
 					patch = W_CachePatchName(fl->icon, PU_CACHE);
 
 					colormap = R_GetTranslationColormap(TC_DEFAULT,
-						K_GetEffectiveFollowerColor(fl->defaultcolor, p->color),
+						K_GetEffectiveFollowerColor(fl->defaultcolor, fl, p->color, &skins[p->skin]),
 						GTC_MENUCACHE
 					);
 				}
@@ -1378,18 +1416,18 @@ static void M_DrawCharSelectCircle(setup_player_t *p, INT16 x, INT16 y)
 
 				if (i == 0)
 				{
-					n = l = r = M_GetColorBefore(p->followercolor, numoptions/2, true);
+					n = l = r = M_GetColorBefore(&p->colors, p->followercolor, (numoptions/2) - 1);
 				}
 				else if (subtract)
 				{
-					n = l = M_GetColorBefore(l, 1, true);
+					n = l = M_GetColorBefore(&p->colors, l, 1);
 				}
 				else
 				{
-					n = r = M_GetColorAfter(r, 1, true);
+					n = r = M_GetColorAfter(&p->colors, r, 1);
 				}
 
-				col = K_GetEffectiveFollowerColor(n, p->color);
+				col = K_GetEffectiveFollowerColor(n, &followers[p->followern], p->color, &skins[p->skin]);
 
 				colormap = R_GetTranslationColormap(TC_DEFAULT, col, GTC_MENUCACHE);
 
@@ -1477,14 +1515,13 @@ static boolean M_DrawCharacterSprite(INT16 x, INT16 y, INT16 skin, UINT8 spr2, U
 // if a setup_player_t is specified instead, its data will be used to animate the follower sprite.
 static boolean M_DrawFollowerSprite(INT16 x, INT16 y, INT32 num, boolean charflip, INT32 addflags, UINT8 *colormap, setup_player_t *p)
 {
-
 	spritedef_t *sprdef;
 	spriteframe_t *sprframe;
 	patch_t *patch;
 	INT32 followernum;
 	state_t *usestate;
 	UINT32 useframe;
-	follower_t fl;
+	follower_t *fl;
 	UINT8 rotation = (charflip ? 1 : 7);
 
 	if (p != NULL)
@@ -1496,7 +1533,7 @@ static boolean M_DrawFollowerSprite(INT16 x, INT16 y, INT32 num, boolean charfli
 	if (followernum < 0 || followernum >= numfollowers)
 		return false;
 
-	fl = followers[followernum];
+	fl = &followers[followernum];
 
 	if (p != NULL)
 	{
@@ -1529,13 +1566,16 @@ static boolean M_DrawFollowerSprite(INT16 x, INT16 y, INT32 num, boolean charfli
 	if (p != NULL)
 	{
 		UINT16 color = K_GetEffectiveFollowerColor(
-			(p->mdepth < CSSTEP_FOLLOWERCOLORS) ? fl.defaultcolor : p->followercolor,
-			p->color);
-		sine = FixedMul(fl.bobamp, FINESINE(((FixedMul(4 * M_TAU_FIXED, fl.bobspeed) * p->follower_timer)>>ANGLETOFINESHIFT) & FINEMASK));
+			(p->mdepth < CSSTEP_FOLLOWERCOLORS) ? fl->defaultcolor : p->followercolor,
+			fl,
+			p->color,
+			&skins[p->skin]
+		);
+		sine = FixedMul(fl->bobamp, FINESINE(((FixedMul(4 * M_TAU_FIXED, fl->bobspeed) * p->follower_timer)>>ANGLETOFINESHIFT) & FINEMASK));
 		colormap = R_GetTranslationColormap(TC_DEFAULT, color, GTC_MENUCACHE);
 	}
 
-	V_DrawFixedPatch((x*FRACUNIT), ((y-12)*FRACUNIT) + sine, fl.scale, addflags, patch, colormap);
+	V_DrawFixedPatch((x*FRACUNIT), ((y-12)*FRACUNIT) + sine, fl->scale, addflags, patch, colormap);
 
 	return true;
 }
@@ -1547,12 +1587,24 @@ static void M_DrawCharSelectSprite(UINT8 num, INT16 x, INT16 y, boolean charflip
 	UINT8 *colormap;
 
 	if (p->skin < 0)
+	{
 		return;
+	}
 
 	if (p->mdepth < CSSTEP_COLORS)
+	{
 		color = skins[p->skin].prefcolor;
+	}
 	else
+	{
 		color = p->color;
+	}
+
+	if (color == SKINCOLOR_NONE)
+	{
+		color = skins[p->skin].prefcolor;
+	}
+
 	colormap = R_GetTranslationColormap(p->skin, color, GTC_MENUCACHE);
 
 	M_DrawCharacterSprite(x, y, p->skin, SPR2_STIN, (charflip ? 1 : 7), ((p->mdepth == CSSTEP_READY) ? setup_animcounter : 0), 0, colormap);
@@ -1599,9 +1651,9 @@ static void M_DrawCharSelectPreview(UINT8 num)
 		M_DrawFollowerSprite(x+32+((charflip ? 1 : -1)*16), y+75, -1, charflip, 0, 0, p);
 	}
 
-	if ((setup_animcounter/10) & 1 && gamestate == GS_MENU)	// Not drawn outside of GS_MENU.
+	if ((setup_animcounter/10) & 1)
 	{
-		if (p->mdepth == CSSTEP_NONE && num == setup_numplayers)
+		if (p->mdepth == CSSTEP_NONE && num == setup_numplayers && gamestate == GS_MENU)
 		{
 			V_DrawScaledPatch(x+1, y+36, 0, W_CachePatchName("4PSTART", PU_CACHE));
 		}
@@ -1832,6 +1884,7 @@ static void M_DrawCharSelectCursor(UINT8 num)
 
 	setup_player_t *p = &setup_player[num];
 	char letter = 'A' + num;
+	UINT16 color = SKINCOLOR_NONE;
 	UINT8 *colormap;
 	INT16 x, y;
 	INT16 quadx, quady;
@@ -1849,7 +1902,20 @@ static void M_DrawCharSelectCursor(UINT8 num)
 	if (optionsmenu.profile)
 		x += 64;
 
-	colormap = R_GetTranslationColormap(TC_DEFAULT, (p->color != SKINCOLOR_NONE ? p->color : SKINCOLOR_GREY), GTC_MENUCACHE);
+	color = p->color;
+	if (color == SKINCOLOR_NONE)
+	{
+		if (p->skin >= 0)
+		{
+			color = skins[p->skin].prefcolor;
+		}
+		else
+		{
+			color = SKINCOLOR_GREY;
+		}
+	}
+
+	colormap = R_GetTranslationColormap(TC_DEFAULT, color, GTC_MENUCACHE);
 
 	if (p->mdepth >= CSSTEP_READY)
 	{
@@ -1890,22 +1956,34 @@ static void M_DrawProfileCard(INT32 x, INT32 y, boolean greyedout, profile_t *p)
 
 	if (p != NULL && p->version)
 	{
-		truecol = PR_GetProfileColor(p);
-		colormap = R_GetTranslationColormap(TC_DEFAULT, truecol, GTC_CACHE);
-		strcpy(pname, p->profilename);
+		truecol = p->color;
 		skinnum = R_SkinAvailable(p->skinname);
+		strcpy(pname, p->profilename);
 	}
 
-	// check setup_player for colormap for the card.
-	// we'll need to check again for drawing afterwards unfortunately.
 	if (sp->mdepth >= CSSTEP_CHARS)
 	{
-		truecol = PR_GetProfileColor(p);
-		colormap = R_GetTranslationColormap(skinnum, sp->color, GTC_MENUCACHE);
+		truecol = sp->color;
+		skinnum = setup_chargrid[sp->gridx][sp->gridy].skinlist[sp->clonenum];
+	}
+
+	if (truecol == SKINCOLOR_NONE)
+	{
+		if (skinnum >= 0)
+		{
+			truecol = skins[skinnum].prefcolor;
+		}
+		else
+		{
+			truecol = SKINCOLOR_RED;
+		}
 	}
 
 	// Card
-	V_DrawFixedPatch(x*FRACUNIT, y*FRACUNIT, FRACUNIT, greyedout ? V_TRANSLUCENT : 0, card, colormap);
+	{
+		colormap = R_GetTranslationColormap(TC_DEFAULT, truecol, GTC_CACHE);
+		V_DrawFixedPatch(x*FRACUNIT, y*FRACUNIT, FRACUNIT, greyedout ? V_TRANSLUCENT : 0, card, colormap);
+	}
 
 	if (greyedout)
 		return;	// only used for profiles we can't select.
@@ -1920,12 +1998,12 @@ static void M_DrawProfileCard(INT32 x, INT32 y, boolean greyedout, profile_t *p)
 	// check what setup_player is doing in priority.
 	if (sp->mdepth >= CSSTEP_CHARS)
 	{
-		skinnum = setup_chargrid[sp->gridx][sp->gridy].skinlist[sp->clonenum];
-
 		if (skinnum >= 0)
 		{
-			if (M_DrawCharacterSprite(x-22, y+119, skinnum, SPR2_STIN, 7, 0, 0, colormap))
-				V_DrawMappedPatch(x+14, y+66, 0, faceprefix[skinnum][FACE_RANK], colormap);
+			UINT8 *ccolormap = R_GetTranslationColormap(skinnum, truecol, GTC_MENUCACHE);
+
+			if (M_DrawCharacterSprite(x-22, y+119, skinnum, SPR2_STIN, 7, 0, 0, ccolormap))
+				V_DrawMappedPatch(x+14, y+66, 0, faceprefix[skinnum][FACE_RANK], ccolormap);
 		}
 
 		M_DrawCharSelectCircle(sp, x-22, y+104);
@@ -1934,7 +2012,7 @@ static void M_DrawProfileCard(INT32 x, INT32 y, boolean greyedout, profile_t *p)
 		{
 			if (M_DrawFollowerSprite(x-22 - 16, y+119, 0, false, 0, 0, sp))
 			{
-				UINT16 col = K_GetEffectiveFollowerColor(sp->followercolor, sp->color);;
+				UINT16 col = K_GetEffectiveFollowerColor(sp->followercolor, &followers[sp->followern], sp->color, &skins[sp->skin]);
 				patch_t *ico = W_CachePatchName(followers[sp->followern].icon, PU_CACHE);
 				UINT8 *fcolormap = R_GetTranslationColormap(TC_DEFAULT, col, GTC_MENUCACHE);
 				V_DrawMappedPatch(x+14+18, y+66, 0, ico, fcolormap);
@@ -1943,28 +2021,36 @@ static void M_DrawProfileCard(INT32 x, INT32 y, boolean greyedout, profile_t *p)
 	}
 	else if (skinnum > -1)	// otherwise, read from profile.
 	{
-		UINT8 *ccolormap, *fcolormap;
-		UINT16 col = K_GetEffectiveFollowerColor(p->followercolor, p->color);
-		UINT8 fln = K_FollowerAvailable(p->follower);
+		UINT8 *ccolormap;
+		INT32 fln = K_FollowerAvailable(p->follower);
 
 		if (R_SkinUsable(g_localplayers[0], skinnum, false))
-			ccolormap = colormap;
+			ccolormap = R_GetTranslationColormap(skinnum, truecol, GTC_MENUCACHE);
 		else
 			ccolormap = R_GetTranslationColormap(TC_BLINK, truecol, GTC_MENUCACHE);
-
-		fcolormap = R_GetTranslationColormap(
-			(K_FollowerUsable(fln) ? TC_DEFAULT : TC_BLINK),
-				col, GTC_MENUCACHE);
 
 		if (M_DrawCharacterSprite(x-22, y+119, skinnum, SPR2_STIN, 7, 0, 0, ccolormap))
 		{
 			V_DrawMappedPatch(x+14, y+66, 0, faceprefix[skinnum][FACE_RANK], ccolormap);
 		}
 
-		if (M_DrawFollowerSprite(x-22 - 16, y+119, fln, false, 0, fcolormap, NULL))
+		if (fln >= 0)
 		{
-			patch_t *ico = W_CachePatchName(followers[fln].icon, PU_CACHE);
-			V_DrawMappedPatch(x+14+18, y+66, 0, ico, fcolormap);
+			UINT16 fcol = K_GetEffectiveFollowerColor(
+				p->followercolor,
+				&followers[fln],
+				p->color,
+				&skins[skinnum]
+			);
+			UINT8 *fcolormap = R_GetTranslationColormap(
+			(K_FollowerUsable(fln) ? TC_DEFAULT : TC_BLINK),
+				fcol, GTC_MENUCACHE);
+
+			if (M_DrawFollowerSprite(x-22 - 16, y+119, fln, false, 0, fcolormap, NULL))
+			{
+				patch_t *ico = W_CachePatchName(followers[fln].icon, PU_CACHE);
+				V_DrawMappedPatch(x+14+18, y+66, 0, ico, fcolormap);
+			}
 		}
 	}
 
@@ -2329,6 +2415,7 @@ static void M_DrawCupTitle(INT16 y, levelsearch_t *levelsearch)
 void M_DrawCupSelect(void)
 {
 	UINT8 i, j, temp = 0;
+	INT16 x, y;
 	UINT8 *colormap = NULL;
 	cupwindata_t *windata = NULL;
 	levelsearch_t templevelsearch = levellist.levelsearch; // full copy
@@ -2339,7 +2426,6 @@ void M_DrawCupSelect(void)
 		{
 			size_t id = (i + (j * CUPMENU_COLUMNS)) + (cupgrid.pageno * (CUPMENU_COLUMNS * CUPMENU_ROWS));
 			patch_t *patch = NULL;
-			INT16 x, y;
 			INT16 icony = 7;
 			char status =  'A';
 			char monitor;
@@ -2423,6 +2509,13 @@ void M_DrawCupSelect(void)
 			{
 				V_DrawScaledPatch(x + 8, y + icony, 0, W_CachePatchName(templevelsearch.cup->icon, PU_CACHE));
 				V_DrawScaledPatch(x + 8, y + icony, 0, W_CachePatchName("CUPBOX", PU_CACHE));
+
+				if (cupgrid.grandprix == true
+				&& templevelsearch.cup == cupsavedata.cup
+				&& id != CUPMENU_CURSORID)
+				{
+					V_DrawScaledPatch(x + 32, y + 32, 0, W_CachePatchName("CUPBKUP1", PU_CACHE));
+				}
 
 				if (!windata)
 					;
@@ -2523,17 +2616,38 @@ void M_DrawCupSelect(void)
 		}
 	}
 
-	V_DrawScaledPatch(14 + (cupgrid.x*42) - 4,
-		20 + (cupgrid.y*44) - 1 - (24*menutransition.tics),
-		0, W_CachePatchName("CUPCURS", PU_CACHE)
-	);
+	x = 14 + (cupgrid.x*42);
+	y = 20 + (cupgrid.y*44) - (30*menutransition.tics);
+
+	V_DrawScaledPatch(x - 4, y - 1, 0, W_CachePatchName("CUPCURS", PU_CACHE));
 
 	templevelsearch.cup = cupgrid.builtgrid[CUPMENU_CURSORID];
+
+	if (cupgrid.grandprix == true
+	&& templevelsearch.cup != NULL
+	&& templevelsearch.cup == cupsavedata.cup)
+	{
+		V_DrawScaledPatch(x + 32, y + 32, 0, W_CachePatchName("CUPBKUP2", PU_CACHE));
+	}
 
 	V_DrawFill(0, 146 + (24*menutransition.tics), BASEVIDWIDTH, 54, 31);
 	M_DrawCupPreview(146 + (24*menutransition.tics), &templevelsearch);
 
 	M_DrawCupTitle(120 - (24*menutransition.tics), &templevelsearch);
+
+	if (cupgrid.numpages > 1)
+	{
+		x = 3 - (skullAnimCounter/5);
+		y = 20 + (44 - 1) - (30*menutransition.tics);
+
+		patch_t *cuparrow = W_CachePatchName("CUPARROW", PU_CACHE);
+
+		if (cupgrid.pageno != 0)
+			V_DrawScaledPatch(x, y, 0, cuparrow);
+
+		if (cupgrid.pageno != cupgrid.numpages-1)
+			V_DrawScaledPatch(BASEVIDWIDTH-x, y, V_FLIP, cuparrow);
+	}
 }
 
 static void M_DrawHighLowLevelTitle(INT16 x, INT16 y, INT16 map)
@@ -2998,7 +3112,7 @@ void M_DrawMPHost(void)
 							}
 							break;
 						}
-						case IT_KEYHANDLER:
+						case IT_ARROWS:
 						{
 							if (currentMenu->menuitems[i].itemaction.routine != M_HandleHostMenuGametype)
 								break;
@@ -4195,11 +4309,6 @@ void M_DrawPause(void)
 	INT16 arrxpos = 150 + 2*offset;	// To draw the background arrow.
 
 	INT16 j = 0;
-	char word1[MAXSTRINGLENGTH];
-	INT16 word1len = 0;
-	char word2[MAXSTRINGLENGTH];
-	INT16 word2len = 0;
-	boolean sok = false;
 
 	patch_t *vertbg = W_CachePatchName("M_STRIPV", PU_CACHE);
 	patch_t *arrstart = W_CachePatchName("M_PTIP", PU_CACHE);
@@ -4297,54 +4406,107 @@ void M_DrawPause(void)
 	}
 
 	// Draw the string!
-	// ...but first get what we need to get.
-	while (currentMenu->menuitems[itemOn].text[j] && j < MAXSTRINGLENGTH)
-	{
-		char c = currentMenu->menuitems[itemOn].text[j];
 
-		if (c == ' ' && !sok)
-		{
-			sok = true;
-			j++;
-			continue;	// We don't care about this :moyai:
-		}
-
-		if (sok)
-		{
-			word2[word2len] = c;
-			word2len++;
-		}
-		else
-		{
-			word1[word1len] = c;
-			word1len++;
-		}
-
-		j++;
-	}
-
-	word1[word1len] = '\0';
-	word2[word2len] = '\0';
+	const char *maintext = NULL;
+	const char *selectabletext = NULL;
+	INT32 mainflags = V_YELLOWMAP, selectableflags = 0;
 
 	if (itemOn == mpause_changegametype)
 	{
-		INT32 w = V_LSTitleLowStringWidth(gametypes[menugametype]->name, 0)/2;
+		selectabletext = gametypes[menugametype]->name;
+	}
+	else if (itemOn == mpause_callvote)
+	{
+		selectabletext = K_GetMidVoteLabel(menucallvote);
 
-		if (word1len)
-			V_DrawCenteredLSTitleHighString(220 + offset*2, 75, 0, word1);
+		if (K_MinimalCheckNewMidVote(menucallvote) == false)
+		{
+			if (g_midVote.active == true)
+			{
+				maintext = "ACTIVE...";
+			}
+			else if (g_midVote.delay > 0)
+			{
+				if (g_midVote.delay != 1)
+					maintext = va("%u", ((g_midVote.delay - 1) / TICRATE) + 1);
+			}
+			else if (K_PlayerIDAllowedInMidVote(consoleplayer) == false)
+			{
+				maintext = "SPECTATING";
+			}
+			else
+			{
+				maintext = "INVALID!?";
+			}
 
-		V_DrawLSTitleLowString(220-w + offset*2, 103, V_YELLOWMAP, gametypes[menugametype]->name);
-		V_DrawCharacter(220-w + offset*2 - 8 - (skullAnimCounter/5), 103+6, '\x1C' | V_YELLOWMAP, false); // left arrow
-		V_DrawCharacter(220+w + offset*2 + 4 + (skullAnimCounter/5), 103+6, '\x1D' | V_YELLOWMAP, false); // right arrow
+			if (maintext != NULL)
+				selectableflags |= V_MODULATE;
+		}
 	}
 	else
 	{
+		maintext = currentMenu->menuitems[itemOn].text;
+		mainflags = 0;
+	}
+
+	if (selectabletext != NULL)
+	{
+		// We have a selection. Let's show the full menu text on top, and the choice below.
+
+		if (currentMenu->menuitems[itemOn].text)
+			V_DrawCenteredLSTitleHighString(220 + offset*2, 75, selectableflags, currentMenu->menuitems[itemOn].text);
+
+		selectableflags |= V_YELLOWMAP;
+
+		INT32 w = V_LSTitleLowStringWidth(selectabletext, selectableflags)/2;
+		V_DrawLSTitleLowString(220-w + offset*2, 103, selectableflags, selectabletext);
+
+		V_DrawCharacter(220-w + offset*2 - 8 - (skullAnimCounter/5), 103+6, '\x1C' | selectableflags, false); // left arrow
+		V_DrawCharacter(220+w + offset*2 + (skullAnimCounter/5), 103+6, '\x1D' | selectableflags, false); // right arrow
+	}
+
+	if (maintext != NULL)
+	{
+		// This is a regular menu option. Try to break it onto two lines.
+
+		char word1[MAXSTRINGLENGTH];
+		INT16 word1len = 0;
+		char word2[MAXSTRINGLENGTH];
+		INT16 word2len = 0;
+		boolean sok = false;
+
+		while (maintext[j] && j < MAXSTRINGLENGTH)
+		{
+			if (maintext[j] == ' ' && !sok)
+			{
+				sok = true;
+				j++;
+				continue;	// We don't care about this :moyai:
+			}
+
+			if (sok)
+			{
+				word2[word2len] = maintext[j];
+				word2len++;
+			}
+			else
+			{
+				word1[word1len] = maintext[j];
+				word1len++;
+			}
+
+			j++;
+		}
+
+		word1[word1len] = '\0';
+		word2[word2len] = '\0';
+
 		// If there's no 2nd word, take this opportunity to center this line of text.
 		if (word1len)
-			V_DrawCenteredLSTitleHighString(220 + offset*2, 75 + (!word2len ? 10 : 0), 0, word1);
+			V_DrawCenteredLSTitleHighString(220 + offset*2, 75 + (!word2len ? 10 : 0), mainflags, word1);
 
 		if (word2len)
-			V_DrawCenteredLSTitleLowString(220 + offset*2, 103, 0, word2);
+			V_DrawCenteredLSTitleLowString(220 + offset*2, 103, mainflags, word2);
 	}
 
 	if (gamestate != GS_INTERMISSION && roundqueue.size > 0)
@@ -4424,6 +4586,106 @@ void M_DrawPause(void)
 
 		Y_RoundQueueDrawer(&standings, offset/2, false, false);
 	}
+}
+
+void M_DrawKickHandler(void)
+{
+	// fake round queue drawer simply to make release
+	INT32 x = 29 + 4, y = 70, returny = y;
+	INT32 pokeamount = (playerkickmenu.poke & 1) ? -playerkickmenu.poke/2 : playerkickmenu.poke/2;
+	INT32 x2 = x + pokeamount - 9 - 8;
+
+	boolean datarightofcolumn = false;
+
+	patch_t *resbar = W_CachePatchName("R_RESBAR", PU_CACHE); // Results bars for players
+
+	UINT8 i;
+
+	for (i = 0; i < MAXPLAYERS; i++)
+	{
+		V_DrawMappedPatch(
+			x, y,
+			(playeringame[i] == true)
+				? ((players[i].spectator == true) ? V_TRANSLUCENT : 0)
+				: V_MODULATE,
+			resbar, NULL
+		);
+
+		V_DrawRightAlignedThinString(
+			x+13, y-2,
+				((i == playerkickmenu.player)
+					? highlightflags
+					: 0
+				),
+			va("%u", i)
+		);
+
+		if (playeringame[i] == true)
+		{
+			if (players[i].skincolor != SKINCOLOR_NONE)
+			{
+				UINT8 *charcolormap;
+				if ((players[i].pflags & PF_NOCONTEST) && players[i].bot)
+				{
+					// RETIRED !!
+					charcolormap = R_GetTranslationColormap(TC_DEFAULT, players[i].skincolor, GTC_CACHE);
+					V_DrawMappedPatch(x+14, y-5, 0, W_CachePatchName("MINIDEAD", PU_CACHE), charcolormap);
+				}
+				else
+				{
+					charcolormap = R_GetTranslationColormap(players[i].skin, players[i].skincolor, GTC_CACHE);
+					V_DrawMappedPatch(x+14, y-5, 0, faceprefix[players[i].skin][FACE_MINIMAP], charcolormap);
+				}
+			}
+
+			V_DrawThinString(
+				x+27, y-2,
+				(
+					P_IsMachineLocalPlayer(&players[i])
+						? highlightflags
+						: 0
+				)|V_ALLOWLOWERCASE|V_6WIDTHSPACE,
+				player_names[i]
+			);
+
+			V_DrawRightAlignedThinString(
+				x+118, y-2,
+				V_ALLOWLOWERCASE|V_6WIDTHSPACE,
+				(players[i].spectator) ? "SPECTATOR" : "PLAYING"
+			);
+		}
+
+		if (i == playerkickmenu.player)
+		{
+			V_DrawScaledPatch(
+				x2, y-1,
+				(datarightofcolumn ? V_FLIP : 0),
+				W_CachePatchName("M_CURSOR", PU_CACHE)
+			);
+		}
+
+		y += 13;
+
+		if (i == (MAXPLAYERS-1)/2)
+		{
+			x = 169 - 4;
+			y = returny;
+
+			datarightofcolumn = true;
+			x2 = x + 118 + 9 + 8 + 4 - pokeamount;
+		}
+	}
+
+	//V_DrawFill(32 + (playerkickmenu.player & 8), 32 + (playerkickmenu.player & 7)*8, 8, 8, playeringame[playerkickmenu.player] ? 0 : 16);
+
+	V_DrawFixedPatch(0, 0, FRACUNIT, 0, W_CachePatchName("MENUHINT", PU_CACHE), NULL);
+	V_DrawCenteredThinString(
+		BASEVIDWIDTH/2, 12,
+		V_ALLOWLOWERCASE|V_6WIDTHSPACE,
+		(playerkickmenu.adminpowered)
+			? "You are using ""\x85""Admin Tools""\x80"", ""\x83""(A)""\x80"" to kick and ""\x84""(C)""\x80"" to ban"
+			: K_GetMidVoteLabel(menucallvote)
+	);
 }
 
 void M_DrawPlaybackMenu(void)
@@ -4805,11 +5067,14 @@ static void M_DrawChallengeTile(INT16 i, INT16 j, INT32 x, INT32 y, boolean hili
 			case SECRET_FOLLOWER:
 				categoryid = '2';
 				break;
-			/*case SECRET_COLOR:
+			case SECRET_COLOR:
 				categoryid = '3';
-				break;*/
+				break;
 			case SECRET_CUP:
 				categoryid = '4';
+				break;
+			case SECRET_MAP:
+				categoryid = '8';
 				break;
 			case SECRET_HARDSPEED:
 			case SECRET_MASTERMODE:
@@ -4819,8 +5084,9 @@ static void M_DrawChallengeTile(INT16 i, INT16 j, INT32 x, INT32 y, boolean hili
 			case SECRET_ONLINE:
 			case SECRET_ADDONS:
 			case SECRET_EGGTV:
-			case SECRET_ALTTITLE:
 			case SECRET_SOUNDTEST:
+			case SECRET_ALTTITLE:
+			case SECRET_MEMETAUNTS:
 				categoryid = '6';
 				break;
 			case SECRET_TIMEATTACK:
@@ -4870,12 +5136,27 @@ static void M_DrawChallengeTile(INT16 i, INT16 j, INT32 x, INT32 y, boolean hili
 				INT32 skin = M_UnlockableFollowerNum(ref);
 				if (skin != -1)
 				{
-					UINT16 col = K_GetEffectiveFollowerColor(followers[skin].defaultcolor, cv_playercolor[0].value);
+					INT32 psk = R_SkinAvailable(cv_skin[0].string);
+					UINT16 col = K_GetEffectiveFollowerColor(followers[skin].defaultcolor, &followers[skin], cv_playercolor[0].value, (psk != -1) ? &skins[psk] : &skins[0]);
 					colormap = R_GetTranslationColormap(TC_DEFAULT, col, GTC_MENUCACHE);
 					pat = W_CachePatchName(followers[skin].icon, PU_CACHE);
 				}
 				break;
 			}
+			case SECRET_COLOR:
+			{
+				INT32 colorid = M_UnlockableColorNum(ref);
+				if (colorid != SKINCOLOR_NONE)
+				{
+					colormap = R_GetTranslationColormap(TC_DEFAULT, colorid, GTC_MENUCACHE);
+				}
+				iconid = 2;
+				break;
+			}
+
+			case SECRET_MAP:
+				iconid = 14;
+				break;
 
 			case SECRET_HARDSPEED:
 				iconid = 3;
@@ -4896,11 +5177,14 @@ static void M_DrawChallengeTile(INT16 i, INT16 j, INT32 x, INT32 y, boolean hili
 			case SECRET_EGGTV:
 				iconid = 11;
 				break;
+			case SECRET_SOUNDTEST:
+				iconid = 1;
+				break;
 			case SECRET_ALTTITLE:
 				iconid = 6;
 				break;
-			case SECRET_SOUNDTEST:
-				iconid = 1;
+			case SECRET_MEMETAUNTS:
+				iconid = 13;
 				break;
 
 			case SECRET_TIMEATTACK:
@@ -4913,7 +5197,7 @@ static void M_DrawChallengeTile(INT16 i, INT16 j, INT32 x, INT32 y, boolean hili
 				iconid = 9;
 				break;
 			case SECRET_SPBATTACK:
-				iconid = 0; // TEMPORARY
+				iconid = 15;
 				break;
 
 			default:
@@ -5108,7 +5392,7 @@ static void M_DrawChallengePreview(INT32 x, INT32 y)
 			// Draw follower next to them
 			if (fskin != -1)
 			{
-				UINT16 col = K_GetEffectiveFollowerColor(followers[fskin].defaultcolor, cv_playercolor[0].value);
+				UINT16 col = K_GetEffectiveFollowerColor(followers[fskin].defaultcolor, &followers[fskin], cv_playercolor[0].value, &skins[skin]);
 				colormap = R_GetTranslationColormap(TC_DEFAULT, col, GTC_MENUCACHE);
 				M_DrawFollowerSprite(x - 16, y, fskin, false, 0, colormap, NULL);
 
@@ -5120,6 +5404,20 @@ static void M_DrawChallengePreview(INT32 x, INT32 y)
 						NULL);
 				}
 			}
+			break;
+		}
+		case SECRET_COLOR:
+		{
+			INT32 colorid = M_UnlockableColorNum(ref);
+			if (colorid == SKINCOLOR_NONE)
+				break;
+			INT32 skin = R_SkinAvailable(cv_skin[0].string);
+			if (skin == -1)
+				skin = 0;
+			colormap = R_GetTranslationColormap(skin, colorid, GTC_MENUCACHE);
+
+			// Draw reference for character bathed in coloured slime
+			M_DrawCharacterSprite(x, y, skin, SPR2_STIN, 7, 0, 0, colormap);
 			break;
 		}
 		case SECRET_CUP:

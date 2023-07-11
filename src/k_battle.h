@@ -10,13 +10,24 @@ extern "C" {
 
 #define BATTLE_SPAWN_INTERVAL (4*TICRATE)
 #define BATTLE_DESPAWN_TIME (15*TICRATE)
+#define BATTLE_POWERUP_TIME (30*TICRATE)
+#define BATTLE_UFO_TIME (20*TICRATE)
+
+#define BATTLE_MONITOR_SPAWN_LIMIT (3)
 
 extern struct battleovertime
 {
 	UINT16 enabled; ///< Has this been initalized yet?
 	fixed_t radius; ///< Radius of kill field
+	fixed_t initial_radius; ///< Starting radius of kill field
 	fixed_t x, y, z; ///< Position to center on
 } battleovertime;
+
+extern struct battleufo
+{
+	INT32 previousId;
+	tic_t due;
+} g_battleufo;
 
 extern boolean battleprisons;
 extern INT32 nummapboxes, numgotboxes; // keep track of spawned battle mode items

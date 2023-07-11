@@ -236,7 +236,7 @@ struct skincolor_t
 
 #define FOLLOWERCOLOR_MATCH UINT16_MAX
 #define FOLLOWERCOLOR_OPPOSITE (UINT16_MAX-1)
-UINT16 K_GetEffectiveFollowerColor(UINT16 followercolor, UINT16 playercolor);
+UINT16 K_GetEffectiveFollowerColor(UINT16 followercolor, follower_t *follower, UINT16 playercolor, skin_t *playerskin);
 
 typedef enum
 {
@@ -517,9 +517,9 @@ void CONS_Debug(UINT32 debugflags, const char *fmt, ...) FUNCDEBUG;
 #include "m_swap.h"
 
 // Things that used to be in dstrings.h
-#define SAVEGAMENAME "srb2sav"
+#define SAVEGAMENAME "ringsav"
 extern char savegamename[256];
-extern char liveeventbackup[256];
+extern char gpbackup[256];
 
 // m_misc.h
 #ifdef GETTEXT

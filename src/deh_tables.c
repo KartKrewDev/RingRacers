@@ -283,7 +283,6 @@ actionpointer_t actionpointers[] =
 	{{A_ChangeHeight},           "A_CHANGEHEIGHT"},
 
 	// SRB2Kart
-	{{A_ItemPop},                "A_ITEMPOP"},
 	{{A_JawzExplode},            "A_JAWZEXPLODE"},
 	{{A_SSMineSearch},           "A_SSMINESEARCH"},
 	{{A_SSMineExplode},          "A_SSMINEEXPLODE"},
@@ -3223,7 +3222,20 @@ const char *const STATE_LIST[] = { // array length left dynamic for sanity testi
 	"S_RANDOMITEM10",
 	"S_RANDOMITEM11",
 	"S_RANDOMITEM12",
-	"S_DEADRANDOMITEM",
+
+	// Ring Box
+	"S_RINGBOX1",
+	"S_RINGBOX2",
+	"S_RINGBOX3",
+	"S_RINGBOX4",
+	"S_RINGBOX5",
+	"S_RINGBOX6",
+	"S_RINGBOX7",
+	"S_RINGBOX8",
+	"S_RINGBOX9",
+	"S_RINGBOX10",
+	"S_RINGBOX11",
+	"S_RINGBOX12",
 
 	// Sphere Box (for Battle)
 	"S_SPHEREBOX1",
@@ -3238,7 +3250,6 @@ const char *const STATE_LIST[] = { // array length left dynamic for sanity testi
 	"S_SPHEREBOX10",
 	"S_SPHEREBOX11",
 	"S_SPHEREBOX12",
-	"S_DEADSPHEREBOX",
 
 	// Random Item Pop
 	"S_RANDOMITEMPOP1",
@@ -3288,10 +3299,16 @@ const char *const STATE_LIST[] = { // array length left dynamic for sanity testi
 	"S_SLIPTIDEZIP",
 
 	"S_INSTAWHIP",
+	"S_INSTAWHIP_RECHARGE1",
+	"S_INSTAWHIP_RECHARGE2",
+	"S_INSTAWHIP_RECHARGE3",
+	"S_INSTAWHIP_RECHARGE4",
 	"S_BLOCKRING",
 	"S_BLOCKBODY",
 
 	"S_SERVANTHAND",
+
+	"S_HORNCODE",
 
 	// Signpost sparkles
 	"S_SIGNSPARK1",
@@ -4580,6 +4597,15 @@ const char *const STATE_LIST[] = { // array length left dynamic for sanity testi
 	"S_JANKSPARK3",
 	"S_JANKSPARK4",
 
+	"S_HITLAG_1",
+	"S_HITLAG_2",
+	"S_HITLAG_3",
+	"S_HITLAG_4",
+	"S_HITLAG_5",
+	"S_HITLAG_6",
+	"S_HITLAG_8",
+	"S_HITLAG_9",
+
 	// Broly Ki Orb
 	"S_BROLY1",
 	"S_BROLY2",
@@ -4601,6 +4627,16 @@ const char *const STATE_LIST[] = { // array length left dynamic for sanity testi
 	"S_GACHABOM_EXPLOSION_4",
 	"S_GACHABOM_WAITING",
 	"S_GACHABOM_RETURNING",
+
+	"S_SUPER_FLICKY",
+
+	"S_BATTLEUFO",
+	"S_BATTLEUFO_LEG",
+	"S_BATTLEUFO_DIE",
+	"S_BATTLEUFO_BEAM1",
+	"S_BATTLEUFO_BEAM2",
+
+	"S_POWERUP_AURA",
 };
 
 // RegEx to generate this from info.h: ^\tMT_([^,]+), --> \t"MT_\1",
@@ -5370,10 +5406,13 @@ const char *const MOBJTYPE_LIST[] = {  // array length left dynamic for sanity t
 	"MT_SLIPTIDEZIP",
 
 	"MT_INSTAWHIP",
+	"MT_INSTAWHIP_RECHARGE",
 	"MT_BLOCKRING",
 	"MT_BLOCKBODY",
 
 	"MT_SERVANTHAND",
+
+	"MT_HORNCODE",
 
 	"MT_SIGNSPARKLE",
 
@@ -5398,6 +5437,7 @@ const char *const MOBJTYPE_LIST[] = {  // array length left dynamic for sanity t
 	"MT_DRIFTELECTRICITY",
 	"MT_DRIFTELECTRICSPARK",
 	"MT_JANKSPARK",
+	"MT_HITLAG",
 
 	"MT_ROCKETSNEAKER", // Rocket sneakers
 
@@ -5728,6 +5768,16 @@ const char *const MOBJTYPE_LIST[] = {  // array length left dynamic for sanity t
 
 	"MT_LOOPENDPOINT",
 	"MT_LOOPCENTERPOINT",
+
+	"MT_SUPER_FLICKY",
+	"MT_SUPER_FLICKY_CONTROLLER",
+
+	"MT_BATTLEUFO_SPAWNER",
+	"MT_BATTLEUFO",
+	"MT_BATTLEUFO_LEG",
+	"MT_BATTLEUFO_BEAM",
+
+	"MT_POWERUP_AURA",
 };
 
 const char *const MOBJFLAG_LIST[] = {
@@ -6866,9 +6916,7 @@ struct int_const_s const INT_CONST[] = {
 	{"GS_MENU",GS_MENU},
 	{"GS_CREDITS",GS_CREDITS},
 	{"GS_EVALUATION",GS_EVALUATION},
-	{"GS_GAMEEND",GS_GAMEEND},
 	{"GS_INTRO",GS_INTRO},
-	{"GS_ENDING",GS_ENDING},
 	{"GS_CUTSCENE",GS_CUTSCENE},
 	{"GS_DEDICATEDSERVER",GS_DEDICATEDSERVER},
 	{"GS_WAITINGPLAYERS",GS_WAITINGPLAYERS},
@@ -6887,6 +6935,15 @@ struct int_const_s const INT_CONST[] = {
 	{"KRITEM_DUALJAWZ",KRITEM_DUALJAWZ},
 	{"KRITEM_TRIPLEGACHABOM",KRITEM_TRIPLEGACHABOM},
 	{"NUMKARTRESULTS",NUMKARTRESULTS},
+	{"FIRSTPOWERUP",FIRSTPOWERUP},
+	{"POWERUP_SMONITOR",POWERUP_SMONITOR},
+	{"POWERUP_BARRIER",POWERUP_BARRIER},
+	{"POWERUP_BUMPER",POWERUP_BUMPER},
+	{"POWERUP_BADGE",POWERUP_BADGE},
+	{"POWERUP_SUPERFLICKY",POWERUP_SUPERFLICKY},
+	{"ENDOFPOWERUPS",ENDOFPOWERUPS},
+	{"LASTPOWERUP",LASTPOWERUP},
+	{"NUMPOWERUPS",NUMPOWERUPS},
 
 	// kartshields_t
 	{"KSHIELD_NONE",KSHIELD_NONE},

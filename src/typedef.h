@@ -47,6 +47,7 @@ TYPEDEF (botvars_t);
 TYPEDEF (roundconditions_t);
 TYPEDEF (skybox_t);
 TYPEDEF (itemroulette_t);
+TYPEDEF (powerupvars_t);
 TYPEDEF (altview_t);
 TYPEDEF (player_t);
 
@@ -189,6 +190,7 @@ TYPEDEF (menucolor_t);
 TYPEDEF (menuitem_t);
 TYPEDEF (menu_t);
 TYPEDEF (menucmd_t);
+TYPEDEF (setup_player_colors_t);
 TYPEDEF (setup_player_t);
 TYPEDEF (modedesc_t);
 
@@ -297,6 +299,7 @@ TYPEDEF (polyfadedata_t);
 
 // p_saveg.h
 TYPEDEF (savedata_t);
+TYPEDEF (savedata_cup_t);
 TYPEDEF (savebuffer_t);
 
 // p_setup.h

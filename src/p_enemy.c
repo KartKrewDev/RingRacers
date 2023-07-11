@@ -312,7 +312,6 @@ void A_ChangeHeight(mobj_t *actor);
 //
 // SRB2Kart
 //
-void A_ItemPop(mobj_t *actor);
 void A_JawzExplode(mobj_t *actor);
 void A_SSMineSearch(mobj_t *actor);
 void A_SSMineExplode(mobj_t *actor);
@@ -3801,7 +3800,7 @@ void A_AttractChase(mobj_t *actor)
 	if (actor->flags2 & MF2_NIGHTSPULL || !actor->health)
 		return;
 
-	if (actor->extravalue1) // SRB2Kart
+	if (actor->extravalue1 && actor->type != MT_EMERALD) // SRB2Kart
 	{
 		if (!actor->target || P_MobjWasRemoved(actor->target) || !actor->target->player)
 		{
@@ -7221,13 +7220,14 @@ void A_ChangeRollAngleAbsolute(mobj_t *actor)
 //
 // var1 = sound # to play
 // var2:
-//		lower 16 bits = If 1, play sound using calling object as origin. If 0, play sound without an origin
+//		lower 16 bits = If 1, play sound using calling object as origin. If 2, use target. If 0, play sound without an origin
 //		upper 16 bits = If 1, do not play sound during preticker.
 //
 void A_PlaySound(mobj_t *actor)
 {
 	INT32 locvar1 = var1;
 	INT32 locvar2 = var2;
+	mobj_t *origin = NULL;
 
 	if (LUA_CallAction(A_PLAYSOUND, actor))
 		return;
@@ -7235,7 +7235,18 @@ void A_PlaySound(mobj_t *actor)
 	if (leveltime < 2 && (locvar2 >> 16))
 		return;
 
-	S_StartSound((locvar2 & 65535) ? actor : NULL, locvar1);
+	switch (locvar2 & 65535)
+	{
+		case 1:
+			origin = actor;
+			break;
+
+		case 2:
+			origin = actor->target ? actor->target : actor;
+			break;
+	}
+
+	S_StartSound(origin, locvar1);
 }
 
 // Function: A_FindTarget
@@ -12971,54 +12982,6 @@ void A_ChangeHeight(mobj_t *actor)
 //
 // SRB2Kart
 //
-
-void A_ItemPop(mobj_t *actor)
-{
-	INT32 locvar1 = var1;
-
-	if (LUA_CallAction(A_ITEMPOP, actor))
-		return;
-
-	if (!(actor->target && actor->target->player))
-	{
-		if (cht_debug && !(actor->target && actor->target->player))
-			CONS_Printf("ERROR: Powerup has no target!\n");
-		return;
-	}
-
-	// de-solidify
-	P_UnsetThingPosition(actor);
-	actor->flags &= ~MF_SOLID;
-	actor->flags |= MF_NOCLIP;
-	P_SetThingPosition(actor);
-
-	// RF_DONTDRAW will flicker as the object's fuse gets
-	// closer to running out (see P_FuseThink)
-	actor->renderflags |= RF_DONTDRAW|RF_TRANS50;
-	actor->color = SKINCOLOR_GREY;
-	actor->colorized = true;
-
-	Obj_SpawnItemDebrisEffects(actor, actor->target);
-
-	if (locvar1 == 1)
-	{
-		P_GivePlayerSpheres(actor->target->player, actor->extravalue1);
-	}
-	else if (locvar1 == 0)
-	{
-		K_StartItemRoulette(actor->target->player);
-	}
-
-	// Here at mapload in battle?
-	if (!(gametyperules & GTR_CIRCUIT) && (actor->flags2 & MF2_BOSSNOTRAP))
-	{
-		numgotboxes++;
-
-		// do not flicker back in just yet, handled by
-		// P_RespawnBattleBoxes eventually
-		P_SetMobjState(actor, S_INVISIBLE);
-	}
-}
 
 void A_JawzExplode(mobj_t *actor)
 {

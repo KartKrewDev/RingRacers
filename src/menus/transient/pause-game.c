@@ -5,6 +5,7 @@
 #include "../../k_grandprix.h" // K_CanChangeRules
 #include "../../m_cond.h"
 #include "../../s_sound.h"
+#include "../../k_zvote.h"
 
 #ifdef HAVE_DISCORDRPC
 #include "../../discord.h"
@@ -22,22 +23,28 @@ menuitem_t PAUSE_Main[] =
 	{IT_STRING | IT_CALL, "STEREO MODE", "M_ICOSTM",
 		NULL, {.routine = M_SoundTest}, 0, 0},
 
-	{IT_STRING | IT_KEYHANDLER, "GAMETYPE", "M_ICOGAM",
+	{IT_STRING | IT_ARROWS, "GAMETYPE", "M_ICOGAM",
 		NULL, {.routine = M_HandlePauseMenuGametype}, 0, 0},
 
 	{IT_STRING | IT_CALL, "CHANGE MAP", "M_ICOMAP",
 		NULL, {.routine = M_LevelSelectInit}, 0, -1},
+
+#ifdef HAVE_DISCORDRPC
+	{IT_STRING | IT_CALL, "DISCORD REQUESTS", "M_ICODIS",
+		NULL, {.routine = M_DiscordRequests}, 0, 0},
+#endif
+
+	{IT_STRING | IT_ARROWS, "ADMIN TOOLS", "M_ICOADM",
+		NULL, {.routine = M_KickHandler}, 0, 0},
+
+	{IT_STRING | IT_ARROWS, "CALL VOTE", "M_ICOVOT",
+		NULL, {.routine = M_HandlePauseMenuCallVote}, 0, 0},
 
 	{IT_STRING | IT_CALL, "RESTART MAP", "M_ICORE",
 		NULL, {.routine = M_RestartMap}, 0, 0},
 
 	{IT_STRING | IT_CALL, "TRY AGAIN", "M_ICORE",
 		NULL, {.routine = M_TryAgain}, 0, 0},
-
-#ifdef HAVE_DISCORDRPC
-	{IT_STRING | IT_CALL, "DISCORD REQUESTS", "M_ICODIS",
-		NULL, {.routine = M_DiscordRequests}, 0, 0},
-#endif
 
 	{IT_STRING | IT_CALL, "RESUME GAME", "M_ICOUNP",
 		NULL, {.routine = M_QuitPauseMenu}, 0, 0},
@@ -71,7 +78,7 @@ menu_t PAUSE_MainDef = {
 	PAUSE_Main,
 	0, 0,
 	0, 0,
-	0,
+	MBF_SOUNDLESS,
 	NULL,
 	1, 10,	// For transition with some menus!
 	M_DrawPause,
@@ -121,11 +128,13 @@ void M_OpenPauseMenu(void)
 	PAUSE_Main[mpause_stereo].status = IT_DISABLED;
 	PAUSE_Main[mpause_changegametype].status = IT_DISABLED;
 	PAUSE_Main[mpause_switchmap].status = IT_DISABLED;
-	PAUSE_Main[mpause_restartmap].status = IT_DISABLED;
-	PAUSE_Main[mpause_tryagain].status = IT_DISABLED;
+	PAUSE_Main[mpause_callvote].status = IT_DISABLED;
+	PAUSE_Main[mpause_admin].status = IT_DISABLED;
 #ifdef HAVE_DISCORDRPC
 	PAUSE_Main[mpause_discordrequests].status = IT_DISABLED;
 #endif
+	PAUSE_Main[mpause_restartmap].status = IT_DISABLED;
+	PAUSE_Main[mpause_tryagain].status = IT_DISABLED;
 
 	PAUSE_Main[mpause_spectate].status = IT_DISABLED;
 	PAUSE_Main[mpause_entergame].status = IT_DISABLED;
@@ -146,7 +155,7 @@ void M_OpenPauseMenu(void)
 
 		if (server || IsPlayerAdmin(consoleplayer))
 		{
-			PAUSE_Main[mpause_changegametype].status = IT_STRING | IT_KEYHANDLER;
+			PAUSE_Main[mpause_changegametype].status = IT_STRING | IT_ARROWS;
 			menugametype = gametype;
 
 			PAUSE_Main[mpause_switchmap].status = IT_STRING | IT_CALL;
@@ -156,12 +165,21 @@ void M_OpenPauseMenu(void)
 			{
 				PAUSE_Main[mpause_addons].status = IT_STRING | IT_CALL;
 			}
+
+			if (netgame)
+			{
+				PAUSE_Main[mpause_admin].status = IT_STRING | IT_CALL;
+			}
 		}
 	}
 	else if (!netgame && !demo.playback)
 	{
 		boolean retryallowed = (modeattacking != ATTACKING_NONE);
-		if (G_GametypeUsesLives())
+		if (
+			retryallowed == false
+			&& gamestate == GS_LEVEL
+			&& G_GametypeUsesLives()
+		)
 		{
 			for (i = 0; i <= splitscreen; i++)
 			{
@@ -175,6 +193,18 @@ void M_OpenPauseMenu(void)
 		if (retryallowed)
 		{
 			PAUSE_Main[mpause_tryagain].status = IT_STRING | IT_CALL;
+		}
+	}
+
+	if (netgame) // && (PAUSE_Main[mpause_admin].status == IT_DISABLED))
+	{
+		menucallvote = K_GetNextAllowedMidVote(menucallvote, true);
+
+		if (menucallvote != MVT__MAX)
+		{
+			menucallvote = K_GetNextAllowedMidVote(menucallvote, false);
+
+			PAUSE_Main[mpause_callvote].status = IT_STRING | IT_ARROWS;
 		}
 	}
 
@@ -267,12 +297,9 @@ boolean M_PauseInputs(INT32 ch)
 // Change gametype
 void M_HandlePauseMenuGametype(INT32 choice)
 {
-	const UINT8 pid = 0;
 	const UINT32 forbidden = GTR_FORBIDMP;
 
-	(void)choice;
-
-	if (M_MenuConfirmPressed(pid))
+	if (choice == 2)
 	{
 		if (menugametype != gametype)
 		{
@@ -281,27 +308,60 @@ void M_HandlePauseMenuGametype(INT32 choice)
 			return;
 		}
 
-		M_SetMenuDelay(pid);
 		S_StartSound(NULL, sfx_s3k7b);
+
+		return;
 	}
-	else if (M_MenuExtraPressed(pid))
+
+	if (choice == -1)
 	{
 		menugametype = gametype;
-		M_SetMenuDelay(pid);
 		S_StartSound(NULL, sfx_s3k7b);
+		return;
 	}
-	else if (menucmd[pid].dpad_lr > 0)
-	{
-		M_NextMenuGametype(forbidden);
-		S_StartSound(NULL, sfx_s3k5b);
-		M_SetMenuDelay(pid);
-	}
-	else if (menucmd[pid].dpad_lr < 0)
+
+	if (choice == 0)
 	{
 		M_PrevMenuGametype(forbidden);
 		S_StartSound(NULL, sfx_s3k5b);
-		M_SetMenuDelay(pid);
 	}
+	else
+	{
+		M_NextMenuGametype(forbidden);
+		S_StartSound(NULL, sfx_s3k5b);
+	}
+}
+
+// Call vote
+UINT32 menucallvote = MVT__MAX;
+
+void M_HandlePauseMenuCallVote(INT32 choice)
+{
+	if (choice == 2)
+	{
+		if (K_MinimalCheckNewMidVote(menucallvote) == false)
+		{
+			// Invalid.
+			S_StartSound(NULL, sfx_s3k7b);
+		}
+		else if (K_MidVoteTypeUsesVictim(menucallvote) == true)
+		{
+			S_StartSound(NULL, sfx_s3k5b);
+			M_KickHandler(-1);
+		}
+		else
+		{
+			// Bog standard and victimless, let's send it on its way!
+			M_ClearMenus(true);
+			K_SendCallMidVote(menucallvote, 0);
+			return;
+		}
+
+		return;
+	}
+
+	menucallvote = K_GetNextAllowedMidVote(menucallvote, (choice == 0));
+	S_StartSound(NULL, sfx_s3k5b);
 }
 
 // Restart map
@@ -358,6 +418,8 @@ void M_ConfirmEnterGame(INT32 choice)
 
 static void M_ExitGameResponse(INT32 ch)
 {
+	const UINT8 pid = 0;
+
 	if (ch != MA_YES)
 		return;
 
@@ -368,7 +430,7 @@ static void M_ExitGameResponse(INT32 ch)
 	else
 	{
 		G_SetExitGameFlag();
-		M_ClearMenus(true);
+		M_SetMenuDelay(pid); // prevent another input
 	}
 }
 

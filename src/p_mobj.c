@@ -2464,6 +2464,12 @@ boolean P_ZMovement(mobj_t *mo)
 				return false;
 			}
 		}
+		else if (mo->type == MT_SUPER_FLICKY)
+		{
+			mom.z = -mom.z;
+
+			Obj_SuperFlickyLanding(mo);
+		}
 		else if (mo->type == MT_DRIFTCLIP)
 		{
 			mom.z = -mom.z/2;
@@ -5325,6 +5331,7 @@ static boolean P_IsTrackerType(INT32 type)
 		case MT_OVERTIME_CENTER:
 		case MT_MONITOR:
 		case MT_EMERALD:
+		case MT_BATTLEUFO:
 			return true;
 
 		default:
@@ -6681,6 +6688,30 @@ static void P_MobjSceneryThink(mobj_t *mobj)
 			return;
 		}
 		break;
+	case MT_INSTAWHIP_RECHARGE:
+		Obj_InstaWhipRechargeThink(mobj);
+
+		if (P_MobjWasRemoved(mobj))
+		{
+			return;
+		}
+		break;
+	case MT_SUPER_FLICKY_CONTROLLER:
+		Obj_SuperFlickyControllerThink(mobj);
+
+		if (P_MobjWasRemoved(mobj))
+		{
+			return;
+		}
+		break;
+	case MT_POWERUP_AURA:
+		Obj_PowerUpAuraThink(mobj);
+
+		if (P_MobjWasRemoved(mobj))
+		{
+			return;
+		}
+		break;
 	case MT_SYMBOL:
 		Obj_SymbolThink(mobj);
 		break;
@@ -6922,6 +6953,14 @@ static boolean P_MobjDeadThink(mobj_t *mobj)
 	case MT_SPECIAL_UFO_PIECE:
 	{
 		Obj_UFOPieceDead(mobj);
+		break;
+	}
+	case MT_BATTLEUFO:
+	{
+		if (P_IsObjectOnGround(mobj) && mobj->fuse == 0)
+		{
+			mobj->fuse = TICRATE;
+		}
 		break;
 	}
 	default:
@@ -7192,29 +7231,12 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 			}
 		}
 
-		switch (mobj->threshold)
+		if (mobj->threshold == KITEM_SPB || mobj->threshold == KITEM_SHRINK)
 		{
-			case KITEM_ORBINAUT:
-				mobj->sprite = SPR_ITMO;
-				mobj->frame = FF_FULLBRIGHT|FF_PAPERSPRITE|K_GetOrbinautItemFrame(mobj->movecount);
-				break;
-			case KITEM_INVINCIBILITY:
-				mobj->sprite = SPR_ITMI;
-				mobj->frame = FF_FULLBRIGHT|FF_PAPERSPRITE|K_GetInvincibilityItemFrame();
-				break;
-			case KITEM_SAD:
-				mobj->sprite = SPR_ITEM;
-				mobj->frame = FF_FULLBRIGHT|FF_PAPERSPRITE;
-				break;
-			case KITEM_SPB:
-			case KITEM_SHRINK:
-				K_SetItemCooldown(mobj->threshold, 20*TICRATE);
-				/* FALLTHRU */
-			default:
-				mobj->sprite = SPR_ITEM;
-				mobj->frame = FF_FULLBRIGHT|FF_PAPERSPRITE|(mobj->threshold);
-				break;
+			K_SetItemCooldown(mobj->threshold, 20*TICRATE);
 		}
+
+		K_UpdateMobjItemOverlay(mobj, mobj->threshold, mobj->movecount);
 		break;
 	}
 	case MT_ITEMCAPSULE:
@@ -7519,6 +7541,8 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 		{
 			if (mobj->threshold > 0)
 				mobj->threshold--;
+
+			A_AttractChase(mobj);
 		}
 		/*FALLTHRU*/
 	case MT_MONITOR:
@@ -7531,6 +7555,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 				{
 					// Delete emeralds to let them reappear
 					P_KillMobj(mobj, NULL, NULL, DMG_NORMAL);
+					return false;
 				}
 			}
 
@@ -8424,6 +8449,33 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 	case MT_ITEM_DEBRIS:
 	{
 		Obj_ItemDebrisThink(mobj);
+		break;
+	}
+	case MT_BATTLEUFO:
+	{
+		if (battleovertime.enabled >= 10*TICRATE)
+		{
+			fixed_t distance = R_PointToDist2(mobj->x, mobj->y, battleovertime.x, battleovertime.y);
+
+			if (distance > battleovertime.radius)
+			{
+				// Delete emeralds to let them reappear
+				P_KillMobj(mobj, NULL, NULL, DMG_NORMAL);
+				return false;
+			}
+		}
+
+		Obj_BattleUFOThink(mobj);
+		break;
+	}
+	case MT_BATTLEUFO_LEG:
+	{
+		Obj_BattleUFOLegThink(mobj);
+		break;
+	}
+	case MT_BATTLEUFO_BEAM:
+	{
+		Obj_BattleUFOBeamThink(mobj);
 		break;
 	}
 	case MT_ROCKETSNEAKER:
@@ -9533,6 +9585,14 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 			return false;
 		}
 		break;
+	case MT_SUPER_FLICKY:
+		Obj_SuperFlickyThink(mobj);
+
+		if (P_MobjWasRemoved(mobj))
+		{
+			return false;
+		}
+		break;
 	default:
 		// check mobj against possible water content, before movement code
 		P_MobjCheckWater(mobj);
@@ -9639,6 +9699,8 @@ static boolean P_CanFlickerFuse(mobj_t *mobj)
 		case MT_SNAPPER_LEG:
 		case MT_MINECARTSEG:
 		case MT_MONITOR_PART:
+		case MT_BATTLEUFO:
+		case MT_BATTLEUFO_LEG:
 			return true;
 
 		case MT_RANDOMITEM:
@@ -9713,7 +9775,7 @@ static boolean P_FuseThink(mobj_t *mobj)
 	case MT_RANDOMITEM:
 		if (mobj->flags2 & MF2_DONTRESPAWN)
 		{
-			;
+			P_RemoveMobj(mobj);
 		}
 		else if (!(gametyperules & GTR_CIRCUIT) && (mobj->state == &states[S_INVISIBLE]))
 		{
@@ -9721,22 +9783,10 @@ static boolean P_FuseThink(mobj_t *mobj)
 		}
 		else
 		{
-			mobj_t *newmobj;
-
-			// Respawn from mapthing if you have one!
-			if (mobj->spawnpoint)
-			{
-				P_SpawnMapThing(mobj->spawnpoint);
-				newmobj = mobj->spawnpoint->mobj; // this is set to the new mobj in P_SpawnMapThing
-			}
-			else
-				newmobj = P_SpawnMobj(mobj->x, mobj->y, mobj->z, mobj->type);
-
-			// Transfer flags2 (strongbox, objectflip, bossnotrap)
-			newmobj->flags2 = mobj->flags2;
+			mobj->flags &= ~MF_NOCLIPTHING;
+			mobj->renderflags &= ~(RF_DONTDRAW|RF_TRANSMASK);
 		}
 
-		P_RemoveMobj(mobj); // make sure they disappear
 		return false;
 	case MT_ITEMCAPSULE:
 		if (mobj->spawnpoint)
@@ -9861,6 +9911,14 @@ void P_MobjThinker(mobj_t *mobj)
 		{
 			K_HandleDirectionalInfluence(mobj->player);
 		}
+
+		// Hitlag VFX "stagger" behavior.
+		// Oni likes the look better if all sparks visibly hold on their 1st frame,
+		// but if we ever reverse course, this is here.
+		/*
+		if (mobj->type == MT_HITLAG && mobj->hitlag == 0)
+			mobj->renderflags &= ~RF_DONTDRAW;
+		*/
 
 		return;
 	}
@@ -10305,6 +10363,8 @@ static void P_DefaultMobjShadowScale(mobj_t *thing)
 		case MT_KART_LEFTOVER:
 		case MT_BATTLECAPSULE:
 		case MT_SPECIAL_UFO:
+		case MT_CDUFO:
+		case MT_BATTLEUFO:
 			thing->shadowscale = FRACUNIT;
 			break;
 		case MT_SMALLMACE:
@@ -10914,6 +10974,9 @@ mobj_t *P_SpawnMobj(fixed_t x, fixed_t y, fixed_t z, mobjtype_t type)
 		case MT_SPHEREBOX:
 			Obj_RandomItemSpawn(mobj);
 			break;
+		case MT_BATTLEUFO:
+			Obj_SpawnBattleUFOLegs(mobj);
+			break;
 		case MT_SYMBOL:
 			Obj_SymbolSpawn(mobj);
 			break;
@@ -11157,6 +11220,11 @@ void P_RemoveMobj(mobj_t *mobj)
 		case MT_RINGSHOOTER:
 		{
 			Obj_RingShooterDelete(mobj);
+			break;
+		}
+		case MT_BATTLEUFO_SPAWNER:
+		{
+			Obj_UnlinkBattleUFOSpawner(mobj);
 			break;
 		}
 		default:
@@ -11590,11 +11658,11 @@ void P_RespawnBattleBoxes(void)
 
 		if (box->type != MT_RANDOMITEM
 			|| (box->flags2 & MF2_DONTRESPAWN)
-			|| box->health > 0
+			|| !(box->flags & MF_NOCLIPTHING)
 			|| box->fuse)
 			continue; // only popped items
 
-		box->fuse = TICRATE; // flicker back in (A_ItemPop preps this effect)
+		box->fuse = TICRATE; // flicker back in
 		P_SetMobjState(box, box->info->raisestate);
 
 		if (numgotboxes > 0)
@@ -11869,6 +11937,26 @@ void P_SpawnPlayer(INT32 playernum)
 			mobj->health = K_BumpersToHealth(K_StartingBumperCount());
 			K_SpawnPlayerBattleBumpers(p);
 		}
+	}
+
+	// Block visuals
+	// (These objects track whether a player is block-eligible on their own, no worries)
+	if (!p->spectator)
+	{
+		mobj_t *ring = P_SpawnMobj(p->mo->x, p->mo->y, p->mo->z, MT_BLOCKRING);
+		P_SetTarget(&ring->target, p->mo);
+		P_SetScale(ring, p->mo->scale);
+		K_MatchGenericExtraFlags(ring, p->mo);
+		ring->renderflags &= ~RF_DONTDRAW;
+
+		mobj_t *body = P_SpawnMobj(p->mo->x, p->mo->y, p->mo->z, MT_BLOCKBODY);
+		P_SetTarget(&body->target, p->mo);
+		P_SetScale(body, p->mo->scale);
+		K_MatchGenericExtraFlags(body, p->mo);
+		body->renderflags |= RF_DONTDRAW;
+
+		if (K_PlayerGuard(p))
+			S_StartSound(body, sfx_s1af);
 	}
 
 	// I'm not refactoring the loop at the top of this file.
@@ -13190,9 +13278,14 @@ static boolean P_SetupSpawnedMapThing(mapthing_t *mthing, mobj_t *mobj)
 	}
 	case MT_RANDOMAUDIENCE:
 	{
-		if (mthing->args[2] != 0)
+		if (mthing->args[2] & TMAUDIM_FLOAT)
 		{
 			mobj->flags |= MF_NOGRAVITY;
+		}
+
+		if (mthing->args[2] & TMAUDIM_BORED)
+		{
+			mobj->flags2 |= MF2_BOSSNOTRAP;
 		}
 
 		if (mthing->args[3] != 0)
@@ -13399,6 +13492,11 @@ static boolean P_SetupSpawnedMapThing(mapthing_t *mthing, mobj_t *mobj)
 	case MT_LOOPCENTERPOINT:
 	{
 		Obj_InitLoopCenter(mobj);
+		break;
+	}
+	case MT_BATTLEUFO_SPAWNER:
+	{
+		Obj_LinkBattleUFOSpawner(mobj);
 		break;
 	}
 	case MT_SYMBOL:

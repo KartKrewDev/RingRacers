@@ -566,8 +566,6 @@ extern INT32 modulothing;
 #define MAXHUNTEMERALDS 64
 extern mapthing_t *huntemeralds[MAXHUNTEMERALDS];
 extern INT32 numhuntemeralds;
-extern boolean runemeraldmanager;
-extern UINT16 emeraldspawndelay;
 extern INT32 numstarposts;
 extern UINT16 bossdisabled;
 extern boolean stoppedclock;

@@ -71,7 +71,8 @@ typedef enum
 	PF_GAINAX			= 1<<3,
 
 	PF_KICKSTARTACCEL	= 1<<4, // Accessibility feature: Is accelerate in kickstart mode?
-	// 1<<5 free
+
+	PF_POINTME			= 1<<5, // An object is calling for my attention (via Obj_PointPlayersToMobj). Unset every frame!
 	// 1<<6 free
 
 	PF_WANTSTOJOIN		= 1<<7, // Spectator that wants to join
@@ -179,7 +180,19 @@ typedef enum
 	KRITEM_DUALJAWZ,
 	KRITEM_TRIPLEGACHABOM,
 
-	NUMKARTRESULTS
+	NUMKARTRESULTS,
+
+	// Power-ups exist in the same enum as items so it's easy
+	// for paper items to be reused for them.
+	FIRSTPOWERUP,
+	POWERUP_SMONITOR = FIRSTPOWERUP,
+	POWERUP_BARRIER,
+	POWERUP_BUMPER,
+	POWERUP_BADGE,
+	POWERUP_SUPERFLICKY,
+	ENDOFPOWERUPS,
+	LASTPOWERUP = ENDOFPOWERUPS - 1,
+	NUMPOWERUPS = ENDOFPOWERUPS - FIRSTPOWERUP,
 } kartitems_t;
 
 typedef enum
@@ -191,6 +204,17 @@ typedef enum
 	KSHIELD_TOP = 4,
 	NUMKARTSHIELDS
 } kartshields_t;
+
+typedef enum
+{
+	KSM_BAR,
+	KSM_DOUBLEBAR,
+	KSM_TRIPLEBAR,
+	KSM_RING,
+	KSM_SEVEN,
+	KSM_JACKPOT,
+	KSM__MAX,
+} kartslotmachine_t;
 
 typedef enum
 {
@@ -257,6 +281,7 @@ typedef enum
 	khud_enginesnd,		// Engine sound offset this player is using.
 	khud_voices,		// Used to stop the player saying more voices than it should
 	khud_tauntvoices,	// Used to specifically stop taunt voice spam
+	khud_taunthorns,	// Used to specifically stop taunt horn spam
 
 	// Battle
 	khud_cardanimation,	// Used to determine the position of some full-screen Battle Mode graphics
@@ -313,9 +338,20 @@ struct respawnvars_t
 	boolean init;
 };
 
+typedef enum
+{
+	BOT_STYLE_NORMAL,
+	BOT_STYLE_STAY,
+	//BOT_STYLE_CHASE,
+	//BOT_STYLE_ESCAPE,
+	BOT_STYLE__MAX
+} botStyle_e;
+
 // player_t struct for all bot variables
 struct botvars_t
 {
+	botStyle_e style; // Training mode-style CPU mode
+
 	UINT8 difficulty; // Bot's difficulty setting
 	UINT8 diffincrease; // In GP: bot difficulty will increase this much next round
 	boolean rival; // If true, they're the GP rival
@@ -399,6 +435,7 @@ struct itemroulette_t
 	tic_t elapsed;
 
 	boolean eggman;
+	boolean ringbox;
 };
 
 // enum for bot item priorities
@@ -427,6 +464,14 @@ typedef struct {
 	vector2_t shift;
 	boolean flip;
 } sonicloopvars_t;
+
+// player_t struct for power-ups
+struct powerupvars_t {
+	UINT16 superTimer;
+	UINT16 barrierTimer;
+	UINT16 rhythmBadgeTimer;
+	mobj_t *flickyController;
+};
 
 // player_t struct for all alternative viewpoint variables
 struct altview_t
@@ -745,6 +790,7 @@ struct player_t
 	mobj_t *sliptideZipIndicator;
 	mobj_t *whip;
 	mobj_t *hand;
+	mobj_t *flickyAttacker;
 
 	UINT8 instaShieldCooldown;
 	UINT8 guardCooldown;
@@ -756,6 +802,9 @@ struct player_t
 
 	boolean markedfordeath;
 
+	UINT8 ringboxdelay; // Delay until Ring Box auto-activates
+	UINT8 ringboxaward; // Where did we stop?
+	
 	fixed_t outrun; // Milky Way road effect
 
 	uint8_t public_key[PUBKEYLENGTH];
@@ -766,6 +815,7 @@ struct player_t
 
 	sonicloopvars_t loop;
 	roundconditions_t roundconditions;
+	powerupvars_t powerup;
 };
 
 // WARNING FOR ANYONE ABOUT TO ADD SOMETHING TO THE PLAYER STRUCT, G_PlayerReborn WANTS YOU TO SUFFER

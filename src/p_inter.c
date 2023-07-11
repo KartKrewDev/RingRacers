@@ -40,7 +40,9 @@
 #include "k_objects.h"
 #include "k_roulette.h"
 #include "k_boss.h"
+#include "k_hitlag.h"
 #include "acs/interface.h"
+#include "k_powerup.h"
 
 // CTF player names
 #define CTFTEAMCODE(pl) pl->ctfteam ? (pl->ctfteam == 1 ? "\x85" : "\x84") : ""
@@ -140,6 +142,7 @@ boolean P_CanPickupItem(player_t *player, UINT8 weapon)
 
 			// Item slot already taken up
 			if (player->itemRoulette.active == true
+				|| player->ringboxdelay > 0
 				|| (weapon != 3 && player->itemamount)
 				|| (player->pflags & PF_ITEMOUT))
 				return false;
@@ -184,6 +187,61 @@ boolean P_EmblemWasCollected(INT32 emblemID)
 	}
 
 	return gamedata->collected[emblemID];
+}
+
+static void P_ItemPop(mobj_t *actor)
+{
+	/*
+	INT32 locvar1 = var1;
+
+	if (LUA_CallAction(A_ITEMPOP, actor))
+		return;
+
+	if (!(actor->target && actor->target->player))
+	{
+		if (cht_debug && !(actor->target && actor->target->player))
+			CONS_Printf("ERROR: Powerup has no target!\n");
+		return;
+	}
+	*/
+
+	P_SetMobjState(actor, S_RINGBOX1);
+	actor->extravalue1 = 0;
+
+	// de-solidify
+	actor->flags |= MF_NOCLIPTHING;
+
+	// RF_DONTDRAW will flicker as the object's fuse gets
+	// closer to running out (see P_FuseThink)
+	actor->renderflags |= RF_DONTDRAW|RF_TRANS50;
+	actor->color = SKINCOLOR_GREY;
+	actor->colorized = true;
+
+	Obj_SpawnItemDebrisEffects(actor, actor->target);
+
+	/*
+	if (locvar1 == 1)
+	{
+		P_GivePlayerSpheres(actor->target->player, actor->extravalue1);
+	}
+	else if (locvar1 == 0)
+	{
+		if (actor->extravalue1 >= TICRATE)
+			K_StartItemRoulette(actor->target->player, false);
+		else
+			K_StartItemRoulette(actor->target->player, true);
+	}
+	*/
+
+	// Here at mapload in battle?
+	if (!(gametyperules & GTR_CIRCUIT) && (actor->flags2 & MF2_BOSSNOTRAP))
+	{
+		numgotboxes++;
+
+		// do not flicker back in just yet, handled by
+		// P_RespawnBattleBoxes eventually
+		P_SetMobjState(actor, S_INVISIBLE);
+	}
 }
 
 /** Takes action based on a ::MF_SPECIAL thing touched by a player.
@@ -276,14 +334,24 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 			P_InstaThrust(player->mo, player->mo->angle, 20<<FRACBITS);
 			return;
 		case MT_FLOATINGITEM: // SRB2Kart
-			if (!P_CanPickupItem(player, 3) || (player->itemamount && player->itemtype != special->threshold))
-				return;
+			if (special->threshold >= FIRSTPOWERUP)
+			{
+				if (P_PlayerInPain(player))
+					return;
 
-			player->itemtype = special->threshold;
-			if ((UINT16)(player->itemamount) + special->movecount > 255)
-				player->itemamount = 255;
+				K_GivePowerUp(player, special->threshold, special->movecount);
+			}
 			else
-				player->itemamount += special->movecount;
+			{
+				if (!P_CanPickupItem(player, 3) || (player->itemamount && player->itemtype != special->threshold))
+					return;
+
+				player->itemtype = special->threshold;
+				if ((UINT16)(player->itemamount) + special->movecount > 255)
+					player->itemamount = 255;
+				else
+					player->itemamount += special->movecount;
+			}
 
 			S_StartSound(special, special->info->deathsound);
 
@@ -300,7 +368,13 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 
 			special->momx = special->momy = special->momz = 0;
 			P_SetTarget(&special->target, toucher);
-			P_KillMobj(special, toucher, toucher, DMG_NORMAL);
+			// P_KillMobj(special, toucher, toucher, DMG_NORMAL);
+			if (special->extravalue1 >= RINGBOX_TIME)
+				K_StartItemRoulette(player, false);
+			else
+				K_StartItemRoulette(player, true);
+			P_ItemPop(special);
+			special->fuse = TICRATE;
 			return;
 		case MT_SPHEREBOX:
 			if (!P_CanPickupItem(player, 0))
@@ -308,7 +382,9 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 
 			special->momx = special->momy = special->momz = 0;
 			P_SetTarget(&special->target, toucher);
-			P_KillMobj(special, toucher, toucher, DMG_NORMAL);
+			// P_KillMobj(special, toucher, toucher, DMG_NORMAL);
+			P_ItemPop(special);
+			P_GivePlayerSpheres(player, special->extravalue2);
 			return;
 		case MT_ITEMCAPSULE:
 			if (special->scale < special->extravalue1) // don't break it while it's respawning
@@ -378,7 +454,7 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 				return;
 			}
 		case MT_EMERALD:
-			if (!P_CanPickupItem(player, 0))
+			if (!P_CanPickupItem(player, 0) || P_PlayerInPain(player))
 				return;
 
 			if (special->threshold > 0)
@@ -434,7 +510,7 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 			if (special->fuse || !P_CanPickupItem(player, 1))
 				return;
 
-			K_StartItemRoulette(player);
+			K_StartItemRoulette(player, false);
 
 			// Karma fireworks
 			/*for (i = 0; i < 5; i++)
@@ -448,7 +524,7 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 				firework->color = toucher->color;
 			}*/
 
-			K_SetHitLagForObjects(special, toucher, 2, true);
+			K_SetHitLagForObjects(special, toucher, toucher, 2, true);
 
 			break;
 
@@ -582,6 +658,10 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 
 		case MT_RINGSHOOTER:
 			Obj_PlayerUsedRingShooter(special, player);
+			return;
+
+		case MT_SUPER_FLICKY:
+			Obj_SuperFlickyPlayerCollide(special, toucher);
 			return;
 
 		default: // SOC or script pickup
@@ -723,7 +803,7 @@ void P_CheckTimeLimit(void)
 			{
 				if (((timelimitintics + starttime - leveltime) % TICRATE) == 0)
 					S_StartSound(NULL, sfx_s3ka7);
-			}			
+			}
 		}
 		return;
 	}
@@ -749,6 +829,8 @@ void P_CheckTimeLimit(void)
 				{
 					thinker_t *th;
 					mobj_t *center = NULL;
+
+					fixed_t rx, ry;
 
 					for (th = thlist[THINK_MOBJ].next; th != &thlist[THINK_MOBJ]; th = th->next)
 					{
@@ -781,7 +863,26 @@ void P_CheckTimeLimit(void)
 						battleovertime.z = center->z;
 					}
 
-					battleovertime.radius = 4096 * mapobjectscale;
+					// Get largest radius from center point to minimap edges
+
+					rx = max(
+							abs(battleovertime.x - (minimapinfo.min_x * FRACUNIT)),
+							abs(battleovertime.x - (minimapinfo.max_x * FRACUNIT))
+					);
+
+					ry = max(
+							abs(battleovertime.y - (minimapinfo.min_y * FRACUNIT)),
+							abs(battleovertime.y - (minimapinfo.max_y * FRACUNIT))
+					);
+
+					battleovertime.initial_radius = min(
+							max(max(rx, ry), 4096 * mapobjectscale),
+							// Prevent overflow in K_RunBattleOvertime
+							FixedDiv(INT32_MAX, M_PI_FIXED) / 2
+					);
+
+					battleovertime.radius = battleovertime.initial_radius;
+
 					battleovertime.enabled = 1;
 
 					S_StartSound(NULL, sfx_kc47);
@@ -820,6 +921,10 @@ void P_CheckPointLimit(void)
 		return;
 
 	if (battleprisons)
+		return;
+
+	// This will be handled by P_KillPlayer
+	if (gametyperules & GTR_BUMPERS)
 		return;
 
 	// pointlimit is nonzero, check if it's been reached by this player
@@ -1047,7 +1152,7 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 
 	P_ActivateThingSpecial(target, source);
 
-	//K_SetHitLagForObjects(target, inflictor, MAXHITLAGTICS, true);
+	//K_SetHitLagForObjects(target, inflictor, source, MAXHITLAGTICS, true);
 
 	// SRB2kart
 	// I wish I knew a better way to do this
@@ -1649,7 +1754,9 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 		case MT_MONITOR:
 			Obj_MonitorOnDeath(target);
 			break;
-
+		case MT_BATTLEUFO:
+			Obj_BattleUFODeath(target);
+			break;
 		default:
 			break;
 	}
@@ -1877,8 +1984,6 @@ static boolean P_PlayerHitsPlayer(mobj_t *target, mobj_t *inflictor, mobj_t *sou
 
 static boolean P_KillPlayer(player_t *player, mobj_t *inflictor, mobj_t *source, UINT8 type)
 {
-	(void)source;
-
 	if (player->respawn.state != RESPAWNST_NONE)
 	{
 		K_DoInstashield(player);
@@ -1951,7 +2056,7 @@ static boolean P_KillPlayer(player_t *player, mobj_t *inflictor, mobj_t *source,
 	}
 
 	K_DropEmeraldsFromPlayer(player, player->emeralds);
-	K_SetHitLagForObjects(player->mo, inflictor, MAXHITLAGTICS, true);
+	K_SetHitLagForObjects(player->mo, inflictor, source, MAXHITLAGTICS, true);
 
 	player->carry = CR_NONE;
 
@@ -2245,7 +2350,7 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 					}
 
 					laglength = max(laglength / 2, 1);
-					K_SetHitLagForObjects(target, inflictor, laglength, false);
+					K_SetHitLagForObjects(target, inflictor, source, laglength, false);
 
 					AddNullHitlag(player, oldHitlag);
 					AddNullHitlag(playerInflictor, oldHitlagInflictor);
@@ -2258,8 +2363,16 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 					if (clash)
 					{
 						player->spheres = max(player->spheres - 10, 0);
+
 						if (inflictor)
+						{
 							K_DoPowerClash(target, inflictor);
+
+							if (inflictor->type == MT_SUPER_FLICKY)
+							{
+								Obj_BlockSuperFlicky(inflictor);
+							}
+						}
 						else if (source)
 							K_DoPowerClash(target, source);
 					}
@@ -2301,7 +2414,7 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 					}
 					else if (target->flags2 & MF2_ALREADYHIT) // do not deal extra damage in the same tic
 					{
-						K_SetHitLagForObjects(target, inflictor, laglength, true);
+						K_SetHitLagForObjects(target, inflictor, source, laglength, true);
 						return false;
 					}
 				}
@@ -2323,7 +2436,7 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 
 			// Instawhip breaks the rules and does "damaging stumble",
 			// but sting and stumble shouldn't be rewarding Battle hits otherwise.
-			if ((type == DMG_STING || type == DMG_STUMBLE) && (inflictor && inflictor->type != MT_INSTAWHIP))
+			if ((type == DMG_STING || type == DMG_STUMBLE) && !(inflictor && inflictor->type == MT_INSTAWHIP))
 			{
 				damage = 0;
 			}
@@ -2334,7 +2447,8 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 				if (source && source != player->mo && source->player)
 				{
 					// Extend the invincibility if the hit was a direct hit.
-					if (inflictor == source && source->player->invincibilitytimer)
+					if (inflictor == source && source->player->invincibilitytimer &&
+							!K_PowerUpRemaining(source->player, POWERUP_SMONITOR))
 					{
 						tic_t kinvextend;
 
@@ -2353,7 +2467,10 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 						K_BattleAwardHit(source->player, player, inflictor, damage);
 					}
 
-					K_TakeBumpersFromPlayer(source->player, player, damage);
+					if (K_Bumpers(source->player) < K_StartingBumperCount() || (damagetype & DMG_STEAL))
+					{
+						K_TakeBumpersFromPlayer(source->player, player, damage);
+					}
 
 					if (damagetype & DMG_STEAL)
 					{
@@ -2427,7 +2544,6 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 					ringburst = K_ExplodePlayer(player, inflictor, source);
 					break;
 				case DMG_WIPEOUT:
-					P_StartQuakeFromMobj(5, 32 * player->mo->scale, 512 * player->mo->scale, player->mo);
 					K_SpinPlayer(player, inflictor, source, KSPIN_WIPEOUT);
 					K_KartPainEnergyFling(player);
 					break;
@@ -2493,7 +2609,7 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 	if (source && source->player && target)
 		G_GhostAddHit((INT32) (source->player - players), target);
 
-	K_SetHitLagForObjects(target, inflictor, laglength, true);
+	K_SetHitLagForObjects(target, inflictor, source, laglength, true);
 
 	target->flags2 |= MF2_ALREADYHIT;
 
@@ -2503,7 +2619,7 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 		return true;
 	}
 
-	//K_SetHitLagForObjects(target, inflictor, laglength, true);
+	//K_SetHitLagForObjects(target, inflictor, source, laglength, true);
 
 	if (!player)
 	{

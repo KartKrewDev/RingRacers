@@ -41,6 +41,7 @@
 #include "../r_skins.h"
 #include "../k_battle.h"
 #include "../k_podium.h"
+#include "../k_bot.h"
 #include "../z_zone.h"
 
 #include "call-funcs.hpp"
@@ -1707,6 +1708,52 @@ bool CallFunc_MapWarp(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Wor
 	if (server)
 		SendNetXCmd(XD_EXITLEVEL, NULL, 0);
 
+	return false;
+}
+
+/*--------------------------------------------------
+	bool CallFunc_AddBot(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
+
+		Inserts a bot, if there's room for them.
+--------------------------------------------------*/
+bool CallFunc_AddBot(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
+{
+	ACSVM::MapScope *map = NULL;
+
+	ACSVM::String *skinStr = nullptr;
+	INT32 skin = -1;
+
+	UINT8 difficulty = 0;
+	botStyle_e style = BOT_STYLE_NORMAL;
+
+	UINT8 newplayernum = 0;
+	bool success = false;
+
+	(void)argC;
+
+	map = thread->scopeMap;
+
+	skinStr = map->getString(argV[0]);
+	if (skinStr->len != 0)
+	{
+		skin = R_SkinAvailable(skinStr->str);
+	}
+
+	if (skin == -1)
+	{
+		skin = R_BotDefaultSkin();
+	}
+
+	difficulty = std::clamp(static_cast<int>(argV[1]), 1, MAXBOTDIFFICULTY);
+
+	style = static_cast<botStyle_e>(argV[2]);
+	if (style < BOT_STYLE_NORMAL || style >= BOT_STYLE__MAX)
+	{
+		style = BOT_STYLE_NORMAL;
+	}
+
+	success = K_AddBot(skin, difficulty, style, &newplayernum);
+	thread->dataStk.push(success ? newplayernum : -1);
 	return false;
 }
 

@@ -16,6 +16,8 @@
 #include "k_objects.h"
 #include "k_roulette.h"
 #include "k_podium.h"
+#include "k_powerup.h"
+#include "k_hitlag.h"
 
 angle_t K_GetCollideAngle(mobj_t *t1, mobj_t *t2)
 {
@@ -422,7 +424,7 @@ boolean K_LandMineCollide(mobj_t *t1, mobj_t *t2)
 		{
 			// Melt item
 			S_StartSound(t2, sfx_s3k43);
-			K_SetHitLagForObjects(t2, t1, 3, false);
+			K_SetHitLagForObjects(t2, t1, t1->target, 3, false);
 		}
 		else
 		{
@@ -888,6 +890,8 @@ boolean K_InstaWhipCollide(mobj_t *shield, mobj_t *victim)
 			P_PlayerRingBurst(victimPlayer, 5);
 			P_DamageMobj(victim, shield, attacker, 1, DMG_STUMBLE); // There's a special exception in P_DamageMobj for type==MT_INSTAWHIP
 
+			K_DropPowerUps(victimPlayer);
+
 			angle_t thrangle = ANGLE_180 + R_PointToAngle2(victim->x, victim->y, shield->x, shield->y);
 			P_Thrust(victim, thrangle, FRACUNIT*10);
 
@@ -898,17 +902,31 @@ boolean K_InstaWhipCollide(mobj_t *shield, mobj_t *victim)
 		}
 		return false;
 	}
+	else if (victim->type == MT_SUPER_FLICKY)
+	{
+		if (Obj_IsSuperFlickyWhippable(victim))
+		{
+			K_AddHitLag(victim, victimHitlag, true);
+			K_AddHitLag(attacker, attackerHitlag, false);
+			shield->hitlag = attacker->hitlag;
+
+			Obj_WhipSuperFlicky(victim);
+			return true;
+		}
+		return false;
+	}
 	else
 	{
 		if (victim->type == MT_ORBINAUT || victim->type == MT_JAWZ || victim->type == MT_GACHABOM
 		|| victim->type == MT_BANANA || victim->type == MT_EGGMANITEM || victim->type == MT_BALLHOG
 		|| victim->type == MT_SSMINE || victim->type == MT_LANDMINE || victim->type == MT_SINK
 		|| victim->type == MT_GARDENTOP || victim->type == MT_DROPTARGET || victim->type == MT_BATTLECAPSULE
-		|| victim->type == MT_MONITOR || victim->type == MT_SPECIAL_UFO)
+		|| victim->type == MT_MONITOR || victim->type == MT_SPECIAL_UFO || victim->type == MT_BATTLEUFO)
 		{
 			// Monitor hack. We can hit monitors once per instawhip, no multihit shredding!
 			// Damage values in Obj_MonitorGetDamage.
-			if (victim->type == MT_MONITOR)
+			// Apply to UFO also -- steelt 29062023
+			if (victim->type == MT_MONITOR || victim->type == MT_BATTLEUFO)
 			{
 				if (shield->extravalue1 == 1)
 					return false;

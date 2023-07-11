@@ -80,30 +80,44 @@ static UINT8 cheatf_warp(void)
 		}
 	}
 
+	M_ClearMenus(true);
+
+	const char *text;
+
 	if (success)
 	{
 		G_SetUsedCheats();
-		M_ClearMenus(true);
 		S_StartSound(0, sfx_kc42);
 
-		M_StartMessage("Tournament Mode",
-			M_GetText(
+		text = M_GetText(
 			"All challenges temporarily unlocked.\n"
 			"Saving is disabled - the game will\n"
 			"return to normal on next launch.\n"
-		), NULL, MM_NOTHING, NULL, NULL);
+		);
 	}
 	else
 	{
 		S_StartSound(0, sfx_s3k7b);
 
-		M_StartMessage("Tournament Mode",
-			M_GetText(
-			"This is the correct password, but\n"
-			"you already have every challenge\n"
-			"unlocked, so saving is still allowed!\n"
-		), NULL, MM_NOTHING, NULL, NULL);
+		if (usedCheats)
+		{
+			text = M_GetText(
+				"This is the correct password, but\n"
+				"you already have every challenge\n"
+				"unlocked, so nothing has changed.\n"
+			);
+		}
+		else
+		{
+			text = M_GetText(
+				"This is the correct password, but\n"
+				"you already have every challenge\n"
+				"unlocked, so saving is still allowed!\n"
+			);
+		}
 	}
+
+	M_StartMessage("Tournament Mode", text, NULL, MM_NOTHING, NULL, NULL);
 
 	return 1;
 }
@@ -132,11 +146,14 @@ static UINT8 cheatf_devmode(void)
 		gamedata->unlocked[i] = true;
 	}
 
-	G_SetUsedCheats();
+	// This is a developer feature, you know how to delete ringdata
+	// G_SetUsedCheats();
 	S_StartSound(0, sfx_kc42);
 
 	devparm = true;
 	cht_debug |= 0x8000;
+
+	G_SaveGameData();
 
 	return 1;
 }
@@ -455,29 +472,6 @@ void Command_Savecheckpoint_f(void)
 	}
 }
 
-// Like M_GetAllEmeralds() but for console devmode junkies.
-/*
-void Command_Getallemeralds_f(void)
-{
-	REQUIRE_CHEATS;
-	REQUIRE_SINGLEPLAYER;
-
-	emeralds = EMERALD_ALL;
-
-	CONS_Printf(M_GetText("You now have all 7 emeralds.\n"));
-}
-
-void Command_Resetemeralds_f(void)
-{
-	REQUIRE_CHEATS;
-	REQUIRE_SINGLEPLAYER;
-
-	emeralds = 0;
-
-	CONS_Printf(M_GetText("Emeralds reset to zero.\n"));
-}
-*/
-
 //
 // Devmode
 //
@@ -567,6 +561,14 @@ void Command_Setrings_f(void)
 	REQUIRE_INLEVEL;
 
 	D_Cheat(consoleplayer, CHEAT_RINGS, atoi(COM_Argv(1)));
+}
+
+void Command_Setspheres_f(void)
+{
+	REQUIRE_CHEATS;
+	REQUIRE_INLEVEL;
+
+	D_Cheat(consoleplayer, CHEAT_SPHERES, atoi(COM_Argv(1)));
 }
 
 void Command_Setlives_f(void)

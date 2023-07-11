@@ -24,6 +24,7 @@
 
 // Battle overtime info
 struct battleovertime battleovertime;
+struct battleufo g_battleufo;
 
 // Capsules mode enabled for this map?
 boolean battleprisons = false;
@@ -255,7 +256,7 @@ mobj_t *K_SpawnSphereBox(fixed_t x, fixed_t y, fixed_t z, angle_t angle, SINT8 f
 
 	drop->flags &= ~(MF_NOGRAVITY|MF_NOCLIPHEIGHT);
 
-	drop->extravalue1 = amount;
+	drop->extravalue2 = amount;
 
 	return drop;
 }
@@ -349,6 +350,11 @@ void K_RunPaperItemSpawners(void)
 		return;
 	}
 
+	if (leveltime == g_battleufo.due)
+	{
+		Obj_SpawnBattleUFOFromSpawner();
+	}
+
 	if (!IsOnInterval(interval))
 	{
 		return;
@@ -411,7 +417,7 @@ void K_RunPaperItemSpawners(void)
 		}
 		else
 		{
-			K_CreatePaperItem(
+			K_FlingPaperItem(
 				battleovertime.x, battleovertime.y, battleovertime.z + (128 * mapobjectscale * flip),
 				FixedAngle(P_RandomRange(PR_ITEM_ROULETTE, 0, 359) * FRACUNIT), flip,
 				0, 0
@@ -435,6 +441,7 @@ void K_RunPaperItemSpawners(void)
 			mobj_t *spotList[MAXITEM];
 			UINT8 spotMap[MAXITEM];
 			UINT8 spotCount = 0, spotBackup = 0, spotAvailable = 0;
+			UINT8 monitorsSpawned = 0;
 
 			for (th = thlist[THINK_MOBJ].next; th != &thlist[THINK_MOBJ]; th = th->next)
 			{
@@ -457,6 +464,10 @@ void K_RunPaperItemSpawners(void)
 					// where a monitor doesn't exist
 					spotMap[spotAvailable] = spotCount;
 					spotAvailable++;
+				}
+				else
+				{
+					monitorsSpawned++;
 				}
 
 				spotList[spotCount] = mo;
@@ -484,12 +495,12 @@ void K_RunPaperItemSpawners(void)
 
 			//CONS_Printf("leveltime = %d ", leveltime);
 
-			if (spotAvailable > 0)
+			if (spotAvailable > 0 && monitorsSpawned < BATTLE_MONITOR_SPAWN_LIMIT)
 			{
 				const UINT8 r = spotMap[P_RandomKey(PR_ITEM_ROULETTE, spotAvailable)];
 
 				Obj_ItemSpotAssignMonitor(spotList[r], Obj_SpawnMonitor(
-							spotList[r], 1 + pcount, firstUnspawnedEmerald));
+							spotList[r], 3, firstUnspawnedEmerald));
 			}
 
 			for (i = 0; i < spotCount; ++i)
@@ -498,7 +509,7 @@ void K_RunPaperItemSpawners(void)
 				spotMap[i] = i;
 			}
 
-			if ((gametyperules & GTR_SPHERES) && IsOnInterval(2 * interval))
+			if ((gametyperules & GTR_SPHERES) && IsOnInterval(16 * interval))
 			{
 				spotBackup = spotCount;
 				for (i = 0; i < pcount; i++)
@@ -559,6 +570,8 @@ void K_RunPaperItemSpawners(void)
 
 static void K_SpawnOvertimeLaser(fixed_t x, fixed_t y, fixed_t scale)
 {
+	const fixed_t heightPadding = 346 * scale;
+
 	UINT8 i, j;
 
 	for (i = 0; i <= r_splitscreen; i++)
@@ -575,10 +588,12 @@ static void K_SpawnOvertimeLaser(fixed_t x, fixed_t y, fixed_t scale)
 		if (player->mo->eflags & MFE_VERTICALFLIP)
 		{
 			zpos = player->mo->z + player->mo->height;
+			zpos = min(zpos + heightPadding, player->mo->ceilingz);
 		}
 		else
 		{
 			zpos = player->mo->z;
+			zpos = max(zpos - heightPadding, player->mo->floorz);
 		}
 
 		flip = P_MobjFlip(player->mo);
@@ -654,9 +669,17 @@ void K_RunBattleOvertime(void)
 		const fixed_t minradius = 768 * mapobjectscale;
 
 		if (battleovertime.radius > minradius)
-			battleovertime.radius -= 2*mapobjectscale;
-		else
+			battleovertime.radius -= (battleovertime.initial_radius / (30*TICRATE));
+
+		if (battleovertime.radius < minradius)
 			battleovertime.radius = minradius;
+
+		// Subtract the 10 second grace period of the barrier
+		if (battleovertime.enabled < 25*TICRATE)
+		{
+			battleovertime.enabled++;
+			Obj_PointPlayersToXY(battleovertime.x, battleovertime.y);
+		}
 	}
 
 	if (battleovertime.radius > 0)
@@ -796,6 +819,9 @@ void K_BattleInit(boolean singleplayercontext)
 			K_SpawnPlayerBattleBumpers(players+i);
 		}
 	}
+
+	g_battleufo.due = starttime;
+	g_battleufo.previousId = Obj_GetFirstBattleUFOSpawnerID();
 }
 
 UINT8 K_Bumpers(player_t *player)

@@ -2,6 +2,9 @@
 #ifndef k_objects_H
 #define k_objects_H
 
+#include "doomdef.h"
+#include "m_fixed.h"
+#include "tables.h" // angle_t
 #include "taglist.h"
 
 #ifdef __cplusplus
@@ -109,6 +112,8 @@ boolean Obj_DropTargetMorphThink(mobj_t *morph);
 
 /* Instawhip */
 void Obj_InstaWhipThink(mobj_t *whip);
+void Obj_SpawnInstaWhipRecharge(player_t *player, angle_t angleOffset);
+void Obj_InstaWhipRechargeThink(mobj_t *mobj);
 
 /* Block VFX */
 void Obj_BlockRingThink(mobj_t *ring);
@@ -132,6 +137,7 @@ void Obj_RandomItemVisuals(mobj_t *mobj);
 boolean Obj_RandomItemSpawnIn(mobj_t *mobj);
 fixed_t Obj_RandomItemScale(fixed_t oldScale);
 void Obj_RandomItemSpawn(mobj_t *mobj);
+#define RINGBOX_TIME (70)
 
 /* Gachabom Rebound */
 void Obj_GachaBomReboundThink(mobj_t *mobj);
@@ -139,6 +145,38 @@ void Obj_SpawnGachaBomRebound(mobj_t *source, mobj_t *target);
 
 /* Servant Hand */
 void Obj_ServantHandHandling(player_t *player);
+void Obj_PointPlayersToXY(fixed_t x, fixed_t y);
+
+/* Super Flicky Controller */
+void Obj_SpawnSuperFlickySwarm(player_t *owner, tic_t time);
+void Obj_SuperFlickyControllerThink(mobj_t *controller);
+void Obj_EndSuperFlickySwarm(mobj_t *controller);
+void Obj_ExtendSuperFlickySwarm(mobj_t *controller, tic_t time);
+tic_t Obj_SuperFlickySwarmTime(mobj_t *controller);
+
+/* Super Flicky */
+void Obj_SuperFlickyThink(mobj_t *flicky);
+void Obj_WhipSuperFlicky(mobj_t *flicky);
+void Obj_BlockSuperFlicky(mobj_t *flicky);
+void Obj_SuperFlickyPlayerCollide(mobj_t *flicky, mobj_t *player);
+void Obj_SuperFlickyLanding(mobj_t *flicky);
+boolean Obj_IsSuperFlickyWhippable(const mobj_t *flicky);
+
+/* Battle/Power-UP UFO */
+void Obj_BattleUFOLegThink(mobj_t *leg);
+void Obj_BattleUFOThink(mobj_t *ufo);
+void Obj_SpawnBattleUFOLegs(mobj_t *ufo);
+void Obj_BattleUFODeath(mobj_t *ufo);
+void Obj_LinkBattleUFOSpawner(mobj_t *spawner);
+void Obj_UnlinkBattleUFOSpawner(mobj_t *spawner);
+void Obj_SpawnBattleUFOFromSpawner(void);
+INT32 Obj_GetFirstBattleUFOSpawnerID(void);
+void Obj_ResetUFOSpawners(void);
+void Obj_BattleUFOBeamThink(mobj_t *beam);
+
+/* Power-Up Aura */
+void Obj_SpawnPowerUpAura(player_t* player);
+void Obj_PowerUpAuraThink(mobj_t* mobj);
 
 /* Lost Colony symbol signs */
 void Obj_SymbolSpawn(mobj_t *mobj);

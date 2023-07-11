@@ -2016,11 +2016,80 @@ typedef struct
 	mapthing_t *angleanchor;
 } sectorspecialthings_t;
 
-static void P_WriteTextmap(void)
+static FILE *P_OpenTextmap(const char *mode, const char *error)
 {
-	size_t i, j;
 	FILE *f;
 	char *filepath = va(pandf, srb2home, "TEXTMAP");
+
+	f = fopen(filepath, mode);
+	if (!f)
+	{
+		CONS_Alert(CONS_ERROR, M_GetText("%s %s\n"), error, filepath);
+	}
+
+	return f;
+}
+
+static void P_WriteTextmapThing(FILE *f, mapthing_t *wmapthings, size_t i, size_t k)
+{
+	size_t j;
+	fprintf(f, "thing // %s\n", sizeu1(k));
+	fprintf(f, "{\n");
+	if (wmapthings[i].tid != 0)
+		fprintf(f, "id = %d;\n", wmapthings[i].tid);
+	fprintf(f, "x = %d;\n", wmapthings[i].x);
+	fprintf(f, "y = %d;\n", wmapthings[i].y);
+	if (wmapthings[i].z != 0)
+		fprintf(f, "height = %d;\n", wmapthings[i].z);
+	fprintf(f, "angle = %d;\n", wmapthings[i].angle);
+	if (wmapthings[i].pitch != 0)
+		fprintf(f, "pitch = %d;\n", wmapthings[i].pitch);
+	if (wmapthings[i].roll != 0)
+		fprintf(f, "roll = %d;\n", wmapthings[i].roll);
+	if (wmapthings[i].type != 0)
+		fprintf(f, "type = %d;\n", wmapthings[i].type);
+	if (wmapthings[i].scale != FRACUNIT)
+		fprintf(f, "scale = %f;\n", FIXED_TO_FLOAT(wmapthings[i].scale));
+	if (wmapthings[i].options & MTF_OBJECTFLIP)
+		fprintf(f, "flip = true;\n");
+	if (wmapthings[i].special != 0)
+		fprintf(f, "special = %d;\n", wmapthings[i].special);
+	for (j = 0; j < NUMMAPTHINGARGS; j++)
+		if (wmapthings[i].args[j] != 0)
+			fprintf(f, "arg%s = %d;\n", sizeu1(j), wmapthings[i].args[j]);
+	for (j = 0; j < NUMMAPTHINGSTRINGARGS; j++)
+		if (mapthings[i].stringargs[j])
+			fprintf(f, "stringarg%s = \"%s\";\n", sizeu1(j), mapthings[i].stringargs[j]);
+	if (wmapthings[i].user.length > 0)
+	{
+		for (j = 0; j < wmapthings[i].user.length; j++)
+		{
+			mapUserProperty_t *const prop = &wmapthings[i].user.properties[j];
+			switch (prop->type)
+			{
+				case USER_PROP_BOOL:
+					fprintf(f, "user_%s = %s;\n", prop->key, (prop->valueBool == true) ? "true" : "false");
+					break;
+				case USER_PROP_INT:
+					fprintf(f, "user_%s = %d;\n", prop->key, prop->valueInt);
+					break;
+				case USER_PROP_FIXED:
+					fprintf(f, "user_%s = %f;\n", prop->key, FIXED_TO_FLOAT(prop->valueFixed));
+					break;
+				case USER_PROP_STR:
+					fprintf(f, "user_%s = \"%s\";\n", prop->key, prop->valueStr);
+					break;
+			}
+		}
+	}
+	fprintf(f, "}\n");
+	fprintf(f, "\n");
+}
+
+static void P_WriteTextmap(void)
+{
+	size_t i, j, k;
+	FILE *f;
 	mtag_t firsttag;
 	mapthing_t *wmapthings;
 	vertex_t *wvertexes;
@@ -2031,10 +2100,9 @@ static void P_WriteTextmap(void)
 	sectorspecialthings_t *specialthings;
 	boolean *wusedvertexes;
 
-	f = fopen(filepath, "w");
+	f = P_OpenTextmap("w", "Couldn't save map file");
 	if (!f)
 	{
-		CONS_Alert(CONS_ERROR, M_GetText("Couldn't save map file %s\n"), filepath);
 		return;
 	}
 
@@ -2120,13 +2188,6 @@ static void P_WriteTextmap(void)
 	{
 		subsector_t *ss;
 		INT32 s;
-
-		if (wmapthings[i].type == mobjinfo[MT_WAYPOINT].doomednum
-			|| wmapthings[i].type == mobjinfo[MT_WAYPOINT_ANCHOR].doomednum
-			|| wmapthings[i].type == mobjinfo[MT_WAYPOINT_RISER].doomednum)
-		{
-			CONS_Alert(CONS_WARNING, M_GetText("Thing %s is a waypoint or waypoint parameter, which cannot be converted fully.\n"), sizeu1(i));
-		}
 
 		if (wmapthings[i].type != 751 && wmapthings[i].type != 752 && wmapthings[i].type != 758)
 			continue;
@@ -2354,59 +2415,20 @@ static void P_WriteTextmap(void)
 	}
 
 	fprintf(f, "namespace = \"srb2\";\n");
-	for (i = 0; i < nummapthings; i++)
+	for (i = k = 0; i < nummapthings; i++)
 	{
-		fprintf(f, "thing // %s\n", sizeu1(i));
-		fprintf(f, "{\n");
-		if (wmapthings[i].tid != 0)
-			fprintf(f, "id = %d;\n", wmapthings[i].tid);
-		fprintf(f, "x = %d;\n", wmapthings[i].x);
-		fprintf(f, "y = %d;\n", wmapthings[i].y);
-		if (wmapthings[i].z != 0)
-			fprintf(f, "height = %d;\n", wmapthings[i].z);
-		fprintf(f, "angle = %d;\n", wmapthings[i].angle);
-		if (wmapthings[i].pitch != 0)
-			fprintf(f, "pitch = %d;\n", wmapthings[i].pitch);
-		if (wmapthings[i].roll != 0)
-			fprintf(f, "roll = %d;\n", wmapthings[i].roll);
-		if (wmapthings[i].type != 0)
-			fprintf(f, "type = %d;\n", wmapthings[i].type);
-		if (wmapthings[i].scale != FRACUNIT)
-			fprintf(f, "scale = %f;\n", FIXED_TO_FLOAT(wmapthings[i].scale));
-		if (wmapthings[i].options & MTF_OBJECTFLIP)
-			fprintf(f, "flip = true;\n");
-		if (wmapthings[i].special != 0)
-			fprintf(f, "special = %d;\n", wmapthings[i].special);
-		for (j = 0; j < NUMMAPTHINGARGS; j++)
-			if (wmapthings[i].args[j] != 0)
-				fprintf(f, "arg%s = %d;\n", sizeu1(j), wmapthings[i].args[j]);
-		for (j = 0; j < NUMMAPTHINGSTRINGARGS; j++)
-			if (mapthings[i].stringargs[j])
-				fprintf(f, "stringarg%s = \"%s\";\n", sizeu1(j), mapthings[i].stringargs[j]);
-		if (wmapthings[i].user.length > 0)
+		if (wmapthings[i].type == mobjinfo[MT_WAYPOINT].doomednum
+			|| wmapthings[i].type == mobjinfo[MT_WAYPOINT_ANCHOR].doomednum
+			|| wmapthings[i].type == mobjinfo[MT_WAYPOINT_RISER].doomednum)
 		{
-			for (j = 0; j < wmapthings[i].user.length; j++)
-			{
-				mapUserProperty_t *const prop = &wmapthings[i].user.properties[j];
-				switch (prop->type)
-				{
-					case USER_PROP_BOOL:
-						fprintf(f, "user_%s = %s;\n", prop->key, (prop->valueBool == true) ? "true" : "false");
-						break;
-					case USER_PROP_INT:
-						fprintf(f, "user_%s = %d;\n", prop->key, prop->valueInt);
-						break;
-					case USER_PROP_FIXED:
-						fprintf(f, "user_%s = %f;\n", prop->key, FIXED_TO_FLOAT(prop->valueFixed));
-						break;
-					case USER_PROP_STR:
-						fprintf(f, "user_%s = \"%s\";\n", prop->key, prop->valueStr);
-						break;
-				}
-			}
+			// Skip waypoints. Because the multi-thing setup was merged into a
+			// single thing type in UDMF, these must be converted later.
+			continue;
 		}
-		fprintf(f, "}\n");
-		fprintf(f, "\n");
+
+		P_WriteTextmapThing(f, wmapthings, i, k);
+
+		k++;
 	}
 
 	j = 0;
@@ -2844,6 +2866,29 @@ static void P_WriteTextmap(void)
 	Z_Free(wsides);
 	Z_Free(specialthings);
 	Z_Free(wusedvertexes);
+}
+
+static void P_WriteTextmapWaypoints(void)
+{
+	FILE *f;
+	mobj_t *waypointmobj;
+
+	// Append to output from P_WriteTextmap prior
+	f = P_OpenTextmap("a", "Couldn't save map file (waypoints)");
+	if (!f)
+	{
+		return;
+	}
+
+	for (
+			waypointmobj = waypointcap;
+			waypointmobj;
+			waypointmobj = waypointmobj->tracer
+	){
+		P_WriteTextmapThing(f, waypointmobj->spawnpoint, 0, waypointmobj->spawnpoint - mapthings);
+	}
+
+	fclose(f);
 }
 
 /** Loads the textmap data, after obtaining the elements count and allocating their respective space.
@@ -6959,7 +7004,11 @@ static void P_ConvertBinaryThingTypes(void)
 			mapthings[i].args[0] = !!(mapthings[i].options & MTF_AMBUSH);
 			break;
 		case 1488: // Follower Audience (unfortunately numbered)
-			mapthings[i].args[2] = !!(mapthings[i].options & MTF_OBJECTSPECIAL);
+			if (mapthings[i].options & MTF_OBJECTSPECIAL)
+				mapthings[i].args[2] |= TMAUDIM_FLOAT;
+			if (mapthings[i].options & MTF_EXTRA)
+				mapthings[i].args[2] |= TMAUDIM_BORED;
+
 			mapthings[i].args[3] = !!(mapthings[i].options & MTF_AMBUSH);
 			break;
 		case 1500: //Glaregoyle
@@ -7140,6 +7189,14 @@ static void P_ConvertBinaryThingTypes(void)
 			break;
 		case 2018: // MT_PETSMOKER
 			mapthings[i].args[0] = !!(mapthings[i].options & MTF_OBJECTSPECIAL);
+			break;
+		case 3786: // MT_BATTLEUFO_SPAWNER
+			mapthings[i].args[0] = mapthings[i].angle;
+			break;
+		case 3441: // MT_DASHRING (TODO: not yet hardcoded)
+		case 3442: // MT_RAINBOWDASHRING (TODO: not yet hardcoded)
+			mapthings[i].args[0] = mapthings[i].options & 13;
+			mapthings[i].args[1] = mapthings[i].extrainfo;
 			break;
 		case FLOOR_SLOPE_THING:
 		case CEILING_SLOPE_THING:
@@ -7346,10 +7403,6 @@ static void P_InitLevelSettings(void)
 	modulothing = 0;
 
 	K_TimerReset();
-
-	// special stage tokens, emeralds, and ring total
-	runemeraldmanager = false;
-	emeraldspawndelay = 60*TICRATE;
 
 	nummaprings = 0;
 	nummapboxes = numgotboxes = 0;
@@ -7730,7 +7783,12 @@ static void P_InitGametype(void)
 
 	if (grandprixinfo.gp == true)
 	{
-		if (grandprixinfo.initalize == true)
+		if (savedata.lives > 0)
+		{
+			K_LoadGrandPrixSaveGame();
+			savedata.lives = 0;
+		}
+		else if (grandprixinfo.initalize == true)
 		{
 			K_InitGrandPrixRank(&grandprixinfo.rank);
 			K_InitGrandPrixBots();
@@ -7742,7 +7800,7 @@ static void P_InitGametype(void)
 			grandprixinfo.wonround = false;
 		}
 	}
-	else if (!modeattacking)
+	else
 	{
 		// We're in a Match Race, use simplistic randomized bots.
 		K_UpdateMatchRaceBots();
@@ -8148,15 +8206,6 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 	R_InitMobjInterpolators();
 	P_InitCachedActions();
 
-	if (!fromnetsave && savedata.lives > 0)
-	{
-		numgameovers = savedata.numgameovers;
-		players[consoleplayer].lives = savedata.lives;
-		players[consoleplayer].score = savedata.score;
-		emeralds = savedata.emeralds;
-		savedata.lives = 0;
-	}
-
 	// internal game map
 	maplumpname = mapheaderinfo[gamemap-1]->lumpname;
 	lastloadedmaplumpnum = mapheaderinfo[gamemap-1]->lumpnum;
@@ -8231,6 +8280,9 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 	{
 		// Backwards compatibility for non-UDMF maps
 		K_AdjustWaypointsParameters();
+
+		if (M_CheckParm("-writetextmap"))
+			P_WriteTextmapWaypoints();
 	}
 
 	if (!fromnetsave) //  ugly hack for P_NetUnArchiveMisc (and P_LoadNetGame)
@@ -8307,22 +8359,6 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 
 	P_MapEnd(); // tm.thing is no longer needed from this point onwards
 
-	// Took me 3 hours to figure out why my progression kept on getting overwritten with the titlemap...
-	if (gamestate == GS_LEVEL)
-	{
-		if (!lastmaploaded) // Start a new game?
-		{
-			// I'd love to do this in the menu code instead of here, but everything's a mess and I can't guarantee saving proper player struct info before the first act's started. You could probably refactor it, but it'd be a lot of effort. Easier to just work off known good code. ~toast 22/06/2020
-			if (!(ultimatemode || netgame || multiplayer || demo.playback || demo.recording || metalrecording || modeattacking || marathonmode)
-				&& !usedCheats && cursaveslot > 0)
-			{
-				G_SaveGame((UINT32)cursaveslot, gamemap);
-			}
-			// If you're looking for saving sp file progression (distinct from G_SaveGameOver), check G_DoCompleted.
-		}
-		lastmaploaded = gamemap; // HAS to be set after saving!!
-	}
-
 	if (!fromnetsave)
 	{
 		INT32 buf = gametic % BACKUPTICS;
@@ -8377,6 +8413,8 @@ void P_PostLoadLevel(void)
 	skipstats = 0;
 
 	P_RunCachedActions();
+
+	G_HandleSaveLevel(false);
 
 	if (marathonmode & MA_INGAME)
 	{

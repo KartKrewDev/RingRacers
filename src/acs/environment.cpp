@@ -166,6 +166,7 @@ Environment::Environment()
 	addFuncDataACS0( 502, addCallFunc(CallFunc_PodiumFinish));
 	addFuncDataACS0( 503, addCallFunc(CallFunc_SetLineRenderStyle));
 	addFuncDataACS0( 504, addCallFunc(CallFunc_MapWarp));
+	addFuncDataACS0( 505, addCallFunc(CallFunc_AddBot));
 }
 
 ACSVM::Thread *Environment::allocThread()

@@ -342,7 +342,6 @@ void P_GiveEmerald(boolean spawnObj)
 	UINT8 em = P_GetNextEmerald();
 
 	S_StartSound(NULL, sfx_cgot); // Got the emerald!
-	emeralds |= (1 << em);
 	stagefailed = false;
 
 	if (spawnObj)
@@ -714,11 +713,49 @@ void P_PlayVictorySound(mobj_t *source)
 void P_EndingMusic(void)
 {
 	const char *jingle = NULL;
-	boolean nointer = false;
 	UINT8 bestPos = UINT8_MAX;
 	player_t *bestPlayer = NULL;
 
 	SINT8 i;
+
+	// See G_DoCompleted and Y_DetermineIntermissionType
+	boolean nointer = ((modeattacking && (players[consoleplayer].pflags & PF_NOCONTEST))
+		|| (grandprixinfo.gp == true && grandprixinfo.eventmode != GPEVENT_NONE));
+
+	for (i = 0; i < MAXPLAYERS; i++)
+	{
+		if (!playeringame[i]
+		|| players[i].spectator)
+			continue;
+
+		// Battle powerstone win
+		if ((gametyperules & GTR_POWERSTONES)
+		&& ALLCHAOSEMERALDS(players[i].emeralds))
+			break;
+
+		// Special round?
+		if (((gametyperules & GTR_SPECIALSTART)
+		|| (grandprixinfo.gp == true
+			&& grandprixinfo.eventmode == GPEVENT_SPECIAL)
+		) == false)
+			continue;
+
+		// Any player has completed well?
+		if (!players[i].exiting
+		|| players[i].bot
+		|| K_IsPlayerLosing(&players[i]))
+			continue;
+
+		// Special win
+		break;
+	}
+
+	// Event - Emerald Finish
+	if (i != MAXPLAYERS)
+	{
+		jingle = "EMRLD";
+		goto skippingposition;
+	}
 
 	// Event - Level Finish
 	// Check for if this is valid or not
@@ -755,10 +792,6 @@ void P_EndingMusic(void)
 			bestPos = pos;
 		}
 	}
-
-	// See G_DoCompleted and Y_DetermineIntermissionType
-	nointer = ((modeattacking && (players[consoleplayer].pflags & PF_NOCONTEST))
-		|| (grandprixinfo.gp == true && grandprixinfo.eventmode != GPEVENT_NONE));
 
 	if (bestPlayer == NULL)
 	{
@@ -797,6 +830,8 @@ void P_EndingMusic(void)
 			jingle = "_win";
 		}
 	}
+
+skippingposition:
 
 	if (nointer == true)
 	{
@@ -1429,30 +1464,33 @@ void P_DoPlayerExit(player_t *player, pflags_t flags)
 		}
 	}
 
-	if (modeattacking)
+	if (demo.playback == false)
 	{
-		G_UpdateRecords();
-	}
-
-	if (!losing)
-	{
-		profile_t *pr = PR_GetPlayerProfile(player);
-		if (pr != NULL)
+		if (modeattacking == true)
 		{
-			pr->wins++;
-			PR_SaveProfiles();
+			G_UpdateRecords();
 		}
 
-		if (P_IsLocalPlayer(player) && player->skin < numskins)
+		if (!losing)
 		{
-			skins[player->skin].records.wins++;
+			profile_t *pr = PR_GetPlayerProfile(player);
+			if (pr != NULL)
+			{
+				pr->wins++;
+				PR_SaveProfiles();
+			}
+
+			if (P_IsLocalPlayer(player) && player->skin < numskins)
+			{
+				skins[player->skin].records.wins++;
+			}
 		}
+
+		if (player == &players[consoleplayer])
+			demo.savebutton = leveltime;
 	}
 
 	player->karthud[khud_cardanimation] = 0; // srb2kart: reset battle animation
-
-	if (player == &players[consoleplayer])
-		demo.savebutton = leveltime;
 }
 
 //
@@ -2342,7 +2380,24 @@ static void P_UpdatePlayerAngle(player_t *player)
 	INT16 targetsteering = K_UpdateSteeringValue(player->steering, player->cmd.turning);
 	angleChange = K_GetKartTurnValue(player, targetsteering) << TICCMD_REDUCE;
 
-	if (!K_PlayerUsesBotMovement(player))
+	if (K_PlayerUsesBotMovement(player))
+	{
+		// You're a bot. Go where you're supposed to go
+		player->steering = targetsteering;
+	}
+	else if ((!(player->cmd.flags & TICCMD_RECEIVED)) && (!!(player->oldcmd.flags && TICCMD_RECEIVED)))
+	{
+		// Missed a single tic. This ticcmd is copied from their previous one
+		// (less the TICCMD_RECEIVED flag), so it will include an old angle, and
+		// steering towards that will turn unambitiously. A better guess is to
+		// assume their inputs are the same, and turn based on those for 1 tic.
+		player->steering = targetsteering;
+		// "Why not use this for multiple consecutive dropped tics?" Oversimplification:
+		// Clients have default netticbuffer 1, so missing more than 1 tic will freeze
+		// your client, and with it, your local camera. Our goal then becomes not to
+		// steer PAST the angle you can see, so the default turn solver behavior is best.
+	}
+	else
 	{
 		// With a full slam on the analog stick, how far could we steer in either direction?
 		INT16 steeringRight =  K_UpdateSteeringValue(player->steering, KART_FULLTURN);
@@ -2392,11 +2447,6 @@ static void P_UpdatePlayerAngle(player_t *player)
 			if (min(targetDelta - angleChange, angleChange - targetDelta) <= leniency)
 				angleChange = targetDelta;
 		}
-	}
-	else
-	{
-		// You're a bot. Go where you're supposed to go
-		player->steering = targetsteering;
 	}
 
 	if (p == UINT8_MAX)

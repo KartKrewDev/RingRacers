@@ -23,9 +23,6 @@ Make sure this matches the actual number of states
 */
 #define KART_NUMINVSPARKLESANIM 12
 
-#define MAXHITLAGTICS 18 //12
-#define HITLAGJITTERS (FRACUNIT / 20)
-
 #define GROW_SCALE (2*FRACUNIT)
 #define SHRINK_SCALE (FRACUNIT/2)
 
@@ -92,8 +89,6 @@ void K_KartPlayerAfterThink(player_t *player);
 angle_t K_MomentumAngleEx(const mobj_t *mo, const fixed_t threshold);
 angle_t K_MomentumAngleReal(const mobj_t *mo);
 #define K_MomentumAngle(mo) K_MomentumAngleEx(mo, 6 * mo->scale)
-void K_AddHitLag(mobj_t *mo, INT32 tics, boolean fromDamage);
-void K_SetHitLagForObjects(mobj_t *mo1, mobj_t *mo2, INT32 tics, boolean fromDamage);
 void K_AwardPlayerRings(player_t *player, INT32 rings, boolean overload);
 void K_DoInstashield(player_t *player);
 void K_DoPowerClash(mobj_t *t1, mobj_t *t2);
@@ -113,6 +108,7 @@ void K_UpdateStumbleIndicator(player_t *player);
 void K_UpdateSliptideZipIndicator(player_t *player);
 INT32 K_ExplodePlayer(player_t *player, mobj_t *inflictor, mobj_t *source);
 void K_DebtStingPlayer(player_t *player, mobj_t *source);
+void K_GiveBumpersToPlayer(player_t *player, player_t *victim, UINT8 amount);
 void K_TakeBumpersFromPlayer(player_t *player, player_t *victim, UINT8 amount);
 void K_MineFlashScreen(mobj_t *source);
 void K_SpawnMineExplosion(mobj_t *source, UINT8 color, tic_t delay);
@@ -150,7 +146,9 @@ void K_SpawnDriftElectricSparks(player_t *player, int color, boolean shockwave);
 void K_KartUpdatePosition(player_t *player);
 void K_UpdateAllPlayerPositions(void);
 SINT8 K_GetTotallyRandomResult(UINT8 useodds);
-mobj_t *K_CreatePaperItem(fixed_t x, fixed_t y, fixed_t z, angle_t angle, SINT8 flip, UINT8 type, UINT8 amount);
+mobj_t *K_CreatePaperItem(fixed_t x, fixed_t y, fixed_t z, angle_t angle, SINT8 flip, UINT8 type, UINT16 amount);
+mobj_t *K_FlingPaperItem(fixed_t x, fixed_t y, fixed_t z, angle_t angle, SINT8 flip, UINT8 type, UINT16 amount);
+void K_DropPaperItem(player_t *player, UINT8 itemtype, UINT16 itemamount);
 void K_PopPlayerShield(player_t *player);
 void K_DropItems(player_t *player);
 void K_DropRocketSneaker(player_t *player);

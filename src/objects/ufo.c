@@ -24,6 +24,7 @@
 #include "../k_waypoint.h"
 #include "../k_specialstage.h"
 #include "../r_skins.h"
+#include "../k_hitlag.h"
 #include "../acs/interface.h"
 
 #define UFO_BASE_SPEED (42 * FRACUNIT) // UFO's slowest speed.
@@ -34,6 +35,9 @@
 #define UFO_SPEEDFACTOR (FRACUNIT * 3 / 4) // Factor of player's best speed, to make it more fair.
 #define UFO_DAMAGED_SPEED (UFO_BASE_SPEED >> 1) // Speed to add when UFO takes damage.
 #define UFO_START_SPEED (UFO_BASE_SPEED << 1) // Speed when the map starts.
+
+#define UFO_PITY_DIST (10000) // Let's aim for an exciting finish! Try to stick closer to the player once they're past this threshold.
+#define UFO_PITY_BRAKES (600 * FRACUNIT) // Subtract this amount from UFO_SFACING, starting at UFO_PITY_DIST and ending at the finish line.
 
 #define UFO_NUMARMS (3)
 #define UFO_ARMDELTA (ANGLE_MAX / UFO_NUMARMS)
@@ -51,6 +55,8 @@
 #define ufo_piece_owner(o) ((o)->target)
 #define ufo_piece_next(o) ((o)->hnext)
 #define ufo_piece_prev(o) ((o)->hprev)
+
+#define ufo_intangible(o) ((o)->cusval)
 
 enum
 {
@@ -167,9 +173,12 @@ static void UFOUpdateDistanceToFinish(mobj_t *ufo)
 
 static void UFOUpdateSpeed(mobj_t *ufo)
 {
+	const fixed_t mapspeedscale = FixedMul(mapobjectscale, K_GetKartGameSpeedScalar(gamespeed));
 	const fixed_t baseSpeed = FixedMul(UFO_BASE_SPEED, K_GetKartGameSpeedScalar(gamespeed));
-	const UINT32 spacing = FixedMul(FixedMul(UFO_SPACING, mapobjectscale), K_GetKartGameSpeedScalar(gamespeed)) >> FRACBITS;
-	const UINT32 deadzone = FixedMul(FixedMul(UFO_DEADZONE, mapobjectscale), K_GetKartGameSpeedScalar(gamespeed)) >> FRACBITS;
+	const UINT32 deadzone = FixedMul(UFO_DEADZONE, mapspeedscale) >> FRACBITS;
+
+	UINT32 spacing = FixedMul(UFO_SPACING, mapspeedscale) >> FRACBITS;
+	UINT32 distanceNerf = FixedMul(UFO_PITY_BRAKES, mapspeedscale) >> FRACBITS;
 
 	// Best values of all of the players.
 	UINT32 bestDist = UINT32_MAX;
@@ -222,6 +231,13 @@ static void UFOUpdateSpeed(mobj_t *ufo)
 	else
 	{
 		INT32 distDelta = 0;
+
+		if (bestDist < UFO_PITY_DIST && UFOEmeraldChase(ufo))
+		{
+			INT32 brakeDelta = UFO_PITY_DIST - bestDist;
+			INT32 distPerNerf = UFO_PITY_DIST / distanceNerf; // Doing this in the sensible way integer overflows. Sorry.
+			spacing = spacing - (brakeDelta / distPerNerf);
+		}
 
 		if (bestDist > spacing)
 		{
@@ -495,6 +511,9 @@ void Obj_SpecialUFOThinker(mobj_t *ufo)
 	UFOUpdateSpeed(ufo);
 	UFOUpdateSound(ufo);
 
+	if (ufo_intangible(ufo))
+		ufo_intangible(ufo)--;
+
 	if (UFOEmeraldChase(ufo) == true)
 	{
 		// Spawn emerald sparkles
@@ -744,8 +763,6 @@ boolean Obj_SpecialUFODamage(mobj_t *ufo, mobj_t *inflictor, mobj_t *source, UIN
 	const fixed_t addSpeed = FixedMul(UFO_DAMAGED_SPEED, K_GetKartGameSpeedScalar(gamespeed));
 	UINT8 damage = 1;
 
-	(void)source;
-
 	if (UFOEmeraldChase(ufo) == true)
 	{
 		// Damaged fully already, no need for any more.
@@ -768,13 +785,14 @@ boolean Obj_SpecialUFODamage(mobj_t *ufo, mobj_t *inflictor, mobj_t *source, UIN
 			SetRandomFakePlayerSkin(source->player, true);
 	}
 
+	ufo_intangible(ufo) = 30;
 
 	// Speed up on damage!
 	ufo_speed(ufo) += addSpeed;
 
 	ufo->health = max(1, ufo->health - damage);
 
-	K_SetHitLagForObjects(ufo, inflictor, (damage / 3) + 2, true);
+	K_SetHitLagForObjects(ufo, inflictor, source, (damage / 3) + 2, true);
 	UFOCopyHitlagToPieces(ufo);
 
 	if (ufo->health == 1)
@@ -817,6 +835,11 @@ void Obj_PlayerUFOCollide(mobj_t *ufo, mobj_t *other)
 	if (other->z + other->height < ufo->z)
 	{
 		return; // underneath
+	}
+
+	if (ufo_intangible(ufo))
+	{
+		return; // We were just hit!
 	}
 
 	if ((other->player->sneakertimer > 0)

@@ -209,7 +209,6 @@ static boolean M_GamestateCanOpenMenu(void)
 	{
 		case GS_INTRO:
 		case GS_CUTSCENE:
-		case GS_GAMEEND:
 		case GS_CREDITS:
 		case GS_EVALUATION:
 		case GS_CEREMONY:
@@ -539,6 +538,21 @@ void M_StartControlPanel(void)
 		// (We can change this timer later when extra animation is added.)
 		if (finalecount < 1)
 			return;
+
+		if (menumessage.active)
+		{
+			if (!menumessage.closing && menumessage.fadetimer == 9)
+			{
+				// The following doesn't work with MM_YESNO.
+				// However, because there's no guarantee a profile
+				// is selected or controls set up to our liking,
+				// we can't call M_HandleMenuMessage.
+
+				M_StopMessage(MA_NONE);
+			}
+
+			return;
+		}
 	}
 
 	menuactive = true;
@@ -549,8 +563,6 @@ void M_StartControlPanel(void)
 	}
 	else if (!Playing())
 	{
-		M_StopMessage(0); // Doesn't work with MM_YESNO or MM_EVENTHANDLER... but good enough to get the game as it is currently functional again
-
 		if (gamestate != GS_MENU)
 		{
 			G_SetGamestate(GS_MENU);
@@ -754,7 +766,7 @@ void M_SetMenuDelay(UINT8 i)
 	}
 }
 
-void M_UpdateMenuCMD(UINT8 i)
+void M_UpdateMenuCMD(UINT8 i, boolean bailrequired)
 {
 	UINT8 mp = max(1, setup_numplayers);
 
@@ -791,6 +803,11 @@ void M_UpdateMenuCMD(UINT8 i)
 	if (G_PlayerInputDown(i, gc_r, mp)) { menucmd[i].buttons |= MBT_R; }
 
 	if (G_PlayerInputDown(i, gc_start, mp)) { menucmd[i].buttons |= MBT_START; }
+
+	if (bailrequired && i == 0)
+	{
+		if (G_GetDeviceGameKeyDownArray(0)[KEY_ESCAPE]) { menucmd[i].buttons |= MBT_B; }
+	}
 
 	if (menucmd[i].dpad_ud == 0 && menucmd[i].dpad_lr == 0 && menucmd[i].buttons == 0)
 	{

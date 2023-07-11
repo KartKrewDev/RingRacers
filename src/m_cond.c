@@ -610,6 +610,7 @@ void M_ClearStats(void)
 	gamedata->timesBeaten = 0;
 
 	gamedata->everloadedaddon = false;
+	gamedata->everfinishedcredits = false;
 	gamedata->eversavedreplay = false;
 	gamedata->everseenspecial = false;
 	gamedata->evercrashed = false;
@@ -738,6 +739,43 @@ boolean M_NotFreePlay(player_t *player)
 	return false;
 }
 
+UINT16 M_CheckCupEmeralds(UINT8 difficulty)
+{
+	if (difficulty == 0)
+		return 0;
+
+	if (difficulty >= KARTGP_MAX)
+		difficulty = KARTGP_MASTER;
+
+	cupheader_t *cup;
+	UINT16 ret = 0, seen = 0;
+
+	for (cup = kartcupheaders; cup; cup = cup->next)
+	{
+		// Does it not *have* an emerald?
+		if (cup->emeraldnum == 0 || cup->emeraldnum > 14)
+			continue;
+
+		UINT16 emerald = 1<<(cup->emeraldnum-1);
+
+		// Only count the first reference.
+		if (seen & emerald)
+			continue;
+
+		// We've seen it, prevent future repetitions.
+		seen |= emerald;
+
+		// Did you actually get it?
+		if (cup->windata[difficulty].got_emerald == false)
+			continue;
+
+		// Wa hoo !
+		ret |= emerald;
+	}
+
+	return ret;
+}
+
 // See also M_GetConditionString
 boolean M_CheckCondition(condition_t *cn, player_t *player)
 {
@@ -791,30 +829,12 @@ boolean M_CheckCondition(condition_t *cn, player_t *player)
 		case UC_ALLSUPER:
 		case UC_ALLEMERALDS:
 		{
-			cupheader_t *cup;
 			UINT16 ret = 0;
-			UINT8 i;
 
 			if (gamestate == GS_LEVEL)
 				return false; // this one could be laggy with many cups available
 
-			for (cup = kartcupheaders; cup; cup = cup->next)
-			{
-				if (cup->emeraldnum == 0)
-					continue;
-
-				i = cn->requirement;
-				for (i = cn->requirement; i < KARTGP_MAX; i++)
-				{
-					if (cup->windata[i].got_emerald == true)
-						break;
-				}
-
-				if (i == KARTGP_MAX)
-					continue;
-
-				ret |= 1<<(cup->emeraldnum-1);
-			}
+			ret = M_CheckCupEmeralds(cn->requirement);
 
 			if (cn->type == UC_ALLCHAOS)
 				return ALLCHAOSEMERALDS(ret);
@@ -835,6 +855,8 @@ boolean M_CheckCondition(condition_t *cn, player_t *player)
 		case UC_ADDON:
 			return ((gamedata->everloadedaddon == true)
 				&& M_SecretUnlocked(SECRET_ADDONS, true));
+		case UC_CREDITS:
+			return (gamedata->everfinishedcredits == true);
 		case UC_REPLAY:
 			return (gamedata->eversavedreplay == true);
 		case UC_CRASH:
@@ -1289,6 +1311,8 @@ static const char *M_GetConditionString(condition_t *cn)
 			if (!M_SecretUnlocked(SECRET_ADDONS, true))
 				return NULL;
 			return "load a custom addon into \"Dr. Robotnik's Ring Racers\"";
+		case UC_CREDITS:
+			return "watch the developer credits all the way from start to finish";
 		case UC_REPLAY:
 			return "save a replay after finishing a round";
 		case UC_CRASH:
@@ -2192,6 +2216,42 @@ INT32 M_UnlockableFollowerNum(unlockable_t *unlock)
 	}
 
 	// Invalid follower unlockable.
+	return -1;
+}
+
+INT32 M_UnlockableColorNum(unlockable_t *unlock)
+{
+	if (unlock->type != SECRET_COLOR)
+	{
+		// This isn't a color unlockable...
+		return -1;
+	}
+
+	if (unlock->stringVar && unlock->stringVar[0])
+	{
+		skincolornum_t colornum = SKINCOLOR_NONE;
+
+		if (unlock->stringVarCache != -1)
+		{
+			return unlock->stringVarCache;
+		}
+
+		// Get the skin from the string.
+		colornum = R_GetColorByName(unlock->stringVar);
+		if (colornum != SKINCOLOR_NONE)
+		{
+			unlock->stringVarCache = colornum;
+			return colornum;
+		}
+	}
+
+	if (unlock->variable > SKINCOLOR_NONE && unlock->variable < numskincolors)
+	{
+		// Use the number directly.
+		return unlock->variable;
+	}
+
+	// Invalid color unlockable.
 	return -1;
 }
 

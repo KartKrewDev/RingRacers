@@ -146,6 +146,8 @@ add_executable(SRB2SDL2 MACOSX_BUNDLE WIN32
 	k_serverstats.c
 	k_zvote.c
 	k_mapuser.c
+	k_powerup.cpp
+	k_hitlag.c
 )
 
 if(SRB2_CONFIG_ENABLE_WEBM_MOVIES)
@@ -580,6 +582,7 @@ add_subdirectory(menus)
 if(SRB2_CONFIG_ENABLE_WEBM_MOVIES)
 	add_subdirectory(media)
 endif()
+add_subdirectory(hud)
 
 # strip debug symbols into separate file when using gcc.
 # to be consistent with Makefile, don't generate for OS X.

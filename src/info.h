@@ -277,7 +277,6 @@ enum actionnum
 	A_DRAGONWING,
 	A_DRAGONSEGMENT,
 	A_CHANGEHEIGHT,
-	A_ITEMPOP,
 	A_JAWZEXPLODE,
 	A_SSMINESEARCH,
 	A_SSMINEEXPLODE,
@@ -550,7 +549,6 @@ void A_ChangeHeight();
 //
 // SRB2Kart
 //
-void A_ItemPop();
 void A_JawzExplode();
 void A_SSMineSearch();
 void A_SSMineExplode();
@@ -1084,6 +1082,7 @@ typedef enum sprite
 	// SRB2Kart
 	SPR_RNDM, // Random Item Box
 	SPR_SBOX, // Sphere Box (for Battle)
+	SPR_RBOX, // Ring Box
 	SPR_RPOP, // Random Item Box Pop
 	SPR_ITRI, // Item Box Debris
 	SPR_ITPA, // Paper item backdrop
@@ -1109,10 +1108,13 @@ typedef enum sprite
 	SPR_SLPT, // Sliptide zip indicator
 
 	SPR_IWHP, // Instawhip
+	SPR_WPRE, // Instawhip Recharge
 	SPR_GRNG, // Guard ring
 	SPR_GBDY, // Guard body
 
 	SPR_DHND, // Servant Hand
+
+	SPR_HORN, // Horncode
 
 	SPR_WIPD, // Wipeout dust trail
 	SPR_DRIF, // Drift Sparks
@@ -1122,6 +1124,14 @@ typedef enum sprite
 	SPR_DREL, // Drift electricity
 	SPR_DRES, // Drift electric sparks
 	SPR_JANK, // Stair janking sparks
+	SPR_HFX1, // Hitlag stage 1
+	SPR_HFX2, // Hitlag stage 2
+	SPR_HFX3, // Hitlag stage 3
+	SPR_HFX4, // Hitlag stage 4
+	SPR_HFX5, // Hitlag stage 5
+	SPR_HFX6, // Hitlag stage 6
+	SPR_HFX8, // Hitlag stage 8
+	SPR_HFX9, // Hitlag stage 9
 
 	// Kart Items
 	SPR_RSHE, // Rocket sneaker
@@ -1234,6 +1244,8 @@ typedef enum sprite
 	SPR_ITMO,
 	SPR_ITMI,
 	SPR_ITMN,
+	SPR_PWRB,
+	SPR_RBOW, // power-up aura
 	SPR_WANT,
 
 	SPR_PBOM, // player bomb
@@ -1400,6 +1412,10 @@ typedef enum sprite
 
 	SPR_GBOM,
 	SPR_GCHX,
+
+	SPR_3DFR,
+
+	SPR_BUFO, // Battle/Power-UP UFO
 
 	// First person view sprites; this is a sprite so that it can be replaced by a specialized MD2 draw later
 	SPR_VIEW,
@@ -4335,7 +4351,20 @@ typedef enum state
 	S_RANDOMITEM10,
 	S_RANDOMITEM11,
 	S_RANDOMITEM12,
-	S_DEADRANDOMITEM,
+
+	// Ring Box
+	S_RINGBOX1,
+	S_RINGBOX2,
+	S_RINGBOX3,
+	S_RINGBOX4,
+	S_RINGBOX5,
+	S_RINGBOX6,
+	S_RINGBOX7,
+	S_RINGBOX8,
+	S_RINGBOX9,
+	S_RINGBOX10,
+	S_RINGBOX11,
+	S_RINGBOX12,
 
 	// Sphere Box (for Battle)
 	S_SPHEREBOX1,
@@ -4350,7 +4379,6 @@ typedef enum state
 	S_SPHEREBOX10,
 	S_SPHEREBOX11,
 	S_SPHEREBOX12,
-	S_DEADSPHEREBOX,
 
 	// Random Item Pop
 	S_RANDOMITEMPOP1,
@@ -4400,10 +4428,16 @@ typedef enum state
 	S_SLIPTIDEZIP,
 
 	S_INSTAWHIP,
+	S_INSTAWHIP_RECHARGE1,
+	S_INSTAWHIP_RECHARGE2,
+	S_INSTAWHIP_RECHARGE3,
+	S_INSTAWHIP_RECHARGE4,
 	S_BLOCKRING,
 	S_BLOCKBODY,
 
 	S_SERVANTHAND,
+
+	S_HORNCODE,
 
 	// Signpost sparkles
 	S_SIGNSPARK1,
@@ -5708,6 +5742,15 @@ typedef enum state
 	S_JANKSPARK3,
 	S_JANKSPARK4,
 
+	S_HITLAG_1,
+	S_HITLAG_2,
+	S_HITLAG_3,
+	S_HITLAG_4,
+	S_HITLAG_5,
+	S_HITLAG_6,
+	S_HITLAG_8,
+	S_HITLAG_9,
+
 	// Broly Ki Orb
 	S_BROLY1,
 	S_BROLY2,
@@ -5729,6 +5772,16 @@ typedef enum state
 	S_GACHABOM_EXPLOSION_4,
 	S_GACHABOM_WAITING,
 	S_GACHABOM_RETURNING,
+
+	S_SUPER_FLICKY,
+
+	S_BATTLEUFO,
+	S_BATTLEUFO_LEG,
+	S_BATTLEUFO_DIE,
+	S_BATTLEUFO_BEAM1,
+	S_BATTLEUFO_BEAM2,
+
+	S_POWERUP_AURA,
 
 	S_FIRSTFREESLOT,
 	S_LASTFREESLOT = S_FIRSTFREESLOT + NUMSTATEFREESLOTS - 1,
@@ -6517,10 +6570,13 @@ typedef enum mobj_type
 	MT_SLIPTIDEZIP,
 
 	MT_INSTAWHIP,
+	MT_INSTAWHIP_RECHARGE,
 	MT_BLOCKRING,
 	MT_BLOCKBODY,
 
 	MT_SERVANTHAND,
+
+	MT_HORNCODE,
 
 	MT_SIGNSPARKLE,
 
@@ -6545,6 +6601,7 @@ typedef enum mobj_type
 	MT_DRIFTELECTRICITY,
 	MT_DRIFTELECTRICSPARK,
 	MT_JANKSPARK,
+	MT_HITLAG,
 
 	MT_ROCKETSNEAKER,
 
@@ -6875,6 +6932,16 @@ typedef enum mobj_type
 
 	MT_LOOPENDPOINT,
 	MT_LOOPCENTERPOINT,
+
+	MT_SUPER_FLICKY,
+	MT_SUPER_FLICKY_CONTROLLER,
+
+	MT_BATTLEUFO_SPAWNER,
+	MT_BATTLEUFO,
+	MT_BATTLEUFO_LEG,
+	MT_BATTLEUFO_BEAM,
+
+	MT_POWERUP_AURA,
 
 	MT_FIRSTFREESLOT,
 	MT_LASTFREESLOT = MT_FIRSTFREESLOT + NUMMOBJFREESLOTS - 1,

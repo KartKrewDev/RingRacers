@@ -19,6 +19,7 @@
 #include "command.h"
 #include "doomstat.h" // MAXSPLITSCREENPLAYERS
 #include "g_demo.h"	//menudemo_t
+#include "p_saveg.h" // savedata_cup_t
 #include "k_profiles.h"	// profile data & functions
 #include "g_input.h"	// gc_
 #include "i_threads.h"
@@ -124,6 +125,9 @@ void M_NextMenuGametype(UINT32 forbidden);
 void M_PrevMenuGametype(UINT32 forbidden);
 void M_HandleHostMenuGametype(INT32 choice);
 void M_HandlePauseMenuGametype(INT32 choice);
+
+extern UINT32 menucallvote; // not midVoteType_e to prevent #include k_zvote
+void M_HandlePauseMenuCallVote(INT32 choice);
 
 //
 // MENU TYPEDEFS
@@ -414,6 +418,8 @@ extern menu_t EXTRAS_EggTVDef;
 extern menuitem_t PAUSE_Main[];
 extern menu_t PAUSE_MainDef;
 
+extern menu_t PAUSE_KickHandlerDef;
+
 // EXTRAS
 extern menuitem_t MISC_Manual[];
 extern menu_t MISC_ManualDef;
@@ -441,11 +447,13 @@ typedef enum
 	mpause_stereo,
 	mpause_changegametype,
 	mpause_switchmap,
-	mpause_restartmap,
-	mpause_tryagain,
 #ifdef HAVE_DISCORDRPC
 	mpause_discordrequests,
 #endif
+	mpause_admin,
+	mpause_callvote,
+	mpause_restartmap,
+	mpause_tryagain,
 
 	mpause_continue,
 	mpause_spectate,
@@ -517,10 +525,11 @@ typedef enum
 } manswer_e;
 
 #define MAXMENUMESSAGE 256
+#define MENUMESSAGECLOSE 2
 extern struct menumessage_s
 {
 	boolean active;
-	boolean closing;
+	UINT8 closing;
 
 	INT32 flags;		// MM_
 	const char *header;
@@ -533,6 +542,7 @@ extern struct menumessage_s
 
 	void (*routine)(INT32 choice);	// Normal routine
 	//void (*eroutine)(event_t *ev);	// Event routine	(MM_EVENTHANDLER)
+	INT32 answer;
 
 	const char *defaultstr;
 	const char *confirmstr;
@@ -599,7 +609,7 @@ void M_SetMenuDelay(UINT8 i);
 
 void M_SortServerList(void);
 
-void M_UpdateMenuCMD(UINT8 i);
+void M_UpdateMenuCMD(UINT8 i, boolean bailrequired);
 boolean M_Responder(event_t *ev);
 boolean M_MenuButtonPressed(UINT8 pid, UINT32 bt);
 boolean M_MenuButtonHeld(UINT8 pid, UINT32 bt);
@@ -632,17 +642,12 @@ void M_MenuTypingInput(INT32 key);
 void M_QuitResponse(INT32 ch);
 void M_QuitSRB2(INT32 choice);
 
-extern UINT16 nummenucolors;
-void M_AddMenuColor(UINT16 color);
-void M_MoveColorBefore(UINT16 color, UINT16 targ);
-void M_MoveColorAfter(UINT16 color, UINT16 targ);
-UINT16 M_GetColorBefore(UINT16 color, UINT16 amount, boolean follower);
-UINT16 M_GetColorAfter(UINT16 color, UINT16 amount, boolean follower);
-void M_InitPlayerSetupColors(void);
-void M_FreePlayerSetupColors(void);
+UINT16 M_GetColorAfter(setup_player_colors_t *colors, UINT16 value, INT32 amount);
+#define M_GetColorBefore(a, b, c) M_GetColorAfter(a, b, -c)
 
 // If you want to waste a bunch of memory for a limit no one will hit, feel free to boost this to MAXSKINS :P
 // I figure this will be enough clone characters to fit onto one grid space.
+// TODO: Dynamically allocate instead, you KNOW this limit will get hit by someone eventually
 #define MAXCLONES MAXSKINS/8
 
 extern struct setup_chargrid_s {
@@ -666,6 +671,13 @@ typedef enum
 	CSSTEP_FOLLOWERCOLORS,
 	CSSTEP_READY
 } setup_mdepth_t;
+
+struct setup_player_colors_t
+{
+	UINT16 *list;
+	size_t listLen;
+	size_t listCap;
+};
 
 struct setup_player_t
 {
@@ -694,6 +706,8 @@ struct setup_player_t
 	tic_t follower_timer;
 	UINT8 follower_frame;
 	state_t *follower_state;
+
+	setup_player_colors_t colors;
 };
 
 extern setup_player_t setup_player[MAXSPLITSCREENPLAYERS];
@@ -1045,6 +1059,7 @@ typedef enum
 	extras_eggtv,
 	extras_stereo,
 	extras_password,
+	extras_credits,
 } extras_e;
 
 void M_InitExtras(INT32 choice); // init for the struct
@@ -1074,6 +1089,15 @@ void M_OpenPauseMenu(void);
 void M_QuitPauseMenu(INT32 choice);
 boolean M_PauseInputs(INT32 ch);
 void M_PauseTick(void);
+
+extern struct playerkickmenu_s {
+	tic_t ticker;
+	UINT8 player;
+	UINT8 poke;
+	boolean adminpowered;
+} playerkickmenu;
+
+void M_KickHandler(INT32 choice);
 
 extern consvar_t cv_dummymenuplayer;
 extern consvar_t cv_dummyspectator;
@@ -1147,6 +1171,7 @@ void M_DrawMPServerBrowser(void);
 
 // Pause menu:
 void M_DrawPause(void);
+void M_DrawKickHandler(void);
 
 // Replay Playback
 void M_DrawPlaybackMenu(void);

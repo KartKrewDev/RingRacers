@@ -186,6 +186,13 @@ void K_InitGrandPrixBots(void)
 	{
 		if (playeringame[i])
 		{
+			if (players[i].bot == true)
+			{
+				// Remove existing bots.
+				CL_RemovePlayer(i, KR_LEAVE);
+				continue;
+			}
+
 			if (numplayers < MAXSPLITSCREENPLAYERS && !players[i].spectator)
 			{
 				competitors[numplayers] = i;
@@ -227,11 +234,15 @@ void K_InitGrandPrixBots(void)
 	for (i = 0; i < usableskins; i++)
 	{
 		if (!(grabskins[i] == MAXSKINS || !R_SkinUsable(-1, grabskins[i], true)))
+		{
 			continue;
+		}
+
 		while (usableskins > i && (grabskins[usableskins] == MAXSKINS || !R_SkinUsable(-1, grabskins[usableskins], true)))
 		{
 			usableskins--;
 		}
+
 		grabskins[i] = grabskins[usableskins];
 		grabskins[usableskins] = MAXSKINS;
 	}
@@ -245,7 +256,7 @@ void K_InitGrandPrixBots(void)
 
 			if (usableskins > 0)
 			{
-				UINT8 index = M_RandomKey(usableskins);
+				UINT8 index = P_RandomKey(PR_BOTS, usableskins);
 				skinnum = grabskins[index];
 				grabskins[index] = grabskins[--usableskins];
 			}
@@ -256,10 +267,48 @@ void K_InitGrandPrixBots(void)
 
 	for (i = 0; i < wantedbots; i++)
 	{
-		if (!K_AddBot(botskinlist[i], difficultylevels[i], &newplayernum))
+		if (!K_AddBot(botskinlist[i], difficultylevels[i], BOT_STYLE_NORMAL, &newplayernum))
 		{
 			break;
 		}
+	}
+}
+
+/*--------------------------------------------------
+	void K_LoadGrandPrixSaveGame(void)
+
+		See header file for description.
+---------------------------------------------------*/
+
+void K_LoadGrandPrixSaveGame(void)
+{
+	if (splitscreen)
+	{
+		// You're not doing splitscreen runs at GDQ.
+		// We are literally 14 days from code freeze
+		// and I am not accomodating weird setup this
+		// second in my last minute QoL feature.
+		// I will *actually* fight you
+		return;
+	}
+
+	players[consoleplayer].lives = savedata.lives;
+	players[consoleplayer].score = savedata.score;
+	players[consoleplayer].totalring = savedata.totalring;
+
+	UINT8 i;
+
+	for (i = 0; i < MAXPLAYERS; i++)
+	{
+		if (savedata.bots[i].valid == false)
+			continue;
+
+		K_SetBot(i, savedata.bots[i].skin, savedata.bots[i].difficulty, BOT_STYLE_NORMAL);
+
+		players[i].botvars.rival = savedata.bots[i].rival;
+		players[i].score = savedata.bots[i].score;
+
+		players[i].spectator = !(gametyperules & GTR_BOTS) || (grandprixinfo.eventmode != GPEVENT_NONE);
 	}
 }
 
@@ -327,8 +376,10 @@ void K_UpdateGrandPrixBots(void)
 	UINT16 newrivalscore = 0;
 	UINT8 i;
 
-	if (K_PodiumSequence())
+	if (K_PodiumSequence() == true)
+	{
 		return;
+	}
 
 	for (i = 0; i < MAXPLAYERS; i++)
 	{

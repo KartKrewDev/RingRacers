@@ -5,10 +5,12 @@
 #include "../k_kart.h"
 #include "../k_objects.h"
 #include "../v_video.h"
+#include "../r_main.h"
+#include "../g_game.h"
 
 void Obj_ServantHandHandling(player_t *player)
 {
-	if (player->pflags & PF_WRONGWAY)
+	if (player->pflags & PF_WRONGWAY || player->pflags & PF_POINTME)
 	{
 		if (player->handtimer < TICRATE)
 		{
@@ -99,5 +101,20 @@ void Obj_ServantHandHandling(player_t *player)
 
 		player->hand->renderflags &= ~RF_DONTDRAW;
 		player->hand->renderflags |= (RF_DONTDRAW & ~K_GetPlayerDontDrawFlag(player));
+	}
+}
+
+void Obj_PointPlayersToXY(fixed_t x, fixed_t y)
+{
+	for(int i = 0; i < MAXPLAYERS; i++)
+	{
+		if (!playeringame[i] || players[i].spectator || !players[i].mo)
+			continue;
+
+		angle_t angletotarget = R_PointToAngle2(
+			players[i].mo->x, players[i].mo->y,
+			x, y);
+		players[i].pflags |= PF_POINTME;
+		players[i].besthanddirection = angletotarget;
 	}
 }

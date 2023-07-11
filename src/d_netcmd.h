@@ -86,8 +86,10 @@ extern consvar_t cv_kartfrantic;
 extern consvar_t cv_kartencore;
 extern consvar_t cv_kartspeedometer;
 extern consvar_t cv_kartvoices;
+extern consvar_t cv_karthorns;
 extern consvar_t cv_kartbot;
 extern consvar_t cv_karteliminatelast;
+extern consvar_t cv_thunderdome;
 extern consvar_t cv_kartusepwrlv;
 
 extern consvar_t cv_votetime;
@@ -241,6 +243,7 @@ void WeaponPref_Parse(UINT8 **cp, INT32 playernum);
 void D_SendPlayerConfig(UINT8 n);
 void Command_ExitGame_f(void);
 void Command_Retry_f(void);
+boolean G_GamestateUsesExitLevel(void);
 void D_GameTypeChanged(INT32 lastgametype); // not a real _OnChange function anymore
 void D_MapChange(UINT16 pmapnum, INT32 pgametype, boolean pencoremode, boolean presetplayers, INT32 pdelay, boolean pskipprecutscene, boolean pforcespecialstage);
 void D_SetupVote(void);

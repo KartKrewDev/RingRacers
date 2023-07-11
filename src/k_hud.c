@@ -42,6 +42,7 @@
 #include "k_bot.h"
 #include "k_rank.h"
 #include "g_party.h"
+#include "k_hitlag.h"
 
 //{ 	Patch Definitions
 static patch_t *kp_nodraw;
@@ -83,6 +84,7 @@ static patch_t *kp_wouldyoustillcatchmeifiwereaworm;
 static patch_t *kp_catcherminimap;
 static patch_t *kp_emeraldminimap[2];
 static patch_t *kp_capsuleminimap[3];
+static patch_t *kp_battleufominimap;
 
 static patch_t *kp_ringsticker[2];
 static patch_t *kp_ringstickersplit[4];
@@ -112,8 +114,10 @@ static patch_t *kp_battleinfo;
 static patch_t *kp_wanted;
 static patch_t *kp_wantedsplit;
 static patch_t *kp_wantedreticle;
+static patch_t *kp_minimapdot;
 
 static patch_t *kp_itembg[4];
+static patch_t *kp_ringbg[4];
 static patch_t *kp_itemtimer[2];
 static patch_t *kp_itemmulsticker[2];
 static patch_t *kp_itemx;
@@ -142,6 +146,12 @@ static patch_t *kp_kitchensink[2];
 static patch_t *kp_droptarget[2];
 static patch_t *kp_gardentop[2];
 static patch_t *kp_gachabom[2];
+static patch_t *kp_bar[2];
+static patch_t *kp_doublebar[2];
+static patch_t *kp_triplebar[2];
+static patch_t *kp_slotring[2];
+static patch_t *kp_seven[2];
+static patch_t *kp_jackpot[2];
 
 static patch_t *kp_check[6];
 
@@ -365,6 +375,8 @@ void K_LoadKartHUDGraphics(void)
 	HU_UpdatePatch(&kp_capsuleminimap[1], "MINICAP2");
 	HU_UpdatePatch(&kp_capsuleminimap[2], "MINICAP3");
 
+	HU_UpdatePatch(&kp_battleufominimap, "MINIBUFO");
+
 	// Rings & Lives
 	HU_UpdatePatch(&kp_ringsticker[0], "RNGBACKA");
 	HU_UpdatePatch(&kp_ringsticker[1], "RNGBACKB");
@@ -435,6 +447,7 @@ void K_LoadKartHUDGraphics(void)
 	HU_UpdatePatch(&kp_wanted, "K_WANTED");
 	HU_UpdatePatch(&kp_wantedsplit, "4PWANTED");
 	HU_UpdatePatch(&kp_wantedreticle, "MMAPWANT");
+	HU_UpdatePatch(&kp_minimapdot, "MMAPDOT");
 
 	// Kart Item Windows
 	HU_UpdatePatch(&kp_itembg[0], "K_ITBG");
@@ -442,6 +455,9 @@ void K_LoadKartHUDGraphics(void)
 	HU_UpdatePatch(&kp_itemtimer[0], "K_ITIMER");
 	HU_UpdatePatch(&kp_itemmulsticker[0], "K_ITMUL");
 	HU_UpdatePatch(&kp_itemx, "K_ITX");
+
+	HU_UpdatePatch(&kp_ringbg[0], "K_RBBG");
+	HU_UpdatePatch(&kp_ringbg[1], "K_SBBG");
 
 	HU_UpdatePatch(&kp_sadface[0], "K_ITSAD");
 	HU_UpdatePatch(&kp_sneaker[0], "K_ITSHOE");
@@ -478,6 +494,12 @@ void K_LoadKartHUDGraphics(void)
 	HU_UpdatePatch(&kp_droptarget[0], "K_ITDTRG");
 	HU_UpdatePatch(&kp_gardentop[0], "K_ITGTOP");
 	HU_UpdatePatch(&kp_gachabom[0], "K_ITGBOM");
+	HU_UpdatePatch(&kp_bar[0], "K_RBBAR");
+	HU_UpdatePatch(&kp_doublebar[0], "K_RBBAR2");
+	HU_UpdatePatch(&kp_triplebar[0], "K_RBBAR3");
+	HU_UpdatePatch(&kp_slotring[0], "K_RBRING");
+	HU_UpdatePatch(&kp_seven[0], "K_RBSEV");
+	HU_UpdatePatch(&kp_jackpot[0], "K_RBJACK");
 
 	sprintf(buffer, "FSMFGxxx");
 	for (i = 0; i < 104; i++)
@@ -531,6 +553,12 @@ void K_LoadKartHUDGraphics(void)
 	HU_UpdatePatch(&kp_droptarget[1], "K_ISDTRG");
 	HU_UpdatePatch(&kp_gardentop[1], "K_ISGTOP");
 	HU_UpdatePatch(&kp_gachabom[1], "K_ISGBOM");
+	HU_UpdatePatch(&kp_bar[1], "K_SBBAR");
+	HU_UpdatePatch(&kp_doublebar[1], "K_SBBAR2");
+	HU_UpdatePatch(&kp_triplebar[1], "K_SBBAR3");
+	HU_UpdatePatch(&kp_slotring[1], "K_SBRING");
+	HU_UpdatePatch(&kp_seven[1], "K_SBSEV");
+	HU_UpdatePatch(&kp_jackpot[1], "K_SBJACK");
 
 	sprintf(buffer, "FSMFSxxx");
 	for (i = 0; i < 104; i++)
@@ -875,6 +903,23 @@ static patch_t *K_GetSmallStaticCachedItemPatch(kartitems_t item)
 	return K_GetCachedItemPatch(item, offset);
 }
 
+static patch_t *K_GetCachedSlotMachinePatch(INT32 item, UINT8 offset)
+{
+	patch_t **kp[KSM__MAX] = {
+		kp_bar,
+		kp_doublebar,
+		kp_triplebar,
+		kp_slotring,
+		kp_seven,
+		kp_jackpot,
+	};
+
+	if (item >= 0 && item < KSM__MAX)
+		return kp[item][offset];
+	else
+		return NULL;
+}
+
 //}
 
 INT32 ITEM_X, ITEM_Y;	// Item Window
@@ -1217,7 +1262,7 @@ static void K_drawKartItem(void)
 		for (i = 0; i < 3; i++)
 		{
 			const SINT8 indexOfs = i-1;
-			const size_t index = (stplyr->itemRoulette.index + indexOfs) % stplyr->itemRoulette.itemListLen;
+			const size_t index = (stplyr->itemRoulette.itemListLen + (stplyr->itemRoulette.index + indexOfs)) % stplyr->itemRoulette.itemListLen;
 
 			const SINT8 result = stplyr->itemRoulette.itemList[index];
 			const SINT8 item = K_ItemResultToType(result);
@@ -1533,12 +1578,120 @@ static void K_drawKartItem(void)
 	}
 }
 
-void K_drawKartTimestamp(tic_t drawtime, INT32 TX, INT32 TY, INT32 splitflags, UINT8 mode)
+static void K_drawKartSlotMachine(void)
 {
-	// TIME_X = BASEVIDWIDTH-124;	// 196
-	// TIME_Y = 6;					//   6
+	// ITEM_X = BASEVIDWIDTH-50;	// 270
+	// ITEM_Y = 24;					//  24
 
-	tic_t worktime;
+	// Why write V_DrawScaledPatch calls over and over when they're all the same?
+	// Set to 'no item' just in case.
+	const UINT8 offset = ((r_splitscreen > 1) ? 1 : 0);
+
+	patch_t *localpatch[3] = { kp_nodraw, kp_nodraw, kp_nodraw };
+	patch_t *localbg = offset ? kp_ringbg[1] : kp_ringbg[0];
+
+	// == SHITGARBAGE UNLIMITED 2: RISE OF MY ASS ==
+	// FIVE LAYERS OF BULLSHIT PER-PIXEL SHOVING BECAUSE THE PATCHES HAVE DIFFERENT OFFSETS
+	// IF YOU ARE HERE TO ADJUST THE RINGBOX HUD TURN OFF YOUR COMPUTER AND GO TO YOUR LOCAL PARK
+
+	INT32 fx = 0, fy = 0, fflags = 0;	// final coords for hud and flags...
+	INT32 boxoffx = 0;
+	INT32 boxoffy = -6;
+	INT32 vstretch = 0;
+	INT32 hstretch = 3;
+	INT32 splitbsx, splitbsy = 0;
+	UINT16 localcolor[3] = { stplyr->skincolor };
+	SINT8 colormode[3] = { TC_RAINBOW };
+
+	fixed_t rouletteOffset = 0;
+	fixed_t rouletteSpace = SLOT_SPACING;
+	vector2_t rouletteCrop = {10, 10};
+	INT32 i;
+
+	if (stplyr->itemRoulette.itemListLen > 0)
+	{
+		// Init with item roulette stuff.
+		for (i = 0; i < 3; i++)
+		{
+			const SINT8 indexOfs = i-1;
+			const size_t index = (stplyr->itemRoulette.itemListLen + (stplyr->itemRoulette.index + indexOfs)) % stplyr->itemRoulette.itemListLen;
+
+			const SINT8 result = stplyr->itemRoulette.itemList[index];
+
+			localpatch[i] = K_GetCachedSlotMachinePatch(result, offset);
+		}
+	}
+
+	if (stplyr->itemRoulette.active == true)
+	{
+		rouletteOffset = K_GetSlotOffset(&stplyr->itemRoulette, rendertimefrac);
+	}
+	else
+	{
+		if (!stplyr->ringboxdelay)
+			return;
+	}
+
+	// pain and suffering defined below
+	if (offset)
+	{
+		boxoffx -= 4;
+		if (stplyr == &players[displayplayers[0]] || stplyr == &players[displayplayers[2]]) // If we are P1 or P3...
+		{
+			fx = ITEM_X + 10;
+			fy = ITEM_Y + 10;
+			fflags = V_SNAPTOLEFT|V_SNAPTOTOP|V_SPLITSCREEN;
+		}
+		else // else, that means we're P2 or P4.
+		{
+			fx = ITEM2_X + 7;
+			fy = ITEM2_Y + 10;
+			fflags = V_SNAPTORIGHT|V_SNAPTOTOP|V_SPLITSCREEN;
+		}
+
+		rouletteSpace = SLOT_SPACING_SPLITSCREEN;
+		rouletteOffset = FixedMul(rouletteOffset, FixedDiv(SLOT_SPACING_SPLITSCREEN, SLOT_SPACING));
+		rouletteCrop.x = 16;
+		rouletteCrop.y = 13;
+		splitbsx = -6;
+		splitbsy = -6;
+		boxoffy += 2;
+		hstretch = 0;
+	}
+	else
+	{
+		fx = ITEM_X;
+		fy = ITEM_Y;
+		fflags = V_SNAPTOTOP|V_SNAPTOLEFT|V_SPLITSCREEN;
+	}
+
+	V_DrawScaledPatch(fx, fy, V_HUDTRANS|V_SLIDEIN|fflags, localbg);
+
+	V_SetClipRect(
+		((fx + rouletteCrop.x + boxoffx + splitbsx) << FRACBITS), ((fy + rouletteCrop.y + boxoffy - vstretch + splitbsy) << FRACBITS),
+		rouletteSpace + (hstretch<<FRACBITS), rouletteSpace + (vstretch<<FRACBITS),
+		V_SLIDEIN|fflags
+	);
+
+	// item box has special layering, transparency, different sized patches, other fucked up shit
+	// ring box is evenly spaced and easy
+	rouletteOffset += rouletteSpace;
+	for (i = 0; i < 3; i++)
+	{
+		V_DrawFixedPatch(
+			((fx)<<FRACBITS), ((fy)<<FRACBITS) + rouletteOffset,
+			FRACUNIT, V_HUDTRANS|V_SLIDEIN|fflags,
+			localpatch[i], (localcolor[i] ? R_GetTranslationColormap(colormode[i], localcolor[i], GTC_CACHE) : NULL)
+		);
+
+		rouletteOffset -= rouletteSpace;
+	}
+
+	V_ClearClipRect();
+}
+
+tic_t K_TranslateTimer(tic_t drawtime, UINT8 mode, INT32 *return_jitter)
+{
 	INT32 jitter = 0;
 
 	if (!mode)
@@ -1573,6 +1726,24 @@ void K_drawKartTimestamp(tic_t drawtime, INT32 TX, INT32 TY, INT32 splitflags, U
 			}
 		}
 	}
+
+	if (return_jitter)
+	{
+		*return_jitter = jitter;
+	}
+
+	return drawtime;
+}
+
+void K_drawKartTimestamp(tic_t drawtime, INT32 TX, INT32 TY, INT32 splitflags, UINT8 mode)
+{
+	// TIME_X = BASEVIDWIDTH-124;	// 196
+	// TIME_Y = 6;					//   6
+
+	tic_t worktime;
+	INT32 jitter = 0;
+
+	drawtime = K_TranslateTimer(drawtime, mode, &jitter);
 
 	V_DrawScaledPatch(TX, TY, splitflags, ((mode == 2) ? kp_lapstickerwide : kp_timestickerwide));
 
@@ -2051,13 +2222,41 @@ static boolean K_drawKartPositionFaces(void)
 
 		if ((gametyperules & GTR_BUMPERS) && (players[rankplayer[i]].pflags & PF_ELIMINATED))
 			V_DrawScaledPatch(FACE_X-4, Y-3, V_HUDTRANS|V_SLIDEIN|V_SNAPTOLEFT, kp_ranknobumpers);
-		else
+		else if (gametyperules & GTR_CIRCUIT)
 		{
 			INT32 pos = players[rankplayer[i]].position;
 			if (pos < 0 || pos > MAXPLAYERS)
 				pos = 0;
 			// Draws the little number over the face
 			V_DrawScaledPatch(FACE_X-5, Y+10, V_HUDTRANS|V_SLIDEIN|V_SNAPTOLEFT, kp_facenum[pos]);
+		}
+		else
+		{
+			INT32 flags = V_HUDTRANS | V_SLIDEIN | V_SNAPTOLEFT;
+
+			colormap = NULL;
+
+			if (g_pointlimit <= players[rankplayer[i]].roundscore)
+			{
+				if (leveltime % 8 < 4)
+				{
+					colormap = R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_TANGERINE, GTC_CACHE);
+				}
+
+				flags |= V_STRINGDANCE;
+			}
+
+			V_DrawStringScaled(
+					(FACE_X - 5) * FRACUNIT,
+					(Y + 10) * FRACUNIT,
+					FRACUNIT,
+					FRACUNIT,
+					FRACUNIT,
+					flags,
+					colormap,
+					PINGF_FONT,
+					va("%d", players[rankplayer[i]].roundscore)
+			);
 		}
 
 		Y -= 18;
@@ -3544,6 +3743,8 @@ static void K_drawKartMinimapWaypoint(waypoint_t *wp, INT32 hudx, INT32 hudy, IN
 	K_drawKartMinimapDot(wp->mobj->x, wp->mobj->y, hudx, hudy, flags | V_NOSCALESTART, pal, size);
 }
 
+#define ICON_DOT_RADIUS (10)
+
 static void K_drawKartMinimap(void)
 {
 	patch_t *workingPic;
@@ -3726,6 +3927,8 @@ static void K_drawKartMinimap(void)
 	{
 		for (i = MAXPLAYERS-1; i >= 0; i--)
 		{
+			boolean nocontest = false;
+
 			if (!playeringame[i])
 				continue;
 			if (!players[i].mo || players[i].spectator || !players[i].mo->skin
@@ -3769,6 +3972,8 @@ static void K_drawKartMinimap(void)
 				colormap = R_GetTranslationColormap(TC_DEFAULT, mobj->color, GTC_CACHE);
 
 				mobj = mobj->tracer;
+
+				nocontest = true;
 			}
 			else
 			{
@@ -3789,6 +3994,8 @@ static void K_drawKartMinimap(void)
 
 			if (doprogressionbar == false)
 			{
+				angle_t ang = R_InterpolateAngle(mobj->old_angle, mobj->angle);
+
 				interpx = R_InterpolateFixed(mobj->old_x, mobj->x);
 				interpy = R_InterpolateFixed(mobj->old_y, mobj->y);
 
@@ -3799,6 +4006,19 @@ static void K_drawKartMinimap(void)
 					|| ((gametyperules & (GTR_BOSS|GTR_POINTLIMIT)) == GTR_POINTLIMIT && K_IsPlayerWanted(&players[i])))
 				{
 					K_drawKartMinimapIcon(interpx, interpy, x, y, splitflags, kp_wantedreticle, NULL);
+				}
+
+				if (!nocontest)
+				{
+					K_drawKartMinimapIcon(
+							interpx,
+							interpy,
+							x + FixedMul(FCOS(ang), ICON_DOT_RADIUS),
+							y - FixedMul(FSIN(ang), ICON_DOT_RADIUS),
+							splitflags,
+							kp_minimapdot,
+							colormap
+					);
 				}
 			}
 			else
@@ -3846,6 +4066,9 @@ static void K_drawKartMinimap(void)
 			case MT_CDUFO:
 				if (battleprisons)
 					workingPic = kp_capsuleminimap[2];
+				break;
+			case MT_BATTLEUFO:
+				workingPic = kp_battleufominimap;
 				break;
 			default:
 				break;
@@ -3927,6 +4150,8 @@ static void K_drawKartMinimap(void)
 
 	for (i = 0; i < numlocalplayers; i++)
 	{
+		boolean nocontest = false;
+
 		if (localplayers[i] == -1)
 			continue; // this doesn't interest us
 
@@ -3951,6 +4176,8 @@ static void K_drawKartMinimap(void)
 			colormap = R_GetTranslationColormap(TC_DEFAULT, mobj->color, GTC_CACHE);
 
 			mobj = mobj->tracer;
+
+			nocontest = true;
 		}
 		else
 		{
@@ -3971,6 +4198,8 @@ static void K_drawKartMinimap(void)
 
 		if (doprogressionbar == false)
 		{
+			angle_t ang = R_InterpolateAngle(mobj->old_angle, mobj->angle);
+
 			interpx = R_InterpolateFixed(mobj->old_x, mobj->x);
 			interpy = R_InterpolateFixed(mobj->old_y, mobj->y);
 
@@ -3981,6 +4210,19 @@ static void K_drawKartMinimap(void)
 				|| ((gametyperules & (GTR_BOSS|GTR_POINTLIMIT)) == GTR_POINTLIMIT && K_IsPlayerWanted(&players[localplayers[i]])))
 			{
 				K_drawKartMinimapIcon(interpx, interpy, x, y, splitflags, kp_wantedreticle, NULL);
+			}
+
+			if (!nocontest)
+			{
+				K_drawKartMinimapIcon(
+						interpx,
+						interpy,
+						x + FixedMul(FCOS(ang), ICON_DOT_RADIUS),
+						y - FixedMul(FSIN(ang), ICON_DOT_RADIUS),
+						splitflags,
+						kp_minimapdot,
+						colormap
+				);
 			}
 		}
 		else
@@ -4943,7 +5185,7 @@ static void K_drawDistributionDebugger(void)
 		return;
 	}
 
-	K_FillItemRouletteData(stplyr, &rouletteData);
+	K_FillItemRouletteData(stplyr, &rouletteData, false);
 
 	for (i = 0; i < rouletteData.itemListLen; i++)
 	{
@@ -5143,7 +5385,6 @@ void K_drawKartHUD(void)
 	boolean islonesome = false;
 	boolean battlefullscreen = false;
 	boolean freecam = demo.freecam;	//disable some hud elements w/ freecam
-	UINT8 i;
 	UINT8 viewnum = R_GetViewNumber();
 
 	// Define the X and Y for each drawn object
@@ -5200,7 +5441,16 @@ void K_drawKartHUD(void)
 
 	// Draw the item window
 	if (LUA_HudEnabled(hud_item) && !freecam)
-		K_drawKartItem();
+	{
+		if (stplyr->itemRoulette.ringbox && stplyr->itemamount == 0 && stplyr->itemtype == 0)
+		{
+			K_drawKartSlotMachine();
+		}
+		else
+		{
+			K_drawKartItem();
+		}
+	}
 
 	if (demo.title)
 		;
@@ -5216,27 +5466,19 @@ void K_drawKartHUD(void)
 
 		islonesome = K_drawKartPositionFaces();
 	}
-	else if (viewnum == r_splitscreen
-		&& (gametyperules & GTR_TIMELIMIT)
-		&& timelimitintics > 0)
+	else if (r_splitscreen == 1)
 	{
-		tic_t highestrealtime = players[displayplayers[1]].realtime;
-
-		// Uses the highest time across all players (handles paused timer on exiting)
-		for (i = 1; i <= r_splitscreen; i++)
-		{
-			if (players[displayplayers[i]].realtime <= highestrealtime)
-				continue;
-			highestrealtime = players[displayplayers[i]].realtime;
-		}
-
-		// Draw the timestamp (mostly) CENTERED
 		if (LUA_HudEnabled(hud_time))
-			K_drawKartTimestamp(highestrealtime,
-				(r_splitscreen == 1 ? TIME_X : ((BASEVIDWIDTH/2) - 69)),
-				TIME_Y,
-				V_HUDTRANS|V_SLIDEIN|V_SNAPTOTOP|(r_splitscreen == 1 ? V_SNAPTORIGHT : 0),
-				0);
+		{
+			K_drawKart2PTimestamp();
+		}
+	}
+	else if (viewnum == r_splitscreen)
+	{
+		if (LUA_HudEnabled(hud_time))
+		{
+			K_drawKart4PTimestamp();
+		}
 	}
 
 	if (!stplyr->spectator && !demo.freecam) // Bottom of the screen elements, don't need in spectate mode
@@ -5280,7 +5522,7 @@ void K_drawKartHUD(void)
 			{
 				if (gametyperules & GTR_CIRCUIT)
 				{
-					if (numlaps > 1)
+					if (numlaps != 1)
 					{
 						K_drawKartLaps();
 						gametypeinfoshown = true;
@@ -5369,6 +5611,8 @@ void K_drawKartHUD(void)
 	{
 		K_drawMiniPing();
 	}
+
+	K_drawKartPowerUps();
 
 	if (G_IsPartyLocal(displayplayers[viewnum]) == false && !demo.playback)
 	{
