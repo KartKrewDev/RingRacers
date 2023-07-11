@@ -1271,10 +1271,10 @@ boolean HU_Responder(event_t *ev)
 
 // Precompile a wordwrapped string to any given width.
 // Now a wrapper for the chat drawer.
-static char *CHAT_WordWrap(INT32 x, INT32 w, fixed_t scale, INT32 option, const char *string)
+static char *CHAT_WordWrap(INT32 w, fixed_t scale, INT32 option, const char *string)
 {
 	return V_ScaledWordWrap(
-		(w - x) << FRACBITS,
+		w << FRACBITS,
 		scale, FRACUNIT, FRACUNIT,
 		option,
 		HU_FONT,
@@ -1312,7 +1312,7 @@ static void HU_drawMiniChat(void)
 
 	for (; i > 0; i--)
 	{
-		char *msg = CHAT_WordWrap(x, boxw-4, scale, V_SNAPTOBOTTOM|V_SNAPTOLEFT, chat_mini[i-1]);
+		char *msg = CHAT_WordWrap(boxw-4, scale, V_SNAPTOBOTTOM|V_SNAPTOLEFT, chat_mini[i-1]);
 		size_t j = 0;
 		INT32 linescount = 1;
 
@@ -1352,7 +1352,7 @@ static void HU_drawMiniChat(void)
 		INT32 timer = ((cv_chattime.value*TICRATE)-chat_timers[i]) - cv_chattime.value*TICRATE+9; // see below...
 		INT32 transflag = (timer >= 0 && timer <= 9) ? (timer*V_10TRANS) : 0; // you can make bad jokes out of this one.
 		size_t j = 0;
-		char *msg = CHAT_WordWrap(x, boxw-4, scale, V_SNAPTOBOTTOM|V_SNAPTOLEFT, chat_mini[i]); // get the current message, and word wrap it.
+		char *msg = CHAT_WordWrap(boxw-4, scale, V_SNAPTOBOTTOM|V_SNAPTOLEFT, chat_mini[i]); // get the current message, and word wrap it.
 
 		INT32 linescount = 1;
 
@@ -1460,7 +1460,7 @@ static void HU_drawChatLog(INT32 offset)
 	for (i=0; i<chat_nummsg_log; i++) // iterate through our chatlog
 	{
 		INT32 j = 0, startj = 0;
-		char *msg = CHAT_WordWrap(x, boxw-4, scale, V_SNAPTOBOTTOM|V_SNAPTOLEFT, chat_log[i]); // get the current message, and word wrap it.
+		char *msg = CHAT_WordWrap(boxw-4, scale, V_SNAPTOBOTTOM|V_SNAPTOLEFT, chat_log[i]); // get the current message, and word wrap it.
 
 		INT32 linescount = 1;
 
@@ -1590,7 +1590,7 @@ static void HU_DrawChat(void)
 	else
 	{
 		msg = CHAT_WordWrap(
-			chatx + 2, boxw-4,
+			boxw-4,
 			scale,
 			V_SNAPTOBOTTOM|V_SNAPTOLEFT,
 			va("%c%s %c%s%c%c", cflag, talk, tflag, w_chat, '\x80', '_')
