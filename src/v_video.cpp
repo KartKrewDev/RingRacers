@@ -2043,76 +2043,6 @@ void V_DrawTitleCardString(INT32 x, INT32 y, const char *str, INT32 flags, boole
 	}
 }
 
-
-// Precompile a wordwrapped string to any given width.
-// This is a muuuch better method than V_WORDWRAP.
-char *V_WordWrap(INT32 x, INT32 w, INT32 option, const char *string)
-{
-	int c;
-	size_t chw, i, lastusablespace = 0;
-	size_t slen;
-	char *newstring = Z_StrDup(string);
-	INT32 spacewidth = 4, charwidth = 0;
-
-	slen = strlen(string);
-
-	if (w == 0)
-		w = BASEVIDWIDTH;
-	w -= x;
-	x = 0;
-
-	switch (option & V_SPACINGMASK)
-	{
-		case V_MONOSPACE:
-			spacewidth = 8;
-			/* FALLTHRU */
-		case V_OLDSPACING:
-			charwidth = 8;
-			break;
-		case V_6WIDTHSPACE:
-			spacewidth = 6;
-		default:
-			break;
-	}
-
-	for (i = 0; i < slen; ++i)
-	{
-		c = newstring[i];
-		if ((UINT8)c & 0x80) //color parsing! -Inuyasha 2.16.09
-			continue;
-
-		if (c == '\n')
-		{
-			x = 0;
-			lastusablespace = 0;
-			continue;
-		}
-
-		if (!!(option & V_FORCEUPPERCASE))
-			c = toupper(c);
-		c -= HU_FONTSTART;
-
-		if (c < 0 || c >= HU_FONTSIZE || !fontv[HU_FONT].font[c])
-		{
-			chw = spacewidth;
-			lastusablespace = i;
-		}
-		else
-			chw = (charwidth ? charwidth : fontv[HU_FONT].font[c]->width);
-
-		x += chw;
-
-		if (lastusablespace != 0 && x > w)
-		{
-			newstring[lastusablespace] = '\n';
-			i = lastusablespace;
-			lastusablespace = 0;
-			x = 0;
-		}
-	}
-	return newstring;
-}
-
 static inline fixed_t FixedCharacterDim(
 		fixed_t  scale,
 		fixed_t   chw,
@@ -2682,6 +2612,136 @@ fixed_t V_StringScaledWidth(
 	}
 
 	return fullwidth;
+}
+
+// Modify a string to wordwrap at any given width.
+void V_ScaledWordWrap(
+		fixed_t          w,
+		fixed_t      scale,
+		fixed_t spacescale,
+		fixed_t    lfscale,
+		INT32      flags,
+		int        fontno,
+		char *newstring)
+{
+	INT32     hchw;/* half-width for centering */
+
+	INT32     dupx;
+
+	font_t   *font;
+
+	boolean uppercase;
+
+	fixed_t cx;
+	fixed_t right;
+
+	fixed_t cw;
+
+	int c;
+
+	uppercase  = ((flags & V_FORCEUPPERCASE) == V_FORCEUPPERCASE);
+	flags	&= ~(V_FLIP);/* These two (V_FORCEUPPERCASE) share a bit. */
+
+	font       = &fontv[fontno];
+
+	fontspec_t fontspec;
+
+	V_GetFontSpecification(fontno, flags, &fontspec);
+
+	hchw     = fontspec.chw >> 1;
+
+	fontspec.chw    <<= FRACBITS;
+	fontspec.spacew <<= FRACBITS;
+
+#define Mul( id, scale ) ( id = FixedMul (scale, id) )
+	Mul    (fontspec.chw,      scale);
+	Mul (fontspec.spacew,      scale);
+	Mul    (fontspec.lfh,      scale);
+
+	Mul (fontspec.spacew, spacescale);
+	Mul    (fontspec.lfh,    lfscale);
+#undef  Mul
+
+	if (( flags & V_NOSCALESTART ))
+	{
+		dupx      = vid.dupx;
+
+		hchw     *=     dupx;
+
+		fontspec.chw      *=     dupx;
+		fontspec.spacew   *=     dupx;
+		fontspec.lfh      *= vid.dupy;
+	}
+	else
+	{
+		dupx      = 1;
+	}
+
+	cx = 0;
+	right = 0;
+
+	size_t i = 0, start = 0;
+	fixed_t cxatstart = 0;
+
+	for (; ( c = newstring[i] ); ++i)
+	{
+		switch (c)
+		{
+			case '\n':
+				cx  =   0;
+				cxatstart = 0;
+				start = 0;
+				break;
+			default:
+				if (( c & 0x80 ))
+					continue;
+
+				if (uppercase)
+				{
+					c = toupper(c);
+				}
+				else if (V_CharacterValid(font, c - font->start) == false)
+				{
+					// Try the other case if it doesn't exist
+					if (c >= 'A' && c <= 'Z')
+					{
+						c = tolower(c);
+					}
+					else if (c >= 'a' && c <= 'z')
+					{
+						c = toupper(c);
+					}
+				}
+
+				c -= font->start;
+				if (V_CharacterValid(font, c) == true)
+				{
+					cw = SHORT (font->font[c]->width) * dupx;
+
+					// How bunched dims work is by incrementing cx slightly less than a full character width.
+					// This causes the next character to be drawn overlapping the previous.
+					// We need to count the full width to get the rightmost edge of the string though.
+					right = cx + (cw * scale);
+
+					(*fontspec.dim_fn)(scale, fontspec.chw, hchw, dupx, &cw);
+					cx += cw;
+				}
+				else
+				{
+					right = (cx += fontspec.spacew);
+					cxatstart = cx;
+					start = i;
+				}
+		}
+
+		// Start trying to wrap if presumed length exceeds the space we have on-screen.
+		if (start != 0 && right > w)
+		{
+			newstring[start] = '\n';
+			cx -= cxatstart;
+			start = 0;
+		}
+	}
 }
 
 void V_DrawCenteredString(INT32 x, INT32 y, INT32 option, const char *string)

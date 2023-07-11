@@ -273,9 +273,6 @@ UINT8 *V_GetStringColormap(INT32 colorflags);
 
 INT32 V_LevelNameHeight(const char *string);
 
-// wordwrap a string using the hu_font
-char *V_WordWrap(INT32 x, INT32 w, INT32 option, const char *string);
-
 // draw a string using a font
 void V_DrawStringScaled(
 		fixed_t     x,
@@ -295,6 +292,15 @@ fixed_t V_StringScaledWidth(
 		INT32      flags,
 		int        fontno,
 		const char *s);
+
+void V_ScaledWordWrap(
+		fixed_t          w,
+		fixed_t      scale,
+		fixed_t spacescale,
+		fixed_t    lfscale,
+		INT32      flags,
+		int        fontno,
+		char *newstring);
 
 // draw a string using the hu_font
 #define V_DrawString( x,y,option,string ) \

@@ -305,6 +305,8 @@ static void I_ShowErrorMessageBox(const char *messagefordevelopers, boolean dump
 
 	// Rudementary word wrapping.
 	// Simple and effective. Does not handle nonuniform letter sizes, etc. but who cares.
+	// We can't use V_ScaledWordWrap, which this shares DNA with, because no guarantee
+	// string character graphics exist as reference in the error handler...
 	{
 		size_t max = 0, maxatstart = 0, start = 0, width = 0, i;
 

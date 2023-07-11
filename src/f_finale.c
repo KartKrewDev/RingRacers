@@ -2281,7 +2281,24 @@ static void F_PreparePageText(char *pagetext)
 
 	if (promptpagetext)
 		Z_Free(promptpagetext);
-	promptpagetext = (pagetext && pagetext[0]) ? V_WordWrap(textx, textr, 0, pagetext) : Z_StrDup("");
+	if (pagetext && pagetext[0])
+	{
+		promptpagetext = Z_StrDup(pagetext);
+		V_ScaledWordWrap(
+			(textx - textr)<<FRACBITS,
+			FRACUNIT, FRACUNIT, FRACUNIT,
+			0, HU_FONT,
+			promptpagetext
+		);
+	}
+	else
+	{
+		// The original code I was replacing did this,
+		// And I'm not really interested enough to figure out
+		// if this is strictly necessary in the long term or
+		// if it was just an anti-crash doohickey. ~toast 110723
+		promptpagetext = Z_StrDup("");
+	}
 
 	F_NewCutscene(promptpagetext);
 	cutscene_textspeed = textprompts[cutnum]->page[scenenum].textspeed ? textprompts[cutnum]->page[scenenum].textspeed : TICRATE/5;

@@ -1270,56 +1270,21 @@ boolean HU_Responder(event_t *ev)
 //======================================================================
 
 // Precompile a wordwrapped string to any given width.
-// This is a muuuch better method than V_WORDWRAP.
-// again stolen and modified a bit from video.c, don't mind me, will need to rearrange this one day.
-// this one is simplified for the chat drawer.
+// Now a wrapper for the chat drawer.
 static char *CHAT_WordWrap(INT32 x, INT32 w, INT32 option, const char *string)
 {
-	INT32 c;
-	size_t chw, i, lastusablespace = 0;
-	size_t slen;
 	char *newstring = Z_StrDup(string);
-	INT32 spacewidth = (vid.width < 640) ? 8 : 4, charwidth = (vid.width < 640) ? 8 : 4;
 
-	slen = strlen(string);
-	x = 0;
+	fixed_t scale = (vid.width < 640) ? FRACUNIT : FRACUNIT/2;
 
-	for (i = 0; i < slen; ++i)
-	{
-		c = newstring[i];
-		if ((UINT8)c >= 0x80 && (UINT8)c <= 0x8F) //color parsing! -Inuyasha 2.16.09
-			continue;
+	V_ScaledWordWrap(
+		(w - x) << FRACBITS,
+		scale, scale, scale,
+		option,
+		HU_FONT,
+		newstring
+	);
 
-		if (c == '\n')
-		{
-			x = 0;
-			lastusablespace = 0;
-			continue;
-		}
-
-		if (!!(option & V_FORCEUPPERCASE))
-			c = toupper(c);
-		c -= HU_FONTSTART;
-
-		if (c < 0 || c >= HU_FONTSIZE || !fontv[HU_FONT].font[c])
-		{
-			chw = spacewidth;
-			lastusablespace = i;
-		}
-		else
-			chw = charwidth;
-
-		x += chw;
-
-		if (lastusablespace != 0 && x > w)
-		{
-			//CONS_Printf("Wrap at index %d\n", i);
-			newstring[lastusablespace] = '\n';
-			i = lastusablespace+1;
-			lastusablespace = 0;
-			x = 0;
-		}
-	}
 	return newstring;
 }
 
