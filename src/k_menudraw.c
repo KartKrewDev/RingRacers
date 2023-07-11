@@ -419,7 +419,7 @@ static void M_DrawMenuTyping(void)
 		&& menutyping.menutypingclose == false
 		&& menutyping.menutypingfade == (menutyping.keyboardtyping ? 9 : 18))
 	{
-		V_DrawCharacter(x + 8 + V_StringWidth(cv->string, 0), y + 12 + 1, '_' | 0x80, false);
+		V_DrawCharacter(x + 8 + V_StringWidth(cv->string, 0), y + 12 + 1, '_', false);
 	}
 
 	const INT32 buttonwidth = ((boxwidth + 1)/NUMVIRTUALKEYSINROW);
@@ -3734,7 +3734,7 @@ void M_DrawEditProfile(void)
 						V_DrawFill(0, y+24, 400 - (menutransition.tics*64), 16, itemOn == i ? 169 : 30);	// 169 is the plague colourization
 						V_DrawString(x + 8, y + 29, 0, cv->string);
 						if (skullAnimCounter < 4 && i == itemOn)
-						V_DrawCharacter(x + 8 + V_StringWidth(cv->string, 0), y + 29, '_' | 0x80, false);
+						V_DrawCharacter(x + 8 + V_StringWidth(cv->string, 0), y + 29, '_', false);
 						y += 16;
 					}
 				}
