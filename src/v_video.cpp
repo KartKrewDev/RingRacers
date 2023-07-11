@@ -2605,7 +2605,7 @@ fixed_t V_StringScaledWidth(
 					cx += cw;
 				}
 				else
-					right = (cx += fontspec.spacew);
+					cx += fontspec.spacew;
 		}
 
 		fullwidth = std::max(right, std::max(cx, fullwidth));
@@ -2728,7 +2728,7 @@ void V_ScaledWordWrap(
 				}
 				else
 				{
-					right = (cx += fontspec.spacew);
+					cx += fontspec.spacew;
 					cxatstart = cx;
 					start = i;
 				}
