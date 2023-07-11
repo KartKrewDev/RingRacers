@@ -2583,7 +2583,7 @@ fixed_t V_StringScaledWidth(
 
 	boolean uppercase;
 
-	fixed_t cx, cy;
+	fixed_t cx;
 	fixed_t right;
 
 	fixed_t cw;
@@ -2630,7 +2630,7 @@ fixed_t V_StringScaledWidth(
 		dupx      = 1;
 	}
 
-	cx = cy = 0;
+	cx = 0;
 	right = 0;
 
 	for (; ( c = *s ); ++s)
@@ -2638,10 +2638,12 @@ fixed_t V_StringScaledWidth(
 		switch (c)
 		{
 			case '\n':
-				cy += fontspec.lfh;
 				cx  =   0;
 				break;
 			default:
+				if (( c & 0x80 ))
+					continue;
+
 				if (uppercase)
 				{
 					c = toupper(c);
@@ -2673,7 +2675,7 @@ fixed_t V_StringScaledWidth(
 					cx += cw;
 				}
 				else
-					cx += fontspec.spacew;
+					right = (cx += fontspec.spacew);
 		}
 
 		fullwidth = std::max(right, std::max(cx, fullwidth));
