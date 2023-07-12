@@ -527,7 +527,7 @@ struct mapheader_t
 };
 
 // level flags
-#define LF_SCRIPTISFILE       (1<<0) ///< True if the script is a file, not a lump.
+//#define LF_(this slot is free) (1<<0)
 #define LF_NOZONE             (1<<1) ///< Don't include "ZONE" on level title
 #define LF_SECTIONRACE        (1<<2) ///< Section race level
 #define LF_SUBTRACTNUM        (1<<3) ///< Use subtractive position number (for bright levels)

@@ -1296,13 +1296,6 @@ void readlevelheader(MYFILE *f, char * name)
 				}
 			}
 			// Individual triggers for level flags, for ease of use (and 2.0 compatibility)
-			else if (fastcmp(word, "SCRIPTISFILE"))
-			{
-				if (i || word2[0] == 'T' || word2[0] == 'Y')
-					mapheaderinfo[num]->levelflags |= LF_SCRIPTISFILE;
-				else
-					mapheaderinfo[num]->levelflags &= ~LF_SCRIPTISFILE;
-			}
 			else if (fastcmp(word, "NOZONE"))
 			{
 				if (i || word2[0] == 'T' || word2[0] == 'Y')

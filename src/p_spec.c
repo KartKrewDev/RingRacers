@@ -2970,18 +2970,6 @@ boolean P_ProcessSpecial(activator_t *activator, INT16 special, INT32 *args, cha
 			P_PlaySFX(stringargs[0] ? get_number(stringargs[0]) : sfx_None, mo, callsec, args[3], args[1], args[2]);
 			break;
 
-		case 415: // Run a script
-			if (cv_runscripts.value)
-			{
-				lumpnum_t lumpnum = W_CheckNumForName(stringargs[0]);
-
-				if (lumpnum == LUMPERROR || W_LumpLength(lumpnum) == 0)
-					CONS_Debug(DBG_SETUP, "Line type 415 Executor: script lump %s not found/not valid.\n", stringargs[0]);
-				else
-					COM_BufInsertText(W_CacheLumpNum(lumpnum, PU_CACHE));
-			}
-			break;
-
 		case 416: // Spawn adjustable fire flicker
 			TAG_ITER_SECTORS(args[0], secnum)
 				P_SpawnAdjustableFireFlicker(&sectors[secnum], args[2],

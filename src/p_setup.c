@@ -7515,34 +7515,6 @@ void P_RespawnThings(void)
 }
 #endif
 
-static void P_RunLevelScript(const char *scriptname)
-{
-	if (!(mapheaderinfo[gamemap-1]->levelflags & LF_SCRIPTISFILE))
-	{
-		lumpnum_t lumpnum;
-		char newname[9];
-
-		strncpy(newname, scriptname, 8);
-
-		newname[8] = '\0';
-
-		lumpnum = W_CheckNumForName(newname);
-
-		if (lumpnum == LUMPERROR || W_LumpLength(lumpnum) == 0)
-		{
-			CONS_Debug(DBG_SETUP, "SOC Error: script lump %s not found/not valid.\n", newname);
-			return;
-		}
-
-		COM_BufInsertText(W_CacheLumpNum(lumpnum, PU_CACHE));
-	}
-	else
-	{
-		COM_BufAddText(va("exec %s\n", scriptname));
-	}
-	COM_BufExecute(); // Run it!
-}
-
 static void P_ResetSpawnpoints(void)
 {
 	UINT8 i;
@@ -7993,9 +7965,6 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 
 	if (mapheaderinfo[gamemap-1]->runsoc[0] != '#')
 		P_RunSOC(mapheaderinfo[gamemap-1]->runsoc);
-
-	if (cv_runscripts.value && mapheaderinfo[gamemap-1]->scriptname[0] != '#')
-		P_RunLevelScript(mapheaderinfo[gamemap-1]->scriptname);
 
 	P_InitLevelSettings();
 
