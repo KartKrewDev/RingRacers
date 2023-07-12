@@ -6712,6 +6712,9 @@ static void P_MobjSceneryThink(mobj_t *mobj)
 			return;
 		}
 		break;
+	case MT_SYMBOL:
+		Obj_SymbolThink(mobj);
+		break;
 	case MT_VWREF:
 	case MT_VWREB:
 	{
@@ -10974,6 +10977,9 @@ mobj_t *P_SpawnMobj(fixed_t x, fixed_t y, fixed_t z, mobjtype_t type)
 		case MT_BATTLEUFO:
 			Obj_SpawnBattleUFOLegs(mobj);
 			break;
+		case MT_SYMBOL:
+			Obj_SymbolSpawn(mobj);
+			break;
 		default:
 			break;
 	}
@@ -13491,6 +13497,11 @@ static boolean P_SetupSpawnedMapThing(mapthing_t *mthing, mobj_t *mobj)
 	case MT_BATTLEUFO_SPAWNER:
 	{
 		Obj_LinkBattleUFOSpawner(mobj);
+		break;
+	}
+	case MT_SYMBOL:
+	{
+		Obj_SymbolSetup(mobj, mthing);
 		break;
 	}
 	default:
