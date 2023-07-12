@@ -999,7 +999,6 @@ static void P_InitializeLinedef(line_t *ld)
 
 	ld->tripwire = false;
 
-	ld->text = NULL;
 	ld->callcount = 0;
 
 	// cph 2006/09/30 - fix sidedef errors right away.
@@ -1104,7 +1103,6 @@ static void P_InitializeSidedef(side_t *sd)
 		sd->special = sd->line->special;
 	}
 
-	sd->text = NULL;
 	sd->colormap_data = NULL;
 }
 
@@ -1199,6 +1197,9 @@ static void P_LoadSidedefs(UINT8 *data)
 
 			case 413: // Change music
 			{
+				if (!isfrontside)
+					break;
+
 				char process[8+1];
 
 				sd->toptexture = sd->midtexture = sd->bottomtexture = 0;
@@ -1216,35 +1217,38 @@ static void P_LoadSidedefs(UINT8 *data)
 					sd->midtexture = get_number(process);
 				}
 
- 				sd->text = Z_Malloc(7, PU_LEVEL, NULL);
-				if (isfrontside && !(msd->toptexture[0] == '-' && msd->toptexture[1] == '\0'))
+				if (msd->toptexture[0] != '-' && msd->toptexture[1] != '\0')
 				{
+					sd->line->stringargs[0] = Z_Malloc(7, PU_LEVEL, NULL);
 					M_Memcpy(process,msd->toptexture,8);
 					process[8] = '\0';
 
 					// If they type in O_ or D_ and their music name, just shrug,
 					// then copy the rest instead.
 					if ((process[0] == 'O' || process[0] == 'D') && process[7])
-						M_Memcpy(sd->text, process+2, 6);
+						M_Memcpy(sd->line->stringargs[0], process+2, 6);
 					else // Assume it's a proper music name.
-						M_Memcpy(sd->text, process, 6);
-					sd->text[6] = 0;
+						M_Memcpy(sd->line->stringargs[0], process, 6);
+					sd->line->stringargs[0][6] = '\0';
 				}
-				else
-					sd->text[0] = 0;
+
 				break;
 			}
 
 			case 414: // Play SFX
 			{
 				sd->toptexture = sd->midtexture = sd->bottomtexture = 0;
+
+				if (!isfrontside)
+					break;
+
 				if (msd->toptexture[0] != '-' || msd->toptexture[1] != '\0')
 				{
 					char process[8 + 1];
 					M_Memcpy(process, msd->toptexture, 8);
 					process[8] = '\0';
 
-					P_WriteDuplicateText(process, &sd->text);
+					P_WriteDuplicateText(process, &sd->line->stringargs[0]);
 				}
 				break;
 			}
@@ -1289,7 +1293,10 @@ static void P_LoadSidedefs(UINT8 *data)
 				if (msd->bottomtexture[0] != '-' || msd->bottomtexture[1] != '\0')
 					M_Memcpy(process+strlen(process), msd->bottomtexture, 8);
 
-				P_WriteDuplicateText(process, &sd->text);
+				P_WriteDuplicateText(
+					process,
+					&sd->line->stringargs[(isfrontside) ? 0 : 1]
+				);
 				break;
 			}
 
@@ -3206,24 +3213,25 @@ static void P_ProcessLinedefsAfterSidedefs(void)
 
 		switch (ld->special)
 		{
-		// Compile linedef 'text' from both sidedefs 'text' for appropriate specials.
+		// Compile linedef text from both sidedefs for appropriate specials.
 		case 331: // Trigger linedef executor: Skin - Continuous
 		case 332: // Trigger linedef executor: Skin - Each time
 		case 333: // Trigger linedef executor: Skin - Once
 		case 443: // Calls a named Lua function
-			if (sides[ld->sidenum[0]].text)
+			if (ld->stringargs[0] && ld->stringargs[1])
 			{
 				size_t len[2];
-				len[0] = strlen(sides[ld->sidenum[0]].text) + 1;
-				len[1] = 0;
+				len[0] = strlen(ld->stringargs[0]);
+				len[1] = strlen(ld->stringargs[1]);
 
-				if (ld->sidenum[1] != 0xffff && sides[ld->sidenum[1]].text)
-					len[1] = strlen(sides[ld->sidenum[1]].text);
-
-				ld->text = Z_Malloc(len[0] + len[1], PU_LEVEL, NULL);
-				M_Memcpy(ld->text, sides[ld->sidenum[0]].text, len[0]);
 				if (len[1])
-					M_Memcpy(ld->text + len[0], sides[ld->sidenum[1]].text, len[1] + 1);
+				{
+					ld->stringargs[0] = Z_Realloc(ld->stringargs[0], len[0] + len[1] + 1, PU_LEVEL, NULL);
+					M_Memcpy(ld->stringargs[0] + len[0] + 1, ld->stringargs[1], len[1] + 1);
+				}
+
+				Z_Free(ld->stringargs[1]);
+				ld->stringargs[1] = NULL;
 			}
 			break;
 		case 447: // Change colormap
@@ -4618,7 +4626,6 @@ static void P_ConvertBinaryLinedefTypes(void)
 			lines[i].args[0] = sides[lines[i].sidenum[0]].textureoffset >> FRACBITS;
 			lines[i].args[1] = sides[lines[i].sidenum[0]].rowoffset >> FRACBITS;
 			lines[i].args[2] = !!(lines[i].flags & ML_SKEWTD);
-			P_WriteDuplicateText(sides[lines[i].sidenum[0]].text, &lines[i].stringargs[0]);
 			break;
 		case 16: //Minecart parameters
 			lines[i].args[0] = sides[lines[i].sidenum[0]].textureoffset >> FRACBITS;
@@ -5362,7 +5369,6 @@ static void P_ConvertBinaryLinedefTypes(void)
 			else
 				lines[i].args[0] = TMT_CONTINUOUS;
 			lines[i].args[1] = !!(lines[i].flags & ML_NOCLIMB);
-			P_WriteDuplicateText(lines[i].text, &lines[i].stringargs[0]);
 			lines[i].special = 331;
 			break;
 		case 334: // Object dye - continuous
@@ -5375,7 +5381,6 @@ static void P_ConvertBinaryLinedefTypes(void)
 			else
 				lines[i].args[0] = TMT_CONTINUOUS;
 			lines[i].args[1] = !!(lines[i].flags & ML_NOCLIMB);
-			P_WriteDuplicateText(sides[lines[i].sidenum[0]].text, &lines[i].stringargs[0]);
 			lines[i].special = 334;
 			break;
 		case 337: //Emerald check - continuous
@@ -5514,7 +5519,6 @@ static void P_ConvertBinaryLinedefTypes(void)
 			lines[i].args[5] = (lines[i].sidenum[1] != 0xffff) ? sides[lines[i].sidenum[1]].textureoffset >> FRACBITS : 0;
 			lines[i].args[6] = (lines[i].sidenum[1] != 0xffff) ? sides[lines[i].sidenum[1]].rowoffset >> FRACBITS : -1;
 			lines[i].args[7] = sides[lines[i].sidenum[0]].bottomtexture;
-			P_WriteDuplicateText(sides[lines[i].sidenum[0]].text, &lines[i].stringargs[0]);
 			break;
 		case 414: //Play sound effect
 			lines[i].args[3] = tag;
@@ -5554,7 +5558,6 @@ static void P_ConvertBinaryLinedefTypes(void)
 					lines[i].args[2] = TMSL_EVERYONE;
 				}
 			}
-			P_WriteDuplicateText(sides[lines[i].sidenum[0]].text, &lines[i].stringargs[0]);
 			break;
 		case 416: //Start adjustable flickering light
 		case 417: //Start adjustable pulsating light
@@ -5620,9 +5623,6 @@ static void P_ConvertBinaryLinedefTypes(void)
 			lines[i].args[0] = sides[lines[i].sidenum[0]].textureoffset >> FRACBITS;
 			lines[i].args[1] = !!(lines[i].flags & ML_NOCLIMB);
 			break;
-		case 425: //Change object state
-			P_WriteDuplicateText(sides[lines[i].sidenum[0]].text, &lines[i].stringargs[0]);
-			break;
 		case 426: //Stop object
 			lines[i].args[0] = !!(lines[i].flags & ML_NOCLIMB);
 			break;
@@ -5685,17 +5685,7 @@ static void P_ConvertBinaryLinedefTypes(void)
 			break;
 		case 442: //Change object type state
 			lines[i].args[2] = tag;
-			P_WriteDuplicateText(sides[lines[i].sidenum[0]].text, &lines[i].stringargs[0]);
-			if (lines[i].sidenum[1] == 0xffff)
-				lines[i].args[3] = 1;
-			else
-			{
-				lines[i].args[3] = 0;
-				P_WriteDuplicateText(sides[lines[i].sidenum[1]].text, &lines[i].stringargs[1]);
-			}
-			break;
-		case 443: //Call Lua function
-			P_WriteDuplicateText(lines[i].text, &lines[i].stringargs[0]);
+			lines[i].args[3] = (lines[i].sidenum[1] == 0xffff) ? 1 : 0;
 			break;
 		case 444: //Earthquake
 			lines[i].args[0] = P_AproxDistance(lines[i].dx, lines[i].dy) >> FRACBITS;
@@ -5847,7 +5837,6 @@ static void P_ConvertBinaryLinedefTypes(void)
 			if (lines[i].flags & ML_MIDSOLID)
 				lines[i].args[3] |= TMP_FREEZETHINKERS;*/
 			lines[i].args[4] = (lines[i].sidenum[1] != 0xFFFF) ? sides[lines[i].sidenum[1]].textureoffset >> FRACBITS : tag;
-			P_WriteDuplicateText(sides[lines[i].sidenum[0]].text, &lines[i].stringargs[0]);
 			break;
 		case 460: //Award rings
 			lines[i].args[0] = sides[lines[i].sidenum[0]].textureoffset >> FRACBITS;
@@ -5876,10 +5865,6 @@ static void P_ConvertBinaryLinedefTypes(void)
 			}
 			else
 				lines[i].args[5] = 0;
-			P_WriteDuplicateText(sides[lines[i].sidenum[0]].text, &lines[i].stringargs[0]);
-			break;
-		case 463: //Dye object
-			P_WriteDuplicateText(sides[lines[i].sidenum[0]].text, &lines[i].stringargs[0]);
 			break;
 		case 464: //Trigger egg capsule
 			lines[i].args[0] = tag;
@@ -5893,12 +5878,6 @@ static void P_ConvertBinaryLinedefTypes(void)
 			lines[i].args[1] = sides[lines[i].sidenum[0]].textureoffset >> FRACBITS;
 			lines[i].args[2] = TML_SECTOR;
 			lines[i].args[3] = !!(lines[i].flags & ML_MIDPEG);
-			break;
-		case 475: // ACS_Execute
-		case 476: // ACS_ExecuteAlways
-		case 477: // ACS_Suspend
-		case 478: // ACS_Terminate
-			P_WriteDuplicateText(sides[lines[i].sidenum[0]].text, &lines[i].stringargs[0]);
 			break;
 		case 480: //Polyobject - door slide
 			lines[i].args[0] = tag;
@@ -6795,7 +6774,7 @@ static void P_ConvertBinaryThingTypes(void)
 			mapthings[i].args[3] = sides[lines[j].sidenum[0]].rowoffset >> FRACBITS;
 			mapthings[i].args[4] = lines[j].backsector ? sides[lines[j].sidenum[1]].textureoffset >> FRACBITS : 0;
 			mapthings[i].args[6] = mapthings[i].angle;
-			P_WriteDuplicateText(sides[lines[j].sidenum[0]].text, &mapthings[i].stringargs[0]);
+			P_WriteDuplicateText(lines[j].stringargs[0], &mapthings[i].stringargs[0]);
 			break;
 		}
 		case 762: //PolyObject spawn point (crush)
@@ -6883,9 +6862,8 @@ static void P_ConvertBinaryThingTypes(void)
 				mapthings[i].args[8] |= TMM_ALWAYSTHINK;
 			if (mapthings[i].type == 1110)
 			{
-				P_WriteDuplicateText(sides[lines[j].sidenum[0]].text, &mapthings[i].stringargs[0]);
-				if (lines[j].backsector)
-					P_WriteDuplicateText(sides[lines[j].sidenum[1]].text, &mapthings[i].stringargs[1]);
+				P_WriteDuplicateText(lines[j].stringargs[0], &mapthings[i].stringargs[0]);
+				P_WriteDuplicateText(lines[j].stringargs[1], &mapthings[i].stringargs[1]);
 			}
 			break;
 		}

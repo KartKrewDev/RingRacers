@@ -135,7 +135,6 @@ enum line_e {
 	line_frontsector,
 	line_backsector,
 	line_polyobj,
-	line_text,
 	line_callcount
 };
 
@@ -162,7 +161,6 @@ static const char *const line_opt[] = {
 	"frontsector",
 	"backsector",
 	"polyobj",
-	"text",
 	"callcount",
 	NULL};
 
@@ -177,7 +175,6 @@ enum side_e {
 	side_sector,
 	side_special,
 	side_repeatcnt,
-	side_text
 };
 
 static const char *const side_opt[] = {
@@ -191,7 +188,6 @@ static const char *const side_opt[] = {
 	"sector",
 	"special",
 	"repeatcnt",
-	"text",
 	NULL};
 
 enum vertex_e {
@@ -1088,9 +1084,6 @@ static int line_get(lua_State *L)
 	case line_polyobj:
 		LUA_PushUserdata(L, line->polyobj, META_POLYOBJ);
 		return 1;
-	case line_text:
-		lua_pushstring(L, line->text);
-		return 1;
 	case line_callcount:
 		lua_pushinteger(L, line->callcount);
 		return 1;
@@ -1187,9 +1180,6 @@ static int side_get(lua_State *L)
 	case side_repeatcnt:
 		lua_pushinteger(L, side->repeatcnt);
 		return 1;
-	case side_text:
-		lua_pushstring(L, side->text);
-		return 1;
 	}
 	return 0;
 }
@@ -1214,7 +1204,6 @@ static int side_set(lua_State *L)
 	case side_line:
 	case side_sector:
 	case side_special:
-	case side_text:
 	default:
 		return luaL_error(L, "side_t field " LUA_QS " cannot be set.", side_opt[field]);
 	case side_textureoffset:
