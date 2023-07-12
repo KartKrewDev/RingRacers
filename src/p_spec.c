@@ -4194,16 +4194,29 @@ boolean P_ProcessSpecial(activator_t *activator, INT16 special, INT32 *args, cha
 			{
 				INT16 rings = args[0];
 				INT32 delay = args[1];
-				if (mo && mo->player)
+				if (
+					mo && mo->player // Player
+					&& rings != 0 // Any effect
+					&& (delay <= 0 || !(leveltime % delay)) // Timing
+				)
 				{
-					// Don't award rings while SPB is targetting you
-					if (mo->player->pflags & PF_RINGLOCK)
-						return false;
-
-					if (delay <= 0 || !(leveltime % delay))
+					if (rings > 0)
 					{
+						// Don't award rings while SPB is targetting you
+						if (mo->player->pflags & PF_RINGLOCK)
+							return false;
+
 						// args[2]: don't cap rings to 20
 						K_AwardPlayerRings(mo->player, rings, args[2]);
+					}
+					else
+					{
+						// Don't push you below baseline
+						if (mo->player->rings < 0)
+							return false;
+
+						mo->player->rings--;
+						S_StartSound(mo, sfx_antiri);
 					}
 				}
 			}
