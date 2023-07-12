@@ -1108,6 +1108,52 @@ static void P_InitializeSidedef(side_t *sd)
 	sd->colormap_data = NULL;
 }
 
+/* -- Reference implementation
+static void P_WriteConstant(INT32 constant, char **target)
+{
+	char buffer[12];
+	size_t len;
+
+	sprintf(buffer, "%d", constant);
+	len = strlen(buffer) + 1;
+	*target = Z_Malloc(len, PU_LEVEL, NULL);
+	M_Memcpy(*target, buffer, len);
+} */
+
+static void P_WriteDuplicateText(const char *text, char **target)
+{
+	if (text == NULL || text[0] == '\0')
+		return;
+
+	size_t len = strlen(text) + 1;
+	*target = Z_Malloc(len, PU_LEVEL, NULL);
+	M_Memcpy(*target, text, len);
+}
+
+static void P_WriteSkincolor(INT32 constant, char **target)
+{
+	if (constant <= SKINCOLOR_NONE
+	|| constant >= (INT32)numskincolors)
+		return;
+
+	P_WriteDuplicateText(
+		va("SKINCOLOR_%s", skincolors[constant].name),
+		target
+	);
+}
+
+static void P_WriteSfx(INT32 constant, char **target)
+{
+	if (constant <= sfx_None
+	|| constant >= (INT32)sfxfree)
+		return;
+
+	P_WriteDuplicateText(
+		va("sfx_%s", S_sfx[constant].name),
+		target
+	);
+}
+
 static void P_LoadSidedefs(UINT8 *data)
 {
 	mapsidedef_t *msd = (mapsidedef_t*)data;
@@ -1197,8 +1243,8 @@ static void P_LoadSidedefs(UINT8 *data)
 					char process[8 + 1];
 					M_Memcpy(process, msd->toptexture, 8);
 					process[8] = '\0';
-					sd->text = Z_Malloc(strlen(process) + 1, PU_LEVEL, NULL);
-					M_Memcpy(sd->text, process, strlen(process) + 1);
+
+					P_WriteDuplicateText(process, &sd->text);
 				}
 				break;
 			}
@@ -1207,21 +1253,13 @@ static void P_LoadSidedefs(UINT8 *data)
 			case 14: // Bustable block parameters
 			case 15: // Fan particle spawner parameters
 			{
-				char process[8*3+1];
-				memset(process,0,8*3+1);
-				sd->toptexture = sd->midtexture = sd->bottomtexture = 0;
-				if (msd->toptexture[0] == '-' && msd->toptexture[1] == '\0')
+				if (msd->toptexture[7] == '\0' && strcasecmp(msd->toptexture, "MT_NULL") == 0)
+				{
+					// Don't bulk the conversion with irrelevant types
 					break;
-				else
-					M_Memcpy(process,msd->toptexture,8);
-				if (msd->midtexture[0] != '-' || msd->midtexture[1] != '\0')
-					M_Memcpy(process+strlen(process), msd->midtexture, 8);
-				if (msd->bottomtexture[0] != '-' || msd->bottomtexture[1] != '\0')
-					M_Memcpy(process+strlen(process), msd->bottomtexture, 8);
-				sd->toptexture = get_number(process);
-				break;
+				}
 			}
-
+			// FALLTHRU
 			case 331: // Trigger linedef executor: Skin - Continuous
 			case 332: // Trigger linedef executor: Skin - Each time
 			case 333: // Trigger linedef executor: Skin - Once
@@ -1250,8 +1288,8 @@ static void P_LoadSidedefs(UINT8 *data)
 					M_Memcpy(process+strlen(process), msd->midtexture, 8);
 				if (msd->bottomtexture[0] != '-' || msd->bottomtexture[1] != '\0')
 					M_Memcpy(process+strlen(process), msd->bottomtexture, 8);
-				sd->text = Z_Malloc(strlen(process)+1, PU_LEVEL, NULL);
-				M_Memcpy(sd->text, process, strlen(process)+1);
+
+				P_WriteDuplicateText(process, &sd->text);
 				break;
 			}
 
@@ -3175,13 +3213,17 @@ static void P_ProcessLinedefsAfterSidedefs(void)
 		case 443: // Calls a named Lua function
 			if (sides[ld->sidenum[0]].text)
 			{
-				size_t len = strlen(sides[ld->sidenum[0]].text) + 1;
+				size_t len[2];
+				len[0] = strlen(sides[ld->sidenum[0]].text) + 1;
+				len[1] = 0;
+
 				if (ld->sidenum[1] != 0xffff && sides[ld->sidenum[1]].text)
-					len += strlen(sides[ld->sidenum[1]].text);
-				ld->text = Z_Malloc(len, PU_LEVEL, NULL);
-				M_Memcpy(ld->text, sides[ld->sidenum[0]].text, strlen(sides[ld->sidenum[0]].text) + 1);
-				if (ld->sidenum[1] != 0xffff && sides[ld->sidenum[1]].text)
-					M_Memcpy(ld->text + strlen(ld->text) + 1, sides[ld->sidenum[1]].text, strlen(sides[ld->sidenum[1]].text) + 1);
+					len[1] = strlen(sides[ld->sidenum[1]].text);
+
+				ld->text = Z_Malloc(len[0] + len[1], PU_LEVEL, NULL);
+				M_Memcpy(ld->text, sides[ld->sidenum[0]].text, len[0]);
+				if (len[1])
+					M_Memcpy(ld->text + len[0], sides[ld->sidenum[1]].text, len[1] + 1);
 			}
 			break;
 		case 447: // Change colormap
@@ -4337,14 +4379,6 @@ static void P_AddBinaryMapTags(void)
 	}
 }
 
-static void P_WriteConstant(INT32 constant, char **target)
-{
-	char buffer[12];
-	sprintf(buffer, "%d", constant);
-	*target = Z_Malloc(strlen(buffer) + 1, PU_LEVEL, NULL);
-	M_Memcpy(*target, buffer, strlen(buffer) + 1);
-}
-
 static line_t *P_FindPointPushLine(taglist_t *list)
 {
 	INT32 i, l;
@@ -4584,7 +4618,7 @@ static void P_ConvertBinaryLinedefTypes(void)
 			lines[i].args[0] = sides[lines[i].sidenum[0]].textureoffset >> FRACBITS;
 			lines[i].args[1] = sides[lines[i].sidenum[0]].rowoffset >> FRACBITS;
 			lines[i].args[2] = !!(lines[i].flags & ML_SKEWTD);
-			P_WriteConstant(sides[lines[i].sidenum[0]].toptexture, &lines[i].stringargs[0]);
+			P_WriteDuplicateText(sides[lines[i].sidenum[0]].text, &lines[i].stringargs[0]);
 			break;
 		case 16: //Minecart parameters
 			lines[i].args[0] = sides[lines[i].sidenum[0]].textureoffset >> FRACBITS;
@@ -5059,7 +5093,7 @@ static void P_ConvertBinaryLinedefTypes(void)
 				lines[i].args[2] = 16;
 			}
 			if (lines[i].flags & ML_MIDSOLID)
-				P_WriteConstant(sides[lines[i].sidenum[0]].textureoffset >> FRACBITS, &lines[i].stringargs[0]);
+				P_WriteSfx(sides[lines[i].sidenum[0]].textureoffset >> FRACBITS, &lines[i].stringargs[0]);
 			if (lines[i].flags & ML_SKEWTD) // Kart Z delay. Yes, it used the same field as the above.
 				lines[i].args[3] = (unsigned)(sides[lines[i].sidenum[0]].textureoffset >> FRACBITS);
 			break;
@@ -5328,11 +5362,7 @@ static void P_ConvertBinaryLinedefTypes(void)
 			else
 				lines[i].args[0] = TMT_CONTINUOUS;
 			lines[i].args[1] = !!(lines[i].flags & ML_NOCLIMB);
-			if (lines[i].text)
-			{
-				lines[i].stringargs[0] = Z_Malloc(strlen(lines[i].text) + 1, PU_LEVEL, NULL);
-				M_Memcpy(lines[i].stringargs[0], lines[i].text, strlen(lines[i].text) + 1);
-			}
+			P_WriteDuplicateText(lines[i].text, &lines[i].stringargs[0]);
 			lines[i].special = 331;
 			break;
 		case 334: // Object dye - continuous
@@ -5345,11 +5375,7 @@ static void P_ConvertBinaryLinedefTypes(void)
 			else
 				lines[i].args[0] = TMT_CONTINUOUS;
 			lines[i].args[1] = !!(lines[i].flags & ML_NOCLIMB);
-			if (sides[lines[i].sidenum[0]].text)
-			{
-				lines[i].stringargs[0] = Z_Malloc(strlen(sides[lines[i].sidenum[0]].text) + 1, PU_LEVEL, NULL);
-				M_Memcpy(lines[i].stringargs[0], sides[lines[i].sidenum[0]].text, strlen(sides[lines[i].sidenum[0]].text) + 1);
-			}
+			P_WriteDuplicateText(sides[lines[i].sidenum[0]].text, &lines[i].stringargs[0]);
 			lines[i].special = 334;
 			break;
 		case 337: //Emerald check - continuous
@@ -5488,11 +5514,7 @@ static void P_ConvertBinaryLinedefTypes(void)
 			lines[i].args[5] = (lines[i].sidenum[1] != 0xffff) ? sides[lines[i].sidenum[1]].textureoffset >> FRACBITS : 0;
 			lines[i].args[6] = (lines[i].sidenum[1] != 0xffff) ? sides[lines[i].sidenum[1]].rowoffset >> FRACBITS : -1;
 			lines[i].args[7] = sides[lines[i].sidenum[0]].bottomtexture;
-			if (sides[lines[i].sidenum[0]].text)
-			{
-				lines[i].stringargs[0] = Z_Malloc(strlen(sides[lines[i].sidenum[0]].text) + 1, PU_LEVEL, NULL);
-				M_Memcpy(lines[i].stringargs[0], sides[lines[i].sidenum[0]].text, strlen(sides[lines[i].sidenum[0]].text) + 1);
-			}
+			P_WriteDuplicateText(sides[lines[i].sidenum[0]].text, &lines[i].stringargs[0]);
 			break;
 		case 414: //Play sound effect
 			lines[i].args[3] = tag;
@@ -5532,37 +5554,8 @@ static void P_ConvertBinaryLinedefTypes(void)
 					lines[i].args[2] = TMSL_EVERYONE;
 				}
 			}
-			if (sides[lines[i].sidenum[0]].text)
-			{
-				lines[i].stringargs[0] = Z_Malloc(strlen(sides[lines[i].sidenum[0]].text) + 1, PU_LEVEL, NULL);
-				M_Memcpy(lines[i].stringargs[0], sides[lines[i].sidenum[0]].text, strlen(sides[lines[i].sidenum[0]].text) + 1);
-			}
+			P_WriteDuplicateText(sides[lines[i].sidenum[0]].text, &lines[i].stringargs[0]);
 			break;
-		case 415: //Run script
-		{
-			INT32 scrnum;
-
-			lines[i].stringargs[0] = Z_Malloc(9, PU_LEVEL, NULL);
-			strcpy(lines[i].stringargs[0], G_BuildMapName(gamemap));
-			lines[i].stringargs[0][0] = 'S';
-			lines[i].stringargs[0][1] = 'C';
-			lines[i].stringargs[0][2] = 'R';
-
-			scrnum = sides[lines[i].sidenum[0]].textureoffset >> FRACBITS;
-			if (scrnum < 0 || scrnum > 999)
-			{
-				scrnum = 0;
-				lines[i].stringargs[0][5] = lines[i].stringargs[0][6] = lines[i].stringargs[0][7] = '0';
-			}
-			else
-			{
-				lines[i].stringargs[0][5] = (char)('0' + (char)((scrnum / 100)));
-				lines[i].stringargs[0][6] = (char)('0' + (char)((scrnum % 100) / 10));
-				lines[i].stringargs[0][7] = (char)('0' + (char)(scrnum % 10));
-			}
-			lines[i].stringargs[0][8] = '\0';
-			break;
-		}
 		case 416: //Start adjustable flickering light
 		case 417: //Start adjustable pulsating light
 		case 602: //Adjustable pulsating light
@@ -5628,11 +5621,7 @@ static void P_ConvertBinaryLinedefTypes(void)
 			lines[i].args[1] = !!(lines[i].flags & ML_NOCLIMB);
 			break;
 		case 425: //Change object state
-			if (sides[lines[i].sidenum[0]].text)
-			{
-				lines[i].stringargs[0] = Z_Malloc(strlen(sides[lines[i].sidenum[0]].text) + 1, PU_LEVEL, NULL);
-				M_Memcpy(lines[i].stringargs[0], sides[lines[i].sidenum[0]].text, strlen(sides[lines[i].sidenum[0]].text) + 1);
-			}
+			P_WriteDuplicateText(sides[lines[i].sidenum[0]].text, &lines[i].stringargs[0]);
 			break;
 		case 426: //Stop object
 			lines[i].args[0] = !!(lines[i].flags & ML_NOCLIMB);
@@ -5696,31 +5685,17 @@ static void P_ConvertBinaryLinedefTypes(void)
 			break;
 		case 442: //Change object type state
 			lines[i].args[2] = tag;
-			if (sides[lines[i].sidenum[0]].text)
-			{
-				lines[i].stringargs[0] = Z_Malloc(strlen(sides[lines[i].sidenum[0]].text) + 1, PU_LEVEL, NULL);
-				M_Memcpy(lines[i].stringargs[0], sides[lines[i].sidenum[0]].text, strlen(sides[lines[i].sidenum[0]].text) + 1);
-			}
+			P_WriteDuplicateText(sides[lines[i].sidenum[0]].text, &lines[i].stringargs[0]);
 			if (lines[i].sidenum[1] == 0xffff)
 				lines[i].args[3] = 1;
 			else
 			{
 				lines[i].args[3] = 0;
-				if (sides[lines[i].sidenum[1]].text)
-				{
-					lines[i].stringargs[1] = Z_Malloc(strlen(sides[lines[i].sidenum[1]].text) + 1, PU_LEVEL, NULL);
-					M_Memcpy(lines[i].stringargs[1], sides[lines[i].sidenum[1]].text, strlen(sides[lines[i].sidenum[1]].text) + 1);
-				}
+				P_WriteDuplicateText(sides[lines[i].sidenum[1]].text, &lines[i].stringargs[1]);
 			}
 			break;
 		case 443: //Call Lua function
-			if (lines[i].text)
-			{
-				lines[i].stringargs[0] = Z_Malloc(strlen(lines[i].text) + 1, PU_LEVEL, NULL);
-				M_Memcpy(lines[i].stringargs[0], lines[i].text, strlen(lines[i].text) + 1);
-			}
-			else
-				CONS_Alert(CONS_WARNING, "Linedef %s is missing the hook name of the Lua function to call! (This should be given in the front texture fields)\n", sizeu1(i));
+			P_WriteDuplicateText(lines[i].text, &lines[i].stringargs[0]);
 			break;
 		case 444: //Earthquake
 			lines[i].args[0] = P_AproxDistance(lines[i].dx, lines[i].dy) >> FRACBITS;
@@ -5872,11 +5847,7 @@ static void P_ConvertBinaryLinedefTypes(void)
 			if (lines[i].flags & ML_MIDSOLID)
 				lines[i].args[3] |= TMP_FREEZETHINKERS;*/
 			lines[i].args[4] = (lines[i].sidenum[1] != 0xFFFF) ? sides[lines[i].sidenum[1]].textureoffset >> FRACBITS : tag;
-			if (sides[lines[i].sidenum[0]].text)
-			{
-				lines[i].stringargs[0] = Z_Malloc(strlen(sides[lines[i].sidenum[0]].text) + 1, PU_LEVEL, NULL);
-				M_Memcpy(lines[i].stringargs[0], sides[lines[i].sidenum[0]].text, strlen(sides[lines[i].sidenum[0]].text) + 1);
-			}
+			P_WriteDuplicateText(sides[lines[i].sidenum[0]].text, &lines[i].stringargs[0]);
 			break;
 		case 460: //Award rings
 			lines[i].args[0] = sides[lines[i].sidenum[0]].textureoffset >> FRACBITS;
@@ -5905,18 +5876,10 @@ static void P_ConvertBinaryLinedefTypes(void)
 			}
 			else
 				lines[i].args[5] = 0;
-			if (sides[lines[i].sidenum[0]].text)
-			{
-				lines[i].stringargs[0] = Z_Malloc(strlen(sides[lines[i].sidenum[0]].text) + 1, PU_LEVEL, NULL);
-				M_Memcpy(lines[i].stringargs[0], sides[lines[i].sidenum[0]].text, strlen(sides[lines[i].sidenum[0]].text) + 1);
-			}
+			P_WriteDuplicateText(sides[lines[i].sidenum[0]].text, &lines[i].stringargs[0]);
 			break;
 		case 463: //Dye object
-			if (sides[lines[i].sidenum[0]].text)
-			{
-				lines[i].stringargs[0] = Z_Malloc(strlen(sides[lines[i].sidenum[0]].text) + 1, PU_LEVEL, NULL);
-				M_Memcpy(lines[i].stringargs[0], sides[lines[i].sidenum[0]].text, strlen(sides[lines[i].sidenum[0]].text) + 1);
-			}
+			P_WriteDuplicateText(sides[lines[i].sidenum[0]].text, &lines[i].stringargs[0]);
 			break;
 		case 464: //Trigger egg capsule
 			lines[i].args[0] = tag;
@@ -5935,11 +5898,7 @@ static void P_ConvertBinaryLinedefTypes(void)
 		case 476: // ACS_ExecuteAlways
 		case 477: // ACS_Suspend
 		case 478: // ACS_Terminate
-			if (sides[lines[i].sidenum[0]].text)
-			{
-				lines[i].stringargs[0] = Z_Malloc(strlen(sides[lines[i].sidenum[0]].text) + 1, PU_LEVEL, NULL);
-				M_Memcpy(lines[i].stringargs[0], sides[lines[i].sidenum[0]].text, strlen(sides[lines[i].sidenum[0]].text) + 1);
-			}
+			P_WriteDuplicateText(sides[lines[i].sidenum[0]].text, &lines[i].stringargs[0]);
 			break;
 		case 480: //Polyobject - door slide
 			lines[i].args[0] = tag;
@@ -6731,7 +6690,9 @@ static void P_ConvertBinaryThingTypes(void)
 			break;
 		case 543: //Balloon
 			if (mapthings[i].angle > 0)
-				P_WriteConstant(((mapthings[i].angle - 1) % (numskincolors - 1)) + 1, &mapthings[i].stringargs[0]);
+			{
+				P_WriteSkincolor(((mapthings[i].angle - 1) % (numskincolors - 1)) + 1, &mapthings[i].stringargs[0]);
+			}
 			mapthings[i].args[0] = !!(mapthings[i].options & MTF_AMBUSH);
 			break;
 		case 555: //Diagonal yellow spring
@@ -6756,22 +6717,22 @@ static void P_ConvertBinaryThingTypes(void)
 		case 706: //Water ambience G
 		case 707: //Water ambience H
 			mapthings[i].args[0] = 35;
-			P_WriteConstant(sfx_amwtr1 + mapthings[i].type - 700, &mapthings[i].stringargs[0]);
+			P_WriteSfx(sfx_amwtr1 + mapthings[i].type - 700, &mapthings[i].stringargs[0]);
 			mapthings[i].type = 700;
 			break;
 		case 708: //Disco ambience
 			mapthings[i].args[0] = 512;
-			P_WriteConstant(sfx_ambint, &mapthings[i].stringargs[0]);
+			P_WriteSfx(sfx_ambint, &mapthings[i].stringargs[0]);
 			mapthings[i].type = 700;
 			break;
 		case 709: //Volcano ambience
 			mapthings[i].args[0] = 220;
-			P_WriteConstant(sfx_ambin2, &mapthings[i].stringargs[0]);
+			P_WriteSfx(sfx_ambin2, &mapthings[i].stringargs[0]);
 			mapthings[i].type = 700;
 			break;
 		case 710: //Machine ambience
 			mapthings[i].args[0] = 24;
-			P_WriteConstant(sfx_ambmac, &mapthings[i].stringargs[0]);
+			P_WriteSfx(sfx_ambmac, &mapthings[i].stringargs[0]);
 			mapthings[i].type = 700;
 			break;
 		case 750: //Slope vertex
@@ -6834,8 +6795,7 @@ static void P_ConvertBinaryThingTypes(void)
 			mapthings[i].args[3] = sides[lines[j].sidenum[0]].rowoffset >> FRACBITS;
 			mapthings[i].args[4] = lines[j].backsector ? sides[lines[j].sidenum[1]].textureoffset >> FRACBITS : 0;
 			mapthings[i].args[6] = mapthings[i].angle;
-			if (sides[lines[j].sidenum[0]].toptexture)
-				P_WriteConstant(sides[lines[j].sidenum[0]].toptexture, &mapthings[i].stringargs[0]);
+			P_WriteDuplicateText(sides[lines[j].sidenum[0]].text, &mapthings[i].stringargs[0]);
 			break;
 		}
 		case 762: //PolyObject spawn point (crush)
@@ -6923,8 +6883,9 @@ static void P_ConvertBinaryThingTypes(void)
 				mapthings[i].args[8] |= TMM_ALWAYSTHINK;
 			if (mapthings[i].type == 1110)
 			{
-				P_WriteConstant(sides[lines[j].sidenum[0]].toptexture, &mapthings[i].stringargs[0]);
-				P_WriteConstant(lines[j].backsector ? sides[lines[j].sidenum[1]].toptexture : MT_NULL, &mapthings[i].stringargs[1]);
+				P_WriteDuplicateText(sides[lines[j].sidenum[0]].text, &mapthings[i].stringargs[0]);
+				if (lines[j].backsector)
+					P_WriteDuplicateText(sides[lines[j].sidenum[1]].text, &mapthings[i].stringargs[1]);
 			}
 			break;
 		}
@@ -6965,7 +6926,11 @@ static void P_ConvertBinaryThingTypes(void)
 			mapthings[i].args[0] = P_AproxDistance(lines[j].dx, lines[j].dy) >> FRACBITS;
 			mapthings[i].args[1] = sides[lines[j].sidenum[0]].textureoffset >> FRACBITS;
 			mapthings[i].args[2] = !!(lines[j].flags & ML_NOCLIMB);
-			P_WriteConstant(MT_ROCKCRUMBLE1 + (sides[lines[j].sidenum[0]].rowoffset >> FRACBITS), &mapthings[i].stringargs[0]);
+			INT32 id = (sides[lines[j].sidenum[0]].rowoffset >> FRACBITS);
+			// Rather than introduce deh_tables.h as a dependency for literally one
+			// conversion, we just... recreate the string expected to be produced.
+			if (id > 0 && id < 16)
+				P_WriteDuplicateText(va("MT_ROCKCRUMBLE%d", id+1), &mapthings[i].stringargs[0]);
 			break;
 		}
 		case 1221: //Minecart saloon door
