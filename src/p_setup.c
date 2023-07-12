@@ -1229,7 +1229,6 @@ static void P_LoadSidedefs(UINT8 *data)
 			case 335: // Trigger linedef executor: Object dye - Each time
 			case 336: // Trigger linedef executor: Object dye - Once
 			case 425: // Calls P_SetMobjState on calling mobj
-			case 434: // Custom Power
 			case 442: // Calls P_SetMobjState on mobjs of a given type in the tagged sectors
 			case 443: // Calls a named Lua function
 			case 459: // Control text prompt (named tag)
@@ -5670,20 +5669,6 @@ static void P_ConvertBinaryLinedefTypes(void)
 			break;
 		case 433: //Enable/disable gravity flip
 			lines[i].args[0] = !!(lines[i].flags & ML_NOCLIMB);
-			break;
-		case 434: //Award power-up
-			if (sides[lines[i].sidenum[0]].text)
-			{
-				lines[i].stringargs[0] = Z_Malloc(strlen(sides[lines[i].sidenum[0]].text) + 1, PU_LEVEL, NULL);
-				M_Memcpy(lines[i].stringargs[0], sides[lines[i].sidenum[0]].text, strlen(sides[lines[i].sidenum[0]].text) + 1);
-			}
-			if (lines[i].sidenum[1] != 0xffff && lines[i].flags & ML_BLOCKPLAYERS) // read power from back sidedef
-			{
-				lines[i].stringargs[1] = Z_Malloc(strlen(sides[lines[i].sidenum[1]].text) + 1, PU_LEVEL, NULL);
-				M_Memcpy(lines[i].stringargs[1], sides[lines[i].sidenum[1]].text, strlen(sides[lines[i].sidenum[1]].text) + 1);
-			}
-			else
-				P_WriteConstant((lines[i].flags & ML_NOCLIMB) ? -1 : (sides[lines[i].sidenum[0]].textureoffset >> FRACBITS), &lines[i].stringargs[1]);
 			break;
 		case 435: //Change plane scroller direction
 			lines[i].args[0] = tag;
