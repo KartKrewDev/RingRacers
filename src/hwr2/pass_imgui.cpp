@@ -127,7 +127,7 @@ void ImguiPass::prepass(Rhi& rhi)
 	}
 }
 
-void ImguiPass::transfer(Rhi& rhi, Handle<TransferContext> ctx)
+void ImguiPass::transfer(Rhi& rhi, Handle<GraphicsContext> ctx)
 {
 	ImGuiIO& io = ImGui::GetIO();
 

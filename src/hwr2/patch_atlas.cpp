@@ -348,7 +348,7 @@ void PatchAtlasCache::prepass(Rhi& rhi)
 	}
 }
 
-void PatchAtlasCache::transfer(Rhi& rhi, Handle<TransferContext> ctx)
+void PatchAtlasCache::transfer(Rhi& rhi, Handle<GraphicsContext> ctx)
 {
 	SRB2_ASSERT(ready_for_lookup());
 

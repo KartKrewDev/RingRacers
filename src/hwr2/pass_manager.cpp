@@ -32,7 +32,7 @@ public:
 	virtual ~LambdaPass();
 
 	virtual void prepass(rhi::Rhi& rhi) override;
-	virtual void transfer(rhi::Rhi& rhi, rhi::Handle<rhi::TransferContext> ctx) override;
+	virtual void transfer(rhi::Rhi& rhi, rhi::Handle<rhi::GraphicsContext> ctx) override;
 	virtual void graphics(rhi::Rhi& rhi, rhi::Handle<rhi::GraphicsContext> ctx) override;
 	virtual void postpass(rhi::Rhi& rhi) override;
 };
@@ -63,7 +63,7 @@ void LambdaPass::prepass(Rhi& rhi)
 	}
 }
 
-void LambdaPass::transfer(Rhi&, Handle<TransferContext>)
+void LambdaPass::transfer(Rhi&, Handle<GraphicsContext>)
 {
 }
 
@@ -137,7 +137,7 @@ void PassManager::prepass(Rhi& rhi)
 	}
 }
 
-void PassManager::transfer(Rhi& rhi, Handle<TransferContext> ctx)
+void PassManager::transfer(Rhi& rhi, Handle<GraphicsContext> ctx)
 {
 	for (auto& pass : passes_)
 	{
@@ -179,11 +179,8 @@ void PassManager::render(Rhi& rhi)
 
 	prepass(rhi);
 
-	Handle<TransferContext> tc = rhi.begin_transfer();
-	transfer(rhi, tc);
-	rhi.end_transfer(tc);
-
 	Handle<GraphicsContext> gc = rhi.begin_graphics();
+	transfer(rhi, gc);
 	graphics(rhi, gc);
 	rhi.end_graphics(gc);
 

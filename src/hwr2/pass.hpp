@@ -26,10 +26,10 @@ public:
 	/// @param rhi
 	virtual void prepass(rhi::Rhi& rhi) = 0;
 
-	/// @brief Upload contents for needed GPU resources.
+	/// @brief Upload contents for needed GPU resources. Passes must implement but this will be removed soon.
 	/// @param rhi
 	/// @param ctx
-	virtual void transfer(rhi::Rhi& rhi, rhi::Handle<rhi::TransferContext> ctx) = 0;
+	virtual void transfer(rhi::Rhi& rhi, rhi::Handle<rhi::GraphicsContext> ctx) = 0;
 
 	/// @brief Issue draw calls.
 	/// @param rhi
