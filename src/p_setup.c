@@ -2557,6 +2557,8 @@ static void P_WriteTextmap(void)
 			fprintf(f, "blocking = true;\n");
 		if (wlines[i].flags & ML_BLOCKPLAYERS)
 			fprintf(f, "blockplayers = true;\n");
+		if (wlines[i].flags & ML_BLOCKMONSTERS)
+			fprintf(f, "blockmonsters = true;\n");
 		if (wlines[i].flags & ML_TWOSIDED)
 			fprintf(f, "twosided = true;\n");
 		if (wlines[i].flags & ML_DONTPEGTOP)
