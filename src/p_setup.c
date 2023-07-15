@@ -7145,6 +7145,55 @@ static void P_ConvertBinaryThingTypes(void)
 		case 3786: // MT_BATTLEUFO_SPAWNER
 			mapthings[i].args[0] = mapthings[i].angle;
 			break;
+		case 3400: // MT_WATERPALACETURBINE (TODO: not yet hardcoded)
+		{
+			mtag_t tag = (mtag_t)mapthings[i].angle;
+			INT32 j = Tag_FindLineSpecial(2009, tag);
+
+			if (j == -1)
+			{
+				CONS_Debug(DBG_GAMELOGIC, "Water Palace Turbine setup: Unable to find parameter line 2009 (tag %d)!\n", tag);
+				break;
+			}
+
+			if (!lines[j].backsector)
+			{
+				CONS_Debug(DBG_GAMELOGIC, "Water Palace Turbine setup: No backside for parameter line 2009 (tag %d)!\n", tag);
+				break;
+			}
+
+			mapthings[i].angle = sides[lines[j].sidenum[0]].rowoffset >> FRACBITS;
+
+			if (mapthings[i].options & MTF_EXTRA)
+				mapthings[i].args[0] = 1;
+			if (mapthings[i].options & MTF_OBJECTSPECIAL)
+				mapthings[i].args[1] = 1;
+
+			mapthings[i].args[2] = lines[j].frontsector->floorheight >> FRACBITS;
+			mapthings[i].args[3] = lines[j].frontsector->ceilingheight >> FRACBITS;
+
+			mapthings[i].args[4] = lines[j].backsector->floorheight >> FRACBITS;
+
+			mapthings[i].args[5] = sides[lines[j].sidenum[0]].textureoffset >> FRACBITS;
+			if (mapthings[i].args[5] < 0)
+				mapthings[i].args[5] = -mapthings[i].args[5];
+
+			mapthings[i].args[6] = sides[lines[j].sidenum[1]].rowoffset >> FRACBITS;
+			if (mapthings[i].args[6] < 0)
+				mapthings[i].args[6] = -mapthings[i].args[6];
+
+			mapthings[i].args[7] = sides[lines[j].sidenum[1]].textureoffset >> FRACBITS;
+			if (mapthings[i].args[7] < 0)
+				mapthings[i].args[7] = -mapthings[i].args[7];
+
+			if (lines[j].flags & ML_SKEWTD)
+				mapthings[i].args[8] = R_PointToDist2(lines[j].v2->x, lines[j].v2->y, lines[j].v1->x, lines[j].v1->y) >> FRACBITS;
+
+			if (lines[j].flags & ML_NOSKEW)
+				mapthings[i].args[9] = 1;
+
+			break;
+		}
 		case 3441: // MT_DASHRING (TODO: not yet hardcoded)
 		case 3442: // MT_RAINBOWDASHRING (TODO: not yet hardcoded)
 			mapthings[i].args[0] = mapthings[i].options & 13;
