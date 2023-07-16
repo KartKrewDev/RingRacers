@@ -124,7 +124,7 @@ void BlitRectPass::prepass(Rhi& rhi)
 	}
 }
 
-void BlitRectPass::transfer(Rhi& rhi, Handle<TransferContext> ctx)
+void BlitRectPass::transfer(Rhi& rhi, Handle<GraphicsContext> ctx)
 {
 	if (quad_vbo_needs_upload_ && quad_vbo_)
 	{

@@ -141,7 +141,7 @@ static Rect get_screen_viewport(uint32_t screen, uint32_t screens, uint32_t w, u
 	return {0, 0, w, h};
 }
 
-void BlitPostimgScreens::transfer(Rhi& rhi, Handle<TransferContext> ctx)
+void BlitPostimgScreens::transfer(Rhi& rhi, Handle<GraphicsContext> ctx)
 {
 	// Upload needed buffers
 	if (upload_quad_buffer_)

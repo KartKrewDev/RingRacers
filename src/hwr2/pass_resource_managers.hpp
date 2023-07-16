@@ -37,7 +37,7 @@ public:
 	virtual ~FramebufferManager();
 
 	virtual void prepass(rhi::Rhi& rhi) override;
-	virtual void transfer(rhi::Rhi& rhi, rhi::Handle<rhi::TransferContext> ctx) override;
+	virtual void transfer(rhi::Rhi& rhi, rhi::Handle<rhi::GraphicsContext> ctx) override;
 	virtual void graphics(rhi::Rhi& rhi, rhi::Handle<rhi::GraphicsContext> ctx) override;
 	virtual void postpass(rhi::Rhi& rhi) override;
 
@@ -83,17 +83,17 @@ class MainPaletteManager final : public Pass
 	std::vector<const uint8_t*> colormaps_to_upload_;
 	std::vector<const uint8_t*> lighttables_to_upload_;
 
-	void upload_palette(rhi::Rhi& rhi, rhi::Handle<rhi::TransferContext> ctx);
-	void upload_lighttables(rhi::Rhi& rhi, rhi::Handle<rhi::TransferContext> ctx);
-	void upload_default_colormap(rhi::Rhi& rhi, rhi::Handle<rhi::TransferContext> ctx);
-	void upload_colormaps(rhi::Rhi& rhi, rhi::Handle<rhi::TransferContext> ctx);
+	void upload_palette(rhi::Rhi& rhi, rhi::Handle<rhi::GraphicsContext> ctx);
+	void upload_lighttables(rhi::Rhi& rhi, rhi::Handle<rhi::GraphicsContext> ctx);
+	void upload_default_colormap(rhi::Rhi& rhi, rhi::Handle<rhi::GraphicsContext> ctx);
+	void upload_colormaps(rhi::Rhi& rhi, rhi::Handle<rhi::GraphicsContext> ctx);
 
 public:
 	MainPaletteManager();
 	virtual ~MainPaletteManager();
 
 	virtual void prepass(rhi::Rhi& rhi) override;
-	virtual void transfer(rhi::Rhi& rhi, rhi::Handle<rhi::TransferContext> ctx) override;
+	virtual void transfer(rhi::Rhi& rhi, rhi::Handle<rhi::GraphicsContext> ctx) override;
 	virtual void graphics(rhi::Rhi& rhi, rhi::Handle<rhi::GraphicsContext> ctx) override;
 	virtual void postpass(rhi::Rhi& rhi) override;
 
@@ -120,7 +120,7 @@ public:
 	virtual ~CommonResourcesManager();
 
 	virtual void prepass(rhi::Rhi& rhi) override;
-	virtual void transfer(rhi::Rhi& rhi, rhi::Handle<rhi::TransferContext> ctx) override;
+	virtual void transfer(rhi::Rhi& rhi, rhi::Handle<rhi::GraphicsContext> ctx) override;
 	virtual void graphics(rhi::Rhi& rhi, rhi::Handle<rhi::GraphicsContext> ctx) override;
 	virtual void postpass(rhi::Rhi& rhi) override;
 
@@ -153,7 +153,7 @@ public:
 	virtual ~FlatTextureManager();
 
 	virtual void prepass(rhi::Rhi& rhi) override;
-	virtual void transfer(rhi::Rhi& rhi, rhi::Handle<rhi::TransferContext> ctx) override;
+	virtual void transfer(rhi::Rhi& rhi, rhi::Handle<rhi::GraphicsContext> ctx) override;
 	virtual void graphics(rhi::Rhi& rhi, rhi::Handle<rhi::GraphicsContext> ctx) override;
 	virtual void postpass(rhi::Rhi& rhi) override;
 

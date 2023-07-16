@@ -1109,6 +1109,7 @@ typedef enum sprite
 
 	SPR_IWHP, // Instawhip
 	SPR_WPRE, // Instawhip Recharge
+	SPR_WPRJ, // Instawhip Reject
 	SPR_GRNG, // Guard ring
 	SPR_GBDY, // Guard body
 
@@ -1132,6 +1133,7 @@ typedef enum sprite
 	SPR_HFX6, // Hitlag stage 6
 	SPR_HFX8, // Hitlag stage 8
 	SPR_HFX9, // Hitlag stage 9
+	SPR_HFXX, // Hitlag stage 10
 
 	// Kart Items
 	SPR_RSHE, // Rocket sneaker
@@ -1194,6 +1196,40 @@ typedef enum sprite
 	SPR_SACO, // Sapphire Coast Fauna
 	SPR_CRAB, // Crystal Abyss mobs
 	SPR_BRNG, // Chaotix Big Ring
+
+	// Lost Colony symbol signs
+	SPR_SYM0,
+	SPR_SYM1,
+	SPR_SYM2,
+	SPR_SYM3,
+	SPR_SYM4,
+	SPR_SYM5,
+	SPR_SYM6,
+	SPR_SYM7,
+	SPR_SYM8,
+	SPR_SYM9,
+	SPR_SYMA,
+	SPR_SYMB,
+	SPR_SYMC,
+	SPR_SYMD,
+	SPR_SYME,
+	SPR_SYMF,
+	SPR_SYMG,
+	SPR_SYMH,
+	SPR_SYMI,
+	SPR_SYMJ,
+	SPR_SYMK,
+	SPR_SYML,
+	SPR_SYMM,
+	SPR_SYMN,
+	SPR_SYMO,
+	SPR_SYMP,
+	SPR_SYMQ,
+	SPR_SYMR,
+	SPR_SYMS,
+	SPR_SYMT,
+	SPR_SYMU,
+	SPR_SYMV,
 
 	SPR_BUMP, // Player/shell bump
 	SPR_FLEN, // Shell hit graphics stuff
@@ -4398,6 +4434,7 @@ typedef enum state
 	S_INSTAWHIP_RECHARGE2,
 	S_INSTAWHIP_RECHARGE3,
 	S_INSTAWHIP_RECHARGE4,
+	S_INSTAWHIP_REJECT,
 	S_BLOCKRING,
 	S_BLOCKBODY,
 
@@ -5092,6 +5129,40 @@ typedef enum state
 	S_LAMPPOST,
 	S_MOSSYTREE,
 
+	// Lost Colony symbol signs
+	S_SYMBOL_0,
+	S_SYMBOL_1,
+	S_SYMBOL_2,
+	S_SYMBOL_3,
+	S_SYMBOL_4,
+	S_SYMBOL_5,
+	S_SYMBOL_6,
+	S_SYMBOL_7,
+	S_SYMBOL_8,
+	S_SYMBOL_9,
+	S_SYMBOL_A,
+	S_SYMBOL_B,
+	S_SYMBOL_C,
+	S_SYMBOL_D,
+	S_SYMBOL_E,
+	S_SYMBOL_F,
+	S_SYMBOL_G,
+	S_SYMBOL_H,
+	S_SYMBOL_I,
+	S_SYMBOL_J,
+	S_SYMBOL_K,
+	S_SYMBOL_L,
+	S_SYMBOL_M,
+	S_SYMBOL_N,
+	S_SYMBOL_O,
+	S_SYMBOL_P,
+	S_SYMBOL_Q,
+	S_SYMBOL_R,
+	S_SYMBOL_S,
+	S_SYMBOL_T,
+	S_SYMBOL_U,
+	S_SYMBOL_V,
+
 	S_BUMP1,
 	S_BUMP2,
 	S_BUMP3,
@@ -5682,6 +5753,7 @@ typedef enum state
 	S_HITLAG_6,
 	S_HITLAG_8,
 	S_HITLAG_9,
+	S_HITLAG_10,
 
 	// Broly Ki Orb
 	S_BROLY1,
@@ -6503,6 +6575,7 @@ typedef enum mobj_type
 
 	MT_INSTAWHIP,
 	MT_INSTAWHIP_RECHARGE,
+	MT_INSTAWHIP_REJECT,
 	MT_BLOCKRING,
 	MT_BLOCKBODY,
 
@@ -6668,6 +6741,8 @@ typedef enum mobj_type
 	MT_FLYINGGARG,
 	MT_LAMPPOST,
 	MT_MOSSYTREE,
+
+	MT_SYMBOL, // Lost Colony symbol signs
 
 	MT_BUMP,
 

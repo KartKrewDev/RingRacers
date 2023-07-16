@@ -24,4 +24,5 @@ target_sources(SRB2SDL2 PRIVATE
 	super-flicky.cpp
 	battle-ufo.cpp
 	powerup-aura.cpp
+	symbol.c
 )

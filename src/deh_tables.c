@@ -3303,6 +3303,7 @@ const char *const STATE_LIST[] = { // array length left dynamic for sanity testi
 	"S_INSTAWHIP_RECHARGE2",
 	"S_INSTAWHIP_RECHARGE3",
 	"S_INSTAWHIP_RECHARGE4",
+	"S_INSTAWHIP_REJECT",
 	"S_BLOCKRING",
 	"S_BLOCKBODY",
 
@@ -3998,6 +3999,40 @@ const char *const STATE_LIST[] = { // array length left dynamic for sanity testi
 	"S_LAMPPOST",
 	"S_MOSSYTREE",
 
+	// Lost Colony symbol signs
+	"S_SYMBOL_0",
+	"S_SYMBOL_1",
+	"S_SYMBOL_2",
+	"S_SYMBOL_3",
+	"S_SYMBOL_4",
+	"S_SYMBOL_5",
+	"S_SYMBOL_6",
+	"S_SYMBOL_7",
+	"S_SYMBOL_8",
+	"S_SYMBOL_9",
+	"S_SYMBOL_A",
+	"S_SYMBOL_B",
+	"S_SYMBOL_C",
+	"S_SYMBOL_D",
+	"S_SYMBOL_E",
+	"S_SYMBOL_F",
+	"S_SYMBOL_G",
+	"S_SYMBOL_H",
+	"S_SYMBOL_I",
+	"S_SYMBOL_J",
+	"S_SYMBOL_K",
+	"S_SYMBOL_L",
+	"S_SYMBOL_M",
+	"S_SYMBOL_N",
+	"S_SYMBOL_O",
+	"S_SYMBOL_P",
+	"S_SYMBOL_Q",
+	"S_SYMBOL_R",
+	"S_SYMBOL_S",
+	"S_SYMBOL_T",
+	"S_SYMBOL_U",
+	"S_SYMBOL_V",
+
 	"S_BUMP1",
 	"S_BUMP2",
 	"S_BUMP3",
@@ -4571,6 +4606,8 @@ const char *const STATE_LIST[] = { // array length left dynamic for sanity testi
 	"S_HITLAG_6",
 	"S_HITLAG_8",
 	"S_HITLAG_9",
+	"S_HITLAG_10",
+
 
 	// Broly Ki Orb
 	"S_BROLY1",
@@ -5373,6 +5410,7 @@ const char *const MOBJTYPE_LIST[] = {  // array length left dynamic for sanity t
 
 	"MT_INSTAWHIP",
 	"MT_INSTAWHIP_RECHARGE",
+	"MT_INSTAWHIP_REJECT",
 	"MT_BLOCKRING",
 	"MT_BLOCKBODY",
 
@@ -5538,6 +5576,8 @@ const char *const MOBJTYPE_LIST[] = {  // array length left dynamic for sanity t
 	"MT_FLYINGGARG",
 	"MT_LAMPPOST",
 	"MT_MOSSYTREE",
+
+	"MT_SYMBOL",
 
 	"MT_BUMP",
 

@@ -498,7 +498,7 @@ void TwodeePass::prepass(Rhi& rhi)
 	}
 }
 
-void TwodeePass::transfer(Rhi& rhi, Handle<TransferContext> ctx)
+void TwodeePass::transfer(Rhi& rhi, Handle<GraphicsContext> ctx)
 {
 	if (!ctx_ || !data_)
 	{
