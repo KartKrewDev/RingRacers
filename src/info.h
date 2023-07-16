@@ -1109,6 +1109,7 @@ typedef enum sprite
 
 	SPR_IWHP, // Instawhip
 	SPR_WPRE, // Instawhip Recharge
+	SPR_WPRJ, // Instawhip Reject
 	SPR_GRNG, // Guard ring
 	SPR_GBDY, // Guard body
 
