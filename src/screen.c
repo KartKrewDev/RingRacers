@@ -696,7 +696,7 @@ void SCR_ClosedCaptions(void)
 		if (music && !gamestopped && (closedcaptions[i].t < flashingtics) && (closedcaptions[i].t & 1))
 			continue;
 
-		flags = V_SNAPTORIGHT|V_SNAPTOBOTTOM|V_ALLOWLOWERCASE;
+		flags = V_SNAPTORIGHT|V_SNAPTOBOTTOM;
 		y = basey-((i + 2)*10);
 
 		if (closedcaptions[i].b)

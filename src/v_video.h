@@ -175,7 +175,7 @@ void V_CubeApply(RGBA_t *input);
 #define V_SNAPTOLEFT         0x04000000 // for centering
 #define V_SNAPTORIGHT        0x08000000 // for centering
 
-#define V_ALLOWLOWERCASE     0x10000000 // (strings only) allow fonts that have lowercase letters to use them
+#define V_FORCEUPPERCASE     0x10000000 // (strings only) prevents fonts that have lowercase letters from using them
 #define V_FLIP               0x10000000 // (patches only) Horizontal flip
 #define V_SLIDEIN            0x20000000 // Slide in from the sides on level load, depending on snap flags
 
@@ -257,8 +257,9 @@ void V_DrawPromptBack(INT32 boxheight, INT32 color);
 INT32 V_DanceYOffset(INT32 counter);
 
 // draw a single character
-void V_DrawCharacter(INT32 x, INT32 y, INT32 c, boolean lowercaseallowed);
-// draw a single character, but for the chat
+void V_DrawCharacterScaled(fixed_t x, fixed_t y, fixed_t scale, INT32 flags, int font, int c, UINT8 *colormap);
+void V_DrawCharacter(INT32 x, INT32 y, INT32 option, boolean lowercase);
+
 void V_DrawChatCharacter(INT32 x, INT32 y, INT32 c, boolean lowercaseallowed, UINT8 *colormap);
 
 UINT8 *V_GetStringColormap(INT32 colorflags);
@@ -271,9 +272,6 @@ UINT8 *V_GetStringColormap(INT32 colorflags);
 	V__IntegerStringWidth ( FRACUNIT,0,LT_FONT,string )
 
 INT32 V_LevelNameHeight(const char *string);
-
-// wordwrap a string using the hu_font
-char *V_WordWrap(INT32 x, INT32 w, INT32 option, const char *string);
 
 // draw a string using a font
 void V_DrawStringScaled(
@@ -288,6 +286,15 @@ void V_DrawStringScaled(
 		const char *text);
 
 fixed_t V_StringScaledWidth(
+		fixed_t      scale,
+		fixed_t spacescale,
+		fixed_t    lfscale,
+		INT32      flags,
+		int        fontno,
+		const char *s);
+
+char * V_ScaledWordWrap(
+		fixed_t          w,
 		fixed_t      scale,
 		fixed_t spacescale,
 		fixed_t    lfscale,
@@ -340,7 +347,7 @@ void V_DrawRightAlignedThinStringAtFixed(fixed_t x, fixed_t y, INT32 option, con
 // Draws a titlecard font string.
 // timer: when the letters start appearing (leave to 0 to disable)
 // threshold: when the letters start disappearing (leave to 0 to disable) (both are INT32 in case you supply negative values...)
-// NOTE: This function ignores most conventional string flags (V_RETURN8, V_ALLOWLOWERCASE ...)
+// NOTE: This function ignores most conventional string flags (V_RETURN8, V_FORCEUPPERCASE ...)
 // NOTE: This font only works with uppercase letters.
 void V_DrawTitleCardString(INT32 x, INT32 y, const char *str, INT32 flags, boolean bossmode, INT32 timer, INT32 threshold);
 
@@ -372,6 +379,15 @@ void V_DrawProfileNum(INT32 x, INT32 y, INT32 flags, UINT8 num);
 
 void V_DrawCenteredTimerString(INT32 x, INT32 y, INT32 option, const char *string);
 void V_DrawRightAlignedTimerString(INT32 x, INT32 y, INT32 option, const char *string);
+
+#define V_DrawMenuString( x,y,option,string ) \
+	V__DrawDupxString (x,y,FRACUNIT,option,NULL,MENU_FONT,string)
+
+#define V_MenuStringWidth( string,option ) \
+	V__IntegerStringWidth ( FRACUNIT,option,MENU_FONT,string )
+
+void V_DrawCenteredMenuString(INT32 x, INT32 y, INT32 option, const char *string);
+void V_DrawRightAlignedMenuString(INT32 x, INT32 y, INT32 option, const char *string);
 
 #define V_DrawGamemodeString( x,y,option,cm,string ) \
 	V__DrawDupxString (x,y,FRACUNIT,option,cm,GM_FONT,string)

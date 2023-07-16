@@ -755,12 +755,12 @@ void F_CreditDrawer(void)
 			break;
 		case 2:
 			if (y>>FRACBITS > -10)
-				V_DrawStringAtFixed((BASEVIDWIDTH-V_StringWidth(&credits[i][1], V_ALLOWLOWERCASE|V_YELLOWMAP))<<FRACBITS>>1, y, V_ALLOWLOWERCASE|V_YELLOWMAP, &credits[i][1]);
+				V_DrawStringAtFixed((BASEVIDWIDTH-V_StringWidth(&credits[i][1], V_YELLOWMAP))<<FRACBITS>>1, y, V_YELLOWMAP, &credits[i][1]);
 			y += 12<<FRACBITS;
 			break;
 		default:
 			if (y>>FRACBITS > -10)
-				V_DrawStringAtFixed(32<<FRACBITS, y, V_ALLOWLOWERCASE, credits[i]);
+				V_DrawStringAtFixed(32<<FRACBITS, y, 0, credits[i]);
 			y += 12<<FRACBITS;
 			break;
 		}
@@ -1555,31 +1555,31 @@ void F_VersionDrawer(void)
 }
 	if (customversionstring[0] != '\0')
 	{
-		addtext(V_ALLOWLOWERCASE, customversionstring);
+		addtext(0, customversionstring);
 		addtext(0, "Mod version:");
 	}
 	else
 	{
 // Development -- show revision / branch info
 #if defined(TESTERS)
-		addtext(V_ALLOWLOWERCASE|V_SKYMAP, "Tester client");
-		addtext(V_ALLOWLOWERCASE|V_TRANSLUCENT, va("%s", compdate));
+		addtext(V_SKYMAP, "Tester client");
+		addtext(V_TRANSLUCENT, va("%s", compdate));
 #elif defined(HOSTTESTERS)
-		addtext(V_ALLOWLOWERCASE|V_REDMAP, "Netgame host for testers");
-		addtext(V_ALLOWLOWERCASE|V_TRANSLUCENT, va("%s", compdate));
+		addtext(V_REDMAP, "Netgame host for testers");
+		addtext(V_TRANSLUCENT, va("%s", compdate));
 #elif defined(DEVELOP)
-		addtext(V_ALLOWLOWERCASE|V_TRANSLUCENT, va("%s %s", comprevision, compnote));
-		addtext(V_ALLOWLOWERCASE|V_TRANSLUCENT, D_GetFancyBranchName());
+		addtext(V_TRANSLUCENT, va("%s %s", comprevision, compnote));
+		addtext(V_TRANSLUCENT, D_GetFancyBranchName());
 #else // Regular build
-		addtext(V_ALLOWLOWERCASE|V_TRANSLUCENT, va("%s", VERSIONSTRING));
+		addtext(V_TRANSLUCENT, va("%s", VERSIONSTRING));
 #endif
 		if (compoptimized)
 		{
-			addtext(V_ALLOWLOWERCASE|V_TRANSLUCENT, va("%s build", comptype));
+			addtext(V_TRANSLUCENT, va("%s build", comptype));
 		}
 		else
 		{
-			addtext(V_ALLOWLOWERCASE|V_ORANGEMAP, va("%s build (no optimizations)", comptype));
+			addtext(V_ORANGEMAP, va("%s build (no optimizations)", comptype));
 		}
 
 		if (compuncommitted)
@@ -1705,15 +1705,15 @@ void F_TitleScreenDrawer(void)
 				V_DrawSmallScaledPatch(84, 36, transval<<V_ALPHASHIFT, ttkflash);
 			}
 */
-			V_DrawCenteredString(BASEVIDWIDTH/2, 64, V_ALLOWLOWERCASE, "Dr. Robotnik's Ring Racers v2.0");
+			V_DrawCenteredString(BASEVIDWIDTH/2, 64, 0, "Dr. Robotnik's Ring Racers v2.0");
 
 #ifdef DEVELOP
 #if defined(TESTERS)
-			V_DrawCenteredString(BASEVIDWIDTH/2, 96, V_SKYMAP|V_ALLOWLOWERCASE, "Tester EXE");
+			V_DrawCenteredString(BASEVIDWIDTH/2, 96, V_SKYMAP, "Tester EXE");
 #elif defined(HOSTTESTERS)
-			V_DrawCenteredThinString(BASEVIDWIDTH/2, 96, V_REDMAP|V_ALLOWLOWERCASE, "Tester netgame host EXE");
+			V_DrawCenteredThinString(BASEVIDWIDTH/2, 96, V_REDMAP, "Tester netgame host EXE");
 #else
-			V_DrawCenteredString(BASEVIDWIDTH/2, 96, V_ALLOWLOWERCASE, "Development EXE");
+			V_DrawCenteredString(BASEVIDWIDTH/2, 96, 0, "Development EXE");
 #endif
 #endif
 			break;
@@ -2123,7 +2123,7 @@ void F_CutsceneDrawer(void)
 		F_RunWipe(wipe_intro_toblack, cutscenes[cutnum]->scene[scenenum].fadeoutid, true, NULL, false, false);
 	}
 
-	V_DrawString(textxpos, textypos, V_ALLOWLOWERCASE, cutscene_disptext);
+	V_DrawString(textxpos, textypos, 0, cutscene_disptext);
 }
 
 void F_CutsceneTicker(void)
@@ -2281,7 +2281,23 @@ static void F_PreparePageText(char *pagetext)
 
 	if (promptpagetext)
 		Z_Free(promptpagetext);
-	promptpagetext = (pagetext && pagetext[0]) ? V_WordWrap(textx, textr, 0, pagetext) : Z_StrDup("");
+	if (pagetext && pagetext[0])
+	{
+		promptpagetext = V_ScaledWordWrap(
+			(textx - textr)<<FRACBITS,
+			FRACUNIT, FRACUNIT, FRACUNIT,
+			0, HU_FONT,
+			pagetext
+		);
+	}
+	else
+	{
+		// The original code I was replacing did this,
+		// And I'm not really interested enough to figure out
+		// if this is strictly necessary in the long term or
+		// if it was just an anti-crash doohickey. ~toast 110723
+		promptpagetext = Z_StrDup("");
+	}
 
 	F_NewCutscene(promptpagetext);
 	cutscene_textspeed = textprompts[cutnum]->page[scenenum].textspeed ? textprompts[cutnum]->page[scenenum].textspeed : TICRATE/5;
@@ -2628,12 +2644,12 @@ void F_TextPromptDrawer(void)
 	}
 
 	// Draw text
-	V_DrawString(textx, texty, (V_SNAPTOBOTTOM|V_ALLOWLOWERCASE), cutscene_disptext);
+	V_DrawString(textx, texty, V_SNAPTOBOTTOM, cutscene_disptext);
 
 	// Draw name
 	// Don't use V_YELLOWMAP here so that the name color can be changed with control codes
 	if (textprompts[cutnum]->page[scenenum].name[0])
-		V_DrawString(textx, namey, (V_SNAPTOBOTTOM|V_ALLOWLOWERCASE), textprompts[cutnum]->page[scenenum].name);
+		V_DrawString(textx, namey, V_SNAPTOBOTTOM, textprompts[cutnum]->page[scenenum].name);
 
 	// Draw chevron
 	if (promptblockcontrols && !timetonext)

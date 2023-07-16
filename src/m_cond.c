@@ -1515,7 +1515,7 @@ char *M_BuildConditionSetString(UINT16 unlockid)
 	size_t len = 1024, worklen;
 	static char message[1024] = "";
 	const char *work = NULL;
-	size_t max = 0, maxatstart = 0, start = 0, i;
+	size_t i;
 	boolean stopasap = false;
 
 	message[0] = '\0';
@@ -1577,35 +1577,9 @@ char *M_BuildConditionSetString(UINT16 unlockid)
 		}
 	}
 
-	// Rudementary word wrapping.
-	// Simple and effective. Does not handle nonuniform letter sizes, etc. but who cares.
-	for (i = 0; message[i]; i++)
+	if (message[0] == '\0')
 	{
-		if (message[i] == ' ')
-		{
-			start = i;
-			max += 4;
-			maxatstart = max;
-		}
-		else if (message[i] == '\n')
-		{
-			start = 0;
-			max = 0;
-			maxatstart = 0;
-			continue;
-		}
-		else if (message[i] & 0x80)
-			continue;
-		else
-			max += 8;
-
-		// Start trying to wrap if presumed length exceeds the space we have on-screen.
-		if (max >= DESCRIPTIONWIDTH && start > 0)
-		{
-			message[start] = '\n';
-			max -= maxatstart;
-			start = 0;
-		}
+		return NULL;
 	}
 
 	// Valid sentence capitalisation handling.
@@ -1634,7 +1608,14 @@ char *M_BuildConditionSetString(UINT16 unlockid)
 		}
 	}
 
-	return message;
+	// Finally, do a clean wordwrap!
+	return V_ScaledWordWrap(
+		DESCRIPTIONWIDTH << FRACBITS,
+		FRACUNIT, FRACUNIT, FRACUNIT,
+		0,
+		HU_FONT,
+		message
+	);
 }
 
 static boolean M_CheckUnlockConditions(player_t *player)
