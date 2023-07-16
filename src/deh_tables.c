@@ -4605,6 +4605,8 @@ const char *const STATE_LIST[] = { // array length left dynamic for sanity testi
 	"S_HITLAG_6",
 	"S_HITLAG_8",
 	"S_HITLAG_9",
+	"S_HITLAG_10",
+
 
 	// Broly Ki Orb
 	"S_BROLY1",
