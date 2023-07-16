@@ -22863,6 +22863,33 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		S_INSTAWHIP_RECHARGE3 // raisestate
 	},
 
+	{               // MT_INSTAWHIP_REJECT
+		-1,             // doomednum
+		S_INSTAWHIP_REJECT,    // spawnstate
+		1000,           // spawnhealth
+		S_NULL,         // seestate
+		sfx_None,       // seesound
+		0,              // reactiontime
+		sfx_None,       // attacksound
+		S_NULL,         // painstate
+		0,              // painchance
+		sfx_None,       // painsound
+		S_NULL,         // meleestate
+		S_NULL,         // missilestate
+		S_NULL,         // deathstate
+		S_NULL,         // xdeathstate
+		sfx_None,       // deathsound
+		0,              // speed
+		90*FRACUNIT,    // radius
+		90*FRACUNIT,    // height
+		0,              // display offset
+		100,            // mass
+		0,              // damage
+		sfx_None,       // activesound
+		MF_NOGRAVITY|MF_NOCLIPHEIGHT|MF_DONTENCOREMAP, // flags
+		S_NULL          // raisestate
+	},
+
 	{           // MT_BLOCKRING
 		-1,             // doomednum
 		S_BLOCKRING,    // spawnstate
