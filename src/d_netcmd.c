@@ -3230,12 +3230,6 @@ static void Got_Mapcmd(UINT8 **cp, INT32 playernum)
 	if (demo.timing)
 		G_DoneLevelLoad();
 
-	if (metalrecording)
-		G_BeginMetal();
-	if (demo.recording) // Okay, level loaded, character spawned and skinned,
-		G_BeginRecording(); // I AM NOW READY TO RECORD.
-	demo.deferstart = true;
-
 #ifdef HAVE_DISCORDRPC
 	DRPC_UpdatePresence();
 #endif
