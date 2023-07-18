@@ -1083,8 +1083,7 @@ void V_DrawFill(INT32 x, INT32 y, INT32 w, INT32 h, INT32 c)
 		.done();
 }
 
-#ifdef HWRENDER
-// This is now a function since it's otherwise repeated 2 times and honestly looks retarded:
+// This is now a function, no use being such a weenie that you say a slur over it
 static UINT32 V_GetHWConsBackColor(void)
 {
 	UINT32 hwcolor;
@@ -1095,26 +1094,25 @@ static UINT32 V_GetHWConsBackColor(void)
 		case 2:		hwcolor = 0xdeb88700;	break;	// Sepia
 		case 3:		hwcolor = 0x40201000;	break; 	// Brown
 		case 4:		hwcolor = 0xfa807200;	break; 	// Pink
-		case 5:		hwcolor = 0xff69b400;	break; 	// Raspberry
-		case 6:		hwcolor = 0xff000000;	break; 	// Red
-		case 7:		hwcolor = 0xffd68300;	break;	// Creamsicle
-		case 8:		hwcolor = 0xff800000;	break; 	// Orange
-		case 9:		hwcolor = 0xdaa52000;	break; 	// Gold
-		case 10:	hwcolor = 0x80800000;	break; 	// Yellow
-		case 11:	hwcolor = 0x00ff0000;	break; 	// Emerald
-		case 12:	hwcolor = 0x00800000;	break; 	// Green
-		case 13:	hwcolor = 0x4080ff00;	break; 	// Cyan
-		case 14:	hwcolor = 0x4682b400;	break; 	// Steel
-		case 15:	hwcolor = 0x1e90ff00;	break;	// Periwinkle
-		case 16:	hwcolor = 0x0000ff00;	break; 	// Blue
-		case 17:	hwcolor = 0xff00ff00;	break; 	// Purple
-		case 18:	hwcolor = 0xee82ee00;	break; 	// Lavender
+		case 5:		hwcolor = 0xff000000;	break; 	// Red
+		case 6:		hwcolor = 0xff800000;	break; 	// Orange
+		case 7:		hwcolor = 0xdaa52000;	break; 	// Gold
+		case 8:		hwcolor = 0xffdd0000;	break; 	// Yellow
+		case 9:		hwcolor = 0xc5e80000;	break; 	// Peridot
+		case 10:	hwcolor = 0x00800000;	break; 	// Green
+		case 11:	hwcolor = 0x15f2b000;	break; 	// Aquamarine
+		case 12:	hwcolor = 0x00ffff00;	break; 	// Cyan
+		case 13:	hwcolor = 0x4682b400;	break; 	// Steel
+		case 14:	hwcolor = 0x0000ff00;	break; 	// Blue
+		case 15:	hwcolor = 0x9844ff00;	break; 	// Purple
+		case 16:	hwcolor = 0xff00ff00;	break;	// Magenta
+		case 17:	hwcolor = 0xee82ee00;	break; 	// Lavender
+		case 18:	hwcolor = 0xf570a500;	break;	// Rose
 		// Default green
 		default:	hwcolor = 0x00800000;	break;
 	}
 	return hwcolor;
 }
-#endif
 
 // THANK YOU MPC!!!
 // and thanks toaster for cleaning it up.
@@ -1674,31 +1672,7 @@ void V_DrawPromptBack(INT32 boxheight, INT32 color)
 	if (color == INT32_MAX)
 		color = cons_backcolor.value;
 
-	UINT32 hwcolor;
-	switch (color)
-	{
-		case 0:		hwcolor = 0xffffff00;	break; 	// White
-		case 1:		hwcolor = 0x00000000;	break; 	// Black // Note this is different from V_DrawFadeConsBack
-		case 2:		hwcolor = 0xdeb88700;	break;	// Sepia
-		case 3:		hwcolor = 0x40201000;	break; 	// Brown
-		case 4:		hwcolor = 0xfa807200;	break; 	// Pink
-		case 5:		hwcolor = 0xff69b400;	break; 	// Raspberry
-		case 6:		hwcolor = 0xff000000;	break; 	// Red
-		case 7:		hwcolor = 0xffd68300;	break;	// Creamsicle
-		case 8:		hwcolor = 0xff800000;	break; 	// Orange
-		case 9:		hwcolor = 0xdaa52000;	break; 	// Gold
-		case 10:	hwcolor = 0x80800000;	break; 	// Yellow
-		case 11:	hwcolor = 0x00ff0000;	break; 	// Emerald
-		case 12:	hwcolor = 0x00800000;	break; 	// Green
-		case 13:	hwcolor = 0x4080ff00;	break; 	// Cyan
-		case 14:	hwcolor = 0x4682b400;	break; 	// Steel
-		case 15:	hwcolor = 0x1e90ff00;	break;	// Periwinkle
-		case 16:	hwcolor = 0x0000ff00;	break; 	// Blue
-		case 17:	hwcolor = 0xff00ff00;	break; 	// Purple
-		case 18:	hwcolor = 0xee82ee00;	break; 	// Lavender
-		// Default green
-		default:	hwcolor = 0x00800000;	break;
-	}
+	UINT32 hwcolor = V_GetHWConsBackColor();
 
 #ifdef HWRENDER
 	if (rendermode == render_opengl)
