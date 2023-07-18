@@ -8339,7 +8339,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 	{
 		K_KartEbrakeVisuals(player);
 
-		Obj_ServantHandHandling(player);
+		Obj_ServantHandSpawning(player);
 	}
 
 	if (K_GetKartButtons(player) & BT_BRAKE &&

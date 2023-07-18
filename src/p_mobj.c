@@ -7380,6 +7380,13 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 			Obj_MantaRingThink(mobj);
 			break;
 		}
+	case MT_SERVANTHAND:
+		{
+			Obj_ServantHandThink(mobj);
+			if (P_MobjWasRemoved(mobj))
+				return false;
+			break;
+		}
 	case MT_BALLHOG:
 		{
 			mobj_t *ghost = P_SpawnGhostMobj(mobj);
@@ -9831,10 +9838,11 @@ static boolean P_FuseThink(mobj_t *mobj)
 	}
 	case MT_SERVANTHAND:
 	{
-		if (!mobj->target
-			|| P_MobjWasRemoved(mobj->target)
+		if (P_MobjWasRemoved(mobj->target)
+			|| !mobj->target->health
 			|| !mobj->target->player
-			|| mobj->target->player->handtimer == 0)
+			|| mobj->target->player->handtimer == 0
+			|| mobj->target->player->hand != mobj)
 		{
 			P_RemoveMobj(mobj);
 			return false;
