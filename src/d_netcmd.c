@@ -430,7 +430,7 @@ static CV_PossibleValue_t kartbot_cons_t[] = {
 	{13,"Lv.MAX"},
 	{0, NULL}
 };
-consvar_t cv_kartbot = CVAR_INIT ("bots", "0", CV_NETVAR, kartbot_cons_t, NULL);
+consvar_t cv_kartbot = CVAR_INIT ("bots", "Off", CV_NETVAR, kartbot_cons_t, NULL);
 
 consvar_t cv_karteliminatelast = CVAR_INIT ("eliminatelast", "Yes", CV_NETVAR|CV_CALL, CV_YesNo, KartEliminateLast_OnChange);
 
