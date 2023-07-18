@@ -4074,7 +4074,10 @@ static thinker_t* LoadMobjThinker(savebuffer_t *save, actionf_p1 thinker)
 	if (diff2 & MD2_RENDERFLAGS)
 		mobj->renderflags = READUINT32(save->p);
 	if (diff2 & MD2_TID)
-		P_SetThingTID(mobj, READINT16(save->p));
+	{
+		INT16 tid = READINT16(save->p);
+		P_SetThingTID(mobj, tid);
+	}
 	if (diff2 & MD2_SPRITESCALE)
 	{
 		mobj->spritexscale = READFIXED(save->p);
