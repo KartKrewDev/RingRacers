@@ -8304,7 +8304,12 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 	//  a netgame save is being loaded, and could actively be harmful by messing with
 	//  the client's view of the data.)
 	if (!fromnetsave)
+	{
 		P_InitGametype();
+
+		// Initialize ACS scripts
+		ACS_LoadLevelScripts(gamemap-1);
+	}
 
 	// Now safe to free.
 	vres_Free(curmapvirt);
@@ -8418,12 +8423,6 @@ void P_PostLoadLevel(void)
 	if (demo.recording) // Okay, level loaded, character spawned and skinned,
 		G_BeginRecording(); // I AM NOW READY TO RECORD.
 	demo.deferstart = true;
-
-	// Initialize ACS scripts
-	//if (!fromnetsave) -- I don't know if it's appropriate to remove this entirely yet
-	{
-		ACS_LoadLevelScripts(gamemap-1);
-	}
 
 	K_TimerInit();
 
