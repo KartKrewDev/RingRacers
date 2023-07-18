@@ -983,7 +983,7 @@ void ST_drawTitleCard(void)
 						by += 5;
 					}
 
-					V_DrawRightAlignedThinString((BASEVIDWIDTH+bx)/2, by, V_6WIDTHSPACE, bossinfo.subtitle);
+					V_DrawRightAlignedThinString((BASEVIDWIDTH+bx)/2, by, 0, bossinfo.subtitle);
 				}
 
 				// Now draw the under-bar itself.
@@ -1172,7 +1172,7 @@ static void ST_overlayDrawer(void)
 				if (!r_splitscreen)
 				{
 					V_DrawCenteredString((BASEVIDWIDTH/2), BASEVIDHEIGHT-40, V_HUDTRANSHALF, M_GetText("VIEWPOINT:"));
-					V_DrawCenteredString((BASEVIDWIDTH/2), BASEVIDHEIGHT-32, V_HUDTRANSHALF|V_ALLOWLOWERCASE, player_names[stplyr-players]);
+					V_DrawCenteredString((BASEVIDWIDTH/2), BASEVIDHEIGHT-32, V_HUDTRANSHALF, player_names[stplyr-players]);
 				}
 				else if (r_splitscreen == 1)
 				{
@@ -1180,11 +1180,11 @@ static void ST_overlayDrawer(void)
 
 					INT32 y = (stplyr == &players[displayplayers[0]]) ? 4 : BASEVIDHEIGHT/2-12;
 					sprintf(name, "VIEWPOINT: %s", player_names[stplyr-players]);
-					V_DrawRightAlignedThinString(BASEVIDWIDTH-40, y, V_HUDTRANSHALF|V_ALLOWLOWERCASE|V_SNAPTOTOP|V_SNAPTOBOTTOM|V_SNAPTORIGHT|V_SPLITSCREEN, name);
+					V_DrawRightAlignedThinString(BASEVIDWIDTH-40, y, V_HUDTRANSHALF|V_SNAPTOTOP|V_SNAPTOBOTTOM|V_SNAPTORIGHT|V_SPLITSCREEN, name);
 				}
 				else if (r_splitscreen)
 				{
-					V_DrawCenteredThinString((vid.width/vid.dupx)/4, BASEVIDHEIGHT/2 - 12, V_HUDTRANSHALF|V_ALLOWLOWERCASE|V_SNAPTOBOTTOM|V_SNAPTOLEFT|V_SPLITSCREEN, player_names[stplyr-players]);
+					V_DrawCenteredThinString((vid.width/vid.dupx)/4, BASEVIDHEIGHT/2 - 12, V_HUDTRANSHALF|V_SNAPTOBOTTOM|V_SNAPTOLEFT|V_SPLITSCREEN, player_names[stplyr-players]);
 				}
 			}
 		}
@@ -1257,17 +1257,17 @@ void ST_DrawDemoTitleEntry(void)
 #define x (BASEVIDWIDTH/2 - 139)
 #define y (BASEVIDHEIGHT/2)
 	M_DrawTextBox(x, y + 4, MAXSTRINGLENGTH, 1);
-	V_DrawString(x + 8, y + 12, V_ALLOWLOWERCASE, nametodraw);
+	V_DrawString(x + 8, y + 12, 0, nametodraw);
 	if (anim < 4)
 		V_DrawCharacter(x + 8 + V_StringWidth(nametodraw, 0), y + 12,
 			'_' | 0x80, false);
 
 	M_DrawTextBox(x + 30, y - 24, 26, 1);
-	V_DrawString(x + 38, y - 16, V_ALLOWLOWERCASE, "Enter the name of the replay.");
+	V_DrawString(x + 38, y - 16, 0, "Enter the name of the replay.");
 
 	M_DrawTextBox(x + 50, y + 20, 20, 1);
-	V_DrawThinString(x + 58, y + 28, V_ALLOWLOWERCASE, "Escape - Cancel");
-	V_DrawRightAlignedThinString(x + 220, y + 28, V_ALLOWLOWERCASE, "Enter - Confirm");
+	V_DrawThinString(x + 58, y + 28, 0, "Escape - Cancel");
+	V_DrawRightAlignedThinString(x + 220, y + 28, 0, "Enter - Confirm");
 #undef x
 #undef y
 }
@@ -1384,20 +1384,20 @@ void ST_Drawer(void)
 			INT32 buttony = 2;
 
 			K_drawButtonAnim(buttonx - 76, buttony, V_HUDTRANS|V_SNAPTOTOP|V_SNAPTORIGHT, kp_button_b[1], leveltime);
-			V_DrawRightAlignedThinString(buttonx - 55, buttony, V_HUDTRANS|V_SNAPTOTOP|V_SNAPTORIGHT|V_ALLOWLOWERCASE|V_6WIDTHSPACE|V_YELLOWMAP, "or");
+			V_DrawRightAlignedThinString(buttonx - 55, buttony, V_HUDTRANS|V_SNAPTOTOP|V_SNAPTORIGHT|V_YELLOWMAP, "or");
 			K_drawButtonAnim(buttonx - 55, buttony, V_HUDTRANS|V_SNAPTOTOP|V_SNAPTORIGHT, kp_button_x[1], leveltime);
-			V_DrawRightAlignedThinString(buttonx - 2, buttony, V_HUDTRANS|V_SNAPTOTOP|V_SNAPTORIGHT|V_ALLOWLOWERCASE|V_6WIDTHSPACE|V_YELLOWMAP, "Save replay");
+			V_DrawRightAlignedThinString(buttonx - 2, buttony, V_HUDTRANS|V_SNAPTOTOP|V_SNAPTORIGHT|V_YELLOWMAP, "Save replay");
 			break;
 		}
 		case DSM_WILLAUTOSAVE:
 		{
-			V_DrawRightAlignedThinString(BASEVIDWIDTH - 55, 2, V_HUDTRANS|V_SNAPTOTOP|V_SNAPTORIGHT|V_ALLOWLOWERCASE|V_6WIDTHSPACE|V_YELLOWMAP, "Replay will be saved.");
+			V_DrawRightAlignedThinString(BASEVIDWIDTH - 55, 2, V_HUDTRANS|V_SNAPTOTOP|V_SNAPTORIGHT|V_YELLOWMAP, "Replay will be saved.");
 			K_drawButtonAnim(BASEVIDWIDTH - 56, 0, V_HUDTRANS|V_SNAPTOTOP|V_SNAPTORIGHT, kp_button_b[1], leveltime);
-			V_DrawRightAlignedThinString(BASEVIDWIDTH - 2, 2, V_HUDTRANS|V_SNAPTOTOP|V_SNAPTORIGHT|V_ALLOWLOWERCASE|V_6WIDTHSPACE|V_YELLOWMAP, "Change title");
+			V_DrawRightAlignedThinString(BASEVIDWIDTH - 2, 2, V_HUDTRANS|V_SNAPTOTOP|V_SNAPTORIGHT|V_YELLOWMAP, "Change title");
 			break;
 		}
 		case DSM_WILLSAVE:
-			V_DrawRightAlignedThinString(BASEVIDWIDTH - 2, 2, V_HUDTRANS|V_SNAPTOTOP|V_SNAPTORIGHT|V_ALLOWLOWERCASE|V_6WIDTHSPACE|V_YELLOWMAP, "Replay will be saved.");
+			V_DrawRightAlignedThinString(BASEVIDWIDTH - 2, 2, V_HUDTRANS|V_SNAPTOTOP|V_SNAPTORIGHT|V_YELLOWMAP, "Replay will be saved.");
 			break;
 
 		case DSM_TITLEENTRY:

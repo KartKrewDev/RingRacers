@@ -1109,6 +1109,7 @@ typedef enum sprite
 
 	SPR_IWHP, // Instawhip
 	SPR_WPRE, // Instawhip Recharge
+	SPR_WPRJ, // Instawhip Reject
 	SPR_GRNG, // Guard ring
 	SPR_GBDY, // Guard body
 
@@ -1132,6 +1133,7 @@ typedef enum sprite
 	SPR_HFX6, // Hitlag stage 6
 	SPR_HFX8, // Hitlag stage 8
 	SPR_HFX9, // Hitlag stage 9
+	SPR_HFXX, // Hitlag stage 10
 
 	// Kart Items
 	SPR_RSHE, // Rocket sneaker
@@ -4432,6 +4434,7 @@ typedef enum state
 	S_INSTAWHIP_RECHARGE2,
 	S_INSTAWHIP_RECHARGE3,
 	S_INSTAWHIP_RECHARGE4,
+	S_INSTAWHIP_REJECT,
 	S_BLOCKRING,
 	S_BLOCKBODY,
 
@@ -5750,6 +5753,7 @@ typedef enum state
 	S_HITLAG_6,
 	S_HITLAG_8,
 	S_HITLAG_9,
+	S_HITLAG_10,
 
 	// Broly Ki Orb
 	S_BROLY1,
@@ -6571,6 +6575,7 @@ typedef enum mobj_type
 
 	MT_INSTAWHIP,
 	MT_INSTAWHIP_RECHARGE,
+	MT_INSTAWHIP_REJECT,
 	MT_BLOCKRING,
 	MT_BLOCKBODY,
 

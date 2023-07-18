@@ -123,10 +123,6 @@ struct GlCoreGraphicsContext : public rhi::GraphicsContext
 {
 };
 
-struct GlCoreTransferContext : public rhi::TransferContext
-{
-};
-
 struct GlCoreActiveUniform
 {
 	uint32_t type;
@@ -159,10 +155,8 @@ class GlCoreRhi final : public Rhi
 	std::optional<Handle<Pipeline>> current_pipeline_;
 	PrimitiveType current_primitive_type_ = PrimitiveType::kPoints;
 	bool graphics_context_active_ = false;
-	bool transfer_context_active_ = false;
 	uint32_t graphics_context_generation_ = 0;
 	uint32_t index_buffer_offset_ = 0;
-	uint32_t transfer_context_generation_ = 0;
 
 	uint8_t stencil_front_reference_ = 0;
 	uint8_t stencil_front_compare_mask_ = 0xFF;
@@ -193,26 +187,23 @@ public:
 	virtual Rect get_renderbuffer_size(Handle<Renderbuffer> renderbuffer) override;
 	virtual uint32_t get_buffer_size(Handle<Buffer> buffer) override;
 
-	virtual Handle<TransferContext> begin_transfer() override;
-	virtual void end_transfer(Handle<TransferContext> handle) override;
-
 	virtual void update_buffer(
-		Handle<TransferContext> ctx,
+		Handle<GraphicsContext> ctx,
 		Handle<Buffer> buffer,
 		uint32_t offset,
 		tcb::span<const std::byte> data
 	) override;
 	virtual void update_texture(
-		Handle<TransferContext> ctx,
+		Handle<GraphicsContext> ctx,
 		Handle<Texture> texture,
 		Rect region,
 		srb2::rhi::PixelFormat data_format,
 		tcb::span<const std::byte> data
 	) override;
 	virtual Handle<UniformSet>
-	create_uniform_set(Handle<TransferContext> ctx, const CreateUniformSetInfo& info) override;
+	create_uniform_set(Handle<GraphicsContext> ctx, const CreateUniformSetInfo& info) override;
 	virtual Handle<BindingSet>
-	create_binding_set(Handle<TransferContext> ctx, Handle<Pipeline> pipeline, const CreateBindingSetInfo& info)
+	create_binding_set(Handle<GraphicsContext> ctx, Handle<Pipeline> pipeline, const CreateBindingSetInfo& info)
 		override;
 
 	virtual Handle<GraphicsContext> begin_graphics() override;

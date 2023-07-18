@@ -67,6 +67,7 @@ extern "C" {
 enum
 {
 	X        (HU),
+	X      (MENU),
 	X      (TINY),
 	X      (FILE),
 

@@ -569,9 +569,6 @@ struct BindingSet
 {
 };
 
-struct TransferContext
-{
-};
 struct GraphicsContext
 {
 };
@@ -607,26 +604,22 @@ struct Rhi
 	virtual Rect get_renderbuffer_size(Handle<Renderbuffer> renderbuffer) = 0;
 	virtual uint32_t get_buffer_size(Handle<Buffer> buffer) = 0;
 
-	virtual Handle<TransferContext> begin_transfer() = 0;
-	virtual void end_transfer(Handle<TransferContext> handle) = 0;
-
-	// Transfer Context functions
 	virtual void update_buffer(
-		Handle<TransferContext> ctx,
+		Handle<GraphicsContext> ctx,
 		Handle<Buffer> buffer,
 		uint32_t offset,
 		tcb::span<const std::byte> data
 	) = 0;
 	virtual void update_texture(
-		Handle<TransferContext> ctx,
+		Handle<GraphicsContext> ctx,
 		Handle<Texture> texture,
 		Rect region,
 		srb2::rhi::PixelFormat data_format,
 		tcb::span<const std::byte> data
 	) = 0;
-	virtual Handle<UniformSet> create_uniform_set(Handle<TransferContext> ctx, const CreateUniformSetInfo& info) = 0;
+	virtual Handle<UniformSet> create_uniform_set(Handle<GraphicsContext> ctx, const CreateUniformSetInfo& info) = 0;
 	virtual Handle<BindingSet>
-	create_binding_set(Handle<TransferContext> ctx, Handle<Pipeline> pipeline, const CreateBindingSetInfo& info) = 0;
+	create_binding_set(Handle<GraphicsContext> ctx, Handle<Pipeline> pipeline, const CreateBindingSetInfo& info) = 0;
 
 	virtual Handle<GraphicsContext> begin_graphics() = 0;
 	virtual void end_graphics(Handle<GraphicsContext> ctx) = 0;

@@ -175,7 +175,7 @@ void PostprocessWipePass::prepass(Rhi& rhi)
 	});
 }
 
-void PostprocessWipePass::transfer(Rhi& rhi, Handle<TransferContext> ctx)
+void PostprocessWipePass::transfer(Rhi& rhi, Handle<GraphicsContext> ctx)
 {
 	if (wipe_tex_ == kNullHandle)
 	{

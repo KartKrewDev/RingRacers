@@ -2,6 +2,7 @@
 // \brief MESSAGE BOX (aka: a hacked, cobbled together menu)
 
 #include "../../k_menu.h"
+#include "../../v_video.h" // V_ScaledWordWrap, HU_FONT
 #include "../../z_zone.h"
 
 // message prompt struct
@@ -30,42 +31,17 @@ static inline size_t M_StringHeight(const char *string)
 void M_StartMessage(const char *header, const char *string, void (*routine)(INT32), menumessagetype_t itemtype, const char *confirmstr, const char *defaultstr)
 {
 	const UINT8 pid = 0;
-	size_t max = 0, maxatstart = 0, start = 0, strlines, i;
 	static char *message = NULL;
 	Z_Free(message);
-	message = Z_StrDup(string);
-	DEBFILE(message);
+	DEBFILE(string);
 
-	// Rudementary word wrapping.
-	// Simple and effective. Does not handle nonuniform letter sizes, etc. but who cares.
-	for (i = 0; message[i]; i++)
-	{
-		if (message[i] == ' ')
-		{
-			start = i;
-			max += 4;
-			maxatstart = max;
-		}
-		else if (message[i] == '\n')
-		{
-			start = 0;
-			max = 0;
-			maxatstart = 0;
-			continue;
-		}
-		else if (message[i] & 0x80)
-			continue;
-		else
-			max += 8;
-
-		// Start trying to wrap if presumed length exceeds the screen width.
-		if (max >= BASEVIDWIDTH && start > 0)
-		{
-			message[start] = '\n';
-			max -= maxatstart;
-			start = 0;
-		}
-	}
+	message = V_ScaledWordWrap(
+		BASEVIDWIDTH << FRACBITS,
+		FRACUNIT, FRACUNIT, FRACUNIT,
+		0,
+		HU_FONT,
+		string
+	);
 
 	strncpy(menumessage.message, string, MAXMENUMESSAGE);
 	menumessage.header = header;
@@ -76,9 +52,6 @@ void M_StartMessage(const char *header, const char *string, void (*routine)(INT3
 	menumessage.timer = 0;
 	menumessage.closing = 0;
 	menumessage.active = true;
-
-	start = 0;
-	max = 0;
 
 	if (!routine)
 	{
@@ -108,29 +81,7 @@ void M_StartMessage(const char *header, const char *string, void (*routine)(INT3
 	}*/
 
 	//added : 06-02-98: now draw a textbox around the message
-	// compute lenght max and the numbers of lines
-	for (strlines = 0; *(message+start); strlines++)
-	{
-		for (i = 0; i < strlen(message+start);i++)
-		{
-			if (*(message+start+i) == '\n')
-			{
-				if (i > max)
-					max = i;
-				start += i;
-				i = (size_t)-1; //added : 07-02-98 : damned!
-				start++;
-				break;
-			}
-		}
-
-		if (i == strlen(message+start))
-		{
-			start += i;
-			if (i > max)
-				max = i;
-		}
-	}
+	// oogh my god this was replaced in 2023
 
 	menumessage.x = (8 * MAXSTRINGLENGTH) - 1;
 	menumessage.y = M_StringHeight(message);

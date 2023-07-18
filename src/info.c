@@ -558,6 +558,7 @@ char sprnames[NUMSPRITES + 1][5] =
 
 	"IWHP", // Instawhip
 	"WPRE", // Instawhip Recharge
+	"WPRJ", // Instawhip Reject
 	"GRNG", // Guard ring
 	"GBDY", // Guard body
 
@@ -581,6 +582,7 @@ char sprnames[NUMSPRITES + 1][5] =
 	"HFX6", // Hitlag stage 6
 	"HFX8", // Hitlag stage 8
 	"HFX9", // Hitlag stage 9
+	"HFXX", // Hitlag stage 10
 
 	// Kart Items
 	"RSHE", // Rocket sneaker
@@ -4022,6 +4024,7 @@ state_t states[NUMSTATES] =
 	{SPR_NULL,                 0, 0, {A_PlaySound}, sfx_s3ka0, 2, S_INSTAWHIP_RECHARGE3}, // S_INSTAWHIP_RECHARGE2
 	{SPR_WPRE,                 FF_FULLBRIGHT|FF_FLOORSPRITE|FF_ANIMATE|0, 36, {NULL}, 17, 2, S_INSTAWHIP_RECHARGE4}, // S_INSTAWHIP_RECHARGE3
 	{SPR_NULL,                 0, 0, {A_PlaySound}, sfx_s3k7c, 2, S_NULL}, // S_INSTAWHIP_RECHARGE4
+	{SPR_WPRJ,                 FF_ANIMATE, 9, {NULL}, 8, 1, S_NULL}, // S_INSTAWHIP_REJECT
 	{SPR_GRNG,                 FF_FULLBRIGHT|FF_PAPERSPRITE|0, -1, {NULL}, 0, 0, S_NULL}, // S_BLOCKRING
 	{SPR_GBDY,                 FF_FULLBRIGHT|FF_ANIMATE|0, -1, {NULL}, 4, 2, S_NULL}, // S_BLOCKBODY
 
@@ -5320,6 +5323,7 @@ state_t states[NUMSTATES] =
 	{SPR_HFX6, FF_FULLBRIGHT|FF_PAPERSPRITE|FF_ANIMATE, 6, {NULL}, 5, 1, S_NULL}, // S_HITLAG_6
 	{SPR_HFX8, FF_FULLBRIGHT|FF_PAPERSPRITE|FF_ANIMATE, 8, {NULL}, 7, 1, S_NULL}, // S_HITLAG_8
 	{SPR_HFX9, FF_FULLBRIGHT|FF_PAPERSPRITE|FF_ANIMATE, 9, {NULL}, 8, 1, S_NULL}, // S_HITLAG_9
+	{SPR_HFXX, FF_FULLBRIGHT|FF_PAPERSPRITE|FF_ANIMATE, 10, {NULL}, 9, 1, S_NULL}, // S_HITLAG_10
 
 	// Broly Ki Orb
 	{SPR_LSSJ, FF_REVERSESUBTRACT|FF_FULLBRIGHT, -1, {NULL}, 0, 0, S_BROLY2}, // S_BROLY1
@@ -22859,6 +22863,33 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		sfx_None,       // activesound
 		MF_NOBLOCKMAP|MF_NOGRAVITY|MF_NOCLIP|MF_NOCLIPHEIGHT|MF_SCENERY|MF_NOCLIPTHING|MF_DONTENCOREMAP|MF_NOSQUISH, // flags
 		S_INSTAWHIP_RECHARGE3 // raisestate
+	},
+
+	{               // MT_INSTAWHIP_REJECT
+		-1,             // doomednum
+		S_INSTAWHIP_REJECT,    // spawnstate
+		1000,           // spawnhealth
+		S_NULL,         // seestate
+		sfx_None,       // seesound
+		0,              // reactiontime
+		sfx_None,       // attacksound
+		S_NULL,         // painstate
+		0,              // painchance
+		sfx_None,       // painsound
+		S_NULL,         // meleestate
+		S_NULL,         // missilestate
+		S_NULL,         // deathstate
+		S_NULL,         // xdeathstate
+		sfx_None,       // deathsound
+		0,              // speed
+		90*FRACUNIT,    // radius
+		90*FRACUNIT,    // height
+		0,              // display offset
+		100,            // mass
+		0,              // damage
+		sfx_None,       // activesound
+		MF_NOGRAVITY|MF_NOCLIPHEIGHT|MF_DONTENCOREMAP, // flags
+		S_NULL          // raisestate
 	},
 
 	{           // MT_BLOCKRING

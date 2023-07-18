@@ -1025,6 +1025,7 @@ void readlevelheader(MYFILE *f, char * name)
 			word2 = tmp += 2;
 			i = atoi(word2); // used for numerical settings
 
+			// The following support mixed/lower case.
 
 			if (fastcmp(word, "LEVELNAME"))
 			{
@@ -1032,7 +1033,14 @@ void readlevelheader(MYFILE *f, char * name)
 					sizeof(mapheaderinfo[num]->lvlttl), va("Level header %d: levelname", num));
 				continue;
 			}
-			// CHEAP HACK: move this over here for lowercase subtitles
+
+			if (fastcmp(word, "ZONETITLE"))
+			{
+				deh_strlcpy(mapheaderinfo[num]->zonttl, word2,
+					sizeof(mapheaderinfo[num]->zonttl), va("Level header %d: zonetitle", num));
+				continue;
+			}
+
 			if (fastcmp(word, "SUBTITLE"))
 			{
 				deh_strlcpy(mapheaderinfo[num]->subttl, word2,
@@ -1127,11 +1135,6 @@ void readlevelheader(MYFILE *f, char * name)
 			}
 
 			// Strings that can be truncated
-			else if (fastcmp(word, "ZONETITLE"))
-			{
-				deh_strlcpy(mapheaderinfo[num]->zonttl, word2,
-					sizeof(mapheaderinfo[num]->zonttl), va("Level header %d: zonetitle", num));
-			}
 			else if (fastcmp(word, "RELEVANTSKIN"))
 			{
 				deh_strlcpy(mapheaderinfo[num]->relevantskin, word2,

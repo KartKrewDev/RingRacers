@@ -3303,6 +3303,7 @@ const char *const STATE_LIST[] = { // array length left dynamic for sanity testi
 	"S_INSTAWHIP_RECHARGE2",
 	"S_INSTAWHIP_RECHARGE3",
 	"S_INSTAWHIP_RECHARGE4",
+	"S_INSTAWHIP_REJECT",
 	"S_BLOCKRING",
 	"S_BLOCKBODY",
 
@@ -4605,6 +4606,8 @@ const char *const STATE_LIST[] = { // array length left dynamic for sanity testi
 	"S_HITLAG_6",
 	"S_HITLAG_8",
 	"S_HITLAG_9",
+	"S_HITLAG_10",
+
 
 	// Broly Ki Orb
 	"S_BROLY1",
@@ -5407,6 +5410,7 @@ const char *const MOBJTYPE_LIST[] = {  // array length left dynamic for sanity t
 
 	"MT_INSTAWHIP",
 	"MT_INSTAWHIP_RECHARGE",
+	"MT_INSTAWHIP_REJECT",
 	"MT_BLOCKRING",
 	"MT_BLOCKBODY",
 
@@ -6862,7 +6866,7 @@ struct int_const_s const INT_CONST[] = {
 	{"V_REVERSESUBTRACT",V_REVERSESUBTRACT},
 	{"V_MODULATE",V_MODULATE},
 	{"V_OVERLAY",V_OVERLAY},
-	{"V_ALLOWLOWERCASE",V_ALLOWLOWERCASE},
+	{"V_FORCEUPPERCASE",V_FORCEUPPERCASE},
 	{"V_FLIP",V_FLIP},
 	{"V_VFLIP",V_VFLIP},
 	{"V_SNAPTOTOP",V_SNAPTOTOP},

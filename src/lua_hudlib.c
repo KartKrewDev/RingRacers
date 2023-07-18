@@ -887,7 +887,7 @@ static int libd_drawString(lua_State *L)
 	fixed_t x = luaL_checkinteger(L, 1);
 	fixed_t y = luaL_checkinteger(L, 2);
 	const char *str = luaL_checkstring(L, 3);
-	INT32 flags = luaL_optinteger(L, 4, V_ALLOWLOWERCASE);
+	INT32 flags = luaL_optinteger(L, 4, 0);
 	enum align align = luaL_checkoption(L, 5, "left", align_opt);
 
 	flags &= ~V_PARAMMASK; // Don't let crashes happen.
@@ -944,7 +944,7 @@ static int libd_drawTitleCardString(lua_State *L)
 	fixed_t x = luaL_checkinteger(L, 1);
 	fixed_t y = luaL_checkinteger(L, 2);
 	const char *str = luaL_checkstring(L, 3);
-	INT32 flags = luaL_optinteger(L, 4, V_ALLOWLOWERCASE);
+	INT32 flags = luaL_optinteger(L, 4, 0);
 	boolean rightalign = lua_optboolean(L, 5);
 	INT32 timer = luaL_optinteger(L, 6, 0);
 	INT32 threshold = luaL_optinteger(L, 7, 0);
@@ -969,7 +969,7 @@ static int libd_drawKartString(lua_State *L)
 	fixed_t x = luaL_checkinteger(L, 1);
 	fixed_t y = luaL_checkinteger(L, 2);
 	const char *str = luaL_checkstring(L, 3);
-	INT32 flags = luaL_optinteger(L, 4, V_ALLOWLOWERCASE);
+	INT32 flags = luaL_optinteger(L, 4, 0);
 	huddrawlist_h list;
 
 	flags &= ~V_PARAMMASK; // Don't let crashes happen.
@@ -998,7 +998,7 @@ static int libd_titleCardStringWidth(lua_State *L)
 static int libd_stringWidth(lua_State *L)
 {
 	const char *str = luaL_checkstring(L, 1);
-	INT32 flags = luaL_optinteger(L, 2, V_ALLOWLOWERCASE);
+	INT32 flags = luaL_optinteger(L, 2, 0);
 	enum widtht widtht = luaL_checkoption(L, 3, "normal", widtht_opt);
 
 	HUDONLY
