@@ -63,8 +63,11 @@ static void RemoveRingShooterPointer(mobj_t *base)
 	}
 
 	// NULL the player's pointer.
-	player = &players[ rs_base_playerid(base) ];
-	P_SetTarget(&player->ringShooter, NULL);
+	if (playeringame[ rs_base_playerid(base) ])
+	{
+		player = &players[ rs_base_playerid(base) ];
+		P_SetTarget(&player->ringShooter, NULL);
+	}
 
 	// Remove our player ID
 	rs_base_playerid(base) = -1;
