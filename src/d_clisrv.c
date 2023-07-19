@@ -118,7 +118,7 @@ UINT32 playerpingtable[MAXPLAYERS]; //table of player latency values.
 
 #define GENTLEMANSMOOTHING (TICRATE)
 static tic_t reference_lag;
-static UINT8 spike_time; 
+static UINT8 spike_time;
 static tic_t lowest_lag;
 boolean server_lagless;
 static CV_PossibleValue_t mindelay_cons_t[] = {{0, "MIN"}, {30, "MAX"}, {0, NULL}};
@@ -266,7 +266,7 @@ shouldsign_t ShouldSignChallenge(uint8_t *message)
 	#ifndef SRB2_LITTLE_ENDIAN
 		#error  "FIXME: 64-bit timestamp field is not supported on Big Endian"
 	#endif
-	
+
 	UINT64 then, now;
 	UINT32 claimedIP, realIP;
 
@@ -2280,7 +2280,7 @@ static void CL_ConnectToServer(void)
 		{
 			PR_ApplyProfile(cv_lastprofile[i].value, i);
 		}
-		
+
 		// Slightly sucks that we have to duplicate these from d_main.c, but
 		// the change to cv_lastprofile doesn't take in time for this codepath.
 		if (M_CheckParm("-profile"))
@@ -4045,7 +4045,7 @@ static void Got_AddBot(UINT8 **p, INT32 playernum)
 	K_SetBot(newplayernum, skinnum, difficulty, style);
 }
 
-static boolean SV_AddWaitingPlayers(SINT8 node, UINT8 *availabilities, 
+static boolean SV_AddWaitingPlayers(SINT8 node, UINT8 *availabilities,
 const char *name, uint8_t *key, UINT16 *pwr,
 const char *name2, uint8_t *key2, UINT16 *pwr2,
 const char *name3, uint8_t *key3, UINT16 *pwr3,
@@ -4208,9 +4208,15 @@ boolean SV_SpawnServer(void)
 		serverrunning = true;
 		SV_ResetServer();
 		SV_GenContext();
-		if (netgame && I_NetOpenSocket)
+		if (netgame)
 		{
-			I_NetOpenSocket();
+			if (I_NetOpenSocket)
+			{
+				I_NetOpenSocket();
+			}
+
+			ourIP = 0;
+			STUN_bind(GotOurIP);
 		}
 
 		// non dedicated server just connect to itself
@@ -4219,9 +4225,7 @@ boolean SV_SpawnServer(void)
 		else doomcom->numslots = 1;
 	}
 
-	ourIP = 0;
-	if (netgame && server)
-		STUN_bind(GotOurIP);
+
 
 	// strictly speaking, i'm not convinced the following is necessary
 	// but I'm not confident enough to remove it entirely in case it breaks something
@@ -4454,19 +4458,19 @@ static void HandleConnect(SINT8 node)
 				memcpy(lastReceivedKey[node][i], PR_GetLocalPlayerProfile(i)->public_key, sizeof(lastReceivedKey[node][i]));
 			}
 			else // Remote player, gotta check their signature.
-			{	
+			{
 				if (PR_IsKeyGuest(lastReceivedKey[node][i])) // IsSplitPlayerOnNodeGuest isn't appropriate here, they're not in-game yet!
 				{
 					if (!cv_allowguests.value)
 					{
 						SV_SendRefuse(node, M_GetText("The server doesn't allow GUESTs.\nCreate a profile to join!"));
-						return;	
+						return;
 					}
 
 					sigcheck = 0; // Always succeeds. Yes, this is a success response. C R Y P T O
 				}
 				else
-				{	
+				{
 					sigcheck = crypto_eddsa_check(netbuffer->u.clientcfg.challengeResponse[i], lastReceivedKey[node][i], lastSentChallenge[node], CHALLENGELENGTH);
 				}
 
@@ -4489,7 +4493,7 @@ static void HandleConnect(SINT8 node)
 							CONS_Alert(CONS_WARNING, "Joining player's pubkey matches existing player, stat updates will be nonsense!\n");
 						#else
 							SV_SendRefuse(node, M_GetText("Duplicate pubkey already on server.\n(Did you share your profile?)"));
-							return;	
+							return;
 						#endif
 					}
 				}
@@ -4507,7 +4511,7 @@ static void HandleConnect(SINT8 node)
 							CONS_Alert(CONS_WARNING, "Players with same pubkey in the joning party, stat updates will be nonsense!\n");
 						#else
 							SV_SendRefuse(node, M_GetText("Duplicate pubkey in local party.\n(How did you even do this?)"));
-							return;	
+							return;
 						#endif
 					}
 				}
@@ -5029,7 +5033,7 @@ static void PT_Say(int node)
 		return;
 	}
 
-	stop_spamming[say.source] = 4; 
+	stop_spamming[say.source] = 4;
 
 	serverplayer_t *stats = SV_GetStatsByPlayerIndex(say.source);
 
@@ -5060,7 +5064,7 @@ static char NodeToSplitPlayer(int node, int split)
 	else if (split == 3)
 		return nodetoplayer4[node];
 	return -1;
-} 
+}
 
 /** Handles a packet received from a node that is in game
   *
@@ -5089,7 +5093,7 @@ static void HandlePacketFromPlayer(SINT8 node)
 	if (netconsole >= MAXPLAYERS)
 		I_Error("bad table nodetoplayer: node %d player %d", doomcom->remotenode, netconsole);
 #endif
-	
+
 
 #ifdef SIGNGAMETRAFFIC
 	if (server)
@@ -5113,10 +5117,10 @@ static void HandlePacketFromPlayer(SINT8 node)
 				{
 					if (crypto_eddsa_check(netbuffer->signature[splitnodes], players[targetplayer].public_key, message, doomcom->datalength - BASEPACKETSIZE))
 					{
-						CONS_Alert(CONS_ERROR, "SIGFAIL! Packet type %d from node %d player %d\nkey %s size %d netconsole %d\n", 
+						CONS_Alert(CONS_ERROR, "SIGFAIL! Packet type %d from node %d player %d\nkey %s size %d netconsole %d\n",
 							netbuffer->packettype, node, splitnodes,
 							GetPrettyRRID(players[targetplayer].public_key, true), doomcom->datalength - BASEPACKETSIZE, netconsole);
-						
+
 						// Something scary can happen when multiple kicks that resolve to the same node are processed in quick succession.
 						// Sometimes, a kick will still be left to process after the player's been disposed, and that causes the kick to resolve on the server instead!
 						// This sucks, so we check for a stale/misfiring kick beforehand.
@@ -5127,7 +5131,7 @@ static void HandlePacketFromPlayer(SINT8 node)
 						return;
 					}
 				}
-					
+
 			}
 		}
 	}
@@ -5651,7 +5655,7 @@ static void HandlePacketFromPlayer(SINT8 node)
 							SendKick(targetplayer, KICK_MSG_SIGFAIL);
 						break;
 					}
-					else 
+					else
 					{
 						memcpy(lastReceivedSignature[targetplayer], netbuffer->u.responseall.signature[responseplayer], sizeof(lastReceivedSignature[targetplayer]));
 					}
@@ -6003,7 +6007,7 @@ static void CL_SendClientCmd(void)
 					lagDelay = reference_lag;
 				}
 			}
-			else 
+			else
 			{
 				reference_lag = lagDelay; // Adjust quickly if the connection improves.
 				spike_time = 0;
@@ -6617,10 +6621,10 @@ static void KickUnverifiedPlayers(void)
 					SendKick(i, KICK_MSG_SIGFAIL);
 			}
 		}
-	}	
+	}
 }
 
-// 
+//
 static void SendChallengeResults(void)
 {
 	int i;
@@ -7146,5 +7150,5 @@ void SendServerNotice(SINT8 target, char *message)
 {
 	if (client)
 		return;
-	DoSayCommand(message, target + 1, HU_PRIVNOTICE, servernode); 
+	DoSayCommand(message, target + 1, HU_PRIVNOTICE, servernode);
 }
