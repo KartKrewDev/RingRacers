@@ -183,6 +183,15 @@ void Obj_SymbolSpawn(mobj_t *mobj);
 void Obj_SymbolSetup(mobj_t *mobj, mapthing_t *mthing);
 void Obj_SymbolThink(mobj_t *mobj);
 
+/* Dash Rings */
+void Obj_RegularDashRingSpawn(mobj_t *mobj);
+void Obj_RainbowDashRingSpawn(mobj_t *mobj);
+void Obj_DashRingSetup(mobj_t *mobj, mapthing_t *mthing);
+void Obj_RainbowDashRingThink(mobj_t *mobj);
+void Obj_DashRingTouch(mobj_t *mobj, player_t *player);
+void Obj_DashRingPlayerThink(player_t *player);
+boolean Obj_DashRingPlayerHasNoGravity(player_t *player);
+
 #ifdef __cplusplus
 } // extern "C"
 #endif

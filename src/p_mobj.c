@@ -1159,6 +1159,11 @@ fixed_t P_GetMobjGravity(mobj_t *mo)
 			gravityadd = FixedMul(TUMBLEGRAVITY, gravityadd);
 		}
 
+		if (mo->player->carry == CR_DASHRING && Obj_DashRingPlayerHasNoGravity(mo->player))
+		{
+			gravityadd = 0;
+		}
+
 		if (K_IsHoldingDownTop(mo->player))
 		{
 			gravityadd *= 3;
@@ -9593,6 +9598,9 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 			return false;
 		}
 		break;
+	case MT_RAINBOWDASHRING:
+		Obj_RainbowDashRingThink(mobj);
+		break;
 	default:
 		// check mobj against possible water content, before movement code
 		P_MobjCheckWater(mobj);
@@ -10979,6 +10987,12 @@ mobj_t *P_SpawnMobj(fixed_t x, fixed_t y, fixed_t z, mobjtype_t type)
 			break;
 		case MT_SYMBOL:
 			Obj_SymbolSpawn(mobj);
+			break;
+		case MT_DASHRING:
+			Obj_RegularDashRingSpawn(mobj);
+			break;
+		case MT_RAINBOWDASHRING:
+			Obj_RainbowDashRingSpawn(mobj);
 			break;
 		default:
 			break;
@@ -13502,6 +13516,12 @@ static boolean P_SetupSpawnedMapThing(mapthing_t *mthing, mobj_t *mobj)
 	case MT_SYMBOL:
 	{
 		Obj_SymbolSetup(mobj, mthing);
+		break;
+	}
+	case MT_DASHRING:
+	case MT_RAINBOWDASHRING:
+	{
+		Obj_DashRingSetup(mobj, mthing);
 		break;
 	}
 	default:

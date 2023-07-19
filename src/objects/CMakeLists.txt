@@ -25,4 +25,5 @@ target_sources(SRB2SDL2 PRIVATE
 	battle-ufo.cpp
 	powerup-aura.cpp
 	symbol.c
+	dash-rings.c
 )

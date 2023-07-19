@@ -475,7 +475,7 @@ sfxinfo_t S_sfx[NUMSFX] =
   {"s3k47",  false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, "Rising dust"}, // Kart AIZ dust
   {"s3k48",  false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, "Pulse"},
   {"s3k49",  false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, "Impact"}, // Kart bump sound
-  {"s3k4a",  false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, "Grab"}, 
+  {"s3k4a",  false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, "Grab"},
   {"s3k4b",  false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, "Splash"},
   {"s3k4c",  false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, "Heavy hit"},
   {"s3k4d",  false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, "Firing bullet"},
@@ -505,7 +505,7 @@ sfxinfo_t S_sfx[NUMSFX] =
   {"s3k65",  false, 255,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, "Got sphere"}, // Blue Spheres
   {"s3k66",  false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, "Special stage end"},
   {"s3k67",  false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, "Firing missile"},
-  {"s3k68",  false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, "Discovery"}, // Kart final lap 
+  {"s3k68",  false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, "Discovery"}, // Kart final lap
   {"s3k69",  false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, "Switch click"},
   {"s3k6a",  false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, "Special stage clear"}, // Kart finish
   {"s3k6b",  false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, "Punch"},
@@ -1196,6 +1196,9 @@ sfxinfo_t S_sfx[NUMSFX] =
   {"fbird",  false, 255,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""}, // Speeding up
   {"fhurt1", false, 255,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""}, // Whipped
   {"fhurt2", false, 255,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""}, // Hunting
+
+  {"dashr",  false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""}, // Regular Dash Ring
+  {"rainbr", false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""}, // Rainbow Dash Ring
 
   // SRB2Kart - Engine sounds
   // Engine class A
