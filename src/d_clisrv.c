@@ -2775,20 +2775,36 @@ void CL_ClearPlayer(INT32 playernum)
 			K_RemoveFollower(&players[playernum]);
 		}
 
-		if (players[playernum].mo)
-		{
-			P_RemoveMobj(players[playernum].mo);
-			P_SetTarget(&players[playernum].mo, NULL);
+#define PlayerPointerRemove(field) \
+		if (field) \
+		{ \
+			P_RemoveMobj(field); \
+			P_SetTarget(&field, NULL); \
 		}
 
+		// These are mostly subservient to the player, and may not clean themselves up.
+		PlayerPointerRemove(players[playernum].mo);
+		PlayerPointerRemove(players[playernum].followmobj);
+		PlayerPointerRemove(players[playernum].stumbleIndicator);
+		PlayerPointerRemove(players[playernum].sliptideZipIndicator);
+
+#undef PlayerPointerRemove
+
+		// These have thinkers of their own.
+		P_SetTarget(&players[playernum].whip, NULL);
+		P_SetTarget(&players[playernum].hand, NULL);
+		P_SetTarget(&players[playernum].hoverhyudoro, NULL);
+		P_SetTarget(&players[playernum].ringShooter, NULL);
+
+		// TODO: Any better handling in store?
+		P_SetTarget(&players[playernum].flickyAttacker, NULL);
+		P_SetTarget(&players[playernum].powerup.flickyController, NULL);
+
+		// These are camera items and possibly belong to multiple players.
 		P_SetTarget(&players[playernum].skybox.viewpoint, NULL);
 		P_SetTarget(&players[playernum].skybox.centerpoint, NULL);
 		P_SetTarget(&players[playernum].awayview.mobj, NULL);
-		P_SetTarget(&players[playernum].followmobj, NULL);
-		P_SetTarget(&players[playernum].hoverhyudoro, NULL);
-		P_SetTarget(&players[playernum].stumbleIndicator, NULL);
-		P_SetTarget(&players[playernum].sliptideZipIndicator, NULL);
-		P_SetTarget(&players[playernum].ringShooter, NULL);
+		
 	}
 
 	// Handle parties.

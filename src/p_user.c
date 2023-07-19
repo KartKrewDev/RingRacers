@@ -4249,6 +4249,25 @@ void P_PlayerThink(player_t *player)
 		player->playerstate = PST_DEAD;
 	}
 
+	// Erasing invalid player pointers
+	{
+#define PlayerPointerErase(field) \
+		if (field && P_MobjWasRemoved(field)) \
+			P_SetTarget(&field, NULL); \
+
+		PlayerPointerErase(player->followmobj);
+		PlayerPointerErase(player->stumbleIndicator);
+		PlayerPointerErase(player->sliptideZipIndicator);
+		PlayerPointerErase(player->whip);
+		PlayerPointerErase(player->hand);
+		PlayerPointerErase(player->ringShooter);
+		PlayerPointerErase(player->hoverhyudoro);
+		PlayerPointerErase(player->flickyAttacker);
+		PlayerPointerErase(player->powerup.flickyController);
+
+#undef PlayerPointerErase
+	}
+
 	player->old_drawangle = player->drawangle;
 
 	P_TickAltView(&player->awayview);
