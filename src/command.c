@@ -917,7 +917,7 @@ static void COM_Help_f(void)
 					boolean follower = (cvar->PossibleValue == Followercolor_cons_t);
 					for (i = SKINCOLOR_NONE; i < numskincolors; ++i)
 					{
-						if (K_ColorUsable(i, follower) == true)
+						if (K_ColorUsable(i, follower, true) == true)
 						{
 							CONS_Printf("  %-3d : %s\n", i, skincolors[i].name);
 							if (i == cvar->value)

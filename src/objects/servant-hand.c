@@ -8,7 +8,7 @@
 #include "../r_main.h"
 #include "../g_game.h"
 
-void Obj_ServantHandHandling(player_t *player)
+void Obj_ServantHandSpawning(player_t *player)
 {
 	if (player->pflags & PF_WRONGWAY || player->pflags & PF_POINTME)
 	{
@@ -36,71 +36,86 @@ void Obj_ServantHandHandling(player_t *player)
 				}
 			}
 		}
-
-		if (player->hand)
-		{
-			player->hand->destscale = mapobjectscale;
-		}
 	}
 	else if (player->handtimer != 0)
 	{
 		player->handtimer--;
 	}
+}
 
-	if (player->hand)
+void Obj_ServantHandThink(mobj_t *hand)
+{
+	UINT8 handtimer = 0;
+	player_t *player = NULL;
+
+	if (P_MobjWasRemoved(hand->target))
+	{
+		P_RemoveMobj(hand);
+		return;
+	}
+
+	if (hand->target->health && hand->target->player && hand->target->player->hand == hand)
+	{
+		player = hand->target->player;
+		handtimer = hand->target->player->handtimer;
+	}
+
 	{
 		const fixed_t handpokespeed = 4;
-		const fixed_t looping = handpokespeed - abs((player->hand->threshold % (handpokespeed*2)) - handpokespeed);
+		const fixed_t looping = handpokespeed - abs((hand->threshold % (handpokespeed*2)) - handpokespeed);
 		fixed_t xoffs = 0, yoffs = 0;
 
-		player->hand->color = player->skincolor;
-		player->hand->angle = player->besthanddirection;
-
-		if (player->hand->fuse != 0)
+		if (hand->fuse != 0)
 		{
 			;
 		}
 		else if (looping != 0)
 		{
-			xoffs = FixedMul(2 * looping * mapobjectscale, FINECOSINE(player->hand->angle >> ANGLETOFINESHIFT)),
-			yoffs = FixedMul(2 * looping * mapobjectscale, FINESINE(player->hand->angle >> ANGLETOFINESHIFT)),
+			xoffs = FixedMul(2 * looping * mapobjectscale, FINECOSINE(hand->angle >> ANGLETOFINESHIFT)),
+			yoffs = FixedMul(2 * looping * mapobjectscale, FINESINE(hand->angle >> ANGLETOFINESHIFT)),
 
-			player->hand->threshold++;
+			hand->threshold++;
 		}
-		else if (player->handtimer == 0)
+		else if (handtimer == 0)
 		{
-			player->hand->fuse = 8;
+			hand->fuse = 8;
 		}
 		else
 		{
-			player->hand->threshold++;
+			hand->threshold++;
 		}
 
-		if (player->hand->fuse != 0)
+		if (hand->fuse != 0)
 		{
-			if ((player->hand->fuse > 4) ^ (player->handtimer < TICRATE/2))
+			if ((hand->fuse > 4) ^ (handtimer < TICRATE/2))
 			{
-				player->hand->spritexscale = FRACUNIT/3;
-				player->hand->spriteyscale = 3*FRACUNIT;
+				hand->spritexscale = FRACUNIT/3;
+				hand->spriteyscale = 3*FRACUNIT;
 			}
 			else
 			{
-				player->hand->spritexscale = 2*FRACUNIT;
-				player->hand->spriteyscale = FRACUNIT/2;
+				hand->spritexscale = 2*FRACUNIT;
+				hand->spriteyscale = FRACUNIT/2;
 			}
 		}
 
-		P_MoveOrigin(player->hand,
-			player->mo->x + xoffs,
-			player->mo->y + yoffs,
-			player->mo->z + player->mo->height + 30*mapobjectscale
-		);
-		K_FlipFromObject(player->hand, player->mo);
+		if (player != NULL)
+		{
+			hand->color = player->skincolor;
+			hand->angle = player->besthanddirection;
 
-		player->hand->sprzoff = player->mo->sprzoff;
+			P_MoveOrigin(hand,
+				player->mo->x + xoffs,
+				player->mo->y + yoffs,
+				player->mo->z + player->mo->height + 30*mapobjectscale
+			);
+			K_FlipFromObject(hand, player->mo);
 
-		player->hand->renderflags &= ~RF_DONTDRAW;
-		player->hand->renderflags |= (RF_DONTDRAW & ~K_GetPlayerDontDrawFlag(player));
+			hand->sprzoff = player->mo->sprzoff;
+
+			hand->renderflags &= ~RF_DONTDRAW;
+			hand->renderflags |= (RF_DONTDRAW & ~K_GetPlayerDontDrawFlag(player));
+		}
 	}
 }
 
