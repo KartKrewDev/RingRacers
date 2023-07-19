@@ -4179,6 +4179,9 @@ boolean P_ProcessSpecial(activator_t *activator, INT16 special, INT32 *args, cha
 
 		case 460: // Award rings
 			{
+				if (gametyperules & GTR_SPHERES)
+					return false;
+
 				INT16 rings = args[0];
 				INT32 delay = args[1];
 				if (
