@@ -3994,8 +3994,6 @@ static void K_drawKartMinimap(void)
 
 			if (doprogressionbar == false)
 			{
-				angle_t ang = R_InterpolateAngle(mobj->old_angle, mobj->angle);
-
 				interpx = R_InterpolateFixed(mobj->old_x, mobj->x);
 				interpy = R_InterpolateFixed(mobj->old_y, mobj->y);
 
@@ -4010,6 +4008,10 @@ static void K_drawKartMinimap(void)
 
 				if (!nocontest)
 				{
+					angle_t ang = R_InterpolateAngle(mobj->old_angle, mobj->angle);
+					if (encoremode)
+						ang = ANGLE_180 - ang;
+
 					K_drawKartMinimapIcon(
 							interpx,
 							interpy,
@@ -4198,8 +4200,6 @@ static void K_drawKartMinimap(void)
 
 		if (doprogressionbar == false)
 		{
-			angle_t ang = R_InterpolateAngle(mobj->old_angle, mobj->angle);
-
 			interpx = R_InterpolateFixed(mobj->old_x, mobj->x);
 			interpy = R_InterpolateFixed(mobj->old_y, mobj->y);
 
@@ -4214,6 +4214,10 @@ static void K_drawKartMinimap(void)
 
 			if (!nocontest)
 			{
+				angle_t ang = R_InterpolateAngle(mobj->old_angle, mobj->angle);
+				if (encoremode)
+					ang = ANGLE_180 - ang;
+
 				K_drawKartMinimapIcon(
 						interpx,
 						interpy,
