@@ -888,7 +888,7 @@ boolean K_InstaWhipCollide(mobj_t *shield, mobj_t *victim)
 			// while still behaving as if it's a "real" hit.
 			P_PlayRinglossSound(victim);
 			P_PlayerRingBurst(victimPlayer, 5);
-			P_DamageMobj(victim, shield, attacker, 1, DMG_STUMBLE); // There's a special exception in P_DamageMobj for type==MT_INSTAWHIP
+			P_DamageMobj(victim, shield, attacker, 1, DMG_WHUMBLE);
 
 			K_DropPowerUps(victimPlayer);
 

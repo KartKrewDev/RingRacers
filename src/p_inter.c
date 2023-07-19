@@ -2326,7 +2326,7 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 					invincible = false;
 				}
 
-				if (invincible && type != DMG_STUMBLE)
+				if (invincible && type != DMG_STUMBLE && type != DMG_WHUMBLE)
 				{
 					const INT32 oldHitlag = target->hitlag;
 					const INT32 oldHitlagInflictor = inflictor ? inflictor->hitlag : 0;
@@ -2384,7 +2384,7 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 
 				{
 					// Check if we should allow wombo combos (hard hits by default, inverted by the presence of DMG_WOMBO).
-					boolean allowcombo = ((hardhit || (type == DMG_STUMBLE)) == !(damagetype & DMG_WOMBO));
+					boolean allowcombo = ((hardhit || (type == DMG_STUMBLE || type == DMG_WHUMBLE)) == !(damagetype & DMG_WOMBO));
 
 					// Tumble/stumble is a special case.
 					if (type == DMG_TUMBLE)
@@ -2393,11 +2393,16 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 						if (player->tumbleBounces == 1 && (P_MobjFlip(target)*target->momz > 0))
 							allowcombo = false;
 					}
-					else if (type == DMG_STUMBLE)
+					else if (type == DMG_STUMBLE || type == DMG_WHUMBLE)
 					{
 						// don't allow constant combo
 						if (player->tumbleBounces == TUMBLEBOUNCES-1 && (P_MobjFlip(target)*target->momz > 0))
+						{
+							if (type == DMG_STUMBLE)
+								return false; // No-sell strings of stumble
+
 							allowcombo = false;
+						}
 					}
 
 					if (allowcombo == false && (target->eflags & MFE_PAUSED))
@@ -2406,7 +2411,7 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 					}
 
 					// DMG_EXPLODE excluded from flashtic checks to prevent dodging eggbox/SPB with weak spinout
-					if ((target->hitlag == 0 || allowcombo == false) && player->flashing > 0 && type != DMG_EXPLODE && type != DMG_STUMBLE)
+					if ((target->hitlag == 0 || allowcombo == false) && player->flashing > 0 && type != DMG_EXPLODE && type != DMG_STUMBLE && type != DMG_WHUMBLE)
 					{
 						// Post-hit invincibility
 						K_DoInstashield(player);
@@ -2434,9 +2439,8 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 				damage = 0;
 			}
 
-			// Instawhip breaks the rules and does "damaging stumble",
-			// but sting and stumble shouldn't be rewarding Battle hits otherwise.
-			if ((type == DMG_STING || type == DMG_STUMBLE) && !(inflictor && inflictor->type == MT_INSTAWHIP))
+			// Sting and stumble shouldn't be rewarding Battle hits.
+			if (type == DMG_STING || type == DMG_STUMBLE)
 			{
 				damage = 0;
 			}
@@ -2532,6 +2536,7 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 					ringburst = 0;
 					break;
 				case DMG_STUMBLE:
+				case DMG_WHUMBLE:
 					K_StumblePlayer(player);
 					ringburst = 0;
 					break;
@@ -2554,7 +2559,7 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 					break;
 			}
 
-			if (type != DMG_STUMBLE)
+			if (type != DMG_STUMBLE && type != DMG_WHUMBLE)
 			{
 				if (type != DMG_STING)
 					player->flashing = K_GetKartFlashing(player);
