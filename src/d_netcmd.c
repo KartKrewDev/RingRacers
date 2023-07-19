@@ -1497,9 +1497,9 @@ static void SendNameAndColor(const UINT8 n)
 	UINT16 sendFollowerColor = cv_followercolor[n].value;
 
 	// don't allow inaccessible colors
-	if (sendColor != SKINCOLOR_NONE && K_ColorUsable(sendColor, false) == false)
+	if (sendColor != SKINCOLOR_NONE && K_ColorUsable(sendColor, false, true) == false)
 	{
-		if (player->skincolor && K_ColorUsable(player->skincolor, false) == true)
+		if (player->skincolor && K_ColorUsable(player->skincolor, false, true) == true)
 		{
 			// Use our previous color
 			CV_StealthSetValue(&cv_playercolor[n], player->skincolor);
@@ -1514,7 +1514,7 @@ static void SendNameAndColor(const UINT8 n)
 	}
 
 	// ditto for follower colour:
-	if (sendFollowerColor != SKINCOLOR_NONE && K_ColorUsable(sendFollowerColor, true) == false)
+	if (sendFollowerColor != SKINCOLOR_NONE && K_ColorUsable(sendFollowerColor, true, true) == false)
 	{
 		CV_StealthSet(&cv_followercolor[n], "Default"); // set it to "Default". I don't care about your stupidity!
 		sendFollowerColor = cv_followercolor[n].value;
@@ -1724,7 +1724,7 @@ static void Got_NameAndColor(UINT8 **cp, INT32 playernum)
 		boolean kick = false;
 
 		// don't allow inaccessible colors
-		if (K_ColorUsable(p->skincolor, false) == false)
+		if (K_ColorUsable(p->skincolor, false, false) == false)
 		{
 			kick = true;
 		}
@@ -6829,7 +6829,7 @@ static void Color_OnChange(const UINT8 p)
 	I_Assert(p < MAXSPLITSCREENPLAYERS);
 
 	UINT16 color = cv_playercolor[p].value;
-	boolean colorisgood = (color == SKINCOLOR_NONE || K_ColorUsable(color, false) == true);
+	boolean colorisgood = (color == SKINCOLOR_NONE || K_ColorUsable(color, false, true) == true);
 
 	if (Playing() && splitscreen < p)
 	{
