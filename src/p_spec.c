@@ -4199,10 +4199,13 @@ boolean P_ProcessSpecial(activator_t *activator, INT16 special, INT32 *args, cha
 					else
 					{
 						// Don't push you below baseline
-						if (mo->player->rings < 0)
+						if (mo->player->rings <= 0)
 							return false;
 
-						mo->player->rings--;
+						if (rings > mo->player->rings)
+							rings = mo->player->rings;
+
+						mo->player->rings -= rings;
 						S_StartSound(mo, sfx_antiri);
 					}
 				}
