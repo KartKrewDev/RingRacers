@@ -4302,7 +4302,7 @@ void P_PlayerThink(player_t *player)
 		else if (player->kickstartaccel < ACCEL_KICKSTART)
 		{
 			player->kickstartaccel++;
-			if ((player->kickstartaccel == ACCEL_KICKSTART) && P_IsLocalPlayer(player))
+			if ((player->kickstartaccel == ACCEL_KICKSTART) && !K_PlayerUsesBotMovement(player) && P_IsDisplayPlayer(player))
 			{
 				S_StartSound(NULL, sfx_ding);
 			}
