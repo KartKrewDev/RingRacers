@@ -1083,7 +1083,6 @@ void V_DrawFill(INT32 x, INT32 y, INT32 w, INT32 h, INT32 c)
 		.done();
 }
 
-// This is now a function, no use being such a weenie that you say a slur over it
 static UINT32 V_GetHWConsBackColor(void)
 {
 	UINT32 hwcolor;
