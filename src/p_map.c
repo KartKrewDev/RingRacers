@@ -355,7 +355,6 @@ P_DoSpringEx
 //
 boolean P_DoSpring(mobj_t *spring, mobj_t *object)
 {
-	const fixed_t scaleVal = FixedSqrt(FixedMul(mapobjectscale, spring->scale));
 	fixed_t vertispeed = spring->info->mass;
 	fixed_t horizspeed = spring->info->damage;
 	UINT16 starcolor = (spring->info->painchance % numskincolors);
@@ -428,7 +427,7 @@ boolean P_DoSpring(mobj_t *spring, mobj_t *object)
 	object->momx = savemomx;
 	object->momy = savemomy;
 
-	P_DoSpringEx(object, scaleVal, vertispeed, horizspeed,
+	P_DoSpringEx(object, mapobjectscale, vertispeed, horizspeed,
 			spring->angle, starcolor);
 
 	// Re-solidify
