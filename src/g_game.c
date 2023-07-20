@@ -2455,10 +2455,8 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	INT32 followerskin;
 	UINT16 followercolor;
 
-	mobj_t *follower; // old follower, will probably be removed by the time we're dead but you never know.
-	mobj_t *hoverhyudoro;
-	mobj_t *skyboxviewpoint;
-	mobj_t *skyboxcenterpoint;
+	mobj_t *ringShooter, *hoverhyudoro;
+	mobj_t *skyboxviewpoint, *skyboxcenterpoint;
 
 	INT32 charflags;
 	UINT32 followitem;
@@ -2677,22 +2675,40 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 
 	if (!betweenmaps)
 	{
-		follower = players[player].follower;
-		P_SetTarget(&players[player].follower, NULL);
-		P_SetTarget(&players[player].awayview.mobj, NULL);
-		P_SetTarget(&players[player].stumbleIndicator, NULL);
+		K_RemoveFollower(&players[player]);
+
+#define PlayerPointerRemove(field) \
+		if (field) \
+		{ \
+			P_RemoveMobj(field); \
+			P_SetTarget(&field, NULL); \
+		}
+
+		// These are mostly subservient to the player, and may not clean themselves up.
+		PlayerPointerRemove(players[player].followmobj);
+		PlayerPointerRemove(players[player].stumbleIndicator);
+		PlayerPointerRemove(players[player].sliptideZipIndicator);
+
+#undef PlayerPointerRemove
+
+		// These will erase themselves.
 		P_SetTarget(&players[player].whip, NULL);
 		P_SetTarget(&players[player].hand, NULL);
-		P_SetTarget(&players[player].ringShooter, NULL);
-		P_SetTarget(&players[player].followmobj, NULL);
 
+		// TODO: Any better handling in store?
+		P_SetTarget(&players[player].awayview.mobj, NULL);
+		P_SetTarget(&players[player].flickyAttacker, NULL);
+		P_SetTarget(&players[player].powerup.flickyController, NULL);
+
+		// The following pointers are safe to set directly, because the end goal should be refcount consistency before and after remanifestation.
+		ringShooter = players[player].ringShooter;
 		hoverhyudoro = players[player].hoverhyudoro;
 		skyboxviewpoint = players[player].skybox.viewpoint;
 		skyboxcenterpoint = players[player].skybox.centerpoint;
 	}
 	else
 	{
-		follower = hoverhyudoro = NULL;
+		ringShooter = hoverhyudoro = NULL;
 		skyboxviewpoint = skyboxcenterpoint = NULL;
 	}
 
@@ -2769,9 +2785,8 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	if (saveroundconditions)
 		memcpy(&p->roundconditions, &roundconditions, sizeof (p->roundconditions));
 
-	if (follower)
-		P_RemoveMobj(follower);
-
+	// See above comment about refcount consistency.
+	p->ringShooter = ringShooter;
 	p->hoverhyudoro = hoverhyudoro;
 	p->skybox.viewpoint = skyboxviewpoint;
 	p->skybox.centerpoint = skyboxcenterpoint;

@@ -373,7 +373,7 @@ void PR_LoadProfiles(void)
 			; // Valid, even outside the bounds
 		}
 		else if (profilesList[i]->color >= numskincolors
-			|| K_ColorUsable(profilesList[i]->color, false) == false)
+			|| K_ColorUsable(profilesList[i]->color, false, false) == false)
 		{
 			profilesList[i]->color = PROFILEDEFAULTCOLOR;
 		}
@@ -383,13 +383,13 @@ void PR_LoadProfiles(void)
 		profilesList[i]->followercolor = READUINT16(save.p);
 
 		if (profilesList[i]->followercolor == FOLLOWERCOLOR_MATCH
-			|| profilesList[i]->followercolor == FOLLOWERCOLOR_OPPOSITE)
+			|| profilesList[i]->followercolor == FOLLOWERCOLOR_OPPOSITE
+			|| profilesList[i]->followercolor == SKINCOLOR_NONE)
 		{
 			; // Valid, even outside the bounds
 		}
 		else if (profilesList[i]->followercolor >= numskincolors
-			|| profilesList[i]->followercolor == SKINCOLOR_NONE
-			|| K_ColorUsable(profilesList[i]->followercolor, true) == false)
+			|| K_ColorUsable(profilesList[i]->followercolor, true, false) == false)
 		{
 			profilesList[i]->followercolor = PROFILEDEFAULTFOLLOWERCOLOR;
 		}

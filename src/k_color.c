@@ -217,11 +217,11 @@ void K_GenerateKartColormap(UINT8 *dest_colormap, INT32 skinnum, UINT8 color)
 }
 
 /*--------------------------------------------------
-	boolean K_ColorUsable(skincolornum_t color, boolean follower)
+	boolean K_ColorUsable(skincolornum_t color, boolean follower, boolean locked)
 
 		See header file for description.
 --------------------------------------------------*/
-boolean K_ColorUsable(skincolornum_t color, boolean follower)
+boolean K_ColorUsable(skincolornum_t color, boolean follower, boolean locked)
 {
 	INT32 i = MAXUNLOCKABLES;
 
@@ -237,7 +237,7 @@ boolean K_ColorUsable(skincolornum_t color, boolean follower)
 		return false;
 	}
 
-	if (demo.playback)
+	if (demo.playback || !locked)
 	{
 		// Simplifies things elsewhere...
 		return true;

@@ -7385,6 +7385,13 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 			Obj_MantaRingThink(mobj);
 			break;
 		}
+	case MT_SERVANTHAND:
+		{
+			Obj_ServantHandThink(mobj);
+			if (P_MobjWasRemoved(mobj))
+				return false;
+			break;
+		}
 	case MT_BALLHOG:
 		{
 			mobj_t *ghost = P_SpawnGhostMobj(mobj);
@@ -9839,10 +9846,11 @@ static boolean P_FuseThink(mobj_t *mobj)
 	}
 	case MT_SERVANTHAND:
 	{
-		if (!mobj->target
-			|| P_MobjWasRemoved(mobj->target)
+		if (P_MobjWasRemoved(mobj->target)
+			|| !mobj->target->health
 			|| !mobj->target->player
-			|| mobj->target->player->handtimer == 0)
+			|| mobj->target->player->handtimer == 0
+			|| mobj->target->player->hand != mobj)
 		{
 			P_RemoveMobj(mobj);
 			return false;
@@ -13808,8 +13816,15 @@ static void P_SpawnItemRow(mapthing_t *mthing, mobjtype_t *itemtypes, UINT8 numi
 				y + FixedMul(length, FINESINE(fineangle)),
 				z, MT_LOOPCENTERPOINT);
 
-		if (!P_MobjWasRemoved(loopanchor))
-			Obj_LinkLoopAnchor(loopanchor, loopcenter, mthing->args[0]);
+		if (P_MobjWasRemoved(loopanchor))
+		{
+			// No recovery.
+			return;
+		}
+
+		loopanchor->spawnpoint = NULL;
+
+		Obj_LinkLoopAnchor(loopanchor, loopcenter, mthing->args[0]);
 	}
 
 	for (r = 0; r < numitems; r++)
@@ -13829,15 +13844,15 @@ static void P_SpawnItemRow(mapthing_t *mthing, mobjtype_t *itemtypes, UINT8 numi
 		if (!inclusive)
 			mobj = P_SpawnMobjFromMapThing(&dummything, x, y, z, itemtype);
 
-		if (!mobj)
+		if (P_MobjWasRemoved(mobj))
 			continue;
 
-		if (isloopend)
-		{
-			Obj_InitLoopEndpoint(mobj, loopanchor);
-		}
-
 		mobj->spawnpoint = NULL;
+
+		if (!isloopend)
+			continue;
+
+		Obj_InitLoopEndpoint(mobj, loopanchor);
 	}
 }
 
@@ -13895,11 +13910,12 @@ static void P_SpawnItemCircle(mapthing_t *mthing, mobjtype_t *itemtypes, UINT8 n
 
 		mobj = P_SpawnMobjFromMapThing(&dummything, x + v[0], y + v[1], z + v[2], itemtype);
 
-		if (!mobj)
+		if (P_MobjWasRemoved(mobj))
 			continue;
 
-		mobj->z -= mobj->height/2;
 		mobj->spawnpoint = NULL;
+
+		mobj->z -= mobj->height/2;
 	}
 }
 
