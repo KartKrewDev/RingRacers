@@ -10438,6 +10438,9 @@ static void P_DefaultMobjShadowScale(mobj_t *thing)
 		case MT_DRIFTCLIP:
 			thing->shadowscale = FRACUNIT/3;
 			break;
+		case MT_BOOSTPAD:
+			thing->shadowscale = 0;
+			break;
 		default:
 			if (thing->flags & (MF_ENEMY|MF_BOSS))
 				thing->shadowscale = FRACUNIT;

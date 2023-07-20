@@ -301,6 +301,7 @@ actionpointer_t actionpointers[] =
 	{{A_InvincSparkleRotate},    "A_INVINCSPARKLEROTATE"},
 	{{A_SpawnItemDebrisCloud},   "A_SPAWNITEMDEBRISCLOUD"},
 	{{A_RingShooterFace},        "A_RINGSHOOTERFACE"},
+	{{A_TextureAnimate},         "A_TEXTUREANIMATE"},
 
 	{{NULL},                     "NONE"},
 
@@ -4250,6 +4251,11 @@ const char *const STATE_LIST[] = { // array length left dynamic for sanity testi
 	"S_DASHRING_VERTICAL_FLASH1",
 	"S_DASHRING_VERTICAL_FLASH2",
 
+	// Boost pads
+	"S_BOOSTPAD",
+	"S_BOOSTPAD_SMALL",
+	"S_BOOSTPAD_TINY",
+
 	// Various plants
 	"S_SONICBUSH",
 
@@ -5620,6 +5626,9 @@ const char *const MOBJTYPE_LIST[] = {  // array length left dynamic for sanity t
 	// Dash Rings
 	"MT_DASHRING",
 	"MT_RAINBOWDASHRING",
+
+	// Boost pads
+	"MT_BOOSTPAD",
 
 	// Various plants
 	"MT_SONICBUSH",

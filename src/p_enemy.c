@@ -330,6 +330,7 @@ void A_FlameShieldPaper(mobj_t *actor);
 void A_InvincSparkleRotate(mobj_t *actor);
 void A_SpawnItemDebrisCloud(mobj_t *actor);
 void A_RingShooterFace(mobj_t *actor);
+void A_TextureAnimate(mobj_t *actor);
 
 //for p_enemy.c
 
@@ -13721,7 +13722,8 @@ A_SpawnItemDebrisCloud (mobj_t *actor)
 	}
 }
 
-// sets the actor's 
+// Assumes the actor is the screen of a Ring Shooter
+// Changes the screen to display the WANTED icon of the Ring Shooter's owner, stretching it to match the screen's dimensions
 // vars do nothing
 void A_RingShooterFace(mobj_t *actor)
 {
@@ -13731,4 +13733,26 @@ void A_RingShooterFace(mobj_t *actor)
 	}
 
 	Obj_UpdateRingShooterFace(actor);
+}
+
+// Syncs the actor's frame with the animated texture ticker in P_UpdateSpecials
+// Call continuously to simulate an animated texture
+// var1 and var2 act like FF_ANIMATE, i.e.:
+// var1 = number of additional frames to cycle through
+// var2 = number of tics to display each frame
+void A_TextureAnimate(mobj_t *actor)
+{
+	INT32 locvar1 = var1;
+	INT32 locvar2 = var2;
+	state_t *state = actor->state;
+
+	if (LUA_CallAction(A_TEXTUREANIMATE, actor))
+	{
+		return;
+	}
+
+	if (actor->frame & FF_ANIMATE) // this doesn't work if you're animating on your own as well
+		return;
+
+	actor->frame = (actor->frame & ~FF_FRAMEMASK) | ((state->frame & FF_FRAMEMASK) + ((leveltime / state->var2) % (state->var1 + 1)))
 }

@@ -720,6 +720,11 @@ char sprnames[NUMSPRITES + 1][5] =
 	// Dash Rings
 	"RAIR",
 
+	// Boost pads
+	"BSTP",
+	"BSTS",
+	"BSTT",
+
 	// Various plants
 	"SBUS",
 
@@ -4934,6 +4939,11 @@ state_t states[NUMSTATES] =
 	{SPR_RAIR, FF_ADD|2,             2, {NULL}, 0, 0, S_DASHRING_60DEGREES_FLASH1},  // S_DASHRING_60DEGREES_FLASH2
 	{SPR_NULL,        0, TICRATE/3 - 2, {NULL}, 0, 0, S_DASHRING_VERTICAL_FLASH2},   // S_DASHRING_VERTICAL_FLASH1
 	{SPR_RAIR, FF_ADD|3,             2, {NULL}, 0, 0, S_DASHRING_VERTICAL_FLASH1},   // S_DASHRING_VERTICAL_FLASH2
+
+	// Boost pads
+	{SPR_BSTP, FF_FLOORSPRITE, 1, {A_TextureAnimate}, 5, 2, S_BOOSTPAD},       // S_BOOSTPAD
+	{SPR_BSTS, FF_FLOORSPRITE, 1, {A_TextureAnimate}, 5, 2, S_BOOSTPAD_SMALL}, // S_BOOSTPAD_SMALL
+	{SPR_BSTT, FF_FLOORSPRITE, 1, {A_TextureAnimate}, 5, 2, S_BOOSTPAD_TINY},  // S_BOOSTPAD_TINY
 
 	// Various plants
 	{SPR_SBUS, 0, -1, {NULL}, 0, 0, S_NULL}, // S_SONICBUSH
@@ -26795,6 +26805,33 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		sfx_None,       // activesound
 		MF_NOGRAVITY|MF_SPECIAL, // flags
 		S_NULL          // raisestate
+	},
+
+	{           // MT_BOOSTPAD
+		510,         // doomednum
+		S_BOOSTPAD,  // spawnstate
+		1,           // spawnhealth
+		S_NULL,      // seestate
+		sfx_None,    // seesound
+		0,           // reactiontime
+		sfx_None,    // attacksound
+		S_NULL,      // painstate
+		0,           // painchance
+		sfx_None,    // painsound
+		S_NULL,      // meleestate
+		S_NULL,      // missilestate
+		S_NULL,      // deathstate
+		S_NULL,      // xdeathstate
+		sfx_None,    // deathsound
+		0,           // speed
+		91*FRACUNIT, // radius
+		16*FRACUNIT, // height
+		0,           // dispoffset
+		0,           // mass
+		0,           // damage
+		sfx_None,    // activesound
+		MF_ENEMY|MF_SPECIAL, // flags
+		S_NULL       // raisestate
 	},
 
 	{           // MT_SONICBUSH,
