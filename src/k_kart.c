@@ -8068,9 +8068,6 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 	if (player->guardCooldown)
 		player->guardCooldown--;
 
-	if (player->whip && P_MobjWasRemoved(player->whip))
-		P_SetTarget(&player->whip, NULL);
-
 	if (player->startboost > 0 && onground == true)
 	{
 		player->startboost--;
@@ -8328,20 +8325,11 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		player->tripwireState = TRIPSTATE_NONE;
 	}
 
-	if (player->hand && P_MobjWasRemoved(player->hand))
-		P_SetTarget(&player->hand, NULL);
-
-	if (player->flickyAttacker && P_MobjWasRemoved(player->flickyAttacker))
-		P_SetTarget(&player->flickyAttacker, NULL);
-
-	if (player->powerup.flickyController && P_MobjWasRemoved(player->powerup.flickyController))
-		P_SetTarget(&player->powerup.flickyController, NULL);
-
 	if (player->spectator == false)
 	{
 		K_KartEbrakeVisuals(player);
 
-		Obj_ServantHandHandling(player);
+		Obj_ServantHandSpawning(player);
 	}
 
 	if (K_GetKartButtons(player) & BT_BRAKE &&

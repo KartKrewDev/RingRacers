@@ -78,6 +78,7 @@ CV_PossibleValue_t CV_OnOff[] = {{0, "Off"}, {1, "On"}, {0, NULL}};
 CV_PossibleValue_t CV_YesNo[] = {{0, "No"}, {1, "Yes"}, {0, NULL}};
 CV_PossibleValue_t CV_Unsigned[] = {{0, "MIN"}, {999999999, "MAX"}, {0, NULL}};
 CV_PossibleValue_t CV_Natural[] = {{1, "MIN"}, {999999999, "MAX"}, {0, NULL}};
+CV_PossibleValue_t CV_TrueFalse[] = {{0, "False"}, {1, "True"}, {0, NULL}};
 
 // Cheats
 #ifdef DEVELOP
@@ -909,15 +910,17 @@ static void COM_Help_f(void)
 			{
 				CONS_Printf(" Possible values:\n");
 				if (cvar->PossibleValue == CV_YesNo)
-					CONS_Printf("  Yes or No (On or Off, 1 or 0)\n");
+					CONS_Printf("  Yes or No (On or Off, True or False, 1 or 0)\n");
 				else if (cvar->PossibleValue == CV_OnOff)
-					CONS_Printf("  On or Off (Yes or No, 1 or 0)\n");
+					CONS_Printf("  On or Off (Yes or No, True or False, 1 or 0)\n");
+				else if (cvar->PossibleValue == CV_TrueFalse)
+					CONS_Printf("  True or False (On or Off, Yes or No, 1 or 0)\n");
 				else if (cvar->PossibleValue == Color_cons_t || cvar->PossibleValue == Followercolor_cons_t)
 				{
 					boolean follower = (cvar->PossibleValue == Followercolor_cons_t);
 					for (i = SKINCOLOR_NONE; i < numskincolors; ++i)
 					{
-						if (K_ColorUsable(i, follower) == true)
+						if (K_ColorUsable(i, follower, true) == true)
 						{
 							CONS_Printf("  %-3d : %s\n", i, skincolors[i].name);
 							if (i == cvar->value)
@@ -1565,12 +1568,12 @@ boolean CV_CompleteValue(consvar_t *var, const char **valstrp, INT32 *intval)
 						goto found;
 			}
 			// Not found ... but wait, there's hope!
-			if (var->PossibleValue == CV_OnOff || var->PossibleValue == CV_YesNo)
+			if (var->PossibleValue == CV_OnOff || var->PossibleValue == CV_YesNo || var->PossibleValue == CV_TrueFalse)
 			{
 				overrideval = -1;
-				if (!stricmp(valstr, "on") || !stricmp(valstr, "yes"))
+				if (!stricmp(valstr, "on") || !stricmp(valstr, "yes") || !stricmp(valstr, "true"))
 					overrideval = 1;
-				else if (!stricmp(valstr, "off") || !stricmp(valstr, "no"))
+				else if (!stricmp(valstr, "off") || !stricmp(valstr, "no") || !stricmp(valstr, "false"))
 					overrideval = 0;
 
 				if (overrideval != -1)

@@ -172,6 +172,7 @@ extern CV_PossibleValue_t CV_OnOff[];
 extern CV_PossibleValue_t CV_YesNo[];
 extern CV_PossibleValue_t CV_Unsigned[];
 extern CV_PossibleValue_t CV_Natural[];
+extern CV_PossibleValue_t CV_TrueFalse[];
 
 // SRB2kart
 // the KARTSPEED and KARTGP were previously defined here, but moved to doomstat to avoid circular dependencies

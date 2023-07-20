@@ -185,7 +185,7 @@ static boolean P_UnArchivePlayer(savebuffer_t *save)
 		savedata.bots[pid].score = READUINT32(save->p);
 	}
 
-	return (pid == 0xFE);	
+	return (pid == 0xFE);
 }
 
 static void P_NetArchivePlayers(savebuffer_t *save)
@@ -499,6 +499,9 @@ static void P_NetArchivePlayers(savebuffer_t *save)
 		WRITEUINT32(save->p, players[i].trickboostpower);
 		WRITEUINT8(save->p, players[i].trickboostdecay);
 		WRITEUINT8(save->p, players[i].trickboost);
+
+		WRITEUINT8(save->p, players[i].dashRingPullTics);
+		WRITEUINT8(save->p, players[i].dashRingPushTics);
 
 		WRITEUINT32(save->p, players[i].ebrakefor);
 
@@ -917,6 +920,9 @@ static void P_NetUnArchivePlayers(savebuffer_t *save)
 		players[i].trickboostpower = READUINT32(save->p);
 		players[i].trickboostdecay = READUINT8(save->p);
 		players[i].trickboost = READUINT8(save->p);
+
+		players[i].dashRingPullTics = READUINT8(save->p);
+		players[i].dashRingPushTics = READUINT8(save->p);
 
 		players[i].ebrakefor = READUINT32(save->p);
 
@@ -4074,7 +4080,10 @@ static thinker_t* LoadMobjThinker(savebuffer_t *save, actionf_p1 thinker)
 	if (diff2 & MD2_RENDERFLAGS)
 		mobj->renderflags = READUINT32(save->p);
 	if (diff2 & MD2_TID)
-		P_SetThingTID(mobj, READINT16(save->p));
+	{
+		INT16 tid = READINT16(save->p);
+		P_SetThingTID(mobj, tid);
+	}
 	if (diff2 & MD2_SPRITESCALE)
 	{
 		mobj->spritexscale = READFIXED(save->p);
@@ -5662,7 +5671,7 @@ static void P_NetArchiveMisc(savebuffer_t *save, boolean resending)
 	}
 
 	WRITEUINT8(save->p, encoremode);
-	
+
 	WRITEUINT8(save->p, mapmusrng);
 
 	WRITEUINT32(save->p, leveltime);
@@ -5833,7 +5842,7 @@ static boolean P_NetUnArchiveMisc(savebuffer_t *save, boolean reloading)
 	}
 
 	encoremode = (boolean)READUINT8(save->p);
-	
+
 	mapmusrng = READUINT8(save->p);
 
 	if (!P_LoadLevel(true, reloading))

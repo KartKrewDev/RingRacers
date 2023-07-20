@@ -150,7 +150,7 @@ static void M_NewPlayerColors(setup_player_t *p)
 	// Add all unlocked colors
 	for (i = SKINCOLOR_NONE+1; i < numskincolors; i++)
 	{
-		if (K_ColorUsable(i, follower) == true)
+		if (K_ColorUsable(i, follower, true) == true)
 		{
 			M_PushMenuColor(&p->colors, i);
 		}

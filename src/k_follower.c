@@ -722,7 +722,7 @@ void K_FollowerHornTaunt(player_t *taunter, player_t *victim)
 		|| victim == NULL
 		|| taunter->followerskin < 0
 		|| taunter->followerskin >= numfollowers
-		|| (P_IsLocalPlayer(victim) == false && cv_karthorns.value != 2)
+		|| (P_IsDisplayPlayer(victim) == false && cv_karthorns.value != 2)
 		|| P_MobjWasRemoved(taunter->mo) == true
 		|| P_MobjWasRemoved(taunter->follower) == true
 	)

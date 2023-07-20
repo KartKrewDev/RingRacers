@@ -59,7 +59,7 @@ static boolean con_started = false; // console has been initialised
 static boolean con_forcepic = true; // at startup toggle console translucency when first off
        boolean con_recalc;          // set true when screen size has changed
 
-static tic_t con_tick; // console ticker for anim or blinking prompt cursor
+static tic_t con_tick; // console ticker for blinking prompt cursor
                         // con_scrollup should use time (currenttime - lasttime)..
 
 static boolean consoletoggle; // true when console key pushed, ticker will handle
@@ -70,8 +70,8 @@ static INT32 con_curlines;  // vid lines currently used by console
 
        INT32 con_clipviewtop; // (useless)
 
-static INT32 con_hudlines;        // number of console heads up message lines
-static INT32 con_hudtime[MAXHUDLINES];      // remaining time of display for hud msg lines
+static UINT8  con_hudlines;             // number of console heads up message lines
+static UINT32 con_hudtime[MAXHUDLINES]; // remaining time of display for hud msg lines
 
        INT32 con_clearlines;      // top screen lines to refresh when view reduced
        boolean con_hudupdate;   // when messages scroll, we need a backgrnd refresh
@@ -108,6 +108,7 @@ static void CON_RecalcSize(void);
 static void CON_ChangeHeight(void);
 
 static void CON_DrawBackpic(void);
+static void CONS_height_Change(void);
 static void CONS_hudlines_Change(void);
 static void CONS_backcolor_Change(void);
 
@@ -123,10 +124,13 @@ static void CONS_backcolor_Change(void);
 static char con_buffer[CON_BUFFERSIZE];
 
 // how many seconds the hud messages lasts on the screen
-static consvar_t cons_msgtimeout = CVAR_INIT ("con_hudtime", "5", CV_SAVE, CV_Unsigned, NULL);
+// CV_Unsigned can overflow when multiplied by TICRATE later, so let's use a 3-year limit instead
+static CV_PossibleValue_t hudtime_cons_t[] = {{0, "MIN"}, {99999999, "MAX"}, {0, NULL}};
+static consvar_t cons_hudtime = CVAR_INIT ("con_hudtime", "5", CV_SAVE, hudtime_cons_t, NULL);
 
 // number of lines displayed on the HUD
-static consvar_t cons_hudlines = CVAR_INIT ("con_hudlines", "5", CV_CALL|CV_SAVE, CV_Unsigned, CONS_hudlines_Change);
+static CV_PossibleValue_t hudlines_cons_t[] = {{0, "MIN"}, {MAXHUDLINES, "MAX"}, {0, NULL}};
+static consvar_t cons_hudlines = CVAR_INIT ("con_hudlines", "5", CV_CALL|CV_SAVE, hudlines_cons_t, CONS_hudlines_Change);
 
 // number of lines console move per frame
 // (con_speed needs a limit, apparently)
@@ -134,7 +138,7 @@ static CV_PossibleValue_t speed_cons_t[] = {{0, "MIN"}, {64, "MAX"}, {0, NULL}};
 static consvar_t cons_speed = CVAR_INIT ("con_speed", "8", CV_SAVE, speed_cons_t, NULL);
 
 // percentage of screen height to use for console
-static consvar_t cons_height = CVAR_INIT ("con_height", "50", CV_SAVE, CV_Unsigned, NULL);
+static consvar_t cons_height = CVAR_INIT ("con_height", "50", CV_CALL|CV_SAVE, CV_Unsigned, CONS_height_Change);
 
 static CV_PossibleValue_t backpic_cons_t[] = {{0, "translucent"}, {1, "picture"}, {0, NULL}};
 // whether to use console background picture, or translucent mode
@@ -152,6 +156,18 @@ consvar_t cons_backcolor = CVAR_INIT ("con_backcolor", "Black", CV_CALL|CV_SAVE,
 
 static void CON_Print(char *msg);
 
+// Change the console height on demand
+//
+static void CONS_height_Change(void)
+{
+	Lock_state();
+
+	if (con_destlines > 0 && !con_startup) // If the console is open (as in, not using "bind")...
+		CON_ChangeHeight(); // ...update its height now, not only when it's closed and re-opened
+
+	Unlock_state();
+}
+
 //
 //
 static void CONS_hudlines_Change(void)
@@ -163,11 +179,6 @@ static void CONS_hudlines_Change(void)
 	// Clear the currently displayed lines
 	for (i = 0; i < con_hudlines; i++)
 		con_hudtime[i] = 0;
-
-	if (cons_hudlines.value < 1)
-		cons_hudlines.value = 1;
-	else if (cons_hudlines.value > MAXHUDLINES)
-		cons_hudlines.value = MAXHUDLINES;
 
 	con_hudlines = cons_hudlines.value;
 
@@ -449,7 +460,7 @@ void CON_Init(void)
 
 		Unlock_state();
 
-		CV_RegisterVar(&cons_msgtimeout);
+		CV_RegisterVar(&cons_hudtime);
 		CV_RegisterVar(&cons_hudlines);
 		CV_RegisterVar(&cons_speed);
 		CV_RegisterVar(&cons_height);
@@ -614,32 +625,38 @@ static void CON_ChangeHeight(void)
 //
 static void CON_MoveConsole(void)
 {
-	fixed_t conspeed;
+	static fixed_t fracmovement = 0;
 
 	Lock_state();
-
-	conspeed = FixedDiv(cons_speed.value*vid.fdupy, FRACUNIT);
 
 	// instant
 	if (!cons_speed.value)
 	{
 		con_curlines = con_destlines;
+		Unlock_state();
 		return;
 	}
 
-	// up/down move to dest
-	if (con_curlines < con_destlines)
+	// Not instant - Increment fracmovement fractionally
+	fracmovement += FixedMul(cons_speed.value*vid.fdupy, renderdeltatics);
+
+	if (con_curlines < con_destlines) // Move the console downwards
 	{
-		con_curlines += FixedInt(conspeed);
-		if (con_curlines > con_destlines)
-			con_curlines = con_destlines;
+		con_curlines += FixedInt(fracmovement); // Move by fracmovement's integer value
+		if (con_curlines > con_destlines) // If we surpassed the destination...
+			con_curlines = con_destlines; // ...clamp to it!
 	}
-	else if (con_curlines > con_destlines)
+	else // Move the console upwards
 	{
-		con_curlines -= FixedInt(conspeed);
+		con_curlines -= FixedInt(fracmovement);
 		if (con_curlines < con_destlines)
 			con_curlines = con_destlines;
+
+		if (con_destlines == 0) // If the console is being closed, not just moved up...
+			con_tick = 0; // ...don't show the blinking cursor
 	}
+
+	fracmovement %= FRACUNIT; // Reset fracmovement's integer value, but keep the fraction
 
 	Unlock_state();
 }
@@ -759,10 +776,6 @@ void CON_Ticker(void)
 			CON_ChangeHeight();
 	}
 
-	// console movement
-	if (con_destlines != con_curlines)
-		CON_MoveConsole();
-
 	// clip the view, so that the part under the console is not drawn
 	con_clipviewtop = -1;
 	if (cons_backpic.value) // clip only when using an opaque background
@@ -784,9 +797,8 @@ void CON_Ticker(void)
 	// make overlay messages disappear after a while
 	for (i = 0; i < con_hudlines; i++)
 	{
-		con_hudtime[i]--;
-		if (con_hudtime[i] < 0)
-			con_hudtime[i] = 0;
+		if (con_hudtime[i])
+			con_hudtime[i]--;
 	}
 
 	Unlock_state();
@@ -1334,7 +1346,8 @@ boolean CON_Responder(event_t *ev)
 static void CON_Linefeed(void)
 {
 	// set time for heads up messages
-	con_hudtime[con_cy%con_hudlines] = cons_msgtimeout.value*TICRATE;
+	if (con_hudlines)
+		con_hudtime[con_cy%con_hudlines] = cons_hudtime.value*TICRATE;
 
 	con_cy++;
 	con_cx = 0;
@@ -1674,7 +1687,7 @@ static void CON_DrawHudlines(void)
 	INT32 charwidth = 8 * con_scalefactor;
 	INT32 charheight = 8 * con_scalefactor;
 
-	if (con_hudlines <= 0)
+	if (!con_hudlines)
 		return;
 
 	if (chat_on && OLDCHAT)
@@ -1682,7 +1695,7 @@ static void CON_DrawHudlines(void)
 	else
 		y = 0;
 
-	for (i = con_cy - con_hudlines+1; i <= con_cy; i++)
+	for (i = con_cy - con_hudlines; i <= con_cy; i++)
 	{
 		size_t c;
 		INT32 x;
@@ -1799,41 +1812,41 @@ static void CON_DrawConsole(void)
 	}
 
 	// draw console text lines from top to bottom
-	if (con_curlines < minheight)
-		return;
-
-	i = con_cy - con_scrollup;
-
-	// skip the last empty line due to the cursor being at the start of a new line
-	i--;
-
-	i -= (con_curlines - minheight) / charheight;
-
-	if (rendermode == render_none) return;
-
-	for (y = (con_curlines-minheight) % charheight; y <= con_curlines-minheight; y += charheight, i++)
+	if (con_curlines >= minheight)
 	{
-		INT32 x;
-		size_t c;
+		i = con_cy - con_scrollup;
 
-		p = (UINT8 *)&con_buffer[((i > 0 ? i : 0)%con_totallines)*con_width];
+		// skip the last empty line due to the cursor being at the start of a new line
+		i--;
 
-		for (c = 0, x = charwidth; c < con_width; c++, x += charwidth, p++)
+		i -= (con_curlines - minheight) / charheight;
+
+		if (rendermode == render_none) return;
+
+		for (y = (con_curlines-minheight) % charheight; y <= con_curlines-minheight; y += charheight, i++)
 		{
-			while (*p & 0x80)
+			INT32 x;
+			size_t c;
+
+			p = (UINT8 *)&con_buffer[((i > 0 ? i : 0)%con_totallines)*con_width];
+
+			for (c = 0, x = charwidth; c < con_width; c++, x += charwidth, p++)
 			{
-				charflags = (*p & 0x7f) << V_CHARCOLORSHIFT;
-				p++;
-				c++;
+				while (*p & 0x80)
+				{
+					charflags = (*p & 0x7f) << V_CHARCOLORSHIFT;
+					p++;
+					c++;
+				}
+				if (c >= con_width)
+					break;
+				V_DrawCharacter(x, y, (INT32)(*p) | charflags | cv_constextsize.value | V_NOSCALESTART, true);
 			}
-			if (c >= con_width)
-				break;
-			V_DrawCharacter(x, y, (INT32)(*p) | charflags | cv_constextsize.value | V_NOSCALESTART, true);
 		}
 	}
 
 	// draw prompt if enough place (not while game startup)
-	if ((con_curlines == con_destlines) && (con_curlines >= minheight) && !con_startup)
+	if ((con_curlines >= (minheight-charheight)) && !con_startup)
 		CON_DrawInput();
 }
 
@@ -1874,6 +1887,10 @@ void CON_Drawer(void)
 		if (con_curlines <= 0)
 			CON_ClearHUD();
 	}
+
+	// console movement
+	if (con_curlines != con_destlines)
+		CON_MoveConsole();
 
 	if (con_curlines > 0)
 		CON_DrawConsole();
