@@ -1273,7 +1273,7 @@ typedef enum sprite
 	// Dash Rings
 	SPR_RAIR,
 
-	// Boost pads
+	// Sneaker Panels
 	SPR_BSTP,
 	SPR_BSTS,
 	SPR_BSTT,
@@ -5390,10 +5390,10 @@ typedef enum state
 	S_DASHRING_VERTICAL_FLASH1,
 	S_DASHRING_VERTICAL_FLASH2,
 
-	// Boost pads
-	S_BOOSTPAD,
-	S_BOOSTPAD_SMALL,
-	S_BOOSTPAD_TINY,
+	// Sneaker Panels
+	S_SNEAKERPANEL,
+	S_SNEAKERPANEL_SMALL,
+	S_SNEAKERPANEL_TINY,
 
 	// Various plants
 	S_SONICBUSH,
@@ -6801,8 +6801,8 @@ typedef enum mobj_type
 	MT_DASHRING,
 	MT_RAINBOWDASHRING,
 
-	// Boost pads
-	MT_BOOSTPAD,
+	// Sneaker Panels
+	MT_SNEAKERPANEL,
 
 	// Various plants
 	MT_SONICBUSH,

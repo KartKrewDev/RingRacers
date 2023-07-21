@@ -720,7 +720,7 @@ char sprnames[NUMSPRITES + 1][5] =
 	// Dash Rings
 	"RAIR",
 
-	// Boost pads
+	// Sneaker Panels
 	"BSTP",
 	"BSTS",
 	"BSTT",
@@ -4940,10 +4940,10 @@ state_t states[NUMSTATES] =
 	{SPR_NULL,        0, TICRATE/3 - 2, {NULL}, 0, 0, S_DASHRING_VERTICAL_FLASH2},   // S_DASHRING_VERTICAL_FLASH1
 	{SPR_RAIR, FF_ADD|3,             2, {NULL}, 0, 0, S_DASHRING_VERTICAL_FLASH1},   // S_DASHRING_VERTICAL_FLASH2
 
-	// Boost pads
-	{SPR_BSTP, FF_FLOORSPRITE, 1, {A_TextureAnimate}, 5, 2, S_BOOSTPAD},       // S_BOOSTPAD
-	{SPR_BSTS, FF_FLOORSPRITE, 1, {A_TextureAnimate}, 5, 2, S_BOOSTPAD_SMALL}, // S_BOOSTPAD_SMALL
-	{SPR_BSTT, FF_FLOORSPRITE, 1, {A_TextureAnimate}, 5, 2, S_BOOSTPAD_TINY},  // S_BOOSTPAD_TINY
+	// Sneaker Panels
+	{SPR_BSTP, FF_FLOORSPRITE|FF_FULLBRIGHT, 1, {A_TextureAnimate}, 5, 2, S_SNEAKERPANEL},       // S_SNEAKERPANEL
+	{SPR_BSTS, FF_FLOORSPRITE|FF_FULLBRIGHT, 1, {A_TextureAnimate}, 5, 2, S_SNEAKERPANEL_SMALL}, // S_SNEAKERPANEL_SMALL
+	{SPR_BSTT, FF_FLOORSPRITE|FF_FULLBRIGHT, 1, {A_TextureAnimate}, 5, 2, S_SNEAKERPANEL_TINY},  // S_SNEAKERPANEL_TINY
 
 	// Various plants
 	{SPR_SBUS, 0, -1, {NULL}, 0, 0, S_NULL}, // S_SONICBUSH
@@ -26807,10 +26807,10 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		S_NULL          // raisestate
 	},
 
-	{           // MT_BOOSTPAD
+	{           // MT_SNEAKERPANEL
 		510,         // doomednum
-		S_BOOSTPAD,  // spawnstate
-		1,           // spawnhealth
+		S_SNEAKERPANEL,  // spawnstate
+		1000,        // spawnhealth
 		S_NULL,      // seestate
 		sfx_None,    // seesound
 		0,           // reactiontime
@@ -26830,7 +26830,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		0,           // mass
 		0,           // damage
 		sfx_None,    // activesound
-		MF_ENEMY|MF_SPECIAL, // flags
+		MF_SPECIAL|MF_ENEMY, // flags -- NOTE: IIRC MF_ENEMY was added by mappers to make conveyor belt setups more convenient
 		S_NULL       // raisestate
 	},
 

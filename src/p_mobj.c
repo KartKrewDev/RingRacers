@@ -9608,6 +9608,9 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 	case MT_RAINBOWDASHRING:
 		Obj_RainbowDashRingThink(mobj);
 		break;
+	case MT_SNEAKERPANEL:
+		Obj_SneakerPanelThink(mobj);
+		break;
 	default:
 		// check mobj against possible water content, before movement code
 		P_MobjCheckWater(mobj);
@@ -10446,7 +10449,7 @@ static void P_DefaultMobjShadowScale(mobj_t *thing)
 		case MT_DRIFTCLIP:
 			thing->shadowscale = FRACUNIT/3;
 			break;
-		case MT_BOOSTPAD:
+		case MT_SNEAKERPANEL:
 			thing->shadowscale = 0;
 			break;
 		default:
@@ -11004,6 +11007,9 @@ mobj_t *P_SpawnMobj(fixed_t x, fixed_t y, fixed_t z, mobjtype_t type)
 			break;
 		case MT_RAINBOWDASHRING:
 			Obj_RainbowDashRingSpawn(mobj);
+			break;
+		case MT_SNEAKERPANEL:
+			Obj_SneakerPanelSpawn(mobj);
 			break;
 		default:
 			break;
@@ -13533,6 +13539,11 @@ static boolean P_SetupSpawnedMapThing(mapthing_t *mthing, mobj_t *mobj)
 	case MT_RAINBOWDASHRING:
 	{
 		Obj_DashRingSetup(mobj, mthing);
+		break;
+	}
+	case MT_SNEAKERPANEL:
+	{
+		Obj_SneakerPanelSetup(mobj, mthing);
 		break;
 	}
 	default:

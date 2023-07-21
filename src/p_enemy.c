@@ -13744,7 +13744,6 @@ void A_TextureAnimate(mobj_t *actor)
 {
 	INT32 locvar1 = var1;
 	INT32 locvar2 = var2;
-	state_t *state = actor->state;
 
 	if (LUA_CallAction(A_TEXTUREANIMATE, actor))
 	{
@@ -13754,5 +13753,5 @@ void A_TextureAnimate(mobj_t *actor)
 	if (actor->frame & FF_ANIMATE) // this doesn't work if you're animating on your own as well
 		return;
 
-	actor->frame = (actor->frame & ~FF_FRAMEMASK) | ((state->frame & FF_FRAMEMASK) + ((leveltime / state->var2) % (state->var1 + 1)))
+	actor->frame += ((leveltime / locvar2) % (locvar1 + 1));
 }
