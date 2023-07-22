@@ -3960,6 +3960,9 @@ static void Got_AddPlayer(UINT8 **p, INT32 playernum)
 	playerconsole[newplayernum] = console;
 	G_BuildLocalSplitscreenParty(newplayernum);
 
+	if (node == mynode && splitscreenplayer == 0)
+		S_AttemptToRestoreMusic(); // Earliest viable point
+
 	if (netgame)
 	{
 		char joinmsg[256];
