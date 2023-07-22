@@ -4076,6 +4076,8 @@ static void Got_Teamchange(UINT8 **cp, INT32 playernum)
 
 	//Now that we've done our error checking and killed the player
 	//if necessary, put the player on the correct team/status.
+	boolean nochangeoccourred = false;
+
 	if (G_GametypeHasTeams())
 	{
 		if (!NetPacket.packet.newteam)
@@ -4087,6 +4089,7 @@ static void Got_Teamchange(UINT8 **cp, INT32 playernum)
 		{
 			players[playernum].ctfteam = NetPacket.packet.newteam;
 			players[playernum].pflags |= PF_WANTSTOJOIN; //players[playernum].spectator = false;
+			nochangeoccourred = true;
 		}
 	}
 	else if (G_GametypeHasSpectators())
@@ -4094,7 +4097,10 @@ static void Got_Teamchange(UINT8 **cp, INT32 playernum)
 		if (!NetPacket.packet.newteam)
 			players[playernum].spectator = true;
 		else
+		{
 			players[playernum].pflags |= PF_WANTSTOJOIN; //players[playernum].spectator = false;
+			nochangeoccourred = true;
+		}
 	}
 
 	if (NetPacket.packet.autobalance)
@@ -4135,7 +4141,7 @@ static void Got_Teamchange(UINT8 **cp, INT32 playernum)
 		}
 	}*/
 
-	if (gamestate != GS_LEVEL)
+	if (gamestate != GS_LEVEL || nochangeoccourred == true)
 		return;
 
 	FinalisePlaystateChange(playernum);
