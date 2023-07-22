@@ -901,22 +901,7 @@ void P_Ticker(boolean run)
 				}
 
 				// POSITION!! music
-				if (encoremode)
-				{
-					// Encore humming starts immediately.
-					if (leveltime == 1)
-						S_ChangeMusicInternal("encore", true);
-				}
-				else
-				{
-					// Plays the POSITION music after the camera spin
-					if (leveltime == introtime)
-						S_ChangeMusicInternal(
-							(mapheaderinfo[gamemap-1]->positionmus[0]
-								? mapheaderinfo[gamemap-1]->positionmus
-								: "postn"
-							), true);
-				}
+				P_StartPositionMusic(true); // exact times only
 			}
 		}
 
