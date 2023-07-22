@@ -8389,6 +8389,11 @@ void P_PostLoadLevel(void)
 {
 	P_MapStart();
 
+	if (G_GametypeHasSpectators())
+	{
+		K_CheckSpectateStatus(false);
+	}
+
 	if (demo.playback)
 		;
 	else if (grandprixinfo.gp == true)

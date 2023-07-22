@@ -1617,7 +1617,7 @@ static void FinalisePlaystateChange(INT32 playernum)
 		// To attempt to discourage rage-spectators, we delay any rejoining.
 		// If you're engaging in a DUEL and quit early, in addition to the
 		// indignity of losing your PWR, you get a special extra-long delay.
-		if (netgame)
+		if (netgame && players[playernum].jointime > 1)
 		{
 			UINT8 pcount = 0;
 
