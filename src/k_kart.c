@@ -9660,7 +9660,7 @@ static void K_KartDrift(player_t *player, boolean onground)
 		if (!keepsliptide && K_IsLosingSliptideZip(player) && player->sliptideZip > 0)
 		{
 			if (!S_SoundPlaying(player->mo, sfx_waved2))
-				S_StartSoundAtVolume(player->mo, sfx_waved2, 255/2); // Losing combo time, going to boost
+				S_StartSoundAtVolume(player->mo, sfx_waved2, 255); // Losing combo time, going to boost
 			S_StopSoundByID(player->mo, sfx_waved1);
 			S_StopSoundByID(player->mo, sfx_waved4);
 			player->sliptideZipDelay++;
@@ -9691,7 +9691,7 @@ static void K_KartDrift(player_t *player, boolean onground)
 					player->sliptideZipBoost += yourBoost;
 
 					K_SpawnDriftBoostExplosion(player, 0);
-					S_StartSoundAtVolume(player->mo, sfx_waved3, 2*255/3); // Boost
+					S_StartSoundAtVolume(player->mo, sfx_waved3, 255); // Boost
 				}
 				S_StopSoundByID(player->mo, sfx_waved1);
 				S_StopSoundByID(player->mo, sfx_waved2);
@@ -9705,7 +9705,7 @@ static void K_KartDrift(player_t *player, boolean onground)
 			S_StopSoundByID(player->mo, sfx_waved1);
 			S_StopSoundByID(player->mo, sfx_waved2);
 			if (player->sliptideZip > 0 && !S_SoundPlaying(player->mo, sfx_waved4))
-				S_StartSoundAtVolume(player->mo, sfx_waved4, 2*255/5); // Passive woosh
+				S_StartSoundAtVolume(player->mo, sfx_waved4, 255); // Passive woosh
 		}
 
 		player->aizdrifttilt -= player->aizdrifttilt / 4;
@@ -9722,7 +9722,7 @@ static void K_KartDrift(player_t *player, boolean onground)
 		S_StopSoundByID(player->mo, sfx_waved2);
 		S_StopSoundByID(player->mo, sfx_waved4);
 		if (!S_SoundPlaying(player->mo, sfx_waved1))
-			S_StartSoundAtVolume(player->mo, sfx_waved1, 255/2); // Charging
+			S_StartSoundAtVolume(player->mo, sfx_waved1, 255); // Charging
 	}
 
 	if (player->drift
