@@ -11740,7 +11740,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 	Obj_RingShooterInput(player);
 }
 
-void K_CheckSpectateStatus(void)
+void K_CheckSpectateStatus(boolean considermapreset)
 {
 	UINT8 respawnlist[MAXPLAYERS];
 	UINT8 i, j, numingame = 0, numjoiners = 0;
@@ -11770,7 +11770,7 @@ void K_CheckSpectateStatus(void)
 			players[i].spectatewait = 0;
 		}
 
-		if (gamestate != GS_LEVEL)
+		if (gamestate != GS_LEVEL || considermapreset == false)
 		{
 			players[i].spectatorReentry = 0;
 		}
@@ -11880,6 +11880,9 @@ void K_CheckSpectateStatus(void)
 		if (cv_maxplayers.value && numingame+i >= cv_maxplayers.value)
 			break;
 	}
+
+	if (considermapreset == false)
+		return;
 
 	// Reset the match when 2P joins 1P, DUEL mode
 	// Reset the match when 3P joins 1P and 2P, DUEL mode must be disabled

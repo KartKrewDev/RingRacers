@@ -1617,7 +1617,11 @@ static void FinalisePlaystateChange(INT32 playernum)
 		// To attempt to discourage rage-spectators, we delay any rejoining.
 		// If you're engaging in a DUEL and quit early, in addition to the
 		// indignity of losing your PWR, you get a special extra-long delay.
-		if (netgame)
+		if (
+			netgame
+			&& players[playernum].jointime > 1
+			&& players[playernum].spectatorReentry == 0
+		)
 		{
 			UINT8 pcount = 0;
 
@@ -3230,12 +3234,6 @@ static void Got_Mapcmd(UINT8 **cp, INT32 playernum)
 	if (demo.timing)
 		G_DoneLevelLoad();
 
-	if (metalrecording)
-		G_BeginMetal();
-	if (demo.recording) // Okay, level loaded, character spawned and skinned,
-		G_BeginRecording(); // I AM NOW READY TO RECORD.
-	demo.deferstart = true;
-
 #ifdef HAVE_DISCORDRPC
 	DRPC_UpdatePresence();
 #endif
@@ -4078,6 +4076,8 @@ static void Got_Teamchange(UINT8 **cp, INT32 playernum)
 
 	//Now that we've done our error checking and killed the player
 	//if necessary, put the player on the correct team/status.
+	boolean nochangeoccourred = false;
+
 	if (G_GametypeHasTeams())
 	{
 		if (!NetPacket.packet.newteam)
@@ -4089,6 +4089,7 @@ static void Got_Teamchange(UINT8 **cp, INT32 playernum)
 		{
 			players[playernum].ctfteam = NetPacket.packet.newteam;
 			players[playernum].pflags |= PF_WANTSTOJOIN; //players[playernum].spectator = false;
+			nochangeoccourred = true;
 		}
 	}
 	else if (G_GametypeHasSpectators())
@@ -4096,7 +4097,10 @@ static void Got_Teamchange(UINT8 **cp, INT32 playernum)
 		if (!NetPacket.packet.newteam)
 			players[playernum].spectator = true;
 		else
+		{
 			players[playernum].pflags |= PF_WANTSTOJOIN; //players[playernum].spectator = false;
+			nochangeoccourred = true;
+		}
 	}
 
 	if (NetPacket.packet.autobalance)
@@ -4137,7 +4141,7 @@ static void Got_Teamchange(UINT8 **cp, INT32 playernum)
 		}
 	}*/
 
-	if (gamestate != GS_LEVEL)
+	if (gamestate != GS_LEVEL || nochangeoccourred == true)
 		return;
 
 	FinalisePlaystateChange(playernum);

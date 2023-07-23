@@ -7789,33 +7789,6 @@ static void P_InitGametype(void)
 	spectateGriefed = 0;
 	K_CashInPowerLevels(); // Pushes power level changes even if intermission was skipped
 
-	if (grandprixinfo.gp == true)
-	{
-		if (savedata.lives > 0)
-		{
-			K_LoadGrandPrixSaveGame();
-			savedata.lives = 0;
-		}
-		else if (grandprixinfo.initalize == true)
-		{
-			K_InitGrandPrixRank(&grandprixinfo.rank);
-			K_InitGrandPrixBots();
-			grandprixinfo.initalize = false;
-		}
-		else if (grandprixinfo.wonround == true)
-		{
-			K_UpdateGrandPrixBots();
-			grandprixinfo.wonround = false;
-		}
-	}
-	else
-	{
-		// We're in a Match Race, use simplistic randomized bots.
-		K_UpdateMatchRaceBots();
-	}
-
-	P_InitPlayers();
-
 	if (modeattacking && !demo.playback)
 		P_LoadRecordGhosts();
 
@@ -8331,7 +8304,12 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 	//  a netgame save is being loaded, and could actively be harmful by messing with
 	//  the client's view of the data.)
 	if (!fromnetsave)
+	{
 		P_InitGametype();
+
+		// Initialize ACS scripts
+		ACS_LoadLevelScripts(gamemap-1);
+	}
 
 	// Now safe to free.
 	vres_Free(curmapvirt);
@@ -8342,12 +8320,6 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 		P_InitCamera();
 		memset(localaiming, 0, sizeof(localaiming));
 		K_InitDirector();
-	}
-
-	// Initialize ACS scripts
-	if (!fromnetsave)
-	{
-		ACS_LoadLevelScripts(gamemap-1);
 	}
 
 	// Remove the loading shit from the screen
@@ -8415,6 +8387,48 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 
 void P_PostLoadLevel(void)
 {
+	P_MapStart();
+
+	if (G_GametypeHasSpectators())
+	{
+		K_CheckSpectateStatus(false);
+	}
+
+	if (demo.playback)
+		;
+	else if (grandprixinfo.gp == true)
+	{
+		if (savedata.lives > 0)
+		{
+			K_LoadGrandPrixSaveGame();
+			savedata.lives = 0;
+		}
+		else if (grandprixinfo.initalize == true)
+		{
+			K_InitGrandPrixRank(&grandprixinfo.rank);
+			K_InitGrandPrixBots();
+			grandprixinfo.initalize = false;
+		}
+		else if (grandprixinfo.wonround == true)
+		{
+			K_UpdateGrandPrixBots();
+			grandprixinfo.wonround = false;
+		}
+	}
+	else
+	{
+		// We're in a Match Race, use simplistic randomized bots.
+		K_UpdateMatchRaceBots();
+	}
+
+	P_InitPlayers();
+
+	if (metalrecording)
+		G_BeginMetal();
+	if (demo.recording) // Okay, level loaded, character spawned and skinned,
+		G_BeginRecording(); // I AM NOW READY TO RECORD.
+	demo.deferstart = true;
+
 	K_TimerInit();
 
 	nextmapoverride = 0;
@@ -8429,12 +8443,10 @@ void P_PostLoadLevel(void)
 		marathonmode &= ~MA_INIT;
 	}
 
-	P_MapStart(); // just in case MapLoad modifies tm.thing
-
 	ACS_RunLevelStartScripts();
 	LUA_HookInt(gamemap, HOOK(MapLoad));
 
-	P_MapEnd(); // just in case MapLoad modifies tm.thing
+	P_MapEnd();
 
 	// We're now done loading the level.
 	levelloading = false;

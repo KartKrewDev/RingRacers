@@ -11830,7 +11830,6 @@ void P_SpawnPlayer(INT32 playernum)
 	else if (netgame && p->jointime <= 1 && pcount)
 	{
 		p->spectator = true;
-		p->spectatorReentry = 0;
 	}
 	else if (multiplayer && !netgame)
 	{
