@@ -13138,6 +13138,11 @@ static boolean P_SetupSpawnedMapThing(mapthing_t *mthing, mobj_t *mobj)
 			mobj->flags2 |= MF2_AMBUSH;
 		}
 		break;
+	case MT_AMBIENT:
+		if (mthing->stringargs[0])
+			mobj->threshold = get_number(mthing->stringargs[0]);
+		mobj->health = mthing->args[0] ? mthing->args[0] : TICRATE;
+		break;
 	// SRB2Kart
 	case MT_WAYPOINT:
 	{

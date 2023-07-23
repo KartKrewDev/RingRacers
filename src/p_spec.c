@@ -2969,18 +2969,6 @@ boolean P_ProcessSpecial(activator_t *activator, INT16 special, INT32 *args, cha
 			P_PlaySFX(stringargs[0] ? get_number(stringargs[0]) : sfx_None, mo, callsec, args[3], args[1], args[2]);
 			break;
 
-		case 415: // Run a script
-			if (cv_runscripts.value)
-			{
-				lumpnum_t lumpnum = W_CheckNumForName(stringargs[0]);
-
-				if (lumpnum == LUMPERROR || W_LumpLength(lumpnum) == 0)
-					CONS_Debug(DBG_SETUP, "Line type 415 Executor: script lump %s not found/not valid.\n", stringargs[0]);
-				else
-					COM_BufInsertText(W_CacheLumpNum(lumpnum, PU_CACHE));
-			}
-			break;
-
 		case 416: // Spawn adjustable fire flicker
 			TAG_ITER_SECTORS(args[0], secnum)
 				P_SpawnAdjustableFireFlicker(&sectors[secnum], args[2],
@@ -4191,18 +4179,37 @@ boolean P_ProcessSpecial(activator_t *activator, INT16 special, INT32 *args, cha
 
 		case 460: // Award rings
 			{
+				if (gametyperules & GTR_SPHERES)
+					return false;
+
 				INT16 rings = args[0];
 				INT32 delay = args[1];
-				if (mo && mo->player)
+				if (
+					mo && mo->player // Player
+					&& rings != 0 // Any effect
+					&& (delay <= 0 || !(leveltime % delay)) // Timing
+				)
 				{
-					// Don't award rings while SPB is targetting you
-					if (mo->player->pflags & PF_RINGLOCK)
-						return false;
-
-					if (delay <= 0 || !(leveltime % delay))
+					if (rings > 0)
 					{
+						// Don't award rings while SPB is targetting you
+						if (mo->player->pflags & PF_RINGLOCK)
+							return false;
+
 						// args[2]: don't cap rings to 20
 						K_AwardPlayerRings(mo->player, rings, args[2]);
+					}
+					else
+					{
+						// Don't push you below baseline
+						if (mo->player->rings <= 0)
+							return false;
+
+						if (rings > mo->player->rings)
+							rings = mo->player->rings;
+
+						mo->player->rings -= rings;
+						S_StartSound(mo, sfx_antiri);
 					}
 				}
 			}
