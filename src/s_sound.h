@@ -346,6 +346,9 @@ void S_ResumeAudio(void);
 void S_EnableSound(void);
 void S_DisableSound(void);
 
+// Attempt to restore music based on gamestate.
+void S_AttemptToRestoreMusic(void);
+
 //
 // Music Fading
 //

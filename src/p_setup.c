@@ -8062,13 +8062,11 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 
 		// Fade out music here. Deduct 2 tics so the fade volume actually reaches 0.
 		// But don't halt the music! S_Start will take care of that. This dodges a MIDI crash bug.
-		if (!(reloadinggamestate || gamestate != GS_LEVEL))
+		if (gamestate == GS_LEVEL)
 			S_FadeMusic(0, FixedMul(
 				FixedDiv((F_GetWipeLength(wipedefs[wipe_level_toblack])-2)*NEWTICRATERATIO, NEWTICRATE), MUSICRATE));
 
-		if (reloadinggamestate)
-			;
-		else if (K_PodiumSequence())
+		if (K_PodiumSequence())
 		{
 			// mapmusrng is set by local player position in K_ResetCeremony
 			S_InitLevelMusic(true);
