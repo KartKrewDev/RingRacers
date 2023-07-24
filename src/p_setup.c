@@ -8280,8 +8280,15 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 	}
 
 	// Now safe to free.
-	vres_Free(curmapvirt);
-	curmapvirt = NULL;
+	// We do the following silly 
+	// construction because vres_Free
+	// no-sells deletions of pointers
+	// that are == curmapvirt.
+	{
+		virtres_t *temp = curmapvirt;
+		curmapvirt = NULL;
+		vres_Free(temp);
+	}
 
 	if (!reloadinggamestate)
 	{
