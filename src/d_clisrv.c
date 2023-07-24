@@ -5196,7 +5196,8 @@ static void HandlePacketFromPlayer(SINT8 node)
 			// If we already received a ticcmd for this tic, just submit it for the next one.
 			tic_t faketic = maketic;
 
-			if (!!(netcmds[maketic % BACKUPTICS][netconsole].flags & TICCMD_RECEIVED))
+			if ((!!(netcmds[maketic % BACKUPTICS][netconsole].flags & TICCMD_RECEIVED))
+				&& (maketic - firstticstosend < BACKUPTICS))
 				faketic++;
 
 			// Copy ticcmd
