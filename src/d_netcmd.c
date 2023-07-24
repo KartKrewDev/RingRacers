@@ -2878,6 +2878,8 @@ static void Command_Map_f(void)
 	size_t option_gametype;
 	size_t option_encore;
 	size_t option_skill;
+	size_t option_server;
+	size_t option_match;
 	boolean newresetplayers;
 	boolean newforcespecialstage;
 
@@ -2901,7 +2903,9 @@ static void Command_Map_f(void)
 	option_force    =   COM_CheckPartialParm("-f");
 	option_gametype =   COM_CheckPartialParm("-g");
 	option_encore   =   COM_CheckPartialParm("-e");
-	option_skill    =   COM_CheckPartialParm("-s");
+	option_skill    =   COM_CheckParm("-skill");
+	option_server   =   COM_CheckParm("-server");
+	option_match    =   COM_CheckParm("-match");
 	newresetplayers = ! COM_CheckParm("-noresetplayers");
 	newforcespecialstage = COM_CheckParm("-forcespecialstage");
 
@@ -3012,70 +3016,109 @@ static void Command_Map_f(void)
 		}
 	}
 
-	if (!(netgame || multiplayer))
 	{
-		grandprixinfo.gamespeed = (cv_kartspeed.value == KARTSPEED_AUTO ? KARTSPEED_NORMAL : cv_kartspeed.value);
-		grandprixinfo.masterbots = false;
-
-		if (option_skill)
+		if ((option_match && option_server)
+		|| (option_match && option_skill)
+		|| (option_server && option_skill))
 		{
-			const char *skillname = COM_Argv(option_skill + 1);
-			INT32 newskill = -1;
-			INT32 j;
-
-			for (j = 0; gpdifficulty_cons_t[j].strvalue; j++)
-			{
-				if (!strcasecmp(gpdifficulty_cons_t[j].strvalue, skillname))
-				{
-					newskill = (INT16)gpdifficulty_cons_t[j].value;
-					break;
-				}
-			}
-
-			if (!gpdifficulty_cons_t[j].strvalue) // reached end of the list with no match
-			{
-				INT32 num = atoi(COM_Argv(option_skill + 1)); // assume they gave us a skill number, which is okay too
-				if (num >= KARTSPEED_EASY && num <= KARTGP_MASTER)
-					newskill = (INT16)num;
-			}
-
-			if (newskill != -1)
-			{
-				if (newskill == KARTGP_MASTER)
-				{
-					grandprixinfo.gamespeed = KARTSPEED_HARD;
-					grandprixinfo.masterbots = true;
-				}
-				else
-				{
-					grandprixinfo.gamespeed = newskill;
-					grandprixinfo.masterbots = false;
-				}
-			}
+			CONS_Alert(CONS_WARNING, M_GetText("These options can't be combined.\nSelect only one out of -server, -match, or -skill.\n"));
+			Z_Free(realmapname);
+			Z_Free(mapname);
+			return;
 		}
-
-		grandprixinfo.gp = true;
-		grandprixinfo.wonround = false;
 
 		if (!Playing())
 		{
 			UINT8 ssplayers = cv_splitplayers.value-1;
-
-			grandprixinfo.cup = NULL;
-			grandprixinfo.initalize = true;
+			boolean newnetgame = (option_server != 0);
 
 			multiplayer = true;
-			restoreMenu = NULL;
+			netgame = false;
 
 			strncpy(connectedservername, cv_servername.string, MAXSERVERNAME);
 
 			if (cv_maxconnections.value < ssplayers+1)
 				CV_SetValue(&cv_maxconnections, ssplayers+1);
 
+			SV_StartSinglePlayerServer(newgametype, newnetgame);
+
 			if (splitscreen != ssplayers)
 			{
 				splitscreen = ssplayers;
 				SplitScreen_OnChange();
+			}
+
+			if (!newnetgame && option_match == 0)
+			{
+				grandprixinfo.gp = true;
+				grandprixinfo.initalize = true;
+				grandprixinfo.cup = NULL;
+
+				grandprixinfo.gamespeed = (cv_kartspeed.value == KARTSPEED_AUTO ? KARTSPEED_NORMAL : cv_kartspeed.value);
+				grandprixinfo.masterbots = false;
+			}
+
+			if (newnetgame)
+			{
+				restoreMenu = &PLAY_MP_OptSelectDef;
+			}
+			else
+			{
+				restoreMenu = NULL;
+			}
+
+			M_ClearMenus(true);
+		}
+		else if (
+			((grandprixinfo.gp == true ? option_match : option_skill) != 0) // Can't swap between.
+			|| (!netgame && (option_server != 0)) // Can't promote to server.
+		)
+		{
+			CONS_Alert(CONS_WARNING, M_GetText("You are already playing a game.\nReturn to the menu to use this option.\n"));
+			Z_Free(realmapname);
+			Z_Free(mapname);
+			return;
+		}
+
+		if (grandprixinfo.gp)
+		{
+			grandprixinfo.wonround = false;
+
+			if (option_skill)
+			{
+				const char *skillname = COM_Argv(option_skill + 1);
+				INT32 newskill = -1;
+				INT32 j;
+
+				for (j = 0; gpdifficulty_cons_t[j].strvalue; j++)
+				{
+					if (!strcasecmp(gpdifficulty_cons_t[j].strvalue, skillname))
+					{
+						newskill = (INT16)gpdifficulty_cons_t[j].value;
+						break;
+					}
+				}
+
+				if (!gpdifficulty_cons_t[j].strvalue) // reached end of the list with no match
+				{
+					INT32 num = atoi(COM_Argv(option_skill + 1)); // assume they gave us a skill number, which is okay too
+					if (num >= KARTSPEED_EASY && num <= KARTGP_MASTER)
+						newskill = (INT16)num;
+				}
+
+				if (newskill != -1)
+				{
+					if (newskill == KARTGP_MASTER)
+					{
+						grandprixinfo.gamespeed = KARTSPEED_HARD;
+						grandprixinfo.masterbots = true;
+					}
+					else
+					{
+						grandprixinfo.gamespeed = newskill;
+						grandprixinfo.masterbots = false;
+					}
+				}
 			}
 		}
 	}
