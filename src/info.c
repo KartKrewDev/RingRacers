@@ -818,6 +818,9 @@ char sprnames[NUMSPRITES + 1][5] =
 	"WBLZ",
 	"WBLN",
 
+	"TUST",
+	"TULE",
+
 	"FWRK",
 	"MXCL",
 	"RGSP",
@@ -5154,6 +5157,9 @@ state_t states[NUMSTATES] =
 
 	{SPR_WBLZ, 0, -1, {NULL}, 0, 0, S_NULL}, // S_LIZARDMAN
 	{SPR_WBLN, 0, -1, {NULL}, 0, 0, S_NULL}, // S_LIONMAN
+
+	{SPR_TUST, FF_PAPERSPRITE, -1, {NULL}, 0, 0, S_NULL}, // S_SUNBEAMPALM_STEM
+	{SPR_TULE, FF_PAPERSPRITE, -1, {NULL}, 0, 0, S_NULL}, // S_SUNBEAMPALM_LEAF
 
 	{SPR_FWRK,   FF_FULLBRIGHT, 2, {NULL}, 0, 0, S_KARMAFIREWORK2}, // S_KARMAFIREWORK1
 	{SPR_FWRK, 1|FF_FULLBRIGHT, 2, {NULL}, 0, 0, S_KARMAFIREWORK3}, // S_KARMAFIREWORK2
@@ -29290,6 +29296,60 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 	    0,              // damage
 	    sfx_None,       // activesound
 	    MF_SOLID,       // flags
+	    S_NULL          // raisestate
+	},
+
+	{           // MT_SUNBEAMPALM_STEM
+	    2697,           // doomednum
+	    S_SUNBEAMPALM_STEM, // spawnstate
+	    1000,           // spawnhealth
+	    S_NULL,         // seestate
+	    sfx_None,       // seesound
+	    8,              // reactiontime
+	    sfx_None,       // attacksound
+	    S_NULL,         // painstate
+	    0,              // painchance
+	    sfx_None,       // painsound
+	    S_NULL,         // meleestate
+	    S_NULL,         // missilestate
+	    S_NULL,         // deathstate
+	    S_NULL,         // xdeathstate
+	    sfx_None,       // deathsound
+	    0,              // speed
+	    90<<FRACBITS,   // radius
+	    420<<FRACBITS,  // height
+	    0,              // display offset
+	    100,            // mass
+	    0,              // damage
+	    sfx_None,       // activesound
+	    MF_NOGRAVITY|MF_NOCLIP|MF_NOCLIPTHING, // flags
+	    S_NULL          // raisestate
+	},
+
+	{           // MT_SUNBEAMPALM_LEAF
+	    -1,             // doomednum
+	    S_SUNBEAMPALM_LEAF, // spawnstate
+	    1000,           // spawnhealth
+	    S_NULL,         // seestate
+	    sfx_None,       // seesound
+	    8,              // reactiontime
+	    sfx_None,       // attacksound
+	    S_NULL,         // painstate
+	    0,              // painchance
+	    sfx_None,       // painsound
+	    S_NULL,         // meleestate
+	    S_NULL,         // missilestate
+	    S_NULL,         // deathstate
+	    S_NULL,         // xdeathstate
+	    sfx_None,       // deathsound
+	    0,              // speed
+	    96<<FRACBITS,   // radius
+	    128<<FRACBITS,  // height
+	    0,              // display offset
+	    100,            // mass
+	    0,              // damage
+	    sfx_None,       // activesound
+	    MF_NOGRAVITY|MF_NOCLIP|MF_NOCLIPTHING|MF_NOCLIPHEIGHT, // flags
 	    S_NULL          // raisestate
 	},
 
