@@ -1633,17 +1633,17 @@ static void M_DrawCharSelectPreview(UINT8 num)
 
 	if (p->showextra == false)
 	{
-		V_DrawScaledPatch(x+9, y+2, 0, W_CachePatchName("FILEBACK", PU_CACHE));
-		V_DrawScaledPatch(x, y+2, 0, W_CachePatchName(va("CHARSEL%c", letter), PU_CACHE));
+		INT32 backx = x + ((num & 1) ? -1 : 11);
+		V_DrawScaledPatch(backx, y+2, 0, W_CachePatchName("FILEBACK", PU_CACHE));
+
+		V_DrawScaledPatch(x + ((num & 1) ? 44 : 0), y+2, 0, W_CachePatchName(va("CHARSEL%c", letter), PU_CACHE));
+
+		profile_t *pr = NULL;
 		if (p->mdepth > CSSTEP_PROFILE)
 		{
-			profile_t *pr = PR_GetProfile(p->profilen);
-			V_DrawCenteredFileString(x+16+18, y+2, 0, pr->profilename);
+			pr = PR_GetProfile(p->profilen);
 		}
-		else
-		{
-			V_DrawFileString(x+16, y+2, 0, "PLAYER");
-		}
+		V_DrawCenteredFileString(backx+26, y+2, 0, pr ? pr->profilename : "PLAYER");
 	}
 
 	if (p->mdepth >= CSSTEP_FOLLOWER)
