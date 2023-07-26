@@ -1786,9 +1786,22 @@ void Y_StartIntermission(void)
 		// Prevent a weird bug
 		timer = 1;
 	}
-	else if (nump < 2 && !netgame)
+	else if (
+		( // Match Race or Time Attack
+			netgame == false
+			&& grandprixinfo.gp == false
+		)
+		&& (
+			modeattacking != ATTACKING_NONE // Definitely never another map
+			|| ( // Any level sequence?
+				roundqueue.size == 0 // No maps queued, points aren't relevant
+				|| roundqueue.position == 0 // OR points from this round will be discarded
+			)
+		)
+	)
 	{
 		// No PWR/global score, skip it
+		// (the above is influenced by G_GetNextMap)
 		timer /= 2;
 	}
 	else
