@@ -539,11 +539,8 @@ void Y_PlayerStandingsDrawer(y_data_t *standings, INT32 xoffset)
 
 			if (standings->isduel)
 			{
-				INT32 duelx = x + 25 - inwardshim/2, duely = y - 80;
-				if (datarightofcolumn)
-					duelx += inwardshim/2;
-				else
-					duelx -= inwardshim/2;
+				INT32 duelx = x + 22 + (datarightofcolumn ? inwardshim : -inwardshim);
+				INT32 duely = y - 80;
 
 				V_DrawScaledPatch(duelx, duely, 0, W_CachePatchName("DUELGRPH", PU_CACHE));
 				V_DrawScaledPatch(duelx + 8, duely + 9, V_TRANSLUCENT, W_CachePatchName("PREVBACK", PU_CACHE));
