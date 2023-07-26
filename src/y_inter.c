@@ -178,6 +178,8 @@ static void Y_CalculateMatchData(UINT8 rankingsmode, void (*comparison)(INT32))
 	data.numplayers = 0;
 	data.roundnum = 0;
 
+	data.isduel = (numplayersingame <= 2);
+
 	for (j = 0; j < numplayersingame; j++)
 	{
 		for (i = 0; i < MAXPLAYERS; i++)
@@ -441,7 +443,7 @@ void Y_PlayerStandingsDrawer(y_data_t *standings, INT32 xoffset)
 	INT32 x, y;
 	INT32 x2, returny, inwardshim = 0;
 
-	boolean verticalresults = (standings->numplayers < 4);
+	boolean verticalresults = (standings->numplayers < 4 && (standings->numplayers == 1 || standings->isduel == false));
 	boolean datarightofcolumn = false;
 	boolean drawping = (netgame && gamestate == GS_LEVEL);
 
@@ -488,7 +490,11 @@ void Y_PlayerStandingsDrawer(y_data_t *standings, INT32 xoffset)
 
 	y = 106 - (heightcount * yspacing)/2;
 
-	if (y < 70)
+	if (standings->isduel)
+	{
+		y += 38;
+	}
+	else if (y < 70)
 	{
 		// One sanity check.
 		y = 70;
@@ -502,7 +508,20 @@ void Y_PlayerStandingsDrawer(y_data_t *standings, INT32 xoffset)
 			: P_IsLocalPlayer
 		);
 
-	for (i = 0; i < standings->numplayers; i++)
+	boolean doreverse = (
+		standings->isduel && standings->numplayers == 2
+		&& standings->num[0] > standings->num[1]
+	);
+
+	i = 0;
+	UINT8 halfway = (standings->numplayers-1)/2;
+	if (doreverse)
+	{
+		i = standings->numplayers-1;
+		halfway++;
+	}
+
+	do // don't use "continue" in this loop just for sanity's sake
 	{
 		const UINT8 pnum = standings->num[i];
 
@@ -512,6 +531,67 @@ void Y_PlayerStandingsDrawer(y_data_t *standings, INT32 xoffset)
 			standings->num[i] = MAXPLAYERS; // this should be the only field setting in this function
 		else
 		{
+			UINT8 *charcolormap = NULL;
+			if (standings->color[i] != SKINCOLOR_NONE)
+			{
+				charcolormap = R_GetTranslationColormap(standings->character[i], standings->color[i], GTC_CACHE);
+			}
+
+			if (standings->isduel)
+			{
+				INT32 duelx = x + 25 - inwardshim/2, duely = y - 80;
+				if (datarightofcolumn)
+					duelx += inwardshim/2;
+				else
+					duelx -= inwardshim/2;
+
+				V_DrawScaledPatch(duelx, duely, 0, W_CachePatchName("DUELGRPH", PU_CACHE));
+				V_DrawScaledPatch(duelx + 8, duely + 9, V_TRANSLUCENT, W_CachePatchName("PREVBACK", PU_CACHE));
+
+				UINT8 spr2 = SPR2_STIN;
+				if (standings->pos[i] == 2)
+				{
+					spr2 = (datarightofcolumn ? SPR2_STGR : SPR2_STGL);
+				}
+
+				M_DrawCharacterSprite(
+					duelx + 40, duely + 78,
+					standings->character[i],
+					spr2,
+					(datarightofcolumn ? 1 : 7),
+					0,
+					0,
+					charcolormap
+				);
+
+				if (!netgame)
+				{
+					UINT8 j, profilen = 0;
+					for (j = 0; j <= splitscreen; j++)
+					{
+						if (pnum == g_localplayers[j])
+							break;
+					}
+
+					if (j > splitscreen)
+						continue;
+
+					profilen = cv_lastprofile[j].value;
+
+					duelx += 8;
+					duely += 5;
+
+					INT32 backx = duelx + (datarightofcolumn ? -1 : 11);
+
+					V_DrawScaledPatch(backx, duely, 0, W_CachePatchName("FILEBACK", PU_CACHE));
+
+					V_DrawScaledPatch(duelx + (datarightofcolumn ? 44 : 0), duely, 0, W_CachePatchName(va("CHARSEL%c", 'A' + j), PU_CACHE));
+
+					profile_t *pr = PR_GetProfile(profilen);
+					V_DrawCenteredFileString(backx+26, duely, 0, pr ? pr->profilename : "PLAYER");
+				}
+			}
+
 			// Apply the jitter offset (later reversed)
 			if (standings->jitter[pnum] > 0)
 				y--;
@@ -522,12 +602,15 @@ void Y_PlayerStandingsDrawer(y_data_t *standings, INT32 xoffset)
 
 			if (standings->color[i] != SKINCOLOR_NONE)
 			{
-				UINT8 *charcolormap;
 				if ((players[pnum].pflags & PF_NOCONTEST) && players[pnum].bot)
 				{
 					// RETIRED !!
-					charcolormap = R_GetTranslationColormap(TC_DEFAULT, standings->color[i], GTC_CACHE);
-					V_DrawMappedPatch(x+14, y-5, 0, W_CachePatchName("MINIDEAD", PU_CACHE), charcolormap);
+					V_DrawMappedPatch(
+						x+14, y-5,
+						0,
+						W_CachePatchName("MINIDEAD", PU_CACHE),
+						R_GetTranslationColormap(TC_DEFAULT, standings->color[i], GTC_CACHE)
+					);
 				}
 				else
 				{
@@ -645,7 +728,7 @@ void Y_PlayerStandingsDrawer(y_data_t *standings, INT32 xoffset)
 
 		y += yspacing;
 
-		if (verticalresults == false && i == (standings->numplayers-1)/2)
+		if (verticalresults == false && i == halfway)
 		{
 			x = 169 + xoffset - inwardshim;
 			y = returny;
@@ -653,7 +736,19 @@ void Y_PlayerStandingsDrawer(y_data_t *standings, INT32 xoffset)
 			datarightofcolumn = true;
 			x2 = x + 118 + 5;
 		}
+
+		if (!doreverse)
+		{
+			if (++i < standings->numplayers)
+				continue;
+			break;
+		}
+
+		if (i == 0)
+			break;
+		i--;
 	}
+	while (true);
 }
 
 //
