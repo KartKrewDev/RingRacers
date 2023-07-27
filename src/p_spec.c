@@ -4205,6 +4205,8 @@ boolean P_ProcessSpecial(activator_t *activator, INT16 special, INT32 *args, cha
 						if (mo->player->rings <= 0)
 							return false;
 
+						rings = -(rings);
+
 						if (rings > mo->player->rings)
 							rings = mo->player->rings;
 
