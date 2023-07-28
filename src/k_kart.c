@@ -9662,7 +9662,7 @@ static void K_KartDrift(player_t *player, boolean onground)
 		if (!keepsliptide && K_IsLosingSliptideZip(player) && player->sliptideZip > 0)
 		{
 			if (!S_SoundPlaying(player->mo, sfx_waved2))
-				S_StartSoundAtVolume(player->mo, sfx_waved2, 255/2); // Losing combo time, going to boost
+				S_StartSoundAtVolume(player->mo, sfx_waved2, 255); // Losing combo time, going to boost
 			S_StopSoundByID(player->mo, sfx_waved1);
 			S_StopSoundByID(player->mo, sfx_waved4);
 			player->sliptideZipDelay++;
@@ -9693,7 +9693,7 @@ static void K_KartDrift(player_t *player, boolean onground)
 					player->sliptideZipBoost += yourBoost;
 
 					K_SpawnDriftBoostExplosion(player, 0);
-					S_StartSoundAtVolume(player->mo, sfx_waved3, 2*255/3); // Boost
+					S_StartSoundAtVolume(player->mo, sfx_waved3, 255); // Boost
 				}
 				S_StopSoundByID(player->mo, sfx_waved1);
 				S_StopSoundByID(player->mo, sfx_waved2);
@@ -9707,7 +9707,7 @@ static void K_KartDrift(player_t *player, boolean onground)
 			S_StopSoundByID(player->mo, sfx_waved1);
 			S_StopSoundByID(player->mo, sfx_waved2);
 			if (player->sliptideZip > 0 && !S_SoundPlaying(player->mo, sfx_waved4))
-				S_StartSoundAtVolume(player->mo, sfx_waved4, 2*255/5); // Passive woosh
+				S_StartSoundAtVolume(player->mo, sfx_waved4, 255); // Passive woosh
 		}
 
 		player->aizdrifttilt -= player->aizdrifttilt / 4;
@@ -9724,7 +9724,7 @@ static void K_KartDrift(player_t *player, boolean onground)
 		S_StopSoundByID(player->mo, sfx_waved2);
 		S_StopSoundByID(player->mo, sfx_waved4);
 		if (!S_SoundPlaying(player->mo, sfx_waved1))
-			S_StartSoundAtVolume(player->mo, sfx_waved1, 255/2); // Charging
+			S_StartSoundAtVolume(player->mo, sfx_waved1, 255); // Charging
 	}
 
 	if (player->drift
@@ -11742,7 +11742,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 	Obj_RingShooterInput(player);
 }
 
-void K_CheckSpectateStatus(void)
+void K_CheckSpectateStatus(boolean considermapreset)
 {
 	UINT8 respawnlist[MAXPLAYERS];
 	UINT8 i, j, numingame = 0, numjoiners = 0;
@@ -11772,7 +11772,7 @@ void K_CheckSpectateStatus(void)
 			players[i].spectatewait = 0;
 		}
 
-		if (gamestate != GS_LEVEL)
+		if (gamestate != GS_LEVEL || considermapreset == false)
 		{
 			players[i].spectatorReentry = 0;
 		}
@@ -11882,6 +11882,9 @@ void K_CheckSpectateStatus(void)
 		if (cv_maxplayers.value && numingame+i >= cv_maxplayers.value)
 			break;
 	}
+
+	if (considermapreset == false)
+		return;
 
 	// Reset the match when 2P joins 1P, DUEL mode
 	// Reset the match when 3P joins 1P and 2P, DUEL mode must be disabled

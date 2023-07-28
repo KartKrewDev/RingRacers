@@ -3960,6 +3960,9 @@ static void Got_AddPlayer(UINT8 **p, INT32 playernum)
 	playerconsole[newplayernum] = console;
 	G_BuildLocalSplitscreenParty(newplayernum);
 
+	if (node == mynode && splitscreenplayer == 0)
+		S_AttemptToRestoreMusic(); // Earliest viable point
+
 	if (netgame)
 	{
 		char joinmsg[256];
@@ -5193,7 +5196,8 @@ static void HandlePacketFromPlayer(SINT8 node)
 			// If we already received a ticcmd for this tic, just submit it for the next one.
 			tic_t faketic = maketic;
 
-			if (!!(netcmds[maketic % BACKUPTICS][netconsole].flags & TICCMD_RECEIVED))
+			if ((!!(netcmds[maketic % BACKUPTICS][netconsole].flags & TICCMD_RECEIVED))
+				&& (maketic - firstticstosend < BACKUPTICS))
 				faketic++;
 
 			// Copy ticcmd

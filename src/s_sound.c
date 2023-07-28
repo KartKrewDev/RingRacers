@@ -1362,7 +1362,7 @@ static UINT32    queue_fadeinms;
 
 static tic_t     pause_starttic;
 
-static void S_AttemptToRestoreMusic(void)
+void S_AttemptToRestoreMusic(void)
 {
 	switch (gamestate)
 	{
@@ -1375,6 +1375,9 @@ static void S_AttemptToRestoreMusic(void)
 			// FALLTHRU
 		case GS_INTERMISSION:
 			S_ChangeMusicInternal("racent", true);
+			break;
+		case GS_CEREMONY:
+			S_ChangeMusicEx(mapmusname, mapmusflags, true, mapmusposition, 0, 0);
 			break;
 		case GS_TITLESCREEN:
 			S_ChangeMusicInternal("_title", looptitle);
@@ -2975,14 +2978,7 @@ void S_InitLevelMusic(boolean fromnetsave)
 		mapmusresume = 0;
 	}
 
-	S_StopMusic(); // Starting ambience should always be restarted, if playing.
-
-	if (leveltime < (starttime + (TICRATE/2))) // SRB2Kart
-	{
-		;
-	}
-	else
-		S_ChangeMusicEx(mapmusname, mapmusflags, true, mapmusposition, 0, 0);
+	S_StopMusic();
 
 	S_ResetMusicStack();
 	music_stack_noposition = false;

@@ -2374,7 +2374,7 @@ void G_Ticker(boolean run)
 			&& (gamestate == GS_LEVEL || gamestate == GS_INTERMISSION || gamestate == GS_VOTING // definitely good
 			|| gamestate == GS_WAITINGPLAYERS)) // definitely a problem if we don't do it at all in this gamestate, but might need more protection?
 		{
-			K_CheckSpectateStatus();
+			K_CheckSpectateStatus(true);
 		}
 
 		if (pausedelay && pausedelay != INT32_MIN)
@@ -2436,6 +2436,8 @@ static inline void G_PlayerFinishLevel(INT32 player)
 
 	p->starpostnum = 0;
 	memset(&p->respawn, 0, sizeof (p->respawn));
+
+	p->spectatorReentry = 0; // Clean up any pending re-entry forbiddings
 }
 
 //

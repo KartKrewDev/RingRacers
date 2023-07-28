@@ -706,6 +706,37 @@ void P_PlayVictorySound(mobj_t *source)
 }
 
 //
+// P_StartPositionMusic
+//
+// Consistently sets starting music!
+//
+void P_StartPositionMusic(boolean exact)
+{
+	if (encoremode)
+	{
+		if (exact
+			? (leveltime != 1)
+			: (leveltime  < 1))
+			return;
+
+		S_ChangeMusicInternal("encore", true);
+	}
+	else
+	{
+		if (exact
+			? (leveltime != introtime)
+			: (leveltime  < introtime))
+			return;
+
+		S_ChangeMusicInternal(
+			(mapheaderinfo[gamemap-1]->positionmus[0]
+				? mapheaderinfo[gamemap-1]->positionmus
+				: "postn"
+			), true);
+	}
+}
+
+//
 // P_EndingMusic
 //
 // Consistently sets ending music!
@@ -882,6 +913,7 @@ void P_RestoreMusic(player_t *player)
 	if ((K_CheckBossIntro() == false)
 		&& (leveltime < (starttime + (TICRATE/2)))) // see also where time overs are handled
 	{
+		P_StartPositionMusic(false); // inexact timing permitted
 		return;
 	}
 

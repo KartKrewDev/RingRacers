@@ -493,7 +493,7 @@ static inline int lib_getenum(lua_State *L)
 		if (mathlib) return luaL_error(L, "player sprite '%s' could not be found.\n", word);
 		return 0;
 	}
-	else if (!mathlib && fastncmp("sfx_",word,4)) {
+	else if (fastncmp("sfx_",word,4)) {
 		p = word+4;
 		for (i = 0; i < NUMSFX; i++)
 			if (S_sfx[i].name && fastcmp(p, S_sfx[i].name)) {

@@ -3060,6 +3060,10 @@ void G_DoPlayDemo(const char *defdemoname)
 	}
 	else
 	{
+		// FIXME: this file doesn't manage its memory and actually free this when it's done using it
+		//Z_Free(demobuf.buffer);
+		demobuf.buffer = NULL;
+
 		n = defdemoname+strlen(defdemoname);
 		while (*n != '/' && *n != '\\' && n != defdemoname)
 			n--;
@@ -4179,13 +4183,19 @@ boolean G_CheckDemoStatus(void)
 		return true;
 	}
 
-	if (demo.recording && (modeattacking || demo.savemode != DSM_NOTSAVING))
+	if (!demo.recording)
+		return false;
+
+	if (modeattacking || demo.savemode != DSM_NOTSAVING)
 	{
 		G_SaveDemo();
 		return true;
 	}
 
+	Z_Free(demobuf.buffer);
+
 	demo.recording = false;
+
 	return false;
 }
 
