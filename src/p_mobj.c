@@ -13350,6 +13350,52 @@ static boolean P_SetupSpawnedMapThing(mapthing_t *mthing, mobj_t *mobj)
 		P_RemoveMobj(mobj); // Don't need this helper obj anymore
 		return false;
 	}
+	case MT_SUNBEAMPALM_STEM:
+	{
+		UINT8 i;
+		const UINT8 numleaves = max(4, (abs(mthing->args[0])+1 % 6) + 4);
+
+		const fixed_t pivot = P_RandomRange(PR_DECORATION, -40, 20) * FRACUNIT;
+
+		mobj->rollangle = FixedAngle(pivot);
+
+		const fixed_t temptop = FixedDiv(mobj->height, mobj->scale);
+		const fixed_t tempside = mobj->info->radius * 2;
+
+		const fixed_t top = P_ReturnThrustX(mobj, mobj->rollangle, temptop) + P_ReturnThrustY(mobj, mobj->rollangle, tempside);
+		const fixed_t side = P_ReturnThrustX(mobj, mobj->rollangle, tempside) - P_ReturnThrustY(mobj, mobj->rollangle, temptop);
+
+		const fixed_t basex = P_ReturnThrustX(mobj, mobj->angle, side);
+		const fixed_t basey = P_ReturnThrustY(mobj, mobj->angle, side);
+
+		const angle_t divideangle = FixedAngle((360*FRACUNIT)/numleaves);
+		angle_t leafangle = P_RandomKey(PR_DECORATION, 360)*ANG1;
+
+		const fixed_t dist = mobjinfo[MT_SUNBEAMPALM_LEAF].radius;
+
+		// Spawn all of the papersprite leaves
+		for (i = 0; i < numleaves; i++, leafangle += divideangle)
+		{
+			mobj_t *leaf;
+
+			leaf = P_SpawnMobjFromMobj(
+				mobj,
+				basex + P_ReturnThrustX(mobj, leafangle, dist),
+				basey + P_ReturnThrustY(mobj, leafangle, dist),
+				top,
+				MT_SUNBEAMPALM_LEAF
+			);
+
+			if (P_MobjWasRemoved(leaf))
+				continue;
+
+			leaf->angle = leafangle;
+
+			leaf->frame |= P_RandomKey(PR_DECORATION, 5);
+		}
+
+		break;
+	}
 	case MT_BATTLECAPSULE:
 	{
 		sector_t *sec = R_PointInSubsector(mobj->x, mobj->y)->sector;
