@@ -6004,6 +6004,7 @@ const char *const MSF_LIST[] = {
 	"RIPPLE_FLOOR",
 	"RIPPLE_CEILING",
 	"INVERTENCORE",
+	"FLATLIGHTING",
 	NULL
 };
 

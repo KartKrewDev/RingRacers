@@ -350,6 +350,8 @@ typedef enum
 	MSF_RIPPLE_CEILING          =  1<<11,
 	// invert encore color remap status
 	MSF_INVERTENCORE            =  1<<12,
+	// turn off directional lighting
+	MSF_FLATLIGHTING            =  1<<13,
 } sectorflags_t;
 
 typedef enum
