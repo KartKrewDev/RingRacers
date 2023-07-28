@@ -561,31 +561,38 @@ void Y_PlayerStandingsDrawer(y_data_t *standings, INT32 xoffset)
 					charcolormap
 				);
 
-				if (!netgame)
+				duelx += 8;
+				duely += 5;
+
+				UINT8 j;
+				for (j = 0; j <= splitscreen; j++)
 				{
-					UINT8 j, profilen = 0;
-					for (j = 0; j <= splitscreen; j++)
-					{
-						if (pnum == g_localplayers[j])
-							break;
-					}
+					if (pnum == g_localplayers[j])
+						break;
+				}
 
-					if (j > splitscreen)
-						continue;
+				INT32 letterpos = duelx + (datarightofcolumn ? 44 : 0);
 
-					profilen = cv_lastprofile[j].value;
+				if (j > splitscreen)
+				{
+					V_DrawScaledPatch(letterpos, duely, 0, W_CachePatchName(va("CHAR%s", (players[pnum].bot ? "CPU" : "EGGA")), PU_CACHE));
+				}
+				else
+				{
+					duelx += (datarightofcolumn ? -1 : 11);
 
-					duelx += 8;
-					duely += 5;
+					UINT8 profilen = cv_lastprofile[j].value;
 
-					INT32 backx = duelx + (datarightofcolumn ? -1 : 11);
+					V_DrawScaledPatch(duelx, duely, 0, W_CachePatchName("FILEBACK", PU_CACHE));
 
-					V_DrawScaledPatch(backx, duely, 0, W_CachePatchName("FILEBACK", PU_CACHE));
+					if (datarightofcolumn && j == 0)
+						letterpos++; // A is one pixel thinner
 
-					V_DrawScaledPatch(duelx + (datarightofcolumn ? 44 : 0), duely, 0, W_CachePatchName(va("CHARSEL%c", 'A' + j), PU_CACHE));
+					V_DrawScaledPatch(letterpos, duely, 0, W_CachePatchName(va("CHARSEL%c", 'A' + j), PU_CACHE));
 
 					profile_t *pr = PR_GetProfile(profilen);
-					V_DrawCenteredFileString(backx+26, duely, 0, pr ? pr->profilename : "PLAYER");
+
+					V_DrawCenteredFileString(duelx+26, duely, 0, pr ? pr->profilename : "PLAYER");
 				}
 			}
 
