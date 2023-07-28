@@ -977,7 +977,7 @@ static void R_Subsector(size_t num)
 			floorcolormap, NULL, NULL, frontsector->f_slope,
 			R_NoEncore(frontsector, &levelflats[frontsector->floorpic], false),
 			R_IsRipplePlane(frontsector, NULL, false),
-			false
+			false, frontsector->flags
 		);
 	}
 	else
@@ -993,7 +993,7 @@ static void R_Subsector(size_t num)
 			ceilingcolormap, NULL, NULL, frontsector->c_slope,
 			R_NoEncore(frontsector, &levelflats[frontsector->ceilingpic], true),
 			R_IsRipplePlane(frontsector, NULL, true),
-			true
+			true, frontsector->flags
 		);
 	}
 	else
@@ -1041,7 +1041,7 @@ static void R_Subsector(size_t num)
 					*rover->bottomyoffs, *rover->bottomangle, *frontsector->lightlist[light].extra_colormap, rover, NULL, *rover->b_slope,
 					R_NoEncore(rover->master->frontsector, &levelflats[*rover->bottompic], true),
 					R_IsRipplePlane(rover->master->frontsector, rover, true),
-					true
+					true, rover->master->frontsector->flags
 				);
 
 				ffloor[numffloors].slope = *rover->b_slope;
@@ -1075,7 +1075,7 @@ static void R_Subsector(size_t num)
 					*frontsector->lightlist[light].extra_colormap, rover, NULL, *rover->t_slope,
 					R_NoEncore(rover->master->frontsector, &levelflats[*rover->toppic], false),
 					R_IsRipplePlane(rover->master->frontsector, rover, false),
-					false
+					false, rover->master->frontsector->flags
 				);
 
 				ffloor[numffloors].slope = *rover->t_slope;
@@ -1125,7 +1125,7 @@ static void R_Subsector(size_t num)
 					NULL, // will ffloors be slopable eventually?
 					R_NoEncore(polysec, &levelflats[polysec->floorpic], false),
 					false, /* TODO: wet polyobjects? */
-					true
+					true, polysec->flags
 				);
 
 				ffloor[numffloors].height = polysec->floorheight;
@@ -1154,7 +1154,7 @@ static void R_Subsector(size_t num)
 					NULL, // will ffloors be slopable eventually?
 					R_NoEncore(polysec, &levelflats[polysec->ceilingpic], true),
 					false, /* TODO: wet polyobjects? */
-					false
+					false, polysec->flags
 				);
 
 				ffloor[numffloors].polyobj = po;

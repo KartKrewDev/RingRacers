@@ -355,7 +355,7 @@ static visplane_t *new_visplane(unsigned hash)
 visplane_t *R_FindPlane(fixed_t height, INT32 picnum, INT32 lightlevel,
 	fixed_t xoff, fixed_t yoff, angle_t plangle, extracolormap_t *planecolormap,
 	ffloor_t *pfloor, polyobj_t *polyobj, pslope_t *slope, boolean noencore,
-	boolean ripple, boolean reverseLight)
+	boolean ripple, boolean reverseLight, sectorflags_t sectorflags)
 {
 	visplane_t *check;
 	unsigned hash;
@@ -392,7 +392,7 @@ visplane_t *R_FindPlane(fixed_t height, INT32 picnum, INT32 lightlevel,
 		}
 	}
 
-	if (slope != NULL && P_ApplyLightOffset(lightlevel >> LIGHTSEGSHIFT))
+	if (slope != NULL && P_ApplyLightOffset(lightlevel >> LIGHTSEGSHIFT, sectorflags))
 	{
 		if (reverseLight && maplighting.directional == true)
 		{
