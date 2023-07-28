@@ -1,5 +1,6 @@
 #include "../p_local.h"
 #include "../k_kart.h"
+#include "../k_objects.h"
 #include "../s_sound.h"
 
 // Dash Rings are scaled by this much relative to the map scale
