@@ -178,6 +178,8 @@ static void Y_CalculateMatchData(UINT8 rankingsmode, void (*comparison)(INT32))
 	data.numplayers = 0;
 	data.roundnum = 0;
 
+	data.isduel = (numplayersingame <= 2);
+
 	for (j = 0; j < numplayersingame; j++)
 	{
 		for (i = 0; i < MAXPLAYERS; i++)
@@ -441,7 +443,7 @@ void Y_PlayerStandingsDrawer(y_data_t *standings, INT32 xoffset)
 	INT32 x, y;
 	INT32 x2, returny, inwardshim = 0;
 
-	boolean verticalresults = (standings->numplayers < 4);
+	boolean verticalresults = (standings->numplayers < 4 && (standings->numplayers == 1 || standings->isduel == false));
 	boolean datarightofcolumn = false;
 	boolean drawping = (netgame && gamestate == GS_LEVEL);
 
@@ -488,7 +490,11 @@ void Y_PlayerStandingsDrawer(y_data_t *standings, INT32 xoffset)
 
 	y = 106 - (heightcount * yspacing)/2;
 
-	if (y < 70)
+	if (standings->isduel)
+	{
+		y += 38;
+	}
+	else if (y < 70)
 	{
 		// One sanity check.
 		y = 70;
@@ -502,7 +508,20 @@ void Y_PlayerStandingsDrawer(y_data_t *standings, INT32 xoffset)
 			: P_IsLocalPlayer
 		);
 
-	for (i = 0; i < standings->numplayers; i++)
+	boolean doreverse = (
+		standings->isduel && standings->numplayers == 2
+		&& standings->num[0] > standings->num[1]
+	);
+
+	i = 0;
+	UINT8 halfway = (standings->numplayers-1)/2;
+	if (doreverse)
+	{
+		i = standings->numplayers-1;
+		halfway++;
+	}
+
+	do // don't use "continue" in this loop just for sanity's sake
 	{
 		const UINT8 pnum = standings->num[i];
 
@@ -512,6 +531,71 @@ void Y_PlayerStandingsDrawer(y_data_t *standings, INT32 xoffset)
 			standings->num[i] = MAXPLAYERS; // this should be the only field setting in this function
 		else
 		{
+			UINT8 *charcolormap = NULL;
+			if (standings->color[i] != SKINCOLOR_NONE)
+			{
+				charcolormap = R_GetTranslationColormap(standings->character[i], standings->color[i], GTC_CACHE);
+			}
+
+			if (standings->isduel)
+			{
+				INT32 duelx = x + 22 + (datarightofcolumn ? inwardshim : -inwardshim);
+				INT32 duely = y - 80;
+
+				V_DrawScaledPatch(duelx, duely, 0, W_CachePatchName("DUELGRPH", PU_CACHE));
+				V_DrawScaledPatch(duelx + 8, duely + 9, V_TRANSLUCENT, W_CachePatchName("PREVBACK", PU_CACHE));
+
+				UINT8 spr2 = SPR2_STIN;
+				if (standings->pos[i] == 2)
+				{
+					spr2 = (datarightofcolumn ? SPR2_STGR : SPR2_STGL);
+				}
+
+				M_DrawCharacterSprite(
+					duelx + 40, duely + 78,
+					standings->character[i],
+					spr2,
+					(datarightofcolumn ? 1 : 7),
+					0,
+					0,
+					charcolormap
+				);
+
+				duelx += 8;
+				duely += 5;
+
+				UINT8 j;
+				for (j = 0; j <= splitscreen; j++)
+				{
+					if (pnum == g_localplayers[j])
+						break;
+				}
+
+				INT32 letterpos = duelx + (datarightofcolumn ? 44 : 0);
+
+				if (j > splitscreen)
+				{
+					V_DrawScaledPatch(letterpos, duely, 0, W_CachePatchName(va("CHAR%s", (players[pnum].bot ? "CPU" : "EGGA")), PU_CACHE));
+				}
+				else
+				{
+					duelx += (datarightofcolumn ? -1 : 11);
+
+					UINT8 profilen = cv_lastprofile[j].value;
+
+					V_DrawScaledPatch(duelx, duely, 0, W_CachePatchName("FILEBACK", PU_CACHE));
+
+					if (datarightofcolumn && j == 0)
+						letterpos++; // A is one pixel thinner
+
+					V_DrawScaledPatch(letterpos, duely, 0, W_CachePatchName(va("CHARSEL%c", 'A' + j), PU_CACHE));
+
+					profile_t *pr = PR_GetProfile(profilen);
+
+					V_DrawCenteredFileString(duelx+26, duely, 0, pr ? pr->profilename : "PLAYER");
+				}
+			}
+
 			// Apply the jitter offset (later reversed)
 			if (standings->jitter[pnum] > 0)
 				y--;
@@ -522,12 +606,15 @@ void Y_PlayerStandingsDrawer(y_data_t *standings, INT32 xoffset)
 
 			if (standings->color[i] != SKINCOLOR_NONE)
 			{
-				UINT8 *charcolormap;
 				if ((players[pnum].pflags & PF_NOCONTEST) && players[pnum].bot)
 				{
 					// RETIRED !!
-					charcolormap = R_GetTranslationColormap(TC_DEFAULT, standings->color[i], GTC_CACHE);
-					V_DrawMappedPatch(x+14, y-5, 0, W_CachePatchName("MINIDEAD", PU_CACHE), charcolormap);
+					V_DrawMappedPatch(
+						x+14, y-5,
+						0,
+						W_CachePatchName("MINIDEAD", PU_CACHE),
+						R_GetTranslationColormap(TC_DEFAULT, standings->color[i], GTC_CACHE)
+					);
 				}
 				else
 				{
@@ -645,7 +732,7 @@ void Y_PlayerStandingsDrawer(y_data_t *standings, INT32 xoffset)
 
 		y += yspacing;
 
-		if (verticalresults == false && i == (standings->numplayers-1)/2)
+		if (verticalresults == false && i == halfway)
 		{
 			x = 169 + xoffset - inwardshim;
 			y = returny;
@@ -653,7 +740,19 @@ void Y_PlayerStandingsDrawer(y_data_t *standings, INT32 xoffset)
 			datarightofcolumn = true;
 			x2 = x + 118 + 5;
 		}
+
+		if (!doreverse)
+		{
+			if (++i < standings->numplayers)
+				continue;
+			break;
+		}
+
+		if (i == 0)
+			break;
+		i--;
 	}
+	while (true);
 }
 
 //
@@ -1691,9 +1790,22 @@ void Y_StartIntermission(void)
 		// Prevent a weird bug
 		timer = 1;
 	}
-	else if (nump < 2 && !netgame)
+	else if (
+		( // Match Race or Time Attack
+			netgame == false
+			&& grandprixinfo.gp == false
+		)
+		&& (
+			modeattacking != ATTACKING_NONE // Definitely never another map
+			|| ( // Any level sequence?
+				roundqueue.size == 0 // No maps queued, points aren't relevant
+				|| roundqueue.position == 0 // OR points from this round will be discarded
+			)
+		)
+	)
 	{
 		// No PWR/global score, skip it
+		// (the above is influenced by G_GetNextMap)
 		timer /= 2;
 	}
 	else
