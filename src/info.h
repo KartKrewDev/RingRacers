@@ -294,7 +294,7 @@ enum actionnum
 	A_INVINCSPARKLEROTATE,
 	A_SPAWNITEMDEBRISCLOUD,
 	A_RINGSHOOTERFACE,
-	A_TEXTUREANIMATE,
+	A_SPAWNSNEAKERPANEL,
 	NUMACTIONS
 };
 
@@ -569,7 +569,7 @@ void A_FlameShieldPaper();
 void A_InvincSparkleRotate();
 void A_SpawnItemDebrisCloud();
 void A_RingShooterFace();
-void A_TextureAnimate();
+void A_SpawnSneakerPanel();
 
 extern boolean actionsoverridden[NUMACTIONS];
 
@@ -5394,6 +5394,7 @@ typedef enum state
 	S_SNEAKERPANEL,
 	S_SNEAKERPANEL_SMALL,
 	S_SNEAKERPANEL_TINY,
+	S_SNEAKERPANELSPAWNER,
 
 	// Various plants
 	S_SONICBUSH,
@@ -6803,6 +6804,7 @@ typedef enum mobj_type
 
 	// Sneaker Panels
 	MT_SNEAKERPANEL,
+	MT_SNEAKERPANELSPAWNER,
 
 	// Various plants
 	MT_SONICBUSH,

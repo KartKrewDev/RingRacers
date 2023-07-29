@@ -5,7 +5,7 @@
 
 #define SNEAKERPANEL_RADIUS (64*FRACUNIT)
 
-static void SneakerPanelSpriteScale(mobj_t *mobj)
+void Obj_SneakerPanelSpriteScale(mobj_t *mobj)
 {
 	statenum_t newState;
 	fixed_t spriteScale;
@@ -41,7 +41,7 @@ static void SneakerPanelSpriteScale(mobj_t *mobj)
 void Obj_SneakerPanelSpawn(mobj_t *mobj)
 {
 	mobj->renderflags |= RF_OBJECTSLOPESPLAT | RF_NOSPLATBILLBOARD;
-	SneakerPanelSpriteScale(mobj);
+	Obj_SneakerPanelSpriteScale(mobj);
 }
 
 void Obj_SneakerPanelSetup(mobj_t *mobj, mapthing_t *mthing)
@@ -52,14 +52,7 @@ void Obj_SneakerPanelSetup(mobj_t *mobj, mapthing_t *mthing)
 		mobj->flags2 |= MF2_OBJECTFLIP;
 	}
 	P_TryMove(mobj, mobj->x, mobj->y, true, NULL); // sets standingslope
-	SneakerPanelSpriteScale(mobj);
-}
-
-void Obj_SneakerPanelThink(mobj_t *mobj)
-{
-	// ugh, this only has to exist because of the sneaker panel spawners...
-	// I think, when we hardcode those, it would be good to make a specialized A_TrapShot wrapper to re-scale their spawned panels and remove this thinker
-	SneakerPanelSpriteScale(mobj);
+	Obj_SneakerPanelSpriteScale(mobj);
 }
 
 void Obj_SneakerPanelCollide(mobj_t *panel, mobj_t *mo)

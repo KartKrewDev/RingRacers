@@ -128,11 +128,10 @@ static void P_SetupStateAnimation(mobj_t *mobj, state_t *st)
 
 	if (st->frame & FF_GLOBALANIM)
 	{
-		// Attempt to account for the pre-ticker for objects spawned on load
-		if (!leveltime) return;
-
-		mobj->anim_duration -= (leveltime + 2) % st->var2;            // Duration synced to timer
-		mobj->frame += ((leveltime + 2) / st->var2) % (animlength + 1); // Frame synced to timer (duration taken into account)
+		mobj->anim_duration -= (leveltime % st->var2);            // Duration synced to timer
+		mobj->frame += (leveltime / st->var2) % (animlength + 1); // Frame synced to timer (duration taken into account)
+		if (!thinkersCompleted)                                   // objects spawned BEFORE (or during) thinkers will think during this tic...
+			mobj->anim_duration++;                                  // ...so increase the duration of their current frame by 1 to sync with objects spawned AFTER thinkers
 	}
 	else if (st->frame & FF_RANDOMANIM)
 	{
@@ -9607,9 +9606,6 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 		break;
 	case MT_RAINBOWDASHRING:
 		Obj_RainbowDashRingThink(mobj);
-		break;
-	case MT_SNEAKERPANEL:
-		Obj_SneakerPanelThink(mobj);
 		break;
 	default:
 		// check mobj against possible water content, before movement code

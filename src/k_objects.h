@@ -194,9 +194,9 @@ void Obj_DashRingPlayerThink(player_t *player);
 boolean Obj_DashRingPlayerHasNoGravity(player_t *player);
 
 /* Sneaker Panels */
+void Obj_SneakerPanelSpriteScale(mobj_t *mobj);
 void Obj_SneakerPanelSpawn(mobj_t *mobj);
 void Obj_SneakerPanelSetup(mobj_t *mobj, mapthing_t *mthing);
-void Obj_SneakerPanelThink(mobj_t *mobj);
 void Obj_SneakerPanelCollide(mobj_t *pad, mobj_t *mo);
 
 #ifdef __cplusplus

@@ -13662,6 +13662,11 @@ A_SpawnItemDebrisCloud (mobj_t *actor)
 	fixed_t kartspeed;
 	fixed_t fade;
 
+	if (LUA_CallAction(A_SPAWNITEMDEBRISCLOUD, (actor)))
+	{
+		return;
+	}
+
 	if (target == NULL || target->player == NULL)
 	{
 		return;
@@ -13735,23 +13740,34 @@ void A_RingShooterFace(mobj_t *actor)
 	Obj_UpdateRingShooterFace(actor);
 }
 
-// Syncs the actor's frame with the animated texture ticker in P_UpdateSpecials
-// Call continuously to simulate an animated texture
-// var1 and var2 act like FF_ANIMATE, i.e.:
-// var1 = number of additional frames to cycle through
-// var2 = number of tics to display each frame
-void A_TextureAnimate(mobj_t *actor)
+// Function: A_SpawnSneakerPanel
+//
+// Description: Spawns a sneaker panel object relative to the location of the actor
+//
+// var1:
+//		var1 >> 16 = x offset
+//		var1 & 65535 = y offset
+// var2:
+//		var2 >> 16 = z
+//		var2 & 65535 = unused
+//
+void A_SpawnSneakerPanel(mobj_t *actor)
 {
+	INT16 x, y, z;
+	mobj_t *mo;
 	INT32 locvar1 = var1;
 	INT32 locvar2 = var2;
 
-	if (LUA_CallAction(A_TEXTUREANIMATE, actor))
+	if (LUA_CallAction(A_SPAWNSNEAKERPANEL, actor))
 	{
 		return;
 	}
 
-	if (actor->frame & FF_ANIMATE) // this doesn't work if you're animating on your own as well
-		return;
+	x = (INT16)(locvar1 >> 16);
+	y = (INT16)(locvar1 & 65535);
+	z = (INT16)(locvar2 >> 16);
 
-	actor->frame += ((leveltime / locvar2) % (locvar1 + 1));
+	mo = P_SpawnMobjFromMobj(actor, x << FRACBITS, y << FRACBITS, z << FRACBITS, MT_SNEAKERPANEL);
+	mo->angle = actor->angle;
+	Obj_SneakerPanelSpriteScale(mo);
 }

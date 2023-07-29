@@ -48,6 +48,7 @@
 #endif
 
 tic_t leveltime;
+boolean thinkersCompleted;
 
 INT32 P_AltFlip(INT32 n, tic_t tics)
 {
@@ -685,6 +686,8 @@ void P_Ticker(boolean run)
 	quake_t *quake = NULL;
 	INT32 i;
 
+	thinkersCompleted = false;
+
 	// Increment jointime and quittime even if paused
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
@@ -794,6 +797,7 @@ void P_Ticker(boolean run)
 		ps_thinkertime = I_GetPreciseTime();
 		P_RunThinkers();
 		ps_thinkertime = I_GetPreciseTime() - ps_thinkertime;
+		thinkersCompleted = true;
 
 		// Run any "after all the other thinkers" stuff
 		{
