@@ -35,6 +35,8 @@ Make sure this matches the actual number of states
 #define INSTAWHIP_DROPGUARD (12)
 #define GUARDBREAK_COOLDOWN (TICRATE*4)
 
+#define FLAMESHIELD_MAX (120)
+
 #define RR_PROJECTILE_FUSE (8*TICRATE)
 
 #define STUMBLE_STEEP_VAL ANG60

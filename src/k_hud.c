@@ -163,8 +163,8 @@ static patch_t *kp_typdot;
 
 static patch_t *kp_eggnum[6];
 
-static patch_t *kp_flameshieldmeter[104][2];
-static patch_t *kp_flameshieldmeter_bg[16][2];
+static patch_t *kp_flameshieldmeter[FLAMESHIELD_MAX][2];
+static patch_t *kp_flameshieldmeter_bg[FLAMESHIELD_MAX][2];
 
 static patch_t *kp_fpview[3];
 static patch_t *kp_inputwheel[5];
@@ -502,7 +502,7 @@ void K_LoadKartHUDGraphics(void)
 	HU_UpdatePatch(&kp_jackpot[0], "K_RBJACK");
 
 	sprintf(buffer, "FSMFGxxx");
-	for (i = 0; i < 104; i++)
+	for (i = 0; i < FLAMESHIELD_MAX; i++)
 	{
 		buffer[5] = '0'+((i+1)/100);
 		buffer[6] = '0'+(((i+1)/10)%10);
@@ -510,10 +510,11 @@ void K_LoadKartHUDGraphics(void)
 		HU_UpdatePatch(&kp_flameshieldmeter[i][0], "%s", buffer);
 	}
 
-	sprintf(buffer, "FSMBG0xx");
-	for (i = 0; i < 16; i++)
+	sprintf(buffer, "FSMBGxxx");
+	for (i = 0; i < FLAMESHIELD_MAX; i++)
 	{
-		buffer[6] = '0'+((i+1)/10);
+		buffer[5] = '0'+((i+1)/100);
+		buffer[6] = '0'+(((i+1)/10)%10);
 		buffer[7] = '0'+((i+1)%10);
 		HU_UpdatePatch(&kp_flameshieldmeter_bg[i][0], "%s", buffer);
 	}
@@ -561,7 +562,7 @@ void K_LoadKartHUDGraphics(void)
 	HU_UpdatePatch(&kp_jackpot[1], "K_SBJACK");
 
 	sprintf(buffer, "FSMFSxxx");
-	for (i = 0; i < 104; i++)
+	for (i = 0; i < 120; i++)
 	{
 		buffer[5] = '0'+((i+1)/100);
 		buffer[6] = '0'+(((i+1)/10)%10);
@@ -570,9 +571,10 @@ void K_LoadKartHUDGraphics(void)
 	}
 
 	sprintf(buffer, "FSMBS0xx");
-	for (i = 0; i < 16; i++)
+	for (i = 0; i < 120; i++)
 	{
-		buffer[6] = '0'+((i+1)/10);
+		buffer[5] = '0'+((i+1)/100);
+		buffer[6] = '0'+(((i+1)/10)%10);
 		buffer[7] = '0'+((i+1)%10);
 		HU_UpdatePatch(&kp_flameshieldmeter_bg[i][1], "%s", buffer);
 	}
@@ -1534,14 +1536,13 @@ static void K_drawKartItem(void)
 
 	if (stplyr->itemtype == KITEM_FLAMESHIELD && stplyr->flamelength > 0)
 	{
-		INT32 numframes = 104;
-		INT32 absolutemax = 16 * flameseg;
-		INT32 flamemax = stplyr->flamelength * flameseg;
+		INT32 numframes = FLAMESHIELD_MAX;
+		INT32 absolutemax = numframes;
+		INT32 flamemax = stplyr->flamelength;
 		INT32 flamemeter = min(stplyr->flamemeter, flamemax);
 
-		INT32 bf = 16 - stplyr->flamelength;
+		INT32 bf = numframes - stplyr->flamelength;
 		INT32 ff = numframes - ((flamemeter * numframes) / absolutemax);
-		INT32 fmin = (8 * (bf-1));
 
 		INT32 xo = 6, yo = 4;
 		INT32 flip = 0;
@@ -1557,10 +1558,13 @@ static void K_drawKartItem(void)
 			}
 		}
 
+		/*
+		INT32 fmin = (8 * (bf-1));
 		if (ff < fmin)
 			ff = fmin;
+		*/
 
-		if (bf >= 0 && bf < 16)
+		if (bf >= 0 && bf < numframes)
 			V_DrawScaledPatch(fx-xo, fy-yo, V_HUDTRANS|V_SLIDEIN|fflags|flip, kp_flameshieldmeter_bg[bf][offset]);
 
 		if (ff >= 0 && ff < numframes && stplyr->flamemeter > 0)

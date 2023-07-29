@@ -1247,7 +1247,7 @@ static void K_BotItemFlame(player_t *player, ticcmd_t *cmd)
 	}
 	else if (player->pflags & PF_HOLDREADY)
 	{
-		INT32 flamemax = player->flamelength * flameseg;
+		INT32 flamemax = player->flamelength;
 
 		if (player->flamemeter < flamemax || flamemax == 0)
 		{
