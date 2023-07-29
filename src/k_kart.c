@@ -8174,7 +8174,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		// from mistakes (or who got sprung purely for track traversal) need steering!
 		// Up to 4x degrease speed below 10FU/t (speed at which you lose drift sparks).
 		INT16 toDegrease = 1;
-		INT16 driftSpeedIncrements = player->speed / (10 * player->mo->scale); //
+		INT16 driftSpeedIncrements = player->speed / (10 * player->mo->scale); // Same breakpoints used for driftcharge stages.
 		toDegrease += max(3 - driftSpeedIncrements, 0);
 
 		if (player->tiregrease <= toDegrease)
