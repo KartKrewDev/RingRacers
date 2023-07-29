@@ -1155,6 +1155,7 @@ void M_DrawMessageMenu(void);
 void M_DrawImageDef(void);
 
 void M_DrawCharacterSelect(void);
+boolean M_DrawCharacterSprite(INT16 x, INT16 y, INT16 skin, UINT8 spr2, UINT8 rotation, UINT32 frame, INT32 addflags, UINT8 *colormap);
 
 void M_DrawCupSelect(void);
 void M_DrawLevelSelect(void);

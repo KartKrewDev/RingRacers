@@ -513,6 +513,11 @@ target_compile_options(SRB2SDL2 PRIVATE
 	$<$<AND:$<COMPILE_LANGUAGE:C>,$<C_COMPILER_ID:MSVC>>:
 		/Wv:19.20.27004.0
 	>
+
+	# GNU
+	$<$<C_COMPILER_ID:GNU>:
+		-fmax-errors=5
+	>
 )
 if(SRB2_CONFIG_ERRORMODE)
 	target_compile_options(SRB2SDL2 PRIVATE
