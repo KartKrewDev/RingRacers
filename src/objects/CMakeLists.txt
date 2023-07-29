@@ -26,4 +26,5 @@ target_sources(SRB2SDL2 PRIVATE
 	powerup-aura.cpp
 	symbol.c
 	dash-rings.c
+	sneaker-panel.c
 )

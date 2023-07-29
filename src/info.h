@@ -294,6 +294,7 @@ enum actionnum
 	A_INVINCSPARKLEROTATE,
 	A_SPAWNITEMDEBRISCLOUD,
 	A_RINGSHOOTERFACE,
+	A_SPAWNSNEAKERPANEL,
 	NUMACTIONS
 };
 
@@ -568,6 +569,7 @@ void A_FlameShieldPaper();
 void A_InvincSparkleRotate();
 void A_SpawnItemDebrisCloud();
 void A_RingShooterFace();
+void A_SpawnSneakerPanel();
 
 extern boolean actionsoverridden[NUMACTIONS];
 
@@ -1270,6 +1272,11 @@ typedef enum sprite
 
 	// Dash Rings
 	SPR_RAIR,
+
+	// Sneaker Panels
+	SPR_BSTP,
+	SPR_BSTS,
+	SPR_BSTT,
 
 	// Various plants
 	SPR_SBUS,
@@ -5386,6 +5393,12 @@ typedef enum state
 	S_DASHRING_VERTICAL_FLASH1,
 	S_DASHRING_VERTICAL_FLASH2,
 
+	// Sneaker Panels
+	S_SNEAKERPANEL,
+	S_SNEAKERPANEL_SMALL,
+	S_SNEAKERPANEL_TINY,
+	S_SNEAKERPANELSPAWNER,
+
 	// Various plants
 	S_SONICBUSH,
 
@@ -6794,6 +6807,10 @@ typedef enum mobj_type
 	// Dash Rings
 	MT_DASHRING,
 	MT_RAINBOWDASHRING,
+
+	// Sneaker Panels
+	MT_SNEAKERPANEL,
+	MT_SNEAKERPANELSPAWNER,
 
 	// Various plants
 	MT_SONICBUSH,
