@@ -11391,7 +11391,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 								INT32 flamemax = 0;
 
 								if (player->flamelength < destlen)
-									player->flamelength++; // Can always go up!
+									player->flamelength = min(destlen, player->flamelength + 7); // Allows gauge to grow quickly when first acquired. 120/16 = ~7
 
 								flamemax = player->flamelength;
 								if (flamemax > 0)
