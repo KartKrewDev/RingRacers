@@ -330,7 +330,7 @@ void A_FlameShieldPaper(mobj_t *actor);
 void A_InvincSparkleRotate(mobj_t *actor);
 void A_SpawnItemDebrisCloud(mobj_t *actor);
 void A_RingShooterFace(mobj_t *actor);
-void A_TextureAnimate(mobj_t *actor);
+void A_SpawnSneakerPanel(mobj_t *actor);
 
 //for p_enemy.c
 

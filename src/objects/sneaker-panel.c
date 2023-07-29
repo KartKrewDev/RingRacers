@@ -31,7 +31,7 @@ void Obj_SneakerPanelSpriteScale(mobj_t *mobj)
 		spriteScale = FRACUNIT << 2;
 	}
 
-	if ((mobj->state - states) != newState)
+	if (((statenum_t)(mobj->state - states)) != newState)
 	{
 		P_SetMobjState(mobj, newState);
 		mobj->spritexscale = mobj->spriteyscale = spriteScale;
