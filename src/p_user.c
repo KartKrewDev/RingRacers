@@ -873,8 +873,6 @@ skippingposition:
 	if (jingle == NULL)
 		return;
 
-	S_SpeedMusic(1.0f);
-
 	S_ChangeMusicInternal(jingle, false);
 }
 
@@ -893,8 +891,6 @@ void P_RestoreMusic(player_t *player)
 		// Only applies to local players
 		return;
 	}
-
-	S_SpeedMusic(1.0f);
 
 	// Event - HERE COMES A NEW CHALLENGER
 	if (mapreset)
