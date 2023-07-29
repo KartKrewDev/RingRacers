@@ -128,11 +128,10 @@ static void P_SetupStateAnimation(mobj_t *mobj, state_t *st)
 
 	if (st->frame & FF_GLOBALANIM)
 	{
-		// Attempt to account for the pre-ticker for objects spawned on load
-		if (!leveltime) return;
-
-		mobj->anim_duration -= (leveltime + 2) % st->var2;            // Duration synced to timer
-		mobj->frame += ((leveltime + 2) / st->var2) % (animlength + 1); // Frame synced to timer (duration taken into account)
+		mobj->anim_duration -= (leveltime % st->var2);            // Duration synced to timer
+		mobj->frame += (leveltime / st->var2) % (animlength + 1); // Frame synced to timer (duration taken into account)
+		if (!thinkersCompleted)                                   // objects spawned BEFORE (or during) thinkers will think during this tic...
+			mobj->anim_duration++;                                  // ...so increase the duration of their current frame by 1 to sync with objects spawned AFTER thinkers
 	}
 	else if (st->frame & FF_RANDOMANIM)
 	{
@@ -1157,6 +1156,11 @@ fixed_t P_GetMobjGravity(mobj_t *mo)
 		if (mo->player->tumbleBounces > 0)
 		{
 			gravityadd = FixedMul(TUMBLEGRAVITY, gravityadd);
+		}
+
+		if (mo->player->carry == CR_DASHRING && Obj_DashRingPlayerHasNoGravity(mo->player))
+		{
+			gravityadd = 0;
 		}
 
 		if (K_IsHoldingDownTop(mo->player))
@@ -9600,6 +9604,9 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 			return false;
 		}
 		break;
+	case MT_RAINBOWDASHRING:
+		Obj_RainbowDashRingThink(mobj);
+		break;
 	default:
 		// check mobj against possible water content, before movement code
 		P_MobjCheckWater(mobj);
@@ -10438,6 +10445,9 @@ static void P_DefaultMobjShadowScale(mobj_t *thing)
 		case MT_DRIFTCLIP:
 			thing->shadowscale = FRACUNIT/3;
 			break;
+		case MT_SNEAKERPANEL:
+			thing->shadowscale = 0;
+			break;
 		default:
 			if (thing->flags & (MF_ENEMY|MF_BOSS))
 				thing->shadowscale = FRACUNIT;
@@ -10987,6 +10997,15 @@ mobj_t *P_SpawnMobj(fixed_t x, fixed_t y, fixed_t z, mobjtype_t type)
 			break;
 		case MT_SYMBOL:
 			Obj_SymbolSpawn(mobj);
+			break;
+		case MT_DASHRING:
+			Obj_RegularDashRingSpawn(mobj);
+			break;
+		case MT_RAINBOWDASHRING:
+			Obj_RainbowDashRingSpawn(mobj);
+			break;
+		case MT_SNEAKERPANEL:
+			Obj_SneakerPanelSpawn(mobj);
 			break;
 		default:
 			break;
@@ -13560,6 +13579,17 @@ static boolean P_SetupSpawnedMapThing(mapthing_t *mthing, mobj_t *mobj)
 	case MT_SYMBOL:
 	{
 		Obj_SymbolSetup(mobj, mthing);
+		break;
+	}
+	case MT_DASHRING:
+	case MT_RAINBOWDASHRING:
+	{
+		Obj_DashRingSetup(mobj, mthing);
+		break;
+	}
+	case MT_SNEAKERPANEL:
+	{
+		Obj_SneakerPanelSetup(mobj, mthing);
 		break;
 	}
 	default:

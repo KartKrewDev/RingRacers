@@ -2027,7 +2027,7 @@ void K_SpawnMagicianParticles(mobj_t *mo, int spread)
 	{
 		fixed_t hmomentum = P_RandomRange(PR_DECORATION, spread * -1, spread) * mo->scale;
 		fixed_t vmomentum = P_RandomRange(PR_DECORATION, spread * -1, spread) * mo->scale;
-		UINT16 color = P_RandomKey(PR_DECORATION, numskincolors); 
+		UINT16 color = P_RandomKey(PR_DECORATION, numskincolors);
 
 		fixed_t ang = FixedAngle(P_RandomRange(PR_DECORATION, 0, 359)*FRACUNIT);
 		SINT8 flip = 1;
@@ -2679,7 +2679,7 @@ void K_TryHurtSoundExchange(mobj_t *victim, mobj_t *attacker)
 		return;
 	}
 
-	// In a perfect world we could move this here, but there's 
+	// In a perfect world we could move this here, but there's
 	// a few niche situations where we want a pain sound from
 	// the victim, but no confirm sound from the attacker.
 	// (ex: DMG_STING)
@@ -4148,7 +4148,7 @@ static boolean K_IsLosingSliptideZip(player_t *player)
 		return true;
 	if (!K_Sliptiding(player) && player->sliptideZip < MIN_WAVEDASH_CHARGE)
 		return true;
-	if (!K_Sliptiding(player) && player->drift == 0 
+	if (!K_Sliptiding(player) && player->drift == 0
 		&& P_IsObjectOnGround(player->mo) && player->sneakertimer == 0
 		&& player->driftboost == 0)
 		return true;
@@ -4211,7 +4211,7 @@ void K_UpdateSliptideZipIndicator(player_t *player)
 		if (leveltime % 2 == 0)
 			mobj->renderflags |= RF_TRANS50;
 	}
-	else 
+	else
 	{
 		// Storing boost
 		mobj->rollangle += 3*ANG15/4;
@@ -4357,7 +4357,7 @@ INT32 K_ExplodePlayer(player_t *player, mobj_t *inflictor, mobj_t *source) // A 
 	{
 		if (inflictor->type == MT_SPBEXPLOSION && inflictor->movefactor)
 		{
-			if (modeattacking & ATTACKING_SPB) 
+			if (modeattacking & ATTACKING_SPB)
 			{
 				P_DamageMobj(player->mo, inflictor, source, 1, DMG_INSTAKILL);
 				player->SPBdistance = 0;
@@ -4676,7 +4676,7 @@ static mobj_t *K_SpawnKartMissile(mobj_t *source, mobjtype_t type, angle_t an, I
 				speed,
 				FixedMul(
 					FixedDiv(source->player->speed, topspeed),
-					deltaFactor 
+					deltaFactor
 				)
 			));
 		}
@@ -7747,6 +7747,8 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 	K_UpdateDraft(player);
 	K_UpdateEngineSounds(player); // Thanks, VAda!
 
+	Obj_DashRingPlayerThink(player);
+
 	// update boost angle if not spun out
 	if (!player->spinouttimer && !player->wipeoutslow)
 		player->boostangle = player->mo->angle;
@@ -8940,7 +8942,7 @@ void K_UpdateDistanceFromFinishLine(player_t *const player)
 
 								bestPoint = pDist;
 
-								bestDist = 
+								bestDist =
 									P_AproxDistance(
 										(result.x >> FRACBITS) - (line[0].x >> FRACBITS),
 										(result.y >> FRACBITS) - (line[0].y >> FRACBITS));
@@ -9101,7 +9103,7 @@ INT16 K_UpdateSteeringValue(INT16 inputSteering, INT16 destSteering)
 	INT16 diff = destSteering - inputSteering;
 	INT16 outputSteering = inputSteering;
 
-	
+
 	// We switched steering directions, lighten up on easing for a more responsive countersteer.
 	// (Don't do this for steering 0, let digital inputs tap-adjust!)
 	if ((inputSteering > 0 && destSteering < 0) || (inputSteering < 0 && destSteering > 0))
@@ -9245,13 +9247,13 @@ INT16 K_GetKartTurnValue(player_t *player, INT16 turnvalue)
 	fixed_t finalhandleboost = player->handleboost;
 
 	// If you're sliptiding, don't interact with handling boosts.
-	// You need turning power proportional to your speed, no matter what! 
+	// You need turning power proportional to your speed, no matter what!
 	fixed_t topspeed = K_GetKartSpeed(player, false, false);
 	if (K_Sliptiding(player))
 	{
 		finalhandleboost = FixedMul(5*SLIPTIDEHANDLING/4, FixedDiv(player->speed, topspeed));
 	}
-	
+
 	if (finalhandleboost > 0 && player->respawn.state == RESPAWNST_NONE)
 	{
 		turnfixed = FixedMul(turnfixed, FRACUNIT + finalhandleboost);
@@ -9336,7 +9338,7 @@ void K_SpawnDriftBoostExplosion(player_t *player, int stage)
 			break;
 
 		case 2:
-			
+
 			overlay->fuse = 32;
 			S_StartSound(player->mo, sfx_kc5b);
 			break;
@@ -9604,7 +9606,7 @@ static void K_KartDrift(player_t *player, boolean onground)
 			&& player->speed >= K_GetKartSpeed(player, false, true)) // and we're above the threshold to spawn dust...
 		{
 			keepsliptide = true; // Then keep your current sliptide, but note the behavior change for sliptidezip handling.
-		}			
+		}
 		else
 		{
 			if (!player->drift)
@@ -9613,7 +9615,7 @@ static void K_KartDrift(player_t *player, boolean onground)
 				player->aizdriftstrat = ((player->drift > 0) ? 1 : -1);
 		}
 	}
-	
+
 	if ((player->aizdriftstrat && !player->drift)
 		|| (keepsliptide))
 	{
@@ -9623,7 +9625,7 @@ static void K_KartDrift(player_t *player, boolean onground)
 		{
 			// Give charge proportional to your angle. Sharp turns are rewarding, slow analog slides are not—remember, this is giving back the speed you gave up.
 			UINT16 addCharge = FixedInt(
-				FixedMul(10*FRACUNIT, 
+				FixedMul(10*FRACUNIT,
 					FixedDiv(abs(player->steering)*FRACUNIT, (9*KART_FULLTURN/10)*FRACUNIT)
 				));
 			addCharge = min(10, max(addCharge, 1));
@@ -9635,7 +9637,7 @@ static void K_KartDrift(player_t *player, boolean onground)
 
 			if (player->sliptideZip >= MIN_WAVEDASH_CHARGE && (player->sliptideZip - addCharge) < MIN_WAVEDASH_CHARGE)
 				S_StartSound(player->mo, sfx_waved5);
-		}	
+		}
 
 		if (abs(player->aizdrifttilt) < ANGLE_22h)
 		{
@@ -10400,7 +10402,7 @@ static void K_KartSpindash(player_t *player)
 				player->spindash++;
 				if (!S_SoundPlaying(player->mo, sfx_kc38))
 					S_StartSound(player->mo, sfx_kc38);
-			} 
+			}
 
 			if (player->spindash >= SPINDASHTHRUSTTIME)
 			{

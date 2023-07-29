@@ -1151,6 +1151,17 @@ static BlockItReturn_t PIT_CheckThing(mobj_t *thing)
 		return K_FallingRockCollide(thing, tm.thing) ? BMIT_CONTINUE : BMIT_ABORT;
 	}
 
+	if (thing->type == MT_SNEAKERPANEL)
+	{
+		Obj_SneakerPanelCollide(thing, tm.thing);
+		return BMIT_CONTINUE;
+	}
+	else if (tm.thing->type == MT_SNEAKERPANEL)
+	{
+		Obj_SneakerPanelCollide(tm.thing, thing);
+		return BMIT_CONTINUE;
+	}
+
 	//}
 
 	if ((thing->type == MT_SPRINGSHELL || thing->type == MT_YELLOWSHELL) && thing->health > 0

@@ -409,8 +409,12 @@ static int player_get(lua_State *L)
 		lua_pushinteger(L, plr->trickboostdecay);
 	else if (fastcmp(field,"trickboost"))
 		lua_pushinteger(L, plr->trickboost);
+	else if (fastcmp(field,"dashRingPullTics"))
+		lua_pushinteger(L, plr->dashRingPullTics);
+	else if (fastcmp(field,"dashRingPushTics"))
+		lua_pushinteger(L, plr->dashRingPushTics);
 	else if (fastcmp(field,"roundscore"))
-		plr->roundscore = luaL_checkinteger(L, 3);
+		lua_pushinteger(L, plr->roundscore);
 	else if (fastcmp(field,"emeralds"))
 		lua_pushinteger(L, plr->emeralds);
 	else if (fastcmp(field,"karmadelay"))
@@ -730,7 +734,7 @@ static int player_set(lua_State *L)
 	else if (fastcmp(field,"sliptideZipBoost"))
 		plr->sliptideZipBoost = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"instaShieldCooldown"))
-		plr->instaShieldCooldown = luaL_checkinteger(L, 3);		
+		plr->instaShieldCooldown = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"guardCooldown"))
 		plr->guardCooldown = luaL_checkinteger(L, 3);
 	/*
@@ -813,8 +817,12 @@ static int player_set(lua_State *L)
 		plr->trickboostdecay = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"trickboost"))
 		plr->trickboost = luaL_checkinteger(L, 3);
+	else if (fastcmp(field,"dashRingPullTics"))
+		plr->dashRingPullTics = luaL_checkinteger(L, 3);
+	else if (fastcmp(field,"dashRingPushTics"))
+		plr->dashRingPushTics = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"roundscore"))
-		lua_pushinteger(L, plr->roundscore);
+		plr->roundscore = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"emeralds"))
 		plr->emeralds = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"karmadelay"))

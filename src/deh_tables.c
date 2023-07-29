@@ -301,6 +301,7 @@ actionpointer_t actionpointers[] =
 	{{A_InvincSparkleRotate},    "A_INVINCSPARKLEROTATE"},
 	{{A_SpawnItemDebrisCloud},   "A_SPAWNITEMDEBRISCLOUD"},
 	{{A_RingShooterFace},        "A_RINGSHOOTERFACE"},
+	{{A_SpawnSneakerPanel},      "A_SPAWNSNEAKERPANEL"},
 
 	{{NULL},                     "NONE"},
 
@@ -4236,6 +4237,26 @@ const char *const STATE_LIST[] = { // array length left dynamic for sanity testi
 	"S_FZSLOWSMOKE4",
 	"S_FZSLOWSMOKE5",
 
+	// Dash Rings
+	"S_DASHRING_HORIZONTAL",
+	"S_DASHRING_30DEGREES",
+	"S_DASHRING_60DEGREES",
+	"S_DASHRING_VERTICAL",
+	"S_DASHRING_HORIZONTAL_FLASH1",
+	"S_DASHRING_HORIZONTAL_FLASH2",
+	"S_DASHRING_30DEGREES_FLASH1",
+	"S_DASHRING_30DEGREES_FLASH2",
+	"S_DASHRING_60DEGREES_FLASH1",
+	"S_DASHRING_60DEGREES_FLASH2",
+	"S_DASHRING_VERTICAL_FLASH1",
+	"S_DASHRING_VERTICAL_FLASH2",
+
+	// Sneaker Panels
+	"S_SNEAKERPANEL",
+	"S_SNEAKERPANEL_SMALL",
+	"S_SNEAKERPANEL_TINY",
+	"S_SNEAKERPANELSPAWNER",
+
 	// Various plants
 	"S_SONICBUSH",
 
@@ -5605,6 +5626,14 @@ const char *const MOBJTYPE_LIST[] = {  // array length left dynamic for sanity t
 	"MT_BATTLEPOINT",
 
 	"MT_FZEROBOOM",
+
+	// Dash Rings
+	"MT_DASHRING",
+	"MT_RAINBOWDASHRING",
+
+	// Sneaker Panels
+	"MT_SNEAKERPANEL",
+	"MT_SNEAKERPANELSPAWNER",
 
 	// Various plants
 	"MT_SONICBUSH",

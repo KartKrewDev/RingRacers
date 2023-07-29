@@ -129,6 +129,7 @@ typedef enum
 	// Specific level gimmicks.
 	CR_SLIDING,
 	CR_ZOOMTUBE,
+	CR_DASHRING,
 } carrytype_t; // carry
 
 /*
@@ -691,6 +692,9 @@ struct player_t
 	UINT8 trickboostdecay;		// used to know how long you've waited
 	UINT8 trickboost;			// Trick boost. This one is weird and has variable speed. Dear god.
 
+	UINT8 dashRingPullTics; // Timer during which the player is pulled towards a dash ring
+	UINT8 dashRingPushTics; // Timer during which the player displays effects and has no gravity after being thrust by a dash ring
+
 	tic_t ebrakefor;	// Ebrake timer, used for visuals.
 
 	UINT16 faultflash; // Used for misc FAULT visuals
@@ -804,7 +808,7 @@ struct player_t
 
 	UINT8 ringboxdelay; // Delay until Ring Box auto-activates
 	UINT8 ringboxaward; // Where did we stop?
-	
+
 	fixed_t outrun; // Milky Way road effect
 
 	uint8_t public_key[PUBKEYLENGTH];

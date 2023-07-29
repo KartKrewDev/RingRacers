@@ -330,6 +330,7 @@ void A_FlameShieldPaper(mobj_t *actor);
 void A_InvincSparkleRotate(mobj_t *actor);
 void A_SpawnItemDebrisCloud(mobj_t *actor);
 void A_RingShooterFace(mobj_t *actor);
+void A_SpawnSneakerPanel(mobj_t *actor);
 
 //for p_enemy.c
 
@@ -13661,6 +13662,11 @@ A_SpawnItemDebrisCloud (mobj_t *actor)
 	fixed_t kartspeed;
 	fixed_t fade;
 
+	if (LUA_CallAction(A_SPAWNITEMDEBRISCLOUD, (actor)))
+	{
+		return;
+	}
+
 	if (target == NULL || target->player == NULL)
 	{
 		return;
@@ -13721,7 +13727,8 @@ A_SpawnItemDebrisCloud (mobj_t *actor)
 	}
 }
 
-// sets the actor's 
+// Assumes the actor is the screen of a Ring Shooter
+// Changes the screen to display the WANTED icon of the Ring Shooter's owner, stretching it to match the screen's dimensions
 // vars do nothing
 void A_RingShooterFace(mobj_t *actor)
 {
@@ -13731,4 +13738,36 @@ void A_RingShooterFace(mobj_t *actor)
 	}
 
 	Obj_UpdateRingShooterFace(actor);
+}
+
+// Function: A_SpawnSneakerPanel
+//
+// Description: Spawns a sneaker panel object relative to the location of the actor
+//
+// var1:
+//		var1 >> 16 = x offset
+//		var1 & 65535 = y offset
+// var2:
+//		var2 >> 16 = z
+//		var2 & 65535 = unused
+//
+void A_SpawnSneakerPanel(mobj_t *actor)
+{
+	INT16 x, y, z;
+	mobj_t *mo;
+	INT32 locvar1 = var1;
+	INT32 locvar2 = var2;
+
+	if (LUA_CallAction(A_SPAWNSNEAKERPANEL, actor))
+	{
+		return;
+	}
+
+	x = (INT16)(locvar1 >> 16);
+	y = (INT16)(locvar1 & 65535);
+	z = (INT16)(locvar2 >> 16);
+
+	mo = P_SpawnMobjFromMobj(actor, x << FRACBITS, y << FRACBITS, z << FRACBITS, MT_SNEAKERPANEL);
+	mo->angle = actor->angle;
+	Obj_SneakerPanelSpriteScale(mo);
 }

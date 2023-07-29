@@ -717,6 +717,14 @@ char sprnames[NUMSPRITES + 1][5] =
 	"FZSM", // F-Zero NO CONTEST explosion
 	"FZBM",
 
+	// Dash Rings
+	"RAIR",
+
+	// Sneaker Panels
+	"BSTP",
+	"BSTS",
+	"BSTT",
+
 	// Various plants
 	"SBUS",
 
@@ -4920,6 +4928,26 @@ state_t states[NUMSTATES] =
 	{SPR_SMOK, 2, 30, {NULL}, 0, 0, S_FZSLOWSMOKE4},	// S_FZSLOWSMOKE3
 	{SPR_SMOK, 3, 30, {NULL}, 0, 0, S_FZSLOWSMOKE5},	// S_FZSLOWSMOKE4
 	{SPR_SMOK, 4, 30, {NULL}, 0, 0, S_NULL},			// S_FZSLOWSMOKE5
+
+	// Dash Rings
+	{SPR_RAIR, 0, -1, {NULL}, 0, 0, S_NULL}, // S_DASHRING_HORIZONTAL
+	{SPR_RAIR, 1, -1, {NULL}, 0, 0, S_NULL}, // S_DASHRING_30DEGREES
+	{SPR_RAIR, 2, -1, {NULL}, 0, 0, S_NULL}, // S_DASHRING_60DEGREES
+	{SPR_RAIR, 3, -1, {NULL}, 0, 0, S_NULL}, // S_DASHRING_VERTICAL
+	{SPR_NULL,        0, TICRATE/3 - 2, {NULL}, 0, 0, S_DASHRING_HORIZONTAL_FLASH2}, // S_DASHRING_HORIZONTAL_FLASH1
+	{SPR_RAIR, FF_ADD|0,             2, {NULL}, 0, 0, S_DASHRING_HORIZONTAL_FLASH1}, // S_DASHRING_HORIZONTAL_FLASH2
+	{SPR_NULL,        0, TICRATE/3 - 2, {NULL}, 0, 0, S_DASHRING_30DEGREES_FLASH2},  // S_DASHRING_30DEGREES_FLASH1
+	{SPR_RAIR, FF_ADD|1,             2, {NULL}, 0, 0, S_DASHRING_30DEGREES_FLASH1},  // S_DASHRING_30DEGREES_FLASH2
+	{SPR_NULL,        0, TICRATE/3 - 2, {NULL}, 0, 0, S_DASHRING_60DEGREES_FLASH2},  // S_DASHRING_60DEGREES_FLASH1
+	{SPR_RAIR, FF_ADD|2,             2, {NULL}, 0, 0, S_DASHRING_60DEGREES_FLASH1},  // S_DASHRING_60DEGREES_FLASH2
+	{SPR_NULL,        0, TICRATE/3 - 2, {NULL}, 0, 0, S_DASHRING_VERTICAL_FLASH2},   // S_DASHRING_VERTICAL_FLASH1
+	{SPR_RAIR, FF_ADD|3,             2, {NULL}, 0, 0, S_DASHRING_VERTICAL_FLASH1},   // S_DASHRING_VERTICAL_FLASH2
+
+	// Sneaker Panels
+	{SPR_BSTP, FF_ANIMATE|FF_GLOBALANIM|FF_FLOORSPRITE|FF_FULLBRIGHT, -1, {NULL}, 5, 2, S_SNEAKERPANEL},       // S_SNEAKERPANEL
+	{SPR_BSTS, FF_ANIMATE|FF_GLOBALANIM|FF_FLOORSPRITE|FF_FULLBRIGHT, -1, {NULL}, 5, 2, S_SNEAKERPANEL_SMALL}, // S_SNEAKERPANEL_SMALL
+	{SPR_BSTT, FF_ANIMATE|FF_GLOBALANIM|FF_FLOORSPRITE|FF_FULLBRIGHT, -1, {NULL}, 5, 2, S_SNEAKERPANEL_TINY},  // S_SNEAKERPANEL_TINY
+	{SPR_NULL, 0, 65, {A_SpawnSneakerPanel}, 0, 0, S_SNEAKERPANELSPAWNER}, // S_SNEAKERPANELSPAWNER
 
 	// Various plants
 	{SPR_SBUS, 0, -1, {NULL}, 0, 0, S_NULL}, // S_SONICBUSH
@@ -26730,6 +26758,114 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		sfx_None,       // activesound
 		MF_NOBLOCKMAP|MF_DONTENCOREMAP, // flags
 		S_NULL          // raisestate
+	},
+
+	{           // MT_DASHRING
+		3441,           // doomednum
+		S_DASHRING_HORIZONTAL, // spawnstate
+		1000,           // spawnhealth
+		S_NULL,         // seestate
+		sfx_dashr,      // seesound
+		8,              // reactiontime
+		sfx_None,       // attacksound
+		S_NULL,         // painstate
+		0,              // painchance
+		sfx_None,       // painsound
+		S_NULL,         // meleestate
+		S_NULL,         // missilestate
+		S_NULL,         // deathstate
+		S_NULL,         // xdeathstate
+		sfx_None,       // deathsound
+		0,              // speed
+		112*FRACUNIT,   // radius
+		192*FRACUNIT,   // height
+		0,              // display offset
+		0,              // mass
+		0,              // damage
+		sfx_None,       // activesound
+		MF_NOGRAVITY|MF_SPECIAL, // flags
+		S_NULL          // raisestate
+	},
+
+	{           // MT_RAINBOWDASHRING
+		3442,           // doomednum
+		S_DASHRING_HORIZONTAL, // spawnstate
+		1000,           // spawnhealth
+		S_NULL,         // seestate
+		sfx_rainbr,     // seesound
+		8,              // reactiontime
+		sfx_None,       // attacksound
+		S_NULL,         // painstate
+		0,              // painchance
+		sfx_None,       // painsound
+		S_NULL,         // meleestate
+		S_NULL,         // missilestate
+		S_NULL,         // deathstate
+		S_NULL,         // xdeathstate
+		sfx_None,       // deathsound
+		0,              // speed
+		112*FRACUNIT,   // radius
+		192*FRACUNIT,   // height
+		0,              // display offset
+		0,              // mass
+		0,              // damage
+		sfx_None,       // activesound
+		MF_NOGRAVITY|MF_SPECIAL, // flags
+		S_NULL          // raisestate
+	},
+
+	{           // MT_SNEAKERPANEL
+		510,         // doomednum
+		S_SNEAKERPANEL,  // spawnstate
+		1000,        // spawnhealth
+		S_NULL,      // seestate
+		sfx_None,    // seesound
+		0,           // reactiontime
+		sfx_None,    // attacksound
+		S_NULL,      // painstate
+		0,           // painchance
+		sfx_None,    // painsound
+		S_NULL,      // meleestate
+		S_NULL,      // missilestate
+		S_NULL,      // deathstate
+		S_NULL,      // xdeathstate
+		sfx_None,    // deathsound
+		0,           // speed
+		91*FRACUNIT, // radius
+		16*FRACUNIT, // height
+		0,           // dispoffset
+		0,           // mass
+		0,           // damage
+		sfx_None,    // activesound
+		MF_SPECIAL|MF_ENEMY, // flags -- NOTE: IIRC MF_ENEMY was added by mappers to make conveyor belt setups more convenient
+		S_NULL       // raisestate
+	},
+
+	{           // MT_SNEAKERPANELSPAWNER
+		511,         // doomednum
+		S_SNEAKERPANELSPAWNER, // spawnstate
+		0,           // spawnhealth
+		S_NULL,      // seestate
+		sfx_None,    // seesound
+		0,           // reactiontime
+		sfx_None,    // attacksound
+		S_NULL,      // painstate
+		0,           // painchance
+		sfx_None,    // painsound
+		S_NULL,      // meleestate
+		S_NULL,      // missilestate
+		S_NULL,      // deathstate
+		S_NULL,      // xdeathstate
+		sfx_None,    // deathsound
+		0,           // speed
+		32*FRACUNIT, // radius
+		60*FRACUNIT, // height
+		0,           // dispoffset
+		0,           // mass
+		0,           // damage
+		sfx_None,    // activesound
+		MF_NOGRAVITY|MF_NOBLOCKMAP|MF_SCENERY|MF_NOCLIPTHING, // flags
+		S_NULL       // raisestate
 	},
 
 	{           // MT_SONICBUSH,
