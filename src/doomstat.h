@@ -742,7 +742,6 @@ extern INT32 greasetics;
 extern INT32 wipeoutslowtime;
 extern INT32 wantedreduce;
 extern INT32 wantedfrequency;
-extern INT32 flameseg;
 
 extern UINT8 introtoplay;
 extern UINT8 creditscutscene;

@@ -8322,7 +8322,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 			return false;
 		}
 
-		flamemax = mobj->target->player->flamelength * flameseg;
+		flamemax = mobj->target->player->flamelength;
 
 		P_SetScale(mobj, (mobj->destscale = (5*mobj->target->scale)>>2));
 

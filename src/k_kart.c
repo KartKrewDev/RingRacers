@@ -9958,6 +9958,7 @@ static INT32 K_FlameShieldMax(player_t *player)
 {
 	UINT32 disttofinish = 0;
 	UINT32 distv = 2048;
+	distv = distv * 16 / FLAMESHIELD_MAX; // Old distv was based on a 16-segment bar
 	UINT8 numplayers = 0;
 	UINT8 i;
 
@@ -9974,7 +9975,7 @@ static INT32 K_FlameShieldMax(player_t *player)
 
 	if (numplayers <= 1)
 	{
-		return 16; // max when alone, for testing
+		return FLAMESHIELD_MAX; // max when alone, for testing
 		// and when in battle, for chaos
 	}
 	else if (player->position == 1)
@@ -9984,7 +9985,7 @@ static INT32 K_FlameShieldMax(player_t *player)
 
 	disttofinish = player->distancetofinish - disttofinish;
 	distv = FixedMul(distv, mapobjectscale);
-	return min(16, 1 + (disttofinish / distv));
+	return min(FLAMESHIELD_MAX, (FLAMESHIELD_MAX / 16) + (disttofinish / distv)); // Ditto for this minimum, old value was 1/16
 }
 
 boolean K_PlayerEBrake(player_t *player)
@@ -11392,7 +11393,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 								if (player->flamelength < destlen)
 									player->flamelength++; // Can always go up!
 
-								flamemax = player->flamelength * flameseg;
+								flamemax = player->flamelength;
 								if (flamemax > 0)
 									flamemax += TICRATE; // leniency period
 
@@ -11444,7 +11445,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 									{
 										player->flamelength--; // Can ONLY go down if you're not using it
 
-										flamemax = player->flamelength * flameseg;
+										flamemax = player->flamelength;
 										if (flamemax > 0)
 											flamemax += TICRATE; // leniency period
 									}
