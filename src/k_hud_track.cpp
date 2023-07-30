@@ -42,6 +42,8 @@ struct TargetTracking
 		case MT_PLAYER:
 			return player_emeralds_color();
 
+		case MT_SUPER_FLICKY:
+			return static_cast<skincolornum_t>(Obj_SuperFlickyOwner(mobj)->color);
 		default:
 			return SKINCOLOR_NONE;
 		}
@@ -267,9 +269,9 @@ void K_DrawTargetTracking(const TargetTracking& target)
 
 		vector2_t targetPos = {};
 
-		bool visible = P_CheckSight(stplyr->mo, target.mobj);
+		bool visible = P_CheckSight(stplyr->mo, target.mobj); 
 
-		if (visible == false && (leveltime & 1))
+		if ((visible == false || target.mobj->type == MT_SUPER_FLICKY) && (leveltime & 1))
 		{
 			// Flicker when not visible.
 			return;
@@ -290,7 +292,12 @@ void K_DrawTargetTracking(const TargetTracking& target)
 			);
 		};
 
-		if (useNear == true)
+		if (target.mobj->type == MT_SUPER_FLICKY)
+		{
+			timer = (leveltime / 2);
+			draw(kp_superflickytarget[timer % 4]);
+		}
+		else if (useNear == true)
 		{
 			timer = (leveltime / 2);
 			draw(kp_capsuletarget_near[timer % 8]);
@@ -381,6 +388,9 @@ bool is_object_tracking_target(const mobj_t* mobj)
 
 	case MT_MONITOR:
 		return is_player_tracking_target() && Obj_MonitorGetEmerald(mobj) != 0;
+
+	case MT_SUPER_FLICKY:
+		return Obj_IsSuperFlickyTargettingYou(mobj, stplyr->mo);
 
 	default:
 		return false;

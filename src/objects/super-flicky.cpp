@@ -277,7 +277,7 @@ struct Flicky : mobj_t
 
 	void animate()
 	{
-		P_InstaScale(this, source()->scale * (chasing() ? 2 : 1));
+		destscale = source()->scale * (chasing() ? 3 : 1);
 
 		if (color >= kSuperStart && color <= kSuperEnd)
 		{
@@ -761,9 +761,23 @@ tic_t Obj_SuperFlickySwarmTime(mobj_t* mobj)
 	return !P_MobjWasRemoved(x) ? x->powerup_remaining() : 0u;
 }
 
+mobj_t *Obj_SuperFlickyOwner(const mobj_t* mobj)
+{
+	const Flicky* x = static_cast<const Flicky*>(mobj);
+
+	return x->source();
+}
+
 boolean Obj_IsSuperFlickyWhippable(const mobj_t* mobj)
 {
 	const Flicky* x = static_cast<const Flicky*>(mobj);
 
 	return mobj == x->chasing() && !x->stunned();
+}
+
+boolean Obj_IsSuperFlickyTargettingYou(const mobj_t* mobj, mobj_t *player)
+{
+	const Flicky* x = static_cast<const Flicky*>(mobj);
+
+	return player == x->chasing();
 }

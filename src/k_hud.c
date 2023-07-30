@@ -85,6 +85,7 @@ static patch_t *kp_catcherminimap;
 static patch_t *kp_emeraldminimap[2];
 static patch_t *kp_capsuleminimap[3];
 static patch_t *kp_battleufominimap;
+static patch_t *kp_superflickyminimap;
 
 static patch_t *kp_ringsticker[2];
 static patch_t *kp_ringstickersplit[4];
@@ -197,6 +198,8 @@ patch_t *kp_capsuletarget_icon[2];
 patch_t *kp_capsuletarget_far[2];
 patch_t *kp_capsuletarget_far_text[2];
 patch_t *kp_capsuletarget_near[8];
+
+patch_t *kp_superflickytarget[4];
 
 patch_t *kp_button_a[2][2];
 patch_t *kp_button_b[2][2];
@@ -376,6 +379,7 @@ void K_LoadKartHUDGraphics(void)
 	HU_UpdatePatch(&kp_capsuleminimap[2], "MINICAP3");
 
 	HU_UpdatePatch(&kp_battleufominimap, "MINIBUFO");
+	HU_UpdatePatch(&kp_superflickyminimap, "FLKMAPA");
 
 	// Rings & Lives
 	HU_UpdatePatch(&kp_ringsticker[0], "RNGBACKA");
@@ -759,6 +763,13 @@ void K_LoadKartHUDGraphics(void)
 		buffer[7] = '0'+i;
 		HU_UpdatePatch(&kp_capsuletarget_near[i], "%s", buffer);
 	}
+
+	sprintf(buffer, "HUDFLKAx");
+	for (i = 0; i < 4; i++)
+	{
+		buffer[7] = '0'+i;
+		HU_UpdatePatch(&kp_superflickytarget[i], "%s", buffer);
+	}	
 
 	K_LoadButtonGraphics(kp_button_a[0], 'A');
 	K_LoadButtonGraphics(kp_button_a[1], 'N');
@@ -4075,6 +4086,13 @@ static void K_drawKartMinimap(void)
 				break;
 			case MT_BATTLEUFO:
 				workingPic = kp_battleufominimap;
+				break;
+			case MT_SUPER_FLICKY:
+				workingPic = kp_superflickyminimap;
+				if (Obj_SuperFlickyOwner(mobj)->color)
+				{
+					colormap = R_GetTranslationColormap(TC_RAINBOW, (Obj_SuperFlickyOwner(mobj)->color), GTC_CACHE);
+				}
 				break;
 			default:
 				break;
