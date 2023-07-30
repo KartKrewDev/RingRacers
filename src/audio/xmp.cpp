@@ -145,9 +145,11 @@ void Xmp<C>::seek(int position_ms)
 	SRB2_ASSERT(instance_ != nullptr);
 	SRB2_ASSERT(module_loaded_ == true);
 
-	int err = xmp_seek_time(instance_, position_ms);
-	if (err != 0)
-		throw XmpException(err);
+	int pos = xmp_seek_time(instance_, position_ms);
+	if (pos < 0)
+	{
+		throw XmpException(pos);
+	}
 }
 
 template <size_t C>
