@@ -103,7 +103,7 @@
 #define SELECT_DELAY_TIME (TICRATE*4)
 #define PICK_DELAY_TIME (TICRATE/2)
 
-#define MAP_ANGER_MAX (VOTE_NUM_LEVELS)
+#define MAP_ANGER_MAX (2)
 
 // Catcher data
 enum
