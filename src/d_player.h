@@ -652,7 +652,8 @@ struct player_t
 	UINT8 ringdelay;	// (0 to 3) - 3 tic delay between every ring usage
 	UINT16 ringboost;	// Ring boost timer
 	UINT8 sparkleanim;	// (0 to 19) - Angle offset for ring sparkle animation
-	UINT16 superring;	// Spawn rings on top of you every tic!
+	UINT16 superring;	// You were awarded rings, and have this many of them left to spawn on yourself.
+	UINT8 nextringaward;	// When should we spawn our next superring ring?
 
 	UINT8 curshield;	// see kartshields_t
 	UINT8 bubblecool;	// Bubble Shield use cooldown

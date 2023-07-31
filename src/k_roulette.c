@@ -229,6 +229,16 @@ static kartslotmachine_t K_KartItemReelRingBox[] =
 	KSM__MAX
 };
 
+static sfxenum_t ringboxsound[] = 
+{
+	sfx_slot00,
+	sfx_slot01,
+	sfx_slot02,
+	sfx_slot03,
+	sfx_slot04,
+	sfx_slot05
+};
+
 /*--------------------------------------------------
 	boolean K_ItemEnabled(kartitems_t item)
 
@@ -1631,7 +1641,12 @@ void K_KartItemRoulette(player_t *const player, ticcmd_t *const cmd)
 			if (P_IsDisplayPlayer(player) && !demo.freecam)
 			{
 				if (roulette->ringbox)
-					S_StartSound(NULL, sfx_s245);
+				{
+					// Hi modders! Boost your treble and Loudness Normalize to 0 LUFS.
+					// I'm a responsible audio engineer. -Tyron 2023-07-30
+					UINT8 volume = (finalItem > 2) ? (15 * finalItem + 60) : 80;
+					S_StartSoundAtVolume(NULL, ringboxsound[finalItem], volume);
+				}
 				else
 					S_StartSound(NULL, sfx_itrolf);
 			}

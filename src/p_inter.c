@@ -205,6 +205,8 @@ static void P_ItemPop(mobj_t *actor)
 	}
 	*/
 
+	Obj_SpawnItemDebrisEffects(actor, actor->target);
+
 	P_SetMobjState(actor, S_RINGBOX1);
 	actor->extravalue1 = 0;
 
@@ -216,8 +218,6 @@ static void P_ItemPop(mobj_t *actor)
 	actor->renderflags |= RF_DONTDRAW|RF_TRANS50;
 	actor->color = SKINCOLOR_GREY;
 	actor->colorized = true;
-
-	Obj_SpawnItemDebrisEffects(actor, actor->target);
 
 	/*
 	if (locvar1 == 1)
