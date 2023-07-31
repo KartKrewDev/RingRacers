@@ -1839,7 +1839,10 @@ static void K_SpawnGenericSpeedLines(player_t *player, boolean top)
 	else
 	{
 		fast->angle = K_MomentumAngle(player->mo);
-
+		if (player->ringboost)
+		{
+			P_SetScale(fast, fast->scale + (fast->scale / 300 * player->ringboost));
+		}
 		if (player->tripwireLeniency)
 		{
 			fast->destscale = fast->destscale * 2;
@@ -1886,6 +1889,17 @@ static void K_SpawnGenericSpeedLines(player_t *player, boolean top)
 	{
 		fast->color = SKINCOLOR_WHITE;
 		fast->colorized = true;
+	}
+	else if (player->ringboost)
+	{
+		UINT8 ringboostcolors[] = {SKINCOLOR_AQUAMARINE, SKINCOLOR_EMERALD, SKINCOLOR_GARDEN, SKINCOLOR_CROCODILE, SKINCOLOR_BANANA};
+		UINT8 ringboostbreakpoint = min(player->ringboost / TICRATE / 3, sizeof(ringboostcolors) / sizeof(ringboostcolors[0]));
+		if (ringboostbreakpoint > 0)
+		{
+			fast->color = ringboostcolors[ringboostbreakpoint - 1];
+			fast->colorized = true;
+			fast->renderflags |= RF_ADD;
+		}
 	}
 }
 
@@ -3264,7 +3278,9 @@ static void K_GetKartBoostPower(player_t *player)
 
 	if (player->ringboost) // Ring Boost
 	{
-		ADDBOOST(FRACUNIT/4, 4*FRACUNIT, 0); // + 20% top speed, + 400% acceleration, +0% handling
+		// This one's a little special: we add extra top speed per tic of ringboost stored up, to allow for Ring Box to really rocket away.
+		// (We compensate when decrementing ringboost to avoid runaway exponential scaling hell.)
+		ADDBOOST(FRACUNIT/4 + (FRACUNIT / 2000 * (player->ringboost)), 4*FRACUNIT, 0); // + 20% top speed, + 400% acceleration, +0% handling
 	}
 
 	if (player->eggmanexplode) // Ready-to-explode
@@ -3633,14 +3649,14 @@ void K_AwardPlayerRings(player_t *player, INT32 rings, boolean overload)
 	if (!overload)
 	{
 		INT32 totalrings =
-			RINGTOTAL(player) + (player->superring / 3);
+			RINGTOTAL(player) + (player->superring);
 
 		/* capped at 20 rings */
 		if ((totalrings + rings) > 20)
 			rings = (20 - totalrings);
 	}
 
-	superring = player->superring + (rings * 3);
+	superring = player->superring + rings;
 
 	/* check if not overflow */
 	if (superring > player->superring)
@@ -7997,6 +8013,11 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 	else if (player->ringboost)
 		player->ringboost--;
 
+	// These values can get FUCKED ever since ring-stacking speed changes.
+	// If we're not activetly being awarded rings, roll off extreme ringboost durations.
+	if (player->superring == 0)
+		player->ringboost -= (player->ringboost / TICRATE / 2);
+
 	if (player->sneakertimer)
 	{
 		player->sneakertimer--;
@@ -8107,17 +8128,24 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 
 	if (player->superring)
 	{
-		if (player->superring % 3 == 0)
+		player->nextringaward++;
+		UINT8 ringrate = 3 - min(2, player->superring / 20); // Used to consume fat stacks of cash faster.
+		if (player->nextringaward >= ringrate)
 		{
 			mobj_t *ring = P_SpawnMobj(player->mo->x, player->mo->y, player->mo->z, MT_RING);
 			ring->extravalue1 = 1; // Ring collect animation timer
 			ring->angle = player->mo->angle; // animation angle
 			P_SetTarget(&ring->target, player->mo); // toucher for thinker
 			player->pickuprings++;
-			if (player->superring <= 3)
+			if (player->superring == 1)
 				ring->cvmem = 1; // play caching when collected
+			player->nextringaward = 0;
+			player->superring--;
 		}
-		player->superring--;
+	}
+	else
+	{
+		player->nextringaward = 99; // Next time we need to award superring, spawn the first one instantly.
 	}
 
 	if (player->pflags & PF_VOID) // Returning from FAULT VOID

@@ -1105,6 +1105,14 @@ sfxinfo_t S_sfx[NUMSFX] =
   {"gpmetr", false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""}, // End of a "Tutorial Teleport"
   {"endwrp", false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""}, // End of a "Tutorial Teleport"
 
+  // SRB2Kart - Ring Box
+  {"slot00", false, 64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, "Bar"},
+  {"slot01", false, 64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, "Double Bar"},
+  {"slot02", false, 64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, "Triple Bar"},
+  {"slot03", false, 64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, "Slot Ring"},
+  {"slot04", false, 64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, "Seven"},
+  {"slot05", false, 64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, "JACKPOT!"},
+
   // SRB2Kart - Drop target sounds
   {"kdtrg1", false,  64, 16, -1, NULL, 0,        -1,  -1, LUMPERROR, ""}, // Low energy, SF_X8AWAYSOUND
   {"kdtrg2", false,  64, 16, -1, NULL, 0,        -1,  -1, LUMPERROR, ""}, // Medium energy, SF_X8AWAYSOUND

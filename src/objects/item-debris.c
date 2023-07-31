@@ -70,6 +70,13 @@ spawn_debris
 
 	// Pass down color to dust particles
 	debris->color = config->origin->color;
+
+	if (config->origin->type != MT_RANDOMITEM
+		|| config->origin->extravalue1 < RINGBOX_TIME)
+	{
+		debris->color = SKINCOLOR_WHITE;
+		debris->colorized = true;
+	}
 }
 
 static void

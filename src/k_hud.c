@@ -1636,6 +1636,25 @@ static void K_drawKartSlotMachine(void)
 			return;
 	}
 
+	if (stplyr->karthud[khud_itemblink] && (leveltime & 1))
+	{
+		colormode[1] = TC_BLINK;
+		localcolor[1] = SKINCOLOR_WHITE;
+
+		// This looks kinda wild with the white-background patch.
+		/*
+		switch (stplyr->ringboxaward)
+		{
+			case 5: // JACKPOT!
+				localcolor[1] = K_RainbowColor(leveltime);
+				break;
+			default:
+				localcolor[1] = SKINCOLOR_WHITE;
+				break;
+		}
+		*/
+	}
+
 	// pain and suffering defined below
 	if (offset)
 	{

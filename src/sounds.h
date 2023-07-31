@@ -1172,6 +1172,14 @@ typedef enum
 	sfx_gpmetr,
 	sfx_endwrp,
 
+	// SRB2Kart - Ring Box
+	sfx_slot00,
+	sfx_slot01,
+	sfx_slot02,
+	sfx_slot03,
+	sfx_slot04,
+	sfx_slot05,
+
 	// SRB2Kart - Drop target sounds
 	sfx_kdtrg1,
 	sfx_kdtrg2,
