@@ -1841,7 +1841,10 @@ static void K_SpawnGenericSpeedLines(player_t *player, boolean top)
 		fast->angle = K_MomentumAngle(player->mo);
 		if (player->ringboost)
 		{
-			P_SetScale(fast, fast->scale + (fast->scale / 300 * player->ringboost));
+			fixed_t bunky = fast->scale;
+			if (player->ringboost < 300)
+				bunky /= (300 * player->ringboost);
+			P_SetScale(fast, fast->scale + bunky);
 		}
 		if (player->tripwireLeniency)
 		{
