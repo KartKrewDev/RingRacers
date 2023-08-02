@@ -162,7 +162,7 @@ static fixed_t bgImageScroll = 0;
 static char bgImageName[9];
 
 #define MENUBG_TEXTSCROLL 6
-#define MENUBG_IMAGESCROLL 32
+#define MENUBG_IMAGESCROLL 36
 
 void M_UpdateMenuBGImage(boolean forceReset)
 {
@@ -181,7 +181,7 @@ void M_UpdateMenuBGImage(boolean forceReset)
 
 	if (forceReset == false && strcmp(bgImageName, oldName))
 	{
-		bgImageScroll = (BASEVIDWIDTH / 2)*FRACUNIT;
+		bgImageScroll = (3 * BASEVIDWIDTH) * (FRACUNIT / 4);
 	}
 }
 
