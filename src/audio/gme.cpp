@@ -65,11 +65,11 @@ std::size_t Gme::get_samples(tcb::span<short> buffer)
 	return buffer.size();
 }
 
-void Gme::seek(int sample)
+void Gme::seek(int position_ms)
 {
 	SRB2_ASSERT(instance_ != nullptr);
 
-	gme_seek_samples(instance_, sample);
+	gme_seek(instance_, position_ms);
 }
 
 float Gme::duration_seconds() const

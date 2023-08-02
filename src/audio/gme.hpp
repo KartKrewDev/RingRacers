@@ -54,7 +54,7 @@ public:
 	explicit Gme(tcb::span<std::byte> data);
 
 	std::size_t get_samples(tcb::span<short> buffer);
-	void seek(int sample);
+	void seek(int position_ms);
 
 	float duration_seconds() const;
 	std::optional<float> loop_point_seconds() const;
