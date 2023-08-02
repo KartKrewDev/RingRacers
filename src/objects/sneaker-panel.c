@@ -2,6 +2,7 @@
 #include "../p_slopes.h"
 #include "../p_local.h"
 #include "../k_kart.h"
+#include "../k_objects.h"
 
 #define SNEAKERPANEL_RADIUS (64*FRACUNIT)
 
