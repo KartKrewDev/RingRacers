@@ -252,6 +252,13 @@ boolean M_LevelListFromGametype(INT16 gt)
 		PLAY_LevelSelectDef.music = \
 		PLAY_TimeAttackDef.music = \
 			currentMenu->music;
+
+		if (gamestate == GS_MENU)
+		{
+			PLAY_CupSelectDef.menuitems[0].patch = \
+			PLAY_LevelSelectDef.menuitems[0].patch = \
+				currentMenu->menuitems[itemOn].patch;
+		}
 	}
 
 	// Obviously go to Cup Select in gametypes that have cups.

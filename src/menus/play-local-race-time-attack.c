@@ -59,11 +59,11 @@ boolean M_TimeAttackInputs(INT32 ch)
 // see ta_e
 menuitem_t PLAY_TimeAttack[] =
 {
-	{IT_STRING | IT_SUBMENU, "Replay...", NULL, NULL, {.submenu = &PLAY_TAReplayDef}, 0, 0},
-	{IT_STRING | IT_SUBMENU, "Guest...", NULL, NULL, {.submenu = &PLAY_TAReplayGuestDef}, 0, 0},
-	{IT_STRING | IT_SUBMENU, "Ghosts...", NULL, NULL, {.submenu = &PLAY_TAGhostsDef}, 0, 0},
+	{IT_STRING | IT_SUBMENU, "Replay...", NULL, "MENUI006", {.submenu = &PLAY_TAReplayDef}, 0, 0},
+	{IT_STRING | IT_SUBMENU, "Guest...", NULL, "MENUI006", {.submenu = &PLAY_TAReplayGuestDef}, 0, 0},
+	{IT_STRING | IT_SUBMENU, "Ghosts...", NULL, "MENUI006", {.submenu = &PLAY_TAGhostsDef}, 0, 0},
 	{IT_HEADERTEXT|IT_HEADER, "", NULL, NULL, {NULL}, 0, 0},
-	{IT_STRING | IT_CALL, "Start", NULL, NULL, {.routine = M_StartTimeAttack}, 0, 0},
+	{IT_STRING | IT_CALL, "Start", NULL, "MENUI006", {.routine = M_StartTimeAttack}, 0, 0},
 };
 
 menu_t PLAY_TimeAttackDef = {
@@ -98,15 +98,15 @@ typedef enum
 
 menuitem_t PLAY_TAReplay[] =
 {
-	{IT_STRING | IT_CALL, "Replay Best Time", NULL, NULL, {.routine = M_ReplayTimeAttack}, 0, 0},
-	{IT_STRING | IT_CALL, "Replay Best Lap", NULL, NULL, {.routine = M_ReplayTimeAttack}, 0, 0},
+	{IT_STRING | IT_CALL, "Replay Best Time", NULL, "MENUI006", {.routine = M_ReplayTimeAttack}, 0, 0},
+	{IT_STRING | IT_CALL, "Replay Best Lap", NULL, "MENUI006", {.routine = M_ReplayTimeAttack}, 0, 0},
 	{IT_HEADERTEXT|IT_HEADER, "", NULL, NULL, {NULL}, 0, 0},
-	{IT_STRING | IT_CALL, "Replay Last", NULL, NULL, {.routine = M_ReplayTimeAttack}, 0, 0},
-	{IT_STRING | IT_CALL, "Replay Guest", NULL, NULL, {.routine = M_ReplayTimeAttack}, 0, 0},
-	{IT_STRING | IT_ARROWS, "Replay Staff", NULL, NULL, {.routine = M_HandleStaffReplay}, 0, 0},
+	{IT_STRING | IT_CALL, "Replay Last", NULL, "MENUI006", {.routine = M_ReplayTimeAttack}, 0, 0},
+	{IT_STRING | IT_CALL, "Replay Guest", NULL, "MENUI006", {.routine = M_ReplayTimeAttack}, 0, 0},
+	{IT_STRING | IT_ARROWS, "Replay Staff", NULL, "MENUI006", {.routine = M_HandleStaffReplay}, 0, 0},
 	{IT_HEADERTEXT|IT_HEADER, "", NULL, NULL, {NULL}, 0, 0},
 
-	{IT_STRING | IT_SUBMENU, "Back", NULL, NULL, {.submenu = &PLAY_TimeAttackDef}, 0, 0},
+	{IT_STRING | IT_SUBMENU, "Back", NULL, "MENUI006", {.submenu = &PLAY_TimeAttackDef}, 0, 0},
 };
 
 menu_t PLAY_TAReplayDef = {
@@ -140,17 +140,17 @@ typedef enum
 
 menuitem_t PLAY_TAReplayGuest[] =
 {
-	{IT_HEADERTEXT|IT_HEADER, "Save as guest...", NULL, NULL, {NULL}, 0, 0},
+	{IT_HEADERTEXT|IT_HEADER, "Save as guest...", NULL, "MENUI006", {NULL}, 0, 0},
 
-	{IT_STRING | IT_CALL, "Best Time", NULL, NULL, {.routine = M_SetGuestReplay}, 0, 0},
-	{IT_STRING | IT_CALL, "Best Lap", NULL, NULL, {.routine = M_SetGuestReplay}, 0, 0},
-	{IT_STRING | IT_CALL, "Last Run", NULL, NULL, {.routine = M_SetGuestReplay}, 0, 0},
-
-	{IT_HEADERTEXT|IT_HEADER, "", NULL, NULL, {NULL}, 0, 0},
-	{IT_STRING | IT_CALL, "Delete Guest", NULL, NULL, {.routine = M_SetGuestReplay}, 0, 0},
+	{IT_STRING | IT_CALL, "Best Time", NULL, "MENUI006", {.routine = M_SetGuestReplay}, 0, 0},
+	{IT_STRING | IT_CALL, "Best Lap", NULL, "MENUI006", {.routine = M_SetGuestReplay}, 0, 0},
+	{IT_STRING | IT_CALL, "Last Run", NULL, "MENUI006", {.routine = M_SetGuestReplay}, 0, 0},
 
 	{IT_HEADERTEXT|IT_HEADER, "", NULL, NULL, {NULL}, 0, 0},
-	{IT_STRING | IT_SUBMENU, "Back", NULL, NULL, {.submenu = &PLAY_TimeAttackDef}, 0, 0},
+	{IT_STRING | IT_CALL, "Delete Guest", NULL, "MENUI006", {.routine = M_SetGuestReplay}, 0, 0},
+
+	{IT_HEADERTEXT|IT_HEADER, "", NULL, NULL, {NULL}, 0, 0},
+	{IT_STRING | IT_SUBMENU, "Back", NULL, "MENUI006", {.submenu = &PLAY_TimeAttackDef}, 0, 0},
 
 };
 
@@ -184,14 +184,14 @@ typedef enum
 
 menuitem_t PLAY_TAGhosts[] =
 {
-	{IT_STRING | IT_CVAR, "Best Time", NULL, NULL, {.cvar = &cv_ghost_besttime}, 0, 0},
-	{IT_STRING | IT_CVAR, "Best Lap", NULL, NULL, {.cvar = &cv_ghost_bestlap}, 0, 0},
-	{IT_STRING | IT_CVAR, "Last", NULL, NULL, {.cvar = &cv_ghost_last}, 0, 0},
-	{IT_DISABLED, "Guest", NULL, NULL, {.cvar = &cv_ghost_guest}, 0, 0},
-	{IT_DISABLED, "Staff", NULL, NULL, {.cvar = &cv_ghost_staff}, 0, 0},
+	{IT_STRING | IT_CVAR, "Best Time", NULL, "MENUI006", {.cvar = &cv_ghost_besttime}, 0, 0},
+	{IT_STRING | IT_CVAR, "Best Lap", NULL, "MENUI006", {.cvar = &cv_ghost_bestlap}, 0, 0},
+	{IT_STRING | IT_CVAR, "Last", NULL, "MENUI006", {.cvar = &cv_ghost_last}, 0, 0},
+	{IT_DISABLED, "Guest", NULL, "MENUI006", {.cvar = &cv_ghost_guest}, 0, 0},
+	{IT_DISABLED, "Staff", NULL, "MENUI006", {.cvar = &cv_ghost_staff}, 0, 0},
 
 	{IT_HEADERTEXT|IT_HEADER, "", NULL, NULL, {NULL}, 0, 0},
-	{IT_STRING | IT_SUBMENU, "Back", NULL, NULL, {.submenu = &PLAY_TimeAttackDef}, 0, 0},
+	{IT_STRING | IT_SUBMENU, "Back", NULL, "MENUI006", {.submenu = &PLAY_TimeAttackDef}, 0, 0},
 };
 
 menu_t PLAY_TAGhostsDef = {
