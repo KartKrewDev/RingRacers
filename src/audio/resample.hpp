@@ -35,6 +35,8 @@ public:
 
 	virtual std::size_t generate(tcb::span<Sample<C>> buffer);
 
+	void ratio(float new_ratio);
+
 	Resampler& operator=(const Resampler<C>& r) = delete;
 	Resampler& operator=(Resampler<C>&& r);
 
