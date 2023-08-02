@@ -7,11 +7,11 @@
 menuitem_t PLAY_RaceDifficulty[] =
 {
 	// For GP
-	{IT_STRING | IT_CVAR, "Difficulty", "Select the game difficulty",
+	{IT_STRING | IT_CVAR, "Difficulty", "Select the game difficulty.",
 		"MENUI004", {.cvar = &cv_dummygpdifficulty}, 0, 0},
 
 	// Match Race
-	{IT_STRING | IT_CVAR, "Difficulty", "Select the game speed",
+	{IT_STRING | IT_CVAR, "Difficulty", "Select the game speed.",
 		"MENUI005", {.cvar = &cv_dummykartspeed}, 0, 0},
 
 	// DISABLE THAT OPTION OUTSIDE OF MATCH RACE
