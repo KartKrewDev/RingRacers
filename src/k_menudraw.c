@@ -205,14 +205,17 @@ void M_DrawMenuBackground(void)
 	V_DrawFixedPatch(8 * FRACUNIT, -bgText1Scroll + text1loop,
 		FRACUNIT, V_SUBTRACT, text1, NULL);
 
-	bgText1Scroll += (MENUBG_TEXTSCROLL*renderdeltatics);
-	while (bgText1Scroll > text1loop)
-		bgText1Scroll -= text1loop;
-
 	V_DrawFixedPatch(-bgText2Scroll, (BASEVIDHEIGHT-8) * FRACUNIT,
 		FRACUNIT, V_ADD, text2, NULL);
 	V_DrawFixedPatch(-bgText2Scroll + text2loop, (BASEVIDHEIGHT-8) * FRACUNIT,
 		FRACUNIT, V_ADD, text2, NULL);
+
+	if (renderdeltatics > 2*FRACUNIT)
+		return; // wipe hitch...
+
+	bgText1Scroll += (MENUBG_TEXTSCROLL*renderdeltatics);
+	while (bgText1Scroll > text1loop)
+		bgText1Scroll -= text1loop;
 
 	bgText2Scroll += (MENUBG_TEXTSCROLL*renderdeltatics);
 	while (bgText2Scroll > text2loop)
