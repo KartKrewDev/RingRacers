@@ -2295,7 +2295,7 @@ static void R_ProjectSprite(mobj_t *thing)
 
 		lightnum = (lightnum + R_ThingLightLevel(oldthing)) >> LIGHTSEGSHIFT;
 
-		if (maplighting.directional == true)
+		if (maplighting.directional == true && !(thing->subsector->sector->flags & MSF_FLATLIGHTING))
 		{
 			fixed_t extralight = R_GetSpriteDirectionalLighting(papersprite
 					? interp.angle + (ang >= ANGLE_180 ? -ANGLE_90 : ANGLE_90)

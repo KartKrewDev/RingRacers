@@ -1705,6 +1705,8 @@ static void ParseTextmapSectorParameter(UINT32 i, const char *param, const char 
 		sectors[i].flags |= MSF_RIPPLE_CEILING;
 	else if (fastcmp(param, "invertencore") && fastcmp("true", val))
 		sectors[i].flags |= MSF_INVERTENCORE;
+	else if (fastcmp(param, "flatlighting") && fastcmp("true", val))
+		sectors[i].flags |= MSF_FLATLIGHTING;
 	else if (fastcmp(param, "nostepup") && fastcmp("true", val))
 		sectors[i].specialflags |= SSF_NOSTEPUP;
 	else if (fastcmp(param, "doublestepup") && fastcmp("true", val))
@@ -3480,15 +3482,25 @@ void P_UpdateSegLightOffset(seg_t *li)
 #endif
 }
 
-boolean P_ApplyLightOffset(UINT8 baselightnum)
+boolean P_ApplyLightOffset(UINT8 baselightnum, sectorflags_t sectorflags)
 {
+	if (sectorflags & MSF_FLATLIGHTING)
+	{
+		return false;
+	}
+
 	// Don't apply light offsets at full bright or full dark.
 	// Is in steps of light num .
 	return (baselightnum < LIGHTLEVELS-1 && baselightnum > 0);
 }
 
-boolean P_ApplyLightOffsetFine(UINT8 baselightlevel)
+boolean P_ApplyLightOffsetFine(UINT8 baselightlevel, sectorflags_t sectorflags)
 {
+	if (sectorflags & MSF_FLATLIGHTING)
+	{
+		return false;
+	}
+
 	// Don't apply light offsets at full bright or full dark.
 	// Uses exact light levels for more smoothness.
 	return (baselightlevel < 255 && baselightlevel > 0);
