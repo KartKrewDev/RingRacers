@@ -53,7 +53,7 @@ std::size_t GmePlayer<C>::generate(tcb::span<Sample<C>> buffer)
 template <size_t C>
 void GmePlayer<C>::seek(float position_seconds)
 {
-	gme_.seek(static_cast<std::size_t>(position_seconds * 44100.f));
+	gme_.seek(static_cast<std::size_t>(position_seconds * 1000.f));
 }
 
 template <size_t C>
