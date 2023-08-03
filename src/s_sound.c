@@ -2801,6 +2801,9 @@ void S_ChangeMusicEx(const char *mmusic, UINT16 mflags, boolean looping, UINT32 
 			I_SetSongPosition(position);
 
 		I_SetSongTrack(mflags & MUSIC_TRACKMASK);
+
+		// Slow level music down a bit in Encore. (Values are vibe-based. WE GET IT YOU VAPE)
+		S_SpeedMusic((encoremode && gamestate == GS_LEVEL) ? 0.86471f : 1.f);
 	}
 	else if (fadeinms) // let fades happen with same music
 	{
@@ -2833,7 +2836,6 @@ void S_StopMusic(void)
 	if (I_SongPaused())
 		I_ResumeSong();
 
-	S_SpeedMusic(1.0f);
 	I_StopSong();
 	S_UnloadMusic(); // for now, stopping also means you unload the song
 

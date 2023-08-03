@@ -84,5 +84,11 @@ size_t Resampler<C>::generate(tcb::span<Sample<C>> buffer)
 	return written;
 }
 
+template <size_t C>
+void Resampler<C>::ratio(float new_ratio)
+{
+	ratio_ = std::max(new_ratio, 0.f);
+}
+
 template class srb2::audio::Resampler<1>;
 template class srb2::audio::Resampler<2>;

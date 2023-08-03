@@ -17,6 +17,7 @@
 #include "../audio/gain.hpp"
 #include "../audio/mixer.hpp"
 #include "../audio/music_player.hpp"
+#include "../audio/resample.hpp"
 #include "../audio/sound_chunk.hpp"
 #include "../audio/sound_effect_player.hpp"
 #include "../cxxutil.hpp"
@@ -42,6 +43,7 @@ using std::vector;
 using srb2::audio::Gain;
 using srb2::audio::Mixer;
 using srb2::audio::MusicPlayer;
+using srb2::audio::Resampler;
 using srb2::audio::Sample;
 using srb2::audio::SoundChunk;
 using srb2::audio::SoundEffectPlayer;
@@ -56,6 +58,7 @@ static unique_ptr<Mixer<2>> master;
 static shared_ptr<Mixer<2>> mixer_sound_effects;
 static shared_ptr<Mixer<2>> mixer_music;
 static shared_ptr<MusicPlayer> music_player;
+static shared_ptr<Resampler<2>> resample_music_player;
 static shared_ptr<Gain<2>> gain_sound_effects;
 static shared_ptr<Gain<2>> gain_music_player;
 static shared_ptr<Gain<2>> gain_music_channel;
@@ -187,11 +190,12 @@ void initialize_sound()
 		mixer_sound_effects = make_shared<Mixer<2>>();
 		mixer_music = make_shared<Mixer<2>>();
 		music_player = make_shared<MusicPlayer>();
+		resample_music_player = make_shared<Resampler<2>>(music_player, 1.f);
 		gain_sound_effects = make_shared<Gain<2>>();
 		gain_music_player = make_shared<Gain<2>>();
 		gain_music_channel = make_shared<Gain<2>>();
 		gain_sound_effects->bind(mixer_sound_effects);
-		gain_music_player->bind(music_player);
+		gain_music_player->bind(resample_music_player);
 		gain_music_channel->bind(mixer_music);
 		master->add_source(gain_sound_effects);
 		master->add_source(gain_music_channel);
@@ -443,7 +447,12 @@ boolean I_SongPaused(void)
 
 boolean I_SetSongSpeed(float speed)
 {
-	(void) speed;
+	if (resample_music_player)
+	{
+		resample_music_player->ratio(speed);
+		return true;
+	}
+
 	return false;
 }
 
