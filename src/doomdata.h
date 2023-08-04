@@ -270,6 +270,7 @@ struct mapthing_t
 	UINT8 extrainfo;
 	mtag_t tid;
 	fixed_t scale;
+	fixed_t spritexscale, spriteyscale;
 	INT16 special;
 	INT32 args[NUM_MAPTHING_ARGS];
 	char *stringargs[NUM_MAPTHING_STRINGARGS];

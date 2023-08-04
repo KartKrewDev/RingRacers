@@ -982,6 +982,10 @@ static int mapthing_get(lua_State *L)
 		number = mt->options;
 	else if(fastcmp(field,"scale"))
 		number = mt->scale;
+	else if(fastcmp(field,"spritexscale"))
+		number = mt->spritexscale;
+	else if(fastcmp(field,"spriteyscale"))
+		number = mt->spriteyscale;
 	else if(fastcmp(field,"z"))
 		number = mt->z;
 	else if(fastcmp(field,"extrainfo"))
