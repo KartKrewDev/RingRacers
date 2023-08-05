@@ -2735,22 +2735,10 @@ void S_ChangeMusicEx(const char *mmusic, UINT16 mflags, boolean looping, UINT32 
 {
 	char newmusic[7];
 
-	struct MusicChange hook_param = {
-		newmusic,
-		&mflags,
-		&looping,
-		&position,
-		&prefadems,
-		&fadeinms
-	};
-
 	if (S_MusicDisabled() || S_PlaysimMusicDisabled())
 		return;
 
 	strncpy(newmusic, mmusic, 7);
-
-	if (LUA_HookMusicChange(music_name, &hook_param))
-		return;
 
 	newmusic[6] = 0;
 

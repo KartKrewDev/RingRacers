@@ -668,9 +668,6 @@ boolean P_EvaluateMusicStatus(UINT16 status, const char *musname)
 				break;
 
 			case JT_OTHER:  // Other state
-				result = LUA_HookShouldJingleContinue(&players[i], musname);
-				break;
-
 			case JT_NONE:   // Null state
 			case JT_MASTER: // Main level music
 			default:

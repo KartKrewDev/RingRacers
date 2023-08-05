@@ -77,12 +77,10 @@ automatically.
 	X (PlayerThink),/* P_PlayerThink */\
 	X (GameQuit),\
 	X (PlayerCmd),/* building the player's ticcmd struct */\
-	X (MusicChange),\
 	X (VoteThinker),/* Y_VoteTicker */\
 
 #define STRING_HOOK_LIST(X) \
 	X (SpecialExecute),\
-	X (ShouldJingleContinue),/* should jingle of the given music continue playing */\
 
 #define HUD_HOOK_LIST(X) \
 	X (game),\
@@ -147,8 +145,6 @@ void LUA_HookPlayerQuit(player_t *, kickreason_t);
 int  LUA_HookTeamSwitch(player_t *, int newteam, boolean fromspectators, boolean tryingautobalance, boolean tryingscramble);
 int  LUA_HookViewpointSwitch(player_t *player, player_t *newdisplayplayer, boolean forced);
 int  LUA_HookSeenPlayer(player_t *player, player_t *seenfriend);
-int  LUA_HookShouldJingleContinue(player_t *, const char *musname);
-int  LUA_HookMusicChange(const char *oldname, struct MusicChange *);
 
 #ifdef __cplusplus
 } // extern "C"

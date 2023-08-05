@@ -302,16 +302,6 @@ boolean S_RecallMusic(UINT16 status, boolean fromfirst);
 // Music Playback
 //
 
-/* this is for the sake of the hook */
-struct MusicChange {
-	char    * newname;
-	UINT16  * mflags;
-	boolean * looping;
-	UINT32  * position;
-	UINT32  * prefadems;
-	UINT32  * fadeinms;
-};
-
 enum
 {
 	MUS_SPECIAL = 1,/* powerups--invincibility, grow */
