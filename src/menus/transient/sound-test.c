@@ -2,6 +2,7 @@
 /// \brief Stereo Mode menu
 
 #include "../../k_menu.h"
+#include "../../music.h"
 #include "../../s_sound.h"
 
 static void M_SoundTestMainControl(INT32 choice)
@@ -36,11 +37,11 @@ static void M_SoundTestMainControl(INT32 choice)
 
 	if (currentMenu->menuitems[itemOn].mvar1 == 1) // Play
 	{
-		if (soundtest.paused == true)
+		if (Music_Paused(soundtest.tune) == true)
 		{
 			S_SoundTestTogglePause();
 		}
-		else if (soundtest.playing == false)
+		else if (Music_Paused(soundtest.tune) == false)
 		{
 			S_SoundTestPlay();
 		}
@@ -49,7 +50,7 @@ static void M_SoundTestMainControl(INT32 choice)
 	{
 		if (currentMenu->menuitems[itemOn].mvar1 == 2) // Pause
 		{
-			if (soundtest.paused == false)
+			if (Music_Paused(soundtest.tune) == false)
 			{
 				S_SoundTestTogglePause();
 			}

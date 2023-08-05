@@ -144,6 +144,26 @@ void Music_Init(void)
 		tune.priority = 100;
 		tune.loop = false;
 	}
+
+	{
+		Tune& tune = g_tunes.insert("stereo");
+
+		tune.priority = 1000;
+		tune.resist = true;
+		tune.keep_open = true;
+		tune.credit = true;
+	}
+
+	{
+		Tune& tune = g_tunes.insert("stereo_fade");
+
+		tune.priority = 1000;
+		tune.fade_out = 5000;
+		tune.fade_out_inclusive = false;
+		tune.resist = true;
+		tune.keep_open = true;
+		tune.credit = true;
+	}
 }
 
 void Music_Tick(void)

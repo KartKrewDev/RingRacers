@@ -1380,7 +1380,7 @@ void S_AttemptToRestoreMusic(void)
 
 musicdef_t *musicdefstart = NULL;
 struct cursongcredit cursongcredit; // Currently displayed song credit info
-struct soundtest soundtest; // Sound Test (sound test)
+struct soundtest soundtest = {.tune = ""}; // Sound Test (sound test)
 
 static void S_InsertMusicAtSoundTestSequenceTail(const char *musname, UINT16 map, musicdef_t ***tail)
 {
@@ -1623,66 +1623,63 @@ updatetrackonly:
 
 void S_SoundTestPlay(void)
 {
+	UINT32 sequencemaxtime = 0;
+	boolean dosequencefadeout = false;
+
 	if (soundtest.current == NULL)
 	{
 		S_SoundTestStop();
 		return;
 	}
 
-	soundtest.privilegedrequest = true;
-
-	S_StopMusic();
-
 	soundtest.playing = true;
 
-	if (soundtest.paused == true)
+	soundtest.tune = "stereo";
+
+	if (soundtest.current->basenoloop[soundtest.currenttrack] == false)
 	{
-		S_SoundTestTogglePause();
+		// Only fade out if we're the last track for this song.
+		dosequencefadeout = (soundtest.currenttrack == soundtest.current->numtracks-1);
+
+		if (dosequencefadeout)
+		{
+			soundtest.tune = "stereo_fade";
+		}
 	}
 
-	S_ChangeMusicInternal(soundtest.current->name[soundtest.currenttrack],
-		!soundtest.current->basenoloop[soundtest.currenttrack]);
+	Music_Remap(soundtest.tune, soundtest.current->name[soundtest.currenttrack]);
+	Music_Loop(soundtest.tune, !soundtest.current->basenoloop[soundtest.currenttrack]);
+	Music_Play(soundtest.tune);
 
-	soundtest.currenttime = 0;
-	soundtest.sequencemaxtime = S_GetMusicLength();
+	// Assuming this song is now actually playing
+	sequencemaxtime = I_GetSongLength();
 
-	if (soundtest.sequencemaxtime == 0)
+	if (sequencemaxtime == 0)
 	{
-		S_SoundTestStop(); // This sets soundtest.privilegedrequest to false
+		S_SoundTestStop();
 		return;
 	}
-
-	S_ShowMusicCredit();
-
-	// ensure default is always set
-	soundtest.sequencefadeout = 0;
-	soundtest.dosequencefadeout = false;
 
 	// Does song have default loop?
 	if (soundtest.current->basenoloop[soundtest.currenttrack] == false)
 	{
-		if (soundtest.sequencemaxtime < 3*60*1000)
+		if (sequencemaxtime < 3*60*1000)
 		{
 			// I'd personally like songs in sequence to last between 3 and 6 minutes.
-			const UINT32 loopduration = (soundtest.sequencemaxtime - S_GetMusicLoopPoint());
+			const UINT32 loopduration = (sequencemaxtime - I_GetSongLoopPoint());
 
 			if (!loopduration)
 				;
 			else do
 			{
-				soundtest.sequencemaxtime += loopduration;
-			} while (soundtest.sequencemaxtime < 4*1000);
+				sequencemaxtime += loopduration;
+			} while (sequencemaxtime < 4*1000);
 			// If the track is EXTREMELY short, keep adding until about 4s!
 		}
-
-		// Only fade out if we're the last track for this song.
-		soundtest.dosequencefadeout = (soundtest.currenttrack == soundtest.current->numtracks-1);
 	}
 
 	// ms to TICRATE conversion
-	soundtest.sequencemaxtime = (TICRATE*soundtest.sequencemaxtime)/1000;
-
-	soundtest.privilegedrequest = false;
+	Music_DelayEnd(soundtest.tune, (TICRATE*sequencemaxtime)/1000);
 }
 
 void S_SoundTestStop(void)
@@ -1692,23 +1689,13 @@ void S_SoundTestStop(void)
 		return;
 	}
 
-	soundtest.privilegedrequest = true;
+	soundtest.tune = "";
 
 	soundtest.playing = false;
-	soundtest.paused = false;
 	soundtest.autosequence = false;
 
-	S_StopMusic();
-	S_StopMusicCredit();
-
-	soundtest.currenttime = 0;
-	soundtest.sequencemaxtime = 0;
-	soundtest.sequencefadeout = 0;
-	soundtest.dosequencefadeout = false;
-
-	S_AttemptToRestoreMusic();
-
-	soundtest.privilegedrequest = false;
+	Music_Stop("stereo");
+	Music_Stop("stereo_fade");
 }
 
 void S_SoundTestTogglePause(void)
@@ -1718,25 +1705,18 @@ void S_SoundTestTogglePause(void)
 		return;
 	}
 
-	if (soundtest.paused == true)
+	if (Music_Paused(soundtest.tune))
 	{
-		soundtest.paused = false;
-		S_ResumeAudio();
+		Music_UnPause(soundtest.tune);
 	}
 	else
 	{
-		soundtest.paused = true;
-		S_PauseAudio();
+		Music_Pause(soundtest.tune);
 	}
 }
 
 void S_TickSoundTest(void)
 {
-	static UINT32 storetime = 0;
-	UINT32 lasttime = storetime;
-
-	storetime = I_GetTime();
-
 	if (soundtest.playing == false || soundtest.current == NULL)
 	{
 		// Nothing worth discussing.
@@ -1749,47 +1729,15 @@ void S_TickSoundTest(void)
 		goto handlenextsong;
 	}
 
-	if (I_SongPaused() == false)
-	{
-		// Increment the funny little timer.
-		soundtest.currenttime += (storetime - lasttime);
-	}
-
-	if (soundtest.sequencefadeout != 0)
-	{
-		// Are we done fading out?
-		if (soundtest.currenttime > soundtest.sequencefadeout)
-		{
-			goto handlenextsong;
-		}
-
-		return;
-	}
-
 	if (soundtest.autosequence == false)
 	{
 		// There's nothing else for us here.
 		return;
 	}
 
-	if (soundtest.currenttime >= soundtest.sequencemaxtime)
+	if (Music_DurationLeft(soundtest.tune) == 0)
 	{
-		if (soundtest.dosequencefadeout == false)
-		{
-			// Handle the immediate progression.
-			goto handlenextsong;
-		}
-
-		if (soundtest.sequencemaxtime > 0)
-		{
-			// Handle the fade.
-			soundtest.privilegedrequest = true;
-			S_FadeMusic(0, SOUNDTEST_FADEOUTSECONDS*1000);
-			soundtest.privilegedrequest = false;
-		}
-
-		// Set the conclusion.
-		soundtest.sequencefadeout = soundtest.currenttime + SOUNDTEST_FADEOUTSECONDS*TICRATE;
+		goto handlenextsong;
 	}
 
 	return;

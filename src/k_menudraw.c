@@ -61,6 +61,9 @@
 // Condition Sets
 #include "m_cond.h"
 
+// Sound Test
+#include "music.h"
+
 // And just some randomness for the exits.
 #include "m_random.h"
 
@@ -6477,22 +6480,22 @@ void M_DrawSoundTest(void)
 		titleoffset += titlewidth;
 	}
 
-	V_DrawRightAlignedString(x + 272-1, 18+32, 0,
-		va("%02u:%02u",
-			G_TicsToMinutes(soundtest.currenttime, true),
-			G_TicsToSeconds(soundtest.currenttime)
-		)
-	);
+	{
+		UINT32 currenttime = min(Music_Elapsed(soundtest.tune), Music_TotalDuration(soundtest.tune));
+
+		V_DrawRightAlignedString(x + 272-1, 18+32, 0,
+			va("%02u:%02u",
+				G_TicsToMinutes(currenttime, true),
+				G_TicsToSeconds(currenttime)
+			)
+		);
+	}
 
 	if ((soundtest.playing && soundtest.current)
 		&& (soundtest.current->basenoloop[soundtest.currenttrack] == true
 		|| soundtest.autosequence == true))
 	{
-		UINT32 exittime = soundtest.sequencemaxtime;
-		if (soundtest.dosequencefadeout == true)
-		{
-			exittime += SOUNDTEST_FADEOUTSECONDS*TICRATE;
-		}
+		UINT32 exittime = Music_TotalDuration(soundtest.tune);
 
 		V_DrawRightAlignedString(x + 272-1, 18+32+10, 0,
 			va("%02u:%02u",
@@ -6546,12 +6549,12 @@ void M_DrawSoundTest(void)
 			// The following are springlocks.
 			else if (currentMenu->menuitems[i].mvar2 == stereospecial_pause) // pause
 			{
-				if (soundtest.paused == true)
+				if (Music_Paused(soundtest.tune) == true)
 					y = currentMenu->y + 6;
 			}
 			else if (currentMenu->menuitems[i].mvar2 == stereospecial_play) // play
 			{
-				if (soundtest.playing == true && soundtest.paused == false)
+				if (soundtest.playing == true && Music_Paused(soundtest.tune) == false)
 					y = currentMenu->y + 6;
 			}
 			else if (currentMenu->menuitems[i].mvar2 == stereospecial_seq) // seq
