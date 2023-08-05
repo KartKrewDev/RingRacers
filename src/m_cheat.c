@@ -1018,7 +1018,6 @@ void Command_ObjectPlace_f(void)
 				op_oldflags1 = mobjinfo[MT_PLAYER].flags;
 				++players[0].lives;
 				players[0].playerstate = PST_LIVE;
-				P_RestoreMusic(&players[0]);
 			}
 			else
 				op_oldstate = (statenum_t)(players[0].mo->state-states);

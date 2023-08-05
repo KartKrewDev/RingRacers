@@ -4,6 +4,7 @@
 #include "../k_menu.h"
 #include "../s_sound.h"
 #include "../m_random.h"
+#include "../music.h"
 #include "../r_skins.h"
 
 struct wrongwarp_s wrongwarp;
@@ -22,7 +23,8 @@ void M_WrongWarp(INT32 choice)
 	M_SetupNextMenu(&MISC_WrongWarpDef, false);
 
 	// Done here to avoid immediate music credit
-	S_ChangeMusicInternal("YEAWAY", true);
+	Music_Remap("menu_nocred", "YEAWAY");
+	Music_Play("menu_nocred");
 }
 
 static void M_WrongWarpTick(void)

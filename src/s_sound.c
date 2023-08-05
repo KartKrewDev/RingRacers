@@ -35,6 +35,7 @@
 #include "m_random.h" // P_RandomKey
 #include "i_time.h"
 #include "v_video.h" // V_ThinStringWidth
+#include "music.h"
 
 #ifdef HW3SOUND
 // 3D Sound Interface
@@ -61,10 +62,6 @@ static void PlaySoundIfUnfocused_OnChange(void);
 #ifdef HAVE_OPENMPT
 static void ModFilter_OnChange(void);
 #endif
-
-static lumpnum_t S_GetMusicLumpNum(const char *mname);
-
-static boolean S_CheckQueue(void);
 
 consvar_t cv_samplerate = CVAR_INIT ("samplerate", "22050", 0, CV_Unsigned, NULL); //Alam: For easy hacking?
 
@@ -1347,21 +1344,6 @@ void S_InitSfxChannels(INT32 sfxVolume)
 /// Music
 /// ------------------------
 
-static char      music_name[7]; // up to 6-character name
-static void      *music_data;
-static UINT16    music_flags;
-static boolean   music_looping;
-static consvar_t *music_refade_cv;
-static int       music_usage;
-
-static char      queue_name[7];
-static UINT16    queue_flags;
-static boolean   queue_looping;
-static UINT32    queue_position;
-static UINT32    queue_fadeinms;
-
-static tic_t     pause_starttic;
-
 void S_AttemptToRestoreMusic(void)
 {
 	switch (gamestate)
@@ -1369,18 +1351,20 @@ void S_AttemptToRestoreMusic(void)
 		case GS_LEVEL:
 			if (musiccountdown != 1)
 			{
-				P_RestoreMusic(&players[consoleplayer]);
+				P_LoadLevelMusic();
+				Music_Play("level");
 				break;
 			}
 			// FALLTHRU
 		case GS_INTERMISSION:
-			S_ChangeMusicInternal("racent", true);
+			Music_Play("intermission");
 			break;
 		case GS_CEREMONY:
-			S_ChangeMusicEx(mapmusname, mapmusflags, true, mapmusposition, 0, 0);
+			Music_Play("level");
 			break;
 		case GS_TITLESCREEN:
-			S_ChangeMusicInternal("_title", looptitle);
+			Music_Loop("title", looptitle);
+			Music_Play("title");
 			break;
 		case GS_MENU:
 			M_PlayMenuJam();
@@ -1822,16 +1806,6 @@ handlenextsong:
 	S_UpdateSoundTestDef(false, true, true);
 }
 
-boolean S_PlaysimMusicDisabled(void)
-{
-	if (soundtest.privilegedrequest)
-		return false;
-
-	return (soundtest.playing // Ring Racers: Stereo Mode
-		|| demo.rewinding // Don't mess with music while rewinding!
-		|| demo.title); // SRB2Kart: Demos don't interrupt title screen music
-}
-
 //
 // S_FindMusicDef
 //
@@ -2130,14 +2104,14 @@ void S_InitMusicDefs(void)
 void S_ShowMusicCredit(void)
 {
 	UINT8 i = 0;
-	musicdef_t *def = S_FindMusicDef(music_name, &i);
+	musicdef_t *def = S_FindMusicDef(Music_CurrentSong(), &i);
 
 	char credittext[128] = "";
 	char *work = NULL;
 	size_t len = 128, worklen;
 	INT32 widthused = BASEVIDWIDTH, workwidth;
 
-	if (!cv_songcredits.value || S_PlaysimMusicDisabled())
+	if (!cv_songcredits.value)
 		return;
 
 	if (!def) // No definitions
@@ -2206,9 +2180,6 @@ void S_ShowMusicCredit(void)
 
 void S_StopMusicCredit(void)
 {
-	if (S_PlaysimMusicDisabled())
-		return;
-
 	cursongcredit.def = NULL;
 }
 
@@ -2216,24 +2187,9 @@ void S_StopMusicCredit(void)
 /// Music Status
 /// ------------------------
 
-boolean S_DigMusicDisabled(void)
-{
-	return digital_disabled;
-}
-
 boolean S_MusicDisabled(void)
 {
 	return digital_disabled;
-}
-
-boolean S_MusicPlaying(void)
-{
-	return I_SongPlaying();
-}
-
-boolean S_MusicPaused(void)
-{
-	return I_SongPaused();
 }
 
 boolean S_MusicNotInFocus(void)
@@ -2243,616 +2199,16 @@ boolean S_MusicNotInFocus(void)
 	);
 }
 
-const char *S_MusicType(void)
-{
-	return I_SongType();
-}
-
-const char *S_MusicName(void)
-{
-	return music_name;
-}
-
-boolean S_MusicInfo(char *mname, UINT16 *mflags, boolean *looping)
-{
-	if (!I_SongPlaying())
-		return false;
-
-	strncpy(mname, music_name, 7);
-	mname[6] = 0;
-	*mflags = music_flags;
-	*looping = music_looping;
-
-	return (boolean)mname[0];
-}
-
-boolean S_MusicExists(const char *mname)
-{
-	return W_CheckNumForName(va("O_%s", mname)) != LUMPERROR;
-}
-
-/// ------------------------
-/// Music Effects
-/// ------------------------
-
-boolean S_SpeedMusic(float speed)
-{
-	return I_SetSongSpeed(speed);
-}
-
-/// ------------------------
-/// Music Seeking
-/// ------------------------
-
-UINT32 S_GetMusicLength(void)
-{
-	return I_GetSongLength();
-}
-
-boolean S_SetMusicLoopPoint(UINT32 looppoint)
-{
-	return I_SetSongLoopPoint(looppoint);
-}
-
-UINT32 S_GetMusicLoopPoint(void)
-{
-	return I_GetSongLoopPoint();
-}
-
-boolean S_SetMusicPosition(UINT32 position)
-{
-	if (S_PlaysimMusicDisabled())
-		return false;
-
-	return I_SetSongPosition(position);
-}
-
-UINT32 S_GetMusicPosition(void)
-{
-	return I_GetSongPosition();
-}
-
-/// ------------------------
-/// Music Stacking (Jingles)
-/// In this section: mazmazz doesn't know how to do dynamic arrays or struct pointers!
-/// ------------------------
-
-char music_stack_nextmusname[7];
-boolean music_stack_noposition = false;
-UINT32 music_stack_fadeout = 0;
-UINT32 music_stack_fadein = 0;
-static musicstack_t *music_stacks = NULL;
-static musicstack_t *last_music_stack = NULL;
-
-void S_SetStackAdjustmentStart(void)
-{
-	if (!pause_starttic)
-		pause_starttic = gametic;
-}
-
-void S_AdjustMusicStackTics(void)
-{
-	if (pause_starttic)
-	{
-		musicstack_t *mst;
-		for (mst = music_stacks; mst; mst = mst->next)
-			mst->tic += gametic - pause_starttic;
-		pause_starttic = 0;
-	}
-}
-
-static void S_ResetMusicStack(void)
-{
-	musicstack_t *mst, *mst_next;
-	for (mst = music_stacks; mst; mst = mst_next)
-	{
-		mst_next = mst->next;
-		Z_Free(mst);
-	}
-	music_stacks = last_music_stack = NULL;
-}
-
-static void S_RemoveMusicStackEntry(musicstack_t *entry)
-{
-	musicstack_t *mst;
-	for (mst = music_stacks; mst; mst = mst->next)
-	{
-		if (mst == entry)
-		{
-			// Remove ourselves from the chain and link
-			// prev and next together
-
-			if (mst->prev)
-				mst->prev->next = mst->next;
-			else
-				music_stacks = mst->next;
-
-			if (mst->next)
-				mst->next->prev = mst->prev;
-			else
-				last_music_stack = mst->prev;
-
-			break;
-		}
-	}
-	Z_Free(entry);
-}
-
-static void S_RemoveMusicStackEntryByStatus(UINT16 status)
-{
-	musicstack_t *mst, *mst_next;
-
-	if (!status)
-		return;
-
-	for (mst = music_stacks; mst; mst = mst_next)
-	{
-		mst_next = mst->next;
-		if (mst->status == status)
-			S_RemoveMusicStackEntry(mst);
-	}
-}
-
-static void S_AddMusicStackEntry(const char *mname, UINT16 mflags, boolean looping, UINT32 position, UINT16 status)
-{
-	musicstack_t *mst, *new_mst;
-
-	// if the first entry is empty, force master onto it
-	if (!music_stacks)
-	{
-		music_stacks = Z_Calloc(sizeof (*mst), PU_MUSIC, NULL);
-		strncpy(music_stacks->musname, (status == JT_MASTER ? mname : (S_CheckQueue() ? queue_name : mapmusname)), 7);
-		music_stacks->musflags = (status == JT_MASTER ? mflags : (S_CheckQueue() ? queue_flags : mapmusflags));
-		music_stacks->looping = (status == JT_MASTER ? looping : (S_CheckQueue() ? queue_looping : true));
-		music_stacks->position = (status == JT_MASTER ? position : (S_CheckQueue() ? queue_position : S_GetMusicPosition()));
-		music_stacks->tic = gametic;
-		music_stacks->status = JT_MASTER;
-		music_stacks->mlumpnum = S_GetMusicLumpNum(music_stacks->musname);
-		music_stacks->noposition = S_CheckQueue();
-
-		if (status == JT_MASTER)
-			return; // we just added the user's entry here
-	}
-
-	// look for an empty slot to park ourselves
-	for (mst = music_stacks; mst->next; mst = mst->next);
-
-	// create our new entry
-	new_mst = Z_Calloc(sizeof (*new_mst), PU_MUSIC, NULL);
-	strncpy(new_mst->musname, mname, 7);
-	new_mst->musname[6] = 0;
-	new_mst->musflags = mflags;
-	new_mst->looping = looping;
-	new_mst->position = position;
-	new_mst->tic = gametic;
-	new_mst->status = status;
-	new_mst->mlumpnum = S_GetMusicLumpNum(new_mst->musname);
-	new_mst->noposition = false;
-
-	mst->next = new_mst;
-	new_mst->prev = mst;
-	new_mst->next = NULL;
-	last_music_stack = new_mst;
-}
-
-static musicstack_t *S_GetMusicStackEntry(UINT16 status, boolean fromfirst, INT16 startindex)
-{
-	musicstack_t *mst, *start_mst = NULL, *mst_next;
-
-	// if the first entry is empty, force master onto it
-	// fixes a memory corruption bug
-	if (!music_stacks && status != JT_MASTER)
-		S_AddMusicStackEntry(mapmusname, mapmusflags, true, S_GetMusicPosition(), JT_MASTER);
-
-	if (startindex >= 0)
-	{
-		INT16 i = 0;
-		for (mst = music_stacks; mst && i <= startindex; mst = mst->next, i++)
-			start_mst = mst;
-	}
-	else
-		start_mst = (fromfirst ? music_stacks : last_music_stack);
-
-	for (mst = start_mst; mst; mst = mst_next)
-	{
-		mst_next = (fromfirst ? mst->next : mst->prev);
-
-		if (!status || mst->status == status)
-		{
-			if (P_EvaluateMusicStatus(mst->status, mst->musname))
-			{
-				if (!S_MusicExists(mst->musname)) // paranoia
-					S_RemoveMusicStackEntry(mst); // then continue
-				else
-					return mst;
-			}
-			else
-				S_RemoveMusicStackEntry(mst); // then continue
-		}
-	}
-
-	return NULL;
-}
-
-void S_RetainMusic(const char *mname, UINT16 mflags, boolean looping, UINT32 position, UINT16 status)
-{
-	musicstack_t *mst;
-
-	if (!status) // we use this as a null indicator, don't push
-	{
-		CONS_Alert(CONS_ERROR, "Music stack entry must have a nonzero status.\n");
-		return;
-	}
-	else if (status == JT_MASTER) // enforce only one JT_MASTER
-	{
-		for (mst = music_stacks; mst; mst = mst->next)
-		{
-			if (mst->status == JT_MASTER)
-			{
-				CONS_Alert(CONS_ERROR, "Music stack can only have one JT_MASTER entry.\n");
-				return;
-			}
-		}
-	}
-	else // remove any existing status
-		S_RemoveMusicStackEntryByStatus(status);
-
-	S_AddMusicStackEntry(mname, mflags, looping, position, status);
-}
-
-boolean S_RecallMusic(UINT16 status, boolean fromfirst)
-{
-	UINT32 newpos = 0;
-	boolean mapmuschanged = false;
-	musicstack_t *result;
-	musicstack_t *entry;
-
-	if (S_PlaysimMusicDisabled())
-		return false;
-
-	entry = Z_Calloc(sizeof (*result), PU_MUSIC, NULL);
-
-	if (status)
-		result = S_GetMusicStackEntry(status, fromfirst, -1);
-	else
-		result = S_GetMusicStackEntry(JT_NONE, false, -1);
-
-	if (result && !S_MusicExists(result->musname))
-	{
-		Z_Free(entry);
-		return false; // music doesn't exist, so don't do anything
-	}
-
-	// make a copy of result, since we make modifications to our copy
-	if (result)
-	{
-		*entry = *result;
-		strncpy(entry->musname, result->musname, 7);
-	}
-
-	// no result, just grab mapmusname
-	if (!result || !entry->musname[0] || ((status == JT_MASTER || (music_stacks ? !music_stacks->status : false)) && !entry->status))
-	{
-		strncpy(entry->musname, mapmusname, 7);
-		entry->musflags = mapmusflags;
-		entry->looping = true;
-		entry->position = mapmusposition;
-		entry->tic = gametic;
-		entry->status = JT_MASTER;
-		entry->mlumpnum = S_GetMusicLumpNum(entry->musname);
-		entry->noposition = false; // don't set this until we do the mapmuschanged check, below. Else, this breaks some resumes.
-	}
-
-	if (entry->status == JT_MASTER)
-	{
-		mapmuschanged = strnicmp(entry->musname, mapmusname, 7);
-		if (mapmuschanged)
-		{
-			strncpy(entry->musname, mapmusname, 7);
-			entry->musflags = mapmusflags;
-			entry->looping = true;
-			entry->position = mapmusposition;
-			entry->tic = gametic;
-			entry->status = JT_MASTER;
-			entry->mlumpnum = S_GetMusicLumpNum(entry->musname);
-			entry->noposition = true;
-		}
-		S_ResetMusicStack();
-	}
-	else if (!entry->status)
-	{
-		Z_Free(entry);
-		return false;
-	}
-
-	if (strncmp(entry->musname, S_MusicName(), 7)) // don't restart music if we're already playing it
-	{
-		if (music_stack_fadeout)
-			S_ChangeMusicEx(entry->musname, entry->musflags, entry->looping, 0, music_stack_fadeout, 0);
-		else
-		{
-			S_ChangeMusicEx(entry->musname, entry->musflags, entry->looping, 0, 0, music_stack_fadein);
-
-			if (!entry->noposition && !music_stack_noposition) // HACK: Global boolean to toggle position resuming, e.g., de-superize
-			{
-				UINT32 poslapse = 0;
-
-				// To prevent the game from jumping past the end of the music, we need
-				// to check if we can get the song's length. Otherwise, if the lapsed resume time goes
-				// over a LOOPPOINT, mixer_sound.c will be unable to calculate the new resume position.
-				if (S_GetMusicLength())
-					poslapse = (UINT32)((float)(gametic - entry->tic)/(float)TICRATE*(float)MUSICRATE);
-
-				newpos = entry->position + poslapse;
-			}
-
-			// If the newly recalled music lumpnum does not match the lumpnum that we stored in stack,
-			// then discard the new position. That way, we will not recall an invalid position
-			// when the music is replaced or digital/MIDI is toggled.
-			if (newpos > 0 && S_MusicPlaying() && S_GetMusicLumpNum(entry->musname) == entry->mlumpnum)
-				S_SetMusicPosition(newpos);
-			else
-			{
-				S_StopFadingMusic();
-				S_SetInternalMusicVolume(100);
-			}
-		}
-		music_stack_noposition = false;
-		music_stack_fadeout = 0;
-		music_stack_fadein = JINGLEPOSTFADE;
-	}
-
-	Z_Free(entry);
-	return true;
-}
-
 /// ------------------------
 /// Music Playback
 /// ------------------------
-
-static lumpnum_t S_GetMusicLumpNum(const char *mname)
-{
-	if (S_MusicExists(mname))
-		return W_GetNumForName(va("o_%s", mname));
-	else
-		return LUMPERROR;
-}
-
-static boolean S_LoadMusic(const char *mname)
-{
-	lumpnum_t mlumpnum;
-	void *mdata;
-
-	if (S_MusicDisabled())
-		return false;
-
-	mlumpnum = S_GetMusicLumpNum(mname);
-
-	if (mlumpnum == LUMPERROR)
-	{
-		CONS_Alert(CONS_ERROR, "Music %.6s could not be loaded: lump not found!\n", mname);
-		return false;
-	}
-
-	// load & register it
-	mdata = W_CacheLumpNum(mlumpnum, PU_MUSIC);
-
-	if (I_LoadSong(mdata, W_LumpLength(mlumpnum)))
-	{
-		strncpy(music_name, mname, 7);
-		music_name[6] = 0;
-		music_data = mdata;
-		return true;
-	}
-	else
-	{
-		CONS_Alert(CONS_ERROR, "Music %.6s could not be loaded: engine failure!\n", mname);
-		return false;
-	}
-}
-
-static void S_UnloadMusic(void)
-{
-	I_UnloadSong();
-
-#ifndef HAVE_SDL //SDL uses RWOPS
-	Z_ChangeTag(music_data, PU_CACHE);
-#endif
-	music_data = NULL;
-
-	music_name[0] = 0;
-	music_flags = 0;
-	music_looping = false;
-
-	music_refade_cv = 0;
-	music_usage = 0;
-}
-
-static boolean S_PlayMusic(boolean looping, UINT32 fadeinms)
-{
-	//musicdef_t *def;
-
-	if (S_MusicDisabled())
-		return false;
-
-	I_UpdateSongLagConditions();
-
-	if ((!fadeinms && !I_PlaySong(looping)) ||
-		(fadeinms && !I_FadeInPlaySong(fadeinms, looping)))
-	{
-		CONS_Alert(CONS_ERROR, "Music %.6s could not be played: engine failure!\n", music_name);
-		S_UnloadMusic();
-		return false;
-	}
-
-#if 0
-	/* set loop point from MUSICDEF */
-	for (def = musicdefstart; def; def = def->next)
-	{
-		if (strcasecmp(def->name, music_name) == 0)
-		{
-			if (def->loop_ms)
-				S_SetMusicLoopPoint(def->loop_ms);
-			break;
-		}
-	}
-#endif
-
-	S_InitMusicVolume(); // switch between digi and sequence volume
-
-	if (S_MusicNotInFocus())
-		I_SetMusicVolume(0);
-
-	return true;
-}
-
-static void S_QueueMusic(const char *mmusic, UINT16 mflags, boolean looping, UINT32 position, UINT32 fadeinms)
-{
-	strncpy(queue_name, mmusic, 7);
-	queue_flags = mflags;
-	queue_looping = looping;
-	queue_position = position;
-	queue_fadeinms = fadeinms;
-}
-
-static boolean S_CheckQueue(void)
-{
-	return queue_name[0];
-}
-
-static void S_ClearQueue(void)
-{
-	queue_name[0] = queue_flags = queue_looping = queue_position = queue_fadeinms = 0;
-}
-
-static void S_ChangeMusicToQueue(void)
-{
-	S_ChangeMusicEx(queue_name, queue_flags, queue_looping, queue_position, 0, queue_fadeinms);
-	S_ClearQueue();
-}
-
-void S_ChangeMusicEx(const char *mmusic, UINT16 mflags, boolean looping, UINT32 position, UINT32 prefadems, UINT32 fadeinms)
-{
-	char newmusic[7];
-
-	if (S_MusicDisabled() || S_PlaysimMusicDisabled())
-		return;
-
-	strncpy(newmusic, mmusic, 7);
-
-	newmusic[6] = 0;
-
- 	// No Music (empty string)
-	if (newmusic[0] == 0)
- 	{
-		if (prefadems)
-			I_FadeSong(0, prefadems, &S_StopMusic);
-		else
-			S_StopMusic();
-		return;
-	}
-
-	if (prefadems) // queue music change for after fade // allow even if the music is the same
-		// && S_MusicPlaying() // Let the delay happen even if we're not playing music
-	{
-		CONS_Debug(DBG_DETAILED, "Now fading out song %s\n", music_name);
-		S_QueueMusic(newmusic, mflags, looping, position, fadeinms);
-		I_FadeSong(0, prefadems, S_ChangeMusicToQueue);
-		return;
-	}
-	else if (strnicmp(music_name, newmusic, 6) || (mflags & MUSIC_FORCERESET))
- 	{
-		CONS_Debug(DBG_DETAILED, "Now playing song %s\n", newmusic);
-
-		S_StopMusic();
-
-		if (!S_LoadMusic(newmusic))
-			return;
-
-		music_flags = mflags;
-		music_looping = looping;
-
-		{
-			UINT8 i = 0;
-			musicdef_t *def = S_FindMusicDef(music_name, &i);
-
-			if (def)
-			{
-				I_SetCurrentSongVolume(def->debug_volume != 0 ? def->debug_volume : def->volume);
-			}
-		}
-
-		if (!S_PlayMusic(looping, fadeinms))
-			return;
-
-		if (position)
-			I_SetSongPosition(position);
-
-		I_SetSongTrack(mflags & MUSIC_TRACKMASK);
-
-		// Slow level music down a bit in Encore. (Values are vibe-based. WE GET IT YOU VAPE)
-		S_SpeedMusic((encoremode && gamestate == GS_LEVEL) ? 0.86471f : 1.f);
-	}
-	else if (fadeinms) // let fades happen with same music
-	{
-		I_SetSongPosition(position);
-		I_FadeSong(100, fadeinms, NULL);
- 	}
-	else // reset volume to 100 with same music
-	{
-		I_StopFadingSong();
-		I_FadeSong(100, 500, NULL);
-	}
-}
-
-void S_ChangeMusicSpecial (const char *mmusic)
-{
-	if (cv_resetspecialmusic.value)
-		S_ChangeMusic(mmusic, MUSIC_FORCERESET, true);
-	else
-		S_ChangeMusicInternal(mmusic, true);
-}
-
-void S_StopMusic(void)
-{
-	if (!I_SongPlaying() || S_PlaysimMusicDisabled())
-		return;
-
-	if (strcasecmp(music_name, mapmusname) == 0)
-		mapmusresume = I_GetSongPosition();
-
-	if (I_SongPaused())
-		I_ResumeSong();
-
-	I_StopSong();
-	S_UnloadMusic(); // for now, stopping also means you unload the song
-
-	if (cv_closedcaptioning.value)
-	{
-		if (closedcaptions[0].s-S_sfx == sfx_None)
-		{
-			if (gamestate != wipegamestate)
-			{
-				closedcaptions[0].c = NULL;
-				closedcaptions[0].s = NULL;
-				closedcaptions[0].t = 0;
-				closedcaptions[0].b = 0;
-			}
-			else
-				closedcaptions[0].t = CAPTIONFADETICS;
-		}
-	}
-}
 
 //
 // Stop and resume music, during game PAUSE.
 //
 void S_PauseAudio(void)
 {
-	if (I_SongPlaying() && !I_SongPaused())
-		I_PauseSong();
-
-	S_SetStackAdjustmentStart();
+	Music_PauseAll();
 }
 
 void S_ResumeAudio(void)
@@ -2860,13 +2216,7 @@ void S_ResumeAudio(void)
 	if (S_MusicNotInFocus())
 		return;
 
-	if (soundtest.paused == true)
-		return;
-
-	if (I_SongPlaying() && I_SongPaused())
-		I_ResumeSong();
-
-	S_AdjustMusicStackTics();
+	Music_UnPauseAll();
 }
 
 void S_SetMusicVolume(INT32 digvolume)
@@ -2879,102 +2229,9 @@ void S_SetMusicVolume(INT32 digvolume)
 	I_SetMusicVolume(digvolume);
 }
 
-void
-S_SetRestoreMusicFadeInCvar (consvar_t *cv)
-{
-	music_refade_cv = cv;
-}
-
-int
-S_GetRestoreMusicFadeIn (void)
-{
-	if (music_refade_cv)
-		return music_refade_cv->value;
-	else
-		return 0;
-}
-
-void
-S_SetMusicUsage (int type)
-{
-	music_usage = type;
-	I_UpdateSongLagConditions();
-}
-
-int
-S_MusicUsage (void)
-{
-	return music_usage;
-}
-
-/// ------------------------
-/// Music Fading
-/// ------------------------
-
-void S_SetInternalMusicVolume(INT32 volume)
-{
-	I_SetInternalMusicVolume(min(max(volume, 0), 100));
-}
-
-void S_StopFadingMusic(void)
-{
-	I_StopFadingSong();
-}
-
-boolean S_FadeMusicFromVolume(UINT8 target_volume, INT16 source_volume, UINT32 ms)
-{
-	if (S_PlaysimMusicDisabled())
-		return false;
-
-	if (source_volume < 0)
-		return I_FadeSong(target_volume, ms, NULL);
-	else
-		return I_FadeSongFromVolume(target_volume, source_volume, ms, NULL);
-}
-
-boolean S_FadeOutStopMusic(UINT32 ms)
-{
-	if (S_PlaysimMusicDisabled())
-		return false;
-
-	return I_FadeSong(0, ms, &S_StopMusic);
-}
-
 /// ------------------------
 /// Init & Others
 /// ------------------------
-
-//
-// Per level startup code.
-// Kills playing sounds at start of level,
-//  determines music if any, changes music.
-//
-void S_InitLevelMusic(boolean fromnetsave)
-{
-
-	if (mapmusflags & MUSIC_RELOADRESET)
-	{
-		if (!fromnetsave)
-		{
-			if (mapheaderinfo[gamemap-1]->musname_size > 1)
-				mapmusrng = P_RandomKey(PR_MUSICSELECT, mapheaderinfo[gamemap-1]->musname_size);
-			else
-				mapmusrng = 0;
-		}
-		strncpy(mapmusname, mapheaderinfo[gamemap-1]->musname[mapmusrng], 7);
-		mapmusname[6] = 0;
-		mapmusflags = (mapheaderinfo[gamemap-1]->mustrack & MUSIC_TRACKMASK);
-		mapmusposition = mapheaderinfo[gamemap-1]->muspos;
-		mapmusresume = 0;
-	}
-
-	S_StopMusic();
-
-	S_ResetMusicStack();
-	music_stack_noposition = false;
-	music_stack_fadeout = 0;
-	music_stack_fadein = JINGLEPOSTFADE;
-}
 
 static inline void PrintMusicDefField(const char *label, const char *field)
 {
@@ -3095,7 +2352,7 @@ static void Command_RestartAudio_f(void)
 	if (dedicated)  // No point in doing anything if game is a dedicated server.
 		return;
 
-	S_StopMusic();
+	Music_StopAll();
 	S_StopSounds();
 	I_ShutdownMusic();
 	I_ShutdownSound();
@@ -3223,7 +2480,7 @@ static void Command_MusicDef_f(void)
 			{
 				UINT8 i = 0;
 
-				def = S_FindMusicDef(music_name, &i);
+				def = S_FindMusicDef(Music_CurrentSong(), &i);
 				def->debug_volume = atoi(arg2);
 				I_SetCurrentSongVolume(def->debug_volume);
 
@@ -3298,13 +2555,11 @@ void GameDigiMusic_OnChange(void)
 		digital_disabled = false;
 		I_StartupSound(); // will return early if initialised
 		I_InitMusic();
-
-		S_AttemptToRestoreMusic();
 	}
 	else
 	{
 		digital_disabled = true;
-		S_StopMusic();
+		I_UnloadSong();
 	}
 }
 

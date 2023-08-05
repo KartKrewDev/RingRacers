@@ -42,6 +42,7 @@
 #include "k_specialstage.h"
 #include "acs/interface.h"
 #include "k_objects.h"
+#include "music.h"
 
 #ifdef PARANOIA
 #include "deh_tables.h" // MOBJTYPE_LIST
@@ -714,7 +715,6 @@ void P_Ticker(boolean run)
 			P_MoveChaseCamera(&players[0], &camera[0], false);
 			R_UpdateViewInterpolation();
 			P_MapEnd();
-			S_SetStackAdjustmentStart();
 			return;
 		}
 	}
@@ -731,12 +731,8 @@ void P_Ticker(boolean run)
 		}
 		else if (demo.freecam && democam.cam)	// special case: allow freecam to MOVE during pause!
 			P_DemoCameraMovement(democam.cam);
-		S_SetStackAdjustmentStart();
 		return;
 	}
-
-	if (!S_MusicPaused())
-		S_AdjustMusicStackTics();
 
 	for (i = 0; i <= r_splitscreen; i++)
 		postimgtype[i] = postimg_none;
@@ -874,8 +870,7 @@ void P_Ticker(boolean run)
 			// Bosses have a punchy start, so no position.
 			if (leveltime == 1)
 			{
-				S_ChangeMusic(mapmusname, mapmusflags, true);
-				S_ShowMusicCredit();
+				Music_Play("level");
 			}
 		}
 		else if (leveltime < starttime + TICRATE)
@@ -883,8 +878,7 @@ void P_Ticker(boolean run)
 			if (leveltime == (starttime + (TICRATE/2)))
 			{
 				// Plays the music after the starting countdown.
-				S_ChangeMusic(mapmusname, mapmusflags, true);
-				S_ShowMusicCredit();
+				Music_Play("level");
 			}
 			else if (starttime != introtime)
 			{
@@ -892,7 +886,6 @@ void P_Ticker(boolean run)
 				if (leveltime == starttime-(3*TICRATE))
 				{
 					S_StartSound(NULL, sfx_s3ka7); // 3,
-					S_FadeMusic(0, 3500); //S_FadeOutStopMusic(3500); -- TODO the S_StopMusic callback can halt successor music instead
 				}
 				else if ((leveltime == starttime-(2*TICRATE))
 					|| (leveltime == starttime-TICRATE))

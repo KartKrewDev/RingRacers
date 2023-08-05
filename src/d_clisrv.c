@@ -63,6 +63,7 @@
 #include "k_vote.h"
 #include "k_serverstats.h"
 #include "k_zvote.h"
+#include "music.h"
 
 // cl loading screen
 #include "v_video.h"
@@ -2747,7 +2748,10 @@ static void Command_connect(void)
 
 	// Menu restore state.
 	restoreMenu = &PLAY_MP_OptSelectDef;
-	S_ChangeMusicInternal("NETMD2", true);
+
+	Music_Remap("menu", "NETMD2");
+	Music_Play("menu");
+
 	if (setup_numplayers == 0)
 	{
 		setup_numplayers = 1;

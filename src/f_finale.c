@@ -46,6 +46,7 @@
 // SRB2Kart
 #include "k_menu.h"
 #include "k_grandprix.h"
+#include "music.h"
 
 // Stage of animation:
 // 0 = text, 1 = art screen
@@ -298,8 +299,6 @@ void F_StartCustomCutscene(INT32 cutscenenum, boolean precutscene, boolean reset
 
 void F_StartIntro(void)
 {
-	S_StopMusicCredit();
-
 	if (gamestate)
 	{
 		F_WipeStartScreen();
@@ -308,7 +307,7 @@ void F_StartIntro(void)
 		F_RunWipe(wipe_intro_toblack, wipedefs[wipe_intro_toblack], false, "FADEMAP0", false, false);
 	}
 
-	S_StopMusic();
+	Music_StopAll();
 	S_StopSounds();
 
 	if (introtoplay)
@@ -331,7 +330,8 @@ void F_StartIntro(void)
 	intro_scenenum = 0;
 	finalecount = animtimer = skullAnimCounter = stoptimer = 0;
 	timetonext = introscenetime[intro_scenenum];
-	S_StopMusic();
+
+	Music_StopAll();
 }
 
 //
@@ -701,11 +701,10 @@ void F_StartCredits(void)
 	gameaction = ga_nothing;
 	paused = false;
 	CON_ToggleOff();
-	S_StopMusic();
+	Music_StopAll();
 	S_StopSounds();
 
-	S_ChangeMusicInternal("_creds", false);
-	S_ShowMusicCredit();
+	Music_Play("credits");
 
 	finalecount = 0;
 	animtimer = 0;
@@ -907,7 +906,9 @@ UINT16 finaleemeralds = 0;
 
 void F_StartGameEvaluation(void)
 {
-	S_FadeMusic(0, MUSICRATE/4);
+	Music_DelayEnd("credits", TICRATE/4);
+	Music_Tick(); // it needs to fade out right now
+
 	S_StopMusicCredit();
 
 	// Credits option in extras menu
@@ -1253,7 +1254,8 @@ void F_GameEvaluationTicker(void)
 		if (finalecount == 1)
 		{
 			// sitting on that distant _shore
-			S_ChangeMusicInternal("_SHORE", false);
+			Music_Remap("shore", "_SHORE");
+			Music_Play("shore");
 		}
 	}
 	else
@@ -1261,7 +1263,8 @@ void F_GameEvaluationTicker(void)
 		if (finalecount == 1)
 		{
 			// _drift across open waters
-			S_ChangeMusicInternal("_DRIFT", false);
+			Music_Remap("shore", "_DRIFT");
+			Music_Play("shore");
 		}
 	}
 
@@ -1766,8 +1769,12 @@ void F_TitleScreenTicker(boolean run)
 	{
 		if (finalecount == 0)
 		{
-			// Now start the music
-			S_ChangeMusicInternal("_title", looptitle);
+			if (!Music_Playing("title"))
+			{
+				// Now start the music
+				Music_Loop("title", looptitle);
+				Music_Play("title");
+			}
 		}
 		else if (menumessage.active)
 		{
@@ -1956,7 +1963,7 @@ void F_WaitingPlayersTicker(void)
 
 	// dumb hack, only start the music on the 1st tick so if you instantly go into the map you aren't hearing a tic of music
 	if (finalecount == 2)
-		S_ChangeMusicInternal("WAIT2J", true);
+		Music_Play("wait");
 }
 
 void F_WaitingPlayersDrawer(void)
@@ -2002,11 +2009,14 @@ static void F_AdvanceToNextScene(void)
 	picxpos = cutscenes[cutnum]->scene[scenenum].xcoord[picnum];
 	picypos = cutscenes[cutnum]->scene[scenenum].ycoord[picnum];
 
+	// FIXME - port to new music system
+#if 0
 	if (cutscenes[cutnum]->scene[scenenum].musswitch[0])
 		S_ChangeMusicEx(cutscenes[cutnum]->scene[scenenum].musswitch,
 			cutscenes[cutnum]->scene[scenenum].musswitchflags,
 			cutscenes[cutnum]->scene[scenenum].musicloop,
 			cutscenes[cutnum]->scene[scenenum].musswitchposition, 0, 0);
+#endif
 
 	// Fade to the next
 	F_NewCutscene(cutscenes[cutnum]->scene[scenenum].text);
@@ -2075,6 +2085,8 @@ void F_StartCustomCutscene(INT32 cutscenenum, boolean precutscene, boolean reset
 	animtimer = cutscenes[cutnum]->scene[0].picduration[0]; // Picture duration
 	stoptimer = 0;
 
+	// FIXME - port to new music system
+#if 0
 	if (cutscenes[cutnum]->scene[0].musswitch[0])
 		S_ChangeMusicEx(cutscenes[cutnum]->scene[0].musswitch,
 			cutscenes[cutnum]->scene[0].musswitchflags,
@@ -2082,6 +2094,7 @@ void F_StartCustomCutscene(INT32 cutscenenum, boolean precutscene, boolean reset
 			cutscenes[cutnum]->scene[scenenum].musswitchposition, 0, 0);
 	else
 		S_StopMusic();
+#endif
 	S_StopSounds();
 }
 
@@ -2365,11 +2378,14 @@ static void F_AdvanceToNextPage(void)
 		picypos = textprompts[cutnum]->page[scenenum].ycoord[picnum];
 		animtimer = pictime = textprompts[cutnum]->page[scenenum].picduration[picnum];
 
+		// FIXME - port to new music system
+#if 0
 		// music change
 		if (textprompts[cutnum]->page[scenenum].musswitch[0])
 			S_ChangeMusic(textprompts[cutnum]->page[scenenum].musswitch,
 				textprompts[cutnum]->page[scenenum].musswitchflags,
 				textprompts[cutnum]->page[scenenum].musicloop);
+#endif
 	}
 }
 
@@ -2453,11 +2469,14 @@ void F_StartTextPrompt(INT32 promptnum, INT32 pagenum, mobj_t *mo, UINT16 postex
 		picypos = textprompts[cutnum]->page[scenenum].ycoord[picnum];
 		animtimer = pictime = textprompts[cutnum]->page[scenenum].picduration[picnum];
 
+		// FIXME - port to new music system
+#if 0
 		// music change
 		if (textprompts[cutnum]->page[scenenum].musswitch[0])
 			S_ChangeMusic(textprompts[cutnum]->page[scenenum].musswitch,
 				textprompts[cutnum]->page[scenenum].musswitchflags,
 				textprompts[cutnum]->page[scenenum].musicloop);
+#endif
 
 		// get the calling player
 		if (promptblockcontrols && mo && mo->player)

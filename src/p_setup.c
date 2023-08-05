@@ -104,6 +104,7 @@
 #include "k_podium.h"
 #include "k_rank.h"
 #include "k_mapuser.h"
+#include "music.h"
 
 // Replay names have time
 #if !defined (UNDER_CE)
@@ -7923,6 +7924,23 @@ static void P_InitMinimapInfo(void)
 	minimapinfo.offs_y = FixedMul((minimapinfo.min_y + minimapinfo.map_h/2) << FRACBITS, minimapinfo.zoom);
 }
 
+void P_ResetLevelMusic(void)
+{
+	if (mapheaderinfo[gamemap-1]->musname_size > 1)
+		mapmusrng = P_RandomKey(PR_MUSICSELECT, mapheaderinfo[gamemap-1]->musname_size);
+	else
+		mapmusrng = 0;
+}
+
+void P_LoadLevelMusic(void)
+{
+	tic_t level_music_start = starttime + (TICRATE/2);
+
+	Music_StopAll();
+	Music_Remap("level", mapheaderinfo[gamemap-1]->musname[mapmusrng]);
+	Music_Seek("level", max(leveltime, level_music_start) - level_music_start);
+}
+
 /** Loads a level from a lump or external wad.
   *
   * \param fromnetsave If true, skip some stuff because we're loading a netgame snapshot.
@@ -7969,6 +7987,11 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 
 	P_InitLevelSettings();
 
+	if (!demo.title)
+	{
+		Music_Stop("title");
+	}
+
 	for (i = 0; i <= r_splitscreen; i++)
 		postimgtype[i] = postimg_none;
 
@@ -7987,7 +8010,7 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 		{
 			tic_t locstarttime, endtime, nowtime;
 
-			S_StopMusic(); // er, about that...
+			Music_StopAll(); // er, about that...
 
 			// Fade to an inverted screen, with a circle fade...
 			F_WipeStartScreen();
@@ -8072,16 +8095,20 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 	{
 		int wipetype = wipe_level_toblack;
 
+		// TODO: What is this?? This does nothing because P_LoadLevelMusic is gonna halt music, anyway.
+#if 0
 		// Fade out music here. Deduct 2 tics so the fade volume actually reaches 0.
 		// But don't halt the music! S_Start will take care of that. This dodges a MIDI crash bug.
 		if (gamestate == GS_LEVEL)
 			S_FadeMusic(0, FixedMul(
 				FixedDiv((F_GetWipeLength(wipedefs[wipe_level_toblack])-2)*NEWTICRATERATIO, NEWTICRATE), MUSICRATE));
+#endif
 
 		if (K_PodiumSequence())
 		{
 			// mapmusrng is set by local player position in K_ResetCeremony
-			S_InitLevelMusic(true);
+			P_ResetLevelMusic();
+			P_LoadLevelMusic();
 		}
 		else if (gamestate == GS_LEVEL)
 		{
@@ -8093,7 +8120,12 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 
 			// We should be fine starting music here.
 			// Don't do this during titlemap, because the menu code handles music by itself.
-			S_InitLevelMusic(fromnetsave);
+			// Netsave loading does this itself, because leveltime isn't set yet!
+			if (!fromnetsave)
+			{
+				P_ResetLevelMusic();
+				P_LoadLevelMusic();
+			}
 		}
 
 		if (gametyperules & GTR_SPECIALSTART)

@@ -2887,6 +2887,8 @@ boolean P_ProcessSpecial(activator_t *activator, INT16 special, INT32 *args, cha
 			break;
 
 		case 413: // Change music
+			// FIXME: port to new music system
+#if 0
 			// console player only unless TMM_ALLPLAYERS is set
 			if ((args[1] & TMM_ALLPLAYERS) || (mo && mo->player && P_IsLocalPlayer(mo->player)) || titlemapinaction)
 			{
@@ -2963,6 +2965,7 @@ boolean P_ProcessSpecial(activator_t *activator, INT16 special, INT32 *args, cha
 				// Except, you can use the TMM_NORELOAD flag to change this behavior.
 				// if (mapmusflags & MUSIC_RELOADRESET) then it will reset the music in G_PlayerReborn.
 			}
+#endif
 			break;
 
 		case 414: // Play SFX

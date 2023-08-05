@@ -69,6 +69,7 @@
 #include "k_vote.h"
 #include "k_serverstats.h"
 #include "k_zvote.h"
+#include "music.h"
 
 #ifdef HAVE_DISCORDRPC
 #include "discord.h"
@@ -2402,13 +2403,15 @@ void G_Ticker(boolean run)
 				musiccountdown--;
 				if (musiccountdown == 1)
 				{
-					S_ChangeMusicInternal("racent", true);
+					Music_Play("intermission");
 				}
 				else if (musiccountdown == (MUSICCOUNTDOWNMAX - (3*TICRATE)/2))
 				{
 					P_EndingMusic();
 				}
 			}
+
+			P_InvincGrowMusic();
 
 			K_TickMidVote();
 		}
@@ -2510,7 +2513,6 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	INT32 itemtype;
 	INT32 itemamount;
 	INT32 growshrinktimer;
-	boolean songcredit = false;
 	UINT16 nocontrol;
 	INT32 khudfault;
 	INT32 kickstartaccel;
@@ -2850,11 +2852,6 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 
 	if (exiting)
 		return;
-
-	P_RestoreMusic(p);
-
-	if (songcredit)
-		S_ShowMusicCredit();
 }
 
 //
@@ -4695,7 +4692,7 @@ void G_EndGame(void)
 	// In a netgame, don't unwittingly boot everyone.
 	if (netgame)
 	{
-		S_StopMusic();
+		Music_StopAll();
 		G_SetGamestate(GS_WAITINGPLAYERS); // hack to prevent a command repeat
 
 		if (server)

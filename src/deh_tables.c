@@ -6609,14 +6609,6 @@ struct int_const_s const INT_CONST[] = {
 	{"int_score",int_score},
 	{"int_scoreortimeattack", int_scoreortimeattack},
 
-	// Jingles (jingletype_t)
-	{"JT_NONE",JT_NONE},
-	{"JT_OTHER",JT_OTHER},
-	{"JT_MASTER",JT_MASTER},
-
-	{"JT_INVINCIBILITY",JT_INVINCIBILITY},
-	{"JT_GROW",JT_GROW},
-
 	// Overlay exception settings
 	{"OV_DONTSCREENOFFSET", OV_DONTSCREENOFFSET},
 	{"OV_DONT3DOFFSET", OV_DONT3DOFFSET},

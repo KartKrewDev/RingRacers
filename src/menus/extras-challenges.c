@@ -4,6 +4,7 @@
 #include "../k_menu.h"
 #include "../m_cond.h" // Condition Sets
 #include "../m_random.h" // And just some randomness for the exits.
+#include "../music.h"
 #include "../z_zone.h"
 #include "../r_skins.h"
 #include "../s_sound.h"
@@ -220,7 +221,7 @@ menu_t *M_InterruptMenuWithChallenges(menu_t *desiredmenu)
 
 	if ((challengesmenu.pending = (newunlock != MAXUNLOCKABLES)))
 	{
-		S_StopMusic();
+		Music_StopAll();
 		MISC_ChallengesDef.prevMenu = desiredmenu;
 	}
 

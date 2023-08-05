@@ -183,9 +183,9 @@ boolean P_InQuicksand(mobj_t *mo);
 boolean P_PlayerHitFloor(player_t *player, boolean fromAir, angle_t oldPitch, angle_t oldRoll);
 
 void P_SetObjectMomZ(mobj_t *mo, fixed_t value, boolean relative);
-void P_RestoreMusic(player_t *player);
 void P_StartPositionMusic(boolean exact);
 void P_EndingMusic(void);
+void P_InvincGrowMusic(void);
 mobj_t *P_SpawnGhostMobj(mobj_t *mobj);
 mobj_t *P_SpawnFakeShadow(mobj_t *mobj, UINT8 offset);
 INT32 P_GivePlayerRings(player_t *player, INT32 num_rings);
@@ -236,36 +236,6 @@ void P_PlayVictorySound(mobj_t *source);
 boolean P_GetLives(player_t *player);
 boolean P_SpectatorJoinGame(player_t *player);
 void P_RestoreMultiMusic(player_t *player);
-
-/// ------------------------
-/// Jingle stuff
-/// ------------------------
-
-typedef enum
-{
-	JT_NONE,   // Null state
-	JT_OTHER,  // Other state
-	JT_MASTER, // Main level music
-
-	JT_INVINCIBILITY, // Invincibility
-	JT_GROW, // Grow
-
-	NUMJINGLES
-} jingletype_t;
-
-struct jingle_t
-{
-	char musname[7];
-	boolean looping;
-};
-
-extern jingle_t jingleinfo[NUMJINGLES];
-
-#define JINGLEPOSTFADE 1000
-
-void P_PlayJingle(player_t *player, jingletype_t jingletype);
-boolean P_EvaluateMusicStatus(UINT16 status, const char *musname);
-void P_PlayJingleMusic(player_t *player, const char *musname, UINT16 musflags, boolean looping, UINT16 status);
 
 //
 // P_MOBJ

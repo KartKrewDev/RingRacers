@@ -22,6 +22,7 @@
 #include "../g_game.h"
 #include "../z_zone.h"
 #include "../k_waypoint.h"
+#include "../music.h"
 
 //
 // ███████╗██╗██╗░░██╗███╗░░░███╗███████╗
@@ -556,21 +557,11 @@ boolean Obj_ShrinkLaserCollide(mobj_t *gun, mobj_t *victim)
 				victim->destscale = FixedMul(victim->destscale, SHRINK_SCALE);
 			}
 
-			if (victim->player->invincibilitytimer > 0)
+			if (P_IsLocalPlayer(victim->player) == false && victim->player->invincibilitytimer == 0)
 			{
-				; // invincibility has priority in P_RestoreMusic, no point in starting here
-			}
-			else if (P_IsLocalPlayer(victim->player) == true)
-			{
-				S_ChangeMusicSpecial("kgrow");
-			}
-			else //used to be "if (P_IsDisplayPlayer(victim->player) == false)"
-			{
+				// don't play this if the player has invincibility -- that takes priority
 				S_StartSound(victim, sfx_alarmg);
 			}
-
-			P_RestoreMusic(victim->player);
-
 		}
 	}
 	else

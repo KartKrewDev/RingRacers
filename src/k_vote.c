@@ -51,6 +51,7 @@
 #include "k_pwrlv.h"
 #include "k_grandprix.h"
 #include "k_color.h"
+#include "music.h"
 
 #ifdef HWRENDER
 #include "hardware/hw_main.h"
@@ -1174,7 +1175,7 @@ static void Y_TickVoteRoulette(void)
 								vote.roulette.endOffset++;
 							}
 
-							S_ChangeMusicInternal("voteeb", false);
+							Music_Play("vote_end");
 							break;
 						}
 					}
@@ -1461,8 +1462,7 @@ void Y_VoteTicker(void)
 
 	if (vote.tic == 0)
 	{
-		S_ChangeMusicInternal("vote", true);
-		S_ShowMusicCredit();
+		Music_Play("vote");
 	}
 
 	if (g_pickedVote != VOTE_NOT_PICKED)
@@ -1728,13 +1728,13 @@ void Y_SetupVoteFinish(SINT8 pick, SINT8 level)
 			{
 				// Only one unique vote, so just end it immediately.
 				vote.endtic = vote.tic + (5*TICRATE);
-				S_ChangeMusicInternal("voteeb", false);
+				Music_Play("vote_end");
 				Y_VoteStops(pick, level);
 				break;
 			}
 			default:
 			{
-				S_ChangeMusicInternal("voteea", true);
+				Music_Play("vote_suspense");
 				break;
 			}
 		}

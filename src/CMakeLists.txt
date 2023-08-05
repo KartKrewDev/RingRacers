@@ -148,6 +148,8 @@ add_executable(SRB2SDL2 MACOSX_BUNDLE WIN32
 	k_mapuser.c
 	k_powerup.cpp
 	k_hitlag.c
+	music.cpp
+	music_manager.cpp
 )
 
 if(SRB2_CONFIG_ENABLE_WEBM_MOVIES)
