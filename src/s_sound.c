@@ -2207,19 +2207,27 @@ static void PrintSongAuthors(const musicdef_t *def, UINT8 i)
 	PrintMusicDefField("Original Composers: ", def->composers);
 }
 
+static void PrintMusicDef(const char *song)
+{
+	UINT8 i = 0;
+	const musicdef_t *def = S_FindMusicDef(song, &i);
+
+	if (def != NULL)
+	{
+		PrintSongAuthors(def, i);
+	}
+}
+
 // TODO: fix this function, needs better support for map names
 static void Command_Tunes_f(void)
 {
 	const char *tunearg;
-	UINT16 track = 0;
-	UINT32 position = 0;
 	const size_t argc = COM_Argc();
 
 	if (argc < 2) //tunes slot ...
 	{
-		CONS_Printf("tunes <name/num> [track] [speed] [position] / <-show> / <-default> / <-none>:\n");
-		CONS_Printf(M_GetText("Play an arbitrary music lump. If a map number is used, 'MAP##M' is played.\n"));
-		CONS_Printf(M_GetText("If the format supports multiple songs, you can specify which one to play.\n\n"));
+		CONS_Printf("tunes <name> [speed] [position] / <-show> / <-showdefault> / <-default> / <-none>:\n");
+		CONS_Printf(M_GetText("Play an arbitrary music lump.\n\n"));
 		CONS_Printf(M_GetText("* With \"-show\", shows the currently playing tune and track.\n"));
 		CONS_Printf(M_GetText("* With \"-showdefault\", shows the current music for the level.\n"));
 		CONS_Printf(M_GetText("* With \"-default\", returns to the default music for the map.\n"));
@@ -2228,70 +2236,48 @@ static void Command_Tunes_f(void)
 	}
 
 	tunearg = COM_Argv(1);
-	track = 0;
 
 	if (!strcasecmp(tunearg, "-show"))
 	{
-		UINT8 i = 0;
-		const musicdef_t *def = S_FindMusicDef(music_name, &i);
-
-		CONS_Printf(M_GetText("The current tune is: %s [track %d]\n"),
-			music_name, (music_flags & MUSIC_TRACKMASK));
-
-		if (def != NULL)
-		{
-			PrintSongAuthors(def, i);
-		}
+		CONS_Printf(M_GetText("The current tune is: %s\n"), Music_CurrentSong());
+		PrintMusicDef(Music_CurrentSong());
 		return;
 	}
+
 	if (!strcasecmp(tunearg, "-showdefault"))
 	{
-		UINT8 i = 0;
-		const musicdef_t *def = S_FindMusicDef(mapmusname, &i);
-
-		CONS_Printf(M_GetText("The default tune is: %s [track %d]\n"),
-			mapmusname, (mapmusflags & MUSIC_TRACKMASK));
-
-		if (def != NULL)
-		{
-			PrintSongAuthors(def, i);
-		}
+		CONS_Printf(M_GetText("The default tune is: %s\n"), Music_Song("level"));
+		PrintMusicDef(Music_Song("level"));
 		return;
 	}
+
+	S_SoundTestStop();
+
 	if (!strcasecmp(tunearg, "-none"))
 	{
-		S_StopMusic();
+		Music_Remap("stereo", "");
+		Music_Play("stereo");
 		return;
 	}
-	else if (!strcasecmp(tunearg, "-default"))
+
+	if (!strcasecmp(tunearg, "-default"))
 	{
-		tunearg = mapheaderinfo[gamemap-1]->musname[mapmusrng];
-		track = mapheaderinfo[gamemap-1]->mustrack;
+		Music_Stop("stereo");
+		return;
 	}
 
-	if (strlen(tunearg) > 6) // This is automatic -- just show the error just in case
-		CONS_Alert(CONS_NOTICE, M_GetText("Music name too long - truncated to six characters.\n"));
-
-	if (argc > 2)
-		track = (UINT16)atoi(COM_Argv(2))-1;
-
-	strncpy(mapmusname, tunearg, 7);
-
-	if (argc > 4)
-		position = (UINT32)atoi(COM_Argv(4));
-
-	mapmusname[6] = 0;
-	mapmusflags = (track & MUSIC_TRACKMASK);
-	mapmusposition = position;
-	mapmusresume = 0;
-
-	S_ChangeMusicEx(mapmusname, mapmusflags, true, mapmusposition, 0, 0);
+	Music_Remap("stereo", tunearg);
+	Music_Loop("stereo", true);
+	Music_Play("stereo");
 
 	if (argc > 3)
+		Music_Seek("stereo", (atoi(COM_Argv(3)) * TICRATE) / 1000);
+
+	if (argc > 2)
 	{
-		float speed = (float)atof(COM_Argv(3));
+		float speed = (float)atof(COM_Argv(2));
 		if (speed > 0.0f)
-			S_SpeedMusic(speed);
+			I_SetSongSpeed(speed);
 	}
 }
 
