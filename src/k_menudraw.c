@@ -6016,7 +6016,12 @@ static void M_DrawStatsMaps(void)
 
 	for (i = 0; i < nummapheaders; i++)
 	{
+		// Check for no visibility
 		if (!mapheaderinfo[i] || (mapheaderinfo[i]->menuflags & (LF2_NOTIMEATTACK|LF2_HIDEINSTATS|LF2_HIDEINMENU)))
+			continue;
+
+		// No TEST RUN, as that's another exception to Time Attack too
+		if (!mapheaderinfo[i]->typeoflevel)
 			continue;
 
 		if (mapheaderinfo[i]->records.time <= 0)
@@ -6171,7 +6176,7 @@ static void M_DrawStatsMaps(void)
 	}
 bottomarrow:
 	if (dobottomarrow)
-		V_DrawCharacter(10, y-STATSSTEP + (skullAnimCounter/5),
+		V_DrawCharacter(10, y-10 + (skullAnimCounter/5),
 			'\x1B' | highlightflags, false); // down arrow
 }
 
