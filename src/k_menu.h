@@ -1270,6 +1270,8 @@ extern struct statisticsmenu_s {
 	statisticspage_t page;
 	INT32 location;
 	INT32 nummaps;
+	INT32 gotmedals;
+	INT32 nummedals;
 	INT32 numextramedals;
 	INT32 maxscroll;
 	UINT16 *maplist;

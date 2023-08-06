@@ -75,7 +75,7 @@ static void M_StatisticsMaps(void)
 		M_StatisticsAddMap(i, NULL, &headerexists);
 	}
 
-	if ((i = statisticsmenu.numextramedals = M_CountMedals(true, true)) != 0)
+	if ((i = statisticsmenu.numextramedals) != 0)
 		i += 2;
 
 	statisticsmenu.maplist[statisticsmenu.nummaps] = NEXTMAP_INVALID;

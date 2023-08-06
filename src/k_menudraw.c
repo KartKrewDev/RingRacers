@@ -6038,7 +6038,7 @@ static void M_DrawStatsMaps(void)
 	else
 		V_DrawRightAlignedThinString(BASEVIDWIDTH-20, 70, 0, "(complete)");
 
-	V_DrawThinString(32, 70, 0, va("x %d/%d", M_CountMedals(false, false), M_CountMedals(true, false)));
+	V_DrawThinString(30, 70, 0, va("x %d/%d", statisticsmenu.gotmedals, statisticsmenu.nummedals));
 	V_DrawSmallMappedPatch(20, 70, 0, W_CachePatchName("GOTITA", PU_CACHE),
 				                       R_GetTranslationColormap(TC_DEFAULT, SKINCOLOR_GOLD, GTC_MENUCACHE));
 
