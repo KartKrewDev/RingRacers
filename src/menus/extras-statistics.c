@@ -5,6 +5,7 @@
 #include "../z_zone.h"
 #include "../m_cond.h" // Condition Sets
 #include "../s_sound.h"
+#include "../r_skins.h"
 
 struct statisticsmenu_s statisticsmenu;
 
@@ -88,6 +89,97 @@ static void M_StatisticsMaps(void)
 	}
 }
 
+static void M_StatisticsChars(void)
+{
+	UINT16 i;
+
+	statisticsmenu.maplist = Z_Malloc(sizeof(UINT16) * (1 + numskins), PU_STATIC, NULL);
+	statisticsmenu.nummaps = 0;
+
+	UINT32 beststat = 0;
+
+	for (i = 0; i < numskins; i++)
+	{
+		if (!R_SkinUsable(-1, i, false))
+			continue;
+
+		statisticsmenu.maplist[statisticsmenu.nummaps++] = i;
+
+		if (skins[i].records.wins == 0)
+			continue;
+
+		// The following is a partial duplication of R_GetEngineClass
+		{
+			if (skins[i].flags & SF_IRONMAN)
+				continue; // does not add to any engine class
+
+			INT32 s = (skins[i].kartspeed - 1);
+			INT32 w = (skins[i].kartweight - 1);
+
+			#define LOCKSTAT(stat) \
+				if (stat < 0) { continue; } \
+				if (stat > 8) { continue; }
+				LOCKSTAT(s);
+				LOCKSTAT(w);
+			#undef LOCKSTAT
+
+			if (
+				statisticsmenu.statgridplayed[s][w] > skins[i].records.wins
+				&& (UINT32_MAX - statisticsmenu.statgridplayed[s][w]) < skins[i].records.wins
+			)
+				continue; // overflow protection
+
+			statisticsmenu.statgridplayed[s][w] += skins[i].records.wins;
+
+			if (beststat >= statisticsmenu.statgridplayed[s][w])
+				continue;
+
+			beststat = statisticsmenu.statgridplayed[s][w];
+		}
+	}
+
+	statisticsmenu.maplist[statisticsmenu.nummaps] = NEXTMAP_INVALID;
+
+	statisticsmenu.location = 0;
+	statisticsmenu.maxscroll = statisticsmenu.nummaps - 6;
+
+	if (statisticsmenu.maxscroll < 0)
+	{
+		statisticsmenu.maxscroll = 0;
+	}
+
+	if (beststat != 0)
+	{
+		UINT16 j;
+		UINT8 shif = 0;
+
+		// Done this way to ensure ample precision but also prevent overflow
+		while (beststat < FRACUNIT)
+		{
+			beststat <<= 1;
+			shif++;
+		}
+
+		for (i = 0; i < 9; i++)
+		{
+			for (j = 0; j < 9; j++)
+			{
+				if (statisticsmenu.statgridplayed[i][j] == 0)
+					continue;
+
+				statisticsmenu.statgridplayed[i][j] =
+					FixedDiv(
+						statisticsmenu.statgridplayed[i][j] << shif,
+						beststat
+					);
+
+				if (statisticsmenu.statgridplayed[i][j] == 0)
+					statisticsmenu.statgridplayed[i][j] = 1;
+			}
+		}
+	}
+}
+
 static void M_StatisticsPageInit(void)
 {
 	switch (statisticsmenu.page)
@@ -98,20 +190,9 @@ static void M_StatisticsPageInit(void)
 			break;
 		}
 
-		default:
-			break;
-	}
-}
-
-static void M_StatisticsPageClear(void)
-{
-	switch (statisticsmenu.page)
-	{
-		case statisticspage_maps:
+		case statisticspage_chars:
 		{
-			Z_Free(statisticsmenu.maplist);
-			statisticsmenu.maplist = NULL;
-
+			M_StatisticsChars();
 			break;
 		}
 
@@ -120,9 +201,22 @@ static void M_StatisticsPageClear(void)
 	}
 }
 
+static void M_StatisticsPageClear(void)
+{
+	if (statisticsmenu.maplist != NULL)
+	{
+		Z_Free(statisticsmenu.maplist);
+		statisticsmenu.maplist = NULL;
+	}
+}
+
 void M_Statistics(INT32 choice)
 {
 	(void)choice;
+
+	statisticsmenu.gotmedals = M_CountMedals(false, false);
+	statisticsmenu.nummedals = M_CountMedals(true, false);
+	statisticsmenu.numextramedals = M_CountMedals(true, true);
 
 	statisticsmenu.page = statisticspage_basic;
 	M_StatisticsPageInit();
@@ -169,8 +263,8 @@ boolean M_StatisticsInputs(INT32 ch)
 		return true;
 	}
 
-	if (statisticsmenu.page != statisticspage_maps)
-		return true; // temporary
+	if (statisticsmenu.maplist == NULL)
+		return true;
 
 	if (M_MenuExtraPressed(pid))
 	{

@@ -6180,6 +6180,120 @@ bottomarrow:
 			'\x1B' | highlightflags, false); // down arrow
 }
 
+#undef STATSSTEP
+#define STATSSTEP 18
+
+static void M_DrawStatsChars(void)
+{
+	INT32 y = 80, i, j;
+	INT16 skin;
+	boolean dobottomarrow = (statisticsmenu.location < statisticsmenu.maxscroll);
+	INT32 location = statisticsmenu.location;
+
+	if (!statisticsmenu.maplist)
+	{
+		V_DrawCenteredThinString(BASEVIDWIDTH/2, 62, 0, "No chars!?");
+		return;
+	}
+
+	if (location)
+		V_DrawCharacter(10, y-(skullAnimCounter/5),
+			'\x1A' | highlightflags, false); // up arrow
+
+	i = -1;
+
+	V_DrawThinString(20, y - 10, highlightflags, "CHARACTER");
+	V_DrawRightAlignedThinString(BASEVIDWIDTH/2 + 34, y - 10, highlightflags, "WINS");
+
+	while ((skin = statisticsmenu.maplist[++i]) != NEXTMAP_INVALID)
+	{
+		if (location)
+		{
+			--location;
+			continue;
+		}
+
+		{
+			UINT8 *colormap = R_GetTranslationColormap(skin, skins[skin].prefcolor, GTC_MENUCACHE);
+
+			V_DrawFixedPatch(24*FRACUNIT, y*FRACUNIT,
+				FRACUNIT,
+				0, faceprefix[skin][FACE_RANK],
+				colormap);
+
+			V_DrawFadeFill(24+16, y, 16, 16, 0, 31, 8); // challengetransparentstrength
+
+			V_DrawFill(24+16+5,   y+1,    1, 14,  0);
+			V_DrawFill(24+16+5+5, y+1,    1, 14,  0);
+			V_DrawFill(24+16+1,   y+5,   14,  1,  0);
+			V_DrawFill(24+16+1,   y+5+5, 14,  1,  0);
+
+			// The following is a partial duplication of R_GetEngineClass
+			{
+				INT32 s = (skins[skin].kartspeed - 1)/3;
+				INT32 w = (skins[skin].kartweight - 1)/3;
+
+				#define LOCKSTAT(stat) \
+					if (stat < 0) { stat = 0; } \
+					if (stat > 2) { stat = 2; }
+					LOCKSTAT(s);
+					LOCKSTAT(w);
+				#undef LOCKSTAT
+
+				V_DrawFill(24+16 + (s*5), y + (w*5), 6, 6, 0);
+			}
+		}
+
+		V_DrawThinString(24+32+2, y+3, 0, skins[skin].realname);
+
+		V_DrawRightAlignedThinString(BASEVIDWIDTH/2 + 30, y+3, 0, va("%d", skins[skin].records.wins));
+
+		y += STATSSTEP;
+
+		if (y >= BASEVIDHEIGHT-STATSSTEP)
+			goto bottomarrow;
+	}
+
+bottomarrow:
+	if (dobottomarrow)
+		V_DrawCharacter(10, y-10 + (skullAnimCounter/5),
+			'\x1B' | highlightflags, false); // down arrow
+
+	UINT32 x = BASEVIDWIDTH - 20 - 90;
+	y = 88;
+
+	V_DrawCenteredThinString(x + 45, y - 10, highlightflags, "HEATMAP");
+
+	V_DrawFadeFill(x, y, 91, 91, 0, 31, 8); // challengetransparentstrength
+
+	V_DrawFill(x+30, y+1,  1, 89,  0);
+	V_DrawFill(x+60, y+1,  1, 89,  0);
+	V_DrawFill(x+1,  y+30, 89, 1,  0);
+	V_DrawFill(x+1,  y+60, 89, 1,  0);
+
+	x++;
+	y++;
+
+	for (i = 0; i < 9; i++)
+	{
+		for (j = 0; j < 9; j++)
+		{
+			if (statisticsmenu.statgridplayed[i][j] == 0)
+				continue;
+
+			V_DrawFill(
+				x + (i * 10),
+				y + (j * 10),
+				9,
+				9,
+				31 - ((statisticsmenu.statgridplayed[i][j] - 1) * 32) / FRACUNIT
+			);
+		}
+	}
+}
+
+#undef STATSSTEP
+
 void M_DrawStatistics(void)
 {
 	char beststr[256];
@@ -6190,8 +6304,47 @@ void M_DrawStatistics(void)
 		V_DrawFixedPatch(0, 0, FRACUNIT, 0, bg, NULL);
 	}
 
+	{
+		const char *pagename = NULL;
+		INT32 pagenamewidth = 0;
+
+		V_DrawFixedPatch(0, 0, FRACUNIT, 0, W_CachePatchName("MENUHINT", PU_CACHE), NULL);
+
+		switch (statisticsmenu.page)
+		{
+			case statisticspage_maps:
+			{
+				pagename = "LEVELS & MEDALS";
+				M_DrawStatsMaps();
+				break;
+			}
+
+			case statisticspage_chars:
+			{
+				pagename = "CHARACTERS & ENGINE CLASSES";
+				M_DrawStatsChars();
+				break;
+			}
+
+			default:
+				break;
+		}
+
+		if (pagename)
+		{
+			pagenamewidth = V_ThinStringWidth(pagename, 0);
+			V_DrawThinString((BASEVIDWIDTH - pagenamewidth)/2, 12, 0, pagename);
+		}
+
+		V_DrawCharacter((BASEVIDWIDTH - pagenamewidth)/2 - 10 - (skullAnimCounter/5), 12,
+			'\x1C', false); // left arrow
+
+		V_DrawCharacter((BASEVIDWIDTH + pagenamewidth)/2 + 2 + (skullAnimCounter/5), 12,
+			'\x1D', false); // right arrow
+	}
+
 	beststr[0] = 0;
-	V_DrawThinString(20, 22, highlightflags, "Total Play Time:");
+	V_DrawThinString(20, 30, highlightflags, "Total Play Time:");
 	besttime = G_TicsToHours(gamedata->totalplaytime);
 	if (besttime)
 	{
@@ -6210,10 +6363,10 @@ void M_DrawStatistics(void)
 	}
 	besttime = G_TicsToSeconds(gamedata->totalplaytime);
 	strcat(beststr, va("%i second%s", besttime, (besttime == 1 ? "" : "s")));
-	V_DrawRightAlignedThinString(BASEVIDWIDTH-20, 22, 0, beststr);
+	V_DrawRightAlignedThinString(BASEVIDWIDTH-20, 30, 0, beststr);
 	beststr[0] = 0;
 
-	V_DrawThinString(20, 32, highlightflags, "Total Rings:");
+	V_DrawThinString(20, 40, highlightflags, "Total Rings:");
 	if (gamedata->totalrings > GDMAX_RINGS)
 	{
 		sprintf(beststr, "%c999,999,999+", '\x82');
@@ -6230,10 +6383,10 @@ void M_DrawStatistics(void)
 	{
 		sprintf(beststr, "%u", gamedata->totalrings);
 	}
-	V_DrawRightAlignedThinString(BASEVIDWIDTH-20, 32, 0, va("%s collected", beststr));
+	V_DrawRightAlignedThinString(BASEVIDWIDTH-20, 40, 0, va("%s collected", beststr));
 
 	beststr[0] = 0;
-	V_DrawThinString(20, 42, highlightflags, "Total Rounds:");
+	V_DrawThinString(20, 50, highlightflags, "Total Rounds:");
 
 	strcat(beststr, va("%u Race", gamedata->roundsplayed[GDGT_RACE]));
 
@@ -6254,22 +6407,8 @@ void M_DrawStatistics(void)
 		strcat(beststr, va(", %u Custom", gamedata->roundsplayed[GDGT_CUSTOM]));
 	}
 
-	V_DrawRightAlignedThinString(BASEVIDWIDTH-20, 42, 0, beststr);
-
-	switch (statisticsmenu.page)
-	{
-		case statisticspage_maps:
-		{
-			M_DrawStatsMaps();
-			break;
-		}
-
-		default:
-			break;
-	}
+	V_DrawRightAlignedThinString(BASEVIDWIDTH-20, 50, 0, beststr);
 }
-
-#undef STATSSTEP
 
 static INT32 M_WrongWarpFallingHelper(INT32 y, INT32 falltime)
 {
