@@ -43,13 +43,11 @@ static boolean M_StatisticsAddMap(UINT16 map, cupheader_t *cup, boolean *headere
 	return true;
 }
 
-void M_Statistics(INT32 choice)
+static void M_StatisticsMaps(void)
 {
 	cupheader_t *cup;
 	UINT16 i;
 	boolean headerexists;
-
-	(void)choice;
 
 	statisticsmenu.maplist = Z_Malloc(sizeof(UINT16) * (nummapheaders+1 + numkartcupheaders), PU_STATIC, NULL);
 	statisticsmenu.nummaps = 0;
@@ -88,6 +86,46 @@ void M_Statistics(INT32 choice)
 	{
 		statisticsmenu.maxscroll = 0;
 	}
+}
+
+static void M_StatisticsPageInit(void)
+{
+	switch (statisticsmenu.page)
+	{
+		case statisticspage_maps:
+		{
+			M_StatisticsMaps();
+			break;
+		}
+
+		default:
+			break;
+	}
+}
+
+static void M_StatisticsPageClear(void)
+{
+	switch (statisticsmenu.page)
+	{
+		case statisticspage_maps:
+		{
+			Z_Free(statisticsmenu.maplist);
+			statisticsmenu.maplist = NULL;
+
+			break;
+		}
+
+		default:
+			break;
+	}
+}
+
+void M_Statistics(INT32 choice)
+{
+	(void)choice;
+
+	statisticsmenu.page = statisticspage_basic;
+	M_StatisticsPageInit();
 
 	MISC_StatisticsDef.prevMenu = currentMenu;
 	M_SetupNextMenu(&MISC_StatisticsDef, false);
@@ -104,11 +142,35 @@ boolean M_StatisticsInputs(INT32 ch)
 		M_GoBack(0);
 		M_SetMenuDelay(pid);
 
-		Z_Free(statisticsmenu.maplist);
-		statisticsmenu.maplist = NULL;
+		M_StatisticsPageClear();
 
 		return true;
 	}
+
+	if (menucmd[pid].dpad_lr != 0)
+	{
+		M_StatisticsPageClear();
+
+		statisticsmenu.page +=
+			statisticspage_max
+			+ (
+				(menucmd[pid].dpad_lr > 0)
+					? 1
+					: -1
+			);
+
+		statisticsmenu.page %= statisticspage_max;
+
+		M_StatisticsPageInit();
+
+		S_StartSound(NULL, sfx_s3k5b);
+		M_SetMenuDelay(pid);
+
+		return true;
+	}
+
+	if (statisticsmenu.page != statisticspage_maps)
+		return true; // temporary
 
 	if (M_MenuExtraPressed(pid))
 	{

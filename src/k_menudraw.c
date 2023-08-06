@@ -5997,14 +5997,56 @@ static void M_DrawMapMedals(INT32 mapnum, INT32 x, INT32 y)
 
 static void M_DrawStatsMaps(void)
 {
-	INT32 y = 80, i = -1;
+	INT32 y = 80, i;
 	INT16 mnum;
 	boolean dotopname = true, dobottomarrow = (statisticsmenu.location < statisticsmenu.maxscroll);
 	INT32 location = statisticsmenu.location;
 
+	char beststr[256];
+
+	tic_t besttime = 0;
+
+	INT32 mapsunfinished = 0;
+
+	if (!statisticsmenu.maplist)
+	{
+		V_DrawCenteredThinString(BASEVIDWIDTH/2, 62, 0, "No maps!?");
+		return;
+	}
+
+	for (i = 0; i < nummapheaders; i++)
+	{
+		if (!mapheaderinfo[i] || (mapheaderinfo[i]->menuflags & (LF2_NOTIMEATTACK|LF2_HIDEINSTATS|LF2_HIDEINMENU)))
+			continue;
+
+		if (mapheaderinfo[i]->records.time <= 0)
+		{
+			mapsunfinished++;
+			continue;
+		}
+
+		besttime += mapheaderinfo[i]->records.time;
+	}
+
+	V_DrawThinString(20, 60, 0, "Combined time records:");
+
+	sprintf(beststr, "%i:%02i:%02i.%02i", G_TicsToHours(besttime), G_TicsToMinutes(besttime, false), G_TicsToSeconds(besttime), G_TicsToCentiseconds(besttime));
+	V_DrawRightAlignedThinString(BASEVIDWIDTH-20, 60, (mapsunfinished ? V_REDMAP : 0), beststr);
+
+	if (mapsunfinished)
+		V_DrawRightAlignedThinString(BASEVIDWIDTH-20, 70, V_REDMAP, va("(%d unfinished)", mapsunfinished));
+	else
+		V_DrawRightAlignedThinString(BASEVIDWIDTH-20, 70, 0, "(complete)");
+
+	V_DrawThinString(32, 70, 0, va("x %d/%d", M_CountMedals(false, false), M_CountMedals(true, false)));
+	V_DrawSmallMappedPatch(20, 70, 0, W_CachePatchName("GOTITA", PU_CACHE),
+				                       R_GetTranslationColormap(TC_DEFAULT, SKINCOLOR_GOLD, GTC_MENUCACHE));
+
 	if (location)
 		V_DrawCharacter(10, y-(skullAnimCounter/5),
 			'\x1A' | highlightflags, false); // up arrow
+
+	i = -1;
 
 	while ((mnum = statisticsmenu.maplist[++i]) != NEXTMAP_INVALID)
 	{
@@ -6136,11 +6178,7 @@ bottomarrow:
 void M_DrawStatistics(void)
 {
 	char beststr[256];
-
 	tic_t besttime = 0;
-
-	INT32 i;
-	INT32 mapsunfinished = 0;
 
 	{
 		patch_t *bg = W_CachePatchName("M_XTRABG", PU_CACHE);
@@ -6213,43 +6251,17 @@ void M_DrawStatistics(void)
 
 	V_DrawRightAlignedThinString(BASEVIDWIDTH-20, 42, 0, beststr);
 
-	if (!statisticsmenu.maplist)
+	switch (statisticsmenu.page)
 	{
-		V_DrawCenteredThinString(BASEVIDWIDTH/2, 62, 0, "No maps!?");
-		return;
-	}
-
-	besttime = 0;
-
-	for (i = 0; i < nummapheaders; i++)
-	{
-		if (!mapheaderinfo[i] || (mapheaderinfo[i]->menuflags & (LF2_NOTIMEATTACK|LF2_HIDEINSTATS|LF2_HIDEINMENU)))
-			continue;
-
-		if (mapheaderinfo[i]->records.time <= 0)
+		case statisticspage_maps:
 		{
-			mapsunfinished++;
-			continue;
+			M_DrawStatsMaps();
+			break;
 		}
 
-		besttime += mapheaderinfo[i]->records.time;
+		default:
+			break;
 	}
-
-	V_DrawThinString(20, 60, 0, "Combined time records:");
-
-	sprintf(beststr, "%i:%02i:%02i.%02i", G_TicsToHours(besttime), G_TicsToMinutes(besttime, false), G_TicsToSeconds(besttime), G_TicsToCentiseconds(besttime));
-	V_DrawRightAlignedThinString(BASEVIDWIDTH-20, 60, (mapsunfinished ? V_REDMAP : 0), beststr);
-
-	if (mapsunfinished)
-		V_DrawRightAlignedThinString(BASEVIDWIDTH-20, 70, V_REDMAP, va("(%d unfinished)", mapsunfinished));
-	else
-		V_DrawRightAlignedThinString(BASEVIDWIDTH-20, 70, 0, "(complete)");
-
-	V_DrawThinString(32, 70, 0, va("x %d/%d", M_CountMedals(false, false), M_CountMedals(true, false)));
-	V_DrawSmallMappedPatch(20, 70, 0, W_CachePatchName("GOTITA", PU_CACHE),
-				                       R_GetTranslationColormap(TC_DEFAULT, SKINCOLOR_GOLD, GTC_MENUCACHE));
-
-	M_DrawStatsMaps();
 }
 
 #undef STATSSTEP

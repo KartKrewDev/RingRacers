@@ -1259,7 +1259,15 @@ void M_DrawChallenges(void);
 void M_ChallengesTick(void);
 boolean M_ChallengesInputs(INT32 ch);
 
+typedef enum
+{
+	statisticspage_basic = 0,
+	statisticspage_maps,
+	statisticspage_max
+} statisticspage_t;
+
 extern struct statisticsmenu_s {
+	statisticspage_t page;
 	INT32 location;
 	INT32 nummaps;
 	INT32 numextramedals;
