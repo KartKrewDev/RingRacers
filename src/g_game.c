@@ -5024,8 +5024,6 @@ void G_LoadGameData(void)
 				dummyrecord.wins = READUINT32(save.p);
 				dummyrecord._saveid = i;
 
-				CONS_Printf(" (TEMPORARY DISPLAY) skinname is \"%s\", has %u wins\n", skinname, dummyrecord.wins);
-
 				tempskinreferences[i].id = MAXSKINS;
 
 				if (skin != -1)
