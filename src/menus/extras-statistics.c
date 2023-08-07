@@ -180,6 +180,32 @@ static void M_StatisticsChars(void)
 	}
 }
 
+static void M_StatisticsGP(void)
+{
+	statisticsmenu.maplist = Z_Malloc(sizeof(UINT16) * (1 + numkartcupheaders), PU_STATIC, NULL);
+	statisticsmenu.nummaps = 0;
+
+	cupheader_t *cup;
+
+	for (cup = kartcupheaders; cup; cup = cup->next)
+	{
+		if (M_CupLocked(cup))
+			continue;
+
+		statisticsmenu.maplist[statisticsmenu.nummaps++] = cup->id;
+	}
+
+	statisticsmenu.maplist[statisticsmenu.nummaps] = UINT16_MAX;
+
+	statisticsmenu.location = 0;
+	statisticsmenu.maxscroll = statisticsmenu.nummaps - 5;
+
+	if (statisticsmenu.maxscroll < 0)
+	{
+		statisticsmenu.maxscroll = 0;
+	}
+}
+
 static void M_StatisticsPageInit(void)
 {
 	switch (statisticsmenu.page)
@@ -193,6 +219,12 @@ static void M_StatisticsPageInit(void)
 		case statisticspage_chars:
 		{
 			M_StatisticsChars();
+			break;
+		}
+	
+		case statisticspage_gp:
+		{
+			M_StatisticsGP();
 			break;
 		}
 

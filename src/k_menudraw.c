@@ -6287,6 +6287,104 @@ bottomarrow:
 }
 
 #undef STATSSTEP
+#define STATSSTEP 21
+
+static void M_DrawStatsGP(void)
+{
+	INT32 y = 80, i, x, j, endj;
+	INT16 id;
+	boolean dobottomarrow = (statisticsmenu.location < statisticsmenu.maxscroll);
+	INT32 location = statisticsmenu.location;
+
+	if (!statisticsmenu.maplist)
+	{
+		V_DrawCenteredThinString(BASEVIDWIDTH/2, 62, 0, "No cups!?");
+		return;
+	}
+
+	if (location)
+		V_DrawCharacter(10, y-(skullAnimCounter/5),
+			'\x1A' | highlightflags, false); // up arrow
+
+	const INT32 width = 44;
+
+	endj = KARTSPEED_NORMAL;
+	if (M_SecretUnlocked(SECRET_HARDSPEED, true))
+	{
+		endj = M_SecretUnlocked(SECRET_MASTERMODE, true)
+			? KARTGP_MASTER
+			: KARTSPEED_HARD;
+	}
+
+	x = BASEVIDWIDTH - 20 - width;
+	for (j = endj; j >= KARTSPEED_EASY; j--, x -= width)
+	{
+		V_DrawCenteredThinString(x + 19, y - 10, highlightflags|V_FORCEUPPERCASE, gpdifficulty_cons_t[j].strvalue);
+	}
+
+	i = -1;
+
+	V_DrawThinString(20, y - 10, highlightflags, "CUP");
+
+	cupheader_t *cup = kartcupheaders;
+
+	while ((id = statisticsmenu.maplist[++i]) < numkartcupheaders)
+	{
+		if (location)
+		{
+			--location;
+			continue;
+		}
+
+		// If we have ANY sort of sorting other than instantiation, this won't work
+		while (cup && cup->id != id)
+		{
+			cup = cup->next;
+		}
+
+		if (!cup)
+		{
+			goto bottomarrow;
+		}
+
+		V_DrawFill(24, y, 21, 20, 31);
+
+		V_DrawScaledPatch(24-1, y-1, 0, W_CachePatchName(cup->icon, PU_CACHE));
+		V_DrawScaledPatch(24-1, y-1, 0, W_CachePatchName("CUPBOX", PU_CACHE));
+
+		V_DrawThinString(24+23+2, y + 6, 0, cup->name);
+
+		x = BASEVIDWIDTH - 20 - width;
+		for (j = endj; j >= KARTSPEED_EASY; j--, x -= width)
+		{
+			if (cup->windata[j].best_placement == 0)
+			{
+				V_DrawCenteredThinString(
+					x + 19, y + 7,
+					V_GRAYMAP,
+					j == KARTSPEED_EASY
+						? "- - - -"
+						: "- - - - - -"
+				);
+				continue;
+			}
+
+			M_DrawCupWinData(x, y + 6, cup, j, false, true);
+		}
+
+		y += STATSSTEP;
+
+		if (y >= BASEVIDHEIGHT-STATSSTEP)
+			goto bottomarrow;
+	}
+
+bottomarrow:
+	if (dobottomarrow)
+		V_DrawCharacter(10, y-10 + (skullAnimCounter/5),
+			'\x1B' | highlightflags, false); // down arrow
+}
+
+#undef STATSSTEP
 
 void M_DrawStatistics(void)
 {
@@ -6306,6 +6404,16 @@ void M_DrawStatistics(void)
 
 		switch (statisticsmenu.page)
 		{
+
+			case statisticspage_gp:
+			{
+				pagename = gamedata->everseenspecial
+					? "GRAND PRIX & EMERALDS"
+					: "GRAND PRIX";
+				M_DrawStatsGP();
+				break;
+			}
+
 			case statisticspage_maps:
 			{
 				pagename = "LEVELS & MEDALS";
