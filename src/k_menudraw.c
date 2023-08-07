@@ -2418,6 +2418,104 @@ static void M_DrawCupTitle(INT16 y, levelsearch_t *levelsearch)
 	}
 }
 
+void M_DrawCupWinData(INT32 rankx, INT32 ranky, cupheader_t *cup, UINT8 difficulty, boolean flash, boolean shift)
+{
+	INT32 rankw = 14 + 1 + 12;
+	if (!shift || (difficulty != KARTSPEED_EASY && gamedata->everseenspecial))
+		rankw += 1 + 12;
+
+	rankx += 19 - (rankw / 2);
+
+	patch_t *gradePat = NULL;
+	UINT8 *colormap = NULL;
+
+	cupwindata_t *windata = &(cup->windata[difficulty]);
+
+	const gp_rank_e grade = windata->best_grade; // (cupgrid.previewanim/TICRATE) % (GRADE_S + 1); -- testing
+	UINT16 gradecolor = K_GetGradeColor(grade);
+
+	if (gradecolor != SKINCOLOR_NONE)
+		colormap = R_GetTranslationColormap(TC_DEFAULT, gradecolor, GTC_MENUCACHE);
+
+	switch (grade)
+	{
+		case GRADE_E:
+			gradePat = W_CachePatchName("R_CUPRNE", PU_CACHE);
+			break;
+		case GRADE_D:
+			gradePat = W_CachePatchName("R_CUPRND", PU_CACHE);
+			break;
+		case GRADE_C:
+			gradePat = W_CachePatchName("R_CUPRNC", PU_CACHE);
+			break;
+		case GRADE_B:
+			gradePat = W_CachePatchName("R_CUPRNB", PU_CACHE);
+			break;
+		case GRADE_A:
+			gradePat = W_CachePatchName("R_CUPRNA", PU_CACHE);
+			break;
+		case GRADE_S:
+			gradePat = W_CachePatchName("R_CUPRNS", PU_CACHE);
+			break;
+		default:
+			break;
+	}
+
+	if (gradePat)
+		V_DrawFixedPatch((rankx)*FRACUNIT, (ranky)*FRACUNIT, FRACUNIT, 0, gradePat, colormap);
+
+	rankx += 14 + 1;
+
+	patch_t *charPat = NULL;
+
+	if ((windata->best_skin.unloaded != NULL)
+		|| (windata->best_skin.id > numskins))
+	{
+		colormap = NULL;
+
+		charPat = W_CachePatchName("HUHMAP", PU_CACHE);
+	}
+	else
+	{
+		UINT8 skin = windata->best_skin.id;
+
+		colormap = R_GetTranslationColormap(skin, skins[skin].prefcolor, GTC_MENUCACHE);
+
+		charPat = faceprefix[skin][FACE_MINIMAP];
+	}
+
+	if (charPat)
+		V_DrawFixedPatch((rankx)*FRACUNIT, (ranky)*FRACUNIT, FRACUNIT, 0, charPat, colormap);
+
+	if (difficulty > 0
+		&& windata->got_emerald == true)
+	{
+		rankx += 12 + 1;
+
+		if (cup->emeraldnum == 0)
+			V_DrawCharacter(rankx+2, ranky+2, '+', false);
+		else
+		{
+			colormap = NULL;
+
+			if (!flash)
+			{
+				UINT16 col = SKINCOLOR_CHAOSEMERALD1 + (cup->emeraldnum-1) % 7;
+
+				colormap = R_GetTranslationColormap(TC_DEFAULT, col, GTC_MENUCACHE);
+			}
+
+			const char *emname = va(
+				"%sMAP%c",
+				(cup->emeraldnum > 7) ? "SUP" : "EME",
+				colormap ? '\0' : 'B'
+			);
+
+			V_DrawFixedPatch((rankx)*FRACUNIT, (ranky)*FRACUNIT, FRACUNIT, 0, W_CachePatchName(emname, PU_CACHE), colormap);
+		}
+	}
+}
+
 void M_DrawCupSelect(void)
 {
 	UINT8 i, j, temp = 0;
@@ -2523,100 +2621,16 @@ void M_DrawCupSelect(void)
 					V_DrawScaledPatch(x + 32, y + 32, 0, W_CachePatchName("CUPBKUP1", PU_CACHE));
 				}
 
-				if (!windata)
-					;
-				else if (windata->best_placement != 0)
+				if (windata && windata->best_placement != 0)
 				{
-					const INT32 rankw = 14 + 12 + 12 + 2;
-					INT32 rankx = (x + 19) - (rankw / 2);
-					const INT32 ranky = 8 + (j*100) - (30*menutransition.tics);
-
-					patch_t *gradePat = NULL;
-					colormap = NULL;
-
-					const gp_rank_e grade = windata->best_grade; // (cupgrid.previewanim/TICRATE) % (GRADE_S + 1); -- testing
-					UINT16 gradecolor = K_GetGradeColor(grade);
-
-					if (gradecolor != SKINCOLOR_NONE)
-						colormap = R_GetTranslationColormap(TC_DEFAULT, gradecolor, GTC_MENUCACHE);
-
-					switch (grade)
-					{
-						case GRADE_E:
-							gradePat = W_CachePatchName("R_CUPRNE", PU_CACHE);
-							break;
-						case GRADE_D:
-							gradePat = W_CachePatchName("R_CUPRND", PU_CACHE);
-							break;
-						case GRADE_C:
-							gradePat = W_CachePatchName("R_CUPRNC", PU_CACHE);
-							break;
-						case GRADE_B:
-							gradePat = W_CachePatchName("R_CUPRNB", PU_CACHE);
-							break;
-						case GRADE_A:
-							gradePat = W_CachePatchName("R_CUPRNA", PU_CACHE);
-							break;
-						case GRADE_S:
-							gradePat = W_CachePatchName("R_CUPRNS", PU_CACHE);
-							break;
-						default:
-							break;
-					}
-
-					if (gradePat)
-						V_DrawFixedPatch((rankx)*FRACUNIT, (ranky)*FRACUNIT, FRACUNIT, 0, gradePat, colormap);
-
-					rankx += 14 + 1;
-
-					patch_t *charPat = NULL;
-
-					if ((windata->best_skin.unloaded != NULL)
-						|| (windata->best_skin.id > numskins))
-					{
-						colormap = NULL;
-
-						charPat = W_CachePatchName("HUHMAP", PU_CACHE);
-					}
-					else
-					{
-						UINT8 skin = windata->best_skin.id;
-
-						colormap = R_GetTranslationColormap(skin, skins[skin].prefcolor, GTC_MENUCACHE);
-
-						charPat = faceprefix[skin][FACE_MINIMAP];
-					}
-
-					if (charPat)
-						V_DrawFixedPatch((rankx)*FRACUNIT, (ranky)*FRACUNIT, FRACUNIT, 0, charPat, colormap);
-
-					if (cv_dummygpdifficulty.value > 0
-						&& windata->got_emerald == true)
-					{
-						rankx += 12 + 1;
-
-						if (templevelsearch.cup->emeraldnum == 0)
-							V_DrawCharacter(rankx+2, ranky+2, '+', false);
-						else
-						{
-							colormap = NULL;
-
-							if (!(cupgrid.previewanim & 1))
-							{
-								UINT16 col = SKINCOLOR_CHAOSEMERALD1 + (templevelsearch.cup->emeraldnum-1) % 7;
-
-								colormap = R_GetTranslationColormap(TC_DEFAULT, col, GTC_MENUCACHE);
-							}
-
-							const char *emname = va(
-								"%sMAP%c",
-								(templevelsearch.cup->emeraldnum > 7) ? "SUP" : "EME",
-								colormap ? '\0' : 'B'
-							);
-
-							V_DrawFixedPatch((rankx)*FRACUNIT, (ranky)*FRACUNIT, FRACUNIT, 0, W_CachePatchName(emname, PU_CACHE), colormap);
-						}
-					}
+					M_DrawCupWinData(
+						x,
+						8 + (j*100) - (30*menutransition.tics),
+						templevelsearch.cup,
+						cv_dummygpdifficulty.value,
+						(cupgrid.previewanim & 1),
+						false
+					);
 				}
 			}
 		}
