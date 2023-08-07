@@ -1283,6 +1283,8 @@ void M_Statistics(INT32 choice);
 void M_DrawStatistics(void);
 boolean M_StatisticsInputs(INT32 ch);
 
+void M_DrawCharacterIconAndEngine(INT32 x, INT32 y, UINT8 skin, UINT8 *colormap, boolean dot);
+
 #define MAXWRONGPLAYER MAXSPLITSCREENPLAYERS
 #define WRONGPLAYEROFFSCREEN 48
 

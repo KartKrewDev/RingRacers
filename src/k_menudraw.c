@@ -5283,6 +5283,41 @@ drawborder:
 
 #define challengetransparentstrength 8
 
+void M_DrawCharacterIconAndEngine(INT32 x, INT32 y, UINT8 skin, UINT8 *colormap, boolean dot)
+{
+	V_DrawFixedPatch(x*FRACUNIT, y*FRACUNIT,
+		FRACUNIT,
+		0, faceprefix[skin][FACE_RANK],
+		colormap);
+
+	if (dot)
+	{
+		V_DrawScaledPatch(x, y + 11, 0, W_CachePatchName("ALTSDOT", PU_CACHE));
+	}
+
+	V_DrawFadeFill(x+16, y, 16, 16, 0, 31, challengetransparentstrength);
+
+	V_DrawFill(x+16+5,   y+1,    1, 14,  0);
+	V_DrawFill(x+16+5+5, y+1,    1, 14,  0);
+	V_DrawFill(x+16+1,   y+5,   14,  1,  0);
+	V_DrawFill(x+16+1,   y+5+5, 14,  1,  0);
+
+	// The following is a partial duplication of R_GetEngineClass
+	{
+		INT32 s = (skins[skin].kartspeed - 1)/3;
+		INT32 w = (skins[skin].kartweight - 1)/3;
+
+		#define LOCKSTAT(stat) \
+			if (stat < 0) { stat = 0; } \
+			if (stat > 2) { stat = 2; }
+			LOCKSTAT(s);
+			LOCKSTAT(w);
+		#undef LOCKSTAT
+
+		V_DrawFill(x+16 + (s*5), y + (w*5), 6, 6, 0);
+	}
+}
+
 static void M_DrawChallengePreview(INT32 x, INT32 y)
 {
 	unlockable_t *ref = NULL;
@@ -5349,37 +5384,7 @@ static void M_DrawChallengePreview(INT32 x, INT32 y)
 					break;
 				}
 
-				V_DrawFixedPatch(4*FRACUNIT, (BASEVIDHEIGHT-(4+16))*FRACUNIT,
-					FRACUNIT,
-					0, faceprefix[i][FACE_RANK],
-					colormap);
-
-				if (i != skin)
-				{
-					V_DrawScaledPatch(4, (11 + BASEVIDHEIGHT-(4+16)), 0, W_CachePatchName("ALTSDOT", PU_CACHE));
-				}
-
-				V_DrawFadeFill(4+16, (BASEVIDHEIGHT-(4+16)), 16, 16, 0, 31, challengetransparentstrength);
-
-				V_DrawFill(4+16+5,   (BASEVIDHEIGHT-(4+16))+1,    1, 14,  0);
-				V_DrawFill(4+16+5+5, (BASEVIDHEIGHT-(4+16))+1,    1, 14,  0);
-				V_DrawFill(4+16+1,   (BASEVIDHEIGHT-(4+16))+5,   14,  1,  0);
-				V_DrawFill(4+16+1,   (BASEVIDHEIGHT-(4+16))+5+5, 14,  1,  0);
-
-				// The following is a partial duplication of R_GetEngineClass
-				{
-					INT32 s = (skins[skin].kartspeed - 1)/3;
-					INT32 w = (skins[skin].kartweight - 1)/3;
-
-					#define LOCKSTAT(stat) \
-						if (stat < 0) { stat = 0; } \
-						if (stat > 2) { stat = 2; }
-						LOCKSTAT(s);
-						LOCKSTAT(w);
-					#undef LOCKSTAT
-
-					V_DrawFill(4+16 + (s*5), (BASEVIDHEIGHT-(4+16)) + (w*5), 6, 6, 0);
-				}
+				M_DrawCharacterIconAndEngine(4, BASEVIDHEIGHT-(4+16), i, colormap, (i == skin));
 			}
 			break;
 		}
@@ -6216,32 +6221,7 @@ static void M_DrawStatsChars(void)
 		{
 			UINT8 *colormap = R_GetTranslationColormap(skin, skins[skin].prefcolor, GTC_MENUCACHE);
 
-			V_DrawFixedPatch(24*FRACUNIT, y*FRACUNIT,
-				FRACUNIT,
-				0, faceprefix[skin][FACE_RANK],
-				colormap);
-
-			V_DrawFadeFill(24+16, y, 16, 16, 0, 31, 8); // challengetransparentstrength
-
-			V_DrawFill(24+16+5,   y+1,    1, 14,  0);
-			V_DrawFill(24+16+5+5, y+1,    1, 14,  0);
-			V_DrawFill(24+16+1,   y+5,   14,  1,  0);
-			V_DrawFill(24+16+1,   y+5+5, 14,  1,  0);
-
-			// The following is a partial duplication of R_GetEngineClass
-			{
-				INT32 s = (skins[skin].kartspeed - 1)/3;
-				INT32 w = (skins[skin].kartweight - 1)/3;
-
-				#define LOCKSTAT(stat) \
-					if (stat < 0) { stat = 0; } \
-					if (stat > 2) { stat = 2; }
-					LOCKSTAT(s);
-					LOCKSTAT(w);
-				#undef LOCKSTAT
-
-				V_DrawFill(24+16 + (s*5), y + (w*5), 6, 6, 0);
-			}
+			M_DrawCharacterIconAndEngine(24, y, skin, colormap, false);
 		}
 
 		V_DrawThinString(24+32+2, y+3, 0, skins[skin].realname);
