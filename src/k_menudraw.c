@@ -6195,7 +6195,7 @@ static void M_DrawStatsMaps(void)
 	}
 bottomarrow:
 	if (dobottomarrow)
-		V_DrawCharacter(10, y-10 + (skullAnimCounter/5),
+		V_DrawCharacter(10, BASEVIDHEIGHT-20 + (skullAnimCounter/5),
 			'\x1B' | highlightflags, false); // down arrow
 }
 
@@ -6250,7 +6250,7 @@ static void M_DrawStatsChars(void)
 
 bottomarrow:
 	if (dobottomarrow)
-		V_DrawCharacter(10, y-10 + (skullAnimCounter/5),
+		V_DrawCharacter(10, BASEVIDHEIGHT-20 + (skullAnimCounter/5),
 			'\x1B' | highlightflags, false); // down arrow
 
 	UINT32 x = BASEVIDWIDTH - 20 - 90;
@@ -6347,12 +6347,12 @@ static void M_DrawStatsGP(void)
 			goto bottomarrow;
 		}
 
-		V_DrawFill(24, y, 21, 20, 31);
+		V_DrawFill(24, y+1, 21, 20, 31);
 
-		V_DrawScaledPatch(24-1, y-1, 0, W_CachePatchName(cup->icon, PU_CACHE));
-		V_DrawScaledPatch(24-1, y-1, 0, W_CachePatchName("CUPBOX", PU_CACHE));
+		V_DrawScaledPatch(24-1, y, 0, W_CachePatchName(cup->icon, PU_CACHE));
+		V_DrawScaledPatch(24-1, y, 0, W_CachePatchName("CUPBOX", PU_CACHE));
 
-		V_DrawThinString(24+23+2, y + 6, 0, cup->name);
+		V_DrawThinString(24+23+2, y + 7, 0, cup->name);
 
 		x = BASEVIDWIDTH - 20 - width;
 		for (j = endj; j >= KARTSPEED_EASY; j--, x -= width)
@@ -6360,16 +6360,16 @@ static void M_DrawStatsGP(void)
 			if (cup->windata[j].best_placement == 0)
 			{
 				V_DrawCenteredThinString(
-					x + 19, y + 7,
+					x + 19, y + 8,
 					V_GRAYMAP,
-					j == KARTSPEED_EASY
-						? "- - - -"
-						: "- - - - - -"
+					(j != KARTSPEED_EASY && gamedata->everseenspecial)
+						? "--   --   --"
+						: "--   --"
 				);
 				continue;
 			}
 
-			M_DrawCupWinData(x, y + 6, cup, j, false, true);
+			M_DrawCupWinData(x, y + 7, cup, j, false, true);
 		}
 
 		y += STATSSTEP;
@@ -6380,7 +6380,7 @@ static void M_DrawStatsGP(void)
 
 bottomarrow:
 	if (dobottomarrow)
-		V_DrawCharacter(10, y-10 + (skullAnimCounter/5),
+		V_DrawCharacter(10, BASEVIDHEIGHT-20 + (skullAnimCounter/5),
 			'\x1B' | highlightflags, false); // down arrow
 }
 
