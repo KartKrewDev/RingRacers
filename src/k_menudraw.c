@@ -6209,7 +6209,7 @@ static void M_DrawStatsChars(void)
 	boolean dobottomarrow = (statisticsmenu.location < statisticsmenu.maxscroll);
 	INT32 location = statisticsmenu.location;
 
-	if (!statisticsmenu.maplist)
+	if (!statisticsmenu.maplist || !statisticsmenu.nummaps)
 	{
 		V_DrawCenteredThinString(BASEVIDWIDTH/2, 62, 0, "No chars!?");
 		return;
@@ -6296,7 +6296,7 @@ static void M_DrawStatsGP(void)
 	boolean dobottomarrow = (statisticsmenu.location < statisticsmenu.maxscroll);
 	INT32 location = statisticsmenu.location;
 
-	if (!statisticsmenu.maplist)
+	if (!statisticsmenu.maplist || !statisticsmenu.nummaps)
 	{
 		V_DrawCenteredThinString(BASEVIDWIDTH/2, 62, 0, "No cups!?");
 		return;
