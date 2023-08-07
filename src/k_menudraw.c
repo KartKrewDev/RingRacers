@@ -2418,20 +2418,84 @@ static void M_DrawCupTitle(INT16 y, levelsearch_t *levelsearch)
 	}
 }
 
-void M_DrawCupWinData(INT32 rankx, INT32 ranky, cupheader_t *cup, UINT8 difficulty, boolean flash, boolean shift)
+fixed_t M_DrawCupWinData(INT32 rankx, INT32 ranky, cupheader_t *cup, UINT8 difficulty, boolean flash, boolean statsmode)
 {
-	INT32 rankw = 14 + 1 + 12;
-	if (!shift || (difficulty != KARTSPEED_EASY && gamedata->everseenspecial))
-		rankw += 1 + 12;
+	INT32 rankw = 14 + 1 + 12 + 1 + 12;
+
+	if (!cup)
+		return 0;
+
+	boolean noemerald = (!gamedata->everseenspecial || difficulty == KARTSPEED_EASY);
+
+	if (statsmode)
+	{
+		rankw += 10 + 1;
+
+		if (noemerald)
+		{
+			rankw -= (12 + 1);
+			rankx += 7; // vibes-based maths, as tyron puts it
+		}
+	}
 
 	rankx += 19 - (rankw / 2);
 
-	patch_t *gradePat = NULL;
+	cupwindata_t *windata = &(cup->windata[difficulty]);
+	if (windata->best_placement == 0)
+	{
+		if (statsmode)
+		{
+			V_DrawCharacter((10-4)/2 + rankx, ranky, '.' | V_GRAYMAP, false);
+			rankx += 10 + 1;
+			V_DrawCharacter((14-4)/2 + rankx, ranky, '.' | V_GRAYMAP, false);
+			rankx += 14 + 1;
+			V_DrawCharacter((12-4)/2 + rankx, ranky, '.' | V_GRAYMAP, false);
+
+			if (!noemerald)
+			{
+				rankx += 12 + 1;
+				V_DrawCharacter((12-4)/2 + rankx, ranky, '.' | V_GRAYMAP, false);
+			}
+		}
+		return rankw;
+	}
+
 	UINT8 *colormap = NULL;
 
-	cupwindata_t *windata = &(cup->windata[difficulty]);
+	if (statsmode)
+	{
+		patch_t *monPat = W_CachePatchName(va("CUPMON%c%c", '0' + cup->monitor, 'C'), PU_CACHE);
+		UINT16 moncolor = SKINCOLOR_NONE;
+
+		switch (windata->best_placement)
+		{
+			case 1:
+				moncolor = SKINCOLOR_GOLD;
+				break;
+			case 2:
+				moncolor = SKINCOLOR_SILVER;
+				break;
+			case 3:
+				moncolor = SKINCOLOR_BRONZE;
+				break;
+			default:
+				moncolor = SKINCOLOR_BEIGE;
+				break;
+		}
+
+		if (moncolor != SKINCOLOR_NONE)
+			colormap = R_GetTranslationColormap(TC_RAINBOW, moncolor, GTC_MENUCACHE);
+
+		if (monPat)
+			V_DrawFixedPatch((rankx)*FRACUNIT, (ranky)*FRACUNIT, FRACUNIT, 0, monPat, colormap);
+
+		rankx += 10 + 1;
+
+		colormap = NULL;
+	}
 
 	const gp_rank_e grade = windata->best_grade; // (cupgrid.previewanim/TICRATE) % (GRADE_S + 1); -- testing
+	patch_t *gradePat = NULL;
 	UINT16 gradecolor = K_GetGradeColor(grade);
 
 	if (gradecolor != SKINCOLOR_NONE)
@@ -2487,11 +2551,12 @@ void M_DrawCupWinData(INT32 rankx, INT32 ranky, cupheader_t *cup, UINT8 difficul
 	if (charPat)
 		V_DrawFixedPatch((rankx)*FRACUNIT, (ranky)*FRACUNIT, FRACUNIT, 0, charPat, colormap);
 
-	if (difficulty > 0
-		&& windata->got_emerald == true)
-	{
-		rankx += 12 + 1;
+	rankx += 12 + 1;
 
+	if (noemerald)
+		;
+	else if (windata->got_emerald == true)
+	{
 		if (cup->emeraldnum == 0)
 			V_DrawCharacter(rankx+2, ranky+2, '+', false);
 		else
@@ -2514,6 +2579,12 @@ void M_DrawCupWinData(INT32 rankx, INT32 ranky, cupheader_t *cup, UINT8 difficul
 			V_DrawFixedPatch((rankx)*FRACUNIT, (ranky)*FRACUNIT, FRACUNIT, 0, W_CachePatchName(emname, PU_CACHE), colormap);
 		}
 	}
+	else if (statsmode)
+	{
+		V_DrawCharacter((12-4)/2 + rankx, ranky, '.' | V_GRAYMAP, false);
+	}
+
+	return rankw;
 }
 
 void M_DrawCupSelect(void)
@@ -6306,7 +6377,7 @@ static void M_DrawStatsGP(void)
 		V_DrawCharacter(10, y-(skullAnimCounter/5),
 			'\x1A' | highlightflags, false); // up arrow
 
-	const INT32 width = 44;
+	const INT32 width = 53;
 
 	endj = KARTSPEED_NORMAL;
 	if (M_SecretUnlocked(SECRET_HARDSPEED, true))
@@ -6316,10 +6387,22 @@ static void M_DrawStatsGP(void)
 			: KARTSPEED_HARD;
 	}
 
-	x = BASEVIDWIDTH - 20 - width;
+	const INT32 h = (21 * min(5, statisticsmenu.nummaps)) - 1;
+
+	x = 7 + BASEVIDWIDTH - 20 - width;
 	for (j = endj; j >= KARTSPEED_EASY; j--, x -= width)
 	{
-		V_DrawCenteredThinString(x + 19, y - 10, highlightflags|V_FORCEUPPERCASE, gpdifficulty_cons_t[j].strvalue);
+		if (j == KARTSPEED_EASY || !gamedata->everseenspecial)
+		{
+			V_DrawFadeFill(x + 6, y + 1, width - (12 + 1), h, 0, 31, 5 + j);
+			V_DrawCenteredThinString(x + 19 + 7, y - 10, highlightflags|V_FORCEUPPERCASE, gpdifficulty_cons_t[j].strvalue);
+			x += (12 + 1);
+		}
+		else
+		{
+			V_DrawFadeFill(x - 7, y + 1, width, h, 0, 31, 5 + j);
+			V_DrawCenteredThinString(x + 19, y - 10, highlightflags|V_FORCEUPPERCASE, gpdifficulty_cons_t[j].strvalue);
+		}
 	}
 
 	i = -1;
@@ -6352,24 +6435,12 @@ static void M_DrawStatsGP(void)
 		V_DrawScaledPatch(24-1, y, 0, W_CachePatchName(cup->icon, PU_CACHE));
 		V_DrawScaledPatch(24-1, y, 0, W_CachePatchName("CUPBOX", PU_CACHE));
 
-		V_DrawThinString(24+23+2, y + 7, 0, cup->name);
+		V_DrawThinString(24+21+2, y + 7, 0, cup->name);
 
-		x = BASEVIDWIDTH - 20 - width;
-		for (j = endj; j >= KARTSPEED_EASY; j--, x -= width)
+		x = 7 + BASEVIDWIDTH - 20 - width;
+		for (j = endj; j >= KARTSPEED_EASY; j--)
 		{
-			if (cup->windata[j].best_placement == 0)
-			{
-				V_DrawCenteredThinString(
-					x + 19, y + 8,
-					V_GRAYMAP,
-					(j != KARTSPEED_EASY && gamedata->everseenspecial)
-						? "--   --   --"
-						: "--   --"
-				);
-				continue;
-			}
-
-			M_DrawCupWinData(x, y + 7, cup, j, false, true);
+			x -= (M_DrawCupWinData(x, y + 5, cup, j, false, true) + 2);
 		}
 
 		y += STATSSTEP;
