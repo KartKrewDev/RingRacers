@@ -1614,7 +1614,7 @@ static void K_drawKartSlotMachine(void)
 	INT32 boxoffy = -6;
 	INT32 vstretch = 0;
 	INT32 hstretch = 3;
-	INT32 splitbsx, splitbsy = 0;
+	INT32 splitbsx = 0, splitbsy = 0;
 	UINT16 localcolor[3] = { stplyr->skincolor };
 	SINT8 colormode[3] = { TC_RAINBOW };
 
