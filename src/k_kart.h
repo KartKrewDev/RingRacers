@@ -42,6 +42,12 @@ Make sure this matches the actual number of states
 #define STUMBLE_STEEP_VAL ANG60
 #define STUMBLE_STEEP_VAL_AIR (ANG30 + ANG10)
 
+#define MAXRINGVOLUME 255
+#define MINRINGVOLUME 100
+#define RINGVOLUMECOLLECTPENALTY 3
+#define RINGVOLUMEUSEPENALTY 15
+#define RINGVOLUMEREGEN 3
+
 angle_t K_ReflectAngle(angle_t angle, angle_t against, fixed_t maxspeed, fixed_t yourspeed);
 
 void K_RegisterKartStuff(void);

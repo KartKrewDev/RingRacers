@@ -3821,7 +3821,10 @@ void A_AttractChase(mobj_t *actor)
 
 				// Base add is 3 tics for 9,9, adds 1 tic for each point closer to the 1,1 end
 				actor->target->player->ringboost += K_GetKartRingPower(actor->target->player, true) + 3;
-				S_ReducedVFXSound(actor->target, sfx_s1b5, NULL);
+				
+				S_ReducedVFXSoundAtVolume(actor->target, sfx_s1b5, actor->target->player->ringvolume, NULL);
+
+				actor->target->player->ringvolume -= RINGVOLUMEUSEPENALTY;
 
 				sparkle = P_SpawnMobj(actor->target->x, actor->target->y, actor->target->z, MT_RINGSPARKS);
 				P_SetTarget(&sparkle->target, actor->target);
@@ -3854,7 +3857,9 @@ void A_AttractChase(mobj_t *actor)
 				if (actor->cvmem) // caching
 					S_StartSound(actor->target, sfx_s1c5);
 				else
-					S_StartSound(actor->target, sfx_s227);
+					S_StartSoundAtVolume(actor->target, sfx_s227, actor->target->player->ringvolume);
+
+				actor->target->player->ringvolume -= RINGVOLUMECOLLECTPENALTY;
 
 				actor->target->player->pickuprings--;
 				P_RemoveMobj(actor);
