@@ -6224,7 +6224,7 @@ static void M_DrawStatsChars(void)
 	V_DrawThinString(20, y - 10, highlightflags, "CHARACTER");
 	V_DrawRightAlignedThinString(BASEVIDWIDTH/2 + 34, y - 10, highlightflags, "WINS");
 
-	while ((skin = statisticsmenu.maplist[++i]) != NEXTMAP_INVALID)
+	while ((skin = statisticsmenu.maplist[++i]) < numskins)
 	{
 		if (location)
 		{

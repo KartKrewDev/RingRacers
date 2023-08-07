@@ -138,7 +138,7 @@ static void M_StatisticsChars(void)
 		}
 	}
 
-	statisticsmenu.maplist[statisticsmenu.nummaps] = NEXTMAP_INVALID;
+	statisticsmenu.maplist[statisticsmenu.nummaps] = MAXSKINS;
 
 	statisticsmenu.location = 0;
 	statisticsmenu.maxscroll = statisticsmenu.nummaps - 6;
