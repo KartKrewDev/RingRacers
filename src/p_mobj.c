@@ -5336,6 +5336,7 @@ static boolean P_IsTrackerType(INT32 type)
 		case MT_MONITOR:
 		case MT_EMERALD:
 		case MT_BATTLEUFO:
+		case MT_SUPER_FLICKY:
 			return true;
 
 		default:

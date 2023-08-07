@@ -161,7 +161,9 @@ void Obj_WhipSuperFlicky(mobj_t *flicky);
 void Obj_BlockSuperFlicky(mobj_t *flicky);
 void Obj_SuperFlickyPlayerCollide(mobj_t *flicky, mobj_t *player);
 void Obj_SuperFlickyLanding(mobj_t *flicky);
+mobj_t *Obj_SuperFlickyOwner(const mobj_t *flicky);
 boolean Obj_IsSuperFlickyWhippable(const mobj_t *flicky);
+boolean Obj_IsSuperFlickyTargettingYou(const mobj_t *flicky, mobj_t *player);
 
 /* Battle/Power-UP UFO */
 void Obj_BattleUFOLegThink(mobj_t *leg);
