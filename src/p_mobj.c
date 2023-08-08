@@ -13845,7 +13845,7 @@ static void P_SpawnItemRow(mapthing_t *mthing, mobjtype_t *itemtypes, UINT8 numi
 	angle_t fineangle = (angle >> ANGLETOFINESHIFT) & FINEMASK;
 
 	boolean isloopend = (mthing->type == mobjinfo[MT_LOOPENDPOINT].doomednum);
-	mobj_t *loopanchor;
+	mobj_t *loopanchor = NULL;
 
 	boolean inclusive = isloopend;
 

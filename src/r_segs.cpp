@@ -716,7 +716,7 @@ static boolean R_IsFFloorTranslucent(visffloor_t *pfloor)
 // Renders all the thick sides in the given range.
 void R_RenderThickSideRange(drawseg_t *ds, INT32 x1, INT32 x2, ffloor_t *pfloor)
 {
-	size_t          pindex;
+	size_t          pindex = 0;
 	column_t *      col, *bmCol = NULL;
 	INT32             lightnum;
 	INT32            texnum, bmnum;
