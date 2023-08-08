@@ -413,6 +413,10 @@ consvar_t cv_kartspeedometer = CVAR_INIT ("speedometer", "Percentage", CV_SAVE, 
 consvar_t cv_kartvoices = CVAR_INIT ("tauntvoices", "Tasteful", CV_SAVE, kartvoices_cons_t, NULL);
 consvar_t cv_karthorns = CVAR_INIT ("taunthorns", "Tasteful", CV_SAVE, kartvoices_cons_t, NULL);
 
+#ifdef DEVELOP
+consvar_t cv_kartencoremap = CVAR_INIT ("encoremap", "On", CV_NETVAR, CV_OnOff, NULL);
+#endif
+
 static CV_PossibleValue_t kartbot_cons_t[] = {
 	{0, "Off"},
 	{1, "Lv.1"},
