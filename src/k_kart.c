@@ -386,6 +386,10 @@ void K_RegisterKartStuff(void)
 	CV_RegisterVar(&cv_debugencorevote);
 
 	CV_RegisterVar(&cv_reducevfx);
+
+	#ifdef DEVELOP
+		CV_RegisterVar(&cv_kartencoremap);
+	#endif
 }
 
 //}

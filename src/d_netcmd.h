@@ -90,6 +90,9 @@ extern consvar_t cv_kartbot;
 extern consvar_t cv_karteliminatelast;
 extern consvar_t cv_thunderdome;
 extern consvar_t cv_kartusepwrlv;
+#ifdef DEVELOP
+	extern consvar_t cv_kartencoremap;
+#endif
 
 extern consvar_t cv_votetime;
 extern consvar_t cv_botscanvote;
