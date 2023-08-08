@@ -386,6 +386,8 @@ void K_RegisterKartStuff(void)
 	CV_RegisterVar(&cv_debugencorevote);
 
 	CV_RegisterVar(&cv_reducevfx);
+
+	CV_RegisterVar(&cv_kartencoremap);
 }
 
 //}

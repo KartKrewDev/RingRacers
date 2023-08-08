@@ -414,7 +414,7 @@ consvar_t cv_kartvoices = CVAR_INIT ("tauntvoices", "Tasteful", CV_SAVE, kartvoi
 consvar_t cv_karthorns = CVAR_INIT ("taunthorns", "Tasteful", CV_SAVE, kartvoices_cons_t, NULL);
 
 #ifdef DEVELOP
-consvar_t cv_kartencoremap = CVAR_INIT ("encoremap", "On", CV_NETVAR, CV_OnOff, NULL);
+	consvar_t cv_kartencoremap = CVAR_INIT ("encoremap", "On", CV_NETVAR|CV_CHEAT, CV_OnOff, NULL);
 #endif
 
 static CV_PossibleValue_t kartbot_cons_t[] = {
