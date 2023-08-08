@@ -1041,10 +1041,10 @@ void readlevelheader(MYFILE *f, char * name)
 				continue;
 			}
 
-			if (fastcmp(word, "SUBTITLE"))
+			if (fastcmp(word, "MENUTITLE"))
 			{
-				deh_strlcpy(mapheaderinfo[num]->subttl, word2,
-					sizeof(mapheaderinfo[num]->subttl), va("Level header %d: subtitle", num));
+				deh_strlcpy(mapheaderinfo[num]->menuttl, word2,
+					sizeof(mapheaderinfo[num]->menuttl), va("Level header %d: menutitle", num));
 				continue;
 			}
 

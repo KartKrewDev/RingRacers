@@ -2744,16 +2744,22 @@ void M_DrawCupSelect(void)
 static void M_DrawHighLowLevelTitle(INT16 x, INT16 y, INT16 map)
 {
 	char word1[22];
-	char word2[22];
+	char word2[22 + 2]; // actnum
 	UINT8 word1len = 0;
 	UINT8 word2len = 0;
 	INT16 x2 = x;
 	UINT8 i;
 
-	if (!mapheaderinfo[map] || !mapheaderinfo[map]->lvlttl[0])
+	if (!mapheaderinfo[map]
+		|| (
+			!mapheaderinfo[map]->menuttl[0]
+			&& !mapheaderinfo[map]->lvlttl[0]
+		)
+	)
 		return;
 
-	if (mapheaderinfo[map]->zonttl[0])
+	if (!mapheaderinfo[map]->menuttl[0]
+		&& mapheaderinfo[map]->zonttl[0])
 	{
 		boolean one = true;
 		boolean two = true;
@@ -2784,12 +2790,17 @@ static void M_DrawHighLowLevelTitle(INT16 x, INT16 y, INT16 map)
 	{
 		boolean donewithone = false;
 
+		char *ttlsource =
+			mapheaderinfo[map]->menuttl[0]
+			? mapheaderinfo[map]->menuttl
+			: mapheaderinfo[map]->lvlttl;
+
 		for (i = 0; i < 22; i++)
 		{
-			if (!mapheaderinfo[map]->lvlttl[i])
+			if (!ttlsource[i])
 				break;
 
-			if (mapheaderinfo[map]->lvlttl[i] == ' ')
+			if (ttlsource[i] == ' ')
 			{
 				if (!donewithone)
 				{
@@ -2800,18 +2811,18 @@ static void M_DrawHighLowLevelTitle(INT16 x, INT16 y, INT16 map)
 
 			if (donewithone)
 			{
-				word2[word2len] = mapheaderinfo[map]->lvlttl[i];
+				word2[word2len] = ttlsource[i];
 				word2len++;
 			}
 			else
 			{
-				word1[word1len] = mapheaderinfo[map]->lvlttl[i];
+				word1[word1len] = ttlsource[i];
 				word1len++;
 			}
 		}
 	}
 
-	if (mapheaderinfo[map]->actnum)
+	if (!mapheaderinfo[map]->menuttl[0] && mapheaderinfo[map]->actnum)
 	{
 		word2[word2len] = ' ';
 		word2len++;
@@ -6187,6 +6198,11 @@ static void M_DrawStatsMaps(void)
 
 		M_DrawMapMedals(mnum+1, 291, y);
 
+		if (mapheaderinfo[mnum]->menuttl[0])
+		{
+			V_DrawThinString(24, y, V_FORCEUPPERCASE, mapheaderinfo[mnum]->menuttl);
+		}
+		else
 		{
 			char *title = G_BuildMapTitle(mnum+1);
 			V_DrawThinString(24, y, V_FORCEUPPERCASE, title);
