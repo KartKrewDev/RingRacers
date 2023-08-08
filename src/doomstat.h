@@ -396,6 +396,8 @@ struct cupheader_t
 	char name[MAXCUPNAME];					///< Cup title
 	UINT32 namehash;						///< Cup title hash
 
+	char realname[MAXCUPNAME];				///< Cup nomme de gurre
+
 	char icon[9];							///< Name of the icon patch
 	char *levellist[CUPCACHE_MAX];			///< List of levels that belong to this cup
 	INT16 cachedlevels[CUPCACHE_MAX];		///< IDs in levellist, bonusgame, and specialstage

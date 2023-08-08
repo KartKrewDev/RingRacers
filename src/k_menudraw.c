@@ -2397,7 +2397,7 @@ static void M_DrawCupTitle(INT16 y, levelsearch_t *levelsearch)
 		boolean unlocked = (M_GetFirstLevelInList(&temp, levelsearch) != NEXTMAP_INVALID);
 		UINT8 *colormap = R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_GREY, GTC_MENUCACHE);
 		patch_t *icon = W_CachePatchName(levelsearch->cup->icon, PU_CACHE);
-		const char *str = (unlocked ? va("%s Cup", levelsearch->cup->name) : "???");
+		const char *str = (unlocked ? va("%s Cup", levelsearch->cup->realname) : "???");
 		INT16 offset = V_LSTitleLowStringWidth(str, 0) / 2;
 
 		V_DrawLSTitleLowString(BASEVIDWIDTH/2 - offset, y+6, 0, str);
@@ -6165,7 +6165,7 @@ static void M_DrawStatsMaps(void)
 				const char *str;
 
 				if (mapheaderinfo[mnum]->cup)
-					str = va("%s CUP", mapheaderinfo[mnum]->cup->name);
+					str = va("%s CUP", mapheaderinfo[mnum]->cup->realname);
 				else
 					str = "LOST AND FOUND";
 
@@ -6435,7 +6435,7 @@ static void M_DrawStatsGP(void)
 		V_DrawScaledPatch(24-1, y, 0, W_CachePatchName(cup->icon, PU_CACHE));
 		V_DrawScaledPatch(24-1, y, 0, W_CachePatchName("CUPBOX", PU_CACHE));
 
-		V_DrawThinString(24+21+2, y + 7, 0, cup->name);
+		V_DrawThinString(24+21+2, y + 7, 0, cup->realname);
 
 		x = 7 + BASEVIDWIDTH - 20 - width;
 		for (j = endj; j >= KARTSPEED_EASY; j--)

@@ -3496,6 +3496,11 @@ void readcupheader(MYFILE *f, cupheader_t *cup)
 				else
 					cup->monitor = (word2[0] - 'A') + 10;
 			}
+			else if (fastcmp(word, "REALNAME"))
+			{
+				deh_strlcpy(cup->realname, word2,
+					sizeof(cup->realname), va("%s Cup: realname", cup->name));
+			}
 			else if (fastcmp(word, "ICON"))
 			{
 				deh_strlcpy(cup->icon, word2,

@@ -495,6 +495,15 @@ static void DEH_LoadDehackedFile(MYFILE *f, boolean mainfile)
 								sizeof(cup->name), va("Cup header %s: name", word2));
 							cup->namehash = hash;
 
+							char *start = strchr(word2, '_');
+							if (start)
+								start++;
+							else
+								start = word2;
+
+							deh_strlcpy(cup->realname, start,
+								sizeof(cup->realname), va("%s Cup: realname (default)", cup->name));
+
 							// Check to see if we have any custom cup record data that we could substitute in.
 							unloaded_cupheader_t *unloadedcup, *unloadedprev = NULL;
 							for (unloadedcup = unloadedcupheaders; unloadedcup; unloadedprev = unloadedcup, unloadedcup = unloadedcup->next)
