@@ -64,6 +64,7 @@
 #include "k_director.h"
 #include "g_party.h"
 #include "k_profiles.h"
+#include "music.h"
 
 #ifdef HW3SOUND
 #include "hardware/hw3sound.h"
@@ -77,20 +78,6 @@
 #if 0
 static void P_NukeAllPlayers(player_t *player);
 #endif
-
-//
-// Jingle stuff.
-//
-
-jingle_t jingleinfo[NUMJINGLES] = {
-	// {musname, looping, reset, nest}
-	{""        , false}, // JT_NONE
-	{""        , false}, // JT_OTHER
-	{""        , false}, // JT_MASTER
-
-	{"kinvnc"  ,  true}, // JT_INVINCIBILITY
-	{"kgrow"   ,  true}, // JT_GROW
-};
 
 //
 // Movement.
@@ -597,93 +584,6 @@ void P_AddPlayerScore(player_t *player, UINT32 amount)
 		player->roundscore = MAXSCORE;
 }
 
-void P_PlayJingle(player_t *player, jingletype_t jingletype)
-{
-	const char *musname = jingleinfo[jingletype].musname;
-	UINT16 musflags = 0;
-	boolean looping = jingleinfo[jingletype].looping;
-
-	char newmusic[7];
-	strncpy(newmusic, musname, 7);
-#ifdef HAVE_LUA_MUSICPLUS
- 	if(LUAh_MusicJingle(jingletype, newmusic, &musflags, &looping))
- 		return;
-#endif
-	newmusic[6] = 0;
-
-	P_PlayJingleMusic(player, newmusic, musflags, looping, jingletype);
-}
-
-//
-// P_PlayJingleMusic
-//
-void P_PlayJingleMusic(player_t *player, const char *musname, UINT16 musflags, boolean looping, UINT16 status)
-{
-	// If gamestate != GS_LEVEL, always play the jingle (1-up intermission)
-	if (gamestate == GS_LEVEL && player && !P_IsLocalPlayer(player))
-		return;
-
-	S_RetainMusic(musname, musflags, looping, 0, status);
-	//S_StopMusic();
-	S_ChangeMusicInternal(musname, looping);
-}
-
-boolean P_EvaluateMusicStatus(UINT16 status, const char *musname)
-{
-	// \todo lua hook
-	int i;
-	boolean result = false;
-
-	for (i = 0; i < MAXPLAYERS; i++)
-	{
-		if (!P_IsLocalPlayer(&players[i]))
-			continue;
-
-		switch(status)
-		{
-			case JT_INVINCIBILITY: // Invincibility
-				if (players[i].invincibilitytimer > 1)
-				{
-					strlcpy(S_sfx[sfx_None].caption, "Invincibility", 14);
-					S_StartCaption(sfx_None, -1, players[i].invincibilitytimer);
-					result = true;
-				}
-				else
-				{
-					result = false;
-				}
-				break;
-
-			case JT_GROW: // Grow
-				if (players[i].growshrinktimer > 1)
-				{
-					strlcpy(S_sfx[sfx_None].caption, "Grow", 14);
-					S_StartCaption(sfx_None, -1, players[i].growshrinktimer);
-					result = true;
-				}
-				else
-				{
-					result = false;
-				}
-				break;
-
-			case JT_OTHER:  // Other state
-				result = LUA_HookShouldJingleContinue(&players[i], musname);
-				break;
-
-			case JT_NONE:   // Null state
-			case JT_MASTER: // Main level music
-			default:
-				result = true;
-		}
-
-		if (result)
-			break;
- 	}
-
-	return result;
-}
-
 void P_PlayRinglossSound(mobj_t *source)
 {
 	if (source->player && K_GetShieldFromItem(source->player->itemtype) != KSHIELD_NONE)
@@ -719,7 +619,7 @@ void P_StartPositionMusic(boolean exact)
 			: (leveltime  < 1))
 			return;
 
-		S_ChangeMusicInternal("encore", true);
+		Music_Remap("position", "encore");
 	}
 	else
 	{
@@ -728,12 +628,15 @@ void P_StartPositionMusic(boolean exact)
 			: (leveltime  < introtime))
 			return;
 
-		S_ChangeMusicInternal(
+		Music_Remap("position",
 			(mapheaderinfo[gamemap-1]->positionmus[0]
 				? mapheaderinfo[gamemap-1]->positionmus
 				: "postn"
-			), true);
+			));
 	}
+
+	Music_Play("position");
+	Music_DelayEnd("position", (starttime + (TICRATE/2)) - leveltime);
 }
 
 //
@@ -873,110 +776,54 @@ skippingposition:
 	if (jingle == NULL)
 		return;
 
-	S_ChangeMusicInternal(jingle, false);
+	Music_Remap("finish", jingle);
+	Music_Play("finish");
 }
 
-//
-// P_RestoreMusic
-//
-// Restores music after some special music change
-//
-void P_RestoreMusic(player_t *player)
+void P_InvincGrowMusic(void)
 {
-	UINT8 overrideLevel = 0;
-	SINT8 i;
+	INT32 invinc = 0;
+	INT32 grow = 0;
 
-	if (P_IsLocalPlayer(player) == false)
-	{
-		// Only applies to local players
-		return;
-	}
+	UINT8 i;
 
-	// Event - HERE COMES A NEW CHALLENGER
-	if (mapreset)
+	for (i = 0; i <= r_splitscreen; ++i)
 	{
-		S_ChangeMusicInternal("chalng", false);
-		return;
-	}
+		player_t *player = &players[displayplayers[i]];
 
-	// Event - Level Ending
-	if (musiccountdown > 0)
-	{
-		return;
-	}
-
-	// Event - Level Start
-	if ((K_CheckBossIntro() == false)
-		&& (leveltime < (starttime + (TICRATE/2)))) // see also where time overs are handled
-	{
-		P_StartPositionMusic(false); // inexact timing permitted
-		return;
-	}
-
-	for (i = 0; i <= r_splitscreen; i++)
-	{
-		player_t *checkPlayer = &players[displayplayers[i]];
-		if (!checkPlayer)
+		if (!P_IsLocalPlayer(player))
 		{
+			// Director cam on another player? Don't play
+			// this.
 			continue;
 		}
 
-		if (checkPlayer->exiting)
+		// Find the longest running timer among splitscreen
+		// players and use that.
+
+		if (player->invincibilitytimer > invinc)
 		{
-			return;
+			invinc = player->invincibilitytimer;
 		}
 
-		if (checkPlayer->invincibilitytimer > 1)
+		if (player->growshrinktimer > grow)
 		{
-			overrideLevel = max(overrideLevel, 2);
-		}
-		else if (checkPlayer->growshrinktimer > 1)
-		{
-			overrideLevel = max(overrideLevel, 1);
+			grow = player->growshrinktimer;
 		}
 	}
 
-	if (overrideLevel != 0)
+	if (invinc && !Music_Playing("invinc"))
 	{
-		// Do a jingle override.
-		jingletype_t jt = JT_NONE;
-
-		switch (overrideLevel)
-		{
-			// Lowest priority to highest priority.
-			case 1:
-				jt = JT_GROW;
-				break;
-			case 2:
-				jt = JT_INVINCIBILITY;
-				break;
-			default:
-				break;
-		}
-
-		if (jt != JT_NONE)
-		{
-			//CONS_Printf("JINGLE: %d\n", jt);
-			//if (S_RecallMusic(jt, false) == false)
-			//{
-				P_PlayJingle(player, jt);
-			//}
-			return;
-		}
+		Music_Play("invinc");
 	}
 
-#if 0
-			// Event - Final Lap
-			// Still works for GME, but disabled for consistency
-			if ((gametyperules & GTR_CIRCUIT) && player->laps >= numlaps)
-				S_SpeedMusic(1.2f);
-#endif
-
-	if (S_RecallMusic(JT_NONE, false) == false) // go down the stack
+	if (grow && !Music_Playing("grow"))
 	{
-		CONS_Debug(DBG_BASIC, "Cannot find any music in resume stack!\n");
-	 	S_ChangeMusicEx(mapmusname, mapmusflags, true, mapmusposition, 0, 0);
+		Music_Play("grow");
 	}
+
+	Music_DelayEnd("invinc", invinc);
+	Music_DelayEnd("grow", grow);
 }
 
 //
@@ -1426,7 +1273,7 @@ void P_DoPlayerExit(player_t *player, pflags_t flags)
 
 	if (P_IsLocalPlayer(player) && !specialout)
 	{
-		S_StopMusic();
+		Music_StopAll();
 		musiccountdown = MUSICCOUNTDOWNMAX;
 	}
 
@@ -1948,8 +1795,6 @@ static void P_CheckInvincibilityTimer(player_t *player)
 	{
 		//K_KartResetPlayerColor(player); -- this gets called every tic anyways
 		G_GhostAddColor((INT32) (player - players), GHC_NORMAL);
-
-		P_RestoreMusic(player);
 		return;
 	}
 }
@@ -4039,7 +3884,7 @@ void P_DoTimeOver(player_t *player)
 
 	if (P_IsLocalPlayer(player))
 	{
-		S_StopMusic();
+		Music_StopAll();
 		musiccountdown = MUSICCOUNTDOWNMAX;
 	}
 

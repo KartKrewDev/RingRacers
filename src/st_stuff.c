@@ -50,6 +50,8 @@
 #include "k_grandprix.h" // we need to know grandprix status for titlecards
 #include "k_boss.h"
 #include "k_zvote.h"
+#include "music.h"
+#include "i_sound.h"
 
 UINT16 objectsdrawn = 0;
 
@@ -381,38 +383,40 @@ static void ST_pushDebugTimeMS(INT32 *height, const char *label, UINT32 ms)
 
 static void ST_drawMusicDebug(INT32 *height)
 {
-	char mname[7];
-	UINT16 mflags; // unused
-	boolean looping;
+	const char *mname = Music_CurrentSong();
+	boolean looping = Music_CanLoop(Music_CurrentId());
 	UINT8 i = 0;
 
 	const musicdef_t *def;
 	const char *format;
 
-	if (!S_MusicInfo(mname, &mflags, &looping))
+	ST_pushDebugString(height, va("    Tune: %8s", Music_CurrentId()));
+	ST_pushRow(height);
+
+	if (!strcmp(mname, ""))
 	{
 		ST_pushDebugString(height, "Song: <NOTHING>");
 		return;
 	}
 
 	def = S_FindMusicDef(mname, &i);
-	format = S_MusicType();
+	format = I_SongType();
 
-	ST_pushDebugTimeMS(height, " Elapsed: ", S_GetMusicPosition());
+	ST_pushDebugTimeMS(height, " Elapsed: ", I_GetSongPosition());
 	ST_pushDebugTimeMS(height, looping
 			? "  Loop B: "
-			: "Duration: ", S_GetMusicLength());
+			: "Duration: ", I_GetSongLength());
 
 	if (looping)
 	{
-		ST_pushDebugTimeMS(height, "  Loop A: ", S_GetMusicLoopPoint());
+		ST_pushDebugTimeMS(height, "  Loop A: ", I_GetSongLoopPoint());
 	}
 
 	ST_pushRow(height);
 
 	if (format)
 	{
-		ST_pushDebugString(height, va("  Format: %8s", S_MusicType()));
+		ST_pushDebugString(height, va("  Format: %8s", I_SongType()));
 	}
 
 	ST_pushDebugString(height, va("    Song: %8s", mname));

@@ -83,6 +83,7 @@
 #include "k_podium.h"
 #include "k_vote.h"
 #include "k_serverstats.h"
+#include "music.h"
 
 #ifdef HWRENDER
 #include "hardware/hw_main.h" // 3D View Rendering
@@ -926,6 +927,8 @@ void D_SRB2Loop(void)
 		}
 #endif
 
+		Music_Tick();
+
 		// Fully completed frame made.
 		finishprecise = I_GetPreciseTime();
 		if (!singletics)
@@ -1015,8 +1018,7 @@ void D_ClearState(void)
 //
 void D_StartTitle(void)
 {
-	if (!demo.title)
-		S_StopMusic();
+	Music_StopAll();
 
 	D_ClearState();
 	F_StartTitleScreen();
@@ -1654,6 +1656,9 @@ void D_SRB2Main(void)
 		I_InitMusic();
 		S_InitSfxChannels(cv_soundvolume.value);
 	}
+
+	Music_Init();
+
 	CON_SetLoadingProgress(LOADED_SINITSFXCHANNELS);
 
 	S_InitMusicDefs();

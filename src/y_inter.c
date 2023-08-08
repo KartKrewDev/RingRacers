@@ -50,6 +50,7 @@
 #include "k_grandprix.h"
 #include "k_serverstats.h" // SV_BumpMatchStats
 #include "m_easing.h"
+#include "music.h"
 
 #ifdef HWRENDER
 #include "hardware/hw_main.h"
@@ -1823,7 +1824,7 @@ void Y_StartIntermission(void)
 		I_Error("Y_StartIntermission: Internal map ID %d not found (nummapheaders = %d)", prevmap, nummapheaders);
 
 	if (timer > 1 && musiccountdown == 0)
-		S_ChangeMusicInternal("racent", true); // loop it
+		Music_Play("intermission");
 
 	S_ShowMusicCredit(); // Always call
 

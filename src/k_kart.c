@@ -47,6 +47,7 @@
 #include "k_podium.h"
 #include "k_powerup.h"
 #include "k_hitlag.h"
+#include "music.h"
 
 // SOME IMPORTANT VARIABLES DEFINED IN DOOMDEF.H:
 // gamespeed is cc (0 for easy, 1 for normal, 2 for hard)
@@ -3847,8 +3848,6 @@ void K_RemoveGrowShrink(player_t *player)
 	}
 
 	player->growshrinktimer = 0;
-
-	P_RestoreMusic(player);
 }
 
 boolean K_IsBigger(mobj_t *compare, mobj_t *other)
@@ -4384,7 +4383,7 @@ INT32 K_ExplodePlayer(player_t *player, mobj_t *inflictor, mobj_t *source) // A 
 			{
 				P_DamageMobj(player->mo, inflictor, source, 1, DMG_INSTAKILL);
 				player->SPBdistance = 0;
-				S_StopMusic();
+				Music_StopAll();
 			}
 
 			spbMultiplier = inflictor->movefactor;
@@ -6201,18 +6200,12 @@ void K_DoInvincibility(player_t *player, tic_t time)
 		P_SetScale(overlay, player->mo->scale);
 	}
 
-	if (P_IsLocalPlayer(player) == true && player->invincibilitytimer == 0)
-	{
-		S_ChangeMusicSpecial("kinvnc");
-	}
-	else //used to be "if (P_IsDisplayPlayer(player) == false)"
+	if (P_IsLocalPlayer(player) == false)
 	{
 		S_StartSound(player->mo, sfx_alarmi);
 	}
 
 	player->invincibilitytimer += time;
-
-	P_RestoreMusic(player);
 }
 
 void K_KillBananaChain(mobj_t *banana, mobj_t *inflictor, mobj_t *source)
@@ -11285,24 +11278,14 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 									player->mo->destscale = FixedMul(player->mo->destscale, SHRINK_SCALE);
 								}
 
-								if (player->invincibilitytimer > 0)
+								if (P_IsLocalPlayer(player) == false && player->invincibilitytimer == 0)
 								{
-									; // invincibility has priority in P_RestoreMusic, no point in starting here
-								}
-								else if (P_IsLocalPlayer(player) == true)
-								{
-									if (player->growshrinktimer < 1)
-										S_ChangeMusicSpecial("kgrow");
-								}
-								else //used to be "if (P_IsDisplayPlayer(player) == false)"
-								{
+									// don't play this if the player has invincibility -- that takes priority
 									S_StartSound(player->mo, sfx_alarmg);
 								}
 
 								player->growshrinktimer = max(0, player->growshrinktimer);
 								player->growshrinktimer += ((gametyperules & GTR_CLOSERPLAYERS) ? 8 : 12) * TICRATE;
-
-								P_RestoreMusic(player);
 
 								S_StartSound(player->mo, sfx_kc5a);
 
@@ -11938,7 +11921,7 @@ void K_CheckSpectateStatus(boolean considermapreset)
 	// Reset the match when 3P joins 1P and 2P, DUEL mode must be disabled
 	if (i > 0 && !mapreset && gamestate == GS_LEVEL && (numingame < 3 && numingame+i >= 2))
 	{
-		S_ChangeMusicInternal("chalng", false); // COME ON
+		Music_Play("comeon"); // COME ON
 		mapreset = 3*TICRATE; // Even though only the server uses this for game logic, set for everyone for HUD
 	}
 }

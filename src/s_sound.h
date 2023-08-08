@@ -157,22 +157,8 @@ void S_StopSound(void *origin);
 
 boolean S_DigMusicDisabled(void);
 boolean S_MusicDisabled(void);
-boolean S_MusicPlaying(void);
-boolean S_MusicPaused(void);
 boolean S_MusicNotInFocus(void);
-const char *S_MusicType(void);
-const char *S_MusicName(void);
 
-boolean S_MusicExists(const char *mname);
-boolean S_MusicInfo(char *mname, UINT16 *mflags, boolean *looping);
-
-
-//
-// Music Effects
-//
-
-// Set Speed of Music
-boolean S_SpeedMusic(float speed);
 
 #define MAXDEFTRACKS 3
 
@@ -213,23 +199,19 @@ extern struct cursongcredit
 
 extern struct soundtest
 {
+	const char *tune;					// Tune used for music system
+
 	boolean playing; 					// Music is playing?
-	boolean paused;						// System paused?
 	boolean justopened;					// Menu visual assist
-	boolean privilegedrequest; 			// Overrides S_PlaysimMusicDisabled w/o changing every function signature
 
 	INT32 menutick;						// Menu visual timer
 
 	musicdef_t *current;				// Current selected music definition
 	SINT8 currenttrack;					// Current selected music track for definition
-	UINT32 currenttime;					// Current music playing time
 
 	soundtestsequence_t sequence;		// Sequence head
 
 	boolean autosequence;				// In auto sequence mode?
-	boolean dosequencefadeout;			// Fade out when reaching the end?
-	UINT32 sequencemaxtime;				// Maximum playing time for current music
-	UINT32 sequencefadeout;				// auto sequence fadeout
 } soundtest;
 
 void S_PopulateSoundTestSequence(void);
@@ -238,9 +220,6 @@ void S_SoundTestPlay(void);
 void S_SoundTestStop(void);
 void S_SoundTestTogglePause(void);
 void S_TickSoundTest(void);
-#define SOUNDTEST_FADEOUTSECONDS 5
-
-boolean S_PlaysimMusicDisabled(void);
 
 extern musicdef_t *musicdefstart;
 
@@ -251,92 +230,8 @@ void S_ShowMusicCredit(void);
 void S_StopMusicCredit(void);
 
 //
-// Music Seeking
-//
-
-// Get Length of Music
-UINT32 S_GetMusicLength(void);
-
-// Set LoopPoint of Music
-boolean S_SetMusicLoopPoint(UINT32 looppoint);
-
-// Get LoopPoint of Music
-UINT32 S_GetMusicLoopPoint(void);
-
-// Set Position of Music
-boolean S_SetMusicPosition(UINT32 position);
-
-// Get Position of Music
-UINT32 S_GetMusicPosition(void);
-
-//
-// Music Stacking (Jingles)
-//
-
-struct musicstack_t
-{
-	char musname[7];
-	UINT16 musflags;
-	boolean looping;
-	UINT32 position;
-	tic_t tic;
-	UINT16 status;
-	lumpnum_t mlumpnum;
-	boolean noposition; // force music stack resuming from zero (like music_stack_noposition)
-
-    musicstack_t *prev;
-    musicstack_t *next;
-};
-
-extern char music_stack_nextmusname[7];
-extern boolean music_stack_noposition;
-extern UINT32 music_stack_fadeout;
-extern UINT32 music_stack_fadein;
-
-void S_SetStackAdjustmentStart(void);
-void S_AdjustMusicStackTics(void);
-void S_RetainMusic(const char *mname, UINT16 mflags, boolean looping, UINT32 position, UINT16 status);
-boolean S_RecallMusic(UINT16 status, boolean fromfirst);
-
-//
 // Music Playback
 //
-
-/* this is for the sake of the hook */
-struct MusicChange {
-	char    * newname;
-	UINT16  * mflags;
-	boolean * looping;
-	UINT32  * position;
-	UINT32  * prefadems;
-	UINT32  * fadeinms;
-};
-
-enum
-{
-	MUS_SPECIAL = 1,/* powerups--invincibility, grow */
-};
-
-// Start music track, arbitrary, given its name, and set whether looping
-// note: music flags 12 bits for tracknum (gme, other formats with more than one track)
-//       13-15 aren't used yet
-//       and the last bit we ignore (internal game flag for resetting music on reload)
-void S_ChangeMusicEx(const char *mmusic, UINT16 mflags, boolean looping, UINT32 position, UINT32 prefadems, UINT32 fadeinms);
-#define S_ChangeMusicInternal(a,b) S_ChangeMusicEx(a,0,b,0,0,0)
-#define S_ChangeMusic(a,b,c) S_ChangeMusicEx(a,b,c,0,0,0)
-
-void S_ChangeMusicSpecial (const char *mmusic);
-
-void S_SetRestoreMusicFadeInCvar (consvar_t *cvar);
-#define S_ClearRestoreMusicFadeInCvar() \
-	S_SetRestoreMusicFadeInCvar(0)
-int  S_GetRestoreMusicFadeIn (void);
-
-void S_SetMusicUsage (int type);
-int  S_MusicUsage (void);
-
-// Stops the music.
-void S_StopMusic(void);
 
 // Stop and resume music, during game PAUSE.
 void S_PauseAudio(void);
@@ -348,17 +243,6 @@ void S_DisableSound(void);
 
 // Attempt to restore music based on gamestate.
 void S_AttemptToRestoreMusic(void);
-
-//
-// Music Fading
-//
-
-void S_SetInternalMusicVolume(INT32 volume);
-void S_StopFadingMusic(void);
-boolean S_FadeMusicFromVolume(UINT8 target_volume, INT16 source_volume, UINT32 ms);
-#define S_FadeMusic(a, b) S_FadeMusicFromVolume(a, -1, b)
-#define S_FadeInChangeMusic(a,b,c,d) S_ChangeMusicEx(a,b,c,0,0,d)
-boolean S_FadeOutStopMusic(UINT32 ms);
 
 //
 // Updates music & sounds

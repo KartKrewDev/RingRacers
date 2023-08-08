@@ -16,6 +16,7 @@
 #include "f_finale.h"
 #include "m_misc.h"
 #include "m_cond.h"
+#include "music.h"
 
 #ifdef PC_DOS
 #include <stdio.h> // for snprintf
@@ -366,7 +367,7 @@ boolean M_Responder(event_t *ev)
 	return true;
 }
 
-#define NotCurrentlyPlaying(desiredname) (!S_MusicPlaying() || strcmp(desiredname, S_MusicName()))
+#define NotCurrentlyPlaying(desiredname) strcmp(desiredname, Music_CurrentSong())
 
 void M_PlayMenuJam(void)
 {
@@ -375,8 +376,7 @@ void M_PlayMenuJam(void)
 
 	if (challengesmenu.pending)
 	{
-		S_StopMusic();
-		S_StopMusicCredit();
+		Music_StopAll();
 
 		musicstatepermitted = true;
 		return;
@@ -391,16 +391,15 @@ void M_PlayMenuJam(void)
 	{
 		if (refMenu->music[0] == '.' && refMenu->music[1] == '\0')
 		{
-			S_StopMusic();
-			S_StopMusicCredit();
+			Music_StopAll();
 			return;
 		}
 		else if (override == 0)
 		{
 			if (NotCurrentlyPlaying(refMenu->music))
 			{
-				S_ChangeMusicInternal(refMenu->music, true);
-				S_ShowMusicCredit();
+				Music_Remap("menu", refMenu->music);
+				Music_Play("menu");
 			}
 			return;
 		}
@@ -416,8 +415,8 @@ void M_PlayMenuJam(void)
 		
 		if (refMenu != NULL && NotCurrentlyPlaying(overridetotrack[override - 1]))
 		{
-			S_ChangeMusicInternal(overridetotrack[override - 1], true);
-			S_ShowMusicCredit();
+			Music_Remap("menu", overridetotrack[override - 1]);
+			Music_Play("menu");
 
 			if (override < GDMUSIC_KEEPONMENU)
 				gamedata->musicstate = GDMUSIC_NONE;
@@ -435,8 +434,8 @@ void M_PlayMenuJam(void)
 	if (!NotCurrentlyPlaying(cv_menujam.string))
 		return;
 
-	S_ChangeMusicInternal(cv_menujam.string, true);
-	S_ShowMusicCredit();
+	Music_Remap("menu", cv_menujam.string);
+	Music_Play("menu");
 }
 
 #undef IsCurrentlyPlaying
@@ -574,6 +573,8 @@ void M_StartControlPanel(void)
 			modeattacking = ATTACKING_NONE;
 		}
 
+		Music_Stop("title");
+
 		if (cv_currprofile.value == -1) // Only ask once per session.
 		{
 			// Make sure the profile data is ready now since we need to select a profile.
@@ -596,7 +597,8 @@ void M_StartControlPanel(void)
 			CV_StealthSetValue(&cv_currprofile, -1); // Make sure to reset that as it is set by PR_ApplyProfile which we kind of hack together to force it.
 
 			// Ambient ocean sounds
-			S_ChangeMusicInternal("_OCEAN", true);
+			Music_Remap("menu_nocred", "_OCEAN");
+			Music_Play("menu_nocred");
 		}
 		else
 		{
