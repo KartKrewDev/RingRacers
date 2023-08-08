@@ -13273,6 +13273,8 @@ static boolean P_SetupSpawnedMapThing(mapthing_t *mthing, mobj_t *mobj)
 				P_SetThingPosition(mobj);
 			}
 		}
+		if (mthing->args[0] == 1)
+			mobj->flags2 |= MF2_AMBUSH;
 		break;
 	}
 	case MT_ITEMCAPSULE:
