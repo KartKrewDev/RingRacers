@@ -6111,7 +6111,7 @@ static void M_DrawStatsMaps(void)
 
 	if (!statisticsmenu.maplist)
 	{
-		V_DrawCenteredThinString(BASEVIDWIDTH/2, 62, 0, "No maps!?");
+		V_DrawCenteredThinString(BASEVIDWIDTH/2, 70, 0, "No maps!?");
 		return;
 	}
 
@@ -6298,7 +6298,7 @@ static void M_DrawStatsChars(void)
 
 	if (!statisticsmenu.maplist || !statisticsmenu.nummaps)
 	{
-		V_DrawCenteredThinString(BASEVIDWIDTH/2, 62, 0, "No chars!?");
+		V_DrawCenteredThinString(BASEVIDWIDTH/2, 70, 0, "No chars!?");
 		return;
 	}
 
@@ -6385,7 +6385,7 @@ static void M_DrawStatsGP(void)
 
 	if (!statisticsmenu.maplist || !statisticsmenu.nummaps)
 	{
-		V_DrawCenteredThinString(BASEVIDWIDTH/2, 62, 0, "No cups!?");
+		V_DrawCenteredThinString(BASEVIDWIDTH/2, 70, 0, "No cups!?");
 		return;
 	}
 
