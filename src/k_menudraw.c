@@ -6410,13 +6410,13 @@ static void M_DrawStatsGP(void)
 	{
 		if (j == KARTSPEED_EASY || !gamedata->everseenspecial)
 		{
-			V_DrawFadeFill(x + 6, y + 1, width - (12 + 1), h, 0, 31, 5 + j);
+			V_DrawFadeFill(x + 6, y + 1, width - (12 + 1), h, 0, 31, 6 + (j & 1)*2);
 			V_DrawCenteredThinString(x + 19 + 7, y - 10, highlightflags|V_FORCEUPPERCASE, gpdifficulty_cons_t[j].strvalue);
 			x += (12 + 1);
 		}
 		else
 		{
-			V_DrawFadeFill(x - 7, y + 1, width, h, 0, 31, 5 + j);
+			V_DrawFadeFill(x - 7, y + 1, width, h, 0, 31, 6 + (j & 1)*2);
 			V_DrawCenteredThinString(x + 19, y - 10, highlightflags|V_FORCEUPPERCASE, gpdifficulty_cons_t[j].strvalue);
 		}
 	}
