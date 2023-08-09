@@ -1793,7 +1793,7 @@ void K_drawKartTimestamp(tic_t drawtime, INT32 TX, INT32 TY, INT32 splitflags, U
 	}
 
 	if (mode && !drawtime)
-		V_DrawTimerString(TX, TY+3, splitflags, va("--'--\"--"));
+		V_DrawTimerString(TX, TY+3, splitflags, "--'--\"--");
 	else
 	{
 		// minutes time      00 __ __
