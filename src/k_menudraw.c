@@ -5988,6 +5988,10 @@ challengedesc:
 
 					keyholdrotation = 360 * ((challengesmenu.chaokeyhold - CHAOHOLD_BEGIN))
 						* (FRACUNIT/(CHAOHOLD_MAX - (CHAOHOLD_BEGIN + CHAOHOLD_END)));
+
+					INT32 time = 3 - (keyholdrotation - 1) / (90 * FRACUNIT);
+					if (time <= 5 && time >= 0)
+						V_DrawScaledPatch(selectx + 2, selecty - 2, 0, kp_eggnum[time]);
 				}
 				else
 				{

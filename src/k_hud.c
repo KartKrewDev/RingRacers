@@ -162,7 +162,7 @@ static patch_t *kp_localtag[4][2];
 static patch_t *kp_talk;
 static patch_t *kp_typdot;
 
-static patch_t *kp_eggnum[6];
+patch_t *kp_eggnum[6];
 
 static patch_t *kp_flameshieldmeter[FLAMESHIELD_MAX][2];
 static patch_t *kp_flameshieldmeter_bg[FLAMESHIELD_MAX][2];
