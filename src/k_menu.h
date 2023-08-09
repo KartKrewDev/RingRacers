@@ -1261,10 +1261,10 @@ boolean M_ChallengesInputs(INT32 ch);
 
 typedef enum
 {
-	statisticspage_basic = 0,
+	//statisticspage_overview = 0,
+	statisticspage_chars = 0,
 	statisticspage_gp,
 	statisticspage_maps,
-	statisticspage_chars,
 	statisticspage_max
 } statisticspage_t;
 

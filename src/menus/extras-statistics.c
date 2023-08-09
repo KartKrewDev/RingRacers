@@ -257,7 +257,6 @@ void M_Statistics(INT32 choice)
 	statisticsmenu.nummedals = M_CountMedals(true, false);
 	statisticsmenu.numextramedals = M_CountMedals(true, true);
 
-	statisticsmenu.page = statisticspage_basic;
 	M_StatisticsPageInit();
 
 	MISC_StatisticsDef.prevMenu = currentMenu;
