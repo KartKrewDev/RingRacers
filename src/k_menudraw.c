@@ -6098,16 +6098,12 @@ static void M_DrawMapMedals(INT32 mapnum, INT32 x, INT32 y)
 
 static void M_DrawStatsMaps(void)
 {
-	INT32 y = 80, i;
+	INT32 y = 70, i;
 	INT16 mnum;
 	boolean dotopname = true, dobottomarrow = (statisticsmenu.location < statisticsmenu.maxscroll);
 	INT32 location = statisticsmenu.location;
 
-	char beststr[256];
-
 	tic_t besttime = 0;
-
-	INT32 mapsunfinished = 0;
 
 	if (!statisticsmenu.maplist)
 	{
@@ -6115,41 +6111,57 @@ static void M_DrawStatsMaps(void)
 		return;
 	}
 
-	for (i = 0; i < nummapheaders; i++)
-	{
-		// Check for no visibility
-		if (!mapheaderinfo[i] || (mapheaderinfo[i]->menuflags & (LF2_NOTIMEATTACK|LF2_HIDEINSTATS|LF2_HIDEINMENU)))
-			continue;
+	INT32 mapsunfinished = 0;
 
-		// No TEST RUN, as that's another exception to Time Attack too
-		if (!mapheaderinfo[i]->typeoflevel)
-			continue;
-
-		if (mapheaderinfo[i]->records.time <= 0)
-		{
-			mapsunfinished++;
-			continue;
-		}
-
-		besttime += mapheaderinfo[i]->records.time;
-	}
-
-	V_DrawThinString(20, 60, 0, "Combined time records:");
-
-	sprintf(beststr, "%i:%02i:%02i.%02i", G_TicsToHours(besttime), G_TicsToMinutes(besttime, false), G_TicsToSeconds(besttime), G_TicsToCentiseconds(besttime));
-	V_DrawRightAlignedThinString(BASEVIDWIDTH-20, 60, (mapsunfinished ? V_REDMAP : 0), beststr);
-
-	if (mapsunfinished)
-		V_DrawRightAlignedThinString(BASEVIDWIDTH-20, 70, V_REDMAP, va("(%d unfinished)", mapsunfinished));
-	else
-		V_DrawRightAlignedThinString(BASEVIDWIDTH-20, 70, 0, "(complete)");
-
-	V_DrawThinString(30, 70, 0, va("x %d/%d", statisticsmenu.gotmedals, statisticsmenu.nummedals));
-	V_DrawSmallMappedPatch(20, 70, 0, W_CachePatchName("GOTITA", PU_CACHE),
+	V_DrawThinString(30, 60, 0, va("x %d/%d", statisticsmenu.gotmedals, statisticsmenu.nummedals));
+	V_DrawSmallMappedPatch(20, 60, 0, W_CachePatchName("GOTITA", PU_CACHE),
 				                       R_GetTranslationColormap(TC_DEFAULT, SKINCOLOR_GOLD, GTC_MENUCACHE));
 
+	INT32 medalspos = BASEVIDWIDTH - 20;
+
+	boolean timeattack[3];
+	timeattack[0] = M_SecretUnlocked(SECRET_TIMEATTACK, true);
+	timeattack[1] = M_SecretUnlocked(SECRET_PRISONBREAK, true);
+	timeattack[2] = M_SecretUnlocked(SECRET_SPECIALATTACK, true);
+
+	if (timeattack[0] || timeattack[1] || timeattack[2])
+	{
+		medalspos -= 64;
+
+		for (i = 0; i < nummapheaders; i++)
+		{
+			// Check for no visibility
+			if (!mapheaderinfo[i] || (mapheaderinfo[i]->menuflags & (LF2_NOTIMEATTACK|LF2_HIDEINSTATS|LF2_HIDEINMENU)))
+				continue;
+
+			// Has to be accessible via time attack
+			if (!(mapheaderinfo[i]->typeoflevel & (TOL_RACE|TOL_BATTLE|TOL_SPECIAL|TOL_VERSUS)))
+				continue;
+
+			if (mapheaderinfo[i]->records.time <= 0)
+			{
+				mapsunfinished++;
+				continue;
+			}
+
+			besttime += mapheaderinfo[i]->records.time;
+		}
+
+		V_DrawRightAlignedThinString(BASEVIDWIDTH-20, 60, 0,
+			va(
+				"Combined time: %c%i:%02i:%02i.%02i (%s)",
+				(mapsunfinished ? '\x85' : '\x80'),
+				G_TicsToHours(besttime),
+				G_TicsToMinutes(besttime, false),
+				G_TicsToSeconds(besttime),
+				G_TicsToCentiseconds(besttime),
+				(mapsunfinished ? "incomplete" : "complete")
+			)
+		);
+	}
+
 	if (location)
-		V_DrawCharacter(10, y-(skullAnimCounter/5),
+		V_DrawCharacter(10, 80-(skullAnimCounter/5),
 			'\x1A' | highlightflags, false); // up arrow
 
 	i = -1;
@@ -6175,7 +6187,9 @@ static void M_DrawStatsMaps(void)
 			{
 				const char *str;
 
-				if (mapheaderinfo[mnum]->cup)
+				if (mapheaderinfo[mnum]->typeoflevel & TOL_TUTORIAL)
+					str = "TUTORIAL MODE";
+				else if (mapheaderinfo[mnum]->cup)
 					str = va("%s CUP", mapheaderinfo[mnum]->cup->realname);
 				else
 					str = "LOST AND FOUND";
@@ -6185,7 +6199,11 @@ static void M_DrawStatsMaps(void)
 
 			if (dotopname)
 			{
-				V_DrawRightAlignedThinString(BASEVIDWIDTH-20, y, highlightflags, "MEDALS");
+				V_DrawRightAlignedThinString(medalspos, y, highlightflags, "MEDALS");
+
+				if (timeattack[0] || timeattack[1] || timeattack[2])
+					V_DrawRightAlignedThinString((BASEVIDWIDTH-20), y, highlightflags, "TIME");
+
 				dotopname = false;
 			}
 
@@ -6196,7 +6214,35 @@ static void M_DrawStatsMaps(void)
 			continue;
 		}
 
-		M_DrawMapMedals(mnum+1, 291, y);
+		V_DrawFadeFill(24, y + 5, (BASEVIDWIDTH - 24) - 24, 3, 0, 31, 8 - (i & 1)*2);
+
+		if (!(mapheaderinfo[mnum]->menuflags & LF2_NOTIMEATTACK)
+		&& (
+				(timeattack[0] && (mapheaderinfo[mnum]->typeoflevel & TOL_RACE))
+			|| (timeattack[1] && (mapheaderinfo[mnum]->typeoflevel & TOL_BATTLE))
+			|| (timeattack[2] && (mapheaderinfo[mnum]->typeoflevel & (TOL_SPECIAL|TOL_VERSUS)))
+			)
+		)
+		{
+			besttime = mapheaderinfo[mnum]->records.time;
+
+			if (besttime)
+			{
+				V_DrawRightAlignedString((BASEVIDWIDTH-24), y+1, 0,
+					va("%02d'%02d\"%02d",
+						G_TicsToMinutes(besttime, true),
+						G_TicsToSeconds(besttime),
+						G_TicsToCentiseconds(besttime)
+					)
+				);
+			}
+			else
+			{
+				V_DrawRightAlignedString((BASEVIDWIDTH-24), y+1, V_GRAYMAP, "--'--\"--");
+			}
+		}
+
+		M_DrawMapMedals(mnum+1, medalspos - 8, y);
 
 		if (mapheaderinfo[mnum]->menuttl[0])
 		{

@@ -9,7 +9,7 @@
 
 struct statisticsmenu_s statisticsmenu;
 
-static boolean M_StatisticsAddMap(UINT16 map, cupheader_t *cup, boolean *headerexists)
+static boolean M_StatisticsAddMap(UINT16 map, cupheader_t *cup, boolean *headerexists, boolean tutorial)
 {
 	if (!mapheaderinfo[map])
 		return false;
@@ -17,12 +17,11 @@ static boolean M_StatisticsAddMap(UINT16 map, cupheader_t *cup, boolean *headere
 	if (mapheaderinfo[map]->cup != cup)
 		return false;
 
-	// Check for no visibility
-	if (mapheaderinfo[map]->menuflags & (LF2_NOTIMEATTACK|LF2_HIDEINSTATS|LF2_HIDEINMENU))
+	if (((mapheaderinfo[map]->typeoflevel & TOL_TUTORIAL) == TOL_TUTORIAL) != tutorial)
 		return false;
 
-	// No TEST RUN, as that's another exception to Time Attack too
-	if (!mapheaderinfo[map]->typeoflevel)
+	// Check for no visibility
+	if (mapheaderinfo[map]->menuflags & (LF2_HIDEINSTATS|LF2_HIDEINMENU))
 		return false;
 
 	// Check for completion
@@ -53,6 +52,7 @@ static void M_StatisticsMaps(void)
 	statisticsmenu.maplist = Z_Malloc(sizeof(UINT16) * (nummapheaders+1 + numkartcupheaders), PU_STATIC, NULL);
 	statisticsmenu.nummaps = 0;
 
+	// Cups
 	for (cup = kartcupheaders; cup; cup = cup->next)
 	{
 		headerexists = false;
@@ -65,22 +65,29 @@ static void M_StatisticsMaps(void)
 			if (cup->cachedlevels[i] >= nummapheaders)
 				continue;
 
-			M_StatisticsAddMap(cup->cachedlevels[i], cup, &headerexists);
+			M_StatisticsAddMap(cup->cachedlevels[i], cup, &headerexists, false);
 		}
 	}
 
+	// Lost and Found
 	headerexists = false;
-
 	for (i = 0; i < nummapheaders; i++)
 	{
-		M_StatisticsAddMap(i, NULL, &headerexists);
+		M_StatisticsAddMap(i, NULL, &headerexists, false);
+	}
+
+	// Tutorial
+	headerexists = false;
+	for (i = 0; i < nummapheaders; i++)
+	{
+		M_StatisticsAddMap(i, NULL, &headerexists, true);
 	}
 
 	if ((i = statisticsmenu.numextramedals) != 0)
 		i += 2;
 
 	statisticsmenu.maplist[statisticsmenu.nummaps] = NEXTMAP_INVALID;
-	statisticsmenu.maxscroll = (statisticsmenu.nummaps + i) - 11;
+	statisticsmenu.maxscroll = (statisticsmenu.nummaps + i) - 12;
 	statisticsmenu.location = 0;
 
 	if (statisticsmenu.maxscroll < 0)
