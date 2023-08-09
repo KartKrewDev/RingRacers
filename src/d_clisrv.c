@@ -2750,7 +2750,11 @@ static void Command_connect(void)
 	restoreMenu = &PLAY_MP_OptSelectDef;
 
 	Music_Remap("menu", "NETMD2");
-	Music_Play("menu");
+
+	if (stricmp(Music_CurrentSong(), "NETMD2"))
+	{
+		Music_Play("menu");
+	}
 
 	if (setup_numplayers == 0)
 	{
