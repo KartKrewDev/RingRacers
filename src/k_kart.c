@@ -4762,29 +4762,34 @@ static mobj_t *K_SpawnKartMissile(mobj_t *source, mobjtype_t type, angle_t an, I
 	P_SetScale(th, finalscale);
 	th->destscale = finalscale;
 
-	if (P_IsObjectOnGround(source))
-	{
-		// floorz and ceilingz aren't properly set to account for FOFs and Polyobjects on spawn
-		// This should set it for FOFs
-		P_SetOrigin(th, th->x, th->y, th->z); // however, THIS can fuck up your day. just absolutely ruin you.
-		if (P_MobjWasRemoved(th))
-			return NULL;
-
-		// spawn on the ground if the player is on the ground
-		if (P_MobjFlip(source) < 0)
-		{
-			th->z = th->ceilingz - th->height;
-			th->eflags |= MFE_VERTICALFLIP;
-		}
-		else
-			th->z = th->floorz;
-	}
-
 	th->angle = an;
 
 	th->momx = FixedMul(finalspeed, FINECOSINE(an>>ANGLETOFINESHIFT));
 	th->momy = FixedMul(finalspeed, FINESINE(an>>ANGLETOFINESHIFT));
 	th->momz = source->momz;
+
+	P_CheckPosition(th, x, y, NULL);
+
+	if (P_MobjWasRemoved(th))
+		return NULL;
+
+	if ((P_IsObjectFlipped(th)
+			? tm.ceilingz - source->ceilingz
+			: tm.floorz - source->floorz) > P_GetThingStepUp(th, x, y))
+	{
+		// Assuming this is on the boundary of a sector and
+		// the wall is too tall... I'm not bothering with
+		// trying to find where the line is. Just nudge this
+		// object back a bit so it (hopefully) doesn't
+		// teleport on top of the ledge.
+
+		const fixed_t r = abs(th->radius - source->radius);
+
+		P_SetOrigin(th, source->x - FixedMul(r, FSIN(an)), source->y - FixedMul(r, FCOS(an)), z);
+
+		if (P_MobjWasRemoved(th))
+			return NULL;
+	}
 
 	if (source->player != NULL)
 	{
