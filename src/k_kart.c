@@ -8187,6 +8187,13 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 	if (player->hyudorotimer)
 		player->hyudorotimer--;
 
+	if (player->ringvolume < MINRINGVOLUME)
+		player->ringvolume = MINRINGVOLUME;
+	else if (MAXRINGVOLUME - player->ringvolume < RINGVOLUMEREGEN)
+		player->ringvolume = MAXRINGVOLUME;
+	else
+		player->ringvolume += RINGVOLUMEREGEN;
+
 	if (player->sadtimer)
 		player->sadtimer--;
 
