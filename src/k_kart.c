@@ -1901,7 +1901,7 @@ static void K_SpawnGenericSpeedLines(player_t *player, boolean top)
 	else if (player->ringboost)
 	{
 		UINT8 ringboostcolors[] = {SKINCOLOR_AQUAMARINE, SKINCOLOR_EMERALD, SKINCOLOR_GARDEN, SKINCOLOR_CROCODILE, SKINCOLOR_BANANA};
-		UINT8 ringboostbreakpoint = min(player->ringboost / TICRATE / 3, sizeof(ringboostcolors) / sizeof(ringboostcolors[0]));
+		UINT8 ringboostbreakpoint = min(player->ringboost / TICRATE / 6, sizeof(ringboostcolors) / sizeof(ringboostcolors[0]));
 		if (ringboostbreakpoint > 0)
 		{
 			fast->color = ringboostcolors[ringboostbreakpoint - 1];
@@ -3288,7 +3288,7 @@ static void K_GetKartBoostPower(player_t *player)
 	{
 		// This one's a little special: we add extra top speed per tic of ringboost stored up, to allow for Ring Box to really rocket away.
 		// (We compensate when decrementing ringboost to avoid runaway exponential scaling hell.)
-		ADDBOOST(FRACUNIT/4 + (FRACUNIT / 2000 * (player->ringboost)), 4*FRACUNIT, 0); // + 20% top speed, + 400% acceleration, +0% handling
+		ADDBOOST(FRACUNIT/4 + (FRACUNIT / 1500 * (player->ringboost)), 4*FRACUNIT, 0); // + 20% top speed, + 400% acceleration, +0% handling
 	}
 
 	if (player->eggmanexplode) // Ready-to-explode
