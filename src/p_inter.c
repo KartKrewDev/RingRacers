@@ -207,7 +207,8 @@ static void P_ItemPop(mobj_t *actor)
 
 	Obj_SpawnItemDebrisEffects(actor, actor->target);
 
-	P_SetMobjState(actor, S_RINGBOX1);
+	if (!specialstageinfo.valid) // In Special, you'll respawn as a Ring Box (random-item.c), don't confuse the player.
+		P_SetMobjState(actor, S_RINGBOX1);
 	actor->extravalue1 = 0;
 
 	// de-solidify

@@ -18,6 +18,7 @@
 #include "../r_defs.h"
 #include "../k_battle.h"
 #include "../m_random.h"
+#include "../k_specialstage.h" // specialstageinfo
 
 #define FLOAT_HEIGHT ( 12 * FRACUNIT )
 #define FLOAT_TIME ( 2 * TICRATE )
@@ -115,9 +116,13 @@ void Obj_RandomItemVisuals(mobj_t *mobj)
 	//
 	// Then extraval1 starts ticking up and triggers the transformation from Ringbox to Random Item.
 	if (mobj->fuse == 0 && !(mobj->flags & MF_NOCLIPTHING) && !(mobj->flags2 & MF2_AMBUSH)
-		&& !cv_thunderdome.value && !(modeattacking & ATTACKING_SPB))
+		&& !cv_thunderdome.value && (modeattacking == 0))
 	{
 		mobj->extravalue1++;
+
+		if (specialstageinfo.valid) // Players need ammo in Special, transform to RANDOMITEM right away!
+			mobj->extravalue1 = max(mobj->extravalue1, RINGBOX_TIME);
+
 		if (mobj->extravalue1 == RINGBOX_TIME)
 		{
 			// Sync the position in RINGBOX and RANDOMITEM animations.
