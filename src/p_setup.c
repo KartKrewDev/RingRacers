@@ -406,7 +406,7 @@ void P_DeleteHeaderFollowers(UINT16 i)
 static void P_ClearSingleMapHeaderInfo(INT16 num)
 {
 	mapheaderinfo[num]->lvlttl[0] = '\0';
-	mapheaderinfo[num]->subttl[0] = '\0';
+	mapheaderinfo[num]->menuttl[0] = '\0';
 	mapheaderinfo[num]->zonttl[0] = '\0';
 	mapheaderinfo[num]->actnum = 0;
 	mapheaderinfo[num]->typeoflevel = 0;

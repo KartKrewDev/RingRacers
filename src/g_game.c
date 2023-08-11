@@ -4742,7 +4742,7 @@ void G_LoadGameSettings(void)
 }
 
 #define GD_VERSIONCHECK 0xBA5ED123 // Change every major version, as usual
-#define GD_VERSIONMINOR 4 // Change every format update
+#define GD_VERSIONMINOR 5 // Change every format update
 
 typedef enum
 {
@@ -5024,8 +5024,6 @@ void G_LoadGameData(void)
 				dummyrecord.wins = READUINT32(save.p);
 				dummyrecord._saveid = i;
 
-				CONS_Printf(" (TEMPORARY DISPLAY) skinname is \"%s\", has %u wins\n", skinname, dummyrecord.wins);
-
 				tempskinreferences[i].id = MAXSKINS;
 
 				if (skin != -1)
@@ -5129,7 +5127,19 @@ void G_LoadGameData(void)
 			cupwindata_t dummywindata[4];
 
 			// Find the relevant cup.
-			READSTRINGL(save.p, cupname, sizeof(cupname));
+			if (versionMinor < 5)
+			{
+				// Before this version cups were called things like RING.
+				// Now that example cup would be called RR_RING instead.
+				cupname[0] = cupname[1] = 'R';
+				cupname[2] = '_';
+				READSTRINGL(save.p, (cupname + 3), sizeof(cupname) - 3);
+			}
+			else
+			{
+				READSTRINGL(save.p, cupname, sizeof(cupname));
+			}
+
 			UINT32 hash = quickncasehash(cupname, MAXCUPNAME);
 			for (cup = kartcupheaders; cup; cup = cup->next)
 			{

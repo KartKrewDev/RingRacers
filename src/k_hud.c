@@ -162,7 +162,7 @@ static patch_t *kp_localtag[4][2];
 static patch_t *kp_talk;
 static patch_t *kp_typdot;
 
-static patch_t *kp_eggnum[6];
+patch_t *kp_eggnum[6];
 
 static patch_t *kp_flameshieldmeter[FLAMESHIELD_MAX][2];
 static patch_t *kp_flameshieldmeter_bg[FLAMESHIELD_MAX][2];
@@ -1793,7 +1793,7 @@ void K_drawKartTimestamp(tic_t drawtime, INT32 TX, INT32 TY, INT32 splitflags, U
 	}
 
 	if (mode && !drawtime)
-		V_DrawTimerString(TX, TY+3, splitflags, va("--'--\"--"));
+		V_DrawTimerString(TX, TY+3, splitflags, "--'--\"--");
 	else
 	{
 		// minutes time      00 __ __

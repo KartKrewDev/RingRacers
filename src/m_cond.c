@@ -1432,7 +1432,7 @@ static const char *M_GetConditionString(condition_t *cn)
 					continue;
 				return va("%s%s %s CUP",
 					completetype, orbetter,
-					(M_CupLocked(cup) ? "???" : cup->name)
+					(M_CupLocked(cup) ? "???" : cup->realname)
 				);
 			}
 			return va("INVALID CUP CONDITION \"%d:%d\"", cn->type, cn->requirement);

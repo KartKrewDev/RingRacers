@@ -396,6 +396,8 @@ struct cupheader_t
 	char name[MAXCUPNAME];					///< Cup title
 	UINT32 namehash;						///< Cup title hash
 
+	char realname[MAXCUPNAME];				///< Cup nomme de gurre
+
 	char icon[9];							///< Name of the icon patch
 	char *levellist[CUPCACHE_MAX];			///< List of levels that belong to this cup
 	INT16 cachedlevels[CUPCACHE_MAX];		///< IDs in levellist, bonusgame, and specialstage
@@ -464,7 +466,7 @@ struct mapheader_t
 
 	// Titlecard information
 	char lvlttl[22];					///< Level name without "Zone". (21 character limit instead of 32, 21 characters can display on screen max anyway)
-	char subttl[33];					///< Subtitle for level
+	char menuttl[22];					///< Menu title for level
 	char zonttl[22];					///< "ZONE" replacement name
 	UINT8 actnum;						///< Act number or 0 for none.
 

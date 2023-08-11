@@ -1259,10 +1259,23 @@ void M_DrawChallenges(void);
 void M_ChallengesTick(void);
 boolean M_ChallengesInputs(INT32 ch);
 
+typedef enum
+{
+	//statisticspage_overview = 0,
+	statisticspage_chars = 0,
+	statisticspage_gp,
+	statisticspage_maps,
+	statisticspage_max
+} statisticspage_t;
+
 extern struct statisticsmenu_s {
+	statisticspage_t page;
 	INT32 location;
 	INT32 nummaps;
+	INT32 gotmedals;
+	INT32 nummedals;
 	INT32 numextramedals;
+	UINT32 statgridplayed[9][9];
 	INT32 maxscroll;
 	UINT16 *maplist;
 } statisticsmenu;
@@ -1270,6 +1283,9 @@ extern struct statisticsmenu_s {
 void M_Statistics(INT32 choice);
 void M_DrawStatistics(void);
 boolean M_StatisticsInputs(INT32 ch);
+
+void M_DrawCharacterIconAndEngine(INT32 x, INT32 y, UINT8 skin, UINT8 *colormap, boolean dot);
+fixed_t M_DrawCupWinData(INT32 rankx, INT32 ranky, cupheader_t *cup, UINT8 difficulty, boolean flash, boolean statsmode);
 
 #define MAXWRONGPLAYER MAXSPLITSCREENPLAYERS
 #define WRONGPLAYEROFFSCREEN 48

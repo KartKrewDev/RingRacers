@@ -1041,10 +1041,10 @@ void readlevelheader(MYFILE *f, char * name)
 				continue;
 			}
 
-			if (fastcmp(word, "SUBTITLE"))
+			if (fastcmp(word, "MENUTITLE"))
 			{
-				deh_strlcpy(mapheaderinfo[num]->subttl, word2,
-					sizeof(mapheaderinfo[num]->subttl), va("Level header %d: subtitle", num));
+				deh_strlcpy(mapheaderinfo[num]->menuttl, word2,
+					sizeof(mapheaderinfo[num]->menuttl), va("Level header %d: menutitle", num));
 				continue;
 			}
 
@@ -3495,6 +3495,11 @@ void readcupheader(MYFILE *f, cupheader_t *cup)
 					deh_warning("%s Cup: Invalid monitor type \"%s\" (should be 1-9 or A-Z)\n", cup->name, word2);
 				else
 					cup->monitor = (word2[0] - 'A') + 10;
+			}
+			else if (fastcmp(word, "REALNAME"))
+			{
+				deh_strlcpy(cup->realname, word2,
+					sizeof(cup->realname), va("%s Cup: realname", cup->name));
 			}
 			else if (fastcmp(word, "ICON"))
 			{

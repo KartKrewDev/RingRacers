@@ -162,7 +162,7 @@ static fixed_t bgImageScroll = 0;
 static char bgImageName[9];
 
 #define MENUBG_TEXTSCROLL 6
-#define MENUBG_IMAGESCROLL 32
+#define MENUBG_IMAGESCROLL 36
 
 void M_UpdateMenuBGImage(boolean forceReset)
 {
@@ -181,7 +181,7 @@ void M_UpdateMenuBGImage(boolean forceReset)
 
 	if (forceReset == false && strcmp(bgImageName, oldName))
 	{
-		bgImageScroll = (BASEVIDWIDTH / 2)*FRACUNIT;
+		bgImageScroll = (3 * BASEVIDWIDTH) * (FRACUNIT / 4);
 	}
 }
 
@@ -205,14 +205,17 @@ void M_DrawMenuBackground(void)
 	V_DrawFixedPatch(8 * FRACUNIT, -bgText1Scroll + text1loop,
 		FRACUNIT, V_SUBTRACT, text1, NULL);
 
-	bgText1Scroll += (MENUBG_TEXTSCROLL*renderdeltatics);
-	while (bgText1Scroll > text1loop)
-		bgText1Scroll -= text1loop;
-
 	V_DrawFixedPatch(-bgText2Scroll, (BASEVIDHEIGHT-8) * FRACUNIT,
 		FRACUNIT, V_ADD, text2, NULL);
 	V_DrawFixedPatch(-bgText2Scroll + text2loop, (BASEVIDHEIGHT-8) * FRACUNIT,
 		FRACUNIT, V_ADD, text2, NULL);
+
+	if (renderdeltatics > 2*FRACUNIT)
+		return; // wipe hitch...
+
+	bgText1Scroll += (MENUBG_TEXTSCROLL*renderdeltatics);
+	while (bgText1Scroll > text1loop)
+		bgText1Scroll -= text1loop;
 
 	bgText2Scroll += (MENUBG_TEXTSCROLL*renderdeltatics);
 	while (bgText2Scroll > text2loop)
@@ -2394,7 +2397,7 @@ static void M_DrawCupTitle(INT16 y, levelsearch_t *levelsearch)
 		boolean unlocked = (M_GetFirstLevelInList(&temp, levelsearch) != NEXTMAP_INVALID);
 		UINT8 *colormap = R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_GREY, GTC_MENUCACHE);
 		patch_t *icon = W_CachePatchName(levelsearch->cup->icon, PU_CACHE);
-		const char *str = (unlocked ? va("%s Cup", levelsearch->cup->name) : "???");
+		const char *str = (unlocked ? va("%s Cup", levelsearch->cup->realname) : "???");
 		INT16 offset = V_LSTitleLowStringWidth(str, 0) / 2;
 
 		V_DrawLSTitleLowString(BASEVIDWIDTH/2 - offset, y+6, 0, str);
@@ -2413,6 +2416,175 @@ static void M_DrawCupTitle(INT16 y, levelsearch_t *levelsearch)
 			V_DrawCenteredLSTitleLowString(BASEVIDWIDTH/2, y+6, 0, va("%s Mode", gametypes[namedgt]->name));
 		}
 	}
+}
+
+fixed_t M_DrawCupWinData(INT32 rankx, INT32 ranky, cupheader_t *cup, UINT8 difficulty, boolean flash, boolean statsmode)
+{
+	INT32 rankw = 14 + 1 + 12 + 1 + 12;
+
+	if (!cup)
+		return 0;
+
+	boolean noemerald = (!gamedata->everseenspecial || difficulty == KARTSPEED_EASY);
+
+	if (statsmode)
+	{
+		rankw += 10 + 1;
+
+		if (noemerald)
+		{
+			rankw -= (12 + 1);
+			rankx += 7; // vibes-based maths, as tyron puts it
+		}
+	}
+
+	rankx += 19 - (rankw / 2);
+
+	cupwindata_t *windata = &(cup->windata[difficulty]);
+	if (windata->best_placement == 0)
+	{
+		if (statsmode)
+		{
+			V_DrawCharacter((10-4)/2 + rankx, ranky, '.' | V_GRAYMAP, false);
+			rankx += 10 + 1;
+			V_DrawCharacter((14-4)/2 + rankx, ranky, '.' | V_GRAYMAP, false);
+			rankx += 14 + 1;
+			V_DrawCharacter((12-4)/2 + rankx, ranky, '.' | V_GRAYMAP, false);
+
+			if (!noemerald)
+			{
+				rankx += 12 + 1;
+				V_DrawCharacter((12-4)/2 + rankx, ranky, '.' | V_GRAYMAP, false);
+			}
+		}
+		return rankw;
+	}
+
+	UINT8 *colormap = NULL;
+
+	if (statsmode)
+	{
+		patch_t *monPat = W_CachePatchName(va("CUPMON%c%c", '0' + cup->monitor, 'C'), PU_CACHE);
+		UINT16 moncolor = SKINCOLOR_NONE;
+
+		switch (windata->best_placement)
+		{
+			case 1:
+				moncolor = SKINCOLOR_GOLD;
+				break;
+			case 2:
+				moncolor = SKINCOLOR_SILVER;
+				break;
+			case 3:
+				moncolor = SKINCOLOR_BRONZE;
+				break;
+			default:
+				moncolor = SKINCOLOR_BEIGE;
+				break;
+		}
+
+		if (moncolor != SKINCOLOR_NONE)
+			colormap = R_GetTranslationColormap(TC_RAINBOW, moncolor, GTC_MENUCACHE);
+
+		if (monPat)
+			V_DrawFixedPatch((rankx)*FRACUNIT, (ranky)*FRACUNIT, FRACUNIT, 0, monPat, colormap);
+
+		rankx += 10 + 1;
+
+		colormap = NULL;
+	}
+
+	const gp_rank_e grade = windata->best_grade; // (cupgrid.previewanim/TICRATE) % (GRADE_S + 1); -- testing
+	patch_t *gradePat = NULL;
+	UINT16 gradecolor = K_GetGradeColor(grade);
+
+	if (gradecolor != SKINCOLOR_NONE)
+		colormap = R_GetTranslationColormap(TC_DEFAULT, gradecolor, GTC_MENUCACHE);
+
+	switch (grade)
+	{
+		case GRADE_E:
+			gradePat = W_CachePatchName("R_CUPRNE", PU_CACHE);
+			break;
+		case GRADE_D:
+			gradePat = W_CachePatchName("R_CUPRND", PU_CACHE);
+			break;
+		case GRADE_C:
+			gradePat = W_CachePatchName("R_CUPRNC", PU_CACHE);
+			break;
+		case GRADE_B:
+			gradePat = W_CachePatchName("R_CUPRNB", PU_CACHE);
+			break;
+		case GRADE_A:
+			gradePat = W_CachePatchName("R_CUPRNA", PU_CACHE);
+			break;
+		case GRADE_S:
+			gradePat = W_CachePatchName("R_CUPRNS", PU_CACHE);
+			break;
+		default:
+			break;
+	}
+
+	if (gradePat)
+		V_DrawFixedPatch((rankx)*FRACUNIT, (ranky)*FRACUNIT, FRACUNIT, 0, gradePat, colormap);
+
+	rankx += 14 + 1;
+
+	patch_t *charPat = NULL;
+
+	if ((windata->best_skin.unloaded != NULL)
+		|| (windata->best_skin.id > numskins))
+	{
+		colormap = NULL;
+
+		charPat = W_CachePatchName("HUHMAP", PU_CACHE);
+	}
+	else
+	{
+		UINT8 skin = windata->best_skin.id;
+
+		colormap = R_GetTranslationColormap(skin, skins[skin].prefcolor, GTC_MENUCACHE);
+
+		charPat = faceprefix[skin][FACE_MINIMAP];
+	}
+
+	if (charPat)
+		V_DrawFixedPatch((rankx)*FRACUNIT, (ranky)*FRACUNIT, FRACUNIT, 0, charPat, colormap);
+
+	rankx += 12 + 1;
+
+	if (noemerald)
+		;
+	else if (windata->got_emerald == true)
+	{
+		if (cup->emeraldnum == 0)
+			V_DrawCharacter(rankx+2, ranky+2, '+', false);
+		else
+		{
+			colormap = NULL;
+
+			if (!flash)
+			{
+				UINT16 col = SKINCOLOR_CHAOSEMERALD1 + (cup->emeraldnum-1) % 7;
+
+				colormap = R_GetTranslationColormap(TC_DEFAULT, col, GTC_MENUCACHE);
+			}
+
+			const char *emname = va(
+				"%sMAP%c",
+				(cup->emeraldnum > 7) ? "SUP" : "EME",
+				colormap ? '\0' : 'B'
+			);
+
+			V_DrawFixedPatch((rankx)*FRACUNIT, (ranky)*FRACUNIT, FRACUNIT, 0, W_CachePatchName(emname, PU_CACHE), colormap);
+		}
+	}
+	else if (statsmode)
+	{
+		V_DrawCharacter((12-4)/2 + rankx, ranky, '.' | V_GRAYMAP, false);
+	}
+
+	return rankw;
 }
 
 void M_DrawCupSelect(void)
@@ -2520,100 +2692,16 @@ void M_DrawCupSelect(void)
 					V_DrawScaledPatch(x + 32, y + 32, 0, W_CachePatchName("CUPBKUP1", PU_CACHE));
 				}
 
-				if (!windata)
-					;
-				else if (windata->best_placement != 0)
+				if (windata && windata->best_placement != 0)
 				{
-					const INT32 rankw = 14 + 12 + 12 + 2;
-					INT32 rankx = (x + 19) - (rankw / 2);
-					const INT32 ranky = 8 + (j*100) - (30*menutransition.tics);
-
-					patch_t *gradePat = NULL;
-					colormap = NULL;
-
-					const gp_rank_e grade = windata->best_grade; // (cupgrid.previewanim/TICRATE) % (GRADE_S + 1); -- testing
-					UINT16 gradecolor = K_GetGradeColor(grade);
-
-					if (gradecolor != SKINCOLOR_NONE)
-						colormap = R_GetTranslationColormap(TC_DEFAULT, gradecolor, GTC_MENUCACHE);
-
-					switch (grade)
-					{
-						case GRADE_E:
-							gradePat = W_CachePatchName("R_CUPRNE", PU_CACHE);
-							break;
-						case GRADE_D:
-							gradePat = W_CachePatchName("R_CUPRND", PU_CACHE);
-							break;
-						case GRADE_C:
-							gradePat = W_CachePatchName("R_CUPRNC", PU_CACHE);
-							break;
-						case GRADE_B:
-							gradePat = W_CachePatchName("R_CUPRNB", PU_CACHE);
-							break;
-						case GRADE_A:
-							gradePat = W_CachePatchName("R_CUPRNA", PU_CACHE);
-							break;
-						case GRADE_S:
-							gradePat = W_CachePatchName("R_CUPRNS", PU_CACHE);
-							break;
-						default:
-							break;
-					}
-
-					if (gradePat)
-						V_DrawFixedPatch((rankx)*FRACUNIT, (ranky)*FRACUNIT, FRACUNIT, 0, gradePat, colormap);
-
-					rankx += 14 + 1;
-
-					patch_t *charPat = NULL;
-
-					if ((windata->best_skin.unloaded != NULL)
-						|| (windata->best_skin.id > numskins))
-					{
-						colormap = NULL;
-
-						charPat = W_CachePatchName("HUHMAP", PU_CACHE);
-					}
-					else
-					{
-						UINT8 skin = windata->best_skin.id;
-
-						colormap = R_GetTranslationColormap(skin, skins[skin].prefcolor, GTC_MENUCACHE);
-
-						charPat = faceprefix[skin][FACE_MINIMAP];
-					}
-
-					if (charPat)
-						V_DrawFixedPatch((rankx)*FRACUNIT, (ranky)*FRACUNIT, FRACUNIT, 0, charPat, colormap);
-
-					if (cv_dummygpdifficulty.value > 0
-						&& windata->got_emerald == true)
-					{
-						rankx += 12 + 1;
-
-						if (templevelsearch.cup->emeraldnum == 0)
-							V_DrawCharacter(rankx+2, ranky+2, '+', false);
-						else
-						{
-							colormap = NULL;
-
-							if (!(cupgrid.previewanim & 1))
-							{
-								UINT16 col = SKINCOLOR_CHAOSEMERALD1 + (templevelsearch.cup->emeraldnum-1) % 7;
-
-								colormap = R_GetTranslationColormap(TC_DEFAULT, col, GTC_MENUCACHE);
-							}
-
-							const char *emname = va(
-								"%sMAP%c",
-								(templevelsearch.cup->emeraldnum > 7) ? "SUP" : "EME",
-								colormap ? '\0' : 'B'
-							);
-
-							V_DrawFixedPatch((rankx)*FRACUNIT, (ranky)*FRACUNIT, FRACUNIT, 0, W_CachePatchName(emname, PU_CACHE), colormap);
-						}
-					}
+					M_DrawCupWinData(
+						x,
+						8 + (j*100) - (30*menutransition.tics),
+						templevelsearch.cup,
+						cv_dummygpdifficulty.value,
+						(cupgrid.previewanim & 1),
+						false
+					);
 				}
 			}
 		}
@@ -2656,16 +2744,22 @@ void M_DrawCupSelect(void)
 static void M_DrawHighLowLevelTitle(INT16 x, INT16 y, INT16 map)
 {
 	char word1[22];
-	char word2[22];
+	char word2[22 + 2]; // actnum
 	UINT8 word1len = 0;
 	UINT8 word2len = 0;
 	INT16 x2 = x;
 	UINT8 i;
 
-	if (!mapheaderinfo[map] || !mapheaderinfo[map]->lvlttl[0])
+	if (!mapheaderinfo[map]
+		|| (
+			!mapheaderinfo[map]->menuttl[0]
+			&& !mapheaderinfo[map]->lvlttl[0]
+		)
+	)
 		return;
 
-	if (mapheaderinfo[map]->zonttl[0])
+	if (!mapheaderinfo[map]->menuttl[0]
+		&& mapheaderinfo[map]->zonttl[0])
 	{
 		boolean one = true;
 		boolean two = true;
@@ -2696,12 +2790,17 @@ static void M_DrawHighLowLevelTitle(INT16 x, INT16 y, INT16 map)
 	{
 		boolean donewithone = false;
 
+		char *ttlsource =
+			mapheaderinfo[map]->menuttl[0]
+			? mapheaderinfo[map]->menuttl
+			: mapheaderinfo[map]->lvlttl;
+
 		for (i = 0; i < 22; i++)
 		{
-			if (!mapheaderinfo[map]->lvlttl[i])
+			if (!ttlsource[i])
 				break;
 
-			if (mapheaderinfo[map]->lvlttl[i] == ' ')
+			if (ttlsource[i] == ' ')
 			{
 				if (!donewithone)
 				{
@@ -2712,18 +2811,18 @@ static void M_DrawHighLowLevelTitle(INT16 x, INT16 y, INT16 map)
 
 			if (donewithone)
 			{
-				word2[word2len] = mapheaderinfo[map]->lvlttl[i];
+				word2[word2len] = ttlsource[i];
 				word2len++;
 			}
 			else
 			{
-				word1[word1len] = mapheaderinfo[map]->lvlttl[i];
+				word1[word1len] = ttlsource[i];
 				word1len++;
 			}
 		}
 	}
 
-	if (mapheaderinfo[map]->actnum)
+	if (!mapheaderinfo[map]->menuttl[0] && mapheaderinfo[map]->actnum)
 	{
 		word2[word2len] = ' ';
 		word2len++;
@@ -5280,6 +5379,41 @@ drawborder:
 
 #define challengetransparentstrength 8
 
+void M_DrawCharacterIconAndEngine(INT32 x, INT32 y, UINT8 skin, UINT8 *colormap, boolean dot)
+{
+	V_DrawFixedPatch(x*FRACUNIT, y*FRACUNIT,
+		FRACUNIT,
+		0, faceprefix[skin][FACE_RANK],
+		colormap);
+
+	if (dot)
+	{
+		V_DrawScaledPatch(x, y + 11, 0, W_CachePatchName("ALTSDOT", PU_CACHE));
+	}
+
+	V_DrawFadeFill(x+16, y, 16, 16, 0, 31, challengetransparentstrength);
+
+	V_DrawFill(x+16+5,   y+1,    1, 14,  0);
+	V_DrawFill(x+16+5+5, y+1,    1, 14,  0);
+	V_DrawFill(x+16+1,   y+5,   14,  1,  0);
+	V_DrawFill(x+16+1,   y+5+5, 14,  1,  0);
+
+	// The following is a partial duplication of R_GetEngineClass
+	{
+		INT32 s = (skins[skin].kartspeed - 1)/3;
+		INT32 w = (skins[skin].kartweight - 1)/3;
+
+		#define LOCKSTAT(stat) \
+			if (stat < 0) { stat = 0; } \
+			if (stat > 2) { stat = 2; }
+			LOCKSTAT(s);
+			LOCKSTAT(w);
+		#undef LOCKSTAT
+
+		V_DrawFill(x+16 + (s*5), y + (w*5), 6, 6, 0);
+	}
+}
+
 static void M_DrawChallengePreview(INT32 x, INT32 y)
 {
 	unlockable_t *ref = NULL;
@@ -5346,37 +5480,7 @@ static void M_DrawChallengePreview(INT32 x, INT32 y)
 					break;
 				}
 
-				V_DrawFixedPatch(4*FRACUNIT, (BASEVIDHEIGHT-(4+16))*FRACUNIT,
-					FRACUNIT,
-					0, faceprefix[i][FACE_RANK],
-					colormap);
-
-				if (i != skin)
-				{
-					V_DrawScaledPatch(4, (11 + BASEVIDHEIGHT-(4+16)), 0, W_CachePatchName("ALTSDOT", PU_CACHE));
-				}
-
-				V_DrawFadeFill(4+16, (BASEVIDHEIGHT-(4+16)), 16, 16, 0, 31, challengetransparentstrength);
-
-				V_DrawFill(4+16+5,   (BASEVIDHEIGHT-(4+16))+1,    1, 14,  0);
-				V_DrawFill(4+16+5+5, (BASEVIDHEIGHT-(4+16))+1,    1, 14,  0);
-				V_DrawFill(4+16+1,   (BASEVIDHEIGHT-(4+16))+5,   14,  1,  0);
-				V_DrawFill(4+16+1,   (BASEVIDHEIGHT-(4+16))+5+5, 14,  1,  0);
-
-				// The following is a partial duplication of R_GetEngineClass
-				{
-					INT32 s = (skins[skin].kartspeed - 1)/3;
-					INT32 w = (skins[skin].kartweight - 1)/3;
-
-					#define LOCKSTAT(stat) \
-						if (stat < 0) { stat = 0; } \
-						if (stat > 2) { stat = 2; }
-						LOCKSTAT(s);
-						LOCKSTAT(w);
-					#undef LOCKSTAT
-
-					V_DrawFill(4+16 + (s*5), (BASEVIDHEIGHT-(4+16)) + (w*5), 6, 6, 0);
-				}
+				M_DrawCharacterIconAndEngine(4, BASEVIDHEIGHT-(4+16), i, colormap, (i == skin));
 			}
 			break;
 		}
@@ -5884,6 +5988,10 @@ challengedesc:
 
 					keyholdrotation = 360 * ((challengesmenu.chaokeyhold - CHAOHOLD_BEGIN))
 						* (FRACUNIT/(CHAOHOLD_MAX - (CHAOHOLD_BEGIN + CHAOHOLD_END)));
+
+					INT32 time = 3 - (keyholdrotation - 1) / (90 * FRACUNIT);
+					if (time <= 5 && time >= 0)
+						V_DrawScaledPatch(selectx + 2, selecty - 2, 0, kp_eggnum[time]);
 				}
 				else
 				{
@@ -5994,14 +6102,73 @@ static void M_DrawMapMedals(INT32 mapnum, INT32 x, INT32 y)
 
 static void M_DrawStatsMaps(void)
 {
-	INT32 y = 80, i = -1;
+	INT32 y = 70, i;
 	INT16 mnum;
 	boolean dotopname = true, dobottomarrow = (statisticsmenu.location < statisticsmenu.maxscroll);
 	INT32 location = statisticsmenu.location;
 
+	tic_t besttime = 0;
+
+	if (!statisticsmenu.maplist)
+	{
+		V_DrawCenteredThinString(BASEVIDWIDTH/2, 70, 0, "No maps!?");
+		return;
+	}
+
+	INT32 mapsunfinished = 0;
+
+	V_DrawThinString(30, 60, 0, va("x %d/%d", statisticsmenu.gotmedals, statisticsmenu.nummedals));
+	V_DrawSmallMappedPatch(20, 60, 0, W_CachePatchName("GOTITA", PU_CACHE),
+				                       R_GetTranslationColormap(TC_DEFAULT, SKINCOLOR_GOLD, GTC_MENUCACHE));
+
+	INT32 medalspos = BASEVIDWIDTH - 20;
+
+	boolean timeattack[3];
+	timeattack[0] = M_SecretUnlocked(SECRET_TIMEATTACK, true);
+	timeattack[1] = M_SecretUnlocked(SECRET_PRISONBREAK, true);
+	timeattack[2] = M_SecretUnlocked(SECRET_SPECIALATTACK, true);
+
+	if (timeattack[0] || timeattack[1] || timeattack[2])
+	{
+		medalspos -= 64;
+
+		for (i = 0; i < nummapheaders; i++)
+		{
+			// Check for no visibility
+			if (!mapheaderinfo[i] || (mapheaderinfo[i]->menuflags & (LF2_NOTIMEATTACK|LF2_HIDEINSTATS|LF2_HIDEINMENU)))
+				continue;
+
+			// Has to be accessible via time attack
+			if (!(mapheaderinfo[i]->typeoflevel & (TOL_RACE|TOL_BATTLE|TOL_SPECIAL|TOL_VERSUS)))
+				continue;
+
+			if (mapheaderinfo[i]->records.time <= 0)
+			{
+				mapsunfinished++;
+				continue;
+			}
+
+			besttime += mapheaderinfo[i]->records.time;
+		}
+
+		V_DrawRightAlignedThinString(BASEVIDWIDTH-20, 60, 0,
+			va(
+				"Combined time: %c%i:%02i:%02i.%02i (%s)",
+				(mapsunfinished ? '\x85' : '\x80'),
+				G_TicsToHours(besttime),
+				G_TicsToMinutes(besttime, false),
+				G_TicsToSeconds(besttime),
+				G_TicsToCentiseconds(besttime),
+				(mapsunfinished ? "incomplete" : "complete")
+			)
+		);
+	}
+
 	if (location)
-		V_DrawCharacter(10, y-(skullAnimCounter/5),
+		V_DrawCharacter(10, 80-(skullAnimCounter/5),
 			'\x1A' | highlightflags, false); // up arrow
+
+	i = -1;
 
 	while ((mnum = statisticsmenu.maplist[++i]) != NEXTMAP_INVALID)
 	{
@@ -6024,8 +6191,10 @@ static void M_DrawStatsMaps(void)
 			{
 				const char *str;
 
-				if (mapheaderinfo[mnum]->cup)
-					str = va("%s CUP", mapheaderinfo[mnum]->cup->name);
+				if (mapheaderinfo[mnum]->typeoflevel & TOL_TUTORIAL)
+					str = "TUTORIAL MODE";
+				else if (mapheaderinfo[mnum]->cup)
+					str = va("%s CUP", mapheaderinfo[mnum]->cup->realname);
 				else
 					str = "LOST AND FOUND";
 
@@ -6034,7 +6203,11 @@ static void M_DrawStatsMaps(void)
 
 			if (dotopname)
 			{
-				V_DrawRightAlignedThinString(BASEVIDWIDTH-20, y, highlightflags, "MEDALS");
+				V_DrawRightAlignedThinString(medalspos, y, highlightflags, "MEDALS");
+
+				if (timeattack[0] || timeattack[1] || timeattack[2])
+					V_DrawRightAlignedThinString((BASEVIDWIDTH-20), y, highlightflags, "TIME");
+
 				dotopname = false;
 			}
 
@@ -6045,8 +6218,41 @@ static void M_DrawStatsMaps(void)
 			continue;
 		}
 
-		M_DrawMapMedals(mnum+1, 291, y);
+		V_DrawFadeFill(24, y + 5, (BASEVIDWIDTH - 24) - 24, 3, 0, 31, 8 - (i & 1)*2);
 
+		if (!(mapheaderinfo[mnum]->menuflags & LF2_NOTIMEATTACK)
+		&& (
+				(timeattack[0] && (mapheaderinfo[mnum]->typeoflevel & TOL_RACE))
+			|| (timeattack[1] && (mapheaderinfo[mnum]->typeoflevel & TOL_BATTLE))
+			|| (timeattack[2] && (mapheaderinfo[mnum]->typeoflevel & (TOL_SPECIAL|TOL_VERSUS)))
+			)
+		)
+		{
+			besttime = mapheaderinfo[mnum]->records.time;
+
+			if (besttime)
+			{
+				V_DrawRightAlignedString((BASEVIDWIDTH-24), y+1, 0,
+					va("%02d'%02d\"%02d",
+						G_TicsToMinutes(besttime, true),
+						G_TicsToSeconds(besttime),
+						G_TicsToCentiseconds(besttime)
+					)
+				);
+			}
+			else
+			{
+				V_DrawRightAlignedString((BASEVIDWIDTH-24), y+1, V_GRAYMAP, "--'--\"--");
+			}
+		}
+
+		M_DrawMapMedals(mnum+1, medalspos - 8, y);
+
+		if (mapheaderinfo[mnum]->menuttl[0])
+		{
+			V_DrawThinString(24, y, V_FORCEUPPERCASE, mapheaderinfo[mnum]->menuttl);
+		}
+		else
 		{
 			char *title = G_BuildMapTitle(mnum+1);
 			V_DrawThinString(24, y, V_FORCEUPPERCASE, title);
@@ -6126,26 +6332,258 @@ static void M_DrawStatsMaps(void)
 	}
 bottomarrow:
 	if (dobottomarrow)
-		V_DrawCharacter(10, y-STATSSTEP + (skullAnimCounter/5),
+		V_DrawCharacter(10, BASEVIDHEIGHT-20 + (skullAnimCounter/5),
 			'\x1B' | highlightflags, false); // down arrow
 }
+
+#undef STATSSTEP
+#define STATSSTEP 18
+
+static void M_DrawStatsChars(void)
+{
+	INT32 y = 80, i, j;
+	INT16 skin;
+	boolean dobottomarrow = (statisticsmenu.location < statisticsmenu.maxscroll);
+	INT32 location = statisticsmenu.location;
+
+	if (!statisticsmenu.maplist || !statisticsmenu.nummaps)
+	{
+		V_DrawCenteredThinString(BASEVIDWIDTH/2, 70, 0, "No chars!?");
+		return;
+	}
+
+	if (location)
+		V_DrawCharacter(10, y-(skullAnimCounter/5),
+			'\x1A' | highlightflags, false); // up arrow
+
+	i = -1;
+
+	V_DrawThinString(20, y - 10, highlightflags, "CHARACTER");
+	V_DrawRightAlignedThinString(BASEVIDWIDTH/2 + 34, y - 10, highlightflags, "WINS");
+
+	while ((skin = statisticsmenu.maplist[++i]) < numskins)
+	{
+		if (location)
+		{
+			--location;
+			continue;
+		}
+
+		{
+			UINT8 *colormap = R_GetTranslationColormap(skin, skins[skin].prefcolor, GTC_MENUCACHE);
+
+			M_DrawCharacterIconAndEngine(24, y, skin, colormap, false);
+		}
+
+		V_DrawThinString(24+32+2, y+3, 0, skins[skin].realname);
+
+		V_DrawRightAlignedThinString(BASEVIDWIDTH/2 + 30, y+3, 0, va("%d", skins[skin].records.wins));
+
+		y += STATSSTEP;
+
+		if (y >= BASEVIDHEIGHT-STATSSTEP)
+			goto bottomarrow;
+	}
+
+bottomarrow:
+	if (dobottomarrow)
+		V_DrawCharacter(10, BASEVIDHEIGHT-20 + (skullAnimCounter/5),
+			'\x1B' | highlightflags, false); // down arrow
+
+	UINT32 x = BASEVIDWIDTH - 20 - 90;
+	y = 88;
+
+	V_DrawCenteredThinString(x + 45, y - 10, highlightflags, "HEATMAP");
+
+	V_DrawFadeFill(x, y, 91, 91, 0, 31, 8); // challengetransparentstrength
+
+	V_DrawFill(x+30, y+1,  1, 89,  0);
+	V_DrawFill(x+60, y+1,  1, 89,  0);
+	V_DrawFill(x+1,  y+30, 89, 1,  0);
+	V_DrawFill(x+1,  y+60, 89, 1,  0);
+
+	x++;
+	y++;
+
+	for (i = 0; i < 9; i++)
+	{
+		for (j = 0; j < 9; j++)
+		{
+			if (statisticsmenu.statgridplayed[i][j] == 0)
+				continue;
+
+			V_DrawFill(
+				x + (i * 10),
+				y + (j * 10),
+				9,
+				9,
+				31 - ((statisticsmenu.statgridplayed[i][j] - 1) * 32) / FRACUNIT
+			);
+		}
+	}
+}
+
+#undef STATSSTEP
+#define STATSSTEP 21
+
+static void M_DrawStatsGP(void)
+{
+	INT32 y = 80, i, x, j, endj;
+	INT16 id;
+	boolean dobottomarrow = (statisticsmenu.location < statisticsmenu.maxscroll);
+	INT32 location = statisticsmenu.location;
+
+	if (!statisticsmenu.maplist || !statisticsmenu.nummaps)
+	{
+		V_DrawCenteredThinString(BASEVIDWIDTH/2, 70, 0, "No cups!?");
+		return;
+	}
+
+	if (location)
+		V_DrawCharacter(10, y-(skullAnimCounter/5),
+			'\x1A' | highlightflags, false); // up arrow
+
+	const INT32 width = 53;
+
+	endj = KARTSPEED_NORMAL;
+	if (M_SecretUnlocked(SECRET_HARDSPEED, true))
+	{
+		endj = M_SecretUnlocked(SECRET_MASTERMODE, true)
+			? KARTGP_MASTER
+			: KARTSPEED_HARD;
+	}
+
+	const INT32 h = (21 * min(5, statisticsmenu.nummaps)) - 1;
+
+	x = 7 + BASEVIDWIDTH - 20 - width;
+	for (j = endj; j >= KARTSPEED_EASY; j--, x -= width)
+	{
+		if (j == KARTSPEED_EASY || !gamedata->everseenspecial)
+		{
+			V_DrawFadeFill(x + 6, y + 1, width - (12 + 1), h, 0, 31, 6 + (j & 1)*2);
+			V_DrawCenteredThinString(x + 19 + 7, y - 10, highlightflags|V_FORCEUPPERCASE, gpdifficulty_cons_t[j].strvalue);
+			x += (12 + 1);
+		}
+		else
+		{
+			V_DrawFadeFill(x - 7, y + 1, width, h, 0, 31, 6 + (j & 1)*2);
+			V_DrawCenteredThinString(x + 19, y - 10, highlightflags|V_FORCEUPPERCASE, gpdifficulty_cons_t[j].strvalue);
+		}
+	}
+
+	i = -1;
+
+	V_DrawThinString(20, y - 10, highlightflags, "CUP");
+
+	cupheader_t *cup = kartcupheaders;
+
+	while ((id = statisticsmenu.maplist[++i]) < numkartcupheaders)
+	{
+		if (location)
+		{
+			--location;
+			continue;
+		}
+
+		// If we have ANY sort of sorting other than instantiation, this won't work
+		while (cup && cup->id != id)
+		{
+			cup = cup->next;
+		}
+
+		if (!cup)
+		{
+			goto bottomarrow;
+		}
+
+		V_DrawFill(24, y+1, 21, 20, 31);
+
+		V_DrawScaledPatch(24-1, y, 0, W_CachePatchName(cup->icon, PU_CACHE));
+		V_DrawScaledPatch(24-1, y, 0, W_CachePatchName("CUPBOX", PU_CACHE));
+
+		V_DrawThinString(24+21+2, y + 7, 0, cup->realname);
+
+		x = 7 + BASEVIDWIDTH - 20 - width;
+		for (j = endj; j >= KARTSPEED_EASY; j--)
+		{
+			x -= (M_DrawCupWinData(x, y + 5, cup, j, false, true) + 2);
+		}
+
+		y += STATSSTEP;
+
+		if (y >= BASEVIDHEIGHT-STATSSTEP)
+			goto bottomarrow;
+	}
+
+bottomarrow:
+	if (dobottomarrow)
+		V_DrawCharacter(10, BASEVIDHEIGHT-20 + (skullAnimCounter/5),
+			'\x1B' | highlightflags, false); // down arrow
+}
+
+#undef STATSSTEP
 
 void M_DrawStatistics(void)
 {
 	char beststr[256];
-
 	tic_t besttime = 0;
-
-	INT32 i;
-	INT32 mapsunfinished = 0;
 
 	{
 		patch_t *bg = W_CachePatchName("M_XTRABG", PU_CACHE);
 		V_DrawFixedPatch(0, 0, FRACUNIT, 0, bg, NULL);
 	}
 
+	{
+		const char *pagename = NULL;
+		INT32 pagenamewidth = 0;
+
+		V_DrawFixedPatch(0, 0, FRACUNIT, 0, W_CachePatchName("MENUHINT", PU_CACHE), NULL);
+
+		switch (statisticsmenu.page)
+		{
+
+			case statisticspage_gp:
+			{
+				pagename = gamedata->everseenspecial
+					? "GRAND PRIX & EMERALDS"
+					: "GRAND PRIX";
+				M_DrawStatsGP();
+				break;
+			}
+
+			case statisticspage_maps:
+			{
+				pagename = "LEVELS & MEDALS";
+				M_DrawStatsMaps();
+				break;
+			}
+
+			case statisticspage_chars:
+			{
+				pagename = "CHARACTERS & ENGINE CLASSES";
+				M_DrawStatsChars();
+				break;
+			}
+
+			default:
+				break;
+		}
+
+		if (pagename)
+		{
+			pagenamewidth = V_ThinStringWidth(pagename, 0);
+			V_DrawThinString((BASEVIDWIDTH - pagenamewidth)/2, 12, 0, pagename);
+		}
+
+		V_DrawCharacter((BASEVIDWIDTH - pagenamewidth)/2 - 10 - (skullAnimCounter/5), 12,
+			'\x1C', false); // left arrow
+
+		V_DrawCharacter((BASEVIDWIDTH + pagenamewidth)/2 + 2 + (skullAnimCounter/5), 12,
+			'\x1D', false); // right arrow
+	}
+
 	beststr[0] = 0;
-	V_DrawThinString(20, 22, highlightflags, "Total Play Time:");
+	V_DrawThinString(20, 30, highlightflags, "Total Play Time:");
 	besttime = G_TicsToHours(gamedata->totalplaytime);
 	if (besttime)
 	{
@@ -6164,10 +6602,10 @@ void M_DrawStatistics(void)
 	}
 	besttime = G_TicsToSeconds(gamedata->totalplaytime);
 	strcat(beststr, va("%i second%s", besttime, (besttime == 1 ? "" : "s")));
-	V_DrawRightAlignedThinString(BASEVIDWIDTH-20, 22, 0, beststr);
+	V_DrawRightAlignedThinString(BASEVIDWIDTH-20, 30, 0, beststr);
 	beststr[0] = 0;
 
-	V_DrawThinString(20, 32, highlightflags, "Total Rings:");
+	V_DrawThinString(20, 40, highlightflags, "Total Rings:");
 	if (gamedata->totalrings > GDMAX_RINGS)
 	{
 		sprintf(beststr, "%c999,999,999+", '\x82');
@@ -6184,10 +6622,10 @@ void M_DrawStatistics(void)
 	{
 		sprintf(beststr, "%u", gamedata->totalrings);
 	}
-	V_DrawRightAlignedThinString(BASEVIDWIDTH-20, 32, 0, va("%s collected", beststr));
+	V_DrawRightAlignedThinString(BASEVIDWIDTH-20, 40, 0, va("%s collected", beststr));
 
 	beststr[0] = 0;
-	V_DrawThinString(20, 42, highlightflags, "Total Rounds:");
+	V_DrawThinString(20, 50, highlightflags, "Total Rounds:");
 
 	strcat(beststr, va("%u Race", gamedata->roundsplayed[GDGT_RACE]));
 
@@ -6208,48 +6646,8 @@ void M_DrawStatistics(void)
 		strcat(beststr, va(", %u Custom", gamedata->roundsplayed[GDGT_CUSTOM]));
 	}
 
-	V_DrawRightAlignedThinString(BASEVIDWIDTH-20, 42, 0, beststr);
-
-	if (!statisticsmenu.maplist)
-	{
-		V_DrawCenteredThinString(BASEVIDWIDTH/2, 62, 0, "No maps!?");
-		return;
-	}
-
-	besttime = 0;
-
-	for (i = 0; i < nummapheaders; i++)
-	{
-		if (!mapheaderinfo[i] || (mapheaderinfo[i]->menuflags & (LF2_NOTIMEATTACK|LF2_HIDEINSTATS|LF2_HIDEINMENU)))
-			continue;
-
-		if (mapheaderinfo[i]->records.time <= 0)
-		{
-			mapsunfinished++;
-			continue;
-		}
-
-		besttime += mapheaderinfo[i]->records.time;
-	}
-
-	V_DrawThinString(20, 60, 0, "Combined time records:");
-
-	sprintf(beststr, "%i:%02i:%02i.%02i", G_TicsToHours(besttime), G_TicsToMinutes(besttime, false), G_TicsToSeconds(besttime), G_TicsToCentiseconds(besttime));
-	V_DrawRightAlignedThinString(BASEVIDWIDTH-20, 60, (mapsunfinished ? V_REDMAP : 0), beststr);
-
-	if (mapsunfinished)
-		V_DrawRightAlignedThinString(BASEVIDWIDTH-20, 70, V_REDMAP, va("(%d unfinished)", mapsunfinished));
-	else
-		V_DrawRightAlignedThinString(BASEVIDWIDTH-20, 70, 0, "(complete)");
-
-	V_DrawThinString(32, 70, 0, va("x %d/%d", M_CountMedals(false, false), M_CountMedals(true, false)));
-	V_DrawSmallMappedPatch(20, 70, 0, W_CachePatchName("GOTITA", PU_CACHE),
-				                       R_GetTranslationColormap(TC_DEFAULT, SKINCOLOR_GOLD, GTC_MENUCACHE));
-
-	M_DrawStatsMaps();
+	V_DrawRightAlignedThinString(BASEVIDWIDTH-20, 50, 0, beststr);
 }
-
-#undef STATSSTEP
 
 static INT32 M_WrongWarpFallingHelper(INT32 y, INT32 falltime)
 {
