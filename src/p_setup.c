@@ -1708,6 +1708,8 @@ static void ParseTextmapSectorParameter(UINT32 i, const char *param, const char 
 		sectors[i].flags |= MSF_INVERTENCORE;
 	else if (fastcmp(param, "flatlighting") && fastcmp("true", val))
 		sectors[i].flags |= MSF_FLATLIGHTING;
+	else if (fastcmp(param, "forcedirectionallighting") && fastcmp("true", val))
+		sectors[i].flags |= MSF_DIRECTIONLIGHTING;
 	else if (fastcmp(param, "nostepup") && fastcmp("true", val))
 		sectors[i].specialflags |= SSF_NOSTEPUP;
 	else if (fastcmp(param, "doublestepup") && fastcmp("true", val))
@@ -3485,6 +3487,12 @@ void P_UpdateSegLightOffset(seg_t *li)
 
 boolean P_SectorUsesDirectionalLighting(const sector_t *sector)
 {
+	// explicitly turned on
+	if (sector->flags & MSF_DIRECTIONLIGHTING)
+	{
+		return true;
+	}
+
 	// explicitly turned off
 	if (sector->flags & MSF_FLATLIGHTING)
 	{

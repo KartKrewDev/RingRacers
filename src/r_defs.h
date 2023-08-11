@@ -352,6 +352,8 @@ typedef enum
 	MSF_INVERTENCORE            =  1<<12,
 	// turn off directional lighting
 	MSF_FLATLIGHTING            =  1<<13,
+	// force it on (even if it was disabled)
+	MSF_DIRECTIONLIGHTING       =  1<<14,
 } sectorflags_t;
 
 typedef enum
