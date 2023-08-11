@@ -1655,6 +1655,7 @@ void D_SRB2Main(void)
 		I_StartupSound();
 		I_InitMusic();
 		S_InitSfxChannels(cv_soundvolume.value);
+		S_InitMusicVolume();
 	}
 
 	Music_Init();
