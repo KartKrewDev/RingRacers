@@ -850,6 +850,10 @@ void D_RegisterServerCommands(void)
 	CV_RegisterVar(&cv_stunserver);
 #endif
 
+#ifdef DEVELOP
+	CV_RegisterVar(&cv_botcontrol);
+#endif
+
 	CV_RegisterVar(&cv_discordinvites);
 	RegisterNetXCmd(XD_DISCORD, Got_DiscordInfo);
 
@@ -992,7 +996,6 @@ void D_RegisterClientCommands(void)
 		CV_RegisterVar(&cv_noresults);
 		CV_RegisterVar(&cv_badtime);
 		CV_RegisterVar(&cv_badip);
-		CV_RegisterVar(&cv_botcontrol);
 	#endif
 
 	// HUD
