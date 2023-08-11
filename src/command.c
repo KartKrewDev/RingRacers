@@ -58,6 +58,7 @@ static void COM_Toggle_f(void);
 static void COM_Add_f(void);
 static void COM_Choose_f(void);
 static void COM_ChooseWeighted_f(void);
+static void COM_Reset_f(void);
 
 static void CV_EnforceExecVersion(void);
 static boolean CV_FilterVarByVersion(consvar_t *v, const char *valstr);
@@ -383,6 +384,7 @@ void COM_Init(void)
 	COM_AddCommand("add", COM_Add_f);
 	COM_AddCommand("choose", COM_Choose_f);
 	COM_AddCommand("chooseweighted", COM_ChooseWeighted_f);
+	COM_AddCommand("reset", COM_Reset_f);
 	RegisterNetXCmd(XD_NETVAR, Got_NetVar);
 }
 
@@ -1215,6 +1217,36 @@ static void COM_ChooseWeighted_f(void)
 		}
 
 		roll -= weights[i];
+	}
+}
+
+static void COM_Reset_f(void)
+{
+	size_t i;
+
+	if (COM_Argc() < 2)
+	{
+		CONS_Printf(M_GetText("reset <cvar1> [cvar2] [...]: Resets a cvar to its default value\n"));
+		return;
+	}
+
+	for (i = 1; i < COM_Argc(); ++i)
+	{
+		consvar_t *cvar = CV_FindVar(COM_Argv(i));
+
+		if (!cvar)
+		{
+			CONS_Alert(CONS_NOTICE, M_GetText("%s is not a cvar\n"), COM_Argv(i));
+			continue;
+		}
+
+		CV_Set(cvar, cvar->defaultvalue);
+
+		// Sometimes a cvar cannot be changed, e.g. CV_NETVAR without admin privilege.
+		if (!stricmp(cvar->string, cvar->defaultvalue))
+		{
+			CONS_Printf("%s = %s\n", cvar->name, cvar->string);
+		}
 	}
 }
 
