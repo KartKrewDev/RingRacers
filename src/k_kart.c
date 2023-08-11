@@ -9701,8 +9701,10 @@ static void K_KartDrift(player_t *player, boolean onground)
 		}
 	}
 
+	/*
 	if (player->mo->eflags & MFE_UNDERWATER)
 		player->aizdriftstrat = 0;
+	*/
 
 	if (!K_Sliptiding(player) || keepsliptide)
 	{
@@ -10085,8 +10087,10 @@ boolean K_PlayerGuard(player_t *player)
 
 SINT8 K_Sliptiding(player_t *player)
 {
+	/*
 	if (player->mo->eflags & MFE_UNDERWATER)
 		return 0;
+	*/
 	return player->drift ? 0 : player->aizdriftstrat;
 }
 
