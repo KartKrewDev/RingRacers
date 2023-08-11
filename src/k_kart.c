@@ -1901,7 +1901,7 @@ static void K_SpawnGenericSpeedLines(player_t *player, boolean top)
 	else if (player->ringboost)
 	{
 		UINT8 ringboostcolors[] = {SKINCOLOR_AQUAMARINE, SKINCOLOR_EMERALD, SKINCOLOR_GARDEN, SKINCOLOR_CROCODILE, SKINCOLOR_BANANA};
-		UINT8 ringboostbreakpoint = min(player->ringboost / TICRATE / 3, sizeof(ringboostcolors) / sizeof(ringboostcolors[0]));
+		UINT8 ringboostbreakpoint = min(player->ringboost / TICRATE / 6, sizeof(ringboostcolors) / sizeof(ringboostcolors[0]));
 		if (ringboostbreakpoint > 0)
 		{
 			fast->color = ringboostcolors[ringboostbreakpoint - 1];
