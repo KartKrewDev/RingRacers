@@ -115,13 +115,13 @@ void Obj_RandomItemVisuals(mobj_t *mobj)
 	// the player's cleared out a good portion of the map.
 	//
 	// Then extraval1 starts ticking up and triggers the transformation from Ringbox to Random Item.
-	if (mobj->fuse == 0 && !(mobj->flags & MF_NOCLIPTHING) && !(mobj->flags2 & MF2_AMBUSH)
-		&& !cv_thunderdome.value && (modeattacking == 0))
+	if (mobj->fuse == 0 && !(mobj->flags & MF_NOCLIPTHING) && !(mobj->flags2 & MF2_AMBUSH) && !cv_thunderdome.value
+		&& (modeattacking == 0 || specialstageinfo.valid)) // Time Attacking in Special is a fucked-looking exception
 	{
 		mobj->extravalue1++;
 
-		if (specialstageinfo.valid) // Players need ammo in Special, transform to RANDOMITEM right away!
-			mobj->extravalue1 = max(mobj->extravalue1, RINGBOX_TIME);
+		if (specialstageinfo.valid) // Setting the timer in this case probably looks kinda goofy, but P_ItemPop checks xval1, not states.
+			mobj->extravalue1 = max(mobj->extravalue1, RINGBOX_TIME); // I will change this if this logic ever becomes even slightly more complicated.
 
 		if (mobj->extravalue1 == RINGBOX_TIME)
 		{
@@ -130,7 +130,6 @@ void Obj_RandomItemVisuals(mobj_t *mobj)
 			P_SetMobjState(mobj, S_RANDOMITEM1 + (animDelta%12));
 		}
 	}
-
 }
 
 boolean Obj_RandomItemSpawnIn(mobj_t *mobj)
