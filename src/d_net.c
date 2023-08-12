@@ -897,9 +897,12 @@ static void DebugPrintpacket(const char *header)
 				size = READUINT16(p);
 			}
 
-			fprintf(debugfile, "    length %d\n", size);
+			// First two bytes: reported total size of payload (does not include the first two bytes)
+			// Next byte (effectively 3rd byte): id for the netcmd
+			// Variable length: payload of netcmd, then more netcmds (id, payload) in sequence
+			fprintf(debugfile, "    length %d, actual length %d\n", size, doomcom->datalength);
 			fprintf(debugfile, "[%s]", netxcmdnames[netbuffer->u.textcmd[2] - 1]);
-			fprintfstringnewline((char *)netbuffer->u.textcmd + 3, size - 2);
+			fprintfstringnewline((char *)netbuffer->u.textcmd, doomcom->datalength);
 			break;
 		}
 		case PT_SERVERCFG:
