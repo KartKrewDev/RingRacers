@@ -1708,6 +1708,8 @@ static void ParseTextmapSectorParameter(UINT32 i, const char *param, const char 
 		sectors[i].flags |= MSF_INVERTENCORE;
 	else if (fastcmp(param, "flatlighting") && fastcmp("true", val))
 		sectors[i].flags |= MSF_FLATLIGHTING;
+	else if (fastcmp(param, "forcedirectionallighting") && fastcmp("true", val))
+		sectors[i].flags |= MSF_DIRECTIONLIGHTING;
 	else if (fastcmp(param, "nostepup") && fastcmp("true", val))
 		sectors[i].specialflags |= SSF_NOSTEPUP;
 	else if (fastcmp(param, "doublestepup") && fastcmp("true", val))
@@ -3483,9 +3485,34 @@ void P_UpdateSegLightOffset(seg_t *li)
 #endif
 }
 
-boolean P_ApplyLightOffset(UINT8 baselightnum, sectorflags_t sectorflags)
+boolean P_SectorUsesDirectionalLighting(const sector_t *sector)
 {
-	if (sectorflags & MSF_FLATLIGHTING)
+	// explicitly turned on
+	if (sector->flags & MSF_DIRECTIONLIGHTING)
+	{
+		return true;
+	}
+
+	// explicitly turned off
+	if (sector->flags & MSF_FLATLIGHTING)
+	{
+		return false;
+	}
+
+	// automatically turned on
+	if (sector->ceilingpic == skyflatnum)
+	{
+		// sky is visible
+		return true;
+	}
+
+	// default is off, for indoors
+	return false;
+}
+
+boolean P_ApplyLightOffset(UINT8 baselightnum, const sector_t *sector)
+{
+	if (!P_SectorUsesDirectionalLighting(sector))
 	{
 		return false;
 	}
@@ -3495,9 +3522,9 @@ boolean P_ApplyLightOffset(UINT8 baselightnum, sectorflags_t sectorflags)
 	return (baselightnum < LIGHTLEVELS-1 && baselightnum > 0);
 }
 
-boolean P_ApplyLightOffsetFine(UINT8 baselightlevel, sectorflags_t sectorflags)
+boolean P_ApplyLightOffsetFine(UINT8 baselightlevel, const sector_t *sector)
 {
-	if (sectorflags & MSF_FLATLIGHTING)
+	if (!P_SectorUsesDirectionalLighting(sector))
 	{
 		return false;
 	}
