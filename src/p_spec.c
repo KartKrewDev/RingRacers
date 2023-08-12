@@ -9329,7 +9329,15 @@ void T_Pusher(pusher_t *p)
 
 		thing->momx += xspeed;
 		thing->momy += yspeed;
-		thing->momz += zspeed;
+
+		// Do not apply upwards wind if the player is
+		// fastfalling. This could cancel out the increased
+		// gravity from fastfalling!
+		if (!(thing->player && thing->player->fastfall && zspeed * P_MobjFlip(thing) > 0))
+		{
+			thing->momz += zspeed;
+		}
+
 		if (thing->player)
 		{
 			thing->player->cmomx += xspeed;
