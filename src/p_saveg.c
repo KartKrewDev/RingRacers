@@ -565,6 +565,7 @@ static void P_NetArchivePlayers(savebuffer_t *save)
 		WRITEUINT8(save->p, players[i].respawn.manual);
 
 		// botvars_t
+		WRITEUINT8(save->p, players[i].bot);
 		WRITEUINT8(save->p, players[i].botvars.difficulty);
 		WRITEUINT8(save->p, players[i].botvars.diffincrease);
 		WRITEUINT8(save->p, players[i].botvars.rival);
@@ -988,6 +989,7 @@ static void P_NetUnArchivePlayers(savebuffer_t *save)
 		players[i].respawn.manual = READUINT8(save->p);
 
 		// botvars_t
+		players[i].bot = READUINT8(save->p);
 		players[i].botvars.difficulty = READUINT8(save->p);
 		players[i].botvars.diffincrease = READUINT8(save->p);
 		players[i].botvars.rival = (boolean)READUINT8(save->p);
