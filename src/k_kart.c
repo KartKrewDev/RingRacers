@@ -4745,7 +4745,7 @@ static mobj_t *K_SpawnKartMissile(mobj_t *source, mobjtype_t type, angle_t an, I
 
 	x = source->x + source->momx + FixedMul(finalspeed, FINECOSINE(an>>ANGLETOFINESHIFT));
 	y = source->y + source->momy + FixedMul(finalspeed, FINESINE(an>>ANGLETOFINESHIFT));
-	z = source->z; // spawn on the ground please
+	z = P_GetZAt(source->standingslope, x, y, source->z); // spawn on the ground please
 
 	th = P_SpawnMobj(x, y, z, type); // this will never return null because collision isn't processed here
 
@@ -4785,7 +4785,11 @@ static mobj_t *K_SpawnKartMissile(mobj_t *source, mobjtype_t type, angle_t an, I
 
 		const fixed_t r = abs(th->radius - source->radius);
 
-		P_SetOrigin(th, source->x - FixedMul(r, FSIN(an)), source->y - FixedMul(r, FCOS(an)), z);
+		x = source->x - FixedMul(r, FSIN(an));
+		y = source->y - FixedMul(r, FCOS(an));
+		z = P_GetZAt(source->standingslope, x, y, source->z);
+
+		P_SetOrigin(th, x, y, z);
 
 		if (P_MobjWasRemoved(th))
 			return NULL;
