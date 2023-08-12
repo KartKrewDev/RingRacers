@@ -256,12 +256,12 @@ void K_TimerInit(void)
 		}
 	}
 
-	if (cv_kartdebugstart.value)
+	if (cv_kartdebugstart.value || M_NotFreePlay() == false)
 	{
 		starttime = 0;
 		introtime = 0;
 	}
-	
+
 	K_SpawnItemCapsules();
 	K_BattleInit(domodeattack);
 

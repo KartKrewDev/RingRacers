@@ -343,7 +343,7 @@ void M_ClearConditionSet(UINT16 set);
 void M_ClearSecrets(void);
 void M_ClearStats(void);
 
-boolean M_NotFreePlay(player_t *player);
+boolean M_NotFreePlay(void);
 UINT16 M_CheckCupEmeralds(UINT8 difficulty);
 
 // Updating conditions and unlockables
