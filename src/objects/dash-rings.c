@@ -163,6 +163,7 @@ static void DashRingLaunch(player_t *player, mobj_t *ring)
 	player->mo->rollangle = 0;
 	player->flashing = 0;
 	player->fastfall = 0;
+	K_TumbleInterrupt(player);
 
 	switch (ring->extravalue1)
 	{
