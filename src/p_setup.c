@@ -398,6 +398,14 @@ void P_DeleteHeaderFollowers(UINT16 i)
 
 #define NUMLAPS_DEFAULT 3
 
+static void P_ClearMapHeaderLighting(mapheader_lighting_t *lighting)
+{
+	lighting->light_contrast = 16;
+	lighting->sprite_backlight = 0;
+	lighting->use_light_angle = false;
+	lighting->light_angle = 0;
+}
+
 /** Clears the data from a single map header.
   *
   * \param i Map number to clear header for.
@@ -438,10 +446,9 @@ static void P_ClearSingleMapHeaderInfo(INT16 num)
 	mapheaderinfo[num]->menuflags = 0;
 	mapheaderinfo[num]->mobj_scale = FRACUNIT;
 	mapheaderinfo[num]->default_waypoint_radius = 0;
-	mapheaderinfo[num]->light_contrast = 16;
-	mapheaderinfo[num]->sprite_backlight = 0;
-	mapheaderinfo[num]->use_light_angle = false;
-	mapheaderinfo[num]->light_angle = 0;
+	P_ClearMapHeaderLighting(&mapheaderinfo[num]->lighting);
+	P_ClearMapHeaderLighting(&mapheaderinfo[num]->lighting_encore);
+	mapheaderinfo[num]->use_encore_lighting = false;
 #if 1 // equivalent to "Followers = DEFAULT"
 	P_SetDefaultHeaderFollowers(num);
 #else
