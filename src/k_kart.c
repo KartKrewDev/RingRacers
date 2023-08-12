@@ -256,6 +256,12 @@ void K_TimerInit(void)
 		}
 	}
 
+	if (cv_kartdebugstart.value)
+	{
+		starttime = 0;
+		introtime = 0;
+	}
+	
 	K_SpawnItemCapsules();
 	K_BattleInit(domodeattack);
 
@@ -376,6 +382,7 @@ void K_RegisterKartStuff(void)
 	CV_RegisterVar(&cv_kartdebughuddrop);
 	CV_RegisterVar(&cv_kartdebugwaypoints);
 	CV_RegisterVar(&cv_kartdebugbots);
+	CV_RegisterVar(&cv_kartdebugstart);
 
 	CV_RegisterVar(&cv_kartdebugnodes);
 	CV_RegisterVar(&cv_kartdebugcolorize);
