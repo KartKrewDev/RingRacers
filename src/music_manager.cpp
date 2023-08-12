@@ -20,6 +20,7 @@
 #include "music_manager.hpp"
 #include "music_tune.hpp"
 
+#include "d_clisrv.h"
 #include "doomtype.h"
 #include "i_sound.h"
 #include "i_time.h"
@@ -170,6 +171,13 @@ bool TuneManager::resync()
 		// The time loss is not easily predictable, and it
 		// causes repeated resyncing, so just don't sync if
 		// it's GME.
+		return false;
+	}
+
+	if (hu_stopped)
+	{
+		// The server is not sending updates. Don't resync
+		// because we know game logic is not moving anyway.
 		return false;
 	}
 
