@@ -9972,7 +9972,7 @@ void K_StripItems(player_t *player)
 
 	if (player->itemRoulette.eggman == false)
 	{
-		player->itemRoulette.active = false;
+		K_StopRoulette(&player->itemRoulette);
 	}
 
 	player->hyudorotimer = 0;
@@ -9988,7 +9988,7 @@ void K_StripItems(player_t *player)
 
 void K_StripOther(player_t *player)
 {
-	player->itemRoulette.active = false;
+	K_StopRoulette(&player->itemRoulette);
 
 	player->invincibilitytimer = 0;
 	if (player->growshrinktimer)
@@ -12119,16 +12119,14 @@ void K_EggmanTransfer(player_t *source, player_t *victim)
 	K_AddHitLag(victim->mo, 2, true);
 	K_DropItems(victim);
 	victim->eggmanexplode = 6*TICRATE;
-	victim->itemRoulette.eggman = false;
-	victim->itemRoulette.active = false;
+	K_StopRoulette(&victim->itemRoulette);
 
 	if (P_IsDisplayPlayer(victim) && !demo.freecam)
 		S_StartSound(NULL, sfx_itrole);
 
 	K_AddHitLag(source->mo, 2, true);
 	source->eggmanexplode = 0;
-	source->itemRoulette.eggman = false;
-	source->itemRoulette.active = false;
+	K_StopRoulette(&source->itemRoulette);
 	source->eggmanTransferDelay = 10;
 
 	S_StopSoundByID(source->mo, sfx_s3k53);

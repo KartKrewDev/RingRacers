@@ -1486,6 +1486,18 @@ void K_StartEggmanRoulette(player_t *const player)
 }
 
 /*--------------------------------------------------
+	void K_StopRoulette(itemroulette_t *const roulette)
+
+		See header file for description.
+--------------------------------------------------*/
+void K_StopRoulette(itemroulette_t *const roulette)
+{
+	roulette->active = false;
+	roulette->eggman = false;
+	roulette->ringbox = false;
+}
+
+/*--------------------------------------------------
 	fixed_t K_GetRouletteOffset(itemroulette_t *const roulette, fixed_t renderDelta)
 
 		See header file for description.

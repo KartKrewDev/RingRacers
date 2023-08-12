@@ -70,6 +70,7 @@
 #include "k_serverstats.h"
 #include "k_zvote.h"
 #include "music.h"
+#include "k_roulette.h"
 
 #ifdef HAVE_DISCORDRPC
 #include "discord.h"
@@ -2583,7 +2584,7 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 
 	if (betweenmaps || leveltime < introtime)
 	{
-		itemRoulette.active = false;
+		K_StopRoulette(&itemRoulette);
 
 		itemtype = 0;
 		itemamount = 0;

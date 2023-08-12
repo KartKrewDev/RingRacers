@@ -1629,7 +1629,7 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 				}
 				player->karthud[khud_itemblink] = TICRATE;
 				player->karthud[khud_itemblinkmode] = 0;
-				player->itemRoulette.active = false;
+				K_StopRoulette(&player->itemRoulette);
 				if (P_IsDisplayPlayer(player))
 					S_StartSound(NULL, sfx_itrolf);
 			}
