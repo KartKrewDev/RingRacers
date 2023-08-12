@@ -156,6 +156,21 @@ void K_StartItemRoulette(player_t *const player, boolean ringbox);
 
 void K_StartEggmanRoulette(player_t *const player);
 
+/*--------------------------------------------------
+	void K_StopRoulette(itemroulette_t *const roulette);
+
+		Resets the roulette back to a default state.
+		Stops item roulette, Eggman and Ringbox.
+
+	Input Arguments:-
+		roulette - The roulette to stop.
+
+	Return:-
+		N/A
+--------------------------------------------------*/
+
+void K_StopRoulette(itemroulette_t *const roulette);
+
 
 /*--------------------------------------------------
 	fixed_t K_GetRouletteOffset(itemroulette_t *const roulette, fixed_t renderDelta);

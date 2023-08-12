@@ -68,6 +68,7 @@
 #include "k_zvote.h"
 #include "k_bot.h"
 #include "k_powerup.h"
+#include "k_roulette.h"
 
 #ifdef SRB2_CONFIG_ENABLE_WEBM_MOVIES
 #include "m_avrecorder.h"
@@ -6179,7 +6180,7 @@ static void Got_Cheat(UINT8 **cp, INT32 playernum)
 			K_StripItems(player);
 
 			// Cancel roulette if rolling
-			player->itemRoulette.active = false;
+			K_StopRoulette(&player->itemRoulette);
 
 			player->itemtype = item;
 			player->itemamount = amt;
