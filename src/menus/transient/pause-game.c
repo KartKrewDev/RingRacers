@@ -174,7 +174,7 @@ void M_OpenPauseMenu(void)
 	}
 	else if (!netgame && !demo.playback)
 	{
-		boolean retryallowed = (modeattacking != ATTACKING_NONE);
+		boolean retryallowed = (modeattacking != ATTACKING_NONE || gametype == GT_TUTORIAL);
 		if (
 			retryallowed == false
 			&& gamestate == GS_LEVEL
