@@ -294,6 +294,13 @@ static inline BlockItReturn_t PIT_SSMineExplode(mobj_t *thing)
 	if (PIT_SSMineChecks(thing) == true)
 		return BMIT_CONTINUE;
 
+	// Don't do Big Boy Damage to the UFO Catcher with
+	// lingering spinout damage
+	if (thing->type == MT_SPECIAL_UFO && explodespin)
+	{
+		return BMIT_CONTINUE;
+	}
+
 	P_DamageMobj(thing, grenade, grenade->target, 1, (explodespin ? DMG_NORMAL : DMG_EXPLODE));
 
 	lagadded = (thing->hitlag - oldhitlag);
