@@ -58,6 +58,8 @@
 
 #define ufo_intangible(o) ((o)->cusval)
 
+#define ufo_emerald(o) ((o)->tracer)
+
 enum
 {
 	UFO_PIECE_TYPE_POD,
@@ -854,6 +856,8 @@ void Obj_PlayerUFOCollide(mobj_t *ufo, mobj_t *other)
 
 boolean Obj_UFOEmeraldCollect(mobj_t *ufo, mobj_t *toucher)
 {
+	mobj_t *emerald = ufo_emerald(ufo);
+
 	if (toucher->player != NULL)
 	{
 		if (P_CanPickupItem(toucher->player, 0) == false)
@@ -874,7 +878,19 @@ boolean Obj_UFOEmeraldCollect(mobj_t *ufo, mobj_t *toucher)
 
 	ACS_RunEmeraldScript(toucher);
 
-	CONS_Printf("You win!\n");
+	if (!P_MobjWasRemoved(emerald))
+	{
+		const int kScaleTics = 16;
+
+		// Emerald will now orbit the player
+		P_SetTarget(&emerald->target, toucher);
+
+		// Scale down because the emerald is huge
+		// Super Emerald needs to be scaled down further
+		emerald->destscale = emerald->scale / (ufo_emeraldnum(ufo) > 7 ? 3 : 2);
+		emerald->scalespeed = abs(emerald->destscale - emerald->scale) / kScaleTics;
+	}
+
 	return true;
 }
 
@@ -1044,6 +1060,7 @@ static mobj_t *InitSpecialUFO(waypoint_t *start)
 		}
 
 		P_SetTarget(&emerald->target, ufo);
+		P_SetTarget(&ufo_emerald(ufo), emerald);
 
 		ufo->color = emerald->color; // for minimap
 		overlay->color = emerald->color;

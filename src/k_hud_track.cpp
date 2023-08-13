@@ -382,7 +382,7 @@ bool is_object_tracking_target(const mobj_t* mobj)
 		return inDuel == false && battleovertime.enabled;
 
 	case MT_EMERALD:
-		return specialstageinfo.valid || is_player_tracking_target();
+		return (specialstageinfo.valid && specialstageinfo.ufo) || is_player_tracking_target();
 
 	case MT_MONITOR:
 		return is_player_tracking_target() && Obj_MonitorGetEmerald(mobj) != 0;
