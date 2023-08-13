@@ -23700,7 +23700,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		sfx_kc2e,       // deathsound
 		0,              // speed
 		16*FRACUNIT,    // radius
-		32*FRACUNIT,    // height
+		64*FRACUNIT,    // height
 		0,              // display offset
 		100,            // mass
 		1,              // damage
@@ -23754,7 +23754,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		sfx_None,       // deathsound
 		0,              // speed
 		16*FRACUNIT,    // radius
-		32*FRACUNIT,    // height
+		64*FRACUNIT,    // height
 		0,              // display offset
 		100,            // mass
 		1,              // damage
@@ -23835,7 +23835,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		sfx_s3k5d,      // deathsound
 		28*FRACUNIT,    // speed
 		24*FRACUNIT,    // radius
-		32*FRACUNIT,    // height
+		64*FRACUNIT,    // height
 		0,              // display offset
 		100,            // mass
 		1,              // damage
@@ -23889,7 +23889,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		sfx_s3k5d,      // deathsound
 		28*FRACUNIT,    // speed
 		16*FRACUNIT,    // radius
-		32*FRACUNIT,    // height
+		64*FRACUNIT,    // height
 		0,              // display offset
 		100,            // mass
 		1,              // damage
@@ -24213,7 +24213,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		sfx_hogbom,     // deathsound
 		40*FRACUNIT,    // speed
 		26*FRACUNIT,    // radius
-		32*FRACUNIT,    // height
+		64*FRACUNIT,    // height
 		0,              // display offset
 		100,            // mass
 		1,              // damage
@@ -24888,7 +24888,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		sfx_s3k5d,      // deathsound
 		28*FRACUNIT,    // speed
 		24*FRACUNIT,    // radius
-		32*FRACUNIT,    // height
+		64*FRACUNIT,    // height
 		0,              // display offset
 		100,            // mass
 		1,              // damage
@@ -30131,7 +30131,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		sfx_None,       // deathsound
 		0,              // speed
 		108*FRACUNIT,   // radius
-		72*FRACUNIT,    // height
+		180*FRACUNIT,    // height
 		0,              // display offset
 		16,             // mass
 		0,              // damage
