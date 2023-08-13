@@ -90,27 +90,6 @@ void I_GetEvent(void);
 */
 void I_OsPolling(void);
 
-// Either returns a null ticcmd,
-// or calls a loadable driver to build it.
-// This ticcmd will then be modified by the gameloop
-// for normal input.
-
-/**	\brief Input for the first player
-*/
-ticcmd_t *I_BaseTiccmd(void);
-
-/**	\brief Input for the second player
-*/
-ticcmd_t *I_BaseTiccmd2(void);
-
-/**	\brief Input for the third player
-*/
-ticcmd_t *I_BaseTiccmd3(void);
-
-/**	\brief Input for the fourth player
-*/
-ticcmd_t *I_BaseTiccmd4(void);
-
 /**	\brief Called by M_Responder when quit is selected, return exit code 0
 */
 void I_Quit(void) FUNCNORETURN;

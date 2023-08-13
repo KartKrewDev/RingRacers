@@ -1416,40 +1416,6 @@ void I_Tactile4(FFType pFFType, const JoyFF_t *FFEffect)
 	(void)FFEffect;
 }
 
-static ticcmd_t emptycmd[MAXSPLITSCREENPLAYERS];
-
-/**	\brief empty ticcmd for player 1
-*/
-
-ticcmd_t *I_BaseTiccmd(void)
-{
-	return &emptycmd[0];
-}
-
-/**	\brief empty ticcmd for player 2
-*/
-
-ticcmd_t *I_BaseTiccmd2(void)
-{
-	return &emptycmd[1];
-}
-
-/**	\brief empty ticcmd for player 3
-*/
-
-ticcmd_t *I_BaseTiccmd3(void)
-{
-	return &emptycmd[2];
-}
-
-/**	\brief empty ticcmd for player 4
-*/
-
-ticcmd_t *I_BaseTiccmd4(void)
-{
-	return &emptycmd[3];
-}
-
 //
 // I_GetTime
 // returns time in 1/TICRATE second tics
