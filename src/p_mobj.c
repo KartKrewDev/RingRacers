@@ -5325,7 +5325,6 @@ static boolean P_IsTrackerType(INT32 type)
 		case MT_SPB:
 		case MT_BATTLECAPSULE:
 		case MT_CDUFO:
-		case MT_SPECIAL_UFO:
 			return true;
 
 		// Players sometimes get targeted with HUD tracking
@@ -7550,48 +7549,19 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 		break;
 	}
 	case MT_EMERALD:
-		{
-			if (mobj->threshold > 0)
-				mobj->threshold--;
+		Obj_EmeraldThink(mobj);
 
-			A_AttractChase(mobj);
+		if (P_MobjWasRemoved(mobj))
+		{
+			return false;
 		}
-		/*FALLTHRU*/
+		break;
 	case MT_MONITOR:
+		Obj_MonitorThink(mobj);
+
+		if (P_MobjWasRemoved(mobj))
 		{
-			if (battleovertime.enabled >= 10*TICRATE)
-			{
-				fixed_t distance = R_PointToDist2(mobj->x, mobj->y, battleovertime.x, battleovertime.y);
-
-				if (distance > battleovertime.radius)
-				{
-					// Delete emeralds to let them reappear
-					P_KillMobj(mobj, NULL, NULL, DMG_NORMAL);
-					return false;
-				}
-			}
-
-			// Don't spawn sparkles on a monitor with no
-			// emerald inside
-			if (mobj->type == MT_MONITOR &&
-					Obj_MonitorGetEmerald(mobj) == 0)
-			{
-				break;
-			}
-
-			if (leveltime % 3 == 0)
-			{
-				mobj_t *sparkle = P_SpawnMobjFromMobj(
-					mobj,
-					P_RandomRange(PR_SPARKLE, -48, 48) * FRACUNIT,
-					P_RandomRange(PR_SPARKLE, -48, 48) * FRACUNIT,
-					P_RandomRange(PR_SPARKLE, 0, 64) * FRACUNIT,
-					MT_EMERALDSPARK
-				);
-
-				sparkle->color = mobj->color;
-				sparkle->momz += 8 * mobj->scale * P_MobjFlip(mobj);
-			}
+			return false;
 		}
 		break;
 	case MT_DRIFTEXPLODE:
@@ -7910,6 +7880,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 			return false;
 		}
 		P_MoveOrigin(mobj, mobj->target->x, mobj->target->y, mobj->target->z);
+		mobj->sprzoff = mobj->target->sprzoff;
 		mobj->old_x = mobj->target->old_x;
 		mobj->old_y = mobj->target->old_y;
 		mobj->old_z = mobj->target->old_z;
@@ -8465,19 +8436,12 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 	}
 	case MT_BATTLEUFO:
 	{
-		if (battleovertime.enabled >= 10*TICRATE)
-		{
-			fixed_t distance = R_PointToDist2(mobj->x, mobj->y, battleovertime.x, battleovertime.y);
-
-			if (distance > battleovertime.radius)
-			{
-				// Delete emeralds to let them reappear
-				P_KillMobj(mobj, NULL, NULL, DMG_NORMAL);
-				return false;
-			}
-		}
-
 		Obj_BattleUFOThink(mobj);
+
+		if (P_MobjWasRemoved(mobj))
+		{
+			return false;
+		}
 		break;
 	}
 	case MT_BATTLEUFO_LEG:

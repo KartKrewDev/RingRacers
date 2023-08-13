@@ -853,3 +853,22 @@ INT32 K_BumpersToHealth(UINT8 bumpers)
 {
 	return (bumpers + 1);
 }
+
+boolean K_BattleOvertimeKiller(mobj_t *mobj)
+{
+	if (battleovertime.enabled < 10*TICRATE)
+	{
+		return false;
+	}
+
+	fixed_t distance = R_PointToDist2(mobj->x, mobj->y, battleovertime.x, battleovertime.y);
+
+	if (distance <= battleovertime.radius)
+	{
+		return false;
+	}
+
+	P_KillMobj(mobj, NULL, NULL, DMG_NORMAL);
+
+	return true;
+}

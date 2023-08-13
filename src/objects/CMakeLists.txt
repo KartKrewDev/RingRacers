@@ -27,4 +27,5 @@ target_sources(SRB2SDL2 PRIVATE
 	symbol.c
 	dash-rings.c
 	sneaker-panel.c
+	emerald.c
 )

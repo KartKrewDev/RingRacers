@@ -137,6 +137,8 @@ void Obj_BattleUFOThink(mobj_t *mobj)
 	{
 		Obj_PointPlayersToXY(mobj->x, mobj->y);
 	}
+
+	K_BattleOvertimeKiller(mobj);
 }
 
 void Obj_BattleUFODeath(mobj_t *mobj)

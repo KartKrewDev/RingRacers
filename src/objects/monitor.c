@@ -496,6 +496,17 @@ Obj_SpawnMonitor
 }
 
 void
+Obj_MonitorThink (mobj_t *monitor)
+{
+	if (Obj_MonitorGetEmerald(monitor))
+	{
+		Obj_SpawnEmeraldSparks(monitor);
+	}
+
+	K_BattleOvertimeKiller(monitor);
+}
+
+void
 Obj_MonitorPartThink (mobj_t *part)
 {
 	const statenum_t statenum = part_type(part);

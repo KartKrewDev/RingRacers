@@ -58,6 +58,8 @@
 
 #define ufo_intangible(o) ((o)->cusval)
 
+#define ufo_emerald(o) ((o)->tracer)
+
 enum
 {
 	UFO_PIECE_TYPE_POD,
@@ -459,27 +461,15 @@ static void UFOMove(mobj_t *ufo)
 	}
 }
 
-static void UFOEmeraldVFX(mobj_t *ufo)
+static void UFOEmeraldVFX(mobj_t *emerald)
 {
 	const INT32 bobS = 32;
 	const angle_t bobA = (leveltime & (bobS - 1)) * (ANGLE_MAX / bobS);
-	const fixed_t bobH = 16 * ufo->scale;
+	const fixed_t bobH = 16 * emerald->scale;
 
-	ufo->sprzoff = FixedMul(bobH, FINESINE(bobA >> ANGLETOFINESHIFT));
+	emerald->sprzoff = FixedMul(bobH, FINESINE(bobA >> ANGLETOFINESHIFT));
 
-	if (leveltime % 3 == 0)
-	{
-		mobj_t *sparkle = P_SpawnMobjFromMobj(
-			ufo,
-			P_RandomRange(PR_SPARKLE, -48, 48) * FRACUNIT,
-			P_RandomRange(PR_SPARKLE, -48, 48) * FRACUNIT,
-			(P_RandomRange(PR_SPARKLE, 0, 64) * FRACUNIT) + FixedDiv(ufo->sprzoff, ufo->scale),
-			MT_EMERALDSPARK
-		);
-
-		sparkle->color = ufo->color;
-		sparkle->momz += 8 * ufo->scale * P_MobjFlip(ufo);
-	}
+	Obj_SpawnEmeraldSparks(emerald);
 }
 
 static boolean UFOHumPlaying(mobj_t *ufo) {
@@ -516,8 +506,6 @@ void Obj_SpecialUFOThinker(mobj_t *ufo)
 
 	if (UFOEmeraldChase(ufo) == true)
 	{
-		// Spawn emerald sparkles
-		UFOEmeraldVFX(ufo);
 		ufo_collectdelay(ufo)--;
 	}
 	else
@@ -868,6 +856,8 @@ void Obj_PlayerUFOCollide(mobj_t *ufo, mobj_t *other)
 
 boolean Obj_UFOEmeraldCollect(mobj_t *ufo, mobj_t *toucher)
 {
+	mobj_t *emerald = ufo_emerald(ufo);
+
 	if (toucher->player != NULL)
 	{
 		if (P_CanPickupItem(toucher->player, 0) == false)
@@ -888,7 +878,19 @@ boolean Obj_UFOEmeraldCollect(mobj_t *ufo, mobj_t *toucher)
 
 	ACS_RunEmeraldScript(toucher);
 
-	CONS_Printf("You win!\n");
+	if (!P_MobjWasRemoved(emerald))
+	{
+		const int kScaleTics = 16;
+
+		// Emerald will now orbit the player
+		P_SetTarget(&emerald->target, toucher);
+
+		// Scale down because the emerald is huge
+		// Super Emerald needs to be scaled down further
+		emerald->destscale = emerald->scale / (ufo_emeraldnum(ufo) > 7 ? 3 : 2);
+		emerald->scalespeed = abs(emerald->destscale - emerald->scale) / kScaleTics;
+	}
+
 	return true;
 }
 
@@ -1026,43 +1028,49 @@ static mobj_t *InitSpecialUFO(waypoint_t *start)
 
 	// Adjustable Special Stage emerald color/shape
 	{
-		overlay = P_SpawnMobjFromMobj(ufo, 0, 0, 0, MT_OVERLAY);
+		mobj_t *emerald = P_SpawnMobjFromMobj(ufo, 0, 0, 0, MT_EMERALD);
 
-		ufo->color = SKINCOLOR_CHAOSEMERALD1;
+		emerald->flags |= MF_NOGRAVITY | MF_NOCLIP | MF_NOCLIPTHING | MF_NOCLIPHEIGHT;
+
+		overlay = P_SpawnMobjFromMobj(emerald, 0, 0, 0, MT_OVERLAY);
+
+		emerald->color = SKINCOLOR_CHAOSEMERALD1;
 		i = ufo_emeraldnum(ufo) = P_GetNextEmerald();
 		if (i > 0)
 		{
-			ufo->color += (i - 1) % 7;
+			emerald->color += (i - 1) % 7;
 			if (i > 7)
 			{
 				// Super Emeralds
-				P_SetMobjState(ufo, S_SUPEREMERALD1);
+				P_SetMobjState(emerald, S_SUPEREMERALD1);
 				P_SetMobjState(overlay, S_SUPEREMERALD_UNDER);
 			}
 			else
 			{
 				// Chaos Emerald
-				P_SetMobjState(ufo, S_CHAOSEMERALD1);
+				P_SetMobjState(emerald, S_CHAOSEMERALD1);
 				P_SetMobjState(overlay, S_CHAOSEMERALD_UNDER);
 			}
 		}
 		else
 		{
 			// Prize -- todo, currently using standard Emerald
-			P_SetMobjState(ufo, S_CHAOSEMERALD1);
+			P_SetMobjState(emerald, S_CHAOSEMERALD1);
 			P_SetMobjState(overlay, S_CHAOSEMERALD_UNDER);
 		}
 
-		if (P_MobjWasRemoved(ufo)) // uh oh !
-		{
-			// Attempted crash prevention with custom SOC
-			return NULL;
-		}
+		P_SetTarget(&emerald->target, ufo);
+		P_SetTarget(&ufo_emerald(ufo), emerald);
 
-		overlay->color = ufo->color;
-		P_SetTarget(&overlay->target, ufo);
+		ufo->color = emerald->color; // for minimap
+		overlay->color = emerald->color;
 
+		P_SetTarget(&overlay->target, emerald);
+
+		// UFO needs this so Jawz reticle lines up!
 		ufo->sprzoff = 32 * mapobjectscale;
+
+		emerald->sprzoff = ufo->sprzoff;
 	}
 
 	// Create UFO pieces.
@@ -1183,4 +1191,17 @@ UINT32 K_GetSpecialUFODistance(void)
 	}
 
 	return UINT32_MAX;
+}
+
+void Obj_UFOEmeraldThink(mobj_t *emerald)
+{
+	mobj_t *ufo = emerald->target;
+
+	P_MoveOrigin(emerald, ufo->x, ufo->y, ufo->z);
+
+	if (UFOEmeraldChase(ufo) == true)
+	{
+		// Spawn emerald sparkles
+		UFOEmeraldVFX(emerald);
+	}
 }

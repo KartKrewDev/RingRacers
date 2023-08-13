@@ -51,6 +51,7 @@ void K_SpawnPlayerBattleBumpers(player_t *p);
 void K_BattleInit(boolean singleplayercontext);
 UINT8 K_Bumpers(player_t *player);
 INT32 K_BumpersToHealth(UINT8 bumpers);
+boolean K_BattleOvertimeKiller(mobj_t *mobj);
 
 #ifdef __cplusplus
 } // extern "C"

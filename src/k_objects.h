@@ -82,10 +82,12 @@ void Obj_UFOPieceDead(mobj_t *piece);
 void Obj_UFOPieceRemoved(mobj_t *piece);
 mobj_t *Obj_CreateSpecialUFO(void);
 UINT32 K_GetSpecialUFODistance(void);
+void Obj_UFOEmeraldThink(mobj_t *emerald);
 
 /* Monitors */
 mobj_t *Obj_SpawnMonitor(mobj_t *origin, UINT8 numItemTypes, UINT8 emerald);
 void Obj_MonitorSpawnParts(mobj_t *monitor);
+void Obj_MonitorThink(mobj_t *monitor);
 void Obj_MonitorPartThink(mobj_t *part);
 fixed_t Obj_MonitorGetDamage(mobj_t *monitor, mobj_t *inflictor, UINT8 damagetype);
 void Obj_MonitorOnDamage(mobj_t *monitor, mobj_t *inflictor, INT32 damage);
@@ -200,6 +202,10 @@ void Obj_SneakerPanelSpriteScale(mobj_t *mobj);
 void Obj_SneakerPanelSpawn(mobj_t *mobj);
 void Obj_SneakerPanelSetup(mobj_t *mobj, mapthing_t *mthing);
 void Obj_SneakerPanelCollide(mobj_t *pad, mobj_t *mo);
+
+/* Emerald */
+void Obj_SpawnEmeraldSparks(mobj_t *source);
+void Obj_EmeraldThink(mobj_t *emerald);
 
 #ifdef __cplusplus
 } // extern "C"
