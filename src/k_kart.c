@@ -8608,6 +8608,7 @@ void K_KartPlayerAfterThink(player_t *player)
 		}
 
 		ret = P_SpawnMobj(targ->x, targ->y, targ->z, MT_PLAYERRETICULE);
+		ret->sprzoff = targ->sprzoff;
 		ret->old_x = targ->old_x;
 		ret->old_y = targ->old_y;
 		ret->old_z = targ->old_z;
