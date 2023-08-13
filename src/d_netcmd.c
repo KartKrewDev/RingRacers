@@ -467,6 +467,7 @@ consvar_t cv_kartdebugbots = CVAR_INIT ("debugbots", "Off", CV_NETVAR|CV_CHEAT, 
 consvar_t cv_kartdebugnodes = CVAR_INIT ("debugnodes", "Off", CV_CHEAT, CV_OnOff, NULL);
 consvar_t cv_kartdebugcolorize = CVAR_INIT ("debugcolorize", "Off", CV_CHEAT, CV_OnOff, NULL);
 consvar_t cv_kartdebugdirector = CVAR_INIT ("debugdirector", "Off", CV_CHEAT, CV_OnOff, NULL);
+consvar_t cv_kartdebugstart = CVAR_INIT ("debugstart", "Off", CV_NETVAR|CV_CHEAT, CV_OnOff, NULL);
 consvar_t cv_spbtest = CVAR_INIT ("spbtest", "Off", CV_CHEAT|CV_NETVAR, CV_OnOff, NULL);
 consvar_t cv_debugrank = CVAR_INIT ("debugrank", "Off", CV_CHEAT, CV_OnOff, NULL);
 consvar_t cv_battletest = CVAR_INIT ("battletest", "Off", CV_CHEAT|CV_NETVAR, CV_OnOff, NULL);
