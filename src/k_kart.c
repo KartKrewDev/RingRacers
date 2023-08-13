@@ -4745,7 +4745,7 @@ static mobj_t *K_SpawnKartMissile(mobj_t *source, mobjtype_t type, angle_t an, I
 
 	x = source->x + source->momx + FixedMul(finalspeed, FINECOSINE(an>>ANGLETOFINESHIFT));
 	y = source->y + source->momy + FixedMul(finalspeed, FINESINE(an>>ANGLETOFINESHIFT));
-	z = source->z; // spawn on the ground please
+	z = P_GetZAt(source->standingslope, x, y, source->z); // spawn on the ground please
 
 	th = P_SpawnMobj(x, y, z, type); // this will never return null because collision isn't processed here
 
@@ -4768,14 +4768,15 @@ static mobj_t *K_SpawnKartMissile(mobj_t *source, mobjtype_t type, angle_t an, I
 	th->momy = FixedMul(finalspeed, FINESINE(an>>ANGLETOFINESHIFT));
 	th->momz = source->momz;
 
-	P_CheckPosition(th, x, y, NULL);
+	// Get floorz and ceilingz
+	P_SetOrigin(th, x, y, z);
 
 	if (P_MobjWasRemoved(th))
 		return NULL;
 
 	if ((P_IsObjectFlipped(th)
-			? tm.ceilingz - source->ceilingz
-			: tm.floorz - source->floorz) > P_GetThingStepUp(th, x, y))
+			? th->ceilingz - source->ceilingz
+			: th->floorz - source->floorz) > P_GetThingStepUp(th, x, y))
 	{
 		// Assuming this is on the boundary of a sector and
 		// the wall is too tall... I'm not bothering with
@@ -4785,10 +4786,34 @@ static mobj_t *K_SpawnKartMissile(mobj_t *source, mobjtype_t type, angle_t an, I
 
 		const fixed_t r = abs(th->radius - source->radius);
 
-		P_SetOrigin(th, source->x - FixedMul(r, FSIN(an)), source->y - FixedMul(r, FCOS(an)), z);
+		x = source->x - FixedMul(r, FSIN(an));
+		y = source->y - FixedMul(r, FCOS(an));
+		z = P_GetZAt(source->standingslope, x, y, source->z);
+
+		P_SetOrigin(th, x, y, z);
 
 		if (P_MobjWasRemoved(th))
 			return NULL;
+	}
+
+	if (P_IsObjectOnGround(source))
+	{
+		// If the player is on the ground, make sure the
+		// missile spawns on the ground, so it smoothly
+		// travels down stairs.
+
+		// FIXME: This needs a more elegant solution because
+		// if multiple stairs are crossed, the height
+		// difference in the end is too great (this affects
+		// slopes too).
+
+		const fixed_t tz = P_IsObjectFlipped(th) ? th->ceilingz - th->height : th->floorz;
+
+		if (abs(tz - z) <= P_GetThingStepUp(th, x, y))
+		{
+			z = tz;
+			th->z = z;
+		}
 	}
 
 	if (source->player != NULL)
