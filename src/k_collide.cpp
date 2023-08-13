@@ -238,8 +238,15 @@ static inline BlockItReturn_t PIT_SSMineSearch(mobj_t *thing)
 	if (grenade->flags2 & MF2_DEBRIS) // don't explode twice
 		return BMIT_ABORT;
 
-	if (thing->type != MT_PLAYER) // Don't explode for anything but an actual player.
+	switch (thing->type)
+	{
+	case MT_PLAYER: // Don't explode for anything but an actual player.
+	case MT_SPECIAL_UFO: // Also UFO catcher
+		break;
+
+	default:
 		return BMIT_CONTINUE;
+	}
 
 	if (thing == grenade->target && grenade->threshold != 0) // Don't blow up at your owner instantly.
 		return BMIT_CONTINUE;
@@ -286,6 +293,13 @@ static inline BlockItReturn_t PIT_SSMineExplode(mobj_t *thing)
 
 	if (PIT_SSMineChecks(thing) == true)
 		return BMIT_CONTINUE;
+
+	// Don't do Big Boy Damage to the UFO Catcher with
+	// lingering spinout damage
+	if (thing->type == MT_SPECIAL_UFO && explodespin)
+	{
+		return BMIT_CONTINUE;
+	}
 
 	P_DamageMobj(thing, grenade, grenade->target, 1, (explodespin ? DMG_NORMAL : DMG_EXPLODE));
 
