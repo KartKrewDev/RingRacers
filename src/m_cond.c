@@ -705,9 +705,10 @@ void M_UpdateConditionSetsPending(void)
 	}
 }
 
-boolean M_NotFreePlay(player_t *player)
+boolean M_NotFreePlay(void)
 {
 	UINT8 i;
+	UINT8 nump = 0;
 
 	if (K_CanChangeRules(true) == false)
 	{
@@ -728,12 +729,12 @@ boolean M_NotFreePlay(player_t *player)
 			continue;
 		}
 
-		if (player == &players[i])
-		{
-			continue;
-		}
+		nump++;
 
-		return true;
+		if (nump > 1)
+		{
+			return true;
+		}
 	}
 
 	return false;
@@ -925,35 +926,35 @@ boolean M_CheckCondition(condition_t *cn, player_t *player)
 		case UCRP_FINISHCOOL:
 			return (player->exiting
 				&& !(player->pflags & PF_NOCONTEST)
-				&& M_NotFreePlay(player)
+				&& M_NotFreePlay()
 				&& !K_IsPlayerLosing(player));
 		case UCRP_FINISHALLPRISONS:
 			return (battleprisons
 				&& !(player->pflags & PF_NOCONTEST)
-				//&& M_NotFreePlay(player)
+				//&& M_NotFreePlay()
 				&& numtargets >= maptargets);
 		case UCRP_NOCONTEST:
 			return (player->pflags & PF_NOCONTEST);
 		case UCRP_FINISHPLACE:
 			return (player->exiting
 				&& !(player->pflags & PF_NOCONTEST)
-				&& M_NotFreePlay(player)
+				&& M_NotFreePlay()
 				&& player->position != 0
 				&& player->position <= cn->requirement);
 		case UCRP_FINISHPLACEEXACT:
 			return (player->exiting 
 				&& !(player->pflags & PF_NOCONTEST)
-				&& M_NotFreePlay(player)
+				&& M_NotFreePlay()
 				&& player->position == cn->requirement);
 		case UCRP_FINISHTIME:
 			return (player->exiting
 				&& !(player->pflags & PF_NOCONTEST)
-				//&& M_NotFreePlay(player)
+				//&& M_NotFreePlay()
 				&& player->realtime <= (unsigned)cn->requirement);
 		case UCRP_FINISHTIMEEXACT:
 			return (player->exiting
 				&& !(player->pflags & PF_NOCONTEST)
-				//&& M_NotFreePlay(player)
+				//&& M_NotFreePlay()
 				&& player->realtime/TICRATE == (unsigned)cn->requirement/TICRATE);
 		case UCRP_FINISHTIMELEFT:
 			return (timelimitintics

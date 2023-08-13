@@ -5070,7 +5070,7 @@ void K_drawKartFreePlay(void)
 	if (stplyr->spectator == true)
 		return;
 
-	if (M_NotFreePlay(stplyr) == true)
+	if (M_NotFreePlay() == true)
 		return;
 
 	if (lt_exitticker < TICRATE/2)
