@@ -467,19 +467,7 @@ static void UFOEmeraldVFX(mobj_t *ufo)
 
 	ufo->sprzoff = FixedMul(bobH, FINESINE(bobA >> ANGLETOFINESHIFT));
 
-	if (leveltime % 3 == 0)
-	{
-		mobj_t *sparkle = P_SpawnMobjFromMobj(
-			ufo,
-			P_RandomRange(PR_SPARKLE, -48, 48) * FRACUNIT,
-			P_RandomRange(PR_SPARKLE, -48, 48) * FRACUNIT,
-			(P_RandomRange(PR_SPARKLE, 0, 64) * FRACUNIT) + FixedDiv(ufo->sprzoff, ufo->scale),
-			MT_EMERALDSPARK
-		);
-
-		sparkle->color = ufo->color;
-		sparkle->momz += 8 * ufo->scale * P_MobjFlip(ufo);
-	}
+	Obj_SpawnEmeraldSparks(ufo);
 }
 
 static boolean UFOHumPlaying(mobj_t *ufo) {
