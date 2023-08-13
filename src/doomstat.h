@@ -439,6 +439,14 @@ struct staffbrief_t
 #define MAXMUSNAMES 3 // maximum definable music tracks per level
 #define MAXHEADERFOLLOWERS 32
 
+struct mapheader_lighting_t
+{
+	UINT8 light_contrast;				///< Range of wall lighting. 0 is no lighting.
+	SINT8 sprite_backlight;				///< Subtract from wall lighting for sprites only.
+	boolean use_light_angle;			///< When false, wall lighting is evenly distributed. When true, wall lighting is directional.
+	angle_t light_angle;				///< Angle of directional wall lighting.
+};
+
 /** Map header information.
   */
 struct mapheader_t
@@ -506,10 +514,10 @@ struct mapheader_t
 	// Visual information
 	UINT16 palette;						///< PAL lump to use on this map
 	UINT16 encorepal;					///< PAL for encore mode
-	UINT8 light_contrast;				///< Range of wall lighting. 0 is no lighting.
-	SINT8 sprite_backlight;				///< Subtract from wall lighting for sprites only.
-	boolean use_light_angle;			///< When false, wall lighting is evenly distributed. When true, wall lighting is directional.
-	angle_t light_angle;				///< Angle of directional wall lighting.
+
+	mapheader_lighting_t lighting;			///< Wall and sprite lighting
+	mapheader_lighting_t lighting_encore;	///< Alternative lighting for Encore mode
+	boolean use_encore_lighting;			///< Whether to use separate Encore lighting
 
 	// Audience information
 	UINT8 numFollowers;					///< Internal. For audience support.

@@ -925,6 +925,20 @@ void readgametype(MYFILE *f, char *gtname)
 	CONS_Printf("Added gametype %s\n", gtname);
 }
 
+static mapheader_lighting_t *usemaplighting(INT32 mapnum, const char *word)
+{
+	if (fastncmp(word, "ENCORE", 6))
+	{
+		mapheaderinfo[mapnum]->use_encore_lighting = true;
+
+		return &mapheaderinfo[mapnum]->lighting_encore;
+	}
+	else
+	{
+		return &mapheaderinfo[mapnum]->lighting;
+	}
+}
+
 void readlevelheader(MYFILE *f, char * name)
 {
 	char *s = Z_Malloc(MAXLINELEN, PU_STATIC, NULL);
@@ -1277,25 +1291,27 @@ void readlevelheader(MYFILE *f, char * name)
 				mapheaderinfo[num]->mobj_scale = get_number(word2);
 			else if (fastcmp(word, "DEFAULTWAYPOINTRADIUS"))
 				mapheaderinfo[num]->default_waypoint_radius = get_number(word2);
-			else if (fastcmp(word, "LIGHTCONTRAST"))
+			else if (fastcmp(word, "LIGHTCONTRAST") || fastcmp(word, "ENCORELIGHTCONTRAST"))
 			{
-				mapheaderinfo[num]->light_contrast = (UINT8)i;
+				usemaplighting(num, word)->light_contrast = (UINT8)i;
 			}
-			else if (fastcmp(word, "SPRITEBACKLIGHT"))
+			else if (fastcmp(word, "SPRITEBACKLIGHT") || fastcmp(word, "ENCORESPRITEBACKLIGHT"))
 			{
-				mapheaderinfo[num]->sprite_backlight = (SINT8)i;
+				usemaplighting(num, word)->sprite_backlight = (SINT8)i;
 			}
-			else if (fastcmp(word, "LIGHTANGLE"))
+			else if (fastcmp(word, "LIGHTANGLE") || fastcmp(word, "ENCORELIGHTANGLE"))
 			{
+				mapheader_lighting_t *lighting = usemaplighting(num, word);
+
 				if (fastcmp(word2, "EVEN"))
 				{
-					mapheaderinfo[num]->use_light_angle = false;
-					mapheaderinfo[num]->light_angle = 0;
+					lighting->use_light_angle = false;
+					lighting->light_angle = 0;
 				}
 				else
 				{
-					mapheaderinfo[num]->use_light_angle = true;
-					mapheaderinfo[num]->light_angle = FixedAngle(FloatToFixed(atof(word2)));
+					lighting->use_light_angle = true;
+					lighting->light_angle = FixedAngle(FloatToFixed(atof(word2)));
 				}
 			}
 			// Individual triggers for level flags, for ease of use (and 2.0 compatibility)
