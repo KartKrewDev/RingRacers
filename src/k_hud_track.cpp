@@ -8,6 +8,7 @@
 #include "k_hud.h"
 #include "k_kart.h"
 #include "k_objects.h"
+#include "k_specialstage.h"
 #include "m_fixed.h"
 #include "p_local.h"
 #include "p_mobj.h"
@@ -374,9 +375,6 @@ bool is_object_tracking_target(const mobj_t* mobj)
 	case MT_CDUFO:
 		return battleprisons;
 
-	case MT_SPECIAL_UFO:
-		return true;
-
 	case MT_PLAYER:
 		return is_player_tracking_target(mobj->player);
 
@@ -384,7 +382,7 @@ bool is_object_tracking_target(const mobj_t* mobj)
 		return inDuel == false && battleovertime.enabled;
 
 	case MT_EMERALD:
-		return is_player_tracking_target();
+		return specialstageinfo.valid || is_player_tracking_target();
 
 	case MT_MONITOR:
 		return is_player_tracking_target() && Obj_MonitorGetEmerald(mobj) != 0;

@@ -26,6 +26,21 @@ void Obj_SpawnEmeraldSparks(mobj_t *mobj)
 
 void Obj_EmeraldThink(mobj_t *emerald)
 {
+	if (!P_MobjWasRemoved(emerald->target))
+	{
+		switch (emerald->target->type)
+		{
+			case MT_SPECIAL_UFO:
+				Obj_UFOEmeraldThink(emerald);
+				break;
+
+			default:
+				break;
+		}
+
+		return;
+	}
+
 	if (emerald->threshold > 0)
 	{
 		emerald->threshold--;

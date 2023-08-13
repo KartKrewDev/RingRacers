@@ -82,6 +82,7 @@ void Obj_UFOPieceDead(mobj_t *piece);
 void Obj_UFOPieceRemoved(mobj_t *piece);
 mobj_t *Obj_CreateSpecialUFO(void);
 UINT32 K_GetSpecialUFODistance(void);
+void Obj_UFOEmeraldThink(mobj_t *emerald);
 
 /* Monitors */
 mobj_t *Obj_SpawnMonitor(mobj_t *origin, UINT8 numItemTypes, UINT8 emerald);
