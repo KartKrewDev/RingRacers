@@ -239,6 +239,7 @@ void M_PlaybackToggleFreecam(INT32 choice)
 	if (!demo.freecam)	// toggle on
 	{
 		demo.freecam = true;
+		democam.button_a_held = 2;
 	}
 	else	// toggle off
 	{
