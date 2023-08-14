@@ -236,7 +236,6 @@ void M_PlaybackToggleFreecam(INT32 choice)
 	splitscreen = 0;
 	R_ExecuteSetViewSize();
 
-	P_InitCameraCmd();	// init camera controls
 	if (!demo.freecam)	// toggle on
 	{
 		demo.freecam = true;

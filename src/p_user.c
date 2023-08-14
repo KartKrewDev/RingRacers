@@ -2979,145 +2979,7 @@ fixed_t t_cam_dist[MAXSPLITSCREENPLAYERS] = {-42,-42,-42,-42};
 fixed_t t_cam_height[MAXSPLITSCREENPLAYERS] = {-42,-42,-42,-42};
 fixed_t t_cam_rotate[MAXSPLITSCREENPLAYERS] = {-42,-42,-42,-42};
 
-// Heavily simplified version of G_BuildTicCmd that only takes the local first player's control input and converts it to readable ticcmd_t
-// we then throw that ticcmd garbage in the camera and make it move
-// TODO: please just use the normal ticcmd function somehow
-
-static ticcmd_t cameracmd;
-
 struct demofreecam_s democam;
-
-// called by m_menu to reinit cam input every time it's toggled
-void P_InitCameraCmd(void)
-{
-	memset(&cameracmd, 0, sizeof(ticcmd_t));	// initialize cmd
-}
-
-static ticcmd_t *P_CameraCmd(camera_t *cam)
-{
-	/*
-	INT32 forward, axis; //i
-	// these ones used for multiple conditions
-	boolean turnleft, turnright, mouseaiming;
-	boolean invertmouse, lookaxis, usejoystick, kbl;
-	INT32 player_invert;
-	INT32 screen_invert;
-	*/
-	ticcmd_t *cmd = &cameracmd;
-
-	(void)cam;
-
-	if (!demo.playback)
-		return cmd;	// empty cmd, no.
-
-	/*
-	kbl = democam.keyboardlook;
-
-	G_CopyTiccmd(cmd, I_BaseTiccmd(), 1); // empty, or external driver
-
-	mouseaiming = true;
-	invertmouse = cv_invertmouse.value;
-	lookaxis = cv_lookaxis[0].value;
-
-	usejoystick = true;
-	turnright = PlayerInputDown(1, gc_turnright);
-	turnleft = PlayerInputDown(1, gc_turnleft);
-
-	axis = PlayerJoyAxis(1, AXISTURN);
-
-	if (encoremode)
-	{
-		turnright ^= turnleft; // swap these using three XORs
-		turnleft ^= turnright;
-		turnright ^= turnleft;
-		axis = -axis;
-	}
-
-	if (axis != 0)
-	{
-		turnright = turnright || (axis > 0);
-		turnleft = turnleft || (axis < 0);
-	}
-	forward = 0;
-
-	cmd->turning = 0;
-
-	// let movement keys cancel each other out
-	if (turnright && !(turnleft))
-	{
-		cmd->turning -= KART_FULLTURN;
-	}
-	else if (turnleft && !(turnright))
-	{
-		cmd->turning += KART_FULLTURN;
-	}
-
-	cmd->turning -= (mousex * 8) * (encoremode ? -1 : 1);
-
-	axis = PlayerJoyAxis(1, AXISMOVE);
-	if (PlayerInputDown(1, gc_a) || (usejoystick && axis > 0))
-		cmd->buttons |= BT_ACCELERATE;
-	axis = PlayerJoyAxis(1, AXISBRAKE);
-	if (PlayerInputDown(1, gc_brake) || (usejoystick && axis > 0))
-		cmd->buttons |= BT_BRAKE;
-	axis = PlayerJoyAxis(1, AXISAIM);
-	if (PlayerInputDown(1, gc_aimforward) || (usejoystick && axis < 0))
-		forward += MAXPLMOVE;
-	if (PlayerInputDown(1, gc_aimbackward) || (usejoystick && axis > 0))
-		forward -= MAXPLMOVE;
-
-	// fire with any button/key
-	axis = PlayerJoyAxis(1, AXISFIRE);
-	if (PlayerInputDown(1, gc_fire) || (usejoystick && axis > 0))
-		cmd->buttons |= BT_ATTACK;
-
-	// spectator aiming shit, ahhhh...
-	player_invert = invertmouse ? -1 : 1;
-	screen_invert = 1;	// nope
-
-	// mouse look stuff (mouse look is not the same as mouse aim)
-	kbl = false;
-
-	// looking up/down
-	cmd->aiming += (mlooky<<19)*player_invert*screen_invert;
-
-	axis = PlayerJoyAxis(1, AXISLOOK);
-
-	// spring back if not using keyboard neither mouselookin'
-	if (!kbl && !lookaxis && !mouseaiming)
-		cmd->aiming = 0;
-
-	if (PlayerInputDown(1, gc_lookup) || (axis < 0))
-	{
-		cmd->aiming += KB_LOOKSPEED * screen_invert;
-		kbl = true;
-	}
-	else if (PlayerInputDown(1, gc_lookdown) || (axis > 0))
-	{
-		cmd->aiming -= KB_LOOKSPEED * screen_invert;
-		kbl = true;
-	}
-
-	if (PlayerInputDown(1, gc_centerview)) // No need to put a spectator limit on this one though :V
-		cmd->aiming = 0;
-
-	cmd->forwardmove += (SINT8)forward;
-
-	if (cmd->forwardmove > MAXPLMOVE)
-		cmd->forwardmove = MAXPLMOVE;
-	else if (cmd->forwardmove < -MAXPLMOVE)
-		cmd->forwardmove = -MAXPLMOVE;
-
-	if (cmd->turning > KART_FULLTURN)
-		cmd->turning = KART_FULLTURN;
-	else if (cmd->turning < -KART_FULLTURN)
-		cmd->turning = -KART_FULLTURN;
-
-	democam.keyboardlook = kbl;
-	*/
-
-	return cmd;
-}
 
 void P_DemoCameraMovement(camera_t *cam)
 {
@@ -3131,7 +2993,7 @@ void P_DemoCameraMovement(camera_t *cam)
 	democam.localaiming = cam->aiming;
 
 	// first off we need to get button input
-	cmd = P_CameraCmd(cam);
+	cmd = D_LocalTiccmd(0);
 
 	cam->aiming += cmd->aiming << TICCMD_REDUCE;
 	cam->angle += cmd->turning << TICCMD_REDUCE;

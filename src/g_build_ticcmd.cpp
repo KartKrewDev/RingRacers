@@ -244,7 +244,7 @@ class TiccmdBuilder
 
 	bool spectator_analog_input()
 	{
-		if (!player()->spectator && !objectplacing)
+		if (!player()->spectator && !objectplacing && !demo.freecam)
 		{
 			return false;
 		}
@@ -361,6 +361,26 @@ public:
 	explicit TiccmdBuilder(ticcmd_t* cmd_, INT32 realtics_, UINT8 ssplayer_) :
 		cmd(cmd_), realtics(realtics_), ssplayer(ssplayer_), viewnum(G_PartyPosition(g_localplayers[forplayer()]))
 	{
+		auto regular_input = [this]
+		{
+			analog_input();
+			common_button_input();
+		};
+
+		if (demo.freecam)
+		{
+			// freecam is controllable even while paused
+
+			*cmd = {};
+
+			if (!typing_input())
+			{
+				regular_input();
+			}
+
+			return;
+		}
+
 		if (paused || P_AutoPause())
 		{
 			return;
@@ -391,8 +411,7 @@ public:
 
 		if (!overlay)
 		{
-			analog_input();
-			common_button_input();
+			regular_input();
 		}
 
 		cmd->angle = localangle[viewnum] >> TICCMD_REDUCE;
