@@ -3318,6 +3318,10 @@ boolean G_GametypeHasTeams(void)
 //
 boolean G_GametypeHasSpectators(void)
 {
+	// TODO: this would make a great debug feature for release
+#ifdef DEVELOP
+	return true;
+#endif
 	return (netgame || (multiplayer && demo.netgame));
 }
 

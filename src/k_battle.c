@@ -127,7 +127,10 @@ void K_CheckBumpers(void)
 	{
 		if (nobumpers > 0 && nobumpers >= numingame)
 		{
+			// TODO: this would make a great debug feature for release
+#ifndef DEVELOP
 			P_DoAllPlayersExit(PF_NOCONTEST, false);
+#endif
 			return;
 		}
 	}

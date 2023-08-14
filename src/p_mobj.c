@@ -11841,7 +11841,10 @@ void P_SpawnPlayer(INT32 playernum)
 		}
 		else // Otherwise, never spectator.
 		{
+			// TODO: this would make a great debug feature for release
+#ifndef DEVELOP
 			p->spectator = false;
+#endif
 		}
 	}
 
