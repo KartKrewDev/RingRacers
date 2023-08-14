@@ -361,14 +361,14 @@ public:
 	explicit TiccmdBuilder(ticcmd_t* cmd_, INT32 realtics_, UINT8 ssplayer_) :
 		cmd(cmd_), realtics(realtics_), ssplayer(ssplayer_), viewnum(G_PartyPosition(g_localplayers[forplayer()]))
 	{
-		*cmd = {}; // blank ticcmd
-
-		if (demo.playback)
+		if (paused || P_AutoPause())
 		{
 			return;
 		}
 
-		if (paused || P_AutoPause())
+		*cmd = {}; // blank ticcmd
+
+		if (demo.playback)
 		{
 			return;
 		}
