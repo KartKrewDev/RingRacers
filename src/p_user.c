@@ -3002,7 +3002,7 @@ void P_DemoCameraMovement(camera_t *cam)
 	// forward/back will have a slope. So, as long as democam
 	// controls haven't been used to alter the vertical angle,
 	// slowly reset it to flat.
-	if (democam.reset_aiming && moving)
+	if ((democam.reset_aiming && moving) || (cmd->buttons & BT_DRIFT))
 	{
 		INT32 aiming = cam->aiming;
 		INT32 smooth = FixedMul(ANGLE_11hh / 4, FCOS(cam->aiming));
