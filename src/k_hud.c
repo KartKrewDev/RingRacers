@@ -5192,12 +5192,15 @@ static void K_drawDirectorHUD(void)
 		offs = 2;
 	}
 
+	K_DrawDirectorButton(offs + 1, "Freecam", kp_button_c[0], 0);
+
 	if (p == -1 || !playeringame[p] || players[p].spectator == false)
 	{
 		return;
 	}
 
-	K_DrawDirectorButton(offs + 1, "Director", kp_button_r,
+	// TODO: this is too close to the screen bottom
+	K_DrawDirectorButton(offs + 2, "Director", kp_button_r,
 		(directorinfo.active ? V_YELLOWMAP : 0));
 
 	if (players[p].flashing)
@@ -5642,6 +5645,11 @@ void K_drawKartHUD(void)
 	// trick panel cool trick
 	if (stplyr->karthud[khud_trickcool])
 		K_drawTrickCool();
+
+	if (freecam)
+	{
+		K_DrawDirectorButton(3, "Freecam", kp_button_c[0], 0);
+	}
 
 	if (modeattacking || freecam) // everything after here is MP and debug only
 		return;

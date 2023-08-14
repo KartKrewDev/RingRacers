@@ -11969,6 +11969,15 @@ void P_SpawnPlayer(INT32 playernum)
 	{
 		K_ToggleDirector(players[consoleplayer].spectator && pcount > 0);
 	}
+
+	// TODO: handle splitscreen
+	// Spectators can switch to freecam. This should be
+	// disabled when they enter the race, or when the level
+	// changes.
+	if (playernum == consoleplayer && !demo.playback)
+	{
+		demo.freecam = false;
+	}
 }
 
 void P_AfterPlayerSpawn(INT32 playernum)

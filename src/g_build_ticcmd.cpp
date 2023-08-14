@@ -206,9 +206,17 @@ class TiccmdBuilder
 		return true;
 	}
 
+	void toggle_freecam_input()
+	{
+		if (M_MenuButtonPressed(forplayer(), MBT_C))
+		{
+			P_ToggleDemoCamera();
+		}
+	}
+
 	bool director_input()
 	{
-		if (G_IsPartyLocal(displayplayers[forplayer()]) == true)
+		if (demo.freecam || G_IsPartyLocal(displayplayers[forplayer()]) == true)
 		{
 			return false;
 		}
@@ -238,6 +246,8 @@ class TiccmdBuilder
 				K_ToggleDirector(true);
 			}
 		}
+
+		toggle_freecam_input();
 
 		return true;
 	}
@@ -376,6 +386,11 @@ public:
 			if (!typing_input() && !director_input())
 			{
 				regular_input();
+
+				if (demo.freecam)
+				{
+					toggle_freecam_input();
+				}
 			}
 
 			return;

@@ -154,6 +154,7 @@ boolean P_TryCameraMove(fixed_t x, fixed_t y, camera_t *thiscam);
 void P_SlideCameraMove(camera_t *thiscam);
 void P_DemoCameraMovement(camera_t *cam);
 boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcalled);
+void P_ToggleDemoCamera(void);
 
 boolean P_PlayerInPain(player_t *player);
 void P_ResetPlayer(player_t *player);

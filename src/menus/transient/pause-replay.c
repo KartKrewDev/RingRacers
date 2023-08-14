@@ -236,16 +236,7 @@ void M_PlaybackToggleFreecam(INT32 choice)
 	splitscreen = 0;
 	R_ExecuteSetViewSize();
 
-	if (!demo.freecam)	// toggle on
-	{
-		demo.freecam = true;
-		democam.button_a_held = 2;
-		democam.reset_aiming = true;
-	}
-	else	// toggle off
-	{
-		demo.freecam = false;
-	}
+	P_ToggleDemoCamera();
 }
 
 void M_PlaybackQuit(INT32 choice)

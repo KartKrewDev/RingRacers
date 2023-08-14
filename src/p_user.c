@@ -2976,7 +2976,7 @@ void P_DemoCameraMovement(camera_t *cam)
 		}
 	}
 
-	if (!(cmd->buttons & BT_ACCELERATE) && democam.button_a_held)
+	if (!(cmd->buttons & (BT_ACCELERATE | BT_DRIFT)) && democam.button_a_held)
 	{
 		democam.button_a_held--;
 	}
@@ -3002,7 +3002,7 @@ void P_DemoCameraMovement(camera_t *cam)
 	// forward/back will have a slope. So, as long as democam
 	// controls haven't been used to alter the vertical angle,
 	// slowly reset it to flat.
-	if ((democam.reset_aiming && moving) || (cmd->buttons & BT_DRIFT))
+	if ((democam.reset_aiming && moving) || ((cmd->buttons & BT_DRIFT) && !democam.button_a_held))
 	{
 		INT32 aiming = cam->aiming;
 		INT32 smooth = FixedMul(ANGLE_11hh / 4, FCOS(cam->aiming));
@@ -3041,6 +3041,20 @@ void P_DemoCameraMovement(camera_t *cam)
 
 	// update subsector to avoid crashes;
 	cam->subsector = R_PointInSubsector(cam->x, cam->y);
+}
+
+void P_ToggleDemoCamera(void)
+{
+	if (!demo.freecam)	// toggle on
+	{
+		demo.freecam = true;
+		democam.button_a_held = 2;
+		democam.reset_aiming = true;
+	}
+	else	// toggle off
+	{
+		demo.freecam = false;
+	}
 }
 
 void P_ResetCamera(player_t *player, camera_t *thiscam)
