@@ -4129,9 +4129,6 @@ void G_StopDemo(void)
 	demo.freecam = false;
 	// reset democam shit too:
 	democam.cam = NULL;
-	democam.localangle = 0;
-	democam.localaiming = 0;
-	democam.keyboardlook = false;
 
 	Z_Free(demo.skinlist);
 	demo.skinlist = NULL;

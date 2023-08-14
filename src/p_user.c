@@ -2989,20 +2989,13 @@ void P_DemoCameraMovement(camera_t *cam)
 
 	// update democam stuff with what we got here:
 	democam.cam = cam;
-	democam.localangle = cam->angle;
-	democam.localaiming = cam->aiming;
-
 	// first off we need to get button input
 	cmd = D_LocalTiccmd(0);
 
 	cam->aiming += cmd->aiming << TICCMD_REDUCE;
 	cam->angle += cmd->turning << TICCMD_REDUCE;
 
-	democam.localangle += cmd->turning << TICCMD_REDUCE;
-	democam.localaiming += cmd->aiming << TICCMD_REDUCE;
-
 	cam->aiming = G_ClipAimingPitch((INT32 *)&cam->aiming);
-	democam.localaiming = G_ClipAimingPitch((INT32 *)&democam.localaiming);
 
 	// camera movement:
 	if (cmd->buttons & BT_ACCELERATE)

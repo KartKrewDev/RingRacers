@@ -135,11 +135,6 @@ struct camera_t
 struct demofreecam_s {
 
 	camera_t *cam;	// this is useful when the game is paused, notably
-
-	angle_t localangle;	// keeps track of the cam angle for cmds
-	angle_t localaiming;	// ditto with aiming
-	boolean turnheld;	// holding turn button for gradual turn speed
-	boolean keyboardlook;	// keyboard look
 };
 
 extern struct demofreecam_s democam;
