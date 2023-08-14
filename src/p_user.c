@@ -1082,6 +1082,15 @@ boolean P_IsDisplayPlayer(player_t *player)
 		return false;
 	}
 
+	// Freecam still techically has a player in
+	// displayplayers. But since the camera is detached, it
+	// would be weird if sounds were heard from that player's
+	// perspective.
+	if (demo.freecam)
+	{
+		return false;
+	}
+
 	for (i = 0; i <= r_splitscreen; i++) // DON'T skip P1
 	{
 		if (player == &players[displayplayers[i]])
@@ -3114,7 +3123,6 @@ void P_DemoCameraMovement(camera_t *cam)
 {
 	ticcmd_t *cmd;
 	angle_t thrustangle;
-	mobj_t *awayviewmobj_hack;
 	player_t *lastp;
 
 	// update democam stuff with what we got here:
@@ -3162,14 +3170,6 @@ void P_DemoCameraMovement(camera_t *cam)
 		// this.......... doesn't actually check for floors and walls and whatnot but the function to do that is a pure mess so fuck that.
 		// besides freecam going inside walls sounds pretty cool on paper.
 	}
-
-	// awayviewmobj hack; this is to prevent us from hearing sounds from the player's perspective
-
-	awayviewmobj_hack = P_SpawnMobj(cam->x, cam->y, cam->z, MT_THOK);
-	awayviewmobj_hack->tics = 2;
-	awayviewmobj_hack->renderflags |= RF_DONTDRAW;
-
-	democam.soundmobj = awayviewmobj_hack;
 
 	// update subsector to avoid crashes;
 	cam->subsector = R_PointInSubsector(cam->x, cam->y);
@@ -3238,8 +3238,6 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 	thiscam->old_z = thiscam->z;
 	thiscam->old_angle = thiscam->angle;
 	thiscam->old_aiming = thiscam->aiming;
-
-	democam.soundmobj = NULL;	// reset this each frame, we don't want the game crashing for stupid reasons now do we
 
 	// We probably shouldn't move the camera if there is no player or player mobj somehow
 	if (!player || !player->mo)

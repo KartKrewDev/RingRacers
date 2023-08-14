@@ -135,7 +135,6 @@ struct camera_t
 struct demofreecam_s {
 
 	camera_t *cam;	// this is useful when the game is paused, notably
-	mobj_t *soundmobj;	// mobj to play sound from, used in s_sound
 
 	angle_t localangle;	// keeps track of the cam angle for cmds
 	angle_t localaiming;	// ditto with aiming
