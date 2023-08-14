@@ -22,9 +22,6 @@
 #include "r_state.h"
 #include "z_zone.h"
 #include "console.h" // con_startup_loadprogress
-#ifdef HWRENDER
-#include "hardware/hw_main.h" // for cv_glshearing
-#endif
 
 static CV_PossibleValue_t fpscap_cons_t[] = {
 #ifdef DEVELOP
@@ -117,23 +114,7 @@ static vector3_t *R_LerpVector3(const vector3_t *from, const vector3_t *to, fixe
 // 18/08/18: (No it's actually 16*viewheight, thanks Jimita for finding this out)
 static void R_SetupFreelook(player_t *player, boolean skybox)
 {
-#ifndef HWRENDER
-	(void)player;
-	(void)skybox;
-#endif
-
-	// clip it in the case we are looking a hardware 90 degrees full aiming
-	// (lmps, network and use F12...)
-	if (rendermode == render_soft
-#ifdef HWRENDER
-		|| (rendermode == render_opengl
-			&& (cv_glshearing.value == 1
-			|| (cv_glshearing.value == 2 && R_IsViewpointThirdPerson(player, skybox))))
-#endif
-		)
-	{
-		G_SoftwareClipAimingPitch((INT32 *)&aimingangle);
-	}
+	G_FinalClipAimingPitch((INT32 *)&aimingangle, player, skybox);
 
 	centeryfrac = (viewheight/2)<<FRACBITS;
 
