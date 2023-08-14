@@ -261,7 +261,7 @@ class TiccmdBuilder
 
 		if (G_PlayerInputDown(forplayer(), gc_lookback, 0))
 		{
-			cmd->aiming -= joystickvector.yaxis;
+			cmd->aiming -= (joystickvector.yaxis * KART_FULLTURN) / JOYAXISRANGE;
 		}
 		else
 		{
