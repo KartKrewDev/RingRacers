@@ -160,6 +160,7 @@ Environment::Environment()
 	addFuncDataACS0( 309, addCallFunc(CallFunc_EncoreMode));
 	addFuncDataACS0( 310, addCallFunc(CallFunc_BreakTheCapsules));
 	addFuncDataACS0( 311, addCallFunc(CallFunc_TimeAttack));
+	addFuncDataACS0( 312, addCallFunc(CallFunc_ThingCount));
 
 	addFuncDataACS0( 500, addCallFunc(CallFunc_CameraWait));
 	addFuncDataACS0( 501, addCallFunc(CallFunc_PodiumPosition));
