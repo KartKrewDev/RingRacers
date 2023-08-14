@@ -2359,45 +2359,6 @@ static void P_UpdatePlayerAngle(player_t *player)
 	}
 }
 
-
-//
-// P_SpectatorMovement
-//
-// Control for spectators in multiplayer
-//
-static void P_SpectatorMovement(player_t *player)
-{
-	ticcmd_t *cmd = &player->cmd;
-
-	P_UpdatePlayerAngle(player);
-
-	ticruned++;
-	if (!(cmd->flags & TICCMD_RECEIVED))
-		ticmiss++;
-
-	if (cmd->buttons & BT_ACCELERATE)
-		player->mo->z += 32*mapobjectscale;
-	else if (cmd->buttons & BT_BRAKE)
-		player->mo->z -= 32*mapobjectscale;
-
-	if (!(player->mo->flags & MF_NOCLIPHEIGHT))
-	{
-		if (player->mo->z > player->mo->ceilingz - player->mo->height)
-			player->mo->z = player->mo->ceilingz - player->mo->height;
-		if (player->mo->z < player->mo->floorz)
-			player->mo->z = player->mo->floorz;
-	}
-
-	player->mo->momx = player->mo->momy = player->mo->momz = 0;
-	if (cmd->forwardmove != 0)
-	{
-		P_Thrust(player->mo, player->mo->angle, cmd->forwardmove*mapobjectscale);
-
-		// Quake-style flying spectators :D
-		player->mo->momz += FixedMul(cmd->forwardmove*mapobjectscale, AIMINGTOSLOPE(player->aiming));
-	}
-}
-
 //
 // P_MovePlayer
 void P_MovePlayer(player_t *player)
@@ -2424,7 +2385,6 @@ void P_MovePlayer(player_t *player)
 	if (player->spectator)
 	{
 		player->mo->eflags &= ~MFE_VERTICALFLIP; // deflip...
-		P_SpectatorMovement(player);
 		return;
 	}
 
@@ -2979,16 +2939,12 @@ fixed_t t_cam_dist[MAXSPLITSCREENPLAYERS] = {-42,-42,-42,-42};
 fixed_t t_cam_height[MAXSPLITSCREENPLAYERS] = {-42,-42,-42,-42};
 fixed_t t_cam_rotate[MAXSPLITSCREENPLAYERS] = {-42,-42,-42,-42};
 
-struct demofreecam_s democam;
-
 void P_DemoCameraMovement(camera_t *cam)
 {
 	ticcmd_t *cmd;
 	angle_t thrustangle;
 	player_t *lastp;
 
-	// update democam stuff with what we got here:
-	democam.cam = cam;
 	// first off we need to get button input
 	cmd = D_LocalTiccmd(0);
 
@@ -3004,7 +2960,7 @@ void P_DemoCameraMovement(camera_t *cam)
 		cam->z -= 32*mapobjectscale;
 
 	// if you hold item, you will lock on to displayplayer. (The last player you were ""f12-ing"")
-	if (cmd->buttons & BT_ATTACK)
+	if (demo.freecam && cmd->buttons & BT_ATTACK)
 	{
 		lastp = &players[displayplayers[0]];	// Fun fact, I was trying displayplayers[0]->mo as if it was Lua like an absolute idiot.
 		cam->angle = R_PointToAngle2(cam->x, cam->y, lastp->mo->x, lastp->mo->y);
@@ -3102,11 +3058,14 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 	if (thiscam->subsector == NULL || thiscam->subsector->sector == NULL)
 		return true;
 
-	if (demo.freecam)
+	if (demo.freecam || player->spectator)
 	{
 		P_DemoCameraMovement(thiscam);
 		return true;
 	}
+
+	if (paused || P_AutoPause())
+		return true;
 
 	playerScale = FixedDiv(player->mo->scale, mapobjectscale);
 	scaleDiff = playerScale - FRACUNIT;

@@ -4127,8 +4127,6 @@ void G_StopDemo(void)
 	singletics = false;
 
 	demo.freecam = false;
-	// reset democam shit too:
-	democam.cam = NULL;
 
 	Z_Free(demo.skinlist);
 	demo.skinlist = NULL;

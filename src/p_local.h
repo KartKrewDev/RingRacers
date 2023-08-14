@@ -131,14 +131,6 @@ struct camera_t
 	angle_t old_angle, old_aiming;
 };
 
-// demo freecam or something before i commit die
-struct demofreecam_s {
-
-	camera_t *cam;	// this is useful when the game is paused, notably
-};
-
-extern struct demofreecam_s democam;
-
 extern camera_t camera[MAXSPLITSCREENPLAYERS];
 extern consvar_t cv_cam_dist[MAXSPLITSCREENPLAYERS], cv_cam_still[MAXSPLITSCREENPLAYERS], cv_cam_height[MAXSPLITSCREENPLAYERS];
 extern consvar_t cv_cam_speed[MAXSPLITSCREENPLAYERS], cv_cam_rotate[MAXSPLITSCREENPLAYERS];

@@ -1266,8 +1266,12 @@ void R_SetupFrame(int s)
 
 	R_SetViewContext(VIEWCONTEXT_PLAYER1 + s);
 
-	if (player->spectator) // no spectator chasecam
-		chasecam = false; // force chasecam off
+	if (player->spectator)
+	{
+		// Free flying spectator uses demo freecam. This
+		// requires chasecam to be enabled.
+		chasecam = true;
+	}
 
 	if (chasecam && (thiscam && !thiscam->chase))
 	{
@@ -1293,7 +1297,7 @@ void R_SetupFrame(int s)
 
 		R_SetupCommonFrame(player, r_viewmobj->subsector);
 	}
-	else if (!player->spectator && chasecam)
+	else if (chasecam)
 	// use outside cam view
 	{
 		r_viewmobj = NULL;
@@ -1431,10 +1435,8 @@ boolean R_ViewpointHasChasecam(player_t *player)
 		}
 	}
 
-	if (player->playerstate == PST_DEAD || gamestate == GS_TITLESCREEN)
+	if (player->playerstate == PST_DEAD || gamestate == GS_TITLESCREEN || player->spectator)
 		chasecam = true; // force chasecam on
-	else if (player->spectator) // no spectator chasecam
-		chasecam = false; // force chasecam off
 
 	return chasecam;
 }
@@ -1447,7 +1449,7 @@ boolean R_IsViewpointThirdPerson(player_t *player, boolean skybox)
 	if (player->awayview.tics || skybox)
 		return chasecam;
 	// use outside cam view
-	else if (!player->spectator && chasecam)
+	else if (chasecam)
 		return true;
 
 	// use the player's eyes view

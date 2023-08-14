@@ -367,13 +367,13 @@ public:
 			common_button_input();
 		};
 
-		if (demo.freecam)
+		if (demo.freecam || player()->spectator)
 		{
 			// freecam is controllable even while paused
 
 			*cmd = {};
 
-			if (!typing_input())
+			if (!typing_input() && !director_input())
 			{
 				regular_input();
 			}
