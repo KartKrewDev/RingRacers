@@ -81,6 +81,7 @@ mobj_t *r_viewmobj;
 int r_splitscreen;
 
 fixed_t rendertimefrac;
+fixed_t rendertimefrac_unpaused;
 fixed_t renderdeltatics;
 boolean renderisnewtic;
 
@@ -1227,7 +1228,7 @@ R_SetupCommonFrame
 	else
 		newview->sector = R_PointInSubsector(newview->x, newview->y)->sector;
 
-	R_InterpolateView(rendertimefrac);
+	R_InterpolateView(rendertimefrac_unpaused);
 }
 
 static void R_SetupAimingFrame(int s)
