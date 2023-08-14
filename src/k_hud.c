@@ -5169,7 +5169,8 @@ static void K_DrawDirectorButton(INT32 idx, const char *label, patch_t *kp[2], I
 
 static void K_drawDirectorHUD(void)
 {
-	const INT32 p = G_PartyMember(consoleplayer, R_GetViewNumber());
+	const UINT8 viewnum = R_GetViewNumber();
+	const INT32 p = viewnum < G_PartySize(consoleplayer) ? G_PartyMember(consoleplayer, viewnum) : -1;
 	const char *itemtxt = "Join";
 	UINT8 offs = 0;
 
@@ -5667,7 +5668,7 @@ void K_drawKartHUD(void)
 
 	K_drawKartPowerUps();
 
-	if (G_IsPartyLocal(displayplayers[viewnum]) == false && !demo.playback)
+	if (G_IsPartyLocal(displayplayers[viewnum]) == false)
 	{
 		K_drawDirectorHUD();
 	}

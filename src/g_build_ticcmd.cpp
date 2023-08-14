@@ -377,7 +377,7 @@ public:
 			common_button_input();
 		};
 
-		if (demo.freecam || player()->spectator)
+		if (demo.playback || demo.freecam || player()->spectator)
 		{
 			// freecam is controllable even while paused
 
@@ -402,11 +402,6 @@ public:
 		}
 
 		*cmd = {}; // blank ticcmd
-
-		if (demo.playback)
-		{
-			return;
-		}
 
 		if (gamestate == GS_LEVEL && player()->playerstate == PST_REBORN)
 		{
