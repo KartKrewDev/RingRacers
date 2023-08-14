@@ -1237,6 +1237,53 @@ bool CallFunc_PlayerScore(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM:
 }
 
 /*--------------------------------------------------
+	bool CallFunc_PlayerNumber(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
+
+		Returns the activating player's ID.
+--------------------------------------------------*/
+bool CallFunc_PlayerNumber(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
+{
+	auto info = &static_cast<Thread *>(thread)->info;
+	INT16 playerID = -1;
+
+	(void)argV;
+	(void)argC;
+
+	if ((info != NULL)
+		&& (info->mo != NULL && P_MobjWasRemoved(info->mo) == false)
+		&& (info->mo->player != NULL))
+	{
+		playerID = (info->mo->player - players);
+	}
+
+	thread->dataStk.push(playerID);
+	return false;
+}
+
+/*--------------------------------------------------
+	bool CallFunc_ActivatorTID(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
+
+		Returns the activating object's TID.
+--------------------------------------------------*/
+bool CallFunc_ActivatorTID(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
+{
+	auto info = &static_cast<Thread *>(thread)->info;
+	INT16 tid = 0;
+
+	(void)argV;
+	(void)argC;
+
+	if ((info != NULL)
+		&& (info->mo != NULL && P_MobjWasRemoved(info->mo) == false))
+	{
+		tid = info->mo->tid;
+	}
+
+	thread->dataStk.push(tid);
+	return false;
+}
+
+/*--------------------------------------------------
 	bool CallFunc_EndLog(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
 
 		One of the ACS wrappers for CONS_Printf.

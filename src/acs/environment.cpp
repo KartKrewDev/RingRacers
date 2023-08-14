@@ -108,6 +108,9 @@ Environment::Environment()
 
 	// 225 to 243: Implemented by ACSVM
 
+	addCodeDataACS0(247, {"",        0, addCallFunc(CallFunc_PlayerNumber)});
+	addCodeDataACS0(248, {"",        0, addCallFunc(CallFunc_ActivatorTID)});
+
 	// 253: Implemented by ACSVM
 
 	// 256 to 257: Implemented by ACSVM
