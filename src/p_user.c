@@ -2947,21 +2947,33 @@ void P_DemoCameraMovement(camera_t *cam)
 	angle_t thrustangle;
 	player_t *lastp;
 
+	boolean moving = false;
+
 	// first off we need to get button input
 	cmd = D_LocalTiccmd(0);
 
-	cam->aiming += cmd->aiming << TICCMD_REDUCE;
-	cam->angle += cmd->turning << TICCMD_REDUCE;
+	if (cmd->aiming != 0)
+	{
+		cam->aiming += cmd->aiming << TICCMD_REDUCE;
 
-	cam->aiming = G_ClipAimingPitch((INT32 *)&cam->aiming);
+		democam.reset_aiming = false;
+	}
+
+	cam->angle += cmd->turning << TICCMD_REDUCE;
 
 	// camera movement:
 	if (!democam.button_a_held)
 	{
 		if (cmd->buttons & BT_ACCELERATE)
+		{
 			cam->z += 32*mapobjectscale;
+			moving = true;
+		}
 		else if (cmd->buttons & BT_BRAKE)
+		{
 			cam->z -= 32*mapobjectscale;
+			moving = true;
+		}
 	}
 
 	if (!(cmd->buttons & BT_ACCELERATE) && democam.button_a_held)
@@ -2975,7 +2987,38 @@ void P_DemoCameraMovement(camera_t *cam)
 		lastp = &players[displayplayers[0]];	// Fun fact, I was trying displayplayers[0]->mo as if it was Lua like an absolute idiot.
 		cam->angle = R_PointToAngle2(cam->x, cam->y, lastp->mo->x, lastp->mo->y);
 		cam->aiming = R_PointToAngle2(0, cam->z, R_PointToDist2(cam->x, cam->y, lastp->mo->x, lastp->mo->y), lastp->mo->z + lastp->mo->scale*128*P_MobjFlip(lastp->mo));	// This is still unholy. Aim a bit above their heads.
+
+		democam.reset_aiming = false;
 	}
+
+	if (cmd->forwardmove != 0)
+	{
+		moving = true;
+	}
+
+	// After switching to democam, the vertical angle of
+	// chasecam is inherited. This is intentional because it
+	// creates a smooth transition. However, moving
+	// forward/back will have a slope. So, as long as democam
+	// controls haven't been used to alter the vertical angle,
+	// slowly reset it to flat.
+	if (democam.reset_aiming && moving)
+	{
+		INT32 aiming = cam->aiming;
+		INT32 smooth = FixedMul(ANGLE_11hh / 4, FCOS(cam->aiming));
+
+		if (abs(smooth) < abs(aiming))
+		{
+			cam->aiming -= smooth * intsign(aiming);
+		}
+		else
+		{
+			cam->aiming = 0;
+			democam.reset_aiming = false; // completely smoothed out
+		}
+	}
+
+	G_FinalClipAimingPitch((INT32 *)&cam->aiming, NULL, false);
 
 	cam->momx = cam->momy = cam->momz = 0;
 
@@ -2985,7 +3028,11 @@ void P_DemoCameraMovement(camera_t *cam)
 
 		cam->x += FixedMul(cmd->forwardmove*mapobjectscale, FINECOSINE(thrustangle));
 		cam->y += FixedMul(cmd->forwardmove*mapobjectscale, FINESINE(thrustangle));
-		cam->z += FixedMul(cmd->forwardmove*mapobjectscale, AIMINGTOSLOPE(cam->aiming));
+
+		if (!democam.reset_aiming)
+		{
+			cam->z += FixedMul(cmd->forwardmove*mapobjectscale, AIMINGTOSLOPE(cam->aiming));
+		}
 		// momentums are useless here, directly add to the coordinates
 
 		// this.......... doesn't actually check for floors and walls and whatnot but the function to do that is a pure mess so fuck that.

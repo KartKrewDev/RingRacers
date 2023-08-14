@@ -135,6 +135,7 @@ struct camera_t
 struct demofreecam_s {
 
 	UINT8 button_a_held;	// A button was held since entering from menu, so don't move camera
+	boolean reset_aiming;	// camera aiming needs to be reset from chase camera
 };
 
 extern struct demofreecam_s democam;

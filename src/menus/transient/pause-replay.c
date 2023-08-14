@@ -240,6 +240,7 @@ void M_PlaybackToggleFreecam(INT32 choice)
 	{
 		demo.freecam = true;
 		democam.button_a_held = 2;
+		democam.reset_aiming = true;
 	}
 	else	// toggle off
 	{
