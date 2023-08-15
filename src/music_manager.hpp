@@ -46,11 +46,11 @@ public:
 
 	Tune& insert(const char* id)
 	{
-		auto [it, inserted] = map_.emplace(id, Tune{});
+		auto res = map_.emplace(id, Tune{});
 
-		SRB2_ASSERT(inserted);
+		SRB2_ASSERT(res.second);
 
-		return it->second;
+		return res.first->second;
 	}
 
 	void tick();
