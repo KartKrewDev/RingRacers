@@ -381,10 +381,9 @@ static bool ACS_ActivatorIsLocal(ACSVM::Thread *thread)
 --------------------------------------------------*/
 static UINT32 ACS_SectorThingCounter(sector_t *sec, mtag_t thingTag, bool (*filter)(mobj_t *))
 {
-	msecnode_t *node = sec->touching_thinglist; // things touching this sector
 	UINT32 count = 0;
 
-	while (node)
+	for (msecnode_t *node = sec->touching_thinglist; node; node = node->m_thinglist_next) // things touching this sector
 	{
 		mobj_t *mo = node->m_thing;
 
@@ -403,8 +402,6 @@ static UINT32 ACS_SectorThingCounter(sector_t *sec, mtag_t thingTag, bool (*filt
 		{
 			count++;
 		}
-
-		node = node->m_thinglist_next;
 	}
 
 	return count;
