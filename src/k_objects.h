@@ -183,10 +183,10 @@ void Obj_BattleUFOBeamThink(mobj_t *beam);
 void Obj_SpawnPowerUpAura(player_t* player);
 void Obj_PowerUpAuraThink(mobj_t* mobj);
 
-/* Lost Colony symbol signs */
-void Obj_SymbolSpawn(mobj_t *mobj);
-void Obj_SymbolSetup(mobj_t *mobj, mapthing_t *mthing);
-void Obj_SymbolThink(mobj_t *mobj);
+/* Ark Arrows */
+void Obj_ArkArrowSpawn(mobj_t *mobj);
+void Obj_ArkArrowSetup(mobj_t *mobj, mapthing_t *mthing);
+void Obj_ArkArrowThink(mobj_t *mobj);
 
 /* Dash Rings */
 void Obj_RegularDashRingSpawn(mobj_t *mobj);

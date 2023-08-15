@@ -7250,12 +7250,17 @@ static void P_ConvertBinaryThingTypes(void)
 		case CEILING_SLOPE_THING:
 			mapthings[i].args[0] = mapthings[i].extrainfo;
 			break;
-		case 4094: // MT_SYMBOL
+		case 4094: // MT_ARKARROW
 			mapthings[i].args[0] = mapthings[i].extrainfo;
 			if (mapthings[i].options & MTF_OBJECTSPECIAL)
 			{
 				// Special = add 16 to the symbol type
 				mapthings[i].args[0] += 16;
+			}
+			if (mapthings[i].options & MTF_AMBUSH)
+			{
+				// Ambush = add 32 to the symbol type
+				mapthings[i].args[0] += 32;
 			}
 			break;
 		default:
