@@ -1802,6 +1802,7 @@ bool CallFunc_MapWarp(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Wor
 	if (argV[1] == 0)
 		skipstats = 1;
 
+	G_BeginLevelExit();
 	exitcountdown = 1;
 
 	if (server)

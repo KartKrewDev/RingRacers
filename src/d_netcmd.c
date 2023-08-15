@@ -5776,7 +5776,7 @@ static void Got_ExitLevelcmd(UINT8 **cp, INT32 playernum)
 	if (G_GamestateUsesExitLevel() == false)
 		return;
 
-	G_ExitLevel();
+	G_FinishExitLevel();
 }
 
 static void Got_SetupVotecmd(UINT8 **cp, INT32 playernum)
