@@ -2842,6 +2842,17 @@ boolean K_WaterRun(mobj_t *mobj)
 {
 	switch (mobj->type)
 	{
+		case MT_ORBINAUT:
+		case MT_GACHABOM:
+		{
+			if (Obj_OrbinautCanRunOnWater(mobj))
+			{
+				return true;
+			}
+
+			return false;
+		}
+
 		case MT_JAWZ:
 		{
 			if (mobj->tracer != NULL && P_MobjWasRemoved(mobj->tracer) == false)

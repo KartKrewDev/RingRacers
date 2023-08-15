@@ -43,6 +43,7 @@ enum {
 	ORBI_TOSSED		= 0x02, // Gacha Bom tossed forward
 	ORBI_TRAIL		= 0x04, // spawn afterimages
 	ORBI_SPIN		= 0x08, // animate facing angle
+	ORBI_WATERSKI	= 0x10, // this orbinaut can waterski
 };
 
 #define orbinaut_flags(o) ((o)->movedir)
@@ -303,10 +304,21 @@ boolean Obj_OrbinautJawzCollide(mobj_t *t1, mobj_t *t2)
 
 void Obj_OrbinautThrown(mobj_t *th, fixed_t finalSpeed, SINT8 dir)
 {
+	orbinaut_flags(th) = 0;
+
 	if (orbinaut_owner(th) != NULL && P_MobjWasRemoved(orbinaut_owner(th)) == false
 		&& orbinaut_owner(th)->player != NULL)
 	{
 		th->color = orbinaut_owner(th)->player->skincolor;
+
+		const mobj_t *owner = orbinaut_owner(th);
+		const ffloor_t *rover = P_IsObjectFlipped(owner) ? owner->ceilingrover : owner->floorrover;
+
+		if (dir != -1 && rover && (rover->fofflags & FOF_SWIMMABLE))
+		{
+			// The owner can run on water, so we should too!
+			orbinaut_flags(th) |= ORBI_WATERSKI;
+		}
 	}
 	else
 	{
@@ -316,7 +328,7 @@ void Obj_OrbinautThrown(mobj_t *th, fixed_t finalSpeed, SINT8 dir)
 	th->fuse = RR_PROJECTILE_FUSE;
 	orbinaut_speed(th) = finalSpeed;
 
-	orbinaut_flags(th) = ORBI_TRAIL;
+	orbinaut_flags(th) |= ORBI_TRAIL;
 
 	if (dir == -1)
 	{
@@ -456,4 +468,9 @@ boolean Obj_GachaBomWasTossed(mobj_t *th)
 void Obj_OrbinautDrop(mobj_t *th)
 {
 	orbinaut_flags(th) |= ORBI_DROPPED;
+}
+
+boolean Obj_OrbinautCanRunOnWater(mobj_t *th)
+{
+	return (orbinaut_flags(th) & ORBI_WATERSKI) == ORBI_WATERSKI;
 }
