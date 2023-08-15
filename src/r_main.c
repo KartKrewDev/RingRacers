@@ -979,7 +979,7 @@ angle_t R_ViewRollAngle(const player_t *player)
 
 	if (cv_tilting.value)
 	{
-		if (!player->spectator)
+		if (!player->spectator && !demo.freecam)
 		{
 			roll += player->tilt;
 		}
