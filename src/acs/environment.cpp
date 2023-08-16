@@ -108,6 +108,9 @@ Environment::Environment()
 
 	// 225 to 243: Implemented by ACSVM
 
+	addCodeDataACS0(247, {"",        0, addCallFunc(CallFunc_PlayerNumber)});
+	addCodeDataACS0(248, {"",        0, addCallFunc(CallFunc_ActivatorTID)});
+
 	// 253: Implemented by ACSVM
 
 	// 256 to 257: Implemented by ACSVM
@@ -160,6 +163,7 @@ Environment::Environment()
 	addFuncDataACS0( 309, addCallFunc(CallFunc_EncoreMode));
 	addFuncDataACS0( 310, addCallFunc(CallFunc_BreakTheCapsules));
 	addFuncDataACS0( 311, addCallFunc(CallFunc_TimeAttack));
+	addFuncDataACS0( 312, addCallFunc(CallFunc_ThingCount));
 
 	addFuncDataACS0( 500, addCallFunc(CallFunc_CameraWait));
 	addFuncDataACS0( 501, addCallFunc(CallFunc_PodiumPosition));

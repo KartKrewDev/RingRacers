@@ -364,7 +364,7 @@ static bool ACS_ActivatorIsLocal(ACSVM::Thread *thread)
 }
 
 /*--------------------------------------------------
-	static UINT32 ACS_SectorThingCounter(sector_t *sec, bool (*filter)(mobj_t *))
+	static UINT32 ACS_SectorThingCounter(sector_t *sec, mtag_t thingTag, bool (*filter)(mobj_t *))
 
 		Helper function for CallFunc_CountEnemies
 		and CallFunc_CountPushables. Counts a number
@@ -372,20 +372,25 @@ static bool ACS_ActivatorIsLocal(ACSVM::Thread *thread)
 
 	Input Arguments:-
 		sec: The sector to search in.
+		thingTag: Thing tag to filter for. 0 allows any.
 		filter: Filter function, total count is increased when
 			this function returns true.
 
 	Return:-
 		Numbers of things matching the filter found.
 --------------------------------------------------*/
-static UINT32 ACS_SectorThingCounter(sector_t *sec, bool (*filter)(mobj_t *))
+static UINT32 ACS_SectorThingCounter(sector_t *sec, mtag_t thingTag, bool (*filter)(mobj_t *))
 {
-	msecnode_t *node = sec->touching_thinglist; // things touching this sector
 	UINT32 count = 0;
 
-	while (node)
+	for (msecnode_t *node = sec->touching_thinglist; node; node = node->m_thinglist_next) // things touching this sector
 	{
 		mobj_t *mo = node->m_thing;
+
+		if (thingTag != 0 && mo->tid != thingTag)
+		{
+			continue;
+		}
 
 		if (mo->z > sec->ceilingheight
 			|| mo->z + mo->height < sec->floorheight)
@@ -397,61 +402,82 @@ static UINT32 ACS_SectorThingCounter(sector_t *sec, bool (*filter)(mobj_t *))
 		{
 			count++;
 		}
-
-		node = node->m_thinglist_next;
 	}
 
 	return count;
 }
 
 /*--------------------------------------------------
-	static UINT32 ACS_SectorTagThingCounter(mtag_t tag, bool (*filter)(mobj_t *))
+	static UINT32 ACS_SectorTagThingCounter(mtag_t sectorTag, sector_t *activator, mtag_t thingTag, bool (*filter)(mobj_t *))
 
 		Helper function for CallFunc_CountEnemies
 		and CallFunc_CountPushables. Counts a number
 		of things in the tagged sectors.
 
 	Input Arguments:-
-		tag: The sector tag to search in.
+		sectorTag: The sector tag to search in.
+		activator: The activator sector to fall back on when sectorTag is 0.
+		thingTag: Thing tag to filter for. 0 allows any.
 		filter: Filter function, total count is increased when
 			this function returns true.
 
 	Return:-
 		Numbers of things matching the filter found.
 --------------------------------------------------*/
-static UINT32 ACS_SectorTagThingCounter(mtag_t tag, bool (*filter)(mobj_t *))
+static UINT32 ACS_SectorIterateThingCounter(sector_t *sec, mtag_t thingTag, bool (*filter)(mobj_t *))
 {
-	INT32 secnum = -1;
 	UINT32 count = 0;
+	boolean FOFsector = false;
 	size_t i;
 
-	TAG_ITER_SECTORS(tag, secnum)
+	if (sec == nullptr)
 	{
-		sector_t *sec = &sectors[secnum];
-		boolean FOFsector = false;
+		return 0;
+	}
 
-		// Check the lines of this sector, to see if it is a FOF control sector.
-		for (i = 0; i < sec->linecount; i++)
+	// Check the lines of this sector, to see if it is a FOF control sector.
+	for (i = 0; i < sec->linecount; i++)
+	{
+		INT32 targetsecnum = -1;
+
+		if (sec->lines[i]->special < 100 || sec->lines[i]->special >= 300)
 		{
-			INT32 targetsecnum = -1;
-
-			if (sec->lines[i]->special < 100 || sec->lines[i]->special >= 300)
-			{
-				continue;
-			}
-
-			FOFsector = true;
-
-			TAG_ITER_SECTORS(sec->lines[i]->args[0], targetsecnum)
-			{
-				sector_t *targetsec = &sectors[targetsecnum];
-				count += ACS_SectorThingCounter(targetsec, filter);
-			}
+			continue;
 		}
 
-		if (FOFsector == false)
+		FOFsector = true;
+
+		TAG_ITER_SECTORS(sec->lines[i]->args[0], targetsecnum)
 		{
-			count += ACS_SectorThingCounter(sec, filter);
+			sector_t *targetsec = &sectors[targetsecnum];
+			count += ACS_SectorThingCounter(targetsec, thingTag, filter);
+		}
+	}
+
+	if (FOFsector == false)
+	{
+		count += ACS_SectorThingCounter(sec, thingTag, filter);
+	}
+
+	return count;
+}
+
+static UINT32 ACS_SectorTagThingCounter(mtag_t sectorTag, sector_t *activator, mtag_t thingTag, bool (*filter)(mobj_t *))
+{
+	UINT32 count = 0;
+
+	if (sectorTag == 0)
+	{
+		count += ACS_SectorIterateThingCounter(activator, thingTag, filter);
+	}
+	else
+	{
+		INT32 secnum = -1;
+
+		TAG_ITER_SECTORS(sectorTag, secnum)
+		{
+			sector_t *sec = &sectors[secnum];
+			count += ACS_SectorIterateThingCounter(sec, thingTag, filter);
 		}
 	}
 
@@ -485,6 +511,12 @@ bool CallFunc_Random(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word
 		no type means indescriminate against type,
 		no tid means search thru all thinkers.
 --------------------------------------------------*/
+static mobjtype_t filter_for_mobjtype = MT_NULL; // annoying but I don't wanna mess with other code
+bool ACS_ThingTypeFilter(mobj_t *mo)
+{
+	return (ACS_CountThing(mo, filter_for_mobjtype));
+}
+
 bool CallFunc_ThingCount(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
 {
 	ACSVM::MapScope *map = NULL;
@@ -494,10 +526,9 @@ bool CallFunc_ThingCount(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::
 
 	mobjtype_t type = MT_NULL;
 	mtag_t tid = 0;
+	mtag_t sectorTag = 0;
 
 	size_t count = 0;
-
-	(void)argC;
 
 	map = thread->scopeMap;
 	str = map->getString(argV[0]);
@@ -524,8 +555,21 @@ bool CallFunc_ThingCount(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::
 
 	tid = argV[1];
 
-	if (tid != 0)
+	if (argC > 2)
 	{
+		sectorTag = argV[2];
+	}
+
+	if (sectorTag != 0)
+	{
+		// Search through sectors.
+		filter_for_mobjtype = type;
+		count = ACS_SectorTagThingCounter(sectorTag, nullptr, tid, ACS_ThingTypeFilter);
+		filter_for_mobjtype = MT_NULL;
+	}
+	else if (tid != 0)
+	{
+		// Search through tag lists.
 		mobj_t *mobj = nullptr;
 
 		while ((mobj = P_FindMobjFromTID(tid, mobj, nullptr)) != nullptr)
@@ -1190,6 +1234,53 @@ bool CallFunc_PlayerScore(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM:
 }
 
 /*--------------------------------------------------
+	bool CallFunc_PlayerNumber(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
+
+		Returns the activating player's ID.
+--------------------------------------------------*/
+bool CallFunc_PlayerNumber(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
+{
+	auto info = &static_cast<Thread *>(thread)->info;
+	INT16 playerID = -1;
+
+	(void)argV;
+	(void)argC;
+
+	if ((info != NULL)
+		&& (info->mo != NULL && P_MobjWasRemoved(info->mo) == false)
+		&& (info->mo->player != NULL))
+	{
+		playerID = (info->mo->player - players);
+	}
+
+	thread->dataStk.push(playerID);
+	return false;
+}
+
+/*--------------------------------------------------
+	bool CallFunc_ActivatorTID(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
+
+		Returns the activating object's TID.
+--------------------------------------------------*/
+bool CallFunc_ActivatorTID(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
+{
+	auto info = &static_cast<Thread *>(thread)->info;
+	INT16 tid = 0;
+
+	(void)argV;
+	(void)argC;
+
+	if ((info != NULL)
+		&& (info->mo != NULL && P_MobjWasRemoved(info->mo) == false))
+	{
+		tid = info->mo->tid;
+	}
+
+	thread->dataStk.push(tid);
+	return false;
+}
+
+/*--------------------------------------------------
 	bool CallFunc_EndLog(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
 
 		One of the ACS wrappers for CONS_Printf.
@@ -1300,13 +1391,17 @@ bool ACS_EnemyFilter(mobj_t *mo)
 
 bool CallFunc_CountEnemies(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
 {
+	auto info = &static_cast<Thread *>(thread)->info;
+
 	mtag_t tag = 0;
+	mtag_t tid = 0;
 	UINT32 count = 0;
 
 	(void)argC;
 
 	tag = argV[0];
-	count = ACS_SectorTagThingCounter(tag, ACS_EnemyFilter);
+	tid = argV[1];
+	count = ACS_SectorTagThingCounter(tag, info->sector, tid, ACS_EnemyFilter);
 
 	thread->dataStk.push(count);
 	return false;
@@ -1325,13 +1420,17 @@ bool ACS_PushableFilter(mobj_t *mo)
 
 bool CallFunc_CountPushables(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
 {
+	auto info = &static_cast<Thread *>(thread)->info;
+
 	mtag_t tag = 0;
+	mtag_t tid = 0;
 	UINT32 count = 0;
 
 	(void)argC;
 
 	tag = argV[0];
-	count = ACS_SectorTagThingCounter(tag, ACS_PushableFilter);
+	tid = argV[1];
+	count = ACS_SectorTagThingCounter(tag, info->sector, tid, ACS_PushableFilter);
 
 	thread->dataStk.push(count);
 	return false;
