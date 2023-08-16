@@ -2998,6 +2998,14 @@ void G_BeginLevelExit(void)
 	{
 		exitcountdown = raceexittime+1;
 	}
+
+	if (g_exit.losing)
+	{
+		if (!g_exit.retry)
+		{
+			ACS_RunGameOverScript();
+		}
+	}
 }
 
 void G_FinishExitLevel(void)

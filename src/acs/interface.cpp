@@ -316,6 +316,22 @@ void ACS_RunEmeraldScript(mobj_t *mo)
 }
 
 /*--------------------------------------------------
+	void ACS_RunGameOverScript(void)
+
+		See header file for description.
+--------------------------------------------------*/
+void ACS_RunGameOverScript(void)
+{
+	Environment *env = &ACSEnv;
+
+	ACSVM::GlobalScope *const global = env->getGlobalScope(0);
+	ACSVM::HubScope *const hub = global->getHubScope(0);
+	ACSVM::MapScope *const map = hub->getMapScope(0);
+
+	map->scriptStartType(ACS_ST_GAMEOVER, {});
+}
+
+/*--------------------------------------------------
 	void ACS_Tick(void)
 
 		See header file for description.
