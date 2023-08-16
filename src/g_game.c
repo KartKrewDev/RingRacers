@@ -806,9 +806,7 @@ const char *G_BuildMapName(INT32 map)
   */
 INT32 G_MapNumber(const char * name)
 {
-#ifdef NEXTMAPINSOC
 	if (strncasecmp("NEXTMAP_", name, 8) != 0)
-#endif
 	{
 		INT32 map;
 		UINT32 hash = quickncasehash(name, MAXMAPLUMPNAME);
@@ -827,7 +825,6 @@ INT32 G_MapNumber(const char * name)
 		return NEXTMAP_INVALID;
 	}
 
-#ifdef NEXTMAPINSOC
 	name += 8;
 
 	if (strcasecmp("EVALUATION", name) == 0)
@@ -836,9 +833,10 @@ INT32 G_MapNumber(const char * name)
 		return NEXTMAP_CREDITS;
 	if (strcasecmp("CEREMONY", name) == 0)
 		return NEXTMAP_CEREMONY;
-	//if (strcasecmp("TITLE", name) == 0)
+	if (strcasecmp("TITLE", name) == 0)
 		return NEXTMAP_TITLE;
-#endif
+
+	return NEXTMAP_INVALID;
 }
 
 /** Clips the console player's mouse aiming to the current view.
