@@ -2069,6 +2069,11 @@ static boolean P_KillPlayer(player_t *player, mobj_t *inflictor, mobj_t *source,
 #else
 		P_DoPlayerExit(player, PF_NOCONTEST);
 #endif
+
+		if (specialstageinfo.valid == true)
+		{
+			HU_DoTitlecardCEcho(player, "FALL OUT!", false);
+		}
 	}
 
 	if (player->exiting)

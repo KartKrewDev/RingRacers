@@ -2053,6 +2053,8 @@ static void K_HandleLapIncrement(player_t *player)
 					if (!(specialstageinfo.ufo == NULL || P_MobjWasRemoved(specialstageinfo.ufo)))
 					{
 						applyflags |= PF_NOCONTEST;
+
+						HU_DoTitlecardCEcho(player, "EMPTY\\HANDED?", false);
 					}
 				}
 
