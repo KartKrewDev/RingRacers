@@ -1858,6 +1858,20 @@ bool CallFunc_AddBot(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word
 }
 
 /*--------------------------------------------------
+	bool CallFunc_StopLevelExit(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
+
+		Halts the level exit if it's happening.
+--------------------------------------------------*/
+bool CallFunc_StopLevelExit(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
+{
+	(void)argV;
+	(void)argC;
+
+	exitcountdown = 0;
+	return false;
+}
+
+/*--------------------------------------------------
 	bool CallFunc_Get/SetLineProperty(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
 
 		Generic line property management.
