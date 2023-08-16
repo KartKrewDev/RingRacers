@@ -1881,6 +1881,17 @@ INT32 V_TitleCardStringWidth(const char *str, boolean p4)
 			continue;
 		}
 
+		// For the sake of centering, don't count punctuation.
+		// TODO: This should ideally be more sophisticated:
+		// - Only apply on the ends of each line.
+		// - Check patch width directly for monospace or
+		//   punctuation that isn't necessarily thin.
+		// - Apply to all string drawing.
+		if (ispunct(*ch))
+		{
+			continue;
+		}
+
 		c = *ch;
 		c = toupper(c);
 		c -= LT_FONTSTART;
