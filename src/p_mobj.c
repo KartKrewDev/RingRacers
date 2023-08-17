@@ -13633,12 +13633,12 @@ static mobj_t *P_SpawnMobjFromMapThing(mapthing_t *mthing, fixed_t x, fixed_t y,
 
 	mobj->special = mthing->special;
 
-	for (arg = 0; arg < NUMMAPTHINGARGS; arg++)
+	for (arg = 0; arg < NUM_MAPTHING_ARGS; arg++)
 	{
 		mobj->args[arg] = mthing->args[arg];
 	}
 
-	for (arg = 0; arg < NUMMAPTHINGSTRINGARGS; arg++)
+	for (arg = 0; arg < NUM_MAPTHING_STRINGARGS; arg++)
 	{
 		size_t len = 0;
 
@@ -13656,6 +13656,31 @@ static mobj_t *P_SpawnMobjFromMapThing(mapthing_t *mthing, fixed_t x, fixed_t y,
 
 		mobj->stringargs[arg] = Z_Realloc(mobj->stringargs[arg], len + 1, PU_LEVEL, NULL);
 		M_Memcpy(mobj->stringargs[arg], mthing->stringargs[arg], len + 1);
+	}
+
+	for (arg = 0; arg < NUM_SCRIPT_ARGS; arg++)
+	{
+		mobj->script_args[arg] = mthing->args[arg];
+	}
+
+	for (arg = 0; arg < NUM_SCRIPT_STRINGARGS; arg++)
+	{
+		size_t len = 0;
+
+		if (mthing->script_stringargs[arg])
+		{
+			len = strlen(mthing->script_stringargs[arg]);
+		}
+
+		if (len == 0)
+		{
+			Z_Free(mobj->script_stringargs[arg]);
+			mobj->script_stringargs[arg] = NULL;
+			continue;
+		}
+
+		mobj->script_stringargs[arg] = Z_Realloc(mobj->script_stringargs[arg], len + 1, PU_LEVEL, NULL);
+		M_Memcpy(mobj->script_stringargs[arg], mthing->script_stringargs[arg], len + 1);
 	}
 
 	if (!P_SetupSpawnedMapThing(mthing, mobj))
@@ -14709,9 +14734,15 @@ void P_DeleteMobjStringArgs(mobj_t *mobj)
 {
 	size_t i = SIZE_MAX;
 
-	for (i = 0; i < NUMMAPTHINGSTRINGARGS; i++)
+	for (i = 0; i < NUM_MAPTHING_STRINGARGS; i++)
 	{
 		Z_Free(mobj->stringargs[i]);
 		mobj->stringargs[i] = NULL;
+	}
+
+	for (i = 0; i < NUM_SCRIPT_STRINGARGS; i++)
+	{
+		Z_Free(mobj->script_stringargs[i]);
+		mobj->script_stringargs[i] = NULL;
 	}
 }

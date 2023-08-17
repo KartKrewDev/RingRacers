@@ -445,9 +445,6 @@ typedef enum
 	CRUMBLE_RESTORE, // Crumble thinker is about to restore to original position
 } crumblestate_t;
 
-#define NUMSECTORARGS 10
-#define NUMSECTORSTRINGARGS 2
-
 //
 // The SECTORS record, at runtime.
 // Stores things/mobjs.
@@ -554,8 +551,8 @@ struct sector_t
 
 	// Action specials
 	INT16 action;
-	INT32 args[NUMSECTORARGS];
-	char *stringargs[NUMSECTORSTRINGARGS];
+	INT32 args[NUM_SCRIPT_ARGS];
+	char *stringargs[NUM_SCRIPT_STRINGARGS];
 	sectoractionflags_t activation;
 
 	// UDMF user-defined custom properties.
@@ -573,10 +570,7 @@ typedef enum
 	ST_NEGATIVE
 } slopetype_t;
 
-#define HORIZONSPECIAL 41
-
-#define NUMLINEARGS 10
-#define NUMLINESTRINGARGS 2
+#define HORIZONSPECIAL (41)
 
 struct line_t
 {
@@ -592,8 +586,8 @@ struct line_t
 	UINT32 activation;
 	INT16 special;
 	taglist_t tags;
-	INT32 args[NUMLINEARGS];
-	char *stringargs[NUMLINESTRINGARGS];
+	INT32 args[NUM_SCRIPT_ARGS];
+	char *stringargs[NUM_SCRIPT_STRINGARGS];
 
 	// Visual appearance: sidedefs.
 	UINT16 sidenum[2]; // sidenum[1] will be 0xffff if one-sided

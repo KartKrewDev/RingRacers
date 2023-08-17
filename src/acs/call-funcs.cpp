@@ -1063,7 +1063,7 @@ bool CallFunc_SetLineSpecial(ACSVM::Thread *thread, const ACSVM::Word *argV, ACS
 	tag = argV[0];
 	spec = argV[1];
 
-	numArgs = std::min(std::max((signed)(argC - 2), 0), NUMLINEARGS);
+	numArgs = std::min(std::max((signed)(argC - 2), 0), NUM_SCRIPT_ARGS);
 
 	TAG_ITER_LINES(tag, lineId)
 	{

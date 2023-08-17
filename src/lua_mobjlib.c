@@ -916,16 +916,16 @@ static int thingargs_get(lua_State *L)
 {
 	INT32 *args = *((INT32**)luaL_checkudata(L, 1, META_THINGARGS));
 	int i = luaL_checkinteger(L, 2);
-	if (i < 0 || i >= NUMMAPTHINGARGS)
+	if (i < 0 || i >= NUM_MAPTHING_ARGS)
 		return luaL_error(L, LUA_QL("mapthing_t.args") " index cannot be %d", i);
 	lua_pushinteger(L, args[i]);
 	return 1;
 }
 
-// #args -> NUMMAPTHINGARGS
+// #args -> NUM_MAPTHING_ARGS
 static int thingargs_len(lua_State* L)
 {
-	lua_pushinteger(L, NUMMAPTHINGARGS);
+	lua_pushinteger(L, NUM_MAPTHING_ARGS);
 	return 1;
 }
 
@@ -934,16 +934,16 @@ static int thingstringargs_get(lua_State *L)
 {
 	char **stringargs = *((char***)luaL_checkudata(L, 1, META_THINGSTRINGARGS));
 	int i = luaL_checkinteger(L, 2);
-	if (i < 0 || i >= NUMMAPTHINGSTRINGARGS)
+	if (i < 0 || i >= NUM_MAPTHING_STRINGARGS)
 		return luaL_error(L, LUA_QL("mapthing_t.stringargs") " index cannot be %d", i);
 	lua_pushstring(L, stringargs[i]);
 	return 1;
 }
 
-// #stringargs -> NUMMAPTHINGSTRINGARGS
+// #stringargs -> NUM_MAPTHING_STRINGARGS
 static int thingstringargs_len(lua_State *L)
 {
-	lua_pushinteger(L, NUMMAPTHINGSTRINGARGS);
+	lua_pushinteger(L, NUM_MAPTHING_STRINGARGS);
 	return 1;
 }
 

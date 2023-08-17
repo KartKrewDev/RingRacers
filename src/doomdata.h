@@ -36,6 +36,11 @@ extern "C" {
 // used in the lumps of the WAD files.
 //
 
+// Number of args for ACS scripts.
+// Increasing this requires you to also update the ACS compiler.
+#define NUM_SCRIPT_ARGS 10
+#define NUM_SCRIPT_STRINGARGS 2
+
 // Lump order in a map WAD: each map needs a couple of lumps
 // to provide a complete scene geometry description.
 enum
@@ -248,8 +253,10 @@ struct mapUserProperties_t
 	size_t capacity;
 };
 
-#define NUMMAPTHINGARGS 10
-#define NUMMAPTHINGSTRINGARGS 2
+// Number of args for thing behaviors.
+// These are safe to increase at any time.
+#define NUM_MAPTHING_ARGS 10
+#define NUM_MAPTHING_STRINGARGS 2
 
 // Thing definition, position, orientation and type,
 // plus visibility flags and attributes.
@@ -264,8 +271,10 @@ struct mapthing_t
 	mtag_t tid;
 	fixed_t scale;
 	INT16 special;
-	INT32 args[NUMMAPTHINGARGS];
-	char *stringargs[NUMMAPTHINGSTRINGARGS];
+	INT32 args[NUM_MAPTHING_ARGS];
+	char *stringargs[NUM_MAPTHING_STRINGARGS];
+	INT32 script_args[NUM_SCRIPT_ARGS];
+	char *script_stringargs[NUM_SCRIPT_STRINGARGS];
 	UINT8 layer; // FOF layer to spawn on, see P_GetMobjSpawnHeight
 	mapUserProperties_t user; // UDMF user-defined custom properties.
 	mobj_t *mobj;
