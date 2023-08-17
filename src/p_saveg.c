@@ -1547,7 +1547,7 @@ static void P_NetUnArchiveColormaps(savebuffer_t *save)
 static boolean P_SectorArgsEqual(const sector_t *sc, const sector_t *spawnsc)
 {
 	UINT8 i;
-	for (i = 0; i < NUMSECTORARGS; i++)
+	for (i = 0; i < NUM_SCRIPT_ARGS; i++)
 		if (sc->args[i] != spawnsc->args[i])
 			return false;
 
@@ -1557,7 +1557,7 @@ static boolean P_SectorArgsEqual(const sector_t *sc, const sector_t *spawnsc)
 static boolean P_SectorStringArgsEqual(const sector_t *sc, const sector_t *spawnsc)
 {
 	UINT8 i;
-	for (i = 0; i < NUMSECTORSTRINGARGS; i++)
+	for (i = 0; i < NUM_SCRIPT_STRINGARGS; i++)
 	{
 		if (!sc->stringargs[i])
 			return !spawnsc->stringargs[i];
@@ -1594,7 +1594,7 @@ static boolean P_SectorStringArgsEqual(const sector_t *sc, const sector_t *spawn
 static boolean P_LineArgsEqual(const line_t *li, const line_t *spawnli)
 {
 	UINT8 i;
-	for (i = 0; i < NUMLINEARGS; i++)
+	for (i = 0; i < NUM_SCRIPT_ARGS; i++)
 		if (li->args[i] != spawnli->args[i])
 			return false;
 
@@ -1604,7 +1604,7 @@ static boolean P_LineArgsEqual(const line_t *li, const line_t *spawnli)
 static boolean P_LineStringArgsEqual(const line_t *li, const line_t *spawnli)
 {
 	UINT8 i;
-	for (i = 0; i < NUMLINESTRINGARGS; i++)
+	for (i = 0; i < NUM_SCRIPT_STRINGARGS; i++)
 	{
 		if (!li->stringargs[i])
 			return !spawnli->stringargs[i];
@@ -1867,12 +1867,12 @@ static void ArchiveSectors(savebuffer_t *save)
 				WRITEINT16(save->p, ss->action);
 			if (diff4 & SD_ARGS)
 			{
-				for (j = 0; j < NUMSECTORARGS; j++)
+				for (j = 0; j < NUM_SCRIPT_ARGS; j++)
 					WRITEINT32(save->p, ss->args[j]);
 			}
 			if (diff4 & SD_STRINGARGS)
 			{
-				for (j = 0; j < NUMSECTORSTRINGARGS; j++)
+				for (j = 0; j < NUM_SCRIPT_STRINGARGS; j++)
 				{
 					size_t len, k;
 
@@ -2021,12 +2021,12 @@ static void UnArchiveSectors(savebuffer_t *save)
 			sectors[i].action = READINT16(save->p);
 		if (diff4 & SD_ARGS)
 		{
-			for (j = 0; j < NUMSECTORARGS; j++)
+			for (j = 0; j < NUM_SCRIPT_ARGS; j++)
 				sectors[i].args[j] = READINT32(save->p);
 		}
 		if (diff4 & SD_STRINGARGS)
 		{
-			for (j = 0; j < NUMLINESTRINGARGS; j++)
+			for (j = 0; j < NUM_SCRIPT_STRINGARGS; j++)
 			{
 				size_t len = READINT32(save->p);
 				size_t k;
@@ -2157,13 +2157,13 @@ static void ArchiveLines(savebuffer_t *save)
 			if (diff2 & LD_ARGS)
 			{
 				UINT8 j;
-				for (j = 0; j < NUMLINEARGS; j++)
+				for (j = 0; j < NUM_SCRIPT_ARGS; j++)
 					WRITEINT32(save->p, li->args[j]);
 			}
 			if (diff2 & LD_STRINGARGS)
 			{
 				UINT8 j;
-				for (j = 0; j < NUMLINESTRINGARGS; j++)
+				for (j = 0; j < NUM_SCRIPT_STRINGARGS; j++)
 				{
 					size_t len, k;
 
@@ -2246,13 +2246,13 @@ static void UnArchiveLines(savebuffer_t *save)
 		if (diff2 & LD_ARGS)
 		{
 			UINT8 j;
-			for (j = 0; j < NUMLINEARGS; j++)
+			for (j = 0; j < NUM_SCRIPT_ARGS; j++)
 				li->args[j] = READINT32(save->p);
 		}
 		if (diff2 & LD_STRINGARGS)
 		{
 			UINT8 j;
-			for (j = 0; j < NUMLINESTRINGARGS; j++)
+			for (j = 0; j < NUM_SCRIPT_STRINGARGS; j++)
 			{
 				size_t len = READINT32(save->p);
 				size_t k;
@@ -2318,7 +2318,7 @@ static void P_NetUnArchiveWorld(savebuffer_t *save)
 static boolean P_ThingArgsEqual(const mobj_t *mobj, const mapthing_t *mapthing)
 {
 	UINT8 i;
-	for (i = 0; i < NUMMAPTHINGARGS; i++)
+	for (i = 0; i < NUM_MAPTHING_ARGS; i++)
 		if (mobj->args[i] != mapthing->args[i])
 			return false;
 
@@ -2328,12 +2328,34 @@ static boolean P_ThingArgsEqual(const mobj_t *mobj, const mapthing_t *mapthing)
 static boolean P_ThingStringArgsEqual(const mobj_t *mobj, const mapthing_t *mapthing)
 {
 	UINT8 i;
-	for (i = 0; i < NUMMAPTHINGSTRINGARGS; i++)
+	for (i = 0; i < NUM_MAPTHING_STRINGARGS; i++)
 	{
 		if (!mobj->stringargs[i])
 			return !mapthing->stringargs[i];
 
 		if (strcmp(mobj->stringargs[i], mapthing->stringargs[i]))
+			return false;
+	}
+
+	return true;
+}
+
+static boolean P_ThingScriptEqual(const mobj_t *mobj, const mapthing_t *mapthing)
+{
+	UINT8 i;
+	if (mobj->special != mapthing->special)
+		return false;
+
+	for (i = 0; i < NUM_SCRIPT_ARGS; i++)
+		if (mobj->script_args[i] != mapthing->script_args[i])
+			return false;
+
+	for (i = 0; i < NUM_SCRIPT_STRINGARGS; i++)
+	{
+		if (!mobj->script_stringargs[i])
+			return !mapthing->script_stringargs[i];
+
+		if (strcmp(mobj->script_stringargs[i], mapthing->script_stringargs[i]))
 			return false;
 	}
 
@@ -2546,7 +2568,7 @@ static void SaveMobjThinker(savebuffer_t *save, const thinker_t *th, const UINT8
 		if (!P_ThingStringArgsEqual(mobj, mobj->spawnpoint))
 			diff |= MD_STRINGARGS;
 
-		if (mobj->special != mobj->spawnpoint->type)
+		if (!P_ThingScriptEqual(mobj, mobj->spawnpoint))
 			diff2 |= MD2_SPECIAL;
 	}
 	else
@@ -2554,7 +2576,7 @@ static void SaveMobjThinker(savebuffer_t *save, const thinker_t *th, const UINT8
 		// not a map spawned thing, so make it from scratch
 		diff = MD_POS | MD_TYPE;
 
-		for (j = 0; j < NUMMAPTHINGARGS; j++)
+		for (j = 0; j < NUM_MAPTHING_ARGS; j++)
 		{
 			if (mobj->args[j] != 0)
 			{
@@ -2563,7 +2585,7 @@ static void SaveMobjThinker(savebuffer_t *save, const thinker_t *th, const UINT8
 			}
 		}
 
-		for (j = 0; j < NUMMAPTHINGSTRINGARGS; j++)
+		for (j = 0; j < NUM_MAPTHING_STRINGARGS; j++)
 		{
 			if (mobj->stringargs[j] != NULL)
 			{
@@ -2575,6 +2597,24 @@ static void SaveMobjThinker(savebuffer_t *save, const thinker_t *th, const UINT8
 		if (mobj->special != 0)
 		{
 			diff2 |= MD2_SPECIAL;
+		}
+
+		for (j = 0; j < NUM_SCRIPT_ARGS; j++)
+		{
+			if (mobj->script_args[j] != 0)
+			{
+				diff2 |= MD2_SPECIAL;
+				break;
+			}
+		}
+
+		for (j = 0; j < NUM_SCRIPT_STRINGARGS; j++)
+		{
+			if (mobj->stringargs[j] != NULL)
+			{
+				diff2 |= MD2_SPECIAL;
+				break;
+			}
 		}
 	}
 
@@ -2826,12 +2866,12 @@ static void SaveMobjThinker(savebuffer_t *save, const thinker_t *th, const UINT8
 		WRITEFIXED(save->p, mobj->scalespeed);
 	if (diff & MD_ARGS)
 	{
-		for (j = 0; j < NUMMAPTHINGARGS; j++)
+		for (j = 0; j < NUM_MAPTHING_ARGS; j++)
 			WRITEINT32(save->p, mobj->args[j]);
 	}
 	if (diff & MD_STRINGARGS)
 	{
-		for (j = 0; j < NUMMAPTHINGSTRINGARGS; j++)
+		for (j = 0; j < NUM_MAPTHING_STRINGARGS; j++)
 		{
 			size_t len, k;
 
@@ -2911,7 +2951,28 @@ static void SaveMobjThinker(savebuffer_t *save, const thinker_t *th, const UINT8
 		WRITEFIXED(save->p, mobj->sprzoff);
 	}
 	if (diff2 & MD2_SPECIAL)
+	{
 		WRITEINT16(save->p, mobj->special);
+
+		for (j = 0; j < NUM_SCRIPT_ARGS; j++)
+			WRITEINT32(save->p, mobj->script_args[j]);
+
+		for (j = 0; j < NUM_SCRIPT_STRINGARGS; j++)
+		{
+			size_t len, k;
+
+			if (!mobj->script_stringargs[j])
+			{
+				WRITEINT32(save->p, 0);
+				continue;
+			}
+
+			len = strlen(mobj->script_stringargs[j]);
+			WRITEINT32(save->p, len);
+			for (k = 0; k < len; k++)
+				WRITECHAR(save->p, mobj->script_stringargs[j][k]);
+		}
+	}
 	if (diff2 & MD2_FLOORSPRITESLOPE)
 	{
 		pslope_t *slope = mobj->floorspriteslope;
@@ -4029,12 +4090,12 @@ static thinker_t* LoadMobjThinker(savebuffer_t *save, actionf_p1 thinker)
 		mobj->scalespeed = mapobjectscale/12;
 	if (diff & MD_ARGS)
 	{
-		for (j = 0; j < NUMMAPTHINGARGS; j++)
+		for (j = 0; j < NUM_MAPTHING_ARGS; j++)
 			mobj->args[j] = READINT32(save->p);
 	}
 	if (diff & MD_STRINGARGS)
 	{
-		for (j = 0; j < NUMMAPTHINGSTRINGARGS; j++)
+		for (j = 0; j < NUM_MAPTHING_STRINGARGS; j++)
 		{
 			size_t len = READINT32(save->p);
 			size_t k;
@@ -4121,6 +4182,27 @@ static thinker_t* LoadMobjThinker(savebuffer_t *save, actionf_p1 thinker)
 	if (diff2 & MD2_SPECIAL)
 	{
 		mobj->special = READINT16(save->p);
+
+		for (j = 0; j < NUM_SCRIPT_ARGS; j++)
+			mobj->script_args[j] = READINT32(save->p);
+
+		for (j = 0; j < NUM_SCRIPT_STRINGARGS; j++)
+		{
+			size_t len = READINT32(save->p);
+			size_t k;
+
+			if (!len)
+			{
+				Z_Free(mobj->script_stringargs[j]);
+				mobj->script_stringargs[j] = NULL;
+				continue;
+			}
+
+			mobj->script_stringargs[j] = Z_Realloc(mobj->script_stringargs[j], len + 1, PU_LEVEL, NULL);
+			for (k = 0; k < len; k++)
+				mobj->script_stringargs[j][k] = READCHAR(save->p);
+			mobj->script_stringargs[j][len] = '\0';
+		}
 	}
 	if (diff2 & MD2_FLOORSPRITESLOPE)
 	{

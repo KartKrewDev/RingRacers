@@ -298,13 +298,13 @@ ACSVM::Word Environment::callSpecImpl
 	auto info = &static_cast<Thread *>(thread)->info;
 	ACSVM::MapScope *const map = thread->scopeMap;
 
-	INT32 args[NUMLINEARGS] = {0};
+	INT32 args[NUM_SCRIPT_ARGS] = {0};
 
-	char *stringargs[NUMLINESTRINGARGS] = {0};
+	char *stringargs[NUM_SCRIPT_STRINGARGS] = {0};
 	auto _ = srb2::finally(
 		[stringargs]()
 		{
-			for (int i = 0; i < NUMLINESTRINGARGS; i++)
+			for (int i = 0; i < NUM_SCRIPT_STRINGARGS; i++)
 			{
 				Z_Free(stringargs[i]);
 			}
@@ -322,7 +322,7 @@ ACSVM::Word Environment::callSpecImpl
 
 	int i = 0;
 
-	for (i = 0; i < std::min((signed)(argC), NUMLINESTRINGARGS); i++)
+	for (i = 0; i < std::min((signed)(argC), NUM_SCRIPT_STRINGARGS); i++)
 	{
 		ACSVM::String *strPtr = map->getString(argV[i]);
 
@@ -330,7 +330,7 @@ ACSVM::Word Environment::callSpecImpl
 		M_Memcpy(stringargs[i], strPtr->str, strPtr->len + 1);
 	}
 
-	for (i = 0; i < std::min((signed)(argC), NUMLINEARGS); i++)
+	for (i = 0; i < std::min((signed)(argC), NUM_SCRIPT_ARGS); i++)
 	{
 		args[i] = argV[i];
 	}

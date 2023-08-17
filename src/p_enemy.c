@@ -6902,7 +6902,7 @@ void A_LinedefExecuteFromArg(mobj_t *actor)
 	if (LUA_CallAction(A_LINEDEFEXECUTEFROMARG, actor))
 		return;
 
-	if (locvar1 < 0 || locvar1 > NUMMAPTHINGARGS)
+	if (locvar1 < 0 || locvar1 > NUM_MAPTHING_ARGS)
 	{
 		CONS_Debug(DBG_GAMELOGIC, "A_LinedefExecuteFromArg: Invalid mapthing arg %d\n", locvar1);
 		return;
