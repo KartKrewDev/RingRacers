@@ -255,12 +255,14 @@ void Obj_JawzThink(mobj_t *th)
 void Obj_JawzThrown(mobj_t *th, fixed_t finalSpeed, SINT8 dir)
 {
 	INT32 lastTarg = -1;
+	player_t *owner = NULL;
 
 	if (jawz_owner(th) != NULL && P_MobjWasRemoved(jawz_owner(th)) == false
 		&& jawz_owner(th)->player != NULL)
 	{
 		lastTarg = jawz_owner(th)->player->lastjawztarget;
 		jawz_retcolor(th) = jawz_owner(th)->player->skincolor;
+		owner = jawz_owner(th)->player;
 	}
 	else
 	{
@@ -296,6 +298,14 @@ void Obj_JawzThrown(mobj_t *th, fixed_t finalSpeed, SINT8 dir)
 			{
 				P_SetTarget(&jawz_chase(th), tryPlayer->mo);
 			}
+		}
+
+		// Sealed Star: target the UFO immediately. I don't
+		// wanna fuck with the lastjawztarget stuff, so just
+		// do this if a target wasn't set.
+		if (jawz_chase(th) == NULL || P_MobjWasRemoved(jawz_chase(th)) == true)
+		{
+			P_SetTarget(&jawz_chase(th), K_FindJawzTarget(th, owner, ANGLE_90));
 		}
 	}
 

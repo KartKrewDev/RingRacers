@@ -2842,6 +2842,17 @@ boolean K_WaterRun(mobj_t *mobj)
 {
 	switch (mobj->type)
 	{
+		case MT_ORBINAUT:
+		case MT_GACHABOM:
+		{
+			if (Obj_OrbinautCanRunOnWater(mobj))
+			{
+				return true;
+			}
+
+			return false;
+		}
+
 		case MT_JAWZ:
 		{
 			if (mobj->tracer != NULL && P_MobjWasRemoved(mobj->tracer) == false)
@@ -4775,6 +4786,50 @@ static mobj_t *K_SpawnKartMissile(mobj_t *source, mobjtype_t type, angle_t an, I
 	th->momy = FixedMul(finalspeed, FINESINE(an>>ANGLETOFINESHIFT));
 	th->momz = source->momz;
 
+	if (source->player != NULL)
+	{
+		th->cusval = source->player->itemscale;
+	}
+
+	switch (type)
+	{
+		case MT_ORBINAUT:
+			Obj_OrbinautThrown(th, finalspeed, dir);
+			break;
+		case MT_JAWZ:
+			Obj_JawzThrown(th, finalspeed, dir);
+			break;
+		case MT_SPB:
+			th->movefactor = finalspeed;
+			break;
+		case MT_BUBBLESHIELDTRAP:
+			P_SetScale(th, ((5*th->destscale)>>2)*4);
+			th->destscale = (5*th->destscale)>>2;
+			S_StartSound(th, sfx_s3kbfl);
+			S_StartSound(th, sfx_cdfm35);
+			break;
+		case MT_BALLHOG:
+			// Contra spread shot scale up
+			th->destscale = th->destscale << 1;
+			th->scalespeed = abs(th->destscale - th->scale) / (2*TICRATE);
+			break;
+		case MT_GARDENTOP:
+			th->movefactor = finalspeed;
+			break;
+		case MT_GACHABOM:
+			Obj_GachaBomThrown(th, finalspeed, dir);
+			break;
+		default:
+			break;
+	}
+
+	// I'm calling P_SetOrigin to update the floorz if this
+	// object can run on water. However, P_CanRunOnWater
+	// requires that the object is already on the ground, so
+	// floorz needs to be set beforehand too.
+	th->floorz = source->floorz;
+	th->ceilingz = source->ceilingz;
+
 	// Get floorz and ceilingz
 	P_SetOrigin(th, x, y, z);
 
@@ -4821,43 +4876,6 @@ static mobj_t *K_SpawnKartMissile(mobj_t *source, mobjtype_t type, angle_t an, I
 			z = tz;
 			th->z = z;
 		}
-	}
-
-	if (source->player != NULL)
-	{
-		th->cusval = source->player->itemscale;
-	}
-
-	switch (type)
-	{
-		case MT_ORBINAUT:
-			Obj_OrbinautThrown(th, finalspeed, dir);
-			break;
-		case MT_JAWZ:
-			Obj_JawzThrown(th, finalspeed, dir);
-			break;
-		case MT_SPB:
-			th->movefactor = finalspeed;
-			break;
-		case MT_BUBBLESHIELDTRAP:
-			P_SetScale(th, ((5*th->destscale)>>2)*4);
-			th->destscale = (5*th->destscale)>>2;
-			S_StartSound(th, sfx_s3kbfl);
-			S_StartSound(th, sfx_cdfm35);
-			break;
-		case MT_BALLHOG:
-			// Contra spread shot scale up
-			th->destscale = th->destscale << 1;
-			th->scalespeed = abs(th->destscale - th->scale) / (2*TICRATE);
-			break;
-		case MT_GARDENTOP:
-			th->movefactor = finalspeed;
-			break;
-		case MT_GACHABOM:
-			Obj_GachaBomThrown(th, finalspeed, dir);
-			break;
-		default:
-			break;
 	}
 
 	if (type != MT_BUBBLESHIELDTRAP)
