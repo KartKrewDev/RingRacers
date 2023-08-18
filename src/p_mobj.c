@@ -12014,12 +12014,15 @@ void P_AfterPlayerSpawn(INT32 playernum)
 
 	p->drawangle = mobj->angle;
 
-	for (i = 0; i <= r_splitscreen; i++)
+	if (p->spectator == false)
 	{
-		if (camera[i].chase)
+		for (i = 0; i <= r_splitscreen; i++)
 		{
-			if (displayplayers[i] == playernum)
-				P_ResetCamera(p, &camera[i]);
+			if (camera[i].chase)
+			{
+				if (displayplayers[i] == playernum)
+					P_ResetCamera(p, &camera[i]);
+			}
 		}
 	}
 
