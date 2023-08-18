@@ -3542,6 +3542,8 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 		z = mo->z + pviewheight + distz;
 	}
 
+	z += player->cameraOffset;
+
 	// point viewed by the camera
 	// this point is just 64 unit forward the player
 	dist = 64*cameraScale;
@@ -3586,13 +3588,13 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 
 	if (mo->eflags & MFE_VERTICALFLIP)
 	{
-		angle = R_PointToAngle2(0, thiscam->z + thiscam->height, dist, mo->z + mo->height - player->mo->height);
+		angle = R_PointToAngle2(0, thiscam->z + thiscam->height, dist, mo->z + mo->height - player->mo->height + player->cameraOffset);
 		if (thiscam->pitch < ANGLE_180 && thiscam->pitch > angle)
 			angle += (thiscam->pitch - angle)/2;
 	}
 	else
 	{
-		angle = R_PointToAngle2(0, thiscam->z, dist, mo->z + player->mo->height);
+		angle = R_PointToAngle2(0, thiscam->z, dist, mo->z + player->mo->height + player->cameraOffset);
 		if (thiscam->pitch >= ANGLE_180 && thiscam->pitch < angle)
 			angle -= (angle - thiscam->pitch)/2;
 	}

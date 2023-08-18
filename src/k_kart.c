@@ -7794,6 +7794,8 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 	player->mo->spritexoffset = 0;
 	player->mo->spriteyoffset = 0;
 
+	player->cameraOffset = 0;
+
 	if (player->curshield == KSHIELD_TOP)
 	{
 		mobj_t *top = K_GetGardenTop(player);
