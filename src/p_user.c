@@ -2956,7 +2956,7 @@ void P_DemoCameraMovement(camera_t *cam)
 	{
 		cam->aiming += cmd->aiming << TICCMD_REDUCE;
 
-		democam.reset_aiming = false;
+		cam->reset_aiming = false;
 	}
 
 	cam->angle += cmd->turning << TICCMD_REDUCE;
@@ -2988,7 +2988,7 @@ void P_DemoCameraMovement(camera_t *cam)
 		cam->angle = R_PointToAngle2(cam->x, cam->y, lastp->mo->x, lastp->mo->y);
 		cam->aiming = R_PointToAngle2(0, cam->z, R_PointToDist2(cam->x, cam->y, lastp->mo->x, lastp->mo->y), lastp->mo->z + lastp->mo->scale*128*P_MobjFlip(lastp->mo));	// This is still unholy. Aim a bit above their heads.
 
-		democam.reset_aiming = false;
+		cam->reset_aiming = false;
 	}
 
 	if (cmd->forwardmove != 0)
@@ -3002,7 +3002,7 @@ void P_DemoCameraMovement(camera_t *cam)
 	// forward/back will have a slope. So, as long as democam
 	// controls haven't been used to alter the vertical angle,
 	// slowly reset it to flat.
-	if ((democam.reset_aiming && moving) || ((cmd->buttons & BT_DRIFT) && !democam.button_a_held))
+	if ((cam->reset_aiming && moving) || ((cmd->buttons & BT_DRIFT) && !democam.button_a_held))
 	{
 		INT32 aiming = cam->aiming;
 		INT32 smooth = FixedMul(ANGLE_11hh / 4, FCOS(cam->aiming));
@@ -3014,7 +3014,7 @@ void P_DemoCameraMovement(camera_t *cam)
 		else
 		{
 			cam->aiming = 0;
-			democam.reset_aiming = false; // completely smoothed out
+			cam->reset_aiming = false; // completely smoothed out
 		}
 	}
 
@@ -3029,7 +3029,7 @@ void P_DemoCameraMovement(camera_t *cam)
 		cam->x += FixedMul(cmd->forwardmove*mapobjectscale, FINECOSINE(thrustangle));
 		cam->y += FixedMul(cmd->forwardmove*mapobjectscale, FINESINE(thrustangle));
 
-		if (!democam.reset_aiming)
+		if (!cam->reset_aiming)
 		{
 			cam->z += FixedMul(cmd->forwardmove*mapobjectscale, AIMINGTOSLOPE(cam->aiming));
 		}
@@ -3049,7 +3049,7 @@ void P_ToggleDemoCamera(void)
 	{
 		demo.freecam = true;
 		democam.button_a_held = 2;
-		democam.reset_aiming = true;
+		camera[0].reset_aiming = true;
 	}
 	else	// toggle off
 	{
@@ -3092,6 +3092,8 @@ void P_ResetCamera(player_t *player, camera_t *thiscam)
 
 	thiscam->radius = 20*FRACUNIT;
 	thiscam->height = 16*FRACUNIT;
+
+	thiscam->reset_aiming = true;
 
 	while (!P_MoveChaseCamera(player,thiscam,true) && ++tries < 2*TICRATE);
 }

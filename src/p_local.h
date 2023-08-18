@@ -126,6 +126,9 @@ struct camera_t
 	// SRB2Kart: camera pitches on slopes
 	angle_t pitch;
 
+	// Freecam: aiming needs to be reset after switching from chasecam
+	boolean reset_aiming;
+
 	// Interpolation data
 	fixed_t old_x, old_y, old_z;
 	angle_t old_angle, old_aiming;
@@ -135,7 +138,6 @@ struct camera_t
 struct demofreecam_s {
 
 	UINT8 button_a_held;	// A button was held since entering from menu, so don't move camera
-	boolean reset_aiming;	// camera aiming needs to be reset from chase camera
 };
 
 extern struct demofreecam_s democam;
