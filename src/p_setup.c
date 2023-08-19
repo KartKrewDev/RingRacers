@@ -7463,6 +7463,7 @@ static boolean P_LoadMapFromFile(void)
 			size_t j;
 
 			mapthings[i].scale = max(mapthings[i].spritexscale, mapthings[i].spriteyscale);
+			mapthings[i].spritexscale = mapthings[i].spriteyscale = FRACUNIT;
 
 			for (j = 0; j < min(NUM_MAPTHING_ARGS, NUM_SCRIPT_ARGS); j++)
 			{
