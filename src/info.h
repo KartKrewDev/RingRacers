@@ -1189,7 +1189,7 @@ typedef enum sprite
 	SPR_POKE, // Pokey
 	SPR_AUDI, // Audience members
 	SPR_DECO, // Old 1.0 Kart Decoratives + New misc ones
-	SPR_DOOD, // All the old D00Dkart objects
+	SPR_SPCN, // Spray Can replaces all the old D00Dkart objects
 	SPR_SNES, // Sprites for SNES remake maps
 	SPR_GBAS, // Sprites for GBA remake maps
 	SPR_SPRS, // Sapphire Coast Spring Shell
@@ -2343,6 +2343,9 @@ typedef enum state
 	S_EMBLEM24,
 	S_EMBLEM25,
 	S_EMBLEM26,
+
+	// Spray Can
+	S_SPRAYCAN,
 
 	// Chaos Emeralds
 	S_CHAOSEMERALD1,
@@ -5074,24 +5077,6 @@ typedef enum state
 	S_APPLE7,
 	S_APPLE8,
 
-	// D00Dkart - Fall Flowers
-	S_DOOD_FLOWER1,
-	S_DOOD_FLOWER2,
-	S_DOOD_FLOWER3,
-	S_DOOD_FLOWER4,
-	S_DOOD_FLOWER5,
-	S_DOOD_FLOWER6,
-
-	// D00Dkart - Super Circuit Box
-	S_DOOD_BOX1,
-	S_DOOD_BOX2,
-	S_DOOD_BOX3,
-	S_DOOD_BOX4,
-	S_DOOD_BOX5,
-
-	// D00Dkart - Diddy Kong Racing Bumper
-	S_DOOD_BALLOON,
-
 	// Chaotix Big Ring
 	S_BIGRING01,
 	S_BIGRING02,
@@ -5994,6 +5979,7 @@ typedef enum mobj_type
 	MT_REDFLAG, // Red CTF Flag
 	MT_BLUEFLAG, // Blue CTF Flag
 	MT_EMBLEM,
+	MT_SPRAYCAN,
 	MT_EMERALD,
 	MT_EMERALDSPARK,
 	MT_EMERHUNT, // Emerald Hunt
@@ -6768,12 +6754,6 @@ typedef enum mobj_type
 	MT_BIGPUMA,
 	MT_APPLE,
 
-	MT_DOOD_FLOWER1,
-	MT_DOOD_FLOWER2,
-	MT_DOOD_FLOWER3,
-	MT_DOOD_FLOWER4,
-	MT_DOOD_BOX,
-	MT_DOOD_BALLOON,
 	MT_BIGRING,
 
 	MT_SNES_DONUTBUSH1,

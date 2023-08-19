@@ -636,7 +636,7 @@ char sprnames[NUMSPRITES + 1][5] =
 	"POKE", // Pokey
 	"AUDI", // Audience members
 	"DECO", // Old 1.0 Kart Decoratives + New misc ones
-	"DOOD", // All the old D00Dkart objects
+	"SPCN", // Spray Can replaces all the old D00Dkart objects
 	"SNES", // Sprites for SNES remake maps
 	"GBAS", // Sprites for GBA remake maps
 	"SPRS", // Sapphire Coast Spring Shell
@@ -1859,6 +1859,9 @@ state_t states[NUMSTATES] =
 	{SPR_EMBM, 23, -1, {NULL}, 0, 0, S_NULL}, // S_EMBLEM24
 	{SPR_EMBM, 24, -1, {NULL}, 0, 0, S_NULL}, // S_EMBLEM25
 	{SPR_EMBM, 25, -1, {NULL}, 0, 0, S_NULL}, // S_EMBLEM26
+
+	// Spray Can
+	{SPR_SPCN, FF_ANIMATE|FF_SEMIBRIGHT, -1, {NULL}, 15, 2, S_NULL}, // S_SPRAYCAN
 
 	// Chaos Emeralds
 	{SPR_EMRC, FF_FULLBRIGHT,           1, {NULL}, 0, 0, S_CHAOSEMERALD2}, // S_CHAOSEMERALD1
@@ -4625,21 +4628,6 @@ state_t states[NUMSTATES] =
 	{SPR_DECO, FF_FULLBRIGHT|19, 2, {NULL}, 0, 0, S_APPLE7}, //S_APPLE6
 	{SPR_DECO, FF_FULLBRIGHT|20, 2, {NULL}, 0, 0, S_APPLE8}, //S_APPLE7
 	{SPR_DECO, FF_FULLBRIGHT|21, 2, {NULL}, 0, 0, S_APPLE1}, //S_APPLE8
-
-	{SPR_DOOD, 0, -1, {NULL}, 0, 0, S_NULL},         // S_DOOD_FLOWER1
-	{SPR_DOOD, 1, 14, {NULL}, 0, 0, S_DOOD_FLOWER3}, // S_DOOD_FLOWER2
-	{SPR_DOOD, 2, 14, {NULL}, 0, 0, S_DOOD_FLOWER2}, // S_DOOD_FLOWER3
-	{SPR_DOOD, 3,  7, {NULL}, 0, 0, S_DOOD_FLOWER5}, // S_DOOD_FLOWER4
-	{SPR_DOOD, 4,  7, {NULL}, 0, 0, S_DOOD_FLOWER4}, // S_DOOD_FLOWER5
-	{SPR_DOOD, 5, -1, {NULL}, 0, 0, S_NULL},         // S_DOOD_FLOWER6
-
-	{SPR_DOOD,  6, 2, {NULL}, 0, 0, S_DOOD_BOX2}, // S_DOOD_BOX1
-	{SPR_DOOD,  7, 2, {NULL}, 0, 0, S_DOOD_BOX3}, // S_DOOD_BOX2
-	{SPR_DOOD,  8, 2, {NULL}, 0, 0, S_DOOD_BOX4}, // S_DOOD_BOX3
-	{SPR_DOOD,  9, 2, {NULL}, 0, 0, S_DOOD_BOX5}, // S_DOOD_BOX4
-	{SPR_DOOD, 10, 2, {NULL}, 0, 0, S_DOOD_BOX1}, // S_DOOD_BOX5
-
-	{SPR_DOOD, 11, -1, {NULL}, 0, 0, S_NULL}, // S_DOOD_BALLOON
 
 	{SPR_BRNG, 0, 2, {NULL}, 0, 0, S_BIGRING02}, // S_BIGRING01
 	{SPR_BRNG, 1, 2, {NULL}, 0, 0, S_BIGRING03}, // S_BIGRING02
@@ -8272,7 +8260,34 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		4,              // mass
 		0,              // damage
 		sfx_None,       // activesound
-		MF_SPECIAL|MF_NOGRAVITY|MF_NOCLIPHEIGHT, // flags
+		MF_SPECIAL|MF_NOGRAVITY|MF_NOCLIPHEIGHT|MF_DONTENCOREMAP, // flags
+		S_NULL          // raisestate
+	},
+
+	{           // MT_SPRAYCAN
+		2807,           // doomednum
+		S_SPRAYCAN,     // spawnstate
+		1000,           // spawnhealth
+		S_NULL,         // seestate
+		sfx_None,       // seesound
+		8,              // reactiontime
+		sfx_None,       // attacksound
+		S_NULL,         // painstate
+		0,              // painchance
+		sfx_None,       // painsound
+		S_NULL,         // meleestate
+		S_NULL,         // missilestate
+		S_NULL,         // deathstate
+		S_NULL,         // xdeathstate
+		sfx_None,       // deathsound
+		0,              // speed
+		30*FRACUNIT,    // radius
+		80*FRACUNIT,    // height
+		0,              // display offset
+		0,              // mass
+		0,              // damage
+		sfx_None,       // activesound
+		MF_SPECIAL|MF_NOGRAVITY|MF_NOCLIPHEIGHT|MF_DONTENCOREMAP, // flags
 		S_NULL          // raisestate
 	},
 
@@ -25670,168 +25685,6 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		0,              // damage
 		sfx_None,       // activesound
 		16,             // flags
-		S_NULL          // raisestate
-	},
-
-	{           // MT_DOOD_FLOWER1
-		2805,           // doomednum
-		S_DOOD_FLOWER1, // spawnstate
-		1000,           // spawnhealth
-		S_NULL,         // seestate
-		sfx_None,       // seesound
-		8,              // reactiontime
-		sfx_None,       // attacksound
-		S_NULL,         // painstate
-		0,              // painchance
-		sfx_None,       // painsound
-		S_NULL,         // meleestate
-		S_NULL,         // missilestate
-		S_NULL,         // deathstate
-		S_NULL,         // xdeathstate
-		sfx_None,       // deathsound
-		0,              // speed
-		1048576,        // radius
-		2097152,        // height
-		0,              // display offset
-		100,            // mass
-		0,              // damage
-		sfx_None,       // activesound
-		33558528,       // flags
-		S_NULL          // raisestate
-	},
-
-	{           // MT_DOOD_FLOWER2
-		2800,           // doomednum
-		S_DOOD_FLOWER2, // spawnstate
-		1000,           // spawnhealth
-		S_NULL,         // seestate
-		sfx_None,       // seesound
-		8,              // reactiontime
-		sfx_None,       // attacksound
-		S_NULL,         // painstate
-		0,              // painchance
-		sfx_None,       // painsound
-		S_NULL,         // meleestate
-		S_NULL,         // missilestate
-		S_NULL,         // deathstate
-		S_NULL,         // xdeathstate
-		sfx_None,       // deathsound
-		0,              // speed
-		1048576,        // radius
-		2621440,        // height
-		0,              // display offset
-		100,            // mass
-		0,              // damage
-		sfx_None,       // activesound
-		33558528,       // flags
-		S_NULL          // raisestate
-	},
-
-	{           // MT_DOOD_FLOWER3
-		2801,           // doomednum
-		S_DOOD_FLOWER4, // spawnstate
-		1000,           // spawnhealth
-		S_NULL,         // seestate
-		sfx_None,       // seesound
-		8,              // reactiontime
-		sfx_None,       // attacksound
-		S_NULL,         // painstate
-		0,              // painchance
-		sfx_None,       // painsound
-		S_NULL,         // meleestate
-		S_NULL,         // missilestate
-		S_NULL,         // deathstate
-		S_NULL,         // xdeathstate
-		sfx_None,       // deathsound
-		0,              // speed
-		1048576,        // radius
-		6291456,        // height
-		0,              // display offset
-		100,            // mass
-		0,              // damage
-		sfx_None,       // activesound
-		33558528,       // flags
-		S_NULL          // raisestate
-	},
-
-	{           // MT_DOOD_FLOWER4
-		2802,           // doomednum
-		S_DOOD_FLOWER6, // spawnstate
-		1000,           // spawnhealth
-		S_NULL,         // seestate
-		sfx_None,       // seesound
-		8,              // reactiontime
-		sfx_None,       // attacksound
-		S_NULL,         // painstate
-		0,              // painchance
-		sfx_None,       // painsound
-		S_NULL,         // meleestate
-		S_NULL,         // missilestate
-		S_NULL,         // deathstate
-		S_NULL,         // xdeathstate
-		sfx_None,       // deathsound
-		0,              // speed
-		524288,         // radius
-		2097152,        // height
-		0,              // display offset
-		100,            // mass
-		0,              // damage
-		sfx_None,       // activesound
-		33558528,       // flags
-		S_NULL          // raisestate
-	},
-
-	{           // MT_DOOD_BOX
-		2809,           // doomednum
-		S_DOOD_BOX1,    // spawnstate
-		1000,           // spawnhealth
-		S_NULL,         // seestate
-		sfx_None,       // seesound
-		8,              // reactiontime
-		sfx_None,       // attacksound
-		S_NULL,         // painstate
-		0,              // painchance
-		sfx_None,       // painsound
-		S_NULL,         // meleestate
-		S_NULL,         // missilestate
-		S_NULL,         // deathstate
-		S_NULL,         // xdeathstate
-		sfx_None,       // deathsound
-		0,              // speed
-		1048576,        // radius
-		2097152,        // height
-		0,              // display offset
-		100,            // mass
-		0,              // damage
-		sfx_None,       // activesound
-		33554944,       // flags
-		S_NULL          // raisestate
-	},
-
-	{           // MT_DOOD_BALLOON
-		2807,           // doomednum
-		S_DOOD_BALLOON, // spawnstate
-		1000,           // spawnhealth
-		S_NULL,         // seestate
-		sfx_None,       // seesound
-		8,              // reactiontime
-		sfx_None,       // attacksound
-		S_NULL,         // painstate
-		0,              // painchance
-		sfx_None,       // painsound
-		S_NULL,         // meleestate
-		S_NULL,         // missilestate
-		S_NULL,         // deathstate
-		S_NULL,         // xdeathstate
-		sfx_None,       // deathsound
-		0,              // speed
-		91*FRACUNIT,    // radius
-		166*FRACUNIT,   // height
-		0,              // display offset
-		0,              // mass
-		0,              // damage
-		sfx_None,       // activesound
-		MF_NOTHINK|MF_NOBLOCKMAP|MF_NOCLIP|MF_SCENERY|MF_NOGRAVITY, // flags
 		S_NULL          // raisestate
 	},
 

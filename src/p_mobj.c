@@ -7170,7 +7170,6 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 		if (P_EmblemWasCollected(mobj->health - 1) || !P_CanPickupEmblem(&players[consoleplayer], mobj->health - 1))
 		{
 			trans = tr_trans50;
-			mobj->renderflags |= (tr_trans50 << RF_TRANSSHIFT);
 		}
 
 		if (mobj->reactiontime > 0
@@ -12197,6 +12196,7 @@ fixed_t P_GetMapThingSpawnHeight(const mobjtype_t mobjtype, const mapthing_t* mt
 	// Ring-like items, float additional units unless args[0] is set.
 	case MT_SPIKEBALL:
 	case MT_EMBLEM:
+	case MT_SPRAYCAN:
 	case MT_RING:
 	case MT_BLUESPHERE:
 		offset += mthing->args[0] ? 0 : 24*FRACUNIT;
@@ -12404,6 +12404,23 @@ static boolean P_SetupEmblem(mapthing_t *mthing, mobj_t *mobj)
 	}
 
 	return true;
+}
+
+void P_SprayCanInit(mobj_t* mobj)
+{
+	UINT16 col = mapheaderinfo[gamemap-1]->cachedcan;
+
+	if (col == 0 || col > MAXCANCOLORS)
+	{
+		mobj->renderflags = RF_DONTDRAW;
+		return;
+	}
+
+	mobj->color = col;
+
+	mobj->renderflags = (gamedata->spraycans[col].got)
+		? (tr_trans50 << RF_TRANSSHIFT)
+		: 0;
 }
 
 static boolean P_SetupMace(mapthing_t *mthing, mobj_t *mobj)
@@ -12864,6 +12881,23 @@ static boolean P_SetupSpawnedMapThing(mapthing_t *mthing, mobj_t *mobj)
 			P_RemoveMobj(mobj);
 			return false;
 		}
+		break;
+	}
+	case MT_SPRAYCAN:
+	{
+		if (numspraycans)
+		{
+			if (numspraycans != UINT8_MAX)
+				numspraycans++;
+
+			P_RemoveMobj(mobj);
+			return false;
+		}
+
+		P_SetScale(mobj, mobj->destscale = 2*mobj->scale);
+
+		P_SprayCanInit(mobj);
+		numspraycans++;
 		break;
 	}
 	case MT_SKYBOX:

@@ -614,6 +614,43 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 				return;
 			}
 
+		case MT_SPRAYCAN:
+			{
+				UINT16 col = mapheaderinfo[gamemap-1]->cachedcan;
+
+				if (col == 0 || col > MAXCANCOLORS)
+				{
+					return;
+				}
+
+				if (demo.playback)
+				{
+					// Never collect emblems in replays.
+					return;
+				}
+
+				if (player->bot)
+				{
+					// Your nefarious opponent puppy can't grab these for you.
+					return;
+				}
+
+				if (P_IsLocalPlayer(player))
+				{
+					if (!gamedata->spraycans[col].got)
+					{
+						gamedata->spraycans[col].got = true;
+						if (!M_UpdateUnlockablesAndExtraEmblems(true, true))
+							S_StartSound(NULL, sfx_ncitem);
+						gamedata->deferredsave = true;
+					}
+				}
+
+				// Don't delete the object, just fade it.
+				P_SprayCanInit(special);
+				return;
+			}
+
 		// CTF Flags
 		case MT_REDFLAG:
 		case MT_BLUEFLAG:
