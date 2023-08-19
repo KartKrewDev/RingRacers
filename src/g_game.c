@@ -4863,14 +4863,7 @@ void G_LoadGameData(void)
 
 	finalisegamedata:
 	{
-		// Don't consider loaded until it's a success!
-		// It used to do this much earlier, but this would cause the gamedata to
-		// save over itself when it I_Errors from the corruption landing point below,
-		// which can accidentally delete players' legitimate data if the code ever has any tiny mistakes!
-		gamedata->loaded = true;
-
-		// Silent update unlockables in case they're out of sync with conditions
-		M_UpdateUnlockablesAndExtraEmblems(false, true);
+		M_FinaliseGameData();
 
 		return;
 	}

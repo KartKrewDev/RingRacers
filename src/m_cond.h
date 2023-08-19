@@ -257,6 +257,8 @@ struct gamedata_t
 {
 	// WHENEVER OR NOT WE'RE READY TO SAVE
 	boolean loaded;
+
+	// DEFERRED EVENTS RELATING TO CHALLENGE PROCESSING
 	boolean deferredsave;
 	boolean deferredconditioncheck;
 
@@ -338,10 +340,11 @@ char *M_BuildConditionSetString(UINT16 unlockid);
 void M_AddRawCondition(UINT16 set, UINT8 id, conditiontype_t c, INT32 r, INT16 x1, INT16 x2, char *stringvar);
 void M_UpdateConditionSetsPending(void);
 
-// Clearing secrets
+// Gamedata clear/init
 void M_ClearConditionSet(UINT16 set);
 void M_ClearSecrets(void);
 void M_ClearStats(void);
+void M_FinaliseGameData(void);
 
 boolean M_NotFreePlay(void);
 UINT16 M_CheckCupEmeralds(UINT8 difficulty);

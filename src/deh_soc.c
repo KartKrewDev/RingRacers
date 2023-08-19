@@ -3007,6 +3007,7 @@ void readmaincfg(MYFILE *f, boolean mainfile)
 				strlwr(gamedatafilename);
 				savemoddata = true;
 				majormods = false;
+				gamedata->loaded = false;
 
 				// Also save a time attack folder
 				filenamelen = strlen(gamedatafilename)-4;  // Strip off the extension

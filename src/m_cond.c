@@ -640,6 +640,21 @@ void M_ClearSecrets(void)
 	gamedata->chaokeys = 3; // Start with 3 !!
 }
 
+void M_FinaliseGameData(void)
+{
+	//M_PopulateChallengeGrid(); -- This can be done lazily when we actually need it
+
+	// Don't consider loaded until it's a success!
+	// It used to do this much earlier, but this would cause the gamedata
+	// to save over itself when it I_Errors from corruption,  which can
+	// accidentally delete players' legitimate data if the code ever has
+	// any tiny mistakes!
+	gamedata->loaded = true;
+
+	// Silent update unlockables in case they're out of sync with conditions
+	M_UpdateUnlockablesAndExtraEmblems(false, true);
+}
+
 // ----------------------
 // Condition set checking
 // ----------------------
