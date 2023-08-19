@@ -561,6 +561,11 @@ void D_ResetTiccmds(void)
 			D_Clearticcmd(textcmds[i]->tic);
 }
 
+ticcmd_t *D_LocalTiccmd(UINT8 ss)
+{
+	return &localcmds[ss][0];
+}
+
 void SendKick(UINT8 playernum, UINT8 msg)
 {
 	UINT8 buf[2];

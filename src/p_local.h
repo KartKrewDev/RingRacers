@@ -126,6 +126,9 @@ struct camera_t
 	// SRB2Kart: camera pitches on slopes
 	angle_t pitch;
 
+	// Freecam: aiming needs to be reset after switching from chasecam
+	boolean reset_aiming;
+
 	// Interpolation data
 	fixed_t old_x, old_y, old_z;
 	angle_t old_angle, old_aiming;
@@ -134,13 +137,7 @@ struct camera_t
 // demo freecam or something before i commit die
 struct demofreecam_s {
 
-	camera_t *cam;	// this is useful when the game is paused, notably
-	mobj_t *soundmobj;	// mobj to play sound from, used in s_sound
-
-	angle_t localangle;	// keeps track of the cam angle for cmds
-	angle_t localaiming;	// ditto with aiming
-	boolean turnheld;	// holding turn button for gradual turn speed
-	boolean keyboardlook;	// keyboard look
+	UINT8 button_a_held;	// A button was held since entering from menu, so don't move camera
 };
 
 extern struct demofreecam_s democam;
@@ -159,7 +156,7 @@ boolean P_TryCameraMove(fixed_t x, fixed_t y, camera_t *thiscam);
 void P_SlideCameraMove(camera_t *thiscam);
 void P_DemoCameraMovement(camera_t *cam);
 boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcalled);
-void P_InitCameraCmd(void);
+void P_ToggleDemoCamera(void);
 
 boolean P_PlayerInPain(player_t *player);
 void P_ResetPlayer(player_t *player);

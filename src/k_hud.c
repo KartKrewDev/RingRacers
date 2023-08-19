@@ -5169,7 +5169,8 @@ static void K_DrawDirectorButton(INT32 idx, const char *label, patch_t *kp[2], I
 
 static void K_drawDirectorHUD(void)
 {
-	const INT32 p = G_PartyMember(consoleplayer, R_GetViewNumber());
+	const UINT8 viewnum = R_GetViewNumber();
+	const INT32 p = viewnum < G_PartySize(consoleplayer) ? G_PartyMember(consoleplayer, viewnum) : -1;
 	const char *itemtxt = "Join";
 	UINT8 offs = 0;
 
@@ -5192,12 +5193,15 @@ static void K_drawDirectorHUD(void)
 		offs = 2;
 	}
 
+	K_DrawDirectorButton(offs + 1, "Freecam", kp_button_c[0], 0);
+
 	if (p == -1 || !playeringame[p] || players[p].spectator == false)
 	{
 		return;
 	}
 
-	K_DrawDirectorButton(offs + 1, "Director", kp_button_r,
+	// TODO: this is too close to the screen bottom
+	K_DrawDirectorButton(offs + 2, "Director", kp_button_r,
 		(directorinfo.active ? V_YELLOWMAP : 0));
 
 	if (players[p].flashing)
@@ -5643,6 +5647,11 @@ void K_drawKartHUD(void)
 	if (stplyr->karthud[khud_trickcool])
 		K_drawTrickCool();
 
+	if (freecam)
+	{
+		K_DrawDirectorButton(3, "Freecam", kp_button_c[0], 0);
+	}
+
 	if (modeattacking || freecam) // everything after here is MP and debug only
 		return;
 
@@ -5659,7 +5668,7 @@ void K_drawKartHUD(void)
 
 	K_drawKartPowerUps();
 
-	if (G_IsPartyLocal(displayplayers[viewnum]) == false && !demo.playback)
+	if (G_IsPartyLocal(displayplayers[viewnum]) == false)
 	{
 		K_drawDirectorHUD();
 	}

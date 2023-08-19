@@ -1998,7 +1998,15 @@ static boolean P_KillPlayer(player_t *player, mobj_t *inflictor, mobj_t *source,
 
 	if (!player->exiting && (specialstageinfo.valid == true || modeattacking & ATTACKING_SPB))
 	{
+		// TODO: this would make a great debug feature for release
+#ifdef DEVELOP
+		if (type != DMG_SPECTATOR)
+		{
+			P_DoPlayerExit(player, PF_NOCONTEST);
+		}
+#else
 		P_DoPlayerExit(player, PF_NOCONTEST);
+#endif
 	}
 
 	if (player->exiting)
