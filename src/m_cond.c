@@ -696,7 +696,7 @@ static void M_AssignSpraycans(void)
 		&& gamedata->spraycans[prependlist[i]].map <= nummapheaders)
 			continue;
 
-		CONS_Printf("DDD - Prepending %d\n", prependlist[i]);
+		//CONS_Printf("DDD - Prepending %d\n", prependlist[i]);
 
 		tempcanlist[listlen] = prependlist[i];
 		gamedata->spraycans[prependlist[i]].got = 2; // invalid set to detect in below loop, rather than having to iterate over prependlist again
@@ -718,7 +718,7 @@ static void M_AssignSpraycans(void)
 			continue;
 		}
 
-		CONS_Printf("DDD - Adding %d\n", i);
+		//CONS_Printf("DDD - Adding %d\n", i);
 
 		tempcanlist[listlen] = i;
 		listlen++;
