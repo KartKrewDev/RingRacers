@@ -1532,7 +1532,7 @@ static const char *M_GetConditionString(condition_t *cn)
 
 			title = BUILDCONDITIONTITLE(checkLevel);
 
-			work = va("%s: grab the spraycan", title);
+			work = va("%s: grab the Spray Can", title);
 
 			Z_Free(title);
 			return work;
