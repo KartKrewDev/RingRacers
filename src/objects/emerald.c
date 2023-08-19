@@ -1,5 +1,6 @@
 #include "../k_battle.h"
 #include "../k_objects.h"
+#include "../k_specialstage.h"
 #include "../info.h"
 #include "../m_random.h"
 #include "../p_local.h"
@@ -163,6 +164,70 @@ void Obj_EmeraldThink(mobj_t *emerald)
 	K_BattleOvertimeKiller(emerald);
 }
 
+void Obj_EmeraldFlareThink(mobj_t *flare)
+{
+	const INT32 kExtraTics = 3;
+	const INT32 flare_tics = states[S_EMERALDFLARE1].tics + kExtraTics;
+
+	if (P_MobjWasRemoved(flare->target))
+	{
+		P_RemoveMobj(flare);
+		return;
+	}
+
+	// Target is assumed to be the emerald in orbit. When
+	// emerald fuse runs out, it shall update player's emerald
+	// flags. Time the flare animation so it ends with the
+	// emerald fuse.
+	if (!flare->fuse && flare->target->fuse > flare_tics)
+	{
+		return;
+	}
+
+	if (flare->state == &states[S_INVISIBLE])
+	{
+		// In special stages, just follow the emerald.
+		if (specialstageinfo.valid == false)
+		{
+			// Update target to player. We don't need to track
+			// the emerald anymore.
+			P_SetTarget(&flare->target, flare->target->target);
+
+			if (P_MobjWasRemoved(flare->target))
+			{
+				P_RemoveMobj(flare);
+				return;
+			}
+		}
+
+		P_SetMobjState(flare, S_EMERALDFLARE1);
+		flare->fuse = flare_tics;
+	}
+
+	// Focus on center of player.
+	P_SetOrigin(flare, flare->target->x, flare->target->y, center_of(flare->target));
+}
+
+static void spawn_lens_flare(mobj_t *emerald)
+{
+	mobj_t *flare = P_SpawnMobjFromMobj(emerald, 0, 0, 0, MT_EMERALDFLARE);
+
+	P_SetTarget(&flare->target, emerald);
+	P_InstaScale(flare, emerald->target->scale);
+
+	flare->color = emerald->color;
+	flare->colorized = true;
+
+	flare->renderflags |= RF_ALWAYSONTOP;
+
+	// FIXME: linkdraw doesn't work consistently, so I drew it on top of everyting (and through walls)
+#if 0
+	P_SetTarget(&flare->tracer, emerald->target);
+	flare->flags2 |= MF2_LINKDRAW;
+	flare->dispoffset = 1000;
+#endif
+}
+
 void Obj_BeginEmeraldOrbit(mobj_t *emerald, mobj_t *target, fixed_t radius, INT32 revolution_time, tic_t fuse)
 {
 	P_SetTarget(&emerald->target, target);
@@ -185,6 +250,8 @@ void Obj_BeginEmeraldOrbit(mobj_t *emerald, mobj_t *target, fixed_t radius, INT3
 
 	emerald->flags |= MF_NOGRAVITY | MF_NOCLIP | MF_NOCLIPTHING | MF_NOCLIPHEIGHT;
 	emerald->shadowscale = 0;
+
+	spawn_lens_flare(emerald);
 }
 
 void Obj_GiveEmerald(mobj_t *emerald)

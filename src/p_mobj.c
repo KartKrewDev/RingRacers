@@ -7556,6 +7556,14 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 			return false;
 		}
 		break;
+	case MT_EMERALDFLARE:
+		Obj_EmeraldFlareThink(mobj);
+
+		if (P_MobjWasRemoved(mobj))
+		{
+			return false;
+		}
+		break;
 	case MT_MONITOR:
 		Obj_MonitorThink(mobj);
 
