@@ -7816,7 +7816,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		}
 	}
 
-	if (!P_MobjWasRemoved(player->whip))
+	if (!P_MobjWasRemoved(player->whip) && (player->whip->flags2 & MF2_AMBUSH))
 	{
 		// Linear acceleration and deceleration to a peak.
 		// There is a constant total time to complete but the
@@ -10962,6 +10962,11 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 						P_SpawnFakeShadow(whip, 20);
 						whip->fuse = INSTAWHIP_DURATION;
 						player->flashing = max(player->flashing, INSTAWHIP_DURATION);
+
+						if (P_IsObjectOnGround(player->mo))
+						{
+							whip->flags2 |= MF2_AMBUSH;
+						}
 
 						if (!K_PowerUpRemaining(player, POWERUP_BADGE))
 						{
