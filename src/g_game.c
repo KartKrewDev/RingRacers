@@ -4357,7 +4357,7 @@ void G_LoadGameSettings(void)
 }
 
 #define GD_VERSIONCHECK 0xBA5ED123 // Change every major version, as usual
-#define GD_VERSIONMINOR 5 // Change every format update
+#define GD_VERSIONMINOR 6 // Change every format update
 
 typedef enum
 {
@@ -4678,10 +4678,17 @@ void G_LoadGameData(void)
 		}
 	}
 
+	UINT16 *tempmapidreferences = NULL;
+
 	numgamedatamapheaders = READUINT32(save.p);
 
 	if (numgamedatamapheaders)
 	{
+		tempmapidreferences = Z_Malloc(
+			numgamedatamapheaders * sizeof (UINT16),
+			PU_STATIC,
+			NULL
+		);
 
 		for (i = 0; i < numgamedatamapheaders; i++)
 		{
@@ -4691,6 +4698,7 @@ void G_LoadGameData(void)
 			READSTRINGL(save.p, mapname, MAXMAPLUMPNAME);
 			mapnum = G_MapNumber(mapname);
 
+			tempmapidreferences[i] = (UINT16)mapnum;
 
 			recorddata_t dummyrecord;
 
@@ -4732,6 +4740,49 @@ void G_LoadGameData(void)
 				// Finally, copy into.
 				M_Memcpy(&unloadedmap->records, &dummyrecord, sizeof(recorddata_t));
 			}
+		}
+	}
+
+	if (versionMinor > 5)
+	{
+		UINT16 numgamedatacans = READUINT32(save.p);
+
+		if (numgamedatacans != MAXCANCOLORS - 1)
+		{
+			save.p += (1 + 4) * numgamedatacans;
+		}
+		else
+		{
+			for (i = 1; i < MAXCANCOLORS; i++)
+			{
+				gamedata->spraycans[i].got = (boolean)READUINT8(save.p);
+				gamedata->spraycans[i].map = 0;
+
+				UINT32 _saveid = READUINT32(save.p);
+
+				if (_saveid >= numgamedatamapheaders)
+				{
+					//CONS_Printf("LOAD - Color %s - id %u, map 0 (invalid id)\n", skincolors[i].name, _saveid);
+					continue;
+				}
+
+				UINT16 map = tempmapidreferences[_saveid];
+				if (map >= nummapheaders || !mapheaderinfo[map])
+				{
+					//CONS_Printf("LOAD - Color %s - id %u, map 0 (unloaded header)\n", skincolors[i].name, _saveid);
+					continue;
+				}
+
+				//CONS_Printf("LOAD - Color %s - id %u, map %d\n", skincolors[i].name, _saveid, map+1);
+
+				gamedata->spraycans[i].map = map+1;
+				mapheaderinfo[map]->cachedcan = i;
+
+				numgamedatacans--; // this one was successfully placed
+			}
+
+			gamedata->allspraycansplaced = (numgamedatacans == 0);
+			//CONS_Printf("CCC - all spray cans placed? %c\n", gamedata->allspraycansplaced ? 'Y' : 'N');
 		}
 	}
 
@@ -4862,6 +4913,8 @@ void G_LoadGameData(void)
 
 	if (tempskinreferences)
 		Z_Free(tempskinreferences);
+	if (tempmapidreferences)
+		Z_Free(tempmapidreferences);
 
 	// done
 	P_SaveBufferFree(&save);
@@ -4983,12 +5036,16 @@ void G_SaveGameData(void)
 
 	for (i = 0; i < nummapheaders; i++)
 	{
+		// No spraycan attached.
+		if (mapheaderinfo[i]->cachedcan == 0
 		// It's safe to assume a level with no mapvisited will have no other data worth keeping, since you get MV_VISITED just for opening it.
-		if (!(mapheaderinfo[i]->records.mapvisited & MV_MAX))
+		&& !(mapheaderinfo[i]->records.mapvisited & MV_MAX))
 		{
+			mapheaderinfo[i]->_saveid = UINT32_MAX;
 			continue;
 		}
 
+		mapheaderinfo[i]->_saveid = numgamedatamapheaders;
 		numgamedatamapheaders++;
 	}
 
@@ -5010,6 +5067,9 @@ void G_SaveGameData(void)
 	}
 
 	length += 4 + (numgamedatamapheaders * (MAXMAPLUMPNAME+1+4+4));
+
+
+	length += 4 + ((MAXCANCOLORS - 1) * (1 + 4));
 
 
 	UINT32 numgamedatacups = 0;
@@ -5206,7 +5266,8 @@ void G_SaveGameData(void)
 
 		for (i = 0; i < nummapheaders; i++)
 		{
-			if (!(mapheaderinfo[i]->records.mapvisited & MV_MAX))
+			if (mapheaderinfo[i]->cachedcan == 0
+			&& !(mapheaderinfo[i]->records.mapvisited & MV_MAX))
 				continue;
 
 			WRITESTRINGL(save.p, mapheaderinfo[i]->lumpname, MAXMAPLUMPNAME);
@@ -5247,6 +5308,27 @@ void G_SaveGameData(void)
 		}
 	}
 
+	WRITEUINT32(save.p, MAXCANCOLORS - 1); // 4
+
+	// (MAXCANCOLORS - 1) * (1 + 4)
+
+	for (i = 1; i < MAXCANCOLORS; i++)
+	{
+		WRITEUINT8(save.p, gamedata->spraycans[i].got);
+
+		UINT32 _saveid = UINT32_MAX;
+
+		UINT16 map = gamedata->spraycans[i].map;
+
+		if (map > 0 && map <= nummapheaders && mapheaderinfo[map - 1])
+		{
+			_saveid = mapheaderinfo[map - 1]->_saveid;
+		}
+
+		//CONS_Printf("SAVE - Color %s - id %u, map %d\n", skincolors[i].name, _saveid, map);
+
+		WRITEUINT32(save.p, _saveid);
+	}
 
 	WRITEUINT32(save.p, numgamedatacups); // 4
 

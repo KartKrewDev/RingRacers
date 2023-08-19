@@ -216,6 +216,13 @@ void clear_levels(void)
 		}
 	}
 
+	if (gamedata)
+	{
+		UINT16 i;
+		for (i = 1; i < MAXCANCOLORS; i++)
+			gamedata->spraycans[i].map = 0;
+	}
+
 	// Exit the current gamemap as a safeguard
 	if (Playing())
 		COM_BufAddText("exitgame"); // Command_ExitGame_f() but delayed

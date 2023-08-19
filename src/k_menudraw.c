@@ -6049,6 +6049,26 @@ challengedesc:
 static void M_DrawMapMedals(INT32 mapnum, INT32 x, INT32 y)
 {
 	UINT8 lasttype = UINT8_MAX, curtype;
+
+	boolean start = false;
+
+	if (mapheaderinfo[mapnum]->cachedcan != 0 && mapheaderinfo[mapnum]->cachedcan < MAXCANCOLORS)
+	{
+		V_DrawSmallMappedPatch(x, y, 0, W_CachePatchName("GOTITA", PU_CACHE),
+			R_GetTranslationColormap(TC_RAINBOW, mapheaderinfo[mapnum]->cachedcan, GTC_MENUCACHE));
+		//V_DrawRightAlignedThinString(x - 2, y, 0, skincolors[mapheaderinfo[mapnum]->cachedcan].name);
+		x -= 8;
+
+		start = true;
+	}
+
+	// Shift over if emblem is of a different discipline
+	if (start)
+		x -= 4;
+
+	// M_GetLevelEmblems is ONE-indexed, urgh
+	mapnum++;
+
 	emblem_t *emblem = M_GetLevelEmblems(mapnum);
 
 	while (emblem)
@@ -6091,7 +6111,7 @@ static void M_DrawMapMedals(INT32 mapnum, INT32 x, INT32 y)
 
 		if (gamedata->collected[emblem-emblemlocations])
 			V_DrawSmallMappedPatch(x, y, 0, W_CachePatchName(M_GetEmblemPatch(emblem, false), PU_CACHE),
-			                       R_GetTranslationColormap(TC_DEFAULT, M_GetEmblemColor(emblem), GTC_MENUCACHE));
+				R_GetTranslationColormap(TC_DEFAULT, M_GetEmblemColor(emblem), GTC_MENUCACHE));
 		else
 			V_DrawSmallScaledPatch(x, y, 0, W_CachePatchName("NEEDIT", PU_CACHE));
 
@@ -6246,7 +6266,7 @@ static void M_DrawStatsMaps(void)
 			}
 		}
 
-		M_DrawMapMedals(mnum+1, medalspos - 8, y);
+		M_DrawMapMedals(mnum, medalspos - 8, y);
 
 		if (mapheaderinfo[mnum]->menuttl[0])
 		{

@@ -531,6 +531,9 @@ struct mapheader_t
 	UINT8 precutscenenum;				///< Cutscene number to play BEFORE a level starts.
 	UINT8 cutscenenum;					///< Cutscene number to use, 0 for none.
 
+	UINT32 _saveid;						///< Purely assistive in gamedata save processes
+	UINT16 cachedcan;					///< Cached Spraycan ID
+
 	// Lua information
 	UINT8 numCustomOptions;				///< Internal. For Lua custom value support.
 	customoption_t *customopts;			///< Custom options. Allocated dynamically for space reasons. Be careful.

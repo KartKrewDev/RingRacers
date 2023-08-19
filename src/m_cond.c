@@ -621,14 +621,23 @@ void M_ClearStats(void)
 
 void M_ClearSecrets(void)
 {
-	INT32 i;
+	memset(gamedata->collected, 0, sizeof(gamedata->collected));
+	memset(gamedata->unlocked, 0, sizeof(gamedata->unlocked));
+	memset(gamedata->unlockpending, 0, sizeof(gamedata->unlockpending));
+	if (!dedicated)
+		memset(netUnlocked, 0, sizeof(netUnlocked));
+	memset(gamedata->achieved, 0, sizeof(gamedata->achieved));
 
-	for (i = 0; i < MAXEMBLEMS; ++i)
-		gamedata->collected[i] = false;
-	for (i = 0; i < MAXUNLOCKABLES; ++i)
-		gamedata->unlocked[i] = gamedata->unlockpending[i] = netUnlocked[i] = false;
-	for (i = 0; i < MAXCONDITIONSETS; ++i)
-		gamedata->achieved[i] = false;
+	gamedata->allspraycansplaced = false;
+	memset(gamedata->spraycans, 0, sizeof(gamedata->spraycans));
+
+	INT32 i;
+	for (i = 0; i < nummapheaders; i++)
+	{
+		if (!mapheaderinfo[i])
+			continue;
+		mapheaderinfo[i]->cachedcan = 0;
+	}
 
 	Z_Free(gamedata->challengegrid);
 	gamedata->challengegrid = NULL;
@@ -640,9 +649,174 @@ void M_ClearSecrets(void)
 	gamedata->chaokeys = 3; // Start with 3 !!
 }
 
+// For lack of a better idea on where to put this
+static void M_Shuffle_UINT16(UINT16 *list, size_t len)
+{
+	size_t i;
+	UINT16 temp;
+	while (--len > 1) // no need to swap on ==
+	{
+		i = M_RandomKey(len);
+		temp = list[i];
+		list[i] = list[len];
+		list[len] = temp;
+	}
+}
+
+static void M_AssignSpraycans(void)
+{
+	// Very convenient I'm programming this on
+	// the release date of "Bomb Rush Cyberfunk".
+	// ~toast 180823 (committed a day later)
+
+	if (gamedata->allspraycansplaced)
+		return;
+
+	// Init ordered list of skincolors
+	UINT16 tempcanlist[MAXCANCOLORS];
+	size_t listlen = 0;
+
+	// Todo one of these should be a freebie
+	UINT16 prependlist[] =
+	{
+		SKINCOLOR_RED,
+		SKINCOLOR_ORANGE,
+		SKINCOLOR_YELLOW,
+		SKINCOLOR_GREEN,
+		SKINCOLOR_BLUE,
+		SKINCOLOR_PURPLE,
+		0
+	};
+
+	UINT16 i;
+
+	for (i = 0; prependlist[i]; i++)
+	{
+		if (gamedata->spraycans[prependlist[i]].map > 0
+		&& gamedata->spraycans[prependlist[i]].map <= nummapheaders)
+			continue;
+
+		CONS_Printf("DDD - Prepending %d\n", prependlist[i]);
+
+		tempcanlist[listlen] = prependlist[i];
+		gamedata->spraycans[prependlist[i]].got = 2; // invalid set to detect in below loop, rather than having to iterate over prependlist again
+		listlen++;
+	}
+
+	size_t prepend = listlen;
+
+	for (i = 1; i < MAXCANCOLORS; i++)
+	{
+		if (gamedata->spraycans[i].map > 0
+		&& gamedata->spraycans[i].map <= nummapheaders)
+			continue;
+
+		if (gamedata->spraycans[i].got == 2)
+		{
+			// re-make valid, reject duplicating prepended
+			gamedata->spraycans[i].got = false;
+			continue;
+		}
+
+		CONS_Printf("DDD - Adding %d\n", i);
+
+		tempcanlist[listlen] = i;
+		listlen++;
+	}
+
+	if (!listlen)
+		goto cansdone;
+
+	if (prepend > 0)
+	{
+		// Swap the prepend for random order
+		M_Shuffle_UINT16(tempcanlist, prepend);
+	}
+
+	if (listlen > prepend)
+	{
+		// Swap everything else for random order
+		M_Shuffle_UINT16(tempcanlist + prepend, listlen - prepend);
+	}
+
+	i = 0;
+
+	cupheader_t *cup;
+
+	UINT16 level;
+
+	for (cup = kartcupheaders; cup; cup = cup->next)
+	{
+		UINT8 j;
+		for (j = 0; j < cup->numlevels; j++)
+		{
+			level = cup->cachedlevels[j];
+
+			if (level > nummapheaders)
+				continue;
+
+			if (mapheaderinfo[level]->cachedcan != 0)
+				continue;
+
+			gamedata->spraycans[tempcanlist[i]].map = level + 1;
+			mapheaderinfo[level]->cachedcan = tempcanlist[i];
+
+			if (++i < listlen)
+				continue;
+
+			goto cansdone;
+		}
+	}
+
+	for (level = 0; level < nummapheaders; level++)
+	{
+		if (!mapheaderinfo[level]
+		|| !(mapheaderinfo[level]->typeoflevel & TOL_RACE)
+		|| mapheaderinfo[level]->cachedcan != 0)
+			continue;
+
+		gamedata->spraycans[tempcanlist[i]].map = level + 1;
+		mapheaderinfo[level]->cachedcan = tempcanlist[i];
+
+		if (++i < listlen)
+			continue;
+
+		goto cansdone;
+	}
+
+cansdone:
+
+#ifdef PARANOIA
+	for (i = 1; i < MAXCANCOLORS; i++)
+	{
+		if (gamedata->spraycans[i].map == 0)
+			I_Error("CANPROBLEM - BAD MAP FOR CAN %d\n", i);
+		if (gamedata->spraycans[i].map > nummapheaders)
+			I_Error("CANPROBLEM - TOO BIG MAP FOR CAN %d\n", i);
+		if (mapheaderinfo[gamedata->spraycans[i].map-1]->cachedcan != i)
+			I_Error("CANPROBLEM - MAP AND CAN DISAGREE FOR %d (%d)\n", i, mapheaderinfo[gamedata->spraycans[i].map-1]->cachedcan);
+	}
+
+	for (i = 0; i < nummapheaders; i++)
+	{
+		if (!mapheaderinfo[i] || mapheaderinfo[i]->cachedcan == 0)
+			continue;
+		if (mapheaderinfo[i]->cachedcan > MAXCANCOLORS)
+			I_Error("MAPPROBLEM - BAD CAN FOR MAP %d\n", i);
+		if (gamedata->spraycans[mapheaderinfo[i]->cachedcan].map-1 != i)
+			I_Error("MAPPROBLEM - CAN AND MAP DISAGREE FOR %d (%d)\n", i, gamedata->spraycans[mapheaderinfo[i]->cachedcan].map-1);
+	}
+#endif
+
+	gamedata->allspraycansplaced = true;
+}
+
 void M_FinaliseGameData(void)
 {
 	//M_PopulateChallengeGrid(); -- This can be done lazily when we actually need it
+
+	// Place the spraycans, which CAN'T be done lazily.
+	M_AssignSpraycans();
 
 	// Don't consider loaded until it's a success!
 	// It used to do this much earlier, but this would cause the gamedata

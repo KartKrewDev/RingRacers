@@ -251,6 +251,12 @@ typedef enum {
 	GDGT_MAX
 } roundsplayed_t;
 
+struct candata_t
+{
+	UINT16 map;
+	boolean got;
+};
+
 // GAMEDATA STRUCTURE
 // Everything that would get saved in gamedata.dat
 struct gamedata_t
@@ -271,6 +277,10 @@ struct gamedata_t
 	// UNLOCKABLES UNLOCKED
 	boolean unlocked[MAXUNLOCKABLES];
 	boolean unlockpending[MAXUNLOCKABLES];
+
+	// SPRAYCANS COLLECTED
+	boolean allspraycansplaced;
+	candata_t spraycans[MAXCANCOLORS];
 
 	// CHALLENGE GRID
 	UINT16 challengegridwidth;

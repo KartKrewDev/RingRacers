@@ -460,6 +460,8 @@ static void P_ClearSingleMapHeaderInfo(INT16 num)
 	mapheaderinfo[num]->justPlayed = 0;
 	mapheaderinfo[num]->anger = 0;
 
+	mapheaderinfo[num]->cachedcan = 0;
+
 	mapheaderinfo[num]->customopts = NULL;
 	mapheaderinfo[num]->numCustomOptions = 0;
 }
