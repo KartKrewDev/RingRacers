@@ -1059,6 +1059,14 @@ boolean M_CheckCondition(condition_t *cn, player_t *player)
 			return false;
 		case UC_PASSWORD:
 			return (cn->stringvar == NULL);
+		case UC_SPRAYCAN:
+		{
+			if (cn->requirement <= 0
+			|| cn->requirement >= MAXCANCOLORS)
+				return false;
+
+			return gamedata->spraycans[cn->requirement].got;
+		}
 
 		// Just for string building
 		case UC_AND:
@@ -1511,6 +1519,24 @@ static const char *M_GetConditionString(condition_t *cn)
 			return NULL;
 		case UC_PASSWORD:
 			return "enter a secret password";
+		case UC_SPRAYCAN:
+		{
+			if (cn->requirement <= 0
+			|| cn->requirement >= MAXCANCOLORS)
+				return va("INVALID SPRAYCAN COLOR \"%d\"", cn->requirement);
+
+			INT32 checkLevel = gamedata->spraycans[cn->requirement].map - 1;
+
+			if (checkLevel < 0 || checkLevel >= nummapheaders || !mapheaderinfo[checkLevel])
+				return va("INVALID SPRAYCAN MAP \"%d:%d\"", cn->requirement, checkLevel);
+
+			title = BUILDCONDITIONTITLE(checkLevel);
+
+			work = va("%s: grab the spraycan", title);
+
+			Z_Free(title);
+			return work;
+		}
 
 		case UC_AND:
 			return "&";

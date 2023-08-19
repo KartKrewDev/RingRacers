@@ -2620,6 +2620,12 @@ static void readcondition(UINT16 set, UINT32 id, char *word2)
 		stringvar = Z_StrDup(params[1]);
 		re = -1;
 	}
+	else if (fastcmp(params[0], "SPRAYCAN"))
+	{
+		PARAMCHECK(1);
+		ty = UC_SPRAYCAN;
+		re = get_skincolor(params[1]);
+	}
 	else if ((offset=0) || fastcmp(params[0], "AND")
 	||        (++offset && fastcmp(params[0], "COMMA")))
 	{

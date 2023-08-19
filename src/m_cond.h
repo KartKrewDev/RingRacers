@@ -58,6 +58,8 @@ typedef enum
 
 	UC_PASSWORD,		// Type in something funny
 
+	UC_SPRAYCAN,		// Grab a spraycan
+
 	 // Just for string building
 	UC_AND,
 	UC_COMMA,
