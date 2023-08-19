@@ -7822,9 +7822,9 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		// There is a constant total time to complete but the
 		// acceleration and deceleration times can be made
 		// asymmetrical.
-		const fixed_t hop = 16 * mapobjectscale;
+		const fixed_t hop = 24 * mapobjectscale;
 		const INT32 duration = 12;
-		const INT32 mid = (duration / 2) - 2;
+		const INT32 mid = (duration / 2) - 1;
 		const INT32 t = (duration - mid) - player->whip->fuse;
 
 		player->cameraOffset = hop - (abs(t * hop) / (t < 0 ? mid : duration - mid));
