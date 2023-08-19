@@ -504,6 +504,7 @@ struct player_t
 	fixed_t deltaviewheight;
 	// bounded/scaled total momentum.
 	fixed_t bob;
+	fixed_t cameraOffset;
 
 	skybox_t skybox;
 
