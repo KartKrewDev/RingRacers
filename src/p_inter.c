@@ -596,26 +596,22 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 		// Secret emblem thingy
 		case MT_EMBLEM:
 			{
-				boolean gotcollected = false;
-
 				if (!P_CanPickupEmblem(player, special->health - 1))
 					return;
 
-				if (P_IsLocalPlayer(player) && !gamedata->collected[special->health-1])
+				if (P_IsLocalPlayer(player))
 				{
-					gamedata->collected[special->health-1] = gotcollected = true;
-					if (!M_UpdateUnlockablesAndExtraEmblems(true, true))
-						S_StartSound(NULL, sfx_ncitem);
-					gamedata->deferredsave = true;
+					if (!gamedata->collected[special->health-1])
+					{
+						gamedata->collected[special->health-1] = true;
+						if (!M_UpdateUnlockablesAndExtraEmblems(true, true))
+							S_StartSound(NULL, sfx_ncitem);
+						gamedata->deferredsave = true;
+					}
 				}
 
-				if (netgame)
-				{
-					// Don't delete the object in netgames, just fade it.
-					return;
-				}
-
-				break;
+				// Don't delete the object, just fade it.
+				return;
 			}
 
 		// CTF Flags
