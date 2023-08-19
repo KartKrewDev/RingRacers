@@ -164,6 +164,41 @@ void Obj_EmeraldThink(mobj_t *emerald)
 	K_BattleOvertimeKiller(emerald);
 }
 
+static mobj_t *spawn_glow(mobj_t *flare)
+{
+	mobj_t *targ = flare->target;
+	mobj_t *x = P_SpawnGhostMobj(targ);
+
+	x->old_x = targ->old_x;
+	x->old_y = targ->old_y;
+	x->old_z = targ->old_z;
+
+	x->fuse = 2; // this actually does last one tic
+	x->extravalue1 = 1;
+	x->extravalue2 = 0;
+
+	x->renderflags = RF_ADD | RF_ALWAYSONTOP;
+
+	// FIXME: linkdraw doesn't work consistently, so I drew it on top of everyting (and through walls)
+#if 0
+	P_SetTarget(&x->tracer, targ);
+	x->flags2 |= MF2_LINKDRAW;
+	x->dispoffset = 1000;
+#endif
+
+	return x;
+}
+
+static mobj_t *spawn_glow_colorize(mobj_t *flare)
+{
+	mobj_t *x = spawn_glow(flare);
+
+	x->color = flare->color;
+	x->colorized = true;
+
+	return x;
+}
+
 void Obj_EmeraldFlareThink(mobj_t *flare)
 {
 	const INT32 kExtraTics = 3;
@@ -206,6 +241,14 @@ void Obj_EmeraldFlareThink(mobj_t *flare)
 
 	// Focus on center of player.
 	P_SetOrigin(flare, flare->target->x, flare->target->y, center_of(flare->target));
+
+	if (leveltime & 1)
+	{
+		// Stacked for more exposure
+		spawn_glow_colorize(flare);
+		spawn_glow(flare);
+		spawn_glow(flare);
+	}
 }
 
 static void spawn_lens_flare(mobj_t *emerald)
