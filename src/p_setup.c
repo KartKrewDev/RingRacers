@@ -123,6 +123,7 @@ unsigned char mapmd5[16];
 //
 
 boolean udmf;
+static INT32 udmf_version;
 size_t numvertexes, numsegs, numsectors, numsubsectors, numnodes, numlines, numsides, nummapthings;
 size_t num_orig_vertexes;
 vertex_t *vertexes;
@@ -1407,8 +1408,18 @@ static boolean TextmapCount(size_t size)
 
 	// Check if namespace is valid.
 	tkn = M_TokenizerRead(0);
-	if (!fastcmp(tkn, "srb2")) // Would like to use "ringracers", but it turns off features in UZB.
-		CONS_Alert(CONS_WARNING, "Invalid namespace '%s', only 'srb2' is supported.\n", tkn);
+	if (!fastcmp(tkn, "ringracers"))
+		CONS_Alert(CONS_WARNING, "Invalid namespace '%s', only 'ringracers' is supported. This map may have issues loading.\n", tkn);
+
+	// Check for version
+	tkn = M_TokenizerRead(0);
+	if (fastcmp(tkn, "version"))
+	{
+		tkn = M_TokenizerRead(0);
+		udmf_version = atoi(tkn);
+		if (udmf_version > UDMF_CURRENT_VERSION)
+			CONS_Alert(CONS_WARNING, "Map is intended for future UDMF version '%d', current supported version is '%d'. This map may have issues loading.\n", udmf_version, UDMF_CURRENT_VERSION);
+	}
 
 	while ((tkn = M_TokenizerRead(0)) && M_TokenizerGetEndPos() < size)
 	{
@@ -1954,7 +1965,7 @@ static void ParseTextmapThingParameter(UINT32 i, const char *param, const char *
 		mapthings[i].special = atol(val);
 	else if (fastcmp(param, "foflayer"))
 		mapthings[i].layer = atol(val);
-	else if (fastncmp(param, "stringarg", 9) && strlen(param) > 9)
+	else if (fastncmp(param, "stringthingarg", 9) && strlen(param) > 9)
 	{
 		size_t argnum = atol(param + 9);
 		if (argnum >= NUM_MAPTHING_STRINGARGS)
@@ -1964,14 +1975,14 @@ static void ParseTextmapThingParameter(UINT32 i, const char *param, const char *
 		M_Memcpy(mapthings[i].stringargs[argnum], val, len);
 		mapthings[i].stringargs[argnum][len] = '\0';
 	}
-	else if (fastncmp(param, "arg", 3) && strlen(param) > 3)
+	else if (fastncmp(param, "thingarg", 3) && strlen(param) > 3)
 	{
 		size_t argnum = atol(param + 3);
 		if (argnum >= NUM_MAPTHING_ARGS)
 			return;
 		mapthings[i].args[argnum] = atol(val);
 	}
-	else if (fastncmp(param, "scriptstringarg", 15) && strlen(param) > 15)
+	else if (fastncmp(param, "stringarg", 15) && strlen(param) > 15)
 	{
 		size_t argnum = atol(param + 15);
 		if (argnum >= NUM_SCRIPT_STRINGARGS)
@@ -1981,7 +1992,7 @@ static void ParseTextmapThingParameter(UINT32 i, const char *param, const char *
 		M_Memcpy(mapthings[i].script_stringargs[argnum], val, len);
 		mapthings[i].script_stringargs[argnum][len] = '\0';
 	}
-	else if (fastncmp(param, "scriptarg", 9) && strlen(param) > 9)
+	else if (fastncmp(param, "arg", 9) && strlen(param) > 9)
 	{
 		size_t argnum = atol(param + 9);
 		if (argnum >= NUM_SCRIPT_ARGS)
@@ -2131,16 +2142,16 @@ static void P_WriteTextmapThing(FILE *f, mapthing_t *wmapthings, size_t i, size_
 		fprintf(f, "special = %d;\n", wmapthings[i].special);
 	for (j = 0; j < NUM_SCRIPT_ARGS; j++)
 		if (wmapthings[i].script_args[j] != 0)
-			fprintf(f, "scriptarg%s = %d;\n", sizeu1(j), wmapthings[i].script_args[j]);
+			fprintf(f, "arg%s = %d;\n", sizeu1(j), wmapthings[i].script_args[j]);
 	for (j = 0; j < NUM_SCRIPT_STRINGARGS; j++)
 		if (mapthings[i].script_stringargs[j])
-			fprintf(f, "scriptstringarg%s = \"%s\";\n", sizeu1(j), mapthings[i].script_stringargs[j]);
+			fprintf(f, "stringarg%s = \"%s\";\n", sizeu1(j), mapthings[i].script_stringargs[j]);
 	for (j = 0; j < NUM_MAPTHING_ARGS; j++)
 		if (wmapthings[i].args[j] != 0)
-			fprintf(f, "arg%s = %d;\n", sizeu1(j), wmapthings[i].args[j]);
+			fprintf(f, "thingarg%s = %d;\n", sizeu1(j), wmapthings[i].args[j]);
 	for (j = 0; j < NUM_MAPTHING_STRINGARGS; j++)
 		if (mapthings[i].stringargs[j])
-			fprintf(f, "stringarg%s = \"%s\";\n", sizeu1(j), mapthings[i].stringargs[j]);
+			fprintf(f, "stringthingarg%s = \"%s\";\n", sizeu1(j), mapthings[i].stringargs[j]);
 	if (wmapthings[i].user.length > 0)
 	{
 		for (j = 0; j < wmapthings[i].user.length; j++)
@@ -2495,7 +2506,8 @@ static void P_WriteTextmap(void)
 		}
 	}
 
-	fprintf(f, "namespace = \"srb2\";\n");
+	fprintf(f, "namespace = \"ringracers\";\n");
+	fprintf(f, "version = %d;\n", UDMF_CURRENT_VERSION);
 	for (i = k = 0; i < nummapthings; i++)
 	{
 		if (wmapthings[i].type == mobjinfo[MT_WAYPOINT].doomednum
@@ -7409,7 +7421,9 @@ static boolean P_LoadMapFromFile(void)
 {
 	virtlump_t *textmap = vres_Find(curmapvirt, "TEXTMAP");
 	size_t i;
+
 	udmf = textmap != NULL;
+	udmf_version = 0;
 
 	if (!P_LoadMapData(curmapvirt))
 		return false;
@@ -7425,6 +7439,40 @@ static boolean P_LoadMapFromFile(void)
 
 	if (!udmf)
 		P_ConvertBinaryMap();
+
+	if (udmf_version < 1)
+	{
+		// version 0 is both binary & older versionless UDMF maps
+		for (i = 0; i < nummapthings; i++)
+		{
+			size_t j;
+
+			for (j = 0; j < min(NUM_MAPTHING_ARGS, NUM_SCRIPT_ARGS); j++)
+			{
+				mapthings[i].args[j] = mapthings[i].script_args[j];
+			}
+
+			for (j = 0; j < min(NUM_MAPTHING_STRINGARGS, NUM_SCRIPT_STRINGARGS); j++)
+			{
+				size_t len = 0;
+
+				if (mapthings[i].script_stringargs[j])
+				{
+					len = strlen(mapthings[i].script_stringargs[j]);
+				}
+
+				if (len == 0)
+				{
+					Z_Free(mapthings[i].stringargs[j]);
+					mapthings[i].stringargs[j] = NULL;
+					continue;
+				}
+
+				mapthings[i].stringargs[j] = Z_Realloc(mapthings[i].stringargs[j], len + 1, PU_LEVEL, NULL);
+				M_Memcpy(mapthings[i].stringargs[j], mapthings[i].script_stringargs[j], len + 1);
+			}
+		}
+	}
 
 	// Copy relevant map data for NetArchive purposes.
 	spawnsectors = Z_Calloc(numsectors * sizeof(*sectors), PU_LEVEL, NULL);
