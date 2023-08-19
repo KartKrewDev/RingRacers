@@ -464,9 +464,14 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 			if (toucher->hitlag > 0)
 				return;
 
-			player->emeralds |= special->extravalue1;
-			K_CheckEmeralds(player);
-			break;
+			// Emerald will now orbit the player
+
+			{
+				const tic_t orbit = 2*TICRATE;
+				Obj_BeginEmeraldOrbit(special, toucher, toucher->radius, orbit, orbit * 20);
+			}
+
+			return;
 		case MT_SPECIAL_UFO:
 			if (Obj_UFOEmeraldCollect(special, toucher) == false)
 			{

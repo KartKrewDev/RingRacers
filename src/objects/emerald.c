@@ -4,6 +4,7 @@
 #include "../m_random.h"
 #include "../p_local.h"
 #include "../r_main.h"
+#include "../s_sound.h"
 #include "../tables.h"
 
 #define emerald_type(o) ((o)->extravalue1)
@@ -12,6 +13,11 @@
 #define emerald_start_radius(o) ((o)->movecount)
 #define emerald_target_radius(o) ((o)->extravalue2)
 #define emerald_z_shift(o) ((o)->reactiontime)
+#define emerald_scale_rate(o) ((o)->movefactor)
+
+// Think of this like EMERALD_SPEED_UP / EMERALD_SPEED_UP_RATE
+#define EMERALD_SPEED_UP (1) // speed up by this much...
+#define EMERALD_SPEED_UP_RATE (1) // ...every N tics
 
 void Obj_SpawnEmeraldSparks(mobj_t *mobj)
 {
@@ -60,7 +66,10 @@ static fixed_t get_current_radius(mobj_t *emerald)
 
 static fixed_t get_bob(mobj_t *emerald)
 {
-	angle_t phase = get_elapsed(emerald) * ((ANGLE_MAX / get_revolve_time(emerald)) / 2);
+	// With a fuse, the emerald experiences "speed up" and the
+	// scale also shrinks. All of these these effects caused
+	// the bob phase shift to look disproportioned.
+	angle_t phase = emerald->fuse ? 0 : get_elapsed(emerald) * ((ANGLE_MAX / get_revolve_time(emerald)) / 2);
 
 	return FixedMul(30 * mapobjectscale, FSIN(emerald->angle + phase));
 }
@@ -77,6 +86,27 @@ static fixed_t get_target_z(mobj_t *emerald)
 	return center_of(emerald->target) + get_bob(emerald) + shift;
 }
 
+static void speed_up(mobj_t *emerald)
+{
+	// Revolution time shouldn't decrease below zero.
+	if (emerald_revolution_time(emerald) <= EMERALD_SPEED_UP)
+	{
+		return;
+	}
+
+	if (get_elapsed(emerald) % EMERALD_SPEED_UP_RATE)
+	{
+		return;
+	}
+
+	// Decrease the fuse proportionally to the revolution time.
+	const fixed_t ratio = (emerald->fuse * FRACUNIT) / emerald_revolution_time(emerald);
+
+	emerald_revolution_time(emerald) -= EMERALD_SPEED_UP;
+
+	emerald->fuse = max(1, (emerald_revolution_time(emerald) * ratio) / FRACUNIT);
+}
+
 static void Obj_EmeraldOrbitPlayer(mobj_t *emerald)
 {
 	fixed_t r = get_current_radius(emerald);
@@ -91,6 +121,13 @@ static void Obj_EmeraldOrbitPlayer(mobj_t *emerald)
 	);
 
 	emerald->angle += ANGLE_MAX / get_revolve_time(emerald);
+
+	if (emerald->fuse > 0)
+	{
+		speed_up(emerald);
+
+		P_InstaScale(emerald, emerald->fuse * emerald_scale_rate(emerald));
+	}
 }
 
 void Obj_EmeraldThink(mobj_t *emerald)
@@ -126,7 +163,7 @@ void Obj_EmeraldThink(mobj_t *emerald)
 	K_BattleOvertimeKiller(emerald);
 }
 
-void Obj_BeginEmeraldOrbit(mobj_t *emerald, mobj_t *target, fixed_t radius, INT32 revolution_time)
+void Obj_BeginEmeraldOrbit(mobj_t *emerald, mobj_t *target, fixed_t radius, INT32 revolution_time, tic_t fuse)
 {
 	P_SetTarget(&emerald->target, target);
 
@@ -136,9 +173,36 @@ void Obj_BeginEmeraldOrbit(mobj_t *emerald, mobj_t *target, fixed_t radius, INT3
 	emerald_start_radius(emerald) = R_PointToDist2(target->x, target->y, emerald->x, emerald->y);
 	emerald_target_radius(emerald) = radius;
 
+	emerald->fuse = fuse;
+
+	if (fuse)
+	{
+		emerald_scale_rate(emerald) = emerald->scale / fuse;
+	}
+
 	emerald->angle = R_PointToAngle2(target->x, target->y, emerald->x, emerald->y);
 	emerald_z_shift(emerald) = emerald->z - get_target_z(emerald);
 
 	emerald->flags |= MF_NOGRAVITY | MF_NOCLIP | MF_NOCLIPTHING | MF_NOCLIPHEIGHT;
 	emerald->shadowscale = 0;
+}
+
+void Obj_GiveEmerald(mobj_t *emerald)
+{
+	if (P_MobjWasRemoved(emerald->target))
+	{
+		return;
+	}
+
+	player_t *player = emerald->target->player;
+
+	if (!player)
+	{
+		return;
+	}
+
+	player->emeralds |= emerald_type(emerald);
+	K_CheckEmeralds(player);
+
+	S_StartSound(emerald->target, emerald->info->deathsound);
 }
