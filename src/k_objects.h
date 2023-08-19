@@ -207,6 +207,7 @@ void Obj_SneakerPanelCollide(mobj_t *pad, mobj_t *mo);
 /* Emerald */
 void Obj_SpawnEmeraldSparks(mobj_t *source);
 void Obj_EmeraldThink(mobj_t *emerald);
+void Obj_BeginEmeraldOrbit(mobj_t *emerald, mobj_t *target, fixed_t radius, INT32 revolution_time);
 
 #ifdef __cplusplus
 } // extern "C"

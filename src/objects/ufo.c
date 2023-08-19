@@ -883,7 +883,7 @@ boolean Obj_UFOEmeraldCollect(mobj_t *ufo, mobj_t *toucher)
 		const int kScaleTics = 16;
 
 		// Emerald will now orbit the player
-		P_SetTarget(&emerald->target, toucher);
+		Obj_BeginEmeraldOrbit(emerald, toucher, 100 * mapobjectscale, 64);
 
 		// Scale down because the emerald is huge
 		// Super Emerald needs to be scaled down further
