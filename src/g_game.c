@@ -4680,53 +4680,58 @@ void G_LoadGameData(void)
 
 	numgamedatamapheaders = READUINT32(save.p);
 
-	for (i = 0; i < numgamedatamapheaders; i++)
+	if (numgamedatamapheaders)
 	{
-		char mapname[MAXMAPLUMPNAME];
-		INT16 mapnum;
 
-		READSTRINGL(save.p, mapname, MAXMAPLUMPNAME);
-		mapnum = G_MapNumber(mapname);
-
-		recorddata_t dummyrecord;
-
-		dummyrecord.mapvisited = READUINT8(save.p);
-		dummyrecord.time = (tic_t)READUINT32(save.p);
-		dummyrecord.lap  = (tic_t)READUINT32(save.p);
-
-		if (mapnum < nummapheaders && mapheaderinfo[mapnum])
+		for (i = 0; i < numgamedatamapheaders; i++)
 		{
-			// Valid mapheader, time to populate with record data.
+			char mapname[MAXMAPLUMPNAME];
+			UINT16 mapnum;
 
-			dummyrecord.mapvisited &= MV_MAX;
-			M_Memcpy(&mapheaderinfo[mapnum]->records, &dummyrecord, sizeof(recorddata_t));
-		}
-		else if (
-			((dummyrecord.mapvisited & MV_PERSISTUNLOADED) != 0
-				&& (dummyrecord.mapvisited & MV_BEATEN) != 0)
-			|| dummyrecord.time != 0
-			|| dummyrecord.lap != 0
-		)
-		{
-			// Invalid, but we don't want to lose all the juicy statistics.
-			// Instead, update a FILO linked list of "unloaded mapheaders".
+			READSTRINGL(save.p, mapname, MAXMAPLUMPNAME);
+			mapnum = G_MapNumber(mapname);
 
-			unloaded_mapheader_t *unloadedmap =
-				Z_Malloc(
-					sizeof(unloaded_mapheader_t),
-					PU_STATIC, NULL
-				);
 
-			// Establish properties, for later retrieval on file add.
-			unloadedmap->lumpname = Z_StrDup(mapname);
-			unloadedmap->lumpnamehash = quickncasehash(unloadedmap->lumpname, MAXMAPLUMPNAME);
+			recorddata_t dummyrecord;
 
-			// Insert at the head, just because it's convenient.
-			unloadedmap->next = unloadedmapheaders;
-			unloadedmapheaders = unloadedmap;
+			dummyrecord.mapvisited = READUINT8(save.p);
+			dummyrecord.time = (tic_t)READUINT32(save.p);
+			dummyrecord.lap  = (tic_t)READUINT32(save.p);
 
-			// Finally, copy into.
-			M_Memcpy(&unloadedmap->records, &dummyrecord, sizeof(recorddata_t));
+			if (mapnum < nummapheaders && mapheaderinfo[mapnum])
+			{
+				// Valid mapheader, time to populate with record data.
+
+				dummyrecord.mapvisited &= MV_MAX;
+				M_Memcpy(&mapheaderinfo[mapnum]->records, &dummyrecord, sizeof(recorddata_t));
+			}
+			else if (
+				((dummyrecord.mapvisited & MV_PERSISTUNLOADED) != 0
+					&& (dummyrecord.mapvisited & MV_BEATEN) != 0)
+				|| dummyrecord.time != 0
+				|| dummyrecord.lap != 0
+			)
+			{
+				// Invalid, but we don't want to lose all the juicy statistics.
+				// Instead, update a FILO linked list of "unloaded mapheaders".
+
+				unloaded_mapheader_t *unloadedmap =
+					Z_Malloc(
+						sizeof(unloaded_mapheader_t),
+						PU_STATIC, NULL
+					);
+
+				// Establish properties, for later retrieval on file add.
+				unloadedmap->lumpname = Z_StrDup(mapname);
+				unloadedmap->lumpnamehash = quickncasehash(unloadedmap->lumpname, MAXMAPLUMPNAME);
+
+				// Insert at the head, just because it's convenient.
+				unloadedmap->next = unloadedmapheaders;
+				unloadedmapheaders = unloadedmap;
+
+				// Finally, copy into.
+				M_Memcpy(&unloadedmap->records, &dummyrecord, sizeof(recorddata_t));
+			}
 		}
 	}
 
