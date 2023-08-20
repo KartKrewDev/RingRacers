@@ -785,7 +785,7 @@ static void COM_CEcho_f(void)
 
 	cechotext[sizeof(cechotext) - 1] = '\0';
 
-	HU_DoCEcho(cechotext);
+	HU_DoTitlecardCEcho(NULL, cechotext, true);
 }
 
 /** Sets drawing flags for the CECHO command.
