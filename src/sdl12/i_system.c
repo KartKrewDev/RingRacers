@@ -217,7 +217,7 @@ void __set_fpscr(long); // in libgcc / kernel's startup.s?
 
 /**	\brief WAD file to look for
 */
-#define WADKEYWORD "main.kart"
+#define WADKEYWORD "bios.pk3"
 /**	\brief holds wad path
 */
 static char returnWadPath[256];
