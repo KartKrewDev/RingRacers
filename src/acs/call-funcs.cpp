@@ -338,6 +338,8 @@ static bool ACS_CountThing(mobj_t *mobj, mobjtype_t type)
 	return false;
 }
 
+// Unused, but it's here if you need it.
+#if 0
 /*--------------------------------------------------
 	static bool ACS_ActivatorIsLocal(ACSVM::Thread *thread)
 
@@ -365,6 +367,7 @@ static bool ACS_ActivatorIsLocal(ACSVM::Thread *thread)
 
 	return false;
 }
+#endif
 
 /*--------------------------------------------------
 	static UINT32 ACS_SectorThingCounter(sector_t *sec, mtag_t thingTag, bool (*filter)(mobj_t *))
@@ -823,8 +826,10 @@ bool CallFunc_EndPrint(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Wo
 	(void)argV;
 	(void)argC;
 
-	if (ACS_ActivatorIsLocal(thread) == true)
-		HU_DoTitlecardCEcho(thread->printBuf.data());
+	auto& info = static_cast<Thread*>(thread)->info;
+
+	if (P_MobjWasRemoved(info.mo) == false && info.mo->player != nullptr)
+		HU_DoTitlecardCEcho(info.mo->player, thread->printBuf.data(), true);
 
 	thread->printBuf.drop();
 	return false;
@@ -1203,7 +1208,7 @@ bool CallFunc_EndPrintBold(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM
 	(void)argV;
 	(void)argC;
 
-	HU_DoTitlecardCEcho(thread->printBuf.data());
+	HU_DoTitlecardCEcho(nullptr, thread->printBuf.data(), true);
 
 	thread->printBuf.drop();
 	return false;

@@ -166,7 +166,7 @@ void HU_SetCEchoFlags(INT32 flags);
 void HU_DoCEcho(const char *msg);
 
 // Titlecard CECHO shite
-void HU_DoTitlecardCEcho(const char *msg);
+void HU_DoTitlecardCEcho(player_t *player, const char *msg, boolean interrupt);
 void HU_ClearTitlecardCEcho(void);
 
 void DoSayCommand(char *message, SINT8 target, UINT8 flags, UINT8 source);
