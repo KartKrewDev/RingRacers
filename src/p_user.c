@@ -4689,6 +4689,22 @@ void P_ForceLocalAngle(player_t *player, angle_t angle)
 			break;
 		}
 	}
+
+	// jartha: OK, I don't really know how ticcmds work. The
+	// specific problem I'm trying to fix is that, on level
+	// load, the player angle gets reset. But the ticcmds
+	// copied in afterward don't match this angle, and they
+	// influence the player steering.
+	for (i = 0; i <= splitscreen; i++)
+	{
+		if (player == &players[g_localplayers[i]])
+		{
+			D_ResetTiccmdAngle(i, angle);
+			localsteering[i] = angle;
+
+			break;
+		}
+	}
 }
 
 boolean P_PlayerFullbright(player_t *player)
