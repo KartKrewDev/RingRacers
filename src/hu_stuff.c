@@ -283,6 +283,12 @@ void HU_Init(void)
 		PR   ("GTFN");
 		REG;
 
+		PR   ("4GTOL");
+		REG;
+
+		PR   ("4GTFN");
+		REG;
+
 		DIG  (1);
 
 		DIM  (0, 10);
@@ -1874,8 +1880,8 @@ static void HU_DrawTitlecardCEcho(void)
 
 			*line = '\0';
 			
-			w = V_TitleCardStringWidth(echoptr);
-			V_DrawTitleCardString(BASEVIDWIDTH/2 -w/2, y, echoptr, 0, false, timer, TICRATE*4);
+			w = V_TitleCardStringWidth(echoptr, false);
+			V_DrawTitleCardString(BASEVIDWIDTH/2 -w/2, y, echoptr, 0, false, timer, TICRATE*4, false);
 
 			y += 32;
 			

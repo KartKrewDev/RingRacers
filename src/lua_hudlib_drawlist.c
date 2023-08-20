@@ -61,6 +61,7 @@ typedef struct drawitem_s {
 	INT32 timer;
 	INT32 threshold;
 	boolean bossmode;
+	boolean p4;
 } drawitem_t;
 
 // The internal structure of a drawlist.
@@ -358,7 +359,8 @@ void LUA_HUD_AddDrawTitleCardString(
 	const char *str,
 	boolean bossmode,
 	INT32 timer,
-	INT32 threshold
+	INT32 threshold,
+	boolean p4
 )
 {
 	size_t i = AllocateDrawItem(list);
@@ -371,6 +373,7 @@ void LUA_HUD_AddDrawTitleCardString(
 	item->bossmode = bossmode;
 	item->timer = timer;
 	item->threshold = threshold;
+	item->p4 = p4;
 }
 
 void LUA_HUD_AddDrawKartString(
@@ -465,7 +468,7 @@ void LUA_HUD_DrawList(huddrawlist_h list)
 				V_DrawFadeScreen(item->color, item->strength);
 				break;
 			case DI_DrawTitleCardString:
-				V_DrawTitleCardString(item->x, item->y, itemstr, item->flags, item->bossmode, item->timer, item->threshold);
+				V_DrawTitleCardString(item->x, item->y, itemstr, item->flags, item->bossmode, item->timer, item->threshold, item->p4);
 				break;
 			case DI_DrawKartString:
 				V_DrawTimerString(item->x, item->y, item->flags, itemstr);

@@ -1462,7 +1462,7 @@ void Y_IntermissionDrawer(void)
 		}
 		else
 		{
-			headerwidth = V_TitleCardStringWidth(data.headerstring);
+			headerwidth = V_TitleCardStringWidth(data.headerstring, false);
 
 			headerx = (BASEVIDWIDTH - headerwidth)/2;
 			headery = 17;
@@ -1490,7 +1490,7 @@ void Y_IntermissionDrawer(void)
 			V_DrawMappedPatch(x + roundx, 39, 0, roundpatch, NULL);
 		}
 
-		V_DrawTitleCardString(x + headerx, headery, data.headerstring, 0, false, 0, 0);
+		V_DrawTitleCardString(x + headerx, headery, data.headerstring, 0, false, 0, 0, false);
 	}
 
 	// Returns early if there's no players to draw

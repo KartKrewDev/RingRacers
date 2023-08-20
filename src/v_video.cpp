@@ -1854,8 +1854,17 @@ void V_DrawChatCharacter(INT32 x, INT32 y, INT32 c, boolean lowercase, UINT8 *co
 
 // V_TitleCardStringWidth
 // Get the string's width using the titlecard font.
-INT32 V_TitleCardStringWidth(const char *str)
+INT32 V_TitleCardStringWidth(const char *str, boolean p4)
 {
+	int bg_font = GTOL_FONT;
+	int fg_font = GTFN_FONT;
+
+	if (p4)
+	{
+		bg_font = GTOL4_FONT;
+		fg_font = GTFN4_FONT;
+	}
+
 	INT32 xoffs = 0;
 	const char *ch = str;
 	char c;
@@ -1877,15 +1886,15 @@ INT32 V_TitleCardStringWidth(const char *str)
 		c -= LT_FONTSTART;
 
 		// check if character exists, if not, it's a space.
-		if (c < 0 || c >= LT_FONTSIZE || !fontv[GTOL_FONT].font[(INT32)c])
+		if (c < 0 || c >= LT_FONTSIZE || !fontv[bg_font].font[(INT32)c])
 		{
-			xoffs += 10;
+			xoffs += p4 ? 5 : 10;
 			continue;
 		}
 
-		pp = fontv[GTFN_FONT].font[(INT32)c];
+		pp = fontv[fg_font].font[(INT32)c];
 
-		xoffs += pp->width-5;
+		xoffs += pp->width - (p4 ? 3 : 5);
 	}
 
 	return xoffs;
@@ -1894,8 +1903,16 @@ INT32 V_TitleCardStringWidth(const char *str)
 // V_DrawTitleCardScreen.
 // see v_video.h's prototype for more information.
 //
-void V_DrawTitleCardString(INT32 x, INT32 y, const char *str, INT32 flags, boolean bossmode, INT32 timer, INT32 threshold)
+void V_DrawTitleCardString(INT32 x, INT32 y, const char *str, INT32 flags, boolean bossmode, INT32 timer, INT32 threshold, boolean p4)
 {
+	int bg_font = GTOL_FONT;
+	int fg_font = GTFN_FONT;
+
+	if (p4)
+	{
+		bg_font = GTOL4_FONT;
+		fg_font = GTFN4_FONT;
+	}
 
 	INT32 xoffs = 0;
 	INT32 yoffs = 0;
@@ -1916,7 +1933,7 @@ void V_DrawTitleCardString(INT32 x, INT32 y, const char *str, INT32 flags, boole
 	x -= 2;	// Account for patch width...
 
 	if (flags & V_SNAPTORIGHT)
-		x -= V_TitleCardStringWidth(str);
+		x -= V_TitleCardStringWidth(str, p4);
 
 
 	for (;;ch++, i++)
@@ -1933,7 +1950,7 @@ void V_DrawTitleCardString(INT32 x, INT32 y, const char *str, INT32 flags, boole
 		if (*ch == '\n')
 		{
 			xoffs = x;
-			yoffs += 32;
+			yoffs += p4 ? 18 : 32;
 
 			continue;
 		}
@@ -1944,14 +1961,14 @@ void V_DrawTitleCardString(INT32 x, INT32 y, const char *str, INT32 flags, boole
 		c -= LT_FONTSTART;
 
 		// check if character exists, if not, it's a space.
-		if (c < 0 || c >= LT_FONTSIZE || !fontv[GTFN_FONT].font[(INT32)c])
+		if (c < 0 || c >= LT_FONTSIZE || !fontv[fg_font].font[(INT32)c])
 		{
-			xoffs += 10;
+			xoffs += p4 ? 5 : 10;
 			continue;
 		}
 
-		ol = fontv[GTOL_FONT].font[(INT32)c];
-		pp = fontv[GTFN_FONT].font[(INT32)c];
+		ol = fontv[bg_font].font[(INT32)c];
+		pp = fontv[fg_font].font[(INT32)c];
 
 		if (bossmode)
 		{
@@ -2004,7 +2021,7 @@ void V_DrawTitleCardString(INT32 x, INT32 y, const char *str, INT32 flags, boole
 			V_DrawStretchyFixedPatch((x + xoffs)*FRACUNIT + offs, (y+yoffs)*FRACUNIT, abs(scalex), FRACUNIT, flags|flipflag, pp, NULL);
 		}
 
-		xoffs += pp->width -5;
+		xoffs += pp->width - (p4 ? 3 : 5);
 	}
 }
 

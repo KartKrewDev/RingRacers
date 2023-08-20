@@ -77,6 +77,9 @@ enum
 	X      (GTOL),
 	X      (GTFN),
 
+	X     (GTOL4),
+	X     (GTFN4),
+
 	X   (TALLNUM),
 	X (NIGHTSNUM),
 	X   (PINGNUM),
