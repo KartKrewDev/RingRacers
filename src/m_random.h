@@ -78,6 +78,8 @@ typedef enum
 
 	PR_BOTS, // Bot spawning
 
+	PR_AUTOSPIN, // Item box accessibility
+
 	PRNUMCLASS
 } pr_class_t;
 

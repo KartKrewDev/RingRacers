@@ -1215,6 +1215,7 @@ void M_Init(void)
 	CV_RegisterVar(&cv_dummyprofilename);
 	CV_RegisterVar(&cv_dummyprofileplayername);
 	CV_RegisterVar(&cv_dummyprofilekickstart);
+	CV_RegisterVar(&cv_dummyprofileautospin);
 	CV_RegisterVar(&cv_dummyprofilerumble);
 
 	CV_RegisterVar(&cv_dummygpdifficulty);

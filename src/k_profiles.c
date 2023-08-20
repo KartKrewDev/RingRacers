@@ -68,6 +68,7 @@ profile_t* PR_MakeProfile(
 	strcpy(new->follower, fname);
 	new->followercolor = fcol;
 	new->kickstartaccel = false;
+	new->autospin = false;
 
 	// Copy from gamecontrol directly as we'll be setting controls up directly in the profile.
 	memcpy(new->controls, controlarray, sizeof(new->controls));
@@ -84,6 +85,7 @@ profile_t* PR_MakeProfileFromPlayer(const char *prname, const char *pname, const
 
 	// Player bound cvars:
 	new->kickstartaccel = cv_kickstartaccel[pnum].value;
+	new->autospin = cv_autospin[pnum].value;
 	new->rumble = cv_rumble[pnum].value;
 
 	return new;
@@ -270,6 +272,7 @@ void PR_SaveProfiles(void)
 
 		// Consvars.
 		WRITEUINT8(save.p, profilesList[i]->kickstartaccel);
+		WRITEUINT8(save.p, profilesList[i]->autospin);
 		WRITEUINT8(save.p, profilesList[i]->rumble);
 
 		// Controls.
@@ -407,6 +410,18 @@ void PR_LoadProfiles(void)
 
 		// Consvars.
 		profilesList[i]->kickstartaccel = (boolean)READUINT8(save.p);
+
+		// 6->7, add autospin
+		if (version < 7)
+		{
+			profilesList[i]->autospin = false;
+			
+		}
+		else
+		{
+			profilesList[i]->autospin = (boolean)READUINT8(save.p);
+		}
+
 		if (version < 4)
 		{
 			profilesList[i]->rumble = true;
@@ -459,6 +474,7 @@ static void PR_ApplyProfile_Settings(profile_t *p, UINT8 playernum)
 {
 	// toggles
 	CV_StealthSetValue(&cv_kickstartaccel[playernum], p->kickstartaccel);
+	CV_StealthSetValue(&cv_autospin[playernum], p->autospin);
 
 	// set controls...
 	memcpy(&gamecontrol[playernum], p->controls, sizeof(gamecontroldefault));

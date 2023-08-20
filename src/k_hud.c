@@ -193,6 +193,8 @@ static patch_t *kp_bossret[4];
 
 static patch_t *kp_trickcool[2];
 
+patch_t *kp_autospin;
+
 patch_t *kp_capsuletarget_arrow[2][2];
 patch_t *kp_capsuletarget_icon[2];
 patch_t *kp_capsuletarget_far[2];
@@ -709,6 +711,8 @@ void K_LoadKartHUDGraphics(void)
 
 	HU_UpdatePatch(&kp_trickcool[0], "K_COOL1");
 	HU_UpdatePatch(&kp_trickcool[1], "K_COOL2");
+
+	HU_UpdatePatch(&kp_autospin, "A11YITEM");
 
 	sprintf(buffer, "K_BOSB0x");
 	for (i = 0; i < 8; i++)
@@ -2743,70 +2747,92 @@ static void K_drawRingCounter(boolean gametypeinfoshown)
 
 static void K_drawKartAccessibilityIcons(boolean gametypeinfoshown, INT32 fx)
 {
-	INT32 fy = LAPS_Y-14;
-	INT32 splitflags = V_SNAPTOLEFT|V_SNAPTOBOTTOM|V_SPLITSCREEN;
-	//INT32 step = 1; -- if there's ever more than one accessibility icon
-
-	fx += LAPS_X;
-
-	if (r_splitscreen < 2) // adjust to speedometer height
-	{
-		if (gametypeinfoshown)
-		{
-			fy -= 11;
-
-			if ((gametyperules & (GTR_BUMPERS|GTR_CIRCUIT)) == GTR_BUMPERS)
-				fy -= 4;
-		}
-		else
-		{
-			fy += 9;
-		}
-	}
-	else
-	{
-		fx = LAPS_X+43;
-		fy = LAPS_Y;
-		if (!(stplyr == &players[displayplayers[0]] || stplyr == &players[displayplayers[2]]))	// If we are not P1 or P3...
-		{
-			splitflags ^= (V_SNAPTOLEFT|V_SNAPTORIGHT);
-			fx = (BASEVIDWIDTH/2) - (fx + 10);
-			//step = -step;
-		}
-	}
-
-	if (stplyr->pflags & PF_KICKSTARTACCEL) // just KICKSTARTACCEL right now, maybe more later
-	{
-		SINT8 col = 0, wid, fil, ofs;
-		UINT8 i = 7;
-		ofs = (stplyr->kickstartaccel == ACCEL_KICKSTART) ? 1 : 0;
-		fil = i-(stplyr->kickstartaccel*i)/ACCEL_KICKSTART;
-
-		V_DrawFill(fx+4, fy+ofs-1, 2, 1, 31|V_SLIDEIN|splitflags);
-		V_DrawFill(fx, (fy+ofs-1)+8, 10, 1, 31|V_SLIDEIN|splitflags);
-
-		while (i--)
-		{
-			wid = (i/2)+1;
-			V_DrawFill(fx+4-wid, fy+ofs+i, 2+(wid*2), 1, 31|V_SLIDEIN|splitflags);
-			if (fil > 0)
-			{
-				if (i < fil)
-					col = 23;
-				else if (i == fil)
-					col = 3;
-				else
-					col = 5 + (i-fil)*2;
-			}
-			else if ((leveltime % 7) == i)
-				col = 0;
-			else
-				col = 3;
-			V_DrawFill(fx+5-wid, fy+ofs+i, (wid*2), 1, col|V_SLIDEIN|splitflags);
-		}
-
-		//fx += step*12;
-	}
+    INT32 fy = LAPS_Y-14;
+    INT32 splitflags = V_SNAPTOLEFT|V_SNAPTOBOTTOM|V_SPLITSCREEN;
+ 
+    boolean mirror = false;
+ 
+    fx += LAPS_X;
+ 
+    if (r_splitscreen < 2) // adjust to speedometer height
+    {
+        if (gametypeinfoshown)
+        {
+            fy -= 11;
+ 
+            if ((gametyperules & (GTR_BUMPERS|GTR_CIRCUIT)) == GTR_BUMPERS)
+                fy -= 4;
+        }
+        else
+        {
+            fy += 9;
+        }
+    }
+    else
+    {
+        fx = LAPS_X+44;
+        fy = LAPS_Y;
+        if (!(stplyr == &players[displayplayers[0]] || stplyr == &players[displayplayers[2]]))  // If we are not P1 or P3...
+        {
+            splitflags ^= (V_SNAPTOLEFT|V_SNAPTORIGHT);
+            fx = (BASEVIDWIDTH/2) - fx;
+            mirror = true;
+        }
+    }
+ 
+    // Kickstart Accel
+    if (stplyr->pflags & PF_KICKSTARTACCEL)
+    {
+        if (mirror)
+            fx -= 10;
+ 
+        SINT8 col = 0, wid, fil, ofs;
+        UINT8 i = 7;
+        ofs = (stplyr->kickstartaccel == ACCEL_KICKSTART) ? 1 : 0;
+        fil = i-(stplyr->kickstartaccel*i)/ACCEL_KICKSTART;
+ 
+        V_DrawFill(fx+4, fy+ofs-1, 2, 1, 31|V_SLIDEIN|splitflags);
+        V_DrawFill(fx, (fy+ofs-1)+8, 10, 1, 31|V_SLIDEIN|splitflags);
+ 
+        while (i--)
+        {
+            wid = (i/2)+1;
+            V_DrawFill(fx+4-wid, fy+ofs+i, 2+(wid*2), 1, 31|V_SLIDEIN|splitflags);
+            if (fil > 0)
+            {
+                if (i < fil)
+                    col = 23;
+                else if (i == fil)
+                    col = 3;
+                else
+                    col = 5 + (i-fil)*2;
+            }
+            else if ((leveltime % 7) == i)
+                col = 0;
+            else
+                col = 3;
+            V_DrawFill(fx+5-wid, fy+ofs+i, (wid*2), 1, col|V_SLIDEIN|splitflags);
+        }
+ 
+        if (mirror)
+            fx--;
+        else
+            fx += 10 + 1;
+    }
+ 
+    // Auto Roulette
+    if (stplyr->pflags & PF_AUTOSPIN)
+    {
+        if (mirror)
+            fx -= 12;
+ 
+        V_DrawScaledPatch(fx, fy-1, V_SLIDEIN|splitflags, kp_autospin);
+ 
+        if (mirror)
+            fx--;
+        else
+            fx += 12 + 1;
+    }
 }
 
 static void K_drawKartSpeedometer(boolean gametypeinfoshown)
