@@ -172,6 +172,7 @@ Environment::Environment()
 	addFuncDataACS0( 504, addCallFunc(CallFunc_MapWarp));
 	addFuncDataACS0( 505, addCallFunc(CallFunc_AddBot));
 	addFuncDataACS0( 506, addCallFunc(CallFunc_StopLevelExit));
+	addFuncDataACS0( 507, addCallFunc(CallFunc_ExitLevel));
 }
 
 ACSVM::Thread *Environment::allocThread()

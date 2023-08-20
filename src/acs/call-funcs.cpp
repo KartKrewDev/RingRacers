@@ -1872,6 +1872,36 @@ bool CallFunc_StopLevelExit(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSV
 }
 
 /*--------------------------------------------------
+	bool CallFunc_ExitLevel(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
+
+		Exits the level.
+--------------------------------------------------*/
+bool CallFunc_ExitLevel(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
+{
+	(void)argV;
+	(void)argC;
+
+	if (exitcountdown == 1)
+	{
+		// An exit is already in progress.
+		return false;
+	}
+
+	if (argC >= 1)
+	{
+		skipstats = (argV[0] == 0);
+	}
+
+	G_BeginLevelExit();
+	exitcountdown = 1;
+
+	if (server)
+		SendNetXCmd(XD_EXITLEVEL, NULL, 0);
+
+	return false;
+}
+
+/*--------------------------------------------------
 	bool CallFunc_Get/SetLineProperty(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
 
 		Generic line property management.
