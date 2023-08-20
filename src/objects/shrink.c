@@ -789,11 +789,7 @@ void Obj_CreateShrinkPohbees(player_t *owner)
 			pohbees[j].start = GetPohbeeStart(player->nextwaypoint);
 			pohbees[j].end = endWaypoint;
 			pohbees[j].lasers = 1;
-
-			if (player->position == 1)
-			{
-				pohbees[j].first = true;
-			}
+			pohbees[j].first = (player->position == 1);
 
 			numPohbees++;
 		}
@@ -801,6 +797,7 @@ void Obj_CreateShrinkPohbees(player_t *owner)
 
 	for (i = 0; i < numPohbees; i++)
 	{
+		// omg pobby hi!!!
 		CreatePohbee(owner, pohbees[i].start, pohbees[i].end, pohbees[i].lasers);
 
 		if (pohbees[i].first == true)
