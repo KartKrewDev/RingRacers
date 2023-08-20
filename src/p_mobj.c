@@ -7556,6 +7556,14 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 			return false;
 		}
 		break;
+	case MT_EMERALDFLARE:
+		Obj_EmeraldFlareThink(mobj);
+
+		if (P_MobjWasRemoved(mobj))
+		{
+			return false;
+		}
+		break;
 	case MT_MONITOR:
 		Obj_MonitorThink(mobj);
 
@@ -9824,6 +9832,12 @@ static boolean P_FuseThink(mobj_t *mobj)
 		mobj->spriteyscale = FRACUNIT;
 
 		break;
+	}
+	case MT_EMERALD:
+	{
+		Obj_GiveEmerald(mobj);
+		P_RemoveMobj(mobj);
+		return false;
 	}
 	case MT_PLAYER:
 		break; // don't remove

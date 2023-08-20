@@ -1208,6 +1208,8 @@ const char *const STATE_LIST[] = { // array length left dynamic for sanity testi
 	"S_EMERALDSPARK6",
 	"S_EMERALDSPARK7",
 
+	"S_EMERALDFLARE1",
+
 	// Emerald hunt shards
 	"S_SHRD1",
 	"S_SHRD2",
@@ -4807,6 +4809,7 @@ const char *const MOBJTYPE_LIST[] = {  // array length left dynamic for sanity t
 	"MT_EMBLEM",
 	"MT_EMERALD",
 	"MT_EMERALDSPARK",
+	"MT_EMERALDFLARE",
 	"MT_EMERHUNT", // Emerald Hunt
 	"MT_EMERALDSPAWN", // Emerald spawner w/ delay
 
