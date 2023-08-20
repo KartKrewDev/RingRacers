@@ -91,7 +91,7 @@ menuitem_t OPTIONS_ProfileControls[] = {
 	{IT_CONTROL | IT_CVAR, "KICKSTART ACCEL", "Hold A to auto-accel. Tap it to cancel.",
 		NULL, {.cvar = &cv_dummyprofilekickstart}, 0, 0},
 
-	{IT_CONTROL | IT_CVAR, "AUTO SPIN", "Automatically stop the item box on a random result.",
+	{IT_CONTROL | IT_CVAR, "AUTO SPIN", "Item roulette auto-stops on a random result.",
 		NULL, {.cvar = &cv_dummyprofileautospin}, 0, 0},
 
 	{IT_HEADER, "EXTRA", "",

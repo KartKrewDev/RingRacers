@@ -1595,7 +1595,7 @@ void K_KartItemRoulette(player_t *const player, ticcmd_t *const cmd)
 
 	if (roulette->elapsed > TICRATE>>1) // Prevent accidental immediate item confirm
 	{
-		if (roulette->elapsed > TICRATE<<4 || (roulette->eggman && roulette->elapsed > TICRATE*4))
+		if (roulette->elapsed > TICRATE<<4 || (roulette->eggman && !roulette->autospin && roulette->elapsed > TICRATE*4))
 		{
 			// Waited way too long, forcefully confirm the item.
 			confirmItem = true;
