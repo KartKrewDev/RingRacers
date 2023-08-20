@@ -1099,7 +1099,7 @@ static void ChangeDirForUrlHandler(void)
 
 static boolean AddIWAD(void)
 {
-	char * path = va(pandf,srb2path,"main.kart");
+	char * path = va(pandf,srb2path,"bios.pk3");
 
 	if (FIL_ReadFileOK(path))
 	{
