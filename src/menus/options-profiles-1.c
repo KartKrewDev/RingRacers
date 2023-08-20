@@ -94,7 +94,7 @@ static void M_StartEditProfile(INT32 c)
 			CV_StealthSet(&cv_dummyprofilename, optionsmenu.profile->profilename);
 			CV_StealthSet(&cv_dummyprofileplayername, optionsmenu.profile->playername);
 			CV_StealthSetValue(&cv_dummyprofilekickstart, optionsmenu.profile->kickstartaccel);
-			CV_StealthSetValue(&cv_dummyprofileautospin, optionsmenu.profile->kickstartaccel);
+			CV_StealthSetValue(&cv_dummyprofileautospin, optionsmenu.profile->autospin);
 			CV_StealthSetValue(&cv_dummyprofilerumble, optionsmenu.profile->rumble);
 		}
 		else

@@ -1872,7 +1872,7 @@ void WeaponPref_Parse(UINT8 **cp, INT32 playernum)
 
 	if (leveltime < 2)
 	{
-		// BAD HACK: No other place I ried to slot this in
+		// BAD HACK: No other place I tried to slot this in
 		// made it work for the host when they initally host,
 		// so this will have to do.
 		K_UpdateShrinkCheat(player);
