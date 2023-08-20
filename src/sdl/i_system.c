@@ -137,7 +137,7 @@ typedef LPVOID (WINAPI *p_MapViewOfFile) (HANDLE, DWORD, DWORD, DWORD, SIZE_T);
 #define UNIXBACKTRACE
 #endif
 
-// Locations for searching for main.kart
+// Locations for searching for bios.pk3
 #if defined (__unix__) || defined(__APPLE__) || defined (UNIXCOMMON)
 #define DEFAULTWADLOCATION1 "/usr/local/share/games/RingRacers"
 #define DEFAULTWADLOCATION2 "/usr/local/games/RingRacers"
@@ -150,7 +150,7 @@ typedef LPVOID (WINAPI *p_MapViewOfFile) (HANDLE, DWORD, DWORD, DWORD, SIZE_T);
 
 /**	\brief WAD file to look for
 */
-#define WADKEYWORD "main.kart"
+#define WADKEYWORD "bios.pk3"
 /**	\brief holds wad path
 */
 static char returnWadPath[256];
@@ -2104,7 +2104,7 @@ static void pathonly(char *s)
 		}
 }
 
-/**	\brief	search for main.kart in the given path
+/**	\brief	search for bios.pk3 in the given path
 
 	\param	searchDir	starting path
 
@@ -2128,9 +2128,9 @@ static const char *searchWad(const char *searchDir)
 	return NULL;
 }
 
-/**	\brief go through all possible paths and look for main.kart
+/**	\brief go through all possible paths and look for bios.pk3
 
-  \return path to main.kart if any
+  \return path to bios.pk3 if any
 
 */
 static const char *locateWad(void)
@@ -2260,7 +2260,7 @@ const char *I_LocateWad(void)
 
 	if (waddir)
 	{
-		// change to the directory where we found main.kart
+		// change to the directory where we found bios.pk3
 #if defined (_WIN32)
 		SetCurrentDirectoryA(waddir);
 #else
