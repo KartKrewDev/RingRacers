@@ -66,7 +66,7 @@ typedef enum
 
 	// free: 1<<1
 
-	PF_AUTOSPIN			= 1<<2, // Accessibility: Non-deterministic item box, no manual stop.
+	PF_AUTOROULETTE		= 1<<2, // Accessibility: Non-deterministic item box, no manual stop.
 
 	// Look back VFX has been spawned
 	// TODO: Is there a better way to track this?
@@ -439,7 +439,7 @@ struct itemroulette_t
 
 	boolean eggman;
 	boolean ringbox;
-	boolean autospin;
+	boolean autoroulette;
 };
 
 // enum for bot item priorities

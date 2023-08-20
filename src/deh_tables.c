@@ -5931,7 +5931,7 @@ const char *const PLAYERFLAG_LIST[] = {
 
 	// free: 1<<1 and 1<<2 (name un-matchable)
 	"\x01",
-	"AUTOSPIN", // Item box accessibility
+	"AUTOROULETTE", // Item box accessibility
 
 	// Look back VFX has been spawned
 	// TODO: Is there a better way to track this?

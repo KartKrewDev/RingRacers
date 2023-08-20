@@ -133,11 +133,11 @@ demoghost *ghosts = NULL;
 #define DF_ENCORE       0x40
 #define DF_MULTIPLAYER  0x80 // This demo was recorded in multiplayer mode!
 
-#define DEMO_SPECTATOR	0x01
-#define DEMO_KICKSTART	0x02
-#define DEMO_SHRINKME	0x04
-#define DEMO_BOT		0x08
-#define DEMO_AUTOSPIN	0x10
+#define DEMO_SPECTATOR		0x01
+#define DEMO_KICKSTART		0x02
+#define DEMO_SHRINKME		0x04
+#define DEMO_BOT			0x08
+#define DEMO_AUTOROULETTE	0x10
 
 // For demos
 #define ZT_FWD		0x0001
@@ -2475,8 +2475,8 @@ void G_BeginRecording(void)
 				i |= DEMO_SPECTATOR;
 			if (player->pflags & PF_KICKSTARTACCEL)
 				i |= DEMO_KICKSTART;
-			if (player->pflags & PF_AUTOSPIN)
-				i |= DEMO_AUTOSPIN;
+			if (player->pflags & PF_AUTOROULETTE)
+				i |= DEMO_AUTOROULETTE;
 			if (player->pflags & PF_SHRINKME)
 				i |= DEMO_SHRINKME;
 			if (player->bot == true)
@@ -3439,10 +3439,10 @@ void G_DoPlayDemo(const char *defdemoname)
 		else
 			players[p].pflags &= ~PF_KICKSTARTACCEL;
 
-		if (flags & DEMO_AUTOSPIN)
-			players[p].pflags |= PF_AUTOSPIN;
+		if (flags & DEMO_AUTOROULETTE)
+			players[p].pflags |= PF_AUTOROULETTE;
 		else
-			players[p].pflags &= ~PF_AUTOSPIN;
+			players[p].pflags &= ~PF_AUTOROULETTE;
 
 		if (flags & DEMO_SHRINKME)
 			players[p].pflags |= PF_SHRINKME;

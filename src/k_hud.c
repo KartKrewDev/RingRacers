@@ -193,7 +193,7 @@ static patch_t *kp_bossret[4];
 
 static patch_t *kp_trickcool[2];
 
-patch_t *kp_autospin;
+patch_t *kp_autoroulette;
 
 patch_t *kp_capsuletarget_arrow[2][2];
 patch_t *kp_capsuletarget_icon[2];
@@ -712,7 +712,7 @@ void K_LoadKartHUDGraphics(void)
 	HU_UpdatePatch(&kp_trickcool[0], "K_COOL1");
 	HU_UpdatePatch(&kp_trickcool[1], "K_COOL2");
 
-	HU_UpdatePatch(&kp_autospin, "A11YITEM");
+	HU_UpdatePatch(&kp_autoroulette, "A11YITEM");
 
 	sprintf(buffer, "K_BOSB0x");
 	for (i = 0; i < 8; i++)
@@ -2821,12 +2821,12 @@ static void K_drawKartAccessibilityIcons(boolean gametypeinfoshown, INT32 fx)
     }
  
     // Auto Roulette
-    if (stplyr->pflags & PF_AUTOSPIN)
+    if (stplyr->pflags & PF_AUTOROULETTE)
     {
         if (mirror)
             fx -= 12;
  
-        V_DrawScaledPatch(fx, fy-1, V_SLIDEIN|splitflags, kp_autospin);
+        V_DrawScaledPatch(fx, fy-1, V_SLIDEIN|splitflags, kp_autoroulette);
  
         if (mirror)
             fx--;

@@ -1074,7 +1074,7 @@ static void K_InitRoulette(itemroulette_t *const roulette)
 	roulette->active = true;
 	roulette->eggman = false;
 	roulette->ringbox = false;
-	roulette->autospin = false;
+	roulette->autoroulette = false;
 
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
@@ -1236,7 +1236,7 @@ static void K_CalculateRouletteSpeed(itemroulette_t *const roulette)
 		return;
 	}
 
-	if (roulette->autospin == true)
+	if (roulette->autoroulette == true)
 	{
 		roulette->speed = ROULETTE_SPEED_FASTEST;
 		return;
@@ -1304,8 +1304,8 @@ void K_FillItemRouletteData(const player_t *player, itemroulette_t *const roulet
 	{
 		roulette->baseDist = K_UndoMapScaling(player->distancetofinish);
 		
-		if (player->pflags & PF_AUTOSPIN)
-			roulette->autospin = true;
+		if (player->pflags & PF_AUTOROULETTE)
+			roulette->autoroulette = true;
 
 		K_CalculateRouletteSpeed(roulette);
 	}
@@ -1467,8 +1467,8 @@ void K_StartItemRoulette(player_t *const player, boolean ringbox)
 
 	K_FillItemRouletteData(player, roulette, ringbox);
 
-	if (roulette->autospin)
-		roulette->index = P_RandomRange(PR_AUTOSPIN, 0, roulette->itemListLen - 1);
+	if (roulette->autoroulette)
+		roulette->index = P_RandomRange(PR_AUTOROULETTE, 0, roulette->itemListLen - 1);
 
 	if (K_PlayerUsesBotMovement(player) == true)
 	{
@@ -1595,12 +1595,12 @@ void K_KartItemRoulette(player_t *const player, ticcmd_t *const cmd)
 
 	if (roulette->elapsed > TICRATE>>1) // Prevent accidental immediate item confirm
 	{
-		if (roulette->elapsed > TICRATE<<4 || (roulette->eggman && !roulette->autospin && roulette->elapsed > TICRATE*4))
+		if (roulette->elapsed > TICRATE<<4 || (roulette->eggman && !roulette->autoroulette && roulette->elapsed > TICRATE*4))
 		{
 			// Waited way too long, forcefully confirm the item.
 			confirmItem = true;
 		}
-		else if (roulette->autospin)
+		else if (roulette->autoroulette)
 		{
 			confirmItem = (roulette->speed > 15);
 		}
@@ -1635,7 +1635,7 @@ void K_KartItemRoulette(player_t *const player, ticcmd_t *const cmd)
 			// D2 fudge factor. Roulette was originally designed and tested with this delay.
 			UINT8 fudgedDelay = (player->cmd.latency <= 2) ? 0 : player->cmd.latency - 2;
 
-			if (roulette->autospin)
+			if (roulette->autoroulette)
 				fudgedDelay = 0; // We didn't manually stop this, you jackwagon
 
 			while (fudgedDelay > 0)
@@ -1693,7 +1693,7 @@ void K_KartItemRoulette(player_t *const player, ticcmd_t *const cmd)
 
 	roulette->elapsed++;
 
-	if (roulette->autospin && (roulette->elapsed % 5 == 0) && (roulette->elapsed > TICRATE))
+	if (roulette->autoroulette && (roulette->elapsed % 5 == 0) && (roulette->elapsed > TICRATE))
 		roulette->speed++;
 
 	if (roulette->tics == 0)

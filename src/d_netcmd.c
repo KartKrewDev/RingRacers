@@ -1061,7 +1061,7 @@ void D_RegisterClientCommands(void)
 	for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
 	{
 		CV_RegisterVar(&cv_kickstartaccel[i]);
-		CV_RegisterVar(&cv_autospin[i]);
+		CV_RegisterVar(&cv_autoroulette[i]);
 		CV_RegisterVar(&cv_shrinkme[i]);
 		CV_RegisterVar(&cv_deadzone[i]);
 		CV_RegisterVar(&cv_rumble[i]);
@@ -1816,7 +1816,7 @@ static void Got_NameAndColor(UINT8 **cp, INT32 playernum)
 enum {
 	WP_KICKSTARTACCEL = 1<<0,
 	WP_SHRINKME = 1<<1,
-	WP_AUTOSPIN = 1<<2,
+	WP_AUTOROULETTE = 1<<2,
 };
 
 void WeaponPref_Send(UINT8 ssplayer)
@@ -1826,8 +1826,8 @@ void WeaponPref_Send(UINT8 ssplayer)
 	if (cv_kickstartaccel[ssplayer].value)
 		prefs |= WP_KICKSTARTACCEL;
 
-	if (cv_autospin[ssplayer].value)
-		prefs |= WP_AUTOSPIN;
+	if (cv_autoroulette[ssplayer].value)
+		prefs |= WP_AUTOROULETTE;
 
 	if (cv_shrinkme[ssplayer].value)
 		prefs |= WP_SHRINKME;
@@ -1844,8 +1844,8 @@ void WeaponPref_Save(UINT8 **cp, INT32 playernum)
 	if (player->pflags & PF_KICKSTARTACCEL)
 		prefs |= WP_KICKSTARTACCEL;
 
-	if (player->pflags & PF_AUTOSPIN)
-		prefs |= WP_AUTOSPIN;
+	if (player->pflags & PF_AUTOROULETTE)
+		prefs |= WP_AUTOROULETTE;
 
 	if (player->pflags & PF_SHRINKME)
 		prefs |= WP_SHRINKME;
@@ -1859,13 +1859,13 @@ void WeaponPref_Parse(UINT8 **cp, INT32 playernum)
 
 	UINT8 prefs = READUINT8(*cp);
 
-	player->pflags &= ~(PF_KICKSTARTACCEL|PF_SHRINKME|PF_AUTOSPIN);
+	player->pflags &= ~(PF_KICKSTARTACCEL|PF_SHRINKME|PF_AUTOROULETTE);
 
 	if (prefs & WP_KICKSTARTACCEL)
 		player->pflags |= PF_KICKSTARTACCEL;
 
-	if (prefs & WP_AUTOSPIN)
-		player->pflags |= PF_AUTOSPIN;
+	if (prefs & WP_AUTOROULETTE)
+		player->pflags |= PF_AUTOROULETTE;
 
 	if (prefs & WP_SHRINKME)
 		player->pflags |= PF_SHRINKME;

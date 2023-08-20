@@ -61,7 +61,7 @@ extern patch_t *kp_capsuletarget_near[8];
 
 extern patch_t *kp_superflickytarget[4];
 
-extern patch_t *kp_autospin;
+extern patch_t *kp_autoroulette;
 
 extern patch_t *kp_button_a[2][2];
 extern patch_t *kp_button_b[2][2];

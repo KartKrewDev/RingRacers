@@ -981,7 +981,7 @@ extern INT16 controlleroffsets[][2];
 extern consvar_t cv_dummyprofilename;
 extern consvar_t cv_dummyprofileplayername;
 extern consvar_t cv_dummyprofilekickstart;
-extern consvar_t cv_dummyprofileautospin;
+extern consvar_t cv_dummyprofileautoroulette;
 extern consvar_t cv_dummyprofilerumble;
 
 void M_ResetOptions(void);

@@ -74,7 +74,7 @@ struct profile_t
 	// Player-specific consvars.
 	// @TODO: List all of those
 	boolean kickstartaccel;				// cv_kickstartaccel
-	boolean autospin;					// cv_autospin
+	boolean autoroulette;					// cv_autoroulette
 	boolean rumble;						// cv_rumble
 
 	// Finally, control data itself

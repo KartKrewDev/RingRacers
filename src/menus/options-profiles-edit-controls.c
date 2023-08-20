@@ -91,8 +91,8 @@ menuitem_t OPTIONS_ProfileControls[] = {
 	{IT_CONTROL | IT_CVAR, "KICKSTART ACCEL", "Hold A to auto-accel. Tap it to cancel.",
 		NULL, {.cvar = &cv_dummyprofilekickstart}, 0, 0},
 
-	{IT_CONTROL | IT_CVAR, "AUTO SPIN", "Item roulette auto-stops on a random result.",
-		NULL, {.cvar = &cv_dummyprofileautospin}, 0, 0},
+	{IT_CONTROL | IT_CVAR, "AUTO ROULETTE", "Item roulette auto-stops on a random result.",
+		NULL, {.cvar = &cv_dummyprofileautoroulette}, 0, 0},
 
 	{IT_HEADER, "EXTRA", "",
 		NULL, {NULL}, 0, 0},
@@ -190,7 +190,7 @@ static void M_ProfileControlSaveResponse(INT32 choice)
 		SINT8 belongsto = PR_ProfileUsedBy(optionsmenu.profile);
 		// Save the profile
 		optionsmenu.profile->kickstartaccel = cv_dummyprofilekickstart.value;
-		optionsmenu.profile->autospin = cv_dummyprofileautospin.value;
+		optionsmenu.profile->autoroulette = cv_dummyprofileautoroulette.value;
 		optionsmenu.profile->rumble = cv_dummyprofilerumble.value;
 		memcpy(&optionsmenu.profile->controls, optionsmenu.tempcontrols, sizeof(gamecontroldefault));
 
@@ -200,7 +200,7 @@ static void M_ProfileControlSaveResponse(INT32 choice)
 		{
 			memcpy(&gamecontrol[belongsto], optionsmenu.tempcontrols, sizeof(gamecontroldefault));
 			CV_SetValue(&cv_kickstartaccel[belongsto], cv_dummyprofilekickstart.value);
-			CV_SetValue(&cv_autospin[belongsto], cv_dummyprofileautospin.value);
+			CV_SetValue(&cv_autoroulette[belongsto], cv_dummyprofileautoroulette.value);
 			CV_SetValue(&cv_rumble[belongsto], cv_dummyprofilerumble.value);
 		}
 
@@ -218,7 +218,7 @@ void M_ProfileControlsConfirm(INT32 choice)
 	M_ProfileControlSaveResponse(MA_YES);
 
 	optionsmenu.profile->kickstartaccel = cv_dummyprofilekickstart.value;		// Make sure to save kickstart accel.
-	optionsmenu.profile->autospin = cv_dummyprofileautospin.value; // We should really just rip this entire construct out at some point
+	optionsmenu.profile->autoroulette = cv_dummyprofileautoroulette.value; // We should really just rip this entire construct out at some point
 	optionsmenu.profile->rumble = cv_dummyprofilerumble.value;		// And rumble too!
 
 	// Reapply player 1's real profile.

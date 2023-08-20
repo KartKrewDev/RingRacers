@@ -623,7 +623,7 @@ static void P_NetArchivePlayers(savebuffer_t *save)
 		WRITEUINT32(save->p, players[i].itemRoulette.elapsed);
 		WRITEUINT8(save->p, players[i].itemRoulette.eggman);
 		WRITEUINT8(save->p, players[i].itemRoulette.ringbox);
-		WRITEUINT8(save->p, players[i].itemRoulette.autospin);
+		WRITEUINT8(save->p, players[i].itemRoulette.autoroulette);
 
 		// sonicloopsvars_t
 		WRITEFIXED(save->p, players[i].loop.radius);
@@ -1059,7 +1059,7 @@ static void P_NetUnArchivePlayers(savebuffer_t *save)
 		players[i].itemRoulette.elapsed = (tic_t)READUINT32(save->p);
 		players[i].itemRoulette.eggman = (boolean)READUINT8(save->p);
 		players[i].itemRoulette.ringbox = (boolean)READUINT8(save->p);
-		players[i].itemRoulette.autospin = (boolean)READUINT8(save->p);
+		players[i].itemRoulette.autoroulette = (boolean)READUINT8(save->p);
 
 		// sonicloopsvars_t
 		players[i].loop.radius = READFIXED(save->p);
