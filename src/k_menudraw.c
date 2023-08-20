@@ -816,7 +816,13 @@ void M_Drawer(void)
 	// draw pause pic
 	if (paused && !demo.playback && (menuactive || cv_showhud.value))
 	{
-		M_DrawPausedText(0);
+		// Don't cover the Stereo player!
+		boolean stereo_open = menuactive && currentMenu == &MISC_SoundTestDef;
+
+		if (stereo_open == false)
+		{
+			M_DrawPausedText(0);
+		}
 	}
 
 	// focus lost notification goes on top of everything, even the former everything
