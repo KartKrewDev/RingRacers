@@ -145,7 +145,7 @@ void __set_fpscr(long); // in libgcc / kernel's startup.s?
 #define O_BINARY 0
 #endif
 
-// Locations for searching the main.kart
+// Locations for searching the bios.pk3
 #ifdef _arch_dreamcast
 #define DEFAULTWADLOCATION1 "/cd"
 #define DEFAULTWADLOCATION2 "/pc"
@@ -3436,7 +3436,7 @@ static void pathonly(char *s)
 		}
 }
 
-/**	\brief	search for main.kart in the given path
+/**	\brief	search for bios.pk3 in the given path
 
 	\param	searchDir	starting path
 
@@ -3460,9 +3460,9 @@ static const char *searchWad(const char *searchDir)
 	return NULL;
 }
 
-/**	\brief go through all possible paths and look for main.kart
+/**	\brief go through all possible paths and look for bios.pk3
 
-  \return path to main.kart if any
+  \return path to bios.pk3 if any
 */
 static const char *locateWad(void)
 {
@@ -3579,7 +3579,7 @@ const char *I_LocateWad(void)
 
 	if (waddir)
 	{
-		// change to the directory where we found main.kart
+		// change to the directory where we found bios.pk3
 #if (defined (_WIN32) && !defined (_WIN32_WCE)) && !defined (_XBOX)
 		SetCurrentDirectoryA(waddir);
 #elif !defined (_WIN32_WCE) && !defined (_PS3)
