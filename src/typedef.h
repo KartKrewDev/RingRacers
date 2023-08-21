@@ -134,6 +134,7 @@ TYPEDEF (unloaded_mapheader_t);
 TYPEDEF (tolinfo_t);
 TYPEDEF (cupheader_t);
 TYPEDEF (unloaded_cupheader_t);
+TYPEDEF (exitcondition_t);
 
 // font.h
 TYPEDEF (font_t);

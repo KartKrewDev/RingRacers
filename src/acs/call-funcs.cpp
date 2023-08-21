@@ -43,6 +43,7 @@
 #include "../k_podium.h"
 #include "../k_bot.h"
 #include "../z_zone.h"
+#include "../music.h"
 
 #include "call-funcs.hpp"
 
@@ -1802,6 +1803,7 @@ bool CallFunc_MapWarp(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Wor
 	if (argV[1] == 0)
 		skipstats = 1;
 
+	G_BeginLevelExit();
 	exitcountdown = 1;
 
 	if (server)
@@ -1853,6 +1855,91 @@ bool CallFunc_AddBot(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word
 
 	success = K_AddBot(skin, difficulty, style, &newplayernum);
 	thread->dataStk.push(success ? newplayernum : -1);
+	return false;
+}
+
+/*--------------------------------------------------
+	bool CallFunc_StopLevelExit(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
+
+		Halts the level exit if it's happening.
+--------------------------------------------------*/
+bool CallFunc_StopLevelExit(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
+{
+	(void)argV;
+	(void)argC;
+
+	exitcountdown = 0;
+	return false;
+}
+
+/*--------------------------------------------------
+	bool CallFunc_ExitLevel(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
+
+		Exits the level.
+--------------------------------------------------*/
+bool CallFunc_ExitLevel(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
+{
+	(void)argV;
+	(void)argC;
+
+	if (exitcountdown == 1)
+	{
+		// An exit is already in progress.
+		return false;
+	}
+
+	if (argC >= 1)
+	{
+		skipstats = (argV[0] == 0);
+	}
+
+	G_BeginLevelExit();
+	exitcountdown = 1;
+
+	if (server)
+		SendNetXCmd(XD_EXITLEVEL, NULL, 0);
+
+	return false;
+}
+
+/*--------------------------------------------------
+	bool CallFunc_MusicPlay(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
+
+		Play a tune. If it's already playing, restart from the
+		beginning.
+--------------------------------------------------*/
+bool CallFunc_MusicPlay(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
+{
+	ACSVM::MapScope *map = thread->scopeMap;
+
+	Music_Play(map->getString(argV[0])->str);
+
+	return false;
+}
+
+/*--------------------------------------------------
+	bool CallFunc_MusicStopAll(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
+
+		Stop every tune that is currently playing.
+--------------------------------------------------*/
+bool CallFunc_MusicStopAll(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
+{
+	Music_StopAll();
+
+	return false;
+}
+
+/*--------------------------------------------------
+	bool CallFunc_MusicRemap(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
+
+		Change the actual song lump that a tune will play.
+--------------------------------------------------*/
+bool CallFunc_MusicRemap(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
+{
+	ACSVM::MapScope *map = thread->scopeMap;
+
+	Music_Remap(map->getString(argV[0])->str, map->getString(argV[1])->str);
+
 	return false;
 }
 
