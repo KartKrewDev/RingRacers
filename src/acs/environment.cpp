@@ -173,6 +173,9 @@ Environment::Environment()
 	addFuncDataACS0( 505, addCallFunc(CallFunc_AddBot));
 	addFuncDataACS0( 506, addCallFunc(CallFunc_StopLevelExit));
 	addFuncDataACS0( 507, addCallFunc(CallFunc_ExitLevel));
+	addFuncDataACS0( 508, addCallFunc(CallFunc_MusicPlay));
+	addFuncDataACS0( 509, addCallFunc(CallFunc_MusicStopAll));
+	addFuncDataACS0( 510, addCallFunc(CallFunc_MusicRemap));
 }
 
 ACSVM::Thread *Environment::allocThread()
