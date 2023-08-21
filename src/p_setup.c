@@ -1412,16 +1412,6 @@ static boolean TextmapCount(size_t size)
 	if (!fastcmp(tkn, "ringracers"))
 		CONS_Alert(CONS_WARNING, "Invalid namespace '%s', only 'ringracers' is supported. This map may have issues loading.\n", tkn);
 
-	// Check for version
-	tkn = M_TokenizerRead(0);
-	if (fastcmp(tkn, "version"))
-	{
-		tkn = M_TokenizerRead(0);
-		udmf_version = atoi(tkn);
-		if (udmf_version > UDMF_CURRENT_VERSION)
-			CONS_Alert(CONS_WARNING, "Map is intended for future UDMF version '%d', current supported version is '%d'. This map may have issues loading.\n", udmf_version, UDMF_CURRENT_VERSION);
-	}
-
 	while ((tkn = M_TokenizerRead(0)) && M_TokenizerGetEndPos() < size)
 	{
 		// Avoid anything inside bracketed stuff, only look for external keywords.
@@ -1443,6 +1433,13 @@ static boolean TextmapCount(size_t size)
 			vertexesPos[numvertexes++] = M_TokenizerGetEndPos();
 		else if (fastcmp(tkn, "sector"))
 			sectorsPos[numsectors++] = M_TokenizerGetEndPos();
+		else if (fastcmp(tkn, "version"))
+		{
+			tkn = M_TokenizerRead(0);
+			udmf_version = atoi(tkn);
+			if (udmf_version > UDMF_CURRENT_VERSION)
+				CONS_Alert(CONS_WARNING, "Map is intended for future UDMF version '%d', current supported version is '%d'. This map may have issues loading.\n", udmf_version, UDMF_CURRENT_VERSION);
+		}
 		else
 			CONS_Alert(CONS_NOTICE, "Unknown field '%s'.\n", tkn);
 	}
