@@ -47,6 +47,7 @@
 #include "k_respawn.h"
 #include "k_terrain.h"
 #include "acs/interface.h"
+#include "m_easing.h"
 
 #ifdef HW3SOUND
 #include "hardware/hw3sound.h"
@@ -9411,17 +9412,20 @@ void P_DoQuakeOffset(UINT8 view, mappoint_t *viewPos, mappoint_t *offset)
 		ir = quake->intensity;
 
 		// Modulate with time remaining.
-		ir = FixedMul(ir, 2 * FRACUNIT * (quake->time + 1) / quake->startTime);
+		ir = Easing_InOutSine(FRACUNIT * (quake->time + 1) / quake->startTime, ir, 0);
 
 		// Modulate with distance from epicenter, if it exists.
 		if (quake->radius > 0 && quake->epicenter != NULL)
 		{
 			fixed_t epidist = P_AproxDistance(
-				viewPos->x - quake->epicenter->x,
-				viewPos->y - quake->epicenter->y
+				P_AproxDistance(
+					viewPos->x - quake->epicenter->x,
+					viewPos->y - quake->epicenter->y
+				),
+				viewPos->z - quake->epicenter->z
 			);
 
-			ir = FixedMul(ir, FixedDiv(max(0, quake->radius - epidist), quake->radius));
+			ir = Easing_InOutSine(min(FRACUNIT, FixedDiv(epidist, quake->radius)), ir, 0);
 		}
 
 		addZ += ir;
