@@ -1556,7 +1556,11 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 				P_PlayDeathSound(target);
 			}
 
-			if (K_Cooperative())
+			// Prisons Free Play: don't eliminate P1 for
+			// spectating. Because in Free Play, this player
+			// can enter the game again, and these flags would
+			// make them intangible.
+			if (K_Cooperative() && !target->player->spectator)
 			{
 				target->player->pflags |= PF_ELIMINATED;
 
@@ -2158,6 +2162,12 @@ static boolean P_KillPlayer(player_t *player, mobj_t *inflictor, mobj_t *source,
 		}
 
 		player->pflags |= PF_ELIMINATED;
+	}
+
+	if (type == DMG_SPECTATOR)
+	{
+		// Set it here so K_CheckBumpers knows about it later.
+		player->spectator = true;
 	}
 
 	return true;
