@@ -8148,7 +8148,6 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 		if (K_PodiumSequence())
 		{
 			// mapmusrng is set by local player position in K_ResetCeremony
-			P_ResetLevelMusic();
 			P_LoadLevelMusic();
 		}
 		else if (gamestate == GS_LEVEL)
