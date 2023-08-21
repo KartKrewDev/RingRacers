@@ -1284,6 +1284,7 @@ void G_StartTitleCard(void)
 	ST_startTitleCard();
 
 	// play the sound
+	if (gamestate != GS_CEREMONY)
 	{
 		sfxenum_t kstart = sfx_kstart;
 		if (K_CheckBossIntro() == true)
