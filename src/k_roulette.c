@@ -1602,7 +1602,8 @@ void K_KartItemRoulette(player_t *const player, ticcmd_t *const cmd)
 		}
 		else if (roulette->autoroulette)
 		{
-			confirmItem = (roulette->speed > 15);
+			// confirmItem = (roulette->speed > 15);
+			confirmItem = (roulette->elapsed == TICRATE*2);
 		}
 		else
 		{
@@ -1693,8 +1694,10 @@ void K_KartItemRoulette(player_t *const player, ticcmd_t *const cmd)
 
 	roulette->elapsed++;
 
+	/*
 	if (roulette->autoroulette && (roulette->elapsed % 5 == 0) && (roulette->elapsed > TICRATE))
 		roulette->speed++;
+	*/
 
 	if (roulette->tics == 0)
 	{
