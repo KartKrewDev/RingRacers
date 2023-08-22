@@ -604,15 +604,18 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 				if (!P_CanPickupEmblem(player, special->health - 1))
 					return;
 
-				if (P_IsLocalPlayer(player))
+				if (!P_IsLocalPlayer(player))
 				{
-					if (!gamedata->collected[special->health-1])
-					{
-						gamedata->collected[special->health-1] = true;
-						if (!M_UpdateUnlockablesAndExtraEmblems(true, true))
-							S_StartSound(NULL, sfx_ncitem);
-						gamedata->deferredsave = true;
-					}
+					// Must be party.
+					return;
+				}
+
+				if (!gamedata->collected[special->health-1])
+				{
+					gamedata->collected[special->health-1] = true;
+					if (!M_UpdateUnlockablesAndExtraEmblems(true, true))
+						S_StartSound(NULL, sfx_ncitem);
+					gamedata->deferredsave = true;
 				}
 
 				// Don't delete the object, just fade it.
