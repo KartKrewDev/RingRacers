@@ -216,10 +216,10 @@ void clear_levels(void)
 		}
 	}
 
-	if (gamedata)
+	if (gamedata && gamedata->spraycans)
 	{
 		UINT16 i;
-		for (i = 1; i < MAXCANCOLORS; i++)
+		for (i = 0; i < gamedata->numspraycans; i++)
 			gamedata->spraycans[i].map = 0;
 	}
 
@@ -326,6 +326,7 @@ void readfreeslots(MYFILE *f)
 						CONS_Printf("Skincolor SKINCOLOR_%s allocated.\n",word);
 						FREE_SKINCOLORS[i] = Z_Malloc(strlen(word)+1, PU_STATIC, NULL);
 						strcpy(FREE_SKINCOLORS[i],word);
+						skincolors[i].cache_spraycan = UINT16_MAX;
 						numskincolors++;
 						break;
 					}
@@ -2625,6 +2626,9 @@ static void readcondition(UINT16 set, UINT32 id, char *word2)
 		PARAMCHECK(1);
 		ty = UC_SPRAYCAN;
 		re = get_skincolor(params[1]);
+
+		// Force at head of the list?
+		x1 = (params[2] && (params[2][0] == 'Y' || params[2][0] == 'T')) ? 1 : 0;
 	}
 	else if ((offset=0) || fastcmp(params[0], "AND")
 	||        (++offset && fastcmp(params[0], "COMMA")))

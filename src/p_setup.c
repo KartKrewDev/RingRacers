@@ -460,7 +460,7 @@ static void P_ClearSingleMapHeaderInfo(INT16 num)
 	mapheaderinfo[num]->justPlayed = 0;
 	mapheaderinfo[num]->anger = 0;
 
-	mapheaderinfo[num]->cachedcan = 0;
+	mapheaderinfo[num]->cache_spraycan = UINT16_MAX;
 
 	mapheaderinfo[num]->customopts = NULL;
 	mapheaderinfo[num]->numCustomOptions = 0;
@@ -816,17 +816,18 @@ static void P_SpawnMapThings(boolean spawnemblems)
 
 	if (spawnemblems)
 	{
-		if (nummapspraycans == 0)
-		{
-			UINT16 col = mapheaderinfo[gamemap-1]->cachedcan;
+		const UINT8 recommendedcans =
+#ifdef DEVELOP
+			!(mapheaderinfo[gamemap-1]->typeoflevel & TOL_RACE) ? 0 :
+#endif
+			1;
 
-			if (col > 0 && col <= MAXCANCOLORS)
-			{
-				CONS_Alert(CONS_WARNING, "SPRAY CANS: Map has assigned Spray Cans but no pickup placed!\n");
-			}
-		}
-		else if (nummapspraycans > 1)
-			CONS_Alert(CONS_ERROR, "SPRAY CANS: Map has too many Spray Cans (%d)!", numspraycans);
+		if (nummapspraycans > recommendedcans)
+			CONS_Alert(CONS_ERROR, "SPRAY CANS: Map has too many Spray Cans (%d)!", nummapspraycans);
+#ifdef DEVELOP
+		else if (nummapspraycans != recommendedcans)
+			CONS_Alert(CONS_ERROR, "SPRAY CANS: Krew-made Race maps need a Spray Can placed!");
+#endif
 	}
 }
 

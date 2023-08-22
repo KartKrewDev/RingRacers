@@ -6117,11 +6117,16 @@ static void M_DrawMapMedals(INT32 mapnum, INT32 x, INT32 y)
 	if (hasmedals)
 		x -= 4;
 
-	if (mapheaderinfo[mapnum]->cachedcan != 0 && mapheaderinfo[mapnum]->cachedcan < MAXCANCOLORS && gamedata->spraycans[mapheaderinfo[mapnum]->cachedcan].got == true)
+	if (mapheaderinfo[mapnum]->cache_spraycan < gamedata->numspraycans)
 	{
-		V_DrawSmallMappedPatch(x, y, 0, W_CachePatchName("GOTCAN", PU_CACHE),
-			R_GetTranslationColormap(TC_RAINBOW, mapheaderinfo[mapnum]->cachedcan, GTC_MENUCACHE));
-		//V_DrawRightAlignedThinString(x - 2, y, 0, skincolors[mapheaderinfo[mapnum]->cachedcan].name);
+		UINT16 col = gamedata->spraycans[mapheaderinfo[mapnum]->cache_spraycan].col;
+
+		if (col < numskincolors)
+		{
+			V_DrawSmallMappedPatch(x, y, 0, W_CachePatchName("GOTCAN", PU_CACHE),
+				R_GetTranslationColormap(TC_RAINBOW, col, GTC_MENUCACHE));
+			//V_DrawRightAlignedThinString(x - 2, y, 0, skincolors[col].name);
+		}
 		x -= 8;
 	}
 }

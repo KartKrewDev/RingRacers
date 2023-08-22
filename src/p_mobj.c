@@ -12437,19 +12437,28 @@ static boolean P_SetupEmblem(mapthing_t *mthing, mobj_t *mobj)
 
 void P_SprayCanInit(mobj_t* mobj)
 {
-	UINT16 col = mapheaderinfo[gamemap-1]->cachedcan;
+	UINT16 can_id = mapheaderinfo[gamemap-1]->cache_spraycan;
 
-	if (col == 0 || col > MAXCANCOLORS)
+	if (can_id < gamedata->numspraycans)
 	{
-		mobj->renderflags = RF_DONTDRAW;
-		return;
+		// Assigned to this level, has been grabbed
+		mobj->renderflags = (tr_trans50 << RF_TRANSSHIFT);
+	}
+	else
+	{
+		// Unassigned, get the next grabbable colour
+		can_id = gamedata->gotspraycans;
+		mobj->renderflags = 0;
 	}
 
-	mobj->color = col;
-
-	mobj->renderflags = (gamedata->spraycans[col].got)
-		? (tr_trans50 << RF_TRANSSHIFT)
-		: 0;
+	if (can_id < gamedata->numspraycans)
+	{
+		mobj->color = gamedata->spraycans[can_id].col;
+	}
+	else
+	{
+		mobj->renderflags = RF_DONTDRAW;
+	}
 }
 
 static boolean P_SetupMace(mapthing_t *mthing, mobj_t *mobj)

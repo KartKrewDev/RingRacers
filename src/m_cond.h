@@ -255,8 +255,8 @@ typedef enum {
 
 struct candata_t
 {
+	UINT16 col;
 	UINT16 map;
-	boolean got;
 };
 
 // GAMEDATA STRUCTURE
@@ -281,8 +281,9 @@ struct gamedata_t
 	boolean unlockpending[MAXUNLOCKABLES];
 
 	// SPRAYCANS COLLECTED
-	boolean allspraycansplaced;
-	candata_t spraycans[MAXCANCOLORS];
+	UINT16 numspraycans;
+	UINT16 gotspraycans;
+	candata_t* spraycans;
 
 	// CHALLENGE GRID
 	UINT16 challengegridwidth;

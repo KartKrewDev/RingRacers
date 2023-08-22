@@ -142,6 +142,7 @@ static inline int lib_freeslot(lua_State *L)
 					CONS_Printf("Skincolor SKINCOLOR_%s allocated.\n",word);
 					FREE_SKINCOLORS[i] = Z_Malloc(strlen(word)+1, PU_STATIC, NULL);
 					strcpy(FREE_SKINCOLORS[i],word);
+					skincolors[i].cache_spraycan = UINT16_MAX;
 					numskincolors++;
 					lua_pushinteger(L, SKINCOLOR_FIRSTFREESLOT + i);
 					r++;

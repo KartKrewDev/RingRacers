@@ -532,7 +532,7 @@ struct mapheader_t
 	UINT8 cutscenenum;					///< Cutscene number to use, 0 for none.
 
 	UINT32 _saveid;						///< Purely assistive in gamedata save processes
-	UINT16 cachedcan;					///< Cached Spraycan ID
+	UINT16 cache_spraycan;				///< Cached Spraycan ID
 
 	// Lua information
 	UINT8 numCustomOptions;				///< Internal. For Lua custom value support.

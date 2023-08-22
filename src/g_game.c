@@ -4801,44 +4801,69 @@ void G_LoadGameData(void)
 
 	if (versionMinor > 5)
 	{
-		UINT16 numgamedatacans = READUINT32(save.p);
+		gamedata->gotspraycans = 0;
+		gamedata->numspraycans = READUINT16(save.p);
+		Z_Free(gamedata->spraycans);
 
-		if (numgamedatacans != MAXCANCOLORS - 1)
+		if (gamedata->numspraycans)
 		{
-			save.p += (1 + 4) * numgamedatacans;
-		}
-		else
-		{
-			for (i = 1; i < MAXCANCOLORS; i++)
+			gamedata->spraycans = Z_Malloc(
+				(gamedata->numspraycans * sizeof(candata_t)),
+				PU_STATIC, NULL);
+
+			for (i = 0; i < gamedata->numspraycans; i++)
 			{
-				gamedata->spraycans[i].got = (boolean)READUINT8(save.p);
-				gamedata->spraycans[i].map = 0;
+				gamedata->spraycans[i].col = SKINCOLOR_NONE;
+				gamedata->spraycans[i].map = NEXTMAP_INVALID;
 
+				UINT16 col = READUINT16(save.p);
 				UINT32 _saveid = READUINT32(save.p);
+
+				if (col < SKINCOLOR_FIRSTFREESLOT)
+				{
+					gamedata->spraycans[i].col = col;
+					skincolors[col].cache_spraycan = i;
+				}
 
 				if (_saveid >= numgamedatamapheaders)
 				{
-					//CONS_Printf("LOAD - Color %s - id %u, map 0 (invalid id)\n", skincolors[i].name, _saveid);
+					// Can has not been grabbed on any map, this is intentional.
 					continue;
 				}
 
 				UINT16 map = tempmapidreferences[_saveid];
 				if (map >= nummapheaders || !mapheaderinfo[map])
 				{
-					//CONS_Printf("LOAD - Color %s - id %u, map 0 (unloaded header)\n", skincolors[i].name, _saveid);
+					//CONS_Printf("LOAD - Can %u, color %s - id %u (unloaded header)\n", i, skincolors[col].name, _saveid);
 					continue;
 				}
 
-				//CONS_Printf("LOAD - Color %s - id %u, map %d\n", skincolors[i].name, _saveid, map+1);
+				//CONS_Printf("LOAD - Can %u, color %s - id %u, map %d\n", i, skincolors[col].name, _saveid, map);
 
-				gamedata->spraycans[i].map = map+1;
-				mapheaderinfo[map]->cachedcan = i;
+				gamedata->spraycans[i].map = map;
 
-				numgamedatacans--; // this one was successfully placed
+				if (gamedata->gotspraycans != i)
+				{
+					//CONS_Printf("LOAD - Swapping gotten can %u, color %s with prior ungotten can %u\n", i, skincolors[col].name, gamedata->gotspraycans);
+
+					// All grabbed cans should be at the head of the list.
+					// Let's swap with the can the disjoint occoured at.
+					// This will prevent a gap from occouring on reload.
+					candata_t copycan = gamedata->spraycans[gamedata->gotspraycans];
+					gamedata->spraycans[gamedata->gotspraycans] = gamedata->spraycans[i];
+					gamedata->spraycans[i] = copycan;
+
+					mapheaderinfo[copycan.map]->cache_spraycan = i;
+				}
+
+				mapheaderinfo[map]->cache_spraycan = gamedata->gotspraycans;
+
+				gamedata->gotspraycans++;
 			}
-
-			gamedata->allspraycansplaced = (numgamedatacans == 0);
-			//CONS_Printf("CCC - all spray cans placed? %c\n", gamedata->allspraycansplaced ? 'Y' : 'N');
+		}
+		else
+		{
+			gamedata->spraycans = NULL;
 		}
 	}
 
@@ -5093,7 +5118,7 @@ void G_SaveGameData(void)
 	for (i = 0; i < nummapheaders; i++)
 	{
 		// No spraycan attached.
-		if (mapheaderinfo[i]->cachedcan == 0
+		if (mapheaderinfo[i]->cache_spraycan >= gamedata->numspraycans
 		// It's safe to assume a level with no mapvisited will have no other data worth keeping, since you get MV_VISITED just for opening it.
 		&& !(mapheaderinfo[i]->records.mapvisited & MV_MAX))
 		{
@@ -5124,8 +5149,12 @@ void G_SaveGameData(void)
 
 	length += 4 + (numgamedatamapheaders * (MAXMAPLUMPNAME+1+4+4));
 
+	length += 2;
 
-	length += 4 + ((MAXCANCOLORS - 1) * (1 + 4));
+	if (gamedata->numspraycans)
+	{
+		length += (gamedata->numspraycans * (2 + 4));
+	}
 
 
 	UINT32 numgamedatacups = 0;
@@ -5322,7 +5351,7 @@ void G_SaveGameData(void)
 
 		for (i = 0; i < nummapheaders; i++)
 		{
-			if (mapheaderinfo[i]->cachedcan == 0
+			if (mapheaderinfo[i]->cache_spraycan >= gamedata->numspraycans
 			&& !(mapheaderinfo[i]->records.mapvisited & MV_MAX))
 				continue;
 
@@ -5363,25 +5392,25 @@ void G_SaveGameData(void)
 			}
 		}
 	}
+	
+	WRITEUINT16(save.p, gamedata->numspraycans); // 2
 
-	WRITEUINT32(save.p, MAXCANCOLORS - 1); // 4
+	// gamedata->numspraycans * (2 + 4)
 
-	// (MAXCANCOLORS - 1) * (1 + 4)
-
-	for (i = 1; i < MAXCANCOLORS; i++)
+	for (i = 0; i < gamedata->numspraycans; i++)
 	{
-		WRITEUINT8(save.p, gamedata->spraycans[i].got);
+		WRITEUINT16(save.p, gamedata->spraycans[i].col);
 
 		UINT32 _saveid = UINT32_MAX;
 
 		UINT16 map = gamedata->spraycans[i].map;
 
-		if (map > 0 && map <= nummapheaders && mapheaderinfo[map - 1])
+		if (map < nummapheaders && mapheaderinfo[map])
 		{
-			_saveid = mapheaderinfo[map - 1]->_saveid;
+			_saveid = mapheaderinfo[map]->_saveid;
 		}
 
-		//CONS_Printf("SAVE - Color %s - id %u, map %d\n", skincolors[i].name, _saveid, map);
+		//CONS_Printf("SAVE - Can %u, color %s - id %u, map %d\n", i, skincolors[gamedata->spraycans[i].col].name, _saveid, map);
 
 		WRITEUINT32(save.p, _saveid);
 	}

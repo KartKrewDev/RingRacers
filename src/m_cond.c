@@ -628,15 +628,22 @@ void M_ClearSecrets(void)
 		memset(netUnlocked, 0, sizeof(netUnlocked));
 	memset(gamedata->achieved, 0, sizeof(gamedata->achieved));
 
-	gamedata->allspraycansplaced = false;
-	memset(gamedata->spraycans, 0, sizeof(gamedata->spraycans));
+	Z_Free(gamedata->spraycans);
+	gamedata->spraycans = NULL;
+	gamedata->numspraycans = 0;
+	gamedata->gotspraycans = 0;
 
-	INT32 i;
+	UINT16 i;
 	for (i = 0; i < nummapheaders; i++)
 	{
 		if (!mapheaderinfo[i])
 			continue;
-		mapheaderinfo[i]->cachedcan = 0;
+		mapheaderinfo[i]->cache_spraycan = UINT16_MAX;
+	}
+
+	for (i = 0; i < numskincolors; i++)
+	{
+		skincolors[i].cache_spraycan = UINT16_MAX;
 	}
 
 	Z_Free(gamedata->challengegrid);
@@ -669,146 +676,100 @@ static void M_AssignSpraycans(void)
 	// the release date of "Bomb Rush Cyberfunk".
 	// ~toast 180823 (committed a day later)
 
-	if (gamedata->allspraycansplaced)
+	if (gamedata->numspraycans != 0)
 		return;
 
 	// Init ordered list of skincolors
-	UINT16 tempcanlist[MAXCANCOLORS];
-	size_t listlen = 0;
+	UINT16 tempcanlist[MAXSKINCOLORS];
+	UINT16 listlen = 0, prependlen = 0;
 
-	// Todo one of these should be a freebie
-	UINT16 prependlist[] =
+	UINT32 i, j;
+	conditionset_t *c;
+	condition_t *cn;
+
+	const UINT16 prependoffset = MAXSKINCOLORS-1;
+
+	// None of the following accounts for cans being removed, only added...
+	for (i = 0; i < MAXCONDITIONSETS; ++i)
 	{
-		SKINCOLOR_RED,
-		SKINCOLOR_ORANGE,
-		SKINCOLOR_YELLOW,
-		SKINCOLOR_GREEN,
-		SKINCOLOR_BLUE,
-		SKINCOLOR_PURPLE,
-		0
-	};
-
-	UINT16 i;
-
-	for (i = 0; prependlist[i]; i++)
-	{
-		if (gamedata->spraycans[prependlist[i]].map > 0
-		&& gamedata->spraycans[prependlist[i]].map <= nummapheaders)
+		c = &conditionSets[i];
+		if (!c->numconditions)
 			continue;
 
-		//CONS_Printf("DDD - Prepending %d\n", prependlist[i]);
-
-		tempcanlist[listlen] = prependlist[i];
-		gamedata->spraycans[prependlist[i]].got = 2; // invalid set to detect in below loop, rather than having to iterate over prependlist again
-		listlen++;
-	}
-
-	size_t prepend = listlen;
-
-	for (i = 1; i < MAXCANCOLORS; i++)
-	{
-		if (gamedata->spraycans[i].map > 0
-		&& gamedata->spraycans[i].map <= nummapheaders)
-			continue;
-
-		if (gamedata->spraycans[i].got == 2)
+		for (j = 0; j < c->numconditions; ++j)
 		{
-			// re-make valid, reject duplicating prepended
-			gamedata->spraycans[i].got = false;
-			continue;
-		}
-
-		//CONS_Printf("DDD - Adding %d\n", i);
-
-		tempcanlist[listlen] = i;
-		listlen++;
-	}
-
-	if (!listlen)
-		goto cansdone;
-
-	if (prepend > 0)
-	{
-		// Swap the prepend for random order
-		M_Shuffle_UINT16(tempcanlist, prepend);
-	}
-
-	if (listlen > prepend)
-	{
-		// Swap everything else for random order
-		M_Shuffle_UINT16(tempcanlist + prepend, listlen - prepend);
-	}
-
-	i = 0;
-
-	cupheader_t *cup;
-
-	UINT16 level;
-
-	for (cup = kartcupheaders; cup; cup = cup->next)
-	{
-		UINT8 j;
-		for (j = 0; j < cup->numlevels; j++)
-		{
-			level = cup->cachedlevels[j];
-
-			if (level > nummapheaders)
+			cn = &c->condition[j];
+			if (cn->type != UC_SPRAYCAN)
 				continue;
 
-			if (mapheaderinfo[level]->cachedcan != 0)
+			// G_LoadGamedata, G_SaveGameData doesn't support custom skincolors right now.
+			if (cn->requirement >= SKINCOLOR_FIRSTFREESLOT) //numskincolors)
 				continue;
 
-			gamedata->spraycans[tempcanlist[i]].map = level + 1;
-			mapheaderinfo[level]->cachedcan = tempcanlist[i];
-
-			if (++i < listlen)
+			if (skincolors[cn->requirement].cache_spraycan != UINT16_MAX)
 				continue;
 
-			goto cansdone;
+			// Still invalid, just in case it isn't assigned one later
+			skincolors[cn->requirement].cache_spraycan = UINT16_MAX-1;
+
+			if (!cn->extrainfo1)
+			{
+				//CONS_Printf("DDD - Adding standard can color %d\n", cn->requirement);
+
+				tempcanlist[listlen] = cn->requirement;
+				listlen++;
+				continue;
+			}
+
+			//CONS_Printf("DDD - Prepending early can color %d\n", cn->requirement);
+
+			tempcanlist[prependoffset - prependlen] = cn->requirement;
+			prependlen++;
 		}
 	}
 
-	for (level = 0; level < nummapheaders; level++)
+	if (listlen)
 	{
-		if (!mapheaderinfo[level]
-		|| !(mapheaderinfo[level]->typeoflevel & TOL_RACE)
-		|| mapheaderinfo[level]->cachedcan != 0)
-			continue;
-
-		gamedata->spraycans[tempcanlist[i]].map = level + 1;
-		mapheaderinfo[level]->cachedcan = tempcanlist[i];
-
-		if (++i < listlen)
-			continue;
-
-		goto cansdone;
+		// Swap the standard colours for random order
+		M_Shuffle_UINT16(tempcanlist, listlen);
+	}
+	else if (!prependlen)
+	{
+		return;
 	}
 
-cansdone:
-
-#ifdef PARANOIA
-	for (i = 1; i < MAXCANCOLORS; i++)
+	if (prependlen)
 	{
-		if (gamedata->spraycans[i].map == 0)
-			I_Error("CANPROBLEM - BAD MAP FOR CAN %d\n", i);
-		if (gamedata->spraycans[i].map > nummapheaders)
-			I_Error("CANPROBLEM - TOO BIG MAP FOR CAN %d\n", i);
-		if (mapheaderinfo[gamedata->spraycans[i].map-1]->cachedcan != i)
-			I_Error("CANPROBLEM - MAP AND CAN DISAGREE FOR %d (%d)\n", i, mapheaderinfo[gamedata->spraycans[i].map-1]->cachedcan);
+		// Swap the early colours for random order
+		M_Shuffle_UINT16(tempcanlist + prependoffset - prependlen, prependlen);
+
+		// Put at the front of the main list
+		// (technically reverses the prepend order, but it
+		// was LITERALLY just shuffled so it doesn't matter)
+		while (prependlen)
+		{
+			prependlen--;
+			tempcanlist[listlen] = tempcanlist[prependlen];
+			tempcanlist[prependlen] = tempcanlist[prependoffset - prependlen];
+			listlen++;
+		}
 	}
 
-	for (i = 0; i < nummapheaders; i++)
-	{
-		if (!mapheaderinfo[i] || mapheaderinfo[i]->cachedcan == 0)
-			continue;
-		if (mapheaderinfo[i]->cachedcan > MAXCANCOLORS)
-			I_Error("MAPPROBLEM - BAD CAN FOR MAP %d\n", i);
-		if (gamedata->spraycans[mapheaderinfo[i]->cachedcan].map-1 != i)
-			I_Error("MAPPROBLEM - CAN AND MAP DISAGREE FOR %d (%d)\n", i, gamedata->spraycans[mapheaderinfo[i]->cachedcan].map-1);
-	}
-#endif
+	gamedata->spraycans = Z_Realloc(
+		gamedata->spraycans,
+		sizeof(candata_t) * (gamedata->numspraycans + listlen),
+		PU_STATIC,
+		NULL);
 
-	gamedata->allspraycansplaced = true;
+	for (i = 0; i < listlen; i++)
+	{
+		gamedata->spraycans[gamedata->numspraycans].map = NEXTMAP_INVALID;
+		gamedata->spraycans[gamedata->numspraycans].col = tempcanlist[i];
+
+		skincolors[tempcanlist[i]].cache_spraycan = gamedata->numspraycans;
+
+		gamedata->numspraycans++;
+	}
 }
 
 void M_FinaliseGameData(void)
@@ -1062,10 +1023,15 @@ boolean M_CheckCondition(condition_t *cn, player_t *player)
 		case UC_SPRAYCAN:
 		{
 			if (cn->requirement <= 0
-			|| cn->requirement >= MAXCANCOLORS)
+			|| cn->requirement >= numskincolors)
 				return false;
 
-			return gamedata->spraycans[cn->requirement].got;
+			UINT16 can_id = skincolors[cn->requirement].cache_spraycan;
+
+			if (can_id >= gamedata->numspraycans)
+				return false;
+
+			return (gamedata->spraycans[can_id].map < nummapheaders);
 		}
 
 		// Just for string building
@@ -1522,20 +1488,24 @@ static const char *M_GetConditionString(condition_t *cn)
 		case UC_SPRAYCAN:
 		{
 			if (cn->requirement <= 0
-			|| cn->requirement >= MAXCANCOLORS)
+			|| cn->requirement >= numskincolors)
 				return va("INVALID SPRAYCAN COLOR \"%d\"", cn->requirement);
 
-			INT32 checkLevel = gamedata->spraycans[cn->requirement].map - 1;
+			UINT16 can_id = skincolors[cn->requirement].cache_spraycan;
 
-			if (checkLevel < 0 || checkLevel >= nummapheaders || !mapheaderinfo[checkLevel])
-				return va("INVALID SPRAYCAN MAP \"%d:%d\"", cn->requirement, checkLevel);
+			if (can_id >= gamedata->numspraycans)
+				return va("INVALID SPRAYCAN ID \"%d:%u\"",
+					cn->requirement,
+					skincolors[cn->requirement].cache_spraycan
+				);
 
-			title = BUILDCONDITIONTITLE(checkLevel);
+			if (can_id == 0)
+				return "grab a Spray Can"; // Special case for the head of the list
 
-			work = va("%s: grab the Spray Can", title);
+			if (gamedata->spraycans[0].map >= nummapheaders)
+				return NULL; // Don't tease that there are many until you have one
 
-			Z_Free(title);
-			return work;
+			return va("grab %d Spray Cans", can_id + 1);
 		}
 
 		case UC_AND:

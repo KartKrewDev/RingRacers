@@ -624,13 +624,6 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 
 		case MT_SPRAYCAN:
 			{
-				UINT16 col = mapheaderinfo[gamemap-1]->cachedcan;
-
-				if (col == 0 || col > MAXCANCOLORS)
-				{
-					return;
-				}
-
 				if (demo.playback)
 				{
 					// Never collect emblems in replays.
@@ -643,15 +636,41 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 					return;
 				}
 
-				if (P_IsLocalPlayer(player))
+				if (!P_IsLocalPlayer(player))
 				{
-					if (!gamedata->spraycans[col].got)
-					{
-						gamedata->spraycans[col].got = true;
-						if (!M_UpdateUnlockablesAndExtraEmblems(true, true))
-							S_StartSound(NULL, sfx_ncitem);
-						gamedata->deferredsave = true;
-					}
+					// Must be party.
+					return;
+				}
+
+				UINT16 can_id = mapheaderinfo[gamemap-1]->cache_spraycan;
+
+				if (can_id < gamedata->numspraycans)
+				{
+					// Assigned to this level, has been grabbed
+					return;
+				}
+				//else
+				{
+					// Unassigned, get the next grabbable colour
+					can_id = gamedata->gotspraycans;
+				}
+
+				if (can_id >= gamedata->numspraycans)
+				{
+					// We've exhausted all the spraycans to grab.
+					return;
+				}
+
+				if (gamedata->spraycans[can_id].map >= nummapheaders)
+				{
+					gamedata->spraycans[can_id].map = gamemap-1;
+					mapheaderinfo[gamemap-1]->cache_spraycan = can_id;
+
+					gamedata->gotspraycans++;
+
+					if (!M_UpdateUnlockablesAndExtraEmblems(true, true))
+						S_StartSound(NULL, sfx_ncitem);
+					gamedata->deferredsave = true;
 				}
 
 				// Don't delete the object, just fade it.
