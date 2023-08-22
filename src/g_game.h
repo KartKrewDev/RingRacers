@@ -126,6 +126,7 @@ ticcmd_t *G_MoveTiccmd(ticcmd_t* dest, const ticcmd_t* src, const size_t n);
 // clip the console player aiming to the view
 INT32 G_ClipAimingPitch(INT32 *aiming);
 INT16 G_SoftwareClipAimingPitch(INT32 *aiming);
+void G_FinalClipAimingPitch(INT32 *aiming, player_t *player, boolean skybox);
 
 extern angle_t localangle[MAXSPLITSCREENPLAYERS];
 extern INT32 localaiming[MAXSPLITSCREENPLAYERS]; // should be an angle_t but signed
@@ -205,7 +206,8 @@ boolean G_GametypeUsesLives(void);
 boolean G_GametypeHasTeams(void);
 boolean G_GametypeHasSpectators(void);
 INT16 G_SometimesGetDifferentEncore(void);
-void G_ExitLevel(void);
+void G_BeginLevelExit(void);
+void G_FinishExitLevel(void);
 void G_NextLevel(void);
 void G_GetNextMap(void);
 void G_Continue(void);

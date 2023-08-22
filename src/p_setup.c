@@ -1220,46 +1220,6 @@ static void P_LoadSidedefs(UINT8 *data)
 				sd->toptexture = sd->midtexture = sd->bottomtexture = 0;
 				break;
 
-			case 413: // Change music
-			{
-				if (!isfrontside)
-					break;
-
-				char process[8+1];
-
-				sd->toptexture = sd->midtexture = sd->bottomtexture = 0;
-				if (msd->bottomtexture[0] != '-' || msd->bottomtexture[1] != '\0')
-				{
-					M_Memcpy(process,msd->bottomtexture,8);
-					process[8] = '\0';
-					sd->bottomtexture = get_number(process);
-				}
-
-				if (!(msd->midtexture[0] == '-' && msd->midtexture[1] == '\0') || msd->midtexture[1] != '\0')
-				{
-					M_Memcpy(process,msd->midtexture,8);
-					process[8] = '\0';
-					sd->midtexture = get_number(process);
-				}
-
-				if (msd->toptexture[0] != '-' && msd->toptexture[1] != '\0')
-				{
-					sd->line->stringargs[0] = Z_Malloc(7, PU_LEVEL, NULL);
-					M_Memcpy(process,msd->toptexture,8);
-					process[8] = '\0';
-
-					// If they type in O_ or D_ and their music name, just shrug,
-					// then copy the rest instead.
-					if ((process[0] == 'O' || process[0] == 'D') && process[7])
-						M_Memcpy(sd->line->stringargs[0], process+2, 6);
-					else // Assume it's a proper music name.
-						M_Memcpy(sd->line->stringargs[0], process, 6);
-					sd->line->stringargs[0][6] = '\0';
-				}
-
-				break;
-			}
-
 			case 414: // Play SFX
 			{
 				sd->toptexture = sd->midtexture = sd->bottomtexture = 0;
@@ -5586,28 +5546,6 @@ static void P_ConvertBinaryLinedefTypes(void)
 			lines[i].args[3] = sides[lines[i].sidenum[0]].rowoffset >> FRACBITS;
 			lines[i].args[4] = lines[i].frontsector->ceilingheight >> FRACBITS;
 			break;
-		case 413: //Change music
-			if (lines[i].flags & ML_NOCLIMB)
-				lines[i].args[1] |= TMM_ALLPLAYERS;
-			if (lines[i].flags & ML_SKEWTD)
-				lines[i].args[1] |= TMM_OFFSET;
-			if (lines[i].flags & ML_NOSKEW)
-				lines[i].args[1] |= TMM_FADE;
-			if (lines[i].flags & ML_BLOCKPLAYERS)
-				lines[i].args[1] |= TMM_NORELOAD;
-			if (lines[i].flags & ML_NOTBOUNCY)
-				lines[i].args[1] |= TMM_FORCERESET;
-			if (lines[i].flags & ML_MIDSOLID)
-				lines[i].args[1] |= TMM_NOLOOP;
-			if (lines[i].flags & ML_MIDPEG)
-				lines[i].args[1] |= TMM_NOCREDIT;
-			lines[i].args[2] = sides[lines[i].sidenum[0]].midtexture;
-			lines[i].args[3] = sides[lines[i].sidenum[0]].textureoffset >> FRACBITS;
-			lines[i].args[4] = sides[lines[i].sidenum[0]].rowoffset >> FRACBITS;
-			lines[i].args[5] = (lines[i].sidenum[1] != 0xffff) ? sides[lines[i].sidenum[1]].textureoffset >> FRACBITS : 0;
-			lines[i].args[6] = (lines[i].sidenum[1] != 0xffff) ? sides[lines[i].sidenum[1]].rowoffset >> FRACBITS : -1;
-			lines[i].args[7] = sides[lines[i].sidenum[0]].bottomtexture;
-			break;
 		case 414: //Play sound effect
 			lines[i].args[3] = tag;
 			if (tag != 0)
@@ -7524,6 +7462,9 @@ static void P_InitLevelSettings(void)
 	racecountdown = exitcountdown = musiccountdown = exitfadestarted = 0;
 	curlap = bestlap = 0; // SRB2Kart
 
+	g_exit.losing = false;
+	g_exit.retry = false;
+
 	// Gamespeed and frantic items
 	gamespeed = KARTSPEED_EASY;
 	franticitems = false;
@@ -7754,6 +7695,8 @@ static void P_SetupCamera(UINT8 pnum, camera_t *cam)
 			cam->subsector = R_PointInSubsector(cam->x, cam->y); // make sure camera has a subsector set -- Monster Iestyn (12/11/18)
 		}
 	}
+
+	cam->chase = false; // tell camera to reset its position next tic
 }
 
 static void P_InitCamera(void)
@@ -8165,7 +8108,6 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 		if (K_PodiumSequence())
 		{
 			// mapmusrng is set by local player position in K_ResetCeremony
-			P_ResetLevelMusic();
 			P_LoadLevelMusic();
 		}
 		else if (gamestate == GS_LEVEL)

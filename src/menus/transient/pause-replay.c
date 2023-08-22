@@ -236,20 +236,7 @@ void M_PlaybackToggleFreecam(INT32 choice)
 	splitscreen = 0;
 	R_ExecuteSetViewSize();
 
-	P_InitCameraCmd();	// init camera controls
-	if (!demo.freecam)	// toggle on
-	{
-		demo.freecam = true;
-		democam.cam = &camera[0];	// this is rather useful
-	}
-	else	// toggle off
-	{
-		demo.freecam = false;
-		// reset democam vars:
-		democam.cam = NULL;
-		//democam.turnheld = false;
-		democam.keyboardlook = false;	// reset only these. localangle / aiming gets set before the cam does anything anyway
-	}
+	P_ToggleDemoCamera();
 }
 
 void M_PlaybackQuit(INT32 choice)

@@ -7555,6 +7555,14 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 			return false;
 		}
 		break;
+	case MT_EMERALDFLARE:
+		Obj_EmeraldFlareThink(mobj);
+
+		if (P_MobjWasRemoved(mobj))
+		{
+			return false;
+		}
+		break;
 	case MT_MONITOR:
 		Obj_MonitorThink(mobj);
 
@@ -9824,6 +9832,12 @@ static boolean P_FuseThink(mobj_t *mobj)
 
 		break;
 	}
+	case MT_EMERALD:
+	{
+		Obj_GiveEmerald(mobj);
+		P_RemoveMobj(mobj);
+		return false;
+	}
 	case MT_PLAYER:
 		break; // don't remove
 	default:
@@ -11840,7 +11854,10 @@ void P_SpawnPlayer(INT32 playernum)
 		}
 		else // Otherwise, never spectator.
 		{
+			// TODO: this would make a great debug feature for release
+#ifndef DEVELOP
 			p->spectator = false;
+#endif
 		}
 	}
 
@@ -11968,6 +11985,15 @@ void P_SpawnPlayer(INT32 playernum)
 	{
 		K_ToggleDirector(players[consoleplayer].spectator && pcount > 0);
 	}
+
+	// TODO: handle splitscreen
+	// Spectators can switch to freecam. This should be
+	// disabled when they enter the race, or when the level
+	// changes.
+	if (playernum == consoleplayer && !demo.playback)
+	{
+		demo.freecam = false;
+	}
 }
 
 void P_AfterPlayerSpawn(INT32 playernum)
@@ -12001,12 +12027,15 @@ void P_AfterPlayerSpawn(INT32 playernum)
 
 	p->drawangle = mobj->angle;
 
-	for (i = 0; i <= r_splitscreen; i++)
+	if (p->spectator == false)
 	{
-		if (camera[i].chase)
+		for (i = 0; i <= r_splitscreen; i++)
 		{
-			if (displayplayers[i] == playernum)
-				P_ResetCamera(p, &camera[i]);
+			if (camera[i].chase)
+			{
+				if (displayplayers[i] == playernum)
+					P_ResetCamera(p, &camera[i]);
+			}
 		}
 	}
 

@@ -127,7 +127,10 @@ void K_CheckBumpers(void)
 	{
 		if (nobumpers > 0 && nobumpers >= numingame)
 		{
+			// TODO: this would make a great debug feature for release
+#ifndef DEVELOP
 			P_DoAllPlayersExit(PF_NOCONTEST, false);
+#endif
 			return;
 		}
 	}
@@ -275,8 +278,7 @@ void K_DropEmeraldsFromPlayer(player_t *player, UINT32 emeraldType)
 
 		if ((player->emeralds & emeraldFlag) && (emeraldFlag & emeraldType))
 		{
-			mobj_t *emerald = K_SpawnChaosEmerald(player->mo->x, player->mo->y, player->mo->z, player->mo->angle - ANGLE_90, flip, emeraldFlag);
-			P_SetTarget(&emerald->target, player->mo);
+			K_SpawnChaosEmerald(player->mo->x, player->mo->y, player->mo->z, player->mo->angle - ANGLE_90, flip, emeraldFlag);
 
 			player->emeralds &= ~emeraldFlag;
 			break; // Drop only one emerald. Emerald wins are hard enough!

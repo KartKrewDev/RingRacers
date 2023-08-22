@@ -206,9 +206,17 @@ class TiccmdBuilder
 		return true;
 	}
 
+	void toggle_freecam_input()
+	{
+		if (M_MenuButtonPressed(forplayer(), MBT_C))
+		{
+			P_ToggleDemoCamera();
+		}
+	}
+
 	bool director_input()
 	{
-		if (G_IsPartyLocal(displayplayers[forplayer()]) == true)
+		if (demo.freecam || G_IsPartyLocal(displayplayers[forplayer()]) == true)
 		{
 			return false;
 		}
@@ -239,12 +247,14 @@ class TiccmdBuilder
 			}
 		}
 
+		toggle_freecam_input();
+
 		return true;
 	}
 
 	bool spectator_analog_input()
 	{
-		if (!player()->spectator && !objectplacing)
+		if (!player()->spectator && !objectplacing && !demo.freecam)
 		{
 			return false;
 		}
@@ -261,7 +271,7 @@ class TiccmdBuilder
 
 		if (G_PlayerInputDown(forplayer(), gc_lookback, 0))
 		{
-			cmd->aiming -= joystickvector.yaxis;
+			cmd->aiming -= (joystickvector.yaxis * KART_FULLTURN) / JOYAXISRANGE;
 		}
 		else
 		{
@@ -361,10 +371,28 @@ public:
 	explicit TiccmdBuilder(ticcmd_t* cmd_, INT32 realtics_, UINT8 ssplayer_) :
 		cmd(cmd_), realtics(realtics_), ssplayer(ssplayer_), viewnum(G_PartyPosition(g_localplayers[forplayer()]))
 	{
-		*cmd = {}; // blank ticcmd
-
-		if (demo.playback)
+		auto regular_input = [this]
 		{
+			analog_input();
+			common_button_input();
+		};
+
+		if (demo.playback || demo.freecam || player()->spectator)
+		{
+			// freecam is controllable even while paused
+
+			*cmd = {};
+
+			if (!typing_input() && !director_input())
+			{
+				regular_input();
+
+				if (demo.freecam)
+				{
+					toggle_freecam_input();
+				}
+			}
+
 			return;
 		}
 
@@ -372,6 +400,8 @@ public:
 		{
 			return;
 		}
+
+		*cmd = {}; // blank ticcmd
 
 		if (gamestate == GS_LEVEL && player()->playerstate == PST_REBORN)
 		{
@@ -391,8 +421,7 @@ public:
 
 		if (!overlay)
 		{
-			analog_input();
-			common_button_input();
+			regular_input();
 		}
 
 		cmd->angle = localangle[viewnum] >> TICCMD_REDUCE;

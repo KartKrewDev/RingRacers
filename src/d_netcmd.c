@@ -3690,11 +3690,14 @@ static void Command_Pause(void)
 			CONS_Printf(M_GetText("You can't pause here.\n"));
 			return;
 		}
+		// TODO: this would make a great debug feature for release
+#ifndef DEVELOP
 		else if (modeattacking)	// in time attack, pausing restarts the map
 		{
 			//M_ModeAttackRetry(0);	// directly call from m_menu;
 			return;
 		}
+#endif
 
 		SendNetXCmd(XD_PAUSE, &buf, 2);
 	}
@@ -3715,8 +3718,11 @@ static void Got_Pause(UINT8 **cp, INT32 playernum)
 		return;
 	}
 
+	// TODO: this would make a great debug feature for release
+#ifndef DEVELOP
 	if (modeattacking && !demo.playback)
 		return;
+#endif
 
 	paused = READUINT8(*cp);
 	dedicatedpause = READUINT8(*cp);
@@ -5770,7 +5776,7 @@ static void Got_ExitLevelcmd(UINT8 **cp, INT32 playernum)
 	if (G_GamestateUsesExitLevel() == false)
 		return;
 
-	G_ExitLevel();
+	G_FinishExitLevel();
 }
 
 static void Got_SetupVotecmd(UINT8 **cp, INT32 playernum)

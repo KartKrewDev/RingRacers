@@ -2365,6 +2365,8 @@ typedef enum state
 	S_EMERALDSPARK6,
 	S_EMERALDSPARK7,
 
+	S_EMERALDFLARE1,
+
 	// Emerald hunt shards
 	S_SHRD1,
 	S_SHRD2,
@@ -5982,6 +5984,7 @@ typedef enum mobj_type
 	MT_SPRAYCAN,
 	MT_EMERALD,
 	MT_EMERALDSPARK,
+	MT_EMERALDFLARE,
 	MT_EMERHUNT, // Emerald Hunt
 	MT_EMERALDSPAWN, // Emerald spawner w/ delay
 

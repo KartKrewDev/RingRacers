@@ -816,7 +816,13 @@ void M_Drawer(void)
 	// draw pause pic
 	if (paused && !demo.playback && (menuactive || cv_showhud.value))
 	{
-		M_DrawPausedText(0);
+		// Don't cover the Stereo player!
+		boolean stereo_open = menuactive && currentMenu == &MISC_SoundTestDef;
+
+		if (stereo_open == false)
+		{
+			M_DrawPausedText(0);
+		}
 	}
 
 	// focus lost notification goes on top of everything, even the former everything
@@ -5048,7 +5054,7 @@ void M_DrawAddons(void)
 
 	m = numwadfiles-(mainwads+musicwads+1);
 
-	V_DrawCenteredString(BASEVIDWIDTH/2, y+4, (majormods ? highlightflags : V_TRANSLUCENT), va("%ld ADD-ON%s LOADED", (long)m, (m == 1) ? "" : "S")); //+2 for music, sounds, +1 for main.kart
+	V_DrawCenteredString(BASEVIDWIDTH/2, y+4, (majormods ? highlightflags : V_TRANSLUCENT), va("%ld ADD-ON%s LOADED", (long)m, (m == 1) ? "" : "S")); //+2 for music, sounds, +1 for bios.pk3
 }
 
 #undef addonsseperation

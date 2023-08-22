@@ -2869,7 +2869,8 @@ static int lib_gExitLevel(lua_State *L)
 	// Moved this bit to G_SetCustomExitVars
 	if (n >= 1) // Don't run the reset to defaults option
 		lib_gSetCustomExitVars(L);
-	G_ExitLevel();
+	G_BeginLevelExit();
+	G_FinishExitLevel();
 	return 0;
 }
 

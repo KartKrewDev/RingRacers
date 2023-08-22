@@ -5735,6 +5735,10 @@ static void P_NetArchiveMisc(savebuffer_t *save, boolean resending)
 	WRITEUINT32(save->p, racecountdown);
 	WRITEUINT32(save->p, exitcountdown);
 
+	// exitcondition_t
+	WRITEUINT8(save->p, g_exit.losing);
+	WRITEUINT8(save->p, g_exit.retry);
+
 	WRITEFIXED(save->p, gravity);
 	WRITEFIXED(save->p, mapobjectscale);
 
@@ -5909,6 +5913,10 @@ static boolean P_NetUnArchiveMisc(savebuffer_t *save, boolean reloading)
 
 	racecountdown = READUINT32(save->p);
 	exitcountdown = READUINT32(save->p);
+
+	// exitcondition_t
+	g_exit.losing = READUINT8(save->p);
+	g_exit.retry = READUINT8(save->p);
 
 	gravity = READFIXED(save->p);
 	mapobjectscale = READFIXED(save->p);

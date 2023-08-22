@@ -34,7 +34,8 @@ void Obj_InstaWhipThink (mobj_t *whip)
 		// Visuals
 		whip->renderflags |= RF_NOSPLATBILLBOARD|RF_FULLBRIGHT;
 
-		if (whip->renderflags & RF_DONTDRAW)
+		// This is opposite of player flashing tics
+		if (leveltime & 1)
 			whip->renderflags &= ~RF_DONTDRAW;
 		else
 			whip->renderflags |= RF_DONTDRAW;

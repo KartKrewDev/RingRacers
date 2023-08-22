@@ -886,11 +886,14 @@ void D_SRB2Loop(void)
 			{
 				rendertimefrac = FRACUNIT;
 			}
+
+			rendertimefrac_unpaused = g_time.timefrac;
 		}
 		else
 		{
 			renderdeltatics = realtics * FRACUNIT;
 			rendertimefrac = FRACUNIT;
+			rendertimefrac_unpaused = FRACUNIT;
 		}
 
 		if (interp || doDisplay)
@@ -1096,7 +1099,7 @@ static void ChangeDirForUrlHandler(void)
 
 static boolean AddIWAD(void)
 {
-	char * path = va(pandf,srb2path,"main.kart");
+	char * path = va(pandf,srb2path,"bios.pk3");
 
 	if (FIL_ReadFileOK(path))
 	{
@@ -1114,7 +1117,7 @@ static void IdentifyVersion(void)
 	const char *srb2waddir = NULL;
 
 #if (defined (__unix__) && !defined (MSDOS)) || defined (UNIXCOMMON) || defined (HAVE_SDL)
-	// change to the directory where 'main.kart' is found
+	// change to the directory where 'bios.pk3' is found
 	srb2waddir = I_LocateWad();
 #endif
 
@@ -1134,7 +1137,7 @@ static void IdentifyVersion(void)
 	// Load the IWAD
 	if (! AddIWAD())
 	{
-		I_Error("MAIN.KART not found! Expected in %s\n", srb2waddir);
+		I_Error("\"bios.pk3\" not found! Expected in %s\n", srb2waddir);
 	}
 
 	// will be overwritten in case of -cdrom or unix/win home
@@ -1478,7 +1481,7 @@ void D_SRB2Main(void)
 #endif
 	// Check MD5s of autoloaded files
 	// Note: Do not add any files that ignore MD5!
-	W_VerifyFileMD5(mainwads, ASSET_HASH_MAIN_KART);							// main.kart
+	W_VerifyFileMD5(mainwads, ASSET_HASH_BIOS_PK3);								// bios.pk3
 	mainwads++; W_VerifyFileMD5(mainwads, ASSET_HASH_GFX_PK3);					// gfx.pk3
 	mainwads++; W_VerifyFileMD5(mainwads, ASSET_HASH_TEXTURES_GENERAL_PK3);		// textures_general.pk3
 	mainwads++; W_VerifyFileMD5(mainwads, ASSET_HASH_TEXTURES_SEGA_PK3);		// textures_segazones.pk3

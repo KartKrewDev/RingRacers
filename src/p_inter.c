@@ -464,9 +464,14 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 			if (toucher->hitlag > 0)
 				return;
 
-			player->emeralds |= special->extravalue1;
-			K_CheckEmeralds(player);
-			break;
+			// Emerald will now orbit the player
+
+			{
+				const tic_t orbit = 2*TICRATE;
+				Obj_BeginEmeraldOrbit(special, toucher, toucher->radius, orbit, orbit * 20);
+			}
+
+			return;
 		case MT_SPECIAL_UFO:
 			if (Obj_UFOEmeraldCollect(special, toucher) == false)
 			{
@@ -2031,7 +2036,15 @@ static boolean P_KillPlayer(player_t *player, mobj_t *inflictor, mobj_t *source,
 
 	if (!player->exiting && (specialstageinfo.valid == true || modeattacking & ATTACKING_SPB))
 	{
+		// TODO: this would make a great debug feature for release
+#ifdef DEVELOP
+		if (type != DMG_SPECTATOR)
+		{
+			P_DoPlayerExit(player, PF_NOCONTEST);
+		}
+#else
 		P_DoPlayerExit(player, PF_NOCONTEST);
+#endif
 	}
 
 	if (player->exiting)

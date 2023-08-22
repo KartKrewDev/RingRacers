@@ -1881,6 +1881,8 @@ state_t states[NUMSTATES] =
 	{SPR_ESPK, FF_FULLBRIGHT|5, 3, {NULL}, 0, 0, S_EMERALDSPARK7}, // S_EMERALDSPARK6
 	{SPR_ESPK, FF_FULLBRIGHT|6, 3, {NULL}, 0, 0, S_NULL}, // S_EMERALDSPARK7
 
+	{SPR_LENS, FF_FULLBRIGHT|FF_ADD|FF_TRANS10|FF_ANIMATE|11, 8, {NULL}, 7, 1, S_GAINAX_MID2}, // S_EMERALDFLARE1
+
 	// Emerald hunt shards
 	{SPR_SHRD, 0, -1, {NULL}, 0, 0, S_NULL}, // S_SHRD1
 	{SPR_SHRD, 1, -1, {NULL}, 0, 0, S_NULL}, // S_SHRD2
@@ -8321,6 +8323,33 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 	{           // MT_EMERALDSPARK
 		-1,             // doomednum
 		S_EMERALDSPARK1,// spawnstate
+		1000,           // spawnhealth
+		S_NULL,         // seestate
+		sfx_None,       // seesound
+		8,              // reactiontime
+		sfx_None,       // attacksound
+		S_NULL,         // painstate
+		0,              // painchance
+		sfx_None,       // painsound
+		S_NULL,         // meleestate
+		S_NULL,         // missilestate
+		S_NULL,         // deathstate
+		S_NULL,         // xdeathstate
+		sfx_None,       // deathsound
+		0,              // speed
+		8*FRACUNIT,     // radius
+		8*FRACUNIT,     // height
+		0,              // display offset
+		16,             // mass
+		0,              // damage
+		sfx_None,       // activesound
+		MF_NOBLOCKMAP|MF_NOGRAVITY|MF_NOCLIP|MF_NOCLIPHEIGHT|MF_DONTENCOREMAP, // flags
+		S_NULL          // raisestate
+	},
+
+	{           // MT_EMERALDFLARE
+		-1,             // doomednum
+		S_INVISIBLE,    // spawnstate
 		1000,           // spawnhealth
 		S_NULL,         // seestate
 		sfx_None,       // seesound

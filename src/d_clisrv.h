@@ -615,7 +615,10 @@ extern UINT8 playerconsole[MAXPLAYERS];
 
 INT32 D_NumPlayers(void);
 boolean D_IsPlayerHumanAndGaming(INT32 player_number);
+
 void D_ResetTiccmds(void);
+void D_ResetTiccmdAngle(UINT8 ss, angle_t angle);
+ticcmd_t *D_LocalTiccmd(UINT8 ss);
 
 tic_t GetLag(INT32 node);
 UINT8 GetFreeXCmdSize(UINT8 playerid);

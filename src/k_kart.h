@@ -29,6 +29,7 @@ Make sure this matches the actual number of states
 #define GROW_PHYSICS_SCALE (3*FRACUNIT/2)
 #define SHRINK_PHYSICS_SCALE (3*FRACUNIT/4)
 
+#define INSTAWHIP_DURATION (12)
 #define INSTAWHIP_COOLDOWN (TICRATE*2)
 #define INSTAWHIP_STARTOFRACE (255)
 #define INSTAWHIP_STARTOFBATTLE (1)

@@ -76,6 +76,10 @@
 #include "discord.h"
 #endif
 
+#ifdef HWRENDER
+#include "hardware/hw_main.h" // for cv_glshearing
+#endif
+
 gameaction_t gameaction;
 gamestate_t gamestate = GS_NULL;
 UINT8 ultimatemode = false;
@@ -272,6 +276,7 @@ mobj_t *hunt2;
 mobj_t *hunt3;
 
 tic_t racecountdown, exitcountdown, musiccountdown; // for racing
+exitcondition_t g_exit;
 
 fixed_t gravity;
 fixed_t mapobjectscale;
@@ -803,9 +808,7 @@ const char *G_BuildMapName(INT32 map)
   */
 INT32 G_MapNumber(const char * name)
 {
-#ifdef NEXTMAPINSOC
 	if (strncasecmp("NEXTMAP_", name, 8) != 0)
-#endif
 	{
 		INT32 map;
 		UINT32 hash = quickncasehash(name, MAXMAPLUMPNAME);
@@ -824,7 +827,6 @@ INT32 G_MapNumber(const char * name)
 		return NEXTMAP_INVALID;
 	}
 
-#ifdef NEXTMAPINSOC
 	name += 8;
 
 	if (strcasecmp("EVALUATION", name) == 0)
@@ -833,9 +835,10 @@ INT32 G_MapNumber(const char * name)
 		return NEXTMAP_CREDITS;
 	if (strcasecmp("CEREMONY", name) == 0)
 		return NEXTMAP_CEREMONY;
-	//if (strcasecmp("TITLE", name) == 0)
+	if (strcasecmp("TITLE", name) == 0)
 		return NEXTMAP_TITLE;
-#endif
+
+	return NEXTMAP_INVALID;
 }
 
 /** Clips the console player's mouse aiming to the current view.
@@ -863,7 +866,7 @@ INT16 G_SoftwareClipAimingPitch(INT32 *aiming)
 	INT32 limitangle;
 
 	// note: the current software mode implementation doesn't have true perspective
-	limitangle = ANGLE_90 - ANG10; // Some viewing fun, but not too far down...
+	limitangle = ANGLE_45; // Some viewing fun, but not too far down...
 
 	if (*aiming > limitangle)
 		*aiming = limitangle;
@@ -871,6 +874,31 @@ INT16 G_SoftwareClipAimingPitch(INT32 *aiming)
 		*aiming = -limitangle;
 
 	return (INT16)((*aiming)>>16);
+}
+
+void G_FinalClipAimingPitch(INT32 *aiming, player_t *player, boolean skybox)
+{
+#ifndef HWRENDER
+	(void)player;
+	(void)skybox;
+#endif
+
+	// clip it in the case we are looking a hardware 90 degrees full aiming
+	// (lmps, network and use F12...)
+	if (rendermode == render_soft
+#ifdef HWRENDER
+		|| (rendermode == render_opengl
+			&& (cv_glshearing.value == 1
+			|| (cv_glshearing.value == 2 && R_IsViewpointThirdPerson(player, skybox))))
+#endif
+		)
+	{
+		G_SoftwareClipAimingPitch(aiming);
+	}
+	else
+	{
+		G_ClipAimingPitch(aiming);
+	}
 }
 
 static INT32 G_GetValueFromControlTable(INT32 deviceID, INT32 deadzone, INT32 *controltable)
@@ -1257,6 +1285,7 @@ void G_StartTitleCard(void)
 	ST_startTitleCard();
 
 	// play the sound
+	if (gamestate != GS_CEREMONY)
 	{
 		sfxenum_t kstart = sfx_kstart;
 		if (K_CheckBossIntro() == true)
@@ -2900,95 +2929,116 @@ void G_AddPlayer(INT32 playernum)
 	demo_extradata[playernum] |= DXD_JOINDATA|DXD_PLAYSTATE|DXD_COLOR|DXD_NAME|DXD_SKIN|DXD_FOLLOWER; // Set everything
 }
 
-void G_ExitLevel(void)
+void G_BeginLevelExit(void)
+{
+	g_exit.losing = true;
+	g_exit.retry = false;
+
+	if (grandprixinfo.gp == true)
+	{
+		UINT8 i;
+
+		for (i = 0; i < MAXPLAYERS; i++)
+		{
+			if (playeringame[i] && !players[i].spectator)
+			{
+				K_PlayerFinishGrandPrix(&players[i]);
+			}
+		}
+	}
+
+	if (!G_GametypeUsesLives() || skipstats != 0)
+	{
+		g_exit.losing = false; // never force a retry
+	}
+	else if (specialstageinfo.valid == true || (gametyperules & GTR_BOSS))
+	{
+		UINT8 i;
+
+		for (i = 0; i < MAXPLAYERS; i++)
+		{
+			if (playeringame[i] && !players[i].spectator && !players[i].bot)
+			{
+				if (!K_IsPlayerLosing(&players[i]))
+				{
+					g_exit.losing = false;
+					break;
+				}
+			}
+		}
+	}
+	else if (grandprixinfo.gp == true && grandprixinfo.eventmode == GPEVENT_NONE)
+	{
+		g_exit.losing = (grandprixinfo.wonround != true);
+	}
+
+	if (g_exit.losing)
+	{
+		// You didn't win...
+
+		UINT8 i;
+
+		for (i = 0; i < MAXPLAYERS; i++)
+		{
+			if (playeringame[i] && !players[i].spectator && !players[i].bot)
+			{
+				if (players[i].lives > 0)
+				{
+					g_exit.retry = true;
+					break;
+				}
+			}
+		}
+	}
+
+	if (g_exit.losing && specialstageinfo.valid)
+	{
+		exitcountdown = TICRATE;
+	}
+	else
+	{
+		exitcountdown = raceexittime+1;
+	}
+
+	if (g_exit.losing)
+	{
+		if (!g_exit.retry)
+		{
+			ACS_RunGameOverScript();
+		}
+	}
+}
+
+void G_FinishExitLevel(void)
 {
 	G_ResetAllDeviceRumbles();
 
 	if (gamestate == GS_LEVEL)
 	{
-		UINT8 i;
-		boolean doretry = false;
-
-		if (grandprixinfo.gp == true)
+		if (g_exit.retry)
 		{
-			for (i = 0; i < MAXPLAYERS; i++)
-			{
-				if (playeringame[i] && !players[i].spectator)
-				{
-					K_PlayerFinishGrandPrix(&players[i]);
-				}
-			}
-		}
-
-		if (!G_GametypeUsesLives() || skipstats != 0)
-			; // never force a retry
-		else if (specialstageinfo.valid == true || (gametyperules & GTR_BOSS))
-		{
-			doretry = true;
-			for (i = 0; i < MAXPLAYERS; i++)
-			{
-				if (playeringame[i] && !players[i].spectator && !players[i].bot)
-				{
-					if (!K_IsPlayerLosing(&players[i]))
-					{
-						doretry = false;
-						break;
-					}
-				}
-			}
-		}
-		else if (grandprixinfo.gp == true && grandprixinfo.eventmode == GPEVENT_NONE)
-		{
-			doretry = (grandprixinfo.wonround != true);
-		}
-
-		if (doretry)
-		{
-			// You didn't win...
-
-			for (i = 0; i < MAXPLAYERS; i++)
-			{
-				if (playeringame[i] && !players[i].spectator && !players[i].bot)
-				{
-					if (players[i].lives > 0)
-					{
-						break;
-					}
-				}
-			}
-
-			if (i == MAXPLAYERS)
-			{
-				// GAME OVER, try again from the start!
-				if (grandprixinfo.gp == true
-					&& grandprixinfo.eventmode == GPEVENT_SPECIAL)
-				{
-					// We were in a Special Stage.
-					// We can still progress to the podium when we game over here.
-					doretry = false;
-				}
-				else if (netgame)
-				{
-					; // Restart cup here whenever we do Online GP
-				}
-				else
-				{
-					// Back to the menu with you.
-					G_HandleSaveLevel(true);
-					D_QuitNetGame();
-					CL_Reset();
-					D_ClearState();
-					M_StartControlPanel();
-				}
-			}
-			else
+			// Restart cup here whenever we do Online GP
+			if (!netgame)
 			{
 				// We have lives, just redo this one course.
 				G_SetRetryFlag();
+				return;
 			}
+		}
+		else if (g_exit.losing)
+		{
+			// We were in a Special Stage.
+			// We can still progress to the podium when we game over here.
+			const boolean special = grandprixinfo.gp == true && grandprixinfo.eventmode == GPEVENT_SPECIAL;
 
-			if (doretry == true)
+			if (!netgame && !special)
 			{
+				// Back to the menu with you.
+				G_HandleSaveLevel(true);
+				D_QuitNetGame();
+				CL_Reset();
+				D_ClearState();
+				M_StartControlPanel();
 				return;
 			}
 		}
@@ -3291,6 +3341,10 @@ boolean G_GametypeHasTeams(void)
 //
 boolean G_GametypeHasSpectators(void)
 {
+	// TODO: this would make a great debug feature for release
+#ifdef DEVELOP
+	return true;
+#endif
 	return (netgame || (multiplayer && demo.netgame));
 }
 

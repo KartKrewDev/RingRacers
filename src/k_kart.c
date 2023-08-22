@@ -7794,6 +7794,8 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 	player->mo->spritexoffset = 0;
 	player->mo->spriteyoffset = 0;
 
+	player->cameraOffset = 0;
+
 	if (player->curshield == KSHIELD_TOP)
 	{
 		mobj_t *top = K_GetGardenTop(player);
@@ -7812,6 +7814,21 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 					P_GetMobjHead(top) -
 					P_GetMobjFeet(player->mo));
 		}
+	}
+
+	if (!P_MobjWasRemoved(player->whip) && (player->whip->flags2 & MF2_AMBUSH))
+	{
+		// Linear acceleration and deceleration to a peak.
+		// There is a constant total time to complete but the
+		// acceleration and deceleration times can be made
+		// asymmetrical.
+		const fixed_t hop = 24 * mapobjectscale;
+		const INT32 duration = 12;
+		const INT32 mid = (duration / 2) - 1;
+		const INT32 t = (duration - mid) - player->whip->fuse;
+
+		player->cameraOffset = hop - (abs(t * hop) / (t < 0 ? mid : duration - mid));
+		player->mo->sprzoff += player->cameraOffset;
 	}
 
 	K_UpdateOffroad(player);
@@ -10943,9 +10960,13 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 						P_SetTarget(&whip->target, player->mo);
 						K_MatchGenericExtraFlags(whip, player->mo);
 						P_SpawnFakeShadow(whip, 20);
-						whip->fuse = 12; // Changing instawhip animation duration? Look here
-						player->flashing = max(player->flashing, 12);
-						player->mo->momz += 4*mapobjectscale;
+						whip->fuse = INSTAWHIP_DURATION;
+						player->flashing = max(player->flashing, INSTAWHIP_DURATION);
+
+						if (P_IsObjectOnGround(player->mo))
+						{
+							whip->flags2 |= MF2_AMBUSH;
+						}
 
 						if (!K_PowerUpRemaining(player, POWERUP_BADGE))
 						{

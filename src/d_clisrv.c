@@ -561,6 +561,21 @@ void D_ResetTiccmds(void)
 			D_Clearticcmd(textcmds[i]->tic);
 }
 
+void D_ResetTiccmdAngle(UINT8 ss, angle_t angle)
+{
+	INT32 i;
+
+	for (i = 0; i < MAXGENTLEMENDELAY; ++i)
+	{
+		localcmds[ss][i].angle = angle >> TICCMD_REDUCE;
+	}
+}
+
+ticcmd_t *D_LocalTiccmd(UINT8 ss)
+{
+	return &localcmds[ss][0];
+}
+
 void SendKick(UINT8 playernum, UINT8 msg)
 {
 	UINT8 buf[2];
