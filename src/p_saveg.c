@@ -2319,7 +2319,7 @@ static boolean P_ThingArgsEqual(const mobj_t *mobj, const mapthing_t *mapthing)
 {
 	UINT8 i;
 	for (i = 0; i < NUM_MAPTHING_ARGS; i++)
-		if (mobj->args[i] != mapthing->args[i])
+		if (mobj->thing_args[i] != mapthing->thing_args[i])
 			return false;
 
 	return true;
@@ -2330,10 +2330,10 @@ static boolean P_ThingStringArgsEqual(const mobj_t *mobj, const mapthing_t *mapt
 	UINT8 i;
 	for (i = 0; i < NUM_MAPTHING_STRINGARGS; i++)
 	{
-		if (!mobj->stringargs[i])
-			return !mapthing->stringargs[i];
+		if (!mobj->thing_stringargs[i])
+			return !mapthing->thing_stringargs[i];
 
-		if (strcmp(mobj->stringargs[i], mapthing->stringargs[i]))
+		if (strcmp(mobj->thing_stringargs[i], mapthing->thing_stringargs[i]))
 			return false;
 	}
 
@@ -2578,7 +2578,7 @@ static void SaveMobjThinker(savebuffer_t *save, const thinker_t *th, const UINT8
 
 		for (j = 0; j < NUM_MAPTHING_ARGS; j++)
 		{
-			if (mobj->args[j] != 0)
+			if (mobj->thing_args[j] != 0)
 			{
 				diff |= MD_ARGS;
 				break;
@@ -2587,7 +2587,7 @@ static void SaveMobjThinker(savebuffer_t *save, const thinker_t *th, const UINT8
 
 		for (j = 0; j < NUM_MAPTHING_STRINGARGS; j++)
 		{
-			if (mobj->stringargs[j] != NULL)
+			if (mobj->thing_stringargs[j] != NULL)
 			{
 				diff |= MD_STRINGARGS;
 				break;
@@ -2610,7 +2610,7 @@ static void SaveMobjThinker(savebuffer_t *save, const thinker_t *th, const UINT8
 
 		for (j = 0; j < NUM_SCRIPT_STRINGARGS; j++)
 		{
-			if (mobj->stringargs[j] != NULL)
+			if (mobj->script_stringargs[j] != NULL)
 			{
 				diff2 |= MD2_SPECIAL;
 				break;
@@ -2867,7 +2867,7 @@ static void SaveMobjThinker(savebuffer_t *save, const thinker_t *th, const UINT8
 	if (diff & MD_ARGS)
 	{
 		for (j = 0; j < NUM_MAPTHING_ARGS; j++)
-			WRITEINT32(save->p, mobj->args[j]);
+			WRITEINT32(save->p, mobj->thing_args[j]);
 	}
 	if (diff & MD_STRINGARGS)
 	{
@@ -2875,16 +2875,16 @@ static void SaveMobjThinker(savebuffer_t *save, const thinker_t *th, const UINT8
 		{
 			size_t len, k;
 
-			if (!mobj->stringargs[j])
+			if (!mobj->thing_stringargs[j])
 			{
 				WRITEINT32(save->p, 0);
 				continue;
 			}
 
-			len = strlen(mobj->stringargs[j]);
+			len = strlen(mobj->thing_stringargs[j]);
 			WRITEINT32(save->p, len);
 			for (k = 0; k < len; k++)
-				WRITECHAR(save->p, mobj->stringargs[j][k]);
+				WRITECHAR(save->p, mobj->thing_stringargs[j][k]);
 		}
 	}
 	if (diff2 & MD2_CUSVAL)
@@ -4091,7 +4091,7 @@ static thinker_t* LoadMobjThinker(savebuffer_t *save, actionf_p1 thinker)
 	if (diff & MD_ARGS)
 	{
 		for (j = 0; j < NUM_MAPTHING_ARGS; j++)
-			mobj->args[j] = READINT32(save->p);
+			mobj->thing_args[j] = READINT32(save->p);
 	}
 	if (diff & MD_STRINGARGS)
 	{
@@ -4102,15 +4102,15 @@ static thinker_t* LoadMobjThinker(savebuffer_t *save, actionf_p1 thinker)
 
 			if (!len)
 			{
-				Z_Free(mobj->stringargs[j]);
-				mobj->stringargs[j] = NULL;
+				Z_Free(mobj->thing_stringargs[j]);
+				mobj->thing_stringargs[j] = NULL;
 				continue;
 			}
 
-			mobj->stringargs[j] = Z_Realloc(mobj->stringargs[j], len + 1, PU_LEVEL, NULL);
+			mobj->thing_stringargs[j] = Z_Realloc(mobj->thing_stringargs[j], len + 1, PU_LEVEL, NULL);
 			for (k = 0; k < len; k++)
-				mobj->stringargs[j][k] = READCHAR(save->p);
-			mobj->stringargs[j][len] = '\0';
+				mobj->thing_stringargs[j][k] = READCHAR(save->p);
+			mobj->thing_stringargs[j][len] = '\0';
 		}
 	}
 	if (diff2 & MD2_CUSVAL)

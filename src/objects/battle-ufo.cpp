@@ -14,7 +14,7 @@
 #define BATTLEUFO_BOB_AMP (4) // UFO bob strength
 #define BATTLEUFO_BOB_SPEED (TICRATE*2) // UFO bob speed
 
-#define spawner_id(o) ((o)->args[0])
+#define spawner_id(o) ((o)->thing_args[0])
 
 #define ufo_spawner(o) ((o)->target)
 

@@ -3435,7 +3435,7 @@ static void P_DoBossVictory(mobj_t *mo)
 	}
 
 	// victory!
-	P_LinedefExecute(mo->args[3], mo, NULL);
+	P_LinedefExecute(mo->thing_args[3], mo, NULL);
 
 	if (stoppedclock && modeattacking) // if you're just time attacking, skip making the capsule appear since you don't need to step on it anyways.
 		return;
@@ -3459,7 +3459,7 @@ static void P_DoBossVictory(mobj_t *mo)
 
 static void P_DoBossDefaultDeath(mobj_t *mo)
 {
-	INT32 bossid = mo->args[0];
+	INT32 bossid = mo->thing_args[0];
 
 	// Stop exploding and prepare to run.
 	P_SetMobjState(mo, mo->info->xdeathstate);
@@ -3504,7 +3504,7 @@ void A_BossDeath(mobj_t *mo)
 	if (LUA_CallAction(A_BOSSDEATH, mo))
 		return;
 
-	P_LinedefExecute(mo->args[2], mo, NULL);
+	P_LinedefExecute(mo->thing_args[2], mo, NULL);
 	mo->health = 0;
 
 	// Boss is dead (but not necessarily fleeing...)
@@ -4079,8 +4079,8 @@ void A_FishJump(mobj_t *actor)
 			jumpval = locvar1;
 		else
 		{
-			if (actor->args[0])
-				jumpval = actor->args[0];
+			if (actor->thing_args[0])
+				jumpval = actor->thing_args[0];
 			else
 				jumpval = 44;
 		}
@@ -5089,16 +5089,16 @@ void A_RockSpawn(mobj_t *actor)
 	if (LUA_CallAction(A_ROCKSPAWN, actor))
 		return;
 
-	type = actor->stringargs[0] ? get_number(actor->stringargs[0]) : MT_ROCKCRUMBLE1;
+	type = actor->thing_stringargs[0] ? get_number(actor->thing_stringargs[0]) : MT_ROCKCRUMBLE1;
 
 	if (type < MT_NULL || type >= NUMMOBJTYPES)
 	{
-		CONS_Debug(DBG_GAMELOGIC, "A_RockSpawn: Invalid mobj type %s!\n", actor->stringargs[0]);
+		CONS_Debug(DBG_GAMELOGIC, "A_RockSpawn: Invalid mobj type %s!\n", actor->thing_stringargs[0]);
 		return;
 	}
 
-	dist = max(actor->args[0] << (FRACBITS - 4), 1);
-	if (actor->args[2])
+	dist = max(actor->thing_args[0] << (FRACBITS - 4), 1);
+	if (actor->thing_args[2])
 		dist += P_RandomByte(PR_UNDEFINED) * (FRACUNIT/32); // random oomph
 
 	mo = P_SpawnMobj(actor->x, actor->y, actor->z, MT_FALLINGROCK);
@@ -5108,7 +5108,7 @@ void A_RockSpawn(mobj_t *actor)
 	P_InstaThrust(mo, mo->angle, dist);
 	mo->momz = dist;
 
-	var1 = actor->args[1];
+	var1 = actor->thing_args[1];
 	A_SetTics(actor);
 }
 
@@ -5770,7 +5770,7 @@ void A_Boss1Chase(mobj_t *actor)
 		}
 		else
 		{
-			P_LinedefExecute(actor->args[4], actor, NULL);
+			P_LinedefExecute(actor->thing_args[4], actor, NULL);
 			P_SetMobjState(actor, actor->info->raisestate);
 		}
 
@@ -6467,7 +6467,7 @@ void A_GuardChase(mobj_t *actor)
 			false, NULL)
 		&& speed > 0) // can't be the same check as previous so that P_TryMove gets to happen.
 		{
-			INT32 direction = actor->args[0];
+			INT32 direction = actor->thing_args[0];
 
 			switch (direction)
 			{
@@ -6734,7 +6734,7 @@ void A_Boss3Path(mobj_t *actor)
 					continue;
 				if (mo2->type != MT_BOSS3WAYPOINT)
 					continue;
-				if (mapthings[i].args[0] != actor->threshold)
+				if (mapthings[i].thing_args[0] != actor->threshold)
 					continue;
 
 				P_SetTarget(&actor->target, mo2);
@@ -6908,7 +6908,7 @@ void A_LinedefExecuteFromArg(mobj_t *actor)
 		return;
 	}
 
-	tagnum = actor->args[locvar1];
+	tagnum = actor->thing_args[locvar1];
 
 	CONS_Debug(DBG_GAMELOGIC, "A_LinedefExecuteFromArg: Running mobjtype %d's sector with tag %d\n", actor->type, tagnum);
 
@@ -7927,7 +7927,7 @@ void A_StateRangeByParameter(mobj_t *actor)
 
 	if (udmf)
 	{
-		parameter = actor->args[0];
+		parameter = actor->thing_args[0];
 	}
 	else if (actor->spawnpoint != NULL)
 	{
@@ -10371,14 +10371,14 @@ void A_FlickyCenter(mobj_t *actor)
 		P_SetTarget(&actor->tracer, flicky);
 
 		actor->flags &= ~(MF_SLIDEME|MF_GRENADEBOUNCE|MF_NOCLIPTHING);
-		if (actor->args[1] & TMFF_AIMLESS)
+		if (actor->thing_args[1] & TMFF_AIMLESS)
 			actor->flags |= MF_SLIDEME;
-		if (actor->args[1] & TMFF_STATIONARY)
+		if (actor->thing_args[1] & TMFF_STATIONARY)
 			actor->flags |= MF_GRENADEBOUNCE;
-		if (actor->args[1] & TMFF_HOP)
+		if (actor->thing_args[1] & TMFF_HOP)
 			actor->flags |= MF_NOCLIPTHING;
-		actor->extravalue1 = actor->args[0] ? abs(actor->args[0])*actor->scale : homeRadius;
-		actor->extravalue2 = actor->args[2];
+		actor->extravalue1 = actor->thing_args[0] ? abs(actor->thing_args[0])*actor->scale : homeRadius;
+		actor->extravalue2 = actor->thing_args[2];
 		actor->friction = actor->x;
 		actor->movefactor = actor->y;
 		actor->watertop = actor->z;
@@ -11299,7 +11299,7 @@ void A_Boss5FindWaypoint(mobj_t *actor)
 	INT32 locvar1 = var1;
 	boolean avoidcenter;
 	INT32 i;
-	INT32 bossid = actor->args[0];
+	INT32 bossid = actor->thing_args[0];
 
 	if (LUA_CallAction(A_BOSS5FINDWAYPOINT, actor))
 		return;
@@ -11326,7 +11326,7 @@ void A_Boss5FindWaypoint(mobj_t *actor)
 				continue;
 			if (mapthings[i].mobj->type != MT_FANGWAYPOINT)
 				continue;
-			if (!(mapthings[i].args[0]))
+			if (!(mapthings[i].thing_args[0]))
 				continue;
 
 			P_SetTarget(&actor->tracer, mapthings[i].mobj);
@@ -11355,7 +11355,7 @@ void A_Boss5FindWaypoint(mobj_t *actor)
 				continue;
 			if (actor->tracer == mapthings[i].mobj) // this was your tracer last time
 				continue;
-			if (mapthings[i].args[0])
+			if (mapthings[i].thing_args[0])
 			{
 				if (avoidcenter)
 					continue;
@@ -11410,7 +11410,7 @@ void A_Boss5FindWaypoint(mobj_t *actor)
 				continue;
 			if (actor->tracer == mapthings[i].mobj) // this was your tracer last time
 				continue;
-			if (mapthings[i].args[0])
+			if (mapthings[i].thing_args[0])
 			{
 				if (avoidcenter)
 					continue;
@@ -12682,7 +12682,7 @@ void A_SpawnPterabytes(mobj_t *actor)
 	if (LUA_CallAction(A_SPAWNPTERABYTES, actor))
 		return;
 
-	amount = min(1, actor->args[0]);
+	amount = min(1, actor->thing_args[0]);
 
 	interval = FixedAngle(FRACUNIT*360/amount);
 
@@ -13322,11 +13322,11 @@ void A_MayonakaArrow(mobj_t *actor)
 	if (LUA_CallAction(A_MAYONAKAARROW, (actor)))
 		return;
 
-	iswarning = (actor->args[0] == TMMA_WARN);	// is our object a warning sign?
+	iswarning = (actor->thing_args[0] == TMMA_WARN);	// is our object a warning sign?
 
 	// "animtimer" is replaced by "extravalue1" here.
 	actor->extravalue1 = ((actor->extravalue1) ? (actor->extravalue1+1) : (P_RandomRange(PR_DECORATION, 0, (iswarning) ? (TICRATE/2) : TICRATE*3)));
-	flip = ((actor->args[0] == TMMA_FLIP) ? (3) : (0));	// flip adds 3 frames, which is the flipped version of the sign.
+	flip = ((actor->thing_args[0] == TMMA_FLIP) ? (3) : (0));	// flip adds 3 frames, which is the flipped version of the sign.
 	// special warning behavior:
 	if (iswarning)
 		flip = 6;

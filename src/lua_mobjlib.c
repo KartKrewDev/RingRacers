@@ -488,10 +488,10 @@ static int mobj_get(lua_State *L)
 		lua_pushinteger(L, mo->special);
 		break;
 	case mobj_args:
-		LUA_PushUserdata(L, mo->args, META_THINGARGS);
+		LUA_PushUserdata(L, mo->thing_args, META_THINGARGS);
 		break;
 	case mobj_stringargs:
-		LUA_PushUserdata(L, mo->stringargs, META_THINGSTRINGARGS);
+		LUA_PushUserdata(L, mo->thing_stringargs, META_THINGSTRINGARGS);
 		break;
 	default: // extra custom variables in Lua memory
 		lua_getfield(L, LUA_REGISTRYINDEX, LREG_EXTVARS);
@@ -996,12 +996,12 @@ static int mapthing_get(lua_State *L)
 		number = mt->special;
 	else if(fastcmp(field,"args"))
 	{
-		LUA_PushUserdata(L, mt->args, META_THINGARGS);
+		LUA_PushUserdata(L, mt->thing_args, META_THINGARGS);
 		return 1;
 	}
 	else if(fastcmp(field,"stringargs"))
 	{
-		LUA_PushUserdata(L, mt->stringargs, META_THINGSTRINGARGS);
+		LUA_PushUserdata(L, mt->thing_stringargs, META_THINGSTRINGARGS);
 		return 1;
 	}
 	else if(fastcmp(field,"mobj")) {

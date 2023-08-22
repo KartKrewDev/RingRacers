@@ -426,8 +426,8 @@ struct mobj_t
 
 	INT32 dispoffset;
 
-	INT32 args[NUM_MAPTHING_ARGS];
-	char *stringargs[NUM_MAPTHING_STRINGARGS];
+	INT32 thing_args[NUM_MAPTHING_ARGS];
+	char *thing_stringargs[NUM_MAPTHING_STRINGARGS];
 
 	INT16 special;
 	INT32 script_args[NUM_SCRIPT_ARGS];

@@ -4436,7 +4436,7 @@ static void P_RefreshItemCapsuleParts(mobj_t *mobj)
 		color = SKINCOLOR_GOLD;
 		newRenderFlags |= RF_SEMIBRIGHT;
 	}
-	else if (mobj->args[3] & TMICM_TIMEATTACK)
+	else if (mobj->thing_args[3] & TMICM_TIMEATTACK)
 		color = SKINCOLOR_SAPPHIRE;
 	else if (itemType == KITEM_SPB)
 		color = SKINCOLOR_JET;
@@ -6539,7 +6539,7 @@ static void P_MobjSceneryThink(mobj_t *mobj)
 		if (!(leveltime % 10))
 		{
 			mobj_t *smok = P_SpawnMobj(mobj->x, mobj->y, mobj->z, MT_PETSMOKE);
-			if (mobj->args[0])
+			if (mobj->thing_args[0])
 				P_SetMobjStateNF(smok, smok->info->painstate); // same function, diff sprite
 		}
 		break;
@@ -9736,7 +9736,7 @@ static boolean P_FuseThink(mobj_t *mobj)
 	case MT_SPIKE:
 	case MT_WALLSPIKE:
 		P_SetMobjState(mobj, mobj->state->nextstate);
-		mobj->fuse = mobj->args[0];
+		mobj->fuse = mobj->thing_args[0];
 		break;
 	case MT_LAVAFALL:
 		if (mobj->state - states == S_LAVAFALL_DORMANT)
@@ -9873,7 +9873,7 @@ void P_MobjThinker(mobj_t *mobj)
 	if (mobj->flags & MF_NOTHINK)
 		return;
 
-	if ((mobj->flags & MF_BOSS) && (bossdisabled & (1 << mobj->args[0])))
+	if ((mobj->flags & MF_BOSS) && (bossdisabled & (1 << mobj->thing_args[0])))
 		return;
 
 	mobj->flags2 &= ~(MF2_ALREADYHIT);
@@ -12087,7 +12087,7 @@ void P_MovePlayerToSpawn(INT32 playernum, mapthing_t *mthing)
 
 		// Setting the spawnpoint's args[0] will make the player start on the ceiling
 		// Objectflip inverts
-		if (!!(mthing->args[0]) ^ !!(mthing->options & MTF_OBJECTFLIP))
+		if (!!(mthing->thing_args[0]) ^ !!(mthing->options & MTF_OBJECTFLIP))
 			z = ceilingspawn - offset;
 		else
 			z = floor + offset;
@@ -12098,7 +12098,7 @@ void P_MovePlayerToSpawn(INT32 playernum, mapthing_t *mthing)
 			mobj->flags2 |= MF2_OBJECTFLIP;
 		}
 
-		if (mthing->args[0])
+		if (mthing->thing_args[0])
 			P_SetPlayerMobjState(mobj, S_KART_SPINOUT);
 	}
 	else
@@ -12220,7 +12220,7 @@ fixed_t P_GetMapThingSpawnHeight(const mobjtype_t mobjtype, const mapthing_t* mt
 	case MT_YELLOWHORIZ:
 	case MT_REDHORIZ:
 	case MT_BLUEHORIZ:
-		offset += mthing->args[0] ? 0 : 16*FRACUNIT;
+		offset += mthing->thing_args[0] ? 0 : 16*FRACUNIT;
 		break;
 
 	// Ring-like items, float additional units unless args[0] is set.
@@ -12228,7 +12228,7 @@ fixed_t P_GetMapThingSpawnHeight(const mobjtype_t mobjtype, const mapthing_t* mt
 	case MT_EMBLEM:
 	case MT_RING:
 	case MT_BLUESPHERE:
-		offset += mthing->args[0] ? 0 : 24*FRACUNIT;
+		offset += mthing->thing_args[0] ? 0 : 24*FRACUNIT;
 		break;
 
 	// This object does not have an offset
@@ -12447,15 +12447,15 @@ static boolean P_SetupMace(mapthing_t *mthing, mobj_t *mobj)
 	mobjeflag_t meflagsapply;
 	const size_t mthingi = (size_t)(mthing - mapthings);
 
-	mlength = abs(mthing->args[0]);
-	mnumspokes = mthing->args[1] + 1;
+	mlength = abs(mthing->thing_args[0]);
+	mnumspokes = mthing->thing_args[1] + 1;
 	mspokeangle = FixedAngle((360*FRACUNIT)/mnumspokes) >> ANGLETOFINESHIFT;
-	mwidth = max(0, mthing->args[2]);
-	mspeed = abs(mthing->args[3] << 4);
-	mphase = mthing->args[4] % 360;
-	mpinch = mthing->args[5] % 360;
-	mnumnospokes = mthing->args[6];
-	mminlength = max(0, min(mlength - 1, mthing->args[7]));
+	mwidth = max(0, mthing->thing_args[2]);
+	mspeed = abs(mthing->thing_args[3] << 4);
+	mphase = mthing->thing_args[4] % 360;
+	mpinch = mthing->thing_args[5] % 360;
+	mnumnospokes = mthing->thing_args[6];
+	mminlength = max(0, min(mlength - 1, mthing->thing_args[7]));
 	mpitch = mthing->pitch % 360;
 	myaw = mthing->angle % 360;
 	mroll = mthing->roll % 360;
@@ -12488,23 +12488,23 @@ static boolean P_SetupMace(mapthing_t *mthing, mobj_t *mobj)
 	switch (mobj->type)
 	{
 	case MT_SPRINGBALLPOINT:
-		macetype = ((mthing->args[8] & TMM_DOUBLESIZE)
+		macetype = ((mthing->thing_args[8] & TMM_DOUBLESIZE)
 			? MT_REDSPRINGBALL
 			: MT_YELLOWSPRINGBALL);
 		chainlink = MT_SMALLMACECHAIN;
 		break;
 	case MT_FIREBARPOINT:
-		macetype = ((mthing->args[8] & TMM_DOUBLESIZE)
+		macetype = ((mthing->thing_args[8] & TMM_DOUBLESIZE)
 			? MT_BIGFIREBAR
 			: MT_SMALLFIREBAR);
 		chainlink = MT_NULL;
 		break;
 	case MT_CUSTOMMACEPOINT:
-		macetype = mthing->stringargs[0] ? get_number(mthing->stringargs[0]) : MT_NULL;
-		chainlink = mthing->stringargs[1] ? get_number(mthing->stringargs[1]) : MT_NULL;
+		macetype = mthing->thing_stringargs[0] ? get_number(mthing->thing_stringargs[0]) : MT_NULL;
+		chainlink = mthing->thing_stringargs[1] ? get_number(mthing->thing_stringargs[1]) : MT_NULL;
 		break;
 	case MT_CHAINPOINT:
-		if (mthing->args[8] & TMM_DOUBLESIZE)
+		if (mthing->thing_args[8] & TMM_DOUBLESIZE)
 		{
 			macetype = MT_BIGGRABCHAIN;
 			chainlink = MT_BIGMACECHAIN;
@@ -12517,7 +12517,7 @@ static boolean P_SetupMace(mapthing_t *mthing, mobj_t *mobj)
 		mchainlike = true;
 		break;
 	default:
-		if (mthing->args[8] & TMM_DOUBLESIZE)
+		if (mthing->thing_args[8] & TMM_DOUBLESIZE)
 		{
 			macetype = MT_BIGMACE;
 			chainlink = MT_BIGMACECHAIN;
@@ -12544,11 +12544,11 @@ static boolean P_SetupMace(mapthing_t *mthing, mobj_t *mobj)
 	firsttype = macetype;
 
 	// Adjustable direction
-	if (mthing->args[8] & TMM_ALLOWYAWCONTROL)
+	if (mthing->thing_args[8] & TMM_ALLOWYAWCONTROL)
 		mobj->flags |= MF_SLIDEME;
 
 	// Swinging
-	if (mthing->args[8] & TMM_SWING)
+	if (mthing->thing_args[8] & TMM_SWING)
 	{
 		mobj->flags2 |= MF2_STRONGBOX;
 		mmin = ((mnumnospokes > 1) ? 1 : 0);
@@ -12557,11 +12557,11 @@ static boolean P_SetupMace(mapthing_t *mthing, mobj_t *mobj)
 		mmin = mnumspokes;
 
 	// If over distance away, don't move UNLESS this flag is applied
-	if (mthing->args[8] & TMM_ALWAYSTHINK)
+	if (mthing->thing_args[8] & TMM_ALWAYSTHINK)
 		mobj->flags2 |= MF2_BOSSNOTRAP;
 
 	// Make the links the same type as the end - repeated below
-	if ((mobj->type != MT_CHAINPOINT) && (((mthing->args[8] & TMM_MACELINKS) == TMM_MACELINKS) != (mobj->type == MT_FIREBARPOINT))) // exclusive or
+	if ((mobj->type != MT_CHAINPOINT) && (((mthing->thing_args[8] & TMM_MACELINKS) == TMM_MACELINKS) != (mobj->type == MT_FIREBARPOINT))) // exclusive or
 	{
 		linktype = macetype;
 		radiusfactor = 2; // Double the radius.
@@ -12573,7 +12573,7 @@ static boolean P_SetupMace(mapthing_t *mthing, mobj_t *mobj)
 		mchainlike = (firsttype == chainlink);
 	widthfactor = (mchainlike ? 1 : 2);
 
-	mflagsapply = (mthing->args[8] & TMM_CLIP) ? 0 : (MF_NOCLIP|MF_NOCLIPHEIGHT);
+	mflagsapply = (mthing->thing_args[8] & TMM_CLIP) ? 0 : (MF_NOCLIP|MF_NOCLIPHEIGHT);
 	mflags2apply = ((mthing->options & MTF_OBJECTFLIP) ? MF2_OBJECTFLIP : 0);
 	meflagsapply = ((mthing->options & MTF_OBJECTFLIP) ? MFE_VERTICALFLIP : 0);
 
@@ -12599,14 +12599,14 @@ static boolean P_SetupMace(mapthing_t *mthing, mobj_t *mobj)
 	hprev = spawnee;\
 }
 
-	mdosound = (mspeed && !(mthing->args[8] & TMM_SILENT));
-	mdocenter = (macetype && (mthing->args[8] & TMM_CENTERLINK));
+	mdosound = (mspeed && !(mthing->thing_args[8] & TMM_SILENT));
+	mdocenter = (macetype && (mthing->thing_args[8] & TMM_CENTERLINK));
 
 	// The actual spawning of spokes
 	while (mnumspokes-- > 0)
 	{
 		// Offsets
-		if (mthing->args[8] & TMM_SWING) // Swinging
+		if (mthing->thing_args[8] & TMM_SWING) // Swinging
 			mroll = (mroll - mspokeangle) & FINEMASK;
 		else // Spinning
 			mphase = (mphase - mspokeangle) & FINEMASK;
@@ -12617,7 +12617,7 @@ static boolean P_SetupMace(mapthing_t *mthing, mobj_t *mobj)
 				continue;
 
 			linktype = chainlink;
-			firsttype = ((mthing->args[8] & TMM_DOUBLESIZE) ? MT_BIGGRABCHAIN : MT_SMALLGRABCHAIN);
+			firsttype = ((mthing->thing_args[8] & TMM_DOUBLESIZE) ? MT_BIGGRABCHAIN : MT_SMALLGRABCHAIN);
 			mmaxlength = 1 + (mlength - 1) * radiusfactor;
 			radiusfactor = widthfactor = 1;
 		}
@@ -12626,7 +12626,7 @@ static boolean P_SetupMace(mapthing_t *mthing, mobj_t *mobj)
 			if (mobj->type == MT_CHAINMACEPOINT)
 			{
 				// Make the links the same type as the end - repeated above
-				if (mthing->args[8] & TMM_MACELINKS)
+				if (mthing->thing_args[8] & TMM_MACELINKS)
 				{
 					linktype = macetype;
 					radiusfactor = 2;
@@ -12716,20 +12716,20 @@ static boolean P_SetupParticleGen(mapthing_t *mthing, mobj_t *mobj)
 	const size_t mthingi = (size_t)(mthing - mapthings);
 
 	// Find the corresponding linedef special, using args[6] as tag
-	line = mthing->args[6] ? Tag_FindLineSpecial(15, mthing->args[6]) : -1;
+	line = mthing->thing_args[6] ? Tag_FindLineSpecial(15, mthing->thing_args[6]) : -1;
 
-	type = mthing->stringargs[0] ? get_number(mthing->stringargs[0]) : MT_PARTICLE;
+	type = mthing->thing_stringargs[0] ? get_number(mthing->thing_stringargs[0]) : MT_PARTICLE;
 
-	ticcount = mthing->args[4];
+	ticcount = mthing->thing_args[4];
 	if (ticcount < 1)
 		ticcount = 3;
 
-	numdivisions = mthing->args[0];
+	numdivisions = mthing->thing_args[0];
 
 	if (numdivisions)
 	{
-		radius = mthing->args[1] << FRACBITS;
-		anglespeed = (mthing->args[3]) % 360;
+		radius = mthing->thing_args[1] << FRACBITS;
+		anglespeed = (mthing->thing_args[3]) % 360;
 		angledivision = 360/numdivisions;
 	}
 	else
@@ -12740,11 +12740,11 @@ static boolean P_SetupParticleGen(mapthing_t *mthing, mobj_t *mobj)
 		angledivision = 0;
 	}
 
-	speed = abs(mthing->args[2]) << FRACBITS;
+	speed = abs(mthing->thing_args[2]) << FRACBITS;
 	if (mthing->options & MTF_OBJECTFLIP)
 		speed *= -1;
 
-	zdist = abs(mthing->args[5]) << FRACBITS;
+	zdist = abs(mthing->thing_args[5]) << FRACBITS;
 
 	CONS_Debug(DBG_GAMELOGIC, "Particle Generator (mapthing #%s):\n"
 		"Radius is %d\n"
@@ -12846,7 +12846,7 @@ void P_InitSkyboxPoint(mobj_t *mobj, mapthing_t *mthing)
 		return;
 	}
 
-	if (mthing->args[0])
+	if (mthing->thing_args[0])
 		P_SetTarget(&skyboxcenterpnts[tag], mobj);
 	else
 		P_SetTarget(&skyboxviewpnts[tag], mobj);
@@ -12901,14 +12901,14 @@ static boolean P_SetupSpawnedMapThing(mapthing_t *mthing, mobj_t *mobj)
 		break;
 	}
 	case MT_EGGSTATUE:
-		if (mthing->args[1])
+		if (mthing->thing_args[1])
 		{
 			mobj->color = SKINCOLOR_GOLD;
 			mobj->colorized = true;
 		}
 		break;
 	case MT_FAN:
-		if (mthing->args[1] & TMF_INVISIBLE)
+		if (mthing->thing_args[1] & TMF_INVISIBLE)
 		{
 			P_UnsetThingPosition(mobj);
 			if (sector_list)
@@ -12919,21 +12919,21 @@ static boolean P_SetupSpawnedMapThing(mapthing_t *mthing, mobj_t *mobj)
 			mobj->flags |= MF_NOSECTOR; // this flag basically turns it invisible
 			P_SetThingPosition(mobj);
 		}
-		if (mthing->args[1] & TMF_NODISTANCECHECK)
+		if (mthing->thing_args[1] & TMF_NODISTANCECHECK)
 			mobj->flags2 |= MF2_AMBUSH;
-		if (mthing->args[0])
-			mobj->health = mthing->args[0];
+		if (mthing->thing_args[0])
+			mobj->health = mthing->thing_args[0];
 		else
 			mobj->health = FixedMul(mobj->subsector->sector->ceilingheight - mobj->subsector->sector->floorheight, 3*(FRACUNIT/4)) >> FRACBITS;
 		break;
 	case MT_BALLOON:
-		if (mthing->stringargs[0])
-			mobj->color = get_number(mthing->stringargs[0]);
-		if (mthing->args[0])
+		if (mthing->thing_stringargs[0])
+			mobj->color = get_number(mthing->thing_stringargs[0]);
+		if (mthing->thing_args[0])
 			mobj->flags2 |= MF2_AMBUSH;
 		break;
 	case MT_FLAME:
-		if (mthing->args[0])
+		if (mthing->thing_args[0])
 		{
 			mobj_t *corona = P_MakeSoftwareCorona(mobj, 20);
 			P_SetScale(corona, (corona->destscale = mobj->scale*3));
@@ -12941,12 +12941,12 @@ static boolean P_SetupSpawnedMapThing(mapthing_t *mthing, mobj_t *mobj)
 		}
 		break;
 	case MT_FLAMEHOLDER:
-		if (!(mthing->args[0] & TMFH_NOFLAME)) // Spawn the fire
+		if (!(mthing->thing_args[0] & TMFH_NOFLAME)) // Spawn the fire
 		{
 			mobj_t *flame = P_SpawnMobjFromMobj(mobj, 0, 0, mobj->height, MT_FLAME);
 			P_SetTarget(&flame->target, mobj);
 			flame->flags2 |= MF2_BOSSNOTRAP;
-			if (mthing->args[0] & TMFH_CORONA)
+			if (mthing->thing_args[0] & TMFH_CORONA)
 			{
 				mobj_t *corona = P_MakeSoftwareCorona(flame, 20);
 				P_SetScale(corona, (corona->destscale = flame->scale*3));
@@ -12956,13 +12956,13 @@ static boolean P_SetupSpawnedMapThing(mapthing_t *mthing, mobj_t *mobj)
 		break;
 	case MT_CANDLE:
 	case MT_CANDLEPRICKET:
-		if (mthing->args[0])
+		if (mthing->thing_args[0])
 			P_MakeSoftwareCorona(mobj, ((mobj->type == MT_CANDLE) ? 42 : 176));
 		break;
 	case MT_JACKO1:
 	case MT_JACKO2:
 	case MT_JACKO3:
-		if (!(mthing->args[0])) // take the torch out of the crafting recipe
+		if (!(mthing->thing_args[0])) // take the torch out of the crafting recipe
 		{
 			mobj_t *overlay = P_SpawnMobjFromMobj(mobj, 0, 0, 0, MT_OVERLAY);
 			P_SetTarget(&overlay->target, mobj);
@@ -12970,14 +12970,14 @@ static boolean P_SetupSpawnedMapThing(mapthing_t *mthing, mobj_t *mobj)
 		}
 		break;
 	case MT_WATERDRIP:
-		mobj->tics = 3*TICRATE + mthing->args[0];
+		mobj->tics = 3*TICRATE + mthing->thing_args[0];
 		break;
 	case MT_FLAMEJET:
 	case MT_VERTICALFLAMEJET:
-		mobj->movecount = mthing->args[0];
-		mobj->threshold = mthing->args[1];
-		mobj->movedir = mthing->args[2];
-		if (mthing->args[3])
+		mobj->movecount = mthing->thing_args[0];
+		mobj->threshold = mthing->thing_args[1];
+		mobj->movedir = mthing->thing_args[2];
+		if (mthing->thing_args[3])
 			mobj->flags2 |= MF2_AMBUSH;
 		break;
 	case MT_MACEPOINT:
@@ -12995,8 +12995,8 @@ static boolean P_SetupSpawnedMapThing(mapthing_t *mthing, mobj_t *mobj)
 		break;
 	case MT_TUBEWAYPOINT:
 	{
-		UINT8 sequence = mthing->args[0];
-		UINT8 id = mthing->args[1];
+		UINT8 sequence = mthing->thing_args[0];
+		UINT8 id = mthing->thing_args[1];
 		mobj->health = id;
 		mobj->threshold = sequence;
 		P_AddTubeWaypoint(sequence, id, mobj);
@@ -13005,7 +13005,7 @@ static boolean P_SetupSpawnedMapThing(mapthing_t *mthing, mobj_t *mobj)
 	case MT_DSZSTALAGMITE:
 	case MT_DSZ2STALAGMITE:
 	case MT_KELP:
-		if (mthing->args[0]) { // make mobj twice as big as normal
+		if (mthing->thing_args[0]) { // make mobj twice as big as normal
 			P_SetScale(mobj, 2*mobj->scale); // not 2*FRACUNIT in case of something like the old ERZ3 mode
 			mobj->destscale = mobj->scale;
 		}
@@ -13045,8 +13045,8 @@ static boolean P_SetupSpawnedMapThing(mapthing_t *mthing, mobj_t *mobj)
 	}
 	break;
 	case MT_SMASHINGSPIKEBALL:
-		if (mthing->args[0] > 0)
-			mobj->tics += mthing->args[0];
+		if (mthing->thing_args[0] > 0)
+			mobj->tics += mthing->thing_args[0];
 		break;
 	case MT_BIGFERN:
 	{
@@ -13070,37 +13070,37 @@ static boolean P_SetupSpawnedMapThing(mapthing_t *mthing, mobj_t *mobj)
 		break;
 	case MT_AXIS:
 		// Inverted if args[3] is set
-		if (mthing->args[3])
+		if (mthing->thing_args[3])
 			mobj->flags2 |= MF2_AMBUSH;
 
-		mobj->radius = abs(mthing->args[2]) << FRACBITS;
+		mobj->radius = abs(mthing->thing_args[2]) << FRACBITS;
 		// FALLTHRU
 	case MT_AXISTRANSFER:
 	case MT_AXISTRANSFERLINE:
 		// Mare it belongs to
-		mobj->threshold = min(mthing->args[0], 7);
+		mobj->threshold = min(mthing->thing_args[0], 7);
 
 		// # in the mare
-		mobj->health = mthing->args[1];
+		mobj->health = mthing->thing_args[1];
 
 		mobj->flags2 |= MF2_AXIS;
 		break;
 	case MT_STARPOST:
-		mobj->health = mthing->args[0] + 1;
+		mobj->health = mthing->thing_args[0] + 1;
 		if (!P_MapAlreadyHasStarPost(mobj))
 			numstarposts++;
 		break;
 	case MT_SPIKE:
 		// Pop up spikes!
-		if (mthing->args[0])
+		if (mthing->thing_args[0])
 		{
 			mobj->flags &= ~MF_SCENERY;
-			mobj->fuse = mthing->args[1];
+			mobj->fuse = mthing->thing_args[1];
 		}
-		if (mthing->args[2] & TMSF_RETRACTED)
+		if (mthing->thing_args[2] & TMSF_RETRACTED)
 			P_SetMobjState(mobj, mobj->info->meleestate);
 		// Use per-thing collision for spikes unless the intangible flag is checked.
-		if (!(mthing->args[2] & TMSF_INTANGIBLE) && !metalrecording)
+		if (!(mthing->thing_args[2] & TMSF_INTANGIBLE) && !metalrecording)
 		{
 			P_UnsetThingPosition(mobj);
 			mobj->flags &= ~(MF_NOBLOCKMAP|MF_NOGRAVITY|MF_NOCLIPHEIGHT);
@@ -13110,15 +13110,15 @@ static boolean P_SetupSpawnedMapThing(mapthing_t *mthing, mobj_t *mobj)
 		break;
 	case MT_WALLSPIKE:
 		// Pop up spikes!
-		if (mthing->args[0])
+		if (mthing->thing_args[0])
 		{
 			mobj->flags &= ~MF_SCENERY;
-			mobj->fuse = mthing->args[1];
+			mobj->fuse = mthing->thing_args[1];
 		}
-		if (mthing->args[2] & TMSF_RETRACTED)
+		if (mthing->thing_args[2] & TMSF_RETRACTED)
 			P_SetMobjState(mobj, mobj->info->meleestate);
 		// Use per-thing collision for spikes unless the intangible flag is checked.
-		if (!(mthing->args[2] & TMSF_INTANGIBLE) && !metalrecording)
+		if (!(mthing->thing_args[2] & TMSF_INTANGIBLE) && !metalrecording)
 		{
 			P_UnsetThingPosition(mobj);
 			mobj->flags &= ~(MF_NOBLOCKMAP | MF_NOCLIPHEIGHT);
@@ -13142,7 +13142,7 @@ static boolean P_SetupSpawnedMapThing(mapthing_t *mthing, mobj_t *mobj)
 		break;
 	case MT_BIGTUMBLEWEED:
 	case MT_LITTLETUMBLEWEED:
-		if (mthing->args[0])
+		if (mthing->thing_args[0])
 		{
 			fixed_t offset = FixedMul(16*FRACUNIT, mobj->scale);
 			mobj->momx += P_RandomChance(PR_DECORATION, FRACUNIT/2) ? offset : -offset;
@@ -13152,9 +13152,9 @@ static boolean P_SetupSpawnedMapThing(mapthing_t *mthing, mobj_t *mobj)
 		}
 		break;
 	case MT_AMBIENT:
-		if (mthing->stringargs[0])
-			mobj->threshold = get_number(mthing->stringargs[0]);
-		mobj->health = mthing->args[0] ? mthing->args[0] : TICRATE;
+		if (mthing->thing_stringargs[0])
+			mobj->threshold = get_number(mthing->thing_stringargs[0]);
+		mobj->health = mthing->thing_args[0] ? mthing->thing_args[0] : TICRATE;
 		break;
 	// SRB2Kart
 	case MT_WAYPOINT:
@@ -13163,8 +13163,8 @@ static boolean P_SetupSpawnedMapThing(mapthing_t *mthing, mobj_t *mobj)
 			mapheaderinfo[gamemap-1]->default_waypoint_radius;
 		mtag_t tag = mthing->tid;
 
-		if (mthing->args[1] > 0)
-			mobj->radius = (mthing->args[1]) * FRACUNIT;
+		if (mthing->thing_args[1] > 0)
+			mobj->radius = (mthing->thing_args[1]) * FRACUNIT;
 		else if (mobjscale > 0)
 			mobj->radius = mobjscale;
 		else
@@ -13176,9 +13176,9 @@ static boolean P_SetupSpawnedMapThing(mapthing_t *mthing, mobj_t *mobj)
 		// lastlook is used for indicating the waypoint is a shortcut
 		// extravalue1 is used for indicating the waypoint is disabled
 		// extravalue2 is used for indicating the waypoint is the finishline
-		mobj->threshold = mthing->args[0];
+		mobj->threshold = mthing->thing_args[0];
 		mobj->movecount = tag;
-		if (mthing->args[2] & TMWPF_DISABLED)
+		if (mthing->thing_args[2] & TMWPF_DISABLED)
 		{
 			mobj->extravalue1 = 0; // The waypoint is disabled if extra is on
 		}
@@ -13186,7 +13186,7 @@ static boolean P_SetupSpawnedMapThing(mapthing_t *mthing, mobj_t *mobj)
 		{
 			mobj->extravalue1 = 1;
 		}
-		if (mthing->args[2] & TMWPF_SHORTCUT)
+		if (mthing->thing_args[2] & TMWPF_SHORTCUT)
 		{
 			mobj->lastlook = 1; // the waypoint is a shortcut if objectspecial is on
 		}
@@ -13194,7 +13194,7 @@ static boolean P_SetupSpawnedMapThing(mapthing_t *mthing, mobj_t *mobj)
 		{
 			mobj->lastlook = 0;
 		}
-		if (mthing->args[2] & TMWPF_NORESPAWN)
+		if (mthing->thing_args[2] & TMWPF_NORESPAWN)
 		{
 			mobj->reactiontime = 0; // Can't respawn at if Ambush is on
 		}
@@ -13202,7 +13202,7 @@ static boolean P_SetupSpawnedMapThing(mapthing_t *mthing, mobj_t *mobj)
 		{
 			mobj->reactiontime = 1;
 		}
-		if (mthing->args[2] & TMWPF_FINISHLINE)
+		if (mthing->thing_args[2] & TMWPF_FINISHLINE)
 		{
 			mobj->extravalue2 = 1; // args[2] of 1 means the waypoint is at the finish line
 			mobj->reactiontime = 0; // Also don't respawn at finish lines
@@ -13222,9 +13222,9 @@ static boolean P_SetupSpawnedMapThing(mapthing_t *mthing, mobj_t *mobj)
 	case MT_BOTHINT:
 	{
 		// Change size
-		if (mthing->args[0] > 0)
+		if (mthing->thing_args[0] > 0)
 		{
-			mobj->radius = mthing->args[0] * FRACUNIT;
+			mobj->radius = mthing->thing_args[0] * FRACUNIT;
 		}
 		else
 		{
@@ -13232,7 +13232,7 @@ static boolean P_SetupSpawnedMapThing(mapthing_t *mthing, mobj_t *mobj)
 		}
 
 		// Steer away instead of towards
-		if (mthing->args[2])
+		if (mthing->thing_args[2])
 		{
 			mobj->extravalue1 = 0;
 		}
@@ -13242,13 +13242,13 @@ static boolean P_SetupSpawnedMapThing(mapthing_t *mthing, mobj_t *mobj)
 		}
 
 		// Steering amount
-		if (mthing->args[1] == 0)
+		if (mthing->thing_args[1] == 0)
 		{
 			mobj->extravalue2 = 4;
 		}
 		else
 		{
-			mobj->extravalue2 = mthing->args[1];
+			mobj->extravalue2 = mthing->thing_args[1];
 		}
 		break;
 	}
@@ -13266,7 +13266,7 @@ static boolean P_SetupSpawnedMapThing(mapthing_t *mthing, mobj_t *mobj)
 				P_SetThingPosition(mobj);
 			}
 		}
-		if (mthing->args[0] == 1)
+		if (mthing->thing_args[0] == 1)
 			mobj->flags2 |= MF2_AMBUSH;
 		break;
 	}
@@ -13289,14 +13289,14 @@ static boolean P_SetupSpawnedMapThing(mapthing_t *mthing, mobj_t *mobj)
 			mobj->flags |= MF_NOGRAVITY;
 
 		// Angle = item type
-		if (mthing->args[0] > 0 && mthing->args[0] < NUMKARTITEMS)
-			mobj->threshold = mthing->args[0];
+		if (mthing->thing_args[0] > 0 && mthing->thing_args[0] < NUMKARTITEMS)
+			mobj->threshold = mthing->thing_args[0];
 
 		// Parameter = extra items (x5 for rings)
-		mobj->movecount += mthing->args[1];
+		mobj->movecount += mthing->thing_args[1];
 
 		// Ambush = double size (grounded) / half size (aerial)
-		if (!(mthing->args[2] & TMICF_INVERTSIZE) == !P_IsObjectOnGround(mobj))
+		if (!(mthing->thing_args[2] & TMICF_INVERTSIZE) == !P_IsObjectOnGround(mobj))
 		{
 			mobj->extravalue1 = min(mobj->extravalue1 << 1, FixedDiv(MAPBLOCKSIZE, mobj->info->radius)); // don't make them larger than the blockmap can handle
 			mobj->scalespeed <<= 1;
@@ -13305,17 +13305,17 @@ static boolean P_SetupSpawnedMapThing(mapthing_t *mthing, mobj_t *mobj)
 	}
 	case MT_RANDOMAUDIENCE:
 	{
-		if (mthing->args[2] & TMAUDIM_FLOAT)
+		if (mthing->thing_args[2] & TMAUDIM_FLOAT)
 		{
 			mobj->flags |= MF_NOGRAVITY;
 		}
 
-		if (mthing->args[2] & TMAUDIM_BORED)
+		if (mthing->thing_args[2] & TMAUDIM_BORED)
 		{
 			mobj->flags2 |= MF2_BOSSNOTRAP;
 		}
 
-		if (mthing->args[3] != 0)
+		if (mthing->thing_args[3] != 0)
 		{
 			mobj->flags2 |= MF2_AMBUSH;
 		}
@@ -13331,8 +13331,8 @@ static boolean P_SetupSpawnedMapThing(mapthing_t *mthing, mobj_t *mobj)
 	{
 		fixed_t top = mobj->z;
 		UINT8 i;
-		UINT8 locnumsegs = abs(mthing->args[0])+2;
-		UINT8 numleaves = max(3, (abs(mthing->args[1])+1 % 6) + 3);
+		UINT8 locnumsegs = abs(mthing->thing_args[0])+2;
+		UINT8 numleaves = max(3, (abs(mthing->thing_args[1])+1 % 6) + 3);
 		mobj_t *coconut;
 
 		// Spawn tree segments
@@ -13368,7 +13368,7 @@ static boolean P_SetupSpawnedMapThing(mapthing_t *mthing, mobj_t *mobj)
 	case MT_SUNBEAMPALM_STEM:
 	{
 		UINT8 i;
-		const UINT8 numleaves = max(4, (abs(mthing->args[0])+1 % 6) + 4);
+		const UINT8 numleaves = max(4, (abs(mthing->thing_args[0])+1 % 6) + 4);
 
 		const fixed_t pivot = P_RandomRange(PR_DECORATION, -40, 20) * FRACUNIT;
 
@@ -13470,7 +13470,7 @@ static boolean P_SetupSpawnedMapThing(mapthing_t *mthing, mobj_t *mobj)
 		}
 
 		// Moving capsules!
-		if (mthing->args[0] && mthing->args[1])
+		if (mthing->thing_args[0] && mthing->thing_args[1])
 		{
 			K_SetupMovingCapsule(mthing, mobj);
 		}
@@ -13539,7 +13539,7 @@ static boolean P_SetupSpawnedMapThing(mapthing_t *mthing, mobj_t *mobj)
 	{
 		Obj_DuelBombInit(mobj);
 
-		if (mthing->args[1])
+		if (mthing->thing_args[1])
 		{
 			Obj_DuelBombReverse(mobj);
 		}
@@ -13597,7 +13597,7 @@ static boolean P_SetupSpawnedMapThing(mapthing_t *mthing, mobj_t *mobj)
 
 	if (mobj->flags & MF_BOSS)
 	{
-		if (mthing->args[1]) // No egg trap for this boss
+		if (mthing->thing_args[1]) // No egg trap for this boss
 			mobj->flags2 |= MF2_BOSSNOTRAP;
 	}
 
@@ -13638,32 +13638,32 @@ static mobj_t *P_SpawnMobjFromMapThing(mapthing_t *mthing, fixed_t x, fixed_t y,
 
 	for (arg = 0; arg < NUM_MAPTHING_ARGS; arg++)
 	{
-		mobj->args[arg] = mthing->args[arg];
+		mobj->thing_args[arg] = mthing->thing_args[arg];
 	}
 
 	for (arg = 0; arg < NUM_MAPTHING_STRINGARGS; arg++)
 	{
 		size_t len = 0;
 
-		if (mthing->stringargs[arg])
+		if (mthing->thing_stringargs[arg])
 		{
-			len = strlen(mthing->stringargs[arg]);
+			len = strlen(mthing->thing_stringargs[arg]);
 		}
 
 		if (len == 0)
 		{
-			Z_Free(mobj->stringargs[arg]);
-			mobj->stringargs[arg] = NULL;
+			Z_Free(mobj->thing_stringargs[arg]);
+			mobj->thing_stringargs[arg] = NULL;
 			continue;
 		}
 
-		mobj->stringargs[arg] = Z_Realloc(mobj->stringargs[arg], len + 1, PU_LEVEL, NULL);
-		M_Memcpy(mobj->stringargs[arg], mthing->stringargs[arg], len + 1);
+		mobj->thing_stringargs[arg] = Z_Realloc(mobj->thing_stringargs[arg], len + 1, PU_LEVEL, NULL);
+		M_Memcpy(mobj->thing_stringargs[arg], mthing->thing_stringargs[arg], len + 1);
 	}
 
 	for (arg = 0; arg < NUM_SCRIPT_ARGS; arg++)
 	{
-		mobj->script_args[arg] = mthing->args[arg];
+		mobj->script_args[arg] = mthing->script_args[arg];
 	}
 
 	for (arg = 0; arg < NUM_SCRIPT_STRINGARGS; arg++)
@@ -13756,7 +13756,7 @@ void P_SpawnHoop(mapthing_t *mthing)
 	mobj_t *nextmobj = NULL;
 	mobj_t *hoopcenter;
 	TMatrix *pitchmatrix, *yawmatrix;
-	fixed_t radius = mthing->args[0] << FRACBITS;
+	fixed_t radius = mthing->thing_args[0] << FRACBITS;
 	fixed_t sizefactor = 4*FRACUNIT;
 	fixed_t hoopsize = radius/sizefactor;
 	INT32 i;
@@ -13908,7 +13908,7 @@ static void P_SpawnItemRow(mapthing_t *mthing, mobjtype_t *itemtypes, UINT8 numi
 
 		loopanchor->spawnpoint = NULL;
 
-		Obj_LinkLoopAnchor(loopanchor, loopcenter, mthing->args[0]);
+		Obj_LinkLoopAnchor(loopanchor, loopcenter, mthing->thing_args[0]);
 	}
 
 	for (r = 0; r < numitems; r++)
@@ -14064,8 +14064,8 @@ void P_SpawnItemPattern(mapthing_t *mthing)
 		UINT8 numitemtypes;
 		if (!udmf)
 			return;
-		P_ParseItemTypes(mthing->stringargs[0], itemtypes, &numitemtypes);
-		P_SpawnItemRow(mthing, itemtypes, numitemtypes, mthing->args[0], mthing->args[1] << FRACBITS, mthing->args[2] << FRACBITS, mthing->angle);
+		P_ParseItemTypes(mthing->thing_stringargs[0], itemtypes, &numitemtypes);
+		P_SpawnItemRow(mthing, itemtypes, numitemtypes, mthing->thing_args[0], mthing->thing_args[1] << FRACBITS, mthing->thing_args[2] << FRACBITS, mthing->angle);
 		return;
 	}
 	case 611: // Generic item circle
@@ -14074,9 +14074,8 @@ void P_SpawnItemPattern(mapthing_t *mthing)
 		UINT8 numitemtypes;
 		if (!udmf)
 			return;
-		CONS_Printf("Itemstring: %s\n", mthing->stringargs[0]);
-		P_ParseItemTypes(mthing->stringargs[0], itemtypes, &numitemtypes);
-		P_SpawnItemCircle(mthing, itemtypes, numitemtypes, mthing->args[0], mthing->args[1] << FRACBITS);
+		P_ParseItemTypes(mthing->thing_stringargs[0], itemtypes, &numitemtypes);
+		P_SpawnItemCircle(mthing, itemtypes, numitemtypes, mthing->thing_args[0], mthing->thing_args[1] << FRACBITS);
 		return;
 	}
 	default:
@@ -14739,8 +14738,8 @@ void P_DeleteMobjStringArgs(mobj_t *mobj)
 
 	for (i = 0; i < NUM_MAPTHING_STRINGARGS; i++)
 	{
-		Z_Free(mobj->stringargs[i]);
-		mobj->stringargs[i] = NULL;
+		Z_Free(mobj->thing_stringargs[i]);
+		mobj->thing_stringargs[i] = NULL;
 	}
 
 	for (i = 0; i < NUM_SCRIPT_STRINGARGS; i++)

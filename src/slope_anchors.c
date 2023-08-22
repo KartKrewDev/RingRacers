@@ -199,7 +199,7 @@ get_anchor
 
 	for (i = 0; i < list->count; ++i)
 	{
-		if (list->points[i] == v && list->anchors[i]->args[0] == group)
+		if (list->points[i] == v && list->anchors[i]->thing_args[0] == group)
 		{
 			for (k = 0; k < 3; ++k)
 			{

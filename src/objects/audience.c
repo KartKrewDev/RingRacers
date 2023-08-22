@@ -38,10 +38,10 @@ Obj_AudienceInit
 	// Pick follower
 	if (mthing != NULL)
 	{
-		if (mthing->stringargs[0] != NULL)
+		if (mthing->thing_stringargs[0] != NULL)
 		{
 			// From mapthing
-			char *stringcopy = Z_StrDup(mthing->stringargs[0]);
+			char *stringcopy = Z_StrDup(mthing->thing_stringargs[0]);
 			char *tok = strtok(stringcopy, " ,");
 			char *c; // for erasing underscores
 
@@ -141,15 +141,15 @@ Obj_AudienceInit
 	{
 		UINT16 colorpick = SKINCOLOR_NONE;
 
-		if (mthing->stringargs[1] != NULL)
+		if (mthing->thing_stringargs[1] != NULL)
 		{
-			if (!stricmp("Random", mthing->stringargs[1]))
+			if (!stricmp("Random", mthing->thing_stringargs[1]))
 			{
 				colorpick = FOLLOWERCOLOR_MATCH;
 			}
 			else
 			{
-				char *stringcopy = Z_StrDup(mthing->stringargs[1]);
+				char *stringcopy = Z_StrDup(mthing->thing_stringargs[1]);
 				char *tok = strtok(stringcopy, " ");
 
 				numref = 0;

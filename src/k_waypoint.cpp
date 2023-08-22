@@ -2399,7 +2399,7 @@ static boolean K_AnchorWaypointRadius(
 				anchor->x, anchor->y);
 
 		// Keep changes for -writetextmap
-		waypointmobj->spawnpoint->args[1] = waypointmobj->radius >> FRACBITS;
+		waypointmobj->spawnpoint->thing_args[1] = waypointmobj->radius >> FRACBITS;
 		return true;
 	}
 	else

@@ -900,8 +900,8 @@ void LUA_InvalidateMapthings(void)
 	for (i = 0; i < nummapthings; i++)
 	{
 		LUA_InvalidateUserdata(&mapthings[i]);
-		LUA_InvalidateUserdata(mapthings[i].args);
-		LUA_InvalidateUserdata(mapthings[i].stringargs);
+		LUA_InvalidateUserdata(mapthings[i].thing_args);
+		LUA_InvalidateUserdata(mapthings[i].thing_stringargs);
 	}
 }
 

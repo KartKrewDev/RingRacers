@@ -16,7 +16,7 @@ void Obj_ArkArrowSpawn(mobj_t *mobj)
 void Obj_ArkArrowSetup(mobj_t *mobj, mapthing_t *mthing)
 {
 	const fixed_t oldHeight = mobj->height;
-	statenum_t stateNum = mobj->info->spawnstate + mthing->args[0];
+	statenum_t stateNum = mobj->info->spawnstate + mthing->thing_args[0];
 
 	if (stateNum - mobj->info->spawnstate >= ARKARROW_OPTIONS)
 	{

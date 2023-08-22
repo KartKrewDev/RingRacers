@@ -271,9 +271,9 @@ struct mapthing_t
 	mtag_t tid;
 	fixed_t scale;
 	fixed_t spritexscale, spriteyscale;
+	INT32 thing_args[NUM_MAPTHING_ARGS];
+	char *thing_stringargs[NUM_MAPTHING_STRINGARGS];
 	INT16 special;
-	INT32 args[NUM_MAPTHING_ARGS];
-	char *stringargs[NUM_MAPTHING_STRINGARGS];
 	INT32 script_args[NUM_SCRIPT_ARGS];
 	char *script_stringargs[NUM_SCRIPT_STRINGARGS];
 	UINT8 layer; // FOF layer to spawn on, see P_GetMobjSpawnHeight
