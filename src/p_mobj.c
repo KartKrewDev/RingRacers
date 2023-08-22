@@ -12914,10 +12914,10 @@ static boolean P_SetupSpawnedMapThing(mapthing_t *mthing, mobj_t *mobj)
 	}
 	case MT_SPRAYCAN:
 	{
-		if (numspraycans)
+		if (nummapspraycans)
 		{
-			if (numspraycans != UINT8_MAX)
-				numspraycans++;
+			if (nummapspraycans != UINT8_MAX)
+				nummapspraycans++;
 
 			P_RemoveMobj(mobj);
 			return false;
@@ -12926,7 +12926,7 @@ static boolean P_SetupSpawnedMapThing(mapthing_t *mthing, mobj_t *mobj)
 		P_SetScale(mobj, mobj->destscale = 2*mobj->scale);
 
 		P_SprayCanInit(mobj);
-		numspraycans++;
+		nummapspraycans++;
 		break;
 	}
 	case MT_SKYBOX:

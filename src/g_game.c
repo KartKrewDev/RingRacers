@@ -219,7 +219,7 @@ UINT32 bluescore, redscore; // CTF and Team Match team scores
 // ring count... for PERFECT!
 INT32 nummaprings = 0;
 
-UINT8 numspraycans = 0;
+UINT8 nummapspraycans = 0;
 
 // Elminates unnecessary searching.
 boolean CheckForBustableBlocks;

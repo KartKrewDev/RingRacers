@@ -816,7 +816,7 @@ static void P_SpawnMapThings(boolean spawnemblems)
 
 	if (spawnemblems)
 	{
-		if (numspraycans == 0)
+		if (nummapspraycans == 0)
 		{
 			UINT16 col = mapheaderinfo[gamemap-1]->cachedcan;
 
@@ -825,7 +825,7 @@ static void P_SpawnMapThings(boolean spawnemblems)
 				CONS_Alert(CONS_WARNING, "SPRAY CANS: Map has assigned Spray Cans but no pickup placed!\n");
 			}
 		}
-		else if (numspraycans > 1)
+		else if (nummapspraycans > 1)
 			CONS_Alert(CONS_ERROR, "SPRAY CANS: Map has too many Spray Cans (%d)!", numspraycans);
 	}
 }
@@ -7425,7 +7425,7 @@ static void P_InitLevelSettings(void)
 	maptargets = numtargets = 0;
 	battleprisons = false;
 
-	numspraycans = 0;
+	nummapspraycans = 0;
 
 	// emerald hunt
 	hunt1 = hunt2 = hunt3 = NULL;

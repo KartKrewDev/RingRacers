@@ -713,7 +713,7 @@ extern INT32 luabanks[NUM_LUABANKS];
 
 extern INT32 nummaprings; //keep track of spawned rings/coins
 
-extern UINT8 numspraycans;
+extern UINT8 nummapspraycans;
 
 extern UINT32 bluescore; ///< Blue Team Scores
 extern UINT32 redscore;  ///< Red Team Scores
