@@ -193,6 +193,7 @@ quake_t *g_quakes = NULL;
 // Map Header Information
 mapheader_t** mapheaderinfo = {NULL};
 INT32 nummapheaders = 0;
+INT32 basenummapheaders = 0;
 INT32 mapallocsize = 0;
 
 unloaded_mapheader_t *unloadedmapheaders = NULL;

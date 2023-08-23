@@ -642,6 +642,7 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 					return;
 				}
 
+				// See also P_SprayCanInit
 				UINT16 can_id = mapheaderinfo[gamemap-1]->cache_spraycan;
 
 				if (can_id < gamedata->numspraycans)
@@ -649,7 +650,8 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 					// Assigned to this level, has been grabbed
 					return;
 				}
-				//else
+				// Prevent footguns - these won't persist when custom levels are unloaded
+				else if (gamemap-1 < basenummapheaders)
 				{
 					// Unassigned, get the next grabbable colour
 					can_id = gamedata->gotspraycans;

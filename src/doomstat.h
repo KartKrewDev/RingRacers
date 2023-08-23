@@ -551,7 +551,7 @@ struct mapheader_t
 #define LF2_FINISHNEEDED	(1<<3) ///< Not available in Time Attack modes until you beat the level
 
 extern mapheader_t** mapheaderinfo;
-extern INT32 nummapheaders, mapallocsize;
+extern INT32 nummapheaders, basenummapheaders, mapallocsize;
 
 struct unloaded_mapheader_t
 {

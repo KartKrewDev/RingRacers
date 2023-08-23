@@ -12437,6 +12437,7 @@ static boolean P_SetupEmblem(mapthing_t *mthing, mobj_t *mobj)
 
 void P_SprayCanInit(mobj_t* mobj)
 {
+	// See also P_TouchSpecialThing
 	UINT16 can_id = mapheaderinfo[gamemap-1]->cache_spraycan;
 
 	if (can_id < gamedata->numspraycans)
@@ -12444,7 +12445,8 @@ void P_SprayCanInit(mobj_t* mobj)
 		// Assigned to this level, has been grabbed
 		mobj->renderflags = (tr_trans50 << RF_TRANSSHIFT);
 	}
-	else
+	// Prevent footguns - these won't persist when custom levels are unloaded
+	else if (gamemap-1 < basenummapheaders)
 	{
 		// Unassigned, get the next grabbable colour
 		can_id = gamedata->gotspraycans;

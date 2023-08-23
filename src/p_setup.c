@@ -8564,7 +8564,7 @@ lumpnum_t wadnamelump = LUMPERROR;
 INT16 wadnamemap = 0; // gamemap based
 
 // Initialising map data (and catching replacements)...
-UINT8 P_InitMapData(boolean existingmapheaders)
+UINT8 P_InitMapData(void)
 {
 	UINT8 ret = 0;
 	INT32 i, j;
@@ -8616,7 +8616,7 @@ UINT8 P_InitMapData(boolean existingmapheaders)
 		if (maplump == LUMPERROR)
 		{
 #ifndef DEVELOP
-			if (!existingmapheaders)
+			if (!basenummapheaders)
 			{
 				I_Error("P_InitMapData: Base map %s has a header but no level\n", name);
 			}
@@ -8633,7 +8633,7 @@ UINT8 P_InitMapData(boolean existingmapheaders)
 			ret |= MAPRET_ADDED;
 			CONS_Printf("%s\n", name);
 
-			if (existingmapheaders && mapheaderinfo[i]->lumpnum != LUMPERROR)
+			if (basenummapheaders && mapheaderinfo[i]->lumpnum != LUMPERROR)
 			{
 				G_SetGameModified(multiplayer, true); // oops, double-defined - no record attack privileges for you
 
@@ -8950,7 +8950,7 @@ boolean P_MultiSetupWadFiles(boolean fullsetup)
 
 	if (partadd_stage == 2)
 	{
-		UINT8 mapsadded = P_InitMapData(true);
+		UINT8 mapsadded = P_InitMapData();
 
 		if (!mapsadded)
 			CONS_Printf(M_GetText("No maps added\n"));

@@ -605,7 +605,10 @@ static void DEH_LoadDehackedFile(MYFILE *f, boolean mainfile)
 	} // end while
 
 	if (gamedataadded)
+	{
+		basenummapheaders = nummapheaders;
 		G_LoadGameData();
+	}
 
 	if (gamestate == GS_MENU || gamestate == GS_TITLESCREEN)
 	{
