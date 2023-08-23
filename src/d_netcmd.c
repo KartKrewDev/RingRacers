@@ -6833,14 +6833,11 @@ static void Skin_OnChange(const UINT8 p)
 		return;
 	}
 
-	if (p == 0)
+	if (!CV_CheatsEnabled() && !(netgame || K_CanChangeRules(false))
+		&& (gamestate != GS_WAITINGPLAYERS)) // allows command line -warp x +skin y
 	{
-		if (!CV_CheatsEnabled() && !(multiplayer || netgame) // In single player.
-			&& (gamestate != GS_WAITINGPLAYERS)) // allows command line -warp x +skin y
-		{
-			CV_StealthSet(&cv_skin[p], skins[players[g_localplayers[p]].skin].name);
-			return;
-		}
+		CV_StealthSet(&cv_skin[p], skins[players[g_localplayers[p]].skin].name);
+		return;
 	}
 
 	if (CanChangeSkin(g_localplayers[p]))
@@ -6890,7 +6887,7 @@ static void Color_OnChange(const UINT8 p)
 	UINT16 color = cv_playercolor[p].value;
 	boolean colorisgood = (color == SKINCOLOR_NONE || K_ColorUsable(color, false, true) == true);
 
-	if (Playing() && splitscreen < p)
+	if (Playing() && p <= splitscreen)
 	{
 		if (P_PlayerMoving(g_localplayers[p]) == true)
 		{
