@@ -2542,6 +2542,14 @@ static void readcondition(UINT16 set, UINT32 id, char *word2)
 			return;
 		}
 	}
+	else if (fastcmp(params[0], "CHARACTERWINS"))
+	{
+		PARAMCHECK(2);
+		ty = UC_CHARACTERWINS;
+		stringvar = Z_StrDup(params[1]);
+		re = -1;
+		x1 = atoi(params[2]);
+	}
 	else if ((offset=0) || fastcmp(params[0], "ALLCHAOS")
 	||        (++offset && fastcmp(params[0], "ALLSUPER"))
 	||        (++offset && fastcmp(params[0], "ALLEMERALDS")))
@@ -2662,22 +2670,8 @@ static void readcondition(UINT16 set, UINT32 id, char *word2)
 	{
 		PARAMCHECK(1);
 		ty = UCRP_ISCHARACTER;
-#if 0
-		{
-			re = R_SkinAvailable(params[1]);
-
-			if (re < 0)
-			{
-				deh_warning("Invalid character %s for condition ID %d", params[1], id+1);
-				return;
-			}
-		}
-#else
-		{
-			stringvar = Z_StrDup(params[1]);
-			re = -1;
-		}
-#endif
+		stringvar = Z_StrDup(params[1]);
+		re = -1;
 	}
 	else if (fastcmp(params[0], "ISENGINECLASS"))
 	{

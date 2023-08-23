@@ -41,6 +41,8 @@ typedef enum
 	UC_MAPSPBATTACK,	// MAPSPBATTACK [map]
 	UC_MAPTIME,			// MAPTIME [map] [time to beat, tics]
 
+	UC_CHARACTERWINS,	// CHARACTERWINS [character] [x rounds]
+
 	UC_ALLCHAOS,		// ALLCHAOS [minimum difficulty]
 	UC_ALLSUPER,		// ALLSUPER [minimum difficulty]
 	UC_ALLEMERALDS,		// ALLEMERALDS [minimum difficulty]

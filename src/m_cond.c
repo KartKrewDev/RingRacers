@@ -819,13 +819,14 @@ void M_UpdateConditionSetsPending(void)
 
 			switch (cn->type)
 			{
+				case UC_CHARACTERWINS:
 				case UCRP_ISCHARACTER:
 				{
 					cn->requirement = R_SkinAvailable(cn->stringvar);
 
 					if (cn->requirement < 0)
 					{
-						CONS_Alert(CONS_WARNING, "UCRP_ISCHARACTER: Invalid character %s for condition ID %d", cn->stringvar, cn->id+1);
+						CONS_Alert(CONS_WARNING, "UC TYPE %u: Invalid character %s for condition ID %d", cn->type, cn->stringvar, cn->id+1);
 						continue;
 					}
 
@@ -980,6 +981,12 @@ boolean M_CheckCondition(condition_t *cn, player_t *player)
 		}
 		case UC_MAPTIME: // Requires time on map <= x
 			return (G_GetBestTime(cn->extrainfo1) <= (unsigned)cn->requirement);
+
+		case UC_CHARACTERWINS:
+			if (cn->requirement < 0)
+				return false;
+
+			return (skins[cn->requirement].records.wins >= (UINT32)cn->extrainfo1);
 
 		case UC_ALLCHAOS:
 		case UC_ALLSUPER:
@@ -1351,6 +1358,19 @@ static const char *M_GetConditionString(condition_t *cn)
 
 			Z_Free(title);
 			return work;
+		}
+
+		case UC_CHARACTERWINS:
+		{
+			if (cn->requirement < 0 || !skins[cn->requirement].realname[0])
+				return va("INVALID CHAR CONDITION \"%d:%d:%d\"", cn->type, cn->requirement, cn->extrainfo1);
+			work = (R_SkinUsable(-1, cn->requirement, false))
+				? skins[cn->requirement].realname
+				: "???";
+			return va("win %d Round%s as %s",
+				cn->extrainfo1,
+				cn->extrainfo1 == 1 ? "" : "s",
+				work);
 		}
 
 		case UC_ALLCHAOS:
