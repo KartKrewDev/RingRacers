@@ -287,12 +287,12 @@ consvar_t cv_playername[MAXSPLITSCREENPLAYERS] = {
 	CVAR_INIT ("name4", "Knuckles", CV_SAVE|CV_CALL|CV_NOINIT, NULL, Name4_OnChange)
 };
 // player colors
-UINT16 lastgoodcolor[MAXSPLITSCREENPLAYERS] = {SKINCOLOR_BLUE, SKINCOLOR_BLUE, SKINCOLOR_BLUE, SKINCOLOR_BLUE};
+UINT16 lastgoodcolor[MAXSPLITSCREENPLAYERS] = {SKINCOLOR_NONE, SKINCOLOR_NONE, SKINCOLOR_NONE, SKINCOLOR_NONE};
 consvar_t cv_playercolor[MAXSPLITSCREENPLAYERS] = {
-	CVAR_INIT ("color", "Red", CV_SAVE|CV_CALL|CV_NOINIT, Color_cons_t, Color1_OnChange),
-	CVAR_INIT ("color2", "Orange", CV_SAVE|CV_CALL|CV_NOINIT, Color_cons_t, Color2_OnChange),
-	CVAR_INIT ("color3", "Blue", CV_SAVE|CV_CALL|CV_NOINIT, Color_cons_t, Color3_OnChange),
-	CVAR_INIT ("color4", "Red", CV_SAVE|CV_CALL|CV_NOINIT, Color_cons_t, Color4_OnChange)
+	CVAR_INIT ("color", "Default", CV_SAVE|CV_CALL|CV_NOINIT, Color_cons_t, Color1_OnChange),
+	CVAR_INIT ("color2", "Default", CV_SAVE|CV_CALL|CV_NOINIT, Color_cons_t, Color2_OnChange),
+	CVAR_INIT ("color3", "Default", CV_SAVE|CV_CALL|CV_NOINIT, Color_cons_t, Color3_OnChange),
+	CVAR_INIT ("color4", "Default", CV_SAVE|CV_CALL|CV_NOINIT, Color_cons_t, Color4_OnChange)
 };
 // player's skin, saved for commodity, when using a favorite skins wad..
 consvar_t cv_skin[MAXSPLITSCREENPLAYERS] = {
@@ -1516,7 +1516,7 @@ static void SendNameAndColor(const UINT8 n)
 			CV_StealthSetValue(&cv_playercolor[n], SKINCOLOR_NONE);
 		}
 
-		sendColor = cv_playercolor[n].value;
+		lastgoodcolor[playernum] = sendColor = cv_playercolor[n].value;
 	}
 
 	// ditto for follower colour:
