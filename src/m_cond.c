@@ -661,9 +661,14 @@ static void M_Shuffle_UINT16(UINT16 *list, size_t len)
 {
 	size_t i;
 	UINT16 temp;
-	while (--len > 1) // no need to swap on ==
+
+	while (len > 1)
 	{
 		i = M_RandomKey(len);
+
+		if (i == --len)
+			continue;
+
 		temp = list[i];
 		list[i] = list[len];
 		list[len] = temp;
