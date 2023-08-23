@@ -1299,7 +1299,7 @@ static void M_DrawCharSelectCircle(setup_player_t *p, INT16 x, INT16 y)
 
 				if (i == 0)
 				{
-					n = l = r = M_GetColorBefore(&p->colors, p->color, (numoptions/2) - 1);
+					n = l = r = M_GetColorBefore(&p->colors, p->color, (numoptions/2) - (numoptions & 1));
 				}
 				else if (subtract)
 				{
@@ -1428,7 +1428,7 @@ static void M_DrawCharSelectCircle(setup_player_t *p, INT16 x, INT16 y)
 
 				if (i == 0)
 				{
-					n = l = r = M_GetColorBefore(&p->colors, p->followercolor, (numoptions/2) - 1);
+					n = l = r = M_GetColorBefore(&p->colors, p->followercolor, (numoptions/2) - (numoptions & 1));
 				}
 				else if (subtract)
 				{
