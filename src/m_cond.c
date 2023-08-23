@@ -826,7 +826,7 @@ void M_UpdateConditionSetsPending(void)
 					if (cn->requirement < 0)
 					{
 						CONS_Alert(CONS_WARNING, "UCRP_ISCHARACTER: Invalid character %s for condition ID %d", cn->stringvar, cn->id+1);
-						return;
+						continue;
 					}
 
 					Z_Free(cn->stringvar);
