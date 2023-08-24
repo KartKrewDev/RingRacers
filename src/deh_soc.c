@@ -220,7 +220,7 @@ void clear_levels(void)
 	{
 		UINT16 i;
 		for (i = 0; i < gamedata->numspraycans; i++)
-			gamedata->spraycans[i].map = 0;
+			gamedata->spraycans[i].map = NEXTMAP_INVALID;
 	}
 
 	// Exit the current gamemap as a safeguard
