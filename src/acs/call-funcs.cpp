@@ -43,6 +43,8 @@
 #include "../k_podium.h"
 #include "../k_bot.h"
 #include "../z_zone.h"
+#include "../r_draw.h"
+#include "../k_dialogue.hpp"
 
 #include "call-funcs.hpp"
 
@@ -658,6 +660,46 @@ bool CallFunc_CameraWait(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::
 		ACSVM::ThreadState::WaitTag,
 		argV[0],
 		ACS_TAGTYPE_CAMERA
+	};
+
+	return true; // Execution interrupted
+}
+
+/*--------------------------------------------------
+	bool CallFunc_DialogueWaitDismiss(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
+
+		Pauses the thread until the current
+		dialogue box is dismissed.
+--------------------------------------------------*/
+bool CallFunc_DialogueWaitDismiss(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
+{
+	(void)argV;
+	(void)argC;
+
+	thread->state = {
+		ACSVM::ThreadState::WaitTag,
+		0,
+		ACS_TAGTYPE_DIALOGUE
+	};
+
+	return true; // Execution interrupted
+}
+
+/*--------------------------------------------------
+	bool CallFunc_DialogueWaitText(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
+
+		Pauses the thread until the current
+		dialogue box finishes rendering its text.
+--------------------------------------------------*/
+bool CallFunc_DialogueWaitText(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
+{
+	(void)argV;
+	(void)argC;
+
+	thread->state = {
+		ACSVM::ThreadState::WaitTag,
+		1,
+		ACS_TAGTYPE_DIALOGUE
 	};
 
 	return true; // Execution interrupted
@@ -1853,6 +1895,98 @@ bool CallFunc_AddBot(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word
 
 	success = K_AddBot(skin, difficulty, style, &newplayernum);
 	thread->dataStk.push(success ? newplayernum : -1);
+	return false;
+}
+
+/*--------------------------------------------------
+	bool CallFunc_DialogueSetSpeaker(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
+
+		Set the dialogue speaker to a skin.
+--------------------------------------------------*/
+bool CallFunc_DialogueSetSpeaker(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
+{
+	ACSVM::MapScope *map = nullptr;
+
+	ACSVM::String *skinStr = nullptr;
+	const char *skinName = nullptr;
+
+	int spriteFrame = 0;
+
+	(void)argC;
+
+	map = thread->scopeMap;
+
+	skinStr = map->getString(argV[0]);
+	skinName = skinStr->str;
+
+	spriteFrame = argV[1];
+
+	g_dialogue.SetSpeaker(skinName, spriteFrame);
+	return false;
+}
+
+/*--------------------------------------------------
+	bool CallFunc_DialogueSetCustomSpeaker(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
+
+		Set the dialogue speaker to specific graphics.
+--------------------------------------------------*/
+bool CallFunc_DialogueSetCustomSpeaker(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
+{
+	ACSVM::MapScope *map = nullptr;
+
+	ACSVM::String *nametagStr = nullptr;
+	const char *nametag = nullptr;
+
+	ACSVM::String *patchStr = nullptr;
+	const char *patchName = nullptr;
+
+	ACSVM::String *colorStr = nullptr;
+	const char *colorName = nullptr;
+	skincolornum_t colorID = SKINCOLOR_NONE;
+	UINT8 *colormap = nullptr;
+
+	(void)argC;
+
+	map = thread->scopeMap;
+
+	nametagStr = map->getString(argV[0]);
+	nametag = nametagStr->str;
+
+	patchStr = map->getString(argV[1]);
+	patchName = patchStr->str;
+
+	colorStr = map->getString(argV[1]);
+	colorName = colorStr->str;
+
+	if (ACS_GetColorFromString(colorName, &colorID) == true)
+	{
+		colormap = R_GetTranslationColormap(TC_DEFAULT, colorID, GTC_CACHE);
+	}
+
+	g_dialogue.SetSpeaker(nametag, patchName, colormap);
+	return false;
+}
+
+/*--------------------------------------------------
+	bool CallFunc_DialogueNewText(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
+
+		Change the current dialogue text.
+--------------------------------------------------*/
+bool CallFunc_DialogueNewText(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
+{
+	ACSVM::MapScope *map = nullptr;
+
+	ACSVM::String *textStr = nullptr;
+	const char *text = nullptr;
+
+	(void)argC;
+
+	map = thread->scopeMap;
+
+	textStr = map->getString(argV[0]);
+	text = textStr->str;
+
+	g_dialogue.NewText(text);
 	return false;
 }
 

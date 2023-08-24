@@ -27,6 +27,7 @@
 #include "../w_wad.h"
 #include "../z_zone.h"
 #include "../p_local.h"
+#include "../k_dialogue.hpp"
 
 #include "environment.hpp"
 #include "thread.hpp"
@@ -171,6 +172,12 @@ Environment::Environment()
 	addFuncDataACS0( 503, addCallFunc(CallFunc_SetLineRenderStyle));
 	addFuncDataACS0( 504, addCallFunc(CallFunc_MapWarp));
 	addFuncDataACS0( 505, addCallFunc(CallFunc_AddBot));
+
+	addFuncDataACS0( 600, addCallFunc(CallFunc_DialogueSetSpeaker));
+	addFuncDataACS0( 601, addCallFunc(CallFunc_DialogueSetCustomSpeaker));
+	addFuncDataACS0( 602, addCallFunc(CallFunc_DialogueNewText));
+	addFuncDataACS0( 603, addCallFunc(CallFunc_DialogueWaitDismiss));
+	addFuncDataACS0( 604, addCallFunc(CallFunc_DialogueWaitText));
 }
 
 ACSVM::Thread *Environment::allocThread()
@@ -283,6 +290,20 @@ bool Environment::checkTag(ACSVM::Word type, ACSVM::Word tag)
 			}
 
 			return (camera->tracer == nullptr || P_MobjWasRemoved(camera->tracer) == true);
+		}
+
+		case ACS_TAGTYPE_DIALOGUE:
+		{
+			if (tag == 0) // cheeky reuse
+			{
+				// wait for dismissal
+				return (!g_dialogue.Active());
+			}
+			else
+			{
+				// wait for text to finish
+				return (g_dialogue.TextDone());
+			}
 		}
 	}
 

@@ -105,6 +105,7 @@
 #include "k_rank.h"
 #include "k_mapuser.h"
 #include "music.h"
+#include "k_dialogue.h"
 
 // Replay names have time
 #if !defined (UNDER_CE)
@@ -1282,7 +1283,6 @@ static void P_LoadSidedefs(UINT8 *data)
 			case 425: // Calls P_SetMobjState on calling mobj
 			case 442: // Calls P_SetMobjState on mobjs of a given type in the tagged sectors
 			case 443: // Calls a named Lua function
-			case 459: // Control text prompt (named tag)
 			case 461: // Spawns an object on the map based on texture offsets
 			case 463: // Colorizes an object
 			case 475: // ACS_Execute
@@ -5993,25 +5993,6 @@ static void P_ConvertBinaryLinedefTypes(void)
 			lines[i].args[2] = sides[lines[i].sidenum[0]].rowoffset >> FRACBITS;
 			lines[i].args[3] = (lines[i].sidenum[1] != 0xffff) ? sides[lines[i].sidenum[1]].textureoffset >> FRACBITS : 0;
 			lines[i].args[4] = !!(lines[i].flags & ML_NOSKEW);
-			break;
-		case 459: //Control text prompt
-			lines[i].args[1] = sides[lines[i].sidenum[0]].textureoffset >> FRACBITS;
-			lines[i].args[2] = sides[lines[i].sidenum[0]].rowoffset >> FRACBITS;
-			if (lines[i].flags & ML_BLOCKPLAYERS)
-				lines[i].args[3] |= TMP_CLOSE;
-			if (lines[i].flags & ML_SKEWTD)
-				lines[i].args[3] |= TMP_RUNPOSTEXEC;
-			if (lines[i].flags & ML_TFERLINE)
-				lines[i].args[3] |= TMP_CALLBYNAME;
-			if (lines[i].flags & ML_NOSKEW)
-				lines[i].args[3] |= TMP_KEEPCONTROLS;
-			if (lines[i].flags & ML_MIDPEG)
-				lines[i].args[3] |= TMP_KEEPREALTIME;
-			/*if (lines[i].flags & ML_NOCLIMB)
-				lines[i].args[3] |= TMP_ALLPLAYERS;
-			if (lines[i].flags & ML_MIDSOLID)
-				lines[i].args[3] |= TMP_FREEZETHINKERS;*/
-			lines[i].args[4] = (lines[i].sidenum[1] != 0xFFFF) ? sides[lines[i].sidenum[1]].textureoffset >> FRACBITS : tag;
 			break;
 		case 460: //Award rings
 			lines[i].args[0] = sides[lines[i].sidenum[0]].textureoffset >> FRACBITS;

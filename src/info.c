@@ -915,6 +915,7 @@ char spr2names[NUMPLAYERSPRITES][5] =
 
 	"SIGN", // Finish signpost
 	"XTRA", // Three Faces of Darkness
+	"TALK", // Dialogue
 };
 playersprite_t free_spr2 = SPR2_FIRSTFREESLOT;
 
@@ -956,6 +957,7 @@ playersprite_t spr2defaults[NUMPLAYERSPRITES] = {
 
 	0, // SPR2_SIGN
 	0, // SPR2_XTRA
+	0, // SPR2_TALK
 };
 
 // Doesn't work with g++, needs actionf_p1 (don't modify this comment)

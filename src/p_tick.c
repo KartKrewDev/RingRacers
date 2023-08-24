@@ -43,6 +43,7 @@
 #include "acs/interface.h"
 #include "k_objects.h"
 #include "music.h"
+#include "k_dialogue.h"
 
 #ifdef PARANOIA
 #include "deh_tables.h" // MOBJTYPE_LIST
@@ -1031,6 +1032,11 @@ void P_Ticker(boolean run)
 		// Move the camera during levels.
 		K_UpdateDirector();
 		P_RunChaseCameras();
+	}
+
+	if (run)
+	{
+		K_TickDialogue();
 	}
 
 	LUA_HOOK(PostThinkFrame);

@@ -52,6 +52,7 @@
 #include "k_zvote.h"
 #include "music.h"
 #include "i_sound.h"
+#include "k_dialogue.h"
 
 UINT16 objectsdrawn = 0;
 
@@ -1244,6 +1245,8 @@ static void ST_overlayDrawer(void)
 	}
 
 	K_DrawMidVote();
+
+	K_DrawDialogue();
 }
 
 void ST_DrawDemoTitleEntry(void)
