@@ -681,9 +681,6 @@ static void M_AssignSpraycans(void)
 	// the release date of "Bomb Rush Cyberfunk".
 	// ~toast 180823 (committed a day later)
 
-	if (gamedata->numspraycans != 0)
-		return;
-
 	// Init ordered list of skincolors
 	UINT16 tempcanlist[MAXSKINCOLORS];
 	UINT16 listlen = 0, prependlen = 0;
