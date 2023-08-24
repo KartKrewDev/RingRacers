@@ -601,26 +601,83 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 		// Secret emblem thingy
 		case MT_EMBLEM:
 			{
-				boolean gotcollected = false;
-
 				if (!P_CanPickupEmblem(player, special->health - 1))
 					return;
 
-				if (P_IsLocalPlayer(player) && !gamedata->collected[special->health-1])
+				if (!P_IsLocalPlayer(player))
 				{
-					gamedata->collected[special->health-1] = gotcollected = true;
+					// Must be party.
+					return;
+				}
+
+				if (!gamedata->collected[special->health-1])
+				{
+					gamedata->collected[special->health-1] = true;
 					if (!M_UpdateUnlockablesAndExtraEmblems(true, true))
 						S_StartSound(NULL, sfx_ncitem);
 					gamedata->deferredsave = true;
 				}
 
-				if (netgame)
+				// Don't delete the object, just fade it.
+				return;
+			}
+
+		case MT_SPRAYCAN:
+			{
+				if (demo.playback)
 				{
-					// Don't delete the object in netgames, just fade it.
+					// Never collect emblems in replays.
 					return;
 				}
 
-				break;
+				if (player->bot)
+				{
+					// Your nefarious opponent puppy can't grab these for you.
+					return;
+				}
+
+				if (!P_IsLocalPlayer(player))
+				{
+					// Must be party.
+					return;
+				}
+
+				// See also P_SprayCanInit
+				UINT16 can_id = mapheaderinfo[gamemap-1]->cache_spraycan;
+
+				if (can_id < gamedata->numspraycans)
+				{
+					// Assigned to this level, has been grabbed
+					return;
+				}
+				// Prevent footguns - these won't persist when custom levels are unloaded
+				else if (gamemap-1 < basenummapheaders)
+				{
+					// Unassigned, get the next grabbable colour
+					can_id = gamedata->gotspraycans;
+				}
+
+				if (can_id >= gamedata->numspraycans)
+				{
+					// We've exhausted all the spraycans to grab.
+					return;
+				}
+
+				if (gamedata->spraycans[can_id].map >= nummapheaders)
+				{
+					gamedata->spraycans[can_id].map = gamemap-1;
+					mapheaderinfo[gamemap-1]->cache_spraycan = can_id;
+
+					gamedata->gotspraycans++;
+
+					if (!M_UpdateUnlockablesAndExtraEmblems(true, true))
+						S_StartSound(NULL, sfx_ncitem);
+					gamedata->deferredsave = true;
+				}
+
+				// Don't delete the object, just fade it.
+				P_SprayCanInit(special);
+				return;
 			}
 
 		// CTF Flags

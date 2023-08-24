@@ -4190,6 +4190,10 @@ static thinker_t* LoadMobjThinker(savebuffer_t *save, actionf_p1 thinker)
 	{
 		P_InitSkyboxPoint(mobj, mobj->spawnpoint);
 	}
+	else if (mobj->type == MT_SPRAYCAN)
+	{
+		P_SprayCanInit(mobj);
+	}
 
 	if (diff2 & MD2_WAYPOINTCAP)
 		P_SetTarget(&waypointcap, mobj);

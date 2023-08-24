@@ -460,6 +460,8 @@ static void P_ClearSingleMapHeaderInfo(INT16 num)
 	mapheaderinfo[num]->justPlayed = 0;
 	mapheaderinfo[num]->anger = 0;
 
+	mapheaderinfo[num]->cache_spraycan = UINT16_MAX;
+
 	mapheaderinfo[num]->customopts = NULL;
 	mapheaderinfo[num]->numCustomOptions = 0;
 }
@@ -811,6 +813,22 @@ static void P_SpawnMapThings(boolean spawnemblems)
 	}
 
 	Z_Free(loopends);
+
+	if (spawnemblems)
+	{
+		const UINT8 recommendedcans =
+#ifdef DEVELOP
+			!(mapheaderinfo[gamemap-1]->typeoflevel & TOL_RACE) ? 0 :
+#endif
+			1;
+
+		if (nummapspraycans > recommendedcans)
+			CONS_Alert(CONS_ERROR, "SPRAY CANS: Map has too many Spray Cans (%d)!", nummapspraycans);
+#ifdef DEVELOP
+		else if (nummapspraycans != recommendedcans)
+			CONS_Alert(CONS_ERROR, "SPRAY CANS: Krew-made Race maps need a Spray Can placed!");
+#endif
+	}
 }
 
 // Experimental groovy write function!
@@ -7408,6 +7426,8 @@ static void P_InitLevelSettings(void)
 	maptargets = numtargets = 0;
 	battleprisons = false;
 
+	nummapspraycans = 0;
+
 	// emerald hunt
 	hunt1 = hunt2 = hunt3 = NULL;
 
@@ -8544,7 +8564,7 @@ lumpnum_t wadnamelump = LUMPERROR;
 INT16 wadnamemap = 0; // gamemap based
 
 // Initialising map data (and catching replacements)...
-UINT8 P_InitMapData(boolean existingmapheaders)
+UINT8 P_InitMapData(void)
 {
 	UINT8 ret = 0;
 	INT32 i, j;
@@ -8596,7 +8616,7 @@ UINT8 P_InitMapData(boolean existingmapheaders)
 		if (maplump == LUMPERROR)
 		{
 #ifndef DEVELOP
-			if (!existingmapheaders)
+			if (!basenummapheaders)
 			{
 				I_Error("P_InitMapData: Base map %s has a header but no level\n", name);
 			}
@@ -8613,7 +8633,7 @@ UINT8 P_InitMapData(boolean existingmapheaders)
 			ret |= MAPRET_ADDED;
 			CONS_Printf("%s\n", name);
 
-			if (existingmapheaders && mapheaderinfo[i]->lumpnum != LUMPERROR)
+			if (basenummapheaders && mapheaderinfo[i]->lumpnum != LUMPERROR)
 			{
 				G_SetGameModified(multiplayer, true); // oops, double-defined - no record attack privileges for you
 
@@ -8930,7 +8950,7 @@ boolean P_MultiSetupWadFiles(boolean fullsetup)
 
 	if (partadd_stage == 2)
 	{
-		UINT8 mapsadded = P_InitMapData(true);
+		UINT8 mapsadded = P_InitMapData();
 
 		if (!mapsadded)
 			CONS_Printf(M_GetText("No maps added\n"));

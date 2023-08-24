@@ -621,14 +621,30 @@ void M_ClearStats(void)
 
 void M_ClearSecrets(void)
 {
-	INT32 i;
+	memset(gamedata->collected, 0, sizeof(gamedata->collected));
+	memset(gamedata->unlocked, 0, sizeof(gamedata->unlocked));
+	memset(gamedata->unlockpending, 0, sizeof(gamedata->unlockpending));
+	if (!dedicated)
+		memset(netUnlocked, 0, sizeof(netUnlocked));
+	memset(gamedata->achieved, 0, sizeof(gamedata->achieved));
 
-	for (i = 0; i < MAXEMBLEMS; ++i)
-		gamedata->collected[i] = false;
-	for (i = 0; i < MAXUNLOCKABLES; ++i)
-		gamedata->unlocked[i] = gamedata->unlockpending[i] = netUnlocked[i] = false;
-	for (i = 0; i < MAXCONDITIONSETS; ++i)
-		gamedata->achieved[i] = false;
+	Z_Free(gamedata->spraycans);
+	gamedata->spraycans = NULL;
+	gamedata->numspraycans = 0;
+	gamedata->gotspraycans = 0;
+
+	UINT16 i;
+	for (i = 0; i < nummapheaders; i++)
+	{
+		if (!mapheaderinfo[i])
+			continue;
+		mapheaderinfo[i]->cache_spraycan = UINT16_MAX;
+	}
+
+	for (i = 0; i < numskincolors; i++)
+	{
+		skincolors[i].cache_spraycan = UINT16_MAX;
+	}
 
 	Z_Free(gamedata->challengegrid);
 	gamedata->challengegrid = NULL;
@@ -638,6 +654,142 @@ void M_ClearSecrets(void)
 	gamedata->pendingkeyroundoffset = 0;
 	gamedata->keyspending = 0;
 	gamedata->chaokeys = 3; // Start with 3 !!
+}
+
+// For lack of a better idea on where to put this
+static void M_Shuffle_UINT16(UINT16 *list, size_t len)
+{
+	size_t i;
+	UINT16 temp;
+
+	while (len > 1)
+	{
+		i = M_RandomKey(len);
+
+		if (i == --len)
+			continue;
+
+		temp = list[i];
+		list[i] = list[len];
+		list[len] = temp;
+	}
+}
+
+static void M_AssignSpraycans(void)
+{
+	// Very convenient I'm programming this on
+	// the release date of "Bomb Rush Cyberfunk".
+	// ~toast 180823 (committed a day later)
+
+	// Init ordered list of skincolors
+	UINT16 tempcanlist[MAXSKINCOLORS];
+	UINT16 listlen = 0, prependlen = 0;
+
+	UINT32 i, j;
+	conditionset_t *c;
+	condition_t *cn;
+
+	const UINT16 prependoffset = MAXSKINCOLORS-1;
+
+	// None of the following accounts for cans being removed, only added...
+	for (i = 0; i < MAXCONDITIONSETS; ++i)
+	{
+		c = &conditionSets[i];
+		if (!c->numconditions)
+			continue;
+
+		for (j = 0; j < c->numconditions; ++j)
+		{
+			cn = &c->condition[j];
+			if (cn->type != UC_SPRAYCAN)
+				continue;
+
+			// G_LoadGamedata, G_SaveGameData doesn't support custom skincolors right now.
+			if (cn->requirement >= SKINCOLOR_FIRSTFREESLOT) //numskincolors)
+				continue;
+
+			if (skincolors[cn->requirement].cache_spraycan != UINT16_MAX)
+				continue;
+
+			// Still invalid, just in case it isn't assigned one later
+			skincolors[cn->requirement].cache_spraycan = UINT16_MAX-1;
+
+			if (!cn->extrainfo1)
+			{
+				//CONS_Printf("DDD - Adding standard can color %d\n", cn->requirement);
+
+				tempcanlist[listlen] = cn->requirement;
+				listlen++;
+				continue;
+			}
+
+			//CONS_Printf("DDD - Prepending early can color %d\n", cn->requirement);
+
+			tempcanlist[prependoffset - prependlen] = cn->requirement;
+			prependlen++;
+		}
+	}
+
+	if (listlen)
+	{
+		// Swap the standard colours for random order
+		M_Shuffle_UINT16(tempcanlist, listlen);
+	}
+	else if (!prependlen)
+	{
+		return;
+	}
+
+	if (prependlen)
+	{
+		// Swap the early colours for random order
+		M_Shuffle_UINT16(tempcanlist + prependoffset - (prependlen - 1), prependlen);
+
+		// Put at the front of the main list
+		// (technically reverses the prepend order, but it
+		// was LITERALLY just shuffled so it doesn't matter)
+		while (prependlen)
+		{
+			prependlen--;
+			tempcanlist[listlen] = tempcanlist[prependlen];
+			tempcanlist[prependlen] = tempcanlist[prependoffset - prependlen];
+			listlen++;
+		}
+	}
+
+	gamedata->spraycans = Z_Realloc(
+		gamedata->spraycans,
+		sizeof(candata_t) * (gamedata->numspraycans + listlen),
+		PU_STATIC,
+		NULL);
+
+	for (i = 0; i < listlen; i++)
+	{
+		gamedata->spraycans[gamedata->numspraycans].map = NEXTMAP_INVALID;
+		gamedata->spraycans[gamedata->numspraycans].col = tempcanlist[i];
+
+		skincolors[tempcanlist[i]].cache_spraycan = gamedata->numspraycans;
+
+		gamedata->numspraycans++;
+	}
+}
+
+void M_FinaliseGameData(void)
+{
+	//M_PopulateChallengeGrid(); -- This can be done lazily when we actually need it
+
+	// Place the spraycans, which CAN'T be done lazily.
+	M_AssignSpraycans();
+
+	// Don't consider loaded until it's a success!
+	// It used to do this much earlier, but this would cause the gamedata
+	// to save over itself when it I_Errors from corruption,  which can
+	// accidentally delete players' legitimate data if the code ever has
+	// any tiny mistakes!
+	gamedata->loaded = true;
+
+	// Silent update unlockables in case they're out of sync with conditions
+	M_UpdateUnlockablesAndExtraEmblems(false, true);
 }
 
 // ----------------------
@@ -664,14 +816,15 @@ void M_UpdateConditionSetsPending(void)
 
 			switch (cn->type)
 			{
+				case UC_CHARACTERWINS:
 				case UCRP_ISCHARACTER:
 				{
 					cn->requirement = R_SkinAvailable(cn->stringvar);
 
 					if (cn->requirement < 0)
 					{
-						CONS_Alert(CONS_WARNING, "UCRP_ISCHARACTER: Invalid character %s for condition ID %d", cn->stringvar, cn->id+1);
-						return;
+						CONS_Alert(CONS_WARNING, "UC TYPE %u: Invalid character %s for condition ID %d", cn->type, cn->stringvar, cn->id+1);
+						continue;
 					}
 
 					Z_Free(cn->stringvar);
@@ -826,6 +979,12 @@ boolean M_CheckCondition(condition_t *cn, player_t *player)
 		case UC_MAPTIME: // Requires time on map <= x
 			return (G_GetBestTime(cn->extrainfo1) <= (unsigned)cn->requirement);
 
+		case UC_CHARACTERWINS:
+			if (cn->requirement < 0)
+				return false;
+
+			return (skins[cn->requirement].records.wins >= (UINT32)cn->extrainfo1);
+
 		case UC_ALLCHAOS:
 		case UC_ALLSUPER:
 		case UC_ALLEMERALDS:
@@ -870,6 +1029,19 @@ boolean M_CheckCondition(condition_t *cn, player_t *player)
 			return false;
 		case UC_PASSWORD:
 			return (cn->stringvar == NULL);
+		case UC_SPRAYCAN:
+		{
+			if (cn->requirement <= 0
+			|| cn->requirement >= numskincolors)
+				return false;
+
+			UINT16 can_id = skincolors[cn->requirement].cache_spraycan;
+
+			if (can_id >= gamedata->numspraycans)
+				return false;
+
+			return (gamedata->spraycans[can_id].map < nummapheaders);
+		}
 
 		// Just for string building
 		case UC_AND:
@@ -1185,6 +1357,19 @@ static const char *M_GetConditionString(condition_t *cn)
 			return work;
 		}
 
+		case UC_CHARACTERWINS:
+		{
+			if (cn->requirement < 0 || !skins[cn->requirement].realname[0])
+				return va("INVALID CHAR CONDITION \"%d:%d:%d\"", cn->type, cn->requirement, cn->extrainfo1);
+			work = (R_SkinUsable(-1, cn->requirement, false))
+				? skins[cn->requirement].realname
+				: "???";
+			return va("win %d Round%s as %s",
+				cn->extrainfo1,
+				cn->extrainfo1 == 1 ? "" : "s",
+				work);
+		}
+
 		case UC_ALLCHAOS:
 		case UC_ALLSUPER:
 		case UC_ALLEMERALDS:
@@ -1322,6 +1507,28 @@ static const char *M_GetConditionString(condition_t *cn)
 			return NULL;
 		case UC_PASSWORD:
 			return "enter a secret password";
+		case UC_SPRAYCAN:
+		{
+			if (cn->requirement <= 0
+			|| cn->requirement >= numskincolors)
+				return va("INVALID SPRAYCAN COLOR \"%d\"", cn->requirement);
+
+			UINT16 can_id = skincolors[cn->requirement].cache_spraycan;
+
+			if (can_id >= gamedata->numspraycans)
+				return va("INVALID SPRAYCAN ID \"%d:%u\"",
+					cn->requirement,
+					skincolors[cn->requirement].cache_spraycan
+				);
+
+			if (can_id == 0)
+				return "grab a Spray Can"; // Special case for the head of the list
+
+			if (gamedata->spraycans[0].map >= nummapheaders)
+				return NULL; // Don't tease that there are many until you have one
+
+			return va("grab %d Spray Cans", can_id + 1);
+		}
 
 		case UC_AND:
 			return "&";

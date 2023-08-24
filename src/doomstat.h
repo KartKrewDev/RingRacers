@@ -531,6 +531,9 @@ struct mapheader_t
 	UINT8 precutscenenum;				///< Cutscene number to play BEFORE a level starts.
 	UINT8 cutscenenum;					///< Cutscene number to use, 0 for none.
 
+	UINT32 _saveid;						///< Purely assistive in gamedata save processes
+	UINT16 cache_spraycan;				///< Cached Spraycan ID
+
 	// Lua information
 	UINT8 numCustomOptions;				///< Internal. For Lua custom value support.
 	customoption_t *customopts;			///< Custom options. Allocated dynamically for space reasons. Be careful.
@@ -548,7 +551,7 @@ struct mapheader_t
 #define LF2_FINISHNEEDED	(1<<3) ///< Not available in Time Attack modes until you beat the level
 
 extern mapheader_t** mapheaderinfo;
-extern INT32 nummapheaders, mapallocsize;
+extern INT32 nummapheaders, basenummapheaders, mapallocsize;
 
 struct unloaded_mapheader_t
 {
@@ -709,6 +712,8 @@ typedef enum
 extern INT32 luabanks[NUM_LUABANKS];
 
 extern INT32 nummaprings; //keep track of spawned rings/coins
+
+extern UINT8 nummapspraycans;
 
 extern UINT32 bluescore; ///< Blue Team Scores
 extern UINT32 redscore;  ///< Red Team Scores
