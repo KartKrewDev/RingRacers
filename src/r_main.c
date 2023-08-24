@@ -151,7 +151,6 @@ static void ChaseCam2_OnChange(void);
 static void ChaseCam3_OnChange(void);
 static void ChaseCam4_OnChange(void);
 
-consvar_t cv_tailspickup = CVAR_INIT ("tailspickup", "On", CV_NETVAR|CV_NOSHOWHELP, CV_OnOff, NULL);
 consvar_t cv_chasecam[MAXSPLITSCREENPLAYERS] = {
 	CVAR_INIT ("chasecam", "On", CV_CALL, CV_OnOff, ChaseCam_OnChange),
 	CVAR_INIT ("chasecam2", "On", CV_CALL, CV_OnOff, ChaseCam2_OnChange),
@@ -180,8 +179,6 @@ consvar_t cv_fov[MAXSPLITSCREENPLAYERS] = {
 consvar_t cv_homremoval = CVAR_INIT ("homremoval", "Yes", CV_SAVE, homremoval_cons_t, NULL);
 
 consvar_t cv_maxportals = CVAR_INIT ("maxportals", "2", CV_SAVE, maxportals_cons_t, NULL);
-
-consvar_t cv_renderstats = CVAR_INIT ("renderstats", "Off", 0, CV_OnOff, NULL);
 
 consvar_t cv_drawpickups = CVAR_INIT ("drawpickups", "Yes", CV_CHEAT, CV_YesNo, NULL);
 
@@ -1693,7 +1690,6 @@ void R_RegisterEngineStuff(void)
 	UINT8 i;
 
 	CV_RegisterVar(&cv_gravity);
-	CV_RegisterVar(&cv_tailspickup);
 	CV_RegisterVar(&cv_allowmlook);
 	CV_RegisterVar(&cv_homremoval);
 

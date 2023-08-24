@@ -242,11 +242,6 @@ static void Command_Eval(void);
 
 static CV_PossibleValue_t usemouse_cons_t[] = {{0, "Off"}, {1, "On"}, {2, "Force"}, {0, NULL}};
 
-#ifdef LJOYSTICK
-static CV_PossibleValue_t joyport_cons_t[] = {{1, "/dev/js0"}, {2, "/dev/js1"}, {3, "/dev/js2"},
-	{4, "/dev/js3"}, {0, NULL}};
-#endif
-
 static CV_PossibleValue_t teamscramble_cons_t[] = {{0, "Off"}, {1, "Random"}, {2, "Points"}, {0, NULL}};
 
 static CV_PossibleValue_t startingliveslimit_cons_t[] = {{1, "MIN"}, {99, "MAX"}, {0, NULL}};
@@ -344,30 +339,12 @@ consvar_t cv_skipmapcheck = CVAR_INIT ("skipmapcheck", "Off", CV_SAVE, CV_OnOff,
 
 consvar_t cv_usemouse = CVAR_INIT ("use_mouse", "Off", CV_SAVE|CV_CALL,usemouse_cons_t, I_StartupMouse);
 
-#if (defined (LJOYSTICK) || defined (HAVE_SDL))
 consvar_t cv_joyscale[MAXSPLITSCREENPLAYERS] = {
 	CVAR_INIT ("padscale", "1", CV_SAVE|CV_CALL, NULL, I_JoyScale),
 	CVAR_INIT ("padscale2", "1", CV_SAVE|CV_CALL, NULL, I_JoyScale2),
 	CVAR_INIT ("padscale3", "1", CV_SAVE|CV_CALL, NULL, I_JoyScale3),
 	CVAR_INIT ("padscale4", "1", CV_SAVE|CV_CALL, NULL, I_JoyScale4)
 };
-
-#ifdef LJOYSTICK
-consvar_t cv_joyport[MAXSPLITSCREENPLAYERS] = { //Alam: for later
-	CVAR_INIT ("padport", "/dev/js0", CV_SAVE, joyport_cons_t, NULL),
-	CVAR_INIT ("padport2", "/dev/js0", CV_SAVE, joyport_cons_t, NULL),
-	CVAR_INIT ("padport3", "/dev/js0", CV_SAVE, joyport_cons_t, NULL),
-	CVAR_INIT ("padport4", "/dev/js0", CV_SAVE, joyport_cons_t, NULL)
-};
-#endif
-#else
-consvar_t cv_joyscale[MAXSPLITSCREENPLAYERS] = { //Alam: Dummy for save
-	CVAR_INIT ("padscale", "1", CV_SAVE|CV_HIDEN, NULL, NULL),
-	CVAR_INIT ("padscale2", "1", CV_SAVE|CV_HIDEN, NULL, NULL),
-	CVAR_INIT ("padscale3", "1", CV_SAVE|CV_HIDEN, NULL, NULL),
-	CVAR_INIT ("padscale4", "1", CV_SAVE|CV_HIDEN, NULL, NULL)
-};
-#endif
 
 // SRB2kart
 consvar_t cv_items[NUMKARTRESULTS-1] = {
@@ -1079,9 +1056,6 @@ void D_RegisterClientCommands(void)
 	for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
 	{
 		CV_RegisterVar(&cv_joyscale[i]);
-#ifdef LJOYSTICK
-		CV_RegisterVar(&cv_joyport[i]);
-#endif
 	}
 
 	// s_sound.c
@@ -1102,12 +1076,6 @@ void D_RegisterClientCommands(void)
 
 	CV_RegisterVar(&cv_soundtest);
 
-	CV_RegisterVar(&cv_invincmusicfade);
-	CV_RegisterVar(&cv_growmusicfade);
-
-	CV_RegisterVar(&cv_resetspecialmusic);
-
-	CV_RegisterVar(&cv_resume);
 	CV_RegisterVar(&cv_perfstats);
 
 	// ingame object placing
