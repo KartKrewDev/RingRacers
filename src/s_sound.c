@@ -59,10 +59,6 @@ static void GameDigiMusic_OnChange(void);
 static void PlayMusicIfUnfocused_OnChange(void);
 static void PlaySoundIfUnfocused_OnChange(void);
 
-#ifdef HAVE_OPENMPT
-static void ModFilter_OnChange(void);
-#endif
-
 // stereo reverse
 consvar_t stereoreverse = CVAR_INIT ("stereoreverse", "Off", CV_SAVE, CV_OnOff, NULL);
 
@@ -94,13 +90,6 @@ consvar_t cv_gamesounds = CVAR_INIT ("sounds", "On", CV_SAVE|CV_CALL|CV_NOINIT, 
 // Window focus sound sytem toggles
 consvar_t cv_playmusicifunfocused = CVAR_INIT ("playmusicifunfocused",  "No", CV_SAVE|CV_CALL|CV_NOINIT, CV_YesNo, PlayMusicIfUnfocused_OnChange);
 consvar_t cv_playsoundifunfocused = CVAR_INIT ("playsoundsifunfocused", "No", CV_SAVE|CV_CALL|CV_NOINIT, CV_YesNo, PlaySoundIfUnfocused_OnChange);
-
-#ifdef HAVE_OPENMPT
-openmpt_module *openmpt_mhandle = NULL;
-
-static CV_PossibleValue_t interpolationfilter_cons_t[] = {{0, "Default"}, {1, "None"}, {2, "Linear"}, {4, "Cubic"}, {8, "Windowed sinc"}, {0, NULL}};
-consvar_t cv_modfilter = CVAR_INIT ("modfilter", "0", CV_SAVE|CV_CALL, interpolationfilter_cons_t, ModFilter_OnChange);
-#endif
 
 #define S_MAX_VOLUME 127
 
@@ -242,10 +231,6 @@ void S_RegisterSoundStuff(void)
 	CV_RegisterVar(&cv_playmusicifunfocused);
 	CV_RegisterVar(&cv_gamesounds);
 	CV_RegisterVar(&cv_gamedigimusic);
-
-#ifdef HAVE_OPENMPT
-	CV_RegisterVar(&cv_modfilter);
-#endif
 
 	COM_AddCommand("tunes", Command_Tunes_f);
 	COM_AddCommand("restartaudio", Command_RestartAudio_f);
@@ -2494,11 +2479,3 @@ static void PlaySoundIfUnfocused_OnChange(void)
 	if (window_notinfocus && !cv_playsoundifunfocused.value)
 		S_StopSounds();
 }
-
-#ifdef HAVE_OPENMPT
-void ModFilter_OnChange(void)
-{
-	if (openmpt_mhandle)
-		openmpt_module_set_render_param(openmpt_mhandle, OPENMPT_MODULE_RENDER_INTERPOLATIONFILTER_LENGTH, cv_modfilter.value);
-}
-#endif

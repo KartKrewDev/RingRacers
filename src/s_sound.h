@@ -19,16 +19,8 @@
 #include "command.h"
 #include "tables.h" // angle_t
 
-#ifdef HAVE_OPENMPT
-#include "libopenmpt/libopenmpt.h"
-#endif
-
 #ifdef __cplusplus
 extern "C" {
-#endif
-
-#ifdef HAVE_OPENMPT
-extern openmpt_module *openmpt_mhandle;
 #endif
 
 // mask used to indicate sound origin is player item pickup
@@ -51,10 +43,6 @@ extern consvar_t cv_gamedigimusic;
 extern consvar_t cv_gamesounds;
 extern consvar_t cv_playmusicifunfocused;
 extern consvar_t cv_playsoundifunfocused;
-
-#ifdef HAVE_OPENMPT
-extern consvar_t cv_modfilter;
-#endif
 
 extern CV_PossibleValue_t soundvolume_cons_t[];
 
