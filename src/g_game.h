@@ -101,13 +101,6 @@ extern consvar_t cv_deadzone[MAXSPLITSCREENPLAYERS];
 
 extern consvar_t cv_ghost_besttime, cv_ghost_bestlap, cv_ghost_last, cv_ghost_guest, cv_ghost_staff;
 
-extern consvar_t cv_invincmusicfade;
-extern consvar_t cv_growmusicfade;
-
-extern consvar_t cv_resetspecialmusic;
-
-extern consvar_t cv_resume;
-
 // mouseaiming (looking up/down with the mouse or keyboard)
 #define KB_LOOKSPEED (1<<25)
 #define MAXPLMOVE (50)

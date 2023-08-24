@@ -63,8 +63,6 @@ static void PlaySoundIfUnfocused_OnChange(void);
 static void ModFilter_OnChange(void);
 #endif
 
-consvar_t cv_samplerate = CVAR_INIT ("samplerate", "22050", 0, CV_Unsigned, NULL); //Alam: For easy hacking?
-
 // stereo reverse
 consvar_t stereoreverse = CVAR_INIT ("stereoreverse", "Off", CV_SAVE, CV_OnOff, NULL);
 
@@ -92,15 +90,6 @@ consvar_t cv_closedcaptioning = CVAR_INIT ("closedcaptioning", "Off", CV_SAVE|CV
 // Sound system toggles, saved into the config
 consvar_t cv_gamedigimusic = CVAR_INIT ("music", "On", CV_SAVE|CV_CALL|CV_NOINIT, CV_OnOff, GameDigiMusic_OnChange);
 consvar_t cv_gamesounds = CVAR_INIT ("sounds", "On", CV_SAVE|CV_CALL|CV_NOINIT, CV_OnOff, GameSounds_OnChange);
-
-static CV_PossibleValue_t music_resync_threshold_cons_t[] = {
-	{0,    "MIN"},
-	{1000, "MAX"},
-	{0, NULL}
-};
-
-consvar_t cv_music_resync_threshold = CVAR_INIT ("music_resync_threshold", "100", CV_SAVE|CV_CALL, music_resync_threshold_cons_t, I_UpdateSongLagThreshold);
-consvar_t cv_music_resync_powerups_only = CVAR_INIT ("music_resync_powerups_only", "No", CV_SAVE|CV_CALL, CV_YesNo, I_UpdateSongLagConditions);
 
 // Window focus sound sytem toggles
 consvar_t cv_playmusicifunfocused = CVAR_INIT ("playmusicifunfocused",  "No", CV_SAVE|CV_CALL|CV_NOINIT, CV_YesNo, PlayMusicIfUnfocused_OnChange);
@@ -249,14 +238,10 @@ void S_RegisterSoundStuff(void)
 	CV_RegisterVar(&precachesound);
 
 	CV_RegisterVar(&surround);
-	CV_RegisterVar(&cv_samplerate);
 	CV_RegisterVar(&cv_playsoundifunfocused);
 	CV_RegisterVar(&cv_playmusicifunfocused);
 	CV_RegisterVar(&cv_gamesounds);
 	CV_RegisterVar(&cv_gamedigimusic);
-
-	CV_RegisterVar(&cv_music_resync_threshold);
-	CV_RegisterVar(&cv_music_resync_powerups_only);
 
 #ifdef HAVE_OPENMPT
 	CV_RegisterVar(&cv_modfilter);

@@ -1076,12 +1076,6 @@ void D_RegisterClientCommands(void)
 
 	CV_RegisterVar(&cv_soundtest);
 
-	CV_RegisterVar(&cv_invincmusicfade);
-	CV_RegisterVar(&cv_growmusicfade);
-
-	CV_RegisterVar(&cv_resetspecialmusic);
-
-	CV_RegisterVar(&cv_resume);
 	CV_RegisterVar(&cv_perfstats);
 
 	// ingame object placing
