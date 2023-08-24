@@ -746,7 +746,7 @@ static void M_AssignSpraycans(void)
 	if (prependlen)
 	{
 		// Swap the early colours for random order
-		M_Shuffle_UINT16(tempcanlist + prependoffset - prependlen, prependlen);
+		M_Shuffle_UINT16(tempcanlist + prependoffset - (prependlen - 1), prependlen);
 
 		// Put at the front of the main list
 		// (technically reverses the prepend order, but it
