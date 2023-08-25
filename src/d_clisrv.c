@@ -3803,8 +3803,8 @@ void SV_ResetServer(void)
 	// clear server_context
 	memset(server_context, '-', 8);
 
-	memset(connectedservername, 0, MAXSERVERNAME);
-	memset(connectedservercontact, 0, MAXSERVERCONTACT);
+	strncpy(connectedservername, "\0", MAXSERVERNAME);
+	strncpy(connectedservercontact, "\0", MAXSERVERCONTACT);
 
 	CV_RevertNetVars();
 
