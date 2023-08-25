@@ -3023,8 +3023,6 @@ static void Command_Map_f(void)
 			multiplayer = true;
 			netgame = false;
 
-			strncpy(connectedservername, cv_servername.string, MAXSERVERNAME);
-
 			if (cv_maxconnections.value < ssplayers+1)
 				CV_SetValue(&cv_maxconnections, ssplayers+1);
 

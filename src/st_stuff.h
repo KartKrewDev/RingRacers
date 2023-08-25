@@ -75,6 +75,8 @@ void ST_preLevelTitleCardDrawer(void);
 extern tic_t lt_ticker, lt_lasttic;
 extern tic_t lt_exitticker, lt_endtime;
 
+void ST_DrawServerSplash(boolean timelimited);
+
 // return if player a is in the same team as player b
 boolean ST_SameTeam(player_t *a, player_t *b);
 
