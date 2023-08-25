@@ -26,6 +26,7 @@
 #include "r_skins.h"
 #include "s_sound.h"
 #include "z_zone.h"
+#include "k_hud.h"
 
 #include "v_draw.hpp"
 
@@ -36,7 +37,6 @@ using srb2::Dialogue;
 void Dialogue::Init(void)
 {
 	active = true;
-	dismissable = false;
 	syllable = true;
 }
 
@@ -190,6 +190,19 @@ void Dialogue::WriteText(void)
 	textDone = (textTimer <= 0 && textDest.empty());
 }
 
+bool Dialogue::Held(void)
+{
+	return ((players[serverplayer].cmd.buttons & BT_VOTE) == BT_VOTE);
+}
+
+bool Dialogue::Pressed(void)
+{
+	return (
+		((players[serverplayer].cmd.buttons & BT_VOTE) == BT_VOTE) &&
+		((players[serverplayer].oldcmd.buttons & BT_VOTE) == 0)
+	);
+}
+
 void Dialogue::CompleteText(void)
 {
 	while (!textDest.empty())
@@ -235,12 +248,7 @@ void Dialogue::Tick(void)
 
 	if (Dismissable() == true)
 	{
-		bool pressed = (
-			((players[serverplayer].cmd.buttons & BT_VOTE) == BT_VOTE) &&
-			((players[serverplayer].oldcmd.buttons & BT_VOTE) == 0)
-		);
-
-		if (pressed == true)
+		if (Pressed() == true)
 		{
 			if (TextDone())
 			{
@@ -286,19 +294,27 @@ void Dialogue::Draw(void)
 		.font(srb2::Draw::Font::kConsole)
 		.text( text.c_str() );
 
-	if (Dismissable() && TextDone() && Active())
+	if (Dismissable())
 	{
-		drawer
-			.xy(304, 7)
-			.patch("TUTDIAG2");
+		if (TextDone())
+		{
+			drawer
+				.xy(304, 7)
+				.patch("TUTDIAG2");
+		}
+
+		K_drawButton(
+			FloatToFixed(drawer.x() + 303),
+			FloatToFixed(drawer.y() + 39),
+			V_SNAPTOTOP,
+			kp_button_z[0], Held()
+		);
 	}
 }
 
 void Dialogue::Dismiss(void)
 {
 	active = false;
-	dismissable = false;
-
 	text.clear();
 	textDest.clear();
 }

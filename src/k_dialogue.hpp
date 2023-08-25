@@ -55,6 +55,9 @@ private:
 	void WriteText(void);
 	void CompleteText(void);
 
+	bool Pressed(void);
+	bool Held(void);
+
 public:
 	static constexpr fixed_t kTextSpeedDefault = FRACUNIT;
 	static constexpr fixed_t kTextPunctPause = (FRACUNIT * TICRATE * 2) / 5;
