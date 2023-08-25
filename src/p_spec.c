@@ -3369,7 +3369,7 @@ boolean P_ProcessSpecial(activator_t *activator, INT16 special, INT32 *args, cha
 		case 437: // Toggle Player Controls
 			if (mo && mo->player)
 			{
-				mo->player->nocontrol = ((args[0] != 0) ? UINT16_MAX : 0);
+				mo->player->nocontrol = ((args[0] == 0) ? UINT16_MAX : 0);
 			}
 			break;
 

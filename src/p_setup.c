@@ -5844,7 +5844,7 @@ static void P_ConvertBinaryLinedefTypes(void)
 			lines[i].args[1] = sides[lines[i].sidenum[0]].rowoffset >> FRACBITS;
 			break;
 		case 437: //Disable player control
-			lines[i].args[0] = sides[lines[i].sidenum[0]].textureoffset >> FRACBITS;
+			lines[i].args[0] = ((sides[lines[i].sidenum[0]].textureoffset >> FRACBITS) != 0);
 			break;
 		case 438: //Change object size
 			lines[i].args[0] = P_AproxDistance(lines[i].dx, lines[i].dy) >> FRACBITS;

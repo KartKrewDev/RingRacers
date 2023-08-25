@@ -8250,7 +8250,6 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		}
 	}
 
-
 	if (player->stealingtimer == 0
 		&& player->rocketsneakertimer
 		&& onground == true)
