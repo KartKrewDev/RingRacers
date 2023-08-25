@@ -19,6 +19,7 @@
 #include "doomdef.h"
 #include "doomtype.h"
 #include "typedef.h"
+#include "sounds.h"
 #include "v_video.h"
 
 namespace srb2
@@ -33,6 +34,7 @@ private:
 	std::string speaker;
 	patch_t *portrait;
 	UINT8 *portraitColormap;
+	sfxenum_t voiceSfx;
 
 	std::string text;
 	std::string textDest;
@@ -43,6 +45,7 @@ private:
 	fixed_t textTimer;
 	fixed_t textSpeed;
 	bool textDone;
+	bool syllable;
 
 	bool dismissable;
 
@@ -59,7 +62,7 @@ public:
 
 	void SetSpeaker(void);
 	void SetSpeaker(std::string skinName, int portraitID);
-	void SetSpeaker(std::string customName, std::string customPatch, UINT8 *customColormap);
+	void SetSpeaker(std::string name, patch_t *patch, UINT8 *colormap, sfxenum_t voice);
 
 	void NewText(std::string newText);
 

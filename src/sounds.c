@@ -1439,6 +1439,7 @@ sfxinfo_t S_sfx[NUMSFX] =
   {"kslow",  false,  64, 32, -1, NULL, 0,  SKSKSLOW,  -1, LUMPERROR, ""},
   {"khitem", false, 128, 32, -1, NULL, 0,  SKSKHITM,  -1, LUMPERROR, ""},
   {"kgloat", false,  64, 48, -1, NULL, 0,  SKSKPOWR,  -1, LUMPERROR, ""},
+  {"ktalk",  false,  64, 48, -1, NULL, 0,  SKSKTALK,  -1, LUMPERROR, ""},
 
   // skin sounds free slots to add sounds at run time (Boris HACK!!!)
   // initialized to NULL

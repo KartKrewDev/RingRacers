@@ -1943,11 +1943,16 @@ bool CallFunc_DialogueSetCustomSpeaker(ACSVM::Thread *thread, const ACSVM::Word 
 
 	ACSVM::String *patchStr = nullptr;
 	const char *patchName = nullptr;
+	patch_t *patch = nullptr;
 
 	ACSVM::String *colorStr = nullptr;
 	const char *colorName = nullptr;
 	skincolornum_t colorID = SKINCOLOR_NONE;
 	UINT8 *colormap = nullptr;
+
+	ACSVM::String *voiceStr = nullptr;
+	const char *voiceName = nullptr;
+	sfxenum_t voiceID = sfx_None;
 
 	(void)argC;
 
@@ -1958,16 +1963,20 @@ bool CallFunc_DialogueSetCustomSpeaker(ACSVM::Thread *thread, const ACSVM::Word 
 
 	patchStr = map->getString(argV[1]);
 	patchName = patchStr->str;
+	patch = static_cast<patch_t *>( W_CachePatchName(patchName, PU_CACHE) );
 
-	colorStr = map->getString(argV[1]);
+	colorStr = map->getString(argV[2]);
 	colorName = colorStr->str;
-
 	if (ACS_GetColorFromString(colorName, &colorID) == true)
 	{
 		colormap = R_GetTranslationColormap(TC_DEFAULT, colorID, GTC_CACHE);
 	}
 
-	g_dialogue.SetSpeaker(nametag, patchName, colormap);
+	voiceStr = map->getString(argV[3]);
+	voiceName = voiceStr->str;
+	ACS_GetSFXFromString(voiceName, &voiceID);
+
+	g_dialogue.SetSpeaker(nametag, patch, colormap, voiceID);
 	return false;
 }
 

@@ -6677,6 +6677,7 @@ struct int_const_s const INT_CONST[] = {
 	{"SKSKSLOW",SKSKSLOW}, // Overtake taunt
 	{"SKSKHITM",SKSKHITM}, // Hit confirm taunt
 	{"SKSKPOWR",SKSKPOWR}, // Power item taunt
+	{"SKSKTALK",SKSKTALK}, // Dialogue
 
 	// 3D Floor/Fake Floor/FOF/whatever flags
 	{"FOF_EXISTS",FOF_EXISTS},                   ///< Always set, to check for validity.

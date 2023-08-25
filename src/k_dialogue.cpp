@@ -18,11 +18,13 @@
 #include <algorithm>
 
 #include "info.h"
+#include "sounds.h"
 #include "g_game.h"
 #include "v_video.h"
 #include "r_draw.h"
 #include "m_easing.h"
 #include "r_skins.h"
+#include "s_sound.h"
 #include "z_zone.h"
 
 #include "v_draw.hpp"
@@ -35,14 +37,18 @@ void Dialogue::Init(void)
 {
 	active = true;
 	dismissable = false;
+	syllable = true;
 }
 
 void Dialogue::SetSpeaker(void)
 {
 	// Unset speaker
 	speaker.clear();
+
 	portrait = nullptr;
 	portraitColormap = nullptr;
+
+	voiceSfx = sfx_None;
 }
 
 void Dialogue::SetSpeaker(std::string skinName, int portraitID)
@@ -69,8 +75,11 @@ void Dialogue::SetSpeaker(std::string skinName, int portraitID)
 		const spriteframe_t *sprframe = &sprdef->spriteframes[portraitID];
 
 		speaker = skin->realname;
+
 		portrait = static_cast<patch_t *>( W_CachePatchNum(sprframe->lumppat[0], PU_CACHE) );
 		portraitColormap = R_GetTranslationColormap(skinID, static_cast<skincolornum_t>(skin->prefcolor), GTC_CACHE);
+
+		voiceSfx = skin->soundsid[ S_sfx[sfx_ktalk].skinsound ];
 	}
 	else
 	{
@@ -78,22 +87,25 @@ void Dialogue::SetSpeaker(std::string skinName, int portraitID)
 	}
 }
 
-void Dialogue::SetSpeaker(std::string customName, std::string customPatch, UINT8 *customColormap)
+void Dialogue::SetSpeaker(std::string name, patch_t *patch, UINT8 *colormap, sfxenum_t voice)
 {
 	Init();
 
 	// Set custom speaker
-	speaker = customName;
+	speaker = name;
 
 	if (speaker.empty())
 	{
 		portrait = nullptr;
 		portraitColormap = nullptr;
+		voiceSfx = sfx_None;
 		return;
 	}
 
-	portrait = static_cast<patch_t *>( W_CachePatchName(customPatch.c_str(), PU_CACHE) );
-	portraitColormap = customColormap;
+	portrait = patch;
+	portraitColormap = colormap;
+
+	voiceSfx = voice;
 }
 
 void Dialogue::NewText(std::string newText)
@@ -106,7 +118,7 @@ void Dialogue::NewText(std::string newText)
 		0, HU_FONT,
 		newText.c_str()
 	);
-	
+
 	text.clear();
 
 	textDest = newText;
@@ -139,6 +151,8 @@ void Dialogue::SetDismissable(bool value)
 
 void Dialogue::WriteText(void)
 {
+	bool voicePlayed = false;
+
 	textTimer -= textSpeed;
 
 	while (textTimer <= 0 && !textDest.empty())
@@ -146,7 +160,21 @@ void Dialogue::WriteText(void)
 		char c = textDest.back();
 		text.push_back(c);
 
-		if (c == '.' || c == '!' || c == '?')
+		if (voicePlayed == false
+			&& std::isprint(c)
+			&& c != ' ')
+		{
+			if (syllable)
+			{
+				S_StopSoundByNum(voiceSfx);
+				S_StartSound(nullptr, voiceSfx);
+			}
+
+			syllable = !syllable;
+			voicePlayed = true;
+		}
+
+		if (c == '.' || c == ',' || c == ';' || c == '!' || c == '?')
 		{
 			// slow down for punctuation
 			textTimer += kTextPunctPause;

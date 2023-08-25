@@ -56,6 +56,7 @@ typedef enum
 	SKSKSLOW, // Overtake taunt
 	SKSKHITM, // Hit confirm taunt
 	SKSKPOWR, // Power item taunt
+	SKSKTALK,
 	NUMSKINSOUNDS
 } skinsound_t;
 
@@ -1506,6 +1507,7 @@ typedef enum
 	sfx_kslow,
 	sfx_khitem,
 	sfx_kgloat,
+	sfx_ktalk,
 
 	// free slots for S_AddSoundFx() at run-time --------------------
 	sfx_freeslot0,
