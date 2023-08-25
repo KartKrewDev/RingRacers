@@ -1952,7 +1952,7 @@ bool CallFunc_DialogueSetCustomSpeaker(ACSVM::Thread *thread, const ACSVM::Word 
 
 	ACSVM::String *voiceStr = nullptr;
 	const char *voiceName = nullptr;
-	sfxenum_t voiceID = sfx_None;
+	sfxenum_t voiceID = sfx_ktalk;
 
 	(void)argC;
 

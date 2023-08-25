@@ -48,7 +48,7 @@ void Dialogue::SetSpeaker(void)
 	portrait = nullptr;
 	portraitColormap = nullptr;
 
-	voiceSfx = sfx_None;
+	voiceSfx = sfx_ktalk;
 }
 
 void Dialogue::SetSpeaker(std::string skinName, int portraitID)
@@ -98,7 +98,7 @@ void Dialogue::SetSpeaker(std::string name, patch_t *patch, UINT8 *colormap, sfx
 	{
 		portrait = nullptr;
 		portraitColormap = nullptr;
-		voiceSfx = sfx_None;
+		voiceSfx = sfx_ktalk;
 		return;
 	}
 
