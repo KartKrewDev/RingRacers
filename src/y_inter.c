@@ -71,6 +71,7 @@ static patch_t *widebgpatch = NULL;
 static patch_t *bgtile = NULL;      // SPECTILE/SRB2BACK
 static patch_t *interpic = NULL;    // custom picture defined in map header
 
+#define INFINITE_TIMER (INT16_MAX) // just some arbitrarily large value that won't easily overflow
 static INT32 timer;
 static INT32 powertype = PWRLV_DISABLED;
 
@@ -85,6 +86,16 @@ static fixed_t chkscroll = 0;
 intertype_t intertype = int_none;
 
 static huddrawlist_h luahuddrawlist_intermission;
+
+static boolean Y_CanSkipIntermission(void)
+{
+	if (!netgame)
+	{
+		return true;
+	}
+
+	return false;
+}
 
 static void Y_UnloadData(void);
 
@@ -1533,6 +1544,17 @@ finalcounter:
 		}
 	}
 
+	if (Y_CanSkipIntermission())
+	{
+		K_drawButton(
+				2*FRACUNIT,
+				(BASEVIDHEIGHT - 16)*FRACUNIT,
+				0,
+				kp_button_a[1],
+				M_MenuConfirmHeld(0)
+		);
+	}
+	else
 	{
 		const INT32 tickDown = (timer + 1)/TICRATE;
 
@@ -1578,6 +1600,46 @@ void Y_Ticker(void)
 
 	LUA_HOOK(IntermissionThinker);
 
+	if (Y_CanSkipIntermission())
+	{
+		if (M_MenuConfirmPressed(0))
+		{
+			// If there is a roundqueue, make time for it.
+			// Else, end instantly on button press.
+			// Actually, give it a slight delay, so the "kaching" sound isn't cut off.
+			const tic_t end = roundqueue.size != 0 ? 3*TICRATE : TICRATE;
+
+			if (intertic == -1) // card flip hasn't started
+			{
+				if (sorttic != -1)
+				{
+					intertic = sorttic;
+				}
+				else
+				{
+					intertic = 0;
+					timer = end;
+				}
+			}
+			else if (timer >= INFINITE_TIMER && intertic >= sorttic + 16) // card done flipping
+			{
+				const INT32 kaching = sorttic + 16 + (2*TICRATE);
+
+				if (intertic < kaching)
+				{
+					intertic = kaching; // kaching immediately
+				}
+
+				timer = end;
+			}
+		}
+
+		if (intertic == -1)
+		{
+			return;
+		}
+	}
+
 	intertic++;
 
 	// Team scramble code for team match and CTF.
@@ -1590,7 +1652,7 @@ void Y_Ticker(void)
 			P_DoTeamscrambling();
 	}*/
 
-	if ((timer && !--timer)
+	if ((timer < INFINITE_TIMER && --timer <= 0)
 		|| (intertic == endtic))
 	{
 		Y_EndIntermission();
@@ -1664,6 +1726,12 @@ void Y_Ticker(void)
 
 					r++;
 					data.jitter[data.num[q]] = 1;
+
+					// Player can skip the tally, kaching!
+					if (Y_CanSkipIntermission() && timer < INFINITE_TIMER)
+					{
+						data.increase[data.num[q]] = 0;
+					}
 
 					if (powertype != PWRLV_DISABLED)
 					{
@@ -1813,6 +1881,21 @@ void Y_StartIntermission(void)
 	{
 		// Minimum two seconds for match results, then two second slideover approx halfway through
 		sorttic = max((timer/2) - 2*TICRATE, 2*TICRATE);
+	}
+
+	// TODO: code's a mess, I'm just making it extra clear
+	// that this piece of code is supposed to take priority
+	// over the above. :)
+	if (Y_CanSkipIntermission())
+	{
+		timer = INFINITE_TIMER; // doesn't count down
+
+		if (sorttic != -1)
+		{
+			// Will start immediately, but must be triggered.
+			// Needs to be TICRATE to bypass a condition in Y_Ticker.
+			sorttic = TICRATE;
+		}
 	}
 
 	// We couldn't display the intermission even if we wanted to.

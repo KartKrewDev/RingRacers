@@ -7170,7 +7170,6 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 		if (P_EmblemWasCollected(mobj->health - 1) || !P_CanPickupEmblem(&players[consoleplayer], mobj->health - 1))
 		{
 			trans = tr_trans50;
-			mobj->renderflags |= (tr_trans50 << RF_TRANSSHIFT);
 		}
 
 		if (mobj->reactiontime > 0
@@ -12226,6 +12225,7 @@ fixed_t P_GetMapThingSpawnHeight(const mobjtype_t mobjtype, const mapthing_t* mt
 	// Ring-like items, float additional units unless args[0] is set.
 	case MT_SPIKEBALL:
 	case MT_EMBLEM:
+	case MT_SPRAYCAN:
 	case MT_RING:
 	case MT_BLUESPHERE:
 		offset += mthing->thing_args[0] ? 0 : 24*FRACUNIT;
@@ -12433,6 +12433,34 @@ static boolean P_SetupEmblem(mapthing_t *mthing, mobj_t *mobj)
 	}
 
 	return true;
+}
+
+void P_SprayCanInit(mobj_t* mobj)
+{
+	// See also P_TouchSpecialThing
+	UINT16 can_id = mapheaderinfo[gamemap-1]->cache_spraycan;
+
+	if (can_id < gamedata->numspraycans)
+	{
+		// Assigned to this level, has been grabbed
+		mobj->renderflags = (tr_trans50 << RF_TRANSSHIFT);
+	}
+	// Prevent footguns - these won't persist when custom levels are unloaded
+	else if (gamemap-1 < basenummapheaders)
+	{
+		// Unassigned, get the next grabbable colour
+		can_id = gamedata->gotspraycans;
+		mobj->renderflags = 0;
+	}
+
+	if (can_id < gamedata->numspraycans)
+	{
+		mobj->color = gamedata->spraycans[can_id].col;
+	}
+	else
+	{
+		mobj->renderflags = RF_DONTDRAW;
+	}
 }
 
 static boolean P_SetupMace(mapthing_t *mthing, mobj_t *mobj)
@@ -12893,6 +12921,23 @@ static boolean P_SetupSpawnedMapThing(mapthing_t *mthing, mobj_t *mobj)
 			P_RemoveMobj(mobj);
 			return false;
 		}
+		break;
+	}
+	case MT_SPRAYCAN:
+	{
+		if (nummapspraycans)
+		{
+			if (nummapspraycans != UINT8_MAX)
+				nummapspraycans++;
+
+			P_RemoveMobj(mobj);
+			return false;
+		}
+
+		P_SetScale(mobj, mobj->destscale = 2*mobj->scale);
+
+		P_SprayCanInit(mobj);
+		nummapspraycans++;
 		break;
 	}
 	case MT_SKYBOX:

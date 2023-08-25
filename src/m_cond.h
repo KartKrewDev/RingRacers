@@ -41,6 +41,8 @@ typedef enum
 	UC_MAPSPBATTACK,	// MAPSPBATTACK [map]
 	UC_MAPTIME,			// MAPTIME [map] [time to beat, tics]
 
+	UC_CHARACTERWINS,	// CHARACTERWINS [character] [x rounds]
+
 	UC_ALLCHAOS,		// ALLCHAOS [minimum difficulty]
 	UC_ALLSUPER,		// ALLSUPER [minimum difficulty]
 	UC_ALLEMERALDS,		// ALLEMERALDS [minimum difficulty]
@@ -57,6 +59,8 @@ typedef enum
 	UC_CRASH,			// Hee ho !
 
 	UC_PASSWORD,		// Type in something funny
+
+	UC_SPRAYCAN,		// Grab a spraycan
 
 	 // Just for string building
 	UC_AND,
@@ -251,12 +255,20 @@ typedef enum {
 	GDGT_MAX
 } roundsplayed_t;
 
+struct candata_t
+{
+	UINT16 col;
+	UINT16 map;
+};
+
 // GAMEDATA STRUCTURE
 // Everything that would get saved in gamedata.dat
 struct gamedata_t
 {
 	// WHENEVER OR NOT WE'RE READY TO SAVE
 	boolean loaded;
+
+	// DEFERRED EVENTS RELATING TO CHALLENGE PROCESSING
 	boolean deferredsave;
 	boolean deferredconditioncheck;
 
@@ -269,6 +281,11 @@ struct gamedata_t
 	// UNLOCKABLES UNLOCKED
 	boolean unlocked[MAXUNLOCKABLES];
 	boolean unlockpending[MAXUNLOCKABLES];
+
+	// SPRAYCANS COLLECTED
+	UINT16 numspraycans;
+	UINT16 gotspraycans;
+	candata_t* spraycans;
 
 	// CHALLENGE GRID
 	UINT16 challengegridwidth;
@@ -338,10 +355,11 @@ char *M_BuildConditionSetString(UINT16 unlockid);
 void M_AddRawCondition(UINT16 set, UINT8 id, conditiontype_t c, INT32 r, INT16 x1, INT16 x2, char *stringvar);
 void M_UpdateConditionSetsPending(void);
 
-// Clearing secrets
+// Gamedata clear/init
 void M_ClearConditionSet(UINT16 set);
 void M_ClearSecrets(void);
 void M_ClearStats(void);
+void M_FinaliseGameData(void);
 
 boolean M_NotFreePlay(void);
 UINT16 M_CheckCupEmeralds(UINT8 difficulty);

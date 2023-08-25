@@ -134,6 +134,7 @@ TYPEDEF (unloaded_mapheader_t);
 TYPEDEF (tolinfo_t);
 TYPEDEF (cupheader_t);
 TYPEDEF (unloaded_cupheader_t);
+TYPEDEF (exitcondition_t);
 
 // font.h
 TYPEDEF (font_t);
@@ -238,6 +239,7 @@ TYPEDEF (condition_t);
 TYPEDEF (conditionset_t);
 TYPEDEF (emblem_t);
 TYPEDEF (unlockable_t);
+TYPEDEF (candata_t);
 TYPEDEF (gamedata_t);
 TYPEDEF (challengegridextradata_t);
 

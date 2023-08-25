@@ -216,6 +216,13 @@ void clear_levels(void)
 		}
 	}
 
+	if (gamedata && gamedata->spraycans)
+	{
+		UINT16 i;
+		for (i = 0; i < gamedata->numspraycans; i++)
+			gamedata->spraycans[i].map = NEXTMAP_INVALID;
+	}
+
 	// Exit the current gamemap as a safeguard
 	if (Playing())
 		COM_BufAddText("exitgame"); // Command_ExitGame_f() but delayed
@@ -319,6 +326,7 @@ void readfreeslots(MYFILE *f)
 						CONS_Printf("Skincolor SKINCOLOR_%s allocated.\n",word);
 						FREE_SKINCOLORS[i] = Z_Malloc(strlen(word)+1, PU_STATIC, NULL);
 						strcpy(FREE_SKINCOLORS[i],word);
+						skincolors[i].cache_spraycan = UINT16_MAX;
 						numskincolors++;
 						break;
 					}
@@ -2534,6 +2542,14 @@ static void readcondition(UINT16 set, UINT32 id, char *word2)
 			return;
 		}
 	}
+	else if (fastcmp(params[0], "CHARACTERWINS"))
+	{
+		PARAMCHECK(2);
+		ty = UC_CHARACTERWINS;
+		stringvar = Z_StrDup(params[1]);
+		re = -1;
+		x1 = atoi(params[2]);
+	}
 	else if ((offset=0) || fastcmp(params[0], "ALLCHAOS")
 	||        (++offset && fastcmp(params[0], "ALLSUPER"))
 	||        (++offset && fastcmp(params[0], "ALLEMERALDS")))
@@ -2613,6 +2629,15 @@ static void readcondition(UINT16 set, UINT32 id, char *word2)
 		stringvar = Z_StrDup(params[1]);
 		re = -1;
 	}
+	else if (fastcmp(params[0], "SPRAYCAN"))
+	{
+		PARAMCHECK(1);
+		ty = UC_SPRAYCAN;
+		re = get_skincolor(params[1]);
+
+		// Force at head of the list?
+		x1 = (params[2] && (params[2][0] == 'Y' || params[2][0] == 'T')) ? 1 : 0;
+	}
 	else if ((offset=0) || fastcmp(params[0], "AND")
 	||        (++offset && fastcmp(params[0], "COMMA")))
 	{
@@ -2645,22 +2670,8 @@ static void readcondition(UINT16 set, UINT32 id, char *word2)
 	{
 		PARAMCHECK(1);
 		ty = UCRP_ISCHARACTER;
-#if 0
-		{
-			re = R_SkinAvailable(params[1]);
-
-			if (re < 0)
-			{
-				deh_warning("Invalid character %s for condition ID %d", params[1], id+1);
-				return;
-			}
-		}
-#else
-		{
-			stringvar = Z_StrDup(params[1]);
-			re = -1;
-		}
-#endif
+		stringvar = Z_StrDup(params[1]);
+		re = -1;
 	}
 	else if (fastcmp(params[0], "ISENGINECLASS"))
 	{
@@ -3007,6 +3018,7 @@ void readmaincfg(MYFILE *f, boolean mainfile)
 				strlwr(gamedatafilename);
 				savemoddata = true;
 				majormods = false;
+				gamedata->loaded = false;
 
 				// Also save a time attack folder
 				filenamelen = strlen(gamedatafilename)-4;  // Strip off the extension

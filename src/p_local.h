@@ -196,6 +196,8 @@ boolean P_AutoPause(void);
 void P_ElementalFire(player_t *player, boolean cropcircle);
 void P_SpawnSkidDust(player_t *player, fixed_t radius, boolean sound);
 
+void P_SprayCanInit(mobj_t* mobj);
+
 void P_HaltPlayerOrbit(player_t *player);
 void P_ExitPlayerOrbit(player_t *player);
 boolean P_PlayerOrbit(player_t *player);

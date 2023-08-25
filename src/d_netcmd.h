@@ -48,9 +48,6 @@ extern consvar_t cv_splitplayers;
 extern consvar_t cv_seenames;
 extern consvar_t cv_usemouse;
 extern consvar_t cv_joyscale[MAXSPLITSCREENPLAYERS];
-#ifdef LJOYSTICK
-extern consvar_t cv_joyport[MAXSPLITSCREENPLAYERS];
-#endif
 
 // normally in p_mobj but the .h is not read
 extern consvar_t cv_itemrespawntime;

@@ -172,6 +172,11 @@ Environment::Environment()
 	addFuncDataACS0( 503, addCallFunc(CallFunc_SetLineRenderStyle));
 	addFuncDataACS0( 504, addCallFunc(CallFunc_MapWarp));
 	addFuncDataACS0( 505, addCallFunc(CallFunc_AddBot));
+	addFuncDataACS0( 506, addCallFunc(CallFunc_StopLevelExit));
+	addFuncDataACS0( 507, addCallFunc(CallFunc_ExitLevel));
+	addFuncDataACS0( 508, addCallFunc(CallFunc_MusicPlay));
+	addFuncDataACS0( 509, addCallFunc(CallFunc_MusicStopAll));
+	addFuncDataACS0( 510, addCallFunc(CallFunc_MusicRemap));
 
 	addFuncDataACS0( 600, addCallFunc(CallFunc_DialogueSetSpeaker));
 	addFuncDataACS0( 601, addCallFunc(CallFunc_DialogueSetCustomSpeaker));

@@ -101,13 +101,6 @@ extern consvar_t cv_deadzone[MAXSPLITSCREENPLAYERS];
 
 extern consvar_t cv_ghost_besttime, cv_ghost_bestlap, cv_ghost_last, cv_ghost_guest, cv_ghost_staff;
 
-extern consvar_t cv_invincmusicfade;
-extern consvar_t cv_growmusicfade;
-
-extern consvar_t cv_resetspecialmusic;
-
-extern consvar_t cv_resume;
-
 // mouseaiming (looking up/down with the mouse or keyboard)
 #define KB_LOOKSPEED (1<<25)
 #define MAXPLMOVE (50)
@@ -206,7 +199,8 @@ boolean G_GametypeUsesLives(void);
 boolean G_GametypeHasTeams(void);
 boolean G_GametypeHasSpectators(void);
 INT16 G_SometimesGetDifferentEncore(void);
-void G_ExitLevel(void);
+void G_BeginLevelExit(void);
+void G_FinishExitLevel(void);
 void G_NextLevel(void);
 void G_GetNextMap(void);
 void G_Continue(void);

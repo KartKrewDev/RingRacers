@@ -1318,19 +1318,12 @@ void P_DoPlayerExit(player_t *player, pflags_t flags)
 
 			if (P_CheckRacers() && !exitcountdown)
 			{
-				if (specialout == true)
-				{
-					exitcountdown = TICRATE;
-				}
-				else
-				{
-					exitcountdown = raceexittime+1;
-				}
+				G_BeginLevelExit();
 			}
 		}
 		else if (!exitcountdown) // All other gametypes
 		{
-			exitcountdown = raceexittime+1;
+			G_BeginLevelExit();
 		}
 
 		if (grandprixinfo.gp == true && player->bot == false && losing == false)
@@ -3777,7 +3770,7 @@ void P_DoTimeOver(player_t *player)
 
 	if (!exitcountdown)
 	{
-		exitcountdown = raceexittime;
+		G_BeginLevelExit();
 	}
 }
 

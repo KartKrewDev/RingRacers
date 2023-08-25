@@ -1299,7 +1299,7 @@ static void M_DrawCharSelectCircle(setup_player_t *p, INT16 x, INT16 y)
 
 				if (i == 0)
 				{
-					n = l = r = M_GetColorBefore(&p->colors, p->color, (numoptions/2) - 1);
+					n = l = r = M_GetColorBefore(&p->colors, p->color, (numoptions/2) - (numoptions & 1));
 				}
 				else if (subtract)
 				{
@@ -1428,7 +1428,7 @@ static void M_DrawCharSelectCircle(setup_player_t *p, INT16 x, INT16 y)
 
 				if (i == 0)
 				{
-					n = l = r = M_GetColorBefore(&p->colors, p->followercolor, (numoptions/2) - 1);
+					n = l = r = M_GetColorBefore(&p->colors, p->followercolor, (numoptions/2) - (numoptions & 1));
 				}
 				else if (subtract)
 				{
@@ -6055,7 +6055,13 @@ challengedesc:
 static void M_DrawMapMedals(INT32 mapnum, INT32 x, INT32 y)
 {
 	UINT8 lasttype = UINT8_MAX, curtype;
+
+	// M_GetLevelEmblems is ONE-indexed, urgh
+	mapnum++;
+
 	emblem_t *emblem = M_GetLevelEmblems(mapnum);
+
+	boolean hasmedals = (emblem != NULL);
 
 	while (emblem)
 	{
@@ -6097,11 +6103,30 @@ static void M_DrawMapMedals(INT32 mapnum, INT32 x, INT32 y)
 
 		if (gamedata->collected[emblem-emblemlocations])
 			V_DrawSmallMappedPatch(x, y, 0, W_CachePatchName(M_GetEmblemPatch(emblem, false), PU_CACHE),
-			                       R_GetTranslationColormap(TC_DEFAULT, M_GetEmblemColor(emblem), GTC_MENUCACHE));
+				R_GetTranslationColormap(TC_DEFAULT, M_GetEmblemColor(emblem), GTC_MENUCACHE));
 		else
 			V_DrawSmallScaledPatch(x, y, 0, W_CachePatchName("NEEDIT", PU_CACHE));
 
 		emblem = M_GetLevelEmblems(-1);
+		x -= 8;
+	}
+
+	// Undo offset
+	mapnum--;
+
+	if (hasmedals)
+		x -= 4;
+
+	if (mapheaderinfo[mapnum]->cache_spraycan < gamedata->numspraycans)
+	{
+		UINT16 col = gamedata->spraycans[mapheaderinfo[mapnum]->cache_spraycan].col;
+
+		if (col < numskincolors)
+		{
+			V_DrawSmallMappedPatch(x, y, 0, W_CachePatchName("GOTCAN", PU_CACHE),
+				R_GetTranslationColormap(TC_RAINBOW, col, GTC_MENUCACHE));
+			//V_DrawRightAlignedThinString(x - 2, y, 0, skincolors[col].name);
+		}
 		x -= 8;
 	}
 }
@@ -6252,7 +6277,7 @@ static void M_DrawStatsMaps(void)
 			}
 		}
 
-		M_DrawMapMedals(mnum+1, medalspos - 8, y);
+		M_DrawMapMedals(mnum, medalspos - 8, y);
 
 		if (mapheaderinfo[mnum]->menuttl[0])
 		{

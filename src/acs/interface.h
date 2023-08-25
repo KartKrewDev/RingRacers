@@ -180,6 +180,17 @@ void ACS_RunEmeraldScript(mobj_t *mo);
 
 
 /*--------------------------------------------------
+	void ACS_RunGameOverScript(void);
+
+		Runs the map's special scripts for exiting
+		the level, due to a losing condition and
+		without any extra lives to retry.
+--------------------------------------------------*/
+
+void ACS_RunGameOverScript(void);
+
+
+/*--------------------------------------------------
 	void ACS_Tick(void);
 
 		Executes all of the ACS environment's

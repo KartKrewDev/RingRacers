@@ -462,6 +462,8 @@ static void P_ClearSingleMapHeaderInfo(INT16 num)
 	mapheaderinfo[num]->justPlayed = 0;
 	mapheaderinfo[num]->anger = 0;
 
+	mapheaderinfo[num]->cache_spraycan = UINT16_MAX;
+
 	mapheaderinfo[num]->customopts = NULL;
 	mapheaderinfo[num]->numCustomOptions = 0;
 }
@@ -813,6 +815,22 @@ static void P_SpawnMapThings(boolean spawnemblems)
 	}
 
 	Z_Free(loopends);
+
+	if (spawnemblems)
+	{
+		const UINT8 recommendedcans =
+#ifdef DEVELOP
+			!(mapheaderinfo[gamemap-1]->typeoflevel & TOL_RACE) ? 0 :
+#endif
+			1;
+
+		if (nummapspraycans > recommendedcans)
+			CONS_Alert(CONS_ERROR, "SPRAY CANS: Map has too many Spray Cans (%d)!", nummapspraycans);
+#ifdef DEVELOP
+		else if (nummapspraycans != recommendedcans)
+			CONS_Alert(CONS_ERROR, "SPRAY CANS: Krew-made Race maps need a Spray Can placed!");
+#endif
+	}
 }
 
 // Experimental groovy write function!
@@ -1204,46 +1222,6 @@ static void P_LoadSidedefs(UINT8 *data)
 				sd->colormap_data = R_CreateColormapFromLinedef(msd->toptexture, msd->midtexture, msd->bottomtexture);
 				sd->toptexture = sd->midtexture = sd->bottomtexture = 0;
 				break;
-
-			case 413: // Change music
-			{
-				if (!isfrontside)
-					break;
-
-				char process[8+1];
-
-				sd->toptexture = sd->midtexture = sd->bottomtexture = 0;
-				if (msd->bottomtexture[0] != '-' || msd->bottomtexture[1] != '\0')
-				{
-					M_Memcpy(process,msd->bottomtexture,8);
-					process[8] = '\0';
-					sd->bottomtexture = get_number(process);
-				}
-
-				if (!(msd->midtexture[0] == '-' && msd->midtexture[1] == '\0') || msd->midtexture[1] != '\0')
-				{
-					M_Memcpy(process,msd->midtexture,8);
-					process[8] = '\0';
-					sd->midtexture = get_number(process);
-				}
-
-				if (msd->toptexture[0] != '-' && msd->toptexture[1] != '\0')
-				{
-					sd->line->stringargs[0] = Z_Malloc(7, PU_LEVEL, NULL);
-					M_Memcpy(process,msd->toptexture,8);
-					process[8] = '\0';
-
-					// If they type in O_ or D_ and their music name, just shrug,
-					// then copy the rest instead.
-					if ((process[0] == 'O' || process[0] == 'D') && process[7])
-						M_Memcpy(sd->line->stringargs[0], process+2, 6);
-					else // Assume it's a proper music name.
-						M_Memcpy(sd->line->stringargs[0], process, 6);
-					sd->line->stringargs[0][6] = '\0';
-				}
-
-				break;
-			}
 
 			case 414: // Play SFX
 			{
@@ -5673,28 +5651,6 @@ static void P_ConvertBinaryLinedefTypes(void)
 			lines[i].args[3] = sides[lines[i].sidenum[0]].rowoffset >> FRACBITS;
 			lines[i].args[4] = lines[i].frontsector->ceilingheight >> FRACBITS;
 			break;
-		case 413: //Change music
-			if (lines[i].flags & ML_NOCLIMB)
-				lines[i].args[1] |= TMM_ALLPLAYERS;
-			if (lines[i].flags & ML_SKEWTD)
-				lines[i].args[1] |= TMM_OFFSET;
-			if (lines[i].flags & ML_NOSKEW)
-				lines[i].args[1] |= TMM_FADE;
-			if (lines[i].flags & ML_BLOCKPLAYERS)
-				lines[i].args[1] |= TMM_NORELOAD;
-			if (lines[i].flags & ML_NOTBOUNCY)
-				lines[i].args[1] |= TMM_FORCERESET;
-			if (lines[i].flags & ML_MIDSOLID)
-				lines[i].args[1] |= TMM_NOLOOP;
-			if (lines[i].flags & ML_MIDPEG)
-				lines[i].args[1] |= TMM_NOCREDIT;
-			lines[i].args[2] = sides[lines[i].sidenum[0]].midtexture;
-			lines[i].args[3] = sides[lines[i].sidenum[0]].textureoffset >> FRACBITS;
-			lines[i].args[4] = sides[lines[i].sidenum[0]].rowoffset >> FRACBITS;
-			lines[i].args[5] = (lines[i].sidenum[1] != 0xffff) ? sides[lines[i].sidenum[1]].textureoffset >> FRACBITS : 0;
-			lines[i].args[6] = (lines[i].sidenum[1] != 0xffff) ? sides[lines[i].sidenum[1]].rowoffset >> FRACBITS : -1;
-			lines[i].args[7] = sides[lines[i].sidenum[0]].bottomtexture;
-			break;
 		case 414: //Play sound effect
 			lines[i].args[3] = tag;
 			if (tag != 0)
@@ -7557,6 +7513,8 @@ static void P_InitLevelSettings(void)
 	maptargets = numtargets = 0;
 	battleprisons = false;
 
+	nummapspraycans = 0;
+
 	// emerald hunt
 	hunt1 = hunt2 = hunt3 = NULL;
 
@@ -7591,6 +7549,9 @@ static void P_InitLevelSettings(void)
 
 	racecountdown = exitcountdown = musiccountdown = exitfadestarted = 0;
 	curlap = bestlap = 0; // SRB2Kart
+
+	g_exit.losing = false;
+	g_exit.retry = false;
 
 	// Gamespeed and frantic items
 	gamespeed = KARTSPEED_EASY;
@@ -8235,7 +8196,6 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 		if (K_PodiumSequence())
 		{
 			// mapmusrng is set by local player position in K_ResetCeremony
-			P_ResetLevelMusic();
 			P_LoadLevelMusic();
 		}
 		else if (gamestate == GS_LEVEL)
@@ -8693,7 +8653,7 @@ lumpnum_t wadnamelump = LUMPERROR;
 INT16 wadnamemap = 0; // gamemap based
 
 // Initialising map data (and catching replacements)...
-UINT8 P_InitMapData(boolean existingmapheaders)
+UINT8 P_InitMapData(void)
 {
 	UINT8 ret = 0;
 	INT32 i, j;
@@ -8745,7 +8705,7 @@ UINT8 P_InitMapData(boolean existingmapheaders)
 		if (maplump == LUMPERROR)
 		{
 #ifndef DEVELOP
-			if (!existingmapheaders)
+			if (!basenummapheaders)
 			{
 				I_Error("P_InitMapData: Base map %s has a header but no level\n", name);
 			}
@@ -8762,7 +8722,7 @@ UINT8 P_InitMapData(boolean existingmapheaders)
 			ret |= MAPRET_ADDED;
 			CONS_Printf("%s\n", name);
 
-			if (existingmapheaders && mapheaderinfo[i]->lumpnum != LUMPERROR)
+			if (basenummapheaders && mapheaderinfo[i]->lumpnum != LUMPERROR)
 			{
 				G_SetGameModified(multiplayer, true); // oops, double-defined - no record attack privileges for you
 
@@ -9079,7 +9039,7 @@ boolean P_MultiSetupWadFiles(boolean fullsetup)
 
 	if (partadd_stage == 2)
 	{
-		UINT8 mapsadded = P_InitMapData(true);
+		UINT8 mapsadded = P_InitMapData();
 
 		if (!mapsadded)
 			CONS_Printf(M_GetText("No maps added\n"));
