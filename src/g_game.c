@@ -405,6 +405,13 @@ consvar_t cv_kickstartaccel[MAXSPLITSCREENPLAYERS] = {
 	CVAR_INIT ("kickstartaccel4", "Off", CV_SAVE|CV_CALL, CV_OnOff, weaponPrefChange4)
 };
 
+consvar_t cv_autoroulette[MAXSPLITSCREENPLAYERS] = {
+	CVAR_INIT ("autoroulette", "Off", CV_SAVE|CV_CALL, CV_OnOff, weaponPrefChange),
+	CVAR_INIT ("autoroulette2", "Off", CV_SAVE|CV_CALL, CV_OnOff, weaponPrefChange2),
+	CVAR_INIT ("autoroulette3", "Off", CV_SAVE|CV_CALL, CV_OnOff, weaponPrefChange3),
+	CVAR_INIT ("autoroulette4", "Off", CV_SAVE|CV_CALL, CV_OnOff, weaponPrefChange4)
+};
+
 consvar_t cv_shrinkme[MAXSPLITSCREENPLAYERS] = {
 	CVAR_INIT ("shrinkme", "Off", CV_CALL, CV_OnOff, weaponPrefChange),
 	CVAR_INIT ("shrinkme2", "Off", CV_CALL, CV_OnOff, weaponPrefChange2),
@@ -2212,7 +2219,7 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	totalring = players[player].totalring;
 	xtralife = players[player].xtralife;
 
-	pflags = (players[player].pflags & (PF_WANTSTOJOIN|PF_KICKSTARTACCEL|PF_SHRINKME|PF_SHRINKACTIVE));
+	pflags = (players[player].pflags & (PF_WANTSTOJOIN|PF_KICKSTARTACCEL|PF_SHRINKME|PF_SHRINKACTIVE|PF_AUTOROULETTE));
 
 	// SRB2kart
 	memcpy(&itemRoulette, &players[player].itemRoulette, sizeof (itemRoulette));

@@ -95,6 +95,7 @@ extern consvar_t cv_songcredits;
 extern consvar_t cv_pauseifunfocused;
 
 extern consvar_t cv_kickstartaccel[MAXSPLITSCREENPLAYERS];
+extern consvar_t cv_autoroulette[MAXSPLITSCREENPLAYERS];
 extern consvar_t cv_shrinkme[MAXSPLITSCREENPLAYERS];
 
 extern consvar_t cv_deadzone[MAXSPLITSCREENPLAYERS];
