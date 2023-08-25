@@ -114,7 +114,7 @@ boolean P_AddWadFile(const char *wadfilename);
 
 #define MAPRET_ADDED (1)
 #define MAPRET_CURRENTREPLACED (1<<1)
-UINT8 P_InitMapData(boolean existingmapheaders);
+UINT8 P_InitMapData(void);
 extern lumpnum_t wadnamelump;
 extern INT16 wadnamemap;
 #define WADNAMECHECK(name) (!strncmp(name, "WADNAME", 7))

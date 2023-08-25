@@ -4272,6 +4272,10 @@ static thinker_t* LoadMobjThinker(savebuffer_t *save, actionf_p1 thinker)
 	{
 		P_InitSkyboxPoint(mobj, mobj->spawnpoint);
 	}
+	else if (mobj->type == MT_SPRAYCAN)
+	{
+		P_SprayCanInit(mobj);
+	}
 
 	if (diff2 & MD2_WAYPOINTCAP)
 		P_SetTarget(&waypointcap, mobj);
@@ -5813,6 +5817,10 @@ static void P_NetArchiveMisc(savebuffer_t *save, boolean resending)
 	WRITEUINT32(save->p, racecountdown);
 	WRITEUINT32(save->p, exitcountdown);
 
+	// exitcondition_t
+	WRITEUINT8(save->p, g_exit.losing);
+	WRITEUINT8(save->p, g_exit.retry);
+
 	WRITEFIXED(save->p, gravity);
 	WRITEFIXED(save->p, mapobjectscale);
 
@@ -5987,6 +5995,10 @@ static boolean P_NetUnArchiveMisc(savebuffer_t *save, boolean reloading)
 
 	racecountdown = READUINT32(save->p);
 	exitcountdown = READUINT32(save->p);
+
+	// exitcondition_t
+	g_exit.losing = READUINT8(save->p);
+	g_exit.retry = READUINT8(save->p);
 
 	gravity = READFIXED(save->p);
 	mapobjectscale = READFIXED(save->p);

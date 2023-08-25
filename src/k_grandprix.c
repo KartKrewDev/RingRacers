@@ -844,6 +844,12 @@ boolean K_CanChangeRules(boolean allowdemos)
 --------------------------------------------------*/
 void K_PlayerFinishGrandPrix(player_t *player)
 {
+	if (grandprixinfo.wonround == true)
+	{
+		// This was already completed.
+		return;
+	}
+
 	if (player->exiting == false)
 	{
 		// You did not finish

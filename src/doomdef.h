@@ -232,6 +232,7 @@ struct skincolor_t
 	UINT8 invshade;             // Signpost color shade
 	UINT16 chatcolor;           // Chat color
 	boolean accessible;         // Accessible by the color command + setup menu
+	UINT16 cache_spraycan;		// Cache for associated spraycan id
 };
 
 #define FOLLOWERCOLOR_MATCH UINT16_MAX

@@ -60,6 +60,9 @@ static void M_EraseDataResponse(INT32 ch)
 	// Delete the data
 	// see also G_LoadGameData
 	// We do these in backwards order to prevent things from being immediately re-unlocked.
+
+	gamedata->loaded = false;
+
 	if (optionsmenu.erasecontext & EC_TIMEATTACK)
 		G_ClearRecords();
 	if (optionsmenu.erasecontext & EC_STATISTICS)
@@ -67,7 +70,7 @@ static void M_EraseDataResponse(INT32 ch)
 	if (optionsmenu.erasecontext & EC_CHALLENGES)
 		M_ClearSecrets();
 
-	M_UpdateUnlockablesAndExtraEmblems(false, true);
+	M_FinaliseGameData();
 
 	// Don't softlock the Stereo on if you won't be able to access it anymore!?
 	if (soundtest.playing && M_SecretUnlocked(SECRET_SOUNDTEST, true) == false)

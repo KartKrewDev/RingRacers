@@ -242,11 +242,6 @@ static void Command_Eval(void);
 
 static CV_PossibleValue_t usemouse_cons_t[] = {{0, "Off"}, {1, "On"}, {2, "Force"}, {0, NULL}};
 
-#ifdef LJOYSTICK
-static CV_PossibleValue_t joyport_cons_t[] = {{1, "/dev/js0"}, {2, "/dev/js1"}, {3, "/dev/js2"},
-	{4, "/dev/js3"}, {0, NULL}};
-#endif
-
 static CV_PossibleValue_t teamscramble_cons_t[] = {{0, "Off"}, {1, "Random"}, {2, "Points"}, {0, NULL}};
 
 static CV_PossibleValue_t startingliveslimit_cons_t[] = {{1, "MIN"}, {99, "MAX"}, {0, NULL}};
@@ -287,12 +282,12 @@ consvar_t cv_playername[MAXSPLITSCREENPLAYERS] = {
 	CVAR_INIT ("name4", "Knuckles", CV_SAVE|CV_CALL|CV_NOINIT, NULL, Name4_OnChange)
 };
 // player colors
-UINT16 lastgoodcolor[MAXSPLITSCREENPLAYERS] = {SKINCOLOR_BLUE, SKINCOLOR_BLUE, SKINCOLOR_BLUE, SKINCOLOR_BLUE};
+UINT16 lastgoodcolor[MAXSPLITSCREENPLAYERS] = {SKINCOLOR_NONE, SKINCOLOR_NONE, SKINCOLOR_NONE, SKINCOLOR_NONE};
 consvar_t cv_playercolor[MAXSPLITSCREENPLAYERS] = {
-	CVAR_INIT ("color", "Red", CV_SAVE|CV_CALL|CV_NOINIT, Color_cons_t, Color1_OnChange),
-	CVAR_INIT ("color2", "Orange", CV_SAVE|CV_CALL|CV_NOINIT, Color_cons_t, Color2_OnChange),
-	CVAR_INIT ("color3", "Blue", CV_SAVE|CV_CALL|CV_NOINIT, Color_cons_t, Color3_OnChange),
-	CVAR_INIT ("color4", "Red", CV_SAVE|CV_CALL|CV_NOINIT, Color_cons_t, Color4_OnChange)
+	CVAR_INIT ("color", "Default", CV_SAVE|CV_CALL|CV_NOINIT, Color_cons_t, Color1_OnChange),
+	CVAR_INIT ("color2", "Default", CV_SAVE|CV_CALL|CV_NOINIT, Color_cons_t, Color2_OnChange),
+	CVAR_INIT ("color3", "Default", CV_SAVE|CV_CALL|CV_NOINIT, Color_cons_t, Color3_OnChange),
+	CVAR_INIT ("color4", "Default", CV_SAVE|CV_CALL|CV_NOINIT, Color_cons_t, Color4_OnChange)
 };
 // player's skin, saved for commodity, when using a favorite skins wad..
 consvar_t cv_skin[MAXSPLITSCREENPLAYERS] = {
@@ -344,30 +339,12 @@ consvar_t cv_skipmapcheck = CVAR_INIT ("skipmapcheck", "Off", CV_SAVE, CV_OnOff,
 
 consvar_t cv_usemouse = CVAR_INIT ("use_mouse", "Off", CV_SAVE|CV_CALL,usemouse_cons_t, I_StartupMouse);
 
-#if (defined (LJOYSTICK) || defined (HAVE_SDL))
 consvar_t cv_joyscale[MAXSPLITSCREENPLAYERS] = {
 	CVAR_INIT ("padscale", "1", CV_SAVE|CV_CALL, NULL, I_JoyScale),
 	CVAR_INIT ("padscale2", "1", CV_SAVE|CV_CALL, NULL, I_JoyScale2),
 	CVAR_INIT ("padscale3", "1", CV_SAVE|CV_CALL, NULL, I_JoyScale3),
 	CVAR_INIT ("padscale4", "1", CV_SAVE|CV_CALL, NULL, I_JoyScale4)
 };
-
-#ifdef LJOYSTICK
-consvar_t cv_joyport[MAXSPLITSCREENPLAYERS] = { //Alam: for later
-	CVAR_INIT ("padport", "/dev/js0", CV_SAVE, joyport_cons_t, NULL),
-	CVAR_INIT ("padport2", "/dev/js0", CV_SAVE, joyport_cons_t, NULL),
-	CVAR_INIT ("padport3", "/dev/js0", CV_SAVE, joyport_cons_t, NULL),
-	CVAR_INIT ("padport4", "/dev/js0", CV_SAVE, joyport_cons_t, NULL)
-};
-#endif
-#else
-consvar_t cv_joyscale[MAXSPLITSCREENPLAYERS] = { //Alam: Dummy for save
-	CVAR_INIT ("padscale", "1", CV_SAVE|CV_HIDEN, NULL, NULL),
-	CVAR_INIT ("padscale2", "1", CV_SAVE|CV_HIDEN, NULL, NULL),
-	CVAR_INIT ("padscale3", "1", CV_SAVE|CV_HIDEN, NULL, NULL),
-	CVAR_INIT ("padscale4", "1", CV_SAVE|CV_HIDEN, NULL, NULL)
-};
-#endif
 
 // SRB2kart
 consvar_t cv_items[NUMKARTRESULTS-1] = {
@@ -1079,9 +1056,6 @@ void D_RegisterClientCommands(void)
 	for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
 	{
 		CV_RegisterVar(&cv_joyscale[i]);
-#ifdef LJOYSTICK
-		CV_RegisterVar(&cv_joyport[i]);
-#endif
 	}
 
 	// s_sound.c
@@ -1102,12 +1076,6 @@ void D_RegisterClientCommands(void)
 
 	CV_RegisterVar(&cv_soundtest);
 
-	CV_RegisterVar(&cv_invincmusicfade);
-	CV_RegisterVar(&cv_growmusicfade);
-
-	CV_RegisterVar(&cv_resetspecialmusic);
-
-	CV_RegisterVar(&cv_resume);
 	CV_RegisterVar(&cv_perfstats);
 
 	// ingame object placing
@@ -1516,7 +1484,7 @@ static void SendNameAndColor(const UINT8 n)
 			CV_StealthSetValue(&cv_playercolor[n], SKINCOLOR_NONE);
 		}
 
-		sendColor = cv_playercolor[n].value;
+		lastgoodcolor[playernum] = sendColor = cv_playercolor[n].value;
 	}
 
 	// ditto for follower colour:
@@ -5776,7 +5744,7 @@ static void Got_ExitLevelcmd(UINT8 **cp, INT32 playernum)
 	if (G_GamestateUsesExitLevel() == false)
 		return;
 
-	G_ExitLevel();
+	G_FinishExitLevel();
 }
 
 static void Got_SetupVotecmd(UINT8 **cp, INT32 playernum)
@@ -6833,14 +6801,11 @@ static void Skin_OnChange(const UINT8 p)
 		return;
 	}
 
-	if (p == 0)
+	if (!CV_CheatsEnabled() && !(netgame || K_CanChangeRules(false))
+		&& (gamestate != GS_WAITINGPLAYERS)) // allows command line -warp x +skin y
 	{
-		if (!CV_CheatsEnabled() && !(multiplayer || netgame) // In single player.
-			&& (gamestate != GS_WAITINGPLAYERS)) // allows command line -warp x +skin y
-		{
-			CV_StealthSet(&cv_skin[p], skins[players[g_localplayers[p]].skin].name);
-			return;
-		}
+		CV_StealthSet(&cv_skin[p], skins[players[g_localplayers[p]].skin].name);
+		return;
 	}
 
 	if (CanChangeSkin(g_localplayers[p]))
@@ -6890,7 +6855,7 @@ static void Color_OnChange(const UINT8 p)
 	UINT16 color = cv_playercolor[p].value;
 	boolean colorisgood = (color == SKINCOLOR_NONE || K_ColorUsable(color, false, true) == true);
 
-	if (Playing() && splitscreen < p)
+	if (Playing() && p <= splitscreen)
 	{
 		if (P_PlayerMoving(g_localplayers[p]) == true)
 		{

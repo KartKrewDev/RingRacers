@@ -1514,7 +1514,8 @@ void D_SRB2Main(void)
 	//
 	// search for mainwad maps
 	//
-	P_InitMapData(false);
+	P_InitMapData();
+	basenummapheaders = nummapheaders;
 
 	CON_SetLoadingProgress(LOADED_IWAD);
 
@@ -1525,7 +1526,7 @@ void D_SRB2Main(void)
 	//
 	// search for pwad maps
 	//
-	P_InitMapData(true);
+	P_InitMapData();
 
 	CON_SetLoadingProgress(LOADED_PWAD);
 

@@ -193,6 +193,7 @@ quake_t *g_quakes = NULL;
 // Map Header Information
 mapheader_t** mapheaderinfo = {NULL};
 INT32 nummapheaders = 0;
+INT32 basenummapheaders = 0;
 INT32 mapallocsize = 0;
 
 unloaded_mapheader_t *unloadedmapheaders = NULL;
@@ -218,6 +219,8 @@ UINT32 bluescore, redscore; // CTF and Team Match team scores
 
 // ring count... for PERFECT!
 INT32 nummaprings = 0;
+
+UINT8 nummapspraycans = 0;
 
 // Elminates unnecessary searching.
 boolean CheckForBustableBlocks;
@@ -274,6 +277,7 @@ mobj_t *hunt2;
 mobj_t *hunt3;
 
 tic_t racecountdown, exitcountdown, musiccountdown; // for racing
+exitcondition_t g_exit;
 
 fixed_t gravity;
 fixed_t mapobjectscale;
@@ -393,13 +397,6 @@ consvar_t cv_pauseifunfocused = CVAR_INIT ("pauseifunfocused", "Yes", CV_SAVE, C
 
 // Display song credits
 consvar_t cv_songcredits = CVAR_INIT ("songcredits", "On", CV_SAVE, CV_OnOff, NULL);
-
-consvar_t cv_invincmusicfade = CVAR_INIT ("invincmusicfade", "300", CV_SAVE, CV_Unsigned, NULL);
-consvar_t cv_growmusicfade = CVAR_INIT ("growmusicfade", "500", CV_SAVE, CV_Unsigned, NULL);
-
-consvar_t cv_resetspecialmusic = CVAR_INIT ("resetspecialmusic", "Yes", CV_SAVE, CV_YesNo, NULL);
-
-consvar_t cv_resume = CVAR_INIT ("resume", "Yes", CV_SAVE, CV_YesNo, NULL);
 
 consvar_t cv_kickstartaccel[MAXSPLITSCREENPLAYERS] = {
 	CVAR_INIT ("kickstartaccel", "Off", CV_SAVE|CV_CALL, CV_OnOff, weaponPrefChange),
@@ -805,9 +802,7 @@ const char *G_BuildMapName(INT32 map)
   */
 INT32 G_MapNumber(const char * name)
 {
-#ifdef NEXTMAPINSOC
 	if (strncasecmp("NEXTMAP_", name, 8) != 0)
-#endif
 	{
 		INT32 map;
 		UINT32 hash = quickncasehash(name, MAXMAPLUMPNAME);
@@ -826,7 +821,6 @@ INT32 G_MapNumber(const char * name)
 		return NEXTMAP_INVALID;
 	}
 
-#ifdef NEXTMAPINSOC
 	name += 8;
 
 	if (strcasecmp("EVALUATION", name) == 0)
@@ -835,9 +829,10 @@ INT32 G_MapNumber(const char * name)
 		return NEXTMAP_CREDITS;
 	if (strcasecmp("CEREMONY", name) == 0)
 		return NEXTMAP_CEREMONY;
-	//if (strcasecmp("TITLE", name) == 0)
+	if (strcasecmp("TITLE", name) == 0)
 		return NEXTMAP_TITLE;
-#endif
+
+	return NEXTMAP_INVALID;
 }
 
 /** Clips the console player's mouse aiming to the current view.
@@ -1284,6 +1279,7 @@ void G_StartTitleCard(void)
 	ST_startTitleCard();
 
 	// play the sound
+	if (gamestate != GS_CEREMONY)
 	{
 		sfxenum_t kstart = sfx_kstart;
 		if (K_CheckBossIntro() == true)
@@ -2927,95 +2923,116 @@ void G_AddPlayer(INT32 playernum)
 	demo_extradata[playernum] |= DXD_JOINDATA|DXD_PLAYSTATE|DXD_COLOR|DXD_NAME|DXD_SKIN|DXD_FOLLOWER; // Set everything
 }
 
-void G_ExitLevel(void)
+void G_BeginLevelExit(void)
+{
+	g_exit.losing = true;
+	g_exit.retry = false;
+
+	if (grandprixinfo.gp == true)
+	{
+		UINT8 i;
+
+		for (i = 0; i < MAXPLAYERS; i++)
+		{
+			if (playeringame[i] && !players[i].spectator)
+			{
+				K_PlayerFinishGrandPrix(&players[i]);
+			}
+		}
+	}
+
+	if (!G_GametypeUsesLives() || skipstats != 0)
+	{
+		g_exit.losing = false; // never force a retry
+	}
+	else if (specialstageinfo.valid == true || (gametyperules & GTR_BOSS))
+	{
+		UINT8 i;
+
+		for (i = 0; i < MAXPLAYERS; i++)
+		{
+			if (playeringame[i] && !players[i].spectator && !players[i].bot)
+			{
+				if (!K_IsPlayerLosing(&players[i]))
+				{
+					g_exit.losing = false;
+					break;
+				}
+			}
+		}
+	}
+	else if (grandprixinfo.gp == true && grandprixinfo.eventmode == GPEVENT_NONE)
+	{
+		g_exit.losing = (grandprixinfo.wonround != true);
+	}
+
+	if (g_exit.losing)
+	{
+		// You didn't win...
+
+		UINT8 i;
+
+		for (i = 0; i < MAXPLAYERS; i++)
+		{
+			if (playeringame[i] && !players[i].spectator && !players[i].bot)
+			{
+				if (players[i].lives > 0)
+				{
+					g_exit.retry = true;
+					break;
+				}
+			}
+		}
+	}
+
+	if (g_exit.losing && specialstageinfo.valid)
+	{
+		exitcountdown = TICRATE;
+	}
+	else
+	{
+		exitcountdown = raceexittime+1;
+	}
+
+	if (g_exit.losing)
+	{
+		if (!g_exit.retry)
+		{
+			ACS_RunGameOverScript();
+		}
+	}
+}
+
+void G_FinishExitLevel(void)
 {
 	G_ResetAllDeviceRumbles();
 
 	if (gamestate == GS_LEVEL)
 	{
-		UINT8 i;
-		boolean doretry = false;
-
-		if (grandprixinfo.gp == true)
+		if (g_exit.retry)
 		{
-			for (i = 0; i < MAXPLAYERS; i++)
-			{
-				if (playeringame[i] && !players[i].spectator)
-				{
-					K_PlayerFinishGrandPrix(&players[i]);
-				}
-			}
-		}
-
-		if (!G_GametypeUsesLives() || skipstats != 0)
-			; // never force a retry
-		else if (specialstageinfo.valid == true || (gametyperules & GTR_BOSS))
-		{
-			doretry = true;
-			for (i = 0; i < MAXPLAYERS; i++)
-			{
-				if (playeringame[i] && !players[i].spectator && !players[i].bot)
-				{
-					if (!K_IsPlayerLosing(&players[i]))
-					{
-						doretry = false;
-						break;
-					}
-				}
-			}
-		}
-		else if (grandprixinfo.gp == true && grandprixinfo.eventmode == GPEVENT_NONE)
-		{
-			doretry = (grandprixinfo.wonround != true);
-		}
-
-		if (doretry)
-		{
-			// You didn't win...
-
-			for (i = 0; i < MAXPLAYERS; i++)
-			{
-				if (playeringame[i] && !players[i].spectator && !players[i].bot)
-				{
-					if (players[i].lives > 0)
-					{
-						break;
-					}
-				}
-			}
-
-			if (i == MAXPLAYERS)
-			{
-				// GAME OVER, try again from the start!
-				if (grandprixinfo.gp == true
-					&& grandprixinfo.eventmode == GPEVENT_SPECIAL)
-				{
-					// We were in a Special Stage.
-					// We can still progress to the podium when we game over here.
-					doretry = false;
-				}
-				else if (netgame)
-				{
-					; // Restart cup here whenever we do Online GP
-				}
-				else
-				{
-					// Back to the menu with you.
-					G_HandleSaveLevel(true);
-					D_QuitNetGame();
-					CL_Reset();
-					D_ClearState();
-					M_StartControlPanel();
-				}
-			}
-			else
+			// Restart cup here whenever we do Online GP
+			if (!netgame)
 			{
 				// We have lives, just redo this one course.
 				G_SetRetryFlag();
+				return;
 			}
+		}
+		else if (g_exit.losing)
+		{
+			// We were in a Special Stage.
+			// We can still progress to the podium when we game over here.
+			const boolean special = grandprixinfo.gp == true && grandprixinfo.eventmode == GPEVENT_SPECIAL;
 
-			if (doretry == true)
+			if (!netgame && !special)
 			{
+				// Back to the menu with you.
+				G_HandleSaveLevel(true);
+				D_QuitNetGame();
+				CL_Reset();
+				D_ClearState();
+				M_StartControlPanel();
 				return;
 			}
 		}
@@ -4390,7 +4407,7 @@ void G_LoadGameSettings(void)
 }
 
 #define GD_VERSIONCHECK 0xBA5ED123 // Change every major version, as usual
-#define GD_VERSIONMINOR 5 // Change every format update
+#define GD_VERSIONMINOR 6 // Change every format update
 
 typedef enum
 {
@@ -4711,55 +4728,136 @@ void G_LoadGameData(void)
 		}
 	}
 
+	UINT16 *tempmapidreferences = NULL;
+
 	numgamedatamapheaders = READUINT32(save.p);
 
-	for (i = 0; i < numgamedatamapheaders; i++)
+	if (numgamedatamapheaders)
 	{
-		char mapname[MAXMAPLUMPNAME];
-		INT16 mapnum;
+		tempmapidreferences = Z_Malloc(
+			numgamedatamapheaders * sizeof (UINT16),
+			PU_STATIC,
+			NULL
+		);
 
-		READSTRINGL(save.p, mapname, MAXMAPLUMPNAME);
-		mapnum = G_MapNumber(mapname);
-
-		recorddata_t dummyrecord;
-
-		dummyrecord.mapvisited = READUINT8(save.p);
-		dummyrecord.time = (tic_t)READUINT32(save.p);
-		dummyrecord.lap  = (tic_t)READUINT32(save.p);
-
-		if (mapnum < nummapheaders && mapheaderinfo[mapnum])
+		for (i = 0; i < numgamedatamapheaders; i++)
 		{
-			// Valid mapheader, time to populate with record data.
+			char mapname[MAXMAPLUMPNAME];
+			UINT16 mapnum;
 
-			dummyrecord.mapvisited &= MV_MAX;
-			M_Memcpy(&mapheaderinfo[mapnum]->records, &dummyrecord, sizeof(recorddata_t));
+			READSTRINGL(save.p, mapname, MAXMAPLUMPNAME);
+			mapnum = G_MapNumber(mapname);
+
+			tempmapidreferences[i] = (UINT16)mapnum;
+
+			recorddata_t dummyrecord;
+
+			dummyrecord.mapvisited = READUINT8(save.p);
+			dummyrecord.time = (tic_t)READUINT32(save.p);
+			dummyrecord.lap  = (tic_t)READUINT32(save.p);
+
+			if (mapnum < nummapheaders && mapheaderinfo[mapnum])
+			{
+				// Valid mapheader, time to populate with record data.
+
+				dummyrecord.mapvisited &= MV_MAX;
+				M_Memcpy(&mapheaderinfo[mapnum]->records, &dummyrecord, sizeof(recorddata_t));
+			}
+			else if (
+				((dummyrecord.mapvisited & MV_PERSISTUNLOADED) != 0
+					&& (dummyrecord.mapvisited & MV_BEATEN) != 0)
+				|| dummyrecord.time != 0
+				|| dummyrecord.lap != 0
+			)
+			{
+				// Invalid, but we don't want to lose all the juicy statistics.
+				// Instead, update a FILO linked list of "unloaded mapheaders".
+
+				unloaded_mapheader_t *unloadedmap =
+					Z_Malloc(
+						sizeof(unloaded_mapheader_t),
+						PU_STATIC, NULL
+					);
+
+				// Establish properties, for later retrieval on file add.
+				unloadedmap->lumpname = Z_StrDup(mapname);
+				unloadedmap->lumpnamehash = quickncasehash(unloadedmap->lumpname, MAXMAPLUMPNAME);
+
+				// Insert at the head, just because it's convenient.
+				unloadedmap->next = unloadedmapheaders;
+				unloadedmapheaders = unloadedmap;
+
+				// Finally, copy into.
+				M_Memcpy(&unloadedmap->records, &dummyrecord, sizeof(recorddata_t));
+			}
 		}
-		else if (
-			((dummyrecord.mapvisited & MV_PERSISTUNLOADED) != 0
-				&& (dummyrecord.mapvisited & MV_BEATEN) != 0)
-			|| dummyrecord.time != 0
-			|| dummyrecord.lap != 0
-		)
+	}
+
+	if (versionMinor > 5)
+	{
+		gamedata->gotspraycans = 0;
+		gamedata->numspraycans = READUINT16(save.p);
+		Z_Free(gamedata->spraycans);
+
+		if (gamedata->numspraycans)
 		{
-			// Invalid, but we don't want to lose all the juicy statistics.
-			// Instead, update a FILO linked list of "unloaded mapheaders".
+			gamedata->spraycans = Z_Malloc(
+				(gamedata->numspraycans * sizeof(candata_t)),
+				PU_STATIC, NULL);
 
-			unloaded_mapheader_t *unloadedmap =
-				Z_Malloc(
-					sizeof(unloaded_mapheader_t),
-					PU_STATIC, NULL
-				);
+			for (i = 0; i < gamedata->numspraycans; i++)
+			{
+				gamedata->spraycans[i].col = SKINCOLOR_NONE;
+				gamedata->spraycans[i].map = NEXTMAP_INVALID;
 
-			// Establish properties, for later retrieval on file add.
-			unloadedmap->lumpname = Z_StrDup(mapname);
-			unloadedmap->lumpnamehash = quickncasehash(unloadedmap->lumpname, MAXMAPLUMPNAME);
+				UINT16 col = READUINT16(save.p);
+				UINT32 _saveid = READUINT32(save.p);
 
-			// Insert at the head, just because it's convenient.
-			unloadedmap->next = unloadedmapheaders;
-			unloadedmapheaders = unloadedmap;
+				if (col < SKINCOLOR_FIRSTFREESLOT)
+				{
+					gamedata->spraycans[i].col = col;
+					skincolors[col].cache_spraycan = i;
+				}
 
-			// Finally, copy into.
-			M_Memcpy(&unloadedmap->records, &dummyrecord, sizeof(recorddata_t));
+				if (_saveid >= numgamedatamapheaders)
+				{
+					// Can has not been grabbed on any map, this is intentional.
+					continue;
+				}
+
+				UINT16 map = tempmapidreferences[_saveid];
+				if (map >= nummapheaders || !mapheaderinfo[map])
+				{
+					//CONS_Printf("LOAD - Can %u, color %s - id %u (unloaded header)\n", i, skincolors[col].name, _saveid);
+					continue;
+				}
+
+				//CONS_Printf("LOAD - Can %u, color %s - id %u, map %d\n", i, skincolors[col].name, _saveid, map);
+
+				gamedata->spraycans[i].map = map;
+
+				if (gamedata->gotspraycans != i)
+				{
+					//CONS_Printf("LOAD - Swapping gotten can %u, color %s with prior ungotten can %u\n", i, skincolors[col].name, gamedata->gotspraycans);
+
+					// All grabbed cans should be at the head of the list.
+					// Let's swap with the can the disjoint occoured at.
+					// This will prevent a gap from occouring on reload.
+					candata_t copycan = gamedata->spraycans[gamedata->gotspraycans];
+					gamedata->spraycans[gamedata->gotspraycans] = gamedata->spraycans[i];
+					gamedata->spraycans[i] = copycan;
+
+					mapheaderinfo[copycan.map]->cache_spraycan = i;
+				}
+
+				mapheaderinfo[map]->cache_spraycan = gamedata->gotspraycans;
+
+				gamedata->gotspraycans++;
+			}
+		}
+		else
+		{
+			gamedata->spraycans = NULL;
 		}
 	}
 
@@ -4890,20 +4988,15 @@ void G_LoadGameData(void)
 
 	if (tempskinreferences)
 		Z_Free(tempskinreferences);
+	if (tempmapidreferences)
+		Z_Free(tempmapidreferences);
 
 	// done
 	P_SaveBufferFree(&save);
 
 	finalisegamedata:
 	{
-		// Don't consider loaded until it's a success!
-		// It used to do this much earlier, but this would cause the gamedata to
-		// save over itself when it I_Errors from the corruption landing point below,
-		// which can accidentally delete players' legitimate data if the code ever has any tiny mistakes!
-		gamedata->loaded = true;
-
-		// Silent update unlockables in case they're out of sync with conditions
-		M_UpdateUnlockablesAndExtraEmblems(false, true);
+		M_FinaliseGameData();
 
 		return;
 	}
@@ -5018,12 +5111,16 @@ void G_SaveGameData(void)
 
 	for (i = 0; i < nummapheaders; i++)
 	{
+		// No spraycan attached.
+		if (mapheaderinfo[i]->cache_spraycan >= gamedata->numspraycans
 		// It's safe to assume a level with no mapvisited will have no other data worth keeping, since you get MV_VISITED just for opening it.
-		if (!(mapheaderinfo[i]->records.mapvisited & MV_MAX))
+		&& !(mapheaderinfo[i]->records.mapvisited & MV_MAX))
 		{
+			mapheaderinfo[i]->_saveid = UINT32_MAX;
 			continue;
 		}
 
+		mapheaderinfo[i]->_saveid = numgamedatamapheaders;
 		numgamedatamapheaders++;
 	}
 
@@ -5045,6 +5142,13 @@ void G_SaveGameData(void)
 	}
 
 	length += 4 + (numgamedatamapheaders * (MAXMAPLUMPNAME+1+4+4));
+
+	length += 2;
+
+	if (gamedata->numspraycans)
+	{
+		length += (gamedata->numspraycans * (2 + 4));
+	}
 
 
 	UINT32 numgamedatacups = 0;
@@ -5241,7 +5345,8 @@ void G_SaveGameData(void)
 
 		for (i = 0; i < nummapheaders; i++)
 		{
-			if (!(mapheaderinfo[i]->records.mapvisited & MV_MAX))
+			if (mapheaderinfo[i]->cache_spraycan >= gamedata->numspraycans
+			&& !(mapheaderinfo[i]->records.mapvisited & MV_MAX))
 				continue;
 
 			WRITESTRINGL(save.p, mapheaderinfo[i]->lumpname, MAXMAPLUMPNAME);
@@ -5281,7 +5386,28 @@ void G_SaveGameData(void)
 			}
 		}
 	}
+	
+	WRITEUINT16(save.p, gamedata->numspraycans); // 2
 
+	// gamedata->numspraycans * (2 + 4)
+
+	for (i = 0; i < gamedata->numspraycans; i++)
+	{
+		WRITEUINT16(save.p, gamedata->spraycans[i].col);
+
+		UINT32 _saveid = UINT32_MAX;
+
+		UINT16 map = gamedata->spraycans[i].map;
+
+		if (map < nummapheaders && mapheaderinfo[map])
+		{
+			_saveid = mapheaderinfo[map]->_saveid;
+		}
+
+		//CONS_Printf("SAVE - Can %u, color %s - id %u, map %d\n", i, skincolors[gamedata->spraycans[i].col].name, _saveid, map);
+
+		WRITEUINT32(save.p, _saveid);
+	}
 
 	WRITEUINT32(save.p, numgamedatacups); // 4
 

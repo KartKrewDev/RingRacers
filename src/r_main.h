@@ -133,7 +133,6 @@ extern consvar_t cv_ffloorclip;
 extern consvar_t cv_drawdist, cv_drawdist_precip;
 extern consvar_t cv_fov[MAXSPLITSCREENPLAYERS];
 extern consvar_t cv_skybox;
-extern consvar_t cv_tailspickup;
 extern consvar_t cv_drawpickups;
 extern consvar_t cv_debugfinishline;
 

@@ -115,7 +115,6 @@ rendermode_t chosenrendermode = render_none; // set by command line arguments
 
 // synchronize page flipping with screen refresh
 consvar_t cv_vidwait = CVAR_INIT ("vid_wait", "Off", CV_SAVE, CV_OnOff, NULL);
-static consvar_t cv_stretch = CVAR_INIT ("stretch", "Off", CV_SAVE|CV_NOSHOWHELP, CV_OnOff, NULL);
 static consvar_t cv_alwaysgrabmouse = CVAR_INIT ("alwaysgrabmouse", "Off", CV_SAVE, CV_OnOff, NULL);
 
 UINT8 graphics_started = 0; // Is used in console.c and screen.c
@@ -1606,7 +1605,6 @@ void I_StartupGraphics(void)
 	COM_AddCommand ("vid_modelist", VID_Command_ModeList_f);
 	COM_AddCommand ("vid_mode", VID_Command_Mode_f);
 	CV_RegisterVar (&cv_vidwait);
-	CV_RegisterVar (&cv_stretch);
 	CV_RegisterVar (&cv_alwaysgrabmouse);
 	disable_mouse = static_cast<SDL_bool>(M_CheckParm("-nomouse"));
 	disable_fullscreen = M_CheckParm("-win") ? SDL_TRUE : SDL_FALSE;
