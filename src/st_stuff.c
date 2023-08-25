@@ -1303,6 +1303,113 @@ void ST_AskToJoinEnvelope(void)
 }
 #endif
 
+static INT32 ST_ServerSplash_OpacityFlag(INT32 opacity)
+{
+	if (opacity >= NUMTRANSMAPS)
+	{
+		return 0;
+	}
+
+	opacity = max(opacity, 1);
+	return (NUMTRANSMAPS - opacity) << V_ALPHASHIFT;
+}
+
+static void ST_DrawServerSplash(void)
+{
+	static const fixed_t SPLASH_LEN = (FRACUNIT * TICRATE) * 3;
+	static const fixed_t SPLASH_WAIT = (FRACUNIT * TICRATE) / 2;
+
+	static fixed_t splashTime = -SPLASH_WAIT;
+	static char prevContext[8] = {0};
+
+	if (memcmp(prevContext, server_context, 8) != 0)
+	{
+		// Context changed, we want to draw it again
+		splashTime = -SPLASH_WAIT;
+		memcpy(prevContext, server_context, 8);
+	}
+
+	if (lt_ticker < lt_endtime)
+	{
+		// Level title is running rn
+		return;
+	}
+
+	if (splashTime >= SPLASH_LEN)
+	{
+		// We finished drawing it
+		return;
+	}
+
+	splashTime += renderdeltatics;
+	if (splashTime <= 0)
+	{
+		// We're waiting a tiny bit to draw it
+		return;
+	}
+
+	const INT32 splashTic = splashTime >> FRACBITS;
+	INT32 opacity = NUMTRANSMAPS;
+	if (splashTic < NUMTRANSMAPS)
+	{
+		opacity = splashTic;
+	}
+	else if (splashTic > (SPLASH_LEN >> FRACBITS) - NUMTRANSMAPS)
+	{
+		opacity = (SPLASH_LEN >> FRACBITS) - splashTic;
+	}
+	INT32 opacityFlag = ST_ServerSplash_OpacityFlag(opacity);
+
+	patch_t *gridPatch = W_CachePatchName("MOTDBG", PU_CACHE);
+	fixed_t gridX = -splashTime / 3;
+	fixed_t gridY = (BASEVIDHEIGHT - gridPatch->height) * FRACUNIT;
+	INT32 gridOpacity = ST_ServerSplash_OpacityFlag(opacity / 2);
+	fixed_t maxX = (vid.width * FRACUNIT) / vid.dupx;
+
+	while (gridX < maxX)
+	{
+		V_DrawFixedPatch(
+			gridX, gridY,
+			FRACUNIT,
+			(V_SNAPTOLEFT|V_SNAPTOBOTTOM) | V_SUBTRACT | gridOpacity,
+			gridPatch,
+			NULL
+		);
+
+		gridX += (gridPatch->width * FRACUNIT);
+	}
+
+	patch_t *iconPatch = W_CachePatchName("MOTDICON", PU_CACHE);
+	fixed_t iconX = (BASEVIDWIDTH - 16 - iconPatch->width) * FRACUNIT;
+	fixed_t iconY = (BASEVIDHEIGHT - 8 - iconPatch->height) * FRACUNIT;
+	V_DrawFixedPatch(
+		iconX, iconY,
+		FRACUNIT,
+		(V_SNAPTORIGHT|V_SNAPTOBOTTOM) | opacityFlag,
+		iconPatch,
+		NULL
+	);
+
+	fixed_t textX = (BASEVIDWIDTH - 16 - 36) * FRACUNIT;
+	fixed_t textY = (BASEVIDHEIGHT - 24) * FRACUNIT;
+
+	if (connectedservercontact[0] != 0)
+	{
+		V_DrawRightAlignedThinStringAtFixed(
+			textX, textY,
+			(V_SNAPTORIGHT|V_SNAPTOBOTTOM) | opacityFlag,
+			va("Contact @ %s", connectedservercontact)
+		);
+		textY -= (10 * FRACUNIT);
+	}
+
+	V_DrawRightAlignedStringAtFixed(
+		textX, textY,
+		(V_SNAPTORIGHT|V_SNAPTOBOTTOM) | opacityFlag,
+		connectedservername
+	);
+}
+
 void ST_Drawer(void)
 {
 	boolean stagetitle = false; // Decide whether to draw the stage title or not
@@ -1376,6 +1483,9 @@ void ST_Drawer(void)
 
 	if (stagetitle)
 		ST_drawTitleCard();
+
+	if (netgame)
+		ST_DrawServerSplash();
 
 	// Replay manual-save stuff
 	if (demo.recording && multiplayer && demo.savebutton && demo.savebutton + 3*TICRATE < leveltime)
