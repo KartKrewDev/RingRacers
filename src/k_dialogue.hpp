@@ -30,8 +30,6 @@ private:
 	patch_t *bgPatch;
 	patch_t *confirmPatch;
 
-	bool active;
-
 	std::string speaker;
 	patch_t *portrait;
 	UINT8 *portraitColormap;
@@ -39,21 +37,25 @@ private:
 	std::string text;
 	std::string textDest;
 
+	bool active;
+	fixed_t slide;
+
 	fixed_t textTimer;
 	fixed_t textSpeed;
 	bool textDone;
 
-	bool freeze;
-	std::string script;
+	bool dismissable;
 
-	void UpdatePatches(void);
+	void Init(void);
+	//void Unset(void);
 
 	void WriteText(void);
 	void CompleteText(void);
 
 public:
 	static constexpr fixed_t kTextSpeedDefault = FRACUNIT;
-	static constexpr fixed_t kTextPunctPause = FRACUNIT * TICRATE * 3 / 5;
+	static constexpr fixed_t kTextPunctPause = (FRACUNIT * TICRATE * 2) / 5;
+	static constexpr fixed_t kSlideSpeed = FRACUNIT / (TICRATE / 5);
 
 	void SetSpeaker(void);
 	void SetSpeaker(std::string skinName, int portraitID);
@@ -63,11 +65,14 @@ public:
 
 	bool Active(void);
 	bool TextDone(void);
+	bool Dismissable(void);
+	void SetDismissable(bool value);
 
 	void Tick(void);
 	void Draw(void);
 
 	void Dismiss(void);
+	void Unset(void);
 };
 
 }; // namespace srb2

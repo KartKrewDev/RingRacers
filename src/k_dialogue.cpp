@@ -21,12 +21,21 @@
 #include "g_game.h"
 #include "v_video.h"
 #include "r_draw.h"
+#include "m_easing.h"
 #include "r_skins.h"
 #include "z_zone.h"
+
+#include "v_draw.hpp"
 
 #include "acs/interface.h"
 
 using srb2::Dialogue;
+
+void Dialogue::Init(void)
+{
+	active = true;
+	dismissable = false;
+}
 
 void Dialogue::SetSpeaker(void)
 {
@@ -38,9 +47,10 @@ void Dialogue::SetSpeaker(void)
 
 void Dialogue::SetSpeaker(std::string skinName, int portraitID)
 {
+	Init();
+
 	// Set speaker based on a skin
 	int skinID = -1;
-
 	if (!skinName.empty())
 	{
 		skinID = R_SkinAvailable(skinName.c_str());
@@ -70,6 +80,8 @@ void Dialogue::SetSpeaker(std::string skinName, int portraitID)
 
 void Dialogue::SetSpeaker(std::string customName, std::string customPatch, UINT8 *customColormap)
 {
+	Init();
+
 	// Set custom speaker
 	speaker = customName;
 
@@ -86,6 +98,15 @@ void Dialogue::SetSpeaker(std::string customName, std::string customPatch, UINT8
 
 void Dialogue::NewText(std::string newText)
 {
+	Init();
+
+	newText = V_ScaledWordWrap(
+		290 << FRACBITS,
+		FRACUNIT, FRACUNIT, FRACUNIT,
+		0, HU_FONT,
+		newText.c_str()
+	);
+	
 	text.clear();
 
 	textDest = newText;
@@ -98,12 +119,22 @@ void Dialogue::NewText(std::string newText)
 
 bool Dialogue::Active(void)
 {
-	return (!speaker.empty());
+	return active;
 }
 
 bool Dialogue::TextDone(void)
 {
 	return textDone;
+}
+
+bool Dialogue::Dismissable(void)
+{
+	return dismissable;
+}
+
+void Dialogue::SetDismissable(bool value)
+{
+	dismissable = value;
 }
 
 void Dialogue::WriteText(void)
@@ -145,114 +176,109 @@ void Dialogue::CompleteText(void)
 
 void Dialogue::Tick(void)
 {
-	if (Active() == false)
+	if (Active())
+	{
+		if (slide < FRACUNIT)
+		{
+			slide += kSlideSpeed;
+		}
+	}
+	else
+	{
+		if (slide > 0)
+		{
+			slide -= kSlideSpeed;
+
+			if (slide <= 0)
+			{
+				Unset();
+			}
+		}
+	}
+
+	slide = std::clamp(slide, 0, FRACUNIT);
+
+	if (slide != FRACUNIT)
 	{
 		return;
 	}
 
 	WriteText();
 
-	bool pressed = (
-		((players[serverplayer].cmd.buttons & BT_VOTE) == BT_VOTE) &&
-		((players[serverplayer].oldcmd.buttons & BT_VOTE) == 0)
-	);
-
-	if (pressed == true)
+	if (Dismissable() == true)
 	{
-		if (textDone)
+		bool pressed = (
+			((players[serverplayer].cmd.buttons & BT_VOTE) == BT_VOTE) &&
+			((players[serverplayer].oldcmd.buttons & BT_VOTE) == 0)
+		);
+
+		if (pressed == true)
 		{
-			SetSpeaker();
+			if (TextDone())
+			{
+				Dismiss();
+			}
+			else
+			{
+				CompleteText();
+			}
 		}
-		else
-		{
-			CompleteText();
-		}
-	}
-}
-
-void Dialogue::UpdatePatches(void)
-{
-	if (bgPatch == nullptr)
-	{
-		bgPatch = static_cast<patch_t *>(W_CachePatchName("TUTDIAG1", PU_HUDGFX) );
-	}
-
-	if (confirmPatch == nullptr)
-	{
-		confirmPatch = static_cast<patch_t *>(W_CachePatchName("TUTDIAG2", PU_HUDGFX) );
 	}
 }
 
 void Dialogue::Draw(void)
 {
-	if (Active() == false)
+	if (slide == 0)
 	{
 		return;
 	}
 
-	UpdatePatches();
+	srb2::Draw drawer = 
+		srb2::Draw(
+			0, FixedToFloat(Easing_OutCubic(slide, -78 * FRACUNIT, 0))
+		).flags(V_SNAPTOTOP);
 
-	V_DrawFixedPatch(
-		0, 0,
-		FRACUNIT,
-		V_SNAPTOTOP,
-		bgPatch,
-		nullptr
-	);
+	drawer.patch("TUTDIAG1");
 
 	if (portrait != nullptr)
 	{
-		V_DrawFixedPatch(
-			10 * FRACUNIT, 41 * FRACUNIT,
-			FRACUNIT,
-			V_SNAPTOTOP,
-			portrait,
-			portraitColormap
-		);
+		drawer
+			.xy(10, 41)
+			.colormap(portraitColormap)
+			.patch(portrait);
 	}
 
-	V_DrawString(
-		45, 39,
-		V_SNAPTOTOP,
-		speaker.c_str()
-	);
+	drawer
+		.xy(45, 39)
+		.font(srb2::Draw::Font::kConsole)
+		.text( speaker.c_str() );
 
-	V_DrawString(
-		10, 3,
-		V_SNAPTOTOP,
-		text.c_str()
-	);
+	drawer
+		.xy(10, 3)
+		.font(srb2::Draw::Font::kConsole)
+		.text( text.c_str() );
 
-	if (textDone)
+	if (Dismissable() && TextDone() && Active())
 	{
-		V_DrawFixedPatch(
-			304 * FRACUNIT, 7 * FRACUNIT,
-			FRACUNIT,
-			V_SNAPTOTOP,
-			confirmPatch,
-			nullptr
-		);
+		drawer
+			.xy(304, 7)
+			.patch("TUTDIAG2");
 	}
 }
 
 void Dialogue::Dismiss(void)
 {
-	if (Active() == false)
-	{
-		return;
-	}
-
-	SetSpeaker();
+	active = false;
+	dismissable = false;
 
 	text.clear();
 	textDest.clear();
+}
 
-	if (G_GamestateUsesLevel() == true && !script.empty())
-	{
-		ACS_Execute(script.c_str(), nullptr, 0, nullptr);
-	}
-
-	script.clear();
+void Dialogue::Unset(void)
+{
+	Dismiss();
+	SetSpeaker();
 }
 
 /*
@@ -264,9 +290,9 @@ void Dialogue::Dismiss(void)
 
 Dialogue g_dialogue;
 
-void K_DismissDialogue(void)
+void K_UnsetDialogue(void)
 {
-	g_dialogue.Dismiss();
+	g_dialogue.Unset();
 }
 
 void K_DrawDialogue(void)

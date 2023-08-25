@@ -84,6 +84,7 @@
 #include "k_vote.h"
 #include "k_serverstats.h"
 #include "music.h"
+#include "k_dialogue.h"
 
 #ifdef HWRENDER
 #include "hardware/hw_main.h" // 3D View Rendering
@@ -1011,6 +1012,8 @@ void D_ClearState(void)
 
 	if (gamedata && gamedata->deferredsave)
 		G_SaveGameData();
+
+	K_UnsetDialogue();
 
 	G_SetGamestate(GS_NULL);
 	wipegamestate = GS_NULL;

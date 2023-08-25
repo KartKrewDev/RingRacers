@@ -21,7 +21,7 @@
 extern "C" {
 #endif
 
-void K_DismissDialogue(void);
+void K_UnsetDialogue(void);
 void K_DrawDialogue(void);
 void K_TickDialogue(void);
 

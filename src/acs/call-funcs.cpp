@@ -676,6 +676,8 @@ bool CallFunc_DialogueWaitDismiss(ACSVM::Thread *thread, const ACSVM::Word *argV
 	(void)argV;
 	(void)argC;
 
+	g_dialogue.SetDismissable(true);
+
 	thread->state = {
 		ACSVM::ThreadState::WaitTag,
 		0,
@@ -695,6 +697,8 @@ bool CallFunc_DialogueWaitText(ACSVM::Thread *thread, const ACSVM::Word *argV, A
 {
 	(void)argV;
 	(void)argC;
+
+	g_dialogue.SetDismissable(false);
 
 	thread->state = {
 		ACSVM::ThreadState::WaitTag,
