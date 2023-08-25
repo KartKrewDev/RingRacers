@@ -1379,6 +1379,9 @@ static void ST_DrawServerSplash(void)
 		gridX += (gridPatch->width * FRACUNIT);
 	}
 
+	// We're a bit crunched atm to do this but hopefully in the future
+	// the icon can be made a bmp file on the hard drive that the server
+	// sends on client join instead.
 	patch_t *iconPatch = W_CachePatchName("MOTDICON", PU_CACHE);
 	fixed_t iconX = (BASEVIDWIDTH - 16 - iconPatch->width) * FRACUNIT;
 	fixed_t iconY = (BASEVIDHEIGHT - 8 - iconPatch->height) * FRACUNIT;
