@@ -123,6 +123,7 @@ unsigned char mapmd5[16];
 //
 
 boolean udmf;
+static INT32 udmf_version;
 size_t numvertexes, numsegs, numsectors, numsubsectors, numnodes, numlines, numsides, nummapthings;
 size_t num_orig_vertexes;
 vertex_t *vertexes;
@@ -723,7 +724,7 @@ static int cmp_loopends(const void *a, const void *b)
 	// weighted sorting; tag takes precedence over type
 	return
 		intsign(mt1->tid - mt2->tid) * 2 +
-		intsign(mt1->args[0] - mt2->args[0]);
+		intsign(mt1->thing_args[0] - mt2->thing_args[0]);
 }
 
 static void P_SpawnMapThings(boolean spawnemblems)
@@ -805,7 +806,7 @@ static void P_SpawnMapThings(boolean spawnemblems)
 			*mt2 = loopends[i];
 
 		if (mt1->tid == mt2->tid &&
-				mt1->args[0] == mt2->args[0])
+				mt1->thing_args[0] == mt2->thing_args[0])
 		{
 			P_SpawnItemLine(mt1, mt2);
 			i++;
@@ -985,8 +986,8 @@ static void P_LoadSectors(UINT8 *data)
 		ss->friction = ORIG_FRICTION;
 
 		ss->action = 0;
-		memset(ss->args, 0, NUMLINEARGS*sizeof(*ss->args));
-		memset(ss->stringargs, 0x00, NUMLINESTRINGARGS*sizeof(*ss->stringargs));
+		memset(ss->args, 0, NUM_SCRIPT_ARGS*sizeof(*ss->args));
+		memset(ss->stringargs, 0x00, NUM_SCRIPT_STRINGARGS*sizeof(*ss->stringargs));
 		ss->activation = 0;
 
 		P_InitializeSector(ss);
@@ -1094,8 +1095,8 @@ static void P_LoadLinedefs(UINT8 *data)
 		ld->flags = (UINT32)(SHORT(mld->flags));
 		ld->special = SHORT(mld->special);
 		Tag_FSet(&ld->tags, SHORT(mld->tag));
-		memset(ld->args, 0, NUMLINEARGS*sizeof(*ld->args));
-		memset(ld->stringargs, 0x00, NUMLINESTRINGARGS*sizeof(*ld->stringargs));
+		memset(ld->args, 0, NUM_SCRIPT_ARGS*sizeof(*ld->args));
+		memset(ld->stringargs, 0x00, NUM_SCRIPT_STRINGARGS*sizeof(*ld->stringargs));
 		ld->alpha = FRACUNIT;
 		ld->executordelay = 0;
 		ld->activation = 0;
@@ -1338,9 +1339,12 @@ static void P_LoadThings(UINT8 *data)
 		mt->extrainfo = (UINT8)(mt->type >> 12);
 		mt->tid = 0;
 		mt->scale = FRACUNIT;
-		memset(mt->args, 0, NUMMAPTHINGARGS*sizeof(*mt->args));
-		memset(mt->stringargs, 0x00, NUMMAPTHINGSTRINGARGS*sizeof(*mt->stringargs));
+		mt->spritexscale = mt->spriteyscale = FRACUNIT;
+		memset(mt->thing_args, 0, NUM_MAPTHING_ARGS*sizeof(*mt->thing_args));
+		memset(mt->thing_stringargs, 0x00, NUM_MAPTHING_STRINGARGS*sizeof(*mt->thing_stringargs));
 		mt->special = 0;
+		memset(mt->script_args, 0, NUM_SCRIPT_ARGS*sizeof(*mt->script_args));
+		memset(mt->script_stringargs, 0x00, NUM_SCRIPT_STRINGARGS*sizeof(*mt->script_stringargs));
 		mt->pitch = mt->roll = 0;
 		mt->layer = 0;
 
@@ -1383,8 +1387,8 @@ static boolean TextmapCount(size_t size)
 
 	// Check if namespace is valid.
 	tkn = M_TokenizerRead(0);
-	if (!fastcmp(tkn, "srb2")) // Would like to use "ringracers", but it turns off features in UZB.
-		CONS_Alert(CONS_WARNING, "Invalid namespace '%s', only 'srb2' is supported.\n", tkn);
+	if (!fastcmp(tkn, "ringracers"))
+		CONS_Alert(CONS_WARNING, "Invalid namespace '%s', only 'ringracers' is supported. This map may have issues loading.\n", tkn);
 
 	while ((tkn = M_TokenizerRead(0)) && M_TokenizerGetEndPos() < size)
 	{
@@ -1407,6 +1411,13 @@ static boolean TextmapCount(size_t size)
 			vertexesPos[numvertexes++] = M_TokenizerGetEndPos();
 		else if (fastcmp(tkn, "sector"))
 			sectorsPos[numsectors++] = M_TokenizerGetEndPos();
+		else if (fastcmp(tkn, "version"))
+		{
+			tkn = M_TokenizerRead(0);
+			udmf_version = atoi(tkn);
+			if (udmf_version > UDMF_CURRENT_VERSION)
+				CONS_Alert(CONS_WARNING, "Map is intended for future UDMF version '%d', current supported version is '%d'. This map may have issues loading.\n", udmf_version, UDMF_CURRENT_VERSION);
+		}
 		else
 			CONS_Alert(CONS_NOTICE, "Unknown field '%s'.\n", tkn);
 	}
@@ -1735,7 +1746,7 @@ static void ParseTextmapSectorParameter(UINT32 i, const char *param, const char 
 	else if (fastncmp(param, "stringarg", 9) && strlen(param) > 9)
 	{
 		size_t argnum = atol(param + 9);
-		if (argnum >= NUMSECTORSTRINGARGS)
+		if (argnum >= NUM_SCRIPT_STRINGARGS)
 			return;
 		sectors[i].stringargs[argnum] = Z_Malloc(strlen(val) + 1, PU_LEVEL, NULL);
 		M_Memcpy(sectors[i].stringargs[argnum], val, strlen(val) + 1);
@@ -1743,7 +1754,7 @@ static void ParseTextmapSectorParameter(UINT32 i, const char *param, const char 
 	else if (fastncmp(param, "arg", 3) && strlen(param) > 3)
 	{
 		size_t argnum = atol(param + 3);
-		if (argnum >= NUMSECTORARGS)
+		if (argnum >= NUM_SCRIPT_ARGS)
 			return;
 		sectors[i].args[argnum] = atol(val);
 	}
@@ -1816,7 +1827,7 @@ static void ParseTextmapLinedefParameter(UINT32 i, const char *param, const char
 	else if (fastncmp(param, "stringarg", 9) && strlen(param) > 9)
 	{
 		size_t argnum = atol(param + 9);
-		if (argnum >= NUMLINESTRINGARGS)
+		if (argnum >= NUM_SCRIPT_STRINGARGS)
 			return;
 		lines[i].stringargs[argnum] = Z_Malloc(strlen(val) + 1, PU_LEVEL, NULL);
 		M_Memcpy(lines[i].stringargs[argnum], val, strlen(val) + 1);
@@ -1824,7 +1835,7 @@ static void ParseTextmapLinedefParameter(UINT32 i, const char *param, const char
 	else if (fastncmp(param, "arg", 3) && strlen(param) > 3)
 	{
 		size_t argnum = atol(param + 3);
-		if (argnum >= NUMLINEARGS)
+		if (argnum >= NUM_SCRIPT_ARGS)
 			return;
 		lines[i].args[argnum] = atol(val);
 	}
@@ -1920,7 +1931,40 @@ static void ParseTextmapThingParameter(UINT32 i, const char *param, const char *
 		mapthings[i].roll = atol(val);
 	else if (fastcmp(param, "type"))
 		mapthings[i].type = atol(val);
-	else if (fastcmp(param, "scale") || fastcmp(param, "scalex") || fastcmp(param, "scaley"))
+	else if (fastcmp(param, "scale"))
+	{
+		if (udmf_version < 1)
+		{
+			mapthings[i].scale = FLOAT_TO_FIXED(atof(val));
+		}
+		else
+		{
+			mapthings[i].spritexscale = mapthings[i].spriteyscale = FLOAT_TO_FIXED(atof(val));
+		}
+	}
+	else if (fastcmp(param, "scalex"))
+	{
+		if (udmf_version < 1)
+		{
+			mapthings[i].scale = FLOAT_TO_FIXED(atof(val));
+		}
+		else
+		{
+			mapthings[i].spritexscale = FLOAT_TO_FIXED(atof(val));
+		}
+	}
+	else if (fastcmp(param, "scaley"))
+	{
+		if (udmf_version < 1)
+		{
+			mapthings[i].scale = FLOAT_TO_FIXED(atof(val));
+		}
+		else
+		{
+			mapthings[i].spriteyscale = FLOAT_TO_FIXED(atof(val));
+		}
+	}
+	else if (fastcmp(param, "mobjscale"))
 		mapthings[i].scale = FLOAT_TO_FIXED(atof(val));
 	// Flags
 	else if (fastcmp(param, "flip") && fastcmp("true", val))
@@ -1932,20 +1976,60 @@ static void ParseTextmapThingParameter(UINT32 i, const char *param, const char *
 		mapthings[i].layer = atol(val);
 	else if (fastncmp(param, "stringarg", 9) && strlen(param) > 9)
 	{
-		size_t argnum = atol(param + 9);
-		if (argnum >= NUMMAPTHINGSTRINGARGS)
-			return;
-		size_t len = strlen(val);
-		mapthings[i].stringargs[argnum] = Z_Malloc(len + 1, PU_LEVEL, NULL);
-		M_Memcpy(mapthings[i].stringargs[argnum], val, len);
-		mapthings[i].stringargs[argnum][len] = '\0';
+		if (udmf_version < 1)
+		{
+			size_t argnum = atol(param + 9);
+			if (argnum >= NUM_MAPTHING_STRINGARGS)
+				return;
+			size_t len = strlen(val);
+			mapthings[i].thing_stringargs[argnum] = Z_Malloc(len + 1, PU_LEVEL, NULL);
+			M_Memcpy(mapthings[i].thing_stringargs[argnum], val, len);
+			mapthings[i].thing_stringargs[argnum][len] = '\0';
+		}
+		else
+		{
+			size_t argnum = atol(param + 9);
+			if (argnum >= NUM_SCRIPT_STRINGARGS)
+				return;
+			size_t len = strlen(val);
+			mapthings[i].script_stringargs[argnum] = Z_Malloc(len + 1, PU_LEVEL, NULL);
+			M_Memcpy(mapthings[i].script_stringargs[argnum], val, len);
+			mapthings[i].script_stringargs[argnum][len] = '\0';
+		}
 	}
 	else if (fastncmp(param, "arg", 3) && strlen(param) > 3)
 	{
-		size_t argnum = atol(param + 3);
-		if (argnum >= NUMMAPTHINGARGS)
+		if (udmf_version < 1)
+		{
+			size_t argnum = atol(param + 3);
+			if (argnum >= NUM_MAPTHING_ARGS)
+				return;
+			mapthings[i].thing_args[argnum] = atol(val);
+		}
+		else
+		{
+			size_t argnum = atol(param + 3);
+			if (argnum >= NUM_SCRIPT_ARGS)
+				return;
+			mapthings[i].script_args[argnum] = atol(val);
+		}
+	}
+	else if (fastncmp(param, "thingstringarg", 14) && strlen(param) > 14)
+	{
+		size_t argnum = atol(param + 14);
+		if (argnum >= NUM_MAPTHING_STRINGARGS)
 			return;
-		mapthings[i].args[argnum] = atol(val);
+		size_t len = strlen(val);
+		mapthings[i].thing_stringargs[argnum] = Z_Malloc(len + 1, PU_LEVEL, NULL);
+		M_Memcpy(mapthings[i].thing_stringargs[argnum], val, len);
+		mapthings[i].thing_stringargs[argnum][len] = '\0';
+	}
+	else if (fastncmp(param, "thingarg", 8) && strlen(param) > 8)
+	{
+		size_t argnum = atol(param + 8);
+		if (argnum >= NUM_MAPTHING_ARGS)
+			return;
+		mapthings[i].thing_args[argnum] = atol(val);
 	}
 	else
 		ParseUserProperty(&mapthings[i].user, param, val);
@@ -2082,18 +2166,28 @@ static void P_WriteTextmapThing(FILE *f, mapthing_t *wmapthings, size_t i, size_
 		fprintf(f, "roll = %d;\n", wmapthings[i].roll);
 	if (wmapthings[i].type != 0)
 		fprintf(f, "type = %d;\n", wmapthings[i].type);
+	if (wmapthings[i].spritexscale != FRACUNIT)
+		fprintf(f, "scalex = %f;\n", FIXED_TO_FLOAT(wmapthings[i].spritexscale));
+	if (wmapthings[i].spriteyscale != FRACUNIT)
+		fprintf(f, "scaley = %f;\n", FIXED_TO_FLOAT(wmapthings[i].spriteyscale));
 	if (wmapthings[i].scale != FRACUNIT)
-		fprintf(f, "scale = %f;\n", FIXED_TO_FLOAT(wmapthings[i].scale));
+		fprintf(f, "mobjscale = %f;\n", FIXED_TO_FLOAT(wmapthings[i].scale));
 	if (wmapthings[i].options & MTF_OBJECTFLIP)
 		fprintf(f, "flip = true;\n");
 	if (wmapthings[i].special != 0)
 		fprintf(f, "special = %d;\n", wmapthings[i].special);
-	for (j = 0; j < NUMMAPTHINGARGS; j++)
-		if (wmapthings[i].args[j] != 0)
-			fprintf(f, "arg%s = %d;\n", sizeu1(j), wmapthings[i].args[j]);
-	for (j = 0; j < NUMMAPTHINGSTRINGARGS; j++)
-		if (mapthings[i].stringargs[j])
-			fprintf(f, "stringarg%s = \"%s\";\n", sizeu1(j), mapthings[i].stringargs[j]);
+	for (j = 0; j < NUM_SCRIPT_ARGS; j++)
+		if (wmapthings[i].script_args[j] != 0)
+			fprintf(f, "arg%s = %d;\n", sizeu1(j), wmapthings[i].script_args[j]);
+	for (j = 0; j < NUM_SCRIPT_STRINGARGS; j++)
+		if (mapthings[i].script_stringargs[j])
+			fprintf(f, "stringarg%s = \"%s\";\n", sizeu1(j), mapthings[i].script_stringargs[j]);
+	for (j = 0; j < NUM_MAPTHING_ARGS; j++)
+		if (wmapthings[i].thing_args[j] != 0)
+			fprintf(f, "thingarg%s = %d;\n", sizeu1(j), wmapthings[i].thing_args[j]);
+	for (j = 0; j < NUM_MAPTHING_STRINGARGS; j++)
+		if (mapthings[i].thing_stringargs[j])
+			fprintf(f, "stringthingarg%s = \"%s\";\n", sizeu1(j), mapthings[i].thing_stringargs[j]);
 	if (wmapthings[i].user.length > 0)
 	{
 		for (j = 0; j < wmapthings[i].user.length; j++)
@@ -2216,248 +2310,255 @@ static void P_WriteTextmap(void)
 		}
 	}
 
-	freetag = Tag_NextUnused(0);
-
-	for (i = 0; i < nummapthings; i++)
+	if (!udmf)
 	{
-		subsector_t *ss;
-		INT32 s;
+		freetag = Tag_NextUnused(0);
 
-		if (wmapthings[i].type != 751 && wmapthings[i].type != 752 && wmapthings[i].type != 758)
-			continue;
-
-		ss = R_PointInSubsector(wmapthings[i].x << FRACBITS, wmapthings[i].y << FRACBITS);
-
-		if (!ss)
-			continue;
-
-		s = ss->sector - sectors;
-
-		switch (wmapthings[i].type)
+		for (i = 0; i < nummapthings; i++)
 		{
-			case 751:
-				if (!specialthings[s].teleport)
-					specialthings[s].teleport = &wmapthings[i];
-				break;
-			case 752:
-				if (!specialthings[s].altview)
-					specialthings[s].altview = &wmapthings[i];
-				break;
-			case 758:
-				if (!specialthings[s].angleanchor)
-					specialthings[s].angleanchor = &wmapthings[i];
-				break;
-			default:
-				break;
+			subsector_t *ss;
+			INT32 s;
+
+			if (wmapthings[i].type != 751 && wmapthings[i].type != 752 && wmapthings[i].type != 758)
+				continue;
+
+			ss = R_PointInSubsector(wmapthings[i].x << FRACBITS, wmapthings[i].y << FRACBITS);
+
+			if (!ss)
+				continue;
+
+			s = ss->sector - sectors;
+
+			switch (wmapthings[i].type)
+			{
+				case 751:
+					if (!specialthings[s].teleport)
+						specialthings[s].teleport = &wmapthings[i];
+					break;
+				case 752:
+					if (!specialthings[s].altview)
+						specialthings[s].altview = &wmapthings[i];
+					break;
+				case 758:
+					if (!specialthings[s].angleanchor)
+						specialthings[s].angleanchor = &wmapthings[i];
+					break;
+				default:
+					break;
+			}
 		}
-	}
 
-	for (i = 0; i < numlines; i++)
-	{
-		INT32 s;
-
-		switch (wlines[i].special)
+		for (i = 0; i < numlines; i++)
 		{
-			case 1:
-				TAG_ITER_SECTORS(Tag_FGet(&wlines[i].tags), s)
-				{
-					CONS_Alert(CONS_WARNING, M_GetText("Linedef %s applies custom gravity to sector %d. Changes to this gravity at runtime will not be reflected in the converted map. Use linedef type 469 for this.\n"), sizeu1(i), s);
-					wsectors[s].gravity = FixedDiv(lines[i].frontsector->floorheight >> FRACBITS, 1000);
-				}
-				break;
-			case 2:
-				CONS_Alert(CONS_WARNING, M_GetText("Custom exit linedef %s detected. Changes to the next map at runtime will not be reflected in the converted map. Use linedef type 468 for this.\n"), sizeu1(i));
-				wlines[i].args[0] = lines[i].frontsector->floorheight >> FRACBITS;
-				wlines[i].args[2] = lines[i].frontsector->ceilingheight >> FRACBITS;
-				break;
-			case 5:
-			case 50:
-			case 51:
-				CONS_Alert(CONS_WARNING, M_GetText("Linedef %s has type %d, which is not supported in UDMF.\n"), sizeu1(i), wlines[i].special);
-				break;
-			case 61:
-				if (wlines[i].flags & ML_MIDSOLID)
-					continue;
-				if (!wlines[i].args[1])
-					continue;
-				CONS_Alert(CONS_WARNING, M_GetText("Linedef %s with crusher type 61 rises twice as fast on spawn. This behavior is not supported in UDMF.\n"), sizeu1(i));
-				break;
-			case 76:
-				if (freetag == (mtag_t)MAXTAGS)
-				{
-					CONS_Alert(CONS_WARNING, M_GetText("No unused tag found. Linedef %s with type 76 cannot be converted.\n"), sizeu1(i));
-					break;
-				}
-				TAG_ITER_SECTORS(wlines[i].args[0], s)
-					for (j = 0; (unsigned)j < wsectors[s].linecount; j++)
-					{
-						line_t *line = wsectors[s].lines[j] - lines + wlines;
-						if (line->special < 100 || line->special >= 300)
-							continue;
-						Tag_Add(&line->tags, freetag);
-					}
-				wlines[i].args[0] = freetag;
-				freetag = Tag_NextUnused(freetag);
-				break;
-			case 259:
-				if (wlines[i].args[3] & FOF_QUICKSAND)
-					CONS_Alert(CONS_WARNING, M_GetText("Quicksand properties of custom FOF on linedef %s cannot be converted. Use linedef type 75 instead.\n"), sizeu1(i));
-				if (wlines[i].args[3] & FOF_BUSTUP)
-					CONS_Alert(CONS_WARNING, M_GetText("Bustable properties of custom FOF on linedef %s cannot be converted. Use linedef type 74 instead.\n"), sizeu1(i));
-				break;
-			case 412:
-				if ((s = Tag_Iterate_Sectors(wlines[i].args[0], 0)) < 0)
-					break;
-				if (!specialthings[s].teleport)
-					break;
-				if (freetag == (mtag_t)MAXTAGS)
-				{
-					CONS_Alert(CONS_WARNING, M_GetText("No unused tag found. Linedef %s with type 412 cannot be converted.\n"), sizeu1(i));
-					break;
-				}
-				specialthings[s].teleport->tid = freetag;
-				wlines[i].args[0] = freetag;
-				freetag = Tag_NextUnused(freetag);
-				break;
-			case 422:
-				if ((s = Tag_Iterate_Sectors(wlines[i].args[0], 0)) < 0)
-					break;
-				if (!specialthings[s].altview)
-					break;
-				if (freetag == (mtag_t)MAXTAGS)
-				{
-					CONS_Alert(CONS_WARNING, M_GetText("No unused tag found. Linedef %s with type 422 cannot be converted.\n"), sizeu1(i));
-					break;
-				}
-				specialthings[s].altview->tid = freetag;
-				wlines[i].args[0] = freetag;
-				specialthings[s].altview->pitch = wlines[i].args[2];
-				freetag = Tag_NextUnused(freetag);
-				break;
-			case 447:
-				CONS_Alert(CONS_WARNING, M_GetText("Linedef %s has change colormap action, which cannot be converted automatically. Tag arg0 to a sector with the desired colormap.\n"), sizeu1(i));
-				if (wlines[i].flags & ML_TFERLINE)
-					CONS_Alert(CONS_WARNING, M_GetText("Linedef %s mixes front and back colormaps, which is not supported in UDMF. Copy one colormap to the target sector first, then mix in the second one.\n"), sizeu1(i));
-				break;
-			case 455:
-				CONS_Alert(CONS_WARNING, M_GetText("Linedef %s has fade colormap action, which cannot be converted automatically. Tag arg0 to a sector with the desired colormap.\n"), sizeu1(i));
-				if (wlines[i].flags & ML_TFERLINE)
-					CONS_Alert(CONS_WARNING, M_GetText("Linedef %s specifies starting colormap for the fade, which is not supported in UDMF. Change the colormap with linedef type 447 instead.\n"), sizeu1(i));
-				break;
-			case 457:
-				if ((s = Tag_Iterate_Sectors(wlines[i].args[0], 0)) < 0)
-					break;
-				if (!specialthings[s].angleanchor)
-					break;
-				if (freetag == (mtag_t)MAXTAGS)
-				{
-					CONS_Alert(CONS_WARNING, M_GetText("No unused tag found. Linedef %s with type 457 cannot be converted.\n"), sizeu1(i));
-					break;
-				}
-				specialthings[s].angleanchor->tid = freetag;
-				wlines[i].args[0] = freetag;
-				freetag = Tag_NextUnused(freetag);
-				break;
-			case 606:
-				if (wlines[i].args[0] == MTAG_GLOBAL)
-				{
-					sector_t *sec = wlines[i].frontsector - sectors + wsectors;
-					sec->extra_colormap = wsides[wlines[i].sidenum[0]].colormap_data;
-				}
-				else
-				{
-					TAG_ITER_SECTORS(wlines[i].args[0], s)
-					{
-						if (wsectors[s].colormap_protected)
-							continue;
+			INT32 s;
 
-						wsectors[s].extra_colormap = wsides[wlines[i].sidenum[0]].colormap_data;
-						if (freetag == (mtag_t)MAXTAGS)
-						{
-							CONS_Alert(CONS_WARNING, M_GetText("No unused tag found. Linedef %s with type 606 cannot be converted.\n"), sizeu1(i));
-							break;
-						}
-						Tag_Add(&wsectors[s].tags, freetag);
-						wlines[i].args[1] = freetag;
-						freetag = Tag_NextUnused(freetag);
+			switch (wlines[i].special)
+			{
+				case 1:
+					TAG_ITER_SECTORS(Tag_FGet(&wlines[i].tags), s)
+					{
+						CONS_Alert(CONS_WARNING, M_GetText("Linedef %s applies custom gravity to sector %d. Changes to this gravity at runtime will not be reflected in the converted map. Use linedef type 469 for this.\n"), sizeu1(i), s);
+						wsectors[s].gravity = FixedDiv(lines[i].frontsector->floorheight >> FRACBITS, 1000);
+					}
+					break;
+				case 2:
+					CONS_Alert(CONS_WARNING, M_GetText("Custom exit linedef %s detected. Changes to the next map at runtime will not be reflected in the converted map. Use linedef type 468 for this.\n"), sizeu1(i));
+					wlines[i].args[0] = lines[i].frontsector->floorheight >> FRACBITS;
+					wlines[i].args[2] = lines[i].frontsector->ceilingheight >> FRACBITS;
+					break;
+				case 5:
+				case 50:
+				case 51:
+					CONS_Alert(CONS_WARNING, M_GetText("Linedef %s has type %d, which is not supported in UDMF.\n"), sizeu1(i), wlines[i].special);
+					break;
+				case 61:
+					if (wlines[i].flags & ML_MIDSOLID)
+						continue;
+					if (!wlines[i].args[1])
+						continue;
+					CONS_Alert(CONS_WARNING, M_GetText("Linedef %s with crusher type 61 rises twice as fast on spawn. This behavior is not supported in UDMF.\n"), sizeu1(i));
+					break;
+				case 76:
+					if (freetag == (mtag_t)MAXTAGS)
+					{
+						CONS_Alert(CONS_WARNING, M_GetText("No unused tag found. Linedef %s with type 76 cannot be converted.\n"), sizeu1(i));
 						break;
 					}
-				}
-				break;
-			default:
-				break;
+					TAG_ITER_SECTORS(wlines[i].args[0], s)
+						for (j = 0; (unsigned)j < wsectors[s].linecount; j++)
+						{
+							line_t *line = wsectors[s].lines[j] - lines + wlines;
+							if (line->special < 100 || line->special >= 300)
+								continue;
+							Tag_Add(&line->tags, freetag);
+						}
+					wlines[i].args[0] = freetag;
+					freetag = Tag_NextUnused(freetag);
+					break;
+				case 259:
+					if (wlines[i].args[3] & FOF_QUICKSAND)
+						CONS_Alert(CONS_WARNING, M_GetText("Quicksand properties of custom FOF on linedef %s cannot be converted. Use linedef type 75 instead.\n"), sizeu1(i));
+					if (wlines[i].args[3] & FOF_BUSTUP)
+						CONS_Alert(CONS_WARNING, M_GetText("Bustable properties of custom FOF on linedef %s cannot be converted. Use linedef type 74 instead.\n"), sizeu1(i));
+					break;
+				case 412:
+					if ((s = Tag_Iterate_Sectors(wlines[i].args[0], 0)) < 0)
+						break;
+					if (!specialthings[s].teleport)
+						break;
+					if (freetag == (mtag_t)MAXTAGS)
+					{
+						CONS_Alert(CONS_WARNING, M_GetText("No unused tag found. Linedef %s with type 412 cannot be converted.\n"), sizeu1(i));
+						break;
+					}
+					specialthings[s].teleport->tid = freetag;
+					wlines[i].args[0] = freetag;
+					freetag = Tag_NextUnused(freetag);
+					break;
+				case 422:
+					if ((s = Tag_Iterate_Sectors(wlines[i].args[0], 0)) < 0)
+						break;
+					if (!specialthings[s].altview)
+						break;
+					if (freetag == (mtag_t)MAXTAGS)
+					{
+						CONS_Alert(CONS_WARNING, M_GetText("No unused tag found. Linedef %s with type 422 cannot be converted.\n"), sizeu1(i));
+						break;
+					}
+					specialthings[s].altview->tid = freetag;
+					wlines[i].args[0] = freetag;
+					specialthings[s].altview->pitch = wlines[i].args[2];
+					freetag = Tag_NextUnused(freetag);
+					break;
+				case 447:
+					CONS_Alert(CONS_WARNING, M_GetText("Linedef %s has change colormap action, which cannot be converted automatically. Tag arg0 to a sector with the desired colormap.\n"), sizeu1(i));
+					if (wlines[i].flags & ML_TFERLINE)
+						CONS_Alert(CONS_WARNING, M_GetText("Linedef %s mixes front and back colormaps, which is not supported in UDMF. Copy one colormap to the target sector first, then mix in the second one.\n"), sizeu1(i));
+					break;
+				case 455:
+					CONS_Alert(CONS_WARNING, M_GetText("Linedef %s has fade colormap action, which cannot be converted automatically. Tag arg0 to a sector with the desired colormap.\n"), sizeu1(i));
+					if (wlines[i].flags & ML_TFERLINE)
+						CONS_Alert(CONS_WARNING, M_GetText("Linedef %s specifies starting colormap for the fade, which is not supported in UDMF. Change the colormap with linedef type 447 instead.\n"), sizeu1(i));
+					break;
+				case 457:
+					if ((s = Tag_Iterate_Sectors(wlines[i].args[0], 0)) < 0)
+						break;
+					if (!specialthings[s].angleanchor)
+						break;
+					if (freetag == (mtag_t)MAXTAGS)
+					{
+						CONS_Alert(CONS_WARNING, M_GetText("No unused tag found. Linedef %s with type 457 cannot be converted.\n"), sizeu1(i));
+						break;
+					}
+					specialthings[s].angleanchor->tid = freetag;
+					wlines[i].args[0] = freetag;
+					freetag = Tag_NextUnused(freetag);
+					break;
+				case 606:
+					if (wlines[i].args[0] == MTAG_GLOBAL)
+					{
+						sector_t *sec = wlines[i].frontsector - sectors + wsectors;
+						sec->extra_colormap = wsides[wlines[i].sidenum[0]].colormap_data;
+					}
+					else
+					{
+						TAG_ITER_SECTORS(wlines[i].args[0], s)
+						{
+							if (wsectors[s].colormap_protected)
+								continue;
+
+							wsectors[s].extra_colormap = wsides[wlines[i].sidenum[0]].colormap_data;
+							if (freetag == (mtag_t)MAXTAGS)
+							{
+								CONS_Alert(CONS_WARNING, M_GetText("No unused tag found. Linedef %s with type 606 cannot be converted.\n"), sizeu1(i));
+								break;
+							}
+							Tag_Add(&wsectors[s].tags, freetag);
+							wlines[i].args[1] = freetag;
+							freetag = Tag_NextUnused(freetag);
+							break;
+						}
+					}
+					break;
+				default:
+					break;
+			}
+
+			if (wlines[i].special >= 300 && wlines[i].special < 400)
+			{
+				CONS_Alert(CONS_WARNING, M_GetText("Linedef %s is a linedef executor, which is not supported in UDMF. Use ACS instead.\n"), sizeu1(i));
+				wlines[i].special = 0;
+			}
+
+			if (wlines[i].executordelay != 0)
+			{
+				CONS_Alert(CONS_WARNING, M_GetText("Linedef %s has an linedef executor delay, which is not supported in UDMF. Use ACS instead.\n"), sizeu1(i));
+			}
 		}
 
-		if (wlines[i].special >= 300 && wlines[i].special < 400)
+		for (i = 0; i < numsectors; i++)
 		{
-			CONS_Alert(CONS_WARNING, M_GetText("Linedef %s is a linedef executor, which is not supported in UDMF. Use ACS instead.\n"), sizeu1(i));
-			wlines[i].special = 0;
-		}
+			if (Tag_Find(&wsectors[i].tags, LE_CAPSULE0))
+				CONS_Alert(CONS_WARNING, M_GetText("Sector %s has reserved tag %d, which is not supported in UDMF. Use arg3 of the boss mapthing instead.\n"), sizeu1(i), LE_CAPSULE0);
+			if (Tag_Find(&wsectors[i].tags, LE_CAPSULE1))
+				CONS_Alert(CONS_WARNING, M_GetText("Sector %s has reserved tag %d, which is not supported in UDMF. Use arg3 of the boss mapthing instead.\n"), sizeu1(i), LE_CAPSULE1);
+			if (Tag_Find(&wsectors[i].tags, LE_CAPSULE2))
+				CONS_Alert(CONS_WARNING, M_GetText("Sector %s has reserved tag %d, which is not supported in UDMF. Use arg3 of the boss mapthing instead.\n"), sizeu1(i), LE_CAPSULE2);
 
-		if (wlines[i].executordelay != 0)
-		{
-			CONS_Alert(CONS_WARNING, M_GetText("Linedef %s has an linedef executor delay, which is not supported in UDMF. Use ACS instead.\n"), sizeu1(i));
+			switch (GETSECSPECIAL(wsectors[i].special, 1))
+			{
+				case 9:
+				case 10:
+					CONS_Alert(CONS_WARNING, M_GetText("Sector %s has ring drainer effect, which is not supported in UDMF. Use action 460 instead.\n"), sizeu1(i));
+					break;
+				default:
+					break;
+			}
+
+			switch (GETSECSPECIAL(wsectors[i].special, 2))
+			{
+				case 6:
+					CONS_Alert(CONS_WARNING, M_GetText("Sector %s has emerald check trigger type, which is not supported in UDMF. Use ACS instead.\n"), sizeu1(i));
+					break;
+				case 7:
+					CONS_Alert(CONS_WARNING, M_GetText("Sector %s has NiGHTS mare trigger type, which is not supported in UDMF. Use ACS instead.\n"), sizeu1(i));
+					break;
+				case 9:
+					CONS_Alert(CONS_WARNING, M_GetText("Sector %s has Egg Capsule type, which is not supported in UDMF. Use action 464 instead.\n"), sizeu1(i));
+					break;
+				default:
+					break;
+			}
+
+			if (wsectors[i].triggertag)
+			{
+				CONS_Alert(CONS_WARNING, M_GetText("Sector %s uses a linedef executor trigger tag, which is not supported in UDMF. Use ACS instead.\n"), sizeu1(i));
+			}
+			if (wsectors[i].triggerer)
+			{
+				CONS_Alert(CONS_WARNING, M_GetText("Sector %s uses a linedef executor trigger effect, which is not supported in UDMF. Use ACS instead.\n"), sizeu1(i));
+			}
+			if ((wsectors[i].flags & (MSF_TRIGGERLINE_PLANE|MSF_TRIGGERLINE_MOBJ)) != 0)
+			{
+				CONS_Alert(CONS_WARNING, M_GetText("Sector %s uses a linedef executor trigger flag, which is not supported in UDMF. Use ACS instead.\n"), sizeu1(i));
+			}
 		}
 	}
 
-	for (i = 0; i < numsectors; i++)
-	{
-		if (Tag_Find(&wsectors[i].tags, LE_CAPSULE0))
-			CONS_Alert(CONS_WARNING, M_GetText("Sector %s has reserved tag %d, which is not supported in UDMF. Use arg3 of the boss mapthing instead.\n"), sizeu1(i), LE_CAPSULE0);
-		if (Tag_Find(&wsectors[i].tags, LE_CAPSULE1))
-			CONS_Alert(CONS_WARNING, M_GetText("Sector %s has reserved tag %d, which is not supported in UDMF. Use arg3 of the boss mapthing instead.\n"), sizeu1(i), LE_CAPSULE1);
-		if (Tag_Find(&wsectors[i].tags, LE_CAPSULE2))
-			CONS_Alert(CONS_WARNING, M_GetText("Sector %s has reserved tag %d, which is not supported in UDMF. Use arg3 of the boss mapthing instead.\n"), sizeu1(i), LE_CAPSULE2);
-
-		switch (GETSECSPECIAL(wsectors[i].special, 1))
-		{
-			case 9:
-			case 10:
-				CONS_Alert(CONS_WARNING, M_GetText("Sector %s has ring drainer effect, which is not supported in UDMF. Use action 460 instead.\n"), sizeu1(i));
-				break;
-			default:
-				break;
-		}
-
-		switch (GETSECSPECIAL(wsectors[i].special, 2))
-		{
-			case 6:
-				CONS_Alert(CONS_WARNING, M_GetText("Sector %s has emerald check trigger type, which is not supported in UDMF. Use ACS instead.\n"), sizeu1(i));
-				break;
-			case 7:
-				CONS_Alert(CONS_WARNING, M_GetText("Sector %s has NiGHTS mare trigger type, which is not supported in UDMF. Use ACS instead.\n"), sizeu1(i));
-				break;
-			case 9:
-				CONS_Alert(CONS_WARNING, M_GetText("Sector %s has Egg Capsule type, which is not supported in UDMF. Use action 464 instead.\n"), sizeu1(i));
-				break;
-			default:
-				break;
-		}
-
-		if (wsectors[i].triggertag)
-		{
-			CONS_Alert(CONS_WARNING, M_GetText("Sector %s uses a linedef executor trigger tag, which is not supported in UDMF. Use ACS instead.\n"), sizeu1(i));
-		}
-		if (wsectors[i].triggerer)
-		{
-			CONS_Alert(CONS_WARNING, M_GetText("Sector %s uses a linedef executor trigger effect, which is not supported in UDMF. Use ACS instead.\n"), sizeu1(i));
-		}
-		if ((wsectors[i].flags & (MSF_TRIGGERLINE_PLANE|MSF_TRIGGERLINE_MOBJ)) != 0)
-		{
-			CONS_Alert(CONS_WARNING, M_GetText("Sector %s uses a linedef executor trigger flag, which is not supported in UDMF. Use ACS instead.\n"), sizeu1(i));
-		}
-	}
-
-	fprintf(f, "namespace = \"srb2\";\n");
+	fprintf(f, "namespace = \"ringracers\";\n");
+	fprintf(f, "version = %d;\n", UDMF_CURRENT_VERSION);
 	for (i = k = 0; i < nummapthings; i++)
 	{
-		if (wmapthings[i].type == mobjinfo[MT_WAYPOINT].doomednum
-			|| wmapthings[i].type == mobjinfo[MT_WAYPOINT_ANCHOR].doomednum
-			|| wmapthings[i].type == mobjinfo[MT_WAYPOINT_RISER].doomednum)
+		if (!udmf)
 		{
-			// Skip waypoints. Because the multi-thing setup was merged into a
-			// single thing type in UDMF, these must be converted later.
-			continue;
+			if (wmapthings[i].type == mobjinfo[MT_WAYPOINT].doomednum
+				|| wmapthings[i].type == mobjinfo[MT_WAYPOINT_ANCHOR].doomednum
+				|| wmapthings[i].type == mobjinfo[MT_WAYPOINT_RISER].doomednum)
+			{
+				// Skip waypoints. Because the multi-thing setup was merged into a
+				// single thing type in UDMF, these must be converted later.
+				continue;
+			}
 		}
 
 		P_WriteTextmapThing(f, wmapthings, i, k);
@@ -2512,10 +2613,10 @@ static void P_WriteTextmap(void)
 		}
 		if (wlines[i].special != 0)
 			fprintf(f, "special = %d;\n", wlines[i].special);
-		for (j = 0; j < NUMLINEARGS; j++)
+		for (j = 0; j < NUM_SCRIPT_ARGS; j++)
 			if (wlines[i].args[j] != 0)
 				fprintf(f, "arg%s = %d;\n", sizeu1(j), wlines[i].args[j]);
-		for (j = 0; j < NUMLINESTRINGARGS; j++)
+		for (j = 0; j < NUM_SCRIPT_STRINGARGS; j++)
 			if (lines[i].stringargs[j])
 				fprintf(f, "stringarg%s = \"%s\";\n", sizeu1(j), lines[i].stringargs[j]);
 		if (wlines[i].alpha != FRACUNIT)
@@ -2800,10 +2901,10 @@ static void P_WriteTextmap(void)
 		}
 		if (wsectors[i].action != 0)
 			fprintf(f, "action = %d;\n", wsectors[i].action);
-		for (j = 0; j < NUMSECTORARGS; j++)
+		for (j = 0; j < NUM_SCRIPT_ARGS; j++)
 			if (wsectors[i].args[j] != 0)
 				fprintf(f, "arg%s = %d;\n", sizeu1(j), wsectors[i].args[j]);
-		for (j = 0; j < NUMSECTORSTRINGARGS; j++)
+		for (j = 0; j < NUM_SCRIPT_STRINGARGS; j++)
 			if (wsectors[i].stringargs[j])
 				fprintf(f, "stringarg%s = \"%s\";\n", sizeu1(j), wsectors[i].stringargs[j]);
 		switch (wsectors[i].activation & SECSPAC_TRIGGERMASK)
@@ -2996,8 +3097,8 @@ static void P_LoadTextmap(void)
 		sc->friction = ORIG_FRICTION;
 
 		sc->action = 0;
-		memset(sc->args, 0, NUMSECTORARGS*sizeof(*sc->args));
-		memset(sc->stringargs, 0x00, NUMSECTORSTRINGARGS*sizeof(*sc->stringargs));
+		memset(sc->args, 0, NUM_SCRIPT_ARGS*sizeof(*sc->args));
+		memset(sc->stringargs, 0x00, NUM_SCRIPT_STRINGARGS*sizeof(*sc->stringargs));
 		sc->activation = 0;
 
 		K_UserPropertiesClear(&sc->user);
@@ -3047,8 +3148,8 @@ static void P_LoadTextmap(void)
 		ld->special = 0;
 		Tag_FSet(&ld->tags, 0);
 
-		memset(ld->args, 0, NUMLINEARGS*sizeof(*ld->args));
-		memset(ld->stringargs, 0x00, NUMLINESTRINGARGS*sizeof(*ld->stringargs));
+		memset(ld->args, 0, NUM_SCRIPT_ARGS*sizeof(*ld->args));
+		memset(ld->stringargs, 0x00, NUM_SCRIPT_STRINGARGS*sizeof(*ld->stringargs));
 		ld->alpha = FRACUNIT;
 		ld->executordelay = 0;
 		ld->sidenum[0] = 0xffff;
@@ -3101,9 +3202,12 @@ static void P_LoadTextmap(void)
 		mt->extrainfo = 0;
 		mt->tid = 0;
 		mt->scale = FRACUNIT;
-		memset(mt->args, 0, NUMMAPTHINGARGS*sizeof(*mt->args));
-		memset(mt->stringargs, 0x00, NUMMAPTHINGSTRINGARGS*sizeof(*mt->stringargs));
+		mt->spritexscale = mt->spriteyscale = FRACUNIT;
+		memset(mt->thing_args, 0, NUM_MAPTHING_ARGS*sizeof(*mt->thing_args));
+		memset(mt->thing_stringargs, 0x00, NUM_MAPTHING_STRINGARGS*sizeof(*mt->thing_stringargs));
 		mt->special = 0;
+		memset(mt->script_args, 0, NUM_SCRIPT_ARGS*sizeof(*mt->script_args));
+		memset(mt->script_stringargs, 0x00, NUM_SCRIPT_STRINGARGS*sizeof(*mt->script_stringargs));
 		mt->layer = 0;
 		mt->mobj = NULL;
 
@@ -6496,45 +6600,45 @@ static void P_ConvertBinaryThingTypes(void)
 			if (mobjinfo[mobjtype].flags & MF_BOSS)
 			{
 				INT32 paramoffset = mapthings[i].extrainfo*LE_PARAMWIDTH;
-				mapthings[i].args[0] = mapthings[i].extrainfo;
-				mapthings[i].args[1] = !!(mapthings[i].options & MTF_OBJECTSPECIAL);
-				mapthings[i].args[2] = LE_BOSSDEAD + paramoffset;
-				mapthings[i].args[3] = LE_ALLBOSSESDEAD + paramoffset;
-				mapthings[i].args[4] = LE_PINCHPHASE + paramoffset;
+				mapthings[i].thing_args[0] = mapthings[i].extrainfo;
+				mapthings[i].thing_args[1] = !!(mapthings[i].options & MTF_OBJECTSPECIAL);
+				mapthings[i].thing_args[2] = LE_BOSSDEAD + paramoffset;
+				mapthings[i].thing_args[3] = LE_ALLBOSSESDEAD + paramoffset;
+				mapthings[i].thing_args[4] = LE_PINCHPHASE + paramoffset;
 			}
 			if (mobjinfo[mobjtype].flags & MF_PUSHABLE)
 			{
 				if ((mapthings[i].options & (MTF_OBJECTSPECIAL|MTF_AMBUSH)) == (MTF_OBJECTSPECIAL|MTF_AMBUSH))
-					mapthings[i].args[0] = TMP_CLASSIC;
+					mapthings[i].thing_args[0] = TMP_CLASSIC;
 				else if (mapthings[i].options & MTF_OBJECTSPECIAL)
-					mapthings[i].args[0] = TMP_SLIDE;
+					mapthings[i].thing_args[0] = TMP_SLIDE;
 				else if (mapthings[i].options & MTF_AMBUSH)
-					mapthings[i].args[0] = TMP_IMMOVABLE;
+					mapthings[i].thing_args[0] = TMP_IMMOVABLE;
 				else
-					mapthings[i].args[0] = TMP_NORMAL;
+					mapthings[i].thing_args[0] = TMP_NORMAL;
 			}
 			if (K_IsDuelItem(mobjtype) == true)
 			{
-				mapthings[i].args[0] = !!(mapthings[i].options & MTF_EXTRA);
+				mapthings[i].thing_args[0] = !!(mapthings[i].options & MTF_EXTRA);
 			}
 		}
 
 		if (mapthings[i].type >= 1 && mapthings[i].type <= 35) //Player starts
 		{
-			mapthings[i].args[0] = !!(mapthings[i].options & MTF_AMBUSH);
+			mapthings[i].thing_args[0] = !!(mapthings[i].options & MTF_AMBUSH);
 			continue;
 		}
 		else if (mapthings[i].type >= 2200 && mapthings[i].type <= 2217) //Flickies
 		{
-			mapthings[i].args[0] = mapthings[i].angle;
+			mapthings[i].thing_args[0] = mapthings[i].angle;
 			if (mapthings[i].options & MTF_EXTRA)
-				mapthings[i].args[1] |= TMFF_AIMLESS;
+				mapthings[i].thing_args[1] |= TMFF_AIMLESS;
 			if (mapthings[i].options & MTF_OBJECTSPECIAL)
-				mapthings[i].args[1] |= TMFF_STATIONARY;
+				mapthings[i].thing_args[1] |= TMFF_STATIONARY;
 			if (mapthings[i].options & MTF_AMBUSH)
-				mapthings[i].args[1] |= TMFF_HOP;
+				mapthings[i].thing_args[1] |= TMFF_HOP;
 			if (mapthings[i].type == 2207)
-				mapthings[i].args[2] = mapthings[i].extrainfo;
+				mapthings[i].thing_args[2] = mapthings[i].extrainfo;
 			continue;
 		}
 
@@ -6542,13 +6646,13 @@ static void P_ConvertBinaryThingTypes(void)
 		{
 		case 102: //SDURF
 		case 1805: //Puma
-			mapthings[i].args[0] = mapthings[i].angle;
+			mapthings[i].thing_args[0] = mapthings[i].angle;
 			break;
 		case 110: //THZ Turret
-			mapthings[i].args[0] = LE_TURRET;
+			mapthings[i].thing_args[0] = LE_TURRET;
 			break;
 		case 111: //Pop-up Turret
-			mapthings[i].args[0] = mapthings[i].angle;
+			mapthings[i].thing_args[0] = mapthings[i].angle;
 			break;
 		case 103: //Buzz (Gold)
 		case 104: //Buzz (Red)
@@ -6560,62 +6664,62 @@ static void P_ConvertBinaryThingTypes(void)
 		case 132: //Cacolantern
 		case 138: //Banpyura
 		case 1602: //Pian
-			mapthings[i].args[0] = !!(mapthings[i].options & MTF_AMBUSH);
+			mapthings[i].thing_args[0] = !!(mapthings[i].options & MTF_AMBUSH);
 			break;
 		case 119: //Egg Guard
 			if ((mapthings[i].options & (MTF_EXTRA|MTF_OBJECTSPECIAL)) == MTF_OBJECTSPECIAL)
-				mapthings[i].args[0] = TMGD_LEFT;
+				mapthings[i].thing_args[0] = TMGD_LEFT;
 			else if ((mapthings[i].options & (MTF_EXTRA|MTF_OBJECTSPECIAL)) == MTF_EXTRA)
-				mapthings[i].args[0] = TMGD_RIGHT;
+				mapthings[i].thing_args[0] = TMGD_RIGHT;
 			else
-				mapthings[i].args[0] = TMGD_BACK;
-			mapthings[i].args[1] = !!(mapthings[i].options & MTF_AMBUSH);
+				mapthings[i].thing_args[0] = TMGD_BACK;
+			mapthings[i].thing_args[1] = !!(mapthings[i].options & MTF_AMBUSH);
 			break;
 		case 127: //Hive Elemental
-			mapthings[i].args[0] = mapthings[i].extrainfo;
+			mapthings[i].thing_args[0] = mapthings[i].extrainfo;
 			break;
 		case 135: //Pterabyte Spawner
-			mapthings[i].args[0] = mapthings[i].extrainfo + 1;
+			mapthings[i].thing_args[0] = mapthings[i].extrainfo + 1;
 			break;
 		case 136: //Pyre Fly
-			mapthings[i].args[0] = !!(mapthings[i].options & MTF_AMBUSH);
+			mapthings[i].thing_args[0] = !!(mapthings[i].options & MTF_AMBUSH);
 			break;
 		case 201: //Egg Slimer
-			mapthings[i].args[5] = !(mapthings[i].options & MTF_AMBUSH);
+			mapthings[i].thing_args[5] = !(mapthings[i].options & MTF_AMBUSH);
 			break;
 		case 203: //Egg Colosseum
-			mapthings[i].args[5] = LE_BOSS4DROP + mapthings[i].extrainfo * LE_PARAMWIDTH;
+			mapthings[i].thing_args[5] = LE_BOSS4DROP + mapthings[i].extrainfo * LE_PARAMWIDTH;
 			break;
 		case 204: //Fang
-			mapthings[i].args[4] = LE_BOSS4DROP + mapthings[i].extrainfo*LE_PARAMWIDTH;
+			mapthings[i].thing_args[4] = LE_BOSS4DROP + mapthings[i].extrainfo*LE_PARAMWIDTH;
 			if (mapthings[i].options & MTF_EXTRA)
-				mapthings[i].args[5] |= TMF_GRAYSCALE;
+				mapthings[i].thing_args[5] |= TMF_GRAYSCALE;
 			if (mapthings[i].options & MTF_AMBUSH)
-				mapthings[i].args[5] |= TMF_SKIPINTRO;
+				mapthings[i].thing_args[5] |= TMF_SKIPINTRO;
 			break;
 		case 206: //Brak Eggman (Old)
-			mapthings[i].args[5] = LE_BRAKPLATFORM + mapthings[i].extrainfo*LE_PARAMWIDTH;
+			mapthings[i].thing_args[5] = LE_BRAKPLATFORM + mapthings[i].extrainfo*LE_PARAMWIDTH;
 			break;
 		case 207: //Metal Sonic (Race)
 		case 2104: //Amy Cameo
-			mapthings[i].args[0] = !!(mapthings[i].options & MTF_EXTRA);
+			mapthings[i].thing_args[0] = !!(mapthings[i].options & MTF_EXTRA);
 			break;
 		case 208: //Metal Sonic (Battle)
-			mapthings[i].args[5] = !!(mapthings[i].options & MTF_EXTRA);
+			mapthings[i].thing_args[5] = !!(mapthings[i].options & MTF_EXTRA);
 			break;
 		case 209: //Brak Eggman
-			mapthings[i].args[5] = LE_BRAKVILEATACK + mapthings[i].extrainfo*LE_PARAMWIDTH;
+			mapthings[i].thing_args[5] = LE_BRAKVILEATACK + mapthings[i].extrainfo*LE_PARAMWIDTH;
 			if (mapthings[i].options & MTF_EXTRA)
-				mapthings[i].args[6] |= TMB_NODEATHFLING;
+				mapthings[i].thing_args[6] |= TMB_NODEATHFLING;
 			if (mapthings[i].options & MTF_AMBUSH)
-				mapthings[i].args[6] |= TMB_BARRIER;
+				mapthings[i].thing_args[6] |= TMB_BARRIER;
 			break;
 		case 292: //Boss waypoint
-			mapthings[i].args[0] = mapthings[i].angle;
-			mapthings[i].args[1] = mapthings[i].options & 7;
+			mapthings[i].thing_args[0] = mapthings[i].angle;
+			mapthings[i].thing_args[1] = mapthings[i].options & 7;
 			break;
 		case 294: //Fang waypoint
-			mapthings[i].args[0] = !!(mapthings[i].options & MTF_AMBUSH);
+			mapthings[i].thing_args[0] = !!(mapthings[i].options & MTF_AMBUSH);
 			break;
 		case 300: //Ring
 		case 301: //Bounce ring
@@ -6641,13 +6745,13 @@ static void P_ConvertBinaryThingTypes(void)
 		case 521: //Spikeball
 		case 1706: //Blue sphere
 		case 1800: //Coin
-			mapthings[i].args[0] = !(mapthings[i].options & MTF_AMBUSH);
+			mapthings[i].thing_args[0] = !(mapthings[i].options & MTF_AMBUSH);
 			break;
 		case 409: //Extra life monitor
-			mapthings[i].args[2] = !(mapthings[i].options & (MTF_AMBUSH|MTF_OBJECTSPECIAL));
+			mapthings[i].thing_args[2] = !(mapthings[i].options & (MTF_AMBUSH|MTF_OBJECTSPECIAL));
 			break;
 		case 500: //Air bubble patch
-			mapthings[i].args[0] = !!(mapthings[i].options & MTF_AMBUSH);
+			mapthings[i].thing_args[0] = !!(mapthings[i].options & MTF_AMBUSH);
 			break;
 		case 502: //Star post
 			if (mapthings[i].extrainfo)
@@ -6655,64 +6759,64 @@ static void P_ConvertBinaryThingTypes(void)
 				// For starposts above param 15 (the 16th), add 360 to the angle like before and start parameter from 1 (NOT 0)!
 				// So the 16th starpost is angle=0 param=15, the 17th would be angle=360 param=1.
 				// This seems more intuitive for mappers to use, since most SP maps won't have over 16 consecutive star posts.
-				mapthings[i].args[0] = mapthings[i].extrainfo + (mapthings[i].angle/360) * 15;
+				mapthings[i].thing_args[0] = mapthings[i].extrainfo + (mapthings[i].angle/360) * 15;
 			else
 				// Old behavior if Parameter is 0; add 360 to the angle for each consecutive star post.
-				mapthings[i].args[0] = (mapthings[i].angle/360);
-			mapthings[i].args[1] = !!(mapthings[i].options & MTF_OBJECTSPECIAL);
+				mapthings[i].thing_args[0] = (mapthings[i].angle/360);
+			mapthings[i].thing_args[1] = !!(mapthings[i].options & MTF_OBJECTSPECIAL);
 			break;
 		case 522: //Wall spike
 			if (mapthings[i].options & MTF_OBJECTSPECIAL)
 			{
-				mapthings[i].args[0] = mobjinfo[MT_WALLSPIKE].speed + mapthings[i].angle/360;
-				mapthings[i].args[1] = (16 - mapthings[i].extrainfo) * mapthings[i].args[0]/16;
+				mapthings[i].thing_args[0] = mobjinfo[MT_WALLSPIKE].speed + mapthings[i].angle/360;
+				mapthings[i].thing_args[1] = (16 - mapthings[i].extrainfo) * mapthings[i].thing_args[0]/16;
 				if (mapthings[i].options & MTF_EXTRA)
-					mapthings[i].args[2] |= TMSF_RETRACTED;
+					mapthings[i].thing_args[2] |= TMSF_RETRACTED;
 			}
 			if (mapthings[i].options & MTF_AMBUSH)
-				mapthings[i].args[2] |= TMSF_INTANGIBLE;
+				mapthings[i].thing_args[2] |= TMSF_INTANGIBLE;
 			break;
 		case 523: //Spike
 			if (mapthings[i].options & MTF_OBJECTSPECIAL)
 			{
-				mapthings[i].args[0] = mobjinfo[MT_SPIKE].speed + mapthings[i].angle;
-				mapthings[i].args[1] = (16 - mapthings[i].extrainfo) * mapthings[i].args[0]/16;
+				mapthings[i].thing_args[0] = mobjinfo[MT_SPIKE].speed + mapthings[i].angle;
+				mapthings[i].thing_args[1] = (16 - mapthings[i].extrainfo) * mapthings[i].thing_args[0]/16;
 				if (mapthings[i].options & MTF_EXTRA)
-					mapthings[i].args[2] |= TMSF_RETRACTED;
+					mapthings[i].thing_args[2] |= TMSF_RETRACTED;
 			}
 			if (mapthings[i].options & MTF_AMBUSH)
-				mapthings[i].args[2] |= TMSF_INTANGIBLE;
+				mapthings[i].thing_args[2] |= TMSF_INTANGIBLE;
 			break;
 		case 540: //Fan
-			mapthings[i].args[0] = mapthings[i].angle;
+			mapthings[i].thing_args[0] = mapthings[i].angle;
 			if (mapthings[i].options & MTF_OBJECTSPECIAL)
-				mapthings[i].args[1] |= TMF_INVISIBLE;
+				mapthings[i].thing_args[1] |= TMF_INVISIBLE;
 			if (mapthings[i].options & MTF_AMBUSH)
-				mapthings[i].args[1] |= TMF_NODISTANCECHECK;
+				mapthings[i].thing_args[1] |= TMF_NODISTANCECHECK;
 			break;
 		case 541: //Gas jet
-			mapthings[i].args[0] = !!(mapthings[i].options & MTF_AMBUSH);
-			mapthings[i].args[1] = !!(mapthings[i].options & MTF_OBJECTSPECIAL);
+			mapthings[i].thing_args[0] = !!(mapthings[i].options & MTF_AMBUSH);
+			mapthings[i].thing_args[1] = !!(mapthings[i].options & MTF_OBJECTSPECIAL);
 			break;
 		case 543: //Balloon
 			if (mapthings[i].angle > 0)
 			{
-				P_WriteSkincolor(((mapthings[i].angle - 1) % (numskincolors - 1)) + 1, &mapthings[i].stringargs[0]);
+				P_WriteSkincolor(((mapthings[i].angle - 1) % (numskincolors - 1)) + 1, &mapthings[i].thing_stringargs[0]);
 			}
-			mapthings[i].args[0] = !!(mapthings[i].options & MTF_AMBUSH);
+			mapthings[i].thing_args[0] = !!(mapthings[i].options & MTF_AMBUSH);
 			break;
 		case 555: //Diagonal yellow spring
 		case 556: //Diagonal red spring
 		case 557: //Diagonal blue spring
 			if (mapthings[i].options & MTF_OBJECTSPECIAL)
-				mapthings[i].args[0] |= TMDS_NOGRAVITY;
+				mapthings[i].thing_args[0] |= TMDS_NOGRAVITY;
 			if (mapthings[i].options & MTF_AMBUSH)
-				mapthings[i].args[0] |= TMDS_ROTATEEXTRA;
+				mapthings[i].thing_args[0] |= TMDS_ROTATEEXTRA;
 			break;
 		case 558: //Horizontal yellow spring
 		case 559: //Horizontal red spring
 		case 560: //Horizontal blue spring
-			mapthings[i].args[0] = !(mapthings[i].options & MTF_AMBUSH);
+			mapthings[i].thing_args[0] = !(mapthings[i].options & MTF_AMBUSH);
 			break;
 		case 700: //Water ambience A
 		case 701: //Water ambience B
@@ -6722,31 +6826,31 @@ static void P_ConvertBinaryThingTypes(void)
 		case 705: //Water ambience F
 		case 706: //Water ambience G
 		case 707: //Water ambience H
-			mapthings[i].args[0] = 35;
-			P_WriteSfx(sfx_amwtr1 + mapthings[i].type - 700, &mapthings[i].stringargs[0]);
+			mapthings[i].thing_args[0] = 35;
+			P_WriteSfx(sfx_amwtr1 + mapthings[i].type - 700, &mapthings[i].thing_stringargs[0]);
 			mapthings[i].type = 700;
 			break;
 		case 708: //Disco ambience
-			mapthings[i].args[0] = 512;
-			P_WriteSfx(sfx_ambint, &mapthings[i].stringargs[0]);
+			mapthings[i].thing_args[0] = 512;
+			P_WriteSfx(sfx_ambint, &mapthings[i].thing_stringargs[0]);
 			mapthings[i].type = 700;
 			break;
 		case 709: //Volcano ambience
-			mapthings[i].args[0] = 220;
-			P_WriteSfx(sfx_ambin2, &mapthings[i].stringargs[0]);
+			mapthings[i].thing_args[0] = 220;
+			P_WriteSfx(sfx_ambin2, &mapthings[i].thing_stringargs[0]);
 			mapthings[i].type = 700;
 			break;
 		case 710: //Machine ambience
-			mapthings[i].args[0] = 24;
-			P_WriteSfx(sfx_ambmac, &mapthings[i].stringargs[0]);
+			mapthings[i].thing_args[0] = 24;
+			P_WriteSfx(sfx_ambmac, &mapthings[i].thing_stringargs[0]);
 			mapthings[i].type = 700;
 			break;
 		case 750: //Slope vertex
-			mapthings[i].args[0] = mapthings[i].extrainfo;
+			mapthings[i].thing_args[0] = mapthings[i].extrainfo;
 			break;
 		case 753: //Zoom tube waypoint
-			mapthings[i].args[0] = mapthings[i].angle >> 8;
-			mapthings[i].args[1] = mapthings[i].angle & 255;
+			mapthings[i].thing_args[0] = mapthings[i].angle >> 8;
+			mapthings[i].thing_args[1] = mapthings[i].angle & 255;
 			break;
 		case 754: //Push point
 		case 755: //Pull point
@@ -6770,21 +6874,21 @@ static void P_ConvertBinaryThingTypes(void)
 				break;
 			}
 
-			mapthings[i].args[0] = mapthings[i].angle;
-			mapthings[i].args[1] = P_AproxDistance(line->dx >> FRACBITS, line->dy >> FRACBITS);
+			mapthings[i].thing_args[0] = mapthings[i].angle;
+			mapthings[i].thing_args[1] = P_AproxDistance(line->dx >> FRACBITS, line->dy >> FRACBITS);
 			if (mapthings[i].type == 755)
-				mapthings[i].args[1] *= -1;
+				mapthings[i].thing_args[1] *= -1;
 			if (mapthings[i].options & MTF_OBJECTSPECIAL)
-				mapthings[i].args[2] |= TMPP_NOZFADE;
+				mapthings[i].thing_args[2] |= TMPP_NOZFADE;
 			if (mapthings[i].options & MTF_AMBUSH)
-				mapthings[i].args[2] |= TMPP_PUSHZ;
+				mapthings[i].thing_args[2] |= TMPP_PUSHZ;
 			if (!(line->flags & ML_NOCLIMB))
-				mapthings[i].args[2] |= TMPP_NONEXCLUSIVE;
+				mapthings[i].thing_args[2] |= TMPP_NONEXCLUSIVE;
 			mapthings[i].type = 754;
 			break;
 		}
 		case 756: //Blast linedef executor
-			mapthings[i].args[0] = mapthings[i].angle;
+			mapthings[i].thing_args[0] = mapthings[i].angle;
 			break;
 		case 757: //Fan particle generator
 		{
@@ -6795,13 +6899,13 @@ static void P_ConvertBinaryThingTypes(void)
 				CONS_Debug(DBG_GAMELOGIC, "Particle generator (mapthing #%s) needs to be tagged to a #15 parameter line (trying to find tag %d).\n", sizeu1(i), mapthings[i].angle);
 				break;
 			}
-			mapthings[i].args[0] = mapthings[i].z;
-			mapthings[i].args[1] = R_PointToDist2(lines[j].v1->x, lines[j].v1->y, lines[j].v2->x, lines[j].v2->y) >> FRACBITS;
-			mapthings[i].args[2] = sides[lines[j].sidenum[0]].textureoffset >> FRACBITS;
-			mapthings[i].args[3] = sides[lines[j].sidenum[0]].rowoffset >> FRACBITS;
-			mapthings[i].args[4] = lines[j].backsector ? sides[lines[j].sidenum[1]].textureoffset >> FRACBITS : 0;
-			mapthings[i].args[6] = mapthings[i].angle;
-			P_WriteDuplicateText(lines[j].stringargs[0], &mapthings[i].stringargs[0]);
+			mapthings[i].thing_args[0] = mapthings[i].z;
+			mapthings[i].thing_args[1] = R_PointToDist2(lines[j].v1->x, lines[j].v1->y, lines[j].v2->x, lines[j].v2->y) >> FRACBITS;
+			mapthings[i].thing_args[2] = sides[lines[j].sidenum[0]].textureoffset >> FRACBITS;
+			mapthings[i].thing_args[3] = sides[lines[j].sidenum[0]].rowoffset >> FRACBITS;
+			mapthings[i].thing_args[4] = lines[j].backsector ? sides[lines[j].sidenum[1]].textureoffset >> FRACBITS : 0;
+			mapthings[i].thing_args[6] = mapthings[i].angle;
+			P_WriteDuplicateText(lines[j].stringargs[0], &mapthings[i].thing_stringargs[0]);
 			break;
 		}
 		case 762: //PolyObject spawn point (crush)
@@ -6825,21 +6929,21 @@ static void P_ConvertBinaryThingTypes(void)
 			break;
 		}
 		case 780: //Skybox
-			mapthings[i].args[0] = !!(mapthings[i].options & MTF_OBJECTSPECIAL);
+			mapthings[i].thing_args[0] = !!(mapthings[i].options & MTF_OBJECTSPECIAL);
 			break;
 		case 799: //Tutorial plant
-			mapthings[i].args[0] = mapthings[i].extrainfo;
+			mapthings[i].thing_args[0] = mapthings[i].extrainfo;
 			break;
 		case 1002: //Dripping water
-			mapthings[i].args[0] = mapthings[i].angle;
+			mapthings[i].thing_args[0] = mapthings[i].angle;
 			break;
 		case 1007: //Kelp
 		case 1008: //Stalagmite (DSZ1)
 		case 1011: //Stalagmite (DSZ2)
-			mapthings[i].args[0] = !!(mapthings[i].options & MTF_OBJECTSPECIAL);
+			mapthings[i].thing_args[0] = !!(mapthings[i].options & MTF_OBJECTSPECIAL);
 			break;
 		case 1102: //Eggman Statue
-			mapthings[i].args[1] = !!(mapthings[i].options & MTF_EXTRA);
+			mapthings[i].thing_args[1] = !!(mapthings[i].options & MTF_EXTRA);
 			break;
 		case 1104: //Mace spawnpoint
 		case 1105: //Chain with maces spawnpoint
@@ -6859,63 +6963,63 @@ static void P_ConvertBinaryThingTypes(void)
 
 			mapthings[i].angle = lines[j].frontsector->ceilingheight >> FRACBITS;
 			mapthings[i].pitch = lines[j].frontsector->floorheight >> FRACBITS;
-			mapthings[i].args[0] = lines[j].dx >> FRACBITS;
-			mapthings[i].args[1] = mapthings[i].extrainfo;
-			mapthings[i].args[3] = lines[j].dy >> FRACBITS;
-			mapthings[i].args[4] = sides[lines[j].sidenum[0]].textureoffset >> FRACBITS;
-			mapthings[i].args[7] = -sides[lines[j].sidenum[0]].rowoffset >> FRACBITS;
+			mapthings[i].thing_args[0] = lines[j].dx >> FRACBITS;
+			mapthings[i].thing_args[1] = mapthings[i].extrainfo;
+			mapthings[i].thing_args[3] = lines[j].dy >> FRACBITS;
+			mapthings[i].thing_args[4] = sides[lines[j].sidenum[0]].textureoffset >> FRACBITS;
+			mapthings[i].thing_args[7] = -sides[lines[j].sidenum[0]].rowoffset >> FRACBITS;
 			if (lines[j].backsector)
 			{
 				mapthings[i].roll = lines[j].backsector->ceilingheight >> FRACBITS;
-				mapthings[i].args[2] = sides[lines[j].sidenum[1]].rowoffset >> FRACBITS;
-				mapthings[i].args[5] = lines[j].backsector->floorheight >> FRACBITS;
-				mapthings[i].args[6] = sides[lines[j].sidenum[1]].textureoffset >> FRACBITS;
+				mapthings[i].thing_args[2] = sides[lines[j].sidenum[1]].rowoffset >> FRACBITS;
+				mapthings[i].thing_args[5] = lines[j].backsector->floorheight >> FRACBITS;
+				mapthings[i].thing_args[6] = sides[lines[j].sidenum[1]].textureoffset >> FRACBITS;
 			}
 			if (mapthings[i].options & MTF_AMBUSH)
-				mapthings[i].args[8] |= TMM_DOUBLESIZE;
+				mapthings[i].thing_args[8] |= TMM_DOUBLESIZE;
 			if (mapthings[i].options & MTF_OBJECTSPECIAL)
-				mapthings[i].args[8] |= TMM_SILENT;
+				mapthings[i].thing_args[8] |= TMM_SILENT;
 			if (lines[j].flags & ML_NOCLIMB)
-				mapthings[i].args[8] |= TMM_ALLOWYAWCONTROL;
+				mapthings[i].thing_args[8] |= TMM_ALLOWYAWCONTROL;
 			if (lines[j].flags & ML_SKEWTD)
-				mapthings[i].args[8] |= TMM_SWING;
+				mapthings[i].thing_args[8] |= TMM_SWING;
 			if (lines[j].flags & ML_NOSKEW)
-				mapthings[i].args[8] |= TMM_MACELINKS;
+				mapthings[i].thing_args[8] |= TMM_MACELINKS;
 			if (lines[j].flags & ML_MIDPEG)
-				mapthings[i].args[8] |= TMM_CENTERLINK;
+				mapthings[i].thing_args[8] |= TMM_CENTERLINK;
 			if (lines[j].flags & ML_MIDSOLID)
-				mapthings[i].args[8] |= TMM_CLIP;
+				mapthings[i].thing_args[8] |= TMM_CLIP;
 			if (lines[j].flags & ML_WRAPMIDTEX)
-				mapthings[i].args[8] |= TMM_ALWAYSTHINK;
+				mapthings[i].thing_args[8] |= TMM_ALWAYSTHINK;
 			if (mapthings[i].type == 1110)
 			{
-				P_WriteDuplicateText(lines[j].stringargs[0], &mapthings[i].stringargs[0]);
-				P_WriteDuplicateText(lines[j].stringargs[1], &mapthings[i].stringargs[1]);
+				P_WriteDuplicateText(lines[j].stringargs[0], &mapthings[i].thing_stringargs[0]);
+				P_WriteDuplicateText(lines[j].stringargs[1], &mapthings[i].thing_stringargs[1]);
 			}
 			break;
 		}
 		case 1101: //Torch
 		case 1119: //Candle
 		case 1120: //Candle pricket
-			mapthings[i].args[0] = !!(mapthings[i].options & MTF_EXTRA);
+			mapthings[i].thing_args[0] = !!(mapthings[i].options & MTF_EXTRA);
 			break;
 		case 1121: //Flame holder
 			if (mapthings[i].options & MTF_OBJECTSPECIAL)
-				mapthings[i].args[0] |= TMFH_NOFLAME;
+				mapthings[i].thing_args[0] |= TMFH_NOFLAME;
 			if (mapthings[i].options & MTF_EXTRA)
-				mapthings[i].args[0] |= TMFH_CORONA;
+				mapthings[i].thing_args[0] |= TMFH_CORONA;
 			break;
 		case 1127: //Spectator EggRobo
 			if (mapthings[i].options & MTF_AMBUSH)
-				mapthings[i].args[0] = TMED_LEFT;
+				mapthings[i].thing_args[0] = TMED_LEFT;
 			else if (mapthings[i].options & MTF_OBJECTSPECIAL)
-				mapthings[i].args[0] = TMED_RIGHT;
+				mapthings[i].thing_args[0] = TMED_RIGHT;
 			else
-				mapthings[i].args[0] = TMED_NONE;
+				mapthings[i].thing_args[0] = TMED_NONE;
 			break;
 		case 1200: //Tumbleweed (Big)
 		case 1201: //Tumbleweed (Small)
-			mapthings[i].args[0] = !!(mapthings[i].options & MTF_AMBUSH);
+			mapthings[i].thing_args[0] = !!(mapthings[i].options & MTF_AMBUSH);
 			break;
 		case 1202: //Rock spawner
 		{
@@ -6928,73 +7032,73 @@ static void P_ConvertBinaryThingTypes(void)
 				break;
 			}
 			mapthings[i].angle = AngleFixed(R_PointToAngle2(lines[j].v2->x, lines[j].v2->y, lines[j].v1->x, lines[j].v1->y)) >> FRACBITS;
-			mapthings[i].args[0] = P_AproxDistance(lines[j].dx, lines[j].dy) >> FRACBITS;
-			mapthings[i].args[1] = sides[lines[j].sidenum[0]].textureoffset >> FRACBITS;
-			mapthings[i].args[2] = !!(lines[j].flags & ML_NOCLIMB);
+			mapthings[i].thing_args[0] = P_AproxDistance(lines[j].dx, lines[j].dy) >> FRACBITS;
+			mapthings[i].thing_args[1] = sides[lines[j].sidenum[0]].textureoffset >> FRACBITS;
+			mapthings[i].thing_args[2] = !!(lines[j].flags & ML_NOCLIMB);
 			INT32 id = (sides[lines[j].sidenum[0]].rowoffset >> FRACBITS);
 			// Rather than introduce deh_tables.h as a dependency for literally one
 			// conversion, we just... recreate the string expected to be produced.
 			if (id > 0 && id < 16)
-				P_WriteDuplicateText(va("MT_ROCKCRUMBLE%d", id+1), &mapthings[i].stringargs[0]);
+				P_WriteDuplicateText(va("MT_ROCKCRUMBLE%d", id+1), &mapthings[i].thing_stringargs[0]);
 			break;
 		}
 		case 1221: //Minecart saloon door
-			mapthings[i].args[0] = !!(mapthings[i].options & MTF_AMBUSH);
+			mapthings[i].thing_args[0] = !!(mapthings[i].options & MTF_AMBUSH);
 			break;
 		case 1229: //Minecart switch point
-			mapthings[i].args[0] = !!(mapthings[i].options & MTF_AMBUSH);
+			mapthings[i].thing_args[0] = !!(mapthings[i].options & MTF_AMBUSH);
 			break;
 		case 1300: //Flame jet (horizontal)
 		case 1301: //Flame jet (vertical)
-			mapthings[i].args[0] = (mapthings[i].angle >> 13)*TICRATE/2;
-			mapthings[i].args[1] = ((mapthings[i].angle >> 10) & 7)*TICRATE/2;
-			mapthings[i].args[2] = 80 - 5*mapthings[i].extrainfo;
-			mapthings[i].args[3] = !!(mapthings[i].options & MTF_AMBUSH);
+			mapthings[i].thing_args[0] = (mapthings[i].angle >> 13)*TICRATE/2;
+			mapthings[i].thing_args[1] = ((mapthings[i].angle >> 10) & 7)*TICRATE/2;
+			mapthings[i].thing_args[2] = 80 - 5*mapthings[i].extrainfo;
+			mapthings[i].thing_args[3] = !!(mapthings[i].options & MTF_AMBUSH);
 			break;
 		case 1304: //Lavafall
-			mapthings[i].args[0] = mapthings[i].angle;
-			mapthings[i].args[1] = !!(mapthings[i].options & MTF_AMBUSH);
+			mapthings[i].thing_args[0] = mapthings[i].angle;
+			mapthings[i].thing_args[1] = !!(mapthings[i].options & MTF_AMBUSH);
 			break;
 		case 1305: //Rollout Rock
-			mapthings[i].args[0] = !!(mapthings[i].options & MTF_AMBUSH);
+			mapthings[i].thing_args[0] = !!(mapthings[i].options & MTF_AMBUSH);
 			break;
 		case 1488: // Follower Audience (unfortunately numbered)
 			if (mapthings[i].options & MTF_OBJECTSPECIAL)
-				mapthings[i].args[2] |= TMAUDIM_FLOAT;
+				mapthings[i].thing_args[2] |= TMAUDIM_FLOAT;
 			if (mapthings[i].options & MTF_EXTRA)
-				mapthings[i].args[2] |= TMAUDIM_BORED;
+				mapthings[i].thing_args[2] |= TMAUDIM_BORED;
 
-			mapthings[i].args[3] = !!(mapthings[i].options & MTF_AMBUSH);
+			mapthings[i].thing_args[3] = !!(mapthings[i].options & MTF_AMBUSH);
 			break;
 		case 1500: //Glaregoyle
 		case 1501: //Glaregoyle (Up)
 		case 1502: //Glaregoyle (Down)
 		case 1503: //Glaregoyle (Long)
 			if (mapthings[i].angle >= 360)
-				mapthings[i].args[1] = 7*(mapthings[i].angle/360) + 1;
+				mapthings[i].thing_args[1] = 7*(mapthings[i].angle/360) + 1;
 			break;
 		case 1700: //Axis
-			mapthings[i].args[2] = mapthings[i].angle & 16383;
-			mapthings[i].args[3] = !!(mapthings[i].angle & 16384);
+			mapthings[i].thing_args[2] = mapthings[i].angle & 16383;
+			mapthings[i].thing_args[3] = !!(mapthings[i].angle & 16384);
 			/* FALLTHRU */
 		case 1701: //Axis transfer
 		case 1702: //Axis transfer line
-			mapthings[i].args[0] = mapthings[i].extrainfo;
-			mapthings[i].args[1] = mapthings[i].options;
+			mapthings[i].thing_args[0] = mapthings[i].extrainfo;
+			mapthings[i].thing_args[1] = mapthings[i].options;
 			break;
 		case 1703: //Ideya drone
-			mapthings[i].args[0] = mapthings[i].angle & 0xFFF;
-			mapthings[i].args[1] = mapthings[i].extrainfo*32;
-			mapthings[i].args[2] = ((mapthings[i].angle & 0xF000) >> 12)*32;
+			mapthings[i].thing_args[0] = mapthings[i].angle & 0xFFF;
+			mapthings[i].thing_args[1] = mapthings[i].extrainfo*32;
+			mapthings[i].thing_args[2] = ((mapthings[i].angle & 0xF000) >> 12)*32;
 			if ((mapthings[i].options & (MTF_OBJECTSPECIAL|MTF_EXTRA)) == (MTF_OBJECTSPECIAL|MTF_EXTRA))
-				mapthings[i].args[3] = TMDA_BOTTOM;
+				mapthings[i].thing_args[3] = TMDA_BOTTOM;
 			else if ((mapthings[i].options & (MTF_OBJECTSPECIAL|MTF_EXTRA)) == MTF_OBJECTSPECIAL)
-				mapthings[i].args[3] = TMDA_TOP;
+				mapthings[i].thing_args[3] = TMDA_TOP;
 			else if ((mapthings[i].options & (MTF_OBJECTSPECIAL|MTF_EXTRA)) == MTF_EXTRA)
-				mapthings[i].args[3] = TMDA_MIDDLE;
+				mapthings[i].thing_args[3] = TMDA_MIDDLE;
 			else
-				mapthings[i].args[3] = TMDA_BOTTOMOFFSET;
-			mapthings[i].args[4] = !!(mapthings[i].options & MTF_AMBUSH);
+				mapthings[i].thing_args[3] = TMDA_BOTTOMOFFSET;
+			mapthings[i].thing_args[4] = !!(mapthings[i].options & MTF_AMBUSH);
 			break;
 		case 1704: //NiGHTS bumper
 			mapthings[i].pitch = 30 * (((mapthings[i].options & 15) + 9) % 12);
@@ -7006,31 +7110,31 @@ static void P_ConvertBinaryThingTypes(void)
 			UINT16 oldangle = mapthings[i].angle;
 			mapthings[i].angle = ((oldangle >> 8)*360)/256;
 			mapthings[i].pitch = ((oldangle & 255)*360)/256;
-			mapthings[i].args[0] = (mapthings[i].type == 1705) ? 96 : (mapthings[i].options & 0xF)*16 + 32;
+			mapthings[i].thing_args[0] = (mapthings[i].type == 1705) ? 96 : (mapthings[i].options & 0xF)*16 + 32;
 			mapthings[i].options &= ~0xF;
 			mapthings[i].type = 1713;
 			break;
 		}
 		case 1710: //Ideya capture
-			mapthings[i].args[0] = mapthings[i].extrainfo;
-			mapthings[i].args[1] = mapthings[i].angle;
+			mapthings[i].thing_args[0] = mapthings[i].extrainfo;
+			mapthings[i].thing_args[1] = mapthings[i].angle;
 			break;
 		case 1714: //Ideya anchor point
-			mapthings[i].args[0] = mapthings[i].extrainfo;
+			mapthings[i].thing_args[0] = mapthings[i].extrainfo;
 			break;
 		case 1806: //King Bowser
-			mapthings[i].args[0] = LE_KOOPA;
+			mapthings[i].thing_args[0] = LE_KOOPA;
 			break;
 		case 1807: //Axe
-			mapthings[i].args[0] = LE_AXE;
+			mapthings[i].thing_args[0] = LE_AXE;
 			break;
 		case 2000: //Smashing spikeball
-			mapthings[i].args[0] = mapthings[i].angle;
+			mapthings[i].thing_args[0] = mapthings[i].angle;
 			break;
 		case 2006: //Jack-o'-lantern 1
 		case 2007: //Jack-o'-lantern 2
 		case 2008: //Jack-o'-lantern 3
-			mapthings[i].args[0] = !!(mapthings[i].options & MTF_EXTRA);
+			mapthings[i].thing_args[0] = !!(mapthings[i].options & MTF_EXTRA);
 			break;
 		case 2001: // MT_WAYPOINT
 		{
@@ -7038,7 +7142,7 @@ static void P_ConvertBinaryThingTypes(void)
 
 			mapthings[i].tid = mapthings[i].angle;
 
-			mapthings[i].args[0] = mapthings[i].z;
+			mapthings[i].thing_args[0] = mapthings[i].z;
 			mapthings[i].z = 0;
 
 			if (firstline != -1)
@@ -7047,106 +7151,106 @@ static void P_ConvertBinaryThingTypes(void)
 				fixed_t linez = sides[lines[firstline].sidenum[0]].rowoffset;
 
 				if (lineradius > 0)
-					mapthings[i].args[1] = lineradius / FRACUNIT;
+					mapthings[i].thing_args[1] = lineradius / FRACUNIT;
 
 				mapthings[i].z = linez / FRACUNIT;
 			}
 
 			if (mapthings[i].extrainfo == 1)
 			{
-				mapthings[i].args[2] |= TMWPF_FINISHLINE;
+				mapthings[i].thing_args[2] |= TMWPF_FINISHLINE;
 			}
 
 			if (mapthings[i].options & MTF_EXTRA)
 			{
-				mapthings[i].args[2] |= TMWPF_DISABLED;
+				mapthings[i].thing_args[2] |= TMWPF_DISABLED;
 			}
 
 			if (mapthings[i].options & MTF_OBJECTSPECIAL)
 			{
-				mapthings[i].args[2] |= TMWPF_SHORTCUT;
+				mapthings[i].thing_args[2] |= TMWPF_SHORTCUT;
 			}
 
 			if (mapthings[i].options & MTF_AMBUSH)
 			{
-				mapthings[i].args[2] |= TMWPF_NORESPAWN;
+				mapthings[i].thing_args[2] |= TMWPF_NORESPAWN;
 			}
 
 			break;
 		}
 		case 2004: // MT_BOTHINT
-			mapthings[i].args[0] = mapthings[i].angle;
-			mapthings[i].args[1] = mapthings[i].extrainfo;
-			mapthings[i].args[2] = !!(mapthings[i].options & MTF_AMBUSH);
+			mapthings[i].thing_args[0] = mapthings[i].angle;
+			mapthings[i].thing_args[1] = mapthings[i].extrainfo;
+			mapthings[i].thing_args[2] = !!(mapthings[i].options & MTF_AMBUSH);
 			break;
 		case 2010: // MT_ITEMCAPSULE
-			mapthings[i].args[0] = mapthings[i].angle;
-			mapthings[i].args[1] = mapthings[i].extrainfo;
+			mapthings[i].thing_args[0] = mapthings[i].angle;
+			mapthings[i].thing_args[1] = mapthings[i].extrainfo;
 
 			if (mapthings[i].options & MTF_OBJECTSPECIAL)
 			{
 				// Special = +16 items (+80 for rings)
-				mapthings[i].args[1] += 16;
+				mapthings[i].thing_args[1] += 16;
 			}
 
 			if (mapthings[i].options & MTF_EXTRA)
 			{
 				// was advertised as an "invert time attack" flag, actually was an "all gamemodes" flag
-				mapthings[i].args[3] = TMICM_MULTIPLAYER|TMICM_TIMEATTACK;
+				mapthings[i].thing_args[3] = TMICM_MULTIPLAYER|TMICM_TIMEATTACK;
 			}
 			else
 			{
-				mapthings[i].args[3] = TMICM_DEFAULT;
+				mapthings[i].thing_args[3] = TMICM_DEFAULT;
 			}
 
 			if (mapthings[i].options & MTF_AMBUSH)
 			{
-				mapthings[i].args[2] |= TMICF_INVERTSIZE;
+				mapthings[i].thing_args[2] |= TMICF_INVERTSIZE;
 			}
 			break;
 		case 2020: // MT_LOOPENDPOINT
 		{
-			mapthings[i].args[0] =
+			mapthings[i].thing_args[0] =
 				mapthings[i].options & MTF_AMBUSH ?
 				TMLOOP_BETA : TMLOOP_ALPHA;
 			break;
 		}
 		case 2021: // MT_LOOPCENTERPOINT
-			mapthings[i].args[0] = (mapthings[i].options & MTF_AMBUSH) == MTF_AMBUSH;
-			mapthings[i].args[1] = mapthings[i].angle;
+			mapthings[i].thing_args[0] = (mapthings[i].options & MTF_AMBUSH) == MTF_AMBUSH;
+			mapthings[i].thing_args[1] = mapthings[i].angle;
 			break;
 		case 2050: // MT_DUELBOMB
-			mapthings[i].args[1] = !!(mapthings[i].options & MTF_AMBUSH);
+			mapthings[i].thing_args[1] = !!(mapthings[i].options & MTF_AMBUSH);
 			break;
 		case 1950: // MT_AAZTREE_HELPER
-			mapthings[i].args[0] = mapthings[i].extrainfo;
-			mapthings[i].args[1] = mapthings[i].angle;
+			mapthings[i].thing_args[0] = mapthings[i].extrainfo;
+			mapthings[i].thing_args[1] = mapthings[i].angle;
 			break;
 		case 2333: // MT_BATTLECAPSULE
-			mapthings[i].args[0] = mapthings[i].extrainfo;
-			mapthings[i].args[1] = mapthings[i].angle;
+			mapthings[i].thing_args[0] = mapthings[i].extrainfo;
+			mapthings[i].thing_args[1] = mapthings[i].angle;
 
 			if (mapthings[i].options & MTF_OBJECTSPECIAL)
 			{
-				mapthings[i].args[2] |= TMBCF_REVERSE;
+				mapthings[i].thing_args[2] |= TMBCF_REVERSE;
 			}
 
 			if (mapthings[i].options & MTF_AMBUSH)
 			{
-				mapthings[i].args[2] |= TMBCF_BACKANDFORTH;
+				mapthings[i].thing_args[2] |= TMBCF_BACKANDFORTH;
 			}
 			break;
 		case 3122: // MT_MAYONAKAARROW
 			if (mapthings[i].options & MTF_OBJECTSPECIAL)
-				mapthings[i].args[0] = TMMA_WARN;
+				mapthings[i].thing_args[0] = TMMA_WARN;
 			else if (mapthings[i].options & MTF_EXTRA)
-				mapthings[i].args[0] = TMMA_FLIP;
+				mapthings[i].thing_args[0] = TMMA_FLIP;
 			break;
 		case 2018: // MT_PETSMOKER
-			mapthings[i].args[0] = !!(mapthings[i].options & MTF_OBJECTSPECIAL);
+			mapthings[i].thing_args[0] = !!(mapthings[i].options & MTF_OBJECTSPECIAL);
 			break;
 		case 3786: // MT_BATTLEUFO_SPAWNER
-			mapthings[i].args[0] = mapthings[i].angle;
+			mapthings[i].thing_args[0] = mapthings[i].angle;
 			break;
 		case 3400: // MT_WATERPALACETURBINE (TODO: not yet hardcoded)
 		{
@@ -7168,55 +7272,55 @@ static void P_ConvertBinaryThingTypes(void)
 			mapthings[i].angle = sides[lines[j].sidenum[0]].rowoffset >> FRACBITS;
 
 			if (mapthings[i].options & MTF_EXTRA)
-				mapthings[i].args[0] = 1;
+				mapthings[i].thing_args[0] = 1;
 			if (mapthings[i].options & MTF_OBJECTSPECIAL)
-				mapthings[i].args[1] = 1;
+				mapthings[i].thing_args[1] = 1;
 
-			mapthings[i].args[2] = lines[j].frontsector->floorheight >> FRACBITS;
-			mapthings[i].args[3] = lines[j].frontsector->ceilingheight >> FRACBITS;
+			mapthings[i].thing_args[2] = lines[j].frontsector->floorheight >> FRACBITS;
+			mapthings[i].thing_args[3] = lines[j].frontsector->ceilingheight >> FRACBITS;
 
-			mapthings[i].args[4] = lines[j].backsector->floorheight >> FRACBITS;
+			mapthings[i].thing_args[4] = lines[j].backsector->floorheight >> FRACBITS;
 
-			mapthings[i].args[5] = sides[lines[j].sidenum[0]].textureoffset >> FRACBITS;
-			if (mapthings[i].args[5] < 0)
-				mapthings[i].args[5] = -mapthings[i].args[5];
+			mapthings[i].thing_args[5] = sides[lines[j].sidenum[0]].textureoffset >> FRACBITS;
+			if (mapthings[i].thing_args[5] < 0)
+				mapthings[i].thing_args[5] = -mapthings[i].thing_args[5];
 
-			mapthings[i].args[6] = sides[lines[j].sidenum[1]].rowoffset >> FRACBITS;
-			if (mapthings[i].args[6] < 0)
-				mapthings[i].args[6] = -mapthings[i].args[6];
+			mapthings[i].thing_args[6] = sides[lines[j].sidenum[1]].rowoffset >> FRACBITS;
+			if (mapthings[i].thing_args[6] < 0)
+				mapthings[i].thing_args[6] = -mapthings[i].thing_args[6];
 
-			mapthings[i].args[7] = sides[lines[j].sidenum[1]].textureoffset >> FRACBITS;
-			if (mapthings[i].args[7] < 0)
-				mapthings[i].args[7] = -mapthings[i].args[7];
+			mapthings[i].thing_args[7] = sides[lines[j].sidenum[1]].textureoffset >> FRACBITS;
+			if (mapthings[i].thing_args[7] < 0)
+				mapthings[i].thing_args[7] = -mapthings[i].thing_args[7];
 
 			if (lines[j].flags & ML_SKEWTD)
-				mapthings[i].args[8] = R_PointToDist2(lines[j].v2->x, lines[j].v2->y, lines[j].v1->x, lines[j].v1->y) >> FRACBITS;
+				mapthings[i].thing_args[8] = R_PointToDist2(lines[j].v2->x, lines[j].v2->y, lines[j].v1->x, lines[j].v1->y) >> FRACBITS;
 
 			if (lines[j].flags & ML_NOSKEW)
-				mapthings[i].args[9] = 1;
+				mapthings[i].thing_args[9] = 1;
 
 			break;
 		}
 		case 3441: // MT_DASHRING (TODO: not yet hardcoded)
 		case 3442: // MT_RAINBOWDASHRING (TODO: not yet hardcoded)
-			mapthings[i].args[0] = mapthings[i].options & 13;
-			mapthings[i].args[1] = mapthings[i].extrainfo;
+			mapthings[i].thing_args[0] = mapthings[i].options & 13;
+			mapthings[i].thing_args[1] = mapthings[i].extrainfo;
 			break;
 		case FLOOR_SLOPE_THING:
 		case CEILING_SLOPE_THING:
-			mapthings[i].args[0] = mapthings[i].extrainfo;
+			mapthings[i].thing_args[0] = mapthings[i].extrainfo;
 			break;
 		case 4094: // MT_ARKARROW
-			mapthings[i].args[0] = mapthings[i].extrainfo;
+			mapthings[i].thing_args[0] = mapthings[i].extrainfo;
 			if (mapthings[i].options & MTF_OBJECTSPECIAL)
 			{
 				// Special = add 16 to the symbol type
-				mapthings[i].args[0] += 16;
+				mapthings[i].thing_args[0] += 16;
 			}
 			if (mapthings[i].options & MTF_AMBUSH)
 			{
 				// Ambush = add 32 to the symbol type
-				mapthings[i].args[0] += 32;
+				mapthings[i].thing_args[0] += 32;
 			}
 			break;
 		default:
@@ -7267,9 +7371,6 @@ static void P_ConvertBinaryMap(void)
 	P_ConvertBinarySectorTypes();
 	P_ConvertBinaryThingTypes();
 	P_ConvertBinaryLinedefFlags();
-
-	if (M_CheckParm("-writetextmap"))
-		P_WriteTextmap();
 }
 
 /** Compute MD5 message digest for bytes read from memory source
@@ -7338,7 +7439,9 @@ static boolean P_LoadMapFromFile(void)
 {
 	virtlump_t *textmap = vres_Find(curmapvirt, "TEXTMAP");
 	size_t i;
+
 	udmf = textmap != NULL;
+	udmf_version = 0;
 
 	if (!P_LoadMapData(curmapvirt))
 		return false;
@@ -7354,6 +7457,9 @@ static boolean P_LoadMapFromFile(void)
 
 	if (!udmf)
 		P_ConvertBinaryMap();
+
+	if (M_CheckParm("-writetextmap"))
+		P_WriteTextmap();
 
 	// Copy relevant map data for NetArchive purposes.
 	spawnsectors = Z_Calloc(numsectors * sizeof(*sectors), PU_LEVEL, NULL);

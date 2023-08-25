@@ -601,16 +601,16 @@ static int sectorargs_get(lua_State *L)
 {
 	INT32 *args = *((INT32**)luaL_checkudata(L, 1, META_SECTORARGS));
 	int i = luaL_checkinteger(L, 2);
-	if (i < 0 || i >= NUMSECTORARGS)
+	if (i < 0 || i >= NUM_SCRIPT_ARGS)
 		return luaL_error(L, LUA_QL("sector_t.args") " index cannot be %d", i);
 	lua_pushinteger(L, args[i]);
 	return 1;
 }
 
-// #args -> NUMSECTORARGS
+// #args -> NUM_SCRIPT_ARGS
 static int sectorargs_len(lua_State* L)
 {
-	lua_pushinteger(L, NUMSECTORARGS);
+	lua_pushinteger(L, NUM_SCRIPT_ARGS);
 	return 1;
 }
 
@@ -619,16 +619,16 @@ static int sectorstringargs_get(lua_State *L)
 {
 	char **stringargs = *((char***)luaL_checkudata(L, 1, META_SECTORSTRINGARGS));
 	int i = luaL_checkinteger(L, 2);
-	if (i < 0 || i >= NUMSECTORSTRINGARGS)
-		return luaL_error(L, LUA_QL("line_t.stringargs") " index cannot be %d", i);
+	if (i < 0 || i >= NUM_SCRIPT_STRINGARGS)
+		return luaL_error(L, LUA_QL("sector_t.stringargs") " index cannot be %d", i);
 	lua_pushstring(L, stringargs[i]);
 	return 1;
 }
 
-// #stringargs -> NUMLINESTRINGARGS
+// #stringargs -> NUM_SCRIPT_STRINGARGS
 static int sectorstringargs_len(lua_State *L)
 {
-	lua_pushinteger(L, NUMSECTORSTRINGARGS);
+	lua_pushinteger(L, NUM_SCRIPT_STRINGARGS);
 	return 1;
 }
 
@@ -944,16 +944,16 @@ static int lineargs_get(lua_State *L)
 {
 	INT32 *args = *((INT32**)luaL_checkudata(L, 1, META_LINEARGS));
 	int i = luaL_checkinteger(L, 2);
-	if (i < 0 || i >= NUMLINEARGS)
+	if (i < 0 || i >= NUM_SCRIPT_ARGS)
 		return luaL_error(L, LUA_QL("line_t.args") " index cannot be %d", i);
 	lua_pushinteger(L, args[i]);
 	return 1;
 }
 
-// #args -> NUMLINEARGS
+// #args -> NUM_SCRIPT_ARGS
 static int lineargs_len(lua_State* L)
 {
-	lua_pushinteger(L, NUMLINEARGS);
+	lua_pushinteger(L, NUM_SCRIPT_ARGS);
 	return 1;
 }
 
@@ -962,16 +962,16 @@ static int linestringargs_get(lua_State *L)
 {
 	char **stringargs = *((char***)luaL_checkudata(L, 1, META_LINESTRINGARGS));
 	int i = luaL_checkinteger(L, 2);
-	if (i < 0 || i >= NUMLINESTRINGARGS)
+	if (i < 0 || i >= NUM_SCRIPT_STRINGARGS)
 		return luaL_error(L, LUA_QL("line_t.stringargs") " index cannot be %d", i);
 	lua_pushstring(L, stringargs[i]);
 	return 1;
 }
 
-// #stringargs -> NUMLINESTRINGARGS
+// #stringargs -> NUM_SCRIPT_STRINGARGS
 static int linestringargs_len(lua_State *L)
 {
-	lua_pushinteger(L, NUMLINESTRINGARGS);
+	lua_pushinteger(L, NUM_SCRIPT_STRINGARGS);
 	return 1;
 }
 

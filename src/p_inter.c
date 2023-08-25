@@ -686,7 +686,7 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 			return;
 
 		case MT_STARPOST:
-			P_TouchStarPost(special, player, special->args[1]);
+			P_TouchStarPost(special, player, special->thing_args[1]);
 			return;
 
 		case MT_BIGTUMBLEWEED:

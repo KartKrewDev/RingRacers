@@ -77,7 +77,7 @@ boolean K_IsDuelItem(mobjtype_t type)
 
 boolean K_DuelItemAlwaysSpawns(mapthing_t *mt)
 {
-	return !!(mt->args[0]);
+	return !!(mt->thing_args[0]);
 }
 
 static void K_SpawnDuelOnlyItems(void)
@@ -122,14 +122,14 @@ static void K_SpawnItemCapsules(void)
 			continue;
 		}
 
-		isRingCapsule = (mt->args[0] < 1 || mt->args[0] == KITEM_SUPERRING || mt->args[0] >= NUMKARTITEMS);
+		isRingCapsule = (mt->thing_args[0] < 1 || mt->thing_args[0] == KITEM_SUPERRING || mt->thing_args[0] >= NUMKARTITEMS);
 		if (isRingCapsule == true && ((gametyperules & GTR_SPHERES) || (modeattacking & ATTACKING_SPB)))
 		{
 			// don't spawn ring capsules in ringless gametypes
 			continue;
 		}
 
-		modeFlags = mt->args[3];
+		modeFlags = mt->thing_args[3];
 		if (modeFlags == TMICM_DEFAULT)
 		{
 			if (isRingCapsule == true)

@@ -712,10 +712,10 @@ void K_RunBattleOvertime(void)
 
 void K_SetupMovingCapsule(mapthing_t *mt, mobj_t *mobj)
 {
-	UINT8 sequence = mt->args[0] - 1;
-	fixed_t speed = (FRACUNIT >> 3) * mt->args[1];
-	boolean backandforth = (mt->args[2] & TMBCF_BACKANDFORTH);
-	boolean reverse = (mt->args[2] & TMBCF_REVERSE);
+	UINT8 sequence = mt->thing_args[0] - 1;
+	fixed_t speed = (FRACUNIT >> 3) * mt->thing_args[1];
+	boolean backandforth = (mt->thing_args[2] & TMBCF_BACKANDFORTH);
+	boolean reverse = (mt->thing_args[2] & TMBCF_REVERSE);
 	mobj_t *target = NULL;
 
 	// Find the inital target
