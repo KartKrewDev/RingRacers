@@ -425,7 +425,6 @@ target_compile_options(SRB2SDL2 PRIVATE
 		-Wmissing-prototypes
 		-Wmissing-declarations
 		-Wmissing-noreturn
-		-Wnested-externs
 		-Winline
 		-Wformat-y2k
 		-Wformat-security
