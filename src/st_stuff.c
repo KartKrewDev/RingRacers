@@ -1398,7 +1398,7 @@ static void ST_DrawServerSplash(void)
 		V_DrawRightAlignedThinStringAtFixed(
 			textX, textY,
 			(V_SNAPTORIGHT|V_SNAPTOBOTTOM) | opacityFlag,
-			va("Contact @ %s", connectedservercontact)
+			va("Contact @ %c%s", '\x80' + cv_shoutcolor.value, connectedservercontact)
 		);
 		textY -= (10 * FRACUNIT);
 	}
