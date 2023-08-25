@@ -122,8 +122,6 @@ static tic_t reference_lag;
 static UINT8 spike_time;
 static tic_t lowest_lag;
 boolean server_lagless;
-static CV_PossibleValue_t mindelay_cons_t[] = {{0, "MIN"}, {30, "MAX"}, {0, NULL}};
-consvar_t cv_mindelay = CVAR_INIT ("mindelay", "2", CV_SAVE, mindelay_cons_t, NULL);
 
 SINT8 nodetoplayer[MAXNETNODES];
 SINT8 nodetoplayer2[MAXNETNODES]; // say the numplayer for this node if any (splitscreen)
@@ -182,20 +180,6 @@ uint8_t priorKeys[MAXPLAYERS][PUBKEYLENGTH]; // Make a note of keys before consu
 boolean serverisfull = false; //lets us be aware if the server was full after we check files, but before downloading, so we can ask if the user still wants to download or not
 tic_t firstconnectattempttime = 0;
 
-consvar_t cv_allowguests = CVAR_INIT ("allowguests", "On", CV_SAVE, CV_OnOff, NULL);
-
-#ifdef DEVELOP
-	consvar_t cv_badjoin = CVAR_INIT ("badjoin", "0", 0, CV_Unsigned, NULL);
-	consvar_t cv_badtraffic = CVAR_INIT ("badtraffic", "0", 0, CV_Unsigned, NULL);
-	consvar_t cv_badresponse = CVAR_INIT ("badresponse", "0", 0, CV_Unsigned, NULL);
-	consvar_t cv_noresponse = CVAR_INIT ("noresponse", "0", 0, CV_Unsigned, NULL);
-	consvar_t cv_nochallenge = CVAR_INIT ("nochallenge", "0", 0, CV_Unsigned, NULL);
-	consvar_t cv_badresults = CVAR_INIT ("badresults", "0", 0, CV_Unsigned, NULL);
-	consvar_t cv_noresults = CVAR_INIT ("noresults", "0", 0, CV_Unsigned, NULL);
-	consvar_t cv_badtime = CVAR_INIT ("badtime", "0", 0, CV_Unsigned, NULL);
-	consvar_t cv_badip = CVAR_INIT ("badip", "0", 0, CV_Unsigned, NULL);
-#endif
-
 // engine
 
 // Must be a power of two
@@ -218,17 +202,6 @@ typedef struct textcmdtic_s
 ticcmd_t netcmds[BACKUPTICS][MAXPLAYERS];
 static textcmdtic_t *textcmds[TEXTCMD_HASH_SIZE] = {NULL};
 
-
-consvar_t cv_showjoinaddress = CVAR_INIT ("showjoinaddress", "Off", CV_SAVE|CV_NETVAR, CV_OnOff, NULL);
-
-static CV_PossibleValue_t playbackspeed_cons_t[] = {{1, "MIN"}, {10, "MAX"}, {0, NULL}};
-consvar_t cv_playbackspeed = CVAR_INIT ("playbackspeed", "1", 0, playbackspeed_cons_t, NULL);
-
-consvar_t cv_httpsource = CVAR_INIT ("http_source", "", CV_SAVE, NULL, NULL);
-
-consvar_t cv_kicktime = CVAR_INIT ("kicktime", "20", CV_SAVE, CV_Unsigned, NULL);
-
-consvar_t cv_gamestochat = CVAR_INIT ("gamestochat", "0", CV_SAVE, CV_Unsigned, NULL);
 
 static tic_t stop_spamming[MAXPLAYERS];
 
@@ -1393,10 +1366,11 @@ static void SV_SendSaveGame(INT32 node, boolean resending)
 
 #ifdef DUMPCONSISTENCY
 #define TMPSAVENAME "badmath.sav"
-static consvar_t cv_dumpconsistency = CVAR_INIT ("dumpconsistency", "Off", CV_SAVE|CV_NETVAR, CV_OnOff, NULL);
 
 static void SV_SavedGame(void)
 {
+	extern consvar_t *cv_dumpconsistency;
+
 	size_t length;
 	savebuffer_t save = {0};
 	char tmpsave[256];
@@ -3622,46 +3596,12 @@ static void Command_ResendGamestate(void)
 	}
 }
 
-static CV_PossibleValue_t netticbuffer_cons_t[] = {{0, "MIN"}, {3, "MAX"}, {0, NULL}};
-consvar_t cv_netticbuffer = CVAR_INIT ("netticbuffer", "1", CV_SAVE, netticbuffer_cons_t, NULL);
-
-static void Joinable_OnChange(void);
-
-consvar_t cv_allownewplayer = CVAR_INIT ("allowjoin", "On", CV_SAVE|CV_CALL, CV_OnOff, Joinable_OnChange);
-
-#ifdef VANILLAJOINNEXTROUND
-consvar_t cv_joinnextround = CVAR_INIT ("joinnextround", "Off", CV_NETVAR, CV_OnOff, NULL); /// \todo not done
-#endif
-
-static CV_PossibleValue_t maxplayers_cons_t[] = {{2, "MIN"}, {MAXPLAYERS, "MAX"}, {0, NULL}};
-consvar_t cv_maxconnections = CVAR_INIT ("maxconnections", "16", CV_SAVE|CV_CALL, maxplayers_cons_t, Joinable_OnChange);
-
-static CV_PossibleValue_t joindelay_cons_t[] = {{1, "MIN"}, {3600, "MAX"}, {0, "Off"}, {0, NULL}};
-consvar_t cv_joindelay = CVAR_INIT ("joindelay", "10", CV_SAVE|CV_NETVAR, joindelay_cons_t, NULL);
-
-// Here for dedicated servers
-static CV_PossibleValue_t discordinvites_cons_t[] = {{0, "Admins Only"}, {1, "Everyone"}, {0, NULL}};
-consvar_t cv_discordinvites = CVAR_INIT ("discordinvites", "Everyone", CV_SAVE|CV_CALL, discordinvites_cons_t, Joinable_OnChange);
-
-static CV_PossibleValue_t resynchattempts_cons_t[] = {{1, "MIN"}, {20, "MAX"}, {0, "No"}, {0, NULL}};
-
-consvar_t cv_resynchattempts = CVAR_INIT ("resynchattempts", "2", CV_SAVE|CV_NETVAR, resynchattempts_cons_t, NULL);
-consvar_t cv_blamecfail = CVAR_INIT ("blamecfail", "Off", CV_SAVE|CV_NETVAR, CV_OnOff, NULL);
-
-// max file size to send to a player (in kilobytes)
-static CV_PossibleValue_t maxsend_cons_t[] = {{0, "MIN"}, {51200, "MAX"}, {0, NULL}};
-consvar_t cv_maxsend = CVAR_INIT ("maxsend", "51200", CV_SAVE|CV_NETVAR, maxsend_cons_t, NULL);
-consvar_t cv_noticedownload = CVAR_INIT ("noticedownload", "Off", CV_SAVE|CV_NETVAR, CV_OnOff, NULL);
-
-// Speed of file downloading (in packets per tic)
-static CV_PossibleValue_t downloadspeed_cons_t[] = {{1, "MIN"}, {300, "MAX"}, {0, NULL}};
-consvar_t cv_downloadspeed = CVAR_INIT ("downloadspeed", "32", CV_SAVE|CV_NETVAR, downloadspeed_cons_t, NULL);
-
 static void Got_AddPlayer(UINT8 **p, INT32 playernum);
 static void Got_RemovePlayer(UINT8 **p, INT32 playernum);
 static void Got_AddBot(UINT8 **p, INT32 playernum);
 
-static void Joinable_OnChange(void)
+void Joinable_OnChange(void);
+void Joinable_OnChange(void)
 {
 	UINT8 buf[3];
 	UINT8 *p = buf;
@@ -3710,7 +3650,10 @@ void D_ClientServerInit(void)
 	RegisterNetXCmd(XD_REMOVEPLAYER, Got_RemovePlayer);
 	RegisterNetXCmd(XD_ADDBOT, Got_AddBot);
 #ifdef DUMPCONSISTENCY
-	CV_RegisterVar(&cv_dumpconsistency);
+	{
+		extern struct CVarList *cvlist_dumpconsistency;
+		CV_RegisterList(cvlist_dumpconsistency);
+	}
 #endif
 	D_LoadBan(false);
 

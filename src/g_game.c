@@ -325,115 +325,6 @@ boolean precache = true; // if true, load all graphics at start
 
 UINT16 prevmap, nextmap;
 
-static void weaponPrefChange(void);
-static void weaponPrefChange2(void);
-static void weaponPrefChange3(void);
-static void weaponPrefChange4(void);
-
-static void rumble_off_handle(void);
-static void rumble_off_handle2(void);
-static void rumble_off_handle3(void);
-static void rumble_off_handle4(void);
-
-// don't mind me putting these here, I was lazy to figure out where else I could put those without blowing up the compiler.
-
-// chat timer thingy
-static CV_PossibleValue_t chattime_cons_t[] = {{5, "MIN"}, {999, "MAX"}, {0, NULL}};
-consvar_t cv_chattime = CVAR_INIT ("chattime", "8", CV_SAVE, chattime_cons_t, NULL);
-
-// chatwidth
-static CV_PossibleValue_t chatwidth_cons_t[] = {{64, "MIN"}, {150, "MAX"}, {0, NULL}};
-consvar_t cv_chatwidth = CVAR_INIT ("chatwidth", "150", CV_SAVE, chatwidth_cons_t, NULL);
-
-// chatheight
-static CV_PossibleValue_t chatheight_cons_t[] = {{6, "MIN"}, {22, "MAX"}, {0, NULL}};
-consvar_t cv_chatheight = CVAR_INIT ("chatheight", "8", CV_SAVE, chatheight_cons_t, NULL);
-
-// chat notifications (do you want to hear beeps? I'd understand if you didn't.)
-consvar_t cv_chatnotifications = CVAR_INIT ("chatnotifications", "On", CV_SAVE, CV_OnOff, NULL);
-
-// chat spam protection (why would you want to disable that???)
-consvar_t cv_chatspamprotection = CVAR_INIT ("chatspamprotection", "On", CV_SAVE, CV_OnOff, NULL);
-
-// minichat text background
-consvar_t cv_chatbacktint = CVAR_INIT ("chatbacktint", "On", CV_SAVE, CV_OnOff, NULL);
-
-// old shit console chat. (mostly exists for stuff like terminal, not because I cared if anyone liked the old chat.)
-static CV_PossibleValue_t consolechat_cons_t[] = {{0, "Window"}, {1, "Console"}, {2, "Window (Hidden)"}, {0, NULL}};
-consvar_t cv_consolechat = CVAR_INIT ("chatmode", "Window", CV_SAVE, consolechat_cons_t, NULL);
-
-// Shout settings
-// The relevant ones are CV_NETVAR because too lazy to send them any other way
-consvar_t cv_shoutname = CVAR_INIT ("shout_name", "SERVER", CV_NETVAR, NULL, NULL);
-
-static CV_PossibleValue_t shoutcolor_cons_t[] =
-{
-	{-1, "Player color"},
-	{0, "White"},
-	{1, "Yellow"},
-	{2, "Purple"},
-	{3, "Green"},
-	{4, "Blue"},
-	{5, "Red"},
-	{6, "Gray"},
-	{7, "Orange"},
-	{8, "Sky-blue"},
-	{9, "Gold"},
-	{10, "Lavender"},
-	{11, "Aqua-green"},
-	{12, "Magenta"},
-	{13, "Pink"},
-	{14, "Brown"},
-	{15, "Tan"},
-	{0, NULL}
-};
-consvar_t cv_shoutcolor = CVAR_INIT ("shout_color", "Red", CV_NETVAR, shoutcolor_cons_t, NULL);
-
-// If on and you're an admin, your messages will automatically become shouts.
-consvar_t cv_autoshout = CVAR_INIT ("autoshout", "Off", CV_NETVAR, CV_OnOff, NULL);
-
-// Pause game upon window losing focus
-consvar_t cv_pauseifunfocused = CVAR_INIT ("pauseifunfocused", "Yes", CV_SAVE, CV_YesNo, NULL);
-
-// Display song credits
-consvar_t cv_songcredits = CVAR_INIT ("songcredits", "On", CV_SAVE, CV_OnOff, NULL);
-
-consvar_t cv_kickstartaccel[MAXSPLITSCREENPLAYERS] = {
-	CVAR_INIT ("kickstartaccel", "Off", CV_SAVE|CV_CALL, CV_OnOff, weaponPrefChange),
-	CVAR_INIT ("kickstartaccel2", "Off", CV_SAVE|CV_CALL, CV_OnOff, weaponPrefChange2),
-	CVAR_INIT ("kickstartaccel3", "Off", CV_SAVE|CV_CALL, CV_OnOff, weaponPrefChange3),
-	CVAR_INIT ("kickstartaccel4", "Off", CV_SAVE|CV_CALL, CV_OnOff, weaponPrefChange4)
-};
-
-consvar_t cv_autoroulette[MAXSPLITSCREENPLAYERS] = {
-	CVAR_INIT ("autoroulette", "Off", CV_SAVE|CV_CALL, CV_OnOff, weaponPrefChange),
-	CVAR_INIT ("autoroulette2", "Off", CV_SAVE|CV_CALL, CV_OnOff, weaponPrefChange2),
-	CVAR_INIT ("autoroulette3", "Off", CV_SAVE|CV_CALL, CV_OnOff, weaponPrefChange3),
-	CVAR_INIT ("autoroulette4", "Off", CV_SAVE|CV_CALL, CV_OnOff, weaponPrefChange4)
-};
-
-consvar_t cv_shrinkme[MAXSPLITSCREENPLAYERS] = {
-	CVAR_INIT ("shrinkme", "Off", CV_CALL, CV_OnOff, weaponPrefChange),
-	CVAR_INIT ("shrinkme2", "Off", CV_CALL, CV_OnOff, weaponPrefChange2),
-	CVAR_INIT ("shrinkme3", "Off", CV_CALL, CV_OnOff, weaponPrefChange3),
-	CVAR_INIT ("shrinkme4", "Off", CV_CALL, CV_OnOff, weaponPrefChange4)
-};
-
-static CV_PossibleValue_t zerotoone_cons_t[] = {{0, "MIN"}, {FRACUNIT, "MAX"}, {0, NULL}};
-consvar_t cv_deadzone[MAXSPLITSCREENPLAYERS] = {
-	CVAR_INIT ("deadzone", "0.25", CV_FLOAT|CV_SAVE, zerotoone_cons_t, NULL),
-	CVAR_INIT ("deadzone2", "0.25", CV_FLOAT|CV_SAVE, zerotoone_cons_t, NULL),
-	CVAR_INIT ("deadzone3", "0.25", CV_FLOAT|CV_SAVE, zerotoone_cons_t, NULL),
-	CVAR_INIT ("deadzone4", "0.25", CV_FLOAT|CV_SAVE, zerotoone_cons_t, NULL)
-};
-
-consvar_t cv_rumble[MAXSPLITSCREENPLAYERS] = {
-	CVAR_INIT ("rumble", "On", CV_SAVE|CV_CALL, CV_OnOff, rumble_off_handle),
-	CVAR_INIT ("rumble2", "On", CV_SAVE|CV_CALL, CV_OnOff, rumble_off_handle2),
-	CVAR_INIT ("rumble3", "On", CV_SAVE|CV_CALL, CV_OnOff, rumble_off_handle3),
-	CVAR_INIT ("rumble4", "On", CV_SAVE|CV_CALL, CV_OnOff, rumble_off_handle4)
-};
-
 // now automatically allocated in D_RegisterClientCommands
 // so that it doesn't have to be updated depending on the value of MAXPLAYERS
 char player_names[MAXPLAYERS][MAXPLAYERNAME+1];
@@ -1107,49 +998,57 @@ ticcmd_t *G_MoveTiccmd(ticcmd_t* dest, const ticcmd_t* src, const size_t n)
 	return dest;
 }
 
-static void weaponPrefChange(void)
+void weaponPrefChange(void);
+void weaponPrefChange(void)
 {
 	if (Playing())
 		WeaponPref_Send(0);
 }
 
-static void weaponPrefChange2(void)
+void weaponPrefChange2(void);
+void weaponPrefChange2(void)
 {
 	if (Playing())
 		WeaponPref_Send(1);
 }
 
-static void weaponPrefChange3(void)
+void weaponPrefChange3(void);
+void weaponPrefChange3(void)
 {
 	if (Playing())
 		WeaponPref_Send(2);
 }
 
-static void weaponPrefChange4(void)
+void weaponPrefChange4(void);
+void weaponPrefChange4(void)
 {
 	if (Playing())
 		WeaponPref_Send(3);
 }
 
-static void rumble_off_handle(void)
+void rumble_off_handle(void);
+void rumble_off_handle(void)
 {
 	if (cv_rumble[0].value == 0)
 		G_ResetPlayerDeviceRumble(0);
 }
 
-static void rumble_off_handle2(void)
+void rumble_off_handle2(void);
+void rumble_off_handle2(void)
 {
 	if (cv_rumble[1].value == 0)
 		G_ResetPlayerDeviceRumble(1);
 }
 
-static void rumble_off_handle3(void)
+void rumble_off_handle3(void);
+void rumble_off_handle3(void)
 {
 	if (cv_rumble[2].value == 0)
 		G_ResetPlayerDeviceRumble(2);
 }
 
-static void rumble_off_handle4(void)
+void rumble_off_handle4(void);
+void rumble_off_handle4(void)
 {
 	if (cv_rumble[3].value == 0)
 		G_ResetPlayerDeviceRumble(3);

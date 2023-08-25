@@ -112,18 +112,15 @@ typedef off_t off64_t;
  #endif
 #endif
 
-consvar_t cv_screenshot_colorprofile = CVAR_INIT ("screenshot_colorprofile", "Yes", CV_SAVE, CV_YesNo, NULL);
+CV_PossibleValue_t lossless_recorder_cons_t[] = {{MM_GIF, "GIF"}, {MM_APNG, "aPNG"}, {MM_SCREENSHOT, "Screenshots"}, {0, NULL}};
 
-static CV_PossibleValue_t lossless_recorder_cons_t[] = {{MM_GIF, "GIF"}, {MM_APNG, "aPNG"}, {MM_SCREENSHOT, "Screenshots"}, {0, NULL}};
-consvar_t cv_lossless_recorder = CVAR_INIT ("lossless_recorder", "GIF", CV_SAVE, lossless_recorder_cons_t, NULL);
-
-static CV_PossibleValue_t zlib_mem_level_t[] = {
+CV_PossibleValue_t zlib_mem_level_t[] = {
 	{1, "(Min Memory) 1"},
 	{2, "2"}, {3, "3"}, {4, "4"}, {5, "5"}, {6, "6"}, {7, "7"},
 	{8, "(Optimal) 8"}, //libpng Default
 	{9, "(Max Memory) 9"}, {0, NULL}};
 
-static CV_PossibleValue_t zlib_level_t[] = {
+CV_PossibleValue_t zlib_level_t[] = {
 	{0, "No Compression"},  //Z_NO_COMPRESSION
 	{1, "(Fastest) 1"}, //Z_BEST_SPEED
 	{2, "2"}, {3, "3"}, {4, "4"}, {5, "5"},
@@ -132,7 +129,7 @@ static CV_PossibleValue_t zlib_level_t[] = {
 	{9, "(Maximum) 9"}, //Z_BEST_COMPRESSION
 	{0, NULL}};
 
-static CV_PossibleValue_t zlib_strategy_t[] = {
+CV_PossibleValue_t zlib_strategy_t[] = {
 	{0, "Normal"}, //Z_DEFAULT_STRATEGY
 	{1, "Filtered"}, //Z_FILTERED
 	{2, "Huffman Only"}, //Z_HUFFMAN_ONLY
@@ -140,34 +137,13 @@ static CV_PossibleValue_t zlib_strategy_t[] = {
 	{4, "Fixed"}, //Z_FIXED
 	{0, NULL}};
 
-static CV_PossibleValue_t zlib_window_bits_t[] = {
+CV_PossibleValue_t zlib_window_bits_t[] = {
 #ifdef WBITS_8_OK
 	{8, "256"},
 #endif
 	{9, "512"}, {10, "1k"}, {11, "2k"}, {12, "4k"}, {13, "8k"},
 	{14, "16k"}, {15, "32k"},
 	{0, NULL}};
-
-static CV_PossibleValue_t apng_delay_t[] = {
-	{1, "1x"},
-	{2, "1/2x"},
-	{3, "1/3x"},
-	{4, "1/4x"},
-	{0, NULL}};
-
-// zlib memory usage is as follows:
-// (1 << (zlib_window_bits+2)) +  (1 << (zlib_level+9))
-consvar_t cv_zlib_memory = CVAR_INIT ("png_memory_level", "7", CV_SAVE, zlib_mem_level_t, NULL);
-consvar_t cv_zlib_level = CVAR_INIT ("png_compress_level", "(Optimal) 6", CV_SAVE, zlib_level_t, NULL);
-consvar_t cv_zlib_strategy = CVAR_INIT ("png_strategy", "Normal", CV_SAVE, zlib_strategy_t, NULL);
-consvar_t cv_zlib_window_bits = CVAR_INIT ("png_window_size", "32k", CV_SAVE, zlib_window_bits_t, NULL);
-
-consvar_t cv_zlib_memorya = CVAR_INIT ("apng_memory_level", "(Max Memory) 9", CV_SAVE, zlib_mem_level_t, NULL);
-consvar_t cv_zlib_levela = CVAR_INIT ("apng_compress_level", "4", CV_SAVE, zlib_level_t, NULL);
-consvar_t cv_zlib_strategya = CVAR_INIT ("apng_strategy", "RLE", CV_SAVE, zlib_strategy_t, NULL);
-consvar_t cv_zlib_window_bitsa = CVAR_INIT ("apng_window_size", "32k", CV_SAVE, zlib_window_bits_t, NULL);
-consvar_t cv_apng_delay = CVAR_INIT ("apng_speed", "1x", CV_SAVE, apng_delay_t, NULL);
-consvar_t cv_apng_downscale = CVAR_INIT ("apng_downscale", "On", CV_SAVE, CV_OnOff, NULL);
 
 #ifdef USE_APNG
 static boolean apng_downscale = false; // So nobody can do something dumb like changing cvars mid output
@@ -657,7 +633,10 @@ void M_FirstLoadConfig(void)
 	}
 
 	// register execversion here before we load any configs
-	CV_RegisterVar(&cv_execversion);
+	{
+		extern struct CVarList *cvlist_execversion;
+		CV_RegisterList(cvlist_execversion);
+	}
 
 	// temporarily reset execversion to default
 	// we shouldn't need to do this, but JUST in case...

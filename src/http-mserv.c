@@ -35,26 +35,6 @@ Documentation available here.
 #define Blame( ... ) \
 	CONS_Printf("\x85" __VA_ARGS__)
 
-static void MasterServer_Debug_OnChange (void);
-
-consvar_t cv_masterserver_timeout = CVAR_INIT
-(
-		"masterserver_timeout", "5", CV_SAVE, CV_Unsigned,
-		NULL
-);
-
-consvar_t cv_masterserver_debug = CVAR_INIT
-(
-	"masterserver_debug", "Off", CV_SAVE|CV_CALL, CV_OnOff,
-	MasterServer_Debug_OnChange
-);
-
-consvar_t cv_masterserver_token = CVAR_INIT
-(
-		"masterserver_token", "", CV_SAVE, NULL,
-		NULL
-);
-
 #define HMS_QUERY_VERSION "?v=2.2"
 
 #ifdef MASTERSERVER
@@ -561,8 +541,8 @@ HMS_set_api (char *api)
 
 #endif/*MASTERSERVER*/
 
-static void
-MasterServer_Debug_OnChange (void)
+void MasterServer_Debug_OnChange (void);
+void MasterServer_Debug_OnChange (void)
 {
 #ifdef MASTERSERVER
 	/* TODO: change to 'latest-log.txt' for log files revision. */

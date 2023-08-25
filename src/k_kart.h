@@ -51,8 +51,6 @@ Make sure this matches the actual number of states
 
 angle_t K_ReflectAngle(angle_t angle, angle_t against, fixed_t maxspeed, fixed_t yourspeed);
 
-void K_RegisterKartStuff(void);
-
 boolean K_IsDuelItem(mobjtype_t type);
 boolean K_DuelItemAlwaysSpawns(mapthing_t *mt);
 

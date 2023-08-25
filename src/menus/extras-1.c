@@ -69,8 +69,6 @@ menu_t EXTRAS_MainDef = {
 
 struct extrasmenu_s extrasmenu;
 
-consvar_t cv_dummyextraspassword = CVAR_INIT ("dummyextraspassword", "", CV_HIDDEN, NULL, NULL);
-
 void M_InitExtras(INT32 choice)
 {
 	// Addons

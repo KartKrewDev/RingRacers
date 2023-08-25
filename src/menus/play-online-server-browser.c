@@ -39,17 +39,6 @@ menu_t PLAY_MP_ServerBrowserDef = {
 	M_ServerBrowserInputs
 };
 
-static CV_PossibleValue_t serversort_cons_t[] = {
-	{0,"Ping"},
-	{1,"AVG. Power Level"},
-	{2,"Most Players"},
-	{3,"Least Players"},
-	{4,"Max Player Slots"},
-	{5,"Gametype"},
-	{0,NULL}
-};
-consvar_t cv_serversort = CVAR_INIT ("serversort", "Ping", CV_CALL, serversort_cons_t, M_SortServerList);
-
 // for server fetch threads...
 M_waiting_mode_t m_waiting_mode = M_NOT_WAITING;
 

@@ -25,13 +25,10 @@
 #include "r_fps.h"
 #include "byteptr.h"
 
-static CV_PossibleValue_t modulate_cons_t[] = {{0, "MIN"}, {FRACUNIT, "MAX"}, {0, NULL}};
-static consvar_t cv_zvote_quorum = CVAR_INIT ("zvote_quorum", "0.6", CV_SAVE|CV_NETVAR|CV_FLOAT, modulate_cons_t, NULL);
-
-static consvar_t cv_zvote_spectators = CVAR_INIT ("zvote_spectator_votes", "Off", CV_SAVE|CV_NETVAR, CV_OnOff, NULL);
-
-static consvar_t cv_zvote_length = CVAR_INIT ("zvote_length", "20", CV_SAVE|CV_NETVAR, CV_Unsigned, NULL);
-static consvar_t cv_zvote_delay = CVAR_INIT ("zvote_delay", "20", CV_SAVE|CV_NETVAR, CV_Unsigned, NULL);
+extern consvar_t cv_zvote_quorum;
+extern consvar_t cv_zvote_spectators;
+extern consvar_t cv_zvote_length;
+extern consvar_t cv_zvote_delay;
 
 midVote_t g_midVote = {0};
 
@@ -323,13 +320,6 @@ static void Got_SetZVote(UINT8 **cp, INT32 playernum)
 void K_RegisterMidVoteCVars(void)
 {
 	INT32 i = INT32_MAX;
-
-	CV_RegisterVar(&cv_zvote_quorum);
-
-	CV_RegisterVar(&cv_zvote_spectators);
-
-	CV_RegisterVar(&cv_zvote_length);
-	CV_RegisterVar(&cv_zvote_delay);
 
 	for (i = 0; i < MVT__MAX; i++)
 	{

@@ -129,61 +129,6 @@ int ps_numpolyobjects = 0;
 
 struct RenderStats g_renderstats;
 
-static CV_PossibleValue_t drawdist_cons_t[] = {
-	/*{256, "256"},*/	{512, "512"},	{768, "768"},
-	{1024, "1024"},	{1536, "1536"},	{2048, "2048"},
-	{3072, "3072"},	{4096, "4096"},	{6144, "6144"},
-	{8192, "8192"},	{0, "Infinite"},	{0, NULL}};
-
-static CV_PossibleValue_t drawdist_precip_cons_t[] = {
-	{256, "256"},	{512, "512"},	{768, "768"},
-	{1024, "1024"},	{1536, "1536"},	{2048, "2048"},
-	{0, "None"},	{0, NULL}};
-
-static CV_PossibleValue_t fov_cons_t[] = {{60*FRACUNIT, "MIN"}, {179*FRACUNIT, "MAX"}, {0, NULL}};
-static CV_PossibleValue_t translucenthud_cons_t[] = {{0, "MIN"}, {10, "MAX"}, {0, NULL}};
-static CV_PossibleValue_t maxportals_cons_t[] = {{0, "MIN"}, {12, "MAX"}, {0, NULL}}; // lmao rendering 32 portals, you're a card
-static CV_PossibleValue_t homremoval_cons_t[] = {{0, "No"}, {1, "Yes"}, {2, "Flash"}, {0, NULL}};
-
-static void Fov_OnChange(void);
-static void ChaseCam_OnChange(void);
-static void ChaseCam2_OnChange(void);
-static void ChaseCam3_OnChange(void);
-static void ChaseCam4_OnChange(void);
-
-consvar_t cv_chasecam[MAXSPLITSCREENPLAYERS] = {
-	CVAR_INIT ("chasecam", "On", CV_CALL, CV_OnOff, ChaseCam_OnChange),
-	CVAR_INIT ("chasecam2", "On", CV_CALL, CV_OnOff, ChaseCam2_OnChange),
-	CVAR_INIT ("chasecam3", "On", CV_CALL, CV_OnOff, ChaseCam3_OnChange),
-	CVAR_INIT ("chasecam4", "On", CV_CALL, CV_OnOff, ChaseCam4_OnChange)
-};
-
-consvar_t cv_shadow = CVAR_INIT ("shadow", "On", CV_SAVE, CV_OnOff, NULL);
-consvar_t cv_skybox = CVAR_INIT ("skybox", "On", CV_SAVE, CV_OnOff, NULL);
-consvar_t cv_ffloorclip = CVAR_INIT ("ffloorclip", "On", CV_SAVE, CV_OnOff, NULL);
-consvar_t cv_allowmlook = CVAR_INIT ("allowmlook", "Yes", CV_NETVAR, CV_YesNo, NULL);
-consvar_t cv_showhud = CVAR_INIT ("showhud", "Yes", CV_CALL,  CV_YesNo, R_SetViewSize);
-consvar_t cv_translucenthud = CVAR_INIT ("translucenthud", "10", CV_SAVE, translucenthud_cons_t, NULL);
-
-consvar_t cv_drawdist = CVAR_INIT ("drawdist", "8192", CV_SAVE, drawdist_cons_t, NULL);
-consvar_t cv_drawdist_precip = CVAR_INIT ("drawdist_precip", "1024", CV_SAVE, drawdist_precip_cons_t, NULL);
-
-consvar_t cv_fov[MAXSPLITSCREENPLAYERS] = {
-	CVAR_INIT ("fov", "90", CV_FLOAT|CV_CALL, fov_cons_t, Fov_OnChange),
-	CVAR_INIT ("fov2", "90", CV_FLOAT|CV_CALL, fov_cons_t, Fov_OnChange),
-	CVAR_INIT ("fov3", "90", CV_FLOAT|CV_CALL, fov_cons_t, Fov_OnChange),
-	CVAR_INIT ("fov4", "90", CV_FLOAT|CV_CALL, fov_cons_t, Fov_OnChange)
-};
-
-// Okay, whoever said homremoval causes a performance hit should be shot.
-consvar_t cv_homremoval = CVAR_INIT ("homremoval", "Yes", CV_SAVE, homremoval_cons_t, NULL);
-
-consvar_t cv_maxportals = CVAR_INIT ("maxportals", "2", CV_SAVE, maxportals_cons_t, NULL);
-
-consvar_t cv_drawpickups = CVAR_INIT ("drawpickups", "Yes", CV_CHEAT, CV_YesNo, NULL);
-
-consvar_t cv_debugfinishline = CVAR_INIT ("debugfinishline", "Off", CV_CHEAT, CV_OnOff, NULL);
-
 void SplitScreen_OnChange(void)
 {
 	UINT8 i;
@@ -235,27 +180,32 @@ void SplitScreen_OnChange(void)
 		}
 	}
 }
-static void Fov_OnChange(void)
+void Fov_OnChange(void);
+void Fov_OnChange(void)
 {
 	R_SetViewSize();
 }
 
-static void ChaseCam_OnChange(void)
+void ChaseCam_OnChange(void);
+void ChaseCam_OnChange(void)
 {
 	;
 }
 
-static void ChaseCam2_OnChange(void)
+void ChaseCam2_OnChange(void);
+void ChaseCam2_OnChange(void)
 {
 	;
 }
 
-static void ChaseCam3_OnChange(void)
+void ChaseCam3_OnChange(void);
+void ChaseCam3_OnChange(void)
 {
 	;
 }
 
-static void ChaseCam4_OnChange(void)
+void ChaseCam4_OnChange(void);
+void ChaseCam4_OnChange(void)
 {
 	;
 }
@@ -1687,58 +1637,11 @@ void R_RenderPlayerView(void)
 
 void R_RegisterEngineStuff(void)
 {
-	UINT8 i;
-
-	CV_RegisterVar(&cv_gravity);
-	CV_RegisterVar(&cv_allowmlook);
-	CV_RegisterVar(&cv_homremoval);
-
-#ifdef SCRAMBLE_REMOVED
-	CV_RegisterVar(&cv_scrambleremoved);
-#endif
 	// Enough for dedicated server
 	if (dedicated)
 		return;
 
-	CV_RegisterVar(&cv_drawdist);
-	CV_RegisterVar(&cv_drawdist_precip);
-
-	CV_RegisterVar(&cv_shadow);
-	CV_RegisterVar(&cv_skybox);
-	CV_RegisterVar(&cv_ffloorclip);
-
-	for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
-	{
-		CV_RegisterVar(&cv_fov[i]);
-		CV_RegisterVar(&cv_chasecam[i]);
-		CV_RegisterVar(&cv_cam_dist[i]);
-		CV_RegisterVar(&cv_cam_still[i]);
-		CV_RegisterVar(&cv_cam_height[i]);
-		CV_RegisterVar(&cv_cam_speed[i]);
-		CV_RegisterVar(&cv_cam_rotate[i]);
-	}
-
-	CV_RegisterVar(&cv_tilting);
-
-	CV_RegisterVar(&cv_showhud);
-	CV_RegisterVar(&cv_translucenthud);
-
-	CV_RegisterVar(&cv_maxportals);
-
-	CV_RegisterVar(&cv_movebob);
-
-	// Frame interpolation/uncapped
-	CV_RegisterVar(&cv_fpscap);
-
-	CV_RegisterVar(&cv_drawpickups);
-
-	CV_RegisterVar(&cv_debugfinishline);
-
 	// debugging
-
-	CV_RegisterVar(&cv_debugrender_contrast);
-	CV_RegisterVar(&cv_debugrender_spriteclip);
-	CV_RegisterVar(&cv_debugrender_portal);
 
 	COM_AddCommand("debugrender_highlight", Command_Debugrender_highlight);
 }

@@ -44,52 +44,19 @@
 static boolean S_AdjustSoundParams(const mobj_t *listener, const mobj_t *source, INT32 *vol, INT32 *sep, INT32 *pitch, sfxinfo_t *sfxinfo);
 #endif
 
-CV_PossibleValue_t soundvolume_cons_t[] = {{0, "MIN"}, {MAX_VOLUME, "MAX"}, {0, NULL}};
-static void SetChannelsNum(void);
 static void Command_Tunes_f(void);
 static void Command_RestartAudio_f(void);
 static void Command_PlaySound(void);
 static void Got_PlaySound(UINT8 **p, INT32 playernum);
 static void Command_MusicDef_f(void);
 
-// Sound system toggles
-static void GameSounds_OnChange(void);
-static void GameDigiMusic_OnChange(void);
-
-static void PlayMusicIfUnfocused_OnChange(void);
-static void PlaySoundIfUnfocused_OnChange(void);
-
-// stereo reverse
-consvar_t stereoreverse = CVAR_INIT ("stereoreverse", "Off", CV_SAVE, CV_OnOff, NULL);
-
-// if true, all sounds are loaded at game startup
-static consvar_t precachesound = CVAR_INIT ("precachesound", "Off", CV_SAVE, CV_OnOff, NULL);
-
-// actual general (maximum) sound & music volume, saved into the config
-consvar_t cv_soundvolume = CVAR_INIT ("soundvolume", "80", CV_SAVE, soundvolume_cons_t, NULL);
-consvar_t cv_digmusicvolume = CVAR_INIT ("musicvolume", "80", CV_SAVE, soundvolume_cons_t, NULL);
-
-// number of channels available
-consvar_t cv_numChannels = CVAR_INIT ("snd_channels", "64", CV_SAVE|CV_CALL, CV_Unsigned, SetChannelsNum);
-
-consvar_t surround = CVAR_INIT ("surround", "Off", CV_SAVE, CV_OnOff, NULL);
-
-static void Captioning_OnChange(void)
+void Captioning_OnChange(void);
+void Captioning_OnChange(void)
 {
 	S_ResetCaptions();
 	if (cv_closedcaptioning.value)
 		S_StartSound(NULL, sfx_menu1);
 }
-
-consvar_t cv_closedcaptioning = CVAR_INIT ("closedcaptioning", "Off", CV_SAVE|CV_CALL, CV_OnOff, Captioning_OnChange);
-
-// Sound system toggles, saved into the config
-consvar_t cv_gamedigimusic = CVAR_INIT ("music", "On", CV_SAVE|CV_CALL|CV_NOINIT, CV_OnOff, GameDigiMusic_OnChange);
-consvar_t cv_gamesounds = CVAR_INIT ("sounds", "On", CV_SAVE|CV_CALL|CV_NOINIT, CV_OnOff, GameSounds_OnChange);
-
-// Window focus sound sytem toggles
-consvar_t cv_playmusicifunfocused = CVAR_INIT ("playmusicifunfocused",  "No", CV_SAVE|CV_CALL|CV_NOINIT, CV_YesNo, PlayMusicIfUnfocused_OnChange);
-consvar_t cv_playsoundifunfocused = CVAR_INIT ("playsoundsifunfocused", "No", CV_SAVE|CV_CALL|CV_NOINIT, CV_YesNo, PlaySoundIfUnfocused_OnChange);
 
 #define S_MAX_VOLUME 127
 
@@ -223,15 +190,6 @@ void S_RegisterSoundStuff(void)
 		return;
 	}
 
-	CV_RegisterVar(&stereoreverse);
-	CV_RegisterVar(&precachesound);
-
-	CV_RegisterVar(&surround);
-	CV_RegisterVar(&cv_playsoundifunfocused);
-	CV_RegisterVar(&cv_playmusicifunfocused);
-	CV_RegisterVar(&cv_gamesounds);
-	CV_RegisterVar(&cv_gamedigimusic);
-
 	COM_AddCommand("tunes", Command_Tunes_f);
 	COM_AddCommand("restartaudio", Command_RestartAudio_f);
 	COM_AddCommand("playsound", Command_PlaySound);
@@ -239,7 +197,8 @@ void S_RegisterSoundStuff(void)
 	COM_AddCommand("musicdef", Command_MusicDef_f);
 }
 
-static void SetChannelsNum(void)
+void SetChannelsNum(void);
+void SetChannelsNum(void)
 {
 	// Allocating the internal channels for mixing
 	// (the maximum number of sounds rendered
@@ -1273,6 +1232,8 @@ void S_StartSoundName(void *mo, const char *soundname)
 //
 void S_InitSfxChannels(INT32 sfxVolume)
 {
+	extern consvar_t precachesound;
+
 	INT32 i;
 
 	if (dedicated)
@@ -2421,6 +2382,7 @@ static void Command_MusicDef_f(void)
 	}
 }
 
+void GameSounds_OnChange(void);
 void GameSounds_OnChange(void)
 {
 	if (M_CheckParm("-nosound") || M_CheckParm("-noaudio"))
@@ -2440,6 +2402,7 @@ void GameSounds_OnChange(void)
 	}
 }
 
+void GameDigiMusic_OnChange(void);
 void GameDigiMusic_OnChange(void)
 {
 	if (M_CheckParm("-nomusic") || M_CheckParm("-noaudio"))
@@ -2460,7 +2423,8 @@ void GameDigiMusic_OnChange(void)
 	}
 }
 
-static void PlayMusicIfUnfocused_OnChange(void)
+void PlayMusicIfUnfocused_OnChange(void);
+void PlayMusicIfUnfocused_OnChange(void)
 {
 	if (window_notinfocus)
 	{
@@ -2471,7 +2435,8 @@ static void PlayMusicIfUnfocused_OnChange(void)
 	}
 }
 
-static void PlaySoundIfUnfocused_OnChange(void)
+void PlaySoundIfUnfocused_OnChange(void);
+void PlaySoundIfUnfocused_OnChange(void)
 {
 	if (!cv_gamesounds.value)
 		return;

@@ -88,16 +88,10 @@ menu_t PAUSE_MainDef = {
 	M_PauseInputs
 };
 
-static void Dummymenuplayer_OnChange(void);
-
-static CV_PossibleValue_t dummymenuplayer_cons_t[] = {{0, "NOPE"}, {1, "P1"}, {2, "P2"}, {3, "P3"}, {4, "P4"}, {0, NULL}};
-
-//static consvar_t cv_dummymenuplayer = CVAR_INIT ("dummymenuplayer", "P1", CV_HIDDEN|CV_CALL, dummymenuplayer_cons_t, Dummymenuplayer_OnChange);
-consvar_t cv_dummymenuplayer = CVAR_INIT ("dummymenuplayer", "P1", CV_HIDDEN|CV_CALL, dummymenuplayer_cons_t, Dummymenuplayer_OnChange);
-
 struct pausemenu_s pausemenu;
 
-static void Dummymenuplayer_OnChange(void)
+void Dummymenuplayer_OnChange(void);
+void Dummymenuplayer_OnChange(void)
 {
 	if (cv_dummymenuplayer.value < 1)
 		CV_StealthSetValue(&cv_dummymenuplayer, splitscreen+1);

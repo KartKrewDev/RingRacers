@@ -745,11 +745,6 @@ extern int
 /// Render flats on walls
 #define WALLFLATS
 
-// Volume scale is 0-100 in new mixer. 100 is treated as -0dB or 100% gain. No more weirdness to work around SDL_mixer
-// problems
-
-#define MAX_VOLUME 100
-
 // Crypto/RRID primitives
 #define PUBKEYLENGTH 32 // Enforced by Monocypher EdDSA
 #define PRIVKEYLENGTH 64 // Enforced by Monocypher EdDSA

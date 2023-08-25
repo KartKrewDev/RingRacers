@@ -24,6 +24,7 @@ add_executable(SRB2SDL2 MACOSX_BUNDLE WIN32
 	am_map.c
 	command.c
 	console.c
+	cvars.cpp
 	font.c
 	hu_stuff.c
 	i_time.c

@@ -419,6 +419,7 @@ extern menuitem_t PAUSE_Main[];
 extern menu_t PAUSE_MainDef;
 
 extern menu_t PAUSE_KickHandlerDef;
+extern menu_t PAUSE_CheatsDef;
 
 // EXTRAS
 extern menuitem_t MISC_Manual[];
@@ -602,7 +603,7 @@ extern struct menutransition_s {
 extern boolean menuwipe;
 
 extern consvar_t cv_showfocuslost;
-extern consvar_t cv_chooseskin, cv_serversort, cv_menujam_update;
+extern consvar_t cv_chooseskin, cv_serversort, cv_menujam_update, cv_menujam;
 extern consvar_t cv_autorecord;
 
 void M_SetMenuDelay(UINT8 i);
