@@ -2079,10 +2079,18 @@ drawontop:
 	if (cechotimer)
 		HU_DrawCEcho();
 
+	const struct tcecho_state *firststate = &g_tcecho[0];
+
+	// Server messages overwrite player-specific messages
+	if (HU_TitlecardCEchoElapsed(firststate) < firststate->duration)
+	{
+		HU_DrawTitlecardCEcho(0);
+	}
+	else
 	{
 		size_t i;
 
-		for (i = 0; i < NUM_TCECHO_STATES; ++i)
+		for (i = 1; i < NUM_TCECHO_STATES; ++i)
 		{
 			HU_DrawTitlecardCEcho(i);
 		}
