@@ -763,43 +763,43 @@ consvar_t cv_votetime = UnsavedNetVar("votetime", "20").min_max(10, 3600);
 // Cheats don't save...
 //
 
-consvar_t cv_battletest = OnlineCheat("battletest", "Off").on_off();
+consvar_t cv_battletest = OnlineCheat("battletest", "Off").on_off().description("Free Play goes to Battle instead of Prisons");
 
 #ifdef DEVELOP
-	consvar_t cv_botcontrol = OnlineCheat("botcontrol", "On").on_off();
+	consvar_t cv_botcontrol = OnlineCheat("botcontrol", "On").on_off().description("Toggle bot AI movement");
 #endif
 
 extern CV_PossibleValue_t capsuletest_cons_t[];
 void CapsuleTest_OnChange(void);
-consvar_t cv_capsuletest = OnlineCheat("capsuletest", "Off").values(capsuletest_cons_t).onchange(CapsuleTest_OnChange);
+consvar_t cv_capsuletest = OnlineCheat("capsuletest", "Off").values(capsuletest_cons_t).onchange(CapsuleTest_OnChange).description("Force item capsule spawning rules");
 
-consvar_t cv_debugencorevote = OnlineCheat("debugencorevote", "Off").on_off();
+consvar_t cv_debugencorevote = OnlineCheat("debugencorevote", "Off").on_off().description("Force encore choice to appear on vote screen");
 
 void ForceSkin_OnChange(void);
-consvar_t cv_forceskin = OnlineCheat("forcecharacter", "None").onchange(ForceSkin_OnChange);
+consvar_t cv_forceskin = OnlineCheat("forcecharacter", "None").onchange(ForceSkin_OnChange).description("Force all players to use one character");
 
-consvar_t cv_kartdebugamount = OnlineCheat("debugitemamount", "1").min_max(1, 255);
-consvar_t cv_kartdebugbots = OnlineCheat("debugbots", "Off").on_off();
-consvar_t cv_kartdebugdistribution = OnlineCheat("debugitemodds", "Off").on_off();
-consvar_t cv_kartdebughuddrop = OnlineCheat("debugitemdrop", "Off").on_off();
+consvar_t cv_kartdebugamount = OnlineCheat("debugitemamount", "1").min_max(1, 255).description("If debugitem, give multiple copies of an item");
+consvar_t cv_kartdebugbots = OnlineCheat("debugbots", "Off").on_off().description("Bot AI debugger");
+consvar_t cv_kartdebugdistribution = OnlineCheat("debugitemodds", "Off").on_off().description("Show items that the roulette can roll");
+consvar_t cv_kartdebughuddrop = OnlineCheat("debugitemdrop", "Off").on_off().description("Players drop paper items when damaged in any way");
 
 extern CV_PossibleValue_t kartdebugitem_cons_t[];
-consvar_t cv_kartdebugitem = OnlineCheat("debugitem", "None").values(kartdebugitem_cons_t);
+consvar_t cv_kartdebugitem = OnlineCheat("debugitem", "None").values(kartdebugitem_cons_t).description("Force item boxes to only roll one kind of item");
 
-consvar_t cv_kartdebugstart = OnlineCheat("debugstart", "Off").on_off();
-consvar_t cv_kartdebugwaypoints = OnlineCheat("debugwaypoints", "Off").values({{0, "Off"}, {1, "Forwards"}, {2, "Backwards"}});
+consvar_t cv_kartdebugstart = OnlineCheat("debugstart", "Off").on_off().description("Skip POSITION");
+consvar_t cv_kartdebugwaypoints = OnlineCheat("debugwaypoints", "Off").values({{0, "Off"}, {1, "Forwards"}, {2, "Backwards"}}).description("Make waypoints visible");
 
 #ifdef DEVELOP
-	consvar_t cv_kartencoremap = OnlineCheat("encoremap", "On").on_off();
+	consvar_t cv_kartencoremap = OnlineCheat("encoremap", "On").on_off().description("Toggle Encore colormap");
 #endif
 
 extern CV_PossibleValue_t numlaps_cons_t[];
 void NumLaps_OnChange(void);
-consvar_t cv_numlaps = OnlineCheat("numlaps", "Map default").values(numlaps_cons_t).onchange(NumLaps_OnChange).save();
+consvar_t cv_numlaps = OnlineCheat("numlaps", "Map default").values(numlaps_cons_t).onchange(NumLaps_OnChange).save().description("Race maps always have the same number of laps");
 
-consvar_t cv_restrictskinchange = OnlineCheat("restrictskinchange", "Yes").yes_no();
-consvar_t cv_spbtest = OnlineCheat("spbtest", "Off").on_off();
-consvar_t cv_timescale = OnlineCheat(cvlist_timer)("timescale", "1.0").floating_point().min_max(FRACUNIT/20, 20*FRACUNIT);
+consvar_t cv_restrictskinchange = OnlineCheat("restrictskinchange", "Yes").yes_no().description("Don't let players change their skin in the middle of gameplay");
+consvar_t cv_spbtest = OnlineCheat("spbtest", "Off").on_off().description("SPB can never target a player");
+consvar_t cv_timescale = OnlineCheat(cvlist_timer)("timescale", "1.0").floating_point().min_max(FRACUNIT/20, 20*FRACUNIT).description("Overclock or slow down the game");
 
 
 //
@@ -808,14 +808,14 @@ consvar_t cv_timescale = OnlineCheat(cvlist_timer)("timescale", "1.0").floating_
 //
 
 consvar_t cv_botscanvote = ServerCheat("botscanvote", "No").yes_no();
-consvar_t cv_debugrank = ServerCheat("debugrank", "Off").on_off();
+consvar_t cv_debugrank = ServerCheat("debugrank", "Off").on_off().description("Show GP rank state on the HUD");
 
 void Gravity_OnChange(void);
-consvar_t cv_gravity = ServerCheat("gravity", "0.8").floating_point().onchange(Gravity_OnChange); // change DEFAULT_GRAVITY if you change this
+consvar_t cv_gravity = ServerCheat("gravity", "0.8").floating_point().onchange(Gravity_OnChange).description("Change the default gravity"); // change DEFAULT_GRAVITY if you change this
 
-consvar_t cv_kartdebugcolorize = ServerCheat("debugcolorize", "Off").on_off();
-consvar_t cv_kartdebugdirector = ServerCheat("debugdirector", "Off").on_off();
-consvar_t cv_kartdebugnodes = ServerCheat("debugnodes", "Off").on_off();
+consvar_t cv_kartdebugcolorize = ServerCheat("debugcolorize", "Off").on_off().description("Show all colorized options on the HUD");
+consvar_t cv_kartdebugdirector = ServerCheat("debugdirector", "Off").on_off().description("Show director AI on the HUD");
+consvar_t cv_kartdebugnodes = ServerCheat("debugnodes", "Off").on_off().description("Show player node and latency on the HUD");
 
 
 //
@@ -824,19 +824,19 @@ consvar_t cv_kartdebugnodes = ServerCheat("debugnodes", "Off").on_off();
 // Not saved...
 //
 
-consvar_t cv_debugfinishline = PlayerCheat("debugfinishline", "Off").on_off();
-consvar_t cv_debugrender_contrast = PlayerCheat("debugrender_contrast", "0.0").floating_point().min_max(-FRACUNIT, FRACUNIT);
-consvar_t cv_debugrender_portal = PlayerCheat("debugrender_portal", "Off").on_off();
-consvar_t cv_debugrender_spriteclip = PlayerCheat("debugrender_spriteclip", "Off").on_off();
-consvar_t cv_devmode_screen = PlayerCheat("devmode_screen", "1").min_max(1, 4);
-consvar_t cv_drawpickups = PlayerCheat("drawpickups", "Yes").yes_no();
+consvar_t cv_debugfinishline = PlayerCheat("debugfinishline", "Off").on_off().description("Highlight finish lines and respawn lines with high contrast colors");
+consvar_t cv_debugrender_contrast = PlayerCheat("debugrender_contrast", "0.0").floating_point().min_max(-FRACUNIT, FRACUNIT).description("Change level lighting");
+consvar_t cv_debugrender_portal = PlayerCheat("debugrender_portal", "Off").on_off().description("Highlight visual portals in red");
+consvar_t cv_debugrender_spriteclip = PlayerCheat("debugrender_spriteclip", "Off").on_off().description("Let sprites draw through walls");
+consvar_t cv_devmode_screen = PlayerCheat("devmode_screen", "1").min_max(1, 4).description("Choose which splitscreen player devmode applies to");
+consvar_t cv_drawpickups = PlayerCheat("drawpickups", "Yes").yes_no().description("Hide rings, spheres, item capsules, prison capsules (visual only)");
 
 void CV_palette_OnChange(void);
-consvar_t cv_palette = PlayerCheat("palette", "").onchange_noinit(CV_palette_OnChange);
-consvar_t cv_palettenum = PlayerCheat("palettenum", "0").values(CV_Unsigned).onchange_noinit(CV_palette_OnChange);
+consvar_t cv_palette = PlayerCheat("palette", "").onchange_noinit(CV_palette_OnChange).description("Force palette to a different lump");
+consvar_t cv_palettenum = PlayerCheat("palettenum", "0").values(CV_Unsigned).onchange_noinit(CV_palette_OnChange).description("Use a different sub-palette by default");
 
 extern CV_PossibleValue_t renderhitbox_cons_t[];
-consvar_t cv_renderhitbox = PlayerCheat("renderhitbox", "Off").values(renderhitbox_cons_t);
+consvar_t cv_renderhitbox = PlayerCheat("renderhitbox", "Off").values(renderhitbox_cons_t).description("Show hitboxes around objects");
 
 
 //
