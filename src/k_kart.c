@@ -10541,8 +10541,11 @@ boolean K_FastFallBounce(player_t *player)
 		else
 		{
 			// Lose speed on bad bounce.
-			player->mo->momx /= 2;
-			player->mo->momy /= 2;
+			if (player->curshield != KSHIELD_BUBBLE)
+			{
+				player->mo->momx /= 2;
+				player->mo->momy /= 2;
+			}
 
 			if (bounce < minBounce)
 			{
@@ -10550,10 +10553,20 @@ boolean K_FastFallBounce(player_t *player)
 			}
 		}
 
+		if (player->curshield == KSHIELD_BUBBLE)
+		{
+			S_StartSound(player->mo, sfx_s3k44);
+			P_InstaThrust(player->mo, player->mo->angle, max(player->speed, abs(player->fastfall)));
+			bounce += 3 * player->mo->scale;
+		}
+		else
+		{
+			S_StartSound(player->mo, sfx_ffbonc);
+		}
+
 		if (player->mo->eflags & MFE_UNDERWATER)
 			bounce = (117 * bounce) / 200;
 
-		S_StartSound(player->mo, sfx_ffbonc);
 		player->mo->momz = bounce * P_MobjFlip(player->mo);
 
 		player->fastfall = 0;
@@ -11421,6 +11434,9 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 									if (player->bubbleblowup > bubbletime*2)
 									{
 										K_ThrowKartItem(player, (player->throwdir > 0), MT_BUBBLESHIELDTRAP, -1, 0, 0);
+										P_InstaThrust(player->mo, player->mo->angle, player->speed + (80 * mapobjectscale));
+										player->sliptideZipBoost += TICRATE; // Just for keeping speed briefly vs. tripwire etc.
+										// If this doesn't turn out to be reliable, I'll change it to directly set leniency or something.
 										K_PlayAttackTaunt(player->mo);
 										player->bubbleblowup = 0;
 										player->bubblecool = 0;
