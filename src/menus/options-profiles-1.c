@@ -30,6 +30,7 @@ menu_t OPTIONS_ProfilesDef = {
 consvar_t cv_dummyprofilename = CVAR_INIT ("dummyprofilename", "", CV_HIDDEN, NULL, NULL);
 consvar_t cv_dummyprofileplayername = CVAR_INIT ("dummyprofileplayername", "", CV_HIDDEN, NULL, NULL);
 consvar_t cv_dummyprofilekickstart = CVAR_INIT ("dummyprofilekickstart", "Off", CV_HIDDEN, CV_OnOff, NULL);
+consvar_t cv_dummyprofileautoroulette = CVAR_INIT ("dummyprofileautoroulette", "Off", CV_HIDDEN, CV_OnOff, NULL);
 consvar_t cv_dummyprofilerumble = CVAR_INIT ("dummyprofilerumble", "On", CV_HIDDEN, CV_OnOff, NULL);
 
 void M_ProfileSelectInit(INT32 choice)
@@ -93,6 +94,7 @@ static void M_StartEditProfile(INT32 c)
 			CV_StealthSet(&cv_dummyprofilename, optionsmenu.profile->profilename);
 			CV_StealthSet(&cv_dummyprofileplayername, optionsmenu.profile->playername);
 			CV_StealthSetValue(&cv_dummyprofilekickstart, optionsmenu.profile->kickstartaccel);
+			CV_StealthSetValue(&cv_dummyprofileautoroulette, optionsmenu.profile->autoroulette);
 			CV_StealthSetValue(&cv_dummyprofilerumble, optionsmenu.profile->rumble);
 		}
 		else
@@ -100,6 +102,7 @@ static void M_StartEditProfile(INT32 c)
 			CV_StealthSet(&cv_dummyprofilename, "");
 			CV_StealthSet(&cv_dummyprofileplayername, "");
 			CV_StealthSetValue(&cv_dummyprofilekickstart, 0);	// off
+			CV_StealthSetValue(&cv_dummyprofileautoroulette, 0); // off
 			CV_StealthSetValue(&cv_dummyprofilerumble, 1);	// on
 		}
 

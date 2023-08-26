@@ -43,6 +43,9 @@ applications may follow different packet versions.
 
 #define HU_MAXMSGLEN 223
 
+#define MAXSERVERNAME 32
+#define MAXSERVERCONTACT 1024
+
 // Networking and tick handling related.
 #define BACKUPTICS 512 // more than enough for most timeouts....
 #define CLIENTBACKUPTICS 32
@@ -226,6 +229,9 @@ struct serverconfig_pak
 	UINT8 maxplayer;
 	boolean allownewplayer;
 	boolean discordinvites;
+
+	char server_name[MAXSERVERNAME];
+	char server_contact[MAXSERVERCONTACT];
 } ATTRPACK;
 
 struct filetx_pak
@@ -276,7 +282,6 @@ struct clientconfig_pak
 #define SV_DEDICATED 0x40		// server is dedicated
 #define SV_LOTSOFADDONS 0x20	// flag used to ask for full file list in d_netfil
 
-#define MAXSERVERNAME 32
 #define MAXFILENEEDED 915
 #define MAX_MIRROR_LENGTH 256
 // This packet is too large
@@ -509,6 +514,7 @@ extern UINT16 software_MAXPACKETLENGTH;
 extern boolean acceptnewnode;
 extern SINT8 servernode;
 extern char connectedservername[MAXSERVERNAME];
+extern char connectedservercontact[MAXSERVERCONTACT];
 extern UINT32 ourIP;
 extern uint8_t lastReceivedKey[MAXNETNODES][MAXSPLITSCREENPLAYERS][PUBKEYLENGTH];
 extern uint8_t lastSentChallenge[MAXNETNODES][CHALLENGELENGTH];

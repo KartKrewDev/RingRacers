@@ -1952,7 +1952,7 @@ void HU_DrawSongCredits(void)
 	}
 	else
 	{
-		y = (r_splitscreen ? (BASEVIDHEIGHT/2)-4 : 32) * FRACUNIT;
+		y = (r_splitscreen ? (BASEVIDHEIGHT/2)-4 : 40) * FRACUNIT;
 	}
 
 	INT32 bgt = (NUMTRANSMAPS/2) + (cursongcredit.trans / 2);

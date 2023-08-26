@@ -1916,8 +1916,6 @@ void D_SRB2Main(void)
 
 		COM_BufExecute(); // ensure the command buffer gets executed before the map starts (+skin)
 
-		strncpy(connectedservername, cv_servername.string, MAXSERVERNAME);
-
 		if (M_CheckParm("-gametype") && M_IsNextParm())
 		{
 			// from Command_Map_f
