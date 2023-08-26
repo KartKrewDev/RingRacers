@@ -990,6 +990,8 @@ void V_DrawBlock(INT32 x, INT32 y, INT32 scrn, INT32 width, INT32 height, const 
 //
 void V_DrawFill(INT32 x, INT32 y, INT32 w, INT32 h, INT32 c)
 {
+	const cliprect_t *clip = V_GetClipRect();
+
 	if (rendermode == render_none)
 		return;
 
@@ -1050,6 +1052,21 @@ void V_DrawFill(INT32 x, INT32 y, INT32 w, INT32 h, INT32 c)
 	UINT8 r = (color.rgba & 0xFF);
 	UINT8 g = (color.rgba & 0xFF00) >> 8;
 	UINT8 b = (color.rgba & 0xFF0000) >> 16;
+
+	if (clip && clip->enabled)
+	{
+		int x2 = std::min(x + w, clip->right);
+		int y2 = std::min(y + h, clip->bottom);
+
+		if (x < clip->left)
+			x = clip->left;
+
+		if (y < clip->top)
+			y = clip->top;
+
+		w = std::max(0, x2 - x);
+		h = std::max(0, y2 - y);
+	}
 
 	g_2d.begin_quad()
 		.patch(nullptr)
