@@ -10605,18 +10605,19 @@ boolean K_FastFallBounce(player_t *player)
 			}
 		}
 
-		if (player->mo->eflags & MFE_UNDERWATER)
-			bounce = (117 * bounce) / 200;
-
 		if (player->curshield == KSHIELD_BUBBLE)
 		{
 			S_StartSound(player->mo, sfx_s3k44);
 			P_InstaThrust(player->mo, player->mo->angle, max(player->speed, abs(player->fastfall)));
+			bounce += 3 * player->mo->scale;
 		}
 		else
 		{
 			S_StartSound(player->mo, sfx_ffbonc);
 		}
+
+		if (player->mo->eflags & MFE_UNDERWATER)
+			bounce = (117 * bounce) / 200;
 
 		player->mo->momz = bounce * P_MobjFlip(player->mo);
 
