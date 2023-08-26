@@ -1326,7 +1326,9 @@ void P_DoPlayerExit(player_t *player, pflags_t flags)
 			G_BeginLevelExit();
 		}
 
-		if (grandprixinfo.gp == true && player->bot == false && losing == false)
+		if (grandprixinfo.gp == true
+			&& (roundqueue.size && roundqueue.position < roundqueue.size) // Not the last map of GP
+			&& player->bot == false && losing == false)
 		{
 			const UINT8 lifethreshold = 20;
 
