@@ -4335,15 +4335,13 @@ void P_PlayerThink(player_t *player)
 		if (!(--player->nocontrol))
 		{
 			if (player->pflags & PF_FAULT)
-            {
+			{
 				player->pflags &= ~PF_FAULT;
 				player->mo->renderflags &= ~RF_DONTDRAW;
 				player->mo->flags &= ~MF_NOCLIPTHING;
 			}
 		}
 	}
-	else
-		player->nocontrol = 0;
 
 	// Flash player after being hit.
 	if (!(player->hyudorotimer // SRB2kart - fixes Hyudoro not flashing when it should.
