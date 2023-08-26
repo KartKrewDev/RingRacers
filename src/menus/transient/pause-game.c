@@ -64,6 +64,9 @@ menuitem_t PAUSE_Main[] =
 	{IT_STRING | IT_CALL, "PLAYER SETUP", "M_ICOCHR",
 		NULL, {.routine = M_CharacterSelect}, 0, 0},
 
+	{IT_STRING | IT_SUBMENU, "CHEATS", "M_ICOCHT",
+		NULL, {.submenu = &PAUSE_CheatsDef}, 0, 0},
+
 	{IT_STRING | IT_CALL, "OPTIONS", "M_ICOOPT",
 		NULL, {.routine = M_InitOptions}, 0, 0},
 
@@ -135,6 +138,7 @@ void M_OpenPauseMenu(void)
 	PAUSE_Main[mpause_canceljoin].status = IT_DISABLED;
 	PAUSE_Main[mpause_spectatemenu].status = IT_DISABLED;
 	PAUSE_Main[mpause_psetup].status = IT_DISABLED;
+	PAUSE_Main[mpause_cheats].status = IT_DISABLED;
 
 	Dummymenuplayer_OnChange();	// Make sure the consvar is within bounds of the amount of splitscreen players we have.
 
@@ -215,6 +219,11 @@ void M_OpenPauseMenu(void)
 			else
 				PAUSE_Main[mpause_entergame].status = IT_STRING | IT_CALL;
 		}
+	}
+
+	if (CV_CheatsEnabled())
+	{
+		PAUSE_Main[mpause_cheats].status = IT_STRING | IT_SUBMENU;
 	}
 
 	G_ResetAllDeviceRumbles();
