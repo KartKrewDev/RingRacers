@@ -10611,7 +10611,7 @@ boolean K_FastFallBounce(player_t *player)
 		if (player->curshield == KSHIELD_BUBBLE)
 		{
 			S_StartSound(player->mo, sfx_s3k44);
-			P_InstaThrust(player->mo, player->mo->angle, abs(player->fastfall));
+			P_InstaThrust(player->mo, player->mo->angle, max(player->speed, abs(player->fastfall)));
 		}
 		else
 		{
