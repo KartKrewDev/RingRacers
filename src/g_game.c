@@ -1249,6 +1249,10 @@ boolean G_IsTitleCardAvailable(void)
 	if (gametyperules & GTR_SPECIALSTART)
 		return false;
 
+	// ALso.
+	if (K_PodiumSequence() == true)
+		return false;
+
 	// The title card is available.
 	return true;
 }

@@ -8216,8 +8216,17 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 			}
 		}
 
-		if (gametyperules & GTR_SPECIALSTART)
+		if (K_PodiumHasEmerald())
 		{
+			// Special Stage out
+			if (ranspecialwipe != 2)
+				S_StartSound(NULL, sfx_s3k6a);
+			levelfadecol = 0;
+			wipetype = wipe_encore_towhite;
+		}
+		else if (gametyperules & GTR_SPECIALSTART)
+		{
+			// Special Stage in
 			if (ranspecialwipe != 2)
 				S_StartSound(NULL, sfx_s3kaf);
 			levelfadecol = 0;
@@ -8225,6 +8234,7 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 		}
 		else if (skipstats == 1)
 		{
+			// MapWarp
 			if (ranspecialwipe != 2)
 				S_StartSound(NULL, sfx_s3k73);
 			levelfadecol = 0;
@@ -8232,11 +8242,13 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 		}
 		else if (encoremode)
 		{
+			// Encore
 			levelfadecol = 0;
 			wipetype = wipe_encore_towhite;
 		}
 		else
 		{
+			// Default
 			levelfadecol = 31;
 		}
 
