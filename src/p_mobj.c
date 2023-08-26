@@ -11770,61 +11770,24 @@ void P_RespawnSpecials(void)
 //
 void P_SpawnPlayer(INT32 playernum)
 {
-	UINT8 i, pcount = 0; // MAXPLAYERS if exiting
+	UINT8 i;
 	player_t *p = &players[playernum];
 	mobj_t *mobj;
 
+	boolean justjoined = (p->jointime <= 1);
+
 	if (p->playerstate == PST_REBORN)
 	{
-		G_PlayerReborn(playernum, (p->jointime <= 1));
+		G_PlayerReborn(playernum, justjoined);
 	}
 
-	for (i = 0; i < MAXPLAYERS; i++)
-	{
-		if (i == playernum)
-			continue;
-		if (!playeringame[i] || players[i].spectator)
-			continue;
-		if (players[i].exiting)
-		{
-			pcount = MAXPLAYERS;
-			break;
-		}
-		if (players[i].jointime <= 1) // Prevent splitscreen hosters/joiners from only adding 1 player at a time in empty servers
-			continue;
-		pcount++;
-	}
+	if (justjoined)
+		G_SpectatePlayerOnJoin(playernum);
 
-	// spawn as spectator determination
-	if (multiplayer && demo.playback)
-	{
-		; // Don't mess with spectator values since the demo setup handles them already.
-	}
-	else if (p->bot)
-	{
-		if (K_PodiumSequence() == true)
-			; // This is too late to correct spectator status. Whatever state we're in at this point, our (dog) bed is made.
-		else if (!(gametyperules & GTR_BOTS)
-		|| (grandprixinfo.gp == true
-			&& grandprixinfo.eventmode != GPEVENT_NONE))
-		{
-			// Bots aren't supposed to be here.
-			p->spectator = true;
-		}
-		else
-		{
-			// No point in a spectating bot!
-			p->spectator = false;
-		}
-	}
-	else if (netgame && p->jointime <= 1 && pcount)
-	{
-		p->spectator = true;
-	}
-	else if (multiplayer && !netgame)
+	if (G_GametypeHasTeams())
 	{
 		// If you're in a team game and you don't have a team assigned yet...
-		if (G_GametypeHasTeams() && p->ctfteam == 0)
+		if (!p->spectator && p->ctfteam == 0)
 		{
 			changeteam_union NetPacket;
 			UINT16 usvalue;
@@ -11834,9 +11797,6 @@ void P_SpawnPlayer(INT32 playernum)
 			// yes even in splitscreen mode
 			p->spectator = true;
 
-			if (playernum&1) p->skincolor = skincolor_redteam;
-			else             p->skincolor = skincolor_blueteam;
-
 			// but immediately send a team change packet.
 			NetPacket.packet.playernum = playernum;
 			NetPacket.packet.verification = true;
@@ -11844,22 +11804,6 @@ void P_SpawnPlayer(INT32 playernum)
 
 			usvalue = SHORT(NetPacket.value.l|NetPacket.value.b);
 			SendNetXCmd(XD_TEAMCHANGE, &usvalue, sizeof(usvalue));
-		}
-		else // Otherwise, never spectator.
-		{
-			// TODO: this would make a great debug feature for release
-#ifndef DEVELOP
-			p->spectator = false;
-#endif
-		}
-	}
-
-	if (G_GametypeHasTeams())
-	{
-		// Fix stupid non spectator spectators.
-		if (!p->spectator && !p->ctfteam)
-		{
-			p->spectator = true;
 		}
 
 		// Fix team colors.
@@ -11959,8 +11903,7 @@ void P_SpawnPlayer(INT32 playernum)
 			S_StartSound(body, sfx_s1af);
 	}
 
-	// I'm not refactoring the loop at the top of this file.
-	pcount = 0;
+	UINT8 pcount = 0;
 
 	for (i = 0; i < MAXPLAYERS; ++i)
 	{

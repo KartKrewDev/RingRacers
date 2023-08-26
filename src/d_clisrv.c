@@ -3875,21 +3875,13 @@ static void Got_AddPlayer(UINT8 **p, INT32 playernum)
 
 	CONS_Debug(DBG_NETPLAY, "addplayer: %d %d\n", node, newplayernum);
 
-	{
-		// Clear player before joining, lest some things get set incorrectly
-		CL_ClearPlayer(newplayernum);
-		G_DestroyParty(newplayernum);
+	G_AddPlayer(newplayernum);
+	//G_SpectatePlayerOnJoin(newplayernum); -- caused desyncs in this spot :(
 
-		playeringame[newplayernum] = true;
-		G_AddPlayer(newplayernum);
-
-		if (newplayernum+1 > doomcom->numslots)
-			doomcom->numslots = (INT16)(newplayernum+1);
-	}
+	if (newplayernum+1 > doomcom->numslots)
+		doomcom->numslots = (INT16)(newplayernum+1);
 
 	newplayer = &players[newplayernum];
-
-	newplayer->jointime = 0;
 
 	READSTRINGN(*p, player_names[newplayernum], MAXPLAYERNAME);
 	READMEM(*p, players[newplayernum].public_key, PUBKEYLENGTH);

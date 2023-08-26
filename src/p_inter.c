@@ -2056,30 +2056,29 @@ static boolean P_PlayerHitsPlayer(mobj_t *target, mobj_t *inflictor, mobj_t *sou
 
 static boolean P_KillPlayer(player_t *player, mobj_t *inflictor, mobj_t *source, UINT8 type)
 {
-	if (player->respawn.state != RESPAWNST_NONE)
+	if (type == DMG_SPECTATOR && (G_GametypeHasTeams() || G_GametypeHasSpectators()))
 	{
-		K_DoInstashield(player);
-		return false;
+		P_SetPlayerSpectator(player-players);
 	}
-
-	if (!player->exiting && (specialstageinfo.valid == true || modeattacking & ATTACKING_SPB))
+	else
 	{
-		// TODO: this would make a great debug feature for release
-#ifdef DEVELOP
-		if (type != DMG_SPECTATOR)
+		if (player->respawn.state != RESPAWNST_NONE)
+		{
+			K_DoInstashield(player);
+			return false;
+		}
+
+		if (player->exiting)
+		{
+			player->mo->destscale = 1;
+			player->mo->flags |= MF_NOCLIPTHING;
+			return false;
+		}
+
+		if (specialstageinfo.valid == true || (modeattacking & ATTACKING_SPB))
 		{
 			P_DoPlayerExit(player, PF_NOCONTEST);
 		}
-#else
-		P_DoPlayerExit(player, PF_NOCONTEST);
-#endif
-	}
-
-	if (player->exiting)
-	{
-		player->mo->destscale = 1;
-		player->mo->flags |= MF_NOCLIPTHING;
-		return false;
 	}
 
 	switch (type)
@@ -2162,12 +2161,6 @@ static boolean P_KillPlayer(player_t *player, mobj_t *inflictor, mobj_t *source,
 		}
 
 		player->pflags |= PF_ELIMINATED;
-	}
-
-	if (type == DMG_SPECTATOR)
-	{
-		// Set it here so K_CheckBumpers knows about it later.
-		player->spectator = true;
 	}
 
 	return true;

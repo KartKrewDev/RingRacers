@@ -201,7 +201,7 @@ void K_InitGrandPrixBots(void)
 			}
 			else
 			{
-				players[i].spectator = true; // force spectate for all other players, if they happen to exist?
+				P_SetPlayerSpectator(i); // force spectate for all other players, if they happen to exist?
 			}
 		}
 	}
