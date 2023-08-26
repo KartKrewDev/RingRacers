@@ -3936,6 +3936,14 @@ boolean K_CheckStumble(player_t *player, angle_t oldPitch, angle_t oldRoll, bool
 		return false;
 	}
 
+	if (fromAir && player->airtime < STUMBLE_AIRTIME
+		&& player->airtime > 1) // ACHTUNG HACK, sorry. Ground-to-ground transitions sometimes have 1-tic airtime because collision blows
+	{
+		// Short airtime with no reaction window, probably a track traversal setpiece.
+		// Don't punish for these.
+		return false;
+	}
+
 	if ((player->mo->pitch == oldPitch)
 		&& (player->mo->roll == oldRoll))
 	{
@@ -4098,6 +4106,9 @@ void K_UpdateStumbleIndicator(player_t *player)
 	{
 		mobj->renderflags &= ~RF_HORIZONTALFLIP;
 	}
+
+	if (air && player->airtime < STUMBLE_AIRTIME)
+		delta = 0;
 
 	steepRange = ANGLE_90 - steepVal;
 	delta = max(0, abs(delta) - ((signed)steepVal));
@@ -8253,9 +8264,6 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		player->incontrol++;
 	}
 
-	player->incontrol = min(player->incontrol, 5*TICRATE);
-	player->incontrol = max(player->incontrol, -5*TICRATE);
-
 	if (player->tumbleBounces > 0)
 	{
 		K_HandleTumbleSound(player);
@@ -10436,6 +10444,7 @@ static void K_KartSpindash(player_t *player)
 		// Update fastfall.
 		player->fastfall = player->mo->momz;
 		player->spindash = 0;
+		player->mo->roll = 0;
 
 		if (player->fastfallBase == 0)
 		{
