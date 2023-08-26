@@ -462,6 +462,7 @@ typedef enum
 	mpause_canceljoin,
 	mpause_spectatemenu,
 	mpause_psetup,
+	mpause_cheats,
 	mpause_options,
 
 	mpause_title,

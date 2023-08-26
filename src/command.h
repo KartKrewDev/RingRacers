@@ -208,6 +208,8 @@ struct CVarList;
 { __VA_ARGS__, NULL, 0, NULL, NULL, {0, {NULL}}, 0U, (char)0, NULL }
 #endif
 
+extern consvar_t *consvar_vars; // list of registered console variables
+
 extern CV_PossibleValue_t CV_OnOff[];
 extern CV_PossibleValue_t CV_YesNo[];
 extern CV_PossibleValue_t CV_Unsigned[];
