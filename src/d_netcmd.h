@@ -49,10 +49,6 @@ extern consvar_t cv_seenames;
 extern consvar_t cv_usemouse;
 extern consvar_t cv_joyscale[MAXSPLITSCREENPLAYERS];
 
-// normally in p_mobj but the .h is not read
-extern consvar_t cv_itemrespawntime;
-extern consvar_t cv_itemrespawn;
-
 extern consvar_t cv_pointlimit;
 extern consvar_t cv_timelimit;
 extern consvar_t cv_numlaps;
@@ -70,7 +66,7 @@ extern consvar_t cv_countdowntime;
 extern consvar_t cv_mute;
 extern consvar_t cv_pause;
 
-extern consvar_t cv_restrictskinchange, cv_allowteamchange, cv_maxplayers, cv_respawntime;
+extern consvar_t cv_restrictskinchange, cv_allowteamchange, cv_maxplayers;
 extern consvar_t cv_spectatorreentry, cv_duelspectatorreentry, cv_antigrief;
 
 // SRB2kart items
@@ -113,7 +109,6 @@ extern consvar_t cv_alttitle, cv_itemfinder;
 
 extern consvar_t cv_inttime, cv_advancemap;
 extern consvar_t cv_overtime;
-extern consvar_t cv_startinglives;
 
 // for F_finale.c
 extern consvar_t cv_rollingdemos;

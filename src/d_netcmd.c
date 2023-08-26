@@ -244,8 +244,6 @@ static CV_PossibleValue_t usemouse_cons_t[] = {{0, "Off"}, {1, "On"}, {2, "Force
 
 static CV_PossibleValue_t teamscramble_cons_t[] = {{0, "Off"}, {1, "Random"}, {2, "Points"}, {0, NULL}};
 
-static CV_PossibleValue_t startingliveslimit_cons_t[] = {{1, "MIN"}, {99, "MAX"}, {0, NULL}};
-
 static CV_PossibleValue_t sleeping_cons_t[] = {{0, "MIN"}, {1000/TICRATE, "MAX"}, {0, NULL}};
 
 static CV_PossibleValue_t pause_cons_t[] = {{0, "Server"}, {1, "All"}, {0, NULL}};
@@ -266,11 +264,6 @@ consvar_t cv_duelspectatorreentry = CVAR_INIT ("duelspectatorreentry", "180", CV
 
 static CV_PossibleValue_t antigrief_cons_t[] = {{10, "MIN"}, {180, "MAX"}, {0, "Off"}, {0, NULL}};
 consvar_t cv_antigrief = CVAR_INIT ("antigrief", "30", CV_NETVAR, antigrief_cons_t, NULL);
-
-consvar_t cv_startinglives = CVAR_INIT ("startinglives", "3", CV_NETVAR|CV_CHEAT|CV_NOSHOWHELP, startingliveslimit_cons_t, NULL);
-
-static CV_PossibleValue_t respawntime_cons_t[] = {{1, "MIN"}, {30, "MAX"}, {0, "Off"}, {0, NULL}};
-consvar_t cv_respawntime = CVAR_INIT ("respawndelay", "1", CV_NETVAR|CV_CHEAT, respawntime_cons_t, NULL);
 
 consvar_t cv_seenames = CVAR_INIT ("seenames", "On", CV_SAVE, CV_OnOff, NULL);
 
@@ -753,10 +746,6 @@ void D_RegisterServerCommands(void)
 	// for master server connection
 	AddMServCommands();
 
-	// p_mobj.c
-	CV_RegisterVar(&cv_itemrespawntime);
-	CV_RegisterVar(&cv_itemrespawn);
-
 	// misc
 	CV_RegisterVar(&cv_pointlimit);
 	CV_RegisterVar(&cv_numlaps);
@@ -774,7 +763,6 @@ void D_RegisterServerCommands(void)
 
 	K_RegisterKartStuff(); // SRB2kart
 
-	CV_RegisterVar(&cv_startinglives);
 	CV_RegisterVar(&cv_countdowntime);
 	CV_RegisterVar(&cv_overtime);
 	CV_RegisterVar(&cv_pause);
@@ -789,7 +777,6 @@ void D_RegisterServerCommands(void)
 	CV_RegisterVar(&cv_spectatorreentry);
 	CV_RegisterVar(&cv_duelspectatorreentry);
 	CV_RegisterVar(&cv_antigrief);
-	CV_RegisterVar(&cv_respawntime);
 
 	// d_clisrv
 	CV_RegisterVar(&cv_maxconnections);
