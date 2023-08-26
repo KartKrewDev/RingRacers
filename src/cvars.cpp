@@ -86,6 +86,12 @@ struct consvar_t::Builder
 		return builder;
 	}
 
+	Builder& description(const char* description)
+	{
+		var_.description = description;
+		return *this;
+	}
+
 	Builder& save()
 	{
 		var_.flags |= CV_SAVE;
