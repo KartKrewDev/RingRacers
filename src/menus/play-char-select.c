@@ -33,12 +33,7 @@ menu_t PLAY_CharSelectDef = {
 	M_CharacterSelectHandler
 };
 
-static CV_PossibleValue_t skins_cons_t[MAXSKINS+1] = {{1, DEFAULTSKIN}};
-consvar_t cv_chooseskin = CVAR_INIT ("chooseskin", DEFAULTSKIN, CV_HIDDEN, skins_cons_t, NULL);
-
-static void Splitplayers_OnChange(void);
-CV_PossibleValue_t splitplayers_cons_t[] = {{1, "One"}, {2, "Two"}, {3, "Three"}, {4, "Four"}, {0, NULL}};
-consvar_t cv_splitplayers = CVAR_INIT ("splitplayers", "One", CV_CALL, splitplayers_cons_t, Splitplayers_OnChange);
+CV_PossibleValue_t skins_cons_t[MAXSKINS+1] = {{1, DEFAULTSKIN}};
 
 // Character Select!
 // @TODO: Splitscreen handling when profiles are added into the game. ...I probably won't be the one to handle this however. -Lat'
@@ -1418,7 +1413,8 @@ boolean M_CharacterSelectQuit(void)
 	return true;
 }
 
-static void Splitplayers_OnChange(void)
+void Splitplayers_OnChange(void);
+void Splitplayers_OnChange(void)
 {
 #if 0
 	if (cv_splitplayers.value < setupm_pselect)

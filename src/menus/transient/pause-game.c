@@ -64,6 +64,9 @@ menuitem_t PAUSE_Main[] =
 	{IT_STRING | IT_CALL, "PLAYER SETUP", "M_ICOCHR",
 		NULL, {.routine = M_CharacterSelect}, 0, 0},
 
+	{IT_STRING | IT_SUBMENU, "CHEATS", "M_ICOCHT",
+		NULL, {.submenu = &PAUSE_CheatsDef}, 0, 0},
+
 	{IT_STRING | IT_CALL, "OPTIONS", "M_ICOOPT",
 		NULL, {.routine = M_InitOptions}, 0, 0},
 
@@ -88,16 +91,10 @@ menu_t PAUSE_MainDef = {
 	M_PauseInputs
 };
 
-static void Dummymenuplayer_OnChange(void);
-
-static CV_PossibleValue_t dummymenuplayer_cons_t[] = {{0, "NOPE"}, {1, "P1"}, {2, "P2"}, {3, "P3"}, {4, "P4"}, {0, NULL}};
-
-//static consvar_t cv_dummymenuplayer = CVAR_INIT ("dummymenuplayer", "P1", CV_HIDDEN|CV_CALL, dummymenuplayer_cons_t, Dummymenuplayer_OnChange);
-consvar_t cv_dummymenuplayer = CVAR_INIT ("dummymenuplayer", "P1", CV_HIDDEN|CV_CALL, dummymenuplayer_cons_t, Dummymenuplayer_OnChange);
-
 struct pausemenu_s pausemenu;
 
-static void Dummymenuplayer_OnChange(void)
+void Dummymenuplayer_OnChange(void);
+void Dummymenuplayer_OnChange(void)
 {
 	if (cv_dummymenuplayer.value < 1)
 		CV_StealthSetValue(&cv_dummymenuplayer, splitscreen+1);
@@ -141,6 +138,7 @@ void M_OpenPauseMenu(void)
 	PAUSE_Main[mpause_canceljoin].status = IT_DISABLED;
 	PAUSE_Main[mpause_spectatemenu].status = IT_DISABLED;
 	PAUSE_Main[mpause_psetup].status = IT_DISABLED;
+	PAUSE_Main[mpause_cheats].status = IT_DISABLED;
 
 	Dummymenuplayer_OnChange();	// Make sure the consvar is within bounds of the amount of splitscreen players we have.
 
@@ -221,6 +219,11 @@ void M_OpenPauseMenu(void)
 			else
 				PAUSE_Main[mpause_entergame].status = IT_STRING | IT_CALL;
 		}
+	}
+
+	if (CV_CheatsEnabled())
+	{
+		PAUSE_Main[mpause_cheats].status = IT_STRING | IT_SUBMENU;
 	}
 
 	G_ResetAllDeviceRumbles();

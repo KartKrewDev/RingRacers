@@ -38,10 +38,6 @@
 #include "discord.h" // DRPC_UpdatePresence
 #include "i_net.h" // doomcom
 
-#ifdef DEVELOP
-	consvar_t cv_botcontrol = CVAR_INIT ("botcontrol", "On", CV_NETVAR|CV_CHEAT, CV_OnOff, NULL);
-#endif
-
 /*--------------------------------------------------
 	void K_SetBot(UINT8 playerNum, UINT8 skinnum, UINT8 difficulty, botStyle_e style)
 

@@ -34,8 +34,6 @@ UINT8 spectateGriefed = 0;
 SINT8 speedscramble = -1;
 SINT8 encorescramble = -1;
 
-consvar_t cv_debugencorevote = CVAR_INIT ("debugencorevote", "Off", CV_CHEAT|CV_NETVAR, CV_OnOff, NULL);
-
 SINT8 K_UsingPowerLevels(void)
 {
 	if (!cv_kartusepwrlv.value)

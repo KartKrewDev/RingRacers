@@ -5910,59 +5910,26 @@ void HWR_LoadLevel(void)
 //                                                         3D ENGINE COMMANDS
 // ==========================================================================
 
-static CV_PossibleValue_t glshaders_cons_t[] = {{HWD_SHADEROPTION_OFF, "Off"}, {HWD_SHADEROPTION_ON, "On"}, {HWD_SHADEROPTION_NOCUSTOM, "Ignore custom shaders"}, {0, NULL}};
-#ifdef BAD_MODEL_OPTIONS
-static CV_PossibleValue_t glmodelinterpolation_cons_t[] = {{0, "Off"}, {1, "Sometimes"}, {2, "Always"}, {0, NULL}};
-#endif
-static CV_PossibleValue_t glshearing_cons_t[] = {{0, "Off"}, {1, "On"}, {2, "Third-person"}, {0, NULL}};
+CV_PossibleValue_t glshaders_cons_t[] = {{HWD_SHADEROPTION_OFF, "Off"}, {HWD_SHADEROPTION_ON, "On"}, {HWD_SHADEROPTION_NOCUSTOM, "Ignore custom shaders"}, {0, NULL}};
 
-static void CV_glfiltermode_OnChange(void);
-static void CV_glanisotropic_OnChange(void);
-
-static CV_PossibleValue_t glfiltermode_cons_t[]= {{HWD_SET_TEXTUREFILTER_POINTSAMPLED, "Nearest"},
+CV_PossibleValue_t glfiltermode_cons_t[]= {{HWD_SET_TEXTUREFILTER_POINTSAMPLED, "Nearest"},
 	{HWD_SET_TEXTUREFILTER_BILINEAR, "Bilinear"}, {HWD_SET_TEXTUREFILTER_TRILINEAR, "Trilinear"},
 	{HWD_SET_TEXTUREFILTER_MIXED1, "Linear_Nearest"},
 	{HWD_SET_TEXTUREFILTER_MIXED2, "Nearest_Linear"},
 	{HWD_SET_TEXTUREFILTER_MIXED3, "Nearest_Mipmap"},
 	{0, NULL}};
+
 CV_PossibleValue_t glanisotropicmode_cons_t[] = {{1, "MIN"}, {16, "MAX"}, {0, NULL}};
 
-consvar_t cv_glshaders = CVAR_INIT ("gr_shaders", "On", CV_SAVE, glshaders_cons_t, NULL);
-consvar_t cv_glallowshaders = CVAR_INIT ("gr_allowclientshaders", "On", CV_NETVAR, CV_OnOff, NULL);
-consvar_t cv_fovchange = CVAR_INIT ("gr_fovchange", "Off", CV_SAVE, CV_OnOff, NULL);
-
-#ifdef ALAM_LIGHTING
-consvar_t cv_gldynamiclighting = CVAR_INIT ("gr_dynamiclighting", "On", CV_SAVE, CV_OnOff, NULL);
-consvar_t cv_glstaticlighting  = CVAR_INIT ("gr_staticlighting", "On", CV_SAVE, CV_OnOff, NULL);
-consvar_t cv_glcoronas = CVAR_INIT ("gr_coronas", "On", CV_SAVE, CV_OnOff, NULL);
-consvar_t cv_glcoronasize = CVAR_INIT ("gr_coronasize", "1", CV_SAVE|CV_FLOAT, 0, NULL);
-#endif
-
-consvar_t cv_glmodels = CVAR_INIT ("gr_models", "Off", CV_SAVE, CV_OnOff, NULL);
-
-#ifdef BAD_MODEL_OPTIONS
-consvar_t cv_glmodelinterpolation = CVAR_INIT ("gr_modelinterpolation", "Sometimes", CV_SAVE, glmodelinterpolation_cons_t, NULL);
-consvar_t cv_glmodellighting = CVAR_INIT ("gr_modellighting", "Off", CV_SAVE, CV_OnOff, NULL);
-#endif
-
-consvar_t cv_glshearing = CVAR_INIT ("gr_shearing", "Off", CV_SAVE, glshearing_cons_t, NULL);
-consvar_t cv_glspritebillboarding = CVAR_INIT ("gr_spritebillboarding", "On", CV_SAVE, CV_OnOff, NULL);
-consvar_t cv_glskydome = CVAR_INIT ("gr_skydome", "On", CV_SAVE, CV_OnOff, NULL);
-
-consvar_t cv_glfiltermode = CVAR_INIT ("gr_filtermode", "Nearest", CV_SAVE|CV_CALL, glfiltermode_cons_t, CV_glfiltermode_OnChange);
-consvar_t cv_glanisotropicmode = CVAR_INIT ("gr_anisotropicmode", "1", CV_CALL, glanisotropicmode_cons_t, CV_glanisotropic_OnChange);
-
-consvar_t cv_glsolvetjoin = CVAR_INIT ("gr_solvetjoin", "On", 0, CV_OnOff, NULL);
-
-consvar_t cv_glbatching = CVAR_INIT ("gr_batching", "On", 0, CV_OnOff, NULL);
-
-static void CV_glfiltermode_OnChange(void)
+void CV_glfiltermode_OnChange(void);
+void CV_glfiltermode_OnChange(void)
 {
 	if (rendermode == render_opengl)
 		HWD.pfnSetSpecialState(HWD_SET_TEXTUREFILTERMODE, cv_glfiltermode.value);
 }
 
-static void CV_glanisotropic_OnChange(void)
+void CV_glanisotropic_OnChange(void);
+void CV_glanisotropic_OnChange(void)
 {
 	if (rendermode == render_opengl)
 		HWD.pfnSetSpecialState(HWD_SET_TEXTUREANISOTROPICMODE, cv_glanisotropicmode.value);
@@ -5971,33 +5938,10 @@ static void CV_glanisotropic_OnChange(void)
 //added by Hurdler: console varibale that are saved
 void HWR_AddCommands(void)
 {
-	CV_RegisterVar(&cv_fovchange);
-
-#ifdef ALAM_LIGHTING
-	CV_RegisterVar(&cv_glstaticlighting);
-	CV_RegisterVar(&cv_gldynamiclighting);
-	CV_RegisterVar(&cv_glcoronasize);
-	CV_RegisterVar(&cv_glcoronas);
-#endif
-
-#ifdef BAD_MODEL_OPTIONS
-	CV_RegisterVar(&cv_glmodellighting);
-	CV_RegisterVar(&cv_glmodelinterpolation);
-#endif
-
-	CV_RegisterVar(&cv_glmodels);
-
-	CV_RegisterVar(&cv_glskydome);
-	CV_RegisterVar(&cv_glspritebillboarding);
-	CV_RegisterVar(&cv_glshearing);
-	CV_RegisterVar(&cv_glshaders);
-	CV_RegisterVar(&cv_glallowshaders);
-	CV_RegisterVar(&cv_glanisotropicmode);
-
-	CV_RegisterVar(&cv_glfiltermode);
-	CV_RegisterVar(&cv_glsolvetjoin);
-
-	CV_RegisterVar(&cv_glbatching);
+	{
+		extern struct CVarList *cvlist_opengl;
+		CV_RegisterList(cvlist_opengl);
+	}
 }
 
 void HWR_AddSessionCommands(void)

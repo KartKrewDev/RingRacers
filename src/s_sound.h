@@ -44,8 +44,6 @@ extern consvar_t cv_gamesounds;
 extern consvar_t cv_playmusicifunfocused;
 extern consvar_t cv_playsoundifunfocused;
 
-extern CV_PossibleValue_t soundvolume_cons_t[];
-
 typedef enum
 {
 	SF_TOTALLYSINGLE =  1, // Only play one of these sounds at a time...GLOBALLY

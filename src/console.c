@@ -70,7 +70,7 @@ static INT32 con_curlines;  // vid lines currently used by console
 
        INT32 con_clipviewtop; // (useless)
 
-static UINT8  con_hudlines;             // number of console heads up message lines
+static UINT8  con_hudlines;                 // number of console heads up message lines
 static UINT32 con_hudtime[MAXHUDLINES]; // remaining time of display for hud msg lines
 
        INT32 con_clearlines;      // top screen lines to refresh when view reduced
@@ -108,9 +108,6 @@ static void CON_RecalcSize(void);
 static void CON_ChangeHeight(void);
 
 static void CON_DrawBackpic(void);
-static void CONS_height_Change(void);
-static void CONS_hudlines_Change(void);
-static void CONS_backcolor_Change(void);
 
 //======================================================================
 //                   CONSOLE VARS AND COMMANDS
@@ -123,42 +120,15 @@ static void CONS_backcolor_Change(void);
 
 static char con_buffer[CON_BUFFERSIZE];
 
-// how many seconds the hud messages lasts on the screen
-// CV_Unsigned can overflow when multiplied by TICRATE later, so let's use a 3-year limit instead
-static CV_PossibleValue_t hudtime_cons_t[] = {{0, "MIN"}, {99999999, "MAX"}, {0, NULL}};
-static consvar_t cons_hudtime = CVAR_INIT ("con_hudtime", "5", CV_SAVE, hudtime_cons_t, NULL);
-
 // number of lines displayed on the HUD
-static CV_PossibleValue_t hudlines_cons_t[] = {{0, "MIN"}, {MAXHUDLINES, "MAX"}, {0, NULL}};
-static consvar_t cons_hudlines = CVAR_INIT ("con_hudlines", "5", CV_CALL|CV_SAVE, hudlines_cons_t, CONS_hudlines_Change);
-
-// number of lines console move per frame
-// (con_speed needs a limit, apparently)
-static CV_PossibleValue_t speed_cons_t[] = {{0, "MIN"}, {64, "MAX"}, {0, NULL}};
-static consvar_t cons_speed = CVAR_INIT ("con_speed", "8", CV_SAVE, speed_cons_t, NULL);
-
-// percentage of screen height to use for console
-static consvar_t cons_height = CVAR_INIT ("con_height", "50", CV_CALL|CV_SAVE, CV_Unsigned, CONS_height_Change);
-
-static CV_PossibleValue_t backpic_cons_t[] = {{0, "translucent"}, {1, "picture"}, {0, NULL}};
-// whether to use console background picture, or translucent mode
-static consvar_t cons_backpic = CVAR_INIT ("con_backpic", "translucent", CV_SAVE, backpic_cons_t, NULL);
-
-static CV_PossibleValue_t backcolor_cons_t[] = {{0, "White"}, 		{1, "Black"},		{2, "Sepia"},
-												{3, "Brown"},		{4, "Pink"},		{5, "Red"},
-												{6, "Orange"},		{7, "Gold"},		{8, "Yellow"},
-												{9, "Peridot"},		{10,"Green"},		{11,"Aquamarine"},
-												{12,"Cyan"},		{13,"Steel"},		{14,"Blue"},
-												{15,"Purple"},		{16,"Magenta"},		{17,"Lavender"},
-												{18,"Rose"},
-												{0, NULL}};
-consvar_t cons_backcolor = CVAR_INIT ("con_backcolor", "Black", CV_CALL|CV_SAVE, backcolor_cons_t, CONS_backcolor_Change);
+CV_PossibleValue_t hudlines_cons_t[] = {{0, "MIN"}, {MAXHUDLINES, "MAX"}, {0, NULL}};
 
 static void CON_Print(char *msg);
 
 // Change the console height on demand
 //
-static void CONS_height_Change(void)
+void CONS_height_Change(void);
+void CONS_height_Change(void)
 {
 	Lock_state();
 
@@ -170,7 +140,8 @@ static void CONS_height_Change(void)
 
 //
 //
-static void CONS_hudlines_Change(void)
+void CONS_hudlines_Change(void);
+void CONS_hudlines_Change(void)
 {
 	INT32 i;
 
@@ -334,7 +305,8 @@ void CON_SetupBackColormap(void)
 	CON_SetupBackColormapEx(1, true); // default to gray
 }
 
-static void CONS_backcolor_Change(void)
+void CONS_backcolor_Change(void);
+void CONS_backcolor_Change(void)
 {
 	CON_SetupBackColormapEx(cons_backcolor.value, false);
 }
@@ -460,12 +432,10 @@ void CON_Init(void)
 
 		Unlock_state();
 
-		CV_RegisterVar(&cons_hudtime);
-		CV_RegisterVar(&cons_hudlines);
-		CV_RegisterVar(&cons_speed);
-		CV_RegisterVar(&cons_height);
-		CV_RegisterVar(&cons_backpic);
-		CV_RegisterVar(&cons_backcolor);
+		{
+			extern struct CVarList *cvlist_console;
+			CV_RegisterList(cvlist_console);
+		}
 		COM_AddCommand("bind", CONS_Bind_f);
 	}
 	else

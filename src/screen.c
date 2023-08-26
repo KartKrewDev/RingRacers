@@ -73,19 +73,6 @@ viddef_t vid;
 INT32 setmodeneeded; //video mode change needed if > 0 (the mode number to set + 1)
 UINT8 setrenderneeded = 0;
 
-//added : 03-02-98: default screen mode, as loaded/saved in config
-consvar_t cv_scr_width = CVAR_INIT ("scr_width", "640", CV_SAVE, CV_Unsigned, NULL);
-consvar_t cv_scr_height = CVAR_INIT ("scr_height", "400", CV_SAVE, CV_Unsigned, NULL);
-
-static CV_PossibleValue_t scr_depth_cons_t[] = {{8, "8 bits"}, {16, "16 bits"}, {24, "24 bits"}, {32, "32 bits"}, {0, NULL}};
-consvar_t cv_scr_depth = CVAR_INIT ("scr_depth", "16 bits", CV_SAVE, scr_depth_cons_t, NULL);
-
-consvar_t cv_renderview = CVAR_INIT ("renderview", "On", 0, CV_OnOff, NULL);
-consvar_t cv_vhseffect = CVAR_INIT ("vhspause", "On", CV_SAVE, CV_OnOff, NULL);
-
-static CV_PossibleValue_t shittyscreen_cons_t[] = {{0, "Okay"}, {1, "Shitty"}, {2, "Extra Shitty"}, {0, NULL}};
-consvar_t cv_shittyscreen = CVAR_INIT ("televisionsignal", "Okay", CV_NOSHOWHELP, shittyscreen_cons_t, NULL);
-
 CV_PossibleValue_t cv_renderer_t[] = {
 	{1, "Software"},
 #ifdef HWRENDER
@@ -93,12 +80,6 @@ CV_PossibleValue_t cv_renderer_t[] = {
 #endif
 	{0, NULL}
 };
-
-consvar_t cv_renderer = CVAR_INIT ("renderer", "Software", CV_SAVE|CV_NOLUA|CV_CALL, cv_renderer_t, SCR_ChangeRenderer);
-
-static void SCR_ChangeFullscreen(void);
-
-consvar_t cv_fullscreen = CVAR_INIT ("fullscreen", "Yes", CV_SAVE|CV_CALL, CV_YesNo, SCR_ChangeFullscreen);
 
 // =========================================================================
 //                           SCREEN VARIABLES
@@ -394,8 +375,10 @@ void SCR_Startup(void)
 	V_Init();
 	V_Recalc();
 
-	CV_RegisterVar(&cv_ticrate);
-	CV_RegisterVar(&cv_constextsize);
+	{
+		extern struct CVarList *cvlist_screen;
+		CV_RegisterList(cvlist_screen);
+	}
 
 	V_SetPalette(0);
 }
@@ -489,6 +472,7 @@ void SCR_SetDefaultMode(void)
 }
 
 // Change fullscreen on/off according to cv_fullscreen
+void SCR_ChangeFullscreen(void);
 void SCR_ChangeFullscreen(void)
 {
 #ifdef DIRECTFULLSCREEN

@@ -26,15 +26,13 @@ enum {
 	RENDERHITBOX_RINGS,
 };
 
-static CV_PossibleValue_t renderhitbox_cons_t[] = {
+CV_PossibleValue_t renderhitbox_cons_t[] = {
 	{RENDERHITBOX_OFF, "Off"},
 	{RENDERHITBOX_TANGIBLE, "Tangible"},
 	{RENDERHITBOX_ALL, "All"},
 	{RENDERHITBOX_INTANGIBLE, "Intangible"},
 	{RENDERHITBOX_RINGS, "Rings"},
 	{0}};
-
-consvar_t cv_renderhitbox = CVAR_INIT ("renderhitbox", "Off", CV_CHEAT, renderhitbox_cons_t, NULL);
 
 struct bbox_col {
 	INT32 x;

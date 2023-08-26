@@ -23,9 +23,6 @@
 #include "v_video.h" // V_GetColor for assigning gamepad indictaor colors
 #include "z_zone.h"
 
-static CV_PossibleValue_t onecontrolperkey_cons_t[] = {{1, "One"}, {2, "Several"}, {0, NULL}};
-consvar_t cv_controlperkey = CVAR_INIT ("controlperkey", "One", CV_SAVE, onecontrolperkey_cons_t, NULL);
-
 // current state of the keys
 // FRACUNIT for fully pressed, 0 for not pressed
 INT32 gamekeydown[MAXDEVICES][NUMINPUTS];

@@ -351,57 +351,6 @@ angle_t K_ReflectAngle(angle_t yourangle, angle_t theirangle, fixed_t yourspeed,
 	return (angle_t)angoffset;
 }
 
-//{ SRB2kart Net Variables
-
-void K_RegisterKartStuff(void)
-{
-	INT32 i;
-
-	for (i = 0; i < NUMKARTRESULTS-1; i++)
-	{
-		CV_RegisterVar(&cv_items[i]);
-	}
-
-	CV_RegisterVar(&cv_kartspeed);
-	CV_RegisterVar(&cv_kartbumpers);
-	CV_RegisterVar(&cv_kartfrantic);
-	CV_RegisterVar(&cv_kartencore);
-	CV_RegisterVar(&cv_kartspeedometer);
-	CV_RegisterVar(&cv_kartvoices);
-	CV_RegisterVar(&cv_karthorns);
-	CV_RegisterVar(&cv_kartbot);
-	CV_RegisterVar(&cv_karteliminatelast);
-	CV_RegisterVar(&cv_thunderdome);
-	CV_RegisterVar(&cv_kartusepwrlv);
-	CV_RegisterVar(&cv_votetime);
-	CV_RegisterVar(&cv_botscanvote);
-
-	CV_RegisterVar(&cv_kartdebugitem);
-	CV_RegisterVar(&cv_kartdebugamount);
-	CV_RegisterVar(&cv_kartdebugdistribution);
-	CV_RegisterVar(&cv_kartdebughuddrop);
-	CV_RegisterVar(&cv_kartdebugwaypoints);
-	CV_RegisterVar(&cv_kartdebugbots);
-	CV_RegisterVar(&cv_kartdebugstart);
-
-	CV_RegisterVar(&cv_kartdebugnodes);
-	CV_RegisterVar(&cv_kartdebugcolorize);
-	CV_RegisterVar(&cv_kartdebugdirector);
-	CV_RegisterVar(&cv_debugrank);
-	CV_RegisterVar(&cv_spbtest);
-	CV_RegisterVar(&cv_capsuletest);
-	CV_RegisterVar(&cv_battletest);
-	CV_RegisterVar(&cv_debugencorevote);
-
-	CV_RegisterVar(&cv_reducevfx);
-
-	#ifdef DEVELOP
-		CV_RegisterVar(&cv_kartencoremap);
-	#endif
-}
-
-//}
-
 boolean K_IsPlayerLosing(player_t *player)
 {
 	INT32 winningpos = 1;

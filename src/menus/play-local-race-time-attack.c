@@ -11,12 +11,11 @@
 #include "../z_zone.h" // Z_StrDup/Z_Free
 #include "../m_cond.h"
 
-static void CV_SPBAttackChanged(void)
+void CV_SPBAttackChanged(void);
+void CV_SPBAttackChanged(void)
 {
 	G_UpdateTimeStickerMedals(levellist.choosemap, false);
 }
-
-consvar_t cv_dummyspbattack = CVAR_INIT ("dummyspbattack", "Off", CV_HIDDEN|CV_CALL, CV_OnOff, CV_SPBAttackChanged);
 
 struct timeattackmenu_s timeattackmenu;
 
@@ -210,18 +209,6 @@ menu_t PLAY_TAGhostsDef = {
 	NULL,
 	NULL
 };
-
-// autorecord demos for time attack
-consvar_t cv_autorecord = CVAR_INIT ("autorecord", "Yes", 0, CV_YesNo, NULL);
-
-CV_PossibleValue_t ghost_cons_t[] = {{0, "Hide"}, {1, "Show Character"}, {2, "Show All"}, {0, NULL}};
-CV_PossibleValue_t ghost2_cons_t[] = {{0, "Hide"}, {1, "Show"}, {0, NULL}};
-
-consvar_t cv_ghost_besttime  = CVAR_INIT ("ghost_besttime",  "Show All", CV_SAVE, ghost_cons_t, NULL);
-consvar_t cv_ghost_bestlap   = CVAR_INIT ("ghost_bestlap",   "Show All", CV_SAVE, ghost_cons_t, NULL);
-consvar_t cv_ghost_last      = CVAR_INIT ("ghost_last",      "Show All", CV_SAVE, ghost_cons_t, NULL);
-consvar_t cv_ghost_guest     = CVAR_INIT ("ghost_guest",     "Show", CV_SAVE, ghost2_cons_t, NULL);
-consvar_t cv_ghost_staff     = CVAR_INIT ("ghost_staff",     "Show", CV_SAVE, ghost2_cons_t, NULL);
 
 // time attack stuff...
 void M_PrepareTimeAttack(INT32 choice)

@@ -37,10 +37,6 @@
 // length of IP strings
 #define IP_SIZE 21
 
-consvar_t cv_discordrp = CVAR_INIT ("discordrp", "On", CV_SAVE|CV_CALL, CV_OnOff, DRPC_UpdatePresence);
-consvar_t cv_discordstreamer = CVAR_INIT ("discordstreamer", "Off", CV_SAVE, CV_OnOff, NULL);
-consvar_t cv_discordasks = CVAR_INIT ("discordasks", "Yes", CV_SAVE|CV_CALL, CV_YesNo, DRPC_UpdatePresence);
-
 struct discordInfo_s discordInfo;
 
 discordRequest_t *discordRequestList = NULL;

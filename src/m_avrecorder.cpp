@@ -53,6 +53,10 @@ enum : int32_t
 
 }; // namespace Res
 
+}; // namespace
+
+extern "C" {
+
 CV_PossibleValue_t movie_resolution_cons_t[] = {
 	{Res::kGame, "Native"},
 	{Res::kBase, "Small"},
@@ -62,33 +66,12 @@ CV_PossibleValue_t movie_resolution_cons_t[] = {
 	{Res::kCustom, "Custom"},
 	{0, NULL}};
 
-CV_PossibleValue_t movie_limit_cons_t[] = {{1, "MIN"}, {INT32_MAX, "MAX"}, {0, "Unlimited"}, {0, NULL}};
-
-}; // namespace
-
-consvar_t cv_movie_resolution = CVAR_INIT("movie_resolution", "Medium", CV_SAVE, movie_resolution_cons_t, NULL);
-consvar_t cv_movie_custom_resolution = CVAR_INIT("movie_custom_resolution", "640x400", CV_SAVE, NULL, NULL);
-
-consvar_t cv_movie_fps = CVAR_INIT("movie_fps", "60", CV_SAVE, CV_Natural, NULL);
-consvar_t cv_movie_showfps = CVAR_INIT("movie_showfps", "Yes", CV_SAVE, CV_YesNo, NULL);
-
-consvar_t cv_movie_sound = CVAR_INIT("movie_sound", "On", CV_SAVE, CV_OnOff, NULL);
-
-consvar_t cv_movie_duration = CVAR_INIT("movie_duration", "Unlimited", CV_SAVE | CV_FLOAT, movie_limit_cons_t, NULL);
-consvar_t cv_movie_size = CVAR_INIT("movie_size", "25.0", CV_SAVE | CV_FLOAT, movie_limit_cons_t, NULL);
+}; // extern "C"
 
 std::shared_ptr<AVRecorder> g_av_recorder;
 
 void M_AVRecorder_AddCommands(void)
 {
-	CV_RegisterVar(&cv_movie_custom_resolution);
-	CV_RegisterVar(&cv_movie_duration);
-	CV_RegisterVar(&cv_movie_fps);
-	CV_RegisterVar(&cv_movie_resolution);
-	CV_RegisterVar(&cv_movie_showfps);
-	CV_RegisterVar(&cv_movie_size);
-	CV_RegisterVar(&cv_movie_sound);
-
 	srb2::media::Options::register_all();
 }
 

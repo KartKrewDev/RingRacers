@@ -108,55 +108,6 @@ static void Got_RequestMapQueuecmd(UINT8 **cp, INT32 playernum);
 static void Got_MapQueuecmd(UINT8 **cp, INT32 playernum);
 static void Got_Cheat(UINT8 **cp, INT32 playernum);
 
-static void PointLimit_OnChange(void);
-static void TimeLimit_OnChange(void);
-static void NumLaps_OnChange(void);
-static void Mute_OnChange(void);
-
-static void AutoBalance_OnChange(void);
-static void TeamScramble_OnChange(void);
-
-static void NetTimeout_OnChange(void);
-static void JoinTimeout_OnChange(void);
-
-static void Lagless_OnChange (void);
-
-static void Gravity_OnChange(void);
-static void ForceSkin_OnChange(void);
-
-static void Name1_OnChange(void);
-static void Name2_OnChange(void);
-static void Name3_OnChange(void);
-static void Name4_OnChange(void);
-static void Skin1_OnChange(void);
-static void Skin2_OnChange(void);
-static void Skin3_OnChange(void);
-static void Skin4_OnChange(void);
-
-static void Follower_OnChange(void);
-static void Follower2_OnChange(void);
-static void Follower3_OnChange(void);
-static void Follower4_OnChange(void);
-static void Followercolor_OnChange(void);
-static void Followercolor2_OnChange(void);
-static void Followercolor3_OnChange(void);
-static void Followercolor4_OnChange(void);
-
-static void Color1_OnChange(void);
-static void Color2_OnChange(void);
-static void Color3_OnChange(void);
-static void Color4_OnChange(void);
-static void DummyConsvar_OnChange(void);
-static void SoundTest_OnChange(void);
-
-static void KartFrantic_OnChange(void);
-static void KartSpeed_OnChange(void);
-static void KartEncore_OnChange(void);
-static void KartEliminateLast_OnChange(void);
-
-static void Schedule_OnChange(void);
-static void LiveStudioAudience_OnChange(void);
-
 static void Command_Playdemo_f(void);
 static void Command_Timedemo_f(void);
 static void Command_Stopdemo_f(void);
@@ -240,180 +191,9 @@ static void Command_Eval(void);
 //                           CLIENT VARIABLES
 // =========================================================================
 
-static CV_PossibleValue_t usemouse_cons_t[] = {{0, "Off"}, {1, "On"}, {2, "Force"}, {0, NULL}};
-
-static CV_PossibleValue_t teamscramble_cons_t[] = {{0, "Off"}, {1, "Random"}, {2, "Points"}, {0, NULL}};
-
-static CV_PossibleValue_t sleeping_cons_t[] = {{0, "MIN"}, {1000/TICRATE, "MAX"}, {0, NULL}};
-
-static CV_PossibleValue_t pause_cons_t[] = {{0, "Server"}, {1, "All"}, {0, NULL}};
-
-consvar_t cv_showinputjoy = CVAR_INIT ("showinputjoy", "Off", 0, CV_OnOff, NULL);
-
-static consvar_t cv_dummyconsvar = CVAR_INIT ("dummyconsvar", "Off", CV_CALL|CV_NOSHOWHELP, CV_OnOff, DummyConsvar_OnChange);
-
-consvar_t cv_restrictskinchange = CVAR_INIT ("restrictskinchange", "Yes", CV_NETVAR|CV_CHEAT, CV_YesNo, NULL);
-consvar_t cv_allowteamchange = CVAR_INIT ("allowteamchange", "Yes", CV_NETVAR, CV_YesNo, NULL);
-
-static CV_PossibleValue_t maxplayers_cons_t[] = {{1, "MIN"}, {MAXPLAYERS, "MAX"}, {0, NULL}};
-consvar_t cv_maxplayers = CVAR_INIT ("maxplayers", "8", CV_NETVAR, maxplayers_cons_t, NULL);
-
-static CV_PossibleValue_t spectatorreentry_cons_t[] = {{0, "MIN"}, {10*60, "MAX"}, {0, NULL}};
-consvar_t cv_spectatorreentry = CVAR_INIT ("spectatorreentry", "30", CV_NETVAR, spectatorreentry_cons_t, NULL);
-consvar_t cv_duelspectatorreentry = CVAR_INIT ("duelspectatorreentry", "180", CV_NETVAR, spectatorreentry_cons_t, NULL);
-
-static CV_PossibleValue_t antigrief_cons_t[] = {{10, "MIN"}, {180, "MAX"}, {0, "Off"}, {0, NULL}};
-consvar_t cv_antigrief = CVAR_INIT ("antigrief", "30", CV_NETVAR, antigrief_cons_t, NULL);
-
-consvar_t cv_seenames = CVAR_INIT ("seenames", "On", CV_SAVE, CV_OnOff, NULL);
-
-// names
-consvar_t cv_playername[MAXSPLITSCREENPLAYERS] = {
-	CVAR_INIT ("name", "Dr. Eggman", CV_SAVE|CV_CALL|CV_NOINIT, NULL, Name1_OnChange),
-	CVAR_INIT ("name2", "Tails", CV_SAVE|CV_CALL|CV_NOINIT, NULL, Name2_OnChange),
-	CVAR_INIT ("name3", "Sonic", CV_SAVE|CV_CALL|CV_NOINIT, NULL, Name3_OnChange),
-	CVAR_INIT ("name4", "Knuckles", CV_SAVE|CV_CALL|CV_NOINIT, NULL, Name4_OnChange)
-};
-// player colors
 UINT16 lastgoodcolor[MAXSPLITSCREENPLAYERS] = {SKINCOLOR_NONE, SKINCOLOR_NONE, SKINCOLOR_NONE, SKINCOLOR_NONE};
-consvar_t cv_playercolor[MAXSPLITSCREENPLAYERS] = {
-	CVAR_INIT ("color", "Default", CV_SAVE|CV_CALL|CV_NOINIT, Color_cons_t, Color1_OnChange),
-	CVAR_INIT ("color2", "Default", CV_SAVE|CV_CALL|CV_NOINIT, Color_cons_t, Color2_OnChange),
-	CVAR_INIT ("color3", "Default", CV_SAVE|CV_CALL|CV_NOINIT, Color_cons_t, Color3_OnChange),
-	CVAR_INIT ("color4", "Default", CV_SAVE|CV_CALL|CV_NOINIT, Color_cons_t, Color4_OnChange)
-};
-// player's skin, saved for commodity, when using a favorite skins wad..
-consvar_t cv_skin[MAXSPLITSCREENPLAYERS] = {
-	CVAR_INIT ("skin", DEFAULTSKIN, CV_SAVE|CV_CALL|CV_NOINIT, NULL, Skin1_OnChange),
-	CVAR_INIT ("skin2", DEFAULTSKIN2, CV_SAVE|CV_CALL|CV_NOINIT, NULL, Skin2_OnChange),
-	CVAR_INIT ("skin3", DEFAULTSKIN3, CV_SAVE|CV_CALL|CV_NOINIT, NULL, Skin3_OnChange),
-	CVAR_INIT ("skin4", DEFAULTSKIN4, CV_SAVE|CV_CALL|CV_NOINIT, NULL, Skin4_OnChange)
-};
 
-// player's followers. Also saved.
-consvar_t cv_follower[MAXSPLITSCREENPLAYERS] = {
-	CVAR_INIT ("follower", "None", CV_SAVE|CV_CALL|CV_NOINIT, NULL, Follower_OnChange),
-	CVAR_INIT ("follower2", "None", CV_SAVE|CV_CALL|CV_NOINIT, NULL, Follower2_OnChange),
-	CVAR_INIT ("follower3", "None", CV_SAVE|CV_CALL|CV_NOINIT, NULL, Follower3_OnChange),
-	CVAR_INIT ("follower4", "None", CV_SAVE|CV_CALL|CV_NOINIT, NULL, Follower4_OnChange)
-};
-
-// player's follower colors... Also saved...
-consvar_t cv_followercolor[MAXSPLITSCREENPLAYERS] = {
-	CVAR_INIT ("followercolor", "Match", CV_SAVE|CV_CALL|CV_NOINIT, Followercolor_cons_t, Followercolor_OnChange),
-	CVAR_INIT ("followercolor2", "Match", CV_SAVE|CV_CALL|CV_NOINIT, Followercolor_cons_t, Followercolor2_OnChange),
-	CVAR_INIT ("followercolor3", "Match", CV_SAVE|CV_CALL|CV_NOINIT, Followercolor_cons_t, Followercolor3_OnChange),
-	CVAR_INIT ("followercolor4", "Match", CV_SAVE|CV_CALL|CV_NOINIT, Followercolor_cons_t, Followercolor4_OnChange)
-};
-
-// last selected profile, unaccessible cvar only set internally but is saved.
-// It's used to know what profile to autoload you to when you get into the character setup.
-
-static CV_PossibleValue_t lastprofile_cons_t[] = {{-1, "MIN"}, {MAXPROFILES, "MAX"}, {0, NULL}};
-
-consvar_t cv_lastprofile[MAXSPLITSCREENPLAYERS] = {
-	CVAR_INIT ("lastprofile", "0", CV_SAVE|CV_HIDDEN, lastprofile_cons_t, NULL),
-	CVAR_INIT ("lastprofile2", "0", CV_SAVE|CV_HIDDEN, lastprofile_cons_t, NULL),
-	CVAR_INIT ("lastprofile3", "0", CV_SAVE|CV_HIDDEN, lastprofile_cons_t, NULL),
-	CVAR_INIT ("lastprofile4", "0", CV_SAVE|CV_HIDDEN, lastprofile_cons_t, NULL),
-};
-
-// currently loaded profile for P1 menuing.
-// You choose this profile when starting the game, this will also set lastprofile[0]
-consvar_t cv_currprofile = CVAR_INIT ("currprofile", "-1", CV_HIDDEN, lastprofile_cons_t, NULL);
-
-// This one is used exclusively for the titlescreen
-consvar_t cv_ttlprofilen = CVAR_INIT ("ttlprofilen", "0", CV_SAVE, lastprofile_cons_t, NULL);
-
-// Cvar for using splitscreen with 1 device.
-consvar_t cv_splitdevice = CVAR_INIT ("splitdevice", "Off", CV_SAVE, CV_OnOff, NULL);
-
-consvar_t cv_skipmapcheck = CVAR_INIT ("skipmapcheck", "Off", CV_SAVE, CV_OnOff, NULL);
-
-consvar_t cv_usemouse = CVAR_INIT ("use_mouse", "Off", CV_SAVE|CV_CALL,usemouse_cons_t, I_StartupMouse);
-
-consvar_t cv_joyscale[MAXSPLITSCREENPLAYERS] = {
-	CVAR_INIT ("padscale", "1", CV_SAVE|CV_CALL, NULL, I_JoyScale),
-	CVAR_INIT ("padscale2", "1", CV_SAVE|CV_CALL, NULL, I_JoyScale2),
-	CVAR_INIT ("padscale3", "1", CV_SAVE|CV_CALL, NULL, I_JoyScale3),
-	CVAR_INIT ("padscale4", "1", CV_SAVE|CV_CALL, NULL, I_JoyScale4)
-};
-
-// SRB2kart
-consvar_t cv_items[NUMKARTRESULTS-1] = {
-	CVAR_INIT ("sneaker", 			"On", CV_NETVAR, CV_OnOff, NULL),
-	CVAR_INIT ("rocketsneaker", 	"On", CV_NETVAR, CV_OnOff, NULL),
-	CVAR_INIT ("invincibility", 	"On", CV_NETVAR, CV_OnOff, NULL),
-	CVAR_INIT ("banana", 			"On", CV_NETVAR, CV_OnOff, NULL),
-	CVAR_INIT ("eggmark", 			"On", CV_NETVAR, CV_OnOff, NULL),
-	CVAR_INIT ("orbinaut", 			"On", CV_NETVAR, CV_OnOff, NULL),
-	CVAR_INIT ("jawz", 				"On", CV_NETVAR, CV_OnOff, NULL),
-	CVAR_INIT ("mine", 				"On", CV_NETVAR, CV_OnOff, NULL),
-	CVAR_INIT ("landmine", 			"On", CV_NETVAR, CV_OnOff, NULL),
-	CVAR_INIT ("ballhog", 			"On", CV_NETVAR, CV_OnOff, NULL),
-	CVAR_INIT ("selfpropelledbomb", "On", CV_NETVAR, CV_OnOff, NULL),
-	CVAR_INIT ("grow", 				"On", CV_NETVAR, CV_OnOff, NULL),
-	CVAR_INIT ("shrink", 			"On", CV_NETVAR, CV_OnOff, NULL),
-	CVAR_INIT ("lightningshield", 	"On", CV_NETVAR, CV_OnOff, NULL),
-	CVAR_INIT ("bubbleshield", 		"On", CV_NETVAR, CV_OnOff, NULL),
-	CVAR_INIT ("flameshield", 		"On", CV_NETVAR, CV_OnOff, NULL),
-	CVAR_INIT ("hyudoro", 			"On", CV_NETVAR, CV_OnOff, NULL),
-	CVAR_INIT ("pogospring", 		"On", CV_NETVAR, CV_OnOff, NULL),
-	CVAR_INIT ("superring", 		"On", CV_NETVAR, CV_OnOff, NULL),
-	CVAR_INIT ("kitchensink", 		"On", CV_NETVAR, CV_OnOff, NULL),
-	CVAR_INIT ("droptarget", 		"On", CV_NETVAR, CV_OnOff, NULL),
-	CVAR_INIT ("gardentop", 		"On", CV_NETVAR, CV_OnOff, NULL),
-	CVAR_INIT ("gachabom", 			"On", CV_NETVAR, CV_OnOff, NULL),
-	CVAR_INIT ("dualsneaker", 		"On", CV_NETVAR, CV_OnOff, NULL),
-	CVAR_INIT ("triplesneaker", 	"On", CV_NETVAR, CV_OnOff, NULL),
-	CVAR_INIT ("triplebanana", 		"On", CV_NETVAR, CV_OnOff, NULL),
-	CVAR_INIT ("tripleorbinaut", 	"On", CV_NETVAR, CV_OnOff, NULL),
-	CVAR_INIT ("quadorbinaut", 		"On", CV_NETVAR, CV_OnOff, NULL),
-	CVAR_INIT ("dualjawz", 			"On", CV_NETVAR, CV_OnOff, NULL),
-	CVAR_INIT ("triplegachabom", 	"On", CV_NETVAR, CV_OnOff, NULL)
-};
-
-consvar_t cv_kartspeed = CVAR_INIT ("gamespeed", "Auto", CV_NETVAR|CV_CALL|CV_NOINIT, kartspeed_cons_t, KartSpeed_OnChange);
-static CV_PossibleValue_t kartbumpers_cons_t[] = {{1, "MIN"}, {12, "MAX"}, {0, NULL}};
-consvar_t cv_kartbumpers = CVAR_INIT ("battlebumpers", "3", CV_NETVAR, kartbumpers_cons_t, NULL);
-consvar_t cv_kartfrantic = CVAR_INIT ("franticitems", "Off", CV_NETVAR|CV_CALL|CV_NOINIT, CV_OnOff, KartFrantic_OnChange);
-static CV_PossibleValue_t kartencore_cons_t[] = {{-1, "Auto"}, {0, "Off"}, {1, "On"}, {0, NULL}};
-consvar_t cv_kartencore = CVAR_INIT ("encore", "Auto", CV_NETVAR|CV_CALL|CV_NOINIT, kartencore_cons_t, KartEncore_OnChange);
-static CV_PossibleValue_t kartspeedometer_cons_t[] = {{0, "Off"}, {1, "Percentage"}, {2, "Kilometers"}, {3, "Miles"}, {4, "Fracunits"}, {0, NULL}};
-consvar_t cv_kartspeedometer = CVAR_INIT ("speedometer", "Percentage", CV_SAVE, kartspeedometer_cons_t, NULL); // use tics in display
-consvar_t cv_kartvoices = CVAR_INIT ("tauntvoices", "Tasteful", CV_SAVE, kartvoices_cons_t, NULL);
-consvar_t cv_karthorns = CVAR_INIT ("taunthorns", "Tasteful", CV_SAVE, kartvoices_cons_t, NULL);
-
-#ifdef DEVELOP
-	consvar_t cv_kartencoremap = CVAR_INIT ("encoremap", "On", CV_NETVAR|CV_CHEAT, CV_OnOff, NULL);
-#endif
-
-static CV_PossibleValue_t kartbot_cons_t[] = {
-	{0, "Off"},
-	{1, "Lv.1"},
-	{2, "Lv.2"},
-	{3, "Lv.3"},
-	{4, "Lv.4"},
-	{5, "Lv.5"},
-	{6, "Lv.6"},
-	{7, "Lv.7"},
-	{8, "Lv.8"},
-	{9, "Lv.9"},
-	{10,"Lv.10"},
-	{11,"Lv.11"},
-	{12,"Lv.12"},
-	{13,"Lv.MAX"},
-	{0, NULL}
-};
-consvar_t cv_kartbot = CVAR_INIT ("bots", "Off", CV_NETVAR, kartbot_cons_t, NULL);
-
-consvar_t cv_karteliminatelast = CVAR_INIT ("eliminatelast", "Yes", CV_NETVAR|CV_CALL, CV_YesNo, KartEliminateLast_OnChange);
-
-consvar_t cv_thunderdome = CVAR_INIT ("thunderdome", "Off", CV_NETVAR, CV_OnOff, NULL);
-
-consvar_t cv_kartusepwrlv = CVAR_INIT ("usepwrlv", "Yes", CV_NETVAR, CV_YesNo, NULL);
-
-static CV_PossibleValue_t kartdebugitem_cons_t[] =
+CV_PossibleValue_t kartdebugitem_cons_t[] =
 {
 #define FOREACH( name, n ) { n, #name }
 	KART_ITEM_ITERATOR,
@@ -425,110 +205,24 @@ static CV_PossibleValue_t kartdebugitem_cons_t[] =
 	{POWERUP_SUPERFLICKY, "SuperFlicky"},
 	{0}
 };
-consvar_t cv_kartdebugitem = CVAR_INIT ("debugitem", "None", CV_NETVAR|CV_CHEAT, kartdebugitem_cons_t, NULL);
-static CV_PossibleValue_t kartdebugamount_cons_t[] = {{1, "MIN"}, {255, "MAX"}, {0, NULL}};
-consvar_t cv_kartdebugamount = CVAR_INIT ("debugitemamount", "1", CV_NETVAR|CV_CHEAT, kartdebugamount_cons_t, NULL);
 
-consvar_t cv_kartdebugdistribution = CVAR_INIT ("debugitemodds", "Off", CV_NETVAR|CV_CHEAT, CV_OnOff, NULL);
-consvar_t cv_kartdebughuddrop = CVAR_INIT ("debugitemdrop", "Off", CV_NETVAR|CV_CHEAT, CV_OnOff, NULL);
-static CV_PossibleValue_t kartdebugwaypoint_cons_t[] = {{0, "Off"}, {1, "Forwards"}, {2, "Backwards"}, {0, NULL}};
-consvar_t cv_kartdebugwaypoints = CVAR_INIT ("debugwaypoints", "Off", CV_NETVAR|CV_CHEAT, kartdebugwaypoint_cons_t, NULL);
-consvar_t cv_kartdebugbots = CVAR_INIT ("debugbots", "Off", CV_NETVAR|CV_CHEAT, CV_OnOff, NULL);
-consvar_t cv_kartdebugnodes = CVAR_INIT ("debugnodes", "Off", CV_CHEAT, CV_OnOff, NULL);
-consvar_t cv_kartdebugcolorize = CVAR_INIT ("debugcolorize", "Off", CV_CHEAT, CV_OnOff, NULL);
-consvar_t cv_kartdebugdirector = CVAR_INIT ("debugdirector", "Off", CV_CHEAT, CV_OnOff, NULL);
-consvar_t cv_kartdebugstart = CVAR_INIT ("debugstart", "Off", CV_NETVAR|CV_CHEAT, CV_OnOff, NULL);
-consvar_t cv_spbtest = CVAR_INIT ("spbtest", "Off", CV_CHEAT|CV_NETVAR, CV_OnOff, NULL);
-consvar_t cv_debugrank = CVAR_INIT ("debugrank", "Off", CV_CHEAT, CV_OnOff, NULL);
-consvar_t cv_battletest = CVAR_INIT ("battletest", "Off", CV_CHEAT|CV_NETVAR, CV_OnOff, NULL);
-
-static CV_PossibleValue_t capsuletest_cons_t[] = {
+CV_PossibleValue_t capsuletest_cons_t[] = {
 	{CV_CAPSULETEST_OFF, "Off"},
 	{CV_CAPSULETEST_MULTIPLAYER, "Multiplayer"},
 	{CV_CAPSULETEST_TIMEATTACK, "TimeAttack"},
 	{0, NULL}};
 
-static void CapsuleTest_OnChange(void)
+void CapsuleTest_OnChange(void);
+void CapsuleTest_OnChange(void)
 {
 	if (gamestate == GS_LEVEL)
 		CONS_Printf("Level must be restarted for capsuletest to have effect.\n");
 }
 
-consvar_t cv_capsuletest = CVAR_INIT ("capsuletest", "Off", CV_CHEAT|CV_NETVAR|CV_CALL, capsuletest_cons_t, CapsuleTest_OnChange);
+CV_PossibleValue_t pointlimit_cons_t[] = {{1, "MIN"}, {MAXSCORE, "MAX"}, {0, "None"}, {-1, "Default"}, {0, NULL}};
+CV_PossibleValue_t numlaps_cons_t[] = {{0, "MIN"}, {MAX_LAPS, "MAX"}, {-1, "Map default"}, {0, NULL}};
 
-consvar_t cv_reducevfx = CVAR_INIT ("reducevfx", "No", CV_SAVE, CV_YesNo, NULL);
-
-static CV_PossibleValue_t votetime_cons_t[] = {{10, "MIN"}, {3600, "MAX"}, {0, NULL}};
-consvar_t cv_votetime = CVAR_INIT ("votetime", "20", CV_NETVAR, votetime_cons_t, NULL);
-
-consvar_t cv_botscanvote = CVAR_INIT ("botscanvote", "No", CV_CHEAT, CV_YesNo, NULL);
-
-consvar_t cv_gravity = CVAR_INIT ("gravity", "0.8", CV_CHEAT|CV_FLOAT|CV_CALL, NULL, Gravity_OnChange); // change DEFAULT_GRAVITY if you change this
-
-consvar_t cv_soundtest = CVAR_INIT ("soundtest", "0", CV_CALL, NULL, SoundTest_OnChange);
-
-static CV_PossibleValue_t minitimelimit_cons_t[] = {{15, "MIN"}, {9999, "MAX"}, {0, NULL}};
-consvar_t cv_countdowntime = CVAR_INIT ("countdowntime", "30", CV_NETVAR, minitimelimit_cons_t, NULL);
-
-consvar_t cv_autobalance = CVAR_INIT ("autobalance", "Off", CV_SAVE|CV_NETVAR|CV_CALL, CV_OnOff, AutoBalance_OnChange);
-consvar_t cv_teamscramble = CVAR_INIT ("teamscramble", "Off", CV_SAVE|CV_NETVAR|CV_CALL|CV_NOINIT, teamscramble_cons_t, TeamScramble_OnChange);
-consvar_t cv_scrambleonchange = CVAR_INIT ("scrambleonchange", "Off", CV_SAVE|CV_NETVAR, teamscramble_cons_t, NULL);
-
-consvar_t cv_alttitle = CVAR_INIT ("alttitle", "Off", CV_CALL|CV_NOSHOWHELP|CV_NOINIT|CV_SAVE, CV_OnOff, AltTitle_OnChange);
-consvar_t cv_itemfinder = CVAR_INIT ("itemfinder", "Off", CV_CALL|CV_NOSHOWHELP, CV_OnOff, ItemFinder_OnChange);
-
-// Scoring type options
-consvar_t cv_overtime = CVAR_INIT ("overtime", "Yes", CV_NETVAR, CV_YesNo, NULL);
-
-consvar_t cv_rollingdemos = CVAR_INIT ("rollingdemos", "On", CV_SAVE, CV_OnOff, NULL);
-
-static CV_PossibleValue_t pointlimit_cons_t[] = {{1, "MIN"}, {MAXSCORE, "MAX"}, {0, "None"}, {-1, "Default"}, {0, NULL}};
-consvar_t cv_pointlimit = CVAR_INIT ("pointlimit", "Default", CV_NETVAR|CV_CALL|CV_NOINIT, pointlimit_cons_t, PointLimit_OnChange);
-static CV_PossibleValue_t timelimit_cons_t[] = {{1, "MIN"}, {30*60, "MAX"}, {0, "None"}, {-1, "Default"}, {0, NULL}};
-consvar_t cv_timelimit = CVAR_INIT ("timelimit", "Default", CV_NETVAR|CV_CALL|CV_NOINIT, timelimit_cons_t, TimeLimit_OnChange);
-
-static CV_PossibleValue_t numlaps_cons_t[] = {{0, "MIN"}, {MAX_LAPS, "MAX"}, {-1, "Map default"}, {0, NULL}};
-consvar_t cv_numlaps = CVAR_INIT ("numlaps", "Map default", CV_SAVE|CV_NETVAR|CV_CALL|CV_CHEAT, numlaps_cons_t, NumLaps_OnChange);
-
-consvar_t cv_forceskin = CVAR_INIT ("forcecharacter", "None", CV_NETVAR|CV_CALL|CV_CHEAT, NULL, ForceSkin_OnChange);
-
-consvar_t cv_downloading = CVAR_INIT ("downloading", "On", 0, CV_OnOff, NULL);
-consvar_t cv_allowexitlevel = CVAR_INIT ("allowexitlevel", "No", CV_NETVAR, CV_YesNo, NULL);
-
-consvar_t cv_netstat = CVAR_INIT ("netstat", "Off", 0, CV_OnOff, NULL); // show bandwidth statistics
-static CV_PossibleValue_t nettimeout_cons_t[] = {{TICRATE/7, "MIN"}, {60*TICRATE, "MAX"}, {0, NULL}};
-consvar_t cv_nettimeout = CVAR_INIT ("nettimeout", "210", CV_CALL|CV_SAVE, nettimeout_cons_t, NetTimeout_OnChange);
-//static CV_PossibleValue_t jointimeout_cons_t[] = {{5*TICRATE, "MIN"}, {60*TICRATE, "MAX"}, {0, NULL}};
-consvar_t cv_jointimeout = CVAR_INIT ("jointimeout", "210", CV_CALL|CV_SAVE, nettimeout_cons_t, JoinTimeout_OnChange);
-consvar_t cv_maxping = CVAR_INIT ("maxdelay", "20", CV_SAVE, CV_Unsigned, NULL);
-
-consvar_t cv_lagless = CVAR_INIT ("lagless", "Off", CV_SAVE|CV_NETVAR|CV_CALL, CV_OnOff, Lagless_OnChange);
-
-static CV_PossibleValue_t pingtimeout_cons_t[] = {{8, "MIN"}, {120, "MAX"}, {0, NULL}};
-consvar_t cv_pingtimeout = CVAR_INIT ("maxdelaytimeout", "10", CV_SAVE|CV_NETVAR, pingtimeout_cons_t, NULL);
-
-// show your ping on the HUD next to framerate. Defaults to warning only (shows up if your ping is > maxping)
-static CV_PossibleValue_t showping_cons_t[] = {{0, "Off"}, {1, "Always"}, {2, "Warning"}, {0, NULL}};
-consvar_t cv_showping = CVAR_INIT ("showping", "Always", CV_SAVE, showping_cons_t, NULL);
-
-static CV_PossibleValue_t pingmeasurement_cons_t[] = {{0, "Frames"}, {1, "Milliseconds"}, {0, NULL}};
-consvar_t cv_pingmeasurement = CVAR_INIT ("pingmeasurement", "Frames", CV_SAVE, pingmeasurement_cons_t, NULL);
-
-consvar_t cv_showviewpointtext = CVAR_INIT ("showviewpointtext", "On", CV_SAVE, CV_OnOff, NULL);
-
-// Intermission time Tails 04-19-2002
-static CV_PossibleValue_t inttime_cons_t[] = {{0, "MIN"}, {3600, "MAX"}, {0, NULL}};
-consvar_t cv_inttime = CVAR_INIT ("inttime", "10", CV_SAVE|CV_NETVAR, inttime_cons_t, NULL);
-
-static CV_PossibleValue_t advancemap_cons_t[] = {{0, "Same"}, {1, "Next"}, {2, "Random"}, {3, "Vote"}, {0, NULL}};
-consvar_t cv_advancemap = CVAR_INIT ("advancemap", "Vote", CV_NETVAR, advancemap_cons_t, NULL);
-
-consvar_t cv_pause = CVAR_INIT ("pausepermission", "Server", CV_SAVE|CV_NETVAR, pause_cons_t, NULL);
-consvar_t cv_mute = CVAR_INIT ("mute", "Off", CV_NETVAR|CV_CALL, CV_OnOff, Mute_OnChange);
-
-consvar_t cv_sleep = CVAR_INIT ("cpusleep", "1", CV_SAVE, sleeping_cons_t, NULL);
-
-static CV_PossibleValue_t perfstats_cons_t[] = {
+CV_PossibleValue_t perfstats_cons_t[] = {
 	{PS_OFF, "Off"},
 	{PS_RENDER, "Rendering"},
 	{PS_LOGIC, "Logic"},
@@ -536,17 +230,6 @@ static CV_PossibleValue_t perfstats_cons_t[] = {
 	{PS_THINKFRAME, "ThinkFrame"},
 	{0, NULL}
 };
-consvar_t cv_perfstats = CVAR_INIT ("perfstats", "Off", 0, perfstats_cons_t, NULL);
-
-consvar_t cv_schedule = CVAR_INIT ("schedule", "On", CV_NETVAR|CV_CALL, CV_OnOff, Schedule_OnChange);
-
-consvar_t cv_automate = CVAR_INIT ("automate", "On", CV_NETVAR, CV_OnOff, NULL);
-
-#ifdef DEVELOP
-consvar_t cv_livestudioaudience = CVAR_INIT ("livestudioaudience", "On", CV_NETVAR|CV_CALL, CV_OnOff, LiveStudioAudience_OnChange);
-#else
-consvar_t cv_livestudioaudience = CVAR_INIT ("livestudioaudience", "Off", CV_NETVAR|CV_CALL, CV_OnOff, LiveStudioAudience_OnChange);
-#endif
 
 char timedemo_name[256];
 boolean timedemo_csv;
@@ -746,92 +429,16 @@ void D_RegisterServerCommands(void)
 	// for master server connection
 	AddMServCommands();
 
-	// misc
-	CV_RegisterVar(&cv_pointlimit);
-	CV_RegisterVar(&cv_numlaps);
-
-	CV_RegisterVar(&cv_autobalance);
-	CV_RegisterVar(&cv_teamscramble);
-	CV_RegisterVar(&cv_scrambleonchange);
-
-	CV_RegisterVar(&cv_inttime);
-	CV_RegisterVar(&cv_advancemap);
-	CV_RegisterVar(&cv_timelimit);
-	CV_RegisterVar(&cv_playbackspeed);
-	CV_RegisterVar(&cv_forceskin);
-	CV_RegisterVar(&cv_downloading);
-
-	K_RegisterKartStuff(); // SRB2kart
-
-	CV_RegisterVar(&cv_countdowntime);
-	CV_RegisterVar(&cv_overtime);
-	CV_RegisterVar(&cv_pause);
-	CV_RegisterVar(&cv_mute);
-
 	RegisterNetXCmd(XD_RANDOMSEED, Got_RandomSeed);
 
-	CV_RegisterVar(&cv_allowexitlevel);
-	CV_RegisterVar(&cv_restrictskinchange);
-	CV_RegisterVar(&cv_allowteamchange);
-	CV_RegisterVar(&cv_maxplayers);
-	CV_RegisterVar(&cv_spectatorreentry);
-	CV_RegisterVar(&cv_duelspectatorreentry);
-	CV_RegisterVar(&cv_antigrief);
-
 	// d_clisrv
-	CV_RegisterVar(&cv_maxconnections);
-	CV_RegisterVar(&cv_joindelay);
-	CV_RegisterVar(&cv_resynchattempts);
-	CV_RegisterVar(&cv_maxsend);
-	CV_RegisterVar(&cv_noticedownload);
-	CV_RegisterVar(&cv_downloadspeed);
-	CV_RegisterVar(&cv_httpsource);
-	CV_RegisterVar(&cv_allownewplayer);
-#ifdef VANILLAJOINNEXTROUND
-	CV_RegisterVar(&cv_joinnextround);
-#endif
-	CV_RegisterVar(&cv_showjoinaddress);
-	CV_RegisterVar(&cv_blamecfail);
 
 	COM_AddCommand("ping", Command_Ping_f);
-	CV_RegisterVar(&cv_nettimeout);
-	CV_RegisterVar(&cv_jointimeout);
-	CV_RegisterVar(&cv_kicktime);
-	CV_RegisterVar(&cv_skipmapcheck);
-	CV_RegisterVar(&cv_sleep);
-	CV_RegisterVar(&cv_maxping);
-	CV_RegisterVar(&cv_lagless);
-	CV_RegisterVar(&cv_pingtimeout);
-	CV_RegisterVar(&cv_showping);
-	CV_RegisterVar(&cv_pingmeasurement);
-	CV_RegisterVar(&cv_showviewpointtext);
 
-	CV_RegisterVar(&cv_schedule);
-	CV_RegisterVar(&cv_automate);
-	CV_RegisterVar(&cv_livestudioaudience);
-
-	CV_RegisterVar(&cv_dummyconsvar);
-
-#ifdef USE_STUN
-	CV_RegisterVar(&cv_stunserver);
-#endif
-
-#ifdef DEVELOP
-	CV_RegisterVar(&cv_botcontrol);
-#endif
-
-	CV_RegisterVar(&cv_discordinvites);
 	RegisterNetXCmd(XD_DISCORD, Got_DiscordInfo);
 
 	COM_AddCommand("numthinkers", Command_Numthinkers_f);
 	COM_AddCommand("countmobjs", Command_CountMobjs_f);
-
-	CV_RegisterVar(&cv_recordmultiplayerdemos);
-	CV_RegisterVar(&cv_netdemosyncquality);
-
-	CV_RegisterVar(&cv_shoutname);
-	CV_RegisterVar(&cv_shoutcolor);
-	CV_RegisterVar(&cv_autoshout);
 
 #ifdef _DEBUG
 	COM_AddCommand("causecfail", Command_CauseCfail_f);
@@ -841,6 +448,11 @@ void D_RegisterServerCommands(void)
 #endif
 
 	K_RegisterMidVoteCVars();
+
+	{
+		extern struct CVarList *cvlist_server;
+		CV_RegisterList(cvlist_server);
+	}
 }
 
 // =========================================================================
@@ -900,179 +512,18 @@ void D_RegisterClientCommands(void)
 	COM_AddCommand("stopmovie", Command_StopMovie_f);
 	COM_AddCommand("minigen", M_MinimapGenerate);
 
-	CV_RegisterVar(&cv_screenshot_colorprofile);
-	CV_RegisterVar(&cv_lossless_recorder);
-
 #ifdef SRB2_CONFIG_ENABLE_WEBM_MOVIES
 	M_AVRecorder_AddCommands();
 #endif
 
-	// PNG variables
-	CV_RegisterVar(&cv_zlib_level);
-	CV_RegisterVar(&cv_zlib_memory);
-	CV_RegisterVar(&cv_zlib_strategy);
-	CV_RegisterVar(&cv_zlib_window_bits);
-	// APNG variables
-	CV_RegisterVar(&cv_zlib_levela);
-	CV_RegisterVar(&cv_zlib_memorya);
-	CV_RegisterVar(&cv_zlib_strategya);
-	CV_RegisterVar(&cv_zlib_window_bitsa);
-	CV_RegisterVar(&cv_apng_delay);
-	CV_RegisterVar(&cv_apng_downscale);
-	// GIF variables
-	CV_RegisterVar(&cv_gif_optimize);
-	CV_RegisterVar(&cv_gif_downscale);
-	CV_RegisterVar(&cv_gif_dynamicdelay);
-	CV_RegisterVar(&cv_gif_localcolortable);
-
-	// register these so it is saved to config
-	for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
-	{
-		CV_RegisterVar(&cv_playername[i]);
-		CV_RegisterVar(&cv_playercolor[i]);
-		CV_RegisterVar(&cv_skin[i]);
-		CV_RegisterVar(&cv_follower[i]);
-		CV_RegisterVar(&cv_followercolor[i]);
-		CV_RegisterVar(&cv_lastprofile[i]);
-	}
-
-	CV_RegisterVar(&cv_currprofile);
-	CV_RegisterVar(&cv_ttlprofilen);
-	CV_RegisterVar(&cv_splitdevice);
-
-	// preferred number of players
-	CV_RegisterVar(&cv_splitplayers);
-
-	CV_RegisterVar(&cv_seenames);
-	CV_RegisterVar(&cv_rollingdemos);
-	CV_RegisterVar(&cv_netstat);
-	CV_RegisterVar(&cv_netticbuffer);
-	CV_RegisterVar(&cv_mindelay);
-
-	CV_RegisterVar(&cv_allowguests);
-	CV_RegisterVar(&cv_gamestochat);
-
-	#ifdef DEVELOP
-		CV_RegisterVar(&cv_badjoin);
-		CV_RegisterVar(&cv_badtraffic);
-		CV_RegisterVar(&cv_badresponse);
-		CV_RegisterVar(&cv_noresponse);
-		CV_RegisterVar(&cv_nochallenge);
-		CV_RegisterVar(&cv_badresults);
-		CV_RegisterVar(&cv_noresults);
-		CV_RegisterVar(&cv_badtime);
-		CV_RegisterVar(&cv_badip);
-	#endif
-
-	// HUD
-	CV_RegisterVar(&cv_alttitle);
-	CV_RegisterVar(&cv_itemfinder);
-	CV_RegisterVar(&cv_showinputjoy);
-
-	// time attack ghost options are also saved to config
-	CV_RegisterVar(&cv_ghost_besttime);
-	CV_RegisterVar(&cv_ghost_bestlap);
-	CV_RegisterVar(&cv_ghost_last);
-	CV_RegisterVar(&cv_ghost_guest);
-	CV_RegisterVar(&cv_ghost_staff);
-
 	COM_AddCommand("displayplayer", Command_Displayplayer_f);
-
-	// FIXME: not to be here.. but needs be done for config loading
-	CV_RegisterVar(&cv_globalgamma);
-	CV_RegisterVar(&cv_globalsaturation);
-
-	CV_RegisterVar(&cv_rhue);
-	CV_RegisterVar(&cv_yhue);
-	CV_RegisterVar(&cv_ghue);
-	CV_RegisterVar(&cv_chue);
-	CV_RegisterVar(&cv_bhue);
-	CV_RegisterVar(&cv_mhue);
-
-	CV_RegisterVar(&cv_rgamma);
-	CV_RegisterVar(&cv_ygamma);
-	CV_RegisterVar(&cv_ggamma);
-	CV_RegisterVar(&cv_cgamma);
-	CV_RegisterVar(&cv_bgamma);
-	CV_RegisterVar(&cv_mgamma);
-
-	CV_RegisterVar(&cv_rsaturation);
-	CV_RegisterVar(&cv_ysaturation);
-	CV_RegisterVar(&cv_gsaturation);
-	CV_RegisterVar(&cv_csaturation);
-	CV_RegisterVar(&cv_bsaturation);
-	CV_RegisterVar(&cv_msaturation);
-
-	CV_RegisterVar(&cv_palette);
-	CV_RegisterVar(&cv_palettenum);
 
 	// k_menu.c
 	//CV_RegisterVar(&cv_compactscoreboard);
-	CV_RegisterVar(&cv_chatheight);
-	CV_RegisterVar(&cv_chatwidth);
-	CV_RegisterVar(&cv_chattime);
-	CV_RegisterVar(&cv_chatspamprotection);
-	CV_RegisterVar(&cv_consolechat);
-	CV_RegisterVar(&cv_chatnotifications);
-	CV_RegisterVar(&cv_chatbacktint);
-
-	CV_RegisterVar(&cv_songcredits);
-	CV_RegisterVar(&cv_tutorialprompt);
-	CV_RegisterVar(&cv_showfocuslost);
-	CV_RegisterVar(&cv_pauseifunfocused);
-
-	// g_input.c
-	for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
-	{
-		CV_RegisterVar(&cv_kickstartaccel[i]);
-		CV_RegisterVar(&cv_autoroulette[i]);
-		CV_RegisterVar(&cv_shrinkme[i]);
-		CV_RegisterVar(&cv_deadzone[i]);
-		CV_RegisterVar(&cv_rumble[i]);
-	}
-
-	// filesrch.c
-	CV_RegisterVar(&cv_addons_md5);
-	CV_RegisterVar(&cv_addons_showall);
-	CV_RegisterVar(&cv_addons_search_type);
-	CV_RegisterVar(&cv_addons_search_case);
-
-	CV_RegisterVar(&cv_controlperkey);
-
-	CV_RegisterVar(&cv_usemouse);
-
-	for (i = 0; i < MAXSPLITSCREENPLAYERS; i++)
-	{
-		CV_RegisterVar(&cv_joyscale[i]);
-	}
-
-	// s_sound.c
-	CV_RegisterVar(&cv_soundvolume);
-	CV_RegisterVar(&cv_closedcaptioning);
-	CV_RegisterVar(&cv_digmusicvolume);
-	CV_RegisterVar(&cv_numChannels);
-
-	// screen.c
-	CV_RegisterVar(&cv_fullscreen);
-	CV_RegisterVar(&cv_renderview);
-	CV_RegisterVar(&cv_vhseffect);
-	CV_RegisterVar(&cv_shittyscreen);
-	CV_RegisterVar(&cv_renderer);
-	CV_RegisterVar(&cv_scr_depth);
-	CV_RegisterVar(&cv_scr_width);
-	CV_RegisterVar(&cv_scr_height);
-
-	CV_RegisterVar(&cv_soundtest);
-
-	CV_RegisterVar(&cv_perfstats);
 
 	// ingame object placing
 	COM_AddCommand("objectplace", Command_ObjectPlace_f);
 	//COM_AddCommand("writethings", Command_Writethings_f);
-	CV_RegisterVar(&cv_speed);
-	CV_RegisterVar(&cv_opflags);
-	CV_RegisterVar(&cv_ophoopflags);
-	CV_RegisterVar(&cv_mapthingnum);
 //	CV_RegisterVar(&cv_grid);
 //	CV_RegisterVar(&cv_snapto);
 
@@ -1096,14 +547,11 @@ void D_RegisterClientCommands(void)
 	COM_AddCommand("goto", Command_Goto_f);
 	COM_AddCommand("angle", Command_Angle_f);
 	COM_AddCommand("respawnat", Command_RespawnAt_f);
-	CV_RegisterVar(&cv_renderhitbox);
-	CV_RegisterVar(&cv_devmode_screen);
 
-#ifdef HAVE_DISCORDRPC
-	CV_RegisterVar(&cv_discordrp);
-	CV_RegisterVar(&cv_discordstreamer);
-	CV_RegisterVar(&cv_discordasks);
-#endif
+	{
+		extern struct CVarList *cvlist_player;
+		CV_RegisterList(cvlist_player);
+	}
 }
 
 /** Checks if a name (as received from another player) is okay.
@@ -4534,6 +3982,8 @@ void Automate_Set(automateEvents_t type, const char *command)
 
 void Automate_Run(automateEvents_t type)
 {
+	extern consvar_t cv_automate;
+
 	if (!server)
 	{
 		// Only the server should be doing this.
@@ -5293,7 +4743,8 @@ void ItemFinder_OnChange(void)
   * \sa cv_pointlimit, TimeLimit_OnChange
   * \author Graue <graue@oceanbase.org>
   */
-static void PointLimit_OnChange(void)
+void PointLimit_OnChange(void);
+void PointLimit_OnChange(void)
 {
 	if (K_CanChangeRules(false) == false)
 	{
@@ -5339,18 +4790,20 @@ static void PointLimit_OnChange(void)
 	}
 }
 
-static void NetTimeout_OnChange(void)
+void NetTimeout_OnChange(void);
+void NetTimeout_OnChange(void)
 {
 	connectiontimeout = (tic_t)cv_nettimeout.value;
 }
 
-static void JoinTimeout_OnChange(void)
+void JoinTimeout_OnChange(void);
+void JoinTimeout_OnChange(void)
 {
 	jointimeout = (tic_t)cv_jointimeout.value;
 }
 
-static void
-Lagless_OnChange (void)
+void Lagless_OnChange (void);
+void Lagless_OnChange (void)
 {
 	/* don't back out of dishonesty, or go lagless after playing honestly */
 	if (cv_lagless.value && gamestate == GS_LEVEL)
@@ -5371,7 +4824,8 @@ UINT32 g_pointlimit = 0;
   *
   * \sa cv_timelimit, PointLimit_OnChange
   */
-static void TimeLimit_OnChange(void)
+void TimeLimit_OnChange(void);
+void TimeLimit_OnChange(void)
 {
 	if (K_CanChangeRules(false) == false)
 	{
@@ -5461,7 +4915,8 @@ void D_GameTypeChanged(INT32 lastgametype)
 	}
 }
 
-static void Gravity_OnChange(void)
+void Gravity_OnChange(void);
+void Gravity_OnChange(void)
 {
 	if (netgame)
 	{
@@ -5472,7 +4927,8 @@ static void Gravity_OnChange(void)
 	gravity = cv_gravity.value;
 }
 
-static void SoundTest_OnChange(void)
+void SoundTest_OnChange(void);
+void SoundTest_OnChange(void)
 {
 	INT32 sfxfreeint = (INT32)sfxfree;
 	if (cv_soundtest.value < 0)
@@ -5491,12 +4947,14 @@ static void SoundTest_OnChange(void)
 	S_StartSound(NULL, cv_soundtest.value);
 }
 
-static void AutoBalance_OnChange(void)
+void AutoBalance_OnChange(void);
+void AutoBalance_OnChange(void)
 {
 	autobalance = (INT16)cv_autobalance.value;
 }
 
-static void TeamScramble_OnChange(void)
+void TeamScramble_OnChange(void);
+void TeamScramble_OnChange(void)
 {
 	INT16 i = 0, j = 0, playercount = 0;
 	boolean repick = true;
@@ -6683,7 +6141,8 @@ static void Command_Eval(void)
   * \sa Command_SetForcedSkin_f, cv_forceskin, forcedskin
   * \author Graue <graue@oceanbase.org>
   */
-static void ForceSkin_OnChange(void)
+void ForceSkin_OnChange(void);
+void ForceSkin_OnChange(void)
 {
 	// NOT in SP, silly!
 	if (!Playing() || !K_CanChangeRules(true))
@@ -6711,22 +6170,26 @@ static void Name_OnChange(const UINT8 p)
 	SendNameAndColor(p);
 }
 
-static void Name1_OnChange(void)
+void Name1_OnChange(void);
+void Name1_OnChange(void)
 {
 	Name_OnChange(0);
 }
 
-static void Name2_OnChange(void)
+void Name2_OnChange(void);
+void Name2_OnChange(void)
 {
 	Name_OnChange(1);
 }
 
-static void Name3_OnChange(void)
+void Name3_OnChange(void);
+void Name3_OnChange(void)
 {
 	Name_OnChange(2);
 }
 
-static void Name4_OnChange(void)
+void Name4_OnChange(void);
+void Name4_OnChange(void)
 {
 	Name_OnChange(3);
 }
@@ -6742,45 +6205,53 @@ static void FollowerAny_OnChange(UINT8 pnum)
 }
 
 // sends the follower change for players
-static void Follower_OnChange(void)
+void Follower_OnChange(void);
+void Follower_OnChange(void)
 {
 	FollowerAny_OnChange(0);
 }
 
 // About the same as Color_OnChange but for followers.
-static void Followercolor_OnChange(void)
+void Followercolor_OnChange(void);
+void Followercolor_OnChange(void)
 {
 	FollowerAny_OnChange(0);
 }
 
 // repeat for the 3 other players
 
-static void Follower2_OnChange(void)
+void Follower2_OnChange(void);
+void Follower2_OnChange(void)
 {
 	FollowerAny_OnChange(1);
 }
 
-static void Followercolor2_OnChange(void)
+void Followercolor2_OnChange(void);
+void Followercolor2_OnChange(void)
 {
 	FollowerAny_OnChange(1);
 }
 
-static void Follower3_OnChange(void)
+void Follower3_OnChange(void);
+void Follower3_OnChange(void)
 {
 	FollowerAny_OnChange(2);
 }
 
-static void Followercolor3_OnChange(void)
+void Followercolor3_OnChange(void);
+void Followercolor3_OnChange(void)
 {
 	FollowerAny_OnChange(2);
 }
 
-static void Follower4_OnChange(void)
+void Follower4_OnChange(void);
+void Follower4_OnChange(void)
 {
 	FollowerAny_OnChange(3);
 }
 
-static void Followercolor4_OnChange(void)
+void Followercolor4_OnChange(void);
+void Followercolor4_OnChange(void)
 {
 	FollowerAny_OnChange(3);
 }
@@ -6815,7 +6286,8 @@ static void Skin_OnChange(const UINT8 p)
 	}
 }
 
-static void Skin1_OnChange(void)
+void Skin1_OnChange(void);
+void Skin1_OnChange(void)
 {
 	Skin_OnChange(0);
 }
@@ -6825,17 +6297,20 @@ static void Skin1_OnChange(void)
   * \sa cv_skin2, Skin_OnChange, Color2_OnChange
   * \author Graue <graue@oceanbase.org>
   */
-static void Skin2_OnChange(void)
+void Skin2_OnChange(void);
+void Skin2_OnChange(void)
 {
 	Skin_OnChange(1);
 }
 
-static void Skin3_OnChange(void)
+void Skin3_OnChange(void);
+void Skin3_OnChange(void)
 {
 	Skin_OnChange(2);
 }
 
-static void Skin4_OnChange(void)
+void Skin4_OnChange(void);
+void Skin4_OnChange(void)
 {
 	Skin_OnChange(3);
 }
@@ -6873,8 +6348,9 @@ static void Color_OnChange(const UINT8 p)
 	lastgoodcolor[p] = color;
 	G_SetPlayerGamepadIndicatorToPlayerColor(p);
 }
-  
-static void Color1_OnChange(void)
+
+void Color1_OnChange(void);
+void Color1_OnChange(void)
 {
 	Color_OnChange(0);
 }
@@ -6884,17 +6360,20 @@ static void Color1_OnChange(void)
   * \sa cv_playercolor2, Color_OnChange, Skin2_OnChange
   * \author Graue <graue@oceanbase.org>
   */
-static void Color2_OnChange(void)
+void Color2_OnChange(void);
+void Color2_OnChange(void)
 {
 	Color_OnChange(1);
 }
 
-static void Color3_OnChange(void)
+void Color3_OnChange(void);
+void Color3_OnChange(void)
 {
 	Color_OnChange(2);
 }
 
-static void Color4_OnChange(void)
+void Color4_OnChange(void);
+void Color4_OnChange(void)
 {
 	Color_OnChange(3);
 }
@@ -6906,7 +6385,8 @@ static void Color4_OnChange(void)
   * \sa cv_mute
   * \author Graue <graue@oceanbase.org>
   */
-static void Mute_OnChange(void)
+void Mute_OnChange(void);
+void Mute_OnChange(void)
 {
 	/*if (server || (IsPlayerAdmin(consoleplayer)))
 		return;*/
@@ -6935,8 +6415,11 @@ static void Mute_OnChange(void)
   * \sa cv_dummyconsvar
   * \author Graue <graue@oceanbase.org>
   */
-static void DummyConsvar_OnChange(void)
+void DummyConsvar_OnChange(void);
+void DummyConsvar_OnChange(void)
 {
+	extern consvar_t cv_dummyconsvar;
+
 	if (cv_dummyconsvar.value == 1)
 	{
 		CV_SetValue(&cv_dummyconsvar, 0);
@@ -6976,7 +6459,8 @@ static void Command_ShowTime_f(void)
 }
 
 // SRB2Kart: On change messages
-static void NumLaps_OnChange(void)
+void NumLaps_OnChange(void);
+void NumLaps_OnChange(void)
 {
 	if (gamestate == GS_LEVEL)
 	{
@@ -6997,7 +6481,8 @@ static void NumLaps_OnChange(void)
 	}
 }
 
-static void KartFrantic_OnChange(void)
+void KartFrantic_OnChange(void);
+void KartFrantic_OnChange(void)
 {
 	if (K_CanChangeRules(false) == false)
 	{
@@ -7015,7 +6500,8 @@ static void KartFrantic_OnChange(void)
 	}
 }
 
-static void KartSpeed_OnChange(void)
+void KartSpeed_OnChange(void);
+void KartSpeed_OnChange(void)
 {
 	if (K_CanChangeRules(false) == false)
 	{
@@ -7033,7 +6519,8 @@ static void KartSpeed_OnChange(void)
 	}
 }
 
-static void KartEncore_OnChange(void)
+void KartEncore_OnChange(void);
+void KartEncore_OnChange(void)
 {
 	if (K_CanChangeRules(false) == false)
 	{
@@ -7043,7 +6530,8 @@ static void KartEncore_OnChange(void)
 	CONS_Printf(M_GetText("Encore Mode will be set to %s next round.\n"), cv_kartencore.string);
 }
 
-static void KartEliminateLast_OnChange(void)
+void KartEliminateLast_OnChange(void);
+void KartEliminateLast_OnChange(void)
 {
 	if (K_CanChangeRules(false) == false)
 	{
@@ -7053,7 +6541,8 @@ static void KartEliminateLast_OnChange(void)
 	P_CheckRacers();
 }
 
-static void Schedule_OnChange(void)
+void Schedule_OnChange(void);
+void Schedule_OnChange(void)
 {
 	size_t i;
 
@@ -7075,7 +6564,8 @@ static void Schedule_OnChange(void)
 	}
 }
 
-static void LiveStudioAudience_OnChange(void)
+void LiveStudioAudience_OnChange(void);
+void LiveStudioAudience_OnChange(void)
 {
 	livestudioaudience_timer = 90;
 }

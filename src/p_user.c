@@ -2856,7 +2856,8 @@ static void P_DeathThink(player_t *player)
 
 camera_t camera[MAXSPLITSCREENPLAYERS]; // Four cameras, three for splitscreen
 
-static void CV_CamRotate_OnChange(void)
+void CV_CamRotate_OnChange(void);
+void CV_CamRotate_OnChange(void)
 {
 	if (cv_cam_rotate[0].value < 0)
 		CV_SetValue(&cv_cam_rotate[0], cv_cam_rotate[0].value + 360);
@@ -2864,7 +2865,8 @@ static void CV_CamRotate_OnChange(void)
 		CV_SetValue(&cv_cam_rotate[0], cv_cam_rotate[0].value % 360);
 }
 
-static void CV_CamRotate2_OnChange(void)
+void CV_CamRotate2_OnChange(void);
+void CV_CamRotate2_OnChange(void)
 {
 	if (cv_cam_rotate[1].value < 0)
 		CV_SetValue(&cv_cam_rotate[1], cv_cam_rotate[1].value + 360);
@@ -2872,7 +2874,8 @@ static void CV_CamRotate2_OnChange(void)
 		CV_SetValue(&cv_cam_rotate[1], cv_cam_rotate[1].value % 360);
 }
 
-static void CV_CamRotate3_OnChange(void)
+void CV_CamRotate3_OnChange(void);
+void CV_CamRotate3_OnChange(void)
 {
 	if (cv_cam_rotate[2].value < 0)
 		CV_SetValue(&cv_cam_rotate[2], cv_cam_rotate[2].value + 360);
@@ -2880,53 +2883,14 @@ static void CV_CamRotate3_OnChange(void)
 		CV_SetValue(&cv_cam_rotate[2], cv_cam_rotate[2].value % 360);
 }
 
-static void CV_CamRotate4_OnChange(void)
+void CV_CamRotate4_OnChange(void);
+void CV_CamRotate4_OnChange(void)
 {
 	if (cv_cam_rotate[3].value < 0)
 		CV_SetValue(&cv_cam_rotate[3], cv_cam_rotate[3].value + 360);
 	else if (cv_cam_rotate[3].value > 359)
 		CV_SetValue(&cv_cam_rotate[3], cv_cam_rotate[3].value % 360);
 }
-
-static CV_PossibleValue_t CV_CamSpeed[] = {{0, "MIN"}, {1*FRACUNIT, "MAX"}, {0, NULL}};
-static CV_PossibleValue_t CV_CamRotate[] = {{-720, "MIN"}, {720, "MAX"}, {0, NULL}};
-
-consvar_t cv_cam_dist[MAXSPLITSCREENPLAYERS] = {
-	CVAR_INIT ("cam_dist", "190", CV_FLOAT|CV_SAVE, NULL, NULL),
-	CVAR_INIT ("cam2_dist", "190", CV_FLOAT|CV_SAVE, NULL, NULL),
-	CVAR_INIT ("cam3_dist", "190", CV_FLOAT|CV_SAVE, NULL, NULL),
-	CVAR_INIT ("cam4_dist", "190", CV_FLOAT|CV_SAVE, NULL, NULL)
-};
-
-consvar_t cv_cam_height[MAXSPLITSCREENPLAYERS] = {
-	CVAR_INIT ("cam_height", "95", CV_FLOAT|CV_SAVE, NULL, NULL),
-	CVAR_INIT ("cam2_height", "95", CV_FLOAT|CV_SAVE, NULL, NULL),
-	CVAR_INIT ("cam3_height", "95", CV_FLOAT|CV_SAVE, NULL, NULL),
-	CVAR_INIT ("cam4_height", "95", CV_FLOAT|CV_SAVE, NULL, NULL)
-};
-
-consvar_t cv_cam_still[MAXSPLITSCREENPLAYERS] = {
-	CVAR_INIT ("cam_still", "Off", 0, CV_OnOff, NULL),
-	CVAR_INIT ("cam2_still", "Off", 0, CV_OnOff, NULL),
-	CVAR_INIT ("cam3_still", "Off", 0, CV_OnOff, NULL),
-	CVAR_INIT ("cam4_still", "Off", 0, CV_OnOff, NULL)
-};
-
-consvar_t cv_cam_speed[MAXSPLITSCREENPLAYERS] = {
-	CVAR_INIT ("cam_speed", "0.4", CV_FLOAT|CV_SAVE, CV_CamSpeed, NULL),
-	CVAR_INIT ("cam2_speed", "0.4", CV_FLOAT|CV_SAVE, CV_CamSpeed, NULL),
-	CVAR_INIT ("cam3_speed", "0.4", CV_FLOAT|CV_SAVE, CV_CamSpeed, NULL),
-	CVAR_INIT ("cam4_speed", "0.4", CV_FLOAT|CV_SAVE, CV_CamSpeed, NULL)
-};
-
-consvar_t cv_cam_rotate[MAXSPLITSCREENPLAYERS] = {
-	CVAR_INIT ("cam_rotate", "0", CV_CALL|CV_NOINIT, CV_CamRotate, CV_CamRotate_OnChange),
-	CVAR_INIT ("cam2_rotate", "0", CV_CALL|CV_NOINIT, CV_CamRotate, CV_CamRotate2_OnChange),
-	CVAR_INIT ("cam3_rotate", "0", CV_CALL|CV_NOINIT, CV_CamRotate, CV_CamRotate3_OnChange),
-	CVAR_INIT ("cam4_rotate", "0", CV_CALL|CV_NOINIT, CV_CamRotate, CV_CamRotate4_OnChange)
-};
-
-consvar_t cv_tilting = CVAR_INIT ("tilting", "On", CV_SAVE, CV_OnOff, NULL);
 
 fixed_t t_cam_dist[MAXSPLITSCREENPLAYERS] = {-42,-42,-42,-42};
 fixed_t t_cam_height[MAXSPLITSCREENPLAYERS] = {-42,-42,-42,-42};

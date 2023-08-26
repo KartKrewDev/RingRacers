@@ -27,12 +27,6 @@ menu_t OPTIONS_ProfilesDef = {
 	NULL,
 };
 
-consvar_t cv_dummyprofilename = CVAR_INIT ("dummyprofilename", "", CV_HIDDEN, NULL, NULL);
-consvar_t cv_dummyprofileplayername = CVAR_INIT ("dummyprofileplayername", "", CV_HIDDEN, NULL, NULL);
-consvar_t cv_dummyprofilekickstart = CVAR_INIT ("dummyprofilekickstart", "Off", CV_HIDDEN, CV_OnOff, NULL);
-consvar_t cv_dummyprofileautoroulette = CVAR_INIT ("dummyprofileautoroulette", "Off", CV_HIDDEN, CV_OnOff, NULL);
-consvar_t cv_dummyprofilerumble = CVAR_INIT ("dummyprofilerumble", "On", CV_HIDDEN, CV_OnOff, NULL);
-
 void M_ProfileSelectInit(INT32 choice)
 {
 	(void)choice;

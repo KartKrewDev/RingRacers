@@ -144,6 +144,7 @@ struct consvar_t //NULL, NULL, 0, NULL, NULL |, 0, NULL, NULL, 0, 0, NULL
 	INT32 flags;            // flags see cvflags_t above
 	CV_PossibleValue_t *PossibleValue; // table of possible values
 	void (*func)(void);   // called on change, if CV_CALL set
+	const char *description;
 	INT32 value;            // for INT32 and fixed_t
 	const char *string;   // value in string
 	char *zstring;        // Either NULL or same as string.
@@ -162,11 +163,52 @@ struct consvar_t //NULL, NULL, 0, NULL, NULL |, 0, NULL, NULL, 0, 0, NULL
 	                      // used only with CV_NETVAR
 	char changed;         // has variable been changed by the user? 0 = no, 1 = yes
 	consvar_t *next;
+
+#ifdef __cplusplus
+	struct Builder;
+
+	consvar_t& operator=(Builder&);
+	consvar_t& operator=(Builder&& builder) { return *this = builder; }
+	consvar_t(Builder& builder) { *this = builder; }
+	consvar_t(Builder&& builder) : consvar_t(builder) {}
+
+	explicit consvar_t() { memset(this, 0, sizeof(consvar_t)); } // all fields MUST be initialized to zero!!
+
+	// Since copy constructors needed to be defined, consvar_t
+	// is no longer an aggregate and cannot be initialized
+	// using brace initialization, like it can in C. The
+	// following constructor matches CVAR_INIT.
+	// TODO: remove this along with CVAR_INIT macro
+	consvar_t(
+			const char* const name_,
+			const char* const defaultvalue_,
+			INT32 const flags_,
+			CV_PossibleValue_t* const PossibleValue_,
+			void (*const func_)(void)
+	) :
+		consvar_t{}
+	{
+		name = name_;
+		defaultvalue = defaultvalue_;
+		flags = flags_;
+		PossibleValue = PossibleValue_;
+		func = func_;
+	}
+#endif
 };
 
+struct CVarList;
+
+// TODO: remove this macro completely and only use consvar_t::Builder
 /* name, defaultvalue, flags, PossibleValue, func */
+#ifdef __cplusplus
+#define CVAR_INIT consvar_t
+#else
 #define CVAR_INIT( ... ) \
-{ __VA_ARGS__, 0, NULL, NULL, {0, {NULL}}, 0U, (char)0, NULL }
+{ __VA_ARGS__, NULL, 0, NULL, NULL, {0, {NULL}}, 0U, (char)0, NULL }
+#endif
+
+extern consvar_t *consvar_vars; // list of registered console variables
 
 extern CV_PossibleValue_t CV_OnOff[];
 extern CV_PossibleValue_t CV_YesNo[];
@@ -179,6 +221,7 @@ extern CV_PossibleValue_t CV_TrueFalse[];
 extern CV_PossibleValue_t kartspeed_cons_t[], dummykartspeed_cons_t[], gpdifficulty_cons_t[];
 extern CV_PossibleValue_t kartvoices_cons_t[];
 
+extern consvar_t cv_cheats;
 extern consvar_t cv_execversion;
 
 void CV_InitFilterVar(void);
@@ -186,6 +229,9 @@ void CV_ToggleExecVersion(boolean enable);
 
 // register a variable for use at the console
 void CV_RegisterVar(consvar_t *variable);
+
+// register groups of variables
+void CV_RegisterList(struct CVarList *list);
 
 // returns a console variable by name
 consvar_t *CV_FindVar(const char *name);

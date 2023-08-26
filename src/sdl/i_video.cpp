@@ -113,10 +113,6 @@ static char vidModeName[33][32]; // allow 33 different modes
 rendermode_t rendermode = render_soft;
 rendermode_t chosenrendermode = render_none; // set by command line arguments
 
-// synchronize page flipping with screen refresh
-consvar_t cv_vidwait = CVAR_INIT ("vid_wait", "Off", CV_SAVE, CV_OnOff, NULL);
-static consvar_t cv_alwaysgrabmouse = CVAR_INIT ("alwaysgrabmouse", "Off", CV_SAVE, CV_OnOff, NULL);
-
 UINT8 graphics_started = 0; // Is used in console.c and screen.c
 
 // To disable fullscreen at startup; is set in VID_PrepareModeList
@@ -332,6 +328,7 @@ static INT32 Impl_SDL_Scancode_To_Keycode(SDL_Scancode code)
 
 static boolean IgnoreMouse(void)
 {
+	extern consvar_t cv_alwaysgrabmouse;
 	if (cv_alwaysgrabmouse.value)
 		return false;
 	if (menuactive)
@@ -1604,8 +1601,10 @@ void I_StartupGraphics(void)
 	COM_AddCommand ("vid_info", VID_Command_Info_f);
 	COM_AddCommand ("vid_modelist", VID_Command_ModeList_f);
 	COM_AddCommand ("vid_mode", VID_Command_Mode_f);
-	CV_RegisterVar (&cv_vidwait);
-	CV_RegisterVar (&cv_alwaysgrabmouse);
+	{
+		extern CVarList *cvlist_graphics_driver;
+		CV_RegisterList(cvlist_graphics_driver);
+	}
 	disable_mouse = static_cast<SDL_bool>(M_CheckParm("-nomouse"));
 	disable_fullscreen = M_CheckParm("-win") ? SDL_TRUE : SDL_FALSE;
 

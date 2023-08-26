@@ -48,8 +48,6 @@ menu_t PLAY_MP_JoinIPDef = {
 	M_JoinIPInputs
 };
 
-consvar_t cv_dummyip = CVAR_INIT ("dummyip", "", CV_HIDDEN, NULL, NULL);
-
 void M_MPJoinIPInit(INT32 choice)
 {
 

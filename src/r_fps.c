@@ -23,20 +23,6 @@
 #include "z_zone.h"
 #include "console.h" // con_startup_loadprogress
 
-static CV_PossibleValue_t fpscap_cons_t[] = {
-#ifdef DEVELOP
-	// Lower values are actually pretty useful for debugging interp problems!
-	{1, "MIN"},
-#else
-	{TICRATE, "MIN"},
-#endif
-	{300, "MAX"},
-	{-1, "Unlimited"},
-	{0, "Match refresh rate"},
-	{0, NULL}
-};
-consvar_t cv_fpscap = CVAR_INIT ("fpscap", "Match refresh rate", CV_SAVE, fpscap_cons_t, NULL);
-
 UINT32 R_GetFramerateCap(void)
 {
 	if (rendermode == render_none)

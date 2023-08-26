@@ -35,9 +35,6 @@ menu_t MISC_AddonsDef = {
 
 // Addons menu: (Merely copypasted, original code by toaster)
 
-static void M_UpdateAddonsSearch(void);
-consvar_t cv_dummyaddonsearch = CVAR_INIT ("dummyaddonsearch", "", CV_HIDDEN|CV_CALL|CV_NOINIT, NULL, M_UpdateAddonsSearch);
-
 void M_Addons(INT32 choice)
 {
 	const char *pathname = ".";
@@ -175,7 +172,8 @@ static void M_AddonExec(INT32 ch)
 	}
 }
 
-static void M_UpdateAddonsSearch(void)
+void M_UpdateAddonsSearch(void);
+void M_UpdateAddonsSearch(void)
 {
 	menusearch[0] = strlen(cv_dummyaddonsearch.string);
 	strlcpy(menusearch+1, cv_dummyaddonsearch.string, MAXSTRINGLENGTH);

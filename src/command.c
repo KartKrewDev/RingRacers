@@ -60,14 +60,13 @@ static void COM_Choose_f(void);
 static void COM_ChooseWeighted_f(void);
 static void COM_Reset_f(void);
 
-static void CV_EnforceExecVersion(void);
 static boolean CV_FilterVarByVersion(consvar_t *v, const char *valstr);
 
 static boolean CV_Command(void);
 consvar_t *CV_FindVar(const char *name);
 static const char *CV_StringValue(const char *var_name);
 
-static consvar_t *consvar_vars; // list of registered console variables
+consvar_t *consvar_vars; // list of registered console variables
 static UINT16     consvar_number_of_netids = 0;
 
 static char com_token[1024];
@@ -80,15 +79,6 @@ CV_PossibleValue_t CV_YesNo[] = {{0, "No"}, {1, "Yes"}, {0, NULL}};
 CV_PossibleValue_t CV_Unsigned[] = {{0, "MIN"}, {999999999, "MAX"}, {0, NULL}};
 CV_PossibleValue_t CV_Natural[] = {{1, "MIN"}, {999999999, "MAX"}, {0, NULL}};
 CV_PossibleValue_t CV_TrueFalse[] = {{0, "False"}, {1, "True"}, {0, NULL}};
-
-// Cheats
-#ifdef DEVELOP
-	#define VALUE "On"
-#else
-	#define VALUE "Off"
-#endif
-consvar_t cv_cheats = CVAR_INIT ("cheats", VALUE, CV_NETVAR|CV_CALL|CV_NOINIT, CV_OnOff, CV_CheatsChanged);
-#undef VALUE
 
 // SRB2kart
 CV_PossibleValue_t kartspeed_cons_t[] = {
@@ -119,7 +109,6 @@ CV_PossibleValue_t kartvoices_cons_t[] = {{0, "Never"}, {1, "Tasteful"}, {2, "Me
 // Also set CV_HIDDEN during runtime, after config is loaded
 
 static boolean execversion_enabled = false;
-consvar_t cv_execversion = CVAR_INIT ("execversion","1",CV_CALL,CV_Unsigned, CV_EnforceExecVersion);
 
 // for default joyaxis detection
 #if 0
@@ -369,7 +358,10 @@ void COM_Init(void)
 	VS_Alloc(&com_text, COM_BUF_SIZE);
 
 	// cheats is a special cvar, so register it ASAP
-	CV_RegisterVar(&cv_cheats);
+	{
+		extern struct CVarList *cvlist_command;
+		CV_RegisterList(cvlist_command);
+	}
 
 	// add standard commands
 	COM_AddCommand("alias", COM_Alias_f);
@@ -2335,7 +2327,8 @@ void CV_ToggleExecVersion(boolean enable)
 	execversion_enabled = enable;
 }
 
-static void CV_EnforceExecVersion(void)
+void CV_EnforceExecVersion(void);
+void CV_EnforceExecVersion(void)
 {
 	if (!execversion_enabled)
 		CV_StealthSetValue(&cv_execversion, EXECVERSION);

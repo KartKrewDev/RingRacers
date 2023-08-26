@@ -57,39 +57,15 @@ static boolean noFurtherInput = false;
 // CONSOLE VARIABLES AND THEIR POSSIBLE VALUES GO HERE.
 // ==========================================================================
 
-// Consvar onchange functions
-static void Dummystaff_OnChange(void);
-
-consvar_t cv_showfocuslost = CVAR_INIT ("showfocuslost", "Yes", CV_SAVE, CV_YesNo, NULL);
-
-consvar_t cv_menujam_update = CVAR_INIT ("menujam_update", "Off", CV_SAVE, CV_OnOff, NULL);
-static CV_PossibleValue_t menujam_cons_t[] = {{0, "menu"}, {1, "menu2"}, {2, "menu3"}, {0, NULL}};
-static consvar_t cv_menujam = CVAR_INIT ("menujam", "menu", CV_SAVE, menujam_cons_t, NULL);
-
-// first time memory
-consvar_t cv_tutorialprompt = CVAR_INIT ("tutorialprompt", "On", CV_SAVE, CV_OnOff, NULL);
-
-//Console variables used solely in the menu system.
-//todo: add a way to use non-console variables in the menu
-//      or make these consvars legitimate like color or skin.
-
-static CV_PossibleValue_t dummyteam_cons_t[] = {{0, "Spectator"}, {1, "Red"}, {2, "Blue"}, {0, NULL}};
-static CV_PossibleValue_t dummyspectate_cons_t[] = {{0, "Spectator"}, {1, "Playing"}, {0, NULL}};
-static CV_PossibleValue_t dummyscramble_cons_t[] = {{0, "Random"}, {1, "Points"}, {0, NULL}};
-static CV_PossibleValue_t dummystaff_cons_t[] = {{0, "MIN"}, {MAXSTAFF-1, "MAX"}, {0, NULL}};
-
-static consvar_t cv_dummyteam = CVAR_INIT ("dummyteam", "Spectator", CV_HIDDEN, dummyteam_cons_t, NULL);
-//static cv_dummyspectate = CVAR_INITconsvar_t  ("dummyspectate", "Spectator", CV_HIDDEN, dummyspectate_cons_t, NULL);
-static consvar_t cv_dummyscramble = CVAR_INIT ("dummyscramble", "Random", CV_HIDDEN, dummyscramble_cons_t, NULL);
-consvar_t cv_dummystaff = CVAR_INIT ("dummystaff", "0", CV_HIDDEN|CV_CALL, dummystaff_cons_t, Dummystaff_OnChange);
-consvar_t cv_dummyspectate = CVAR_INIT ("dummyspectate", "Spectator", CV_HIDDEN, dummyspectate_cons_t, NULL);
+CV_PossibleValue_t dummystaff_cons_t[] = {{0, "MIN"}, {MAXSTAFF-1, "MAX"}, {0, NULL}};
 
 // ==========================================================================
 // CVAR ONCHANGE EVENTS GO HERE
 // ==========================================================================
 // (there's only a couple anyway)
 
-static void Dummystaff_OnChange(void)
+void Dummystaff_OnChange(void);
+void Dummystaff_OnChange(void)
 {
 	if (mapheaderinfo[levellist.choosemap] == NULL || mapheaderinfo[levellist.choosemap]->ghostCount <= 0)
 		return;
@@ -1190,44 +1166,11 @@ void M_Init(void)
 #if 0
 	CV_RegisterVar(&cv_nextmap);
 #endif
-	CV_RegisterVar(&cv_chooseskin);
-	CV_RegisterVar(&cv_autorecord);
-
-	// don't lose your position in the jam cycle
-	CV_RegisterVar(&cv_menujam_update);
-	CV_RegisterVar(&cv_menujam);
-
-	CV_RegisterVar(&cv_serversort);
 
 	if (dedicated)
 		return;
 
 	//COM_AddCommand("manual", Command_Manual_f);
-
-	// Menu hacks
-	CV_RegisterVar(&cv_dummymenuplayer);
-	CV_RegisterVar(&cv_dummyteam);
-	CV_RegisterVar(&cv_dummyspectate);
-	CV_RegisterVar(&cv_dummyscramble);
-	CV_RegisterVar(&cv_dummystaff);
-	CV_RegisterVar(&cv_dummyip);
-
-	CV_RegisterVar(&cv_dummyprofilename);
-	CV_RegisterVar(&cv_dummyprofileplayername);
-	CV_RegisterVar(&cv_dummyprofilekickstart);
-	CV_RegisterVar(&cv_dummyprofileautoroulette);
-	CV_RegisterVar(&cv_dummyprofilerumble);
-
-	CV_RegisterVar(&cv_dummygpdifficulty);
-	CV_RegisterVar(&cv_dummykartspeed);
-	CV_RegisterVar(&cv_dummygpencore);
-	CV_RegisterVar(&cv_dummymatchbots);
-
-	CV_RegisterVar(&cv_dummyspbattack);
-
-	CV_RegisterVar(&cv_dummyaddonsearch);
-
-	CV_RegisterVar(&cv_dummyextraspassword);
 
 	M_UpdateMenuBGImage(true);
 }

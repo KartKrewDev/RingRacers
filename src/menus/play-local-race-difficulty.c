@@ -49,29 +49,6 @@ menu_t PLAY_RaceDifficultyDef = {
 	NULL
 };
 
-consvar_t cv_dummygpdifficulty = CVAR_INIT ("dummygpdifficulty", "Normal", CV_HIDDEN, gpdifficulty_cons_t, NULL);
-consvar_t cv_dummykartspeed = CVAR_INIT ("dummykartspeed", "Normal", CV_HIDDEN, dummykartspeed_cons_t, NULL);
-consvar_t cv_dummygpencore = CVAR_INIT ("dummygpencore", "Off", CV_HIDDEN, CV_OnOff, NULL);
-
-static CV_PossibleValue_t dummymatchbots_cons_t[] = {
-	{0, "Off"},
-	{1, "Lv.1"},
-	{2, "Lv.2"},
-	{3, "Lv.3"},
-	{4, "Lv.4"},
-	{5, "Lv.5"},
-	{6, "Lv.6"},
-	{7, "Lv.7"},
-	{8, "Lv.8"},
-	{9, "Lv.9"},
-	{10, "Lv.10"},
-	{11, "Lv.11"},
-	{12, "Lv.12"},
-	{13, "Lv.MAX"},
-	{0, NULL}
-};
-consvar_t cv_dummymatchbots = CVAR_INIT ("dummymatchbots", "Off", CV_HIDDEN, dummymatchbots_cons_t, NULL);
-
 void M_SetupDifficultyOptions(INT32 choice)
 {
 	PLAY_RaceDifficulty[drace_gpdifficulty].status = IT_DISABLED;
