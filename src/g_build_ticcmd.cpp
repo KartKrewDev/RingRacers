@@ -37,6 +37,9 @@
 #include "p_mobj.h"
 #include "p_tick.h"
 #include "tables.h"
+#include "m_random.h" // monkey input
+
+extern "C" consvar_t cv_fuzz;
 
 namespace
 {
@@ -142,6 +145,14 @@ class TiccmdBuilder
 		cmd->forwardmove = clamp(cmd->forwardmove, MAXPLMOVE);
 		cmd->turning = clamp(cmd->turning, KART_FULLTURN);
 		cmd->throwdir = clamp(cmd->throwdir, KART_FULLTURN);
+
+		if (cv_fuzz.value)
+		{
+			cmd->forwardmove = P_RandomRange(PR_FUZZ, -MAXPLMOVE, MAXPLMOVE);
+			cmd->turning = P_RandomRange(PR_FUZZ, -KART_FULLTURN, KART_FULLTURN);
+			cmd->throwdir = P_RandomRange(PR_FUZZ, -KART_FULLTURN, KART_FULLTURN);
+			cmd->buttons = P_RandomRange(PR_FUZZ, 0, 255);
+		}
 
 		// Send leveltime when this tic was generated to the server for control lag calculations.
 		// Only do this when in a level. Also do this after the hook, so that it can't overwrite this.
