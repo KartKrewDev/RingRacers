@@ -2092,22 +2092,22 @@ static void TextmapUnfixFlatOffsets(sector_t *sec)
 {
 	if (sec->floorpic_angle)
 	{
-		fixed_t pc = FINECOSINE(sec->floorpic_angle >> ANGLETOFINESHIFT);
-		fixed_t ps = FINESINE(sec->floorpic_angle >> ANGLETOFINESHIFT);
+		fixed_t pc = FINECOSINE(sec->floorpic_angle>>ANGLETOFINESHIFT);
+		fixed_t ps = -FINESINE (sec->floorpic_angle>>ANGLETOFINESHIFT);
 		fixed_t xoffs = sec->floor_xoffs;
 		fixed_t yoffs = sec->floor_yoffs;
-		sec->floor_xoffs = (FixedMul(xoffs, ps) % MAXFLATSIZE) + (FixedMul(yoffs, pc) % MAXFLATSIZE);
-		sec->floor_yoffs = (FixedMul(xoffs, pc) % MAXFLATSIZE) - (FixedMul(yoffs, ps) % MAXFLATSIZE);
+		sec->floor_xoffs = (FixedMul(xoffs, pc) % MAXFLATSIZE) - (FixedMul(yoffs, ps) % MAXFLATSIZE);
+		sec->floor_yoffs = (FixedMul(xoffs, ps) % MAXFLATSIZE) + (FixedMul(yoffs, pc) % MAXFLATSIZE);
 	}
 
 	if (sec->ceilingpic_angle)
 	{
-		fixed_t pc = FINECOSINE(sec->ceilingpic_angle >> ANGLETOFINESHIFT);
-		fixed_t ps = FINESINE(sec->ceilingpic_angle >> ANGLETOFINESHIFT);
+		fixed_t pc = FINECOSINE(sec->ceilingpic_angle>>ANGLETOFINESHIFT);
+		fixed_t ps = -FINESINE (sec->ceilingpic_angle>>ANGLETOFINESHIFT);
 		fixed_t xoffs = sec->ceiling_xoffs;
 		fixed_t yoffs = sec->ceiling_yoffs;
-		sec->ceiling_xoffs = (FixedMul(xoffs, ps) % MAXFLATSIZE) + (FixedMul(yoffs, pc) % MAXFLATSIZE);
-		sec->ceiling_yoffs = (FixedMul(xoffs, pc) % MAXFLATSIZE) - (FixedMul(yoffs, ps) % MAXFLATSIZE);
+		sec->ceiling_xoffs = (FixedMul(xoffs, pc) % MAXFLATSIZE) - (FixedMul(yoffs, ps) % MAXFLATSIZE);
+		sec->ceiling_yoffs = (FixedMul(xoffs, ps) % MAXFLATSIZE) + (FixedMul(yoffs, pc) % MAXFLATSIZE);
 	}
 }
 
