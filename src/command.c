@@ -332,14 +332,7 @@ void COM_ImmedExecute(const char *ptext)
 //                            COMMAND EXECUTION
 // =========================================================================
 
-typedef struct xcommand_s
-{
-	const char *name;
-	struct xcommand_s *next;
-	com_func_t function;
-} xcommand_t;
-
-static xcommand_t *com_commands = NULL; // current commands
+xcommand_t *com_commands = NULL; // current commands
 
 #define MAX_ARGS 80
 static size_t com_argc;
@@ -517,7 +510,7 @@ static void COM_TokenizeString(char *ptext)
   * \param name Name of the command.
   * \param func Function called when the command is run.
   */
-void COM_AddCommand(const char *name, com_func_t func)
+xcommand_t *COM_AddCommand(const char *name, com_func_t func)
 {
 	xcommand_t *cmd;
 
@@ -525,7 +518,7 @@ void COM_AddCommand(const char *name, com_func_t func)
 	if (CV_StringValue(name)[0] != '\0')
 	{
 		I_Error("%s is a variable name\n", name);
-		return;
+		return NULL;
 	}
 
 	// fail if the command already exists
@@ -540,15 +533,25 @@ void COM_AddCommand(const char *name, com_func_t func)
 			if (cmd->function != COM_Lua_f)
 				I_Error("Command %s already exists\n", name);
 
-			return;
+			return NULL;
 		}
 	}
 
 	cmd = ZZ_Alloc(sizeof *cmd);
 	cmd->name = name;
 	cmd->function = func;
+	cmd->debug = false;
 	cmd->next = com_commands;
 	com_commands = cmd;
+
+	return cmd;
+}
+
+void COM_AddDebugCommand(const char *name, com_func_t func)
+{
+	xcommand_t *cmd = COM_AddCommand(name, func);
+
+	cmd->debug = true;
 }
 
 /** Adds a console command for Lua.
@@ -579,6 +582,7 @@ int COM_AddLuaCommand(const char *name)
 	cmd = ZZ_Alloc(sizeof *cmd);
 	cmd->name = name;
 	cmd->function = COM_Lua_f;
+	cmd->debug = false;
 	cmd->next = com_commands;
 	com_commands = cmd;
 	return 0;
