@@ -777,10 +777,12 @@ static void COM_CEcho_f(void)
 	size_t i;
 	char cechotext[1024] = "";
 
-	for (i = 1; i < COM_Argc(); i++)
+	strncpy(cechotext, COM_Argv(1), sizeof(cechotext)-1);
+
+	for (i = 2; i < COM_Argc(); i++)
 	{
-		strncat(cechotext, COM_Argv(i), sizeof(cechotext)-1);
 		strncat(cechotext, " ", sizeof(cechotext)-1);
+		strncat(cechotext, COM_Argv(i), sizeof(cechotext)-1);
 	}
 
 	cechotext[sizeof(cechotext) - 1] = '\0';
