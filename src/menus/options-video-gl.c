@@ -28,8 +28,10 @@ menuitem_t OPTIONS_VideoOGL[] =
 	{IT_STRING | IT_CVAR, "Texture Quality", "Texture depth. Higher values are recommended.",
 		NULL, {.cvar = &cv_scr_depth}, 0, 0},
 
+	/*
 	{IT_STRING | IT_CVAR, "Texture Filter", "Texture Filter. Nearest is recommended.",
 		NULL, {.cvar = &cv_glfiltermode}, 0, 0},
+	*/
 
 	{IT_STRING | IT_CVAR, "Anisotropic", "Lower values will improve performance at a minor quality loss.",
 		NULL, {.cvar = &cv_glanisotropicmode}, 0, 0},
