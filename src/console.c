@@ -436,7 +436,7 @@ void CON_Init(void)
 			extern struct CVarList *cvlist_console;
 			CV_RegisterList(cvlist_console);
 		}
-		COM_AddCommand("bind", CONS_Bind_f);
+		COM_AddDebugCommand("bind", CONS_Bind_f);
 	}
 	else
 	{

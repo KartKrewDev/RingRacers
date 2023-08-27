@@ -364,7 +364,7 @@ void COM_Init(void)
 	COM_AddCommand("cechoduration", COM_CEchoDuration_f);
 	COM_AddCommand("exec", COM_Exec_f);
 	COM_AddCommand("wait", COM_Wait_f);
-	COM_AddCommand("help", COM_Help_f);
+	COM_AddDebugCommand("help", COM_Help_f);
 	COM_AddCommand("toggle", COM_Toggle_f);
 	COM_AddCommand("add", COM_Add_f);
 	COM_AddCommand("choose", COM_Choose_f);

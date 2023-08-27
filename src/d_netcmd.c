@@ -379,27 +379,27 @@ void D_RegisterServerCommands(void)
 	COM_AddCommand("serverchangeteam", Command_ServerTeamChange_f);
 
 	RegisterNetXCmd(XD_CLEARSCORES, Got_Clearscores);
-	COM_AddCommand("clearscores", Command_Clearscores_f);
+	COM_AddDebugCommand("clearscores", Command_Clearscores_f);
 	COM_AddCommand("map", Command_Map_f);
-	COM_AddCommand("randommap", Command_RandomMap);
+	COM_AddDebugCommand("randommap", Command_RandomMap);
 	COM_AddCommand("restartlevel", Command_RestartLevel);
 	COM_AddCommand("queuemap", Command_QueueMap_f);
 
 	COM_AddCommand("exitgame", Command_ExitGame_f);
 	COM_AddCommand("retry", Command_Retry_f);
 	COM_AddCommand("exitlevel", Command_ExitLevel_f);
-	COM_AddCommand("showmap", Command_Showmap_f);
+	COM_AddDebugCommand("showmap", Command_Showmap_f);
 	COM_AddCommand("mapmd5", Command_Mapmd5_f);
 
 	COM_AddCommand("addfile", Command_Addfile);
-	COM_AddCommand("listwad", Command_ListWADS_f);
-	COM_AddCommand("listmapthings", Command_ListDoomednums_f);
+	COM_AddDebugCommand("listwad", Command_ListWADS_f);
+	COM_AddDebugCommand("listmapthings", Command_ListDoomednums_f);
 
 	COM_AddCommand("runsoc", Command_RunSOC);
 	COM_AddCommand("pause", Command_Pause);
 
-	COM_AddCommand("gametype", Command_ShowGametype_f);
-	COM_AddCommand("version", Command_Version_f);
+	COM_AddDebugCommand("gametype", Command_ShowGametype_f);
+	COM_AddDebugCommand("version", Command_Version_f);
 #ifdef UPDATE_ALERT
 	COM_AddCommand("mod_details", Command_ModDetails_f);
 #endif
@@ -408,17 +408,17 @@ void D_RegisterServerCommands(void)
 	COM_AddCommand("saveconfig", Command_SaveConfig_f);
 	COM_AddCommand("loadconfig", Command_LoadConfig_f);
 	COM_AddCommand("changeconfig", Command_ChangeConfig_f);
-	COM_AddCommand("isgamemodified", Command_Isgamemodified_f); // test
-	COM_AddCommand("showscores", Command_ShowScores_f);
-	COM_AddCommand("showtime", Command_ShowTime_f);
+	COM_AddDebugCommand("isgamemodified", Command_Isgamemodified_f); // test
+	COM_AddDebugCommand("showscores", Command_ShowScores_f);
+	COM_AddDebugCommand("showtime", Command_ShowTime_f);
 #ifdef _DEBUG
-	COM_AddCommand("togglemodified", Command_Togglemodified_f);
-	COM_AddCommand("archivetest", Command_Archivetest_f);
+	COM_AddDebugCommand("togglemodified", Command_Togglemodified_f);
+	COM_AddDebugCommand("archivetest", Command_Archivetest_f);
 #endif
 
-	COM_AddCommand("downloads", Command_Downloads_f);
+	COM_AddDebugCommand("downloads", Command_Downloads_f);
 
-	COM_AddCommand("give", Command_KartGiveItem_f);
+	COM_AddDebugCommand("give", Command_KartGiveItem_f);
 
 	COM_AddCommand("schedule_add", Command_Schedule_Add);
 	COM_AddCommand("schedule_clear", Command_Schedule_Clear);
@@ -426,7 +426,7 @@ void D_RegisterServerCommands(void)
 
 	COM_AddCommand("automate_set", Command_Automate_Set);
 
-	COM_AddCommand("eval", Command_Eval);
+	COM_AddDebugCommand("eval", Command_Eval);
 
 	COM_AddCommand("writetextmap", Command_WriteTextmap);
 
@@ -437,15 +437,15 @@ void D_RegisterServerCommands(void)
 
 	// d_clisrv
 
-	COM_AddCommand("ping", Command_Ping_f);
+	COM_AddDebugCommand("ping", Command_Ping_f);
 
 	RegisterNetXCmd(XD_DISCORD, Got_DiscordInfo);
 
-	COM_AddCommand("numthinkers", Command_Numthinkers_f);
-	COM_AddCommand("countmobjs", Command_CountMobjs_f);
+	COM_AddDebugCommand("numthinkers", Command_Numthinkers_f);
+	COM_AddDebugCommand("countmobjs", Command_CountMobjs_f);
 
 #ifdef _DEBUG
-	COM_AddCommand("causecfail", Command_CauseCfail_f);
+	COM_AddDebugCommand("causecfail", Command_CauseCfail_f);
 #endif
 #ifdef LUA_ALLOW_BYTECODE
 	COM_AddCommand("dumplua", Command_Dumplua_f);
@@ -496,9 +496,9 @@ void D_RegisterClientCommands(void)
 	COM_AddCommand("stopdemo", Command_Stopdemo_f);
 	COM_AddCommand("playintro", Command_Playintro_f);
 
-	COM_AddCommand("resetcamera", Command_ResetCamera_f);
+	COM_AddDebugCommand("resetcamera", Command_ResetCamera_f);
 
-	COM_AddCommand("view", Command_View_f);
+	COM_AddDebugCommand("view", Command_View_f);
 	COM_AddCommand("view2", Command_View_f);
 	COM_AddCommand("view3", Command_View_f);
 	COM_AddCommand("view4", Command_View_f);
@@ -514,43 +514,43 @@ void D_RegisterClientCommands(void)
 	COM_AddCommand("startmovie", Command_StartMovie_f);
 	COM_AddCommand("startlossless", Command_StartLossless_f);
 	COM_AddCommand("stopmovie", Command_StopMovie_f);
-	COM_AddCommand("minigen", M_MinimapGenerate);
+	COM_AddDebugCommand("minigen", M_MinimapGenerate);
 
 #ifdef SRB2_CONFIG_ENABLE_WEBM_MOVIES
 	M_AVRecorder_AddCommands();
 #endif
 
-	COM_AddCommand("displayplayer", Command_Displayplayer_f);
+	COM_AddDebugCommand("displayplayer", Command_Displayplayer_f);
 
 	// k_menu.c
 	//CV_RegisterVar(&cv_compactscoreboard);
 
 	// ingame object placing
-	COM_AddCommand("objectplace", Command_ObjectPlace_f);
+	COM_AddDebugCommand("objectplace", Command_ObjectPlace_f);
 	//COM_AddCommand("writethings", Command_Writethings_f);
 //	CV_RegisterVar(&cv_grid);
 //	CV_RegisterVar(&cv_snapto);
 
 	// add cheats
-	COM_AddCommand("noclip", Command_CheatNoClip_f);
-	COM_AddCommand("god", Command_CheatGod_f);
-	COM_AddCommand("setrings", Command_Setrings_f);
-	COM_AddCommand("setspheres", Command_Setspheres_f);
-	COM_AddCommand("setlives", Command_Setlives_f);
-	COM_AddCommand("setscore", Command_Setscore_f);
-	COM_AddCommand("devmode", Command_Devmode_f);
-	COM_AddCommand("savecheckpoint", Command_Savecheckpoint_f);
-	COM_AddCommand("scale", Command_Scale_f);
-	COM_AddCommand("gravflip", Command_Gravflip_f);
-	COM_AddCommand("hurtme", Command_Hurtme_f);
-	COM_AddCommand("teleport", Command_Teleport_f);
-	COM_AddCommand("rteleport", Command_RTeleport_f);
-	COM_AddCommand("skynum", Command_Skynum_f);
-	COM_AddCommand("weather", Command_Weather_f);
-	COM_AddCommand("grayscale", Command_Grayscale_f);
-	COM_AddCommand("goto", Command_Goto_f);
-	COM_AddCommand("angle", Command_Angle_f);
-	COM_AddCommand("respawnat", Command_RespawnAt_f);
+	COM_AddDebugCommand("noclip", Command_CheatNoClip_f);
+	COM_AddDebugCommand("god", Command_CheatGod_f);
+	COM_AddDebugCommand("setrings", Command_Setrings_f);
+	COM_AddDebugCommand("setspheres", Command_Setspheres_f);
+	COM_AddDebugCommand("setlives", Command_Setlives_f);
+	COM_AddDebugCommand("setscore", Command_Setscore_f);
+	COM_AddDebugCommand("devmode", Command_Devmode_f);
+	COM_AddDebugCommand("savecheckpoint", Command_Savecheckpoint_f);
+	COM_AddDebugCommand("scale", Command_Scale_f);
+	COM_AddDebugCommand("gravflip", Command_Gravflip_f);
+	COM_AddDebugCommand("hurtme", Command_Hurtme_f);
+	COM_AddDebugCommand("teleport", Command_Teleport_f);
+	COM_AddDebugCommand("rteleport", Command_RTeleport_f);
+	COM_AddDebugCommand("skynum", Command_Skynum_f);
+	COM_AddDebugCommand("weather", Command_Weather_f);
+	COM_AddDebugCommand("grayscale", Command_Grayscale_f);
+	COM_AddDebugCommand("goto", Command_Goto_f);
+	COM_AddDebugCommand("angle", Command_Angle_f);
+	COM_AddDebugCommand("respawnat", Command_RespawnAt_f);
 
 	{
 		extern struct CVarList *cvlist_player;
