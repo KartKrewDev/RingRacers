@@ -259,7 +259,7 @@ void K_TimerInit(void)
 		}
 	}
 
-	if (cv_kartdebugstart.value == 0 || M_NotFreePlay() == false)
+	if (cv_kartdebugstart.value == -1 ? M_NotFreePlay() == false : cv_kartdebugstart.value == 0)
 	{
 		starttime = 0;
 		introtime = 0;
