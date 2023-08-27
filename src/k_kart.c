@@ -8263,6 +8263,9 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 			player->incontrol = 0;
 		player->incontrol++;
 	}
+	
+	player->incontrol = min(player->incontrol, 5*TICRATE);
+	player->incontrol = max(player->incontrol, -5*TICRATE);
 
 	if (player->tumbleBounces > 0)
 	{
