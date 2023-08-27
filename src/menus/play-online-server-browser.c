@@ -338,13 +338,51 @@ static int ServerListEntryComparator_gametypename(const void *entry1, const void
 	int c;
 	if (( c = strcasecmp(sa->info.gametypename, sb->info.gametypename) ))
 		return c;
-	return strcmp(sa->info.servername, sb->info.servername); \
+	return strcmp(sa->info.servername, sb->info.servername);
+}
+
+static int ServerListEntryComparator_recommended(const void *entry1, const void *entry2)
+{
+	const serverelem_t *sa = (const serverelem_t*)entry1, *sb = (const serverelem_t*)entry2;
+
+	INT32 saseedval = sa->info.numberofplayer;
+	INT32 sbseedval = sb->info.numberofplayer;
+
+	// Tyron wrote the following on 25072022:
+	// "sort should be two parts
+	// top part of the list is "all non-empty servers sorted by reverse playercount", with servers above a certain reported ping marked as bad connection or whatever
+	// bottom part of the list is all empty servers sorted by ping"
+	// toast is implementing on 27082023, over a year later, because
+	// "fixing server join flow" is saner to do near the end
+
+	{
+		const UINT8 SERVER_EMPTY = 1;
+
+		// The intent with this nudge is to show you
+		// good games you could get a memorable Duel in,
+		// with the possibility to really katamari into
+		// something more substantial.
+		// By comparison, empty games are not nearly as
+		// fun to get going, so let's lower their SEO.
+		if (!saseedval)
+			saseedval = MAXPLAYERS + SERVER_EMPTY;
+		if (!sbseedval)
+			sbseedval = MAXPLAYERS + SERVER_EMPTY;
+	}
+
+	if (saseedval != sbseedval)
+		return saseedval - sbseedval;
+
+	return sa->info.time - sb->info.time;
 }
 
 void M_SortServerList(void)
 {
 	switch(cv_serversort.value)
 	{
+	case -1:
+		qsort(serverlist, serverlistcount, sizeof(serverelem_t), ServerListEntryComparator_recommended);
+		break;
 	case 0:		// Ping.
 		qsort(serverlist, serverlistcount, sizeof(serverelem_t), ServerListEntryComparator_time);
 		break;

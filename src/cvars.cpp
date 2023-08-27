@@ -540,13 +540,14 @@ consvar_t cv_server_contact = Server("server_contact", "").onchange_noinit(Updat
 consvar_t cv_servername = Server("servername", "Ring Racers server").onchange_noinit(Update_parameters);
 
 void M_SortServerList(void);
-consvar_t cv_serversort = Server("serversort", "Ping").dont_save().onchange(M_SortServerList).values({
-	{0,"Ping"},
-	{1,"AVG. Power Level"},
-	{2,"Most Players"},
-	{3,"Least Players"},
-	{4,"Max Player Slots"},
-	{5,"Gametype"},
+consvar_t cv_serversort = Server("serversort", "Recommended").dont_save().onchange(M_SortServerList).values({
+	{-1, "Recommended"},
+	{ 0, "Ping"},
+	{ 1, "AVG. Power Level"},
+	{ 2, "Most Players"},
+	{ 3, "Least Players"},
+	{ 4, "Max Player Slots"},
+	{ 5, "Gametype"},
 });
 
 // show your ping on the HUD next to framerate. Defaults to warning only (shows up if your ping is > maxping)
