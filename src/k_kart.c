@@ -228,6 +228,9 @@ void K_TimerInit(void)
 				numPlayers++;
 			}
 
+			if (cv_kartdebugstart.value > 0)
+				numPlayers = cv_kartdebugstart.value;
+
 			if (numPlayers < 2)
 			{
 				domodeattack = true;
@@ -256,7 +259,7 @@ void K_TimerInit(void)
 		}
 	}
 
-	if (cv_kartdebugstart.value || M_NotFreePlay() == false)
+	if (cv_kartdebugstart.value == 0 || M_NotFreePlay() == false)
 	{
 		starttime = 0;
 		introtime = 0;
