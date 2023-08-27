@@ -5810,6 +5810,8 @@ const char *const MOBJTYPE_LIST[] = {  // array length left dynamic for sanity t
 	"MT_BATTLEUFO_BEAM",
 
 	"MT_POWERUP_AURA",
+
+	"MT_SCRIPT_THING",
 };
 
 const char *const MOBJFLAG_LIST[] = {
