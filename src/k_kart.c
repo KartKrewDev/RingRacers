@@ -10029,7 +10029,7 @@ void K_StripOther(player_t *player)
 static INT32 K_FlameShieldMax(player_t *player)
 {
 	UINT32 disttofinish = 0;
-	UINT32 distv = 2048;
+	UINT32 distv = 1024; // Pre no-scams: 2048
 	distv = distv * 16 / FLAMESHIELD_MAX; // Old distv was based on a 16-segment bar
 	UINT8 numplayers = 0;
 	UINT32 scamradius = 2000; // How close is close enough that we shouldn't be allowed to scam 1st?
