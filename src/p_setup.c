@@ -2187,7 +2187,7 @@ static void P_WriteTextmapThing(FILE *f, mapthing_t *wmapthings, size_t i, size_
 			fprintf(f, "thingarg%s = %d;\n", sizeu1(j), wmapthings[i].thing_args[j]);
 	for (j = 0; j < NUM_MAPTHING_STRINGARGS; j++)
 		if (mapthings[i].thing_stringargs[j])
-			fprintf(f, "stringthingarg%s = \"%s\";\n", sizeu1(j), mapthings[i].thing_stringargs[j]);
+			fprintf(f, "thingstringarg%s = \"%s\";\n", sizeu1(j), mapthings[i].thing_stringargs[j]);
 	if (wmapthings[i].user.length > 0)
 	{
 		for (j = 0; j < wmapthings[i].user.length; j++)
