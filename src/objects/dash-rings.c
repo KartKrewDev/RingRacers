@@ -161,7 +161,7 @@ static void DashRingLaunch(player_t *player, mobj_t *ring)
 	player->dashRingPushTics = DASHRING_PUSH_TICS;
 
 	player->mo->rollangle = 0;
-	player->mo->roll = 0;
+	P_ResetPitchRoll(player->mo);
 	player->flashing = 0;
 	player->fastfall = 0;
 	K_TumbleInterrupt(player);

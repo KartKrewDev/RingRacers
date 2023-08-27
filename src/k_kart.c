@@ -10446,7 +10446,7 @@ static void K_KartSpindash(player_t *player)
 		// Update fastfall.
 		player->fastfall = player->mo->momz;
 		player->spindash = 0;
-		player->mo->roll = 0;
+		P_ResetPitchRoll(player->mo);
 
 		if (player->fastfallBase == 0)
 		{
