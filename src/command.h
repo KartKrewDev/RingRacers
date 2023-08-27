@@ -140,6 +140,7 @@ typedef enum
 	                 // used on menus
 	CV_CHEAT = 2048, // Don't let this be used in multiplayer unless cheats are on.
 	CV_NOLUA = 4096,/* don't let this be called from Lua */
+	CV_ADDEDBYLUA = 8192,
 } cvflags_t;
 
 struct CV_PossibleValue_t

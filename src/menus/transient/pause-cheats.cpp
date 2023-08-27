@@ -64,7 +64,7 @@ void list_cvars()
 {
 	for (consvar_t* var = consvar_vars; var; var = var->next)
 	{
-		if (!(var->flags & CV_CHEAT))
+		if (!(var->flags & (CV_CHEAT | CV_ADDEDBYLUA)))
 		{
 			continue;
 		}
