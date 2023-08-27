@@ -4959,7 +4959,6 @@ state_t states[NUMSTATES] =
 	{SPR_BSTP, FF_ANIMATE|FF_GLOBALANIM|FF_FLOORSPRITE|FF_FULLBRIGHT, -1, {NULL}, 5, 2, S_SNEAKERPANEL},       // S_SNEAKERPANEL
 	{SPR_BSTS, FF_ANIMATE|FF_GLOBALANIM|FF_FLOORSPRITE|FF_FULLBRIGHT, -1, {NULL}, 5, 2, S_SNEAKERPANEL_SMALL}, // S_SNEAKERPANEL_SMALL
 	{SPR_BSTT, FF_ANIMATE|FF_GLOBALANIM|FF_FLOORSPRITE|FF_FULLBRIGHT, -1, {NULL}, 5, 2, S_SNEAKERPANEL_TINY},  // S_SNEAKERPANEL_TINY
-	{SPR_NULL, 0, 65, {A_SpawnSneakerPanel}, 0, 0, S_SNEAKERPANELSPAWNER}, // S_SNEAKERPANELSPAWNER
 
 	// Various plants
 	{SPR_SBUS, 0, -1, {NULL}, 0, 0, S_NULL}, // S_SONICBUSH
@@ -26747,11 +26746,11 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 
 	{           // MT_SNEAKERPANELSPAWNER
 		511,         // doomednum
-		S_SNEAKERPANELSPAWNER, // spawnstate
+		S_INVISIBLE, // spawnstate
 		0,           // spawnhealth
 		S_NULL,      // seestate
 		sfx_None,    // seesound
-		0,           // reactiontime
+		65,          // reactiontime
 		sfx_None,    // attacksound
 		S_NULL,      // painstate
 		0,           // painchance
