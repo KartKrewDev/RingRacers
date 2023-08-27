@@ -11,11 +11,6 @@ void Obj_SneakerPanelSpriteScale(mobj_t *mobj)
 	statenum_t newState;
 	fixed_t spriteScale;
 
-	if (mobj->scale == mobj->movefactor)
-		return;
-
-	mobj->movefactor = mobj->scale;
-
 	if (mobj->scale > FRACUNIT >> 1)
 	{
 		newState = S_SNEAKERPANEL;
@@ -32,11 +27,8 @@ void Obj_SneakerPanelSpriteScale(mobj_t *mobj)
 		spriteScale = FRACUNIT << 2;
 	}
 
-	if (((statenum_t)(mobj->state - states)) != newState)
-	{
-		P_SetMobjState(mobj, newState);
-		mobj->spritexscale = mobj->spriteyscale = spriteScale;
-	}
+	P_SetMobjState(mobj, newState);
+	mobj->spritexscale = mobj->spriteyscale = spriteScale;
 }
 
 void Obj_SneakerPanelSpawn(mobj_t *mobj)
@@ -120,4 +112,24 @@ void Obj_SneakerPanelCollide(mobj_t *panel, mobj_t *mo)
 		player->floorboost = 2;
 
 	K_DoSneaker(player, 0);
+}
+
+void Obj_SneakerPanelSpawnerSpawn(mobj_t *mobj)
+{
+	mobj->fuse = mobj->reactiontime;
+}
+
+void Obj_SneakerPanelSpawnerSetup(mobj_t *mobj, mapthing_t *mthing)
+{
+	if (mthing->thing_args[0] != 0)
+	{
+		mobj->fuse = mobj->reactiontime = mthing->thing_args[0];
+	}
+}
+
+void Obj_SneakerPanelSpawnerFuse(mobj_t *mobj)
+{
+	var1 = var2 = 0;
+	A_SpawnSneakerPanel(mobj);
+	mobj->fuse = mobj->reactiontime;
 }

@@ -203,6 +203,9 @@ void Obj_SneakerPanelSpriteScale(mobj_t *mobj);
 void Obj_SneakerPanelSpawn(mobj_t *mobj);
 void Obj_SneakerPanelSetup(mobj_t *mobj, mapthing_t *mthing);
 void Obj_SneakerPanelCollide(mobj_t *pad, mobj_t *mo);
+void Obj_SneakerPanelSpawnerSpawn(mobj_t *mobj);
+void Obj_SneakerPanelSpawnerSetup(mobj_t *mobj, mapthing_t *mthing);
+void Obj_SneakerPanelSpawnerFuse(mobj_t *mobj);
 
 /* Emerald */
 void Obj_SpawnEmeraldSparks(mobj_t *source);

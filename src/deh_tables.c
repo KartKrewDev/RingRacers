@@ -4252,7 +4252,6 @@ const char *const STATE_LIST[] = { // array length left dynamic for sanity testi
 	"S_SNEAKERPANEL",
 	"S_SNEAKERPANEL_SMALL",
 	"S_SNEAKERPANEL_TINY",
-	"S_SNEAKERPANELSPAWNER",
 
 	// Various plants
 	"S_SONICBUSH",
