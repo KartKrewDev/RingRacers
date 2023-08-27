@@ -2127,6 +2127,29 @@ static INT32 P_RGBAToColor(INT32 rgba)
 	return (r << 16) | (g << 8) | b;
 }
 
+static void TextmapWriteSlopeConstants(FILE *f, sector_t *sec)
+{
+	if (sec->f_slope != NULL)
+	{
+		const pslope_t *slope = sec->f_slope;
+
+		fprintf(f, "floorplane_a = %f;\n", FIXED_TO_FLOAT(slope->constants[0]));
+		fprintf(f, "floorplane_b = %f;\n", FIXED_TO_FLOAT(slope->constants[1]));
+		fprintf(f, "floorplane_c = %f;\n", FIXED_TO_FLOAT(slope->constants[2]));
+		fprintf(f, "floorplane_d = %f;\n", FIXED_TO_FLOAT(slope->constants[3]));
+	}
+
+	if (sec->c_slope != NULL)
+	{
+		const pslope_t *slope = sec->c_slope;
+
+		fprintf(f, "ceilingplane_a = %f;\n", FIXED_TO_FLOAT(slope->constants[0]));
+		fprintf(f, "ceilingplane_b = %f;\n", FIXED_TO_FLOAT(slope->constants[1]));
+		fprintf(f, "ceilingplane_c = %f;\n", FIXED_TO_FLOAT(slope->constants[2]));
+		fprintf(f, "ceilingplane_d = %f;\n", FIXED_TO_FLOAT(slope->constants[3]));
+	}
+}
+
 typedef struct
 {
 	mapthing_t *teleport;
@@ -2899,6 +2922,7 @@ static void P_WriteTextmap(void)
 					break;
 			}
 		}
+		TextmapWriteSlopeConstants(f, &wsectors[i]);
 		if (wsectors[i].action != 0)
 			fprintf(f, "action = %d;\n", wsectors[i].action);
 		for (j = 0; j < NUM_SCRIPT_ARGS; j++)
