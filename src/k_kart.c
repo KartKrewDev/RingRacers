@@ -9933,7 +9933,7 @@ void K_KartUpdatePosition(player_t *player)
 			realplayers > 1)
 	{
 		/* grace period so you don't fall off INSTANTLY */
-		if (position == 1 && player->topinfirst < 2*TICRATE)
+		if (K_GetItemRouletteDistance(player, 8) < 2000 && player->topinfirst < 2*TICRATE) // "Why 8?" Literally no reason, but since we intend for constant-ish distance we choose a fake fixed playercount.
 		{
 			player->topinfirst++;
 		}
@@ -10032,6 +10032,7 @@ static INT32 K_FlameShieldMax(player_t *player)
 	UINT32 distv = 2048;
 	distv = distv * 16 / FLAMESHIELD_MAX; // Old distv was based on a 16-segment bar
 	UINT8 numplayers = 0;
+	UINT32 scamradius = 2000; // How close is close enough that we shouldn't be allowed to scam 1st?
 	UINT8 i;
 
 	if (gametyperules & GTR_CIRCUIT)
@@ -10045,18 +10046,21 @@ static INT32 K_FlameShieldMax(player_t *player)
 		}
 	}
 
+	disttofinish = player->distancetofinish - disttofinish;
+	distv = FixedMul(distv, mapobjectscale);
+
 	if (numplayers <= 1)
 	{
 		return FLAMESHIELD_MAX; // max when alone, for testing
 		// and when in battle, for chaos
 	}
-	else if (player->position == 1)
+	else if (player->position == 1 || disttofinish < scamradius)
 	{
 		return 0; // minimum for first
 	}
 
-	disttofinish = player->distancetofinish - disttofinish;
-	distv = FixedMul(distv, mapobjectscale);
+	disttofinish = disttofinish - scamradius;
+
 	return min(FLAMESHIELD_MAX, (FLAMESHIELD_MAX / 16) + (disttofinish / distv)); // Ditto for this minimum, old value was 1/16
 }
 
