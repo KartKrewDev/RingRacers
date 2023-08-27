@@ -1580,7 +1580,7 @@ static UINT32 SL_SearchServer(INT32 node)
 	return UINT32_MAX;
 }
 
-static void SL_InsertServer(serverinfo_pak* info, SINT8 node)
+static boolean SL_InsertServer(serverinfo_pak* info, SINT8 node)
 {
 	UINT32 i;
 
@@ -1592,25 +1592,25 @@ static void SL_InsertServer(serverinfo_pak* info, SINT8 node)
 	{
 		// not found add it
 		if (serverlistcount >= MAXSERVERLIST)
-			return; // list full
+			return false; // list full
 
 		if (info->_255 != 255)
-			return;/* old packet format */
+			return false;/* old packet format */
 
 		if (info->packetversion != PACKETVERSION)
-			return;/* old new packet format */
+			return false;/* old new packet format */
 
 		if (info->version != VERSION)
-			return; // Not same version.
+			return false; // Not same version.
 
 		if (info->subversion != SUBVERSION)
-			return; // Close, but no cigar.
+			return false; // Close, but no cigar.
 
 		if (strcmp(info->application, SRB2APPLICATION))
-			return;/* that's a different mod */
+			return false;/* that's a different mod */
 
 		if (info->modifiedgame != (mpmenu.room == 1))
-			return;/* CORE vs MODDED! */
+			return false;/* CORE vs MODDED! */
 
 		i = serverlistcount++;
 	}
@@ -1620,6 +1620,8 @@ static void SL_InsertServer(serverinfo_pak* info, SINT8 node)
 
 	// resort server list
 	M_SortServerList();
+
+	return true;
 }
 
 void CL_QueryServerList (msg_server_t *server_list)
@@ -4646,7 +4648,9 @@ static void HandleServerInfo(SINT8 node)
 	memcpy(servername, netbuffer->u.serverinfo.servername, MAXSERVERNAME);
 	CopyCaretColors(netbuffer->u.serverinfo.servername, servername, MAXSERVERNAME);
 
-	SL_InsertServer(&netbuffer->u.serverinfo, node);
+	// If we have cause to reject it, it's not worth observing.
+	if (SL_InsertServer(&netbuffer->u.serverinfo, node) == false)
+		serverlistultimatecount--;
 }
 
 static void PT_WillResendGamestate(void)
