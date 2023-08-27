@@ -488,8 +488,7 @@ void P_ResetPlayer(player_t *player)
 
 	if (player->mo != NULL && P_MobjWasRemoved(player->mo) == false)
 	{
-		player->mo->pitch = 0;
-		player->mo->roll = 0;
+		P_ResetPitchRoll(player->mo);
 	}
 }
 

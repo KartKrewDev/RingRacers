@@ -3918,7 +3918,7 @@ void K_StumblePlayer(player_t *player)
 	P_SetPlayerMobjState(player->mo, S_KART_SPINOUT);
 
 	// Reset slope.
-	player->mo->pitch = player->mo->roll = 0;
+	P_ResetPitchRoll(player->mo);
 }
 
 boolean K_CheckStumble(player_t *player, angle_t oldPitch, angle_t oldRoll, boolean fromAir)
@@ -4260,7 +4260,7 @@ static void K_HandleTumbleBounce(player_t *player)
 			player->tumbleHeight = 10;
 			player->pflags |= PF_TUMBLELASTBOUNCE;
 			player->mo->rollangle = 0;	// p_user.c will stop rotating the player automatically
-			player->mo->pitch = player->mo->roll = 0; // Prevent Kodachrome Void infinite
+			P_ResetPitchRoll(player->mo); // Prevent Kodachrome Void infinite
 		}
 	}
 
@@ -6162,8 +6162,7 @@ void K_DoPogoSpring(mobj_t *mo, fixed_t vertispeed, UINT8 sound)
 		mo->momz = FixedDiv(mo->momz, FixedSqrt(3*FRACUNIT));
 	}
 
-	mo->pitch = 0;
-	mo->roll = 0;
+	P_ResetPitchRoll(mo);
 
 	if (sound)
 	{

@@ -1333,7 +1333,7 @@ void P_SetPitchRollFromSlope(mobj_t *mo, pslope_t *slope)
 	}
 	else
 	{
-		mo->pitch = mo->roll = 0;
+		P_ResetPitchRoll(mo);
 	}
 }
 
@@ -1346,6 +1346,15 @@ void P_SetPitchRoll(mobj_t *mo, angle_t pitch, angle_t yaw)
 	yaw >>= ANGLETOFINESHIFT;
 	mo->roll  = FixedMul(pitch, FINESINE   (yaw));
 	mo->pitch = FixedMul(pitch, FINECOSINE (yaw));
+}
+
+//
+// P_ResetPitchRoll
+//
+void P_ResetPitchRoll(mobj_t *mo)
+{
+	mo->pitch = 0;
+	mo->roll = 0;
 }
 
 #define STOPSPEED (FRACUNIT)
@@ -7191,7 +7200,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 	}
 	case MT_FLOATINGITEM:
 	{
-		mobj->pitch = mobj->roll = 0;
+		P_ResetPitchRoll(mobj);
 		if (mobj->flags & MF_NOCLIPTHING)
 		{
 			if (P_CheckDeathPitCollide(mobj))
