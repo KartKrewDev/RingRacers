@@ -1852,9 +1852,8 @@ void V_DrawChatCharacter(INT32 x, INT32 y, INT32 c, boolean lowercase, UINT8 *co
 	);
 }
 
-// V_TitleCardStringWidth
-// Get the string's width using the titlecard font.
-INT32 V_TitleCardStringWidth(const char *str, boolean p4)
+template <bool Centered>
+static INT32 Internal_TitleCardStringOffset(const char *str, boolean p4)
 {
 	int bg_font = GTOL_FONT;
 	int fg_font = GTFN_FONT;
@@ -1870,45 +1869,123 @@ INT32 V_TitleCardStringWidth(const char *str, boolean p4)
 	char c;
 	patch_t *pp;
 
-	for (;;ch++)
+	// Returns true if it reached the end, false if interrupted.
+	auto scan = [&](auto keep_going)
 	{
-		if (!*ch)
-			break;
-
-		if (*ch == '\n')
+		for (;;ch++)
 		{
-			xoffs = 0;
-			continue;
+			if (*ch == '\n')
+			{
+				xoffs = 0;
+				return false;
+			}
+
+			if (!keep_going(*ch))
+			{
+				break;
+			}
+
+			c = *ch;
+			c = toupper(c);
+			c -= LT_FONTSTART;
+
+			// check if character exists, if not, it's a space.
+			if (c < 0 || c >= LT_FONTSIZE || !fontv[bg_font].font[(INT32)c])
+			{
+				xoffs += p4 ? 5 : 10;
+				continue;
+			}
+
+			pp = fontv[fg_font].font[(INT32)c];
+
+			xoffs += pp->width - (p4 ? 3 : 5);
 		}
 
-		// For the sake of centering, don't count punctuation.
+		return true;
+	};
+
+	do
+	{
+		// For the sake of centering, don't count spaces or
+		// punctuation at each end of a line.
 		// TODO: This should ideally be more sophisticated:
-		// - Only apply on the ends of each line.
 		// - Check patch width directly for monospace or
 		//   punctuation that isn't necessarily thin.
-		// - Apply to all string drawing.
-		if (ispunct(*ch))
+		// - Apply to all centered string drawing.
+		if constexpr (Centered)
 		{
-			continue;
+			// Count leading fluff
+			if (!scan([](int c) { return c && !isalnum(c); }))
+			{
+				continue;
+			}
+
+			if (!*ch)
+			{
+				// ALL fluff, so center it normally.
+				break;
+			}
+
+			// xoffs gets halved later, which centers the
+			// string. If we don't want leading fluff to push
+			// everything to the right, its full width needs
+			// to be subtracted, so it's doubled here to
+			// cancel out the division.
+			xoffs *= 2;
+
+			INT32 trim = -1;
+
+			bool reached_end = scan(
+				[&trim, &xoffs](int c)
+				{
+					if (isalnum(c))
+					{
+						trim = -1;
+					}
+					else if (trim < 0)
+					{
+						trim = xoffs;
+					}
+
+					return c;
+				}
+			);
+
+			// Discount trailing fluff
+			if (reached_end && trim >= 0)
+			{
+				xoffs = trim;
+			}
 		}
-
-		c = *ch;
-		c = toupper(c);
-		c -= LT_FONTSTART;
-
-		// check if character exists, if not, it's a space.
-		if (c < 0 || c >= LT_FONTSIZE || !fontv[bg_font].font[(INT32)c])
+		else
 		{
-			xoffs += p4 ? 5 : 10;
-			continue;
+			scan([](int c) { return c; });
 		}
-
-		pp = fontv[fg_font].font[(INT32)c];
-
-		xoffs += pp->width - (p4 ? 3 : 5);
 	}
+	while (*(ch++));
 
-	return xoffs;
+	if constexpr (Centered)
+	{
+		return xoffs / 2;
+	}
+	else
+	{
+		return xoffs;
+	}
+}
+
+// V_TitleCardStringWidth
+// Get the string's width using the titlecard font.
+INT32 V_TitleCardStringWidth(const char *str, boolean p4)
+{
+	return Internal_TitleCardStringOffset<false>(str, p4);
+}
+
+// V_CenteredTitleCardStringOffset
+// Subtract this offset from an X coordinate to center the string around that point.
+INT32 V_CenteredTitleCardStringOffset(const char *str, boolean p4)
+{
+	return Internal_TitleCardStringOffset<true>(str, p4);
 }
 
 // V_DrawTitleCardScreen.

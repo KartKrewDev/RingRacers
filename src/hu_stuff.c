@@ -1902,7 +1902,7 @@ static void HU_DrawTitlecardCEcho(size_t num)
 
 		while (*echoptr != '\0')
 		{
-			INT32 w;
+			INT32 ofs;
 			INT32 timer = (INT32)(elapsed - timeroffset);
 			
 			if (timer <= 0)
@@ -1915,8 +1915,8 @@ static void HU_DrawTitlecardCEcho(size_t num)
 
 			*line = '\0';
 			
-			w = V_TitleCardStringWidth(echoptr, p4);
-			V_DrawTitleCardString(x -w/2, y, echoptr, 0, false, timer, TICRATE*4, p4);
+			ofs = V_CenteredTitleCardStringOffset(echoptr, p4);
+			V_DrawTitleCardString(x - ofs, y, echoptr, 0, false, timer, TICRATE*4, p4);
 
 			y += p4 ? 18 : 32;
 			

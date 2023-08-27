@@ -352,6 +352,9 @@ void V_DrawTitleCardString(INT32 x, INT32 y, const char *str, INT32 flags, boole
 // returns thr width of a string drawn using the above function.
 INT32 V_TitleCardStringWidth(const char *str, boolean p4);
 
+// offset that can be subtracted to center align.
+INT32 V_CenteredTitleCardStringOffset(const char *str, boolean p4);
+
 // Draw tall nums, used for menu, HUD, intermission
 void V_DrawTallNum(INT32 x, INT32 y, INT32 flags, INT32 num);
 void V_DrawPaddedTallNum(INT32 x, INT32 y, INT32 flags, INT32 num, INT32 digits);
