@@ -2092,22 +2092,22 @@ static void TextmapUnfixFlatOffsets(sector_t *sec)
 {
 	if (sec->floorpic_angle)
 	{
-		fixed_t pc = FINECOSINE(sec->floorpic_angle >> ANGLETOFINESHIFT);
-		fixed_t ps = FINESINE(sec->floorpic_angle >> ANGLETOFINESHIFT);
+		fixed_t pc = FINECOSINE(sec->floorpic_angle>>ANGLETOFINESHIFT);
+		fixed_t ps = -FINESINE (sec->floorpic_angle>>ANGLETOFINESHIFT);
 		fixed_t xoffs = sec->floor_xoffs;
 		fixed_t yoffs = sec->floor_yoffs;
-		sec->floor_xoffs = (FixedMul(xoffs, ps) % MAXFLATSIZE) + (FixedMul(yoffs, pc) % MAXFLATSIZE);
-		sec->floor_yoffs = (FixedMul(xoffs, pc) % MAXFLATSIZE) - (FixedMul(yoffs, ps) % MAXFLATSIZE);
+		sec->floor_xoffs = (FixedMul(xoffs, pc) % MAXFLATSIZE) - (FixedMul(yoffs, ps) % MAXFLATSIZE);
+		sec->floor_yoffs = (FixedMul(xoffs, ps) % MAXFLATSIZE) + (FixedMul(yoffs, pc) % MAXFLATSIZE);
 	}
 
 	if (sec->ceilingpic_angle)
 	{
-		fixed_t pc = FINECOSINE(sec->ceilingpic_angle >> ANGLETOFINESHIFT);
-		fixed_t ps = FINESINE(sec->ceilingpic_angle >> ANGLETOFINESHIFT);
+		fixed_t pc = FINECOSINE(sec->ceilingpic_angle>>ANGLETOFINESHIFT);
+		fixed_t ps = -FINESINE (sec->ceilingpic_angle>>ANGLETOFINESHIFT);
 		fixed_t xoffs = sec->ceiling_xoffs;
 		fixed_t yoffs = sec->ceiling_yoffs;
-		sec->ceiling_xoffs = (FixedMul(xoffs, ps) % MAXFLATSIZE) + (FixedMul(yoffs, pc) % MAXFLATSIZE);
-		sec->ceiling_yoffs = (FixedMul(xoffs, pc) % MAXFLATSIZE) - (FixedMul(yoffs, ps) % MAXFLATSIZE);
+		sec->ceiling_xoffs = (FixedMul(xoffs, pc) % MAXFLATSIZE) - (FixedMul(yoffs, ps) % MAXFLATSIZE);
+		sec->ceiling_yoffs = (FixedMul(xoffs, ps) % MAXFLATSIZE) + (FixedMul(yoffs, pc) % MAXFLATSIZE);
 	}
 }
 
@@ -2125,6 +2125,29 @@ static INT32 P_RGBAToColor(INT32 rgba)
 	UINT8 g = R_GetRgbaG(rgba);
 	UINT8 b = R_GetRgbaB(rgba);
 	return (r << 16) | (g << 8) | b;
+}
+
+static void TextmapWriteSlopeConstants(FILE *f, sector_t *sec)
+{
+	if (sec->f_slope != NULL)
+	{
+		const pslope_t *slope = sec->f_slope;
+
+		fprintf(f, "floorplane_a = %f;\n", FIXED_TO_FLOAT(slope->constants[0]));
+		fprintf(f, "floorplane_b = %f;\n", FIXED_TO_FLOAT(slope->constants[1]));
+		fprintf(f, "floorplane_c = %f;\n", FIXED_TO_FLOAT(slope->constants[2]));
+		fprintf(f, "floorplane_d = %f;\n", FIXED_TO_FLOAT(slope->constants[3]));
+	}
+
+	if (sec->c_slope != NULL)
+	{
+		const pslope_t *slope = sec->c_slope;
+
+		fprintf(f, "ceilingplane_a = %f;\n", FIXED_TO_FLOAT(slope->constants[0]));
+		fprintf(f, "ceilingplane_b = %f;\n", FIXED_TO_FLOAT(slope->constants[1]));
+		fprintf(f, "ceilingplane_c = %f;\n", FIXED_TO_FLOAT(slope->constants[2]));
+		fprintf(f, "ceilingplane_d = %f;\n", FIXED_TO_FLOAT(slope->constants[3]));
+	}
 }
 
 typedef struct
@@ -2192,7 +2215,7 @@ static void P_WriteTextmapThing(FILE *f, mapthing_t *wmapthings, size_t i, size_
 			fprintf(f, "thingarg%s = %d;\n", sizeu1(j), wmapthings[i].thing_args[j]);
 	for (j = 0; j < NUM_MAPTHING_STRINGARGS; j++)
 		if (mapthings[i].thing_stringargs[j])
-			fprintf(f, "stringthingarg%s = \"%s\";\n", sizeu1(j), mapthings[i].thing_stringargs[j]);
+			fprintf(f, "thingstringarg%s = \"%s\";\n", sizeu1(j), mapthings[i].thing_stringargs[j]);
 	if (wmapthings[i].user.length > 0)
 	{
 		for (j = 0; j < wmapthings[i].user.length; j++)
@@ -2904,6 +2927,7 @@ static void P_WriteTextmap(void)
 					break;
 			}
 		}
+		TextmapWriteSlopeConstants(f, &wsectors[i]);
 		if (wsectors[i].action != 0)
 			fprintf(f, "action = %d;\n", wsectors[i].action);
 		for (j = 0; j < NUM_SCRIPT_ARGS; j++)
