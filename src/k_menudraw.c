@@ -3408,6 +3408,89 @@ void M_DrawMPRoomSelect(void)
 }
 
 // SERVER BROWSER
+static void M_DrawServerCountAndHorizontalBar(void)
+{
+	const char *text;
+	INT32 y = currentMenu->y+STRINGHEIGHT;
+
+	const char throbber[4] = {'-', '\\', '|', '/'};
+	UINT8 throbindex = (mpmenu.ticker/4) % 4;
+
+	switch (M_GetWaitingMode())
+	{
+		case M_WAITING_VERSION:
+			text = "Checking for updates";
+			break;
+
+		case M_WAITING_SERVERS:
+			text = "Loading server list";
+			break;
+
+		default:
+			if (serverlistultimatecount > serverlistcount)
+			{
+				text = va("%d/%d server%s found...",
+						serverlistcount,
+						serverlistultimatecount,
+						serverlistultimatecount == 1 ? "" : "s"
+				);
+			}
+			else
+			{
+				throbindex = UINT8_MAX; // No throbber!
+				if (serverlistcount > 0)
+				{
+					text = va("%d server%s found",
+						serverlistcount,
+						serverlistcount == 1 ? "" : "s"
+					);
+				}
+				else
+				{
+					text = "No servers found";
+				}
+			}
+	}
+
+	if (throbindex == UINT8_MAX)
+	{
+		V_DrawRightAlignedString(
+			BASEVIDWIDTH - currentMenu->x,
+			y,
+			highlightflags,
+			text
+		);
+	}
+	else
+	{
+		V_DrawRightAlignedString(
+			BASEVIDWIDTH - currentMenu->x - 12, y,
+			highlightflags,
+			text
+		);
+
+		V_DrawCenteredString( // Only clean way to center the throbber without exposing character width
+			BASEVIDWIDTH - currentMenu->x - 4, y,
+			highlightflags,
+			va("%c", throbber[throbindex])
+		);
+	}
+
+	// Did you change the Server Browser address? Have a little reminder.
+
+	INT32 mservflags = 0;
+	if (CV_IsSetToDefault(&cv_masterserver))
+		mservflags = highlightflags|V_30TRANS;
+	else
+		mservflags = warningflags;
+
+	y = BASEVIDHEIGHT - 24;
+
+	V_DrawFadeFill(0, y-1, BASEVIDWIDTH, 10, 0, 31, 5);
+	V_DrawCenteredString(BASEVIDWIDTH/2, y,
+		mservflags, va("MS: %s", cv_masterserver.string));
+}
+
 void M_DrawMPServerBrowser(void)
 {
 	patch_t *text1 = W_CachePatchName("MENUBGT1", PU_CACHE);
@@ -3508,6 +3591,8 @@ void M_DrawMPServerBrowser(void)
 	// normal menu options
 	M_DrawGenericMenu();
 
+	// And finally, the overlay bar!
+	M_DrawServerCountAndHorizontalBar();
 }
 
 // OPTIONS MENU

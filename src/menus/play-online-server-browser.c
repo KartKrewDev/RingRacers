@@ -3,11 +3,14 @@
 
 #include "../k_menu.h"
 #include "../v_video.h"
-#include "../i_system.h" // I_OsPolling
-#include "../i_video.h" // I_UpdateNoBlit
+#include "../s_sound.h"
+
+//#define SERVERLISTDEBUG
 
 #ifdef SERVERLISTDEBUG
 #include "../m_random.h"
+
+void M_ServerListFillDebug(void);
 #endif
 
 menuitem_t PLAY_MP_ServerBrowser[] =
@@ -16,8 +19,8 @@ menuitem_t PLAY_MP_ServerBrowser[] =
 	{IT_STRING | IT_CVAR, "SORT BY", NULL,	// tooltip MUST be null.
 		NULL, {.cvar = &cv_serversort}, 0, 0},
 
-	{IT_STRING, "REFRESH", NULL,
-		NULL, {NULL}, 0, 0},
+	{IT_STRING | IT_CALL, "REFRESH", NULL,
+		NULL, {.routine = &M_RefreshServers}, 0, 0},
 
 	{IT_NOTHING, NULL, NULL, NULL, {NULL}, 0, 0},
 };
@@ -41,28 +44,6 @@ menu_t PLAY_MP_ServerBrowserDef = {
 
 // for server fetch threads...
 M_waiting_mode_t m_waiting_mode = M_NOT_WAITING;
-
-// depending on mpmenu.room, either allows only unmodded servers or modded ones. Remove others from the list.
-// we do this by iterating backwards.
-static void M_CleanServerList(void)
-{
-	UINT8 i = serverlistcount;
-
-	while (i)
-	{
-
-		if (serverlist[i].info.modifiedgame != mpmenu.room)
-		{
-			// move everything after this index 1 slot down...
-			if (i != serverlistcount)
-				memcpy(&serverlist[i], &serverlist[i+1], sizeof(serverelem_t)*(serverlistcount-i));
-
-			serverlistcount--;
-		}
-
-		i--;
-	}
-}
 
 void
 M_SetWaitingMode (int mode)
@@ -180,31 +161,19 @@ void M_RefreshServers(INT32 choice)
 {
 	(void)choice;
 
-	// Display a little "please wait" message.
-	M_DrawTextBox(52, BASEVIDHEIGHT/2-10, 25, 3);
-	V_DrawCenteredString(BASEVIDWIDTH/2, BASEVIDHEIGHT/2, 0, "Searching for servers...");
-	V_DrawCenteredString(BASEVIDWIDTH/2, (BASEVIDHEIGHT/2)+12, 0, "Please wait.");
-	I_OsPolling();
-	I_UpdateNoBlit();
-	if (rendermode == render_soft)
-		I_FinishUpdate(); // page flip or blit buffer
+	CL_UpdateServerList();
 
+#ifdef SERVERLISTDEBUG
+	M_ServerListFillDebug();
+#else /*SERVERLISTDEBUG*/
 #ifdef MASTERSERVER
 #ifdef HAVE_THREADS
 	Spawn_masterserver_thread("fetch-servers", Fetch_servers_thread);
 #else/*HAVE_THREADS*/
 	Fetch_servers_thread(NULL);
 #endif/*HAVE_THREADS*/
-#else/*MASTERSERVER*/
-	CL_UpdateServerList();
 #endif/*MASTERSERVER*/
-
-#ifdef SERVERLISTDEBUG
-	M_ServerListFillDebug();
-#endif
-	M_CleanServerList();
-	M_SortServerList();
-
+#endif /*SERVERLISTDEBUG*/
 }
 
 #ifdef UPDATE_ALERT
@@ -253,12 +222,19 @@ void M_ServersMenu(INT32 choice)
 	// modified game check: no longer handled
 	// we don't request a restart unless the filelist differs
 
+	CL_UpdateServerList();
+
+	mpmenu.ticker = 0;
 	mpmenu.servernum = 0;
 	mpmenu.scrolln = 0;
 	mpmenu.slide = 0;
 
 	M_SetupNextMenu(&PLAY_MP_ServerBrowserDef, false);
 	itemOn = 0;
+
+#ifdef SERVERLISTDEBUG
+	M_ServerListFillDebug();
+#else /*SERVERLISTDEBUG*/
 
 #if defined (MASTERSERVER) && defined (HAVE_THREADS)
 	I_lock_mutex(&ms_QueryId_mutex);
@@ -289,12 +265,7 @@ void M_ServersMenu(INT32 choice)
 	M_RefreshServers(0);
 #endif/*defined (MASTERSERVER) && defined (HAVE_THREADS)*/
 
-#ifdef SERVERLISTDEBUG
-	M_ServerListFillDebug();
-#endif
-
-	M_CleanServerList();
-	M_SortServerList();
+#endif /*SERVERLISTDEBUG*/
 }
 
 #ifdef SERVERLISTDEBUG
@@ -304,7 +275,7 @@ void M_ServerListFillDebug(void)
 {
 	UINT8 i = 0;
 
-	serverlistcount = 10;
+	serverlistcount = 40;
 	memset(serverlist, 0, sizeof(serverlist));	// zero out the array for convenience...
 
 	for (i = 0; i < serverlistcount; i++)
@@ -327,6 +298,8 @@ void M_ServerListFillDebug(void)
 
 		CONS_Printf("Serv %d | %d...\n", i, serverlist[i].info.modifiedgame);
 	}
+
+	M_SortServerList();
 }
 
 #endif // SERVERLISTDEBUG
@@ -397,14 +370,33 @@ void M_SortServerList(void)
 // Server browser inputs & ticker
 void M_MPServerBrowserTick(void)
 {
+	mpmenu.ticker++;
 	mpmenu.slide /= 2;
+
+#if defined (MASTERSERVER) && defined (HAVE_THREADS)
+	I_lock_mutex(&ms_ServerList_mutex);
+	{
+		if (ms_ServerList)
+		{
+			CL_QueryServerList(ms_ServerList);
+			free(ms_ServerList);
+			ms_ServerList = NULL;
+		}
+	}
+	I_unlock_mutex(ms_ServerList_mutex);
+#endif
+
+	CL_TimeoutServerList();
 }
 
 // Input handler for server browser.
 boolean M_ServerBrowserInputs(INT32 ch)
 {
 	UINT8 pid = 0;
-	UINT8 maxscroll = serverlistcount-(SERVERSPERPAGE/2);
+	INT16 maxscroll = serverlistcount - (SERVERSPERPAGE/2) - 2; // Why? Because
+	if (maxscroll < 0)
+		maxscroll = 0;
+
 	(void) ch;
 
 	if (!itemOn && menucmd[pid].dpad_ud < 0)
@@ -412,21 +404,37 @@ boolean M_ServerBrowserInputs(INT32 ch)
 		M_PrevOpt();	// go to itemOn 2
 		if (serverlistcount)
 		{
-			UINT8 prevscroll = mpmenu.scrolln;
+			INT32 prevscroll = mpmenu.scrolln;
 
-			mpmenu.servernum = serverlistcount;
+			mpmenu.servernum = serverlistcount-1;
 			mpmenu.scrolln = maxscroll;
-			mpmenu.slide = SERVERSPACE * (prevscroll - mpmenu.scrolln);
+			mpmenu.slide = SERVERSPACE * (prevscroll - (INT32)mpmenu.scrolln);
 		}
 		else
 		{
 			itemOn = 1;	// Sike! If there are no servers, go to refresh instead.
 		}
 
+		S_StartSound(NULL, sfx_s3k5b);
+		M_SetMenuDelay(pid);
+
 		return true;	// overwrite behaviour.
 	}
 	else if (itemOn == 2)	// server browser itself...
 	{
+#ifndef SERVERLISTDEBUG
+		if (M_MenuConfirmPressed(pid))
+		{
+			M_SetMenuDelay(pid);
+
+			COM_BufAddText(va("connect node %d\n", serverlist[mpmenu.servernum].node));
+
+			M_PleaseWait();
+
+			return true;
+		}
+#endif
+
 		// we have to manually do that here.
 		if (M_MenuBackPressed(pid))
 		{
@@ -436,12 +444,13 @@ boolean M_ServerBrowserInputs(INT32 ch)
 
 		else if (menucmd[pid].dpad_ud > 0)	// down
 		{
-			if (mpmenu.servernum >= serverlistcount-1)
+			if ((UINT32)(mpmenu.servernum+1) >= serverlistcount)
 			{
-				UINT8 prevscroll = mpmenu.scrolln;
+				INT32 prevscroll = mpmenu.scrolln;
+
 				mpmenu.servernum = 0;
 				mpmenu.scrolln = 0;
-				mpmenu.slide = SERVERSPACE * (prevscroll - mpmenu.scrolln);
+				mpmenu.slide = SERVERSPACE * (prevscroll - (INT32)mpmenu.scrolln);
 
 				M_NextOpt();	// Go back to the top of the real menu.
 			}
@@ -460,14 +469,13 @@ boolean M_ServerBrowserInputs(INT32 ch)
 		}
 		else if (menucmd[pid].dpad_ud < 0)
 		{
-
 			if (!mpmenu.servernum)
 			{
 				M_PrevOpt();
 			}
 			else
 			{
-				if (mpmenu.servernum <= serverlistcount-(SERVERSPERPAGE/2) && mpmenu.scrolln)
+				if (mpmenu.servernum <= (INT16)maxscroll && mpmenu.scrolln)
 				{
 					mpmenu.scrolln--;
 					mpmenu.slide -= SERVERSPACE;

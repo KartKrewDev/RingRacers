@@ -29,8 +29,6 @@
 extern "C" {
 #endif
 
-#define SERVERLISTDEBUG
-
 // flags for items in the menu
 // menu handle (what we do when key is pressed
 #define IT_TYPE             14     // (2+4+8)
@@ -842,6 +840,8 @@ extern struct mpmenu_s {
 
 } mpmenu;
 
+void M_PleaseWait(void);
+
 // Time Attack
 void M_PrepareTimeAttack(INT32 choice);
 void M_StartTimeAttack(INT32 choice);
@@ -894,11 +894,6 @@ void Fetch_servers_thread (int *id);
 
 void M_RefreshServers(INT32 choice);
 void M_ServersMenu(INT32 choice);
-
-// for debugging purposes...
-#ifdef SERVERLISTDEBUG
-void M_ServerListFillDebug(void);
-#endif
 
 // Options menu:
 
