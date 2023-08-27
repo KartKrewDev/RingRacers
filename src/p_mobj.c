@@ -8138,7 +8138,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 		mobj->extravalue1 += 1;
 
 		mobj->angle += ANG1*mobj->extravalue1;
-		mobj->scale = mobj->target->scale;
+		P_SetScale(mobj, mobj->target->scale);
 
 		destx = mobj->target->x;
 		desty = mobj->target->y;
