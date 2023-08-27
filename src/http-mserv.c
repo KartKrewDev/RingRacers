@@ -441,7 +441,12 @@ HMS_fetch_servers (msg_server_t *list, int query_id)
 					break;
 #endif
 
+//#define MSERVTESTALONE
+#ifdef MSERVTESTALONE
+				strcpy(list[i].ip, "127.0.0.1"); // MS test without needing a second person to host
+#else
 				strlcpy(list[i].ip,      address, sizeof list[i].ip);
+#endif
 				strlcpy(list[i].port,    port,    sizeof list[i].port);
 
 				if (contact)
