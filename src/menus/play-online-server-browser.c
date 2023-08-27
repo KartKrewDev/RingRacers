@@ -281,20 +281,20 @@ void M_ServerListFillDebug(void)
 	for (i = 0; i < serverlistcount; i++)
 	{
 		// We don't really care about the server node for this, let's just fill in the info so that we have a visual...
-		serverlist[i].info.numberofplayer = min(i, 8);
-		serverlist[i].info.maxplayer = 8;
+		serverlist[i].info.maxplayer = M_RandomRange(8, 16);
+		UINT8 val = i % 16;
+		serverlist[i].info.numberofplayer = min(val, serverlist[i].info.maxplayer);
 
-		serverlist[i].info.avgpwrlv = P_RandomRange(PR_UNDEFINED, 500, 1500);
-		serverlist[i].info.time = P_RandomRange(PR_UNDEFINED, 1, 8);	// ping
+		serverlist[i].info.avgpwrlv = M_RandomRange(500, 1500);
+		serverlist[i].info.time = M_RandomRange(1, 8);	// ping
 
 		strcpy(serverlist[i].info.servername, va("Serv %d", i+1));
 
 		strcpy(serverlist[i].info.gametypename, i & 1 ? "Race" : "Battle");
 
-		P_RandomRange(PR_UNDEFINED, 0, 5);	// change results...
-		serverlist[i].info.kartvars = P_RandomRange(PR_UNDEFINED, 0, 3) & SV_SPEEDMASK;
+		serverlist[i].info.kartvars = M_RandomRange(0, 3) & SV_SPEEDMASK;
 
-		serverlist[i].info.modifiedgame = P_RandomRange(PR_UNDEFINED, 0, 1);
+		serverlist[i].info.modifiedgame = M_RandomRange(0, 1);
 
 		CONS_Printf("Serv %d | %d...\n", i, serverlist[i].info.modifiedgame);
 	}
