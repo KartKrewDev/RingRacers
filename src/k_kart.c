@@ -6142,6 +6142,7 @@ void K_DoPogoSpring(mobj_t *mo, fixed_t vertispeed, UINT8 sound)
 		mo->player->trickboostpower = max(FixedDiv(mo->player->speed, K_GetKartSpeed(mo->player, false, false)) - FRACUNIT, 0)*125/100;
 		mo->player->trickboostpower = FixedDiv(mo->player->trickboostpower, K_GrowShrinkSpeedMul(mo->player));
 		//CONS_Printf("Got boost: %d%\n", mo->player->trickboostpower*100 / FRACUNIT);
+		mo->player->fastfall = 0;
 	}
 
 	mo->momz = FixedMul(thrust, mapobjectscale);
