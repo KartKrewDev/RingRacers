@@ -2134,10 +2134,15 @@ typedef struct
 	mapthing_t *angleanchor;
 } sectorspecialthings_t;
 
+static boolean P_CanWriteTextmap(void)
+{
+	return roundqueue.writetextmap == true && roundqueue.size > 0;
+}
+
 static FILE *P_OpenTextmap(const char *mode, const char *error)
 {
 	FILE *f;
-	char *filepath = va(pandf, srb2home, "TEXTMAP");
+	char *filepath = va("%s" PATHSEP "TEXTMAP.%s.txt", srb2home, mapheaderinfo[gamemap-1]->lumpname);
 
 	f = fopen(filepath, mode);
 	if (!f)
@@ -7439,7 +7444,7 @@ static boolean P_LoadMapFromFile(void)
 	if (!udmf)
 		P_ConvertBinaryMap();
 
-	if (M_CheckParm("-writetextmap"))
+	if (P_CanWriteTextmap())
 		P_WriteTextmap();
 
 	// Copy relevant map data for NetArchive purposes.
@@ -8364,7 +8369,7 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 		// Backwards compatibility for non-UDMF maps
 		K_AdjustWaypointsParameters();
 
-		if (M_CheckParm("-writetextmap"))
+		if (P_CanWriteTextmap())
 			P_WriteTextmapWaypoints();
 	}
 
