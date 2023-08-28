@@ -11,7 +11,7 @@
 /*
 Documentation available here.
 
-                     <https://ms.kartkrew.org/tools/api/2/>
+                     <https://ms.kartkrew.org/tools/api/2.2/>
 */
 
 #ifdef HAVE_CURL
