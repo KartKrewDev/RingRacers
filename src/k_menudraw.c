@@ -3419,11 +3419,11 @@ static void M_DrawServerCountAndHorizontalBar(void)
 	switch (M_GetWaitingMode())
 	{
 		case M_WAITING_VERSION:
-			text = "Checking for updates";
+			text = "Checking for updates...";
 			break;
 
 		case M_WAITING_SERVERS:
-			text = "Loading server list";
+			text = "Loading server list...";
 			break;
 
 		default:
@@ -3438,17 +3438,10 @@ static void M_DrawServerCountAndHorizontalBar(void)
 			else
 			{
 				throbindex = UINT8_MAX; // No throbber!
-				if (serverlistcount > 0)
-				{
-					text = va("%d server%s found",
-						serverlistcount,
-						serverlistcount == 1 ? "" : "s"
-					);
-				}
-				else
-				{
-					text = "No servers found";
-				}
+				text = va("%d server%s found",
+					serverlistcount,
+					serverlistcount == 1 ? "" : "s"
+				);
 			}
 	}
 
@@ -3480,15 +3473,15 @@ static void M_DrawServerCountAndHorizontalBar(void)
 
 	INT32 mservflags = 0;
 	if (CV_IsSetToDefault(&cv_masterserver))
-		mservflags = highlightflags|V_30TRANS;
+		mservflags = highlightflags;
 	else
 		mservflags = warningflags;
 
 	y = BASEVIDHEIGHT - 24;
 
-	V_DrawFadeFill(0, y-1, BASEVIDWIDTH, 10, 0, 31, 5);
-	V_DrawCenteredString(BASEVIDWIDTH/2, y,
-		mservflags, va("MS: %s", cv_masterserver.string));
+	V_DrawFadeFill(0, y-1, BASEVIDWIDTH, 10+1, 0, 31, 5);
+	V_DrawCenteredThinString(BASEVIDWIDTH/2, y,
+		mservflags, va("List from \"%s\"", cv_masterserver.string));
 }
 
 void M_DrawMPServerBrowser(void)
