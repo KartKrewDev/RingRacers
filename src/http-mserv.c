@@ -516,6 +516,35 @@ HMS_compare_mod_version (char *buffer, size_t buffer_size)
 	return ok;
 }
 
+const char *
+HMS_fetch_rules (char *buffer, size_t buffer_size)
+{
+	struct HMS_buffer *hms;
+
+	hms = HMS_connect("rules");
+
+	if (! hms)
+		return NULL;
+
+	if (HMS_do(hms))
+	{
+		char *p = strstr(hms->buffer, "\n\n");
+
+		if (p)
+		{
+			p[1] = '\0';
+
+			strlcpy(buffer, hms->buffer, buffer_size);
+		}
+		else
+			buffer = NULL;
+	}
+
+	HMS_end(hms);
+
+	return buffer;
+}
+
 static char *
 Strip_trailing_slashes (char *api)
 {

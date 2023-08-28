@@ -841,6 +841,7 @@ extern struct mpmenu_s {
 } mpmenu;
 
 void M_PleaseWait(void);
+void M_PopupMasterServerRules(void);
 
 // Time Attack
 void M_PrepareTimeAttack(INT32 choice);
