@@ -46,6 +46,7 @@ typedef enum
 
 typedef enum
 {
+	PICFLAGS_NONE = 0,
 	PICFLAGS_XFLIP = 1,
 	PICFLAGS_YFLIP = 1<<1
 } pictureflags_t;

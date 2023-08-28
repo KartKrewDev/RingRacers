@@ -40,6 +40,9 @@
 #include "lzf.h"
 #endif
 
+#include <algorithm>
+#include <cstddef>
+
 #include "doomdef.h"
 #include "doomstat.h"
 #include "doomtype.h"
@@ -227,7 +230,7 @@ static inline void W_LoadDehackedLumpsPK3(UINT16 wadnum, boolean mainfile)
 		{
 			lumpinfo_t *lump_p = &wadfiles[wadnum]->lumpinfo[posStart];
 			size_t length = strlen(wadfiles[wadnum]->filename) + 1 + strlen(lump_p->fullname); // length of file name, '|', and lump name
-			char *name = malloc(length + 1);
+			char *name = static_cast<char*>(malloc(length + 1));
 			sprintf(name, "%s|%s", wadfiles[wadnum]->filename, lump_p->fullname);
 			name[length] = '\0';
 			CONS_Printf(M_GetText("Loading SOC from %s\n"), name);
@@ -256,7 +259,7 @@ static inline void W_LoadDehackedLumps(UINT16 wadnum, boolean mainfile)
 			if (memcmp(lump_p->name,"SOC_",4)==0) // Check for generic SOC lump
 			{	// shameless copy+paste of code from LUA_LoadLump
 				size_t length = strlen(wadfiles[wadnum]->filename) + 1 + strlen(lump_p->fullname); // length of file name, '|', and lump name
-				char *name = malloc(length + 1);
+				char *name = static_cast<char*>(malloc(length + 1));
 				sprintf(name, "%s|%s", wadfiles[wadnum]->filename, lump_p->fullname);
 				name[length] = '\0';
 
@@ -337,7 +340,7 @@ static restype_t ResourceFileDetect (const char* filename)
  */
 static lumpinfo_t* ResGetLumpsStandalone (FILE* handle, UINT16* numlumps, const char* lumpname)
 {
-	lumpinfo_t* lumpinfo = Z_Calloc(sizeof (*lumpinfo), PU_STATIC, NULL);
+	lumpinfo_t* lumpinfo = static_cast<lumpinfo_t*>(Z_Calloc(sizeof (*lumpinfo), PU_STATIC, NULL));
 	lumpinfo->position = 0;
 	fseek(handle, 0, SEEK_END);
 	lumpinfo->size = ftell(handle);
@@ -346,12 +349,12 @@ static lumpinfo_t* ResGetLumpsStandalone (FILE* handle, UINT16* numlumps, const 
 	lumpinfo->hash = quickncasehash(lumpname, 8);
 
 	// Allocate the lump's long name.
-	lumpinfo->longname = Z_Malloc(9 * sizeof(char), PU_STATIC, NULL);
+	lumpinfo->longname = static_cast<char*>(Z_Malloc(9 * sizeof(char), PU_STATIC, NULL));
 	strcpy(lumpinfo->longname, lumpname);
 	lumpinfo->longname[8] = '\0';
 
 	// Allocate the lump's full name.
-	lumpinfo->fullname = Z_Malloc(9 * sizeof(char), PU_STATIC, NULL);
+	lumpinfo->fullname = static_cast<char*>(Z_Malloc(9 * sizeof(char), PU_STATIC, NULL));
 	strcpy(lumpinfo->fullname, lumpname);
 	lumpinfo->fullname[8] = '\0';
 
@@ -395,7 +398,7 @@ static lumpinfo_t* ResGetLumpsWad (FILE* handle, UINT16* nlmp, const char* filen
 
 	// read wad file directory
 	i = header.numlumps * sizeof (*fileinfo);
-	fileinfov = fileinfo = malloc(i);
+	fileinfov = fileinfo = static_cast<filelump_t*>(malloc(i));
 	if (fseek(handle, header.infotableofs, SEEK_SET) == -1
 		|| fread(fileinfo, 1, i, handle) < i)
 	{
@@ -407,7 +410,7 @@ static lumpinfo_t* ResGetLumpsWad (FILE* handle, UINT16* nlmp, const char* filen
 	numlumps = header.numlumps;
 
 	// fill in lumpinfo for this wad
-	lump_p = lumpinfo = Z_Malloc(numlumps * sizeof (*lumpinfo), PU_STATIC, NULL);
+	lump_p = lumpinfo = static_cast<lumpinfo_t*>(Z_Malloc(numlumps * sizeof (*lumpinfo), PU_STATIC, NULL));
 	for (i = 0; i < numlumps; i++, lump_p++, fileinfo++)
 	{
 		lump_p->position = LONG(fileinfo->filepos);
@@ -488,7 +491,7 @@ static lumpinfo_t* ResGetLumpsWad (FILE* handle, UINT16* nlmp, const char* filen
 				namelen = strlen(trimname);
 
 			// Allocate the lump's long and full name (save on memory).
-			lump_p->longname = lump_p->fullname = Z_Calloc(namelen * sizeof(char), PU_STATIC, NULL);
+			lump_p->longname = lump_p->fullname = static_cast<char*>(Z_Calloc(namelen * sizeof(char), PU_STATIC, NULL));
 			strncpy(lump_p->longname, trimname, namelen);
 			lump_p->longname[namelen-1] = '\0';
 
@@ -505,7 +508,7 @@ static lumpinfo_t* ResGetLumpsWad (FILE* handle, UINT16* nlmp, const char* filen
 			lump_p->hash = quickncasehash(lump_p->name, 8);
 
 			// Allocate the lump's long and full name (save on memory).
-			lump_p->longname = lump_p->fullname = Z_Malloc(9 * sizeof(char), PU_STATIC, NULL);
+			lump_p->longname = lump_p->fullname = static_cast<char*>(Z_Malloc(9 * sizeof(char), PU_STATIC, NULL));
 			strncpy(lump_p->longname, fileinfo->name, 8);
 			lump_p->longname[8] = '\0';
 		}
@@ -613,7 +616,7 @@ static lumpinfo_t* ResGetLumpsZip (FILE* handle, UINT16* nlmp)
 	// Look for central directory end signature near end of file.
 	// Contains entry number (number of lumps), and central directory start offset.
 	fseek(handle, 0, SEEK_END);
-	if (!ResFindSignature(handle, pat_end, max(0, ftell(handle) - (22 + 65536))))
+	if (!ResFindSignature(handle, pat_end, std::max(0l, ftell(handle) - (22 + 65536))))
 	{
 		CONS_Alert(CONS_ERROR, "Missing central directory\n");
 		return NULL;
@@ -627,7 +630,7 @@ static lumpinfo_t* ResGetLumpsZip (FILE* handle, UINT16* nlmp)
 	}
 	numlumps = zend.entries;
 
-	lump_p = lumpinfo = Z_Malloc(numlumps * sizeof (*lumpinfo), PU_STATIC, NULL);
+	lump_p = lumpinfo = static_cast<lumpinfo_t*>(Z_Malloc(numlumps * sizeof (*lumpinfo), PU_STATIC, NULL));
 
 	fseek(handle, zend.cdiroffset, SEEK_SET);
 	for (i = 0; i < numlumps; i++, lump_p++)
@@ -653,7 +656,7 @@ static lumpinfo_t* ResGetLumpsZip (FILE* handle, UINT16* nlmp)
 		lump_p->disksize = zentry.compsize;
 		lump_p->size = zentry.size;
 
-		fullname = malloc(zentry.namelen + 1);
+		fullname = static_cast<char*>(malloc(zentry.namelen + 1));
 		if (fgets(fullname, zentry.namelen + 1, handle) != fullname)
 		{
 			CONS_Alert(CONS_ERROR, "Unable to read lumpname (%s)\n", M_FileError(handle));
@@ -672,13 +675,13 @@ static lumpinfo_t* ResGetLumpsZip (FILE* handle, UINT16* nlmp)
 			dotpos = fullname + strlen(fullname); // Watch for files without extension.
 
 		memset(lump_p->name, '\0', 9); // Making sure they're initialized to 0. Is it necessary?
-		strncpy(lump_p->name, trimname, min(8, dotpos - trimname));
+		strncpy(lump_p->name, trimname, std::min(static_cast<std::ptrdiff_t>(8), dotpos - trimname));
 		lump_p->hash = quickncasehash(lump_p->name, 8);
 
-		lump_p->longname = Z_Calloc(dotpos - trimname + 1, PU_STATIC, NULL);
+		lump_p->longname = static_cast<char*>(Z_Calloc(dotpos - trimname + 1, PU_STATIC, NULL));
 		strlcpy(lump_p->longname, trimname, dotpos - trimname + 1);
 
-		lump_p->fullname = Z_Calloc(zentry.namelen + 1, PU_STATIC, NULL);
+		lump_p->fullname = static_cast<char*>(Z_Calloc(zentry.namelen + 1, PU_STATIC, NULL));
 		strncpy(lump_p->fullname, fullname, zentry.namelen);
 
 		switch(zentry.compression)
@@ -867,7 +870,7 @@ UINT16 W_InitFile(const char *filename, boolean mainfile, boolean startup)
 	//
 	// link wad file to search files
 	//
-	wadfile = Z_Malloc(sizeof (*wadfile), PU_STATIC, NULL);
+	wadfile = static_cast<wadfile_t*>(Z_Malloc(sizeof (*wadfile), PU_STATIC, NULL));
 	wadfile->filename = Z_StrDup(filename);
 	wadfile->type = type;
 	wadfile->handle = handle;
@@ -1596,8 +1599,8 @@ size_t W_ReadLumpHeaderPwad(UINT16 wad, UINT16 lump, void *dest, size_t size, si
 			char *decData; // Lump's decompressed real data.
 			size_t retval; // Helper var, lzf_decompress returns 0 when an error occurs.
 
-			rawData = Z_Malloc(l->disksize, PU_STATIC, NULL);
-			decData = Z_Malloc(l->size, PU_STATIC, NULL);
+			rawData = static_cast<char*>(Z_Malloc(l->disksize, PU_STATIC, NULL));
+			decData = static_cast<char*>(Z_Malloc(l->size, PU_STATIC, NULL));
 
 			if (fread(rawData, 1, l->disksize, handle) < l->disksize)
 				I_Error("wad %d, lump %d: cannot read compressed data", wad, lump);
@@ -1645,8 +1648,8 @@ size_t W_ReadLumpHeaderPwad(UINT16 wad, UINT16 lump, void *dest, size_t size, si
 			unsigned long rawSize = l->disksize;
 			unsigned long decSize = size;
 
-			rawData = Z_Malloc(rawSize, PU_STATIC, NULL);
-			decData = dest;
+			rawData = static_cast<UINT8*>(Z_Malloc(rawSize, PU_STATIC, NULL));
+			decData = static_cast<UINT8*>(dest);
 
 			if (fread(rawData, 1, rawSize, handle) < rawSize)
 				I_Error("wad %d, lump %d: cannot read compressed data", wad, lump);
@@ -1861,13 +1864,13 @@ static void *MakePatch(void *lumpdata, size_t size, INT32 tag, void *cache)
 #ifndef NO_PNG_LUMPS
 	if (Picture_IsLumpPNG((UINT8 *)lumpdata, len))
 	{
-		ptr = Picture_PNGConvert((UINT8 *)lumpdata, PICFMT_DOOMPATCH, NULL, NULL, NULL, NULL, len, &len, 0);
+		ptr = Picture_PNGConvert((UINT8 *)lumpdata, PICFMT_DOOMPATCH, NULL, NULL, NULL, NULL, len, &len, PICFLAGS_NONE);
 	}
 #endif
 
 	dest = Z_Calloc(sizeof(patch_t), tag, cache);
 
-	Patch_Create(ptr, len, dest);
+	Patch_Create(static_cast<softwarepatch_t*>(ptr), len, dest);
 
 	return dest;
 }
@@ -1910,7 +1913,7 @@ void *W_CachePatchNumPwad(UINT16 wad, UINT16 lump, INT32 tag)
 	if (!TestValidLump(wad, lump))
 		return NULL;
 
-	patch = W_CacheSoftwarePatchNumPwad(wad, lump, tag);
+	patch = static_cast<patch_t*>(W_CacheSoftwarePatchNumPwad(wad, lump, tag));
 
 #ifdef HWRENDER
 	// Software-only compile cache the data without conversion
@@ -2145,7 +2148,7 @@ W_VerifyPK3 (FILE *fp, lumpchecklist_t *checklist, boolean status)
 	fseek(fp, 0, SEEK_END);
 	file_size = ftell(fp);
 
-	if (!ResFindSignature(fp, pat_end, max(0, ftell(fp) - (22 + 65536))))
+	if (!ResFindSignature(fp, pat_end, std::max(0l, ftell(fp) - (22 + 65536))))
 		return true;
 
 	fseek(fp, -4, SEEK_CUR);
@@ -2170,7 +2173,7 @@ W_VerifyPK3 (FILE *fp, lumpchecklist_t *checklist, boolean status)
 
 		if (verified == true)
 		{
-			fullname = malloc(zentry.namelen + 1);
+			fullname = static_cast<char*>(malloc(zentry.namelen + 1));
 			if (fgets(fullname, zentry.namelen + 1, fp) != fullname)
 				return true;
 
@@ -2186,7 +2189,7 @@ W_VerifyPK3 (FILE *fp, lumpchecklist_t *checklist, boolean status)
 					dotpos = fullname + strlen(fullname); // Watch for files without extension.
 
 				memset(lumpname, '\0', 9); // Making sure they're initialized to 0. Is it necessary?
-				strncpy(lumpname, trimname, min(8, dotpos - trimname));
+				strncpy(lumpname, trimname, std::min(static_cast<std::ptrdiff_t>(8), dotpos - trimname));
 
 				if (! W_VerifyName(lumpname, checklist, status))
 					verified = false;
@@ -2366,11 +2369,11 @@ virtres_t* vres_GetMap(lumpnum_t lumpnum)
 		size_t *vsizecache;
 
 		// Remember that we're assuming that the WAD will have a specific set of lumps in a specific order.
-		UINT8 *wadData = W_CacheLumpNum(lumpnum, PU_LEVEL);
+		UINT8 *wadData = static_cast<UINT8*>(W_CacheLumpNum(lumpnum, PU_LEVEL));
 		filelump_t *fileinfo = (filelump_t *)(wadData + ((wadinfo_t *)wadData)->infotableofs);
 
 		i = ((wadinfo_t *)wadData)->numlumps;
-		vsizecache = Z_Malloc(sizeof(size_t)*i, PU_LEVEL, NULL);
+		vsizecache = static_cast<size_t*>(Z_Malloc(sizeof(size_t)*i, PU_LEVEL, NULL));
 
 		for (realentry = 0; realentry < i; realentry++)
 		{
@@ -2382,7 +2385,7 @@ virtres_t* vres_GetMap(lumpnum_t lumpnum)
 			numlumps++;
 		}
 
-		vlumps = Z_Malloc(sizeof(virtlump_t)*numlumps, PU_LEVEL, NULL);
+		vlumps = static_cast<virtlump_t*>(Z_Malloc(sizeof(virtlump_t)*numlumps, PU_LEVEL, NULL));
 
 		// Build the lumps, skipping over empty entries.
 		for (i = 0, realentry = 0; i < numlumps; realentry++)
@@ -2393,7 +2396,9 @@ virtres_t* vres_GetMap(lumpnum_t lumpnum)
 			// Play it safe with the name in this case.
 			memcpy(vlumps[i].name, (fileinfo + realentry)->name, 8);
 			vlumps[i].name[8] = '\0';
-			vlumps[i].data = Z_Malloc(vlumps[i].size, PU_LEVEL, NULL); // This is memory inefficient, sorry about that.
+			vlumps[i].data = static_cast<UINT8*>(
+				Z_Malloc(vlumps[i].size, PU_LEVEL, NULL) // This is memory inefficient, sorry about that.
+			);
 			memcpy(vlumps[i].data, wadData + (fileinfo + realentry)->filepos, vlumps[i].size);
 			i++;
 		}
@@ -2414,16 +2419,16 @@ virtres_t* vres_GetMap(lumpnum_t lumpnum)
 		}
 		numlumps++;
 
-		vlumps = Z_Malloc(sizeof(virtlump_t)*numlumps, PU_LEVEL, NULL);
+		vlumps = static_cast<virtlump_t*>(Z_Malloc(sizeof(virtlump_t)*numlumps, PU_LEVEL, NULL));
 		for (i = 0; i < numlumps; i++, lumpnum++)
 		{
 			vlumps[i].size = W_LumpLength(lumpnum);
 			memcpy(vlumps[i].name, W_CheckNameForNum(lumpnum), 8);
 			vlumps[i].name[8] = '\0';
-			vlumps[i].data = W_CacheLumpNum(lumpnum, PU_LEVEL);
+			vlumps[i].data = static_cast<UINT8*>(W_CacheLumpNum(lumpnum, PU_LEVEL));
 		}
 	}
-	vres = Z_Malloc(sizeof(virtres_t), PU_LEVEL, NULL);
+	vres = static_cast<virtres_t*>(Z_Malloc(sizeof(virtres_t), PU_LEVEL, NULL));
 	vres->vlumps = vlumps;
 	vres->numlumps = numlumps;
 
@@ -2493,7 +2498,7 @@ void *vres_GetPatch(virtlump_t *vlump, INT32 tag)
 	if (!vlump)
 		return NULL;
 
-	patch = MakePatch(vlump->data, vlump->size, tag, NULL);
+	patch = static_cast<patch_t*>(MakePatch(vlump->data, vlump->size, tag, NULL));
 
 #ifdef HWRENDER
 	// Software-only compile cache the data without conversion
