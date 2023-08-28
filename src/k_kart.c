@@ -3921,7 +3921,7 @@ void K_StumblePlayer(player_t *player)
 	P_SetPlayerMobjState(player->mo, S_KART_SPINOUT);
 
 	// Reset slope.
-	player->mo->pitch = player->mo->roll = 0;
+	P_ResetPitchRoll(player->mo);
 }
 
 boolean K_CheckStumble(player_t *player, angle_t oldPitch, angle_t oldRoll, boolean fromAir)
@@ -3936,6 +3936,14 @@ boolean K_CheckStumble(player_t *player, angle_t oldPitch, angle_t oldRoll, bool
 	if (player->tumbleBounces)
 	{
 		// Already tumbling.
+		return false;
+	}
+
+	if (fromAir && player->airtime < STUMBLE_AIRTIME
+		&& player->airtime > 1) // ACHTUNG HACK, sorry. Ground-to-ground transitions sometimes have 1-tic airtime because collision blows
+	{
+		// Short airtime with no reaction window, probably a track traversal setpiece.
+		// Don't punish for these.
 		return false;
 	}
 
@@ -4102,6 +4110,9 @@ void K_UpdateStumbleIndicator(player_t *player)
 		mobj->renderflags &= ~RF_HORIZONTALFLIP;
 	}
 
+	if (air && player->airtime < STUMBLE_AIRTIME)
+		delta = 0;
+
 	steepRange = ANGLE_90 - steepVal;
 	delta = max(0, abs(delta) - ((signed)steepVal));
 	trans = ((FixedDiv(AngleFixed(delta), AngleFixed(steepRange)) * (NUMTRANSMAPS - 2)) + (FRACUNIT/2)) / FRACUNIT;
@@ -4252,7 +4263,7 @@ static void K_HandleTumbleBounce(player_t *player)
 			player->tumbleHeight = 10;
 			player->pflags |= PF_TUMBLELASTBOUNCE;
 			player->mo->rollangle = 0;	// p_user.c will stop rotating the player automatically
-			player->mo->pitch = player->mo->roll = 0; // Prevent Kodachrome Void infinite
+			P_ResetPitchRoll(player->mo); // Prevent Kodachrome Void infinite
 		}
 	}
 
@@ -6155,8 +6166,7 @@ void K_DoPogoSpring(mobj_t *mo, fixed_t vertispeed, UINT8 sound)
 		mo->momz = FixedDiv(mo->momz, FixedSqrt(3*FRACUNIT));
 	}
 
-	mo->pitch = 0;
-	mo->roll = 0;
+	P_ResetPitchRoll(mo);
 
 	if (sound)
 	{
@@ -8256,7 +8266,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 			player->incontrol = 0;
 		player->incontrol++;
 	}
-
+	
 	player->incontrol = min(player->incontrol, 5*TICRATE);
 	player->incontrol = max(player->incontrol, -5*TICRATE);
 
@@ -10444,6 +10454,7 @@ static void K_KartSpindash(player_t *player)
 		// Update fastfall.
 		player->fastfall = player->mo->momz;
 		player->spindash = 0;
+		P_ResetPitchRoll(player->mo);
 
 		if (player->fastfallBase == 0)
 		{
