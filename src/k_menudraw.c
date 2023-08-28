@@ -3422,6 +3422,9 @@ void M_DrawMPRoomSelect(void)
 
 	V_DrawFixedPatch(160<<FRACBITS, 100<<FRACBITS, FRACUNIT, (!mpmenu.room) ? (5<<V_ALPHASHIFT) : 0, butt2[(!mpmenu.room) ? 1 : 0], NULL);
 
+	V_DrawFixedPatch(0, 0, FRACUNIT, 0, W_CachePatchName("MENUHINT", PU_CACHE), NULL);
+	V_DrawCenteredThinString(BASEVIDWIDTH/2, 12, 0, "Select today's type of play!");
+
 	M_DrawMasterServerReminder();
 }
 
