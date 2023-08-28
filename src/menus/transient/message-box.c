@@ -31,19 +31,20 @@ static inline size_t M_StringHeight(const char *string)
 void M_StartMessage(const char *header, const char *string, void (*routine)(INT32), menumessagetype_t itemtype, const char *confirmstr, const char *defaultstr)
 {
 	const UINT8 pid = 0;
-	static char *message = NULL;
-	Z_Free(message);
 	DEBFILE(string);
 
-	message = V_ScaledWordWrap(
-		BASEVIDWIDTH << FRACBITS,
+	char *message = V_ScaledWordWrap(
+		(BASEVIDWIDTH - 8) << FRACBITS,
 		FRACUNIT, FRACUNIT, FRACUNIT,
 		0,
 		HU_FONT,
 		string
 	);
 
-	strncpy(menumessage.message, string, MAXMENUMESSAGE);
+	strncpy(menumessage.message, message, MAXMENUMESSAGE);
+
+	Z_Free(message);
+
 	menumessage.header = header;
 	menumessage.flags = itemtype;
 	menumessage.routine = routine;
@@ -84,7 +85,7 @@ void M_StartMessage(const char *header, const char *string, void (*routine)(INT3
 	// oogh my god this was replaced in 2023
 
 	menumessage.x = (8 * MAXSTRINGLENGTH) - 1;
-	menumessage.y = M_StringHeight(message);
+	menumessage.y = M_StringHeight(menumessage.message);
 
 	M_SetMenuDelay(pid);	// Set menu delay to avoid setting off any of the handlers.
 }
