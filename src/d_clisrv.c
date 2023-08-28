@@ -4226,6 +4226,11 @@ boolean SV_SpawnServer(void)
 				I_NetOpenSocket();
 			}
 
+			if (cv_advertise.value)
+			{
+				RegisterServer();
+			}
+
 			ourIP = 0;
 			STUN_bind(GotOurIP);
 		}
