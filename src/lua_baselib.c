@@ -3515,9 +3515,12 @@ static int lib_getTimeMicros(lua_State *L)
 
 static int lib_startTitlecardCecho(lua_State *L)
 {
-	const char *str = luaL_checkstring(L, 1);
-	HU_DoTitlecardCEcho(str);
-	
+	player_t *player = lua_isnil(L, 1) ? NULL : *((player_t **)luaL_checkudata(L, 1, META_PLAYER));
+	const char *str = luaL_checkstring(L, 2);
+	boolean interrupt = lua_optboolean(L, 3);
+
+	HU_DoTitlecardCEcho(player, str, interrupt);
+
 	return 1;
 }
 

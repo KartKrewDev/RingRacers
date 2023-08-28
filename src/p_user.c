@@ -1296,7 +1296,7 @@ void P_DoPlayerExit(player_t *player, pflags_t flags)
 		{
 			K_UpdateAllPlayerPositions();
 
-			if (cv_kartvoices.value)
+			if (cv_kartvoices.value && !(gametyperules & GTR_SPECIALSTART))
 			{
 				if (P_IsDisplayPlayer(player))
 				{
@@ -1326,7 +1326,9 @@ void P_DoPlayerExit(player_t *player, pflags_t flags)
 			G_BeginLevelExit();
 		}
 
-		if (grandprixinfo.gp == true && player->bot == false && losing == false)
+		if (grandprixinfo.gp == true
+			&& (roundqueue.size && roundqueue.position < roundqueue.size) // Not the last map of GP
+			&& player->bot == false && losing == false)
 		{
 			const UINT8 lifethreshold = 20;
 
@@ -1406,6 +1408,11 @@ void P_DoAllPlayersExit(pflags_t flags, boolean trygivelife)
 	{
 		// You've already finished, don't play again
 		;
+	}
+	else if (gametyperules & GTR_SPECIALSTART)
+	{
+		// Warp out
+		S_StartSound(NULL, sfx_s3kb3);
 	}
 	else if (musiccountdown == 0)
 	{
