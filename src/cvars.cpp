@@ -502,6 +502,7 @@ consvar_t cv_kicktime = Server("kicktime", "20").values(CV_Unsigned);
 
 void MasterServer_OnChange(void);
 consvar_t cv_masterserver = Server("masterserver", "https://ms.kartkrew.org/ms/api").onchange(MasterServer_OnChange);
+consvar_t cv_masterserver_nagattempts = Server("masterserver_nagattempts", "5").values(CV_Unsigned);
 
 void MasterServer_Debug_OnChange (void);
 consvar_t cv_masterserver_debug = Server("masterserver_debug", "Off").on_off().onchange(MasterServer_Debug_OnChange);

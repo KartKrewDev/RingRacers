@@ -57,6 +57,7 @@ struct msg_ban_t
 // ================================ GLOBALS ===============================
 
 extern consvar_t cv_masterserver, cv_servername;
+extern consvar_t cv_masterserver_nagattempts;
 extern consvar_t cv_server_contact;
 extern consvar_t cv_masterserver_update_rate;
 extern consvar_t cv_masterserver_timeout;

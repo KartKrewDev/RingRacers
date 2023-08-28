@@ -3086,6 +3086,23 @@ void M_DrawTimeAttack(void)
 
 // NOTE: This is pretty rigid and only intended for use with the multiplayer options menu which has *3* choices.
 
+static void M_DrawMasterServerReminder(void)
+{
+	// Did you change the Server Browser address? Have a little reminder.
+
+	INT32 mservflags = 0;
+	if (CV_IsSetToDefault(&cv_masterserver))
+		mservflags = highlightflags;
+	else
+		mservflags = warningflags;
+
+	INT32 y = BASEVIDHEIGHT - 24;
+
+	V_DrawFadeFill(0, y-1, BASEVIDWIDTH, 10+1, 0, 31, 5);
+	V_DrawCenteredThinString(BASEVIDWIDTH/2, y,
+		mservflags, va("List via \"%s\"", cv_masterserver.string));
+}
+
 static void M_MPOptDrawer(menu_t *m, INT16 extend[3][3])
 {
 	// This is a copypaste of the generic gamemode menu code with a few changes.
@@ -3149,6 +3166,7 @@ void M_DrawMPOptSelect(void)
 	M_DrawEggaChannel();
 	M_DrawMenuTooltips();
 	M_MPOptDrawer(&PLAY_MP_OptSelectDef, mpmenu.modewinextend);
+	M_DrawMasterServerReminder();
 }
 
 // Multiplayer mode option select: HOST GAME!
@@ -3468,20 +3486,6 @@ static void M_DrawServerCountAndHorizontalBar(void)
 			va("%c", throbber[throbindex])
 		);
 	}
-
-	// Did you change the Server Browser address? Have a little reminder.
-
-	INT32 mservflags = 0;
-	if (CV_IsSetToDefault(&cv_masterserver))
-		mservflags = highlightflags;
-	else
-		mservflags = warningflags;
-
-	y = BASEVIDHEIGHT - 24;
-
-	V_DrawFadeFill(0, y-1, BASEVIDWIDTH, 10+1, 0, 31, 5);
-	V_DrawCenteredThinString(BASEVIDWIDTH/2, y,
-		mservflags, va("List from \"%s\"", cv_masterserver.string));
 }
 
 void M_DrawMPServerBrowser(void)
@@ -3586,6 +3590,7 @@ void M_DrawMPServerBrowser(void)
 
 	// And finally, the overlay bar!
 	M_DrawServerCountAndHorizontalBar();
+	M_DrawMasterServerReminder();
 }
 
 // OPTIONS MENU
