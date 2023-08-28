@@ -1146,7 +1146,7 @@ void G_DoLoadLevelEx(boolean resetplayer, gamestate_t newstate)
 		else
 		{
 			// Podium: writetextmap is finished. Yay!
-			HU_DoTitlecardCEcho(va("Congratulations,\\%s!\\Check the console!", cv_playername[0].string));
+			HU_DoTitlecardCEcho(NULL, va("Congratulations,\\%s!\\Check the console!", cv_playername[0].string), true);
 
 			livestudioaudience_timer = 0;
 			LiveStudioAudience();
