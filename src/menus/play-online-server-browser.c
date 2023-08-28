@@ -313,7 +313,7 @@ static int ServerListEntryComparator_##key(const void *entry1, const void *entry
 	const serverelem_t *sa = (const serverelem_t*)entry1, *sb = (const serverelem_t*)entry2; \
 	if (sa->info.key != sb->info.key) \
 		return sa->info.key - sb->info.key; \
-	return strcmp(sa->info.servername, sb->info.servername); \
+	return sa->info.time - sb->info.time; \
 }
 
 // This does descending instead of ascending.
@@ -323,15 +323,22 @@ static int ServerListEntryComparator_##key##_reverse(const void *entry1, const v
 	const serverelem_t *sa = (const serverelem_t*)entry1, *sb = (const serverelem_t*)entry2; \
 	if (sb->info.key != sa->info.key) \
 		return sb->info.key - sa->info.key; \
-	return strcmp(sb->info.servername, sa->info.servername); \
+	return sa->info.time - sb->info.time; \
 }
 
-SERVER_LIST_ENTRY_COMPARATOR(time)
+//SERVER_LIST_ENTRY_COMPARATOR(time) -- done seperately due to the usual tiebreaker being time
 SERVER_LIST_ENTRY_COMPARATOR(numberofplayer)
 SERVER_LIST_ENTRY_COMPARATOR_REVERSE(numberofplayer)
 SERVER_LIST_ENTRY_COMPARATOR_REVERSE(maxplayer)
 SERVER_LIST_ENTRY_COMPARATOR(avgpwrlv)
 
+static int ServerListEntryComparator_time(const void *entry1, const void *entry2)
+{
+	const serverelem_t *sa = (const serverelem_t*)entry1, *sb = (const serverelem_t*)entry2;
+	if (sa->info.time != sb->info.time)
+		return sa->info.time - sb->info.time;
+	return strcmp(sa->info.servername, sb->info.servername);
+}
 
 static int ServerListEntryComparator_gametypename(const void *entry1, const void *entry2)
 {
@@ -339,7 +346,7 @@ static int ServerListEntryComparator_gametypename(const void *entry1, const void
 	int c;
 	if (( c = strcasecmp(sa->info.gametypename, sb->info.gametypename) ))
 		return c;
-	return strcmp(sa->info.servername, sb->info.servername);
+	return sa->info.time - sb->info.time;
 }
 
 static int ServerListEntryComparator_recommended(const void *entry1, const void *entry2)
