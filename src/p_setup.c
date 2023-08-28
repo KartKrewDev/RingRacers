@@ -8074,13 +8074,8 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 	// This is needed. Don't touch.
 	maptol = mapheaderinfo[gamemap-1]->typeoflevel;
 
-	// HWR2 skip 3d render draw hack to avoid losing the current wipe screen
-	g_wipeskiprender = true;
-
 	CON_Drawer(); // let the user know what we are going to do
 	I_FinishUpdate(); // page flip or blit buffer
-
-	g_wipeskiprender = false;
 
 	// Reset the palette
 	if (rendermode != render_none)
@@ -8150,6 +8145,8 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 		lastwipetic = nowtime; \
 		if (moviemode && rendermode == render_opengl) \
 			M_LegacySaveFrame(); \
+		else if (moviemode && rendermode != render_none) \
+			I_CaptureVideoFrame(); \
 		NetKeepAlive(); \
 	} \
 
@@ -8451,7 +8448,7 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 	}
 
 	// Now safe to free.
-	// We do the following silly 
+	// We do the following silly
 	// construction because vres_Free
 	// no-sells deletions of pointers
 	// that are == curmapvirt.

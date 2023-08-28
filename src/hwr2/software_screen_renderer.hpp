@@ -7,19 +7,19 @@
 // See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
 
-#ifndef __SRB2_HWR2_PASS_SOFTWARE_HPP_
-#define __SRB2_HWR2_PASS_SOFTWARE_HPP_
+#ifndef __SRB2_HWR2_SOFTWARE_SCREEN_RENDERER_HPP_
+#define __SRB2_HWR2_SOFTWARE_SCREEN_RENDERER_HPP_
 
 #include <cstddef>
 #include <vector>
 
-#include "pass.hpp"
+#include "../rhi/rhi.hpp"
 
 namespace srb2::hwr2
 {
 
 /// @brief Renders software player views in prepass and uploads the result to a texture in transfer.
-class SoftwarePass final : public Pass
+class SoftwareScreenRenderer final
 {
 	rhi::Handle<rhi::Texture> screen_texture_;
 	uint32_t width_ = 0;
@@ -30,17 +30,14 @@ class SoftwarePass final : public Pass
 	std::vector<uint8_t> copy_buffer_;
 
 public:
-	SoftwarePass();
-	virtual ~SoftwarePass();
+	SoftwareScreenRenderer();
+	~SoftwareScreenRenderer();
 
-	virtual void prepass(rhi::Rhi& rhi) override;
-	virtual void transfer(rhi::Rhi& rhi, rhi::Handle<rhi::GraphicsContext> ctx) override;
-	virtual void graphics(rhi::Rhi& rhi, rhi::Handle<rhi::GraphicsContext> ctx) override;
-	virtual void postpass(rhi::Rhi& rhi) override;
+	void draw(rhi::Rhi& rhi, rhi::Handle<rhi::GraphicsContext> ctx);
 
-	rhi::Handle<rhi::Texture> screen_texture() const noexcept { return screen_texture_; }
+	rhi::Handle<rhi::Texture> screen() const { return screen_texture_; }
 };
 
 } // namespace srb2::hwr2
 
-#endif // __SRB2_HWR2_PASS_SOFTWARE_HPP_
+#endif // __SRB2_HWR2_SOFTWARE_SCREEN_RENDERER_HPP_

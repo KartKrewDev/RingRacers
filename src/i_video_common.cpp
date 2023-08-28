@@ -17,16 +17,9 @@
 
 #include "cxxutil.hpp"
 #include "f_finale.h"
+#include "m_misc.h"
+#include "hwr2/hardware_state.hpp"
 #include "hwr2/patch_atlas.hpp"
-#include "hwr2/pass_blit_postimg_screens.hpp"
-#include "hwr2/pass_blit_rect.hpp"
-#include "hwr2/pass_imgui.hpp"
-#include "hwr2/pass_manager.hpp"
-#include "hwr2/pass_postprocess.hpp"
-#include "hwr2/pass_resource_managers.hpp"
-#include "hwr2/pass_screenshot.hpp"
-#include "hwr2/pass_software.hpp"
-#include "hwr2/pass_twodee.hpp"
 #include "hwr2/twodee.hpp"
 #include "v_video.h"
 
@@ -56,27 +49,56 @@ using namespace srb2;
 using namespace srb2::hwr2;
 using namespace srb2::rhi;
 
-namespace
-{
-struct InternalPassData
-{
-	std::shared_ptr<PassManager> resource_passmanager;
-	std::shared_ptr<PassManager> normal_rendering;
-	std::shared_ptr<PassManager> wipe_capture_start_rendering;
-	std::shared_ptr<PassManager> wipe_capture_end_rendering;
-	std::shared_ptr<PassManager> wipe_rendering;
-};
-} // namespace
-
-static std::unique_ptr<InternalPassData> g_passes;
 static Rhi* g_last_known_rhi = nullptr;
 static bool g_imgui_frame_active = false;
+static Handle<GraphicsContext> g_main_graphics_context;
+static HardwareState g_hw_state;
 
 Handle<Rhi> srb2::sys::g_current_rhi = kNullHandle;
 
 static bool rhi_changed(Rhi* rhi)
 {
 	return g_last_known_rhi != rhi;
+}
+
+static void reset_hardware_state(Rhi* rhi)
+{
+	// The lifetime of objects pointed to by RHI Handles is determined by the RHI itself, so it is enough to simply
+	// "forget" about the resources previously known.
+	g_hw_state = HardwareState {};
+	g_hw_state.palette_manager = std::make_unique<PaletteManager>();
+	g_hw_state.flat_manager = std::make_unique<FlatTextureManager>();
+	g_hw_state.patch_atlas_cache = std::make_unique<PatchAtlasCache>(2048, 3);
+	g_hw_state.twodee_renderer = std::make_unique<TwodeeRenderer>(
+		g_hw_state.palette_manager.get(),
+		g_hw_state.flat_manager.get(),
+		g_hw_state.patch_atlas_cache.get()
+	);
+	g_hw_state.software_screen_renderer = std::make_unique<SoftwareScreenRenderer>();
+	g_hw_state.blit_postimg_screens = std::make_unique<BlitPostimgScreens>(g_hw_state.palette_manager.get());
+	g_hw_state.wipe = std::make_unique<PostprocessWipePass>();
+	g_hw_state.blit_rect = std::make_unique<BlitRectPass>();
+	g_hw_state.screen_capture = std::make_unique<ScreenshotPass>();
+	g_hw_state.wipe_frames = {};
+
+	g_last_known_rhi = rhi;
+}
+
+static void new_twodee_frame();
+static void new_imgui_frame();
+
+static void preframe_update(Rhi& rhi)
+{
+	SRB2_ASSERT(g_main_graphics_context != kNullHandle);
+
+	g_hw_state.palette_manager->update(rhi, g_main_graphics_context);
+	new_twodee_frame();
+	new_imgui_frame();
+}
+
+static void postframe_update(Rhi& rhi)
+{
+	g_hw_state.palette_manager->destroy_per_frame_resources(rhi);
 }
 
 #ifdef HWRENDER
@@ -187,278 +209,13 @@ static void temp_legacy_finishupdate_draws()
 	ST_drawDebugInfo();
 }
 
-static InternalPassData build_pass_manager()
-{
-	auto framebuffer_manager = std::make_shared<FramebufferManager>();
-	auto palette_manager = std::make_shared<MainPaletteManager>();
-	auto common_resources_manager = std::make_shared<CommonResourcesManager>();
-	auto flat_texture_manager = std::make_shared<FlatTextureManager>();
-	auto patch_atlas_cache = std::make_shared<PatchAtlasCache>(2048, 2);
-	auto resource_manager = std::make_shared<PassManager>();
-
-	resource_manager->insert("framebuffer_manager", framebuffer_manager);
-	resource_manager->insert("palette_manager", palette_manager);
-	resource_manager->insert("common_resources_manager", common_resources_manager);
-	resource_manager->insert("flat_texture_manager", flat_texture_manager);
-	resource_manager->insert("patch_atlas_cache", patch_atlas_cache);
-
-	// Basic Rendering is responsible for drawing 3d, 2d, and postprocessing the image.
-	// This is drawn to an alternating internal color buffer.
-	// Normal Rendering will output the result via final composite and present.
-	// Wipe Start Screen and Wipe End Screen will save to special color buffers used for Wipe Rendering.
-	auto basic_rendering = std::make_shared<PassManager>();
-
-	auto software_pass = std::make_shared<SoftwarePass>();
-	auto blit_postimg_screens = std::make_shared<BlitPostimgScreens>(palette_manager);
-	auto twodee = std::make_shared<TwodeePass>();
-	twodee->flat_manager_ = flat_texture_manager;
-	twodee->patch_atlas_cache_ = patch_atlas_cache;
-	twodee->data_ = make_twodee_pass_data();
-	twodee->ctx_ = &g_2d;
-	auto pp_simple_blit_pass = std::make_shared<BlitRectPass>(false);
-	auto screenshot_pass = std::make_shared<ScreenshotPass>();
-	auto imgui_pass = std::make_shared<ImguiPass>();
-	auto final_composite_pass = std::make_shared<BlitRectPass>(true);
-
-	basic_rendering->insert(
-		"3d_prepare",
-		[framebuffer_manager](PassManager& mgr, Rhi&)
-		{
-			const bool sw_enabled = rendermode == render_soft && gamestate != GS_NULL;
-
-			mgr.set_pass_enabled("software", sw_enabled);
-			mgr.set_pass_enabled("blit_postimg_screens_prepare", sw_enabled);
-			mgr.set_pass_enabled("blit_postimg_screens", sw_enabled && !g_wipeskiprender);
-		}
-	);
-	basic_rendering->insert("software", software_pass);
-	basic_rendering->insert(
-		"blit_postimg_screens_prepare",
-		[blit_postimg_screens, software_pass, framebuffer_manager](PassManager&, Rhi&)
-		{
-			const bool sw_enabled = rendermode == render_soft && gamestate != GS_NULL;
-			const int screens = std::clamp(r_splitscreen + 1, 1, MAXSPLITSCREENPLAYERS);
-
-			blit_postimg_screens->set_num_screens(screens);
-			for (int i = 0; i < screens; i++)
-			{
-				if (sw_enabled)
-				{
-					glm::vec2 uv_offset {0.f, 0.f};
-					glm::vec2 uv_size {1.f, 1.f};
-
-					if (screens > 2)
-					{
-						uv_size = glm::vec2(.5f, .5f);
-						switch (i)
-						{
-						case 0:
-							uv_offset = glm::vec2(0.f, 0.f);
-							break;
-						case 1:
-							uv_offset = glm::vec2(.5f, 0.f);
-							break;
-						case 2:
-							uv_offset = glm::vec2(0.f, .5f);
-							break;
-						case 3:
-							uv_offset = glm::vec2(.5f, .5f);
-							break;
-						}
-					}
-					else if (screens > 1)
-					{
-						uv_size = glm::vec2(1.0, 0.5);
-						if (i == 1)
-						{
-							uv_offset = glm::vec2(0.f, .5f);
-						}
-					}
-
-					// "You should probably never have more than 3 levels of indentation" -- Eidolon, the author of this
-
-					blit_postimg_screens->set_screen(
-						i,
-						{
-							software_pass->screen_texture(),
-							true,
-							uv_offset,
-							uv_size,
-							{
-								postimgtype[i] == postimg_water,
-								postimgtype[i] == postimg_heat,
-								postimgtype[i] == postimg_flip,
-								postimgtype[i] == postimg_mirror
-							}
-						}
-					);
-				}
-			}
-			blit_postimg_screens->set_target(framebuffer_manager->main_color(), vid.width, vid.height);
-		}
-	);
-	basic_rendering->insert("blit_postimg_screens", blit_postimg_screens);
-
-	basic_rendering->insert(
-		"2d_prepare",
-		[twodee, framebuffer_manager, palette_manager](PassManager& mgr, Rhi&)
-		{
-			twodee->output_ = framebuffer_manager->main_color();
-			twodee->palette_manager_ = palette_manager;
-			twodee->output_width_ = vid.width;
-			twodee->output_height_ = vid.height;
-		}
-	);
-	basic_rendering->insert("2d", twodee);
-
-	basic_rendering->insert(
-		"pp_final_simple_blit_prepare",
-		[pp_simple_blit_pass, framebuffer_manager](PassManager&, Rhi&)
-		{
-			framebuffer_manager->swap_post();
-			pp_simple_blit_pass->set_texture(framebuffer_manager->main_color(), vid.width, vid.height);
-			pp_simple_blit_pass
-				->set_output(framebuffer_manager->current_post_color(), vid.width, vid.height, false, false);
-		}
-	);
-	basic_rendering->insert("pp_final_simple_blit", pp_simple_blit_pass);
-
-	auto screenshot_rendering = std::make_shared<PassManager>();
-
-	screenshot_rendering->insert(
-		"screenshot_prepare",
-		[screenshot_pass, framebuffer_manager](PassManager&, Rhi&)
-		{
-			screenshot_pass->set_source(framebuffer_manager->current_post_color(), vid.width, vid.height);
-		}
-	);
-	screenshot_rendering->insert("screenshot", screenshot_pass);
-
-	// Composite-present takes the current postprocess result and outputs it to the default framebuffer.
-	// It also renders imgui and presents the screen.
-	auto composite_present_rendering = std::make_shared<PassManager>();
-
-	composite_present_rendering->insert(
-		"final_composite_prepare",
-		[final_composite_pass, framebuffer_manager](PassManager&, Rhi&)
-		{
-			final_composite_pass->set_texture(framebuffer_manager->current_post_color(), vid.width, vid.height);
-			final_composite_pass->set_output(kNullHandle, vid.realwidth, vid.realheight, true, false);
-		}
-	);
-	composite_present_rendering->insert("final_composite", final_composite_pass);
-	composite_present_rendering->insert("imgui", imgui_pass);
-	composite_present_rendering->insert(
-		"present",
-		[](PassManager&, Rhi& rhi) {},
-		[framebuffer_manager](PassManager&, Rhi& rhi)
-		{
-			g_imgui_frame_active = false;
-			rhi.present();
-			rhi.finish();
-			framebuffer_manager->reset_post();
-			I_NewImguiFrame();
-		}
-	);
-
-	// Normal rendering combines basic rendering and composite-present.
-	auto normal_rendering = std::make_shared<PassManager>();
-
-	normal_rendering->insert("resource_manager", resource_manager);
-	normal_rendering->insert("basic_rendering", basic_rendering);
-	normal_rendering->insert("screenshot_rendering", screenshot_rendering);
-	normal_rendering->insert("composite_present_rendering", composite_present_rendering);
-
-	// Wipe Start Screen Capture rendering
-	auto wipe_capture_start_rendering = std::make_shared<PassManager>();
-	auto wipe_start_blit = std::make_shared<BlitRectPass>();
-
-	wipe_capture_start_rendering->insert("resource_manager", resource_manager);
-	wipe_capture_start_rendering->insert("basic_rendering", basic_rendering);
-	wipe_capture_start_rendering->insert(
-		"wipe_capture_prepare",
-		[framebuffer_manager, wipe_start_blit](PassManager&, Rhi&)
-		{
-			wipe_start_blit->set_texture(framebuffer_manager->previous_post_color(), vid.width, vid.height);
-			wipe_start_blit->set_output(framebuffer_manager->wipe_start_color(), vid.width, vid.height, false, true);
-		}
-	);
-	wipe_capture_start_rendering->insert("wipe_capture", wipe_start_blit);
-
-	// Wipe End Screen Capture rendering
-	auto wipe_capture_end_rendering = std::make_shared<PassManager>();
-	auto wipe_end_blit = std::make_shared<BlitRectPass>();
-	auto wipe_end_blit_start_to_main = std::make_shared<BlitRectPass>();
-
-	wipe_capture_end_rendering->insert("resource_manager", resource_manager);
-	wipe_capture_end_rendering->insert("basic_rendering", basic_rendering);
-	wipe_capture_end_rendering->insert(
-		"wipe_capture_prepare",
-		[framebuffer_manager, wipe_end_blit, wipe_end_blit_start_to_main](PassManager&, Rhi&)
-		{
-			wipe_end_blit->set_texture(framebuffer_manager->current_post_color(), vid.width, vid.height);
-			wipe_end_blit->set_output(framebuffer_manager->wipe_end_color(), vid.width, vid.height, false, true);
-
-			wipe_end_blit_start_to_main->set_texture(
-				framebuffer_manager->wipe_start_color(),
-				vid.width,
-				vid.height
-			);
-			wipe_end_blit_start_to_main->set_output(
-				framebuffer_manager->main_color(),
-				vid.width,
-				vid.height,
-				false,
-				true
-			);
-		}
-	);
-	wipe_capture_end_rendering->insert("wipe_capture", wipe_end_blit);
-	wipe_capture_end_rendering->insert("wipe_end_blit_start_to_main", wipe_end_blit_start_to_main);
-
-	// Wipe rendering only runs the wipe shader on the start and end screens, and adds composite-present.
-	auto wipe_rendering = std::make_shared<PassManager>();
-
-	auto pp_wipe_pass = std::make_shared<PostprocessWipePass>();
-
-	wipe_rendering->insert("resource_manager", resource_manager);
-	wipe_rendering->insert(
-		"pp_final_wipe_prepare",
-		[pp_wipe_pass, framebuffer_manager, common_resources_manager](PassManager&, Rhi&)
-		{
-			framebuffer_manager->swap_post();
-			Handle<Texture> start = framebuffer_manager->main_color();
-			Handle<Texture> end = framebuffer_manager->wipe_end_color();
-			if (g_wipereverse)
-			{
-				std::swap(start, end);
-			}
-			pp_wipe_pass->set_start(start);
-			pp_wipe_pass->set_end(end);
-			pp_wipe_pass->set_target(framebuffer_manager->current_post_color(), vid.width, vid.height);
-		}
-	);
-	wipe_rendering->insert("pp_final_wipe", pp_wipe_pass);
-	wipe_rendering->insert("screenshot_rendering", screenshot_rendering);
-	wipe_rendering->insert("composite_present_rendering", composite_present_rendering);
-
-	InternalPassData ret;
-	ret.resource_passmanager = resource_manager;
-	ret.normal_rendering = normal_rendering;
-	ret.wipe_capture_start_rendering = wipe_capture_start_rendering;
-	ret.wipe_capture_end_rendering = wipe_capture_end_rendering;
-	ret.wipe_rendering = wipe_rendering;
-
-	return ret;
-}
-
-void I_NewTwodeeFrame(void)
+static void new_twodee_frame()
 {
 	g_2d = Twodee();
 	Patch_ResetFreedThisFrame();
 }
 
-void I_NewImguiFrame(void)
+static void new_imgui_frame()
 {
 	if (g_imgui_frame_active)
 	{
@@ -472,13 +229,61 @@ void I_NewImguiFrame(void)
 	g_imgui_frame_active = true;
 }
 
-static void maybe_reinit_passes(Rhi* rhi)
+rhi::Handle<rhi::GraphicsContext> sys::main_graphics_context()
 {
-	if (rhi_changed(rhi) || !g_passes)
+	return g_main_graphics_context;
+}
+
+HardwareState* sys::main_hardware_state()
+{
+	return &g_hw_state;
+}
+
+void I_CaptureVideoFrame()
+{
+	rhi::Rhi* rhi = srb2::sys::get_rhi(srb2::sys::g_current_rhi);
+	rhi::Handle<rhi::GraphicsContext> ctx = srb2::sys::main_graphics_context();
+	hwr2::HardwareState* hw_state = srb2::sys::main_hardware_state();
+
+	hw_state->screen_capture->set_source(static_cast<uint32_t>(vid.width), static_cast<uint32_t>(vid.height));
+	hw_state->screen_capture->capture(*rhi, ctx);
+}
+
+void I_StartDisplayUpdate(void)
+{
+	if (rendermode == render_none)
 	{
-		g_last_known_rhi = rhi;
-		g_passes = std::make_unique<InternalPassData>(build_pass_manager());
+		return;
 	}
+
+#ifdef HWRENDER
+	if (rendermode == render_opengl)
+	{
+		return;
+	}
+#endif
+
+	rhi::Rhi* rhi = sys::get_rhi(sys::g_current_rhi);
+
+	if (rhi == nullptr)
+	{
+		// ???
+		return;
+	}
+
+	if (rhi_changed(rhi))
+	{
+		// Reset all hardware 2 state
+		reset_hardware_state(rhi);
+	}
+
+	rhi::Handle<rhi::GraphicsContext> ctx = rhi->begin_graphics();
+
+	rhi->begin_default_render_pass(ctx, false);
+
+	g_main_graphics_context = ctx;
+
+	preframe_update(*rhi);
 }
 
 void I_FinishUpdate(void)
@@ -506,99 +311,22 @@ void I_FinishUpdate(void)
 		return;
 	}
 
-	maybe_reinit_passes(rhi);
+	rhi::Handle<rhi::GraphicsContext> ctx = g_main_graphics_context;
 
-	g_passes->normal_rendering->render(*rhi);
-}
-
-void I_FinishUpdateWipeStartScreen(void)
-{
-	if (rendermode == render_none)
+	if (ctx != kNullHandle)
 	{
-		return;
+		// better hope the drawing code left the context in a render pass, I guess
+		g_hw_state.twodee_renderer->flush(*rhi, ctx, g_2d);
+		rhi->end_render_pass(ctx);
+		rhi->end_graphics(ctx);
+		g_main_graphics_context = kNullHandle;
+
+		postframe_update(*rhi);
 	}
 
-#ifdef HWRENDER
-	if (rendermode == render_opengl)
-	{
-		finish_legacy_ogl_update();
-		return;
-	}
-#endif
+	rhi->present();
+	rhi->finish();
 
-	temp_legacy_finishupdate_draws();
-
-	rhi::Rhi* rhi = sys::get_rhi(sys::g_current_rhi);
-
-	if (rhi == nullptr)
-	{
-		// ???
-		return;
-	}
-
-	maybe_reinit_passes(rhi);
-
-	g_passes->wipe_capture_start_rendering->render(*rhi);
-	I_NewImguiFrame();
-}
-
-void I_FinishUpdateWipeEndScreen(void)
-{
-	if (rendermode == render_none)
-	{
-		return;
-	}
-
-#ifdef HWRENDER
-	if (rendermode == render_opengl)
-	{
-		finish_legacy_ogl_update();
-		return;
-	}
-#endif
-
-	temp_legacy_finishupdate_draws();
-
-	rhi::Rhi* rhi = sys::get_rhi(sys::g_current_rhi);
-
-	if (rhi == nullptr)
-	{
-		// ???
-		return;
-	}
-
-	maybe_reinit_passes(rhi);
-
-	g_passes->wipe_capture_end_rendering->render(*rhi);
-	I_NewImguiFrame();
-}
-
-void I_FinishUpdateWipe(void)
-{
-	if (rendermode == render_none)
-	{
-		return;
-	}
-
-#ifdef HWRENDER
-	if (rendermode == render_opengl)
-	{
-		finish_legacy_ogl_update();
-		return;
-	}
-#endif
-
-	temp_legacy_finishupdate_draws();
-
-	rhi::Rhi* rhi = sys::get_rhi(sys::g_current_rhi);
-
-	if (rhi == nullptr)
-	{
-		// ???
-		return;
-	}
-
-	maybe_reinit_passes(rhi);
-
-	g_passes->wipe_rendering->render(*rhi);
+	// Immediately prepare to begin drawing the next frame
+	I_StartDisplayUpdate();
 }

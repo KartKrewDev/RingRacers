@@ -45,6 +45,8 @@
 // SRB2Kart
 #include "k_menu.h"
 
+using namespace srb2;
+
 typedef struct fademask_s {
 	UINT8* mask;
 	UINT16 width, height;
@@ -216,7 +218,6 @@ UINT8 g_wipemode = 0;
 UINT8 g_wipetype = 0;
 UINT8 g_wipeframe = 0;
 boolean g_wipereverse = false;
-boolean g_wipeskiprender = false;
 boolean g_wipeencorewiggle = false;
 boolean WipeStageTitle = false;
 INT32 lastwipetic = 0;
@@ -260,7 +261,7 @@ static fademask_t *F_GetFadeMask(UINT8 masknum, UINT8 scrnnum) {
 	if (lumpnum == LUMPERROR)
 		goto freemask;
 
-	lump = W_CacheLumpNum(lumpnum, PU_CACHE);
+	lump = static_cast<UINT8*>(W_CacheLumpNum(lumpnum, PU_CACHE));
 	lsize = W_LumpLength(lumpnum);
 	switch (lsize)
 	{
@@ -287,7 +288,7 @@ static fademask_t *F_GetFadeMask(UINT8 masknum, UINT8 scrnnum) {
 			goto freemask;
 	}
 	if (lsize != fm.size)
-		fm.mask = Z_Realloc(fm.mask, lsize, PU_STATIC, NULL);
+		fm.mask = reinterpret_cast<UINT8*>(Z_Realloc(fm.mask, lsize, PU_STATIC, NULL));
 	fm.size = lsize;
 
 	mask = fm.mask;
@@ -319,6 +320,38 @@ static fademask_t *F_GetFadeMask(UINT8 masknum, UINT8 scrnnum) {
 
 #endif
 
+static void refresh_wipe_screen_texture(rhi::Rhi& rhi, rhi::Handle<rhi::GraphicsContext> ctx, rhi::Handle<rhi::Texture>& tex)
+{
+	bool recreate = false;
+	if (!tex)
+	{
+		recreate = true;
+	}
+	else
+	{
+		rhi::TextureDetails deets = rhi.get_texture_details(tex);
+		if (deets.width != static_cast<uint32_t>(vid.width) || deets.height != static_cast<uint32_t>(vid.height))
+		{
+			recreate = true;
+			rhi.destroy_texture(tex);
+			tex = rhi::kNullHandle;
+		}
+	}
+
+	if (!recreate)
+	{
+		return;
+	}
+
+	tex = rhi.create_texture({
+		rhi::TextureFormat::kRGBA,
+		static_cast<uint32_t>(vid.width),
+		static_cast<uint32_t>(vid.height),
+		rhi::TextureWrapMode::kClamp,
+		rhi::TextureWrapMode::kClamp
+	});
+}
+
 /** Save the "before" screen of a wipe.
   */
 void F_WipeStartScreen(void)
@@ -331,9 +364,31 @@ void F_WipeStartScreen(void)
 		return;
 	}
 #endif
-	wipe_scr_start = screens[3];
-	I_ReadScreen(wipe_scr_start);
-	I_FinishUpdateWipeStartScreen();
+
+	rhi::Rhi* rhi = srb2::sys::get_rhi(srb2::sys::g_current_rhi);
+
+	if (!rhi)
+	{
+		return;
+	}
+
+	rhi::Handle<rhi::GraphicsContext> ctx = srb2::sys::main_graphics_context();
+
+	if (!ctx)
+	{
+		return;
+	}
+
+	hwr2::HardwareState* hw_state = srb2::sys::main_hardware_state();
+
+	refresh_wipe_screen_texture(*rhi, ctx, hw_state->wipe_frames.start);
+
+	hw_state->twodee_renderer->flush(*rhi, ctx, g_2d);
+
+	rhi::Rect copy_region = {0, 0, static_cast<uint32_t>(vid.width), static_cast<uint32_t>(vid.height)};
+	rhi->copy_framebuffer_to_texture(ctx, hw_state->wipe_frames.start, copy_region, copy_region);
+
+	I_FinishUpdate();
 #endif
 }
 
@@ -349,10 +404,36 @@ void F_WipeEndScreen(void)
 		return;
 	}
 #endif
-	wipe_scr_end = screens[4];
-	I_ReadScreen(wipe_scr_end);
-	V_DrawBlock(0, 0, 0, vid.width, vid.height, wipe_scr_start);
-	I_FinishUpdateWipeEndScreen();
+
+	rhi::Rhi* rhi = srb2::sys::get_rhi(srb2::sys::g_current_rhi);
+
+	if (!rhi)
+	{
+		return;
+	}
+
+	rhi::Handle<rhi::GraphicsContext> ctx = srb2::sys::main_graphics_context();
+
+	if (!ctx)
+	{
+		return;
+	}
+
+	hwr2::HardwareState* hw_state = srb2::sys::main_hardware_state();
+
+	refresh_wipe_screen_texture(*rhi, ctx, hw_state->wipe_frames.end);
+
+	hw_state->twodee_renderer->flush(*rhi, ctx, g_2d);
+
+	rhi::Rect copy_region = {0, 0, static_cast<uint32_t>(vid.width), static_cast<uint32_t>(vid.height)};
+	rhi->copy_framebuffer_to_texture(ctx, hw_state->wipe_frames.end, copy_region, copy_region);
+
+	hw_state->blit_rect->set_output(copy_region.w, copy_region.h, false, true);
+	rhi::TextureDetails start_deets = rhi->get_texture_details(hw_state->wipe_frames.start);
+	hw_state->blit_rect->set_texture(hw_state->wipe_frames.start, start_deets.width, start_deets.height);
+	hw_state->blit_rect->draw(*rhi, ctx);
+
+	I_FinishUpdate();
 #endif
 }
 
@@ -394,7 +475,7 @@ void F_RunWipe(UINT8 wipemode, UINT8 wipetype, boolean drawMenu, const char *col
 	if (clump != LUMPERROR && wipetype != UINT8_MAX)
 	{
 		pallen = 32;
-		fcolor = Z_MallocAlign((256 * pallen), PU_STATIC, NULL, 8);
+		fcolor = static_cast<lighttable_t*>(Z_MallocAlign((256 * pallen), PU_STATIC, NULL, 8));
 		W_ReadLump(clump, fcolor);
 	}
 	else
@@ -407,7 +488,6 @@ void F_RunWipe(UINT8 wipemode, UINT8 wipetype, boolean drawMenu, const char *col
 
 	// Init the wipe
 	WipeInAction = true;
-	g_wipeskiprender = false;
 	wipe_scr = screens[0];
 
 	// lastwipetic should either be 0 or the tic we last wiped
@@ -449,6 +529,23 @@ void F_RunWipe(UINT8 wipemode, UINT8 wipetype, boolean drawMenu, const char *col
 			{
 				g_wipeencorewiggle = 0;
 			}
+			rhi::Rhi* rhi = srb2::sys::get_rhi(srb2::sys::g_current_rhi);
+			rhi::Handle<rhi::GraphicsContext> ctx = srb2::sys::main_graphics_context();
+			hwr2::HardwareState* hw_state = srb2::sys::main_hardware_state();
+
+			if (reverse)
+			{
+				hw_state->wipe->set_start(hw_state->wipe_frames.end);
+				hw_state->wipe->set_end(hw_state->wipe_frames.start);
+			}
+			else
+			{
+				hw_state->wipe->set_start(hw_state->wipe_frames.start);
+				hw_state->wipe->set_end(hw_state->wipe_frames.end);
+			}
+
+			hw_state->wipe->set_target_size(static_cast<uint32_t>(vid.width), static_cast<uint32_t>(vid.height));
+			hw_state->wipe->draw(*rhi, ctx);
 		}
 
 		I_OsPolling();
@@ -465,24 +562,20 @@ void F_RunWipe(UINT8 wipemode, UINT8 wipetype, boolean drawMenu, const char *col
 #endif
 		}
 
-		I_FinishUpdateWipe(); // page flip or blit buffer
-
-		if (rendermode != render_none)
-		{
-			// Skip subsequent renders until the end of the wipe to preserve the current frame.
-			g_wipeskiprender = true;
-		}
+		I_FinishUpdate(); // page flip or blit buffer
 
 #ifdef HWRENDER
 		if (moviemode && rendermode == render_opengl)
 			M_LegacySaveFrame();
+		else
 #endif
+		if (moviemode && rendermode != render_none)
+			I_CaptureVideoFrame();
 
 		NetKeepAlive(); // Update the network so we don't cause timeouts
 	}
 
 	WipeInAction = false;
-	g_wipeskiprender = false;
 
 	if (fcolor)
 	{

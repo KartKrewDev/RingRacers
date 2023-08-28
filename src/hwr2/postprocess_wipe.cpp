@@ -7,7 +7,7 @@
 // See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
 
-#include "pass_postprocess.hpp"
+#include "postprocess_wipe.hpp"
 
 #include <string>
 
@@ -62,23 +62,16 @@ PostprocessWipePass::PostprocessWipePass()
 
 PostprocessWipePass::~PostprocessWipePass() = default;
 
+void PostprocessWipePass::draw(Rhi& rhi, Handle<GraphicsContext> ctx)
+{
+	prepass(rhi);
+	transfer(rhi, ctx);
+	graphics(rhi, ctx);
+	postpass(rhi);
+}
+
 void PostprocessWipePass::prepass(Rhi& rhi)
 {
-	if (!render_pass_)
-	{
-		render_pass_ = rhi.create_render_pass(
-			{
-				false,
-				AttachmentLoadOp::kLoad,
-				AttachmentStoreOp::kStore,
-				AttachmentLoadOp::kDontCare,
-				AttachmentStoreOp::kDontCare,
-				AttachmentLoadOp::kDontCare,
-				AttachmentStoreOp::kDontCare
-			}
-		);
-	}
-
 	if (!pipeline_)
 	{
 		pipeline_ = rhi.create_pipeline(kWipePipelineDesc);
@@ -224,26 +217,12 @@ void PostprocessWipePass::graphics(Rhi& rhi, Handle<GraphicsContext> ctx)
 		return;
 	}
 
-	if (target_)
-	{
-		rhi.begin_render_pass(ctx, {render_pass_, target_, std::nullopt, {0, 0, 0, 1}});
-	}
-	else
-	{
-		rhi.begin_default_render_pass(ctx, false);
-	}
-
 	rhi.bind_pipeline(ctx, pipeline_);
-	if (target_)
-	{
-		rhi.set_viewport(ctx, {0, 0, target_w_, target_h_});
-	}
+	rhi.set_viewport(ctx, {0, 0, width_, height_});
 	rhi.bind_uniform_set(ctx, 0, us_);
 	rhi.bind_binding_set(ctx, bs_);
 	rhi.bind_index_buffer(ctx, ibo_);
 	rhi.draw_indexed(ctx, 6, 0);
-
-	rhi.end_render_pass(ctx);
 }
 
 void PostprocessWipePass::postpass(Rhi& rhi)

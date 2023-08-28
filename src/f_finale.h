@@ -129,7 +129,6 @@ extern UINT8 g_wipemode;
 extern UINT8 g_wipetype;
 extern UINT8 g_wipeframe;
 extern boolean g_wipereverse;
-extern boolean g_wipeskiprender;
 extern boolean g_wipeencorewiggle;
 extern boolean WipeStageTitle;
 

@@ -18,6 +18,7 @@
 
 #ifdef __cplusplus
 
+#include "hwr2/hardware_state.hpp"
 #include "rhi/rhi.hpp"
 
 namespace srb2::sys {
@@ -26,7 +27,10 @@ extern rhi::Handle<rhi::Rhi> g_current_rhi;
 
 rhi::Rhi* get_rhi(rhi::Handle<rhi::Rhi> handle);
 
-} // namespace
+rhi::Handle<rhi::GraphicsContext> main_graphics_context();
+hwr2::HardwareState* main_hardware_state();
+
+} // namespace srb2::sys
 
 extern "C" {
 #endif
@@ -130,24 +134,13 @@ extern boolean allow_fullscreen;
 */
 void I_UpdateNoBlit(void);
 
-/** \brief Begin a new Twodee frame.
+/** \brief Start a display update.
 */
-void I_NewTwodeeFrame(void);
-
-/** \brief Begin a new dear imgui frame.
-*/
-void I_NewImguiFrame(void);
+void I_StartDisplayUpdate(void);
 
 /**	\brief Update video system with updating frame
 */
 void I_FinishUpdate(void);
-
-void I_FinishUpdateWipeStartScreen(void);
-void I_FinishUpdateWipeEndScreen(void);
-
-/** \brief Update video system during a wipe
-*/
-void I_FinishUpdateWipe(void);
 
 /**	\brief I_FinishUpdate(), but vsync disabled
 */
@@ -178,6 +171,8 @@ void I_BeginRead(void);
 void I_EndRead(void);
 
 UINT32 I_GetRefreshRate(void);
+
+void I_CaptureVideoFrame(void);
 
 #ifdef __cplusplus
 } // extern "C"

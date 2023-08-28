@@ -582,6 +582,7 @@ struct TextureDetails
 
 /// @brief The unpack alignment of a row span when uploading pixels to the device.
 constexpr const std::size_t kPixelRowUnpackAlignment = 4;
+constexpr const std::size_t kPixelRowPackAlignment = 4;
 
 /// @brief An active handle to a rendering device.
 struct Rhi
@@ -638,6 +639,12 @@ struct Rhi
 	virtual void draw_indexed(Handle<GraphicsContext> ctx, uint32_t index_count, uint32_t first_index) = 0;
 	virtual void
 	read_pixels(Handle<GraphicsContext> ctx, const Rect& rect, PixelFormat format, tcb::span<std::byte> out) = 0;
+	virtual void copy_framebuffer_to_texture(
+		Handle<GraphicsContext> ctx,
+		Handle<Texture> dst_tex,
+		const Rect& dst_region,
+		const Rect& src_region
+	) = 0;
 	virtual void set_stencil_reference(Handle<GraphicsContext> ctx, CullMode face, uint8_t reference) = 0;
 	virtual void set_stencil_compare_mask(Handle<GraphicsContext> ctx, CullMode face, uint8_t mask) = 0;
 	virtual void set_stencil_write_mask(Handle<GraphicsContext> ctx, CullMode face, uint8_t mask) = 0;

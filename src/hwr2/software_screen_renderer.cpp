@@ -7,7 +7,7 @@
 // See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
 
-#include "pass_software.hpp"
+#include "software_screen_renderer.hpp"
 
 #include "../i_video.h"
 #include "../v_video.h"
@@ -16,19 +16,11 @@ using namespace srb2;
 using namespace srb2::hwr2;
 using namespace srb2::rhi;
 
-SoftwarePass::SoftwarePass() : Pass()
+SoftwareScreenRenderer::SoftwareScreenRenderer() = default;
+SoftwareScreenRenderer::~SoftwareScreenRenderer() = default;
+
+void SoftwareScreenRenderer::draw(Rhi& rhi, Handle<GraphicsContext> ctx)
 {
-}
-
-SoftwarePass::~SoftwarePass() = default;
-
-void SoftwarePass::prepass(Rhi& rhi)
-{
-	if (rendermode != render_soft)
-	{
-		return;
-	}
-
 	// Render the player views... or not yet? Needs to be moved out of D_Display in d_main.c
 	// Assume it's already been done and vid.buffer contains the composited splitscreen view.
 	// In the future though, we will want to treat each player viewport separately for postprocessing.
@@ -75,10 +67,7 @@ void SoftwarePass::prepass(Rhi& rhi)
 			}
 		}
 	}
-}
 
-void SoftwarePass::transfer(Rhi& rhi, Handle<GraphicsContext> ctx)
-{
 	// Upload screen
 	tcb::span<const std::byte> screen_span;
 	if (width_ % kPixelRowUnpackAlignment > 0)
@@ -91,12 +80,4 @@ void SoftwarePass::transfer(Rhi& rhi, Handle<GraphicsContext> ctx)
 	}
 
 	rhi.update_texture(ctx, screen_texture_, {0, 0, width_, height_}, PixelFormat::kR8, screen_span);
-}
-
-void SoftwarePass::graphics(Rhi& rhi, Handle<GraphicsContext> ctx)
-{
-}
-
-void SoftwarePass::postpass(Rhi& rhi)
-{
 }

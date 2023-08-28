@@ -7,38 +7,33 @@
 // See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
 
-#ifndef __SRB2_HWR2_PASS_SCREENSHOT_HPP__
-#define __SRB2_HWR2_PASS_SCREENSHOT_HPP__
+#ifndef __SRB2_HWR2_SCREEN_CAPTURE_HPP__
+#define __SRB2_HWR2_SCREEN_CAPTURE_HPP__
 
 #include <cstddef>
 #include <vector>
 
-#include "pass.hpp"
+#include "../rhi/rhi.hpp"
 
 namespace srb2::hwr2
 {
 
-class ScreenshotPass : public Pass
+class ScreenshotPass
 {
-	bool doing_screenshot_ = false;
-	rhi::Handle<rhi::Texture> source_;
 	rhi::Handle<rhi::RenderPass> render_pass_;
 	std::vector<uint8_t> pixel_data_;
+	std::vector<uint8_t> packed_data_;
 	uint32_t width_ = 0;
 	uint32_t height_ = 0;
 
 public:
 	ScreenshotPass();
-	virtual ~ScreenshotPass();
+	~ScreenshotPass();
 
-	virtual void prepass(rhi::Rhi& rhi) override;
-	virtual void transfer(rhi::Rhi& rhi, rhi::Handle<rhi::GraphicsContext> ctx) override;
-	virtual void graphics(rhi::Rhi& rhi, rhi::Handle<rhi::GraphicsContext> ctx) override;
-	virtual void postpass(rhi::Rhi& rhi) override;
+	void capture(rhi::Rhi& rhi, rhi::Handle<rhi::GraphicsContext> ctx);
 
-	void set_source(rhi::Handle<rhi::Texture> source, uint32_t width, uint32_t height)
+	void set_source(uint32_t width, uint32_t height)
 	{
-		source_ = source;
 		width_ = width;
 		height_ = height;
 	}
@@ -46,4 +41,4 @@ public:
 
 } // namespace srb2::hwr2
 
-#endif // __SRB2_HWR2_PASS_SCREENSHOT_HPP__
+#endif // __SRB2_HWR2_SCREEN_CAPTURE_HPP__

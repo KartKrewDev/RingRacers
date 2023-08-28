@@ -19,17 +19,13 @@
 
 #include "../cxxutil.hpp"
 #include "patch_atlas.hpp"
-#include "pass.hpp"
-#include "pass_resource_managers.hpp"
+#include "resource_management.hpp"
 #include "twodee.hpp"
 
 namespace srb2::hwr2
 {
 
-class TwodeePass;
-
-/// @brief Shared structures to allow multiple 2D instances to share the same atlases
-struct TwodeePassData;
+class TwodeeRenderer;
 
 /// @brief Hash map key for caching pipelines
 struct TwodeePipelineKey
@@ -40,6 +36,22 @@ struct TwodeePipelineKey
 	bool operator==(const TwodeePipelineKey& r) const noexcept { return !(blend != r.blend || lines != r.lines); }
 	bool operator!=(const TwodeePipelineKey& r) const noexcept { return !(*this == r); }
 };
+
+} // namespace srb2::hwr2
+
+template <>
+struct std::hash<srb2::hwr2::TwodeePipelineKey>
+{
+	std::size_t operator()(const srb2::hwr2::TwodeePipelineKey& v) const
+	{
+		std::size_t hash = 0;
+		srb2::hash_combine(hash, v.blend, v.lines);
+		return hash;
+	}
+};
+
+namespace srb2::hwr2
+{
 
 struct MergedTwodeeCommandFlatTexture
 {
@@ -69,52 +81,44 @@ struct MergedTwodeeCommandList
 	std::vector<MergedTwodeeCommand> cmds;
 };
 
-std::shared_ptr<TwodeePassData> make_twodee_pass_data();
-
-struct TwodeePass final : public Pass
+class TwodeeRenderer final
 {
-	Twodee* ctx_ = nullptr;
+	bool initialized_ = false;
 	std::variant<rhi::Handle<rhi::Texture>, rhi::Handle<rhi::Renderbuffer>> out_color_;
 
-	std::shared_ptr<TwodeePassData> data_;
-	std::shared_ptr<MainPaletteManager> palette_manager_;
-	std::shared_ptr<FlatTextureManager> flat_manager_;
-	std::shared_ptr<PatchAtlasCache> patch_atlas_cache_;
-	rhi::Handle<rhi::UniformSet> us_1;
-	rhi::Handle<rhi::UniformSet> us_2;
+	PaletteManager* palette_manager_;
+	FlatTextureManager* flat_manager_;
+	PatchAtlasCache* patch_atlas_cache_;
 	std::vector<MergedTwodeeCommandList> cmd_lists_;
 	std::vector<std::tuple<rhi::Handle<rhi::Buffer>, std::size_t>> vbos_;
 	std::vector<std::tuple<rhi::Handle<rhi::Buffer>, std::size_t>> ibos_;
 	rhi::Handle<rhi::RenderPass> render_pass_;
 	rhi::Handle<rhi::Texture> output_;
-	uint32_t output_width_ = 0;
-	uint32_t output_height_ = 0;
+	rhi::Handle<rhi::Texture> default_tex_;
+	std::unordered_map<TwodeePipelineKey, rhi::Handle<rhi::Pipeline>> pipelines_;
 
 	void rewrite_patch_quad_vertices(Draw2dList& list, const Draw2dPatchQuad& cmd) const;
 
-	TwodeePass();
-	virtual ~TwodeePass();
+	void initialize(rhi::Rhi& rhi, rhi::Handle<rhi::GraphicsContext> ctx);
 
-	virtual void prepass(rhi::Rhi& rhi) override;
+public:
+	TwodeeRenderer(
+		srb2::NotNull<PaletteManager*> palette_manager,
+		srb2::NotNull<FlatTextureManager*> flat_manager,
+		srb2::NotNull<PatchAtlasCache*> patch_atlas_cache
+	);
+	TwodeeRenderer(const TwodeeRenderer&) = delete;
+	TwodeeRenderer(TwodeeRenderer&&);
+	~TwodeeRenderer();
+	TwodeeRenderer& operator=(const TwodeeRenderer&) = delete;
+	TwodeeRenderer& operator=(TwodeeRenderer&&);
 
-	virtual void transfer(rhi::Rhi& rhi, rhi::Handle<rhi::GraphicsContext> ctx) override;
-
-	virtual void graphics(rhi::Rhi& rhi, rhi::Handle<rhi::GraphicsContext> ctx) override;
-
-	virtual void postpass(rhi::Rhi& rhi) override;
+	/// @brief Flush accumulated Twodee state and perform draws.
+	/// @param rhi
+	/// @param ctx
+	void flush(rhi::Rhi& rhi, rhi::Handle<rhi::GraphicsContext> ctx, Twodee& twodee);
 };
 
 } // namespace srb2::hwr2
-
-template <>
-struct std::hash<srb2::hwr2::TwodeePipelineKey>
-{
-	std::size_t operator()(const srb2::hwr2::TwodeePipelineKey& v) const
-	{
-		std::size_t hash = 0;
-		srb2::hash_combine(hash, v.blend, v.lines);
-		return hash;
-	}
-};
 
 #endif // __SRB2_HWR2_PASS_TWODEE_HPP__
