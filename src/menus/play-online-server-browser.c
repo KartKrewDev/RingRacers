@@ -229,6 +229,7 @@ void M_ServersMenu(INT32 choice)
 	mpmenu.scrolln = 0;
 	mpmenu.slide = 0;
 
+	PLAY_MP_ServerBrowserDef.prevMenu = currentMenu;
 	M_SetupNextMenu(&PLAY_MP_ServerBrowserDef, false);
 	itemOn = 0;
 
