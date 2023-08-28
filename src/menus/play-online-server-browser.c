@@ -435,13 +435,15 @@ boolean M_ServerBrowserInputs(INT32 ch)
 	if (maxscroll < 0)
 		maxscroll = 0;
 
+	const INT16 serverbrowserOn = (currentMenu->numitems - 1);
+
 	(void) ch;
 
 	if (!itemOn && menucmd[pid].dpad_ud < 0)
 	{
-		M_PrevOpt();	// go to itemOn 2
 		if (serverlistcount)
 		{
+			// Return the MS listing to the bottom.
 			INT32 prevscroll = mpmenu.scrolln;
 
 			mpmenu.servernum = serverlistcount-1;
@@ -450,15 +452,14 @@ boolean M_ServerBrowserInputs(INT32 ch)
 		}
 		else
 		{
-			itemOn = 1;	// Sike! If there are no servers, go to refresh instead.
+			M_PrevOpt(); // Double apply
 		}
-
-		S_StartSound(NULL, sfx_s3k5b);
-		M_SetMenuDelay(pid);
-
-		return true;	// overwrite behaviour.
 	}
-	else if (itemOn == 2)	// server browser itself...
+	else if (itemOn == (serverbrowserOn - 1) && menucmd[pid].dpad_ud > 0 && !serverlistcount)
+	{
+		M_NextOpt(); // Double apply
+	}
+	else if (itemOn == serverbrowserOn)	// server browser itself...
 	{
 #ifndef SERVERLISTDEBUG
 		if (M_MenuConfirmPressed(pid))
@@ -473,59 +474,49 @@ boolean M_ServerBrowserInputs(INT32 ch)
 		}
 #endif
 
-		// we have to manually do that here.
-		if (M_MenuBackPressed(pid))
+		if (menucmd[pid].dpad_ud > 0)	// down
 		{
-			M_GoBack(0);
-			M_SetMenuDelay(pid);
-		}
-
-		else if (menucmd[pid].dpad_ud > 0)	// down
-		{
-			if ((UINT32)(mpmenu.servernum+1) >= serverlistcount)
+			if ((UINT32)(mpmenu.servernum+1) < serverlistcount)
 			{
-				INT32 prevscroll = mpmenu.scrolln;
-
-				mpmenu.servernum = 0;
-				mpmenu.scrolln = 0;
-				mpmenu.slide = SERVERSPACE * (prevscroll - (INT32)mpmenu.scrolln);
-
-				M_NextOpt();	// Go back to the top of the real menu.
-			}
-			else
-			{
+				// Listing scroll down
 				mpmenu.servernum++;
 				if (mpmenu.scrolln < maxscroll && mpmenu.servernum > SERVERSPERPAGE/2)
 				{
 					mpmenu.scrolln++;
 					mpmenu.slide += SERVERSPACE;
 				}
-			}
-			S_StartSound(NULL, sfx_s3k5b);
-			M_SetMenuDelay(pid);
 
+				S_StartSound(NULL, sfx_s3k5b);
+				M_SetMenuDelay(pid);
+
+				return true;
+			}
+
+			// Return the MS listing to the top.
+			INT32 prevscroll = mpmenu.scrolln;
+
+			mpmenu.servernum = 0;
+			mpmenu.scrolln = 0;
+			mpmenu.slide = SERVERSPACE * (prevscroll - (INT32)mpmenu.scrolln);
 		}
 		else if (menucmd[pid].dpad_ud < 0)
 		{
-			if (!mpmenu.servernum)
+			if (mpmenu.servernum)
 			{
-				M_PrevOpt();
-			}
-			else
-			{
+				// Listing scroll up
 				if (mpmenu.servernum <= (INT16)maxscroll && mpmenu.scrolln)
 				{
 					mpmenu.scrolln--;
 					mpmenu.slide -= SERVERSPACE;
 				}
-
 				mpmenu.servernum--;
-			}
-			S_StartSound(NULL, sfx_s3k5b);
-			M_SetMenuDelay(pid);
 
+				S_StartSound(NULL, sfx_s3k5b);
+				M_SetMenuDelay(pid);
+
+				return true;
+			}
 		}
-		return true;	// Overwrite behaviour.
 	}
 	return false;	// use normal behaviour.
 }
