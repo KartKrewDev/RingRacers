@@ -10451,16 +10451,17 @@ static void K_KartSpindash(player_t *player)
 	{
 		if (player->pflags & PF_NOFASTFALL)
 			return;
-		// Update fastfall.
-		player->fastfall = player->mo->momz;
-		player->spindash = 0;
-		P_ResetPitchRoll(player->mo);
 
-		if (player->fastfallBase == 0)
+		if (player->fastfall == 0)
 		{
 			// Factors 3D momentum.
 			player->fastfallBase = FixedHypot(player->speed, player->mo->momz);
 		}
+
+		// Update fastfall.
+		player->fastfall = player->mo->momz;
+		player->spindash = 0;
+		P_ResetPitchRoll(player->mo);
 
 		return;
 	}
@@ -10589,7 +10590,6 @@ boolean K_FastFallBounce(player_t *player)
 		player->mo->momz = bounce * P_MobjFlip(player->mo);
 
 		player->fastfall = 0;
-		player->fastfallBase = 0;
 		return true;
 	}
 
