@@ -42,6 +42,10 @@
 
 #include <algorithm>
 #include <cstddef>
+#include <mutex>
+
+#include "cxxutil.hpp"
+#include "wad_private.hpp"
 
 #include "doomdef.h"
 #include "doomstat.h"
@@ -85,6 +89,14 @@
 #define O_BINARY 0
 #endif
 
+using namespace srb2::wad;
+
+namespace srb2::wad
+{
+
+std::mutex g_wadfiles_mutex;
+
+}; // namespace srb2::wad
 
 typedef struct
 {
@@ -122,6 +134,8 @@ void W_Shutdown(void)
 	while (numwadfiles--)
 	{
 		wadfile_t *wad = wadfiles[numwadfiles];
+
+		delete wad->internal_state;
 
 		fclose(wad->handle);
 		Z_Free(wad->filename);
@@ -289,7 +303,7 @@ static inline void W_LoadDehackedLumps(UINT16 wadnum, boolean mainfile)
   * \param resblock resulting MD5 checksum
   * \return 0 if MD5 checksum was made, and is at resblock, 1 if error was found
   */
-static inline INT32 W_MakeFileMD5(const char *filename, void *resblock)
+INT32 W_MakeFileMD5(const char *filename, void *resblock)
 {
 #ifdef NOMD5
 	(void)filename;
@@ -790,6 +804,7 @@ UINT16 W_InitFile(const char *filename, boolean mainfile, boolean startup)
 	size_t i;
 #endif
 	UINT8 md5sum[16];
+	const boolean md5_in_background = startup;
 	int important;
 
 	if (!(refreshdirmenu & REFRESHDIR_ADDFILE))
@@ -831,21 +846,24 @@ UINT16 W_InitFile(const char *filename, boolean mainfile, boolean startup)
 	important = !important;
 
 #ifndef NOMD5
-	//
-	// w-waiiiit!
-	// Let's not add a wad file if the MD5 matches
-	// an MD5 of an already added WAD file!
-	//
-	W_MakeFileMD5(filename, md5sum);
-
-	for (i = 0; i < numwadfiles; i++)
+	if (!md5_in_background)
 	{
-		if (!memcmp(wadfiles[i]->md5sum, md5sum, 16))
+		//
+		// w-waiiiit!
+		// Let's not add a wad file if the MD5 matches
+		// an MD5 of an already added WAD file!
+		//
+		W_MakeFileMD5(filename, md5sum);
+
+		for (i = 0; i < numwadfiles; i++)
 		{
-			CONS_Alert(CONS_ERROR, M_GetText("%s is already loaded\n"), filename);
-			if (handle)
-				fclose(handle);
-			return W_InitFileError(filename, false);
+			if (!memcmp(W_GetFileMD5(wadfiles[i]), md5sum, 16))
+			{
+				CONS_Alert(CONS_ERROR, M_GetText("%s is already loaded\n"), filename);
+				if (handle)
+					fclose(handle);
+				return W_InitFileError(filename, false);
+			}
 		}
 	}
 #endif
@@ -902,21 +920,35 @@ UINT16 W_InitFile(const char *filename, boolean mainfile, boolean startup)
 	wadfile->filesize = (unsigned)ftell(handle);
 	wadfile->type = type;
 
-	// already generated, just copy it over
-	M_Memcpy(&wadfile->md5sum, &md5sum, 16);
-
 	//
 	// set up caching
 	//
 	Z_Calloc(numlumps * sizeof (*wadfile->lumpcache), PU_STATIC, &wadfile->lumpcache);
 	Z_Calloc(numlumps * sizeof (*wadfile->patchcache), PU_STATIC, &wadfile->patchcache);
 
+	wadfile->internal_state = new wadfile_private_t(wadfile);
+
+	if (md5_in_background)
+	{
+		wadfile->internal_state->md5sum_.request();
+	}
+	else
+	{
+		// already generated, just copy it over
+		wadfile->internal_state->md5sum_.fill(md5sum);
+	}
+
 	//
 	// add the wadfile
 	//
 	CONS_Printf(M_GetText("Added file %s (%u lumps)\n"), filename, numlumps);
-	wadfiles[numwadfiles] = wadfile;
-	numwadfiles++; // must come BEFORE W_LoadDehackedLumps, so any addfile called by COM_BufInsertText called by Lua doesn't overwrite what we just loaded
+
+	{
+		std::lock_guard _(g_wadfiles_mutex);
+
+		wadfiles[numwadfiles] = wadfile;
+		numwadfiles++; // must come BEFORE W_LoadDehackedLumps, so any addfile called by COM_BufInsertText called by Lua doesn't overwrite what we just loaded
+	}
 
 #ifdef HWRENDER
 	// Read shaders from file
@@ -2001,7 +2033,8 @@ void *W_CachePatchLongName(const char *name, INT32 tag)
   */
 #define MD5_FORMAT \
 	"%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x"
-static void PrintMD5String(const UINT8 *md5, char *buf)
+void PrintMD5String(const UINT8 *md5, char *buf);
+void PrintMD5String(const UINT8 *md5, char *buf)
 {
 	snprintf(buf, 2*MD5_LEN+1, MD5_FORMAT,
 		md5[0], md5[1], md5[2], md5[3],
@@ -2048,18 +2081,13 @@ void W_VerifyFileMD5(UINT16 wadfilenum, const char *matchmd5)
 		else realmd5[ix>>1] = (UINT8)(n<<4);
 	}
 
-	if (memcmp(realmd5, wadfiles[wadfilenum]->md5sum, 16))
-	{
-		char actualmd5text[2*MD5_LEN+1];
-		PrintMD5String(wadfiles[wadfilenum]->md5sum, actualmd5text);
-#ifdef _DEBUG
-		CONS_Printf
-#else
-		I_Error
+	wadfiles[wadfilenum]->internal_state->md5sum_.expect(realmd5);
 #endif
-			(M_GetText("File is old, is corrupt or has been modified: %s (found md5: %s, wanted: %s)\n"), wadfiles[wadfilenum]->filename, actualmd5text, matchmd5);
-	}
-#endif
+}
+
+const UINT8* W_GetFileMD5(const wadfile_t* wadfile)
+{
+	return wadfile->internal_state->md5sum_.get();
 }
 
 // Verify versions for different archive
