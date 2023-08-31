@@ -267,6 +267,7 @@ static void P_NetArchivePlayers(savebuffer_t *save)
 		WRITEUINT8(save->p, players[i].latestlap);
 		WRITEUINT32(save->p, players[i].lapPoints);
 		WRITEINT32(save->p, players[i].cheatchecknum);
+		WRITEINT32(save->p, players[i].checkpointId);
 
 		WRITEUINT8(save->p, players[i].ctfteam);
 
@@ -777,6 +778,7 @@ static void P_NetUnArchivePlayers(savebuffer_t *save)
 		players[i].latestlap = READUINT8(save->p);
 		players[i].lapPoints = READUINT32(save->p);
 		players[i].cheatchecknum = READINT32(save->p);
+		players[i].checkpointId = READINT32(save->p);
 
 		players[i].ctfteam = READUINT8(save->p); // 1 == Red, 2 == Blue
 
