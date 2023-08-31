@@ -3418,9 +3418,9 @@ void M_DrawMPRoomSelect(void)
 
 	// Draw buttons:
 
-	V_DrawFixedPatch(160<<FRACBITS, 100<<FRACBITS, FRACUNIT, mpmenu.room ? (5<<V_ALPHASHIFT) : 0, butt1[(mpmenu.room) ? 1 : 0], NULL);
+	V_DrawFixedPatch(160<<FRACBITS, 90<<FRACBITS, FRACUNIT, mpmenu.room ? (5<<V_ALPHASHIFT) : 0, butt1[(mpmenu.room) ? 1 : 0], NULL);
 
-	V_DrawFixedPatch(160<<FRACBITS, 100<<FRACBITS, FRACUNIT, (!mpmenu.room) ? (5<<V_ALPHASHIFT) : 0, butt2[(!mpmenu.room) ? 1 : 0], NULL);
+	V_DrawFixedPatch(160<<FRACBITS, 90<<FRACBITS, FRACUNIT, (!mpmenu.room) ? (5<<V_ALPHASHIFT) : 0, butt2[(!mpmenu.room) ? 1 : 0], NULL);
 
 	V_DrawFixedPatch(0, 0, FRACUNIT, 0, W_CachePatchName("MENUHINT", PU_CACHE), NULL);
 	V_DrawCenteredThinString(BASEVIDWIDTH/2, 12, 0, "Select today's type of play!");
@@ -3586,7 +3586,12 @@ void M_DrawMPServerBrowser(void)
 	V_DrawFill(0, 53, 320, 1, 31);
 	V_DrawFill(0, 55, 320, 1, 31);
 
-	V_DrawCenteredGamemodeString(160, 2, 0, 0, "Server Browser");
+	const char *headertext;
+	if (M_SecretUnlocked(SECRET_ADDONS, true))
+		headertext = va("%s Servers", mpmenu.room ? "Modded" : "Core");
+	else
+		headertext = "Server Browser";
+	V_DrawCenteredGamemodeString(160, 2, 0, 0, headertext);
 
 	// normal menu options
 	M_DrawGenericMenu();
