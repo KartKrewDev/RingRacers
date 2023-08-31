@@ -888,6 +888,10 @@ char sprnames[NUMSPRITES + 1][5] =
 
 	"BUFO", // Battle/Power-UP UFO
 
+	"CPT1", // Checkpoint Orb
+	"CPT2", // Checkpoint Stick
+	"CPT3", // Checkpoint Base
+
 	// First person view sprites; this is a sprite so that it can be replaced by a specialized MD2 draw later
 	"VIEW",
 };
@@ -5394,6 +5398,22 @@ state_t states[NUMSTATES] =
 	{SPR_DEZL, 3|FF_FULLBRIGHT, -1, {NULL}, 0, 0, S_NULL}, // S_BATTLEUFO_BEAM2
 
 	{SPR_RBOW, FF_PAPERSPRITE|FF_ADD|FF_FULLBRIGHT|FF_ANIMATE, -1, {NULL}, 14, 2, S_NULL}, // S_POWERUP_AURA
+
+	{SPR_CPT3, 0, -1, {NULL}, 0, 0, S_NULL}, // S_CHECKPOINT
+	{SPR_CPT2, FF_PAPERSPRITE, -1, {NULL}, 0, 0, S_NULL}, // S_CHECKPOINT_ARM
+	{SPR_CPT1, FF_ADD|FF_FULLBRIGHT, -1, {NULL}, 0, 0, S_NULL}, // S_CHECKPOINT_ORB_DEAD
+	{SPR_CPT1, FF_ADD|FF_FULLBRIGHT|FF_ANIMATE, -1, {NULL}, 2, 1, S_NULL}, // S_CHECKPOINT_ORB_LIVE
+	{SPR_SGNS, FF_ADD|FF_FULLBRIGHT, 1, {NULL}, 0, 0, S_CHECKPOINT_SPARK2}, // S_CHECKPOINT_SPARK1
+	{SPR_SGNS, FF_ADD|FF_FULLBRIGHT|1, 1, {NULL}, 0, 0, S_CHECKPOINT_SPARK3}, // S_CHECKPOINT_SPARK2
+	{SPR_SGNS, FF_ADD|FF_FULLBRIGHT|2, 1, {NULL}, 0, 0, S_CHECKPOINT_SPARK4}, // S_CHECKPOINT_SPARK3
+	{SPR_SGNS, FF_ADD|FF_FULLBRIGHT|3, 1, {NULL}, 0, 0, S_CHECKPOINT_SPARK5}, // S_CHECKPOINT_SPARK4
+	{SPR_SGNS, FF_ADD|FF_FULLBRIGHT|4, 1, {NULL}, 0, 0, S_CHECKPOINT_SPARK6}, // S_CHECKPOINT_SPARK5
+	{SPR_SGNS, FF_ADD|FF_FULLBRIGHT|5, 1, {NULL}, 0, 0, S_CHECKPOINT_SPARK7}, // S_CHECKPOINT_SPARK6
+	{SPR_SGNS, FF_ADD|FF_FULLBRIGHT|6, 1, {NULL}, 0, 0, S_CHECKPOINT_SPARK8}, // S_CHECKPOINT_SPARK7
+	{SPR_SGNS, FF_ADD|FF_FULLBRIGHT|7, 1, {NULL}, 0, 0, S_CHECKPOINT_SPARK9}, // S_CHECKPOINT_SPARK8
+	{SPR_SGNS, FF_ADD|FF_FULLBRIGHT|8, 1, {NULL}, 0, 0, S_CHECKPOINT_SPARK10}, // S_CHECKPOINT_SPARK9
+	{SPR_SGNS, FF_ADD|FF_FULLBRIGHT|3, 1, {NULL}, 0, 0, S_CHECKPOINT_SPARK11}, // S_CHECKPOINT_SPARK10
+	{SPR_SGNS, FF_ADD|FF_FULLBRIGHT|2, 1, {NULL}, 0, 0, S_CHECKPOINT_SPARK1}, // S_CHECKPOINT_SPARK11
 };
 
 mobjinfo_t mobjinfo[NUMMOBJTYPES] =
@@ -30302,6 +30322,33 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		0,              // damage
 		sfx_None,       // activesound
 		MF_NOBLOCKMAP|MF_NOGRAVITY|MF_NOCLIPHEIGHT|MF_SCENERY, // flags
+		S_NULL          // raisestate
+	},
+
+	{           // MT_CHECKPOINT_END
+		2030,           // doomednum
+		S_CHECKPOINT,   // spawnstate
+		1000,           // spawnhealth
+		S_NULL,         // seestate
+		sfx_None,       // seesound
+		0,              // reactiontime
+		sfx_None,       // attacksound
+		S_NULL,         // painstate
+		0,              // painchance
+		sfx_None,       // painsound
+		S_NULL,         // meleestate
+		S_NULL,         // missilestate
+		S_NULL,         // deathstate
+		S_NULL,         // xdeathstate
+		sfx_None,       // deathsound
+		0,              // speed
+		19*FRACUNIT,    // radius
+		75*FRACUNIT,    // height
+		0,              // display offset
+		0,              // mass
+		0,              // damage
+		sfx_None,       // activesound
+		MF_NOBLOCKMAP|MF_NOGRAVITY|MF_NOCLIPHEIGHT|MF_SCENERY|MF_DONTENCOREMAP, // flags
 		S_NULL          // raisestate
 	},
 
