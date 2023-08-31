@@ -2736,9 +2736,16 @@ static void K_drawRingCounter(boolean gametypeinfoshown)
 		if (uselives)
 		{
 			UINT8 *colormap = R_GetTranslationColormap(stplyr->skin, stplyr->skincolor, GTC_CACHE);
-			V_DrawMappedPatch(LAPS_X+40, fy-5, V_HUDTRANS|V_SLIDEIN|splitflags, faceprefix[stplyr->skin][FACE_RANK], colormap);
-			if (stplyr->lives >= 0)
-				K_DrawLivesDigits(LAPS_X + (stplyr->lives < 10 ? 60 : 57), fy, 6, V_HUDTRANS|V_SLIDEIN|splitflags, kp_facenum);
+			V_DrawMappedPatch(LAPS_X+46, fy-5, V_HUDTRANS|V_SLIDEIN|splitflags, faceprefix[stplyr->skin][FACE_RANK], colormap);
+			SINT8 livescount = 0;
+			if (stplyr->lives > 0)
+			{
+				livescount = stplyr->lives;
+				if (livescount > 10)
+					livescount = 10;
+			}
+			//K_DrawLivesDigits -- not using this because it messed with the FENG SHUI
+			V_DrawScaledPatch(LAPS_X+63, fy, V_HUDTRANS|V_SLIDEIN|splitflags, kp_facenum[livescount]);
 		}
 	}
 }
