@@ -11801,24 +11801,6 @@ void P_SpawnPlayer(INT32 playernum)
 	if (justjoined)
 		G_SpectatePlayerOnJoin(playernum);
 
-	if (p->bot && !demo.playback) // Don't mess with spectator values since the demo setup handles them already.
-	{
-		if (K_PodiumSequence() == true)
-			; // This is too late to correct spectator status. Whatever state we're in at this point, our (dog) bed is made.
-		else if (!(gametyperules & GTR_BOTS)
-		|| (grandprixinfo.gp == true
-			&& grandprixinfo.eventmode != GPEVENT_NONE))
-		{
-			// Bots aren't supposed to be here.
-			p->spectator = true;
-		}
-		else
-		{
-			// No point in a spectating bot!
-			p->spectator = false;
-		}
-	}
-
 	if (G_GametypeHasTeams())
 	{
 		// If you're in a team game and you don't have a team assigned yet...

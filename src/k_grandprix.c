@@ -307,6 +307,8 @@ void K_LoadGrandPrixSaveGame(void)
 
 		players[i].botvars.rival = savedata.bots[i].rival;
 		players[i].score = savedata.bots[i].score;
+
+		players[i].spectator = !(gametyperules & GTR_BOTS) || (grandprixinfo.eventmode != GPEVENT_NONE);
 	}
 }
 
@@ -375,6 +377,21 @@ void K_UpdateGrandPrixBots(void)
 	UINT8 i;
 
 	if (K_PodiumSequence() == true)
+	{
+		return;
+	}
+
+	for (i = 0; i < MAXPLAYERS; i++)
+	{
+		if (!playeringame[i] || !players[i].bot)
+		{
+			continue;
+		}
+
+		players[i].spectator = !(gametyperules & GTR_BOTS) || (grandprixinfo.eventmode != GPEVENT_NONE);
+	}
+
+	if (grandprixinfo.wonround == false)
 	{
 		return;
 	}

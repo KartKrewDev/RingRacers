@@ -8559,7 +8559,7 @@ void P_PostLoadLevel(void)
 			K_InitGrandPrixBots();
 			grandprixinfo.initalize = false;
 		}
-		else if (grandprixinfo.wonround == true)
+		else
 		{
 			K_UpdateGrandPrixBots();
 			grandprixinfo.wonround = false;
