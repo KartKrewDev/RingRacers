@@ -652,6 +652,7 @@ struct player_t
 
 	// player's ring count
 	SINT8 rings;
+	SINT8 hudrings;		// The above is only updated during play, this is locked after finishing
 	UINT8 pickuprings;	// Number of rings being picked up before added to the counter (prevents rings from being deleted forever over 20)
 	UINT8 ringdelay;	// (0 to 3) - 3 tic delay between every ring usage
 	UINT16 ringboost;	// Ring boost timer
