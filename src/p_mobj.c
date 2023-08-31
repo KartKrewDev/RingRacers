@@ -6728,6 +6728,9 @@ static void P_MobjSceneryThink(mobj_t *mobj)
 	case MT_ARKARROW:
 		Obj_ArkArrowThink(mobj);
 		break;
+	case MT_CHECKPOINT_END:
+		Obj_CheckpointThink(mobj);
+		break;
 	case MT_SCRIPT_THING:
 	{
 		if (mobj->thing_args[2] != 0)
@@ -10416,6 +10419,7 @@ static void P_DefaultMobjShadowScale(mobj_t *thing)
 		case MT_CDUFO:
 		case MT_BATTLEUFO:
 		case MT_SPRAYCAN:
+		case MT_CHECKPOINT_END:
 			thing->shadowscale = FRACUNIT;
 			break;
 		case MT_SMALLMACE:
@@ -11291,6 +11295,11 @@ void P_RemoveMobj(mobj_t *mobj)
 		case MT_BATTLEUFO_SPAWNER:
 		{
 			Obj_UnlinkBattleUFOSpawner(mobj);
+			break;
+		}
+		case MT_CHECKPOINT_END:
+		{
+			Obj_UnlinkCheckpoint(mobj);
 			break;
 		}
 		default:
@@ -13631,6 +13640,11 @@ static boolean P_SetupSpawnedMapThing(mapthing_t *mthing, mobj_t *mobj)
 	case MT_SNEAKERPANELSPAWNER:
 	{
 		Obj_SneakerPanelSpawnerSetup(mobj, mthing);
+		break;
+	}
+	case MT_CHECKPOINT_END:
+	{
+		Obj_LinkCheckpoint(mobj);
 		break;
 	}
 	default:

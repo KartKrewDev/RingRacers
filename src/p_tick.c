@@ -236,6 +236,7 @@ void P_InitThinkers(void)
 	}
 
 	Obj_ResetUFOSpawners();
+	Obj_ResetCheckpoints();
 }
 
 // Adds a new thinker at the end of the list.
