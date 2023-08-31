@@ -263,7 +263,7 @@ void P_RecalcPrecipInSector(sector_t *sector);
 void P_PrecipitationEffects(void);
 
 void P_RemoveMobj(mobj_t *th);
-boolean P_MobjWasRemoved(mobj_t *th);
+boolean P_MobjWasRemoved(const mobj_t *th);
 void P_RemoveSavegameMobj(mobj_t *th);
 boolean P_SetPlayerMobjState(mobj_t *mobj, statenum_t state);
 boolean P_SetMobjState(mobj_t *mobj, statenum_t state);
@@ -313,7 +313,7 @@ mobj_t *P_SPMAngle(mobj_t *source, mobjtype_t type, angle_t angle, UINT8 aimtype
 #define P_SpawnPlayerMissile(s,t,f) P_SPMAngle(s,t,s->angle,true,f)
 #define P_SpawnNameFinder(s,t) P_SPMAngle(s,t,s->angle,true,0)
 void P_ColorTeamMissile(mobj_t *missile, player_t *source);
-SINT8 P_MobjFlip(mobj_t *mobj);
+SINT8 P_MobjFlip(const mobj_t *mobj);
 fixed_t P_GetMobjGravity(mobj_t *mo);
 
 void P_CalcChasePostImg(player_t *player, camera_t *thiscam);

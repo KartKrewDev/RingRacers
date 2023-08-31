@@ -567,7 +567,7 @@ static boolean P_SetPrecipMobjState(precipmobj_t *mobj, statenum_t state)
 //
 // Special utility to return +1 or -1 depending on mobj's gravity
 //
-SINT8 P_MobjFlip(mobj_t *mobj)
+SINT8 P_MobjFlip(const mobj_t *mobj)
 {
 	if (mobj && mobj->eflags & MFE_VERTICALFLIP)
 		return -1;
@@ -11379,7 +11379,7 @@ void P_RemoveMobj(mobj_t *mobj)
 
 // This does not need to be added to Lua.
 // To test it in Lua, check mobj.valid
-boolean P_MobjWasRemoved(mobj_t *mobj)
+boolean P_MobjWasRemoved(const mobj_t *mobj)
 {
 	if (mobj && mobj->thinker.function.acp1 == (actionf_p1)P_MobjThinker)
 		return false;
