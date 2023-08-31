@@ -95,6 +95,21 @@ gp_rank_e K_PodiumGrade(void)
 }
 
 /*--------------------------------------------------
+	boolean K_PodiumHasEmerald(void)
+
+		See header file for description.
+--------------------------------------------------*/
+boolean K_PodiumHasEmerald(void)
+{
+	if (K_PodiumSequence() == false)
+	{
+		return false;
+	}
+
+	return podiumData.rank.specialWon;
+}
+
+/*--------------------------------------------------
 	UINT8 K_GetPodiumPosition(player_t *player)
 
 		See header file for description.
@@ -284,6 +299,7 @@ boolean K_StartCeremony(void)
 
 		G_SetGametype(GT_RACE);
 		G_DoLoadLevelEx(false, GS_CEREMONY);
+		wipegamestate = GS_CEREMONY; // I don't know what else to do here
 
 		r_splitscreen = 0; // Only one screen for the ceremony
 		R_ExecuteSetViewSize();

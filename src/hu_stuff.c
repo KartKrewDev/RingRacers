@@ -62,6 +62,7 @@
 #include "r_fps.h"
 #include "d_clisrv.h"
 #include "y_inter.h" // Y_PlayerStandingsDrawer
+#include "g_party.h"
 
 // coords are scaled
 #define HU_INPUTX 0
@@ -157,10 +158,15 @@ static tic_t cechotimer = 0;
 static tic_t cechoduration = 5*TICRATE;
 static INT32 cechoflags = 0;
 
-static char tcechotext[1024];			// buffer for the titlecard text
-static tic_t tcechotimer = 0;		// goes up by 1 each frame this is active
-static tic_t tcechoduration = 0;	// Set automatically
+struct tcecho_state
+{
+	char text[1024];	// buffer for the titlecard text
+	tic_t start;		// gametic that the message started
+	tic_t duration;		// Set automatically
+};
 
+#define NUM_TCECHO_STATES (1 + MAXSPLITSCREENPLAYERS)
+static struct tcecho_state g_tcecho[NUM_TCECHO_STATES];
 
 static tic_t resynch_ticker = 0;
 
@@ -281,6 +287,12 @@ void HU_Init(void)
 		REG;
 
 		PR   ("GTFN");
+		REG;
+
+		PR   ("4GTOL");
+		REG;
+
+		PR   ("4GTFN");
 		REG;
 
 		DIG  (1);
@@ -960,13 +972,6 @@ void HU_Ticker(void)
 
 	if (cechotimer)
 		cechotimer--;
-	
-	if (tcechotimer)
-	{
-		tcechotimer++;
-		if (tcechotimer > tcechoduration)
-			tcechotimer = 0;
-	}
 
 	if (gamestate != GS_LEVEL)
 	{
@@ -1829,12 +1834,31 @@ static void HU_DrawCEcho(void)
 	}
 }
 
-static void HU_DrawTitlecardCEcho(void)
+static tic_t HU_TitlecardCEchoElapsed(const struct tcecho_state *state)
 {
-	if (tcechotimer)
+	return max(gametic, state->start) - state->start;
+}
+
+static void HU_DrawTitlecardCEcho(size_t num)
+{
+	const struct tcecho_state *state = &g_tcecho[num];
+
+	tic_t elapsed = HU_TitlecardCEchoElapsed(state);
+	UINT8 viewnum = max(1, num) - 1;
+	boolean p4 = (num != 0 && r_splitscreen);
+
+	// If the splitscreens were somehow decreased in the
+	// middle of drawing this, don't draw it.
+	if (viewnum > r_splitscreen)
+	{
+		return;
+	}
+
+	if (elapsed < state->duration)
 	{
 		INT32 i = 0;
-		INT32 y = (BASEVIDHEIGHT/2)-16;
+		INT32 x = BASEVIDWIDTH/2;
+		INT32 y = BASEVIDHEIGHT/2;
 		INT32 pnumlines = 0;
 		INT32 timeroffset = 0;
 
@@ -1842,11 +1866,28 @@ static void HU_DrawTitlecardCEcho(void)
 		char *echoptr;
 		char temp[1024];
 
-		for (i = 0; tcechotext[i] != '\0'; ++i)
-			if (tcechotext[i] == '\\')
+		for (i = 0; state->text[i] != '\0'; ++i)
+			if (state->text[i] == '\\')
 				pnumlines++;
 
-		y -= (pnumlines-1)*16;
+		if (p4)
+		{
+			if (r_splitscreen == 1) // 2P
+			{
+				y -= (1 - (viewnum * 2)) * (y / 2);
+			}
+			else // 3P / 4P
+			{
+				x -= (1 - ((viewnum % 2) * 2)) * (x / 2);
+				y -= (1 - ((viewnum / 2) * 2)) * (y / 2);
+			}
+
+			y -= 11 + ((pnumlines-1) * 9);
+		}
+		else
+		{
+			y -= 18 + ((pnumlines-1) * 16);
+		}
 
 		// Prevent crashing because I'm sick of this
 		if (y < 0)
@@ -1856,13 +1897,13 @@ static void HU_DrawTitlecardCEcho(void)
 			return;
 		}
 
-		strcpy(temp, tcechotext);
+		strcpy(temp, state->text);
 		echoptr = &temp[0];
 
 		while (*echoptr != '\0')
 		{
-			INT32 w;
-			INT32 timer = (INT32)(tcechotimer - timeroffset);
+			INT32 ofs;
+			INT32 timer = (INT32)(elapsed - timeroffset);
 			
 			if (timer <= 0)
 				return;	// we don't care.
@@ -1874,10 +1915,10 @@ static void HU_DrawTitlecardCEcho(void)
 
 			*line = '\0';
 			
-			w = V_TitleCardStringWidth(echoptr);
-			V_DrawTitleCardString(BASEVIDWIDTH/2 -w/2, y, echoptr, 0, false, timer, TICRATE*4);
+			ofs = V_CenteredTitleCardStringOffset(echoptr, p4);
+			V_DrawTitleCardString(x - ofs, y, echoptr, 0, false, timer, TICRATE*4, p4);
 
-			y += 32;
+			y += p4 ? 18 : 32;
 			
 			// offset the timer for the next line.
 			timeroffset += strlen(echoptr);
@@ -2037,9 +2078,23 @@ drawontop:
 
 	if (cechotimer)
 		HU_DrawCEcho();
-	
-	if (tcechotimer)
-		HU_DrawTitlecardCEcho();
+
+	const struct tcecho_state *firststate = &g_tcecho[0];
+
+	// Server messages overwrite player-specific messages
+	if (HU_TitlecardCEchoElapsed(firststate) < firststate->duration)
+	{
+		HU_DrawTitlecardCEcho(0);
+	}
+	else
+	{
+		size_t i;
+
+		for (i = 1; i < NUM_TCECHO_STATES; ++i)
+		{
+			HU_DrawTitlecardCEcho(i);
+		}
+	}
 }
 
 //======================================================================
@@ -2576,17 +2631,41 @@ void HU_DoCEcho(const char *msg)
 // No need to bother clearing the buffer or anything.
 void HU_ClearTitlecardCEcho(void)
 {
-	tcechotimer = 0;
+	size_t i;
+
+	for (i = 0; i < NUM_TCECHO_STATES; ++i)
+	{
+		g_tcecho[i].duration = 0;
+	}
 }
 
 // Similar but for titlecard CEcho and also way less convoluted because I have no clue whatever the fuck they were trying above.
-void HU_DoTitlecardCEcho(const char *msg)
+void HU_DoTitlecardCEcho(player_t *player, const char *msg, boolean interrupt)
 {
+	if (player && !P_IsDisplayPlayer(player))
+	{
+		return;
+	}
+
+	struct tcecho_state *state = &g_tcecho[0];
+
+	if (player)
+	{
+		state = &g_tcecho[1 + G_PartyPosition(player - players)];
+	}
+
+	// If this message should not interrupt an existing
+	// message. Check if another message is already running.
+	if (!interrupt && HU_TitlecardCEchoElapsed(state) < state->duration)
+	{
+		return;
+	}
+
 	I_OutputMsg("%s\n", msg);	// print to log
-	
-	strncpy(tcechotext, msg, sizeof(tcechotext));
-	strncat(tcechotext, "\\", sizeof(tcechotext) - strlen(tcechotext) - 1);
-	tcechotext[sizeof(tcechotext) - 1] = '\0';	
-	tcechotimer = 1;
-	tcechoduration = TICRATE*6 + strlen(tcechotext);
+
+	strncpy(state->text, msg, sizeof(state->text));
+	strncat(state->text, "\\", sizeof(state->text) - strlen(state->text) - 1);
+	state->text[sizeof(state->text) - 1] = '\0';
+	state->start = gametic;
+	state->duration = TICRATE*6 + strlen(state->text);
 }

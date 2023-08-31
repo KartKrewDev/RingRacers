@@ -2075,7 +2075,12 @@ static boolean P_KillPlayer(player_t *player, mobj_t *inflictor, mobj_t *source,
 			return false;
 		}
 
-		if (specialstageinfo.valid == true || (modeattacking & ATTACKING_SPB))
+		if (specialstageinfo.valid == true)
+		{
+			HU_DoTitlecardCEcho(player, "FALL OUT!", false);
+			P_DoPlayerExit(player, PF_NOCONTEST);
+		}
+		else if (modeattacking & ATTACKING_SPB)
 		{
 			P_DoPlayerExit(player, PF_NOCONTEST);
 		}
@@ -2581,7 +2586,6 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 			player->driftboost = player->strongdriftboost = 0;
 			player->gateBoost = 0;
 			player->fastfall = 0;
-			player->fastfallBase = 0;
 			player->ringboost = 0;
 			player->glanceDir = 0;
 			player->pflags &= ~PF_GAINAX;

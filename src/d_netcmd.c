@@ -187,6 +187,8 @@ static void Command_Automate_Set(void);
 
 static void Command_Eval(void);
 
+static void Command_WriteTextmap(void);
+
 // =========================================================================
 //                           CLIENT VARIABLES
 // =========================================================================
@@ -425,6 +427,8 @@ void D_RegisterServerCommands(void)
 	COM_AddCommand("automate_set", Command_Automate_Set);
 
 	COM_AddCommand("eval", Command_Eval);
+
+	COM_AddCommand("writetextmap", Command_WriteTextmap);
 
 	// for master server connection
 	AddMServCommands();
@@ -6119,6 +6123,75 @@ static void Command_Eval(void)
 
 		CONS_Printf("%f (%d)\n", FixedToFloat(n), n);
 	}
+}
+
+static void Command_WriteTextmap(void)
+{
+	if (COM_Argc() < 2)
+	{
+		CONS_Printf(
+"writetextmap <map> [map2...]: Update a map to the latest UDMF version.\n"
+"- Use the full map name, e.g. RR_TestRun.\n"
+"- You can give this command UP TO %d map names and it will convert all of them.\n"
+"- This command generates TEXTMAP files.\n"
+"- The location of the generated TEXTMAPs will appear in the console.\n",
+ROUNDQUEUE_MAX
+		);
+		return;
+	}
+
+	if (Playing())
+	{
+		CONS_Alert(CONS_ERROR, "This command cannot be used in-game. Return to the titlescreen first!\n");
+		return;
+	}
+
+	if (COM_Argc() - 1 > ROUNDQUEUE_MAX)
+	{
+		CONS_Alert(CONS_ERROR, "Cannot convert more than %d maps. Try again.\n", ROUNDQUEUE_MAX);
+		return;
+	}
+
+	// Start up a "minor" grand prix session
+	memset(&grandprixinfo, 0, sizeof(struct grandprixinfo));
+	memset(&roundqueue, 0, sizeof(struct roundqueue));
+
+	grandprixinfo.gamespeed = KARTSPEED_NORMAL;
+	grandprixinfo.masterbots = false;
+
+	grandprixinfo.gp = true;
+	grandprixinfo.cup = NULL;
+	grandprixinfo.wonround = false;
+
+	grandprixinfo.initalize = true;
+
+	roundqueue.position = 1;
+	roundqueue.roundnum = 1;
+	roundqueue.writetextmap = true;
+
+	size_t i;
+
+	for (i = 1; i < COM_Argc(); ++i)
+	{
+		INT32 map = G_MapNumber(COM_Argv(i));
+
+		if (map < 0 || map >= nummapheaders)
+		{
+			CONS_Alert(CONS_WARNING, "%s: Map doesn't exist. Not doing anything.\n", COM_Argv(i));
+
+			// clear round queue (to be safe)
+			memset(&roundqueue, 0, sizeof(struct roundqueue));
+			return;
+		}
+
+		INT32 gt = G_GuessGametypeByTOL(mapheaderinfo[map]->typeoflevel);
+
+		G_MapIntoRoundQueue(map, gt != -1 ? gt : GT_RACE, false, false);
+	}
+
+	D_MapChange(1 + roundqueue.entries[0].mapnum, roundqueue.entries[0].gametype, false, true, 1, false, false);
+
+	CON_ToggleOff();
 }
 
 /** Makes a change to ::cv_forceskin take effect immediately.

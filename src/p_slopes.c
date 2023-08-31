@@ -143,6 +143,8 @@ void P_ReconfigureViaVertexes (pslope_t *slope, const vector3_t v1, const vector
 {
 	vector3_t vec1, vec2;
 
+	memset(slope->constants, 0, sizeof(slope->constants));
+
 	// Set origin.
 	FV3_Copy(&slope->o, &v1);
 
@@ -203,6 +205,11 @@ static void ReconfigureViaConstants (pslope_t *slope, const fixed_t a, const fix
 	fixed_t m;
 	fixed_t o = 0;
 	vector3_t *normal = &slope->normal;
+
+	slope->constants[0] = a;
+	slope->constants[1] = b;
+	slope->constants[2] = c;
+	slope->constants[3] = d;
 
 	if (c)
 		o = abs(c) <= FRACUNIT ? -FixedMul(d, FixedDiv(FRACUNIT, c)) : -FixedDiv(d, c);

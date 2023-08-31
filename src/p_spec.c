@@ -1987,7 +1987,15 @@ static void K_HandleLapIncrement(player_t *player)
 
 			player->starpostnum = 0;
 
-			if (P_IsDisplayPlayer(player))
+			if (gametyperules & GTR_SPECIALSTART)
+			{
+				if (player->laps > numlaps)
+				{
+					// Warp out
+					S_StartSound(NULL, sfx_s3kb3);
+				}
+			}
+			else if (P_IsDisplayPlayer(player))
 			{
 				if (numlaps > 1 && player->laps == numlaps) // final lap
 					S_StartSound(NULL, sfx_s3k68);
@@ -2053,6 +2061,8 @@ static void K_HandleLapIncrement(player_t *player)
 					if (!(specialstageinfo.ufo == NULL || P_MobjWasRemoved(specialstageinfo.ufo)))
 					{
 						applyflags |= PF_NOCONTEST;
+
+						HU_DoTitlecardCEcho(player, "EMPTY\\HANDED?", false);
 					}
 				}
 

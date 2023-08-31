@@ -70,6 +70,20 @@ gp_rank_e K_PodiumGrade(void);
 
 
 /*--------------------------------------------------
+	boolean K_PodiumHasEmerald(void)
+
+		Returns whether the Emerald or Prize was collected.
+
+	Input Arguments:-
+		N/A
+
+	Return:-
+		true if the Emerald/Prize was collected during the GP, otherwise false.
+--------------------------------------------------*/
+boolean K_PodiumHasEmerald(void);
+
+
+/*--------------------------------------------------
 	UINT8 K_GetPodiumPosition(player_t *player);
 
 		Calculates what the player's position would

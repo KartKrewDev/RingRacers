@@ -1333,7 +1333,7 @@ void P_SetPitchRollFromSlope(mobj_t *mo, pslope_t *slope)
 	}
 	else
 	{
-		mo->pitch = mo->roll = 0;
+		P_ResetPitchRoll(mo);
 	}
 }
 
@@ -1346,6 +1346,15 @@ void P_SetPitchRoll(mobj_t *mo, angle_t pitch, angle_t yaw)
 	yaw >>= ANGLETOFINESHIFT;
 	mo->roll  = FixedMul(pitch, FINESINE   (yaw));
 	mo->pitch = FixedMul(pitch, FINECOSINE (yaw));
+}
+
+//
+// P_ResetPitchRoll
+//
+void P_ResetPitchRoll(mobj_t *mo)
+{
+	mo->pitch = 0;
+	mo->roll = 0;
 }
 
 #define STOPSPEED (FRACUNIT)
@@ -7191,7 +7200,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 	}
 	case MT_FLOATINGITEM:
 	{
-		mobj->pitch = mobj->roll = 0;
+		P_ResetPitchRoll(mobj);
 		if (mobj->flags & MF_NOCLIPTHING)
 		{
 			if (P_CheckDeathPitCollide(mobj))
@@ -8138,7 +8147,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 		mobj->extravalue1 += 1;
 
 		mobj->angle += ANG1*mobj->extravalue1;
-		mobj->scale = mobj->target->scale;
+		P_SetScale(mobj, mobj->target->scale);
 
 		destx = mobj->target->x;
 		desty = mobj->target->y;
@@ -9835,6 +9844,11 @@ static boolean P_FuseThink(mobj_t *mobj)
 		P_RemoveMobj(mobj);
 		return false;
 	}
+	case MT_SNEAKERPANELSPAWNER:
+	{
+		Obj_SneakerPanelSpawnerFuse(mobj);
+		break;
+	}
 	case MT_PLAYER:
 		break; // don't remove
 	default:
@@ -10981,6 +10995,9 @@ mobj_t *P_SpawnMobj(fixed_t x, fixed_t y, fixed_t z, mobjtype_t type)
 			break;
 		case MT_SNEAKERPANEL:
 			Obj_SneakerPanelSpawn(mobj);
+			break;
+		case MT_SNEAKERPANELSPAWNER:
+			Obj_SneakerPanelSpawnerSpawn(mobj);
 			break;
 		default:
 			break;
@@ -13585,6 +13602,11 @@ static boolean P_SetupSpawnedMapThing(mapthing_t *mthing, mobj_t *mobj)
 	case MT_SNEAKERPANEL:
 	{
 		Obj_SneakerPanelSetup(mobj, mthing);
+		break;
+	}
+	case MT_SNEAKERPANELSPAWNER:
+	{
+		Obj_SneakerPanelSpawnerSetup(mobj, mthing);
 		break;
 	}
 	default:

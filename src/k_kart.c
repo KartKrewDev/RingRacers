@@ -228,6 +228,9 @@ void K_TimerInit(void)
 				numPlayers++;
 			}
 
+			if (cv_kartdebugstart.value > 0)
+				numPlayers = cv_kartdebugstart.value;
+
 			if (numPlayers < 2)
 			{
 				domodeattack = true;
@@ -256,7 +259,7 @@ void K_TimerInit(void)
 		}
 	}
 
-	if (cv_kartdebugstart.value || M_NotFreePlay() == false)
+	if (cv_kartdebugstart.value == -1 ? M_NotFreePlay() == false : cv_kartdebugstart.value == 0)
 	{
 		starttime = 0;
 		introtime = 0;
@@ -3918,7 +3921,7 @@ void K_StumblePlayer(player_t *player)
 	P_SetPlayerMobjState(player->mo, S_KART_SPINOUT);
 
 	// Reset slope.
-	player->mo->pitch = player->mo->roll = 0;
+	P_ResetPitchRoll(player->mo);
 }
 
 boolean K_CheckStumble(player_t *player, angle_t oldPitch, angle_t oldRoll, boolean fromAir)
@@ -3933,6 +3936,14 @@ boolean K_CheckStumble(player_t *player, angle_t oldPitch, angle_t oldRoll, bool
 	if (player->tumbleBounces)
 	{
 		// Already tumbling.
+		return false;
+	}
+
+	if (fromAir && player->airtime < STUMBLE_AIRTIME
+		&& player->airtime > 1) // ACHTUNG HACK, sorry. Ground-to-ground transitions sometimes have 1-tic airtime because collision blows
+	{
+		// Short airtime with no reaction window, probably a track traversal setpiece.
+		// Don't punish for these.
 		return false;
 	}
 
@@ -4099,6 +4110,9 @@ void K_UpdateStumbleIndicator(player_t *player)
 		mobj->renderflags &= ~RF_HORIZONTALFLIP;
 	}
 
+	if (air && player->airtime < STUMBLE_AIRTIME)
+		delta = 0;
+
 	steepRange = ANGLE_90 - steepVal;
 	delta = max(0, abs(delta) - ((signed)steepVal));
 	trans = ((FixedDiv(AngleFixed(delta), AngleFixed(steepRange)) * (NUMTRANSMAPS - 2)) + (FRACUNIT/2)) / FRACUNIT;
@@ -4249,7 +4263,7 @@ static void K_HandleTumbleBounce(player_t *player)
 			player->tumbleHeight = 10;
 			player->pflags |= PF_TUMBLELASTBOUNCE;
 			player->mo->rollangle = 0;	// p_user.c will stop rotating the player automatically
-			player->mo->pitch = player->mo->roll = 0; // Prevent Kodachrome Void infinite
+			P_ResetPitchRoll(player->mo); // Prevent Kodachrome Void infinite
 		}
 	}
 
@@ -6142,6 +6156,7 @@ void K_DoPogoSpring(mobj_t *mo, fixed_t vertispeed, UINT8 sound)
 		mo->player->trickboostpower = max(FixedDiv(mo->player->speed, K_GetKartSpeed(mo->player, false, false)) - FRACUNIT, 0)*125/100;
 		mo->player->trickboostpower = FixedDiv(mo->player->trickboostpower, K_GrowShrinkSpeedMul(mo->player));
 		//CONS_Printf("Got boost: %d%\n", mo->player->trickboostpower*100 / FRACUNIT);
+		mo->player->fastfall = 0;
 	}
 
 	mo->momz = FixedMul(thrust, mapobjectscale);
@@ -6151,8 +6166,7 @@ void K_DoPogoSpring(mobj_t *mo, fixed_t vertispeed, UINT8 sound)
 		mo->momz = FixedDiv(mo->momz, FixedSqrt(3*FRACUNIT));
 	}
 
-	mo->pitch = 0;
-	mo->roll = 0;
+	P_ResetPitchRoll(mo);
 
 	if (sound)
 	{
@@ -8252,7 +8266,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 			player->incontrol = 0;
 		player->incontrol++;
 	}
-
+	
 	player->incontrol = min(player->incontrol, 5*TICRATE);
 	player->incontrol = max(player->incontrol, -5*TICRATE);
 
@@ -9933,7 +9947,7 @@ void K_KartUpdatePosition(player_t *player)
 			realplayers > 1)
 	{
 		/* grace period so you don't fall off INSTANTLY */
-		if (position == 1 && player->topinfirst < 2*TICRATE)
+		if (K_GetItemRouletteDistance(player, 8) < 2000 && player->topinfirst < 2*TICRATE) // "Why 8?" Literally no reason, but since we intend for constant-ish distance we choose a fake fixed playercount.
 		{
 			player->topinfirst++;
 		}
@@ -10029,9 +10043,10 @@ void K_StripOther(player_t *player)
 static INT32 K_FlameShieldMax(player_t *player)
 {
 	UINT32 disttofinish = 0;
-	UINT32 distv = 2048;
+	UINT32 distv = 1024; // Pre no-scams: 2048
 	distv = distv * 16 / FLAMESHIELD_MAX; // Old distv was based on a 16-segment bar
 	UINT8 numplayers = 0;
+	UINT32 scamradius = 2000; // How close is close enough that we shouldn't be allowed to scam 1st?
 	UINT8 i;
 
 	if (gametyperules & GTR_CIRCUIT)
@@ -10045,18 +10060,21 @@ static INT32 K_FlameShieldMax(player_t *player)
 		}
 	}
 
+	disttofinish = player->distancetofinish - disttofinish;
+	distv = FixedMul(distv, mapobjectscale);
+
 	if (numplayers <= 1)
 	{
 		return FLAMESHIELD_MAX; // max when alone, for testing
 		// and when in battle, for chaos
 	}
-	else if (player->position == 1)
+	else if (player->position == 1 || disttofinish < scamradius)
 	{
 		return 0; // minimum for first
 	}
 
-	disttofinish = player->distancetofinish - disttofinish;
-	distv = FixedMul(distv, mapobjectscale);
+	disttofinish = disttofinish - scamradius;
+
 	return min(FLAMESHIELD_MAX, (FLAMESHIELD_MAX / 16) + (disttofinish / distv)); // Ditto for this minimum, old value was 1/16
 }
 
@@ -10433,15 +10451,17 @@ static void K_KartSpindash(player_t *player)
 	{
 		if (player->pflags & PF_NOFASTFALL)
 			return;
-		// Update fastfall.
-		player->fastfall = player->mo->momz;
-		player->spindash = 0;
 
-		if (player->fastfallBase == 0)
+		if (player->fastfall == 0)
 		{
 			// Factors 3D momentum.
 			player->fastfallBase = FixedHypot(player->speed, player->mo->momz);
 		}
+
+		// Update fastfall.
+		player->fastfall = player->mo->momz;
+		player->spindash = 0;
+		P_ResetPitchRoll(player->mo);
 
 		return;
 	}
@@ -10541,8 +10561,11 @@ boolean K_FastFallBounce(player_t *player)
 		else
 		{
 			// Lose speed on bad bounce.
-			player->mo->momx /= 2;
-			player->mo->momy /= 2;
+			if (player->curshield != KSHIELD_BUBBLE)
+			{
+				player->mo->momx /= 2;
+				player->mo->momy /= 2;
+			}
 
 			if (bounce < minBounce)
 			{
@@ -10550,14 +10573,23 @@ boolean K_FastFallBounce(player_t *player)
 			}
 		}
 
+		if (player->curshield == KSHIELD_BUBBLE)
+		{
+			S_StartSound(player->mo, sfx_s3k44);
+			P_InstaThrust(player->mo, player->mo->angle, max(player->speed, abs(player->fastfall)));
+			bounce += 3 * player->mo->scale;
+		}
+		else
+		{
+			S_StartSound(player->mo, sfx_ffbonc);
+		}
+
 		if (player->mo->eflags & MFE_UNDERWATER)
 			bounce = (117 * bounce) / 200;
 
-		S_StartSound(player->mo, sfx_ffbonc);
 		player->mo->momz = bounce * P_MobjFlip(player->mo);
 
 		player->fastfall = 0;
-		player->fastfallBase = 0;
 		return true;
 	}
 
@@ -11421,6 +11453,9 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 									if (player->bubbleblowup > bubbletime*2)
 									{
 										K_ThrowKartItem(player, (player->throwdir > 0), MT_BUBBLESHIELDTRAP, -1, 0, 0);
+										P_InstaThrust(player->mo, player->mo->angle, player->speed + (80 * mapobjectscale));
+										player->sliptideZipBoost += TICRATE; // Just for keeping speed briefly vs. tripwire etc.
+										// If this doesn't turn out to be reliable, I'll change it to directly set leniency or something.
 										K_PlayAttackTaunt(player->mo);
 										player->bubbleblowup = 0;
 										player->bubblecool = 0;
