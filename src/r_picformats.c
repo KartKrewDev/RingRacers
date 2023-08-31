@@ -1466,7 +1466,7 @@ static void copy_to_skin (struct ParseSpriteInfoState *parser, INT32 skinnum)
 	}
 }
 
-static void R_ParseSpriteInfoFrame(struct ParseSpriteInfoState *parser, boolean all)
+static boolean R_ParseSpriteInfoFrame(struct ParseSpriteInfoState *parser, boolean all)
 {
 	char *sprinfoToken;
 	size_t sprinfoTokenLength;
@@ -1487,12 +1487,15 @@ static void R_ParseSpriteInfoFrame(struct ParseSpriteInfoState *parser, boolean 
 		sprinfoToken = M_GetToken(NULL);
 		if (sprinfoToken == NULL)
 		{
-			I_Error("Error parsing SPRTINFO lump: Unexpected end of file where sprite frame should be");
+			CONS_Alert(CONS_WARNING, "Error parsing SPRTINFO lump: Unexpected end of file where sprite frame should be\n");
+			return false;
 		}
 		sprinfoTokenLength = strlen(sprinfoToken);
 		if (sprinfoTokenLength != 1)
 		{
-			I_Error("Error parsing SPRTINFO lump: Invalid frame \"%s\"",sprinfoToken);
+			CONS_Alert(CONS_WARNING, "Error parsing SPRTINFO lump: Invalid frame \"%s\"\n",sprinfoToken);
+			Z_Free(sprinfoToken);
+			return false;
 		}
 		else
 			frameChar = sprinfoToken;
@@ -1504,7 +1507,10 @@ static void R_ParseSpriteInfoFrame(struct ParseSpriteInfoState *parser, boolean 
 	// Left Curly Brace
 	sprinfoToken = M_GetToken(NULL);
 	if (sprinfoToken == NULL)
-		I_Error("Error parsing SPRTINFO lump: Missing sprite info");
+	{
+		CONS_Alert(CONS_WARNING, "Error parsing SPRTINFO lump: Missing sprite info\n");
+		return false;
+	}
 	else
 	{
 		if (strcmp(sprinfoToken,"{")==0)
@@ -1513,7 +1519,8 @@ static void R_ParseSpriteInfoFrame(struct ParseSpriteInfoState *parser, boolean 
 			sprinfoToken = M_GetToken(NULL);
 			if (sprinfoToken == NULL)
 			{
-				I_Error("Error parsing SPRTINFO lump: Unexpected end of file where sprite info should be");
+				CONS_Alert(CONS_WARNING, "Error parsing SPRTINFO lump: Unexpected end of file where sprite info should be\n");
+				return false;
 			}
 			while (strcmp(sprinfoToken,"}")!=0)
 			{
@@ -1550,7 +1557,8 @@ static void R_ParseSpriteInfoFrame(struct ParseSpriteInfoState *parser, boolean 
 				sprinfoToken = M_GetToken(NULL);
 				if (sprinfoToken == NULL)
 				{
-					I_Error("Error parsing SPRTINFO lump: Unexpected end of file where sprite info or right curly brace should be");
+					CONS_Alert(CONS_WARNING, "Error parsing SPRTINFO lump: Unexpected end of file where sprite info or right curly brace should be\n");
+					return false;
 				}
 			}
 		}
@@ -1574,7 +1582,11 @@ static void R_ParseSpriteInfoFrame(struct ParseSpriteInfoState *parser, boolean 
 		INT32 i;
 
 		if (!parser->foundskins)
-			I_Error("Error parsing SPRTINFO lump: No skins specified in this sprite2 definition");
+		{
+			CONS_Alert(CONS_WARNING, "Error parsing SPRTINFO lump: No skins specified in this sprite2 definition\n");
+			Z_Free(bright);
+			return false;
+		}
 
 		if (parser->foundskins < 0)
 		{
@@ -1607,6 +1619,8 @@ static void R_ParseSpriteInfoFrame(struct ParseSpriteInfoState *parser, boolean 
 			M_Memcpy(&spriteinfo[parser->sprnum], parser->info, sizeof(spriteinfo_t));
 		}
 	}
+
+	return true;
 }
 
 //
@@ -1614,7 +1628,7 @@ static void R_ParseSpriteInfoFrame(struct ParseSpriteInfoState *parser, boolean 
 //
 // Parse a SPRTINFO lump.
 //
-static void R_ParseSpriteInfo(boolean spr2)
+static boolean R_ParseSpriteInfo(boolean spr2)
 {
 	char *sprinfoToken;
 	size_t sprinfoTokenLength;
@@ -1634,7 +1648,8 @@ static void R_ParseSpriteInfo(boolean spr2)
 	sprinfoToken = M_GetToken(NULL);
 	if (sprinfoToken == NULL)
 	{
-		I_Error("Error parsing SPRTINFO lump: Unexpected end of file where sprite name should be");
+		CONS_Alert(CONS_WARNING, "Error parsing SPRTINFO lump: Unexpected end of file where sprite name should be\n");
+		return false;
 	}
 
 	if (!strcmp(sprinfoToken, "*")) // All sprites
@@ -1646,7 +1661,9 @@ static void R_ParseSpriteInfo(boolean spr2)
 		sprinfoTokenLength = strlen(sprinfoToken);
 		if (sprinfoTokenLength != 4)
 		{
-			I_Error("Error parsing SPRTINFO lump: Sprite name \"%s\" isn't 4 characters long",sprinfoToken);
+			CONS_Alert(CONS_WARNING, "Error parsing SPRTINFO lump: Sprite name \"%s\" isn't 4 characters long\n",sprinfoToken);
+			Z_Free(sprinfoToken);
+			return false;
 		}
 		else
 		{
@@ -1666,7 +1683,10 @@ static void R_ParseSpriteInfo(boolean spr2)
 		for (i = 0; i <= NUMSPRITES; i++)
 		{
 			if (i == NUMSPRITES)
-				I_Error("Error parsing SPRTINFO lump: Unknown sprite name \"%s\"", newSpriteName);
+			{
+				CONS_Alert(CONS_WARNING, "Error parsing SPRTINFO lump: Unknown sprite name \"%s\"\n", newSpriteName);
+				return false;
+			}
 			if (!memcmp(newSpriteName,sprnames[i],4))
 			{
 				parser.sprnum = i;
@@ -1679,7 +1699,10 @@ static void R_ParseSpriteInfo(boolean spr2)
 		for (i = 0; i <= NUMPLAYERSPRITES; i++)
 		{
 			if (i == NUMPLAYERSPRITES)
-				I_Error("Error parsing SPRTINFO lump: Unknown sprite2 name \"%s\"", newSpriteName);
+			{
+				CONS_Alert(CONS_WARNING, "Error parsing SPRTINFO lump: Unknown sprite2 name \"%s\"\n", newSpriteName);
+				return false;
+			}
 			if (!memcmp(newSpriteName,spr2names[i],4))
 			{
 				parser.spr2num = i;
@@ -1695,22 +1718,33 @@ static void R_ParseSpriteInfo(boolean spr2)
 	sprinfoToken = M_GetToken(NULL);
 	if (sprinfoToken == NULL)
 	{
-		I_Error("Error parsing SPRTINFO lump: Unexpected end of file where open curly brace for sprite \"%s\" should be",newSpriteName);
+		CONS_Alert(CONS_WARNING, "Error parsing SPRTINFO lump: Unexpected end of file where open curly brace for sprite \"%s\" should be\n",newSpriteName);
+		Z_Free(parser.info);
+		return false;
 	}
+
+	boolean error = false;
+
 	if (strcmp(sprinfoToken,"{")==0)
 	{
 		Z_Free(sprinfoToken);
 		sprinfoToken = M_GetToken(NULL);
 		if (sprinfoToken == NULL)
 		{
-			I_Error("Error parsing SPRTINFO lump: Unexpected end of file where definition for sprite \"%s\" should be",newSpriteName);
+			CONS_Alert(CONS_WARNING, "Error parsing SPRTINFO lump: Unexpected end of file where definition for sprite \"%s\" should be\n",newSpriteName);
+			Z_Free(parser.info);
+			return false;
 		}
 		while (strcmp(sprinfoToken,"}")!=0)
 		{
 			if (stricmp(sprinfoToken, "SKIN")==0)
 			{
 				if (!spr2)
-					I_Error("Error parsing SPRTINFO lump: \"SKIN\" token found outside of a sprite2 definition");
+				{
+					CONS_Alert(CONS_WARNING, "Error parsing SPRTINFO lump: \"SKIN\" token found outside of a sprite2 definition\n");
+					error = true;
+					break;
+				}
 
 				Z_Free(sprinfoToken);
 				R_ParseSpriteInfoSkin(&parser);
@@ -1718,31 +1752,46 @@ static void R_ParseSpriteInfo(boolean spr2)
 			else if (stricmp(sprinfoToken, "FRAME")==0)
 			{
 				Z_Free(sprinfoToken);
-				R_ParseSpriteInfoFrame(&parser, PARSER_FRAME);
+				if (!R_ParseSpriteInfoFrame(&parser, PARSER_FRAME))
+				{
+					error = true;
+					break;
+				}
 			}
 			else if (stricmp(sprinfoToken, "DEFAULT")==0)
 			{
 				Z_Free(sprinfoToken);
-				R_ParseSpriteInfoFrame(&parser, PARSER_DEFAULT);
+				if (!R_ParseSpriteInfoFrame(&parser, PARSER_DEFAULT))
+				{
+					error = true;
+					break;
+				}
 			}
 			else
 			{
-				I_Error("Error parsing SPRTINFO lump: Unknown keyword \"%s\" in sprite %s",sprinfoToken,newSpriteName);
+				CONS_Alert(CONS_WARNING, "Error parsing SPRTINFO lump: Unknown keyword \"%s\" in sprite %s\n",sprinfoToken,newSpriteName);
+				error = true;
+				break;
 			}
 
 			sprinfoToken = M_GetToken(NULL);
 			if (sprinfoToken == NULL)
 			{
-				I_Error("Error parsing SPRTINFO lump: Unexpected end of file where sprite info or right curly brace for sprite \"%s\" should be",newSpriteName);
+				CONS_Alert(CONS_WARNING, "Error parsing SPRTINFO lump: Unexpected end of file where sprite info or right curly brace for sprite \"%s\" should be\n",newSpriteName);
+				error = true;
+				break;
 			}
 		}
 	}
 	else
 	{
-		I_Error("Error parsing SPRTINFO lump: Expected \"{\" for sprite \"%s\", got \"%s\"",newSpriteName,sprinfoToken);
+		CONS_Alert(CONS_WARNING, "Error parsing SPRTINFO lump: Expected \"{\" for sprite \"%s\", got \"%s\"\n",newSpriteName,sprinfoToken);
+		error = true;
 	}
 	Z_Free(sprinfoToken);
 	Z_Free(parser.info);
+
+	return !error;
 }
 
 //
@@ -1777,13 +1826,20 @@ void R_ParseSPRTINFOLump(UINT16 wadNum, UINT16 lumpNum)
 	sprinfoToken = M_GetToken(sprinfoText);
 	while (sprinfoToken != NULL)
 	{
+		boolean error = true;
+
 		if (!stricmp(sprinfoToken, "SPRITE"))
-			R_ParseSpriteInfo(false);
+			error = !R_ParseSpriteInfo(false);
 		else if (!stricmp(sprinfoToken, "SPRITE2"))
-			R_ParseSpriteInfo(true);
+			error = !R_ParseSpriteInfo(true);
 		else
-			I_Error("Error parsing SPRTINFO lump: Unknown keyword \"%s\"", sprinfoToken);
+			CONS_Alert(CONS_WARNING, "Error parsing SPRTINFO lump: Unknown keyword \"%s\"\n", sprinfoToken);
+
 		Z_Free(sprinfoToken);
+
+		if (error)
+			break;
+
 		sprinfoToken = M_GetToken(NULL);
 	}
 	Z_Free((void *)sprinfoText);
