@@ -7835,6 +7835,9 @@ static void P_InitPlayers(void)
 	UINT8 i;
 	INT32 skin = -1;
 
+	// Make sure objectplace is OFF when you first start the level!
+	OP_ResetObjectplace();
+
 	// Are we forcing a character?
 	if (gametype == GT_TUTORIAL)
 	{
@@ -7871,14 +7874,7 @@ static void P_InitPlayers(void)
 			// followercolor can be left alone for hopefully obvious reasons
 		}
 
-		if (!(gametyperules & GTR_CIRCUIT) && K_PodiumSequence() == false)
-		{
-			G_DoReborn(i);
-		}
-		else // gametype is race
-		{
-			G_SpawnPlayer(i);
-		}
+		G_SpawnPlayer(i);
 
 		players[i].xtralife = 0; // extra lives do not ever carry over from the previous round
 	}

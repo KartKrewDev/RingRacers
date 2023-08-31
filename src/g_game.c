@@ -2831,9 +2831,6 @@ void G_DoReborn(INT32 playernum)
 {
 	player_t *player = &players[playernum];
 
-	// Make sure objectplace is OFF when you first start the level!
-	OP_ResetObjectplace();
-
 	{
 		// respawn at the start
 		mobj_t *oldmo = NULL;
