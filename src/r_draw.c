@@ -200,7 +200,13 @@ CV_PossibleValue_t Color_cons_t[MAXSKINCOLORS+1];
 
 #define TRANSTAB_AMTMUL10 (255.0f / 10.0f)
 
-static void R_GenerateBlendTables(void);
+struct GenerateBlendTables_State
+{
+	RGBA_t *masterPalette;
+	RGBA_t *gammaCorrectedPalette;
+};
+
+static void R_GenerateBlendTables_Core(struct GenerateBlendTables_State *state);
 static void R_GenerateTranslucencyTable(UINT8 *table, RGBA_t* sourcepal, int style, UINT8 blendamt);
 
 static void R_AllocateBlendTables(void)
@@ -221,8 +227,13 @@ static void R_AllocateBlendTables(void)
 #ifdef HAVE_THREADS
 static void R_GenerateBlendTables_Thread(void *userdata)
 {
-	(void)userdata;
-	R_GenerateBlendTables();
+	struct GenerateBlendTables_State *state = userdata;
+
+	R_GenerateBlendTables_Core(state);
+
+	free(state->masterPalette);
+	free(state->gammaCorrectedPalette);
+	free(state);
 }
 #endif
 
@@ -247,16 +258,29 @@ void R_InitTranslucencyTables(void)
 	W_ReadLump(W_GetNumForName("TRANS90"), transtables+0x80000);
 
 	R_AllocateBlendTables();
-
-#ifdef HAVE_THREADS
-	I_spawn_thread("blend-tables",
-			R_GenerateBlendTables_Thread, NULL);
-#else
 	R_GenerateBlendTables();
-#endif
 }
 
 void R_GenerateBlendTables(void)
+{
+#ifdef HAVE_THREADS
+	// Allocate copies for the worker thread since the originals can be freed in the main thread.
+	struct GenerateBlendTables_State *state = malloc(sizeof *state);
+	size_t palsize = 256 * sizeof(RGBA_t);
+
+	state->masterPalette = memcpy(malloc(palsize), pMasterPalette, palsize);
+	state->gammaCorrectedPalette = memcpy(malloc(palsize), pGammaCorrectedPalette, palsize);
+
+	I_spawn_thread("blend-tables",
+			R_GenerateBlendTables_Thread, state);
+#else
+	struct GenerateBlendTables_State state = {pMasterPalette, pGammaCorrectedPalette};
+
+	R_GenerateBlendTables_Core(&state);
+#endif
+}
+
+static void R_GenerateBlendTables_Core(struct GenerateBlendTables_State *state)
 {
 	INT32 i;
 
@@ -265,12 +289,12 @@ void R_GenerateBlendTables(void)
 		const size_t offs = (0x10000 * i);
 		const UINT8 alpha = (TRANSTAB_AMTMUL10 * ((float)(10-i)));
 
-		R_GenerateTranslucencyTable(blendtables[blendtab_add] + offs, pGammaCorrectedPalette, AST_ADD, alpha);
-		R_GenerateTranslucencyTable(blendtables[blendtab_subtract] + offs, pMasterPalette, AST_SUBTRACT, alpha); // intentionally uses pMasterPalette
-		R_GenerateTranslucencyTable(blendtables[blendtab_reversesubtract] + offs, pGammaCorrectedPalette, AST_REVERSESUBTRACT, alpha);
+		R_GenerateTranslucencyTable(blendtables[blendtab_add] + offs, state->gammaCorrectedPalette, AST_ADD, alpha);
+		R_GenerateTranslucencyTable(blendtables[blendtab_subtract] + offs, state->masterPalette, AST_SUBTRACT, alpha); // intentionally uses pMasterPalette
+		R_GenerateTranslucencyTable(blendtables[blendtab_reversesubtract] + offs, state->gammaCorrectedPalette, AST_REVERSESUBTRACT, alpha);
 	}
 
-	R_GenerateTranslucencyTable(blendtables[blendtab_modulate], pGammaCorrectedPalette, AST_MODULATE, 0);
+	R_GenerateTranslucencyTable(blendtables[blendtab_modulate], state->gammaCorrectedPalette, AST_MODULATE, 0);
 }
 
 void R_GenerateTranslucencyTable(UINT8 *table, RGBA_t* sourcepal, int style, UINT8 blendamt)
