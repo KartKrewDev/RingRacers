@@ -7877,6 +7877,15 @@ static void P_InitPlayers(void)
 		G_SpawnPlayer(i);
 
 		players[i].xtralife = 0; // extra lives do not ever carry over from the previous round
+
+		if (P_MobjWasRemoved(players[i].mo) == false && !players[i].spectator)
+		{
+			// Rooooooolllling staaaaaaart
+			if ((gametyperules & (GTR_ROLLINGSTART|GTR_CIRCUIT)) == (GTR_ROLLINGSTART|GTR_CIRCUIT))
+			{
+				P_InstaThrust(players[i].mo, players[i].mo->angle, K_GetKartSpeed(&players[i], false, false));
+			}
+		}
 	}
 
 	K_UpdateAllPlayerPositions();
@@ -8567,6 +8576,8 @@ void P_PostLoadLevel(void)
 		K_UpdateMatchRaceBots();
 	}
 
+	K_TimerInit();
+
 	P_InitPlayers();
 
 	if (metalrecording)
@@ -8574,8 +8585,6 @@ void P_PostLoadLevel(void)
 	if (demo.recording) // Okay, level loaded, character spawned and skinned,
 		G_BeginRecording(); // I AM NOW READY TO RECORD.
 	demo.deferstart = true;
-
-	K_TimerInit();
 
 	nextmapoverride = 0;
 	skipstats = 0;

@@ -2097,11 +2097,17 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	roundconditions_t roundconditions;
 	boolean saveroundconditions;
 
+	// This needs to be first, to permit it to wipe extra information
+	jointime = players[player].jointime;
+	if (jointime <= 1)
+	{
+		G_SpectatePlayerOnJoin(player);
+		betweenmaps = true;
+	}
+
 	score = players[player].score;
 	lives = players[player].lives;
 	ctfteam = players[player].ctfteam;
-
-	jointime = players[player].jointime;
 
 	splitscreenindex = players[player].splitscreenindex;
 	spectator = players[player].spectator;
@@ -2891,7 +2897,7 @@ void G_SpectatePlayerOnJoin(INT32 playernum)
 			continue;
 
 		// Prevent splitscreen hosters/joiners from only adding 1 player at a time in empty servers (this will also catch yourself)
-		if (!players[i].jointime)
+		if (players[i].jointime <= 1)
 			continue;
 
 		// A ha! An established player! It's time to spectate

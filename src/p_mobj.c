@@ -11791,15 +11791,10 @@ void P_SpawnPlayer(INT32 playernum)
 	player_t *p = &players[playernum];
 	mobj_t *mobj;
 
-	boolean justjoined = (p->jointime <= 1);
-
 	if (p->playerstate == PST_REBORN)
 	{
-		G_PlayerReborn(playernum, justjoined);
+		G_PlayerReborn(playernum, false);
 	}
-
-	if (justjoined)
-		G_SpectatePlayerOnJoin(playernum);
 
 	if (G_GametypeHasTeams())
 	{
