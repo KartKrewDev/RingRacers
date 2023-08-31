@@ -3509,7 +3509,7 @@ boolean P_SpectatorJoinGame(player_t *player)
 	// Pressing fire assigns you to a team that needs players if allowed.
 	// Partial code reproduction from p_tick.c autobalance code.
 	// a surprise tool that will help us later...
-	if (G_GametypeHasTeams())
+	if (G_GametypeHasTeams() && player->ctfteam == 0)
 	{
 		INT32 z, numplayersred = 0, numplayersblue = 0;
 
