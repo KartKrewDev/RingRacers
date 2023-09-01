@@ -877,7 +877,7 @@ void K_PlayerFinishGrandPrix(player_t *player)
 	grandprixinfo.wonround = true;
 
 	// Increase your total rings
-	INT32 ringtotal = RINGTOTAL(player);
+	INT32 ringtotal = player->hudrings;
 	if (ringtotal > 0)
 	{
 		if (ringtotal > 20)

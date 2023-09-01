@@ -7414,6 +7414,8 @@ static void K_UpdateInvincibilitySounds(player_t *player)
 #undef STOPTHIS
 }
 
+// This function is not strictly for non-netsynced properties.
+// It's just a convenient name for things that don't stop during hitlag.
 void K_KartPlayerHUDUpdate(player_t *player)
 {
 	if (player->karthud[khud_lapanimation])
@@ -7464,6 +7466,12 @@ void K_KartPlayerHUDUpdate(player_t *player)
 
 	if (!(gametyperules & GTR_SPHERES))
 	{
+		if (!player->exiting
+		&& !(player->pflags & (PF_NOCONTEST|PF_ELIMINATED)))
+		{
+			player->hudrings = player->rings;
+		}
+
 		if (player->mo && player->mo->hitlag <= 0)
 		{
 			// 0 is the fast spin animation, set at 30 tics of ring boost or higher!
@@ -7499,7 +7507,7 @@ void K_KartPlayerHUDUpdate(player_t *player)
 
 			if (player->karthud[khud_ringspblock] >= 14) // debt animation
 			{
-				if ((player->rings > 0) // Get out of 0 ring animation
+				if ((player->hudrings > 0) // Get out of 0 ring animation
 					&& (normalanim == 3 || normalanim == 10)) // on these transition frames.
 					player->karthud[khud_ringspblock] = normalanim;
 				else
@@ -7507,7 +7515,7 @@ void K_KartPlayerHUDUpdate(player_t *player)
 			}
 			else // normal animation
 			{
-				if ((player->rings <= 0) // Go into 0 ring animation
+				if ((player->hudrings <= 0) // Go into 0 ring animation
 					&& (player->karthud[khud_ringspblock] == 1 || player->karthud[khud_ringspblock] == 8)) // on these transition frames.
 					player->karthud[khud_ringspblock] = debtanim;
 				else

@@ -2608,15 +2608,15 @@ static void K_drawRingCounter(boolean gametypeinfoshown)
 	boolean colorring = false;
 	INT32 ringx = 0, fy = 0;
 
-	rn[0] = ((abs(stplyr->rings) / 10) % 10);
-	rn[1] = (abs(stplyr->rings) % 10);
+	rn[0] = ((abs(stplyr->hudrings) / 10) % 10);
+	rn[1] = (abs(stplyr->hudrings) % 10);
 
-	if (stplyr->rings <= 0 && (leveltime/5 & 1)) // In debt
+	if (stplyr->hudrings <= 0 && (leveltime/5 & 1)) // In debt
 	{
 		ringmap = R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_CRIMSON, GTC_CACHE);
 		colorring = true;
 	}
-	else if (stplyr->rings >= 20) // Maxed out
+	else if (stplyr->hudrings >= 20) // Maxed out
 		ringmap = R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_YELLOW, GTC_CACHE);
 
 	if (stplyr->karthud[khud_ringframe] > RINGANIM_FLIPFRAME)
@@ -2673,7 +2673,7 @@ static void K_drawRingCounter(boolean gametypeinfoshown)
 
 		V_DrawMappedPatch(fr+ringx, fy-3, V_HUDTRANS|V_SLIDEIN|splitflags|ringflip, kp_smallring[ringanim_realframe], (colorring ? ringmap : NULL));
 
-		if (stplyr->rings < 0) // Draw the minus for ring debt
+		if (stplyr->hudrings < 0) // Draw the minus for ring debt
 			V_DrawMappedPatch(fr+7, fy, V_HUDTRANS|V_SLIDEIN|splitflags, kp_ringdebtminussmall, ringmap);
 
 		V_DrawMappedPatch(fr+11, fy, V_HUDTRANS|V_SLIDEIN|splitflags, fontv[PINGNUM_FONT].font[rn[0]], ringmap);
@@ -2716,7 +2716,7 @@ static void K_drawRingCounter(boolean gametypeinfoshown)
 
 		V_DrawMappedPatch(LAPS_X+ringx+7, fy-5, V_HUDTRANS|V_SLIDEIN|splitflags|ringflip, kp_ring[ringanim_realframe], (colorring ? ringmap : NULL));
 
-		if (stplyr->rings < 0) // Draw the minus for ring debt
+		if (stplyr->hudrings < 0) // Draw the minus for ring debt
 		{
 			V_DrawMappedPatch(LAPS_X+23, fy, V_HUDTRANS|V_SLIDEIN|splitflags, kp_ringdebtminus, ringmap);
 			V_DrawMappedPatch(LAPS_X+29, fy, V_HUDTRANS|V_SLIDEIN|splitflags, kp_facenum[rn[0]], ringmap);
@@ -2736,9 +2736,16 @@ static void K_drawRingCounter(boolean gametypeinfoshown)
 		if (uselives)
 		{
 			UINT8 *colormap = R_GetTranslationColormap(stplyr->skin, stplyr->skincolor, GTC_CACHE);
-			V_DrawMappedPatch(LAPS_X+40, fy-5, V_HUDTRANS|V_SLIDEIN|splitflags, faceprefix[stplyr->skin][FACE_RANK], colormap);
-			if (stplyr->lives >= 0)
-				K_DrawLivesDigits(LAPS_X + (stplyr->lives < 10 ? 60 : 57), fy, 6, V_HUDTRANS|V_SLIDEIN|splitflags, kp_facenum);
+			V_DrawMappedPatch(LAPS_X+46, fy-5, V_HUDTRANS|V_SLIDEIN|splitflags, faceprefix[stplyr->skin][FACE_RANK], colormap);
+			SINT8 livescount = 0;
+			if (stplyr->lives > 0)
+			{
+				livescount = stplyr->lives;
+				if (livescount > 10)
+					livescount = 10;
+			}
+			//K_DrawLivesDigits -- not using this because it messed with the FENG SHUI
+			V_DrawScaledPatch(LAPS_X+63, fy, V_HUDTRANS|V_SLIDEIN|splitflags, kp_facenum[livescount]);
 		}
 	}
 }

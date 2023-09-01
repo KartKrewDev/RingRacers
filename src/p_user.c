@@ -1290,6 +1290,29 @@ void P_DoPlayerExit(player_t *player, pflags_t flags)
 	{
 		ClearFakePlayerSkin(player);
 
+		if (!(gametyperules & GTR_SPHERES))
+		{
+			player->hudrings = RINGTOTAL(player);
+			if (player->hudrings > 20)
+				player->hudrings = 20;
+
+			if (grandprixinfo.gp == true
+				&& grandprixinfo.eventmode == GPEVENT_NONE
+				&& player->bot == false && losing == false)
+			{
+				const UINT8 lifethreshold = 20;
+
+				const UINT8 oldExtra = player->totalring / lifethreshold;
+				const UINT8 extra = (player->totalring + player->hudrings) / lifethreshold;
+
+				if (extra > oldExtra)
+				{
+					S_StartSound(NULL, sfx_cdfm73);
+					player->xtralife = (extra - oldExtra);
+				}
+			}
+		}
+
 		if ((gametyperules & GTR_CIRCUIT)) // Special Race-like handling
 		{
 			K_UpdateAllPlayerPositions();
@@ -1322,22 +1345,6 @@ void P_DoPlayerExit(player_t *player, pflags_t flags)
 		else if (!exitcountdown) // All other gametypes
 		{
 			G_BeginLevelExit();
-		}
-
-		if (grandprixinfo.gp == true
-			&& (roundqueue.size && roundqueue.position < roundqueue.size) // Not the last map of GP
-			&& player->bot == false && losing == false)
-		{
-			const UINT8 lifethreshold = 20;
-
-			const UINT8 oldExtra = player->totalring / lifethreshold;
-			const UINT8 extra = (player->totalring + RINGTOTAL(player)) / lifethreshold;
-
-			if (extra > oldExtra)
-			{
-				S_StartSound(NULL, sfx_cdfm73);
-				player->xtralife = (extra - oldExtra);
-			}
 		}
 	}
 
