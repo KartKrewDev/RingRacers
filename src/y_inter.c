@@ -1349,6 +1349,67 @@ void Y_RoundQueueDrawer(y_data_t *standings, INT32 offset, boolean doanimations,
 	}
 }
 
+#define INTERBUTTONSLIDEIN (TICRATE/2)
+
+//
+// Y_DrawIntermissionButton
+//
+// It's a button that slides at the given time
+//
+void Y_DrawIntermissionButton(INT32 startslide, INT32 through)
+{
+	INT32 percentslide = 0;
+	const INT32 slidetime = (TICRATE/4);
+	boolean pressed = false;
+
+	if (startslide >= 0)
+	{
+		through = startslide;
+	}
+	else
+	{
+		through -= ((TICRATE/2) + 1);
+		pressed = (!menuactive && M_MenuConfirmHeld(0));
+	}
+
+	if (through >= 0)
+	{
+		if (through >= slidetime)
+		{
+			percentslide = FRACUNIT;
+		}
+		else
+		{
+			percentslide = R_InterpolateFixed(
+				(through - 1) * FRACUNIT,
+				(through * FRACUNIT)
+			) / slidetime;
+		}
+	}
+
+	if (percentslide < FRACUNIT)
+	{
+		INT32 offset = 0;
+
+		if (percentslide)
+		{
+			offset = Easing_InCubic(
+				percentslide,
+				0,
+				16 * FRACUNIT
+			);
+		}
+
+		K_drawButton(
+			2*FRACUNIT - offset,
+			(BASEVIDHEIGHT - 16)*FRACUNIT,
+			0,
+			kp_button_a[1],
+			pressed
+		);
+	}
+}
+
 //
 // Y_IntermissionDrawer
 //
@@ -1541,13 +1602,7 @@ finalcounter:
 
 	if (Y_CanSkipIntermission())
 	{
-		K_drawButton(
-				2*FRACUNIT,
-				(BASEVIDHEIGHT - 16)*FRACUNIT,
-				0,
-				kp_button_a[1],
-				M_MenuConfirmHeld(0)
-		);
+		Y_DrawIntermissionButton(INTERBUTTONSLIDEIN - intertic, 3*TICRATE - timer);
 	}
 	else
 	{
@@ -1597,14 +1652,22 @@ void Y_Ticker(void)
 
 	if (Y_CanSkipIntermission())
 	{
-		if (M_MenuConfirmPressed(0))
+		if (intertic < INTERBUTTONSLIDEIN)
+		{
+			intertic++;
+			return;
+		}
+
+		boolean preventintertic = (intertic == INTERBUTTONSLIDEIN);
+
+		if (!menuactive && M_MenuConfirmPressed(0))
 		{
 			// If there is a roundqueue, make time for it.
 			// Else, end instantly on button press.
 			// Actually, give it a slight delay, so the "kaching" sound isn't cut off.
 			const tic_t end = roundqueue.size != 0 ? 3*TICRATE : TICRATE;
 
-			if (intertic == -1) // card flip hasn't started
+			if (intertic == INTERBUTTONSLIDEIN) // card flip hasn't started
 			{
 				if (sorttic != -1)
 				{
@@ -1612,9 +1675,10 @@ void Y_Ticker(void)
 				}
 				else
 				{
-					intertic = 0;
 					timer = end;
 				}
+
+				preventintertic = false;
 			}
 			else if (timer >= INFINITE_TIMER && intertic >= sorttic + 16) // card done flipping
 			{
@@ -1629,7 +1693,7 @@ void Y_Ticker(void)
 			}
 		}
 
-		if (intertic == -1)
+		if (preventintertic)
 		{
 			return;
 		}
