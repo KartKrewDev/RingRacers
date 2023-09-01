@@ -4,6 +4,7 @@
 #include "../k_menu.h"
 #include "../m_cond.h"
 #include "../s_sound.h"
+#include "../mserv.h" // cv_masterserver
 
 #if defined (TESTERS)
 	#define IT_STRING_CALL_NOTESTERS IT_DISABLED
@@ -11,13 +12,74 @@
 	#define IT_STRING_CALL_NOTESTERS (IT_STRING | IT_CALL)
 #endif // TESTERS
 
+static boolean firstDismissedNagThisBoot = true;
+
+static void M_HandleMasterServerResetChoice(INT32 ch)
+{
+	if (ch == MA_YES)
+	{
+		CV_Set(&cv_masterserver, cv_masterserver.defaultvalue);
+		CV_Set(&cv_masterserver_nagattempts, cv_masterserver_nagattempts.defaultvalue);
+		S_StartSound(NULL, sfx_s221);
+	}
+	else 
+	{
+		if (firstDismissedNagThisBoot)
+		{
+			if (cv_masterserver_nagattempts.value > 0)
+			{
+				CV_SetValue(&cv_masterserver_nagattempts, cv_masterserver_nagattempts.value - 1);
+			}
+			firstDismissedNagThisBoot = false;
+		}
+	}
+}
+
+static void M_PreMPHostInitChoice(INT32 ch)
+{
+	M_HandleMasterServerResetChoice(ch);
+	M_MPHostInit(0);
+}
+
+static void M_PreMPHostInit(INT32 choice)
+{
+	(void)choice;
+
+	if (!CV_IsSetToDefault(&cv_masterserver) && cv_masterserver_nagattempts.value > 0)
+	{
+		M_StartMessage("Server Browser Alert", M_GetText("Hey! You've changed the game's\naddress for the Server Browser.\n\nYou won't be able to host games on\nthe official Server Browser.\n\nUnless you're from the future, this\nprobably isn't what you want.\n"), &M_PreMPHostInitChoice, MM_YESNO, "Fix and continue", "I changed the URL intentionally");
+		return;
+	}
+
+	M_MPHostInit(0);
+}
+
+static void M_PreMPRoomSelectInitChoice(INT32 ch)
+{
+	M_HandleMasterServerResetChoice(ch);
+	M_MPRoomSelectInit(0);
+}
+
+static void M_PreMPRoomSelectInit(INT32 choice)
+{
+	(void)choice;
+
+	if (!CV_IsSetToDefault(&cv_masterserver) && cv_masterserver_nagattempts.value > 0)
+	{
+		M_StartMessage("Server Browser Alert", M_GetText("Hey! You've changed the game's\naddress for the Server Browser.\n\nYou won't be able to see games from\nthe official Server Browser.\n\nUnless you're from the future, this\nprobably isn't what you want.\n"), &M_PreMPRoomSelectInitChoice, MM_YESNO, "Fix and continue", "I changed the URL intentionally");
+		return;
+	}
+
+	M_MPRoomSelectInit(0);
+}
+
 menuitem_t PLAY_MP_OptSelect[] =
 {
 	{IT_STRING_CALL_NOTESTERS, "Host Game", "Start your own online game!",
-		NULL, {.routine = M_MPHostInit}, 0, 0},
+		NULL, {.routine = M_PreMPHostInit}, 0, 0},
 
 	{IT_STRING_CALL_NOTESTERS, "Server Browser", "Search for game servers to play in.",
-		NULL, {.routine = M_MPRoomSelectInit}, 0, 0},
+		NULL, {.routine = M_PreMPRoomSelectInit}, 0, 0},
 
 	{IT_STRING | IT_CALL, "Join by IP", "Join an online game by its IP address.",
 		NULL, {.routine = M_MPJoinIPInit}, 0, 0},

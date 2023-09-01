@@ -3,6 +3,8 @@
 
 #include "../k_menu.h"
 #include "../s_sound.h"
+#include "../z_zone.h"
+#include "../mserv.h"
 
 // MULTIPLAYER HOST SCREEN -- see mhost_e
 menuitem_t PLAY_MP_Host[] =
@@ -43,13 +45,41 @@ menu_t PLAY_MP_HostDef = {
 	NULL
 };
 
+void M_PopupMasterServerRules(void)
+{
+#ifdef MASTERSERVER
+	if (cv_advertise.value && (serverrunning || currentMenu == &PLAY_MP_HostDef))
+	{
+		char *rules = GetMasterServerRules();
+
+		if (rules != NULL)
+		{
+			M_StartMessage("Server List Rules", rules, NULL, MM_NOTHING, NULL, NULL);
+			Z_Free(rules);
+		}
+	}
+#endif
+}
+
 void M_MPHostInit(INT32 choice)
 {
-
 	(void)choice;
 	mpmenu.modewinextend[0][0] = 1;
 	M_SetupNextMenu(&PLAY_MP_HostDef, true);
 	itemOn = mhost_go;
+
+	Get_rules();
+	// There's one downside to doing it this way:
+	// if you turn advertise on via the console,
+	// then access this menu for the first time,
+	// no rules will pop up because they haven't
+	// arrived yet.
+	M_PopupMasterServerRules();
+	// HOWEVER, this menu popup isn't for people
+	// who know how to use the Developer Console.
+	// People who CAN do that should already know
+	// what kind of service they're connecting to.
+	// (it'll still appear in the logs later, too!)
 }
 
 void M_HandleHostMenuGametype(INT32 choice)

@@ -11,7 +11,7 @@
 /*
 Documentation available here.
 
-                     <https://ms.kartkrew.org/tools/api/2/>
+                     <https://ms.kartkrew.org/tools/api/2.2/>
 */
 
 #ifdef HAVE_CURL
@@ -441,7 +441,12 @@ HMS_fetch_servers (msg_server_t *list, int query_id)
 					break;
 #endif
 
+//#define MSERVTESTALONE
+#ifdef MSERVTESTALONE
+				strcpy(list[i].ip, "127.0.0.1"); // MS test without needing a second person to host
+#else
 				strlcpy(list[i].ip,      address, sizeof list[i].ip);
+#endif
 				strlcpy(list[i].port,    port,    sizeof list[i].port);
 
 				if (contact)
@@ -509,6 +514,40 @@ HMS_compare_mod_version (char *buffer, size_t buffer_size)
 	HMS_end(hms);
 
 	return ok;
+}
+
+const char *
+HMS_fetch_rules (char *buffer, size_t buffer_size)
+{
+	struct HMS_buffer *hms;
+
+	hms = HMS_connect("rules");
+
+	if (! hms)
+		return NULL;
+
+	boolean ok = HMS_do(hms);
+
+	if (ok)
+	{
+		char *p = strstr(hms->buffer, "\n\n");
+
+		if (p)
+		{
+			p[1] = '\0';
+
+			strlcpy(buffer, hms->buffer, buffer_size);
+		}
+		else
+			buffer = NULL;
+	}
+
+	HMS_end(hms);
+
+	if (!ok)
+		return NULL;
+
+	return buffer;
 }
 
 static char *

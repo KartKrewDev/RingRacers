@@ -454,7 +454,7 @@ void F_RunWipe(UINT8 wipemode, UINT8 wipetype, boolean drawMenu, const char *col
 		I_OsPolling();
 		I_UpdateNoBlit();
 
-		if (drawMenu)
+		if (drawMenu && rendermode != render_none)
 		{
 #ifdef HAVE_THREADS
 			I_lock_mutex(&k_menu_mutex);
