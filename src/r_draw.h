@@ -157,6 +157,7 @@ enum
 extern UINT8 *blendtables[NUMBLENDMAPS];
 
 void R_InitTranslucencyTables(void);
+void R_GenerateBlendTables(void);
 
 UINT8 *R_GetTranslucencyTable(INT32 alphalevel);
 UINT8 *R_GetBlendTable(int style, INT32 alphalevel);

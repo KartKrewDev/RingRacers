@@ -943,10 +943,10 @@ void ST_drawTitleCard(void)
 		// Everything else...
 		if (bossinfo.enemyname)
 		{
-			bx = V_TitleCardStringWidth(bossinfo.enemyname);
+			bx = V_TitleCardStringWidth(bossinfo.enemyname, false);
 
 			// Name.
-			V_DrawTitleCardString((BASEVIDWIDTH - bx)/2, 75, bossinfo.enemyname, 0, true, bossinfo.titleshow, lt_exitticker);
+			V_DrawTitleCardString((BASEVIDWIDTH - bx)/2, 75, bossinfo.enemyname, 0, true, bossinfo.titleshow, lt_exitticker, false);
 
 			// Under-bar.
 			{
@@ -1067,10 +1067,10 @@ void ST_drawTitleCard(void)
 	V_DrawFixedPatch(eggx2*FRACUNIT, eggy2*FRACUNIT, FRACUNIT, V_SNAPTOBOTTOM|V_SNAPTOLEFT, tccirclebottom, NULL);
 
 	// Now the level name.
-	V_DrawTitleCardString((actnum) ? 265 : 280, 60, lvlttl, V_SNAPTORIGHT, false, lt_ticker, TTANIMENDTHRESHOLD);
+	V_DrawTitleCardString((actnum) ? 265 : 280, 60, lvlttl, V_SNAPTORIGHT, false, lt_ticker, TTANIMENDTHRESHOLD, false);
 
 	if (!(mapheaderinfo[gamemap-1]->levelflags & LF_NOZONE))
-		V_DrawTitleCardString((actnum) ? 265 : 280, 60+32, strlen(zonttl) ? zonttl : "ZONE", V_SNAPTORIGHT, false, lt_ticker - strlen(lvlttl), TTANIMENDTHRESHOLD);
+		V_DrawTitleCardString((actnum) ? 265 : 280, 60+32, strlen(zonttl) ? zonttl : "ZONE", V_SNAPTORIGHT, false, lt_ticker - strlen(lvlttl), TTANIMENDTHRESHOLD, false);
 
 	// the act has a similar graphic animation, but we'll handle it here since it's only like 2 graphics lmfao.
 	if (actnum && actnum < 10)

@@ -1333,7 +1333,7 @@ void P_SetPitchRollFromSlope(mobj_t *mo, pslope_t *slope)
 	}
 	else
 	{
-		mo->pitch = mo->roll = 0;
+		P_ResetPitchRoll(mo);
 	}
 }
 
@@ -1346,6 +1346,15 @@ void P_SetPitchRoll(mobj_t *mo, angle_t pitch, angle_t yaw)
 	yaw >>= ANGLETOFINESHIFT;
 	mo->roll  = FixedMul(pitch, FINESINE   (yaw));
 	mo->pitch = FixedMul(pitch, FINECOSINE (yaw));
+}
+
+//
+// P_ResetPitchRoll
+//
+void P_ResetPitchRoll(mobj_t *mo)
+{
+	mo->pitch = 0;
+	mo->roll = 0;
 }
 
 #define STOPSPEED (FRACUNIT)
@@ -6716,6 +6725,49 @@ static void P_MobjSceneryThink(mobj_t *mobj)
 	case MT_ARKARROW:
 		Obj_ArkArrowThink(mobj);
 		break;
+	case MT_SCRIPT_THING:
+	{
+		if (mobj->thing_args[2] != 0)
+		{
+			// turned off
+			break;
+		}
+
+		UINT8 i;
+		for (i = 0; i < MAXPLAYERS; i++)
+		{
+			if (playeringame[i] == false)
+			{
+				continue;
+			}
+
+			player_t *player = &players[i];
+			if (P_MobjWasRemoved(player->mo) == true)
+			{
+				continue;
+			}
+
+			fixed_t dist = R_PointToDist2(
+				mobj->x, mobj->y,
+				player->mo->x, player->mo->y
+			);
+
+			if (dist < mobj->thing_args[0] * FRACUNIT)
+			{
+				P_ActivateThingSpecial(mobj, player->mo);
+
+				if (mobj->thing_args[1] == 0)
+				{
+					P_RemoveMobj(mobj);
+					return;
+				}
+
+				break;
+			}
+		}
+
+		break;
+	}
 	case MT_VWREF:
 	case MT_VWREB:
 	{
@@ -7191,7 +7243,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 	}
 	case MT_FLOATINGITEM:
 	{
-		mobj->pitch = mobj->roll = 0;
+		P_ResetPitchRoll(mobj);
 		if (mobj->flags & MF_NOCLIPTHING)
 		{
 			if (P_CheckDeathPitCollide(mobj))
@@ -11778,61 +11830,24 @@ void P_RespawnSpecials(void)
 //
 void P_SpawnPlayer(INT32 playernum)
 {
-	UINT8 i, pcount = 0; // MAXPLAYERS if exiting
+	UINT8 i;
 	player_t *p = &players[playernum];
 	mobj_t *mobj;
 
+	boolean justjoined = (p->jointime <= 1);
+
 	if (p->playerstate == PST_REBORN)
 	{
-		G_PlayerReborn(playernum, (p->jointime <= 1));
+		G_PlayerReborn(playernum, justjoined);
 	}
 
-	for (i = 0; i < MAXPLAYERS; i++)
-	{
-		if (i == playernum)
-			continue;
-		if (!playeringame[i] || players[i].spectator)
-			continue;
-		if (players[i].exiting)
-		{
-			pcount = MAXPLAYERS;
-			break;
-		}
-		if (players[i].jointime <= 1) // Prevent splitscreen hosters/joiners from only adding 1 player at a time in empty servers
-			continue;
-		pcount++;
-	}
+	if (justjoined)
+		G_SpectatePlayerOnJoin(playernum);
 
-	// spawn as spectator determination
-	if (multiplayer && demo.playback)
-	{
-		; // Don't mess with spectator values since the demo setup handles them already.
-	}
-	else if (p->bot)
-	{
-		if (K_PodiumSequence() == true)
-			; // This is too late to correct spectator status. Whatever state we're in at this point, our (dog) bed is made.
-		else if (!(gametyperules & GTR_BOTS)
-		|| (grandprixinfo.gp == true
-			&& grandprixinfo.eventmode != GPEVENT_NONE))
-		{
-			// Bots aren't supposed to be here.
-			p->spectator = true;
-		}
-		else
-		{
-			// No point in a spectating bot!
-			p->spectator = false;
-		}
-	}
-	else if (netgame && p->jointime <= 1 && pcount)
-	{
-		p->spectator = true;
-	}
-	else if (multiplayer && !netgame)
+	if (G_GametypeHasTeams())
 	{
 		// If you're in a team game and you don't have a team assigned yet...
-		if (G_GametypeHasTeams() && p->ctfteam == 0)
+		if (!p->spectator && p->ctfteam == 0)
 		{
 			changeteam_union NetPacket;
 			UINT16 usvalue;
@@ -11842,9 +11857,6 @@ void P_SpawnPlayer(INT32 playernum)
 			// yes even in splitscreen mode
 			p->spectator = true;
 
-			if (playernum&1) p->skincolor = skincolor_redteam;
-			else             p->skincolor = skincolor_blueteam;
-
 			// but immediately send a team change packet.
 			NetPacket.packet.playernum = playernum;
 			NetPacket.packet.verification = true;
@@ -11852,22 +11864,6 @@ void P_SpawnPlayer(INT32 playernum)
 
 			usvalue = SHORT(NetPacket.value.l|NetPacket.value.b);
 			SendNetXCmd(XD_TEAMCHANGE, &usvalue, sizeof(usvalue));
-		}
-		else // Otherwise, never spectator.
-		{
-			// TODO: this would make a great debug feature for release
-#ifndef DEVELOP
-			p->spectator = false;
-#endif
-		}
-	}
-
-	if (G_GametypeHasTeams())
-	{
-		// Fix stupid non spectator spectators.
-		if (!p->spectator && !p->ctfteam)
-		{
-			p->spectator = true;
 		}
 
 		// Fix team colors.
@@ -11967,8 +11963,7 @@ void P_SpawnPlayer(INT32 playernum)
 			S_StartSound(body, sfx_s1af);
 	}
 
-	// I'm not refactoring the loop at the top of this file.
-	pcount = 0;
+	UINT8 pcount = 0;
 
 	for (i = 0; i < MAXPLAYERS; ++i)
 	{

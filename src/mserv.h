@@ -57,6 +57,7 @@ struct msg_ban_t
 // ================================ GLOBALS ===============================
 
 extern consvar_t cv_masterserver, cv_servername;
+extern consvar_t cv_masterserver_nagattempts;
 extern consvar_t cv_server_contact;
 extern consvar_t cv_masterserver_update_rate;
 extern consvar_t cv_masterserver_timeout;
@@ -77,12 +78,16 @@ extern I_mutex       ms_ServerList_mutex;
 void RegisterServer(void);
 void UnregisterServer(void);
 
+void Get_rules(void);
+
 void MasterClient_Ticker(void);
 
 msg_server_t *GetShortServersList(int id);
 #ifdef UPDATE_ALERT
 char *GetMODVersion(int id);
 #endif
+
+char *GetMasterServerRules(void);
 
 void AddMServCommands(void);
 
@@ -94,6 +99,7 @@ int  HMS_update (void);
 void HMS_list_servers (void);
 msg_server_t * HMS_fetch_servers (msg_server_t *list, int id);
 int  HMS_compare_mod_version (char *buffer, size_t size_of_buffer);
+const char * HMS_fetch_rules (char *buffer, size_t size_of_buffer);
 
 #ifdef __cplusplus
 } // extern "C"

@@ -42,8 +42,7 @@ void M_MPRoomSelect(INT32 choice)
 		M_ServersMenu(0);
 		M_SetMenuDelay(pid);
 	}
-	else if (mpmenu.roomforced == false
-		&& menucmd[pid].dpad_lr != 0)
+	else if (menucmd[pid].dpad_lr != 0)
 	{
 		mpmenu.room ^= 1;
 		S_StartSound(NULL, sfx_s3k5b);
@@ -59,12 +58,28 @@ void M_MPRoomSelectTick(void)
 void M_MPRoomSelectInit(INT32 choice)
 {
 	(void)choice;
+
+	if (modifiedgame)
+	{
+		M_StartMessage("Server Browser & Add-Ons", M_GetText("You have add-ons loaded.\nYou won't be able to join netgames!\n\nTo play online, restart the game\nand don't load any addons.\n\n\"Dr. Robotnik's Ring Racers\" will\nautomatically add everything\nyou need when you join.\n"), NULL, MM_NOTHING, NULL, NULL);
+		return;
+	}
+
+	// The following behaviour is affected by modifiedgame despite the above restriction.
+	// It's a sanity check were that to be removed, wheither by us or by a modified client.
+	// "wheither"? That typo rules, I'm keeping that ~toast 280823
+
 	mpmenu.room = (modifiedgame == true) ? 1 : 0;
-	mpmenu.roomforced = ((modifiedgame == true) || (!M_SecretUnlocked(SECRET_ADDONS, true)));
 	mpmenu.ticker = 0;
 	mpmenu.servernum = 0;
 	mpmenu.scrolln = 0;
 	mpmenu.slide = 0;
+
+	if ((modifiedgame == true) || (M_SecretUnlocked(SECRET_ADDONS, true) == false))
+	{
+		M_ServersMenu(0);
+		return;
+	}
 
 	M_SetupNextMenu(&PLAY_MP_RoomSelectDef, false);
 }

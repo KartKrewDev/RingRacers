@@ -127,10 +127,7 @@ void K_CheckBumpers(void)
 	{
 		if (nobumpers > 0 && nobumpers >= numingame)
 		{
-			// TODO: this would make a great debug feature for release
-#ifndef DEVELOP
 			P_DoAllPlayersExit(PF_NOCONTEST, false);
-#endif
 			return;
 		}
 	}
@@ -142,9 +139,9 @@ void K_CheckBumpers(void)
 
 	if (numingame <= 1)
 	{
-		if ((gametyperules & GTR_PRISONS) && (K_CanChangeRules(true) == true))
+		if ((gametyperules & GTR_PRISONS) && !battleprisons && (K_CanChangeRules(true) == true))
 		{
-			// Reset map to turn on battle capsules
+			// Reset map to turn on battle prisons
 			if (server)
 				D_MapChange(gamemap, gametype, encoremode, true, 0, false, false);
 		}

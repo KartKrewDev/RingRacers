@@ -4332,6 +4332,9 @@ static void K_drawKartFinish(boolean finish)
 
 	if (finish)
 	{
+		if (gametyperules & GTR_SPECIALSTART)
+			return;
+
 		timer = stplyr->karthud[khud_finish];
 		kptodraw = kp_racefinish;
 		minsplitstationary = 2;

@@ -47,12 +47,8 @@ void K_SetBot(UINT8 newplayernum, UINT8 skinnum, UINT8 difficulty, botStyle_e st
 {
 	CONS_Debug(DBG_NETPLAY, "addbot: %d\n", newplayernum);
 
-	// Clear player before joining, lest some things get set incorrectly
-	CL_ClearPlayer(newplayernum);
-	G_DestroyParty(newplayernum);
-
-	playeringame[newplayernum] = true;
 	G_AddPlayer(newplayernum);
+
 	if (newplayernum+1 > doomcom->numslots)
 		doomcom->numslots = (INT16)(newplayernum+1);
 
