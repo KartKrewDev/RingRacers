@@ -1609,8 +1609,8 @@ static boolean SL_InsertServer(serverinfo_pak* info, SINT8 node)
 		if (strcmp(info->application, SRB2APPLICATION))
 			return false;/* that's a different mod */
 
-		if (info->modifiedgame != (mpmenu.room == 1))
-			return false;/* CORE vs MODDED! */
+		if (!server && info->modifiedgame != (mpmenu.room == 1))
+			return false;/* CORE vs MODDED! Unless we ARE the server (i.e. local play), then it's fine to not match. */
 
 		i = serverlistcount++;
 	}
@@ -2844,7 +2844,7 @@ void CL_ClearPlayer(INT32 playernum)
 		P_SetTarget(&players[playernum].skybox.viewpoint, NULL);
 		P_SetTarget(&players[playernum].skybox.centerpoint, NULL);
 		P_SetTarget(&players[playernum].awayview.mobj, NULL);
-		
+
 	}
 
 	// Handle parties.
