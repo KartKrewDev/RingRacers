@@ -1277,13 +1277,6 @@ const char *const STATE_LIST[] = { // array length left dynamic for sanity testi
 	"S_WALLSPIKED1",
 	"S_WALLSPIKED2",
 
-	// Cheatcheck
-	"S_CHEATCHECK_IDLE",
-	"S_CHEATCHECK_FLASH",
-	"S_CHEATCHECK_STARTSPIN",
-	"S_CHEATCHECK_SPIN",
-	"S_CHEATCHECK_ENDSPIN",
-
 	// Big floating mine
 	"S_BIGMINE_IDLE",
 	"S_BIGMINE_ALERT1",

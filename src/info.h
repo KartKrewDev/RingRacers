@@ -710,7 +710,6 @@ typedef enum sprite
 	SPR_USPK, // Floor spike
 	SPR_WSPK, // Wall spike
 	SPR_WSPB, // Wall spike base
-	SPR_STPT, // Cheatcheck
 	SPR_BMNE, // Big floating mine
 	SPR_PUMI, // Rollout Rock
 
@@ -2431,13 +2430,6 @@ typedef enum state
 	S_WALLSPIKEBASE,
 	S_WALLSPIKED1,
 	S_WALLSPIKED2,
-
-	// Cheatcheck
-	S_CHEATCHECK_IDLE,
-	S_CHEATCHECK_FLASH,
-	S_CHEATCHECK_STARTSPIN,
-	S_CHEATCHECK_SPIN,
-	S_CHEATCHECK_ENDSPIN,
 
 	// Big floating mine
 	S_BIGMINE_IDLE,
