@@ -440,38 +440,18 @@ static void D_Display(void)
 	switch (gamestate)
 	{
 		case GS_TITLESCREEN:
-			if (!titlemapinaction || !curbghide) {
+			if (!titlemapinaction || !curbghide)
+			{
 				F_TitleScreenDrawer();
-				break;
 			}
-			/* FALLTHRU */
-		case GS_LEVEL:
-			if (!gametic)
-				break;
-			HU_Erase();
-			AM_Drawer();
 			break;
 
 		case GS_INTERMISSION:
 			Y_IntermissionDrawer();
-			HU_Erase();
-			HU_Drawer();
 			break;
 
 		case GS_VOTING:
 			Y_VoteDrawer();
-			HU_Erase();
-			HU_Drawer();
-			break;
-
-		case GS_CEREMONY:
-			if (!gametic)
-				break;
-			HU_Erase();
-			HU_Drawer();
-			break;
-
-		case GS_MENU:
 			break;
 
 		case GS_INTRO:
@@ -485,24 +465,14 @@ static void D_Display(void)
 
 		case GS_CUTSCENE:
 			F_CutsceneDrawer();
-			HU_Erase();
-			HU_Drawer();
 			break;
 
 		case GS_EVALUATION:
 			F_GameEvaluationDrawer();
-			HU_Erase();
-			HU_Drawer();
-			break;
-
-		case GS_CONTINUING:
-			//F_ContinueDrawer();
 			break;
 
 		case GS_CREDITS:
 			F_CreditDrawer();
-			HU_Erase();
-			HU_Drawer();
 			break;
 
 		case GS_WAITINGPLAYERS:
@@ -511,13 +481,14 @@ static void D_Display(void)
 			{
 				// I don't think HOM from nothing drawing is independent...
 				F_WaitingPlayersDrawer();
-				HU_Erase();
-				HU_Drawer();
 			}
 		case GS_DEDICATEDSERVER:
 		case GS_NULL:
+		default:
 			break;
 	}
+
+	HU_Erase();
 
 	// STUPID race condition...
 	{
@@ -628,9 +599,9 @@ static void D_Display(void)
 			{
 				case GS_LEVEL:
 				{
+					AM_Drawer();
 					ST_Drawer();
 					F_TextPromptDrawer();
-					HU_Drawer();
 					break;
 				}
 				case GS_TITLESCREEN:
@@ -653,6 +624,11 @@ static void D_Display(void)
 		{
 			ps_uitime = I_GetPreciseTime();
 		}
+	}
+
+	if (Playing())
+	{
+		HU_Drawer();
 	}
 
 	// change gamma if needed
