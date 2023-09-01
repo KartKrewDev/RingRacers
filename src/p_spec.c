@@ -6636,7 +6636,11 @@ void P_InitSpecials(void)
 {
 	mapheader_lighting_t *lighting = &mapheaderinfo[gamemap-1]->lighting;
 
-	if (encoremode && cv_kartencoremap.value && mapheaderinfo[gamemap-1]->use_encore_lighting)
+	if (encoremode
+#ifdef DEVELOP
+			&& cv_kartencoremap.value
+#endif
+			&& mapheaderinfo[gamemap-1]->use_encore_lighting)
 	{
 		lighting = &mapheaderinfo[gamemap-1]->lighting_encore;
 	}

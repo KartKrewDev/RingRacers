@@ -8336,7 +8336,11 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 
 	if (mapheaderinfo[gamemap-1])
 	{
-		if (encoremode && cv_kartencoremap.value)
+		if (encoremode
+#ifdef DEVELOP
+				&& cv_kartencoremap.value
+#endif
+				)
 		{
 			encoreLump = vres_Find(curmapvirt, "ENCORE");
 		}

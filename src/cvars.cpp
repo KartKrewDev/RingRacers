@@ -532,8 +532,7 @@ consvar_t cv_playbackspeed = Server("playbackspeed", "1").min_max(1, 10).dont_sa
 
 consvar_t cv_reducevfx = Server("reducevfx", "No").yes_no();
 
-void RendezvousServer_OnChange(void);
-consvar_t cv_rendezvousserver = Server("holepunchserver", "relay.kartkrew.org").onchange(RendezvousServer_OnChange);
+consvar_t cv_rendezvousserver = Server("holepunchserver", "relay.kartkrew.org");
 
 void Update_parameters (void);
 consvar_t cv_server_contact = Server("server_contact", "").onchange_noinit(Update_parameters);
