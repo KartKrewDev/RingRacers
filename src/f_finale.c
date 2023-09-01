@@ -712,6 +712,7 @@ void F_StartCredits(void)
 	finalecount = 0;
 	animtimer = 0;
 	timetonext = 2*TICRATE;
+	keypressed = false;
 }
 
 void F_CreditDrawer(void)
@@ -769,6 +770,15 @@ void F_CreditDrawer(void)
 		if (((y>>FRACBITS) * vid.dupy) > vid.height)
 			break;
 	}
+
+	if (finalecount)
+	{
+		Y_DrawIntermissionButton(-1, (timetonext ? 5*TICRATE : TICRATE) - finalecount);
+	}
+	else
+	{
+		Y_DrawIntermissionButton(timetonext, 0);
+	}
 }
 
 void F_CreditTicker(void)
@@ -805,18 +815,6 @@ void F_CreditTicker(void)
 			break;
 	}
 
-	// Do this here rather than in the drawer you doofus! (this is why dedicated mode broke at credits)
-	if (!credits[i] && y <= 120<<FRACBITS && !finalecount)
-	{
-		timetonext = 5*TICRATE+1;
-		finalecount = 5*TICRATE;
-
-		// You watched all the credits? What a trooper!
-		gamedata->everfinishedcredits = true;
-		if (M_UpdateUnlockablesAndExtraEmblems(true, true))
-			G_SaveGameData();
-	}
-
 	if (timetonext)
 		timetonext--;
 	else
@@ -824,8 +822,39 @@ void F_CreditTicker(void)
 
 	credbgtimer++;
 
-	if (finalecount && --finalecount == 0)
-		F_StartGameEvaluation();
+	// Do this here rather than in the drawer you doofus! (this is why dedicated mode broke at credits)
+
+	if (finalecount)
+	{
+		if (--finalecount == 0)
+		{
+			F_StartGameEvaluation();
+		}
+		return;
+	}
+
+	if (keypressed)
+	{
+		finalecount = TICRATE;
+
+		if (netgame
+			&& (server || IsPlayerAdmin(consoleplayer))
+		)
+		{
+			SendNetXCmd(XD_EXITLEVEL, NULL, 0);
+			return;
+		}
+	}
+	else if (!credits[i] && y <= 120<<FRACBITS)
+	{
+		timetonext = 5*TICRATE;
+		finalecount = 5*TICRATE;
+
+		// You watched all the credits? What a trooper!
+		gamedata->everfinishedcredits = true;
+		if (M_UpdateUnlockablesAndExtraEmblems(true, true))
+			G_SaveGameData();
+	}
 }
 
 boolean F_CreditResponder(event_t *event)
@@ -879,6 +908,9 @@ boolean F_CreditResponder(event_t *event)
 		return false;*/
 
 	if (key != KEY_ESCAPE && key != KEY_ENTER && key != KEY_BACKSPACE)
+		return false;
+
+	if (timetonext)
 		return false;
 
 	if (keypressed)
