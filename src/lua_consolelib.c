@@ -411,7 +411,7 @@ static int lib_cvRegisterVar(lua_State *L)
 		return luaL_error(L, M_GetText("Variable %s has CV_CALL without a function\n"), cvar->name);
 
 	// actually time to register it to the console now! Finally!
-	cvar->flags |= CV_MODIFIED;
+	cvar->flags |= CV_MODIFIED | CV_ADDEDBYLUA;
 	CV_RegisterVar(cvar);
 	if (cvar->flags & CV_MODIFIED)
 		return luaL_error(L, "failed to register cvar (probable conflict with internal variable/command names)");

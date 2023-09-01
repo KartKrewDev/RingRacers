@@ -44,7 +44,18 @@ enum
 
 typedef void (*com_func_t)(void);
 
-void COM_AddCommand(const char *name, com_func_t func);
+struct xcommand_t
+{
+	const char *name;
+	xcommand_t *next;
+	com_func_t function;
+	boolean debug;
+};
+
+extern xcommand_t *com_commands; // current commands
+
+xcommand_t *COM_AddCommand(const char *name, com_func_t func);
+void COM_AddDebugCommand(const char *name, com_func_t func);
 int COM_AddLuaCommand(const char *name);
 
 size_t COM_Argc(void);
@@ -129,6 +140,7 @@ typedef enum
 	                 // used on menus
 	CV_CHEAT = 2048, // Don't let this be used in multiplayer unless cheats are on.
 	CV_NOLUA = 4096,/* don't let this be called from Lua */
+	CV_ADDEDBYLUA = 8192,
 } cvflags_t;
 
 struct CV_PossibleValue_t

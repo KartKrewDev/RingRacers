@@ -148,6 +148,7 @@ public:
 		constexpr Chain() {}
 		explicit Chain(float x, float y) : x_(x), y_(y) {}
 		Chain(const Chain&) = default;
+		Chain& operator=(const Chain&) = default;
 
 		struct Clipper
 		{

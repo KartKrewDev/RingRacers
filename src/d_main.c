@@ -1445,9 +1445,9 @@ void D_SRB2Main(void)
 	// Do this up here so that WADs loaded through the command line can use ExecCfg
 	COM_Init();
 
-	COM_AddCommand("assert", Command_assert);
+	COM_AddDebugCommand("assert", Command_assert);
 #ifdef DEVELOP
-	COM_AddCommand("crash", Command_crash);
+	COM_AddDebugCommand("crash", Command_crash);
 #endif
 
 #ifndef TESTERS

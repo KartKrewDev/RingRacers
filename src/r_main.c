@@ -1643,5 +1643,5 @@ void R_RegisterEngineStuff(void)
 
 	// debugging
 
-	COM_AddCommand("debugrender_highlight", Command_Debugrender_highlight);
+	COM_AddDebugCommand("debugrender_highlight", Command_Debugrender_highlight);
 }

@@ -190,11 +190,11 @@ void S_RegisterSoundStuff(void)
 		return;
 	}
 
-	COM_AddCommand("tunes", Command_Tunes_f);
-	COM_AddCommand("restartaudio", Command_RestartAudio_f);
-	COM_AddCommand("playsound", Command_PlaySound);
+	COM_AddDebugCommand("tunes", Command_Tunes_f);
+	COM_AddDebugCommand("restartaudio", Command_RestartAudio_f);
+	COM_AddDebugCommand("playsound", Command_PlaySound);
 	RegisterNetXCmd(XD_PLAYSOUND, Got_PlaySound);
-	COM_AddCommand("musicdef", Command_MusicDef_f);
+	COM_AddDebugCommand("musicdef", Command_MusicDef_f);
 }
 
 void SetChannelsNum(void);

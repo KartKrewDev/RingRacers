@@ -32,6 +32,7 @@ TYPEDEF (minigen_t);
 TYPEDEF (vsbuf_t);
 TYPEDEF (CV_PossibleValue_t);
 TYPEDEF (consvar_t);
+TYPEDEF (xcommand_t);
 
 // d_netcmd.h
 TYPEDEF (changeteam_packet_t);
