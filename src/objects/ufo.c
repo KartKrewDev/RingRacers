@@ -26,6 +26,7 @@
 #include "../r_skins.h"
 #include "../k_hitlag.h"
 #include "../acs/interface.h"
+#include "../hu_stuff.h"
 
 #define UFO_BASE_SPEED (42 * FRACUNIT) // UFO's slowest speed.
 #define UFO_SPEEDUP (FRACUNIT >> 1) // Acceleration
@@ -453,6 +454,8 @@ static void UFOMove(mobj_t *ufo)
 
 		// Disable player
 		P_DoAllPlayersExit(PF_NOCONTEST, false);
+
+		HU_DoTitlecardCEcho(NULL, "TOO LATE...", false);
 	}
 
 	if (pathfindsuccess == true)

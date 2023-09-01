@@ -6,6 +6,7 @@
 #include "../i_system.h" // I_OsPolling
 #include "../i_video.h" // I_UpdateNoBlit
 #include "../m_misc.h" // NUMLOGIP
+#include "../f_finale.h" // g_wipeskiprender
 
 menuitem_t PLAY_MP_JoinIP[] =
 {
@@ -56,6 +57,21 @@ void M_MPJoinIPInit(INT32 choice)
 	M_SetupNextMenu(&PLAY_MP_JoinIPDef, true);
 }
 
+void M_PleaseWait(void)
+{
+	if (rendermode == render_none)
+		return;
+
+	g_wipeskiprender = true;
+
+	M_DrawTextBox(56, BASEVIDHEIGHT/2-12, 24, 2);
+	V_DrawCenteredString(BASEVIDWIDTH/2, BASEVIDHEIGHT/2, 0, "PLEASE WAIT...");
+	I_OsPolling();
+	I_UpdateNoBlit();
+	if (rendermode == render_soft)
+		I_FinishUpdate(); // page flip or blit buffer
+}
+
 // Attempts to join a given IP from the menu.
 void M_JoinIP(const char *ipa)
 {
@@ -67,13 +83,7 @@ void M_JoinIP(const char *ipa)
 
 	COM_BufAddText(va("connect \"%s\"\n", ipa));
 
-	// A little "please wait" message.
-	M_DrawTextBox(56, BASEVIDHEIGHT/2-12, 24, 2);
-	V_DrawCenteredString(BASEVIDWIDTH/2, BASEVIDHEIGHT/2, 0, "Connecting to server...");
-	I_OsPolling();
-	I_UpdateNoBlit();
-	if (rendermode == render_soft)
-		I_FinishUpdate(); // page flip or blit buffer
+	M_PleaseWait();
 }
 
 boolean M_JoinIPInputs(INT32 ch)

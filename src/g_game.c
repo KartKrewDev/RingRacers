@@ -1146,7 +1146,7 @@ void G_DoLoadLevelEx(boolean resetplayer, gamestate_t newstate)
 		else
 		{
 			// Podium: writetextmap is finished. Yay!
-			HU_DoTitlecardCEcho(va("Congratulations,\\%s!\\Check the console!", cv_playername[0].string));
+			HU_DoTitlecardCEcho(NULL, va("Congratulations,\\%s!\\Check the console!", cv_playername[0].string), true);
 
 			livestudioaudience_timer = 0;
 			LiveStudioAudience();
@@ -1274,6 +1274,10 @@ boolean G_IsTitleCardAvailable(void)
 
 	// Instant white fade.
 	if (gametyperules & GTR_SPECIALSTART)
+		return false;
+
+	// ALso.
+	if (K_PodiumSequence() == true)
 		return false;
 
 	// The title card is available.
@@ -2827,9 +2831,6 @@ void G_DoReborn(INT32 playernum)
 {
 	player_t *player = &players[playernum];
 
-	// Make sure objectplace is OFF when you first start the level!
-	OP_ResetObjectplace();
-
 	{
 		// respawn at the start
 		mobj_t *oldmo = NULL;
@@ -2850,11 +2851,53 @@ void G_DoReborn(INT32 playernum)
 	}
 }
 
+// These are the barest esentials.
+// This func probably doesn't even need to know if the player is a bot.
 void G_AddPlayer(INT32 playernum)
 {
-	player_t *p = &players[playernum];
-	p->playerstate = PST_REBORN;
-	demo_extradata[playernum] |= DXD_JOINDATA|DXD_PLAYSTATE|DXD_COLOR|DXD_NAME|DXD_SKIN|DXD_FOLLOWER; // Set everything
+	CL_ClearPlayer(playernum);
+	G_DestroyParty(playernum);
+
+	playeringame[playernum] = true;
+
+	player_t *newplayer = &players[playernum];
+
+	newplayer->playerstate = PST_REBORN;
+	newplayer->jointime = 0;
+
+	demo_extradata[playernum] |= DXD_ADDPLAYER;
+}
+
+void G_SpectatePlayerOnJoin(INT32 playernum)
+{
+	// This is only ever called shortly after the above.
+	// That calls CL_ClearPlayer, so spectator is false by default
+
+	if (!netgame && !G_GametypeHasTeams() && !G_GametypeHasSpectators())
+		return;
+
+	// These are handled automatically elsewhere
+	if (demo.playback || players[playernum].bot)
+		return;
+
+	UINT8 i;
+	for (i = 0; i < MAXPLAYERS; i++)
+	{
+		if (!playeringame[i])
+			continue;
+
+		// Spectators are of no consequence
+		if (players[i].spectator)
+			continue;
+
+		// Prevent splitscreen hosters/joiners from only adding 1 player at a time in empty servers (this will also catch yourself)
+		if (!players[i].jointime)
+			continue;
+
+		// A ha! An established player! It's time to spectate
+		players[playernum].spectator = true;
+		break;
+	}
 }
 
 void G_BeginLevelExit(void)
@@ -3273,7 +3316,7 @@ boolean G_GametypeHasSpectators(void)
 #ifdef DEVELOP
 	return true;
 #endif
-	return (netgame || (multiplayer && demo.netgame));
+	return (netgame || (demo.playback && demo.netgame));
 }
 
 //

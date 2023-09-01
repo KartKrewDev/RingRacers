@@ -948,6 +948,7 @@ static int libd_drawTitleCardString(lua_State *L)
 	boolean rightalign = lua_optboolean(L, 5);
 	INT32 timer = luaL_optinteger(L, 6, 0);
 	INT32 threshold = luaL_optinteger(L, 7, 0);
+	boolean p4 = lua_optboolean(L, 8);
 	huddrawlist_h list;
 
 	flags &= ~V_PARAMMASK; // Don't let crashes happen.
@@ -958,9 +959,9 @@ static int libd_drawTitleCardString(lua_State *L)
 	lua_pop(L, 1);
 
 	if (LUA_HUD_IsDrawListValid(list))
-		LUA_HUD_AddDrawTitleCardString(list, x, y, flags, str, rightalign, timer, threshold);
+		LUA_HUD_AddDrawTitleCardString(list, x, y, flags, str, rightalign, timer, threshold, p4);
 	else
-		V_DrawTitleCardString(x, y, str, flags, rightalign, timer, threshold);
+		V_DrawTitleCardString(x, y, str, flags, rightalign, timer, threshold, p4);
 	return 0;
 }
 
@@ -989,9 +990,10 @@ static int libd_drawKartString(lua_State *L)
 static int libd_titleCardStringWidth(lua_State *L)
 {
 	const char *str = luaL_checkstring(L, 1);
+	boolean p4 = lua_optboolean(L, 2);
 	HUDONLY
 
-	lua_pushinteger(L, V_TitleCardStringWidth(str));
+	lua_pushinteger(L, V_TitleCardStringWidth(str, p4));
 	return 1;
 }
 

@@ -17,6 +17,7 @@
 
 #include "doomstat.h"
 #include "doomdef.h"
+#include "console.h" // con_startup
 #include "command.h"
 #include "i_threads.h"
 #include "mserv.h"
@@ -39,6 +40,8 @@ static boolean MSInProgress;
 static boolean MSUpdateAgain;
 
 static time_t  MSLastPing;
+
+static char *MSRules;
 
 #ifdef HAVE_THREADS
 static I_mutex MSMutex;
@@ -157,6 +160,43 @@ static void Command_Listserv_f(void)
 	}
 }
 
+static boolean firstmsrules = false;
+
+static void
+Get_masterserver_rules (boolean checkfirst)
+{
+	char rules[256];
+
+	if (checkfirst)
+	{
+		boolean MSRulesExist;
+
+		Lock_state();
+		MSRulesExist = (MSRules != NULL);
+		Unlock_state();
+
+		if (MSRulesExist)
+			return;
+	}
+
+	if (HMS_fetch_rules(rules, sizeof rules))
+	{
+		Lock_state();
+		Z_Free(MSRules);
+		MSRules = Z_StrDup(rules);
+
+		if (MSRegistered == true)
+		{
+			CONS_Printf("\n");
+			CONS_Alert(CONS_NOTICE, "%s\n", rules);
+		}
+
+		firstmsrules = true;
+
+		Unlock_state();
+	}
+}
+
 static void
 Finish_registration (void)
 {
@@ -174,6 +214,17 @@ Finish_registration (void)
 		time(&MSLastPing);
 	}
 	Unlock_state();
+
+	char *rules = GetMasterServerRules();
+	if (rules == NULL)
+	{
+		Get_masterserver_rules(true);
+	}
+	else
+	{
+		CONS_Printf("\n");
+		CONS_Alert(CONS_NOTICE, "%s\n", rules);
+	}
 
 	if (registered)
 		CONS_Printf("Master server registration successful.\n");
@@ -255,6 +306,15 @@ Finish_unlist (void)
 		I_wake_all_cond(&MSCond);
 #endif
 	}
+}
+
+static void
+Finish_masterserver_change (char *api)
+{
+	HMS_set_api(api);
+
+	if (!con_startup)
+		Get_masterserver_rules(false);
 }
 
 #ifdef HAVE_THREADS
@@ -350,7 +410,14 @@ Change_masterserver_thread (char *api)
 	}
 	Unlock_state();
 
-	HMS_set_api(api);
+	Finish_masterserver_change(api);
+}
+
+static void
+Get_masterserver_rules_thread (void)
+{
+	// THIS FUNC has its own lock check in it
+	Get_masterserver_rules(true);
 }
 #endif/*HAVE_THREADS*/
 
@@ -395,6 +462,17 @@ void UnregisterServer(void)
 	Finish_unlist();
 #endif
 #endif/*MASTERSERVER*/
+}
+
+char *GetMasterServerRules(void)
+{
+	char *rules;
+
+	Lock_state();
+	rules = MSRules ? Z_StrDup(MSRules) : NULL;
+	Unlock_state();
+
+	return rules;
 }
 
 static boolean
@@ -447,7 +525,21 @@ Set_api (const char *api)
 			strdup(api)
 	);
 #else
-	HMS_set_api(strdup(api));
+	Finish_masterserver_change(strdup(api));
+#endif
+}
+
+void
+Get_rules (void)
+{
+#ifdef HAVE_THREADS
+	I_spawn_thread(
+			"get-masterserver-rules",
+			(I_thread_fn)Get_masterserver_rules_thread,
+			NULL
+	);
+#else
+	Get_masterserver_rules(true);
 #endif
 }
 
@@ -521,6 +613,8 @@ void Advertise_OnChange(void)
 #ifdef HAVE_DISCORDRPC
 	DRPC_UpdatePresence();
 #endif
+
+	M_PopupMasterServerRules();
 }
 
 #ifdef DEVELOP

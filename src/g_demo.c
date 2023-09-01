@@ -228,10 +228,7 @@ void G_ReadDemoExtraData(void)
 		{
 			if (!playeringame[p])
 			{
-				CL_ClearPlayer(p);
-				playeringame[p] = true;
 				G_AddPlayer(p);
-				players[p].spectator = true;
 			}
 
 			for (i = 0; i < MAXAVAILABILITY; i++)
@@ -253,28 +250,34 @@ void G_ReadDemoExtraData(void)
 
 			switch (i) {
 			case DXD_PST_PLAYING:
-				if (players[p].bot)
+				if (players[p].spectator == true)
 				{
-					players[p].spectator = false;
-				}
-				else
-				{
-					players[p].pflags |= PF_WANTSTOJOIN;
+					if (players[p].bot)
+					{
+						players[p].spectator = false;
+					}
+					else
+					{
+						players[p].pflags |= PF_WANTSTOJOIN;
+					}
 				}
 				//CONS_Printf("player %s is despectating on tic %d\n", player_names[p], leveltime);
 				break;
 
 			case DXD_PST_SPECTATING:
-				players[p].pflags &= ~PF_WANTSTOJOIN; // double-fuck you
-				if (players[p].spectator != true)
+				if (players[p].spectator)
 				{
-					//CONS_Printf("player %s is spectating on tic %d\n", player_names[p], leveltime);
-					players[p].spectator = true;
-					if (players[p].mo)
-						P_DamageMobj(players[p].mo, NULL, NULL, 1, DMG_INSTAKILL);
-					else
-						players[p].playerstate = PST_REBORN;
+					players[p].pflags &= ~PF_WANTSTOJOIN;
 				}
+				else
+				{
+					if (players[p].mo)
+					{
+						P_DamageMobj(players[p].mo, NULL, NULL, 1, DMG_SPECTATOR);
+					}
+					P_SetPlayerSpectator(p);
+				}
+
 				break;
 
 			case DXD_PST_LEFT:
@@ -3420,7 +3423,7 @@ void G_DoPlayDemo(const char *defdemoname)
 		if (!playeringame[displayplayers[0]] || players[displayplayers[0]].spectator)
 			displayplayers[0] = consoleplayer = serverplayer = p;
 
-		playeringame[p] = true;
+		G_AddPlayer(p);
 		players[p].spectator = spectator;
 
 		if (flags & DEMO_KICKSTART)

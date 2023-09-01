@@ -127,6 +127,8 @@ extern UINT8 demo_writerng;
 #define DXD_COLOR      0x10 // color changed
 #define DXD_FOLLOWER   0x20 // follower was changed
 
+#define DXD_ADDPLAYER (DXD_JOINDATA|DXD_PLAYSTATE|DXD_COLOR|DXD_NAME|DXD_SKIN|DXD_FOLLOWER)
+
 #define DXD_WEAPONPREF 0x80 // netsynced playsim settings were changed
 
 #define DXD_PST_PLAYING    0x01

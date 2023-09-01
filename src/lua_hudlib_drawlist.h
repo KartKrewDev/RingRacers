@@ -111,7 +111,8 @@ void LUA_HUD_AddDrawTitleCardString(
 	const char *str,
 	boolean bossmode,
 	INT32 timer,
-	INT32 threshold
+	INT32 threshold,
+	boolean p4
 );
 void LUA_HUD_AddDrawKartString(
 	huddrawlist_h list,

@@ -3086,6 +3086,23 @@ void M_DrawTimeAttack(void)
 
 // NOTE: This is pretty rigid and only intended for use with the multiplayer options menu which has *3* choices.
 
+static void M_DrawMasterServerReminder(void)
+{
+	// Did you change the Server Browser address? Have a little reminder.
+
+	INT32 mservflags = 0;
+	if (CV_IsSetToDefault(&cv_masterserver))
+		mservflags = highlightflags;
+	else
+		mservflags = warningflags;
+
+	INT32 y = BASEVIDHEIGHT - 24;
+
+	V_DrawFadeFill(0, y-1, BASEVIDWIDTH, 10+1, 0, 31, 5);
+	V_DrawCenteredThinString(BASEVIDWIDTH/2, y,
+		mservflags, va("List via \"%s\"", cv_masterserver.string));
+}
+
 static void M_MPOptDrawer(menu_t *m, INT16 extend[3][3])
 {
 	// This is a copypaste of the generic gamemode menu code with a few changes.
@@ -3149,6 +3166,7 @@ void M_DrawMPOptSelect(void)
 	M_DrawEggaChannel();
 	M_DrawMenuTooltips();
 	M_MPOptDrawer(&PLAY_MP_OptSelectDef, mpmenu.modewinextend);
+	M_DrawMasterServerReminder();
 }
 
 // Multiplayer mode option select: HOST GAME!
@@ -3400,14 +3418,79 @@ void M_DrawMPRoomSelect(void)
 
 	// Draw buttons:
 
-	if (!mpmenu.roomforced || mpmenu.room == 0)
-		V_DrawFixedPatch(160<<FRACBITS, 100<<FRACBITS, FRACUNIT, mpmenu.room ? (5<<V_ALPHASHIFT) : 0, butt1[(mpmenu.room) ? 1 : 0], NULL);
+	V_DrawFixedPatch(160<<FRACBITS, 90<<FRACBITS, FRACUNIT, mpmenu.room ? (5<<V_ALPHASHIFT) : 0, butt1[(mpmenu.room) ? 1 : 0], NULL);
 
-	if (!mpmenu.roomforced || mpmenu.room == 1)
-		V_DrawFixedPatch(160<<FRACBITS, 100<<FRACBITS, FRACUNIT, (!mpmenu.room) ? (5<<V_ALPHASHIFT) : 0, butt2[(!mpmenu.room) ? 1 : 0], NULL);
+	V_DrawFixedPatch(160<<FRACBITS, 90<<FRACBITS, FRACUNIT, (!mpmenu.room) ? (5<<V_ALPHASHIFT) : 0, butt2[(!mpmenu.room) ? 1 : 0], NULL);
+
+	V_DrawFixedPatch(0, 0, FRACUNIT, 0, W_CachePatchName("MENUHINT", PU_CACHE), NULL);
+	V_DrawCenteredThinString(BASEVIDWIDTH/2, 12, 0, "Select today's type of play!");
+
+	M_DrawMasterServerReminder();
 }
 
 // SERVER BROWSER
+static void M_DrawServerCountAndHorizontalBar(void)
+{
+	const char *text;
+	INT32 y = currentMenu->y+STRINGHEIGHT;
+
+	const char throbber[4] = {'-', '\\', '|', '/'};
+	UINT8 throbindex = (mpmenu.ticker/4) % 4;
+
+	switch (M_GetWaitingMode())
+	{
+		case M_WAITING_VERSION:
+			text = "Checking for updates...";
+			break;
+
+		case M_WAITING_SERVERS:
+			text = "Loading server list...";
+			break;
+
+		default:
+			if (serverlistultimatecount > serverlistcount)
+			{
+				text = va("%d/%d server%s found...",
+						serverlistcount,
+						serverlistultimatecount,
+						serverlistultimatecount == 1 ? "" : "s"
+				);
+			}
+			else
+			{
+				throbindex = UINT8_MAX; // No throbber!
+				text = va("%d server%s found",
+					serverlistcount,
+					serverlistcount == 1 ? "" : "s"
+				);
+			}
+	}
+
+	if (throbindex == UINT8_MAX)
+	{
+		V_DrawRightAlignedString(
+			BASEVIDWIDTH - currentMenu->x,
+			y,
+			highlightflags,
+			text
+		);
+	}
+	else
+	{
+		V_DrawRightAlignedString(
+			BASEVIDWIDTH - currentMenu->x - 12, y,
+			highlightflags,
+			text
+		);
+
+		V_DrawCenteredString( // Only clean way to center the throbber without exposing character width
+			BASEVIDWIDTH - currentMenu->x - 4, y,
+			highlightflags,
+			va("%c", throbber[throbindex])
+		);
+	}
+}
+
 void M_DrawMPServerBrowser(void)
 {
 	patch_t *text1 = W_CachePatchName("MENUBGT1", PU_CACHE);
@@ -3503,11 +3586,19 @@ void M_DrawMPServerBrowser(void)
 	V_DrawFill(0, 53, 320, 1, 31);
 	V_DrawFill(0, 55, 320, 1, 31);
 
-	V_DrawCenteredGamemodeString(160, 2, 0, 0, "Server Browser");
+	const char *headertext;
+	if (M_SecretUnlocked(SECRET_ADDONS, true))
+		headertext = va("%s Servers", mpmenu.room ? "Modded" : "Core");
+	else
+		headertext = "Server Browser";
+	V_DrawCenteredGamemodeString(160, 2, 0, 0, headertext);
 
 	// normal menu options
 	M_DrawGenericMenu();
 
+	// And finally, the overlay bar!
+	M_DrawServerCountAndHorizontalBar();
+	M_DrawMasterServerReminder();
 }
 
 // OPTIONS MENU

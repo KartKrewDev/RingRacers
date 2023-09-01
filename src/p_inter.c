@@ -1556,7 +1556,11 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 				P_PlayDeathSound(target);
 			}
 
-			if (K_Cooperative())
+			// Prisons Free Play: don't eliminate P1 for
+			// spectating. Because in Free Play, this player
+			// can enter the game again, and these flags would
+			// make them intangible.
+			if (K_Cooperative() && !target->player->spectator)
 			{
 				target->player->pflags |= PF_ELIMINATED;
 
@@ -2052,30 +2056,34 @@ static boolean P_PlayerHitsPlayer(mobj_t *target, mobj_t *inflictor, mobj_t *sou
 
 static boolean P_KillPlayer(player_t *player, mobj_t *inflictor, mobj_t *source, UINT8 type)
 {
-	if (player->respawn.state != RESPAWNST_NONE)
+	if (type == DMG_SPECTATOR && (G_GametypeHasTeams() || G_GametypeHasSpectators()))
 	{
-		K_DoInstashield(player);
-		return false;
+		P_SetPlayerSpectator(player-players);
 	}
-
-	if (!player->exiting && (specialstageinfo.valid == true || modeattacking & ATTACKING_SPB))
+	else
 	{
-		// TODO: this would make a great debug feature for release
-#ifdef DEVELOP
-		if (type != DMG_SPECTATOR)
+		if (player->respawn.state != RESPAWNST_NONE)
+		{
+			K_DoInstashield(player);
+			return false;
+		}
+
+		if (player->exiting)
+		{
+			player->mo->destscale = 1;
+			player->mo->flags |= MF_NOCLIPTHING;
+			return false;
+		}
+
+		if (specialstageinfo.valid == true)
+		{
+			HU_DoTitlecardCEcho(player, "FALL OUT!", false);
+			P_DoPlayerExit(player, PF_NOCONTEST);
+		}
+		else if (modeattacking & ATTACKING_SPB)
 		{
 			P_DoPlayerExit(player, PF_NOCONTEST);
 		}
-#else
-		P_DoPlayerExit(player, PF_NOCONTEST);
-#endif
-	}
-
-	if (player->exiting)
-	{
-		player->mo->destscale = 1;
-		player->mo->flags |= MF_NOCLIPTHING;
-		return false;
 	}
 
 	switch (type)
@@ -2578,7 +2586,6 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 			player->driftboost = player->strongdriftboost = 0;
 			player->gateBoost = 0;
 			player->fastfall = 0;
-			player->fastfallBase = 0;
 			player->ringboost = 0;
 			player->glanceDir = 0;
 			player->pflags &= ~PF_GAINAX;

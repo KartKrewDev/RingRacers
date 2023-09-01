@@ -1193,14 +1193,13 @@ static void Got_NameAndColor(UINT8 **cp, INT32 playernum)
 				&& LUA_HookTeamSwitch(&players[playernum], 0, false, false, false)) // fiiiine, lua can except it
 			{
 				P_DamageMobj(players[playernum].mo, NULL, NULL, 1, DMG_SPECTATOR);
-				players[playernum].playerstate = PST_REBORN;
 
-				players[playernum].pflags &= ~PF_WANTSTOJOIN;
-				players[playernum].spectator = true;
+				if (players[i].spectator)
+				{
+					HU_AddChatText(va("\x82*%s became a spectator.", player_names[playernum]), false);
 
-				HU_AddChatText(va("\x82*%s became a spectator.", player_names[playernum]), false);
-
-				FinalisePlaystateChange(playernum);
+					FinalisePlaystateChange(playernum);
+				}
 			}
 		}
 	}
@@ -3452,6 +3451,22 @@ static void Command_ServerTeamChange_f(void)
 	SendNetXCmd(XD_TEAMCHANGE, &usvalue, sizeof(usvalue));
 }
 
+void P_SetPlayerSpectator(INT32 playernum)
+{
+	//Make sure you're in the right gametype.
+	if (!G_GametypeHasTeams() && !G_GametypeHasSpectators())
+		return;
+
+	// Don't duplicate efforts.
+	if (players[playernum].spectator)
+		return;
+
+	players[playernum].spectator = true;
+	players[playernum].pflags &= ~PF_WANTSTOJOIN;
+
+	players[playernum].playerstate = PST_REBORN;
+}
+
 //todo: This and the other teamchange functions are getting too long and messy. Needs cleaning.
 static void Got_Teamchange(UINT8 **cp, INT32 playernum)
 {
@@ -3523,55 +3538,38 @@ static void Got_Teamchange(UINT8 **cp, INT32 playernum)
 	{
 		CONS_Alert(CONS_WARNING, M_GetText("Illegal team change received from player %s\n"), player_names[playernum]);
 		SendKick(playernum, KICK_MSG_CON_FAIL);
+		return;
 	}
 
 	//Safety first!
 	// (not respawning spectators here...)
 	wasspectator = (players[playernum].spectator == true);
-		
-	if (!wasspectator && gamestate == GS_LEVEL)
-	{
-		if (players[playernum].mo)
-		{
-			P_DamageMobj(players[playernum].mo, NULL, NULL, 1,
-				(NetPacket.packet.newteam ? DMG_INSTAKILL : DMG_SPECTATOR));
-		}
-		//else
-		if (!NetPacket.packet.newteam)
-		{
-			players[playernum].playerstate = PST_REBORN;
-		}
-	}
 
-	players[playernum].pflags &= ~PF_WANTSTOJOIN;
+	if (!wasspectator)
+	{
+		if (gamestate == GS_LEVEL && players[playernum].mo)
+		{
+			// The following will call P_SetPlayerSpectator if successful
+			P_DamageMobj(players[playernum].mo, NULL, NULL, 1, DMG_SPECTATOR);
+		}
+
+		//...but because the above could return early under some contexts, we try again here
+		P_SetPlayerSpectator(playernum);
+	}
 
 	//Now that we've done our error checking and killed the player
 	//if necessary, put the player on the correct team/status.
-	boolean nochangeoccourred = false;
+
+	if (NetPacket.packet.newteam != 0)
+	{
+		// This serves us in both teamchange contexts.
+		players[playernum].pflags |= PF_WANTSTOJOIN;
+	}
 
 	if (G_GametypeHasTeams())
 	{
-		if (!NetPacket.packet.newteam)
-		{
-			players[playernum].ctfteam = 0;
-			players[playernum].spectator = true;
-		}
-		else
-		{
-			players[playernum].ctfteam = NetPacket.packet.newteam;
-			players[playernum].pflags |= PF_WANTSTOJOIN; //players[playernum].spectator = false;
-			nochangeoccourred = true;
-		}
-	}
-	else if (G_GametypeHasSpectators())
-	{
-		if (!NetPacket.packet.newteam)
-			players[playernum].spectator = true;
-		else
-		{
-			players[playernum].pflags |= PF_WANTSTOJOIN; //players[playernum].spectator = false;
-			nochangeoccourred = true;
-		}
+		// This one is, of course, specific.
+		players[playernum].ctfteam = NetPacket.packet.newteam;
 	}
 
 	if (NetPacket.packet.autobalance)
@@ -3599,20 +3597,7 @@ static void Got_Teamchange(UINT8 **cp, INT32 playernum)
 	else if (NetPacket.packet.newteam == 0 && !wasspectator)
 		HU_AddChatText(va("\x82*%s became a spectator.", player_names[playernum]), false); // "entered the game" text was moved to P_SpectatorJoinGame
 
-	/*if (G_GametypeHasTeams())
-	{
-		if (NetPacket.packet.newteam)
-		{
-			UINT8 i;
-			for (i = 0; i <= splitscreen; i++)
-			{
-				if (playernum == g_localplayers[i]) //CTF and Team Match colors.
-					CV_SetValue(&cv_playercolor[i], NetPacket.packet.newteam + 5); - -this calculation is totally wrong
-			}
-		}
-	}*/
-
-	if (gamestate != GS_LEVEL || nochangeoccourred == true)
+	if (gamestate != GS_LEVEL || wasspectator == true)
 		return;
 
 	FinalisePlaystateChange(playernum);

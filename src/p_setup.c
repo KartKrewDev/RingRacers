@@ -7835,6 +7835,9 @@ static void P_InitPlayers(void)
 	UINT8 i;
 	INT32 skin = -1;
 
+	// Make sure objectplace is OFF when you first start the level!
+	OP_ResetObjectplace();
+
 	// Are we forcing a character?
 	if (gametype == GT_TUTORIAL)
 	{
@@ -7871,14 +7874,7 @@ static void P_InitPlayers(void)
 			// followercolor can be left alone for hopefully obvious reasons
 		}
 
-		if (!(gametyperules & GTR_CIRCUIT) && K_PodiumSequence() == false)
-		{
-			G_DoReborn(i);
-		}
-		else // gametype is race
-		{
-			G_SpawnPlayer(i);
-		}
+		G_SpawnPlayer(i);
 
 		players[i].xtralife = 0; // extra lives do not ever carry over from the previous round
 	}
@@ -8245,8 +8241,17 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 			}
 		}
 
-		if (gametyperules & GTR_SPECIALSTART)
+		if (K_PodiumHasEmerald())
 		{
+			// Special Stage out
+			if (ranspecialwipe != 2)
+				S_StartSound(NULL, sfx_s3k6a);
+			levelfadecol = 0;
+			wipetype = wipe_encore_towhite;
+		}
+		else if (gametyperules & GTR_SPECIALSTART)
+		{
+			// Special Stage in
 			if (ranspecialwipe != 2)
 				S_StartSound(NULL, sfx_s3kaf);
 			levelfadecol = 0;
@@ -8254,6 +8259,7 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 		}
 		else if (skipstats == 1)
 		{
+			// MapWarp
 			if (ranspecialwipe != 2)
 				S_StartSound(NULL, sfx_s3k73);
 			levelfadecol = 0;
@@ -8261,11 +8267,13 @@ boolean P_LoadLevel(boolean fromnetsave, boolean reloadinggamestate)
 		}
 		else if (encoremode)
 		{
+			// Encore
 			levelfadecol = 0;
 			wipetype = wipe_encore_towhite;
 		}
 		else
 		{
+			// Default
 			levelfadecol = 31;
 		}
 
@@ -8547,7 +8555,7 @@ void P_PostLoadLevel(void)
 			K_InitGrandPrixBots();
 			grandprixinfo.initalize = false;
 		}
-		else if (grandprixinfo.wonround == true)
+		else
 		{
 			K_UpdateGrandPrixBots();
 			grandprixinfo.wonround = false;

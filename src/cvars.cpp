@@ -502,6 +502,7 @@ consvar_t cv_kicktime = Server("kicktime", "20").values(CV_Unsigned);
 
 void MasterServer_OnChange(void);
 consvar_t cv_masterserver = Server("masterserver", "https://ms.kartkrew.org/ms/api").onchange(MasterServer_OnChange);
+consvar_t cv_masterserver_nagattempts = Server("masterserver_nagattempts", "5").values(CV_Unsigned);
 
 void MasterServer_Debug_OnChange (void);
 consvar_t cv_masterserver_debug = Server("masterserver_debug", "Off").on_off().onchange(MasterServer_Debug_OnChange);
@@ -540,13 +541,14 @@ consvar_t cv_server_contact = Server("server_contact", "").onchange_noinit(Updat
 consvar_t cv_servername = Server("servername", "Ring Racers server").onchange_noinit(Update_parameters);
 
 void M_SortServerList(void);
-consvar_t cv_serversort = Server("serversort", "Ping").dont_save().onchange(M_SortServerList).values({
-	{0,"Ping"},
-	{1,"AVG. Power Level"},
-	{2,"Most Players"},
-	{3,"Least Players"},
-	{4,"Max Player Slots"},
-	{5,"Gametype"},
+consvar_t cv_serversort = Server("serversort", "Recommended").dont_save().onchange(M_SortServerList).values({
+	{-1, "Recommended"},
+	{ 0, "Ping"},
+	{ 1, "AVG. Power Level"},
+	{ 2, "Most Players"},
+	{ 3, "Least Players"},
+	{ 4, "Max Player Slots"},
+	{ 5, "Gametype"},
 });
 
 // show your ping on the HUD next to framerate. Defaults to warning only (shows up if your ping is > maxping)

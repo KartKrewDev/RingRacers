@@ -3,11 +3,14 @@
 
 #include "../k_menu.h"
 #include "../v_video.h"
-#include "../i_system.h" // I_OsPolling
-#include "../i_video.h" // I_UpdateNoBlit
+#include "../s_sound.h"
+
+//#define SERVERLISTDEBUG
 
 #ifdef SERVERLISTDEBUG
 #include "../m_random.h"
+
+void M_ServerListFillDebug(void);
 #endif
 
 menuitem_t PLAY_MP_ServerBrowser[] =
@@ -16,8 +19,8 @@ menuitem_t PLAY_MP_ServerBrowser[] =
 	{IT_STRING | IT_CVAR, "SORT BY", NULL,	// tooltip MUST be null.
 		NULL, {.cvar = &cv_serversort}, 0, 0},
 
-	{IT_STRING, "REFRESH", NULL,
-		NULL, {NULL}, 0, 0},
+	{IT_STRING | IT_CALL, "REFRESH", NULL,
+		NULL, {.routine = &M_RefreshServers}, 0, 0},
 
 	{IT_NOTHING, NULL, NULL, NULL, {NULL}, 0, 0},
 };
@@ -41,28 +44,6 @@ menu_t PLAY_MP_ServerBrowserDef = {
 
 // for server fetch threads...
 M_waiting_mode_t m_waiting_mode = M_NOT_WAITING;
-
-// depending on mpmenu.room, either allows only unmodded servers or modded ones. Remove others from the list.
-// we do this by iterating backwards.
-static void M_CleanServerList(void)
-{
-	UINT8 i = serverlistcount;
-
-	while (i)
-	{
-
-		if (serverlist[i].info.modifiedgame != mpmenu.room)
-		{
-			// move everything after this index 1 slot down...
-			if (i != serverlistcount)
-				memcpy(&serverlist[i], &serverlist[i+1], sizeof(serverelem_t)*(serverlistcount-i));
-
-			serverlistcount--;
-		}
-
-		i--;
-	}
-}
 
 void
 M_SetWaitingMode (int mode)
@@ -180,31 +161,19 @@ void M_RefreshServers(INT32 choice)
 {
 	(void)choice;
 
-	// Display a little "please wait" message.
-	M_DrawTextBox(52, BASEVIDHEIGHT/2-10, 25, 3);
-	V_DrawCenteredString(BASEVIDWIDTH/2, BASEVIDHEIGHT/2, 0, "Searching for servers...");
-	V_DrawCenteredString(BASEVIDWIDTH/2, (BASEVIDHEIGHT/2)+12, 0, "Please wait.");
-	I_OsPolling();
-	I_UpdateNoBlit();
-	if (rendermode == render_soft)
-		I_FinishUpdate(); // page flip or blit buffer
+	CL_UpdateServerList();
 
+#ifdef SERVERLISTDEBUG
+	M_ServerListFillDebug();
+#else /*SERVERLISTDEBUG*/
 #ifdef MASTERSERVER
 #ifdef HAVE_THREADS
 	Spawn_masterserver_thread("fetch-servers", Fetch_servers_thread);
 #else/*HAVE_THREADS*/
 	Fetch_servers_thread(NULL);
 #endif/*HAVE_THREADS*/
-#else/*MASTERSERVER*/
-	CL_UpdateServerList();
 #endif/*MASTERSERVER*/
-
-#ifdef SERVERLISTDEBUG
-	M_ServerListFillDebug();
-#endif
-	M_CleanServerList();
-	M_SortServerList();
-
+#endif /*SERVERLISTDEBUG*/
 }
 
 #ifdef UPDATE_ALERT
@@ -253,12 +222,20 @@ void M_ServersMenu(INT32 choice)
 	// modified game check: no longer handled
 	// we don't request a restart unless the filelist differs
 
+	CL_UpdateServerList();
+
+	mpmenu.ticker = 0;
 	mpmenu.servernum = 0;
 	mpmenu.scrolln = 0;
 	mpmenu.slide = 0;
 
+	PLAY_MP_ServerBrowserDef.prevMenu = currentMenu;
 	M_SetupNextMenu(&PLAY_MP_ServerBrowserDef, false);
 	itemOn = 0;
+
+#ifdef SERVERLISTDEBUG
+	M_ServerListFillDebug();
+#else /*SERVERLISTDEBUG*/
 
 #if defined (MASTERSERVER) && defined (HAVE_THREADS)
 	I_lock_mutex(&ms_QueryId_mutex);
@@ -289,12 +266,7 @@ void M_ServersMenu(INT32 choice)
 	M_RefreshServers(0);
 #endif/*defined (MASTERSERVER) && defined (HAVE_THREADS)*/
 
-#ifdef SERVERLISTDEBUG
-	M_ServerListFillDebug();
-#endif
-
-	M_CleanServerList();
-	M_SortServerList();
+#endif /*SERVERLISTDEBUG*/
 }
 
 #ifdef SERVERLISTDEBUG
@@ -304,29 +276,31 @@ void M_ServerListFillDebug(void)
 {
 	UINT8 i = 0;
 
-	serverlistcount = 10;
+	serverlistcount = 40;
 	memset(serverlist, 0, sizeof(serverlist));	// zero out the array for convenience...
 
 	for (i = 0; i < serverlistcount; i++)
 	{
 		// We don't really care about the server node for this, let's just fill in the info so that we have a visual...
-		serverlist[i].info.numberofplayer = min(i, 8);
-		serverlist[i].info.maxplayer = 8;
+		serverlist[i].info.maxplayer = M_RandomRange(8, 16);
+		UINT8 val = i % 16;
+		serverlist[i].info.numberofplayer = min(val, serverlist[i].info.maxplayer);
 
-		serverlist[i].info.avgpwrlv = P_RandomRange(PR_UNDEFINED, 500, 1500);
-		serverlist[i].info.time = P_RandomRange(PR_UNDEFINED, 1, 8);	// ping
+		serverlist[i].info.avgpwrlv = M_RandomRange(500, 1500);
+		serverlist[i].info.time = M_RandomRange(1, 8);	// ping
 
 		strcpy(serverlist[i].info.servername, va("Serv %d", i+1));
 
 		strcpy(serverlist[i].info.gametypename, i & 1 ? "Race" : "Battle");
 
-		P_RandomRange(PR_UNDEFINED, 0, 5);	// change results...
-		serverlist[i].info.kartvars = P_RandomRange(PR_UNDEFINED, 0, 3) & SV_SPEEDMASK;
+		serverlist[i].info.kartvars = M_RandomRange(0, 3) & SV_SPEEDMASK;
 
-		serverlist[i].info.modifiedgame = P_RandomRange(PR_UNDEFINED, 0, 1);
+		serverlist[i].info.modifiedgame = M_RandomRange(0, 1);
 
 		CONS_Printf("Serv %d | %d...\n", i, serverlist[i].info.modifiedgame);
 	}
+
+	M_SortServerList();
 }
 
 #endif // SERVERLISTDEBUG
@@ -339,7 +313,7 @@ static int ServerListEntryComparator_##key(const void *entry1, const void *entry
 	const serverelem_t *sa = (const serverelem_t*)entry1, *sb = (const serverelem_t*)entry2; \
 	if (sa->info.key != sb->info.key) \
 		return sa->info.key - sb->info.key; \
-	return strcmp(sa->info.servername, sb->info.servername); \
+	return sa->info.time - sb->info.time; \
 }
 
 // This does descending instead of ascending.
@@ -349,15 +323,22 @@ static int ServerListEntryComparator_##key##_reverse(const void *entry1, const v
 	const serverelem_t *sa = (const serverelem_t*)entry1, *sb = (const serverelem_t*)entry2; \
 	if (sb->info.key != sa->info.key) \
 		return sb->info.key - sa->info.key; \
-	return strcmp(sb->info.servername, sa->info.servername); \
+	return sa->info.time - sb->info.time; \
 }
 
-SERVER_LIST_ENTRY_COMPARATOR(time)
+//SERVER_LIST_ENTRY_COMPARATOR(time) -- done seperately due to the usual tiebreaker being time
 SERVER_LIST_ENTRY_COMPARATOR(numberofplayer)
 SERVER_LIST_ENTRY_COMPARATOR_REVERSE(numberofplayer)
 SERVER_LIST_ENTRY_COMPARATOR_REVERSE(maxplayer)
 SERVER_LIST_ENTRY_COMPARATOR(avgpwrlv)
 
+static int ServerListEntryComparator_time(const void *entry1, const void *entry2)
+{
+	const serverelem_t *sa = (const serverelem_t*)entry1, *sb = (const serverelem_t*)entry2;
+	if (sa->info.time != sb->info.time)
+		return sa->info.time - sb->info.time;
+	return strcmp(sa->info.servername, sb->info.servername);
+}
 
 static int ServerListEntryComparator_gametypename(const void *entry1, const void *entry2)
 {
@@ -365,13 +346,51 @@ static int ServerListEntryComparator_gametypename(const void *entry1, const void
 	int c;
 	if (( c = strcasecmp(sa->info.gametypename, sb->info.gametypename) ))
 		return c;
-	return strcmp(sa->info.servername, sb->info.servername); \
+	return sa->info.time - sb->info.time;
+}
+
+static int ServerListEntryComparator_recommended(const void *entry1, const void *entry2)
+{
+	const serverelem_t *sa = (const serverelem_t*)entry1, *sb = (const serverelem_t*)entry2;
+
+	INT32 saseedval = sa->info.numberofplayer;
+	INT32 sbseedval = sb->info.numberofplayer;
+
+	// Tyron wrote the following on 25072022:
+	// "sort should be two parts
+	// top part of the list is "all non-empty servers sorted by reverse playercount", with servers above a certain reported ping marked as bad connection or whatever
+	// bottom part of the list is all empty servers sorted by ping"
+	// toast is implementing on 27082023, over a year later, because
+	// "fixing server join flow" is saner to do near the end
+
+	{
+		const UINT8 SERVER_EMPTY = 1;
+
+		// The intent with this nudge is to show you
+		// good games you could get a memorable Duel in,
+		// with the possibility to really katamari into
+		// something more substantial.
+		// By comparison, empty games are not nearly as
+		// fun to get going, so let's lower their SEO.
+		if (!saseedval)
+			saseedval = MAXPLAYERS + SERVER_EMPTY;
+		if (!sbseedval)
+			sbseedval = MAXPLAYERS + SERVER_EMPTY;
+	}
+
+	if (saseedval != sbseedval)
+		return saseedval - sbseedval;
+
+	return sa->info.time - sb->info.time;
 }
 
 void M_SortServerList(void)
 {
 	switch(cv_serversort.value)
 	{
+	case -1:
+		qsort(serverlist, serverlistcount, sizeof(serverelem_t), ServerListEntryComparator_recommended);
+		break;
 	case 0:		// Ping.
 		qsort(serverlist, serverlistcount, sizeof(serverelem_t), ServerListEntryComparator_time);
 		break;
@@ -397,89 +416,115 @@ void M_SortServerList(void)
 // Server browser inputs & ticker
 void M_MPServerBrowserTick(void)
 {
+	mpmenu.ticker++;
 	mpmenu.slide /= 2;
+
+#if defined (MASTERSERVER) && defined (HAVE_THREADS)
+	I_lock_mutex(&ms_ServerList_mutex);
+	{
+		if (ms_ServerList)
+		{
+			CL_QueryServerList(ms_ServerList);
+			free(ms_ServerList);
+			ms_ServerList = NULL;
+		}
+	}
+	I_unlock_mutex(ms_ServerList_mutex);
+#endif
+
+	CL_TimeoutServerList();
 }
 
 // Input handler for server browser.
 boolean M_ServerBrowserInputs(INT32 ch)
 {
 	UINT8 pid = 0;
-	UINT8 maxscroll = serverlistcount-(SERVERSPERPAGE/2);
+	INT16 maxscroll = serverlistcount - (SERVERSPERPAGE/2) - 2; // Why? Because
+	if (maxscroll < 0)
+		maxscroll = 0;
+
+	const INT16 serverbrowserOn = (currentMenu->numitems - 1);
+
 	(void) ch;
 
 	if (!itemOn && menucmd[pid].dpad_ud < 0)
 	{
-		M_PrevOpt();	// go to itemOn 2
 		if (serverlistcount)
 		{
-			UINT8 prevscroll = mpmenu.scrolln;
+			// Return the MS listing to the bottom.
+			INT32 prevscroll = mpmenu.scrolln;
 
-			mpmenu.servernum = serverlistcount;
+			mpmenu.servernum = serverlistcount-1;
 			mpmenu.scrolln = maxscroll;
-			mpmenu.slide = SERVERSPACE * (prevscroll - mpmenu.scrolln);
+			mpmenu.slide = SERVERSPACE * (prevscroll - (INT32)mpmenu.scrolln);
 		}
 		else
 		{
-			itemOn = 1;	// Sike! If there are no servers, go to refresh instead.
+			M_PrevOpt(); // Double apply
 		}
-
-		return true;	// overwrite behaviour.
 	}
-	else if (itemOn == 2)	// server browser itself...
+	else if (itemOn == (serverbrowserOn - 1) && menucmd[pid].dpad_ud > 0 && !serverlistcount)
 	{
-		// we have to manually do that here.
-		if (M_MenuBackPressed(pid))
+		M_NextOpt(); // Double apply
+	}
+	else if (itemOn == serverbrowserOn)	// server browser itself...
+	{
+#ifndef SERVERLISTDEBUG
+		if (M_MenuConfirmPressed(pid))
 		{
-			M_GoBack(0);
 			M_SetMenuDelay(pid);
+
+			COM_BufAddText(va("connect node %d\n", serverlist[mpmenu.servernum].node));
+
+			M_PleaseWait();
+
+			return true;
 		}
+#endif
 
-		else if (menucmd[pid].dpad_ud > 0)	// down
+		if (menucmd[pid].dpad_ud > 0)	// down
 		{
-			if (mpmenu.servernum >= serverlistcount-1)
+			if ((UINT32)(mpmenu.servernum+1) < serverlistcount)
 			{
-				UINT8 prevscroll = mpmenu.scrolln;
-				mpmenu.servernum = 0;
-				mpmenu.scrolln = 0;
-				mpmenu.slide = SERVERSPACE * (prevscroll - mpmenu.scrolln);
-
-				M_NextOpt();	// Go back to the top of the real menu.
-			}
-			else
-			{
+				// Listing scroll down
 				mpmenu.servernum++;
 				if (mpmenu.scrolln < maxscroll && mpmenu.servernum > SERVERSPERPAGE/2)
 				{
 					mpmenu.scrolln++;
 					mpmenu.slide += SERVERSPACE;
 				}
-			}
-			S_StartSound(NULL, sfx_s3k5b);
-			M_SetMenuDelay(pid);
 
+				S_StartSound(NULL, sfx_s3k5b);
+				M_SetMenuDelay(pid);
+
+				return true;
+			}
+
+			// Return the MS listing to the top.
+			INT32 prevscroll = mpmenu.scrolln;
+
+			mpmenu.servernum = 0;
+			mpmenu.scrolln = 0;
+			mpmenu.slide = SERVERSPACE * (prevscroll - (INT32)mpmenu.scrolln);
 		}
 		else if (menucmd[pid].dpad_ud < 0)
 		{
-
-			if (!mpmenu.servernum)
+			if (mpmenu.servernum)
 			{
-				M_PrevOpt();
-			}
-			else
-			{
-				if (mpmenu.servernum <= serverlistcount-(SERVERSPERPAGE/2) && mpmenu.scrolln)
+				// Listing scroll up
+				if (mpmenu.servernum <= (INT16)maxscroll && mpmenu.scrolln)
 				{
 					mpmenu.scrolln--;
 					mpmenu.slide -= SERVERSPACE;
 				}
-
 				mpmenu.servernum--;
-			}
-			S_StartSound(NULL, sfx_s3k5b);
-			M_SetMenuDelay(pid);
 
+				S_StartSound(NULL, sfx_s3k5b);
+				M_SetMenuDelay(pid);
+
+				return true;
+			}
 		}
-		return true;	// Overwrite behaviour.
 	}
 	return false;	// use normal behaviour.
 }
