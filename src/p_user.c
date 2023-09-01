@@ -3171,7 +3171,7 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 	thiscam->radius = 20*cameraScale;
 	thiscam->height = 16*cameraScale;
 
-	// Don't run while respawning from a starpost
+	// Don't run while respawning from a cheatcheck
 	// Inu 4/8/13 Why not?!
 //	if (leveltime > 0 && timeinmap <= 0)
 //		return true;

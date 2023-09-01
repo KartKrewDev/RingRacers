@@ -2012,7 +2012,7 @@ static inline void G_PlayerFinishLevel(INT32 player)
 	p->mo->renderflags &= ~(RF_TRANSMASK|RF_BRIGHTMASK); // cancel invisibility
 	P_FlashPal(p, 0, 0); // Resets
 
-	p->starpostnum = 0;
+	p->cheatchecknum = 0;
 	memset(&p->respawn, 0, sizeof (p->respawn));
 
 	p->spectatorReentry = 0; // Clean up any pending re-entry forbiddings
@@ -2045,7 +2045,7 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 
 	UINT8 ctfteam;
 
-	INT32 starpostnum;
+	INT32 cheatchecknum;
 	INT32 exiting;
 	INT32 khudfinish;
 	INT32 khudcardanimation;
@@ -2191,7 +2191,7 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 		exiting = 0;
 		khudfinish = 0;
 		khudcardanimation = 0;
-		starpostnum = 0;
+		cheatchecknum = 0;
 
 		saveroundconditions = false;
 	}
@@ -2239,7 +2239,7 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 			khudcardanimation = 0;
 		}
 
-		starpostnum = players[player].starpostnum;
+		cheatchecknum = players[player].cheatchecknum;
 
 		pflags |= (players[player].pflags & (PF_STASIS|PF_ELIMINATED|PF_NOCONTEST|PF_FAULT|PF_LOSTLIFE));
 
@@ -2320,7 +2320,7 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	memcpy(players[player].availabilities, availabilities, sizeof(availabilities));
 	p->followitem = followitem;
 
-	p->starpostnum = starpostnum;
+	p->cheatchecknum = cheatchecknum;
 	p->exiting = exiting;
 	p->karthud[khud_finish] = khudfinish;
 	p->karthud[khud_cardanimation] = khudcardanimation;
@@ -2485,22 +2485,22 @@ void G_SpawnPlayer(INT32 playernum)
 		return;
 
 	P_SpawnPlayer(playernum);
-	G_MovePlayerToSpawnOrStarpost(playernum);
+	G_MovePlayerToSpawnOrCheatcheck(playernum);
 	LUA_HookPlayer(&players[playernum], HOOK(PlayerSpawn)); // Lua hook for player spawning :)
 }
 
-void G_MovePlayerToSpawnOrStarpost(INT32 playernum)
+void G_MovePlayerToSpawnOrCheatcheck(INT32 playernum)
 {
 #if 0
 	if (leveltime <= introtime && !players[playernum].spectator)
 		P_MovePlayerToSpawn(playernum, G_FindMapStart(playernum));
 	else
-		P_MovePlayerToStarpost(playernum);
+		P_MovePlayerToCheatcheck(playernum);
 #else
 	// Player's first spawn should be at the "map start".
 	// I.e. level load or join mid game.
 	if (leveltime > starttime && players[playernum].jointime > 1 && K_PodiumSequence() == false)
-		P_MovePlayerToStarpost(playernum);
+		P_MovePlayerToCheatcheck(playernum);
 	else
 		P_MovePlayerToSpawn(playernum, G_FindMapStart(playernum));
 #endif

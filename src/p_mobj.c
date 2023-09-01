@@ -12141,7 +12141,7 @@ void P_MovePlayerToSpawn(INT32 playernum, mapthing_t *mthing)
 	P_AfterPlayerSpawn(playernum);
 }
 
-void P_MovePlayerToStarpost(INT32 playernum)
+void P_MovePlayerToCheatcheck(INT32 playernum)
 {
 	fixed_t z;
 	sector_t *sector;
@@ -12876,7 +12876,7 @@ void P_InitSkyboxPoint(mobj_t *mobj, mapthing_t *mthing)
 		P_SetTarget(&skyboxviewpnts[tag], mobj);
 }
 
-static boolean P_MapAlreadyHasStarPost(mobj_t *mobj)
+static boolean P_MapAlreadyHasCheatcheck(mobj_t *mobj)
 {
 	thinker_t *th;
 	mobj_t *mo2;
@@ -12891,7 +12891,7 @@ static boolean P_MapAlreadyHasStarPost(mobj_t *mobj)
 		if (mo2 == mobj)
 			continue;
 
-		if (mo2->type == MT_STARPOST && mo2->health == mobj->health)
+		if (mo2->type == MT_CHEATCHECK && mo2->health == mobj->health)
 			return true;
 	}
 
@@ -13126,10 +13126,10 @@ static boolean P_SetupSpawnedMapThing(mapthing_t *mthing, mobj_t *mobj)
 
 		mobj->flags2 |= MF2_AXIS;
 		break;
-	case MT_STARPOST:
+	case MT_CHEATCHECK:
 		mobj->health = mthing->thing_args[0] + 1;
-		if (!P_MapAlreadyHasStarPost(mobj))
-			numstarposts++;
+		if (!P_MapAlreadyHasCheatcheck(mobj))
+			numcheatchecks++;
 		break;
 	case MT_SPIKE:
 		// Pop up spikes!

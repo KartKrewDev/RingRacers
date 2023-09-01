@@ -32,16 +32,16 @@
 
 */
 void P_MixUp(mobj_t *thing, fixed_t x, fixed_t y, fixed_t z, angle_t angle,
-			INT16 starpostx, INT16 starposty, INT16 starpostz,
-			INT32 starpostnum, tic_t starposttime, angle_t starpostangle,
-			fixed_t starpostscale, angle_t drawangle, INT32 flags2)
+			INT16 cheatcheckx, INT16 cheatchecky, INT16 cheatcheckz,
+			INT32 cheatchecknum, tic_t cheatchecktime, angle_t cheatcheckangle,
+			fixed_t cheatcheckscale, angle_t drawangle, INT32 flags2)
 {
 	const INT32 takeflags2 = MF2_OBJECTFLIP;
 	UINT8 i;
 
-	(void)starposttime;
-	(void)starpostangle;
-	(void)starpostscale;
+	(void)cheatchecktime;
+	(void)cheatcheckangle;
+	(void)cheatcheckscale;
 
 	// the move is ok,
 	// so link the thing into its new position
@@ -88,11 +88,11 @@ void P_MixUp(mobj_t *thing, fixed_t x, fixed_t y, fixed_t z, angle_t angle,
 		if (!thing->tracer)
 			thing->player->speed = 0;
 
-		// Starpost information
-		thing->player->respawn.pointx = starpostx;
-		thing->player->respawn.pointy = starposty;
-		thing->player->respawn.pointz = starpostz;
-		thing->player->starpostnum = starpostnum;
+		// Cheatcheck information
+		thing->player->respawn.pointx = cheatcheckx;
+		thing->player->respawn.pointy = cheatchecky;
+		thing->player->respawn.pointz = cheatcheckz;
+		thing->player->cheatchecknum = cheatchecknum;
 
 		thing->player->drawangle = drawangle;
 

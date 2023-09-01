@@ -537,7 +537,7 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 void P_PlayerRingBurst(player_t *player, INT32 num_rings); /// \todo better fit in p_user.c
 
 void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck);
-void P_TouchStarPost(mobj_t *starpost, player_t *player, boolean snaptopost);
+void P_TouchCheatcheck(mobj_t *cheatcheck, player_t *player, boolean snaptopost);
 void P_CheckTimeLimit(void);
 void P_CheckPointLimit(void);
 boolean P_CheckRacers(void);
@@ -558,9 +558,9 @@ extern INT32 ceilmovesound;
 #define CARRYFACTOR (FRACUNIT-ORIG_FRICTION)
 
 void P_MixUp(mobj_t *thing, fixed_t x, fixed_t y, fixed_t z, angle_t angle,
-			INT16 starpostx, INT16 starposty, INT16 starpostz,
-			INT32 starpostnum, tic_t starposttime, angle_t starpostangle,
-			fixed_t starpostscale, angle_t drawangle, INT32 flags2);
+			INT16 cheatcheckx, INT16 cheatchecky, INT16 cheatcheckz,
+			INT32 cheatchecknum, tic_t cheatchecktime, angle_t cheatcheckangle,
+			fixed_t cheatcheckscale, angle_t drawangle, INT32 flags2);
 boolean P_Teleport(mobj_t *thing, fixed_t x, fixed_t y, fixed_t z, angle_t angle, boolean flash, boolean dontstopmove);
 boolean P_SetMobjStateNF(mobj_t *mobj, statenum_t state);
 boolean P_CheckMissileSpawn(mobj_t *th);

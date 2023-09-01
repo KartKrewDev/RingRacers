@@ -367,7 +367,7 @@ typedef enum
 	SSF_WINDCURRENT = 1<<3,
 	SSF_CONVEYOR = 1<<4,
 	// free: 1<<5,
-	SSF_STARPOSTACTIVATOR = 1<<6,
+	SSF_CHEATCHECKACTIVATOR = 1<<6,
 	SSF_EXIT = 1<<7,
 	SSF_DELETEITEMS = 1<<8,
 	// free: 1<<9,

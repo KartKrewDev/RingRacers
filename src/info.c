@@ -157,7 +157,7 @@ char sprnames[NUMSPRITES + 1][5] =
 	"USPK", // Floor spike
 	"WSPK", // Wall spike
 	"WSPB", // Wall spike base
-	"STPT", // Starpost
+	"STPT", // Cheatcheck
 	"BMNE", // Big floating mine
 	"PUMI", // Rollout Rock
 
@@ -1949,12 +1949,12 @@ state_t states[NUMSTATES] =
 	{SPR_WSPK, 4,-1, {NULL}, 0, 0, S_NULL}, // S_WALLSPIKED1 -- Busted spike particles
 	{SPR_WSPK, 5,-1, {NULL}, 0, 0, S_NULL}, // S_WALLSPIKED2
 
-	// Starpost
-	{SPR_STPT, 0            , -1, {NULL},  0, 0, S_NULL},           // S_STARPOST_IDLE
-	{SPR_STPT, FF_ANIMATE|17, -1, {NULL},  5, 1, S_NULL},           // S_STARPOST_FLASH
-	{SPR_STPT, FF_ANIMATE|13,  2, {NULL},  1, 1, S_STARPOST_SPIN},  // S_STARPOST_STARTSPIN
-	{SPR_STPT, FF_ANIMATE|1 , 23, {NULL}, 11, 1, S_STARPOST_ENDSPIN}, // S_STARPOST_SPIN
-	{SPR_STPT, FF_ANIMATE|15,  2, {NULL},  1, 1, S_STARPOST_FLASH}, // S_STARPOST_ENDSPIN
+	// Cheatcheck
+	{SPR_STPT, 0            , -1, {NULL},  0, 0, S_NULL},           // S_CHEATCHECK_IDLE
+	{SPR_STPT, FF_ANIMATE|17, -1, {NULL},  5, 1, S_NULL},           // S_CHEATCHECK_FLASH
+	{SPR_STPT, FF_ANIMATE|13,  2, {NULL},  1, 1, S_CHEATCHECK_SPIN},  // S_CHEATCHECK_STARTSPIN
+	{SPR_STPT, FF_ANIMATE|1 , 23, {NULL}, 11, 1, S_CHEATCHECK_ENDSPIN}, // S_CHEATCHECK_SPIN
+	{SPR_STPT, FF_ANIMATE|15,  2, {NULL},  1, 1, S_CHEATCHECK_FLASH}, // S_CHEATCHECK_ENDSPIN
 
 	// Big floating mine
 	{SPR_BMNE, 0,  2, {A_Look},      ((224<<FRACBITS)|1), 0, S_BIGMINE_IDLE},   // S_BIGMINE_IDLE
@@ -9212,7 +9212,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		S_NULL          // raisestate
 	},
 
-	{           // MT_STARPOST
+	{           // MT_CHEATCHECK
 		502,            // doomednum
 		S_INVISIBLE,    // spawnstate
 		1,              // spawnhealth
