@@ -1373,6 +1373,19 @@ boolean G_Responder(event_t *ev)
 			return true;
 		}
 	}
+	else if (gamestate == GS_EVALUATION)
+	{
+		if (HU_Responder(ev))
+		{
+			hu_keystrokes = true;
+			return true; // chat ate the event
+		}
+
+		if (F_EvaluationResponder(ev))
+		{
+			return true;
+		}
+	}
 	else if (gamestate == GS_CEREMONY)
 	{
 		if (HU_Responder(ev))

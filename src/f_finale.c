@@ -933,8 +933,13 @@ typedef enum
 	EVAL_MAX
 } evaluationtype_t;
 
-#define EVALLEN_PERFECT (18*TICRATE)
 #define EVALLEN_NORMAL (14*TICRATE)
+#define EVALLEN_HALFWAY (EVALLEN_NORMAL/2)
+
+// tyron made something perfect and i would sooner
+// smite everyone in this room starting with myself
+// over the idea of cutting it ~toast 250623
+#define EVALLEN_PERFECT (18*TICRATE)
 
 static evaluationtype_t evaluationtype;
 UINT16 finaleemeralds = 0;
@@ -988,10 +993,13 @@ void F_StartGameEvaluation(void)
 	else
 		evaluationtype = EVAL_PERFECT;
 
+	timetonext = (evaluationtype == EVAL_PERFECT) ? EVALLEN_PERFECT : EVALLEN_NORMAL;
+
 	gameaction = ga_nothing;
 	paused = false;
 	CON_ToggleOff();
 
+	keypressed = false;
 	finalecount = -1;
 }
 
@@ -1273,19 +1281,14 @@ void F_GameEvaluationDrawer(void)
 		endingtext = va("%s, %s%s", skins[players[consoleplayer].skin].realname, rtatext, cuttext);
 		V_DrawCenteredString(BASEVIDWIDTH/2, 182, V_SNAPTOBOTTOM|(ultimatemode ? V_REDMAP : V_YELLOWMAP), endingtext);
 	}
+
+	Y_DrawIntermissionButton(EVALLEN_HALFWAY + TICRATE - finalecount, (finalecount + TICRATE) - timetonext);
 }
 
 void F_GameEvaluationTicker(void)
 {
-	INT32 evallen = EVALLEN_NORMAL;
-
 	if (evaluationtype == EVAL_PERFECT)
 	{
-		// tyron made something perfect and i would sooner
-		// smite everyone in this room starting with myself
-		// over the idea of cutting it ~toast 250623
-		evallen = EVALLEN_PERFECT;
-
 		if (finalecount == 1)
 		{
 			// sitting on that distant _shore
@@ -1303,13 +1306,13 @@ void F_GameEvaluationTicker(void)
 		}
 	}
 
-	if (++finalecount > evallen)
+	if (++finalecount == timetonext)
 	{
 		F_StartGameEnd();
 		return;
 	}
 
-	if (finalecount == evallen/2)
+	if (finalecount == EVALLEN_HALFWAY)
 	{
 		if (!usedCheats)
 		{
@@ -1321,8 +1324,66 @@ void F_GameEvaluationTicker(void)
 	}
 }
 
-#undef EVALLEN_PERFECT
+boolean F_EvaluationResponder(event_t *event)
+{
+	INT32 key = event->data1;
+
+	// remap virtual keys (mouse & joystick buttons)
+	switch (key)
+	{
+		case KEY_MOUSE1:
+			key = KEY_ENTER;
+			break;
+		case KEY_MOUSE1 + 1:
+			key = KEY_BACKSPACE;
+			break;
+		case KEY_JOY1:
+		case KEY_JOY1 + 2:
+			key = KEY_ENTER;
+			break;
+		case KEY_JOY1 + 3:
+			key = 'n';
+			break;
+		case KEY_JOY1 + 1:
+			key = KEY_BACKSPACE;
+			break;
+		case KEY_HAT1:
+			key = KEY_UPARROW;
+			break;
+		case KEY_HAT1 + 1:
+			key = KEY_DOWNARROW;
+			break;
+		case KEY_HAT1 + 2:
+			key = KEY_LEFTARROW;
+			break;
+		case KEY_HAT1 + 3:
+			key = KEY_RIGHTARROW;
+			break;
+	}
+
+	if (event->type != ev_keydown)
+		return false;
+
+	if (key != KEY_ESCAPE && key != KEY_ENTER && key != KEY_BACKSPACE)
+		return false;
+
+	if (finalecount <= EVALLEN_HALFWAY + TICRATE)
+		return false;
+
+	if (finalecount > (timetonext - TICRATE))
+		return true;
+
+	if (keypressed)
+		return true;
+
+	keypressed = true;
+	timetonext = finalecount + TICRATE;
+	return true;
+}
+
 #undef EVALLEN_NORMAL
+#undef EVALLEN_HALFWAY
+#undef EVALLEN_PERFECT
 
 // ==========
 //  GAME END
