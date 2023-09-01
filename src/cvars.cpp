@@ -838,7 +838,7 @@ consvar_t cv_palettenum = PlayerCheat("palettenum", "0").values(CV_Unsigned).onc
 extern CV_PossibleValue_t renderhitbox_cons_t[];
 consvar_t cv_renderhitbox = PlayerCheat("renderhitbox", "Off").values(renderhitbox_cons_t).description("Show hitboxes around objects");
 
-consvar_t cv_fuzz = PlayerCheat("fuzz", "Off").on_off().description("Human players spam random inputs, get random items");
+consvar_t cv_fuzz = OnlineCheat("fuzz", "Off").on_off().description("Human players spam random inputs, get random items");
 
 //
 // Dummy variables used solely in the menu system.
