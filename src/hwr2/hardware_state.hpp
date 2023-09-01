@@ -17,6 +17,7 @@
 #include "screen_capture.hpp"
 #include "software_screen_renderer.hpp"
 #include "twodee_renderer.hpp"
+#include "upscale_backbuffer.hpp"
 
 namespace srb2::hwr2
 {
@@ -38,6 +39,7 @@ struct HardwareState
 	std::unique_ptr<PostprocessWipePass> wipe;
 	std::unique_ptr<BlitRectPass> blit_rect;
 	std::unique_ptr<ScreenshotPass> screen_capture;
+	std::unique_ptr<UpscaleBackbuffer> backbuffer;
 	WipeFrames wipe_frames;
 };
 

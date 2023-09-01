@@ -3207,9 +3207,6 @@ void VID_DisplaySoftwareScreen()
 	// Misnomer; this just uploads the screen to the software indexed screen texture
 	hw_state->software_screen_renderer->draw(*rhi, ctx);
 
-	rhi->end_render_pass(ctx);
-	rhi->begin_default_render_pass(ctx, false);
-
 	const int screens = std::clamp(r_splitscreen + 1, 1, MAXSPLITSCREENPLAYERS);
 	hw_state->blit_postimg_screens->set_num_screens(screens);
 	hw_state->blit_postimg_screens->set_target(static_cast<uint32_t>(vid.width), static_cast<uint32_t>(vid.height));

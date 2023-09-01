@@ -79,6 +79,7 @@ static void reset_hardware_state(Rhi* rhi)
 	g_hw_state.wipe = std::make_unique<PostprocessWipePass>();
 	g_hw_state.blit_rect = std::make_unique<BlitRectPass>();
 	g_hw_state.screen_capture = std::make_unique<ScreenshotPass>();
+	g_hw_state.backbuffer = std::make_unique<UpscaleBackbuffer>();
 	g_hw_state.wipe_frames = {};
 
 	g_last_known_rhi = rhi;
@@ -278,8 +279,9 @@ void I_StartDisplayUpdate(void)
 	}
 
 	rhi::Handle<rhi::GraphicsContext> ctx = rhi->begin_graphics();
+	HardwareState* hw_state = &g_hw_state;
 
-	rhi->begin_default_render_pass(ctx, false);
+	hw_state->backbuffer->begin_pass(*rhi, ctx);
 
 	g_main_graphics_context = ctx;
 
@@ -318,6 +320,15 @@ void I_FinishUpdate(void)
 		// better hope the drawing code left the context in a render pass, I guess
 		g_hw_state.twodee_renderer->flush(*rhi, ctx, g_2d);
 		rhi->end_render_pass(ctx);
+
+		rhi->begin_default_render_pass(ctx, true);
+
+		// Upscale draw the backbuffer (with postprocessing maybe?)
+		g_hw_state.blit_rect->set_output(vid.realwidth, vid.realheight, true, true);
+		g_hw_state.blit_rect->set_texture(g_hw_state.backbuffer->color(), static_cast<uint32_t>(vid.width), static_cast<uint32_t>(vid.height));
+		g_hw_state.blit_rect->draw(*rhi, ctx);
+		rhi->end_render_pass(ctx);
+
 		rhi->end_graphics(ctx);
 		g_main_graphics_context = kNullHandle;
 

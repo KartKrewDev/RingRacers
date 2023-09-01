@@ -27,4 +27,6 @@ target_sources(SRB2SDL2 PRIVATE
 	twodee.hpp
 	twodee_renderer.cpp
 	twodee_renderer.hpp
+	upscale_backbuffer.cpp
+	upscale_backbuffer.hpp
 )

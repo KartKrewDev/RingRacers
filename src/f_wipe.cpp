@@ -226,8 +226,6 @@ INT32 lastwipetic = 0;
 
 #define GENLEN 31
 
-static UINT8 *wipe_scr_start; //screen 3
-static UINT8 *wipe_scr_end; //screen 4
 static UINT8 *wipe_scr; //screen 0 (main drawing)
 static UINT8 pallen;
 static fixed_t paldiv;
@@ -385,8 +383,11 @@ void F_WipeStartScreen(void)
 
 	hw_state->twodee_renderer->flush(*rhi, ctx, g_2d);
 
-	rhi::Rect copy_region = {0, 0, static_cast<uint32_t>(vid.width), static_cast<uint32_t>(vid.height)};
-	rhi->copy_framebuffer_to_texture(ctx, hw_state->wipe_frames.start, copy_region, copy_region);
+	rhi::Rect dst_region = {0, 0, static_cast<uint32_t>(vid.width), static_cast<uint32_t>(vid.height)};
+	rhi::TextureDetails backbuf_deets = rhi->get_texture_details(hw_state->backbuffer->color());
+	dst_region.w = std::min(dst_region.w, backbuf_deets.width);
+	dst_region.h = std::min(dst_region.h, backbuf_deets.height);
+	rhi->copy_framebuffer_to_texture(ctx, hw_state->wipe_frames.start, dst_region, dst_region);
 
 	I_FinishUpdate();
 #endif
@@ -425,10 +426,13 @@ void F_WipeEndScreen(void)
 
 	hw_state->twodee_renderer->flush(*rhi, ctx, g_2d);
 
-	rhi::Rect copy_region = {0, 0, static_cast<uint32_t>(vid.width), static_cast<uint32_t>(vid.height)};
-	rhi->copy_framebuffer_to_texture(ctx, hw_state->wipe_frames.end, copy_region, copy_region);
+	rhi::Rect dst_region = {0, 0, static_cast<uint32_t>(vid.width), static_cast<uint32_t>(vid.height)};
+	rhi::TextureDetails backbuf_deets = rhi->get_texture_details(hw_state->backbuffer->color());
+	dst_region.w = std::min(dst_region.w, backbuf_deets.width);
+	dst_region.h = std::min(dst_region.h, backbuf_deets.height);
+	rhi->copy_framebuffer_to_texture(ctx, hw_state->wipe_frames.end, dst_region, dst_region);
 
-	hw_state->blit_rect->set_output(copy_region.w, copy_region.h, false, true);
+	hw_state->blit_rect->set_output(dst_region.w, dst_region.h, false, true);
 	rhi::TextureDetails start_deets = rhi->get_texture_details(hw_state->wipe_frames.start);
 	hw_state->blit_rect->set_texture(hw_state->wipe_frames.start, start_deets.width, start_deets.height);
 	hw_state->blit_rect->draw(*rhi, ctx);
