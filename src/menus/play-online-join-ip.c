@@ -62,8 +62,6 @@ void M_PleaseWait(void)
 	if (rendermode == render_none)
 		return;
 
-	g_wipeskiprender = true;
-
 	M_DrawTextBox(56, BASEVIDHEIGHT/2-12, 24, 2);
 	V_DrawCenteredString(BASEVIDWIDTH/2, BASEVIDHEIGHT/2, 0, "PLEASE WAIT...");
 	I_OsPolling();
