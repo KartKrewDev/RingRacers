@@ -138,7 +138,7 @@ mapthing_t *mapthings;
 sector_t *spawnsectors;
 line_t *spawnlines;
 side_t *spawnsides;
-INT32 numstarposts;
+INT32 numcheatchecks;
 UINT16 bossdisabled;
 boolean stoppedclock;
 boolean levelloading;
@@ -1712,8 +1712,8 @@ static void ParseTextmapSectorParameter(UINT32 i, const char *param, const char 
 		sectors[i].specialflags |= SSF_DOUBLESTEPUP;
 	else if (fastcmp(param, "nostepdown") && fastcmp("true", val))
 		sectors[i].specialflags |= SSF_NOSTEPDOWN;
-	else if (fastcmp(param, "starpostactivator") && fastcmp("true", val))
-		sectors[i].specialflags |= SSF_STARPOSTACTIVATOR;
+	else if ((fastcmp(param, "cheatcheckactivator") || fastcmp(param, "starpostactivator")) && fastcmp("true", val))
+		sectors[i].specialflags |= SSF_CHEATCHECKACTIVATOR;
 	else if (fastcmp(param, "exit") && fastcmp("true", val))
 		sectors[i].specialflags |= SSF_EXIT;
 	else if (fastcmp(param, "deleteitems") && fastcmp("true", val))
@@ -2888,8 +2888,8 @@ static void P_WriteTextmap(void)
 			fprintf(f, "doublestepup = true;\n");
 		if (wsectors[i].specialflags & SSF_NOSTEPDOWN)
 			fprintf(f, "nostepdown = true;\n");
-		if (wsectors[i].specialflags & SSF_STARPOSTACTIVATOR)
-			fprintf(f, "starpostactivator = true;\n");
+		if (wsectors[i].specialflags & SSF_CHEATCHECKACTIVATOR)
+			fprintf(f, "cheatcheckactivator = true;\n");
 		if (wsectors[i].specialflags & SSF_EXIT)
 			fprintf(f, "exit = true;\n");
 		if (wsectors[i].specialflags & SSF_DELETEITEMS)
@@ -6561,8 +6561,8 @@ static void P_ConvertBinarySectorTypes(void)
 
 		switch(GETSECSPECIAL(sectors[i].special, 4))
 		{
-			case 1: //Star post activator
-				sectors[i].specialflags |= SSF_STARPOSTACTIVATOR;
+			case 1: //Cheat Check activator
+				sectors[i].specialflags |= SSF_CHEATCHECKACTIVATOR;
 				break;
 			case 2: //Exit
 				sectors[i].specialflags |= SSF_EXIT;
@@ -6763,11 +6763,11 @@ static void P_ConvertBinaryThingTypes(void)
 		case 500: //Air bubble patch
 			mapthings[i].thing_args[0] = !!(mapthings[i].options & MTF_AMBUSH);
 			break;
-		case 502: //Star post
+		case 502: //Cheat Check
 			if (mapthings[i].extrainfo)
 				// Allow thing Parameter to define star post num too!
-				// For starposts above param 15 (the 16th), add 360 to the angle like before and start parameter from 1 (NOT 0)!
-				// So the 16th starpost is angle=0 param=15, the 17th would be angle=360 param=1.
+				// For cheatchecks above param 15 (the 16th), add 360 to the angle like before and start parameter from 1 (NOT 0)!
+				// So the 16th cheatcheck is angle=0 param=15, the 17th would be angle=360 param=1.
 				// This seems more intuitive for mappers to use, since most SP maps won't have over 16 consecutive star posts.
 				mapthings[i].thing_args[0] = mapthings[i].extrainfo + (mapthings[i].angle/360) * 15;
 			else
@@ -7548,7 +7548,7 @@ static void P_InitLevelSettings(void)
 	hunt1 = hunt2 = hunt3 = NULL;
 
 	// circuit, race and competition stuff
-	numstarposts = 0;
+	numcheatchecks = 0;
 	timeinmap = 0;
 
 	// special stage

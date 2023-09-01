@@ -5328,12 +5328,12 @@ static void K_DrawWaypointDebugger(void)
 	V_DrawString(8, 166, 0, va("Next Waypoint ID: %d%s", K_GetWaypointID(stplyr->nextwaypoint), ((stplyr->pflags & PF_WRONGWAY) ? " (WRONG WAY)" : "")));
 	V_DrawString(8, 176, 0, va("Finishline Distance: %d", stplyr->distancetofinish));
 
-	if (numstarposts > 0)
+	if (numcheatchecks > 0)
 	{
-		if (stplyr->starpostnum == numstarposts)
-			V_DrawString(8, 186, 0, va("Checkpoint: %d / %d (Can finish)", stplyr->starpostnum, numstarposts));
+		if (stplyr->cheatchecknum == numcheatchecks)
+			V_DrawString(8, 186, 0, va("Cheat Check: %d / %d (Can finish)", stplyr->cheatchecknum, numcheatchecks));
 		else
-			V_DrawString(8, 186, 0, va("Checkpoint: %d / %d", stplyr->starpostnum, numstarposts));
+			V_DrawString(8, 186, 0, va("Cheat Check: %d / %d", stplyr->cheatchecknum, numcheatchecks));
 	}
 }
 

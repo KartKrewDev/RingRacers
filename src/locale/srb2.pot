@@ -2415,7 +2415,7 @@ msgstr ""
 
 #: m_menu.c:3271
 msgid ""
-"Retry this act from the last starpost?\n"
+"Retry this act from the last cheatcheck?\n"
 "\n"
 "(Press 'Y' to confirm)\n"
 msgstr ""

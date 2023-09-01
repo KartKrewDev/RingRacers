@@ -1928,7 +1928,7 @@ static void K_HandleLapIncrement(player_t *player)
 			return;
 		}
 
-		if ((player->starpostnum == numstarposts) || (player->laps == 0))
+		if ((player->cheatchecknum == numcheatchecks) || (player->laps == 0))
 		{
 			size_t i = 0;
 			UINT8 nump = 0;
@@ -1985,7 +1985,7 @@ static void K_HandleLapIncrement(player_t *player)
 			if (netgame && player->laps > numlaps)
 				CON_LogMessage(va(M_GetText("%s has finished the race.\n"), player_names[player-players]));
 
-			player->starpostnum = 0;
+			player->cheatchecknum = 0;
 
 			if (gametyperules & GTR_SPECIALSTART)
 			{
@@ -2131,7 +2131,7 @@ static void K_HandleLapIncrement(player_t *player)
 				gamedata->deferredconditioncheck = true;
 			}
 		}
-		else if (player->starpostnum)
+		else if (player->cheatchecknum)
 		{
 			S_StartSound(player->mo, sfx_s26d);
 		}
@@ -2143,9 +2143,9 @@ static void K_HandleLapDecrement(player_t *player)
 {
 	if (player)
 	{
-		if ((player->starpostnum == 0) && (player->laps > 0))
+		if ((player->cheatchecknum == 0) && (player->laps > 0))
 		{
-			player->starpostnum = numstarposts;
+			player->cheatchecknum = numcheatchecks;
 			player->laps--;
 			curlap = UINT32_MAX;
 		}
@@ -5222,11 +5222,11 @@ static void P_EvaluateSpecialFlags(player_t *player, sector_t *sector, sector_t 
 		player->onconveyor = 2;
 	if (sector->specialflags & SSF_CONVEYOR)
 		player->onconveyor = 4;
-	if (sector->specialflags & SSF_STARPOSTACTIVATOR)
+	if (sector->specialflags & SSF_CHEATCHECKACTIVATOR)
 	{
-		mobj_t *post = P_GetObjectTypeInSectorNum(MT_STARPOST, sector - sectors);
+		mobj_t *post = P_GetObjectTypeInSectorNum(MT_CHEATCHECK, sector - sectors);
 		if (post)
-			P_TouchStarPost(post, player, false);
+			P_TouchCheatcheck(post, player, false);
 	}
 	if (sector->specialflags & SSF_EXIT)
 		P_ProcessExitSector(player, sectag);

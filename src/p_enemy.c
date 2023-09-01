@@ -5515,9 +5515,9 @@ void A_MixUp(mobj_t *actor)
 		UINT16 carry1,carry2;     //carry
 		INT32 transspeed;         //player speed
 
-		// Starpost stuff
-		fixed_t starpostx, starposty, starpostz;
-		INT32 starpostnum;
+		// Cheatcheck stuff
+		fixed_t cheatcheckx, cheatchecky, cheatcheckz;
+		INT32 cheatchecknum;
 
 		INT32 mflags2;
 
@@ -5557,20 +5557,20 @@ void A_MixUp(mobj_t *actor)
 		angle = players[one].mo->angle;
 		drawangle = players[one].drawangle;
 
-		starpostx = players[one].respawn.pointx;
-		starposty = players[one].respawn.pointy;
-		starpostz = players[one].respawn.pointz;
-		starpostnum = players[one].starpostnum;
+		cheatcheckx = players[one].respawn.pointx;
+		cheatchecky = players[one].respawn.pointy;
+		cheatcheckz = players[one].respawn.pointz;
+		cheatchecknum = players[one].cheatchecknum;
 
 		mflags2 = players[one].mo->flags2;
 
 		P_MixUp(players[one].mo, players[two].mo->x, players[two].mo->y, players[two].mo->z, players[two].mo->angle,
 				players[two].respawn.pointx, players[two].respawn.pointy, players[two].respawn.pointz,
-				players[two].starpostnum, 0, 0,
+				players[two].cheatchecknum, 0, 0,
 				FRACUNIT, players[two].drawangle, players[two].mo->flags2);
 
-		P_MixUp(players[two].mo, x, y, z, angle, starpostx, starposty, starpostz,
-				starpostnum, 0, 0,
+		P_MixUp(players[two].mo, x, y, z, angle, cheatcheckx, cheatchecky, cheatcheckz,
+				cheatchecknum, 0, 0,
 				FRACUNIT, drawangle, mflags2);
 
 		//carry set after mixup.  Stupid P_ResetPlayer() takes away some of the stuff we look for...
@@ -5595,7 +5595,7 @@ void A_MixUp(mobj_t *actor)
 
 		// Star post stuff
 		fixed_t spposition[MAXPLAYERS][3];
-		INT32 starpostnum[MAXPLAYERS];
+		INT32 cheatchecknum[MAXPLAYERS];
 
 		INT32 flags2[MAXPLAYERS];
 
@@ -5630,7 +5630,7 @@ void A_MixUp(mobj_t *actor)
 				spposition[counter][0] = players[i].respawn.pointx;
 				spposition[counter][1] = players[i].respawn.pointy;
 				spposition[counter][2] = players[i].respawn.pointz;
-				starpostnum[counter] = players[i].starpostnum;
+				cheatchecknum[counter] = players[i].cheatchecknum;
 
 				flags2[counter] = players[i].mo->flags2;
 
@@ -5670,7 +5670,7 @@ void A_MixUp(mobj_t *actor)
 
 				P_MixUp(players[i].mo, position[teleportfrom][0], position[teleportfrom][1], position[teleportfrom][2], anglepos[teleportfrom][0],
 					spposition[teleportfrom][0], spposition[teleportfrom][1], spposition[teleportfrom][2],
-					starpostnum[teleportfrom], 0, 0,
+					cheatchecknum[teleportfrom], 0, 0,
 					FRACUNIT, anglepos[teleportfrom][1], flags2[teleportfrom]);
 
 				//...carry after.  same reasoning.

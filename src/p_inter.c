@@ -685,8 +685,8 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 		case MT_BLUEFLAG:
 			return;
 
-		case MT_STARPOST:
-			P_TouchStarPost(special, player, special->thing_args[1]);
+		case MT_CHEATCHECK:
+			P_TouchCheatcheck(special, player, special->thing_args[1]);
 			return;
 
 		case MT_BIGTUMBLEWEED:
@@ -743,20 +743,20 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 	special->shadowscale = 0;
 }
 
-/** Saves a player's level progress at a star post
+/** Saves a player's level progress at a Cheat Check
   *
-  * \param post The star post to trigger
-  * \param player The player that should receive the checkpoint
-  * \param snaptopost If true, the respawn point will use the star post's position, otherwise player x/y and star post z
+  * \param post The Cheat Check to trigger
+  * \param player The player that should receive the cheatcheck
+  * \param snaptopost If true, the respawn point will use the cheatcheck's position, otherwise player x/y and star post z
   */
-void P_TouchStarPost(mobj_t *post, player_t *player, boolean snaptopost)
+void P_TouchCheatcheck(mobj_t *post, player_t *player, boolean snaptopost)
 {
 	mobj_t *toucher = player->mo;
 
 	(void)snaptopost;
 
-	// Player must have touched all previous starposts
-	if (post->health - player->starpostnum > 1)
+	// Player must have touched all previous cheatchecks
+	if (post->health - player->cheatchecknum > 1)
 	{
 		if (!player->checkskip)
 			S_StartSound(toucher, sfx_lose);
@@ -767,14 +767,14 @@ void P_TouchStarPost(mobj_t *post, player_t *player, boolean snaptopost)
 	// With the parameter + angle setup, we can go up to 1365 star posts. Who needs that many?
 	if (post->health > 1365)
 	{
-		CONS_Debug(DBG_GAMELOGIC, "Bad Starpost Number!\n");
+		CONS_Debug(DBG_GAMELOGIC, "Bad Cheatcheck Number!\n");
 		return;
 	}
 
-	if (player->starpostnum >= post->health)
+	if (player->cheatchecknum >= post->health)
 		return; // Already hit this post
 
-	player->starpostnum = post->health;
+	player->cheatchecknum = post->health;
 }
 
 static void P_AddBrokenPrison(mobj_t *target, mobj_t *source)

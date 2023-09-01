@@ -738,7 +738,7 @@ struct player_t
 	UINT8 laps; // Number of laps (optional)
 	UINT8 latestlap;
 	UINT32 lapPoints; // Points given from laps
-	INT32 starpostnum; // The number of the last starpost you hit
+	INT32 cheatchecknum; // The number of the last cheatcheck you hit
 
 	UINT8 ctfteam; // 0 == Spectator, 1 == Red, 2 == Blue
 

@@ -1277,13 +1277,6 @@ const char *const STATE_LIST[] = { // array length left dynamic for sanity testi
 	"S_WALLSPIKED1",
 	"S_WALLSPIKED2",
 
-	// Starpost
-	"S_STARPOST_IDLE",
-	"S_STARPOST_FLASH",
-	"S_STARPOST_STARTSPIN",
-	"S_STARPOST_SPIN",
-	"S_STARPOST_ENDSPIN",
-
 	// Big floating mine
 	"S_BIGMINE_IDLE",
 	"S_BIGMINE_ALERT1",
@@ -4832,7 +4825,7 @@ const char *const MOBJTYPE_LIST[] = {  // array length left dynamic for sanity t
 	"MT_SPIKE",
 	"MT_WALLSPIKE",
 	"MT_WALLSPIKEBASE",
-	"MT_STARPOST",
+	"MT_CHEATCHECK",
 	"MT_BIGMINE",
 	"MT_BLASTEXECUTOR",
 	"MT_CANNONLAUNCHER",
@@ -6045,7 +6038,7 @@ const char *const SSF_LIST[] = {
 	"WINDCURRENT",
 	"CONVEYOR",
 	"\x01",			  // free (name un-matchable)
-	"STARPOSTACTIVATOR",
+	"CHEATCHECKACTIVATOR",
 	"EXIT",
 	"\x01",			  // free (name un-matchable)
 	"\x01",			  // free (name un-matchable)

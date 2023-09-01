@@ -533,7 +533,7 @@ void P_MobjCheckWater(mobj_t *mobj);
 // Player spawn points
 void P_SpawnPlayer(INT32 playernum);
 void P_MovePlayerToSpawn(INT32 playernum, mapthing_t *mthing);
-void P_MovePlayerToStarpost(INT32 playernum);
+void P_MovePlayerToCheatcheck(INT32 playernum);
 void P_AfterPlayerSpawn(INT32 playernum);
 
 fixed_t P_GetMobjSpawnHeight(const mobjtype_t mobjtype, const fixed_t x, const fixed_t y, const fixed_t dz, const fixed_t offset, const size_t layer, const boolean flip, const fixed_t scale);
@@ -569,7 +569,7 @@ extern INT32 modulothing;
 #define MAXHUNTEMERALDS 64
 extern mapthing_t *huntemeralds[MAXHUNTEMERALDS];
 extern INT32 numhuntemeralds;
-extern INT32 numstarposts;
+extern INT32 numcheatchecks;
 extern UINT16 bossdisabled;
 extern boolean stoppedclock;
 
