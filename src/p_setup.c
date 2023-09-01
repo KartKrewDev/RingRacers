@@ -6561,7 +6561,7 @@ static void P_ConvertBinarySectorTypes(void)
 
 		switch(GETSECSPECIAL(sectors[i].special, 4))
 		{
-			case 1: //Star post activator
+			case 1: //Cheat Check activator
 				sectors[i].specialflags |= SSF_CHEATCHECKACTIVATOR;
 				break;
 			case 2: //Exit
@@ -6763,7 +6763,7 @@ static void P_ConvertBinaryThingTypes(void)
 		case 500: //Air bubble patch
 			mapthings[i].thing_args[0] = !!(mapthings[i].options & MTF_AMBUSH);
 			break;
-		case 502: //Star post
+		case 502: //Cheat Check
 			if (mapthings[i].extrainfo)
 				// Allow thing Parameter to define star post num too!
 				// For cheatchecks above param 15 (the 16th), add 360 to the angle like before and start parameter from 1 (NOT 0)!

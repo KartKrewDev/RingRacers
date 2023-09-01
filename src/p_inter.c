@@ -743,11 +743,11 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 	special->shadowscale = 0;
 }
 
-/** Saves a player's level progress at a star post
+/** Saves a player's level progress at a Cheat Check
   *
-  * \param post The star post to trigger
-  * \param player The player that should receive the checkpoint
-  * \param snaptopost If true, the respawn point will use the star post's position, otherwise player x/y and star post z
+  * \param post The Cheat Check to trigger
+  * \param player The player that should receive the cheatcheck
+  * \param snaptopost If true, the respawn point will use the cheatcheck's position, otherwise player x/y and star post z
   */
 void P_TouchCheatcheck(mobj_t *post, player_t *player, boolean snaptopost)
 {
