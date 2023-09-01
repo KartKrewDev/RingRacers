@@ -178,30 +178,7 @@ void K_TimerInit(void)
 	if ((gametyperules & (GTR_ROLLINGSTART|GTR_CIRCUIT)) == (GTR_ROLLINGSTART|GTR_CIRCUIT))
 	{
 		S_StartSound(NULL, sfx_s25f);
-
-		for (i = 0; i < MAXPLAYERS; i++)
-		{
-			player_t *player = NULL;
-
-			if (playeringame[i] == false)
-			{
-				continue;
-			}
-
-			player = &players[i];
-			if (player->spectator == true)
-			{
-				continue;
-			}
-
-			if (player->mo == NULL || P_MobjWasRemoved(player->mo) == true)
-			{
-				continue;
-			}
-
-			// Rolling start? lol
-			P_InstaThrust(player->mo, player->mo->angle, K_GetKartSpeed(player, false, false));
-		}
+		// The actual push occours in P_InitPlayers
 	}
 	else if (skipstats != 0)
 	{
