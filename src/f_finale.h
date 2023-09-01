@@ -30,8 +30,6 @@ extern "C" {
 // Called by main loop.
 boolean F_IntroResponder(event_t *ev);
 boolean F_CutsceneResponder(event_t *ev);
-boolean F_CreditResponder(event_t *ev);
-boolean F_EvaluationResponder(event_t *ev);
 
 // Called by main loop.
 void F_IntroTicker(void);

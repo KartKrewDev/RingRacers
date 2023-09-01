@@ -824,6 +824,13 @@ void F_CreditTicker(void)
 
 	// Do this here rather than in the drawer you doofus! (this is why dedicated mode broke at credits)
 
+	const boolean reachedbottom = (!credits[i] && y <= 120<<FRACBITS);
+
+	if (reachedbottom && !timetonext)
+	{
+		timetonext = 5*TICRATE;
+	}
+
 	if (finalecount)
 	{
 		if (--finalecount == 0)
@@ -833,7 +840,20 @@ void F_CreditTicker(void)
 		return;
 	}
 
-	if (keypressed)
+	if (reachedbottom)
+	{
+		finalecount = 5*TICRATE;
+
+		// You watched all the credits? What a trooper!
+		gamedata->everfinishedcredits = true;
+		if (M_UpdateUnlockablesAndExtraEmblems(true, true))
+			G_SaveGameData();
+	}
+	else if (timetonext)
+		;
+	/*else if (!(gamedata->timesBeaten) && !(netgame || multiplayer) && !cht_debug)
+		;*/
+	else if (!menuactive && M_MenuConfirmPressed(0))
 	{
 		finalecount = TICRATE;
 
@@ -845,79 +865,6 @@ void F_CreditTicker(void)
 			return;
 		}
 	}
-	else if (!credits[i] && y <= 120<<FRACBITS)
-	{
-		timetonext = 5*TICRATE;
-		finalecount = 5*TICRATE;
-
-		// You watched all the credits? What a trooper!
-		gamedata->everfinishedcredits = true;
-		if (M_UpdateUnlockablesAndExtraEmblems(true, true))
-			G_SaveGameData();
-	}
-}
-
-boolean F_CreditResponder(event_t *event)
-{
-	INT32 key = event->data1;
-
-	// remap virtual keys (mouse & joystick buttons)
-	switch (key)
-	{
-		case KEY_MOUSE1:
-			key = KEY_ENTER;
-			break;
-		case KEY_MOUSE1 + 1:
-			key = KEY_BACKSPACE;
-			break;
-		case KEY_JOY1:
-		case KEY_JOY1 + 2:
-			key = KEY_ENTER;
-			break;
-		case KEY_JOY1 + 3:
-			key = 'n';
-			break;
-		case KEY_JOY1 + 1:
-			key = KEY_BACKSPACE;
-			break;
-		case KEY_HAT1:
-			key = KEY_UPARROW;
-			break;
-		case KEY_HAT1 + 1:
-			key = KEY_DOWNARROW;
-			break;
-		case KEY_HAT1 + 2:
-			key = KEY_LEFTARROW;
-			break;
-		case KEY_HAT1 + 3:
-			key = KEY_RIGHTARROW;
-			break;
-	}
-
-	if (event->type != ev_keydown)
-		return false;
-
-	if (key == KEY_DOWNARROW || key == KEY_SPACE)
-	{
-		if (!timetonext && !finalecount)
-			animtimer += 7;
-		return false;
-	}
-
-	/*if (!(gamedata->timesBeaten) && !(netgame || multiplayer) && !cht_debug)
-		return false;*/
-
-	if (key != KEY_ESCAPE && key != KEY_ENTER && key != KEY_BACKSPACE)
-		return false;
-
-	if (timetonext)
-		return false;
-
-	if (keypressed)
-		return true;
-
-	keypressed = true;
-	return true;
 }
 
 // ============
@@ -1312,6 +1259,18 @@ void F_GameEvaluationTicker(void)
 		return;
 	}
 
+	if (keypressed)
+		;
+	else if (finalecount <= EVALLEN_HALFWAY + TICRATE)
+		;
+	else if (finalecount >= (timetonext - TICRATE))
+		;
+	else if (!menuactive && M_MenuConfirmPressed(0))
+	{
+		keypressed = true;
+		timetonext = finalecount + TICRATE;
+	}
+
 	if (finalecount == EVALLEN_HALFWAY)
 	{
 		if (!usedCheats)
@@ -1322,63 +1281,6 @@ void F_GameEvaluationTicker(void)
 			G_SaveGameData();
 		}
 	}
-}
-
-boolean F_EvaluationResponder(event_t *event)
-{
-	INT32 key = event->data1;
-
-	// remap virtual keys (mouse & joystick buttons)
-	switch (key)
-	{
-		case KEY_MOUSE1:
-			key = KEY_ENTER;
-			break;
-		case KEY_MOUSE1 + 1:
-			key = KEY_BACKSPACE;
-			break;
-		case KEY_JOY1:
-		case KEY_JOY1 + 2:
-			key = KEY_ENTER;
-			break;
-		case KEY_JOY1 + 3:
-			key = 'n';
-			break;
-		case KEY_JOY1 + 1:
-			key = KEY_BACKSPACE;
-			break;
-		case KEY_HAT1:
-			key = KEY_UPARROW;
-			break;
-		case KEY_HAT1 + 1:
-			key = KEY_DOWNARROW;
-			break;
-		case KEY_HAT1 + 2:
-			key = KEY_LEFTARROW;
-			break;
-		case KEY_HAT1 + 3:
-			key = KEY_RIGHTARROW;
-			break;
-	}
-
-	if (event->type != ev_keydown)
-		return false;
-
-	if (key != KEY_ESCAPE && key != KEY_ENTER && key != KEY_BACKSPACE)
-		return false;
-
-	if (finalecount <= EVALLEN_HALFWAY + TICRATE)
-		return false;
-
-	if (finalecount > (timetonext - TICRATE))
-		return true;
-
-	if (keypressed)
-		return true;
-
-	keypressed = true;
-	timetonext = finalecount + TICRATE;
-	return true;
 }
 
 #undef EVALLEN_NORMAL

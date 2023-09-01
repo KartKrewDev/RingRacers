@@ -1361,20 +1361,6 @@ boolean G_Responder(event_t *ev)
 			return true;
 		}
 	}
-	else if (gamestate == GS_CREDITS)
-	{
-		if (F_CreditResponder(ev))
-		{
-			return true;
-		}
-	}
-	else if (gamestate == GS_EVALUATION)
-	{
-		if (F_EvaluationResponder(ev))
-		{
-			return true;
-		}
-	}
 	else if (gamestate == GS_CEREMONY)
 	{
 		if (K_CeremonyResponder(ev))
