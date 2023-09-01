@@ -27,11 +27,16 @@ using namespace rhi;
 
 #ifndef NDEBUG
 #define GL_ASSERT                                                                                                      \
+	while (1)                                                                                                          \
 	{                                                                                                                  \
 		GLenum __err = gl_->GetError();                                                                                \
 		if (__err != GL_NO_ERROR)                                                                                      \
 		{                                                                                                              \
 			I_Error("GL Error at %s %d: %d", __FILE__, __LINE__, __err);                                               \
+		}                                                                                                              \
+		else                                                                                                           \
+		{                                                                                                              \
+			break;                                                                                                     \
 		}                                                                                                              \
 	}
 #else
@@ -1193,6 +1198,10 @@ void GlCoreRhi::end_graphics(rhi::Handle<rhi::GraphicsContext> handle)
 	SRB2_ASSERT(graphics_context_active_ == true);
 	SRB2_ASSERT(current_pipeline_.has_value() == false && current_render_pass_.has_value() == false);
 	graphics_context_generation_ += 1;
+	if (graphics_context_generation_ == 0)
+	{
+		graphics_context_generation_ = 1;
+	}
 	graphics_context_active_ = false;
 	gl_->Flush();
 	GL_ASSERT;
@@ -1646,6 +1655,7 @@ void GlCoreRhi::set_viewport(Handle<GraphicsContext> ctx, const Rect& rect)
 	SRB2_ASSERT(current_render_pass_.has_value() == true && current_pipeline_.has_value() == true);
 
 	gl_->Viewport(rect.x, rect.y, rect.w, rect.h);
+	GL_ASSERT;
 }
 
 void GlCoreRhi::draw(Handle<GraphicsContext> ctx, uint32_t vertex_count, uint32_t first_vertex)
@@ -1688,9 +1698,38 @@ void GlCoreRhi::read_pixels(Handle<GraphicsContext> ctx, const Rect& rect, Pixel
 	GLenum type = std::get<1>(gl_format);
 	GLint size = std::get<2>(gl_format);
 
-	SRB2_ASSERT(out.size_bytes() == rect.w * rect.h * size);
+	// Pack alignment comes into play.
+	uint32_t pack_aligned_w = (rect.w + (kPixelRowPackAlignment - 1)) & ~(kPixelRowPackAlignment - 1);
+
+	SRB2_ASSERT(out.size_bytes() == pack_aligned_w * rect.h * size);
+
+	bool is_back;
+	Rect src_dim;
+	auto render_pass_visitor = srb2::Overload {
+		[&](const DefaultRenderPassState& state) {
+			is_back = true;
+			src_dim = platform_->get_default_framebuffer_dimensions();
+		},
+		[&](const RenderPassBeginInfo& state) {
+			is_back = false;
+			SRB2_ASSERT(texture_slab_.is_valid(state.color_attachment));
+			auto& attach_tex = texture_slab_[state.color_attachment];
+			src_dim = {0, 0, attach_tex.desc.width, attach_tex.desc.height};
+		}
+	};
+	std::visit(render_pass_visitor, *current_render_pass_);
+
+	SRB2_ASSERT(rect.x >= 0);
+	SRB2_ASSERT(rect.y >= 0);
+	SRB2_ASSERT(rect.x + rect.w <= src_dim.w);
+	SRB2_ASSERT(rect.y + rect.h <= src_dim.h);
+
+	GLenum read_buffer = is_back ? GL_BACK_LEFT : GL_COLOR_ATTACHMENT0;
+	gl_->ReadBuffer(read_buffer);
+	GL_ASSERT;
 
 	gl_->ReadPixels(rect.x, rect.y, rect.w, rect.h, layout, type, out.data());
+	GL_ASSERT;
 }
 
 void GlCoreRhi::set_stencil_reference(Handle<GraphicsContext> ctx, CullMode face, uint8_t reference)
@@ -1837,5 +1876,55 @@ void GlCoreRhi::finish()
 	}
 
 	disposal_.clear();
+	GL_ASSERT;
+}
+
+void GlCoreRhi::copy_framebuffer_to_texture(
+	Handle<GraphicsContext> ctx,
+	Handle<Texture> dst_tex,
+	const Rect& dst_region,
+	const Rect& src_region
+)
+{
+	SRB2_ASSERT(graphics_context_active_ == true);
+	SRB2_ASSERT(current_render_pass_.has_value());
+	SRB2_ASSERT(texture_slab_.is_valid(dst_tex));
+
+	auto& tex = texture_slab_[dst_tex];
+	SRB2_ASSERT(dst_region.w == src_region.w);
+	SRB2_ASSERT(dst_region.h == src_region.h);
+	SRB2_ASSERT(dst_region.x >= 0);
+	SRB2_ASSERT(dst_region.y >= 0);
+	SRB2_ASSERT(dst_region.x + dst_region.w <= tex.desc.width);
+	SRB2_ASSERT(dst_region.y + dst_region.h <= tex.desc.height);
+
+	bool is_back;
+	Rect src_dim;
+	auto render_pass_visitor = srb2::Overload {
+		[&](const DefaultRenderPassState& state) {
+			is_back = true;
+			src_dim = platform_->get_default_framebuffer_dimensions();
+		},
+		[&](const RenderPassBeginInfo& state) {
+			is_back = false;
+			SRB2_ASSERT(texture_slab_.is_valid(state.color_attachment));
+			auto& attach_tex = texture_slab_[state.color_attachment];
+			src_dim = {0, 0, attach_tex.desc.width, attach_tex.desc.height};
+		}
+	};
+	std::visit(render_pass_visitor, *current_render_pass_);
+
+	SRB2_ASSERT(src_region.x >= 0);
+	SRB2_ASSERT(src_region.y >= 0);
+	SRB2_ASSERT(src_region.x + src_region.w <= src_dim.w);
+	SRB2_ASSERT(src_region.y + src_region.h <= src_dim.h);
+
+	GLenum read_buffer = is_back ? GL_BACK_LEFT : GL_COLOR_ATTACHMENT0;
+	gl_->ReadBuffer(read_buffer);
+	GL_ASSERT;
+
+	gl_->BindTexture(GL_TEXTURE_2D, tex.texture);
+	GL_ASSERT;
+	gl_->CopyTexSubImage2D(GL_TEXTURE_2D, 0, dst_region.x, dst_region.y, src_region.x, src_region.y, dst_region.w, dst_region.h);
 	GL_ASSERT;
 }

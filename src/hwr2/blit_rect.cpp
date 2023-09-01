@@ -7,7 +7,7 @@
 // See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
 
-#include "pass_blit_rect.hpp"
+#include "blit_rect.hpp"
 
 #include <optional>
 
@@ -37,22 +37,6 @@ static const BlitVertex kVerts[] =
 
 static const uint16_t kIndices[] = {0, 1, 2, 1, 3, 2};
 
-/// @brief Pipeline used for paletted source textures. Requires the texture and the palette texture.
-static const PipelineDesc kPalettedPipelineDescription = {
-	PipelineProgram::kUnshadedPaletted,
-	{{{sizeof(BlitVertex)}}, {{VertexAttributeName::kPosition, 0, 0}, {VertexAttributeName::kTexCoord0, 0, 12}}},
-	{{{{UniformName::kProjection}}, {{UniformName::kModelView, UniformName::kTexCoord0Transform}}}},
-	{{// R8 index texture
-	  SamplerName::kSampler0,
-	  // 256x1 palette texture
-	  SamplerName::kSampler1}},
-	std::nullopt,
-	{std::nullopt, {true, true, true, true}},
-	PrimitiveType::kTriangles,
-	CullMode::kNone,
-	FaceWinding::kCounterClockwise,
-	{0.f, 0.f, 0.f, 1.f}};
-
 /// @brief Pipeline used for non-paletted source textures.
 static const PipelineDesc kUnshadedPipelineDescription = {
 	PipelineProgram::kUnshaded,
@@ -67,33 +51,21 @@ static const PipelineDesc kUnshadedPipelineDescription = {
 	FaceWinding::kCounterClockwise,
 	{0.f, 0.f, 0.f, 1.f}};
 
-BlitRectPass::BlitRectPass() : Pass()
-{
-}
-
-BlitRectPass::BlitRectPass(bool output_clear) : Pass(), output_clear_(output_clear)
-{
-}
-
-BlitRectPass::BlitRectPass(const std::shared_ptr<MainPaletteManager>& palette_mgr, bool output_clear)
-	: Pass(), output_clear_(output_clear), palette_mgr_(palette_mgr)
-{
-}
-
+BlitRectPass::BlitRectPass() = default;
 BlitRectPass::~BlitRectPass() = default;
+
+void BlitRectPass::draw(Rhi& rhi, Handle<GraphicsContext> ctx)
+{
+	prepass(rhi);
+	transfer(rhi, ctx);
+	graphics(rhi, ctx);
+}
 
 void BlitRectPass::prepass(Rhi& rhi)
 {
 	if (!pipeline_)
 	{
-		if (palette_mgr_)
-		{
-			pipeline_ = rhi.create_pipeline(kPalettedPipelineDescription);
-		}
-		else
-		{
-			pipeline_ = rhi.create_pipeline(kUnshadedPipelineDescription);
-		}
+		pipeline_ = rhi.create_pipeline(kUnshadedPipelineDescription);
 	}
 
 	if (!quad_vbo_)
@@ -106,21 +78,6 @@ void BlitRectPass::prepass(Rhi& rhi)
 	{
 		quad_ibo_ = rhi.create_buffer({sizeof(kIndices), BufferType::kIndexBuffer, BufferUsage::kImmutable});
 		quad_ibo_needs_upload_ = true;
-	}
-
-	if (!render_pass_)
-	{
-		render_pass_ = rhi.create_render_pass(
-			{
-				false,
-			 	output_clear_ ? AttachmentLoadOp::kClear : AttachmentLoadOp::kLoad,
-			 	AttachmentStoreOp::kStore,
-				AttachmentLoadOp::kDontCare,
-				AttachmentStoreOp::kDontCare,
-				AttachmentLoadOp::kDontCare,
-				AttachmentStoreOp::kDontCare
-			}
-		);
 	}
 }
 
@@ -173,45 +130,17 @@ void BlitRectPass::transfer(Rhi& rhi, Handle<GraphicsContext> ctx)
 	uniform_sets_[1] = rhi.create_uniform_set(ctx, {g2_uniforms});
 
 	std::array<rhi::VertexAttributeBufferBinding, 1> vbs = {{{0, quad_vbo_}}};
-	if (palette_mgr_)
-	{
-		std::array<rhi::TextureBinding, 2> tbs = {
-			{{rhi::SamplerName::kSampler0, texture_}, {rhi::SamplerName::kSampler1, palette_mgr_->palette()}}};
-		binding_set_ = rhi.create_binding_set(ctx, pipeline_, {vbs, tbs});
-	}
-	else
-	{
-		std::array<rhi::TextureBinding, 1> tbs = {{{rhi::SamplerName::kSampler0, texture_}}};
-		binding_set_ = rhi.create_binding_set(ctx, pipeline_, {vbs, tbs});
-	}
+	std::array<rhi::TextureBinding, 1> tbs = {{{rhi::SamplerName::kSampler0, texture_}}};
+	binding_set_ = rhi.create_binding_set(ctx, pipeline_, {vbs, tbs});
 }
-
-static constexpr const glm::vec4 kClearColor = {0, 0, 0, 1};
 
 void BlitRectPass::graphics(Rhi& rhi, Handle<GraphicsContext> ctx)
 {
-	if (output_)
-	{
-		rhi.begin_render_pass(ctx, {render_pass_, output_, std::nullopt, kClearColor});
-	}
-	else
-	{
-		rhi.begin_default_render_pass(ctx, output_clear_);
-	}
-
 	rhi.bind_pipeline(ctx, pipeline_);
-	if (output_)
-	{
-		rhi.set_viewport(ctx, {0, 0, output_width_, output_height_});
-	}
+	rhi.set_viewport(ctx, {0, 0, output_width_, output_height_});
 	rhi.bind_uniform_set(ctx, 0, uniform_sets_[0]);
 	rhi.bind_uniform_set(ctx, 1, uniform_sets_[1]);
 	rhi.bind_binding_set(ctx, binding_set_);
 	rhi.bind_index_buffer(ctx, quad_ibo_);
 	rhi.draw_indexed(ctx, 6, 0);
-	rhi.end_render_pass(ctx);
-}
-
-void BlitRectPass::postpass(Rhi& rhi)
-{
 }

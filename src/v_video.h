@@ -431,6 +431,12 @@ void V_DrawPatchFill(patch_t *pat);
 void VID_BlitLinearScreen(const UINT8 *srcptr, UINT8 *destptr, INT32 width, INT32 height, size_t srcrowbytes,
 	size_t destrowbytes);
 
+/**
+ * Display the software framebuffer to the screen. Added in RHI conversion; software is not implicitly displayed by the
+ * system.
+ */
+void VID_DisplaySoftwareScreen(void);
+
 #ifdef __cplusplus
 } // extern "C"
 #endif

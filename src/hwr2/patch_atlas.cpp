@@ -215,7 +215,7 @@ static PatchAtlas create_atlas(Rhi& rhi, uint32_t size)
 	return new_atlas;
 }
 
-void PatchAtlasCache::pack(Rhi& rhi)
+void PatchAtlasCache::pack(Rhi& rhi, Handle<GraphicsContext> ctx)
 {
 	// Prepare stbrp rects for patches to be loaded.
 	std::vector<stbrp_rect> rects;
@@ -291,9 +291,34 @@ void PatchAtlasCache::pack(Rhi& rhi)
 		}
 	}
 
+	patches_to_pack_.clear();
+
 	// TODO Create large patch "atlases"
 
-	patches_to_pack_.clear();
+	SRB2_ASSERT(ready_for_lookup());
+
+	// Upload atlased patches
+	std::vector<uint8_t> patch_data;
+	for (const patch_t* patch_to_upload : patches_to_upload_)
+	{
+		srb2::NotNull<PatchAtlas*> atlas = find_patch(patch_to_upload);
+
+		std::optional<PatchAtlas::Entry> entry = atlas->find_patch(patch_to_upload);
+		SRB2_ASSERT(entry.has_value());
+
+		convert_patch_to_trimmed_rg8_pixels(patch_to_upload, patch_data);
+
+		rhi.update_texture(
+			ctx,
+			atlas->tex_,
+			{static_cast<int32_t>(entry->x), static_cast<int32_t>(entry->y), entry->w, entry->h},
+			PixelFormat::kRG8,
+			tcb::as_bytes(tcb::span(patch_data))
+		);
+
+		patch_data.clear();
+	}
+	patches_to_upload_.clear();
 }
 
 PatchAtlas* PatchAtlasCache::find_patch(srb2::NotNull<const patch_t*> patch)
@@ -338,48 +363,4 @@ void PatchAtlasCache::queue_patch(srb2::NotNull<const patch_t*> patch)
 	}
 
 	patches_to_pack_.insert(patch);
-}
-
-void PatchAtlasCache::prepass(Rhi& rhi)
-{
-	if (need_to_reset())
-	{
-		reset(rhi);
-	}
-}
-
-void PatchAtlasCache::transfer(Rhi& rhi, Handle<GraphicsContext> ctx)
-{
-	SRB2_ASSERT(ready_for_lookup());
-
-	// Upload atlased patches
-	std::vector<uint8_t> patch_data;
-	for (const patch_t* patch_to_upload : patches_to_upload_)
-	{
-		srb2::NotNull<PatchAtlas*> atlas = find_patch(patch_to_upload);
-
-		std::optional<PatchAtlas::Entry> entry = atlas->find_patch(patch_to_upload);
-		SRB2_ASSERT(entry.has_value());
-
-		convert_patch_to_trimmed_rg8_pixels(patch_to_upload, patch_data);
-
-		rhi.update_texture(
-			ctx,
-			atlas->tex_,
-			{static_cast<int32_t>(entry->x), static_cast<int32_t>(entry->y), entry->w, entry->h},
-			PixelFormat::kRG8,
-			tcb::as_bytes(tcb::span(patch_data))
-		);
-
-		patch_data.clear();
-	}
-	patches_to_upload_.clear();
-}
-
-void PatchAtlasCache::graphics(Rhi& rhi, Handle<GraphicsContext> ctx)
-{
-}
-
-void PatchAtlasCache::postpass(Rhi& rhi)
-{
 }

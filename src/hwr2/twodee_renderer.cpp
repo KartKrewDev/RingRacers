@@ -7,7 +7,7 @@
 // See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
 
-#include "pass_twodee.hpp"
+#include "twodee_renderer.hpp"
 
 #include <unordered_set>
 
@@ -23,23 +23,15 @@ using namespace srb2;
 using namespace srb2::hwr2;
 using namespace srb2::rhi;
 
-struct srb2::hwr2::TwodeePassData
-{
-	Handle<Texture> default_tex;
-	std::unordered_map<TwodeePipelineKey, Handle<Pipeline>> pipelines;
-	bool upload_default_tex = false;
-};
-
-std::shared_ptr<TwodeePassData> srb2::hwr2::make_twodee_pass_data()
-{
-	return std::make_shared<TwodeePassData>();
-}
-
-TwodeePass::TwodeePass() : Pass()
-{
-}
-
-TwodeePass::~TwodeePass() = default;
+TwodeeRenderer::TwodeeRenderer(
+	srb2::NotNull<PaletteManager*> palette_manager,
+	srb2::NotNull<FlatTextureManager*> flat_manager,
+	srb2::NotNull<PatchAtlasCache*> patch_atlas_cache
+) : palette_manager_(palette_manager), flat_manager_(flat_manager), patch_atlas_cache_(patch_atlas_cache)
+{}
+TwodeeRenderer::TwodeeRenderer(TwodeeRenderer&&) = default;
+TwodeeRenderer::~TwodeeRenderer() = default;
+TwodeeRenderer& TwodeeRenderer::operator=(TwodeeRenderer&&) = default;
 
 static constexpr const uint32_t kVboInitSize = 32768;
 static constexpr const uint32_t kIboInitSize = 4096;
@@ -123,7 +115,7 @@ static PipelineDesc make_pipeline_desc(TwodeePipelineKey key)
 		{0.f, 0.f, 0.f, 1.f}};
 }
 
-void TwodeePass::rewrite_patch_quad_vertices(Draw2dList& list, const Draw2dPatchQuad& cmd) const
+void TwodeeRenderer::rewrite_patch_quad_vertices(Draw2dList& list, const Draw2dPatchQuad& cmd) const
 {
 	// Patch quads are clipped according to the patch's atlas entry
 	const patch_t* patch = cmd.patch;
@@ -237,14 +229,8 @@ void TwodeePass::rewrite_patch_quad_vertices(Draw2dList& list, const Draw2dPatch
 	list.vertices[vtx_offs + 3].v = clipped_vmax;
 }
 
-void TwodeePass::prepass(Rhi& rhi)
+void TwodeeRenderer::initialize(Rhi& rhi, Handle<GraphicsContext> ctx)
 {
-	if (!ctx_ || !data_)
-	{
-		return;
-	}
-
-	if (data_->pipelines.size() == 0)
 	{
 		TwodeePipelineKey alpha_transparent_tris = {BlendMode::kAlphaTransparent, false};
 		TwodeePipelineKey modulate_tris = {BlendMode::kModulate, false};
@@ -258,49 +244,45 @@ void TwodeePass::prepass(Rhi& rhi)
 		TwodeePipelineKey subtractive_lines = {BlendMode::kSubtractive, true};
 		TwodeePipelineKey revsubtractive_lines = {BlendMode::kReverseSubtractive, true};
 		TwodeePipelineKey invertdest_lines = {BlendMode::kInvertDest, true};
-		data_->pipelines.insert({alpha_transparent_tris, rhi.create_pipeline(make_pipeline_desc(alpha_transparent_tris))});
-		data_->pipelines.insert({modulate_tris, rhi.create_pipeline(make_pipeline_desc(modulate_tris))});
-		data_->pipelines.insert({additive_tris, rhi.create_pipeline(make_pipeline_desc(additive_tris))});
-		data_->pipelines.insert({subtractive_tris, rhi.create_pipeline(make_pipeline_desc(subtractive_tris))});
-		data_->pipelines.insert({revsubtractive_tris, rhi.create_pipeline(make_pipeline_desc(revsubtractive_tris))});
-		data_->pipelines.insert({invertdest_tris, rhi.create_pipeline(make_pipeline_desc(invertdest_tris))});
-		data_->pipelines.insert({alpha_transparent_lines, rhi.create_pipeline(make_pipeline_desc(alpha_transparent_lines))});
-		data_->pipelines.insert({modulate_lines, rhi.create_pipeline(make_pipeline_desc(modulate_lines))});
-		data_->pipelines.insert({additive_lines, rhi.create_pipeline(make_pipeline_desc(additive_lines))});
-		data_->pipelines.insert({subtractive_lines, rhi.create_pipeline(make_pipeline_desc(subtractive_lines))});
-		data_->pipelines.insert({revsubtractive_lines, rhi.create_pipeline(make_pipeline_desc(revsubtractive_lines))});
-		data_->pipelines.insert({invertdest_lines, rhi.create_pipeline(make_pipeline_desc(revsubtractive_lines))});
+		pipelines_.insert({alpha_transparent_tris, rhi.create_pipeline(make_pipeline_desc(alpha_transparent_tris))});
+		pipelines_.insert({modulate_tris, rhi.create_pipeline(make_pipeline_desc(modulate_tris))});
+		pipelines_.insert({additive_tris, rhi.create_pipeline(make_pipeline_desc(additive_tris))});
+		pipelines_.insert({subtractive_tris, rhi.create_pipeline(make_pipeline_desc(subtractive_tris))});
+		pipelines_.insert({revsubtractive_tris, rhi.create_pipeline(make_pipeline_desc(revsubtractive_tris))});
+		pipelines_.insert({invertdest_tris, rhi.create_pipeline(make_pipeline_desc(invertdest_tris))});
+		pipelines_.insert({alpha_transparent_lines, rhi.create_pipeline(make_pipeline_desc(alpha_transparent_lines))});
+		pipelines_.insert({modulate_lines, rhi.create_pipeline(make_pipeline_desc(modulate_lines))});
+		pipelines_.insert({additive_lines, rhi.create_pipeline(make_pipeline_desc(additive_lines))});
+		pipelines_.insert({subtractive_lines, rhi.create_pipeline(make_pipeline_desc(subtractive_lines))});
+		pipelines_.insert({revsubtractive_lines, rhi.create_pipeline(make_pipeline_desc(revsubtractive_lines))});
+		pipelines_.insert({invertdest_lines, rhi.create_pipeline(make_pipeline_desc(revsubtractive_lines))});
 	}
 
-	if (!data_->default_tex)
 	{
-		data_->default_tex = rhi.create_texture({
+		default_tex_ = rhi.create_texture({
 			TextureFormat::kLuminanceAlpha,
 			2,
 			1,
 			TextureWrapMode::kClamp,
 			TextureWrapMode::kClamp
 		});
-		data_->upload_default_tex = true;
+		std::array<uint8_t, 4> data = {0, 255, 0, 255};
+		rhi.update_texture(ctx, default_tex_, {0, 0, 2, 1}, PixelFormat::kRG8, tcb::as_bytes(tcb::span(data)));
 	}
-	if (!render_pass_)
+
+	initialized_ = true;
+}
+
+void TwodeeRenderer::flush(Rhi& rhi, Handle<GraphicsContext> ctx, Twodee& twodee)
+{
+	if (!initialized_)
 	{
-		render_pass_ = rhi.create_render_pass(
-			{
-				false,
-				AttachmentLoadOp::kLoad,
-				AttachmentStoreOp::kStore,
-				AttachmentLoadOp::kDontCare,
-				AttachmentStoreOp::kDontCare,
-				AttachmentLoadOp::kDontCare,
-				AttachmentStoreOp::kDontCare
-			}
-		);
+		initialize(rhi, ctx);
 	}
 
 	// Stage 1 - command list patch detection
 	std::unordered_set<const patch_t*> found_patches;
-	for (const auto& list : *ctx_)
+	for (const auto& list : twodee)
 	{
 		for (const auto& cmd : list.cmds)
 		{
@@ -313,7 +295,7 @@ void TwodeePass::prepass(Rhi& rhi)
 					}
 					if (cmd.colormap != nullptr)
 					{
-						palette_manager_->find_or_create_colormap(rhi, cmd.colormap);
+						palette_manager_->find_or_create_colormap(rhi, ctx, cmd.colormap);
 					}
 				},
 				[&](const Draw2dVertices& cmd) {}};
@@ -325,10 +307,10 @@ void TwodeePass::prepass(Rhi& rhi)
 	{
 		patch_atlas_cache_->queue_patch(patch);
 	}
-	patch_atlas_cache_->pack(rhi);
+	patch_atlas_cache_->pack(rhi, ctx);
 
 	size_t list_index = 0;
-	for (auto& list : *ctx_)
+	for (auto& list : twodee)
 	{
 		Handle<Buffer> vbo;
 		uint32_t vertex_data_size = tcb::as_bytes(tcb::span(list.vertices)).size();
@@ -461,7 +443,7 @@ void TwodeePass::prepass(Rhi& rhi)
 					{
 						if (cmd.flat_lump != LUMPERROR)
 						{
-							flat_manager_->find_or_create_indexed(rhi, cmd.flat_lump);
+							flat_manager_->find_or_create_indexed(rhi, ctx, cmd.flat_lump);
 							typeof(the_new_one.texture) t = MergedTwodeeCommandFlatTexture {cmd.flat_lump};
 							the_new_one.texture = t;
 						}
@@ -496,28 +478,12 @@ void TwodeePass::prepass(Rhi& rhi)
 
 		list_index++;
 	}
-}
-
-void TwodeePass::transfer(Rhi& rhi, Handle<GraphicsContext> ctx)
-{
-	if (!ctx_ || !data_)
-	{
-		return;
-	}
-
-	if (data_->upload_default_tex)
-	{
-		std::array<uint8_t, 4> data = {0, 255, 0, 255};
-		rhi.update_texture(ctx, data_->default_tex, {0, 0, 2, 1}, PixelFormat::kRG8, tcb::as_bytes(tcb::span(data)));
-
-		data_->upload_default_tex = false;
-	}
 
 	Handle<Texture> palette_tex = palette_manager_->palette();
 
 	// Update the buffers for each list
-	auto ctx_list_itr = ctx_->begin();
-	for (size_t i = 0; i < cmd_lists_.size() && ctx_list_itr != ctx_->end(); i++)
+	auto ctx_list_itr = twodee.begin();
+	for (size_t i = 0; i < cmd_lists_.size() && ctx_list_itr != twodee.end(); i++)
 	{
 		auto& merged_list = cmd_lists_[i];
 		auto& orig_list = *ctx_list_itr;
@@ -540,7 +506,7 @@ void TwodeePass::transfer(Rhi& rhi, Handle<GraphicsContext> ctx)
 				},
 				[&](const MergedTwodeeCommandFlatTexture& tex)
 				{
-					Handle<Texture> th = flat_manager_->find_indexed(tex.lump);
+					Handle<Texture> th = flat_manager_->find_or_create_indexed(rhi, ctx, tex.lump);
 					SRB2_ASSERT(th != kNullHandle);
 					tx[0] = {SamplerName::kSampler0, th};
 					tx[1] = {SamplerName::kSampler1, palette_tex};
@@ -551,7 +517,7 @@ void TwodeePass::transfer(Rhi& rhi, Handle<GraphicsContext> ctx)
 			}
 			else
 			{
-				tx[0] = {SamplerName::kSampler0, data_->default_tex};
+				tx[0] = {SamplerName::kSampler0, default_tex_};
 				tx[1] = {SamplerName::kSampler1, palette_tex};
 			}
 
@@ -559,12 +525,12 @@ void TwodeePass::transfer(Rhi& rhi, Handle<GraphicsContext> ctx)
 			Handle<Texture> colormap_h = palette_manager_->default_colormap();
 			if (colormap)
 			{
-				colormap_h = palette_manager_->find_colormap(colormap);
+				colormap_h = palette_manager_->find_or_create_colormap(rhi, ctx, colormap);
 				SRB2_ASSERT(colormap_h != kNullHandle);
 			}
 			tx[2] = {SamplerName::kSampler2, colormap_h};
 			mcmd.binding_set =
-				rhi.create_binding_set(ctx, data_->pipelines[mcmd.pipeline_key], {tcb::span(vbos), tcb::span(tx)});
+				rhi.create_binding_set(ctx, pipelines_[mcmd.pipeline_key], {tcb::span(vbos), tcb::span(tx)});
 		}
 
 		ctx_list_itr++;
@@ -588,28 +554,10 @@ void TwodeePass::transfer(Rhi& rhi, Handle<GraphicsContext> ctx)
 		// Sampler 0 Is Indexed Alpha (yes, it always is)
 		static_cast<int32_t>(1)
 	};
-	us_1 = rhi.create_uniform_set(ctx, {tcb::span(g1_uniforms)});
-	us_2 = rhi.create_uniform_set(ctx, {tcb::span(g2_uniforms)});
-}
+	Handle<UniformSet> us_1 = rhi.create_uniform_set(ctx, {tcb::span(g1_uniforms)});
+	Handle<UniformSet> us_2 = rhi.create_uniform_set(ctx, {tcb::span(g2_uniforms)});
 
-static constexpr const glm::vec4 kClearColor = {0, 0, 0, 1};
-
-void TwodeePass::graphics(Rhi& rhi, Handle<GraphicsContext> ctx)
-{
-	if (!ctx_ || !data_)
-	{
-		return;
-	}
-
-	if (output_)
-	{
-		rhi.begin_render_pass(ctx, {render_pass_, output_, std::nullopt, kClearColor});
-	}
-	else
-	{
-		rhi.begin_default_render_pass(ctx, false);
-	}
-
+	// Presumably, we're already in a renderpass when flush is called
 	for (auto& list : cmd_lists_)
 	{
 		for (auto& cmd : list.cmds)
@@ -620,13 +568,10 @@ void TwodeePass::graphics(Rhi& rhi, Handle<GraphicsContext> ctx)
 				// This shouldn't happen, but, just in case...
 				continue;
 			}
-			SRB2_ASSERT(data_->pipelines.find(cmd.pipeline_key) != data_->pipelines.end());
-			Handle<Pipeline> pl = data_->pipelines[cmd.pipeline_key];
+			SRB2_ASSERT(pipelines_.find(cmd.pipeline_key) != pipelines_.end());
+			Handle<Pipeline> pl = pipelines_[cmd.pipeline_key];
 			rhi.bind_pipeline(ctx, pl);
-			if (output_)
-			{
-				rhi.set_viewport(ctx, {0, 0, output_width_, output_height_});
-			}
+			rhi.set_viewport(ctx, {0, 0, static_cast<uint32_t>(vid.width), static_cast<uint32_t>(vid.height)});
 			rhi.bind_uniform_set(ctx, 0, us_1);
 			rhi.bind_uniform_set(ctx, 1, us_2);
 			rhi.bind_binding_set(ctx, cmd.binding_set);
@@ -634,15 +579,15 @@ void TwodeePass::graphics(Rhi& rhi, Handle<GraphicsContext> ctx)
 			rhi.draw_indexed(ctx, cmd.elements, cmd.index_offset);
 		}
 	}
-	rhi.end_render_pass(ctx);
-}
-
-void TwodeePass::postpass(Rhi& rhi)
-{
-	if (!ctx_ || !data_)
-	{
-		return;
-	}
 
 	cmd_lists_.clear();
+
+	// Reset context for next drawing batch
+	twodee = Twodee();
+
+	// Reset the patch atlas if needed
+	if (patch_atlas_cache_->need_to_reset())
+	{
+		patch_atlas_cache_->reset(rhi);
+	}
 }

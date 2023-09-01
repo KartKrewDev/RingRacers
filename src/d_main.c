@@ -606,6 +606,12 @@ static void D_Display(void)
 				R_RestoreLevelInterpolators();
 			}
 
+			// rhi: display the software framebuffer to the screen
+			if (rendermode == render_soft)
+			{
+				VID_DisplaySoftwareScreen();
+			}
+
 			if (lastdraw)
 			{
 				if (rendermode == render_soft)
@@ -744,9 +750,6 @@ static void D_Display(void)
 		ps_swaptime = I_GetPreciseTime();
 		I_FinishUpdate(); // page flip or blit buffer
 		ps_swaptime = I_GetPreciseTime() - ps_swaptime;
-
-		// We should never do the HWR2 skip 3d drawing hack for more than 1 full draw.
-		g_wipeskiprender = false;
 	}
 }
 
@@ -846,11 +849,6 @@ void D_SRB2Loop(void)
 		HW3S_BeginFrameUpdate();
 #endif
 
-		if (rendermode != render_none)
-		{
-			I_NewTwodeeFrame();
-		}
-
 		if (realtics > 0 || singletics)
 		{
 			// don't skip more than 10 frames at a time
@@ -926,6 +924,9 @@ void D_SRB2Loop(void)
 		if (rendermode == render_opengl && takescreenshot)
 			M_DoLegacyGLScreenShot();
 #endif
+
+		if ((moviemode || takescreenshot) && rendermode == render_soft)
+			I_CaptureVideoFrame();
 
 		// consoleplayer -> displayplayers (hear sounds from viewpoint)
 		S_UpdateSounds(); // move positional sounds
@@ -1557,14 +1558,9 @@ void D_SRB2Main(void)
 
 	CONS_Printf("I_StartupGraphics()...\n");
 	I_StartupGraphics();
+	I_StartDisplayUpdate();
 
 	I_StartupInput();
-
-	if (rendermode != render_none)
-	{
-		I_NewTwodeeFrame();
-		I_NewImguiFrame();
-	}
 
 #ifdef HWRENDER
 	// Lactozilla: Add every hardware mode CVAR and CCMD.

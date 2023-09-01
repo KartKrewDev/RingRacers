@@ -17,13 +17,12 @@
 
 #include "../rhi/rhi.hpp"
 #include "../doomdef.h"
-#include "pass.hpp"
-#include "pass_resource_managers.hpp"
+#include "resource_management.hpp"
 
 namespace srb2::hwr2
 {
 
-class BlitPostimgScreens : public Pass
+class BlitPostimgScreens
 {
 public:
 	struct PostImgConfig
@@ -61,20 +60,18 @@ private:
 	uint32_t screens_;
 	std::array<ScreenConfig, 4> screen_configs_;
 	srb2::StaticVec<ScreenData, 4> screen_data_;
-	rhi::Handle<rhi::Texture> target_;
 	uint32_t target_width_;
 	uint32_t target_height_;
 
-	std::shared_ptr<MainPaletteManager> palette_mgr_;
+	PaletteManager* palette_mgr_;
+
+	void prepass(rhi::Rhi& rhi);
+	void transfer(rhi::Rhi& rhi, rhi::Handle<rhi::GraphicsContext> ctx);
 
 public:
-	BlitPostimgScreens(const std::shared_ptr<MainPaletteManager>& palette_mgr);
-	virtual ~BlitPostimgScreens();
+	explicit BlitPostimgScreens(PaletteManager* palette_mgr);
 
-	virtual void prepass(rhi::Rhi& rhi) override;
-	virtual void transfer(rhi::Rhi& rhi, rhi::Handle<rhi::GraphicsContext> ctx) override;
-	virtual void graphics(rhi::Rhi& rhi, rhi::Handle<rhi::GraphicsContext> ctx) override;
-	virtual void postpass(rhi::Rhi& rhi) override;
+	void draw(rhi::Rhi& rhi, rhi::Handle<rhi::GraphicsContext> ctx);
 
 	void set_num_screens(uint32_t screens) noexcept
 	{
@@ -88,9 +85,8 @@ public:
 		screen_configs_[screen_index] = config;
 	}
 
-	void set_target(rhi::Handle<rhi::Texture> target, uint32_t width, uint32_t height) noexcept
+	void set_target(uint32_t width, uint32_t height) noexcept
 	{
-		target_ = target;
 		target_width_ = width;
 		target_height_ = height;
 	}

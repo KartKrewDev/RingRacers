@@ -7,7 +7,7 @@
 // See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
 
-#include "pass_software.hpp"
+#include "software_screen_renderer.hpp"
 
 #include "../i_video.h"
 #include "../v_video.h"
@@ -16,19 +16,11 @@ using namespace srb2;
 using namespace srb2::hwr2;
 using namespace srb2::rhi;
 
-SoftwarePass::SoftwarePass() : Pass()
+SoftwareScreenRenderer::SoftwareScreenRenderer() = default;
+SoftwareScreenRenderer::~SoftwareScreenRenderer() = default;
+
+void SoftwareScreenRenderer::draw(Rhi& rhi, Handle<GraphicsContext> ctx)
 {
-}
-
-SoftwarePass::~SoftwarePass() = default;
-
-void SoftwarePass::prepass(Rhi& rhi)
-{
-	if (rendermode != render_soft)
-	{
-		return;
-	}
-
 	// Render the player views... or not yet? Needs to be moved out of D_Display in d_main.c
 	// Assume it's already been done and vid.buffer contains the composited splitscreen view.
 	// In the future though, we will want to treat each player viewport separately for postprocessing.
@@ -58,27 +50,15 @@ void SoftwarePass::prepass(Rhi& rhi)
 	// If the screen width won't fit the unpack alignment, we need to copy the screen.
 	if (width_ % kPixelRowUnpackAlignment > 0)
 	{
-		std::size_t padded_width = (width_ + (kPixelRowUnpackAlignment - 1)) & !kPixelRowUnpackAlignment;
+		std::size_t padded_width = (width_ + (kPixelRowUnpackAlignment - 1)) & ~(kPixelRowUnpackAlignment - 1);
 		copy_buffer_.clear();
-		copy_buffer_.reserve(padded_width * height_);
+		copy_buffer_.resize(padded_width * height_, 0);
 		for (std::size_t y = 0; y < height_; y++)
 		{
-			for (std::size_t x = 0; x < width_; x++)
-			{
-				copy_buffer_.push_back(vid.buffer[(width_ * y) + x]);
-			}
-
-			// Padding to unpack alignment
-			for (std::size_t i = 0; i < padded_width - width_; i++)
-			{
-				copy_buffer_.push_back(0);
-			}
+			std::copy(&vid.buffer[width_ * y], &vid.buffer[width_ * (y + 1)], &copy_buffer_[padded_width * y]);
 		}
 	}
-}
 
-void SoftwarePass::transfer(Rhi& rhi, Handle<GraphicsContext> ctx)
-{
 	// Upload screen
 	tcb::span<const std::byte> screen_span;
 	if (width_ % kPixelRowUnpackAlignment > 0)
@@ -91,12 +71,4 @@ void SoftwarePass::transfer(Rhi& rhi, Handle<GraphicsContext> ctx)
 	}
 
 	rhi.update_texture(ctx, screen_texture_, {0, 0, width_, height_}, PixelFormat::kR8, screen_span);
-}
-
-void SoftwarePass::graphics(Rhi& rhi, Handle<GraphicsContext> ctx)
-{
-}
-
-void SoftwarePass::postpass(Rhi& rhi)
-{
 }

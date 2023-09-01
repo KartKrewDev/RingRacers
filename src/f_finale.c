@@ -432,7 +432,10 @@ void F_IntroTicker(void)
 #ifdef HWRENDER
 					if (moviemode && rendermode == render_opengl) // make sure we save frames for the white hold too
 						M_LegacySaveFrame();
+					else
 #endif
+					if (moviemode && rendermode != render_none)
+						I_CaptureVideoFrame();
 				}
 			}
 

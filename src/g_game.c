@@ -1247,7 +1247,10 @@ void G_PreLevelTitleCard(void)
 #ifdef HWRENDER
 		if (moviemode && rendermode == render_opengl)
 			M_LegacySaveFrame();
+		else
 #endif
+		if (moviemode && rendermode != render_none)
+			I_CaptureVideoFrame();
 
 		while (!((nowtime = I_GetTime()) - lasttime))
 		{
@@ -2758,7 +2761,7 @@ mapthing_t *G_FindMapStart(INT32 playernum)
 	if (!playeringame[playernum])
 		return NULL;
 
-	// -- Podium -- 
+	// -- Podium --
 	// Single special behavior
 	if (K_PodiumSequence() == true)
 		spawnpoint = G_FindPodiumStart(playernum);
@@ -4904,7 +4907,7 @@ void G_LoadGameData(void)
 
 			if (versionMinor < 3)
 			{
-				// We now require backfilling of placement information.	
+				// We now require backfilling of placement information.
 
 				cupwindata_t bestwindata;
 				bestwindata.best_placement = 0;

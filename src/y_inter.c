@@ -1364,13 +1364,8 @@ void Y_IntermissionDrawer(void)
 
 	//player icon 1 (55,79) 2 (55,93) 5 (183,79)
 
-	// If we early return, skip drawing the 3D scene (software buffer) so it doesn't clobber the frame for the wipe
-	g_wipeskiprender = true;
-
 	if (intertype == int_none || rendermode == render_none)
 		return;
-
-	g_wipeskiprender = false;
 
 	fixed_t x;
 
@@ -1390,16 +1385,16 @@ void Y_IntermissionDrawer(void)
 
 	// Draw the background
 	K_DrawMapThumbnail(0, 0, BASEVIDWIDTH<<FRACBITS, (data.encore ? V_FLIP : 0), prevmap, bgcolor);
-	
+
 	// Draw a mask over the BG to get the correct colorization
 	V_DrawMappedPatch(0, 0, V_ADD|V_TRANSLUCENT, mask, NULL);
-	
+
 	// Draw the marquee (scroll pending)
 	//V_DrawMappedPatch(0, 154, V_SUBTRACT, rrmq, NULL);
-	
+
 	// Draw the checker pattern (scroll pending)
 	//V_DrawMappedPatch(0, 0, V_SUBTRACT, rbgchk, NULL);
-	
+
 	for (x = -mqscroll; x < (BASEVIDWIDTH * FRACUNIT); x += mqloop)
 	{
 		V_DrawFixedPatch(x, 154<<FRACBITS, FRACUNIT, V_SUBTRACT, rrmq, NULL);
@@ -1519,16 +1514,16 @@ finalcounter:
 		{
 			switch (demo.savemode)
 			{
-				case DSM_NOTSAVING: 
+				case DSM_NOTSAVING:
 				{
 					INT32 buttonx = BASEVIDWIDTH;
 					INT32 buttony = 2;
-					
+
 					K_drawButtonAnim(buttonx - 76, buttony, 0, kp_button_b[1], replayprompttic);
 					V_DrawRightAlignedThinString(buttonx - 55, buttony, highlightflags, "or");
 					K_drawButtonAnim(buttonx - 55, buttony, 0, kp_button_x[1], replayprompttic);
 					V_DrawRightAlignedThinString(buttonx - 2, buttony, highlightflags, "Save replay");
-					break;	
+					break;
 				}
 				case DSM_SAVED:
 					V_DrawRightAlignedThinString(BASEVIDWIDTH - 2, 2, highlightflags, "Replay saved!");
@@ -1588,8 +1583,8 @@ void Y_Ticker(void)
 		{
 			replayprompttic++;
 			G_CheckDemoTitleEntry();
-		} 
-			
+		}
+
 		if (demo.savemode == DSM_WILLSAVE || demo.savemode == DSM_WILLAUTOSAVE)
 			G_SaveDemo();
 	}

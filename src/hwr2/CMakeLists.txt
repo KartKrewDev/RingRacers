@@ -1,27 +1,32 @@
 target_sources(SRB2SDL2 PRIVATE
 	blendmode.hpp
-	pass_blit_postimg_screens.cpp
-	pass_blit_postimg_screens.hpp
-	pass_blit_rect.cpp
-	pass_blit_rect.hpp
+	blit_postimg_screens.cpp
+	blit_postimg_screens.hpp
+	blit_rect.cpp
+	blit_rect.hpp
+	hardware_state.hpp
 	pass_imgui.cpp
 	pass_imgui.hpp
 	pass_manager.cpp
 	pass_manager.hpp
-	pass_postprocess.cpp
-	pass_postprocess.hpp
 	pass_resource_managers.cpp
 	pass_resource_managers.hpp
-	pass_screenshot.cpp
-	pass_screenshot.hpp
-	pass_software.cpp
-	pass_software.hpp
-	pass_twodee.cpp
-	pass_twodee.hpp
 	pass.cpp
 	pass.hpp
 	patch_atlas.cpp
 	patch_atlas.hpp
+	postprocess_wipe.cpp
+	postprocess_wipe.hpp
+	resource_management.cpp
+	resource_management.hpp
+	screen_capture.cpp
+	screen_capture.hpp
+	software_screen_renderer.cpp
+	software_screen_renderer.hpp
 	twodee.cpp
 	twodee.hpp
+	twodee_renderer.cpp
+	twodee_renderer.hpp
+	upscale_backbuffer.cpp
+	upscale_backbuffer.hpp
 )

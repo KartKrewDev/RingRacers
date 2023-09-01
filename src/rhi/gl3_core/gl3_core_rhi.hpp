@@ -155,7 +155,7 @@ class GlCoreRhi final : public Rhi
 	std::optional<Handle<Pipeline>> current_pipeline_;
 	PrimitiveType current_primitive_type_ = PrimitiveType::kPoints;
 	bool graphics_context_active_ = false;
-	uint32_t graphics_context_generation_ = 0;
+	uint32_t graphics_context_generation_ = 1;
 	uint32_t index_buffer_offset_ = 0;
 
 	uint8_t stencil_front_reference_ = 0;
@@ -223,6 +223,12 @@ public:
 	virtual void draw_indexed(Handle<GraphicsContext> ctx, uint32_t index_count, uint32_t first_index) override;
 	virtual void
 	read_pixels(Handle<GraphicsContext> ctx, const Rect& rect, PixelFormat format, tcb::span<std::byte> out) override;
+	virtual void copy_framebuffer_to_texture(
+		Handle<GraphicsContext> ctx,
+		Handle<Texture> dst_tex,
+		const Rect& dst_region,
+		const Rect& src_region
+	) override;
 	virtual void set_stencil_reference(Handle<GraphicsContext> ctx, CullMode face, uint8_t reference) override;
 	virtual void set_stencil_compare_mask(Handle<GraphicsContext> ctx, CullMode face, uint8_t mask) override;
 	virtual void set_stencil_write_mask(Handle<GraphicsContext> ctx, CullMode face, uint8_t mask) override;

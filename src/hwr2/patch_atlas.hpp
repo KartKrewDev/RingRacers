@@ -81,7 +81,7 @@ public:
 /// @brief A resource-managing pass which creates and manages a set of Atlas Textures with
 /// optimally packed Patches, allowing drawing passes to reuse the same texture binds for
 /// drawing things like sprites and 2D elements.
-class PatchAtlasCache : public Pass
+class PatchAtlasCache
 {
 	std::vector<PatchAtlas> atlases_;
 	std::unordered_map<const patch_t*, size_t> patch_lookup_;
@@ -92,10 +92,6 @@ class PatchAtlasCache : public Pass
 	uint32_t tex_size_ = 2048;
 	size_t max_textures_ = 2;
 
-	bool need_to_reset() const;
-
-	/// @brief Clear the atlases and reset for lookup.
-	void reset(rhi::Rhi& rhi);
 	bool ready_for_lookup() const;
 
 	/// @brief Decide if a rect's dimensions are Large, that is, the rect should not be packed and instead its patch
@@ -109,14 +105,14 @@ public:
 	PatchAtlasCache(PatchAtlasCache&&);
 	PatchAtlasCache& operator=(const PatchAtlasCache&) = delete;
 	PatchAtlasCache& operator=(PatchAtlasCache&&);
-	virtual ~PatchAtlasCache();
+	~PatchAtlasCache();
 
 	/// @brief Queue a patch to be packed. All patches will be packed after the prepass phase,
 	/// or the owner can explicitly request a pack.
 	void queue_patch(srb2::NotNull<const patch_t*> patch);
 
 	/// @brief Pack queued patches, allowing them to be looked up with find_patch.
-	void pack(rhi::Rhi& rhi);
+	void pack(rhi::Rhi& rhi, rhi::Handle<rhi::GraphicsContext> ctx);
 
 	/// @brief Find the atlas a patch belongs to, or nullopt if it is not cached.
 	/// This may not be called if there are still patches that need to be packed.
@@ -124,10 +120,10 @@ public:
 	const PatchAtlas* find_patch(srb2::NotNull<const patch_t*> patch) const;
 	PatchAtlas* find_patch(srb2::NotNull<const patch_t*> patch);
 
-	virtual void prepass(rhi::Rhi& rhi) override;
-	virtual void transfer(rhi::Rhi& rhi, rhi::Handle<rhi::GraphicsContext> ctx) override;
-	virtual void graphics(rhi::Rhi& rhi, rhi::Handle<rhi::GraphicsContext> ctx) override;
-	virtual void postpass(rhi::Rhi& rhi) override;
+	bool need_to_reset() const;
+
+	/// @brief Clear the atlases and reset for lookup.
+	void reset(rhi::Rhi& rhi);
 };
 
 /// @brief Calculate the subregion of the patch which excludes empty space on the borders.

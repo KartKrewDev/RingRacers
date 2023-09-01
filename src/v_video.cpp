@@ -3195,3 +3195,72 @@ void V_Recalc(void)
 	vid.fsmalldupy = vid.smalldupy*FRACUNIT;
 #endif
 }
+
+void VID_DisplaySoftwareScreen()
+{
+	// TODO implement
+	// upload framebuffer, bind pipeline, draw
+	rhi::Rhi* rhi = srb2::sys::get_rhi(srb2::sys::g_current_rhi);
+	rhi::Handle<rhi::GraphicsContext> ctx = srb2::sys::main_graphics_context();
+	hwr2::HardwareState* hw_state = srb2::sys::main_hardware_state();
+
+	// Misnomer; this just uploads the screen to the software indexed screen texture
+	hw_state->software_screen_renderer->draw(*rhi, ctx);
+
+	const int screens = std::clamp(r_splitscreen + 1, 1, MAXSPLITSCREENPLAYERS);
+	hw_state->blit_postimg_screens->set_num_screens(screens);
+	hw_state->blit_postimg_screens->set_target(static_cast<uint32_t>(vid.width), static_cast<uint32_t>(vid.height));
+
+	for (int i = 0; i < screens; i++)
+	{
+		glm::vec2 uv_offset {0.f, 0.f};
+		glm::vec2 uv_size {1.f, 1.f};
+
+		if (screens > 2)
+		{
+			uv_size = glm::vec2(.5f, .5f);
+			switch (i)
+			{
+			case 0:
+				uv_offset = glm::vec2(0.f, 0.f);
+				break;
+			case 1:
+				uv_offset = glm::vec2(.5f, 0.f);
+				break;
+			case 2:
+				uv_offset = glm::vec2(0.f, .5f);
+				break;
+			case 3:
+				uv_offset = glm::vec2(.5f, .5f);
+				break;
+			}
+		}
+		else if (screens > 1)
+		{
+			uv_size = glm::vec2(1.f, .5f);
+			if (i == 1)
+			{
+				uv_offset = glm::vec2(0.f, .5f);
+			}
+		}
+
+		hw_state->blit_postimg_screens->set_screen(
+			i,
+			{
+				hw_state->software_screen_renderer->screen(),
+				true,
+				uv_offset,
+				uv_size,
+				{
+					postimgtype[i] == postimg_water,
+					postimgtype[i] == postimg_heat,
+					postimgtype[i] == postimg_flip,
+					postimgtype[i] == postimg_mirror
+				}
+			}
+		);
+	}
+
+	// Post-process blit to the 'default' framebuffer
+	hw_state->blit_postimg_screens->draw(*rhi, ctx);
+}

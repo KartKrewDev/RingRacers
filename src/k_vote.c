@@ -796,9 +796,6 @@ void Y_VoteDrawer(void)
 {
 	static angle_t rubyFloatTime = 0;
 
-	// If we early return, skip drawing the 3D scene (software buffer) so it doesn't clobber the frame for the wipe
-	g_wipeskiprender = true;
-
 	if (rendermode == render_none)
 	{
 		return;
@@ -813,8 +810,6 @@ void Y_VoteDrawer(void)
 	{
 		return;
 	}
-
-	g_wipeskiprender = false;
 
 	vote_draw.ruby_height = FINESINE(rubyFloatTime >> ANGLETOFINESHIFT);
 	rubyFloatTime += FixedMul(ANGLE_MAX / NEWTICRATE, renderdeltatics);
@@ -1226,7 +1221,7 @@ static void Y_TryMapAngerVote(void)
 
 	INT32 numPlayers = 0;
 	INT32 i = 0;
-	
+
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
 		if (Y_PlayerIDCanVote(i) == false)

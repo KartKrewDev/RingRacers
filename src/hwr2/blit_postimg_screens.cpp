@@ -7,7 +7,7 @@
 // See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
 
-#include "pass_blit_postimg_screens.hpp"
+#include "blit_postimg_screens.hpp"
 
 #include <glm/mat3x3.hpp>
 #include <glm/mat4x4.hpp>
@@ -68,12 +68,53 @@ static const BlitVertex kVerts[] =
 
 static const uint16_t kIndices[] = {0, 1, 2, 1, 3, 2};
 
-BlitPostimgScreens::BlitPostimgScreens(const std::shared_ptr<MainPaletteManager>& palette_mgr)
+
+static Rect get_screen_viewport(uint32_t screen, uint32_t screens, uint32_t w, uint32_t h)
+{
+	switch (screens)
+	{
+	case 1:
+		return {0, 0, w, h};
+	case 2:
+		return {0, screen == 0 ? (static_cast<int32_t>(h) / 2) : 0, w, (h / 2)};
+	default:
+		switch (screen)
+		{
+		case 2:
+			return {0, 0, w / 2, h / 2};
+		case 3:
+			return {static_cast<int32_t>(w) / 2, 0, w / 2, h / 2};
+		case 0:
+			return {0, static_cast<int32_t>(h) / 2, w / 2, h / 2};
+		case 1:
+			return {static_cast<int32_t>(w) / 2, static_cast<int32_t>(h) / 2, w / 2, h / 2};
+		}
+	}
+	return {0, 0, w, h};
+}
+
+BlitPostimgScreens::BlitPostimgScreens(PaletteManager* palette_mgr)
 	: palette_mgr_(palette_mgr)
 {
 }
 
-BlitPostimgScreens::~BlitPostimgScreens() = default;
+void BlitPostimgScreens::draw(Rhi& rhi, Handle<GraphicsContext> ctx)
+{
+	prepass(rhi);
+	transfer(rhi, ctx);
+
+	for (uint32_t i = 0; i < screens_; i++)
+	{
+		BlitPostimgScreens::ScreenData& data = screen_data_[i];
+
+		rhi.bind_pipeline(ctx, data.pipeline);
+		rhi.set_viewport(ctx, get_screen_viewport(i, screens_, target_width_, target_height_));
+		rhi.bind_uniform_set(ctx, 0, data.uniform_set);
+		rhi.bind_binding_set(ctx, data.binding_set);
+		rhi.bind_index_buffer(ctx, quad_ibo_);
+		rhi.draw_indexed(ctx, 6, 0);
+	}
+}
 
 void BlitPostimgScreens::prepass(Rhi& rhi)
 {
@@ -115,30 +156,6 @@ void BlitPostimgScreens::prepass(Rhi& rhi)
 	}
 
 	screen_data_.clear();
-}
-
-static Rect get_screen_viewport(uint32_t screen, uint32_t screens, uint32_t w, uint32_t h)
-{
-	switch (screens)
-	{
-	case 1:
-		return {0, 0, w, h};
-	case 2:
-		return {0, screen == 0 ? (static_cast<int32_t>(h) / 2) : 0, w, (h / 2)};
-	default:
-		switch (screen)
-		{
-		case 2:
-			return {0, 0, w / 2, h / 2};
-		case 3:
-			return {static_cast<int32_t>(w) / 2, 0, w / 2, h / 2};
-		case 0:
-			return {0, static_cast<int32_t>(h) / 2, w / 2, h / 2};
-		case 1:
-			return {static_cast<int32_t>(w) / 2, static_cast<int32_t>(h) / 2, w / 2, h / 2};
-		}
-	}
-	return {0, 0, w, h};
 }
 
 void BlitPostimgScreens::transfer(Rhi& rhi, Handle<GraphicsContext> ctx)
@@ -206,7 +223,7 @@ void BlitPostimgScreens::transfer(Rhi& rhi, Handle<GraphicsContext> ctx)
 
 		UniformVariant uniforms[] =
 		{
-			FixedToFloat(g_time.timefrac) + leveltime,
+			static_cast<float>(leveltime),
 			projection,
 			modelview,
 			texcoord_transform,
@@ -220,34 +237,4 @@ void BlitPostimgScreens::transfer(Rhi& rhi, Handle<GraphicsContext> ctx)
 
 		screen_data_[i] = std::move(data);
 	}
-}
-
-void BlitPostimgScreens::graphics(Rhi& rhi, Handle<GraphicsContext> ctx)
-{
-	if (target_)
-	{
-		rhi.begin_render_pass(ctx, {renderpass_, target_, std::nullopt, glm::vec4(0.0, 0.0, 0.0, 1.0)});
-	}
-	else
-	{
-		rhi.begin_default_render_pass(ctx, true);
-	}
-
-	for (uint32_t i = 0; i < screens_; i++)
-	{
-		BlitPostimgScreens::ScreenData& data = screen_data_[i];
-
-		rhi.bind_pipeline(ctx, data.pipeline);
-		rhi.set_viewport(ctx, get_screen_viewport(i, screens_, target_ ? target_width_ : vid.width, target_ ? target_height_ : vid.height));
-		rhi.bind_uniform_set(ctx, 0, data.uniform_set);
-		rhi.bind_binding_set(ctx, data.binding_set);
-		rhi.bind_index_buffer(ctx, quad_ibo_);
-		rhi.draw_indexed(ctx, 6, 0);
-	}
-
-	rhi.end_render_pass(ctx);
-}
-
-void BlitPostimgScreens::postpass(Rhi& rhi)
-{
 }
