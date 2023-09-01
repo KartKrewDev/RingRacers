@@ -1263,7 +1263,7 @@ void F_GameEvaluationTicker(void)
 	}
 	else
 	{
-		if (finalecount == 1)
+		if (finalecount == TICRATE/2)
 		{
 			// _drift across open waters
 			Music_Remap("shore", "_DRIFT");
