@@ -50,21 +50,12 @@ void SoftwareScreenRenderer::draw(Rhi& rhi, Handle<GraphicsContext> ctx)
 	// If the screen width won't fit the unpack alignment, we need to copy the screen.
 	if (width_ % kPixelRowUnpackAlignment > 0)
 	{
-		std::size_t padded_width = (width_ + (kPixelRowUnpackAlignment - 1)) & !kPixelRowUnpackAlignment;
+		std::size_t padded_width = (width_ + (kPixelRowUnpackAlignment - 1)) & ~(kPixelRowUnpackAlignment - 1);
 		copy_buffer_.clear();
-		copy_buffer_.reserve(padded_width * height_);
+		copy_buffer_.resize(padded_width * height_, 0);
 		for (std::size_t y = 0; y < height_; y++)
 		{
-			for (std::size_t x = 0; x < width_; x++)
-			{
-				copy_buffer_.push_back(vid.buffer[(width_ * y) + x]);
-			}
-
-			// Padding to unpack alignment
-			for (std::size_t i = 0; i < padded_width - width_; i++)
-			{
-				copy_buffer_.push_back(0);
-			}
+			std::copy(&vid.buffer[width_ * y], &vid.buffer[width_ * (y + 1)], &copy_buffer_[padded_width * y]);
 		}
 	}
 
