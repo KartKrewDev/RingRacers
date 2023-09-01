@@ -461,68 +461,34 @@ void K_CeremonyTicker(boolean run)
 					podiumData.delay = 0;
 				}
 			}
+			else if (podiumData.delay == TICRATE)
+			{
+				if (!menuactive && M_MenuConfirmPressed(0))
+				{
+					podiumData.delay++;
+				}
+			}
+			else
+			{
+				if (++podiumData.delay == 2*TICRATE)
+				{
+					if (grandprixinfo.gp == true
+						&& grandprixinfo.cup != NULL
+						&& grandprixinfo.cup->playcredits == true)
+					{
+						nextmap = NEXTMAP_CREDITS;
+					}
+					else
+					{
+						nextmap = NEXTMAP_TITLE;
+					}
+
+					G_EndGame();
+					return;
+				}
+			}
 		}
 	}
-}
-
-/*--------------------------------------------------
-	boolean K_CeremonyResponder(event_t *event)
-
-		See header file for description.
---------------------------------------------------*/
-boolean K_CeremonyResponder(event_t *event)
-{
-	INT32 key = event->data1;
-
-	if (podiumData.ranking == false || podiumData.state < PODIUM_STATES)
-	{
-		return false;
-	}
-
-	// remap virtual keys (mouse & joystick buttons)
-	switch (key)
-	{
-		case KEY_MOUSE1:
-			key = KEY_ENTER;
-			break;
-		case KEY_MOUSE1 + 1:
-			key = KEY_BACKSPACE;
-			break;
-		case KEY_JOY1:
-		case KEY_JOY1 + 2:
-			key = KEY_ENTER;
-			break;
-		case KEY_JOY1 + 3:
-			key = 'n';
-			break;
-		case KEY_JOY1 + 1:
-			key = KEY_BACKSPACE;
-			break;
-		case KEY_HAT1:
-			key = KEY_UPARROW;
-			break;
-		case KEY_HAT1 + 1:
-			key = KEY_DOWNARROW;
-			break;
-		case KEY_HAT1 + 2:
-			key = KEY_LEFTARROW;
-			break;
-		case KEY_HAT1 + 3:
-			key = KEY_RIGHTARROW;
-			break;
-	}
-
-	if (event->type != ev_keydown)
-	{
-		return false;
-	}
-
-	if (key != KEY_ESCAPE && key != KEY_ENTER && key != KEY_BACKSPACE)
-	{
-		return false;
-	}
-
-	return true;
 }
 
 /*--------------------------------------------------
@@ -625,11 +591,8 @@ void K_CeremonyDrawer(void)
 					);
 					break;
 				}
-				case 9:
+				default:
 				{
-					V_DrawThinString(2, BASEVIDHEIGHT - 10, V_SNAPTOBOTTOM|V_SNAPTOLEFT|V_6WIDTHSPACE,
-						"Press some button type deal to continue"
-					);
 					break;
 				}
 			}
@@ -642,5 +605,10 @@ void K_CeremonyDrawer(void)
 	{
 		// Level fade-in
 		V_DrawCustomFadeScreen(((levelfadecol == 0) ? "FADEMAP1" : "FADEMAP0"), 31-(timeinmap*2));
+	}
+
+	if (podiumData.state == PODIUM_STATES)
+	{
+		Y_DrawIntermissionButton(TICRATE - podiumData.delay, podiumData.delay - TICRATE);
 	}
 }

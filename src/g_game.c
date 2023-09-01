@@ -1361,25 +1361,6 @@ boolean G_Responder(event_t *ev)
 			return true;
 		}
 	}
-	else if (gamestate == GS_CEREMONY)
-	{
-		if (K_CeremonyResponder(ev))
-		{
-			if (grandprixinfo.gp == true
-				&& grandprixinfo.cup != NULL
-				&& grandprixinfo.cup->playcredits == true)
-			{
-				nextmap = NEXTMAP_CREDITS;
-			}
-			else
-			{
-				nextmap = NEXTMAP_TITLE;
-			}
-
-			G_EndGame();
-			return true;
-		}
-	}
 
 	if (gamestate == GS_LEVEL && ev->type == ev_keydown && multiplayer && demo.playback && !demo.freecam)
 	{
