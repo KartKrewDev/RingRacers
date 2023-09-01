@@ -616,16 +616,3 @@ void Advertise_OnChange(void)
 
 	M_PopupMasterServerRules();
 }
-
-#ifdef DEVELOP
-void RendezvousServer_OnChange (void);
-void RendezvousServer_OnChange (void)
-{
-	consvar_t *cvar = &cv_rendezvousserver;
-
-	if (!strcmp(cvar->string, "jart-dev.jameds.org"))
-		CV_StealthSet(cvar, cvar->defaultvalue);
-}
-#else
-#error "This was an indev thing, remove at release."
-#endif

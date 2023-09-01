@@ -96,6 +96,23 @@
 
 #include "lua_script.h"
 
+/* Manually defined asset hashes
+ * Last updated 2019 / 01 / 18 - Kart v1.0.2 - Main assets
+ * Last updated 2020 / 08 / 30 - Kart v1.3 - patch.kart
+ */
+
+#define ASSET_HASH_BIOS_PK3					"00000000000000000000000000000000"
+#define ASSET_HASH_GFX_PK3					"00000000000000000000000000000000"
+#define ASSET_HASH_TEXTURES_GENERAL_PK3		"00000000000000000000000000000000"
+#define ASSET_HASH_TEXTURES_SEGA_PK3		"00000000000000000000000000000000"
+#define ASSET_HASH_TEXTURES_ORIGINAL_PK3	"00000000000000000000000000000000"
+#define ASSET_HASH_CHARS_PK3				"00000000000000000000000000000000"
+#define ASSET_HASH_FOLLOWERS_PK3			"00000000000000000000000000000000"
+#define ASSET_HASH_MAPS_PK3					"00000000000000000000000000000000"
+#ifdef USE_PATCH_FILE
+#define ASSET_HASH_PATCH_PK3				"00000000000000000000000000000000"
+#endif
+
 // Version numbers for netplay :upside_down_face:
 int    VERSION;
 int SUBVERSION;
@@ -1479,18 +1496,18 @@ void D_SRB2Main(void)
 	mainwads = 0;
 
 #ifndef DEVELOP
-#ifdef USE_PATCH_FILE
-	mainwads++; W_VerifyFileMD5(mainwads, ASSET_HASH_PATCH_PK3);		// patch.pk3
-#endif
 	// Check MD5s of autoloaded files
 	// Note: Do not add any files that ignore MD5!
 	W_VerifyFileMD5(mainwads, ASSET_HASH_BIOS_PK3);								// bios.pk3
+#ifdef USE_PATCH_FILE
+	mainwads++; W_VerifyFileMD5(mainwads, ASSET_HASH_PATCH_PK3);				// patch.pk3
+#endif
 	mainwads++; W_VerifyFileMD5(mainwads, ASSET_HASH_GFX_PK3);					// gfx.pk3
 	mainwads++; W_VerifyFileMD5(mainwads, ASSET_HASH_TEXTURES_GENERAL_PK3);		// textures_general.pk3
 	mainwads++; W_VerifyFileMD5(mainwads, ASSET_HASH_TEXTURES_SEGA_PK3);		// textures_segazones.pk3
 	mainwads++; W_VerifyFileMD5(mainwads, ASSET_HASH_TEXTURES_ORIGINAL_PK3);	// textures_originalzones.pk3
 	mainwads++; W_VerifyFileMD5(mainwads, ASSET_HASH_CHARS_PK3);				// chars.pk3
-	mainwads++; W_VerifyFileMd5(mainwads, ASSET_HASH_FOLLOWERS_PK3);			// followers.pk3
+	mainwads++; W_VerifyFileMD5(mainwads, ASSET_HASH_FOLLOWERS_PK3);			// followers.pk3
 	mainwads++; W_VerifyFileMD5(mainwads, ASSET_HASH_MAPS_PK3);					// maps.pk3
 #else
 #ifdef USE_PATCH_FILE

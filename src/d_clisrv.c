@@ -4186,9 +4186,11 @@ void CL_RemoveSplitscreenPlayer(UINT8 p)
 #ifndef TESTERS
 static void GotOurIP(UINT32 address)
 {
-	const unsigned char * p = (const unsigned char *)&address;
 	#ifdef DEVELOP
+	{
+		const unsigned char * p = (const unsigned char *)&address;
 		CONS_Printf("Got IP of %u.%u.%u.%u\n", p[0], p[1], p[2], p[3]);
+	}
 	#endif
 	ourIP = address;
 }
