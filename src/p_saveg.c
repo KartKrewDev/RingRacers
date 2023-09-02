@@ -5875,8 +5875,8 @@ static void P_NetArchiveMisc(savebuffer_t *save, boolean resending)
 
 	WRITEUINT32(save->p, g_pointlimit);
 
-	WRITEUINT32(save->p, darktimer);
-	WRITEUINT32(save->p, darkness);
+	WRITEFIXED(save->p, darktimer);
+	WRITEFIXED(save->p, darkness);
 
 	// Is it paused?
 	if (paused)
@@ -6057,8 +6057,8 @@ static boolean P_NetUnArchiveMisc(savebuffer_t *save, boolean reloading)
 
 	g_pointlimit = READUINT32(save->p);
 
-	darktimer = READUINT32(save->p);
-	darkness = READUINT32(save->p);
+	darktimer = READFIXED(save->p);
+	darkness = READFIXED(save->p);
 
 	// Is it paused?
 	if (READUINT8(save->p) == 0x2f)
