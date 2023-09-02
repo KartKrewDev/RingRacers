@@ -944,11 +944,12 @@ void P_Ticker(boolean run)
 
 
 		const fixed_t darkdelta = FRACUNIT/50;
+		const fixed_t maxdark = FRACUNIT/7;
 		if (darktimer) // dark or darkening
 		{
 			darktimer--;
 			darkness += darkdelta;
-			darkness = min(darkness, FRACUNIT/6);
+			darkness = min(darkness, maxdark);
 		}
 		else if (darkness >= darkdelta) // lightening
 		{
