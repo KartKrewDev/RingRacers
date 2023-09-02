@@ -1609,8 +1609,8 @@ static boolean SL_InsertServer(serverinfo_pak* info, SINT8 node)
 		if (strcmp(info->application, SRB2APPLICATION))
 			return false;/* that's a different mod */
 
-		if (!server && info->modifiedgame != (mpmenu.room == 1))
-			return false;/* CORE vs MODDED! Unless we ARE the server (i.e. local play), then it's fine to not match. */
+		if (serverlistultimatecount && info->modifiedgame != (mpmenu.room == 1))
+			return false;/* CORE vs MODDED! But only on the server browser page. */
 
 		i = serverlistcount++;
 	}
@@ -4658,8 +4658,13 @@ static void HandleServerInfo(SINT8 node)
 	CopyCaretColors(netbuffer->u.serverinfo.servername, servername, MAXSERVERNAME);
 
 	// If we have cause to reject it, it's not worth observing.
-	if (SL_InsertServer(&netbuffer->u.serverinfo, node) == false)
+	if (
+		SL_InsertServer(&netbuffer->u.serverinfo, node) == false
+		&& serverlistultimatecount
+	)
+	{
 		serverlistultimatecount--;
+	}
 }
 
 static void PT_WillResendGamestate(void)
