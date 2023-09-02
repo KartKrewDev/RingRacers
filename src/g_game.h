@@ -86,6 +86,8 @@ extern boolean pausebreakkey;
 
 extern boolean promptactive;
 
+extern tic_t darktimer;
+extern fixed_t darkness;
 
 extern consvar_t cv_tutorialprompt;
 

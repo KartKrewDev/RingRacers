@@ -19,6 +19,7 @@
 #include "m_fixed.h"
 #include "r_draw.h"
 #include "r_main.h"
+#include "g_game.h"
 
 using namespace srb2::r_debug;
 
@@ -38,12 +39,14 @@ void R_CheckDebugHighlight(debugrender_highlight_t k)
 
 INT32 R_AdjustLightLevel(INT32 light)
 {
+	constexpr fixed_t kRange = (LIGHTLEVELS - 1) * FRACUNIT;
+
 	if (!debugrender_highlight && cv_debugrender_contrast.value == 0)
 	{
-		return light;
+		const fixed_t darken = FixedMul(darkness, kRange);
+		return std::clamp((light * FRACUNIT) - darken, 0, kRange) / FRACUNIT;
 	}
 
-	constexpr fixed_t kRange = (LIGHTLEVELS - 1) * FRACUNIT;
 	const fixed_t adjust = FixedMul(cv_debugrender_contrast.value, kRange);
 
 	if (debugrender_highlight)
