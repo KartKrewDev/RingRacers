@@ -2723,28 +2723,22 @@ static void Command_connect(void)
 	// we don't request a restart unless the filelist differs
 
 	server = false;
-/*
-	if (!stricmp(COM_Argv(1), "self"))
-	{
-		servernode = 0;
-		server = true;
-		/// \bug should be but...
-		//SV_SpawnServer();
-	}
-	else
-*/
+
+	// Get the server node.
+	if (netgame)
 	{
 		// used in menu to connect to a server in the list
-		if (netgame && !stricmp(COM_Argv(1), "node"))
+		if (stricmp(COM_Argv(1), "node") != 0)
 		{
-			servernode = (SINT8)atoi(COM_Argv(2));
-		}
-		else if (netgame)
-		{
-			CONS_Printf(M_GetText("You cannot connect while in a game. End this game first.\n"));
+			CONS_Printf(M_GetText("You cannot connect via address while joining a server.\n"));
 			return;
 		}
-		else if (I_NetOpenSocket)
+		servernode = (SINT8)atoi(COM_Argv(2));
+	}
+	else
+	{
+		// Standard behaviour
+		if (I_NetOpenSocket)
 		{
 			I_NetOpenSocket();
 			netgame = true;
@@ -2771,7 +2765,10 @@ static void Command_connect(void)
 			}
 		}
 		else
+		{
 			CONS_Alert(CONS_ERROR, M_GetText("There is no network driver\n"));
+			return;
+		}
 	}
 
 	if (splitscreen != cv_splitplayers.value-1)
