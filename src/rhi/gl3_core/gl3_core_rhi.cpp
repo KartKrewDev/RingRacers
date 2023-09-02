@@ -617,7 +617,8 @@ void GlCoreRhi::destroy_texture(rhi::Handle<rhi::Texture> handle)
 	SRB2_ASSERT(texture_slab_.is_valid(handle) == true);
 	GlCoreTexture casted = texture_slab_.remove(handle);
 	GLuint name = casted.texture;
-	disposal_.push_back([this, name] { gl_->DeleteTextures(1, &name); });
+	gl_->DeleteTextures(1, &name);
+	GL_ASSERT;
 }
 
 void GlCoreRhi::update_texture(
@@ -701,7 +702,8 @@ void GlCoreRhi::destroy_buffer(rhi::Handle<rhi::Buffer> handle)
 	GlCoreBuffer casted = buffer_slab_.remove(handle);
 	GLuint name = casted.buffer;
 
-	disposal_.push_back([this, name] { gl_->DeleteBuffers(1, &name); });
+	gl_->DeleteBuffers(1, &name);
+	GL_ASSERT;
 }
 
 void GlCoreRhi::update_buffer(
@@ -864,7 +866,8 @@ void GlCoreRhi::destroy_renderbuffer(rhi::Handle<rhi::Renderbuffer> handle)
 	SRB2_ASSERT(renderbuffer_slab_.is_valid(handle) == true);
 	GlCoreRenderbuffer casted = renderbuffer_slab_.remove(handle);
 	GLuint name = casted.renderbuffer;
-	disposal_.push_back([this, name] { gl_->DeleteRenderbuffers(1, &name); });
+	gl_->DeleteRenderbuffers(1, &name);
+	GL_ASSERT;
 }
 
 rhi::Handle<rhi::Pipeline> GlCoreRhi::create_pipeline(const PipelineDesc& desc)
@@ -1181,9 +1184,12 @@ void GlCoreRhi::destroy_pipeline(rhi::Handle<rhi::Pipeline> handle)
 	GLuint fragment_shader = casted.fragment_shader;
 	GLuint program = casted.program;
 
-	disposal_.push_back([this, fragment_shader] { gl_->DeleteShader(fragment_shader); });
-	disposal_.push_back([this, vertex_shader] { gl_->DeleteShader(vertex_shader); });
-	disposal_.push_back([this, program] { gl_->DeleteProgram(program); });
+	gl_->DeleteProgram(program);
+	GL_ASSERT;
+	gl_->DeleteShader(vertex_shader);
+	GL_ASSERT;
+	gl_->DeleteShader(fragment_shader);
+	GL_ASSERT;
 }
 
 rhi::Handle<rhi::GraphicsContext> GlCoreRhi::begin_graphics()
@@ -1867,16 +1873,9 @@ void GlCoreRhi::finish()
 	for (auto& fbset : framebuffers_)
 	{
 		gl_->DeleteFramebuffers(1, &fbset.second);
+		GL_ASSERT;
 	}
 	framebuffers_.clear();
-
-	for (auto it = disposal_.begin(); it != disposal_.end(); it++)
-	{
-		(*it)();
-	}
-
-	disposal_.clear();
-	GL_ASSERT;
 }
 
 void GlCoreRhi::copy_framebuffer_to_texture(
