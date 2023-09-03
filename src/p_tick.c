@@ -942,6 +942,24 @@ void P_Ticker(boolean run)
 		if (racecountdown > 1)
 			racecountdown--;
 
+
+		const fixed_t darkdelta = FRACUNIT/50;
+		const fixed_t maxdark = FRACUNIT/7;
+		if (darktimer) // dark or darkening
+		{
+			darktimer--;
+			darkness += darkdelta;
+			darkness = min(darkness, maxdark);
+		}
+		else if (darkness >= darkdelta) // lightening
+		{
+			darkness -= darkdelta;
+		}
+		else // light
+		{
+			darkness = 0;
+		}
+
 		if (exitcountdown > 1)
 		{
 			exitcountdown--;

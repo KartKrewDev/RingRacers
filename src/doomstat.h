@@ -777,6 +777,9 @@ struct exitcondition_t
 extern tic_t racecountdown, exitcountdown, musiccountdown;
 extern exitcondition_t g_exit;
 
+extern tic_t darktimer;
+extern fixed_t darkness;
+
 #define DEFAULT_GRAVITY (4*FRACUNIT/5)
 extern fixed_t gravity;
 extern fixed_t mapobjectscale;

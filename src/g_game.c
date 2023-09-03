@@ -279,6 +279,9 @@ mobj_t *hunt3;
 tic_t racecountdown, exitcountdown, musiccountdown; // for racing
 exitcondition_t g_exit;
 
+tic_t darktimer;
+fixed_t darkness;
+
 fixed_t gravity;
 fixed_t mapobjectscale;
 

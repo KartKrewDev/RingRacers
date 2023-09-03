@@ -32,7 +32,7 @@
 // ██║░░░░░██║██╔╝╚██╗██║░╚═╝░██║███████╗
 // ╚═╝░░░░░╚═╝╚═╝░░╚═╝╚═╝░░░░░╚═╝╚══════╝
 //
-// vertical flip
+// FIXME (because it was completely unsearchable): vertical flip
 //
 
 #define POHBEE_HOVER (128 << FRACBITS)
@@ -544,7 +544,7 @@ boolean Obj_ShrinkLaserCollide(mobj_t *gun, mobj_t *victim)
 			K_RemoveGrowShrink(victim->player);
 		}
 
-		victim->player->growshrinktimer += 3*TICRATE;
+		victim->player->growshrinktimer += 6*TICRATE;
 		S_StartSound(victim, sfx_kc5a);
 
 		if (prevTimer <= 0)
@@ -738,6 +738,8 @@ void Obj_CreateShrinkPohbees(player_t *owner)
 	}
 
 	ownerPos = owner->position;
+
+	darktimer = POHBEE_TIME;
 
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
