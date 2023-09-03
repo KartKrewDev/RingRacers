@@ -80,6 +80,8 @@ typedef enum
 
 	PR_AUTOROULETTE, // Item box accessibility
 
+	PR_FUZZ, // Stability testing
+
 	PRNUMCLASS
 } pr_class_t;
 

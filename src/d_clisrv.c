@@ -5092,6 +5092,27 @@ static char NodeToSplitPlayer(int node, int split)
 	return -1;
 }
 
+static void FuzzTiccmd(ticcmd_t* target)
+{
+	extern consvar_t cv_fuzz;
+	if (cv_fuzz.value)
+	{
+		target->forwardmove = P_RandomRange(PR_FUZZ, -MAXPLMOVE, MAXPLMOVE);
+		target->turning = P_RandomRange(PR_FUZZ, -KART_FULLTURN, KART_FULLTURN);
+		target->throwdir = P_RandomRange(PR_FUZZ, -KART_FULLTURN, KART_FULLTURN);
+		target->buttons = P_RandomRange(PR_FUZZ, 0, 255);
+
+		// Make fuzzed players more likely to do impactful things
+		if (P_RandomRange(PR_FUZZ, 0, 500))
+		{
+			target->buttons |= BT_ACCELERATE;
+			target->buttons &= ~BT_LOOKBACK;
+			target->buttons &= ~BT_RESPAWN;
+			target->buttons &= ~BT_BRAKE;
+		}
+	}
+}
+
 /** Handles a packet received from a node that is in game
   *
   * \param node The packet sender
@@ -5223,6 +5244,8 @@ static void HandlePacketFromPlayer(SINT8 node)
 				&& (maketic - firstticstosend < BACKUPTICS))
 				faketic++;
 
+			FuzzTiccmd(&netbuffer->u.clientpak.cmd);
+
 			// Copy ticcmd
 			G_MoveTiccmd(&netcmds[faketic%BACKUPTICS][netconsole], &netbuffer->u.clientpak.cmd, 1);
 
@@ -5236,6 +5259,7 @@ static void HandlePacketFromPlayer(SINT8 node)
 				|| (netbuffer->packettype == PT_CLIENT4CMD || netbuffer->packettype == PT_CLIENT4MIS))
 				&& (nodetoplayer2[node] >= 0))
 			{
+				FuzzTiccmd(&netbuffer->u.client2pak.cmd2);
 				G_MoveTiccmd(&netcmds[faketic%BACKUPTICS][(UINT8)nodetoplayer2[node]],
 					&netbuffer->u.client2pak.cmd2, 1);
 
@@ -5247,6 +5271,7 @@ static void HandlePacketFromPlayer(SINT8 node)
 				|| (netbuffer->packettype == PT_CLIENT4CMD || netbuffer->packettype == PT_CLIENT4MIS))
 				&& (nodetoplayer3[node] >= 0))
 			{
+				FuzzTiccmd(&netbuffer->u.client3pak.cmd3);
 				G_MoveTiccmd(&netcmds[faketic%BACKUPTICS][(UINT8)nodetoplayer3[node]],
 					&netbuffer->u.client3pak.cmd3, 1);
 
@@ -5257,6 +5282,7 @@ static void HandlePacketFromPlayer(SINT8 node)
 			if ((netbuffer->packettype == PT_CLIENT4CMD || netbuffer->packettype == PT_CLIENT4MIS)
 				&& (nodetoplayer4[node] >= 0))
 			{
+				FuzzTiccmd(&netbuffer->u.client4pak.cmd4);
 				G_MoveTiccmd(&netcmds[faketic%BACKUPTICS][(UINT8)nodetoplayer4[node]],
 					&netbuffer->u.client4pak.cmd4, 1);
 

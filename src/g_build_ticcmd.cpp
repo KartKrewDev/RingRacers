@@ -37,6 +37,7 @@
 #include "p_mobj.h"
 #include "p_tick.h"
 #include "tables.h"
+#include "m_random.h" // monkey input
 
 namespace
 {
