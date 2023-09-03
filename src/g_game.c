@@ -1329,13 +1329,20 @@ boolean G_Responder(event_t *ev)
 		return false;
 	}
 
-	if (gamestate == GS_LEVEL)
+	if (Playing())
 	{
+		// If you're playing, chat is real.
+		// Neatly sidesteps a class of bugs where whenever we add a
+		// new gamestate accessible in netplay, chat was console-only.
 		if (HU_Responder(ev))
 		{
 			hu_keystrokes = true;
 			return true; // chat ate the event
 		}
+	}
+
+	if (gamestate == GS_LEVEL)
+	{
 		if (AM_Responder(ev))
 			return true; // automap ate it
 		// map the event (key/mouse/joy) to a gamecontrol
@@ -1351,71 +1358,10 @@ boolean G_Responder(event_t *ev)
 	}
 	else if (gamestate == GS_CUTSCENE)
 	{
-		if (HU_Responder(ev))
-		{
-			hu_keystrokes = true;
-			return true; // chat ate the event
-		}
-
 		if (F_CutsceneResponder(ev))
 		{
 			D_StartTitle();
 			return true;
-		}
-	}
-	else if (gamestate == GS_CREDITS)
-	{
-		if (HU_Responder(ev))
-		{
-			hu_keystrokes = true;
-			return true; // chat ate the event
-		}
-
-		if (F_CreditResponder(ev))
-		{
-			// Skip credits for everyone
-			if (! netgame)
-				F_StartGameEvaluation();
-			else if (server || IsPlayerAdmin(consoleplayer))
-				SendNetXCmd(XD_EXITLEVEL, NULL, 0);
-			return true;
-		}
-	}
-	else if (gamestate == GS_CEREMONY)
-	{
-		if (HU_Responder(ev))
-		{
-			hu_keystrokes = true;
-			return true; // chat ate the event
-		}
-
-		if (K_CeremonyResponder(ev))
-		{
-			if (grandprixinfo.gp == true
-				&& grandprixinfo.cup != NULL
-				&& grandprixinfo.cup->playcredits == true)
-			{
-				nextmap = NEXTMAP_CREDITS;
-			}
-			else
-			{
-				nextmap = NEXTMAP_TITLE;
-			}
-
-			G_EndGame();
-			return true;
-		}
-	}
-	else if (gamestate == GS_CONTINUING)
-	{
-		return true;
-	}
-	else if (gamestate == GS_INTERMISSION || gamestate == GS_VOTING || gamestate == GS_EVALUATION)
-	{
-		if (HU_Responder(ev))
-		{
-			hu_keystrokes = true;
-			return true; // chat ate the event
 		}
 	}
 

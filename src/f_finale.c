@@ -712,6 +712,7 @@ void F_StartCredits(void)
 	finalecount = 0;
 	animtimer = 0;
 	timetonext = 2*TICRATE;
+	keypressed = false;
 }
 
 void F_CreditDrawer(void)
@@ -769,6 +770,15 @@ void F_CreditDrawer(void)
 		if (((y>>FRACBITS) * vid.dupy) > vid.height)
 			break;
 	}
+
+	if (finalecount)
+	{
+		Y_DrawIntermissionButton(-1, (timetonext ? 5*TICRATE : TICRATE) - finalecount);
+	}
+	else
+	{
+		Y_DrawIntermissionButton(timetonext, 0);
+	}
 }
 
 void F_CreditTicker(void)
@@ -805,18 +815,6 @@ void F_CreditTicker(void)
 			break;
 	}
 
-	// Do this here rather than in the drawer you doofus! (this is why dedicated mode broke at credits)
-	if (!credits[i] && y <= 120<<FRACBITS && !finalecount)
-	{
-		timetonext = 5*TICRATE+1;
-		finalecount = 5*TICRATE;
-
-		// You watched all the credits? What a trooper!
-		gamedata->everfinishedcredits = true;
-		if (M_UpdateUnlockablesAndExtraEmblems(true, true))
-			G_SaveGameData();
-	}
-
 	if (timetonext)
 		timetonext--;
 	else
@@ -824,68 +822,49 @@ void F_CreditTicker(void)
 
 	credbgtimer++;
 
-	if (finalecount && --finalecount == 0)
-		F_StartGameEvaluation();
-}
+	// Do this here rather than in the drawer you doofus! (this is why dedicated mode broke at credits)
 
-boolean F_CreditResponder(event_t *event)
-{
-	INT32 key = event->data1;
+	const boolean reachedbottom = (!credits[i] && y <= 120<<FRACBITS);
 
-	// remap virtual keys (mouse & joystick buttons)
-	switch (key)
+	if (reachedbottom && !timetonext)
 	{
-		case KEY_MOUSE1:
-			key = KEY_ENTER;
-			break;
-		case KEY_MOUSE1 + 1:
-			key = KEY_BACKSPACE;
-			break;
-		case KEY_JOY1:
-		case KEY_JOY1 + 2:
-			key = KEY_ENTER;
-			break;
-		case KEY_JOY1 + 3:
-			key = 'n';
-			break;
-		case KEY_JOY1 + 1:
-			key = KEY_BACKSPACE;
-			break;
-		case KEY_HAT1:
-			key = KEY_UPARROW;
-			break;
-		case KEY_HAT1 + 1:
-			key = KEY_DOWNARROW;
-			break;
-		case KEY_HAT1 + 2:
-			key = KEY_LEFTARROW;
-			break;
-		case KEY_HAT1 + 3:
-			key = KEY_RIGHTARROW;
-			break;
+		timetonext = 5*TICRATE;
 	}
 
-	if (event->type != ev_keydown)
-		return false;
-
-	if (key == KEY_DOWNARROW || key == KEY_SPACE)
+	if (finalecount)
 	{
-		if (!timetonext && !finalecount)
-			animtimer += 7;
-		return false;
+		if (--finalecount == 0)
+		{
+			F_StartGameEvaluation();
+		}
+		return;
 	}
 
-	/*if (!(gamedata->timesBeaten) && !(netgame || multiplayer) && !cht_debug)
-		return false;*/
+	if (reachedbottom)
+	{
+		finalecount = 5*TICRATE;
 
-	if (key != KEY_ESCAPE && key != KEY_ENTER && key != KEY_BACKSPACE)
-		return false;
+		// You watched all the credits? What a trooper!
+		gamedata->everfinishedcredits = true;
+		if (M_UpdateUnlockablesAndExtraEmblems(true, true))
+			G_SaveGameData();
+	}
+	else if (timetonext)
+		;
+	/*else if (!(gamedata->timesBeaten) && !(netgame || multiplayer) && !cht_debug)
+		;*/
+	else if (!menuactive && M_MenuConfirmPressed(0))
+	{
+		finalecount = TICRATE;
 
-	if (keypressed)
-		return true;
-
-	keypressed = true;
-	return true;
+		if (netgame
+			&& (server || IsPlayerAdmin(consoleplayer))
+		)
+		{
+			SendNetXCmd(XD_EXITLEVEL, NULL, 0);
+			return;
+		}
+	}
 }
 
 // ============
@@ -901,8 +880,13 @@ typedef enum
 	EVAL_MAX
 } evaluationtype_t;
 
-#define EVALLEN_PERFECT (18*TICRATE)
 #define EVALLEN_NORMAL (14*TICRATE)
+#define EVALLEN_HALFWAY (EVALLEN_NORMAL/2)
+
+// tyron made something perfect and i would sooner
+// smite everyone in this room starting with myself
+// over the idea of cutting it ~toast 250623
+#define EVALLEN_PERFECT (18*TICRATE)
 
 static evaluationtype_t evaluationtype;
 UINT16 finaleemeralds = 0;
@@ -956,10 +940,13 @@ void F_StartGameEvaluation(void)
 	else
 		evaluationtype = EVAL_PERFECT;
 
+	timetonext = (evaluationtype == EVAL_PERFECT) ? EVALLEN_PERFECT : EVALLEN_NORMAL;
+
 	gameaction = ga_nothing;
 	paused = false;
 	CON_ToggleOff();
 
+	keypressed = false;
 	finalecount = -1;
 }
 
@@ -1241,19 +1228,14 @@ void F_GameEvaluationDrawer(void)
 		endingtext = va("%s, %s%s", skins[players[consoleplayer].skin].realname, rtatext, cuttext);
 		V_DrawCenteredString(BASEVIDWIDTH/2, 182, V_SNAPTOBOTTOM|(ultimatemode ? V_REDMAP : V_YELLOWMAP), endingtext);
 	}
+
+	Y_DrawIntermissionButton(EVALLEN_HALFWAY + TICRATE - finalecount, (finalecount + TICRATE) - timetonext);
 }
 
 void F_GameEvaluationTicker(void)
 {
-	INT32 evallen = EVALLEN_NORMAL;
-
 	if (evaluationtype == EVAL_PERFECT)
 	{
-		// tyron made something perfect and i would sooner
-		// smite everyone in this room starting with myself
-		// over the idea of cutting it ~toast 250623
-		evallen = EVALLEN_PERFECT;
-
 		if (finalecount == 1)
 		{
 			// sitting on that distant _shore
@@ -1263,7 +1245,7 @@ void F_GameEvaluationTicker(void)
 	}
 	else
 	{
-		if (finalecount == 1)
+		if (finalecount == TICRATE/2)
 		{
 			// _drift across open waters
 			Music_Remap("shore", "_DRIFT");
@@ -1271,13 +1253,25 @@ void F_GameEvaluationTicker(void)
 		}
 	}
 
-	if (++finalecount > evallen)
+	if (++finalecount == timetonext)
 	{
 		F_StartGameEnd();
 		return;
 	}
 
-	if (finalecount == evallen/2)
+	if (keypressed)
+		;
+	else if (finalecount <= EVALLEN_HALFWAY + TICRATE)
+		;
+	else if (finalecount >= (timetonext - TICRATE))
+		;
+	else if (!menuactive && M_MenuConfirmPressed(0))
+	{
+		keypressed = true;
+		timetonext = finalecount + TICRATE;
+	}
+
+	if (finalecount == EVALLEN_HALFWAY)
 	{
 		if (!usedCheats)
 		{
@@ -1289,8 +1283,9 @@ void F_GameEvaluationTicker(void)
 	}
 }
 
-#undef EVALLEN_PERFECT
 #undef EVALLEN_NORMAL
+#undef EVALLEN_HALFWAY
+#undef EVALLEN_PERFECT
 
 // ==========
 //  GAME END
