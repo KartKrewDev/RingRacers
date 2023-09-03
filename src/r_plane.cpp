@@ -13,8 +13,6 @@
 ///        while maintaining a per column clipping list only.
 ///        Moreover, the sky areas have to be determined.
 
-#include <algorithm>
-
 #include "doomdef.h"
 #include "console.h"
 #include "g_game.h"
@@ -203,6 +201,11 @@ static void R_MapPlane(INT32 y, INT32 x1, INT32 x2)
 		ds_xfrac += planeripple.xfrac;
 		ds_yfrac += planeripple.yfrac;
 		ds_bgofs >>= FRACBITS;
+
+		if ((y + ds_bgofs) >= viewheight)
+			ds_bgofs = viewheight-y-1;
+		if ((y + ds_bgofs) < 0)
+			ds_bgofs = -y;
 	}
 
 	pindex = distance >> LIGHTZSHIFT;
@@ -226,9 +229,6 @@ static void R_MapPlane(INT32 y, INT32 x1, INT32 x2)
 	ds_y = y;
 	ds_x1 = x1;
 	ds_x2 = x2;
-
-	// ds_bgofs must not cause an out-of-bounds read
-	ds_bgofs = std::clamp(ds_bgofs, -ds_y, vid.height - ds_y - 1);
 
 	spanfunc();
 }
