@@ -201,6 +201,11 @@ static void R_MapPlane(INT32 y, INT32 x1, INT32 x2)
 		ds_xfrac += planeripple.xfrac;
 		ds_yfrac += planeripple.yfrac;
 		ds_bgofs >>= FRACBITS;
+
+		if ((y + ds_bgofs) >= viewheight)
+			ds_bgofs = viewheight-y-1;
+		if ((y + ds_bgofs) < 0)
+			ds_bgofs = -y;
 	}
 
 	pindex = distance >> LIGHTZSHIFT;
@@ -330,7 +335,7 @@ static visplane_t *new_visplane(unsigned hash)
 	visplane_t *check = freetail;
 	if (!check)
 	{
-		check = calloc(1, sizeof (*check));
+		check = static_cast<visplane_t*>(calloc(1, sizeof (*check)));
 		if (check == NULL) I_Error("%s: Out of memory", "new_visplane"); // FIXME: ugly
 	}
 	else
@@ -786,11 +791,11 @@ d->z = (v1.x * v2.y) - (v1.y * v2.x)
 void R_SetTiltedSpan(INT32 span)
 {
 	if (ds_su == NULL)
-		ds_su = Z_Malloc(sizeof(*ds_su) * vid.height, PU_STATIC, NULL);
+		ds_su = static_cast<floatv3_t*>(Z_Malloc(sizeof(*ds_su) * vid.height, PU_STATIC, NULL));
 	if (ds_sv == NULL)
-		ds_sv = Z_Malloc(sizeof(*ds_sv) * vid.height, PU_STATIC, NULL);
+		ds_sv = static_cast<floatv3_t*>(Z_Malloc(sizeof(*ds_sv) * vid.height, PU_STATIC, NULL));
 	if (ds_sz == NULL)
-		ds_sz = Z_Malloc(sizeof(*ds_sz) * vid.height, PU_STATIC, NULL);
+		ds_sz = static_cast<floatv3_t*>(Z_Malloc(sizeof(*ds_sz) * vid.height, PU_STATIC, NULL));
 
 	ds_sup = &ds_su[span];
 	ds_svp = &ds_sv[span];
@@ -840,7 +845,7 @@ void R_DrawSinglePlane(visplane_t *pl)
 	INT32 x, stop;
 	ffloor_t *rover;
 	INT32 type, spanfunctype = BASEDRAWFUNC;
-	debugrender_highlight_t debug = 0;
+	debugrender_highlight_t debug = debugrender_highlight_t::SW_HI_PLANES;
 	void (*mapfunc)(INT32, INT32, INT32) = R_MapPlane;
 
 	if (!(pl->minx <= pl->maxx))

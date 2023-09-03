@@ -2408,7 +2408,7 @@ static void R_ProjectSprite(mobj_t *thing)
 
 	vis->xscale = FixedMul(spritexscale, xscale); //SoM: 4/17/2000
 	vis->scale = FixedMul(spriteyscale, yscale); //<<detailshift;
-	vis->thingscale = interp.scale;
+	vis->thingscale = this_scale;
 
 	vis->spritexscale = spritexscale;
 	vis->spriteyscale = spriteyscale;
@@ -2649,7 +2649,7 @@ static void R_ProjectPrecipitationSprite(precipmobj_t *thing)
 	vis = R_NewVisSprite();
 	vis->scale = FixedMul(yscale, this_scale);
 	vis->sortscale = yscale; //<<detailshift;
-	vis->thingscale = interp.scale;
+	vis->thingscale = this_scale;
 	vis->dispoffset = 0; // Monster Iestyn: 23/11/15
 	vis->gx = interp.x;
 	vis->gy = interp.y;
@@ -3635,14 +3635,14 @@ void R_ClipSprites(drawseg_t* dsstart, portal_t* portal)
 			// e6y: ~13% of speed improvement on sunder.wad map10
 			if (ds->x1 < cx)
 			{
-				drawsegs_xranges[1].items[drawsegs_xranges[1].count] = 
+				drawsegs_xranges[1].items[drawsegs_xranges[1].count] =
 					drawsegs_xranges[0].items[drawsegs_xranges[0].count];
 				drawsegs_xranges[1].count++;
 			}
 
 			if (ds->x2 >= cx)
 			{
-				drawsegs_xranges[2].items[drawsegs_xranges[2].count] = 
+				drawsegs_xranges[2].items[drawsegs_xranges[2].count] =
 					drawsegs_xranges[0].items[drawsegs_xranges[0].count];
 				drawsegs_xranges[2].count++;
 			}
