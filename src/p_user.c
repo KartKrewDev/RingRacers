@@ -2915,6 +2915,7 @@ void P_DemoCameraMovement(camera_t *cam)
 	ticcmd_t *cmd;
 	angle_t thrustangle;
 	player_t *lastp;
+	angle_t turning;
 
 	boolean moving = false;
 
@@ -2928,7 +2929,12 @@ void P_DemoCameraMovement(camera_t *cam)
 		cam->reset_aiming = false;
 	}
 
-	cam->angle += cmd->turning << TICCMD_REDUCE;
+	turning = cmd->turning << TICCMD_REDUCE;
+	if (encoremode)
+	{
+		turning = -turning;
+	}
+	cam->angle += turning;
 
 	// camera movement:
 	if (!democam.button_a_held)
