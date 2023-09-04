@@ -165,8 +165,6 @@ class GlCoreRhi final : public Rhi
 	uint8_t stencil_back_compare_mask_ = 0xFF;
 	uint8_t stencil_back_write_mask_ = 0xFF;
 
-	std::vector<std::function<void()>> disposal_;
-
 public:
 	GlCoreRhi(std::unique_ptr<GlCorePlatform>&& platform, GlLoadFunc load_func);
 	virtual ~GlCoreRhi();
