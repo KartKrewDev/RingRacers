@@ -10413,6 +10413,7 @@ static void P_DefaultMobjShadowScale(mobj_t *thing)
 		case MT_SPECIAL_UFO:
 		case MT_CDUFO:
 		case MT_BATTLEUFO:
+		case MT_SPRAYCAN:
 			thing->shadowscale = FRACUNIT;
 			break;
 		case MT_SMALLMACE:
