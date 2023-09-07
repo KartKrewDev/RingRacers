@@ -144,18 +144,21 @@ private:
 		case MT_SUPER_FLICKY:
 			return {
 				{ // Near
-					{4, 2, {kp_superflickytarget}}, // 1P
+					{4, 2, {kp_superflickytarget[0]}}, // 1P
+					{{4, 2, {kp_superflickytarget[1]}}}, // 4P
 				},
 			};
 
 		default:
 			return {
 				{ // Near
-					{8, 2, {kp_capsuletarget_near}}, // 1P
+					{8, 2, {kp_capsuletarget_near[0]}}, // 1P
+					{{8, 2, {kp_capsuletarget_near[1]}}}, // 4P
 				},
-				{ // Far
-					{2, 3, {kp_capsuletarget_far, kp_capsuletarget_far_text}}, // 1P
-				},
+				{{ // Far
+					{2, 3, {kp_capsuletarget_far[0], kp_capsuletarget_far_text}}, // 1P
+					{{2, 3, {kp_capsuletarget_far[1]}}}, // 4P
+				}},
 			};
 		}
 	}
