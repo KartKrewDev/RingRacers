@@ -151,7 +151,8 @@ UINT32 nflatxshift, nflatyshift, nflatshiftup, nflatmask;
 #define BLINK_TT_CACHE_INDEX (MAXSKINS + 5)
 #define DASHMODE_TT_CACHE_INDEX (MAXSKINS + 6)
 #define HITLAG_TT_CACHE_INDEX (MAXSKINS + 7)
-#define TT_CACHE_SIZE (MAXSKINS + 8)
+#define INTERMISSION_TT_CACHE_INDEX (MAXSKINS + 8)
+#define TT_CACHE_SIZE (MAXSKINS + 9)
 
 #define SKIN_RAMP_LENGTH 16
 #define DEFAULT_STARTTRANSCOLOR 96
@@ -172,6 +173,7 @@ static INT32 SkinToCacheIndex(INT32 skinnum)
 		case TC_BLINK:      return BLINK_TT_CACHE_INDEX;
 		case TC_DASHMODE:   return DASHMODE_TT_CACHE_INDEX;
 		case TC_HITLAG:     return HITLAG_TT_CACHE_INDEX;
+		case TC_INTERMISSION: return INTERMISSION_TT_CACHE_INDEX;
 		     default:       break;
 	}
 
@@ -190,6 +192,7 @@ static INT32 CacheIndexToSkin(INT32 ttc)
 		case BLINK_TT_CACHE_INDEX:      return TC_BLINK;
 		case DASHMODE_TT_CACHE_INDEX:   return TC_DASHMODE;
 		case HITLAG_TT_CACHE_INDEX:     return TC_HITLAG;
+		case INTERMISSION_TT_CACHE_INDEX: return TC_INTERMISSION;
 		     default:                   break;
 	}
 

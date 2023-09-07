@@ -154,6 +154,66 @@ void K_HitlagColormap(UINT8 *dest_colormap)
 }
 
 /*--------------------------------------------------
+	static void K_IntermissionColormap(UINT8 *dest_colormap)
+
+		Turns warm colors tan, and cool colors steel-blue.
+--------------------------------------------------*/
+static void K_IntermissionColormap(UINT8 *dest_colormap)
+{
+	RGBA_t color;
+	INT32 i;
+
+	// for every colour in the palette, check its 
+	for (i = 0; i < NUM_PALETTE_ENTRIES; i++)
+	{
+		color = V_GetColor(i);
+
+		UINT8 lo = min(min(color.s.red, color.s.green), color.s.blue);
+		UINT8 hi = max(max(color.s.red, color.s.green), color.s.blue);
+
+		double hue = 0.0;
+		if (lo != hi)
+		{
+			if (hi == color.s.red)
+			{
+				hue = (color.s.green - color.s.blue) / (hi - lo);
+			}
+			else if (hi == color.s.green)
+			{
+				hue = 2.0 + (color.s.blue - color.s.red) / (hi - lo);
+			}
+			else
+			{
+				hue = 4.0 + (color.s.red - color.s.green) / (hi - lo);
+			}
+
+			if (hue < 0.0)
+			{
+				hue += 6.0;
+			}
+		}
+
+		UINT16 skincolor = SKINCOLOR_INTERMISSION1;
+		const double blue_start = 3.0;
+		const double blue_end = 5.0;
+		const double green_buffer = 0.5;
+		if (hue > blue_start && hue < blue_end)
+		{
+			skincolor = SKINCOLOR_INTERMISSION3;
+		}
+		else if (hue > blue_start - green_buffer && hue < blue_start + green_buffer)
+		{
+			skincolor = SKINCOLOR_INTERMISSION2;
+		}
+
+		INT32 lum = K_ColorRelativeLuminance(color.s.red, color.s.green, color.s.blue);
+		INT32 skincolor_index = ((255 - lum) * 15) / 255;
+
+		dest_colormap[i] = skincolors[skincolor].ramp[skincolor_index];
+	}
+}
+
+/*--------------------------------------------------
 	void K_GenerateKartColormap(UINT8 *dest_colormap, INT32 skinnum, UINT8 color)
 
 		See header file for description.
@@ -166,6 +226,11 @@ void K_GenerateKartColormap(UINT8 *dest_colormap, INT32 skinnum, UINT8 color)
 	if (skinnum == TC_HITLAG)
 	{
 		K_HitlagColormap(dest_colormap);
+		return;
+	}
+	else if (skinnum == TC_INTERMISSION)
+	{
+		K_IntermissionColormap(dest_colormap);
 		return;
 	}
 	else if (skinnum == TC_BOSS

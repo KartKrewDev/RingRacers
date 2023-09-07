@@ -6254,7 +6254,9 @@ const char *COLOR_ENUMS[] = {
 	"POSNUM_BEST5",
 	"POSNUM_BEST6",
 
-	"INTERMISSION",
+	"INTERMISSION1",
+	"INTERMISSION2",
+	"INTERMISSION3",
 };
 
 const char *const KARTHUD_LIST[] = {
@@ -6927,6 +6929,7 @@ struct int_const_s const INT_CONST[] = {
 	{"TC_BLINK",TC_BLINK},
 	{"TC_DASHMODE",TC_DASHMODE},
 	{"TC_HITLAG",TC_HITLAG},
+	{"TC_INTERMISSION",TC_INTERMISSION},
 
 	// marathonmode flags
 	{"MA_INIT",MA_INIT},
