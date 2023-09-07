@@ -19,6 +19,11 @@
 #include "st_stuff.h"
 #include "v_video.h"
 
+#ifdef WIN32
+#undef near
+#undef far
+#endif
+
 using namespace srb2;
 
 namespace
