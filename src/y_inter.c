@@ -1436,25 +1436,13 @@ void Y_IntermissionDrawer(void)
 	// Scrolling marquee
 	patch_t *rrmq = W_CachePatchName("R_RRMQ", PU_PATCH);
 
-	// Blending mask for the background
-	patch_t *mask = W_CachePatchName("R_MASK", PU_PATCH);
-
 	fixed_t mqloop = SHORT(rrmq->width)*FRACUNIT;
 	fixed_t chkloop = SHORT(rbgchk->width)*FRACUNIT;
 
-	UINT8 *bgcolor = R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_INTERMISSION, GTC_CACHE);
+	UINT8 *bgcolor = R_GetTranslationColormap(TC_INTERMISSION, 0, GTC_CACHE);
 
 	// Draw the background
 	K_DrawMapThumbnail(0, 0, BASEVIDWIDTH<<FRACBITS, (data.encore ? V_FLIP : 0), prevmap, bgcolor);
-
-	// Draw a mask over the BG to get the correct colorization
-	V_DrawMappedPatch(0, 0, V_ADD|V_TRANSLUCENT, mask, NULL);
-
-	// Draw the marquee (scroll pending)
-	//V_DrawMappedPatch(0, 154, V_SUBTRACT, rrmq, NULL);
-
-	// Draw the checker pattern (scroll pending)
-	//V_DrawMappedPatch(0, 0, V_SUBTRACT, rbgchk, NULL);
 
 	for (x = -mqscroll; x < (BASEVIDWIDTH * FRACUNIT); x += mqloop)
 	{

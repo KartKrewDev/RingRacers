@@ -30516,7 +30516,9 @@ skincolor_t skincolors[MAXSKINCOLORS] = {
 	{"Position Best 5", {152, 152, 153, 153, 154, 154, 155, 155, 156, 156, 157, 158, 159, 253, 254,  30}, SKINCOLOR_NONE, 0, 0, false, UINT16_MAX}, // SKINCOLOR_POSNUM_BEST5
 	{"Position Best 6", {181, 181, 182, 182, 183, 183, 184, 184, 185, 185, 186, 186, 187, 187,  29,  30}, SKINCOLOR_NONE, 0, 0, false, UINT16_MAX}, // SKINCOLOR_POSNUM_BEST6
 
-	{"Intermission", {0,80,80,81,81,81,84,85,86,87,246,248,251,26,28,31}, SKINCOLOR_NONE, 0, 0, false, UINT16_MAX}, // SKINCOLOR_INTERMISSION
+	{"Intermission 1", {  0,  80,  80,  80,  81,  81,  81,  84,  84,  85,  86,  86,  87,  87, 246, 248}, SKINCOLOR_NONE, 0, 0, false, UINT16_MAX}, // SKINCOLOR_INTERMISSION1
+	{"Intermission 2", {  0,  81,  81,  81,  88,  88,  88,  89,  89, 140, 140, 141, 141, 142, 142, 142}, SKINCOLOR_NONE, 0, 0, false, UINT16_MAX}, // SKINCOLOR_INTERMISSION2
+	{"Intermission 3", {  0, 144, 144, 144, 129, 129, 129, 130, 130, 146, 147, 147,  14,  16,  17,  19}, SKINCOLOR_NONE, 0, 0, false, UINT16_MAX}, // SKINCOLOR_INTERMISSION3
 };
 
 /** Patches the mobjinfo, state, and skincolor tables.
