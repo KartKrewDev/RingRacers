@@ -92,7 +92,7 @@ add_executable(SRB2SDL2 MACOSX_BUNDLE WIN32
 	v_video.cpp
 	s_sound.c
 	sounds.c
-	w_wad.c
+	w_wad.cpp
 	filesrch.c
 	mserv.c
 	http-mserv.c

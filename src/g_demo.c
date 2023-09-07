@@ -2053,7 +2053,7 @@ static void G_SaveDemoExtraFiles(UINT8 **pp)
 	{
 		nameonly(( filename = va("%s", wadfiles[i]->filename) ));
 		WRITESTRINGL((*pp), filename, MAX_WADPATH);
-		WRITEMEM((*pp), wadfiles[i]->md5sum, 16);
+		WRITEMEM((*pp), W_GetFileMD5(wadfiles[i]), 16);
 
 		totalfiles++;
 	}
@@ -2089,7 +2089,7 @@ static void G_LoadDemoExtraFiles(UINT8 **pp)
 
 			for (j = 0; j < numwadfiles; ++j)
 			{
-				if (memcmp(md5sum, wadfiles[j]->md5sum, 16) == 0)
+				if (memcmp(md5sum, W_GetFileMD5(wadfiles[j]), 16) == 0)
 				{
 					alreadyloaded = true;
 					break;
@@ -2192,7 +2192,7 @@ static UINT8 G_CheckDemoExtraFiles(savebuffer_t *info, boolean quick)
 				else
 					continue;
 
-				if (memcmp(md5sum, wadfiles[j]->md5sum, 16) == 0)
+				if (memcmp(md5sum, W_GetFileMD5(wadfiles[j]), 16) == 0)
 				{
 					alreadyloaded = true;
 

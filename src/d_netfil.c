@@ -208,7 +208,7 @@ UINT8 *PutFileNeeded(UINT16 firstfile)
 		count++;
 		WRITEUINT32(p, wadfiles[i]->filesize);
 		WRITESTRINGN(p, wadfilename, MAX_WADPATH);
-		WRITEMEM(p, wadfiles[i]->md5sum, 16);
+		WRITEMEM(p, W_GetFileMD5(wadfiles[i]), 16);
 	}
 	if (netbuffer->packettype == PT_MOREFILESNEEDED)
 		netbuffer->u.filesneededcfg.num = count;
@@ -576,7 +576,7 @@ INT32 CL_CheckFiles(void)
 				return 2;
 
 			// For the sake of speed, only bother with a md5 check
-			if (memcmp(wadfiles[j]->md5sum, fileneeded[i].md5sum, 16))
+			if (memcmp(W_GetFileMD5(wadfiles[j]), fileneeded[i].md5sum, 16))
 				return 2;
 
 			// It's accounted for! let's keep going.
@@ -611,7 +611,7 @@ INT32 CL_CheckFiles(void)
 		{
 			nameonly(strcpy(wadfilename, wadfiles[j]->filename));
 			if (!stricmp(wadfilename, fileneeded[i].filename) &&
-				!memcmp(wadfiles[j]->md5sum, fileneeded[i].md5sum, 16))
+				!memcmp(W_GetFileMD5(wadfiles[j]), fileneeded[i].md5sum, 16))
 			{
 				CONS_Debug(DBG_NETPLAY, "already loaded\n");
 				fileneeded[i].status = FS_OPEN;
