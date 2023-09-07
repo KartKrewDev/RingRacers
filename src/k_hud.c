@@ -203,6 +203,9 @@ patch_t *kp_capsuletarget_near[2][8];
 
 patch_t *kp_superflickytarget[2][4];
 
+patch_t *kp_spraycantarget_far[2][6];
+patch_t *kp_spraycantarget_near[2][6];
+
 patch_t *kp_button_a[2][2];
 patch_t *kp_button_b[2][2];
 patch_t *kp_button_c[2][2];
@@ -794,6 +797,34 @@ void K_LoadKartHUDGraphics(void)
 	{
 		buffer[7] = '0'+i;
 		HU_UpdatePatch(&kp_superflickytarget[1][i], "%s", buffer);
+	}
+
+	sprintf(buffer, "SPCNBFAx");
+	for (i = 0; i < 6; i++)
+	{
+		buffer[7] = '1'+i;
+		HU_UpdatePatch(&kp_spraycantarget_far[0][i], "%s", buffer);
+	}
+
+	sprintf(buffer, "SPCNSFAx");
+	for (i = 0; i < 6; i++)
+	{
+		buffer[7] = '1'+i;
+		HU_UpdatePatch(&kp_spraycantarget_far[1][i], "%s", buffer);
+	}
+
+	sprintf(buffer, "SPCNBCLx");
+	for (i = 0; i < 6; i++)
+	{
+		buffer[7] = '1'+i;
+		HU_UpdatePatch(&kp_spraycantarget_near[0][i], "%s", buffer);
+	}
+
+	sprintf(buffer, "SPCNSCLx");
+	for (i = 0; i < 6; i++)
+	{
+		buffer[7] = '1'+i;
+		HU_UpdatePatch(&kp_spraycantarget_near[1][i], "%s", buffer);
 	}
 
 	K_LoadButtonGraphics(kp_button_a[0], 'A');

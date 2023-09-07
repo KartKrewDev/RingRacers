@@ -33,6 +33,7 @@ struct TargetTracking
 		int frames;
 		int tics_per_frame;
 		StaticVec<patch_t**, kMaxLayers> layers;
+		int32_t video_flags = 0;
 	};
 
 	struct Graphics
@@ -83,6 +84,18 @@ struct TargetTracking
 		Animation& anim = r_splitscreen <= 1 || !pair.p4 ? pair.p1 : *pair.p4;
 
 		return anim;
+	}
+
+	bool uses_off_screen_arrow() const
+	{
+		switch (mobj->type)
+		{
+		case MT_SPRAYCAN:
+			return false;
+
+		default:
+			return true;
+		}
 	}
 
 	StaticVec<uint32_t, 7> player_emeralds_vec() const
@@ -149,6 +162,18 @@ private:
 				},
 			};
 
+		case MT_SPRAYCAN:
+			return {
+				{ // Near
+					{6, 2, {kp_spraycantarget_near[0]}, V_ADD}, // 1P
+					{{6, 2, {kp_spraycantarget_near[1]}, V_ADD}}, // 4P
+				},
+				{{ // Far
+					{6, 2, {kp_spraycantarget_far[0]}, V_ADD}, // 1P
+					{{6, 2, {kp_spraycantarget_far[1]}, V_ADD}}, // 4P
+				}},
+			};
+
 		default:
 			return {
 				{ // Near
@@ -177,6 +202,11 @@ void K_DrawTargetTracking(const TargetTracking& target)
 	{
 		// Off-screen, draw alongside the borders of the screen.
 		// Probably the most complicated thing.
+
+		if (target.uses_off_screen_arrow() == false)
+		{
+			return;
+		}
 
 		int32_t scrVal = 240;
 		vector2_t screenSize = {};
@@ -339,7 +369,7 @@ void K_DrawTargetTracking(const TargetTracking& target)
 				targetPos.x - ((patch->width << FRACBITS) >> 1),
 				targetPos.y - ((patch->height << FRACBITS) >> 1),
 				FRACUNIT,
-				V_SPLITSCREEN,
+				V_SPLITSCREEN | anim.video_flags,
 				patch,
 				colormap
 			);
@@ -421,6 +451,9 @@ bool is_object_tracking_target(const mobj_t* mobj)
 	case MT_SUPER_FLICKY:
 		return Obj_IsSuperFlickyTargettingYou(mobj, stplyr->mo);
 
+	case MT_SPRAYCAN:
+		return !(mobj->renderflags & (RF_TRANSMASK | RF_DONTDRAW)); // the spraycan wasn't collected yet
+
 	default:
 		return false;
 	}
@@ -433,6 +466,10 @@ bool is_object_visible(mobj_t* mobj)
 	case MT_SUPER_FLICKY:
 		// Always flickers.
 		return (leveltime & 1);
+
+	case MT_SPRAYCAN:
+		// Flickers, but only when visible.
+		return P_CheckSight(stplyr->mo, mobj) && (leveltime & 1);
 
 	default:
 		// Flicker when not visible.
