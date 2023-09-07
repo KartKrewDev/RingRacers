@@ -1,5 +1,6 @@
 #include <algorithm>
 #include <cstddef>
+#include <optional>
 #include <vector>
 
 #include "core/static_vec.hpp"
@@ -25,6 +26,27 @@ namespace
 
 struct TargetTracking
 {
+	static constexpr int kMaxLayers = 2;
+
+	struct Animation
+	{
+		int frames;
+		int tics_per_frame;
+		StaticVec<patch_t**, kMaxLayers> layers;
+	};
+
+	struct Graphics
+	{
+		struct SplitscreenPair
+		{
+			Animation p1;
+			std::optional<Animation> p4;
+		};
+
+		SplitscreenPair near;
+		std::optional<SplitscreenPair> far;
+	};
+
 	mobj_t* mobj;
 	vector3_t point;
 	fixed_t camDist;
@@ -45,9 +67,22 @@ struct TargetTracking
 
 		case MT_SUPER_FLICKY:
 			return static_cast<skincolornum_t>(Obj_SuperFlickyOwner(mobj)->color);
+
 		default:
 			return SKINCOLOR_NONE;
 		}
+	}
+
+	Animation animation() const
+	{
+		const fixed_t farDistance = 1280 * mapobjectscale;
+		bool useNear = (camDist < farDistance);
+
+		Graphics gfx = graphics();
+		Graphics::SplitscreenPair& pair = useNear || !gfx.far ? gfx.near : *gfx.far;
+		Animation& anim = r_splitscreen <= 1 || !pair.p4 ? pair.p1 : *pair.p4;
+
+		return anim;
 	}
 
 	StaticVec<uint32_t, 7> player_emeralds_vec() const
@@ -99,6 +134,30 @@ struct TargetTracking
 		}
 
 		return nullptr;
+	}
+
+private:
+	Graphics graphics() const
+	{
+		switch (mobj->type)
+		{
+		case MT_SUPER_FLICKY:
+			return {
+				{ // Near
+					{4, 2, {kp_superflickytarget}}, // 1P
+				},
+			};
+
+		default:
+			return {
+				{ // Near
+					{8, 2, {kp_capsuletarget_near}}, // 1P
+				},
+				{ // Far
+					{2, 3, {kp_capsuletarget_far, kp_capsuletarget_far_text}}, // 1P
+				},
+			};
+		}
 	}
 };
 
@@ -265,24 +324,14 @@ void K_DrawTargetTracking(const TargetTracking& target)
 	else
 	{
 		// Draw simple overlay.
-		const fixed_t farDistance = 1280 * mapobjectscale;
-		bool useNear = (target.camDist < farDistance);
+		vector2_t targetPos = {result.x, result.y};
 
-		vector2_t targetPos = {};
+		TargetTracking::Animation anim = target.animation();
 
-		bool visible = P_CheckSight(stplyr->mo, target.mobj); 
-
-		if ((visible == false || target.mobj->type == MT_SUPER_FLICKY) && (leveltime & 1))
+		for (patch_t** array : anim.layers)
 		{
-			// Flicker when not visible.
-			return;
-		}
+			patch_t* patch = array[(leveltime / anim.tics_per_frame) % anim.frames];
 
-		targetPos.x = result.x;
-		targetPos.y = result.y;
-
-		auto draw = [&](patch_t* patch)
-		{
 			V_DrawFixedPatch(
 				targetPos.x - ((patch->width << FRACBITS) >> 1),
 				targetPos.y - ((patch->height << FRACBITS) >> 1),
@@ -292,27 +341,6 @@ void K_DrawTargetTracking(const TargetTracking& target)
 				colormap
 			);
 		};
-
-		if (target.mobj->type == MT_SUPER_FLICKY)
-		{
-			timer = (leveltime / 2);
-			draw(kp_superflickytarget[timer % 4]);
-		}
-		else if (useNear == true)
-		{
-			timer = (leveltime / 2);
-			draw(kp_capsuletarget_near[timer % 8]);
-		}
-		else
-		{
-			timer = (leveltime / 3);
-			draw(kp_capsuletarget_far[timer & 1]);
-
-			if (r_splitscreen <= 1)
-			{
-				draw(kp_capsuletarget_far_text[timer & 1]);
-			}
-		}
 	}
 }
 
@@ -395,6 +423,20 @@ bool is_object_tracking_target(const mobj_t* mobj)
 	}
 }
 
+bool is_object_visible(mobj_t* mobj)
+{
+	switch (mobj->type)
+	{
+	case MT_SUPER_FLICKY:
+		// Always flickers.
+		return (leveltime & 1);
+
+	default:
+		// Flicker when not visible.
+		return P_CheckSight(stplyr->mo, mobj) || (leveltime & 1);
+	}
+}
+
 }; // namespace
 
 void K_drawTargetHUD(const vector3_t* origin, player_t* player)
@@ -414,6 +456,11 @@ void K_drawTargetHUD(const vector3_t* origin, player_t* player)
 		}
 
 		if (is_object_tracking_target(mobj) == false)
+		{
+			continue;
+		}
+
+		if (is_object_visible(mobj) == false)
 		{
 			continue;
 		}
