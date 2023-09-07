@@ -10089,7 +10089,7 @@ boolean K_PlayerEBrake(player_t *player)
 	}
 
 	if (K_PressingEBrake(player) == true
-		&& player->drift == 0
+		&& (player->drift == 0 || P_IsObjectOnGround(player->mo) == false)
 		&& P_PlayerInPain(player) == false
 		&& player->justbumped == 0
 		&& player->spindashboost == 0
