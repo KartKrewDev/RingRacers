@@ -9476,7 +9476,7 @@ static void K_KartDrift(player_t *player, boolean onground)
 			{
 				// Stage 1: Yellow sparks
 				if (!onground)
-					P_Thrust(player->mo, pushdir, player->speed / 4);
+					P_Thrust(player->mo, pushdir, player->speed / 3);
 
 				if (player->driftboost < 20)
 					player->driftboost = 20;
@@ -9487,7 +9487,7 @@ static void K_KartDrift(player_t *player, boolean onground)
 			{
 				// Stage 2: Red sparks
 				if (!onground)
-					P_Thrust(player->mo, pushdir, player->speed / 3);
+					P_Thrust(player->mo, pushdir, player->speed / 2);
 
 				if (player->driftboost < 50)
 					player->driftboost = 50;
@@ -9498,7 +9498,7 @@ static void K_KartDrift(player_t *player, boolean onground)
 			{
 				// Stage 3: Blue sparks
 				if (!onground)
-					P_Thrust(player->mo, pushdir, ( 5 * player->speed ) / 12);
+					P_Thrust(player->mo, pushdir, player->speed);
 
 				if (player->driftboost < 85)
 					player->driftboost = 85;
@@ -9512,7 +9512,7 @@ static void K_KartDrift(player_t *player, boolean onground)
 			{
 				// Stage 4: Rainbow sparks
 				if (!onground)
-					P_Thrust(player->mo, pushdir, player->speed / 2);
+					P_Thrust(player->mo, pushdir, (5 * player->speed / 4));
 
 				if (player->driftboost < 125)
 					player->driftboost = 125;
