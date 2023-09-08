@@ -63,6 +63,10 @@ void K_SetBot(UINT8 newplayernum, UINT8 skinnum, UINT8 difficulty, botStyle_e st
 	players[newplayernum].botvars.style = style;
 	players[newplayernum].lives = 9;
 
+	// The bot may immediately become a spectator AT THE START of a GP.
+	// For each subsequent round of GP, K_UpdateGrandPrixBots will handle this.
+	players[newplayernum].spectator = grandprixinfo.gp && grandprixinfo.initalize && K_BotDefaultSpectator();
+
 	players[newplayernum].skincolor = skins[skinnum].prefcolor;
 	sprintf(player_names[newplayernum], "%s", skins[skinnum].realname);
 	SetPlayerSkinByNum(newplayernum, skinnum);

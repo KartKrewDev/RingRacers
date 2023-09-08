@@ -308,7 +308,7 @@ void K_LoadGrandPrixSaveGame(void)
 		players[i].botvars.rival = savedata.bots[i].rival;
 		players[i].score = savedata.bots[i].score;
 
-		players[i].spectator = !(gametyperules & GTR_BOTS) || (grandprixinfo.eventmode != GPEVENT_NONE);
+		players[i].spectator = K_BotDefaultSpectator();
 	}
 }
 
@@ -897,4 +897,26 @@ void K_PlayerFinishGrandPrix(player_t *player)
 	}
 
 	P_GivePlayerLives(player, player->xtralife);
+}
+
+/*--------------------------------------------------
+	boolean K_BotDefaultSpectator(player_t *player);
+
+		See header file for description.
+--------------------------------------------------*/
+boolean K_BotDefaultSpectator(void)
+{
+	if (!(gametyperules & GTR_BOTS))
+	{
+		// This gametype does not support bots.
+		return true;
+	}
+
+	if (grandprixinfo.eventmode != GPEVENT_NONE)
+	{
+		// This is a special round of GP, so bots must spectate.
+		return true;
+	}
+
+	return false;
 }
