@@ -1609,8 +1609,8 @@ static boolean SL_InsertServer(serverinfo_pak* info, SINT8 node)
 		if (strcmp(info->application, SRB2APPLICATION))
 			return false;/* that's a different mod */
 
-		if (!server && info->modifiedgame != (mpmenu.room == 1))
-			return false;/* CORE vs MODDED! Unless we ARE the server (i.e. local play), then it's fine to not match. */
+		if (serverlistultimatecount && info->modifiedgame != (mpmenu.room == 1))
+			return false;/* CORE vs MODDED! But only on the server browser page. */
 
 		i = serverlistcount++;
 	}
@@ -2723,28 +2723,22 @@ static void Command_connect(void)
 	// we don't request a restart unless the filelist differs
 
 	server = false;
-/*
-	if (!stricmp(COM_Argv(1), "self"))
-	{
-		servernode = 0;
-		server = true;
-		/// \bug should be but...
-		//SV_SpawnServer();
-	}
-	else
-*/
+
+	// Get the server node.
+	if (netgame)
 	{
 		// used in menu to connect to a server in the list
-		if (netgame && !stricmp(COM_Argv(1), "node"))
+		if (stricmp(COM_Argv(1), "node") != 0)
 		{
-			servernode = (SINT8)atoi(COM_Argv(2));
-		}
-		else if (netgame)
-		{
-			CONS_Printf(M_GetText("You cannot connect while in a game. End this game first.\n"));
+			CONS_Printf(M_GetText("You cannot connect via address while joining a server.\n"));
 			return;
 		}
-		else if (I_NetOpenSocket)
+		servernode = (SINT8)atoi(COM_Argv(2));
+	}
+	else
+	{
+		// Standard behaviour
+		if (I_NetOpenSocket)
 		{
 			I_NetOpenSocket();
 			netgame = true;
@@ -2771,7 +2765,10 @@ static void Command_connect(void)
 			}
 		}
 		else
+		{
 			CONS_Alert(CONS_ERROR, M_GetText("There is no network driver\n"));
+			return;
+		}
 	}
 
 	if (splitscreen != cv_splitplayers.value-1)
@@ -4658,8 +4655,13 @@ static void HandleServerInfo(SINT8 node)
 	CopyCaretColors(netbuffer->u.serverinfo.servername, servername, MAXSERVERNAME);
 
 	// If we have cause to reject it, it's not worth observing.
-	if (SL_InsertServer(&netbuffer->u.serverinfo, node) == false)
+	if (
+		SL_InsertServer(&netbuffer->u.serverinfo, node) == false
+		&& serverlistultimatecount
+	)
+	{
 		serverlistultimatecount--;
+	}
 }
 
 static void PT_WillResendGamestate(void)

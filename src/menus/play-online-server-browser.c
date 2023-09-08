@@ -13,6 +13,13 @@
 void M_ServerListFillDebug(void);
 #endif
 
+// Quit
+static boolean M_ServerBrowserQuit(void)
+{
+	serverlistultimatecount = 0;
+	return true;
+}
+
 menuitem_t PLAY_MP_ServerBrowser[] =
 {
 
@@ -38,7 +45,7 @@ menu_t PLAY_MP_ServerBrowserDef = {
 	M_DrawMPServerBrowser,
 	M_MPServerBrowserTick,
 	NULL,
-	NULL,
+	M_ServerBrowserQuit,
 	M_ServerBrowserInputs
 };
 

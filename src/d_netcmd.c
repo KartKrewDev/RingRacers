@@ -2320,9 +2320,17 @@ static void Command_Map_f(void)
 	INT32 newgametype = gametype;
 	boolean newencoremode = (cv_kartencore.value == 1);
 
-	if (client && !IsPlayerAdmin(consoleplayer))
+	if (Playing())
 	{
-		CONS_Printf(M_GetText("Only the server or a remote admin can use this.\n"));
+		if (client && !IsPlayerAdmin(consoleplayer))
+		{
+			CONS_Printf(M_GetText("Only the server or a remote admin can use this.\n"));
+			return;
+		}
+	}
+	else if (netgame)
+	{
+		CONS_Printf(M_GetText("You cannot start a session while joining a server.\n"));
 		return;
 	}
 
