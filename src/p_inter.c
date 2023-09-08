@@ -2068,20 +2068,30 @@ static boolean P_KillPlayer(player_t *player, mobj_t *inflictor, mobj_t *source,
 			return false;
 		}
 
+		if (player->exiting == false && specialstageinfo.valid == true)
+		{
+			HU_DoTitlecardCEcho(player, "FALL OUT!", false);
+
+			// This must be done before the condition to set
+			// destscale = 1, so any special stage death
+			// shrinks the player to a speck.
+			P_DoPlayerExit(player, PF_NOCONTEST);
+		}
+
 		if (player->exiting)
 		{
+			// If the player already finished the race, and
+			// they fall into a death pit afterward, their
+			// body shrinks into nothingness.
 			player->mo->destscale = 1;
 			player->mo->flags |= MF_NOCLIPTHING;
+
 			return false;
 		}
 
-		if (specialstageinfo.valid == true)
+		if (modeattacking & ATTACKING_SPB)
 		{
-			HU_DoTitlecardCEcho(player, "FALL OUT!", false);
-			P_DoPlayerExit(player, PF_NOCONTEST);
-		}
-		else if (modeattacking & ATTACKING_SPB)
-		{
+			// Death in SPB Attack is an instant loss.
 			P_DoPlayerExit(player, PF_NOCONTEST);
 		}
 	}
