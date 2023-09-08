@@ -5342,6 +5342,7 @@ static boolean P_IsTrackerType(INT32 type)
 		case MT_EMERALD:
 		case MT_BATTLEUFO:
 		case MT_SUPER_FLICKY:
+		case MT_SPRAYCAN:
 			return true;
 
 		default:
@@ -10412,6 +10413,7 @@ static void P_DefaultMobjShadowScale(mobj_t *thing)
 		case MT_SPECIAL_UFO:
 		case MT_CDUFO:
 		case MT_BATTLEUFO:
+		case MT_SPRAYCAN:
 			thing->shadowscale = FRACUNIT;
 			break;
 		case MT_SMALLMACE:

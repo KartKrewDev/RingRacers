@@ -55,11 +55,14 @@ void K_DrawSticker(INT32 x, INT32 y, INT32 width, INT32 flags, boolean isSmall);
 
 extern patch_t *kp_capsuletarget_arrow[2][2];
 extern patch_t *kp_capsuletarget_icon[2];
-extern patch_t *kp_capsuletarget_far[2];
+extern patch_t *kp_capsuletarget_far[2][2];
 extern patch_t *kp_capsuletarget_far_text[2];
-extern patch_t *kp_capsuletarget_near[8];
+extern patch_t *kp_capsuletarget_near[2][8];
 
-extern patch_t *kp_superflickytarget[4];
+extern patch_t *kp_superflickytarget[2][4];
+
+extern patch_t *kp_spraycantarget_far[2][6];
+extern patch_t *kp_spraycantarget_near[2][6];
 
 extern patch_t *kp_autoroulette;
 

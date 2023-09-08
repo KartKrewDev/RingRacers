@@ -1,5 +1,6 @@
 #include <algorithm>
 #include <cstddef>
+#include <optional>
 #include <vector>
 
 #include "core/static_vec.hpp"
@@ -18,6 +19,11 @@
 #include "st_stuff.h"
 #include "v_video.h"
 
+#ifdef WIN32
+#undef near
+#undef far
+#endif
+
 using namespace srb2;
 
 namespace
@@ -25,6 +31,28 @@ namespace
 
 struct TargetTracking
 {
+	static constexpr int kMaxLayers = 2;
+
+	struct Animation
+	{
+		int frames;
+		int tics_per_frame;
+		StaticVec<patch_t**, kMaxLayers> layers;
+		int32_t video_flags = 0;
+	};
+
+	struct Graphics
+	{
+		struct SplitscreenPair
+		{
+			Animation p1;
+			std::optional<Animation> p4;
+		};
+
+		SplitscreenPair near;
+		std::optional<SplitscreenPair> far;
+	};
+
 	mobj_t* mobj;
 	vector3_t point;
 	fixed_t camDist;
@@ -45,8 +73,33 @@ struct TargetTracking
 
 		case MT_SUPER_FLICKY:
 			return static_cast<skincolornum_t>(Obj_SuperFlickyOwner(mobj)->color);
+
 		default:
 			return SKINCOLOR_NONE;
+		}
+	}
+
+	Animation animation() const
+	{
+		const fixed_t farDistance = 1280 * mapobjectscale;
+		bool useNear = (camDist < farDistance);
+
+		Graphics gfx = graphics();
+		Graphics::SplitscreenPair& pair = useNear || !gfx.far ? gfx.near : *gfx.far;
+		Animation& anim = r_splitscreen <= 1 || !pair.p4 ? pair.p1 : *pair.p4;
+
+		return anim;
+	}
+
+	bool uses_off_screen_arrow() const
+	{
+		switch (mobj->type)
+		{
+		case MT_SPRAYCAN:
+			return false;
+
+		default:
+			return true;
 		}
 	}
 
@@ -100,6 +153,45 @@ struct TargetTracking
 
 		return nullptr;
 	}
+
+private:
+	Graphics graphics() const
+	{
+		switch (mobj->type)
+		{
+		case MT_SUPER_FLICKY:
+			return {
+				{ // Near
+					{4, 2, {kp_superflickytarget[0]}}, // 1P
+					{{4, 2, {kp_superflickytarget[1]}}}, // 4P
+				},
+			};
+
+		case MT_SPRAYCAN:
+			return {
+				{ // Near
+					{6, 2, {kp_spraycantarget_near[0]}, V_ADD}, // 1P
+					{{6, 2, {kp_spraycantarget_near[1]}, V_ADD}}, // 4P
+				},
+				{{ // Far
+					{6, 2, {kp_spraycantarget_far[0]}, V_ADD}, // 1P
+					{{6, 2, {kp_spraycantarget_far[1]}, V_ADD}}, // 4P
+				}},
+			};
+
+		default:
+			return {
+				{ // Near
+					{8, 2, {kp_capsuletarget_near[0]}}, // 1P
+					{{8, 2, {kp_capsuletarget_near[1]}}}, // 4P
+				},
+				{{ // Far
+					{2, 3, {kp_capsuletarget_far[0], kp_capsuletarget_far_text}}, // 1P
+					{{2, 3, {kp_capsuletarget_far[1]}}}, // 4P
+				}},
+			};
+		}
+	}
 };
 
 void K_DrawTargetTracking(const TargetTracking& target)
@@ -115,6 +207,11 @@ void K_DrawTargetTracking(const TargetTracking& target)
 	{
 		// Off-screen, draw alongside the borders of the screen.
 		// Probably the most complicated thing.
+
+		if (target.uses_off_screen_arrow() == false)
+		{
+			return;
+		}
 
 		int32_t scrVal = 240;
 		vector2_t screenSize = {};
@@ -265,54 +362,23 @@ void K_DrawTargetTracking(const TargetTracking& target)
 	else
 	{
 		// Draw simple overlay.
-		const fixed_t farDistance = 1280 * mapobjectscale;
-		bool useNear = (target.camDist < farDistance);
+		vector2_t targetPos = {result.x, result.y};
 
-		vector2_t targetPos = {};
+		TargetTracking::Animation anim = target.animation();
 
-		bool visible = P_CheckSight(stplyr->mo, target.mobj); 
-
-		if ((visible == false || target.mobj->type == MT_SUPER_FLICKY) && (leveltime & 1))
+		for (patch_t** array : anim.layers)
 		{
-			// Flicker when not visible.
-			return;
-		}
+			patch_t* patch = array[(leveltime / anim.tics_per_frame) % anim.frames];
 
-		targetPos.x = result.x;
-		targetPos.y = result.y;
-
-		auto draw = [&](patch_t* patch)
-		{
 			V_DrawFixedPatch(
 				targetPos.x - ((patch->width << FRACBITS) >> 1),
 				targetPos.y - ((patch->height << FRACBITS) >> 1),
 				FRACUNIT,
-				V_SPLITSCREEN,
+				V_SPLITSCREEN | anim.video_flags,
 				patch,
 				colormap
 			);
 		};
-
-		if (target.mobj->type == MT_SUPER_FLICKY)
-		{
-			timer = (leveltime / 2);
-			draw(kp_superflickytarget[timer % 4]);
-		}
-		else if (useNear == true)
-		{
-			timer = (leveltime / 2);
-			draw(kp_capsuletarget_near[timer % 8]);
-		}
-		else
-		{
-			timer = (leveltime / 3);
-			draw(kp_capsuletarget_far[timer & 1]);
-
-			if (r_splitscreen <= 1)
-			{
-				draw(kp_capsuletarget_far_text[timer & 1]);
-			}
-		}
 	}
 }
 
@@ -390,8 +456,29 @@ bool is_object_tracking_target(const mobj_t* mobj)
 	case MT_SUPER_FLICKY:
 		return Obj_IsSuperFlickyTargettingYou(mobj, stplyr->mo);
 
+	case MT_SPRAYCAN:
+		return !(mobj->renderflags & (RF_TRANSMASK | RF_DONTDRAW)); // the spraycan wasn't collected yet
+
 	default:
 		return false;
+	}
+}
+
+bool is_object_visible(mobj_t* mobj)
+{
+	switch (mobj->type)
+	{
+	case MT_SUPER_FLICKY:
+		// Always flickers.
+		return (leveltime & 1);
+
+	case MT_SPRAYCAN:
+		// Flickers, but only when visible.
+		return P_CheckSight(stplyr->mo, mobj) && (leveltime & 1);
+
+	default:
+		// Flicker when not visible.
+		return P_CheckSight(stplyr->mo, mobj) || (leveltime & 1);
 	}
 }
 
@@ -414,6 +501,11 @@ void K_drawTargetHUD(const vector3_t* origin, player_t* player)
 		}
 
 		if (is_object_tracking_target(mobj) == false)
+		{
+			continue;
+		}
+
+		if (is_object_visible(mobj) == false)
 		{
 			continue;
 		}
