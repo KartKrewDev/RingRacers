@@ -91,6 +91,7 @@ void Command_Grayscale_f(void);
 void Command_Goto_f(void);
 void Command_Angle_f(void);
 void Command_RespawnAt_f(void);
+void Command_GotoSkybox_f(void);
 #ifdef _DEBUG
 void Command_CauseCfail_f(void);
 #endif
