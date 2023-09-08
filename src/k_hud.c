@@ -2003,8 +2003,6 @@ static fixed_t K_DrawKartPositionNumPatch(UINT8 num, UINT8 *color, fixed_t x, fi
 		);
 	}
 
-	x += 7 * scale; // push the tens place towards the ones place
-
 	return x;
 }
 
@@ -2133,8 +2131,7 @@ static void K_DrawKartPositionNum(UINT8 num)
 		do
 		{
 			fixed_t w = SHORT(kp_positionnum[adjustNum % 10][0][splitIndex]->width) * scale;
-			fx += w; // these should be the reverse of the
-			fx -= 7 * scale; // x offsets in K_DrawKartPositionNumPatch
+			fx += w;
 			adjustNum /= 10;
 		} while (adjustNum);
 	}
