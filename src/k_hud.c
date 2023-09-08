@@ -2091,6 +2091,8 @@ static void K_DrawKartPositionNum(INT32 num)
 
 		fx >>= 1;
 		fy >>= 1;
+
+		fy -= (21 << FRACBITS);
 	}
 
 	if (trans > 0)
