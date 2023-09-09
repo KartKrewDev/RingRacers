@@ -1277,6 +1277,8 @@ typedef enum
 	sfx_dashr,
 	sfx_rainbr,
 
+	sfx_rank,
+
 	// Next up: UNIQUE ENGINE SOUNDS! Hoooooo boy...
 	// Engine class A - Low Speed, Low Weight
 	sfx_krta00,

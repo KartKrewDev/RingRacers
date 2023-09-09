@@ -2037,7 +2037,7 @@ static void K_HandleLapIncrement(player_t *player)
 
 					if (nump > 1 && K_IsPlayerLosing(player) == false)
 					{
-						if (nump > 2 && player->position == 1) // 1st place in 1v1 uses thumbs up
+						if (inDuel == false && player->position == 1) // 1st place in 1v1 uses thumbs up
 						{
 							player->lapPoints += 2;
 						}
@@ -4482,7 +4482,7 @@ static void P_SetupSignObject(mobj_t *sign, mobj_t *pmo, boolean error)
 	P_SetMobjState(sign, S_SIGN_POLE);
 
 	sign->movefactor = sign->z;
-	sign->z += (768*sign->scale) * P_MobjFlip(sign);
+	sign->z += (576*sign->scale) * P_MobjFlip(sign);
 	sign->movecount = 1;
 	sign->extravalue1 = AngleFixed(sign->angle) >> FRACBITS;
 

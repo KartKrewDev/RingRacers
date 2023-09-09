@@ -91,7 +91,7 @@ Chain::Clipper::Clipper(const Chain& chain)
 		FloatToFixed(chain.clipy1_),
 		FloatToFixed(chain.clipx2_ - chain.clipx1_),
 		FloatToFixed(chain.clipy2_ - chain.clipy1_),
-		0
+		chain.flags_
 	);
 }
 
@@ -121,6 +121,9 @@ int Draw::font_to_fontno(Font font)
 
 	case Font::kPing:
 		return PINGF_FONT;
+
+	case Font::kTimer:
+		return TIMER_FONT;
 	}
 
 	return TINY_FONT;

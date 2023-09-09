@@ -1410,6 +1410,76 @@ void Y_DrawIntermissionButton(INT32 startslide, INT32 through)
 	}
 }
 
+void Y_DrawIntermissionHeader(fixed_t x, fixed_t y, boolean gotthrough, const char *headerstring, UINT8 roundnum, boolean small)
+{
+	const INT32 v_width = (small ? BASEVIDWIDTH/2 : BASEVIDWIDTH);
+	const fixed_t frac = (small ? FRACUNIT/2 : FRACUNIT);
+	const INT32 small_flag = (small ? V_SPLITSCREEN : 0);
+
+	if (small && r_splitscreen > 1)
+	{
+		V_SetClipRect(
+			0,
+			0,
+			v_width << FRACBITS,
+			BASEVIDHEIGHT << FRACBITS,
+			V_SPLITSCREEN
+		);
+	}
+
+	// Header bar
+	patch_t *rtpbr = W_CachePatchName((small ? "R_RTPB4" : "R_RTPBR"), PU_PATCH);
+	V_DrawFixedPatch((20 * frac) + x, (24 * frac) + y, FRACUNIT, small_flag, rtpbr, NULL);
+
+	fixed_t headerx, headery, headerwidth = 0;
+
+	if (gotthrough)
+	{
+		headerx = (51 * frac);
+		headery = (7 * frac);
+	}
+	else
+	{
+		headerwidth = V_TitleCardStringWidth(headerstring, small);
+
+		headerx = (v_width - headerwidth) * (FRACUNIT / 2);
+		headery = 17 * frac;
+	}
+
+	// Draw round numbers
+	if (roundnum > 0 && roundnum <= 10)
+	{
+		patch_t *roundpatch =
+			W_CachePatchName(
+				va("TT_RN%s%d", (small ? "S" : "D"), roundnum),
+				PU_PATCH
+			);
+
+		fixed_t roundx = (v_width * 3 * FRACUNIT) / 4;
+
+		if (headerwidth != 0)
+		{
+			const fixed_t roundoffset = (8 * frac) + (roundpatch->width * FRACUNIT);
+
+			roundx = headerx + roundoffset;
+			headerx -= roundoffset/2;
+		}
+
+		V_DrawFixedPatch(x + roundx, (39 * frac) + y, FRACUNIT, small_flag, roundpatch, NULL);
+	}
+
+	V_DrawTitleCardStringFixed(x + headerx, y + headery, FRACUNIT, headerstring, small_flag, false, 0, 0, small);
+
+	if (gotthrough)
+	{
+		// GOT THROUGH ROUND
+		patch_t *gthro = W_CachePatchName((small ? "R_GTHR4" : "R_GTHRO"), PU_PATCH);
+		V_DrawFixedPatch((50 * frac) + x, (42 * frac) + y, FRACUNIT, small_flag, gthro, NULL);
+	}
+
+	V_ClearClipRect();
+}
+
 //
 // Y_IntermissionDrawer
 //
@@ -1488,54 +1558,7 @@ void Y_IntermissionDrawer(void)
 	}
 
 	// Draw the header bar
-	{
-		// Header bar
-		patch_t *rtpbr = W_CachePatchName("R_RTPBR", PU_PATCH);
-		V_DrawMappedPatch(20 + x, 24, 0, rtpbr, NULL);
-
-		INT32 headerx, headery, headerwidth = 0;
-
-		if (data.gotthrough)
-		{
-			// GOT THROUGH ROUND
-			patch_t *gthro = W_CachePatchName("R_GTHRO", PU_PATCH);
-			V_DrawMappedPatch(50 + x, 42, 0, gthro, NULL);
-
-			headerx = 51;
-			headery = 7;
-		}
-		else
-		{
-			headerwidth = V_TitleCardStringWidth(data.headerstring, false);
-
-			headerx = (BASEVIDWIDTH - headerwidth)/2;
-			headery = 17;
-		}
-
-		// Draw round numbers
-		if (data.roundnum > 0 && data.roundnum <= 10)
-		{
-			patch_t *roundpatch =
-				W_CachePatchName(
-					va("TT_RND%d", data.roundnum),
-					PU_PATCH
-				);
-
-			INT32 roundx = 240;
-
-			if (headerwidth != 0)
-			{
-				const INT32 roundoffset = 8 + SHORT(roundpatch->width);
-
-				roundx = headerx + roundoffset;
-				headerx -= roundoffset/2;
-			}
-
-			V_DrawMappedPatch(x + roundx, 39, 0, roundpatch, NULL);
-		}
-
-		V_DrawTitleCardString(x + headerx, headery, data.headerstring, 0, false, 0, 0, false);
-	}
+	Y_DrawIntermissionHeader(x << FRACBITS, 0, data.gotthrough, data.headerstring, data.roundnum, false);
 
 	// Returns early if there's no players to draw
 	Y_PlayerStandingsDrawer(&data, x);

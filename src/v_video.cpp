@@ -575,12 +575,18 @@ void V_AdjustXYWithSnap(INT32 *x, INT32 *y, UINT32 options, INT32 dupx, INT32 du
 	{
 		const tic_t length = TICRATE/4;
 		tic_t timer = lt_exitticker;
+
 		if (K_CheckBossIntro() == true || G_IsTitleCardAvailable() == false)
 		{
 			if (leveltime <= 16)
 				timer = 0;
 			else
 				timer = leveltime-16;
+		}
+
+		if (stplyr->tally.hudSlide != 0)
+		{
+			timer = length - stplyr->tally.hudSlide;
 		}
 
 		if (timer < length)
@@ -1988,10 +1994,10 @@ INT32 V_CenteredTitleCardStringOffset(const char *str, boolean p4)
 	return Internal_TitleCardStringOffset<true>(str, p4);
 }
 
-// V_DrawTitleCardScreen.
+// V_DrawTitleCardStringFixed.
 // see v_video.h's prototype for more information.
 //
-void V_DrawTitleCardString(INT32 x, INT32 y, const char *str, INT32 flags, boolean bossmode, INT32 timer, INT32 threshold, boolean p4)
+void V_DrawTitleCardStringFixed(fixed_t x, fixed_t y, fixed_t scale, const char *str, INT32 flags, boolean bossmode, INT32 timer, INT32 threshold, boolean p4)
 {
 	int bg_font = GTOL_FONT;
 	int fg_font = GTFN_FONT;
@@ -2018,11 +2024,12 @@ void V_DrawTitleCardString(INT32 x, INT32 y, const char *str, INT32 flags, boole
 	patch_t *pp;
 	patch_t *ol;
 
-	x -= 2;	// Account for patch width...
+	x -= 2 * scale;	// Account for patch width...
 
 	if (flags & V_SNAPTORIGHT)
-		x -= V_TitleCardStringWidth(str, p4);
-
+	{
+		x -= V_TitleCardStringWidth(str, p4) * scale;
+	}
 
 	for (;;ch++, i++)
 	{
@@ -2038,7 +2045,7 @@ void V_DrawTitleCardString(INT32 x, INT32 y, const char *str, INT32 flags, boole
 		if (*ch == '\n')
 		{
 			xoffs = x;
-			yoffs += p4 ? 18 : 32;
+			yoffs += (p4 ? 18 : 32) * scale;
 
 			continue;
 		}
@@ -2051,7 +2058,7 @@ void V_DrawTitleCardString(INT32 x, INT32 y, const char *str, INT32 flags, boole
 		// check if character exists, if not, it's a space.
 		if (c < 0 || c >= LT_FONTSIZE || !fontv[fg_font].font[(INT32)c])
 		{
-			xoffs += p4 ? 5 : 10;
+			xoffs += (p4 ? 5 : 10) * scale;
 			continue;
 		}
 
@@ -2105,11 +2112,11 @@ void V_DrawTitleCardString(INT32 x, INT32 y, const char *str, INT32 flags, boole
 		if (scalex && ol && pp)
 		{
 			//CONS_Printf("%d\n", (INT32)c);
-			V_DrawStretchyFixedPatch((x + xoffs)*FRACUNIT + offs, (y+yoffs)*FRACUNIT, abs(scalex), FRACUNIT, flags|flipflag, ol, NULL);
-			V_DrawStretchyFixedPatch((x + xoffs)*FRACUNIT + offs, (y+yoffs)*FRACUNIT, abs(scalex), FRACUNIT, flags|flipflag, pp, NULL);
+			V_DrawStretchyFixedPatch((x + xoffs) + offs, (y+yoffs), FixedMul(abs(scalex), scale), scale, flags|flipflag, ol, NULL);
+			V_DrawStretchyFixedPatch((x + xoffs) + offs, (y+yoffs), FixedMul(abs(scalex), scale), scale, flags|flipflag, pp, NULL);
 		}
 
-		xoffs += pp->width - (p4 ? 3 : 5);
+		xoffs += (pp->width - (p4 ? 3 : 5)) * scale;
 	}
 }
 

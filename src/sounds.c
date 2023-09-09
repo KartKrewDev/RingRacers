@@ -1208,6 +1208,8 @@ sfxinfo_t S_sfx[NUMSFX] =
   {"dashr",  false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""}, // Regular Dash Ring
   {"rainbr", false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""}, // Rainbow Dash Ring
 
+  {"rank",   false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""}, // Rank slam
+
   // SRB2Kart - Engine sounds
   // Engine class A
   {"krta00", false,  48, 65, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},

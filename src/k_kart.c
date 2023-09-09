@@ -47,6 +47,7 @@
 #include "k_podium.h"
 #include "k_powerup.h"
 #include "k_hitlag.h"
+#include "k_tally.h"
 #include "music.h"
 
 // SOME IMPORTANT VARIABLES DEFINED IN DOOMDEF.H:
@@ -7277,7 +7278,7 @@ static void K_UpdateEngineSounds(player_t *player)
 	INT32 targetsnd = 0;
 	INT32 i;
 
-	if (leveltime < 8 || player->spectator || gamestate != GS_LEVEL)
+	if (leveltime < 8 || player->spectator || gamestate != GS_LEVEL || player->exiting)
 	{
 		// Silence the engines, and reset sound number while we're at it.
 		player->karthud[khud_enginesnd] = 0;
@@ -7419,6 +7420,11 @@ static void K_UpdateInvincibilitySounds(player_t *player)
 // It's just a convenient name for things that don't stop during hitlag.
 void K_KartPlayerHUDUpdate(player_t *player)
 {
+	if (K_PlayerTallyActive(player) == true)
+	{
+		K_TickPlayerTally(player);
+	}
+
 	if (player->karthud[khud_lapanimation])
 		player->karthud[khud_lapanimation]--;
 
@@ -7536,29 +7542,6 @@ void K_KartPlayerHUDUpdate(player_t *player)
 	}
 	else
 		player->karthud[khud_finish] = 0;
-
-	if ((gametyperules & GTR_BUMPERS) && (player->exiting || player->karmadelay))
-	{
-		if (player->exiting)
-		{
-			if (exitcountdown < (11*TICRATE)/2)
-				player->karthud[khud_cardanimation] += ((164-player->karthud[khud_cardanimation])/8)+1;
-		}
-		else
-		{
-			if (player->karmadelay < 6*TICRATE)
-				player->karthud[khud_cardanimation] -= ((164-player->karthud[khud_cardanimation])/8)+1;
-			else if (player->karmadelay < 9*TICRATE)
-				player->karthud[khud_cardanimation] += ((164-player->karthud[khud_cardanimation])/8)+1;
-		}
-
-		if (player->karthud[khud_cardanimation] > 164)
-			player->karthud[khud_cardanimation] = 164;
-		if (player->karthud[khud_cardanimation] < 0)
-			player->karthud[khud_cardanimation] = 0;
-	}
-	else
-		player->karthud[khud_cardanimation] = 0;
 }
 
 #undef RINGANIM_DELAYMAX
@@ -12245,7 +12228,7 @@ UINT32 K_PointLimitForGametype(void)
 		return 0;
 	}
 
-	if ((gametyperules & battleRules) == battleRules)
+	if ((gametyperules & battleRules) == battleRules) // why isn't this just another GTR_??
 	{
 		INT32 i;
 

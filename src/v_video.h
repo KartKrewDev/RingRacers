@@ -347,8 +347,10 @@ void V_DrawRightAlignedThinStringAtFixed(fixed_t x, fixed_t y, INT32 option, con
 // threshold: when the letters start disappearing (leave to 0 to disable) (both are INT32 in case you supply negative values...)
 // NOTE: This function ignores most conventional string flags (V_RETURN8, V_FORCEUPPERCASE ...)
 // NOTE: This font only works with uppercase letters.
-void V_DrawTitleCardString(INT32 x, INT32 y, const char *str, INT32 flags, boolean bossmode, INT32 timer, INT32 threshold, boolean p4);
-
+void V_DrawTitleCardStringFixed(fixed_t x, fixed_t y, fixed_t scale, const char *str, INT32 flags, boolean bossmode, INT32 timer, INT32 threshold, boolean p4);
+#define V_DrawTitleCardString( x,y,str,flags,bossmode,timer,threshold,p4 ) \
+	V_DrawTitleCardStringFixed ((x)<<FRACBITS,(y)<<FRACBITS,FRACUNIT,str,flags,bossmode,timer,threshold,p4)
+	
 // returns thr width of a string drawn using the above function.
 INT32 V_TitleCardStringWidth(const char *str, boolean p4);
 
