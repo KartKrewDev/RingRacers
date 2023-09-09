@@ -249,6 +249,50 @@ static inline void R_DrawBlendFlippedColumnInCache(column_t *patch, UINT8 *cache
 	}
 }
 
+static UINT8 *R_AllocateTextureBlock(size_t blocksize, UINT8 **user)
+{
+	texturememory += blocksize;
+
+	return Z_Malloc(blocksize, PU_CACHE, user);
+}
+
+static UINT8 *R_AllocateDummyTextureBlock(size_t width, UINT8 **user)
+{
+	// Allocate dummy data. Keep 4-bytes aligned.
+	// Column offsets will be initialized to 0, which points to the 0xff byte (empty column flag).
+	size_t blocksize = 4 + (width * 4);
+	UINT8 *block = R_AllocateTextureBlock(blocksize, user);
+
+	memset(block, 0, blocksize);
+	block[0] = 0xff;
+
+	return block;
+}
+
+static boolean R_CheckTextureLumpLength(texture_t *texture, size_t patch)
+{
+	UINT16 wadnum = texture->patches[patch].wad;
+	UINT16 lumpnum = texture->patches[patch].lump;
+	size_t lumplength = W_LumpLengthPwad(wadnum, lumpnum);
+
+	// The header does not exist
+	if (lumplength < offsetof(softwarepatch_t, columnofs))
+	{
+		CONS_Alert(
+			CONS_ERROR,
+			"%.8s: texture lump data is too small. Expected %s bytes, got %s. (%s)\n",
+			texture->name,
+			sizeu1(offsetof(softwarepatch_t, columnofs)),
+			sizeu2(lumplength),
+			wadfiles[wadnum]->lumpinfo[lumpnum].fullname
+		);
+
+		return false;
+	}
+
+	return true;
+}
+
 //
 // R_GenerateTexture
 //
@@ -297,22 +341,11 @@ UINT8 *R_GenerateTexture(size_t texnum)
 		lumplength = W_LumpLengthPwad(wadnum, lumpnum);
 
 		// The header does not exist
-		if (lumplength < offsetof(softwarepatch_t, columnofs))
+		if (R_CheckTextureLumpLength(texture, 0) == false)
 		{
-			CONS_Alert(
-				CONS_ERROR,
-				"%.8s: texture lump data is too small. Expected %s bytes, got %s. (%s)\n",
-				texture->name,
-				sizeu1(offsetof(softwarepatch_t, columnofs)),
-				sizeu2(lumplength),
-				wadfiles[wadnum]->lumpinfo[lumpnum].fullname
-			);
-
-			// Allocate dummy data. Keep 4-bytes aligned.
-			// Column offsets will be initialized to 0, which points to the 0xff byte (empty column flag).
-			block = Z_Calloc(4 + (texture->width * 4), PU_CACHE, &texturecache[texnum]);
-			block[0] = 0xff;
+			block = R_AllocateDummyTextureBlock(texture->width, &texturecache[texnum]);
 			texturecolumnofs[texnum] = (UINT32*)&block[4];
+			textures[texnum]->holes = true;
 			return block;
 		}
 
