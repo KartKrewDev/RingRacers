@@ -151,6 +151,7 @@ add_executable(SRB2SDL2 MACOSX_BUNDLE WIN32
 	k_powerup.cpp
 	k_hitlag.c
 	k_dialogue.cpp
+	k_tally.cpp
 	music.cpp
 	music_manager.cpp
 )

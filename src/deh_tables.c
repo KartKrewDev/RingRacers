@@ -6281,7 +6281,6 @@ const char *const KARTHUD_LIST[] = {
 	"VOICES",
 	"TAUNTVOICES",
 
-	"CARDANIMATION",
 	"YOUGOTEM",
 };
 

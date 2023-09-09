@@ -789,17 +789,6 @@ void K_PlayerLoseLife(player_t *player)
 
 	player->lives--;
 	player->pflags |= PF_LOSTLIFE;
-
-#if 0
-	if (player->lives <= 0)
-	{
-		if (P_IsLocalPlayer(player))
-		{
-			S_StopMusic();
-			S_ChangeMusicInternal("gmover", false);
-		}
-	}
-#endif
 }
 
 /*--------------------------------------------------
@@ -840,63 +829,6 @@ boolean K_CanChangeRules(boolean allowdemos)
 	}
 
 	return true;
-}
-
-/*--------------------------------------------------
-	void K_PlayerFinishGrandPrix(player_t *player);
-
-		See header file for description.
---------------------------------------------------*/
-void K_PlayerFinishGrandPrix(player_t *player)
-{
-	if (grandprixinfo.wonround == true)
-	{
-		// This was already completed.
-		return;
-	}
-
-	if (player->exiting == false)
-	{
-		// You did not finish
-		return;
-	}
-
-	if (player->bot)
-	{
-		// Bots are going to get harder... :)
-		K_IncreaseBotDifficulty(player);
-		return;
-	}
-
-	if (K_IsPlayerLosing(player))
-	{
-		return;
-	}
-
-	// YOU WIN
-	grandprixinfo.wonround = true;
-
-	// Increase your total rings
-	INT32 ringtotal = player->hudrings;
-	if (ringtotal > 0)
-	{
-		if (ringtotal > 20)
-			ringtotal = 20;
-		player->totalring += ringtotal;
-		grandprixinfo.rank.rings += ringtotal;
-	}
-
-	if (grandprixinfo.eventmode == GPEVENT_NONE)
-	{
-		grandprixinfo.rank.winPoints += K_CalculateGPRankPoints(player->position, grandprixinfo.rank.totalPlayers);
-		grandprixinfo.rank.laps += player->lapPoints;
-	}
-	else if (grandprixinfo.eventmode == GPEVENT_SPECIAL)
-	{
-		grandprixinfo.rank.specialWon = true;
-	}
-
-	P_GivePlayerLives(player, player->xtralife);
 }
 
 /*--------------------------------------------------

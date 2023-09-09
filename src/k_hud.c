@@ -2023,6 +2023,11 @@ static void K_DrawKartPositionNum(INT32 num)
 	INT32 fflags = 0;
 	UINT8 *color = NULL;
 
+	if (stplyr->lives <= 0 && stplyr->playerstate == PST_DEAD)
+	{
+		return;
+	}
+
 	if (leveltime < (starttime + NUMTRANSMAPS))
 	{
 		trans = (starttime + NUMTRANSMAPS) - leveltime;
@@ -2033,7 +2038,7 @@ static void K_DrawKartPositionNum(INT32 num)
 		return;
 	}
 
-	if (stplyr->positiondelay || stplyr->exiting)
+	if (stplyr->positiondelay > 0 || K_PlayerTallyActive(stplyr) == true)
 	{
 		const UINT8 delay = (stplyr->exiting) ? POS_DELAY_TIME : stplyr->positiondelay;
 		const fixed_t add = (scale * 3) >> ((r_splitscreen == 1) ? 1 : 2);
@@ -2128,7 +2133,7 @@ static void K_DrawKartPositionNum(INT32 num)
 	{
 		K_DrawKartPositionNumPatch(
 			0, color,
-			fx, fy, scale, V_SLIDEIN|V_SPLITSCREEN|fflags
+			fx, fy, scale, V_SPLITSCREEN|fflags
 		);
 
 		return;
@@ -2143,7 +2148,7 @@ static void K_DrawKartPositionNum(INT32 num)
 
 		fx = K_DrawKartPositionNumPatch(
 			(num % 10), color,
-			fx, fy, scale, V_SLIDEIN|V_SPLITSCREEN|fflags
+			fx, fy, scale, V_SPLITSCREEN|fflags
 		);
 		num /= 10;
 	}
@@ -4606,6 +4611,11 @@ static void K_drawKartStartCountdown(void)
 {
 	INT32 pnum = 0;
 
+	if (stplyr->lives <= 0 && stplyr->playerstate == PST_DEAD)
+	{
+		return;
+	}
+
 	if (stplyr->karthud[khud_fault] != 0)
 	{
 		K_drawKartFinish(false);
@@ -4652,115 +4662,6 @@ static void K_drawKartStartCountdown(void)
 
 		V_DrawScaledPatch(STCD_X - (SHORT(kp_startcountdown[pnum]->width)/2), STCD_Y - (SHORT(kp_startcountdown[pnum]->height)/2), V_SPLITSCREEN, kp_startcountdown[pnum]);
 	}
-}
-
-static void K_drawBattleFullscreen(void)
-{
-	INT32 x = BASEVIDWIDTH/2;
-	INT32 y = -64+(stplyr->karthud[khud_cardanimation]); // card animation goes from 0 to 164, 164 is the middle of the screen
-	INT32 splitflags = V_SNAPTOTOP; // I don't feel like properly supporting non-green resolutions, so you can have a misuse of SNAPTO instead
-	fixed_t scale = FRACUNIT;
-	boolean drawcomebacktimer = true;	// lazy hack because it's cleaner in the long run.
-
-	if (!LUA_HudEnabled(hud_battlecomebacktimer))
-		drawcomebacktimer = false;
-
-	if (r_splitscreen)
-	{
-		if ((r_splitscreen == 1 && stplyr == &players[displayplayers[1]])
-			|| (r_splitscreen > 1 && (stplyr == &players[displayplayers[2]]
-			|| (stplyr == &players[displayplayers[3]] && r_splitscreen > 2))))
-		{
-			y = 232-(stplyr->karthud[khud_cardanimation]/2);
-			splitflags = V_SNAPTOBOTTOM;
-		}
-		else
-			y = -32+(stplyr->karthud[khud_cardanimation]/2);
-
-		if (r_splitscreen > 1)
-		{
-			scale /= 2;
-
-			if (stplyr == &players[displayplayers[1]]
-				|| (stplyr == &players[displayplayers[3]] && r_splitscreen > 2))
-				x = 3*BASEVIDWIDTH/4;
-			else
-				x = BASEVIDWIDTH/4;
-		}
-		else
-		{
-			if (stplyr->exiting)
-			{
-				if (stplyr == &players[displayplayers[1]])
-					x = BASEVIDWIDTH-96;
-				else
-					x = 96;
-			}
-			else
-				scale /= 2;
-		}
-	}
-
-	if (stplyr->exiting)
-	{
-		if (stplyr == &players[displayplayers[0]])
-			V_DrawFadeScreen(0xFF00, 16);
-		if (exitcountdown <= (11*TICRATE)/2 && !stplyr->spectator)
-		{
-			patch_t *p = kp_battlecool;
-
-			if (K_IsPlayerLosing(stplyr))
-				p = kp_battlelose;
-			else if (stplyr->position == 1 && (!battleprisons || numtargets >= maptargets))
-				p = kp_battlewin;
-
-			V_DrawFixedPatch(x<<FRACBITS, y<<FRACBITS, scale, splitflags, p, NULL);
-		}
-
-		K_drawKartFinish(true);
-	}
-	else if (stplyr->karmadelay && !stplyr->spectator && drawcomebacktimer)
-	{
-		UINT16 t = stplyr->karmadelay/(10*TICRATE);
-		INT32 txoff, adjust = (r_splitscreen > 1) ? 4 : 6; // normal string is 8, kart string is 12, half of that for ease
-		INT32 ty = (BASEVIDHEIGHT/2)+66;
-
-		txoff = adjust;
-
-		while (t)
-		{
-			txoff += adjust;
-			t /= 10;
-		}
-
-		if (r_splitscreen)
-		{
-			if (r_splitscreen > 1)
-				ty = (BASEVIDHEIGHT/4)+33;
-			if ((r_splitscreen == 1 && stplyr == &players[displayplayers[1]])
-				|| (stplyr == &players[displayplayers[2]] && r_splitscreen > 1)
-				|| (stplyr == &players[displayplayers[3]] && r_splitscreen > 2))
-				ty += (BASEVIDHEIGHT/2);
-		}
-		else
-			V_DrawFadeScreen(0xFF00, 16);
-
-		if (!comebackshowninfo)
-			V_DrawFixedPatch(x<<FRACBITS, y<<FRACBITS, scale, splitflags, kp_battleinfo, NULL);
-		else
-			V_DrawFixedPatch(x<<FRACBITS, y<<FRACBITS, scale, splitflags, kp_battlewait, NULL);
-
-		if (r_splitscreen > 1)
-			V_DrawString(x-txoff, ty, 0, va("%d", stplyr->karmadelay/TICRATE));
-		else
-		{
-			V_DrawFixedPatch(x<<FRACBITS, ty<<FRACBITS, scale, 0, kp_timeoutsticker, NULL);
-			V_DrawTimerString(x-txoff, ty, 0, va("%d", stplyr->karmadelay/TICRATE));
-		}
-	}
-
-	// FREE PLAY?
-	K_drawKartFreePlay();
 }
 
 static void K_drawKartFirstPerson(void)
@@ -5520,7 +5421,6 @@ static void K_DrawGPRankDebugger(void)
 void K_drawKartHUD(void)
 {
 	boolean islonesome = false;
-	boolean battlefullscreen = false;
 	boolean freecam = demo.freecam;	//disable some hud elements w/ freecam
 	UINT8 viewnum = R_GetViewNumber();
 
@@ -5539,13 +5439,7 @@ void K_drawKartHUD(void)
 		return;
 	}
 
-	battlefullscreen = (!(gametyperules & GTR_CIRCUIT)
-		&& (stplyr->exiting
-		|| (((gametyperules & GTR_KARMA) && (stplyr->karmadelay > 0))
-		&& !(stplyr->pflags & PF_ELIMINATED)
-		&& stplyr->playerstate == PST_LIVE)));
-
-	if (!demo.title && (!battlefullscreen || r_splitscreen))
+	if (!demo.title)
 	{
 		// Draw the CHECK indicator before the other items, so it's overlapped by everything else
 		if (LUA_HudEnabled(hud_check))	// delete lua when?
@@ -5567,13 +5461,6 @@ void K_drawKartHUD(void)
 
 		if (LUA_HudEnabled(hud_minimap))
 			K_drawKartMinimap();
-	}
-
-	if (battlefullscreen && !freecam)
-	{
-		if (LUA_HudEnabled(hud_battlefullscreen))
-			K_drawBattleFullscreen();
-		return;
 	}
 
 	// Draw the item window
@@ -5637,6 +5524,11 @@ void K_drawKartHUD(void)
 		else
 		{
 			boolean gametypeinfoshown = false;
+
+			if (K_PlayerTallyActive(stplyr) == true)
+			{
+				K_DrawPlayerTally();
+			}
 
 			if (LUA_HudEnabled(hud_position))
 			{

@@ -65,6 +65,7 @@
 #include "g_party.h"
 #include "k_profiles.h"
 #include "music.h"
+#include "k_tally.h"
 
 #ifdef HW3SOUND
 #include "hardware/hw3sound.h"
@@ -1278,10 +1279,10 @@ void P_DoPlayerExit(player_t *player, pflags_t flags)
 		K_PlayerLoseLife(player);
 	}
 
-	if (P_IsLocalPlayer(player) && !specialout)
+	if (P_IsLocalPlayer(player) && !specialout && musiccountdown == 0)
 	{
 		Music_StopAll();
-		musiccountdown = MUSICCOUNTDOWNMAX;
+		musiccountdown = MUSIC_COUNTDOWN_MAX;
 	}
 
 	player->exiting = 1;
@@ -1307,7 +1308,6 @@ void P_DoPlayerExit(player_t *player, pflags_t flags)
 
 				if (extra > oldExtra)
 				{
-					S_StartSound(NULL, sfx_cdfm73);
 					player->xtralife = (extra - oldExtra);
 				}
 			}
@@ -1316,26 +1316,6 @@ void P_DoPlayerExit(player_t *player, pflags_t flags)
 		if ((gametyperules & GTR_CIRCUIT)) // Special Race-like handling
 		{
 			K_UpdateAllPlayerPositions();
-
-			if (cv_kartvoices.value && !(gametyperules & GTR_SPECIALSTART))
-			{
-				if (P_IsDisplayPlayer(player))
-				{
-					sfxenum_t sfx_id;
-					if (losing)
-						sfx_id = ((skin_t *)player->mo->skin)->soundsid[S_sfx[sfx_klose].skinsound];
-					else
-						sfx_id = ((skin_t *)player->mo->skin)->soundsid[S_sfx[sfx_kwin].skinsound];
-					S_StartSound(NULL, sfx_id);
-				}
-				else
-				{
-					if (losing)
-						S_StartSound(player->mo, sfx_klose);
-					else
-						S_StartSound(player->mo, sfx_kwin);
-				}
-			}
 
 			if (P_CheckRacers() && !exitcountdown)
 			{
@@ -1347,6 +1327,8 @@ void P_DoPlayerExit(player_t *player, pflags_t flags)
 			G_BeginLevelExit();
 		}
 	}
+
+	K_InitPlayerTally(player);
 
 	if (demo.playback == false)
 	{
@@ -1373,8 +1355,6 @@ void P_DoPlayerExit(player_t *player, pflags_t flags)
 		if (player == &players[consoleplayer])
 			demo.savebutton = leveltime;
 	}
-
-	player->karthud[khud_cardanimation] = 0; // srb2kart: reset battle animation
 }
 
 //
@@ -1384,7 +1364,6 @@ void P_DoPlayerExit(player_t *player, pflags_t flags)
 void P_DoAllPlayersExit(pflags_t flags, boolean trygivelife)
 {
 	UINT8 i;
-	boolean givenlife = false;
 	const boolean dofinishsound = (musiccountdown == 0);
 
 	for (i = 0; i < MAXPLAYERS; i++)
@@ -1406,7 +1385,6 @@ void P_DoAllPlayersExit(pflags_t flags, boolean trygivelife)
 		}
 
 		P_GivePlayerLives(&players[i], 1);
-		givenlife = true;
 	}
 
 	if (!dofinishsound)
@@ -1428,12 +1406,6 @@ void P_DoAllPlayersExit(pflags_t flags, boolean trygivelife)
 	{
 		// Everyone finish sound
 		S_StartSound(NULL, sfx_s3k6a);
-	}
-
-	if (givenlife)
-	{
-		// Life sound
-		S_StartSound(NULL, sfx_cdfm73);
 	}
 }
 
@@ -3744,16 +3716,18 @@ void P_DoTimeOver(player_t *player)
 		P_DamageMobj(player->mo, NULL, NULL, 1, DMG_TIMEOVER);
 	}
 
-	if (P_IsLocalPlayer(player))
+	if (P_IsLocalPlayer(player) && musiccountdown == 0)
 	{
 		Music_StopAll();
-		musiccountdown = MUSICCOUNTDOWNMAX;
+		musiccountdown = MUSIC_COUNTDOWN_MAX;
 	}
 
 	if (!exitcountdown)
 	{
 		G_BeginLevelExit();
 	}
+
+	K_InitPlayerTally(player);
 }
 
 // SRB2Kart: These are useful functions, but we aren't using them yet.
@@ -3982,6 +3956,27 @@ void P_PlayerThink(player_t *player)
 	{
 		CONS_Debug(DBG_GAMELOGIC, "P_PlayerThink: Player %s in PST_LIVE with 0 health. (\"Zombie bug\")\n", sizeu1(playeri));
 		player->playerstate = PST_DEAD;
+	}
+
+	if (G_GametypeUsesLives() == true && player->lives <= 0 && player->playerstate != PST_DEAD)
+	{
+		player->mo->flags &= ~(MF_SOLID|MF_SHOOTABLE); // does not block
+		P_UnsetThingPosition(player->mo);
+		player->mo->flags |= MF_NOBLOCKMAP|MF_NOCLIP|MF_NOCLIPHEIGHT|MF_NOGRAVITY;
+		P_SetThingPosition(player->mo);
+		player->mo->standingslope = NULL;
+		player->mo->terrain = NULL;
+		player->mo->pmomz = 0;
+
+		player->playerstate = PST_DEAD;
+
+		// respawn from where you died
+		player->respawn.pointx = player->mo->x;
+		player->respawn.pointy = player->mo->y;
+		player->respawn.pointz = player->mo->z;
+
+		player->pflags |= PF_LOSTLIFE|PF_ELIMINATED|PF_NOCONTEST;
+		K_InitPlayerTally(player);
 	}
 
 	// Erasing invalid player pointers

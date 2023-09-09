@@ -942,7 +942,6 @@ void P_Ticker(boolean run)
 		if (racecountdown > 1)
 			racecountdown--;
 
-
 		const fixed_t darkdelta = FRACUNIT/50;
 		const fixed_t maxdark = FRACUNIT/7;
 		if (darktimer) // dark or darkening
@@ -960,12 +959,35 @@ void P_Ticker(boolean run)
 			darkness = 0;
 		}
 
-		if (exitcountdown > 1)
+		if (exitcountdown >= 1)
 		{
-			exitcountdown--;
-			if (server && exitcountdown == 1)
+			boolean run_exit_countdown = true;
+			for (i = 0; i < MAXPLAYERS; i++)
 			{
-				SendNetXCmd(XD_EXITLEVEL, NULL, 0);
+				if (playeringame[i] == false)
+				{
+					continue;
+				}
+
+				player_t *player = &players[i];
+				if (K_PlayerTallyActive(player) == true && player->tally.done == false)
+				{
+					run_exit_countdown = false;
+					break;
+				}
+			}
+
+			if (run_exit_countdown == true)
+			{
+				if (exitcountdown > 1)
+				{
+					exitcountdown--;
+				}
+
+				if (server && exitcountdown == 1)
+				{
+					SendNetXCmd(XD_EXITLEVEL, NULL, 0);
+				}
 			}
 		}
 

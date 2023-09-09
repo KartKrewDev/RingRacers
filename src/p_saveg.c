@@ -647,6 +647,52 @@ static void P_NetArchivePlayers(savebuffer_t *save)
 		WRITEUINT16(save->p, players[i].powerup.superTimer);
 		WRITEUINT16(save->p, players[i].powerup.barrierTimer);
 		WRITEUINT16(save->p, players[i].powerup.rhythmBadgeTimer);
+
+		// level_tally_t
+		WRITEUINT8(save->p, players[i].tally.active);
+		if (players[i].tally.active)
+		{
+			WRITEUINT16(save->p, players[i].tally.gt);
+			WRITEUINT8(save->p, players[i].tally.gotThru);
+			WRITESTRINGN(save->p, players[i].tally.header, 63);
+			WRITEUINT8(save->p, players[i].tally.roundNum);
+			WRITEINT32(save->p, players[i].tally.gradeVoice);
+
+			WRITEINT32(save->p, players[i].tally.time);
+			WRITEUINT16(save->p, players[i].tally.ringPool);
+			for (q = 0; q < TALLY_WINDOW_SIZE; q++)
+				WRITEINT32(save->p, players[i].tally.stats[q]);
+
+			WRITEUINT8(save->p, players[i].tally.position);
+			WRITEUINT8(save->p, players[i].tally.numPlayers);
+			WRITEUINT8(save->p, players[i].tally.rings);
+			WRITEUINT16(save->p, players[i].tally.laps);
+			WRITEUINT16(save->p, players[i].tally.totalLaps);
+			WRITEUINT16(save->p, players[i].tally.prisons);
+			WRITEUINT16(save->p, players[i].tally.totalPrisons);
+			WRITEINT32(save->p, players[i].tally.points);
+			WRITEINT32(save->p, players[i].tally.pointLimit);
+			WRITEUINT8(save->p, players[i].tally.powerStones);
+			for (q = 0; q < TALLY_WINDOW_SIZE; q++)
+				WRITEINT32(save->p, players[i].tally.bonuses[q]);
+			WRITEINT32(save->p, players[i].tally.rank);
+
+			WRITEINT32(save->p, players[i].tally.state);
+			WRITEINT32(save->p, players[i].tally.hudSlide);
+			WRITEINT32(save->p, players[i].tally.delay);
+			WRITEINT32(save->p, players[i].tally.transition);
+			WRITEINT32(save->p, players[i].tally.transitionTime);
+			WRITEUINT8(save->p, players[i].tally.lines);
+			WRITEUINT8(save->p, players[i].tally.lineCount);
+			for (q = 0; q < TALLY_WINDOW_SIZE; q++)
+				WRITEINT32(save->p, players[i].tally.displayStat[q]);
+			for (q = 0; q < TALLY_WINDOW_SIZE; q++)
+				WRITEINT32(save->p, players[i].tally.displayBonus[q]);
+			WRITEUINT8(save->p, players[i].tally.tickSound);
+			WRITEUINT8(save->p, players[i].tally.xtraBlink);
+			WRITEUINT8(save->p, players[i].tally.showGrade);
+			WRITEUINT8(save->p, players[i].tally.done);
+		}
 	}
 }
 
@@ -1084,6 +1130,56 @@ static void P_NetUnArchivePlayers(savebuffer_t *save)
 		players[i].powerup.superTimer = READUINT16(save->p);
 		players[i].powerup.barrierTimer = READUINT16(save->p);
 		players[i].powerup.rhythmBadgeTimer = READUINT16(save->p);
+
+		// level_tally_t
+		players[i].tally.active = READUINT8(save->p);
+		if (players[i].tally.active)
+		{
+			players[i].tally.owner = &players[i];
+			players[i].tally.gt = READUINT16(save->p);
+			players[i].tally.gotThru = (boolean)READUINT8(save->p);
+
+			READSTRINGN(save->p, players[i].tally.header, 63);
+			players[i].tally.header[63] = '\0';
+
+			players[i].tally.roundNum = READUINT8(save->p);
+			players[i].tally.gradeVoice = READINT32(save->p);
+
+			players[i].tally.time = READINT32(save->p);
+			players[i].tally.ringPool = READUINT16(save->p);
+			for (q = 0; q < TALLY_WINDOW_SIZE; q++)
+				players[i].tally.stats[q] = READINT32(save->p);
+
+			players[i].tally.position = READUINT8(save->p);
+			players[i].tally.numPlayers = READUINT8(save->p);
+			players[i].tally.rings = READUINT8(save->p);
+			players[i].tally.laps = READUINT16(save->p);
+			players[i].tally.totalLaps = READUINT16(save->p);
+			players[i].tally.prisons = READUINT16(save->p);
+			players[i].tally.totalPrisons = READUINT16(save->p);
+			players[i].tally.points = READINT32(save->p);
+			players[i].tally.pointLimit = READINT32(save->p);
+			players[i].tally.powerStones = READUINT8(save->p);
+			for (q = 0; q < TALLY_WINDOW_SIZE; q++)
+				players[i].tally.bonuses[q] = READINT32(save->p);
+			players[i].tally.rank = READINT32(save->p);
+
+			players[i].tally.state = READINT32(save->p);
+			players[i].tally.hudSlide = READINT32(save->p);
+			players[i].tally.delay = READINT32(save->p);
+			players[i].tally.transition = READINT32(save->p);
+			players[i].tally.transitionTime = READINT32(save->p);
+			players[i].tally.lines = READUINT8(save->p);
+			players[i].tally.lineCount = READUINT8(save->p);
+			for (q = 0; q < TALLY_WINDOW_SIZE; q++)
+				players[i].tally.displayStat[q] = READINT32(save->p);
+			for (q = 0; q < TALLY_WINDOW_SIZE; q++)
+				players[i].tally.displayBonus[q] = READINT32(save->p);
+			players[i].tally.tickSound = READUINT8(save->p);
+			players[i].tally.xtraBlink = READUINT8(save->p);
+			players[i].tally.showGrade = (boolean)READUINT8(save->p);
+			players[i].tally.done = (boolean)READUINT8(save->p);
+		}
 
 		//players[i].viewheight = P_GetPlayerViewHeight(players[i]); // scale cannot be factored in at this point
 	}

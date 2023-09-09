@@ -221,6 +221,9 @@ TYPEDEF (waypoint_t);
 // k_rank.h
 TYPEDEF (gpRank_t);
 
+// k_tally.h
+TYPEDEF (level_tally_t);
+
 // k_zvote.h
 TYPEDEF (midVote_t);
 TYPEDEF (midVoteGUI_t);

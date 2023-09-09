@@ -743,9 +743,6 @@ extern tic_t starttime;
 extern const tic_t bulbtime;
 extern UINT8 numbulbs;
 
-extern tic_t raceexittime;
-#define MUSICCOUNTDOWNMAX (raceexittime - (TICRATE/2))
-
 extern INT32 hyudorotime;
 extern INT32 stealtime;
 extern INT32 sneakertime;

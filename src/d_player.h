@@ -32,6 +32,9 @@
 // the player struct stores a waypoint for racing
 #include "k_waypoint.h"
 
+// struct to store tally screen data on
+#include "k_tally.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -287,7 +290,6 @@ typedef enum
 	khud_taunthorns,	// Used to specifically stop taunt horn spam
 
 	// Battle
-	khud_cardanimation,	// Used to determine the position of some full-screen Battle Mode graphics
 	khud_yougotem, 		// "You Got Em" gfx when hitting someone as a karma player via a method that gets you back in the game instantly
 
 	// Tricks
@@ -827,6 +829,8 @@ struct player_t
 	sonicloopvars_t loop;
 	roundconditions_t roundconditions;
 	powerupvars_t powerup;
+
+	level_tally_t tally;
 };
 
 // WARNING FOR ANYONE ABOUT TO ADD SOMETHING TO THE PLAYER STRUCT, G_PlayerReborn WANTS YOU TO SUFFER

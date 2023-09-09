@@ -250,8 +250,6 @@ tic_t starttime = 3;
 const tic_t bulbtime = TICRATE/2;
 UINT8 numbulbs = 1;
 
-tic_t raceexittime = 7*TICRATE + (TICRATE/2);
-
 INT32 hyudorotime = 7*TICRATE;
 INT32 stealtime = TICRATE/2;
 INT32 sneakertime = TICRATE + (TICRATE/3);
@@ -1933,7 +1931,7 @@ void G_Ticker(boolean run)
 				{
 					Music_Play("intermission");
 				}
-				else if (musiccountdown == (MUSICCOUNTDOWNMAX - (3*TICRATE)/2))
+				else if (musiccountdown == MUSIC_COUNTDOWN_MAX - TALLY_TIME)
 				{
 					P_EndingMusic();
 				}
@@ -1968,6 +1966,9 @@ static inline void G_PlayerFinishLevel(INT32 player)
 	memset(&p->respawn, 0, sizeof (p->respawn));
 
 	p->spectatorReentry = 0; // Clean up any pending re-entry forbiddings
+
+	// Init player tally if we didn't get one set up in advance.
+	K_InitPlayerTally(p);
 }
 
 //
@@ -2000,7 +2001,6 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	INT32 cheatchecknum;
 	INT32 exiting;
 	INT32 khudfinish;
-	INT32 khudcardanimation;
 	INT16 totalring;
 	UINT8 laps;
 	UINT8 latestlap;
@@ -2048,6 +2048,9 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 
 	roundconditions_t roundconditions;
 	boolean saveroundconditions;
+
+	level_tally_t tally;
+	boolean tallyactive;
 
 	// This needs to be first, to permit it to wipe extra information
 	jointime = players[player].jointime;
@@ -2148,10 +2151,10 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 		roundscore = 0;
 		exiting = 0;
 		khudfinish = 0;
-		khudcardanimation = 0;
 		cheatchecknum = 0;
 
 		saveroundconditions = false;
+		tallyactive = false;
 	}
 	else
 	{
@@ -2186,16 +2189,7 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 		roundscore = players[player].roundscore;
 
 		exiting = players[player].exiting;
-		if (exiting > 0)
-		{
-			khudfinish = players[player].karthud[khud_finish];
-			khudcardanimation = players[player].karthud[khud_cardanimation];
-		}
-		else
-		{
-			khudfinish = 0;
-			khudcardanimation = 0;
-		}
+		khudfinish = (exiting > 0) ? players[player].karthud[khud_finish] : 0;
 
 		cheatchecknum = players[player].cheatchecknum;
 
@@ -2203,6 +2197,12 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 
 		memcpy(&roundconditions, &players[player].roundconditions, sizeof (roundconditions));
 		saveroundconditions = true;
+
+		tallyactive = players[player].tally.active;
+		if (tallyactive)
+		{
+			tally = players[player].tally;
+		}
 	}
 
 	spectatorReentry = (betweenmaps ? 0 : players[player].spectatorReentry);
@@ -2281,7 +2281,6 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	p->cheatchecknum = cheatchecknum;
 	p->exiting = exiting;
 	p->karthud[khud_finish] = khudfinish;
-	p->karthud[khud_cardanimation] = khudcardanimation;
 
 	p->laps = laps;
 	p->latestlap = latestlap;
@@ -2323,6 +2322,11 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 
 	if (saveroundconditions)
 		memcpy(&p->roundconditions, &roundconditions, sizeof (p->roundconditions));
+
+	if (tallyactive == true)
+	{
+		p->tally = tally;
+	}
 
 	// See above comment about refcount consistency.
 	p->ringShooter = ringShooter;
@@ -2863,24 +2867,11 @@ void G_BeginLevelExit(void)
 	g_exit.losing = true;
 	g_exit.retry = false;
 
-	if (grandprixinfo.gp == true)
-	{
-		UINT8 i;
-
-		for (i = 0; i < MAXPLAYERS; i++)
-		{
-			if (playeringame[i] && !players[i].spectator)
-			{
-				K_PlayerFinishGrandPrix(&players[i]);
-			}
-		}
-	}
-
 	if (!G_GametypeUsesLives() || skipstats != 0)
 	{
 		g_exit.losing = false; // never force a retry
 	}
-	else if (specialstageinfo.valid == true || (gametyperules & GTR_BOSS))
+	else
 	{
 		UINT8 i;
 
@@ -2895,10 +2886,6 @@ void G_BeginLevelExit(void)
 				}
 			}
 		}
-	}
-	else if (grandprixinfo.gp == true && grandprixinfo.eventmode == GPEVENT_NONE)
-	{
-		g_exit.losing = (grandprixinfo.wonround != true);
 	}
 
 	if (g_exit.losing)
@@ -2920,13 +2907,11 @@ void G_BeginLevelExit(void)
 		}
 	}
 
-	if (g_exit.losing && specialstageinfo.valid)
+	exitcountdown = TICRATE;
+
+	if (grandprixinfo.gp == true)
 	{
-		exitcountdown = TICRATE;
-	}
-	else
-	{
-		exitcountdown = raceexittime+1;
+		grandprixinfo.wonround = !g_exit.losing;
 	}
 
 	if (g_exit.losing)
@@ -2958,7 +2943,7 @@ void G_FinishExitLevel(void)
 		{
 			// We were in a Special Stage.
 			// We can still progress to the podium when we game over here.
-			const boolean special = grandprixinfo.gp == true && grandprixinfo.eventmode == GPEVENT_SPECIAL;
+			const boolean special = grandprixinfo.gp == true && grandprixinfo.cup != NULL && grandprixinfo.eventmode == GPEVENT_SPECIAL;
 
 			if (!netgame && !special)
 			{
@@ -4006,7 +3991,7 @@ void G_GetNextMap(void)
 //
 static void G_DoCompleted(void)
 {
-	INT32 i, j = 0;
+	INT32 i;
 
 	if (modeattacking && pausedelay)
 		pausedelay = 0;
@@ -4053,30 +4038,62 @@ static void G_DoCompleted(void)
 
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
-		if (playeringame[i])
+		if (playeringame[i] == false)
 		{
-			// Exitlevel shouldn't get you the points
-			if (!players[i].exiting && !(players[i].pflags & PF_NOCONTEST))
-			{
-				clientPowerAdd[i] = 0;
-
-				if (players[i].bot)
-				{
-					K_FakeBotResults(&players[i]);
-				}
-				else
-				{
-					players[i].pflags |= PF_NOCONTEST;
-
-					if (P_IsLocalPlayer(&players[i]))
-					{
-						j++;
-					}
-				}
-			}
-
-			G_PlayerFinishLevel(i); // take away cards and stuff
+			continue;
 		}
+
+		player_t *const player = &players[i];
+
+		// Exitlevel shouldn't get you the points
+		if (player->exiting == false && (player->pflags & PF_NOCONTEST) == 0)
+		{
+			clientPowerAdd[i] = 0;
+
+			if (player->bot == true)
+			{
+				K_FakeBotResults(player);
+			}
+			else
+			{
+				player->pflags |= PF_NOCONTEST;
+			}
+		}
+
+		if (grandprixinfo.gp == true && grandprixinfo.wonround == true && player->exiting == true)
+		{
+			if (player->bot == true)
+			{
+				// Bots are going to get harder... :)
+				K_IncreaseBotDifficulty(player);
+			}
+			else if (K_IsPlayerLosing(player) == false)
+			{
+				// Increase your total rings
+				INT32 ringtotal = player->hudrings;
+				if (ringtotal > 0)
+				{
+					if (ringtotal > 20)
+						ringtotal = 20;
+					player->totalring += ringtotal;
+					grandprixinfo.rank.rings += ringtotal;
+				}
+
+				if (grandprixinfo.eventmode == GPEVENT_NONE)
+				{
+					grandprixinfo.rank.winPoints += K_CalculateGPRankPoints(player->position, grandprixinfo.rank.totalPlayers);
+					grandprixinfo.rank.laps += player->lapPoints;
+				}
+				else if (grandprixinfo.eventmode == GPEVENT_SPECIAL)
+				{
+					grandprixinfo.rank.specialWon = true;
+				}
+
+				P_GivePlayerLives(player, player->xtralife);
+			}
+		}
+
+		G_PlayerFinishLevel(i); // take away cards and stuff
 	}
 
 	if (automapactive)

@@ -36,6 +36,7 @@ public:
 		kFreeplay,
 		kZVote,
 		kPing,
+		kTimer,
 	};
 
 	enum class Align
@@ -99,6 +100,7 @@ public:
 	public:
 		float x() const { return x_; }
 		float y() const { return y_; }
+		INT32 flags() const { return flags_; }
 
 		// Methods add relative to the current state
 		Chain& x(float x);
@@ -188,6 +190,7 @@ public:
 
 	float x() const { return chain_.x(); }
 	float y() const { return chain_.y(); }
+	INT32 flags() const { return chain_.flags(); }
 
 #define METHOD(Name) \
 	template <typename... Args>\

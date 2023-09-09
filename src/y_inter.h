@@ -45,6 +45,7 @@ typedef struct
 	INT32 linemeter; // For GP only
 } y_data_t;
 
+void Y_DrawIntermissionHeader(INT32 x, INT32 y, boolean gotthrough, const char *headerstring, UINT8 roundnum, boolean small);
 void Y_IntermissionDrawer(void);
 void Y_Ticker(void);
 
