@@ -446,7 +446,6 @@ TYPEDEF (lumpinfo_t);
 TYPEDEF (virtlump_t);
 TYPEDEF (virtres_t);
 TYPEDEF (wadfile_t);
-TYPEDEF (wadfile_private_t);
 
 #undef TYPEDEF
 #undef TYPEDEF2
