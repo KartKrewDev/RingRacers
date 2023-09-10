@@ -80,6 +80,7 @@ extern fixed_t *textureheight; // needed for texture pegging
 
 extern UINT32 **texturecolumnofs; // column offset lookup table for each texture
 extern UINT8 **texturecache; // graphics data for each generated full-size texture
+extern UINT8 **texturebrightmapcache; // graphics data for brightmap converted for use with a specific texture
 
 // Load TEXTURES definitions, create lookup tables
 void R_LoadTextures(void);
@@ -89,14 +90,17 @@ void R_FlushTextureCache(void);
 // Texture generation
 UINT8 *R_GenerateTexture(size_t texnum);
 UINT8 *R_GenerateTextureAsFlat(size_t texnum);
+UINT8 *R_GenerateTextureBrightmap(size_t texnum);
 INT32 R_GetTextureNum(INT32 texnum);
 INT32 R_GetTextureBrightmap(INT32 texnum);
+boolean R_TextureHasBrightmap(INT32 texnum);
 void R_CheckTextureCache(INT32 tex);
 void R_ClearTextureNumCache(boolean btell);
 
 // Retrieve texture data.
 void *R_GetLevelFlat(levelflat_t *levelflat);
 UINT8 *R_GetColumn(fixed_t tex, INT32 col);
+UINT8 *R_GetBrightmapColumn(fixed_t tex, INT32 col);
 void *R_GetFlat(lumpnum_t flatnum);
 
 boolean R_CheckPowersOfTwo(void);

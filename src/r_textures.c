@@ -50,6 +50,7 @@ INT32 numtextures = 0; // total number of textures found,
 texture_t **textures = NULL;
 UINT32 **texturecolumnofs; // column offset lookup table for each texture
 UINT8 **texturecache; // graphics data for each generated full-size texture
+UINT8 **texturebrightmapcache; // graphics data for brightmap converted for use with a specific texture
 
 INT32 *texturewidth;
 fixed_t *textureheight; // needed for texture pegging
@@ -544,6 +545,202 @@ UINT8 *R_GenerateTextureAsFlat(size_t texnum)
 	return texture->flat;
 }
 
+// This function writes a column to p, using the posts from
+// tcol, but the pixel values from bcol. If bcol is larger
+// than tcol, the pixels are cropped. If bcol is smaller than
+// tcol, the empty space is filled with TRANSPARENTPIXEL.
+static void R_ConvertBrightmapColumn(UINT8 *p, const column_t *tcol, const column_t *bcol)
+{
+	/*
+
+	___t1
+	|
+	|     ___b1
+	|     |
+	|     |
+	|__t2 |
+	|     |__b2
+	|
+	|     ___b3
+	|__t3 |
+		  |
+	___t4 |
+	|     |__b4
+	|__t5
+
+	___t6
+	|__t7
+
+	*/
+
+	// copy post header
+	memcpy(&p[-3], tcol, 3);
+
+	INT32 ttop = tcol->topdelta;
+	INT32 btop = bcol->topdelta;
+
+	INT32 y = ttop;
+
+	while (tcol->topdelta != 0xff && bcol->topdelta != 0xff)
+	{
+		INT32 tbot = ttop + tcol->length;
+		INT32 bbot = btop + bcol->length;
+
+		INT32 n;
+
+		// t1 to b1
+		// b2 to b3
+		// --------
+		// The brightmap column starts below the
+		// texture column, so pad it with black
+		// pixels.
+
+		n = max(0, min(btop, tbot) - y);
+		memset(&p[y - ttop], TRANSPARENTPIXEL, n);
+		y += n;
+
+		// b1 to t2
+		// t2 to b2
+		// b3 to t3
+		// t4 to b4
+		// --------
+		// Copy parts of the brightmap column which
+		// line up with the texture column.
+
+		n = max(0, min(bbot, tbot) - y);
+		memcpy(&p[y - ttop], (const UINT8*)bcol + 3 + (y - btop), n);
+		y += n;
+
+		if (y == tbot)
+		{
+			p += 4 + tcol->length;
+			tcol = (const column_t*)((const UINT8*)tcol + 4 + tcol->length);
+
+			memcpy(&p[-3], tcol, 3); // copy post header
+
+			// Tall patches add the topdelta if it is less
+			// than the running topdelta.
+			ttop = tcol->topdelta <= ttop ? ttop + tcol->topdelta : tcol->topdelta;
+			y = ttop;
+		}
+
+		if (y >= bbot)
+		{
+			bcol = (const column_t*)((const UINT8*)bcol + 4 + bcol->length);
+			btop = bcol->topdelta <= btop ? btop + bcol->topdelta : bcol->topdelta; // tall patches
+		}
+	}
+
+	if (tcol->topdelta != 0xff)
+	{
+		// b4 to t5
+		// t6 to t7
+		// --------
+		// The texture column continues past the end
+		// of the brightmap column, so pad it with
+		// black pixels.
+
+		y -= ttop;
+		memset(&p[y], TRANSPARENTPIXEL, tcol->length - y);
+
+		while
+		(
+			(
+				p += 4 + tcol->length,
+				tcol = (const column_t*)((const UINT8*)tcol + 4 + tcol->length)
+			)->topdelta != 0xff
+		)
+		{
+			memcpy(&p[-3], tcol, 3); // copy post header
+			memset(p, TRANSPARENTPIXEL, tcol->length);
+		}
+	}
+
+	p[-3] = 0xff;
+}
+
+// Remember, this function must generate a texture that
+// matches the layout of texnum. It must have the same width
+// and same columns. Only the pixels that overlap are copied
+// from the brightmap texture.
+UINT8 *R_GenerateTextureBrightmap(size_t texnum)
+{
+	texture_t *texture = textures[texnum];
+	texture_t *bright = textures[R_GetTextureBrightmap(texnum)];
+
+	if (R_TextureHasBrightmap(texnum) && bright->patchcount > 1)
+	{
+		CONS_Alert(
+				CONS_WARNING,
+				"%.8s: BRIGHTMAP should not be a composite texture. Only using the first patch.\n",
+				bright->name
+		);
+	}
+
+	if (R_CheckTextureLumpLength(texture, 0) == false)
+	{
+		return R_AllocateDummyTextureBlock(texture->width, &texturebrightmapcache[texnum]);
+	}
+
+	R_CheckTextureCache(texnum);
+
+	softwarepatch_t *patch = NULL;
+	INT32 bmap_width = 0;
+	column_t empty = {0xff, 0};
+
+	if (R_TextureHasBrightmap(texnum) && R_CheckTextureLumpLength(bright, 0))
+	{
+		patch = W_CacheLumpNumPwad(bright->patches[0].wad, bright->patches[0].lump, PU_STATIC);
+		bmap_width = SHORT(patch->width);
+	}
+
+	UINT8 *block;
+
+	if (texture->holes)
+	{
+		block = R_AllocateTextureBlock(
+				W_LumpLengthPwad(texture->patches[0].wad, texture->patches[0].lump),
+				&texturebrightmapcache[texnum]
+		);
+
+		INT32 x;
+
+		for (x = 0; x < texture->width; ++x)
+		{
+			const column_t *tcol = (column_t*)(R_GetColumn(texnum, x) - 3);
+			const column_t *bcol = x < bmap_width ? (column_t*)((UINT8*)patch + LONG(patch->columnofs[x])) : &empty;
+
+			R_ConvertBrightmapColumn(block + LONG(texturecolumnofs[texnum][x]), tcol, bcol);
+		}
+	}
+	else
+	{
+		// Allocate the same size as composite textures.
+		size_t blocksize = (texture->width * 4) + (texture->width * texture->height) + 1;
+
+		block = R_AllocateTextureBlock(blocksize, &texturebrightmapcache[texnum]);
+		memset(block, TRANSPARENTPIXEL, blocksize); // Transparency hack
+
+		texpatch_t origin = {0};
+		INT32 x;
+
+		for (x = 0; x < texture->width; ++x)
+		{
+			R_DrawColumnInCache(
+					x < bmap_width ? (column_t*)((UINT8*)patch + LONG(patch->columnofs[x])) : &empty,
+					block + LONG(texturecolumnofs[texnum][x]),
+					&origin,
+					texture->height,
+					patch->height
+			);
+		}
+	}
+
+	Z_Free(patch);
+
+	return block;
+}
+
 //
 // R_GetTextureNum
 //
@@ -572,6 +769,11 @@ INT32 R_GetTextureBrightmap(INT32 texnum)
 	return texturebrightmaps[texnum];
 }
 
+boolean R_TextureHasBrightmap(INT32 texnum)
+{
+	return R_GetTextureBrightmap(texnum) != 0;
+}
+
 //
 // R_CheckTextureCache
 //
@@ -584,12 +786,8 @@ void R_CheckTextureCache(INT32 tex)
 		R_GenerateTexture(tex);
 }
 
-//
-// R_GetColumn
-//
-UINT8 *R_GetColumn(fixed_t tex, INT32 col)
+static inline INT32 wrap_column(fixed_t tex, INT32 col)
 {
-	UINT8 *data;
 	INT32 width = texturewidth[tex];
 
 	if (width & (width - 1))
@@ -597,11 +795,29 @@ UINT8 *R_GetColumn(fixed_t tex, INT32 col)
 	else
 		col &= (width - 1);
 
-	data = texturecache[tex];
-	if (!data)
-		data = R_GenerateTexture(tex);
+	return col;
+}
 
-	return data + LONG(texturecolumnofs[tex][col]);
+//
+// R_GetColumn
+//
+UINT8 *R_GetColumn(fixed_t tex, INT32 col)
+{
+	if (!texturecache[tex])
+		R_GenerateTexture(tex);
+
+	return texturecache[tex] + LONG(texturecolumnofs[tex][wrap_column(tex, col)]);
+}
+
+//
+// R_GetBrightmapColumn
+//
+UINT8 *R_GetBrightmapColumn(fixed_t tex, INT32 col)
+{
+	if (!texturebrightmapcache[tex])
+		R_GenerateTextureBrightmap(tex);
+
+	return texturebrightmapcache[tex] + LONG(texturecolumnofs[tex][wrap_column(tex, col)]);
 }
 
 void *R_GetFlat(lumpnum_t flatlumpnum)
@@ -1132,6 +1348,7 @@ static void R_AllocateTextures(INT32 add)
 	recallocuser(&texturecolumnofs, oldsize, newsize);
 	// Allocate texture referencing cache.
 	recallocuser(&texturecache, oldsize, newsize);
+	recallocuser(&texturebrightmapcache, oldsize, newsize);
 	// Allocate texture width table.
 	recallocuser(&texturewidth, oldsize, newsize);
 	// Allocate texture height table.
@@ -1146,8 +1363,8 @@ static void R_AllocateTextures(INT32 add)
 		// R_FlushTextureCache relies on the user for
 		// Z_Free, texturecache has been reallocated so the
 		// user is now garbage memory.
-		Z_SetUser(texturecache[i],
-				(void**)&texturecache[i]);
+		Z_SetUser(texturecache[i], (void**)&texturecache[i]);
+		Z_SetUser(texturebrightmapcache[i], (void**)&texturebrightmapcache[i]);
 	}
 
 	while (i < newtextures)

@@ -1031,6 +1031,9 @@ void R_DrawSinglePlane(visplane_t *pl)
 		INT32 bmNum = R_GetTextureBrightmap(levelflat->u.texture.num);
 		if (bmNum != 0)
 		{
+			// FIXME: This has the potential to read out of
+			// bounds if the brightmap texture is not as
+			// large as the flat.
 			ds_brightmap = (UINT8 *)R_GenerateTextureAsFlat(bmNum);
 		}
 	}
