@@ -640,6 +640,23 @@ void Command_RespawnAt_f(void)
 	D_Cheat(consoleplayer, CHEAT_RESPAWNAT, atoi(COM_Argv(1)));
 }
 
+void Command_GotoSkybox_f(void)
+{
+	REQUIRE_CHEATS;
+	REQUIRE_INLEVEL;
+
+	mobj_t *skybox = players[consoleplayer].skybox.viewpoint;
+
+	if (P_MobjWasRemoved(skybox))
+	{
+		CONS_Printf("There is no visible skybox for local Player 1.\n");
+		return;
+	}
+
+	D_Cheat(consoleplayer, CHEAT_TELEPORT, skybox->x, skybox->y, skybox->z);
+	D_Cheat(consoleplayer, CHEAT_ANGLE, skybox->angle);
+}
+
 //
 // OBJECTPLACE (and related variables)
 //

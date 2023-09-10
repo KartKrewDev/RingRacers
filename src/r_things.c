@@ -900,6 +900,14 @@ static void R_DrawVisSprite(vissprite_t *vis)
 	}
 
 	// Prevent an out of bounds error
+	//
+	// FIXME: The following check doesn't account for
+	// differences in transparency between the patches.
+	//
+	// Sprite BRIGHTMAPs should be converted on load,
+	// as like textures. I'm too tired to bother with it
+	// right now, though.
+	//
 	if (bmpatch && (bmpatch->width != patch->width ||
 				bmpatch->height != patch->height))
 	{

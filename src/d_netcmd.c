@@ -551,6 +551,7 @@ void D_RegisterClientCommands(void)
 	COM_AddDebugCommand("goto", Command_Goto_f);
 	COM_AddDebugCommand("angle", Command_Angle_f);
 	COM_AddDebugCommand("respawnat", Command_RespawnAt_f);
+	COM_AddDebugCommand("goto_skybox", Command_GotoSkybox_f);
 
 	{
 		extern struct CVarList *cvlist_player;
