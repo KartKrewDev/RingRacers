@@ -837,7 +837,7 @@ boolean preparefilemenu(boolean samedepth, boolean replayhut)
 
 							if (strcmp(dent->d_name, filenamebuf[i]))
 								continue;
-							if (cv_addons_md5.value && !checkfilemd5(menupath, W_GetFileMD5(wadfiles[i])))
+							if (cv_addons_md5.value && !checkfilemd5(menupath, wadfiles[i]->md5sum))
 								continue;
 
 							ext |= EXT_LOADED;

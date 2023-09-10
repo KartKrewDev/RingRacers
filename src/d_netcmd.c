@@ -4317,7 +4317,7 @@ static void Command_Addfile(void)
 
 			for (i = 0; i < numwadfiles; i++)
 			{
-				if (!memcmp(W_GetFileMD5(wadfiles[i]), md5sum, 16))
+				if (!memcmp(wadfiles[i]->md5sum, md5sum, 16))
 				{
 					CONS_Alert(CONS_ERROR, M_GetText("%s is already loaded\n"), fn);
 					valid = false;
