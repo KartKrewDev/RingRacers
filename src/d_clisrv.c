@@ -2258,12 +2258,16 @@ static boolean CL_ServerConnectionTicker(const char *tmpsave, tic_t *oldtic, tic
 #endif
 			}
 			I_UpdateNoVsync(); // page flip or blit buffer
+
 #ifdef HWRENDER
+			// Only take screenshots after drawing.
 			if (moviemode && rendermode == render_opengl)
 				M_LegacySaveFrame();
-			else
+			if (rendermode == render_opengl && takescreenshot)
+				M_DoLegacyGLScreenShot();
 #endif
-			if (moviemode && rendermode != render_none)
+
+			if ((moviemode || takescreenshot) && rendermode == render_soft)
 				I_CaptureVideoFrame();
 			S_UpdateSounds();
 			S_UpdateClosedCaptions();
