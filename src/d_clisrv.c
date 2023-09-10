@@ -4056,10 +4056,10 @@ static void Got_AddBot(UINT8 **p, INT32 playernum)
 }
 
 static boolean SV_AddWaitingPlayers(SINT8 node, UINT8 *availabilities,
-const char *name, uint8_t *key, UINT16 *pwr,
-const char *name2, uint8_t *key2, UINT16 *pwr2,
-const char *name3, uint8_t *key3, UINT16 *pwr3,
-const char *name4, uint8_t *key4, UINT16 *pwr4)
+	const char *name, uint8_t *key, UINT16 *pwr,
+	const char *name2, uint8_t *key2, UINT16 *pwr2,
+	const char *name3, uint8_t *key3, UINT16 *pwr3,
+	const char *name4, uint8_t *key4, UINT16 *pwr4)
 {
 	INT32 n, newplayernum, i;
 	UINT8 buf[4 + MAXPLAYERNAME + PUBKEYLENGTH + MAXAVAILABILITY + sizeof(((serverplayer_t *)0)->powerlevels)];
@@ -4166,6 +4166,85 @@ const char *name4, uint8_t *key4, UINT16 *pwr4)
 	}
 
 	return newplayer;
+}
+
+/*--------------------------------------------------
+	boolean K_AddBotFromServer(UINT8 skin, UINT8 difficulty, botStyle_e style, UINT8 *p)
+
+		See header file for description.
+--------------------------------------------------*/
+boolean K_AddBotFromServer(UINT8 skin, UINT8 difficulty, botStyle_e style, UINT8 *p)
+{
+	UINT8 newplayernum = *p;
+
+	// search for a free playernum
+	// we can't use playeringame since it is not updated here
+	for (; newplayernum < MAXPLAYERS; newplayernum++)
+	{
+		UINT8 n;
+
+		for (n = 0; n < MAXNETNODES; n++)
+		{
+			if (nodetoplayer[n] == newplayernum
+			|| nodetoplayer2[n] == newplayernum
+			|| nodetoplayer3[n] == newplayernum
+			|| nodetoplayer4[n] == newplayernum)
+				break;
+		}
+
+		if (n == MAXNETNODES)
+			break;
+	}
+
+	for (; newplayernum < MAXPLAYERS; newplayernum++)
+	{
+		if (playeringame[newplayernum] == false)
+		{
+			// free player slot
+			break;
+		}
+	}
+
+	if (newplayernum >= MAXPLAYERS)
+	{
+		// nothing is free
+		*p = MAXPLAYERS;
+		return false;
+	}
+
+	if (server)
+	{
+		UINT8 buf[4];
+		UINT8 *buf_p = buf;
+
+		WRITEUINT8(buf_p, newplayernum);
+
+		if (skin > numskins)
+		{
+			skin = numskins;
+		}
+
+		WRITEUINT8(buf_p, skin);
+
+		if (difficulty < 1)
+		{
+			difficulty = 1;
+		}
+		else if (difficulty > MAXBOTDIFFICULTY)
+		{
+			difficulty = MAXBOTDIFFICULTY;
+		}
+
+		WRITEUINT8(buf_p, difficulty);
+		WRITEUINT8(buf_p, style);
+
+		SendNetXCmd(XD_ADDBOT, buf, buf_p - buf);
+		DEBFILE(va("Server added bot %d\n", newplayernum));
+	}
+
+	// use the next free slot (we can't put playeringame[newplayernum] = true here)
+	*p = newplayernum+1;
+	return true;
 }
 
 void CL_AddSplitscreenPlayer(void)

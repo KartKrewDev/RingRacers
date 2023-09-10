@@ -588,6 +588,27 @@ void SV_StartSinglePlayerServer(INT32 dogametype, boolean donetgame);
 boolean SV_SpawnServer(void);
 void SV_StopServer(void);
 void SV_ResetServer(void);
+
+/*--------------------------------------------------
+	boolean K_AddBotFromServer(UINT8 skin, UINT8 difficulty, botStyle_e style, UINT8 *newplayernum);
+
+		Adds a new bot, using a server-sided packet sent to all clients.
+		Using regular K_AddBot wherever possible is better, but this is kept
+		as a back-up measure if this is the only option.
+
+	Input Arguments:-
+		skin - Skin number that the bot will use.
+		difficulty - Difficulty level this bot will use.
+		style - Bot style to spawn this bot with, see botStyle_e.
+		newplayernum - Pointer to the last valid player slot number.
+			Is a pointer so that this function can be called multiple times to add more than one bot.
+
+	Return:-
+		true if a bot can be added via a packet later, otherwise false.
+--------------------------------------------------*/
+
+boolean K_AddBotFromServer(UINT8 skin, UINT8 difficulty, botStyle_e style, UINT8 *p);
+
 void CL_AddSplitscreenPlayer(void);
 void CL_RemoveSplitscreenPlayer(UINT8 p);
 void CL_Reset(void);

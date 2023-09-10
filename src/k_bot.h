@@ -1,7 +1,7 @@
-// SONIC ROBO BLAST 2 KART
+// DR. ROBOTNIK'S RING RACERS
 //-----------------------------------------------------------------------------
-// Copyright (C) 2018-2020 by Sally "TehRealSalt" Cochenour
-// Copyright (C) 2018-2020 by Kart Krew
+// Copyright (C) by Sally "TehRealSalt" Cochenour
+// Copyright (C) by Kart Krew
 //
 // This program is free software distributed under the
 // terms of the GNU General Public License, version 2.
@@ -45,7 +45,8 @@ extern "C" {
 #define BOT_ITEM_DECISION_TIME (2*TICRATE)
 
 // Point for bots to aim for
-struct botprediction_t {
+struct botprediction_t
+{
 	fixed_t x, y;
 	fixed_t radius, baseRadius;
 };
@@ -178,27 +179,6 @@ boolean K_AddBot(UINT8 skin, UINT8 difficulty, botStyle_e style, UINT8 *p);
 --------------------------------------------------*/
 
 void K_SetBot(UINT8 newplayernum, UINT8 skinnum, UINT8 difficulty, botStyle_e style);
-
-
-/*--------------------------------------------------
-	boolean K_AddBotFromServer(UINT8 skin, UINT8 difficulty, botStyle_e style, UINT8 *newplayernum);
-
-		Adds a new bot, using a server-sided packet sent to all clients.
-		Using regular K_AddBot wherever possible is better, but this is kept
-		as a back-up measure if this is the only option.
-
-	Input Arguments:-
-		skin - Skin number that the bot will use.
-		difficulty - Difficulty level this bot will use.
-		style - Bot style to spawn this bot with, see botStyle_e.
-		newplayernum - Pointer to the last valid player slot number.
-			Is a pointer so that this function can be called multiple times to add more than one bot.
-
-	Return:-
-		true if a bot can be added via a packet later, otherwise false.
---------------------------------------------------*/
-
-boolean K_AddBotFromServer(UINT8 skin, UINT8 difficulty, botStyle_e style, UINT8 *p);
 
 
 /*--------------------------------------------------
