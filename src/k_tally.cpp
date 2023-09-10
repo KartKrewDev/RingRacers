@@ -330,14 +330,11 @@ void level_tally_t::Init(player_t *player)
 		if ((gametypes[gt]->rules & GTR_CIRCUIT) == GTR_CIRCUIT)
 		{
 			laps = player->lapPoints;
+			totalLaps = K_RaceLapCount(gamemap-1);
 
-			if (inDuel == true)
+			if (inDuel == false)
 			{
-				totalLaps = K_RaceLapCount(gamemap);
-			}
-			else
-			{
-				totalLaps = K_RaceLapCount(gamemap) * 2;
+				totalLaps *= 2;
 			}
 		}
 
