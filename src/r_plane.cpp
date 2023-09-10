@@ -236,7 +236,7 @@ static void R_MapPlane(INT32 y, INT32 x1, INT32 x2)
 static void R_MapTiltedPlane(INT32 y, INT32 x1, INT32 x2)
 {
 #ifdef RANGECHECK
-	if (x2 < x1 || x1 < 0 || x2 >= viewwidth || y > viewheight)
+	if (x2 < x1 || x1 < 0 || x2 >= viewwidth || y >= viewheight || y < 0)
 		I_Error("R_MapTiltedPlane: %d, %d at %d", x1, x2, y);
 #endif
 
@@ -248,9 +248,7 @@ static void R_MapTiltedPlane(INT32 y, INT32 x1, INT32 x2)
 	{
 		ds_bgofs = R_CalculateRippleOffset(y);
 
-		ds_sup = &ds_su[y];
-		ds_svp = &ds_sv[y];
-		ds_szp = &ds_sz[y];
+		R_SetTiltedSpan(std::clamp(y, 0, viewheight));
 
 		ds_bgofs >>= FRACBITS;
 
@@ -791,11 +789,11 @@ d->z = (v1.x * v2.y) - (v1.y * v2.x)
 void R_SetTiltedSpan(INT32 span)
 {
 	if (ds_su == NULL)
-		ds_su = static_cast<floatv3_t*>(Z_Malloc(sizeof(*ds_su) * vid.height, PU_STATIC, NULL));
+		ds_su = static_cast<floatv3_t*>(Z_Calloc(sizeof(*ds_su) * vid.height, PU_STATIC, NULL));
 	if (ds_sv == NULL)
-		ds_sv = static_cast<floatv3_t*>(Z_Malloc(sizeof(*ds_sv) * vid.height, PU_STATIC, NULL));
+		ds_sv = static_cast<floatv3_t*>(Z_Calloc(sizeof(*ds_sv) * vid.height, PU_STATIC, NULL));
 	if (ds_sz == NULL)
-		ds_sz = static_cast<floatv3_t*>(Z_Malloc(sizeof(*ds_sz) * vid.height, PU_STATIC, NULL));
+		ds_sz = static_cast<floatv3_t*>(Z_Calloc(sizeof(*ds_sz) * vid.height, PU_STATIC, NULL));
 
 	ds_sup = &ds_su[span];
 	ds_svp = &ds_sv[span];
