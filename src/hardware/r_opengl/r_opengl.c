@@ -580,6 +580,10 @@ static PFNglGetUniformLocation pglGetUniformLocation;
 // 13062019
 typedef enum
 {
+	// textures
+	gluniform_tex,
+	gluniform_brightmap,
+
 	// lighting
 	gluniform_poly_color,
 	gluniform_tint_color,
@@ -703,7 +707,7 @@ static GLRGBAFloat shader_defaultcolor = {1.0f, 1.0f, 1.0f, 1.0f};
 	"}\n"
 
 #define GLSL_SOFTWARE_FADE_EQUATION \
-	"float darkness = R_DoomLightingEquation(lighting);\n" \
+	"float darkness = R_DoomLightingEquation(lighting + light_gain);\n" \
 	"if (fade_start != 0.0 || fade_end != 31.0) {\n" \
 		"float fs = fade_start / 31.0;\n" \
 		"float fe = fade_end / 31.0;\n" \
@@ -746,6 +750,7 @@ static GLRGBAFloat shader_defaultcolor = {1.0f, 1.0f, 1.0f, 1.0f};
 
 #define GLSL_SOFTWARE_FRAGMENT_SHADER \
 	"uniform sampler2D tex;\n" \
+	"uniform sampler2D brightmap;\n" \
 	"uniform vec4 poly_color;\n" \
 	"uniform vec4 tint_color;\n" \
 	"uniform vec4 fade_color;\n" \
@@ -758,6 +763,7 @@ static GLRGBAFloat shader_defaultcolor = {1.0f, 1.0f, 1.0f, 1.0f};
 		"vec4 texel = texture2D(tex, gl_TexCoord[0].st);\n" \
 		"vec4 base_color = texel * poly_color;\n" \
 		"vec4 final_color = base_color;\n" \
+		"float light_gain = (255.0 - lighting) * floor(texture2D(brightmap, gl_TexCoord[0].st).r);\n" \
 		GLSL_SOFTWARE_TINT_EQUATION \
 		GLSL_SOFTWARE_FADE_EQUATION \
 		"final_color.a = texel.a * poly_color.a;\n" \
@@ -768,6 +774,7 @@ static GLRGBAFloat shader_defaultcolor = {1.0f, 1.0f, 1.0f, 1.0f};
 // accompanying vertex shader (stored in gl_Color)
 #define GLSL_SOFTWARE_MODEL_LIGHTING_FRAGMENT_SHADER \
 	"uniform sampler2D tex;\n" \
+	"uniform sampler2D brightmap;\n" \
 	"uniform vec4 poly_color;\n" \
 	"uniform vec4 tint_color;\n" \
 	"uniform vec4 fade_color;\n" \
@@ -780,6 +787,7 @@ static GLRGBAFloat shader_defaultcolor = {1.0f, 1.0f, 1.0f, 1.0f};
 		"vec4 texel = texture2D(tex, gl_TexCoord[0].st);\n" \
 		"vec4 base_color = texel * poly_color;\n" \
 		"vec4 final_color = base_color;\n" \
+		"float light_gain = (255.0 - lighting) * floor(texture2D(brightmap, gl_TexCoord[0].st).r);\n" \
 		GLSL_SOFTWARE_TINT_EQUATION \
 		GLSL_SOFTWARE_FADE_EQUATION \
 		"final_color *= gl_Color;\n" \
@@ -796,6 +804,7 @@ static GLRGBAFloat shader_defaultcolor = {1.0f, 1.0f, 1.0f, 1.0f};
 
 #define GLSL_WATER_FRAGMENT_SHADER \
 	"uniform sampler2D tex;\n" \
+	"uniform sampler2D brightmap;\n" \
 	"uniform vec4 poly_color;\n" \
 	"uniform vec4 tint_color;\n" \
 	"uniform vec4 fade_color;\n" \
@@ -817,6 +826,7 @@ static GLRGBAFloat shader_defaultcolor = {1.0f, 1.0f, 1.0f, 1.0f};
 		"vec4 texel = texture2D(tex, vec2(gl_TexCoord[0].s - sdistort, gl_TexCoord[0].t - cdistort));\n" \
 		"vec4 base_color = texel * poly_color;\n" \
 		"vec4 final_color = base_color;\n" \
+		"float light_gain = (255.0 - lighting) * floor(texture2D(brightmap, gl_TexCoord[0].st).r);\n" \
 		GLSL_SOFTWARE_TINT_EQUATION \
 		GLSL_SOFTWARE_FADE_EQUATION \
 		"final_color.a = texel.a * poly_color.a;\n" \
@@ -840,6 +850,7 @@ static GLRGBAFloat shader_defaultcolor = {1.0f, 1.0f, 1.0f, 1.0f};
 	"void main(void) {\n" \
 		"vec4 base_color = gl_Color;\n" \
 		"vec4 final_color = base_color;\n" \
+		"float light_gain = 0.0;\n" \
 		GLSL_SOFTWARE_TINT_EQUATION \
 		GLSL_SOFTWARE_FADE_EQUATION \
 		"gl_FragColor = final_color;\n" \
@@ -1154,14 +1165,16 @@ EXPORT void HWRAPI(CleanShaders) (void)
 // -----------------+
 // SetNoTexture     : Disable texture
 // -----------------+
-static void SetNoTexture(void)
+static void SetNoTexture(GLenum texture)
 {
 	// Disable texture.
 	if (tex_downloaded != NOTEXTURE_NUM)
 	{
 		if (NOTEXTURE_NUM == 0)
 			pglGenTextures(1, &NOTEXTURE_NUM);
+		pglActiveTexture(texture);
 		pglBindTexture(GL_TEXTURE_2D, NOTEXTURE_NUM);
+		pglActiveTexture(GL_TEXTURE0);
 		tex_downloaded = NOTEXTURE_NUM;
 	}
 }
@@ -1307,7 +1320,7 @@ void SetStates(void)
 	SetBlend(0);
 
 	tex_downloaded = 0;
-	SetNoTexture();
+	SetNoTexture(GL_TEXTURE0);
 
 	pglPolygonOffset(-1.0f, -1.0f);
 
@@ -1782,7 +1795,7 @@ EXPORT void HWRAPI(SetBlend) (FBITFIELD PolyFlags)
 		}
 		if (PolyFlags & PF_NoTexture)
 		{
-			SetNoTexture();
+			SetNoTexture(GL_TEXTURE0);
 		}
 	}
 	CurrentPolyFlags = PolyFlags;
@@ -1906,6 +1919,12 @@ EXPORT void HWRAPI(UpdateTexture) (GLMipmap_t *pTexInfo)
 	else
 		GL_MSG_Warning("UpdateTexture: bad format %d\n", pTexInfo->format);
 
+	if (!(pTexInfo->flags & TF_BRIGHTMAP))
+	{
+		SetNoTexture(GL_TEXTURE1); // will be assigned later, if needed
+	}
+
+	pglActiveTexture(pTexInfo->flags & TF_BRIGHTMAP ? GL_TEXTURE1 : GL_TEXTURE0);
 	pglBindTexture(GL_TEXTURE_2D, num);
 	tex_downloaded = num;
 
@@ -1996,6 +2015,8 @@ EXPORT void HWRAPI(UpdateTexture) (GLMipmap_t *pTexInfo)
 
 	if (maximumAnisotropy)
 		pglTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, anisotropic_filter);
+
+	pglActiveTexture(GL_TEXTURE0);
 }
 
 // -----------------+
@@ -2005,14 +2026,21 @@ EXPORT void HWRAPI(SetTexture) (GLMipmap_t *pTexInfo)
 {
 	if (!pTexInfo)
 	{
-		SetNoTexture();
+		SetNoTexture(GL_TEXTURE0);
 		return;
 	}
 	else if (pTexInfo->downloaded)
 	{
 		if (pTexInfo->downloaded != tex_downloaded)
 		{
+			if (!(pTexInfo->flags & TF_BRIGHTMAP))
+			{
+				SetNoTexture(GL_TEXTURE1); // will be assigned later, if needed
+			}
+
+			pglActiveTexture(pTexInfo->flags & TF_BRIGHTMAP ? GL_TEXTURE1 : GL_TEXTURE0);
 			pglBindTexture(GL_TEXTURE_2D, pTexInfo->downloaded);
+			pglActiveTexture(GL_TEXTURE0);
 			tex_downloaded = pTexInfo->downloaded;
 		}
 	}
@@ -2084,6 +2112,8 @@ static void Shader_SetUniforms(FSurfaceInfo *Surface, GLRGBAFloat *poly, GLRGBAF
 				function (uniform, a, b, c, d);
 
 		// polygon
+		UNIFORM_1(shader->uniforms[gluniform_tex], 0, pglUniform1i);
+		UNIFORM_1(shader->uniforms[gluniform_brightmap], 1, pglUniform1i);
 		UNIFORM_4(shader->uniforms[gluniform_poly_color], poly->red, poly->green, poly->blue, poly->alpha, pglUniform4f);
 		UNIFORM_4(shader->uniforms[gluniform_tint_color], tint->red, tint->green, tint->blue, tint->alpha, pglUniform4f);
 		UNIFORM_4(shader->uniforms[gluniform_fade_color], fade->red, fade->green, fade->blue, fade->alpha, pglUniform4f);
@@ -2182,6 +2212,10 @@ static boolean Shader_CompileProgram(gl_shader_t *shader, GLint i, const GLchar 
 
 	// 13062019
 #define GETUNI(uniform) pglGetUniformLocation(shader->program, uniform);
+
+	// textures
+	shader->uniforms[gluniform_tex] = GETUNI("tex");
+	shader->uniforms[gluniform_brightmap] = GETUNI("brightmap");
 
 	// lighting
 	shader->uniforms[gluniform_poly_color] = GETUNI("poly_color");

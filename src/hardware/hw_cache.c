@@ -443,7 +443,7 @@ static UINT8 *MakeBlock(GLMipmap_t *grMipmap)
 // Create a composite texture from patches, adapt the texture size to a power of 2
 // height and width for the hardware texture cache.
 //
-static void HWR_GenerateTexture(INT32 texnum, INT32 basetexnum, GLMapTexture_t *grtex)
+static void HWR_GenerateTexture(GLMapTexture_t *grtex, INT32 texnum, boolean noencoremap)
 {
 	UINT8 *block;
 	texture_t *texture;
@@ -477,7 +477,7 @@ static void HWR_GenerateTexture(INT32 texnum, INT32 basetexnum, GLMapTexture_t *
 	grtex->mipmap.height = (UINT16)texture->height;
 	grtex->mipmap.format = textureformat;
 
-	if (encoremap && R_TextureCanRemap(basetexnum))
+	if (!noencoremap && encoremap)
 		colormap += COLORMAP_REMAPOFFSET;
 
 	grtex->mipmap.colormap = Z_Calloc(sizeof(*grtex->mipmap.colormap), PU_HWRPATCHCOLMIPMAP, NULL);
@@ -797,7 +797,7 @@ GLMapTexture_t *HWR_GetTexture(INT32 tex, INT32 basetex)
 
 	// Generate texture if missing from the cache
 	if (!grtex->mipmap.data && !grtex->mipmap.downloaded)
-		HWR_GenerateTexture(tex, basetex, grtex);
+		HWR_GenerateTexture(grtex, tex, !R_TextureCanRemap(basetex));
 
 	// If hardware does not have the texture, then call pfnSetTexture to upload it
 	if (!grtex->mipmap.downloaded)
@@ -806,6 +806,29 @@ GLMapTexture_t *HWR_GetTexture(INT32 tex, INT32 basetex)
 
 	// The system-memory data can be purged now.
 	Z_ChangeTag(grtex->mipmap.data, PU_HWRCACHE_UNLOCKED);
+
+	if (R_GetTextureBrightmap(tex))
+	{
+		GLMapTexture_t *grtexbright;
+
+		// Every texture in memory, stored in the
+		// hardware renderer's bit depth format. Wow!
+		grtexbright = &gl_textures[R_GetTextureBrightmap(tex)];
+
+		// Generate texture if missing from the cache
+		if (!grtexbright->mipmap.data && !grtexbright->mipmap.downloaded)
+			HWR_GenerateTexture(grtexbright, R_GetTextureBrightmap(tex), true);
+
+		grtexbright->mipmap.flags |= TF_BRIGHTMAP;
+
+		// If hardware does not have the texture, then call pfnSetTexture to upload it
+		if (!grtexbright->mipmap.downloaded)
+			HWD.pfnSetTexture(&grtexbright->mipmap);
+		HWR_SetCurrentTexture(&grtexbright->mipmap);
+
+		// The system-memory data can be purged now.
+		Z_ChangeTag(grtexbright->mipmap.data, PU_HWRCACHE_UNLOCKED);
+	}
 
 	return grtex;
 }
@@ -966,6 +989,26 @@ void HWR_GetLevelFlat(levelflat_t *levelflat, boolean noencoremap)
 
 		// The system-memory data can be purged now.
 		Z_ChangeTag(grtex->mipmap.data, PU_HWRCACHE_UNLOCKED);
+
+		if ((texturenum = R_GetTextureBrightmap(texturenum)))
+		{
+			// Every texture in memory, stored as a 8-bit flat. Wow!
+			grtex = &gl_flats[texturenum];
+
+			// Generate flat if missing from the cache
+			if (!grtex->mipmap.data && !grtex->mipmap.downloaded)
+				HWR_CacheTextureAsFlat(&grtex->mipmap, texturenum, true);
+
+			grtex->mipmap.flags |= TF_BRIGHTMAP;
+
+			// If hardware does not have the texture, then call pfnSetTexture to upload it
+			if (!grtex->mipmap.downloaded)
+				HWD.pfnSetTexture(&grtex->mipmap);
+			HWR_SetCurrentTexture(&grtex->mipmap);
+
+			// The system-memory data can be purged now.
+			Z_ChangeTag(grtex->mipmap.data, PU_HWRCACHE_UNLOCKED);
+		}
 	}
 	else if (levelflat->type == LEVELFLAT_PATCH)
 	{
