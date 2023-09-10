@@ -1500,7 +1500,7 @@ static void K_BuildBotTiccmdNormal(player_t *player, ticcmd_t *cmd)
 	precise_t t = 0;
 
 	botprediction_t *predict = nullptr;
-	auto predict_finally = srb2::finally([predict]() { Z_Free(predict); });
+	auto predict_finally = srb2::finally([&predict]() { Z_Free(predict); });
 
 	boolean trySpindash = true;
 	angle_t destangle = 0;
