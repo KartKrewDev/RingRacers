@@ -1961,13 +1961,13 @@ void K_drawKartTimestamp(tic_t drawtime, INT32 TX, INT32 TY, INT32 splitflags, U
 
 static fixed_t K_DrawKartPositionNumPatch(UINT8 num, UINT8 *color, fixed_t x, fixed_t y, fixed_t scale, INT32 flags)
 {
-	UINT8 splitIndex = (r_splitscreen > 0) ? 1 : 0;
+	const UINT8 splitIndex = (r_splitscreen > 0) ? 1 : 0;
 	fixed_t w = FRACUNIT;
 	fixed_t h = FRACUNIT;
 	INT32 overlayFlags[2];
 	INT32 i;
 
-	if (num >= 10)
+	if (num > 9)
 	{
 		return x; // invalid input
 	}
@@ -1986,10 +1986,7 @@ static fixed_t K_DrawKartPositionNumPatch(UINT8 num, UINT8 *color, fixed_t x, fi
 	w = SHORT(kp_positionnum[num][0][splitIndex]->width) * scale;
 	h = SHORT(kp_positionnum[num][0][splitIndex]->height) * scale;
 
-	if (flags & V_SNAPTORIGHT)
-	{
-		x -= w;
-	}
+	x -= w;
 
 	if (flags & V_SNAPTOBOTTOM)
 	{
@@ -2006,15 +2003,10 @@ static fixed_t K_DrawKartPositionNumPatch(UINT8 num, UINT8 *color, fixed_t x, fi
 		);
 	}
 
-	if (!(flags & V_SNAPTORIGHT))
-	{
-		x -= w;
-	}
-
 	return x;
 }
 
-static void K_DrawKartPositionNum(INT32 num)
+static void K_DrawKartPositionNum(UINT8 num)
 {
 	const tic_t counter = (leveltime / 3); // Alternate colors every three frames
 	fixed_t scale = FRACUNIT;
@@ -2091,6 +2083,10 @@ static void K_DrawKartPositionNum(INT32 num)
 
 		fx >>= 1;
 		fy >>= 1;
+
+		// We're putting it in the same corner as
+		// the rest of our HUD, so it needs raised.
+		fy -= (21 << FRACBITS);
 	}
 
 	if (trans > 0)
@@ -2128,30 +2124,27 @@ static void K_DrawKartPositionNum(INT32 num)
 		color = R_GetTranslationColormap(TC_DEFAULT, SKINCOLOR_POSNUM, GTC_CACHE);
 	}
 
-	// Special case for 0
-	if (num <= 0)
+	if ((fflags & V_SNAPTORIGHT) == 0 && num > 9)
 	{
-		K_DrawKartPositionNumPatch(
-			0, color,
-			fx, fy, scale, V_SPLITSCREEN|fflags
-		);
-
-		return;
+		const UINT8 splitIndex = (r_splitscreen > 0) ? 1 : 0;
+		UINT8 adjustNum = num;
+		do
+		{
+			fixed_t w = SHORT(kp_positionnum[adjustNum % 10][0][splitIndex]->width) * scale;
+			fx += w;
+			adjustNum /= 10;
+		} while (adjustNum);
 	}
 
 	// Draw the number
-	while (num)
+	do
 	{
-		/*
-
-		*/
-
 		fx = K_DrawKartPositionNumPatch(
 			(num % 10), color,
 			fx, fy, scale, V_SPLITSCREEN|fflags
 		);
 		num /= 10;
-	}
+	} while (num);
 }
 
 static boolean K_drawKartPositionFaces(void)
