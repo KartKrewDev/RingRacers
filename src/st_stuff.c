@@ -1491,9 +1491,12 @@ void ST_Drawer(void)
 			ST_MayonakaStatic();
 	}
 
-	// Draw a fade on level opening
-	if (timeinmap < 16)
-		V_DrawCustomFadeScreen(((levelfadecol == 0) ? "FADEMAP1" : "FADEMAP0"), 31-(timeinmap*2)); // Then gradually fade out from there
+	// See d_main.c and V_DrawCustomFadeScreen for the hacks that prevents this being here
+	/*if (timeinmap < 16)
+	{
+		// Level fade-in
+		V_DrawCustomFadeScreen(((levelfadecol == 0) ? "FADEMAP1" : "FADEMAP0"), 31-(timeinmap*2));
+	}*/
 
 	if (stagetitle)
 		ST_drawTitleCard();

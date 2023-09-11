@@ -580,6 +580,19 @@ static void D_Display(void)
 			// rhi: display the software framebuffer to the screen
 			if (rendermode == render_soft)
 			{
+				// TODO: THIS SHOULD IDEALLY BE IN REGULAR HUD CODE !!
+				// (st_stuff.c ST_Drawer, also duplicated in k_podium.c)
+				// Unfortunately this is the latest place we can do it
+				// If we could immediately tint the GPU data a lot
+				// of problems could be solved (including GL support)
+				if (gamestate != GS_TITLESCREEN
+				&& G_GamestateUsesLevel() == true
+				&& timeinmap < 16)
+				{
+					// Level fade-in
+					V_DrawCustomFadeScreen(((levelfadecol == 0) ? "FADEMAP1" : "FADEMAP0"), 31-(timeinmap*2));
+				}
+
 				VID_DisplaySoftwareScreen();
 			}
 

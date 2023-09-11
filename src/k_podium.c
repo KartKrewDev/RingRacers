@@ -601,11 +601,12 @@ void K_CeremonyDrawer(void)
 		}
 	}
 
-	if (timeinmap < 16)
+	// See d_main.c and V_DrawCustomFadeScreen for the hacks that prevents this being here
+	/*if (timeinmap < 16)
 	{
 		// Level fade-in
 		V_DrawCustomFadeScreen(((levelfadecol == 0) ? "FADEMAP1" : "FADEMAP0"), 31-(timeinmap*2));
-	}
+	}*/
 
 	if (podiumData.state == PODIUM_STATES)
 	{
