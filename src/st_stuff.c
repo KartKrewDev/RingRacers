@@ -117,6 +117,7 @@ void ST_Ticker(boolean run)
 // 0 is default, any others are special palettes.
 INT32 st_palette = 0;
 UINT32 st_translucency = 10;
+fixed_t st_fadein = 0;
 
 void ST_doPaletteStuff(void)
 {
@@ -1424,6 +1425,35 @@ void ST_DrawServerSplash(boolean timelimited)
 	}
 }
 
+static fixed_t ST_CalculateFadeIn(player_t *player)
+{
+	const tic_t length = TICRATE/4;
+
+	if (player->tally.hudSlide != 0)
+	{
+		tic_t timer = length - player->tally.hudSlide;
+
+		return ((timer * FRACUNIT) + (FRACUNIT - rendertimefrac)) / length;
+	}
+
+	tic_t timer = lt_exitticker;
+
+	if (K_CheckBossIntro() == true || G_IsTitleCardAvailable() == false)
+	{
+		if (leveltime <= 16)
+			timer = 0;
+		else
+			timer = leveltime-16;
+	}
+
+	if (timer < length)
+	{
+		return ((timer * FRACUNIT) + rendertimefrac) / length;
+	}
+
+	return FRACUNIT;
+}
+
 void ST_Drawer(void)
 {
 	boolean stagetitle = false; // Decide whether to draw the stage title or not
@@ -1479,6 +1509,7 @@ void ST_Drawer(void)
 		for (i = 0; i <= r_splitscreen; i++)
 		{
 			stplyr = &players[displayplayers[i]];
+			st_fadein = ST_FadeIn(stplyr);
 			R_SetViewContext(VIEWCONTEXT_PLAYER1 + i);
 			R_InterpolateView(rendertimefrac); // to assist with object tracking
 			ST_overlayDrawer();

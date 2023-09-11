@@ -573,33 +573,14 @@ void V_AdjustXYWithSnap(INT32 *x, INT32 *y, UINT32 options, INT32 dupx, INT32 du
 
 	if ((options & V_SLIDEIN))
 	{
-		const tic_t length = TICRATE/4;
-		tic_t timer = lt_exitticker;
-
-		if (K_CheckBossIntro() == true || G_IsTitleCardAvailable() == false)
-		{
-			if (leveltime <= 16)
-				timer = 0;
-			else
-				timer = leveltime-16;
-		}
-
-		if (stplyr->tally.hudSlide != 0)
-		{
-			timer = length - stplyr->tally.hudSlide;
-		}
-
-		if (timer < length)
+		if (st_fadein < FRACUNIT)
 		{
 			if ((options & (V_SNAPTORIGHT|V_SNAPTOLEFT|V_SPLITSCREEN)) != 0)
 			{
 				boolean slidefromright = false;
 
-				const INT32 offsetAmount = (screenwidth * FRACUNIT/2) / length;
-				fixed_t offset = (screenwidth * FRACUNIT/2) - (timer * offsetAmount);
-
-				offset += FixedMul(offsetAmount, renderdeltatics);
-				offset /= FRACUNIT;
+				const fixed_t offsetAmount = (screenwidth * FRACUNIT/2);
+				INT32 offset = (offsetAmount - FixedMul(offsetAmount, st_fadein)) / FRACUNIT;
 
 				if (r_splitscreen > 1)
 				{
@@ -621,11 +602,8 @@ void V_AdjustXYWithSnap(INT32 *x, INT32 *y, UINT32 options, INT32 dupx, INT32 du
 			}
 			else
 			{
-				const INT32 offsetAmount = (screenheight * FRACUNIT/2) / length;
-				fixed_t offset = (screenheight * FRACUNIT/2) - (timer * offsetAmount);
-
-				offset += FixedMul(offsetAmount, renderdeltatics);
-				offset /= FRACUNIT;
+				const fixed_t offsetAmount = (screenheight * FRACUNIT/2);
+				INT32 offset = (offsetAmount - FixedMul(offsetAmount, st_fadein)) / FRACUNIT;
 
 				if (options & V_SNAPTOBOTTOM)
 				{
