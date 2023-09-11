@@ -4276,7 +4276,7 @@ static void K_drawKartMinimap(void)
 		if (localplayers[i] == -1)
 			continue; // this doesn't interest us
 
-		if ((players[i].hyudorotimer > 0) && (leveltime & 1))
+		if ((players[localplayers[i]].hyudorotimer > 0) && (leveltime & 1))
 			continue;
 
 		mobj = players[localplayers[i]].mo;
@@ -4350,7 +4350,7 @@ static void K_drawKartMinimap(void)
 		}
 		else
 		{
-			K_drawKartProgressionMinimapIcon(players[i].distancetofinish, x, y, splitflags, workingPic, colormap);
+			K_drawKartProgressionMinimapIcon(players[localplayers[i]].distancetofinish, x, y, splitflags, workingPic, colormap);
 		}
 	}
 
