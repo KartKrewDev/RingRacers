@@ -3948,12 +3948,7 @@ static void K_drawKartMinimap(void)
 
 	if (dofade)
 	{
-		const tic_t length = TICRATE/2;
-
-		if (!lt_exitticker)
-			return;
-		if (lt_exitticker < length)
-			minimaptrans = (((INT32)lt_exitticker)*minimaptrans)/((INT32)length);
+		minimaptrans = FixedMul(minimaptrans, (st_translucency * FRACUNIT) / 10);
 
 		if (!minimaptrans)
 			return;
