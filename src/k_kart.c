@@ -10149,7 +10149,7 @@ void K_KartEbrakeVisuals(player_t *p)
 		}
 
 		// sound
-		if (!S_SoundPlaying(p->mo, sfx_s3kd9s))
+		if (!S_SoundPlaying(p->mo, sfx_s3kd9s) && (leveltime > starttime || P_IsDisplayPlayer(p)))
 			S_ReducedVFXSound(p->mo, sfx_s3kd9s, p);
 
 		// HOLD! bubble.
