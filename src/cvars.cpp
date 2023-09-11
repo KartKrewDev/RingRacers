@@ -779,6 +779,8 @@ consvar_t cv_debugencorevote = OnlineCheat("debugencorevote", "Off").on_off().de
 void ForceSkin_OnChange(void);
 consvar_t cv_forceskin = OnlineCheat("forcecharacter", "None").onchange(ForceSkin_OnChange).description("Force all players to use one character");
 
+consvar_t cv_fuzz = OnlineCheat("fuzz", "Off").on_off().description("Human players spam random inputs, get random items");
+
 consvar_t cv_kartdebugamount = OnlineCheat("debugitemamount", "1").min_max(1, 255).description("If debugitem, give multiple copies of an item");
 consvar_t cv_kartdebugbots = OnlineCheat("debugbots", "Off").on_off().description("Bot AI debugger");
 consvar_t cv_kartdebugdistribution = OnlineCheat("debugitemodds", "Off").on_off().description("Show items that the roulette can roll");
@@ -809,7 +811,6 @@ consvar_t cv_timescale = OnlineCheat(cvlist_timer)("timescale", "1.0").floating_
 //
 
 consvar_t cv_botscanvote = ServerCheat("botscanvote", "No").yes_no();
-consvar_t cv_debugrank = ServerCheat("debugrank", "Off").on_off().description("Show GP rank state on the HUD");
 
 void Gravity_OnChange(void);
 consvar_t cv_gravity = ServerCheat("gravity", "0.8").floating_point().onchange(Gravity_OnChange).description("Change the default gravity"); // change DEFAULT_GRAVITY if you change this
@@ -825,7 +826,22 @@ consvar_t cv_kartdebugnodes = ServerCheat("debugnodes", "Off").on_off().descript
 // Not saved...
 //
 
+consvar_t cv_1pswap = PlayerCheat("1pswap", "1").min_max(1, MAXSPLITSCREENPLAYERS).description("Let P1's Profile control a different splitscreen player");
+
 consvar_t cv_debugfinishline = PlayerCheat("debugfinishline", "Off").on_off().description("Highlight finish lines and respawn lines with high contrast colors");
+
+consvar_t cv_debugrank = PlayerCheat("debugrank", "Off").description("Show GP rank state on the HUD; optionally force a rank grade").values({
+	{0, "Off"},
+	{1, "On"},
+	// This matches the order of gp_rank_e
+	{2, "E"},
+	{3, "D"},
+	{4, "C"},
+	{5, "B"},
+	{6, "A"},
+	{7, "S"},
+});
+
 consvar_t cv_debugrender_contrast = PlayerCheat("debugrender_contrast", "0.0").floating_point().min_max(-FRACUNIT, FRACUNIT).description("Change level lighting");
 consvar_t cv_debugrender_portal = PlayerCheat("debugrender_portal", "Off").on_off().description("Highlight visual portals in red");
 consvar_t cv_debugrender_spriteclip = PlayerCheat("debugrender_spriteclip", "Off").on_off().description("Let sprites draw through walls");
@@ -838,8 +854,6 @@ consvar_t cv_palettenum = PlayerCheat("palettenum", "0").values(CV_Unsigned).onc
 
 extern CV_PossibleValue_t renderhitbox_cons_t[];
 consvar_t cv_renderhitbox = PlayerCheat("renderhitbox", "Off").values(renderhitbox_cons_t).description("Show hitboxes around objects");
-
-consvar_t cv_fuzz = OnlineCheat("fuzz", "Off").on_off().description("Human players spam random inputs, get random items");
 
 //
 // Dummy variables used solely in the menu system.

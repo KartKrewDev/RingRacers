@@ -13,6 +13,7 @@
 #include <algorithm>
 #include <cmath>
 
+#include "command.h"
 #include "console.h"
 #include "d_player.h"
 #include "d_ticcmd.h"
@@ -38,6 +39,8 @@
 #include "p_tick.h"
 #include "tables.h"
 #include "m_random.h" // monkey input
+
+extern "C" consvar_t cv_1pswap;
 
 namespace
 {
@@ -76,17 +79,34 @@ class TiccmdBuilder
 	ticcmd_t* cmd;
 	INT32 realtics;
 	UINT8 ssplayer;
-	UINT8 viewnum;
+	UINT8 viewnum = G_PartyPosition(g_localplayers[forplayer()]);
+	UINT8 pid = swap_ssplayer() - 1;
 	JoyStickVector2 joystickvector;
 
 	UINT8 forplayer() const { return ssplayer - 1; }
 	player_t* player() const { return &players[g_localplayers[forplayer()]]; }
 
+	UINT8 swap_ssplayer() const
+	{
+		if (ssplayer == cv_1pswap.value)
+		{
+			return 1;
+		}
+		else if (ssplayer == 1)
+		{
+			return cv_1pswap.value;
+		}
+		else
+		{
+			return ssplayer;
+		}
+	}
+
 	// Get the actual sensible radial value for a joystick axis when accounting for a deadzone
 	void handle_axis_deadzone()
 	{
-		INT32 gamepadStyle = Joystick[forplayer()].bGamepadStyle;
-		fixed_t deadZone = cv_deadzone[forplayer()].value;
+		INT32 gamepadStyle = Joystick[pid].bGamepadStyle;
+		fixed_t deadZone = cv_deadzone[pid].value;
 
 		// When gamepadstyle is "true" the values are just -1, 0, or 1. This is done in the interface code.
 		if (gamepadStyle)
@@ -209,7 +229,7 @@ class TiccmdBuilder
 
 	void toggle_freecam_input()
 	{
-		if (M_MenuButtonPressed(forplayer(), MBT_C))
+		if (M_MenuButtonPressed(pid, MBT_C))
 		{
 			P_ToggleDemoCamera();
 		}
@@ -222,13 +242,13 @@ class TiccmdBuilder
 			return false;
 		}
 
-		if (M_MenuButtonPressed(forplayer(), MBT_A))
+		if (M_MenuButtonPressed(pid, MBT_A))
 		{
 			G_AdjustView(ssplayer, 1, true);
 			K_ToggleDirector(false);
 		}
 
-		if (M_MenuButtonPressed(forplayer(), MBT_X))
+		if (M_MenuButtonPressed(pid, MBT_X))
 		{
 			G_AdjustView(ssplayer, -1, true);
 			K_ToggleDirector(false);
@@ -237,12 +257,12 @@ class TiccmdBuilder
 		if (player()->spectator == true)
 		{
 			// duplication of fire
-			if (G_PlayerInputDown(forplayer(), gc_item, 0))
+			if (G_PlayerInputDown(pid, gc_item, 0))
 			{
 				cmd->buttons |= BT_ATTACK;
 			}
 
-			if (M_MenuButtonPressed(forplayer(), MBT_R))
+			if (M_MenuButtonPressed(pid, MBT_R))
 			{
 				K_ToggleDirector(true);
 			}
@@ -260,17 +280,17 @@ class TiccmdBuilder
 			return false;
 		}
 
-		if (G_PlayerInputDown(forplayer(), gc_accel, 0))
+		if (G_PlayerInputDown(pid, gc_accel, 0))
 		{
 			cmd->buttons |= BT_ACCELERATE;
 		}
 
-		if (G_PlayerInputDown(forplayer(), gc_brake, 0))
+		if (G_PlayerInputDown(pid, gc_brake, 0))
 		{
 			cmd->buttons |= BT_BRAKE;
 		}
 
-		if (G_PlayerInputDown(forplayer(), gc_lookback, 0))
+		if (G_PlayerInputDown(pid, gc_lookback, 0))
 		{
 			cmd->aiming -= (joystickvector.yaxis * KART_FULLTURN) / JOYAXISRANGE;
 		}
@@ -293,14 +313,14 @@ class TiccmdBuilder
 	void kart_analog_input()
 	{
 		// forward with key or button // SRB2kart - we use an accel/brake instead of forward/backward.
-		INT32 value = G_PlayerInputAnalog(forplayer(), gc_accel, 0);
+		INT32 value = G_PlayerInputAnalog(pid, gc_accel, 0);
 		if (value != 0)
 		{
 			cmd->buttons |= BT_ACCELERATE;
 			cmd->forwardmove += ((value * MAXPLMOVE) / JOYAXISRANGE);
 		}
 
-		value = G_PlayerInputAnalog(forplayer(), gc_brake, 0);
+		value = G_PlayerInputAnalog(pid, gc_brake, 0);
 		if (value != 0)
 		{
 			cmd->buttons |= BT_BRAKE;
@@ -316,7 +336,7 @@ class TiccmdBuilder
 
 	void analog_input()
 	{
-		joystickvector.xaxis = G_PlayerInputAnalog(forplayer(), gc_right, 0) - G_PlayerInputAnalog(forplayer(), gc_left, 0);
+		joystickvector.xaxis = G_PlayerInputAnalog(pid, gc_right, 0) - G_PlayerInputAnalog(pid, gc_left, 0);
 		joystickvector.yaxis = 0;
 		handle_axis_deadzone();
 
@@ -324,7 +344,7 @@ class TiccmdBuilder
 		// use it for aiming to throw items forward/backward and the vote screen
 		// This mean that the turn axis will still be gradient but up/down will be 0
 		// until the stick is pushed far enough
-		joystickvector.yaxis = G_PlayerInputAnalog(forplayer(), gc_down, 0) - G_PlayerInputAnalog(forplayer(), gc_up, 0);
+		joystickvector.yaxis = G_PlayerInputAnalog(pid, gc_down, 0) - G_PlayerInputAnalog(pid, gc_up, 0);
 
 		if (encoremode)
 		{
@@ -348,7 +368,7 @@ class TiccmdBuilder
 	{
 		auto map = [this](INT32 gamecontrol, UINT32 button)
 		{
-			if (G_PlayerInputDown(forplayer(), gamecontrol, 0))
+			if (G_PlayerInputDown(pid, gamecontrol, 0))
 			{
 				cmd->buttons |= button;
 			}
@@ -370,7 +390,7 @@ class TiccmdBuilder
 
 public:
 	explicit TiccmdBuilder(ticcmd_t* cmd_, INT32 realtics_, UINT8 ssplayer_) :
-		cmd(cmd_), realtics(realtics_), ssplayer(ssplayer_), viewnum(G_PartyPosition(g_localplayers[forplayer()]))
+		cmd(cmd_), realtics(realtics_), ssplayer(ssplayer_)
 	{
 		auto regular_input = [this]
 		{

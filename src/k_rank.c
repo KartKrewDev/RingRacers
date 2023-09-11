@@ -25,6 +25,7 @@
 #include "fastcmp.h"
 #include "byteptr.h"
 #include "k_race.h"
+#include "command.h"
 
 // I was ALMOST tempted to start tearing apart all
 // of the map loading code and turning it into C++
@@ -383,6 +384,15 @@ void K_UpdateGPRank(void)
 --------------------------------------------------*/
 gp_rank_e K_CalculateGPGrade(gpRank_t *rankData)
 {
+	{
+		extern consvar_t cv_debugrank;
+
+		if (cv_debugrank.value >= 2)
+		{
+			return GRADE_E + (cv_debugrank.value - 2);
+		}
+	}
+
 	static const fixed_t gradePercents[GRADE_A] = {
 		 7*FRACUNIT/20,		// D: 35% or higher
 		10*FRACUNIT/20,		// C: 50% or higher
