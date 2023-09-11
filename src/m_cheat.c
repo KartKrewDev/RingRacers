@@ -133,7 +133,7 @@ static UINT8 cheatf_wrongwarp(void)
 #ifdef DEVELOP
 static UINT8 cheatf_devmode(void)
 {
-	UINT16 i;
+	INT32 i;
 
 	if (modifiedgame)
 		return 0;
@@ -144,6 +144,12 @@ static UINT8 cheatf_devmode(void)
 		if (!unlockables[i].conditionset)
 			continue;
 		gamedata->unlocked[i] = true;
+	}
+
+	// Unlock all hidden levels.
+	for (i = 0; i < nummapheaders; i++)
+	{
+		mapheaderinfo[i]->records.mapvisited = MV_MAX;
 	}
 
 	// This is a developer feature, you know how to delete ringdata
