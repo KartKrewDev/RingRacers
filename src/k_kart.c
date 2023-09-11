@@ -8387,7 +8387,9 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		player->tripwireState = TRIPSTATE_NONE;
 	}
 
-	if (player->spectator == false)
+	// If the player is out of the game, these visuals may
+	// look really strange.
+	if (player->spectator == false && !(player->pflags & PF_NOCONTEST))
 	{
 		K_KartEbrakeVisuals(player);
 
