@@ -1172,6 +1172,8 @@ fixed_t P_GetMobjGravity(mobj_t *mo)
 			const fixed_t mult = 3*FRACUNIT + (3 * FixedDiv(mo->player->fastfallBase, unit));
 
 			gravityadd = FixedMul(gravityadd, mult);
+			if (mo->player->curshield == KSHIELD_BUBBLE)
+				gravityadd *= 2;
 		}
 	}
 	else
