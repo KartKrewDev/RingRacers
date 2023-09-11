@@ -6200,10 +6200,10 @@ static void M_DrawMapMedals(INT32 mapnum, INT32 x, INT32 y)
 		lasttype = curtype;
 
 		if (gamedata->collected[emblem-emblemlocations])
-			V_DrawSmallMappedPatch(x, y, 0, W_CachePatchName(M_GetEmblemPatch(emblem, false), PU_CACHE),
+			V_DrawMappedPatch(x, y, 0, W_CachePatchName(M_GetEmblemPatch(emblem, false), PU_CACHE),
 				R_GetTranslationColormap(TC_DEFAULT, M_GetEmblemColor(emblem), GTC_MENUCACHE));
 		else
-			V_DrawSmallScaledPatch(x, y, 0, W_CachePatchName("NEEDIT", PU_CACHE));
+			V_DrawScaledPatch(x, y, 0, W_CachePatchName("NEEDIT", PU_CACHE));
 
 		emblem = M_GetLevelEmblems(-1);
 		x -= 8;
@@ -6221,8 +6221,8 @@ static void M_DrawMapMedals(INT32 mapnum, INT32 x, INT32 y)
 
 		if (col < numskincolors)
 		{
-			V_DrawSmallMappedPatch(x, y, 0, W_CachePatchName("GOTCAN", PU_CACHE),
-				R_GetTranslationColormap(TC_RAINBOW, col, GTC_MENUCACHE));
+			V_DrawMappedPatch(x, y, 0, W_CachePatchName("GOTCAN", PU_CACHE),
+				R_GetTranslationColormap(TC_DEFAULT, col, GTC_MENUCACHE));
 			//V_DrawRightAlignedThinString(x - 2, y, 0, skincolors[col].name);
 		}
 		x -= 8;
@@ -6247,7 +6247,7 @@ static void M_DrawStatsMaps(void)
 	INT32 mapsunfinished = 0;
 
 	V_DrawThinString(30, 60, 0, va("x %d/%d", statisticsmenu.gotmedals, statisticsmenu.nummedals));
-	V_DrawSmallMappedPatch(20, 60, 0, W_CachePatchName("GOTITA", PU_CACHE),
+	V_DrawMappedPatch(20, 60, 0, W_CachePatchName("GOTITA", PU_CACHE),
 				                       R_GetTranslationColormap(TC_DEFAULT, SKINCOLOR_GOLD, GTC_MENUCACHE));
 
 	INT32 medalspos = BASEVIDWIDTH - 20;
@@ -6443,12 +6443,12 @@ static void M_DrawStatsMaps(void)
 				UINT16 color = min(unlockables[i].color, numskincolors-1);
 				if (!color)
 					color = SKINCOLOR_GOLD;
-				V_DrawSmallMappedPatch(291, y+1, 0, W_CachePatchName("GOTITA", PU_CACHE),
+				V_DrawMappedPatch(291, y+1, 0, W_CachePatchName("GOTITA", PU_CACHE),
 				                       R_GetTranslationColormap(TC_DEFAULT, color, GTC_MENUCACHE));
 			}
 			else
 			{
-				V_DrawSmallScaledPatch(291, y+1, 0, W_CachePatchName("NEEDIT", PU_CACHE));
+				V_DrawScaledPatch(291, y+1, 0, W_CachePatchName("NEEDIT", PU_CACHE));
 			}
 
 			V_DrawThinString(24, y, 0, va("%s", unlockables[i].name));
