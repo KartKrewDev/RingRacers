@@ -1475,21 +1475,27 @@ void ST_Drawer(void)
 #endif
 		if (rendermode != render_none) ST_doPaletteStuff();
 
-	{
-#if 0
-		const tic_t length = TICRATE/2;
+	fixed_t localfadein[MAXSPLITSCREENPLAYERS];
 
-		if (lt_exitticker)
+	// HUD fading for anything not tied to a single player,
+	// i.e. the minimap. Since individual splitscreen
+	// players' HUDs may fade away before other's, use the
+	// the last one remaining.
+	{
+		fixed_t maxFade = 0;
+		UINT8 i;
+
+		for (i = 0; i <= r_splitscreen; i++)
 		{
-			st_translucency = cv_translucenthud.value;
-			if (lt_exitticker < length)
-				st_translucency = (((INT32)(lt_ticker - lt_endtime))*st_translucency)/((INT32)length);
+			localfadein[i] = ST_CalculateFadeIn(&players[displayplayers[i]]);
+
+			if (localfadein[i] > maxFade)
+			{
+				maxFade = localfadein[i];
+			}
 		}
-		else
-			st_translucency = 0;
-#else
-		st_translucency = cv_translucenthud.value;
-#endif
+
+		st_translucency = FixedMul(10, maxFade);
 	}
 
 	// Check for a valid level title
@@ -1509,7 +1515,7 @@ void ST_Drawer(void)
 		for (i = 0; i <= r_splitscreen; i++)
 		{
 			stplyr = &players[displayplayers[i]];
-			st_fadein = ST_FadeIn(stplyr);
+			st_fadein = localfadein[i];
 			R_SetViewContext(VIEWCONTEXT_PLAYER1 + i);
 			R_InterpolateView(rendertimefrac); // to assist with object tracking
 			ST_overlayDrawer();

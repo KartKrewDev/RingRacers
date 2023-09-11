@@ -1172,14 +1172,6 @@ static int libd_getlocaltransflag(lua_State *L)
 	return 1;
 }
 
-// Get cv_translucenthud's value for HUD rendering as a normal V_xxTRANS int
-static int libd_getusertransflag(lua_State *L)
-{
-	HUDONLY
-	lua_pushinteger(L, (10-cv_translucenthud.value)*V_10TRANS);	// A bit weird that it's called "translucenthud" yet 10 is fully opaque :V
-	return 1;
-}
-
 // Return the time elapsed for the previous frame, in tics.
 static int libd_getDeltaTime(lua_State *L)
 {
@@ -1226,7 +1218,6 @@ static luaL_Reg lib_draw[] = {
 	{"renderer", libd_renderer},
 	{"localTransFlag", libd_getlocaltransflag},
 	{"drawOnMinimap", libd_drawOnMinimap},
-	{"userTransFlag", libd_getusertransflag},
 	{"getDeltaTime", libd_getDeltaTime},
 	{NULL, NULL}
 };

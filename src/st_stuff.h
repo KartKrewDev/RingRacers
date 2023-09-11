@@ -86,7 +86,7 @@ boolean ST_SameTeam(player_t *a, player_t *b);
 
 extern boolean st_overlay; // sb overlay on or off when fullscreen
 extern INT32 st_palette; // 0 is default, any others are special palettes.
-extern UINT32 st_translucency;
+extern UINT32 st_translucency; // HUD fading for elements not attached to specific players
 extern fixed_t st_fadein; // transitioning value per player, FRACUNIT = fully in view
 
 extern lumpnum_t st_borderpatchnum;

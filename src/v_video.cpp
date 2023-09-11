@@ -734,6 +734,39 @@ static inline UINT8 transmappedpdraw(const UINT8 *dest, const UINT8 *source, fix
 	return *(v_translevel + (((*(v_colormap + source[ofs>>FRACBITS]))<<8)&0xff00) + (*dest&0xff));
 }
 
+UINT32 V_GetHUDTranslucency(INT32 scrn)
+{
+	if (scrn & V_SLIDEIN)
+	{
+		return 10;
+	}
+
+	if (scrn & V_SPLITSCREEN)
+	{
+		return FixedMul(10, st_fadein);
+	}
+
+	return st_translucency;
+}
+
+static UINT32 V_GetAlphaLevel(INT32 scrn)
+{
+	switch (scrn & V_ALPHAMASK)
+	{
+	case V_HUDTRANSHALF:
+		return hudminusalpha[V_GetHUDTranslucency(scrn)];
+
+	case V_HUDTRANS:
+		return 10 - V_GetHUDTranslucency(scrn);
+
+	case V_HUDTRANSDOUBLE:
+		return hudplusalpha[V_GetHUDTranslucency(scrn)];
+
+	default:
+		return (scrn & V_ALPHAMASK) >> V_ALPHASHIFT;
+	}
+}
+
 // Draws a patch scaled to arbitrary size.
 void V_DrawStretchyFixedPatch(fixed_t x, fixed_t y, fixed_t pscale, fixed_t vscale, INT32 scrn, patch_t *patch, const UINT8 *colormap)
 {
@@ -759,18 +792,8 @@ void V_DrawStretchyFixedPatch(fixed_t x, fixed_t y, fixed_t pscale, fixed_t vsca
 
 	if ((blendmode = ((scrn & V_BLENDMASK) >> V_BLENDSHIFT)))
 		blendmode++; // realign to constants
-	if ((alphalevel = ((scrn & V_ALPHAMASK) >> V_ALPHASHIFT)))
-	{
-		if (alphalevel == 10) // V_HUDTRANSHALF
-			alphalevel = hudminusalpha[st_translucency];
-		else if (alphalevel == 11) // V_HUDTRANS
-			alphalevel = 10 - st_translucency;
-		else if (alphalevel == 12) // V_HUDTRANSDOUBLE
-			alphalevel = hudplusalpha[st_translucency];
-
-		if (alphalevel >= 10) // Still inelegible to render?
-			return;
-	}
+	if ((alphalevel = V_GetAlphaLevel(scrn)) >= 10)
+		return;
 
 	dupx = vid.dupx;
 	dupy = vid.dupy;
@@ -1108,18 +1131,8 @@ void V_DrawFillConsoleMap(INT32 x, INT32 y, INT32 w, INT32 h, INT32 c)
 	}
 #endif
 
-	if ((alphalevel = ((c & V_ALPHAMASK) >> V_ALPHASHIFT)))
-	{
-		if (alphalevel == 10) // V_HUDTRANSHALF
-			alphalevel = hudminusalpha[st_translucency];
-		else if (alphalevel == 11) // V_HUDTRANS
-			alphalevel = 10 - st_translucency;
-		else if (alphalevel == 12) // V_HUDTRANSDOUBLE
-			alphalevel = hudplusalpha[st_translucency];
-
-		if (alphalevel >= 10) // Still inelegible to render?
-			return;
-	}
+	if ((alphalevel = V_GetAlphaLevel(c)) >= 10)
+		return;
 
 	if (!(c & V_NOSCALESTART))
 	{
