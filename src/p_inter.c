@@ -1134,7 +1134,7 @@ boolean P_CheckRacers(void)
 	// SO, we're not done playing.
 	// Let's see if it's time to start the death counter!
 
-	if (racecountdown == 0)
+	if (racecountdown == 0 && K_Cooperative() == false)
 	{
 		// If the winners are all done, then start the death timer.
 		UINT8 winningPos = max(1, numPlaying / 2);
