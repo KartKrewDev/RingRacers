@@ -4213,9 +4213,15 @@ static void K_HandleTumbleBounce(player_t *player)
 
 	if (player->markedfordeath)
 	{
+		if (player->exiting == false && specialstageinfo.valid == true)
+		{
+			// markedfordeath is when player's die at -20 rings
+			HU_DoTitlecardCEcho(player, "NOT ENOUGH\\RINGS...", false);
+		}
+
 		player->markedfordeath = false;
 		P_StartQuakeFromMobj(5, 32 * player->mo->scale, 512 * player->mo->scale, player->mo);
-		P_KillMobj(player->mo, NULL, NULL, DMG_INSTAKILL);
+		P_DamageMobj(player->mo, NULL, NULL, 1, DMG_INSTAKILL);
 		return;
 	}
 

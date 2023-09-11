@@ -2071,7 +2071,10 @@ static boolean P_KillPlayer(player_t *player, mobj_t *inflictor, mobj_t *source,
 
 		if (player->exiting == false && specialstageinfo.valid == true)
 		{
-			HU_DoTitlecardCEcho(player, "FALL OUT!", false);
+			if (type == DMG_DEATHPIT)
+			{
+				HU_DoTitlecardCEcho(player, "FALL OUT!", false);
+			}
 
 			// This must be done before the condition to set
 			// destscale = 1, so any special stage death
@@ -2079,7 +2082,7 @@ static boolean P_KillPlayer(player_t *player, mobj_t *inflictor, mobj_t *source,
 			P_DoPlayerExit(player, PF_NOCONTEST);
 		}
 
-		if (player->exiting)
+		if (player->exiting && type == DMG_DEATHPIT)
 		{
 			// If the player already finished the race, and
 			// they fall into a death pit afterward, their
