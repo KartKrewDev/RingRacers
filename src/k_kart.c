@@ -11567,7 +11567,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 						case KITEM_SUPERRING:
 							if (ATTACK_IS_DOWN && !HOLDING_ITEM && NO_HYUDORO)
 							{
-								K_AwardPlayerRings(player, 10, true);
+								K_AwardPlayerRings(player, 20, true);
 								player->itemamount--;
 							}
 							break;
