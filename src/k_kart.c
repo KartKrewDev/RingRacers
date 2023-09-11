@@ -4215,7 +4215,7 @@ static void K_HandleTumbleBounce(player_t *player)
 	{
 		player->markedfordeath = false;
 		P_StartQuakeFromMobj(5, 32 * player->mo->scale, 512 * player->mo->scale, player->mo);
-		P_KillMobj(player->mo, NULL, NULL, DMG_INSTAKILL);
+		P_DamageMobj(player->mo, NULL, NULL, 1, DMG_INSTAKILL);
 		return;
 	}
 
