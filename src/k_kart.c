@@ -11428,9 +11428,12 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 									if (player->bubbleblowup > bubbletime*2)
 									{
 										K_ThrowKartItem(player, (player->throwdir > 0), MT_BUBBLESHIELDTRAP, -1, 0, 0);
-										P_InstaThrust(player->mo, player->mo->angle, player->speed + (80 * mapobjectscale));
-										player->sliptideZipBoost += TICRATE; // Just for keeping speed briefly vs. tripwire etc.
-										// If this doesn't turn out to be reliable, I'll change it to directly set leniency or something.
+										if (player->throwdir == -1)
+										{
+											P_InstaThrust(player->mo, player->mo->angle, player->speed + (80 * mapobjectscale));
+											player->sliptideZipBoost += TICRATE; // Just for keeping speed briefly vs. tripwire etc.
+											// If this doesn't turn out to be reliable, I'll change it to directly set leniency or something.
+										}
 										K_PlayAttackTaunt(player->mo);
 										player->bubbleblowup = 0;
 										player->bubblecool = 0;
