@@ -659,6 +659,66 @@ static void R_ConvertBrightmapColumn(UINT8 *p, const column_t *tcol, const colum
 	p[-3] = 0xff;
 }
 
+struct rawcheckcolumn_state
+{
+	softwarepatch_t *patch;
+	size_t data_size;
+	boolean error;
+	const char *name;
+};
+
+static void R_InitRawCheckColumn(
+		struct rawcheckcolumn_state *state,
+		softwarepatch_t *patch,
+		size_t size,
+		const char *name
+)
+{
+	state->patch = patch;
+	state->data_size = size;
+	state->error = (patch == NULL);
+	state->name = name;
+}
+
+static void R_CheckRawColumn_Error(struct rawcheckcolumn_state *state, const char *error)
+{
+	if (state->error)
+	{
+		return;
+	}
+
+	CONS_Alert(CONS_WARNING, "%.8s: %s\n", state->name, error);
+
+	state->error = true;
+}
+
+static column_t *R_CheckRawColumn(struct rawcheckcolumn_state *state, INT32 x)
+{
+	static column_t empty = {0xff, 0};
+
+	if (state->error)
+	{
+		return &empty;
+	}
+
+	if (x < SHORT(state->patch->width))
+	{
+		size_t ofs = LONG(state->patch->columnofs[x]);
+
+		if (ofs < state->data_size)
+		{
+			return (column_t*)((UINT8*)state->patch + ofs);
+		}
+		else
+		{
+			R_CheckRawColumn_Error(state, "Patch column offsets go out of bounds."
+					" Make sure the lump is in Doom Graphics format and not a Flat or PNG or anything else.");
+		}
+	}
+
+	return &empty;
+}
+
 // Remember, this function must generate a texture that
 // matches the layout of texnum. It must have the same width
 // and same columns. Only the pixels that overlap are copied
@@ -684,14 +744,20 @@ UINT8 *R_GenerateTextureBrightmap(size_t texnum)
 
 	R_CheckTextureCache(texnum);
 
-	softwarepatch_t *patch = NULL;
-	INT32 bmap_width = 0;
-	column_t empty = {0xff, 0};
+	softwarepatch_t *bmap = NULL;
+	struct rawcheckcolumn_state rchk;
 
 	if (R_TextureHasBrightmap(texnum) && R_CheckTextureLumpLength(bright, 0))
 	{
-		patch = W_CacheLumpNumPwad(bright->patches[0].wad, bright->patches[0].lump, PU_STATIC);
-		bmap_width = SHORT(patch->width);
+		INT32 wad = bright->patches[0].wad;
+		INT32 lump = bright->patches[0].lump;
+
+		bmap = W_CacheLumpNumPwad(wad, lump, PU_STATIC);
+		R_InitRawCheckColumn(&rchk, bmap, W_LumpLengthPwad(wad, lump), bright->name);
+	}
+	else
+	{
+		R_InitRawCheckColumn(&rchk, NULL, 0, bright->name);
 	}
 
 	UINT8 *block;
@@ -708,7 +774,7 @@ UINT8 *R_GenerateTextureBrightmap(size_t texnum)
 		for (x = 0; x < texture->width; ++x)
 		{
 			const column_t *tcol = (column_t*)(R_GetColumn(texnum, x) - 3);
-			const column_t *bcol = x < bmap_width ? (column_t*)((UINT8*)patch + LONG(patch->columnofs[x])) : &empty;
+			const column_t *bcol = R_CheckRawColumn(&rchk, x);
 
 			R_ConvertBrightmapColumn(block + LONG(texturecolumnofs[texnum][x]), tcol, bcol);
 		}
@@ -727,16 +793,16 @@ UINT8 *R_GenerateTextureBrightmap(size_t texnum)
 		for (x = 0; x < texture->width; ++x)
 		{
 			R_DrawColumnInCache(
-					x < bmap_width ? (column_t*)((UINT8*)patch + LONG(patch->columnofs[x])) : &empty,
+					R_CheckRawColumn(&rchk, x),
 					block + LONG(texturecolumnofs[texnum][x]),
 					&origin,
 					texture->height,
-					patch->height
+					SHORT(bmap->height)
 			);
 		}
 	}
 
-	Z_Free(patch);
+	Z_Free(bmap);
 
 	return block;
 }
