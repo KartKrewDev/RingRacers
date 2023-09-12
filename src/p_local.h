@@ -543,8 +543,8 @@ void P_CheckPointLimit(void);
 boolean P_CheckRacers(void);
 
 boolean P_CanPickupItem(player_t *player, UINT8 weapon);
-boolean P_IsPickupCheesy(player_t *player, UINT8 weapon);
-void P_UpdateLastPickup(player_t *player, UINT8 weapon);
+boolean P_IsPickupCheesy(player_t *player, UINT8 type);
+void P_UpdateLastPickup(player_t *player, UINT8 type);
 boolean P_CanPickupEmblem(player_t *player, INT32 emblemID);
 boolean P_EmblemWasCollected(INT32 emblemID);
 
