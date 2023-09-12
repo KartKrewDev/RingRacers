@@ -572,7 +572,7 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 				return;
 
 			// Don't immediately pick up spilled rings
-			if (special->threshold > 0 || P_PlayerInPain(player))
+			if (special->threshold > 0 || P_PlayerInPain(player) || player->spindash) // player->spindash: Otherwise, players can pick up rings that are thrown out of them from invinc spindash penalty
 				return;
 
 			if (!(P_CanPickupItem(player, 0)))
