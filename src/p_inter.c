@@ -389,6 +389,7 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 			special->flags &= ~MF_SPECIAL;
 			return;
 		case MT_RANDOMITEM:
+			// -Wpedantic label wackness
 			UINT8 cheesetype = (special->flags2 & MF2_AMBUSH) ? 2 : 1;
 
 			if (!P_CanPickupItem(player, 1))
