@@ -10,6 +10,7 @@
 /// \file  ufo.c
 /// \brief Special Stage UFO + Emerald handler
 
+#include "../command.h"
 #include "../doomdef.h"
 #include "../doomstat.h"
 #include "../info.h"
@@ -337,8 +338,63 @@ waypoint_t *K_GetSpecialUFOWaypoint(mobj_t *ufo)
 	return NULL;
 }
 
+static void UFOMoveToDistance(mobj_t *ufo, UINT32 distancetofinish)
+{
+	waypoint_t *finishline = K_GetFinishLineWaypoint();
+	const boolean useshortcuts = false;
+	const boolean huntbackwards = true;
+	path_t pathtofinish = {0};
+
+	if (finishline == NULL)
+	{
+		return;
+	}
+
+	boolean pathfindsuccess = K_PathfindThruCircuit(
+		finishline,
+		distancetofinish,
+		&pathtofinish,
+		useshortcuts,
+		huntbackwards
+	);
+
+	if (pathfindsuccess == false)
+	{
+		return;
+	}
+
+	pathfindnode_t *node = &pathtofinish.array[pathtofinish.numnodes - 1];
+
+	if (node->camefrom != NULL)
+	{
+		UINT32 a_to_b = (node->gscore - node->camefrom->gscore);
+		UINT32 overshot = (node->gscore - distancetofinish);
+		fixed_t f = FixedDiv(overshot, max(1, a_to_b));
+
+		mobj_t *a = ((waypoint_t*)node->camefrom->nodedata)->mobj;
+		mobj_t *b = ((waypoint_t*)node->nodedata)->mobj;
+
+		UFOMoveTo(
+			ufo,
+			b->x - FixedMul(f, b->x - a->x),
+			b->y - FixedMul(f, b->y - a->y),
+			b->z - FixedMul(f, b->z - a->z)
+		);
+	}
+
+	Z_Free(pathtofinish.array);
+}
+
 static void UFOMove(mobj_t *ufo)
 {
+	extern consvar_t cv_ufo_follow;
+
+	if (cv_ufo_follow.value)
+	{
+		UFOMoveToDistance(ufo, players[cv_ufo_follow.value - 1].distancetofinish);
+		return;
+	}
+
 	waypoint_t *curWaypoint = NULL;
 	waypoint_t *destWaypoint = NULL;
 
