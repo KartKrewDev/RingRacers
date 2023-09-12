@@ -8245,6 +8245,9 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 	player->incontrol = min(player->incontrol, 5*TICRATE);
 	player->incontrol = max(player->incontrol, -5*TICRATE);
 
+	if (P_PlayerInPain(player))
+		player->lastpickuptype = -1; // got your ass beat, go grab anything
+
 	if (player->tumbleBounces > 0)
 	{
 		K_HandleTumbleSound(player);

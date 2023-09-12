@@ -388,6 +388,8 @@ static void P_NetArchivePlayers(savebuffer_t *save)
 		WRITEUINT8(save->p, players[i].positiondelay);
 		WRITEUINT32(save->p, players[i].distancetofinish);
 		WRITEUINT32(save->p, players[i].distancetofinishprev);
+		WRITEUINT32(save->p, players[i].lastpickupdistance);
+		WRITEUINT8(save->p, players[i].lastpickuptype);
 		WRITEUINT32(save->p, K_GetWaypointHeapIndex(players[i].currentwaypoint));
 		WRITEUINT32(save->p, K_GetWaypointHeapIndex(players[i].nextwaypoint));
 		WRITEUINT32(save->p, players[i].airtime);
@@ -860,6 +862,8 @@ static void P_NetUnArchivePlayers(savebuffer_t *save)
 		players[i].positiondelay = READUINT8(save->p);
 		players[i].distancetofinish = READUINT32(save->p);
 		players[i].distancetofinishprev = READUINT32(save->p);
+		players[i].lastpickupdistance = READUINT32(save->p);
+		players[i].lastpickuptype = READUINT8(save->p);
 		players[i].currentwaypoint = (waypoint_t *)(size_t)READUINT32(save->p);
 		players[i].nextwaypoint = (waypoint_t *)(size_t)READUINT32(save->p);
 		players[i].airtime = READUINT32(save->p);
