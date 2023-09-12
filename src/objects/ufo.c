@@ -552,8 +552,34 @@ static void UFOUpdateSound(mobj_t *ufo) {
 	}
 }
 
+static void UFODebugSetHealth(mobj_t *ufo, UINT8 health)
+{
+	if (ufo->health == health + 1 || UFOEmeraldChase(ufo) == true)
+	{
+		return;
+	}
+
+	extern consvar_t cv_ufo_follow;
+
+	UINT8 pnum = max(1, cv_ufo_follow.value) - 1;
+	mobj_t *source = players[pnum].mo;
+
+	if (playeringame[pnum] == false || P_MobjWasRemoved(source) == true)
+	{
+		return;
+	}
+
+	ufo->health = health + 2;
+	Obj_SpecialUFODamage(ufo, ufo, source, DMG_NORMAL); // does 1 damage, updates pieces
+}
+
 void Obj_SpecialUFOThinker(mobj_t *ufo)
 {
+	{
+		extern consvar_t cv_ufo_health;
+		UFODebugSetHealth(ufo, cv_ufo_health.value);
+	}
+
 	UFOMove(ufo);
 	UFOUpdateAngle(ufo);
 	UFOUpdateDistanceToFinish(ufo);
@@ -772,6 +798,11 @@ static UINT8 GetUFODamage(mobj_t *inflictor, UINT8 damageType)
 			{
 				// Players deal damage relative to how many sneakers they used.
 				return 15 * max(1, inflictor->player->numsneakers);
+			}
+			case MT_SPECIAL_UFO:
+			{
+				// UFODebugSetHealth
+				return 1;
 			}
 			default:
 			{

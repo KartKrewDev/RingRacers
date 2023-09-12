@@ -803,6 +803,7 @@ consvar_t cv_restrictskinchange = OnlineCheat("restrictskinchange", "Yes").yes_n
 consvar_t cv_spbtest = OnlineCheat("spbtest", "Off").on_off().description("SPB can never target a player");
 consvar_t cv_timescale = OnlineCheat(cvlist_timer)("timescale", "1.0").floating_point().min_max(FRACUNIT/20, 20*FRACUNIT).description("Overclock or slow down the game");
 consvar_t cv_ufo_follow = OnlineCheat("ufo_follow", "0").min_max(0, MAXPLAYERS).description("Make UFO Catcher folow this player");
+consvar_t cv_ufo_health = OnlineCheat("ufo_health", "100").min_max(0, 100).description("Override UFO Catcher health -- applied at spawn or when value is changed");
 
 
 //
