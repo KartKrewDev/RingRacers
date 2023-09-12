@@ -1198,6 +1198,12 @@ void G_DoLoadLevel(boolean resetplayer)
 //
 void G_StartTitleCard(void)
 {
+	// clear the hud
+	CON_ClearHUD();
+
+	// prepare status bar
+	ST_startTitleCard(); // <-- always must be called to init some variables
+
 	// The title card has been disabled for this map.
 	// Oh well.
 	if (demo.rewinding || !G_IsTitleCardAvailable())
@@ -1205,12 +1211,6 @@ void G_StartTitleCard(void)
 		WipeStageTitle = false;
 		return;
 	}
-
-	// clear the hud
-	CON_ClearHUD();
-
-	// prepare status bar
-	ST_startTitleCard();
 
 	// play the sound
 	if (gamestate != GS_CEREMONY)

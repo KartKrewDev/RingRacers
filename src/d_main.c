@@ -587,10 +587,10 @@ static void D_Display(void)
 				// of problems could be solved (including GL support)
 				if (gamestate != GS_TITLESCREEN
 				&& G_GamestateUsesLevel() == true
-				&& timeinmap < 16)
+				&& lt_fade < 16)
 				{
 					// Level fade-in
-					V_DrawCustomFadeScreen(((levelfadecol == 0) ? "FADEMAP1" : "FADEMAP0"), 31-(timeinmap*2));
+					V_DrawCustomFadeScreen(((levelfadecol == 0) ? "FADEMAP1" : "FADEMAP0"), 31-(lt_fade*2));
 				}
 
 				VID_DisplaySoftwareScreen();
