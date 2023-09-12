@@ -12,9 +12,6 @@ menuitem_t OPTIONS_HUD[] =
 	{IT_STRING | IT_CVAR, "Show HUD (F3)", "Toggles HUD display. Great for taking screenshots!",
 		NULL, {.cvar = &cv_showhud}, 0, 0},
 
-	{IT_STRING | IT_CVAR | IT_CV_SLIDER, "HUD Opacity", "Non opaque values may have performance impacts in software mode.",
-		NULL, {.cvar = &cv_translucenthud}, 0, 0},
-
 	{IT_SPACE | IT_NOTHING, NULL,  NULL,
 		NULL, {NULL}, 0, 0},
 

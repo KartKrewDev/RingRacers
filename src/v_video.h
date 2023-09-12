@@ -155,10 +155,6 @@ void V_CubeApply(RGBA_t *input);
 #define V_HUDTRANSHALF       0x000A0000
 #define V_HUDTRANS           0x000B0000 // draw the hud translucent
 #define V_HUDTRANSDOUBLE     0x000C0000
-// Macros follow
-#define V_USERHUDTRANSHALF   ((10-(cv_translucenthud.value/2))<<V_ALPHASHIFT)
-#define V_USERHUDTRANS       ((10-cv_translucenthud.value)<<V_ALPHASHIFT)
-#define V_USERHUDTRANSDOUBLE ((10-min(cv_translucenthud.value*2, 10))<<V_ALPHASHIFT)
 
 // use bits 21-23 for blendmodes
 #define V_BLENDSHIFT         20
@@ -181,6 +177,8 @@ void V_CubeApply(RGBA_t *input);
 
 #define V_NOSCALESTART       0x40000000 // don't scale x, y, start coords
 #define V_SPLITSCREEN        0x80000000 // Add half of screen width or height automatically depending on player number
+
+UINT32 V_GetHUDTranslucency(INT32 scrn);
 
 void V_AdjustXYWithSnap(INT32 *x, INT32 *y, UINT32 options, INT32 dupx, INT32 dupy);
 

@@ -446,7 +446,6 @@ consvar_t cv_splitplayers = Player("splitplayers", "One").values({{1, "One"}, {2
 
 consvar_t cv_ticrate = Player(cvlist_screen)("showfps", "No").yes_no();
 consvar_t cv_tilting = Player("tilting", "On").on_off();
-consvar_t cv_translucenthud = Player("translucenthud", "10").min_max(0, 10);
 
 // first time memory
 consvar_t cv_tutorialprompt = Player("tutorialprompt", "On").on_off();
