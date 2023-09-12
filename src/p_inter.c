@@ -439,7 +439,10 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 					break;
 			}
 
-			P_UpdateLastPickup(player, 3);
+			// Ring Capsules shouldn't affect pickup cheese, they're just used as condensed ground-ring placements.
+			if (special->threshold != KITEM_SUPERRING)
+				P_UpdateLastPickup(player, 3);
+
 			S_StartSound(toucher, special->info->deathsound);
 			P_KillMobj(special, toucher, toucher, DMG_NORMAL);
 			return;
