@@ -10593,6 +10593,10 @@ static void K_AirFailsafe(player_t *player)
 		return;
 	}
 
+	// Maps with "drop-in" POSITION areas (Dragonspire, Hydrocity) cause problems if we allow failsafe.
+	if (leveltime < introtime)
+		return;
+
 	if ((K_GetKartButtons(player) & BT_ACCELERATE) || K_GetForwardMove(player) != 0)
 	{
 		// Queue up later
