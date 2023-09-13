@@ -2312,7 +2312,7 @@ boolean P_ZMovement(mobj_t *mo)
 			break;
 
 		case MT_EMERALD:
-			if (P_CheckDeathPitCollide(mo))
+			if (!(mo->flags & MF_NOCLIPHEIGHT) && P_CheckDeathPitCollide(mo))
 			{
 				P_RemoveMobj(mo);
 				return false;
