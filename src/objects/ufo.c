@@ -391,7 +391,10 @@ static void UFOMove(mobj_t *ufo)
 
 	if (cv_ufo_follow.value)
 	{
-		UFOMoveToDistance(ufo, players[cv_ufo_follow.value - 1].distancetofinish);
+		if (playeringame[cv_ufo_follow.value - 1])
+		{
+			UFOMoveToDistance(ufo, players[cv_ufo_follow.value - 1].distancetofinish);
+		}
 		return;
 	}
 
