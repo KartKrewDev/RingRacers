@@ -12443,8 +12443,14 @@ void P_SprayCanInit(mobj_t* mobj)
 	// Prevent footguns - these won't persist when custom levels are unloaded
 	else if (gamemap-1 < basenummapheaders)
 	{
-		// Unassigned, get the next grabbable colour
+		// Unassigned, get the next grabbable colour (offset by threshold)
 		can_id = gamedata->gotspraycans;
+
+		// It's ok if this goes over gamedata->numspraycans, as they're
+		// capped below in this func... but NEVER let this go backwards!!
+		if (mobj->threshold != 0)
+			can_id += (mobj->threshold & UINT8_MAX);
+
 		mobj->renderflags = 0;
 	}
 
@@ -12920,17 +12926,15 @@ static boolean P_SetupSpawnedMapThing(mapthing_t *mthing, mobj_t *mobj)
 	}
 	case MT_SPRAYCAN:
 	{
-		if (nummapspraycans)
+		if (nummapspraycans == UINT8_MAX)
 		{
-			if (nummapspraycans != UINT8_MAX)
-				nummapspraycans++;
-
 			P_RemoveMobj(mobj);
 			return false;
 		}
 
 		P_SetScale(mobj, mobj->destscale = 2*mobj->scale);
 
+		mobj->threshold = nummapspraycans;
 		P_SprayCanInit(mobj);
 		nummapspraycans++;
 		break;
