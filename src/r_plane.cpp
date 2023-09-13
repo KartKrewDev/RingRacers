@@ -365,16 +365,27 @@ visplane_t *R_FindPlane(fixed_t height, INT32 picnum, INT32 lightlevel,
 
 	if (!slope) // Don't mess with this right now if a slope is involved
 	{
-		xoff += viewx;
-		yoff -= viewy;
 		if (plangle != 0)
 		{
+			// Must use 64-bit math to avoid an overflow!
+			INT64 vx = xoff + viewx;
+			INT64 vy = yoff - viewy;
+
 			// Add the view offset, rotated by the plane angle.
 			float ang = ANG2RAD(plangle);
-			float x = FixedToFloat(xoff);
-			float y = FixedToFloat(yoff);
-			xoff = FloatToFixed(x * cos(ang) + y * sin(ang));
-			yoff = FloatToFixed(-x * sin(ang) + y * cos(ang));
+			float x = vx / (float)FRACUNIT;
+			float y = vy / (float)FRACUNIT;
+
+			vx = (x * cos(ang) + y * sin(ang)) * FRACUNIT;
+			vy = (-x * sin(ang) + y * cos(ang)) * FRACUNIT;
+
+			xoff = vx;
+			yoff = vy;
+		}
+		else
+		{
+			xoff += viewx;
+			yoff -= viewy;
 		}
 	}
 
