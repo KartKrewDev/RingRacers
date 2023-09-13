@@ -2195,9 +2195,9 @@ boolean P_CheckDeathPitCollide(mobj_t *mo)
 		const sectorflags_t flags = mo->subsector->sector->flags;
 
 		return (
-			   (mo->z <= mo->subsector->sector->floorheight
+			   (mo->z <= mo->floorz
 				&& ((flags & MSF_TRIGGERSPECIAL_HEADBUMP) || !flipped) && (flags & MSF_FLIPSPECIAL_FLOOR))
-			|| (mo->z + mo->height >= mo->subsector->sector->ceilingheight
+			|| (mo->z + mo->height >= mo->ceilingz
 				&& ((flags & MSF_TRIGGERSPECIAL_HEADBUMP) || flipped) && (flags & MSF_FLIPSPECIAL_CEILING))
 		);
 	}
