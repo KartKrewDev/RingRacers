@@ -166,6 +166,7 @@ Environment::Environment()
 	addFuncDataACS0( 311, addCallFunc(CallFunc_TimeAttack));
 	addFuncDataACS0( 312, addCallFunc(CallFunc_ThingCount));
 	addFuncDataACS0( 313, addCallFunc(CallFunc_GrandPrix));
+	addFuncDataACS0( 314, addCallFunc(CallFunc_GetGrabbedSprayCan));
 
 	addFuncDataACS0( 500, addCallFunc(CallFunc_CameraWait));
 	addFuncDataACS0( 501, addCallFunc(CallFunc_PodiumPosition));

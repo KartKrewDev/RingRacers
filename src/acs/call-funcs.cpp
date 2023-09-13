@@ -1714,6 +1714,42 @@ bool CallFunc_GrandPrix(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::W
 	return false;
 }
 
+/*--------------------------------------------------
+	bool CallFunc_GetGrabbedSprayCan(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
+
+		Returns the level's associated Spray Can, if grabbed.
+--------------------------------------------------*/
+bool CallFunc_GetGrabbedSprayCan(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
+{
+	Environment *env = &ACSEnv;
+
+	(void)argV;
+	(void)argC;
+
+	if (netgame == false // cans are per-player and completely unsyncable
+	&& gamemap-1 < basenummapheaders)
+	{
+		// See also P_SprayCanInit
+		UINT16 can_id = mapheaderinfo[gamemap-1]->cache_spraycan;
+
+		if (can_id < gamedata->numspraycans)
+		{
+			UINT16 col = gamedata->spraycans[can_id].col;
+
+			thread->dataStk.push(~env->getString( skincolors[col].name )->idx);
+			return false;
+		}
+
+		if (gamedata->gotspraycans >= gamedata->numspraycans)
+		{
+			thread->dataStk.push(~env->getString( "_Completed" )->idx);
+			return false;
+		}
+	}
+
+	thread->dataStk.push(0);
+	return false;
+}
 
 /*--------------------------------------------------
 	bool CallFunc_PodiumPosition(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
