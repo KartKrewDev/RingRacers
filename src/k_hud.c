@@ -5435,7 +5435,7 @@ void K_drawKartHUD(void)
 				K_drawKartPlayerCheck();
 
 		// nametags
-		if (LUA_HudEnabled(hud_names))
+		if (LUA_HudEnabled(hud_names) && cv_drawpickups.value)
 			K_drawKartNameTags();
 
 		// Draw WANTED status

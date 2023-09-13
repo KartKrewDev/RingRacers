@@ -3720,6 +3720,7 @@ boolean R_ThingVisible (mobj_t *thing)
 			case MT_OVERLAY: // mostly capsule numbers :)))
 			case MT_BATTLECAPSULE:
 			case MT_BATTLECAPSULE_PIECE:
+			case MT_SPRAYCAN:
 				return false;
 
 			default:
