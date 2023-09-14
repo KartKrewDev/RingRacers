@@ -11385,7 +11385,11 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 							}
 							break;
 						case KITEM_GARDENTOP:
-							if (ATTACK_IS_DOWN && NO_HYUDORO)
+							if (player->curshield == KSHIELD_TOP && K_GetGardenTop(player) == NULL)
+							{
+								Obj_GardenTopDeploy(player->mo);
+							}
+							else if (ATTACK_IS_DOWN && NO_HYUDORO)
 							{
 								if (player->curshield != KSHIELD_TOP)
 								{

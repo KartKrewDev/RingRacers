@@ -411,6 +411,13 @@ anchor_top (mobj_t *top)
 		return;
 	}
 
+	/* Rider lost track of this object. */
+	if (rider_top(rider) != top)
+	{
+		P_RemoveMobj(top);
+		return;
+	}
+
 	tilt(top);
 
 	anchor(top, rider, rider->angle, 0);
