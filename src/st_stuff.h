@@ -74,6 +74,7 @@ void ST_preLevelTitleCardDrawer(void);
 
 extern tic_t lt_ticker, lt_lasttic;
 extern tic_t lt_exitticker, lt_endtime;
+extern tic_t lt_fade;
 
 void ST_DrawServerSplash(boolean timelimited);
 

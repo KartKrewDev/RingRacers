@@ -541,6 +541,7 @@ void ST_drawDebugInfo(void)
 
 tic_t lt_ticker = 0, lt_lasttic = 0;
 tic_t lt_exitticker = 0, lt_endtime = 0;
+tic_t lt_fade = 0;
 
 // SRB2KART: HUD shit for new titlecards:
 static patch_t *tcchev1;
@@ -590,6 +591,7 @@ INT32 eggx1, eggx2, eggy1, eggy2;
 #define BASE_CHEV2Y (135)
 
 #define TTANIMTHRESHOLD (TICRATE)
+#define TTFADESTART (TTANIMTHRESHOLD-4)
 #define TTANIMSTART (TTANIMTHRESHOLD-16)
 #define TTANIMENDTHRESHOLD (TICRATE*3)
 #define TTANIMEND (TICRATE*4)
@@ -673,6 +675,7 @@ void ST_startTitleCard(void)
 	// initialize HUD variables
 	lt_ticker = lt_exitticker = lt_lasttic = 0;
 	lt_endtime = 4*TICRATE;	// + (10*NEWTICRATERATIO);
+	lt_fade = 0;
 }
 
 //
@@ -699,6 +702,11 @@ void ST_runTitleCard(void)
 	boolean run = !(paused || P_AutoPause());
 	INT32 auxticker;
 	boolean doroundicon = (marathonmode || (roundqueue.size > 0 && roundqueue.position > 0));
+
+	if (run && lt_fade < 16)
+	{
+		lt_fade++;
+	}
 
 	if (!G_IsTitleCardAvailable())
 		return;
@@ -740,9 +748,20 @@ void ST_runTitleCard(void)
 			}
 			// No matter the circumstances, scroll the WARN...
 			bannerx = -((lt_ticker*2)%((encoremode ? twarn2 : twarn)->width));
+
+			if (run && lt_ticker < PRELEVELTIME)
+			{
+				lt_fade--;
+			}
 		}
 		else
 		{
+			// LEVEL FADE
+			if (run && lt_ticker < TTFADESTART)
+			{
+				lt_fade--; // don't fade yet
+			}
+
 			// TITLECARD START
 			if (lt_ticker < TTANIMSTART)
 			{
@@ -1529,10 +1548,10 @@ void ST_Drawer(void)
 	}
 
 	// See d_main.c and V_DrawCustomFadeScreen for the hacks that prevents this being here
-	/*if (timeinmap < 16)
+	/*if (lt_fade < 16)
 	{
 		// Level fade-in
-		V_DrawCustomFadeScreen(((levelfadecol == 0) ? "FADEMAP1" : "FADEMAP0"), 31-(timeinmap*2));
+		V_DrawCustomFadeScreen(((levelfadecol == 0) ? "FADEMAP1" : "FADEMAP0"), 31-(lt_fade*2));
 	}*/
 
 	if (stagetitle)
