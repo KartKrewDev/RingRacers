@@ -2194,12 +2194,11 @@ boolean P_CheckDeathPitCollide(mobj_t *mo)
 		const boolean flipped = (mo->eflags & MFE_VERTICALFLIP);
 		const sectorflags_t flags = mo->subsector->sector->flags;
 
-		return (
-			   (mo->z <= mo->floorz
-				&& ((flags & MSF_TRIGGERSPECIAL_HEADBUMP) || !flipped) && (flags & MSF_FLIPSPECIAL_FLOOR))
-			|| (mo->z + mo->height >= mo->ceilingz
-				&& ((flags & MSF_TRIGGERSPECIAL_HEADBUMP) || flipped) && (flags & MSF_FLIPSPECIAL_CEILING))
-		);
+		if (((flags & MSF_TRIGGERSPECIAL_HEADBUMP) || !flipped) && (flags & MSF_FLIPSPECIAL_FLOOR))
+			return (mo->z <= P_GetSpecialBottomZ(mo, mo->subsector->sector, mo->subsector->sector));
+
+		if (((flags & MSF_TRIGGERSPECIAL_HEADBUMP) || flipped) && (flags & MSF_FLIPSPECIAL_CEILING))
+			return (mo->z + mo->height >= P_GetSpecialTopZ(mo, mo->subsector->sector, mo->subsector->sector));
 	}
 
 	return false;
