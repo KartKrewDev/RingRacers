@@ -2469,9 +2469,10 @@ void G_MovePlayerToSpawnOrCheatcheck(INT32 playernum)
 		mobj_t *checkpoint;
 		vector3_t pos;
 
-		if (players[playernum].checkpointId &&
-			(checkpoint = Obj_FindCheckpoint(players[playernum].checkpointId)) &&
-			Obj_GetCheckpointRespawnPosition(checkpoint, &pos))
+		if ((gametyperules & GTR_CHECKPOINTS)
+			&& players[playernum].checkpointId
+			&& (checkpoint = Obj_FindCheckpoint(players[playernum].checkpointId))
+			&& Obj_GetCheckpointRespawnPosition(checkpoint, &pos))
 		{
 			respawnvars_t *rsp = &players[playernum].respawn;
 
@@ -3057,7 +3058,7 @@ static gametype_t defaultgametypes[] =
 	{
 		"Tutorial",
 		"GT_TUTORIAL",
-		GTR_NOMP|GTR_NOCUPSELECT|GTR_NOPOSITION,
+		GTR_CHECKPOINTS|GTR_NOMP|GTR_NOCUPSELECT|GTR_NOPOSITION,
 		TOL_TUTORIAL,
 		int_none,
 		0,
