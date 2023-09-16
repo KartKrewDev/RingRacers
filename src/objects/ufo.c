@@ -295,7 +295,7 @@ static void UFOUpdateSpeed(mobj_t *ufo)
 				SpawnEmeraldSpeedLines(ufo);
 		}
 		else if (ufo_speed(ufo) > 70*FRACUNIT && !S_SoundPlaying(ufo, sfx_clawzm))
-		{			
+		{
 			S_StartSound(ufo, sfx_clawzm);
 		}
 	}
@@ -580,7 +580,10 @@ void Obj_SpecialUFOThinker(mobj_t *ufo)
 {
 	{
 		extern consvar_t cv_ufo_health;
-		UFODebugSetHealth(ufo, cv_ufo_health.value);
+		if (cv_ufo_health.value != -1)
+		{
+			UFODebugSetHealth(ufo, cv_ufo_health.value);
+		}
 	}
 
 	UFOMove(ufo);
@@ -700,7 +703,7 @@ static void UFOCopyHitlagToPieces(mobj_t *ufo)
 		{
 			spawn_debris (piece);
 		}
-	
+
 		piece = ufo_piece_next(piece);
 	}
 }
