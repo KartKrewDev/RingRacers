@@ -12,6 +12,8 @@
 
 #include "../rhi/rhi.hpp"
 
+#include <unordered_map>
+
 namespace srb2::hwr2
 {
 
