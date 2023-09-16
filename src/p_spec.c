@@ -9268,16 +9268,15 @@ void T_Pusher(pusher_t *p)
 				thing->player->carry = CR_SLIDING;
 				thing->angle = R_PointToAngle2(0, 0, xspeed, yspeed);
 
-				
-				if (!demo.playback)
-				{
-					angle_t angle = thing->player->boostangle;
-					if (thing->angle - angle > ANGLE_180)
-						thing->player->boostangle = angle - (angle - thing->angle) / 8;
-					else
-						thing->player->boostangle = angle + (thing->angle - angle) / 8; 
-					//P_SetPlayerAngle(thing->player, thing->angle);
-				}
+				// Previously modified boostangle, and didn't run in demo playback.
+				// (Probably because SRB2's demo format was already storing and applying the camera changes made here?)
+				// Whatever the case, this is drawangle now so that players don't fly out of pusher setpieces.
+				angle_t angle = thing->player->drawangle;
+				if (thing->angle - angle > ANGLE_180)
+					thing->player->drawangle = angle - (angle - thing->angle) / 8;
+				else
+					thing->player->drawangle = angle + (thing->angle - angle) / 8; 
+				//P_SetPlayerAngle(thing->player, thing->angle);
 				
 			}
 
