@@ -1291,7 +1291,7 @@ bool CallFunc_PlayerRings(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM:
 /*--------------------------------------------------
 	bool CallFunc_PlayerScore(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
 
-		Returns the activating player's ring count.
+		Returns the activating player's roundscore.
 --------------------------------------------------*/
 bool CallFunc_PlayerScore(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
 {
@@ -1724,11 +1724,11 @@ bool CallFunc_EncoreMode(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::
 }
 
 /*--------------------------------------------------
-	bool CallFunc_BreakTheCapsules(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
+	bool CallFunc_PrisonBreak(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
 
-		Returns if the map is in Break the Capsules.
+		Returns if the map is in Prison Break mode.
 --------------------------------------------------*/
-bool CallFunc_BreakTheCapsules(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
+bool CallFunc_PrisonBreak(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
 {
 	(void)argV;
 	(void)argC;
