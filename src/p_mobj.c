@@ -11339,13 +11339,21 @@ void P_RemoveMobj(mobj_t *mobj)
 
 		if (mobj->hnext && !P_MobjWasRemoved(mobj->hnext))
 		{
-			P_SetTarget(&mobj->hnext->hprev, mobj->hprev);
+			if (mobj->hnext->hprev == mobj)
+			{
+				P_SetTarget(&mobj->hnext->hprev, mobj->hprev);
+			}
+
 			P_SetTarget(&mobj->hnext, NULL);
 		}
 
 		if (mobj->hprev && !P_MobjWasRemoved(mobj->hprev))
 		{
-			P_SetTarget(&mobj->hprev->hnext, cachenext);
+			if (mobj->hprev->hnext == mobj)
+			{
+				P_SetTarget(&mobj->hprev->hnext, cachenext);
+			}
+
 			P_SetTarget(&mobj->hprev, NULL);
 		}
 	}

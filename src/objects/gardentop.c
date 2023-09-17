@@ -411,6 +411,13 @@ anchor_top (mobj_t *top)
 		return;
 	}
 
+	/* Rider lost track of this object. */
+	if (rider_top(rider) != top)
+	{
+		P_RemoveMobj(top);
+		return;
+	}
+
 	tilt(top);
 
 	anchor(top, rider, rider->angle, 0);
@@ -578,17 +585,17 @@ Obj_GardenTopThrow (player_t *player)
 		   should fall off. */
 		P_SetOrigin(player->mo, player->mo->x, player->mo->y,
 				player->mo->z + height * P_MobjFlip(player->mo));
-
-		if (player->itemamount > 0)
-			player->itemamount--;
-
-		if (player->itemamount <= 0)
-			player->itemtype = KITEM_NONE;
-
-		player->curshield = KSHIELD_NONE;
-
-		player->mo->radius = K_DefaultPlayerRadius(player);
 	}
+
+	if (player->itemamount > 0)
+		player->itemamount--;
+
+	if (player->itemamount <= 0)
+		player->itemtype = KITEM_NONE;
+
+	player->curshield = KSHIELD_NONE;
+
+	player->mo->radius = K_DefaultPlayerRadius(player);
 
 	return top;
 }
