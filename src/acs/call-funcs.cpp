@@ -681,6 +681,12 @@ bool CallFunc_DialogueWaitDismiss(ACSVM::Thread *thread, const ACSVM::Word *argV
 	(void)argV;
 	(void)argC;
 
+	// TODO when we move away from g_dialogue
+	if (netgame)
+	{
+		return false;
+	}
+
 	g_dialogue.SetDismissable(true);
 
 	thread->state = {
@@ -702,6 +708,12 @@ bool CallFunc_DialogueWaitText(ACSVM::Thread *thread, const ACSVM::Word *argV, A
 {
 	(void)argV;
 	(void)argC;
+
+	// TODO when we move away from g_dialogue
+	if (netgame)
+	{
+		return false;
+	}
 
 	g_dialogue.SetDismissable(false);
 
@@ -1977,6 +1989,12 @@ bool CallFunc_DialogueSetSpeaker(ACSVM::Thread *thread, const ACSVM::Word *argV,
 
 	(void)argC;
 
+	// TODO when we move away from g_dialogue
+	if (netgame)
+	{
+		return false;
+	}
+
 	map = thread->scopeMap;
 
 	skinStr = map->getString(argV[0]);
@@ -2014,6 +2032,12 @@ bool CallFunc_DialogueSetCustomSpeaker(ACSVM::Thread *thread, const ACSVM::Word 
 	sfxenum_t voiceID = sfx_ktalk;
 
 	(void)argC;
+
+	// TODO when we move away from g_dialogue
+	if (netgame)
+	{
+		return false;
+	}
 
 	map = thread->scopeMap;
 
@@ -2095,6 +2119,12 @@ bool CallFunc_DialogueNewText(ACSVM::Thread *thread, const ACSVM::Word *argV, AC
 	const char *text = nullptr;
 
 	(void)argC;
+
+	// TODO when we move away from g_dialogue
+	if (netgame)
+	{
+		return false;
+	}
 
 	map = thread->scopeMap;
 

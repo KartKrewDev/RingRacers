@@ -301,6 +301,12 @@ bool Environment::checkTag(ACSVM::Word type, ACSVM::Word tag)
 
 		case ACS_TAGTYPE_DIALOGUE:
 		{
+			// TODO when we move away from g_dialogue
+			if (netgame)
+			{
+				return true;
+			}
+
 			if (tag == 0) // cheeky reuse
 			{
 				// wait for dismissal
