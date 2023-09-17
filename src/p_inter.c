@@ -388,7 +388,7 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 
 			special->flags &= ~MF_SPECIAL;
 			return;
-		case MT_RANDOMITEM:
+		case MT_RANDOMITEM: {
 			UINT8 cheesetype = (special->flags2 & MF2_AMBUSH) ? 2 : 1;
 
 			if (!P_CanPickupItem(player, 1))
@@ -407,6 +407,7 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 			P_ItemPop(special);
 			special->fuse = TICRATE;
 			return;
+		}
 		case MT_SPHEREBOX:
 			if (!P_CanPickupItem(player, 0))
 				return;
