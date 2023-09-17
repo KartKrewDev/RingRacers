@@ -28,4 +28,5 @@ target_sources(SRB2SDL2 PRIVATE
 	dash-rings.c
 	sneaker-panel.c
 	emerald.c
+	checkpoint.cpp
 )

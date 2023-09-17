@@ -2794,7 +2794,16 @@ static void P_DeathThink(player_t *player)
 
 	if (playerGone == false && player->deadtimer > TICRATE)
 	{
-		player->playerstate = PST_REBORN;
+		if (!netgame && !splitscreen
+		&& player->bot == false
+		&& (gametyperules & GTR_CHECKPOINTS))
+		{
+			G_SetRetryFlag();
+		}
+		else
+		{
+			player->playerstate = PST_REBORN;
+		}
 	}
 
 	// TODO: support splitscreen

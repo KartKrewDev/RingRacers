@@ -71,6 +71,7 @@
 #include "k_zvote.h"
 #include "music.h"
 #include "k_roulette.h"
+#include "k_objects.h"
 
 #ifdef HAVE_DISCORDRPC
 #include "discord.h"
@@ -2044,6 +2045,7 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	UINT16 nocontrol;
 	INT32 khudfault;
 	INT32 kickstartaccel;
+	INT32 checkpointId;
 	boolean enteredGame;
 
 	roundconditions_t roundconditions;
@@ -2249,6 +2251,8 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 		skyboxviewpoint = skyboxcenterpoint = NULL;
 	}
 
+	checkpointId = players[player].checkpointId;
+
 	enteredGame = players[player].enteredGame;
 
 	p = &players[player];
@@ -2305,6 +2309,7 @@ void G_PlayerReborn(INT32 player, boolean betweenmaps)
 	p->karthud[khud_fault] = khudfault;
 	p->nocontrol = nocontrol;
 	p->kickstartaccel = kickstartaccel;
+	p->checkpointId = checkpointId;
 
 	p->ringvolume = 255;
 
@@ -2453,19 +2458,40 @@ void G_SpawnPlayer(INT32 playernum)
 
 void G_MovePlayerToSpawnOrCheatcheck(INT32 playernum)
 {
-#if 0
-	if (leveltime <= introtime && !players[playernum].spectator)
-		P_MovePlayerToSpawn(playernum, G_FindMapStart(playernum));
-	else
-		P_MovePlayerToCheatcheck(playernum);
-#else
 	// Player's first spawn should be at the "map start".
 	// I.e. level load or join mid game.
 	if (leveltime > starttime && players[playernum].jointime > 1 && K_PodiumSequence() == false)
+	{
 		P_MovePlayerToCheatcheck(playernum);
+	}
 	else
-		P_MovePlayerToSpawn(playernum, G_FindMapStart(playernum));
-#endif
+	{
+		mobj_t *checkpoint;
+		vector3_t pos;
+
+		if ((gametyperules & GTR_CHECKPOINTS)
+			&& players[playernum].checkpointId
+			&& (checkpoint = Obj_FindCheckpoint(players[playernum].checkpointId))
+			&& Obj_GetCheckpointRespawnPosition(checkpoint, &pos))
+		{
+			respawnvars_t *rsp = &players[playernum].respawn;
+
+			rsp->wp = NULL;
+			rsp->pointx = pos.x;
+			rsp->pointy = pos.y;
+			rsp->pointz = pos.z;
+
+			players[playernum].mo->angle = Obj_GetCheckpointRespawnAngle(checkpoint);
+
+			Obj_ActivateCheckpointInstantly(checkpoint);
+
+			P_MovePlayerToCheatcheck(playernum);
+		}
+		else
+		{
+			P_MovePlayerToSpawn(playernum, G_FindMapStart(playernum));
+		}
+	}
 }
 
 mapthing_t *G_FindTeamStart(INT32 playernum)
@@ -3032,7 +3058,7 @@ static gametype_t defaultgametypes[] =
 	{
 		"Tutorial",
 		"GT_TUTORIAL",
-		GTR_NOMP|GTR_NOCUPSELECT|GTR_NOPOSITION,
+		GTR_CHECKPOINTS|GTR_NOMP|GTR_NOCUPSELECT|GTR_NOPOSITION,
 		TOL_TUTORIAL,
 		int_none,
 		0,
@@ -5668,6 +5694,11 @@ void G_InitNew(UINT8 pencoremode, INT32 map, boolean resetplayer, boolean skippr
 			players[i].xtralife = 0;
 			players[i].totalring = 0;
 			players[i].score = 0;
+		}
+
+		if (resetplayer || map != gamemap)
+		{
+			players[i].checkpointId = 0;
 		}
 	}
 

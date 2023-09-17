@@ -622,25 +622,26 @@ enum GameTypeRules
 	GTR_ITEMARROWS			= 1<<9,		// Show item box arrows above players
 
 	// Bonus gametype rules
-	GTR_PRISONS				= 1<<10,	// Can enter Prison Break mode
-	GTR_CATCHER				= 1<<11,	// UFO Catcher (only works with GTR_CIRCUIT)
-	GTR_ROLLINGSTART		= 1<<12,	// Rolling start (only works with GTR_CIRCUIT)
-	GTR_SPECIALSTART		= 1<<13,	// White fade instant start
-	GTR_BOSS				= 1<<14,	// Boss intro and spawning
+	GTR_CHECKPOINTS			= 1<<10,	// Player respawns at specific checkpoints
+	GTR_PRISONS				= 1<<11,	// Can enter Prison Break mode
+	GTR_CATCHER				= 1<<12,	// UFO Catcher (only works with GTR_CIRCUIT)
+	GTR_ROLLINGSTART		= 1<<13,	// Rolling start (only works with GTR_CIRCUIT)
+	GTR_SPECIALSTART		= 1<<14,	// White fade instant start
+	GTR_BOSS				= 1<<15,	// Boss intro and spawning
 
 	// General purpose rules
-	GTR_POINTLIMIT			= 1<<15,	// Reaching point limit ends the round
-	GTR_TIMELIMIT			= 1<<16,	// Reaching time limit ends the round
-	GTR_OVERTIME			= 1<<17,	// Allow overtime behavior
-	GTR_ENCORE				= 1<<18,	// Alternate Encore mirroring, scripting, and texture remapping
+	GTR_POINTLIMIT			= 1<<16,	// Reaching point limit ends the round
+	GTR_TIMELIMIT			= 1<<17,	// Reaching time limit ends the round
+	GTR_OVERTIME			= 1<<18,	// Allow overtime behavior
+	GTR_ENCORE				= 1<<19,	// Alternate Encore mirroring, scripting, and texture remapping
 
-	GTR_TEAMS				= 1<<19,	// Teams are forced on
-	GTR_NOTEAMS				= 1<<20,	// Teams are forced off
-	GTR_TEAMSTARTS			= 1<<21,	// Use team-based start positions
+	GTR_TEAMS				= 1<<20,	// Teams are forced on
+	GTR_NOTEAMS				= 1<<21,	// Teams are forced off
+	GTR_TEAMSTARTS			= 1<<22,	// Use team-based start positions
 
-	GTR_NOMP				= 1<<22,	// No multiplayer
-	GTR_NOCUPSELECT			= 1<<23,	// Your maps are not selected via cup.
-	GTR_NOPOSITION			= 1<<24,	// No POSITION
+	GTR_NOMP				= 1<<23,	// No multiplayer
+	GTR_NOCUPSELECT			= 1<<24,	// Your maps are not selected via cup.
+	GTR_NOPOSITION			= 1<<25,	// No POSITION
 
 	// free: to and including 1<<31
 };

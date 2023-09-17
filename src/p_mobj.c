@@ -567,7 +567,7 @@ static boolean P_SetPrecipMobjState(precipmobj_t *mobj, statenum_t state)
 //
 // Special utility to return +1 or -1 depending on mobj's gravity
 //
-SINT8 P_MobjFlip(mobj_t *mobj)
+SINT8 P_MobjFlip(const mobj_t *mobj)
 {
 	if (mobj && mobj->eflags & MFE_VERTICALFLIP)
 		return -1;
@@ -6728,6 +6728,9 @@ static void P_MobjSceneryThink(mobj_t *mobj)
 	case MT_ARKARROW:
 		Obj_ArkArrowThink(mobj);
 		break;
+	case MT_CHECKPOINT_END:
+		Obj_CheckpointThink(mobj);
+		break;
 	case MT_SCRIPT_THING:
 	{
 		if (mobj->thing_args[2] != 0)
@@ -10416,6 +10419,7 @@ static void P_DefaultMobjShadowScale(mobj_t *thing)
 		case MT_CDUFO:
 		case MT_BATTLEUFO:
 		case MT_SPRAYCAN:
+		case MT_CHECKPOINT_END:
 			thing->shadowscale = FRACUNIT;
 			break;
 		case MT_SMALLMACE:
@@ -11293,6 +11297,11 @@ void P_RemoveMobj(mobj_t *mobj)
 			Obj_UnlinkBattleUFOSpawner(mobj);
 			break;
 		}
+		case MT_CHECKPOINT_END:
+		{
+			Obj_UnlinkCheckpoint(mobj);
+			break;
+		}
 		default:
 		{
 			break;
@@ -11379,7 +11388,7 @@ void P_RemoveMobj(mobj_t *mobj)
 
 // This does not need to be added to Lua.
 // To test it in Lua, check mobj.valid
-boolean P_MobjWasRemoved(mobj_t *mobj)
+boolean P_MobjWasRemoved(const mobj_t *mobj)
 {
 	if (mobj && mobj->thinker.function.acp1 == (actionf_p1)P_MobjThinker)
 		return false;
@@ -12307,6 +12316,10 @@ static boolean P_AllowMobjSpawn(mapthing_t* mthing, mobjtype_t i)
 	{
 		case MT_RING:
 			if (modeattacking & ATTACKING_SPB)
+				return false;
+			break;
+		case MT_CHECKPOINT_END:
+			if (!(gametyperules & GTR_CHECKPOINTS))
 				return false;
 			break;
 		default:
@@ -13631,6 +13644,11 @@ static boolean P_SetupSpawnedMapThing(mapthing_t *mthing, mobj_t *mobj)
 	case MT_SNEAKERPANELSPAWNER:
 	{
 		Obj_SneakerPanelSpawnerSetup(mobj, mthing);
+		break;
+	}
+	case MT_CHECKPOINT_END:
+	{
+		Obj_LinkCheckpoint(mobj);
 		break;
 	}
 	default:

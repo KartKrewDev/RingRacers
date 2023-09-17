@@ -4653,6 +4653,22 @@ const char *const STATE_LIST[] = { // array length left dynamic for sanity testi
 	"S_BATTLEUFO_BEAM2",
 
 	"S_POWERUP_AURA",
+
+	"S_CHECKPOINT",
+	"S_CHECKPOINT_ARM",
+	"S_CHECKPOINT_ORB_DEAD",
+	"S_CHECKPOINT_ORB_LIVE",
+	"S_CHECKPOINT_SPARK1",
+	"S_CHECKPOINT_SPARK2",
+	"S_CHECKPOINT_SPARK3",
+	"S_CHECKPOINT_SPARK4",
+	"S_CHECKPOINT_SPARK5",
+	"S_CHECKPOINT_SPARK6",
+	"S_CHECKPOINT_SPARK7",
+	"S_CHECKPOINT_SPARK8",
+	"S_CHECKPOINT_SPARK9",
+	"S_CHECKPOINT_SPARK10",
+	"S_CHECKPOINT_SPARK11",
 };
 
 // RegEx to generate this from info.h: ^\tMT_([^,]+), --> \t"MT_\1",
@@ -5803,6 +5819,7 @@ const char *const MOBJTYPE_LIST[] = {  // array length left dynamic for sanity t
 
 	"MT_POWERUP_AURA",
 
+	"MT_CHECKPOINT_END",
 	"MT_SCRIPT_THING",
 };
 
@@ -5969,6 +5986,7 @@ const char *const GAMETYPERULE_LIST[] = {
 	"KARMA",
 	"ITEMARROWS",
 
+	"CHECKPOINTS",
 	"PRISONS",
 	"CATCHER",
 	"ROLLINGSTART",

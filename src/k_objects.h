@@ -214,6 +214,17 @@ void Obj_EmeraldFlareThink(mobj_t *flare);
 void Obj_BeginEmeraldOrbit(mobj_t *emerald, mobj_t *target, fixed_t radius, INT32 revolution_time, tic_t fuse);
 void Obj_GiveEmerald(mobj_t *emerald);
 
+/* Checkpoints */
+void Obj_ResetCheckpoints(void);
+void Obj_LinkCheckpoint(mobj_t *end);
+void Obj_UnlinkCheckpoint(mobj_t *end);
+void Obj_CheckpointThink(mobj_t *end);
+void Obj_CrossCheckpoints(player_t *player, fixed_t old_x, fixed_t old_y);
+mobj_t *Obj_FindCheckpoint(INT32 id);
+boolean Obj_GetCheckpointRespawnPosition(const mobj_t *checkpoint, vector3_t *return_pos);
+angle_t Obj_GetCheckpointRespawnAngle(const mobj_t *checkpoint);
+void Obj_ActivateCheckpointInstantly(mobj_t* mobj);
+
 #ifdef __cplusplus
 } // extern "C"
 #endif
