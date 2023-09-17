@@ -90,6 +90,7 @@ Environment::Environment()
 	addCodeDataACS0(100, {"",        3, addCallFunc(CallFunc_ThingSound)});
 	addCodeDataACS0(101, {"",        0, addCallFunc(CallFunc_EndPrintBold)});
 
+	addCodeDataACS0(118, {"",        0, addCallFunc(CallFunc_IsNetworkGame)});
 	addCodeDataACS0(119, {"",        0, addCallFunc(CallFunc_PlayerTeam)});
 	addCodeDataACS0(120, {"",        0, addCallFunc(CallFunc_PlayerRings)});
 

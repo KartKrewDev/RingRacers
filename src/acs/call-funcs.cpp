@@ -927,6 +927,20 @@ bool CallFunc_Timer(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word 
 }
 
 /*--------------------------------------------------
+	bool CallFunc_IsNetworkGame(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
+
+		Pushes netgame status to ACS.
+--------------------------------------------------*/
+bool CallFunc_IsNetworkGame(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
+{
+	(void)argV;
+	(void)argC;
+
+	thread->dataStk.push(netgame);
+	return false;
+}
+
+/*--------------------------------------------------
 	bool CallFunc_SectorSound(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
 
 		Plays a point sound effect from a sector.
