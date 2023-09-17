@@ -579,6 +579,8 @@ struct player_t
 	UINT8 positiondelay;	// Used for position number, so it can grow when passing
 	UINT32 distancetofinish;
 	UINT32 distancetofinishprev;
+	UINT32 lastpickupdistance; // Anti item set farming
+	UINT8 lastpickuptype;
 	waypoint_t *currentwaypoint;
 	waypoint_t *nextwaypoint;
 	respawnvars_t respawn;	// Respawn info

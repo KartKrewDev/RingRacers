@@ -118,6 +118,10 @@ boolean P_CanPickupItem(player_t *player, UINT8 weapon)
 	if (player->exiting || mapreset || (player->pflags & PF_ELIMINATED))
 		return false;
 
+	// 0: Sphere/Ring
+	// 1: Random Item / Capsule
+	// 2: Eggbox
+	// 3: Paperitem
 	if (weapon)
 	{
 		// Item slot already taken up
@@ -153,6 +157,27 @@ boolean P_CanPickupItem(player_t *player, UINT8 weapon)
 	}
 
 	return true;
+}
+
+// Allow players to pick up only one pickup from each set of pickups.
+// Anticheese pickup types are different than-P_CanPickupItem weapon, because that system is
+// already slightly scary without introducing special cases for different types of the same pickup.
+// 1 = floating item, 2 = perma ring, 3 = capsule
+boolean P_IsPickupCheesy(player_t *player, UINT8 type)
+{
+	if (player->lastpickupdistance && player->lastpickuptype == type)
+	{
+		UINT32 distancedelta = min(player->distancetofinish - player->lastpickupdistance, player->lastpickupdistance - player->distancetofinish);
+		if (distancedelta < 2500)
+			return true;
+	}
+	return false;
+}
+
+void P_UpdateLastPickup(player_t *player, UINT8 type)
+{
+	player->lastpickuptype = type;
+	player->lastpickupdistance = player->distancetofinish;
 }
 
 boolean P_CanPickupEmblem(player_t *player, INT32 emblemID)
@@ -364,11 +389,16 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 			special->flags &= ~MF_SPECIAL;
 			return;
 		case MT_RANDOMITEM:
+			UINT8 cheesetype = (special->flags2 & MF2_AMBUSH) ? 2 : 1;
+
 			if (!P_CanPickupItem(player, 1))
+				return;
+			if (P_IsPickupCheesy(player, cheesetype))
 				return;
 
 			special->momx = special->momy = special->momz = 0;
 			P_SetTarget(&special->target, toucher);
+			P_UpdateLastPickup(player, cheesetype);
 			// P_KillMobj(special, toucher, toucher, DMG_NORMAL);
 			if (special->extravalue1 >= RINGBOX_TIME)
 				K_StartItemRoulette(player, false);
@@ -404,8 +434,14 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 				default:
 					if (!P_CanPickupItem(player, 1))
 						return;
+					if (P_IsPickupCheesy(player, 3))
+						return;
 					break;
 			}
+
+			// Ring Capsules shouldn't affect pickup cheese, they're just used as condensed ground-ring placements.
+			if (special->threshold != KITEM_SUPERRING)
+				P_UpdateLastPickup(player, 3);
 
 			S_StartSound(toucher, special->info->deathsound);
 			P_KillMobj(special, toucher, toucher, DMG_NORMAL);
