@@ -816,7 +816,8 @@ static void P_SpawnMapThings(boolean spawnemblems)
 
 	Z_Free(loopends);
 
-	if (spawnemblems)
+	if (spawnemblems
+		&& gametype != GT_TUTORIAL)
 	{
 		const UINT8 recommendedcans =
 #ifdef DEVELOP

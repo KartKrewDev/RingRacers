@@ -692,6 +692,25 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 				{
 					// Unassigned, get the next grabbable colour
 					can_id = gamedata->gotspraycans;
+
+					// Multiple cans in one map?
+					if (special->threshold != 0)
+					{
+						UINT16 ref_id = can_id + (special->threshold & UINT8_MAX);
+						if (ref_id >= gamedata->numspraycans)
+							return;
+
+						// Swap this specific can to the head of the list.
+						UINT16 swapcol = gamedata->spraycans[ref_id].col;
+
+						gamedata->spraycans[ref_id].col =
+							gamedata->spraycans[can_id].col;
+						skincolors[gamedata->spraycans[ref_id].col].cache_spraycan = ref_id;
+
+						gamedata->spraycans[can_id].col = swapcol;
+						skincolors[swapcol].cache_spraycan = can_id;
+					}
+
 				}
 
 				if (can_id >= gamedata->numspraycans)
@@ -712,8 +731,30 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 					gamedata->deferredsave = true;
 				}
 
-				// Don't delete the object, just fade it.
-				P_SprayCanInit(special);
+				{
+					mobj_t *canmo = NULL;
+					mobj_t *next = NULL;
+
+					for (canmo = trackercap; canmo; canmo = next)
+					{
+						next = canmo->itnext;
+
+						if (canmo->type != MT_SPRAYCAN)
+							continue;
+
+						// Don't delete the object(s), just fade it.
+						if (netgame || canmo == special)
+						{
+							P_SprayCanInit(canmo);
+							continue;
+						}
+
+						// Get ready to get rid of these
+						canmo->renderflags |= (tr_trans50 << RF_TRANSSHIFT);
+						canmo->destscale = 0;
+					}
+				}
+
 				return;
 			}
 

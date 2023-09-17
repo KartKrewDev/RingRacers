@@ -157,8 +157,19 @@ void Dialogue::WriteText(void)
 
 	while (textTimer <= 0 && !textDest.empty())
 	{
-		char c = textDest.back();
+		char c = textDest.back(), nextc = '\n';
 		text.push_back(c);
+
+		textDest.pop_back();
+
+		if (c & 0x80)
+		{
+			// Color code support
+			continue;
+		}
+
+		if (!textDest.empty())
+			nextc = textDest.back();
 
 		if (voicePlayed == false
 			&& std::isprint(c)
@@ -174,7 +185,8 @@ void Dialogue::WriteText(void)
 			voicePlayed = true;
 		}
 
-		if (c == '.' || c == ',' || c == ';' || c == '!' || c == '?')
+		if (std::ispunct(c)
+			&& std::isspace(nextc))
 		{
 			// slow down for punctuation
 			textTimer += kTextPunctPause;
@@ -183,8 +195,6 @@ void Dialogue::WriteText(void)
 		{
 			textTimer += FRACUNIT;
 		}
-
-		textDest.pop_back();
 	}
 
 	textDone = (textTimer <= 0 && textDest.empty());
