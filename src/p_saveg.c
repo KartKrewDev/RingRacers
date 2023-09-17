@@ -553,7 +553,16 @@ static void P_NetArchivePlayers(savebuffer_t *save)
 		WRITEUINT8(save->p, players[i].ringboxdelay);
 		WRITEUINT8(save->p, players[i].ringboxaward);
 		WRITEFIXED(save->p, players[i].outrun);
-
+		
+		WRITEUINT8(save->p, players[i].rideroid);
+		WRITEUINT8(save->p, players[i].rdnodepull);
+		WRITEANGLE(save->p, players[i].rideroidangle);
+		WRITEFIXED(save->p, players[i].rideroidspeed);
+		WRITEANGLE(save->p, players[i].rideroidrollangle);
+		WRITEFIXED(save->p, players[i].rdaddmomx);
+		WRITEFIXED(save->p, players[i].rdaddmomy);
+		WRITEFIXED(save->p, players[i].rdaddmomz);
+		
 		// respawnvars_t
 		WRITEUINT8(save->p, players[i].respawn.state);
 		WRITEUINT32(save->p, K_GetWaypointHeapIndex(players[i].respawn.wp));
@@ -1028,6 +1037,15 @@ static void P_NetUnArchivePlayers(savebuffer_t *save)
 		players[i].ringboxdelay = READUINT8(save->p);
 		players[i].ringboxaward = READUINT8(save->p);
 		players[i].outrun = READFIXED(save->p);
+		
+		players[i].rideroid = READUINT8(save->p);
+		players[i].rdnodepull = READUINT8(save->p);
+		players[i].rideroidangle = READANGLE(save->p);
+		players[i].rideroidspeed = READFIXED(save->p);
+		players[i].rideroidrollangle = READANGLE(save->p);
+		players[i].rdaddmomx = READFIXED(save->p);
+		players[i].rdaddmomy = READFIXED(save->p);
+		players[i].rdaddmomz = READFIXED(save->p);
 
 		// respawnvars_t
 		players[i].respawn.state = READUINT8(save->p);
