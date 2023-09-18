@@ -321,6 +321,8 @@ move_to_player (mobj_t *hyu)
 
 	hyu->z = target->z; // stay level with target
 	hyu->angle = angle;
+
+	hyu->color = target->color;
 }
 
 static void
@@ -572,6 +574,34 @@ hyudoro_hover_await_stack (mobj_t *hyu)
 	return true;
 }
 
+static void
+trail_ghosts
+(		mobj_t * hyu,
+		boolean colorize)
+{
+	// Spawns every other frame
+	if (leveltime & 1)
+	{
+		return;
+	}
+
+	mobj_t *ghost = P_SpawnGhostMobj(hyu);
+
+	// Flickers every frame
+	ghost->extravalue1 = 1;
+	ghost->extravalue2 = 2;
+
+	// copy per-splitscreen-player visibility
+	ghost->renderflags =
+		(hyu->renderflags & RF_DONTDRAW);
+
+	ghost->colorized = colorize;
+
+	ghost->tics = 8;
+
+	P_SetTarget(&ghost->tracer, hyu);
+}
+
 void
 Obj_InitHyudoroCenter (mobj_t * center, mobj_t * master)
 {
@@ -630,26 +660,12 @@ Obj_HyudoroThink (mobj_t *hyu)
 			if (hyudoro_center(hyu))
 				project_hyudoro(hyu);
 
-			if (leveltime & 1)
-			{
-				mobj_t *ghost = P_SpawnGhostMobj(hyu);
-
-				// Flickers every frame
-				ghost->extravalue1 = 1;
-				ghost->extravalue2 = 2;
-
-				// copy per-splitscreen-player visibility
-				ghost->renderflags =
-					(hyu->renderflags & RF_DONTDRAW);
-
-				ghost->tics = 8;
-
-				P_SetTarget(&ghost->tracer, hyu);
-			}
+			trail_ghosts(hyu, false);
 			break;
 
 		case HYU_RETURN:
 			move_to_player(hyu);
+			trail_ghosts(hyu, true);
 			break;
 
 		case HYU_HOVER:
