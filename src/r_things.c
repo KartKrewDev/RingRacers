@@ -926,6 +926,7 @@ static void R_DrawVisSprite(vissprite_t *vis)
 	{
 		R_SetColumnFunc(COLDRAWFUNC_DROPSHADOW, false);
 		dc_transmap = vis->transmap;
+		dc_shadowcolor = vis->color;
 	}
 	else if (!(vis->cut & SC_PRECIP) &&
 			R_ThingIsFlashing(vis->mobj)) // Bosses "flash"
@@ -1542,6 +1543,8 @@ static void R_ProjectDropShadow(
 
 	shadow->transmap = R_GetBlendTable(thing->whiteshadow ? AST_ADD : AST_SUBTRACT, 0);
 	shadow->colormap = colormaps;
+
+	shadow->color = thing->shadowcolor;
 
 	objectsdrawn++;
 }

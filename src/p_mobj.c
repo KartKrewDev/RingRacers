@@ -10408,6 +10408,7 @@ static void P_DefaultMobjShadowScale(mobj_t *thing)
 {
 	thing->shadowscale = 0;
 	thing->whiteshadow = ((thing->frame & FF_BRIGHTMASK) == FF_FULLBRIGHT);
+	thing->shadowcolor = 15;
 
 	switch (thing->type)
 	{

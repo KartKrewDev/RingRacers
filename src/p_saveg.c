@@ -3023,6 +3023,7 @@ static void SaveMobjThinker(savebuffer_t *save, const thinker_t *th, const UINT8
 	{
 		WRITEFIXED(save->p, mobj->shadowscale);
 		WRITEUINT8(save->p, mobj->whiteshadow);
+		WRITEUINT8(save->p, mobj->shadowcolor);
 	}
 	if (diff2 & MD2_RENDERFLAGS)
 	{
@@ -4249,6 +4250,7 @@ static thinker_t* LoadMobjThinker(savebuffer_t *save, actionf_p1 thinker)
 	{
 		mobj->shadowscale = READFIXED(save->p);
 		mobj->whiteshadow = READUINT8(save->p);
+		mobj->shadowcolor = READUINT8(save->p);
 	}
 	if (diff2 & MD2_RENDERFLAGS)
 		mobj->renderflags = READUINT32(save->p);

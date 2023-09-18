@@ -59,6 +59,8 @@ extern INT32 dc_numlights, dc_maxlights;
 //Fix TUTIFRUTI
 extern INT32 dc_texheight;
 
+extern UINT8 dc_shadowcolor;
+
 // -----------------------
 // SPAN DRAWING CODE STUFF
 // -----------------------

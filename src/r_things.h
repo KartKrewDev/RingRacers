@@ -225,6 +225,7 @@ struct vissprite_t
 	fixed_t spritexoffset, spriteyoffset;
 
 	fixed_t shadowscale;
+	UINT8 color; // palette index
 
 	INT16 clipbot[MAXVIDWIDTH], cliptop[MAXVIDWIDTH];
 
