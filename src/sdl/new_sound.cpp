@@ -128,6 +128,8 @@ void audio_callback(void* userdata, Uint8* buffer, int len)
 {
 	tracy::SetThreadName("SDL Audio Thread");
 	FrameMarkStart(kAudio);
+	ZoneScoped;
+
 	// The SDL Audio lock is implied to be held during callback.
 
 	try
