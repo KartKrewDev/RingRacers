@@ -560,6 +560,8 @@ hyudoro_patrol_hit_player
 	if (player->hyudorotimer)
 		return false;
 
+	player->pflags |= PF_CASTSHADOW;
+
 	// NO ITEM?
 	if (!player->itemamount)
 		return false;

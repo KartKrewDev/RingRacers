@@ -28,6 +28,11 @@ INT32 R_ThingLightLevel(mobj_t* thing)
 			// Darken on every other frame of instawhip cooldown
 			lightlevel -= 128;
 		}
+
+		if (player->pflags & PF_CASTSHADOW)
+		{
+			lightlevel -= 255;
+		}
 	}
 
 	return lightlevel;

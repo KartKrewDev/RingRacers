@@ -7738,6 +7738,8 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 
 	player->cameraOffset = 0;
 
+	player->pflags &= ~(PF_CASTSHADOW);
+
 	if (player->curshield == KSHIELD_TOP)
 	{
 		mobj_t *top = K_GetGardenTop(player);
