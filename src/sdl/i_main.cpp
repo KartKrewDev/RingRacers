@@ -355,3 +355,16 @@ int main(int argc, char **argv)
 }
 
 #endif
+
+void* operator new(size_t count)
+{
+	auto p = malloc(count);
+	TracyAlloc(p, count);
+	return p;
+}
+
+void operator delete(void* ptr)
+{
+	TracyFree(ptr);
+	free(ptr);
+}
