@@ -62,6 +62,7 @@ K_ChangePlayerItem
 #define hyudoro_target(o) ((o)->target)
 
 #define hyudoro_stolefrom(o) ((o)->hnext)
+#define hyudoro_timer(o) ((o)->movedir)
 
 #define hyudoro_center_max_radius(o) ((o)->threshold)
 #define hyudoro_center_master(o) ((o)->target)
@@ -522,6 +523,12 @@ hyudoro_patrol_hit_player
 
 	hyu->renderflags &= ~(RF_DONTDRAW);
 
+	// Reset shadow to default (after alt_shadow)
+	reset_shadow(hyu);
+
+	// This will flicker the shadow
+	hyudoro_timer(hyu) = 18;
+
 	return true;
 }
 
@@ -621,6 +628,31 @@ trail_ghosts
 	P_SetTarget(&ghost->tracer, hyu);
 }
 
+static void
+alt_shadow (mobj_t *hyu)
+{
+	/* spaced out pulse, fake randomness */
+	switch (leveltime % (7 + ((leveltime / 8) % 3)))
+	{
+		default:
+			hyu->shadowcolor = 15;
+			hyu->whiteshadow = false;
+			break;
+		case 1:
+			hyu->shadowcolor = 5;
+			hyu->whiteshadow = true;
+			break;
+		case 2:
+			hyu->shadowcolor = 181;
+			hyu->whiteshadow = true;
+			break;
+		case 3:
+			hyu->shadowcolor = 255;
+			hyu->whiteshadow = true;
+			break;
+	}
+}
+
 void
 Obj_InitHyudoroCenter (mobj_t * center, mobj_t * master)
 {
@@ -680,11 +712,15 @@ Obj_HyudoroThink (mobj_t *hyu)
 				project_hyudoro(hyu);
 
 			trail_ghosts(hyu, false);
+			alt_shadow(hyu);
 			break;
 
 		case HYU_RETURN:
 			move_to_player(hyu);
 			trail_ghosts(hyu, true);
+
+			if (hyudoro_timer(hyu) > 0)
+				hyu->whiteshadow = !hyu->whiteshadow;
 			break;
 
 		case HYU_HOVER:
@@ -695,6 +731,9 @@ Obj_HyudoroThink (mobj_t *hyu)
 			}
 			break;
 	}
+
+	if (hyudoro_timer(hyu) > 0)
+		hyudoro_timer(hyu)--;
 }
 
 void
