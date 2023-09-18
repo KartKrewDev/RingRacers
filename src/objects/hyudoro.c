@@ -22,6 +22,7 @@
 #include "../s_sound.h"
 #include "../g_game.h"
 #include "../k_hitlag.h"
+#include "../p_slopes.h"
 
 enum {
 	HYU_PATROL,
@@ -150,6 +151,14 @@ project_hyudoro (mobj_t *hyu)
 	hyu->angle = angle + ANGLE_90;
 
 	sine_bob(hyu, angle, FRACUNIT);
+
+	hyu->z = P_GetZAt(center->standingslope, hyu->x, hyu->y,
+			P_GetMobjGround(center));
+
+	if (P_IsObjectFlipped(hyu))
+	{
+		hyu->z -= hyu->height;
+	}
 }
 
 static void
@@ -569,6 +578,12 @@ Obj_HyudoroDeploy (mobj_t *master)
 
 	center->angle = master->angle;
 	Obj_InitHyudoroCenter(center, master);
+
+	// Update floorz to the correct position by indicating
+	// that it should be recalculated by P_MobjThinker.
+	center->floorz = master->z;
+	center->ceilingz = master->z + master->height;
+	center->z = P_GetMobjGround(center) - P_MobjFlip(center);
 
 	S_StartSound(master, sfx_s3k92); // scary ghost noise
 }
