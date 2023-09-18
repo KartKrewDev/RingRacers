@@ -225,6 +225,13 @@ boolean Obj_GetCheckpointRespawnPosition(const mobj_t *checkpoint, vector3_t *re
 angle_t Obj_GetCheckpointRespawnAngle(const mobj_t *checkpoint);
 void Obj_ActivateCheckpointInstantly(mobj_t* mobj);
 
+/* Rideroid / Rideroid Node */
+void Obj_RideroidThink(mobj_t *mo);
+
+void Obj_RideroidNodeSpawn(mobj_t *mo);
+void Obj_RideroidNodeThink(mobj_t *mo);
+
+
 #ifdef __cplusplus
 } // extern "C"
 #endif

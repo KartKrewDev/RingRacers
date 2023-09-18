@@ -9633,6 +9633,20 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 	case MT_RAINBOWDASHRING:
 		Obj_RainbowDashRingThink(mobj);
 		break;
+	
+	case MT_RIDEROID:
+		Obj_RideroidThink(mobj);
+		if (P_MobjWasRemoved(mobj))
+		{
+			return false;
+		}
+		
+		break;
+	
+	case MT_RIDEROIDNODE:
+		Obj_RideroidNodeThink(mobj);
+		break;
+		
 	default:
 		// check mobj against possible water content, before movement code
 		P_MobjCheckWater(mobj);
@@ -11043,6 +11057,9 @@ mobj_t *P_SpawnMobj(fixed_t x, fixed_t y, fixed_t z, mobjtype_t type)
 		case MT_RAINBOWDASHRING:
 			Obj_RainbowDashRingSpawn(mobj);
 			break;
+		case MT_RIDEROIDNODE:
+			Obj_RideroidNodeSpawn(mobj);
+			break;			
 		case MT_SNEAKERPANEL:
 			Obj_SneakerPanelSpawn(mobj);
 			break;
