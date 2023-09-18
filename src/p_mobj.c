@@ -8734,18 +8734,17 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 			boolean newperfect = false;
 			if (
 				(newplayer != NULL)
-				&& (gametyperules & GTR_CIRCUIT)
 				&& (gamespeed >= KARTSPEED_HARD)
-				&& (K_TimeAttackRules() == false)
+				&& (newplayer->tally.active == true)
+				&& (newplayer->tally.totalLaps > 0) // Only true if not Time Attack
+				&& (newplayer->tally.laps >= newplayer->tally.totalLaps)
 			)
 			{
-				UINT16 totalLaps = numlaps;
-				if (inDuel == false)
-				{
-					totalLaps *= 2;
-				}
+				UINT32 skinflags = (demo.playback)
+					? demo.skinlist[demo.currentskinid[(newplayer-players)]].flags
+					: skins[newplayer->skin].flags;
 
-				newperfect = (newplayer->lapPoints >= totalLaps);
+				newperfect = !!(skinflags & SF_IRONMAN);
 			}
 
 			mobj_t *cur = mobj->hnext;
