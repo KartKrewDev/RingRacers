@@ -15,6 +15,8 @@
 
 #include <cmath>
 
+#include <tracy/tracy/Tracy.hpp>
+
 #include "doomdef.h"
 #include "r_local.h"
 #include "p_local.h" // stplyr
@@ -3196,6 +3198,8 @@ void V_Recalc(void)
 
 void VID_DisplaySoftwareScreen()
 {
+	ZoneScoped;
+
 	// TODO implement
 	// upload framebuffer, bind pipeline, draw
 	rhi::Rhi* rhi = srb2::sys::get_rhi(srb2::sys::g_current_rhi);

@@ -291,6 +291,7 @@ void I_StartDisplayUpdate(void)
 
 void I_FinishUpdate(void)
 {
+	ZoneScoped;
 	if (rendermode == render_none)
 	{
 		FrameMark;
