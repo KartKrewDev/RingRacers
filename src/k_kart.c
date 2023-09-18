@@ -4323,7 +4323,11 @@ void K_ApplyTripWire(player_t *player, tripwirestate_t state)
 	}
 
 	player->tripwireState = state;
-	K_AddHitLag(player->mo, 10, false);
+
+	if (player->hyudorotimer <= 0)
+	{
+		K_AddHitLag(player->mo, 10, false);
+	}
 
 	if (state == TRIPSTATE_PASSED && player->spinouttimer &&
 			player->speed > 2 * K_GetKartSpeed(player, false, true))
