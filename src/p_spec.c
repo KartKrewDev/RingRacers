@@ -4488,6 +4488,7 @@ static void P_SetupSignObject(mobj_t *sign, mobj_t *pmo, boolean error)
 
 	sign->movefactor = sign->z;
 	sign->z += (576*sign->scale) * P_MobjFlip(sign);
+	sign->old_z = sign->z; // interp hijack
 	sign->movecount = 1;
 	sign->extravalue1 = AngleFixed(sign->angle) >> FRACBITS;
 
