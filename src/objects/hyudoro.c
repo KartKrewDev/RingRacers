@@ -629,6 +629,43 @@ trail_ghosts
 }
 
 static void
+trail_glow (mobj_t *hyu)
+{
+	mobj_t *ghost = P_SpawnGhostMobj(hyu);
+
+	// Flickers every frame
+	ghost->extravalue1 = 1;
+	ghost->extravalue2 = 0;
+
+	ghost->renderflags = RF_ADD | RF_TRANS80;
+
+	ghost->tics = 2; // this actually does last one tic
+
+	ghost->momz = hyu->momz; // copy stack position
+}
+
+static void
+blend_hover_hyudoro (mobj_t *hyu)
+{
+	player_t *player = get_hyudoro_target_player(hyu);
+
+	hyu->renderflags &= ~(RF_BLENDMASK);
+
+	if (!player)
+	{
+		return;
+	}
+
+	/* 1st place: Hyudoro stack is unusable, so make a visual
+	   indication */
+	if (player->position == 1)
+	{
+		hyu->renderflags |= RF_MODULATE;
+		trail_glow(hyu);
+	}
+}
+
+static void
 alt_shadow (mobj_t *hyu)
 {
 	/* spaced out pulse, fake randomness */
@@ -727,8 +764,11 @@ Obj_HyudoroThink (mobj_t *hyu)
 			if (hyudoro_target(hyu))
 			{
 				project_hyudoro_hover(hyu);
-				hyudoro_hover_await_stack(hyu);
+
+				if (hyudoro_hover_await_stack(hyu))
+					break;
 			}
+			blend_hover_hyudoro(hyu);
 			break;
 	}
 
