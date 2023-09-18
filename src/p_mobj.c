@@ -4371,7 +4371,8 @@ static void P_ItemCapsulePartThinker(mobj_t *mobj)
 	else // alive
 	{
 		mobj_t *target = mobj->target;
-		fixed_t targetScale, z;
+		fixed_t targetScale;
+		fixed_t x, y, z;
 
 		if (P_MobjWasRemoved(target))
 		{
@@ -4394,19 +4395,23 @@ static void P_ItemCapsulePartThinker(mobj_t *mobj)
 		else
 			K_GenericExtraFlagsNoZAdjust(mobj, target);
 
+		x = target->x + target->sprxoff;
+		y = target->y + target->spryoff;
+		z = target->z + target->sprzoff;
+
 		if (mobj->eflags & MFE_VERTICALFLIP)
-			z = target->z + target->height - mobj->height - FixedMul(mobj->scale, mobj->movefactor);
+			z += target->height - mobj->height - FixedMul(mobj->scale, mobj->movefactor);
 		else
-			z = target->z + FixedMul(mobj->scale, mobj->movefactor);
+			z += FixedMul(mobj->scale, mobj->movefactor);
 
 		// rotate & move to capsule
 		mobj->angle += mobj->movedir;
 		if (mobj->flags2 & MF2_CLASSICPUSH) // centered
-			P_MoveOrigin(mobj, target->x, target->y, z);
+			P_MoveOrigin(mobj, x, y, z);
 		else
 			P_MoveOrigin(mobj,
-				target->x + P_ReturnThrustX(mobj, mobj->angle + ANGLE_90, mobj->radius),
-				target->y + P_ReturnThrustY(mobj, mobj->angle + ANGLE_90, mobj->radius),
+				x + P_ReturnThrustX(mobj, mobj->angle + ANGLE_90, mobj->radius),
+				y + P_ReturnThrustY(mobj, mobj->angle + ANGLE_90, mobj->radius),
 				z);
 	}
 }
