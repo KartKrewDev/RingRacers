@@ -24,6 +24,7 @@ struct Shadow : mobj_t
 	void move()
 	{
 		whiteshadow = follow()->whiteshadow;
+		shadowcolor = follow()->shadowcolor;
 
 		P_MoveOrigin(this, follow()->x, follow()->y, P_GetMobjFeet(follow()));
 	}
