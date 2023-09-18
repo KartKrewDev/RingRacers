@@ -891,7 +891,13 @@ char sprnames[NUMSPRITES + 1][5] =
 	"CPT1", // Checkpoint Orb
 	"CPT2", // Checkpoint Stick
 	"CPT3", // Checkpoint Base
-
+	
+	// rideroid (see info.h for detail)
+	"RDRD",
+	"RDRA",
+	"RDRC",
+	"RDRL",
+	
 	// First person view sprites; this is a sprite so that it can be replaced by a specialized MD2 draw later
 	"VIEW",
 };
@@ -5414,6 +5420,10 @@ state_t states[NUMSTATES] =
 	{SPR_SGNS, FF_ADD|FF_FULLBRIGHT|8, 1, {NULL}, 0, 0, S_CHECKPOINT_SPARK10}, // S_CHECKPOINT_SPARK9
 	{SPR_SGNS, FF_ADD|FF_FULLBRIGHT|3, 1, {NULL}, 0, 0, S_CHECKPOINT_SPARK11}, // S_CHECKPOINT_SPARK10
 	{SPR_SGNS, FF_ADD|FF_FULLBRIGHT|2, 1, {NULL}, 0, 0, S_CHECKPOINT_SPARK1}, // S_CHECKPOINT_SPARK11
+	
+	{SPR_RDRD, 0, -1, {NULL}, 0, 0, S_RIDEROID},	// S_RIDEROID
+	{SPR_RDRC, FF_ANIMATE|FF_FULLBRIGHT|FF_TRANS30, -1, {NULL}, 3, 2, S_RIDEROID_ICON},	// S_RIDEROID_ICON
+	
 };
 
 mobjinfo_t mobjinfo[NUMMOBJTYPES] =
@@ -30378,6 +30388,61 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		MF_NOBLOCKMAP|MF_NOCLIP|MF_NOCLIPHEIGHT|MF_NOCLIPTHING|MF_NOGRAVITY|MF_SCENERY, // flags
 		S_NULL          // raisestate
 	},
+
+	{           // MT_RIDEROID
+		-1,           // doomednum
+		S_RIDEROID,    // spawnstate
+		1000,           // spawnhealth
+		S_NULL,         // seestate
+		sfx_None,       // seesound
+		0,              // reactiontime
+		sfx_None,       // attacksound
+		S_NULL,         // painstate
+		0,              // painchance
+		sfx_None,       // painsound
+		S_NULL,         // meleestate
+		S_NULL,         // missilestate
+		S_NULL,         // deathstate
+		S_NULL,         // xdeathstate
+		sfx_None,       // deathsound
+		0,              // speed
+		80*FRACUNIT,    // radius
+		40*FRACUNIT,    // height
+		0,              // display offset
+		0,              // mass
+		0,              // damage
+		sfx_None,       // activesound
+		MF_NOGRAVITY|MF_NOCLIP|MF_NOCLIPHEIGHT, // flags
+		S_NULL          // raisestate
+	},
+
+	{           // MT_RIDEROIDNODE
+		3711,           // doomednum
+		S_RIDEROID_ICON,    // spawnstate
+		1000,           // spawnhealth
+		S_NULL,         // seestate
+		sfx_None,       // seesound
+		0,              // reactiontime
+		sfx_None,       // attacksound
+		S_NULL,         // painstate
+		0,              // painchance
+		sfx_None,       // painsound
+		S_NULL,         // meleestate
+		S_NULL,         // missilestate
+		S_NULL,         // deathstate
+		S_NULL,         // xdeathstate
+		sfx_None,       // deathsound
+		0,              // speed
+		80*FRACUNIT,    // radius
+		80*FRACUNIT,    // height
+		0,              // display offset
+		0,              // mass
+		0,              // damage
+		sfx_None,       // activesound
+		MF_NOGRAVITY, // flags
+		S_NULL          // raisestate
+	},
+	
 };
 
 skincolor_t skincolors[MAXSKINCOLORS] = {

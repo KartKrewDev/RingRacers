@@ -1278,6 +1278,12 @@ typedef enum
 	sfx_rainbr,
 
 	sfx_rank,
+	
+	// rideroid
+	sfx_ridr1,
+	sfx_ridr2,
+	sfx_ridr3,
+	sfx_ridr4,
 
 	// Next up: UNIQUE ENGINE SOUNDS! Hoooooo boy...
 	// Engine class A - Low Speed, Low Weight
