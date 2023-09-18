@@ -163,6 +163,28 @@ project_hyudoro (mobj_t *hyu)
 }
 
 static void
+rise_thru_stack (mobj_t *hyu)
+{
+	mobj_t *target = hyudoro_target(hyu);
+
+	fixed_t spacer = ((target->height / 2) +
+			(hyu->height * 2));
+
+	fixed_t sink = hyudoro_stackpos(hyu) * spacer;
+
+	fixed_t zofs = abs(hyu->momz);
+	fixed_t d = (zofs - sink);
+	fixed_t speed = d / 8;
+
+	if (abs(d) < abs(speed))
+		zofs = sink;
+	else
+		zofs -= speed;
+
+	hyu->momz = zofs * P_MobjFlip(target);
+}
+
+static void
 project_hyudoro_hover (mobj_t *hyu)
 {
 	mobj_t *target = hyudoro_target(hyu);
@@ -171,18 +193,17 @@ project_hyudoro_hover (mobj_t *hyu)
 	angle_t ang = get_look_angle(target) + ANGLE_67h;
 	fixed_t rad = (target->radius * 2) + hyu->radius;
 
-	fixed_t zofs = hyudoro_stackpos(hyu) *
-		((target->height / 2) + (hyu->height * 2));
-
 	P_MoveOrigin(hyu,
 			target->x - P_ReturnThrustX(hyu, ang, rad),
 			target->y - P_ReturnThrustY(hyu, ang, rad),
-			target->z + (zofs * P_MobjFlip(target)));
+			target->z);
 
 	// Cancel momentum from HYU_RETURN.
 	// (And anything else! I don't trust this game!!)
 	hyu->momx = 0;
 	hyu->momy = 0;
+
+	rise_thru_stack(hyu);
 
 	hyu->angle = ang;
 
@@ -603,9 +624,6 @@ Obj_HyudoroDeploy (mobj_t *master)
 void
 Obj_HyudoroThink (mobj_t *hyu)
 {
-	// Might get set from clipping slopes
-	hyu->momz = 0;
-
 	switch (hyudoro_mode(hyu))
 	{
 		case HYU_PATROL:
