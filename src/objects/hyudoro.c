@@ -132,6 +132,13 @@ bob_in_place
 }
 
 static void
+reset_shadow (mobj_t *hyu)
+{
+	hyu->shadowcolor = 15;
+	hyu->whiteshadow = true;
+}
+
+static void
 project_hyudoro (mobj_t *hyu)
 {
 	mobj_t *center = hyudoro_center(hyu);
@@ -371,6 +378,16 @@ append_hyudoro
 
 	hyudoro_stackpos(hyu) = lastpos + 1;
 	P_SetTarget(head, hyu);
+
+	/* only first in list gets a shadow */
+	if (lastpos == 0)
+	{
+		reset_shadow(hyu);
+	}
+	else
+	{
+		hyu->shadowcolor = 31;/* black - hide it */
+	}
 }
 
 static void
@@ -398,6 +415,8 @@ pop_hyudoro (mobj_t **head)
 	{
 		return;
 	}
+
+	reset_shadow(hyu);/* show it */
 
 	do
 	{
