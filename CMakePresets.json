@@ -46,6 +46,14 @@
 			"cacheVariables": {
 				"SRB2_CONFIG_DEV_BUILD": "OFF"
 			}
+		},
+		{
+			"name": "release-tracy",
+			"description": "Build for Tracy profiling",
+			"inherits": "default",
+			"cacheVariables": {
+				"SRB2_CONFIG_TRACY": "ON"
+			}
 		}
 	],
 	"buildPresets": [
