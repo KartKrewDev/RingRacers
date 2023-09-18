@@ -251,7 +251,7 @@ tic_t starttime = 3;
 const tic_t bulbtime = TICRATE/2;
 UINT8 numbulbs = 1;
 
-INT32 hyudorotime = 7*TICRATE;
+INT32 hyudorotime = 14*TICRATE;
 INT32 stealtime = TICRATE/2;
 INT32 sneakertime = TICRATE + (TICRATE/3);
 INT32 itemtime = 8*TICRATE;

@@ -3792,6 +3792,7 @@ const char *const STATE_LIST[] = { // array length left dynamic for sanity testi
 
 	// Caked-Up Booty-Sheet Ghost
 	"S_HYUDORO",
+	"S_HYUDORO_RETURNING",
 
 	// Grow
 	"S_GROW_PARTICLE",
@@ -5935,7 +5936,7 @@ const char *const PLAYERFLAG_LIST[] = {
 	"KICKSTARTACCEL", // Accessibility feature: Is accelerate in kickstart mode?
 	"POINTME", // An object is calling for my attention (via Obj_PointPlayersToMobj). Unset every frame!
 
-	"\x01", // free: 1<<6 (name un-matchable)
+	"CASTSHADOW", // Something is casting a shadow on the player
 
 	"WANTSTOJOIN", // Spectator that wants to join
 

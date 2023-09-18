@@ -1315,6 +1315,14 @@ fixed_t R_GetShadowZ(
 	sector_t *sector;
 	ffloor_t *rover;
 
+	if (R_CustomShadowZ(thing, &groundz, &groundslope))
+	{
+		if (shadowslope != NULL)
+			*shadowslope = groundslope;
+
+		return groundz;
+	}
+
 	// for frame interpolation
 	interpmobjstate_t interp = {0};
 
