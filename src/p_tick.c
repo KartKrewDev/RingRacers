@@ -52,6 +52,63 @@
 tic_t leveltime;
 boolean thinkersCompleted;
 
+static boolean g_freezeCheat;
+static boolean g_freezeLevel;
+
+boolean P_LevelIsFrozen(void)
+{
+	return (g_freezeLevel || g_freezeCheat);
+}
+
+boolean P_FreezeCheat(void)
+{
+	return (g_freezeLevel || g_freezeCheat);
+}
+
+void P_SetFreezeCheat(boolean value)
+{
+	g_freezeCheat = value;
+}
+
+void P_SetFreezeLevel(boolean value)
+{
+	g_freezeLevel = value;
+}
+
+boolean P_MobjIsFrozen(mobj_t *mobj)
+{
+	if (g_freezeCheat == true)
+	{
+		// freeze cheat
+		switch (mobj->type)
+		{
+			case MT_PLAYER:
+			{
+				break;
+			}
+			default:
+			{
+				return true;
+			}
+		}
+	}
+
+	if (g_freezeLevel == true)
+	{
+		// level totally frozen
+		return true;
+	}
+
+	if ((mobj->eflags & MFE_PAUSED) == MFE_PAUSED)
+	{
+		// hitlag
+		return true;
+	}
+
+	// manual
+	return mobj->frozen;
+}
+
 INT32 P_AltFlip(INT32 n, tic_t tics)
 {
 	return leveltime % (2 * tics) < tics ? n : -(n);

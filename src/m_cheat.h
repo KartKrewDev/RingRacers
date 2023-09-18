@@ -41,6 +41,7 @@ typedef enum {
 	CHEAT_RESPAWNAT,
 	CHEAT_GIVEPOWERUP,
 	CHEAT_SPHERES,
+	CHEAT_FREEZE,
 
 	NUMBER_OF_CHEATS
 } cheat_t;
@@ -74,6 +75,7 @@ void OP_ObjectplaceMovement(player_t *player);
 //
 void Command_CheatNoClip_f(void);
 void Command_CheatGod_f(void);
+void Command_CheatFreeze_f(void);
 void Command_Savecheckpoint_f(void);
 void Command_Setrings_f(void);
 void Command_Setspheres_f(void);

@@ -3118,7 +3118,7 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 
 	mo = player->mo;
 
-	if (mo->hitlag > 0 || player->playerstate == PST_DEAD)
+	if (P_MobjIsFrozen(mo) || player->playerstate == PST_DEAD)
 	{
 		// Do not move the camera while in hitlag!
 		// The camera zooming out after you got hit makes it hard to focus on the vibration.
@@ -4212,7 +4212,7 @@ void P_PlayerThink(player_t *player)
 	ALL ABOVE THIS BLOCK OCCURS EVEN WITH HITLAG
 	/ ------------------------------------------ */
 
-	if (player->mo->hitlag > 0)
+	if (P_MobjIsFrozen(player->mo))
 	{
 		return;
 	}
@@ -4550,7 +4550,7 @@ void P_IncrementGriefValue(player_t *player, UINT32 *grief, const UINT32 griefMa
 	INT32 progress = player->distancetofinishprev - player->distancetofinish;
 	boolean exceptions = (
 		player->flashing != 0
-		|| player->mo->hitlag != 0
+		|| P_MobjIsFrozen(player->mo)
 		|| player->airtime > 3*TICRATE/2
 		|| (player->justbumped > 0 && player->justbumped < bumptime-1)
 	);

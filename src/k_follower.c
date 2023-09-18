@@ -435,7 +435,7 @@ void K_HandleFollower(player_t *player)
 	}
 	else // follower exists, woo!
 	{
-		if (player->follower->hitlag != 0)
+		if (P_MobjIsFrozen(player->follower))
 		{
 			// Don't update frames in hitlag
 			return;
