@@ -4443,7 +4443,9 @@ static void P_RefreshItemCapsuleParts(mobj_t *mobj)
 	}
 
 	// update cap colors
-	if (itemType == KITEM_SUPERRING)
+	if (mobj->extravalue2)
+		color = mobj->extravalue2;
+	else if (itemType == KITEM_SUPERRING)
 	{
 		color = SKINCOLOR_GOLD;
 		newRenderFlags |= RF_SEMIBRIGHT;
@@ -4487,7 +4489,10 @@ static void P_RefreshItemCapsuleParts(mobj_t *mobj)
 					count = mobj->movecount;
 				break;
 			case KITEM_SUPERRING: // always display the number, and multiply it by 5
-				count = mobj->movecount * 5;
+				if (mobj->flags2 & MF2_STRONGBOX)
+					count = mobj->movecount * 20; // give Super Rings
+				else
+					count = mobj->movecount * 5;
 				break;
 			case KITEM_SAD: // never display the number
 			case KITEM_SPB:

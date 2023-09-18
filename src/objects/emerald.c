@@ -304,13 +304,8 @@ void Obj_BeginEmeraldOrbit(mobj_t *emerald, mobj_t *target, fixed_t radius, INT3
 	spawn_lens_flare(emerald);
 }
 
-void Obj_GiveEmerald(mobj_t *emerald)
+static void give_player(mobj_t *emerald)
 {
-	if (P_MobjWasRemoved(emerald_orbit(emerald)) || P_MobjWasRemoved(emerald_award(emerald)))
-	{
-		return;
-	}
-
 	player_t *player = emerald_award(emerald)->player;
 
 	if (!player)
@@ -322,6 +317,37 @@ void Obj_GiveEmerald(mobj_t *emerald)
 	K_CheckEmeralds(player);
 
 	S_StartSound(emerald_award(emerald), emerald->info->deathsound);
+}
+
+void Obj_GiveEmerald(mobj_t *emerald)
+{
+	if (P_MobjWasRemoved(emerald_orbit(emerald)) || P_MobjWasRemoved(emerald_award(emerald)))
+	{
+		return;
+	}
+
+	// FIXME: emerald orbiting behavior should become its own object. For now,
+	// though, enjoy these special conditions!
+	switch (emerald_award(emerald)->type)
+	{
+		case MT_PLAYER:
+			give_player(emerald);
+			break;
+
+		case MT_ITEMCAPSULE: // objects/hyudoro.c
+			// DMG_INSTAKILL to kill it without respawning later
+			P_KillMobj(emerald_award(emerald), emerald_orbit(emerald), emerald_orbit(emerald), DMG_INSTAKILL);
+
+			if (emerald_orbit(emerald)->player)
+			{
+				// Unlock item for stacked Hyudoros
+				emerald_orbit(emerald)->player->itemRoulette.reserved = 0;
+			}
+			break;
+
+		default:
+			break;
+	}
 }
 
 void Obj_SetEmeraldAwardee(mobj_t *emerald, mobj_t *awardee)
