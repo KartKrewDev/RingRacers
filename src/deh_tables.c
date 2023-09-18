@@ -3792,6 +3792,7 @@ const char *const STATE_LIST[] = { // array length left dynamic for sanity testi
 
 	// Caked-Up Booty-Sheet Ghost
 	"S_HYUDORO",
+	"S_HYUDORO_RETURNING",
 
 	// Grow
 	"S_GROW_PARTICLE",

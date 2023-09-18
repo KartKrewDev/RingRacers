@@ -601,6 +601,8 @@ hyudoro_patrol_hit_player
 	// This will flicker the shadow
 	hyudoro_timer(hyu) = 18;
 
+	P_SetMobjState(hyu, S_HYUDORO_RETURNING);
+
 	return true;
 }
 
