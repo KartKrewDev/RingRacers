@@ -698,9 +698,9 @@ static GLRGBAFloat shader_defaultcolor = {1.0f, 1.0f, 1.0f, 1.0f};
 	"}\n"
 
 #define GLSL_SOFTWARE_TINT_EQUATION \
-	"if (tint_color.a > 0.0) {\n" \
+	"if (mix(tint_color.a, 0.0, brightmap_mix) > 0.0) {\n" \
 		"float color_bright = sqrt((base_color.r * base_color.r) + (base_color.g * base_color.g) + (base_color.b * base_color.b));\n" \
-		"float strength = sqrt(9.0 * tint_color.a);\n" \
+		"float strength = sqrt(9.0 * mix(tint_color.a, 0.0, brightmap_mix));\n" \
 		"final_color.r = clamp((color_bright * (tint_color.r * strength)) + (base_color.r * (1.0 - strength)), 0.0, 1.0);\n" \
 		"final_color.g = clamp((color_bright * (tint_color.g * strength)) + (base_color.g * (1.0 - strength)), 0.0, 1.0);\n" \
 		"final_color.b = clamp((color_bright * (tint_color.b * strength)) + (base_color.b * (1.0 - strength)), 0.0, 1.0);\n" \
@@ -708,7 +708,7 @@ static GLRGBAFloat shader_defaultcolor = {1.0f, 1.0f, 1.0f, 1.0f};
 
 #define GLSL_SOFTWARE_FADE_EQUATION \
 	"float darkness = R_DoomLightingEquation(lighting + light_gain);\n" \
-	"if (fade_start != 0.0 || fade_end != 31.0) {\n" \
+	"if (fade_start > 0.0 || fade_end < 31.0) {\n" \
 		"float fs = fade_start / 31.0;\n" \
 		"float fe = fade_end / 31.0;\n" \
 		"float fd = fe - fs;\n" \
@@ -763,7 +763,8 @@ static GLRGBAFloat shader_defaultcolor = {1.0f, 1.0f, 1.0f, 1.0f};
 		"vec4 texel = texture2D(tex, gl_TexCoord[0].st);\n" \
 		"vec4 base_color = texel * poly_color;\n" \
 		"vec4 final_color = base_color;\n" \
-		"float light_gain = (255.0 - lighting) * floor(texture2D(brightmap, gl_TexCoord[0].st).r);\n" \
+		"float brightmap_mix = floor(texture2D(brightmap, gl_TexCoord[0].st).r);\n" \
+		"float light_gain = (255.0 - lighting) * brightmap_mix;\n" \
 		GLSL_SOFTWARE_TINT_EQUATION \
 		GLSL_SOFTWARE_FADE_EQUATION \
 		"final_color.a = texel.a * poly_color.a;\n" \
@@ -787,7 +788,8 @@ static GLRGBAFloat shader_defaultcolor = {1.0f, 1.0f, 1.0f, 1.0f};
 		"vec4 texel = texture2D(tex, gl_TexCoord[0].st);\n" \
 		"vec4 base_color = texel * poly_color;\n" \
 		"vec4 final_color = base_color;\n" \
-		"float light_gain = (255.0 - lighting) * floor(texture2D(brightmap, gl_TexCoord[0].st).r);\n" \
+		"float brightmap_mix = floor(texture2D(brightmap, gl_TexCoord[0].st).r);\n" \
+		"float light_gain = (255.0 - lighting) * brightmap_mix;\n" \
 		GLSL_SOFTWARE_TINT_EQUATION \
 		GLSL_SOFTWARE_FADE_EQUATION \
 		"final_color *= gl_Color;\n" \
@@ -826,7 +828,8 @@ static GLRGBAFloat shader_defaultcolor = {1.0f, 1.0f, 1.0f, 1.0f};
 		"vec4 texel = texture2D(tex, vec2(gl_TexCoord[0].s - sdistort, gl_TexCoord[0].t - cdistort));\n" \
 		"vec4 base_color = texel * poly_color;\n" \
 		"vec4 final_color = base_color;\n" \
-		"float light_gain = (255.0 - lighting) * floor(texture2D(brightmap, gl_TexCoord[0].st).r);\n" \
+		"float brightmap_mix = floor(texture2D(brightmap, gl_TexCoord[0].st).r);\n" \
+		"float light_gain = (255.0 - lighting) * brightmap_mix;\n" \
 		GLSL_SOFTWARE_TINT_EQUATION \
 		GLSL_SOFTWARE_FADE_EQUATION \
 		"final_color.a = texel.a * poly_color.a;\n" \
@@ -850,6 +853,7 @@ static GLRGBAFloat shader_defaultcolor = {1.0f, 1.0f, 1.0f, 1.0f};
 	"void main(void) {\n" \
 		"vec4 base_color = gl_Color;\n" \
 		"vec4 final_color = base_color;\n" \
+		"float brightmap_mix = 0.0;\n" \
 		"float light_gain = 0.0;\n" \
 		GLSL_SOFTWARE_TINT_EQUATION \
 		GLSL_SOFTWARE_FADE_EQUATION \
