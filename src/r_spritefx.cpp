@@ -10,6 +10,7 @@
 
 #include "d_player.h"
 #include "info.h"
+#include "k_objects.h"
 #include "p_tick.h"
 #include "r_splats.h"
 #include "r_things.h"
@@ -26,6 +27,11 @@ INT32 R_ThingLightLevel(mobj_t* thing)
 		{
 			// Darken on every other frame of instawhip cooldown
 			lightlevel -= 128;
+		}
+
+		if (player->pflags & PF_CASTSHADOW)
+		{
+			lightlevel -= 255;
 		}
 	}
 
@@ -52,6 +58,24 @@ boolean R_SplatSlope(mobj_t* mobj, vector3_t position, pslope_t* slope)
 		slope->zdelta = FRACUNIT;
 		return true;
 	}
+
+	default:
+		break;
+	}
+
+	return false;
+}
+
+boolean R_CustomShadowZ(mobj_t* thing, fixed_t *z, pslope_t** slope)
+{
+	switch (thing->type)
+	{
+	case MT_SHADOW:
+		if (Obj_FakeShadowZ(thing, z, slope))
+		{
+			return true;
+		}
+		break;
 
 	default:
 		break;

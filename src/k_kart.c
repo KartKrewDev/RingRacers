@@ -4323,7 +4323,11 @@ void K_ApplyTripWire(player_t *player, tripwirestate_t state)
 	}
 
 	player->tripwireState = state;
-	K_AddHitLag(player->mo, 10, false);
+
+	if (player->hyudorotimer <= 0)
+	{
+		K_AddHitLag(player->mo, 10, false);
+	}
 
 	if (state == TRIPSTATE_PASSED && player->spinouttimer &&
 			player->speed > 2 * K_GetKartSpeed(player, false, true))
@@ -7733,6 +7737,8 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 	player->mo->spriteyoffset = 0;
 
 	player->cameraOffset = 0;
+
+	player->pflags &= ~(PF_CASTSHADOW);
 
 	if (player->curshield == KSHIELD_TOP)
 	{
@@ -11661,23 +11667,19 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 
 		if (player->hyudorotimer > 0)
 		{
-			if (leveltime & 1)
+			player->mo->renderflags |= RF_DONTDRAW | RF_MODULATE;
+			player->mo->renderflags &= ~K_GetPlayerDontDrawFlag(player);
+
+			if (!(leveltime & 1) && (player->hyudorotimer < (TICRATE/2) || player->hyudorotimer > hyudorotime-(TICRATE/2)))
 			{
-				player->mo->renderflags |= RF_DONTDRAW;
-			}
-			else
-			{
-				if (player->hyudorotimer >= (TICRATE/2) && player->hyudorotimer <= hyudorotime-(TICRATE/2))
-					player->mo->renderflags &= ~K_GetPlayerDontDrawFlag(player);
-				else
-					player->mo->renderflags &= ~RF_DONTDRAW;
+				player->mo->renderflags &= ~(RF_DONTDRAW | RF_BLENDMASK);
 			}
 
 			player->flashing = player->hyudorotimer; // We'll do this for now, let's people know about the invisible people through subtle hints
 		}
 		else if (player->hyudorotimer == 0)
 		{
-			player->mo->renderflags &= ~RF_DONTDRAW;
+			player->mo->renderflags &= ~RF_BLENDMASK;
 		}
 
 		if (player->trickpanel == 1)

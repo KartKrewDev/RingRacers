@@ -4508,6 +4508,7 @@ state_t states[NUMSTATES] =
 	{SPR_GTAR, FF_FULLBRIGHT|FF_PAPERSPRITE, -1, {NULL}, 5, 2, S_NULL}, // S_GARDENTOPARROW
 
 	{SPR_HYUU, FF_FULLBRIGHT, -1, {NULL}, 0, 0, S_NULL}, // S_HYUDORO
+	{SPR_HYUU, FF_FULLBRIGHT|1, -1, {NULL}, 0, 0, S_NULL}, // S_HYUDORO_RETURNING
 
 	{SPR_GRWP, FF_FULLBRIGHT|FF_ANIMATE, 13, {NULL}, 7, 1, S_NULL}, // S_GROW_PARTICLE
 
@@ -24667,13 +24668,13 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		S_NULL,         // xdeathstate
 		sfx_None,       // deathsound
 		0,              // speed
-		32*FRACUNIT,    // radius
-		24*FRACUNIT,    // height
+		40*FRACUNIT,    // radius
+		80*FRACUNIT,    // height
 		0,              // display offset
 		0,              // mass
 		0,              // damage
 		sfx_None,       // activesound
-		MF_SPECIAL|MF_NOCLIP|MF_NOGRAVITY|MF_DONTENCOREMAP|MF_APPLYTERRAIN, // flags
+		MF_SPECIAL|MF_NOCLIP|MF_NOCLIPHEIGHT|MF_NOGRAVITY|MF_DONTENCOREMAP|MF_APPLYTERRAIN|MF_NOSQUISH, // flags
 		S_NULL          // raisestate
 	},
 

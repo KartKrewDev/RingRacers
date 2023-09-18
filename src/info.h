@@ -4950,6 +4950,7 @@ typedef enum state
 
 	// Caked-Up Booty-Sheet Ghost
 	S_HYUDORO,
+	S_HYUDORO_RETURNING,
 
 	// Grow
 	S_GROW_PARTICLE,

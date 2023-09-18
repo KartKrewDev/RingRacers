@@ -29,4 +29,5 @@ target_sources(SRB2SDL2 PRIVATE
 	sneaker-panel.c
 	emerald.c
 	checkpoint.cpp
+	shadow.cpp
 )

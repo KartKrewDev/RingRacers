@@ -3792,6 +3792,7 @@ const char *const STATE_LIST[] = { // array length left dynamic for sanity testi
 
 	// Caked-Up Booty-Sheet Ghost
 	"S_HYUDORO",
+	"S_HYUDORO_RETURNING",
 
 	// Grow
 	"S_GROW_PARTICLE",
@@ -5923,8 +5924,8 @@ const char *const MAPTHINGFLAG_LIST[4] = {
 const char *const PLAYERFLAG_LIST[] = {
 	"GODMODE",
 
-	// free: 1<<1 and 1<<2 (name un-matchable)
-	"\x01",
+	"\x01", // free: 1<<1 (name un-matchable)
+
 	"AUTOROULETTE", // Item box accessibility
 
 	// Look back VFX has been spawned
@@ -5932,9 +5933,10 @@ const char *const PLAYERFLAG_LIST[] = {
 	"GAINAX",
 
 	// Accessibility and cheats
-	"KICKSTARTACCEL", // Is accelerate in kickstart mode?
-	"GODMODE",
-	"NOCLIP",
+	"KICKSTARTACCEL", // Accessibility feature: Is accelerate in kickstart mode?
+	"POINTME", // An object is calling for my attention (via Obj_PointPlayersToMobj). Unset every frame!
+
+	"CASTSHADOW", // Something is casting a shadow on the player
 
 	"WANTSTOJOIN", // Spectator that wants to join
 
@@ -5966,8 +5968,11 @@ const char *const PLAYERFLAG_LIST[] = {
 	"HITFINISHLINE", // Already hit the finish line this tic
 	"WRONGWAY", // Moving the wrong way with respect to waypoints?
 
-	"SHRINKME",
-	"SHRINKACTIVE",
+	"SHRINKME", // "Shrink me" cheat preference
+	"SHRINKACTIVE", // "Shrink me" cheat is in effect. (Can't be disabled mid-race)
+
+	"VOID", // Removed from reality! When leaving hitlag, reenable visibility+collision and kill speed.
+	"NOFASTFALL", // Has already done ebrake/fastfall behavior for this input. Fastfalling needs a new input to prevent unwanted bounces on unexpected airtime.
 
 	NULL // stop loop here.
 };

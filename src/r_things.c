@@ -926,6 +926,7 @@ static void R_DrawVisSprite(vissprite_t *vis)
 	{
 		R_SetColumnFunc(COLDRAWFUNC_DROPSHADOW, false);
 		dc_transmap = vis->transmap;
+		dc_shadowcolor = vis->color;
 	}
 	else if (!(vis->cut & SC_PRECIP) &&
 			R_ThingIsFlashing(vis->mobj)) // Bosses "flash"
@@ -1314,6 +1315,14 @@ fixed_t R_GetShadowZ(
 	sector_t *sector;
 	ffloor_t *rover;
 
+	if (R_CustomShadowZ(thing, &groundz, &groundslope))
+	{
+		if (shadowslope != NULL)
+			*shadowslope = groundslope;
+
+		return groundz;
+	}
+
 	// for frame interpolation
 	interpmobjstate_t interp = {0};
 
@@ -1542,6 +1551,8 @@ static void R_ProjectDropShadow(
 
 	shadow->transmap = R_GetBlendTable(thing->whiteshadow ? AST_ADD : AST_SUBTRACT, 0);
 	shadow->colormap = colormaps;
+
+	shadow->color = thing->shadowcolor;
 
 	objectsdrawn++;
 }

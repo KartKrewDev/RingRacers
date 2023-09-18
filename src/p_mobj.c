@@ -4371,7 +4371,8 @@ static void P_ItemCapsulePartThinker(mobj_t *mobj)
 	else // alive
 	{
 		mobj_t *target = mobj->target;
-		fixed_t targetScale, z;
+		fixed_t targetScale;
+		fixed_t x, y, z;
 
 		if (P_MobjWasRemoved(target))
 		{
@@ -4394,19 +4395,23 @@ static void P_ItemCapsulePartThinker(mobj_t *mobj)
 		else
 			K_GenericExtraFlagsNoZAdjust(mobj, target);
 
+		x = target->x + target->sprxoff;
+		y = target->y + target->spryoff;
+		z = target->z + target->sprzoff;
+
 		if (mobj->eflags & MFE_VERTICALFLIP)
-			z = target->z + target->height - mobj->height - FixedMul(mobj->scale, mobj->movefactor);
+			z += target->height - mobj->height - FixedMul(mobj->scale, mobj->movefactor);
 		else
-			z = target->z + FixedMul(mobj->scale, mobj->movefactor);
+			z += FixedMul(mobj->scale, mobj->movefactor);
 
 		// rotate & move to capsule
 		mobj->angle += mobj->movedir;
 		if (mobj->flags2 & MF2_CLASSICPUSH) // centered
-			P_MoveOrigin(mobj, target->x, target->y, z);
+			P_MoveOrigin(mobj, x, y, z);
 		else
 			P_MoveOrigin(mobj,
-				target->x + P_ReturnThrustX(mobj, mobj->angle + ANGLE_90, mobj->radius),
-				target->y + P_ReturnThrustY(mobj, mobj->angle + ANGLE_90, mobj->radius),
+				x + P_ReturnThrustX(mobj, mobj->angle + ANGLE_90, mobj->radius),
+				y + P_ReturnThrustY(mobj, mobj->angle + ANGLE_90, mobj->radius),
 				z);
 	}
 }
@@ -4438,7 +4443,9 @@ static void P_RefreshItemCapsuleParts(mobj_t *mobj)
 	}
 
 	// update cap colors
-	if (itemType == KITEM_SUPERRING)
+	if (mobj->extravalue2)
+		color = mobj->extravalue2;
+	else if (itemType == KITEM_SUPERRING)
 	{
 		color = SKINCOLOR_GOLD;
 		newRenderFlags |= RF_SEMIBRIGHT;
@@ -4482,7 +4489,10 @@ static void P_RefreshItemCapsuleParts(mobj_t *mobj)
 					count = mobj->movecount;
 				break;
 			case KITEM_SUPERRING: // always display the number, and multiply it by 5
-				count = mobj->movecount * 5;
+				if (mobj->flags2 & MF2_STRONGBOX)
+					count = mobj->movecount * 20; // give Super Rings
+				else
+					count = mobj->movecount * 5;
 				break;
 			case KITEM_SAD: // never display the number
 			case KITEM_SPB:
@@ -5782,16 +5792,10 @@ static void P_MobjSceneryThink(mobj_t *mobj)
 	switch (mobj->type)
 	{
 	case MT_SHADOW:
-		if (mobj->tracer)
+		Obj_FakeShadowThink(mobj);
+
+		if (P_MobjWasRemoved(mobj))
 		{
-			P_MoveOrigin(mobj,
-					mobj->tracer->x,
-					mobj->tracer->y,
-					mobj->tracer->z);
-		}
-		else
-		{
-			P_RemoveMobj(mobj);
 			return;
 		}
 		break;
@@ -7297,6 +7301,14 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 		break;
 	}
 	case MT_ITEMCAPSULE:
+		if (!P_MobjWasRemoved(mobj->target))
+		{
+			P_MoveOrigin(mobj,
+					mobj->target->x + mobj->target->sprxoff,
+					mobj->target->y + mobj->target->spryoff,
+					mobj->target->z + mobj->target->sprzoff);
+		}
+
 		// scale the capsule
 		if (mobj->scale < mobj->extravalue1)
 		{
@@ -10408,6 +10420,7 @@ static void P_DefaultMobjShadowScale(mobj_t *thing)
 {
 	thing->shadowscale = 0;
 	thing->whiteshadow = ((thing->frame & FF_BRIGHTMASK) == FF_FULLBRIGHT);
+	thing->shadowcolor = 15;
 
 	switch (thing->type)
 	{
