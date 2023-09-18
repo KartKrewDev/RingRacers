@@ -8731,6 +8731,23 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 					mobj->angle += ANGLE_11hh;
 			}
 
+			boolean newperfect = false;
+			if (
+				(newplayer != NULL)
+				&& (gametyperules & GTR_CIRCUIT)
+				&& (gamespeed >= KARTSPEED_HARD)
+				&& (K_TimeAttackRules() == false)
+			)
+			{
+				UINT16 totalLaps = numlaps;
+				if (inDuel == false)
+				{
+					totalLaps *= 2;
+				}
+
+				newperfect = (newplayer->lapPoints >= totalLaps);
+			}
+
 			mobj_t *cur = mobj->hnext;
 			while (cur && !P_MobjWasRemoved(cur))
 			{
@@ -8746,7 +8763,8 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 						cur->frame = cur->state->frame + skincolors[newplayer->skincolor].invshade;
 					}
 				}
-				else if (cur->state == &states[S_KART_SIGN])
+				else if (cur->state == &states[S_KART_SIGN]
+					|| cur->state == &states[S_KART_SIGL])
 				{
 					z += (5*mobj->scale);
 					amt += 1;
@@ -8755,6 +8773,9 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 					{
 						cur->skin = &skins[newplayer->skin];
 						cur->color = newplayer->skincolor;
+						// Even if we didn't have the Perfect Sign to consider,
+						// it's still necessary to refresh SPR2 on skin changes.
+						P_SetMobjState(cur, (newperfect == true) ? S_KART_SIGL : S_KART_SIGN);
 					}
 				}
 				else if (cur->state == &states[S_SIGN_ERROR])
