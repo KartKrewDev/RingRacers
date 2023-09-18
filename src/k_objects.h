@@ -227,9 +227,9 @@ void Obj_ActivateCheckpointInstantly(mobj_t* mobj);
 
 /* Rideroid / Rideroid Node */
 void Obj_RideroidThink(mobj_t *mo);
-
 void Obj_RideroidNodeSpawn(mobj_t *mo);
 void Obj_RideroidNodeThink(mobj_t *mo);
+void Obj_getPlayerOffRideroid(mobj_t *mo);	// used in p_map.c to get off of em when passing transfer lines.
 
 
 #ifdef __cplusplus

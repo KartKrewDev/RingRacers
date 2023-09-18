@@ -56,21 +56,42 @@ static void plr_resetRideroidVars(player_t *p)
 // kills the rideroid and removes it from the map.
 static void Obj_killRideroid(mobj_t *mo)
 {
+	UINT8 i;
+	
+	for (i = 0; i < 32; i++)
+	{
+		mobj_t *t = P_SpawnMobj(mo->x, mo->y, mo->z, MT_THOK);
+		t->color = SKINCOLOR_TEAL;
+		t->frame = FF_FULLBRIGHT;
+		t->destscale = 1;
+		t->momx = P_RandomRange(PR_DECORATION, -32, 32)*mapobjectscale;
+		t->momy = P_RandomRange(PR_DECORATION, -32, 32)*mapobjectscale;
+		t->momz = P_RandomRange(PR_DECORATION, -32, 32)*mapobjectscale;
+	}
 	P_RemoveMobj(mo);
 }
 
-// this assumes mo->target and mo->target->player is valid.
-// if it's not, uuuh well too bad.
-static void Obj_getPlayerOffRideroid(mobj_t *mo)
+// makes the player get off of the rideroid.
+void Obj_getPlayerOffRideroid(mobj_t *mo)
 {
 	mobj_t *pmo = mo->target;
-	player_t *p = pmo->player;
 	
-	pmo->flags &= ~MF_NOGRAVITY;
-	plr_resetRideroidVars(p);
-	
-	if (!P_MobjWasRemoved(mo))
+	if (pmo && !P_MobjWasRemoved(pmo))
+	{
+		player_t *p = pmo->player;
+		
+		pmo->flags &= ~MF_NOGRAVITY;
+		plr_resetRideroidVars(p);
+
 		mo->fuse = TICRATE/2;
+		mo->momx = mo->momx*2;
+		mo->momy = mo->momy*2;
+		mo->momz = 0;
+		mo->target = NULL;
+		
+		S_StartSound(mo, sfx_ridr4);
+		
+	}
 }
 
 // this assumes mo->target and mo->target->player is valid.
@@ -97,19 +118,23 @@ static fixed_t Obj_rideroidLerp(INT32 start, INT32 finish, INT32 percent)
 static void Obj_rideroidTrail(mobj_t *mo)
 {
 	mobj_t *pmo = mo->target;
-	player_t *p = pmo->player;	// used to make some graphics local to save on framerate
+	player_t *p;
 	
 	UINT8 i, j;
 	
 	angle_t h_an = mo->angle + ANG1*90;
+	
+	if (pmo && !P_MobjWasRemoved(pmo))
+	{
+		p = pmo->player;	// used to make some graphics local to save on framerate
+		mo->color = pmo->color;
+		mo->colorized = pmo->colorized;
+	}	
 	// from here, we will use the following:
 	// extravalue1: prev x
 	// extravalue2: prev y
 	// cusval: prev z
 	// cvmem: prev roll angle
-
-	mo->color = pmo->color;
-	mo->colorized = pmo->colorized;
 	
 	for (j = 0; j < 9; j++)
 	{
@@ -135,7 +160,7 @@ static void Obj_rideroidTrail(mobj_t *mo)
 			P_SetScale(t, max(1, mapobjectscale*5/6 - ((10-j)*mapobjectscale/120)));
 			t->destscale = 1;
 
-			if (p != &players[consoleplayer] && j)
+			if (p && p != &players[consoleplayer] && j)
 				t->renderflags |= RF_DONTDRAW;
 			
 		}
@@ -156,6 +181,10 @@ static void Obj_updateRideroidPos(mobj_t *mo)
 	fixed_t y = pmo->y + 2*FINESINE(pmo->angle>>ANGLETOFINESHIFT);
 	
 	P_MoveOrigin(mo, x, y, pmo->z - 10*mapobjectscale);
+	mo->momx = pmo->momx;
+	mo->momy = pmo->momy;
+	mo->momz = pmo->momz;
+	
 	Obj_rideroidTrail(mo);
 }
 
@@ -176,7 +205,19 @@ void Obj_RideroidThink(mobj_t *mo)
 	
 	if (!pmo || P_MobjWasRemoved(pmo))
 	{
-		Obj_killRideroid(mo);
+		if (!mo->fuse)
+		{
+			mo->fuse = TICRATE/2;
+		}
+		else if (mo->fuse == 1)
+		{
+			Obj_killRideroid(mo);
+		}
+		else
+		{
+			Obj_rideroidTrail(mo);
+			mo->rollangle += ANG1*24;
+		}
 		return;
 	}
 	
@@ -197,7 +238,7 @@ void Obj_RideroidThink(mobj_t *mo)
 			p->rideroid = true;
 			p->rdnodepull = false;
 			
-			//S_StartSound(pmo, sfx_ridr2);
+			S_StartSound(pmo, sfx_ridr2);
 		}
 		
 		return;
@@ -231,8 +272,8 @@ void Obj_RideroidThink(mobj_t *mo)
 	
 	mo->movecount++;	// we use this as a timer for sounds and whatnot.
 	
-	//if (mo->movecount == 1 || !(mo->movecount%TICRATE))
-		//S_StartSound(mo, sfx_ridr3);
+	if (mo->movecount == 1 || !(mo->movecount%TICRATE))
+		S_StartSound(mo, sfx_ridr3);
 	
 	
 	// aaaaand the actual gameplay and shit... wooooo
@@ -294,7 +335,7 @@ void Obj_RideroidThink(mobj_t *mo)
 		
 		if (p->cmd.turning < -400)
 		{
-			P_Thrust(pmo, mo->angle - 90*ANG1, 2*mapobjectscale);
+			P_Thrust(pmo, mo->angle - ANGLE_90, 2*mapobjectscale);
 			p->rideroidrollangle -= ANG1*3;
 			
 			if (p->rideroidrollangle < -ANG1*25)
@@ -305,7 +346,7 @@ void Obj_RideroidThink(mobj_t *mo)
 		}
 		else if (p->cmd.turning > 400)
 		{
-			P_Thrust(pmo, mo->angle + 90*ANG1, 2*mapobjectscale);
+			P_Thrust(pmo, mo->angle + ANGLE_90, 2*mapobjectscale);
 			p->rideroidrollangle += ANG1*3;
 			
 			if (p->rideroidrollangle > ANG1*25)
@@ -323,15 +364,20 @@ void Obj_RideroidThink(mobj_t *mo)
 		p->rdaddmomx = pmo->momx - basemomx;
 		p->rdaddmomy = pmo->momy - basemomy;
 		
-		//CONS_Printf("CURR: %d, %d\n", pmo->momx/mapobjectscale, pmo->momy/mapobjectscale);
-		//CONS_Printf("BASE: %d, %d\n", basemomx/mapobjectscale, basemomy/mapobjectscale);
-		//CONS_Printf("ADD: %d, %d\n", p->rdaddmomx/mapobjectscale, p->rdaddmomy/mapobjectscale);
+		/*CONS_Printf("CURR: %d, %d\n", pmo->momx/mapobjectscale, pmo->momy/mapobjectscale);
+		CONS_Printf("BASE: %d, %d\n", basemomx/mapobjectscale, basemomy/mapobjectscale);
+		CONS_Printf("ADD: %d, %d\n", p->rdaddmomx/mapobjectscale, p->rdaddmomy/mapobjectscale);*/
 		
 		// find out how much addmomx and addmomy we can actually get.
 		// we do this by misusing P_Thrust to calc our values then immediately cancelling it.
 		basemomx = pmo->momx;
 		basemomy = pmo->momy;
-		P_Thrust(pmo, mo->angle - ANG1*90, RIDEROIDMAXADD*6*mapobjectscale);
+		
+		if (mo->angle > ANGLE_90 && mo->angle < ANGLE_270)
+			P_Thrust(pmo, mo->angle - ANGLE_90, RIDEROIDMAXADD*6*mapobjectscale);
+		else
+			P_Thrust(pmo, mo->angle + ANGLE_90, RIDEROIDMAXADD*6*mapobjectscale);
+		
 		xthreshold = pmo->momx - basemomx;
 		ythreshold = pmo->momy - basemomy;
 		
@@ -489,7 +535,7 @@ void Obj_RideroidNodeThink(mobj_t *mo)
 			rd->angle = players[i].rideroidangle;
 			P_SetTarget(&rd->target, pmo);
 			
-			//S_StartSound(rd, sfx_ridr1);
+			S_StartSound(rd, sfx_ridr1);
 			
 			//CONS_Printf("rd pull\n");
 					

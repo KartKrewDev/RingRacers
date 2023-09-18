@@ -1210,6 +1210,11 @@ sfxinfo_t S_sfx[NUMSFX] =
 
   {"rank",   false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""}, // Rank slam
 
+  {"ridr1",   false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, "Boarding Rideroid"}, // Rideroid Activation
+  {"ridr2",   false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""}, // Rideroid Diveroll
+  {"ridr3",   false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""}, // Rideroid Loop
+  {"ridr4",   false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""}, // Leaving Rideroid 
+
   // SRB2Kart - Engine sounds
   // Engine class A
   {"krta00", false,  48, 65, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},

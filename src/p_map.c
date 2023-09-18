@@ -1877,7 +1877,14 @@ static BlockItReturn_t PIT_CheckLine(line_t *ld)
 		else if (shouldCollide == 2)
 			return BMIT_CONTINUE; // force no collide
 	}
-
+	
+	// a bit of a hacky behaviour, but not that I know where else it would go.
+	if (tm.thing->type == MT_RIDEROID
+	&& tm.blockingline->flags & ML_TFERLINE)
+	{
+		Obj_getPlayerOffRideroid(tm.thing);
+	}
+	
 	if (!ld->backsector) // one sided line
 	{
 		if (P_PointOnLineSide(tm.thing->x, tm.thing->y, ld))
