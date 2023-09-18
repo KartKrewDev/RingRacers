@@ -581,7 +581,12 @@ hyudoro_patrol_hit_player
 
 	K_StripItems(player);
 
-	player->hyudorotimer = hyudorotime;
+	/* do not make 1st place invisible */
+	if (player->position != 1)
+	{
+		player->hyudorotimer = hyudorotime;
+	}
+
 	player->stealingtimer = hyudorotime;
 
 	P_SetTarget(&hyudoro_stolefrom(hyu), toucher);
