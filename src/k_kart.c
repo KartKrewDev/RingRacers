@@ -10550,23 +10550,24 @@ boolean K_FastFallBounce(player_t *player)
 		const fixed_t minBounce = player->mo->scale;
 		fixed_t bounce = 2 * abs(player->fastfall) / 3;
 
+		if (player->curshield != KSHIELD_BUBBLE && bounce <= 2 * maxBounce)
+		{
+			// Lose speed on bad bounce.
+			// Slow down more as horizontal momentum shrinks
+			// compared to vertical momentum.
+			angle_t a = R_PointToAngle2(0, 0, 4 * maxBounce, player->speed);
+			fixed_t f = FSIN(a);
+			player->mo->momx = FixedMul(player->mo->momx, f);
+			player->mo->momy = FixedMul(player->mo->momy, f);
+		}
+
 		if (bounce > maxBounce)
 		{
 			bounce = maxBounce;
 		}
-		else
+		else if (bounce < minBounce)
 		{
-			// Lose speed on bad bounce.
-			if (player->curshield != KSHIELD_BUBBLE)
-			{
-				player->mo->momx /= 2;
-				player->mo->momy /= 2;
-			}
-
-			if (bounce < minBounce)
-			{
-				bounce = minBounce;
-			}
+			bounce = minBounce;
 		}
 
 		if (player->curshield == KSHIELD_BUBBLE)
