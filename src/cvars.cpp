@@ -773,6 +773,7 @@ extern CV_PossibleValue_t capsuletest_cons_t[];
 void CapsuleTest_OnChange(void);
 consvar_t cv_capsuletest = OnlineCheat("capsuletest", "Off").values(capsuletest_cons_t).onchange(CapsuleTest_OnChange).description("Force item capsule spawning rules");
 
+consvar_t cv_debugcheese = OnlineCheat("debugcheese", "Off").on_off().description("Disable checks that prevent farming item boxes");
 consvar_t cv_debugencorevote = OnlineCheat("debugencorevote", "Off").on_off().description("Force encore choice to appear on vote screen");
 
 void ForceSkin_OnChange(void);

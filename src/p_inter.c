@@ -165,6 +165,13 @@ boolean P_CanPickupItem(player_t *player, UINT8 weapon)
 // 1 = floating item, 2 = perma ring, 3 = capsule
 boolean P_IsPickupCheesy(player_t *player, UINT8 type)
 {
+	extern consvar_t cv_debugcheese;
+
+	if (cv_debugcheese.value)
+	{
+		return false;
+	}
+
 	if (player->lastpickupdistance && player->lastpickuptype == type)
 	{
 		UINT32 distancedelta = min(player->distancetofinish - player->lastpickupdistance, player->lastpickupdistance - player->distancetofinish);
