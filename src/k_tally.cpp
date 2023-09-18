@@ -43,7 +43,7 @@ boolean level_tally_t::UseBonuses(void)
 	}
 
 	// No bonuses / ranking in FREE PLAY or Time Attack
-	return (K_TimeAttackRules() == false || grandprixinfo.gp == true);
+	return (grandprixinfo.gp == true || K_TimeAttackRules() == false);
 }
 
 void level_tally_t::DetermineBonuses(void)
