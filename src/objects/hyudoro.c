@@ -183,20 +183,6 @@ project_hyudoro_hover (mobj_t *hyu)
 	bob_in_place(hyu, 64);
 }
 
-static void
-spawn_hyudoro_shadow (mobj_t *hyu)
-{
-	mobj_t *shadow = P_SpawnMobjFromMobj(
-			hyu, 0, 0, 0, MT_SHADOW);
-
-	shadow->whiteshadow = true;
-
-	shadow->shadowscale = hyu->shadowscale;
-	hyu->shadowscale = 0;
-
-	P_SetTarget(&shadow->tracer, hyu);
-}
-
 static mobj_t *
 find_duel_target (mobj_t *ignore)
 {
@@ -572,7 +558,7 @@ Obj_InitHyudoroCenter (mobj_t * center, mobj_t * master)
 		hyu->renderflags &= ~(K_GetPlayerDontDrawFlag(master->player));
 	}
 
-	spawn_hyudoro_shadow(hyu); // this sucks btw
+	Obj_SpawnFakeShadow(hyu); // this sucks btw
 }
 
 void

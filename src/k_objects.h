@@ -214,6 +214,10 @@ void Obj_EmeraldFlareThink(mobj_t *flare);
 void Obj_BeginEmeraldOrbit(mobj_t *emerald, mobj_t *target, fixed_t radius, INT32 revolution_time, tic_t fuse);
 void Obj_GiveEmerald(mobj_t *emerald);
 
+/* Fake Shadow */
+mobj_t *Obj_SpawnFakeShadow(mobj_t *from);
+void Obj_FakeShadowThink(mobj_t *shadow);
+
 /* Checkpoints */
 void Obj_ResetCheckpoints(void);
 void Obj_LinkCheckpoint(mobj_t *end);

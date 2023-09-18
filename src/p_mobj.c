@@ -5782,16 +5782,10 @@ static void P_MobjSceneryThink(mobj_t *mobj)
 	switch (mobj->type)
 	{
 	case MT_SHADOW:
-		if (mobj->tracer)
+		Obj_FakeShadowThink(mobj);
+
+		if (P_MobjWasRemoved(mobj))
 		{
-			P_MoveOrigin(mobj,
-					mobj->tracer->x,
-					mobj->tracer->y,
-					mobj->tracer->z);
-		}
-		else
-		{
-			P_RemoveMobj(mobj);
 			return;
 		}
 		break;
