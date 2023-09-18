@@ -1,3 +1,6 @@
+#include <optional>
+#include <utility>
+
 #include "../info.h"
 #include "../k_objects.h"
 #include "../p_local.h"
@@ -18,6 +21,28 @@ struct Shadow : mobj_t
 	}
 
 	bool valid() const { return !P_MobjWasRemoved(this) && !P_MobjWasRemoved(follow()); }
+
+	std::optional<std::pair<fixed_t, pslope_t*>> z_position() const
+	{
+		switch (follow()->type)
+		{
+		case MT_HYUDORO: {
+			fixed_t z;
+			pslope_t* slope;
+
+			if (Obj_HyudoroShadowZ(follow(), &z, &slope))
+			{
+				return {{z, slope}};
+			}
+			break;
+		}
+
+		default:
+			break;
+		}
+
+		return {};
+	}
 
 	void destroy() { P_RemoveMobj(this); }
 
@@ -57,4 +82,28 @@ void Obj_FakeShadowThink(mobj_t* shadow)
 	}
 
 	x->move();
+}
+
+boolean Obj_FakeShadowZ(const mobj_t* shadow, fixed_t* return_z, pslope_t** return_slope)
+{
+	auto x = static_cast<const Shadow*>(shadow);
+
+	if (!x->valid())
+	{
+		return false;
+	}
+
+	auto pair = x->z_position();
+
+	if (!pair)
+	{
+		return false;
+	}
+
+	auto [z, slope] = *pair;
+
+	*return_z = z;
+	*return_slope = slope;
+
+	return true;
 }

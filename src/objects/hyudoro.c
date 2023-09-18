@@ -882,3 +882,21 @@ Obj_HyudoroCollide
 			break;
 	}
 }
+
+boolean
+Obj_HyudoroShadowZ
+(		mobj_t * hyu,
+		fixed_t * return_z,
+		pslope_t ** return_slope)
+{
+	if (hyudoro_mode(hyu) != HYU_PATROL)
+		return false;
+
+	if (P_MobjWasRemoved(hyudoro_center(hyu)))
+		return false;
+
+	*return_z = hyu->z;
+	*return_slope = hyudoro_center(hyu)->standingslope;
+
+	return true;
+}

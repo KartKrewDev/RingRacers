@@ -17,6 +17,7 @@ void Obj_HyudoroDeploy(mobj_t *master);
 void Obj_HyudoroThink(mobj_t *actor);
 void Obj_HyudoroCenterThink(mobj_t *actor);
 void Obj_HyudoroCollide(mobj_t *special, mobj_t *toucher);
+boolean Obj_HyudoroShadowZ(mobj_t *actor, fixed_t *return_z, pslope_t **return_slope);
 
 /* Garden Top */
 void Obj_GardenTopDeploy(mobj_t *rider);
@@ -218,6 +219,7 @@ void Obj_SetEmeraldAwardee(mobj_t *emerald, mobj_t *awardee);
 /* Fake Shadow */
 mobj_t *Obj_SpawnFakeShadow(mobj_t *from);
 void Obj_FakeShadowThink(mobj_t *shadow);
+boolean Obj_FakeShadowZ(const mobj_t *shadow, fixed_t *return_z, pslope_t **return_slope);
 
 /* Checkpoints */
 void Obj_ResetCheckpoints(void);
