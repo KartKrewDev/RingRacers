@@ -91,7 +91,8 @@ get_look_angle (mobj_t *thing)
 static boolean
 is_hyudoro (mobj_t *thing)
 {
-	return thing && thing->type == MT_HYUDORO;
+	return !P_MobjWasRemoved(thing) &&
+		thing->type == MT_HYUDORO;
 }
 
 static mobj_t *
@@ -346,7 +347,7 @@ append_hyudoro
 	}
 
 	hyudoro_stackpos(hyu) = lastpos + 1;
-	*head = hyu;
+	P_SetTarget(head, hyu);
 }
 
 static void
@@ -354,26 +355,37 @@ pop_hyudoro (mobj_t **head)
 {
 	mobj_t *hyu = *head;
 
-	INT32 lastpos;
-	INT32 thispos;
-
-	if (is_hyudoro(hyu))
+	if (!is_hyudoro(hyu))
 	{
-		lastpos = hyudoro_stackpos(hyu);
-		hyu = hyudoro_next(hyu);
-
-		while (is_hyudoro(hyu))
-		{
-			thispos = hyudoro_stackpos(hyu);
-
-			hyudoro_stackpos(hyu) = lastpos;
-			lastpos = thispos;
-
-			hyu = hyudoro_next(hyu);
-		}
+		return;
 	}
 
-	*head = hyu;
+	INT32 lastpos = hyudoro_stackpos(hyu);
+
+	{
+		mobj_t *next = hyudoro_next(hyu);
+
+		P_SetTarget(head, next);
+		P_SetTarget(&hyudoro_next(hyu), NULL);
+
+		hyu = next;
+	}
+
+	if (!is_hyudoro(hyu))
+	{
+		return;
+	}
+
+	do
+	{
+		INT32 thispos = hyudoro_stackpos(hyu);
+
+		hyudoro_stackpos(hyu) = lastpos;
+		lastpos = thispos;
+
+		hyu = hyudoro_next(hyu);
+	}
+	while (is_hyudoro(hyu));
 }
 
 static void hyudoro_set_held_item_from_player
