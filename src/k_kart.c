@@ -10147,15 +10147,9 @@ void K_KartEbrakeVisuals(player_t *p)
 	{
 		if (p->ebrakefor % 20 == 0)
 		{
-			wave = P_SpawnMobj(p->mo->x, p->mo->y, p->mo->z, MT_SOFTLANDING);
-			P_SetScale(wave, p->mo->scale);
-			if (p->respawn.state == RESPAWNST_NONE)
-			{
-				wave->momx = p->mo->momx;
-				wave->momy = p->mo->momy;
-				wave->momz = p->mo->momz;
-				wave->standingslope = p->mo->standingslope;
-			}
+			wave = P_SpawnMobj(p->mo->x, p->mo->y, p->mo->floorz, MT_SOFTLANDING);
+			P_InstaScale(wave, p->mo->scale);
+			P_SetTarget(&wave->target, p->mo);
 			K_ReduceVFX(wave, p);
 		}
 
