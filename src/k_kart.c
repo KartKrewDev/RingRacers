@@ -10147,15 +10147,9 @@ void K_KartEbrakeVisuals(player_t *p)
 	{
 		if (p->ebrakefor % 20 == 0)
 		{
-			wave = P_SpawnMobj(p->mo->x, p->mo->y, p->mo->z, MT_SOFTLANDING);
-			P_SetScale(wave, p->mo->scale);
-			if (p->respawn.state == RESPAWNST_NONE)
-			{
-				wave->momx = p->mo->momx;
-				wave->momy = p->mo->momy;
-				wave->momz = p->mo->momz;
-				wave->standingslope = p->mo->standingslope;
-			}
+			wave = P_SpawnMobj(p->mo->x, p->mo->y, p->mo->floorz, MT_SOFTLANDING);
+			P_InstaScale(wave, p->mo->scale);
+			P_SetTarget(&wave->target, p->mo);
 			K_ReduceVFX(wave, p);
 		}
 
@@ -10546,34 +10540,35 @@ boolean K_FastFallBounce(player_t *player)
 	// Handle fastfall bounce.
 	if (player->fastfall != 0)
 	{
-		const fixed_t maxBounce = player->mo->scale * 10;
-		const fixed_t minBounce = player->mo->scale;
+		const fixed_t maxBounce = mapobjectscale * 10;
+		const fixed_t minBounce = mapobjectscale;
 		fixed_t bounce = 2 * abs(player->fastfall) / 3;
+
+		if (player->curshield != KSHIELD_BUBBLE && bounce <= 2 * maxBounce)
+		{
+			// Lose speed on bad bounce.
+			// Slow down more as horizontal momentum shrinks
+			// compared to vertical momentum.
+			angle_t a = R_PointToAngle2(0, 0, 4 * maxBounce, player->speed);
+			fixed_t f = FSIN(a);
+			player->mo->momx = FixedMul(player->mo->momx, f);
+			player->mo->momy = FixedMul(player->mo->momy, f);
+		}
 
 		if (bounce > maxBounce)
 		{
 			bounce = maxBounce;
 		}
-		else
+		else if (bounce < minBounce)
 		{
-			// Lose speed on bad bounce.
-			if (player->curshield != KSHIELD_BUBBLE)
-			{
-				player->mo->momx /= 2;
-				player->mo->momy /= 2;
-			}
-
-			if (bounce < minBounce)
-			{
-				bounce = minBounce;
-			}
+			bounce = minBounce;
 		}
 
 		if (player->curshield == KSHIELD_BUBBLE)
 		{
 			S_StartSound(player->mo, sfx_s3k44);
 			P_InstaThrust(player->mo, player->mo->angle, 11*max(player->speed, abs(player->fastfall))/10);
-			bounce += 3 * player->mo->scale;
+			bounce += 3 * mapobjectscale;
 		}
 		else
 		{
