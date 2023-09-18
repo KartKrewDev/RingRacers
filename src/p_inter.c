@@ -2301,7 +2301,7 @@ static void AddNullHitlag(player_t *player, tic_t oldHitlag)
 	// 1) repeating damage doesn't count
 	// 2) new damage sources still count
 
-	if (player->timeshit <= player->timeshitprev)
+	if (player->timeshit <= player->timeshitprev || player->hyudorotimer > 0)
 	{
 		player->nullHitlag += (player->mo->hitlag - oldHitlag);
 	}
