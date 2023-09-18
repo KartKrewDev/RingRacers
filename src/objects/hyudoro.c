@@ -57,6 +57,8 @@ K_GetSpeed (mobj_t *mobj)
 #define hyudoro_center_max_radius(o) ((o)->threshold)
 #define hyudoro_center_master(o) ((o)->target)
 
+#define HYU_VISUAL_HEIGHT (24)
+
 static angle_t
 trace_angle (mobj_t *hyu)
 {
@@ -108,7 +110,7 @@ sine_bob
 		angle_t a,
 		fixed_t sineofs)
 {
-	hyu->sprzoff = FixedMul(hyu->height,
+	hyu->sprzoff = FixedMul(HYU_VISUAL_HEIGHT * hyu->scale,
 			sineofs + FINESINE(a >> ANGLETOFINESHIFT));
 }
 
@@ -166,7 +168,7 @@ rise_thru_stack (mobj_t *hyu)
 	mobj_t *target = hyudoro_target(hyu);
 
 	fixed_t spacer = ((target->height / 2) +
-			(hyu->height * 2));
+			(HYU_VISUAL_HEIGHT * hyu->scale * 2));
 
 	fixed_t sink = hyudoro_stackpos(hyu) * spacer;
 
@@ -300,7 +302,7 @@ do_confused (mobj_t *hyu)
 	// Bob very fast
 	bob_in_place(hyu, 32);
 
-	hyu->sprzoff += hyu->height;
+	hyu->sprzoff += HYU_VISUAL_HEIGHT * hyu->scale;
 }
 
 static void

@@ -24668,8 +24668,8 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		S_NULL,         // xdeathstate
 		sfx_None,       // deathsound
 		0,              // speed
-		32*FRACUNIT,    // radius
-		24*FRACUNIT,    // height
+		40*FRACUNIT,    // radius
+		80*FRACUNIT,    // height
 		0,              // display offset
 		0,              // mass
 		0,              // damage
