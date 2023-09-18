@@ -10540,8 +10540,8 @@ boolean K_FastFallBounce(player_t *player)
 	// Handle fastfall bounce.
 	if (player->fastfall != 0)
 	{
-		const fixed_t maxBounce = player->mo->scale * 10;
-		const fixed_t minBounce = player->mo->scale;
+		const fixed_t maxBounce = mapobjectscale * 10;
+		const fixed_t minBounce = mapobjectscale;
 		fixed_t bounce = 2 * abs(player->fastfall) / 3;
 
 		if (player->curshield != KSHIELD_BUBBLE && bounce <= 2 * maxBounce)
@@ -10568,7 +10568,7 @@ boolean K_FastFallBounce(player_t *player)
 		{
 			S_StartSound(player->mo, sfx_s3k44);
 			P_InstaThrust(player->mo, player->mo->angle, 11*max(player->speed, abs(player->fastfall))/10);
-			bounce += 3 * player->mo->scale;
+			bounce += 3 * mapobjectscale;
 		}
 		else
 		{
