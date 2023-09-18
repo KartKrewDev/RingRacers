@@ -4,7 +4,7 @@ add_executable(SRB2SDL2 MACOSX_BUNDLE WIN32
 	md5.c
 	config.h.in
 	string.c
-	d_main.c
+	d_main.cpp
 	d_clisrv.c
 	d_net.c
 	d_netfil.c
