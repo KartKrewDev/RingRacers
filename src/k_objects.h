@@ -215,6 +215,7 @@ void Obj_EmeraldFlareThink(mobj_t *flare);
 void Obj_BeginEmeraldOrbit(mobj_t *emerald, mobj_t *target, fixed_t radius, INT32 revolution_time, tic_t fuse);
 void Obj_GiveEmerald(mobj_t *emerald);
 void Obj_SetEmeraldAwardee(mobj_t *emerald, mobj_t *awardee);
+boolean Obj_EmeraldCanHUDTrack(const mobj_t *emerald);
 
 /* Fake Shadow */
 mobj_t *Obj_SpawnFakeShadow(mobj_t *from);

@@ -448,8 +448,8 @@ bool is_object_tracking_target(const mobj_t* mobj)
 		return inDuel == false && battleovertime.enabled;
 
 	case MT_EMERALD:
-		// extravalue1: emerald flag must be set
-		return mobj->extravalue1 && ((specialstageinfo.valid && specialstageinfo.ufo) || is_player_tracking_target());
+		return Obj_EmeraldCanHUDTrack(mobj) &&
+			((specialstageinfo.valid && specialstageinfo.ufo) || is_player_tracking_target());
 
 	case MT_MONITOR:
 		return is_player_tracking_target() && Obj_MonitorGetEmerald(mobj) != 0;

@@ -354,3 +354,13 @@ void Obj_SetEmeraldAwardee(mobj_t *emerald, mobj_t *awardee)
 {
 	P_SetTarget(&emerald_award(emerald), awardee);
 }
+
+boolean Obj_EmeraldCanHUDTrack(const mobj_t *emerald)
+{
+	if (!P_MobjWasRemoved(emerald_award(emerald)) && emerald_award(emerald)->type == MT_ITEMCAPSULE)
+	{
+		return false;
+	}
+
+	return true;
+}
