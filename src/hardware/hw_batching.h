@@ -27,6 +27,7 @@ typedef struct
 	FUINT numVerts;
 	FBITFIELD polyFlags;
 	GLMipmap_t *texture;
+	GLMipmap_t *brightmap;
 	int shader;
 	// this tells batching that the plane belongs to a horizon line and must be drawn in correct order with the skywalls
 	boolean horizonSpecial;
