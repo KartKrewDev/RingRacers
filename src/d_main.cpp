@@ -15,6 +15,8 @@
 ///        plus functions to parse command line parameters, configure game
 ///        parameters, and call the startup functions.
 
+#include <tracy/tracy/Tracy.hpp>
+
 #if (defined (__unix__) && !defined (MSDOS)) || defined(__APPLE__) || defined (UNIXCOMMON)
 #include <sys/stat.h>
 #include <sys/types.h>
@@ -336,6 +338,8 @@ static void D_Display(void)
 	static boolean wipe = false;
 	INT32 wipedefindex = 0;
 	UINT8 i;
+
+	ZoneScoped;
 
 	if (!dedicated)
 	{
