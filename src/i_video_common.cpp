@@ -14,6 +14,7 @@
 #include <vector>
 
 #include <imgui.h>
+#include <tracy/tracy/Tracy.hpp>
 
 #include "cxxutil.hpp"
 #include "f_finale.h"
@@ -292,6 +293,7 @@ void I_FinishUpdate(void)
 {
 	if (rendermode == render_none)
 	{
+		FrameMark;
 		return;
 	}
 
@@ -299,6 +301,7 @@ void I_FinishUpdate(void)
 	if (rendermode == render_opengl)
 	{
 		finish_legacy_ogl_update();
+		FrameMark;
 		return;
 	}
 #endif
@@ -310,6 +313,7 @@ void I_FinishUpdate(void)
 	if (rhi == nullptr)
 	{
 		// ???
+		FrameMark;
 		return;
 	}
 
@@ -337,6 +341,8 @@ void I_FinishUpdate(void)
 
 	rhi->present();
 	rhi->finish();
+
+	FrameMark;
 
 	// Immediately prepare to begin drawing the next frame
 	I_StartDisplayUpdate();

@@ -12,6 +12,7 @@
 #include <memory>
 
 #include <SDL.h>
+#include <tracy/tracy/Tracy.hpp>
 
 #include "../audio/chunk_load.hpp"
 #include "../audio/gain.hpp"
@@ -121,8 +122,12 @@ public:
 	~SdlAudioLockHandle() { SDL_UnlockAudio(); }
 };
 
+static const char* kAudio = "Audio";
+
 void audio_callback(void* userdata, Uint8* buffer, int len)
 {
+	tracy::SetThreadName("SDL Audio Thread");
+	FrameMarkStart(kAudio);
 	// The SDL Audio lock is implied to be held during callback.
 
 	try
@@ -155,6 +160,8 @@ void audio_callback(void* userdata, Uint8* buffer, int len)
 	catch (...)
 	{
 	}
+
+	FrameMarkEnd(kAudio);
 
 	return;
 }
