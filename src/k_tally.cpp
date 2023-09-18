@@ -17,7 +17,6 @@
 #include "k_kart.h"
 #include "k_rank.h"
 #include "k_grandprix.h"
-#include "k_race.h"
 #include "k_battle.h"
 #include "k_boss.h"
 #include "k_specialstage.h"
@@ -330,7 +329,7 @@ void level_tally_t::Init(player_t *player)
 		if ((gametypes[gt]->rules & GTR_CIRCUIT) == GTR_CIRCUIT)
 		{
 			laps = player->lapPoints;
-			totalLaps = K_RaceLapCount(gamemap-1);
+			totalLaps = numlaps;
 
 			if (inDuel == false)
 			{

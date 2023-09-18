@@ -423,7 +423,7 @@ void K_RunFinishLineBeam(void)
 }
 
 /*--------------------------------------------------
-	UINT8 K_RaceLapCount(void);
+	UINT8 K_RaceLapCount(INT16 mapNum);
 
 		See header file for description.
 --------------------------------------------------*/
