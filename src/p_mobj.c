@@ -7291,6 +7291,14 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 		break;
 	}
 	case MT_ITEMCAPSULE:
+		if (!P_MobjWasRemoved(mobj->target))
+		{
+			P_MoveOrigin(mobj,
+					mobj->target->x + mobj->target->sprxoff,
+					mobj->target->y + mobj->target->spryoff,
+					mobj->target->z + mobj->target->sprzoff);
+		}
+
 		// scale the capsule
 		if (mobj->scale < mobj->extravalue1)
 		{
