@@ -442,6 +442,7 @@ struct itemroulette_t
 	boolean eggman;
 	boolean ringbox;
 	boolean autoroulette;
+	UINT8 reserved;
 };
 
 // enum for bot item priorities

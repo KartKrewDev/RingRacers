@@ -115,7 +115,7 @@ void P_RampConstant(const BasicFF_t *FFInfo, INT32 Start, INT32 End)
 //
 boolean P_CanPickupItem(player_t *player, UINT8 weapon)
 {
-	if (player->exiting || mapreset || (player->pflags & PF_ELIMINATED))
+	if (player->exiting || mapreset || (player->pflags & PF_ELIMINATED) || player->itemRoulette.reserved)
 		return false;
 
 	// 0: Sphere/Ring
