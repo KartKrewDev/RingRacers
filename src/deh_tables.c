@@ -367,6 +367,7 @@ const char *const STATE_LIST[] = { // array length left dynamic for sanity testi
 	"S_KART_SPINOUT",
 	"S_KART_DEAD",
 	"S_KART_SIGN",
+	"S_KART_SIGL",
 
 	// technically the player goes here but it's an infinite tic state
 	"S_OBJPLACE_DUMMY",

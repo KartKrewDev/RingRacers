@@ -8631,9 +8631,8 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 	case MT_SIGN: // Kart's unique sign behavior
 		if (mobj->movecount != 0)
 		{
-			mobj_t *cur = mobj->hnext;
-			SINT8 newskin = -1;
-			UINT8 newcolor = SKINCOLOR_NONE;
+			player_t *newplayer = NULL;
+
 			angle_t endangle = FixedAngle(mobj->extravalue1 << FRACBITS);
 
 			if (mobj->movecount == 1)
@@ -8647,8 +8646,11 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 					mobj->momz = 0;
 					mobj->movecount = 2;
 
-					newskin = ((skin_t*)mobj->target->skin) - skins;
-					newcolor = mobj->target->player->skincolor;
+					if (!P_MobjWasRemoved(mobj->target))
+					{
+						// Guarantee correct display of the player
+						newplayer = mobj->target->player;
+					}
 				}
 				else
 				{
@@ -8675,8 +8677,11 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 					{
 						if (ticstilimpact <= 8)
 						{
-							newskin = ((skin_t*)mobj->target->skin) - skins;
-							newcolor = mobj->target->player->skincolor;
+							if (!P_MobjWasRemoved(mobj->target))
+							{
+								// In anticipation of final declaration...
+								newplayer = mobj->target->player;
+							}
 						}
 						else
 						{
@@ -8688,25 +8693,33 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 
 							for (i = 0; i < MAXPLAYERS; i++)
 							{
-								if (playeringame[i] && !players[i].spectator)
-								{
-									plist[plistlen] = i;
-									plistlen++;
-								}
+								if (!playeringame[i])
+									continue;
+								if (players[i].spectator == true)
+									continue;
+
+								plist[plistlen++] = i;
 							}
 
-							if (plistlen <= 1)
+							if (plistlen)
+							{
+								if (plistlen > 1)
+								{
+									// Pick another player in the server!
+									plistlen = P_RandomKey(PR_SPARKLE, plistlen+1);
+								}
+								else
+								{
+									// One entry, grab the head.
+									plistlen = 0;
+								}
+
+								newplayer = &players[plist[plistlen]];
+							}
+							else if (!P_MobjWasRemoved(mobj->target))
 							{
 								// Default to the winner
-								newskin = ((skin_t*)mobj->target->skin) - skins;
-								newcolor = mobj->target->player->skincolor;
-							}
-							else
-							{
-								// Pick another player in the server!
-								player_t *p = &players[plist[P_RandomKey(PR_SPARKLE, plistlen)]];
-								newskin = ((skin_t*)p->mo->skin) - skins;
-								newcolor = p->skincolor;
+								newplayer = mobj->target->player;
 							}
 						}
 					}
@@ -8718,6 +8731,47 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 					mobj->angle += ANGLE_11hh;
 			}
 
+			boolean newperfect = false;
+			if (
+				(newplayer != NULL)
+				&& (gamespeed != KARTSPEED_EASY)
+				&& (newplayer->tally.active == true)
+				&& (newplayer->tally.totalLaps > 0) // Only true if not Time Attack
+				&& (newplayer->tally.laps >= newplayer->tally.totalLaps)
+			)
+			{
+				UINT8 pnum = (newplayer-players);
+				UINT32 skinflags = (demo.playback)
+					? demo.skinlist[demo.currentskinid[pnum]].flags
+					: skins[newplayer->skin].flags;
+
+				if (skinflags & SF_IRONMAN)
+				{
+					UINT8 i, maxdifficulty = 0;
+					for (i = 0; i < MAXPLAYERS; i++)
+					{
+						if (!playeringame[i])
+							continue;
+						if (players[i].spectator == true)
+							continue;
+						if (i == pnum)
+							continue;
+
+						// Any other player being a human permits Magician L-taunting.
+						if (players[i].bot == false)
+							break;
+
+						// Otherwise, guarantee this player faced a challenge first.
+						if (maxdifficulty >= players[i].botvars.difficulty)
+							continue;
+						maxdifficulty = players[i].botvars.difficulty;
+					}
+
+					newperfect = (i < MAXPLAYERS || maxdifficulty >= (MAXBOTDIFFICULTY/2));
+				}
+			}
+
+			mobj_t *cur = mobj->hnext;
 			while (cur && !P_MobjWasRemoved(cur))
 			{
 				fixed_t amt = cur->extravalue1 * mobj->scale;
@@ -8726,21 +8780,25 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 
 				if (cur->state == &states[S_SIGN_FACE])
 				{
-					if (newcolor != SKINCOLOR_NONE)
+					if (newplayer != NULL)
 					{
-						cur->color = skincolors[newcolor].invcolor;
-						cur->frame = cur->state->frame + skincolors[newcolor].invshade;
+						cur->color = skincolors[newplayer->skincolor].invcolor;
+						cur->frame = cur->state->frame + skincolors[newplayer->skincolor].invshade;
 					}
 				}
-				else if (cur->state == &states[S_KART_SIGN])
+				else if (cur->state == &states[S_KART_SIGN]
+					|| cur->state == &states[S_KART_SIGL])
 				{
 					z += (5*mobj->scale);
 					amt += 1;
 
-					if (newskin != -1)
+					if (newplayer != NULL)
 					{
-						cur->skin = &skins[newskin];
-						cur->color = newcolor;
+						cur->skin = &skins[newplayer->skin];
+						cur->color = newplayer->skincolor;
+						// Even if we didn't have the Perfect Sign to consider,
+						// it's still necessary to refresh SPR2 on skin changes.
+						P_SetMobjState(cur, (newperfect == true) ? S_KART_SIGL : S_KART_SIGN);
 					}
 				}
 				else if (cur->state == &states[S_SIGN_ERROR])
