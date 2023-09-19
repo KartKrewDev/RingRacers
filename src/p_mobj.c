@@ -8734,17 +8734,41 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 			boolean newperfect = false;
 			if (
 				(newplayer != NULL)
-				&& (gamespeed >= KARTSPEED_HARD)
+				&& (gamespeed != KARTSPEED_EASY)
 				&& (newplayer->tally.active == true)
 				&& (newplayer->tally.totalLaps > 0) // Only true if not Time Attack
 				&& (newplayer->tally.laps >= newplayer->tally.totalLaps)
 			)
 			{
+				UINT8 pnum = (newplayer-players);
 				UINT32 skinflags = (demo.playback)
-					? demo.skinlist[demo.currentskinid[(newplayer-players)]].flags
+					? demo.skinlist[demo.currentskinid[pnum]].flags
 					: skins[newplayer->skin].flags;
 
-				newperfect = !!(skinflags & SF_IRONMAN);
+				if (skinflags & SF_IRONMAN)
+				{
+					UINT8 i, maxdifficulty = 0;
+					for (i = 0; i < MAXPLAYERS; i++)
+					{
+						if (!playeringame[i])
+							continue;
+						if (players[i].spectator == true)
+							continue;
+						if (i == pnum)
+							continue;
+
+						// Any other player being a human permits Magician L-taunting.
+						if (players[i].bot == false)
+							break;
+
+						// Otherwise, guarantee this player faced a challenge first.
+						if (maxdifficulty >= players[i].botvars.difficulty)
+							continue;
+						maxdifficulty = players[i].botvars.difficulty;
+					}
+
+					newperfect = (i < MAXPLAYERS || maxdifficulty >= (MAXBOTDIFFICULTY/2));
+				}
 			}
 
 			mobj_t *cur = mobj->hnext;
