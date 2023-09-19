@@ -122,7 +122,9 @@ public:
 	~SdlAudioLockHandle() { SDL_UnlockAudio(); }
 };
 
+#ifdef TRACY_ENABLE
 static const char* kAudio = "Audio";
+#endif
 
 void audio_callback(void* userdata, Uint8* buffer, int len)
 {
