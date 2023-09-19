@@ -46,7 +46,7 @@ static const UINT8 DWHITE      = 0;
 #define THOKWALLCOLORS        REDS
 #define THOKWALLRANGE         REDRANGE
 #define TSWALLCOLORS          DWHITE
-#define TSFINISHLINE          GRAYS
+#define TSFINISHLINE          (GREENS + 2)
 #define TSTRIPWIRE            (CYANS + 4)
 #define TSFOFINFO             (BLUES + 4)
 #define FDWALLCOLORS          BROWNS
