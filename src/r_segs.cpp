@@ -11,6 +11,8 @@
 /// \file  r_segs.c
 /// \brief All the clipping: columns, horizontal spans, sky columns
 
+#include <tracy/tracy/Tracy.hpp>
+
 #include "doomdef.h"
 #include "r_local.h"
 #include "r_sky.h"
@@ -1736,6 +1738,8 @@ void R_StoreWallRange(INT32 start, INT32 stop)
 	fixed_t ceilingfrontslide, floorfrontslide, ceilingbackslide, floorbackslide;
 	static size_t maxdrawsegs = 0;
 	const INT32 twosidedmidtexture = R_GetTwoSidedMidTexture(curline);
+
+	ZoneScoped;
 
 	maskedtextureheight = NULL;
 	//initialize segleft and segright

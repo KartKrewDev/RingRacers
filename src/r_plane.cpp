@@ -13,6 +13,8 @@
 ///        while maintaining a per column clipping list only.
 ///        Moreover, the sky areas have to be determined.
 
+#include <tracy/tracy/Tracy.hpp>
+
 #include "doomdef.h"
 #include "console.h"
 #include "g_game.h"
@@ -143,6 +145,7 @@ static void R_UpdatePlaneRipple(void)
 
 static void R_MapPlane(INT32 y, INT32 x1, INT32 x2)
 {
+	ZoneScoped;
 	angle_t angle, planecos, planesin;
 	fixed_t distance = 0, span;
 	size_t pindex;
@@ -235,6 +238,7 @@ static void R_MapPlane(INT32 y, INT32 x1, INT32 x2)
 
 static void R_MapTiltedPlane(INT32 y, INT32 x1, INT32 x2)
 {
+	ZoneScoped;
 #ifdef RANGECHECK
 	if (x2 < x1 || x1 < 0 || x2 >= viewwidth || y >= viewheight || y < 0)
 		I_Error("R_MapTiltedPlane: %d, %d at %d", x1, x2, y);
@@ -609,6 +613,8 @@ void R_DrawPlanes(void)
 	visplane_t *pl;
 	INT32 i;
 
+	ZoneScoped;
+
 	R_UpdatePlaneRipple();
 
 	for (i = 0; i < MAXVISPLANES; i++, pl++)
@@ -632,6 +638,8 @@ static void R_DrawSkyPlane(visplane_t *pl)
 {
 	INT32 x;
 	INT32 angle;
+
+	ZoneScoped;
 
 	R_CheckDebugHighlight(SW_HI_SKY);
 
@@ -859,6 +867,8 @@ void R_DrawSinglePlane(visplane_t *pl)
 
 	if (!(pl->minx <= pl->maxx))
 		return;
+
+	ZoneScoped;
 
 	// sky flat
 	if (pl->picnum == skyflatnum)

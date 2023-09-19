@@ -81,6 +81,7 @@ option(SRB2_CONFIG_PACKETDROP "Compile with PACKETDROP defined." OFF)
 option(SRB2_CONFIG_ZDEBUG "Compile with ZDEBUG defined." OFF)
 # SRB2_CONFIG_PROFILEMODE is probably superceded by some CMake setting.
 option(SRB2_CONFIG_PROFILEMODE "Compile for profiling (GCC only)." OFF)
+option(SRB2_CONFIG_TRACY "Compile with Tracy profiling enabled" OFF)
 option(SRB2_CONFIG_ASAN "Compile with AddressSanitizer (libasan)." OFF)
 set(SRB2_CONFIG_ASSET_DIRECTORY "" CACHE PATH "Path to directory that contains all asset files for the installer. If set, assets will be part of installation and cpack.")
 
