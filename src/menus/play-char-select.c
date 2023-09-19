@@ -181,6 +181,10 @@ static void M_SetupProfileGridPos(setup_player_t *p)
 		p->followercategory = followers[p->followern].category;
 
 	p->followercolor = pr->followercolor;
+	if (K_ColorUsable(p->followercolor, true, true) == false)
+	{
+		p->followercolor = SKINCOLOR_NONE;
+	}
 
 	if (!R_SkinUsable(g_localplayers[0], i, false))
 	{
@@ -196,7 +200,13 @@ static void M_SetupProfileGridPos(setup_player_t *p)
 		alt++;
 
 	p->clonenum = alt;
+
 	p->color = pr->color;
+	if (K_ColorUsable(p->color, false, true) == false)
+	{
+		p->color = SKINCOLOR_NONE;
+	}
+		
 }
 
 static void M_SetupMidGameGridPos(setup_player_t *p, UINT8 num)
@@ -1255,13 +1265,6 @@ boolean M_CharacterSelectHandler(INT32 choice)
 		{
 			p->skin = setup_chargrid[p->gridx][p->gridy].skinlist[p->clonenum];
 		}
-
-		// Keep profile colour.
-		/*if (p->mdepth < CSSTEP_COLORS)
-		{
-			p->color = skins[p->skin].prefcolor;
-
-		}*/
 
 		if (playersChanged == true)
 		{
