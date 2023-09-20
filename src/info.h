@@ -1476,7 +1476,7 @@ typedef enum playersprite
 	SPR2_DRRN, SPR2_DRRO, SPR2_DRRI,
 	SPR2_SPIN,
 	SPR2_DEAD,
-	SPR2_SIGN,
+	SPR2_SIGN, SPR2_SIGL,
 	SPR2_XTRA,
 	SPR2_TALK,
 
@@ -1532,6 +1532,7 @@ typedef enum state
 	S_KART_SPINOUT,
 	S_KART_DEAD,
 	S_KART_SIGN,
+	S_KART_SIGL,
 
 	// technically the player goes here but it's an infinite tic state
 	S_OBJPLACE_DUMMY,
@@ -4957,6 +4958,7 @@ typedef enum state
 
 	// Caked-Up Booty-Sheet Ghost
 	S_HYUDORO,
+	S_HYUDORO_RETURNING,
 
 	// Grow
 	S_GROW_PARTICLE,

@@ -415,6 +415,7 @@ struct mobj_t
 
 	fixed_t shadowscale; // If this object casts a shadow, and the size relative to radius
 	boolean whiteshadow; // Use white shadow, set to true by default for fullbright objects
+	UINT8 shadowcolor; // Palette index to use for rendering the shadow
 
 	fixed_t sprxoff, spryoff, sprzoff; // Sprite offsets in real space, does NOT affect position or collision
 

@@ -115,7 +115,7 @@ void P_RampConstant(const BasicFF_t *FFInfo, INT32 Start, INT32 End)
 //
 boolean P_CanPickupItem(player_t *player, UINT8 weapon)
 {
-	if (player->exiting || mapreset || (player->pflags & PF_ELIMINATED))
+	if (player->exiting || mapreset || (player->pflags & PF_ELIMINATED) || player->itemRoulette.reserved)
 		return false;
 
 	// 0: Sphere/Ring
@@ -165,6 +165,13 @@ boolean P_CanPickupItem(player_t *player, UINT8 weapon)
 // 1 = floating item, 2 = perma ring, 3 = capsule
 boolean P_IsPickupCheesy(player_t *player, UINT8 type)
 {
+	extern consvar_t cv_debugcheese;
+
+	if (cv_debugcheese.value)
+	{
+		return false;
+	}
+
 	if (player->lastpickupdistance && player->lastpickuptype == type)
 	{
 		UINT32 distancedelta = min(player->distancetofinish - player->lastpickupdistance, player->lastpickupdistance - player->distancetofinish);
@@ -1684,7 +1691,7 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 			INT16 spacing = (target->radius >> 1) / target->scale;
 
 			// set respawn fuse
-			if (K_CapsuleTimeAttackRules() == true) // no respawns
+			if (damagetype == DMG_INSTAKILL || K_CapsuleTimeAttackRules() == true) // no respawns
 				;
 			else if (target->threshold == KITEM_SUPERRING)
 				target->fuse = 20*TICRATE;
@@ -1749,18 +1756,22 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 			{
 				player_t *player = source->player;
 
-				// special behavior for ring capsules
-				if (target->threshold == KITEM_SUPERRING)
+				// MF2_STRONGBOX: always put the item right in the hotbar!
+				if (!(target->flags2 & MF2_STRONGBOX))
 				{
-					K_AwardPlayerRings(player, 5 * target->movecount, true);
-					break;
-				}
+					// special behavior for ring capsules
+					if (target->threshold == KITEM_SUPERRING)
+					{
+						K_AwardPlayerRings(player, 5 * target->movecount, true);
+						break;
+					}
 
-				// special behavior for SPB capsules
-				if (target->threshold == KITEM_SPB)
-				{
-					K_ThrowKartItem(player, true, MT_SPB, 1, 0, 0);
-					break;
+					// special behavior for SPB capsules
+					if (target->threshold == KITEM_SPB)
+					{
+						K_ThrowKartItem(player, true, MT_SPB, 1, 0, 0);
+						break;
+					}
 				}
 
 				if (target->threshold < 1 || target->threshold >= NUMKARTITEMS) // bruh moment prevention
@@ -2298,7 +2309,7 @@ static void AddNullHitlag(player_t *player, tic_t oldHitlag)
 	// 1) repeating damage doesn't count
 	// 2) new damage sources still count
 
-	if (player->timeshit <= player->timeshitprev)
+	if (player->timeshit <= player->timeshitprev || player->hyudorotimer > 0)
 	{
 		player->nullHitlag += (player->mo->hitlag - oldHitlag);
 	}

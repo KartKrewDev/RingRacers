@@ -251,7 +251,7 @@ tic_t starttime = 3;
 const tic_t bulbtime = TICRATE/2;
 UINT8 numbulbs = 1;
 
-INT32 hyudorotime = 7*TICRATE;
+INT32 hyudorotime = 14*TICRATE;
 INT32 stealtime = TICRATE/2;
 INT32 sneakertime = TICRATE + (TICRATE/3);
 INT32 itemtime = 8*TICRATE;
@@ -1824,7 +1824,6 @@ void G_Ticker(boolean run)
 			if (demo.title)
 				F_TitleDemoTicker();
 			P_Ticker(run); // tic the game
-			ST_Ticker(run);
 			F_TextPromptTicker();
 			AM_Ticker();
 			HU_Ticker();
@@ -1897,6 +1896,10 @@ void G_Ticker(boolean run)
 
 	if (run)
 	{
+		if (gamestate != GS_TITLESCREEN
+		&& G_GamestateUsesLevel() == true)
+			ST_Ticker(run);
+
 		if (G_GametypeHasSpectators()
 			&& (gamestate == GS_LEVEL || gamestate == GS_INTERMISSION || gamestate == GS_VOTING // definitely good
 			|| gamestate == GS_WAITINGPLAYERS)) // definitely a problem if we don't do it at all in this gamestate, but might need more protection?

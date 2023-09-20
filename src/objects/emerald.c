@@ -15,6 +15,8 @@
 #define emerald_target_radius(o) ((o)->extravalue2)
 #define emerald_z_shift(o) ((o)->reactiontime)
 #define emerald_scale_rate(o) ((o)->movefactor)
+#define emerald_orbit(o) ((o)->target)
+#define emerald_award(o) ((o)->tracer)
 
 // Think of this like EMERALD_SPEED_UP / EMERALD_SPEED_UP_RATE
 #define EMERALD_SPEED_UP (1) // speed up by this much...
@@ -84,7 +86,7 @@ static fixed_t get_target_z(mobj_t *emerald)
 {
 	fixed_t shift = FixedMul(emerald_z_shift(emerald), FRACUNIT - get_suck_factor(emerald));
 
-	return center_of(emerald->target) + get_bob(emerald) + shift;
+	return center_of(emerald_orbit(emerald)) + get_bob(emerald) + shift;
 }
 
 static void speed_up(mobj_t *emerald)
@@ -116,8 +118,8 @@ static void Obj_EmeraldOrbitPlayer(mobj_t *emerald)
 
 	P_MoveOrigin(
 			emerald,
-			emerald->target->x + x,
-			emerald->target->y + y,
+			emerald_orbit(emerald)->x + x,
+			emerald_orbit(emerald)->y + y,
 			get_target_z(emerald)
 	);
 
@@ -133,9 +135,9 @@ static void Obj_EmeraldOrbitPlayer(mobj_t *emerald)
 
 void Obj_EmeraldThink(mobj_t *emerald)
 {
-	if (!P_MobjWasRemoved(emerald->target))
+	if (!P_MobjWasRemoved(emerald_orbit(emerald)))
 	{
-		switch (emerald->target->type)
+		switch (emerald_orbit(emerald)->type)
 		{
 			case MT_SPECIAL_UFO:
 				Obj_UFOEmeraldThink(emerald);
@@ -256,7 +258,7 @@ static void spawn_lens_flare(mobj_t *emerald)
 	mobj_t *flare = P_SpawnMobjFromMobj(emerald, 0, 0, 0, MT_EMERALDFLARE);
 
 	P_SetTarget(&flare->target, emerald);
-	P_InstaScale(flare, emerald->target->scale);
+	P_InstaScale(flare, emerald_orbit(emerald)->scale);
 
 	flare->color = emerald->color;
 	flare->colorized = true;
@@ -265,7 +267,7 @@ static void spawn_lens_flare(mobj_t *emerald)
 
 	// FIXME: linkdraw doesn't work consistently, so I drew it on top of everyting (and through walls)
 #if 0
-	P_SetTarget(&flare->tracer, emerald->target);
+	P_SetTarget(&flare->tracer, emerald_orbit(emerald));
 	flare->flags2 |= MF2_LINKDRAW;
 	flare->dispoffset = 1000;
 #endif
@@ -273,7 +275,12 @@ static void spawn_lens_flare(mobj_t *emerald)
 
 void Obj_BeginEmeraldOrbit(mobj_t *emerald, mobj_t *target, fixed_t radius, INT32 revolution_time, tic_t fuse)
 {
-	P_SetTarget(&emerald->target, target);
+	P_SetTarget(&emerald_orbit(emerald), target);
+
+	if (P_MobjWasRemoved(emerald_award(emerald)))
+	{
+		P_SetTarget(&emerald_award(emerald), target);
+	}
 
 	emerald_anim_start(emerald) = leveltime;
 	emerald_revolution_time(emerald) = revolution_time;
@@ -297,14 +304,9 @@ void Obj_BeginEmeraldOrbit(mobj_t *emerald, mobj_t *target, fixed_t radius, INT3
 	spawn_lens_flare(emerald);
 }
 
-void Obj_GiveEmerald(mobj_t *emerald)
+static void give_player(mobj_t *emerald)
 {
-	if (P_MobjWasRemoved(emerald->target))
-	{
-		return;
-	}
-
-	player_t *player = emerald->target->player;
+	player_t *player = emerald_award(emerald)->player;
 
 	if (!player)
 	{
@@ -314,5 +316,51 @@ void Obj_GiveEmerald(mobj_t *emerald)
 	player->emeralds |= emerald_type(emerald);
 	K_CheckEmeralds(player);
 
-	S_StartSound(emerald->target, emerald->info->deathsound);
+	S_StartSound(emerald_award(emerald), emerald->info->deathsound);
+}
+
+void Obj_GiveEmerald(mobj_t *emerald)
+{
+	if (P_MobjWasRemoved(emerald_orbit(emerald)) || P_MobjWasRemoved(emerald_award(emerald)))
+	{
+		return;
+	}
+
+	// FIXME: emerald orbiting behavior should become its own object. For now,
+	// though, enjoy these special conditions!
+	switch (emerald_award(emerald)->type)
+	{
+		case MT_PLAYER:
+			give_player(emerald);
+			break;
+
+		case MT_ITEMCAPSULE: // objects/hyudoro.c
+			// DMG_INSTAKILL to kill it without respawning later
+			P_KillMobj(emerald_award(emerald), emerald_orbit(emerald), emerald_orbit(emerald), DMG_INSTAKILL);
+
+			if (emerald_orbit(emerald)->player)
+			{
+				// Unlock item for stacked Hyudoros
+				emerald_orbit(emerald)->player->itemRoulette.reserved = 0;
+			}
+			break;
+
+		default:
+			break;
+	}
+}
+
+void Obj_SetEmeraldAwardee(mobj_t *emerald, mobj_t *awardee)
+{
+	P_SetTarget(&emerald_award(emerald), awardee);
+}
+
+boolean Obj_EmeraldCanHUDTrack(const mobj_t *emerald)
+{
+	if (!P_MobjWasRemoved(emerald_award(emerald)) && emerald_award(emerald)->type == MT_ITEMCAPSULE)
+	{
+		return false;
+	}
+
+	return true;
 }

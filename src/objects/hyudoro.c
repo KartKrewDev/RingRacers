@@ -22,11 +22,13 @@
 #include "../s_sound.h"
 #include "../g_game.h"
 #include "../k_hitlag.h"
+#include "../p_slopes.h"
 
 enum {
 	HYU_PATROL,
 	HYU_RETURN,
 	HYU_HOVER,
+	HYU_ORBIT,
 };
 
 // TODO: make these general functions
@@ -37,33 +39,25 @@ K_GetSpeed (mobj_t *mobj)
 	return FixedHypot(mobj->momx, mobj->momy);
 }
 
-static void
-K_ChangePlayerItem
-(		player_t * player,
-		INT32 itemtype,
-		INT32 itemamount)
-{
-	player->itemtype = itemtype;
-	player->itemamount = itemamount;
-	K_UnsetItemOut(player);
-}
-
 #define hyudoro_mode(o) ((o)->extravalue1)
 #define hyudoro_itemtype(o) ((o)->movefactor)
 #define hyudoro_itemcount(o) ((o)->movecount)
 #define hyudoro_hover_stack(o) ((o)->threshold)
 #define hyudoro_next(o) ((o)->tracer)
 #define hyudoro_stackpos(o) ((o)->reactiontime)
-#define hyudoro_delivered(o) (hyudoro_itemtype(o) == KITEM_NONE)
 
 // cannot be combined
 #define hyudoro_center(o) ((o)->target)
 #define hyudoro_target(o) ((o)->target)
 
 #define hyudoro_stolefrom(o) ((o)->hnext)
+#define hyudoro_capsule(o) ((o)->hprev)
+#define hyudoro_timer(o) ((o)->movedir)
 
 #define hyudoro_center_max_radius(o) ((o)->threshold)
 #define hyudoro_center_master(o) ((o)->target)
+
+#define HYU_VISUAL_HEIGHT (24)
 
 static angle_t
 trace_angle (mobj_t *hyu)
@@ -90,7 +84,8 @@ get_look_angle (mobj_t *thing)
 static boolean
 is_hyudoro (mobj_t *thing)
 {
-	return thing && thing->type == MT_HYUDORO;
+	return !P_MobjWasRemoved(thing) &&
+		thing->type == MT_HYUDORO;
 }
 
 static mobj_t *
@@ -115,7 +110,7 @@ sine_bob
 		angle_t a,
 		fixed_t sineofs)
 {
-	hyu->sprzoff = FixedMul(hyu->height,
+	hyu->sprzoff = FixedMul(HYU_VISUAL_HEIGHT * hyu->scale,
 			sineofs + FINESINE(a >> ANGLETOFINESHIFT));
 }
 
@@ -127,6 +122,13 @@ bob_in_place
 	sine_bob(hyu,
 			(leveltime & (bob_speed - 1)) *
 			(ANGLE_MAX / bob_speed), -(3*FRACUNIT/4));
+}
+
+static void
+reset_shadow (mobj_t *hyu)
+{
+	hyu->shadowcolor = 15;
+	hyu->whiteshadow = true;
 }
 
 static void
@@ -150,6 +152,36 @@ project_hyudoro (mobj_t *hyu)
 	hyu->angle = angle + ANGLE_90;
 
 	sine_bob(hyu, angle, FRACUNIT);
+
+	hyu->z = P_GetZAt(center->standingslope, hyu->x, hyu->y,
+			P_GetMobjGround(center));
+
+	if (P_IsObjectFlipped(hyu))
+	{
+		hyu->z -= hyu->height;
+	}
+}
+
+static void
+rise_thru_stack (mobj_t *hyu)
+{
+	mobj_t *target = hyudoro_target(hyu);
+
+	fixed_t spacer = ((target->height / 2) +
+			(HYU_VISUAL_HEIGHT * hyu->scale * 2));
+
+	fixed_t sink = hyudoro_stackpos(hyu) * spacer;
+
+	fixed_t zofs = abs(hyu->momz);
+	fixed_t d = (zofs - sink);
+	fixed_t speed = d / 8;
+
+	if (abs(d) < abs(speed))
+		zofs = sink;
+	else
+		zofs -= speed;
+
+	hyu->momz = zofs * P_MobjFlip(target);
 }
 
 static void
@@ -161,18 +193,17 @@ project_hyudoro_hover (mobj_t *hyu)
 	angle_t ang = get_look_angle(target) + ANGLE_67h;
 	fixed_t rad = (target->radius * 2) + hyu->radius;
 
-	fixed_t zofs = hyudoro_stackpos(hyu) *
-		((target->height / 2) + (hyu->height * 2));
-
 	P_MoveOrigin(hyu,
 			target->x - P_ReturnThrustX(hyu, ang, rad),
 			target->y - P_ReturnThrustY(hyu, ang, rad),
-			target->z + (zofs * P_MobjFlip(target)));
+			target->z);
 
 	// Cancel momentum from HYU_RETURN.
 	// (And anything else! I don't trust this game!!)
 	hyu->momx = 0;
 	hyu->momy = 0;
+
+	rise_thru_stack(hyu);
 
 	hyu->angle = ang;
 
@@ -183,18 +214,28 @@ project_hyudoro_hover (mobj_t *hyu)
 	bob_in_place(hyu, 64);
 }
 
-static void
-spawn_hyudoro_shadow (mobj_t *hyu)
+static boolean
+project_hyudoro_orbit (mobj_t *hyu)
 {
-	mobj_t *shadow = P_SpawnMobjFromMobj(
-			hyu, 0, 0, 0, MT_SHADOW);
+	mobj_t *orbit = hyudoro_target(hyu);
 
-	shadow->whiteshadow = true;
+	if (P_MobjWasRemoved(orbit))
+	{
+		return false;
+	}
 
-	shadow->shadowscale = hyu->shadowscale;
-	hyu->shadowscale = 0;
+	P_MoveOrigin(hyu, orbit->x, orbit->y, orbit->z);
+	hyu->destscale = orbit->scale;
 
-	P_SetTarget(&shadow->tracer, hyu);
+	mobj_t *facing = orbit->target;
+
+	if (!P_MobjWasRemoved(facing))
+	{
+		hyu->angle = R_PointToAngle2(
+				hyu->x, hyu->y, facing->x, facing->y);
+	}
+
+	return true;
 }
 
 static mobj_t *
@@ -251,12 +292,6 @@ do_confused (mobj_t *hyu)
 	// Hyudoro is confused.
 	// Spin around, try to find a new target.
 
-	if (hyudoro_delivered(hyu))
-	{
-		// Already delivered, not confused
-		return;
-	}
-
 	// Try to find new target
 	P_SetTarget(&hyudoro_target(hyu),
 		find_duel_target(hyudoro_stolefrom(hyu)));
@@ -267,7 +302,7 @@ do_confused (mobj_t *hyu)
 	// Bob very fast
 	bob_in_place(hyu, 32);
 
-	hyu->sprzoff += hyu->height;
+	hyu->sprzoff += HYU_VISUAL_HEIGHT * hyu->scale;
 }
 
 static void
@@ -304,37 +339,38 @@ move_to_player (mobj_t *hyu)
 
 	hyu->z = target->z; // stay level with target
 	hyu->angle = angle;
+
+	hyu->color = target->color;
 }
 
 static void
 deliver_item (mobj_t *hyu)
 {
-	mobj_t *target = hyudoro_target(hyu);
-	player_t *player = target->player;
+	/* set physical position to visual position in stack */
+	hyu->z += hyu->momz;
+	hyu->momz = 0;
 
-	P_SetTarget(&hyudoro_target(hyu), NULL);
+	mobj_t *emerald = P_SpawnMobjFromMobj(
+			hyu, 0, 0, 0, MT_EMERALD);
 
-	if (player)
-	{
-		K_ChangePlayerItem(player,
-				hyudoro_itemtype(hyu),
-				player->itemamount + hyudoro_itemcount(hyu));
-	}
+	/* only want emerald for its orbiting behavior, so make
+	   it invisible */
+	P_SetMobjState(emerald, S_INVISIBLE);
 
-	S_StartSound(target, sfx_itpick);
+	Obj_BeginEmeraldOrbit(
+			emerald, hyudoro_target(hyu), 0, 64, 128);
 
-	// Stop moving here
-	hyu->momx = 0;
-	hyu->momy = 0;
+	/* See Obj_GiveEmerald. I won't risk relying on the
+	   Hyudoro object in case it is removed first. So go
+	   through the capsule instead. */
+	Obj_SetEmeraldAwardee(emerald, hyudoro_capsule(hyu));
 
-	hyu->tics = 4;
+	/* hyudoro will teleport to emerald (orbit the player) */
+	hyudoro_mode(hyu) = HYU_ORBIT;
+	P_SetTarget(&hyudoro_target(hyu), emerald);
 
-	hyu->destscale = target->scale / 4;
-	hyu->scalespeed =
-		abs(hyu->scale - hyu->destscale) / hyu->tics;
-
-	// sets as already delivered
-	hyudoro_itemtype(hyu) = KITEM_NONE;
+	hyu->renderflags &= ~(RF_DONTDRAW | RF_BLENDMASK);
+	reset_shadow(hyu);
 }
 
 static void
@@ -351,7 +387,17 @@ append_hyudoro
 	}
 
 	hyudoro_stackpos(hyu) = lastpos + 1;
-	*head = hyu;
+	P_SetTarget(head, hyu);
+
+	/* only first in list gets a shadow */
+	if (lastpos == 0)
+	{
+		reset_shadow(hyu);
+	}
+	else
+	{
+		hyu->shadowcolor = 31;/* black - hide it */
+	}
 }
 
 static void
@@ -359,31 +405,106 @@ pop_hyudoro (mobj_t **head)
 {
 	mobj_t *hyu = *head;
 
-	INT32 lastpos;
-	INT32 thispos;
-
-	if (is_hyudoro(hyu))
+	if (!is_hyudoro(hyu))
 	{
-		lastpos = hyudoro_stackpos(hyu);
-		hyu = hyudoro_next(hyu);
-
-		while (is_hyudoro(hyu))
-		{
-			thispos = hyudoro_stackpos(hyu);
-
-			hyudoro_stackpos(hyu) = lastpos;
-			lastpos = thispos;
-
-			hyu = hyudoro_next(hyu);
-		}
+		return;
 	}
 
-	*head = hyu;
+	INT32 lastpos = hyudoro_stackpos(hyu);
+
+	{
+		mobj_t *next = hyudoro_next(hyu);
+
+		P_SetTarget(head, next);
+		P_SetTarget(&hyudoro_next(hyu), NULL);
+
+		hyu = next;
+	}
+
+	if (!is_hyudoro(hyu))
+	{
+		return;
+	}
+
+	reset_shadow(hyu);/* show it */
+
+	do
+	{
+		INT32 thispos = hyudoro_stackpos(hyu);
+
+		hyudoro_stackpos(hyu) = lastpos;
+		lastpos = thispos;
+
+		hyu = hyudoro_next(hyu);
+	}
+	while (is_hyudoro(hyu));
 }
 
-static void hyudoro_set_held_item_from_player
+static mobj_t *
+spawn_capsule (mobj_t *hyu)
+{
+	mobj_t *caps = P_SpawnMobjFromMobj(
+			hyu, 0, 0, 0, MT_ITEMCAPSULE);
+
+	/* hyudoro only needs its own shadow */
+	caps->shadowscale = 0;
+
+	caps->flags |=
+		MF_NOGRAVITY |
+		MF_NOCLIP |
+		MF_NOCLIPTHING |
+		MF_NOCLIPHEIGHT;
+
+	/* signal that this item capsule always puts items in the HUD */
+	caps->flags2 |= MF2_STRONGBOX;
+
+	P_SetTarget(&hyudoro_capsule(hyu), caps);
+
+	/* capsule teleports to hyudoro */
+	P_SetTarget(&caps->target, hyu);
+
+	/* so it looks like hyudoro is holding it */
+	caps->sprzoff = 20 * hyu->scale;
+
+	return caps;
+}
+
+static void
+update_capsule_position (mobj_t *hyu)
+{
+	mobj_t *caps = hyudoro_capsule(hyu);
+
+	if (P_MobjWasRemoved(caps))
+		return;
+
+	caps->extravalue1 = hyu->scale / 3;
+
+	/* hold it in the hyudoro's hands */
+	const fixed_t r = hyu->radius;
+	caps->sprxoff = FixedMul(r, FCOS(hyu->angle));
+	caps->spryoff = FixedMul(r, FSIN(hyu->angle));
+}
+
+static void
+set_item
 (		mobj_t * hyu,
-		player_t *player)
+		INT32 item,
+		INT32 amount)
+{
+	mobj_t *caps = P_MobjWasRemoved(hyudoro_capsule(hyu))
+		? spawn_capsule(hyu) : hyudoro_capsule(hyu);
+
+	hyudoro_itemtype(hyu) = item;
+	hyudoro_itemcount(hyu) = amount;
+
+	caps->threshold = hyudoro_itemtype(hyu);
+	caps->movecount = hyudoro_itemcount(hyu);
+}
+
+static void
+hyudoro_set_held_item_from_player
+(		mobj_t * hyu,
+		player_t * player)
 {
 	if (K_ItemEnabled(KITEM_KITCHENSINK))
 	{
@@ -409,15 +530,13 @@ static void hyudoro_set_held_item_from_player
 				itemCooldowns[player->itemtype - 1] = 0;
 			}
 
-			hyudoro_itemtype(hyu) = KITEM_KITCHENSINK;
-			hyudoro_itemcount(hyu) = 1;
+			set_item(hyu, KITEM_KITCHENSINK, 1);
 
 			return;
 		}
 	}
 
-	hyudoro_itemtype(hyu) = player->itemtype;
-	hyudoro_itemcount(hyu) = player->itemamount;
+	set_item(hyu, player->itemtype, player->itemamount);
 }
 
 static boolean
@@ -443,6 +562,8 @@ hyudoro_patrol_hit_player
 	if (player->hyudorotimer)
 		return false;
 
+	player->pflags |= PF_CASTSHADOW;
+
 	// NO ITEM?
 	if (!player->itemamount)
 		return false;
@@ -453,9 +574,19 @@ hyudoro_patrol_hit_player
 
 	hyudoro_set_held_item_from_player(hyu, player);
 
+	if (!P_MobjWasRemoved(hyudoro_capsule(hyu)))
+	{
+		hyudoro_capsule(hyu)->extravalue2 = player->skincolor;
+	}
+
 	K_StripItems(player);
 
-	player->hyudorotimer = hyudorotime;
+	/* do not make 1st place invisible */
+	if (player->position != 1)
+	{
+		player->hyudorotimer = hyudorotime;
+	}
+
 	player->stealingtimer = hyudorotime;
 
 	P_SetTarget(&hyudoro_stolefrom(hyu), toucher);
@@ -473,6 +604,14 @@ hyudoro_patrol_hit_player
 
 	hyu->renderflags &= ~(RF_DONTDRAW);
 
+	// Reset shadow to default (after alt_shadow)
+	reset_shadow(hyu);
+
+	// This will flicker the shadow
+	hyudoro_timer(hyu) = 18;
+
+	P_SetMobjState(hyu, S_HYUDORO_RETURNING);
+
 	return true;
 }
 
@@ -488,16 +627,13 @@ award_immediately (mobj_t *hyu)
 			return false;
 		}
 
-		if (player->itemamount &&
-				player->itemtype != hyudoro_itemtype(hyu))
-		{
+		if (!P_CanPickupItem(player, 1))
 			return false;
-		}
 
-		// Same as picking up paper items; get stacks
-		// immediately
-		if (!P_CanPickupItem(player, 3))
-			return false;
+		// Prevent receiving any more items or even stacked
+		// Hyudoros! Put on a timer so roulette cannot become
+		// locked permanently.
+		player->itemRoulette.reserved = 2*TICRATE;
 	}
 
 	deliver_item(hyu);
@@ -544,6 +680,96 @@ hyudoro_hover_await_stack (mobj_t *hyu)
 	return true;
 }
 
+static void
+trail_ghosts
+(		mobj_t * hyu,
+		boolean colorize)
+{
+	// Spawns every other frame
+	if (leveltime & 1)
+	{
+		return;
+	}
+
+	mobj_t *ghost = P_SpawnGhostMobj(hyu);
+
+	// Flickers every frame
+	ghost->extravalue1 = 1;
+	ghost->extravalue2 = 2;
+
+	// copy per-splitscreen-player visibility
+	ghost->renderflags =
+		(hyu->renderflags & RF_DONTDRAW);
+
+	ghost->colorized = colorize;
+
+	ghost->tics = 8;
+
+	P_SetTarget(&ghost->tracer, hyu);
+}
+
+static void
+trail_glow (mobj_t *hyu)
+{
+	mobj_t *ghost = P_SpawnGhostMobj(hyu);
+
+	// Flickers every frame
+	ghost->extravalue1 = 1;
+	ghost->extravalue2 = 0;
+
+	ghost->renderflags = RF_ADD | RF_TRANS80;
+
+	ghost->tics = 2; // this actually does last one tic
+
+	ghost->momz = hyu->momz; // copy stack position
+}
+
+static void
+blend_hover_hyudoro (mobj_t *hyu)
+{
+	player_t *player = get_hyudoro_target_player(hyu);
+
+	hyu->renderflags &= ~(RF_BLENDMASK);
+
+	if (!player)
+	{
+		return;
+	}
+
+	/* 1st place: Hyudoro stack is unusable, so make a visual
+	   indication */
+	if (player->position == 1)
+	{
+		hyu->renderflags |= RF_MODULATE;
+		trail_glow(hyu);
+	}
+}
+
+static void
+alt_shadow (mobj_t *hyu)
+{
+	/* spaced out pulse, fake randomness */
+	switch (leveltime % (7 + ((leveltime / 8) % 3)))
+	{
+		default:
+			hyu->shadowcolor = 15;
+			hyu->whiteshadow = false;
+			break;
+		case 1:
+			hyu->shadowcolor = 5;
+			hyu->whiteshadow = true;
+			break;
+		case 2:
+			hyu->shadowcolor = 181;
+			hyu->whiteshadow = true;
+			break;
+		case 3:
+			hyu->shadowcolor = 255;
+			hyu->whiteshadow = true;
+			break;
+	}
+}
+
 void
 Obj_InitHyudoroCenter (mobj_t * center, mobj_t * master)
 {
@@ -572,7 +798,7 @@ Obj_InitHyudoroCenter (mobj_t * center, mobj_t * master)
 		hyu->renderflags &= ~(K_GetPlayerDontDrawFlag(master->player));
 	}
 
-	spawn_hyudoro_shadow(hyu); // this sucks btw
+	Obj_SpawnFakeShadow(hyu); // this sucks btw
 }
 
 void
@@ -584,51 +810,60 @@ Obj_HyudoroDeploy (mobj_t *master)
 	center->angle = master->angle;
 	Obj_InitHyudoroCenter(center, master);
 
+	// Update floorz to the correct position by indicating
+	// that it should be recalculated by P_MobjThinker.
+	center->floorz = master->z;
+	center->ceilingz = master->z + master->height;
+	center->z = P_GetMobjGround(center) - P_MobjFlip(center);
+
 	S_StartSound(master, sfx_s3k92); // scary ghost noise
 }
 
 void
 Obj_HyudoroThink (mobj_t *hyu)
 {
-	// Might get set from clipping slopes
-	hyu->momz = 0;
-
 	switch (hyudoro_mode(hyu))
 	{
 		case HYU_PATROL:
 			if (hyudoro_center(hyu))
 				project_hyudoro(hyu);
 
-			if (leveltime & 1)
-			{
-				mobj_t *ghost = P_SpawnGhostMobj(hyu);
-
-				// Flickers every frame
-				ghost->extravalue1 = 1;
-				ghost->extravalue2 = 2;
-
-				// copy per-splitscreen-player visibility
-				ghost->renderflags =
-					(hyu->renderflags & RF_DONTDRAW);
-
-				ghost->tics = 8;
-
-				P_SetTarget(&ghost->tracer, hyu);
-			}
+			trail_ghosts(hyu, false);
+			alt_shadow(hyu);
 			break;
 
 		case HYU_RETURN:
 			move_to_player(hyu);
+			trail_ghosts(hyu, true);
+
+			if (hyudoro_timer(hyu) > 0)
+				hyu->whiteshadow = !hyu->whiteshadow;
 			break;
 
 		case HYU_HOVER:
 			if (hyudoro_target(hyu))
 			{
 				project_hyudoro_hover(hyu);
-				hyudoro_hover_await_stack(hyu);
+
+				if (hyudoro_hover_await_stack(hyu))
+					break;
+			}
+			blend_hover_hyudoro(hyu);
+			break;
+
+		case HYU_ORBIT:
+			if (!project_hyudoro_orbit(hyu))
+			{
+				P_RemoveMobj(hyu);
+				return;
 			}
 			break;
 	}
+
+	update_capsule_position(hyu);
+
+	if (hyudoro_timer(hyu) > 0)
+		hyudoro_timer(hyu)--;
 }
 
 void
@@ -655,4 +890,22 @@ Obj_HyudoroCollide
 			hyudoro_return_hit_player(hyu, toucher);
 			break;
 	}
+}
+
+boolean
+Obj_HyudoroShadowZ
+(		mobj_t * hyu,
+		fixed_t * return_z,
+		pslope_t ** return_slope)
+{
+	if (hyudoro_mode(hyu) != HYU_PATROL)
+		return false;
+
+	if (P_MobjWasRemoved(hyudoro_center(hyu)))
+		return false;
+
+	*return_z = hyu->z;
+	*return_slope = hyudoro_center(hyu)->standingslope;
+
+	return true;
 }

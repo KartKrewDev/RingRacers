@@ -1509,6 +1509,7 @@ void K_StopRoulette(itemroulette_t *const roulette)
 	roulette->active = false;
 	roulette->eggman = false;
 	roulette->ringbox = false;
+	roulette->reserved = 0;
 }
 
 /*--------------------------------------------------
@@ -1573,6 +1574,12 @@ void K_KartItemRoulette(player_t *const player, ticcmd_t *const cmd)
 {
 	itemroulette_t *const roulette = &player->itemRoulette;
 	boolean confirmItem = false;
+
+	if (roulette->reserved > 0)
+	{
+		roulette->reserved--;
+		return;
+	}
 
 	// This makes the roulette cycle through items.
 	// If this isn't active, you shouldn't be here.

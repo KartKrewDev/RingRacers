@@ -9,6 +9,8 @@
 			"cacheVariables": {
 				"CMAKE_C_FLAGS": "-fdiagnostics-color",
 				"CMAKE_CXX_FLAGS": "-fdiagnostics-color",
+				"CMAKE_C_FLAGS_RELWITHDEBINFO": "-O3 -g -DNDEBUG",
+				"CMAKE_CXX_FLAGS_RELWITHDEBINFO": "-O3 -g -DNDEBUG",
 				"SRB2_CONFIG_DEV_BUILD": "ON",
 				"SRB2_CONFIG_HOSTTESTERS": "OFF",
 				"SRB2_CONFIG_TESTERS": "OFF",
@@ -45,6 +47,14 @@
 			"inherits": "default",
 			"cacheVariables": {
 				"SRB2_CONFIG_DEV_BUILD": "OFF"
+			}
+		},
+		{
+			"name": "release-tracy",
+			"description": "Build for Tracy profiling",
+			"inherits": "default",
+			"cacheVariables": {
+				"SRB2_CONFIG_TRACY": "ON"
 			}
 		}
 	],

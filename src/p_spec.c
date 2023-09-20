@@ -3234,7 +3234,12 @@ boolean P_ProcessSpecial(activator_t *activator, INT16 special, INT32 *args, cha
 						continue;
 
 					scroller = (scroll_t *)th;
-					if (!Tag_Find(&sectors[scroller->affectee].tags, args[0]))
+
+					const taglist_t* taglist = (scroller->type == sc_side)
+						? &sides[scroller->affectee].line->tags
+						: &sectors[scroller->affectee].tags;
+
+					if (!Tag_Find(taglist, args[0]))
 						continue;
 
 					switch (scroller->type)
@@ -4483,6 +4488,7 @@ static void P_SetupSignObject(mobj_t *sign, mobj_t *pmo, boolean error)
 
 	sign->movefactor = sign->z;
 	sign->z += (576*sign->scale) * P_MobjFlip(sign);
+	sign->old_z = sign->z; // interp hijack
 	sign->movecount = 1;
 	sign->extravalue1 = AngleFixed(sign->angle) >> FRACBITS;
 

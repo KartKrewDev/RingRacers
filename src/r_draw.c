@@ -128,6 +128,8 @@ UINT8 *ds_source; // points to the start of a flat
 UINT8 *ds_brightmap; // start of brightmap flat
 UINT8 *ds_transmap; // one of the translucency tables
 
+UINT8 dc_shadowcolor;
+
 // Vectors for Software's tilted slope drawers
 floatv3_t *ds_su, *ds_sv, *ds_sz;
 floatv3_t *ds_sup, *ds_svp, *ds_szp;

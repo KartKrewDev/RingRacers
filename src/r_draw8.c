@@ -584,9 +584,7 @@ void R_DrawDropShadowColumn_8(void)
 	dest = &topleft[dc_yl*vid.width + dc_x];
 
 	{
-#define DSCOLOR 15 // palette index for the color of the shadow
-		register const UINT8 *transmap_offset = dc_transmap + (dc_colormap[DSCOLOR] << 8);
-#undef DSCOLOR
+		register const UINT8 *transmap_offset = dc_transmap + (dc_colormap[dc_shadowcolor] << 8);
 		while ((count -= 2) >= 0)
 		{
 			*dest = *(transmap_offset + (*dest));

@@ -27,6 +27,8 @@
 #include <stdexcept>
 #include <string>
 
+#include <tracy/tracy/Tracy.hpp>
+
 #if defined (__GNUC__) || defined (__unix__)
 #include <unistd.h>
 #endif
@@ -278,6 +280,8 @@ int main(int argc, char **argv)
 	myargc = argc;
 	myargv = argv; /// \todo pull out path to exe from this string
 
+	tracy::SetThreadName("Main");
+
 #ifdef HAVE_TTF
 #ifdef _WIN32
 	I_StartupTTF(FONTPOINTSIZE, SDL_INIT_VIDEO|SDL_INIT_AUDIO, SDL_SWSURFACE);
@@ -351,3 +355,16 @@ int main(int argc, char **argv)
 }
 
 #endif
+
+void* operator new(size_t count)
+{
+	auto p = malloc(count);
+	TracyAlloc(p, count);
+	return p;
+}
+
+void operator delete(void* ptr)
+{
+	TracyFree(ptr);
+	free(ptr);
+}

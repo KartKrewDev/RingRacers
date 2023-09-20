@@ -925,7 +925,7 @@ char spr2names[NUMPLAYERSPRITES][5] =
 	"SPIN", // Spinout
 	"DEAD", // Dead
 
-	"SIGN", // Finish signpost
+	"SIGN", "SIGL", // Finish signpost
 	"XTRA", // Three Faces of Darkness
 	"TALK", // Dialogue
 };
@@ -968,6 +968,7 @@ playersprite_t spr2defaults[NUMPLAYERSPRITES] = {
 	0, // SPR2_DEAD
 
 	0, // SPR2_SIGN
+	SPR2_SIGN, // SPR2_SIGL
 	0, // SPR2_XTRA
 	0, // SPR2_TALK
 };
@@ -1027,7 +1028,8 @@ state_t states[NUMSTATES] =
 	{SPR_PLAY, SPR2_DRRI,					  1, {NULL}, 0, 0, S_KART_DRIFT_R_IN},			// S_KART_DRIFT_R_IN
 	{SPR_PLAY, SPR2_SPIN|FF_ANIMATE,		350, {NULL}, 0, 1, S_KART_STILL},				// S_KART_SPINOUT
 	{SPR_PLAY, SPR2_DEAD,					  3, {NULL}, 0, 0, S_KART_DEAD},				// S_KART_DEAD
-	{SPR_PLAY, SPR2_SIGN|FF_PAPERSPRITE,	  1, {NULL}, 0, 0, S_KART_SIGN},				// S_KART_SIGN
+	{SPR_PLAY, SPR2_SIGN|FF_ANIMATE|FF_PAPERSPRITE, -1, {NULL}, 0, 1, 0},					// S_KART_SIGN
+	{SPR_PLAY, SPR2_SIGL|FF_ANIMATE|FF_PAPERSPRITE, -1, {NULL}, 0, 1, 0},					// S_KART_SIGL
 
 	{SPR_NULL, 0, -1, {NULL}, 0, 0, S_OBJPLACE_DUMMY}, // S_OBJPLACE_DUMMY
 
@@ -4517,6 +4519,7 @@ state_t states[NUMSTATES] =
 	{SPR_GTAR, FF_FULLBRIGHT|FF_PAPERSPRITE, -1, {NULL}, 5, 2, S_NULL}, // S_GARDENTOPARROW
 
 	{SPR_HYUU, FF_FULLBRIGHT, -1, {NULL}, 0, 0, S_NULL}, // S_HYUDORO
+	{SPR_HYUU, FF_FULLBRIGHT|1, -1, {NULL}, 0, 0, S_NULL}, // S_HYUDORO_RETURNING
 
 	{SPR_GRWP, FF_FULLBRIGHT|FF_ANIMATE, 13, {NULL}, 7, 1, S_NULL}, // S_GROW_PARTICLE
 
@@ -24679,13 +24682,13 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		S_NULL,         // xdeathstate
 		sfx_None,       // deathsound
 		0,              // speed
-		32*FRACUNIT,    // radius
-		24*FRACUNIT,    // height
+		40*FRACUNIT,    // radius
+		80*FRACUNIT,    // height
 		0,              // display offset
 		0,              // mass
 		0,              // damage
 		sfx_None,       // activesound
-		MF_SPECIAL|MF_NOCLIP|MF_NOGRAVITY|MF_DONTENCOREMAP|MF_APPLYTERRAIN, // flags
+		MF_SPECIAL|MF_NOCLIP|MF_NOCLIPHEIGHT|MF_NOGRAVITY|MF_DONTENCOREMAP|MF_APPLYTERRAIN|MF_NOSQUISH, // flags
 		S_NULL          // raisestate
 	},
 

@@ -32,4 +32,5 @@ target_sources(SRB2SDL2 PRIVATE
 	rideroid.c
 	bungee.c
 	eggball.c
+	shadow.cpp
 )

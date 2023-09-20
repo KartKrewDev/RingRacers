@@ -25,6 +25,8 @@
 ///        allocator was fragmenting badly. Finally, this version is a bit
 ///        simpler (about half the lines of code).
 
+#include <tracy/tracy/TracyC.h>
+
 #include "doomdef.h"
 #include "doomstat.h"
 #include "r_patch.h"
@@ -200,6 +202,7 @@ void Z_Free2(void *ptr, const char *file, INT32 line)
 		*block->user = NULL;
 
 	// Free the memory and get rid of the block.
+	TracyCFree(block->real);
 	free(block->real);
 #ifdef VALGRIND_DESTROY_MEMPOOL
 	VALGRIND_DESTROY_MEMPOOL(block);
@@ -273,6 +276,7 @@ void *Z_Malloc2(size_t size, INT32 tag, void *user, INT32 alignbits,
 	padsize += (1<<sizeof(size_t))*2;
 #endif
 	ptr = xm(blocksize + padsize*2);
+	TracyCAlloc(ptr, blocksize);
 
 	// This horrible calculation makes sure that "given" is aligned
 	// properly.

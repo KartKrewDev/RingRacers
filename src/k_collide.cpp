@@ -218,7 +218,7 @@ static inline boolean PIT_SSMineChecks(mobj_t *thing)
 	if (!(thing->flags & MF_SHOOTABLE) || (thing->flags & MF_SCENERY))
 		return true;
 
-	if (thing->player && thing->player->spectator)
+	if (thing->player && (thing->player->spectator || thing->player->hyudorotimer > 0))
 		return true;
 
 	if (P_AproxDistance(P_AproxDistance(thing->x - grenade->x, thing->y - grenade->y), thing->z - grenade->z) > explodedist)

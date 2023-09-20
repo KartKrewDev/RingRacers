@@ -1413,6 +1413,10 @@ static void K_drawKartItem(void)
 			else
 				localpatch[1] = kp_nodraw;
 		}
+		else if (stplyr->itemRoulette.reserved > 0)
+		{
+			localpatch[1] = kp_nodraw;
+		}
 		else
 		{
 			if (stplyr->itemamount <= 0)
