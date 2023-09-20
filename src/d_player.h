@@ -730,6 +730,11 @@ struct player_t
 	fixed_t rdaddmomy;
 	fixed_t rdaddmomz;
 	
+	////////////
+	// bungee //
+	////////////
+	UINT8 bungee;				// constants are defined with the object file for the bungee.
+	
 	//
 
 	SINT8 lives;

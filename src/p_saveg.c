@@ -563,6 +563,8 @@ static void P_NetArchivePlayers(savebuffer_t *save)
 		WRITEFIXED(save->p, players[i].rdaddmomy);
 		WRITEFIXED(save->p, players[i].rdaddmomz);
 		
+		WRITEUINT8(save->, players[i].bungee);
+		
 		// respawnvars_t
 		WRITEUINT8(save->p, players[i].respawn.state);
 		WRITEUINT32(save->p, K_GetWaypointHeapIndex(players[i].respawn.wp));
@@ -1046,6 +1048,8 @@ static void P_NetUnArchivePlayers(savebuffer_t *save)
 		players[i].rdaddmomx = READFIXED(save->p);
 		players[i].rdaddmomy = READFIXED(save->p);
 		players[i].rdaddmomz = READFIXED(save->p);
+		
+		players[i].bungee = READUINT8(save->p);
 
 		// respawnvars_t
 		players[i].respawn.state = READUINT8(save->p);
