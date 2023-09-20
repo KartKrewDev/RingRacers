@@ -118,7 +118,7 @@ static fixed_t Obj_rideroidLerp(INT32 start, INT32 finish, INT32 percent)
 static void Obj_rideroidTrail(mobj_t *mo)
 {
 	mobj_t *pmo = mo->target;
-	player_t *p;
+	player_t *p = NULL;
 	
 	UINT8 i, j;
 	
@@ -456,8 +456,10 @@ void Obj_RideroidNodeSpawn(mobj_t *mo)
 	for (i = 0; i < 2; i++)
 	{
 		
-		angle_t ang = mo->angle + (i)*180*ANG1;
+		angle_t ang = mo->angle + (i)*180;
 		fixed_t zpos = mo->z + 64*mapobjectscale + mapobjectscale*96*i;
+		
+		ang *= ANG1;	// this has to be done here or the warning prevents the compile, we don't care about overflowing here.
 		
 		for (j = 0; j < 7; j++)
 		{
