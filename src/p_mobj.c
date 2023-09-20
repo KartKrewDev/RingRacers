@@ -9646,7 +9646,15 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 	case MT_RIDEROIDNODE:
 		Obj_RideroidNodeThink(mobj);
 		break;
+	
+	case MT_LSZ_EGGBALLSPAWNER:
+		Obj_EggBallSpawnerThink(mobj);
+		break;
 		
+	case MT_LSZ_EGGBALL:
+		Obj_EggBallThink(mobj);
+		break;
+	
 	default:
 		// check mobj against possible water content, before movement code
 		P_MobjCheckWater(mobj);

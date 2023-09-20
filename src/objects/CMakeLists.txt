@@ -31,4 +31,5 @@ target_sources(SRB2SDL2 PRIVATE
 	checkpoint.cpp
 	rideroid.c
 	bungee.c
+	eggball.c
 )

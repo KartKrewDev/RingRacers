@@ -1451,6 +1451,8 @@ typedef enum sprite
 	SPR_RDRC,
 	SPR_RDRL,
 	
+	SPR_LSZB,	// eggman ball.
+	
 	// First person view sprites; this is a sprite so that it can be replaced by a specialized MD2 draw later
 	SPR_VIEW,
 
@@ -7027,6 +7029,8 @@ typedef enum mobj_type
 	MT_RIDEROIDNODE,
 	
 	MT_LSZ_BUNGEE,
+	MT_LSZ_EGGBALLSPAWNER,
+	MT_LSZ_EGGBALL,
 	
 	MT_FIRSTFREESLOT,
 	MT_LASTFREESLOT = MT_FIRSTFREESLOT + NUMMOBJFREESLOTS - 1,
