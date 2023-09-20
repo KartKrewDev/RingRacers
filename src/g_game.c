@@ -1824,7 +1824,6 @@ void G_Ticker(boolean run)
 			if (demo.title)
 				F_TitleDemoTicker();
 			P_Ticker(run); // tic the game
-			ST_Ticker(run);
 			F_TextPromptTicker();
 			AM_Ticker();
 			HU_Ticker();
@@ -1897,6 +1896,10 @@ void G_Ticker(boolean run)
 
 	if (run)
 	{
+		if (gamestate != GS_TITLESCREEN
+		&& G_GamestateUsesLevel() == true)
+			ST_Ticker(run);
+
 		if (G_GametypeHasSpectators()
 			&& (gamestate == GS_LEVEL || gamestate == GS_INTERMISSION || gamestate == GS_VOTING // definitely good
 			|| gamestate == GS_WAITINGPLAYERS)) // definitely a problem if we don't do it at all in this gamestate, but might need more protection?
