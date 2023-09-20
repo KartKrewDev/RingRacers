@@ -757,6 +757,10 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 
 				return;
 			}
+			
+		case MT_LSZ_BUNGEE:
+			Obj_BungeeSpecial(special, player);
+			return;
 
 		// CTF Flags
 		case MT_REDFLAG:

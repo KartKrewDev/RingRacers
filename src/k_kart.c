@@ -11833,7 +11833,9 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 	K_KartDrift(player, onground);
 	K_KartSpindash(player);
 
-	if (onground == false)
+	if (onground == false
+	&& !player->bungee		// if this list of condition ever gets bigger, maybe this should become a function.
+	)
 	{
 		K_AirFailsafe(player);
 	}
@@ -11841,8 +11843,9 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 	{
 		player->pflags &= ~PF_AIRFAILSAFE;
 	}
-
+	
 	Obj_RingShooterInput(player);
+	Obj_playerBungeeThink(player);
 }
 
 void K_CheckSpectateStatus(boolean considermapreset)
