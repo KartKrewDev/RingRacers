@@ -49,8 +49,6 @@ void Obj_BungeeSpecial(mobj_t *mo, player_t *p)
 
 	S_StartSound(mo, sfx_s3k5a);
 	P_SetTarget(&p->mo->tracer, latch);
-
-	return;
 }
 
 // this is the thinker to call on the player when they get bungee'd.
@@ -61,7 +59,7 @@ void Obj_playerBungeeThink(player_t *p)
 	UINT8 i;
 	
 	// someone removed it 
-	if (!bungee || !P_MobjWasRemoved(bungee))
+	if (!bungee || P_MobjWasRemoved(bungee))
 		return;
 	
 	bungee->tics = 4;	// we set this to a low value so that it despawns if the player vanishes for some reason.
@@ -90,7 +88,7 @@ void Obj_playerBungeeThink(player_t *p)
 			
 			p->mo->flags &= ~MF_NOGRAVITY;
 			p->mo->flags &= ~MF_NOCLIPTHING;
-			p->mo->pflags &= ~PF_NOFASTFALL;
+			p->pflags &= ~PF_NOFASTFALL;
 			p->bungee = BUNGEE_NONE;
 			P_InstaThrust(p->mo, bungee->angle, p->mo->momz/8);
 			p->mo->momz = (p->mo->momz*3)/4;
@@ -115,6 +113,7 @@ void Obj_playerBungeeThink(player_t *p)
 		
 		P_SetScale(seg, mapobjectscale/3);
 		seg->color = SKINCOLOR_EMERALD;
+		seg->frame = 0;
 		seg->fuse = 2;
 	}
 }

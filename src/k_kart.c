@@ -11845,7 +11845,9 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 	}
 	
 	Obj_RingShooterInput(player);
-	Obj_playerBungeeThink(player);
+	
+	if (player->bungee)
+		Obj_playerBungeeThink(player);
 }
 
 void K_CheckSpectateStatus(boolean considermapreset)
