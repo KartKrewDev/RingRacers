@@ -7089,6 +7089,11 @@ void M_DrawSoundTest(void)
 				if (soundtest.autosequence == true)
 					y = currentMenu->y + 6;
 			}
+			else if (currentMenu->menuitems[i].mvar2 == stereospecial_shf) // shf
+			{
+				if (soundtest.shuffle == true)
+					y = currentMenu->y + 6;
+			}
 
 			// Button is being pressed
 			if (i == itemOn && !soundtest.justopened && M_MenuConfirmHeld(pid))
@@ -7199,7 +7204,7 @@ void M_DrawSoundTest(void)
 			V_DrawCenteredThinString(x + 13, y + 1, 0, currentMenu->menuitems[i].text);
 		}
 
-		x += 27;
+		x += 25;
 	}
 
 	V_DrawCharacter(cursorx - 4, currentMenu->y - 8 - (skullAnimCounter/5),
