@@ -1613,7 +1613,8 @@ finalcounter:
 
 	if (Y_CanSkipIntermission())
 	{
-		Y_DrawIntermissionButton(INTERBUTTONSLIDEIN - intertic, 3*TICRATE - timer);
+		const tic_t end = roundqueue.size != 0 ? 3*TICRATE : TICRATE;
+		Y_DrawIntermissionButton(INTERBUTTONSLIDEIN - intertic, end - timer);
 	}
 	else
 	{
