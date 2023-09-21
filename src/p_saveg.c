@@ -567,9 +567,9 @@ static void P_NetArchivePlayers(savebuffer_t *save)
 		
 		WRITEUINT32(save->p, players[i].lasthover);
 		
-		WRITEUINT8(save->p, players[i].dlzrocket);
-		WRITEUINT32(save->p, players[i].dlzrocketangle);
-		WRITEUINT32(save->p, players[i].dlzrocketanglev);
+		WRITEUINT32(save->p, players[i].dlzrocket);
+		WRITEANGLE(save->p, players[i].dlzrocketangle);
+		WRITEINT32(save->p, players[i].dlzrocketanglev);
 		WRITEUINT32(save->p, players[i].dlzrocketspd);
 		
 		WRITEUINT8(save->p, players[i].seasaw);
@@ -1068,9 +1068,9 @@ static void P_NetUnArchivePlayers(savebuffer_t *save)
 		
 		players[i].lasthover = READUINT32(save->p);
 		
-		players[i].dlzrocket = READUINT8(save->p);
-		players[i].dlzrocketangle = READUINT32(save->p);
-		players[i].dlzrocketanglev = READUINT32(save->p);
+		players[i].dlzrocket = READUINT32(save->p);
+		players[i].dlzrocketangle = READANGLE(save->p);
+		players[i].dlzrocketanglev = READINT32(save->p);
 		players[i].dlzrocketspd = READUINT32(save->p);
 		
 		players[i].seasaw = READUINT8(save->p);

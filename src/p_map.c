@@ -1879,10 +1879,16 @@ static BlockItReturn_t PIT_CheckLine(line_t *ld)
 	}
 	
 	// a bit of a hacky behaviour, but not that I know where else it would go.
-	if (tm.thing->type == MT_RIDEROID
-	&& tm.blockingline->flags & ML_TFERLINE)
+	if (tm.blockingline->flags & ML_TFERLINE)
 	{
-		Obj_getPlayerOffRideroid(tm.thing);
+		if (tm.thing->type == MT_RIDEROID)
+		{
+			Obj_getPlayerOffRideroid(tm.thing);
+		}
+		else if (tm.thing->type == MT_PLAYER && tm.thing->player && tm.thing->player->dlzrocket)
+		{
+			Obj_DLZRocketDismount(tm.thing->player);
+		}
 	}
 	
 	if (!ld->backsector) // one sided line

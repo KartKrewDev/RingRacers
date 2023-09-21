@@ -11160,7 +11160,10 @@ mobj_t *P_SpawnMobj(fixed_t x, fixed_t y, fixed_t z, mobjtype_t type)
 			break;
 		case MT_RIDEROIDNODE:
 			Obj_RideroidNodeSpawn(mobj);
-			break;			
+			break;
+		case MT_DLZ_ROCKET:
+			Obj_DLZRocketSpawn(mobj);
+			break;
 		case MT_SNEAKERPANEL:
 			Obj_SneakerPanelSpawn(mobj);
 			break;

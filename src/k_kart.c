@@ -11845,6 +11845,9 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 	
 	if (player->bungee)
 		Obj_playerBungeeThink(player);
+	
+	if (player->dlzrocket)
+		Obj_playerDLZRocket(player);
 }
 
 void K_CheckSpectateStatus(boolean considermapreset)

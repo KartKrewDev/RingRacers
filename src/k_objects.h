@@ -247,6 +247,12 @@ void Obj_playerBungeeThink(player_t *p);			// player interaction with the bungee
 void Obj_EggBallSpawnerThink(mobj_t *mo);
 void Obj_EggBallThink(mobj_t *mo);
 
+/* DLZ Rockets */
+void Obj_DLZRocketSpawn(mobj_t *mo);
+void Obj_DLZRocketSpecial(mobj_t *mo, player_t *p);	// touch activation
+void Obj_playerDLZRocket(player_t *p);				// player looping thinker
+void Obj_DLZRocketDismount(player_t *p);			// used in p_map.c to get off the rocket when we cross transfer lines.
+
 #ifdef __cplusplus
 } // extern "C"
 #endif

@@ -744,9 +744,9 @@ struct player_t
 	tic_t lasthover;			// used for the hover mobjs
 	
 	// rockets
-	boolean dlzrocket;			// true if latched onto a dlz rocket.
+	tic_t dlzrocket;			// counts up as we stay on a rocket.
 	angle_t dlzrocketangle;		// current travel angle with the rocket.
-	angle_t dlzrocketanglev;	// current vertical travel angle with the rocket.
+	INT32 dlzrocketanglev;		// current vertical travel angle with the rocket. signed instead of angle_t.
 	fixed_t dlzrocketspd;		// current rocket travel speed.
 	
 	// seasaws (variables are shared with other seasaw-like objects)

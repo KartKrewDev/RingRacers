@@ -820,7 +820,11 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 		case MT_RAINBOWDASHRING:
 			Obj_DashRingTouch(special, player);
 			return;
-
+		
+		case MT_DLZ_ROCKET:
+			Obj_DLZRocketSpecial(special, player);
+			return;
+		
 		default: // SOC or script pickup
 			P_SetTarget(&special->target, toucher);
 			break;
