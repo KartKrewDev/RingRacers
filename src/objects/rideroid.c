@@ -528,7 +528,7 @@ void Obj_RideroidNodeThink(mobj_t *mo)
 			
 			players[i].rdnodepull = true;
 			players[i].rideroidangle = mo->spawnpoint->angle*ANG1;	// reminder that mo->angle changes, so we use the spawnpoint angle.
-			players[i].rideroidspeed = RIDEROIDSPEED/8;
+			players[i].rideroidspeed = RIDEROIDSPEED;
 			
 			P_SetTarget(&pmo->tracer, mo);
 			
