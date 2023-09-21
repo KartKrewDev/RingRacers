@@ -1453,6 +1453,11 @@ typedef enum sprite
 	
 	SPR_LSZB,	// eggman ball.
 	
+	SPR_DLZH,	// DLZ Hover
+	SPR_DLZR,	// DLZ Rocket
+	SPR_DLZS,	// DLZ Seasaw
+	SPR_DLZA,	// Helper arrows for rocket
+	
 	// First person view sprites; this is a sprite so that it can be replaced by a specialized MD2 draw later
 	SPR_VIEW,
 
@@ -5856,6 +5861,11 @@ typedef enum state
 	S_RIDEROID,
 	S_RIDEROID_ICON,
 	
+	// dead line zone
+	S_DLZHOVER,
+	S_DLZROCKET_L,
+	S_DLZROCKET_R,
+	
 	S_FIRSTFREESLOT,
 	S_LASTFREESLOT = S_FIRSTFREESLOT + NUMSTATEFREESLOTS - 1,
 	NUMSTATES
@@ -7033,6 +7043,14 @@ typedef enum mobj_type
 	MT_LSZ_BUNGEE,
 	MT_LSZ_EGGBALLSPAWNER,
 	MT_LSZ_EGGBALL,
+	
+	MT_DLZ_HOVER,
+	MT_DLZ_ROCKET,
+	MT_DLZ_SEASAW_SPAWN,
+	MT_DLZ_SEASAW_HITBOX,
+	MT_DLZ_SEASAW_VISUAL,
+	MT_DLZ_RINGVACCUM,
+	MT_DLZ_SUCKEDRING,
 	
 	MT_FIRSTFREESLOT,
 	MT_LASTFREESLOT = MT_FIRSTFREESLOT + NUMMOBJFREESLOTS - 1,

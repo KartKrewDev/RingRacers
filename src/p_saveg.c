@@ -565,6 +565,20 @@ static void P_NetArchivePlayers(savebuffer_t *save)
 		
 		WRITEUINT8(save->p, players[i].bungee);
 		
+		WRITEUINT32(save->p, players[i].lasthover);
+		
+		WRITEUINT8(save->p, players[i].dlzrocket);
+		WRITEUINT32(save->p, players[i].dlzrocketangle);
+		WRITEUINT32(save->p, players[i].dlzrocketanglev);
+		WRITEUINT32(save->p, players[i].dlzrocketspd);
+		
+		WRITEUINT8(save->p, players[i].seasaw);
+		WRITEUINT32(save->p, players[i].seasawcooldown);
+		WRITEUINT32(save->p, players[i].seasawdist);
+		WRITEUINT32(save->p, players[i].seasawangle);
+		WRITEUINT32(save->p, players[i].seasawangleadd);
+		WRITEUINT8(save->p, players[i].seasawdir);
+		
 		// respawnvars_t
 		WRITEUINT8(save->p, players[i].respawn.state);
 		WRITEUINT32(save->p, K_GetWaypointHeapIndex(players[i].respawn.wp));
@@ -1051,6 +1065,20 @@ static void P_NetUnArchivePlayers(savebuffer_t *save)
 		players[i].rdaddmomz = READFIXED(save->p);
 		
 		players[i].bungee = READUINT8(save->p);
+		
+		players[i].lasthover = READUINT32(save->p);
+		
+		players[i].dlzrocket = READUINT8(save->p);
+		players[i].dlzrocketangle = READUINT32(save->p);
+		players[i].dlzrocketanglev = READUINT32(save->p);
+		players[i].dlzrocketspd = READUINT32(save->p);
+		
+		players[i].seasaw = READUINT8(save->p);
+		players[i].seasawcooldown = READUINT32(save->p);
+		players[i].seasawdist = READUINT32(save->p);
+		players[i].seasawangle = READUINT32(save->p);
+		players[i].seasawangleadd = READUINT32(save->p);
+		players[i].seasawdir = READUINT8(save->p);
 
 		// respawnvars_t
 		players[i].respawn.state = READUINT8(save->p);

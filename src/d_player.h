@@ -737,6 +737,27 @@ struct player_t
 	////////////
 	UINT8 bungee;				// constants are defined with the object file for the bungee.
 	
+	////////////////////
+	// dead line zone //
+	////////////////////
+	// hovers
+	tic_t lasthover;			// used for the hover mobjs
+	
+	// rockets
+	boolean dlzrocket;			// true if latched onto a dlz rocket.
+	angle_t dlzrocketangle;		// current travel angle with the rocket.
+	angle_t dlzrocketanglev;	// current vertical travel angle with the rocket.
+	fixed_t dlzrocketspd;		// current rocket travel speed.
+	
+	// seasaws (variables are shared with other seasaw-like objects)
+	boolean seasaw;				// true if using a seasaw
+	tic_t seasawcooldown;		// cooldown to avoid triggering the same seasaw over and over
+	fixed_t seasawdist;			// distance from the center of the seasaw when latched.
+	angle_t seasawangle;		// angle from the center of the seasaw when latched.
+	angle_t seasawangleadd;		// used to spin the seasaw
+	boolean seasawdir;			// flips or not seasaw rotation
+	
+	
 	//
 
 	SINT8 lives;

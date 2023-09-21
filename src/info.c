@@ -901,6 +901,12 @@ char sprnames[NUMSPRITES + 1][5] =
 	// leaf storm egg ball.
 	"LSZB",
 	
+	// Dead Line Zone
+	"DLZH",
+	"DLZR",
+	"DLZS",
+	"DLZA",	
+	
 	// First person view sprites; this is a sprite so that it can be replaced by a specialized MD2 draw later
 	"VIEW",
 };
@@ -5429,6 +5435,12 @@ state_t states[NUMSTATES] =
 	
 	{SPR_RDRD, 0, -1, {NULL}, 0, 0, S_RIDEROID},	// S_RIDEROID
 	{SPR_RDRC, FF_ANIMATE|FF_FULLBRIGHT|FF_TRANS30, -1, {NULL}, 3, 2, S_RIDEROID_ICON},	// S_RIDEROID_ICON
+	
+	{SPR_DLZH, 0, -1, {NULL}, 0, 0, S_DLZHOVER},	// S_DLZHOVER
+	
+	{SPR_DLZR, 0, -1, {NULL}, 0, 0, S_DLZROCKET_L},	// S_DLZROCKET_L
+	{SPR_DLZR, 1, -1, {NULL}, 0, 0, S_DLZROCKET_R},	// S_DLZROCKET_R
+	
 };
 
 mobjinfo_t mobjinfo[NUMMOBJTYPES] =
@@ -30526,6 +30538,168 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		0,              // damage
 		sfx_None,       // activesound
 		MF_PAIN, // flags
+		S_NULL          // raisestate
+	},
+
+	{           // MT_DLZ_HOVER,
+		3430,           // doomednum
+		S_DLZHOVER,    // spawnstate
+		1000,           // spawnhealth
+		S_NULL,         // seestate
+		sfx_None,       // seesound
+		0,              // reactiontime
+		sfx_None,       // attacksound
+		S_NULL,         // painstate
+		0,              // painchance
+		sfx_None,       // painsound
+		S_NULL,         // meleestate
+		S_NULL,         // missilestate
+		S_NULL,         // deathstate
+		S_NULL,         // xdeathstate
+		sfx_None,       // deathsound
+		0,              // speed
+		100*FRACUNIT,    // radius
+		32*FRACUNIT,    // height
+		0,              // display offset
+		0,     // mass
+		0,              // damage
+		sfx_None,       // activesound
+		MF_NOGRAVITY|MF_SOLID, // flags
+		S_NULL          // raisestate
+	},
+
+	{           // MT_DLZ_ROCKET,
+		3431,           // doomednum
+		S_INVISIBLE,    // spawnstate
+		1000,           // spawnhealth
+		S_NULL,         // seestate
+		sfx_None,       // seesound
+		0,              // reactiontime
+		sfx_None,       // attacksound
+		S_NULL,         // painstate
+		0,              // painchance
+		sfx_None,       // painsound
+		S_NULL,         // meleestate
+		S_NULL,         // missilestate
+		S_NULL,         // deathstate
+		S_NULL,         // xdeathstate
+		sfx_None,       // deathsound
+		0,              // speed
+		100*FRACUNIT,    // radius
+		64*FRACUNIT,    // height
+		0,              // display offset
+		0,     // mass
+		0,              // damage
+		sfx_None,       // activesound
+		MF_NOGRAVITY|MF_SPECIAL, // flags
+		S_NULL          // raisestate
+	},
+
+	{           // MT_DLZ_SEASAW_SPAWN,
+		3432,           // doomednum
+		S_INVISIBLE,    // spawnstate
+		1000,           // spawnhealth
+		S_NULL,         // seestate
+		sfx_None,       // seesound
+		0,              // reactiontime
+		sfx_None,       // attacksound
+		S_NULL,         // painstate
+		0,              // painchance
+		sfx_None,       // painsound
+		S_NULL,         // meleestate
+		S_NULL,         // missilestate
+		S_NULL,         // deathstate
+		S_NULL,         // xdeathstate
+		sfx_None,       // deathsound
+		0,              // speed
+		32*FRACUNIT,    // radius
+		32*FRACUNIT,    // height
+		0,              // display offset
+		0,     // mass
+		0,              // damage
+		sfx_None,       // activesound
+		0, // flags
+		S_NULL          // raisestate
+	},
+
+	{           // MT_DLZ_SEASAW_HITBOX,
+		-1,          	// doomednum
+		S_INVISIBLE,    // spawnstate
+		1000,           // spawnhealth
+		S_NULL,         // seestate
+		sfx_None,       // seesound
+		0,              // reactiontime
+		sfx_None,       // attacksound
+		S_NULL,         // painstate
+		0,              // painchance
+		sfx_None,       // painsound
+		S_NULL,         // meleestate
+		S_NULL,         // missilestate
+		S_NULL,         // deathstate
+		S_NULL,         // xdeathstate
+		sfx_None,       // deathsound
+		0,              // speed
+		8*FRACUNIT,    // radius
+		40*FRACUNIT,    // height
+		0,              // display offset
+		0,    	 		// mass
+		0,              // damage
+		sfx_None,       // activesound
+		MF_SOLID, 		// flags
+		S_NULL          // raisestate
+	},
+
+	{           // MT_DLZ_SEASAW_VISUAL,
+		-1,           	// doomednum
+		S_INVISIBLE,    // spawnstate
+		1000,           // spawnhealth
+		S_NULL,         // seestate
+		sfx_None,       // seesound
+		0,              // reactiontime
+		sfx_None,       // attacksound
+		S_NULL,         // painstate
+		0,              // painchance
+		sfx_None,       // painsound
+		S_NULL,         // meleestate
+		S_NULL,         // missilestate
+		S_NULL,         // deathstate
+		S_NULL,         // xdeathstate
+		sfx_None,       // deathsound
+		0,              // speed
+		40*FRACUNIT,    // radius
+		64*FRACUNIT,    // height
+		0,              // display offset
+		0,     			// mass
+		0,              // damage
+		sfx_None,       // activesound
+		MF_NOGRAVITY, 	// flags
+		S_NULL          // raisestate
+	},
+
+	{           // MT_DLZ_RINGVACCUM,
+		3443,           // doomednum
+		S_INVISIBLE,    // spawnstate
+		1000,           // spawnhealth
+		S_NULL,         // seestate
+		sfx_None,       // seesound
+		0,              // reactiontime
+		sfx_None,       // attacksound
+		S_NULL,         // painstate
+		0,              // painchance
+		sfx_None,       // painsound
+		S_NULL,         // meleestate
+		S_NULL,         // missilestate
+		S_NULL,         // deathstate
+		S_NULL,         // xdeathstate
+		sfx_None,       // deathsound
+		0,              // speed
+		96*FRACUNIT,    // radius
+		32*FRACUNIT,    // height
+		0,              // display offset
+		0,     			// mass
+		0,              // damage
+		sfx_None,       // activesound
+		MF_SOLID, 		// flags
 		S_NULL          // raisestate
 	},
 	
