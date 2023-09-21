@@ -9390,7 +9390,7 @@ void P_StartQuakeFromMobj(tic_t time, fixed_t intensity, fixed_t radius, mobj_t 
 	quake->epicenter = (mappoint_t *)Z_Malloc(sizeof(mappoint_t), PU_LEVEL, NULL);
 	quake->epicenter->x = mobj->x;
 	quake->epicenter->y = mobj->y;
-	quake->epicenter->z = mobj->z;
+	quake->epicenter->z = mobj->z + (mobj->height / 2);
 }
 
 void P_DoQuakeOffset(UINT8 view, mappoint_t *viewPos, mappoint_t *offset)
