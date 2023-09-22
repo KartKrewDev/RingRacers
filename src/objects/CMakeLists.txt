@@ -33,5 +33,6 @@ target_sources(SRB2SDL2 PRIVATE
 	bungee.c
 	eggball.c
 	dlzrocket.c
+	dlzseasaw.c
 	shadow.cpp
 )

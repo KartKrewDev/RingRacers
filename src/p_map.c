@@ -741,7 +741,15 @@ static BlockItReturn_t PIT_CheckThing(mobj_t *thing)
 	}
 
 	// SRB2kart 011617 - Colission[sic] code for kart items //
-
+	
+	if (thing->type == MT_DLZ_SEASAW_HITBOX)
+	{
+		if (tm.thing->type == MT_PLAYER)
+			Obj_DLZSeasawCollide(tm.thing, thing);	// all checks are performed in there.
+		
+		return BMIT_CONTINUE;
+	}
+	
 	if (tm.thing->type == MT_INSTAWHIP)
 	{
 		if (tm.thing->z > thing->z + thing->height)

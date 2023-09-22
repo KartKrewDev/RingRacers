@@ -575,8 +575,9 @@ static void P_NetArchivePlayers(savebuffer_t *save)
 		WRITEUINT8(save->p, players[i].seasaw);
 		WRITEUINT32(save->p, players[i].seasawcooldown);
 		WRITEUINT32(save->p, players[i].seasawdist);
-		WRITEUINT32(save->p, players[i].seasawangle);
-		WRITEUINT32(save->p, players[i].seasawangleadd);
+		WRITEINT32(save->p, players[i].seasawangle);
+		WRITEINT32(save->p, players[i].seasawangleadd);
+		WRITEINT32(save->p, players[i].seasawmoreangle);
 		WRITEUINT8(save->p, players[i].seasawdir);
 		
 		// respawnvars_t
@@ -1076,8 +1077,9 @@ static void P_NetUnArchivePlayers(savebuffer_t *save)
 		players[i].seasaw = READUINT8(save->p);
 		players[i].seasawcooldown = READUINT32(save->p);
 		players[i].seasawdist = READUINT32(save->p);
-		players[i].seasawangle = READUINT32(save->p);
-		players[i].seasawangleadd = READUINT32(save->p);
+		players[i].seasawangle = READINT32(save->p);
+		players[i].seasawangleadd = READINT32(save->p);
+		players[i].seasawmoreangle = READINT32(save->p);
 		players[i].seasawdir = READUINT8(save->p);
 
 		// respawnvars_t

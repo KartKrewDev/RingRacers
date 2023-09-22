@@ -11848,6 +11848,9 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 	
 	if (player->dlzrocket)
 		Obj_playerDLZRocket(player);
+	
+	if (player->seasawcooldown && !player->seasaw)
+		player->seasawcooldown--;
 }
 
 void K_CheckSpectateStatus(boolean considermapreset)

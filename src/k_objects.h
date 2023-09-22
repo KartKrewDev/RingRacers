@@ -253,6 +253,11 @@ void Obj_DLZRocketSpecial(mobj_t *mo, player_t *p);	// touch activation
 void Obj_playerDLZRocket(player_t *p);				// player looping thinker
 void Obj_DLZRocketDismount(player_t *p);			// used in p_map.c to get off the rocket when we cross transfer lines.
 
+/* DLZ Seasaw */
+void Obj_DLZSeasawSpawn(mobj_t *mo);
+void Obj_DLZSeasawThink(mobj_t *mo);
+void Obj_DLZSeasawCollide(mobj_t *mo, mobj_t *mo2);
+
 #ifdef __cplusplus
 } // extern "C"
 #endif

@@ -753,8 +753,9 @@ struct player_t
 	boolean seasaw;				// true if using a seasaw
 	tic_t seasawcooldown;		// cooldown to avoid triggering the same seasaw over and over
 	fixed_t seasawdist;			// distance from the center of the seasaw when latched.
-	angle_t seasawangle;		// angle from the center of the seasaw when latched.
-	angle_t seasawangleadd;		// used to spin the seasaw
+	INT32 seasawangle;		// angle from the center of the seasaw when latched.
+	INT32 seasawangleadd;		// used to spin the seasaw
+	INT32 seasawmoreangle;		// used for reverse sesaws in DLZ.
 	boolean seasawdir;			// flips or not seasaw rotation
 	
 	
