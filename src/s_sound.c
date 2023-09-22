@@ -667,9 +667,9 @@ void S_UpdateSounds(void)
 
 	// Update sound/music volumes, if changed manually at console
 	if (actualsfxvolume != cv_soundvolume.value)
-		S_SetSfxVolume (cv_soundvolume.value);
+		S_SetSfxVolume();
 	if (actualdigmusicvolume != cv_digmusicvolume.value)
-		S_SetDigMusicVolume (cv_digmusicvolume.value);
+		S_SetMusicVolume();
 
 	// We're done now, if we're not in a level.
 	if (gamestate != GS_LEVEL)
@@ -852,13 +852,12 @@ void S_UpdateClosedCaptions(void)
 	}
 }
 
-void S_SetSfxVolume(INT32 volume)
+void S_SetSfxVolume(void)
 {
-	//CV_SetValue(&cv_soundvolume, volume);
-	actualsfxvolume = volume;
+	actualsfxvolume = cv_soundvolume.value;
 
 	// now hardware volume
-	I_SetSfxVolume(volume);
+	I_SetSfxVolume(actualsfxvolume);
 }
 
 void S_ClearSfx(void)
@@ -1149,7 +1148,7 @@ void S_StartSoundName(void *mo, const char *soundname)
 // Sets channels, SFX volume,
 //  allocates channel buffer, sets S_sfx lookup.
 //
-void S_InitSfxChannels(INT32 sfxVolume)
+void S_InitSfxChannels(void)
 {
 	extern consvar_t precachesound;
 
@@ -1158,7 +1157,7 @@ void S_InitSfxChannels(INT32 sfxVolume)
 	if (dedicated)
 		return;
 
-	S_SetSfxVolume(sfxVolume);
+	S_SetSfxVolume();
 
 	SetChannelsNum();
 
@@ -2010,14 +2009,10 @@ void S_ResumeAudio(void)
 	Music_UnPauseAll();
 }
 
-void S_SetMusicVolume(INT32 digvolume)
+void S_SetMusicVolume(void)
 {
-	if (digvolume < 0)
-		digvolume = cv_digmusicvolume.value;
-
-	//CV_SetValue(&cv_digmusicvolume, digvolume);
-	actualdigmusicvolume = digvolume;
-	I_SetMusicVolume(digvolume);
+	actualdigmusicvolume = cv_digmusicvolume.value;
+	I_SetMusicVolume(actualdigmusicvolume);
 }
 
 /// ------------------------
@@ -2138,8 +2133,8 @@ static void Command_RestartAudio_f(void)
 
 // These must be called or no sound and music until manually set.
 
-	I_SetSfxVolume(cv_soundvolume.value);
-	S_SetMusicVolume(cv_digmusicvolume.value);
+	S_SetSfxVolume();
+	S_SetMusicVolume();
 
 	S_StartSound(NULL, sfx_strpst);
 
@@ -2311,7 +2306,7 @@ void GameSounds_OnChange(void)
 	{
 		sound_disabled = false;
 		I_StartupSound(); // will return early if initialised
-		S_InitSfxChannels(cv_soundvolume.value);
+		S_InitSfxChannels();
 		S_StartSound(NULL, sfx_strpst);
 	}
 	else
@@ -2350,7 +2345,7 @@ void PlayMusicIfUnfocused_OnChange(void)
 		if (cv_playmusicifunfocused.value)
 			I_SetMusicVolume(0);
 		else
-			S_InitMusicVolume();
+			S_SetMusicVolume();
 	}
 }
 

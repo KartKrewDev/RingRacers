@@ -1659,8 +1659,8 @@ void D_SRB2Main(void)
 		CONS_Printf("S_InitSfxChannels(): Setting up sound channels.\n");
 		I_StartupSound();
 		I_InitMusic();
-		S_InitSfxChannels(cv_soundvolume.value);
-		S_InitMusicVolume();
+		S_InitSfxChannels();
+		S_SetMusicVolume();
 	}
 
 	Music_Init();
