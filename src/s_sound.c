@@ -37,12 +37,7 @@
 #include "v_video.h" // V_ThinStringWidth
 #include "music.h"
 
-#ifdef HW3SOUND
-// 3D Sound Interface
-#include "hardware/hw3sound.h"
-#else
 static boolean S_AdjustSoundParams(const mobj_t *listener, const mobj_t *source, INT32 *vol, INT32 *sep, INT32 *pitch, sfxinfo_t *sfxinfo);
-#endif
 
 static void Command_Tunes_f(void);
 static void Command_RestartAudio_f(void);
@@ -213,13 +208,6 @@ void SetChannelsNum(void)
 	if (cv_numChannels.value == 999999999) //Alam_GBC: OH MY ROD!(ROD rimmiced with GOD!)
 		CV_StealthSet(&cv_numChannels,cv_numChannels.defaultvalue);
 
-#ifdef HW3SOUND
-	if (hws_mode != HWS_DEFAULT_MODE)
-	{
-		HW3S_SetSourcesNum();
-		return;
-	}
-#endif
 	if (cv_numChannels.value)
 		channels = (channel_t *)Z_Calloc(cv_numChannels.value * sizeof (channel_t), PU_STATIC, NULL);
 	numofchannels = (channels ? cv_numChannels.value : 0);
@@ -267,14 +255,6 @@ void S_StopSounds(void)
 {
 	INT32 cnum;
 
-#ifdef HW3SOUND
-	if (hws_mode != HWS_DEFAULT_MODE)
-	{
-		HW3S_StopSounds();
-		return;
-	}
-#endif
-
 	// kill all playing sounds at start of level
 	for (cnum = 0; cnum < numofchannels; cnum++)
 		if (channels[cnum].sfxinfo)
@@ -295,13 +275,6 @@ void S_StopSoundByID(void *origin, sfxenum_t sfx_id)
 	if (!origin)
 		return;
 #endif
-#ifdef HW3SOUND
-	if (hws_mode != HWS_DEFAULT_MODE)
-	{
-		HW3S_StopSoundByID(origin, sfx_id);
-		return;
-	}
-#endif
 	for (cnum = 0; cnum < numofchannels; cnum++)
 	{
 		if (channels[cnum].sfxinfo == &S_sfx[sfx_id] && channels[cnum].origin == origin)
@@ -315,13 +288,6 @@ void S_StopSoundByNum(sfxenum_t sfxnum)
 {
 	INT32 cnum;
 
-#ifdef HW3SOUND
-	if (hws_mode != HWS_DEFAULT_MODE)
-	{
-		HW3S_StopSoundByNum(sfxnum);
-		return;
-	}
-#endif
 	for (cnum = 0; cnum < numofchannels; cnum++)
 	{
 		if (channels[cnum].sfxinfo == &S_sfx[sfxnum])
@@ -484,14 +450,6 @@ void S_StartSoundAtVolume(const void *origin_p, sfxenum_t sfx_id, INT32 volume)
 		}
 	}
 
-#ifdef HW3SOUND
-	if (hws_mode != HWS_DEFAULT_MODE)
-	{
-		HW3S_StartSound(origin, sfx_id);
-		return;
-	};
-#endif
-
 	for (i = 0; i <= r_splitscreen; i++)
 	{
 		player_t *player = &players[displayplayers[i]];
@@ -649,12 +607,7 @@ void S_StartSound(const void *origin, sfxenum_t sfx_id)
 		return;
 
 	// the volume is handled 8 bits
-#ifdef HW3SOUND
-	if (hws_mode != HWS_DEFAULT_MODE)
-		HW3S_StartSound(origin, sfx_id);
-	else
-#endif
-		S_StartSoundAtVolume(origin, sfx_id, 255);
+	S_StartSoundAtVolume(origin, sfx_id, 255);
 }
 
 void S_ReducedVFXSoundAtVolume(const void *origin, sfxenum_t sfx_id, INT32 volume, player_t *owner)
@@ -687,13 +640,6 @@ void S_StopSound(void *origin)
 	if (!origin)
 		return;
 
-#ifdef HW3SOUND
-	if (hws_mode != HWS_DEFAULT_MODE)
-	{
-		HW3S_StopSound(origin);
-		return;
-	}
-#endif
 	for (cnum = 0; cnum < numofchannels; cnum++)
 	{
 		if (channels[cnum].sfxinfo && channels[cnum].origin == origin)
@@ -763,14 +709,6 @@ void S_UpdateSounds(void)
 
 #ifndef NOMUMBLE
 	I_UpdateMumble(players[consoleplayer].mo, listener[0]);
-#endif
-
-#ifdef HW3SOUND
-	if (hws_mode != HWS_DEFAULT_MODE)
-	{
-		HW3S_UpdateSources();
-		goto notinlevel;
-	}
 #endif
 
 	for (i = 0; i <= r_splitscreen; i++)
@@ -919,12 +857,8 @@ void S_SetSfxVolume(INT32 volume)
 	//CV_SetValue(&cv_soundvolume, volume);
 	actualsfxvolume = volume;
 
-#ifdef HW3SOUND
-	hws_mode == HWS_DEFAULT_MODE ? I_SetSfxVolume(volume&0x1F) : HW3S_SetSfxVolume(volume&0x1F);
-#else
 	// now hardware volume
 	I_SetSfxVolume(volume);
-#endif
 }
 
 void S_ClearSfx(void)
@@ -1128,11 +1062,6 @@ INT32 S_OriginPlaying(void *origin)
 	if (!origin)
 		return false;
 
-#ifdef HW3SOUND
-	if (hws_mode != HWS_DEFAULT_MODE)
-		return HW3S_OriginPlaying(origin);
-#endif
-
 	for (cnum = 0; cnum < numofchannels; cnum++)
 		if (channels[cnum].origin == origin)
 			return 1;
@@ -1144,11 +1073,6 @@ INT32 S_OriginPlaying(void *origin)
 INT32 S_IdPlaying(sfxenum_t id)
 {
 	INT32 cnum;
-
-#ifdef HW3SOUND
-	if (hws_mode != HWS_DEFAULT_MODE)
-		return HW3S_IdPlaying(id);
-#endif
 
 	for (cnum = 0; cnum < numofchannels; cnum++)
 		if ((size_t)(channels[cnum].sfxinfo - S_sfx) == (size_t)id)
@@ -1163,11 +1087,6 @@ INT32 S_SoundPlaying(void *origin, sfxenum_t id)
 	INT32 cnum;
 	if (!origin)
 		return 0;
-
-#ifdef HW3SOUND
-	if (hws_mode != HWS_DEFAULT_MODE)
-		return HW3S_SoundPlaying(origin, id);
-#endif
 
 	for (cnum = 0; cnum < numofchannels; cnum++)
 	{

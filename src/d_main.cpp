@@ -92,10 +92,6 @@
 #include "hardware/hw_main.h" // 3D View Rendering
 #endif
 
-#ifdef HW3SOUND
-#include "hardware/hw3sound.h"
-#endif
-
 #include "lua_script.h"
 
 /* Manually defined asset hashes
@@ -838,10 +834,6 @@ void D_SRB2Loop(void)
 		interp = R_UsingFrameInterpolation() && !dedicated;
 		doDisplay = false;
 
-#ifdef HW3SOUND
-		HW3S_BeginFrameUpdate();
-#endif
-
 		if (realtics > 0 || singletics)
 		{
 			// don't skip more than 10 frames at a time
@@ -931,10 +923,6 @@ void D_SRB2Loop(void)
 			S_UpdateClosedCaptions();
 			S_TickSoundTest();
 		}
-
-#ifdef HW3SOUND
-		HW3S_EndFrameUpdate();
-#endif
 
 		LUA_Step();
 

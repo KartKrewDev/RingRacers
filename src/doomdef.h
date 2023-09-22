@@ -15,46 +15,6 @@
 #ifndef __DOOMDEF__
 #define __DOOMDEF__
 
-// Sound system select
-// This should actually be in the makefile,
-// but I can't stand that gibberish. D:
-#define SOUND_DUMMY   0
-#define SOUND_SDL     1
-#define SOUND_MIXER   2
-#define SOUND_FMOD    3
-
-#ifndef SOUND
-#ifdef HAVE_SDL
-
-// Use Mixer interface?
-#ifdef HAVE_MIXER
-    #define SOUND SOUND_MIXER
-    #ifdef HW3SOUND
-    #undef HW3SOUND
-    #endif
-#endif
-
-// Use generic SDL interface.
-#ifndef SOUND
-#define SOUND SOUND_SDL
-#endif
-
-#else // No SDL.
-
-// Use FMOD?
-#ifdef HAVE_FMOD
-    #define SOUND SOUND_FMOD
-    #ifdef HW3SOUND
-    #undef HW3SOUND
-    #endif
-#else
-    // No more interfaces. :(
-    #define SOUND SOUND_DUMMY
-#endif
-
-#endif
-#endif
-
 #ifdef _WIN32
 #define ASMCALL __cdecl
 #else
