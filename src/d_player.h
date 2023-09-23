@@ -342,6 +342,8 @@ struct respawnvars_t
 	boolean manual; // Respawn coords were manually set, please respawn exactly there
 	boolean fromRingShooter; // Respawn was from Ring Shooter, don't allow E-Brake drop
 	boolean init;
+	boolean fast; // Deaths after long airtime can leave you far away from your first waypoint, speed over there!
+	fixed_t returnspeed; // Used for consistent timing for deathpoint-to-first-waypoint travel.
 };
 
 typedef enum

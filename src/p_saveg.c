@@ -567,6 +567,8 @@ static void P_NetArchivePlayers(savebuffer_t *save)
 		WRITEUINT32(save->p, players[i].respawn.dropdash);
 		WRITEUINT8(save->p, players[i].respawn.truedeath);
 		WRITEUINT8(save->p, players[i].respawn.manual);
+		WRITEUINT8(save->p, players[i].respawn.fast);
+		WRITEUINT32(save->p, players[i].respawn.returnspeed);
 
 		// botvars_t
 		WRITEUINT8(save->p, players[i].bot);
@@ -1043,6 +1045,8 @@ static void P_NetUnArchivePlayers(savebuffer_t *save)
 		players[i].respawn.dropdash = READUINT32(save->p);
 		players[i].respawn.truedeath = READUINT8(save->p);
 		players[i].respawn.manual = READUINT8(save->p);
+		players[i].respawn.fast = READUINT8(save->p);
+		players[i].respawn.returnspeed = READUINT32(save->p);
 
 		// botvars_t
 		players[i].bot = READUINT8(save->p);
