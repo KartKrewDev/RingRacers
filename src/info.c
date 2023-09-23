@@ -30702,6 +30702,33 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		MF_SOLID, 		// flags
 		S_NULL          // raisestate
 	},
+
+	{           // MT_DLZ_SUCKEDRING,
+		-1,           	// doomednum
+		S_RING,    		// spawnstate
+		1000,           // spawnhealth
+		S_NULL,         // seestate
+		sfx_None,       // seesound
+		0,              // reactiontime
+		sfx_None,       // attacksound
+		S_NULL,         // painstate
+		0,              // painchance
+		sfx_None,       // painsound
+		S_NULL,         // meleestate
+		S_NULL,         // missilestate
+		S_NULL,         // deathstate
+		S_NULL,         // xdeathstate
+		sfx_None,       // deathsound
+		0,              // speed
+		32*FRACUNIT,    // radius
+		32*FRACUNIT,    // height
+		0,              // display offset
+		0,     			// mass
+		0,              // damage
+		sfx_None,       // activesound
+		MF_NOGRAVITY, 	// flags
+		S_NULL          // raisestate
+	},
 	
 };
 

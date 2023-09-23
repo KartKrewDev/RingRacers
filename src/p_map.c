@@ -758,6 +758,14 @@ static BlockItReturn_t PIT_CheckThing(mobj_t *thing)
 		return BMIT_CONTINUE;
 	}
 	
+	if (thing->type == MT_DLZ_RINGVACCUM)
+	{
+		if (tm.thing->type == MT_FLINGRING)
+			Obj_DLZRingVaccumCollide(tm.thing, thing);
+		
+		return BMIT_CONTINUE;
+	}
+	
 	if (tm.thing->type == MT_INSTAWHIP)
 	{
 		if (tm.thing->z > thing->z + thing->height)

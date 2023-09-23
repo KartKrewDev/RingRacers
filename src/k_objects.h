@@ -262,6 +262,11 @@ void Obj_DLZSeasawCollide(mobj_t *mo, mobj_t *mo2);
 void Obj_DLZHoverSpawn(mobj_t *mo);
 void Obj_DLZHoverCollide(mobj_t *mo, mobj_t *mo2);
 
+/* DLZ Ring Vaccum */
+void Obj_DLZRingVaccumSpawn(mobj_t *mo);
+void Obj_DLZRingVaccumCollide(mobj_t *mo, mobj_t *mo2);
+void Obj_DLZSuckedRingThink(mobj_t *mo);
+
 #ifdef __cplusplus
 } // extern "C"
 #endif
