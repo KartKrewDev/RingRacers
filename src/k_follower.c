@@ -773,7 +773,8 @@ void K_FollowerHornTaunt(player_t *taunter, player_t *victim)
 			honk->fuse = TICRATE/2;
 			honk->renderflags |= RF_DONTDRAW;
 
-			S_StartSound(taunter->follower, fl->hornsound);
+			if (P_IsDisplayPlayer(victim) || P_IsDisplayPlayer(taunter))
+				S_StartSound(NULL, fl->hornsound);
 
 			honk->flags2 |= MF2_AMBUSH;
 		}
