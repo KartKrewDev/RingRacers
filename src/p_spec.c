@@ -9412,20 +9412,24 @@ void P_DoQuakeOffset(UINT8 view, mappoint_t *viewPos, mappoint_t *offset)
 		ir = quake->intensity;
 
 		// Modulate with time remaining.
-		ir = Easing_InOutSine(FRACUNIT * (quake->time + 1) / quake->startTime, ir, 0);
+		const fixed_t timeEase = (FRACUNIT * ((quake->startTime - quake->time) - 1)) / quake->startTime;
+		ir = Easing_InCubic(timeEase, ir, 0);
 
 		// Modulate with distance from epicenter, if it exists.
 		if (quake->radius > 0 && quake->epicenter != NULL)
 		{
-			fixed_t epidist = P_AproxDistance(
+			const fixed_t distBuffer = 256 * mapobjectscale; // add a small buffer zone before it starts to drop off
+			const fixed_t epidist = P_AproxDistance(
 				P_AproxDistance(
 					viewPos->x - quake->epicenter->x,
 					viewPos->y - quake->epicenter->y
 				),
 				viewPos->z - quake->epicenter->z
-			);
+			) - distBuffer;
 
-			ir = Easing_InOutSine(min(FRACUNIT, FixedDiv(epidist, quake->radius)), ir, 0);
+			
+			const fixed_t distEase = min(FixedDiv(max(epidist, 0), quake->radius), FRACUNIT);
+			ir = Easing_InCubic(distEase, ir, 0);
 		}
 
 		addZ += ir;
