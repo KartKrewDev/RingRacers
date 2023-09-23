@@ -26,10 +26,10 @@ extern "C" {
 #endif
 
 // Maximum value of botvars.difficulty
-#define MAXBOTDIFFICULTY 13
+#define MAXBOTDIFFICULTY (13)
 
 // Level of a "difficult" bot. The max bot level was increased, but this keeps all of the same calculations.
-#define DIFFICULTBOT 9
+#define DIFFICULTBOT (9)
 
 // How many tics in a row do you need to turn in this direction before we'll let you turn.
 // Made it as small as possible without making it look like the bots are twitching constantly.
@@ -50,7 +50,6 @@ struct botprediction_t
 	fixed_t x, y;
 	fixed_t radius, baseRadius;
 };
-
 
 // AVAILABLE FOR LUA
 
@@ -84,6 +83,26 @@ boolean K_PlayerUsesBotMovement(player_t *player);
 --------------------------------------------------*/
 
 boolean K_BotCanTakeCut(player_t *player);
+
+
+/*--------------------------------------------------
+	fixed_t K_BotMapModifier(void);
+
+		Gives a multiplier, based on the track complexity.
+		Track complexity is a measure of how easy it is for
+		the bots to continuously rubberband. This is used
+		to make the rubberbanding and other difficulty
+		adjustments feel roughly the same between wildly
+		different layouts.
+
+	Input Arguments:-
+		N/A
+
+	Return:-
+		A multiplier in fixed point scale, between 0.0 and 2.0.
+--------------------------------------------------*/
+
+fixed_t K_BotMapModifier(void);
 
 
 /*--------------------------------------------------

@@ -667,18 +667,25 @@ void K_RetireBots(void)
 		grabskins[usableskins] = MAXSKINS;
 	}
 
-	if (!grandprixinfo.gp) // Sure, let's let this happen all the time :)
+	if (grandprixinfo.gp) // Sure, let's let this happen all the time :)
 	{
-		newDifficulty = cv_kartbot.value;
+		if (grandprixinfo.masterbots == true)
+		{
+			newDifficulty = MAXBOTDIFFICULTY;
+		}
+		else
+		{
+			const UINT8 startingdifficulty = K_BotStartingDifficulty(grandprixinfo.gamespeed);
+			newDifficulty = startingdifficulty - 4;
+			if (roundqueue.size > 0)
+			{
+				newDifficulty += roundqueue.roundnum;
+			}
+		}
 	}
 	else
 	{
-		const UINT8 startingdifficulty = K_BotStartingDifficulty(grandprixinfo.gamespeed);
-		newDifficulty = startingdifficulty - 4;
-		if (roundqueue.size > 0)
-		{
-			 newDifficulty += roundqueue.roundnum;
-		}
+		newDifficulty = cv_kartbot.value;
 	}
 
 	if (newDifficulty > MAXBOTDIFFICULTY)

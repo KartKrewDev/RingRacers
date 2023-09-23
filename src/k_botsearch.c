@@ -28,6 +28,7 @@
 #include "r_things.h" // numskins
 #include "p_slopes.h" // P_GetZAt
 #include "m_perfstats.h"
+#include "k_objects.h"
 
 /*--------------------------------------------------
 	static BlockItReturn_t K_FindEggboxes(mobj_t *thing)
@@ -477,7 +478,7 @@ static BlockItReturn_t K_FindObjectsForNudging(mobj_t *thing)
 
 			if (P_CanPickupItem(g_nudgeSearch.botmo->player, 1))
 			{
-				K_AddAttackObject(thing, side, 10);
+				K_AddAttackObject(thing, side, ((thing->extravalue1 < RINGBOX_TIME) ? 10 : 20));
 			}
 			break;
 		case MT_EGGMANITEM:
@@ -493,11 +494,11 @@ static BlockItReturn_t K_FindObjectsForNudging(mobj_t *thing)
 
 				if (stealth >= requiredstealth)
 				{
-					K_AddAttackObject(thing, side, 10);
+					K_AddAttackObject(thing, side, 20);
 				}
 				else
 				{
-					K_AddDodgeObject(thing, side, 10);
+					K_AddDodgeObject(thing, side, 20);
 				}
 			}
 			break;
