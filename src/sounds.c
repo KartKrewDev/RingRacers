@@ -1210,6 +1210,16 @@ sfxinfo_t S_sfx[NUMSFX] =
 
   {"rank",   false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""}, // Rank slam
 
+  // Damage sounds
+  {"dmga1",  false,  64, 8, -1, NULL, 0,         -1,  -1, LUMPERROR, "Damaged"},
+  {"dmga2",  false,  64, 8, -1, NULL, 0,         -1,  -1, LUMPERROR, "Damaged"},
+  {"dmga3",  false,  64, 8, -1, NULL, 0,         -1,  -1, LUMPERROR, "Damaged"},
+  {"dmga4",  false,  64, 8, -1, NULL, 0,         -1,  -1, LUMPERROR, "Damaged"},
+  {"dmgb1",  false,  64, 8, -1, NULL, 0,         -1,  -1, LUMPERROR, "Damaged"},
+  {"dmgb2",  false,  64, 8, -1, NULL, 0,         -1,  -1, LUMPERROR, "Damaged"},
+  {"dmgb3",  false,  64, 8, -1, NULL, 0,         -1,  -1, LUMPERROR, "Damaged"},
+  {"dmgb4",  false,  64, 8, -1, NULL, 0,         -1,  -1, LUMPERROR, "Damaged"},
+
   // SRB2Kart - Engine sounds
   // Engine class A
   {"krta00", false,  48, 65, -1, NULL, 0,        -1,  -1, LUMPERROR, ""},

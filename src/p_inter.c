@@ -2752,7 +2752,7 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 				if (type != DMG_STING)
 					player->flashing = K_GetKartFlashing(player);
 
-				P_PlayRinglossSound(target);
+				//P_PlayRinglossSound(target);
 				P_PlayerRingBurst(player, ringburst);
 
 				K_PopPlayerShield(player);
