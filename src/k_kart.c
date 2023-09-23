@@ -10703,9 +10703,10 @@ void K_AdjustPlayerFriction(player_t *player)
 	{
 		player->mo->friction += 614;
 	}
-	else if (player->mo->eflags & MFE_UNDERWATER)
+	else if ((player->mo->eflags & MFE_UNDERWATER))
 	{
-		player->mo->friction += 312;
+		if (!K_Sliptiding(player))
+			player->mo->friction += 312;
 	}
 
 	// Wipeout slowdown
