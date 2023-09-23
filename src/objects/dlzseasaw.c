@@ -41,6 +41,13 @@ static void Obj_DLZSeasawUpdate(mobj_t *mo, boolean ghostme)
 		mo->tracer->tics = 3;
 		P_MoveOrigin(mo->tracer, mo->x, mo->y, mo->z);
 		P_SetScale(mo->tracer, mo->scale);
+		
+		if (mo->eflags & MFE_VERTICALFLIP)
+		{
+			mo->tracer->eflags |= MFE_VERTICALFLIP;
+			mo->tracer->eflags |= MF2_OBJECTFLIP;
+		}
+		
 	}
 	
 	
@@ -63,6 +70,12 @@ static void Obj_DLZSeasawUpdate(mobj_t *mo, boolean ghostme)
 				ptr->angle = visan;
 				ptr->tics = 3;
 				P_SetScale(ptr, mo->scale);
+
+				if (mo->eflags & MFE_VERTICALFLIP)
+				{
+					ptr->eflags |= MFE_VERTICALFLIP;
+					ptr->flags2 |= MF2_OBJECTFLIP;
+				}
 				
 				if (ghostme && leveltime&1)
 				{
@@ -91,6 +104,13 @@ static void Obj_DLZSeasawUpdate(mobj_t *mo, boolean ghostme)
 				P_SetOrigin(ptrp, x, y, mo->z + 8*mapobjectscale*P_MobjFlip(mo));	// it's invisible so nobody cares about interpolating it.
 				ptrp->angle = visan;
 				ptrp->tics = 3;
+
+
+				if (mo->eflags & MFE_VERTICALFLIP)
+				{
+					ptrp->eflags |= MFE_VERTICALFLIP;
+					ptrp->flags2 |= MF2_OBJECTFLIP;
+				}
 				
 				hdist += 16;
 			}
