@@ -758,6 +758,11 @@ struct player_t
 	INT32 seasawmoreangle;		// used for reverse sesaws in DLZ.
 	boolean seasawdir;			// flips or not seasaw rotation
 	
+	// water palace turbines (or cnz barrels, or whatever the hell people use it for nowadays)
+	tic_t turbine;			// ticker (while true, we set the tracer to the turbine)
+	INT32 turbineangle;		// angle around the turbine. ...Made in INT32 to make it easier to translate from lua
+	fixed_t turbineheight;	// height around the turbine
+	boolean turbinespd;		// if true, we used a sneaker and get the altpath.
 	
 	//
 

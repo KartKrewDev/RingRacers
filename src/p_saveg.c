@@ -580,6 +580,11 @@ static void P_NetArchivePlayers(savebuffer_t *save)
 		WRITEINT32(save->p, players[i].seasawmoreangle);
 		WRITEUINT8(save->p, players[i].seasawdir);
 		
+		WRITEUINT32(save->p, players[i].turbine);
+		WRITEINT32(save->p, players[i].turbineangle);
+		WRITEFIXED(save->p, players[i].turbineheight);
+		WRITEUINT8(save->p, players[i].turbinespd);
+		
 		// respawnvars_t
 		WRITEUINT8(save->p, players[i].respawn.state);
 		WRITEUINT32(save->p, K_GetWaypointHeapIndex(players[i].respawn.wp));
@@ -1081,6 +1086,11 @@ static void P_NetUnArchivePlayers(savebuffer_t *save)
 		players[i].seasawangleadd = READINT32(save->p);
 		players[i].seasawmoreangle = READINT32(save->p);
 		players[i].seasawdir = READUINT8(save->p);
+
+		players[i].turbine = READUINT32(save->p);
+		players[i].turbineangle = READINT32(save->p);
+		players[i].turbineheight = READFIXED(save->p);
+		players[i].turbinespd = READUINT8(save->p);
 
 		// respawnvars_t
 		players[i].respawn.state = READUINT8(save->p);

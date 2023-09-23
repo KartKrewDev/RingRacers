@@ -71,7 +71,7 @@ void Obj_DLZRocketDismount(player_t *p)
 // touching the rocket, initialize player vars etc...
 void Obj_DLZRocketSpecial(mobj_t *mo, player_t *p)
 {
-	if (p->dlzrocket)	// already on one, don't bother resetting, duh.
+	if (K_isPlayerInSpecialState(p))	// already on one, don't bother resetting, duh.
 		return;
 	
 	p->mo->z = mo->z + 16*P_MobjFlip(p->mo)*mapobjectscale;

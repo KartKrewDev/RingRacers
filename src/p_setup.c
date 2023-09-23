@@ -7263,7 +7263,7 @@ static void P_ConvertBinaryThingTypes(void)
 		case 3786: // MT_BATTLEUFO_SPAWNER
 			mapthings[i].thing_args[0] = mapthings[i].angle;
 			break;
-		case 3400: // MT_WATERPALACETURBINE (TODO: not yet hardcoded)
+		case 3400: // MT_WATERPALACETURBINE
 		{
 			mtag_t tag = (mtag_t)mapthings[i].angle;
 			INT32 j = Tag_FindLineSpecial(2009, tag);
@@ -7312,8 +7312,8 @@ static void P_ConvertBinaryThingTypes(void)
 
 			break;
 		}
-		case 3441: // MT_DASHRING (TODO: not yet hardcoded)
-		case 3442: // MT_RAINBOWDASHRING (TODO: not yet hardcoded)
+		case 3441: // MT_DASHRING
+		case 3442: // MT_RAINBOWDASHRING
 			mapthings[i].thing_args[0] = mapthings[i].options & 13;
 			mapthings[i].thing_args[1] = mapthings[i].extrainfo;
 			break;

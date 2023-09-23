@@ -57,6 +57,18 @@
 // comeback is Battle Mode's karma comeback, also bool
 // mapreset is set when enough players fill an empty server
 
+// lat: used for when the player is in some weird state where it wouldn't be wise for it to be overwritten by another object that does similarly wacky shit.
+boolean K_isPlayerInSpecialState(player_t *p)
+{
+	return (
+		p->rideroid
+		|| p->bungee
+		|| p->dlzrocket
+		|| p->seasaw
+		|| p->turbine
+	);
+}
+
 boolean K_IsDuelItem(mobjtype_t type)
 {
 	switch (type)

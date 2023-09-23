@@ -308,6 +308,10 @@ void Obj_DLZSeasawCollide(mobj_t *mo, mobj_t *mo2)
 	// cooldown / respawning
 	if (p->seasawcooldown || p->respawn.timer)
 		return;
+	
+	// other wacko state that'd do very weird shit if we overwrote it.
+	if (K_isPlayerInSpecialState(p))
+		return;
 
 	// another player is already using the seasar
 	if (mo2->target && !P_MobjWasRemoved(mo2->target) && mo2->target->target && !P_MobjWasRemoved(mo2->target->target))

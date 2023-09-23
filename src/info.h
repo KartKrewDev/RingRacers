@@ -1458,6 +1458,11 @@ typedef enum sprite
 	SPR_DLZS,	// DLZ Seasaw
 	SPR_DLZA,	// Helper arrows for rocket
 	
+	SPR_WPWL,	// turbine
+	SPR_WPZF,	// fountain
+	SPR_WPZK,	// klagen
+	
+	
 	// First person view sprites; this is a sprite so that it can be replaced by a specialized MD2 draw later
 	SPR_VIEW,
 
@@ -5866,6 +5871,13 @@ typedef enum state
 	S_DLZROCKET_L,
 	S_DLZROCKET_R,
 	
+	// water palace zone
+	S_WPZFOUNTAIN,
+	S_WPZFOUNTAINANIM,
+	S_KURAGEN,
+	S_KURAGENBOMB,
+	
+	
 	S_FIRSTFREESLOT,
 	S_LASTFREESLOT = S_FIRSTFREESLOT + NUMSTATEFREESLOTS - 1,
 	NUMSTATES
@@ -7051,6 +7063,12 @@ typedef enum mobj_type
 	MT_DLZ_SEASAW_VISUAL,
 	MT_DLZ_RINGVACCUM,
 	MT_DLZ_SUCKEDRING,
+	
+	MT_WATERPALACETURBINE,
+	MT_WATERPALACEBUBBLE,
+	MT_WATERPALACEFOUNTAIN,
+	MT_KURAGEN,
+	MT_KURAGENBOMB,
 	
 	MT_FIRSTFREESLOT,
 	MT_LASTFREESLOT = MT_FIRSTFREESLOT + NUMMOBJFREESLOTS - 1,

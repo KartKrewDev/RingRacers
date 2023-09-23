@@ -35,7 +35,7 @@ void Obj_BungeeSpecial(mobj_t *mo, player_t *p)
 	
 	mobj_t *latch;
 	
-	if (p->bungee || P_IsObjectOnGround(p->mo) || p->springstars)
+	if (P_IsObjectOnGround(p->mo) || p->springstars || K_isPlayerInSpecialState(p))
 		return;
 	
 	P_InstaThrust(p->mo, 0, 0);
