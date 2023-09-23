@@ -1432,7 +1432,7 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 		ACS_RunPlayerDeathScript(target->player);
 	}
 
-	if (source && target && target->player && source->player)
+	if (source && target && target->player && source->player && (target->player != source->player))
 		P_PlayVictorySound(source); // Killer laughs at you. LAUGHS! BWAHAHAHA!
 
 	// Other death animation effects
