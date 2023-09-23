@@ -37,6 +37,8 @@ Obj_SpawnBrolyKi
 	x = P_SpawnMobjFromMobj(
 			source, 0, 0, 0, MT_BROLY);
 
+	P_SetTarget(&x->target, source);
+
 	// Shrink into center of source object.
 	x->z = (source->z + source->height / 2);
 
