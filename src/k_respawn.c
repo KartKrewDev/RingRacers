@@ -387,7 +387,7 @@ static void K_MovePlayerToRespawnPoint(player_t *player)
 	{
 		if (player->respawn.returnspeed == 0)
 			player->respawn.returnspeed = dist / returntime;
-		stepamt = player->respawn.returnspeed;
+		stepamt = max(stepamt, player->respawn.returnspeed);
 	}
 
 	if (dist <= stepamt)
