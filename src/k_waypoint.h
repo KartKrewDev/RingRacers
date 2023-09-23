@@ -56,6 +56,21 @@ waypoint_t *K_GetFinishLineWaypoint(void);
 
 
 /*--------------------------------------------------
+	waypoint_t *K_GetStartingWaypoint(void);
+
+		Return the waypoint farthest from the finish line.
+
+	Input Arguments:-
+		None
+
+	Return:-
+		The waypoint that is being used as the startingwaypoint.
+--------------------------------------------------*/
+
+waypoint_t *K_GetStartingWaypoint(void);
+
+
+/*--------------------------------------------------
 	boolean K_GetWaypointIsFinishline(waypoint_t *waypoint)
 
 		Returns whether the waypoint is marked as the finishline. This may not actually be the finishline.
@@ -170,7 +185,24 @@ waypoint_t *K_GetWaypointFromID(INT32 waypointID);
 	Return:-
 		The circuit length.
 --------------------------------------------------*/
+
 UINT32 K_GetCircuitLength(void);
+
+
+/*--------------------------------------------------
+	INT32 K_GetTrackComplexity(void)
+
+		Returns the track complexity values. This depends
+		on how many turns the map has, and is used for
+		bot code to determine their rubberbanding.
+
+	Input Arguments:-
+
+	Return:-
+		The track complexity value.
+--------------------------------------------------*/
+
+INT32 K_GetTrackComplexity(void);
 
 
 /*--------------------------------------------------

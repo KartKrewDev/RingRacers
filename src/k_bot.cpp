@@ -450,6 +450,25 @@ static line_t *K_FindBotController(mobj_t *mo)
 }
 
 /*--------------------------------------------------
+	fixed_t K_BotMapModifier(void)
+
+		See header file for description.
+--------------------------------------------------*/
+fixed_t K_BotMapModifier(void)
+{
+	constexpr INT32 complexity_scale = 10000;
+	constexpr INT32 modifier_max = FRACUNIT * 2;
+	
+	const fixed_t complexity_value = std::clamp<fixed_t>(
+		FixedDiv(K_GetTrackComplexity(), complexity_scale),
+		-modifier_max,
+		modifier_max * 2
+	);
+
+	return FRACUNIT + complexity_value;
+}
+
+/*--------------------------------------------------
 	static UINT32 K_BotRubberbandDistance(player_t *player)
 
 		Calculates the distance away from 1st place that the
@@ -465,7 +484,7 @@ static UINT32 K_BotRubberbandDistance(player_t *player)
 {
 	const UINT32 spacing = FixedDiv(640 * mapobjectscale, K_GetKartGameSpeedScalar(gamespeed)) / FRACUNIT;
 	const UINT8 portpriority = player - players;
-	UINT8 pos = 0;
+	UINT8 pos = 1;
 	UINT8 i;
 
 	if (player->botvars.rival)
@@ -509,15 +528,22 @@ static UINT32 K_BotRubberbandDistance(player_t *player)
 --------------------------------------------------*/
 fixed_t K_BotRubberband(player_t *player)
 {
+	constexpr fixed_t rubberdeltabase = FRACUNIT / 4; // +/- x0.25
+
+	// Lv.   1: x0.50 avg
+	// Lv.   9: x1.50 avg
 	const fixed_t difficultyEase = ((player->botvars.difficulty - 1) * FRACUNIT) / (DIFFICULTBOT - 1);
+	const fixed_t rubberavg = Easing_Linear(difficultyEase, FRACUNIT / 2, FRACUNIT * 3 / 2);
 
 	// Lv.   1: x0.35 min
 	// Lv.   9: x1.35 min
-	const fixed_t rubbermin = Easing_Linear(difficultyEase, FRACUNIT * 35 / 100, FRACUNIT * 135 / 100);
+	const fixed_t rubberdeltamin = FixedMul(rubberdeltabase, K_BotMapModifier());
+	const fixed_t rubbermin = std::max<fixed_t>(rubberavg - rubberdeltamin, FRACUNIT/3);
 
-	// Lv.   1: x1.0 max
+	// Lv.   1: x0.65 max
 	// Lv.   9: x1.65 max
-	const fixed_t rubbermax = Easing_Linear(difficultyEase, FRACUNIT, FRACUNIT * 165 / 100);
+	const fixed_t rubberdeltamax = FixedMul(rubberdeltabase, K_BotMapModifier());
+	const fixed_t rubbermax = std::min<fixed_t>(rubberavg - rubberdeltamax, FRACUNIT*3);
 
 	fixed_t rubberband = FRACUNIT >> 1;
 	player_t *firstplace = nullptr;
@@ -550,6 +576,12 @@ fixed_t K_BotRubberband(player_t *player)
 			continue;
 		}
 
+		// Don't rubberband to ourselves...
+		if (player == &players[i])
+		{
+			continue;
+		}
+
 #if 0
 		// Only rubberband up to players.
 		if (players[i].bot)
@@ -566,15 +598,7 @@ fixed_t K_BotRubberband(player_t *player)
 
 	if (firstplace != nullptr)
 	{
-		// Lv.   1: 5120 units
-		// Lv.   9: 320 units
-		const fixed_t spacing = FixedDiv(
-			std::max<fixed_t>(
-				80 * mapobjectscale,
-				Easing_Linear(difficultyEase, 5120 * mapobjectscale, 320 * mapobjectscale)
-			),
-			K_GetKartGameSpeedScalar(gamespeed)
-		) / FRACUNIT;
+		const fixed_t spacing = FixedDiv(2560 * mapobjectscale, K_GetKartGameSpeedScalar(gamespeed)) / FRACUNIT;
 		const UINT32 wanteddist = firstplace->distancetofinish + K_BotRubberbandDistance(player);
 		const INT32 distdiff = player->distancetofinish - wanteddist;
 
@@ -745,7 +769,7 @@ static botprediction_t *K_CreateBotPrediction(player_t *player)
 	const precise_t time = I_GetPreciseTime();
 
 	// Stair janking makes it harder to steer, so attempt to steer harder.
-	const UINT8 jankDiv = (player->stairjank > 0) ? 2 : 1;
+	const UINT8 jankDiv = (player->stairjank > 0) ? 4 : 1;
 
 	const INT16 handling = K_GetKartTurnValue(player, KART_FULLTURN) / jankDiv; // Reduce prediction based on how fast you can turn
 

@@ -1449,10 +1449,15 @@ static void K_BotItemInstashield(player_t *player, ticcmd_t *cmd)
 
 		if (dist <= radius)
 		{
-			// Use it!!
-			cmd->buttons |= BT_ATTACK;
-			break;
+			K_ItemConfirmForTarget(player, target, player->botvars.difficulty * 2);
 		}
+	}
+
+	if (player->botvars.itemconfirm > 10*TICRATE)
+	{
+		// Use it!!
+		cmd->buttons |= BT_ATTACK;
+		player->botvars.itemconfirm = 0;
 	}
 }
 
@@ -1494,7 +1499,7 @@ static void K_BotItemRouletteMash(player_t *player, ticcmd_t *cmd)
 			player->itemRoulette.itemList[ player->itemRoulette.index ]
 		);
 
-		if (player->botvars.roulettePriority == currentPriority) 
+		if (player->botvars.roulettePriority == currentPriority)
 		{
 			// This is the item we want! Start timing!
 			player->botvars.itemconfirm++;
