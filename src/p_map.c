@@ -750,6 +750,14 @@ static BlockItReturn_t PIT_CheckThing(mobj_t *thing)
 		return BMIT_CONTINUE;
 	}
 	
+	if (thing->type == MT_DLZ_HOVER)
+	{
+		if (tm.thing->type == MT_PLAYER)
+			Obj_DLZHoverCollide(tm.thing, thing);
+		
+		return BMIT_CONTINUE;
+	}
+	
 	if (tm.thing->type == MT_INSTAWHIP)
 	{
 		if (tm.thing->z > thing->z + thing->height)

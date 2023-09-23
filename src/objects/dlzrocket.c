@@ -31,10 +31,13 @@
 #define DLZROCKETVERTSPEED (ANG1)
 #define DLZROCKETMAXVERT (ANG1*60)
 
-void Obj_DLZRocketSpawn(mobj_t *mo)
+void Obj_DLZRocketThink(mobj_t *mo)
 {
 	UINT8 i;
 	angle_t an = mo->angle + ANGLE_90;
+	
+	if (mo->extravalue1)
+		return;
 	
 	for (i = 0; i < 2; i++)
 	{
@@ -44,11 +47,14 @@ void Obj_DLZRocketSpawn(mobj_t *mo)
 		mobj_t *r = P_SpawnMobj(x, y, mo->z, MT_THOK);
 		P_SetMobjState(r, i ? S_DLZROCKET_L : S_DLZROCKET_R);
 		P_SetScale(r, (mapobjectscale*3)/2);
-		r->angle = mo->angle;
+		r->destscale = (mapobjectscale*3)/2;
+		r->angle = mo->spawnpoint->angle*ANG1;
 		r->tics = -1;
 		
 		an += ANGLE_180;
 	}
+	
+	mo->extravalue1 = 1;
 }
 
 void Obj_DLZRocketDismount(player_t *p)

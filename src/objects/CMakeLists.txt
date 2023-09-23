@@ -34,5 +34,6 @@ target_sources(SRB2SDL2 PRIVATE
 	eggball.c
 	dlzrocket.c
 	dlzseasaw.c
+	dlzothers.c
 	shadow.cpp
 )

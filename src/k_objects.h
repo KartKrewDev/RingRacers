@@ -248,7 +248,7 @@ void Obj_EggBallSpawnerThink(mobj_t *mo);
 void Obj_EggBallThink(mobj_t *mo);
 
 /* DLZ Rockets */
-void Obj_DLZRocketSpawn(mobj_t *mo);
+void Obj_DLZRocketThink(mobj_t *mo);
 void Obj_DLZRocketSpecial(mobj_t *mo, player_t *p);	// touch activation
 void Obj_playerDLZRocket(player_t *p);				// player looping thinker
 void Obj_DLZRocketDismount(player_t *p);			// used in p_map.c to get off the rocket when we cross transfer lines.
@@ -257,6 +257,10 @@ void Obj_DLZRocketDismount(player_t *p);			// used in p_map.c to get off the roc
 void Obj_DLZSeasawSpawn(mobj_t *mo);
 void Obj_DLZSeasawThink(mobj_t *mo);
 void Obj_DLZSeasawCollide(mobj_t *mo, mobj_t *mo2);
+
+/* DLZ Hover */
+void Obj_DLZHoverSpawn(mobj_t *mo);
+void Obj_DLZHoverCollide(mobj_t *mo, mobj_t *mo2);
 
 #ifdef __cplusplus
 } // extern "C"
