@@ -62,6 +62,7 @@ boolean K_isPlayerInSpecialState(player_t *p)
 {
 	return (
 		p->rideroid
+		|| p->rdnodepull
 		|| p->bungee
 		|| p->dlzrocket
 		|| p->seasaw
@@ -11863,6 +11864,14 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 	
 	if (player->seasawcooldown && !player->seasaw)
 		player->seasawcooldown--;
+	
+	if (player->turbine)
+	{
+		if (player->mo->tracer && !P_MobjWasRemoved(player->mo->tracer))
+			Obj_playerWPZTurbine(player);
+		else
+			player->turbine--;	// acts as a cooldown
+	}
 }
 
 void K_CheckSpectateStatus(boolean considermapreset)

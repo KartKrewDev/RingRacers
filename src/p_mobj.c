@@ -9736,6 +9736,14 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 	case MT_DLZ_SUCKEDRING:
 		Obj_DLZSuckedRingThink(mobj);
 		break;
+		
+	case MT_WATERPALACETURBINE:
+		Obj_WPZTurbineThinker(mobj);
+		break;
+		
+	case MT_WATERPALACEBUBBLE:
+		Obj_WPZBubbleThink(mobj);
+		break;
 	
 	default:
 		// check mobj against possible water content, before movement code
@@ -11181,6 +11189,9 @@ mobj_t *P_SpawnMobj(fixed_t x, fixed_t y, fixed_t z, mobjtype_t type)
 			break;
 		case MT_DLZ_RINGVACCUM:
 			Obj_DLZRingVaccumSpawn(mobj);
+			break;
+		case MT_WATERPALACETURBINE:
+			Obj_WPZTurbineSpawn(mobj);
 			break;
 		case MT_SNEAKERPANEL:
 			Obj_SneakerPanelSpawn(mobj);

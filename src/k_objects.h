@@ -267,6 +267,12 @@ void Obj_DLZRingVaccumSpawn(mobj_t *mo);
 void Obj_DLZRingVaccumCollide(mobj_t *mo, mobj_t *mo2);
 void Obj_DLZSuckedRingThink(mobj_t *mo);
 
+/* WPZ Turbine */
+void Obj_WPZTurbineSpawn(mobj_t *mo);
+void Obj_WPZTurbineThinker(mobj_t *mo);
+void Obj_playerWPZTurbine(player_t *p);
+void Obj_WPZBubbleThink(mobj_t *mo);
+
 #ifdef __cplusplus
 } // extern "C"
 #endif
