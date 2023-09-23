@@ -101,6 +101,8 @@ bool CallFunc_DialogueSetSpeaker(ACSVM::Thread *thread, const ACSVM::Word *argV,
 bool CallFunc_DialogueSetCustomSpeaker(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC);
 bool CallFunc_DialogueNewText(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC);
 
+bool CallFunc_Freeze(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC);
+
 bool CallFunc_GetLineProperty(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC);
 bool CallFunc_SetLineProperty(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC);
 bool CallFunc_GetSideProperty(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC);

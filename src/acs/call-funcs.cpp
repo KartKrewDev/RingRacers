@@ -2177,6 +2177,21 @@ bool CallFunc_MusicRemap(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::
 }
 
 /*--------------------------------------------------
+	bool CallFunc_Freeze(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
+
+		Updates level freeze.
+--------------------------------------------------*/
+bool CallFunc_Freeze(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
+{
+	(void)argV;
+	(void)argC;
+
+	P_SetFreezeLevel(argV[0] != 0);
+
+	return false;
+}
+
+/*--------------------------------------------------
 	bool CallFunc_Get/SetLineProperty(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
 
 		Generic line property management.
