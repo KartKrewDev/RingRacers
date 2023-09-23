@@ -90,6 +90,7 @@ Environment::Environment()
 	addCodeDataACS0(100, {"",        3, addCallFunc(CallFunc_ThingSound)});
 	addCodeDataACS0(101, {"",        0, addCallFunc(CallFunc_EndPrintBold)});
 
+	addCodeDataACS0(118, {"",        0, addCallFunc(CallFunc_IsNetworkGame)});
 	addCodeDataACS0(119, {"",        0, addCallFunc(CallFunc_PlayerTeam)});
 	addCodeDataACS0(120, {"",        0, addCallFunc(CallFunc_PlayerRings)});
 
@@ -162,11 +163,12 @@ Environment::Environment()
 	addFuncDataACS0( 307, addCallFunc(CallFunc_PlayerLap));
 	addFuncDataACS0( 308, addCallFunc(CallFunc_LowestLap));
 	addFuncDataACS0( 309, addCallFunc(CallFunc_EncoreMode));
-	addFuncDataACS0( 310, addCallFunc(CallFunc_BreakTheCapsules));
+	addFuncDataACS0( 310, addCallFunc(CallFunc_PrisonBreak));
 	addFuncDataACS0( 311, addCallFunc(CallFunc_TimeAttack));
 	addFuncDataACS0( 312, addCallFunc(CallFunc_ThingCount));
 	addFuncDataACS0( 313, addCallFunc(CallFunc_GrandPrix));
 	addFuncDataACS0( 314, addCallFunc(CallFunc_GetGrabbedSprayCan));
+	addFuncDataACS0( 315, addCallFunc(CallFunc_PlayerBot));
 
 	addFuncDataACS0( 500, addCallFunc(CallFunc_CameraWait));
 	addFuncDataACS0( 501, addCallFunc(CallFunc_PodiumPosition));
