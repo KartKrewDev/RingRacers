@@ -9745,6 +9745,18 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 		Obj_WPZBubbleThink(mobj);
 		break;
 	
+	case MT_WATERPALACEFOUNTAIN:
+		Obj_WPZFountainThink(mobj);
+		break;
+	
+	case MT_KURAGEN:
+		Obj_WPZKuragenThink(mobj);
+		break;
+		
+	case MT_KURAGENBOMB:
+		Obj_WPZKuragenBombThink(mobj);
+		break;
+	
 	default:
 		// check mobj against possible water content, before movement code
 		P_MobjCheckWater(mobj);

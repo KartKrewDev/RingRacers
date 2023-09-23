@@ -36,5 +36,6 @@ target_sources(SRB2SDL2 PRIVATE
 	dlzseasaw.c
 	dlzothers.c
 	wpzturbine.c
+	wpzothers.c
 	shadow.cpp
 )

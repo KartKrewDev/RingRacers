@@ -273,6 +273,13 @@ void Obj_WPZTurbineThinker(mobj_t *mo);
 void Obj_playerWPZTurbine(player_t *p);
 void Obj_WPZBubbleThink(mobj_t *mo);
 
+/* WPZ Fountains */
+void Obj_WPZFountainThink(mobj_t *mo);
+
+/* WPZ Kuragens */
+void Obj_WPZKuragenThink(mobj_t *mo);
+void Obj_WPZKuragenBombThink(mobj_t *mo);
+
 #ifdef __cplusplus
 } // extern "C"
 #endif
