@@ -231,6 +231,22 @@ void M_DrawMenuBackground(void)
 	}
 }
 
+UINT16 M_GetCvPlayerColor(UINT8 pnum)
+{
+	if (pnum >= MAXSPLITSCREENPLAYERS)
+		return SKINCOLOR_NONE;
+
+	UINT16 color = cv_playercolor[pnum].value;
+	if (color != SKINCOLOR_NONE)
+		return color;
+
+	INT32 skin = R_SkinAvailable(cv_skin[pnum].string);
+	if (skin == -1)
+		return SKINCOLOR_NONE;
+
+	return skins[skin].prefcolor;
+}
+
 static void M_DrawMenuParty(void)
 {
 	const INT32 PLATTER_WIDTH = 19;
@@ -253,6 +269,18 @@ static void M_DrawMenuParty(void)
 	x = 2;
 	y = BASEVIDHEIGHT - small->height - 2;
 
+	// Despite the work put into it, can't use M_GetCvPlayerColor directly - we need to reference skin always.
+	#define grab_skin_and_colormap(pnum) \
+	{ \
+		skin = R_SkinAvailable(cv_skin[pnum].string); \
+		color = cv_playercolor[pnum].value; \
+		if (skin == -1) \
+			skin = 0; \
+		if (color == SKINCOLOR_NONE) \
+			color = skins[skin].prefcolor; \
+		colormap = R_GetTranslationColormap(skin, color, GTC_MENUCACHE); \
+	}
+
 	switch (setup_numplayers)
 	{
 		case 1:
@@ -260,9 +288,7 @@ static void M_DrawMenuParty(void)
 			x -= 8;
 			V_DrawScaledPatch(x, y, 0, small);
 
-			skin = R_SkinAvailable(cv_skin[0].string);
-			color = cv_playercolor[0].value;
-			colormap = R_GetTranslationColormap(skin, color, GTC_MENUCACHE);
+			grab_skin_and_colormap(0);
 
 			V_DrawMappedPatch(x + 22, y + 8, 0, faceprefix[skin][FACE_MINIMAP], colormap);
 			break;
@@ -273,15 +299,11 @@ static void M_DrawMenuParty(void)
 			V_DrawScaledPatch(x, y, 0, small);
 			V_DrawScaledPatch(x + PLATTER_OFFSET, y - PLATTER_STAGGER, 0, small);
 
-			skin = R_SkinAvailable(cv_skin[1].string);
-			color = cv_playercolor[1].value;
-			colormap = R_GetTranslationColormap(skin, color, GTC_MENUCACHE);
+			grab_skin_and_colormap(1);
 
 			V_DrawMappedPatch(x + PLATTER_OFFSET + 22, y - PLATTER_STAGGER + 8, 0, faceprefix[skin][FACE_MINIMAP], colormap);
 
-			skin = R_SkinAvailable(cv_skin[0].string);
-			color = cv_playercolor[0].value;
-			colormap = R_GetTranslationColormap(skin, color, GTC_MENUCACHE);
+			grab_skin_and_colormap(0);
 
 			V_DrawMappedPatch(x + 22, y + 8, 0, faceprefix[skin][FACE_MINIMAP], colormap);
 			break;
@@ -291,21 +313,15 @@ static void M_DrawMenuParty(void)
 			V_DrawScaledPatch(x, y, 0, large);
 			V_DrawScaledPatch(x + PLATTER_OFFSET, y - PLATTER_STAGGER, 0, small);
 
-			skin = R_SkinAvailable(cv_skin[1].string);
-			color = cv_playercolor[1].value;
-			colormap = R_GetTranslationColormap(skin, color, GTC_MENUCACHE);
+			grab_skin_and_colormap(1);
 
 			V_DrawMappedPatch(x + PLATTER_OFFSET + 22, y - PLATTER_STAGGER + 8, 0, faceprefix[skin][FACE_MINIMAP], colormap);
 
-			skin = R_SkinAvailable(cv_skin[0].string);
-			color = cv_playercolor[0].value;
-			colormap = R_GetTranslationColormap(skin, color, GTC_MENUCACHE);
+			grab_skin_and_colormap(0);
 
 			V_DrawMappedPatch(x + 12, y - 2, 0, faceprefix[skin][FACE_MINIMAP], colormap);
 
-			skin = R_SkinAvailable(cv_skin[2].string);
-			color = cv_playercolor[2].value;
-			colormap = R_GetTranslationColormap(skin, color, GTC_MENUCACHE);
+			grab_skin_and_colormap(2);
 
 			V_DrawMappedPatch(x + 22, y + 8, 0, faceprefix[skin][FACE_MINIMAP], colormap);
 			break;
@@ -315,27 +331,19 @@ static void M_DrawMenuParty(void)
 			V_DrawScaledPatch(x, y, 0, large);
 			V_DrawScaledPatch(x + PLATTER_OFFSET, y - PLATTER_STAGGER, 0, large);
 
-			skin = R_SkinAvailable(cv_skin[1].string);
-			color = cv_playercolor[1].value;
-			colormap = R_GetTranslationColormap(skin, color, GTC_MENUCACHE);
+			grab_skin_and_colormap(1);
 
 			V_DrawMappedPatch(x + PLATTER_OFFSET + 12, y - PLATTER_STAGGER - 2, 0, faceprefix[skin][FACE_MINIMAP], colormap);
 
-			skin = R_SkinAvailable(cv_skin[0].string);
-			color = cv_playercolor[0].value;
-			colormap = R_GetTranslationColormap(skin, color, GTC_MENUCACHE);
+			grab_skin_and_colormap(0);
 
 			V_DrawMappedPatch(x + 12, y - 2, 0, faceprefix[skin][FACE_MINIMAP], colormap);
 
-			skin = R_SkinAvailable(cv_skin[3].string);
-			color = cv_playercolor[3].value;
-			colormap = R_GetTranslationColormap(skin, color, GTC_MENUCACHE);
+			grab_skin_and_colormap(3);
 
 			V_DrawMappedPatch(x + PLATTER_OFFSET + 22, y - PLATTER_STAGGER + 8, 0, faceprefix[skin][FACE_MINIMAP], colormap);
 
-			skin = R_SkinAvailable(cv_skin[2].string);
-			color = cv_playercolor[2].value;
-			colormap = R_GetTranslationColormap(skin, color, GTC_MENUCACHE);
+			grab_skin_and_colormap(2);
 
 			V_DrawMappedPatch(x + 22, y + 8, 0, faceprefix[skin][FACE_MINIMAP], colormap);
 			break;
@@ -345,6 +353,8 @@ static void M_DrawMenuParty(void)
 			return;
 		}
 	}
+
+	#undef grab_skin_and_color
 
 	x += PLATTER_WIDTH;
 	y += small->height;
@@ -5476,7 +5486,7 @@ drawborder:
 		buffer[7] = (skullAnimCounter/5) ? '2' : '1';
 		pat = W_CachePatchName(buffer, PU_CACHE);
 
-		colormap = R_GetTranslationColormap(TC_DEFAULT, cv_playercolor[0].value, GTC_MENUCACHE);
+		colormap = R_GetTranslationColormap(TC_DEFAULT, M_GetCvPlayerColor(0), GTC_MENUCACHE);
 
 		V_DrawFixedPatch(
 			x*FRACUNIT, y*FRACUNIT,
@@ -5877,7 +5887,7 @@ static void M_DrawChallengePreview(INT32 x, INT32 y)
 	}
 	else
 	{
-		colormap = R_GetTranslationColormap(TC_DEFAULT, cv_playercolor[0].value, GTC_MENUCACHE);
+		colormap = R_GetTranslationColormap(TC_DEFAULT, M_GetCvPlayerColor(0), GTC_MENUCACHE);
 		V_DrawFixedPatch((x+40)<<FRACBITS, ((y+25)<<FRACBITS),
 			FRACUNIT/2, 0,
 			W_CachePatchName("K_LAPE02", PU_CACHE),

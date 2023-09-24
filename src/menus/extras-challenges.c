@@ -559,14 +559,7 @@ void M_ChallengesTick(void)
 
 				if (bombcolor == SKINCOLOR_NONE)
 				{
-					bombcolor = cv_playercolor[0].value;
-					if (bombcolor == SKINCOLOR_NONE)
-					{
-						INT32 psk = R_SkinAvailable(cv_skin[0].string);
-						if (psk == -1)
-							psk = 0;
-						bombcolor = skins[psk].prefcolor;
-					}
+					bombcolor = M_GetCvPlayerColor(0);
 				}
 
 				i = (ref->majorunlock && M_RandomChance(FRACUNIT/2)) ? 1 : 0;

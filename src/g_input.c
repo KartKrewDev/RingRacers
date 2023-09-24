@@ -21,6 +21,7 @@
 #include "i_joy.h" // JOYAXISRANGE
 #include "r_draw.h" // GTC_ macros for assigning gamepad indicator colors
 #include "v_video.h" // V_GetColor for assigning gamepad indictaor colors
+#include "r_skins.h" // skins[].prefcolor for assigning gamepad indicator colors
 #include "z_zone.h"
 
 // current state of the keys
@@ -206,7 +207,6 @@ void G_SetDeviceForPlayer(INT32 player, INT32 device)
 void G_SetPlayerGamepadIndicatorToPlayerColor(INT32 player)
 {
 	INT32 device;
-	INT32 skin;
 	UINT16 skincolor;
 	UINT8 *colormap;
 	byteColor_t byte_color;
@@ -220,15 +220,24 @@ void G_SetPlayerGamepadIndicatorToPlayerColor(INT32 player)
 		return;
 	}
 
-	skin = cv_skin[player].value;
 	skincolor = cv_playercolor[player].value;
-	colormap = R_GetTranslationColormap(skin, skincolor, GTC_MENUCACHE);
+	if (skincolor == SKINCOLOR_NONE)
+	{
+		INT32 skin = cv_skin[player].value;
+		if (skin == -1)
+			skin = 0;
+		skincolor = skins[skin].prefcolor;
+	}
+
+	// We use TC_DEFAULT here rather than player skin because...
+	colormap = R_GetTranslationColormap(TC_DEFAULT, skincolor, GTC_MENUCACHE);
 
 	if (colormap == NULL)
 	{
 		return;
 	}
 
+	// ...we're grabbing the same index as a reference point across remaps!
 	byte_color = V_GetColor(colormap[104]).s;
 
 	I_SetGamepadIndicatorColor(device, byte_color.red, byte_color.green, byte_color.blue);
