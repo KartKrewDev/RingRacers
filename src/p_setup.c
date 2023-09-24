@@ -1356,6 +1356,8 @@ static void P_LoadThings(UINT8 *data)
 		else
 			mt->z = mt->options >> ZSHIFT;
 
+		mt->adjusted_z = INT32_MAX;
+
 		mt->mobj = NULL;
 	}
 }
@@ -3239,6 +3241,7 @@ static void P_LoadTextmap(void)
 		memset(mt->script_args, 0, NUM_SCRIPT_ARGS*sizeof(*mt->script_args));
 		memset(mt->script_stringargs, 0x00, NUM_SCRIPT_STRINGARGS*sizeof(*mt->script_stringargs));
 		mt->layer = 0;
+		mt->adjusted_z = INT32_MAX;
 		mt->mobj = NULL;
 
 		K_UserPropertiesClear(&mt->user);

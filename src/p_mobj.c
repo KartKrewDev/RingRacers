@@ -13910,7 +13910,16 @@ mobj_t *P_SpawnMapThing(mapthing_t *mthing)
 
 	x = mthing->x << FRACBITS;
 	y = mthing->y << FRACBITS;
-	z = P_GetMapThingSpawnHeight(i, mthing, x, y);
+
+	if (mthing->adjusted_z != INT32_MAX)
+	{
+		z = mthing->adjusted_z;
+	}
+	else
+	{
+		z = P_GetMapThingSpawnHeight(i, mthing, x, y);
+	}
+
 	return P_SpawnMobjFromMapThing(mthing, x, y, z, i);
 }
 
