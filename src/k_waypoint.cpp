@@ -26,6 +26,8 @@
 #include <algorithm>
 #include <vector>
 
+#include <fmt/format.h>
+
 // The number of sparkles per waypoint connection in the waypoint visualisation
 static const UINT32 SPARKLES_PER_CONNECTION = 16U;
 
@@ -2574,8 +2576,8 @@ static INT32 K_CalculateTrackComplexity(void)
 
 			delta = FixedMul(delta, FixedMul(FixedMul(dist_factor, radius_factor), wall_factor));
 
-			CONS_Printf(
-				"TURN [%d]: r: %.2f, d: %.2f, w: %.2f, r*d*w: %.2f, DELTA: %d\n",
+			std::string msg = fmt::format(
+				"TURN [{}]: r: {:.2f}, d: {:.2f}, w: {:.2f}, r*d*w: {:.2f}, DELTA: {}\n",
 				i,
 				FixedToFloat(radius_factor),
 				FixedToFloat(dist_factor),
@@ -2583,6 +2585,7 @@ static INT32 K_CalculateTrackComplexity(void)
 				FixedToFloat(FixedMul(FixedMul(dist_factor, radius_factor), wall_factor)),
 				(delta / FRACUNIT)
 			);
+			CONS_Printf("%s", msg.c_str());
 			trackcomplexity += (delta / FRACUNIT);
 		}
 
@@ -2663,7 +2666,7 @@ static INT32 K_CalculateTrackComplexity(void)
 			}
 		}
 
-		CONS_Printf("Num sneaker panel sets: %d\n", sneaker_panels.size());
+		CONS_Printf("%s", fmt::format("Num sneaker panel sets: {}\n", sneaker_panels.size()).c_str());
 		trackcomplexity -= sneaker_panels.size() * 1250;
 
 		CONS_Printf(" ** COMPLEXITY: %d\n", trackcomplexity);
