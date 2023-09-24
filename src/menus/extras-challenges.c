@@ -290,10 +290,10 @@ void M_Challenges(INT32 choice)
 	M_SetupNextMenu(&MISC_ChallengesDef, false);
 }
 
-static boolean M_CanKeyHiliTile(boolean devskip)
+static boolean M_CanKeyHiliTile(void)
 {
 	// No keys to do it with?
-	if (gamedata->chaokeys == 0 && !devskip)
+	if (gamedata->chaokeys == 0)
 		return false;
 
 	// No tile data?
@@ -308,17 +308,22 @@ static boolean M_CanKeyHiliTile(boolean devskip)
 	if (gamedata->unlocked[challengesmenu.currentunlock] == true)
 		return false;
 
-	// Marked as unskippable?
-	if (unlockables[challengesmenu.currentunlock].majorunlock == true && !devskip)
-		return false;
-
 	UINT16 i = (challengesmenu.hilix * CHALLENGEGRIDHEIGHT) + challengesmenu.hiliy;
 
 	// Not a hinted tile OR a fresh board.
 	if (!(challengesmenu.extradata[i].flags & CHE_HINT)
-	&& (challengesmenu.unlockcount[CC_UNLOCKED] + challengesmenu.unlockcount[CC_TALLY] > 0)
-	&& !devskip)
+	&& (challengesmenu.unlockcount[CC_UNLOCKED] + challengesmenu.unlockcount[CC_TALLY] > 0))
 		return false;
+
+	// Marked as major?
+	if (unlockables[challengesmenu.currentunlock].majorunlock == true)
+	{
+		if (!(challengesmenu.extradata[i].flags & CHE_ALLCLEAR))
+			return false;
+
+		if (gamedata->chaokeys < 10)
+			return false;
+	}
 
 	// All good!
 	return true;
@@ -370,12 +375,7 @@ void M_ChallengesTick(void)
 
 	if (challengesmenu.chaokeyhold)
 	{
-		boolean devskip = false;
-#ifdef DEVELOP
-		devskip = M_MenuButtonHeld(pid, MBT_Z);
-#endif
-		// A little messy, but don't freak out, this is just so devs don't crash the game on non-tiles
-		if ((devskip || M_MenuExtraHeld(pid)) && M_CanKeyHiliTile(devskip))
+		if (M_MenuExtraHeld(pid) && M_CanKeyHiliTile())
 		{
 			// Not pressed just this frame?
 			if (!M_MenuExtraPressed(pid))
@@ -385,7 +385,8 @@ void M_ChallengesTick(void)
 				if (challengesmenu.chaokeyhold > CHAOHOLD_MAX)
 				{
 #ifndef CHAOKEYDEBUG
-					gamedata->chaokeys--;
+					gamedata->chaokeys -= (unlockables[challengesmenu.currentunlock].majorunlock == true)
+						? 10 : 1;
 #endif
 					challengesmenu.chaokeyhold = 0;
 					challengesmenu.unlockcount[CC_CHAOANIM]++;
@@ -616,7 +617,7 @@ boolean M_ChallengesInputs(INT32 ch)
 	}
 	else if (M_MenuExtraPressed(pid))
 	{
-		if (M_CanKeyHiliTile(false))
+		if (M_CanKeyHiliTile())
 		{
 			challengesmenu.chaokeyhold = 1;
 		}
@@ -642,7 +643,9 @@ boolean M_ChallengesInputs(INT32 ch)
 #ifdef DEVELOP
 	else if (M_MenuButtonPressed(pid, MBT_Z))
 	{
-		challengesmenu.chaokeyhold = 1;
+		gamedata->chaokeys++;
+		challengesmenu.unlockcount[CC_CHAOANIM]++;
+		S_StartSound(NULL, sfx_dbgsal);
 		return true;
 	}
 #endif

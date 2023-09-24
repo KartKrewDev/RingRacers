@@ -6080,46 +6080,81 @@ challengedesc:
 		if (offs < challengekeybarwidth)
 			V_DrawFadeFill(1+offs, 25, challengekeybarwidth-offs, 2, 0, 31, challengetransparentstrength);
 
-		if (challengesmenu.chaokeyhold)
+		if (challengesmenu.currentunlock < MAXUNLOCKABLES && challengesmenu.chaokeyhold)
 		{
-			fixed_t keyholdrotation = 0, radius = challengesgridstep;
+			fixed_t tilex = selectx, tiley = selecty;
 
-			if (challengesmenu.chaokeyhold < CHAOHOLD_BEGIN)
+			fixed_t baseradius = challengesgridstep;
+
+			boolean major = false, ending = false;
+			if (unlockables[challengesmenu.currentunlock].majorunlock == true)
 			{
-				radius = (challengesmenu.chaokeyhold*radius)*(FRACUNIT/CHAOHOLD_BEGIN);
-				keyx += challengesmenu.chaokeyhold*((selectx*FRACUNIT) - keyx)/CHAOHOLD_BEGIN;
-				keyy += challengesmenu.chaokeyhold*((selecty*FRACUNIT) - keyy)/CHAOHOLD_BEGIN;
+				major = true;
+				tilex += challengesgridstep/2;
+				tiley += challengesgridstep/2;
+				baseradius *= 2;
 			}
-			else
+
+			if (challengesmenu.chaokeyhold >= CHAOHOLD_MAX - CHAOHOLD_END)
 			{
-				if (challengesmenu.chaokeyhold < CHAOHOLD_MAX - CHAOHOLD_END)
+				ending = true;
+				baseradius = ((CHAOHOLD_MAX - challengesmenu.chaokeyhold)*baseradius)*(FRACUNIT/CHAOHOLD_END);
+			}
+
+			INT16 specifickeyholdtime = challengesmenu.chaokeyhold;
+
+			for (i = 0; i < (major ? 10 : 1); i++, specifickeyholdtime -= 4)
+			{
+				fixed_t radius = baseradius;
+				fixed_t thiskeyx, thiskeyy;
+				fixed_t keyholdrotation = 0;
+
+				if (specifickeyholdtime < CHAOHOLD_BEGIN)
 				{
-					radius <<= FRACBITS;
+					if (specifickeyholdtime < 0)
+					{
+						// Nothing following will be relevant
+						break;
+					}
 
-					keyholdrotation = 360 * ((challengesmenu.chaokeyhold - CHAOHOLD_BEGIN))
-						* (FRACUNIT/(CHAOHOLD_MAX - (CHAOHOLD_BEGIN + CHAOHOLD_END)));
-
-					INT32 time = 3 - (keyholdrotation - 1) / (90 * FRACUNIT);
-					if (time <= 5 && time >= 0)
-						V_DrawScaledPatch(selectx + 2, selecty - 2, 0, kp_eggnum[time]);
+					radius = (specifickeyholdtime*radius)*(FRACUNIT/CHAOHOLD_BEGIN);
+					thiskeyx = keyx + specifickeyholdtime*((tilex*FRACUNIT) - keyx)/CHAOHOLD_BEGIN;
+					thiskeyy = keyy + specifickeyholdtime*((tiley*FRACUNIT) - keyy)/CHAOHOLD_BEGIN;
 				}
 				else
 				{
-					radius = ((CHAOHOLD_MAX - challengesmenu.chaokeyhold)*radius)*(FRACUNIT/CHAOHOLD_END);
+					keyholdrotation = (-36 * i) * FRACUNIT;
+
+					if (ending == false)
+					{
+						radius <<= FRACBITS;
+
+						keyholdrotation += 360 * ((challengesmenu.chaokeyhold - CHAOHOLD_BEGIN))
+							* (FRACUNIT/(CHAOHOLD_MAX - (CHAOHOLD_BEGIN + CHAOHOLD_END)));
+
+						if (i == 0)
+						{
+							INT32 time = 3 - (keyholdrotation - 1) / (90 * FRACUNIT);
+							if (time <= 5 && time >= 0)
+								V_DrawScaledPatch(tilex + 2, tiley - 2, 0, kp_eggnum[time]);
+						}
+					}
+
+					thiskeyx = tilex*FRACUNIT;
+					thiskeyy = tiley*FRACUNIT;
 				}
 
-				keyx = selectx*FRACUNIT;
-				keyy = selecty*FRACUNIT;
-			}
+				if (radius != 0)
+				{
+					angle_t ang = (FixedAngle(
+						keyholdrotation
+						) >> ANGLETOFINESHIFT) & FINEMASK;
 
-			if (radius)
-			{
-				angle_t ang = (FixedAngle(
-					keyholdrotation
-					) >> ANGLETOFINESHIFT) & FINEMASK;
+					thiskeyx += FixedMul(radius, FINESINE(ang));
+					thiskeyy -= FixedMul(radius, FINECOSINE(ang));
+				}
 
-				keyx += FixedMul(radius, FINESINE(ang));
-				keyy -= FixedMul(radius, FINECOSINE(ang));
+				V_DrawFixedPatch(thiskeyx, thiskeyy, FRACUNIT, 0, key, NULL);
 			}
 		}
 
