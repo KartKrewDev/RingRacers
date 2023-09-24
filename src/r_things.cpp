@@ -1068,12 +1068,8 @@ static void R_DrawVisSprite(vissprite_t *vis)
 		// Vertically sheared sprite
 		for (dc_x = vis->x1; dc_x <= vis->x2; dc_x++, frac += vis->xiscale, dc_texturemid -= vis->shear.tan)
 		{
-			texturecolumn = frac>>FRACBITS;
+			texturecolumn = std::clamp(frac >> FRACBITS, 0, patch->width - 1);
 
-#ifdef RANGECHECK
-			if (texturecolumn < 0 || texturecolumn >= pwidth)
-				I_Error("R_DrawSpriteRange: bad texturecolumn at %d from end, dc_x=%d, x2=%d, texturecolumn=%d (%d), pwidth=%d, xiscale=%d, startfrac=%d", vis->x2 - dc_x, dc_x, vis->x2, texturecolumn, frac, pwidth, vis->xiscale, vis->startfrac);
-#endif
 			column = (column_t *)((UINT8 *)patch->columns + (patch->columnofs[texturecolumn]));
 			if (bmpatch)
 				bmcol = (column_t *)((UINT8 *)bmpatch->columns + (bmpatch->columnofs[texturecolumn]));
@@ -1084,10 +1080,8 @@ static void R_DrawVisSprite(vissprite_t *vis)
 	}
 	else
 	{
-#ifdef RANGECHECK
-		pwidth = patch->width;
-#endif
 
+#ifdef RANGECHECK
 		if (vis->x1test && vis->x2test)
 		{
 			INT32 x1test = vis->x1test;
@@ -1101,21 +1095,18 @@ static void R_DrawVisSprite(vissprite_t *vis)
 
 			const INT32 t = (vis->startfrac + (vis->xiscale * (x2test - x1test))) >> FRACBITS;
 
-			if (x1test <= x2test && (t < 0 || t >= pwidth))
+			if (x1test <= x2test && (t < 0 || t >= patch->width))
 			{
 				CONS_Printf("THE GAME WOULD HAVE CRASHED, %d (old) vs %d (new)\n", (x2test - x1test), (vis->x2 - vis->x1));
 			}
 		}
+#endif // RANGECHECK
 
 		// Non-paper drawing loop
 		for (dc_x = vis->x1; dc_x <= vis->x2; dc_x++, frac += vis->xiscale, sprtopscreen += vis->shear.tan)
 		{
-			texturecolumn = frac>>FRACBITS;
+			texturecolumn = std::clamp(frac >> FRACBITS, 0, patch->width - 1);
 
-#ifdef RANGECHECK
-			if (texturecolumn < 0 || texturecolumn >= pwidth)
-				I_Error("R_DrawSpriteRange: bad texturecolumn at %d from end, dc_x=%d, x2=%d, texturecolumn=%d (%d), pwidth=%d, xiscale=%d, startfrac=%d", vis->x2 - dc_x, dc_x, vis->x2, texturecolumn, frac, pwidth, vis->xiscale, vis->startfrac);
-#endif
 			column = (column_t *)((UINT8 *)patch->columns + (patch->columnofs[texturecolumn]));
 
 			if (bmpatch)
