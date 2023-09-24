@@ -418,14 +418,14 @@ void M_UpdateChallengeGridExtraData(challengegridextradata_t *extradata)
 		{
 			id = (i * CHALLENGEGRIDHEIGHT) + j;
 			num = gamedata->challengegrid[id];
-			if (num >= MAXUNLOCKABLES || unlockables[num].majorunlock == false)
+			if (num >= MAXUNLOCKABLES || unlockables[num].majorunlock == false || gamedata->unlocked[num] == true)
 			{
 				extradata[id].flags = CHE_NONE;
 				continue;
 			}
 
-			// We only do this for large tiles, to reduce the complexity
-			// of most standard tile challenge comparisons
+			// We only do this for locked large tiles, to reduce the
+			// complexity of most standard tile challenge comparisons
 			extradata[id].flags = CHE_ALLCLEAR;
 		}
 	}
