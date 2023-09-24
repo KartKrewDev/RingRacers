@@ -5224,6 +5224,12 @@ static void M_DrawChallengeTile(INT16 i, INT16 j, INT32 x, INT32 y, boolean hili
 			colormap
 		);
 
+		if (challengesmenu.extradata[id].flags & CHE_ALLCLEAR)
+		{
+			// Temporary drawer for "key should be usable"
+			V_DrawFill(x + 5, y + 5, 2, 2, 255);
+		}
+
 		pat = missingpat;
 		colormap = NULL;
 

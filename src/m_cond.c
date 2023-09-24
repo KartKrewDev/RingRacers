@@ -417,7 +417,16 @@ void M_UpdateChallengeGridExtraData(challengegridextradata_t *extradata)
 		for (j = 0; j < CHALLENGEGRIDHEIGHT; j++)
 		{
 			id = (i * CHALLENGEGRIDHEIGHT) + j;
-			extradata[id].flags = CHE_NONE;
+			num = gamedata->challengegrid[id];
+			if (num >= MAXUNLOCKABLES || unlockables[num].majorunlock == false)
+			{
+				extradata[id].flags = CHE_NONE;
+				continue;
+			}
+
+			// We only do this for large tiles, to reduce the complexity
+			// of most standard tile challenge comparisons
+			extradata[id].flags = CHE_ALLCLEAR;
 		}
 	}
 
@@ -468,12 +477,22 @@ void M_UpdateChallengeGridExtraData(challengegridextradata_t *extradata)
 
 					if (extradata[id].flags == CHE_HINT)
 					{
+						// CHE_ALLCLEAR has already been removed,
+						// and CHE_HINT has already been applied,
+						// so nothing more needs to be done here.
 						continue;
 					}
 				}
-				else if (work < MAXUNLOCKABLES && gamedata->unlocked[work])
+				else if (work < MAXUNLOCKABLES)
 				{
-					extradata[id].flags = CHE_HINT;
+					if (gamedata->unlocked[work] == true)
+					{
+						extradata[id].flags |= CHE_HINT;
+					}
+					else
+					{
+						extradata[id].flags &= ~CHE_ALLCLEAR;
+					}
 				}
 			}
 
@@ -495,9 +514,13 @@ void M_UpdateChallengeGridExtraData(challengegridextradata_t *extradata)
 					{
 						//CONS_Printf(" %d - %d to left of %d is valid\n", work, tempid, id);
 						// If we haven't already updated our id, it's the one to our left.
-						if (extradata[id].flags == CHE_HINT)
+						if (extradata[id].flags & CHE_HINT)
 						{
-							extradata[tempid].flags = CHE_HINT;
+							extradata[tempid].flags |= CHE_HINT;
+						}
+						if (!(extradata[id].flags & CHE_ALLCLEAR))
+						{
+							extradata[tempid].flags &= ~CHE_ALLCLEAR;
 						}
 						extradata[id].flags = CHE_CONNECTEDLEFT;
 						id = tempid;
@@ -505,16 +528,25 @@ void M_UpdateChallengeGridExtraData(challengegridextradata_t *extradata)
 					/*else
 						CONS_Printf(" %d - %d to left of %d is invalid\n", work, tempid, id);*/
 				}
-				else if (work < MAXUNLOCKABLES && gamedata->unlocked[work])
+				else if (work < MAXUNLOCKABLES)
 				{
-					extradata[id].flags = CHE_HINT;
-					continue;
+					if (gamedata->unlocked[work] == true)
+					{
+						extradata[id].flags |= CHE_HINT;
+					}
+					else
+					{
+						extradata[id].flags &= ~CHE_ALLCLEAR;
+					}
 				}
 			}
 
 			// Since we're not modifying id past this point, the conditions become much simpler.
-			if ((extradata[id].flags & (CHE_HINT|CHE_DONTDRAW)) == CHE_HINT)
+			if (extradata[id].flags == CHE_HINT)
 			{
+				// CHE_ALLCLEAR has already been removed,
+				// and CHE_HINT has already been applied,
+				// so nothing more needs to be done here.
 				continue;
 			}
 
@@ -528,10 +560,16 @@ void M_UpdateChallengeGridExtraData(challengegridextradata_t *extradata)
 				{
 					;
 				}
-				else if (work < MAXUNLOCKABLES && gamedata->unlocked[work])
+				else if (work < MAXUNLOCKABLES)
 				{
-					extradata[id].flags = CHE_HINT;
-					continue;
+					if (gamedata->unlocked[work] == true)
+					{
+						extradata[id].flags |= CHE_HINT;
+					}
+					else
+					{
+						extradata[id].flags &= ~CHE_ALLCLEAR;
+					}
 				}
 			}
 
@@ -551,10 +589,16 @@ void M_UpdateChallengeGridExtraData(challengegridextradata_t *extradata)
 				{
 					;
 				}
-				else if (work < MAXUNLOCKABLES && gamedata->unlocked[work])
+				else if (work < MAXUNLOCKABLES)
 				{
-					extradata[id].flags = CHE_HINT;
-					continue;
+					if (gamedata->unlocked[work] == true)
+					{
+						extradata[id].flags |= CHE_HINT;
+					}
+					else
+					{
+						extradata[id].flags &= ~CHE_ALLCLEAR;
+					}
 				}
 			}
 		}

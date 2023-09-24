@@ -347,6 +347,7 @@ void M_UpdateChallengeGridExtraData(challengegridextradata_t *extradata);
 #define CHE_CONNECTEDLEFT (1<<1)
 #define CHE_CONNECTEDUP   (1<<2)
 #define CHE_DONTDRAW (CHE_CONNECTEDLEFT|CHE_CONNECTEDUP)
+#define CHE_ALLCLEAR      (1<<3)
 
 char *M_BuildConditionSetString(UINT16 unlockid);
 #define DESCRIPTIONWIDTH 170
