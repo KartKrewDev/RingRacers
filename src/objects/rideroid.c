@@ -307,34 +307,34 @@ void Obj_RideroidThink(mobj_t *mo)
 	// now actual movement:
 	
 	// first, do the movement for this frame
-	P_InstaThrust(pmo, mo->angle, p->rideroidspeed*mapobjectscale);
+	P_InstaThrust(pmo, (angle_t)p->rideroidangle, p->rideroidspeed*mapobjectscale);
+	basemomx = p->mo->momx;
+	basemomy = p->mo->momy;
+	
 	pmo->momx += p->rdaddmomx;
 	pmo->momy += p->rdaddmomy;
 	pmo->momz += p->rdaddmomz;
-	pmo->angle = mo->angle;
-	p->drawangle = mo->angle;
-	P_SetPlayerAngle(pmo->player, mo->angle);
+	pmo->angle = (angle_t)p->rideroidangle;
+	p->drawangle = (angle_t)p->rideroidangle;
+	P_SetPlayerAngle(pmo->player, (angle_t)p->rideroidangle);
 	pmo->rollangle = p->rideroidrollangle;
 	mo->rollangle = p->rideroidrollangle;
 	pmo->pitch = 0;
 	
 	// update the rideroid object (me) to be below the target player
 	Obj_updateRideroidPos(mo);
-	
-	
-	// now compute all the shit for the *next* frame!
-	basemomx = p->rideroidspeed*FINECOSINE(mo->angle >> ANGLETOFINESHIFT);
-	basemomy = p->rideroidspeed*FINESINE(mo->angle >> ANGLETOFINESHIFT);
 
 	// turning left/right
 	if (p->cmd.turning)
 	{
 		fixed_t savemomx = pmo->momx;
 		fixed_t savemomy = pmo->momy;
-		UINT8 dir = 0;
+		SINT8 dir = 0;
+		INT32 a;
 		
 		if (p->cmd.turning < -400)
 		{
+			a = (INT32)(mo->angle) - ANG1*90;
 			P_Thrust(pmo, mo->angle - ANGLE_90, 2*mapobjectscale);
 			p->rideroidrollangle -= ANG1*3;
 			
@@ -346,6 +346,7 @@ void Obj_RideroidThink(mobj_t *mo)
 		}
 		else if (p->cmd.turning > 400)
 		{
+			a = (INT32)(mo->angle) + ANG1*90;
 			P_Thrust(pmo, mo->angle + ANGLE_90, 2*mapobjectscale);
 			p->rideroidrollangle += ANG1*3;
 			
@@ -360,38 +361,51 @@ void Obj_RideroidThink(mobj_t *mo)
 			p->rideroidspeed -= 1;
 		}
 		
-		// save the added momentum
-		p->rdaddmomx = pmo->momx - basemomx;
-		p->rdaddmomy = pmo->momy - basemomy;
-		
-		/*CONS_Printf("CURR: %d, %d\n", pmo->momx/mapobjectscale, pmo->momy/mapobjectscale);
-		CONS_Printf("BASE: %d, %d\n", basemomx/mapobjectscale, basemomy/mapobjectscale);
-		CONS_Printf("ADD: %d, %d\n", p->rdaddmomx/mapobjectscale, p->rdaddmomy/mapobjectscale);*/
-		
-		// find out how much addmomx and addmomy we can actually get.
-		// we do this by misusing P_Thrust to calc our values then immediately cancelling it.
-		basemomx = pmo->momx;
-		basemomy = pmo->momy;
-		
-		if (mo->angle > ANGLE_90 && mo->angle < ANGLE_270)
-			P_Thrust(pmo, mo->angle - ANGLE_90, RIDEROIDMAXADD*6*mapobjectscale);
-		else
-			P_Thrust(pmo, mo->angle + ANGLE_90, RIDEROIDMAXADD*6*mapobjectscale);
-		
-		xthreshold = pmo->momx - basemomx;
-		ythreshold = pmo->momy - basemomy;
-		
-		// clamp the momentums using the calculated thresholds.
-		p->rdaddmomx = max(p->rdaddmomx, -abs(xthreshold));
-		p->rdaddmomy = max(p->rdaddmomy, -abs(ythreshold));
-		p->rdaddmomx = min(p->rdaddmomx, abs(xthreshold));
-		p->rdaddmomy = min(p->rdaddmomy, abs(ythreshold));
+		if (dir != 0)
+		{
+			
+			// save the added momentum
+			p->rdaddmomx = pmo->momx - basemomx;
+			p->rdaddmomy = pmo->momy - basemomy;
 
-		// now cancel it.
-		pmo->momx = savemomx;
-		pmo->momy = savemomy;
-		//CONS_Printf("NEWCURR: %d, %d\n", pmo->momx/mapobjectscale, pmo->momy/mapobjectscale);
-		
+			CONS_Printf("AX1: %d, AY1: %d\n", p->rdaddmomx/mapobjectscale, p->rdaddmomy/mapobjectscale);
+			
+			pmo->momx = basemomx;
+			pmo->momy = basemomy;
+			
+			/*CONS_Printf("CURR: %d, %d\n", pmo->momx/mapobjectscale, pmo->momy/mapobjectscale);
+			CONS_Printf("BASE: %d, %d\n", basemomx/mapobjectscale, basemomy/mapobjectscale);
+			CONS_Printf("ADD: %d, %d\n", p->rdaddmomx/mapobjectscale, p->rdaddmomy/mapobjectscale);*/
+			
+			// find out how much addmomx and addmomy we can actually get.
+			// we do this by misusing P_Thrust to calc our values then immediately cancelling it.
+			basemomx = pmo->momx;
+			basemomy = pmo->momy;
+			
+			a = (INT32)(mo->angle) - dir*ANG1*90;
+			P_Thrust(pmo, (angle_t)a, RIDEROIDMAXADD*3*mapobjectscale);
+			
+			xthreshold = pmo->momx - basemomx;
+			ythreshold = pmo->momy - basemomy;
+			
+			//CONS_Printf("XT: %d (%d), YT: %d (%d)\n", xthreshold/mapobjectscale, abs(xthreshold/mapobjectscale), ythreshold/mapobjectscale, abs(ythreshold/mapobjectscale));
+			
+			// clamp the momentums using the calculated thresholds.
+			
+			// the fixedmul check checks if both numbers are of the same sign.
+			if (abs(p->rdaddmomx) > abs(xthreshold))
+				p->rdaddmomx = xthreshold;
+			
+			if (abs(p->rdaddmomy) > abs(ythreshold))
+				p->rdaddmomy = ythreshold;
+
+			//CONS_Printf("AX2: %d, AY2: %d\n", p->rdaddmomx/mapobjectscale, p->rdaddmomy/mapobjectscale);
+
+			// now cancel it.
+			pmo->momx = savemomx;
+			pmo->momy = savemomy;
+			//CONS_Printf("NEWCURR: %d, %d\n", pmo->momx/mapobjectscale, pmo->momy/mapobjectscale);
+		}
 	}
 	else	// not turning
 	{

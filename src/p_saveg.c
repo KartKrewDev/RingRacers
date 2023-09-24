@@ -556,9 +556,9 @@ static void P_NetArchivePlayers(savebuffer_t *save)
 		
 		WRITEUINT8(save->p, players[i].rideroid);
 		WRITEUINT8(save->p, players[i].rdnodepull);
-		WRITEANGLE(save->p, players[i].rideroidangle);
+		WRITEINT32(save->p, players[i].rideroidangle);
 		WRITEFIXED(save->p, players[i].rideroidspeed);
-		WRITEANGLE(save->p, players[i].rideroidrollangle);
+		WRITEINT32(save->p, players[i].rideroidrollangle);
 		WRITEFIXED(save->p, players[i].rdaddmomx);
 		WRITEFIXED(save->p, players[i].rdaddmomy);
 		WRITEFIXED(save->p, players[i].rdaddmomz);
@@ -1063,9 +1063,9 @@ static void P_NetUnArchivePlayers(savebuffer_t *save)
 		
 		players[i].rideroid = READUINT8(save->p);
 		players[i].rdnodepull = READUINT8(save->p);
-		players[i].rideroidangle = READANGLE(save->p);
+		players[i].rideroidangle = READINT32(save->p);
 		players[i].rideroidspeed = READFIXED(save->p);
-		players[i].rideroidrollangle = READANGLE(save->p);
+		players[i].rideroidrollangle = READINT32(save->p);
 		players[i].rdaddmomx = READFIXED(save->p);
 		players[i].rdaddmomy = READFIXED(save->p);
 		players[i].rdaddmomz = READFIXED(save->p);

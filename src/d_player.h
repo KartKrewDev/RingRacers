@@ -725,9 +725,9 @@ struct player_t
 	//////////////
 	boolean rideroid;			// on rideroid y/n
 	boolean rdnodepull;			// being pulled by rideroid node. mo target is set to the node while this is true.
-	angle_t rideroidangle;		// angle the rideroid is going at. This doesn't change once we're on it.
+	INT32 rideroidangle;		// angle the rideroid is going at. This doesn't change once we're on it. INT32 because the code was originally written in lua and fuckshit happens with angle_t.
 	fixed_t rideroidspeed;		// speed the rideroid is to be moving at.
-	fixed_t rideroidrollangle;	// rollangle while turning
+	INT32 rideroidrollangle;	// rollangle while turning
 	fixed_t rdaddmomx;			// some speed variables to smoothe things out without fighting with the regular momentum system.
 	fixed_t rdaddmomy;
 	fixed_t rdaddmomz;
