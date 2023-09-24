@@ -24,6 +24,7 @@
 #include "../k_waypoint.h"
 #include "../k_respawn.h"
 #include "../k_collide.h"
+#include "../k_color.h"
 
 #define DLZROCKETDIST 96
 #define DLZROCKETSPEED 80
@@ -112,6 +113,9 @@ void Obj_playerDLZRocket(player_t *p)
 	if (p->ringboost)
 		maxspd += 10;
 	
+	if (p->startboost)
+		maxspd += 30;
+	
 	// set player speed
 	if (p->dlzrocketspd < maxspd)
 		p->dlzrocketspd++;
@@ -184,6 +188,10 @@ void Obj_playerDLZRocket(player_t *p)
 			expl->color = p->mo->color;
 			P_SetScale(expl, mapobjectscale);
 			expl->destscale = 2*mapobjectscale;
+			
+			if (p->startboost)
+				expl->color = K_RainbowColor(leveltime);
+			
 		
 		}
 		visangle += ANGLE_180;
