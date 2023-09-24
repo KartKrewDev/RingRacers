@@ -94,7 +94,7 @@ static void Obj_WPZTurbineUpdate(mobj_t *mo)
 	}
 	
 	// bubbles if we're underwater	
-	if (mo->eflags & MFE_UNDERWATER && leveltime%(TICRATE/2) == 0)
+	if (mo->z < mo->watertop && leveltime%10 == 0)
 	{
 	
 		INT32 dradius = TURBINE_SPIN;
@@ -106,7 +106,7 @@ static void Obj_WPZTurbineUpdate(mobj_t *mo)
 		if (mt->thing_args[7])
 			dradius = mt->thing_args[7];
 		
-		bubbleradius = P_RandomRange(PR_FUZZ, dradius/4, dradius);
+		bubbleradius = P_RandomRange(PR_FUZZ, dradius/4, (dradius*3)/2);
 		bubbleang = P_RandomRange(PR_FUZZ, 0, 359)*ANG1;
 		
 		bx = mo->x + FixedMul(mapobjectscale, bubbleradius*FINECOSINE(bubbleang>>ANGLETOFINESHIFT));
@@ -357,13 +357,13 @@ void Obj_WPZBubbleThink(mobj_t *mo)
 		return;
 	}
 	
-	mt = mo->spawnpoint;
+	mt = t->spawnpoint;
 	if (!mt)
 		return;
 	
 	mo->momz = mapobjectscale*16;
-	tx = mo->tracer->x + FixedMul(mapobjectscale, mo->movefactor*FINECOSINE(ang>>ANGLETOFINESHIFT));
-	ty = mo->tracer->y + FixedMul(mapobjectscale, mo->movefactor*FINESINE(ang>>ANGLETOFINESHIFT));
+	tx = t->x + FixedMul(mapobjectscale, mo->movecount*FINECOSINE(ang>>ANGLETOFINESHIFT));
+	ty = t->y + FixedMul(mapobjectscale, mo->movecount*FINESINE(ang>>ANGLETOFINESHIFT));
 	
 	mo->momx = (tx - mo->x)/24;
 	mo->momy = (ty - mo->y)/24;
@@ -382,4 +382,7 @@ void Obj_WPZBubbleThink(mobj_t *mo)
 	}
 	
 	mo->angle += 3*ANG1 * (mt->thing_args[0] ? -1 : 1);
+	
+	if (mo->z > mo->watertop || mo->z > mo->ceilingz)
+		P_RemoveMobj(mo);
 }
