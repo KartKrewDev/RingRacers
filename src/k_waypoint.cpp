@@ -23,6 +23,9 @@
 
 #include "cxxutil.hpp"
 
+#include <algorithm>
+#include <vector>
+
 // The number of sparkles per waypoint connection in the waypoint visualisation
 static const UINT32 SPARKLES_PER_CONNECTION = 16U;
 
