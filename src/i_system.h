@@ -280,40 +280,6 @@ char *I_GetUserName(void);
 */
 INT32 I_mkdir(const char *dirname, INT32 unixright);
 
-struct CPUInfoFlags {
-	int FPU        : 1; ///< FPU availabile
-	int CPUID      : 1; ///< CPUID instruction
-	int RDTSC      : 1; ///< RDTSC instruction
-	int MMX        : 1; ///< MMX features
-	int MMXExt     : 1; ///< MMX Ext. features
-	int CMOV       : 1; ///< Pentium Pro's "cmov"
-	int AMD3DNow   : 1; ///< 3DNow features
-	int AMD3DNowExt: 1; ///< 3DNow! Ext. features
-	int SSE        : 1; ///< SSE features
-	int SSE2       : 1; ///< SSE2 features
-	int SSE3       : 1; ///< SSE3 features
-	int IA64       : 1; ///< Running on IA64
-	int AMD64      : 1; ///< Running on AMD64
-	int AltiVec    : 1; ///< AltiVec features
-	int FPPE       : 1; ///< floating-point precision error
-	int PFC        : 1; ///< TBD?
-	int cmpxchg    : 1; ///< ?
-	int cmpxchg16b : 1; ///< ?
-	int cmp8xchg16 : 1; ///< ?
-	int FPE        : 1; ///< FPU Emu
-	int DEP        : 1; ///< Data excution prevent
-	int PPCMM64    : 1; ///< PowerPC Movemem 64bit ok?
-	int ALPHAbyte  : 1; ///< ?
-	int PAE        : 1; ///< Physical Address Extension
-	int CPUs       : 8;
-};
-
-
-/**	\brief Info about CPU
-		\return CPUInfo in bits
-*/
-const CPUInfoFlags *I_CPUInfo(void);
-
 /**	\brief Find main WAD
 		\return path to main WAD
 */

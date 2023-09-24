@@ -233,11 +233,6 @@ INT32 I_mkdir(const char *dirname, INT32 unixright)
   return -1;
 }
 
-const CPUInfoFlags *I_CPUInfo(void)
-{
-  return NULL;
-}
-
 const char *I_LocateWad(void)
 {
   return "/sdcard/srb2";
