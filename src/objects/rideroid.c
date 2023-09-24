@@ -24,9 +24,10 @@
 #include "../k_waypoint.h"
 #include "../k_respawn.h"
 #include "../k_collide.h"
+#include "../k_color.h"
 
 #define NODERADIUS 260
-#define NODEPULLOK 16
+#define NODEPULLOK 48
 #define NODEROTSPEED ANG1
 
 #define RIDEROIDSPEED 80
@@ -160,8 +161,13 @@ static void Obj_rideroidTrail(mobj_t *mo)
 			P_SetScale(t, max(1, mapobjectscale*5/6 - ((10-j)*mapobjectscale/120)));
 			t->destscale = 1;
 
-			if (p && p != &players[consoleplayer] && j)
-				t->renderflags |= RF_DONTDRAW;
+			if (p)
+			{
+				if (p != &players[consoleplayer] && j)
+					t->renderflags |= RF_DONTDRAW;
+				else if (p->startboost)
+					t->color = K_RainbowColor(leveltime);
+			}
 			
 		}
 	}
@@ -250,13 +256,16 @@ void Obj_RideroidThink(mobj_t *mo)
 	// the values are a little arbitrary but they work for how little use these have.
 	
 	if (p->ringboost)
-		maxspd *= 12/10;	// Ring Boost: 120% max speed.
+		maxspd = (maxspd*12)/10;	// Ring Boost: 120% max speed.
 	
 	if (p->draftpower)
 	{
 		UINT8 draftperc = (p->draftpower*100 / FRACUNIT);	// 0-100%
 		maxspd += (draftperc/5) / 100;
 	}
+	
+	if (p->startboost)
+		maxspd = (maxspd*15)/10;	// 150% speed
 	
 	// increase speed as we go unless we're turning harshly.
 	if (p->rideroidspeed*mapobjectscale < maxspd)
@@ -368,7 +377,7 @@ void Obj_RideroidThink(mobj_t *mo)
 			p->rdaddmomx = pmo->momx - basemomx;
 			p->rdaddmomy = pmo->momy - basemomy;
 
-			CONS_Printf("AX1: %d, AY1: %d\n", p->rdaddmomx/mapobjectscale, p->rdaddmomy/mapobjectscale);
+			//CONS_Printf("AX1: %d, AY1: %d\n", p->rdaddmomx/mapobjectscale, p->rdaddmomy/mapobjectscale);
 			
 			pmo->momx = basemomx;
 			pmo->momy = basemomy;
