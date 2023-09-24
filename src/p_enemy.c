@@ -318,6 +318,7 @@ void A_SSMineExplode(mobj_t *actor);
 void A_SSMineFlash(mobj_t *actor);
 void A_LandMineExplode(mobj_t *actor);
 void A_BallhogExplode(mobj_t *actor);
+void A_SpecialStageBombExplode(mobj_t *actor);
 void A_LightningFollowPlayer(mobj_t *actor);
 void A_FZBoomFlash(mobj_t *actor);
 void A_FZBoomSmoke(mobj_t *actor);
@@ -13068,12 +13069,7 @@ void A_SSMineFlash(mobj_t *actor)
 
 void A_LandMineExplode(mobj_t *actor)
 {
-
-	mobj_t *expl;
-	INT32 colour = SKINCOLOR_KETCHUP;	// we spell words properly here
-	INT32 i;
-	mobj_t *smoldering;
-
+	skincolornum_t colour = SKINCOLOR_KETCHUP;	// we spell words properly here
 	tic_t delay = actor->reactiontime;
 
 	if (LUA_CallAction(A_LANDMINEEXPLODE, actor))
@@ -13090,32 +13086,9 @@ void A_LandMineExplode(mobj_t *actor)
 	if (actor->target && !P_MobjWasRemoved(actor->target))
 		colour = actor->target->color;
 
-	// Spawn smoke remains:
-	smoldering = P_SpawnMobj(actor->x, actor->y, actor->z, MT_SMOLDERING);
-	P_SetScale(smoldering, actor->scale);
-	smoldering->tics = TICRATE*3;
-	smoldering->hitlag = delay;
+	K_SpawnLandMineExplosion(actor, colour, delay);
 
 	actor->fuse = actor->tics;	// disappear when this state ends.
-
-	// spawn a few physics explosions
-	for (i = 0; i < 15; i++)
-	{
-		expl = P_SpawnMobj(actor->x, actor->y, actor->z + actor->scale, MT_BOOMEXPLODE);
-		expl->color = colour;
-		expl->tics = (i+1);
-		expl->hitlag = delay;
-		expl->renderflags |= RF_DONTDRAW;
-
-		//K_MatchGenericExtraFlags(expl, actor);
-		P_SetScale(expl, actor->scale*4);
-
-		expl->momx = P_RandomRange(PR_EXPLOSION, -3, 3)*actor->scale/2;
-		expl->momy = P_RandomRange(PR_EXPLOSION, -3, 3)*actor->scale/2;
-
-		// 100/45 = 2.22 fu/t
-		expl->momz = ((i+1)*actor->scale*5/2)*P_MobjFlip(expl);
-	}
 
 	Obj_SpawnBrolyKi(actor, delay);
 }
@@ -13132,6 +13105,14 @@ void A_BallhogExplode(mobj_t *actor)
 	mo2->destscale = mo2->scale;
 	S_StartSound(mo2, actor->info->deathsound);
 	return;
+}
+
+void A_SpecialStageBombExplode(mobj_t *actor)
+{
+	if (LUA_CallAction(A_SPECIALSTAGEBOMBEXPLODE, actor))
+		return;
+
+	K_SpawnLandMineExplosion(actor, SKINCOLOR_KETCHUP, actor->hitlag);
 }
 
 // A_LightningFollowPlayer:

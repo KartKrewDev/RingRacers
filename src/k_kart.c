@@ -4524,7 +4524,7 @@ void K_MineFlashScreen(mobj_t *source)
 }
 
 // Spawns the purely visual explosion
-void K_SpawnMineExplosion(mobj_t *source, UINT8 color, tic_t delay)
+void K_SpawnMineExplosion(mobj_t *source, skincolornum_t color, tic_t delay)
 {
 	INT32 i, radius, height;
 	mobj_t *smoldering = P_SpawnMobj(source->x, source->y, source->z, MT_SMOLDERING);
@@ -4611,6 +4611,38 @@ void K_SpawnMineExplosion(mobj_t *source, UINT8 color, tic_t delay)
 }
 
 #undef MINEQUAKEDIST
+
+void K_SpawnLandMineExplosion(mobj_t *source, skincolornum_t color, tic_t delay)
+{
+	mobj_t *smoldering;
+	mobj_t *expl;
+	UINT8 i;
+
+	// Spawn smoke remains:
+	smoldering = P_SpawnMobj(source->x, source->y, source->z, MT_SMOLDERING);
+	P_SetScale(smoldering, source->scale);
+	smoldering->tics = TICRATE*3;
+	smoldering->hitlag = delay;
+
+	// spawn a few physics explosions
+	for (i = 0; i < 15; i++)
+	{
+		expl = P_SpawnMobj(source->x, source->y, source->z + source->scale, MT_BOOMEXPLODE);
+		expl->color = color;
+		expl->tics = (i+1);
+		expl->hitlag = delay;
+		expl->renderflags |= RF_DONTDRAW;
+
+		//K_MatchGenericExtraFlags(expl, actor);
+		P_SetScale(expl, source->scale*4);
+
+		expl->momx = P_RandomRange(PR_EXPLOSION, -3, 3)*source->scale/2;
+		expl->momy = P_RandomRange(PR_EXPLOSION, -3, 3)*source->scale/2;
+
+		// 100/45 = 2.22 fu/t
+		expl->momz = ((i+1)*source->scale*5/2)*P_MobjFlip(expl);
+	}
+}
 
 fixed_t K_ItemScaleForPlayer(player_t *player)
 {

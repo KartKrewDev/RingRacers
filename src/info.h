@@ -282,6 +282,7 @@ enum actionnum
 	A_SSMINEEXPLODE,
 	A_LANDMINEEXPLODE,
 	A_BALLHOGEXPLODE,
+	A_SPECIALSTAGEBOMBEXPLODE,
 	A_LIGHTNINGFOLLOWPLAYER,
 	A_FZBOOMFLASH,
 	A_FZBOOMSMOKE,
@@ -557,6 +558,7 @@ void A_SSMineFlash();
 void A_LandMineExplode();
 void A_LandMineExplode();
 void A_BallhogExplode();
+void A_SpecialStageBombExplode();
 void A_LightningFollowPlayer();
 void A_FZBoomFlash();
 void A_FZBoomSmoke();
@@ -1350,6 +1352,10 @@ typedef enum sprite
 
 	// Eerie Grove
 	SPR_EGFG,
+
+	// Chaos Chute
+	SPR_SARC,
+	SPR_SSBM,
 
 	// SMK ports
 	SPR_SMKP,
@@ -5526,6 +5532,17 @@ typedef enum state
 	S_EERIEFOG4,
 	S_EERIEFOG5,
 
+	// Chaos Chute
+	S_SPECIALSTAGEARCH,
+	S_SPECIALSTAGEBOMB,
+	S_SPECIALSTAGEBOMB_DISARM,
+	S_SPECIALSTAGEBOMB_EXPLODE,
+	S_SPECIALSTAGEBOMB_DISAPPEAR,
+	S_SPECIALSTAGEBOMB_FLICKER1,
+	S_SPECIALSTAGEBOMB_FLICKER2,
+	S_SPECIALSTAGEBOMB_FLICKERLOOP,
+	S_SPECIALSTAGEBOMB_RESET,
+
 	// SMK ports
 	S_SMK_PIPE1, // Generic pipes
 	S_SMK_PIPE2,
@@ -6918,6 +6935,10 @@ typedef enum mobj_type
 	// Eerie Grove
 	MT_EERIEFOG,
 	MT_EERIEFOGGEN,
+
+	// Chaos Chute
+	MT_SPECIALSTAGEARCH,
+	MT_SPECIALSTAGEBOMB,
 
 	// SMK ports
 	MT_SMK_PIPE,
