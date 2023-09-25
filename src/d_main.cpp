@@ -510,6 +510,29 @@ static void D_Display(void)
 
 				ps_rendercalltime = I_GetPreciseTime();
 
+				if (rendermode == render_soft)
+				{
+					if (cv_homremoval.value)
+					{
+						if (cv_homremoval.value == 1)
+						{
+							// Clear the software screen buffer to remove HOM
+							memset(screens[0], 31, vid.width * vid.height * vid.bpp);
+						}
+						else
+						{
+							//'development' HOM removal -- makes it blindingly obvious if HOM is spotted.
+							memset(screens[0], 32+(timeinmap&15), vid.width * vid.height * vid.bpp);
+						}
+					}
+
+					if (r_splitscreen == 2)
+					{
+						// Draw over the fourth screen so you don't have to stare at a HOM :V
+						V_DrawFill(viewwidth, viewheight, viewwidth, viewheight, 31|V_NOSCALESTART);
+					}
+				}
+
 				for (i = 0; i <= r_splitscreen; i++)
 				{
 					if (players[displayplayers[i]].mo || players[displayplayers[i]].playerstate == PST_DEAD)

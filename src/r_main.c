@@ -1475,26 +1475,6 @@ void R_RenderPlayerView(void)
 	INT32			nummasks	= 1;
 	maskcount_t*	masks		= malloc(sizeof(maskcount_t));
 
-	// if this is display player 1
-	if (cv_homremoval.value && player == &players[displayplayers[0]])
-	{
-		if (cv_homremoval.value == 1)
-		{
-			// Clear the software screen buffer to remove HOM
-			memset(screens[0], 31, vid.width * vid.height * vid.bpp);
-		}
-		else
-		{
-			//'development' HOM removal -- makes it blindingly obvious if HOM is spotted.
-			memset(screens[0], 32+(timeinmap&15), vid.width * vid.height * vid.bpp);
-		}
-	}
-	else if (r_splitscreen == 2 && player == &players[displayplayers[2]])
-	{
-		// Draw over the fourth screen so you don't have to stare at a HOM :V
-		V_DrawFill(viewwidth, viewheight, viewwidth, viewheight, 31|V_NOSCALESTART);
-	}
-
 	R_SetupFrame(viewssnum);
 	framecount++;
 	validcount++;
