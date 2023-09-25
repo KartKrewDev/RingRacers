@@ -40,9 +40,16 @@ void Obj_WPZFountainThink(mobj_t *mo)
 // kuragens
 void Obj_WPZKuragenThink(mobj_t *mo)
 {
+	//(void)mo;
 	boolean active = false;
 	
-	P_SetScale(mo, mapobjectscale*2);
+	// .....and i need to do this... because?
+	if (!mo->cusval)
+	{
+		P_SetScale(mo, mapobjectscale*2);
+		mo->destscale = mapobjectscale*2;
+		mo->cusval = 1;
+	}
 	
 	if (!(mo->spawnpoint->options & 1 || mo->spawnpoint->thing_args[0]))	// extra flag skips player checks, making it a decoration.
 	{
