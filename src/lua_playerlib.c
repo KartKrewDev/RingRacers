@@ -463,6 +463,69 @@ static int player_get(lua_State *L)
 	else if (fastcmp(field,"follower"))
 		LUA_PushUserdata(L, plr->follower, META_MOBJ);
 	//
+	
+	// rideroids
+	else if (fastcmp(field,"rideroid"))
+		lua_pushboolean(L, plr->rideroid);
+	else if (fastcmp(field,"rdnodepull"))
+		lua_pushboolean(L, plr->rdnodepull);	
+	else if (fastcmp(field,"rideroidangle"))
+		lua_pushinteger(L, plr->rideroidangle);
+	else if (fastcmp(field,"rideroidspeed"))
+		lua_pushinteger(L, plr->rideroidspeed);	
+	else if (fastcmp(field,"rideroidrollangle"))
+		lua_pushinteger(L, plr->rideroidrollangle);
+	else if (fastcmp(field,"rdaddmomx"))
+		lua_pushinteger(L, plr->rdaddmomx);		
+	else if (fastcmp(field,"rdaddmomy"))
+		lua_pushinteger(L, plr->rdaddmomy);	
+	else if (fastcmp(field,"rdaddmomz"))
+		lua_pushinteger(L, plr->rdaddmomz);	
+	
+	// bungee
+	else if (fastcmp(field,"bungee"))
+		lua_pushinteger(L, plr->bungee);	
+	
+	// dlz hover
+	else if (fastcmp(field,"lasthover"))
+		lua_pushinteger(L, plr->lasthover);	
+	
+	// dlz rocket
+	else if (fastcmp(field,"dlzrocket"))
+		lua_pushinteger(L, plr->dlzrocket);	
+	else if (fastcmp(field,"dlzrocketangle"))
+		lua_pushinteger(L, plr->dlzrocketangle);
+	else if (fastcmp(field,"dlzrocketanglev"))
+		lua_pushinteger(L, plr->dlzrocketanglev);
+	else if (fastcmp(field,"dlzrocketspd"))
+		lua_pushinteger(L, plr->dlzrocketspd);
+
+	// seasaws
+	else if (fastcmp(field,"seasaw"))
+		lua_pushboolean(L, plr->seasaw);
+	else if (fastcmp(field,"seasawcooldown"))
+		lua_pushinteger(L, plr->seasawcooldown);
+	else if (fastcmp(field,"seasawdist"))
+		lua_pushinteger(L, plr->seasawdist);
+	else if (fastcmp(field,"seasawangle"))
+		lua_pushinteger(L, plr->seasawangle);
+	else if (fastcmp(field,"seasawangleadd"))
+		lua_pushinteger(L, plr->seasawangleadd);
+	else if (fastcmp(field,"seasawmoreangle"))
+		lua_pushinteger(L, plr->seasawmoreangle);
+	else if (fastcmp(field,"seasawdir"))
+		lua_pushboolean(L, plr->seasawdir);		
+
+	// turbine
+	else if (fastcmp(field,"turbine"))
+		lua_pushinteger(L, plr->turbine);
+	else if (fastcmp(field,"turbineangle"))
+		lua_pushinteger(L, plr->turbineangle);
+	else if (fastcmp(field,"turbineheight"))
+		lua_pushinteger(L, plr->turbineheight);
+	else if (fastcmp(field,"turbinespd"))
+		lua_pushinteger(L, plr->turbinespd);		
+	
 	else if (fastcmp(field,"charflags"))
 		lua_pushinteger(L, plr->charflags);
 	else if (fastcmp(field,"followitem"))
@@ -857,6 +920,70 @@ static int player_set(lua_State *L)
 		plr->followerready = luaL_checkboolean(L, 3);
 	else if (fastcmp(field,"follower"))	// it's probably best we don't allow the follower mobj to change.
 		return NOSET;
+
+	// time to add to the endless elseif list!!!!
+	// rideroids
+	else if (fastcmp(field,"rideroid"))
+		plr->rideroid = luaL_checkboolean(L, 3);
+	else if (fastcmp(field,"rdnodepull"))
+		plr->rdnodepull = luaL_checkboolean(L, 3);
+	else if (fastcmp(field,"rideroidangle"))
+		plr->rideroidangle = luaL_checkinteger(L, 3);	
+	else if (fastcmp(field,"rideroidspeed"))
+		plr->rideroidspeed = luaL_checkinteger(L, 3);
+	else if (fastcmp(field,"rideroidrollangle"))
+		plr->rideroidrollangle = luaL_checkinteger(L, 3);
+	else if (fastcmp(field,"rdaddmomx"))
+		plr->rdaddmomx = luaL_checkinteger(L, 3);
+	else if (fastcmp(field,"rdaddmomy"))
+		plr->rdaddmomy = luaL_checkinteger(L, 3);
+	else if (fastcmp(field,"rdaddmomz"))
+		plr->rdaddmomz = luaL_checkinteger(L, 3);	
+	
+	// bungee
+	else if (fastcmp(field,"bungee"))
+		plr->bungee = luaL_checkinteger(L, 3);	
+
+	// dlz hover
+	else if (fastcmp(field,"lasthover"))
+		plr->lasthover = luaL_checkinteger(L, 3);
+
+	// dlz rocket
+	else if (fastcmp(field,"dlzrocket"))
+		plr->dlzrocket = luaL_checkinteger(L, 3);
+	else if (fastcmp(field,"dlzrocketangle"))
+		plr->dlzrocketangle = luaL_checkinteger(L, 3);
+	else if (fastcmp(field,"dlzrocketanglev"))
+		plr->dlzrocketanglev = luaL_checkinteger(L, 3);
+	else if (fastcmp(field,"dlzrocketspd"))
+		plr->dlzrocketspd = luaL_checkinteger(L, 3);
+
+	// seasaws
+	else if (fastcmp(field,"seasaw"))
+		plr->seasaw = luaL_checkboolean(L, 3);	
+	else if (fastcmp(field,"seasawcooldown"))
+		plr->seasawcooldown = luaL_checkinteger(L, 3);
+	else if (fastcmp(field,"seasawdist"))
+		plr->seasawdist = luaL_checkinteger(L, 3);
+	else if (fastcmp(field,"seasawangle"))
+		plr->seasawangle = luaL_checkinteger(L, 3);
+	else if (fastcmp(field,"seasawangleadd"))
+		plr->seasawangleadd = luaL_checkinteger(L, 3);
+	else if (fastcmp(field,"seasawmoreangle"))
+		plr->seasawmoreangle = luaL_checkinteger(L, 3);
+	else if (fastcmp(field,"seasawdir"))
+		plr->seasawdir = luaL_checkboolean(L, 3);
+
+	// turbines
+	else if (fastcmp(field,"turbine"))
+		plr->turbine = luaL_checkinteger(L, 3);	
+	else if (fastcmp(field,"turbineangle"))
+		plr->turbineangle = luaL_checkinteger(L, 3);
+	else if (fastcmp(field,"turbineheight"))
+		plr->turbineheight = luaL_checkinteger(L, 3);
+	else if (fastcmp(field,"turbinespd"))
+		plr->turbinespd = luaL_checkinteger(L, 3);	
+	
 	//
 	else if (fastcmp(field,"charflags"))
 		plr->charflags = (UINT32)luaL_checkinteger(L, 3);
