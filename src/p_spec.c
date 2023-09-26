@@ -47,10 +47,7 @@
 #include "k_respawn.h"
 #include "k_terrain.h"
 #include "acs/interface.h"
-
-#ifdef HW3SOUND
-#include "hardware/hw3sound.h"
-#endif
+#include "m_easing.h"
 
 // Not sure if this is necessary, but it was in w_wad.c, so I'm putting it here too -Shadow Hog
 #include <errno.h>
@@ -9389,7 +9386,7 @@ void P_StartQuakeFromMobj(tic_t time, fixed_t intensity, fixed_t radius, mobj_t 
 	quake->epicenter = (mappoint_t *)Z_Malloc(sizeof(mappoint_t), PU_LEVEL, NULL);
 	quake->epicenter->x = mobj->x;
 	quake->epicenter->y = mobj->y;
-	quake->epicenter->z = mobj->z;
+	quake->epicenter->z = mobj->z + (mobj->height / 2);
 }
 
 void P_DoQuakeOffset(UINT8 view, mappoint_t *viewPos, mappoint_t *offset)
@@ -9411,17 +9408,25 @@ void P_DoQuakeOffset(UINT8 view, mappoint_t *viewPos, mappoint_t *offset)
 		ir = quake->intensity;
 
 		// Modulate with time remaining.
-		ir = FixedMul(ir, 2 * FRACUNIT * (quake->time + 1) / quake->startTime);
+		const fixed_t timeEase = (FRACUNIT * ((quake->startTime - quake->time) - 1)) / quake->startTime;
+		ir = Easing_InCubic(timeEase, ir, 0);
 
 		// Modulate with distance from epicenter, if it exists.
 		if (quake->radius > 0 && quake->epicenter != NULL)
 		{
-			fixed_t epidist = P_AproxDistance(
-				viewPos->x - quake->epicenter->x,
-				viewPos->y - quake->epicenter->y
-			);
+			const fixed_t distBuffer = 256 * mapobjectscale; // add a small buffer zone before it starts to drop off
+			const fixed_t epidist = P_AproxDistance(
+				P_AproxDistance(
+					viewPos->x - quake->epicenter->x,
+					viewPos->y - quake->epicenter->y
+				),
+				viewPos->z - quake->epicenter->z
+			) - distBuffer;
 
-			ir = FixedMul(ir, FixedDiv(max(0, quake->radius - epidist), quake->radius));
+			
+			fixed_t distEase = FixedDiv(max(epidist, 0), quake->radius);
+			distEase = min(distEase, FRACUNIT);
+			ir = Easing_InCubic(distEase, ir, 0);
 		}
 
 		addZ += ir;

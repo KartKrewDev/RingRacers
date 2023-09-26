@@ -10085,6 +10085,14 @@ void P_MobjThinker(mobj_t *mobj)
 
 		if (mobj->player != NULL && mobj->hitlag == 0 && (mobj->eflags & MFE_DAMAGEHITLAG))
 		{
+			if (mobj->player->ringburst > 0)
+			{
+				// Delayed ring loss
+				P_PlayRinglossSound(mobj);
+				P_PlayerRingBurst(mobj->player, mobj->player->ringburst);
+				mobj->player->ringburst = 0;
+			}
+
 			K_HandleDirectionalInfluence(mobj->player);
 		}
 

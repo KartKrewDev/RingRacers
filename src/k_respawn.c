@@ -287,6 +287,8 @@ void K_DoIngameRespawn(player_t *player)
 	player->respawn.timer = RESPAWN_TIME;
 	player->respawn.state = RESPAWNST_MOVE;
 	player->respawn.init = true;
+	player->respawn.fast = true;
+	player->respawn.returnspeed = 0;
 
 	player->respawn.airtimer = player->airtime;
 	player->respawn.truedeath = !!(player->pflags & PF_FAULT);
@@ -338,6 +340,7 @@ static void K_MovePlayerToRespawnPoint(player_t *player)
 {
 	const int airCompensation = 128;
 	fixed_t realstepamt = (64 * mapobjectscale);
+	UINT32 returntime = TICRATE;
 	fixed_t stepamt;
 
 	vector3_t dest, step, laser;
@@ -379,6 +382,14 @@ static void K_MovePlayerToRespawnPoint(player_t *player)
 		player->mo->z - dest.z
 	);
 
+	// Traveling from death location to first waypoint? Set speed to get there in a fixed time.
+	if (player->respawn.fast)
+	{
+		if (player->respawn.returnspeed == 0)
+			player->respawn.returnspeed = dist / returntime;
+		stepamt = max(stepamt, player->respawn.returnspeed);
+	}
+
 	if (dist <= stepamt)
 	{
 		// Reduce by the amount we needed to get to this waypoint
@@ -390,6 +401,9 @@ static void K_MovePlayerToRespawnPoint(player_t *player)
 		player->mo->y = dest.y;
 		player->mo->z = dest.z;
 		P_SetThingPosition(player->mo);
+
+		// We are no longer traveling from death location to 1st waypoint, so use standard timings
+		player->respawn.fast = false;
 
 		// At the first valid waypoint, permit extra player control options.
 		player->respawn.init = false;

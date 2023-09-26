@@ -927,6 +927,20 @@ bool CallFunc_Timer(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word 
 }
 
 /*--------------------------------------------------
+	bool CallFunc_IsNetworkGame(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
+
+		Pushes netgame status to ACS.
+--------------------------------------------------*/
+bool CallFunc_IsNetworkGame(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
+{
+	(void)argV;
+	(void)argC;
+
+	thread->dataStk.push(netgame);
+	return false;
+}
+
+/*--------------------------------------------------
 	bool CallFunc_SectorSound(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
 
 		Plays a point sound effect from a sector.
@@ -1277,7 +1291,7 @@ bool CallFunc_PlayerRings(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM:
 /*--------------------------------------------------
 	bool CallFunc_PlayerScore(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
 
-		Returns the activating player's ring count.
+		Returns the activating player's roundscore.
 --------------------------------------------------*/
 bool CallFunc_PlayerScore(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
 {
@@ -1585,6 +1599,31 @@ bool CallFunc_PlayerSkin(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::
 }
 
 /*--------------------------------------------------
+	bool CallFunc_PlayerBot(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
+
+		Returns the activating player's bot status.
+--------------------------------------------------*/
+bool CallFunc_PlayerBot(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
+{
+	auto info = &static_cast<Thread *>(thread)->info;
+
+	(void)argV;
+	(void)argC;
+
+	if ((info != NULL)
+		&& (info->mo != NULL && P_MobjWasRemoved(info->mo) == false)
+		&& (info->mo->player != NULL))
+	{
+		
+		thread->dataStk.push(info->mo->player->bot);
+		return false;
+	}
+
+	thread->dataStk.push(false);
+	return false;
+}
+
+/*--------------------------------------------------
 	bool CallFunc_GetObjectDye(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
 
 		Returns the activating object's current dye.
@@ -1685,11 +1724,11 @@ bool CallFunc_EncoreMode(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::
 }
 
 /*--------------------------------------------------
-	bool CallFunc_BreakTheCapsules(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
+	bool CallFunc_PrisonBreak(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
 
-		Returns if the map is in Break the Capsules.
+		Returns if the map is in Prison Break mode.
 --------------------------------------------------*/
-bool CallFunc_BreakTheCapsules(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
+bool CallFunc_PrisonBreak(ACSVM::Thread *thread, const ACSVM::Word *argV, ACSVM::Word argC)
 {
 	(void)argV;
 	(void)argC;

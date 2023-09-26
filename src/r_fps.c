@@ -327,13 +327,12 @@ static void AddInterpolator(levelinterpolator_t* interpolator)
 		{
 			levelinterpolators_size *= 2;
 		}
-		
-		levelinterpolators = Z_ReallocAlign(
+
+		levelinterpolators = Z_Realloc(
 			(void*) levelinterpolators,
 			sizeof(levelinterpolator_t*) * levelinterpolators_size,
 			PU_LEVEL,
-			NULL,
-			sizeof(levelinterpolator_t*) * 8
+			NULL
 		);
 	}
 
@@ -343,11 +342,8 @@ static void AddInterpolator(levelinterpolator_t* interpolator)
 
 static levelinterpolator_t *CreateInterpolator(levelinterpolator_type_e type, thinker_t *thinker)
 {
-	levelinterpolator_t *ret = (levelinterpolator_t*) Z_CallocAlign(
-		sizeof(levelinterpolator_t),
-		PU_LEVEL,
-		NULL,
-		sizeof(levelinterpolator_t) * 8
+	levelinterpolator_t *ret = (levelinterpolator_t*) Z_Calloc(
+		sizeof(levelinterpolator_t), PU_LEVEL, NULL
 	);
 
 	ret->type = type;
@@ -662,12 +658,11 @@ void R_AddMobjInterpolator(mobj_t *mobj)
 			interpolated_mobjs_capacity *= 2;
 		}
 
-		interpolated_mobjs = Z_ReallocAlign(
+		interpolated_mobjs = Z_Realloc(
 			interpolated_mobjs,
 			sizeof(mobj_t *) * interpolated_mobjs_capacity,
 			PU_LEVEL,
-			NULL,
-			64
+			NULL
 		);
 	}
 

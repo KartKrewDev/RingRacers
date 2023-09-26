@@ -3358,8 +3358,9 @@ fixed_t K_GetKartSpeed(player_t *player, boolean doboostpower, boolean dorubberb
 
 		if (K_PlayerUsesBotMovement(player))
 		{
-			// Increase bot speed by 1-10% depending on difficulty
-			fixed_t add = (player->botvars.difficulty * (FRACUNIT/10)) / DIFFICULTBOT;
+			// Increase bot speed by 0-10% depending on difficulty
+			const fixed_t modifier = K_BotMapModifier();
+			fixed_t add = ((player->botvars.difficulty-1) * FixedMul(FRACUNIT / 10, modifier)) / (DIFFICULTBOT-1);
 			finalspeed = FixedMul(finalspeed, FRACUNIT + add);
 
 			if (player->bot && player->botvars.rival)
@@ -4511,6 +4512,11 @@ void K_MineFlashScreen(mobj_t *source)
 	INT32 pnum;
 	player_t *p;
 
+	if (P_MobjWasRemoved(source))
+	{
+		return;
+	}
+
 	S_StartSound(source, sfx_s3k4e);
 	P_StartQuakeFromMobj(12, 55 * source->scale, MINEQUAKEDIST * source->scale, source);
 
@@ -4620,6 +4626,8 @@ void K_SpawnMineExplosion(mobj_t *source, UINT8 color, tic_t delay)
 		truc->hitlag += delay;
 		truc->renderflags |= RF_DONTDRAW;
 	}
+
+	Obj_SpawnBrolyKi(source, delay);
 }
 
 #undef MINEQUAKEDIST
@@ -9111,15 +9119,23 @@ void K_UpdateDistanceFromFinishLine(player_t *const player)
 
 INT32 K_GetKartRingPower(player_t *player, boolean boosted)
 {
-	INT32 ringPower = ((9 - player->kartspeed) + (9 - player->kartweight)) / 2;
+	fixed_t ringPower = ((9 - player->kartspeed) + (9 - player->kartweight)) * (FRACUNIT/2);
 
 	if (boosted == true && K_PlayerUsesBotMovement(player))
 	{
-		// Double for Lv. 9
-		ringPower += (player->botvars.difficulty * ringPower) / DIFFICULTBOT;
+		// x2.0 for Lv. 9
+		const fixed_t modifier = K_BotMapModifier();
+		fixed_t add = ((player->botvars.difficulty-1) * modifier) / (DIFFICULTBOT-1);
+		ringPower = FixedMul(ringPower, FRACUNIT + add);
+
+		if (player->botvars.rival == true)
+		{
+			// x2.0 for Rival
+			ringPower = FixedMul(ringPower, 2*FRACUNIT);
+		}
 	}
 
-	return ringPower;
+	return ringPower / FRACUNIT;
 }
 
 // Returns false if this player being placed here causes them to collide with any other player
@@ -10657,10 +10673,11 @@ fixed_t K_PlayerBaseFriction(player_t *player, fixed_t original)
 		frict -= FixedMul(FRACUNIT >> 5, factor);
 
 		// Bots gain more traction as they rubberband.
-		if (player->botvars.rubberband > FRACUNIT)
+		fixed_t traction_value = FixedMul(player->botvars.rubberband, max(FRACUNIT, K_BotMapModifier()));
+		if (traction_value > FRACUNIT)
 		{
 			const fixed_t extraFriction = FixedMul(FRACUNIT >> 5, factor);
-			const fixed_t mul = player->botvars.rubberband - FRACUNIT;
+			const fixed_t mul = traction_value - FRACUNIT;
 			frict -= FixedMul(extraFriction, mul);
 		}
 	}
@@ -10716,9 +10733,10 @@ void K_AdjustPlayerFriction(player_t *player)
 	{
 		player->mo->friction += 614;
 	}
-	else if (player->mo->eflags & MFE_UNDERWATER)
+	else if ((player->mo->eflags & MFE_UNDERWATER))
 	{
-		player->mo->friction += 312;
+		if (!K_Sliptiding(player))
+			player->mo->friction += 312;
 	}
 
 	// Wipeout slowdown

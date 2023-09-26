@@ -342,6 +342,8 @@ struct respawnvars_t
 	boolean manual; // Respawn coords were manually set, please respawn exactly there
 	boolean fromRingShooter; // Respawn was from Ring Shooter, don't allow E-Brake drop
 	boolean init;
+	boolean fast; // Deaths after long airtime can leave you far away from your first waypoint, speed over there!
+	fixed_t returnspeed; // Used for consistent timing for deathpoint-to-first-waypoint travel.
 };
 
 typedef enum
@@ -666,6 +668,7 @@ struct player_t
 	UINT16 superring;	// You were awarded rings, and have this many of them left to spawn on yourself.
 	UINT8 nextringaward;	// When should we spawn our next superring ring?
 	UINT16 ringvolume;		// When consuming lots of rings, lower the sound a little.
+	UINT16 ringburst;		// Queued number of rings to lose after hitlag ends
 
 	UINT8 curshield;	// see kartshields_t
 	UINT8 bubblecool;	// Bubble Shield use cooldown

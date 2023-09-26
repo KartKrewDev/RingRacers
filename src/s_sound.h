@@ -98,7 +98,7 @@ void S_RegisterSoundStuff(void);
 // Initializes sound stuff, including volume
 // Sets channels, SFX, allocates channel buffer, sets S_sfx lookup.
 //
-void S_InitSfxChannels(INT32 sfxVolume);
+void S_InitSfxChannels(void);
 
 //
 // Per level startup code.
@@ -237,10 +237,8 @@ FUNCMATH fixed_t S_CalculateSoundDistance(fixed_t px1, fixed_t py1, fixed_t pz1,
 
 INT32 S_GetSoundVolume(sfxinfo_t *sfx, INT32 volume);
 
-void S_SetSfxVolume(INT32 volume);
-void S_SetMusicVolume(INT32 digvolume);
-#define S_SetDigMusicVolume S_SetMusicVolume
-#define S_InitMusicVolume() S_SetMusicVolume(-1)
+void S_SetSfxVolume(void);
+void S_SetMusicVolume(void);
 
 INT32 S_OriginPlaying(void *origin);
 INT32 S_IdPlaying(sfxenum_t id);
@@ -251,10 +249,8 @@ void S_StartSoundName(void *mo, const  char *soundname);
 void S_StopSoundByID(void *origin, sfxenum_t sfx_id);
 void S_StopSoundByNum(sfxenum_t sfxnum);
 
-#ifndef HW3SOUND
 #define S_StartAttackSound S_StartSound
 #define S_StartScreamSound S_StartSound
-#endif
 
 #ifdef __cplusplus
 } // extern "C"

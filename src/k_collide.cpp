@@ -305,7 +305,7 @@ static inline BlockItReturn_t PIT_SSMineExplode(mobj_t *thing)
 
 	lagadded = (thing->hitlag - oldhitlag);
 
-	if (lagadded > 0)
+	if (lagadded > minehitlag)
 	{
 		minehitlag = lagadded;
 	}
@@ -337,19 +337,17 @@ tic_t K_MineExplodeAttack(mobj_t *actor, fixed_t size, boolean spin)
 	// Set this flag to ensure that the inital action won't be triggered twice.
 	actor->flags2 |= MF2_DEBRIS;
 
+	if (minehitlag == 0)
+	{
+		minehitlag = actor->hitlag;
+	}
+
 	// Set this flag to ensure the hitbox timer doesn't get extended with every player hit
 	actor->flags |= MF_NOHITLAGFORME;
 	actor->hitlag = 0; // same deal
 
 	if (!spin)
 	{
-		if (minehitlag == 0)
-		{
-			minehitlag = actor->hitlag;
-		}
-
-		Obj_SpawnBrolyKi(actor, minehitlag);
-
 		return minehitlag;
 	}
 

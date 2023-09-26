@@ -1249,31 +1249,7 @@ static mobj_t *InitSpecialUFO(waypoint_t *start)
 
 mobj_t *Obj_CreateSpecialUFO(void)
 {
-	waypoint_t *finishWaypoint = K_GetFinishLineWaypoint();
-	waypoint_t *startWaypoint = NULL;
-
-	if (finishWaypoint != NULL)
-	{
-		const boolean huntbackwards = true;
-		const boolean useshortcuts = false;
-		const UINT32 traveldist = INT32_MAX; // Go as far back as possible. Not UINT32_MAX to avoid possible overflow.
-		boolean pathfindsuccess = false;
-		path_t pathtofinish = {0};
-
-		pathfindsuccess = K_PathfindThruCircuit(
-			finishWaypoint, traveldist,
-			&pathtofinish,
-			useshortcuts, huntbackwards
-		);
-
-		if (pathfindsuccess == true)
-		{
-			startWaypoint = (waypoint_t *)pathtofinish.array[ pathtofinish.numnodes - 1 ].nodedata;
-			Z_Free(pathtofinish.array);
-		}
-	}
-
-	return InitSpecialUFO(startWaypoint);
+	return InitSpecialUFO(K_GetStartingWaypoint());
 }
 
 UINT32 K_GetSpecialUFODistance(void)

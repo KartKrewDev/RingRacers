@@ -468,6 +468,7 @@ static void P_NetArchivePlayers(savebuffer_t *save)
 		WRITEUINT16(save->p, players[i].superring);
 		WRITEUINT8(save->p, players[i].nextringaward);
 		WRITEUINT8(save->p, players[i].ringvolume);
+		WRITEUINT16(save->p, players[i].ringburst);
 
 		WRITEUINT8(save->p, players[i].curshield);
 		WRITEUINT8(save->p, players[i].bubblecool);
@@ -598,6 +599,8 @@ static void P_NetArchivePlayers(savebuffer_t *save)
 		WRITEUINT32(save->p, players[i].respawn.dropdash);
 		WRITEUINT8(save->p, players[i].respawn.truedeath);
 		WRITEUINT8(save->p, players[i].respawn.manual);
+		WRITEUINT8(save->p, players[i].respawn.fast);
+		WRITEUINT32(save->p, players[i].respawn.returnspeed);
 
 		// botvars_t
 		WRITEUINT8(save->p, players[i].bot);
@@ -975,6 +978,7 @@ static void P_NetUnArchivePlayers(savebuffer_t *save)
 		players[i].superring = READUINT16(save->p);
 		players[i].nextringaward = READUINT8(save->p);
 		players[i].ringvolume = READUINT8(save->p);
+		players[i].ringburst = READUINT16(save->p);
 
 		players[i].curshield = READUINT8(save->p);
 		players[i].bubblecool = READUINT8(save->p);
@@ -1105,6 +1109,8 @@ static void P_NetUnArchivePlayers(savebuffer_t *save)
 		players[i].respawn.dropdash = READUINT32(save->p);
 		players[i].respawn.truedeath = READUINT8(save->p);
 		players[i].respawn.manual = READUINT8(save->p);
+		players[i].respawn.fast = READUINT8(save->p);
+		players[i].respawn.returnspeed = READUINT32(save->p);
 
 		// botvars_t
 		players[i].bot = READUINT8(save->p);
