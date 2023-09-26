@@ -3687,16 +3687,12 @@ static void Command_Login_f(void)
 
 boolean IsPlayerAdmin(INT32 playernum)
 {
-#if defined(DEVELOP) && !(defined(HOSTTESTERS) || defined(TESTERS))
-	return playernum != serverplayer;
-#else
 	INT32 i;
 	for (i = 0; i < MAXPLAYERS; i++)
 		if (playernum == adminplayers[i])
 			return true;
 
 	return false;
-#endif
 }
 
 void SetAdminPlayer(INT32 playernum)
