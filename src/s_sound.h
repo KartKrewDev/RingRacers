@@ -150,6 +150,9 @@ struct soundtestsequence_t
 	UINT8 id;
 	UINT16 map;
 	musicdef_t *next;
+
+	size_t shuffleinfo;
+	musicdef_t *shufflenext;
 };
 
 // Music credits
@@ -195,6 +198,7 @@ extern struct soundtest
 	soundtestsequence_t sequence;		// Sequence head
 
 	boolean autosequence;				// In auto sequence mode?
+	boolean shuffle;					// In shuffle mode;
 } soundtest;
 
 void S_PopulateSoundTestSequence(void);
