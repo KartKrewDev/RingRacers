@@ -6257,6 +6257,8 @@ P_RaiseTaggedThingsToFakeFloor (
 					offset = mo->z - mo->floorz;
 					mo->z = P_GetZAt(control->c_slope, mo->x, mo->y, control->ceilingheight) + offset;
 				}
+
+				mthing->adjusted_z = mo->z;
 			}
 		}
 	}
