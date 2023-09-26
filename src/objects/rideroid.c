@@ -163,9 +163,10 @@ static void Obj_rideroidTrail(mobj_t *mo)
 
 			if (p)
 			{
-				if (p != &players[consoleplayer] && j)
-					t->renderflags |= RF_DONTDRAW;
-				else if (p->startboost)
+				if (j)
+					t->renderflags |= (RF_DONTDRAW & ~K_GetPlayerDontDrawFlag(p));
+
+				if (p->startboost)
 					t->color = K_RainbowColor(leveltime);
 			}
 
