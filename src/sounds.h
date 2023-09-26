@@ -1279,6 +1279,16 @@ typedef enum
 
 	sfx_rank,
 
+	// Damage sounds
+	sfx_dmga1,
+	sfx_dmga2,
+	sfx_dmga3,
+	sfx_dmga4,
+	sfx_dmgb1,
+	sfx_dmgb2,
+	sfx_dmgb3,
+	sfx_dmgb4,
+
 	// Next up: UNIQUE ENGINE SOUNDS! Hoooooo boy...
 	// Engine class A - Low Speed, Low Weight
 	sfx_krta00,

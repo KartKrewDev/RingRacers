@@ -18,6 +18,7 @@
 #include "m_random.h"
 #include "p_local.h"
 #include "r_main.h"
+#include "s_sound.h"
 
 /*--------------------------------------------------
 	void K_AddHitLag(mobj_t *mo, INT32 tics, boolean fromDamage)
@@ -130,12 +131,37 @@ static void K_SpawnSingleHitLagSpark(
 }
 
 /*--------------------------------------------------
+	static void K_PlayHitLagSFX(mobj_t *victim, UINT8 tics)
+
+		Plays a damage sound for a player.
+
+	Input Arguments:-
+		victim - Object getting damaged.
+		tics - How long the hitlag was.
+
+	Return:-
+		N/A
+--------------------------------------------------*/
+static void K_PlayHitLagSFX(mobj_t *victim, UINT8 tics)
+{
+	sfxenum_t soundID = sfx_dmga1;
+
+	if (P_Random(PR_DECORATION) & 1) // might want to use this set for some other scenario, instead of randomized?
+	{
+		soundID = sfx_dmgb1;
+	}
+
+	soundID += ((tics * (NUM_HITLAG_SOUNDS - 1)) + (MAXHITLAGTICS >> 1)) / MAXHITLAGTICS;
+	S_StartSound(victim, soundID);
+}
+
+/*--------------------------------------------------
 	static void K_SpawnHitLagEFX(mobj_t *victim, mobj_t *inflictor, mobj_t *source, UINT8 tics)
 
 		Spawns several hitlag sparks for damage.
 
 	Input Arguments:-
-		victim - Object getting touched.
+		victim - Object getting damaged.
 		inflictor - Object touching the victim. May be NULL.
 		source - Object that inflictor came from. May be NULL or same as inflictor.
 		tics - How long the hitlag was.
@@ -152,6 +178,7 @@ static void K_SpawnHitLagEFX(mobj_t *victim, mobj_t *inflictor, mobj_t *source, 
 
 	I_Assert(P_MobjWasRemoved(victim) == false);
 
+	K_PlayHitLagSFX(victim, tics);
 	P_StartQuakeFromMobj(tics, tics * 2 * mapobjectscale, 512 * mapobjectscale, victim);
 
 	if (P_MobjWasRemoved(inflictor) == false)
