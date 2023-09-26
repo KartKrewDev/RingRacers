@@ -78,7 +78,7 @@ menuitem_t PLAY_MP_OptSelect[] =
 	{IT_STRING_CALL_NOTESTERS, "Host Game", "Start your own online game!",
 		NULL, {.routine = M_PreMPHostInit}, 0, 0},
 
-	{IT_STRING_CALL_NOTESTERS, "Server Browser", "Search for game servers to play in.",
+	{IT_STRING | IT_CALL, "Server Browser", "Search for game servers to play in.",
 		NULL, {.routine = M_PreMPRoomSelectInit}, 0, 0},
 
 	{IT_STRING | IT_CALL, "Join by IP", "Join an online game by its IP address.",
