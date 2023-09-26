@@ -206,7 +206,11 @@ struct BallSwitch_Ball : mobj_t
 	{
 		Push(inflictor, 64 << FRACBITS, 1 << FRACBITS);
 		K_SetHitLagForObjects(this, inflictor, source, 4, true);
-		DeferActivation(true, source);
+
+		if (Active() == false)
+		{
+			DeferActivation(true, source);
+		}
 	}
 };
 
