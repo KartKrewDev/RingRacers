@@ -78,7 +78,6 @@ option(SRB2_CONFIG_ERRORMODE "Compile C code with warnings treated as errors." O
 option(SRB2_CONFIG_DEBUGMODE "Compile with PARANOIA, ZDEBUG, RANGECHECK and PACKETDROP defined." OFF)
 option(SRB2_CONFIG_DEV_BUILD "Compile a development build." OFF)
 option(SRB2_CONFIG_TESTERS "Compile a build for testers." OFF)
-# SRB2_CONFIG_PROFILEMODE is probably superceded by some CMake setting.
 option(SRB2_CONFIG_MOBJCONSISTANCY "Compile with MOBJCONSISTANCY defined." OFF)
 option(SRB2_CONFIG_PACKETDROP "Compile with PACKETDROP defined." OFF)
 option(SRB2_CONFIG_ZDEBUG "Compile with ZDEBUG defined." OFF)
