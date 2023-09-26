@@ -65,9 +65,9 @@ static void Obj_killRideroid(mobj_t *mo)
 		t->color = SKINCOLOR_TEAL;
 		t->frame = FF_FULLBRIGHT;
 		t->destscale = 1;
-		t->momx = P_RandomRange(PR_DECORATION, -32, 32)*mapobjectscale;
-		t->momy = P_RandomRange(PR_DECORATION, -32, 32)*mapobjectscale;
-		t->momz = P_RandomRange(PR_DECORATION, -32, 32)*mapobjectscale;
+		t->momx = P_RandomRange(PR_EXPLOSION, -32, 32)*mapobjectscale;
+		t->momy = P_RandomRange(PR_EXPLOSION, -32, 32)*mapobjectscale;
+		t->momz = P_RandomRange(PR_EXPLOSION, -32, 32)*mapobjectscale;
 	}
 	P_RemoveMobj(mo);
 }

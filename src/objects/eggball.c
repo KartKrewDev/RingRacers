@@ -38,7 +38,7 @@ void Obj_EggBallSpawnerThink(mobj_t *mo)
 		ball->angle = mo->angle;
 		P_SetScale(ball, 6*mapobjectscale);
 
-		mo->extravalue1 = P_RandomRange(PR_FUZZ, TICRATE*BALLMINSPAWNTIME, TICRATE*BALLMAXSPAWNTIME);
+		mo->extravalue1 = P_RandomRange(PR_TRACKHAZARD, TICRATE*BALLMINSPAWNTIME, TICRATE*BALLMAXSPAWNTIME);
 	}
 	mo->extravalue1--;
 }
@@ -68,7 +68,7 @@ void Obj_EggBallThink(mobj_t *mo)
 				mobj_t *dust = P_SpawnMobj(mo->x, mo->y, mo->z, MT_DRIFTDUST);
 				P_SetScale(dust, mapobjectscale*3);
 				P_InstaThrust(dust, (360/16)*an*i, mapobjectscale*24);	// the angle thing is to avoid a warning due to overflows.
-				dust->momz = P_RandomRange(PR_FUZZ, 0, 7)*mapobjectscale;
+				dust->momz = P_RandomRange(PR_DECORATION, 0, 7)*mapobjectscale;
 			}
 
 			S_StartSound(mo, sfx_s3k59);
@@ -92,13 +92,13 @@ void Obj_EggBallThink(mobj_t *mo)
 	{
 		if (P_IsObjectOnGround(mo) && mo->extravalue2 &1)
 		{
-			fixed_t dx = mo->x + P_RandomRange(PR_FUZZ, -96, 96)*mapobjectscale - mo->momx*2;
-			fixed_t dy = mo->y + P_RandomRange(PR_FUZZ, -96, 96)*mapobjectscale - mo->momy*2;
+			fixed_t dx = mo->x + P_RandomRange(PR_DECORATION, -96, 96)*mapobjectscale - mo->momx*2;
+			fixed_t dy = mo->y + P_RandomRange(PR_DECORATION, -96, 96)*mapobjectscale - mo->momy*2;
 			fixed_t dz = mo->z;
 
 			mobj_t *dust = P_SpawnMobj(dx, dy, dz, MT_DRIFTDUST);
 			P_SetScale(dust, mapobjectscale*3);
-			dust->momz = P_RandomRange(PR_FUZZ, 0, 7)*mapobjectscale;
+			dust->momz = P_RandomRange(PR_DECORATION, 0, 7)*mapobjectscale;
 			dust->destscale = mapobjectscale*8;
 		}
 

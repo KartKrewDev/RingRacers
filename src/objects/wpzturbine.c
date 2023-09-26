@@ -106,8 +106,8 @@ static void Obj_WPZTurbineUpdate(mobj_t *mo)
 		if (mt->thing_args[7])
 			dradius = mt->thing_args[7];
 
-		bubbleradius = P_RandomRange(PR_FUZZ, dradius/4, (dradius*3)/2);
-		bubbleang = P_RandomRange(PR_FUZZ, 0, 359)*ANG1;
+		bubbleradius = P_RandomRange(PR_BUBBLE, dradius/4, (dradius*3)/2);
+		bubbleang = P_RandomRange(PR_BUBBLE, 0, 359)*ANG1;
 
 		bx = mo->x + FixedMul(mapobjectscale, bubbleradius*FINECOSINE(bubbleang>>ANGLETOFINESHIFT));
 		by = mo->y + FixedMul(mapobjectscale, bubbleradius*FINECOSINE(bubbleang>>ANGLETOFINESHIFT));
@@ -285,9 +285,9 @@ void Obj_playerWPZTurbine(player_t *p)
 
 	if (pmo->eflags & MFE_UNDERWATER)
 	{
-		fixed_t rx = pmo->x + P_RandomRange(PR_FUZZ, -64, 64)*mapobjectscale;
-		fixed_t ry = pmo->y + P_RandomRange(PR_FUZZ, -64, 64)*mapobjectscale;
-		fixed_t rz = pmo->z + P_RandomRange(PR_FUZZ, -64, 64)*mapobjectscale;
+		fixed_t rx = pmo->x + P_RandomRange(PR_DECORATION, -64, 64)*mapobjectscale;
+		fixed_t ry = pmo->y + P_RandomRange(PR_DECORATION, -64, 64)*mapobjectscale;
+		fixed_t rz = pmo->z + P_RandomRange(PR_DECORATION, -64, 64)*mapobjectscale;
 
 		mobj_t *bubl = P_SpawnMobj(rx, ry, rz, MT_THOK);
 		P_SetScale(bubl, pmo->scale*2);
@@ -370,9 +370,9 @@ void Obj_WPZBubbleThink(mobj_t *mo)
 
 	if (leveltime & 1)
 	{
-		fixed_t rx = mo->x + P_RandomRange(PR_FUZZ, -64, 64)*mapobjectscale;
-		fixed_t ry = mo->y + P_RandomRange(PR_FUZZ, -64, 64)*mapobjectscale;
-		fixed_t rz = mo->z + P_RandomRange(PR_FUZZ, -64, 64)*mapobjectscale;
+		fixed_t rx = mo->x + P_RandomRange(PR_DECORATION, -64, 64)*mapobjectscale;
+		fixed_t ry = mo->y + P_RandomRange(PR_DECORATION, -64, 64)*mapobjectscale;
+		fixed_t rz = mo->z + P_RandomRange(PR_DECORATION, -64, 64)*mapobjectscale;
 		mobj_t *bubl = P_SpawnMobj(rx, ry, rz, MT_THOK);
 		P_SetScale(bubl, mapobjectscale*4);
 		bubl->destscale = 1;

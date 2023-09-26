@@ -177,9 +177,9 @@ void Obj_playerDLZRocket(player_t *p)
 
 		for (j = 0; j < 2; j++)
 		{
-			fixed_t xoffs = P_RandomRange(PR_FUZZ, -6, 6)*mapobjectscale;
-			fixed_t yoffs = P_RandomRange(PR_FUZZ, -6, 6)*mapobjectscale;
-			fixed_t soffs = P_RandomRange(PR_FUZZ, 0, 3);
+			fixed_t xoffs = P_RandomRange(PR_EXPLOSION, -6, 6)*mapobjectscale;
+			fixed_t yoffs = P_RandomRange(PR_EXPLOSION, -6, 6)*mapobjectscale;
+			fixed_t soffs = P_RandomRange(PR_EXPLOSION, 0, 3);
 
 			mobj_t *expl = P_SpawnMobj(r->x + xoffs, r->y + yoffs, r->z + xoffs, MT_THOK);
 			P_SetMobjState(expl, S_QUICKBOOM1+soffs);

@@ -73,6 +73,7 @@ typedef enum
 	PR_SPARKLE, // Endsign and/or Emerald
 
 	PR_MOVINGTARGET, // Randomised moving targets
+	PR_TRACKHAZARD, // Randomised track hazards
 
 	PR_BATTLEUFO, // Battle UFO spawning
 
