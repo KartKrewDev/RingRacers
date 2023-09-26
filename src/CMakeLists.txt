@@ -209,8 +209,6 @@ set(SRB2_CONFIG_DEV_BUILD OFF CACHE BOOL
 	"Compile a development build of Dr Robotnik's Ring Racers.")
 set(SRB2_CONFIG_TESTERS OFF CACHE BOOL
 	"Compile a build for testers.")
-set(SRB2_CONFIG_HOSTTESTERS OFF CACHE BOOL
-	"Compile a build to host netgames for testers builds.")
 
 add_subdirectory(blua)
 
@@ -555,9 +553,6 @@ if(SRB2_CONFIG_DEBUGMODE)
 endif()
 if(SRB2_CONFIG_TESTERS)
 	target_compile_definitions(SRB2SDL2 PRIVATE -DTESTERS)
-endif()
-if(SRB2_CONFIG_HOSTTESTERS)
-	target_compile_definitions(SRB2SDL2 PRIVATE -DHOSTTESTERS)
 endif()
 if(SRB2_CONFIG_MOBJCONSISTANCY)
 	target_compile_definitions(SRB2SDL2 PRIVATE -DMOBJCONSISTANCY)

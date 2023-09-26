@@ -1565,9 +1565,6 @@ void F_VersionDrawer(void)
 #if defined(TESTERS)
 		addtext(V_SKYMAP, "Tester client");
 		addtext(V_TRANSLUCENT, va("%s", compdate));
-#elif defined(HOSTTESTERS)
-		addtext(V_REDMAP, "Netgame host for testers");
-		addtext(V_TRANSLUCENT, va("%s", compdate));
 #elif defined(DEVELOP)
 		addtext(V_TRANSLUCENT, va("%s %s", comprevision, compnote));
 		addtext(V_TRANSLUCENT, D_GetFancyBranchName());
@@ -1711,8 +1708,6 @@ void F_TitleScreenDrawer(void)
 #ifdef DEVELOP
 #if defined(TESTERS)
 			V_DrawCenteredString(BASEVIDWIDTH/2, 96, V_SKYMAP, "Tester EXE");
-#elif defined(HOSTTESTERS)
-			V_DrawCenteredThinString(BASEVIDWIDTH/2, 96, V_REDMAP, "Tester netgame host EXE");
 #else
 			V_DrawCenteredString(BASEVIDWIDTH/2, 96, 0, "Development EXE");
 #endif

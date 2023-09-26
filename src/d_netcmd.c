@@ -4638,8 +4638,6 @@ static void Command_Version_f(void)
 	// DEVELOP build
 #if defined(TESTERS)
 	CONS_Printf("\x88" "TESTERS " "\x80");
-#elif defined(HOSTTESTERS)
-	CONS_Printf("\x82" "HOSTTESTERS " "\x80");
 #elif defined(DEVELOP)
 	CONS_Printf("\x87" "DEVELOP " "\x80");
 #endif

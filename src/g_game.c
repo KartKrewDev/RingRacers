@@ -89,7 +89,7 @@ JoyType_t Joystick[MAXSPLITSCREENPLAYERS];
 
 // SRB2kart
 char gamedatafilename[64] =
-#if defined (TESTERS) || defined (HOSTTESTERS)
+#if defined (TESTERS)
 	"test"
 #elif defined(DEVELOP)
 	"develop"
