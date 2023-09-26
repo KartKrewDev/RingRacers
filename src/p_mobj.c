@@ -9723,10 +9723,18 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 
 	case MT_LSZ_EGGBALL:
 		Obj_EggBallThink(mobj);
+		if (P_MobjWasRemoved(mobj))
+		{
+			return false;
+		}
 		break;
 
 	case MT_DLZ_ROCKET:
 		Obj_DLZRocketThink(mobj);
+		if (P_MobjWasRemoved(mobj))
+		{
+			return false;
+		}
 		break;
 
 	case MT_DLZ_SEASAW_SPAWN:
@@ -9735,6 +9743,10 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 
 	case MT_DLZ_SUCKEDRING:
 		Obj_DLZSuckedRingThink(mobj);
+		if (P_MobjWasRemoved(mobj))
+		{
+			return false;
+		}
 		break;
 
 	case MT_WATERPALACETURBINE:
@@ -9743,6 +9755,10 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 
 	case MT_WATERPALACEBUBBLE:
 		Obj_WPZBubbleThink(mobj);
+		if (P_MobjWasRemoved(mobj))
+		{
+			return false;
+		}
 		break;
 
 	case MT_WATERPALACEFOUNTAIN:
@@ -9755,6 +9771,10 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 
 	case MT_KURAGENBOMB:
 		Obj_WPZKuragenBombThink(mobj);
+		if (P_MobjWasRemoved(mobj))
+		{
+			return false;
+		}
 		break;
 
 	default:
