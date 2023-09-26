@@ -42,7 +42,7 @@ void Obj_WPZKuragenThink(mobj_t *mo)
 {
 	//(void)mo;
 	boolean active = false;
-	
+
 	// .....and i need to do this... because?
 	if (!mo->cusval)
 	{
@@ -50,7 +50,7 @@ void Obj_WPZKuragenThink(mobj_t *mo)
 		mo->destscale = mapobjectscale*2;
 		mo->cusval = 1;
 	}
-	
+
 	if (!(mo->spawnpoint->options & 1 || mo->spawnpoint->thing_args[0]))	// extra flag skips player checks, making it a decoration.
 	{
 		UINT8 i;
@@ -58,13 +58,13 @@ void Obj_WPZKuragenThink(mobj_t *mo)
 		{
 			player_t *p;
 			mobj_t *pmo;
-			
+
 			if (!playeringame[i] || players[i].spectator)
 				continue;
-			
+
 			p = &players[i];
 			pmo = p->mo;
-			
+
 			if (R_PointToDist2(pmo->x, pmo->y, mo->x, mo->y) < mapobjectscale*6144)
 			{
 				active = true;
@@ -72,11 +72,11 @@ void Obj_WPZKuragenThink(mobj_t *mo)
 			}
 		}
 	}
-	
+
 	if (active && mo->extravalue1)
 	{
 		mo->extravalue1--;
-		
+
 		if (!mo->extravalue1)
 		{
 			mobj_t *b = P_SpawnMobj(mo->x, mo->y, mo->z, MT_KURAGENBOMB);
@@ -98,7 +98,7 @@ void Obj_WPZKuragenBombThink(mobj_t *mo)
 		P_SetScale(mo, mapobjectscale/2);
 		P_RadiusAttack(mo, mo, FRACUNIT*192, DMG_EXPLODE, false);
 		A_MineExplode(mo);
-		
+
 		P_RemoveMobj(mo);
 	}
 }

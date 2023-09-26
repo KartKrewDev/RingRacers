@@ -37,7 +37,7 @@ void Obj_EggBallSpawnerThink(mobj_t *mo)
 		mobj_t *ball = P_SpawnMobj(mo->x, mo->y, mo->z, MT_LSZ_EGGBALL);
 		ball->angle = mo->angle;
 		P_SetScale(ball, 6*mapobjectscale);
-		
+
 		mo->extravalue1 = P_RandomRange(PR_FUZZ, TICRATE*BALLMINSPAWNTIME, TICRATE*BALLMAXSPAWNTIME);
 	}
 	mo->extravalue1--;
@@ -50,18 +50,18 @@ void Obj_EggBallSpawnerThink(mobj_t *mo)
 
 void Obj_EggBallThink(mobj_t *mo)
 {
-	
+
 	P_SetScale(mo, 6*mapobjectscale);
-	
+
 	if (mo->eflags & MFE_JUSTHITFLOOR
 	&& mo->threshold)
 	{
 		if (mo->threshold < -10*mapobjectscale)
 		{
 			UINT8 i;
-			
+
 			mo->momz = (fixed_t)(-mo->threshold)/8;
-			
+
 			for (i=0; i<16; i++)
 			{
 				angle_t an = ANG1;
@@ -70,14 +70,14 @@ void Obj_EggBallThink(mobj_t *mo)
 				P_InstaThrust(dust, (360/16)*an*i, mapobjectscale*24);	// the angle thing is to avoid a warning due to overflows.
 				dust->momz = P_RandomRange(PR_FUZZ, 0, 7)*mapobjectscale;
 			}
-			
+
 			S_StartSound(mo, sfx_s3k59);
-			
+
 			P_StartQuakeFromMobj(FRACUNIT*20, 6, 512 * mapobjectscale, mo);
-			
+
 		}
 	}
-	
+
 	if (!mo->extravalue1)
 	{
 		if (P_IsObjectOnGround(mo))
@@ -95,17 +95,17 @@ void Obj_EggBallThink(mobj_t *mo)
 			fixed_t dx = mo->x + P_RandomRange(PR_FUZZ, -96, 96)*mapobjectscale - mo->momx*2;
 			fixed_t dy = mo->y + P_RandomRange(PR_FUZZ, -96, 96)*mapobjectscale - mo->momy*2;
 			fixed_t dz = mo->z;
-			
+
 			mobj_t *dust = P_SpawnMobj(dx, dy, dz, MT_DRIFTDUST);
 			P_SetScale(dust, mapobjectscale*3);
-			dust->momz = P_RandomRange(PR_FUZZ, 0, 7)*mapobjectscale;	
+			dust->momz = P_RandomRange(PR_FUZZ, 0, 7)*mapobjectscale;
 			dust->destscale = mapobjectscale*8;
 		}
-		
+
 		P_InstaThrust(mo, mo->angle, mo->cusval);
 		mo->extravalue2 += 1;
 		mo->frame = mo->extravalue2 % (24 * 2) / 2; // 24 is for frame Y.
-		
+
 		// build up speed
 		if (P_IsObjectOnGround(mo))
 		{
@@ -124,11 +124,11 @@ void Obj_EggBallThink(mobj_t *mo)
 				}
 			}
 		}
-				
-		mo->movedir = mo->z;	
+
+		mo->movedir = mo->z;
 	}
 	mo->threshold = mo->momz;
-	
+
 	if (P_CheckDeathPitCollide(mo))
 		P_RemoveMobj(mo);
 }
