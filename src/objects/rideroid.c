@@ -82,7 +82,9 @@ void Obj_getPlayerOffRideroid(mobj_t *mo)
 		player_t *p = pmo->player;
 
 		pmo->flags &= ~MF_NOGRAVITY;
-		plr_resetRideroidVars(p);
+
+		if (p)
+			plr_resetRideroidVars(p);
 
 		mo->fuse = TICRATE/2;
 		mo->momx = mo->momx*2;
