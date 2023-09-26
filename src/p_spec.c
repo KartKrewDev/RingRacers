@@ -9428,7 +9428,8 @@ void P_DoQuakeOffset(UINT8 view, mappoint_t *viewPos, mappoint_t *offset)
 			) - distBuffer;
 
 			
-			const fixed_t distEase = min(FixedDiv(max(epidist, 0), quake->radius), FRACUNIT);
+			fixed_t distEase = FixedDiv(max(epidist, 0), quake->radius);
+			distEase = min(distEase, FRACUNIT);
 			ir = Easing_InCubic(distEase, ir, 0);
 		}
 
