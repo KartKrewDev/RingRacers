@@ -13059,12 +13059,11 @@ void A_SSMineExplode(mobj_t *actor)
 
 void A_SSMineFlash(mobj_t *actor)
 {
-	K_MineFlashScreen(actor);
+	K_MineFlashScreen(actor->target);
 }
 
 void A_LandMineExplode(mobj_t *actor)
 {
-
 	mobj_t *expl;
 	INT32 colour = SKINCOLOR_KETCHUP;	// we spell words properly here
 	INT32 i;

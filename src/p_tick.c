@@ -1026,7 +1026,7 @@ void P_Ticker(boolean run)
 			{
 				quake->epicenter->x = quake->mobj->x;
 				quake->epicenter->y = quake->mobj->y;
-				quake->epicenter->z = quake->mobj->z;
+				quake->epicenter->z = quake->mobj->z + (quake->mobj->height / 2);
 			}
 
 			quake = quake->next;
