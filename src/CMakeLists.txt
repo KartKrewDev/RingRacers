@@ -205,10 +205,6 @@ set(SRB2_CONFIG_USEASM OFF CACHE BOOL
 	"Enable NASM tmap implementation for software mode speedup.")
 set(SRB2_CONFIG_YASM OFF CACHE BOOL
 	"Use YASM in place of NASM.")
-set(SRB2_CONFIG_DEV_BUILD OFF CACHE BOOL
-	"Compile a development build of Dr Robotnik's Ring Racers.")
-set(SRB2_CONFIG_TESTERS OFF CACHE BOOL
-	"Compile a build for testers.")
 
 add_subdirectory(blua)
 
