@@ -8268,7 +8268,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 			player->incontrol = 0;
 		player->incontrol++;
 	}
-	
+
 	player->incontrol = min(player->incontrol, 5*TICRATE);
 	player->incontrol = max(player->incontrol, -5*TICRATE);
 
@@ -11871,18 +11871,18 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 	{
 		player->pflags &= ~PF_AIRFAILSAFE;
 	}
-	
+
 	Obj_RingShooterInput(player);
-	
+
 	if (player->bungee)
 		Obj_playerBungeeThink(player);
-	
+
 	if (player->dlzrocket)
 		Obj_playerDLZRocket(player);
-	
+
 	if (player->seasawcooldown && !player->seasaw)
 		player->seasawcooldown--;
-	
+
 	if (player->turbine)
 	{
 		if (player->mo->tracer && !P_MobjWasRemoved(player->mo->tracer))

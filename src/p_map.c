@@ -741,31 +741,31 @@ static BlockItReturn_t PIT_CheckThing(mobj_t *thing)
 	}
 
 	// SRB2kart 011617 - Colission[sic] code for kart items //
-	
+
 	if (thing->type == MT_DLZ_SEASAW_HITBOX)
 	{
 		if (tm.thing->type == MT_PLAYER)
 			Obj_DLZSeasawCollide(tm.thing, thing);	// all checks are performed in there.
-		
+
 		return BMIT_CONTINUE;
 	}
-	
+
 	if (thing->type == MT_DLZ_HOVER)
 	{
 		if (tm.thing->type == MT_PLAYER)
 			Obj_DLZHoverCollide(tm.thing, thing);
-		
+
 		return BMIT_CONTINUE;
 	}
-	
+
 	if (thing->type == MT_DLZ_RINGVACCUM)
 	{
 		if (tm.thing->type == MT_FLINGRING)
 			Obj_DLZRingVaccumCollide(tm.thing, thing);
-		
+
 		return BMIT_CONTINUE;
 	}
-	
+
 	if (tm.thing->type == MT_INSTAWHIP)
 	{
 		if (tm.thing->z > thing->z + thing->height)
@@ -1901,7 +1901,7 @@ static BlockItReturn_t PIT_CheckLine(line_t *ld)
 		else if (shouldCollide == 2)
 			return BMIT_CONTINUE; // force no collide
 	}
-	
+
 	// a bit of a hacky behaviour, but not that I know where else it would go.
 	if (tm.blockingline->flags & ML_TFERLINE)
 	{
@@ -1914,7 +1914,7 @@ static BlockItReturn_t PIT_CheckLine(line_t *ld)
 			Obj_DLZRocketDismount(tm.thing->player);
 		}
 	}
-	
+
 	if (!ld->backsector) // one sided line
 	{
 		if (P_PointOnLineSide(tm.thing->x, tm.thing->y, ld))

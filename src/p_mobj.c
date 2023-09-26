@@ -9703,24 +9703,24 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 	case MT_RAINBOWDASHRING:
 		Obj_RainbowDashRingThink(mobj);
 		break;
-	
+
 	case MT_RIDEROID:
 		Obj_RideroidThink(mobj);
 		if (P_MobjWasRemoved(mobj))
 		{
 			return false;
 		}
-		
+
 		break;
-	
+
 	case MT_RIDEROIDNODE:
 		Obj_RideroidNodeThink(mobj);
 		break;
-	
+
 	case MT_LSZ_EGGBALLSPAWNER:
 		Obj_EggBallSpawnerThink(mobj);
 		break;
-		
+
 	case MT_LSZ_EGGBALL:
 		Obj_EggBallThink(mobj);
 		break;
@@ -9728,35 +9728,35 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 	case MT_DLZ_ROCKET:
 		Obj_DLZRocketThink(mobj);
 		break;
-	
+
 	case MT_DLZ_SEASAW_SPAWN:
 		Obj_DLZSeasawThink(mobj);
 		break;
-	
+
 	case MT_DLZ_SUCKEDRING:
 		Obj_DLZSuckedRingThink(mobj);
 		break;
-		
+
 	case MT_WATERPALACETURBINE:
 		Obj_WPZTurbineThinker(mobj);
 		break;
-		
+
 	case MT_WATERPALACEBUBBLE:
 		Obj_WPZBubbleThink(mobj);
 		break;
-	
+
 	case MT_WATERPALACEFOUNTAIN:
 		Obj_WPZFountainThink(mobj);
 		break;
-	
+
 	case MT_KURAGEN:
 		Obj_WPZKuragenThink(mobj);
 		break;
-		
+
 	case MT_KURAGENBOMB:
 		Obj_WPZKuragenBombThink(mobj);
 		break;
-	
+
 	default:
 		// check mobj against possible water content, before movement code
 		P_MobjCheckWater(mobj);

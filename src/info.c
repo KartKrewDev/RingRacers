@@ -891,27 +891,27 @@ char sprnames[NUMSPRITES + 1][5] =
 	"CPT1", // Checkpoint Orb
 	"CPT2", // Checkpoint Stick
 	"CPT3", // Checkpoint Base
-	
+
 	// rideroid (see info.h for detail)
 	"RDRD",
 	"RDRA",
 	"RDRC",
 	"RDRL",
-	
+
 	// leaf storm egg ball.
 	"LSZB",
-	
+
 	// Dead Line Zone
 	"DLZH",
 	"DLZR",
 	"DLZS",
-	"DLZA",	
-	
+	"DLZA",
+
 	// Water Palace Zone
 	"WPWL",	// turbine
 	"WPZF",	// fountain
-	"WPZK",	// klagen	
-	
+	"WPZK",	// klagen
+
 	// First person view sprites; this is a sprite so that it can be replaced by a specialized MD2 draw later
 	"VIEW",
 };
@@ -5437,17 +5437,17 @@ state_t states[NUMSTATES] =
 	{SPR_SGNS, FF_ADD|FF_FULLBRIGHT|8, 1, {NULL}, 0, 0, S_CHECKPOINT_SPARK10}, // S_CHECKPOINT_SPARK9
 	{SPR_SGNS, FF_ADD|FF_FULLBRIGHT|3, 1, {NULL}, 0, 0, S_CHECKPOINT_SPARK11}, // S_CHECKPOINT_SPARK10
 	{SPR_SGNS, FF_ADD|FF_FULLBRIGHT|2, 1, {NULL}, 0, 0, S_CHECKPOINT_SPARK1}, // S_CHECKPOINT_SPARK11
-	
+
 	// Las Vegas
 	{SPR_RDRD, 0, -1, {NULL}, 0, 0, S_RIDEROID},	// S_RIDEROID
 	{SPR_RDRC, FF_ANIMATE|FF_FULLBRIGHT|FF_TRANS30, -1, {NULL}, 3, 2, S_RIDEROID_ICON},	// S_RIDEROID_ICON
-	
+
 	// Dead Line
 	{SPR_DLZH, 0, -1, {NULL}, 0, 0, S_DLZHOVER},	// S_DLZHOVER
-	
+
 	{SPR_DLZR, 0, -1, {NULL}, 0, 0, S_DLZROCKET_L},	// S_DLZROCKET_L
 	{SPR_DLZR, 1, -1, {NULL}, 0, 0, S_DLZROCKET_R},	// S_DLZROCKET_R
-	
+
 	// Water Palace
 	{SPR_WPZF, 0, -1, {NULL}, 0, 0, S_WPZFOUNTAIN},	// S_WPZFOUNTAIN
 	{SPR_WPZF, 1|FF_ANIMATE, -1, {NULL}, 3, 2, S_WPZFOUNTAINANIM},	// S_WPZFOUNTAINANIM
@@ -30741,7 +30741,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		MF_NOGRAVITY, 	// flags
 		S_NULL          // raisestate
 	},
-	
+
 	{           // MT_WATERPALACETURBINE
 		3400,           // doomednum
 		S_INVISIBLE,    // spawnstate
@@ -30767,8 +30767,8 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		sfx_None,       // activesound
 		MF_NOGRAVITY|MF_NOBLOCKMAP, 	// flags
 		S_NULL          // raisestate
-	},	
-	
+	},
+
 	{           // MT_WATERPALACEBUBBLE
 		-1,           // doomednum
 		S_INVISIBLE,    // spawnstate
@@ -30794,7 +30794,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		sfx_None,       // activesound
 		MF_NOGRAVITY|MF_NOBLOCKMAP|MF_NOCLIP, 	// flags
 		S_NULL          // raisestate
-	},		
+	},
 
 	{           // MT_WATERPALACEFOUNTAIN
 		3401,           // doomednum
@@ -30822,7 +30822,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		MF_SOLID, 		// flags
 		S_NULL          // raisestate
 	},
-	
+
 	{           // MT_KURAGEN
 		3402,           // doomednum
 		S_KURAGEN,  	// spawnstate
@@ -30848,7 +30848,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		sfx_None,       // activesound
 		MF_NOGRAVITY, 	// flags
 		S_NULL          // raisestate
-	},	
+	},
 
 	{           // MT_KURAGENBOMB
 		-1,           	// doomednum
@@ -30875,8 +30875,8 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		sfx_None,       // activesound
 		MF_PAIN, 		// flags
 		S_NULL          // raisestate
-	},	
-	
+	},
+
 };
 
 skincolor_t skincolors[MAXSKINCOLORS] = {

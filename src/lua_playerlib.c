@@ -465,36 +465,36 @@ static int player_get(lua_State *L)
 	else if (fastcmp(field,"follower"))
 		LUA_PushUserdata(L, plr->follower, META_MOBJ);
 	//
-	
+
 	// rideroids
 	else if (fastcmp(field,"rideroid"))
 		lua_pushboolean(L, plr->rideroid);
 	else if (fastcmp(field,"rdnodepull"))
-		lua_pushboolean(L, plr->rdnodepull);	
+		lua_pushboolean(L, plr->rdnodepull);
 	else if (fastcmp(field,"rideroidangle"))
 		lua_pushinteger(L, plr->rideroidangle);
 	else if (fastcmp(field,"rideroidspeed"))
-		lua_pushinteger(L, plr->rideroidspeed);	
+		lua_pushinteger(L, plr->rideroidspeed);
 	else if (fastcmp(field,"rideroidrollangle"))
 		lua_pushinteger(L, plr->rideroidrollangle);
 	else if (fastcmp(field,"rdaddmomx"))
-		lua_pushinteger(L, plr->rdaddmomx);		
+		lua_pushinteger(L, plr->rdaddmomx);
 	else if (fastcmp(field,"rdaddmomy"))
-		lua_pushinteger(L, plr->rdaddmomy);	
+		lua_pushinteger(L, plr->rdaddmomy);
 	else if (fastcmp(field,"rdaddmomz"))
-		lua_pushinteger(L, plr->rdaddmomz);	
-	
+		lua_pushinteger(L, plr->rdaddmomz);
+
 	// bungee
 	else if (fastcmp(field,"bungee"))
-		lua_pushinteger(L, plr->bungee);	
-	
+		lua_pushinteger(L, plr->bungee);
+
 	// dlz hover
 	else if (fastcmp(field,"lasthover"))
-		lua_pushinteger(L, plr->lasthover);	
-	
+		lua_pushinteger(L, plr->lasthover);
+
 	// dlz rocket
 	else if (fastcmp(field,"dlzrocket"))
-		lua_pushinteger(L, plr->dlzrocket);	
+		lua_pushinteger(L, plr->dlzrocket);
 	else if (fastcmp(field,"dlzrocketangle"))
 		lua_pushinteger(L, plr->dlzrocketangle);
 	else if (fastcmp(field,"dlzrocketanglev"))
@@ -516,7 +516,7 @@ static int player_get(lua_State *L)
 	else if (fastcmp(field,"seasawmoreangle"))
 		lua_pushinteger(L, plr->seasawmoreangle);
 	else if (fastcmp(field,"seasawdir"))
-		lua_pushboolean(L, plr->seasawdir);		
+		lua_pushboolean(L, plr->seasawdir);
 
 	// turbine
 	else if (fastcmp(field,"turbine"))
@@ -526,8 +526,8 @@ static int player_get(lua_State *L)
 	else if (fastcmp(field,"turbineheight"))
 		lua_pushinteger(L, plr->turbineheight);
 	else if (fastcmp(field,"turbinespd"))
-		lua_pushinteger(L, plr->turbinespd);		
-	
+		lua_pushinteger(L, plr->turbinespd);
+
 	else if (fastcmp(field,"charflags"))
 		lua_pushinteger(L, plr->charflags);
 	else if (fastcmp(field,"followitem"))
@@ -932,7 +932,7 @@ static int player_set(lua_State *L)
 	else if (fastcmp(field,"rdnodepull"))
 		plr->rdnodepull = luaL_checkboolean(L, 3);
 	else if (fastcmp(field,"rideroidangle"))
-		plr->rideroidangle = luaL_checkinteger(L, 3);	
+		plr->rideroidangle = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"rideroidspeed"))
 		plr->rideroidspeed = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"rideroidrollangle"))
@@ -942,11 +942,11 @@ static int player_set(lua_State *L)
 	else if (fastcmp(field,"rdaddmomy"))
 		plr->rdaddmomy = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"rdaddmomz"))
-		plr->rdaddmomz = luaL_checkinteger(L, 3);	
-	
+		plr->rdaddmomz = luaL_checkinteger(L, 3);
+
 	// bungee
 	else if (fastcmp(field,"bungee"))
-		plr->bungee = luaL_checkinteger(L, 3);	
+		plr->bungee = luaL_checkinteger(L, 3);
 
 	// dlz hover
 	else if (fastcmp(field,"lasthover"))
@@ -964,7 +964,7 @@ static int player_set(lua_State *L)
 
 	// seasaws
 	else if (fastcmp(field,"seasaw"))
-		plr->seasaw = luaL_checkboolean(L, 3);	
+		plr->seasaw = luaL_checkboolean(L, 3);
 	else if (fastcmp(field,"seasawcooldown"))
 		plr->seasawcooldown = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"seasawdist"))
@@ -980,14 +980,14 @@ static int player_set(lua_State *L)
 
 	// turbines
 	else if (fastcmp(field,"turbine"))
-		plr->turbine = luaL_checkinteger(L, 3);	
+		plr->turbine = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"turbineangle"))
 		plr->turbineangle = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"turbineheight"))
 		plr->turbineheight = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"turbinespd"))
-		plr->turbinespd = luaL_checkinteger(L, 3);	
-	
+		plr->turbinespd = luaL_checkinteger(L, 3);
+
 	//
 	else if (fastcmp(field,"charflags"))
 		plr->charflags = (UINT32)luaL_checkinteger(L, 3);

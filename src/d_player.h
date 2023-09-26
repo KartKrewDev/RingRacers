@@ -722,7 +722,7 @@ struct player_t
 	tic_t spheredigestion;
 
 	SINT8 glanceDir; // Direction the player is trying to look backwards in
-	
+
 	//////////////
 	// rideroid //
 	//////////////
@@ -734,24 +734,24 @@ struct player_t
 	fixed_t rdaddmomx;			// some speed variables to smoothe things out without fighting with the regular momentum system.
 	fixed_t rdaddmomy;
 	fixed_t rdaddmomz;
-	
+
 	////////////
 	// bungee //
 	////////////
 	UINT8 bungee;				// constants are defined with the object file for the bungee.
-	
+
 	////////////////////
 	// dead line zone //
 	////////////////////
 	// hovers
 	tic_t lasthover;			// used for the hover mobjs
-	
+
 	// rockets
 	tic_t dlzrocket;			// counts up as we stay on a rocket.
 	angle_t dlzrocketangle;		// current travel angle with the rocket.
 	INT32 dlzrocketanglev;		// current vertical travel angle with the rocket. signed instead of angle_t.
 	fixed_t dlzrocketspd;		// current rocket travel speed.
-	
+
 	// seasaws (variables are shared with other seasaw-like objects)
 	boolean seasaw;				// true if using a seasaw
 	tic_t seasawcooldown;		// cooldown to avoid triggering the same seasaw over and over
@@ -760,13 +760,13 @@ struct player_t
 	INT32 seasawangleadd;		// used to spin the seasaw
 	INT32 seasawmoreangle;		// used for reverse sesaws in DLZ.
 	boolean seasawdir;			// flips or not seasaw rotation
-	
+
 	// water palace turbines (or cnz barrels, or whatever the hell people use it for nowadays)
 	tic_t turbine;			// ticker (while true, we set the tracer to the turbine)
 	INT32 turbineangle;		// angle around the turbine. ...Made in INT32 to make it easier to translate from lua
 	fixed_t turbineheight;	// height around the turbine
 	boolean turbinespd;		// if true, we used a sneaker and get the altpath.
-	
+
 	//
 
 	SINT8 lives;
