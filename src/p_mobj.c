@@ -9703,6 +9703,11 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 	case MT_RAINBOWDASHRING:
 		Obj_RainbowDashRingThink(mobj);
 		break;
+	case MT_BALLSWITCH_BALL:
+	{
+		Obj_BallSwitchThink(mobj);
+		break;
+	}
 	default:
 		// check mobj against possible water content, before movement code
 		P_MobjCheckWater(mobj);
@@ -11141,6 +11146,9 @@ mobj_t *P_SpawnMobj(fixed_t x, fixed_t y, fixed_t z, mobjtype_t type)
 			break;
 		case MT_SNEAKERPANELSPAWNER:
 			Obj_SneakerPanelSpawnerSpawn(mobj);
+			break;
+		case MT_BALLSWITCH_BALL:
+			Obj_BallSwitchInit(mobj);
 			break;
 		default:
 			break;
