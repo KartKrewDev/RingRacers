@@ -938,11 +938,11 @@ static int player_set(lua_State *L)
 	else if (fastcmp(field,"rideroidrollangle"))
 		plr->rideroidrollangle = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"rdaddmomx"))
-		plr->rdaddmomx = luaL_checkinteger(L, 3);
+		plr->rdaddmomx = luaL_checkfixed(L, 3);
 	else if (fastcmp(field,"rdaddmomy"))
-		plr->rdaddmomy = luaL_checkinteger(L, 3);
+		plr->rdaddmomy = luaL_checkfixed(L, 3);
 	else if (fastcmp(field,"rdaddmomz"))
-		plr->rdaddmomz = luaL_checkinteger(L, 3);
+		plr->rdaddmomz = luaL_checkfixed(L, 3);
 
 	// bungee
 	else if (fastcmp(field,"bungee"))
@@ -960,7 +960,7 @@ static int player_set(lua_State *L)
 	else if (fastcmp(field,"dlzrocketanglev"))
 		plr->dlzrocketanglev = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"dlzrocketspd"))
-		plr->dlzrocketspd = luaL_checkinteger(L, 3);
+		plr->dlzrocketspd = luaL_checkfixed(L, 3);
 
 	// seasaws
 	else if (fastcmp(field,"seasaw"))
@@ -968,7 +968,7 @@ static int player_set(lua_State *L)
 	else if (fastcmp(field,"seasawcooldown"))
 		plr->seasawcooldown = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"seasawdist"))
-		plr->seasawdist = luaL_checkinteger(L, 3);
+		plr->seasawdist = luaL_checkfixed(L, 3);
 	else if (fastcmp(field,"seasawangle"))
 		plr->seasawangle = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"seasawangleadd"))
@@ -984,7 +984,7 @@ static int player_set(lua_State *L)
 	else if (fastcmp(field,"turbineangle"))
 		plr->turbineangle = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"turbineheight"))
-		plr->turbineheight = luaL_checkinteger(L, 3);
+		plr->turbineheight = luaL_checkfixed(L, 3);
 	else if (fastcmp(field,"turbinespd"))
 		plr->turbinespd = luaL_checkinteger(L, 3);
 

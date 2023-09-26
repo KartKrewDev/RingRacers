@@ -571,11 +571,11 @@ static void P_NetArchivePlayers(savebuffer_t *save)
 		WRITEUINT32(save->p, players[i].dlzrocket);
 		WRITEANGLE(save->p, players[i].dlzrocketangle);
 		WRITEINT32(save->p, players[i].dlzrocketanglev);
-		WRITEUINT32(save->p, players[i].dlzrocketspd);
+		WRITEFIXED(save->p, players[i].dlzrocketspd);
 
 		WRITEUINT8(save->p, players[i].seasaw);
 		WRITEUINT32(save->p, players[i].seasawcooldown);
-		WRITEUINT32(save->p, players[i].seasawdist);
+		WRITEFIXED(save->p, players[i].seasawdist);
 		WRITEINT32(save->p, players[i].seasawangle);
 		WRITEINT32(save->p, players[i].seasawangleadd);
 		WRITEINT32(save->p, players[i].seasawmoreangle);
@@ -1065,8 +1065,8 @@ static void P_NetUnArchivePlayers(savebuffer_t *save)
 		players[i].ringboxaward = READUINT8(save->p);
 		players[i].outrun = READFIXED(save->p);
 
-		players[i].rideroid = READUINT8(save->p);
-		players[i].rdnodepull = READUINT8(save->p);
+		players[i].rideroid = (boolean)READUINT8(save->p);
+		players[i].rdnodepull = (boolean)READUINT8(save->p);
 		players[i].rideroidangle = READINT32(save->p);
 		players[i].rideroidspeed = READFIXED(save->p);
 		players[i].rideroidrollangle = READINT32(save->p);
@@ -1076,25 +1076,25 @@ static void P_NetUnArchivePlayers(savebuffer_t *save)
 
 		players[i].bungee = READUINT8(save->p);
 
-		players[i].lasthover = READUINT32(save->p);
+		players[i].lasthover = (tic_t)READUINT32(save->p);
 
-		players[i].dlzrocket = READUINT32(save->p);
+		players[i].dlzrocket = (tic_t)READUINT32(save->p);
 		players[i].dlzrocketangle = READANGLE(save->p);
 		players[i].dlzrocketanglev = READINT32(save->p);
-		players[i].dlzrocketspd = READUINT32(save->p);
+		players[i].dlzrocketspd = READFIXED(save->p);
 
-		players[i].seasaw = READUINT8(save->p);
+		players[i].seasaw = (boolean)READUINT8(save->p);
 		players[i].seasawcooldown = READUINT32(save->p);
-		players[i].seasawdist = READUINT32(save->p);
+		players[i].seasawdist = READFIXED(save->p);
 		players[i].seasawangle = READINT32(save->p);
 		players[i].seasawangleadd = READINT32(save->p);
 		players[i].seasawmoreangle = READINT32(save->p);
-		players[i].seasawdir = READUINT8(save->p);
+		players[i].seasawdir = (boolean)READUINT8(save->p);
 
-		players[i].turbine = READUINT32(save->p);
+		players[i].turbine = (tic_t)READUINT32(save->p);
 		players[i].turbineangle = READINT32(save->p);
 		players[i].turbineheight = READFIXED(save->p);
-		players[i].turbinespd = READUINT8(save->p);
+		players[i].turbinespd = (boolean)READUINT8(save->p);
 
 		// respawnvars_t
 		players[i].respawn.state = READUINT8(save->p);
