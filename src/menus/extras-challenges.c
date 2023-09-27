@@ -54,6 +54,14 @@ menu_t MISC_StatisticsDef = {
 
 struct challengesmenu_s challengesmenu;
 
+static void M_UpdateChallengeGridVisuals(void)
+{
+	// Currently only updates the completion %.
+	challengesmenu.unlockcount[CC_PERCENT] =
+		(100 * challengesmenu.unlockcount[CC_UNLOCKED])
+			/challengesmenu.unlockcount[CC_TOTAL];
+}
+
 static void M_ChallengesAutoFocus(UINT16 unlockid, boolean fresh)
 {
 	UINT16 i;
@@ -263,6 +271,8 @@ menu_t *M_InterruptMenuWithChallenges(menu_t *desiredmenu)
 			challengesmenu.unlockcount[CC_UNLOCKED]++;
 		}
 
+		M_UpdateChallengeGridVisuals();
+
 		if (challengesmenu.pending)
 			M_ChallengesAutoFocus(newunlock, true);
 		else if (newunlock >= MAXUNLOCKABLES && gamedata->pendingkeyrounds > 0
@@ -312,7 +322,7 @@ static boolean M_CanKeyHiliTile(void)
 
 	// Not a hinted tile OR a fresh board.
 	if (!(challengesmenu.extradata[i].flags & CHE_HINT)
-	&& (challengesmenu.unlockcount[CC_UNLOCKED] + challengesmenu.unlockcount[CC_TALLY] > 0))
+	&& (challengesmenu.unlockcount[CC_UNLOCKED] > 0))
 		return false;
 
 	// Marked as major?
@@ -520,7 +530,9 @@ void M_ChallengesTick(void)
 				Z_Free(challengesmenu.unlockcondition);
 			challengesmenu.unlockcondition = M_BuildConditionSetString(challengesmenu.currentunlock);
 
-			challengesmenu.unlockcount[CC_TALLY]++;
+			challengesmenu.unlockcount[CC_UNLOCKED]++;
+			M_UpdateChallengeGridVisuals();
+
 			challengesmenu.unlockcount[CC_ANIM]++;
 
 			if (challengesmenu.extradata)
@@ -582,15 +594,6 @@ void M_ChallengesTick(void)
 	}
 	else if (!challengesmenu.chaokeyhold)
 	{
-
-		// Tick down the tally. (currently not visible)
-		/*if ((challengesmenu.ticker & 1)
-			&& challengesmenu.unlockcount[CC_TALLY] > 0)
-		{
-			challengesmenu.unlockcount[CC_TALLY]--;
-			challengesmenu.unlockcount[CC_UNLOCKED]++;
-		}*/
-
 		if (challengesmenu.fade > 0)
 		{
 			// Fade decrease.
@@ -631,10 +634,8 @@ boolean M_ChallengesInputs(INT32 ch)
 			{
 				gamedata->unlocked[challengesmenu.currentunlock] = gamedata->unlockpending[challengesmenu.currentunlock] = false;
 
-				if (challengesmenu.unlockcount[CC_TALLY] > 0)
-					challengesmenu.unlockcount[CC_TALLY]--;
-				else
-					challengesmenu.unlockcount[CC_UNLOCKED]--;
+				challengesmenu.unlockcount[CC_UNLOCKED]--;
+				M_UpdateChallengeGridVisuals();
 			}
 #endif
 		}

@@ -1206,7 +1206,7 @@ void M_DrawAddons(void);
 
 #define CC_TOTAL 0
 #define CC_UNLOCKED 1
-#define CC_TALLY 2
+#define CC_PERCENT 2
 #define CC_ANIM 3
 #define CC_CHAOANIM 4
 #define CC_CHAONOPE 5

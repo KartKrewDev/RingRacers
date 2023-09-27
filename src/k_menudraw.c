@@ -5896,7 +5896,6 @@ static void M_DrawChallengePreview(INT32 x, INT32 y)
 }
 
 #define challengesgridstep 22
-#define challengekeybarwidth 50
 
 void M_DrawChallenges(void)
 {
@@ -6046,11 +6045,23 @@ challengedesc:
 
 	// Tally
 	{
-		str = va("%d/%d",
-			challengesmenu.unlockcount[CC_UNLOCKED] + challengesmenu.unlockcount[CC_TALLY],
-			challengesmenu.unlockcount[CC_TOTAL]
-			);
-		V_DrawRightAlignedTimerString(BASEVIDWIDTH-7, 9-challengesmenu.unlockcount[CC_ANIM], 0, str);
+		INT32 textx = BASEVIDWIDTH - 24, texty = 20-challengesmenu.unlockcount[CC_ANIM];
+		UINT8 numbers[3];
+		numbers[0] = ((challengesmenu.unlockcount[CC_PERCENT] / 100) % 10);
+		numbers[1] = ((challengesmenu.unlockcount[CC_PERCENT] / 10) % 10);
+		numbers[2] = (challengesmenu.unlockcount[CC_PERCENT] % 10);
+
+		patch_t *percent = W_CachePatchName("K_SPDML1", PU_CACHE);
+
+		V_DrawScaledPatch(textx + 3, texty, 0, percent);
+
+		i = 3;
+		while (i)
+		{
+			i--;
+			textx -= 6;
+			V_DrawScaledPatch(textx, texty, 0, kp_facenum[numbers[i]]);
+		}
 	}
 
 	// Chao Keys
@@ -6061,34 +6072,50 @@ challengedesc:
 			offs = -offs;
 		offs /= 2;
 
-		if (gamedata->chaokeys > 9)
-		{
-			offs -= 6;
-			if (gamedata->chaokeys > 99)
-				offs -= 2; // as far as we can go
-		}
-
-		fixed_t keyx = (8+offs)*FRACUNIT, keyy = 5*FRACUNIT;
-
-		const char *timerstr = va("%u", gamedata->chaokeys);
-
-		V_DrawTimerString((27+offs), 9-challengesmenu.unlockcount[CC_CHAOANIM], 0, timerstr);
+		fixed_t keyx = (3+offs)*FRACUNIT, keyy = 0;
 
 		K_drawButton(
-			(27 + offs + V_TimerStringWidth(timerstr, 0) + 2) << FRACBITS,
-			11 << FRACBITS,
+			(21 + offs + 2) << FRACBITS,
+			8 << FRACBITS,
 			0, kp_button_c[1],
 			M_MenuExtraHeld(pid)
 		);
 
-		offs = challengekeybarwidth;
+		#define challengekeybarheight 27
+
+		offs = challengekeybarheight;
 		if (gamedata->chaokeys < GDMAX_CHAOKEYS)
-			offs = ((gamedata->pendingkeyroundoffset * challengekeybarwidth)/GDCONVERT_ROUNDSTOKEY);
+			offs = ((gamedata->pendingkeyroundoffset * challengekeybarheight)/GDCONVERT_ROUNDSTOKEY);
 
 		if (offs > 0)
-			V_DrawFill(1, 25, offs, 2, 0);
-		if (offs < challengekeybarwidth)
-			V_DrawFadeFill(1+offs, 25, challengekeybarwidth-offs, 2, 0, 31, challengetransparentstrength);
+			V_DrawFill(1, 1 + (challengekeybarheight-offs), 2, offs, 0);
+		if (offs < challengekeybarheight)
+			V_DrawFadeFill(1, 1, 2, challengekeybarheight-offs, 0, 31, challengetransparentstrength);
+
+		#undef challengekeybarheight
+
+		{
+			INT32 textx = 4, texty = 20-challengesmenu.unlockcount[CC_CHAOANIM];
+			UINT8 numbers[4];
+			numbers[0] = ((gamedata->chaokeys / 100) % 10);
+			numbers[1] = ((gamedata->chaokeys / 10) % 10);
+			numbers[2] = (gamedata->chaokeys % 10);
+
+			numbers[3] = ((gamedata->chaokeys / 1000) % 10);
+			if (numbers[3] != 0)
+			{
+				V_DrawScaledPatch(textx - 1, texty, 0, kp_facenum[numbers[3]]);
+				textx += 5;
+			}
+
+			i = 0;
+			while (i < 3)
+			{
+				V_DrawScaledPatch(textx, texty, 0, kp_facenum[numbers[i]]);
+				textx += 6;
+				i++;
+			}
+		}
 
 		if (challengesmenu.currentunlock < MAXUNLOCKABLES && challengesmenu.chaokeyhold)
 		{
@@ -6202,7 +6229,6 @@ challengedesc:
 
 #undef challengetransparentstrength
 #undef challengesgridstep
-#undef challengekeybarwidth
 
 // Statistics menu
 
