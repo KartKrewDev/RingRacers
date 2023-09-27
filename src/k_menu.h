@@ -1214,9 +1214,11 @@ void M_DrawAddons(void);
 
 #define TILEFLIP_MAX 16
 
-#define CHAOHOLD_MAX (3*TICRATE/2)
-#define CHAOHOLD_BEGIN 7
-#define CHAOHOLD_END 3
+#define CHAOHOLD_STANDARD (40) // (Close to 3*TICRATE/2 after padding, but adjusted to evenly divide by 10)
+#define CHAOHOLD_MAJOR (60) //(3*CHAOHOLD_STANDARD/2)
+#define CHAOHOLD_BEGIN (7)
+#define CHAOHOLD_END (3)
+#define CHAOHOLD_PADDING (CHAOHOLD_BEGIN + CHAOHOLD_END)
 
 extern struct timeattackmenu_s {
 

@@ -6102,18 +6102,25 @@ challengedesc:
 				major = true;
 				tilex += challengesgridstep/2;
 				tiley += challengesgridstep/2;
-				baseradius *= 2;
+				baseradius = (7*baseradius)/4;
 			}
 
-			if (challengesmenu.chaokeyhold >= CHAOHOLD_MAX - CHAOHOLD_END)
+			const INT32 chaohold_duration =
+				CHAOHOLD_PADDING
+				+ (major
+					? CHAOHOLD_MAJOR
+					: CHAOHOLD_STANDARD
+				);
+
+			if (challengesmenu.chaokeyhold >= chaohold_duration - CHAOHOLD_END)
 			{
 				ending = true;
-				baseradius = ((CHAOHOLD_MAX - challengesmenu.chaokeyhold)*baseradius)*(FRACUNIT/CHAOHOLD_END);
+				baseradius = ((chaohold_duration - challengesmenu.chaokeyhold)*baseradius)*(FRACUNIT/CHAOHOLD_END);
 			}
 
 			INT16 specifickeyholdtime = challengesmenu.chaokeyhold;
 
-			for (i = 0; i < (major ? 10 : 1); i++, specifickeyholdtime -= 4)
+			for (i = 0; i < (major ? 10 : 1); i++, specifickeyholdtime -= (CHAOHOLD_STANDARD/10))
 			{
 				fixed_t radius = baseradius;
 				fixed_t thiskeyx, thiskeyy;
@@ -6140,11 +6147,11 @@ challengedesc:
 						radius <<= FRACBITS;
 
 						keyholdrotation += 360 * ((challengesmenu.chaokeyhold - CHAOHOLD_BEGIN))
-							* (FRACUNIT/(CHAOHOLD_MAX - (CHAOHOLD_BEGIN + CHAOHOLD_END)));
+							* (FRACUNIT/(CHAOHOLD_STANDARD)); // intentionally not chaohold_duration
 
 						if (i == 0)
 						{
-							INT32 time = 3 - (keyholdrotation - 1) / (90 * FRACUNIT);
+							INT32 time = (major ? 5 : 3) - (keyholdrotation - 1) / (90 * FRACUNIT);
 							if (time <= 5 && time >= 0)
 								V_DrawScaledPatch(tilex + 2, tiley - 2, 0, kp_eggnum[time]);
 						}

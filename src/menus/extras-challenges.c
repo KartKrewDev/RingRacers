@@ -382,7 +382,14 @@ void M_ChallengesTick(void)
 			{
 				challengesmenu.chaokeyhold++;
 
-				if (challengesmenu.chaokeyhold > CHAOHOLD_MAX)
+				const UINT32 chaohold_duration =
+					CHAOHOLD_PADDING 
+					+ ((unlockables[challengesmenu.currentunlock].majorunlock == true)
+						? CHAOHOLD_MAJOR
+						: CHAOHOLD_STANDARD
+					);
+
+				if (challengesmenu.chaokeyhold > chaohold_duration)
 				{
 #ifndef CHAOKEYDEBUG
 					gamedata->chaokeys -= (unlockables[challengesmenu.currentunlock].majorunlock == true)
