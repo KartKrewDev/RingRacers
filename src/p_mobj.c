@@ -11640,6 +11640,9 @@ static void P_SpawnPrecipitationAt(fixed_t basex, fixed_t basey)
 
 		for (j = 0; j < numparticles; j++)
 		{
+			INT32 floorz;
+			INT32 ceilingz;
+
 			rainmo = P_SpawnPrecipMobj(x, y, z, type);
 
 			if (randomstates > 0)
@@ -11658,8 +11661,19 @@ static void P_SpawnPrecipitationAt(fixed_t basex, fixed_t basey)
 				}
 			}
 
-			// Randomly assign a height, now that floorz is set.
-			rainmo->z = M_RandomRange(rainmo->floorz >> FRACBITS, rainmo->ceilingz >> FRACBITS) << FRACBITS;
+			floorz = rainmo->floorz >> FRACBITS;
+			ceilingz = rainmo->ceilingz >> FRACBITS;
+
+			if (floorz < ceilingz)
+			{
+				// Randomly assign a height, now that floorz is set.
+				rainmo->z = M_RandomRange(floorz, ceilingz) << FRACBITS;
+			}
+			else
+			{
+				// ...except if the floor is above the ceiling.
+				rainmo->z = ceilingz << FRACBITS;
+			}
 		}
 	}
 }
