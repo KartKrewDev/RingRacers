@@ -6088,6 +6088,7 @@ void M_DrawChallenges(void)
 	}
 
 	// Do underlay for everything else early so the bottom of the reticule doesn't get shaded over.
+	if (challengesmenu.currentunlock < MAXUNLOCKABLES)
 	{
 		y = 120;
 
@@ -6191,14 +6192,10 @@ challengedesc:
 			{
 				str = "???"; //M_CreateSecretMenuOption(str);
 			}
-		}
-		else
-		{
-			str = "---";
-		}
 
-		offset = V_LSTitleLowStringWidth(str, 0) / 2;
-		V_DrawLSTitleLowString(BASEVIDWIDTH/2 - offset, y+6, 0, str);
+			offset = V_LSTitleLowStringWidth(str, 0) / 2;
+			V_DrawLSTitleLowString(BASEVIDWIDTH/2 - offset, y+6, 0, str);
+		}
 	}
 
 	// Percentage
