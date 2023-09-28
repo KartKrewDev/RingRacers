@@ -5996,7 +5996,7 @@ static void M_DrawChallengeKeys(INT32 tilex, INT32 tiley)
 
 			if (specifickeyholdtime < CHAOHOLD_BEGIN)
 			{
-				if (specifickeyholdtime < 0)
+				if (specifickeyholdtime <= 0)
 				{
 					// Nothing following will be relevant
 					break;
@@ -6045,7 +6045,15 @@ static void M_DrawChallengeKeys(INT32 tilex, INT32 tiley)
 
 	// The final Chao Key on the stack
 	{
-		V_DrawFixedPatch(keyx, keyy, FRACUNIT, 0, key, NULL);
+		UINT8 *lastkeycolormap = NULL;
+
+		if (gamedata->chaokeys <= keysbeingused)
+		{
+			// Greyed out if there's going to be none left
+			lastkeycolormap = R_GetTranslationColormap(TC_BLINK, SKINCOLOR_BLACK, GTC_MENUCACHE);
+		}
+
+		V_DrawFixedPatch(keyx, keyy, FRACUNIT, 0, key, lastkeycolormap);
 	}
 }
 
