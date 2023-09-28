@@ -56,10 +56,79 @@ struct challengesmenu_s challengesmenu;
 
 static void M_UpdateChallengeGridVisuals(void)
 {
-	// Currently only updates the completion %.
-	challengesmenu.unlockcount[CC_PERCENT] =
-		(100 * challengesmenu.unlockcount[CC_UNLOCKED])
-			/challengesmenu.unlockcount[CC_TOTAL];
+	UINT16 i;
+
+	challengesmenu.unlockcount[CMC_UNLOCKED] = 0;
+	challengesmenu.unlockcount[CMC_TOTAL] = 0;
+
+	for (i = 0; i < MAXUNLOCKABLES; i++)
+	{
+		if (!unlockables[i].conditionset)
+		{
+			continue;
+		}
+
+		challengesmenu.unlockcount[CMC_TOTAL]++;
+
+		if (!gamedata->unlocked[i])
+		{
+			continue;
+		}
+
+		challengesmenu.unlockcount[CMC_UNLOCKED]++;
+
+		if (M_Achieved(unlockables[i].conditionset - 1) == true)
+		{
+			continue;
+		}
+
+		challengesmenu.unlockcount[CMC_KEYED]++;
+
+		if (unlockables[i].majorunlock == false)
+		{
+			continue;
+		}
+
+		challengesmenu.unlockcount[CMC_MAJORSKIPPED]++;
+	}
+
+	challengesmenu.unlockcount[CMC_PERCENT] =
+		(100 * challengesmenu.unlockcount[CMC_UNLOCKED])
+			/challengesmenu.unlockcount[CMC_TOTAL];
+
+	#define medalheight (19)
+
+	challengesmenu.unlockcount[CMC_MEDALID] = 0;
+
+	if (challengesmenu.unlockcount[CMC_PERCENT] == 100)
+	{
+		challengesmenu.unlockcount[CMC_MEDALFILLED] = medalheight;
+
+		if (challengesmenu.unlockcount[CMC_KEYED] == 0)
+		{
+			challengesmenu.unlockcount[CMC_MEDALID] = 2;
+			challengesmenu.unlockcount[CMC_PERCENT]++; // 101%
+		}
+		else if (challengesmenu.unlockcount[CMC_MAJORSKIPPED] == 0)
+		{
+			challengesmenu.unlockcount[CMC_MEDALID] = 1;
+		}
+	}
+	else
+	{
+		challengesmenu.unlockcount[CMC_MEDALFILLED] =
+			(medalheight * challengesmenu.unlockcount[CMC_UNLOCKED])
+				/challengesmenu.unlockcount[CMC_TOTAL];
+
+		if (challengesmenu.unlockcount[CMC_MEDALFILLED] == 0 && challengesmenu.unlockcount[CMC_UNLOCKED] != 0)
+		{
+			// Cheat to give you a sliver of pixel.
+			challengesmenu.unlockcount[CMC_MEDALFILLED] = 1;
+		}
+	}
+
+	challengesmenu.unlockcount[CMC_MEDALBLANK] =
+		medalheight - challengesmenu.unlockcount[CMC_MEDALFILLED];
 }
 
 static void M_ChallengesAutoFocus(UINT16 unlockid, boolean fresh)
@@ -218,7 +287,7 @@ static void M_ChallengesAutoFocus(UINT16 unlockid, boolean fresh)
 
 menu_t *M_InterruptMenuWithChallenges(menu_t *desiredmenu)
 {
-	UINT16 i, newunlock;
+	UINT16 newunlock;
 
 	if (Playing())
 		return desiredmenu;
@@ -254,22 +323,6 @@ menu_t *M_InterruptMenuWithChallenges(menu_t *desiredmenu)
 
 		memset(setup_explosions, 0, sizeof(setup_explosions));
 		memset(&challengesmenu.unlockcount, 0, sizeof(challengesmenu.unlockcount));
-		for (i = 0; i < MAXUNLOCKABLES; i++)
-		{
-			if (!unlockables[i].conditionset)
-			{
-				continue;
-			}
-
-			challengesmenu.unlockcount[CC_TOTAL]++;
-
-			if (!gamedata->unlocked[i])
-			{
-				continue;
-			}
-
-			challengesmenu.unlockcount[CC_UNLOCKED]++;
-		}
 
 		M_UpdateChallengeGridVisuals();
 
@@ -322,7 +375,7 @@ static boolean M_CanKeyHiliTile(void)
 
 	// Not a hinted tile OR a fresh board.
 	if (!(challengesmenu.extradata[i].flags & CHE_HINT)
-	&& (challengesmenu.unlockcount[CC_UNLOCKED] > 0))
+	&& (challengesmenu.unlockcount[CMC_UNLOCKED] > 0))
 		return false;
 
 	// Marked as major?
@@ -353,7 +406,7 @@ void M_ChallengesTick(void)
 		if (setup_explosions[i].tics > 0)
 			setup_explosions[i].tics--;
 	}
-	for (i = CC_ANIM; i < CC_MAX; i++)
+	for (i = CMC_ANIM; i < CMC_MAX; i++)
 	{
 		if (challengesmenu.unlockcount[i] > 0)
 			challengesmenu.unlockcount[i]--;
@@ -406,7 +459,7 @@ void M_ChallengesTick(void)
 						? 10 : 1;
 #endif
 					challengesmenu.chaokeyhold = 0;
-					challengesmenu.unlockcount[CC_CHAOANIM]++;
+					challengesmenu.unlockcount[CMC_CHAOANIM]++;
 
 					S_StartSound(NULL, sfx_chchng);
 
@@ -419,7 +472,7 @@ void M_ChallengesTick(void)
 		else
 		{
 			challengesmenu.chaokeyhold = 0;
-			challengesmenu.unlockcount[CC_CHAONOPE] = 6;
+			challengesmenu.unlockcount[CMC_CHAONOPE] = 6;
 			S_StartSound(NULL, sfx_s3k7b); //sfx_s3kb2
 		}
 	}
@@ -479,7 +532,7 @@ void M_ChallengesTick(void)
 					S_StartSound(NULL, sfx_achiev);
 					gamedata->keyspending--;
 					gamedata->chaokeys++;
-					challengesmenu.unlockcount[CC_CHAOANIM]++;
+					challengesmenu.unlockcount[CMC_CHAOANIM]++;
 
 					if (gamedata->musicstate < GDMUSIC_KEYG)
 						gamedata->musicstate = GDMUSIC_KEYG;
@@ -529,11 +582,9 @@ void M_ChallengesTick(void)
 			if (challengesmenu.unlockcondition)
 				Z_Free(challengesmenu.unlockcondition);
 			challengesmenu.unlockcondition = M_BuildConditionSetString(challengesmenu.currentunlock);
-
-			challengesmenu.unlockcount[CC_UNLOCKED]++;
 			M_UpdateChallengeGridVisuals();
 
-			challengesmenu.unlockcount[CC_ANIM]++;
+			challengesmenu.unlockcount[CMC_ANIM]++;
 
 			if (challengesmenu.extradata)
 			{
@@ -626,7 +677,7 @@ boolean M_ChallengesInputs(INT32 ch)
 		}
 		else
 		{
-			challengesmenu.unlockcount[CC_CHAONOPE] = 6;
+			challengesmenu.unlockcount[CMC_CHAONOPE] = 6;
 			S_StartSound(NULL, sfx_s3k7b); //sfx_s3kb2
 
 #ifdef CHAOKEYDEBUG
@@ -634,7 +685,6 @@ boolean M_ChallengesInputs(INT32 ch)
 			{
 				gamedata->unlocked[challengesmenu.currentunlock] = gamedata->unlockpending[challengesmenu.currentunlock] = false;
 
-				challengesmenu.unlockcount[CC_UNLOCKED]--;
 				M_UpdateChallengeGridVisuals();
 			}
 #endif
@@ -645,7 +695,7 @@ boolean M_ChallengesInputs(INT32 ch)
 	else if (M_MenuButtonPressed(pid, MBT_Z))
 	{
 		gamedata->chaokeys++;
-		challengesmenu.unlockcount[CC_CHAOANIM]++;
+		challengesmenu.unlockcount[CMC_CHAOANIM]++;
 		S_StartSound(NULL, sfx_dbgsal);
 		return true;
 	}

@@ -5902,7 +5902,7 @@ static void M_DrawChallengeKeys(INT32 tilex, INT32 tiley)
 	const UINT8 pid = 0;
 
 	patch_t *key = W_CachePatchName("UN_CHA00", PU_CACHE);
-	INT32 offs = challengesmenu.unlockcount[CC_CHAONOPE];
+	INT32 offs = challengesmenu.unlockcount[CMC_CHAONOPE];
 	if (offs & 1)
 		offs = -offs;
 	offs /= 2;
@@ -5935,7 +5935,7 @@ static void M_DrawChallengeKeys(INT32 tilex, INT32 tiley)
 
 	// Counter
 	{
-		INT32 textx = 4, texty = 20-challengesmenu.unlockcount[CC_CHAOANIM];
+		INT32 textx = 4, texty = 20-challengesmenu.unlockcount[CMC_CHAOANIM];
 		UINT8 numbers[4];
 		numbers[0] = ((gamedata->chaokeys / 100) % 10);
 		numbers[1] = ((gamedata->chaokeys / 10) % 10);
@@ -6201,13 +6201,50 @@ challengedesc:
 		V_DrawLSTitleLowString(BASEVIDWIDTH/2 - offset, y+6, 0, str);
 	}
 
-	// Tally
+	// Percentage
 	{
-		INT32 textx = BASEVIDWIDTH - 24, texty = 20-challengesmenu.unlockcount[CC_ANIM];
+		patch_t *medal = W_CachePatchName(
+			va("UN_MDL%c", '0' + challengesmenu.unlockcount[CMC_MEDALID]),
+			PU_CACHE
+		);
+
+		fixed_t medalchopy = 1;
+
+		for (i = CMC_MEDALBLANK; i <= CMC_MEDALFILLED; i++)
+		{
+			if (challengesmenu.unlockcount[i] == 0)
+				continue;
+
+			V_SetClipRect(
+				0,
+				medalchopy << FRACBITS,
+				BASEVIDWIDTH << FRACBITS,
+				(medalchopy + challengesmenu.unlockcount[CMC_MEDALBLANK]) << FRACBITS,
+				0
+			);
+
+			UINT8 *medalcolormap = NULL;
+			if (i == CMC_MEDALBLANK)
+			{
+				medalcolormap = R_GetTranslationColormap(TC_BLINK, SKINCOLOR_BLACK, GTC_MENUCACHE);
+			}
+			else if (challengesmenu.unlockcount[CMC_MEDALID] == 0)
+			{
+				medalcolormap = R_GetTranslationColormap(TC_DEFAULT, M_GetCvPlayerColor(0), GTC_MENUCACHE);
+			}
+
+			V_DrawFixedPatch((BASEVIDWIDTH - 32)*FRACUNIT, 1*FRACUNIT, FRACUNIT, 0, medal, medalcolormap);
+
+			V_ClearClipRect();
+
+			medalchopy += challengesmenu.unlockcount[i];
+		}
+
+		INT32 textx = BASEVIDWIDTH - 24, texty = 20-challengesmenu.unlockcount[CMC_ANIM];
 		UINT8 numbers[3];
-		numbers[0] = ((challengesmenu.unlockcount[CC_PERCENT] / 100) % 10);
-		numbers[1] = ((challengesmenu.unlockcount[CC_PERCENT] / 10) % 10);
-		numbers[2] = (challengesmenu.unlockcount[CC_PERCENT] % 10);
+		numbers[0] = ((challengesmenu.unlockcount[CMC_PERCENT] / 100) % 10);
+		numbers[1] = ((challengesmenu.unlockcount[CMC_PERCENT] / 10) % 10);
+		numbers[2] = (challengesmenu.unlockcount[CMC_PERCENT] % 10);
 
 		patch_t *percent = W_CachePatchName("K_SPDML1", PU_CACHE);
 
