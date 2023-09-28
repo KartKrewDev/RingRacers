@@ -5897,10 +5897,160 @@ static void M_DrawChallengePreview(INT32 x, INT32 y)
 
 #define challengesgridstep 22
 
-void M_DrawChallenges(void)
+static void M_DrawChallengeKeys(INT32 tilex, INT32 tiley)
 {
 	const UINT8 pid = 0;
 
+	patch_t *key = W_CachePatchName("UN_CHA00", PU_CACHE);
+	INT32 offs = challengesmenu.unlockcount[CC_CHAONOPE];
+	if (offs & 1)
+		offs = -offs;
+	offs /= 2;
+
+	fixed_t keyx = (3+offs)*FRACUNIT, keyy = 0;
+
+	// Button prompt
+	K_drawButton(
+		(21 + offs + 2) << FRACBITS,
+		8 << FRACBITS,
+		0, kp_button_c[1],
+		M_MenuExtraHeld(pid)
+	);
+
+	// Meter of rounds played that contribute to Chao Key generation
+	{
+		#define challengekeybarheight 27
+
+		offs = challengekeybarheight;
+		if (gamedata->chaokeys < GDMAX_CHAOKEYS)
+			offs = ((gamedata->pendingkeyroundoffset * challengekeybarheight)/GDCONVERT_ROUNDSTOKEY);
+
+		if (offs > 0)
+			V_DrawFill(1, 1 + (challengekeybarheight-offs), 2, offs, 0);
+		if (offs < challengekeybarheight)
+			V_DrawFadeFill(1, 1, 2, challengekeybarheight-offs, 0, 31, challengetransparentstrength);
+
+		#undef challengekeybarheight
+	}
+
+	// Counter
+	{
+		INT32 textx = 4, texty = 20-challengesmenu.unlockcount[CC_CHAOANIM];
+		UINT8 numbers[4];
+		numbers[0] = ((gamedata->chaokeys / 100) % 10);
+		numbers[1] = ((gamedata->chaokeys / 10) % 10);
+		numbers[2] = (gamedata->chaokeys % 10);
+
+		numbers[3] = ((gamedata->chaokeys / 1000) % 10);
+		if (numbers[3] != 0)
+		{
+			V_DrawScaledPatch(textx - 1, texty, 0, kp_facenum[numbers[3]]);
+			textx += 5;
+		}
+
+		UINT8 i = 0;
+		while (i < 3)
+		{
+			V_DrawScaledPatch(textx, texty, 0, kp_facenum[numbers[i]]);
+			textx += 6;
+			i++;
+		}
+	}
+
+	UINT8 keysbeingused = 0;
+
+	// The Chao Key swooping animation
+	if (challengesmenu.currentunlock < MAXUNLOCKABLES && challengesmenu.chaokeyhold)
+	{
+		fixed_t baseradius = challengesgridstep;
+
+		boolean major = false, ending = false;
+		if (unlockables[challengesmenu.currentunlock].majorunlock == true)
+		{
+			major = true;
+			tilex += challengesgridstep/2;
+			tiley += challengesgridstep/2;
+			baseradius = (7*baseradius)/4;
+		}
+
+		const INT32 chaohold_duration =
+			CHAOHOLD_PADDING
+			+ (major
+				? CHAOHOLD_MAJOR
+				: CHAOHOLD_STANDARD
+			);
+
+		if (challengesmenu.chaokeyhold >= chaohold_duration - CHAOHOLD_END)
+		{
+			ending = true;
+			baseradius = ((chaohold_duration - challengesmenu.chaokeyhold)*baseradius)*(FRACUNIT/CHAOHOLD_END);
+		}
+
+		INT16 specifickeyholdtime = challengesmenu.chaokeyhold;
+
+		for (; keysbeingused < (major ? 10 : 1); keysbeingused++, specifickeyholdtime -= (CHAOHOLD_STANDARD/10))
+		{
+			fixed_t radius = baseradius;
+			fixed_t thiskeyx, thiskeyy;
+			fixed_t keyholdrotation = 0;
+
+			if (specifickeyholdtime < CHAOHOLD_BEGIN)
+			{
+				if (specifickeyholdtime < 0)
+				{
+					// Nothing following will be relevant
+					break;
+				}
+
+				radius = (specifickeyholdtime*radius)*(FRACUNIT/CHAOHOLD_BEGIN);
+				thiskeyx = keyx + specifickeyholdtime*((tilex*FRACUNIT) - keyx)/CHAOHOLD_BEGIN;
+				thiskeyy = keyy + specifickeyholdtime*((tiley*FRACUNIT) - keyy)/CHAOHOLD_BEGIN;
+			}
+			else
+			{
+				keyholdrotation = (-36 * keysbeingused) * FRACUNIT; // 360/10
+
+				if (ending == false)
+				{
+					radius <<= FRACBITS;
+
+					keyholdrotation += 360 * ((challengesmenu.chaokeyhold - CHAOHOLD_BEGIN))
+						* (FRACUNIT/(CHAOHOLD_STANDARD)); // intentionally not chaohold_duration
+
+					if (keysbeingused == 0)
+					{
+						INT32 time = (major ? 5 : 3) - (keyholdrotation - 1) / (90 * FRACUNIT);
+						if (time <= 5 && time >= 0)
+							V_DrawScaledPatch(tilex + 2, tiley - 2, 0, kp_eggnum[time]);
+					}
+				}
+
+				thiskeyx = tilex*FRACUNIT;
+				thiskeyy = tiley*FRACUNIT;
+			}
+
+			if (radius != 0)
+			{
+				angle_t ang = (FixedAngle(
+					keyholdrotation
+					) >> ANGLETOFINESHIFT) & FINEMASK;
+
+				thiskeyx += FixedMul(radius, FINESINE(ang));
+				thiskeyy -= FixedMul(radius, FINECOSINE(ang));
+			}
+
+			V_DrawFixedPatch(thiskeyx, thiskeyy, FRACUNIT, 0, key, NULL);
+		}
+	}
+
+	// The final Chao Key on the stack
+	{
+		V_DrawFixedPatch(keyx, keyy, FRACUNIT, 0, key, NULL);
+	}
+}
+
+void M_DrawChallenges(void)
+{
 	INT32 x = currentMenu->x, explodex, selectx = 0, selecty = 0;
 	INT32 y;
 	INT16 i, j;
@@ -6064,146 +6214,8 @@ challengedesc:
 		}
 	}
 
-	// Chao Keys
-	{
-		patch_t *key = W_CachePatchName("UN_CHA00", PU_CACHE);
-		INT32 offs = challengesmenu.unlockcount[CC_CHAONOPE];
-		if (offs & 1)
-			offs = -offs;
-		offs /= 2;
-
-		fixed_t keyx = (3+offs)*FRACUNIT, keyy = 0;
-
-		K_drawButton(
-			(21 + offs + 2) << FRACBITS,
-			8 << FRACBITS,
-			0, kp_button_c[1],
-			M_MenuExtraHeld(pid)
-		);
-
-		#define challengekeybarheight 27
-
-		offs = challengekeybarheight;
-		if (gamedata->chaokeys < GDMAX_CHAOKEYS)
-			offs = ((gamedata->pendingkeyroundoffset * challengekeybarheight)/GDCONVERT_ROUNDSTOKEY);
-
-		if (offs > 0)
-			V_DrawFill(1, 1 + (challengekeybarheight-offs), 2, offs, 0);
-		if (offs < challengekeybarheight)
-			V_DrawFadeFill(1, 1, 2, challengekeybarheight-offs, 0, 31, challengetransparentstrength);
-
-		#undef challengekeybarheight
-
-		{
-			INT32 textx = 4, texty = 20-challengesmenu.unlockcount[CC_CHAOANIM];
-			UINT8 numbers[4];
-			numbers[0] = ((gamedata->chaokeys / 100) % 10);
-			numbers[1] = ((gamedata->chaokeys / 10) % 10);
-			numbers[2] = (gamedata->chaokeys % 10);
-
-			numbers[3] = ((gamedata->chaokeys / 1000) % 10);
-			if (numbers[3] != 0)
-			{
-				V_DrawScaledPatch(textx - 1, texty, 0, kp_facenum[numbers[3]]);
-				textx += 5;
-			}
-
-			i = 0;
-			while (i < 3)
-			{
-				V_DrawScaledPatch(textx, texty, 0, kp_facenum[numbers[i]]);
-				textx += 6;
-				i++;
-			}
-		}
-
-		if (challengesmenu.currentunlock < MAXUNLOCKABLES && challengesmenu.chaokeyhold)
-		{
-			fixed_t tilex = selectx, tiley = selecty;
-
-			fixed_t baseradius = challengesgridstep;
-
-			boolean major = false, ending = false;
-			if (unlockables[challengesmenu.currentunlock].majorunlock == true)
-			{
-				major = true;
-				tilex += challengesgridstep/2;
-				tiley += challengesgridstep/2;
-				baseradius = (7*baseradius)/4;
-			}
-
-			const INT32 chaohold_duration =
-				CHAOHOLD_PADDING
-				+ (major
-					? CHAOHOLD_MAJOR
-					: CHAOHOLD_STANDARD
-				);
-
-			if (challengesmenu.chaokeyhold >= chaohold_duration - CHAOHOLD_END)
-			{
-				ending = true;
-				baseradius = ((chaohold_duration - challengesmenu.chaokeyhold)*baseradius)*(FRACUNIT/CHAOHOLD_END);
-			}
-
-			INT16 specifickeyholdtime = challengesmenu.chaokeyhold;
-
-			for (i = 0; i < (major ? 10 : 1); i++, specifickeyholdtime -= (CHAOHOLD_STANDARD/10))
-			{
-				fixed_t radius = baseradius;
-				fixed_t thiskeyx, thiskeyy;
-				fixed_t keyholdrotation = 0;
-
-				if (specifickeyholdtime < CHAOHOLD_BEGIN)
-				{
-					if (specifickeyholdtime < 0)
-					{
-						// Nothing following will be relevant
-						break;
-					}
-
-					radius = (specifickeyholdtime*radius)*(FRACUNIT/CHAOHOLD_BEGIN);
-					thiskeyx = keyx + specifickeyholdtime*((tilex*FRACUNIT) - keyx)/CHAOHOLD_BEGIN;
-					thiskeyy = keyy + specifickeyholdtime*((tiley*FRACUNIT) - keyy)/CHAOHOLD_BEGIN;
-				}
-				else
-				{
-					keyholdrotation = (-36 * i) * FRACUNIT;
-
-					if (ending == false)
-					{
-						radius <<= FRACBITS;
-
-						keyholdrotation += 360 * ((challengesmenu.chaokeyhold - CHAOHOLD_BEGIN))
-							* (FRACUNIT/(CHAOHOLD_STANDARD)); // intentionally not chaohold_duration
-
-						if (i == 0)
-						{
-							INT32 time = (major ? 5 : 3) - (keyholdrotation - 1) / (90 * FRACUNIT);
-							if (time <= 5 && time >= 0)
-								V_DrawScaledPatch(tilex + 2, tiley - 2, 0, kp_eggnum[time]);
-						}
-					}
-
-					thiskeyx = tilex*FRACUNIT;
-					thiskeyy = tiley*FRACUNIT;
-				}
-
-				if (radius != 0)
-				{
-					angle_t ang = (FixedAngle(
-						keyholdrotation
-						) >> ANGLETOFINESHIFT) & FINEMASK;
-
-					thiskeyx += FixedMul(radius, FINESINE(ang));
-					thiskeyy -= FixedMul(radius, FINECOSINE(ang));
-				}
-
-				V_DrawFixedPatch(thiskeyx, thiskeyy, FRACUNIT, 0, key, NULL);
-			}
-		}
-
-		V_DrawFixedPatch(keyx, keyy, FRACUNIT, 0, key, NULL);
-	}
+	// Chao Key information
+	M_DrawChallengeKeys(selectx, selecty);
 
 	// Derived from M_DrawCharSelectPreview
 	x = 40;
