@@ -5907,30 +5907,28 @@ static void M_DrawChallengeKeys(INT32 tilex, INT32 tiley)
 		offs = -offs;
 	offs /= 2;
 
-	fixed_t keyx = (3+offs)*FRACUNIT, keyy = 0;
+	fixed_t keyx = (8+offs)*FRACUNIT, keyy = 0;
 
 	// Button prompt
 	K_drawButton(
-		(21 + offs + 2) << FRACBITS,
-		8 << FRACBITS,
+		24 << FRACBITS,
+		16 << FRACBITS,
 		0, kp_button_c[1],
 		M_MenuExtraHeld(pid)
 	);
 
-	// Meter of rounds played that contribute to Chao Key generation
+	// Metyr of rounds played that contribute to Chao Key generation
 	{
-		#define challengekeybarheight 27
+		const INT32 keybarlen = 36, keybary = 28;
 
-		offs = challengekeybarheight;
+		offs = keybarlen;
 		if (gamedata->chaokeys < GDMAX_CHAOKEYS)
-			offs = ((gamedata->pendingkeyroundoffset * challengekeybarheight)/GDCONVERT_ROUNDSTOKEY);
+			offs = ((gamedata->pendingkeyroundoffset * keybarlen)/GDCONVERT_ROUNDSTOKEY);
 
 		if (offs > 0)
-			V_DrawFill(1, 1 + (challengekeybarheight-offs), 2, offs, 0);
-		if (offs < challengekeybarheight)
-			V_DrawFadeFill(1, 1, 2, challengekeybarheight-offs, 0, 31, challengetransparentstrength);
-
-		#undef challengekeybarheight
+			V_DrawFill(1, keybary, offs, 1, 0);
+		if (offs < keybarlen)
+			V_DrawFadeFill(1+offs, keybary, keybarlen-offs, 1, 0, 31, challengetransparentstrength);
 	}
 
 	// Counter
@@ -5944,8 +5942,8 @@ static void M_DrawChallengeKeys(INT32 tilex, INT32 tiley)
 		numbers[3] = ((gamedata->chaokeys / 1000) % 10);
 		if (numbers[3] != 0)
 		{
-			V_DrawScaledPatch(textx - 1, texty, 0, kp_facenum[numbers[3]]);
-			textx += 5;
+			V_DrawScaledPatch(textx - 4, texty, 0, kp_facenum[numbers[3]]);
+			textx += 2;
 		}
 
 		UINT8 i = 0;
@@ -6198,6 +6196,18 @@ challengedesc:
 		}
 	}
 
+	// Wings
+	{
+		const INT32 endy = 18, endlen = 38;
+		patch_t *endwing = W_CachePatchName("K_BOSB01", PU_CACHE);
+
+		V_DrawFill(0, endy, endlen, 11, 24);
+		V_DrawFixedPatch(endlen*FRACUNIT, endy*FRACUNIT, FRACUNIT, V_FLIP, endwing, NULL);
+
+		V_DrawFill(BASEVIDWIDTH - endlen, endy, endlen, 11, 24);
+		V_DrawFixedPatch((BASEVIDWIDTH - endlen)*FRACUNIT, endy*FRACUNIT, FRACUNIT, 0, endwing, NULL);
+	}
+
 	// Percentage
 	{
 		patch_t *medal = W_CachePatchName(
@@ -6230,14 +6240,14 @@ challengedesc:
 				medalcolormap = R_GetTranslationColormap(TC_DEFAULT, M_GetCvPlayerColor(0), GTC_MENUCACHE);
 			}
 
-			V_DrawFixedPatch((BASEVIDWIDTH - 32)*FRACUNIT, 1*FRACUNIT, FRACUNIT, 0, medal, medalcolormap);
+			V_DrawFixedPatch((BASEVIDWIDTH - 31)*FRACUNIT, 1*FRACUNIT, FRACUNIT, 0, medal, medalcolormap);
 
 			V_ClearClipRect();
 
 			medalchopy += challengesmenu.unlockcount[i];
 		}
 
-		INT32 textx = BASEVIDWIDTH - 24, texty = 20-challengesmenu.unlockcount[CMC_ANIM];
+		INT32 textx = BASEVIDWIDTH - 21, texty = 20-challengesmenu.unlockcount[CMC_ANIM];
 		UINT8 numbers[3];
 		numbers[0] = ((challengesmenu.unlockcount[CMC_PERCENT] / 100) % 10);
 		numbers[1] = ((challengesmenu.unlockcount[CMC_PERCENT] / 10) % 10);
@@ -6245,7 +6255,7 @@ challengedesc:
 
 		patch_t *percent = W_CachePatchName("K_SPDML1", PU_CACHE);
 
-		V_DrawScaledPatch(textx + 3, texty, 0, percent);
+		V_DrawScaledPatch(textx + 2, texty, 0, percent);
 
 		i = 3;
 		while (i)
