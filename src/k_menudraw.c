@@ -5914,7 +5914,7 @@ static void M_DrawChallengeKeys(INT32 tilex, INT32 tiley)
 		24 << FRACBITS,
 		16 << FRACBITS,
 		0, kp_button_c[1],
-		M_MenuExtraHeld(pid)
+		menumessage.active == false && M_MenuExtraHeld(pid) == true
 	);
 
 	// Metyr of rounds played that contribute to Chao Key generation

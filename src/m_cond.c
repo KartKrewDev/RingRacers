@@ -658,6 +658,8 @@ void M_ClearStats(void)
 	gamedata->eversavedreplay = false;
 	gamedata->everseenspecial = false;
 	gamedata->evercrashed = false;
+	gamedata->chaokeytutorial = false;
+	gamedata->majorkeyskipattempted = false;
 	gamedata->musicstate = GDMUSIC_NONE;
 
 	gamedata->importprofilewins = false;

@@ -1259,7 +1259,7 @@ extern struct challengesmenu_s {
 	boolean pending;
 	boolean requestnew;
 
-	boolean chaokeyadd;
+	boolean chaokeyadd, keywasadded;
 	UINT8 chaokeyhold;
 
 	boolean requestflip;

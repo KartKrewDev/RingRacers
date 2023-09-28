@@ -311,6 +311,8 @@ struct gamedata_t
 	boolean eversavedreplay;
 	boolean everseenspecial;
 	boolean evercrashed;
+	boolean chaokeytutorial;
+	boolean majorkeyskipattempted;
 	gdmusic_t musicstate;
 
 	// BACKWARDS COMPAT ASSIST

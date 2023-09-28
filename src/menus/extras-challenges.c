@@ -308,6 +308,7 @@ menu_t *M_InterruptMenuWithChallenges(menu_t *desiredmenu)
 		challengesmenu.requestflip = false;
 		challengesmenu.requestnew = false;
 		challengesmenu.chaokeyadd = false;
+		challengesmenu.keywasadded = false;
 		challengesmenu.chaokeyhold = 0;
 		challengesmenu.currentunlock = MAXUNLOCKABLES;
 		challengesmenu.unlockcondition = NULL;
@@ -390,6 +391,55 @@ static boolean M_CanKeyHiliTile(void)
 
 	// All good!
 	return true;
+}
+
+enum {
+	CCTUTORIAL_KEYGEN = 0,
+	CCTUTORIAL_MAJORSKIP,
+} cctutorial_e;
+
+static void M_ChallengesTutorial(UINT8 option)
+{
+	switch (option)
+	{
+		case CCTUTORIAL_KEYGEN:
+		{
+			M_StartMessage("Challenges & Chao Keys",
+				va(M_GetText(
+				"You just generated a Chao Key!\n"
+				"\n"
+				"They can be used to skip your way past\n"
+				"any Challenges you can see a hint for.\n"
+				"\n"
+				"But use them wisely - it'll take\n"
+				"%u rounds to pick up another.\n"
+				), GDCONVERT_ROUNDSTOKEY
+				), NULL, MM_NOTHING, NULL, NULL);
+			gamedata->chaokeytutorial = true;
+			break;
+		}
+		case CCTUTORIAL_MAJORSKIP:
+		{
+			M_StartMessage("Major Challenges & Chao Keys",
+				M_GetText(
+				"The larger tiles are Major Challenges.\n"
+				"They are significant tests of skill.\n"
+				"\n"
+				"If you're struggling and need to skip one,\n"
+				"not only will it cost you 10 Chao Keys, but\n"
+				"every nearby Challenge must be unlocked!\n"
+				), NULL, MM_NOTHING, NULL, "Wow, that's a lot");
+			gamedata->majorkeyskipattempted = true;
+			break;
+		}
+		default:
+		{
+			M_StartMessage("M_ChallengesTutorial ERROR",
+				"Invalid argument!?\n",
+				NULL, MM_NOTHING, NULL, NULL);
+			break;
+		}
+	}
 }
 
 void M_ChallengesTick(void)
@@ -536,6 +586,8 @@ void M_ChallengesTick(void)
 
 					if (gamedata->musicstate < GDMUSIC_KEYG)
 						gamedata->musicstate = GDMUSIC_KEYG;
+
+					challengesmenu.keywasadded = true;
 				}
 			}
 		}
@@ -652,6 +704,12 @@ void M_ChallengesTick(void)
 			{
 				// Play music the moment control returns.
 				M_PlayMenuJam();
+
+				if (gamedata->chaokeytutorial == false
+				&& challengesmenu.keywasadded == true)
+				{
+					M_ChallengesTutorial(CCTUTORIAL_KEYGEN);
+				}
 			}
 		}
 	}
@@ -671,7 +729,15 @@ boolean M_ChallengesInputs(INT32 ch)
 	}
 	else if (M_MenuExtraPressed(pid))
 	{
-		if (M_CanKeyHiliTile())
+		if (gamedata->chaokeytutorial == true
+			&& gamedata->majorkeyskipattempted == false
+			&& challengesmenu.currentunlock < MAXUNLOCKABLES
+			&& gamedata->unlocked[challengesmenu.currentunlock] == false
+			&& unlockables[challengesmenu.currentunlock].majorunlock == true)
+		{
+			M_ChallengesTutorial(CCTUTORIAL_MAJORSKIP);
+		}
+		else if (M_CanKeyHiliTile())
 		{
 			challengesmenu.chaokeyhold = 1;
 		}
@@ -696,6 +762,12 @@ boolean M_ChallengesInputs(INT32 ch)
 	{
 		gamedata->chaokeys++;
 		challengesmenu.unlockcount[CMC_CHAOANIM]++;
+
+		if (gamedata->chaokeytutorial == false)
+		{
+			M_ChallengesTutorial(CCTUTORIAL_KEYGEN);
+		}
+
 		S_StartSound(NULL, sfx_dbgsal);
 		return true;
 	}

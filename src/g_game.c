@@ -4390,12 +4390,15 @@ void G_LoadGameSettings(void)
 #define GD_VERSIONCHECK 0xBA5ED123 // Change every major version, as usual
 #define GD_VERSIONMINOR 7 // Change every format update
 
+// You can't rearrange these without a special format update
 typedef enum
 {
 	GDEVER_ADDON = 1,
 	GDEVER_CREDITS = 1<<1,
 	GDEVER_REPLAY = 1<<2,
 	GDEVER_SPECIAL = 1<<3,
+	GDEVER_KEYTUTORIAL = 1<<4,
+	GDEVER_KEYMAJORSKIP = 1<<5,
 } gdeverdone_t;
 
 static const char *G_GameDataFolder(void)
@@ -4528,6 +4531,8 @@ void G_LoadGameData(void)
 			gamedata->everfinishedcredits = !!(everflags & GDEVER_CREDITS);
 			gamedata->eversavedreplay = !!(everflags & GDEVER_REPLAY);
 			gamedata->everseenspecial = !!(everflags & GDEVER_SPECIAL);
+			gamedata->chaokeytutorial = !!(everflags & GDEVER_KEYTUTORIAL);
+			gamedata->majorkeyskipattempted = !!(everflags & GDEVER_KEYMAJORSKIP);
 		}
 		else
 		{
@@ -5206,6 +5211,10 @@ void G_SaveGameData(void)
 			everflags |= GDEVER_REPLAY;
 		if (gamedata->everseenspecial)
 			everflags |= GDEVER_SPECIAL;
+		if (gamedata->chaokeytutorial)
+			everflags |= GDEVER_KEYTUTORIAL;
+		if (gamedata->majorkeyskipattempted)
+			everflags |= GDEVER_KEYMAJORSKIP;
 
 		WRITEUINT32(save.p, everflags); // 4
 	}
