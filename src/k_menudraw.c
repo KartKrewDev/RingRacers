@@ -5600,7 +5600,7 @@ static void M_DrawChallengePreview(INT32 x, INT32 y)
 					break;
 				}
 
-				M_DrawCharacterIconAndEngine(4, BASEVIDHEIGHT-(4+16), i, colormap, (i == skin));
+				M_DrawCharacterIconAndEngine(4, BASEVIDHEIGHT-(4+16), i, colormap, (i != skin));
 			}
 			break;
 		}
