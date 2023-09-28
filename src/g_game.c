@@ -4388,7 +4388,7 @@ void G_LoadGameSettings(void)
 }
 
 #define GD_VERSIONCHECK 0xBA5ED123 // Change every major version, as usual
-#define GD_VERSIONMINOR 6 // Change every format update
+#define GD_VERSIONMINOR 7 // Change every format update
 
 typedef enum
 {
@@ -4481,7 +4481,7 @@ void G_LoadGameData(void)
 		FIL_WriteFile(va("%s" PATHSEP "%s.bak", srb2home, gamedatafilename), save.buffer, save.size);
 	}
 
-	if ((versionMinor == 0 || versionMinor == 1)
+	if ((versionMinor <= 6)
 #ifdef DEVELOP
 		|| M_CheckParm("-resetchallengegrid")
 #endif
@@ -4593,7 +4593,7 @@ void G_LoadGameData(void)
 	if (gridunusable)
 	{
 		UINT16 burn = READUINT16(save.p); // Previous challengegridwidth
-		UINT8 height = (versionMinor > 0) ? CHALLENGEGRIDHEIGHT : 5;
+		UINT8 height = (versionMinor && versionMinor <= 6) ? 4 : CHALLENGEGRIDHEIGHT;
 		save.p += (burn * height * unlockreadsize); // Step over previous grid data
 
 		gamedata->challengegridwidth = 0;

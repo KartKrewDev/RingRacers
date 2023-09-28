@@ -21,7 +21,7 @@ menu_t MISC_ChallengesDef = {
 	&MainDef,
 	0,
 	MISC_ChallengesStatsDummyMenu,
-	BASEVIDWIDTH/2, 30,
+	BASEVIDWIDTH/2, 11,
 	0, 0,
 	0,
 	"UNLOCK",

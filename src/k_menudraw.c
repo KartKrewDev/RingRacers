@@ -5572,7 +5572,7 @@ static void M_DrawChallengePreview(INT32 x, INT32 y)
 			addflags ^= V_FLIP; // This sprite is left/right flipped!
 		}
 
-		V_DrawFixedPatch(x*FRACUNIT, (y+6)*FRACUNIT, FRACUNIT, addflags, patch, NULL);
+		V_DrawFixedPatch(x*FRACUNIT, (y+7)*FRACUNIT, FRACUNIT, addflags, patch, NULL);
 		return;
 	}
 
@@ -6105,7 +6105,7 @@ void M_DrawChallenges(void)
 
 	y = currentMenu->y;
 
-	V_DrawFadeFill(0, y-2, BASEVIDWIDTH, 90, 0, 31, challengetransparentstrength);
+	V_DrawFadeFill(0, y-2, BASEVIDWIDTH, (challengesgridstep * CHALLENGEGRIDHEIGHT) + 2, 0, 31, challengetransparentstrength);
 
 	x -= (challengesgridstep-1);
 
