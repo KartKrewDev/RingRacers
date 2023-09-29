@@ -13113,6 +13113,7 @@ void A_SpecialStageBombExplode(mobj_t *actor)
 		return;
 
 	K_SpawnLandMineExplosion(actor, SKINCOLOR_KETCHUP, actor->hitlag);
+	P_StartQuakeFromMobj(TICRATE/6, 24 * actor->scale, 512 * mapobjectscale, actor);
 }
 
 // A_LightningFollowPlayer:
