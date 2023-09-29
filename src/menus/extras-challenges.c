@@ -407,12 +407,10 @@ static void M_ChallengesTutorial(UINT8 option)
 			M_StartMessage("Challenges & Chao Keys",
 				va(M_GetText(
 				"You just generated a Chao Key!\n"
+				"These can clear tough Challenges.\n"
 				"\n"
-				"They can be used to skip your way past\n"
-				"any Challenges you can see a hint for.\n"
-				"\n"
-				"But use them wisely - it'll take\n"
-				"%u rounds to pick up another.\n"
+				"Use them wisely - it'll take\n"
+				"%u rounds to pick up another!\n"
 				), GDCONVERT_ROUNDSTOKEY
 				), NULL, MM_NOTHING, NULL, NULL);
 			gamedata->chaokeytutorial = true;
@@ -420,15 +418,14 @@ static void M_ChallengesTutorial(UINT8 option)
 		}
 		case CCTUTORIAL_MAJORSKIP:
 		{
-			M_StartMessage("Major Challenges & Chao Keys",
+			M_StartMessage("Big Challenges & Chao Keys",
 				M_GetText(
-				"The larger tiles are Major Challenges.\n"
-				"They are significant tests of skill.\n"
+				"Watch out! You need 10 Chao Keys.\n"
+				"to break open Big Challenge tiles.\n"
 				"\n"
-				"If you're struggling and need to skip one,\n"
-				"not only will it cost you 10 Chao Keys, but\n"
-				"every nearby Challenge must be unlocked!\n"
-				), NULL, MM_NOTHING, NULL, "Wow, that's a lot");
+				"You'll also need to unlock\n"
+				"the surrounding tiles first.\n"
+				), NULL, MM_NOTHING, NULL, NULL);
 			gamedata->majorkeyskipattempted = true;
 			break;
 		}
