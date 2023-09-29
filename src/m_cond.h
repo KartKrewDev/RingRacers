@@ -240,11 +240,7 @@ typedef enum {
 #define GDMAX_RINGS 999999999
 #define GDMAX_CHAOKEYS 9999
 
-#ifdef DEVELOP
-#define GDCONVERT_ROUNDSTOKEY 20
-#else
-#define GDCONVERT_ROUNDSTOKEY 50
-#endif
+#define GDCONVERT_ROUNDSTOKEY 32
 
 typedef enum {
 	GDGT_RACE,

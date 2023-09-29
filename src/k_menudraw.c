@@ -5919,16 +5919,22 @@ static void M_DrawChallengeKeys(INT32 tilex, INT32 tiley)
 
 	// Metyr of rounds played that contribute to Chao Key generation
 	{
-		const INT32 keybarlen = 36, keybary = 28;
+		const INT32 keybarlen = 32, keybary = 28;
 
 		offs = keybarlen;
 		if (gamedata->chaokeys < GDMAX_CHAOKEYS)
+		{
+		#if (GDCONVERT_ROUNDSTOKEY != 32)
 			offs = ((gamedata->pendingkeyroundoffset * keybarlen)/GDCONVERT_ROUNDSTOKEY);
+		#else
+			offs = gamedata->pendingkeyroundoffset;
+		#endif
+		}
 
 		if (offs > 0)
-			V_DrawFill(1, keybary, offs, 1, 0);
+			V_DrawFill(1+2, keybary, offs, 1, 0);
 		if (offs < keybarlen)
-			V_DrawFadeFill(1+offs, keybary, keybarlen-offs, 1, 0, 31, challengetransparentstrength);
+			V_DrawFadeFill(1+2+offs, keybary, keybarlen-offs, 1, 0, 31, challengetransparentstrength);
 	}
 
 	// Counter
