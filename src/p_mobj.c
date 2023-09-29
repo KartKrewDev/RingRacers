@@ -10496,6 +10496,20 @@ void P_SceneryThinker(mobj_t *mobj)
 // GAME SPAWN FUNCTIONS
 //
 
+fixed_t P_GetMobjDefaultScale(mobj_t *mobj)
+{
+	switch(mobj->type)
+	{
+		case MT_SPECIALSTAGEARCH:
+			return 5*FRACUNIT;
+		case MT_SPECIALSTAGEBOMB:
+			return 3*FRACUNIT/4;
+		default:
+			break;
+	}
+	return FRACUNIT;
+}
+
 static void P_DefaultMobjShadowScale(mobj_t *thing)
 {
 	thing->shadowscale = 0;
@@ -10596,6 +10610,7 @@ mobj_t *P_SpawnMobj(fixed_t x, fixed_t y, fixed_t z, mobjtype_t type)
 	SINT8 sc = -1;
 	state_t *st;
 	mobj_t *mobj;
+	fixed_t scale;
 
 	if (type == MT_NULL)
 	{
@@ -10648,13 +10663,12 @@ mobj_t *P_SpawnMobj(fixed_t x, fixed_t y, fixed_t z, mobjtype_t type)
 
 	// All mobjs are created at 100% scale.
 	mobj->scale = FRACUNIT;
-	mobj->destscale = mobj->scale;
-	mobj->scalespeed = FRACUNIT/12;
+	mobj->destscale = mapobjectscale;
+	mobj->scalespeed = mapobjectscale/12;
 
-	if (mapobjectscale != FRACUNIT) //&& !(mobj->type == MT_BLACKEGGMAN)
+	if ((scale = P_GetMobjDefaultScale(mobj)) != FRACUNIT)
 	{
-		mobj->destscale = mapobjectscale;
-		mobj->scalespeed = mapobjectscale/12;
+		mobj->destscale = FixedMul(mobj->destscale, scale);
 	}
 
 	// Sprite rendering

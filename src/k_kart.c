@@ -3802,13 +3802,33 @@ void K_RemoveGrowShrink(player_t *player)
 
 boolean K_IsBigger(mobj_t *compare, mobj_t *other)
 {
+	fixed_t compareScale, otherScale;
+
 	if ((compare == NULL || P_MobjWasRemoved(compare) == true)
 		|| (other == NULL || P_MobjWasRemoved(other) == true))
 	{
 		return false;
 	}
 
-	return (compare->scale > other->scale + (mapobjectscale / 4));
+	if ((compareScale = P_GetMobjDefaultScale(compare)) != FRACUNIT)
+	{
+		compareScale = FixedDiv(compare->scale, compareScale);
+	}
+	else
+	{
+		compareScale = compare->scale;
+	}
+
+	if ((otherScale = P_GetMobjDefaultScale(other)) != FRACUNIT)
+	{
+		otherScale = FixedDiv(other->scale, otherScale);
+	}
+	else
+	{
+		otherScale = other->scale;
+	}
+
+	return (compareScale > otherScale + (mapobjectscale / 4));
 }
 
 static fixed_t K_TumbleZ(mobj_t *mo, fixed_t input)
