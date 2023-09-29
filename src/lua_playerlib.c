@@ -361,6 +361,8 @@ static int player_get(lua_State *L)
 		lua_pushinteger(L, plr->nextringaward);
 	else if (fastcmp(field,"ringvolume"))
 		lua_pushinteger(L, plr->ringvolume);
+	else if (fastcmp(field,"ringburst"))
+		lua_pushinteger(L, plr->ringburst);
 	else if (fastcmp(field,"curshield"))
 		lua_pushinteger(L, plr->curshield);
 	else if (fastcmp(field,"bubblecool"))
@@ -775,6 +777,8 @@ static int player_set(lua_State *L)
 		plr->nextringaward = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"ringvolume"))
 		plr->ringvolume = luaL_checkinteger(L, 3);
+	else if (fastcmp(field,"ringburst"))
+		plr->ringburst = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"curshield"))
 		plr->curshield = luaL_checkinteger(L, 3);
 	else if (fastcmp(field,"bubblecool"))

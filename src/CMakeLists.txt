@@ -78,7 +78,7 @@ add_executable(SRB2SDL2 MACOSX_BUNDLE WIN32
 	r_sky.c
 	r_splats.c
 	r_spritefx.cpp
-	r_things.c
+	r_things.cpp
 	r_bbox.c
 	r_textures.c
 	r_textures_dups.cpp

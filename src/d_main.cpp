@@ -92,10 +92,6 @@
 #include "hardware/hw_main.h" // 3D View Rendering
 #endif
 
-#ifdef HW3SOUND
-#include "hardware/hw3sound.h"
-#endif
-
 #include "lua_script.h"
 
 /* Manually defined asset hashes
@@ -514,6 +510,29 @@ static void D_Display(void)
 
 				ps_rendercalltime = I_GetPreciseTime();
 
+				if (rendermode == render_soft)
+				{
+					if (cv_homremoval.value)
+					{
+						if (cv_homremoval.value == 1)
+						{
+							// Clear the software screen buffer to remove HOM
+							memset(screens[0], 31, vid.width * vid.height * vid.bpp);
+						}
+						else
+						{
+							//'development' HOM removal -- makes it blindingly obvious if HOM is spotted.
+							memset(screens[0], 32+(timeinmap&15), vid.width * vid.height * vid.bpp);
+						}
+					}
+
+					if (r_splitscreen == 2)
+					{
+						// Draw over the fourth screen so you don't have to stare at a HOM :V
+						V_DrawFill(viewwidth, viewheight, viewwidth, viewheight, 31|V_NOSCALESTART);
+					}
+				}
+
 				for (i = 0; i <= r_splitscreen; i++)
 				{
 					if (players[displayplayers[i]].mo || players[displayplayers[i]].playerstate == PST_DEAD)
@@ -838,10 +857,6 @@ void D_SRB2Loop(void)
 		interp = R_UsingFrameInterpolation() && !dedicated;
 		doDisplay = false;
 
-#ifdef HW3SOUND
-		HW3S_BeginFrameUpdate();
-#endif
-
 		if (realtics > 0 || singletics)
 		{
 			// don't skip more than 10 frames at a time
@@ -931,10 +946,6 @@ void D_SRB2Loop(void)
 			S_UpdateClosedCaptions();
 			S_TickSoundTest();
 		}
-
-#ifdef HW3SOUND
-		HW3S_EndFrameUpdate();
-#endif
 
 		LUA_Step();
 
@@ -1671,8 +1682,8 @@ void D_SRB2Main(void)
 		CONS_Printf("S_InitSfxChannels(): Setting up sound channels.\n");
 		I_StartupSound();
 		I_InitMusic();
-		S_InitSfxChannels(cv_soundvolume.value);
-		S_InitMusicVolume();
+		S_InitSfxChannels();
+		S_SetMusicVolume();
 	}
 
 	Music_Init();

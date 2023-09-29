@@ -82,6 +82,26 @@ static void M_SoundTestSeq(INT32 choice)
 	soundtest.autosequence ^= true;
 }
 
+static void M_SoundTestShf(INT32 choice)
+{
+	(void)choice;
+
+	if (soundtest.shuffle)
+	{
+		soundtest.shuffle = false;
+		soundtest.sequence.shuffleinfo = 0;
+	}
+	else
+	{
+		S_SoundTestStop();
+
+		soundtest.playing = true;
+		soundtest.autosequence = true;
+		soundtest.shuffle = true;
+		S_UpdateSoundTestDef(false, false, false);
+	}
+}
+
 consvar_t *M_GetSoundTestVolumeCvar(void)
 {
 	if (soundtest.current == NULL)
@@ -160,18 +180,20 @@ static void M_SoundTestTick(void)
 menuitem_t MISC_SoundTest[] =
 {
 	{IT_STRING | IT_CALL,   "Back",  "STER_IC0", NULL, {.routine = M_GoBack},               0,  stereospecial_back},
-	{IT_SPACE, NULL, NULL, NULL, {NULL}, 11, 0},
+	{IT_SPACE, NULL, NULL, NULL, {NULL}, 6, 0},
 	{IT_STRING | IT_CALL,   "Stop",  "STER_IC1", NULL, {.routine = M_SoundTestMainControl}, 0,  0},
-	{IT_SPACE, NULL, NULL, NULL, {NULL},  8, 0},
+	{IT_SPACE, NULL, NULL, NULL, {NULL},  6, 0},
 	{IT_STRING | IT_CALL,   "Pause", "STER_IC2", NULL, {.routine = M_SoundTestMainControl}, 2,  stereospecial_pause},
 	{IT_STRING | IT_CALL,   "Play",  "STER_IC3", NULL, {.routine = M_SoundTestMainControl}, 1,  stereospecial_play},
-	{IT_SPACE, NULL, NULL, NULL, {NULL},  8, 0},
+	{IT_SPACE, NULL, NULL, NULL, {NULL},  6, 0},
 	{IT_STRING | IT_CALL,   "Prev",  "STER_IC4", NULL, {.routine = M_SoundTestNextPrev},   -1,  0},
 	{IT_STRING | IT_CALL,   "Next",  "STER_IC5", NULL, {.routine = M_SoundTestNextPrev},    1,  0},
-	{IT_SPACE, NULL, NULL, NULL, {NULL},  8, 0},
+	{IT_SPACE, NULL, NULL, NULL, {NULL},  6, 0},
 	{IT_STRING | IT_ARROWS, "Seq",   "STER_IC6", NULL, {.routine = M_SoundTestSeq},         0,  stereospecial_seq},
+	{IT_STRING | IT_ARROWS, "Shf",  "STER_IC7", NULL, {.routine = M_SoundTestShf},        0,  stereospecial_shf},
 	{IT_SPACE, NULL, NULL, NULL, {NULL}, 0, 244},
 	{IT_STRING | IT_ARROWS, "Vol",   NULL,       NULL, {.routine = M_SoundTestVol},         0,  stereospecial_vol},
+	{IT_SPACE, NULL, NULL, NULL, {NULL},  2, 0},
 	{IT_STRING | IT_ARROWS, "Track", NULL,       NULL, {.routine = M_SoundTestTrack},       0,  stereospecial_track},
 };
 

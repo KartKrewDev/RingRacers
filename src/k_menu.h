@@ -1309,6 +1309,7 @@ typedef enum
 	stereospecial_pause,
 	stereospecial_play,
 	stereospecial_seq,
+	stereospecial_shf,
 	stereospecial_vol,
 	stereospecial_track,
 } stereospecial_e;

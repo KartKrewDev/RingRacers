@@ -36,10 +36,6 @@
 #include "k_objects.h"
 #include "k_roulette.h"
 
-#ifdef HW3SOUND
-#include "hardware/hw3sound.h"
-#endif
-
 boolean LUA_CallAction(enum actionnum actionnum, mobj_t *actor);
 
 player_t *stplyr;
@@ -13064,7 +13060,7 @@ void A_SSMineExplode(mobj_t *actor)
 
 void A_SSMineFlash(mobj_t *actor)
 {
-	K_MineFlashScreen(actor);
+	K_MineFlashScreen(actor->target);
 }
 
 void A_LandMineExplode(mobj_t *actor)

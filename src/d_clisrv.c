@@ -3803,6 +3803,7 @@ void SV_ResetServer(void)
 	DEBFILE("\n-=-=-=-=-=-=-= Server Reset =-=-=-=-=-=-=-\n\n");
 }
 
+#ifndef TESTERS
 static void SV_GenContext(void)
 {
 	UINT8 i;
@@ -3821,6 +3822,7 @@ static void SV_GenContext(void)
 	strncpy(connectedservername, cv_servername.string, MAXSERVERNAME);
 	strncpy(connectedservercontact, cv_server_contact.string, MAXSERVERCONTACT);
 }
+#endif // TESTERS
 
 //
 // D_QuitNetGame

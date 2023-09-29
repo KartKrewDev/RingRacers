@@ -4519,6 +4519,11 @@ void K_MineFlashScreen(mobj_t *source)
 	INT32 pnum;
 	player_t *p;
 
+	if (P_MobjWasRemoved(source))
+	{
+		return;
+	}
+
 	S_StartSound(source, sfx_s3k4e);
 	P_StartQuakeFromMobj(12, 55 * source->scale, MINEQUAKEDIST * source->scale, source);
 
@@ -4628,6 +4633,8 @@ void K_SpawnMineExplosion(mobj_t *source, skincolornum_t color, tic_t delay)
 		truc->hitlag += delay;
 		truc->renderflags |= RF_DONTDRAW;
 	}
+
+	Obj_SpawnBrolyKi(source, delay);
 }
 
 #undef MINEQUAKEDIST

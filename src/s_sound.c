@@ -32,17 +32,12 @@
 #include "lua_hook.h" // MusicChange hook
 #include "byteptr.h"
 #include "k_menu.h" // M_PlayMenuJam
-#include "m_random.h" // P_RandomKey
+#include "m_random.h" // M_RandomKey
 #include "i_time.h"
 #include "v_video.h" // V_ThinStringWidth
 #include "music.h"
 
-#ifdef HW3SOUND
-// 3D Sound Interface
-#include "hardware/hw3sound.h"
-#else
 static boolean S_AdjustSoundParams(const mobj_t *listener, const mobj_t *source, INT32 *vol, INT32 *sep, INT32 *pitch, sfxinfo_t *sfxinfo);
-#endif
 
 static void Command_Tunes_f(void);
 static void Command_RestartAudio_f(void);
@@ -213,13 +208,6 @@ void SetChannelsNum(void)
 	if (cv_numChannels.value == 999999999) //Alam_GBC: OH MY ROD!(ROD rimmiced with GOD!)
 		CV_StealthSet(&cv_numChannels,cv_numChannels.defaultvalue);
 
-#ifdef HW3SOUND
-	if (hws_mode != HWS_DEFAULT_MODE)
-	{
-		HW3S_SetSourcesNum();
-		return;
-	}
-#endif
 	if (cv_numChannels.value)
 		channels = (channel_t *)Z_Calloc(cv_numChannels.value * sizeof (channel_t), PU_STATIC, NULL);
 	numofchannels = (channels ? cv_numChannels.value : 0);
@@ -267,14 +255,6 @@ void S_StopSounds(void)
 {
 	INT32 cnum;
 
-#ifdef HW3SOUND
-	if (hws_mode != HWS_DEFAULT_MODE)
-	{
-		HW3S_StopSounds();
-		return;
-	}
-#endif
-
 	// kill all playing sounds at start of level
 	for (cnum = 0; cnum < numofchannels; cnum++)
 		if (channels[cnum].sfxinfo)
@@ -295,13 +275,6 @@ void S_StopSoundByID(void *origin, sfxenum_t sfx_id)
 	if (!origin)
 		return;
 #endif
-#ifdef HW3SOUND
-	if (hws_mode != HWS_DEFAULT_MODE)
-	{
-		HW3S_StopSoundByID(origin, sfx_id);
-		return;
-	}
-#endif
 	for (cnum = 0; cnum < numofchannels; cnum++)
 	{
 		if (channels[cnum].sfxinfo == &S_sfx[sfx_id] && channels[cnum].origin == origin)
@@ -315,13 +288,6 @@ void S_StopSoundByNum(sfxenum_t sfxnum)
 {
 	INT32 cnum;
 
-#ifdef HW3SOUND
-	if (hws_mode != HWS_DEFAULT_MODE)
-	{
-		HW3S_StopSoundByNum(sfxnum);
-		return;
-	}
-#endif
 	for (cnum = 0; cnum < numofchannels; cnum++)
 	{
 		if (channels[cnum].sfxinfo == &S_sfx[sfxnum])
@@ -484,14 +450,6 @@ void S_StartSoundAtVolume(const void *origin_p, sfxenum_t sfx_id, INT32 volume)
 		}
 	}
 
-#ifdef HW3SOUND
-	if (hws_mode != HWS_DEFAULT_MODE)
-	{
-		HW3S_StartSound(origin, sfx_id);
-		return;
-	};
-#endif
-
 	for (i = 0; i <= r_splitscreen; i++)
 	{
 		player_t *player = &players[displayplayers[i]];
@@ -649,12 +607,7 @@ void S_StartSound(const void *origin, sfxenum_t sfx_id)
 		return;
 
 	// the volume is handled 8 bits
-#ifdef HW3SOUND
-	if (hws_mode != HWS_DEFAULT_MODE)
-		HW3S_StartSound(origin, sfx_id);
-	else
-#endif
-		S_StartSoundAtVolume(origin, sfx_id, 255);
+	S_StartSoundAtVolume(origin, sfx_id, 255);
 }
 
 void S_ReducedVFXSoundAtVolume(const void *origin, sfxenum_t sfx_id, INT32 volume, player_t *owner)
@@ -687,13 +640,6 @@ void S_StopSound(void *origin)
 	if (!origin)
 		return;
 
-#ifdef HW3SOUND
-	if (hws_mode != HWS_DEFAULT_MODE)
-	{
-		HW3S_StopSound(origin);
-		return;
-	}
-#endif
 	for (cnum = 0; cnum < numofchannels; cnum++)
 	{
 		if (channels[cnum].sfxinfo && channels[cnum].origin == origin)
@@ -721,9 +667,9 @@ void S_UpdateSounds(void)
 
 	// Update sound/music volumes, if changed manually at console
 	if (actualsfxvolume != cv_soundvolume.value)
-		S_SetSfxVolume (cv_soundvolume.value);
+		S_SetSfxVolume();
 	if (actualdigmusicvolume != cv_digmusicvolume.value)
-		S_SetDigMusicVolume (cv_digmusicvolume.value);
+		S_SetMusicVolume();
 
 	// We're done now, if we're not in a level.
 	if (gamestate != GS_LEVEL)
@@ -763,14 +709,6 @@ void S_UpdateSounds(void)
 
 #ifndef NOMUMBLE
 	I_UpdateMumble(players[consoleplayer].mo, listener[0]);
-#endif
-
-#ifdef HW3SOUND
-	if (hws_mode != HWS_DEFAULT_MODE)
-	{
-		HW3S_UpdateSources();
-		goto notinlevel;
-	}
 #endif
 
 	for (i = 0; i <= r_splitscreen; i++)
@@ -914,17 +852,12 @@ void S_UpdateClosedCaptions(void)
 	}
 }
 
-void S_SetSfxVolume(INT32 volume)
+void S_SetSfxVolume(void)
 {
-	//CV_SetValue(&cv_soundvolume, volume);
-	actualsfxvolume = volume;
+	actualsfxvolume = cv_soundvolume.value;
 
-#ifdef HW3SOUND
-	hws_mode == HWS_DEFAULT_MODE ? I_SetSfxVolume(volume&0x1F) : HW3S_SetSfxVolume(volume&0x1F);
-#else
 	// now hardware volume
-	I_SetSfxVolume(volume);
-#endif
+	I_SetSfxVolume(actualsfxvolume);
 }
 
 void S_ClearSfx(void)
@@ -1128,11 +1061,6 @@ INT32 S_OriginPlaying(void *origin)
 	if (!origin)
 		return false;
 
-#ifdef HW3SOUND
-	if (hws_mode != HWS_DEFAULT_MODE)
-		return HW3S_OriginPlaying(origin);
-#endif
-
 	for (cnum = 0; cnum < numofchannels; cnum++)
 		if (channels[cnum].origin == origin)
 			return 1;
@@ -1144,11 +1072,6 @@ INT32 S_OriginPlaying(void *origin)
 INT32 S_IdPlaying(sfxenum_t id)
 {
 	INT32 cnum;
-
-#ifdef HW3SOUND
-	if (hws_mode != HWS_DEFAULT_MODE)
-		return HW3S_IdPlaying(id);
-#endif
 
 	for (cnum = 0; cnum < numofchannels; cnum++)
 		if ((size_t)(channels[cnum].sfxinfo - S_sfx) == (size_t)id)
@@ -1163,11 +1086,6 @@ INT32 S_SoundPlaying(void *origin, sfxenum_t id)
 	INT32 cnum;
 	if (!origin)
 		return 0;
-
-#ifdef HW3SOUND
-	if (hws_mode != HWS_DEFAULT_MODE)
-		return HW3S_SoundPlaying(origin, id);
-#endif
 
 	for (cnum = 0; cnum < numofchannels; cnum++)
 	{
@@ -1230,7 +1148,7 @@ void S_StartSoundName(void *mo, const char *soundname)
 // Sets channels, SFX volume,
 //  allocates channel buffer, sets S_sfx lookup.
 //
-void S_InitSfxChannels(INT32 sfxVolume)
+void S_InitSfxChannels(void)
 {
 	extern consvar_t precachesound;
 
@@ -1239,7 +1157,7 @@ void S_InitSfxChannels(INT32 sfxVolume)
 	if (dedicated)
 		return;
 
-	S_SetSfxVolume(sfxVolume);
+	S_SetSfxVolume();
 
 	SetChannelsNum();
 
@@ -1366,6 +1284,10 @@ void S_PopulateSoundTestSequence(void)
 	if (soundtest.sequence.id == 0)
 		soundtest.sequence.id = 1;
 
+	// Prepare shuffle material.
+	soundtest.sequence.shuffleinfo = 0;
+	soundtest.sequence.shufflenext = NULL;
+
 	soundtest.sequence.next = NULL;
 
 	tail = &soundtest.sequence.next;
@@ -1437,6 +1359,11 @@ void S_PopulateSoundTestSequence(void)
 
 		for (def = musicdefstart; def; def = def->next)
 		{
+			// This is the simplest set of checks,
+			// so let's wipe the shuffle data here.
+			def->sequence.shuffleinfo = 0;
+			def->sequence.shufflenext = NULL;
+
 			if (def->sequence.id == soundtest.sequence.id)
 				continue;
 
@@ -1467,12 +1394,11 @@ static boolean S_SoundTestDefLocked(musicdef_t *def)
 
 void S_UpdateSoundTestDef(boolean reverse, boolean dotracks, boolean skipnull)
 {
-	musicdef_t *newdef;
-
-	newdef = NULL;
+	musicdef_t *newdef = NULL;
 
 	if (reverse == false)
 	{
+		// Track update
 		if (dotracks == true && soundtest.current != NULL
 			&& soundtest.currenttrack < soundtest.current->numtracks-1)
 		{
@@ -1480,28 +1406,180 @@ void S_UpdateSoundTestDef(boolean reverse, boolean dotracks, boolean skipnull)
 			goto updatetrackonly;
 		}
 
-		newdef = (soundtest.current != NULL)
-			? soundtest.current->sequence.next
-			: soundtest.sequence.next;
-		while (newdef != NULL && S_SoundTestDefLocked(newdef))
-			newdef = newdef->sequence.next;
-		if (newdef == NULL && skipnull == true)
+		if (soundtest.shuffle == true && soundtest.sequence.shuffleinfo == 0)
 		{
+			// The shuffle data isn't initialised.
+			// Count the valid set of musicdefs we can randomly select from!
+			// This will later liberally be passed to M_RandomKey.
+
 			newdef = soundtest.sequence.next;
+			while (newdef != NULL)
+			{
+				if (S_SoundTestDefLocked(newdef) == false)
+				{
+					newdef->sequence.shuffleinfo = 0;
+					soundtest.sequence.shuffleinfo++;
+				}
+				else
+				{
+					// Don't permit if it gets unlocked before shuffle count gets reset
+					newdef->sequence.shuffleinfo = (size_t)-1;
+				}
+				newdef->sequence.shufflenext = NULL;
+
+				newdef = newdef->sequence.next;
+			}
+			soundtest.sequence.shufflenext = NULL;
+		}
+
+		if (soundtest.shuffle == true)
+		{
+			// Do we have it cached..?
+			newdef = soundtest.current != NULL
+				? soundtest.current->sequence.shufflenext
+				: soundtest.sequence.shufflenext;
+
+			if (newdef != NULL)
+				;
+			else if (soundtest.sequence.shuffleinfo != 0)
+			{
+				// Nope, not cached. Grab a random entry and hunt for it.
+				size_t shuffleseek = M_RandomKey(soundtest.sequence.shuffleinfo);
+				size_t shuffleseekcopy = shuffleseek;
+
+				// Since these are sequential, we can sometimes
+				// get a small benefit by starting partway down the list.
+				if (
+					soundtest.current != NULL
+					&& soundtest.current->sequence.shuffleinfo != 0
+					&& soundtest.current->sequence.shuffleinfo <= shuffleseek
+				)
+				{
+					newdef = soundtest.current;
+					shuffleseek -= (soundtest.current->sequence.shuffleinfo - 1);
+				}
+				else
+				{
+					newdef = soundtest.sequence.next;
+				}
+
+				// ...yeah, though, this is basically O(n). I could provide a
+				// great many excuses, but the basic impetus is that I saw
+				// a thread on an open-source software development forum where,
+				// since 2014, a parade of users have been asking for the same
+				// basic QoL feature and been consecutively berated by one developer
+				// extremely against the idea of implmenting something imperfect.
+				// I have enough self-awareness as a programmer to recognise that
+				// that is a chronic case of "PROGRAMMER BRAIN". Sometimes you
+				// just need to do a feature "badly" because it's more important
+				// for it to exist at all than to channel mathematical elegance.
+				// ~toast 220923
+
+				for (; newdef != NULL; newdef = newdef->sequence.next)
+				{
+					if (newdef->sequence.shuffleinfo != 0)
+						continue;
+
+					if (S_SoundTestDefLocked(newdef) == true)
+						continue;
+
+					if (shuffleseek != 0)
+					{
+						shuffleseek--;
+						continue;
+					}
+					break;
+				}
+
+				if (newdef == NULL)
+				{
+					// Fell short!? Try again later
+					soundtest.sequence.shuffleinfo = 0;
+				}
+				else
+				{
+					// Don't select the same entry twice
+					if (soundtest.sequence.shuffleinfo)
+						soundtest.sequence.shuffleinfo--;
+
+					// One-indexed so the first shuffled entry has a valid shuffleinfo
+					newdef->sequence.shuffleinfo = shuffleseekcopy+1;
+
+					// Link it to the end of the chain
+					if (soundtest.current && soundtest.current->sequence.shuffleinfo != 0)
+					{
+						soundtest.current->sequence.shufflenext = newdef;
+					}
+					else
+					{
+						soundtest.sequence.shufflenext = newdef;
+					}
+				}
+			}
+		}
+		else
+		{
+			// Just blaze through the musicdefs
+			newdef = (soundtest.current != NULL)
+				? soundtest.current->sequence.next
+				: soundtest.sequence.next;
 			while (newdef != NULL && S_SoundTestDefLocked(newdef))
 				newdef = newdef->sequence.next;
+
+			if (newdef == NULL && skipnull == true)
+			{
+				newdef = soundtest.sequence.next;
+				while (newdef != NULL && S_SoundTestDefLocked(newdef))
+					newdef = newdef->sequence.next;
+			}
 		}
 	}
 	else
 	{
+		// Everything in this case is doing a full-on O(n) search
+		// for the previous entry in one of two singly linked lists.
+		// I know there are better solutions. It basically boils
+		// down to the fact that this code only runs on direct user
+		// input on a menu, never in the background, and therefore
+		// is straight up less important than the forwards direction.
+
 		musicdef_t *def, *lastdef = NULL;
 
+		// Track update
 		if (dotracks == true && soundtest.current != NULL
 			&& soundtest.currenttrack > 0)
 		{
 			soundtest.currenttrack--;
 			goto updatetrackonly;
 		}
+
+		if (soundtest.shuffle && soundtest.current != NULL)
+		{
+			// Basically identical structure to the sequence.next case... templates might be cool one day
+
+			if (soundtest.sequence.shufflenext == soundtest.current)
+				;
+			else for (def = soundtest.sequence.shufflenext; def; def = def->sequence.shufflenext)
+			{
+				if (!S_SoundTestDefLocked(def))
+				{
+					lastdef = def;
+				}
+
+				if (def->sequence.shufflenext != soundtest.current)
+				{
+					continue;
+				}
+
+				newdef = lastdef;
+				break;
+			}
+
+			goto updatecurrent;
+		}
+
+		soundtest.shuffle = false;
+		soundtest.sequence.shuffleinfo = 0;
 
 		if (soundtest.current == soundtest.sequence.next
 			&& skipnull == false)
@@ -1617,6 +1695,8 @@ void S_SoundTestStop(void)
 
 	soundtest.playing = false;
 	soundtest.autosequence = false;
+	soundtest.shuffle = false;
+	soundtest.sequence.shuffleinfo = 0;
 
 	Music_Stop("stereo");
 	Music_Stop("stereo_fade");
@@ -2091,14 +2171,10 @@ void S_ResumeAudio(void)
 	Music_UnPauseAll();
 }
 
-void S_SetMusicVolume(INT32 digvolume)
+void S_SetMusicVolume(void)
 {
-	if (digvolume < 0)
-		digvolume = cv_digmusicvolume.value;
-
-	//CV_SetValue(&cv_digmusicvolume, digvolume);
-	actualdigmusicvolume = digvolume;
-	I_SetMusicVolume(digvolume);
+	actualdigmusicvolume = cv_digmusicvolume.value;
+	I_SetMusicVolume(actualdigmusicvolume);
 }
 
 /// ------------------------
@@ -2219,8 +2295,8 @@ static void Command_RestartAudio_f(void)
 
 // These must be called or no sound and music until manually set.
 
-	I_SetSfxVolume(cv_soundvolume.value);
-	S_SetMusicVolume(cv_digmusicvolume.value);
+	S_SetSfxVolume();
+	S_SetMusicVolume();
 
 	S_StartSound(NULL, sfx_strpst);
 
@@ -2392,7 +2468,7 @@ void GameSounds_OnChange(void)
 	{
 		sound_disabled = false;
 		I_StartupSound(); // will return early if initialised
-		S_InitSfxChannels(cv_soundvolume.value);
+		S_InitSfxChannels();
 		S_StartSound(NULL, sfx_strpst);
 	}
 	else
@@ -2431,7 +2507,7 @@ void PlayMusicIfUnfocused_OnChange(void)
 		if (cv_playmusicifunfocused.value)
 			I_SetMusicVolume(0);
 		else
-			S_InitMusicVolume();
+			S_SetMusicVolume();
 	}
 }
 

@@ -668,6 +668,7 @@ struct player_t
 	UINT16 superring;	// You were awarded rings, and have this many of them left to spawn on yourself.
 	UINT8 nextringaward;	// When should we spawn our next superring ring?
 	UINT16 ringvolume;		// When consuming lots of rings, lower the sound a little.
+	UINT16 ringburst;		// Queued number of rings to lose after hitlag ends
 
 	UINT8 curshield;	// see kartshields_t
 	UINT8 bubblecool;	// Bubble Shield use cooldown

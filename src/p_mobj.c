@@ -10031,6 +10031,14 @@ void P_MobjThinker(mobj_t *mobj)
 
 		if (mobj->player != NULL && mobj->hitlag == 0 && (mobj->eflags & MFE_DAMAGEHITLAG))
 		{
+			if (mobj->player->ringburst > 0)
+			{
+				// Delayed ring loss
+				P_PlayRinglossSound(mobj);
+				P_PlayerRingBurst(mobj->player, mobj->player->ringburst);
+				mobj->player->ringburst = 0;
+			}
+
 			K_HandleDirectionalInfluence(mobj->player);
 		}
 
@@ -13924,7 +13932,16 @@ mobj_t *P_SpawnMapThing(mapthing_t *mthing)
 
 	x = mthing->x << FRACBITS;
 	y = mthing->y << FRACBITS;
-	z = P_GetMapThingSpawnHeight(i, mthing, x, y);
+
+	if (mthing->adjusted_z != INT32_MAX)
+	{
+		z = mthing->adjusted_z;
+	}
+	else
+	{
+		z = P_GetMapThingSpawnHeight(i, mthing, x, y);
+	}
+
 	return P_SpawnMobjFromMapThing(mthing, x, y, z, i);
 }
 

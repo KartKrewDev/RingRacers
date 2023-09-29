@@ -8,8 +8,10 @@
 // terms of the GNU General Public License, version 2.
 // See the 'LICENSE' file for more details.
 //-----------------------------------------------------------------------------
-/// \file  r_things.c
+/// \file  r_things.cpp
 /// \brief Refresh of things, i.e. objects represented by sprites
+
+#include <algorithm>
 
 #include "doomdef.h"
 #include "console.h"
@@ -325,7 +327,7 @@ boolean R_AddSingleSpriteDef(const char *sprname, spritedef_t *spritedef, UINT16
 
 				if (Picture_IsLumpPNG((UINT8*)&patch, len))
 				{
-					UINT8 *png = W_CacheLumpNumPwad(wadnum, l, PU_STATIC);
+					UINT8 *png = static_cast<UINT8*>(W_CacheLumpNumPwad(wadnum, l, PU_STATIC));
 					Picture_PNGDimensions((UINT8 *)png, &width, &height, &topoffset, &leftoffset, len);
 					isPNG = true;
 					Z_Free(png);
@@ -451,7 +453,7 @@ boolean R_AddSingleSpriteDef(const char *sprname, spritedef_t *spritedef, UINT16
 	// allocate this sprite's frames
 	if (!spritedef->spriteframes)
 		spritedef->spriteframes =
-		 Z_Malloc(maxframe * sizeof (*spritedef->spriteframes), PU_STATIC, NULL);
+		 static_cast<spriteframe_t*>(Z_Malloc(maxframe * sizeof (*spritedef->spriteframes), PU_STATIC, NULL));
 
 	spritedef->numframes = maxframe;
 	M_Memcpy(spritedef->spriteframes, sprtemp, maxframe*sizeof (spriteframe_t));
@@ -574,7 +576,7 @@ void R_InitSprites(void)
 	if (!numsprites)
 		I_Error("R_AddSpriteDefs: no sprites in namelist\n");
 
-	sprites = Z_Calloc(numsprites * sizeof (*sprites), PU_STATIC, NULL);
+	sprites = static_cast<spritedef_t*>(Z_Calloc(numsprites * sizeof (*sprites), PU_STATIC, NULL));
 
 	// find sprites in each -file added pwad
 	for (i = 0; i < numwadfiles; i++)
@@ -765,13 +767,13 @@ void R_DrawFlippedMaskedColumn(column_t *column, column_t *brightmap, INT32 base
 
 		if (dc_yl <= dc_yh && dc_yh > 0)
 		{
-			dc_source = ZZ_Alloc(column->length);
+			dc_source = static_cast<UINT8*>(ZZ_Alloc(column->length));
 			for (s = (UINT8 *)column+2+column->length, d = dc_source; d < dc_source+column->length; --s)
 				*d++ = *s;
 
 			if (brightmap != NULL)
 			{
-				dc_brightmap = ZZ_Alloc(brightmap->length);
+				dc_brightmap = static_cast<UINT8*>(ZZ_Alloc(brightmap->length));
 				for (s = (UINT8 *)brightmap+2+brightmap->length, d = dc_brightmap; d < dc_brightmap+brightmap->length; --s)
 					*d++ = *s;
 			}
@@ -825,7 +827,7 @@ UINT8 *R_GetSpriteTranslation(vissprite_t *vis)
 	if (!(vis->cut & SC_PRECIP) &&
 			R_ThingIsFlashing(vis->mobj))
 	{
-		return R_GetTranslationColormap(TC_HITLAG, 0, GTC_CACHE);
+		return R_GetTranslationColormap(TC_HITLAG, static_cast<skincolornum_t>(0), GTC_CACHE);
 	}
 	/*
 	else if (R_SpriteIsFlashing(vis)) // Bosses "flash"
@@ -842,14 +844,14 @@ UINT8 *R_GetSpriteTranslation(vissprite_t *vis)
 	{
 		// New colormap stuff for skins Tails 06-07-2002
 		if (!(vis->cut & SC_PRECIP) && vis->mobj->colorized)
-			return R_GetTranslationColormap(TC_RAINBOW, vis->mobj->color, GTC_CACHE);
+			return R_GetTranslationColormap(TC_RAINBOW, static_cast<skincolornum_t>(vis->mobj->color), GTC_CACHE);
 		else if (!(vis->cut & SC_PRECIP) && vis->mobj->skin && vis->mobj->sprite == SPR_PLAY) // This thing is a player!
 		{
 			size_t skinnum = (skin_t*)vis->mobj->skin-skins;
-			return R_GetTranslationColormap((INT32)skinnum, vis->mobj->color, GTC_CACHE);
+			return R_GetTranslationColormap((INT32)skinnum, static_cast<skincolornum_t>(vis->mobj->color), GTC_CACHE);
 		}
 		else // Use the defaults
-			return R_GetTranslationColormap(TC_DEFAULT, vis->mobj->color, GTC_CACHE);
+			return R_GetTranslationColormap(TC_DEFAULT, static_cast<skincolornum_t>(vis->mobj->color), GTC_CACHE);
 	}
 	else if (vis->mobj->sprite == SPR_PLAY) // Looks like a player, but doesn't have a color? Get rid of green sonic syndrome.
 		return R_GetTranslationColormap(TC_DEFAULT, SKINCOLOR_BLUE, GTC_CACHE);
@@ -987,7 +989,7 @@ static void R_DrawVisSprite(vissprite_t *vis)
 			vis->scale = FixedMul(vis->scale, this_scale);
 			vis->scalestep = FixedMul(vis->scalestep, this_scale);
 			vis->xiscale = FixedDiv(vis->xiscale,this_scale);
-			vis->cut |= SC_ISSCALED;
+			vis->cut = static_cast<spritecut_e>(vis->cut | SC_ISSCALED);
 		}
 		dc_texturemid = FixedDiv(dc_texturemid,this_scale);
 	}
@@ -1066,12 +1068,8 @@ static void R_DrawVisSprite(vissprite_t *vis)
 		// Vertically sheared sprite
 		for (dc_x = vis->x1; dc_x <= vis->x2; dc_x++, frac += vis->xiscale, dc_texturemid -= vis->shear.tan)
 		{
-			texturecolumn = frac>>FRACBITS;
+			texturecolumn = std::clamp(frac >> FRACBITS, 0, patch->width - 1);
 
-#ifdef RANGECHECK
-			if (texturecolumn < 0 || texturecolumn >= pwidth)
-				I_Error("R_DrawSpriteRange: bad texturecolumn at %d from end, dc_x=%d, x2=%d, texturecolumn=%d (%d), pwidth=%d, xiscale=%d, startfrac=%d", vis->x2 - dc_x, dc_x, vis->x2, texturecolumn, frac, pwidth, vis->xiscale, vis->startfrac);
-#endif
 			column = (column_t *)((UINT8 *)patch->columns + (patch->columnofs[texturecolumn]));
 			if (bmpatch)
 				bmcol = (column_t *)((UINT8 *)bmpatch->columns + (bmpatch->columnofs[texturecolumn]));
@@ -1082,10 +1080,8 @@ static void R_DrawVisSprite(vissprite_t *vis)
 	}
 	else
 	{
-#ifdef RANGECHECK
-		pwidth = patch->width;
-#endif
 
+#ifdef RANGECHECK
 		if (vis->x1test && vis->x2test)
 		{
 			INT32 x1test = vis->x1test;
@@ -1099,21 +1095,18 @@ static void R_DrawVisSprite(vissprite_t *vis)
 
 			const INT32 t = (vis->startfrac + (vis->xiscale * (x2test - x1test))) >> FRACBITS;
 
-			if (x1test <= x2test && (t < 0 || t >= pwidth))
+			if (x1test <= x2test && (t < 0 || t >= patch->width))
 			{
 				CONS_Printf("THE GAME WOULD HAVE CRASHED, %d (old) vs %d (new)\n", (x2test - x1test), (vis->x2 - vis->x1));
 			}
 		}
+#endif // RANGECHECK
 
 		// Non-paper drawing loop
 		for (dc_x = vis->x1; dc_x <= vis->x2; dc_x++, frac += vis->xiscale, sprtopscreen += vis->shear.tan)
 		{
-			texturecolumn = frac>>FRACBITS;
+			texturecolumn = std::clamp(frac >> FRACBITS, 0, patch->width - 1);
 
-#ifdef RANGECHECK
-			if (texturecolumn < 0 || texturecolumn >= pwidth)
-				I_Error("R_DrawSpriteRange: bad texturecolumn at %d from end, dc_x=%d, x2=%d, texturecolumn=%d (%d), pwidth=%d, xiscale=%d, startfrac=%d", vis->x2 - dc_x, dc_x, vis->x2, texturecolumn, frac, pwidth, vis->xiscale, vis->startfrac);
-#endif
 			column = (column_t *)((UINT8 *)patch->columns + (patch->columnofs[texturecolumn]));
 
 			if (bmpatch)
@@ -1232,11 +1225,11 @@ static void R_SplitSprite(vissprite_t *sprite)
 
 		// Found a split! Make a new sprite, copy the old sprite to it, and
 		// adjust the heights.
-		newsprite = M_Memcpy(R_NewVisSprite(), sprite, sizeof (vissprite_t));
+		newsprite = static_cast<vissprite_t*>(M_Memcpy(R_NewVisSprite(), sprite, sizeof (vissprite_t)));
 
-		newsprite->cut |= (sprite->cut & SC_FLAGMASK);
+		newsprite->cut = static_cast<spritecut_e>(newsprite->cut | (sprite->cut & SC_FLAGMASK));
 
-		sprite->cut |= SC_BOTTOM;
+		sprite->cut = static_cast<spritecut_e>(sprite->cut | SC_BOTTOM);
 		sprite->gz = testheight;
 
 		newsprite->gzt = sprite->gz;
@@ -1246,7 +1239,7 @@ static void R_SplitSprite(vissprite_t *sprite)
 
 		newsprite->szt -= 8;
 
-		newsprite->cut |= SC_TOP;
+		newsprite->cut = static_cast<spritecut_e>(newsprite->cut | SC_TOP);
 		if (!(sector->lightlist[i].caster->fofflags & FOF_NOSHADE))
 		{
 			lightnum = (*sector->lightlist[i].lightlevel >> LIGHTSEGSHIFT);
@@ -1294,7 +1287,7 @@ static patch_t *R_CacheSpriteBrightMap(const spriteinfo_t *sprinfo, UINT8 frame)
 		return NULL;
 	}
 
-	return W_CachePatchNum(num, PU_SPRITE);
+	return static_cast<patch_t*>(W_CachePatchNum(num, PU_SPRITE));
 }
 
 //
@@ -1451,12 +1444,12 @@ static void R_ProjectDropShadow(
 		R_InterpolateMobjState(thing, FRACUNIT, &interp);
 	}
 
-	patch = W_CachePatchName("DSHADOW", PU_SPRITE);
+	patch = static_cast<patch_t*>(W_CachePatchName("DSHADOW", PU_SPRITE));
 	xscale = FixedDiv(projection[viewssnum], tz);
 	yscale = FixedDiv(projectiony[viewssnum], tz);
 	shadowxscale = FixedMul(thing->radius*2, scale);
 	shadowyscale = FixedMul(FixedMul(thing->radius*2, scale), FixedDiv(abs(groundz - viewz), tz));
-	shadowyscale = min(shadowyscale, shadowxscale) / patch->height;
+	shadowyscale = std::min(shadowyscale, shadowxscale) / patch->height;
 	shadowxscale /= patch->width;
 	shadowskew = 0;
 
@@ -1511,7 +1504,7 @@ static void R_ProjectDropShadow(
 	shadow->sector = vis->sector;
 	shadow->szt = (INT16)((centeryfrac - FixedMul(shadow->gzt - viewz, yscale))>>FRACBITS);
 	shadow->sz = (INT16)((centeryfrac - FixedMul(shadow->gz - viewz, yscale))>>FRACBITS);
-	shadow->cut = SC_ISSCALED|SC_SHADOW; //check this
+	shadow->cut = static_cast<spritecut_e>(SC_ISSCALED|SC_SHADOW); //check this
 
 	shadow->startfrac = 0;
 	//shadow->xiscale = 0x7ffffff0 / (shadow->xscale/2);
@@ -1636,7 +1629,7 @@ static void R_ProjectBoundingBox(mobj_t *thing, vissprite_t *vis)
 		box->sortscale = vis->sortscale; // link sorting to sprite
 		box->dispoffset = vis->dispoffset + 5;
 
-		box->cut |= SC_LINKDRAW;
+		box->cut = static_cast<spritecut_e>(box->cut | SC_LINKDRAW);
 	}
 	else
 	{
@@ -1661,7 +1654,7 @@ static void R_ProjectBoundingBox(mobj_t *thing, vissprite_t *vis)
 static fixed_t R_GetSpriteDirectionalLighting(angle_t angle)
 {
 	// Copied from P_UpdateSegLightOffset
-	const UINT8 contrast = min(max(0, maplighting.contrast - maplighting.backlight), UINT8_MAX);
+	const UINT8 contrast = std::min(std::max(0, maplighting.contrast - maplighting.backlight), UINT8_MAX);
 	const fixed_t contrastFixed = ((fixed_t)contrast) * FRACUNIT;
 
 	fixed_t light = FRACUNIT;
@@ -1919,7 +1912,7 @@ static void R_ProjectSprite(mobj_t *thing)
 
 	//Fab: lumppat is the lump number of the patch to use, this is different
 	//     than lumpid for sprites-in-pwad : the graphics are patched
-	patch = W_CachePatchNum(sprframe->lumppat[rot], PU_SPRITE);
+	patch = static_cast<patch_t*>(W_CachePatchNum(sprframe->lumppat[rot], PU_SPRITE));
 
 #ifdef ROTSPRITE
 	spriterotangle = R_SpriteRotationAngle(thing, NULL);
@@ -1940,7 +1933,7 @@ static void R_ProjectSprite(mobj_t *thing)
 		if (rotsprite != NULL)
 		{
 			patch = rotsprite;
-			cut |= SC_ISROTATED;
+			cut = static_cast<spritecut_e>(cut | SC_ISROTATED);
 
 			spr_width = rotsprite->width << FRACBITS;
 			spr_height = rotsprite->height << FRACBITS;
@@ -2022,7 +2015,7 @@ static void R_ProjectSprite(mobj_t *thing)
 
 		tx2 = FixedMul(tr_x, viewsin) - FixedMul(tr_y, viewcos);
 
-		if (max(tz, tz2) < FixedMul(MINZ, this_scale)) // non-papersprite clipping is handled earlier
+		if (std::max(tz, tz2) < FixedMul(MINZ, this_scale)) // non-papersprite clipping is handled earlier
 			return;
 
 		// Needs partially clipped
@@ -2172,7 +2165,7 @@ static void R_ProjectSprite(mobj_t *thing)
 			dispoffset *= -1; // if it's physically behind, make sure it's ordered behind (if dispoffset > 0)
 
 		sortscale = linkscale; // now make sure it's linked
-		cut |= SC_LINKDRAW;
+		cut = static_cast<spritecut_e>(cut | SC_LINKDRAW);
 	}
 	else if (splat)
 	{
@@ -2245,7 +2238,7 @@ static void R_ProjectSprite(mobj_t *thing)
 			spritexscale = FixedMul(thing->radius * 2, FixedMul(shadowscale, spritexscale));
 			spriteyscale = FixedMul(thing->radius * 2, FixedMul(shadowscale, spriteyscale));
 			spriteyscale = FixedMul(spriteyscale, FixedDiv(abs(groundz - viewz), tz));
-			spriteyscale = min(spriteyscale, spritexscale) / patch->height;
+			spriteyscale = std::min(spriteyscale, spritexscale) / patch->height;
 			spritexscale /= patch->width;
 		}
 		else
@@ -2261,7 +2254,7 @@ static void R_ProjectSprite(mobj_t *thing)
 			gzt = (isflipped ? (interp.z + thing->height) : interp.z) + patch->height * spriteyscale / 2;
 			gz = gzt - patch->height * spriteyscale;
 
-			cut |= SC_SHEAR;
+			cut = static_cast<spritecut_e>(cut | SC_SHEAR);
 		}
 	}
 
@@ -2330,7 +2323,7 @@ static void R_ProjectSprite(mobj_t *thing)
 					: R_PointToAngle(interp.x, interp.y));
 
 			// Less change in contrast in dark sectors
-			extralight = FixedMul(extralight, min(max(0, lightnum), LIGHTLEVELS - 1) * FRACUNIT / (LIGHTLEVELS - 1));
+			extralight = FixedMul(extralight, std::min(std::max(0, lightnum), LIGHTLEVELS - 1) * FRACUNIT / (LIGHTLEVELS - 1));
 
 			if (papersprite)
 			{
@@ -2342,7 +2335,7 @@ static void R_ProjectSprite(mobj_t *thing)
 				fixed_t n = FixedDiv(FixedMul(xscale, LIGHTRESOLUTIONFIX), ((MAXLIGHTSCALE-1) << LIGHTSCALESHIFT));
 
 				// Less change in contrast at further distances, to counteract DOOM diminished light
-				extralight = FixedMul(extralight, min(n, FRACUNIT));
+				extralight = FixedMul(extralight, std::min(n, FRACUNIT));
 
 				// Contrast is stronger for normal sprites, stronger than wall lighting is at the same distance
 				lightnum += FixedFloor((extralight / 4) + (FRACUNIT / 2)) / FRACUNIT;
@@ -2484,11 +2477,11 @@ static void R_ProjectSprite(mobj_t *thing)
 	vis->transmap = R_GetBlendTable(blendmode, trans);
 
 	if (R_ThingIsSemiBright(oldthing))
-		vis->cut |= SC_SEMIBRIGHT;
+		vis->cut = static_cast<spritecut_e>(vis->cut | SC_SEMIBRIGHT);
 	else if (R_ThingIsFullBright(oldthing))
-		vis->cut |= SC_FULLBRIGHT;
+		vis->cut = static_cast<spritecut_e>(vis->cut | SC_FULLBRIGHT);
 	else if (R_ThingIsFullDark(oldthing))
-		vis->cut |= SC_FULLDARK;
+		vis->cut = static_cast<spritecut_e>(vis->cut | SC_FULLDARK);
 
 	//
 	// determine the colormap (lightlevel & special effects)
@@ -2517,9 +2510,9 @@ static void R_ProjectSprite(mobj_t *thing)
 	}
 
 	if (vflip)
-		vis->cut |= SC_VFLIP;
+		vis->cut = static_cast<spritecut_e>(vis->cut | SC_VFLIP);
 	if (splat)
-		vis->cut |= SC_SPLAT; // I like ya cut g
+		vis->cut = static_cast<spritecut_e>(vis->cut | SC_SPLAT); // I like ya cut g
 
 	vis->patch = patch;
 	vis->bright = R_CacheSpriteBrightMap(sprinfo, frame);
@@ -2714,7 +2707,7 @@ static void R_ProjectPrecipitationSprite(precipmobj_t *thing)
 
 	//Fab: lumppat is the lump number of the patch to use, this is different
 	//     than lumpid for sprites-in-pwad : the graphics are patched
-	vis->patch = W_CachePatchNum(sprframe->lumppat[0], PU_SPRITE);
+	vis->patch = static_cast<patch_t*>(W_CachePatchNum(sprframe->lumppat[0], PU_SPRITE));
 	vis->bright = R_CacheSpriteBrightMap(&spriteinfo[thing->sprite],
 			thing->frame & FF_FRAMEMASK);
 
@@ -3300,7 +3293,7 @@ static drawnode_t *R_CreateDrawNode(drawnode_t *link)
 
 	if (node == &nodebankhead)
 	{
-		node = malloc(sizeof (*node));
+		node = static_cast<drawnode_t*>(malloc(sizeof (*node)));
 		if (!node)
 			I_Error("No more free memory to CreateDrawNode");
 	}
@@ -3591,12 +3584,12 @@ void R_ClipVisSprite(vissprite_t *spr, INT32 x1, INT32 x2, portal_t* portal)
 
 	if (xclip == x)
 	{
-		spr->cut |= SC_CULL; // completely skip this sprite going forward
+		spr->cut = static_cast<spritecut_e>(spr->cut | SC_CULL); // completely skip this sprite going forward
 	}
 	else if (portal)
 	{
-		INT32 start_index = max(portal->start, x1);
-		INT32 end_index = min(portal->start + portal->end - portal->start, x2);
+		INT32 start_index = std::max(portal->start, x1);
+		INT32 end_index = std::min(portal->start + portal->end - portal->start, x2);
 		for (x = x1; x < start_index; x++)
 		{
 			spr->clipbot[x] = -1;
@@ -3644,11 +3637,11 @@ void R_ClipSprites(drawseg_t* dsstart, portal_t* portal)
 
 		for (i = 0; i < DS_RANGES_COUNT; i++)
 		{
-			drawsegs_xranges[i].items = Z_Realloc(
+			drawsegs_xranges[i].items = static_cast<drawseg_xrange_item_t*>(Z_Realloc(
 				drawsegs_xranges[i].items,
 				drawsegs_xrange_size * sizeof(drawsegs_xranges[i].items[0]),
 				PU_STATIC, NULL
-			);
+			));
 		}
 	}
 
@@ -3884,7 +3877,7 @@ void R_DrawMasked(maskcount_t* masks, INT32 nummasks)
 	drawnode_t *heads;	/**< Drawnode lists; as many as number of views/portals. */
 	INT32 i;
 
-	heads = calloc(nummasks, sizeof(drawnode_t));
+	heads = static_cast<drawnode_t*>(calloc(nummasks, sizeof(drawnode_t)));
 
 	for (i = 0; i < nummasks; i++)
 	{
