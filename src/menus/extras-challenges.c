@@ -354,7 +354,7 @@ void M_Challenges(INT32 choice)
 	M_SetupNextMenu(&MISC_ChallengesDef, false);
 }
 
-static boolean M_CanKeyHiliTile(void)
+boolean M_CanKeyHiliTile(void)
 {
 	// No keys to do it with?
 	if (gamedata->chaokeys == 0)

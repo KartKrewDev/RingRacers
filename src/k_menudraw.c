@@ -5234,12 +5234,6 @@ static void M_DrawChallengeTile(INT16 i, INT16 j, INT32 x, INT32 y, boolean hili
 			colormap
 		);
 
-		if (challengesmenu.extradata[id].flags & CHE_ALLCLEAR)
-		{
-			// Temporary drawer for "key should be usable"
-			V_DrawFill(x + 5, y + 5, 2, 2, 255);
-		}
-
 		pat = missingpat;
 		colormap = NULL;
 
@@ -5572,7 +5566,7 @@ static void M_DrawChallengePreview(INT32 x, INT32 y)
 			addflags ^= V_FLIP; // This sprite is left/right flipped!
 		}
 
-		V_DrawFixedPatch(x*FRACUNIT, (y+7)*FRACUNIT, FRACUNIT, addflags, patch, NULL);
+		V_DrawFixedPatch(x*FRACUNIT, (y+2)*FRACUNIT, FRACUNIT, addflags, patch, NULL);
 		return;
 	}
 
@@ -6058,6 +6052,23 @@ static void M_DrawChallengeKeys(INT32 tilex, INT32 tiley)
 		}
 
 		V_DrawFixedPatch(keyx, keyy, FRACUNIT, 0, key, lastkeycolormap);
+
+		// Extra glowverlay if you can use a Chao Key
+		if (keysbeingused == 0 && M_CanKeyHiliTile())
+		{
+			INT32 trans = (((challengesmenu.ticker/5) % 6) - 3);
+			if (trans)
+			{
+				trans = ((trans < 0)
+					? (10 + trans)
+					: (10 - trans)
+				) << V_ALPHASHIFT;
+
+				V_DrawFixedPatch(keyx, keyy, FRACUNIT, trans, key,
+					R_GetTranslationColormap(TC_ALLWHITE, 0, GTC_MENUCACHE)
+				);
+			}
+		}
 	}
 }
 

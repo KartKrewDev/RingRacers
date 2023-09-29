@@ -1274,6 +1274,7 @@ void M_Challenges(INT32 choice);
 void M_DrawChallenges(void);
 void M_ChallengesTick(void);
 boolean M_ChallengesInputs(INT32 ch);
+boolean M_CanKeyHiliTile(void);
 
 typedef enum
 {
