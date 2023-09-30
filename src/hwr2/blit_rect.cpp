@@ -100,7 +100,7 @@ void BlitRectPass::transfer(Rhi& rhi, Handle<GraphicsContext> ctx)
 	if (output_correct_aspect_)
 	{
 		aspect = static_cast<float>(texture_width_) / static_cast<float>(texture_height_);
-		output_aspect = static_cast<float>(output_width_) / static_cast<float>(output_height_);
+		output_aspect = static_cast<float>(output_position_.w) / static_cast<float>(output_position_.h);
 	}
 	bool taller = aspect > output_aspect;
 
@@ -137,7 +137,7 @@ void BlitRectPass::transfer(Rhi& rhi, Handle<GraphicsContext> ctx)
 void BlitRectPass::graphics(Rhi& rhi, Handle<GraphicsContext> ctx)
 {
 	rhi.bind_pipeline(ctx, pipeline_);
-	rhi.set_viewport(ctx, {0, 0, output_width_, output_height_});
+	rhi.set_viewport(ctx, output_position_);
 	rhi.bind_uniform_set(ctx, 0, uniform_sets_[0]);
 	rhi.bind_uniform_set(ctx, 1, uniform_sets_[1]);
 	rhi.bind_binding_set(ctx, binding_set_);

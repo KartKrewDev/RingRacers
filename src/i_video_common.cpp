@@ -329,7 +329,7 @@ void I_FinishUpdate(void)
 		rhi->begin_default_render_pass(ctx, true);
 
 		// Upscale draw the backbuffer (with postprocessing maybe?)
-		g_hw_state.blit_rect->set_output(vid.realwidth, vid.realheight, true, true);
+		g_hw_state.blit_rect->set_output(0, 0, vid.realwidth, vid.realheight, true, true);
 		g_hw_state.blit_rect->set_texture(g_hw_state.backbuffer->color(), static_cast<uint32_t>(vid.width), static_cast<uint32_t>(vid.height));
 		g_hw_state.blit_rect->draw(*rhi, ctx);
 		rhi->end_render_pass(ctx);
