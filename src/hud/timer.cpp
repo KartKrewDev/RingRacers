@@ -27,11 +27,11 @@ void K_drawKart2PTimestamp(void)
 	{
 		if (R_GetViewNumber() == 0)
 		{
-			return Draw(286, 31).flags(V_SNAPTOTOP);
+			return Draw(287, 33).flags(V_SNAPTOTOP);
 		}
 		else
 		{
-			return Draw(286, 163).flags(V_SNAPTOBOTTOM);
+			return Draw(287, 156).flags(V_SNAPTOBOTTOM);
 		}
 	};
 

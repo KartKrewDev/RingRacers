@@ -90,10 +90,10 @@ void K_drawKartPowerUps(void)
 		switch (r_splitscreen)
 		{
 		case 0:
-			return { make_drawer(307, 55, Draw::Font::kZVote), "PWRU", -17, 7, -35, -1 };
+			return { make_drawer(307, 58, Draw::Font::kZVote), "PWRU", -17, 7, -35, -1 };
 
 		case 1:
-			return { make_drawer(318, viewnum == 0 ? 55 : 155, Draw::Font::kPing), "PWRS", -9, 6, -19, -1 };
+			return { make_drawer(318, viewnum == 0 ? 58 : 147, Draw::Font::kPing), "PWRS", -9, 6, -19, -1 };
 		}
 
 		// 3/4P
