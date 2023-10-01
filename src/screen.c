@@ -535,9 +535,6 @@ void SCR_DisplayTicRate(void)
 	INT32 x = 318;
 	double fps = round(averageFPS);
 
-	// draw "FPS"
-	V_DrawFixedPatch(306<<FRACBITS, 183<<FRACBITS, FRACUNIT, V_SNAPTOBOTTOM|V_SNAPTORIGHT, framecounter, R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_YELLOW, GTC_CACHE));
-
 	if (fps > (benchmark * 0.9))
 		ticcntcolor = R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_MINT, GTC_CACHE);
 	else if (fps < (benchmark * 0.5))
