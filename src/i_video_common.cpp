@@ -107,62 +107,6 @@ static void postframe_update(Rhi& rhi)
 	g_hw_state.palette_manager->destroy_per_frame_resources(rhi);
 }
 
-#ifdef HWRENDER
-static void finish_legacy_ogl_update()
-{
-	int player;
-
-	SCR_CalculateFPS();
-
-	if (st_overlay)
-	{
-		if (cv_songcredits.value)
-			HU_DrawSongCredits();
-
-		if (cv_ticrate.value)
-			SCR_DisplayTicRate();
-
-		if (cv_showping.value && netgame && (consoleplayer != serverplayer || !server_lagless))
-		{
-			if (server_lagless)
-			{
-				if (consoleplayer != serverplayer)
-					SCR_DisplayLocalPing();
-			}
-			else
-			{
-				for (player = 1; player < MAXPLAYERS; player++)
-				{
-					if (D_IsPlayerHumanAndGaming(player))
-					{
-						SCR_DisplayLocalPing();
-						break;
-					}
-				}
-			}
-		}
-		if (cv_mindelay.value && consoleplayer == serverplayer && Playing())
-			SCR_DisplayLocalPing();
-	}
-
-	if (marathonmode)
-		SCR_DisplayMarathonInfo();
-
-	// draw captions if enabled
-	if (cv_closedcaptioning.value)
-		SCR_ClosedCaptions();
-
-#ifdef HAVE_DISCORDRPC
-	if (discordRequestList != NULL)
-		ST_AskToJoinEnvelope();
-#endif
-
-	ST_drawDebugInfo();
-
-	OglSdlFinishUpdate(cv_vidwait.value);
-}
-#endif
-
 static void temp_legacy_finishupdate_draws()
 {
 	SCR_CalculateFPS();
@@ -214,6 +158,14 @@ static void temp_legacy_finishupdate_draws()
 
 	ST_drawDebugInfo();
 }
+
+#ifdef HWRENDER
+static void finish_legacy_ogl_update()
+{
+	temp_legacy_finishupdate_draws();
+	OglSdlFinishUpdate(cv_vidwait.value);
+}
+#endif
 
 static void new_twodee_frame()
 {
