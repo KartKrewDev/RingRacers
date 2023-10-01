@@ -7927,8 +7927,6 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 
 			debtflag->color = player->skincolor;
 			debtflag->fuse = 2;
-
-			debtflag->renderflags = K_GetPlayerDontDrawFlag(player);
 		}
 
 		if (player->springstars && (leveltime & 1))
