@@ -19,7 +19,7 @@
 #include "d_clisrv.h" // playerconsole
 #include "doomdef.h" // MAXPLAYERS
 #include "doomstat.h" // consoleplayer
-#include "g_game.h" // localangle
+#include "g_game.h" // G_FixCamera
 #include "g_party.h"
 #include "g_state.h"
 #include "p_local.h"
@@ -136,20 +136,8 @@ public:
 
 		for (std::size_t i = 0; i < size(); ++i)
 		{
-			const playernum_t player = at(i);
-
-			displayplayers[i] = player;
-
-			// The order of displayplayers can change, which
-			// would make localangle invalid now.
-			localangle[i] = players[player].angleturn;
-
-			P_ResetCamera(&players[player], &camera[i]);
-
-			// Make sure the viewport doesn't interpolate at
-			// all into its new position -- just snap
-			// instantly into place.
-			R_ResetViewInterpolation(1 + i);
+			displayplayers[i] = at(i);
+			G_FixCamera(1 + i);
 		}
 
 		r_splitscreen = size() - 1;
