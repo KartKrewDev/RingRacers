@@ -20,6 +20,7 @@ class UpscaleBackbuffer
 	rhi::Handle<rhi::Texture> color_;
 	rhi::Handle<rhi::Renderbuffer> depth_;
 	rhi::Handle<rhi::RenderPass> renderpass_;
+	rhi::Handle<rhi::RenderPass> renderpass_clear_;
 
 public:
 	UpscaleBackbuffer();
