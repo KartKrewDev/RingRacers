@@ -206,7 +206,15 @@ class TiccmdBuilder
 		else
 #endif
 		{
-			localangle[viewnum] += angleChange;
+			int p = g_localplayers[forplayer()];
+
+			for (int i = 0; i <= r_splitscreen; ++i)
+			{
+				if (displayplayers[i] == p)
+				{
+					localangle[i] += angleChange;
+				}
+			}
 		}
 	}
 

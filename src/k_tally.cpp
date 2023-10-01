@@ -33,6 +33,7 @@
 #include "m_easing.h"
 #include "s_sound.h"
 #include "st_stuff.h"
+#include "r_fps.h"
 
 boolean level_tally_t::UseBonuses(void)
 {
@@ -883,14 +884,14 @@ void level_tally_t::Draw(void)
 	SINT8 h_transition_sign = 1;
 	if (r_splitscreen > 1)
 	{
-		if (stplyr == &players[displayplayers[0]] || stplyr == &players[displayplayers[2]])
+		if (!(R_GetViewNumber() & 1))
 		{
 			h_transition_sign = -h_transition_sign;
 		}
 	}
 	else if (r_splitscreen > 0)
 	{
-		if (stplyr == &players[displayplayers[1]])
+		if (R_GetViewNumber() == 1)
 		{
 			h_transition_sign = -h_transition_sign;
 		}

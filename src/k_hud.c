@@ -1481,7 +1481,7 @@ static void K_drawKartItem(void)
 	// pain and suffering defined below
 	if (offset)
 	{
-		if (stplyr == &players[displayplayers[0]] || stplyr == &players[displayplayers[2]]) // If we are P1 or P3...
+		if (!(R_GetViewNumber() & 1)) // If we are P1 or P3...
 		{
 			fx = ITEM_X;
 			fy = ITEM_Y;
@@ -1622,7 +1622,7 @@ static void K_drawKartItem(void)
 		{
 			xo++;
 
-			if (stplyr == &players[displayplayers[0]] || stplyr == &players[displayplayers[2]]) // Flip for P1 and P3 (yes, that's correct)
+			if (!(R_GetViewNumber() & 1)) // Flip for P1 and P3 (yes, that's correct)
 			{
 				xo -= 62;
 				flip = V_FLIP;
@@ -1730,7 +1730,7 @@ static void K_drawKartSlotMachine(void)
 	if (offset)
 	{
 		boxoffx -= 4;
-		if (stplyr == &players[displayplayers[0]] || stplyr == &players[displayplayers[2]]) // If we are P1 or P3...
+		if (!(R_GetViewNumber() & 1)) // If we are P1 or P3...
 		{
 			fx = ITEM_X + 10;
 			fy = ITEM_Y + 10;
@@ -2052,7 +2052,7 @@ static void K_DrawKartPositionNum(UINT8 num)
 	{
 		fx = BASEVIDWIDTH << FRACBITS;
 
-		if (stplyr == &players[displayplayers[0]])
+		if (R_GetViewNumber() == 0)
 		{
 			// for player 1: display this at the top right, above the minimap.
 			fy = 0;
@@ -2071,8 +2071,7 @@ static void K_DrawKartPositionNum(UINT8 num)
 	{
 		fy = BASEVIDHEIGHT << FRACBITS;
 
-		if (stplyr == &players[displayplayers[0]]
-			|| stplyr == &players[displayplayers[2]])
+		if (!(R_GetViewNumber() & 1)) // If we are P1 or P3...
 		{
 			// If we are P1 or P3...
 			fx = 0;
@@ -2512,7 +2511,7 @@ static void K_drawKartEmeralds(void)
 		if (r_splitscreen < 2)
 		{
 			startx -= 8;
-			if (r_splitscreen == 1 && stplyr == &players[displayplayers[0]])
+			if (r_splitscreen == 1 && R_GetViewNumber() == 0)
 			{
 				starty = 1;
 			}
@@ -2522,7 +2521,7 @@ static void K_drawKartEmeralds(void)
 		{
 			xindex = 2;
 			starty -= 15;
-			if (stplyr == &players[displayplayers[0]] || stplyr == &players[displayplayers[2]])	// If we are P1 or P3...
+			if (!(R_GetViewNumber() & 1)) // If we are P1 or P3...
 			{
 				startx = LAPS_X;
 				splitflags = V_SNAPTOLEFT|V_SNAPTOBOTTOM|V_SPLITSCREEN;
@@ -2586,7 +2585,7 @@ static void K_drawKartLaps(void)
 		}
 		else
 		{
-			if (stplyr == &players[displayplayers[0]] || stplyr == &players[displayplayers[2]])	// If we are P1 or P3...
+			if (!(R_GetViewNumber() & 1)) // If we are P1 or P3...
 			{
 				fx = LAPS_X;
 				fy = LAPS_Y;
@@ -2693,7 +2692,7 @@ static void K_drawRingCounter(boolean gametypeinfoshown)
 		}
 		else
 		{
-			if (stplyr == &players[displayplayers[0]] || stplyr == &players[displayplayers[2]])	// If we are P1 or P3...
+			if (!(R_GetViewNumber() & 1)) // If we are P1 or P3...
 			{
 				fx = LAPS_X;
 				fy = LAPS_Y;
@@ -2833,7 +2832,7 @@ static void K_drawKartAccessibilityIcons(boolean gametypeinfoshown, INT32 fx)
     {
         fx = LAPS_X+44;
         fy = LAPS_Y;
-        if (!(stplyr == &players[displayplayers[0]] || stplyr == &players[displayplayers[2]]))  // If we are not P1 or P3...
+        if (R_GetViewNumber() & 1) // If we are not P1 or P3...
         {
             splitflags ^= (V_SNAPTOLEFT|V_SNAPTORIGHT);
             fx = (BASEVIDWIDTH/2) - fx;
@@ -2992,7 +2991,7 @@ static void K_drawBlueSphereMeter(boolean gametypeinfoshown)
 	else
 	{
 		xstep = 8;
-		if (stplyr == &players[displayplayers[0]] || stplyr == &players[displayplayers[2]])	// If we are P1 or P3...
+		if (!(R_GetViewNumber() & 1)) // If we are P1 or P3...
 		{
 			fx = LAPS_X-2;
 			fy = LAPS_Y;
@@ -3077,7 +3076,7 @@ static void K_drawKartBumpersOrKarma(void)
 		}
 		else
 		{
-			if (stplyr == &players[displayplayers[0]] || stplyr == &players[displayplayers[2]])	// If we are P1 or P3...
+			if (!(R_GetViewNumber() & 1)) // If we are P1 or P3...
 			{
 				fx = LAPS_X;
 				fy = LAPS_Y;
@@ -3704,20 +3703,10 @@ static void K_drawKartNameTags(void)
 
 			if (result.onScreen == true)
 			{
-				if (!(demo.playback == true && demo.freecam == true))
+				if (!(demo.playback == true && demo.freecam == true) && P_IsDisplayPlayer(ntplayer) &&
+						ntplayer != &players[displayplayers[cnum]])
 				{
-					for (j = 0; j <= (unsigned)r_splitscreen; j++)
-					{
-						if (ntplayer == &players[displayplayers[j]])
-						{
-							break;
-						}
-					}
-
-					if (j <= (unsigned)r_splitscreen && j != cnum)
-					{
-						localindicator = j;
-					}
+					localindicator = G_PartyPosition(ntplayer - players);
 				}
 
 				if (localindicator >= 0)
@@ -3896,7 +3885,7 @@ static void K_drawKartMinimap(void)
 
 	// Only draw for the first player
 	// Maybe move this somewhere else where this won't be a concern?
-	if (stplyr != &players[displayplayers[0]])
+	if (R_GetViewNumber() != 0)
 		return;
 
 	if (specialstageinfo.valid == true)
@@ -4431,7 +4420,7 @@ static void K_drawKartFinish(boolean finish)
 
 		interpx = R_InterpolateFixed(ox, x);
 
-		if (r_splitscreen && stplyr == &players[displayplayers[1]])
+		if (r_splitscreen && R_GetViewNumber() == 1)
 			interpx = -interpx;
 
 		V_DrawFixedPatch(interpx + (STCD_X<<FRACBITS) - (pwidth / 2),
@@ -4669,14 +4658,12 @@ static void K_drawKartFirstPerson(void)
 	if (stplyr->spectator || !stplyr->mo || (stplyr->mo->renderflags & RF_DONTDRAW))
 		return;
 
-	if (stplyr == &players[displayplayers[1]] && r_splitscreen)
-		{ pn = pnum[1]; tn = turn[1]; dr = drift[1]; }
-	else if (stplyr == &players[displayplayers[2]] && r_splitscreen > 1)
-		{ pn = pnum[2]; tn = turn[2]; dr = drift[2]; }
-	else if (stplyr == &players[displayplayers[3]] && r_splitscreen > 2)
-		{ pn = pnum[3]; tn = turn[3]; dr = drift[3]; }
-	else
-		{ pn = pnum[0]; tn = turn[0]; dr = drift[0]; }
+	{
+		UINT8 view = R_GetViewNumber();
+		pn = pnum[view];
+		tn = turn[view];
+		dr = drift[view];
+	}
 
 	if (r_splitscreen)
 	{
@@ -4805,14 +4792,12 @@ static void K_drawKartFirstPerson(void)
 
 	V_DrawFixedPatch(x, y, scale, splitflags, kp_fpview[target], colmap);
 
-	if (stplyr == &players[displayplayers[1]] && r_splitscreen)
-		{ pnum[1] = pn; turn[1] = tn; drift[1] = dr; }
-	else if (stplyr == &players[displayplayers[2]] && r_splitscreen > 1)
-		{ pnum[2] = pn; turn[2] = tn; drift[2] = dr; }
-	else if (stplyr == &players[displayplayers[3]] && r_splitscreen > 2)
-		{ pnum[3] = pn; turn[3] = tn; drift[3] = dr; }
-	else
-		{ pnum[0] = pn; turn[0] = tn; drift[0] = dr; }
+	{
+		UINT8 view = R_GetViewNumber();
+		pnum[view] = pn;
+		turn[view] = tn;
+		drift[view] = dr;
+	}
 }
 
 // doesn't need to ever support 4p
@@ -5093,26 +5078,19 @@ static void
 K_drawMiniPing (void)
 {
 	UINT32 f = V_SNAPTORIGHT;
-	UINT8 i;
+	UINT8 i = R_GetViewNumber();
 
 	if (!cv_showping.value)
 	{
 		return;
 	}
 
-	for (i = 0; i <= r_splitscreen; i++)
+	if (r_splitscreen > 1 && !(i & 1))
 	{
-		if (stplyr == &players[displayplayers[i]])
-		{
-			if (r_splitscreen > 1 && !(i & 1))
-			{
-				f = V_SNAPTOLEFT;
-			}
-
-			Draw_party_ping(i, f);
-			break;
-		}
+		f = V_SNAPTOLEFT;
 	}
+
+	Draw_party_ping(i, f);
 }
 
 void K_drawButton(fixed_t x, fixed_t y, INT32 flags, patch_t *button[2], boolean pressed)
@@ -5210,7 +5188,7 @@ static void K_drawDistributionDebugger(void)
 	fixed_t y = -pad;
 	size_t i;
 
-	if (stplyr != &players[displayplayers[0]]) // only for p1
+	if (R_GetViewNumber() != 0) // only for p1
 	{
 		return;
 	}
@@ -5268,7 +5246,7 @@ static void K_DrawWaypointDebugger(void)
 	if (cv_kartdebugwaypoints.value == 0)
 		return;
 
-	if (stplyr != &players[displayplayers[0]]) // only for p1
+	if (R_GetViewNumber() != 0) // only for p1
 		return;
 
 	if (netgame)
@@ -5298,7 +5276,7 @@ static void K_DrawBotDebugger(void)
 		return;
 	}
 
-	if (stplyr != &players[displayplayers[0]]) // only for p1
+	if (R_GetViewNumber() != 0) // only for p1
 	{
 		return;
 	}
@@ -5368,7 +5346,7 @@ static void K_DrawGPRankDebugger(void)
 		return;
 	}
 
-	if (stplyr != &players[displayplayers[0]]) // only for p1
+	if (R_GetViewNumber() != 0) // only for p1
 	{
 		return;
 	}
@@ -5425,7 +5403,7 @@ void K_drawKartHUD(void)
 		K_drawKartFirstPerson();
 
 	// Draw full screen stuff that turns off the rest of the HUD
-	if (mapreset && stplyr == &players[displayplayers[0]])
+	if (mapreset && R_GetViewNumber() == 0)
 	{
 		K_drawChallengerScreen();
 		return;
