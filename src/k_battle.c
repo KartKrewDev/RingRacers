@@ -801,24 +801,6 @@ void K_BattleInit(boolean singleplayercontext)
 		battleprisons = true;
 	}
 
-	if (gametyperules & GTR_BUMPERS)
-	{
-		const INT32 startingHealth = K_BumpersToHealth(K_StartingBumperCount());
-
-		for (i = 0; i < MAXPLAYERS; i++)
-		{
-			if (!playeringame[i] || players[i].spectator)
-				continue;
-
-			if (players[i].mo)
-			{
-				players[i].mo->health = startingHealth;
-			}
-
-			K_SpawnPlayerBattleBumpers(players+i);
-		}
-	}
-
 	g_battleufo.due = starttime;
 	g_battleufo.previousId = Obj_GetFirstBattleUFOSpawnerID();
 }
