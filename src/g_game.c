@@ -1507,12 +1507,14 @@ boolean G_CouldView(INT32 playernum)
 //
 boolean G_CanView(INT32 playernum, UINT8 viewnum, boolean onlyactive)
 {
+	if (!playeringame[playernum] || players[playernum].spectator)
+	{
+		return false;
+	}
+
 	UINT8 splits;
 	UINT8 viewd;
 	INT32 *displayplayerp;
-
-	if (!(onlyactive ? G_CouldView(playernum) : (playeringame[playernum] && !players[playernum].spectator)))
-		return false;
 
 	splits = r_splitscreen+1;
 	if (viewnum > splits)
@@ -1522,14 +1524,17 @@ boolean G_CanView(INT32 playernum, UINT8 viewnum, boolean onlyactive)
 	{
 		displayplayerp = (&displayplayers[viewd-1]);
 		if ((*displayplayerp) == playernum)
-			return false;
+			return true;
 	}
 	for (viewd = viewnum + 1; viewd <= splits; ++viewd)
 	{
 		displayplayerp = (&displayplayers[viewd-1]);
 		if ((*displayplayerp) == playernum)
-			return false;
+			return true;
 	}
+
+	if (onlyactive && !G_CouldView(playernum))
+		return false;
 
 	return true;
 }
