@@ -1710,13 +1710,6 @@ static void Command_SetViews_f(void)
 	UINT8 splits;
 	UINT8 newsplits;
 
-	if (!( demo.playback && multiplayer ))
-	{
-		CONS_Alert(CONS_NOTICE,
-				"You must be viewing a multiplayer replay to use this.\n");
-		return;
-	}
-
 	if (COM_Argc() != 2)
 	{
 		CONS_Printf("setviews <views>: set the number of split screens\n");
@@ -1727,12 +1720,26 @@ static void Command_SetViews_f(void)
 
 	newsplits = atoi(COM_Argv(1));
 	newsplits = min(max(newsplits, 1), 4);
-	if (newsplits > splits)
+
+	if (newsplits > splits && demo.playback && multiplayer)
+	{
 		G_AdjustView(newsplits, 0, true);
+	}
 	else
 	{
+		// Even if the splits go beyond the real number of
+		// splitscreen players, displayplayers was filled
+		// with duplicates of P1 (see Got_AddPlayer).
 		r_splitscreen = newsplits-1;
 		R_ExecuteSetViewSize();
+
+		// If promoting (outside of replays), make sure the
+		// camera is in the correct position.
+		UINT8 i;
+		for (i = splits + 1; i <= newsplits; ++i)
+		{
+			G_FixCamera(i);
+		}
 	}
 }
 
