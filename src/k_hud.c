@@ -5618,7 +5618,7 @@ void K_drawKartHUD(void)
 
 	K_drawKartPowerUps();
 
-	if (G_IsPartyLocal(displayplayers[viewnum]) == false)
+	if (K_DirectorIsAvailable(viewnum) == true)
 	{
 		K_drawDirectorHUD();
 	}

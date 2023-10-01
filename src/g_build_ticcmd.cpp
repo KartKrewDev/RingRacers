@@ -245,7 +245,7 @@ class TiccmdBuilder
 
 	bool director_input()
 	{
-		if (demo.freecam || G_IsPartyLocal(displayplayers[forplayer()]) == true)
+		if (demo.freecam || !K_DirectorIsAvailable(viewnum))
 		{
 			return false;
 		}

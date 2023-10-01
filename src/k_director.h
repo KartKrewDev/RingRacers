@@ -28,6 +28,7 @@ void K_UpdateDirector(void);
 void K_DrawDirectorDebugger(void);
 void K_DirectorFollowAttack(player_t *player, mobj_t *inflictor, mobj_t *source);
 void K_ToggleDirector(boolean active);
+boolean K_DirectorIsAvailable(UINT8 viewnum);
 
 #ifdef __cplusplus
 } // extern "C"
