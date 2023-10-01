@@ -419,6 +419,9 @@ void D_RegisterServerCommands(void)
 	COM_AddDebugCommand("downloads", Command_Downloads_f);
 
 	COM_AddDebugCommand("give", Command_KartGiveItem_f);
+	COM_AddDebugCommand("give2", Command_KartGiveItem_f);
+	COM_AddDebugCommand("give3", Command_KartGiveItem_f);
+	COM_AddDebugCommand("give4", Command_KartGiveItem_f);
 
 	COM_AddCommand("schedule_add", Command_Schedule_Add);
 	COM_AddCommand("schedule_clear", Command_Schedule_Clear);
@@ -1606,6 +1609,22 @@ static void GetViewablePlayerPlaceRange(INT32 *first, INT32 *last)
 	}
 }
 
+static int GetCommandViewNumber(void)
+{
+	char c = COM_Argv(0)[strlen(COM_Argv(0))-1];/* may be digit */
+
+	switch (c)
+	{
+		default:
+			return 0;
+
+		case '2':
+		case '3':
+		case '4':
+			return c - '1';
+	}
+}
+
 #define PRINTVIEWPOINT( pre,suf ) \
 	CONS_Printf(pre"viewing \x84(%d) \x83%s\x80"suf".\n",\
 			(*displayplayerp), player_names[(*displayplayerp)]);
@@ -1613,21 +1632,11 @@ static void Command_View_f(void)
 {
 	INT32 *displayplayerp;
 	INT32 olddisplayplayer;
-	int viewnum;
+	int viewnum = 1 + GetCommandViewNumber();
 	const char *playerparam;
 	INT32 placenum;
 	INT32 playernum;
 	INT32 firstplace, lastplace;
-	char c;
-	/* easy peasy */
-	c = COM_Argv(0)[strlen(COM_Argv(0))-1];/* may be digit */
-	switch (c)
-	{
-		case '2': viewnum = 2; break;
-		case '3': viewnum = 3; break;
-		case '4': viewnum = 4; break;
-		default:  viewnum = 1;
-	}
 
 	if (viewnum > 1 && !( multiplayer && demo.playback ))
 	{
@@ -5924,6 +5933,8 @@ static void Command_Archivetest_f(void)
 */
 static void Command_KartGiveItem_f(void)
 {
+	UINT8 localplayer = g_localplayers[GetCommandViewNumber()];
+
 	int           ac;
 	const char *name;
 	INT32       item;
@@ -5979,7 +5990,7 @@ static void Command_KartGiveItem_f(void)
 				else
 					amt = BATTLE_POWERUP_TIME;
 
-				D_Cheat(consoleplayer, CHEAT_GIVEPOWERUP, item, amt);
+				D_Cheat(localplayer, CHEAT_GIVEPOWERUP, item, amt);
 			}
 			else if (item < NUMKARTITEMS)
 			{
@@ -5990,7 +6001,7 @@ static void Command_KartGiveItem_f(void)
 				else
 					amt = (item != KITEM_NONE);/* default to one quantity, or zero, if KITEM_NONE */
 
-				D_Cheat(consoleplayer, CHEAT_GIVEITEM, item, amt);
+				D_Cheat(localplayer, CHEAT_GIVEITEM, item, amt);
 			}
 			else
 			{
