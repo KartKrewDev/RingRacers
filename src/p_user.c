@@ -2887,7 +2887,7 @@ fixed_t t_cam_rotate[MAXSPLITSCREENPLAYERS] = {-42,-42,-42,-42};
 
 struct demofreecam_s democam;
 
-void P_DemoCameraMovement(camera_t *cam)
+void P_DemoCameraMovement(camera_t *cam, UINT8 num)
 {
 	ticcmd_t *cmd;
 	angle_t thrustangle;
@@ -2897,7 +2897,7 @@ void P_DemoCameraMovement(camera_t *cam)
 	boolean moving = false;
 
 	// first off we need to get button input
-	cmd = D_LocalTiccmd(0);
+	cmd = D_LocalTiccmd(num);
 
 	if (cmd->aiming != 0)
 	{
@@ -3083,18 +3083,6 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 	if (thiscam->subsector == NULL || thiscam->subsector->sector == NULL)
 		return true;
 
-	if (demo.freecam || player->spectator)
-	{
-		P_DemoCameraMovement(thiscam);
-		return true;
-	}
-
-	if (paused || P_AutoPause())
-		return true;
-
-	playerScale = FixedDiv(player->mo->scale, mapobjectscale);
-	scaleDiff = playerScale - FRACUNIT;
-
 	if (thiscam == &camera[1]) // Camera 2
 	{
 		num = 1;
@@ -3111,6 +3099,18 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 	{
 		num = 0;
 	}
+
+	if (demo.freecam || player->spectator)
+	{
+		P_DemoCameraMovement(thiscam, num);
+		return true;
+	}
+
+	if (paused || P_AutoPause())
+		return true;
+
+	playerScale = FixedDiv(player->mo->scale, mapobjectscale);
+	scaleDiff = playerScale - FRACUNIT;
 
 	mo = player->mo;
 

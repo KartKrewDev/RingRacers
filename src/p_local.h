@@ -154,7 +154,7 @@ void P_AddPlayerScore(player_t *player, UINT32 amount);
 void P_ResetCamera(player_t *player, camera_t *thiscam);
 boolean P_TryCameraMove(fixed_t x, fixed_t y, camera_t *thiscam);
 void P_SlideCameraMove(camera_t *thiscam);
-void P_DemoCameraMovement(camera_t *cam);
+void P_DemoCameraMovement(camera_t *cam, UINT8 num);
 boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcalled);
 void P_ToggleDemoCamera(void);
 
