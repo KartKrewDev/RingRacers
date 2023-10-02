@@ -2139,7 +2139,7 @@ static void K_DrawKartPositionNum(UINT8 num)
 		color = R_GetTranslationColormap(TC_DEFAULT, SKINCOLOR_POSNUM, GTC_CACHE);
 	}
 
-	if ((fflags & V_SNAPTORIGHT) == 0 && num > 9)
+	if ((fflags & V_SNAPTORIGHT) == 0)
 	{
 		const UINT8 splitIndex = (r_splitscreen > 0) ? 1 : 0;
 		UINT8 adjustNum = num;
