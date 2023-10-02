@@ -100,6 +100,7 @@ static patch_t *kp_speedometersticker;
 static patch_t *kp_speedometerlabel[4];
 
 static patch_t *kp_rankbumper;
+static patch_t *kp_bigbumper;
 static patch_t *kp_tinybumper[2];
 static patch_t *kp_ranknobumpers;
 static patch_t *kp_rankcapsule;
@@ -439,6 +440,7 @@ void K_LoadKartHUDGraphics(void)
 
 	// Extra ranking icons
 	HU_UpdatePatch(&kp_rankbumper, "K_BLNICO");
+	HU_UpdatePatch(&kp_bigbumper, "K_BLNBIG");
 	HU_UpdatePatch(&kp_tinybumper[0], "K_BLNA");
 	HU_UpdatePatch(&kp_tinybumper[1], "K_BLNB");
 	HU_UpdatePatch(&kp_ranknobumpers, "K_NOBLNS");
@@ -3131,10 +3133,9 @@ static void K_drawKartBumpersOrKarma(void)
 
 		fx += 2;
 
-		V_DrawScaledPatch(fx+22, fy, V_HUDTRANS|V_SLIDEIN|splitflags, frameslash);
-
 		if (battleprisons)
 		{
+			V_DrawScaledPatch(fx+22, fy, V_HUDTRANS|V_SLIDEIN|splitflags, frameslash);
 			V_DrawMappedPatch(fx-1, fy-2, V_HUDTRANS|V_SLIDEIN|splitflags, kp_rankcapsule, NULL);
 
 			if (numtargets > 9 || maptargets > 9)
@@ -3160,31 +3161,16 @@ static void K_drawKartBumpersOrKarma(void)
 		}
 		else
 		{
-			const INT32 maxbumper = K_StartingBumperCount();
 			const UINT8 bumpers = K_Bumpers(stplyr);
 
 			V_DrawMappedPatch(fx-1, fy-2, V_HUDTRANS|V_SLIDEIN|splitflags, kp_rankbumper, colormap);
 
-			if (bumpers > 9 || maxbumper > 9)
-			{
-				UINT8 ln[2];
-				ln[0] = (bumpers / 10 % 10);
-				ln[1] = (bumpers % 10);
+			UINT8 ln[2];
+			ln[0] = (bumpers / 10 % 10);
+			ln[1] = (bumpers % 10);
 
-				V_DrawScaledPatch(fx+13, fy, V_HUDTRANS|V_SLIDEIN|splitflags, fontv[PINGNUM_FONT].font[ln[0]]);
-				V_DrawScaledPatch(fx+17, fy, V_HUDTRANS|V_SLIDEIN|splitflags, fontv[PINGNUM_FONT].font[ln[1]]);
-
-				ln[0] = ((abs(maxbumper) / 10) % 10);
-				ln[1] = (abs(maxbumper) % 10);
-
-				V_DrawScaledPatch(fx+27, fy, V_HUDTRANS|V_SLIDEIN|splitflags, fontv[PINGNUM_FONT].font[ln[0]]);
-				V_DrawScaledPatch(fx+31, fy, V_HUDTRANS|V_SLIDEIN|splitflags, fontv[PINGNUM_FONT].font[ln[1]]);
-			}
-			else
-			{
-				V_DrawScaledPatch(fx+13, fy, V_HUDTRANS|V_SLIDEIN|splitflags, kp_facenum[(bumpers) % 10]);
-				V_DrawScaledPatch(fx+27, fy, V_HUDTRANS|V_SLIDEIN|splitflags, kp_facenum[(maxbumper) % 10]);
-			}
+			V_DrawScaledPatch(fx+13, fy, V_HUDTRANS|V_SLIDEIN|splitflags, kp_facenum[ln[0]]);
+			V_DrawScaledPatch(fx+19, fy, V_HUDTRANS|V_SLIDEIN|splitflags, kp_facenum[ln[1]]);
 		}
 	}
 	else
@@ -3201,7 +3187,6 @@ static void K_drawKartBumpersOrKarma(void)
 		}
 		else
 		{
-			const INT32 maxbumper = K_StartingBumperCount();
 			const UINT8 bumpers = K_Bumpers(stplyr);
 
 			if (r_splitscreen == 0)
@@ -3209,12 +3194,9 @@ static void K_drawKartBumpersOrKarma(void)
 				fy += 2;
 			}
 
-			if (bumpers > 9 && maxbumper > 9)
-				V_DrawMappedPatch(LAPS_X, fy, V_HUDTRANS|V_SLIDEIN|splitflags, kp_bumperstickerwide, colormap);
-			else
-				V_DrawMappedPatch(LAPS_X, fy, V_HUDTRANS|V_SLIDEIN|splitflags, kp_bumpersticker, colormap);
-
-			V_DrawTimerString(LAPS_X+47, fy+3, V_HUDTRANS|V_SLIDEIN|splitflags, va("%d/%d", bumpers, maxbumper));
+			K_DrawSticker(LAPS_X+12, fy+5, bumpers > 9 ? 64 : 52, V_HUDTRANS|V_SLIDEIN|splitflags, false);
+			V_DrawMappedPatch(LAPS_X+15, fy-5, V_HUDTRANS|V_SLIDEIN|splitflags, kp_bigbumper, colormap);
+			V_DrawTimerString(LAPS_X+47, fy+3, V_HUDTRANS|V_SLIDEIN|splitflags, va("%d", bumpers));
 		}
 	}
 }
