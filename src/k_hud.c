@@ -5461,19 +5461,6 @@ void K_drawKartHUD(void)
 			K_drawKartMinimap();
 	}
 
-	// Draw the item window
-	if (LUA_HudEnabled(hud_item) && !freecam)
-	{
-		if (stplyr->itemRoulette.ringbox && stplyr->itemamount == 0 && stplyr->itemtype == 0)
-		{
-			K_drawKartSlotMachine();
-		}
-		else
-		{
-			K_drawKartItem();
-		}
-	}
-
 	if (demo.title)
 		;
 	else if (!r_splitscreen)
@@ -5586,6 +5573,19 @@ void K_drawKartHUD(void)
 				// Draw the input UI
 				if (LUA_HudEnabled(hud_position))
 					K_drawInput();
+			}
+
+			// Draw the item window
+			if (LUA_HudEnabled(hud_item) && !freecam)
+			{
+				if (stplyr->itemRoulette.ringbox && stplyr->itemamount == 0 && stplyr->itemtype == 0)
+				{
+					K_drawKartSlotMachine();
+				}
+				else
+				{
+					K_drawKartItem();
+				}
 			}
 		}
 	}
