@@ -7539,6 +7539,9 @@ static void P_InitLevelSettings(void)
 	leveltime = 0;
 	modulothing = 0;
 
+	P_SetFreezeLevel(false);
+	P_SetFreezeCheat(false);
+
 	K_TimerReset();
 
 	nummaprings = 0;

@@ -10012,6 +10012,7 @@ void P_MobjThinker(mobj_t *mobj)
 	mobj->flags2 &= ~(MF2_ALREADYHIT);
 
 	// Don't run any thinker code while in hitlag
+	mobj->eflags &= ~(MFE_PAUSED);
 	if ((mobj->player ? mobj->hitlag - mobj->player->nullHitlag : mobj->hitlag) > 0)
 	{
 		mobj->eflags |= MFE_PAUSED;
@@ -10054,11 +10055,14 @@ void P_MobjThinker(mobj_t *mobj)
 		if (mobj->type == MT_HITLAG && mobj->hitlag == 0)
 			mobj->renderflags &= ~RF_DONTDRAW;
 		*/
+	}
 
+	if (P_MobjIsFrozen(mobj))
+	{
 		return;
 	}
 
-	mobj->eflags &= ~(MFE_PUSHED|MFE_SPRUNG|MFE_JUSTBOUNCEDWALL|MFE_DAMAGEHITLAG|MFE_SLOPELAUNCHED|MFE_PAUSED);
+	mobj->eflags &= ~(MFE_PUSHED|MFE_SPRUNG|MFE_JUSTBOUNCEDWALL|MFE_DAMAGEHITLAG|MFE_SLOPELAUNCHED);
 
 	// sal: what the hell? is there any reason this isn't done, like, literally ANYWHERE else?
 	P_SetTarget(&tm.floorthing, NULL);

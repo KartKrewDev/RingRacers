@@ -48,6 +48,7 @@ private:
 	bool syllable;
 
 	bool dismissable;
+	bool freeze;
 
 	void Init(void);
 	//void Unset(void);

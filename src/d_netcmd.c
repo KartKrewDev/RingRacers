@@ -534,6 +534,7 @@ void D_RegisterClientCommands(void)
 	// add cheats
 	COM_AddDebugCommand("noclip", Command_CheatNoClip_f);
 	COM_AddDebugCommand("god", Command_CheatGod_f);
+	COM_AddDebugCommand("freeze", Command_CheatFreeze_f);
 	COM_AddDebugCommand("setrings", Command_Setrings_f);
 	COM_AddDebugCommand("setspheres", Command_Setspheres_f);
 	COM_AddDebugCommand("setlives", Command_Setlives_f);
@@ -5734,6 +5735,13 @@ static void Got_Cheat(UINT8 **cp, INT32 playernum)
 			P_GivePlayerSpheres(player, spheres);
 
 			CV_CheaterWarning(targetPlayer, va("spheres = %d", spheres));
+			break;
+		}
+
+		case CHEAT_FREEZE: {
+			const char *status = P_FreezeCheat() ? "off" : "on";
+			P_SetFreezeCheat( !P_FreezeCheat() );
+			CV_CheaterWarning(targetPlayer, va("freeze %s", status));
 			break;
 		}
 
