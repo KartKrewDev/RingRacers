@@ -817,6 +817,12 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 			Obj_DashRingTouch(special, player);
 			return;
 
+		case MT_BALLSWITCH_BALL:
+		{
+			Obj_BallSwitchTouched(special, toucher);
+			return;
+		}
+
 		default: // SOC or script pickup
 			P_SetTarget(&special->target, toucher);
 			break;
@@ -2396,6 +2402,12 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 			force = true;
 		else if (shouldForce == 2)
 			return false;
+	}
+
+	if (target->type == MT_BALLSWITCH_BALL)
+	{
+		Obj_BallSwitchDamaged(target, inflictor, source);
+		return false;
 	}
 
 	if (!force)

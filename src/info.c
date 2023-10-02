@@ -892,6 +892,8 @@ char sprnames[NUMSPRITES + 1][5] =
 	"CPT2", // Checkpoint Stick
 	"CPT3", // Checkpoint Base
 
+	"SA2S", // SA2-style Ball Switch
+
 	// First person view sprites; this is a sprite so that it can be replaced by a specialized MD2 draw later
 	"VIEW",
 };
@@ -5417,6 +5419,11 @@ state_t states[NUMSTATES] =
 	{SPR_SGNS, FF_ADD|FF_FULLBRIGHT|8, 1, {NULL}, 0, 0, S_CHECKPOINT_SPARK10}, // S_CHECKPOINT_SPARK9
 	{SPR_SGNS, FF_ADD|FF_FULLBRIGHT|3, 1, {NULL}, 0, 0, S_CHECKPOINT_SPARK11}, // S_CHECKPOINT_SPARK10
 	{SPR_SGNS, FF_ADD|FF_FULLBRIGHT|2, 1, {NULL}, 0, 0, S_CHECKPOINT_SPARK1}, // S_CHECKPOINT_SPARK11
+
+	{SPR_SA2S, FF_SEMIBRIGHT|3, -1, {NULL}, 0, 0, S_NULL}, // S_BALLSWITCH_BALL
+	{SPR_SA2S, FF_FULLBRIGHT|FF_ANIMATE|FF_GLOBALANIM|4, -1, {NULL}, 1, 1, S_NULL}, // S_BALLSWITCH_BALL_ACTIVE
+	{SPR_SA2S, FF_FLOORSPRITE, -1, {NULL}, 0, 0, S_NULL}, // S_BALLSWITCH_PAD
+	{SPR_SA2S, FF_FLOORSPRITE|FF_ANIMATE|FF_GLOBALANIM|1, -1, {NULL}, 1, 1, S_NULL}, // S_BALLSWITCH_PAD_ACTIVE
 };
 
 mobjinfo_t mobjinfo[NUMMOBJTYPES] =
@@ -30373,6 +30380,60 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		sfx_None,       // deathsound
 		0,              // speed
 		16*FRACUNIT,    // radius
+		16*FRACUNIT,    // height
+		0,              // display offset
+		0,              // mass
+		0,              // damage
+		sfx_None,       // activesound
+		MF_NOBLOCKMAP|MF_NOCLIP|MF_NOCLIPHEIGHT|MF_NOCLIPTHING|MF_NOGRAVITY|MF_SCENERY, // flags
+		S_NULL          // raisestate
+	},
+
+	{           // MT_BALLSWITCH_BALL
+		5000,           // doomednum
+		S_BALLSWITCH_BALL, // spawnstate
+		1000,           // spawnhealth
+		S_NULL,         // seestate
+		sfx_None,       // seesound
+		0,              // reactiontime
+		sfx_None,       // attacksound
+		S_NULL,         // painstate
+		0,              // painchance
+		sfx_None,       // painsound
+		S_NULL,         // meleestate
+		S_NULL,         // missilestate
+		S_NULL,         // deathstate
+		S_NULL,         // xdeathstate
+		sfx_None,       // deathsound
+		0,              // speed
+		36*FRACUNIT,    // radius
+		64*FRACUNIT,    // height
+		0,              // display offset
+		0,              // mass
+		0,              // damage
+		sfx_None,       // activesound
+		MF_SPECIAL|MF_SHOOTABLE|MF_NOGRAVITY, // flags
+		S_NULL          // raisestate
+	},
+
+	{           // MT_BALLSWITCH_PAD
+		-1,           // doomednum
+		S_BALLSWITCH_PAD, // spawnstate
+		1000,           // spawnhealth
+		S_NULL,         // seestate
+		sfx_None,       // seesound
+		0,              // reactiontime
+		sfx_None,       // attacksound
+		S_NULL,         // painstate
+		0,              // painchance
+		sfx_None,       // painsound
+		S_NULL,         // meleestate
+		S_NULL,         // missilestate
+		S_NULL,         // deathstate
+		S_NULL,         // xdeathstate
+		sfx_None,       // deathsound
+		0,              // speed
+		64*FRACUNIT,    // radius
 		16*FRACUNIT,    // height
 		0,              // display offset
 		0,              // mass

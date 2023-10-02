@@ -1446,6 +1446,8 @@ typedef enum sprite
 	SPR_CPT2, // Checkpoint Stick
 	SPR_CPT3, // Checkpoint Base
 
+	SPR_SA2S, // SA2-style Ball Switch
+
 	// First person view sprites; this is a sprite so that it can be replaced by a specialized MD2 draw later
 	SPR_VIEW,
 
@@ -5845,6 +5847,11 @@ typedef enum state
 	S_CHECKPOINT_SPARK10,
 	S_CHECKPOINT_SPARK11,
 
+	S_BALLSWITCH_BALL,
+	S_BALLSWITCH_BALL_ACTIVE,
+	S_BALLSWITCH_PAD,
+	S_BALLSWITCH_PAD_ACTIVE,
+
 	S_FIRSTFREESLOT,
 	S_LASTFREESLOT = S_FIRSTFREESLOT + NUMSTATEFREESLOTS - 1,
 	NUMSTATES
@@ -7015,6 +7022,9 @@ typedef enum mobj_type
 
 	MT_CHECKPOINT_END,
 	MT_SCRIPT_THING,
+
+	MT_BALLSWITCH_BALL,
+	MT_BALLSWITCH_PAD,
 
 	MT_FIRSTFREESLOT,
 	MT_LASTFREESLOT = MT_FIRSTFREESLOT + NUMMOBJFREESLOTS - 1,
