@@ -1507,6 +1507,11 @@ static void K_drawKartItem(void)
 		fflags = V_SNAPTOTOP|V_SNAPTOLEFT|V_SPLITSCREEN;
 	}
 
+	if (r_splitscreen == 1)
+	{
+		fy -= 5;
+	}
+
 	V_DrawScaledPatch(fx, fy, V_HUDTRANS|V_SLIDEIN|fflags, localbg);
 
 	// Need to draw these in a particular order, for sorting.
@@ -1757,6 +1762,11 @@ static void K_drawKartSlotMachine(void)
 		fx = ITEM_X;
 		fy = ITEM_Y;
 		fflags = V_SNAPTOTOP|V_SNAPTOLEFT|V_SPLITSCREEN;
+	}
+
+	if (r_splitscreen == 1)
+	{
+		fy -= 5;
 	}
 
 	V_DrawScaledPatch(fx, fy, V_HUDTRANS|V_SLIDEIN|fflags, localbg);
@@ -2903,6 +2913,11 @@ static void K_drawKartSpeedometer(boolean gametypeinfoshown)
 	INT32 splitflags = V_SNAPTOBOTTOM|V_SNAPTOLEFT|V_SPLITSCREEN;
 	INT32 fy = LAPS_Y-14;
 
+	if (battleprisons)
+	{
+		fy -= 2;
+	}
+
 	if (!stplyr->exiting) // Keep the same speed value as when you crossed the finish line!
 	{
 		switch (cv_kartspeedometer.value)
@@ -2975,7 +2990,23 @@ static void K_drawBlueSphereMeter(boolean gametypeinfoshown)
 	if (r_splitscreen < 2)	// don't change shit for THIS splitscreen.
 	{
 		fx = LAPS_X;
-		fy = LAPS_Y-7;
+		fy = LAPS_Y-4;
+
+		if (battleprisons)
+		{
+			if (r_splitscreen == 1)
+			{
+				fy -= 8;
+			}
+			else
+			{
+				fy -= 5;
+			}
+		}
+		else if (r_splitscreen == 1)
+		{
+			fy -= 5;
+		}
 
 		if (gametypeinfoshown)
 		{
@@ -3003,6 +3034,11 @@ static void K_drawBlueSphereMeter(boolean gametypeinfoshown)
 			splitflags ^= V_SNAPTOLEFT|V_SNAPTORIGHT;
 			flipflag = V_FLIP; // make the string right aligned and other shit
 			xstep = -xstep;
+		}
+
+		if (battleprisons)
+		{
+			fy -= 5;
 		}
 
 		if (gametypeinfoshown)
@@ -3092,11 +3128,14 @@ static void K_drawKartBumpersOrKarma(void)
 		}
 
 		V_DrawScaledPatch(fx-2 + (flipflag ? (SHORT(kp_ringstickersplit[1]->width) - 3) : 0), fy, V_HUDTRANS|V_SLIDEIN|splitflags|flipflag, kp_ringstickersplit[0]);
+
+		fx += 2;
+
 		V_DrawScaledPatch(fx+22, fy, V_HUDTRANS|V_SLIDEIN|splitflags, frameslash);
 
 		if (battleprisons)
 		{
-			V_DrawMappedPatch(fx+1, fy-2, V_HUDTRANS|V_SLIDEIN|splitflags, kp_rankcapsule, NULL);
+			V_DrawMappedPatch(fx-1, fy-2, V_HUDTRANS|V_SLIDEIN|splitflags, kp_rankcapsule, NULL);
 
 			if (numtargets > 9 || maptargets > 9)
 			{
@@ -3124,7 +3163,7 @@ static void K_drawKartBumpersOrKarma(void)
 			const INT32 maxbumper = K_StartingBumperCount();
 			const UINT8 bumpers = K_Bumpers(stplyr);
 
-			V_DrawMappedPatch(fx+1, fy-2, V_HUDTRANS|V_SLIDEIN|splitflags, kp_rankbumper, colormap);
+			V_DrawMappedPatch(fx-1, fy-2, V_HUDTRANS|V_SLIDEIN|splitflags, kp_rankbumper, colormap);
 
 			if (bumpers > 9 || maxbumper > 9)
 			{
@@ -3150,25 +3189,32 @@ static void K_drawKartBumpersOrKarma(void)
 	}
 	else
 	{
+		INT32 fy = r_splitscreen == 1 ? LAPS_Y-3 : LAPS_Y;
+
 		if (battleprisons)
 		{
 			if (numtargets > 9 && maptargets > 9)
-				V_DrawMappedPatch(LAPS_X, LAPS_Y, V_HUDTRANS|V_SLIDEIN|splitflags, kp_capsulestickerwide, NULL);
+				V_DrawMappedPatch(LAPS_X, fy, V_HUDTRANS|V_SLIDEIN|splitflags, kp_capsulestickerwide, NULL);
 			else
-				V_DrawMappedPatch(LAPS_X, LAPS_Y, V_HUDTRANS|V_SLIDEIN|splitflags, kp_capsulesticker, NULL);
-			V_DrawTimerString(LAPS_X+47, LAPS_Y+3, V_HUDTRANS|V_SLIDEIN|splitflags, va("%d/%d", numtargets, maptargets));
+				V_DrawMappedPatch(LAPS_X, fy, V_HUDTRANS|V_SLIDEIN|splitflags, kp_capsulesticker, NULL);
+			V_DrawTimerString(LAPS_X+47, fy+3, V_HUDTRANS|V_SLIDEIN|splitflags, va("%d/%d", numtargets, maptargets));
 		}
 		else
 		{
 			const INT32 maxbumper = K_StartingBumperCount();
 			const UINT8 bumpers = K_Bumpers(stplyr);
 
-			if (bumpers > 9 && maxbumper > 9)
-				V_DrawMappedPatch(LAPS_X, LAPS_Y, V_HUDTRANS|V_SLIDEIN|splitflags, kp_bumperstickerwide, colormap);
-			else
-				V_DrawMappedPatch(LAPS_X, LAPS_Y, V_HUDTRANS|V_SLIDEIN|splitflags, kp_bumpersticker, colormap);
+			if (r_splitscreen == 0)
+			{
+				fy += 2;
+			}
 
-			V_DrawTimerString(LAPS_X+47, LAPS_Y+3, V_HUDTRANS|V_SLIDEIN|splitflags, va("%d/%d", bumpers, maxbumper));
+			if (bumpers > 9 && maxbumper > 9)
+				V_DrawMappedPatch(LAPS_X, fy, V_HUDTRANS|V_SLIDEIN|splitflags, kp_bumperstickerwide, colormap);
+			else
+				V_DrawMappedPatch(LAPS_X, fy, V_HUDTRANS|V_SLIDEIN|splitflags, kp_bumpersticker, colormap);
+
+			V_DrawTimerString(LAPS_X+47, fy+3, V_HUDTRANS|V_SLIDEIN|splitflags, va("%d/%d", bumpers, maxbumper));
 		}
 	}
 }
