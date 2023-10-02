@@ -1451,8 +1451,15 @@ static fixed_t ST_CalculateFadeIn(player_t *player)
 	if (player->tally.hudSlide != 0)
 	{
 		tic_t timer = length - player->tally.hudSlide;
+		fixed_t f = timer * FRACUNIT;
 
-		return ((timer * FRACUNIT) + (FRACUNIT - rendertimefrac)) / length;
+		// Not interpolated at very beginning or end
+		if (timer > 0 && timer < length)
+		{
+			f += FRACUNIT - rendertimefrac;
+		}
+
+		return f / length;
 	}
 
 	tic_t timer = lt_exitticker;
@@ -1467,9 +1474,18 @@ static fixed_t ST_CalculateFadeIn(player_t *player)
 
 	if (timer < length)
 	{
-		return ((timer * FRACUNIT) + rendertimefrac) / length;
+		fixed_t f = timer * FRACUNIT;
+
+		// Not interpolated at very beginning
+		if (timer > 0)
+		{
+			f += rendertimefrac;
+		}
+
+		return f / length;
 	}
 
+	// Not interpolated at very end
 	return FRACUNIT;
 }
 
