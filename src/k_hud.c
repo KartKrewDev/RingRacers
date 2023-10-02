@@ -5081,23 +5081,26 @@ void K_drawKartFreePlay(void)
 	if (((leveltime-lt_endtime) % TICRATE) < TICRATE/2)
 		return;
 
-	const fixed_t x = ((BASEVIDWIDTH - (LAPS_X+6)) * FRACUNIT) - \
-	V_StringScaledWidth(
+	INT32 h_snap = (r_splitscreen < 2 || R_GetViewNumber() & 1) ? V_SNAPTORIGHT : V_SNAPTOLEFT;
+	fixed_t x = ((r_splitscreen > 1 ? BASEVIDWIDTH/4 : BASEVIDWIDTH - (LAPS_X+6)) * FRACUNIT);
+	fixed_t y = ((r_splitscreen ? BASEVIDHEIGHT/2 : BASEVIDHEIGHT) - 20) * FRACUNIT;
+
+	x -= V_StringScaledWidth(
 		FRACUNIT,
 		FRACUNIT,
 		FRACUNIT,
-		V_HUDTRANS|V_SLIDEIN|V_SNAPTOBOTTOM|V_SNAPTORIGHT|V_SPLITSCREEN,
+		V_HUDTRANS|V_SLIDEIN|V_SNAPTOBOTTOM|h_snap|V_SPLITSCREEN,
 		KART_FONT,
 		"FREE PLAY"
-	);
+	) / (r_splitscreen > 1 ? 2 : 1);
 
 	V_DrawStringScaled(
 		x,
-		(LAPS_Y+3) * FRACUNIT,
+		y,
 		FRACUNIT,
 		FRACUNIT,
 		FRACUNIT,
-		V_HUDTRANS|V_SLIDEIN|V_SNAPTOBOTTOM|V_SNAPTORIGHT|V_SPLITSCREEN,
+		V_HUDTRANS|V_SLIDEIN|V_SNAPTOBOTTOM|h_snap|V_SPLITSCREEN,
 		NULL,
 		KART_FONT,
 		"FREE PLAY"
