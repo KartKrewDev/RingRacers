@@ -578,7 +578,7 @@ void SCR_DisplayLocalPing(void)
 	{
 		INT32 dispy = cv_ticrate.value ? 160 : 181;
 		offline = (consoleplayer == serverplayer);
-		HU_drawPing(307 * FRACUNIT, dispy * FRACUNIT, ping, V_SNAPTORIGHT | V_SNAPTOBOTTOM | V_HUDTRANS, offline, 0);
+		HU_drawPing(307 * FRACUNIT, dispy * FRACUNIT, ping, V_SNAPTORIGHT | V_SNAPTOBOTTOM, offline, 0);
 	}
 }
 
