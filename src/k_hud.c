@@ -2741,10 +2741,16 @@ static void K_drawRingCounter(boolean gametypeinfoshown)
 		V_DrawMappedPatch(fr+ringx, fy-3, V_HUDTRANS|V_SLIDEIN|splitflags|ringflip, kp_smallring[ringanim_realframe], (colorring ? ringmap : NULL));
 
 		if (stplyr->hudrings < 0) // Draw the minus for ring debt
-			V_DrawMappedPatch(fr+7, fy, V_HUDTRANS|V_SLIDEIN|splitflags, kp_ringdebtminussmall, ringmap);
-
-		V_DrawMappedPatch(fr+11, fy, V_HUDTRANS|V_SLIDEIN|splitflags, fontv[PINGNUM_FONT].font[rn[0]], ringmap);
-		V_DrawMappedPatch(fr+15, fy, V_HUDTRANS|V_SLIDEIN|splitflags, fontv[PINGNUM_FONT].font[rn[1]], ringmap);
+		{
+			V_DrawMappedPatch(fr+11, fy, V_HUDTRANS|V_SLIDEIN|splitflags, kp_ringdebtminussmall, ringmap);
+			V_DrawMappedPatch(fr+15, fy, V_HUDTRANS|V_SLIDEIN|splitflags, fontv[PINGNUM_FONT].font[rn[0]], ringmap);
+			V_DrawMappedPatch(fr+19, fy, V_HUDTRANS|V_SLIDEIN|splitflags, fontv[PINGNUM_FONT].font[rn[1]], ringmap);
+		}
+		else
+		{
+			V_DrawMappedPatch(fr+11, fy, V_HUDTRANS|V_SLIDEIN|splitflags, fontv[PINGNUM_FONT].font[rn[0]], ringmap);
+			V_DrawMappedPatch(fr+15, fy, V_HUDTRANS|V_SLIDEIN|splitflags, fontv[PINGNUM_FONT].font[rn[1]], ringmap);
+		}
 
 		// SPB ring lock
 		if (stplyr->pflags & PF_RINGLOCK)
