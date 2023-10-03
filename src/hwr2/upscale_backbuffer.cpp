@@ -37,6 +37,19 @@ void UpscaleBackbuffer::begin_pass(Rhi& rhi, Handle<GraphicsContext> ctx)
 		remake = true;
 	}
 
+	auto new_renderpass = [&rhi = rhi](AttachmentLoadOp load_op, AttachmentStoreOp store_op)
+	{
+		RenderPassDesc desc {};
+		desc.use_depth_stencil = true;
+		desc.color_load_op = load_op;
+		desc.color_store_op = store_op;
+		desc.depth_load_op = load_op;
+		desc.depth_store_op = store_op;
+		desc.stencil_load_op = load_op;
+		desc.stencil_store_op = store_op;
+		return rhi.create_render_pass(desc);
+	};
+
 	if (remake)
 	{
 		if (color_)
@@ -63,23 +76,22 @@ void UpscaleBackbuffer::begin_pass(Rhi& rhi, Handle<GraphicsContext> ctx)
 		depth_tex.height = vid_height;
 
 		depth_ = rhi.create_renderbuffer(depth_tex);
-	}
 
-	if (!renderpass_)
+		if (!renderpass_clear_)
+		{
+			renderpass_clear_ = new_renderpass(AttachmentLoadOp::kClear, AttachmentStoreOp::kStore);
+		}
+	}
+	else
 	{
-		RenderPassDesc desc {};
-		desc.use_depth_stencil = true;
-		desc.color_load_op = AttachmentLoadOp::kLoad;
-		desc.color_store_op = AttachmentStoreOp::kStore;
-		desc.depth_load_op = AttachmentLoadOp::kLoad;
-		desc.depth_store_op = AttachmentStoreOp::kStore;
-		desc.stencil_load_op = AttachmentLoadOp::kLoad;
-		desc.stencil_store_op = AttachmentStoreOp::kStore;
-		renderpass_ = rhi.create_render_pass(desc);
+		if (!renderpass_)
+		{
+			renderpass_ = new_renderpass(AttachmentLoadOp::kLoad, AttachmentStoreOp::kStore);
+		}
 	}
 
 	RenderPassBeginInfo begin_info {};
-	begin_info.render_pass = renderpass_;
+	begin_info.render_pass = remake ? renderpass_clear_ : renderpass_;
 	begin_info.clear_color = {0, 0, 0, 1};
 	begin_info.color_attachment = color_;
 	begin_info.depth_stencil_attachment = depth_;

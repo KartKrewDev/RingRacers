@@ -421,6 +421,10 @@ consvar_t cv_scr_depth = Player("scr_depth", "16 bits").values({{8, "8 bits"}, {
 consvar_t cv_scr_width = Player("scr_width", "640").values(CV_Unsigned);
 consvar_t cv_scr_height = Player("scr_height", "400").values(CV_Unsigned);
 
+consvar_t cv_scr_scale = Player("scr_scale", "1.0").floating_point();
+consvar_t cv_scr_x = Player("scr_x", "0.0").floating_point();
+consvar_t cv_scr_y = Player("scr_y", "0.0").floating_point();
+
 consvar_t cv_seenames = Player("seenames", "On").on_off();
 consvar_t cv_shadow = Player("shadow", "On").on_off();
 consvar_t cv_shittyscreen = Player("televisionsignal", "Okay").flags(CV_NOSHOWHELP).values({{0, "Okay"}, {1, "Shitty"}, {2, "Extra Shitty"}}).dont_save();
