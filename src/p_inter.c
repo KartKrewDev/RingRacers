@@ -556,6 +556,26 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 			P_SetTarget(&special->target, toucher);
 			S_StartSound(special, sfx_s1a2);
 			return;
+
+		case MT_SPECIALSTAGEBOMB:
+			// only attempt to damage the player if they're not invincible
+			if (!(player->invincibilitytimer > 0
+				|| K_IsBigger(toucher, special) == true
+				|| K_PlayerGuard(player) == true
+				|| player->hyudorotimer > 0))
+			{
+				if (P_DamageMobj(toucher, special, special, 1, DMG_STUMBLE))
+				{
+					P_SetMobjState(special, special->info->painstate);
+					special->eflags |= MFE_DAMAGEHITLAG;
+					return;
+				}
+			}
+			// if we didn't damage the player, just explode
+			P_SetMobjState(special, special->info->painstate);
+			P_SetMobjState(special, special->info->raisestate); // immediately explode visually
+			return;
+
 		case MT_CDUFO: // SRB2kart
 			if (special->fuse || !P_CanPickupItem(player, 1))
 				return;
