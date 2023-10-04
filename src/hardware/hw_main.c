@@ -5398,17 +5398,7 @@ static void HWR_DrawSkyBackground(player_t *player)
 	{
 		FTransform dometransform;
 		const float fpov = FIXED_TO_FLOAT(cv_fov[viewssnum].value+player->fovadd);
-		postimg_t *type = &postimgtype[0];
-		SINT8 i;
-
-		for (i = r_splitscreen; i >= 0; i--)
-		{
-			if (player == &players[displayplayers[i]])
-			{
-				type = &postimgtype[i];
-				break;
-			}
-		}
+		postimg_t *type = &postimgtype[R_GetViewNumber()];
 
 		memset(&dometransform, 0x00, sizeof(FTransform));
 
@@ -6104,19 +6094,9 @@ INT32 HWR_GetTextureUsed(void)
 
 void HWR_DoPostProcessor(player_t *player)
 {
-	postimg_t *type = &postimgtype[0];
-	SINT8 i;
+	postimg_t *type = &postimgtype[R_GetViewNumber()];
 
 	HWD.pfnUnSetShader();
-
-	for (i = r_splitscreen; i >= 0; i--)
-	{
-		if (player == &players[displayplayers[i]])
-		{
-			type = &postimgtype[i];
-			break;
-		}
-	}
 
 	// Armageddon Blast Flash!
 	// Could this even be considered postprocessor?

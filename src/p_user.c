@@ -2887,7 +2887,7 @@ fixed_t t_cam_rotate[MAXSPLITSCREENPLAYERS] = {-42,-42,-42,-42};
 
 struct demofreecam_s democam;
 
-void P_DemoCameraMovement(camera_t *cam)
+void P_DemoCameraMovement(camera_t *cam, UINT8 num)
 {
 	ticcmd_t *cmd;
 	angle_t thrustangle;
@@ -2897,7 +2897,7 @@ void P_DemoCameraMovement(camera_t *cam)
 	boolean moving = false;
 
 	// first off we need to get button input
-	cmd = D_LocalTiccmd(0);
+	cmd = D_LocalTiccmd(num);
 
 	if (cmd->aiming != 0)
 	{
@@ -3083,18 +3083,6 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 	if (thiscam->subsector == NULL || thiscam->subsector->sector == NULL)
 		return true;
 
-	if (demo.freecam || player->spectator)
-	{
-		P_DemoCameraMovement(thiscam);
-		return true;
-	}
-
-	if (paused || P_AutoPause())
-		return true;
-
-	playerScale = FixedDiv(player->mo->scale, mapobjectscale);
-	scaleDiff = playerScale - FRACUNIT;
-
 	if (thiscam == &camera[1]) // Camera 2
 	{
 		num = 1;
@@ -3111,6 +3099,18 @@ boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcall
 	{
 		num = 0;
 	}
+
+	if (demo.freecam || player->spectator)
+	{
+		P_DemoCameraMovement(thiscam, num);
+		return true;
+	}
+
+	if (paused || P_AutoPause())
+		return true;
+
+	playerScale = FixedDiv(player->mo->scale, mapobjectscale);
+	scaleDiff = playerScale - FRACUNIT;
 
 	mo = player->mo;
 
@@ -3544,19 +3544,10 @@ boolean P_SpectatorJoinGame(player_t *player)
 	player->enteredGame = true;
 
 	// Reset away view (some code referenced from Got_Teamchange)
+	if (G_IsPartyLocal(player - players))
 	{
-		UINT8 i = 0;
-		const UINT8 *localplayertable = G_PartyArray(consoleplayer);
-
-		for (i = 0; i <= r_splitscreen; i++)
-		{
-			if (localplayertable[i] == (player-players))
-			{
-				LUA_HookViewpointSwitch(player, player, true);
-				displayplayers[i] = (player-players);
-				break;
-			}
-		}
+		LUA_HookViewpointSwitch(player, player, true);
+		displayplayers[G_PartyPosition(player - players)] = (player-players);
 	}
 
 	// a surprise tool that will help us later...
@@ -3572,11 +3563,11 @@ boolean P_SpectatorJoinGame(player_t *player)
 }
 
 // the below is first person only, if you're curious. check out P_CalcChasePostImg in p_mobj.c for chasecam
-static void P_CalcPostImg(player_t *player)
+static void P_CalcPostImg(player_t *player, size_t viewnum)
 {
 	sector_t *sector = player->mo->subsector->sector;
-	postimg_t *type = NULL;
-	INT32 *param;
+	postimg_t *type = &postimgtype[viewnum];
+	INT32 *param = &postimgparam[viewnum];
 	fixed_t pviewheight;
 	size_t i;
 
@@ -3589,16 +3580,6 @@ static void P_CalcPostImg(player_t *player)
 	{
 		sector = player->awayview.mobj->subsector->sector;
 		pviewheight = player->awayview.mobj->z;
-	}
-
-	for (i = 0; i <= (unsigned)r_splitscreen; i++)
-	{
-		if (player == &players[displayplayers[i]])
-		{
-			type = &postimgtype[i];
-			param = &postimgparam[i];
-			break;
-		}
 	}
 
 	// see if we are in heat (no, not THAT kind of heat...)
@@ -4400,7 +4381,6 @@ void P_PlayerThink(player_t *player)
 //
 void P_PlayerAfterThink(player_t *player)
 {
-	camera_t *thiscam = NULL; // if not one of the displayed players, just don't bother
 	UINT8 i;
 
 #ifdef PARANOIA
@@ -4425,15 +4405,6 @@ void P_PlayerAfterThink(player_t *player)
 		P_PlayerInSpecialSector(player);
 #endif
 
-	for (i = 0; i <= r_splitscreen; i++)
-	{
-		if (player == &players[displayplayers[i]])
-		{
-			thiscam = &camera[i];
-			break;
-		}
-	}
-
 	if (player->playerstate == PST_DEAD)
 	{
 		// Followers need handled while dead.
@@ -4448,12 +4419,20 @@ void P_PlayerAfterThink(player_t *player)
 		return;
 	}
 
-	if (thiscam)
 	{
-		if (!thiscam->chase) // bob view only if looking through the player's eyes
+		boolean chase = true;
+
+		for (i = 0; i <= r_splitscreen; i++)
+		{
+			if (player == &players[displayplayers[i]] && !camera[i].chase)
+			{
+				chase = false;
+			}
+		}
+
+		if (!chase) // bob view only if looking through the player's eyes
 		{
 			P_CalcHeight(player);
-			P_CalcPostImg(player);
 		}
 		else
 		{
@@ -4465,6 +4444,14 @@ void P_PlayerAfterThink(player_t *player)
 				player->viewz = player->mo->z + player->mo->height - player->viewheight;
 			else
 				player->viewz = player->mo->z + player->viewheight;
+		}
+
+		for (i = 0; i <= r_splitscreen; i++)
+		{
+			if (player == &players[displayplayers[i]] && !camera[i].chase)
+			{
+				P_CalcPostImg(player, i);
+			}
 		}
 	}
 
@@ -4530,10 +4517,15 @@ void P_PlayerAfterThink(player_t *player)
 		K_UpdateBotGameplayVars(player);
 	}
 
-	if (thiscam)
+	for (i = 0; i <= r_splitscreen; i++)
 	{
+		if (player != &players[displayplayers[i]])
+		{
+			continue;
+		}
+
 		// Store before it gets 0'd out
-		thiscam->pmomz = player->mo->pmomz;
+		camera[i].pmomz = player->mo->pmomz;
 	}
 
 	if (P_IsObjectOnGround(player->mo))
@@ -4632,21 +4624,6 @@ void P_SetPlayerAngle(player_t *player, angle_t angle)
 	player->angleturn = angle;
 }
 
-angle_t P_GetLocalAngle(player_t *player)
-{
-	// this function is from vanilla srb2. can you tell?
-	// (hint: they have separate variables for all of this shit instead of arrays)
-	UINT8 i;
-
-	for (i = 0; i <= r_splitscreen; i++)
-	{
-		if (player == &players[displayplayers[i]])
-			return localangle[i];
-	}
-
-	return 0;
-}
-
 void P_ForceLocalAngle(player_t *player, angle_t angle)
 {
 	UINT8 i;
@@ -4658,8 +4635,6 @@ void P_ForceLocalAngle(player_t *player, angle_t angle)
 		if (player == &players[displayplayers[i]])
 		{
 			localangle[i] = angle;
-
-			break;
 		}
 	}
 

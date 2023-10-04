@@ -206,7 +206,15 @@ class TiccmdBuilder
 		else
 #endif
 		{
-			localangle[viewnum] += angleChange;
+			int p = g_localplayers[forplayer()];
+
+			for (int i = 0; i <= r_splitscreen; ++i)
+			{
+				if (displayplayers[i] == p)
+				{
+					localangle[i] += angleChange;
+				}
+			}
 		}
 	}
 
@@ -237,7 +245,7 @@ class TiccmdBuilder
 
 	bool director_input()
 	{
-		if (demo.freecam || G_IsPartyLocal(displayplayers[forplayer()]) == true)
+		if (demo.freecam || !K_DirectorIsAvailable(viewnum))
 		{
 			return false;
 		}

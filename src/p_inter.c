@@ -1439,7 +1439,6 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 			if (target->player == &players[displayplayers[i]])
 			{
 				localaiming[i] = 0;
-				break;
 			}
 		}
 

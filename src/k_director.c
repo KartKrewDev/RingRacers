@@ -11,6 +11,7 @@
 #include "k_director.h"
 #include "d_netcmd.h"
 #include "p_local.h"
+#include "g_party.h"
 
 #define SWITCHTIME TICRATE * 5		// cooldown between unforced switches
 #define BOREDOMTIME 3 * TICRATE / 2 // how long until players considered far apart?
@@ -321,4 +322,10 @@ void K_ToggleDirector(boolean active)
 	}
 
 	directorinfo.active = active;
+}
+
+boolean K_DirectorIsAvailable(UINT8 viewnum)
+{
+	return viewnum <= r_splitscreen && viewnum < G_PartySize(consoleplayer) &&
+		displayplayers[viewnum] != G_PartyMember(consoleplayer, viewnum);
 }

@@ -264,13 +264,13 @@ UINT32 K_GetPlayerDontDrawFlag(player_t *player)
 		return flag;
 
 	if (player == &players[displayplayers[0]])
-		flag = RF_DONTDRAWP1;
-	else if (r_splitscreen >= 1 && player == &players[displayplayers[1]])
-		flag = RF_DONTDRAWP2;
-	else if (r_splitscreen >= 2 && player == &players[displayplayers[2]])
-		flag = RF_DONTDRAWP3;
-	else if (r_splitscreen >= 3 && player == &players[displayplayers[3]])
-		flag = RF_DONTDRAWP4;
+		flag |= RF_DONTDRAWP1;
+	if (r_splitscreen >= 1 && player == &players[displayplayers[1]])
+		flag |= RF_DONTDRAWP2;
+	if (r_splitscreen >= 2 && player == &players[displayplayers[2]])
+		flag |= RF_DONTDRAWP3;
+	if (r_splitscreen >= 3 && player == &players[displayplayers[3]])
+		flag |= RF_DONTDRAWP4;
 
 	return flag;
 }
@@ -7927,8 +7927,6 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 
 			debtflag->color = player->skincolor;
 			debtflag->fuse = 2;
-
-			debtflag->renderflags = K_GetPlayerDontDrawFlag(player);
 		}
 
 		if (player->springstars && (leveltime & 1))

@@ -12090,13 +12090,8 @@ void P_SpawnPlayer(INT32 playernum)
 
 	if ((gametyperules & GTR_BUMPERS) && !p->spectator)
 	{
-		// At leveltime == 2, K_TimerInit will get called and reset
-		// the bumpers to the initial value for the level.
-		if (leveltime > 2) // Reset those bumpers!
-		{
-			mobj->health = K_BumpersToHealth(K_StartingBumperCount());
-			K_SpawnPlayerBattleBumpers(p);
-		}
+		mobj->health = K_BumpersToHealth(K_StartingBumperCount());
+		K_SpawnPlayerBattleBumpers(p);
 	}
 
 	// Block visuals

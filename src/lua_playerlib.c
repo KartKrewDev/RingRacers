@@ -599,7 +599,6 @@ static int player_set(lua_State *L)
 			if (plr == &players[displayplayers[i]])
 			{
 				localaiming[i] = plr->aiming;
-				break;
 			}
 		}
 	}
