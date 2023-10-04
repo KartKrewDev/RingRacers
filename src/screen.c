@@ -532,7 +532,7 @@ void SCR_DisplayTicRate(void)
 	const UINT8 *ticcntcolor = NULL;
 	UINT32 cap = R_GetFramerateCap();
 	UINT32 benchmark = (cap == 0) ? I_GetRefreshRate() : cap;
-	INT32 x = 318;
+	INT32 x = 317;
 	double fps = round(averageFPS);
 
 	if (fps > (benchmark * 0.9))
@@ -586,7 +586,7 @@ void SCR_DisplayLocalPing(void)
 		return;
 	}
 
-	INT32 dispy = cv_ticrate.value ? 160 : 181;
+	INT32 dispy = cv_ticrate.value ? 170 : 181;
 	boolean offline = (consoleplayer == serverplayer);
 
 	HU_drawPing(307 * FRACUNIT, dispy * FRACUNIT, ping, V_SNAPTORIGHT | V_SNAPTOBOTTOM, offline, 0);
