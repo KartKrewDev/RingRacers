@@ -591,6 +591,9 @@ typedef enum
 	gluniform_lighting,
 	gluniform_fade_start,
 	gluniform_fade_end,
+	gluniform_light_dir,
+	gluniform_light_contrast,
+	gluniform_light_backlight,
 
 	// misc. (custom shaders)
 	gluniform_leveltime,
@@ -621,6 +624,11 @@ static gl_shaderstate_t gl_shaderstate;
 
 // Shader info
 static INT32 shader_leveltime = 0;
+static float shader_light_x = 0.0f;
+static float shader_light_y = 0.0f;
+static float shader_light_z = 0.0f;
+static INT32 shader_light_contrast = 0;
+static INT32 shader_light_backlight = 0;
 
 // Lactozilla: Shader functions
 static boolean Shader_CompileProgram(gl_shader_t *shader, GLint i, const GLchar *vert_shader, const GLchar *frag_shader);
@@ -628,56 +636,6 @@ static void Shader_CompileError(const char *message, GLuint program, INT32 shade
 static void Shader_SetUniforms(FSurfaceInfo *Surface, GLRGBAFloat *poly, GLRGBAFloat *tint, GLRGBAFloat *fade);
 
 static GLRGBAFloat shader_defaultcolor = {1.0f, 1.0f, 1.0f, 1.0f};
-
-// ================
-//  Vertex shaders
-// ================
-
-//
-// Generic vertex shader
-//
-
-#define GLSL_DEFAULT_VERTEX_SHADER \
-	"void main()\n" \
-	"{\n" \
-		"gl_Position = gl_ProjectionMatrix * gl_ModelViewMatrix * gl_Vertex;\n" \
-		"gl_FrontColor = gl_Color;\n" \
-		"gl_TexCoord[0].xy = gl_MultiTexCoord0.xy;\n" \
-		"gl_ClipVertex = gl_ModelViewMatrix * gl_Vertex;\n" \
-	"}\0"
-
-// replicates the way fixed function lighting is used by the model lighting option,
-// stores the lighting result to gl_Color
-// (ambient lighting of 0.75 and diffuse lighting from above)
-#define GLSL_MODEL_LIGHTING_VERTEX_SHADER \
-	"void main()\n" \
-	"{\n" \
-		"float nDotVP = dot(gl_Normal, vec3(0, 1, 0));\n" \
-		"float light = 0.75 + max(nDotVP, 0.0);\n" \
-		"gl_Position = gl_ProjectionMatrix * gl_ModelViewMatrix * gl_Vertex;\n" \
-		"gl_FrontColor = vec4(light, light, light, 1.0);\n" \
-		"gl_TexCoord[0].xy = gl_MultiTexCoord0.xy;\n" \
-		"gl_ClipVertex = gl_ModelViewMatrix * gl_Vertex;\n" \
-	"}\0"
-
-// ==================
-//  Fragment shaders
-// ==================
-
-//
-// Generic fragment shader
-//
-
-#define GLSL_DEFAULT_FRAGMENT_SHADER \
-	"uniform sampler2D tex;\n" \
-	"uniform vec4 poly_color;\n" \
-	"void main(void) {\n" \
-		"gl_FragColor = texture2D(tex, gl_TexCoord[0].st) * poly_color;\n" \
-	"}\0"
-
-//
-// Software fragment shader
-//
 
 #define GLSL_DOOM_COLORMAP \
 	"float R_DoomColormap(float light, float z)\n" \
@@ -707,7 +665,7 @@ static GLRGBAFloat shader_defaultcolor = {1.0f, 1.0f, 1.0f, 1.0f};
 	"}\n"
 
 #define GLSL_SOFTWARE_FADE_EQUATION \
-	"float darkness = R_DoomLightingEquation(lighting + light_gain);\n" \
+	"float darkness = R_DoomLightingEquation(final_lighting);\n" \
 	"if (fade_start > 0.0 || fade_end < 31.0) {\n" \
 		"float fs = fade_start / 31.0;\n" \
 		"float fe = fade_end / 31.0;\n" \
@@ -746,7 +704,68 @@ static GLRGBAFloat shader_defaultcolor = {1.0f, 1.0f, 1.0f, 1.0f};
 		"final_color.b += colorIntensity;\n" \
 	"} else {\n" \
 		"final_color.b -= colorIntensity;\n" \
-	"}\n" \
+	"}\n"
+
+// ================
+//  Vertex shaders
+// ================
+
+//
+// Generic vertex shader
+//
+
+#define GLSL_DEFAULT_VERTEX_SHADER \
+	"void main()\n" \
+	"{\n" \
+		"gl_Position = gl_ProjectionMatrix * gl_ModelViewMatrix * gl_Vertex;\n" \
+		"gl_FrontColor = gl_Color;\n" \
+		"gl_TexCoord[0].xy = gl_MultiTexCoord0.xy;\n" \
+		"gl_ClipVertex = gl_ModelViewMatrix * gl_Vertex;\n" \
+	"}\0"
+
+// reinterpretation of sprite lighting for models
+// it's a combination of how it works for normal sprites & papersprites
+#define GLSL_MODEL_LIGHTING_VERTEX_SHADER \
+	"uniform float lighting;\n" \
+	"uniform vec3 light_dir;\n" \
+	"uniform float light_contrast;\n" \
+	"uniform float light_backlight;\n" \
+	"void main()\n" \
+	"{\n" \
+		"gl_Position = gl_ProjectionMatrix * gl_ModelViewMatrix * gl_Vertex;\n" \
+		"float light = lighting;\n" \
+		"if (length(light_dir) > 0.000001) {\n" \
+			"mat4 m4 = gl_ProjectionMatrix * gl_ModelViewMatrix;\n" \
+			"mat3 m3 = mat3( m4[0].xyz, m4[1].xyz, m4[2].xyz );\n" \
+			"float extralight = -dot(normalize(gl_Normal * m3), normalize(light_dir));\n" \
+			"extralight *= light_contrast - light_backlight;\n" \
+			"extralight *= lighting / 255.0;\n" \
+			"light += extralight * 2.5;\n" \
+		"}\n" \
+		"light = clamp(light / 255.0, 0.0, 1.0);\n" \
+		"gl_FrontColor = vec4(light, light, light, 1.0);\n" \
+		"gl_TexCoord[0].xy = gl_MultiTexCoord0.xy;\n" \
+		"gl_ClipVertex = gl_ModelViewMatrix * gl_Vertex;\n" \
+	"}\0"
+
+// ==================
+//  Fragment shaders
+// ==================
+
+//
+// Generic fragment shader
+//
+
+#define GLSL_DEFAULT_FRAGMENT_SHADER \
+	"uniform sampler2D tex;\n" \
+	"uniform vec4 poly_color;\n" \
+	"void main(void) {\n" \
+		"gl_FragColor = texture2D(tex, gl_TexCoord[0].st) * poly_color;\n" \
+	"}\0"
+
+//
+// Software fragment shader
+//
 
 #define GLSL_SOFTWARE_FRAGMENT_SHADER \
 	"uniform sampler2D tex;\n" \
@@ -765,6 +784,7 @@ static GLRGBAFloat shader_defaultcolor = {1.0f, 1.0f, 1.0f, 1.0f};
 		"vec4 final_color = base_color;\n" \
 		"float brightmap_mix = floor(texture2D(brightmap, gl_TexCoord[0].st).r);\n" \
 		"float light_gain = (255.0 - lighting) * brightmap_mix;\n" \
+		"float final_lighting = lighting + light_gain;\n" \
 		GLSL_SOFTWARE_TINT_EQUATION \
 		GLSL_SOFTWARE_FADE_EQUATION \
 		"final_color.a = texel.a * poly_color.a;\n" \
@@ -779,7 +799,6 @@ static GLRGBAFloat shader_defaultcolor = {1.0f, 1.0f, 1.0f, 1.0f};
 	"uniform vec4 poly_color;\n" \
 	"uniform vec4 tint_color;\n" \
 	"uniform vec4 fade_color;\n" \
-	"uniform float lighting;\n" \
 	"uniform float fade_start;\n" \
 	"uniform float fade_end;\n" \
 	GLSL_DOOM_COLORMAP \
@@ -788,11 +807,12 @@ static GLRGBAFloat shader_defaultcolor = {1.0f, 1.0f, 1.0f, 1.0f};
 		"vec4 texel = texture2D(tex, gl_TexCoord[0].st);\n" \
 		"vec4 base_color = texel * poly_color;\n" \
 		"vec4 final_color = base_color;\n" \
+		"float final_lighting = gl_Color.r * 255.0;\n" \
 		"float brightmap_mix = floor(texture2D(brightmap, gl_TexCoord[0].st).r);\n" \
-		"float light_gain = (255.0 - lighting) * brightmap_mix;\n" \
+		"float light_gain = (255.0 - final_lighting) * brightmap_mix;\n" \
+		"final_lighting += light_gain;\n" \
 		GLSL_SOFTWARE_TINT_EQUATION \
 		GLSL_SOFTWARE_FADE_EQUATION \
-		"final_color *= gl_Color;\n" \
 		"final_color.a = texel.a * poly_color.a;\n" \
 		"gl_FragColor = final_color;\n" \
 	"}\0"
@@ -830,6 +850,7 @@ static GLRGBAFloat shader_defaultcolor = {1.0f, 1.0f, 1.0f, 1.0f};
 		"vec4 final_color = base_color;\n" \
 		"float brightmap_mix = floor(texture2D(brightmap, gl_TexCoord[0].st).r);\n" \
 		"float light_gain = (255.0 - lighting) * brightmap_mix;\n" \
+		"float final_lighting = lighting + light_gain;\n" \
 		GLSL_SOFTWARE_TINT_EQUATION \
 		GLSL_SOFTWARE_FADE_EQUATION \
 		"final_color.a = texel.a * poly_color.a;\n" \
@@ -855,6 +876,7 @@ static GLRGBAFloat shader_defaultcolor = {1.0f, 1.0f, 1.0f, 1.0f};
 		"vec4 final_color = base_color;\n" \
 		"float brightmap_mix = 0.0;\n" \
 		"float light_gain = 0.0;\n" \
+		"float final_lighting = lighting + light_gain;\n" \
 		GLSL_SOFTWARE_TINT_EQUATION \
 		GLSL_SOFTWARE_FADE_EQUATION \
 		"gl_FragColor = final_color;\n" \
@@ -1035,6 +1057,21 @@ EXPORT void HWRAPI(SetShaderInfo) (hwdshaderinfo_t info, INT32 value)
 	{
 		case HWD_SHADERINFO_LEVELTIME:
 			shader_leveltime = value;
+			break;
+		case HWD_SHADERINFO_LIGHT_X:
+			shader_light_x = FixedToFloat(value);
+			break;
+		case HWD_SHADERINFO_LIGHT_Y:
+			shader_light_y = FixedToFloat(value);
+			break;
+		case HWD_SHADERINFO_LIGHT_Z:
+			shader_light_z = FixedToFloat(value);
+			break;
+		case HWD_SHADERINFO_LIGHT_CONTRAST:
+			shader_light_contrast = value;
+			break;
+		case HWD_SHADERINFO_LIGHT_BACKLIGHT:
+			shader_light_backlight = value;
 			break;
 		default:
 			break;
@@ -2121,12 +2158,35 @@ static void Shader_SetUniforms(FSurfaceInfo *Surface, GLRGBAFloat *poly, GLRGBAF
 		UNIFORM_4(shader->uniforms[gluniform_poly_color], poly->red, poly->green, poly->blue, poly->alpha, pglUniform4f);
 		UNIFORM_4(shader->uniforms[gluniform_tint_color], tint->red, tint->green, tint->blue, tint->alpha, pglUniform4f);
 		UNIFORM_4(shader->uniforms[gluniform_fade_color], fade->red, fade->green, fade->blue, fade->alpha, pglUniform4f);
+
+		boolean directional = false;
 		if (Surface != NULL)
 		{
 			UNIFORM_1(shader->uniforms[gluniform_lighting], Surface->LightInfo.light_level, pglUniform1f);
 			UNIFORM_1(shader->uniforms[gluniform_fade_start], Surface->LightInfo.fade_start, pglUniform1f);
 			UNIFORM_1(shader->uniforms[gluniform_fade_end], Surface->LightInfo.fade_end, pglUniform1f);
+			directional = Surface->LightInfo.directional;
 		}
+		else
+		{
+			UNIFORM_1(shader->uniforms[gluniform_lighting], 255, pglUniform1f);
+			UNIFORM_1(shader->uniforms[gluniform_fade_start], 0, pglUniform1f);
+			UNIFORM_1(shader->uniforms[gluniform_fade_end], 31, pglUniform1f);
+		}
+
+		if (directional)
+		{
+			UNIFORM_3(shader->uniforms[gluniform_light_dir], shader_light_x, shader_light_y, shader_light_z, pglUniform3f);
+			UNIFORM_1(shader->uniforms[gluniform_light_contrast], shader_light_contrast, pglUniform1f);
+			UNIFORM_1(shader->uniforms[gluniform_light_backlight], shader_light_backlight, pglUniform1f);
+		}
+		else
+		{
+			UNIFORM_3(shader->uniforms[gluniform_light_dir], 0, 0, 0, pglUniform3f);
+			UNIFORM_1(shader->uniforms[gluniform_light_contrast], 0, pglUniform1f);
+			UNIFORM_1(shader->uniforms[gluniform_light_backlight], 0, pglUniform1f);
+		}
+
 		UNIFORM_1(shader->uniforms[gluniform_leveltime], ((float)shader_leveltime) / TICRATE, pglUniform1f);
 
 		#undef UNIFORM_1
@@ -2228,6 +2288,9 @@ static boolean Shader_CompileProgram(gl_shader_t *shader, GLint i, const GLchar 
 	shader->uniforms[gluniform_lighting] = GETUNI("lighting");
 	shader->uniforms[gluniform_fade_start] = GETUNI("fade_start");
 	shader->uniforms[gluniform_fade_end] = GETUNI("fade_end");
+	shader->uniforms[gluniform_light_dir] = GETUNI("light_dir");
+	shader->uniforms[gluniform_light_contrast] = GETUNI("light_contrast");
+	shader->uniforms[gluniform_light_backlight] = GETUNI("light_backlight");
 
 	// misc. (custom shaders)
 	shader->uniforms[gluniform_leveltime] = GETUNI("leveltime");
@@ -2819,13 +2882,6 @@ static void DrawModelEx(model_t *model, INT32 frameIndex, float duration, float 
 			diffuse[1] = poly.green;
 			diffuse[2] = poly.blue;
 			diffuse[3] = poly.alpha;
-
-			if (ambient[0] > 0.75f)
-				ambient[0] = 0.75f;
-			if (ambient[1] > 0.75f)
-				ambient[1] = 0.75f;
-			if (ambient[2] > 0.75f)
-				ambient[2] = 0.75f;
 
 			pglLightfv(GL_LIGHT0, GL_POSITION, LightPos);
 
