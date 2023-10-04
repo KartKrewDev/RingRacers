@@ -5486,18 +5486,23 @@ void K_drawKartHUD(void)
 
 		islonesome = K_drawKartPositionFaces();
 	}
-	else if (r_splitscreen == 1)
+	else
 	{
-		if (LUA_HudEnabled(hud_time))
+		islonesome = M_NotFreePlay() == false;
+
+		if (r_splitscreen == 1)
 		{
-			K_drawKart2PTimestamp();
+			if (LUA_HudEnabled(hud_time))
+			{
+				K_drawKart2PTimestamp();
+			}
 		}
-	}
-	else if (viewnum == r_splitscreen)
-	{
-		if (LUA_HudEnabled(hud_time))
+		else if (viewnum == r_splitscreen)
 		{
-			K_drawKart4PTimestamp();
+			if (LUA_HudEnabled(hud_time))
+			{
+				K_drawKart4PTimestamp();
+			}
 		}
 	}
 
