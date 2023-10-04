@@ -3552,6 +3552,31 @@ static void K_drawKartNameTags(void)
 		return;
 	}
 
+	// Crop within splitscreen bounds
+	switch (r_splitscreen)
+	{
+		case 1:
+			V_SetClipRect(
+				0,
+				cnum == 1 ? (BASEVIDHEIGHT / 2) * FRACUNIT : 0,
+				BASEVIDWIDTH * FRACUNIT,
+				(BASEVIDHEIGHT / 2) * FRACUNIT,
+				0
+			);
+			break;
+
+		case 2:
+		case 3:
+			V_SetClipRect(
+				cnum & 1 ? (BASEVIDWIDTH / 2) * FRACUNIT : 0,
+				cnum > 1 ? (BASEVIDHEIGHT / 2) * FRACUNIT : 0,
+				(BASEVIDWIDTH / 2) * FRACUNIT,
+				(BASEVIDHEIGHT / 2) * FRACUNIT,
+				0
+			);
+			break;
+	}
+
 	c.x = viewx;
 	c.y = viewy;
 	c.z = viewz;
@@ -3767,6 +3792,8 @@ static void K_drawKartNameTags(void)
 			}
 		}
 	}
+
+	V_ClearClipRect();
 }
 
 #define PROGRESSION_BAR_WIDTH 120
