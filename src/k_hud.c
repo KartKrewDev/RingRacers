@@ -2109,8 +2109,6 @@ static void K_DrawKartPositionNum(UINT8 num)
 		fflags |= (trans << V_ALPHASHIFT);
 	}
 
-	fflags |= V_SLIDEIN;
-
 	if (stplyr->exiting && num == 1)
 	{
 		// 1st place winner? You get rainbows!!
