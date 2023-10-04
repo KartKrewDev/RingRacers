@@ -5225,7 +5225,7 @@ static void K_drawDirectorHUD(void)
 
 	// TODO: this is too close to the screen bottom
 	K_DrawDirectorButton(offs + 2, "Director", kp_button_r,
-		(directorinfo.active ? V_YELLOWMAP : 0));
+		(K_DirectorIsEnabled(viewnum) ? V_YELLOWMAP : 0));
 
 	if (players[p].flashing)
 		itemtxt = ". . .";

@@ -20,7 +20,18 @@
 #define WALKBACKDIST 600			// how close should a trailing player be before we switch?
 #define PINCHDIST 30000				// how close should the leader be to be considered "end of race"?
 
-struct directorinfo directorinfo;
+struct directorinfo
+{
+    boolean active; // is view point switching enabled?
+    tic_t cooldown; // how long has it been since we last switched?
+    tic_t freeze;   // when nonzero, fixed switch pending, freeze logic!
+    INT32 attacker; // who to switch to when freeze delay elapses
+    INT32 maxdist;  // how far is the closest player from finishing?
+
+    INT32 sortedplayers[MAXPLAYERS]; // position-1 goes in, player index comes out.
+    INT32 gap[MAXPLAYERS];           // gap between a given position and their closest pursuer
+    INT32 boredom[MAXPLAYERS];       // how long has a given position had no credible attackers?
+} directorinfo;
 
 void K_InitDirector(void)
 {
@@ -322,6 +333,12 @@ void K_ToggleDirector(boolean active)
 	}
 
 	directorinfo.active = active;
+}
+
+boolean K_DirectorIsEnabled(UINT8 viewnum)
+{
+	(void)viewnum;
+	return directorinfo.active;
 }
 
 boolean K_DirectorIsAvailable(UINT8 viewnum)
