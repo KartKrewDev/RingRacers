@@ -1653,9 +1653,6 @@ void G_ConfirmRewind(tic_t rewindtime)
 
 	COM_BufInsertText("renderview on\n");
 
-	if (demo.freecam)
-		return;	// don't touch from there
-
 	splitscreen = oldss;
 	displayplayers[0] = olddp1;
 	displayplayers[1] = olddp2;
@@ -4126,7 +4123,13 @@ void G_StopDemo(void)
 	demo.timing = false;
 	singletics = false;
 
-	demo.freecam = false;
+	{
+		UINT8 i;
+		for (i = 0; i < MAXSPLITSCREENPLAYERS; ++i)
+		{
+			camera[i].freecam = false;
+		}
+	}
 
 	Z_Free(demo.skinlist);
 	demo.skinlist = NULL;

@@ -3381,7 +3381,7 @@ static boolean K_ShowPlayerNametag(player_t *p)
 		return false;
 	}
 
-	if (demo.playback == true && demo.freecam == true)
+	if (demo.playback == true && camera[R_GetViewNumber()].freecam == true)
 	{
 		return true;
 	}
@@ -3762,7 +3762,7 @@ static void K_drawKartNameTags(void)
 
 			if (result.onScreen == true)
 			{
-				if (!(demo.playback == true && demo.freecam == true) && P_IsDisplayPlayer(ntplayer) &&
+				if (!(demo.playback == true && camera[cnum].freecam == true) && P_IsDisplayPlayer(ntplayer) &&
 						ntplayer != &players[displayplayers[cnum]])
 				{
 					localindicator = G_PartyPosition(ntplayer - players);
@@ -5455,8 +5455,8 @@ static void K_DrawGPRankDebugger(void)
 void K_drawKartHUD(void)
 {
 	boolean islonesome = false;
-	boolean freecam = demo.freecam;	//disable some hud elements w/ freecam
 	UINT8 viewnum = R_GetViewNumber();
+	boolean freecam = camera[viewnum].freecam;	//disable some hud elements w/ freecam
 
 	// Define the X and Y for each drawn object
 	// This is handled by console/menu values
@@ -5531,7 +5531,7 @@ void K_drawKartHUD(void)
 		}
 	}
 
-	if (!stplyr->spectator && !demo.freecam) // Bottom of the screen elements, don't need in spectate mode
+	if (!stplyr->spectator && !freecam) // Bottom of the screen elements, don't need in spectate mode
 	{
 		if (demo.title) // Draw title logo instead in demo.titles
 		{

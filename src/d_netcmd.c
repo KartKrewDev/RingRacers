@@ -1645,7 +1645,7 @@ static void Command_View_f(void)
 		return;
 	}
 
-	if (demo.freecam)
+	if (camera[viewnum-1].freecam)
 		return;
 
 	displayplayerp = &displayplayers[viewnum-1];

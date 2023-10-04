@@ -92,6 +92,8 @@ void P_UnlinkThinker(thinker_t *thinker);
 struct camera_t
 {
 	boolean chase;
+	boolean freecam;
+
 	angle_t aiming;
 
 	// Things used by FS cameras.
@@ -126,6 +128,9 @@ struct camera_t
 	// SRB2Kart: camera pitches on slopes
 	angle_t pitch;
 
+	// Freecam: A button was held since entering from menu, so don't move camera
+	UINT8 button_a_held;
+
 	// Freecam: aiming needs to be reset after switching from chasecam
 	boolean reset_aiming;
 
@@ -133,14 +138,6 @@ struct camera_t
 	fixed_t old_x, old_y, old_z;
 	angle_t old_angle, old_aiming;
 };
-
-// demo freecam or something before i commit die
-struct demofreecam_s {
-
-	UINT8 button_a_held;	// A button was held since entering from menu, so don't move camera
-};
-
-extern struct demofreecam_s democam;
 
 extern camera_t camera[MAXSPLITSCREENPLAYERS];
 extern consvar_t cv_cam_dist[MAXSPLITSCREENPLAYERS], cv_cam_still[MAXSPLITSCREENPLAYERS], cv_cam_height[MAXSPLITSCREENPLAYERS];
@@ -156,7 +153,7 @@ boolean P_TryCameraMove(fixed_t x, fixed_t y, camera_t *thiscam);
 void P_SlideCameraMove(camera_t *thiscam);
 void P_DemoCameraMovement(camera_t *cam, UINT8 num);
 boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcalled);
-void P_ToggleDemoCamera(void);
+void P_ToggleDemoCamera(UINT8 viewnum);
 
 boolean P_PlayerInPain(player_t *player);
 void P_ResetPlayer(player_t *player);

@@ -1192,7 +1192,7 @@ static void ST_overlayDrawer(void)
 	{
 		if (cv_showviewpointtext.value)
 		{
-			if (!demo.title && !P_IsLocalPlayer(stplyr) && !demo.freecam)
+			if (!demo.title && !P_IsLocalPlayer(stplyr) && !camera[viewnum].freecam)
 			{
 				if (!r_splitscreen)
 				{

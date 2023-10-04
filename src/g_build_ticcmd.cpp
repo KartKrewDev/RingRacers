@@ -86,6 +86,8 @@ class TiccmdBuilder
 	UINT8 forplayer() const { return ssplayer - 1; }
 	player_t* player() const { return &players[g_localplayers[forplayer()]]; }
 
+	bool freecam() const { return camera[forplayer()].freecam; }
+
 	UINT8 swap_ssplayer() const
 	{
 		if (ssplayer == cv_1pswap.value)
@@ -239,13 +241,13 @@ class TiccmdBuilder
 	{
 		if (M_MenuButtonPressed(pid, MBT_C))
 		{
-			P_ToggleDemoCamera();
+			P_ToggleDemoCamera(forplayer());
 		}
 	}
 
 	bool director_input()
 	{
-		if (demo.freecam || !K_DirectorIsAvailable(viewnum))
+		if (freecam() || !K_DirectorIsAvailable(viewnum))
 		{
 			return false;
 		}
@@ -283,7 +285,7 @@ class TiccmdBuilder
 
 	bool spectator_analog_input()
 	{
-		if (!player()->spectator && !objectplacing && !demo.freecam)
+		if (!player()->spectator && !objectplacing && !freecam())
 		{
 			return false;
 		}
@@ -406,7 +408,7 @@ public:
 			common_button_input();
 		};
 
-		if (demo.playback || demo.freecam || player()->spectator)
+		if (demo.playback || freecam() || player()->spectator)
 		{
 			// freecam is controllable even while paused
 
@@ -416,7 +418,7 @@ public:
 			{
 				regular_input();
 
-				if (demo.freecam)
+				if (freecam())
 				{
 					toggle_freecam_input();
 				}

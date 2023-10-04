@@ -12231,7 +12231,7 @@ void P_SpawnPlayer(INT32 playernum)
 		// changes.
 		if (!demo.playback)
 		{
-			demo.freecam = false;
+			camera[G_PartyPosition(playernum)].freecam = false;
 		}
 	}
 	else if (pcount == 1)
