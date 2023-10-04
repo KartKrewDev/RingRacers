@@ -3453,7 +3453,7 @@ static void K_DrawNameTagForPlayer(fixed_t x, fixed_t y, player_t *p)
 
 	// Since there's no "V_DrawFixedFill", and I don't feel like making it,
 	// fuck it, we're gonna just V_NOSCALESTART hack it
-	if (cnum & 1)
+	if (r_splitscreen > 1 && cnum & 1)
 	{
 		x += (BASEVIDWIDTH/2) * FRACUNIT;
 	}
