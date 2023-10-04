@@ -253,13 +253,13 @@ class TiccmdBuilder
 		if (M_MenuButtonPressed(pid, MBT_A))
 		{
 			G_AdjustView(ssplayer, 1, true);
-			K_ToggleDirector(false);
+			K_ToggleDirector(forplayer(), false);
 		}
 
 		if (M_MenuButtonPressed(pid, MBT_X))
 		{
 			G_AdjustView(ssplayer, -1, true);
-			K_ToggleDirector(false);
+			K_ToggleDirector(forplayer(), false);
 		}
 
 		if (player()->spectator == true)
@@ -272,7 +272,7 @@ class TiccmdBuilder
 
 			if (M_MenuButtonPressed(pid, MBT_R))
 			{
-				K_ToggleDirector(true);
+				K_ToggleDirector(forplayer(), true);
 			}
 		}
 

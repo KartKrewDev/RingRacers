@@ -2802,11 +2802,10 @@ static void P_DeathThink(player_t *player)
 		}
 	}
 
-	// TODO: support splitscreen
 	// Spectate another player after 2 seconds
-	if (player == &players[consoleplayer] && playerGone == true && (gametyperules & GTR_BUMPERS) && player->deadtimer == 2*TICRATE)
+	if (G_IsPartyLocal(player - players) && playerGone == true && (gametyperules & GTR_BUMPERS) && player->deadtimer == 2*TICRATE)
 	{
-		K_ToggleDirector(true);
+		K_ToggleDirector(G_PartyPosition(player - players), true);
 	}
 
 	// Keep time rolling
