@@ -3688,7 +3688,7 @@ static void Command_Login_f(void)
 
 boolean IsPlayerAdmin(INT32 playernum)
 {
-#if defined(DEVELOP) && !(defined(HOSTTESTERS) || defined(TESTERS))
+#if 0 // defined(DEVELOP)
 	return playernum != serverplayer;
 #else
 	INT32 i;
@@ -4643,8 +4643,6 @@ static void Command_Version_f(void)
 	// DEVELOP build
 #if defined(TESTERS)
 	CONS_Printf("\x88" "TESTERS " "\x80");
-#elif defined(HOSTTESTERS)
-	CONS_Printf("\x82" "HOSTTESTERS " "\x80");
 #elif defined(DEVELOP)
 	CONS_Printf("\x87" "DEVELOP " "\x80");
 #endif

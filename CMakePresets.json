@@ -34,14 +34,6 @@
 			}
 		},
 		{
-			"name": "host-testers",
-			"description": "Build to use when hosting, to let testers join",
-			"inherits": "default",
-			"cacheVariables": {
-				"SRB2_CONFIG_HOSTTESTERS": "ON"
-			}
-		},
-		{
 			"name": "release",
 			"description": "Build for game's release",
 			"inherits": "default",
