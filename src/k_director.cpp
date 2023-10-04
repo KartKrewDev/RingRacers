@@ -3,6 +3,8 @@
 /// \file  k_director.c
 /// \brief SRB2kart automatic spectator camera.
 
+#include <algorithm>
+
 #include "k_kart.h"
 #include "k_respawn.h"
 #include "doomdef.h"
@@ -97,7 +99,7 @@ static void K_UpdateDirectorPositions(void)
 
 		if (directorinfo.gap[position] >= BREAKAWAYDIST)
 		{
-			directorinfo.boredom[position] = min(BOREDOMTIME * 2, directorinfo.boredom[position] + 1);
+			directorinfo.boredom[position] = std::min(BOREDOMTIME * 2, directorinfo.boredom[position] + 1);
 		}
 		else if (directorinfo.boredom[position] > 0)
 		{

@@ -137,7 +137,7 @@ add_executable(SRB2SDL2 MACOSX_BUNDLE WIN32
 	k_terrain.c
 	k_brightmap.c
 	k_terrain.c
-	k_director.c
+	k_director.cpp
 	k_follower.c
 	k_profiles.c
 	k_specialstage.c
