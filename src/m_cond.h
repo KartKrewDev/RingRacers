@@ -89,6 +89,8 @@ typedef enum
 	UCRP_FINISHALLPRISONS, // Break all prisons
 	UCRP_NOCONTEST, // No Contest
 
+	UCRP_MAKERETIRE, // Make another player of [skin] No Contest
+
 	UCRP_FINISHPLACE, // Finish at least [place]
 	UCRP_FINISHPLACEEXACT, // Finish at [place] exactly
 

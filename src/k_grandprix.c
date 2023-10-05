@@ -217,7 +217,7 @@ void K_InitGrandPrixBots(void)
 			for (j = 0; j < numplayers; j++)
 			{
 				player_t *p = &players[competitors[j]];
-				char *rivalname = skins[p->skin].rivals[i];
+				const char *rivalname = skins[p->skin].rivals[i];
 				INT32 rivalnum = R_SkinAvailable(rivalname);
 
 				// Intentionally referenced before (currently dummied out) unlock check. Such a tease!

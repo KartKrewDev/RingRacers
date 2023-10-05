@@ -864,6 +864,7 @@ void M_UpdateConditionSetsPending(void)
 			{
 				case UC_CHARACTERWINS:
 				case UCRP_ISCHARACTER:
+				case UCRP_MAKERETIRE:
 				{
 					cn->requirement = R_SkinAvailable(cn->stringvar);
 
@@ -1153,6 +1154,58 @@ boolean M_CheckCondition(condition_t *cn, player_t *player)
 				&& numtargets >= maptargets);
 		case UCRP_NOCONTEST:
 			return (player->pflags & PF_NOCONTEST);
+
+		case UCRP_MAKERETIRE:
+		{
+			// You can't "make" someone retire in coop.
+			if (K_Cooperative() == true)
+			{
+				return false;
+			}
+
+			// The following is basically UCRP_FINISHCOOL,
+			// but without the M_NotFreePlay check since this
+			// condition is already dependent on other players.
+			if ((player->exiting
+				&& !(player->pflags & PF_NOCONTEST)
+				&& !K_IsPlayerLosing(player)) == false)
+			{
+				return false;
+			}
+
+			UINT8 i;
+			for (i = 0; i < MAXPLAYERS; i++)
+			{
+				if (playeringame[i] == false)
+				{
+					continue;
+				}
+
+				// This player is ME!
+				if (player == players+i)
+				{
+					continue;
+				}
+
+				// This player didn't NO CONTEST.
+				if (!(players[i].pflags & PF_NOCONTEST))
+				{
+					continue;
+				}
+
+				// This player doesn't have the right skin.
+				if (players[i].skin != cn->requirement)
+				{
+					continue;
+				}
+
+				// Okay, the right player is dead!
+				break;
+			}
+
+			return (i != MAXPLAYERS);
+		}
+
 		case UCRP_FINISHPLACE:
 			return (player->exiting
 				&& !(player->pflags & PF_NOCONTEST)
@@ -1748,6 +1801,16 @@ static const char *M_GetConditionString(condition_t *cn)
 			return "break every prison";
 		case UCRP_NOCONTEST:
 			return "NO CONTEST";
+
+		case UCRP_MAKERETIRE:
+		{
+			if (cn->requirement < 0 || !skins[cn->requirement].realname[0])
+				return va("INVALID CHAR CONDITION \"%d:%d\"", cn->type, cn->requirement);
+
+			work = M_GetConditionCharacter(cn->requirement, false);
+			return va("make %s retire", work);
+		}
+
 		case UCRP_FINISHPLACE:
 		case UCRP_FINISHPLACEEXACT:
 			return va("finish in %d%s%s", cn->requirement, M_GetNthType(cn->requirement),

@@ -2777,6 +2777,13 @@ static void readcondition(UINT16 set, UINT32 id, char *word2)
 		//PARAMCHECK(1);
 		ty = UCRP_FINISHCOOL + offset;
 	}
+	else if (fastcmp(params[0], "MAKERETIRE"))
+	{
+		PARAMCHECK(1);
+		ty = UCRP_MAKERETIRE;
+		stringvar = Z_StrDup(params[1]);
+		re = -1;
+	}
 	else if ((offset=0) || fastcmp(params[0], "FINISHPLACE")
 	||        (++offset && fastcmp(params[0], "FINISHPLACEEXACT")))
 	{
