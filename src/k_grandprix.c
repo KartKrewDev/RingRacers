@@ -714,10 +714,12 @@ void K_RetireBots(void)
 
 			if (usableskins > 0)
 			{
-				UINT8 index = P_RandomKey(PR_RULESCRAMBLE, usableskins);
+				UINT8 index = P_RandomKey(PR_BOTS, usableskins);
 				skinnum = grabskins[index];
 				grabskins[index] = grabskins[--usableskins];
 			}
+
+			memcpy(&bot->availabilities, R_GetSkinAvailabilities(false, skinnum), MAXAVAILABILITY*sizeof(UINT8));
 
 			bot->botvars.difficulty = newDifficulty;
 			bot->botvars.diffincrease = 0;

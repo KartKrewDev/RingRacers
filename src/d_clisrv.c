@@ -917,7 +917,7 @@ static boolean CL_SendJoin(void)
 	for (; i < MAXSPLITSCREENPLAYERS; i++)
 		strncpy(netbuffer->u.clientcfg.names[i], va("Player %c", 'A' + i), MAXPLAYERNAME);
 
-	memcpy(&netbuffer->u.clientcfg.availabilities, R_GetSkinAvailabilities(false, false), MAXAVAILABILITY*sizeof(UINT8));
+	memcpy(&netbuffer->u.clientcfg.availabilities, R_GetSkinAvailabilities(false, -1), MAXAVAILABILITY*sizeof(UINT8));
 
 	// Don't leak old signatures from prior sessions.
 	memset(&netbuffer->u.clientcfg.challengeResponse, 0, sizeof(((clientconfig_pak *)0)->challengeResponse));
@@ -4332,7 +4332,7 @@ boolean SV_SpawnServer(void)
 	// strictly speaking, i'm not convinced the following is necessary
 	// but I'm not confident enough to remove it entirely in case it breaks something
 	{
-		UINT8 *availabilitiesbuffer = R_GetSkinAvailabilities(false, false);
+		UINT8 *availabilitiesbuffer = R_GetSkinAvailabilities(false, -1);
 		SINT8 node = 0;
 		for (; node < MAXNETNODES; node++)
 			result |= SV_AddWaitingPlayers(node, availabilitiesbuffer,
