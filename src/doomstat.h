@@ -763,8 +763,6 @@ extern UINT8 useSeal;
 extern UINT8 use1upSound;
 extern UINT8 maxXtraLife; // Max extra lives from rings
 
-extern mobj_t *hunt1, *hunt2, *hunt3; // Emerald hunt locations
-
 struct exitcondition_t
 {
 	boolean losing;

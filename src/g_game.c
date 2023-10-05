@@ -270,11 +270,6 @@ UINT8 introtoplay;
 UINT8 creditscutscene;
 UINT8 useSeal = 1;
 
-// Emerald locations
-mobj_t *hunt1;
-mobj_t *hunt2;
-mobj_t *hunt3;
-
 tic_t racecountdown, exitcountdown, musiccountdown; // for racing
 exitcondition_t g_exit;
 

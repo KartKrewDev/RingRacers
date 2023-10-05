@@ -7548,9 +7548,6 @@ static void P_InitLevelSettings(void)
 
 	nummapspraycans = 0;
 
-	// emerald hunt
-	hunt1 = hunt2 = hunt3 = NULL;
-
 	// circuit, race and competition stuff
 	numcheatchecks = 0;
 	timeinmap = 0;
