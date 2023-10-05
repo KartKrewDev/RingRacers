@@ -1274,6 +1274,54 @@ static char *M_BuildConditionTitle(UINT16 map)
 	return title;
 }
 
+static const char *M_GetConditionCharacter(INT32 skin, boolean directlyrequires)
+{
+	// First we check for direct unlock.
+	boolean permitname = R_SkinUsable(-1, skin, false);
+
+	if (permitname == false && directlyrequires == false)
+	{
+		// If there's no direct unlock, we CAN check for if the
+		// character is the Rival of somebody we DO have unlocked...
+
+		UINT8 i, j;
+		for (i = 0; i < numskins; i++)
+		{
+			if (i == skin)
+				continue;
+
+			if (R_SkinUsable(-1, i, false) == false)
+				continue;
+
+			for (j = 0; j < SKINRIVALS; j++)
+			{
+				const char *rivalname = skins[i].rivals[j];
+				INT32 rivalnum = R_SkinAvailable(rivalname);
+
+				if (rivalnum != skin)
+					continue;
+
+				// We can see this character as a Rival!
+				break;
+			}
+
+			if (j == SKINRIVALS)
+				continue;
+
+			// "break" our way up the nesting...
+			break;
+		}
+
+		// We stopped before the end, we can see it!
+		if (i != numskins)
+			permitname = true;
+	}
+
+	return (permitname)
+		? skins[skin].realname
+		: "???";
+}
+
 static const char *M_GetNthType(UINT8 position)
 {
 	if (position == 1)
@@ -1293,8 +1341,6 @@ static const char *M_GetConditionString(condition_t *cn)
 	const char *work = NULL;
 
 	// If this function returns NULL, it stops building the condition and just does ???'s.
-
-#define BUILDCONDITIONTITLE(i) (M_BuildConditionTitle(i))
 
 	switch (cn->type)
 	{
@@ -1366,7 +1412,7 @@ static const char *M_GetConditionString(condition_t *cn)
 			if (cn->requirement >= nummapheaders || !mapheaderinfo[cn->requirement])
 				return va("INVALID MAP CONDITION \"%d:%d\"", cn->type, cn->requirement);
 
-			title = BUILDCONDITIONTITLE(cn->requirement);
+			title = M_BuildConditionTitle(cn->requirement);
 
 			if (cn->type == UC_MAPSPBATTACK)
 				prefix = (M_SecretUnlocked(SECRET_SPBATTACK, true) ? "SPB ATTACK: " : "???: ");
@@ -1393,7 +1439,7 @@ static const char *M_GetConditionString(condition_t *cn)
 			if (cn->extrainfo1 >= nummapheaders || !mapheaderinfo[cn->extrainfo1])
 				return va("INVALID MAP CONDITION \"%d:%d:%d\"", cn->type, cn->extrainfo1, cn->requirement);
 
-			title = BUILDCONDITIONTITLE(cn->extrainfo1);
+			title = M_BuildConditionTitle(cn->extrainfo1);
 			work = va("beat %s in %i:%02i.%02i", title,
 				G_TicsToMinutes(cn->requirement, true),
 				G_TicsToSeconds(cn->requirement),
@@ -1407,9 +1453,7 @@ static const char *M_GetConditionString(condition_t *cn)
 		{
 			if (cn->requirement < 0 || !skins[cn->requirement].realname[0])
 				return va("INVALID CHAR CONDITION \"%d:%d:%d\"", cn->type, cn->requirement, cn->extrainfo1);
-			work = (R_SkinUsable(-1, cn->requirement, false))
-				? skins[cn->requirement].realname
-				: "???";
+			work = M_GetConditionCharacter(cn->requirement, true);
 			return va("win %d Round%s as %s",
 				cn->extrainfo1,
 				cn->extrainfo1 == 1 ? "" : "s",
@@ -1465,7 +1509,7 @@ static const char *M_GetConditionString(condition_t *cn)
 			if (checkLevel >= nummapheaders || !mapheaderinfo[checkLevel])
 				return va("INVALID MEDAL MAP \"%d:%d\"", cn->requirement, checkLevel);
 
-			title = BUILDCONDITIONTITLE(checkLevel);
+			title = M_BuildConditionTitle(checkLevel);
 			switch (emblemlocations[i].type)
 			{
 				case ET_MAP:
@@ -1600,7 +1644,7 @@ static const char *M_GetConditionString(condition_t *cn)
 			if (cn->requirement >= nummapheaders || !mapheaderinfo[cn->requirement])
 				return va("INVALID MAP CONDITION \"%d:%d\":", cn->type, cn->requirement);
 
-			title = BUILDCONDITIONTITLE(cn->requirement);
+			title = M_BuildConditionTitle(cn->requirement);
 			work = va("%s:", title);
 			Z_Free(title);
 			return work;
@@ -1608,16 +1652,14 @@ static const char *M_GetConditionString(condition_t *cn)
 			if (cn->requirement >= nummapheaders || !mapheaderinfo[cn->requirement])
 				return va("INVALID MAP CONDITION \"%d:%d\"", cn->type, cn->requirement);
 
-			title = BUILDCONDITIONTITLE(cn->requirement);
+			title = M_BuildConditionTitle(cn->requirement);
 			work = va("on %s", title);
 			Z_Free(title);
 			return work;
 		case UCRP_ISCHARACTER:
 			if (cn->requirement < 0 || !skins[cn->requirement].realname[0])
 				return va("INVALID CHAR CONDITION \"%d:%d\"", cn->type, cn->requirement);
-			work = (R_SkinUsable(-1, cn->requirement, false))
-				? skins[cn->requirement].realname
-				: "???";
+			work = M_GetConditionCharacter(cn->requirement, true);
 			return va("as %s", work);
 		case UCRP_ISENGINECLASS:
 			return va("with engine class %c", 'A' + cn->requirement);
@@ -1757,8 +1799,6 @@ static const char *M_GetConditionString(condition_t *cn)
 	}
 	// UC_MAPTRIGGER and UC_CONDITIONSET are explicitly very hard to support proper descriptions for
 	return va("UNSUPPORTED CONDITION \"%d\"", cn->type);
-
-#undef BUILDCONDITIONTITLE
 }
 
 char *M_BuildConditionSetString(UINT16 unlockid)
