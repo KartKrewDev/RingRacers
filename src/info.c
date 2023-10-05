@@ -143,6 +143,8 @@ char sprnames[NUMSPRITES + 1][5] =
 	"NCHP", // NiGHTS chip
 	"NSTR", // NiGHTS star
 	"EMBM", // Emblem
+	"SPCN", // Spray Can
+	"MMSH", // Ancient Shrine
 	"EMRC", // Chaos Emeralds
 	"SEMR", // Super Emeralds
 	"ESPK",
@@ -635,7 +637,6 @@ char sprnames[NUMSPRITES + 1][5] =
 	"POKE", // Pokey
 	"AUDI", // Audience members
 	"DECO", // Old 1.0 Kart Decoratives + New misc ones
-	"SPCN", // Spray Can replaces all the old D00Dkart objects
 	"SNES", // Sprites for SNES remake maps
 	"GBAS", // Sprites for GBA remake maps
 	"SPRS", // Sapphire Coast Spring Shell
@@ -1869,6 +1870,9 @@ state_t states[NUMSTATES] =
 
 	// Spray Can
 	{SPR_SPCN, FF_ANIMATE|FF_SEMIBRIGHT, -1, {NULL}, 15, 2, S_NULL}, // S_SPRAYCAN
+
+	// Ancient Shrine
+	{SPR_MMSH, 0, -1, {NULL}, 0, 0, S_NULL}, // S_ANCIENTSHRINE
 
 	// Chaos Emeralds
 	{SPR_EMRC, FF_FULLBRIGHT,           1, {NULL}, 0, 0, S_CHAOSEMERALD2}, // S_CHAOSEMERALD1
@@ -8306,6 +8310,33 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		0,              // damage
 		sfx_None,       // activesound
 		MF_SPECIAL|MF_NOGRAVITY|MF_NOCLIPHEIGHT|MF_DONTENCOREMAP, // flags
+		S_NULL          // raisestate
+	},
+
+	{           // MT_ANCIENTSHRINE
+		2256,           // doomednum
+		S_ANCIENTSHRINE,// spawnstate
+		1000,           // spawnhealth
+		S_NULL,         // seestate
+		sfx_None,       // seesound
+		8,              // reactiontime
+		sfx_None,       // attacksound
+		S_NULL,         // painstate
+		0,              // painchance
+		sfx_None,       // painsound
+		S_NULL,         // meleestate
+		S_NULL,         // missilestate
+		S_NULL,         // deathstate
+		S_NULL,         // xdeathstate
+		sfx_None,       // deathsound
+		0,              // speed
+		48*FRACUNIT,    // radius
+		80*FRACUNIT,    // height
+		0,              // display offset
+		0,              // mass
+		0,              // damage
+		sfx_None,       // activesound
+		MF_SCENERY|MF_NOGRAVITY|MF_SOLID|MF_DONTENCOREMAP, // flags
 		S_NULL          // raisestate
 	},
 

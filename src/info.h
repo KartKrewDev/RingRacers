@@ -696,6 +696,8 @@ typedef enum sprite
 	SPR_NCHP, // NiGHTS chip
 	SPR_NSTR, // NiGHTS star
 	SPR_EMBM, // Emblem
+	SPR_SPCN, // Spray Can
+	SPR_MMSH, // Ancient Shrine
 	SPR_EMRC, // Chaos Emeralds
 	SPR_SEMR, // Super Emeralds
 	SPR_ESPK,
@@ -1188,7 +1190,6 @@ typedef enum sprite
 	SPR_POKE, // Pokey
 	SPR_AUDI, // Audience members
 	SPR_DECO, // Old 1.0 Kart Decoratives + New misc ones
-	SPR_SPCN, // Spray Can replaces all the old D00Dkart objects
 	SPR_SNES, // Sprites for SNES remake maps
 	SPR_GBAS, // Sprites for GBA remake maps
 	SPR_SPRS, // Sapphire Coast Spring Shell
@@ -2351,6 +2352,9 @@ typedef enum state
 
 	// Spray Can
 	S_SPRAYCAN,
+
+	// Ancient Shrine
+	S_ANCIENTSHRINE,
 
 	// Chaos Emeralds
 	S_CHAOSEMERALD1,
@@ -5996,6 +6000,7 @@ typedef enum mobj_type
 	MT_BLUEFLAG, // Blue CTF Flag
 	MT_EMBLEM,
 	MT_SPRAYCAN,
+	MT_ANCIENTSHRINE,
 	MT_EMERALD,
 	MT_EMERALDSPARK,
 	MT_EMERALDFLARE,

@@ -5338,6 +5338,10 @@ static boolean P_IsTrackerType(INT32 type)
 		case MT_JAWZ:
 			return true;
 
+		// Players need to be able to glance at the Ancient Shrines
+		case MT_ANCIENTSHRINE:
+			return true;
+
 		// Primarily for minimap data, handle with care
 		case MT_SPB:
 		case MT_BATTLECAPSULE:
@@ -5348,6 +5352,7 @@ static boolean P_IsTrackerType(INT32 type)
 		case MT_PLAYER:
 			return true;
 
+		// HUD tracking
 		case MT_OVERTIME_CENTER:
 		case MT_MONITOR:
 		case MT_EMERALD:
@@ -13058,6 +13063,22 @@ static boolean P_SetupSpawnedMapThing(mapthing_t *mthing, mobj_t *mobj)
 		mobj->threshold = nummapspraycans;
 		P_SprayCanInit(mobj);
 		nummapspraycans++;
+		break;
+	}
+	case MT_ANCIENTSHRINE:
+	{
+		angle_t remainderangle = (mobj->angle % ANGLE_90);
+
+		if (remainderangle)
+		{
+			// Always lock to 90 degree grid.
+			if (remainderangle > ANGLE_45)
+				mobj->angle += ANGLE_90;
+			mobj->angle -= remainderangle;
+		}
+
+		P_SetScale(mobj, mobj->destscale = 2*mobj->scale);
+
 		break;
 	}
 	case MT_SKYBOX:

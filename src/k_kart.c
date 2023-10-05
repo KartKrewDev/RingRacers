@@ -2022,10 +2022,10 @@ static SINT8 K_GlanceAtPlayers(player_t *glancePlayer, boolean horn)
 {
 	const fixed_t maxdistance = FixedMul(1280 * mapobjectscale, K_GetKartGameSpeedScalar(gamespeed));
 	const angle_t blindSpotSize = ANG10; // ANG5
-	UINT8 i;
 	SINT8 glanceDir = 0;
 	SINT8 lastValidGlance = 0;
-	boolean podiumspecial = (K_PodiumSequence() == true && glancePlayer->nextwaypoint == NULL && glancePlayer->speed == 0);
+	const boolean podiumspecial = (K_PodiumSequence() == true && glancePlayer->nextwaypoint == NULL && glancePlayer->speed == 0);
+	boolean mysticmelodyspecial = false;
 
 	if (podiumspecial)
 	{
@@ -2044,43 +2044,47 @@ static SINT8 K_GlanceAtPlayers(player_t *glancePlayer, boolean horn)
 
 	// See if there's any players coming up behind us.
 	// If so, your character will glance at 'em.
-	for (i = 0; i < MAXPLAYERS; i++)
+	mobj_t *victim = NULL, *victimnext = NULL;
+
+	for (victim = trackercap; victim; victim = victimnext)
 	{
-		player_t *p;
+		player_t *p = victim->player;
 		angle_t back;
 		angle_t diff;
 		fixed_t distance;
 		SINT8 dir = -1;
 
-		if (!playeringame[i])
+		victimnext = victim->itnext;
+
+		if (p != NULL)
 		{
-			// Invalid player
-			continue;
+			if (p == glancePlayer)
+			{
+				// FOOL! Don't glance at yerself!
+				continue;
+			}
+
+			if (p->spectator || p->hyudorotimer > 0)
+			{
+				// Not playing / invisible
+				continue;
+			}
+
+			if (podiumspecial && p->position >= glancePlayer->position)
+			{
+				// On the podium, only look with envy, not condesencion
+				continue;
+			}
 		}
-
-		p = &players[i];
-
-		if (p == glancePlayer)
+		else if (victim->type != MT_ANCIENTSHRINE)
 		{
-			// FOOL! Don't glance at yerself!
-			continue;
-		}
-
-		if (!p->mo || P_MobjWasRemoved(p->mo))
-		{
-			// Invalid mobj
-			continue;
-		}
-
-		if (p->spectator || p->hyudorotimer > 0)
-		{
-			// Not playing / invisible
+			// Ancient Shrines are a special exception to glance logic.
 			continue;
 		}
 
 		if (!podiumspecial)
 		{
-			distance = R_PointToDist2(glancePlayer->mo->x, glancePlayer->mo->y, p->mo->x, p->mo->y);
+			distance = R_PointToDist2(glancePlayer->mo->x, glancePlayer->mo->y, victim->x, victim->y);
 
 			if (distance > maxdistance)
 			{
@@ -2088,13 +2092,9 @@ static SINT8 K_GlanceAtPlayers(player_t *glancePlayer, boolean horn)
 				continue;
 			}
 		}
-		else if (p->position >= glancePlayer->position)
-		{
-			continue;
-		}
 
 		back = glancePlayer->mo->angle + ANGLE_180;
-		diff = R_PointToAngle2(glancePlayer->mo->x, glancePlayer->mo->y, p->mo->x, p->mo->y) - back;
+		diff = R_PointToAngle2(glancePlayer->mo->x, glancePlayer->mo->y, victim->x, victim->y) - back;
 
 		if (diff > ANGLE_180)
 		{
@@ -2114,7 +2114,7 @@ static SINT8 K_GlanceAtPlayers(player_t *glancePlayer, boolean horn)
 			continue;
 		}
 
-		if (!podiumspecial && P_CheckSight(glancePlayer->mo, p->mo) == false)
+		if (!podiumspecial && P_CheckSight(glancePlayer->mo, victim) == false)
 		{
 			// Blocked by a wall, we can't glance at 'em!
 			continue;
@@ -2129,7 +2129,14 @@ static SINT8 K_GlanceAtPlayers(player_t *glancePlayer, boolean horn)
 
 		if (horn == true)
 		{
-			K_FollowerHornTaunt(glancePlayer, p);
+			if (p != NULL)
+			{
+				K_FollowerHornTaunt(glancePlayer, p, false);
+			}
+			else if (victim->type == MT_ANCIENTSHRINE)
+			{
+				mysticmelodyspecial = true;
+			}
 		}
 	}
 
@@ -2137,7 +2144,7 @@ static SINT8 K_GlanceAtPlayers(player_t *glancePlayer, boolean horn)
 	{
 		const boolean tasteful = (glancePlayer->karthud[khud_taunthorns] == 0);
 
-		K_FollowerHornTaunt(glancePlayer, glancePlayer);
+		K_FollowerHornTaunt(glancePlayer, glancePlayer, mysticmelodyspecial);
 
 		if (tasteful && glancePlayer->karthud[khud_taunthorns] < 2*TICRATE)
 			glancePlayer->karthud[khud_taunthorns] = 2*TICRATE;

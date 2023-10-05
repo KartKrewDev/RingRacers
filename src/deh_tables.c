@@ -1194,6 +1194,9 @@ const char *const STATE_LIST[] = { // array length left dynamic for sanity testi
 	// Spray Can
 	"S_SPRAYCAN",
 
+	// Ancient Shrine
+	"S_ANCIENTSHRINE",
+
 	// Chaos Emeralds
 	"S_CHAOSEMERALD1",
 	"S_CHAOSEMERALD2",
@@ -4803,6 +4806,7 @@ const char *const MOBJTYPE_LIST[] = {  // array length left dynamic for sanity t
 	"MT_BLUEFLAG", // Blue CTF Flag
 	"MT_EMBLEM",
 	"MT_SPRAYCAN",
+	"MT_ANCIENTSHRINE",
 	"MT_EMERALD",
 	"MT_EMERALDSPARK",
 	"MT_EMERALDFLARE",

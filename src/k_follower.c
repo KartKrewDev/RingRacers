@@ -710,25 +710,46 @@ void K_HandleFollower(player_t *player)
 }
 
 /*--------------------------------------------------
-	void K_FollowerHornTaunt(player_t *taunter, player_t *victim)
+	void K_FollowerHornTaunt(player_t *taunter, player_t *victim, boolean mysticmelodyspecial)
 
 		See header file for description.
 --------------------------------------------------*/
-void K_FollowerHornTaunt(player_t *taunter, player_t *victim)
+void K_FollowerHornTaunt(player_t *taunter, player_t *victim, boolean mysticmelodyspecial)
 {
+	// Basic checks
 	if (
-		(cv_karthorns.value == 0)
-		|| taunter == NULL
+		taunter == NULL
 		|| victim == NULL
 		|| taunter->followerskin < 0
 		|| taunter->followerskin >= numfollowers
+	)
+	{
+		return;
+	}
+
+	const follower_t *fl = &followers[taunter->followerskin];
+
+	// Check mystic melody special status
+	if (mysticmelodyspecial == true)
+	{
+		/*mysticmelodyspecial = (fl->hornsound == sfx_melody)
+
+		if (mysticmelodyspecial == true)
+		{
+			// Todo: The rest of the owl
+		}*/
+	}
+
+	// More expensive checks
+	if (
+		(cv_karthorns.value == 0 && mysticmelodyspecial == false)
 		|| (P_IsDisplayPlayer(victim) == false && cv_karthorns.value != 2)
 		|| P_MobjWasRemoved(taunter->mo) == true
 		|| P_MobjWasRemoved(taunter->follower) == true
 	)
+	{
 		return;
-
-	const follower_t *fl = &followers[taunter->followerskin];
+	}
 
 	const boolean tasteful = (taunter->karthud[khud_taunthorns] == 0);
 
