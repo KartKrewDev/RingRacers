@@ -763,9 +763,15 @@ void K_FakeBotResults(player_t *bot)
 		}
 	}
 
-	if (besttime == UINT32_MAX // No one finished, so you don't finish either.
-	|| bot->distancetofinish >= worstdist) // Last place, you aren't going to finish.
+	if (besttime == UINT32_MAX) // No one finished, so you don't finish either.
 	{
+		// We don't apply PF_NOCONTEST in the exitlevel case - that's done for all players in G_DoCompleted.
+		return;
+	}
+
+	if (bot->distancetofinish >= worstdist) // Last place, you aren't going to finish.
+	{
+		// This was a successful murder!
 		bot->pflags |= PF_NOCONTEST;
 		return;
 	}

@@ -4022,48 +4022,21 @@ static void G_DoCompleted(void)
 {
 	INT32 i;
 
-	if (modeattacking && pausedelay)
-		pausedelay = 0;
-
 	// We do this here so Challenges-related sounds aren't insta-killed
 	S_StopSounds();
 
-	if (legitimateexit && !demo.playback && !mapreset) // (yes you're allowed to unlock stuff this way when the game is modified)
-	{
-		if (gametype != GT_TUTORIAL)
-		{
-			UINT8 roundtype = GDGT_CUSTOM;
-
-			if (gametype == GT_RACE)
-				roundtype = GDGT_RACE;
-			else if (gametype == GT_BATTLE)
-				roundtype = (battleprisons ? GDGT_PRISONS : GDGT_BATTLE);
-			else if (gametype == GT_SPECIAL || gametype == GT_VERSUS)
-				roundtype = GDGT_SPECIAL;
-
-			gamedata->roundsplayed[roundtype]++;
-		}
-		gamedata->pendingkeyrounds++;
-
-		// Done before forced addition of PF_NOCONTEST to make UCRP_NOCONTEST harder to achieve
-		M_UpdateUnlockablesAndExtraEmblems(true, true);
-		gamedata->deferredsave = true;
-	}
-
-	if (gamedata->deferredsave)
-		G_SaveGameData();
-
-	legitimateexit = false;
-
-	gameaction = ga_nothing;
-
-	if (metalplayback)
-		G_StopMetalDemo();
-	if (metalrecording)
-		G_StopMetalRecording(false);
-
-	G_SetGamestate(GS_NULL);
-	wipegamestate = GS_NULL;
+	// First, loop over all players to:
+	// - fake bot results
+	// - set client power add
+	// - grand prix updates (for those who have finished)
+	//    - for bots
+	//        - set up difficulty increase (if applicable)
+	//    - for humans
+	//        - update Rings
+	//        - award Lives
+	//        - update over-all GP rank
+	// - wipe some level-only player struct data
+	// (The common thread is it needs to be done before Challenges updates.)
 
 	for (i = 0; i < MAXPLAYERS; i++)
 	{
@@ -4074,8 +4047,7 @@ static void G_DoCompleted(void)
 
 		player_t *const player = &players[i];
 
-		// Exitlevel shouldn't get you the points
-		if (player->exiting == false && (player->pflags & PF_NOCONTEST) == 0)
+		if ((player->exiting == 0) && (player->pflags & PF_NOCONTEST) == 0)
 		{
 			clientPowerAdd[i] = 0;
 
@@ -4083,13 +4055,9 @@ static void G_DoCompleted(void)
 			{
 				K_FakeBotResults(player);
 			}
-			else
-			{
-				player->pflags |= PF_NOCONTEST;
-			}
 		}
 
-		if (grandprixinfo.gp == true && grandprixinfo.wonround == true && player->exiting == true)
+		if (grandprixinfo.gp == true && grandprixinfo.wonround == true && player->exiting)
 		{
 			if (player->bot == true)
 			{
@@ -4125,11 +4093,77 @@ static void G_DoCompleted(void)
 		G_PlayerFinishLevel(i); // take away cards and stuff
 	}
 
-	if (automapactive)
-		AM_Stop();
+	// Then, do gamedata-relevant material.
+	// This has to be done second because some Challenges
+	// are dependent on round standings.
+	if (legitimateexit && !demo.playback && !mapreset)
+	{
+		if (gametype != GT_TUTORIAL)
+		{
+			UINT8 roundtype = GDGT_CUSTOM;
 
-	prevmap = (INT16)(gamemap-1);
+			if (gametype == GT_RACE)
+				roundtype = GDGT_RACE;
+			else if (gametype == GT_BATTLE)
+				roundtype = (battleprisons ? GDGT_PRISONS : GDGT_BATTLE);
+			else if (gametype == GT_SPECIAL || gametype == GT_VERSUS)
+				roundtype = GDGT_SPECIAL;
 
+			gamedata->roundsplayed[roundtype]++;
+		}
+		gamedata->pendingkeyrounds++;
+
+		M_UpdateUnlockablesAndExtraEmblems(true, true);
+		gamedata->deferredsave = true;
+	}
+
+	// This isn't in the above block because other
+	// mechanisms can queue up a gamedata save.
+	if (gamedata->deferredsave)
+		G_SaveGameData();
+
+	// Then, update some important game state.
+	{
+		legitimateexit = false;
+
+		if (modeattacking && pausedelay)
+			pausedelay = 0;
+
+		gameaction = ga_nothing;
+
+		if (metalplayback)
+			G_StopMetalDemo();
+		if (metalrecording)
+			G_StopMetalRecording(false);
+
+		if (automapactive)
+			AM_Stop();
+
+		G_SetGamestate(GS_NULL);
+		wipegamestate = GS_NULL;
+
+		prevmap = (INT16)(gamemap-1);
+	}
+
+	// Finally, if you're not exiting, guarantee NO CONTEST.
+	// We do this seperately from the loop above Challenges,
+	// so NOCONTEST-related Challenges don't fire on exitlevel.
+	for (i = 0; i < MAXPLAYERS; i++)
+	{
+		if (playeringame[i] == false)
+		{
+			continue;
+		}
+
+		if (players[i].exiting || (players[i].pflags & PF_NOCONTEST))
+		{
+			continue;
+		}
+
+		players[i].pflags |= PF_NOCONTEST;
+	}
+
+	// And lastly, everything in anticipation for Intermission/level change.
 	if (!demo.playback)
 	{
 		// Set up power level gametype scrambles
