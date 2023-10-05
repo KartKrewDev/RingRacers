@@ -773,12 +773,21 @@ void K_FollowerHornTaunt(player_t *taunter, player_t *victim)
 			honk->fuse = TICRATE/2;
 			honk->renderflags |= RF_DONTDRAW;
 
-			if (P_IsDisplayPlayer(victim) || P_IsDisplayPlayer(taunter))
-				S_StartSound(NULL, fl->hornsound);
-
 			honk->flags2 |= MF2_AMBUSH;
 		}
 
-		honk->renderflags &= ~K_GetPlayerDontDrawFlag(victim);
+		UINT32 dontdrawflag = K_GetPlayerDontDrawFlag(victim);
+
+		// A display player is affected!
+		if (dontdrawflag != 0)
+		{
+			// Only play the sound for the first seen display player
+			if ((honk->renderflags & RF_DONTDRAW) == RF_DONTDRAW)
+			{
+				S_StartSound(NULL, fl->hornsound);
+			}
+
+			honk->renderflags &= ~dontdrawflag;
+		}
 	}
 }
