@@ -300,7 +300,7 @@ void Portal_AddSkyboxPortals (const player_t *player)
 	{
 		for (pl = visplanes[i]; pl; pl = pl->next)
 		{
-			if (pl->picnum == skyflatnum)
+			if (pl->picnum == skyflatnum && !pl->damage)
 			{
 				Portal_AddSkybox(player, pl);
 
