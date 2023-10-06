@@ -529,19 +529,11 @@ void G_UpdateRecords(void)
 		&& (time < UINT32_MAX)) // DNF
 			mapheaderinfo[gamemap-1]->records.time = time;
 	}
-	else
-	{
-		mapheaderinfo[gamemap-1]->records.time = 0;
-	}
 
 	if (modeattacking & ATTACKING_LAP)
 	{
 		if ((mapheaderinfo[gamemap-1]->records.lap == 0) || (bestlap < mapheaderinfo[gamemap-1]->records.lap))
 			mapheaderinfo[gamemap-1]->records.lap = bestlap;
-	}
-	else
-	{
-		mapheaderinfo[gamemap-1]->records.lap = 0;
 	}
 
 	// Check emblems when level data is updated
