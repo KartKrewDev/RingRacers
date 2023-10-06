@@ -3919,6 +3919,11 @@ if (!followers[numfollowers].field) \
 	NOSTATE(hitconfirmstate, "HITCONFIRMSTATE");
 #undef NOSTATE
 
+	if (!followers[numfollowers].hornsound)
+	{
+		followers[numfollowers].hornsound = sfx_horn00;
+	}
+
 	CONS_Printf("Added follower '%s'\n", testname);
 	if (followers[numfollowers].category < numfollowercategories)
 		followercategories[followers[numfollowers].category].numincategory++;
