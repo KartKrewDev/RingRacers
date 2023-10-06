@@ -6392,6 +6392,12 @@ static void M_DrawMapMedals(INT32 mapnum, INT32 x, INT32 y)
 		}
 		x -= 8;
 	}
+
+	if (mapheaderinfo[mapnum]->records.mapvisited & MV_MYSTICMELODY)
+	{
+		V_DrawScaledPatch(x, y, 0, W_CachePatchName("GOTMEL", PU_CACHE));
+		x -= 8;
+	}
 }
 
 static void M_DrawStatsMaps(void)

@@ -729,15 +729,16 @@ void K_FollowerHornTaunt(player_t *taunter, player_t *victim, boolean mysticmelo
 
 	const follower_t *fl = &followers[taunter->followerskin];
 
-	// Check mystic melody special status
+	// Restrict mystic melody special status
 	if (mysticmelodyspecial == true)
 	{
-		/*mysticmelodyspecial = (fl->hornsound == sfx_melody)
-
-		if (mysticmelodyspecial == true)
-		{
-			// Todo: The rest of the owl
-		}*/
+		mysticmelodyspecial = (
+			(demo.playback == false) // No downloading somebody else's replay
+			&& (fl->hornsound == sfx_melody) // Must be the Mystic Melody
+			&& (taunter->bot == false) // No getting your puppies to do it for you
+			&& P_IsLocalPlayer(taunter) // Must be in your party
+			&& !(mapheaderinfo[gamemap-1]->records.mapvisited & MV_MYSTICMELODY) // Not already done
+		);
 	}
 
 	// More expensive checks
@@ -757,6 +758,40 @@ void K_FollowerHornTaunt(player_t *taunter, player_t *victim, boolean mysticmelo
 	{
 		mobj_t *honk = taunter->follower->hprev;
 		const fixed_t desiredscale = (2*taunter->mo->scale)/3;
+
+		if (mysticmelodyspecial == true)
+		{
+			mobj_t *mobj = NULL, *next = NULL;
+
+			for (mobj = trackercap; mobj; mobj = next)
+			{
+				next = mobj->itnext;
+				if (mobj->type != MT_ANCIENTSHRINE)
+				{
+					// Not relevant
+					continue;
+				}
+
+				if (P_MobjWasRemoved(mobj->tracer) == false)
+				{
+					// Already initiated
+					continue;
+				}
+
+				// Cleverly a mobj type where TypeIsNetSynced is false
+				P_SetTarget(&mobj->tracer, P_SpawnMobjFromMobj(mobj, 0, 0, 0, MT_HORNCODE));
+
+				if (P_MobjWasRemoved(mobj->tracer) == true)
+				{
+					// Unrecoverable?!
+					continue;
+				}
+
+				// This is a helper non-netsynced countdown
+				mobj->tracer->renderflags |= RF_DONTDRAW;
+				mobj->tracer->fuse = 2*TICRATE;
+			}
+		}
 
 		if (P_MobjWasRemoved(honk) == true)
 		{

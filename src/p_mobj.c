@@ -7255,6 +7255,21 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 
 		break;
 	}
+	case MT_ANCIENTSHRINE:
+	{
+		if (P_MobjWasRemoved(mobj->tracer) == false
+			&& mobj->tracer->fuse == 1)
+		{
+			if (!(mapheaderinfo[gamemap-1]->records.mapvisited & MV_MYSTICMELODY))
+			{
+				mapheaderinfo[gamemap-1]->records.mapvisited |= MV_MYSTICMELODY;
+			}
+		}
+
+		mobj->frame = (mapheaderinfo[gamemap-1]->records.mapvisited & MV_MYSTICMELODY) ? 1 : 0;
+
+		break;
+	}
 	case MT_FLOATINGITEM:
 	{
 		P_ResetPitchRoll(mobj);

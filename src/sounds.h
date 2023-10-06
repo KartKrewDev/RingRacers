@@ -1262,6 +1262,7 @@ typedef enum
 	sfx_clawk2,
 
 	sfx_horn00,
+	sfx_melody,
 	sfx_monch,
 	sfx_etexpl,
 

@@ -142,7 +142,8 @@ struct skinreference_t
 #define MV_BEATEN       	(1<<1)
 #define MV_ENCORE       	(1<<2)
 #define MV_SPBATTACK    	(1<<3)
-#define MV_MAX          	(MV_VISITED|MV_BEATEN|MV_ENCORE|MV_SPBATTACK)
+#define MV_MYSTICMELODY		(1<<4)
+#define MV_MAX          	(MV_VISITED|MV_BEATEN|MV_ENCORE|MV_SPBATTACK|MV_MYSTICMELODY)
 #define MV_FINISHNEEDED		(1<<7)
 #define MV_PERSISTUNLOADED	(MV_SPBATTACK|MV_FINISHNEEDED)
 
