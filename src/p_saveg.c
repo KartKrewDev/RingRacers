@@ -2624,7 +2624,7 @@ static UINT32 SaveSlope(const pslope_t *slope)
 	return 0xFFFFFFFF;
 }
 
-static boolean TypeIsNetSynced(mobjtype_t type)
+boolean TypeIsNetSynced(mobjtype_t type)
 {
 	// Ignore stationary hoops - these will be respawned from mapthings.
 	if (type == MT_HOOP)
