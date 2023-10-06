@@ -201,10 +201,19 @@ boolean P_CanPickupEmblem(player_t *player, INT32 emblemID)
 		return false;
 	}
 
-	if (player->bot)
+	if (player != NULL)
 	{
-		// Your nefarious opponent puppy can't grab these for you.
-		return false;
+		if (player->bot)
+		{
+			// Your nefarious opponent puppy can't grab these for you.
+			return false;
+		}
+
+		if (player->exiting)
+		{
+			// Yeah but YOU didn't actually do it now did you
+			return false;
+		}
 	}
 
 	return true;
@@ -677,6 +686,12 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 				if (player->bot)
 				{
 					// Your nefarious opponent puppy can't grab these for you.
+					return;
+				}
+
+				if (player->exiting)
+				{
+					// Yeah but YOU didn't actually do it now did you
 					return;
 				}
 

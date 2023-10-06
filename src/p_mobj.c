@@ -7230,7 +7230,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 		mobj->frame &= ~FF_TRANSMASK;
 		mobj->renderflags &= ~RF_TRANSMASK;
 
-		if (P_EmblemWasCollected(mobj->health - 1) || !P_CanPickupEmblem(&players[consoleplayer], mobj->health - 1))
+		if (P_EmblemWasCollected(mobj->health - 1) || !P_CanPickupEmblem(NULL, mobj->health - 1))
 		{
 			trans = tr_trans50;
 		}
