@@ -1478,11 +1478,10 @@ static const char *M_GetConditionString(condition_t *cn)
 			else if (cn->type == UC_MAPSPBATTACK)
 				work = "conquer";
 
-			work = va("%s%s %s%s",
+			work = va("%s%s %s",
 				prefix,
 				work,
-				title,
-				(cn->type == UC_MAPENCORE) ? " in Encore Mode" : "");
+				title);
 			Z_Free(title);
 			return work;
 		}
