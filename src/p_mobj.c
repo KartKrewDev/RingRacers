@@ -7263,6 +7263,10 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 			if (!(mapheaderinfo[gamemap-1]->records.mapvisited & MV_MYSTICMELODY))
 			{
 				mapheaderinfo[gamemap-1]->records.mapvisited |= MV_MYSTICMELODY;
+
+				if (!M_UpdateUnlockablesAndExtraEmblems(true, true))
+					S_StartSound(NULL, sfx_ncitem);
+				gamedata->deferredsave = true;
 			}
 		}
 

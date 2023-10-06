@@ -39,6 +39,7 @@ typedef enum
 	UC_MAPBEATEN,		// MAPBEATEN [map]
 	UC_MAPENCORE,		// MAPENCORE [map]
 	UC_MAPSPBATTACK,	// MAPSPBATTACK [map]
+	UC_MAPMYSTICMELODY,	// MAPMYSTICMELODY [map]
 	UC_MAPTIME,			// MAPTIME [map] [time to beat, tics]
 
 	UC_CHARACTERWINS,	// CHARACTERWINS [character] [x rounds]

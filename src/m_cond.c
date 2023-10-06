@@ -1010,6 +1010,7 @@ boolean M_CheckCondition(condition_t *cn, player_t *player)
 		case UC_MAPBEATEN: // Requires map x to be beaten
 		case UC_MAPENCORE: // Requires map x to be beaten in encore
 		case UC_MAPSPBATTACK: // Requires map x to be beaten in SPB Attack
+		case UC_MAPMYSTICMELODY: // Mystic Melody on map x's Ancient Shrine
 		{
 			UINT8 mvtype = MV_VISITED;
 			if (cn->type == UC_MAPBEATEN)
@@ -1018,6 +1019,8 @@ boolean M_CheckCondition(condition_t *cn, player_t *player)
 				mvtype = MV_ENCORE;
 			else if (cn->type == UC_MAPSPBATTACK)
 				mvtype = MV_SPBATTACK;
+			else if (cn->type == UC_MAPMYSTICMELODY)
+				mvtype = MV_MYSTICMELODY;
 
 			return ((cn->requirement < nummapheaders)
 				&& (mapheaderinfo[cn->requirement])
@@ -1459,6 +1462,7 @@ static const char *M_GetConditionString(condition_t *cn)
 		case UC_MAPBEATEN: // Requires map x to be beaten
 		case UC_MAPENCORE: // Requires map x to be beaten in encore
 		case UC_MAPSPBATTACK: // Requires map x to be beaten in SPB Attack
+		case UC_MAPMYSTICMELODY: // Mystic Melody on map x's Ancient Shrine
 		{
 			const char *prefix = "";
 
@@ -1477,6 +1481,8 @@ static const char *M_GetConditionString(condition_t *cn)
 				work = "visit";
 			else if (cn->type == UC_MAPSPBATTACK)
 				work = "conquer";
+			else if (cn->type == UC_MAPMYSTICMELODY)
+				work = "activate the ancient shrine in";
 
 			work = va("%s%s %s",
 				prefix,
