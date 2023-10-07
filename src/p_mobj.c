@@ -10686,6 +10686,9 @@ static void P_DefaultMobjShadowScale(mobj_t *thing)
 		case MT_SNEAKERPANEL:
 			thing->shadowscale = 0;
 			break;
+		case MT_KURAGEN:
+			thing->shadowscale = FRACUNIT/4;
+			break;
 		default:
 			if (thing->flags & (MF_ENEMY|MF_BOSS))
 				thing->shadowscale = FRACUNIT;
