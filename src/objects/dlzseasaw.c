@@ -34,8 +34,6 @@ static void Obj_DLZSeasawUpdate(mobj_t *mo, boolean ghostme)
 	UINT8 i, j;
 	angle_t visan = (angle_t)mo->extravalue1 + ANGLE_90;
 
-	P_SetScale(mo, 2*mapobjectscale);
-
 	if (mo->tracer && !P_MobjWasRemoved(mo->tracer))
 	{
 		mo->tracer->tics = 3;
@@ -128,7 +126,10 @@ void Obj_DLZSeasawSpawn(mobj_t *mo)
 	mobj_t *ptr = mo;
 	mobj_t *ptrp = mo;
 	UINT8 i, j;
-
+	
+	P_SetScale(mo, 2*mapobjectscale);
+	mo->destscale = 2*mapobjectscale;
+	
 	// setup vars
 	mo->extravalue1 = (INT32)mo->angle;
 
