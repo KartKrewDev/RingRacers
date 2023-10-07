@@ -166,7 +166,7 @@ void Obj_WPZTurbineThinker(mobj_t *mo)
 			p->turbineheight = baseheight;
 			p->turbinespd = false;
 
-			if (FixedDiv(p->speed, K_GetKartSpeed(p, false, false)) > FRACUNIT + FRACUNIT/3	// 133% speed
+			if (FixedDiv(p->speed, K_GetKartSpeed(p, false, false)) > FRACUNIT*2	// 200% speed
 			&& baseheight != sneakerheight)
 			{
 				p->turbineheight = sneakerheight;
