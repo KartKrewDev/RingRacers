@@ -26,8 +26,7 @@ class BlitRectPass
 	uint32_t texture_width_ = 0;
 	uint32_t texture_height_ = 0;
 	rhi::Handle<rhi::Texture> output_;
-	uint32_t output_width_ = 0;
-	uint32_t output_height_ = 0;
+	rhi::Rect output_position_;
 	bool output_correct_aspect_ = false;
 	bool output_flip_ = false;
 	rhi::Handle<rhi::Buffer> quad_vbo_;
@@ -63,14 +62,15 @@ public:
 	/// @param width   texture width
 	/// @param height  texture height
 	void set_output(
+		int32_t x,
+		int32_t y,
 		uint32_t width,
 		uint32_t height,
 		bool correct_aspect,
 		bool flip
 	) noexcept
 	{
-		output_width_ = width;
-		output_height_ = height;
+		output_position_ = {x, y, width, height};
 		output_correct_aspect_ = correct_aspect;
 		output_flip_ = flip;
 	}

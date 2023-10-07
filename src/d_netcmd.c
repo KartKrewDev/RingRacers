@@ -419,6 +419,9 @@ void D_RegisterServerCommands(void)
 	COM_AddDebugCommand("downloads", Command_Downloads_f);
 
 	COM_AddDebugCommand("give", Command_KartGiveItem_f);
+	COM_AddDebugCommand("give2", Command_KartGiveItem_f);
+	COM_AddDebugCommand("give3", Command_KartGiveItem_f);
+	COM_AddDebugCommand("give4", Command_KartGiveItem_f);
 
 	COM_AddCommand("schedule_add", Command_Schedule_Add);
 	COM_AddCommand("schedule_clear", Command_Schedule_Clear);
@@ -534,6 +537,7 @@ void D_RegisterClientCommands(void)
 	// add cheats
 	COM_AddDebugCommand("noclip", Command_CheatNoClip_f);
 	COM_AddDebugCommand("god", Command_CheatGod_f);
+	COM_AddDebugCommand("freeze", Command_CheatFreeze_f);
 	COM_AddDebugCommand("setrings", Command_Setrings_f);
 	COM_AddDebugCommand("setspheres", Command_Setspheres_f);
 	COM_AddDebugCommand("setlives", Command_Setlives_f);
@@ -1605,6 +1609,22 @@ static void GetViewablePlayerPlaceRange(INT32 *first, INT32 *last)
 	}
 }
 
+static int GetCommandViewNumber(void)
+{
+	char c = COM_Argv(0)[strlen(COM_Argv(0))-1];/* may be digit */
+
+	switch (c)
+	{
+		default:
+			return 0;
+
+		case '2':
+		case '3':
+		case '4':
+			return c - '1';
+	}
+}
+
 #define PRINTVIEWPOINT( pre,suf ) \
 	CONS_Printf(pre"viewing \x84(%d) \x83%s\x80"suf".\n",\
 			(*displayplayerp), player_names[(*displayplayerp)]);
@@ -1612,21 +1632,11 @@ static void Command_View_f(void)
 {
 	INT32 *displayplayerp;
 	INT32 olddisplayplayer;
-	int viewnum;
+	int viewnum = 1 + GetCommandViewNumber();
 	const char *playerparam;
 	INT32 placenum;
 	INT32 playernum;
 	INT32 firstplace, lastplace;
-	char c;
-	/* easy peasy */
-	c = COM_Argv(0)[strlen(COM_Argv(0))-1];/* may be digit */
-	switch (c)
-	{
-		case '2': viewnum = 2; break;
-		case '3': viewnum = 3; break;
-		case '4': viewnum = 4; break;
-		default:  viewnum = 1;
-	}
 
 	if (viewnum > 1 && !( multiplayer && demo.playback ))
 	{
@@ -1709,13 +1719,6 @@ static void Command_SetViews_f(void)
 	UINT8 splits;
 	UINT8 newsplits;
 
-	if (!( demo.playback && multiplayer ))
-	{
-		CONS_Alert(CONS_NOTICE,
-				"You must be viewing a multiplayer replay to use this.\n");
-		return;
-	}
-
 	if (COM_Argc() != 2)
 	{
 		CONS_Printf("setviews <views>: set the number of split screens\n");
@@ -1726,12 +1729,26 @@ static void Command_SetViews_f(void)
 
 	newsplits = atoi(COM_Argv(1));
 	newsplits = min(max(newsplits, 1), 4);
-	if (newsplits > splits)
+
+	if (newsplits > splits && demo.playback && multiplayer)
+	{
 		G_AdjustView(newsplits, 0, true);
+	}
 	else
 	{
+		// Even if the splits go beyond the real number of
+		// splitscreen players, displayplayers was filled
+		// with duplicates of P1 (see Got_AddPlayer).
 		r_splitscreen = newsplits-1;
 		R_ExecuteSetViewSize();
+
+		// If promoting (outside of replays), make sure the
+		// camera is in the correct position.
+		UINT8 i;
+		for (i = splits + 1; i <= newsplits; ++i)
+		{
+			G_FixCamera(i);
+		}
 	}
 }
 
@@ -3687,7 +3704,7 @@ static void Command_Login_f(void)
 
 boolean IsPlayerAdmin(INT32 playernum)
 {
-#if defined(DEVELOP) && !(defined(HOSTTESTERS) || defined(TESTERS))
+#if 0 // defined(DEVELOP)
 	return playernum != serverplayer;
 #else
 	INT32 i;
@@ -4642,8 +4659,6 @@ static void Command_Version_f(void)
 	// DEVELOP build
 #if defined(TESTERS)
 	CONS_Printf("\x88" "TESTERS " "\x80");
-#elif defined(HOSTTESTERS)
-	CONS_Printf("\x82" "HOSTTESTERS " "\x80");
 #elif defined(DEVELOP)
 	CONS_Printf("\x87" "DEVELOP " "\x80");
 #endif
@@ -5737,6 +5752,13 @@ static void Got_Cheat(UINT8 **cp, INT32 playernum)
 			break;
 		}
 
+		case CHEAT_FREEZE: {
+			const char *status = P_FreezeCheat() ? "off" : "on";
+			P_SetFreezeCheat( !P_FreezeCheat() );
+			CV_CheaterWarning(targetPlayer, va("freeze %s", status));
+			break;
+		}
+
 		case NUMBER_OF_CHEATS:
 			break;
 	}
@@ -5911,6 +5933,8 @@ static void Command_Archivetest_f(void)
 */
 static void Command_KartGiveItem_f(void)
 {
+	UINT8 localplayer = g_localplayers[GetCommandViewNumber()];
+
 	int           ac;
 	const char *name;
 	INT32       item;
@@ -5966,7 +5990,7 @@ static void Command_KartGiveItem_f(void)
 				else
 					amt = BATTLE_POWERUP_TIME;
 
-				D_Cheat(consoleplayer, CHEAT_GIVEPOWERUP, item, amt);
+				D_Cheat(localplayer, CHEAT_GIVEPOWERUP, item, amt);
 			}
 			else if (item < NUMKARTITEMS)
 			{
@@ -5977,7 +6001,7 @@ static void Command_KartGiveItem_f(void)
 				else
 					amt = (item != KITEM_NONE);/* default to one quantity, or zero, if KITEM_NONE */
 
-				D_Cheat(consoleplayer, CHEAT_GIVEITEM, item, amt);
+				D_Cheat(localplayer, CHEAT_GIVEITEM, item, amt);
 			}
 			else
 			{

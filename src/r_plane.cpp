@@ -20,6 +20,7 @@
 #include "g_game.h"
 #include "p_setup.h" // levelflats
 #include "p_slopes.h"
+#include "r_fps.h"
 #include "r_data.h"
 #include "r_textures.h"
 #include "r_local.h"
@@ -963,8 +964,6 @@ void R_DrawSinglePlane(visplane_t *pl)
 			planeripple.active = true;
 			if (spanfunctype == SPANDRAWFUNC_TRANS)
 			{
-				UINT8 i;
-
 				spanfunctype = SPANDRAWFUNC_WATER;
 
 				// Copy the current scene, ugh
@@ -977,43 +976,38 @@ void R_DrawSinglePlane(visplane_t *pl)
 					bottom = viewheight;
 
 				// Only copy the part of the screen we need
-				for (i = 0; i <= r_splitscreen; i++)
+				UINT8 i = R_GetViewNumber();
+				INT32 scrx = 0;
+				INT32 scry = top;
+				INT32 offset;
+
+				if (r_splitscreen == 1)
 				{
-					if (viewplayer == &players[displayplayers[i]])
+					if (i & 1)
 					{
-						INT32 scrx = 0;
-						INT32 scry = top;
-						INT32 offset;
-
-						if (r_splitscreen == 1)
-						{
-							if (i & 1)
-							{
-								scry += viewheight;
-							}
-						}
-						else
-						{
-							if (i & 1)
-							{
-								scrx += viewwidth;
-							}
-
-							if (i / 2)
-							{
-								scry += viewheight;
-							}
-						}
-
-						offset = (scry*vid.width) + scrx;
-
-						// No idea if this works
-						VID_BlitLinearScreen(screens[0] + offset,
-							screens[1] + (top*vid.width), // intentionally not +offset
-							viewwidth, bottom-top,
-							vid.width, vid.width);
+						scry += viewheight;
 					}
 				}
+				else
+				{
+					if (i & 1)
+					{
+						scrx += viewwidth;
+					}
+
+					if (i / 2)
+					{
+						scry += viewheight;
+					}
+				}
+
+				offset = (scry*vid.width) + scrx;
+
+				// No idea if this works
+				VID_BlitLinearScreen(screens[0] + offset,
+					screens[1] + (top*vid.width), // intentionally not +offset
+					viewwidth, bottom-top,
+					vid.width, vid.width);
 			}
 		}
 #endif

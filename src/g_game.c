@@ -89,7 +89,7 @@ JoyType_t Joystick[MAXSPLITSCREENPLAYERS];
 
 // SRB2kart
 char gamedatafilename[64] =
-#if defined (TESTERS) || defined (HOSTTESTERS)
+#if defined (TESTERS)
 	"test"
 #elif defined(DEVELOP)
 	"develop"
@@ -1494,12 +1494,14 @@ boolean G_CouldView(INT32 playernum)
 //
 boolean G_CanView(INT32 playernum, UINT8 viewnum, boolean onlyactive)
 {
+	if (!playeringame[playernum] || players[playernum].spectator)
+	{
+		return false;
+	}
+
 	UINT8 splits;
 	UINT8 viewd;
 	INT32 *displayplayerp;
-
-	if (!(onlyactive ? G_CouldView(playernum) : (playeringame[playernum] && !players[playernum].spectator)))
-		return false;
 
 	splits = r_splitscreen+1;
 	if (viewnum > splits)
@@ -1509,14 +1511,17 @@ boolean G_CanView(INT32 playernum, UINT8 viewnum, boolean onlyactive)
 	{
 		displayplayerp = (&displayplayers[viewd-1]);
 		if ((*displayplayerp) == playernum)
-			return false;
+			return true;
 	}
 	for (viewd = viewnum + 1; viewd <= splits; ++viewd)
 	{
 		displayplayerp = (&displayplayers[viewd-1]);
 		if ((*displayplayerp) == playernum)
-			return false;
+			return true;
 	}
+
+	if (onlyactive && !G_CouldView(playernum))
+		return false;
 
 	return true;
 }
@@ -1567,7 +1572,6 @@ void G_ResetView(UINT8 viewnum, INT32 playernum, boolean onlyactive)
 	UINT8 viewd;
 
 	INT32    *displayplayerp;
-	camera_t *camerap;
 
 	INT32 olddisplayplayer;
 	INT32 playersviewable;
@@ -1618,22 +1622,14 @@ void G_ResetView(UINT8 viewnum, INT32 playernum, boolean onlyactive)
 	(*displayplayerp) = playernum;
 	if ((*displayplayerp) != olddisplayplayer)
 	{
-		camerap = &camera[viewnum-1];
-		P_ResetCamera(&players[(*displayplayerp)], camerap);
-
-		R_ResetViewInterpolation(viewnum);
+		G_FixCamera(viewnum);
 	}
 
 	if (viewnum > splits)
 	{
 		for (viewd = splits+1; viewd < viewnum; ++viewd)
 		{
-			displayplayerp = (&displayplayers[viewd-1]);
-			camerap = &camera[viewd];
-
-			(*displayplayerp) = G_FindView(0, viewd, onlyactive, false);
-
-			P_ResetCamera(&players[(*displayplayerp)], camerap);
+			G_FixCamera(viewd);
 		}
 	}
 
@@ -1693,6 +1689,26 @@ void G_ResetViews(void)
 	{
 		G_AdjustView(viewd, 0, false);
 	}
+}
+
+//
+// G_FixCamera
+// Reset camera position, angle and interpolation on a view
+// after changing state.
+//
+void G_FixCamera(UINT8 view)
+{
+	player_t *player = &players[displayplayers[view - 1]];
+
+	// The order of displayplayers can change, which would
+	// invalidate localangle.
+	localangle[view - 1] = player->angleturn;
+
+	P_ResetCamera(player, &camera[view - 1]);
+
+	// Make sure the viewport doesn't interpolate at all into
+	// its new position -- just snap instantly into place.
+	R_ResetViewInterpolation(view);
 }
 
 //

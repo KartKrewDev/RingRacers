@@ -233,6 +233,12 @@ boolean Obj_GetCheckpointRespawnPosition(const mobj_t *checkpoint, vector3_t *re
 angle_t Obj_GetCheckpointRespawnAngle(const mobj_t *checkpoint);
 void Obj_ActivateCheckpointInstantly(mobj_t* mobj);
 
+/* Ball Switch */
+void Obj_BallSwitchInit(mobj_t *mobj);
+void Obj_BallSwitchThink(mobj_t *mobj);
+void Obj_BallSwitchTouched(mobj_t *mobj, mobj_t *toucher);
+void Obj_BallSwitchDamaged(mobj_t *mobj, mobj_t *inflictor, mobj_t *source);
+
 #ifdef __cplusplus
 } // extern "C"
 #endif

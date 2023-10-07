@@ -573,7 +573,7 @@ static BlockItReturn_t PIT_CheckThing(mobj_t *thing)
 		return BMIT_CONTINUE;
 
 	// Ignore the collision if BOTH things are in hitlag.
-	if (thing->hitlag > 0 && tm.thing->hitlag > 0)
+	if (P_MobjIsFrozen(thing) && P_MobjIsFrozen(tm.thing))
 		return BMIT_CONTINUE;
 
 	if ((thing->flags & MF_NOCLIPTHING) || !(thing->flags & (MF_SOLID|MF_SPECIAL|MF_PAIN|MF_SHOOTABLE|MF_SPRING)))

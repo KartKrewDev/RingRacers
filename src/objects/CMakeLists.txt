@@ -30,4 +30,5 @@ target_sources(SRB2SDL2 PRIVATE
 	emerald.c
 	checkpoint.cpp
 	shadow.cpp
+	ball-switch.cpp
 )

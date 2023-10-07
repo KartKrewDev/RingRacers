@@ -565,6 +565,26 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 			P_SetTarget(&special->target, toucher);
 			S_StartSound(special, sfx_s1a2);
 			return;
+
+		case MT_SPECIALSTAGEBOMB:
+			// only attempt to damage the player if they're not invincible
+			if (!(player->invincibilitytimer > 0
+				|| K_IsBigger(toucher, special) == true
+				|| K_PlayerGuard(player) == true
+				|| player->hyudorotimer > 0))
+			{
+				if (P_DamageMobj(toucher, special, special, 1, DMG_STUMBLE))
+				{
+					P_SetMobjState(special, special->info->painstate);
+					special->eflags |= MFE_DAMAGEHITLAG;
+					return;
+				}
+			}
+			// if we didn't damage the player, just explode
+			P_SetMobjState(special, special->info->painstate);
+			P_SetMobjState(special, special->info->raisestate); // immediately explode visually
+			return;
+
 		case MT_CDUFO: // SRB2kart
 			if (special->fuse || !P_CanPickupItem(player, 1))
 				return;
@@ -831,6 +851,12 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 		case MT_RAINBOWDASHRING:
 			Obj_DashRingTouch(special, player);
 			return;
+
+		case MT_BALLSWITCH_BALL:
+		{
+			Obj_BallSwitchTouched(special, toucher);
+			return;
+		}
 
 		default: // SOC or script pickup
 			P_SetTarget(&special->target, toucher);
@@ -1428,7 +1454,6 @@ void P_KillMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, UINT8 damaget
 			if (target->player == &players[displayplayers[i]])
 			{
 				localaiming[i] = 0;
-				break;
 			}
 		}
 
@@ -2411,6 +2436,12 @@ boolean P_DamageMobj(mobj_t *target, mobj_t *inflictor, mobj_t *source, INT32 da
 			force = true;
 		else if (shouldForce == 2)
 			return false;
+	}
+
+	if (target->type == MT_BALLSWITCH_BALL)
+	{
+		Obj_BallSwitchDamaged(target, inflictor, source);
+		return false;
 	}
 
 	if (!force)

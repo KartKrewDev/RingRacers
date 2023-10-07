@@ -432,7 +432,7 @@ void F_WipeEndScreen(void)
 	dst_region.h = std::min(dst_region.h, backbuf_deets.height);
 	rhi->copy_framebuffer_to_texture(ctx, hw_state->wipe_frames.end, dst_region, dst_region);
 
-	hw_state->blit_rect->set_output(dst_region.w, dst_region.h, false, true);
+	hw_state->blit_rect->set_output(0, 0, dst_region.w, dst_region.h, false, true);
 	rhi::TextureDetails start_deets = rhi->get_texture_details(hw_state->wipe_frames.start);
 	hw_state->blit_rect->set_texture(hw_state->wipe_frames.start, start_deets.width, start_deets.height);
 	hw_state->blit_rect->draw(*rhi, ctx);

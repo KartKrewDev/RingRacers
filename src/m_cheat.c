@@ -303,6 +303,14 @@ void Command_CheatGod_f(void)
 	D_Cheat(consoleplayer, CHEAT_GOD);
 }
 
+void Command_CheatFreeze_f(void)
+{
+	REQUIRE_CHEATS;
+	REQUIRE_INLEVEL;
+
+	D_Cheat(consoleplayer, CHEAT_FREEZE);
+}
+
 void Command_Scale_f(void)
 {
 	const double scaled = atof(COM_Argv(1));

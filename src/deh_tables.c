@@ -289,6 +289,7 @@ actionpointer_t actionpointers[] =
 	{{A_SSMineFlash},            "A_SSMINEFLASH"},
 	{{A_LandMineExplode},		 "A_LANDMINEEXPLODE"},
 	{{A_BallhogExplode},         "A_BALLHOGEXPLODE"},
+	{{A_SpecialStageBombExplode},"A_SPECIALSTAGEBOMBEXPLODE"},
 	{{A_LightningFollowPlayer},  "A_LIGHTNINGFOLLOWPLAYER"},
 	{{A_FZBoomFlash},            "A_FZBOOMFLASH"},
 	{{A_FZBoomSmoke},            "A_FZBOOMSMOKE"},
@@ -4372,6 +4373,17 @@ const char *const STATE_LIST[] = { // array length left dynamic for sanity testi
 	"S_EERIEFOG4",
 	"S_EERIEFOG5",
 
+	// Chaos Chute
+	"S_SPECIALSTAGEARCH",
+	"S_SPECIALSTAGEBOMB",
+	"S_SPECIALSTAGEBOMB_DISARM",
+	"S_SPECIALSTAGEBOMB_EXPLODE",
+	"S_SPECIALSTAGEBOMB_DISAPPEAR",
+	"S_SPECIALSTAGEBOMB_FLICKER1",
+	"S_SPECIALSTAGEBOMB_FLICKER2",
+	"S_SPECIALSTAGEBOMB_FLICKERLOOP",
+	"S_SPECIALSTAGEBOMB_RESET",
+
 	// SMK ports
 	"S_SMK_PIPE1", // Generic pipes
 	"S_SMK_PIPE2",
@@ -4674,6 +4686,11 @@ const char *const STATE_LIST[] = { // array length left dynamic for sanity testi
 	"S_CHECKPOINT_SPARK9",
 	"S_CHECKPOINT_SPARK10",
 	"S_CHECKPOINT_SPARK11",
+
+	"S_BALLSWITCH_BALL",
+	"S_BALLSWITCH_BALL_ACTIVE",
+	"S_BALLSWITCH_PAD",
+	"S_BALLSWITCH_PAD_ACTIVE",
 };
 
 // RegEx to generate this from info.h: ^\tMT_([^,]+), --> \t"MT_\1",
@@ -5731,6 +5748,10 @@ const char *const MOBJTYPE_LIST[] = {  // array length left dynamic for sanity t
 	"MT_EERIEFOG",
 	"MT_EERIEFOGGEN",
 
+	// Chaos Chute
+	"MT_SPECIALSTAGEARCH",
+	"MT_SPECIALSTAGEBOMB",
+
 	// SMK ports
 	"MT_SMK_PIPE",
 	"MT_SMK_MOLESPAWNER",
@@ -5827,6 +5848,9 @@ const char *const MOBJTYPE_LIST[] = {  // array length left dynamic for sanity t
 
 	"MT_CHECKPOINT_END",
 	"MT_SCRIPT_THING",
+
+	"MT_BALLSWITCH_BALL",
+	"MT_BALLSWITCH_PAD",
 };
 
 const char *const MOBJFLAG_LIST[] = {

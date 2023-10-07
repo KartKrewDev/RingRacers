@@ -434,6 +434,8 @@ struct mobj_t
 	INT32 script_args[NUM_SCRIPT_ARGS];
 	char *script_stringargs[NUM_SCRIPT_STRINGARGS];
 
+	boolean frozen;
+
 	// WARNING: New fields must be added separately to savegame and Lua.
 };
 

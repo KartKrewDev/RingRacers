@@ -532,11 +532,8 @@ void SCR_DisplayTicRate(void)
 	const UINT8 *ticcntcolor = NULL;
 	UINT32 cap = R_GetFramerateCap();
 	UINT32 benchmark = (cap == 0) ? I_GetRefreshRate() : cap;
-	INT32 x = 318;
+	INT32 x = 317;
 	double fps = round(averageFPS);
-
-	// draw "FPS"
-	V_DrawFixedPatch(306<<FRACBITS, 183<<FRACBITS, FRACUNIT, V_SNAPTOBOTTOM|V_SNAPTORIGHT, framecounter, R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_YELLOW, GTC_CACHE));
 
 	if (fps > (benchmark * 0.9))
 		ticcntcolor = R_GetTranslationColormap(TC_RAINBOW, SKINCOLOR_MINT, GTC_CACHE);
@@ -571,15 +568,28 @@ void SCR_DisplayTicRate(void)
 
 void SCR_DisplayLocalPing(void)
 {
-	boolean offline;
-
-	UINT32 ping = playerpingtable[consoleplayer];	// consoleplayer's ping is everyone's ping in a splitnetgame :P
-	if (! r_splitscreen && ( cv_showping.value == 1 || (cv_showping.value == 2 && ping > servermaxping) ))	// only show 2 (warning) if our ping is at a bad level
+	// Splitscreen party has its own ping counter, but show the
+	// 1P version anyway in some cases:
+	// - On intermission, vote, etc. gamestates where the player
+	//   HUD is not drawn.
+	// - If the menu is opened, since it draws over the player
+	//   HUD.
+	if (r_splitscreen && gamestate == GS_LEVEL && !menuactive)
 	{
-		INT32 dispy = cv_ticrate.value ? 160 : 181;
-		offline = (consoleplayer == serverplayer);
-		HU_drawPing(307 * FRACUNIT, dispy * FRACUNIT, ping, V_SNAPTORIGHT | V_SNAPTOBOTTOM | V_HUDTRANS, offline, 0);
+		return;
 	}
+
+	UINT32 ping = playerpingtable[consoleplayer];
+
+	if (cv_showping.value == 2 && ping <= servermaxping) // only show 2 (warning) if our ping is at a bad level
+	{
+		return;
+	}
+
+	INT32 dispy = cv_ticrate.value ? 170 : 181;
+	boolean offline = (consoleplayer == serverplayer);
+
+	HU_drawPing(307 * FRACUNIT, dispy * FRACUNIT, ping, V_SNAPTORIGHT | V_SNAPTOBOTTOM, offline, 0);
 }
 
 

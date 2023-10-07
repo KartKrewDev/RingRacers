@@ -154,7 +154,7 @@ void P_AddPlayerScore(player_t *player, UINT32 amount);
 void P_ResetCamera(player_t *player, camera_t *thiscam);
 boolean P_TryCameraMove(fixed_t x, fixed_t y, camera_t *thiscam);
 void P_SlideCameraMove(camera_t *thiscam);
-void P_DemoCameraMovement(camera_t *cam);
+void P_DemoCameraMovement(camera_t *cam, UINT8 num);
 boolean P_MoveChaseCamera(player_t *player, camera_t *thiscam, boolean resetcalled);
 void P_ToggleDemoCamera(void);
 
@@ -167,7 +167,6 @@ boolean P_IsMachineLocalPlayer(player_t *player);
 boolean P_IsDisplayPlayer(player_t *player);
 
 void P_SetPlayerAngle(player_t *player, angle_t angle);
-angle_t P_GetLocalAngle(player_t *player);
 void P_ForceLocalAngle(player_t *player, angle_t angle);
 boolean P_PlayerFullbright(player_t *player);
 
@@ -256,6 +255,7 @@ mobjtype_t P_GetMobjtype(UINT16 mthingtype);
 
 void P_RespawnSpecials(void);
 
+fixed_t P_GetMobjDefaultScale(mobj_t *mobj);
 mobj_t *P_SpawnMobj(fixed_t x, fixed_t y, fixed_t z, mobjtype_t type);
 
 void P_CalculatePrecipFloor(precipmobj_t *mobj);
@@ -332,6 +332,8 @@ void P_FlashPal(player_t *pl, UINT16 type, UINT16 duration);
 #define PAL_MIXUP    2
 #define PAL_RECYCLE  3
 #define PAL_NUKE     4
+
+boolean P_MobjIsFrozen(mobj_t *mobj);
 
 //
 // P_ENEMY

@@ -16,8 +16,10 @@
 #include <imgui.h>
 #include <tracy/tracy/Tracy.hpp>
 
+#include "command.h"
 #include "cxxutil.hpp"
 #include "f_finale.h"
+#include "m_fixed.h"
 #include "m_misc.h"
 #include "hwr2/hardware_state.hpp"
 #include "hwr2/patch_atlas.hpp"
@@ -45,6 +47,8 @@
 #include "s_sound.h"
 #include "st_stuff.h"
 #include "v_video.h"
+
+extern "C" consvar_t cv_scr_scale, cv_scr_x, cv_scr_y;
 
 using namespace srb2;
 using namespace srb2::hwr2;
@@ -103,62 +107,6 @@ static void postframe_update(Rhi& rhi)
 	g_hw_state.palette_manager->destroy_per_frame_resources(rhi);
 }
 
-#ifdef HWRENDER
-static void finish_legacy_ogl_update()
-{
-	int player;
-
-	SCR_CalculateFPS();
-
-	if (st_overlay)
-	{
-		if (cv_songcredits.value)
-			HU_DrawSongCredits();
-
-		if (cv_ticrate.value)
-			SCR_DisplayTicRate();
-
-		if (cv_showping.value && netgame && (consoleplayer != serverplayer || !server_lagless))
-		{
-			if (server_lagless)
-			{
-				if (consoleplayer != serverplayer)
-					SCR_DisplayLocalPing();
-			}
-			else
-			{
-				for (player = 1; player < MAXPLAYERS; player++)
-				{
-					if (D_IsPlayerHumanAndGaming(player))
-					{
-						SCR_DisplayLocalPing();
-						break;
-					}
-				}
-			}
-		}
-		if (cv_mindelay.value && consoleplayer == serverplayer && Playing())
-			SCR_DisplayLocalPing();
-	}
-
-	if (marathonmode)
-		SCR_DisplayMarathonInfo();
-
-	// draw captions if enabled
-	if (cv_closedcaptioning.value)
-		SCR_ClosedCaptions();
-
-#ifdef HAVE_DISCORDRPC
-	if (discordRequestList != NULL)
-		ST_AskToJoinEnvelope();
-#endif
-
-	ST_drawDebugInfo();
-
-	OglSdlFinishUpdate(cv_vidwait.value);
-}
-#endif
-
 static void temp_legacy_finishupdate_draws()
 {
 	SCR_CalculateFPS();
@@ -210,6 +158,14 @@ static void temp_legacy_finishupdate_draws()
 
 	ST_drawDebugInfo();
 }
+
+#ifdef HWRENDER
+static void finish_legacy_ogl_update()
+{
+	temp_legacy_finishupdate_draws();
+	OglSdlFinishUpdate(cv_vidwait.value);
+}
+#endif
 
 static void new_twodee_frame()
 {
@@ -329,7 +285,20 @@ void I_FinishUpdate(void)
 		rhi->begin_default_render_pass(ctx, true);
 
 		// Upscale draw the backbuffer (with postprocessing maybe?)
-		g_hw_state.blit_rect->set_output(vid.realwidth, vid.realheight, true, true);
+		if (cv_scr_scale.value != FRACUNIT)
+		{
+			float f = std::max(FixedToFloat(cv_scr_scale.value), 0.f);
+			float w = vid.realwidth * f;
+			float h = vid.realheight * f;
+			float x = (vid.realwidth - w) * (0.5f + (FixedToFloat(cv_scr_x.value) * 0.5f));
+			float y = (vid.realheight - h) * (0.5f + (FixedToFloat(cv_scr_y.value) * 0.5f));
+
+			g_hw_state.blit_rect->set_output(x, y, w, h, true, true);
+		}
+		else
+		{
+			g_hw_state.blit_rect->set_output(0, 0, vid.realwidth, vid.realheight, true, true);
+		}
 		g_hw_state.blit_rect->set_texture(g_hw_state.backbuffer->color(), static_cast<uint32_t>(vid.width), static_cast<uint32_t>(vid.height));
 		g_hw_state.blit_rect->draw(*rhi, ctx);
 		rhi->end_render_pass(ctx);

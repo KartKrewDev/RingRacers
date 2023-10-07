@@ -282,6 +282,7 @@ enum actionnum
 	A_SSMINEEXPLODE,
 	A_LANDMINEEXPLODE,
 	A_BALLHOGEXPLODE,
+	A_SPECIALSTAGEBOMBEXPLODE,
 	A_LIGHTNINGFOLLOWPLAYER,
 	A_FZBOOMFLASH,
 	A_FZBOOMSMOKE,
@@ -557,6 +558,7 @@ void A_SSMineFlash();
 void A_LandMineExplode();
 void A_LandMineExplode();
 void A_BallhogExplode();
+void A_SpecialStageBombExplode();
 void A_LightningFollowPlayer();
 void A_FZBoomFlash();
 void A_FZBoomSmoke();
@@ -1352,6 +1354,10 @@ typedef enum sprite
 	// Eerie Grove
 	SPR_EGFG,
 
+	// Chaos Chute
+	SPR_SARC,
+	SPR_SSBM,
+
 	// SMK ports
 	SPR_SMKP,
 	SPR_MTYM,
@@ -1446,6 +1452,8 @@ typedef enum sprite
 	SPR_CPT1, // Checkpoint Orb
 	SPR_CPT2, // Checkpoint Stick
 	SPR_CPT3, // Checkpoint Base
+
+	SPR_SA2S, // SA2-style Ball Switch
 
 	// First person view sprites; this is a sprite so that it can be replaced by a specialized MD2 draw later
 	SPR_VIEW,
@@ -5530,6 +5538,17 @@ typedef enum state
 	S_EERIEFOG4,
 	S_EERIEFOG5,
 
+	// Chaos Chute
+	S_SPECIALSTAGEARCH,
+	S_SPECIALSTAGEBOMB,
+	S_SPECIALSTAGEBOMB_DISARM,
+	S_SPECIALSTAGEBOMB_EXPLODE,
+	S_SPECIALSTAGEBOMB_DISAPPEAR,
+	S_SPECIALSTAGEBOMB_FLICKER1,
+	S_SPECIALSTAGEBOMB_FLICKER2,
+	S_SPECIALSTAGEBOMB_FLICKERLOOP,
+	S_SPECIALSTAGEBOMB_RESET,
+
 	// SMK ports
 	S_SMK_PIPE1, // Generic pipes
 	S_SMK_PIPE2,
@@ -5848,6 +5867,11 @@ typedef enum state
 	S_CHECKPOINT_SPARK9,
 	S_CHECKPOINT_SPARK10,
 	S_CHECKPOINT_SPARK11,
+
+	S_BALLSWITCH_BALL,
+	S_BALLSWITCH_BALL_ACTIVE,
+	S_BALLSWITCH_PAD,
+	S_BALLSWITCH_PAD_ACTIVE,
 
 	S_FIRSTFREESLOT,
 	S_LASTFREESLOT = S_FIRSTFREESLOT + NUMSTATEFREESLOTS - 1,
@@ -6924,6 +6948,10 @@ typedef enum mobj_type
 	MT_EERIEFOG,
 	MT_EERIEFOGGEN,
 
+	// Chaos Chute
+	MT_SPECIALSTAGEARCH,
+	MT_SPECIALSTAGEBOMB,
+
 	// SMK ports
 	MT_SMK_PIPE,
 	MT_SMK_MOLESPAWNER,
@@ -7020,6 +7048,9 @@ typedef enum mobj_type
 
 	MT_CHECKPOINT_END,
 	MT_SCRIPT_THING,
+
+	MT_BALLSWITCH_BALL,
+	MT_BALLSWITCH_PAD,
 
 	MT_FIRSTFREESLOT,
 	MT_LASTFREESLOT = MT_FIRSTFREESLOT + NUMMOBJFREESLOTS - 1,
