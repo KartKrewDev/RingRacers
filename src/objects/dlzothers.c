@@ -90,7 +90,7 @@ void Obj_DLZRingVaccumCollide(mobj_t *mo, mobj_t *mo2)
 	if (!P_IsObjectOnGround(mo) || mo->momz)
 		return;
 
-	fake = P_SpawnMobj(mo->x, mo->y, mo->z, MT_FLINGRING);
+	fake = P_SpawnMobj(mo->x, mo->y, mo->z, MT_DLZ_SUCKEDRING);
 	P_SetScale(fake, mo->scale);
 	fake->scalespeed = mapobjectscale/64;
 	fake->destscale = 1;
@@ -115,8 +115,8 @@ void Obj_DLZSuckedRingThink(mobj_t *mo)
 		return;
 	}
 
-	x = t->x + mo->movefactor*FINECOSINE(mo->angle>>ANGLETOFINESHIFT);
-	y = t->y + mo->movefactor*FINESINE(mo->angle>>ANGLETOFINESHIFT);
+	x = t->x + FixedMul(mo->movefactor, FINECOSINE(mo->angle>>ANGLETOFINESHIFT));
+	y = t->y + FixedMul(mo->movefactor, FINESINE(mo->angle>>ANGLETOFINESHIFT));
 
 	P_MoveOrigin(mo, x, y, mo->z);
 
