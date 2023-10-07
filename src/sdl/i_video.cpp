@@ -235,6 +235,11 @@ static void SDLSetMode(INT32 width, INT32 height, SDL_bool fullscreen, SDL_bool 
 	SDL_GetWindowSize(window, &width, &height);
 	vid.realwidth = static_cast<uint32_t>(width);
 	vid.realheight = static_cast<uint32_t>(height);
+
+	if (graphics_started)
+	{
+		I_UpdateNoVsync();
+	}
 }
 
 static INT32 Impl_SDL_Scancode_To_Keycode(SDL_Scancode code)
@@ -501,6 +506,11 @@ static void Impl_HandleWindowEvent(SDL_WindowEvent evt)
 		case SDL_WINDOWEVENT_MOVED:
 			window_x = evt.data1;
 			window_y = evt.data2;
+			break;
+		case SDL_WINDOWEVENT_SIZE_CHANGED:
+			vid.realwidth = evt.data1;
+			vid.realheight = evt.data2;
+			break;
 	}
 
 	if (FOCUSUNION == oldfocus) // No state change
@@ -1535,7 +1545,7 @@ INT32 VID_SetMode(INT32 modeNum)
 
 static SDL_bool Impl_CreateWindow(SDL_bool fullscreen)
 {
-	int flags = 0;
+	uint32_t flags = SDL_WINDOW_RESIZABLE;
 
 	if (rendermode == render_none) // dedicated
 		return SDL_TRUE; // Monster Iestyn -- not sure if it really matters what we return here tbh

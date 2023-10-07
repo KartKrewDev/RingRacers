@@ -38,4 +38,5 @@ target_sources(SRB2SDL2 PRIVATE
 	wpzturbine.c
 	wpzothers.c
 	shadow.cpp
+	ball-switch.cpp
 )

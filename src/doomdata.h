@@ -278,6 +278,7 @@ struct mapthing_t
 	char *script_stringargs[NUM_SCRIPT_STRINGARGS];
 	UINT8 layer; // FOF layer to spawn on, see P_GetMobjSpawnHeight
 	mapUserProperties_t user; // UDMF user-defined custom properties.
+	fixed_t adjusted_z; // Z adjusted on map load, used for respawning
 	mobj_t *mobj;
 };
 

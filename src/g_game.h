@@ -240,6 +240,7 @@ INT32 G_CountPlayersPotentiallyViewable(boolean active);
 void G_ResetViews(void);
 void G_ResetView(UINT8 viewnum, INT32 playernum, boolean onlyactive);
 void G_AdjustView(UINT8 viewnum, INT32 offset, boolean onlyactive);
+void G_FixCamera(UINT8 viewnum);
 
 void G_AddPlayer(INT32 playernum);
 void G_SpectatePlayerOnJoin(INT32 playernum);

@@ -662,7 +662,7 @@ static int libd_drawOnMinimap(lua_State *L)
 	if (gamestate != GS_LEVEL)
 		return 0;
 
-	if (stplyr != &players[displayplayers[0]])
+	if (R_GetViewNumber() != 0)
 		return 0;
 
 	AutomapPic = mapheaderinfo[gamemap-1]->minimapPic;

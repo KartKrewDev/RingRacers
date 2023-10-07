@@ -2867,7 +2867,6 @@ boolean P_ProcessSpecial(activator_t *activator, INT16 special, INT32 *args, cha
 								camera[i].z += z;
 								camera[i].subsector = R_PointInSubsector(camera[i].x, camera[i].y);
 								R_RelativeTeleportViewInterpolation(i, x, y, z, 0);
-								break;
 							}
 						}
 					}
@@ -6257,6 +6256,8 @@ P_RaiseTaggedThingsToFakeFloor (
 					offset = mo->z - mo->floorz;
 					mo->z = P_GetZAt(control->c_slope, mo->x, mo->y, control->ceilingheight) + offset;
 				}
+
+				mthing->adjusted_z = mo->z;
 			}
 		}
 	}

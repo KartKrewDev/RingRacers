@@ -280,6 +280,13 @@ void Obj_WPZFountainThink(mobj_t *mo);
 void Obj_WPZKuragenThink(mobj_t *mo);
 void Obj_WPZKuragenBombThink(mobj_t *mo);
 
+/* Ball Switch */
+void Obj_BallSwitchInit(mobj_t *mobj);
+void Obj_BallSwitchThink(mobj_t *mobj);
+void Obj_BallSwitchTouched(mobj_t *mobj, mobj_t *toucher);
+void Obj_BallSwitchDamaged(mobj_t *mobj, mobj_t *inflictor, mobj_t *source);
+
+
 #ifdef __cplusplus
 } // extern "C"
 #endif

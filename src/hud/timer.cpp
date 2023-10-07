@@ -4,6 +4,7 @@
 #include "../g_game.h"
 #include "../k_hud.h"
 #include "../p_local.h"
+#include "../r_fps.h"
 #include "../v_draw.hpp"
 
 using srb2::Draw;
@@ -24,13 +25,13 @@ void K_drawKart2PTimestamp(void)
 {
 	auto get_row = []
 	{
-		if (stplyr == &players[displayplayers[0]])
+		if (R_GetViewNumber() == 0)
 		{
-			return Draw(286, 31).flags(V_SNAPTOTOP);
+			return Draw(287, 33).flags(V_SNAPTOTOP);
 		}
 		else
 		{
-			return Draw(286, 163).flags(V_SNAPTOBOTTOM);
+			return Draw(287, 156).flags(V_SNAPTOBOTTOM);
 		}
 	};
 

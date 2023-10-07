@@ -20,6 +20,7 @@
 #include "r_local.h"
 #include "r_state.h"
 #include "r_portal.h" // Add seg portals
+#include "r_fps.h"
 
 #include "r_splats.h"
 #include "p_local.h" // camera
@@ -276,18 +277,11 @@ sector_t *R_FakeFlat(sector_t *sec, sector_t *tempsec, INT32 *floorlightlevel,
 		mobj_t *viewmobj = viewplayer->mo;
 		INT32 heightsec;
 		boolean underwater;
-		UINT8 i;
+		UINT8 i = R_GetViewNumber();
 
-		for (i = 0; i <= r_splitscreen; i++)
-		{
-			if (viewplayer == &players[displayplayers[i]] && camera[i].chase)
-			{
-				heightsec = R_PointInSubsector(camera[i].x, camera[i].y)->sector->heightsec;
-				break;
-			}
-		}
-
-		if (i > r_splitscreen && viewmobj)
+		if (camera[i].chase)
+			heightsec = R_PointInSubsector(camera[i].x, camera[i].y)->sector->heightsec;
+		else if (i > r_splitscreen && viewmobj)
 			heightsec = R_PointInSubsector(viewmobj->x, viewmobj->y)->sector->heightsec;
 		else
 			return sec;

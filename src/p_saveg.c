@@ -2604,7 +2604,7 @@ typedef enum
 	MD2_WAYPOINTCAP  = 1<<25,
 	MD2_KITEMCAP     = 1<<26,
 	MD2_ITNEXT       = 1<<27,
-	MD2_LASTMOMZ     = 1<<28,
+	MD2_FROZEN       = 1<<28,
 	MD2_TERRAIN      = 1<<29,
 	MD2_WATERSKIP    = 1<<30,
 	MD2_LIGHTLEVEL   = (INT32)(1U<<31),
@@ -2795,7 +2795,7 @@ static void SaveMobjThinker(savebuffer_t *save, const thinker_t *th, const UINT8
 	}
 
 	// not the default but the most probable
-	if (mobj->momx != 0 || mobj->momy != 0 || mobj->momz != 0 || mobj->pmomz != 0)
+	if (mobj->momx != 0 || mobj->momy != 0 || mobj->momz != 0 || mobj->pmomz != 0 || mobj->lastmomz != 0)
 		diff |= MD_MOM;
 	if (mobj->radius != mobj->info->radius)
 		diff |= MD_RADIUS;
@@ -2917,8 +2917,8 @@ static void SaveMobjThinker(savebuffer_t *save, const thinker_t *th, const UINT8
 		diff2 |= MD2_KITEMCAP;
 	if (mobj->itnext)
 		diff2 |= MD2_ITNEXT;
-	if (mobj->lastmomz)
-		diff2 |= MD2_LASTMOMZ;
+	if (mobj->frozen)
+		diff2 |= MD2_FROZEN;
 	if (mobj->terrain != NULL || mobj->terrainOverlay != NULL)
 		diff2 |= MD2_TERRAIN;
 
@@ -2981,6 +2981,7 @@ static void SaveMobjThinker(savebuffer_t *save, const thinker_t *th, const UINT8
 		WRITEFIXED(save->p, mobj->momy);
 		WRITEFIXED(save->p, mobj->momz);
 		WRITEFIXED(save->p, mobj->pmomz);
+		WRITEFIXED(save->p, mobj->lastmomz);
 	}
 	if (diff & MD_RADIUS)
 		WRITEFIXED(save->p, mobj->radius);
@@ -3185,9 +3186,9 @@ static void SaveMobjThinker(savebuffer_t *save, const thinker_t *th, const UINT8
 	{
 		WRITEINT32(save->p, mobj->dispoffset);
 	}
-	if (diff2 & MD2_LASTMOMZ)
+	if (diff2 & MD2_FROZEN)
 	{
-		WRITEINT32(save->p, mobj->lastmomz);
+		WRITEUINT8(save->p, mobj->frozen);
 	}
 	if (diff2 & MD2_TERRAIN)
 	{
@@ -4164,6 +4165,7 @@ static thinker_t* LoadMobjThinker(savebuffer_t *save, actionf_p1 thinker)
 		mobj->momy = READFIXED(save->p);
 		mobj->momz = READFIXED(save->p);
 		mobj->pmomz = READFIXED(save->p);
+		mobj->lastmomz = READFIXED(save->p);
 	} // otherwise they're zero, and the memset took care of it
 
 	if (diff & MD_RADIUS)
@@ -4419,9 +4421,9 @@ static thinker_t* LoadMobjThinker(savebuffer_t *save, actionf_p1 thinker)
 	{
 		mobj->dispoffset = READINT32(save->p);
 	}
-	if (diff2 & MD2_LASTMOMZ)
+	if (diff2 & MD2_FROZEN)
 	{
-		mobj->lastmomz = READINT32(save->p);
+		mobj->frozen = (boolean)READUINT8(save->p);
 	}
 	if (diff2 & MD2_TERRAIN)
 	{

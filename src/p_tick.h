@@ -27,6 +27,12 @@ extern "C" {
 extern tic_t leveltime;
 extern boolean thinkersCompleted;
 
+boolean P_LevelIsFrozen(void);
+boolean P_FreezeCheat(void);
+void P_SetFreezeCheat(boolean value);
+void P_SetFreezeLevel(boolean value);
+boolean P_MobjIsFrozen(mobj_t *mobj);
+
 // Called by G_Ticker. Carries out all thinking of enemies and players.
 void Command_Numthinkers_f(void);
 void Command_CountMobjs_f(void);

@@ -9777,6 +9777,12 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 		}
 		break;
 
+	case MT_BALLSWITCH_BALL:
+	{
+		Obj_BallSwitchThink(mobj);
+		break;
+	}
+
 	default:
 		// check mobj against possible water content, before movement code
 		P_MobjCheckWater(mobj);
@@ -10081,6 +10087,7 @@ void P_MobjThinker(mobj_t *mobj)
 	mobj->flags2 &= ~(MF2_ALREADYHIT);
 
 	// Don't run any thinker code while in hitlag
+	mobj->eflags &= ~(MFE_PAUSED);
 	if ((mobj->player ? mobj->hitlag - mobj->player->nullHitlag : mobj->hitlag) > 0)
 	{
 		mobj->eflags |= MFE_PAUSED;
@@ -10123,11 +10130,14 @@ void P_MobjThinker(mobj_t *mobj)
 		if (mobj->type == MT_HITLAG && mobj->hitlag == 0)
 			mobj->renderflags &= ~RF_DONTDRAW;
 		*/
+	}
 
+	if (P_MobjIsFrozen(mobj))
+	{
 		return;
 	}
 
-	mobj->eflags &= ~(MFE_PUSHED|MFE_SPRUNG|MFE_JUSTBOUNCEDWALL|MFE_DAMAGEHITLAG|MFE_SLOPELAUNCHED|MFE_PAUSED);
+	mobj->eflags &= ~(MFE_PUSHED|MFE_SPRUNG|MFE_JUSTBOUNCEDWALL|MFE_DAMAGEHITLAG|MFE_SLOPELAUNCHED);
 
 	// sal: what the hell? is there any reason this isn't done, like, literally ANYWHERE else?
 	P_SetTarget(&tm.floorthing, NULL);
@@ -10578,6 +10588,20 @@ void P_SceneryThinker(mobj_t *mobj)
 // GAME SPAWN FUNCTIONS
 //
 
+fixed_t P_GetMobjDefaultScale(mobj_t *mobj)
+{
+	switch(mobj->type)
+	{
+		case MT_SPECIALSTAGEARCH:
+			return 5*FRACUNIT;
+		case MT_SPECIALSTAGEBOMB:
+			return 3*FRACUNIT/4;
+		default:
+			break;
+	}
+	return FRACUNIT;
+}
+
 static void P_DefaultMobjShadowScale(mobj_t *thing)
 {
 	thing->shadowscale = 0;
@@ -10678,6 +10702,7 @@ mobj_t *P_SpawnMobj(fixed_t x, fixed_t y, fixed_t z, mobjtype_t type)
 	SINT8 sc = -1;
 	state_t *st;
 	mobj_t *mobj;
+	fixed_t scale;
 
 	if (type == MT_NULL)
 	{
@@ -10730,13 +10755,12 @@ mobj_t *P_SpawnMobj(fixed_t x, fixed_t y, fixed_t z, mobjtype_t type)
 
 	// All mobjs are created at 100% scale.
 	mobj->scale = FRACUNIT;
-	mobj->destscale = mobj->scale;
-	mobj->scalespeed = FRACUNIT/12;
+	mobj->destscale = mapobjectscale;
+	mobj->scalespeed = mapobjectscale/12;
 
-	if (mapobjectscale != FRACUNIT) //&& !(mobj->type == MT_BLACKEGGMAN)
+	if ((scale = P_GetMobjDefaultScale(mobj)) != FRACUNIT)
 	{
-		mobj->destscale = mapobjectscale;
-		mobj->scalespeed = mapobjectscale/12;
+		mobj->destscale = FixedMul(mobj->destscale, scale);
 	}
 
 	// Sprite rendering
@@ -11239,6 +11263,9 @@ mobj_t *P_SpawnMobj(fixed_t x, fixed_t y, fixed_t z, mobjtype_t type)
 		case MT_SNEAKERPANELSPAWNER:
 			Obj_SneakerPanelSpawnerSpawn(mobj);
 			break;
+		case MT_BALLSWITCH_BALL:
+			Obj_BallSwitchInit(mobj);
+			break;
 		default:
 			break;
 	}
@@ -11729,6 +11756,9 @@ static void P_SpawnPrecipitationAt(fixed_t basex, fixed_t basey)
 
 		for (j = 0; j < numparticles; j++)
 		{
+			INT32 floorz;
+			INT32 ceilingz;
+
 			rainmo = P_SpawnPrecipMobj(x, y, z, type);
 
 			if (randomstates > 0)
@@ -11747,8 +11777,19 @@ static void P_SpawnPrecipitationAt(fixed_t basex, fixed_t basey)
 				}
 			}
 
-			// Randomly assign a height, now that floorz is set.
-			rainmo->z = M_RandomRange(rainmo->floorz >> FRACBITS, rainmo->ceilingz >> FRACBITS) << FRACBITS;
+			floorz = rainmo->floorz >> FRACBITS;
+			ceilingz = rainmo->ceilingz >> FRACBITS;
+
+			if (floorz < ceilingz)
+			{
+				// Randomly assign a height, now that floorz is set.
+				rainmo->z = M_RandomRange(floorz, ceilingz) << FRACBITS;
+			}
+			else
+			{
+				// ...except if the floor is above the ceiling.
+				rainmo->z = ceilingz << FRACBITS;
+			}
 		}
 	}
 }
@@ -12139,13 +12180,8 @@ void P_SpawnPlayer(INT32 playernum)
 
 	if ((gametyperules & GTR_BUMPERS) && !p->spectator)
 	{
-		// At leveltime == 2, K_TimerInit will get called and reset
-		// the bumpers to the initial value for the level.
-		if (leveltime > 2) // Reset those bumpers!
-		{
-			mobj->health = K_BumpersToHealth(K_StartingBumperCount());
-			K_SpawnPlayerBattleBumpers(p);
-		}
+		mobj->health = K_BumpersToHealth(K_StartingBumperCount());
+		K_SpawnPlayerBattleBumpers(p);
 	}
 
 	// Block visuals
@@ -14007,7 +14043,16 @@ mobj_t *P_SpawnMapThing(mapthing_t *mthing)
 
 	x = mthing->x << FRACBITS;
 	y = mthing->y << FRACBITS;
-	z = P_GetMapThingSpawnHeight(i, mthing, x, y);
+
+	if (mthing->adjusted_z != INT32_MAX)
+	{
+		z = mthing->adjusted_z;
+	}
+	else
+	{
+		z = P_GetMapThingSpawnHeight(i, mthing, x, y);
+	}
+
 	return P_SpawnMobjFromMapThing(mthing, x, y, z, i);
 }
 

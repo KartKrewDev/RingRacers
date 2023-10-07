@@ -797,6 +797,10 @@ char sprnames[NUMSPRITES + 1][5] =
 	// Eerie Grove
 	"EGFG",
 
+	// Chaos Chute
+	"SARC",
+	"SSBM",
+
 	// SMK ports
 	"SMKP",
 	"MTYM",
@@ -911,6 +915,8 @@ char sprnames[NUMSPRITES + 1][5] =
 	"WPWL",	// turbine
 	"WPZF",	// fountain
 	"WPZK",	// klagen
+
+	"SA2S", // SA2-style Ball Switch
 
 	// First person view sprites; this is a sprite so that it can be replaced by a specialized MD2 draw later
 	"VIEW",
@@ -5108,6 +5114,17 @@ state_t states[NUMSTATES] =
 	{SPR_EGFG, FF_TRANS90|FF_FULLBRIGHT|3, 7, {A_SetRandomTics}, 5, 9, S_EERIEFOG5}, // S_EERIEFOG4
 	{SPR_EGFG, FF_TRANS90|FF_FULLBRIGHT|4, 7, {A_SetRandomTics}, 5, 9, S_EERIEFOG1}, // S_EERIEFOG5
 
+	// Chaos Chute
+	{SPR_SARC,           FF_PAPERSPRITE|0, -1, {NULL}, 0, 0, S_NULL}, // S_SPECIALSTAGEARCH
+	{SPR_SSBM, FF_GLOBALANIM|FF_ANIMATE|0,         -1, {NULL}, 3, 3, S_NULL}, // S_SPECIALSTAGEBOMB
+	{SPR_SSBM,                          0,          1, {A_SetObjectFlags}, MF_NOCLIPTHING, 2, S_SPECIALSTAGEBOMB_EXPLODE}, // S_SPECIALSTAGEBOMB_DISARM
+	{SPR_NULL,                          0,          0, {A_SpecialStageBombExplode}, 0, 0, S_SPECIALSTAGEBOMB_DISAPPEAR}, // S_SPECIALSTAGEBOMB_EXPLODE
+	{SPR_NULL,                          0, 28*TICRATE, {A_Pain}, 0, 0, S_SPECIALSTAGEBOMB_FLICKER1}, // S_SPECIALSTAGEBOMB_DISAPPEAR
+	{SPR_SSBM, FF_GLOBALANIM|FF_ANIMATE|0,          1, {NULL}, 3, 3, S_SPECIALSTAGEBOMB_FLICKER2}, // S_SPECIALSTAGEBOMB_FLICKER1
+	{SPR_NULL,                          0,          1, {NULL}, 0, 0, S_SPECIALSTAGEBOMB_FLICKERLOOP}, // S_SPECIALSTAGEBOMB_FLICKER2
+	{SPR_NULL,                          0,          0, {A_Repeat}, TICRATE, S_SPECIALSTAGEBOMB_FLICKER1, S_SPECIALSTAGEBOMB_RESET}, // S_SPECIALSTAGEBOMB_FLICKERLOOP
+	{SPR_NULL,                          0,          0, {A_SetObjectFlags}, MF_NOCLIPTHING, 1, S_SPECIALSTAGEBOMB}, // S_SPECIALSTAGEBOMB_RESET
+
 	// SMK ports
 	{SPR_SMKP, 0, -1, {NULL}, 0, 0, S_SMK_PIPE1}, // S_SMK_PIPE1
 	{SPR_SMKP, 1, -1, {NULL}, 0, 0, S_SMK_PIPE2}, // S_SMK_PIPE2
@@ -5453,6 +5470,11 @@ state_t states[NUMSTATES] =
 	{SPR_WPZF, 1|FF_ANIMATE, -1, {NULL}, 3, 2, S_WPZFOUNTAINANIM},	// S_WPZFOUNTAINANIM
 	{SPR_WPZK, FF_ANIMATE, -1, {NULL}, 3, 12, S_KURAGEN},	// S_KURAGEN
 	{SPR_WPZK, 4, -1, {NULL}, 0, 0, S_KURAGENBOMB},			// S_KURAGENBOMB
+
+	{SPR_SA2S, FF_SEMIBRIGHT|3, -1, {NULL}, 0, 0, S_NULL}, // S_BALLSWITCH_BALL
+	{SPR_SA2S, FF_FULLBRIGHT|FF_ANIMATE|FF_GLOBALANIM|4, -1, {NULL}, 1, 1, S_NULL}, // S_BALLSWITCH_BALL_ACTIVE
+	{SPR_SA2S, FF_FLOORSPRITE, -1, {NULL}, 0, 0, S_NULL}, // S_BALLSWITCH_PAD
+	{SPR_SA2S, FF_FLOORSPRITE|FF_ANIMATE|FF_GLOBALANIM|1, -1, {NULL}, 1, 1, S_NULL}, // S_BALLSWITCH_PAD_ACTIVE
 };
 
 mobjinfo_t mobjinfo[NUMMOBJTYPES] =
@@ -28336,6 +28358,60 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		S_NULL          // raisestate
 	},
 
+	{           // MT_SPECIALSTAGEARCH
+		3889,        // doomednum
+		S_SPECIALSTAGEARCH, // spawnstate
+		1000,        // spawnhealth
+		S_NULL,      // seestate
+		sfx_None,    // seesound
+		0,           // reactiontime
+		sfx_None,    // attacksound
+		S_NULL,      // painstate
+		0,           // painchance
+		sfx_None,    // painsound
+		S_NULL,      // meleestate
+		S_NULL,      // missilestate
+		S_NULL,      // deathstate
+		S_NULL,      // xdeathstate
+		sfx_None,    // deathsound
+		0,           // speed
+		16*FRACUNIT, // radius
+		16*FRACUNIT, // height
+		0,           // dispoffset
+		0,           // mass
+		0,           // damage
+		sfx_None,    // activesound
+		MF_SCENERY|MF_NOGRAVITY, // flags
+		S_NULL       // raisestate
+	},
+
+	{           // MT_SPECIALSTAGEBOMB
+		3890,        // doomednum
+		S_SPECIALSTAGEBOMB, // spawnstate
+		1000,        // spawnhealth
+		S_NULL,      // seestate
+		sfx_None,    // seesound
+		0,           // reactiontime
+		sfx_None,    // attacksound
+		S_SPECIALSTAGEBOMB_DISARM, // painstate
+		0,           // painchance
+		sfx_s24b,    // painsound
+		S_NULL,      // meleestate
+		S_NULL,      // missilestate
+		S_NULL,      // deathstate
+		S_NULL,      // xdeathstate
+		sfx_None,    // deathsound
+		0,           // speed
+		60*FRACUNIT, // radius
+		100*FRACUNIT, // height
+		0,           // dispoffset
+		7,           // mass
+		0,           // damage
+		sfx_None,    // activesound
+		MF_SPECIAL,  // flags
+		S_SPECIALSTAGEBOMB_EXPLODE // raisestate
+	},
+
 	{           // MT_SMK_PIPE
 		3970,           // doomednum
 		S_SMK_PIPE1,    // spawnstate
@@ -29412,7 +29488,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 	    100,            // mass
 	    0,              // damage
 	    sfx_None,       // activesound
-	    MF_NOGRAVITY|MF_NOCLIP|MF_NOCLIPTHING, // flags
+	    MF_NOGRAVITY|MF_NOCLIP|MF_NOCLIPTHING|MF_DRAWFROMFARAWAY, // flags
 	    S_NULL          // raisestate
 	},
 
@@ -29439,7 +29515,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 	    100,            // mass
 	    0,              // damage
 	    sfx_None,       // activesound
-	    MF_NOGRAVITY|MF_NOCLIP|MF_NOCLIPTHING|MF_NOCLIPHEIGHT, // flags
+	    MF_NOGRAVITY|MF_NOCLIP|MF_NOCLIPTHING|MF_NOCLIPHEIGHT|MF_DRAWFROMFARAWAY, // flags
 	    S_NULL          // raisestate
 	},
 
@@ -30877,7 +30953,61 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		S_NULL          // raisestate
 	},
 
+	{           // MT_BALLSWITCH_BALL
+		5000,           // doomednum
+		S_BALLSWITCH_BALL, // spawnstate
+		1000,           // spawnhealth
+		S_NULL,         // seestate
+		sfx_None,       // seesound
+		0,              // reactiontime
+		sfx_None,       // attacksound
+		S_NULL,         // painstate
+		0,              // painchance
+		sfx_None,       // painsound
+		S_NULL,         // meleestate
+		S_NULL,         // missilestate
+		S_NULL,         // deathstate
+		S_NULL,         // xdeathstate
+		sfx_None,       // deathsound
+		0,              // speed
+		36*FRACUNIT,    // radius
+		64*FRACUNIT,    // height
+		0,              // display offset
+		0,              // mass
+		0,              // damage
+		sfx_None,       // activesound
+		MF_SPECIAL|MF_SHOOTABLE|MF_NOGRAVITY, // flags
+		S_NULL          // raisestate
+	},
+
+	{           // MT_BALLSWITCH_PAD
+		-1,           // doomednum
+		S_BALLSWITCH_PAD, // spawnstate
+		1000,           // spawnhealth
+		S_NULL,         // seestate
+		sfx_None,       // seesound
+		0,              // reactiontime
+		sfx_None,       // attacksound
+		S_NULL,         // painstate
+		0,              // painchance
+		sfx_None,       // painsound
+		S_NULL,         // meleestate
+		S_NULL,         // missilestate
+		S_NULL,         // deathstate
+		S_NULL,         // xdeathstate
+		sfx_None,       // deathsound
+		0,              // speed
+		64*FRACUNIT,    // radius
+		16*FRACUNIT,    // height
+		0,              // display offset
+		0,              // mass
+		0,              // damage
+		sfx_None,       // activesound
+		MF_NOBLOCKMAP|MF_NOCLIP|MF_NOCLIPHEIGHT|MF_NOCLIPTHING|MF_NOGRAVITY|MF_SCENERY, // flags
+		S_NULL          // raisestate
+	},
 };
+
 
 skincolor_t skincolors[MAXSKINCOLORS] = {
 	{"Default",        {  0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0}, SKINCOLOR_NONE,             0, 0,             false, UINT16_MAX}, // SKINCOLOR_NONE

@@ -32,7 +32,7 @@
 #include "lua_hook.h" // MusicChange hook
 #include "byteptr.h"
 #include "k_menu.h" // M_PlayMenuJam
-#include "m_random.h" // P_RandomKey
+#include "m_random.h" // M_RandomKey
 #include "i_time.h"
 #include "v_video.h" // V_ThinStringWidth
 #include "music.h"
@@ -1284,6 +1284,10 @@ void S_PopulateSoundTestSequence(void)
 	if (soundtest.sequence.id == 0)
 		soundtest.sequence.id = 1;
 
+	// Prepare shuffle material.
+	soundtest.sequence.shuffleinfo = 0;
+	soundtest.sequence.shufflenext = NULL;
+
 	soundtest.sequence.next = NULL;
 
 	tail = &soundtest.sequence.next;
@@ -1355,6 +1359,11 @@ void S_PopulateSoundTestSequence(void)
 
 		for (def = musicdefstart; def; def = def->next)
 		{
+			// This is the simplest set of checks,
+			// so let's wipe the shuffle data here.
+			def->sequence.shuffleinfo = 0;
+			def->sequence.shufflenext = NULL;
+
 			if (def->sequence.id == soundtest.sequence.id)
 				continue;
 
@@ -1385,12 +1394,11 @@ static boolean S_SoundTestDefLocked(musicdef_t *def)
 
 void S_UpdateSoundTestDef(boolean reverse, boolean dotracks, boolean skipnull)
 {
-	musicdef_t *newdef;
-
-	newdef = NULL;
+	musicdef_t *newdef = NULL;
 
 	if (reverse == false)
 	{
+		// Track update
 		if (dotracks == true && soundtest.current != NULL
 			&& soundtest.currenttrack < soundtest.current->numtracks-1)
 		{
@@ -1398,28 +1406,180 @@ void S_UpdateSoundTestDef(boolean reverse, boolean dotracks, boolean skipnull)
 			goto updatetrackonly;
 		}
 
-		newdef = (soundtest.current != NULL)
-			? soundtest.current->sequence.next
-			: soundtest.sequence.next;
-		while (newdef != NULL && S_SoundTestDefLocked(newdef))
-			newdef = newdef->sequence.next;
-		if (newdef == NULL && skipnull == true)
+		if (soundtest.shuffle == true && soundtest.sequence.shuffleinfo == 0)
 		{
+			// The shuffle data isn't initialised.
+			// Count the valid set of musicdefs we can randomly select from!
+			// This will later liberally be passed to M_RandomKey.
+
 			newdef = soundtest.sequence.next;
+			while (newdef != NULL)
+			{
+				if (S_SoundTestDefLocked(newdef) == false)
+				{
+					newdef->sequence.shuffleinfo = 0;
+					soundtest.sequence.shuffleinfo++;
+				}
+				else
+				{
+					// Don't permit if it gets unlocked before shuffle count gets reset
+					newdef->sequence.shuffleinfo = (size_t)-1;
+				}
+				newdef->sequence.shufflenext = NULL;
+
+				newdef = newdef->sequence.next;
+			}
+			soundtest.sequence.shufflenext = NULL;
+		}
+
+		if (soundtest.shuffle == true)
+		{
+			// Do we have it cached..?
+			newdef = soundtest.current != NULL
+				? soundtest.current->sequence.shufflenext
+				: soundtest.sequence.shufflenext;
+
+			if (newdef != NULL)
+				;
+			else if (soundtest.sequence.shuffleinfo != 0)
+			{
+				// Nope, not cached. Grab a random entry and hunt for it.
+				size_t shuffleseek = M_RandomKey(soundtest.sequence.shuffleinfo);
+				size_t shuffleseekcopy = shuffleseek;
+
+				// Since these are sequential, we can sometimes
+				// get a small benefit by starting partway down the list.
+				if (
+					soundtest.current != NULL
+					&& soundtest.current->sequence.shuffleinfo != 0
+					&& soundtest.current->sequence.shuffleinfo <= shuffleseek
+				)
+				{
+					newdef = soundtest.current;
+					shuffleseek -= (soundtest.current->sequence.shuffleinfo - 1);
+				}
+				else
+				{
+					newdef = soundtest.sequence.next;
+				}
+
+				// ...yeah, though, this is basically O(n). I could provide a
+				// great many excuses, but the basic impetus is that I saw
+				// a thread on an open-source software development forum where,
+				// since 2014, a parade of users have been asking for the same
+				// basic QoL feature and been consecutively berated by one developer
+				// extremely against the idea of implmenting something imperfect.
+				// I have enough self-awareness as a programmer to recognise that
+				// that is a chronic case of "PROGRAMMER BRAIN". Sometimes you
+				// just need to do a feature "badly" because it's more important
+				// for it to exist at all than to channel mathematical elegance.
+				// ~toast 220923
+
+				for (; newdef != NULL; newdef = newdef->sequence.next)
+				{
+					if (newdef->sequence.shuffleinfo != 0)
+						continue;
+
+					if (S_SoundTestDefLocked(newdef) == true)
+						continue;
+
+					if (shuffleseek != 0)
+					{
+						shuffleseek--;
+						continue;
+					}
+					break;
+				}
+
+				if (newdef == NULL)
+				{
+					// Fell short!? Try again later
+					soundtest.sequence.shuffleinfo = 0;
+				}
+				else
+				{
+					// Don't select the same entry twice
+					if (soundtest.sequence.shuffleinfo)
+						soundtest.sequence.shuffleinfo--;
+
+					// One-indexed so the first shuffled entry has a valid shuffleinfo
+					newdef->sequence.shuffleinfo = shuffleseekcopy+1;
+
+					// Link it to the end of the chain
+					if (soundtest.current && soundtest.current->sequence.shuffleinfo != 0)
+					{
+						soundtest.current->sequence.shufflenext = newdef;
+					}
+					else
+					{
+						soundtest.sequence.shufflenext = newdef;
+					}
+				}
+			}
+		}
+		else
+		{
+			// Just blaze through the musicdefs
+			newdef = (soundtest.current != NULL)
+				? soundtest.current->sequence.next
+				: soundtest.sequence.next;
 			while (newdef != NULL && S_SoundTestDefLocked(newdef))
 				newdef = newdef->sequence.next;
+
+			if (newdef == NULL && skipnull == true)
+			{
+				newdef = soundtest.sequence.next;
+				while (newdef != NULL && S_SoundTestDefLocked(newdef))
+					newdef = newdef->sequence.next;
+			}
 		}
 	}
 	else
 	{
+		// Everything in this case is doing a full-on O(n) search
+		// for the previous entry in one of two singly linked lists.
+		// I know there are better solutions. It basically boils
+		// down to the fact that this code only runs on direct user
+		// input on a menu, never in the background, and therefore
+		// is straight up less important than the forwards direction.
+
 		musicdef_t *def, *lastdef = NULL;
 
+		// Track update
 		if (dotracks == true && soundtest.current != NULL
 			&& soundtest.currenttrack > 0)
 		{
 			soundtest.currenttrack--;
 			goto updatetrackonly;
 		}
+
+		if (soundtest.shuffle && soundtest.current != NULL)
+		{
+			// Basically identical structure to the sequence.next case... templates might be cool one day
+
+			if (soundtest.sequence.shufflenext == soundtest.current)
+				;
+			else for (def = soundtest.sequence.shufflenext; def; def = def->sequence.shufflenext)
+			{
+				if (!S_SoundTestDefLocked(def))
+				{
+					lastdef = def;
+				}
+
+				if (def->sequence.shufflenext != soundtest.current)
+				{
+					continue;
+				}
+
+				newdef = lastdef;
+				break;
+			}
+
+			goto updatecurrent;
+		}
+
+		soundtest.shuffle = false;
+		soundtest.sequence.shuffleinfo = 0;
 
 		if (soundtest.current == soundtest.sequence.next
 			&& skipnull == false)
@@ -1535,6 +1695,8 @@ void S_SoundTestStop(void)
 
 	soundtest.playing = false;
 	soundtest.autosequence = false;
+	soundtest.shuffle = false;
+	soundtest.sequence.shuffleinfo = 0;
 
 	Music_Stop("stereo");
 	Music_Stop("stereo_fade");

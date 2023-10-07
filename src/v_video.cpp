@@ -27,6 +27,7 @@
 #include "f_finale.h"
 #include "r_draw.h"
 #include "console.h"
+#include "r_fps.h"
 
 #include "i_video.h" // rendermode
 #include "z_zone.h"
@@ -513,8 +514,7 @@ void V_AdjustXYWithSnap(INT32 *x, INT32 *y, UINT32 options, INT32 dupx, INT32 du
 	INT32 screenheight = vid.height;
 	INT32 basewidth = BASEVIDWIDTH * dupx;
 	INT32 baseheight = BASEVIDHEIGHT * dupy;
-	SINT8 player = -1;
-	UINT8 i;
+	SINT8 player = R_GetViewNumber();
 
 	if (options & V_SPLITSCREEN)
 	{
@@ -528,15 +528,6 @@ void V_AdjustXYWithSnap(INT32 *x, INT32 *y, UINT32 options, INT32 dupx, INT32 du
 		{
 			screenwidth /= 2;
 			basewidth /= 2;
-		}
-	}
-
-	for (i = 0; i <= r_splitscreen; i++)
-	{
-		if (stplyr == &players[displayplayers[i]])
-		{
-			player = i;
-			break;
 		}
 	}
 
@@ -586,7 +577,7 @@ void V_AdjustXYWithSnap(INT32 *x, INT32 *y, UINT32 options, INT32 dupx, INT32 du
 
 				if (r_splitscreen > 1)
 				{
-					if (stplyr == &players[displayplayers[1]] || stplyr == &players[displayplayers[3]])
+					if (player & 1)
 						slidefromright = true;
 				}
 
