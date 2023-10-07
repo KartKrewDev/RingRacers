@@ -46,6 +46,7 @@
 #include "console.h" // CON_LogMessage
 #include "k_respawn.h"
 #include "k_terrain.h"
+#include "k_objects.h"
 #include "acs/interface.h"
 #include "m_easing.h"
 
@@ -1379,6 +1380,7 @@ boolean P_CanActivateSpecial(INT16 special)
 	{
 		case 2001: // Finish line
 		case 2003: // Respawn line
+		case 2005: // Dismount Flying Object	(always true here so that conditions are only kept on execution)
 		{
 			return true;
 		}
@@ -4464,6 +4466,18 @@ boolean P_ProcessSpecial(activator_t *activator, INT16 special, INT32 *args, cha
 				P_DamageMobj(mo, NULL, NULL, 1, DMG_DEATHPIT);
 			}
 		}
+		break;
+
+		case 2005: // Dismount Flying object
+			// the rideroid is a bit complex so it's the one controlling the player rather than the player controlling it.
+			// so it is the object needing to be checked for rather than the player
+			if (mo->player && mo->player->rideroid && mo->tracer
+			&& !P_MobjWasRemoved(mo->tracer) && mo->tracer->type == MT_RIDEROID)
+				Obj_getPlayerOffRideroid(mo->tracer);
+
+			// dlz rockets are simpler and are tied to the player hence why we check for the player here instead.
+			if (mo->player && mo->player->dlzrocket)
+				Obj_DLZRocketDismount(mo->player);
 		break;
 
 		default:
@@ -9279,9 +9293,9 @@ void T_Pusher(pusher_t *p)
 				if (thing->angle - angle > ANGLE_180)
 					thing->player->drawangle = angle - (angle - thing->angle) / 8;
 				else
-					thing->player->drawangle = angle + (thing->angle - angle) / 8; 
+					thing->player->drawangle = angle + (thing->angle - angle) / 8;
 				//P_SetPlayerAngle(thing->player, thing->angle);
-				
+
 			}
 
 			if (p->exclusive)
@@ -9424,7 +9438,7 @@ void P_DoQuakeOffset(UINT8 view, mappoint_t *viewPos, mappoint_t *offset)
 				viewPos->z - quake->epicenter->z
 			) - distBuffer;
 
-			
+
 			fixed_t distEase = FixedDiv(max(epidist, 0), quake->radius);
 			distEase = min(distEase, FRACUNIT);
 			ir = Easing_InCubic(distEase, ir, 0);

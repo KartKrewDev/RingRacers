@@ -52,6 +52,8 @@ static void plr_resetRideroidVars(player_t *p)
 	p->rdaddmomx = 0;
 	p->rdaddmomy = 0;
 	p->rdaddmomz = 0;
+
+	P_SetTarget(&p->mo->tracer, NULL);
 }
 
 // kills the rideroid and removes it from the map.
@@ -254,6 +256,8 @@ void Obj_RideroidThink(mobj_t *mo)
 	}
 
 	// if we're here, we made it to the rideroid and we can use it, or something like that!
+
+	P_SetTarget(&p->mo->tracer, mo);	// keep a reference of the rideroid in the player for convenience.
 
 	// calculate the maximum speed we can move at.
 	// the values are a little arbitrary but they work for how little use these have.

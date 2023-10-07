@@ -1902,19 +1902,6 @@ static BlockItReturn_t PIT_CheckLine(line_t *ld)
 			return BMIT_CONTINUE; // force no collide
 	}
 
-	// a bit of a hacky behaviour, but not that I know where else it would go.
-	if (tm.blockingline->flags & ML_TFERLINE)
-	{
-		if (tm.thing->type == MT_RIDEROID)
-		{
-			Obj_getPlayerOffRideroid(tm.thing);
-		}
-		else if (tm.thing->type == MT_PLAYER && tm.thing->player && tm.thing->player->dlzrocket)
-		{
-			Obj_DLZRocketDismount(tm.thing->player);
-		}
-	}
-
 	if (!ld->backsector) // one sided line
 	{
 		if (P_PointOnLineSide(tm.thing->x, tm.thing->y, ld))

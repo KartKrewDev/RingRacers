@@ -415,6 +415,7 @@ boolean R_IsDebugLine(seg_t *line)
 		{
 			case 2001: // Ring Racers: Finish Line
 			case 2003: // Ring Racers: Respawn Line
+			case 2005: // Ring Racers: Dismount flying object Line
 				return true;
 		}
 	}
