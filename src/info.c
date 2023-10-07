@@ -5459,6 +5459,9 @@ state_t states[NUMSTATES] =
 	{SPR_RDRD, 0, -1, {NULL}, 0, 0, S_RIDEROID},	// S_RIDEROID
 	{SPR_RDRC, FF_ANIMATE|FF_FULLBRIGHT|FF_TRANS30, -1, {NULL}, 3, 2, S_RIDEROID_ICON},	// S_RIDEROID_ICON
 
+	// Leaf Storm
+	{SPR_LSZB, 0, -1, {NULL}, 0, 0, S_EGGBALL},	// S_EGGBALL
+
 	// Dead Line
 	{SPR_DLZH, 0, -1, {NULL}, 0, 0, S_DLZHOVER},	// S_DLZHOVER
 
@@ -30603,8 +30606,8 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 	},
 
 	{           // MT_LSZ_EGGBALL
-		-1,           // doomednum
-		S_INVISIBLE,    // spawnstate
+		-1,             // doomednum
+		S_EGGBALL,      // spawnstate
 		1000,           // spawnhealth
 		S_NULL,         // seestate
 		sfx_None,       // seesound
@@ -30765,7 +30768,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 	},
 
 	{           // MT_DLZ_RINGVACCUM,
-		3443,           // doomednum
+		3433,           // doomednum
 		S_INVISIBLE,    // spawnstate
 		1000,           // spawnhealth
 		S_NULL,         // seestate

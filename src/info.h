@@ -5884,6 +5884,9 @@ typedef enum state
 	S_RIDEROID,
 	S_RIDEROID_ICON,
 
+	// leaf storm
+	S_EGGBALL,
+
 	// dead line zone
 	S_DLZHOVER,
 	S_DLZROCKET_L,

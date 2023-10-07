@@ -31,12 +31,14 @@
 // spawns balls every BALLMINSPAWNTIME to BALLMAXSPAWNTIME seconds.
 void Obj_EggBallSpawnerThink(mobj_t *mo)
 {
-
 	if (!mo->extravalue1)
 	{
 		mobj_t *ball = P_SpawnMobj(mo->x, mo->y, mo->z, MT_LSZ_EGGBALL);
-		ball->angle = mo->angle;
-		P_SetScale(ball, 6*mapobjectscale);
+		if (P_MobjWasRemoved(ball) == false)
+		{
+			ball->angle = mo->angle;
+			P_SetScale(ball, (ball->destscale = 6*mapobjectscale));
+		}
 
 		mo->extravalue1 = P_RandomRange(PR_TRACKHAZARD, TICRATE*BALLMINSPAWNTIME, TICRATE*BALLMAXSPAWNTIME);
 	}
@@ -50,13 +52,17 @@ void Obj_EggBallSpawnerThink(mobj_t *mo)
 
 void Obj_EggBallThink(mobj_t *mo)
 {
+	const boolean onground = P_IsObjectOnGround(mo);
 
-	P_SetScale(mo, 6*mapobjectscale);
-
-	if (mo->eflags & MFE_JUSTHITFLOOR
-	&& mo->threshold)
+	if (mo->eflags & MFE_JUSTHITFLOOR)
 	{
-		if (mo->threshold < -10*mapobjectscale)
+		if (mo->extravalue1 && P_CheckDeathPitCollide(mo))
+		{
+			P_RemoveMobj(mo);
+			return;
+		}
+
+		if (mo->threshold && mo->threshold < -10*mapobjectscale)
 		{
 			UINT8 i;
 
@@ -80,17 +86,16 @@ void Obj_EggBallThink(mobj_t *mo)
 
 	if (!mo->extravalue1)
 	{
-		if (P_IsObjectOnGround(mo))
+		if (onground)
 		{
 			mo->extravalue1 = 1;
 			mo->cusval = 24*mapobjectscale;
 			mo->movedir = mo->z;
-			mo->sprite = SPR_LSZB;
 		}
 	}
 	else
 	{
-		if (P_IsObjectOnGround(mo) && mo->extravalue2 &1)
+		if (onground && (mo->extravalue2 & 1))
 		{
 			fixed_t dx = mo->x + P_RandomRange(PR_DECORATION, -96, 96)*mapobjectscale - mo->momx*2;
 			fixed_t dy = mo->y + P_RandomRange(PR_DECORATION, -96, 96)*mapobjectscale - mo->momy*2;
@@ -107,7 +112,7 @@ void Obj_EggBallThink(mobj_t *mo)
 		mo->frame = mo->extravalue2 % (24 * 2) / 2; // 24 is for frame Y.
 
 		// build up speed
-		if (P_IsObjectOnGround(mo))
+		if (onground)
 		{
 			if (mo->eflags & MFE_VERTICALFLIP)
 			{
@@ -128,7 +133,4 @@ void Obj_EggBallThink(mobj_t *mo)
 		mo->movedir = mo->z;
 	}
 	mo->threshold = mo->momz;
-
-	if (P_CheckDeathPitCollide(mo))
-		P_RemoveMobj(mo);
 }
