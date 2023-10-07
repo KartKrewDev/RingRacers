@@ -126,10 +126,10 @@ void Obj_DLZSeasawSpawn(mobj_t *mo)
 	mobj_t *ptr = mo;
 	mobj_t *ptrp = mo;
 	UINT8 i, j;
-	
+
 	P_SetScale(mo, 2*mapobjectscale);
 	mo->destscale = 2*mapobjectscale;
-	
+
 	// setup vars
 	mo->extravalue1 = (INT32)mo->angle;
 
