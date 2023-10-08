@@ -29,6 +29,14 @@ target_sources(SRB2SDL2 PRIVATE
 	sneaker-panel.c
 	emerald.c
 	checkpoint.cpp
+	rideroid.c
+	bungee.c
+	eggball.c
+	dlzrocket.c
+	dlzseasaw.c
+	dlzothers.c
+	wpzturbine.c
+	wpzothers.c
 	shadow.cpp
 	ball-switch.cpp
 )

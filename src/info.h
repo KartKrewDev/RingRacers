@@ -1243,7 +1243,7 @@ typedef enum sprite
 	SPR_ARK3,
 	SPR_ARK4,
 	SPR_ARK5,
-	
+
 
 	SPR_BUMP, // Player/shell bump
 	SPR_FLEN, // Shell hit graphics stuff
@@ -1451,6 +1451,22 @@ typedef enum sprite
 	SPR_CPT1, // Checkpoint Orb
 	SPR_CPT2, // Checkpoint Stick
 	SPR_CPT3, // Checkpoint Base
+
+	SPR_RDRD, // rideroid
+	SPR_RDRA, // rideroid node sprites
+	SPR_RDRC,
+	SPR_RDRL,
+
+	SPR_LSZB,	// eggman ball.
+
+	SPR_DLZH,	// DLZ Hover
+	SPR_DLZR,	// DLZ Rocket
+	SPR_DLZS,	// DLZ Seasaw
+	SPR_DLZA,	// Helper arrows for rocket
+
+	SPR_WPWL,	// turbine
+	SPR_WPZF,	// fountain
+	SPR_WPZK,	// klagen
 
 	SPR_SA2S, // SA2-style Ball Switch
 
@@ -5864,6 +5880,24 @@ typedef enum state
 	S_CHECKPOINT_SPARK10,
 	S_CHECKPOINT_SPARK11,
 
+	// rideroid
+	S_RIDEROID,
+	S_RIDEROID_ICON,
+
+	// leaf storm
+	S_EGGBALL,
+
+	// dead line zone
+	S_DLZHOVER,
+	S_DLZROCKET_L,
+	S_DLZROCKET_R,
+
+	// water palace zone
+	S_WPZFOUNTAIN,
+	S_WPZFOUNTAINANIM,
+	S_KURAGEN,
+	S_KURAGENBOMB,
+
 	S_BALLSWITCH_BALL,
 	S_BALLSWITCH_BALL_ACTIVE,
 	S_BALLSWITCH_PAD,
@@ -7043,6 +7077,27 @@ typedef enum mobj_type
 
 	MT_CHECKPOINT_END,
 	MT_SCRIPT_THING,
+
+	MT_RIDEROID,
+	MT_RIDEROIDNODE,
+
+	MT_LSZ_BUNGEE,
+	MT_LSZ_EGGBALLSPAWNER,
+	MT_LSZ_EGGBALL,
+
+	MT_DLZ_HOVER,
+	MT_DLZ_ROCKET,
+	MT_DLZ_SEASAW_SPAWN,
+	MT_DLZ_SEASAW_HITBOX,
+	MT_DLZ_SEASAW_VISUAL,
+	MT_DLZ_RINGVACCUM,
+	MT_DLZ_SUCKEDRING,
+
+	MT_WATERPALACETURBINE,
+	MT_WATERPALACEBUBBLE,
+	MT_WATERPALACEFOUNTAIN,
+	MT_KURAGEN,
+	MT_KURAGENBOMB,
 
 	MT_BALLSWITCH_BALL,
 	MT_BALLSWITCH_PAD,

@@ -229,6 +229,9 @@ UINT32 K_PointLimitForGametype(void);
 
 boolean K_Cooperative(void);
 
+// lat: used for when the player is in some weird state where it wouldn't be wise for it to be overwritten by another object that does similarly wacky shit.
+boolean K_isPlayerInSpecialState(player_t *p);
+
 #ifdef __cplusplus
 } // extern "C"
 #endif

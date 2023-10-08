@@ -896,6 +896,26 @@ char sprnames[NUMSPRITES + 1][5] =
 	"CPT2", // Checkpoint Stick
 	"CPT3", // Checkpoint Base
 
+	// rideroid (see info.h for detail)
+	"RDRD",
+	"RDRA",
+	"RDRC",
+	"RDRL",
+
+	// leaf storm egg ball.
+	"LSZB",
+
+	// Dead Line Zone
+	"DLZH",
+	"DLZR",
+	"DLZS",
+	"DLZA",
+
+	// Water Palace Zone
+	"WPWL",	// turbine
+	"WPZF",	// fountain
+	"WPZK",	// klagen
+
 	"SA2S", // SA2-style Ball Switch
 
 	// First person view sprites; this is a sprite so that it can be replaced by a specialized MD2 draw later
@@ -5434,6 +5454,25 @@ state_t states[NUMSTATES] =
 	{SPR_SGNS, FF_ADD|FF_FULLBRIGHT|8, 1, {NULL}, 0, 0, S_CHECKPOINT_SPARK10}, // S_CHECKPOINT_SPARK9
 	{SPR_SGNS, FF_ADD|FF_FULLBRIGHT|3, 1, {NULL}, 0, 0, S_CHECKPOINT_SPARK11}, // S_CHECKPOINT_SPARK10
 	{SPR_SGNS, FF_ADD|FF_FULLBRIGHT|2, 1, {NULL}, 0, 0, S_CHECKPOINT_SPARK1}, // S_CHECKPOINT_SPARK11
+
+	// Las Vegas
+	{SPR_RDRD, 0, -1, {NULL}, 0, 0, S_RIDEROID},	// S_RIDEROID
+	{SPR_RDRC, FF_ANIMATE|FF_FULLBRIGHT|FF_TRANS30, -1, {NULL}, 3, 2, S_RIDEROID_ICON},	// S_RIDEROID_ICON
+
+	// Leaf Storm
+	{SPR_LSZB, 0, -1, {NULL}, 0, 0, S_EGGBALL},	// S_EGGBALL
+
+	// Dead Line
+	{SPR_DLZH, 0, -1, {NULL}, 0, 0, S_DLZHOVER},	// S_DLZHOVER
+
+	{SPR_DLZR, 0, -1, {NULL}, 0, 0, S_DLZROCKET_L},	// S_DLZROCKET_L
+	{SPR_DLZR, 1, -1, {NULL}, 0, 0, S_DLZROCKET_R},	// S_DLZROCKET_R
+
+	// Water Palace
+	{SPR_WPZF, 0, -1, {NULL}, 0, 0, S_WPZFOUNTAIN},	// S_WPZFOUNTAIN
+	{SPR_WPZF, 1|FF_ANIMATE, -1, {NULL}, 3, 2, S_WPZFOUNTAINANIM},	// S_WPZFOUNTAINANIM
+	{SPR_WPZK, FF_ANIMATE, -1, {NULL}, 3, 12, S_KURAGEN},	// S_KURAGEN
+	{SPR_WPZK, 4, -1, {NULL}, 0, 0, S_KURAGENBOMB},			// S_KURAGENBOMB
 
 	{SPR_SA2S, FF_SEMIBRIGHT|3, -1, {NULL}, 0, 0, S_NULL}, // S_BALLSWITCH_BALL
 	{SPR_SA2S, FF_FULLBRIGHT|FF_ANIMATE|FF_GLOBALANIM|4, -1, {NULL}, 1, 1, S_NULL}, // S_BALLSWITCH_BALL_ACTIVE
@@ -30458,6 +30497,465 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		S_NULL          // raisestate
 	},
 
+	{           // MT_RIDEROID
+		-1,           // doomednum
+		S_RIDEROID,    // spawnstate
+		1000,           // spawnhealth
+		S_NULL,         // seestate
+		sfx_None,       // seesound
+		0,              // reactiontime
+		sfx_None,       // attacksound
+		S_NULL,         // painstate
+		0,              // painchance
+		sfx_None,       // painsound
+		S_NULL,         // meleestate
+		S_NULL,         // missilestate
+		S_NULL,         // deathstate
+		S_NULL,         // xdeathstate
+		sfx_None,       // deathsound
+		0,              // speed
+		30*FRACUNIT,    // radius
+		40*FRACUNIT,    // height
+		0,              // display offset
+		0,              // mass
+		0,              // damage
+		sfx_None,       // activesound
+		MF_NOGRAVITY|MF_NOCLIPHEIGHT, // flags
+		S_NULL          // raisestate
+	},
+
+	{           // MT_RIDEROIDNODE
+		3711,           // doomednum
+		S_RIDEROID_ICON,    // spawnstate
+		1000,           // spawnhealth
+		S_NULL,         // seestate
+		sfx_None,       // seesound
+		0,              // reactiontime
+		sfx_None,       // attacksound
+		S_NULL,         // painstate
+		0,              // painchance
+		sfx_None,       // painsound
+		S_NULL,         // meleestate
+		S_NULL,         // missilestate
+		S_NULL,         // deathstate
+		S_NULL,         // xdeathstate
+		sfx_None,       // deathsound
+		0,              // speed
+		80*FRACUNIT,    // radius
+		80*FRACUNIT,    // height
+		0,              // display offset
+		0,              // mass
+		0,              // damage
+		sfx_None,       // activesound
+		MF_NOGRAVITY|MF_NOCLIP, // flags
+		S_NULL          // raisestate
+	},
+
+	{           // MT_LSZ_BUNGEE
+		3440,           // doomednum
+		S_INVISIBLE,    // spawnstate
+		1000,           // spawnhealth
+		S_NULL,         // seestate
+		sfx_None,       // seesound
+		0,              // reactiontime
+		sfx_None,       // attacksound
+		S_NULL,         // painstate
+		0,              // painchance
+		sfx_None,       // painsound
+		S_NULL,         // meleestate
+		S_NULL,         // missilestate
+		S_NULL,         // deathstate
+		S_NULL,         // xdeathstate
+		sfx_None,       // deathsound
+		0,              // speed
+		127*FRACUNIT,    // radius
+		64*FRACUNIT,    // height
+		0,              // display offset
+		0,              // mass
+		0,              // damage
+		sfx_None,       // activesound
+		MF_NOGRAVITY|MF_SPECIAL, // flags
+		S_NULL          // raisestate
+	},
+
+	{           // MT_LSZ_EGGBALLSPAWNER
+		3443,           // doomednum
+		S_INVISIBLE,    // spawnstate
+		1000,           // spawnhealth
+		S_NULL,         // seestate
+		sfx_None,       // seesound
+		0,              // reactiontime
+		sfx_None,       // attacksound
+		S_NULL,         // painstate
+		0,              // painchance
+		sfx_None,       // painsound
+		S_NULL,         // meleestate
+		S_NULL,         // missilestate
+		S_NULL,         // deathstate
+		S_NULL,         // xdeathstate
+		sfx_None,       // deathsound
+		0,              // speed
+		8*FRACUNIT,    // radius
+		8*FRACUNIT,    // height
+		0,              // display offset
+		0,              // mass
+		0,              // damage
+		sfx_None,       // activesound
+		MF_NOGRAVITY, // flags
+		S_NULL          // raisestate
+	},
+
+	{           // MT_LSZ_EGGBALL
+		-1,             // doomednum
+		S_EGGBALL,      // spawnstate
+		1000,           // spawnhealth
+		S_NULL,         // seestate
+		sfx_None,       // seesound
+		0,              // reactiontime
+		sfx_None,       // attacksound
+		S_NULL,         // painstate
+		0,              // painchance
+		sfx_None,       // painsound
+		S_NULL,         // meleestate
+		S_NULL,         // missilestate
+		S_NULL,         // deathstate
+		S_NULL,         // xdeathstate
+		sfx_None,       // deathsound
+		0,              // speed
+		32*FRACUNIT,    // radius
+		64*FRACUNIT,    // height
+		0,              // display offset
+		DMG_TUMBLE,     // mass
+		0,              // damage
+		sfx_None,       // activesound
+		MF_PAIN, // flags
+		S_NULL          // raisestate
+	},
+
+	{           // MT_DLZ_HOVER,
+		3430,           // doomednum
+		S_DLZHOVER,    // spawnstate
+		1000,           // spawnhealth
+		S_NULL,         // seestate
+		sfx_None,       // seesound
+		0,              // reactiontime
+		sfx_None,       // attacksound
+		S_NULL,         // painstate
+		0,              // painchance
+		sfx_None,       // painsound
+		S_NULL,         // meleestate
+		S_NULL,         // missilestate
+		S_NULL,         // deathstate
+		S_NULL,         // xdeathstate
+		sfx_None,       // deathsound
+		0,              // speed
+		100*FRACUNIT,    // radius
+		32*FRACUNIT,    // height
+		0,              // display offset
+		0,     // mass
+		0,              // damage
+		sfx_None,       // activesound
+		MF_NOGRAVITY|MF_SOLID, // flags
+		S_NULL          // raisestate
+	},
+
+	{           // MT_DLZ_ROCKET,
+		3431,           // doomednum
+		S_INVISIBLE,    // spawnstate
+		1000,           // spawnhealth
+		S_NULL,         // seestate
+		sfx_None,       // seesound
+		0,              // reactiontime
+		sfx_None,       // attacksound
+		S_NULL,         // painstate
+		0,              // painchance
+		sfx_None,       // painsound
+		S_NULL,         // meleestate
+		S_NULL,         // missilestate
+		S_NULL,         // deathstate
+		S_NULL,         // xdeathstate
+		sfx_None,       // deathsound
+		0,              // speed
+		100*FRACUNIT,    // radius
+		64*FRACUNIT,    // height
+		0,              // display offset
+		0,     // mass
+		0,              // damage
+		sfx_None,       // activesound
+		MF_NOGRAVITY|MF_SPECIAL, // flags
+		S_NULL          // raisestate
+	},
+
+	{           // MT_DLZ_SEASAW_SPAWN,
+		3432,           // doomednum
+		S_INVISIBLE,    // spawnstate
+		1000,           // spawnhealth
+		S_NULL,         // seestate
+		sfx_None,       // seesound
+		0,              // reactiontime
+		sfx_None,       // attacksound
+		S_NULL,         // painstate
+		0,              // painchance
+		sfx_None,       // painsound
+		S_NULL,         // meleestate
+		S_NULL,         // missilestate
+		S_NULL,         // deathstate
+		S_NULL,         // xdeathstate
+		sfx_None,       // deathsound
+		0,              // speed
+		32*FRACUNIT,    // radius
+		32*FRACUNIT,    // height
+		0,              // display offset
+		0,     // mass
+		0,              // damage
+		sfx_None,       // activesound
+		0, // flags
+		S_NULL          // raisestate
+	},
+
+	{           // MT_DLZ_SEASAW_HITBOX,
+		-1,          	// doomednum
+		S_INVISIBLE,    // spawnstate
+		1000,           // spawnhealth
+		S_NULL,         // seestate
+		sfx_None,       // seesound
+		0,              // reactiontime
+		sfx_None,       // attacksound
+		S_NULL,         // painstate
+		0,              // painchance
+		sfx_None,       // painsound
+		S_NULL,         // meleestate
+		S_NULL,         // missilestate
+		S_NULL,         // deathstate
+		S_NULL,         // xdeathstate
+		sfx_None,       // deathsound
+		0,              // speed
+		8*FRACUNIT,    // radius
+		40*FRACUNIT,    // height
+		0,              // display offset
+		0,    	 		// mass
+		0,              // damage
+		sfx_None,       // activesound
+		MF_SOLID, 		// flags
+		S_NULL          // raisestate
+	},
+
+	{           // MT_DLZ_SEASAW_VISUAL,
+		-1,           	// doomednum
+		S_INVISIBLE,    // spawnstate
+		1000,           // spawnhealth
+		S_NULL,         // seestate
+		sfx_None,       // seesound
+		0,              // reactiontime
+		sfx_None,       // attacksound
+		S_NULL,         // painstate
+		0,              // painchance
+		sfx_None,       // painsound
+		S_NULL,         // meleestate
+		S_NULL,         // missilestate
+		S_NULL,         // deathstate
+		S_NULL,         // xdeathstate
+		sfx_None,       // deathsound
+		0,              // speed
+		40*FRACUNIT,    // radius
+		64*FRACUNIT,    // height
+		0,              // display offset
+		0,     			// mass
+		0,              // damage
+		sfx_None,       // activesound
+		MF_NOGRAVITY|MF_NOCLIP|MF_NOCLIPHEIGHT, 	// flags
+		S_NULL          // raisestate
+	},
+
+	{           // MT_DLZ_RINGVACCUM,
+		3433,           // doomednum
+		S_INVISIBLE,    // spawnstate
+		1000,           // spawnhealth
+		S_NULL,         // seestate
+		sfx_None,       // seesound
+		0,              // reactiontime
+		sfx_None,       // attacksound
+		S_NULL,         // painstate
+		0,              // painchance
+		sfx_None,       // painsound
+		S_NULL,         // meleestate
+		S_NULL,         // missilestate
+		S_NULL,         // deathstate
+		S_NULL,         // xdeathstate
+		sfx_None,       // deathsound
+		0,              // speed
+		96*FRACUNIT,    // radius
+		32*FRACUNIT,    // height
+		0,              // display offset
+		0,     			// mass
+		0,              // damage
+		sfx_None,       // activesound
+		MF_SOLID, 		// flags
+		S_NULL          // raisestate
+	},
+
+	{           // MT_DLZ_SUCKEDRING,
+		-1,           	// doomednum
+		S_RING,    		// spawnstate
+		1000,           // spawnhealth
+		S_NULL,         // seestate
+		sfx_None,       // seesound
+		0,              // reactiontime
+		sfx_None,       // attacksound
+		S_NULL,         // painstate
+		0,              // painchance
+		sfx_None,       // painsound
+		S_NULL,         // meleestate
+		S_NULL,         // missilestate
+		S_NULL,         // deathstate
+		S_NULL,         // xdeathstate
+		sfx_None,       // deathsound
+		0,              // speed
+		32*FRACUNIT,    // radius
+		32*FRACUNIT,    // height
+		0,              // display offset
+		0,     			// mass
+		0,              // damage
+		sfx_None,       // activesound
+		MF_NOGRAVITY, 	// flags
+		S_NULL          // raisestate
+	},
+
+	{           // MT_WATERPALACETURBINE
+		3400,           // doomednum
+		S_INVISIBLE,    // spawnstate
+		1000,           // spawnhealth
+		S_NULL,         // seestate
+		sfx_None,       // seesound
+		0,              // reactiontime
+		sfx_None,       // attacksound
+		S_NULL,         // painstate
+		0,              // painchance
+		sfx_None,       // painsound
+		S_NULL,         // meleestate
+		S_NULL,         // missilestate
+		S_NULL,         // deathstate
+		S_NULL,         // xdeathstate
+		sfx_None,       // deathsound
+		0,              // speed
+		32*FRACUNIT,    // radius
+		32*FRACUNIT,    // height
+		0,              // display offset
+		0,     			// mass
+		0,              // damage
+		sfx_None,       // activesound
+		MF_NOGRAVITY|MF_NOBLOCKMAP, 	// flags
+		S_NULL          // raisestate
+	},
+
+	{           // MT_WATERPALACEBUBBLE
+		-1,           // doomednum
+		S_INVISIBLE,    // spawnstate
+		1000,           // spawnhealth
+		S_NULL,         // seestate
+		sfx_None,       // seesound
+		0,              // reactiontime
+		sfx_None,       // attacksound
+		S_NULL,         // painstate
+		0,              // painchance
+		sfx_None,       // painsound
+		S_NULL,         // meleestate
+		S_NULL,         // missilestate
+		S_NULL,         // deathstate
+		S_NULL,         // xdeathstate
+		sfx_None,       // deathsound
+		0,              // speed
+		32*FRACUNIT,    // radius
+		32*FRACUNIT,    // height
+		0,              // display offset
+		0,     			// mass
+		0,              // damage
+		sfx_None,       // activesound
+		MF_NOGRAVITY|MF_NOBLOCKMAP|MF_NOCLIP, 	// flags
+		S_NULL          // raisestate
+	},
+
+	{           // MT_WATERPALACEFOUNTAIN
+		3401,           // doomednum
+		S_WPZFOUNTAIN,  // spawnstate
+		1000,           // spawnhealth
+		S_NULL,         // seestate
+		sfx_None,       // seesound
+		0,              // reactiontime
+		sfx_None,       // attacksound
+		S_NULL,         // painstate
+		0,              // painchance
+		sfx_None,       // painsound
+		S_NULL,         // meleestate
+		S_NULL,         // missilestate
+		S_NULL,         // deathstate
+		S_NULL,         // xdeathstate
+		sfx_None,       // deathsound
+		0,              // speed
+		16*FRACUNIT,    // radius
+		64*FRACUNIT,    // height
+		0,              // display offset
+		0,     			// mass
+		0,              // damage
+		sfx_None,       // activesound
+		MF_SOLID, 		// flags
+		S_NULL          // raisestate
+	},
+
+	{           // MT_KURAGEN
+		3402,           // doomednum
+		S_KURAGEN,  	// spawnstate
+		1000,           // spawnhealth
+		S_NULL,         // seestate
+		sfx_None,       // seesound
+		0,              // reactiontime
+		sfx_None,       // attacksound
+		S_NULL,         // painstate
+		0,              // painchance
+		sfx_None,       // painsound
+		S_NULL,         // meleestate
+		S_NULL,         // missilestate
+		S_NULL,         // deathstate
+		S_NULL,         // xdeathstate
+		sfx_None,       // deathsound
+		0,              // speed
+		64*FRACUNIT,    // radius
+		64*FRACUNIT,    // height
+		0,              // display offset
+		0,     			// mass
+		0,              // damage
+		sfx_None,       // activesound
+		MF_NOGRAVITY, 	// flags
+		S_NULL          // raisestate
+	},
+
+	{           // MT_KURAGENBOMB
+		-1,           	// doomednum
+		S_KURAGENBOMB,  // spawnstate
+		1000,           // spawnhealth
+		S_NULL,         // seestate
+		sfx_None,       // seesound
+		0,              // reactiontime
+		sfx_None,       // attacksound
+		S_NULL,         // painstate
+		0,              // painchance
+		sfx_None,       // painsound
+		S_NULL,         // meleestate
+		S_NULL,         // missilestate
+		S_NULL,         // deathstate
+		S_NULL,         // xdeathstate
+		sfx_None,       // deathsound
+		0,              // speed
+		64*FRACUNIT,    // radius
+		64*FRACUNIT,    // height
+		0,              // display offset
+		0,     			// mass
+		DMG_EXPLODE,    // damage
+		sfx_None,       // activesound
+		MF_PAIN, 		// flags
+		S_NULL          // raisestate
+	},
+
 	{           // MT_BALLSWITCH_BALL
 		5000,           // doomednum
 		S_BALLSWITCH_BALL, // spawnstate
@@ -30512,6 +31010,7 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		S_NULL          // raisestate
 	},
 };
+
 
 skincolor_t skincolors[MAXSKINCOLORS] = {
 	{"Default",        {  0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0}, SKINCOLOR_NONE,             0, 0,             false, UINT16_MAX}, // SKINCOLOR_NONE
