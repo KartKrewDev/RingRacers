@@ -991,7 +991,8 @@ static UINT8 K_TrySpindash(player_t *player)
 			}
 		}
 
-		AddForCondition(K_ApplyOffroad(player) == true && player->offroad > 0); // Slowed by offroad
+		constexpr fixed_t minimum_offroad = (3 << FRACBITS) >> 1; // Do not spindash in weak offroad
+		AddForCondition(K_ApplyOffroad(player) == true && player->offroad > minimum_offroad); // Slowed by offroad
 		AddForCondition(speedDiff < (baseAccel >> 3)); // Accelerating slower than expected
 		AddForCondition(angleDiff > ANG60); // Being pushed backwards
 		AddForCondition(uphill == true); // Going up a steep slope without speed
