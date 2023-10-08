@@ -4307,40 +4307,24 @@ boolean P_ProcessSpecial(activator_t *activator, INT16 special, INT32 *args, cha
 
 		case 475: // ACS_Execute
 			{
-				INT32 newArgs[NUM_SCRIPT_ARGS-1] = {0};
-				INT32 i;
-
 				if (!stringargs[0])
 				{
 					CONS_Debug(DBG_GAMELOGIC, "Special type 475: No script name given\n");
 					return false;
 				}
 
-				for (i = 1; i < NUM_SCRIPT_ARGS; i++)
-				{
-					newArgs[i - 1] = args[i];
-				}
-
-				ACS_Execute(stringargs[0], newArgs, NUM_SCRIPT_ARGS-1, activator);
+				ACS_Execute(stringargs[0], &args[1], NUM_SCRIPT_ARGS - 1, (const char* const*)&stringargs[1], NUM_SCRIPT_STRINGARGS - 1, activator);
 			}
 			break;
 		case 476: // ACS_ExecuteAlways
 			{
-				INT32 newArgs[NUM_SCRIPT_ARGS-1] = {0};
-				INT32 i;
-
 				if (!stringargs[0])
 				{
 					CONS_Debug(DBG_GAMELOGIC, "Special type 475: No script name given\n");
 					return false;
 				}
 
-				for (i = 1; i < NUM_SCRIPT_ARGS; i++)
-				{
-					newArgs[i - 1] = args[i];
-				}
-
-				ACS_ExecuteAlways(stringargs[0], newArgs, NUM_SCRIPT_ARGS-1, activator);
+				ACS_ExecuteAlways(stringargs[0], &args[1], NUM_SCRIPT_ARGS - 1, (const char* const*)&stringargs[1], NUM_SCRIPT_STRINGARGS - 1, activator);
 			}
 			break;
 		case 477: // ACS_Suspend
