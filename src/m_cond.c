@@ -679,7 +679,7 @@ void M_ClearSecrets(void)
 	gamedata->numspraycans = 0;
 	gamedata->gotspraycans = 0;
 
-	UINT16 i;
+	UINT16 i, j;
 	for (i = 0; i < nummapheaders; i++)
 	{
 		if (!mapheaderinfo[i])
@@ -688,6 +688,11 @@ void M_ClearSecrets(void)
 		mapheaderinfo[i]->cache_spraycan = UINT16_MAX;
 
 		mapheaderinfo[i]->cache_maplock = MAXUNLOCKABLES;
+
+		for (j = 1; j < mapheaderinfo[i]->musname_size; j++)
+		{
+			mapheaderinfo[i]->cache_muslock[j-1] = MAXUNLOCKABLES;
+		}
 	}
 
 	cupheader_t *cup;
@@ -847,6 +852,28 @@ static void M_PrecacheLevelLocks(void)
 					if (mapheaderinfo[map]->cache_maplock != MAXUNLOCKABLES)
 						CONS_Alert(CONS_ERROR, "Unlockable %u: Too many SECRET_MAPs associated with Level %s\n", i, mapheaderinfo[map]->lumpname);
 					mapheaderinfo[map]->cache_maplock = i;
+				}
+				break;
+			}
+
+			case SECRET_ALTMUSIC:
+			{
+				UINT16 map = M_UnlockableMapNum(&unlockables[i]);
+				if (map < nummapheaders
+					&& mapheaderinfo[map])
+				{
+					for (j = 1; j < mapheaderinfo[map]->musname_size; j++)
+					{
+						if (mapheaderinfo[map]->cache_muslock[j - 1] != MAXUNLOCKABLES)
+						{
+							continue;
+						}
+
+						mapheaderinfo[map]->cache_muslock[j - 1] = i;
+						break;
+					}
+					if (j == mapheaderinfo[map]->musname_size)
+						CONS_Alert(CONS_ERROR, "Unlockable %u: Too many SECRET_ALTMUSICs associated with Level %s\n", i, mapheaderinfo[map]->lumpname);
 				}
 				break;
 			}
@@ -2712,7 +2739,7 @@ cupheader_t *M_UnlockableCup(unlockable_t *unlock)
 
 UINT16 M_UnlockableMapNum(unlockable_t *unlock)
 {
-	if (unlock->type != SECRET_MAP)
+	if (unlock->type != SECRET_MAP && unlock->type != SECRET_ALTMUSIC)
 	{
 		// This isn't a map unlockable...
 		return NEXTMAP_INVALID;

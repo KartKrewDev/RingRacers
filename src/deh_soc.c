@@ -1219,6 +1219,8 @@ void readlevelheader(MYFILE *f, char * name)
 							break;
 						deh_strlcpy(mapheaderinfo[num]->musname[j], tmp,
 							sizeof(mapheaderinfo[num]->musname[j]), va("Level header %d: music", num));
+						if (j)
+							mapheaderinfo[num]->cache_muslock[j - 1] = MAXUNLOCKABLES;
 						j++;
 					} while ((tmp = strtok(NULL,",")) != NULL);
 					
@@ -2354,6 +2356,8 @@ void readunlockable(MYFILE *f, INT32 num)
 						unlockables[num].type = SECRET_CUP;
 					else if (fastcmp(word2, "MAP"))
 						unlockables[num].type = SECRET_MAP;
+					else if (fastcmp(word2, "ALTMUSIC"))
+						unlockables[num].type = SECRET_ALTMUSIC;
 					else if (fastcmp(word2, "SKIN"))
 						unlockables[num].type = SECRET_SKIN;
 					else if (fastcmp(word2, "FOLLOWER"))

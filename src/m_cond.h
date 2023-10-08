@@ -187,6 +187,7 @@ typedef enum
 	// Level restrictions
 	SECRET_CUP,					// Permit access to entire cup (overrides SECRET_MAP)
 	SECRET_MAP,					// Permit access to single map
+	SECRET_ALTMUSIC,			// Permit access to single map music track
 
 	// Player restrictions
 	SECRET_SKIN,				// Permit this character
