@@ -238,11 +238,12 @@ void R_SetSpanFunc(size_t id, boolean npo2, boolean brightmapped)
 {
 	I_Assert(id < SPANDRAWFUNC_MAX);
 
-	if (spanfuncs_flat[id] != NULL && debugrender_highlight != 0)
+	if (debugrender_highlight != 0 && R_SetSpanFuncFlat(id))
 	{
-		spanfunc = spanfuncs_flat[id];
+		return;
 	}
-	else if (spanfuncs_npo2[id] != NULL && npo2 == true)
+
+	if (spanfuncs_npo2[id] != NULL && npo2 == true)
 	{
 		spanfunc = spanfuncs_npo2[id];
 	}
@@ -256,6 +257,20 @@ void R_SetSpanFunc(size_t id, boolean npo2, boolean brightmapped)
 	{
 		spanfunc = spanfuncs[id];
 	}
+}
+
+boolean R_SetSpanFuncFlat(size_t id)
+{
+	I_Assert(id < SPANDRAWFUNC_MAX);
+
+	if (spanfuncs_flat[id] == NULL)
+	{
+		return false;
+	}
+
+	spanfunc = spanfuncs_flat[id];
+
+	return true;
 }
 
 boolean R_CheckColumnFunc(size_t id)

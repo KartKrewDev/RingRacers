@@ -20,6 +20,7 @@ extern "C" {
 
 #include "screen.h" // needs MAXVIDWIDTH/MAXVIDHEIGHT
 #include "r_data.h"
+#include "r_defs.h"
 #include "r_textures.h"
 #include "p_polyobj.h"
 
@@ -60,6 +61,7 @@ struct visplane_t
 
 	boolean noencore;
 	boolean ripple;
+	sectordamage_t damage;
 };
 
 extern visplane_t *visplanes[MAXVISPLANES];
@@ -88,7 +90,7 @@ void R_ClearFFloorClips (void);
 void R_DrawPlanes(void);
 visplane_t *R_FindPlane(fixed_t height, INT32 picnum, INT32 lightlevel, fixed_t xoff, fixed_t yoff, angle_t plangle,
 	extracolormap_t *planecolormap, ffloor_t *ffloor, polyobj_t *polyobj, pslope_t *slope, boolean noencore,
-	boolean ripple, boolean reverseLight, const sector_t *lighting_sector);
+	boolean ripple, boolean reverseLight, const sector_t *lighting_sector, sectordamage_t damage);
 visplane_t *R_CheckPlane(visplane_t *pl, INT32 start, INT32 stop);
 void R_ExpandPlane(visplane_t *pl, INT32 start, INT32 stop);
 void R_PlaneBounds(visplane_t *plane);
@@ -107,6 +109,8 @@ void R_CalculateSlopeVectors(void);
 
 // Sets the slope vector pointers for the current tilted span.
 void R_SetTiltedSpan(INT32 span);
+
+boolean R_PlaneIsHighlighted(const visplane_t *pl);
 
 struct visffloor_t
 {

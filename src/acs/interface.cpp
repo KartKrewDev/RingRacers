@@ -11,10 +11,13 @@
 /// \file  interface.cpp
 /// \brief Action Code Script: Interface for the rest of SRB2's game logic
 
+#include <algorithm>
 #include <cstddef>
 #include <istream>
 #include <ostream>
 #include <vector>
+
+#include <tcb/span.hpp>
 
 #include "acsvm.hpp"
 
@@ -347,31 +350,63 @@ void ACS_Tick(void)
 }
 
 /*--------------------------------------------------
-	boolean ACS_Execute(const char *name, const INT32 *args, size_t numArgs, activator_t *activator)
+	static std::vector<ACSVM::Word> ACS_MixArgs(tcb::span<const INT32> args, tcb::span<const char* const> stringArgs)
 
-		See header file for description.
+		Convert strings to ACS arguments and position them
+		correctly among integer arguments.
+
+	Input Arguments:-
+		args: Integer arguments.
+		stringArgs: C string arguments.
+
+	Return:-
+		Final argument vector.
 --------------------------------------------------*/
-boolean ACS_Execute(const char *name, const INT32 *args, size_t numArgs, activator_t *activator)
+static std::vector<ACSVM::Word> ACS_MixArgs(tcb::span<const INT32> args, tcb::span<const char* const> stringArgs)
 {
-	Environment *env = &ACSEnv;
+	std::vector<ACSVM::Word> argV;
+	size_t first = std::min(args.size(), stringArgs.size());
 
-	ACSVM::GlobalScope *const global = env->getGlobalScope(0);
-	ACSVM::HubScope *const hub = global->getHubScope(0);
-	ACSVM::MapScope *const map = hub->getMapScope(0);
-	ACSVM::ScopeID scope{global->id, hub->id, map->id};
+	auto new_string = [env = &ACSEnv](const char* str) -> ACSVM::Word { return ~env->getString(str, strlen(str))->idx; };
 
-	ThreadInfo info{activator};
+	for (size_t i = 0; i < first; ++i)
+	{
+		// args[i] must be 0.
+		//
+		// If ACS_Execute is called from ACS, stringargs[i]
+		// will always be set, because there is no
+		// differentiation between integers and strings on
+		// arguments passed to a function. In this case,
+		// string arguments already exist in the ACS string
+		// table beforehand (and set in args[i]), so no
+		// conversion is required here.
+		//
+		// If ACS_Execute is called from a map line special,
+		// args[i] may be left unset (0), while stringArgs[i]
+		// is set. In this case, conversion to ACS string
+		// table is necessary.
+		argV.push_back(!args[i] && stringArgs[i] ? new_string(stringArgs[i]) : args[i]);
+	}
 
-	ACSVM::String *script = env->getString(name, strlen(name));
-	return map->scriptStart(script, scope, {reinterpret_cast<const ACSVM::Word *>(args), numArgs, &info});
+	for (size_t i = first; i < args.size(); ++i)
+	{
+		argV.push_back(args[i]);
+	}
+
+	for (size_t i = first; i < stringArgs.size(); ++i)
+	{
+		argV.push_back(new_string(stringArgs[i] ? stringArgs[i] : ""));
+	}
+
+	return argV;
 }
 
 /*--------------------------------------------------
-	boolean ACS_ExecuteAlways(const char *name, const INT32 *args, size_t numArgs, activator_t *activator)
+	boolean ACS_Execute(const char *name, const INT32 *args, size_t numArgs, const char *const *stringArgs, size_t numStringArgs, activator_t *activator)
 
 		See header file for description.
 --------------------------------------------------*/
-boolean ACS_ExecuteAlways(const char *name, const INT32 *args, size_t numArgs, activator_t *activator)
+boolean ACS_Execute(const char *name, const INT32 *args, size_t numArgs, const char *const *stringArgs, size_t numStringArgs, activator_t *activator)
 {
 	Environment *env = &ACSEnv;
 
@@ -383,7 +418,29 @@ boolean ACS_ExecuteAlways(const char *name, const INT32 *args, size_t numArgs, a
 	ThreadInfo info{activator};
 
 	ACSVM::String *script = env->getString(name, strlen(name));
-	return map->scriptStartForced(script, scope, {reinterpret_cast<const ACSVM::Word *>(args), numArgs, &info});
+	std::vector<ACSVM::Word> argV = ACS_MixArgs(tcb::span {args, numArgs}, tcb::span {stringArgs, numStringArgs});
+	return map->scriptStart(script, scope, {argV.data(), argV.size(), &info});
+}
+
+/*--------------------------------------------------
+	boolean ACS_ExecuteAlways(const char *name, const INT32 *args, size_t numArgs, const char *const *stringArgs, size_t numStringArgs, activator_t *activator)
+
+		See header file for description.
+--------------------------------------------------*/
+boolean ACS_ExecuteAlways(const char *name, const INT32 *args, size_t numArgs, const char *const *stringArgs, size_t numStringArgs, activator_t *activator)
+{
+	Environment *env = &ACSEnv;
+
+	ACSVM::GlobalScope *const global = env->getGlobalScope(0);
+	ACSVM::HubScope *const hub = global->getHubScope(0);
+	ACSVM::MapScope *const map = hub->getMapScope(0);
+	ACSVM::ScopeID scope{global->id, hub->id, map->id};
+
+	ThreadInfo info{activator};
+
+	ACSVM::String *script = env->getString(name, strlen(name));
+	std::vector<ACSVM::Word> argV = ACS_MixArgs(tcb::span {args, numArgs}, tcb::span {stringArgs, numStringArgs});
+	return map->scriptStartForced(script, scope, {argV.data(), argV.size(), &info});
 }
 
 /*--------------------------------------------------
