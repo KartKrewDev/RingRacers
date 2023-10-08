@@ -684,7 +684,16 @@ void M_ClearSecrets(void)
 	{
 		if (!mapheaderinfo[i])
 			continue;
+
 		mapheaderinfo[i]->cache_spraycan = UINT16_MAX;
+
+		mapheaderinfo[i]->cache_maplock = MAXUNLOCKABLES;
+	}
+
+	cupheader_t *cup;
+	for (cup = kartcupheaders; cup; cup = cup->next)
+	{
+		cup->cache_cuplock = MAXUNLOCKABLES;
 	}
 
 	for (i = 0; i < numskincolors; i++)
@@ -820,9 +829,53 @@ static void M_AssignSpraycans(void)
 	}
 }
 
+static void M_PrecacheLevelLocks(void)
+{
+	UINT16 i, j;
+
+	for (i = 0; i < MAXUNLOCKABLES; ++i)
+	{
+		switch (unlockables[i].type)
+		{
+			// SECRET_SKIN, SECRET_COLOR, SECRET_FOLLOWER are instantiated too late to use
+			case SECRET_MAP:
+			{
+				UINT16 map = M_UnlockableMapNum(&unlockables[i]);
+				if (map < nummapheaders
+					&& mapheaderinfo[map])
+				{
+					if (mapheaderinfo[map]->cache_maplock != MAXUNLOCKABLES)
+						CONS_Alert(CONS_ERROR, "Unlockable %u: Too many SECRET_MAPs associated with Level %s\n", i, mapheaderinfo[map]->lumpname);
+					mapheaderinfo[map]->cache_maplock = i;
+				}
+				break;
+			}
+
+			case SECRET_CUP:
+			{
+				cupheader_t *cup = M_UnlockableCup(&unlockables[i]);
+				if (cup)
+				{
+					if (cup->cache_cuplock != MAXUNLOCKABLES)
+						CONS_Alert(CONS_ERROR, "Unlockable %u: Too many SECRET_CUPs associated with Cup %s\n", i, cup->name);
+					cup->cache_cuplock = i;
+					break;
+				}
+				break;
+			}
+
+			default:
+				break;
+		}
+	}
+}
+
 void M_FinaliseGameData(void)
 {
 	//M_PopulateChallengeGrid(); -- This can be done lazily when we actually need it
+
+	// Precache as many unlockables as is meaningfully feasible
+	M_PrecacheLevelLocks();
 
 	// Place the spraycans, which CAN'T be done lazily.
 	M_AssignSpraycans();
@@ -2341,8 +2394,6 @@ boolean M_SecretUnlocked(INT32 type, boolean local)
 
 boolean M_CupLocked(cupheader_t *cup)
 {
-	UINT16 i;
-
 	// Don't lock maps in dedicated servers.
 	// That just makes hosts' lives hell.
 	if (dedicated)
@@ -2355,6 +2406,9 @@ boolean M_CupLocked(cupheader_t *cup)
 	if (!cup)
 		return false;
 
+#if 0 // perfect uncached behaviour
+	UINT16 i;
+
 	for (i = 0; i < MAXUNLOCKABLES; ++i)
 	{
 		if (unlockables[i].type != SECRET_CUP)
@@ -2363,14 +2417,16 @@ boolean M_CupLocked(cupheader_t *cup)
 			continue;
 		return !M_CheckNetUnlockByID(i);
 	}
+#else
+	if (cup->cache_cuplock < MAXUNLOCKABLES)
+		return !M_CheckNetUnlockByID(cup->cache_cuplock);
+#endif
 
 	return false;
 }
 
 boolean M_MapLocked(UINT16 mapnum)
 {
-	UINT16 i;
-
 	// Don't lock maps in dedicated servers.
 	// That just makes hosts' lives hell.
 	if (dedicated)
@@ -2391,6 +2447,9 @@ boolean M_MapLocked(UINT16 mapnum)
 		return M_CupLocked(mapheaderinfo[mapnum-1]->cup);
 	}
 
+#if 0 // perfect uncached behaviour
+	UINT16 i;
+
 	for (i = 0; i < MAXUNLOCKABLES; ++i)
 	{
 		if (unlockables[i].type != SECRET_MAP)
@@ -2399,6 +2458,10 @@ boolean M_MapLocked(UINT16 mapnum)
 			continue;
 		return !M_CheckNetUnlockByID(i);
 	}
+#else
+	if (mapheaderinfo[mapnum-1]->cache_maplock < MAXUNLOCKABLES)
+		return !M_CheckNetUnlockByID(mapheaderinfo[mapnum-1]->cache_maplock);
+#endif
 
 	return false;
 }

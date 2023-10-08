@@ -408,6 +408,8 @@ struct cupheader_t
 
 	boolean playcredits;					///< Play the credits?
 
+	UINT16 cache_cuplock;					///< Cached Unlockable ID
+
 	cupwindata_t windata[4];				///< Data for cup visitation
 	cupheader_t *next;						///< Next cup in linked list
 };
@@ -534,6 +536,7 @@ struct mapheader_t
 
 	UINT32 _saveid;						///< Purely assistive in gamedata save processes
 	UINT16 cache_spraycan;				///< Cached Spraycan ID
+	UINT16 cache_maplock;				///< Cached Unlockable ID
 
 	// Lua information
 	UINT8 numCustomOptions;				///< Internal. For Lua custom value support.

@@ -464,6 +464,8 @@ static void P_ClearSingleMapHeaderInfo(INT16 num)
 
 	mapheaderinfo[num]->cache_spraycan = UINT16_MAX;
 
+	mapheaderinfo[num]->cache_maplock = MAXUNLOCKABLES;
+
 	mapheaderinfo[num]->customopts = NULL;
 	mapheaderinfo[num]->numCustomOptions = 0;
 }
