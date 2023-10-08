@@ -69,6 +69,7 @@ extern INT32 ds_y, ds_x1, ds_x2;
 extern lighttable_t *ds_colormap;
 extern lighttable_t *ds_fullbright;
 extern lighttable_t *ds_translation;
+extern lighttable_t *ds_flatlighting;
 
 extern fixed_t ds_xfrac, ds_yfrac, ds_xstep, ds_ystep;
 extern INT32 ds_waterofs, ds_bgofs;
@@ -79,8 +80,6 @@ extern boolean ds_powersoftwo;
 extern UINT8 *ds_source;
 extern UINT8 *ds_brightmap;
 extern UINT8 *ds_transmap;
-
-extern UINT8 ds_flatcolor;
 
 struct floatv3_t {
 	float x, y, z;

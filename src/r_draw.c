@@ -117,6 +117,7 @@ INT32 ds_y, ds_x1, ds_x2;
 lighttable_t *ds_colormap;
 lighttable_t *ds_fullbright;
 lighttable_t *ds_translation; // Lactozilla: Sprite splat drawer
+lighttable_t *ds_flatlighting;
 
 fixed_t ds_xfrac, ds_yfrac, ds_xstep, ds_ystep;
 INT32 ds_waterofs, ds_bgofs;

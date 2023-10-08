@@ -227,6 +227,7 @@ void SCR_SetDrawFuncs(void);
 // Set current column / span drawers
 void R_SetColumnFunc(size_t id, boolean brightmapped);
 void R_SetSpanFunc(size_t id, boolean npo2, boolean brightmapped);
+boolean R_SetSpanFuncFlat(size_t id); // flat color
 
 // Compare current column drawer
 boolean R_CheckColumnFunc(size_t id);

@@ -13,6 +13,7 @@
 
 #include <tracy/tracy/Tracy.hpp>
 
+#include "command.h"
 #include "doomdef.h"
 #include "r_local.h"
 #include "r_sky.h"
@@ -29,6 +30,8 @@
 #include "console.h" // con_clipviewtop
 #include "taglist.h"
 #include "r_draw.h"
+
+extern "C" consvar_t cv_debugfinishline;
 
 #define HEIGHTBITS              12
 #define HEIGHTUNIT              (1<<HEIGHTBITS)
@@ -2111,7 +2114,9 @@ void R_StoreWallRange(INT32 start, INT32 stop)
 			|| frontsector->extra_colormap != backsector->extra_colormap
 			|| (frontsector->ffloors != backsector->ffloors && !Tag_Compare(&frontsector->tags, &backsector->tags))
 			// Portals block traversal behind them
-			|| g_portal)
+			|| g_portal
+			// Highlighting death pits
+			|| (cv_debugfinishline.value && frontsector->damagetype != backsector->damagetype))
 		{
 			markfloor = true;
 		}
@@ -2147,7 +2152,9 @@ void R_StoreWallRange(INT32 start, INT32 stop)
 			|| frontsector->extra_colormap != backsector->extra_colormap
 			|| (frontsector->ffloors != backsector->ffloors && !Tag_Compare(&frontsector->tags, &backsector->tags))
 			// Portals block traversal behind them
-			|| g_portal)
+			|| g_portal
+			// Highlighting death pits
+			|| (cv_debugfinishline.value && frontsector->damagetype != backsector->damagetype))
 		{
 				markceiling = true;
 		}
@@ -2713,7 +2720,7 @@ void R_StoreWallRange(INT32 start, INT32 stop)
 			{
 				for (rover = backsector->ffloors; rover && i < MAXFFLOORS; rover = rover->next)
 				{
-					if (!(rover->fofflags & FOF_EXISTS) || !(rover->fofflags & FOF_RENDERPLANES))
+					if (!(rover->fofflags & FOF_EXISTS) || (!cv_debugfinishline.value && !(rover->fofflags & FOF_RENDERPLANES)))
 						continue;
 					if (rover->norender == leveltime)
 						continue;
@@ -2770,7 +2777,7 @@ void R_StoreWallRange(INT32 start, INT32 stop)
 			{
 				for (rover = frontsector->ffloors; rover && i < MAXFFLOORS; rover = rover->next)
 				{
-					if (!(rover->fofflags & FOF_EXISTS) || !(rover->fofflags & FOF_RENDERPLANES))
+					if (!(rover->fofflags & FOF_EXISTS) || (!cv_debugfinishline.value && !(rover->fofflags & FOF_RENDERPLANES)))
 						continue;
 					if (rover->norender == leveltime)
 						continue;
