@@ -100,10 +100,14 @@ static void M_UpdateChallengeGridVisuals(void)
 
 	challengesmenu.unlockcount[CMC_MEDALID] = 0;
 
+	challengesmenu.unlockcount[CMC_MEDALFILLED] =
+		(medalheight * (
+			challengesmenu.unlockcount[CMC_UNLOCKED]
+			- challengesmenu.unlockcount[CMC_MAJORSKIPPED]
+		)) / challengesmenu.unlockcount[CMC_TOTAL];
+
 	if (challengesmenu.unlockcount[CMC_PERCENT] == 100)
 	{
-		challengesmenu.unlockcount[CMC_MEDALFILLED] = medalheight;
-
 		if (challengesmenu.unlockcount[CMC_KEYED] == 0)
 		{
 			challengesmenu.unlockcount[CMC_MEDALID] = 2;
@@ -116,10 +120,6 @@ static void M_UpdateChallengeGridVisuals(void)
 	}
 	else
 	{
-		challengesmenu.unlockcount[CMC_MEDALFILLED] =
-			(medalheight * challengesmenu.unlockcount[CMC_UNLOCKED])
-				/challengesmenu.unlockcount[CMC_TOTAL];
-
 		if (challengesmenu.unlockcount[CMC_MEDALFILLED] == 0 && challengesmenu.unlockcount[CMC_UNLOCKED] != 0)
 		{
 			// Cheat to give you a sliver of pixel.
