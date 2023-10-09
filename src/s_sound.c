@@ -1224,7 +1224,7 @@ musicdef_t *musicdefstart = NULL;
 struct cursongcredit cursongcredit; // Currently displayed song credit info
 struct soundtest soundtest = {.tune = ""}; // Sound Test (sound test)
 
-static void S_InsertMusicAtSoundTestSequenceTail(const char *musname, UINT16 map, musicdef_t ***tail)
+static void S_InsertMusicAtSoundTestSequenceTail(const char *musname, UINT16 map, UINT8 altref, musicdef_t ***tail)
 {
 	UINT8 i = 0;
 	musicdef_t *def = S_FindMusicDef(musname, &i);
@@ -1237,6 +1237,7 @@ static void S_InsertMusicAtSoundTestSequenceTail(const char *musname, UINT16 map
 
 	def->sequence.id = soundtest.sequence.id;
 	def->sequence.map = map;
+	def->sequence.altref = altref;
 
 	// So what we're doing here is to avoid iterating
 	// for every insertion, we dereference the pointer
@@ -1255,17 +1256,17 @@ static void S_InsertMapIntoSoundTestSequence(UINT16 map, musicdef_t ***tail)
 
 	if (mapheaderinfo[map]->positionmus[0])
 	{
-		S_InsertMusicAtSoundTestSequenceTail(mapheaderinfo[map]->positionmus, map, tail);
+		S_InsertMusicAtSoundTestSequenceTail(mapheaderinfo[map]->positionmus, map, 0, tail);
 	}
 
 	for (i = 0; i < mapheaderinfo[map]->musname_size; i++)
 	{
-		S_InsertMusicAtSoundTestSequenceTail(mapheaderinfo[map]->musname[i], map, tail);
+		S_InsertMusicAtSoundTestSequenceTail(mapheaderinfo[map]->musname[i], map, i, tail);
 	}
 
 	for (i = 0; i < mapheaderinfo[map]->associatedmus_size; i++)
 	{
-		S_InsertMusicAtSoundTestSequenceTail(mapheaderinfo[map]->associatedmus[i], map, tail);
+		S_InsertMusicAtSoundTestSequenceTail(mapheaderinfo[map]->associatedmus[i], map, ALTREF_REQUIRESBEATEN, tail);
 	}
 }
 
@@ -1352,6 +1353,7 @@ void S_PopulateSoundTestSequence(void)
 
 			def->sequence.id = soundtest.sequence.id;
 			def->sequence.map = NEXTMAP_INVALID;
+			def->sequence.altref = 0;
 
 			def->sequence.next = soundtest.sequence.next;
 			soundtest.sequence.next = def;
@@ -1369,6 +1371,7 @@ void S_PopulateSoundTestSequence(void)
 
 			def->sequence.id = soundtest.sequence.id;
 			def->sequence.map = NEXTMAP_INVALID;
+			def->sequence.altref = 0;
 
 			def->sequence.next = *tail;
 			*tail = def;
@@ -1380,13 +1383,26 @@ static boolean S_SoundTestDefLocked(musicdef_t *def)
 {
 	// temporary - i'd like to find a way to conditionally hide
 	// specific musicdefs that don't have any map associated.
-	if (def->sequence.map >= nummapheaders)
+	if (def->sequence.map >= nummapheaders || !mapheaderinfo[def->sequence.map])
 		return false;
 
+	mapheader_t *header = mapheaderinfo[def->sequence.map];
+
 	// Is the level tied to SP progression?
-	if ((mapheaderinfo[def->sequence.map]->menuflags & (LF2_FINISHNEEDED|LF2_HIDEINMENU))
-	&& !(mapheaderinfo[def->sequence.map]->records.mapvisited & MV_BEATEN))
+	if ((
+		(header->menuflags & (LF2_FINISHNEEDED|LF2_HIDEINMENU))
+		|| (def->sequence.altref == ALTREF_REQUIRESBEATEN) // Associated music only when completed
+	)
+	&& !(header->records.mapvisited & MV_BEATEN))
 		return true;
+
+	if (def->sequence.altref != 0 && def->sequence.altref < header->musname_size)
+	{
+		// Alt music requires unlocking the alt
+		if ((header->cache_muslock[def->sequence.altref - 1] < MAXUNLOCKABLES)
+		&& gamedata->unlocked[header->cache_muslock[def->sequence.altref - 1]] == false)
+			return true;
+	}
 
 	// Finally, do a full-fat map check.
 	return M_MapLocked(def->sequence.map+1);

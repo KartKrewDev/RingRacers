@@ -144,11 +144,13 @@ boolean S_MusicNotInFocus(void);
 
 
 #define MAXDEFTRACKS 3
+#define ALTREF_REQUIRESBEATEN UINT8_MAX
 
 struct soundtestsequence_t
 {
 	UINT8 id;
 	UINT16 map;
+	UINT8 altref;
 	musicdef_t *next;
 
 	size_t shuffleinfo;
