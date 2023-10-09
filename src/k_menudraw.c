@@ -6243,7 +6243,7 @@ challengedesc:
 				0,
 				medalchopy << FRACBITS,
 				BASEVIDWIDTH << FRACBITS,
-				(medalchopy + challengesmenu.unlockcount[CMC_MEDALBLANK]) << FRACBITS,
+				(medalchopy + challengesmenu.unlockcount[i]) << FRACBITS,
 				0
 			);
 
