@@ -75,6 +75,9 @@ UINT8 R_DebugLineColor(const line_t *ld)
 
 	case 2003: // Ring Racers: Respawn Line
 		return alt ? 0x23 : 0x00; // red, white
+
+	case 2005: // Ring Racers: Dismount flying object Line
+		return alt ? 0x86 : 0x36; // blue, orange
 	}
 
 	return 0x00;

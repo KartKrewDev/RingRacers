@@ -233,11 +233,59 @@ boolean Obj_GetCheckpointRespawnPosition(const mobj_t *checkpoint, vector3_t *re
 angle_t Obj_GetCheckpointRespawnAngle(const mobj_t *checkpoint);
 void Obj_ActivateCheckpointInstantly(mobj_t* mobj);
 
+/* Rideroid / Rideroid Node */
+void Obj_RideroidThink(mobj_t *mo);
+void Obj_RideroidNodeSpawn(mobj_t *mo);
+void Obj_RideroidNodeThink(mobj_t *mo);
+void Obj_getPlayerOffRideroid(mobj_t *mo);	// used in p_map.c to get off of em when passing transfer lines.
+
+/* LSZ Bungee */
+void Obj_BungeeSpecial(mobj_t *mo, player_t *p);	// used when the player touches the bungee, to be used in p_inter.c
+void Obj_playerBungeeThink(player_t *p);			// player interaction with the bungee. The bungee is to be stored in p->mo->tracer.
+
+/* LSZ Balls */
+void Obj_EggBallSpawnerThink(mobj_t *mo);
+void Obj_EggBallThink(mobj_t *mo);
+
+/* DLZ Rockets */
+void Obj_DLZRocketThink(mobj_t *mo);
+void Obj_DLZRocketSpecial(mobj_t *mo, player_t *p);	// touch activation
+void Obj_playerDLZRocket(player_t *p);				// player looping thinker
+void Obj_DLZRocketDismount(player_t *p);			// used in p_map.c to get off the rocket when we cross transfer lines.
+
+/* DLZ Seasaw */
+void Obj_DLZSeasawSpawn(mobj_t *mo);
+void Obj_DLZSeasawThink(mobj_t *mo);
+void Obj_DLZSeasawCollide(mobj_t *mo, mobj_t *mo2);
+
+/* DLZ Hover */
+void Obj_DLZHoverSpawn(mobj_t *mo);
+void Obj_DLZHoverCollide(mobj_t *mo, mobj_t *mo2);
+
+/* DLZ Ring Vaccum */
+void Obj_DLZRingVaccumSpawn(mobj_t *mo);
+void Obj_DLZRingVaccumCollide(mobj_t *mo, mobj_t *mo2);
+void Obj_DLZSuckedRingThink(mobj_t *mo);
+
+/* WPZ Turbine */
+void Obj_WPZTurbineSpawn(mobj_t *mo);
+void Obj_WPZTurbineThinker(mobj_t *mo);
+void Obj_playerWPZTurbine(player_t *p);
+void Obj_WPZBubbleThink(mobj_t *mo);
+
+/* WPZ Fountains */
+void Obj_WPZFountainThink(mobj_t *mo);
+
+/* WPZ Kuragens */
+void Obj_WPZKuragenThink(mobj_t *mo);
+void Obj_WPZKuragenBombThink(mobj_t *mo);
+
 /* Ball Switch */
 void Obj_BallSwitchInit(mobj_t *mobj);
 void Obj_BallSwitchThink(mobj_t *mobj);
 void Obj_BallSwitchTouched(mobj_t *mobj, mobj_t *toucher);
 void Obj_BallSwitchDamaged(mobj_t *mobj, mobj_t *inflictor, mobj_t *source);
+
 
 #ifdef __cplusplus
 } // extern "C"

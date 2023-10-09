@@ -57,6 +57,19 @@
 // comeback is Battle Mode's karma comeback, also bool
 // mapreset is set when enough players fill an empty server
 
+// lat: used for when the player is in some weird state where it wouldn't be wise for it to be overwritten by another object that does similarly wacky shit.
+boolean K_isPlayerInSpecialState(player_t *p)
+{
+	return (
+		p->rideroid
+		|| p->rdnodepull
+		|| p->bungee
+		|| p->dlzrocket
+		|| p->seasaw
+		|| p->turbine
+	);
+}
+
 boolean K_IsDuelItem(mobjtype_t type)
 {
 	switch (type)
@@ -8312,7 +8325,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 			player->incontrol = 0;
 		player->incontrol++;
 	}
-	
+
 	player->incontrol = min(player->incontrol, 5*TICRATE);
 	player->incontrol = max(player->incontrol, -5*TICRATE);
 
@@ -11905,7 +11918,9 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 	K_KartDrift(player, onground);
 	K_KartSpindash(player);
 
-	if (onground == false)
+	if (onground == false
+	&& !player->bungee		// if this list of condition ever gets bigger, maybe this should become a function.
+	)
 	{
 		K_AirFailsafe(player);
 	}
@@ -11915,6 +11930,23 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 	}
 
 	Obj_RingShooterInput(player);
+
+	if (player->bungee)
+		Obj_playerBungeeThink(player);
+
+	if (player->dlzrocket)
+		Obj_playerDLZRocket(player);
+
+	if (player->seasawcooldown && !player->seasaw)
+		player->seasawcooldown--;
+
+	if (player->turbine)
+	{
+		if (player->mo->tracer && !P_MobjWasRemoved(player->mo->tracer))
+			Obj_playerWPZTurbine(player);
+		else
+			player->turbine--;	// acts as a cooldown
+	}
 }
 
 void K_CheckSpectateStatus(boolean considermapreset)

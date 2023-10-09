@@ -9727,11 +9727,86 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 	case MT_RAINBOWDASHRING:
 		Obj_RainbowDashRingThink(mobj);
 		break;
+
+	case MT_RIDEROID:
+		Obj_RideroidThink(mobj);
+		if (P_MobjWasRemoved(mobj))
+		{
+			return false;
+		}
+
+		break;
+
+	case MT_RIDEROIDNODE:
+		Obj_RideroidNodeThink(mobj);
+		break;
+
+	case MT_LSZ_EGGBALLSPAWNER:
+		Obj_EggBallSpawnerThink(mobj);
+		break;
+
+	case MT_LSZ_EGGBALL:
+		Obj_EggBallThink(mobj);
+		if (P_MobjWasRemoved(mobj))
+		{
+			return false;
+		}
+		break;
+
+	case MT_DLZ_ROCKET:
+		Obj_DLZRocketThink(mobj);
+		if (P_MobjWasRemoved(mobj))
+		{
+			return false;
+		}
+		break;
+
+	case MT_DLZ_SEASAW_SPAWN:
+		Obj_DLZSeasawThink(mobj);
+		break;
+
+	case MT_DLZ_SUCKEDRING:
+		Obj_DLZSuckedRingThink(mobj);
+		if (P_MobjWasRemoved(mobj))
+		{
+			return false;
+		}
+		break;
+
+	case MT_WATERPALACETURBINE:
+		Obj_WPZTurbineThinker(mobj);
+		break;
+
+	case MT_WATERPALACEBUBBLE:
+		Obj_WPZBubbleThink(mobj);
+		if (P_MobjWasRemoved(mobj))
+		{
+			return false;
+		}
+		break;
+
+	case MT_WATERPALACEFOUNTAIN:
+		Obj_WPZFountainThink(mobj);
+		break;
+
+	case MT_KURAGEN:
+		Obj_WPZKuragenThink(mobj);
+		break;
+
+	case MT_KURAGENBOMB:
+		Obj_WPZKuragenBombThink(mobj);
+		if (P_MobjWasRemoved(mobj))
+		{
+			return false;
+		}
+		break;
+
 	case MT_BALLSWITCH_BALL:
 	{
 		Obj_BallSwitchThink(mobj);
 		break;
 	}
+
 	default:
 		// check mobj against possible water content, before movement code
 		P_MobjCheckWater(mobj);
@@ -10635,6 +10710,9 @@ static void P_DefaultMobjShadowScale(mobj_t *thing)
 		case MT_SNEAKERPANEL:
 			thing->shadowscale = 0;
 			break;
+		case MT_KURAGEN:
+			thing->shadowscale = FRACUNIT/4;
+			break;
 		default:
 			if (thing->flags & (MF_ENEMY|MF_BOSS))
 				thing->shadowscale = FRACUNIT;
@@ -11190,6 +11268,21 @@ mobj_t *P_SpawnMobj(fixed_t x, fixed_t y, fixed_t z, mobjtype_t type)
 			break;
 		case MT_RAINBOWDASHRING:
 			Obj_RainbowDashRingSpawn(mobj);
+			break;
+		case MT_RIDEROIDNODE:
+			Obj_RideroidNodeSpawn(mobj);
+			break;
+		case MT_DLZ_SEASAW_SPAWN:
+			Obj_DLZSeasawSpawn(mobj);
+			break;
+		case MT_DLZ_HOVER:
+			Obj_DLZHoverSpawn(mobj);
+			break;
+		case MT_DLZ_RINGVACCUM:
+			Obj_DLZRingVaccumSpawn(mobj);
+			break;
+		case MT_WATERPALACETURBINE:
+			Obj_WPZTurbineSpawn(mobj);
 			break;
 		case MT_SNEAKERPANEL:
 			Obj_SneakerPanelSpawn(mobj);

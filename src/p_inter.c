@@ -800,6 +800,10 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 				return;
 			}
 
+		case MT_LSZ_BUNGEE:
+			Obj_BungeeSpecial(special, player);
+			return;
+
 		// CTF Flags
 		case MT_REDFLAG:
 		case MT_BLUEFLAG:
@@ -850,6 +854,10 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 		case MT_DASHRING:
 		case MT_RAINBOWDASHRING:
 			Obj_DashRingTouch(special, player);
+			return;
+
+		case MT_DLZ_ROCKET:
+			Obj_DLZRocketSpecial(special, player);
 			return;
 
 		case MT_BALLSWITCH_BALL:

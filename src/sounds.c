@@ -1211,6 +1211,11 @@ sfxinfo_t S_sfx[NUMSFX] =
 
   {"rank",   false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""}, // Rank slam
 
+  {"ridr1",   false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, "Boarding Rideroid"}, // Rideroid Activation
+  {"ridr2",   false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""}, // Rideroid Diveroll
+  {"ridr3",   false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""}, // Rideroid Loop
+  {"ridr4",   false,  64,  0, -1, NULL, 0,        -1,  -1, LUMPERROR, ""}, // Leaving Rideroid 
+
   // Damage sounds
   {"dmga1",  false, 255, 8, -1, NULL, 0,         -1,  -1, LUMPERROR, "Damaged"},
   {"dmga2",  false, 255, 8, -1, NULL, 0,         -1,  -1, LUMPERROR, "Damaged"},
