@@ -2934,8 +2934,8 @@ void P_DemoCameraMovement(camera_t *cam, UINT8 num)
 		cam->button_a_held--;
 	}
 
-	// if you hold item, you will lock on to displayplayer. (The last player you were ""f12-ing"")
-	if (cam->freecam && cmd->buttons & BT_ATTACK)
+	// if you hold Y, you will lock on to displayplayer. (The last player you were ""f12-ing"")
+	if (cam->freecam && cmd->buttons & BT_RESPAWN)
 	{
 		lastp = &players[displayplayers[0]];	// Fun fact, I was trying displayplayers[0]->mo as if it was Lua like an absolute idiot.
 		cam->angle = R_PointToAngle2(cam->x, cam->y, lastp->mo->x, lastp->mo->y);
