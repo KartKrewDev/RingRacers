@@ -2913,15 +2913,19 @@ void P_DemoCameraMovement(camera_t *cam, UINT8 num)
 	// camera movement:
 	if (!cam->button_a_held)
 	{
-		if (cmd->buttons & BT_ACCELERATE)
+		int dir = ((cmd->buttons & BT_ACCELERATE) ? 1 : 0) + ((cmd->buttons & BT_BRAKE) ? -1 : 0);
+
+		switch (dir)
 		{
-			cam->z += 32*mapobjectscale;
-			moving = true;
-		}
-		else if (cmd->buttons & BT_BRAKE)
-		{
-			cam->z -= 32*mapobjectscale;
-			moving = true;
+			case 1:
+				cam->z += 32*mapobjectscale;
+				moving = true;
+				break;
+
+			case -1:
+				cam->z -= 32*mapobjectscale;
+				moving = true;
+				break;
 		}
 	}
 
