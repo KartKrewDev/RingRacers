@@ -1397,7 +1397,19 @@ static char *M_BuildConditionTitle(UINT16 map)
 	|| M_MapLocked(map+1))
 		return Z_StrDup("???");
 
-	title = ref = G_BuildMapTitle(map+1);
+	if (mapheaderinfo[map]->menuttl[0])
+	{
+		if (mapheaderinfo[map]->typeoflevel & TOL_TUTORIAL)
+		{
+			// Intentionally not forced uppercase
+			return Z_StrDup(va("the %s Tutorial", mapheaderinfo[map]->menuttl));
+		}
+		title = ref = Z_StrDup(mapheaderinfo[map]->menuttl);
+	}
+	else
+	{
+		title = ref = G_BuildMapTitle(map+1);
+	}
 
 	if (!title)
 		I_Error("M_BuildConditionTitle: out of memory");
