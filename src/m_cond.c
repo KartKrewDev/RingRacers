@@ -806,14 +806,15 @@ static void M_AssignSpraycans(void)
 		M_Shuffle_UINT16(tempcanlist + prependoffset - (prependlen - 1), prependlen);
 
 		// Put at the front of the main list
-		// (technically reverses the prepend order, but it
+		// (technically messes with the main order, but it
 		// was LITERALLY just shuffled so it doesn't matter)
-		while (prependlen)
+		i = 0;
+		while (i < prependlen)
 		{
-			prependlen--;
-			tempcanlist[listlen] = tempcanlist[prependlen];
-			tempcanlist[prependlen] = tempcanlist[prependoffset - prependlen];
+			tempcanlist[listlen] = tempcanlist[i];
+			tempcanlist[i] = tempcanlist[prependoffset - i];
 			listlen++;
+			i++;
 		}
 	}
 
