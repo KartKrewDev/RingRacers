@@ -92,11 +92,10 @@ draw_bbox_col
 	col->y = (centeryfrac - FixedMul(bb->tz, yscale));
 	col->h = FixedMul(bb->height, yscale);
 
-	// Using this function is TOO EASY!
-	V_DrawFill(
-			viewwindowx + col->x,
-			viewwindowy + col->y / FRACUNIT, 1,
-			col->h / FRACUNIT, V_NOSCALESTART | bb->color);
+	if (col->x >= 0 && col->x < viewwidth)
+	{
+		raster_bbox_seg(col->x, col->y, col->h, bb->color);
+	}
 }
 
 static void
