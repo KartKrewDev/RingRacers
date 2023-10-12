@@ -2708,6 +2708,10 @@ boolean TypeIsNetSynced(mobjtype_t type)
 	if (type == MT_HORNCODE)
 		return false;
 
+	// MT_PRISONEGGDROP: Yeah these are completely local
+	if (type == MT_PRISONEGGDROP)
+		return false;
+
 	return true;
 }
 

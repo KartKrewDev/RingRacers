@@ -4425,7 +4425,7 @@ void G_LoadGameSettings(void)
 }
 
 #define GD_VERSIONCHECK 0xBA5ED123 // Change every major version, as usual
-#define GD_VERSIONMINOR 7 // Change every format update
+#define GD_VERSIONMINOR 8 // Change every format update
 
 // You can't rearrange these without a special format update
 typedef enum
@@ -4581,6 +4581,13 @@ void G_LoadGameData(void)
 	else
 	{
 		save.p += 4; // no direct equivalent to matchesplayed
+	}
+
+	// Prison Egg Pickups
+	if (versionMinor >= 8)
+	{
+		gamedata->thisprisoneggpickup = READUINT16(save.p);
+		gamedata->prisoneggstothispickup = READUINT16(save.p);
 	}
 
 	{
@@ -5090,6 +5097,7 @@ void G_SaveGameData(void)
 		(4*GDGT_MAX)+
 		4+1+2+2+
 		4+
+		2+2+
 		4+
 		(MAXEMBLEMS+(MAXUNLOCKABLES*2)+MAXCONDITIONSETS)+
 		4+2);
@@ -5255,6 +5263,10 @@ void G_SaveGameData(void)
 
 		WRITEUINT32(save.p, everflags); // 4
 	}
+
+	// Prison Egg Pickups
+	WRITEUINT16(save.p, gamedata->thisprisoneggpickup); // 2
+	WRITEUINT16(save.p, gamedata->prisoneggstothispickup); // 2
 
 	WRITEUINT32(save.p, quickncasehash(timeattackfolder, 64)); // 4
 

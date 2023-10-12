@@ -703,7 +703,9 @@ typedef enum sprite
 	SPR_EMRC, // Chaos Emeralds
 	SPR_SEMR, // Super Emeralds
 	SPR_ESPK,
-	SPR_SHRD, // Emerald Hunt
+
+	// Prison Egg Drops
+	SPR_ALTM,
 
 	// Interactive Objects
 	SPR_BBLS, // water bubble source
@@ -2400,10 +2402,8 @@ typedef enum state
 
 	S_EMERALDFLARE1,
 
-	// Emerald hunt shards
-	S_SHRD1,
-	S_SHRD2,
-	S_SHRD3,
+	// Prison Egg Drops
+	S_PRISONEGGDROP_CD,
 
 	// Bubble Source
 	S_BUBBLES1,
@@ -6062,8 +6062,7 @@ typedef enum mobj_type
 	MT_EMERALD,
 	MT_EMERALDSPARK,
 	MT_EMERALDFLARE,
-	MT_EMERHUNT, // Emerald Hunt
-	MT_EMERALDSPAWN, // Emerald spawner w/ delay
+	MT_PRISONEGGDROP,
 
 	// Springs and others
 	MT_FAN,

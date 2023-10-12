@@ -2643,6 +2643,22 @@ static void readcondition(UINT16 set, UINT32 id, char *word2)
 		// Force at head of the list?
 		x1 = (params[2] && (params[2][0] == 'Y' || params[2][0] == 'T')) ? 1 : 0;
 	}
+	else if (fastcmp(params[0], "PRISONEGGCD"))
+	{
+		ty = UC_PRISONEGGCD;
+		re = NEXTMAP_INVALID;
+
+		if (params[1])
+		{
+			re = G_MapNumber(params[1]);
+
+			if (re >= nummapheaders)
+			{
+				deh_warning("Invalid level %s for condition ID %d", params[1], id+1);
+				return;
+			}
+		}
+	}
 	else if ((offset=0) || fastcmp(params[0], "AND")
 	||        (++offset && fastcmp(params[0], "COMMA")))
 	{

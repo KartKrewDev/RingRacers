@@ -1193,6 +1193,7 @@ sfxinfo_t S_sfx[NUMSFX] =
 
   {"horn00", false,  255, 0, -1, NULL, 0,         -1,  -1, LUMPERROR, "/"}, // HORNCODE
   {"melody", false,  255, 0, -1, NULL, 0,         -1,  -1, LUMPERROR, "/"}, // Mystic Melody
+  {"cdsprk", false,  255, 0, -1, NULL, 0,         -1,  -1, LUMPERROR, "/"}, // Prison Egg CD sparkling
   {"monch",  false,  255, 0, -1, NULL, 0,         -1,  -1, LUMPERROR, ""},
   {"etexpl", false,  255, 0, -1, NULL, 0,         -1,  -1, LUMPERROR, "Game crash"},
 

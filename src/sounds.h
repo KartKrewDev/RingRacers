@@ -1263,6 +1263,7 @@ typedef enum
 
 	sfx_horn00,
 	sfx_melody,
+	sfx_cdsprk,
 	sfx_monch,
 	sfx_etexpl,
 

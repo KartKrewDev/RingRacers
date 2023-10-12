@@ -800,6 +800,49 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 				return;
 			}
 
+		case MT_PRISONEGGDROP:
+			{
+				if (demo.playback)
+				{
+					// Never collect emblems in replays.
+					return;
+				}
+
+				if (player->bot)
+				{
+					// Your nefarious opponent puppy can't grab these for you.
+					return;
+				}
+
+				if (!P_IsLocalPlayer(player))
+				{
+					// Must be party.
+					return;
+				}
+
+				if (special->hitlag || special->scale < mapobjectscale/2)
+				{
+					// Don't get during the initial activation
+					return;
+				}
+
+				if (
+					grandprixinfo.gp == true // Bonus Round
+					&& netgame == false // game design + makes it easier to implement
+					&& gamedata->thisprisoneggpickup_cached != NULL
+				)
+				{
+					gamedata->thisprisoneggpickupgrabbed = true;
+					gamedata->prisoneggstothispickup = GDINIT_PRISONSTOPRIZE;
+
+					if (!M_UpdateUnlockablesAndExtraEmblems(true, true))
+						S_StartSound(NULL, sfx_ncitem);
+					gamedata->deferredsave = true;
+				}
+
+				break;
+			}
+
 		case MT_LSZ_BUNGEE:
 			Obj_BungeeSpecial(special, player);
 			return;
@@ -936,6 +979,11 @@ static void P_AddBrokenPrison(mobj_t *target, mobj_t *source)
 		K_SpawnBattlePoints(source->player, NULL, 1);
 	}
 
+	if (gamedata->prisoneggstothispickup)
+	{
+		gamedata->prisoneggstothispickup--;
+	}
+
 	if (++numtargets >= maptargets)
 	{
 		P_DoAllPlayersExit(0, (grandprixinfo.gp == true));
@@ -947,6 +995,55 @@ static void P_AddBrokenPrison(mobj_t *target, mobj_t *source)
 		{
 			extratimeintics += 10*TICRATE;
 			secretextratime = TICRATE/2;
+		}
+
+		if (
+			grandprixinfo.gp == true // Bonus Round
+			&& demo.playback == false // Not playback
+			&& netgame == false // game design + makes it easier to implement
+			&& gamedata->thisprisoneggpickup_cached != NULL
+			&& gamedata->prisoneggstothispickup == 0
+			&& gamedata->thisprisoneggpickupgrabbed == false
+		)
+		{
+			// Will be 0 for the next level
+			gamedata->prisoneggstothispickup = (maptargets - numtargets);
+
+			mobj_t *secretpickup = P_SpawnMobj(
+				target->x, target->y,
+				target->z + (
+					target->height
+					- FixedMul(mobjinfo[MT_PRISONEGGDROP].height, mapobjectscale)
+				),
+				MT_PRISONEGGDROP
+			);
+
+			if (secretpickup)
+			{
+				secretpickup->hitlag = target->hitlag;
+
+				P_SetScale(secretpickup, mapobjectscale/TICRATE);
+				// secretpickup->destscale = mapobjectscale; -- safe assumption it's already set?
+				secretpickup->scalespeed = (2*mapobjectscale)/(3*TICRATE);
+
+				// NOT from the target - just in case it's just been placed on the ceiling as a gimmick
+				K_FlipFromObject(secretpickup, source);
+
+				// Okay these have to use M_Random because replays...
+				// The spawning of these won't be recorded back!
+				const angle_t launchangle = FixedAngle(M_RandomRange(60, 80) * FRACUNIT);
+				const fixed_t launchmomentum = 20 * mapobjectscale;
+
+				secretpickup->momz = P_MobjFlip(target) // THIS one uses target!
+					* P_ReturnThrustY(secretpickup, launchangle, launchmomentum);
+
+				secretpickup->angle = FixedAngle(M_RandomKey(360) * FRACUNIT);
+
+				P_InstaThrust(
+					secretpickup, secretpickup->angle,
+					P_ReturnThrustX(secretpickup, launchangle, launchmomentum)
+				);
+			}
 		}
 	}
 }

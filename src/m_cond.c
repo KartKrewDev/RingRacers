@@ -679,6 +679,14 @@ void M_ClearSecrets(void)
 	gamedata->numspraycans = 0;
 	gamedata->gotspraycans = 0;
 
+	Z_Free(gamedata->prisoneggpickups);
+	gamedata->prisoneggpickups = NULL;
+	gamedata->numprisoneggpickups = 0;
+	gamedata->gettableprisoneggpickups = 0;
+	gamedata->thisprisoneggpickup = MAXCONDITIONSETS;
+	gamedata->thisprisoneggpickup_cached = NULL;
+	gamedata->thisprisoneggpickupgrabbed = false;
+
 	UINT16 i, j;
 	for (i = 0; i < nummapheaders; i++)
 	{
@@ -713,7 +721,9 @@ void M_ClearSecrets(void)
 	gamedata->pendingkeyrounds = 0;
 	gamedata->pendingkeyroundoffset = 0;
 	gamedata->keyspending = 0;
-	gamedata->chaokeys = 3; // Start with 3 !!
+
+	gamedata->chaokeys = GDINIT_CHAOKEYS;
+	gamedata->prisoneggstothispickup = GDINIT_PRISONSTOPRIZE;
 }
 
 // For lack of a better idea on where to put this
@@ -835,6 +845,171 @@ static void M_AssignSpraycans(void)
 	}
 }
 
+static void M_InitPrisonEggPickups(void)
+{
+	// Init ordered list of skincolors
+	UINT16 temppickups[MAXCONDITIONSETS];
+	UINT16 listlen = 0;
+
+	UINT32 i, j;
+	conditionset_t *c;
+	condition_t *cn;
+
+	for (i = 0; i < MAXCONDITIONSETS; ++i)
+	{
+		// Optimisation - unlike Spray Cans, these are rebuilt every game launch/savedata wipe.
+		// Therefore, we don't need to re-store the ones that have been achieved.
+		if (gamedata->achieved[i])
+			continue;
+
+		c = &conditionSets[i];
+		if (!c->numconditions)
+			continue;
+
+		for (j = 0; j < c->numconditions; ++j)
+		{
+			cn = &c->condition[j];
+			if (cn->type != UC_PRISONEGGCD)
+				continue;
+
+			temppickups[listlen] = i;
+			listlen++;
+			break;
+		}
+	}
+
+	if (!listlen)
+	{
+		return;
+	}
+
+	// This list doesn't need to be shuffled because it's always being randomly grabbed.
+	// (Unlike Spray Cans, you don't know which CD you miss out on.)
+
+	gamedata->prisoneggpickups = Z_Realloc(
+		gamedata->prisoneggpickups,
+		sizeof(UINT16) * listlen,
+		PU_STATIC,
+		NULL);
+
+	while (gamedata->numprisoneggpickups < listlen)
+	{
+		gamedata->prisoneggpickups[gamedata->numprisoneggpickups]
+			= temppickups[gamedata->numprisoneggpickups];
+		gamedata->numprisoneggpickups++;
+	}
+
+	M_UpdateNextPrisonEggPickup();
+}
+
+void M_UpdateNextPrisonEggPickup(void)
+{
+	UINT16 i = gamedata->gettableprisoneggpickups, j, swap;
+
+	conditionset_t *c;
+	condition_t *cn;
+
+	boolean firstrun = true;
+
+cacheprisoneggpickup:
+
+	// Check if the current roll is fine
+	gamedata->thisprisoneggpickup_cached = NULL;
+	if (gamedata->thisprisoneggpickup < MAXCONDITIONSETS)
+	{
+		//CONS_Printf("CACHE TEST: thisprisoneggpickup is set to %u\n", gamedata->thisprisoneggpickup);
+		if (gamedata->achieved[gamedata->thisprisoneggpickup] == false)
+		{
+			c = &conditionSets[gamedata->thisprisoneggpickup];
+			if (c->numconditions)
+			{
+				for (j = 0; j < c->numconditions; ++j)
+				{
+					cn = &c->condition[j];
+					if (cn->type != UC_PRISONEGGCD)
+						continue;
+
+					if (cn->requirement < nummapheaders && M_MapLocked(cn->requirement+1))
+						continue;
+
+					// Good! Attach the cache.
+					gamedata->thisprisoneggpickup_cached = cn;
+					//CONS_Printf(" successfully set to cn!\n");
+					break;
+				}
+			}
+		}
+
+		if (gamedata->thisprisoneggpickup_cached == NULL)
+		{
+			gamedata->thisprisoneggpickup = MAXCONDITIONSETS;
+			gamedata->thisprisoneggpickupgrabbed = false;
+		}
+	}
+
+	if (firstrun && gamedata->numprisoneggpickups && gamedata->thisprisoneggpickup == MAXCONDITIONSETS)
+	{
+		for (; i < gamedata->numprisoneggpickups; i++)
+		{
+			if (gamedata->achieved[gamedata->prisoneggpickups[i]] == false)
+			{
+				c = &conditionSets[gamedata->prisoneggpickups[i]];
+				if (c->numconditions)
+				{
+					for (j = 0; j < c->numconditions; ++j)
+					{
+						cn = &c->condition[j];
+						if (cn->type != UC_PRISONEGGCD)
+							continue;
+
+						// Locked associated map? Keep in the rear end dimension!
+						if (cn->requirement < nummapheaders && M_MapLocked(cn->requirement+1))
+							break; // not continue intentionally
+
+						// Okay, this should be available.
+						// Bring to the front!
+						swap = gamedata->prisoneggpickups[gamedata->gettableprisoneggpickups];
+						gamedata->prisoneggpickups[gamedata->gettableprisoneggpickups] = 
+							gamedata->prisoneggpickups[i];
+						gamedata->prisoneggpickups[i] = swap;
+
+						gamedata->gettableprisoneggpickups++;
+
+						break;
+					}
+
+					if (j < c->numconditions)
+						continue;
+				}
+			}
+
+			// Fell all the way through?
+			// Push this all the way to the back, and lop it off!
+
+			swap = gamedata->prisoneggpickups[gamedata->numprisoneggpickups];
+			gamedata->prisoneggpickups[gamedata->numprisoneggpickups] = 
+				gamedata->prisoneggpickups[i];
+			gamedata->prisoneggpickups[i] = swap;
+
+			gamedata->numprisoneggpickups--;
+			i--; // We run the loop again for this entry
+		}
+
+		if (gamedata->gettableprisoneggpickups)
+		{
+			gamedata->thisprisoneggpickup =
+				gamedata->prisoneggpickups[
+					M_RandomKey(gamedata->gettableprisoneggpickups)
+				];
+
+			firstrun = false;
+			goto cacheprisoneggpickup;
+		}
+	}
+
+	//CONS_Printf("thisprisoneggpickup = %u (MAXCONDITIONSETS is %u)\n", gamedata->thisprisoneggpickup, MAXCONDITIONSETS);
+}
+
 static void M_PrecacheLevelLocks(void)
 {
 	UINT16 i, j;
@@ -907,6 +1082,9 @@ void M_FinaliseGameData(void)
 
 	// Place the spraycans, which CAN'T be done lazily.
 	M_AssignSpraycans();
+
+	// You could probably do the Prison Egg Pickups lazily, but it'd be a lagspike mid-combat.
+	M_InitPrisonEggPickups();
 
 	// Don't consider loaded until it's a success!
 	// It used to do this much earlier, but this would cause the gamedata
@@ -1160,6 +1338,7 @@ boolean M_CheckCondition(condition_t *cn, player_t *player)
 			return false;
 		case UC_PASSWORD:
 			return (cn->stringvar == NULL);
+
 		case UC_SPRAYCAN:
 		{
 			if (cn->requirement <= 0
@@ -1173,6 +1352,9 @@ boolean M_CheckCondition(condition_t *cn, player_t *player)
 
 			return (gamedata->spraycans[can_id].map < nummapheaders);
 		}
+
+		case UC_PRISONEGGCD:
+			return ((gamedata->thisprisoneggpickupgrabbed == true) && (cn == gamedata->thisprisoneggpickup_cached));
 
 		// Just for string building
 		case UC_AND:
@@ -1748,6 +1930,7 @@ static const char *M_GetConditionString(condition_t *cn)
 			return NULL;
 		case UC_PASSWORD:
 			return "enter a secret password";
+
 		case UC_SPRAYCAN:
 		{
 			if (cn->requirement <= 0
@@ -1770,6 +1953,10 @@ static const char *M_GetConditionString(condition_t *cn)
 
 			return va("grab %d Spray Cans", can_id + 1);
 		}
+
+		case UC_PRISONEGGCD:
+			// :butterfly: "alternatively you could say 'grab a hot toooon' or 'smooth beeat'"
+			return "BONUS ROUND: grab a prize from a Prison Egg";
 
 		case UC_AND:
 			return "&";
@@ -2160,6 +2347,8 @@ boolean M_UpdateUnlockablesAndExtraEmblems(boolean loud, boolean doall)
 	if (doall)
 	{
 		response = M_CheckUnlockConditions(NULL);
+
+		M_UpdateNextPrisonEggPickup();
 
 		if (gamedata->pendingkeyrounds == 0
 			|| (gamedata->chaokeys >= GDMAX_CHAOKEYS))

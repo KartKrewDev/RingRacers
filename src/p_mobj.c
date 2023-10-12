@@ -7638,6 +7638,7 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 		break;
 	}
 	case MT_EMERALD:
+	{
 		Obj_EmeraldThink(mobj);
 
 		if (P_MobjWasRemoved(mobj))
@@ -7645,6 +7646,56 @@ static boolean P_MobjRegularThink(mobj_t *mobj)
 			return false;
 		}
 		break;
+	}
+	case MT_PRISONEGGDROP:
+	{
+		// If it gets any more complicated than this I'll make an objects/prisoneggdrop.c file, promise
+		// ~toast 121023
+
+		statenum_t teststate = S_NULL;
+
+		if (mobj->flags2 & MF2_AMBUSH)
+		{
+			if (P_IsObjectOnGround(mobj))
+			{
+				if (P_CheckDeathPitCollide(mobj))
+				{
+					P_RemoveMobj(mobj);
+					return false;
+				}
+
+				mobj->momx = mobj->momy = 0;
+			}
+
+			teststate = (mobj->state-states);
+		}
+		else if (!netgame)
+		{
+			if (gamedata->thisprisoneggpickup_cached->type == UC_PRISONEGGCD)
+			{
+				teststate = S_PRISONEGGDROP_CD;
+			}
+
+			P_SetMobjState(mobj, teststate);
+
+			if (P_MobjWasRemoved(mobj))
+			{
+				return false;
+			}
+
+			S_StartSound(NULL, sfx_cdsprk);
+
+			mobj->z += P_MobjFlip(mobj);
+			mobj->flags2 |= MF2_AMBUSH;
+		}
+
+		if (teststate == S_PRISONEGGDROP_CD)
+		{
+			mobj->angle += ANGLE_MAX/TICRATE;
+		}
+
+		break;
+	}
 	case MT_EMERALDFLARE:
 		Obj_EmeraldFlareThink(mobj);
 

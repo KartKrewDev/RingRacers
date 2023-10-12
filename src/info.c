@@ -148,7 +148,9 @@ char sprnames[NUMSPRITES + 1][5] =
 	"EMRC", // Chaos Emeralds
 	"SEMR", // Super Emeralds
 	"ESPK",
-	"SHRD", // Emerald Hunt
+
+	// Prison Egg Drops
+	"ALTM",
 
 	// Interactive Objects
 	"BBLS", // water bubble source
@@ -1920,10 +1922,8 @@ state_t states[NUMSTATES] =
 
 	{SPR_LENS, FF_FULLBRIGHT|FF_ADD|FF_TRANS10|FF_ANIMATE|11, 8, {NULL}, 7, 1, S_GAINAX_MID2}, // S_EMERALDFLARE1
 
-	// Emerald hunt shards
-	{SPR_SHRD, 0, -1, {NULL}, 0, 0, S_NULL}, // S_SHRD1
-	{SPR_SHRD, 1, -1, {NULL}, 0, 0, S_NULL}, // S_SHRD2
-	{SPR_SHRD, 2, -1, {NULL}, 0, 0, S_NULL}, // S_SHRD3
+	// Prison Egg Drops
+	{SPR_ALTM, 0|FF_PAPERSPRITE, -1, {NULL}, 0, 0, S_NULL}, // S_PRISONEGGDROP_CD
 
 	// Bubble Source
 	{SPR_BBLS, 0, 8, {A_BubbleSpawn}, 2048, 0, S_BUBBLES2}, // S_BUBBLES1
@@ -8482,9 +8482,9 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		S_NULL          // raisestate
 	},
 
-	{           // MT_EMERHUNT
-		320,            // doomednum
-		S_SHRD1,        // spawnstate
+	{           // MT_PRISONEGGDROP
+		-1,             // doomednum
+		S_INVISIBLE,    // spawnstate
 		1000,           // spawnhealth
 		S_NULL,         // seestate
 		sfx_None,       // seesound
@@ -8495,44 +8495,17 @@ mobjinfo_t mobjinfo[NUMMOBJTYPES] =
 		sfx_None,       // painsound
 		S_NULL,         // meleestate
 		S_NULL,         // missilestate
-		S_SPRK1,        // deathstate
-		S_NULL,         // xdeathstate
-		sfx_cgot,       // deathsound
-		8,              // speed
-		12*FRACUNIT,    // radius
-		42*FRACUNIT,    // height
-		0,              // display offset
-		4,              // mass
-		0,              // damage
-		sfx_None,       // activesound
-		MF_SPECIAL|MF_NOGRAVITY, // flags
-		S_NULL          // raisestate
-	},
-
-	{           // MT_EMERALDSPAWN
-		321,            // doomednum
-		S_INVISIBLE,    // spawnstate
-		1000,           // spawnhealth
-		S_NULL,         // seestate
-		sfx_None,       // seesound
-		0,              // reactiontime
-		sfx_None,       // attacksound
-		S_NULL,         // painstate
-		0,              // painchance
-		sfx_None,       // painsound
-		S_NULL,         // meleestate
-		S_NULL,         // missilestate
 		S_NULL,         // deathstate
 		S_NULL,         // xdeathstate
-		sfx_None,       // deathsound
+		sfx_s3k9c,      // deathsound
 		0,              // speed
-		8,              // radius
-		8,              // height
+		65*FRACUNIT,    // radius
+		130*FRACUNIT,   // height
 		0,              // display offset
-		10,             // mass
+		16,             // mass
 		0,              // damage
 		sfx_None,       // activesound
-		MF_NOBLOCKMAP|MF_NOGRAVITY|MF_NOSECTOR,  // flags
+		MF_SPECIAL|MF_PICKUPFROMBELOW|MF_DONTENCOREMAP, // flags
 		S_NULL          // raisestate
 	},
 

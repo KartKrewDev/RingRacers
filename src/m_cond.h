@@ -63,6 +63,8 @@ typedef enum
 
 	UC_SPRAYCAN,		// Grab a spraycan
 
+	UC_PRISONEGGCD,		// Grab a CD from a Prison Egg
+
 	 // Just for string building
 	UC_AND,
 	UC_COMMA,
@@ -246,6 +248,9 @@ typedef enum {
 
 #define GDCONVERT_ROUNDSTOKEY 32
 
+#define GDINIT_CHAOKEYS 3 // Start with 3 Chao Keys !!
+#define GDINIT_PRISONSTOPRIZE 30 // 30 Prison Eggs to your [Wild Prize] !!
+
 typedef enum {
 	GDGT_RACE,
 	GDGT_BATTLE,
@@ -286,6 +291,15 @@ struct gamedata_t
 	UINT16 numspraycans;
 	UINT16 gotspraycans;
 	candata_t* spraycans;
+
+	// PRISON EGG PICKUPS
+	UINT16 numprisoneggpickups;
+	UINT16 gettableprisoneggpickups;
+	UINT16 thisprisoneggpickup;
+	condition_t *thisprisoneggpickup_cached;
+	boolean thisprisoneggpickupgrabbed;
+	UINT16 prisoneggstothispickup;
+	UINT16* prisoneggpickups;
 
 	// CHALLENGE GRID
 	UINT16 challengegridwidth;
@@ -374,6 +388,8 @@ boolean M_UpdateUnlockablesAndExtraEmblems(boolean loud, boolean doall);
 
 #define PENDING_CHAOKEYS (UINT16_MAX-1)
 UINT16 M_GetNextAchievedUnlock(boolean canskipchaokeys);
+
+void M_UpdateNextPrisonEggPickup(void);
 
 UINT16 M_CheckLevelEmblems(void);
 UINT16 M_CompletionEmblems(void);

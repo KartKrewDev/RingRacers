@@ -267,6 +267,22 @@ void K_TimerInit(void)
 	{
 		K_SpawnDuelOnlyItems();
 	}
+
+	if (
+		battleprisons == true
+		&& grandprixinfo.gp == true
+		&& netgame == false
+		&& gamedata->thisprisoneggpickup_cached != NULL
+		&& gamedata->prisoneggstothispickup == 0
+		&& maptargets > 1
+	)
+	{
+		// This calculation is like this so...
+		// - You can't get a Prison Egg Drop on the last broken target
+		// - If it were 0 at minimum there'd be a slight bias towards the start of the round
+		//    - This is bad because it benefits CD farming like in Brawl :D
+		gamedata->prisoneggstothispickup = 1 + M_RandomKey(maptargets - 1);
+	}
 }
 
 UINT32 K_GetPlayerDontDrawFlag(player_t *player)

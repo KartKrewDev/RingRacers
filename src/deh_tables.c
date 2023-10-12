@@ -1218,10 +1218,8 @@ const char *const STATE_LIST[] = { // array length left dynamic for sanity testi
 
 	"S_EMERALDFLARE1",
 
-	// Emerald hunt shards
-	"S_SHRD1",
-	"S_SHRD2",
-	"S_SHRD3",
+	// Prison Egg Drops
+	"S_PRISONEGGDROP_CD",
 
 	// Bubble Source
 	"S_BUBBLES1",
@@ -4841,8 +4839,7 @@ const char *const MOBJTYPE_LIST[] = {  // array length left dynamic for sanity t
 	"MT_EMERALD",
 	"MT_EMERALDSPARK",
 	"MT_EMERALDFLARE",
-	"MT_EMERHUNT", // Emerald Hunt
-	"MT_EMERALDSPAWN", // Emerald spawner w/ delay
+	"MT_PRISONEGGDROP",
 
 	// Springs and others
 	"MT_FAN",
