@@ -5272,7 +5272,7 @@ static void M_DrawChallengeTile(INT16 i, INT16 j, INT32 x, INT32 y, boolean hili
 
 	if (categoryside)
 	{
-		char categoryid = '8';
+		char categoryid = '0';
 		colormap = bgmap;
 		switch (ref->type)
 		{
@@ -5309,6 +5309,9 @@ static void M_DrawChallengeTile(INT16 i, INT16 j, INT32 x, INT32 y, boolean hili
 			case SECRET_SPECIALATTACK:
 			case SECRET_SPBATTACK:
 				categoryid = '7';
+				break;
+			case SECRET_ALTMUSIC:
+				categoryid = '9';
 				break;
 		}
 		pat = W_CachePatchName(va("UN_RR0%c%c",
@@ -5371,6 +5374,9 @@ static void M_DrawChallengeTile(INT16 i, INT16 j, INT32 x, INT32 y, boolean hili
 
 			case SECRET_MAP:
 				iconid = 14;
+				break;
+			case SECRET_ALTMUSIC:
+				iconid = 16;
 				break;
 
 			case SECRET_HARDSPEED:
