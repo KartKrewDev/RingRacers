@@ -544,6 +544,7 @@ void P_CheckTimeLimit(void);
 void P_CheckPointLimit(void);
 boolean P_CheckRacers(void);
 
+boolean P_Whipping(player_t *player);
 boolean P_CanPickupItem(player_t *player, UINT8 weapon);
 boolean P_IsPickupCheesy(player_t *player, UINT8 type);
 void P_UpdateLastPickup(player_t *player, UINT8 type);

@@ -108,6 +108,15 @@ void P_RampConstant(const BasicFF_t *FFInfo, INT32 Start, INT32 End)
 // GET STUFF
 //
 
+boolean P_Whipping(player_t *player)
+{
+	if (player->instaWhipCharge)
+		return true;
+	if (player->whip && !P_MobjWasRemoved(player->whip))
+		return true;
+	return false;
+}
+
 //
 // P_CanPickupItem
 //
@@ -115,7 +124,7 @@ void P_RampConstant(const BasicFF_t *FFInfo, INT32 Start, INT32 End)
 //
 boolean P_CanPickupItem(player_t *player, UINT8 weapon)
 {
-	if (player->exiting || mapreset || (player->pflags & PF_ELIMINATED) || player->itemRoulette.reserved)
+	if (player->exiting || mapreset || (player->pflags & PF_ELIMINATED) || player->itemRoulette.reserved || P_Whipping(player))
 		return false;
 
 	// 0: Sphere/Ring
@@ -438,6 +447,8 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 				case KITEM_SUPERRING:
 					if (player->pflags & PF_RINGLOCK) // no cheaty rings
 						return;
+					if (player->instaWhipCharge)
+						return;
 					break;
 				default:
 					if (!P_CanPickupItem(player, 1))
@@ -633,6 +644,10 @@ void P_TouchSpecialThing(mobj_t *special, mobj_t *toucher, boolean heightcheck)
 
 			// No picking up rings while SPB is targetting you
 			if (player->pflags & PF_RINGLOCK)
+				return;
+
+			// Prepping instawhip? Don't ruin it by collecting rings
+			if (player->instaWhipCharge)
 				return;
 
 			// Don't immediately pick up spilled rings

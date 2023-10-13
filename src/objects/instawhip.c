@@ -2,6 +2,7 @@
 #include "../info.h"
 #include "../k_objects.h"
 #include "../p_local.h"
+#include "../k_kart.h" // INSTAWHIP_COOLDOWN
 
 #define recharge_target(o) ((o)->target)
 #define recharge_offset(o) ((o)->movedir)
@@ -49,7 +50,7 @@ void Obj_SpawnInstaWhipRecharge(player_t *player, angle_t angleOffset)
 {
 	mobj_t *x = P_SpawnMobjFromMobj(player->mo, 0, 0, 0, MT_INSTAWHIP_RECHARGE);
 
-	x->tics = max(player->instaShieldCooldown - states[x->info->raisestate].tics, 0);
+	x->tics = max(INSTAWHIP_COOLDOWN - player->instaWhipCharge - states[x->info->raisestate].tics, 0);
 	x->renderflags |= RF_SLOPESPLAT | RF_NOSPLATBILLBOARD;
 
 	P_SetTarget(&recharge_target(x), player->mo);
@@ -60,7 +61,7 @@ void Obj_InstaWhipRechargeThink(mobj_t *x)
 {
 	mobj_t *target = recharge_target(x);
 
-	if (P_MobjWasRemoved(target))
+	if (P_MobjWasRemoved(target) || !target->player->instaWhipCharge)
 	{
 		P_RemoveMobj(x);
 		return;
