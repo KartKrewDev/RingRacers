@@ -10181,6 +10181,9 @@ boolean K_PlayerGuard(player_t *player)
 		return true;
 	}
 
+	if (player->spheres == 0)
+		return false;
+
 	// Ugh. Duplicating a lot of this because while Guard _superficially_ looks like it's
 	// restricted similarly to ebrake, it's actually _really_ bad if we can't guard after item bumps.
 
@@ -10201,10 +10204,10 @@ boolean K_PlayerGuard(player_t *player)
 		&& player->spindashboost == 0
 		&& player->nocontrol == 0)
 	{
-		return false;
+		return true;
 	}
 
-	return (K_PlayerEBrake(player) && player->spheres > 0);
+	return false;
 }
 
 SINT8 K_Sliptiding(player_t *player)
@@ -11040,6 +11043,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 					else
 					{
 						player->instaWhipCharge = 0;
+						player->guardCooldown = INSTAWHIP_DROPGUARD;
 						if (!K_PowerUpRemaining(player, POWERUP_BARRIER))
 						{
 							player->guardCooldown = INSTAWHIP_COOLDOWN;
