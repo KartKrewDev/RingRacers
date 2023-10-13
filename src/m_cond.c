@@ -1241,6 +1241,8 @@ boolean M_CheckCondition(condition_t *cn, player_t *player)
 {
 	switch (cn->type)
 	{
+		case UC_NONE:
+			return false;
 		case UC_PLAYTIME: // Requires total playing time >= x
 			return (gamedata->totalplaytime >= (unsigned)cn->requirement);
 		case UC_ROUNDSPLAYED: // Requires any level completed >= x times
@@ -1359,6 +1361,7 @@ boolean M_CheckCondition(condition_t *cn, player_t *player)
 		// Just for string building
 		case UC_AND:
 		case UC_COMMA:
+		case UC_DESCRIPTIONOVERRIDE:
 			return true;
 
 		case UCRP_PREFIX_GRANDPRIX:
@@ -1550,7 +1553,7 @@ static boolean M_CheckConditionSet(conditionset_t *c, player_t *player)
 			continue;
 
 		// Skip entries that are JUST for string building
-		if (cn->type == UC_AND || cn->type == UC_COMMA)
+		if (cn->type == UC_AND || cn->type == UC_COMMA || cn->type == UC_DESCRIPTIONOVERRIDE)
 			continue;
 
 		lastID = cn->id;
@@ -1962,6 +1965,8 @@ static const char *M_GetConditionString(condition_t *cn)
 			return "&";
 		case UC_COMMA:
 			return ",";
+		case UC_DESCRIPTIONOVERRIDE:
+			return cn->stringvar;
 
 		case UCRP_PREFIX_GRANDPRIX:
 			return "GRAND PRIX:";
@@ -2140,7 +2145,7 @@ static const char *M_GetConditionString(condition_t *cn)
 		case UCRP_WETPLAYER:
 			return va("without %s %s",
 				(cn->requirement & MFE_TOUCHWATER) ? "touching any" : "going into",
-				cn->stringvar);
+				(cn->stringvar) ? cn->stringvar : "water");
 
 		default:
 			break;
@@ -2207,6 +2212,10 @@ char *M_BuildConditionSetString(UINT16 unlockid)
 		{
 			stopasap = true;
 			work = "???";
+		}
+		else if (cn->type == UC_DESCRIPTIONOVERRIDE)
+		{
+			stopasap = true;
 		}
 		worklen = strlen(work);
 

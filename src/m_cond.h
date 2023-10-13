@@ -28,6 +28,8 @@ extern "C" {
 // [required] <optional>
 typedef enum
 {
+	UC_NONE,
+
 	UC_PLAYTIME,		// PLAYTIME [tics]
 	UC_ROUNDSPLAYED,	// ROUNDSPLAYED [x played]
 	UC_TOTALRINGS,		// TOTALRINGS [x collected]
@@ -68,6 +70,7 @@ typedef enum
 	 // Just for string building
 	UC_AND,
 	UC_COMMA,
+	UC_DESCRIPTIONOVERRIDE,
 
 	UCRP_REQUIRESPLAYING, // All conditions below this can only be checked if (Playing() && gamestate == GS_LEVEL).
 

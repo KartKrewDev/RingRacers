@@ -72,6 +72,8 @@ fixed_t get_number(const char *word)
 
 #define PARAMCHECK(n) do { if (!params[n]) { deh_warning("Too few parameters, need %d", n); return; }} while (0)
 
+#define EXTENDEDPARAMCHECK(spos, n) do { if (!spos || !(*spos)) { deh_warning("Missing extended parameter, need at least %d", n); return; }} while (0)
+
 /* ======================================================================== */
 // Load a dehacked file format
 /* ======================================================================== */
@@ -2421,35 +2423,54 @@ void readunlockable(MYFILE *f, INT32 num)
 	Z_Free(s);
 }
 
+// This is a home-grown strtok(" ") equivalent so we can isolate the first chunk without destroying the rest of the line.
+static void conditiongetparam(char **params, UINT8 paramid, char **spos)
+{
+	if (*spos == NULL || *(*spos) == '\0')
+	{
+		params[paramid] = NULL;
+		return;
+	}
+
+	params[paramid] = *spos;
+	while (*(*spos) != '\0' && *(*spos) != ' ')
+	{
+		*(*spos) = toupper(*(*spos));
+		(*spos)++;
+	}
+	if (*(*spos) == ' ')
+	{
+		*(*spos) = '\0';
+		(*spos)++;
+
+		while (*(*spos) == ' ')
+			(*spos)++;
+	}
+}
+
 static void readcondition(UINT16 set, UINT32 id, char *word2)
 {
 	INT32 i;
-	char *params[5]; // condition, requirement, extra info, extra info, stringvar
-	char *spos;
+	const UINT8 MAXCONDITIONPARAMS = 5;
+	char *params[MAXCONDITIONPARAMS]; // condition, requirement, extra info, extra info, stringvar
+	char *spos = NULL;
 	char *stringvar = NULL;
 
-	conditiontype_t ty;
+	conditiontype_t ty = UC_NONE;
 	INT32 re = 0;
 	INT16 x1 = 0, x2 = 0;
 
 	INT32 offset = 0;
 
-#if 0
-	char *endpos = word2 + strlen(word2);
-#endif
-
-	spos = strtok(word2, " ");
-
-	for (i = 0; i < 5; ++i)
+	// Lop the leading spaces off
+	if (word2 && *word2)
 	{
-		if (spos != NULL)
-		{
-			params[i] = spos;
-			spos = strtok(NULL, " ");
-		}
-		else
-			params[i] = NULL;
+		spos = word2;
+		while (*spos == ' ')
+			spos++;
 	}
+
+	conditiongetparam(params, 0, &spos);
 
 	if (!params[0])
 	{
@@ -2457,7 +2478,66 @@ static void readcondition(UINT16 set, UINT32 id, char *word2)
 		return;
 	}
 
-	if (fastcmp(params[0], "PLAYTIME"))
+	// We do free descriptions first.
+
+	if (fastcmp(params[0], "DESCRIPTIONOVERRIDE"))
+	{
+		EXTENDEDPARAMCHECK(spos, 1);
+		ty = UC_DESCRIPTIONOVERRIDE;
+
+		stringvar = Z_StrDup(spos);
+	}
+	else if (fastcmp(params[0], "PASSWORD"))
+	{
+		EXTENDEDPARAMCHECK(spos, 1);
+		ty = UC_PASSWORD;
+
+		stringvar = Z_StrDup(spos);
+		re = -1;
+	}
+
+	if (ty != UC_NONE)
+		goto setcondition;
+
+	// Now conditions that take one standard param and one free description.
+
+	conditiongetparam(params, 1, &spos);
+
+	if (fastcmp(params[0], "WETPLAYER"))
+	{
+		PARAMCHECK(1);
+		//EXTENDEDPARAMCHECK(spos, 2);
+		ty = UCRP_WETPLAYER;
+		re = MFE_UNDERWATER;
+		x1 = 1;
+
+		if (fastcmp(params[1], "STRICT"))
+			re |= MFE_TOUCHWATER;
+		else if (fastcmp(params[1], "STANDARD"))
+			;
+		else
+		{
+			deh_warning("liquid strictness requirement \"%s\" invalid for condition ID %d", params[1], id+1);
+			return;
+		}
+
+		if (spos && *spos)
+			stringvar = Z_StrDup(spos);
+	}
+
+	if (ty != UC_NONE)
+		goto setcondition;
+
+	// Now for all other conditions.
+
+	for (i = 2; i < MAXCONDITIONPARAMS; i++)
+	{
+		conditiongetparam(params, i, &spos);
+	}
+
+	if (ty != UC_NONE)
+		;
+	else if (fastcmp(params[0], "PLAYTIME"))
 	{
 		PARAMCHECK(1);
 		ty = UC_PLAYTIME + offset;
@@ -2626,13 +2706,6 @@ static void readcondition(UINT16 set, UINT32 id, char *word2)
 	{
 		//PARAMCHECK(1);
 		ty = UC_ADDON + offset;
-	}
-	else if (fastcmp(params[0], "PASSWORD"))
-	{
-		PARAMCHECK(1);
-		ty = UC_PASSWORD;
-		stringvar = Z_StrDup(params[1]);
-		re = -1;
 	}
 	else if (fastcmp(params[0], "SPRAYCAN"))
 	{
@@ -2844,27 +2917,6 @@ static void readcondition(UINT16 set, UINT32 id, char *word2)
 			deh_warning("Trigger ID %d out of range (0 - 31) for condition ID %d", re, id+1);
 			return;
 		}
-
-		// The following undid the effects of strtok.
-		// Unfortunately, there is no way it can reasonably undo the effects of strupr.
-		// If we want custom descriptions for map execution triggers, we're gonna need a different method.
-#if 0
-		// undo affect of strtok
-		i = 5;
-		// so spos will still be the strtok from earlier
-		while (i >= 2)
-		{
-			if (!spos)
-				continue;
-			while (*spos != '\0')
-				spos++;
-			if (spos < endpos)
-				*spos = ' ';
-			spos = params[--i];
-		}
-
-		stringvar = Z_StrDup(params[2]);
-#endif
 	}
 	else if ((offset=0) || fastcmp(params[0], "FALLOFF")
 	||        (++offset && fastcmp(params[0], "TOUCHOFFROAD"))
@@ -2886,32 +2938,13 @@ static void readcondition(UINT16 set, UINT32 id, char *word2)
 		//PARAMCHECK(1);
 		ty = UCRP_TRIPWIREHYUU + offset;
 	}
-	else if (fastcmp(params[0], "WETPLAYER"))
-	{
-		PARAMCHECK(1);
-		ty = UCRP_WETPLAYER;
-		re = MFE_UNDERWATER;
-		x1 = 1;
-
-		if (params[2])
-		{
-			if (fastcmp(params[2], "STRICT"))
-				re |= MFE_TOUCHWATER;
-			else
-			{
-				deh_warning("liquid strictness requirement \"%s\" invalid for condition ID %d", params[2], id+1);
-				return;
-			}
-		}
-
-		stringvar = Z_StrDup(params[1]);
-	}
 	else
 	{
 		deh_warning("Invalid condition name %s for condition ID %d", params[0], id+1);
 		return;
 	}
 
+setcondition:
 	M_AddRawCondition(set, (UINT8)id, ty, re, x1, x2, stringvar);
 }
 
@@ -2954,7 +2987,7 @@ void readconditionset(MYFILE *f, UINT16 setnum)
 
 			// Now get the part after
 			word2 = tmp += 2;
-			strupr(word2);
+			//strupr(word2);
 
 			if (fastncmp(word, "CONDITION", 9))
 			{
