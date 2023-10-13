@@ -3691,8 +3691,7 @@ void K_DoGuardBreak(mobj_t *t1, mobj_t *t2) {
 	if (P_PlayerInPain(t2->player))
 		return;
 
-	// short-circuit instashield for vfx visibility
-	t1->player->instaWhipCharge = GUARDBREAK_COOLDOWN;
+	t1->player->instaWhipCharge = 0;
 	t1->player->guardCooldown = GUARDBREAK_COOLDOWN;
 
 	S_StartSound(t1, sfx_gbrk);
