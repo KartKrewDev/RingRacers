@@ -56,10 +56,10 @@ raster_bbox_seg
 {
 	y /= FRACUNIT;
 
+	h = y + (FixedCeil(abs(h)) / FRACUNIT);
+
 	if (y < 0)
 		y = 0;
-
-	h = y + (FixedCeil(abs(h)) / FRACUNIT);
 
 	if (h >= viewheight)
 		h = viewheight;
@@ -124,9 +124,6 @@ draw_bbox_row
 	x1 = a->x;
 	x2 = b->x;
 
-	if (x2 >= viewwidth)
-		x2 = viewwidth - 1;
-
 	if (x1 == x2 || x1 >= viewwidth || x2 < 0)
 		return;
 
@@ -153,6 +150,9 @@ draw_bbox_row
 		y2 -= x1 * s2;
 		x1 = 0;
 	}
+
+	if (x2 >= viewwidth)
+		x2 = viewwidth - 1;
 
 	while (x1 < x2)
 	{
