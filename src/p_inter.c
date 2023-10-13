@@ -124,13 +124,17 @@ boolean P_Whipping(player_t *player)
 //
 boolean P_CanPickupItem(player_t *player, UINT8 weapon)
 {
-	if (player->exiting || mapreset || (player->pflags & PF_ELIMINATED) || player->itemRoulette.reserved || P_Whipping(player))
+	if (player->exiting || mapreset || (player->pflags & PF_ELIMINATED) || player->itemRoulette.reserved)
 		return false;
 
 	// 0: Sphere/Ring
 	// 1: Random Item / Capsule
 	// 2: Eggbox
 	// 3: Paperitem
+
+	if (weapon != 2 && P_Whipping(player))
+		return false;
+
 	if (weapon)
 	{
 		// Item slot already taken up

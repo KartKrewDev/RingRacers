@@ -1409,8 +1409,8 @@ static void K_UpdateDraft(player_t *player)
 		leniency *= 4;
 	}
 
-	// Opportunity cost for berserk attacking. Get your slingshot speed first!
-	if (player->instaWhipCharge && player->rings <= 0)
+	// Want to berserk attack? Get your speed FIRST.
+	if (player->instaWhipCharge)
 		return;
 
 	// Not enough speed to draft.
@@ -8137,10 +8137,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 		player->gateBoost--;
 
 	if (player->powerup.rhythmBadgeTimer > 0)
-	{
-		player->instaWhipCharge = min(player->instaWhipCharge, 1);
 		player->powerup.rhythmBadgeTimer--;
-	}
 
 	if (player->powerup.barrierTimer > 0)
 	{
@@ -8270,8 +8267,12 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 	if (player->justbumped > 0)
 		player->justbumped--;
 
+	// Don't screw up chain ring pickup/usage with instawhip charge.
+	// If the button stays held, delay charge a bit.
 	if (player->instaWhipChargeLockout)
 		player->instaWhipChargeLockout--;
+	if (player->rings > 0)
+		player->instaWhipChargeLockout = TICRATE/2;
 	if (!(player->cmd.buttons & BT_ATTACK)) // Deliberate Item button release, no need to protect you from lockout
 		player->instaWhipChargeLockout = 0;
 
@@ -11002,13 +11003,19 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 			if (player->pflags & PF_USERINGS)
 			{
 				boolean chargingwhip = (cmd->buttons & BT_ATTACK) && (player->rings <= 0) && (!player->instaWhipChargeLockout);
-				boolean releasedwhip = !(cmd->buttons & BT_ATTACK) && (player->rings <= 0 && player->instaWhipCharge);
+				boolean releasedwhip = (!(cmd->buttons & BT_ATTACK)) && (player->rings <= 0 && player->instaWhipCharge);
 
 				if (K_PowerUpRemaining(player, POWERUP_BADGE))
 				{
 					chargingwhip = false;
 					releasedwhip = (ATTACK_IS_DOWN && player->rings <= 0);
 					player->instaWhipCharge = INSTAWHIP_COOLDOWN;
+				}
+
+				if (leveltime < starttime || player->spindash)
+				{
+					chargingwhip = false;
+					player->instaWhipCharge = 0;
 				}
 
 				if (chargingwhip)
@@ -11025,7 +11032,7 @@ void K_MoveKartPlayer(player_t *player, boolean onground)
 				}
 				else if (releasedwhip)
 				{
-					if (player->instaWhipCharge < INSTAWHIP_COOLDOWN || leveltime < starttime || player->spindash)
+					if (player->instaWhipCharge < INSTAWHIP_COOLDOWN)
 					{
 						S_StartSound(player->mo, sfx_kc50);
 						player->instaWhipCharge = 0;
