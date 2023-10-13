@@ -8276,7 +8276,7 @@ void K_KartPlayerThink(player_t *player, ticcmd_t *cmd)
 	if (!(player->cmd.buttons & BT_ATTACK)) // Deliberate Item button release, no need to protect you from lockout
 		player->instaWhipChargeLockout = 0;
 
-	if (P_PlayerInPain(player))
+	if (P_PlayerInPain(player) || player->itemamount)
 		player->instaWhipCharge = 0;
 
 	if (player->tiregrease)
